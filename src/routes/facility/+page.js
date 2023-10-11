@@ -12,7 +12,7 @@ export async function load({ params }) {
 
 	if (data) {
 		return {
-			station: data
+			station: []
 		};
 	}
 	return {
