@@ -10,7 +10,7 @@ const client = createClient({
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ params }) {
-	const data = await client.fetch(`*[_type == "station" && code == "${params.name}"]`);
+	const data = await client.fetch(`*[_type == "station" && code == "${params.id}"]`);
 
 	if (data && data.length > 0) {
 		return { name: data[0].name, code: data[0].code };
