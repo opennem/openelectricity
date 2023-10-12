@@ -1,6 +1,5 @@
 import adapter from '@sveltejs/adapter-cloudflare';
 import { vitePreprocess } from '@sveltejs/kit/vite';
-
 import { createClient } from '@sanity/client';
 
 const client = createClient({
@@ -9,8 +8,11 @@ const client = createClient({
 	apiVersion: '2023-10-11',
 	useCdn: false
 });
-const data = await client.fetch(`*[_type == "station"]`);
-const pages = data.map((record) => `/facility/${record.code}`);
+
+const getEntries = async () => {
+	const data = await client.fetch(`*[_type == "station"]`);
+	return data.map((record) => `/facility/${record.code}`);
+};
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -23,7 +25,7 @@ const config = {
 			}
 		}),
 		prerender: {
-			entries: [...pages]
+			entries: await getEntries()
 		}
 	},
 	preprocess: vitePreprocess()
