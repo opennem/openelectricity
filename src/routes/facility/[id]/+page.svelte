@@ -11,7 +11,7 @@
 
 <svelte:head>
 	<title>{data.name}</title>
-	<meta property="og:title" content={`OpenNEM - {data.name}`} />
+	<meta property="og:title" content={`OpenNEM - ${data.name}`} />
 	<meta name="og:description" content={toPlainText(data.description)} />
 	<meta property="og:image" content={mainPhoto.url} />
 </svelte:head>
