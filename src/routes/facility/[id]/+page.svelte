@@ -5,15 +5,13 @@
 	export let data;
 
 	$: mainPhoto = data.photos && data.photos[0];
-
-	console.log(data);
 </script>
 
 <svelte:head>
 	<title>{data.name}</title>
 	<meta property="og:title" content={`OpenNEM - ${data.name}`} />
 	<meta name="og:description" content={toPlainText(data.description)} />
-	<meta property="og:image" content={mainPhoto.url} />
+	<meta property="og:image" content={mainPhoto?.url} />
 </svelte:head>
 
 <h1 class="prose-h1 prose-slate text-2xl my-4">{data.name}</h1>
@@ -21,7 +19,9 @@
 <div class="flex flex-col sm:flex-row gap-4">
 	<!-- https://github.com/portabletext/svelte-portabletext -->
 	<PortableText value={data.description} components={{}} />
-	<img class="rounded-md max-w-xs" src={mainPhoto.url} alt={mainPhoto.caption} />
+	{#if mainPhoto}
+		<img class="rounded-md max-w-xs" src={mainPhoto.url} alt={mainPhoto.caption} />
+	{/if}
 </div>
 
 <section class="my-6">

@@ -10,7 +10,7 @@ const client = createClient({
 });
 
 const getEntries = async () => {
-	const data = await client.fetch(`*[_type == "station"]`);
+	const data = await client.fetch(`*[_type == "facility"]`);
 	return data.map((record) => `/facility/${record.code}`);
 };
 
