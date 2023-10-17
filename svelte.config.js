@@ -1,6 +1,6 @@
 import adapter from '@sveltejs/adapter-cloudflare';
 import { vitePreprocess } from '@sveltejs/kit/vite';
-import { client } from '$lib/sanity';
+import { client } from './src/lib/sanity.js';
 
 const getEntries = async () => {
 	const data = await client.fetch(`*[_type == "facility"]`);
