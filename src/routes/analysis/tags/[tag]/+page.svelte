@@ -1,6 +1,5 @@
 <script>
     import { page } from '$app/stores';
-
 	export let data;
 	let articles = data.articles;
     let tag = $page.params.tag

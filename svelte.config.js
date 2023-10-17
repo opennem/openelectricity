@@ -1,11 +1,5 @@
 import adapter from '@sveltejs/adapter-cloudflare';
 import { vitePreprocess } from '@sveltejs/kit/vite';
-import { client } from './src/lib/sanity.js';
-
-const getEntries = async () => {
-	const data = await client.fetch(`*[_type == "facility"]`);
-	return data.map((record) => `/facility/${record.code}`);
-};
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -16,10 +10,7 @@ const config = {
 				include: ['/*'],
 				exclude: ['<all>']
 			}
-		}),
-		prerender: {
-			entries: await getEntries()
-		}
+		})
 	},
 	preprocess: vitePreprocess()
 };
