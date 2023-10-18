@@ -34,7 +34,7 @@
 	{#each sortedFacilities as { name, code }}
 		<li>
 			<a class="text-slate-500 text-sm hover:underline" href="/facility/{code}">
-				{name} <small>({code})</small>
+				{name} <small>({decodeURIComponent(code)})</small>
 			</a>
 		</li>
 	{/each}
