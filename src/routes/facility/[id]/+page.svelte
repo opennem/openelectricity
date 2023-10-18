@@ -46,7 +46,7 @@
 		<tbody>
 			{#each units as unit}
 				<tr class="border-b">
-					<td>{unit.code}</td>
+					<td>{decodeURIComponent(unit.code)}</td>
 					<td>{unit.capacity_registered}</td>
 					<td>{unit.emissions_factor_co2}</td>
 					<td>{unit.dispatch_type}</td>
