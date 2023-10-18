@@ -22,7 +22,9 @@
 	<!-- https://github.com/portabletext/svelte-portabletext -->
 	<PortableText value={data.description} components={{}} />
 	{#if mainPhoto}
-		<img class="rounded-md max-w-xs" src={mainPhoto.url} alt={mainPhoto.caption} />
+		<div>
+			<img class="rounded-md sm:max-w-[300px]" src={mainPhoto.url} alt={mainPhoto.caption} />
+		</div>
 	{/if}
 </div>
 
