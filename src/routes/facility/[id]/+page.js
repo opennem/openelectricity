@@ -5,7 +5,11 @@ import { client } from '$lib/sanity';
 export async function load({ params }) {
 	const data = await client.fetch(
 		`*[_type == "facility" && code == "${params.id}"]
-			{_id, name, code, photos, units[]->, description}`
+			{_id, name, code, photos, description,
+				units[]->{
+					_id, name, code, dispatch_type, status, capacity_registered, emissions_factor_co2, data_first_seen, data_last_seen, fuel_technology->
+				}
+			}`
 	);
 
 	console.log(data);

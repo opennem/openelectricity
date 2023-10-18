@@ -1,10 +1,12 @@
 <script>
 	import { PortableText, toPlainText } from '@portabletext/svelte';
+	import { byProp } from '$lib/utils/sort';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
 
 	$: mainPhoto = data.photos && data.photos[0];
+	$: units = data.units.sort(byProp('code'));
 </script>
 
 <svelte:head>
@@ -27,19 +29,27 @@
 <section class="my-6">
 	<div class="w-full h-[300px] bg-slate-200 rounded-md" />
 
-	<table class="w-full sm:w-1/2 my-4">
+	<table class="w-full my-4">
 		<thead>
-			<tr class="border-b">
-				<th class="text-left">Unit</th>
-				<th class="text-left">Capacity</th>
+			<tr class="border-b text-left">
+				<th>Unit</th>
+				<th>Capacity</th>
+				<th>Emissions Factor</th>
+				<th>Dispatch Type</th>
+				<th>Fuel Tech</th>
+				<th>Status</th>
 			</tr>
 		</thead>
 
 		<tbody>
-			{#each data.units as unit}
+			{#each units as unit}
 				<tr class="border-b">
 					<td>{unit.code}</td>
 					<td>{unit.capacity_registered}</td>
+					<td>{unit.emissions_factor_co2}</td>
+					<td>{unit.dispatch_type}</td>
+					<td>{unit.fuel_technology.name}</td>
+					<td>{unit.status}</td>
 				</tr>
 			{/each}
 		</tbody>

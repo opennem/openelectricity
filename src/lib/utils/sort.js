@@ -3,7 +3,7 @@
  * @param {string} prop
  * @returns {Function}
  */
-export function sortByProp(prop) {
+export function byProp(prop) {
 	return (
 		/**
 		 * @param {*} a
