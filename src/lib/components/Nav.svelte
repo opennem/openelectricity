@@ -2,7 +2,7 @@
 	const navItems = [
 		{ name: 'Home', href: '/' },
 		{ name: 'Articles', href: '/analysis' },
-		{ name: 'Facility', href: '/facility/BAYSW' },
+		{ name: 'Sitemap', href: '/sitemap' },
 		{ name: 'Page content', href: '/content' }
 	];
 </script>
