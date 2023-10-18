@@ -1,7 +1,6 @@
 /**
- *
  * @param {string} prop
- * @returns {Function}
+ * @returns {Function} sort function
  */
 export function byProp(prop) {
 	return (
@@ -11,16 +10,15 @@ export function byProp(prop) {
 		 * @returns {number}
 		 */
 		(a, b) => {
-			const nameA = a[prop].toUpperCase(); // ignore upper and lowercase
-			const nameB = b[prop].toUpperCase(); // ignore upper and lowercase
-			if (nameA < nameB) {
+			const propA = a[prop].toUpperCase();
+			const propB = b[prop].toUpperCase();
+			if (propA < propB) {
 				return -1;
 			}
-			if (nameA > nameB) {
+			if (propA > propB) {
 				return 1;
 			}
 
-			// names must be equal
 			return 0;
 		}
 	);
