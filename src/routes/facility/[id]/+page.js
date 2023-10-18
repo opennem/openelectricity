@@ -12,8 +12,6 @@ export async function load({ params }) {
 			}`
 	);
 
-	console.log(data);
-
 	if (data && data.length > 0) {
 		return {
 			name: data[0].name,
