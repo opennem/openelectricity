@@ -1,5 +1,7 @@
 <script>
 	import { sortByProp } from '$lib/utils/sort.js';
+
+	/** @type {import('./$types').PageData} */
 	export let data;
 
 	$: sortedFacilities = data.facilities.sort(sortByProp('name'));
