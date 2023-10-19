@@ -1,6 +1,8 @@
 <script>
 	import { PortableText, toPlainText } from '@portabletext/svelte';
 	import { byProp } from '$lib/utils/sort';
+	import { selectedRangeLabel, selectedIntervalLabel } from '../store';
+	import RangeIntervalSelection from './RangeIntervalSelection.svelte';
 	import UnitTable from './UnitTable.svelte';
 
 	/** @type {import('./$types').PageData} */
@@ -24,6 +26,7 @@
 <div class="flex flex-col sm:flex-row gap-4">
 	<!-- https://github.com/portabletext/svelte-portabletext -->
 	<PortableText value={data.description} components={{}} />
+
 	{#if mainPhoto}
 		<div>
 			<img class="rounded-md sm:max-w-[300px]" src={mainPhoto.url} alt={mainPhoto.caption} />
@@ -32,6 +35,12 @@
 </div>
 
 <section class="my-6">
+	<RangeIntervalSelection />
+
+	<h5 class="mt-2 text-sm font-extralight text-right">
+		{$selectedRangeLabel}/{$selectedIntervalLabel}
+	</h5>
+
 	<div class="w-full h-[300px] bg-slate-200 rounded-md" />
 
 	<UnitTable data={units} />
