@@ -1,47 +1,58 @@
 <script>
+	import { fade } from 'svelte/transition';
 	import { PortableText, toPlainText } from '@portabletext/svelte';
 	import { byProp } from '$lib/utils/sort';
 	import { selectedRangeLabel, selectedIntervalLabel } from '../store';
 	import RangeIntervalSelection from './RangeIntervalSelection.svelte';
 	import UnitTable from './UnitTable.svelte';
+	import FacilityList from './FacilityList.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
 
+	let selected = data.facility.code || '';
+
+	$: facility = data.facility;
 	// TODO: should have an alternate image for the og:image
-	$: mainPhoto = data.photos && data.photos[0];
-	$: units = data.units.sort(byProp('code'));
-	$: pageTitle = `OpenNEM Facility — ${data.name}`;
+	$: mainPhoto = facility.photos && facility.photos[0];
+	$: units = facility.units.sort(byProp('code'));
+	$: pageTitle = `OpenNEM Facility — ${facility.name}`;
 </script>
 
 <svelte:head>
 	<title>{pageTitle}</title>
 	<meta property="og:title" content={pageTitle} />
-	<meta name="og:description" content={toPlainText(data.description)} />
+	<meta name="og:description" content={toPlainText(facility.description)} />
 	<meta property="og:image" content={mainPhoto?.url} />
 </svelte:head>
 
-<h1 class="prose-h1 prose-slate text-2xl my-4">{data.name}</h1>
+<FacilityList {selected} />
 
-<div class="flex flex-col sm:flex-row gap-4">
-	<!-- https://github.com/portabletext/svelte-portabletext -->
-	<PortableText value={data.description} components={{}} />
+{#key data.facility.name}
+	<h1 class="prose-h1 prose-slate text-2xl my-4">{facility.name}</h1>
 
-	{#if mainPhoto}
-		<div>
-			<img class="rounded-md sm:max-w-[300px]" src={mainPhoto.url} alt={mainPhoto.caption} />
+	<div in:fade={{ duration: 200, delay: 150 }} out:fade={{ duration: 100 }}>
+		<div class="flex flex-col sm:flex-row gap-4">
+			<!-- https://github.com/portabletext/svelte-portabletext -->
+			<PortableText value={facility.description} components={{}} />
+
+			{#if mainPhoto}
+				<div>
+					<img class="rounded-md sm:max-w-[300px]" src={mainPhoto.url} alt={mainPhoto.caption} />
+				</div>
+			{/if}
 		</div>
-	{/if}
-</div>
 
-<section class="my-6">
-	<RangeIntervalSelection />
+		<section class="my-6">
+			<RangeIntervalSelection />
 
-	<h5 class="mt-2 text-sm font-extralight text-right">
-		{$selectedRangeLabel}/{$selectedIntervalLabel}
-	</h5>
+			<h5 class="mt-2 text-sm font-extralight text-right">
+				{$selectedRangeLabel}/{$selectedIntervalLabel}
+			</h5>
 
-	<div class="w-full h-[300px] bg-slate-200 rounded-md" />
+			<div class="w-full h-[300px] bg-slate-200 rounded-md" />
 
-	<UnitTable data={units} />
-</section>
+			<UnitTable data={units} />
+		</section>
+	</div>
+{/key}

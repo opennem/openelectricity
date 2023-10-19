@@ -17,16 +17,18 @@ export async function load({ params }) {
 
 	if (data && data.length > 0) {
 		return {
-			name: data[0].name,
-			code: data[0].code,
-			photos: data[0].photos,
-			units: data[0].units.map((/** @type {Unit} */ unit) => {
-				return {
-					...unit,
-					fuel_technology_name: unit.fuel_technology.name
-				};
-			}),
-			description: data[0].description
+			facility: {
+				name: data[0].name,
+				code: data[0].code,
+				photos: data[0].photos,
+				units: data[0].units.map((/** @type {Unit} */ unit) => {
+					return {
+						...unit,
+						fuel_technology_name: unit.fuel_technology.name
+					};
+				}),
+				description: data[0].description
+			}
 		};
 	}
 

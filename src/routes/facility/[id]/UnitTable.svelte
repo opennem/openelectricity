@@ -28,7 +28,7 @@
 	<thead>
 		<tr class="border-b text-left">
 			{#each columns as { header }}
-				<th>{header}</th>
+				<th class="font-semibold">{header}</th>
 			{/each}
 		</tr>
 	</thead>
