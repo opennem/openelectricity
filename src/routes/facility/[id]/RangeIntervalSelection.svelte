@@ -1,5 +1,5 @@
 <script>
-	import ButtonGroup from '$lib/components/ButtonGroup/index.svelte';
+	import ButtonGroup from '$lib/components/ButtonGroup.svelte';
 	import { rangeList, selectedRange, intervalList, selectedInterval } from '../store';
 </script>
 
