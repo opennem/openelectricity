@@ -1,10 +1,10 @@
-import type { CustomBlockComponentProps } from '@portabletext/svelte';
+import type { PortableTextComponents } from '@portabletext/svelte';
 import type { Unit } from './unit.types';
 
 export type Facility = {
 	_id: string;
 	code: string;
 	capacity_registered: number;
-	description: CustomBlockComponentProps;
+	description: PortableTextComponents;
 	units: Unit[];
 };
