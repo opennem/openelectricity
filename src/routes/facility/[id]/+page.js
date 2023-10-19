@@ -1,6 +1,8 @@
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity';
 
+/** @typedef {import('$lib/types/unit.types').Unit} Unit */
+
 /** @type {import('./$types').PageLoad} */
 export async function load({ params }) {
 	const code = encodeURIComponent(params.id);
@@ -18,7 +20,12 @@ export async function load({ params }) {
 			name: data[0].name,
 			code: data[0].code,
 			photos: data[0].photos,
-			units: data[0].units,
+			units: data[0].units.map((/** @type {Unit} */ unit) => {
+				return {
+					...unit,
+					fuel_technology_name: unit.fuel_technology.name
+				};
+			}),
 			description: data[0].description
 		};
 	}
