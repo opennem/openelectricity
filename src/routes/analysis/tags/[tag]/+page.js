@@ -10,7 +10,7 @@ export async function load({ params }) {
 		}`
 	);
 
-	if (data) {
+	if (data && data.length) {
 		return {
 			...data[0]
 		};

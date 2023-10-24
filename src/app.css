@@ -7,5 +7,29 @@
 @tailwind utilities;
 
 html {
-	background-color: theme(colors.gray.100);
+	/* 1rem = 10px */
+	box-sizing: border-box;
+	font-size: 62.5%;
+	background-color: theme(colors.white);
+}
+*,
+*:before,
+*:after {
+	box-sizing: inherit;
+}
+
+html,
+body {
+	max-width: 100vw;
+	overflow-x: hidden;
+	margin: 0;
+	padding: 0;
+	height: 100%;
+}
+body {
+	font-size: 1.6rem;
+	color: theme(colors.black);
+	display: flex;
+	flex-direction: column;
+	min-height: 100%;
 }
