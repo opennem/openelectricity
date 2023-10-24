@@ -29,7 +29,5 @@ body {
 body {
 	font-size: 1.6rem;
 	color: theme(colors.black);
-	display: flex;
-	flex-direction: column;
 	min-height: 100%;
 }

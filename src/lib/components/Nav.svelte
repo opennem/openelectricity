@@ -11,7 +11,7 @@
 	];
 </script>
 
-<header class="h-28">
+<header class="h-28 border-mid-grey border-b-[0.05rem] border-solid">
 	<div class="flex items-center justify-between container mx-auto h-full">
 		<a href="/">
 			<h1 class="m-0"><img class="block" src="/img/logo.svg" alt="Open Electricity" /></h1>

@@ -5,6 +5,7 @@
 	export let data;
 </script>
 
-
-<h1>{data.title}</h1>
-<PortableText value={data.content} components={{}} />
+<div class="container mx-auto py-12">
+	<h1>{data.title}</h1>
+	<PortableText value={data.content} components={{}} />
+</div>

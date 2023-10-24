@@ -6,7 +6,7 @@
 
 <Nav />
 
-<main class="p-2 flex-grow">
+<main class="flex-grow">
 	<slot />
 </main>
 

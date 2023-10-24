@@ -3,9 +3,9 @@
 	const articles = data.articles;
 </script>
 
-<div class="container mx-auto">
+<div class="container mx-auto py-12">
 	<h1 class="text-3xl font-bold">Analysis</h1>
-	<div>
+	<div class="grid grid-cols-3 py-12">
 		{#each articles as { title, slug }}
 			<div>
 				<h3 class="text-3xl font-bold">{title}</h3>
