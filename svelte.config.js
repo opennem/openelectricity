@@ -10,7 +10,10 @@ const config = {
 				include: ['/*'],
 				exclude: ['<all>']
 			}
-		})
+		}),
+		prerender: {
+			handleHttpError: 'warn'
+		}
 	},
 	preprocess: vitePreprocess()
 };

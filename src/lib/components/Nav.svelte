@@ -9,7 +9,6 @@
 		{ name: 'Analysis', href: '/analysis' },
 		{ name: 'About', href: '/about' }
 	];
-	console.log($page.url.pathname);
 </script>
 
 <header class="h-28">
