@@ -1,5 +1,5 @@
 /**
- * Transform backend json data to time series dataset and additional meta data about the time series data
+ * Transform backend json data to time series dataset and also additional meta data about the time series data
  * @param {*} dataset
  * @returns {*}
  */
