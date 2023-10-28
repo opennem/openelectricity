@@ -1,20 +1,20 @@
 <footer class="border-mid-grey border-t-[0.05rem] border-solid">
-	<div class="bg-warm-grey py-[4rem]">
+	<div class="bg-warm-grey py-16">
 		<div class="container mx-auto">
 			<div class="flex">
 				<div class="flex items-center flex-shrink-0">
 					<img
 						src="/img/logo.svg"
 						alt="Open Electricity logo"
-						class="block h-[2rem] w-auto mr-[2rem] mt-[0.6rem]"
+						class="block h-8 w-auto mr-[2rem] mt-[0.6rem]"
 					/>
 					<img
 						src="/img/superpower.svg"
 						alt="The Superpower Institute logo"
-						class="block h-[3rem] w-auto"
+						class="block h-12 w-auto"
 					/>
 				</div>
-				<div class="flex-shrink px-[3.2rem]">
+				<div class="flex-shrink px-12">
 					<strong>Stay Connected</strong> — Sign up to be notified of platform updates, events and the
 					latest analysis.
 				</div>
@@ -23,17 +23,16 @@
 						type="email"
 						name="email"
 						placeholder="Email Address"
-						class="w-full h-[5rem] rounded-full pl-[2rem] pr-[7rem] inherit text-[1.4rem]"
+						class="w-full h-20 rounded-full pl-8 pr-28 inherit text-[1.4rem]"
 					/>
-					<button
-						class="h-[5rem] rounded-full bg-white border border-black px-[3.2rem] font-bold ml-[-5rem]"
+					<button class="h-20 rounded-full bg-white border border-black px-12 font-bold ml-[-5rem]"
 						>Subscribe</button
 					>
 				</form>
 			</div>
 		</div>
 	</div>
-	<div class="bg-light-warm-grey py-[4rem]">
+	<div class="bg-light-warm-grey py-16">
 		<div class="container mx-auto flex">
 			<div>
 				<p>

@@ -3,7 +3,8 @@ export default {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 	theme: {
 		fontFamily: {
-			sans: ['DM Sans', 'sans-serif']
+			sans: ['DM Sans', 'sans-serif'],
+			space: ['Space Grotesk', 'sans-serif']
 		},
 		screens: {
 			sm: '768px',
@@ -23,8 +24,49 @@ export default {
 			}
 		},
 		fontSize: {
+			DEFAULT: '1.6rem',
+			xs: '1.2rem',
 			sm: '1.4rem',
-			base: '1.6rem'
+			base: '1.6rem',
+			lg: '2rem',
+			xl: '2.4rem',
+			'2xl': '2.8rem',
+			'3xl': '3.6rem',
+			'4xl': '4rem',
+			'5xl': '4.4rem',
+			'6xl': '4.8rem',
+			'7xl': '5.2rem',
+			'8xl': '5.6rem',
+			'9xl': '6rem'
+		},
+		lineHeight: {
+			DEFAULT: '1.5',
+			xs: '1.6rem',
+			sm: '1.8rem',
+			base: '2rem',
+			lg: '2.4rem',
+			xl: '2.8rem',
+			'2xl': '3.2rem',
+			'3xl': '4rem',
+			'4xl': '4.4rem',
+			'5xl': '4.8rem',
+			'6xl': '5.2rem',
+			'7xl': '5.6rem',
+			'8xl': '6rem',
+			'9xl': '6.4rem',
+			none: '1',
+			tight: '98%',
+			snug: '105%'
+		},
+		letterSpacing: {
+			tightest: '-0.12rem',
+			tighter: '-0.072rem',
+			tight: '-0.048rem',
+			normal: '0',
+			'normal-wide': '0.014rem',
+			wide: '0.016rem',
+			wider: '0.063rem',
+			widest: '0.072rem'
 		},
 		colors: {
 			transparent: 'transparent',

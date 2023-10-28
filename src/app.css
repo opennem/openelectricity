@@ -2,13 +2,17 @@
 	font-family: 'DM Sans';
 	src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
 }
+@font-face {
+	font-family: 'Space Grotesk';
+	src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 html {
-	/* 1rem = 10px */
 	box-sizing: border-box;
+	/* 1rem = 10px */
 	font-size: 62.5%;
 	background-color: theme(colors.white);
 }
@@ -27,7 +31,45 @@ body {
 	height: 100%;
 }
 body {
-	font-size: 1.6rem;
-	color: theme(colors.black);
+	font-size: theme(fontSize.base);
+	color: theme(colors.dark-grey);
 	min-height: 100%;
+}
+
+@layer base {
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		@apply font-bold mb-[0.5em];
+	}
+	h1 {
+		@apply text-4xl leading-4xl md:text-9xl md:leading-9xl;
+	}
+	h2 {
+		@apply text-2xl leading-2xl md:text-3xl md:leading-3xl;
+	}
+	h3 {
+		@apply text-xl leading-xl;
+	}
+	h4 {
+		@apply text-base leading-base md:text-lg md:leading-lg;
+	}
+	h5 {
+		@apply text-base leading-base;
+	}
+	h6 {
+		@apply text-sm leading-sm;
+	}
+	.subhead-primary {
+		@apply font-space tracking-widest text-base leading-base font-bold;
+	}
+	.subhead-secondary {
+		@apply font-space tracking-wider text-sm leading-sm text-mid-grey uppercase font-medium;
+	}
+	p {
+		@apply mb-[1em];
+	}
 }

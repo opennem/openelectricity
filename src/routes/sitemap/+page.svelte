@@ -8,9 +8,9 @@
 </script>
 
 <div class="container mx-auto">
-	<h1 class="text-3xl font-bold">Sitemap</h1>
+	<h1>Sitemap</h1>
 
-	<h3 class="text-xl border-b font-semibold mt-6">Articles</h3>
+	<h3>Articles</h3>
 	<ul class="list-disc pl-6">
 		{#each data.articles as { title, slug }}
 			<li>
@@ -20,13 +20,22 @@
 		{/each}
 	</ul>
 
-	<h3 class="text-xl border-b font-semibold mt-6">Tags</h3>
+	<h3>Tags</h3>
 	<ul class="list-disc pl-6">
 		{#each data.tags as { title, slug }}
 			<li>
 				<a class="text-slate-500 text-sm hover:underline" href="/analysis/tags/{slug.current}"
 					>{title}</a
 				>
+			</li>
+		{/each}
+	</ul>
+
+	<h3 class="text-xl border-b font-semibold mt-6">Content Pages</h3>
+	<ul class="list-disc pl-6">
+		{#each data.contentPages as { title, slug }}
+			<li>
+				<a class="text-slate-500 text-sm hover:underline" href="/content/{slug.current}">{title}</a>
 			</li>
 		{/each}
 	</ul>

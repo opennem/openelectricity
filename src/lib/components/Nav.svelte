@@ -5,9 +5,9 @@
 		{ name: 'Data Tracker', href: 'https://data.openelectricity.org.au/' },
 		{ name: 'Facilities Map', href: 'https://data.openelectricity.org.au/facilities' },
 		{ name: 'Path to 2050', href: '/isp' },
-		{ name: 'Grid Events', href: '/events' },
+		{ name: 'Latest Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },
-		{ name: 'About', href: '/about' }
+		{ name: 'About', href: '/content/about' }
 	];
 </script>
 
