@@ -7,20 +7,17 @@ export default {
 			space: ['Space Grotesk', 'sans-serif']
 		},
 		screens: {
-			sm: '768px',
 			md: '1024px',
-			lg: '1280px',
-			xl: '1440px',
-			'2xl': '1920px'
+			lg: '1440px',
+			xl: '1920px'
 		},
 		container: {
+			center: true,
 			padding: {
 				DEFAULT: '2rem',
-				sm: '2rem',
-				md: '2rem',
-				lg: '3rem',
-				xl: '10rem',
-				'2xl': '24rem'
+				md: '3rem',
+				lg: '10rem',
+				xl: '24rem'
 			}
 		},
 		fontSize: {

@@ -7,7 +7,7 @@
 	$: sortedFacilities = data.facilities.sort(byProp('name'));
 </script>
 
-<div class="container mx-auto">
+<div class="container max-w-none lg:container">
 	<h1>Sitemap</h1>
 
 	<h3>Articles</h3>

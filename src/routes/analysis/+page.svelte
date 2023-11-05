@@ -3,7 +3,7 @@
 	const articles = data.articles;
 </script>
 
-<div class="container mx-auto py-12">
+<div class="container max-w-none lg:container py-12">
 	<h1>Analysis</h1>
 	<div class="grid grid-cols-3 py-12">
 		{#each articles as { title, slug }}

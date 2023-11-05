@@ -1,0 +1,28 @@
+[
+	{
+		"instance_id": "a547cd3e-7920-11ee-b962-0242ac120002",
+		"record_id": "c32b0f0a-7920-11ee-b962-0242ac120002",
+		"time": "2023-25-10 09:05:00+11:00",
+		"value": 23794,
+		"unit": "MW",
+		"country": "AU",
+		"network": "NEM",
+		"region": "NSW",
+		"fuel_tech": "solar",
+		"type": "peak",
+		"description": "Highest total solar generation in NSW of all time"
+	},
+	{
+		"instance_id": "cbe8026e-7921-11ee-b962-0242ac120002",
+		"record_id": "d24f7c54-7921-11ee-b962-0242ac120002",
+		"time": "2023-25-10 09:05:00+11:00",
+		"value": 1794,
+		"unit": "MW",
+		"country": "AU",
+		"network": "NEM",
+		"region": "NSW",
+		"fuel_tech": "coal",
+		"type": "low",
+		"description": "Lowest total coal generation in NSW of all time"
+	}
+]

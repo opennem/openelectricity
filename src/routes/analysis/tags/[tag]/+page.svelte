@@ -2,7 +2,7 @@
 	export let data;
 </script>
 
-<div class="container mx-auto py-12">
+<div class="container max-w-none lg:container py-12">
 	<h1 class="text-3xl font-bold">Articles for tag <em>{data.title}</em></h1>
 	<div class="grid grid-cols-3 py-12">
 		{#each data.articles as { title, slug }}

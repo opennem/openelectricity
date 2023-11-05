@@ -1,14 +1,16 @@
 <script>
 	import ButtonGroup from '$lib/components/ButtonGroup.svelte';
+	import Goal from '$lib/components/Goal.svelte';
 	import Map from '$lib/components/Map.svelte';
 	import { PortableText } from '@portabletext/svelte';
+	import SectionLink from '$lib/components/SectionLink.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
 </script>
 
 <div class="bg-white">
-	<div class="container mx-auto">
+	<div class="container max-w-none lg:container">
 		<div
 			class="flex py-20 justify-between items-center border-mid-grey border-b-[0.05rem] border-solid"
 		>
@@ -48,12 +50,15 @@
 	</div>
 </div>
 <div class="bg-white py-16">
-	<div class="container mx-auto">
-		<h3>{data.chart_title}</h3>
+	<div class="container max-w-none lg:container">
+		<header class="flex justify-between">
+			<h3>{data.chart_title}</h3>
+			<SectionLink href="https://data.openelectricity.org.au/" title="Data Tracker" />
+		</header>
 	</div>
 </div>
 <div class="bg-light-warm-grey">
-	<div class="container mx-auto">
+	<div class="container max-w-none lg:container">
 		<div class="grid grid-cols-2 gap-40 py-16">
 			<Map classes="w-full block h-auto" />
 			<div class="bg-white rounded-lg p-12">
@@ -71,19 +76,25 @@
 	</div>
 </div>
 <div class="bg-white py-16">
-	<div class="container mx-auto">
+	<div class="container max-w-none lg:container">
 		<h3>ISP Explorer</h3>
 	</div>
 </div>
 <div class="bg-light-warm-grey py-16">
-	<div class="container mx-auto">
-		<h3>{data.records_title}</h3>
+	<div class="container max-w-none lg:container">
+		<header class="flex justify-between">
+			<h3>{data.records_title}</h3>
+			<SectionLink href="/records" title="View all Events" />
+		</header>
 	</div>
 </div>
 <div class="bg-white py-16">
-	<div class="container mx-auto">
-		<h3>{data.analysis_title}</h3>
-		<div class={`grid grid-cols-4`}>
+	<div class="container max-w-none lg:container">
+		<header class="flex justify-between">
+			<h3>{data.analysis_title}</h3>
+			<SectionLink href="/analysis" title="View all Analysis" />
+		</header>
+		<div class="grid grid-cols-4">
 			{#each data.articles as { title, slug }}
 				<div>
 					<h3>{title}</h3>
@@ -94,13 +105,14 @@
 	</div>
 </div>
 <div class="bg-white py-16">
-	<div class="container mx-auto">
-		<h3>{data.goals_title}</h3>
-		<div class={`grid grid-cols-4`}>
-			{#each data.goals as goal}
-				<div>
-					<span>{goal}</span>
-				</div>
+	<div class="container max-w-none lg:container">
+		<header class="flex justify-between">
+			<h3>{data.goals_title}</h3>
+			<SectionLink href="/content/about" title="About" />
+		</header>
+		<div class={`grid grid-cols-1 md:grid-cols-3 gap-16 mt-16`}>
+			{#each data.goals as goal, i}
+				<Goal {goal} index={i + 1} />
 			{/each}
 		</div>
 	</div>

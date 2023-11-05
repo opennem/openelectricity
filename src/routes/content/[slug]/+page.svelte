@@ -5,8 +5,8 @@
 	export let data;
 </script>
 
-<div class="container mx-auto py-12">
-	<div class="max-w-[66%]">
+<div class="container max-w-none lg:container py-12">
+	<div class="">
 		<h1>{data.title}</h1>
 		<PortableText value={data.content} components={{}} />
 	</div>
