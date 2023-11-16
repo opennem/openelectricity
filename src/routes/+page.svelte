@@ -4,9 +4,14 @@
 	import Map from '$lib/components/Map.svelte';
 	import { PortableText } from '@portabletext/svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
+	import Record from '$lib/components/Record.svelte';
+	import { tick } from 'svelte';
+	import { recordsByDay } from '$lib/records';
+	import ButtonLink from '$lib/components/ButtonLink.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
+	const dailyRecords = recordsByDay(data.records);
 </script>
 
 <div class="bg-white">
@@ -80,12 +85,21 @@
 		<h3>ISP Explorer</h3>
 	</div>
 </div>
-<div class="bg-light-warm-grey py-16">
+<div class="bg-light-warm-grey py-40">
 	<div class="container max-w-none lg:container">
-		<header class="flex justify-between">
+		<header class="text-center">
 			<h3>{data.records_title}</h3>
-			<SectionLink href="/records" title="View all Events" />
 		</header>
+		<div class="my-14">
+			<div class="mx-auto max-w-[51rem]">
+				{#each dailyRecords[0] as record}
+					<Record {record} class="mb-4" />
+				{/each}
+			</div>
+		</div>
+		<footer class="text-center mt-20">
+			<ButtonLink href="/records">View all records</ButtonLink>
+		</footer>
 	</div>
 </div>
 <div class="bg-white py-16">
@@ -104,7 +118,8 @@
 		</div>
 	</div>
 </div>
-<div class="bg-white py-16">
+
+<!-- <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
 		<header class="flex justify-between">
 			<h3>{data.goals_title}</h3>
@@ -116,7 +131,7 @@
 			{/each}
 		</div>
 	</div>
-</div>
+</div> -->
 
 <style>
 	.key-numbers-grid {
