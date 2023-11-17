@@ -70,10 +70,10 @@ const sampleRecordTemplates = [
 		country: 'AU',
 		network: 'NEM',
 		region,
-		fuel_tech: 'solar_rooftop',
+		fuel_tech: 'solar',
 		type: 'peak',
 		description: `Highest total solar generation in ${region} of all time`,
-		significance: 5
+		significance: 3 + Math.round(Math.random() * 7)
 	}),
 	(/** @type {string} */ time, /** @type {string} */ region) => ({
 		instance_id: uuidv4(),
@@ -84,10 +84,10 @@ const sampleRecordTemplates = [
 		country: 'AU',
 		network: 'NEM',
 		region: 'All',
-		fuel_tech: 'solar_rooftop',
+		fuel_tech: 'solar',
 		type: 'peak',
 		description: 'Highest total solar generation of all time',
-		significance: 5
+		significance: 3 + Math.round(Math.random() * 7)
 	}),
 	(/** @type {string} */ time, /** @type {string} */ region) => ({
 		instance_id: uuidv4(),
@@ -98,10 +98,10 @@ const sampleRecordTemplates = [
 		country: 'AU',
 		network: 'NEM',
 		region,
-		fuel_tech: 'gas_ccgt',
+		fuel_tech: 'gas',
 		type: 'peak',
 		description: `Highest total gas price in ${region}`,
-		significance: 5
+		significance: 3 + Math.round(Math.random() * 7)
 	}),
 	(/** @type {string} */ time, /** @type {string} */ region) => ({
 		instance_id: uuidv4(),
@@ -115,7 +115,7 @@ const sampleRecordTemplates = [
 		fuel_tech: 'wind',
 		type: 'peak',
 		description: `Highest total wind generation of all time in ${region}`,
-		significance: 5
+		significance: 3 + Math.round(Math.random() * 7)
 	}),
 	(/** @type {string} */ time, /** @type {string} */ region) => ({
 		instance_id: uuidv4(),
@@ -126,10 +126,10 @@ const sampleRecordTemplates = [
 		country: 'AU',
 		network: 'NEM',
 		region,
-		fuel_tech: 'coal_black',
+		fuel_tech: 'coal',
 		type: 'low',
 		description: `Lowest coal capacity in ${region}`,
-		significance: 8
+		significance: 3 + Math.round(Math.random() * 7)
 	})
 ];
 

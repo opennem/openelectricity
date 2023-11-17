@@ -1,3 +1,5 @@
+import type { FuelTechCode } from './fuel_tech.types';
+
 export type Record = {
 	instance_id: string;
 	record_id: string;
@@ -7,7 +9,7 @@ export type Record = {
 	country: string;
 	network: string;
 	region: string;
-	fuel_tech: string;
+	fuel_tech: FuelTechCode;
 	type: 'peak' | 'low';
 	description: string;
 	significance: number;

@@ -3,10 +3,10 @@
     <mask id="path-1-inside-1_10597_61164" fill="white">
         <rect x="10.0195" y="6.22852" width="18" height="24" rx="2"/>
     </mask>
-    <rect x="10.0195" y="6.22852" width="18" height="24" rx="2" stroke="#353535" stroke-width="6" mask="url(#path-1-inside-1_10597_61164)"/>
-    <path d="M22.0195 2.22852H7.01953C5.91496 2.22852 5.01953 3.12395 5.01953 4.22852V21.7285" stroke="#353535" stroke-width="3"/>
-    <path d="M20.8945 1.72852L26.5195 8.07225" stroke="#353535" stroke-width="3"/>
-    <path d="M11.707 28.6035L4.61328 20.6973" stroke="#353535" stroke-width="3"/>
-    <rect x="17.5195" y="12.2285" width="3" height="10" fill="#353535"/>
-    <rect x="24.0195" y="15.7285" width="3" height="10" transform="rotate(90 24.0195 15.7285)" fill="#353535"/>
+    <rect x="10.0195" y="6.22852" width="18" height="24" rx="2" stroke="currentColor" stroke-width="6" mask="url(#path-1-inside-1_10597_61164)"/>
+    <path d="M22.0195 2.22852H7.01953C5.91496 2.22852 5.01953 3.12395 5.01953 4.22852V21.7285" stroke="currentColor" stroke-width="3"/>
+    <path d="M20.8945 1.72852L26.5195 8.07225" stroke="currentColor" stroke-width="3"/>
+    <path d="M11.707 28.6035L4.61328 20.6973" stroke="currentColor" stroke-width="3"/>
+    <rect x="17.5195" y="12.2285" width="3" height="10" fill="currentColor"/>
+    <rect x="24.0195" y="15.7285" width="3" height="10" transform="rotate(90 24.0195 15.7285)" fill="currentColor"/>
 </svg>

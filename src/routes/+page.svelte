@@ -1,11 +1,9 @@
 <script>
 	import ButtonGroup from '$lib/components/ButtonGroup.svelte';
-	import Goal from '$lib/components/Goal.svelte';
+	// import Goal from '$lib/components/Goal.svelte';
 	import Map from '$lib/components/Map.svelte';
-	import { PortableText } from '@portabletext/svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
-	import Record from '$lib/components/Record.svelte';
-	import { tick } from 'svelte';
+	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import { recordsByDay } from '$lib/records';
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 
@@ -93,7 +91,7 @@
 		<div class="my-14">
 			<div class="mx-auto max-w-[51rem]">
 				{#each dailyRecords[0] as record}
-					<Record {record} class="mb-4" />
+					<RecordCard {record} class="mb-4" />
 				{/each}
 			</div>
 		</div>

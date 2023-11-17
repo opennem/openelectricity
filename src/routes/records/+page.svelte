@@ -1,5 +1,5 @@
 <script>
-	import Record from '$lib/components/Record.svelte';
+	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import { recordsByDay } from '$lib/records';
 	import { format, isToday } from 'date-fns';
 
@@ -24,7 +24,7 @@
 						</header>
 						<div>
 							{#each day as record}
-								<Record {record} class="mb-4" />
+								<RecordCard {record} class="mb-4" />
 							{/each}
 						</div>
 					</div>
@@ -44,8 +44,5 @@
 		right: 100%;
 		top: 0;
 		background-color: white;
-	}
-	.records-layout {
-		grid-template-columns: repeat(12, 1fr);
 	}
 </style>
