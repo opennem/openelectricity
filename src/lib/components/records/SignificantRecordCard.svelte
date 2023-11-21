@@ -5,7 +5,8 @@
 
 	/** @type {import('$lib/types/record.types').Record[]} */
 	export let record;
-	const highlightTextColor =
+
+	$: highlightTextColor =
 		record[0].fuel_tech === 'gas' || record[0].fuel_tech === 'solar' ? 'text-black' : 'text-white';
 </script>
 

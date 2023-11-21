@@ -4,7 +4,7 @@
 
 	/** @type {import('$lib/types/record.types').Record[]} */
 	export let record;
-	let isSignificant = record[0].significance > 6;
+	$: isSignificant = record[0].significance > 6;
 </script>
 
 {#if isSignificant}

@@ -69,6 +69,9 @@ body {
 	.subhead-secondary {
 		@apply font-space tracking-wider text-sm leading-sm text-mid-grey uppercase font-medium;
 	}
+	.text-link-large {
+		@apply font-space tracking-wider text-base leading-base text-dark-grey font-bold underline;
+	}
 	p {
 		@apply mb-[1em];
 	}
