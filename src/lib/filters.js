@@ -1,3 +1,7 @@
+/** @typedef {import('$lib/types/filters.types').TechnologyFilterOptions} TechnologyFilterOptions  */
+/** @typedef {import('$lib/types/filters.types').TechnologyFilterDict} TechnologyFilterDict  */
+
+/** @type {TechnologyFilterOptions} */
 export const technologyFilters = {
 	solar: { label: 'Solar', renewable: true },
 	wind: { label: 'Wind', renewable: true },
@@ -9,4 +13,20 @@ export const technologyFilters = {
 	coal: { label: 'Coal', renewable: false },
 	distillate: { label: 'Distillate', renewable: false },
 	gas: { label: 'Gas', renewable: false }
+};
+
+/** @type {TechnologyFilterDict} */
+export const technologyDefaultSelections = {
+	solar: false,
+	wind: false,
+	hydro: false,
+	pumps: false,
+	battery_charging: false,
+	battery_discharging: false,
+	bioenergy: false,
+	coal: false,
+	distillate: false,
+	gas: false,
+	renewables: false,
+	'non-renewables': false
 };

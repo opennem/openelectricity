@@ -1,14 +1,19 @@
 <script>
+	/** @typedef {import('$lib/types/filters.types').TechnologyFilterDict} TechnologyFilterDict */
+	/** @typedef {import('$lib/types/filters.types').TechnologyFilterKey} TechnologyFilterKey  */
+	/** @typedef {import('$lib/types/record.types').Record} Record  */
+	/** @typedef {import('./$types').PageData} PageData  */
+
 	import FilterSection from '$lib/components/filters/FilterSection.svelte';
 	import FilterSectionHead from '$lib/components/filters/FilterSectionHead.svelte';
 	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 	import TextInput from '$lib/components/form-elements/TextInput.svelte';
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
-	import { technologyFilters } from '$lib/filters';
+	import { technologyFilters, technologyDefaultSelections } from '$lib/filters';
 	import { recordsByDay } from '$lib/records';
 	import { format, isToday } from 'date-fns';
 
-	/** @type {import('./$types').PageData} */
+	/** @type {PageData} */
 	export let data;
 
 	let showTechnology = false;
@@ -16,35 +21,27 @@
 	let showPeakLow = false;
 	let searchString = '';
 
-	$: technologySelections = Object.keys(technologyFilters).reduce(
-		(accumulator, key) => {
-			accumulator[key] = false;
-			return accumulator;
-		},
-		{
-			renewables: false,
-			'non-renewables': false
-		}
-	);
+	/** @type {TechnologyFilterDict} */
+	$: technologySelections = { ...technologyDefaultSelections };
 
 	$: hasSearchTerm = searchString.trim() !== '';
 	$: hasTechnologySelections = Object.values(technologySelections).find((selection) => selection);
 	$: hasFilters = hasSearchTerm || hasTechnologySelections;
 
-	$: filteredRecords = data.records.filter(
-		(/** @type {import('$lib/types/record.types').Record} */ record) => {
-			const searchFilter = record.description.toLowerCase().includes(searchString.toLowerCase());
-			const technologyFilter = technologySelections[record.fuel_tech] || !hasTechnologySelections;
+	$: filteredRecords = data.records.filter((/** @type {Record} */ record) => {
+		const searchFilter = record.description.toLowerCase().includes(searchString.toLowerCase());
+		const technologyFilter =
+			technologySelections[/** @type {keyof TechnologyFilterDict} */ (record.fuel_tech)] ||
+			!hasTechnologySelections;
 
-			return searchFilter && technologyFilter;
-		}
-	);
+		return searchFilter && technologyFilter;
+	});
 
 	$: dailyRecords = recordsByDay(filteredRecords);
 
 	const clearAllFilters = () => {
 		Object.keys(technologySelections).forEach((technology) => {
-			technologySelections[technology] = false;
+			technologySelections[/** @type {keyof TechnologyFilterDict} */ (technology)] = false;
 		});
 
 		searchString = '';
@@ -56,19 +53,22 @@
 
 		if (name === 'renewables' || name === 'non-renewables') {
 			Object.keys(technologyFilters).forEach((technologyKey) => {
-				if (technologyFilters[technologyKey].renewable === (name === 'renewables')) {
-					technologySelections[technologyKey] = checked;
+				if (
+					technologyFilters[/** @type {TechnologyFilterKey} */ (technologyKey)].renewable ===
+					(name === 'renewables')
+				) {
+					technologySelections[/** @type {keyof TechnologyFilterDict} */ (technologyKey)] = checked;
 				}
 			});
 		} else {
-			if (technologyFilters[name].renewable) {
+			if (technologyFilters[/** @type {TechnologyFilterKey} */ (name)].renewable) {
 				technologySelections['renewables'] = false;
 			} else {
 				technologySelections['non-renewables'] = false;
 			}
 		}
 
-		technologySelections[name] = checked;
+		technologySelections[/** @type {TechnologyFilterKey} */ (name)] = checked;
 	};
 </script>
 
@@ -105,7 +105,7 @@
 								hasFilters={hasTechnologySelections}
 								clearHandler={() => {
 									Object.keys(technologySelections).forEach((technology) => {
-										technologySelections[technology] = false;
+										technologySelections[/** @type {TechnologyFilterKey} */ (technology)] = false;
 									});
 								}}
 							/>
@@ -121,13 +121,17 @@
 											/>
 											<ul class="ml-8">
 												{#each Object.keys(technologyFilters) as technology}
-													{#if technologyFilters[technology].renewable}
+													{#if technologyFilters[/** @type {TechnologyFilterKey} */ (technology)].renewable}
 														<li>
 															<Checkbox
 																name={technology}
-																label={technologyFilters[technology].label}
+																label={technologyFilters[
+																	/** @type {TechnologyFilterKey} */ (technology)
+																].label}
 																changeHandler={fuelTechChange}
-																checked={technologySelections[technology]}
+																checked={technologySelections[
+																	/** @type {TechnologyFilterKey} */ (technology)
+																]}
 															/>
 														</li>
 													{/if}
@@ -143,13 +147,17 @@
 											/>
 											<ul class="ml-8">
 												{#each Object.keys(technologyFilters) as technology}
-													{#if !technologyFilters[technology].renewable}
+													{#if !technologyFilters[/** @type {TechnologyFilterKey} */ (technology)].renewable}
 														<li>
 															<Checkbox
 																name={technology}
-																label={technologyFilters[technology].label}
+																label={technologyFilters[
+																	/** @type {TechnologyFilterKey} */ (technology)
+																].label}
 																changeHandler={fuelTechChange}
-																checked={technologySelections[technology]}
+																checked={technologySelections[
+																	/** @type {TechnologyFilterKey} */ (technology)
+																]}
 															/>
 														</li>
 													{/if}
