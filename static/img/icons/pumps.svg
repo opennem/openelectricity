@@ -1,4 +1,4 @@
-<svg width="33" height="33" viewBox="0 0 33 33" fill="none"
+<svg id="icon" width="33" height="33" viewBox="0 0 33 33" fill="none"
     xmlns="http://www.w3.org/2000/svg">
     <circle cx="16.0195" cy="18.2285" r="10.5" stroke="currentColor" stroke-width="3"/>
     <rect x="25.0195" y="4.22852" width="3" height="14" rx="1.5" fill="currentColor"/>

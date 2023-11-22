@@ -10,5 +10,5 @@
 	fill="none"
 	class={`${$$restProps.class ? $$restProps.class : ''}`}
 >
-	<use xlink:href={`#svg--${icon}`} />
+	<use xlink:href={`/img/icons/${icon}.svg#icon`} width={size} height={size} />
 </svg>
