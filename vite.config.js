@@ -3,5 +3,5 @@ import { sveltekitSprite } from 'sveltekit-sprite';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	plugins: [sveltekit(), sveltekitSprite({ injectLabel: '%vite.plugin.sprite%' })]
+	plugins: [sveltekitSprite(), sveltekit()]
 });
