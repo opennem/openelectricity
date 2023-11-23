@@ -6,47 +6,47 @@
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import { recordsByDay } from '$lib/records';
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
+	import GenerationMixSparkline from '$lib/components/homepage/GenerationMixSparkline.svelte';
+	import FossilIconAnim from '$lib/components/homepage/FossilIconAnim.svelte';
+	import RenewableIconAnim from '$lib/components/homepage/RenewableIconAnim.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
 	const dailyRecords = recordsByDay(data.records);
 </script>
 
-<div class="bg-white">
+<div class="bg-light-warm-grey">
 	<div class="container max-w-none lg:container">
-		<div
-			class="flex py-20 justify-between items-center border-mid-grey border-b-[0.05rem] border-solid"
-		>
-			<div class="w-7/12">
+		<div class="flex py-20 justify-between items-center">
+			<div class="w-6/12">
 				<h2 class="md:text-9xl md:leading-9xl">{data.banner_title}</h2>
-				<p>{data.banner_statement}</p>
+				<p>{@html data.banner_statement}</p>
 			</div>
-			<div class="w-3/12 bg-light-warm-grey p-8 font-medium text-sm">
-				<h6 class="subhead-secondary mb-4">Key Numbers</h6>
-				<ul>
-					<li class="grid key-numbers-grid items-center mb-1">
-						<h6 class="font-medium">Renewables</h6>
-						<span>37.9%</span>
-						<span class="block w-full h-12 bg-warm-grey" />
-					</li>
-					<li class="grid key-numbers-grid items-center mb-1">
-						<h6 class="font-medium">Brown Coal</h6>
-						<span>37.9%</span>
-						<span class="block w-full h-12 bg-warm-grey" />
-					</li>
-					<li class="grid key-numbers-grid items-center mb-1">
-						<h6 class="font-medium">Black Coal</h6>
-						<span>37.9%</span>
-						<span class="block w-full h-12 bg-warm-grey" />
-					</li>
-					<li class="grid key-numbers-grid items-center mb-1">
-						<h6 class="font-medium">All Gas</h6>
-						<span>37.9%</span>
-						<span class="block w-full h-12 bg-warm-grey" />
-					</li>
-				</ul>
-				<div class="mt-8 text-sm text-mid-grey font-normal">
-					Total Generation, rolling 12 month avg (%).
+			<div class="w-5/12 p-8 font-medium text-sm">
+				<div class="flex gap-8 justify-between bg-white p-20 font-medium text-sm rounded-md">
+					<div class="flex-grow">
+						<GenerationMixSparkline class="block w-full" />
+						<div class="text-xs text-mid-grey text-right">October 2023</div>
+					</div>
+					<div class="flex flex-col gap-8 flex-shrink">
+						<div class="flex gap-4 items-center">
+							<FossilIconAnim />
+							<div>
+								<h5 class="mb-0">Fossil</h5>
+								<h3 class="mb-0">61.4%</h3>
+							</div>
+						</div>
+						<div class="flex gap-4 items-center">
+							<RenewableIconAnim />
+							<div>
+								<h5 class="mb-0">Renewables</h5>
+								<h3 class="mb-0">38.6%</h3>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="mt-8 text-xs text-mid-grey text-right">
+					Contribution to demand. Rolling 12 month average. View data.
 				</div>
 			</div>
 		</div>
