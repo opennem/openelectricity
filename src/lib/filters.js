@@ -1,6 +1,7 @@
 /** @typedef {import('$lib/types/filters.types').TechnologyFilterOptions} TechnologyFilterOptions  */
 /** @typedef {import('$lib/types/filters.types').TechnologyFilterDict} TechnologyFilterDict  */
 
+/** Fuel Technologies */
 /** @type {TechnologyFilterOptions} */
 export const technologyFilters = {
 	solar: { label: 'Solar', renewable: true },
@@ -29,4 +30,36 @@ export const technologyDefaultSelections = {
 	gas: false,
 	renewables: false,
 	'non-renewables': false
+};
+
+/** Regions */
+export const regionFilters = {
+	QLD: { label: 'Queensland' },
+	NSW: { label: 'New South Wales' },
+	VIC: { label: 'Victoria' },
+	SA: { label: 'South Australia' },
+	TAS: { label: 'Tasmania' },
+	WA: { label: 'Western Australia' }
+};
+
+export const regionDefaultSelections = {
+	QLD: false,
+	NSW: false,
+	VIC: false,
+	SA: false,
+	TAS: false,
+	WA: false
+};
+
+/** Peak/Low */
+export const peakLowFilters = {
+	all: { label: 'View all' },
+	peak: { label: 'Peaks' },
+	low: { label: 'Lows' }
+};
+
+export const peakLowDefaultSelections = {
+	all: false,
+	peak: false,
+	low: false
 };

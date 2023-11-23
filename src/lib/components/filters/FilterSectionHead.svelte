@@ -12,7 +12,7 @@
 	export let clearTitle = 'Clear';
 </script>
 
-<header class="flex justify-between items-center">
+<header class="flex justify-between items-center py-8">
 	{#if toggleHandler}
 		<button
 			on:click|preventDefault={toggleHandler}

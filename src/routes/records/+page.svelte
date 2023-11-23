@@ -4,13 +4,22 @@
 	/** @typedef {import('$lib/types/record.types').Record} Record  */
 	/** @typedef {import('./$types').PageData} PageData  */
 
+	import FilterContent from '$lib/components/filters/FilterContent.svelte';
 	import FilterSection from '$lib/components/filters/FilterSection.svelte';
 	import FilterSectionHead from '$lib/components/filters/FilterSectionHead.svelte';
 	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
+	import RadioButton from '$lib/components/form-elements/RadioButton.svelte';
 	import TextInput from '$lib/components/form-elements/TextInput.svelte';
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
-	import { technologyFilters, technologyDefaultSelections } from '$lib/filters';
+	import {
+		technologyFilters,
+		technologyDefaultSelections,
+		regionFilters,
+		regionDefaultSelections,
+		peakLowFilters
+	} from '$lib/filters';
 	import { recordsByDay } from '$lib/records';
+	import { getKeys } from '$lib/utils/keys';
 	import { format, isToday } from 'date-fns';
 
 	/** @type {PageData} */
@@ -23,26 +32,38 @@
 
 	/** @type {TechnologyFilterDict} */
 	$: technologySelections = { ...technologyDefaultSelections };
+	$: regionSelections = { ...regionDefaultSelections };
+	$: peakLowSelection = 'all';
 
 	$: hasSearchTerm = searchString.trim() !== '';
 	$: hasTechnologySelections = Object.values(technologySelections).find((selection) => selection);
-	$: hasFilters = hasSearchTerm || hasTechnologySelections;
+	$: hasRegionSelections = Object.values(regionSelections).find((selection) => selection);
+	$: hasFilters =
+		hasSearchTerm || hasTechnologySelections || hasRegionSelections || peakLowSelection !== 'all';
 
 	$: filteredRecords = data.records.filter((/** @type {Record} */ record) => {
 		const searchFilter = record.description.toLowerCase().includes(searchString.toLowerCase());
 		const technologyFilter =
 			technologySelections[/** @type {keyof TechnologyFilterDict} */ (record.fuel_tech)] ||
 			!hasTechnologySelections;
+		const regionFilter = regionSelections[record.region] || !hasRegionSelections;
+		const peakLowFilter = peakLowSelection === 'all' || record.type === peakLowSelection;
 
-		return searchFilter && technologyFilter;
+		return searchFilter && technologyFilter && regionFilter && peakLowFilter;
 	});
 
 	$: dailyRecords = recordsByDay(filteredRecords);
 
 	const clearAllFilters = () => {
-		Object.keys(technologySelections).forEach((technology) => {
-			technologySelections[/** @type {keyof TechnologyFilterDict} */ (technology)] = false;
+		getKeys(technologySelections).forEach((technology) => {
+			technologySelections[technology] = false;
 		});
+
+		getKeys(regionSelections).forEach((region) => {
+			regionSelections[region] = false;
+		});
+
+		peakLowSelection = 'all';
 
 		searchString = '';
 	};
@@ -52,12 +73,9 @@
 		const { name, checked } = e.currentTarget;
 
 		if (name === 'renewables' || name === 'non-renewables') {
-			Object.keys(technologyFilters).forEach((technologyKey) => {
-				if (
-					technologyFilters[/** @type {TechnologyFilterKey} */ (technologyKey)].renewable ===
-					(name === 'renewables')
-				) {
-					technologySelections[/** @type {keyof TechnologyFilterDict} */ (technologyKey)] = checked;
+			getKeys(technologyFilters).forEach((technologyKey) => {
+				if (technologyFilters[technologyKey].renewable === (name === 'renewables')) {
+					technologySelections[technologyKey] = checked;
 				}
 			});
 		} else {
@@ -69,6 +87,18 @@
 		}
 
 		technologySelections[/** @type {TechnologyFilterKey} */ (name)] = checked;
+	};
+
+	/** @type {import('svelte/elements').FormEventHandler<HTMLInputElement>} */
+	const regionChange = (e) => {
+		const { name, checked } = e.currentTarget;
+		regionSelections[name] = checked;
+	};
+
+	/** @type {import('svelte/elements').FormEventHandler<HTMLInputElement>} */
+	const handlePeakLow = (e) => {
+		const { name, value } = e.currentTarget;
+		peakLowSelection = value;
 	};
 </script>
 
@@ -86,16 +116,18 @@
 						{hasFilters}
 						clearHandler={clearAllFilters}
 					/>
-					<main>
+					<div>
 						<FilterSection>
-							<TextInput
-								class="w-full bg-[url('/img/search.svg')] bg-no-repeat bg-[center_left_1rem] pl-14"
-								placeholder="Search all records"
-								value={searchString}
-								changeHandler={(e) => {
-									searchString = e.currentTarget.value;
-								}}
-							/>
+							<FilterContent>
+								<TextInput
+									class="w-full bg-[url('/img/search.svg')] bg-no-repeat bg-[center_left_1rem] pl-14"
+									placeholder="Search all records"
+									value={searchString}
+									changeHandler={(e) => {
+										searchString = e.currentTarget.value;
+									}}
+								/>
+							</FilterContent>
 						</FilterSection>
 						<FilterSection>
 							<FilterSectionHead
@@ -104,13 +136,13 @@
 								toggleHandler={() => (showTechnology = !showTechnology)}
 								hasFilters={hasTechnologySelections}
 								clearHandler={() => {
-									Object.keys(technologySelections).forEach((technology) => {
-										technologySelections[/** @type {TechnologyFilterKey} */ (technology)] = false;
+									getKeys(technologySelections).forEach((technology) => {
+										technologySelections[technology] = false;
 									});
 								}}
 							/>
 							{#if showTechnology}
-								<main class="py-8">
+								<FilterContent>
 									<ul>
 										<li class="mb-4">
 											<Checkbox
@@ -120,21 +152,15 @@
 												checked={technologySelections['renewables']}
 											/>
 											<ul class="ml-8">
-												{#each Object.keys(technologyFilters) as technology}
-													{#if technologyFilters[/** @type {TechnologyFilterKey} */ (technology)].renewable}
-														<li>
-															<Checkbox
-																name={technology}
-																label={technologyFilters[
-																	/** @type {TechnologyFilterKey} */ (technology)
-																].label}
-																changeHandler={fuelTechChange}
-																checked={technologySelections[
-																	/** @type {TechnologyFilterKey} */ (technology)
-																]}
-															/>
-														</li>
-													{/if}
+												{#each getKeys(technologyFilters).filter((t) => technologyFilters[t].renewable) as technology}
+													<li>
+														<Checkbox
+															name={technology}
+															label={technologyFilters[technology].label}
+															changeHandler={fuelTechChange}
+															checked={technologySelections[technology]}
+														/>
+													</li>
 												{/each}
 											</ul>
 										</li>
@@ -146,26 +172,20 @@
 												checked={technologySelections['non-renewables']}
 											/>
 											<ul class="ml-8">
-												{#each Object.keys(technologyFilters) as technology}
-													{#if !technologyFilters[/** @type {TechnologyFilterKey} */ (technology)].renewable}
-														<li>
-															<Checkbox
-																name={technology}
-																label={technologyFilters[
-																	/** @type {TechnologyFilterKey} */ (technology)
-																].label}
-																changeHandler={fuelTechChange}
-																checked={technologySelections[
-																	/** @type {TechnologyFilterKey} */ (technology)
-																]}
-															/>
-														</li>
-													{/if}
+												{#each getKeys(technologyFilters).filter((t) => !technologyFilters[t].renewable) as technology}
+													<li>
+														<Checkbox
+															name={technology}
+															label={technologyFilters[technology].label}
+															changeHandler={fuelTechChange}
+															checked={technologySelections[technology]}
+														/>
+													</li>
 												{/each}
 											</ul>
 										</li>
 									</ul>
-								</main>
+								</FilterContent>
 							{/if}
 						</FilterSection>
 						<FilterSection>
@@ -173,18 +193,57 @@
 								title="Regions"
 								isOpen={showRegions}
 								toggleHandler={() => (showRegions = !showRegions)}
+								hasFilters={hasRegionSelections}
+								clearHandler={() => {
+									getKeys(regionSelections).forEach((region) => {
+										regionSelections[region] = false;
+									});
+								}}
 							/>
-							<main />
+							{#if showRegions}
+								<FilterContent>
+									<ul>
+										{#each getKeys(regionFilters) as region}
+											<li>
+												<Checkbox
+													name={region}
+													label={regionFilters[region].label}
+													changeHandler={regionChange}
+													checked={regionSelections[region]}
+												/>
+											</li>
+										{/each}
+									</ul>
+								</FilterContent>
+							{/if}
 						</FilterSection>
 						<FilterSection>
 							<FilterSectionHead
 								title="Peak/Low"
 								isOpen={showPeakLow}
 								toggleHandler={() => (showPeakLow = !showPeakLow)}
+								hasFilters={peakLowSelection !== 'all'}
+								clearHandler={() => {
+									peakLowSelection = 'all';
+								}}
 							/>
-							<main />
+							{#if showPeakLow}
+								<FilterContent>
+									<div class="flex gap-4">
+										{#each getKeys(peakLowFilters) as peakLow}
+											<RadioButton
+												name="peak_low"
+												label={peakLowFilters[peakLow].label}
+												value={peakLow}
+												changeHandler={handlePeakLow}
+												checked={peakLowSelection === peakLow}
+											/>
+										{/each}
+									</div>
+								</FilterContent>
+							{/if}
 						</FilterSection>
-					</main>
+					</div>
 				</div>
 			</div>
 			<div class="flex-grow pt-6 pb-16">

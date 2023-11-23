@@ -1,6 +1,5 @@
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity';
-import { PUBLIC_RECORDS_API } from '$env/static/public';
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ params, fetch }) {
@@ -9,7 +8,7 @@ export async function load({ params, fetch }) {
 	);
 	const articles = await client.fetch(`*[_type == "article"][0..3]{_id, title, content, slug}`);
 
-	const recordsRes = await fetch(PUBLIC_RECORDS_API);
+	const recordsRes = await fetch('/api/records');
 	let records = [];
 
 	if (recordsRes && recordsRes.ok) {

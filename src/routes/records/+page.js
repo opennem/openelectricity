@@ -1,10 +1,8 @@
-import { PUBLIC_RECORDS_API } from '$env/static/public';
-
 import { error } from '@sveltejs/kit';
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ fetch, params }) {
-	const data = await fetch(PUBLIC_RECORDS_API);
+	const data = await fetch('/api/records');
 
 	if (data && data.ok) {
 		return {
