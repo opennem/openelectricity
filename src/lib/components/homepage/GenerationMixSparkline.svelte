@@ -1,7 +1,10 @@
+<script>
+</script>
+
 <svg
-	width="171"
-	height="117"
-	viewBox="0 0 171 117"
+	width="200"
+	height="112.5"
+	viewBox="0 0 200 112.5"
 	fill="none"
 	xmlns="http://www.w3.org/2000/svg"
 	class={`${$$restProps.class}`}
@@ -17,9 +20,9 @@
 		stroke-width="3"
 	/>
 	<circle cx="165.415" cy="39" r="5" fill="#5A523E" />
-	<circle cx="165.415" cy="39" r="5" fill="black" fill-opacity="0.2" />
+	<!-- <circle cx="165.415" cy="39" r="5" fill="black" fill-opacity="0.2" /> -->
 	<circle cx="165.415" cy="63" r="5" fill="#82D87A" />
-	<circle cx="165.415" cy="63" r="5" fill="black" fill-opacity="0.2" />
+	<!-- <circle cx="165.415" cy="63" r="5" fill="black" fill-opacity="0.2" /> -->
 	<rect x="0.415039" width="9.73126" height="116.636" fill="white" />
 	<path d="M10.1504 103.562H169.743" stroke="black" stroke-dasharray="1 1" />
 </svg>

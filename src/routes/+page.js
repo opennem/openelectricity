@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity';
+import { PUBLIC_JSON_API } from '$env/static/public';
 
 /** @type {import('./$types').PageLoad} */
 export async function load({ params, fetch }) {
@@ -14,6 +15,10 @@ export async function load({ params, fetch }) {
 	if (recordsRes && recordsRes.ok) {
 		records = await recordsRes.json();
 	}
+
+	const now = new Date();
+	const prevYearJSON = await fetch(`${PUBLIC_JSON_API}${now.getFullYear() - 1}.json`);
+	const currentYearJSON = await fetch(`${PUBLIC_JSON_API}${now.getFullYear()}.json`);
 
 	if (homepageData && homepageData.length > 0) {
 		return {

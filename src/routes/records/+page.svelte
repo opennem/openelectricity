@@ -8,7 +8,7 @@
 	import FilterSection from '$lib/components/filters/FilterSection.svelte';
 	import FilterSectionHead from '$lib/components/filters/FilterSectionHead.svelte';
 	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
-	import RadioButton from '$lib/components/form-elements/RadioButton.svelte';
+	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
 	import TextInput from '$lib/components/form-elements/TextInput.svelte';
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import {
@@ -21,19 +21,24 @@
 	import { recordsByDay } from '$lib/records';
 	import { getKeys } from '$lib/utils/keys';
 	import { format, isToday } from 'date-fns';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	/** @type {PageData} */
 	export let data;
 
+	let pURL = $page.url;
+	console.log(pURL.searchParams.get('technologies')?.split('+'));
+
 	let showTechnology = false;
 	let showRegions = false;
 	let showPeakLow = false;
-	let searchString = '';
+	let searchString = pURL.searchParams.get('search') || '';
 
 	/** @type {TechnologyFilterDict} */
 	$: technologySelections = { ...technologyDefaultSelections };
 	$: regionSelections = { ...regionDefaultSelections };
-	$: peakLowSelection = 'all';
+	$: peakLowSelection = pURL.searchParams.get('peak-low') || 'all';
 
 	$: hasSearchTerm = searchString.trim() !== '';
 	$: hasTechnologySelections = Object.values(technologySelections).find((selection) => selection);
@@ -64,8 +69,8 @@
 		});
 
 		peakLowSelection = 'all';
-
 		searchString = '';
+		setQueryString();
 	};
 
 	/** @type {import('svelte/elements').FormEventHandler<HTMLInputElement>} */
@@ -87,18 +92,41 @@
 		}
 
 		technologySelections[/** @type {TechnologyFilterKey} */ (name)] = checked;
+		setQueryString();
 	};
 
 	/** @type {import('svelte/elements').FormEventHandler<HTMLInputElement>} */
 	const regionChange = (e) => {
 		const { name, checked } = e.currentTarget;
 		regionSelections[name] = checked;
+		setQueryString();
 	};
 
 	/** @type {import('svelte/elements').FormEventHandler<HTMLInputElement>} */
 	const handlePeakLow = (e) => {
 		const { name, value } = e.currentTarget;
 		peakLowSelection = value;
+		setQueryString();
+	};
+
+	const setQueryString = () => {
+		const newUrl = new URL($page.url);
+		newUrl.searchParams.delete();
+
+		const technologies = getKeys(technologySelections)
+			.filter((technology) => technologySelections[technology])
+			.join('+');
+
+		const regions = getKeys(regionSelections)
+			.filter((region) => regionSelections[region])
+			.join('+');
+
+		searchString.trim() && newUrl?.searchParams.set('search', searchString.trim());
+		peakLowSelection !== 'all' && newUrl?.searchParams.set('peak-low', peakLowSelection);
+		technologies && newUrl?.searchParams.set('technologies', technologies);
+		regions && newUrl?.searchParams.set('regions', regions);
+
+		history.replaceState(history.state, '', newUrl);
 	};
 </script>
 
@@ -125,6 +153,7 @@
 									value={searchString}
 									changeHandler={(e) => {
 										searchString = e.currentTarget.value;
+										setQueryString();
 									}}
 								/>
 							</FilterContent>
@@ -231,7 +260,7 @@
 								<FilterContent>
 									<div class="flex gap-4">
 										{#each getKeys(peakLowFilters) as peakLow}
-											<RadioButton
+											<RadioBigButton
 												name="peak_low"
 												label={peakLowFilters[peakLow].label}
 												value={peakLow}

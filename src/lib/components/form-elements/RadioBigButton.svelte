@@ -30,5 +30,6 @@
 	}
 	.label input[type='radio']:checked + span {
 		border-color: theme(colors.dark-grey);
+		background-color: theme(colors.light-warm-grey);
 	}
 </style>
