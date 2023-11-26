@@ -22,7 +22,6 @@
 	import { getKeys } from '$lib/utils/keys';
 	import { format, isToday } from 'date-fns';
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 
 	/** @type {PageData} */
 	export let data;
@@ -111,7 +110,7 @@
 
 	const setQueryString = () => {
 		const newUrl = new URL($page.url);
-		newUrl.searchParams.delete();
+		// newUrl.searchParams.delete();
 
 		const technologies = getKeys(technologySelections)
 			.filter((technology) => technologySelections[technology])

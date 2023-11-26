@@ -16,9 +16,17 @@ export async function load({ params, fetch }) {
 		records = await recordsRes.json();
 	}
 
-	const now = new Date();
-	const prevYearJSON = await fetch(`${PUBLIC_JSON_API}${now.getFullYear() - 1}.json`);
-	const currentYearJSON = await fetch(`${PUBLIC_JSON_API}${now.getFullYear()}.json`);
+	// const now = new Date();
+	// const prevYearJSON = await fetch(`${PUBLIC_JSON_API}${now.getFullYear() - 1}.json`);
+	// const currentYearJSON = await fetch(`${PUBLIC_JSON_API}${now.getFullYear()}.json`);
+
+	// currentYearJSON.data.forEach(datum => {
+	// 	if (datum.type === "energy" && datum.hasOwnProperty("fuel_tech")) {
+	// 		datum.history.data.forEach(day => {
+
+	// 		})
+	// 	}
+	// })
 
 	if (homepageData && homepageData.length > 0) {
 		return {
