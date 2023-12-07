@@ -26,8 +26,23 @@
 	/** @type {PageData} */
 	export let data;
 
+	// Grab defaults from URL if present
 	let pURL = $page.url;
-	console.log(pURL.searchParams.get('technologies')?.split('+'));
+	let technologyArgs = pURL.searchParams
+		.get('technologies')
+		?.split('+')
+		.reduce((acc, current) => {
+			acc[current] = true;
+			return acc;
+		}, {});
+
+	let regionArgs = pURL.searchParams
+		.get('region')
+		?.split('+')
+		.reduce((acc, current) => {
+			acc[current] = true;
+			return acc;
+		}, {});
 
 	let showTechnology = false;
 	let showRegions = false;
@@ -35,8 +50,8 @@
 	let searchString = pURL.searchParams.get('search') || '';
 
 	/** @type {TechnologyFilterDict} */
-	$: technologySelections = { ...technologyDefaultSelections };
-	$: regionSelections = { ...regionDefaultSelections };
+	$: technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
+	$: regionSelections = { ...regionDefaultSelections, ...regionArgs };
 	$: peakLowSelection = pURL.searchParams.get('peak-low') || 'all';
 
 	$: hasSearchTerm = searchString.trim() !== '';
@@ -110,7 +125,8 @@
 
 	const setQueryString = () => {
 		const newUrl = new URL($page.url);
-		// newUrl.searchParams.delete();
+		newUrl.hash = '';
+		newUrl.search = '';
 
 		const technologies = getKeys(technologySelections)
 			.filter((technology) => technologySelections[technology])
@@ -120,8 +136,14 @@
 			.filter((region) => regionSelections[region])
 			.join('+');
 
-		searchString.trim() && newUrl?.searchParams.set('search', searchString.trim());
-		peakLowSelection !== 'all' && newUrl?.searchParams.set('peak-low', peakLowSelection);
+		if (searchString.trim() !== '') {
+			newUrl?.searchParams.set('search', searchString.trim());
+		}
+
+		if (peakLowSelection !== 'all') {
+			newUrl?.searchParams.set('peak-low', peakLowSelection);
+		}
+
 		technologies && newUrl?.searchParams.set('technologies', technologies);
 		regions && newUrl?.searchParams.set('regions', regions);
 
@@ -167,6 +189,7 @@
 									getKeys(technologySelections).forEach((technology) => {
 										technologySelections[technology] = false;
 									});
+									setQueryString();
 								}}
 							/>
 							{#if showTechnology}
@@ -226,6 +249,7 @@
 									getKeys(regionSelections).forEach((region) => {
 										regionSelections[region] = false;
 									});
+									setQueryString();
 								}}
 							/>
 							{#if showRegions}
@@ -253,6 +277,7 @@
 								hasFilters={peakLowSelection !== 'all'}
 								clearHandler={() => {
 									peakLowSelection = 'all';
+									setQueryString();
 								}}
 							/>
 							{#if showPeakLow}

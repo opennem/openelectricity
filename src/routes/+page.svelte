@@ -1,7 +1,7 @@
 <script>
 	import ButtonGroup from '$lib/components/ButtonGroup.svelte';
 	// import Goal from '$lib/components/Goal.svelte';
-	import Map from '$lib/components/Map.svelte';
+	import Map from '$lib/components/map/Map.svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import { recordsByDay } from '$lib/records';
@@ -9,10 +9,27 @@
 	import GenerationMixSparkline from '$lib/components/homepage/GenerationMixSparkline.svelte';
 	import FossilIconAnim from '$lib/components/homepage/FossilIconAnim.svelte';
 	import RenewableIconAnim from '$lib/components/homepage/RenewableIconAnim.svelte';
+	import { format, isToday } from 'date-fns';
+	import Switch from '$lib/components/Switch.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
 	const dailyRecords = recordsByDay(data.records);
+	const recordsSlice = [];
+	let remaining = 5;
+	dailyRecords.every((day) => {
+		if (remaining > day.length) {
+			recordsSlice.push(day);
+			remaining -= day.length;
+		} else {
+			recordsSlice.push(day.slice(0, remaining));
+			remaining = 0;
+		}
+
+		return remaining > 0;
+	});
+
+	$: mapMode = 'live';
 </script>
 
 <div class="bg-light-warm-grey">
@@ -63,17 +80,79 @@
 <div class="bg-light-warm-grey">
 	<div class="container max-w-none lg:container">
 		<div class="grid grid-cols-2 gap-40 py-16">
-			<Map classes="w-full block h-auto" />
-			<div class="bg-white rounded-lg p-12">
-				<h3>{data.map_title}</h3>
-				<ButtonGroup
-					buttons={[
-						{ label: '1D', value: 1 },
-						{ label: '3D', value: 3 },
-						{ label: '7D', value: 7 }
-					]}
-					selected={1}
-				/>
+			<Map mode={mapMode} class="w-full block h-auto" />
+			<div class="bg-white rounded-lg p-12 text-center">
+				<header>
+					<h3>{data.map_title}</h3>
+					<Switch
+						buttons={[
+							{ label: 'Carbon Intensity', value: 'annual' },
+							{ label: 'Live Flows', value: 'live' }
+						]}
+						selected={mapMode}
+						class="justify-center"
+						onChange={(value) => {
+							mapMode = value;
+						}}
+					/>
+				</header>
+				<section class="my-12">
+					<table class="text-left w-full">
+						<thead>
+							<tr class="border-b-[0.05rem] border-mid-grey border-solid align-bottom">
+								<td />
+								<td>Price</td>
+								<td><span>MW</span><br />Generation</td>
+								<td><span>%</span><br />Renewable</td>
+								<td><span>KgCo2 / MWh</span><br />Carbon Intensity</td>
+							</tr>
+						</thead>
+						<tbody>
+							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
+								<td>WA</td>
+								<td>56.45</td>
+								<td>18,256</td>
+								<td>45%</td>
+								<td>420</td>
+							</tr>
+							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
+								<td>QLD</td>
+								<td>56.45</td>
+								<td>18,256</td>
+								<td>45%</td>
+								<td>420</td>
+							</tr>
+							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
+								<td>NSW</td>
+								<td>56.45</td>
+								<td>18,256</td>
+								<td>45%</td>
+								<td>420</td>
+							</tr>
+							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
+								<td>SA</td>
+								<td>56.45</td>
+								<td>18,256</td>
+								<td>45%</td>
+								<td>420</td>
+							</tr>
+							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
+								<td>VIC</td>
+								<td>56.45</td>
+								<td>18,256</td>
+								<td>45%</td>
+								<td>420</td>
+							</tr>
+							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
+								<td>TAS</td>
+								<td>56.45</td>
+								<td>18,256</td>
+								<td>45%</td>
+								<td>420</td>
+							</tr>
+						</tbody>
+					</table>
+				</section>
 			</div>
 		</div>
 	</div>
@@ -90,8 +169,17 @@
 		</header>
 		<div class="my-14">
 			<div class="mx-auto max-w-[51rem]">
-				{#each dailyRecords[0] as record}
-					<RecordCard {record} class="mb-4" />
+				{#each recordsSlice as day}
+					<div class="max-w-[51rem] mx-auto">
+						<header class="font-space text-sm uppercase py-8 z-5">
+							{isToday(Date.parse(day[0][0].time)) ? 'Today' : format(Date.parse(day[0][0].time), 'dd LLL, yyyy')}
+						</header>
+						<div>
+							{#each day as record}
+								<RecordCard {record} class="mb-4" />
+							{/each}
+						</div>
+					</div>
 				{/each}
 			</div>
 		</div>

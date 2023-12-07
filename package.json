@@ -34,8 +34,10 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@sanity/image-url": "^1.0.2",
 		"date-fns": "^2.30.0",
 		"js-base64": "^3.7.5",
-		"uuid": "^9.0.1"
+		"uuid": "^9.0.1",
+		"wcag-color": "^1.1.1"
 	}
 }

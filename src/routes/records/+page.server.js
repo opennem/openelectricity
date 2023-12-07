@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 
-/** @type {import('./$types').PageLoad} */
+/** @type {import('./$types').PageServerLoad} */
 export async function load({ fetch, params }) {
 	const data = await fetch('/api/records');
 
