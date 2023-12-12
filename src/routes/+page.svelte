@@ -14,7 +14,10 @@
 
 	/** @type {import('./$types').PageData} */
 	export let data;
-	const dailyRecords = recordsByDay(data.records);
+	const { records, banner_title, banner_statement, chart_title, map_title, records_title, analysis_title, articles } =
+		data;
+
+	const dailyRecords = recordsByDay(records);
 	const recordsSlice = [];
 	let remaining = 5;
 	dailyRecords.every((day) => {
@@ -30,14 +33,15 @@
 	});
 
 	$: mapMode = 'live';
+	$: mapData = data[mapMode];
 </script>
 
 <div class="bg-light-warm-grey">
 	<div class="container max-w-none lg:container">
 		<div class="flex py-20 justify-between items-center">
 			<div class="w-6/12">
-				<h2 class="md:text-9xl md:leading-9xl">{data.banner_title}</h2>
-				<p>{@html data.banner_statement}</p>
+				<h2 class="md:text-9xl md:leading-9xl">{banner_title}</h2>
+				<p>{@html banner_statement}</p>
 			</div>
 			<div class="w-5/12 p-8 font-medium text-sm">
 				<div class="flex gap-8 justify-between bg-white p-20 font-medium text-sm rounded-md">
@@ -72,87 +76,67 @@
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
 		<header class="flex justify-between">
-			<h3>{data.chart_title}</h3>
+			<h3>{chart_title}</h3>
 			<SectionLink href="https://data.openelectricity.org.au/" title="Data Tracker" />
 		</header>
 	</div>
 </div>
 <div class="bg-light-warm-grey">
 	<div class="container max-w-none lg:container">
-		<div class="grid grid-cols-2 gap-40 py-16">
-			<Map mode={mapMode} class="w-full block h-auto" />
-			<div class="bg-white rounded-lg p-12 text-center">
-				<header>
-					<h3>{data.map_title}</h3>
-					<Switch
-						buttons={[
-							{ label: 'Carbon Intensity', value: 'annual' },
-							{ label: 'Live Flows', value: 'live' }
-						]}
-						selected={mapMode}
-						class="justify-center"
-						onChange={(value) => {
-							mapMode = value;
-						}}
-					/>
-				</header>
-				<section class="my-12">
-					<table class="text-left w-full">
-						<thead>
-							<tr class="border-b-[0.05rem] border-mid-grey border-solid align-bottom">
-								<td />
-								<td>Price</td>
-								<td><span>MW</span><br />Generation</td>
-								<td><span>%</span><br />Renewable</td>
-								<td><span>KgCo2 / MWh</span><br />Carbon Intensity</td>
-							</tr>
-						</thead>
-						<tbody>
-							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
-								<td>WA</td>
-								<td>56.45</td>
-								<td>18,256</td>
-								<td>45%</td>
-								<td>420</td>
-							</tr>
-							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
-								<td>QLD</td>
-								<td>56.45</td>
-								<td>18,256</td>
-								<td>45%</td>
-								<td>420</td>
-							</tr>
-							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
-								<td>NSW</td>
-								<td>56.45</td>
-								<td>18,256</td>
-								<td>45%</td>
-								<td>420</td>
-							</tr>
-							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
-								<td>SA</td>
-								<td>56.45</td>
-								<td>18,256</td>
-								<td>45%</td>
-								<td>420</td>
-							</tr>
-							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
-								<td>VIC</td>
-								<td>56.45</td>
-								<td>18,256</td>
-								<td>45%</td>
-								<td>420</td>
-							</tr>
-							<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
-								<td>TAS</td>
-								<td>56.45</td>
-								<td>18,256</td>
-								<td>45%</td>
-								<td>420</td>
-							</tr>
-						</tbody>
-					</table>
-				</section>
+		<div class="grid grid-cols-2 gap-36 py-16">
+			<Map mode={mapMode} data={mapData} class="w-full block h-auto" />
+			<div>
+				<div class="bg-white rounded-lg p-16 text-center">
+					<header>
+						<h3>{map_title}</h3>
+						<Switch
+							buttons={[
+								{ label: 'Carbon Intensity', value: 'annual' },
+								{ label: 'Live Flows', value: 'live', icon: 'live' }
+							]}
+							selected={mapMode}
+							class="justify-center my-4"
+							onChange={(value) => {
+								mapMode = value;
+							}}
+						/>
+						{#if mapData.dispatch}
+							<div class="font-space font-medium text-mid-grey uppercase text-sm">{mapData.dispatch}</div>
+						{/if}
+					</header>
+					<section class="mt-12">
+						<table class="text-left w-full table-fixed">
+							<thead>
+								<tr class="border-b-[0.05rem] border-mid-grey border-solid align-bottom text-xs">
+									{#each mapData.columns as column}
+										<td class="pb-3 text-left">
+											{#if column.unit}
+												<div class="text-mid-warm-grey">{column.unit}</div>
+											{/if}
+											{column.label}
+										</td>
+									{/each}
+								</tr>
+							</thead>
+							<tbody>
+								{#each mapData.rows as row}
+									<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
+										{#each mapData.columns as column, cidx}
+											<td class="py-3 text-sm text-left" class:font-medium={cidx > 0}>
+												{row[column.id]}
+											</td>
+										{/each}
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+						{#if mapData.notes}
+							<div class="text-mid-grey pt-8 px-8 text-xs">
+								{#each mapData.notes as note}<div>{note}</div>{/each}
+							</div>
+						{/if}
+					</section>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -165,7 +149,7 @@
 <div class="bg-light-warm-grey py-40">
 	<div class="container max-w-none lg:container">
 		<header class="text-center">
-			<h3>{data.records_title}</h3>
+			<h3>{records_title}</h3>
 		</header>
 		<div class="my-14">
 			<div class="mx-auto max-w-[51rem]">
@@ -191,11 +175,11 @@
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
 		<header class="flex justify-between">
-			<h3>{data.analysis_title}</h3>
+			<h3>{analysis_title}</h3>
 			<SectionLink href="/analysis" title="View all Analysis" />
 		</header>
 		<div class="grid grid-cols-4">
-			{#each data.articles as { title, slug }}
+			{#each articles as { title, slug }}
 				<div>
 					<h3>{title}</h3>
 					<a href="/analysis/{slug.current}">Read more</a>
@@ -204,23 +188,3 @@
 		</div>
 	</div>
 </div>
-
-<!-- <div class="bg-white py-16">
-	<div class="container max-w-none lg:container">
-		<header class="flex justify-between">
-			<h3>{data.goals_title}</h3>
-			<SectionLink href="/content/about" title="About" />
-		</header>
-		<div class={`grid grid-cols-1 md:grid-cols-3 gap-16 mt-16`}>
-			{#each data.goals as goal, i}
-				<Goal {goal} index={i + 1} />
-			{/each}
-		</div>
-	</div>
-</div> -->
-
-<style>
-	.key-numbers-grid {
-		grid-template-columns: 1fr minmax(5rem, 25%) minmax(5rem, 25%);
-	}
-</style>

@@ -13,86 +13,14 @@
 
 	/** @type {string}*/
 	export let mode = 'live';
+	export let data = null;
 
-	export let data = {
-		TAS: {
-			live: {
-				price: 57.66
-			},
-			annual: {
-				price: 56.55,
-				generation: 18566,
-				renewables: 0.45,
-				carbon_intensity: 420
-			}
-		},
-		NSW: {
-			live: {
-				price: 57.66
-			},
-			annual: {
-				price: 56.55,
-				generation: 18566,
-				renewables: 0.45,
-				carbon_intensity: 420
-			}
-		},
-		QLD: {
-			live: {
-				price: 57.66
-			},
-			annual: {
-				price: 56.55,
-				generation: 18566,
-				renewables: 0.45,
-				carbon_intensity: 420
-			}
-		},
-		WA: {
-			live: {
-				price: 57.66
-			},
-			annual: {
-				price: 56.55,
-				generation: 18566,
-				renewables: 0.45,
-				carbon_intensity: 420
-			}
-		},
-		VIC: {
-			live: {
-				price: 57.66
-			},
-			annual: {
-				price: 56.55,
-				generation: 18566,
-				renewables: 0.45,
-				carbon_intensity: 420
-			}
-		},
-		SA: {
-			live: {
-				price: 57.66
-			},
-			annual: {
-				price: 56.55,
-				generation: 18566,
-				renewables: 0.45,
-				carbon_intensity: 420
-			}
-		},
-		NT: {
-			live: {
-				price: null
-			},
-			annual: {
-				price: 56.55,
-				generation: 18566,
-				renewables: 0.45,
-				carbon_intensity: 420
-			}
-		}
-	};
+	$: stateData = data.rows.reduce((acc, row) => {
+		acc[row.state] = row;
+		return acc;
+	}, {});
+
+	const absRound = (val) => Math.abs(Math.round(val));
 </script>
 
 <svg
@@ -119,54 +47,76 @@
 	<circle cx="485.459" cy="457.353" r="3.44336" fill="white" stroke="black" stroke-width="1.5" />
 	<path d="M488.109 458.657L554.594 492.728" stroke="black" stroke-dasharray="3 2" />
 
-	<!-- PRICE/EMISSIONS LABELS -->
-	<MapLabel
-		text={mode === 'live' ? `$${data.TAS.live.price}` : data.TAS.annual.carbon_intensity}
-		colour="#000000"
-		x={515}
-		y={552}
-		bg={true}
-		textAnchor="left"
-	/><!-- Tas -->
-	<MapLabel text="N/A" colour="#6A6A6A" x={310} y={170} /><!-- NT -->
-	<MapLabel
-		text={mode === 'live' ? `$${data.SA.live.price}` : data.SA.annual.carbon_intensity}
-		colour={best('#ffffff', '#000000', '#ff000088')}
-		x={330}
-		y={330}
-	/><!-- SA -->
-	<MapLabel
-		text={mode === 'live' ? `$${data.VIC.live.price}` : data.VIC.annual.carbon_intensity}
-		colour="#000000"
-		x={560}
-		y={498}
-		bg={true}
-		textAnchor="left"
-	/><!-- VIC -->
-	<MapLabel
-		text={mode === 'live' ? `$${data.WA.live.price}` : data.WA.annual.carbon_intensity}
-		colour={best('#ffffff', '#000000', '#ff000088')}
-		x={130}
-		y={263}
-	/><!-- WA -->
-	<MapLabel
-		text={mode === 'live' ? `$${data.QLD.live.price}` : data.QLD.annual.carbon_intensity}
-		colour={best('#ffffff', '#000000', '#ff000088')}
-		x={480}
-		y={229}
-	/><!-- QLD -->
-	<MapLabel
-		text={mode === 'live' ? `$${data.NSW.live.price}` : data.NSW.annual.carbon_intensity}
-		colour={best('#ffffff', '#000000', '#ff000088')}
-		x={500}
-		y={383}
-	/><!-- NSW -->
+	{#if data}
+		<!-- PRICE/EMISSIONS LABELS -->
+		<MapLabel
+			text={mode === 'live' ? `$${stateData.TAS.price}` : stateData.TAS.intensity}
+			colour="#000000"
+			x={515}
+			y={552}
+			bg={true}
+			textAnchor="left"
+		/><!-- Tas -->
+		<MapLabel text="N/A" colour="#6A6A6A" x={310} y={170} /><!-- NT -->
+		<MapLabel
+			text={mode === 'live' ? `$${stateData.SA.price}` : stateData.SA.intensity}
+			colour={best('#ffffff', '#000000', '#ff000088')}
+			x={330}
+			y={330}
+		/><!-- SA -->
+		<MapLabel
+			text={mode === 'live' ? `$${stateData.VIC.price}` : stateData.VIC.intensity}
+			colour="#000000"
+			x={560}
+			y={498}
+			bg={true}
+			textAnchor="left"
+		/><!-- VIC -->
+		<MapLabel
+			text={mode === 'live' ? `$${stateData.WA.price}` : stateData.WA.intensity}
+			colour={best('#ffffff', '#000000', '#ff000088')}
+			x={130}
+			y={263}
+		/><!-- WA -->
+		<MapLabel
+			text={mode === 'live' ? `$${stateData.QLD.price}` : stateData.QLD.intensity}
+			colour={best('#ffffff', '#000000', '#ff000088')}
+			x={480}
+			y={229}
+		/><!-- QLD -->
+		<MapLabel
+			text={mode === 'live' ? `$${stateData.NSW.price}` : stateData.NSW.intensity}
+			colour={best('#ffffff', '#000000', '#ff000088')}
+			x={500}
+			y={383}
+		/><!-- NSW -->
 
-	{#if mode === 'live'}
-		<!-- FLOWS -->
-		<Flow direction="down" flow={999} x={500} y={315} /><!-- QLD <-> NSW -->
-		<Flow direction="up" flow={342} x={480} y={430} /><!-- VIC <-> NSW -->
-		<Flow direction="down" flow={365} x={490} y={495} /><!-- VIC <-> TAS -->
-		<Flow direction="left" flow={342} x={418} y={440} /><!-- VIC <-> SA -->
+		{#if data.flows}
+			<!-- FLOWS -->
+			<Flow
+				direction={data.flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
+				flow={absRound(data.flows['NSW1->QLD1'])}
+				x={500}
+				y={315}
+			/><!-- QLD <-> NSW -->
+			<Flow
+				direction={data.flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
+				flow={absRound(data.flows['NSW1->VIC1'])}
+				x={480}
+				y={430}
+			/><!-- VIC <-> NSW -->
+			<Flow
+				direction={data.flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
+				flow={absRound(data.flows['TAS1->VIC1'])}
+				x={490}
+				y={495}
+			/><!-- VIC <-> TAS -->
+			<Flow
+				direction={data.flows['SA1->VIC1'] > 0 ? 'right' : 'left'}
+				flow={absRound(data.flows['SA1->VIC1'])}
+				x={418}
+				y={440}
+			/><!-- VIC <-> SA -->
+		{/if}
 	{/if}
 </svg>
