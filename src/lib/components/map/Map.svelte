@@ -1,5 +1,4 @@
 <script>
-	import { best } from 'wcag-color';
 	import Flow from './Flow.svelte';
 	import MapLabel from './MapLabel.svelte';
 	import TextureMask from './TextureMask.svelte';
@@ -10,17 +9,49 @@
 	import Tas from './states/TAS.svelte';
 	import Vic from './states/VIC.svelte';
 	import Wa from './states/WA.svelte';
+	import { createIntensityScale, createPriceScale } from '$lib/colours';
+	import { contrast } from 'chroma-js';
 
 	/** @type {string}*/
 	export let mode = 'live';
 	export let data = null;
+
+	const absRound = (val) => Math.abs(Math.round(val));
 
 	$: stateData = data.rows.reduce((acc, row) => {
 		acc[row.state] = row;
 		return acc;
 	}, {});
 
-	const absRound = (val) => Math.abs(Math.round(val));
+	$: priceColourScale = createPriceScale(1000);
+	$: intensityColourScale = createIntensityScale(500);
+
+	/**
+	 * Get the fill colour for the state based on the map mode and data
+	 * @param {string} state
+	 */
+	$: getStateFillColour = (state) => {
+		if (!data) return '#FFFFFF';
+
+		let scale = priceColourScale;
+		let key = 'price';
+
+		if (mode === 'annual') {
+			scale = intensityColourScale;
+			key = 'intensity';
+		}
+
+		return scale(stateData[state][key]);
+	};
+
+	/**
+	 * Get the text colour for a state, making sure it has contrast to the fill colour
+	 * @param {string} state
+	 */
+	$: getStateTextColour = (state) => {
+		const fill = getStateFillColour(state);
+		return contrast(fill, '#FFFFFF') > 4.5 ? '#FFFFFF' : '#000000';
+	};
 </script>
 
 <svg
@@ -33,13 +64,13 @@
 	class={`overflow-visible w-full h-auto block ${$$restProps.class}`}
 >
 	<!-- State geometry -->
-	<Tas fill="#ff000088" />
-	<Nsw fill="#ff000088" />
-	<Qld fill="#ff000088" />
-	<Wa fill="#ff000088" />
-	<Vic fill="#ff000088" />
-	<Sa fill="#ff000088" />
-	<Nt fill="#F1F0ED" />
+	<Tas fill={getStateFillColour('TAS')} />
+	<Nsw fill={getStateFillColour('NSW')} />
+	<Qld fill={getStateFillColour('QLD')} />
+	<Wa fill={getStateFillColour('WA')} />
+	<Vic fill={getStateFillColour('VIC')} />
+	<Sa fill={getStateFillColour('SA')} />
+	<Nt fill="#FFFFFF" />
 
 	<TextureMask />
 
@@ -60,7 +91,7 @@
 		<MapLabel text="N/A" colour="#6A6A6A" x={310} y={170} /><!-- NT -->
 		<MapLabel
 			text={mode === 'live' ? `$${stateData.SA.price}` : stateData.SA.intensity}
-			colour={best('#ffffff', '#000000', '#ff000088')}
+			colour={getStateTextColour('SA')}
 			x={330}
 			y={330}
 		/><!-- SA -->
@@ -74,19 +105,19 @@
 		/><!-- VIC -->
 		<MapLabel
 			text={mode === 'live' ? `$${stateData.WA.price}` : stateData.WA.intensity}
-			colour={best('#ffffff', '#000000', '#ff000088')}
+			colour={getStateTextColour('WA')}
 			x={130}
 			y={263}
 		/><!-- WA -->
 		<MapLabel
 			text={mode === 'live' ? `$${stateData.QLD.price}` : stateData.QLD.intensity}
-			colour={best('#ffffff', '#000000', '#ff000088')}
+			colour={getStateTextColour('QLD')}
 			x={480}
 			y={229}
 		/><!-- QLD -->
 		<MapLabel
 			text={mode === 'live' ? `$${stateData.NSW.price}` : stateData.NSW.intensity}
-			colour={best('#ffffff', '#000000', '#ff000088')}
+			colour={getStateTextColour('NSW')}
 			x={500}
 			y={383}
 		/><!-- NSW -->

@@ -1,6 +1,4 @@
 <script>
-	import ButtonGroup from '$lib/components/ButtonGroup.svelte';
-	// import Goal from '$lib/components/Goal.svelte';
 	import Map from '$lib/components/map/Map.svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
@@ -14,9 +12,18 @@
 
 	/** @type {import('./$types').PageData} */
 	export let data;
-	const { records, banner_title, banner_statement, chart_title, map_title, records_title, analysis_title, articles } =
-		data;
+	const {
+		records,
+		banner_title,
+		banner_statement,
+		chart_title,
+		map_title,
+		records_title,
+		analysis_title,
+		articles
+	} = data;
 
+	// Process records
 	const dailyRecords = recordsByDay(records);
 	const recordsSlice = [];
 	let remaining = 5;
@@ -32,6 +39,7 @@
 		return remaining > 0;
 	});
 
+	// Track map mode and data
 	$: mapMode = 'live';
 	$: mapData = data[mapMode];
 </script>
@@ -101,7 +109,9 @@
 							}}
 						/>
 						{#if mapData.dispatch}
-							<div class="font-space font-medium text-mid-grey uppercase text-sm">{mapData.dispatch}</div>
+							<div class="font-space font-medium text-mid-grey uppercase text-sm">
+								{mapData.dispatch}
+							</div>
 						{/if}
 					</header>
 					<section class="mt-12">
@@ -156,7 +166,9 @@
 				{#each recordsSlice as day}
 					<div class="max-w-[51rem] mx-auto">
 						<header class="font-space text-sm uppercase py-8 z-5">
-							{isToday(Date.parse(day[0][0].time)) ? 'Today' : format(Date.parse(day[0][0].time), 'dd LLL, yyyy')}
+							{isToday(Date.parse(day[0][0].time))
+								? 'Today'
+								: format(Date.parse(day[0][0].time), 'dd LLL, yyyy')}
 						</header>
 						<div>
 							{#each day as record}
