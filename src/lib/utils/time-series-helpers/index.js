@@ -6,7 +6,7 @@ import useDate from './use-date';
  * @returns {*}
  */
 export function transformToTimeSeriesDataset(dataset) {
-	console.log(dataset);
+	console.log('before', dataset);
 
 	// get all the projection data unique interval, start and last
 	// - expect all should be the same
