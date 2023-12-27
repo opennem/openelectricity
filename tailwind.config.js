@@ -1,6 +1,11 @@
 /** @type {import('tailwindcss').Config} */
 export default {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
+	safelist: [
+		{
+			pattern: /bg-*-*/
+		}
+	],
 	theme: {
 		fontFamily: {
 			sans: ['DM Sans', 'sans-serif'],
@@ -79,28 +84,43 @@ export default {
 			'alert-yellow': '#EB1F70',
 			'error-red': '#FA6060',
 			'success-green': '#70D26E',
-			/* Sources */
-			'solar-rooftop': '#FFDB35',
-			'solar-utlity': '#FECF00',
-			wind: '#396A09',
-			'battery-discharging': '#0098F9',
-			'gas-waste-coal-mine': '#AB5D14',
-			'gas-reciprocating': '#F8D7B4',
-			'gas-ocgt': '#FFC68B',
-			'gas-ccgt': '#FDAB57',
-			'gas-steam': '#F2831A',
+
+			/* Fuel techs */
+			battery_charging: '#A9D5ED',
+			battery_discharging: '#0098F9',
+			bioenergy_biogas: '#43B0B0',
+			bioenergy_biomass: '#1B6F6F',
+			coal_black: '#131313',
+			coal_brown: '#804D25',
 			distillate: '#F1461D',
-			'bioenergy-biomass': '#1B6F6F',
-			'bioenergy-biogas': '#43B0B0',
-			'coal-black': '#131313',
-			'coal-brown': '#804D25',
-			/* Loads */
+			gas_ccgt: '#FDAB57',
+			gas_ocgt: '#FFC68B',
+			gas_recip: '#F8D7B4',
+			gas_steam: '#F2831A',
+			gas_wcmg: '#AB5D14',
+			hydro: '#3C77AB',
 			pumps: '#7DA6CA',
-			'battery-discharging': '#A9D5ED',
-			exports: '#8C6FA8'
+			solar_utility: '#FECF00',
+			solar_thermal: '',
+			solar_rooftop: '#FFDB35',
+			wind: '#396A09',
+			nuclear: '#FF0000',
+			imports: '#00FF00',
+			exports: '#8C6FA8',
+			interconnector: '#0000FF',
+
+			/* Fuel tech groups */
+			bioenergy: '#43B0B0',
+			coal: '#131313',
+			gas: '#FDAB57',
+			solar: '#FFDB35'
 		},
 
-		extend: {}
+		extend: {
+			backgroundImage: {
+				grain: "url('/img/grain.svg')"
+			}
+		}
 	},
 	plugins: [require('@tailwindcss/typography'), require('@tailwindcss/forms')]
 };

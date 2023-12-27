@@ -5,7 +5,7 @@
 	const navItems = [
 		{ name: 'Data Tracker', href: 'https://data.openelectricity.org.au/' },
 		{ name: 'Facilities Map', href: 'https://data.openelectricity.org.au/facilities' },
-		{ name: 'Path to 2050', href: '/isp' },
+		{ name: 'Future Scenarios', href: '/isp' },
 		{ name: 'Latest Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },
 		{ name: 'About', href: '/content/about' }
@@ -18,7 +18,7 @@
 	});
 </script>
 
-<header class="h-28 border-mid-grey border-b-[0.05rem] border-solid">
+<header class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid">
 	<div class="container max-w-none lg:container flex items-center justify-between h-full">
 		<a href="/" class="relative z-20">
 			<h1 class="m-0"><img class="block" src="/img/logo.svg" alt="Open Electricity" /></h1>

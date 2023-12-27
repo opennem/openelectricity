@@ -1,11 +1,10 @@
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity';
 
-/** @type {import('./$types').PageLoad} */
+/** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {
 	const data = await client.fetch(
-		`*[_type == "article" && slug.current == "${params.article}"]
-			{_id, title, content}`
+		`*[_type == "content" && slug.current == "${params.slug}"]{_id, title, content}`
 	);
 
 	if (data && data.length > 0) {

@@ -1,5 +1,37 @@
 <script>
 	import SectionLink from './SectionLink.svelte';
+	let formSubmitting = false;
+	let formSubmitted = false;
+
+	/**
+	 * @type {HTMLInputElement}
+	 */
+	let emailField;
+
+	async function signup(/** @type {{ currentTarget: HTMLFormElement | undefined; }} */ event) {
+		formSubmitting = true;
+
+		const data = new FormData(event.currentTarget);
+
+		const res = await fetch('/api/signup', {
+			method: 'POST',
+			body: JSON.stringify({ email: data.get('email') })
+		});
+
+		formSubmitting = false;
+		formSubmitted = true;
+
+		// Wait 2 seconds after form is submitted, then clear and reset the form
+		await /** @type {Promise<void>} */ (
+			new Promise((resolve) => {
+				setTimeout(() => {
+					formSubmitted = false;
+					emailField.value = '';
+					resolve();
+				}, 2000);
+			})
+		);
+	}
 </script>
 
 <footer class="mb-32">
@@ -18,15 +50,19 @@
 					<strong>Stay Connected</strong> — Sign up to be notified of platform updates, events and the
 					latest analysis.
 				</div>
-				<form class="flex md:w-5/12 flex-shrink-0 items-center">
+				<form class="flex md:w-5/12 flex-shrink-0 items-center" on:submit|preventDefault={signup}>
 					<input
 						type="email"
 						name="email"
 						placeholder="Email Address"
 						class="w-full h-20 rounded-full pl-8 pr-28 inherit text-[1.4rem] focus:ring-red focus:border-red"
+						bind:this={emailField}
 					/>
-					<button class="h-20 rounded-full bg-white border border-black px-12 font-bold ml-[-5rem]"
-						>Subscribe</button
+					<button
+						type="submit"
+						class="h-20 rounded-full bg-white border border-black px-12 font-bold ml-[-5rem]"
+						disabled={formSubmitting || formSubmitted}
+						>{formSubmitting ? 'Processing...' : formSubmitted ? 'Subscribed' : 'Subscribe'}</button
 					>
 				</form>
 			</div>

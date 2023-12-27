@@ -1,0 +1,9 @@
+<svg id="icon" width="33" height="33" viewBox="0 0 33 33" fill="none"
+    xmlns="http://www.w3.org/2000/svg">
+    <rect x="2.01953" y="27.2285" width="28" height="3" rx="1.5" fill="currentColor"/>
+    <rect x="20.0195" y="20.2285" width="3" height="10" fill="currentColor"/>
+    <rect x="28.4473" y="15.2285" width="3" height="14.3867" transform="rotate(60 28.4473 15.2285)" fill="currentColor"/>
+    <rect x="8.01953" y="20.2285" width="3" height="10" fill="currentColor"/>
+    <rect x="16.4473" y="15.2285" width="3" height="14.3867" transform="rotate(60 16.4473 15.2285)" fill="currentColor"/>
+    <circle cx="7.01953" cy="7.22852" r="5.5" stroke="currentColor" stroke-width="3"/>
+</svg>

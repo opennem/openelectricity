@@ -69,10 +69,29 @@ body {
 	.subhead-secondary {
 		@apply font-space tracking-wider text-sm leading-sm text-mid-grey uppercase font-medium;
 	}
+	.text-link-large {
+		@apply font-space tracking-wider text-base leading-base text-dark-grey font-bold underline;
+	}
 	p {
 		@apply mb-[1em];
 	}
 	a {
 		@apply text-red hover:underline;
+	}
+	.grain-bg {
+		position: relative;
+	}
+	.grain-bg:before {
+		content: '';
+		display: block;
+		background: url(/img/grain.svg);
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 10;
+		opacity: 0.4;
+		filter: contrast(170%) brightness(100%);
 	}
 }
