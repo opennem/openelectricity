@@ -1,6 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 	import Line from '$lib/components/charts/Line.svelte';
+	import Area from '$lib/components/charts/Area.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 
@@ -61,6 +62,7 @@
 			<AxisX />
 			<AxisY ticks={4} />
 			<Line />
+			<Area />
 		</Svg>
 	</LayerCake>
 </div>
