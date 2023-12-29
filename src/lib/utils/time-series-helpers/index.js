@@ -1,9 +1,10 @@
 import { parse as parseInterval } from './intervals';
 import useDate from './use-date';
+
 /**
  * Transform backend json data to time series dataset and also additional meta data about the time series data
  * @param {*} dataset
- * @returns {*}
+ * @returns {[{time: number, date: Date, [key: string]: number}]|[]}
  */
 export function transformToTimeSeriesDataset(dataset) {
 	console.log('before', dataset);
@@ -75,13 +76,8 @@ export function transformToTimeSeriesDataset(dataset) {
 
 		console.log('tsData', tsData);
 
-		return {
-			tsData,
-			start: startDate,
-			last: lastDate,
-			interval
-		};
+		return tsData;
 	}
 
-	return null;
+	return [];
 }

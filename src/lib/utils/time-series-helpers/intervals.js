@@ -22,7 +22,7 @@ INTERVAL_LABELS[YEAR] = 'Year';
 /**
  *
  * @param {string} intervalString
- * @returns {{ key: string, label: string, incrementerValue: number, incrementerFn: Function | undefined }}}
+ * @returns {{ key: string, label: string, incrementerValue: number, incrementerFn: import('date-fns/addYears') | undefined }}}
  */
 export function parse(intervalString) {
 	const length = intervalString.length;
