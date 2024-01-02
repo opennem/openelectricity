@@ -43,8 +43,6 @@
 	// Track map mode and data
 	$: mapMode = 'live';
 	$: mapData = data[mapMode];
-
-	$: console.log('data', data);
 </script>
 
 <div class="bg-light-warm-grey">
