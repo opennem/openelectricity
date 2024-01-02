@@ -18,11 +18,11 @@ export const createIntensityScale = (max) => scale(spectrum.intensity).domain([0
 export const createPriceScale = (max) =>
 	scale(spectrum.price).domain([0, max]).classes(spectrum.price.length);
 
-const MIN_CONTRAST_RATIO = 3;
-const WHITE = chroma('white');
-const BLACK = chroma('black');
+const minContrastRatio = 3;
+const white = chroma('white');
+const black = chroma('black');
 
 export const getContrastedTextColour = (colour) => {
-	const contrastRatio = contrast(colour, WHITE);
-	return contrastRatio >= MIN_CONTRAST_RATIO ? WHITE : BLACK;
+	const contrastRatio = contrast(colour, white);
+	return contrastRatio >= minContrastRatio ? white : black;
 };
