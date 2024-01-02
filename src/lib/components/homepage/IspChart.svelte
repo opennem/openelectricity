@@ -11,6 +11,7 @@
 	export let data = [];
 	export let xKey = '';
 	export let yKey = [];
+	export let yDomain = undefined;
 	export let zKey = 'key';
 
 	export let seriesNames = [];
@@ -20,14 +21,15 @@
 	const formatTickY = (d) => format('~s')(d);
 
 	$: stackedData = stack(data, seriesNames);
-	$: console.log('stackedData', data, seriesNames, stackedData);
 </script>
 
 <div class="chart-container">
 	<LayerCake
-		padding={{ top: 8, right: 10, bottom: 20, left: 25 }}
+		padding={{ top: 20, right: 0, bottom: 20, left: 0 }}
 		x={(d) => d.data[xKey]}
 		y={yKey}
+		{yDomain}
+		yNice={4}
 		z={zKey}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
@@ -36,9 +38,23 @@
 		data={stackedData}
 	>
 		<Svg>
-			<AxisX formatTick={formatTickX} tickMarks={true} />
+			<defs>
+				<pattern
+					id="hatch-pattern"
+					width="4"
+					height="4"
+					patternUnits="userSpaceOnUse"
+					patternTransform="rotate(45)"
+				>
+					<line stroke="rgba(236, 233, 230, 0.3)" stroke-width="2px" y2="10" />
+				</pattern>
+			</defs>
+
 			<AxisY formatTick={formatTickY} />
+			<AxisX formatTick={formatTickX} tickMarks={true} />
+
 			<AreaStacked />
+			<AreaStacked fill="url(#hatch-pattern)" />
 		</Svg>
 	</LayerCake>
 </div>
@@ -46,7 +62,6 @@
 <style>
 	.chart-container {
 		width: 100%;
-		height: 450px;
-		padding: 1rem;
+		height: 650px;
 	}
 </style>

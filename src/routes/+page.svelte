@@ -9,6 +9,7 @@
 	import RenewableIconAnim from '$lib/components/homepage/RenewableIconAnim.svelte';
 	import { format, isToday } from 'date-fns';
 	import Switch from '$lib/components/Switch.svelte';
+	import IspSection from '$lib/components/homepage/IspSection.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -42,6 +43,8 @@
 	// Track map mode and data
 	$: mapMode = 'live';
 	$: mapData = data[mapMode];
+
+	$: console.log('data', data);
 </script>
 
 <div class="bg-light-warm-grey">
@@ -153,7 +156,7 @@
 </div>
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
-		<h3>ISP Explorer</h3>
+		<IspSection {data} />
 	</div>
 </div>
 <div class="bg-light-warm-grey py-40">

@@ -1,12 +1,14 @@
 export const fuelTechNameMap = {
-	demand_response: 'Demand Response',
-	interconnector: 'Interconnector',
-	exports: 'Exports',
-	imports: 'Imports',
-
 	battery_charging: 'Battery (Charging)',
 	battery_VPP_charging: 'Battery (VPP Charging)',
 	battery_distributed_charging: 'Battery (Distributed Charging)',
+
+	demand_response: 'Demand Response',
+	exports: 'Exports',
+
+	interconnector: 'Interconnector',
+	imports: 'Imports',
+
 	battery_discharging: 'Battery (Discharging)',
 	battery_VPP_discharging: 'Battery (VPP Discharging)',
 	battery_distributed_discharging: 'Battery (Distributed Discharging)',

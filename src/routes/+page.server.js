@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity';
 import { format, isToday } from 'date-fns';
 import { energyData } from '$lib/stats';
+import ispData from '$lib/isp';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params, fetch }) {
@@ -18,6 +19,7 @@ export async function load({ params, fetch }) {
 	}
 
 	const { annual, live } = await energyData();
+	const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
 	if (homepageData && homepageData.length > 0) {
 		return {
@@ -25,7 +27,12 @@ export async function load({ params, fetch }) {
 			articles,
 			records,
 			annual,
-			live
+			live,
+
+			outlookEnergyNem,
+			pathways,
+			scenarios,
+			fuelTechs
 		};
 	}
 

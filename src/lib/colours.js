@@ -18,7 +18,7 @@ export const createIntensityScale = (max) => scale(spectrum.intensity).domain([0
 export const createPriceScale = (max) =>
 	scale(spectrum.price).domain([0, max]).classes(spectrum.price.length);
 
-const MIN_CONTRAST_RATIO = 5;
+const MIN_CONTRAST_RATIO = 3;
 const WHITE = chroma('white');
 const BLACK = chroma('black');
 

@@ -28,12 +28,12 @@ export function transformToTimeSeriesDataset(dataset) {
 		const startDate = new Date(useDate(start));
 		const lastDate = new Date(useDate(last));
 
-		console.log('interval', interval);
-		console.log('start', start);
-		console.log('startDate', startDate);
-		console.log('last', last);
-		console.log('lastDate', lastDate);
-		console.log('intervalObj', intervalObj);
+		// console.log('interval', interval);
+		// console.log('start', start);
+		// console.log('startDate', startDate);
+		// console.log('last', last);
+		// console.log('lastDate', lastDate);
+		// console.log('intervalObj', intervalObj);
 
 		let currentTime = startDate.getTime();
 		let lastTime = lastDate.getTime();
@@ -60,7 +60,7 @@ export function transformToTimeSeriesDataset(dataset) {
 			const data = ds.projection.data;
 
 			// TODO: throw a warning if length doesn't match
-			console.log('check length', tsData.length, data.length);
+			// console.log('check length', tsData.length, data.length);
 
 			data.forEach(
 				/**
@@ -74,7 +74,7 @@ export function transformToTimeSeriesDataset(dataset) {
 			);
 		});
 
-		console.log('tsData', tsData);
+		// console.log('tsData', tsData);
 
 		return tsData;
 	}

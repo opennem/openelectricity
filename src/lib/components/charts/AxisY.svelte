@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { padding, xRange, yScale } = getContext('LayerCake');
+	const { padding, xRange, yScale, containerWidth, height } = getContext('LayerCake');
 
 	/** @type {boolean} Extend lines from the ticks into the chart. d */
 	export let gridlines = true;
@@ -36,6 +36,8 @@
 
 	$: isBandwidth = typeof $yScale.bandwidth === 'function';
 
+	$: console.log('width', $containerWidth, $height);
+
 	$: tickVals = Array.isArray(ticks)
 		? ticks
 		: isBandwidth
@@ -46,6 +48,7 @@
 </script>
 
 <g class="axis y-axis" transform="translate({-$padding.left}, 0)">
+	<rect width={$containerWidth} height={$height} fill="#FAF9F6" />
 	{#each tickVals as tick (tick)}
 		<g
 			class="tick tick-{tick}"
