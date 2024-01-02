@@ -1,4 +1,4 @@
-import chroma, { scale } from 'chroma-js';
+import chroma, { scale, contrast } from 'chroma-js';
 
 export const spectrum = {
 	intensity: ['#52A972', '#9ED48B', '#E9FFAA', '#A6A36F', '#594929'],
@@ -23,6 +23,6 @@ const WHITE = chroma('white');
 const BLACK = chroma('black');
 
 export const getContrastedTextColour = (colour) => {
-	const contrastRatio = chroma.contrast(colour, WHITE);
+	const contrastRatio = contrast(colour, WHITE);
 	return contrastRatio >= MIN_CONTRAST_RATIO ? WHITE : BLACK;
 };
