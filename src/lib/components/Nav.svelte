@@ -5,7 +5,7 @@
 	const navItems = [
 		{ name: 'Data Tracker', href: 'https://data.openelectricity.org.au/' },
 		{ name: 'Facilities Map', href: 'https://data.openelectricity.org.au/facilities' },
-		{ name: 'Future Scenarios', href: '/isp' },
+		{ name: 'Future Scenarios', href: '/isp-tracker' },
 		{ name: 'Latest Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },
 		{ name: 'About', href: '/content/about' }
