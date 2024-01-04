@@ -21,6 +21,10 @@
 		return fill ? fill : $zGet(d);
 	}
 
+	/**
+	 * @param {MouseEvent|FocusEvent} e
+	 * @param {*} d
+	 */
 	function handleMousemove(e, d) {
 		dispatch('mousemove', { e, data: d });
 	}

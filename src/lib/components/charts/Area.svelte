@@ -6,7 +6,8 @@
 	/** @type {string} shape fill colour */
 	export let fill = '#ababab10';
 
-	$: path = 'M' + $data.map((d) => `${$xGet(d)},${$yGet(d)}`).join('L');
+	$: path =
+		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');
 
 	let area = '';
 

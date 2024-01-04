@@ -3,10 +3,11 @@
 
 	const { data, xGet, yGet } = getContext('LayerCake');
 
-	/** @type {string} = shape's fill colour */
+	/** @type {string} shape's fill colour */
 	export let stroke = '#ababab';
 
-	$: path = 'M' + $data.map((d) => `${$xGet(d)},${$yGet(d)}`).join('L');
+	$: path =
+		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');
 </script>
 
 <path class="path-line" d={path} {stroke} />
