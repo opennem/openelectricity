@@ -69,7 +69,6 @@
 		right: 0;
 		bottom: 0;
 		left: 0;
-		background-color: rgba(64, 113, 156, 0.1);
 	}
 	.line {
 		position: absolute;
