@@ -3,8 +3,8 @@ import useDate from './use-date';
 
 /**
  * Transform backend json data to time series dataset and also additional meta data about the time series data
- * @param {*} dataset
- * @returns {[{time: number, date: Date, [key: string]: number}]|[]}
+ * @param {import('$lib/types/isp.types').IspData[]} dataset
+ * @returns {import('$lib/types/chart.types').TimeSeriesData[]|[]}
  */
 export function transformToTimeSeriesDataset(dataset) {
 	console.log('before', dataset);
@@ -49,6 +49,7 @@ export function transformToTimeSeriesDataset(dataset) {
 					date: new Date(currentTime)
 				});
 				currentTime = intervalObj
+					// @ts-ignore
 					.incrementerFn(currentTime, intervalObj.incrementerValue)
 					.getTime();
 			}

@@ -1,3 +1,8 @@
+import { getKeys } from '$lib/utils/keys';
+
+/** @typedef {import("./types/fuel_tech.types").FuelTechCode} FuelTechCode */
+
+/** @type {Object.<FuelTechCode, string>}} */
 export const fuelTechNameMap = {
 	battery_charging: 'Battery (Charging)',
 	battery_VPP_charging: 'Battery (VPP Charging)',
@@ -78,6 +83,7 @@ export const fuelTechGroupMap = {
 	solar: ['solar_utility', 'solar_thermal', 'solar_rooftop']
 };
 
+/** @type {Object.<FuelTechCode, string>}} */
 export const fuelTechColourMap = {
 	battery_charging: '#4F5FD7',
 	battery_discharging: '#3145CE',
@@ -124,8 +130,8 @@ export const fuelTechColourMap = {
 	demand_response: '#7F7F7F'
 };
 
-export const fuelTechGroups = Object.keys(fuelTechGroupMap);
-export const fuelTechNames = Object.keys(fuelTechNameMap);
+export const fuelTechGroups = getKeys(fuelTechGroupMap);
+export const fuelTechNames = getKeys(fuelTechNameMap);
 
 export const fuelTechGroup = (groupCode) => {
 	if (fuelTechGroupMap[groupCode]) return fuelTechGroupMap[groupCode];
@@ -135,13 +141,13 @@ export const fuelTechGroup = (groupCode) => {
 /**
  * Takes an array of records and sorts them into days,
  * and groups together commom record types within the days
- * @param {import("./types/fuel_tech.types").FuelTechCode} ftCode
+ * @param {FuelTechCode} ftCode
  * @returns {string}
  */
 export const fuelTechName = (ftCode) => fuelTechNameMap[ftCode] || ftCode;
 
 /**
- * @param {import("./types/fuel_tech.types").FuelTechCode} ftCode
+ * @param {FuelTechCode} ftCode
  * @returns {string}
  */
 export const fuelTechColour = (ftCode) => fuelTechColourMap[ftCode] || '#fff';

@@ -1,12 +1,13 @@
 <script>
-	import { LayerCake, Svg, flatten, stack } from 'layercake';
+	import { LayerCake, Svg, Html, flatten, stack } from 'layercake';
 	import { scaleOrdinal } from 'd3-scale';
 	import { format } from 'd3-format';
-	import { timeFormat } from 'd3-time-format';
+	import { format as dateFormat } from 'date-fns';
 
 	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
+	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 
 	export let data = [];
 	export let xKey = '';
@@ -17,10 +18,13 @@
 	export let seriesNames = [];
 	export let seriesColours = [];
 
-	const formatTickX = timeFormat('%Y');
+	const formatTickX = (d) => dateFormat(d, 'yyyy');
 	const formatTickY = (d) => format('~s')(d);
 
+	let evt;
+
 	$: stackedData = stack(data, seriesNames);
+	$: allYears = [...new Set(data.map((d) => d.date))];
 </script>
 
 <div class="chart-container">
@@ -51,11 +55,16 @@
 			</defs>
 
 			<AxisY formatTick={formatTickY} />
-			<AxisX formatTick={formatTickX} tickMarks={true} />
+			<AxisX ticks={allYears} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
 
-			<AreaStacked />
-			<AreaStacked fill="url(#hatch-pattern)" />
+			<AreaStacked on:mousemove={(event) => (evt = event.detail)} on:mouseout />
+
+			<!-- <AreaStacked fill="url(#hatch-pattern)" /> -->
 		</Svg>
+
+		<Html>
+			<HoverLine dataset={data} />
+		</Html>
 	</LayerCake>
 </div>
 
