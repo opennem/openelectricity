@@ -1,11 +1,10 @@
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity';
-import { format, isToday } from 'date-fns';
 import { energyData } from '$lib/stats';
 import ispData from '$lib/isp';
 
 /** @type {import('./$types').PageServerLoad} */
-export async function load({ params, fetch }) {
+export async function load({ fetch }) {
 	const homepageData = await client.fetch(
 		`*[_type == "homepage"]{_id, banner_title, banner_statement, map_title, chart_title, records_title, analysis_title, goals_title, goals}`
 	);
