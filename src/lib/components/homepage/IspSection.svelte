@@ -74,7 +74,7 @@
 
 	/** @type {IspData[]} */
 	let dataset = [];
-	/** @type {Object.<string, *>[]} */
+	/** @type {TimeSeriesData[] | []} */
 	let tsData = [];
 	/** @type {string[]} */
 	let seriesNames = [];
@@ -248,7 +248,7 @@
 				<p class="mt-6">No data for this scenario and pathway</p>
 			{:else}
 				<IspChart
-					data={tsData}
+					dataset={tsData}
 					{xKey}
 					yKey={[0, 1]}
 					yDomain={selectedScenario === 'hydrogen_superpower' ? undefined : [-150000, 500000]}

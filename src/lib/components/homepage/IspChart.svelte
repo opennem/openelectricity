@@ -9,28 +9,40 @@
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 
-	export let data = [];
-	export let xKey = '';
-	export let yKey = [];
-	export let yDomain = undefined;
-	export let zKey = 'key';
+	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
+	export let dataset = [];
 
+	export let xKey = '';
+
+	/** @type {number[]} */
+	export let yKey = [];
+
+	/** @type {number[] | undefined} */
+	export let yDomain = undefined;
+
+	export let zKey = '';
+
+	/** @type {string[]} */
 	export let seriesNames = [];
+
+	/** @type {string[]} */
 	export let seriesColours = [];
 
-	const formatTickX = (d) => dateFormat(d, 'yyyy');
-	const formatTickY = (d) => format('~s')(d);
+	const formatTickX = (/** @type {Date} */ d) => dateFormat(d, 'yyyy');
+	const formatTickY = (/** @type {number} */ d) => format('~s')(d);
 
+	/** @type {*} */
 	let evt;
+	$: console.log('evt', evt);
 
-	$: stackedData = stack(data, seriesNames);
-	$: allYears = [...new Set(data.map((d) => d.date))];
+	$: stackedData = stack(dataset, seriesNames);
+	$: allYears = [...new Set(dataset.map((d) => d.date))];
 </script>
 
 <div class="chart-container">
 	<LayerCake
 		padding={{ top: 20, right: 0, bottom: 20, left: 0 }}
-		x={(d) => d.data[xKey]}
+		x={(/** @type {*} */ d) => d.data[xKey]}
 		y={yKey}
 		{yDomain}
 		yNice={4}
@@ -57,13 +69,16 @@
 			<AxisY formatTick={formatTickY} />
 			<AxisX ticks={allYears} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
 
-			<AreaStacked on:mousemove={(event) => (evt = event.detail)} on:mouseout />
-
-			<!-- <AreaStacked fill="url(#hatch-pattern)" /> -->
+			<AreaStacked />
+			<AreaStacked
+				fill="url(#hatch-pattern)"
+				on:mousemove={(event) => (evt = event.detail)}
+				on:mouseout
+			/>
 		</Svg>
 
 		<Html>
-			<HoverLine dataset={data} />
+			<HoverLine {dataset} />
 		</Html>
 	</LayerCake>
 </div>
