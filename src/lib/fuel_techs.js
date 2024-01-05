@@ -53,11 +53,11 @@ export const fuelTechNameMap = {
 
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 export const fuelTechGroupMap = {
-	battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
-	demand_response: ['demand_response'],
-	exports: ['exports'],
+	// battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
+	// demand_response: ['demand_response'],
+	// exports: ['exports'],
 
-	imports: ['imports'],
+	// imports: ['imports'],
 
 	battery_discharging: [
 		'battery_discharging',

@@ -1,5 +1,8 @@
 <script>
 	import { LayerCake, Svg, Html, flatten, stack } from 'layercake';
+	import { tweened } from 'svelte/motion';
+	import * as eases from 'svelte/easing';
+
 	import { scaleOrdinal } from 'd3-scale';
 	import { format } from 'd3-format';
 	import { format as dateFormat } from 'date-fns';
@@ -8,6 +11,8 @@
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
+	import Overlay from '$lib/components/charts/Overlay.svelte';
+	import HatchPattern from '$lib/components/charts/defs/HatchPattern.svelte';
 
 	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
 	export let dataset = [];
@@ -31,12 +36,34 @@
 	const formatTickX = (/** @type {Date} */ d) => dateFormat(d, 'yyyy');
 	const formatTickY = (/** @type {number} */ d) => format('~s')(d);
 
+	/** TODO: work out transition */
+	const tweenOptions = {
+		duration: 750,
+		easing: eases.cubicInOut
+	};
+	const yTweened = tweened(/** @type {number|undefined} */ (undefined), tweenOptions);
+
+	$: maxY = yDomain ? yDomain[1] : undefined;
+	// $: maxArr = [...dataset.map((d) => d._max)];
+	// @ts-ignore
+	// $: datasetMax = maxArr ? Math.max(...maxArr) : 0;
+	$: if (dataset) yTweened.set(maxY);
+
+	$: console.log('maxY', maxY);
+	/** end */
+
 	/** @type {*} */
 	let evt;
 	$: console.log('evt', evt);
 
 	$: stackedData = stack(dataset, seriesNames);
-	$: allYears = [...new Set(dataset.map((d) => d.date))];
+	// $: allYears = [...new Set(dataset.map((d) => d.date))];
+	const someYears = [
+		new Date('2050-01-01'),
+		new Date('2040-01-01'),
+		new Date('2030-01-01'),
+		new Date('2024-01-01')
+	];
 </script>
 
 <div class="chart-container">
@@ -44,8 +71,7 @@
 		padding={{ top: 20, right: 0, bottom: 20, left: 0 }}
 		x={(/** @type {*} */ d) => d.data[xKey]}
 		y={yKey}
-		{yDomain}
-		yNice={4}
+		yDomain={[0, $yTweened]}
 		z={zKey}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
@@ -55,30 +81,18 @@
 	>
 		<Svg>
 			<defs>
-				<pattern
-					id="hatch-pattern"
-					width="4"
-					height="4"
-					patternUnits="userSpaceOnUse"
-					patternTransform="rotate(45)"
-				>
-					<line stroke="rgba(236, 233, 230, 0.3)" stroke-width="2px" y2="10" />
-				</pattern>
+				<HatchPattern id="hatch-pattern" />
 			</defs>
 
-			<AxisY formatTick={formatTickY} />
-			<AxisX ticks={allYears} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
+			<AxisY ticks={2} xTick={5} formatTick={formatTickY} gridlines={true} />
+			<AxisX ticks={someYears} gridlines={false} formatTick={formatTickX} tickMarks={true} />
 
-			<AreaStacked />
-			<AreaStacked
-				fill="url(#hatch-pattern)"
-				on:mousemove={(event) => (evt = event.detail)}
-				on:mouseout
-			/>
+			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
+			<Overlay fill="url(#hatch-pattern)" />
 		</Svg>
 
 		<Html>
-			<HoverLine {dataset} />
+			<HoverLine {dataset} formatValue={formatTickX} />
 		</Html>
 	</LayerCake>
 </div>

@@ -7,8 +7,6 @@ import useDate from './use-date';
  * @returns {import('$lib/types/chart.types').TimeSeriesData[]|[]}
  */
 export function transformToTimeSeriesDataset(dataset) {
-	console.log('before', dataset);
-
 	// get all the projection data unique interval, start and last
 	// - expect all should be the same
 	const intervals = [...new Set(dataset.map((d) => d.projection.interval))];

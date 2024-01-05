@@ -2,15 +2,19 @@
 	import { getContext } from 'svelte';
 	import { closestTo } from 'date-fns';
 
-	const { xGet, yGet, xScale } = getContext('LayerCake');
+	const { xGet, yGet, xScale, height } = getContext('LayerCake');
 
 	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
 	export let dataset = [];
+
+	/** @type {Function} A function that passes the current value and expects a nicely formatted value in return. */
+	export let formatValue = (/** @type {*} */ d) => d;
 
 	let visible = false;
 	let x = 0;
 	let y = [0, 0];
 	let useDataHeight = false;
+	let value = 0;
 
 	$: compareDates = [...new Set(dataset.map((d) => d.date))];
 
@@ -29,12 +33,19 @@
 
 		x = $xGet({ data });
 
-		if (found && found._max && found._min) {
+		if (found) {
+			value = found.time;
+		} else {
+			value = 0;
+		}
+
+		if (found && found._max !== undefined && found._min !== undefined) {
 			useDataHeight = true;
 			y = $yGet([found._max, found._min]);
 		} else {
 			useDataHeight = false;
 		}
+
 		visible = true;
 	}
 </script>
@@ -49,20 +60,28 @@
 
 {#if visible}
 	{#if useDataHeight}
-		<div style="left: {x - 1}px; top:{y[0]}px; height: {y[1] - y[0]}px;" class="line" />
+		<div style="left: {x - 1}px; top: {y[0]}px; height: {y[1] - y[0]}px;" class="hover-line" />
 	{:else}
-		<div style="left: {x - 1}px;" class="line" />
+		<div style="left: {x - 1}px;" class="hover-line" />
 	{/if}
+	<div style="left: {x - 12}px; top: {$height + 5}px" class="hover-text">{formatValue(value)}</div>
 {/if}
 
 <style>
-	.line {
+	.hover-line,
+	.hover-text {
 		position: absolute;
 		top: 0;
 		bottom: 0;
 		left: 0;
-		width: 2px;
-		border-left: 2px dotted #333;
 		pointer-events: none;
+	}
+	.hover-line {
+		width: 1px;
+		border-left: 1px solid #333;
+	}
+	.hover-text {
+		font-size: 10px;
+		font-weight: 400;
 	}
 </style>

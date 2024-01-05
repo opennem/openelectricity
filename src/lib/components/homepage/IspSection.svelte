@@ -13,6 +13,7 @@
 	import IspChart from '$lib/components/homepage/IspChart.svelte';
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Icon from '$lib/components/Icon.svelte';
+	import Select from '$lib/components/form-elements/Select.svelte';
 
 	/** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
 	/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
@@ -34,13 +35,13 @@
 		'demand_response'
 	];
 
-	/** @type {string|null} */
-	let selectedPathway = null;
+	/** @type {string|undefined} */
+	let selectedPathway;
 	let selectedScenario = scenarios[0];
 	let selectedFtGroup = ftGroups[0];
 
 	$: scenarioPathways = [...new Set(filteredWithScenario.map((d) => d.pathway))].sort(); // get all pathways for selected scenario
-	$: if (selectedPathway === null) {
+	$: if (selectedPathway === undefined) {
 		selectedPathway = scenarioPathways[0]; // initialise selected pathway to first pathway in scenario
 	}
 
@@ -183,7 +184,7 @@
 	</header>
 
 	<div class="flex">
-		<div class="text-dark-grey max-w-[450px] text-sm">
+		<div class="text-dark-grey max-w-[400px] text-sm">
 			<div class="pr-12">
 				<p>
 					A range of modelled scenarios exist which envision the evolution of Australia's National
@@ -194,56 +195,42 @@
 					system en route to a zero-emissions electricity network.
 				</p>
 				<p>Explore the <strong>2022 AEMO</strong> future scenarios below.</p>
+			</div>
 
-				<div class="flex flex-wrap gap-6">
-					{#each scenarios as scenario}
-						<button
-							class="rounded-lg border border-mid-warm-grey hover:bg-light-warm-grey px-8 py-4 capitalize"
-							class:border-dark-grey={selectedScenario === scenario}
-							class:bg-light-warm-grey={selectedScenario === scenario}
-							value={scenario}
-							on:click={() => {
-								selectedScenario = scenario;
-							}}
-						>
-							{scenario.split('_').join(' ')}
-						</button>
-					{/each}
-				</div>
+			<div class="flex flex-wrap gap-6">
+				{#each scenarios as scenario}
+					<button
+						class="rounded-lg border border-mid-warm-grey hover:bg-light-warm-grey px-6 py-4 capitalize"
+						class:border-dark-grey={selectedScenario === scenario}
+						class:bg-light-warm-grey={selectedScenario === scenario}
+						value={scenario}
+						on:click={() => {
+							selectedScenario = scenario;
+						}}
+					>
+						{scenario.split('_').join(' ')}
+					</button>
+				{/each}
+			</div>
+
+			<div
+				class="border-t-1 border-mid-warm-grey pt-6 mt-12 mr-12 flex gap-6 text-sm text-alert-yellow"
+			>
+				<label for="pathway-select">
+					<span>Pathways</span>
+					<Select bind:value={selectedPathway} options={scenarioPathways} id="pathway-select" />
+				</label>
+
+				<label for="ft-group-select">
+					<span>Fuel Technology Group</span>
+					<Select bind:value={selectedFtGroup} options={ftGroups} id="ft-group-select" />
+				</label>
 			</div>
 		</div>
 
+		<!-- yDomain={selectedScenario === 'hydrogen_superpower' ? undefined : [0, 500000]} -->
+
 		<div class="w-full">
-			<div class="flex gap-6 text-sm text-alert-yellow">
-				<label>
-					<span>Pathways</span>
-
-					<select
-						bind:value={selectedPathway}
-						class="w-full block rounded-md text-base border-0 py-4 pl-4 pr-12 text-dark-grey ring-1 ring-mid-warm-grey focus:ring-dark-grey"
-					>
-						{#each scenarioPathways as pathway}
-							<option value={pathway}>{pathway}</option>
-						{/each}
-					</select>
-				</label>
-
-				<label>
-					<span>Fuel Technology Group</span>
-
-					<select
-						bind:value={selectedFtGroup}
-						class="w-full block rounded-md text-base border-0 py-4 pl-4 pr-12 text-dark-grey ring-1 ring-mid-warm-grey focus:ring-dark-grey"
-					>
-						{#each ftGroups as ftGroup}
-							<option value={ftGroup}>
-								{ftGroup}
-							</option>
-						{/each}
-					</select>
-				</label>
-			</div>
-
 			{#if filteredWithPathwayScenario.length === 0}
 				<p class="mt-6">No data for this scenario and pathway</p>
 			{:else}
@@ -251,7 +238,7 @@
 					dataset={tsData}
 					{xKey}
 					yKey={[0, 1]}
-					yDomain={selectedScenario === 'hydrogen_superpower' ? undefined : [-150000, 500000]}
+					yDomain={selectedScenario === 'hydrogen_superpower' ? [0, 1550000] : [0, 550000]}
 					zKey="key"
 					{seriesNames}
 					{seriesColours}
