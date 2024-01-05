@@ -6,7 +6,7 @@
 	/** @type {string | number } */
 	export let selected = '';
 	/** @type {(value: string) => void} */
-	export let onChange = (value) => {};
+	export let onChange = () => {};
 </script>
 
 <div class={`inline-flex text-sm rounded-md bg-light-warm-grey ${$$restProps.class}`}>

@@ -13,7 +13,7 @@
 
 		const data = new FormData(event.currentTarget);
 
-		const res = await fetch('/api/signup', {
+		await fetch('/api/signup', {
 			method: 'POST',
 			body: JSON.stringify({ email: data.get('email') })
 		});

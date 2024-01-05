@@ -5,6 +5,8 @@ export const spectrum = {
 	price: ['#F2F1EE', '#D1D0CD', '#B0B0AE', '#91918F', '#737372', '#565655', '#3B3B3B', '#222222']
 };
 
+/** @typedef {import('chroma-js').Color} Color */
+
 /**
  * @param {number} max
  * @returns {import("chroma-js").Scale}
@@ -22,6 +24,11 @@ const minContrastRatio = 3;
 const white = chroma('white');
 const black = chroma('black');
 
+/**
+ * Returns either black or white depending on which has the highest contrast ratio
+ * @param {Color} colour
+ * @returns {Color}
+ */
 export const getContrastedTextColour = (colour) => {
 	const contrastRatio = contrast(colour, white);
 	return contrastRatio >= minContrastRatio ? white : black;

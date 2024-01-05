@@ -51,6 +51,7 @@ export const fuelTechNameMap = {
 	solar: 'Solar'
 };
 
+/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 export const fuelTechGroupMap = {
 	battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
 	demand_response: ['demand_response'],
@@ -130,9 +131,14 @@ export const fuelTechColourMap = {
 	demand_response: '#7F7F7F'
 };
 
-export const fuelTechGroups = getKeys(fuelTechGroupMap);
+export const fuelTechGroups = /** @type {FuelTechCode[]} */ (getKeys(fuelTechGroupMap));
 export const fuelTechNames = getKeys(fuelTechNameMap);
 
+/**
+ *
+ * @param {FuelTechCode} groupCode
+ * @returns {FuelTechCode[]}
+ */
 export const fuelTechGroup = (groupCode) => {
 	if (fuelTechGroupMap[groupCode]) return fuelTechGroupMap[groupCode];
 	return [groupCode];

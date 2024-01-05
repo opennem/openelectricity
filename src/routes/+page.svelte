@@ -21,7 +21,9 @@
 		map_title,
 		records_title,
 		analysis_title,
-		articles
+		articles,
+		outlookEnergyNem,
+		fuelTechs
 	} = data;
 
 	// Process records
@@ -154,7 +156,7 @@
 </div>
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
-		<IspSection {data} />
+		<IspSection data={{ fuelTechs, outlookEnergyNem }} />
 	</div>
 </div>
 <div class="bg-light-warm-grey py-40">
