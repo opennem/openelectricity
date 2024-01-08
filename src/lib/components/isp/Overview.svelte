@@ -154,9 +154,9 @@
 		</ButtonLink>
 	</header>
 
-	<div class="flex">
-		<div class="text-dark-grey max-w-[400px] text-sm">
-			<div class="pr-12">
+	<div class="flex gap-12">
+		<div class="text-dark-grey max-w-[450px] w-2/5 text-sm">
+			<div>
 				<p>
 					A range of modelled scenarios exist which envision the evolution of Australia's National
 					Electricity Market (NEM) over the coming decades.
@@ -168,7 +168,7 @@
 				<p>Explore the <strong>2022 AEMO</strong> future scenarios below.</p>
 			</div>
 
-			<div class="flex flex-wrap gap-6">
+			<div class="grid grid-cols-2 gap-6">
 				{#each scenarios as scenario}
 					<button
 						class="rounded-lg border border-mid-warm-grey hover:bg-light-warm-grey px-6 py-4 capitalize"
@@ -201,7 +201,7 @@
 
 		<!-- yDomain={selectedScenario === 'hydrogen_superpower' ? undefined : [0, 500000]} -->
 
-		<div class="w-full">
+		<div class="w-3/5">
 			{#if filteredWithPathwayScenario.length === 0}
 				<p class="mt-6">No data for this scenario and pathway</p>
 			{:else}

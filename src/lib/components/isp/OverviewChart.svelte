@@ -65,7 +65,7 @@
 
 <div class="chart-container">
 	<LayerCake
-		padding={{ top: 20, right: 0, bottom: 20, left: 0 }}
+		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
 		x={(/** @type {*} */ d) => d.data[xKey]}
 		y={yKey}
 		yDomain={[0, $yTweened]}
