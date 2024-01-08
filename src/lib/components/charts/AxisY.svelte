@@ -46,7 +46,6 @@
 </script>
 
 <g class="axis y-axis" transform="translate({-$padding.left}, 0)">
-	<rect width={$containerWidth} height={$height} fill="#FAF9F6" />
 	{#each tickVals as tick (tick)}
 		<g
 			class="tick tick-{tick}"

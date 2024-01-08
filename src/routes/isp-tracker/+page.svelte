@@ -1,8 +1,8 @@
 <script>
-	import IspSection from '$lib/components/homepage/IspSection.svelte';
+	import IspOverview from '$lib/components/isp/Overview.svelte';
 
 	/** @type {{ fuelTechs: string[], outlookEnergyNem: import('$lib/types/isp.types').Isp }} */
 	export let data;
 </script>
 
-<IspSection {data} />
+<IspOverview {data} />

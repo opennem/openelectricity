@@ -20,6 +20,7 @@ export type IspData = {
 	pathway: string;
 	units: string;
 	projection: Projection;
+	colour?: string;
 };
 
 export type Projection = {

@@ -4,8 +4,8 @@
 	import * as eases from 'svelte/easing';
 
 	import { scaleOrdinal } from 'd3-scale';
-	import { format } from 'd3-format';
-	import { format as dateFormat } from 'date-fns';
+
+	import { formatTickX, formatTickY } from './helpers';
 
 	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
@@ -33,17 +33,14 @@
 	/** @type {string[]} */
 	export let seriesColours = [];
 
-	const formatTickX = (/** @type {Date} */ d) => dateFormat(d, 'yyyy');
-	const formatTickY = (/** @type {number} */ d) => format('~s')(d);
-
 	/** TODO: work out transition */
 	const tweenOptions = {
 		duration: 750,
 		easing: eases.cubicInOut
 	};
-	const yTweened = tweened(/** @type {number|undefined} */ (undefined), tweenOptions);
+	const yTweened = tweened(/** @type {number|null} */ (null), tweenOptions);
 
-	$: maxY = yDomain ? yDomain[1] : undefined;
+	$: maxY = yDomain ? yDomain[1] : null;
 	// $: maxArr = [...dataset.map((d) => d._max)];
 	// @ts-ignore
 	// $: datasetMax = maxArr ? Math.max(...maxArr) : 0;

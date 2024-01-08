@@ -1,19 +1,18 @@
 <script>
 	import { getContrastedTextColour } from '$lib/colours.js';
-	import {
-		fuelTechNames,
-		fuelTechName,
-		fuelTechColour,
-		fuelTechGroups,
-		fuelTechGroup
-	} from '$lib/fuel_techs.js';
+	import { fuelTechNames, fuelTechName, fuelTechColour, fuelTechGroups } from '$lib/fuel_techs.js';
 	import { transformToTimeSeriesDataset } from '$lib/utils/time-series-helpers';
 	import deepCopy from '$lib/utils/deep-copy';
+	import { updateWithMinMaxValues, groupedIspData } from './helpers';
 
-	import IspChart from '$lib/components/homepage/IspChart.svelte';
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Select from '$lib/components/form-elements/Select.svelte';
+
+	import OverviewChart from './OverviewChart.svelte';
+	import Gauges from './Gauges.svelte';
+	import Sparklines from './Sparklines.svelte';
+	import SparkLineArea from './SparkLineArea.svelte';
 
 	/** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
 	/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
@@ -26,6 +25,8 @@
 
 	let ftGroups = ['Custom', 'Detailed'];
 	let scenarios = ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower']; // scenarios in display order
+	let metricKeys = ['wind', 'solar', 'coal']; // gauge metrics in display order
+
 	/** @type {FuelTechCode[]} */
 	let loadFts = [
 		'exports',
@@ -58,7 +59,9 @@
 		fuelTechNames.forEach((/** @type {*} */ code) => {
 			const filtered = filteredWithPathwayScenario.filter((d) => d.fuel_tech === code);
 			if (filtered.length > 0) {
-				orderedFilteredWithPathwayScenario.push(deepCopy(filtered[0]));
+				const copy = deepCopy(filtered[0]);
+				copy.colour = fuelTechColour(code);
+				orderedFilteredWithPathwayScenario.push(copy);
 			}
 		});
 
@@ -77,10 +80,16 @@
 	let dataset = [];
 	/** @type {TimeSeriesData[] | []} */
 	let tsData = [];
+
+	/** @type {TimeSeriesData[] | []} */
+	let tsData2 = [];
+
 	/** @type {string[]} */
 	let seriesNames = [];
 	/** @type {string[]} */
 	let seriesColours = [];
+
+	$: isCustomGroup = selectedFtGroup === 'Custom';
 
 	$: if (selectedFtGroup === 'Custom') {
 		let groupedDatasets = groupedIspData(fuelTechGroups, orderedFilteredWithPathwayScenario);
@@ -96,6 +105,8 @@
 		dataset = groupedDatasets;
 	} else if (selectedFtGroup === 'Detailed') {
 		let transformedFiltered = transformToTimeSeriesDataset(orderedFilteredWithPathwayScenario);
+		let transformedFiltered2 = transformToTimeSeriesDataset(filteredWithPathwayScenario);
+
 		seriesColours = orderedFilteredWithPathwayScenario.map((d) => fuelTechColour(d.fuel_tech));
 		seriesNames =
 			transformedFiltered && transformedFiltered.length
@@ -103,73 +114,33 @@
 				: [];
 		const loadSeries = seriesNames.filter((d) => loadFts.find((l) => d.includes(l)));
 		tsData = updateWithMinMaxValues(transformedFiltered, seriesNames, loadSeries);
+		tsData2 = updateWithMinMaxValues(transformedFiltered2, seriesNames, []);
 		dataset = orderedFilteredWithPathwayScenario;
 	}
 
-	/**
-	 * @param {TimeSeriesData[]} dataset
-	 * @param {string[]} seriesNames
-	 * @param {string[]} loadSeries
-	 * @returns {TimeSeriesData[]}
-	 */
-	function updateWithMinMaxValues(dataset, seriesNames, loadSeries) {
-		return dataset.map((d) => {
-			/** @type {TimeSeriesData} */
-			const newObj = { ...d };
-			// get min and max values for each time series
-			newObj._max = 0;
-			newObj._min = 0;
-			seriesNames.forEach((l) => {
-				const value = d[l] || 0;
-				if (newObj._max || newObj._max === 0) newObj._max += +value;
-			});
-			loadSeries.forEach((l) => {
-				const value = d[l] || 0;
-				if (newObj._min || newObj._min === 0) newObj._min += +value;
-			});
+	$: fuelTechLabelDict = dataset.reduce((/** @type {Object.<string, string>} */ acc, curr) => {
+		acc[curr.id] = fuelTechName(curr.fuel_tech);
+		return acc;
+	}, {});
+	$: fuelTechColourDict = dataset.reduce((/** @type {Object.<string, string>} */ acc, curr) => {
+		acc[curr.id] = fuelTechColour(curr.fuel_tech);
+		return acc;
+	}, {});
 
-			return newObj;
-		});
-	}
+	$: console.log('dataset', dataset, tsData);
+	$: console.log('fuelTechLabelDict', fuelTechLabelDict, fuelTechColourDict);
 
-	/**
-	 * @param {FuelTechCode[]} groups
-	 * @param {IspData[]} originalData
-	 * @returns {IspData[]}
-	 */
-	function groupedIspData(groups, originalData) {
-		/** @type {IspData[]} */
-		let grouped = [];
+	const trackYears = [2024, 2030, 2051];
+	const startEndYears = [2024, 2051];
 
-		groups.forEach((code) => {
-			const codes = fuelTechGroup(code);
-			const filtered = originalData.filter((d) => codes.includes(d.fuel_tech));
+	$: startEndXTicks = startEndYears.map((year) => new Date(`${year}-01-01`));
+	$: sparklineXTicks = trackYears.map((year) => new Date(`${year}-01-01`));
 
-			if (filtered.length > 0) {
-				const projection = filtered[0].projection;
-				const groupObject = {
-					...filtered[0],
-					fuel_tech: code,
-					id: `${code}.${filtered[0].scenario}.${filtered[0].pathway.toLowerCase()}`,
-					projection: { ...projection }
-				};
-
-				// set the group projection.data array to all zeros
-				groupObject.projection.data = groupObject.projection.data.map(() => 0);
-
-				// sum each filtered projection.data array into group projection data
-				filtered.forEach((d) => {
-					d.projection.data.forEach((d, i) => {
-						groupObject.projection.data[i] += d;
-					});
-				});
-
-				grouped.push(groupObject);
-			}
-		});
-
-		return grouped;
-	}
+	/** @type {TimeSeriesData[]} */
+	$: sparklineDataset = isCustomGroup
+		? trackYears.map((year) => tsData.find((d) => d.date.getFullYear() === year))
+		: trackYears.map((year) => tsData2.find((d) => d.date.getFullYear() === year));
+	$: console.log('sparklineDataset', sparklineDataset);
 </script>
 
 <section class="p-4">
@@ -234,7 +205,7 @@
 			{#if filteredWithPathwayScenario.length === 0}
 				<p class="mt-6">No data for this scenario and pathway</p>
 			{:else}
-				<IspChart
+				<OverviewChart
 					dataset={tsData}
 					{xKey}
 					yKey={[0, 1]}
@@ -259,5 +230,34 @@
 				</div>
 			{/if}
 		</div>
+	</div>
+
+	<!-- <div class="mt-12">
+		<Gauges
+			dataset={tsData}
+			keys={seriesNames}
+			labelDict={fuelTechLabelDict}
+			colourDict={fuelTechColourDict}
+		/>
+	</div> -->
+
+	<div class="mt-6">
+		<SparkLineArea
+			dataset={isCustomGroup ? tsData : tsData2}
+			keys={seriesNames}
+			xTicks={startEndXTicks}
+			labelDict={fuelTechLabelDict}
+			colourDict={fuelTechColourDict}
+		/>
+	</div>
+
+	<div class="mt-6">
+		<Sparklines
+			dataset={sparklineDataset}
+			keys={seriesNames}
+			xTicks={sparklineXTicks}
+			labelDict={fuelTechLabelDict}
+			colourDict={fuelTechColourDict}
+		/>
 	</div>
 </section>

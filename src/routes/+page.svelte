@@ -9,7 +9,7 @@
 	import RenewableIconAnim from '$lib/components/homepage/RenewableIconAnim.svelte';
 	import { format, isToday } from 'date-fns';
 	import Switch from '$lib/components/Switch.svelte';
-	import IspSection from '$lib/components/homepage/IspSection.svelte';
+	import IspOverview from '$lib/components/isp/Overview.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -156,7 +156,7 @@
 </div>
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
-		<IspSection data={{ fuelTechs, outlookEnergyNem }} />
+		<IspOverview data={{ fuelTechs, outlookEnergyNem }} />
 	</div>
 </div>
 <div class="bg-light-warm-grey py-40">
