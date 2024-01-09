@@ -266,7 +266,33 @@
 		/>
 	</div> -->
 
-	<div class="flex mb-12 w-[120px]">
+	{#if sparklineView === 'line'}
+		<div class="mt-6">
+			<SparkLineArea
+				dataset={isCustomGroup ? tsData : tsData2}
+				keys={seriesNames}
+				xTicks={startEndXTicks}
+				labelDict={fuelTechLabelDict}
+				colourDict={fuelTechColourDict}
+				{hoverData}
+				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+				on:mouseout={() => (hoverData = undefined)}
+			/>
+		</div>
+	{:else}
+		<div class="mt-6">
+			<Sparklines
+				dataset={sparklineDataset}
+				keys={seriesNames}
+				xTicks={sparklineXTicks}
+				labelDict={fuelTechLabelDict}
+				colourDict={fuelTechColourDict}
+				{hoverData}
+			/>
+		</div>
+	{/if}
+
+	<div class="flex mx-auto mt-12 w-[120px]">
 		<button
 			class="w-full text-center relative p-4 bg-light-warm-grey border rounded-tl-md rounded-bl-md hover:bg-white"
 			class:bg-white={sparklineView === 'line'}
@@ -296,29 +322,4 @@
 			</span>
 		</button>
 	</div>
-
-	{#if sparklineView === 'line'}
-		<div class="mt-6">
-			<SparkLineArea
-				dataset={isCustomGroup ? tsData : tsData2}
-				keys={seriesNames}
-				xTicks={startEndXTicks}
-				labelDict={fuelTechLabelDict}
-				colourDict={fuelTechColourDict}
-				{hoverData}
-				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-				on:mouseout={() => (hoverData = undefined)}
-			/>
-		</div>
-	{:else}
-		<div class="mt-6">
-			<Sparklines
-				dataset={sparklineDataset}
-				keys={seriesNames}
-				xTicks={sparklineXTicks}
-				labelDict={fuelTechLabelDict}
-				colourDict={fuelTechColourDict}
-			/>
-		</div>
-	{/if}
 </section>

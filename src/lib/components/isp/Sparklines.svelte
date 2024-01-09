@@ -8,6 +8,8 @@
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 
+	import KeyHeader from './KeyHeader.svelte';
+
 	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
 	export let dataset = [];
 
@@ -22,12 +24,15 @@
 
 	/** @type {Date[] | undefined} */
 	export let xTicks = undefined;
+
+	/** @type {TimeSeriesData | undefined}*/
+	export let hoverData = undefined;
 </script>
 
 <div class="grid grid-cols-6 gap-6">
 	{#each keys as key}
 		<div class="p-8 bg-light-warm-grey rounded-lg">
-			<h6 class="truncate">{labelDict[key]}</h6>
+			<KeyHeader {key} title={labelDict[key]} data={hoverData} />
 
 			<div style="height: 150px;">
 				<LayerCake
