@@ -9,6 +9,13 @@ import { fuelTechGroup } from '$lib/fuel_techs.js';
 
 export const formatTickX = (/** @type {Date} */ d) => dateFormat(d, 'yyyy');
 export const formatTickY = (/** @type {number} */ d) => format('~s')(d);
+export const formatValue = (/** @type {number} */ d) => {
+	const formatted = format('.0f')(d / 1000);
+	if (formatted !== '0') {
+		return formatted + 'k';
+	}
+	return formatted;
+};
 
 /**
  * @param {TimeSeriesData[]} dataset

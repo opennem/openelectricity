@@ -1,5 +1,5 @@
 <script>
-	import { LayerCake, Svg } from 'layercake';
+	import { LayerCake, Svg, Html } from 'layercake';
 
 	import { formatTickX, formatTickY } from './helpers';
 
@@ -7,8 +7,13 @@
 	import Area from '$lib/components/charts/Area.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
+	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 
-	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
+	import KeyHeader from './KeyHeader.svelte';
+
+	/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
+
+	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
 
 	/** @type {string[]} */
@@ -22,12 +27,15 @@
 
 	/** @type {Date[] | undefined} */
 	export let xTicks = undefined;
+
+	/** @type {TimeSeriesData | undefined}*/
+	export let hoverData = undefined;
 </script>
 
 <div class="grid grid-cols-6 gap-6">
 	{#each keys as key}
 		<div class="p-8 bg-light-warm-grey rounded-lg">
-			<h6 class="truncate">{labelDict[key]}</h6>
+			<KeyHeader {key} title={labelDict[key]} data={hoverData} />
 
 			<div style="height: 150px;">
 				<LayerCake
@@ -39,16 +47,27 @@
 				>
 					<Svg>
 						<AxisX
-							formatTick={formatTickX}
+							formatTick={hoverData ? () => '' : formatTickX}
 							ticks={xTicks}
 							tickMarks={true}
-							snapTicks={true}
 							gridlines={false}
 						/>
 						<AxisY formatTick={formatTickY} ticks={2} />
-						<Line stroke={colourDict[key]} />
+						<Line stroke={colourDict[key]} {hoverData} />
 						<Area fill={`${colourDict[key]}20`} />
 					</Svg>
+
+					<Html>
+						<HoverLine
+							{dataset}
+							{hoverData}
+							yTopOffset={6}
+							lineColour={colourDict[key]}
+							formatValue={formatTickX}
+							on:mousemove
+							on:mouseout
+						/>
+					</Html>
 				</LayerCake>
 			</div>
 		</div>

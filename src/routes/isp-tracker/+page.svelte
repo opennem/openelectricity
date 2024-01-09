@@ -5,4 +5,6 @@
 	export let data;
 </script>
 
-<IspOverview {data} />
+<div class="container">
+	<IspOverview {data} />
+</div>

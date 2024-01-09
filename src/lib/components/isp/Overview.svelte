@@ -25,7 +25,25 @@
 
 	let ftGroups = ['Custom', 'Detailed'];
 	let scenarios = ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower']; // scenarios in display order
+	let scenarioLabels = {
+		step_change: 'Step Change',
+		progressive_change: 'Progressive Change',
+		slow_change: 'Slow Change',
+		hydrogen_superpower: 'Hydrogen Superpower'
+	};
+
+	let scenarioDescriptions = {
+		step_change:
+			'The Step Change scenario is considered the most likely future for the National Electricity Market (NEM). This scenario takes into account various factors such as ageing generation plants, technical innovation, economics, government policies, energy security, and consumer choice.',
+		progressive_change:
+			'The Progressive Change scenario is designed to assess the potential impact of a gradual and evolving transition toward a low-carbon energy system, taking into account the complexities and challenges associated with achieving decarbonization goals.',
+		slow_change:
+			'The Slow Change scenario is an unlikely transition scenario that does not meet carbon reduction targets. It takes into account the difficult economic environment following the COVID-19 pandemic, reflecting a slower economy and falling short of the targets.',
+		hydrogen_superpower:
+			'The Hydrogen Superpower scenario is a highly ambitious scenario that includes strong global action, significant technological breakthroughs, and a near quadrupling of National Electricity Market (NEM) energy consumption to support a hydrogen export industry. '
+	};
 	let metricKeys = ['wind', 'solar', 'coal']; // gauge metrics in display order
+	let sparklineView = 'line'; // bar
 
 	/** @type {FuelTechCode[]} */
 	let loadFts = [
@@ -141,6 +159,9 @@
 		? trackYears.map((year) => tsData.find((d) => d.date.getFullYear() === year))
 		: trackYears.map((year) => tsData2.find((d) => d.date.getFullYear() === year));
 	$: console.log('sparklineDataset', sparklineDataset);
+
+	/** @type {TimeSeriesData | undefined} */
+	let hoverData = undefined;
 </script>
 
 <section class="p-4">
@@ -154,8 +175,8 @@
 		</ButtonLink>
 	</header>
 
-	<div class="flex gap-12">
-		<div class="text-dark-grey max-w-[450px] w-2/5 text-sm">
+	<div class="grid grid-cols-6 gap-12 mb-6">
+		<div class="text-dark-grey text-sm col-span-2">
 			<div>
 				<p>
 					A range of modelled scenarios exist which envision the evolution of Australia's National
@@ -171,7 +192,7 @@
 			<div class="grid grid-cols-2 gap-6">
 				{#each scenarios as scenario}
 					<button
-						class="rounded-lg border border-mid-warm-grey hover:bg-light-warm-grey px-6 py-4 capitalize"
+						class="rounded-lg border border-mid-warm-grey hover:bg-light-warm-grey px-4 py-4 capitalize"
 						class:border-dark-grey={selectedScenario === scenario}
 						class:bg-light-warm-grey={selectedScenario === scenario}
 						value={scenario}
@@ -201,11 +222,13 @@
 
 		<!-- yDomain={selectedScenario === 'hydrogen_superpower' ? undefined : [0, 500000]} -->
 
-		<div class="w-3/5">
+		<div class="col-span-4">
 			{#if filteredWithPathwayScenario.length === 0}
 				<p class="mt-6">No data for this scenario and pathway</p>
 			{:else}
 				<OverviewChart
+					title={`Energy Generation (GWh) under AEMO ${scenarioLabels[selectedScenario]} 2022`}
+					description={scenarioDescriptions[selectedScenario]}
 					dataset={tsData}
 					{xKey}
 					yKey={[0, 1]}
@@ -213,9 +236,11 @@
 					zKey="key"
 					{seriesNames}
 					{seriesColours}
+					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+					on:mouseout={() => (hoverData = undefined)}
 				/>
 
-				<div class="flex gap-2 flex-wrap text-xs">
+				<!-- <div class="flex gap-2 flex-wrap justify-end text-xs">
 					{#each dataset as row}
 						<span
 							class="py-1 px-3 rounded"
@@ -227,7 +252,7 @@
 							{fuelTechName(row.fuel_tech)}
 						</span>
 					{/each}
-				</div>
+				</div> -->
 			{/if}
 		</div>
 	</div>
@@ -241,23 +266,59 @@
 		/>
 	</div> -->
 
-	<div class="mt-6">
-		<SparkLineArea
-			dataset={isCustomGroup ? tsData : tsData2}
-			keys={seriesNames}
-			xTicks={startEndXTicks}
-			labelDict={fuelTechLabelDict}
-			colourDict={fuelTechColourDict}
-		/>
+	<div class="flex mb-12 w-[120px]">
+		<button
+			class="w-full text-center relative p-4 bg-light-warm-grey border rounded-tl-md rounded-bl-md hover:bg-white"
+			class:bg-white={sparklineView === 'line'}
+			class:z-10={sparklineView === 'line'}
+			class:shadow={sparklineView === 'line'}
+			class:rounded-md={sparklineView === 'line'}
+			class:border-black={sparklineView === 'line'}
+			class:border-mid-warm-grey={sparklineView !== 'line'}
+			on:click={() => (sparklineView = 'line')}
+		>
+			<span class="flex justify-center text-dark-grey">
+				<Icon icon="presentation-chart-line" size={19} />
+			</span>
+		</button>
+		<button
+			class="w-full relative -left-1 p-4 bg-light-warm-grey border border-mid-warm-grey rounded-tr-md rounded-br-md hover:bg-white"
+			class:bg-white={sparklineView === 'bar'}
+			class:z-10={sparklineView === 'bar'}
+			class:shadow={sparklineView === 'bar'}
+			class:rounded-md={sparklineView === 'bar'}
+			class:border-black={sparklineView === 'bar'}
+			class:border-mid-warm-grey={sparklineView !== 'bar'}
+			on:click={() => (sparklineView = 'bar')}
+		>
+			<span class="flex justify-center text-dark-grey">
+				<Icon icon="presentation-chart-bar" size={19} />
+			</span>
+		</button>
 	</div>
 
-	<div class="mt-6">
-		<Sparklines
-			dataset={sparklineDataset}
-			keys={seriesNames}
-			xTicks={sparklineXTicks}
-			labelDict={fuelTechLabelDict}
-			colourDict={fuelTechColourDict}
-		/>
-	</div>
+	{#if sparklineView === 'line'}
+		<div class="mt-6">
+			<SparkLineArea
+				dataset={isCustomGroup ? tsData : tsData2}
+				keys={seriesNames}
+				xTicks={startEndXTicks}
+				labelDict={fuelTechLabelDict}
+				colourDict={fuelTechColourDict}
+				{hoverData}
+				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+				on:mouseout={() => (hoverData = undefined)}
+			/>
+		</div>
+	{:else}
+		<div class="mt-6">
+			<Sparklines
+				dataset={sparklineDataset}
+				keys={seriesNames}
+				xTicks={sparklineXTicks}
+				labelDict={fuelTechLabelDict}
+				colourDict={fuelTechColourDict}
+			/>
+		</div>
+	{/if}
 </section>

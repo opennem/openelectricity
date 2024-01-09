@@ -1,11 +1,21 @@
 <script>
-	import { getContext } from 'svelte';
+	import { getContext, createEventDispatcher } from 'svelte';
 	import { closestTo } from 'date-fns';
 
 	const { xGet, yGet, xScale, height } = getContext('LayerCake');
+	const dispatch = createEventDispatcher();
 
 	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
 	export let dataset = [];
+
+	/** @type {import('$lib/types/chart.types').TimeSeriesData | undefined} */
+	export let hoverData = undefined;
+
+	export let lineColour = '#333';
+
+	export let yTopOffset = 0;
+
+	export let isShapeStack = false;
 
 	/** @type {Function} A function that passes the current value and expects a nicely formatted value in return. */
 	export let formatValue = (/** @type {*} */ d) => d;
@@ -18,6 +28,38 @@
 
 	$: compareDates = [...new Set(dataset.map((d) => d.date))];
 
+	$: if (hoverData) {
+		updateLineCoords(hoverData);
+		visible = true;
+	} else {
+		visible = false;
+	}
+
+	function updateLineCoords(d) {
+		const data = { date: d.date };
+		x = isShapeStack ? $xGet({ data }) : $xGet(data);
+
+		if (d) {
+			value = d.time;
+		} else {
+			value = 0;
+		}
+
+		if (isShapeStack) {
+			if (d && d._max !== undefined && d._min !== undefined) {
+				useDataHeight = true;
+
+				y = $yGet([d._max, d._min]);
+			} else {
+				useDataHeight = false;
+			}
+		} else {
+			// make sure the line doesn't go off the bottom of the chart
+			y = [$yGet(d) + yTopOffset > $height ? $height : $yGet(d) + yTopOffset, $height];
+			useDataHeight = true;
+		}
+	}
+
 	/**
 	 * this function looks for the closest date to the mouse position
 	 * and sets the x and y values for the line
@@ -28,25 +70,15 @@
 	function findItem(evt) {
 		const xInvert = $xScale.invert(evt.offsetX);
 		const closest = closestTo(new Date(xInvert), compareDates);
-		const data = { date: closest };
 		const found = dataset.find((d) => d.time === closest?.getTime());
-
-		x = $xGet({ data });
-
-		if (found) {
-			value = found.time;
-		} else {
-			value = 0;
-		}
-
-		if (found && found._max !== undefined && found._min !== undefined) {
-			useDataHeight = true;
-			y = $yGet([found._max, found._min]);
-		} else {
-			useDataHeight = false;
-		}
-
+		updateLineCoords(found);
 		visible = true;
+		dispatch('mousemove', found);
+	}
+
+	function mouseout() {
+		visible = false;
+		dispatch('mouseout');
 	}
 </script>
 
@@ -54,13 +86,17 @@
 	class="absolute top-0 left-0 right-0 bottom-0"
 	role="presentation"
 	on:mousemove={findItem}
-	on:mouseout={() => (visible = false)}
-	on:blur={() => (visible = false)}
+	on:mouseout={mouseout}
+	on:blur={mouseout}
 />
 
 {#if visible}
 	{#if useDataHeight}
-		<div style="left: {x - 1}px; top: {y[0]}px; height: {y[1] - y[0]}px;" class="hover-line" />
+		<div
+			style="left: {x - 1}px; top: {y[0]}px; height: {y[1] -
+				y[0]}px; border-left-color: {lineColour}"
+			class="hover-line"
+		/>
 	{:else}
 		<div style="left: {x - 1}px;" class="hover-line" />
 	{/if}

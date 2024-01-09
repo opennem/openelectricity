@@ -14,8 +14,13 @@
 	import Overlay from '$lib/components/charts/Overlay.svelte';
 	import HatchPattern from '$lib/components/charts/defs/HatchPattern.svelte';
 
+	import ChartAnnotations from './ChartAnnotations.svelte';
+
 	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
 	export let dataset = [];
+
+	export let title = '';
+	export let description = '';
 
 	export let xKey = '';
 
@@ -76,12 +81,16 @@
 		flatData={flatten(stackedData)}
 		data={stackedData}
 	>
+		<Html>
+			<ChartAnnotations {title} {description} />
+		</Html>
+
 		<Svg>
 			<defs>
 				<HatchPattern id="hatch-pattern" />
 			</defs>
 
-			<AxisY ticks={2} xTick={5} formatTick={formatTickY} gridlines={true} />
+			<AxisY ticks={2} xTick={5} formatTick={formatTickY} gridlines={false} />
 			<AxisX ticks={someYears} gridlines={false} formatTick={formatTickX} tickMarks={true} />
 
 			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
@@ -89,7 +98,7 @@
 		</Svg>
 
 		<Html>
-			<HoverLine {dataset} formatValue={formatTickX} />
+			<HoverLine {dataset} isShapeStack={true} formatValue={formatTickX} on:mousemove on:mouseout />
 		</Html>
 	</LayerCake>
 </div>

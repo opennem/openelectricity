@@ -14,6 +14,7 @@ export const fuelTechNameMap = {
 	interconnector: 'Interconnector',
 	imports: 'Imports',
 
+	battery: 'Battery',
 	battery_discharging: 'Battery (Discharging)',
 	battery_VPP_discharging: 'Battery (VPP Discharging)',
 	battery_distributed_discharging: 'Battery (Distributed Discharging)',
@@ -59,11 +60,7 @@ export const fuelTechGroupMap = {
 
 	// imports: ['imports'],
 
-	battery_discharging: [
-		'battery_discharging',
-		'battery_VPP_discharging',
-		'battery_distributed_discharging'
-	],
+	battery: ['battery_discharging', 'battery_VPP_discharging', 'battery_distributed_discharging'],
 
 	coal: ['coal_black', 'coal_brown'],
 
@@ -92,6 +89,7 @@ export const fuelTechColourMap = {
 	battery_VPP_discharging: '#3145CE',
 	battery_distributed_charging: '#4F5FD7',
 	battery_distributed_discharging: '#3145CE',
+	battery: '#3145CE',
 
 	bioenergy: '#069FAF',
 	bioenergy_biogas: '#069FAF',
