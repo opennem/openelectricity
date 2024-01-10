@@ -82,7 +82,7 @@
 		data={stackedData}
 	>
 		<Html>
-			<ChartAnnotations {title} {description} />
+			<div class="absolute top-0 left-0 right-0 bottom-0 bg-light-warm-grey" role="presentation" />
 		</Html>
 
 		<Svg>
@@ -96,6 +96,10 @@
 			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
 			<Overlay fill="url(#hatch-pattern)" />
 		</Svg>
+
+		<Html pointerEvents={false}>
+			<ChartAnnotations {title} {description} />
+		</Html>
 
 		<Html>
 			<HoverLine {dataset} isShapeStack={true} formatValue={formatTickX} on:mousemove on:mouseout />
