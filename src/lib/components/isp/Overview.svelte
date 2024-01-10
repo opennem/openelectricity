@@ -1,5 +1,4 @@
 <script>
-	import { getContrastedTextColour } from '$lib/colours.js';
 	import { fuelTechNames, fuelTechName, fuelTechColour, fuelTechGroups } from '$lib/fuel_techs.js';
 	import { transformToTimeSeriesDataset } from '$lib/utils/time-series-helpers';
 	import deepCopy from '$lib/utils/deep-copy';
@@ -10,13 +9,14 @@
 	import Select from '$lib/components/form-elements/Select.svelte';
 
 	import OverviewChart from './OverviewChart.svelte';
-	import Gauges from './Gauges.svelte';
-	import Sparklines from './Sparklines.svelte';
+	import SparkBar from './SparkBar.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
+	import DashboardViewOptions from './DashboardViewOptions.svelte';
 
 	/** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
 	/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
 	/** @typedef {import('$lib/types/isp.types').IspData} IspData */
+	/** @typedef {import('$lib/types/isp.types').ScenarioKey} ScenarioKey */
 
 	/** @type {{ fuelTechs: string[], outlookEnergyNem: import('$lib/types/isp.types').Isp }} */
 	export let data;
@@ -24,6 +24,7 @@
 	const xKey = 'date';
 
 	let ftGroups = ['Custom', 'Detailed'];
+	/** @type {ScenarioKey[]} */
 	let scenarios = ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower']; // scenarios in display order
 	let scenarioLabels = {
 		step_change: 'Step Change',
@@ -31,7 +32,6 @@
 		slow_change: 'Slow Change',
 		hydrogen_superpower: 'Hydrogen Superpower'
 	};
-
 	let scenarioDescriptions = {
 		step_change:
 			'The Step Change scenario is considered the most likely future for the National Electricity Market (NEM). This scenario takes into account various factors such as ageing generation plants, technical innovation, economics, government policies, energy security, and consumer choice.',
@@ -42,8 +42,9 @@
 		hydrogen_superpower:
 			'The Hydrogen Superpower scenario is a highly ambitious scenario that includes strong global action, significant technological breakthroughs, and a near quadrupling of National Electricity Market (NEM) energy consumption to support a hydrogen export industry. '
 	};
-	let metricKeys = ['wind', 'solar', 'coal']; // gauge metrics in display order
-	let sparklineView = 'line'; // bar
+
+	/** @type {'line'|'bar'} */
+	let dashboard = 'line'; // bar
 
 	/** @type {FuelTechCode[]} */
 	let loadFts = [
@@ -56,6 +57,7 @@
 
 	/** @type {string|undefined} */
 	let selectedPathway;
+	/** @type {ScenarioKey} */
 	let selectedScenario = scenarios[0];
 	let selectedFtGroup = ftGroups[0];
 
@@ -96,6 +98,7 @@
 
 	/** @type {IspData[]} */
 	let dataset = [];
+
 	/** @type {TimeSeriesData[] | []} */
 	let tsData = [];
 
@@ -104,6 +107,7 @@
 
 	/** @type {string[]} */
 	let seriesNames = [];
+
 	/** @type {string[]} */
 	let seriesColours = [];
 
@@ -145,20 +149,34 @@
 		return acc;
 	}, {});
 
-	$: console.log('dataset', dataset, tsData);
-	$: console.log('fuelTechLabelDict', fuelTechLabelDict, fuelTechColourDict);
-
 	const trackYears = [2024, 2030, 2051];
 	const startEndYears = [2024, 2051];
 
 	$: startEndXTicks = startEndYears.map((year) => new Date(`${year}-01-01`));
-	$: sparklineXTicks = trackYears.map((year) => new Date(`${year}-01-01`));
 
 	/** @type {TimeSeriesData[]} */
-	$: sparklineDataset = isCustomGroup
-		? trackYears.map((year) => tsData.find((d) => d.date.getFullYear() === year))
-		: trackYears.map((year) => tsData2.find((d) => d.date.getFullYear() === year));
-	$: console.log('sparklineDataset', sparklineDataset);
+	let sparklineDataset = [];
+
+	$: if (selectedFtGroup === 'Custom') {
+		updateSparklineDataset(tsData);
+	} else if (selectedFtGroup === 'Detailed') {
+		updateSparklineDataset(tsData2);
+	}
+
+	/** @param {TimeSeriesData[]} dataset */
+	function updateSparklineDataset(dataset) {
+		sparklineDataset = [];
+		trackYears.forEach((year) => {
+			const data = dataset.find((d) => d.date.getFullYear() === year);
+			if (data) {
+				sparklineDataset.push(data);
+			} else {
+				console.warn('no data for year', year);
+			}
+		});
+	}
+
+	$: sparklineXTicks = sparklineDataset.map((d) => new Date(`${d.date.getFullYear()}-01-01`));
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
@@ -192,7 +210,8 @@
 			<div class="grid grid-cols-2 gap-6">
 				{#each scenarios as scenario}
 					<button
-						class="rounded-lg border border-mid-warm-grey hover:bg-light-warm-grey px-4 py-4 capitalize"
+						class="rounded-lg border hover:bg-light-warm-grey px-4 py-4 capitalize"
+						class:border-mid-warm-grey={selectedScenario !== scenario}
 						class:border-dark-grey={selectedScenario === scenario}
 						class:bg-light-warm-grey={selectedScenario === scenario}
 						value={scenario}
@@ -266,60 +285,35 @@
 		/>
 	</div> -->
 
-	{#if sparklineView === 'line'}
-		<div class="mt-6">
-			<SparkLineArea
-				dataset={isCustomGroup ? tsData : tsData2}
-				keys={seriesNames}
-				xTicks={startEndXTicks}
-				labelDict={fuelTechLabelDict}
-				colourDict={fuelTechColourDict}
-				{hoverData}
-				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-				on:mouseout={() => (hoverData = undefined)}
-			/>
-		</div>
-	{:else}
-		<div class="mt-6">
-			<Sparklines
-				dataset={sparklineDataset}
-				keys={seriesNames}
-				xTicks={sparklineXTicks}
-				labelDict={fuelTechLabelDict}
-				colourDict={fuelTechColourDict}
-				{hoverData}
-			/>
-		</div>
-	{/if}
+	<div class="mt-6 grid grid-cols-6 gap-6">
+		{#if dashboard === 'line'}
+			{#each seriesNames as key}
+				<SparkLineArea
+					dataset={isCustomGroup ? tsData : tsData2}
+					{key}
+					xTicks={startEndXTicks}
+					title={fuelTechLabelDict[key]}
+					colour={fuelTechColourDict[key]}
+					{hoverData}
+					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+					on:mouseout={() => (hoverData = undefined)}
+				/>
+			{/each}
+		{:else}
+			{#each seriesNames as key}
+				<SparkBar
+					dataset={sparklineDataset}
+					{key}
+					xTicks={sparklineXTicks}
+					title={fuelTechLabelDict[key]}
+					colour={fuelTechColourDict[key]}
+					{hoverData}
+				/>
+			{/each}
+		{/if}
+	</div>
 
-	<div class="flex mx-auto mt-12 w-[120px]">
-		<button
-			class="w-full text-center relative p-4 bg-light-warm-grey border rounded-tl-md rounded-bl-md hover:bg-white"
-			class:bg-white={sparklineView === 'line'}
-			class:z-10={sparklineView === 'line'}
-			class:shadow={sparklineView === 'line'}
-			class:rounded-md={sparklineView === 'line'}
-			class:border-black={sparklineView === 'line'}
-			class:border-mid-warm-grey={sparklineView !== 'line'}
-			on:click={() => (sparklineView = 'line')}
-		>
-			<span class="flex justify-center text-dark-grey">
-				<Icon icon="presentation-chart-line" size={19} />
-			</span>
-		</button>
-		<button
-			class="w-full relative -left-1 p-4 bg-light-warm-grey border border-mid-warm-grey rounded-tr-md rounded-br-md hover:bg-white"
-			class:bg-white={sparklineView === 'bar'}
-			class:z-10={sparklineView === 'bar'}
-			class:shadow={sparklineView === 'bar'}
-			class:rounded-md={sparklineView === 'bar'}
-			class:border-black={sparklineView === 'bar'}
-			class:border-mid-warm-grey={sparklineView !== 'bar'}
-			on:click={() => (sparklineView = 'bar')}
-		>
-			<span class="flex justify-center text-dark-grey">
-				<Icon icon="presentation-chart-bar" size={19} />
-			</span>
-		</button>
+	<div class="mx-auto w-[130px] mt-6">
+		<DashboardViewOptions current={dashboard} on:change={(evt) => (dashboard = evt.detail)} />
 	</div>
 </section>
