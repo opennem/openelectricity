@@ -183,13 +183,15 @@
 </script>
 
 <section class="p-4">
-	<header class="flex justify-between gap-6 items-start">
-		<h1 class="">Explore the future of Australia's national electricity market</h1>
+	<header class="grid grid-cols-5">
+		<h1 class="col-span-4">Explore the future of Australia's national electricity market</h1>
 
-		<ButtonLink href="/isp-tracker">
-			<span class="text-nowrap">Download Data</span>
-			<Icon icon="arrow-down-tray" size={24} />
-		</ButtonLink>
+		<div>
+			<ButtonLink href="/isp-tracker">
+				<span>Download Data</span>
+				<Icon icon="arrow-down-tray" size={24} />
+			</ButtonLink>
+		</div>
 	</header>
 
 	<div class="grid grid-cols-6 gap-12 my-6">
