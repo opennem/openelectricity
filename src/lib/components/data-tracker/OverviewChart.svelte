@@ -39,7 +39,9 @@
 
 	$: stackedData = stack(dataset, seriesNames);
 
-	$: console.log('stackedData', stackedData, dataset, seriesNames);
+	$: ticks = [dataset[0][xKey], dataset[dataset.length - 1][xKey]];
+
+	$: console.log('stackedData', stackedData, dataset, seriesNames, ticks);
 </script>
 
 <div class="chart-container">
@@ -57,13 +59,7 @@
 		<Svg>
 			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
 			<AxisY ticks={1} formatTick={formatTickY} gridlines={false} tickMarks={true} />
-			<AxisX
-				ticks={6}
-				gridlines={false}
-				formatTick={formatTickX}
-				tickMarks={true}
-				snapTicks={true}
-			/>
+			<AxisX {ticks} gridlines={false} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
 		</Svg>
 
 		<Html>
