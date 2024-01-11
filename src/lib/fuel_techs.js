@@ -19,8 +19,8 @@ export const fuelTechNameMap = {
 	battery_VPP_discharging: 'Battery (VPP Discharging)',
 	battery_distributed_discharging: 'Battery (Distributed Discharging)',
 
-	coal_black: 'Coal (Black)',
 	coal_brown: 'Coal (Brown)',
+	coal_black: 'Coal (Black)',
 	coal: 'Coal',
 
 	nuclear: 'Nuclear',

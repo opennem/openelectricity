@@ -1,4 +1,5 @@
 import type { FuelTechCode } from './fuel_tech.types';
+import type { DataSeries } from './data_series.types';
 
 export type ScenarioKey =
 	| 'step_change'
@@ -25,13 +26,6 @@ export type IspData = {
 	scenario: string;
 	pathway: string;
 	units: string;
-	projection: Projection;
+	projection: DataSeries;
 	colour?: string;
-};
-
-export type Projection = {
-	start: string;
-	last: string;
-	interval: string;
-	data: number[];
 };

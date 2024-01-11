@@ -10,6 +10,7 @@
 	import { format, isToday } from 'date-fns';
 	import Switch from '$lib/components/Switch.svelte';
 	import IspOverview from '$lib/components/isp/Overview.svelte';
+	import DataTrackerOverview from '$lib/components/data-tracker/Overview.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -23,7 +24,9 @@
 		analysis_title,
 		articles,
 		outlookEnergyNem,
-		fuelTechs
+		fuelTechs,
+
+		dataTrackerData
 	} = data;
 
 	// Process records
@@ -90,6 +93,10 @@
 			<h3>{chart_title}</h3>
 			<SectionLink href="https://data.openelectricity.org.au/" title="Data Tracker" />
 		</header>
+
+		<section class="my-16">
+			<DataTrackerOverview data={dataTrackerData} />
+		</section>
 	</div>
 </div>
 <div class="bg-light-warm-grey">

@@ -17,6 +17,8 @@
 
 	export let isShapeStack = false;
 
+	export let showHoverText = true;
+
 	/** @type {Function} A function that passes the current value and expects a nicely formatted value in return. */
 	export let formatValue = (/** @type {*} */ d) => d;
 
@@ -100,7 +102,12 @@
 	{:else}
 		<div style="left: {x - 1}px;" class="hover-line" />
 	{/if}
-	<div style="left: {x - 12}px; top: {$height + 5}px" class="hover-text">{formatValue(value)}</div>
+
+	{#if showHoverText}
+		<div style="left: {x - 12}px; top: {$height + 5}px" class="hover-text">
+			{formatValue(value)}
+		</div>
+	{/if}
 {/if}
 
 <style>

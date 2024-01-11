@@ -1,4 +1,4 @@
-import addYears from 'date-fns/addYears';
+import { addMinutes, addYears } from 'date-fns';
 
 /**
  * Parse interval:
@@ -14,6 +14,7 @@ import addYears from 'date-fns/addYears';
 const durationKeys = ['s', 'm', 'h', 'd', 'w', 'M', 'Q', 'Y'];
 
 export const YEAR = 'Y';
+export const MINUTES = 'm';
 
 /** @type {Object.<string, string>} */
 export const INTERVAL_LABELS = {};
@@ -22,9 +23,10 @@ INTERVAL_LABELS[YEAR] = 'Year';
 /**
  *
  * @param {string} intervalString
- * @returns {{ key: string, label: string, incrementerValue: number, incrementerFn: import('date-fns/addYears') | undefined }}}
+ * @returns {{ key: string, label: string, incrementerValue: number, incrementerFn: Function | undefined }}}
  */
 export function parse(intervalString) {
+	console.log(intervalString);
 	const length = intervalString.length;
 	const key = intervalString.charAt(length - 1);
 	const incrementerValue = length === 1 ? 1 : parseInt(intervalString.substring(0, length - 1), 10);
@@ -32,7 +34,9 @@ export function parse(intervalString) {
 
 	if (durationKeys.includes(key)) {
 		if (key === YEAR) {
-			incrementerFn = addYears;
+			incrementerFn = /** @type {Function} */ (addYears);
+		} else if (key === MINUTES) {
+			incrementerFn = /** @type {Function} */ (addMinutes);
 		}
 	} else {
 		throw new Error(`Invalid duration key: ${key}`);
