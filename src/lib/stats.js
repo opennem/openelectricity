@@ -1,5 +1,6 @@
 import { PUBLIC_FLOWS_API, PUBLIC_EMISSIONS_API, PUBLIC_PRICE_API } from '$env/static/public';
-import { format, isToday } from 'date-fns';
+import format from 'date-fns/format';
+import isToday from 'date-fns/isToday';
 
 const DISPATCH_CACHE_T = 60 * 5 * 1000;
 

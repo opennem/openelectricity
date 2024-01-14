@@ -5,8 +5,7 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { data, xGet, yGet, x, yRange, xScale, y, height, zGet, zScale, z } =
-		getContext('LayerCake');
+	const { data, xGet, yGet, x, yRange, xScale, y, height } = getContext('LayerCake');
 
 	/** @type {String} [fill='#00e047'] - The shape's fill color. */
 	export let fill = '#00e047';
@@ -20,12 +19,12 @@
 	/** @type {Boolean} [false] - Show the numbers for each column */
 	export let showLabels = false;
 
-	$: columnWidth = (d) => {
+	$: columnWidth = (/** @type {*} */ d) => {
 		const vals = $xGet(d);
 		return Math.abs(vals[1] - vals[0]);
 	};
 
-	$: columnHeight = (d) => {
+	$: columnHeight = (/** @type {*} */ d) => {
 		return $yRange[0] - $yGet(d);
 	};
 </script>

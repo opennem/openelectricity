@@ -16,8 +16,6 @@
 		.endAngle($xScale(end));
 </script>
 
-<!-- 34143.3, 193562.5 -->
-
 <g class="arc-group" transform="translate({$width / 2}, {$height / 2})">
 	<path d={arcGen($data)} {fill} />
 </g>

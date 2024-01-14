@@ -1,4 +1,7 @@
 <script>
+	import format from 'date-fns/format';
+	import isToday from 'date-fns/isToday';
+
 	import Map from '$lib/components/map/Map.svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
@@ -7,7 +10,6 @@
 	import GenerationMixSparkline from '$lib/components/homepage/GenerationMixSparkline.svelte';
 	import FossilIconAnim from '$lib/components/homepage/FossilIconAnim.svelte';
 	import RenewableIconAnim from '$lib/components/homepage/RenewableIconAnim.svelte';
-	import { format, isToday } from 'date-fns';
 	import Switch from '$lib/components/Switch.svelte';
 	import IspOverview from '$lib/components/isp/Overview.svelte';
 	import DataTrackerOverview from '$lib/components/data-tracker/Overview.svelte';

@@ -1,6 +1,6 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
-	import { closestTo } from 'date-fns';
+	import closestTo from 'date-fns/closestTo';
 
 	const { xGet, yGet, xScale, height } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
@@ -37,11 +37,13 @@
 		visible = false;
 	}
 
+	/**
+	 * @param {import('$lib/types/chart.types').TimeSeriesData | undefined} d
+	 */
 	function updateLineCoords(d) {
-		const data = { date: d.date };
-		x = isShapeStack ? $xGet({ data }) : $xGet(data);
-
 		if (d) {
+			const data = { date: d.date };
+			x = isShapeStack ? $xGet({ data }) : $xGet(data);
 			value = d.time;
 		} else {
 			value = 0;

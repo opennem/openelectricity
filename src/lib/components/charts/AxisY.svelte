@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { padding, xRange, yScale, containerWidth, height } = getContext('LayerCake');
+	const { padding, xRange, yScale } = getContext('LayerCake');
 
 	/** @type {boolean} Extend lines from the ticks into the chart. d */
 	export let gridlines = true;

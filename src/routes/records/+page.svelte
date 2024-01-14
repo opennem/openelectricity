@@ -4,6 +4,9 @@
 	/** @typedef {import('$lib/types/record.types').Record} Record  */
 	/** @typedef {import('./$types').PageData} PageData  */
 
+	import format from 'date-fns/format';
+	import isToday from 'date-fns/isToday';
+
 	import FilterContent from '$lib/components/filters/FilterContent.svelte';
 	import FilterSection from '$lib/components/filters/FilterSection.svelte';
 	import FilterSectionHead from '$lib/components/filters/FilterSectionHead.svelte';
@@ -20,7 +23,6 @@
 	} from '$lib/filters';
 	import { recordsByDay } from '$lib/records';
 	import { getKeys } from '$lib/utils/keys';
-	import { format, isToday } from 'date-fns';
 	import { page } from '$app/stores';
 
 	/** @type {PageData} */

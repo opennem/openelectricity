@@ -3,16 +3,16 @@
 
 	import { scaleOrdinal } from 'd3-scale';
 
-	import { format } from 'd3-format';
-	import { format as dateFormat } from 'date-fns';
+	import { format as d3Format } from 'd3-format';
+	import format from 'date-fns/format';
 
 	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 
-	export const formatTickX = (/** @type {Date} */ d) => dateFormat(d, 'd MMM, h:mm aaa');
-	export const formatTickY = (/** @type {number} */ d) => format('~s')(d);
+	export const formatTickX = (/** @type {Date} */ d) => format(d, 'd MMM, h:mm aaa');
+	export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 
 	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
 	export let dataset = [];
@@ -21,9 +21,6 @@
 
 	/** @type {number[]} */
 	export let yKey = [];
-
-	// /** @type {number[] | undefined} */
-	// export let yDomain = undefined;
 
 	export let zKey = '';
 
@@ -41,7 +38,7 @@
 
 	$: ticks = [dataset[0][xKey], dataset[dataset.length - 1][xKey]];
 
-	$: console.log('stackedData', stackedData, dataset, seriesNames, ticks);
+	// $: console.log('stackedData', stackedData, dataset, seriesNames, ticks);
 </script>
 
 <div class="chart-container">

@@ -1,4 +1,4 @@
-import { format } from 'date-fns';
+import format from 'date-fns/format';
 import { v4 as uuidv4 } from 'uuid';
 
 /** @typedef {import('$lib/types/record.types').Record} Record */

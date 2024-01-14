@@ -1,9 +1,8 @@
 import { interpolate } from 'd3-interpolate';
 import { mean } from 'd3-array';
-import { parseISO } from 'date-fns';
+import parseISO from 'date-fns/parseISO';
+import { formatInTimeZone } from 'date-fns-tz';
 import { parse as parseInterval } from './intervals';
-import useDate from './use-date';
-import { data } from 'autoprefixer';
 
 /**
  * Transform backend json data to time series dataset and also additional meta data about the time series data
@@ -27,8 +26,6 @@ export function transformToTimeSeriesDataset(dataset) {
 		newDataset.push(newSet);
 	});
 
-	// get all the projection data unique interval, start and last
-	// - expect all should be the same
 	const intervals = [...new Set(dataset.map((d) => d.history.interval))];
 	const starts = [...new Set(dataset.map((d) => d.history.start))];
 	const lasts = [...new Set(dataset.map((d) => d.history.last))];
@@ -39,6 +36,8 @@ export function transformToTimeSeriesDataset(dataset) {
 	console.log('intervals', intervals[1], intervalObj);
 	console.log('starts', starts[0], startDate);
 	console.log('lasts', lasts[0], lastDate);
+
+	// console.log('format', startDate, formatInTimeZone(startDate, '+10:00', 'yyyy-MM-dd HH:mm:ss'));
 
 	let currentTime = startDate.getTime();
 	let lastTime = lastDate.getTime();

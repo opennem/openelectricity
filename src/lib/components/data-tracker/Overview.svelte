@@ -1,13 +1,15 @@
 <script>
-	import { fuelTechNames, fuelTechName, fuelTechColour, fuelTechGroups } from '$lib/fuel_techs.js';
+	import { fuelTechNames, fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
 	import { transformToTimeSeriesDataset } from '$lib/utils/time-series-helpers/data-tracker-helpers.js';
 	import deepCopy from '$lib/utils/deep-copy';
 
 	import OverviewChart from './OverviewChart.svelte';
 
-	export let data;
+	/** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
+	/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
 
-	$: dataset = data;
+	/** @type {TimeSeriesData[]} */
+	export let data;
 
 	const xKey = 'date';
 
@@ -20,7 +22,7 @@
 	$: {
 		orderedAndLoadsInverted = [];
 		fuelTechNames.forEach((/** @type {*} */ code) => {
-			const filtered = dataset.filter((d) => d.fuel_tech === code);
+			const filtered = data.filter((d) => d.fuel_tech === code);
 			if (filtered.length > 0) {
 				const copy = deepCopy(filtered[0]);
 				copy.colour = fuelTechColour(code);
@@ -32,9 +34,15 @@
 			const code = d.fuel_tech;
 			// invert load fuel techs so it displays below the zero x axis in the stacked area chart
 			if (loadFts.includes(code)) {
-				d.history.data.forEach((value, i) => {
-					d.history.data[i] = value * -1;
-				});
+				d.history.data.forEach(
+					/**
+					 * @param {number} value
+					 * @param {number} i
+					 */
+					(value, i) => {
+						d.history.data[i] = value * -1;
+					}
+				);
 			}
 		});
 	}
@@ -62,7 +70,9 @@
 	$: console.log('seriesNames', seriesNames, fuelTechLabelDict);
 	$: console.log('seriesColours', seriesColours, fuelTechColourDict);
 
+	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
+	$: console.log('hoverData', hoverData);
 </script>
 
 {#if tsData.length === 0}
@@ -75,7 +85,7 @@
 		zKey="key"
 		{seriesNames}
 		{seriesColours}
-		on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+		on:mousemove={(e) => (hoverData = e.detail)}
 		on:mouseout={() => (hoverData = undefined)}
 	/>
 {/if}
