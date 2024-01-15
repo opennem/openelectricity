@@ -3,14 +3,15 @@
 
 	import { scaleOrdinal } from 'd3-scale';
 	import { format as d3Format } from 'd3-format';
-	import format from 'date-fns/format';
+	import { formatInTimeZone } from 'date-fns-tz';
 
 	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 
-	export const formatTickX = (/** @type {Date} */ d) => format(d, 'd MMM, h:mm aaa');
+	export const formatTickX = (/** @type {Date} */ d) =>
+		formatInTimeZone(d, '+10:00', 'd MMM, h:mm aaa');
 	export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 
 	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
