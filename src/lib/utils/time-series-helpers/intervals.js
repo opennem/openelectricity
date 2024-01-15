@@ -24,7 +24,7 @@ INTERVAL_LABELS[YEAR] = 'Year';
 /**
  *
  * @param {string} intervalString
- * @returns {{ key: string, label: string, incrementerValue: number, incrementerFn: Function | undefined }}}
+ * @returns {{ intervalString: string, key: string, label: string, seconds: number, incrementerValue: number, incrementerFn: Function | undefined }}}
  */
 export function parse(intervalString) {
 	console.log(intervalString);
@@ -32,20 +32,25 @@ export function parse(intervalString) {
 	const key = intervalString.charAt(length - 1);
 	const incrementerValue = length === 1 ? 1 : parseInt(intervalString.substring(0, length - 1), 10);
 	let incrementerFn;
+	let seconds = 0;
 
 	if (durationKeys.includes(key)) {
 		if (key === YEAR) {
 			incrementerFn = /** @type {Function} */ (addYears);
+			seconds = incrementerValue * 365 * 24 * 60 * 60;
 		} else if (key === MINUTES) {
 			incrementerFn = /** @type {Function} */ (addMinutes);
+			seconds = incrementerValue * 60;
 		}
 	} else {
 		throw new Error(`Invalid duration key: ${key}`);
 	}
 
 	return {
+		intervalString,
 		key,
 		label: INTERVAL_LABELS[key],
+		seconds,
 		incrementerValue,
 		incrementerFn
 	};

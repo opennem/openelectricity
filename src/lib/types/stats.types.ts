@@ -16,7 +16,7 @@ export type StatsData = {
 	network: string;
 	units: string;
 	history: DataSeries;
-	forcast: DataSeries;
+	forecast?: DataSeries;
 	fuel_tech?: FuelTechCode;
 	colour?: string;
 };
