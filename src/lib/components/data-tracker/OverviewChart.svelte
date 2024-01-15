@@ -2,7 +2,6 @@
 	import { LayerCake, Svg, Html, flatten, stack } from 'layercake';
 
 	import { scaleOrdinal } from 'd3-scale';
-
 	import { format as d3Format } from 'd3-format';
 	import format from 'date-fns/format';
 
@@ -75,6 +74,6 @@
 <style>
 	.chart-container {
 		width: 100%;
-		height: 330px;
+		height: 500px;
 	}
 </style>

@@ -24,8 +24,7 @@ export async function load({ fetch }) {
 	const dataTrackerRes = await fetch(`${PUBLIC_JSON_API}/au/NEM/power/7d.json`);
 	const { data } = await dataTrackerRes.json();
 	const dataTrackerData = data.filter(
-		(/** @type {import('$lib/types/stats.types').StatsData} */ d) =>
-			d.fuel_tech && d.fuel_tech !== 'solar_rooftop'
+		(/** @type {import('$lib/types/stats.types').StatsData} */ d) => d.fuel_tech
 	);
 
 	if (homepageData && homepageData.length > 0) {

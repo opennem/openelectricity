@@ -52,6 +52,27 @@ export const fuelTechNameMap = {
 	solar: 'Solar'
 };
 
+export const fuelTechOrder = [
+	'battery_charging',
+	'pumps',
+	'exports',
+	'coal_brown',
+	'coal_black',
+	'bioenergy_biogas',
+	'bioenergy_biomass',
+	'distillate',
+	'gas_steam',
+	'gas_ccgt',
+	'gas_ocgt',
+	'gas_recip',
+	'gas_wcmg',
+	'battery_discharging',
+	'hydro',
+	'wind',
+	'solar_utility',
+	'solar_rooftop'
+];
+
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 export const fuelTechGroupMap = {
 	// battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],

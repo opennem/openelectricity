@@ -1,5 +1,5 @@
 <script>
-	import { fuelTechNames, fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
+	import { fuelTechName, fuelTechColour, fuelTechOrder } from '$lib/fuel_techs.js';
 	import { transformToTimeSeriesDataset } from '$lib/utils/time-series-helpers/data-tracker-helpers.js';
 	import deepCopy from '$lib/utils/deep-copy';
 
@@ -21,7 +21,7 @@
 
 	$: {
 		orderedAndLoadsInverted = [];
-		fuelTechNames.forEach((/** @type {*} */ code) => {
+		fuelTechOrder.forEach((/** @type {*} */ code) => {
 			const filtered = data.filter((d) => d.fuel_tech === code);
 			if (filtered.length > 0) {
 				const copy = deepCopy(filtered[0]);
