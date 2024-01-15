@@ -55,7 +55,7 @@
 	>
 		<Svg>
 			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
-			<AxisY ticks={1} formatTick={formatTickY} gridlines={false} tickMarks={true} />
+			<AxisY formatTick={formatTickY} gridlines={false} tickMarks={true} ticks={[0, 35000]} />
 			<AxisX {ticks} gridlines={false} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
 		</Svg>
 

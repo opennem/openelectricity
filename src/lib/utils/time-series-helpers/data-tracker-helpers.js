@@ -3,6 +3,7 @@ import { mean } from 'd3-array';
 import parseISO from 'date-fns/parseISO';
 // import { formatInTimeZone } from 'date-fns-tz';
 import { parse as parseInterval } from './intervals';
+import mutateWithMinMax from './mutate-with-min-max';
 
 /**
  * Transform backend json data to time series dataset and also additional meta data about the time series data
@@ -149,6 +150,9 @@ export function transformToTimeSeriesDataset(dataset) {
 	});
 
 	console.log('tsData', tsData, newDataset);
+
+	// const loads = ['pumps', 'battery_charging', 'exports'];
+	// const loadSeries = newDataset.filter((d) => loads.includes(d.fuel_tech)).map((d) => d.id);
 
 	return tsData;
 }
