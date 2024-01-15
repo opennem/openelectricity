@@ -1,5 +1,4 @@
-import addMinutes from 'date-fns/addMinutes';
-import addYears from 'date-fns/addYears';
+import { addMinutes, addYears } from 'date-fns';
 
 /**
  * Parse interval:

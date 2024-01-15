@@ -4,8 +4,7 @@
 	/** @typedef {import('$lib/types/record.types').Record} Record  */
 	/** @typedef {import('./$types').PageData} PageData  */
 
-	import format from 'date-fns/format';
-	import isToday from 'date-fns/isToday';
+	import { format, isToday } from 'date-fns';
 
 	import FilterContent from '$lib/components/filters/FilterContent.svelte';
 	import FilterSection from '$lib/components/filters/FilterSection.svelte';

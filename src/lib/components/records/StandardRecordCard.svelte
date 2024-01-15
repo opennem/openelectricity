@@ -1,6 +1,6 @@
 <script>
 	import Icon from '$lib/components/Icon.svelte';
-	import format from 'date-fns/format';
+	import { format } from 'date-fns';
 
 	/** @type {import('$lib/types/record.types').Record[]} */
 	export let record;

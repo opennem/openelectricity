@@ -1,6 +1,6 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
-	import closestTo from 'date-fns/closestTo';
+	import { closestTo } from 'date-fns';
 
 	const { xGet, yGet, xScale, height } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();

@@ -1,6 +1,5 @@
 <script>
-	import format from 'date-fns/format';
-	import isToday from 'date-fns/isToday';
+	import { format, isToday } from 'date-fns';
 
 	import Map from '$lib/components/map/Map.svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';

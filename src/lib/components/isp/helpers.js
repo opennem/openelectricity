@@ -1,5 +1,5 @@
 import { format as d3Format } from 'd3-format';
-import format from 'date-fns/format';
+import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 
 import { fuelTechGroup } from '$lib/fuel_techs.js';

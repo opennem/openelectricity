@@ -1,6 +1,6 @@
 import { interpolate } from 'd3-interpolate';
 import { mean } from 'd3-array';
-import parseISO from 'date-fns/parseISO';
+import { parseISO } from 'date-fns';
 // import { formatInTimeZone } from 'date-fns-tz';
 import { parse as parseInterval } from './intervals';
 import mutateWithMinMax from './mutate-with-min-max';
