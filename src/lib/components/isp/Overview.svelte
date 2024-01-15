@@ -1,4 +1,5 @@
 <script>
+	import { formatInTimeZone } from 'date-fns-tz';
 	import { fuelTechNames, fuelTechName, fuelTechColour, fuelTechGroups } from '$lib/fuel_techs.js';
 	import { transformToTimeSeriesDataset } from '$lib/utils/time-series-helpers';
 	import deepCopy from '$lib/utils/deep-copy';
@@ -167,16 +168,18 @@
 	function updateSparklineDataset(dataset) {
 		sparklineDataset = [];
 		trackYears.forEach((year) => {
-			const data = dataset.find((d) => d.date.getFullYear() === year);
+			const data = dataset.find((d) => +formatInTimeZone(d.date, '+10:00', 'yyyy') === year);
 			if (data) {
 				sparklineDataset.push(data);
 			} else {
-				console.warn('no data for year', year);
+				console.warn('no data for year', year, dataset);
 			}
 		});
 	}
 
-	$: sparklineXTicks = sparklineDataset.map((d) => new Date(`${d.date.getFullYear()}-01-01`));
+	$: sparklineXTicks = sparklineDataset.map(
+		(d) => new Date(`${formatInTimeZone(d.date, '+10:00', 'yyyy')}-01-01`)
+	);
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;

@@ -1,5 +1,6 @@
 import { format as d3Format } from 'd3-format';
 import format from 'date-fns/format';
+import { formatInTimeZone } from 'date-fns-tz';
 
 import { fuelTechGroup } from '$lib/fuel_techs.js';
 
@@ -7,7 +8,7 @@ import { fuelTechGroup } from '$lib/fuel_techs.js';
 /** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
 /** @typedef {import('$lib/types/isp.types').IspData} IspData */
 
-export const formatTickX = (/** @type {Date} */ d) => format(d, 'yyyy');
+export const formatTickX = (/** @type {Date} */ d) => formatInTimeZone(d, '+10:00', 'yyyy');
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 export const formatValue = (/** @type {number} */ d) => {
 	const formatted = d3Format('.0f')(d / 1000);
