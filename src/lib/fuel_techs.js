@@ -102,6 +102,27 @@ export const fuelTechGroupMap = {
 	solar: ['solar_utility', 'solar_thermal', 'solar_rooftop']
 };
 
+/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
+export const historicalEnergyGroupMap = {
+	// battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
+	// demand_response: ['demand_response'],
+	// exports: ['exports'],
+
+	// imports: ['imports'],
+
+	battery: ['battery_discharging'],
+
+	coal: ['coal_black', 'coal_brown'],
+
+	gas: ['gas_ccgt', 'gas_ocgt', 'gas_recip', 'gas_steam', 'gas_wcmg'],
+
+	hydro: ['hydro'],
+
+	wind: ['wind'],
+
+	solar: ['solar_utility', 'solar_rooftop']
+};
+
 /** @type {Object.<FuelTechCode, string>}} */
 export const fuelTechColourMap = {
 	battery_charging: '#4F5FD7',
@@ -153,13 +174,17 @@ export const fuelTechColourMap = {
 export const fuelTechGroups = /** @type {FuelTechCode[]} */ (getKeys(fuelTechGroupMap));
 export const fuelTechNames = getKeys(fuelTechNameMap);
 
+export const historicalEnergyGroups = /** @type {FuelTechCode[]} */ (
+	getKeys(historicalEnergyGroupMap)
+);
+
 /**
- *
+ * @param {Object.<FuelTechCode, FuelTechCode[]>} groupMap
  * @param {FuelTechCode} groupCode
  * @returns {FuelTechCode[]}
  */
-export const fuelTechGroup = (groupCode) => {
-	if (fuelTechGroupMap[groupCode]) return fuelTechGroupMap[groupCode];
+export const fuelTechGroup = (groupMap, groupCode) => {
+	if (groupMap[groupCode]) return groupMap[groupCode];
 	return [groupCode];
 };
 

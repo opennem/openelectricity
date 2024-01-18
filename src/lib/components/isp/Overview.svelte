@@ -1,14 +1,24 @@
 <script>
 	import { formatInTimeZone } from 'date-fns-tz';
-	import { fuelTechNames, fuelTechName, fuelTechColour, fuelTechGroups } from '$lib/fuel_techs.js';
+	import { rollup, sum } from 'd3-array';
+	import {
+		fuelTechNames,
+		fuelTechName,
+		fuelTechColour,
+		fuelTechGroups,
+		historicalEnergyGroups
+	} from '$lib/fuel_techs.js';
 	import { transformToTimeSeriesDataset } from '$lib/utils/time-series-helpers';
+	import { transformToTimeSeriesDataset as transformToTsDataset } from '$lib/utils/time-series-helpers/energy-parser';
+	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import deepCopy from '$lib/utils/deep-copy';
-	import { updateWithMinMaxValues, groupedIspData } from './helpers';
+	import { groupedIspData, groupedStatsData } from './helpers';
 
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Select from '$lib/components/form-elements/Select.svelte';
 
+	import HistoricalChart from './HistoricalChart.svelte';
 	import OverviewChart from './OverviewChart.svelte';
 	import SparkBar from './SparkBar.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
@@ -17,9 +27,10 @@
 	/** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
 	/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
 	/** @typedef {import('$lib/types/isp.types').IspData} IspData */
+	/** @typedef {import('$lib/types/stats.types').StatsData} StatsData */
 	/** @typedef {import('$lib/types/isp.types').ScenarioKey} ScenarioKey */
 
-	/** @type {{ fuelTechs: string[], outlookEnergyNem: import('$lib/types/isp.types').Isp }} */
+	/** @type {{ fuelTechs: string[], outlookEnergyNem: import('$lib/types/isp.types').Isp, historyEnergyNemData: StatsData[]  }} */
 	export let data;
 
 	const xKey = 'date';
@@ -53,7 +64,8 @@
 		'battery_charging',
 		'battery_VPP_charging',
 		'battery_distributed_charging',
-		'demand_response'
+		'demand_response',
+		'pumps'
 	];
 
 	/** @type {string|undefined} */
@@ -124,7 +136,7 @@
 				: [];
 
 		const loadSeries = seriesNames.filter((d) => loadFts.find((l) => d.includes(l)));
-		tsData = updateWithMinMaxValues(transformedFiltered, seriesNames, loadSeries);
+		tsData = withMinMax(transformedFiltered, seriesNames, loadSeries);
 		dataset = groupedDatasets;
 	} else if (selectedFtGroup === 'Detailed') {
 		let transformedFiltered = transformToTimeSeriesDataset(orderedFilteredWithPathwayScenario);
@@ -136,8 +148,8 @@
 				? Object.keys(transformedFiltered[0]).filter((d) => d !== xKey && d !== 'time')
 				: [];
 		const loadSeries = seriesNames.filter((d) => loadFts.find((l) => d.includes(l)));
-		tsData = updateWithMinMaxValues(transformedFiltered, seriesNames, loadSeries);
-		tsData2 = updateWithMinMaxValues(transformedFiltered2, seriesNames, []);
+		tsData = withMinMax(transformedFiltered, seriesNames, loadSeries);
+		tsData2 = withMinMax(transformedFiltered2, seriesNames, []);
 		dataset = orderedFilteredWithPathwayScenario;
 	}
 
@@ -183,6 +195,75 @@
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
+
+	const historicalData = data.historyEnergyNemData;
+	$: console.log('historicalData', historicalData);
+
+	/** @type {StatsData[]} */
+	let historicalDataset = [];
+
+	/** @type {TimeSeriesData[] | []} */
+	let historicalTsData = [];
+
+	/** @type {string[]} */
+	let historicalSeriesNames = [];
+
+	/** @type {string[]} */
+	let historicalSeriesColours = [];
+	$: {
+		let ordered = [];
+
+		fuelTechNames.forEach((/** @type {*} */ code) => {
+			const filtered = historicalData.filter((d) => d.fuel_tech === code);
+			if (filtered.length > 0) {
+				const copy = deepCopy(filtered[0]);
+				copy.colour = fuelTechColour(code);
+				ordered.push(copy);
+			}
+		});
+		let groupedDatasets = groupedStatsData(historicalEnergyGroups, ordered);
+
+		let transformed = transformToTsDataset(groupedDatasets, '1M');
+
+		console.log('groupedDatasets', groupedDatasets);
+		console.log('transformed', transformed);
+
+		historicalSeriesColours = fuelTechGroups.map((d) => fuelTechColour(d));
+		historicalSeriesNames =
+			transformed && transformed.length
+				? Object.keys(transformed[0]).filter((d) => d !== xKey && d !== 'time')
+				: [];
+
+		const groupByYearDate = rollup(
+			transformed,
+			(v) => {
+				const obj = {
+					date: v[0].date,
+					time: v[0].time
+				};
+
+				v.forEach((d) => {
+					historicalSeriesNames.forEach((key) => {
+						if (obj[key] === undefined) {
+							obj[key] = 0;
+						}
+						obj[key] += d[key];
+					});
+				});
+
+				return obj;
+			},
+			(d) => d.date.getFullYear()
+		);
+
+		const groupBy = [...groupByYearDate.values()];
+
+		console.log('groupByYearDate', groupByYearDate, groupBy);
+
+		const loadSeries = seriesNames.filter((d) => loadFts.find((l) => d.includes(l)));
+		historicalTsData = withMinMax(groupBy, seriesNames, loadSeries);
+		historicalDataset = groupedDatasets;
+	}
 </script>
 
 <section class="p-4">
@@ -198,49 +279,61 @@
 	</header>
 
 	<div class="grid grid-cols-6 gap-12 my-6">
-		<div class="text-dark-grey text-sm col-span-2">
-			<div>
-				<p>
-					A range of modelled scenarios exist which envision the evolution of Australia's National
-					Electricity Market (NEM) over the coming decades.
-				</p>
-				<p>
-					These scenarios aim to steer Australia towards a cost-effective, reliable and safe energy
-					system en route to a zero-emissions electricity network.
-				</p>
-				<p>Explore the <strong>2022 AEMO</strong> future scenarios below.</p>
+		<div class="text-dark-grey text-sm col-span-2 relative">
+			<div class="absolute top-0 z-10">
+				<div>
+					<p>
+						A range of modelled scenarios exist which envision the evolution of Australia's National
+						Electricity Market (NEM) over the coming decades.
+					</p>
+					<p>
+						These scenarios aim to steer Australia towards a cost-effective, reliable and safe
+						energy system en route to a zero-emissions electricity network.
+					</p>
+					<p>Explore the <strong>2022 AEMO</strong> future scenarios below.</p>
+				</div>
+
+				<div class="grid grid-cols-2 gap-6">
+					{#each scenarios as scenario}
+						<button
+							class="rounded-lg border hover:bg-light-warm-grey px-4 py-4 capitalize"
+							class:border-mid-warm-grey={selectedScenario !== scenario}
+							class:border-dark-grey={selectedScenario === scenario}
+							class:bg-light-warm-grey={selectedScenario === scenario}
+							value={scenario}
+							on:click={() => {
+								selectedScenario = scenario;
+							}}
+						>
+							{scenario.split('_').join(' ')}
+						</button>
+					{/each}
+				</div>
+
+				<!-- <div
+					class="border-t-1 border-mid-warm-grey pt-6 mt-12 mr-12 flex gap-6 text-sm text-alert-yellow"
+				>
+					<label for="pathway-select">
+						<span>Pathways</span>
+						<Select bind:value={selectedPathway} options={scenarioPathways} id="pathway-select" />
+					</label>
+
+					<label for="ft-group-select">
+						<span>Fuel Technology Group</span>
+						<Select bind:value={selectedFtGroup} options={ftGroups} id="ft-group-select" />
+					</label>
+				</div> -->
 			</div>
 
-			<div class="grid grid-cols-2 gap-6">
-				{#each scenarios as scenario}
-					<button
-						class="rounded-lg border hover:bg-light-warm-grey px-4 py-4 capitalize"
-						class:border-mid-warm-grey={selectedScenario !== scenario}
-						class:border-dark-grey={selectedScenario === scenario}
-						class:bg-light-warm-grey={selectedScenario === scenario}
-						value={scenario}
-						on:click={() => {
-							selectedScenario = scenario;
-						}}
-					>
-						{scenario.split('_').join(' ')}
-					</button>
-				{/each}
-			</div>
-
-			<div
-				class="border-t-1 border-mid-warm-grey pt-6 mt-12 mr-12 flex gap-6 text-sm text-alert-yellow"
-			>
-				<label for="pathway-select">
-					<span>Pathways</span>
-					<Select bind:value={selectedPathway} options={scenarioPathways} id="pathway-select" />
-				</label>
-
-				<label for="ft-group-select">
-					<span>Fuel Technology Group</span>
-					<Select bind:value={selectedFtGroup} options={ftGroups} id="ft-group-select" />
-				</label>
-			</div>
+			<HistoricalChart
+				dataset={historicalTsData}
+				{xKey}
+				yKey={[0, 1]}
+				yDomain={selectedScenario === 'hydrogen_superpower' ? [0, 1550000] : [0, 550000]}
+				zKey="key"
+				seriesNames={historicalSeriesNames}
+				seriesColours={historicalSeriesColours}
+			/>
 		</div>
 
 		<!-- yDomain={selectedScenario === 'hydrogen_superpower' ? undefined : [0, 500000]} -->

@@ -27,7 +27,9 @@
 		outlookEnergyNem,
 		fuelTechs,
 
-		dataTrackerData
+		dataTrackerData,
+
+		historyEnergyNemData
 	} = data;
 
 	// Process records
@@ -164,7 +166,7 @@
 </div>
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
-		<IspOverview data={{ fuelTechs, outlookEnergyNem }} />
+		<IspOverview data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
 	</div>
 </div>
 <div class="bg-light-warm-grey py-40">

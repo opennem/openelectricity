@@ -1,12 +1,12 @@
 import { format as d3Format } from 'd3-format';
-import { format } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 
-import { fuelTechGroup } from '$lib/fuel_techs.js';
+import { fuelTechGroup, fuelTechGroupMap, historicalEnergyGroupMap } from '$lib/fuel_techs.js';
 
 /** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
 /** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
 /** @typedef {import('$lib/types/isp.types').IspData} IspData */
+/** @typedef {import('$lib/types/stats.types').StatsData} StatsData */
 
 export const formatTickX = (/** @type {Date} */ d) => formatInTimeZone(d, '+10:00', 'yyyy');
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
@@ -19,32 +19,6 @@ export const formatValue = (/** @type {number} */ d) => {
 };
 
 /**
- * @param {TimeSeriesData[]} dataset
- * @param {string[]} seriesNames
- * @param {string[]} loadSeries
- * @returns {TimeSeriesData[]}
- */
-export function updateWithMinMaxValues(dataset, seriesNames, loadSeries) {
-	return dataset.map((d) => {
-		/** @type {TimeSeriesData} */
-		const newObj = { ...d };
-		// get min and max values for each time series
-		newObj._max = 0;
-		newObj._min = 0;
-		seriesNames.forEach((l) => {
-			const value = d[l] || 0;
-			if (newObj._max || newObj._max === 0) newObj._max += +value;
-		});
-		loadSeries.forEach((l) => {
-			const value = d[l] || 0;
-			if (newObj._min || newObj._min === 0) newObj._min += +value;
-		});
-
-		return newObj;
-	});
-}
-
-/**
  * @param {FuelTechCode[]} groups
  * @param {IspData[]} originalData
  * @returns {IspData[]}
@@ -54,7 +28,7 @@ export function groupedIspData(groups, originalData) {
 	let grouped = [];
 
 	groups.forEach((code) => {
-		const codes = fuelTechGroup(code);
+		const codes = fuelTechGroup(fuelTechGroupMap, code);
 		const filtered = originalData.filter((d) => codes.includes(d.fuel_tech));
 
 		if (filtered.length > 0) {
@@ -73,6 +47,46 @@ export function groupedIspData(groups, originalData) {
 			filtered.forEach((d) => {
 				d.projection.data.forEach((d, i) => {
 					groupObject.projection.data[i] += d;
+				});
+			});
+
+			grouped.push(groupObject);
+		}
+	});
+
+	return grouped;
+}
+
+/**
+ * @param {FuelTechCode[]} groups
+ * @param {StatsData[]} originalData
+ * @returns {StatsData[]}
+ */
+export function groupedStatsData(groups, originalData) {
+	/** @type {StatsData[]} */
+	let grouped = [];
+
+	groups.forEach((code) => {
+		const codes = fuelTechGroup(historicalEnergyGroupMap, code);
+		const filtered = originalData.filter((d) => codes.includes(d.fuel_tech));
+
+		if (filtered.length > 0) {
+			const history = filtered[0].history;
+			const groupObject = {
+				...filtered[0],
+				code,
+				fuel_tech: code,
+				id: `au.${code}.historical`,
+				history: { ...history }
+			};
+
+			// set the group projection.data array to all zeros
+			groupObject.history.data = groupObject.history.data.map(() => 0);
+
+			// sum each filtered projection.data array into group projection data
+			filtered.forEach((d) => {
+				d.history.data.forEach((d, i) => {
+					groupObject.history.data[i] += d;
 				});
 			});
 

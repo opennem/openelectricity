@@ -47,7 +47,7 @@
 		});
 	}
 
-	$: tsData = transformToTimeSeriesDataset(orderedAndLoadsInverted);
+	$: tsData = transformToTimeSeriesDataset(orderedAndLoadsInverted, '30m');
 	$: seriesColours = orderedAndLoadsInverted.map((d) => fuelTechColour(d.fuel_tech));
 	$: seriesNames =
 		tsData && tsData.length ? Object.keys(tsData[0]).filter((d) => d !== xKey && d !== 'time') : [];

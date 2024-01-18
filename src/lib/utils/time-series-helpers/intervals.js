@@ -1,4 +1,4 @@
-import { addMinutes, addYears } from 'date-fns';
+import { addMinutes, addMonths, addYears } from 'date-fns';
 
 /**
  * Parse interval:
@@ -14,11 +14,14 @@ import { addMinutes, addYears } from 'date-fns';
 const durationKeys = ['s', 'm', 'h', 'd', 'w', 'M', 'Q', 'Y'];
 
 export const YEAR = 'Y';
+export const MONTH = 'M';
 export const MINUTES = 'm';
 
 /** @type {Object.<string, string>} */
 export const INTERVAL_LABELS = {};
 INTERVAL_LABELS[YEAR] = 'Year';
+INTERVAL_LABELS[MONTH] = 'Month';
+INTERVAL_LABELS[MINUTES] = 'Minutes';
 
 /**
  *
@@ -37,6 +40,9 @@ export function parse(intervalString) {
 		if (key === YEAR) {
 			incrementerFn = /** @type {Function} */ (addYears);
 			seconds = incrementerValue * 365 * 24 * 60 * 60;
+		} else if (key === MONTH) {
+			incrementerFn = /** @type {Function} */ (addMonths);
+			seconds = incrementerValue * 30 * 24 * 60 * 60;
 		} else if (key === MINUTES) {
 			incrementerFn = /** @type {Function} */ (addMinutes);
 			seconds = incrementerValue * 60;

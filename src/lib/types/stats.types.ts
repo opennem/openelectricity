@@ -18,5 +18,6 @@ export type StatsData = {
 	history: DataSeries;
 	forecast?: DataSeries;
 	fuel_tech?: FuelTechCode;
+	data_type?: string;
 	colour?: string;
 };

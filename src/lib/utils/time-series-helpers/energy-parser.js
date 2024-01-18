@@ -83,11 +83,12 @@ export function transformToTimeSeriesDataset(dataset, outputRange) {
 		const newSet = { ...set };
 		newSet.history = { ...set.history };
 
-		if (set.history.interval === '5m') {
-			// convert to 30m
-			newSet.history.interval = '30m';
-			newSet.history.data = calculateMeanArray(set.history.data, 5, 30);
-		}
+		// if (set.history.interval === '1M') {
+		// 	// convert to 30m
+		// 	newSet.history.interval = '1Y';
+		// 	newSet.history.data = calculateMeanArray(set.history.data, 1, 12);
+		// }
+		// console.log('newSet', newSet);
 		newDataset.push(newSet);
 	});
 
@@ -130,8 +131,6 @@ export function transformToTimeSeriesDataset(dataset, outputRange) {
 		// TODO: throw a warning if length doesn't match
 		// console.log('check length', tsData.length, data.length);
 
-		console.log('length', data.length, data);
-
 		data.forEach(
 			/**
 			 *
@@ -140,7 +139,6 @@ export function transformToTimeSeriesDataset(dataset, outputRange) {
 			 */
 			(d, i) => {
 				tsData[i][id] = d;
-				// console.log('tsData[i]', i, tsData[i]);
 			}
 		);
 	});
