@@ -20,4 +20,5 @@ export type StatsData = {
 	fuel_tech?: FuelTechCode;
 	data_type?: string;
 	colour?: string;
+	[key: string]: any;
 };

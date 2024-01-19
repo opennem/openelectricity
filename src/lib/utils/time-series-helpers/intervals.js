@@ -29,7 +29,6 @@ INTERVAL_LABELS[MINUTES] = 'Minutes';
  * @returns {{ intervalString: string, key: string, label: string, seconds: number, incrementerValue: number, incrementerFn: Function | undefined }}}
  */
 export function parse(intervalString) {
-	console.log(intervalString);
 	const length = intervalString.length;
 	const key = intervalString.charAt(length - 1);
 	const incrementerValue = length === 1 ? 1 : parseInt(intervalString.substring(0, length - 1), 10);

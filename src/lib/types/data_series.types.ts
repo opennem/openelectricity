@@ -2,5 +2,5 @@ export type DataSeries = {
 	start: string;
 	last: string;
 	interval: string;
-	data: number[];
+	data: (number | null | undefined)[];
 };

@@ -1,30 +1,27 @@
 import { interpolate } from 'd3-interpolate';
 import { mean } from 'd3-array';
 import { parseISO } from 'date-fns';
-import { parse as parseInterval } from './intervals';
+import { parse as parseInterval } from '../intervals';
+import timeBucket from '../time-bucket';
+import timeSeries from '../time-series';
 
 /**
  * Transform backend json data to time series dataset and also additional meta data about the time series data
- * @param {import('$lib/types/stats.types').StatsData[]} dataset
- * @param {import('$lib/types/data_range.types').DataRange} outputRange
- * @returns {import('$lib/types/chart.types').TimeSeriesData[]|[]}
+ * @param {StatsData[]} dataset
+ * @param {DataRange} outputRange
+ * @returns {TimeSeriesData[]|[]}
  */
-export function transformToTimeSeriesDataset(dataset, outputRange) {
-	/** @type {*} */
+export function transform(dataset, outputRange) {
+	/** @type {StatsData[]} */
 	const newDataset = [];
-
-	console.log('dataset', dataset);
-
 	const intervalArr = [...new Set(dataset.map((d) => d.history.interval))].map((i) =>
 		parseInterval(i)
 	);
 	const minIntervalSeconds = Math.min(...intervalArr.map((i) => i.seconds));
 	const minIntervalObj = intervalArr.find((i) => i.seconds === minIntervalSeconds);
-
 	const otherDataset = dataset.find((d) => d.history.interval === minIntervalObj?.intervalString);
-	console.log('intervalArr', intervalArr, minIntervalSeconds);
 
-	/** @type {*} */
+	/** @type {StatsData[]} */
 	let interpolatedDatasets = [];
 
 	// interpolate data to min interval
@@ -56,24 +53,26 @@ export function transformToTimeSeriesDataset(dataset, outputRange) {
 	console.log('interpolatedDatasets', interpolatedDatasets);
 
 	interpolatedDatasets.forEach((set) => {
-		const data = set.history.data;
-		const seconds = minIntervalObj?.seconds || 0;
-		const interval = seconds * 1000;
-		const startTime = new Date(set.history.start);
+		if (set.history) {
+			const data = set.history.data;
+			const seconds = minIntervalObj?.seconds || 0;
+			const interval = seconds * 1000;
+			const startTime = parseISO(set.history.start);
 
-		const start = otherDataset?.history.start || '';
-		const last = otherDataset?.history.last || '';
-		const dataStartDate = new Date(start);
-		const dataLastDate = new Date(last);
+			const start = otherDataset?.history.start || '';
+			const last = otherDataset?.history.last || '';
+			const dataStartDate = parseISO(start);
+			const dataLastDate = parseISO(last);
 
-		const filteredData = data.filter((value, idx) => {
-			const currentTime = new Date(startTime.getTime() + idx * interval);
-			return currentTime >= dataStartDate && currentTime <= dataLastDate;
-		});
+			const filteredData = data.filter((value, idx) => {
+				const currentTime = new Date(startTime.getTime() + idx * interval);
+				return currentTime >= dataStartDate && currentTime <= dataLastDate;
+			});
 
-		set.history.data = filteredData;
-		set.history.start = start;
-		set.history.last = last;
+			set.history.data = filteredData;
+			set.history.start = start;
+			set.history.last = last;
+		}
 	});
 
 	[
@@ -83,12 +82,11 @@ export function transformToTimeSeriesDataset(dataset, outputRange) {
 		const newSet = { ...set };
 		newSet.history = { ...set.history };
 
-		// if (set.history.interval === '1M') {
-		// 	// convert to 30m
-		// 	newSet.history.interval = '1Y';
-		// 	newSet.history.data = calculateMeanArray(set.history.data, 1, 12);
-		// }
-		// console.log('newSet', newSet);
+		if (set.history.interval === '5m') {
+			// convert to 30m
+			newSet.history.interval = '30m';
+			newSet.history.data = calculateMeanArray(set.history.data, 5, 30);
+		}
 		newDataset.push(newSet);
 	});
 
@@ -103,50 +101,17 @@ export function transformToTimeSeriesDataset(dataset, outputRange) {
 	console.log('starts', starts[0], startDate);
 	console.log('lasts', lasts[0], lastDate);
 
-	let currentTime = startDate.getTime();
-	let lastTime = lastDate.getTime();
-
-	/** @type {*} */
-	const tsData = [];
-
-	// time bucket
-	while (currentTime <= lastTime) {
-		if (intervalObj.incrementerFn) {
-			tsData.push({
-				time: currentTime,
-				date: new Date(currentTime)
-			});
-			currentTime = intervalObj
-				// @ts-ignore
-				.incrementerFn(currentTime, intervalObj.incrementerValue)
-				.getTime();
-		}
-	}
-
-	// add history data
-	newDataset.forEach((ds) => {
-		const id = ds.id;
-		const data = ds.history.data;
-
-		// TODO: throw a warning if length doesn't match
-		// console.log('check length', tsData.length, data.length);
-
-		data.forEach(
-			/**
-			 *
-			 * @param {*} d
-			 * @param {number} i
-			 */
-			(d, i) => {
-				tsData[i][id] = d;
-			}
-		);
+	/** @type {TimeSeriesData[]} */
+	const tsData = timeSeries({
+		bucket: timeBucket({
+			start: startDate,
+			last: lastDate,
+			incrementer: intervalObj.incrementerFn,
+			incrementValue: intervalObj.incrementerValue
+		}),
+		dataset: newDataset,
+		dataProp: 'history'
 	});
-
-	console.log('tsData', tsData, newDataset);
-
-	// const loads = ['pumps', 'battery_charging', 'exports'];
-	// const loadSeries = newDataset.filter((d) => loads.includes(d.fuel_tech)).map((d) => d.id);
 
 	return tsData;
 }

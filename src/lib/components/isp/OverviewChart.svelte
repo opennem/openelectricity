@@ -38,6 +38,14 @@
 	/** @type {string[]} */
 	export let seriesColours = [];
 
+	/** @type {*} */
+	export let xTicks = undefined;
+
+	/** @type {*} */
+	export let yTicks = undefined;
+
+	export let overlay = false;
+
 	/** TODO: work out transition */
 	const tweenOptions = {
 		duration: 750,
@@ -59,13 +67,6 @@
 	$: console.log('evt', evt);
 
 	$: stackedData = stack(dataset, seriesNames);
-	// $: allYears = [...new Set(dataset.map((d) => d.date))];
-	const someYears = [
-		new Date('2050-01-01'),
-		new Date('2040-01-01'),
-		new Date('2030-01-01'),
-		new Date('2024-01-01')
-	];
 </script>
 
 <div class="chart-container">
@@ -90,11 +91,14 @@
 				<HatchPattern id="hatch-pattern" />
 			</defs>
 
-			<AxisY ticks={2} xTick={5} formatTick={formatTickY} gridlines={false} />
-			<AxisX ticks={someYears} gridlines={false} formatTick={formatTickX} tickMarks={true} />
+			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />
+			<AxisX ticks={xTicks} gridlines={false} formatTick={formatTickX} tickMarks={true} />
 
 			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
-			<Overlay fill="url(#hatch-pattern)" />
+
+			{#if overlay}
+				<Overlay fill="url(#hatch-pattern)" />
+			{/if}
 		</Svg>
 
 		<Html pointerEvents={false}>

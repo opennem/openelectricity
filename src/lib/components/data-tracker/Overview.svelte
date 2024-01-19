@@ -1,12 +1,9 @@
 <script>
 	import { fuelTechName, fuelTechColour, fuelTechOrder } from '$lib/fuel_techs.js';
-	import { transformToTimeSeriesDataset } from '$lib/utils/time-series-helpers/data-tracker-helpers.js';
+	import { transform } from '$lib/utils/time-series-helpers/transform/power.js';
 	import deepCopy from '$lib/utils/deep-copy';
 
 	import OverviewChart from './OverviewChart.svelte';
-
-	/** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
-	/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
 
 	/** @type {TimeSeriesData[]} */
 	export let data;
@@ -47,7 +44,7 @@
 		});
 	}
 
-	$: tsData = transformToTimeSeriesDataset(orderedAndLoadsInverted, '30m');
+	$: tsData = transform(orderedAndLoadsInverted, '30m');
 	$: seriesColours = orderedAndLoadsInverted.map((d) => fuelTechColour(d.fuel_tech));
 	$: seriesNames =
 		tsData && tsData.length ? Object.keys(tsData[0]).filter((d) => d !== xKey && d !== 'time') : [];

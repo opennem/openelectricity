@@ -3,11 +3,6 @@ import { formatInTimeZone } from 'date-fns-tz';
 
 import { fuelTechGroup, fuelTechGroupMap, historicalEnergyGroupMap } from '$lib/fuel_techs.js';
 
-/** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
-/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
-/** @typedef {import('$lib/types/isp.types').IspData} IspData */
-/** @typedef {import('$lib/types/stats.types').StatsData} StatsData */
-
 export const formatTickX = (/** @type {Date} */ d) => formatInTimeZone(d, '+10:00', 'yyyy');
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 export const formatValue = (/** @type {number} */ d) => {

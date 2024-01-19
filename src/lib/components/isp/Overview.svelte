@@ -1,6 +1,6 @@
 <script>
 	import { formatInTimeZone } from 'date-fns-tz';
-	import { rollup, sum } from 'd3-array';
+	import { rollup } from 'd3-array';
 	import {
 		fuelTechNames,
 		fuelTechName,
@@ -8,8 +8,7 @@
 		fuelTechGroups,
 		historicalEnergyGroups
 	} from '$lib/fuel_techs.js';
-	import { transformToTimeSeriesDataset } from '$lib/utils/time-series-helpers';
-	import { transformToTimeSeriesDataset as transformToTsDataset } from '$lib/utils/time-series-helpers/energy-parser';
+	import { transform as transformEnergy } from '$lib/utils/time-series-helpers/transform/energy';
 	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import deepCopy from '$lib/utils/deep-copy';
 	import { groupedIspData, groupedStatsData } from './helpers';
@@ -18,19 +17,12 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Select from '$lib/components/form-elements/Select.svelte';
 
-	import HistoricalChart from './HistoricalChart.svelte';
 	import OverviewChart from './OverviewChart.svelte';
 	import SparkBar from './SparkBar.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
 	import DashboardViewOptions from './DashboardViewOptions.svelte';
 
-	/** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
-	/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
-	/** @typedef {import('$lib/types/isp.types').IspData} IspData */
-	/** @typedef {import('$lib/types/stats.types').StatsData} StatsData */
-	/** @typedef {import('$lib/types/isp.types').ScenarioKey} ScenarioKey */
-
-	/** @type {{ fuelTechs: string[], outlookEnergyNem: import('$lib/types/isp.types').Isp, historyEnergyNemData: StatsData[]  }} */
+	/** @type {{ fuelTechs: string[], outlookEnergyNem: Isp, historyEnergyNemData: StatsData[]  }} */
 	export let data;
 
 	const xKey = 'date';
@@ -84,6 +76,7 @@
 	$: filteredWithPathwayScenario = filteredWithScenario.filter(
 		(d) => d.pathway === selectedPathway
 	);
+	$: yDomain = selectedScenario === 'hydrogen_superpower' ? [0, 1550000] : [0, 550000];
 
 	/** @type {IspData[]} */
 	let orderedFilteredWithPathwayScenario = [];
@@ -103,7 +96,7 @@
 			// invert load fuel techs so it displays below the zero x axis in the stacked area chart
 			if (loadFts.includes(code)) {
 				d.projection.data.forEach((value, i) => {
-					d.projection.data[i] = value * -1;
+					d.projection.data[i] = value ? value * -1 : null;
 				});
 			}
 		});
@@ -128,7 +121,7 @@
 
 	$: if (selectedFtGroup === 'Custom') {
 		let groupedDatasets = groupedIspData(fuelTechGroups, orderedFilteredWithPathwayScenario);
-		let transformedFiltered = transformToTimeSeriesDataset(groupedDatasets);
+		let transformedFiltered = transformEnergy(groupedDatasets, 'projection', '1Y');
 		seriesColours = fuelTechGroups.map((d) => fuelTechColour(d));
 		seriesNames =
 			transformedFiltered && transformedFiltered.length
@@ -139,8 +132,12 @@
 		tsData = withMinMax(transformedFiltered, seriesNames, loadSeries);
 		dataset = groupedDatasets;
 	} else if (selectedFtGroup === 'Detailed') {
-		let transformedFiltered = transformToTimeSeriesDataset(orderedFilteredWithPathwayScenario);
-		let transformedFiltered2 = transformToTimeSeriesDataset(filteredWithPathwayScenario);
+		let transformedFiltered = transformEnergy(
+			orderedFilteredWithPathwayScenario,
+			'projection',
+			'1Y'
+		);
+		let transformedFiltered2 = transformEnergy(filteredWithPathwayScenario, 'projection', '1Y');
 
 		seriesColours = orderedFilteredWithPathwayScenario.map((d) => fuelTechColour(d.fuel_tech));
 		seriesNames =
@@ -223,10 +220,7 @@
 		});
 		let groupedDatasets = groupedStatsData(historicalEnergyGroups, ordered);
 
-		let transformed = transformToTsDataset(groupedDatasets, '1M');
-
-		console.log('groupedDatasets', groupedDatasets);
-		console.log('transformed', transformed);
+		let transformed = transformEnergy(groupedDatasets, 'history', '1M');
 
 		historicalSeriesColours = fuelTechGroups.map((d) => fuelTechColour(d));
 		historicalSeriesNames =
@@ -258,10 +252,8 @@
 
 		const groupBy = [...groupByYearDate.values()];
 
-		console.log('groupByYearDate', groupByYearDate, groupBy);
-
 		const loadSeries = seriesNames.filter((d) => loadFts.find((l) => d.includes(l)));
-		historicalTsData = withMinMax(groupBy, seriesNames, loadSeries);
+		historicalTsData = withMinMax(groupBy, historicalSeriesNames, loadSeries);
 		historicalDataset = groupedDatasets;
 	}
 </script>
@@ -325,18 +317,18 @@
 				</div> -->
 			</div>
 
-			<HistoricalChart
+			<OverviewChart
 				dataset={historicalTsData}
 				{xKey}
+				xTicks={[new Date('1999-01-01'), new Date('2023-01-01')]}
 				yKey={[0, 1]}
-				yDomain={selectedScenario === 'hydrogen_superpower' ? [0, 1550000] : [0, 550000]}
+				yTicks={0}
+				{yDomain}
 				zKey="key"
 				seriesNames={historicalSeriesNames}
 				seriesColours={historicalSeriesColours}
 			/>
 		</div>
-
-		<!-- yDomain={selectedScenario === 'hydrogen_superpower' ? undefined : [0, 500000]} -->
 
 		<div class="col-span-4">
 			{#if filteredWithPathwayScenario.length === 0}
@@ -347,11 +339,19 @@
 					description={scenarioDescriptions[selectedScenario]}
 					dataset={tsData}
 					{xKey}
+					xTicks={[
+						new Date('2050-01-01'),
+						new Date('2040-01-01'),
+						new Date('2030-01-01'),
+						new Date('2024-01-01')
+					]}
 					yKey={[0, 1]}
-					yDomain={selectedScenario === 'hydrogen_superpower' ? [0, 1550000] : [0, 550000]}
+					yTicks={2}
+					{yDomain}
 					zKey="key"
 					{seriesNames}
 					{seriesColours}
+					overlay={true}
 					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 					on:mouseout={() => (hoverData = undefined)}
 				/>
