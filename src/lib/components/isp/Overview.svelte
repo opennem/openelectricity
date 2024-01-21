@@ -352,6 +352,7 @@
 					{seriesNames}
 					{seriesColours}
 					overlay={true}
+					bgClass="bg-light-warm-grey"
 					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 					on:mouseout={() => (hoverData = undefined)}
 				/>

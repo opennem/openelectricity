@@ -46,6 +46,8 @@
 
 	export let overlay = false;
 
+	export let bgClass = '';
+
 	/** TODO: work out transition */
 	const tweenOptions = {
 		duration: 750,
@@ -83,7 +85,7 @@
 		data={stackedData}
 	>
 		<Html>
-			<div class="absolute top-0 left-0 right-0 bottom-0 bg-light-warm-grey" role="presentation" />
+			<div class="absolute top-0 left-0 right-0 bottom-0 {bgClass}" role="presentation" />
 		</Html>
 
 		<Svg>
