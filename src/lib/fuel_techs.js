@@ -135,9 +135,17 @@ export const fossilRenewablesGroupMap = {
 		'gas_ocgt',
 		'gas_recip',
 		'gas_steam',
-		'gas_wcmg'
+		'gas_wcmg',
+		'distillate'
 	],
-	renewables: ['solar_utility', 'solar_rooftop', 'wind', 'hydro']
+	renewables: [
+		'solar_utility',
+		'solar_rooftop',
+		'wind',
+		'hydro',
+		'bioenergy_biogas',
+		'bioenergy_biomass'
+	]
 };
 
 /** @type {Object.<FuelTechCode, string>}} */
