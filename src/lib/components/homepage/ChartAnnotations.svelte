@@ -36,8 +36,8 @@
 	<div
 		class="absolute"
 		style="
-      top:{top(group.values) - 20}px;
-      left:{left(group.values) + 30}px;
+      top:{top(group.values) - 9}px;
+      left:{left(group.values) + 10}px;
     "
 	>
 		<div class="flex items-center gap-4">
