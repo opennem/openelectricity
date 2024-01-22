@@ -49,7 +49,10 @@ export const fuelTechNameMap = {
 	solar_utility: 'Solar (Utility)',
 	solar_thermal: 'Solar (Thermal)',
 	solar_rooftop: 'Solar (Rooftop)',
-	solar: 'Solar'
+	solar: 'Solar',
+
+	fossil_fuels: 'Fossil Fuels',
+	renewables: 'Renewables'
 };
 
 export const fuelTechOrder = [
@@ -123,6 +126,20 @@ export const historicalEnergyGroupMap = {
 	solar: ['solar_utility', 'solar_rooftop']
 };
 
+/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
+export const fossilRenewablesGroupMap = {
+	fossil_fuels: [
+		'coal_black',
+		'coal_brown',
+		'gas_ccgt',
+		'gas_ocgt',
+		'gas_recip',
+		'gas_steam',
+		'gas_wcmg'
+	],
+	renewables: ['solar_utility', 'solar_rooftop', 'wind', 'hydro']
+};
+
 /** @type {Object.<FuelTechCode, string>}} */
 export const fuelTechColourMap = {
 	battery_charging: '#4F5FD7',
@@ -168,7 +185,10 @@ export const fuelTechColourMap = {
 	imports: '#CFA7FF',
 	exports: '#722AF7',
 	interconnector: '#7F7F7F',
-	demand_response: '#7F7F7F'
+	demand_response: '#7F7F7F',
+
+	fossil_fuels: '#594929',
+	renewables: '#52A972'
 };
 
 export const fuelTechGroups = /** @type {FuelTechCode[]} */ (getKeys(fuelTechGroupMap));
@@ -176,6 +196,10 @@ export const fuelTechNames = getKeys(fuelTechNameMap);
 
 export const historicalEnergyGroups = /** @type {FuelTechCode[]} */ (
 	getKeys(historicalEnergyGroupMap)
+);
+
+export const fossilRenewablesGroups = /** @type {FuelTechCode[]} */ (
+	getKeys(fossilRenewablesGroupMap)
 );
 
 /**

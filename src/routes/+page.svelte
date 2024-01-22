@@ -12,6 +12,7 @@
 	import Switch from '$lib/components/Switch.svelte';
 	import IspOverview from '$lib/components/isp/Overview.svelte';
 	import DataTrackerOverview from '$lib/components/data-tracker/Overview.svelte';
+	import FossilFuelsVsRenewables from '$lib/components/homepage/FossilFuelsVsRenewables.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -53,43 +54,49 @@
 	$: mapData = data[mapMode];
 </script>
 
-<div class="bg-light-warm-grey">
-	<div class="container max-w-none lg:container">
-		<div class="flex py-20 justify-between items-center">
-			<div class="w-6/12">
-				<h2 class="md:text-9xl md:leading-9xl">{banner_title}</h2>
-				<p>{@html banner_statement}</p>
+<div class="container max-w-none lg:container">
+	<FossilFuelsVsRenewables
+		data={historyEnergyNemData}
+		title={banner_title}
+		description={banner_statement}
+	/>
+
+	<!-- <div class="flex py-20 justify-between items-center">
+		<div class="w-6/12">
+			<h2 class="md:text-9xl md:leading-9xl">{banner_title}</h2>
+			<p>{@html banner_statement}</p>
+		</div>
+
+		<div class="w-5/12 p-8 font-medium text-sm">
+			<div class="flex gap-8 justify-between bg-white p-20 font-medium text-sm rounded-md">
+				<div class="flex-grow">
+					<GenerationMixSparkline class="block w-full" />
+					<div class="text-xs text-mid-grey text-right">October 2023</div>
+				</div>
+				<div class="flex flex-col gap-8 flex-shrink">
+					<div class="flex gap-4 items-center">
+						<FossilIconAnim />
+						<div>
+							<h5 class="mb-0">Fossil</h5>
+							<h3 class="mb-0">61.4%</h3>
+						</div>
+					</div>
+					<div class="flex gap-4 items-center">
+						<RenewableIconAnim />
+						<div>
+							<h5 class="mb-0">Renewables</h5>
+							<h3 class="mb-0">38.6%</h3>
+						</div>
+					</div>
+				</div>
 			</div>
-			<div class="w-5/12 p-8 font-medium text-sm">
-				<div class="flex gap-8 justify-between bg-white p-20 font-medium text-sm rounded-md">
-					<div class="flex-grow">
-						<GenerationMixSparkline class="block w-full" />
-						<div class="text-xs text-mid-grey text-right">October 2023</div>
-					</div>
-					<div class="flex flex-col gap-8 flex-shrink">
-						<div class="flex gap-4 items-center">
-							<FossilIconAnim />
-							<div>
-								<h5 class="mb-0">Fossil</h5>
-								<h3 class="mb-0">61.4%</h3>
-							</div>
-						</div>
-						<div class="flex gap-4 items-center">
-							<RenewableIconAnim />
-							<div>
-								<h5 class="mb-0">Renewables</h5>
-								<h3 class="mb-0">38.6%</h3>
-							</div>
-						</div>
-					</div>
-				</div>
-				<div class="mt-8 text-xs text-mid-grey text-right">
-					Contribution to demand. Rolling 12 month average. View data.
-				</div>
+			<div class="mt-8 text-xs text-mid-grey text-right">
+				Contribution to demand. Rolling 12 month average. View data.
 			</div>
 		</div>
-	</div>
+	</div> -->
 </div>
+
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
 		<header class="flex justify-between">

@@ -11,8 +11,6 @@
 
 	import KeyHeader from './KeyHeader.svelte';
 
-	/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
-
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
 

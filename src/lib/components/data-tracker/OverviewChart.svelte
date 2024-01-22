@@ -1,6 +1,5 @@
 <script>
 	import { LayerCake, Svg, Html, flatten, stack } from 'layercake';
-
 	import { scaleOrdinal } from 'd3-scale';
 	import { format as d3Format } from 'd3-format';
 	import { formatInTimeZone } from 'date-fns-tz';
@@ -54,7 +53,7 @@
 		data={stackedData}
 	>
 		<Html>
-			<div class="italic text-right text-xs text-dark-grey mr-8 mt-3">
+			<div class="italic text-right text-xs text-dark-grey mr-8 -mt-8">
 				Last 7 days Power Generation (GW)
 			</div>
 		</Html>
