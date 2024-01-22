@@ -5,9 +5,17 @@ const perfTime = new PerfTime();
 
 export default function (data, keys) {
 	perfTime.time();
-	for (let x = data.length - 1; x >= 0; x--) {
-		const d = data[x];
-		const last = subMonths(data[x].date, 12);
+
+	const cloneData = data.map((d) => {
+		return {
+			...d,
+			date: new Date(d.date)
+		};
+	});
+
+	for (let x = cloneData.length - 1; x >= 0; x--) {
+		const d = cloneData[x];
+		const last = subMonths(cloneData[x].date, 12);
 
 		keys.forEach((k) => {
 			const id = k;
@@ -17,12 +25,12 @@ export default function (data, keys) {
 			let hasNulls = false;
 
 			if (index >= 0) {
-				while (isAfter(data[index].date, last)) {
-					if (!data[index][id] && data[index][id] !== 0) {
+				while (isAfter(cloneData[index].date, last)) {
+					if (!cloneData[index][id] && cloneData[index][id] !== 0) {
 						hasNulls = true;
 					}
 
-					sum += data[index][id] || 0;
+					sum += cloneData[index][id] || 0;
 
 					index--;
 					count++;
@@ -33,14 +41,14 @@ export default function (data, keys) {
 				}
 			}
 
-			data[x][id] = hasNulls ? null : sum;
+			cloneData[x][id] = hasNulls ? null : sum;
 		});
 	}
 
 	// filter out incomplete rolling sums
-	const firstDate = data[0].date;
+	const firstDate = cloneData[0].date;
 	const firstAvailable = addMonths(firstDate, 11);
-	const updated = data.filter((d) => isAfter(d.date, firstAvailable));
+	const updated = cloneData.filter((d) => isAfter(d.date, firstAvailable));
 
 	perfTime.timeEnd('--- data.12month-rolling-sum');
 
