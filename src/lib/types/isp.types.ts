@@ -5,7 +5,8 @@ export type ScenarioKey =
 	| 'step_change'
 	| 'progressive_change'
 	| 'slow_change'
-	| 'hydrogen_superpower';
+	| 'hydrogen_superpower'
+	| 'green_energy_exports';
 
 export type Isp = {
 	type: string;

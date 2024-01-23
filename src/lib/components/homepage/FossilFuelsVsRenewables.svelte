@@ -21,6 +21,7 @@
 	import MultiLine from '$lib/components/charts/MultiLine.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
+	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 	import ChartAnnotations from './ChartAnnotations.svelte';
 
 	export let data;
@@ -235,6 +236,8 @@
 		</Svg>
 
 		<Html>
+			<HoverLine dataset={tsData} formatValue={formatTickX} on:mousemove on:mouseout />
+
 			<div class="w-6/12 mt-[150px]">
 				<h2 class="md:text-9xl md:leading-9xl">{title}</h2>
 				<p>{@html description}</p>

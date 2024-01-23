@@ -1,5 +1,6 @@
-import outlookEnergyNem from '$lib/isp-data/isp_outlooks/au/NEM/energy/outlook.json';
+// import outlookEnergyNem from '$lib/isp-data/isp_outlooks/au/NEM/energy/outlook.json';
 // import outlookCapacityNem from '$lib/isp-data/isp_outlooks/au/NEM/capacity/outlook.json';
+import outlookEnergyNem from '$lib/isp-data/outlooks2024/au/NEM/energy/outlook.json';
 
 function ispData() {
 	const data = outlookEnergyNem.data;

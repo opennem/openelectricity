@@ -27,6 +27,7 @@
 		articles,
 		outlookEnergyNem,
 		fuelTechs,
+		scenarios,
 
 		dataTrackerData,
 
@@ -52,6 +53,8 @@
 	// Track map mode and data
 	$: mapMode = 'live';
 	$: mapData = data[mapMode];
+
+	$: console.log('scenarios', scenarios);
 </script>
 
 <div class="container max-w-none lg:container">

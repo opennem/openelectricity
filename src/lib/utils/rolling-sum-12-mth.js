@@ -21,7 +21,6 @@ export default function (data, keys) {
 			const id = k;
 			let sum = d[id] || 0;
 			let index = x - 1;
-			let count = 1;
 			let hasNulls = false;
 
 			if (index >= 0) {
@@ -33,7 +32,6 @@ export default function (data, keys) {
 					sum += cloneData[index][id] || 0;
 
 					index--;
-					count++;
 
 					if (index < 0) {
 						break;
@@ -47,7 +45,7 @@ export default function (data, keys) {
 
 	// filter out incomplete rolling sums
 	const firstDate = cloneData[0].date;
-	const firstAvailable = addMonths(firstDate, 11);
+	const firstAvailable = addMonths(firstDate, 12);
 	const updated = cloneData.filter((d) => isAfter(d.date, firstAvailable));
 
 	perfTime.timeEnd('--- data.12month-rolling-sum');
