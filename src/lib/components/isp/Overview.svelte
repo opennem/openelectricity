@@ -29,12 +29,15 @@
 
 	let ftGroups = ['Custom', 'Detailed'];
 	/** @type {ScenarioKey[]} */
-	let scenarios = ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower']; // scenarios in display order
+	// let scenarios = ['step_change', 'progressive_change', 'slow_change', 'hydrogen_superpower']; // scenarios in display order
+	let scenarios = ['step_change', 'progressive_change', 'green_energy_exports']; // scenarios in display order
+
 	let scenarioLabels = {
 		step_change: 'Step Change',
 		progressive_change: 'Progressive Change',
-		slow_change: 'Slow Change',
-		hydrogen_superpower: 'Hydrogen Superpower'
+		// slow_change: 'Slow Change',
+		green_energy_exports: 'Green Energy Exports'
+		// hydrogen_superpower: 'Hydrogen Superpower'
 	};
 	let scenarioDescriptions = {
 		step_change:
@@ -43,8 +46,8 @@
 			'The Progressive Change scenario is designed to assess the potential impact of a gradual and evolving transition toward a low-carbon energy system, taking into account the complexities and challenges associated with achieving decarbonization goals.',
 		slow_change:
 			'The Slow Change scenario is an unlikely transition scenario that does not meet carbon reduction targets. It takes into account the difficult economic environment following the COVID-19 pandemic, reflecting a slower economy and falling short of the targets.',
-		hydrogen_superpower:
-			'The Hydrogen Superpower scenario is a highly ambitious scenario that includes strong global action, significant technological breakthroughs, and a near quadrupling of National Electricity Market (NEM) energy consumption to support a hydrogen export industry. '
+		green_energy_exports:
+			'The Green Energy Exports scenario is a highly ambitious scenario that includes strong global action, significant technological breakthroughs, and a near quadrupling of National Electricity Market (NEM) energy consumption to support a hydrogen export industry. '
 	};
 
 	/** @type {'line'|'bar'} */
@@ -76,7 +79,7 @@
 	$: filteredWithPathwayScenario = filteredWithScenario.filter(
 		(d) => d.pathway === selectedPathway
 	);
-	$: yDomain = selectedScenario === 'hydrogen_superpower' ? [0, 1550000] : [0, 550000];
+	$: yDomain = selectedScenario === 'green_energy_exports' ? [0, 1550000] : [0, 550000];
 
 	/** @type {IspData[]} */
 	let orderedFilteredWithPathwayScenario = [];
@@ -159,8 +162,8 @@
 		return acc;
 	}, {});
 
-	const trackYears = [2024, 2030, 2051];
-	const startEndYears = [2024, 2051];
+	const trackYears = [2025, 2030, 2051];
+	const startEndYears = [2025, 2052];
 
 	$: startEndXTicks = startEndYears.map((year) => new Date(`${year}-01-01`));
 
@@ -282,7 +285,7 @@
 						These scenarios aim to steer Australia towards a cost-effective, reliable and safe
 						energy system en route to a zero-emissions electricity network.
 					</p>
-					<p>Explore the <strong>2022 AEMO</strong> future scenarios below.</p>
+					<p>Explore the <strong>draft 2024 AEMO</strong> future scenarios below.</p>
 				</div>
 
 				<div class="grid grid-cols-2 gap-6">
@@ -302,7 +305,7 @@
 					{/each}
 				</div>
 
-				<!-- <div
+				<div
 					class="border-t-1 border-mid-warm-grey pt-6 mt-12 mr-12 flex gap-6 text-sm text-alert-yellow"
 				>
 					<label for="pathway-select">
@@ -314,7 +317,7 @@
 						<span>Fuel Technology Group</span>
 						<Select bind:value={selectedFtGroup} options={ftGroups} id="ft-group-select" />
 					</label>
-				</div> -->
+				</div>
 			</div>
 
 			<OverviewChart
@@ -343,7 +346,7 @@
 						new Date('2050-01-01'),
 						new Date('2040-01-01'),
 						new Date('2030-01-01'),
-						new Date('2024-01-01')
+						new Date('2025-01-01')
 					]}
 					yKey={[0, 1]}
 					yTicks={2}
