@@ -5,10 +5,10 @@
 	const { xGet, yGet, xScale, height } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
-	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
+	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
 
-	/** @type {import('$lib/types/chart.types').TimeSeriesData | undefined} */
+	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
 
 	export let lineColour = '#333';

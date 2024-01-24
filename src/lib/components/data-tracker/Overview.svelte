@@ -63,13 +63,13 @@
 		},
 		{}
 	);
-	$: console.log('updated', orderedAndLoadsInverted, tsData);
-	$: console.log('seriesNames', seriesNames, fuelTechLabelDict);
-	$: console.log('seriesColours', seriesColours, fuelTechColourDict);
+	// $: console.log('updated', orderedAndLoadsInverted, tsData);
+	// $: console.log('seriesNames', seriesNames, fuelTechLabelDict);
+	// $: console.log('seriesColours', seriesColours, fuelTechColourDict);
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
-	$: console.log('hoverData', hoverData);
+	// $: console.log('hoverData', hoverData);
 </script>
 
 {#if tsData.length === 0}

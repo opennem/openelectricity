@@ -6,7 +6,7 @@
 	/** @type {string} shape's fill colour */
 	export let stroke = '#ababab';
 
-	/** @type {import('$lib/types/chart.types').TimeSeriesData | undefined} */
+	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
 
 	$: cx = hoverData ? $xGet(hoverData) : 0;

@@ -197,7 +197,7 @@
 	let hoverData = undefined;
 
 	const historicalData = data.historyEnergyNemData;
-	$: console.log('historicalData', historicalData);
+	// $: console.log('historicalData', historicalData);
 
 	/** @type {StatsData[]} */
 	let historicalDataset = [];
@@ -355,6 +355,7 @@
 					{seriesNames}
 					{seriesColours}
 					overlay={true}
+					{hoverData}
 					bgClass="bg-light-warm-grey"
 					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 					on:mouseout={() => (hoverData = undefined)}

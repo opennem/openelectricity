@@ -8,7 +8,7 @@
 	const { data, y, xGet, yGet, zGet } = getContext('LayerCake');
 	const formatY = format('.1f');
 
-	$: console.log('annotation', annotation, dataset);
+	// $: console.log('annotation', annotation, dataset);
 
 	$: left = (values) => {
 		const latest = values[values.length - 1];
@@ -26,9 +26,9 @@
 		return find ? find.label : '';
 	};
 
-	$: value = (values) => {
-		const latest = values[values.length - 1];
-		return $y(latest);
+	$: getValue = (group) => {
+		if (!annotation) return 0;
+		return annotation[group.group];
 	};
 </script>
 
@@ -46,7 +46,7 @@
 		</div>
 
 		<span class="text-2xl font-semibold">
-			{formatY(value(group.values))}%
+			{formatY(getValue(group))}%
 		</span>
 	</div>
 {/each}

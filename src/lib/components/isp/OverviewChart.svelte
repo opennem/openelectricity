@@ -11,6 +11,7 @@
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
+	import HoverDots from '$lib/components/charts/HoverDots.svelte';
 	import Overlay from '$lib/components/charts/Overlay.svelte';
 	import HatchPattern from '$lib/components/charts/defs/HatchPattern.svelte';
 
@@ -47,6 +48,9 @@
 	export let overlay = false;
 
 	export let bgClass = '';
+
+	/** @type {TimeSeriesData | undefined}*/
+	export let hoverData = undefined;
 
 	/** TODO: work out transition */
 	const tweenOptions = {
@@ -108,8 +112,19 @@
 		</Html>
 
 		<Html>
-			<HoverLine {dataset} isShapeStack={true} formatValue={formatTickX} on:mousemove on:mouseout />
+			<HoverLine
+				{dataset}
+				{hoverData}
+				isShapeStack={true}
+				formatValue={formatTickX}
+				on:mousemove
+				on:mouseout
+			/>
 		</Html>
+
+		<Svg pointerEvents={false}>
+			<HoverDots {dataset} {hoverData} />
+		</Svg>
 	</LayerCake>
 </div>
 

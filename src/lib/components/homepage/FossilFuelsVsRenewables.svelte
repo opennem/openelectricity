@@ -30,7 +30,7 @@
 
 	const xKey = 'date';
 	const formatTickX = (/** @type {Date} */ d) => formatInTimeZone(d, '+10:00', 'yyyy');
-	const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
+	const formatTickY = (/** @type {number} */ d) => `${d3Format('~s')(d)}%`;
 
 	/** @type {StatsData[]} */
 	let historicalDataset = [];
@@ -46,6 +46,9 @@
 
 	/** @type {*} */
 	let nameMap = {};
+
+	/** @type {TimeSeriesData | undefined} */
+	export let hoverData = undefined;
 
 	let totalSet = {
 		data_type: 'energy',
@@ -216,7 +219,7 @@
 
 <div class="chart-container">
 	<LayerCake
-		padding={{ top: 50, right: 0, bottom: 50, left: 50 }}
+		padding={{ top: 20, right: 15, bottom: 40, left: 45 }}
 		x={'date'}
 		xDomain={[new Date(2000, 0, 1).getTime(), new Date(2030, 11, 31).getTime()]}
 		y={'value'}
@@ -232,18 +235,23 @@
 			<AxisX formatTick={formatTickX} ticks={displayXTicks} tickMarks={true} gridlines={true} />
 			<AxisY formatTick={formatTickY} ticks={5} />
 
-			<MultiLine />
+			<MultiLine {hoverData} />
 		</Svg>
 
 		<Html>
-			<HoverLine dataset={tsData} formatValue={formatTickX} on:mousemove on:mouseout />
+			<HoverLine
+				dataset={tsData}
+				formatValue={formatTickX}
+				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+				on:mouseout={() => (hoverData = undefined)}
+			/>
 
-			<div class="w-6/12 mt-[150px]">
+			<div class="w-6/12 mt-[150px] ml-6">
 				<h2 class="md:text-9xl md:leading-9xl">{title}</h2>
 				<p>{@html description}</p>
 			</div>
 
-			<ChartAnnotations annotation={latestDatapoint} dataset={historicalDataset} />
+			<ChartAnnotations annotation={hoverData || latestDatapoint} dataset={historicalDataset} />
 		</Html>
 	</LayerCake>
 </div>
