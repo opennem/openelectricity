@@ -26,7 +26,7 @@ export async function load({ fetch }) {
 	const dataTrackerRes = await fetch(`${PUBLIC_JSON_API}/au/NEM/power/7d.json`);
 	const { data: dataTrackerJson } = await dataTrackerRes.json();
 	const dataTrackerData = dataTrackerJson.filter(
-		(/** @type {import('$lib/types/stats.types').StatsData} */ d) => d.fuel_tech
+		(/** @type {StatsData} */ d) => d.fuel_tech && d.type === 'power'
 	);
 
 	const historyEnergyNemRes = await fetch(`${PUBLIC_JSON_API}/au/NEM/energy/all.json`);
