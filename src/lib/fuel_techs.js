@@ -84,8 +84,6 @@ export const fuelTechGroupMap = {
 
 	// imports: ['imports'],
 
-	battery: ['battery_discharging', 'battery_VPP_discharging', 'battery_distributed_discharging'],
-
 	coal: ['coal_black', 'coal_brown'],
 
 	gas: [
@@ -100,6 +98,7 @@ export const fuelTechGroupMap = {
 
 	hydro: ['hydro'],
 
+	battery: ['battery_discharging', 'battery_VPP_discharging', 'battery_distributed_discharging'],
 	wind: ['wind', 'wind_offshore'],
 
 	solar: ['solar_utility', 'solar_thermal', 'solar_rooftop']
@@ -113,13 +112,12 @@ export const historicalEnergyGroupMap = {
 
 	// imports: ['imports'],
 
-	battery: ['battery_discharging'],
-
 	coal: ['coal_black', 'coal_brown'],
 
 	gas: ['gas_ccgt', 'gas_ocgt', 'gas_recip', 'gas_steam', 'gas_wcmg'],
 
 	hydro: ['hydro'],
+	battery: ['battery_discharging'],
 
 	wind: ['wind'],
 
