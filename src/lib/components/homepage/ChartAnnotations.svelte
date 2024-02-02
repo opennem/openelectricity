@@ -8,8 +8,6 @@
 	const { data, y, xGet, yGet, zGet } = getContext('LayerCake');
 	const formatY = format('.1f');
 
-	// $: console.log('annotation', annotation, dataset);
-
 	$: left = (values) => {
 		const latest = values[values.length - 1];
 

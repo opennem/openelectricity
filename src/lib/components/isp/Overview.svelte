@@ -71,7 +71,7 @@
 
 	$: scenarioPathways = [...new Set(filteredWithScenario.map((d) => d.pathway))].sort(); // get all pathways for selected scenario
 	$: if (selectedPathway === undefined) {
-		selectedPathway = scenarioPathways[0]; // initialise selected pathway to first pathway in scenario
+		selectedPathway = 'CDP11 (ODP)';
 	}
 
 	$: outlookData = data.outlookEnergyNem.data;
@@ -253,7 +253,8 @@
 			(d) => d.date.getFullYear()
 		);
 
-		const groupBy = [...groupByYearDate.values()];
+		// filter out 2024 data since 2024 is incomplete
+		const groupBy = [...groupByYearDate.values()].filter((d) => d.date.getFullYear() < 2024);
 
 		const loadSeries = seriesNames.filter((d) => loadFts.find((l) => d.includes(l)));
 		historicalTsData = withMinMax(groupBy, historicalSeriesNames, loadSeries);
@@ -305,7 +306,7 @@
 					{/each}
 				</div>
 
-				<div
+				<!-- <div
 					class="border-t-1 border-mid-warm-grey pt-6 mt-12 mr-12 flex gap-6 text-sm text-alert-yellow"
 				>
 					<label for="pathway-select">
@@ -317,7 +318,7 @@
 						<span>Fuel Technology Group</span>
 						<Select bind:value={selectedFtGroup} options={ftGroups} id="ft-group-select" />
 					</label>
-				</div>
+				</div> -->
 			</div>
 
 			<OverviewChart
@@ -338,7 +339,7 @@
 				<p class="mt-6">No data for this scenario and pathway</p>
 			{:else}
 				<OverviewChart
-					title={`Energy Generation (GWh) under AEMO ${scenarioLabels[selectedScenario]} 2022`}
+					title={`Energy Generation (GWh) under AEMO ${scenarioLabels[selectedScenario]} 2024`}
 					description={scenarioDescriptions[selectedScenario]}
 					dataset={tsData}
 					{xKey}
