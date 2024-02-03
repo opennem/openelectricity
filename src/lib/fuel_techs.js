@@ -99,6 +99,7 @@ export const fuelTechGroupMap = {
 	hydro: ['hydro'],
 
 	battery: ['battery_discharging', 'battery_VPP_discharging', 'battery_distributed_discharging'],
+
 	wind: ['wind', 'wind_offshore'],
 
 	solar: ['solar_utility', 'solar_thermal', 'solar_rooftop']
@@ -117,6 +118,7 @@ export const historicalEnergyGroupMap = {
 	gas: ['gas_ccgt', 'gas_ocgt', 'gas_recip', 'gas_steam', 'gas_wcmg'],
 
 	hydro: ['hydro'],
+
 	battery: ['battery_discharging'],
 
 	wind: ['wind'],
@@ -144,6 +146,7 @@ export const fossilRenewablesGroupMap = {
 		'bioenergy_biogas',
 		'bioenergy_biomass'
 	]
+	// battery: ['battery_discharging']
 };
 
 /** @type {Object.<FuelTechCode, string>}} */

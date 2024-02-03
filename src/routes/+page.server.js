@@ -32,6 +32,9 @@ export async function load({ fetch }) {
 	const historyEnergyNemRes = await fetch(`${PUBLIC_JSON_API}/au/NEM/energy/all.json`);
 	const { data: jsonData } = await historyEnergyNemRes.json();
 	const historyEnergyNemData = energyHistory(jsonData);
+	// const historyEnergyNemData = energyHistory(
+	// 	jsonData.filter((d) => d.fuel_tech !== 'bioenergy_biogas')
+	// );
 
 	if (homepageData && homepageData.length > 0) {
 		return {

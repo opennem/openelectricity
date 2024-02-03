@@ -65,23 +65,30 @@
 		}
 	};
 
+	function isLoads(ft) {
+		return ft === 'battery_charging' || ft === 'pumps';
+	}
+
 	$: {
 		if (data && data.length) {
-			console.log('data', data);
+			console.log('cal total', data);
+			totalSet.history.data = data[0].history.data.map(() => 0);
 			data.forEach((set, i) => {
 				if (i === 0) {
-					totalSet.history.data = set.history.data.map((d) => d || 0);
+					console.log('first one', set.fuel_tech, isLoads(set.fuel_tech));
+					totalSet.history.data = set.history.data.map(() => 0);
 					totalSet.history.start = set.history.start;
 					totalSet.history.last = set.history.last;
-				} else {
-					set.history.data.forEach((d, i) => {
-						if (set.fuel_tech === 'battery_charging' || set.fuel_tech === 'pumps') {
-							totalSet.history.data[i] -= d || 0;
-						} else {
-							totalSet.history.data[i] += d || 0;
-						}
-					});
 				}
+
+				// NOTE: the sum  to be used for Renewables % calculations do not include any loads
+				set.history.data.forEach((d, i) => {
+					if (isLoads(set.fuel_tech)) {
+						// totalSet.history.data[i] -= d || 0;
+					} else {
+						totalSet.history.data[i] += d || 0;
+					}
+				});
 			});
 
 			console.log('totalSet', totalSet);
@@ -152,6 +159,7 @@
 
 			seriesNames.forEach((key) => {
 				obj[key] = (d[key] / d['au.total.historical']) * 100;
+				// obj[key] = d[key];
 			});
 
 			return obj;
@@ -231,6 +239,12 @@
 		{flatData}
 		data={groupedData}
 	>
+		<Html>
+			<div class="italic text-right text-xs text-dark-grey mr-8">
+				NEM 12 Month Rolling Sum (Energy % of total)
+			</div>
+		</Html>
+
 		<Svg>
 			<AxisX formatTick={formatTickX} ticks={displayXTicks} tickMarks={true} gridlines={true} />
 			<AxisY formatTick={formatTickY} ticks={5} />
