@@ -20,11 +20,5 @@ export const handle: Handle = async ({ event, resolve }) => {
 		});
 	}
 
-	console.log('# Server Hook');
-	console.log(url);
-	console.log(auth);
-	console.log(ADMIN_LOGIN);
-	console.log('# End Server Hook');
-
 	return resolve(event);
 };
