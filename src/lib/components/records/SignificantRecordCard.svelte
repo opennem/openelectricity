@@ -46,7 +46,10 @@
 				</div>
 			{/each}
 		</div>
-		<div class="h-32 bg-[url('/img/significant-record.png')] bg-no-repeat bg-top bg-cover" />
+		<div
+			style={`background-image: url(/img/records/${record[0].fueltech}.png)`}
+			class={`h-44 bg-no-repeat bg-top bg-cover`}
+		/>
 	</div>
 </div>
 
