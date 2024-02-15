@@ -1,9 +1,13 @@
 import { format as d3Format } from 'd3-format';
 import { formatInTimeZone } from 'date-fns-tz';
+import { subYears } from 'date-fns';
 
 import { fuelTechGroup, fuelTechGroupMap, historicalEnergyGroupMap } from '$lib/fuel_techs.js';
 
 export const formatTickX = (/** @type {Date} */ d) => formatInTimeZone(d, '+10:00', 'yyyy');
+// minus 1 year to display as FY
+export const formatFyTickX = (/** @type {Date} */ d) =>
+	formatInTimeZone(subYears(d, 1), '+10:00', 'yyyy');
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 export const formatValue = (/** @type {number} */ d) => {
 	const formatted = d3Format('.0f')(d / 1000);
@@ -48,6 +52,8 @@ export function groupedIspData(groups, originalData) {
 			grouped.push(groupObject);
 		}
 	});
+
+	console.log('grouped', grouped);
 
 	return grouped;
 }

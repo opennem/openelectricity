@@ -11,7 +11,7 @@
 	import { transform as transformEnergy } from '$lib/utils/time-series-helpers/transform/energy';
 	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import deepCopy from '$lib/utils/deep-copy';
-	import { groupedIspData, groupedStatsData } from './helpers';
+	import { groupedIspData, groupedStatsData, formatTickX, formatFyTickX } from './helpers';
 
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Icon from '$lib/components/Icon.svelte';
@@ -125,6 +125,7 @@
 	$: if (selectedFtGroup === 'Custom') {
 		let groupedDatasets = groupedIspData(fuelTechGroups, orderedFilteredWithPathwayScenario);
 		let transformedFiltered = transformEnergy(groupedDatasets, 'projection', '1Y');
+
 		seriesColours = fuelTechGroups.map((d) => fuelTechColour(d));
 		seriesNames =
 			transformedFiltered && transformedFiltered.length
@@ -162,7 +163,7 @@
 		return acc;
 	}, {});
 
-	const trackYears = [2025, 2030, 2051];
+	const trackYears = [2025, 2031, 2051];
 	const startEndYears = [2025, 2052];
 
 	$: startEndXTicks = startEndYears.map((year) => new Date(`${year}-01-01`));
@@ -331,6 +332,7 @@
 				zKey="key"
 				seriesNames={historicalSeriesNames}
 				seriesColours={historicalSeriesColours}
+				{formatTickX}
 			/>
 		</div>
 
@@ -344,9 +346,9 @@
 					dataset={tsData}
 					{xKey}
 					xTicks={[
-						new Date('2050-01-01'),
-						new Date('2040-01-01'),
-						new Date('2030-01-01'),
+						new Date('2051-01-01'),
+						new Date('2041-01-01'),
+						new Date('2031-01-01'),
 						new Date('2025-01-01')
 					]}
 					yKey={[0, 1]}
@@ -358,6 +360,7 @@
 					overlay={true}
 					{hoverData}
 					bgClass="bg-light-warm-grey"
+					formatTickX={formatFyTickX}
 					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 					on:mouseout={() => (hoverData = undefined)}
 				/>

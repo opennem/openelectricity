@@ -5,7 +5,7 @@
 
 	import { scaleOrdinal } from 'd3-scale';
 
-	import { formatTickX, formatTickY } from './helpers';
+	import { formatTickY } from './helpers';
 
 	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
@@ -51,6 +51,9 @@
 
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
+
+	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
+	export let formatTickX = (/** @type {*} */ d) => d;
 
 	/** TODO: work out transition */
 	const tweenOptions = {
