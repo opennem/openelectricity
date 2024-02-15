@@ -1,6 +1,8 @@
 <script>
 	import Icon from '$lib/components/Icon.svelte';
-	import { format } from 'date-fns';
+	import { formatRecordInterval } from '$lib/records';
+	import { format, parseISO } from 'date-fns';
+	import { formatInTimeZone } from 'date-fns-tz';
 
 	/** @type {import('$lib/types/record.types').Record[]} */
 	export let record;
@@ -13,7 +15,7 @@
 		<span
 			class={`flex flex-shrink-0 justify-center items-center w-12 h-12 bg-warm-grey rounded-full mr-6`}
 		>
-			<Icon icon={record[0].fuel_tech} size={16} />
+			<Icon icon={record[0].fueltech} size={16} />
 		</span>
 		<h5 class="font-medium">{record[0].description}</h5>
 	</div>
@@ -29,7 +31,7 @@
 					{/if}
 				</div>
 				<div class="self-end text-right text-xs">
-					{format(Date.parse(instance.time), 'K:mm aaa')}
+					{formatRecordInterval(instance.interval, 'K:mm aaa')}
 				</div>
 			</div>
 		{/each}

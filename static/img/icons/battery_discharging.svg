@@ -1,10 +1,10 @@
 <svg id="icon" width="33" height="33" viewBox="0 0 33 33" fill="none"
     xmlns="http://www.w3.org/2000/svg">
-    <mask id="path-1-inside-1_10597_61156" fill="white">
-        <rect x="10.0195" y="6.22852" width="18" height="24" rx="2"/>
-    </mask>
-    <rect x="10.0195" y="6.22852" width="18" height="24" rx="2" stroke="currentColor" stroke-width="6" mask="url(#path-1-inside-1_10597_61156)"/>
-    <path d="M22.0195 2.22852H7.01953C5.91496 2.22852 5.01953 3.12395 5.01953 4.22852V21.7285" stroke="currentColor" stroke-width="3"/>
-    <path d="M20.8945 1.72852L26.5195 8.07225" stroke="currentColor" stroke-width="3"/>
-    <path d="M11.707 28.6035L4.61328 20.6973" stroke="currentColor" stroke-width="3"/>
+    <rect x="31.8477" y="20.8662" width="1.5" height="5.03261" rx="0.75" transform="rotate(45 31.8477 20.8662)" fill="currentColor"/>
+    <rect width="1.5" height="5.03261" rx="0.75" transform="matrix(0.707107 -0.707107 -0.707107 -0.707107 31.8477 22.9385)" fill="currentColor"/>
+    <rect x="32.5352" y="21.1523" width="1.5" height="12" rx="0.75" transform="rotate(90 32.5352 21.1523)" fill="currentColor"/>
+    <rect x="5.1582" y="0.808594" width="1.5" height="10" rx="0.75" fill="currentColor"/>
+    <rect x="10.9082" y="5.05859" width="1.5" height="10" rx="0.75" transform="rotate(90 10.9082 5.05859)" fill="currentColor"/>
+    <rect x="10.9082" y="12.9023" width="1.5" height="10" rx="0.75" transform="rotate(90 10.9082 12.9023)" fill="currentColor"/>
+    <path d="M25.9082 18.9023V15.9023C25.9082 14.7978 25.0128 13.9023 23.9082 13.9023H15.9082C14.8036 13.9023 13.9082 14.7978 13.9082 15.9023V27.9023C13.9082 29.0069 14.8036 29.9023 15.9082 29.9023H23.9082C25.0128 29.9023 25.9082 29.0069 25.9082 27.9023V24.9023" stroke="currentColor" stroke-width="1.5"/>
 </svg>

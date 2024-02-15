@@ -1,6 +1,8 @@
 <svg id="icon" width="33" height="33" viewBox="0 0 33 33" fill="none"
     xmlns="http://www.w3.org/2000/svg">
-    <path d="M6.38923 26.6973L3.82549 21.8795L8.73467 16.1724L14.4123 26.6973H6.38923Z" stroke="currentColor" stroke-width="3"/>
-    <path d="M14.4759 26.6929L7.40817 13.559L8.12303 7.47028L20.8138 5.80782L28.2632 12.7779L23.0746 26.651L14.4759 26.6929Z" stroke="currentColor" stroke-width="3"/>
-    <path d="M19.7872 26.6633L20.8833 20.0666L28.2599 21.8551L27.2646 26.7193L19.7872 26.6633Z" fill="none" stroke="currentColor" stroke-width="3"/>
+    <rect width="1.5" height="12" rx="0.75" transform="matrix(-0.707107 -0.707107 -0.707107 0.707107 13.6367 4.94873)" fill="currentColor"/>
+    <path d="M13.6366 10.6051C13.6366 10.6051 13.0023 7.14246 11.5152 5.65538C10.0282 4.16831 6.5655 3.53406 6.5655 3.53406" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M12.845 29.8257L10.8039 25.6917L13.9684 22.0604L18.1322 29.8257H12.845Z" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M18.1292 29.84L14.0785 22.2822L16.4399 16.4069L26.6344 13.2411L32.1092 18.7438L28.2799 29.84H18.1292Z" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M24.8488 29.8347L25.7028 24.6624L30.8613 25.9764L30.1795 29.8347H24.8488Z" fill="white" stroke="currentColor" stroke-width="1.5"/>
 </svg>

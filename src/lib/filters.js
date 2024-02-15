@@ -34,27 +34,27 @@ export const technologyDefaultSelections = {
 
 /** Regions */
 export const regionFilters = {
-	QLD: { label: 'Queensland' },
-	NSW: { label: 'New South Wales' },
-	VIC: { label: 'Victoria' },
-	SA: { label: 'South Australia' },
-	TAS: { label: 'Tasmania' },
-	WA: { label: 'Western Australia' }
+	QLD1: { label: 'Queensland' },
+	NSW1: { label: 'New South Wales' },
+	VIC1: { label: 'Victoria' },
+	SA1: { label: 'South Australia' },
+	TAS1: { label: 'Tasmania' },
+	WEM: { label: 'Western Australia' }
 };
 
 export const regionDefaultSelections = {
-	QLD: false,
-	NSW: false,
-	VIC: false,
-	SA: false,
-	TAS: false,
-	WA: false
+	QLD1: false,
+	NSW1: false,
+	VIC1: false,
+	SA1: false,
+	TAS1: false,
+	WEM: false
 };
 
 /** Peak/Low */
 export const peakLowFilters = {
 	all: { label: 'View all' },
-	peak: { label: 'Peaks' },
+	high: { label: 'Peaks' },
 	low: { label: 'Lows' }
 };
 

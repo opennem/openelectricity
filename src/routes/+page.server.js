@@ -17,7 +17,8 @@ export async function load({ fetch }) {
 	let records = [];
 
 	if (recordsRes && recordsRes.ok) {
-		records = await recordsRes.json();
+		const recordsResponse = await recordsRes.json();
+		records = recordsResponse.data;
 	}
 
 	const { annual, live } = await energyData();

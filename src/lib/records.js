@@ -1,8 +1,29 @@
-import { format } from 'date-fns';
+import { addMinutes, format, subMinutes } from 'date-fns';
+import { formatInTimeZone, utcToZonedTime } from 'date-fns-tz';
+
 import { v4 as uuidv4 } from 'uuid';
 
 /** @typedef {import('$lib/types/record.types').Record} Record */
 /** @typedef {import('$lib/types/record.types').DailyRecords} DailyRecords */
+
+export const intervalDate = (/** @type {string} */ interval) => {
+	const date = new Date(interval);
+	const offset = date.getTimezoneOffset();
+	return Math.sign(offset) !== -1 ? addMinutes(date, offset) : subMinutes(date, Math.abs(offset));
+};
+
+export const formatRecordInterval = (
+	/** @type {string} */ interval,
+	/** @type {string} */ formatString
+) => {
+	const parts = interval.split('+');
+
+	if (parts.length > 1) {
+		return formatInTimeZone(Date.parse(interval), `+${parts.pop()}`, formatString);
+	}
+
+	return format(Date.parse(interval), formatString);
+};
 
 /**
  * Takes an array of records and sorts them into days,
@@ -15,7 +36,8 @@ export const recordsByDay = (records) => {
 	/** @type {DailyRecords} */
 	const days = {};
 	records.forEach((record) => {
-		const day = format(Date.parse(record.time), 'yyyy-MM-dd');
+		const day = formatRecordInterval(record.interval, 'yyyy-MM-dd');
+
 		// create a bin for the day if there isn't one
 		if (!days[day]) {
 			days[day] = {};
@@ -39,12 +61,12 @@ export const recordsByDay = (records) => {
 				// Sort the record types within the day so the record type with the most recent activity is at the top
 				const orderedDay = Object.keys(days[key])
 					.sort((a, b) => {
-						return Date.parse(days[key][b][0].time) - Date.parse(days[key][a][0].time);
+						return Date.parse(days[key][b][0].interval) - Date.parse(days[key][a][0].interval);
 					})
 					.map((orderedRecordId) =>
 						// Sort the records within each unique type into order so newest is first
 						days[key][orderedRecordId]
-							.sort((a, b) => Date.parse(b.time) - Date.parse(a.time))
+							.sort((a, b) => Date.parse(b.interval) - Date.parse(a.interval))
 							.slice(0, 3)
 					);
 

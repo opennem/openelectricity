@@ -1,9 +1,12 @@
 <svg id="icon" width="33" height="33" viewBox="0 0 33 33" fill="none"
     xmlns="http://www.w3.org/2000/svg">
-    <rect x="2.01953" y="27.2285" width="28" height="3" rx="1.5" fill="currentColor"/>
-    <rect x="20.0195" y="20.2285" width="3" height="10" fill="currentColor"/>
-    <rect x="28.4473" y="15.2285" width="3" height="14.3867" transform="rotate(60 28.4473 15.2285)" fill="currentColor"/>
-    <rect x="8.01953" y="20.2285" width="3" height="10" fill="currentColor"/>
-    <rect x="16.4473" y="15.2285" width="3" height="14.3867" transform="rotate(60 16.4473 15.2285)" fill="currentColor"/>
-    <circle cx="7.01953" cy="7.22852" r="5.5" stroke="currentColor" stroke-width="3"/>
+    <path d="M3.87695 30.3672L31.1123 30.3672" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M18.4605 16.8086L8.1582 24.3998" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M28.7652 16.8086L18.4629 24.3998" stroke="currentColor" stroke-width="1.5"/>
+    <circle cx="7.9082" cy="8.30859" r="3.25" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M13.1604 14.6175C13.4539 14.9097 13.9288 14.9086 14.221 14.615C14.5132 14.3214 14.5121 13.8466 14.2185 13.5544L13.1604 14.6175ZM11.1714 12.6378L13.1604 14.6175L14.2185 13.5544L12.2295 11.5746L11.1714 12.6378Z" fill="currentColor"/>
+    <path d="M7.1582 16.137C7.1582 16.5512 7.49399 16.887 7.9082 16.887C8.32242 16.887 8.6582 16.5512 8.6582 16.137L7.1582 16.137ZM7.1582 13.3086L7.1582 16.137L8.6582 16.137L8.6582 13.3086L7.1582 13.3086Z" fill="currentColor"/>
+    <path d="M15.7366 9.05859C16.1508 9.05859 16.4866 8.72281 16.4866 8.30859C16.4866 7.89438 16.1508 7.55859 15.7366 7.55859V9.05859ZM12.9082 9.05859H15.7366V7.55859H12.9082V9.05859Z" fill="currentColor"/>
+    <path d="M13.9082 30.1804L13.9082 20.0938" stroke="currentColor" stroke-width="1.5"/>
+    <path d="M24.2207 30.1804L24.2207 20.0938" stroke="currentColor" stroke-width="1.5"/>
 </svg>

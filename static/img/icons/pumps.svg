@@ -1,7 +1,14 @@
 <svg id="icon" width="33" height="33" viewBox="0 0 33 33" fill="none"
     xmlns="http://www.w3.org/2000/svg">
-    <circle cx="16.0195" cy="18.2285" r="10.5" stroke="currentColor" stroke-width="3"/>
-    <rect x="25.0195" y="4.22852" width="3" height="14" rx="1.5" fill="currentColor"/>
-    <rect x="18.0195" y="4.22852" width="3" height="4" rx="1.5" fill="currentColor"/>
-    <circle cx="16.0195" cy="18.2285" r="4.5" stroke="currentColor" stroke-width="3"/>
+    <circle cx="20.9082" cy="20.8086" r="10" stroke="currentColor" stroke-width="1.5"/>
+    <circle cx="20.9102" cy="20.8086" r="2.25" stroke="currentColor" stroke-width="1.5"/>
+    <rect x="23.1582" y="6.80859" width="1.5" height="4.93652" fill="currentColor"/>
+    <rect x="27.1582" y="6.80859" width="1.5" height="6.78418" fill="currentColor"/>
+    <rect x="20.9082" y="6.80859" width="10" height="1.5" rx="0.75" fill="currentColor"/>
+    <path d="M2.9082 3.80859C2.9082 3.80859 4.31445 4.58984 5.93945 4.58984C7.56445 4.58984 8.9082 3.80859 8.9082 3.80859C8.9082 3.80859 10.4082 2.87109 11.9082 2.87109C13.4082 2.87109 14.9082 3.80859 14.9082 3.80859" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M2.9082 7.80859C2.9082 7.80859 4.31445 8.58984 5.93945 8.58984C7.56445 8.58984 8.9082 7.80859 8.9082 7.80859C8.9082 7.80859 10.4082 6.87109 11.9082 6.87109C13.4082 6.87109 14.9082 7.80859 14.9082 7.80859" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M23.8575 20.3441L23.8575 21.4561L24.9383 21.4561C24.8347 21.2287 24.682 20.9901 24.4571 20.7681C24.2544 20.5681 24.0487 20.4341 23.8575 20.3441Z" stroke="currentColor" stroke-width="2"/>
+    <path d="M17.9589 21.2731L17.9589 20.1611L16.8781 20.1611C16.9817 20.3885 17.1344 20.6271 17.3593 20.8491C17.562 21.0491 17.7677 21.1831 17.9589 21.2731Z" stroke="currentColor" stroke-width="2"/>
+    <path d="M21.3737 23.917H20.2617V24.9979C20.4891 24.8943 20.7277 24.7416 20.9497 24.5167C21.1497 24.314 21.2837 24.1083 21.3737 23.917Z" stroke="currentColor" stroke-width="2"/>
+    <path d="M20.4427 17.7002H21.5547V16.6193C21.3273 16.7229 21.0887 16.8756 20.8667 17.1005C20.6667 17.3032 20.5327 17.5089 20.4427 17.7002Z" stroke="currentColor" stroke-width="2"/>
 </svg>

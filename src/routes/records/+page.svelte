@@ -62,12 +62,13 @@
 		hasSearchTerm || hasTechnologySelections || hasRegionSelections || peakLowSelection !== 'all';
 
 	$: filteredRecords = data.records.filter((/** @type {Record} */ record) => {
-		const searchFilter = record.description.toLowerCase().includes(searchString.toLowerCase());
+		const searchFilter =
+			!record.description || record.description.toLowerCase().includes(searchString.toLowerCase());
 		const technologyFilter =
-			technologySelections[/** @type {keyof TechnologyFilterDict} */ (record.fuel_tech)] ||
+			technologySelections[/** @type {keyof TechnologyFilterDict} */ (record.fueltech)] ||
 			!hasTechnologySelections;
-		const regionFilter = regionSelections[record.region] || !hasRegionSelections;
-		const peakLowFilter = peakLowSelection === 'all' || record.type === peakLowSelection;
+		const regionFilter = regionSelections[record.network_region] || !hasRegionSelections;
+		const peakLowFilter = peakLowSelection === 'all' || record.record_type === peakLowSelection;
 
 		return searchFilter && technologyFilter && regionFilter && peakLowFilter;
 	});
@@ -304,9 +305,9 @@
 				{#each dailyRecords as day}
 					<div class="max-w-[51rem] mx-auto">
 						<header class="font-space text-sm uppercase py-8 sticky top-0 z-50 bg-warm-grey">
-							{isToday(Date.parse(day[0][0].time))
+							{isToday(Date.parse(day[0][0].interval))
 								? 'Today'
-								: format(Date.parse(day[0][0].time), 'dd LLL, yyyy')}
+								: format(Date.parse(day[0][0].interval), 'dd LLL, yyyy')}
 						</header>
 						<div>
 							{#each day as record}

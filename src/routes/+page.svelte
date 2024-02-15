@@ -189,9 +189,9 @@
 				{#each recordsSlice as day}
 					<div class="max-w-[51rem] mx-auto">
 						<header class="font-space text-sm uppercase py-8 z-5">
-							{isToday(Date.parse(day[0][0].time))
+							{isToday(Date.parse(day[0][0].interval))
 								? 'Today'
-								: format(Date.parse(day[0][0].time), 'dd LLL, yyyy')}
+								: format(Date.parse(day[0][0].interval), 'dd LLL, yyyy')}
 						</header>
 						<div>
 							{#each day as record}
@@ -203,7 +203,7 @@
 			</div>
 		</div>
 		<footer class="text-center mt-20">
-			<ButtonLink href="/records">View all records</ButtonLink>
+			<ButtonLink href="/records" class="inline-flex">View all records</ButtonLink>
 		</footer>
 	</div>
 </div>
