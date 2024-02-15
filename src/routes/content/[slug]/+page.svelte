@@ -3,13 +3,14 @@
 
 	/** @type {import('./$types').PageData} */
 	export let data;
+	console.log(data);
 </script>
 
-<div class="container max-w-none lg:container py-12">
-	<div class="max-w-5xl mx-auto">
-		<header class="">
-			<h1>{data.title}</h1>
-			<RichText content={data.content} />
-		</header>
-	</div>
+<div class="container lg:container py-12">
+	<header class="mx-auto max-w-5xl py-16">
+		<h1>{data.title}</h1>
+	</header>
+	{#if data.content}
+		<RichText content={data.content} />
+	{/if}
 </div>

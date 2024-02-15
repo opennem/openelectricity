@@ -28,12 +28,13 @@
 
 	values.push([...current]);
 	const components = { types: { image: Image } };
+	console.log(values);
 </script>
 
 {#if content}
 	{#each values as value}
 		<div class={`mx-auto max-w-5xl ${value.type === 'wide' ? 'full-width-image' : ''}`}>
-			<PortableText value={value.blocks} {components} />
+			<PortableText value={value.blocks ? value.blocks : value} {components} />
 		</div>
 	{/each}
 {/if}
