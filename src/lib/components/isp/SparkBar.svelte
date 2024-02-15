@@ -2,7 +2,7 @@
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
 
-	import { formatTickX, formatTickY } from './helpers';
+	import { formatFyTickX, formatTickY } from './helpers';
 
 	import Column from '$lib/components/charts/Column.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
@@ -40,7 +40,7 @@
 		>
 			<Svg>
 				<Column fill={colour} />
-				<AxisX formatTick={formatTickX} ticks={xTicks} gridlines={false} />
+				<AxisX formatTick={formatFyTickX} ticks={xTicks} gridlines={false} />
 				<AxisY formatTick={formatTickY} ticks={2} xTick={4} />
 			</Svg>
 		</LayerCake>

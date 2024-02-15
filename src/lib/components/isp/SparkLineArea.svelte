@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg, Html } from 'layercake';
 
-	import { formatTickX, formatTickY } from './helpers';
+	import { formatFyTickX, formatTickY } from './helpers';
 
 	import Line from '$lib/components/charts/Line.svelte';
 	import Area from '$lib/components/charts/Area.svelte';
@@ -38,7 +38,7 @@
 		>
 			<Svg>
 				<AxisX
-					formatTick={hoverData ? () => '' : formatTickX}
+					formatTick={hoverData ? () => '' : formatFyTickX}
 					ticks={xTicks}
 					tickMarks={true}
 					gridlines={false}
@@ -54,7 +54,7 @@
 					{hoverData}
 					yTopOffset={6}
 					lineColour={colour}
-					formatValue={formatTickX}
+					formatValue={formatFyTickX}
 					on:mousemove
 					on:mouseout
 				/>
