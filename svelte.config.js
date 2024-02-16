@@ -8,7 +8,15 @@ const config = {
 		adapter: adapter({
 			routes: {
 				include: ['/*'],
-				exclude: ['<build>', '<files>', '/analysis/*', '/facility/*', '/content/*', '/isp/*']
+				exclude: [
+					'<build>',
+					'<files>',
+					'/analysis/*',
+					'/facility/*',
+					'/content/*',
+					'/isp/*',
+					'/records/*'
+				]
 			}
 		}),
 		prerender: {

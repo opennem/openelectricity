@@ -12,6 +12,7 @@
 	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
 	import TextInput from '$lib/components/form-elements/TextInput.svelte';
+	import Button from '$lib/components/form-elements/Button.svelte';
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import {
 		technologyFilters,
@@ -48,12 +49,15 @@
 	let showTechnology = false;
 	let showRegions = false;
 	let showPeakLow = false;
+	let showDate = false;
 	let searchString = pURL.searchParams.get('search') || '';
 
 	/** @type {TechnologyFilterDict} */
 	$: technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
 	$: regionSelections = { ...regionDefaultSelections, ...regionArgs };
 	$: peakLowSelection = pURL.searchParams.get('peak-low') || 'all';
+	$: dateSelection = pURL.searchParams.get('date') || 'none';
+	$: dateChosen = 'none';
 
 	$: hasSearchTerm = searchString.trim() !== '';
 	$: hasTechnologySelections = Object.values(technologySelections).find((selection) => selection);
@@ -61,19 +65,36 @@
 	$: hasFilters =
 		hasSearchTerm || hasTechnologySelections || hasRegionSelections || peakLowSelection !== 'all';
 
-	$: filteredRecords = data.records.filter((/** @type {Record} */ record) => {
-		const searchFilter =
-			!record.description || record.description.toLowerCase().includes(searchString.toLowerCase());
-		const technologyFilter =
-			technologySelections[/** @type {keyof TechnologyFilterDict} */ (record.fueltech)] ||
-			!hasTechnologySelections;
-		const regionFilter = regionSelections[record.network_region] || !hasRegionSelections;
-		const peakLowFilter = peakLowSelection === 'all' || record.record_type === peakLowSelection;
+	$: recordsFilter = (/** @type {Record[]} */ records) =>
+		records?.filter((/** @type {Record} */ record) => {
+			const searchFilter =
+				!record.description ||
+				record.description.toLowerCase().includes(searchString.toLowerCase());
+			const technologyFilter =
+				technologySelections[/** @type {keyof TechnologyFilterDict} */ (record.fueltech)] ||
+				!hasTechnologySelections;
+			const regionFilter = regionSelections[record.network_region] || !hasRegionSelections;
+			const peakLowFilter = peakLowSelection === 'all' || record.record_type === peakLowSelection;
 
-		return searchFilter && technologyFilter && regionFilter && peakLowFilter;
-	});
+			return searchFilter && technologyFilter && regionFilter && peakLowFilter;
+		});
 
+	$: filteredRecords = recordsFilter(data.records) || [];
 	$: dailyRecords = recordsByDay(filteredRecords);
+
+	$: fetchRecords = async () => {
+		let dateParams = '';
+
+		if (dateSelection !== 'none') {
+			dateParams = `?date=${dateSelection}`;
+		}
+
+		const resp = await fetch(`/api/records${dateParams}`);
+		if (resp && resp.ok) {
+			const recordsResponse = await resp.json();
+			filteredRecords = recordsFilter(recordsResponse.data);
+		}
+	};
 
 	const clearAllFilters = () => {
 		getKeys(technologySelections).forEach((technology) => {
@@ -144,6 +165,10 @@
 
 		if (peakLowSelection !== 'all') {
 			newUrl?.searchParams.set('peak-low', peakLowSelection);
+		}
+
+		if (dateSelection !== 'none') {
+			newUrl?.searchParams.set('date', dateSelection);
 		}
 
 		technologies && newUrl?.searchParams.set('technologies', technologies);
@@ -295,6 +320,60 @@
 											/>
 										{/each}
 									</div>
+								</FilterContent>
+							{/if}
+						</FilterSection>
+						<FilterSection>
+							<FilterSectionHead
+								title="Date"
+								isOpen={showDate}
+								toggleHandler={() => (showDate = !showDate)}
+								hasFilters={dateSelection !== 'none'}
+								clearHandler={() => {
+									dateSelection = 'none';
+									dateChosen = 'none';
+									setQueryString();
+									fetchRecords();
+								}}
+							/>
+							{#if showDate}
+								<FilterContent>
+									<div class="flex gap-4">
+										<TextInput
+											type="date"
+											class="appearance-none w-full bg-no-repeat"
+											value={dateChosen !== 'none'
+												? format(new Date(dateChosen), 'yyyy-MM-dd')
+												: dateSelection !== 'none'
+												? format(new Date(dateSelection), 'yyyy-MM-dd')
+												: ''}
+											changeHandler={(e) => {
+												dateChosen = e.currentTarget.value;
+												setQueryString();
+											}}
+										/>
+									</div>
+									{#if dateChosen !== 'none'}
+										<div class="py-8 grid gap-4 grid-cols-2">
+											<Button
+												secondary={true}
+												clickHandler={() => {
+													dateChosen = dateSelection;
+													setQueryString();
+													fetchRecords();
+												}}>Cancel</Button
+											>
+											<Button
+												clickHandler={(e) => {
+													dateSelection = dateChosen;
+													dateChosen = 'none';
+
+													setQueryString();
+													fetchRecords();
+												}}>Apply</Button
+											>
+										</div>
+									{/if}
 								</FilterContent>
 							{/if}
 						</FilterSection>
