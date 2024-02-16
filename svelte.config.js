@@ -15,7 +15,7 @@ const config = {
 					'/facility/*',
 					'/content/*',
 					'/isp/*',
-					'/records/*'
+					'/records'
 				]
 			}
 		}),

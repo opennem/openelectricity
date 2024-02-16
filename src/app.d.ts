@@ -10,3 +10,5 @@ declare global {
 }
 
 export {};
+
+declare module 'chroma-js';

@@ -1,4 +1,5 @@
-import chroma, { scale, contrast } from 'chroma-js';
+import chroma from 'chroma-js';
+const { scale, contrast } = chroma;
 
 export const spectrum = {
 	intensity: ['#52A972', '#9ED48B', '#E9FFAA', '#A6A36F', '#594929'],

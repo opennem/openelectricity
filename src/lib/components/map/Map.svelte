@@ -10,7 +10,7 @@
 	import Vic from './states/VIC.svelte';
 	import Wa from './states/WA.svelte';
 	import { createIntensityScale, createPriceScale } from '$lib/colours';
-	import { contrast } from 'chroma-js';
+	import chroma from 'chroma-js';
 
 	/** @type {string}*/
 	export let mode = 'live';
@@ -29,6 +29,7 @@
 	/**
 	 * Get the fill colour for the state based on the map mode and data
 	 * @param {string} state
+	 * @returns {string}
 	 */
 	$: getStateFillColour = (state) => {
 		if (!data) return '#FFFFFF';
@@ -50,7 +51,7 @@
 	 */
 	$: getStateTextColour = (state) => {
 		const fill = getStateFillColour(state);
-		return contrast(fill, '#FFFFFF') > 4.5 ? '#FFFFFF' : '#000000';
+		return chroma.contrast(fill.toString(), '#FFFFFF') > 4.5 ? '#FFFFFF' : '#000000';
 	};
 </script>
 
