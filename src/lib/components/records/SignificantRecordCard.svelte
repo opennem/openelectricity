@@ -28,7 +28,7 @@
 		<div class="p-6">
 			{#each record as instance, i}
 				<div
-					class={`grid record-value gap-4 relative z-20 ${
+					class={`grid record-value gap-4 relative z-[15] ${
 						i === 0 ? 'text-base leading-lg' : 'leading-base'
 					}`}
 				>

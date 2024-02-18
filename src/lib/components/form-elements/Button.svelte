@@ -2,19 +2,23 @@
 	/** @type {import('svelte/elements').MouseEventHandler<HTMLButtonElement> | null} */
 	export let clickHandler = null;
 	export let secondary = false;
+	export let active = false;
 </script>
 
 <button
 	on:click={clickHandler}
-	class="button rounded-md border-solid border-[0.1rem] border-black p-4 font-space appearance-none text-sm font-medium bg-black text-white"
-	class:secondary><slot /></button
+	class="button rounded-md border-solid border-[0.1rem] border-black p-4 font-space appearance-none text-sm font-medium bg-black text-white ${$$restProps.class}"
+	class:secondary
+	class:active><slot /></button
 >
 
 <style lang="postcss">
-	.button {
+	.button,
+	.button:active {
 		transition: all 0.5s ease;
 	}
-	.button:hover {
+	.button:hover,
+	.active {
 		background-color: theme(colors.dark-grey);
 		color: #fff;
 	}

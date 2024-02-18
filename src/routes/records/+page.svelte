@@ -24,9 +24,12 @@
 	import { recordsByDay } from '$lib/records';
 	import { getKeys } from '$lib/utils/keys';
 	import { page } from '$app/stores';
+	import Icon from '$lib/components/Icon.svelte';
 
 	/** @type {PageData} */
 	export let data;
+
+	$: showMenu = false;
 
 	// Grab defaults from URL if present
 	let pURL = $page.url;
@@ -180,12 +183,22 @@
 
 <div class="bg-warm-grey">
 	<div class="container max-w-none lg:container">
-		<div class="flex gap-8">
+		<div class="block md:flex gap-8">
 			<div
-				class="records-sidebar min-w-[27rem] w-3/12 bg-white py-14 pr-8 relative border-solid border-r-[0.05rem] border-mid-warm-grey"
+				class="records-sidebar-fill records-sidebar min-w-[27rem] w-full md:w-3/12 bg-white py-8 md:py-14 md:pr-8 relative border-solid md:border-r-[0.05rem] border-mid-warm-grey"
 			>
-				<h1 class="text-2xl leading-2xl md:text-3xl md:leading-3xl">Records</h1>
-				<div>
+				<div class="flex justify-between">
+					<h1 class="text-2xl leading-2xl md:text-3xl md:leading-3xl mb-0">Records</h1>
+					<Button
+						secondary={true}
+						class="text-black flex-shrink-0 w-16 h-16 flex justify-center align-middle md:hidden"
+						active={showMenu}
+						clickHandler={() => {
+							showMenu = !showMenu;
+						}}><Icon icon="filter" /></Button
+					>
+				</div>
+				<div class={`${showMenu ? 'block' : 'hidden'} md:block`}>
 					<FilterSectionHead
 						title="Filters"
 						clearTitle="Clear all"
@@ -383,7 +396,7 @@
 			<div class="flex-grow pt-6 pb-16">
 				{#each dailyRecords as day}
 					<div class="max-w-[51rem] mx-auto">
-						<header class="font-space text-sm uppercase py-8 sticky top-0 z-50 bg-warm-grey">
+						<header class="font-space text-sm uppercase py-8 sticky top-0 z-20 bg-warm-grey">
 							{isToday(Date.parse(day[0][0].interval))
 								? 'Today'
 								: format(Date.parse(day[0][0].interval), 'dd LLL, yyyy')}
@@ -400,7 +413,7 @@
 	</div>
 </div>
 
-<style>
+<style lang="postcss">
 	.records-sidebar:before {
 		content: '';
 		display: block;
@@ -410,5 +423,20 @@
 		right: 100%;
 		top: 0;
 		background-color: white;
+	}
+	.records-sidebar-fill:after {
+		content: '';
+		display: block;
+		width: 100vh;
+		height: 100%;
+		position: absolute;
+		left: 100%;
+		top: 0;
+		background-color: white;
+	}
+	@media (min-width: theme(screens.md)) {
+		.records-sidebar-fill:after {
+			display: none;
+		}
 	}
 </style>
