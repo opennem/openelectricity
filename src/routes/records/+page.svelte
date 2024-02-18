@@ -76,7 +76,10 @@
 			const technologyFilter =
 				technologySelections[/** @type {keyof TechnologyFilterDict} */ (record.fueltech)] ||
 				!hasTechnologySelections;
-			const regionFilter = regionSelections[record.network_region] || !hasRegionSelections;
+			const regionFilter =
+				regionSelections[record.network_region] ||
+				regionSelections[record.network] ||
+				!hasRegionSelections;
 			const peakLowFilter = peakLowSelection === 'all' || record.record_type === peakLowSelection;
 
 			return searchFilter && technologyFilter && regionFilter && peakLowFilter;

@@ -1,6 +1,6 @@
 <script>
 	import Icon from '$lib/components/Icon.svelte';
-	import { formatRecordInterval } from '$lib/records';
+	import { formatRecordInterval, recordDescription } from '$lib/records';
 	import { format, parseISO } from 'date-fns';
 	import { formatInTimeZone } from 'date-fns-tz';
 
@@ -17,7 +17,7 @@
 		>
 			<Icon icon={record[0].fueltech} size={16} />
 		</span>
-		<h5 class="font-medium">{record[0].description}</h5>
+		<h5 class="font-medium">{recordDescription(record[0])}</h5>
 	</div>
 	<div class="p-6">
 		{#each record as instance, i}

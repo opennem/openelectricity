@@ -2,9 +2,21 @@ import { addMinutes, format, subMinutes } from 'date-fns';
 import { formatInTimeZone, utcToZonedTime } from 'date-fns-tz';
 
 import { v4 as uuidv4 } from 'uuid';
+import { regionFilters } from './filters';
+import { fuelTechNameMap } from './fuel_techs';
 
 /** @typedef {import('$lib/types/record.types').Record} Record */
 /** @typedef {import('$lib/types/record.types').DailyRecords} DailyRecords */
+
+export const recordDescription = (/** @type {Record} */ record) => {
+	const regionLabel = regionFilters[record.network_region || record.network]?.label;
+	const typeLabel = record.record_type === 'high' ? 'Highest' : 'Lowest';
+	const fueltechLabel = fuelTechNameMap[record.fueltech];
+	const activity = 'generation';
+	const period = 'of all time';
+
+	return `${typeLabel} ${fueltechLabel} ${activity} in ${regionLabel} ${period}`;
+};
 
 export const intervalDate = (/** @type {string} */ interval) => {
 	const date = new Date(interval);

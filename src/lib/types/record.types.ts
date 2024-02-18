@@ -1,3 +1,4 @@
+import { regionFilters } from '$lib/filters';
 import type { FuelTechCode } from './fuel_tech.types';
 
 export type Record = {
@@ -7,11 +8,12 @@ export type Record = {
 	value: number;
 	unit: string;
 	network: string;
-	network_region: string;
+	network_region: 'QLD1' | 'NSW1' | 'VIC1' | 'SA1' | 'TAS1' | 'WEM';
 	fueltech: FuelTechCode;
 	record_type: 'high' | 'low';
 	description: string;
 	significance: number;
+	period: string;
 };
 
 export type DailyRecords = {

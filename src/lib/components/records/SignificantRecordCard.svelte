@@ -1,7 +1,7 @@
 <script>
 	import Icon from '$lib/components/Icon.svelte';
 	import { fuelTechName } from '$lib/fuel_techs';
-	import { formatRecordInterval } from '$lib/records';
+	import { formatRecordInterval, recordDescription } from '$lib/records';
 	import { format } from 'date-fns';
 	import { formatInTimeZone } from 'date-fns-tz';
 
@@ -22,7 +22,7 @@
 			<Icon icon={record[0].fueltech} size={16} class="mr-2" />
 			{fuelTechName(record[0].fueltech)}
 		</span>
-		<h5 class="font-medium text-lg leading-lg pr-2">{record[0].description}</h5>
+		<h5 class="font-medium text-lg leading-lg pr-2">{recordDescription(record[0])}</h5>
 	</div>
 	<div class={`grain-bg bg-${record[0].fueltech} ${highlightTextColor}`}>
 		<div class="p-6">
