@@ -13,6 +13,7 @@
 	import IspOverview from '$lib/components/isp/Overview.svelte';
 	import DataTrackerOverview from '$lib/components/data-tracker/Overview.svelte';
 	import FossilFuelsVsRenewables from '$lib/components/homepage/FossilFuelsVsRenewables.svelte';
+	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -54,7 +55,11 @@
 	$: mapMode = 'live';
 	$: mapData = data[mapMode];
 
-	$: console.log('scenarios', scenarios);
+	// $: console.log('scenarios', scenarios);
+
+	$: onMapModeChange = (/** @type {string} */ value) => {
+		mapMode = value;
+	};
 </script>
 
 <div class="container max-w-none lg:container">
@@ -112,35 +117,30 @@
 		</section>
 	</div>
 </div>
-<div class="bg-light-warm-grey">
+<div class="md:bg-light-warm-grey">
 	<div class="container max-w-none lg:container">
-		<div class="grid grid-cols-2 gap-36 py-16">
-			<Map mode={mapMode} data={mapData} class="w-full block h-auto" />
+		<div class="md:grid grid-cols-2 gap-36 py-16">
+			<MapHeader
+				{mapMode}
+				mapTitle={map_title}
+				onChange={onMapModeChange}
+				dispatch={mapData.dispatch}
+				class="md:hidden"
+			/>
+			<Map mode={mapMode} data={mapData} class="w-full block h-auto pt-8 md:pt-0" />
 			<div>
-				<div class="bg-white rounded-lg p-16 text-center">
-					<header>
-						<h3>{map_title}</h3>
-						<Switch
-							buttons={[
-								{ label: 'Carbon Intensity', value: 'annual' },
-								{ label: 'Live Flows', value: 'live', icon: 'live' }
-							]}
-							selected={mapMode}
-							class="justify-center my-4"
-							onChange={(value) => {
-								mapMode = value;
-							}}
-						/>
-						{#if mapData.dispatch}
-							<div class="font-space font-medium text-mid-grey uppercase text-sm">
-								{mapData.dispatch}
-							</div>
-						{/if}
-					</header>
+				<div class="bg-white rounded-lg md:p-16 text-center">
+					<MapHeader
+						{mapMode}
+						mapTitle={map_title}
+						onChange={onMapModeChange}
+						dispatch={mapData.dispatch}
+						class="hidden md:block"
+					/>
 					<section class="mt-12">
-						<table class="text-left w-full table-fixed">
+						<table class="text-left w-full">
 							<thead>
-								<tr class="border-b-[0.05rem] border-mid-grey border-solid align-bottom text-xs">
+								<tr class="border-b-[0.05rem] border-mid-grey border-solid align-bottom text-xxs">
 									{#each mapData.columns as column}
 										<td class="pb-3 text-left">
 											{#if column.unit}

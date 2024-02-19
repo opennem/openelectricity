@@ -92,9 +92,9 @@
 			</div>
 			<div class="mt-16 md:mt-0">
 				<p class="flex flex-col gap-4 md:flex-row md:gap-8 text-base mb-8">
-					<SectionLink href="/content/about" title="Dev Documentation" />
-					<SectionLink href="/content/about" title="Status Page" />
 					<SectionLink href="/content/about" title="About" />
+					<SectionLink href="/content/developers" title="Dev Documentation" />
+					<!-- <SectionLink href="/content/about" title="Status Page" /> -->
 				</p>
 
 				<h5>Transparency & Accountability</h5>
