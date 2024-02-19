@@ -5,3 +5,4 @@
 /** @typedef {import('$lib/types/isp.types').IspData} IspData */
 /** @typedef {import('$lib/types/isp.types').ScenarioKey} ScenarioKey */
 /** @typedef {import('$lib/types/data_range.types').DataRange} DataRange */
+/** @typedef {import('$lib/types/article.types').Article} Article */

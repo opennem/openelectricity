@@ -11,7 +11,11 @@ export async function load({ fetch }) {
 	const homepageData = await client.fetch(
 		`*[_type == "homepage"]{_id, banner_title, banner_statement, map_title, chart_title, records_title, analysis_title, goals_title, goals}`
 	);
-	const articles = await client.fetch(`*[_type == "article"][0..3]{_id, title, content, slug}`);
+
+	/** @type {import('$lib/types/article.types').Article[]} */
+	const articles = await client.fetch(
+		`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
+	);
 
 	const recordsRes = await fetch('/api/records');
 	let records = [];

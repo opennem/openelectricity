@@ -14,6 +14,7 @@
 	import DataTrackerOverview from '$lib/components/data-tracker/Overview.svelte';
 	import FossilFuelsVsRenewables from '$lib/components/homepage/FossilFuelsVsRenewables.svelte';
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
+	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -213,12 +214,9 @@
 			<h3>{analysis_title}</h3>
 			<SectionLink href="/analysis" title="View all Analysis" />
 		</header>
-		<div class="grid grid-cols-4">
-			{#each articles as { title, slug }}
-				<div>
-					<h3>{title}</h3>
-					<a href="/analysis/{slug.current}">Read more</a>
-				</div>
+		<div class="grid grid-cols-4 gap-8">
+			{#each articles as article}
+				<ArticleCard {article} />
 			{/each}
 		</div>
 	</div>
