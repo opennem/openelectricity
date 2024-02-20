@@ -3,13 +3,15 @@
 	export let clickHandler = null;
 	export let secondary = false;
 	export let active = false;
+	export let disabled = false;
 </script>
 
 <button
 	on:click={clickHandler}
 	class="button rounded-md border-solid border-[0.1rem] border-black p-4 font-space appearance-none text-sm font-medium bg-black text-white ${$$restProps.class}"
 	class:secondary
-	class:active><slot /></button
+	class:active
+	{disabled}><slot /></button
 >
 
 <style lang="postcss">
@@ -21,6 +23,9 @@
 	.active {
 		background-color: theme(colors.dark-grey);
 		color: #fff;
+	}
+	.button:disabled {
+		background-color: theme(colors.light-warm-grey);
 	}
 	.secondary {
 		background-color: #fff;

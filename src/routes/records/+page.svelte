@@ -29,7 +29,9 @@
 	/** @type {PageData} */
 	export let data;
 
-	$: showMenu = false;
+	const PAGE_LENGTH = 50;
+	let recordsData = data.records;
+	let currentPage = 1;
 
 	// Grab defaults from URL if present
 	let pURL = $page.url;
@@ -49,18 +51,22 @@
 			return acc;
 		}, {});
 
+	let isLoading = false;
+
+	let showMenu = false;
 	let showTechnology = false;
 	let showRegions = false;
 	let showPeakLow = false;
 	let showDate = false;
-	let searchString = pURL.searchParams.get('search') || '';
+	let showLoadMore = data.count > PAGE_LENGTH;
 
+	let searchString = pURL.searchParams.get('search') || '';
 	/** @type {TechnologyFilterDict} */
-	$: technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
-	$: regionSelections = { ...regionDefaultSelections, ...regionArgs };
-	$: peakLowSelection = pURL.searchParams.get('peak-low') || 'all';
-	$: dateSelection = pURL.searchParams.get('date') || 'none';
-	$: dateChosen = 'none';
+	let technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
+	let regionSelections = { ...regionDefaultSelections, ...regionArgs };
+	let peakLowSelection = pURL.searchParams.get('peak-low') || 'all';
+	let dateSelection = pURL.searchParams.get('date') || 'none';
+	let dateChosen = 'none';
 
 	$: hasSearchTerm = searchString.trim() !== '';
 	$: hasTechnologySelections = Object.values(technologySelections).find((selection) => selection);
@@ -85,21 +91,39 @@
 			return searchFilter && technologyFilter && regionFilter && peakLowFilter;
 		});
 
-	$: filteredRecords = recordsFilter(data.records) || [];
+	$: filteredRecords = recordsFilter(recordsData) || [];
 	$: dailyRecords = recordsByDay(filteredRecords);
 
-	$: fetchRecords = async () => {
-		let dateParams = '';
+	const fetchRecords = async (pageNum = -1) => {
+		isLoading = true;
 
+		let p = [];
 		if (dateSelection !== 'none') {
-			dateParams = `?date=${dateSelection}`;
+			p.push(`date=${dateSelection}`);
+		}
+		if (pageNum > 0) {
+			p.push(`page=${pageNum}`);
 		}
 
-		const resp = await fetch(`/api/records${dateParams}`);
+		const params = p.length ? `?${p.join('&')}` : '';
+		const resp = await fetch(`/api/records${params}`);
 		if (resp && resp.ok) {
 			const recordsResponse = await resp.json();
-			filteredRecords = recordsFilter(recordsResponse.data);
+			if (pageNum > 0) {
+				currentPage = pageNum;
+				recordsData = [...recordsData, ...recordsResponse.data];
+			} else {
+				recordsData = recordsResponse.data;
+			}
+
+			if (recordsResponse.data.length >= PAGE_LENGTH) {
+				showLoadMore = true;
+			} else {
+				showLoadMore = false;
+			}
 		}
+
+		isLoading = false;
 	};
 
 	const clearAllFilters = () => {
@@ -375,6 +399,7 @@
 												secondary={true}
 												clickHandler={() => {
 													dateChosen = dateSelection;
+													currentPage = 1;
 													setQueryString();
 													fetchRecords();
 												}}>Cancel</Button
@@ -383,7 +408,7 @@
 												clickHandler={(e) => {
 													dateSelection = dateChosen;
 													dateChosen = 'none';
-
+													currentPage = 1;
 													setQueryString();
 													fetchRecords();
 												}}>Apply</Button
@@ -411,6 +436,17 @@
 						</div>
 					</div>
 				{/each}
+				{#if showLoadMore}
+					<div class="flex justify-center my-16">
+						<Button
+							clickHandler={() => {
+								fetchRecords(currentPage + 1);
+							}}
+							secondary={true}
+							disabled={isLoading}>Load more</Button
+						>
+					</div>
+				{/if}
 			</div>
 		</div>
 	</div>
