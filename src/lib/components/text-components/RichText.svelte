@@ -6,29 +6,33 @@
 	let values = [];
 	let current = [];
 
-	content.forEach((block) => {
-		if (block._type === 'image' && block.style === 'wide') {
-			if (current.length !== 0) {
+	$: {
+		values = [];
+		current = [];
+
+		content.forEach((block) => {
+			if (block._type === 'image' && block.style === 'wide') {
+				if (current.length !== 0) {
+					values.push({
+						type: 'narrow',
+						blocks: [...current]
+					});
+				}
+
 				values.push({
-					type: 'narrow',
-					blocks: [...current]
+					type: 'wide',
+					blocks: [block]
 				});
+
+				current = [];
+			} else {
+				current.push(block);
 			}
+		});
 
-			values.push({
-				type: 'wide',
-				blocks: [block]
-			});
-
-			current = [];
-		} else {
-			current.push(block);
-		}
-	});
-
-	values.push([...current]);
+		values.push([...current]);
+	}
 	const components = { types: { image: Image } };
-	console.log(values);
 </script>
 
 {#if content}

@@ -1,16 +1,14 @@
 <script>
-	import { urlFor } from '$lib/sanity';
+	import AnalysisCard from './AnalysisCard.svelte';
+	import MilestoneCard from './MilestoneCard.svelte';
 
 	/** @type {import('$lib/types/article.types').Article} */
 	export let article;
+	$: isMilestone = article.article_type === 'milestone';
 </script>
 
-<a
-	href={`/analysis/${article.slug.current}`}
-	class={`flex flex-col h-full py-8 ${$$restProps.class}`}
->
-	<h3>{article.title}</h3>
-	{#if article.cover}
-		<img src={urlFor(article.cover).width(590).height(346).url()} alt={article.cover.alt} />
-	{/if}
-</a>
+{#if isMilestone}
+	<MilestoneCard {article} class={$$restProps.class} />
+{:else}
+	<AnalysisCard {article} class={$$restProps.class} />
+{/if}

@@ -75,13 +75,6 @@
 
 	$: filteredArticles = articlesFilter(data.articles) || [];
 
-	// $: fetchArticles = async () => {
-	// 	const data = await client.fetch(`*[_type == "article"]{_id, title, content, slug}`);
-	// 	if (data) {
-	// 		filteredArticles = articlesFilter(data);
-	// 	}
-	// };
-
 	const clearAllFilters = () => {
 		getKeys(technologySelections).forEach((technology) => {
 			technologySelections[technology] = false;

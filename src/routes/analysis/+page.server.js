@@ -7,7 +7,6 @@ export async function load() {
 		`*[_type == "article"]| order(publish_date desc){_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
 	);
 
-	console.log(data);
 	if (data) {
 		return {
 			articles: data

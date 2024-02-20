@@ -1,6 +1,5 @@
 import { error } from '@sveltejs/kit';
 
-/** @type {import('./$types').PageServerLoad} */
 export async function load({ fetch, params, url }) {
 	try {
 		const date = url.searchParams.get('date');
@@ -11,7 +10,8 @@ export async function load({ fetch, params, url }) {
 			const recordsResponse = await data.json();
 
 			return {
-				records: recordsResponse.data
+				records: recordsResponse.data,
+				count: recordsResponse.total_records
 			};
 		}
 	} catch (e) {
@@ -20,5 +20,6 @@ export async function load({ fetch, params, url }) {
 			records: []
 		};
 	}
+
 	// throw error(404, 'Not found');
 }
