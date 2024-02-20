@@ -21,12 +21,12 @@
 	import { getKeys } from '$lib/utils/keys';
 	import { page } from '$app/stores';
 	import Icon from '$lib/components/Icon.svelte';
+	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
 	/** @type {PageData} */
 	export let data;
-	console.log(data);
 
-	$: showMenu = false;
+	let showMenu = false;
 
 	// Grab defaults from URL if present
 	let pURL = $page.url;
@@ -52,9 +52,9 @@
 	let searchString = pURL.searchParams.get('search') || '';
 
 	/** @type {TechnologyFilterDict} */
-	$: technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
-	$: regionSelections = { ...regionDefaultSelections, ...regionArgs };
-	$: dateChosen = 'none';
+	let technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
+	let regionSelections = { ...regionDefaultSelections, ...regionArgs };
+	let dateChosen = 'none';
 
 	$: hasSearchTerm = searchString.trim() !== '';
 	$: hasTechnologySelections = Object.values(technologySelections).find((selection) => selection);
@@ -328,11 +328,8 @@
 				</div>
 			</div>
 			<div class="md:w-9/12 grid grid-cols-3 py-12">
-				{#each filteredArticles as { title, slug }}
-					<div>
-						<h3>{title}</h3>
-						<a href="/analysis/{slug.current}">Read more</a>
-					</div>
+				{#each filteredArticles as article}
+					<ArticleCard {article} />
 				{/each}
 			</div>
 		</div>

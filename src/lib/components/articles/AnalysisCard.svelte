@@ -10,6 +10,9 @@
 	class={`flex flex-col h-full py-8 ${$$restProps.class}`}
 >
 	<h3>{article.title}</h3>
+	<div>
+		{#each article.author as author} <div>{author.name}</div>{/each}
+	</div>
 	{#if article.cover}
 		<img src={urlFor(article.cover).width(590).height(346).url()} alt={article.cover.alt} />
 	{/if}

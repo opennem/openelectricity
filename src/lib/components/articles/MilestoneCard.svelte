@@ -13,4 +13,8 @@
 	{#if article.cover}
 		<img src={urlFor(article.cover).width(590).height(346).url()} alt={article.cover.alt} />
 	{/if}
+	<div
+		style={`background-image: url(/img/records/${article.fueltech}.png)`}
+		class={`h-44 bg-no-repeat bg-top bg-cover`}
+	/>
 </a>

@@ -22,6 +22,7 @@
 		records,
 		banner_title,
 		banner_statement,
+		milestones_title,
 		chart_title,
 		map_title,
 		records_title,
@@ -30,9 +31,8 @@
 		outlookEnergyNem,
 		fuelTechs,
 		scenarios,
-
+		milestones,
 		dataTrackerData,
-
 		historyEnergyNemData
 	} = data;
 
@@ -118,6 +118,19 @@
 		</section>
 	</div>
 </div>
+<div class="bg-white py-16">
+	<div class="container max-w-none lg:container">
+		<header class="flex justify-between">
+			<h3>{milestones_title}</h3>
+			<SectionLink href="/analysis" title="View all" />
+		</header>
+		<div class="grid grid-cols-4 gap-8">
+			{#each milestones as article}
+				<ArticleCard {article} />
+			{/each}
+		</div>
+	</div>
+</div>
 <div class="md:bg-light-warm-grey">
 	<div class="container max-w-none lg:container">
 		<div class="md:grid grid-cols-2 gap-36 py-16">
@@ -134,7 +147,7 @@
 					<MapHeader
 						{mapMode}
 						mapTitle={map_title}
-						onChange={onMapModeChange}
+						onChange="{onMapModeChange}x"
 						dispatch={mapData.dispatch}
 						class="hidden md:block"
 					/>
