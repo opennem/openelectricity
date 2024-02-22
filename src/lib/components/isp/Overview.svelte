@@ -199,12 +199,12 @@
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
 
-	const historicalData = data.historyEnergyNemData;
-	// $: console.log('historicalData', historicalData);
 	// Convert historical data to TWh to match ISP
-	historicalData.forEach((d) => {
-		d.history.data = d.history.data.map((v) => v / 1000);
+	const historicalData = deepCopy(data.historyEnergyNemData).map((d) => {
+		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
+		d.history = { ...d.history, data: historyData };
 		d.units = 'TWh';
+		return d;
 	});
 
 	/** @type {StatsData[]} */
