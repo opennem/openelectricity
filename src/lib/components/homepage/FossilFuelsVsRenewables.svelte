@@ -81,7 +81,7 @@
 					totalSet.history.last = set.history.last;
 				}
 
-				// NOTE: the sum  to be used for Renewables % calculations do not include any loads
+				// NOTE: the sum to be used for % calculations do not include any loads - only generation
 				set.history.data.forEach((d, i) => {
 					if (isLoads(set.fuel_tech)) {
 						// totalSet.history.data[i] -= d || 0;
@@ -171,8 +171,9 @@
 		tsData = rollingSumPercentage;
 	}
 
-	const displayXTickYears = [2000, 2005, 2010, 2015, 2020, 2025, 2030];
-	const displayXTicks = displayXTickYears.map((year) => new Date(`${year}-01-01`));
+	const displayXTicks = [2000, 2005, 2010, 2015, 2020, 2025, 2030].map(
+		(year) => new Date(`${year}-01-01`)
+	);
 
 	$: groupedData = groupLonger(tsData, seriesNames);
 	$: flatData = flatten(groupedData, 'values');
