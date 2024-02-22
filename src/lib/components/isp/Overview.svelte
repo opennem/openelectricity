@@ -263,12 +263,12 @@
 		// );
 
 		const getFinYearDate = (date) => {
-			const year = date.getFullYear();
-			const month = date.getMonth();
-			if (month < 6) {
-				return new Date(year - 1, 6, 1);
+			const m = formatInTimeZone(date, '+10:00', 'MM');
+			const y = formatInTimeZone(date, '+10:00', 'yyyy');
+			if (+m < 7) {
+				return new Date(+y - 1, 6, 1);
 			} else {
-				return new Date(year, 6, 1);
+				return new Date(+y, 6, 1);
 			}
 		};
 
@@ -322,7 +322,7 @@
 		</div>
 	</header>
 
-	<div class="grid grid-cols-6 gap-12 my-6">
+	<div class="grid grid-cols-6 gap-3 my-6">
 		<div class="text-dark-grey text-sm col-span-2 relative">
 			<div class="absolute top-0 z-10">
 				<div>
@@ -372,7 +372,7 @@
 			<OverviewChart
 				dataset={historicalTsData}
 				{xKey}
-				xTicks={[new Date('2000-01-01'), new Date('2023-01-01')]}
+				xTicks={[new Date('2000-01-01'), new Date('2012-01-01')]}
 				yKey={[0, 1]}
 				yTicks={0}
 				{yDomain}
