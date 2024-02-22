@@ -10,9 +10,9 @@ export const formatFyTickX = (/** @type {Date} */ d) =>
 	formatInTimeZone(subYears(d, 1), '+10:00', 'yyyy');
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 export const formatValue = (/** @type {number} */ d) => {
-	const formatted = d3Format('.0f')(d / 1000);
+	const formatted = d3Format('.0f')(d);
 	if (formatted !== '0') {
-		return formatted + 'k';
+		return formatted + 'TWh';
 	}
 	return formatted;
 };

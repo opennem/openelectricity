@@ -4,12 +4,25 @@ import outlookEnergyNem from '$lib/isp-data/outlooks2024/au/NEM/energy/outlook.j
 
 function ispData() {
 	const data = outlookEnergyNem.data;
+	const updatedDataToTera = data.map((d) => {
+		const projection = { ...d.projection };
+		projection.data = projection.data.map((d) => d / 1000);
+
+		return {
+			...d,
+			projection
+		};
+	});
+
 	const pathways = [...new Set(data.map((d) => d.pathway))].sort();
 	const scenarios = [...new Set(data.map((d) => d.scenario))].sort();
 	const fuelTechs = [...new Set(data.map((d) => d.fuel_tech))].sort();
 
 	return {
-		outlookEnergyNem,
+		outlookEnergyNem: {
+			...outlookEnergyNem,
+			data: updatedDataToTera
+		},
 		pathways,
 		scenarios,
 		fuelTechs

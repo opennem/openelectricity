@@ -3,7 +3,7 @@
 
 	export let key = '';
 	export let title = '';
-	/** @type {import('$lib/types/chart.types').TimeSeriesData | undefined} */
+	/** @type {TimeSeriesData | undefined} */
 	export let data = undefined;
 
 	$: value = data ? /** @type {number} */ (data[key]) : 0;

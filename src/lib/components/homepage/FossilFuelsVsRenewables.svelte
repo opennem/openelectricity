@@ -229,15 +229,15 @@
 	<LayerCake
 		padding={{ top: 20, right: 15, bottom: 40, left: 45 }}
 		x={'date'}
-		xDomain={[new Date(2000, 0, 1).getTime(), new Date(2030, 11, 31).getTime()]}
 		y={'value'}
-		yDomain={[0, null]}
 		z={'group'}
-		zScale={scaleOrdinal()}
+		xDomain={[new Date(2000, 0, 1).getTime(), new Date(2030, 11, 31).getTime()]}
+		yDomain={[0, null]}
 		zDomain={seriesNames}
+		zScale={scaleOrdinal()}
 		zRange={seriesColours}
-		{flatData}
 		data={groupedData}
+		{flatData}
 	>
 		<Html>
 			<div class="italic text-right text-xs text-dark-grey mr-8">

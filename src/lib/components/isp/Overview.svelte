@@ -75,11 +75,13 @@
 	}
 
 	$: outlookData = data.outlookEnergyNem.data;
+	$: console.log('outlookData', outlookData);
 	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
 	$: filteredWithPathwayScenario = filteredWithScenario.filter(
 		(d) => d.pathway === selectedPathway
 	);
-	$: yDomain = selectedScenario === 'green_energy_exports' ? [0, 1550000] : [0, 550000];
+	$: yDomain =
+		selectedScenario === 'green_energy_exports' ? [0, 1550000 / 1000] : [0, 550000 / 1000];
 
 	/** @type {IspData[]} */
 	let orderedFilteredWithPathwayScenario = [];
@@ -199,6 +201,11 @@
 
 	const historicalData = data.historyEnergyNemData;
 	// $: console.log('historicalData', historicalData);
+	// Convert historical data to TWh to match ISP
+	historicalData.forEach((d) => {
+		d.history.data = d.history.data.map((v) => v / 1000);
+		d.units = 'TWh';
+	});
 
 	/** @type {StatsData[]} */
 	let historicalDataset = [];
@@ -341,7 +348,7 @@
 				<p class="mt-6">No data for this scenario and pathway</p>
 			{:else}
 				<OverviewChart
-					title={`Energy Generation (GWh) under AEMO ${scenarioLabels[selectedScenario]} 2024`}
+					title={`Energy Generation (TWh) under AEMO ${scenarioLabels[selectedScenario]} 2024`}
 					description={scenarioDescriptions[selectedScenario]}
 					dataset={tsData}
 					{xKey}
