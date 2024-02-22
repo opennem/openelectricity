@@ -21,6 +21,7 @@
 	import SparkBar from './SparkBar.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
 	import DashboardViewOptions from './DashboardViewOptions.svelte';
+	import { addMonths } from 'date-fns';
 
 	/** @type {{ fuelTechs: string[], outlookEnergyNem: Isp, historyEnergyNemData: StatsData[]  }} */
 	export let data;
@@ -239,12 +240,49 @@
 				? Object.keys(transformed[0]).filter((d) => d !== xKey && d !== 'time')
 				: [];
 
-		const groupByYearDate = rollup(
+		// const groupByYearDate = rollup(
+		// 	transformed,
+		// 	(v) => {
+		// 		const obj = {
+		// 			date: v[0].date,
+		// 			time: v[0].time
+		// 		};
+
+		// 		v.forEach((d) => {
+		// 			historicalSeriesNames.forEach((key) => {
+		// 				if (obj[key] === undefined) {
+		// 					obj[key] = 0;
+		// 				}
+		// 				obj[key] += d[key];
+		// 			});
+		// 		});
+
+		// 		return obj;
+		// 	},
+		// 	(d) => d.date.getFullYear()
+		// );
+
+		const getFinYearDate = (date) => {
+			const year = date.getFullYear();
+			const month = date.getMonth();
+			if (month < 6) {
+				return new Date(year - 1, 6, 1);
+			} else {
+				return new Date(year, 6, 1);
+			}
+		};
+
+		transformed.forEach((d) => {
+			d._rollupDate = getFinYearDate(d.date);
+		});
+
+		const groupByFinYearDate = rollup(
 			transformed,
 			(v) => {
+				const finDate = addMonths(v[0].date, 6);
 				const obj = {
-					date: v[0].date,
-					time: v[0].time
+					date: finDate,
+					time: finDate.getTime()
 				};
 
 				v.forEach((d) => {
@@ -258,11 +296,13 @@
 
 				return obj;
 			},
-			(d) => d.date.getFullYear()
+			(d) => d._rollupDate
 		);
 
-		// filter out 2024 data since 2024 is incomplete
-		const groupBy = [...groupByYearDate.values()].filter((d) => d.date.getFullYear() < 2024);
+		// filter out Fin Year 1999 and 2024 data
+		const groupBy = [...groupByFinYearDate.values()].filter(
+			(d) => d.date.getFullYear() < 2024 && d.date.getFullYear() > 1999
+		);
 
 		const loadSeries = seriesNames.filter((d) => loadFts.find((l) => d.includes(l)));
 		historicalTsData = withMinMax(groupBy, historicalSeriesNames, loadSeries);
@@ -332,7 +372,7 @@
 			<OverviewChart
 				dataset={historicalTsData}
 				{xKey}
-				xTicks={[new Date('1999-01-01'), new Date('2023-01-01')]}
+				xTicks={[new Date('2000-01-01'), new Date('2023-01-01')]}
 				yKey={[0, 1]}
 				yTicks={0}
 				{yDomain}
