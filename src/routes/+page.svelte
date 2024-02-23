@@ -55,9 +55,12 @@
 
 	// $: console.log('scenarios', scenarios);
 
-	$: onMapModeChange = (/** @type {string} */ value) => {
+	/**
+	 * @param {string} value
+	 */
+	function onMapModeChange(value) {
 		mapMode = value;
-	};
+	}
 </script>
 
 <div class="container max-w-none lg:container">
@@ -109,7 +112,7 @@
 					<MapHeader
 						{mapMode}
 						mapTitle={map_title}
-						onChange="{onMapModeChange}x"
+						onChange={onMapModeChange}
 						dispatch={mapData.dispatch}
 						class="hidden md:block"
 					/>
