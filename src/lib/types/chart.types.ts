@@ -5,3 +5,10 @@ export type TimeSeriesData = {
 	_min?: number;
 	[key: string]: number | Date | undefined;
 };
+
+export type TimeSeriesGroupData = {
+	time: number;
+	date: Date;
+	group: string;
+	value: number | string;
+};
