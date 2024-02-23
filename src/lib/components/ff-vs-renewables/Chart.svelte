@@ -86,7 +86,13 @@
 		</Html>
 
 		<Svg>
-			<AxisX formatTick={formatTickX} ticks={displayXTicks} tickMarks={true} gridlines={true} />
+			<AxisX
+				formatTick={formatTickX}
+				ticks={displayXTicks}
+				tickMarks={true}
+				gridlines={true}
+				tickLabel={!Boolean(hoverData)}
+			/>
 			<AxisY formatTick={formatTickY} ticks={5} />
 
 			<MultiLine {hoverData} />
