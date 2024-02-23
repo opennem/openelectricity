@@ -1,5 +1,4 @@
 import { format as d3Format } from 'd3-format';
-// import console from './console.js'
 
 export default class PerfTime {
 	constructor(label) {

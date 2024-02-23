@@ -3,6 +3,12 @@ import PerfTime from './perf-time.js';
 
 const perfTime = new PerfTime();
 
+/**
+ *
+ * @param {TimeSeriesData[]} data
+ * @param {*} keys
+ * @returns {TimeSeriesData[]}
+ */
 export default function (data, keys) {
 	perfTime.time();
 
