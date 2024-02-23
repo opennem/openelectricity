@@ -5,10 +5,10 @@
 	/** @type {TimeSeriesData} */
 	export let annotation;
 
-	/** @type {StatsData} */
+	/** @type {StatsData[]} */
 	export let dataset;
 
-	const { data, y, xGet, yGet, zGet } = getContext('LayerCake');
+	const { data, xGet, yGet, zGet } = getContext('LayerCake');
 	const formatY = format('.1f');
 
 	$: left = (/** @type {TimeSeriesData[]} */ values) => {
