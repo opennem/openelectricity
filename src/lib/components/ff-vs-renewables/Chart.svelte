@@ -1,13 +1,11 @@
 <script>
 	import { LayerCake, Svg, Html, flatten, groupLonger } from 'layercake';
-	import { rollup, sum } from 'd3-array';
 	import { scaleOrdinal } from 'd3-scale';
 	import { format as d3Format } from 'd3-format';
 	import { formatInTimeZone } from 'date-fns-tz';
 
 	import {
 		fuelTechGroup,
-		fuelTechGroups,
 		fuelTechNames,
 		fuelTechColour,
 		fuelTechNameMap,
@@ -22,7 +20,7 @@
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
-	import ChartAnnotations from './ChartAnnotations.svelte';
+	import Annotations from './Annotations.svelte';
 
 	export let data;
 	export let title = '';
@@ -266,7 +264,7 @@
 				<p>{@html description}</p>
 			</div>
 
-			<ChartAnnotations annotation={hoverData || latestDatapoint} dataset={historicalDataset} />
+			<Annotations annotation={hoverData || latestDatapoint} dataset={historicalDataset} />
 		</Html>
 	</LayerCake>
 </div>
