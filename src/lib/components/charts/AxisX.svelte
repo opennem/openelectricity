@@ -8,6 +8,9 @@
 	/** @type {boolean} Show a vertical mark for each tick. */
 	export let tickMarks = false;
 
+	/** @type {boolean} Show the label for each tick. */
+	export let tickLabel = true;
+
 	/** @type {boolean} Show a solid line at the bottom. */
 	export let baseline = false;
 
@@ -76,15 +79,17 @@
 				/>
 			{/if}
 
-			<text
-				x={isBandwidth ? $xScale.bandwidth() / 2 + xTick : xTick}
-				y={yTick}
-				dx=""
-				dy=""
-				text-anchor={textAnchor(i)}
-			>
-				{formatTick(tick)}
-			</text>
+			{#if tickLabel}
+				<text
+					x={isBandwidth ? $xScale.bandwidth() / 2 + xTick : xTick}
+					y={yTick}
+					dx=""
+					dy=""
+					text-anchor={textAnchor(i)}
+				>
+					{formatTick(tick)}
+				</text>
+			{/if}
 		</g>
 	{/each}
 
