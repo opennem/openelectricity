@@ -1,6 +1,7 @@
 <script>
 	import { LayerCake, Svg, Html, flatten, groupLonger } from 'layercake';
 	import { scaleOrdinal } from 'd3-scale';
+	import { formatInTimeZone } from 'date-fns-tz';
 
 	import { fuelTechColour, fossilRenewablesGroups } from '$lib/fuel_techs.js';
 	import MultiLine from '$lib/components/charts/MultiLine.svelte';
@@ -18,6 +19,9 @@
 		groupedStatsData,
 		getKeysAndRollingSumPercentDataset
 	} from './helpers';
+
+	export const formatHoverTickX = (/** @type {Date} */ d) =>
+		formatInTimeZone(d, '+10:00', 'MMM yyyy');
 
 	/** @type {StatsData[]} */
 	export let data;
@@ -45,6 +49,14 @@
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
 
+	let chartHeight = 650; // pixels
+	let innerWidth = 0;
+
+	$: console.log('innerWidth', innerWidth);
+
+	$: md = innerWidth > 1024;
+	$: chartBottom = md ? 40 : 100;
+
 	$: if (data && data.length) {
 		totalStatsData = calculateTotalStatsData(data);
 		ordered = getOrderedStatsData(data);
@@ -65,9 +77,16 @@
 	$: latestDatapoint = tsData[tsData.length - 1];
 </script>
 
-<div class="chart-container">
+<svelte:window bind:innerWidth />
+
+<div class="pt-6 md:absolute md:w-6/12 md:mt-[150px] md:ml-24 md:pt-0 md:z-10">
+	<h2 class="text-3xl leading-3xl font-semibold md:text-9xl md:leading-9xl">{title}</h2>
+	<p>{@html description}</p>
+</div>
+
+<div class="chart-container h-[350px] md:h-[650px]">
 	<LayerCake
-		padding={{ top: 20, right: 15, bottom: 40, left: 45 }}
+		padding={{ top: 20, right: 15, bottom: chartBottom, left: 45 }}
 		x={'date'}
 		y={'value'}
 		z={'group'}
@@ -89,29 +108,31 @@
 			<AxisX
 				formatTick={formatTickX}
 				ticks={displayXTicks}
-				tickMarks={true}
+				tickMarks={false}
 				gridlines={true}
+				snapTicks={true}
 				tickLabel={!Boolean(hoverData)}
 			/>
 			<AxisY formatTick={formatTickY} ticks={5} />
 
+			<MultiLine opacity={0.1} />
 			<MultiLine {hoverData} />
 		</Svg>
 
 		<Html>
 			<HoverLine
 				dataset={tsData}
-				formatValue={formatTickX}
+				formatValue={formatHoverTickX}
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>
 
-			<div class="w-6/12 mt-[150px] ml-6">
-				<h2 class="md:text-9xl md:leading-9xl">{title}</h2>
-				<p>{@html description}</p>
-			</div>
-
-			<Annotations annotation={hoverData || latestDatapoint} dataset={historicalDataset} />
+			<Annotations
+				rounded={hoverData !== undefined}
+				annotation={hoverData || latestDatapoint}
+				dataset={historicalDataset}
+				showBesideLatestPoint={md}
+			/>
 		</Html>
 	</LayerCake>
 </div>
@@ -119,6 +140,5 @@
 <style>
 	.chart-container {
 		width: 100%;
-		height: 650px;
 	}
 </style>

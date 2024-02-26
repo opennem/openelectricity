@@ -63,7 +63,7 @@
 	}
 </script>
 
-<div class="container max-w-none lg:container">
+<div class="container max-w-none lg:container relative">
 	<FossilFuelsVsRenewables
 		data={historyEnergyNemData}
 		title={banner_title}
@@ -83,6 +83,7 @@
 		</section>
 	</div>
 </div>
+
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
 		<header class="flex justify-between">
@@ -96,6 +97,7 @@
 		</div>
 	</div>
 </div>
+
 <div class="md:bg-light-warm-grey">
 	<div class="container max-w-none lg:container">
 		<div class="md:grid grid-cols-2 gap-36 py-16">
