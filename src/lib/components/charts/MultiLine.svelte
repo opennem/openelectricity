@@ -7,6 +7,8 @@
 	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
 
+	export let opacity = 1;
+
 	$: path = (values) => {
 		return (
 			'M' +
@@ -20,18 +22,26 @@
 
 	$: cx = (values) => {
 		if (!hoverData) return 0;
-
-		const find = values.find((item) => item.time === hoverData.time);
-
+		const time = hoverData.time;
+		const find = values.find((item) => item.time === time);
 		return $xGet(find);
 	};
 	$: cy = (values) => {
 		if (!hoverData) return 0;
-
-		const find = values.find((item) => item.time === hoverData.time);
-
+		const time = hoverData.time;
+		const find = values.find((item) => item.time === time);
 		return $yGet(find);
 	};
+
+	$: updatedData = hoverData
+		? $data.map((d) => {
+				const time = hoverData.time;
+				return {
+					group: d.group,
+					values: d.values.filter((v) => v.time <= time)
+				};
+		  })
+		: $data;
 </script>
 
 <g
@@ -49,8 +59,13 @@
 			<circle cx={cx(group.values)} cy={cy(group.values)} r="6" fill={$zGet(group)} />
 		{/each}
 	{/if}
-	{#each $data as group}
-		<path class="path-line" d={path(group.values)} stroke={$zGet(group)} />
+	{#each updatedData as group}
+		<path
+			class="path-line"
+			d={path(group.values)}
+			stroke={$zGet(group)}
+			style="opacity: {opacity};"
+		/>
 	{/each}
 </g>
 
