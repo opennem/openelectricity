@@ -8,7 +8,7 @@ export default {
 	],
 	theme: {
 		fontFamily: {
-			sans: ['system-ui', 'DM Sans', 'sans-serif'],
+			sans: ['DM Sans', 'sans-serif'],
 			space: ['Space Grotesk', 'sans-serif']
 		},
 		screens: {

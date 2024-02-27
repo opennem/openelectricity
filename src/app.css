@@ -3,8 +3,23 @@
 	src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
 }
 @font-face {
+	font-family: 'DM Sans';
+	src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
+	font-weight: 600;
+}
+@font-face {
+	font-family: 'DM Sans';
+	src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
+	font-weight: 700;
+}
+@font-face {
 	font-family: 'Space Grotesk';
 	src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
+}
+@font-face {
+	font-family: 'Space Grotesk';
+	src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
+	font-weight: 600;
 }
 @tailwind base;
 @tailwind components;
@@ -34,6 +49,10 @@ body {
 	font-size: theme(fontSize.base);
 	color: theme(colors.dark-grey);
 	min-height: 100%;
+}
+
+b {
+	font-weight: 600;
 }
 
 @layer base {
