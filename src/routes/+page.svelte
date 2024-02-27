@@ -75,9 +75,9 @@
 
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
-		<header class="flex justify-between">
+		<header class="flex justify-center">
 			<h3>{chart_title}</h3>
-			<SectionLink href="https://data.openelectricity.org.au/" title="Data Tracker" />
+			<!-- <SectionLink href="https://data.openelectricity.org.au/" title="Data Tracker" /> -->
 		</header>
 
 		<section class="my-16">

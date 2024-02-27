@@ -119,6 +119,7 @@
 				{dataset}
 				{hoverData}
 				isShapeStack={true}
+				useDataHeight={true}
 				formatValue={formatTickX}
 				on:mousemove
 				on:mouseout

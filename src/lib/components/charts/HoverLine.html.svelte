@@ -19,13 +19,14 @@
 
 	export let showHoverText = true;
 
+	export let useDataHeight = false;
+
 	/** @type {Function} A function that passes the current value and expects a nicely formatted value in return. */
 	export let formatValue = (/** @type {*} */ d) => d;
 
 	let visible = false;
 	let x = 0;
 	let y = [0, 0];
-	let useDataHeight = false;
 	let value = 0;
 
 	$: compareDates = [...new Set(dataset.map((d) => d.date))];
@@ -38,7 +39,7 @@
 	}
 
 	/**
-	 * @param {import('$lib/types/chart.types').TimeSeriesData | undefined} d
+	 * @param {TimeSeriesData | undefined} d
 	 */
 	function updateLineCoords(d) {
 		if (d) {
@@ -51,16 +52,11 @@
 
 		if (isShapeStack) {
 			if (d && d._max !== undefined && d._min !== undefined) {
-				useDataHeight = true;
-
 				y = $yGet([d._max, d._min]);
-			} else {
-				useDataHeight = false;
 			}
 		} else {
 			// make sure the line doesn't go off the bottom of the chart
 			y = [$yGet(d) + yTopOffset > $height ? $height : $yGet(d) + yTopOffset, $height];
-			useDataHeight = true;
 		}
 	}
 

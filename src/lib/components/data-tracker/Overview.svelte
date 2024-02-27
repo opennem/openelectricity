@@ -1,6 +1,7 @@
 <script>
 	import { fuelTechName, fuelTechColour, fuelTechOrder } from '$lib/fuel_techs.js';
 	import { transform } from '$lib/utils/time-series-helpers/transform/power.js';
+	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import deepCopy from '$lib/utils/deep-copy';
 
 	import OverviewChart from './OverviewChart.svelte';
@@ -43,11 +44,13 @@
 			}
 		});
 	}
-
-	$: tsData = transform(orderedAndLoadsInverted, '30m');
+	$: transformed = transform(orderedAndLoadsInverted, '30m');
 	$: seriesColours = orderedAndLoadsInverted.map((d) => fuelTechColour(d.fuel_tech));
 	$: seriesNames =
-		tsData && tsData.length ? Object.keys(tsData[0]).filter((d) => d !== xKey && d !== 'time') : [];
+		transformed && transformed.length
+			? Object.keys(transformed[0]).filter((d) => d !== xKey && d !== 'time')
+			: [];
+	$: tsData = withMinMax(transformed, seriesNames, loadFts);
 
 	$: fuelTechLabelDict = orderedAndLoadsInverted.reduce(
 		(/** @type {Object.<string, string>} */ acc, curr) => {

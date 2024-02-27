@@ -8,12 +8,13 @@
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
+	import HoverText from '$lib/components/charts/HoverText.html.svelte';
 
 	export const formatTickX = (/** @type {Date} */ d) =>
 		formatInTimeZone(d, '+10:00', 'd MMM, h:mm aaa');
-	export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
+	export const formatTickY = (/** @type {number} */ d) => d3Format('.0f')(d / 1000);
 
-	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
+	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
 
 	export let xKey = '';
@@ -31,18 +32,15 @@
 
 	/** @type {*} */
 	let evt;
-	$: console.log('evt', evt);
 
 	$: stackedData = stack(dataset, seriesNames);
-
 	$: ticks = [dataset[0][xKey], dataset[dataset.length - 1][xKey]];
-
-	// $: console.log('stackedData', stackedData, dataset, seriesNames, ticks);
+	$: maxY = Math.round(Math.max(...dataset.map((d) => d._max || 0)));
 </script>
 
 <div class="chart-container">
 	<LayerCake
-		padding={{ top: 20, right: 15, bottom: 40, left: 15 }}
+		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
 		x={(/** @type {*} */ d) => d.data[xKey]}
 		y={yKey}
 		z={zKey}
@@ -60,11 +58,12 @@
 
 		<Svg>
 			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
-			<AxisY formatTick={formatTickY} gridlines={false} tickMarks={true} ticks={[0, 35000]} />
-			<AxisX {ticks} gridlines={false} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
+			<AxisX {ticks} gridlines={true} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
+			<AxisY formatTick={formatTickY} gridlines={true} tickMarks={true} ticks={[0, maxY]} />
 		</Svg>
 
 		<Html>
+			<!-- <HoverText /> -->
 			<HoverLine
 				{dataset}
 				showHoverText={false}
