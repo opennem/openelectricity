@@ -63,12 +63,14 @@
 	}
 </script>
 
-<div class="container max-w-none lg:container relative bg-light-warm-grey pt-3 pb-6">
-	<FossilFuelsVsRenewables
-		data={historyEnergyNemData}
-		title={banner_title}
-		description={banner_statement}
-	/>
+<div class="md:bg-light-warm-grey pt-3 pb-6">
+	<div class="container max-w-none lg:container relative">
+		<FossilFuelsVsRenewables
+			data={historyEnergyNemData}
+			title={banner_title}
+			description={banner_statement}
+		/>
+	</div>
 </div>
 
 <div class="bg-white py-16">
