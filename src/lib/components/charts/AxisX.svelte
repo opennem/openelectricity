@@ -105,8 +105,8 @@
 	}
 	line,
 	.tick line {
-		stroke: #aaa;
-		stroke-dasharray: 2;
+		stroke: #efefef;
+		stroke-dasharray: 0;
 	}
 
 	.tick text {

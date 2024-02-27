@@ -56,6 +56,8 @@
 
 	$: md = innerWidth > 1024;
 	$: chartBottom = md ? 40 : 100;
+	$: chartLeft = md ? 0 : 0;
+	$: chartRight = md ? 0 : 0;
 
 	$: if (data && data.length) {
 		totalStatsData = calculateTotalStatsData(data);
@@ -75,6 +77,10 @@
 	$: groupedData = groupLonger(tsData, seriesNames);
 	$: flatData = flatten(groupedData, 'values');
 	$: latestDatapoint = tsData[tsData.length - 1];
+
+	$: chartLabelStyles = md
+		? 'italic text-right text-xs text-dark-grey mr-8 z-10 pointer-events-none relative'
+		: 'absolute -top-8 italic text-xs text-dark-grey right-0';
 </script>
 
 <svelte:window bind:innerWidth />
@@ -88,11 +94,11 @@
 
 <div class="chart-container h-[350px] md:h-[650px]">
 	<LayerCake
-		padding={{ top: 20, right: 15, bottom: chartBottom, left: 45 }}
+		padding={{ top: 20, right: chartRight, bottom: chartBottom, left: chartLeft }}
 		x={'date'}
 		y={'value'}
 		z={'group'}
-		xDomain={[new Date(2000, 0, 1).getTime(), new Date(2030, 11, 31).getTime()]}
+		xDomain={[new Date(2000, 0, 1).getTime(), new Date(2030, 0, 1).getTime()]}
 		yDomain={[0, null]}
 		zDomain={seriesNames}
 		zScale={scaleOrdinal()}
@@ -101,21 +107,19 @@
 		{flatData}
 	>
 		<Html>
-			<div class="italic text-right text-xs text-dark-grey mr-8">
-				NEM 12 Month Rolling Sum (Energy % of total)
-			</div>
+			<div class={chartLabelStyles}>NEM 12 Month Rolling Sum (Energy % of total)</div>
 		</Html>
 
 		<Svg>
 			<AxisX
 				formatTick={formatTickX}
 				ticks={displayXTicks}
-				tickMarks={false}
+				tickMarks={true}
 				gridlines={true}
 				snapTicks={true}
 				tickLabel={!Boolean(hoverData)}
 			/>
-			<AxisY formatTick={formatTickY} ticks={5} />
+			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
 
 			<MultiLine opacity={0.1} />
 			<MultiLine {hoverData} />

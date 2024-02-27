@@ -86,10 +86,10 @@
 	}
 
 	.tick line {
-		stroke: #aaa;
+		stroke: #efefef;
 	}
 	.tick .gridline {
-		stroke-dasharray: 2;
+		stroke-dasharray: 0;
 	}
 
 	.tick text {
