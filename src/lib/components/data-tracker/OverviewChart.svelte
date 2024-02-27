@@ -12,7 +12,7 @@
 
 	export const formatTickX = (/** @type {Date} */ d) =>
 		formatInTimeZone(d, '+10:00', 'd MMM, h:mm aaa');
-	export const formatTickY = (/** @type {number} */ d) => d3Format('.0f')(d / 1000);
+	export const formatTickY = (/** @type {number} */ d) => d3Format('.0f')(d / 1000) + ' GW';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];

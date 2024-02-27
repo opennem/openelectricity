@@ -12,7 +12,7 @@ export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 export const formatValue = (/** @type {number} */ d) => {
 	const formatted = d3Format('.0f')(d);
 	if (formatted !== '0') {
-		return formatted + 'TWh';
+		return formatted + ' TWh';
 	}
 	return formatted;
 };
