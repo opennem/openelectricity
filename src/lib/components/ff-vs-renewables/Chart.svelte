@@ -84,9 +84,11 @@
 <svelte:window bind:innerWidth />
 
 <div
-	class="pt-6 md:absolute md:w-6/12 md:mt-[150px] md:ml-24 md:pt-0 md:z-10 md:pointer-events-none"
+	class="py-6 md:absolute md:w-6/12 md:mt-[150px] md:ml-24 md:pt-0 md:z-10 md:pointer-events-none"
 >
-	<h2 class="text-3xl leading-3xl font-semibold md:text-9xl md:leading-9xl">{title}</h2>
+	<h2 class="text-xl leading-xl font-extrabold md:font-semibold md:text-9xl md:leading-9xl">
+		{title}
+	</h2>
 	<p>{@html description}</p>
 </div>
 
