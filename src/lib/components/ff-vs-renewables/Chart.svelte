@@ -13,6 +13,7 @@
 	import {
 		formatTickX,
 		formatTickY,
+		xDomain,
 		displayXTicks,
 		calculateTotalStatsData,
 		getOrderedStatsData,
@@ -49,10 +50,7 @@
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
 
-	let chartHeight = 650; // pixels
 	let innerWidth = 0;
-
-	$: console.log('innerWidth', innerWidth);
 
 	$: md = innerWidth > 1024;
 	$: chartBottom = md ? 40 : 100;
@@ -98,7 +96,7 @@
 		x={'date'}
 		y={'value'}
 		z={'group'}
-		xDomain={[new Date(2000, 0, 1).getTime(), new Date(2030, 0, 1).getTime()]}
+		{xDomain}
 		yDomain={[0, null]}
 		zDomain={seriesNames}
 		zScale={scaleOrdinal()}

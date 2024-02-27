@@ -55,9 +55,9 @@
 					class:rounded-full={rounded}
 					style="background-color: {$zGet(group)}"
 				/>
-				<span class="uppercase font-space font-semibold text-sm md:text-xs text-mid-grey"
-					>{label(group)}</span
-				>
+				<span class="uppercase font-space font-semibold text-sm md:text-xs text-mid-grey">
+					{label(group)}
+				</span>
 			</div>
 
 			<div class="flex items-baseline gap-1">
