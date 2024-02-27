@@ -63,7 +63,7 @@
 	}
 </script>
 
-<div class="md:bg-light-warm-grey pt-3 pb-6">
+<div class="bg-light-warm-grey pt-3 pb-6">
 	<div class="container max-w-none lg:container relative">
 		<FossilFuelsVsRenewables
 			data={historyEnergyNemData}
