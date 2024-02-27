@@ -40,7 +40,7 @@
 		? ''
 		: 'flex items-center justify-center gap-14 absolute bottom-[-100px] w-full px-12';
 
-	$: getStyles = (values) =>
+	$: getStyles = (/** @type {TimeSeriesData[]} */ values) =>
 		showBesideLatestPoint
 			? `top: ${top(values) - 9}px; left: ${left(values) + 10}px;`
 			: `bottom: -100px; left: 0`;
