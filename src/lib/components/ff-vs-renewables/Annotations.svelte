@@ -38,7 +38,7 @@
 
 	$: classes = showBesideLatestPoint
 		? ''
-		: 'flex items-center justify-between absolute bottom-[-100px] w-full px-12';
+		: 'flex items-center justify-center gap-14 absolute bottom-[-100px] w-full px-12';
 
 	$: getStyles = (values) =>
 		showBesideLatestPoint
