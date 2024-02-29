@@ -1,12 +1,7 @@
 <script>
-	import { getContext, createEventDispatcher } from 'svelte';
-	import { closestTo } from 'date-fns';
+	import { getContext } from 'svelte';
 
-	const { xGet, yGet, xScale, height } = getContext('LayerCake');
-	const dispatch = createEventDispatcher();
-
-	/** @type {TimeSeriesData[]} */
-	export let dataset = [];
+	const { xGet, yGet, height } = getContext('LayerCake');
 
 	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
@@ -28,8 +23,6 @@
 	let x = 0;
 	let y = [0, 0];
 	let value = 0;
-
-	$: compareDates = [...new Set(dataset.map((d) => d.date))];
 
 	$: if (hoverData) {
 		updateLineCoords(hoverData);
@@ -59,36 +52,7 @@
 			y = [$yGet(d) + yTopOffset > $height ? $height : $yGet(d) + yTopOffset, $height];
 		}
 	}
-
-	/**
-	 * this function looks for the closest date to the mouse position
-	 * and sets the x and y values for the line
-	 * - if the data contains _max and _min values, use those for the y values which is height of the min/max range
-	 * - otherwise, the line will be the full height of the chart
-	 * @param {MouseEvent} evt
-	 */
-	function findItem(evt) {
-		const xInvert = $xScale.invert(evt.offsetX);
-		const closest = closestTo(new Date(xInvert), compareDates);
-		const found = dataset.find((d) => d.time === closest?.getTime());
-		updateLineCoords(found);
-		visible = true;
-		dispatch('mousemove', found);
-	}
-
-	function mouseout() {
-		visible = false;
-		dispatch('mouseout');
-	}
 </script>
-
-<div
-	class="absolute top-0 left-0 right-0 bottom-0"
-	role="presentation"
-	on:mousemove={findItem}
-	on:mouseout={mouseout}
-	on:blur={mouseout}
-/>
 
 {#if visible}
 	{#if useDataHeight}

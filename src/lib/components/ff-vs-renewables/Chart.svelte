@@ -8,6 +8,7 @@
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
+	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
 	import Annotations from './Annotations.svelte';
 
 	import {
@@ -106,7 +107,7 @@
 		data={groupedData}
 		{flatData}
 	>
-		<Html>
+		<Html pointerEvents={false}>
 			<div class={chartLabelStyles}>NEM 12 Month Rolling Sum (Energy % of total)</div>
 		</Html>
 
@@ -121,17 +122,18 @@
 			/>
 			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
 
-			<MultiLine opacity={0.1} />
-			<MultiLine {hoverData} />
-		</Svg>
+			<!-- <MultiLine opacity={0.05} /> -->
 
-		<Html>
-			<HoverLine
+			<MultiLine {hoverData} />
+			<HoverLayer
 				dataset={tsData}
-				formatValue={formatHoverTickX}
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>
+		</Svg>
+
+		<Html pointerEvents={false}>
+			<HoverLine {hoverData} formatValue={formatHoverTickX} />
 
 			<Annotations
 				rounded={hoverData !== undefined}
