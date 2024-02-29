@@ -10,6 +10,7 @@
 	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
+	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 	import HoverDots from '$lib/components/charts/HoverDots.svelte';
 	import Overlay from '$lib/components/charts/Overlay.svelte';
@@ -91,7 +92,7 @@
 		flatData={flatten(stackedData)}
 		data={stackedData}
 	>
-		<Html>
+		<Html pointerEvents={false}>
 			<div class="absolute top-0 left-0 right-0 bottom-0 {bgClass}" role="presentation" />
 		</Html>
 
@@ -108,22 +109,16 @@
 			{#if overlay}
 				<Overlay fill="url(#hatch-pattern)" />
 			{/if}
+
+			<HoverLayer {dataset} on:mousemove on:mouseout />
 		</Svg>
 
 		<Html pointerEvents={false}>
 			<ChartAnnotations {title} {description} />
 		</Html>
 
-		<Html>
-			<HoverLine
-				{dataset}
-				{hoverData}
-				isShapeStack={true}
-				useDataHeight={true}
-				formatValue={formatTickX}
-				on:mousemove
-				on:mouseout
-			/>
+		<Html pointerEvents={false}>
+			<HoverLine {hoverData} isShapeStack={true} useDataHeight={true} formatValue={formatTickX} />
 		</Html>
 
 		<Svg pointerEvents={false}>

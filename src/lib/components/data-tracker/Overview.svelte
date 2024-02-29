@@ -69,23 +69,10 @@
 	// $: console.log('updated', orderedAndLoadsInverted, tsData);
 	// $: console.log('seriesNames', seriesNames, fuelTechLabelDict);
 	// $: console.log('seriesColours', seriesColours, fuelTechColourDict);
-
-	/** @type {TimeSeriesData | undefined} */
-	let hoverData = undefined;
-	// $: console.log('hoverData', hoverData);
 </script>
 
 {#if tsData.length === 0}
 	<p class="mt-6">No data</p>
 {:else}
-	<OverviewChart
-		dataset={tsData}
-		{xKey}
-		yKey={[0, 1]}
-		zKey="key"
-		{seriesNames}
-		{seriesColours}
-		on:mousemove={(e) => (hoverData = e.detail)}
-		on:mouseout={() => (hoverData = undefined)}
-	/>
+	<OverviewChart dataset={tsData} {xKey} yKey={[0, 1]} zKey="key" {seriesNames} {seriesColours} />
 {/if}

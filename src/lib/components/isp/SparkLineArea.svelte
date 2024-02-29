@@ -7,6 +7,7 @@
 	import Area from '$lib/components/charts/Area.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
+	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 
 	import KeyHeader from './KeyHeader.svelte';
@@ -46,18 +47,11 @@
 				<AxisY formatTick={formatTickY} ticks={2} />
 				<Line stroke={colour} {hoverData} />
 				<Area fill={`${colour}20`} />
+				<HoverLayer {dataset} on:mousemove on:mouseout />
 			</Svg>
 
-			<Html>
-				<HoverLine
-					{dataset}
-					{hoverData}
-					yTopOffset={6}
-					lineColour={colour}
-					formatValue={formatFyTickX}
-					on:mousemove
-					on:mouseout
-				/>
+			<Html pointerEvents={false}>
+				<HoverLine {hoverData} yTopOffset={6} lineColour={colour} formatValue={formatFyTickX} />
 			</Html>
 		</LayerCake>
 	</div>

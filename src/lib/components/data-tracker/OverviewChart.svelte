@@ -7,6 +7,7 @@
 	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
+	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 	import HoverText from '$lib/components/charts/HoverText.html.svelte';
 
@@ -29,6 +30,9 @@
 
 	/** @type {string[]} */
 	export let seriesColours = [];
+
+	/** @type {TimeSeriesData | undefined} */
+	let hoverData = undefined;
 
 	/** @type {*} */
 	let evt;
@@ -57,21 +61,22 @@
 		</Html>
 
 		<Svg>
-			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
+			<AreaStacked
+				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+				on:mouseout={() => (hoverData = undefined)}
+			/>
 			<AxisX {ticks} gridlines={true} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
 			<AxisY formatTick={formatTickY} gridlines={true} tickMarks={true} ticks={[0, maxY]} />
+			<HoverLayer
+				{dataset}
+				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+				on:mouseout={() => (hoverData = undefined)}
+			/>
 		</Svg>
 
-		<Html>
+		<Html pointerEvents={false}>
 			<!-- <HoverText /> -->
-			<HoverLine
-				{dataset}
-				showHoverText={false}
-				isShapeStack={true}
-				formatValue={formatTickX}
-				on:mousemove
-				on:mouseout
-			/>
+			<HoverLine {hoverData} showHoverText={false} isShapeStack={true} formatValue={formatTickX} />
 		</Html>
 	</LayerCake>
 </div>
