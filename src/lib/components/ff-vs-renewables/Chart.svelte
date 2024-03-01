@@ -118,7 +118,7 @@
 				tickMarks={true}
 				gridlines={true}
 				snapTicks={true}
-				tickLabel={!Boolean(hoverData)}
+				tickLabel={!hoverData}
 			/>
 			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
 
