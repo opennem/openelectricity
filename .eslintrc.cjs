@@ -12,6 +12,6 @@ module.exports = {
 		node: true
 	},
 	rules: {
-		'no-at-html-tags': 'never'
+		'svelte/no-at-html-tags': 0
 	}
 };
