@@ -4,9 +4,10 @@ import { subYears } from 'date-fns';
 
 import { fuelTechGroup, fuelTechGroupMap, historicalEnergyGroupMap } from '$lib/fuel_techs.js';
 
-export const formatTickX = (/** @type {Date} */ d) => 'FY' + formatInTimeZone(d, '+10:00', 'yy');
+export const formatTickX = (/** @type {Date | number} */ d) =>
+	'FY' + formatInTimeZone(d, '+10:00', 'yy');
 // minus 1 year to display as FY
-export const formatFyTickX = (/** @type {Date} */ d) =>
+export const formatFyTickX = (/** @type {Date | number} */ d) =>
 	'FY' + formatInTimeZone(subYears(d, 1), '+10:00', 'yy');
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 export const formatValue = (/** @type {number} */ d) => {

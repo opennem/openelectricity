@@ -9,6 +9,7 @@
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
+	import HoverText from '$lib/components/charts/HoverText.html.svelte';
 
 	import KeyHeader from './KeyHeader.svelte';
 
@@ -24,6 +25,7 @@
 
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
+	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
 <div class="p-8 bg-light-warm-grey rounded-lg">
@@ -51,7 +53,12 @@
 			</Svg>
 
 			<Html pointerEvents={false}>
-				<HoverLine {hoverData} yTopOffset={6} lineColour={colour} formatValue={formatFyTickX} />
+				<HoverText {hoverData} position="bottom">
+					<span class="text-[10px] font-light relative -top-[6px]">
+						{formatFyTickX(hoverTime)}
+					</span>
+				</HoverText>
+				<HoverLine {hoverData} yTopOffset={6} lineColour={colour} />
 			</Html>
 		</LayerCake>
 	</div>

@@ -96,7 +96,7 @@
 					</span>
 				</div>
 			</HoverText>
-			<HoverLine {hoverData} showHoverText={false} isShapeStack={true} formatValue={formatTickX} />
+			<HoverLine {hoverData} isShapeStack={true} />
 		</Html>
 	</LayerCake>
 </div>

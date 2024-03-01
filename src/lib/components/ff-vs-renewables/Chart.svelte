@@ -9,6 +9,7 @@
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
+	import HoverText from '$lib/components/charts/HoverText.html.svelte';
 	import Annotations from './Annotations.svelte';
 
 	import {
@@ -22,7 +23,7 @@
 		getKeysAndRollingSumPercentDataset
 	} from './helpers';
 
-	export const formatHoverTickX = (/** @type {Date} */ d) =>
+	export const formatHoverTickX = (/** @type {Date | number} */ d) =>
 		formatInTimeZone(d, '+10:00', 'MMM yyyy');
 
 	/** @type {StatsData[]} */
@@ -80,6 +81,8 @@
 	$: chartLabelStyles = md
 		? 'italic text-right text-xs text-dark-grey mr-8 z-10 pointer-events-none relative'
 		: 'absolute -top-8 italic text-xs text-dark-grey right-0';
+
+	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
 <svelte:window bind:innerWidth />
@@ -133,7 +136,10 @@
 		</Svg>
 
 		<Html pointerEvents={false}>
-			<HoverLine {hoverData} formatValue={formatHoverTickX} />
+			<HoverText {hoverData} position="bottom">
+				{formatHoverTickX(hoverTime)}
+			</HoverText>
+			<HoverLine {hoverData} />
 
 			<Annotations
 				rounded={hoverData !== undefined}

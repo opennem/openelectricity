@@ -13,6 +13,7 @@
 	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 	import HoverDots from '$lib/components/charts/HoverDots.svelte';
+	import HoverText from '$lib/components/charts/HoverText.html.svelte';
 	import Overlay from '$lib/components/charts/Overlay.svelte';
 	import HatchPattern from '$lib/components/charts/defs/HatchPattern.svelte';
 
@@ -77,6 +78,7 @@
 	$: console.log('evt', evt);
 
 	$: stackedData = stack(dataset, seriesNames);
+	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
 <div class="chart-container">
@@ -102,7 +104,12 @@
 			</defs>
 
 			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />
-			<AxisX ticks={xTicks} gridlines={false} formatTick={formatTickX} tickMarks={true} />
+			<AxisX
+				ticks={xTicks}
+				gridlines={false}
+				formatTick={hoverData ? () => '' : formatTickX}
+				tickMarks={true}
+			/>
 
 			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
 
@@ -118,7 +125,12 @@
 		</Html>
 
 		<Html pointerEvents={false}>
-			<HoverLine {hoverData} isShapeStack={true} useDataHeight={true} formatValue={formatTickX} />
+			<HoverText {hoverData} isShapeStack={true} position="bottom">
+				<span class="text-[10px] font-light relative -top-[6px]">
+					{formatTickX(hoverTime)}
+				</span>
+			</HoverText>
+			<HoverLine {hoverData} isShapeStack={true} useDataHeight={true} />
 		</Html>
 
 		<Svg pointerEvents={false}>
