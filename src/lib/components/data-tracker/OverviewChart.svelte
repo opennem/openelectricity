@@ -31,8 +31,14 @@
 	/** @type {string[]} */
 	export let seriesColours = [];
 
+	/** @type {string[]} */
+	export let seriesLabels = [];
+
 	/** @type {TimeSeriesData | undefined} */
-	let hoverData = undefined;
+	let hoverData;
+
+	/** @type {string | undefined} */
+	let hoverKey;
 
 	/** @type {*} */
 	let evt;
@@ -43,6 +49,9 @@
 	$: maxY = Math.round(Math.max(...dataset.map((d) => d._max || 0)));
 	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	$: hoverKeyValue = hoverData && hoverKey ? hoverData[hoverKey] || null : null;
+	$: hoverKeyColour = seriesColours[seriesNames.indexOf(hoverKey)];
+	$: hoverKeyLabel = seriesLabels[seriesNames.indexOf(hoverKey)];
 </script>
 
 <div class="chart-container">
@@ -66,10 +75,6 @@
 		</Html>
 
 		<Svg>
-			<AreaStacked
-				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-				on:mouseout={() => (hoverData = undefined)}
-			/>
 			<AxisX {ticks} gridlines={true} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
 			<AxisY
 				formatTick={hoverData ? () => '' : formatTickY}
@@ -82,6 +87,17 @@
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>
+			<AreaStacked
+				{dataset}
+				on:mousemove={(e) => {
+					hoverKey = e.detail.key;
+					hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+				}}
+				on:mouseout={() => {
+					hoverKey = undefined;
+					hoverData = undefined;
+				}}
+			/>
 		</Svg>
 
 		<Html pointerEvents={false}>
@@ -90,10 +106,24 @@
 					<span class="px-2 py-1 font-light">
 						{formatTickX(hoverTime)}
 					</span>
-					<span class="block bg-warm-grey px-2 py-1">
-						Total
-						<strong class="font-semibold">{formatTickY(hoverMax)}</strong>
-					</span>
+
+					<div class="bg-warm-grey px-4 py-1 flex gap-6 items-center">
+						{#if hoverKeyValue !== null}
+							<div class="flex items-center gap-2">
+								<div class="flex items-center gap-2">
+									<span class="w-2.5 h-2.5 block" style="background-color: {hoverKeyColour}" />
+									{hoverKeyLabel}
+								</div>
+
+								<strong class="font-semibold">{formatTickY(hoverKeyValue)}</strong>
+							</div>
+						{/if}
+
+						<span class="flex items-center gap-2">
+							Total
+							<strong class="font-semibold">{formatTickY(hoverMax)}</strong>
+						</span>
+					</div>
 				</div>
 			</HoverText>
 			<HoverLine {hoverData} isShapeStack={true} />

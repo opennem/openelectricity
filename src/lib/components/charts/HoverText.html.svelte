@@ -32,7 +32,8 @@
 		const data = { date: d.date };
 		x = isShapeStack ? $xGet({ data }) : $xGet(data);
 
-		const textOffsetWidth = textContainer?.offsetWidth;
+		const textOffsetWidth = textContainer?.offsetWidth || 200;
+		// const textOffsetWidth = 500;
 		let left = x - textOffsetWidth / 2;
 
 		// snap to the left or right if the text would go off the chart

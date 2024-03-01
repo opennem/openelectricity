@@ -46,6 +46,7 @@
 	}
 	$: transformed = transform(orderedAndLoadsInverted, '30m');
 	$: seriesColours = orderedAndLoadsInverted.map((d) => fuelTechColour(d.fuel_tech));
+	$: seriesLabels = orderedAndLoadsInverted.map((d) => fuelTechName(d.fuel_tech));
 	$: seriesNames =
 		transformed && transformed.length
 			? Object.keys(transformed[0]).filter((d) => d !== xKey && d !== 'time')
@@ -74,5 +75,13 @@
 {#if tsData.length === 0}
 	<p class="mt-6">No data</p>
 {:else}
-	<OverviewChart dataset={tsData} {xKey} yKey={[0, 1]} zKey="key" {seriesNames} {seriesColours} />
+	<OverviewChart
+		dataset={tsData}
+		{xKey}
+		yKey={[0, 1]}
+		zKey="key"
+		{seriesNames}
+		{seriesColours}
+		{seriesLabels}
+	/>
 {/if}
