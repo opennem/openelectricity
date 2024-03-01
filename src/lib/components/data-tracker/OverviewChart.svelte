@@ -11,7 +11,7 @@
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 	import HoverText from '$lib/components/charts/HoverText.html.svelte';
 
-	export const formatTickX = (/** @type {Date} */ d) =>
+	export const formatTickX = (/** @type {Date | number} */ d) =>
 		formatInTimeZone(d, '+10:00', 'd MMM, h:mm aaa');
 	export const formatTickY = (/** @type {number} */ d) => d3Format('.0f')(d / 1000) + ' GW';
 
@@ -36,10 +36,13 @@
 
 	/** @type {*} */
 	let evt;
+	$: console.log(evt);
 
 	$: stackedData = stack(dataset, seriesNames);
 	$: ticks = [dataset[0][xKey], dataset[dataset.length - 1][xKey]];
 	$: maxY = Math.round(Math.max(...dataset.map((d) => d._max || 0)));
+	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
+	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
 <div class="chart-container">
@@ -55,9 +58,11 @@
 		data={stackedData}
 	>
 		<Html>
-			<div class="italic text-right text-xs text-dark-grey mr-8 -mt-8">
-				Last 7 days Power Generation (GW)
-			</div>
+			{#if !hoverData}
+				<div class="italic text-right text-xs text-dark-grey -mt-8">
+					Last 7 days Power Generation (GW)
+				</div>
+			{/if}
 		</Html>
 
 		<Svg>
@@ -66,7 +71,12 @@
 				on:mouseout={() => (hoverData = undefined)}
 			/>
 			<AxisX {ticks} gridlines={true} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
-			<AxisY formatTick={formatTickY} gridlines={true} tickMarks={true} ticks={[0, maxY]} />
+			<AxisY
+				formatTick={hoverData ? () => '' : formatTickY}
+				gridlines={true}
+				tickMarks={true}
+				ticks={[0, maxY]}
+			/>
 			<HoverLayer
 				{dataset}
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
@@ -75,7 +85,17 @@
 		</Svg>
 
 		<Html pointerEvents={false}>
-			<!-- <HoverText /> -->
+			<HoverText {hoverData} position="top" isShapeStack={true}>
+				<div class="flex gap-1 text-xs leading-xs whitespace-nowrap">
+					<span class="px-2 py-1 font-light">
+						{formatTickX(hoverTime)}
+					</span>
+					<span class="block bg-warm-grey px-2 py-1">
+						Total
+						<strong class="font-semibold">{formatTickY(hoverMax)}</strong>
+					</span>
+				</div>
+			</HoverText>
 			<HoverLine {hoverData} showHoverText={false} isShapeStack={true} formatValue={formatTickX} />
 		</Html>
 	</LayerCake>
