@@ -137,7 +137,9 @@
 
 		<Html pointerEvents={false}>
 			<HoverText {hoverData} position="bottom">
-				{formatHoverTickX(hoverTime)}
+				<span class="text-xs font-light">
+					{formatHoverTickX(hoverTime)}
+				</span>
 			</HoverText>
 			<HoverLine {hoverData} />
 
