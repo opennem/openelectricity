@@ -98,7 +98,7 @@ export const fuelTechGroupMap = {
 
 	hydro: ['hydro'],
 
-	battery: ['battery_discharging', 'battery_VPP_discharging', 'battery_distributed_discharging'],
+	// battery: ['battery_discharging', 'battery_VPP_discharging', 'battery_distributed_discharging'],
 
 	wind: ['wind', 'wind_offshore'],
 
@@ -119,7 +119,7 @@ export const historicalEnergyGroupMap = {
 
 	hydro: ['hydro'],
 
-	battery: ['battery_discharging'],
+	// battery: ['battery_discharging'],
 
 	wind: ['wind'],
 

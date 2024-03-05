@@ -438,7 +438,7 @@
 		/>
 	</div> -->
 
-	<div class="mt-6 grid grid-cols-6 gap-6">
+	<div class="mt-6 grid grid-cols-5 gap-5">
 		{#if dashboard === 'line'}
 			{#each seriesNames as key}
 				<SparkLineArea
