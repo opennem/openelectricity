@@ -82,7 +82,7 @@
 		(d) => d.pathway === selectedPathway
 	);
 	$: yDomain =
-		selectedScenario === 'green_energy_exports' ? [0, 1550000 / 1000] : [0, 550000 / 1000];
+		selectedScenario === 'green_energy_exports' ? [0, 1250000 / 1000] : [0, 500000 / 1000];
 
 	/** @type {IspData[]} */
 	let orderedFilteredWithPathwayScenario = [];
@@ -135,8 +135,8 @@
 				? Object.keys(transformedFiltered[0]).filter((d) => d !== xKey && d !== 'time')
 				: [];
 
-		const loadSeries = seriesNames.filter((d) => loadFts.find((l) => d.includes(l)));
-		tsData = withMinMax(transformedFiltered, seriesNames, loadSeries);
+		tsData = withMinMax(transformedFiltered, seriesNames, []);
+
 		dataset = groupedDatasets;
 	} else if (selectedFtGroup === 'Detailed') {
 		let transformedFiltered = transformEnergy(
@@ -337,7 +337,7 @@
 					<p>Explore the <strong>draft 2024 AEMO</strong> future scenarios below.</p>
 				</div>
 
-				<div class="grid grid-cols-2 gap-6">
+				<div class="grid grid-cols-1 gap-6 mr-36">
 					{#each scenarios as scenario}
 						<button
 							class="rounded-lg border hover:bg-light-warm-grey px-4 py-4 capitalize"
