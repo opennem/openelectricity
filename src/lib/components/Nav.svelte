@@ -1,10 +1,11 @@
 <script>
 	import { page } from '$app/stores';
 	import { afterNavigate } from '$app/navigation';
+	import { dataTrackerLink } from '$lib/stores/app';
 
 	const navItems = [
-		{ name: 'Data Tracker', href: 'https://data.openelectricity.org.au/' },
-		{ name: 'Facilities Map', href: 'https://data.openelectricity.org.au/facilities' },
+		{ name: 'Data Tracker', href: $dataTrackerLink },
+		{ name: 'Facilities Map', href: `${$dataTrackerLink}/facilities` },
 		{ name: 'Future Scenarios', href: '/isp-tracker' },
 		{ name: 'Latest Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },

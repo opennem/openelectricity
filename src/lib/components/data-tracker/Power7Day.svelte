@@ -1,9 +1,11 @@
 <script>
+	import { dataTrackerLink } from '$lib/stores/app';
 	import { fuelTechName, fuelTechColour, fuelTechOrder } from '$lib/fuel_techs.js';
 	import { transform } from '$lib/utils/time-series-helpers/transform/power.js';
 	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import deepCopy from '$lib/utils/deep-copy';
 
+	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Chart from './Chart.svelte';
 
 	/** @type {TimeSeriesData[]} */
@@ -84,4 +86,7 @@
 		{seriesColours}
 		{seriesLabels}
 	/>
+	<div class="flex justify-center">
+		<ButtonLink href={$dataTrackerLink}>View full data tracker</ButtonLink>
+	</div>
 {/if}
