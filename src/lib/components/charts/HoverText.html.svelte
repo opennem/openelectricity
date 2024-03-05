@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { xGet, width, height } = getContext('LayerCake');
+	const { xGet, height } = getContext('LayerCake');
 
 	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
@@ -32,21 +32,14 @@
 		const data = { date: d.date };
 		x = isShapeStack ? $xGet({ data }) : $xGet(data);
 
-		const textOffsetWidth = textContainer?.offsetWidth || 200;
-		// const textOffsetWidth = 500;
+		const textOffsetWidth = textContainer?.clientWidth;
+		const textOffsetHeight = textContainer?.clientHeight;
 		let left = x - textOffsetWidth / 2;
 
-		// snap to the left or right if the text would go off the chart
-		if (left < 0) {
-			left = 0;
-		} else if (x > $width - textOffsetWidth / 2) {
-			left = $width - textOffsetWidth;
-		}
-
 		if (position === 'top') {
-			style = `left: ${left}px; top: -2rem`;
+			style = `left: ${left}px; top: -${textOffsetHeight}px`;
 		} else {
-			style = `left: ${left}px; top: ${$height + 5}px`;
+			style = `left: ${left}px; top: ${$height}px`;
 		}
 	}
 </script>

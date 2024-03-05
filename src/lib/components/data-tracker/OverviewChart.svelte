@@ -11,7 +11,7 @@
 	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
 	import HoverText from '$lib/components/charts/HoverText.html.svelte';
 
-	export const formatTickX = (/** @type {Date | number} */ d) =>
+	export const formatTickX = (/** @type {number} */ d) =>
 		formatInTimeZone(d, '+10:00', 'd MMM, h:mm aaa');
 	export const formatTickY = (/** @type {number} */ d) => d3Format('.0f')(d / 1000) + ' GW';
 
@@ -49,12 +49,18 @@
 	$: maxY = Math.round(Math.max(...dataset.map((d) => d._max || 0)));
 	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	$: hoverKeyValue = hoverData && hoverKey ? hoverData[hoverKey] || null : null;
-	$: hoverKeyColour = seriesColours[seriesNames.indexOf(hoverKey)];
-	$: hoverKeyLabel = seriesLabels[seriesNames.indexOf(hoverKey)];
+	$: hoverKeyValue =
+		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
+	$: hoverKeyColour = hoverKey ? seriesColours[seriesNames.indexOf(hoverKey)] : '';
+	$: hoverKeyLabel = hoverKey ? seriesLabels[seriesNames.indexOf(hoverKey)] : '';
+
+	const handleMousemove = (/** @type {*} */ e) => {
+		hoverKey = e.detail.key;
+		hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+	};
 </script>
 
-<div class="chart-container">
+<div class="chart-container h-[300px] md:h-[500px]">
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
 		x={(/** @type {*} */ d) => d.data[xKey]}
@@ -67,42 +73,8 @@
 		data={stackedData}
 	>
 		<Html>
-			{#if !hoverData}
-				<div class="italic text-right text-xs text-dark-grey -mt-8">
-					Last 7 days Power Generation (GW)
-				</div>
-			{/if}
-		</Html>
-
-		<Svg>
-			<AxisX {ticks} gridlines={true} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
-			<AxisY
-				formatTick={hoverData ? () => '' : formatTickY}
-				gridlines={true}
-				tickMarks={true}
-				ticks={[0, maxY]}
-			/>
-			<HoverLayer
-				{dataset}
-				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-				on:mouseout={() => (hoverData = undefined)}
-			/>
-			<AreaStacked
-				{dataset}
-				on:mousemove={(e) => {
-					hoverKey = e.detail.key;
-					hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
-				}}
-				on:mouseout={() => {
-					hoverKey = undefined;
-					hoverData = undefined;
-				}}
-			/>
-		</Svg>
-
-		<Html pointerEvents={false}>
-			<HoverText {hoverData} position="top" isShapeStack={true}>
-				<div class="flex gap-1 text-xs leading-xs whitespace-nowrap">
+			{#if hoverData}
+				<div class="flex justify-end gap-1 text-xs leading-xs whitespace-nowrap -mt-8">
 					<span class="px-2 py-1 font-light">
 						{formatTickX(hoverTime)}
 					</span>
@@ -125,7 +97,38 @@
 						</span>
 					</div>
 				</div>
-			</HoverText>
+			{:else}
+				<div class="italic text-right text-xs text-dark-grey -mt-8">
+					Last 7 days Power Generation (GW)
+				</div>
+			{/if}
+		</Html>
+
+		<Svg>
+			<AxisX {ticks} gridlines={true} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
+			<AxisY
+				formatTick={hoverData ? () => '' : formatTickY}
+				gridlines={true}
+				tickMarks={true}
+				ticks={[0, maxY]}
+			/>
+			<HoverLayer
+				{dataset}
+				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+				on:mouseout={() => (hoverData = undefined)}
+			/>
+			<AreaStacked
+				{dataset}
+				on:mousemove={handleMousemove}
+				on:mouseout={() => {
+					hoverKey = undefined;
+					hoverData = undefined;
+				}}
+			/>
+		</Svg>
+
+		<Html pointerEvents={false}>
+			<HoverText {hoverData} isShapeStack={true} />
 			<HoverLine {hoverData} isShapeStack={true} />
 		</Html>
 	</LayerCake>
@@ -134,6 +137,5 @@
 <style>
 	.chart-container {
 		width: 100%;
-		height: 500px;
 	}
 </style>
