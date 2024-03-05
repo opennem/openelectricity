@@ -6,12 +6,15 @@
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import { recordsByDay } from '$lib/records';
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import IspOverview from '$lib/components/isp/Overview.svelte';
 	import Power7Day from '$lib/components/data-tracker/Power7Day.svelte';
 	import FossilFuelsVsRenewables from '$lib/components/ff-vs-renewables/Chart.svelte';
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
+
+	import { dataTrackerLink } from '$lib/stores/app';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -75,14 +78,24 @@
 
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
-		<header class="flex justify-center">
+		<header class="flex justify-start items-center md:justify-between">
 			<h3>{chart_title}</h3>
-			<!-- <SectionLink href="https://data.openelectricity.org.au/" title="Data Tracker" /> -->
+			<ButtonLink href={$dataTrackerLink} class="hidden md:flex">
+				View full data tracker
+				<Icon icon="arrow-right-circle" size={24} />
+			</ButtonLink>
 		</header>
 
 		<section class="my-16">
 			<Power7Day data={dataTrackerData} />
 		</section>
+
+		<footer class="flex justify-center md:hidden">
+			<ButtonLink href={$dataTrackerLink}>
+				View full data tracker
+				<Icon icon="arrow-right-circle" size={24} />
+			</ButtonLink>
+		</footer>
 	</div>
 </div>
 
