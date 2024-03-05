@@ -8,7 +8,7 @@
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import IspOverview from '$lib/components/isp/Overview.svelte';
-	import DataTrackerOverview from '$lib/components/data-tracker/Overview.svelte';
+	import Power7Day from '$lib/components/data-tracker/Power7Day.svelte';
 	import FossilFuelsVsRenewables from '$lib/components/ff-vs-renewables/Chart.svelte';
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
@@ -81,7 +81,7 @@
 		</header>
 
 		<section class="my-16">
-			<DataTrackerOverview data={dataTrackerData} />
+			<Power7Day data={dataTrackerData} />
 		</section>
 	</div>
 </div>

@@ -4,7 +4,7 @@
 	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import deepCopy from '$lib/utils/deep-copy';
 
-	import OverviewChart from './OverviewChart.svelte';
+	import Chart from './Chart.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let data;
@@ -53,20 +53,20 @@
 			: [];
 	$: tsData = withMinMax(transformed, seriesNames, loadFts);
 
-	$: fuelTechLabelDict = orderedAndLoadsInverted.reduce(
-		(/** @type {Object.<string, string>} */ acc, curr) => {
-			acc[curr.id] = fuelTechName(curr.fuel_tech);
-			return acc;
-		},
-		{}
-	);
-	$: fuelTechColourDict = orderedAndLoadsInverted.reduce(
-		(/** @type {Object.<string, string>} */ acc, curr) => {
-			acc[curr.id] = fuelTechColour(curr.fuel_tech);
-			return acc;
-		},
-		{}
-	);
+	// $: fuelTechLabelDict = orderedAndLoadsInverted.reduce(
+	// 	(/** @type {Object.<string, string>} */ acc, curr) => {
+	// 		acc[curr.id] = fuelTechName(curr.fuel_tech);
+	// 		return acc;
+	// 	},
+	// 	{}
+	// );
+	// $: fuelTechColourDict = orderedAndLoadsInverted.reduce(
+	// 	(/** @type {Object.<string, string>} */ acc, curr) => {
+	// 		acc[curr.id] = fuelTechColour(curr.fuel_tech);
+	// 		return acc;
+	// 	},
+	// 	{}
+	// );
 	// $: console.log('updated', orderedAndLoadsInverted, tsData);
 	// $: console.log('seriesNames', seriesNames, fuelTechLabelDict);
 	// $: console.log('seriesColours', seriesColours, fuelTechColourDict);
@@ -75,7 +75,7 @@
 {#if tsData.length === 0}
 	<p class="mt-6">No data</p>
 {:else}
-	<OverviewChart
+	<Chart
 		dataset={tsData}
 		{xKey}
 		yKey={[0, 1]}

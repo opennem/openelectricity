@@ -1,7 +1,7 @@
 <script>
-	import DataTrackerOverview from '$lib/components/data-tracker/Overview.svelte';
+	import Power7Day from '$lib/components/data-tracker/Power7Day.svelte';
 
 	export let data;
 </script>
 
-<DataTrackerOverview data={data.data} />
+<Power7Day data={data.data} />
