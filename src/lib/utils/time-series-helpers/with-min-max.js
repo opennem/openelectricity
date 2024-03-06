@@ -1,5 +1,3 @@
-/** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
-
 /**
  * @param {TimeSeriesData[]} dataset
  * @param {string[]} seriesNames
