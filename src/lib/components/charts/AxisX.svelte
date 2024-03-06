@@ -17,6 +17,11 @@
 	/** @type {boolean} Instead of centering the text on the first and the last items, align them to the edges of the chart. */
 	export let snapTicks = false;
 
+	/** @type {string} [stroke='#000'] - The gridline's stroke colour. */
+	export let stroke = '#efefef';
+
+	export let clipPathId = '';
+
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
 	export let formatTick = (/** @type {*} */ d) => d;
 
@@ -62,11 +67,11 @@
 	}
 </script>
 
-<g class="axis x-axis" class:snapTicks>
+<g class="axis x-axis" class:snapTicks clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
 	{#each tickVals as tick, i (tick)}
 		<g class="tick tick-{i}" transform="translate({$xScale(tick)}, {Math.max(...$yRange)})">
 			{#if gridlines !== false}
-				<line class="gridline" y1={$height * -1} y2="0" x1="0" x2="0" />
+				<line class="gridline" {stroke} y1={$height * -1} y2="0" x1="0" x2="0" />
 			{/if}
 
 			{#if tickMarks === true}
@@ -105,7 +110,6 @@
 	}
 	line,
 	.tick line {
-		stroke: #efefef;
 		stroke-dasharray: 0;
 	}
 

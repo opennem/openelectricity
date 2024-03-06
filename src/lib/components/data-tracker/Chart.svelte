@@ -4,7 +4,12 @@
 	import { format as d3Format } from 'd3-format';
 	import { formatInTimeZone } from 'date-fns-tz';
 
+	import nighttimes from '$lib/utils/nighttimes';
+	import dayTicks from '$lib/utils/day-ticks';
+
 	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
+	import ClipPath from '$lib/components/charts/ClipPath.svelte';
+	import Element from '$lib/components/charts/Element.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
 	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
@@ -13,6 +18,8 @@
 
 	export const formatTickX = (/** @type {number} */ d) =>
 		formatInTimeZone(d, '+10:00', 'd MMM, h:mm aaa');
+	export const formatDailyTickX = (/** @type {number} */ d) =>
+		formatInTimeZone(d, '+10:00', 'd MMM');
 	export const formatTickY = (/** @type {number} */ d) => d3Format('.0f')(d / 1000) + ' GW';
 
 	/** @type {TimeSeriesData[]} */
@@ -46,6 +53,7 @@
 
 	$: stackedData = stack(dataset, seriesNames);
 	$: ticks = [dataset[0][xKey], dataset[dataset.length - 1][xKey]];
+	$: dailyTicks = dayTicks(dataset[0][xKey], dataset[dataset.length - 1][xKey]);
 	$: maxY = Math.round(Math.max(...dataset.map((d) => d._max || 0)));
 	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
@@ -58,12 +66,14 @@
 		hoverKey = e.detail.key;
 		hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
 	};
+
+	$: nightGuides = nighttimes(dataset[0].date, dataset[dataset.length - 1].date);
 </script>
 
 <div class="chart-container h-[300px] md:h-[500px]">
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
-		x={(/** @type {*} */ d) => d.data[xKey]}
+		x={(/** @type {*} */ d) => d[xKey] || d.data[xKey]}
 		y={yKey}
 		z={zKey}
 		zScale={scaleOrdinal()}
@@ -105,18 +115,18 @@
 		</Html>
 
 		<Svg>
-			<AxisX {ticks} gridlines={true} formatTick={formatTickX} tickMarks={true} snapTicks={true} />
-			<AxisY
-				formatTick={hoverData ? () => '' : formatTickY}
-				gridlines={true}
-				tickMarks={true}
-				ticks={[0, maxY]}
-			/>
+			<defs>
+				<ClipPath id="clip-path" />
+			</defs>
+
+			<Element dataset={nightGuides} fill="#33333311" clipPathId="clip-path" />
+
 			<HoverLayer
 				{dataset}
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>
+
 			<AreaStacked
 				{dataset}
 				on:mousemove={handleMousemove}
@@ -125,7 +135,28 @@
 					hoverData = undefined;
 				}}
 			/>
+
+			<AxisX
+				ticks={dailyTicks}
+				stroke="#99999933"
+				gridlines={true}
+				formatTick={formatDailyTickX}
+				tickMarks={true}
+				clipPathId="clip-path"
+			/>
+
+			<AxisY
+				formatTick={formatTickY}
+				gridlines={true}
+				stroke="#99999933"
+				textFill="#00000099"
+				tickMarks={true}
+				ticks={[0, maxY]}
+				xTick={5}
+			/>
 		</Svg>
+
+		<Svg pointerEvents={false} />
 
 		<Html pointerEvents={false}>
 			<HoverText {hoverData} isShapeStack={true} />

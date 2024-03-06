@@ -9,6 +9,14 @@
 	/** @type {boolean} Show a vertical mark for each tick. */
 	export let tickMarks = false;
 
+	/** @type {string} [stroke='#efefef'] - The gridline's stroke colour. */
+	export let stroke = '#efefef';
+
+	/** @type {string} [fill='#666'] - The text's fill colour. */
+	export let textFill = '#666';
+
+	export let clipPathId = '';
+
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
 	export let formatTick = (/** @type {*} */ d) => d;
 
@@ -45,7 +53,11 @@
 		: $yScale.ticks(ticks);
 </script>
 
-<g class="axis y-axis" transform="translate({-$padding.left}, 0)">
+<g
+	class="axis y-axis"
+	transform="translate({-$padding.left}, 0)"
+	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
+>
 	{#each tickVals as tick (tick)}
 		<g
 			class="tick tick-{tick}"
@@ -54,6 +66,7 @@
 			{#if gridlines !== false}
 				<line
 					class="gridline"
+					{stroke}
 					x2="100%"
 					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
 					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}
@@ -69,12 +82,15 @@
 				/>
 			{/if}
 			<text
+				fill={textFill}
 				x={xTick}
 				y={isBandwidth ? $yScale.bandwidth() / 2 + yTick : yTick}
 				dx={isBandwidth ? -9 : dxTick}
 				dy={isBandwidth ? 4 : dyTick}
-				style="text-anchor:{isBandwidth ? 'end' : textAnchor};">{formatTick(tick)}</text
+				style="text-anchor:{isBandwidth ? 'end' : textAnchor};"
 			>
+				{formatTick(tick)}
+			</text>
 		</g>
 	{/each}
 </g>
@@ -85,15 +101,8 @@
 		font-weight: 200;
 	}
 
-	.tick line {
-		stroke: #efefef;
-	}
 	.tick .gridline {
 		stroke-dasharray: 0;
-	}
-
-	.tick text {
-		fill: #666;
 	}
 
 	.tick.tick-0 line {
