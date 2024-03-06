@@ -54,7 +54,7 @@
 </script>
 
 <g
-	class="axis y-axis"
+	class="axis y-axis pointer-events-none"
 	transform="translate({-$padding.left}, 0)"
 	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
 >

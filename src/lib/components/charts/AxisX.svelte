@@ -67,7 +67,11 @@
 	}
 </script>
 
-<g class="axis x-axis" class:snapTicks clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+<g
+	class="axis x-axis pointer-events-none"
+	class:snapTicks
+	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
+>
 	{#each tickVals as tick, i (tick)}
 		<g class="tick tick-{i}" transform="translate({$xScale(tick)}, {Math.max(...$yRange)})">
 			{#if gridlines !== false}
