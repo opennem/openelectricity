@@ -1,12 +1,14 @@
 <script>
 	import { fuelTechName, fuelTechColour, fuelTechOrder } from '$lib/fuel_techs.js';
-	import { transform } from '$lib/utils/time-series-helpers/transform/power.js';
+	import { transform, transformData } from '$lib/utils/time-series-helpers/transform/power.js';
 	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import deepCopy from '$lib/utils/deep-copy';
 
+	import { filter } from './helpers';
+
 	import Chart from './Chart.svelte';
 
-	/** @type {TimeSeriesData[]} */
+	/** @type {StatsData[]} */
 	export let data;
 
 	const xKey = 'date';
@@ -16,6 +18,23 @@
 
 	/** @type {*[]} */
 	let orderedAndLoadsInverted = [];
+
+	$: grouped = filter(data, 'history');
+	$: dataset = transformData(grouped, '30m', 'history');
+
+	$: newSeriesColours = grouped.map((d) => fuelTechColour(d.fuel_tech));
+	$: newSeriesLabels = grouped.map((d) => fuelTechName(d.fuel_tech));
+
+	$: newSeriesNames =
+		dataset && dataset.length
+			? Object.keys(dataset[0]).filter((d) => d !== xKey && d !== 'time')
+			: [];
+
+	$: newTsData = withMinMax(dataset, newSeriesNames, loadFts);
+
+	$: console.log('newSeriesColours', newSeriesColours);
+	$: console.log('grouped', grouped);
+	$: console.log('dataset', dataset);
 
 	$: {
 		orderedAndLoadsInverted = [];
@@ -83,5 +102,15 @@
 		{seriesNames}
 		{seriesColours}
 		{seriesLabels}
+	/>
+
+	<Chart
+		dataset={newTsData}
+		{xKey}
+		yKey={[0, 1]}
+		zKey="key"
+		seriesNames={newSeriesNames}
+		seriesColours={newSeriesColours}
+		seriesLabels={newSeriesLabels}
 	/>
 {/if}

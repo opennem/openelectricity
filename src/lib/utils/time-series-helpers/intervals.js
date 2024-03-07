@@ -26,7 +26,7 @@ INTERVAL_LABELS[MINUTES] = 'Minutes';
 /**
  *
  * @param {string} intervalString
- * @returns {{ intervalString: string, key: string, label: string, seconds: number, incrementerValue: number, incrementerFn: Function | undefined }}}
+ * @returns {StatsInterval}
  */
 export function parse(intervalString) {
 	const length = intervalString.length;

@@ -82,10 +82,10 @@ export function groupedStatsData(groups, originalData) {
 				history: { ...history }
 			};
 
-			// set the group projection.data array to all zeros
+			// set the group history.data array to all zeros
 			groupObject.history.data = groupObject.history.data.map(() => 0);
 
-			// sum each filtered projection.data array into group projection data
+			// sum each filtered history.data array into group history data
 			filtered.forEach((d) => {
 				d.history.data.forEach((d, i) => {
 					groupObject.history.data[i] += d;

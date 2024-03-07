@@ -117,7 +117,40 @@ export function transform(dataset, outputRange) {
 }
 
 /**
+ *
+ * @param {StatsData[]} dataset
+ * @param {DataRange} outputRange
+ * @param {StatsType} statsType
+ * @returns
+ */
+export function transformData(dataset, outputRange, statsType = 'history') {
+	const starts = [...new Set(dataset.map((d) => d[statsType].start))];
+	const lasts = [...new Set(dataset.map((d) => d[statsType].last))];
+	const intervalObj = parseInterval(outputRange);
+	const startDate = parseISO(starts[0]);
+	const lastDate = parseISO(lasts[0]);
+
+	/** @type {TimeSeriesData[]} */
+	const tsData = timeSeries({
+		bucket: timeBucket({
+			start: startDate,
+			last: lastDate,
+			incrementer: intervalObj.incrementerFn,
+			incrementValue: intervalObj.incrementerValue
+		}),
+		dataset,
+		dataProp: statsType
+	});
+
+	return tsData;
+}
+
+/**
  * function to get mean value of a 5 minute interval to target interval in minutes
+ * @param {number[]} dataArray
+ * @param {number} original
+ * @param {number} target
+ * @returns {number[]}
  **/
 export function calculateMeanArray(dataArray, original, target) {
 	const meanArray = [];

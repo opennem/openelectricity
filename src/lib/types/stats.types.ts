@@ -13,6 +13,8 @@ export type Stats = {
 };
 
 export type StatsData = {
+	[key in StatsType]: DataSeries;
+} & {
 	id: string;
 	type: string;
 	network: string;
@@ -20,6 +22,4 @@ export type StatsData = {
 	fuel_tech?: FuelTechCode;
 	data_type?: string;
 	colour?: string;
-	[key: StatsType]: DataSeries;
-	[key: string]: any;
 };
