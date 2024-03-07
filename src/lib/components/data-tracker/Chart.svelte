@@ -8,7 +8,7 @@
 	import dayTicks from '$lib/utils/day-ticks';
 
 	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
-	import ClipPath from '$lib/components/charts/ClipPath.svelte';
+	import ClipPath from '$lib/components/charts/defs/ClipPath.svelte';
 	import Element from '$lib/components/charts/Element.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
@@ -52,7 +52,6 @@
 	$: console.log(evt);
 
 	$: stackedData = stack(dataset, seriesNames);
-	$: ticks = [dataset[0][xKey], dataset[dataset.length - 1][xKey]];
 	$: dailyTicks = dayTicks(dataset[0][xKey], dataset[dataset.length - 1][xKey]);
 	$: maxY = Math.round(Math.max(...dataset.map((d) => d._max || 0)));
 	$: hoverMax = hoverData ? hoverData._max || 0 : 0;

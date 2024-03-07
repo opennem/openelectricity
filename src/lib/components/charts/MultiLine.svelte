@@ -54,11 +54,6 @@
 		dispatch('mouseout');
 	}}
 >
-	<!-- {#if hoverData}
-		{#each $data as group}
-			<circle cx={cx(group.values)} cy={cy(group.values)} r="6" fill={$zGet(group)} />
-		{/each}
-	{/if} -->
 	{#each updatedData as group}
 		<path
 			class="path-line"

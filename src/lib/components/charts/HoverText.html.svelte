@@ -12,7 +12,6 @@
 	export let position = 'top';
 
 	let visible = false;
-	let x = 0;
 	let style = '';
 
 	/** @type {HTMLElement} */
@@ -30,11 +29,11 @@
 	 */
 	function updateCoords(d) {
 		const data = { date: d.date };
-		x = isShapeStack ? $xGet({ data }) : $xGet(data);
+		const x = isShapeStack ? $xGet({ data }) : $xGet(data);
 
 		const textOffsetWidth = textContainer?.clientWidth;
 		const textOffsetHeight = textContainer?.clientHeight;
-		let left = x - textOffsetWidth / 2;
+		const left = x - textOffsetWidth / 2;
 
 		if (position === 'top') {
 			style = `left: ${left}px; top: -${textOffsetHeight}px`;

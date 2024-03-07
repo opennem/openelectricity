@@ -7,16 +7,16 @@
 
 	const { data, xGet, yGet, x, yRange, xScale, y, height } = getContext('LayerCake');
 
-	/** @type {String} [fill='#00e047'] - The shape's fill colour. */
+	/** @type {string} [fill='#00e047'] - The shape's fill colour. */
 	export let fill = '#00e047';
 
-	/** @type {String} [stroke='#000'] - The shape's stroke colour. */
+	/** @type {string} [stroke='#000'] - The shape's stroke colour. */
 	export let stroke = '#000';
 
-	/** @type {Number} [strokeWidth=0] - The shape's stroke width. */
+	/** @type {number} [strokeWidth=0] - The shape's stroke width. */
 	export let strokeWidth = 0;
 
-	/** @type {Boolean} [false] - Show the numbers for each column */
+	/** @type {boolean} [false] - Show the numbers for each column */
 	export let showLabels = false;
 
 	$: columnWidth = (/** @type {*} */ d) => {

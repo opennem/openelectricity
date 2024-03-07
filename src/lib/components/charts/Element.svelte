@@ -1,21 +1,18 @@
-<!--
-  @component
-  Generates an SVG column chart.
- -->
 <script>
 	import { getContext } from 'svelte';
 
-	const { data, xGet, height } = getContext('LayerCake');
+	const { xGet, height } = getContext('LayerCake');
 
+	/** @type {*[]} */
 	export let dataset = [];
 
-	/** @type {String} [fill='#00e047'] - The shape's fill colour. */
+	/** @type {string} [fill='#00e047'] - The shape's fill colour. */
 	export let fill = '#00e047';
 
-	/** @type {String} [stroke='#000'] - The shape's stroke colour. */
+	/** @type {string} [stroke='#000'] - The shape's stroke colour. */
 	export let stroke = '#000';
 
-	/** @type {Number} [strokeWidth=0] - The shape's stroke width. */
+	/** @type {number} [strokeWidth=0] - The shape's stroke width. */
 	export let strokeWidth = 0;
 
 	export let clipPathId = '';
