@@ -1,6 +1,8 @@
 import type { FuelTechCode } from './fuel_tech.types';
 import type { DataSeries } from './data_series.types';
 
+export type StatsType = 'history' | 'forecast' | 'projection';
+
 export type Stats = {
 	type: string;
 	version: string;
@@ -15,10 +17,9 @@ export type StatsData = {
 	type: string;
 	network: string;
 	units: string;
-	history: DataSeries;
-	forecast?: DataSeries;
 	fuel_tech?: FuelTechCode;
 	data_type?: string;
 	colour?: string;
+	[key: StatsType]: DataSeries;
 	[key: string]: any;
 };

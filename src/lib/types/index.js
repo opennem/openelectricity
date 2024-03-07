@@ -1,4 +1,5 @@
 /** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
+/** @typedef {import('$lib/types/stats.types').StatsType} StatsType */
 /** @typedef {import('$lib/types/stats.types').StatsData} StatsData */
 /** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
 /** @typedef {import('$lib/types/chart.types').TimeSeriesGroupData} TimeSeriesGroupData */
