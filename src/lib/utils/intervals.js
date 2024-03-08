@@ -28,7 +28,7 @@ INTERVAL_LABELS[MINUTES] = 'Minutes';
  * @param {string} intervalString
  * @returns {StatsInterval}
  */
-export function parse(intervalString) {
+export default function (intervalString) {
 	const length = intervalString.length;
 	const key = intervalString.charAt(length - 1);
 	const incrementerValue = length === 1 ? 1 : parseInt(intervalString.substring(0, length - 1), 10);
@@ -55,6 +55,7 @@ export function parse(intervalString) {
 		key,
 		label: INTERVAL_LABELS[key],
 		seconds,
+		milliseconds: seconds * 1000,
 		incrementerValue,
 		incrementerFn
 	};

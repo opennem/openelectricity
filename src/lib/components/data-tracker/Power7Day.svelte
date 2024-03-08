@@ -1,116 +1,68 @@
 <script>
+	import { rollup } from 'd3-array';
 	import { fuelTechName, fuelTechColour, fuelTechOrder } from '$lib/fuel_techs.js';
-	import { transform, transformData } from '$lib/utils/time-series-helpers/transform/power.js';
+	import transform from '$lib/utils/time-series-helpers/transform-stats-to-ts';
 	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
-	import deepCopy from '$lib/utils/deep-copy';
-
-	import { filter } from './helpers';
+	import { key } from '$lib/utils/time-series-helpers/rollup/key';
+	import parseInterval from '$lib/utils/intervals';
+	import meanReducer from '$lib/utils/time-series-helpers/reducer/mean';
+	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
 
 	import Chart from './Chart.svelte';
+
+	/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
+	const historicalEnergyGroupMap = {
+		battery_charging: ['battery_charging'],
+		pumps: ['pumps'],
+		exports: ['exports'],
+		imports: ['imports'],
+		coal: ['coal_black', 'coal_brown'],
+		gas: ['gas_ccgt', 'gas_ocgt', 'gas_recip', 'gas_steam', 'gas_wcmg'],
+		battery_discharging: ['battery_discharging'],
+		hydro: ['hydro'],
+		wind: ['wind'],
+		solar: ['solar_utility', 'solar_rooftop']
+	};
+
+	/** @type {FuelTechCode[]} */
+	const loadFts = ['exports', 'battery_charging', 'pumps'];
 
 	/** @type {StatsData[]} */
 	export let data;
 
 	const xKey = 'date';
+	const targetIntervalObj = parseInterval('30m');
 
-	/** @type {FuelTechCode[]} */
-	let loadFts = ['exports', 'battery_charging', 'pumps'];
+	$: statsDatasets = new StatsDatasets(data, 'history')
+		.mergeAndInterpolate()
+		.reorder(fuelTechOrder)
+		.invertLoadValues(loadFts)
+		.group(historicalEnergyGroupMap).data;
 
-	/** @type {*[]} */
-	let orderedAndLoadsInverted = [];
-
-	$: grouped = filter(data, 'history');
-	$: dataset = transformData(grouped, '30m', 'history');
-
-	$: newSeriesColours = grouped.map((d) => fuelTechColour(d.fuel_tech));
-	$: newSeriesLabels = grouped.map((d) => fuelTechName(d.fuel_tech));
-
-	$: newSeriesNames =
-		dataset && dataset.length
-			? Object.keys(dataset[0]).filter((d) => d !== xKey && d !== 'time')
-			: [];
-
-	$: newTsData = withMinMax(dataset, newSeriesNames, loadFts);
-
-	$: console.log('newSeriesColours', newSeriesColours);
-	$: console.log('grouped', grouped);
-	$: console.log('dataset', dataset);
-
-	$: {
-		orderedAndLoadsInverted = [];
-		fuelTechOrder.forEach((/** @type {*} */ code) => {
-			const filtered = data.filter((d) => d.fuel_tech === code);
-			if (filtered.length > 0) {
-				const copy = deepCopy(filtered[0]);
-				copy.colour = fuelTechColour(code);
-				orderedAndLoadsInverted.push(copy);
-			}
-		});
-
-		orderedAndLoadsInverted.forEach((d) => {
-			const code = d.fuel_tech;
-			// invert load fuel techs so it displays below the zero x axis in the stacked area chart
-			if (loadFts.includes(code)) {
-				d.history.data.forEach(
-					/**
-					 * @param {number} value
-					 * @param {number} i
-					 */
-					(value, i) => {
-						d.history.data[i] = value * -1;
-					}
-				);
-			}
-		});
-	}
-	$: transformed = transform(orderedAndLoadsInverted, '30m');
-	$: seriesColours = orderedAndLoadsInverted.map((d) => fuelTechColour(d.fuel_tech));
-	$: seriesLabels = orderedAndLoadsInverted.map((d) => fuelTechName(d.fuel_tech));
+	$: transformed = transform(statsDatasets, '5m', 'history');
+	$: seriesColours = statsDatasets.map((d) => fuelTechColour(d.fuel_tech));
+	$: seriesLabels = statsDatasets.map((d) => fuelTechName(d.fuel_tech));
 	$: seriesNames =
 		transformed && transformed.length
 			? Object.keys(transformed[0]).filter((d) => d !== xKey && d !== 'time')
 			: [];
-	$: tsData = withMinMax(transformed, seriesNames, loadFts);
 
-	// $: fuelTechLabelDict = orderedAndLoadsInverted.reduce(
-	// 	(/** @type {Object.<string, string>} */ acc, curr) => {
-	// 		acc[curr.id] = fuelTechName(curr.fuel_tech);
-	// 		return acc;
-	// 	},
-	// 	{}
-	// );
-	// $: fuelTechColourDict = orderedAndLoadsInverted.reduce(
-	// 	(/** @type {Object.<string, string>} */ acc, curr) => {
-	// 		acc[curr.id] = fuelTechColour(curr.fuel_tech);
-	// 		return acc;
-	// 	},
-	// 	{}
-	// );
-	// $: console.log('updated', orderedAndLoadsInverted, tsData);
-	// $: console.log('seriesNames', seriesNames, fuelTechLabelDict);
-	// $: console.log('seriesColours', seriesColours, fuelTechColourDict);
+	$: rolledUpData = rollup(
+		transformed.map((d) => {
+			return {
+				...d,
+				key: key(d.time, targetIntervalObj.milliseconds)
+			};
+		}),
+		(/** @type {TimeSeriesData[]} */ values) => meanReducer(values, seriesNames),
+		(/** @type {TimeSeriesData} */ d) => d.key
+	);
+
+	$: dataset = withMinMax([...rolledUpData.values()], seriesNames, loadFts);
 </script>
 
-{#if tsData.length === 0}
+{#if dataset.length === 0}
 	<p class="mt-6">No data</p>
 {:else}
-	<Chart
-		dataset={tsData}
-		{xKey}
-		yKey={[0, 1]}
-		zKey="key"
-		{seriesNames}
-		{seriesColours}
-		{seriesLabels}
-	/>
-
-	<Chart
-		dataset={newTsData}
-		{xKey}
-		yKey={[0, 1]}
-		zKey="key"
-		seriesNames={newSeriesNames}
-		seriesColours={newSeriesColours}
-		seriesLabels={newSeriesLabels}
-	/>
+	<Chart {dataset} {xKey} yKey={[0, 1]} zKey="key" {seriesNames} {seriesColours} {seriesLabels} />
 {/if}

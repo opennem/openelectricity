@@ -8,7 +8,8 @@
 		fuelTechGroups,
 		historicalEnergyGroups
 	} from '$lib/fuel_techs.js';
-	import { transform as transformEnergy } from '$lib/utils/time-series-helpers/transform/energy';
+	import transformEnergy from '$lib/utils/time-series-helpers/transform-stats-to-ts';
+
 	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import deepCopy from '$lib/utils/deep-copy';
 	import { groupedIspData, groupedStatsData, formatTickX, formatFyTickX } from './helpers';
@@ -127,7 +128,7 @@
 
 	$: if (selectedFtGroup === 'Custom') {
 		let groupedDatasets = groupedIspData(fuelTechGroups, orderedFilteredWithPathwayScenario);
-		let transformedFiltered = transformEnergy(groupedDatasets, 'projection', '1Y');
+		let transformedFiltered = transformEnergy(groupedDatasets, '1Y', 'projection');
 
 		seriesColours = fuelTechGroups.map((d) => fuelTechColour(d));
 		seriesNames =
@@ -141,10 +142,10 @@
 	} else if (selectedFtGroup === 'Detailed') {
 		let transformedFiltered = transformEnergy(
 			orderedFilteredWithPathwayScenario,
-			'projection',
-			'1Y'
+			'1Y',
+			'projection'
 		);
-		let transformedFiltered2 = transformEnergy(filteredWithPathwayScenario, 'projection', '1Y');
+		let transformedFiltered2 = transformEnergy(filteredWithPathwayScenario, '1Y', 'projection');
 
 		seriesColours = orderedFilteredWithPathwayScenario.map((d) => fuelTechColour(d.fuel_tech));
 		seriesNames =
@@ -232,7 +233,7 @@
 		});
 		let groupedDatasets = groupedStatsData(historicalEnergyGroups, ordered);
 
-		let transformed = transformEnergy(groupedDatasets, 'history', '1M');
+		let transformed = transformEnergy(groupedDatasets, '1M', 'history');
 
 		historicalSeriesColours = fuelTechGroups.map((d) => fuelTechColour(d));
 		historicalSeriesNames =

@@ -10,7 +10,8 @@ import {
 	fuelTechColour,
 	fossilRenewablesGroupMap
 } from '$lib/fuel_techs.js';
-import { transform as transformEnergy } from '$lib/utils/time-series-helpers/transform/energy';
+import transformEnergy from '$lib/utils/time-series-helpers/transform-stats-to-ts';
+
 import transformRollingSum12Mth from '$lib/utils/rolling-sum-12-mth';
 
 export const formatTickX = (/** @type {Date} */ d) => formatInTimeZone(d, '+10:00', 'yyyy');
@@ -151,7 +152,7 @@ export function groupedStatsData(groups, originalData) {
  * @returns
  */
 export function getKeysAndRollingSumPercentDataset(statsDataset) {
-	const transformed = transformEnergy(statsDataset, 'history', '1M');
+	const transformed = transformEnergy(statsDataset, '1M', 'history');
 
 	const keys =
 		transformed && transformed.length

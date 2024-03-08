@@ -20,7 +20,8 @@
 		formatInTimeZone(d, '+10:00', 'd MMM, h:mm aaa');
 	export const formatDailyTickX = (/** @type {number} */ d) =>
 		formatInTimeZone(d, '+10:00', 'd MMM');
-	export const formatTickY = (/** @type {number} */ d) => d3Format('.0f')(d / 1000) + ' GW';
+	export const formatTickY = (/** @type {number} */ d) => d3Format('.1f')(d / 1000) + ' GW';
+	// export const formatTickY = (/** @type {number} */ d) => d3Format('.0f')(d) + ' MW';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
