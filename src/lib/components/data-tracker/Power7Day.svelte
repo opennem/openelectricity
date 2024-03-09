@@ -1,13 +1,9 @@
 <script>
-	import { rollup } from 'd3-array';
-	import { fuelTechName, fuelTechColour, fuelTechOrder } from '$lib/fuel_techs.js';
-	import transform from '$lib/utils/time-series-helpers/transform-stats-to-ts';
-	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
-	import { key } from '$lib/utils/time-series-helpers/rollup/key';
+	import { fuelTechOrder } from '$lib/fuel_techs.js';
 	import parseInterval from '$lib/utils/intervals';
-	import meanReducer from '$lib/utils/time-series-helpers/reducer/mean';
-	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
 
+	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
+	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
 	import Chart from './Chart.svelte';
 
 	/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
@@ -31,7 +27,6 @@
 	export let data;
 
 	const xKey = 'date';
-	const targetIntervalObj = parseInterval('30m');
 
 	$: statsDatasets = new StatsDatasets(data, 'history')
 		.mergeAndInterpolate()
@@ -39,30 +34,24 @@
 		.invertLoadValues(loadFts)
 		.group(historicalEnergyGroupMap).data;
 
-	$: transformed = transform(statsDatasets, '5m', 'history');
-	$: seriesColours = statsDatasets.map((d) => fuelTechColour(d.fuel_tech));
-	$: seriesLabels = statsDatasets.map((d) => fuelTechName(d.fuel_tech));
-	$: seriesNames =
-		transformed && transformed.length
-			? Object.keys(transformed[0]).filter((d) => d !== xKey && d !== 'time')
-			: [];
+	$: timeSeriesDatasets = new TimeSeriesDatasets(statsDatasets, parseInterval('5m'), 'history')
+		.transform()
+		.rollup(parseInterval('5m'))
+		.updateMinMax(loadFts);
 
-	$: rolledUpData = rollup(
-		transformed.map((d) => {
-			return {
-				...d,
-				key: key(d.time, targetIntervalObj.milliseconds)
-			};
-		}),
-		(/** @type {TimeSeriesData[]} */ values) => meanReducer(values, seriesNames),
-		(/** @type {TimeSeriesData} */ d) => d.key
-	);
-
-	$: dataset = withMinMax([...rolledUpData.values()], seriesNames, loadFts);
+	$: dataset = timeSeriesDatasets.data;
 </script>
 
 {#if dataset.length === 0}
 	<p class="mt-6">No data</p>
 {:else}
-	<Chart {dataset} {xKey} yKey={[0, 1]} zKey="key" {seriesNames} {seriesColours} {seriesLabels} />
+	<Chart
+		{dataset}
+		{xKey}
+		yKey={[0, 1]}
+		zKey="key"
+		seriesNames={timeSeriesDatasets.seriesNames}
+		seriesColours={timeSeriesDatasets.seriesColours}
+		seriesLabels={timeSeriesDatasets.seriesLabels}
+	/>
 {/if}
