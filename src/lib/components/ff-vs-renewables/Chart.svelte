@@ -3,7 +3,6 @@
 	import { scaleOrdinal } from 'd3-scale';
 	import { formatInTimeZone } from 'date-fns-tz';
 
-	import { fuelTechColour, fossilRenewablesGroups } from '$lib/fuel_techs.js';
 	import MultiLine from '$lib/components/charts/MultiLine.svelte';
 	import AxisX from '$lib/components/charts/AxisX.svelte';
 	import AxisY from '$lib/components/charts/AxisY.svelte';
@@ -12,42 +11,28 @@
 	import HoverText from '$lib/components/charts/HoverText.html.svelte';
 	import Annotations from './Annotations.svelte';
 
-	import {
-		formatTickX,
-		formatTickY,
-		xDomain,
-		displayXTicks,
-		calculateTotalStatsData,
-		getOrderedStatsData,
-		groupedStatsData,
-		getKeysAndRollingSumPercentDataset
-	} from './helpers';
+	import { formatTickX, formatTickY, xDomain, displayXTicks } from './helpers';
 
 	export const formatHoverTickX = (/** @type {Date | number} */ d) =>
 		formatInTimeZone(d, '+10:00', 'MMM yyyy');
 
-	/** @type {StatsData[]} */
-	export let data;
 	export let title = '';
 	export let description = '';
 
 	/** @type {StatsData[]} */
-	let historicalDataset = [];
+	export let historicalDataset = [];
 
 	/** @type {TimeSeriesData[] | []} */
-	let tsData = [];
+	export let tsData = [];
 
 	/** @type {string[]} */
-	let seriesNames = [];
+	export let seriesNames = [];
 
 	/** @type {string[]} */
-	let seriesColours = [];
+	export let seriesColours = [];
 
-	/** @type {StatsData} */
-	let totalStatsData;
-
-	/** @type {StatsData[]} */
-	let ordered;
+	/** @type {object} */
+	export let seriesLabels = {};
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
@@ -59,22 +44,9 @@
 	$: chartLeft = md ? 0 : 0;
 	$: chartRight = md ? 0 : 0;
 
-	$: if (data && data.length) {
-		totalStatsData = calculateTotalStatsData(data);
-		ordered = getOrderedStatsData(data);
-		historicalDataset = groupedStatsData(fossilRenewablesGroups, ordered);
-
-		const { keys, rollingSumPercentageDataset } = getKeysAndRollingSumPercentDataset([
-			...historicalDataset,
-			totalStatsData
-		]);
-
-		seriesNames = keys;
-		seriesColours = fossilRenewablesGroups.map((d) => fuelTechColour(d));
-		tsData = rollingSumPercentageDataset;
-	}
-
 	$: groupedData = groupLonger(tsData, seriesNames);
+
+	$: console.log('groupedData', groupedData);
 	$: flatData = flatten(groupedData, 'values');
 	$: latestDatapoint = tsData[tsData.length - 1];
 
@@ -147,6 +119,7 @@
 				rounded={hoverData !== undefined}
 				annotation={hoverData || latestDatapoint}
 				dataset={historicalDataset}
+				{seriesLabels}
 				showBesideLatestPoint={md}
 			/>
 		</Html>

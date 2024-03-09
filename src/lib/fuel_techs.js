@@ -222,8 +222,6 @@ export const fuelTechGroup = (groupMap, groupCode) => {
 };
 
 /**
- * Takes an array of records and sorts them into days,
- * and groups together commom record types within the days
  * @param {FuelTechCode} ftCode
  * @returns {string}
  */

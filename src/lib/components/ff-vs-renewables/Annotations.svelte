@@ -12,6 +12,8 @@
 
 	export let showBesideLatestPoint = false;
 
+	export let seriesLabels = {};
+
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
 	const formatY = format('.1f');
 
@@ -26,8 +28,7 @@
 	};
 
 	$: label = (/** @type {TimeSeriesGroupData} */ group) => {
-		const find = dataset.find((d) => d.id === group.group);
-		return find ? find.label : '';
+		return seriesLabels[group.group];
 	};
 
 	$: getValue = (/** @type {TimeSeriesGroupData} */ group) => {

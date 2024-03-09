@@ -36,7 +36,7 @@
 
 	$: timeSeriesDatasets = new TimeSeriesDatasets(statsDatasets, parseInterval('5m'), 'history')
 		.transform()
-		.rollup(parseInterval('5m'))
+		.rollup(parseInterval('30m'))
 		.updateMinMax(loadFts);
 
 	$: dataset = timeSeriesDatasets.data;

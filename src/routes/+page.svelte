@@ -10,7 +10,7 @@
 	import Switch from '$lib/components/Switch.svelte';
 	import IspOverview from '$lib/components/isp/Overview.svelte';
 	import Power7Day from '$lib/components/data-tracker/Power7Day.svelte';
-	import FossilFuelsVsRenewables from '$lib/components/ff-vs-renewables/Chart.svelte';
+	import FossilFuelsVsRenewables from '$lib/components/ff-vs-renewables/FfVsRenewables.svelte';
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 

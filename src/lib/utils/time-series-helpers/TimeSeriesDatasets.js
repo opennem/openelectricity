@@ -4,6 +4,7 @@ import transform from '$lib/utils/time-series-helpers/transform-stats-to-ts';
 import { key } from '$lib/utils/time-series-helpers/rollup/key';
 import meanReducer from '$lib/utils/time-series-helpers/reducer/mean';
 import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
+import transformRollingSum12Mth from '$lib/utils/rolling-sum-12-mth';
 
 /**
  *
@@ -21,8 +22,24 @@ function TimeSeriesDatasets(statsDatasets, statsInterval, statsType) {
 	this.statsInterval = statsInterval;
 	this.statsType = statsType || 'history';
 
-	this.seriesColours = statsDatasets.map((d) => fuelTechColour(d.fuel_tech));
-	this.seriesLabels = statsDatasets.map((d) => fuelTechName(d.fuel_tech));
+	this.seriesColours = statsDatasets.map((d) =>
+		d.fuel_tech ? fuelTechColour(d.fuel_tech) : '#fff'
+	);
+
+	this.seriesLabels = statsDatasets.map((d) => (d.fuel_tech ? fuelTechName(d.fuel_tech) : ''));
+
+	this.seriesLabels2 = {};
+
+	statsDatasets.forEach((d) => {
+		/** @type {*} */
+		const obj = {};
+		const ft = d.fuel_tech || '';
+
+		if (ft) {
+			obj[d.id] = fuelTechName(ft);
+			this.seriesLabels2 = { ...this.seriesLabels2, ...obj };
+		}
+	});
 }
 
 TimeSeriesDatasets.prototype.transform = function () {
@@ -46,6 +63,38 @@ TimeSeriesDatasets.prototype.rollup = function (/** @type {StatsInterval} */ tar
 		(/** @type {TimeSeriesData} */ d) => d.key
 	);
 	this.data = [...rolledUpData.values()];
+	return this;
+};
+
+TimeSeriesDatasets.prototype.calculate12MthRollingSum = function () {
+	this.data = transformRollingSum12Mth(this.data, this.seriesNames);
+	return this;
+};
+
+TimeSeriesDatasets.prototype.convertToPercentage = function (
+	/** @type {string} */ id = 'au.total-minus-loads.history'
+) {
+	this.data = this.data.map((d) => {
+		/** @type {TimeSeriesData} */
+		const obj = {
+			date: d.date,
+			time: d.time
+		};
+
+		const total = /** @type {number} */ (d[id]);
+
+		this.seriesNames.forEach((key) => {
+			const seriesValue = /** @type {number} */ (d[key]);
+			if (seriesValue && total) {
+				obj[key] = (seriesValue / total) * 100;
+			} else {
+				obj[key] = 0;
+			}
+		});
+
+		return obj;
+	});
+
 	return this;
 };
 

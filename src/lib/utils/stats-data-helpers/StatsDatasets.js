@@ -2,6 +2,7 @@ import deepCopy from '$lib/utils/deep-copy';
 import getMinInterval from './min-interval';
 import mergeStatsType from './merge-stats-type';
 import interpolateDatasets from './interpolate-data';
+import totalMinusLoadsStats from './total-minus-loads-stats';
 
 /**
  *
@@ -9,7 +10,8 @@ import interpolateDatasets from './interpolate-data';
  * @param {StatsType | undefined} statsType
  */
 function StatsDatasets(data, statsType) {
-	this.data = data;
+	this.originalData = deepCopy(data);
+	this.data = deepCopy(data);
 	this.statsType = statsType || 'history';
 	this.minIntervalObj = getMinInterval(data, this.statsType);
 }
@@ -17,6 +19,7 @@ function StatsDatasets(data, statsType) {
 StatsDatasets.prototype.mergeAndInterpolate = function () {
 	const merged = mergeStatsType(this.data, this.statsType);
 	const interpolated = interpolateDatasets(merged, this.minIntervalObj, this.statsType);
+
 	this.data = [
 		...merged.filter((d) => d[this.statsType].interval === this.minIntervalObj?.intervalString),
 		...interpolated
@@ -110,6 +113,14 @@ StatsDatasets.prototype.group = function (/** @type {Object} */ groupMap) {
 
 	this.data = grouped;
 
+	return this;
+};
+
+StatsDatasets.prototype.addTotalMinusLoads = function (
+	/** @type {FuelTechCode[]} */ loads,
+	/** @type {string} */ id
+) {
+	this.data.push(totalMinusLoadsStats(this.originalData, this.statsType, loads, id));
 	return this;
 };
 
