@@ -73,3 +73,27 @@ export const formatValue = (/** @type {number} */ d) => {
 	}
 	return formatted;
 };
+
+/** @type {ScenarioKey[]} */
+export const scenarios = ['step_change', 'progressive_change', 'green_energy_exports']; // scenarios in display order
+
+export const scenarioLabels = {
+	step_change: 'Step Change',
+	progressive_change: 'Progressive Change',
+	// slow_change: 'Slow Change',
+	green_energy_exports: 'Green Energy Exports'
+	// hydrogen_superpower: 'Hydrogen Superpower'
+};
+
+export const scenarioDescriptions = {
+	step_change:
+		'The Step Change scenario is considered the most likely future for the National Electricity Market (NEM). This scenario takes into account various factors such as ageing generation plants, technical innovation, economics, government policies, energy security, and consumer choice.',
+	progressive_change:
+		'The Progressive Change scenario is designed to assess the potential impact of a gradual and evolving transition toward a low-carbon energy system, taking into account the complexities and challenges associated with achieving decarbonization goals.',
+	slow_change:
+		'The Slow Change scenario is an unlikely transition scenario that does not meet carbon reduction targets. It takes into account the difficult economic environment following the COVID-19 pandemic, reflecting a slower economy and falling short of the targets.',
+	green_energy_exports:
+		'The Green Energy Exports scenario is a highly ambitious scenario that includes strong global action, significant technological breakthroughs, and a near quadrupling of National Electricity Market (NEM) energy consumption to support a hydrogen export industry. '
+};
+
+export const selectedPathway = 'CDP11 (ODP)';

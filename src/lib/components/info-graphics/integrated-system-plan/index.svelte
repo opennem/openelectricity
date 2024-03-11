@@ -8,7 +8,11 @@
 		labelReducer,
 		colourReducer,
 		formatTickX,
-		formatFyTickX
+		formatFyTickX,
+		scenarios,
+		scenarioLabels,
+		scenarioDescriptions,
+		selectedPathway
 	} from './helpers';
 
 	import {
@@ -35,42 +39,8 @@
 
 	const xKey = 'date';
 
-	/** @type {ScenarioKey[]} */
-	let scenarios = ['step_change', 'progressive_change', 'green_energy_exports']; // scenarios in display order
-
-	let scenarioLabels = {
-		step_change: 'Step Change',
-		progressive_change: 'Progressive Change',
-		// slow_change: 'Slow Change',
-		green_energy_exports: 'Green Energy Exports'
-		// hydrogen_superpower: 'Hydrogen Superpower'
-	};
-	let scenarioDescriptions = {
-		step_change:
-			'The Step Change scenario is considered the most likely future for the National Electricity Market (NEM). This scenario takes into account various factors such as ageing generation plants, technical innovation, economics, government policies, energy security, and consumer choice.',
-		progressive_change:
-			'The Progressive Change scenario is designed to assess the potential impact of a gradual and evolving transition toward a low-carbon energy system, taking into account the complexities and challenges associated with achieving decarbonization goals.',
-		slow_change:
-			'The Slow Change scenario is an unlikely transition scenario that does not meet carbon reduction targets. It takes into account the difficult economic environment following the COVID-19 pandemic, reflecting a slower economy and falling short of the targets.',
-		green_energy_exports:
-			'The Green Energy Exports scenario is a highly ambitious scenario that includes strong global action, significant technological breakthroughs, and a near quadrupling of National Electricity Market (NEM) energy consumption to support a hydrogen export industry. '
-	};
-
 	/** @type {'line'|'bar'} */
 	let dashboard = 'line'; // bar
-
-	/** @type {FuelTechCode[]} */
-	let loadFts = [
-		'exports',
-		'battery_charging',
-		'battery_VPP_charging',
-		'battery_distributed_charging',
-		'demand_response',
-		'pumps'
-	];
-
-	/** @type {string|undefined} */
-	let selectedPathway = 'CDP11 (ODP)';
 
 	/** @type {ScenarioKey} */
 	let selectedScenario = scenarios[0];
@@ -78,14 +48,15 @@
 	$: outlookData = data.outlookEnergyNem.data;
 
 	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
+
 	$: filteredWithPathwayScenario = filteredWithScenario.filter(
 		(d) => d.pathway === selectedPathway
 	);
+
 	$: yDomain =
 		selectedScenario === 'green_energy_exports' ? [0, 1250000 / 1000] : [0, 500000 / 1000];
 
 	$: projectionStatsDatasets = new StatsDatasets(filteredWithPathwayScenario, 'projection')
-		.invertLoadValues(loadFts)
 		.group(domainGroups)
 		.reorder(domainOrder);
 
@@ -100,11 +71,13 @@
 		.updateMinMax();
 
 	$: projectionSeriesNames = projectionTimeSeriesDatasets.seriesNames;
+
 	$: projectionSeriesLabels = projectionTimeSeriesDatasets.seriesLabels2;
+
 	$: projectionSeriesColours = projectionTimeSeriesDatasets.seriesColours2;
 
 	// Convert historical data to TWh to match ISP
-	const historicalData = deepCopy(data.historyEnergyNemData).map((d) => {
+	$: historicalData = deepCopy(data.historyEnergyNemData).map((d) => {
 		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
 		d.history = { ...d.history, data: historyData };
 		d.units = 'TWh';
@@ -130,29 +103,26 @@
 		(d) => d.date.getFullYear() < 2023 && d.date.getFullYear() > 1998
 	);
 
-	const trackYears = [2025, 2031, 2051];
-	const startEndYears = [2025, 2052];
-
-	$: startEndXTicks = startEndYears.map((year) => new Date(`${year}-01-01`));
+	$: sparkLineXTicks = [2025, 2052].map((year) => new Date(`${year}-01-01`));
 
 	/** @type {TimeSeriesData[]} */
-	let sparkbarDataset = [];
+	let sparkBarDataset = [];
 
 	$: {
-		sparkbarDataset = [];
-		trackYears.forEach((year) => {
+		sparkBarDataset = [];
+		[2025, 2031, 2051].forEach((year) => {
 			const data = projectionTimeSeriesDatasets.data.find(
 				(d) => +formatInTimeZone(d.date, '+10:00', 'yyyy') === year
 			);
 			if (data) {
-				sparkbarDataset.push(data);
+				sparkBarDataset.push(data);
 			} else {
 				console.warn('no data for year', year, projectionTimeSeriesDatasets.data);
 			}
 		});
 	}
 
-	$: sparklineXTicks = sparkbarDataset.map(
+	$: sparkBarXTicks = sparkBarDataset.map(
 		(d) => new Date(`${formatInTimeZone(d.date, '+10:00', 'yyyy')}-01-01`)
 	);
 
@@ -257,7 +227,7 @@
 				<SparkLineArea
 					dataset={projectionTimeSeriesDatasets.data}
 					{key}
-					xTicks={startEndXTicks}
+					xTicks={sparkLineXTicks}
 					title={projectionSeriesLabels[key]}
 					colour={projectionSeriesColours[key]}
 					{hoverData}
@@ -268,9 +238,9 @@
 		{:else}
 			{#each projectionSeriesNames as key}
 				<SparkBar
-					dataset={sparkbarDataset}
+					dataset={sparkBarDataset}
 					{key}
-					xTicks={sparklineXTicks}
+					xTicks={sparkBarXTicks}
 					title={projectionSeriesLabels[key]}
 					colour={projectionSeriesColours[key]}
 					{hoverData}
