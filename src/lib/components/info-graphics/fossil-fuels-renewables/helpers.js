@@ -1,6 +1,48 @@
 import { range } from 'd3-array';
 import { format as d3Format } from 'd3-format';
 import { formatInTimeZone } from 'date-fns-tz';
+import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
+
+/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
+export const domainGroups = {
+	fossil_fuels: [
+		'coal_black',
+		'coal_brown',
+		'gas_ccgt',
+		'gas_ocgt',
+		'gas_recip',
+		'gas_steam',
+		'gas_wcmg',
+		'distillate'
+	],
+	renewables: [
+		'solar_utility',
+		'solar_rooftop',
+		'wind',
+		'hydro',
+		'bioenergy_biogas',
+		'bioenergy_biomass'
+	]
+};
+/** @type {FuelTechCode[]} */
+export const loadFts = ['exports', 'battery_charging', 'pumps'];
+
+export const totalId = 'au-total';
+
+export const labelReducer = (
+	/** @type {Object.<string, string>} */ acc,
+	/** @type {StatsData} **/ d
+) => {
+	acc[d.id] = d.fuel_tech ? fuelTechName(d.fuel_tech) : '';
+	return acc;
+};
+export const colourReducer = (
+	/** @type {Object.<string, string>} */ acc,
+	/** @type {StatsData} **/ d
+) => {
+	acc[d.id] = d.fuel_tech ? fuelTechColour(d.fuel_tech) : '';
+	return acc;
+};
 
 export const formatTickX = (/** @type {Date} */ d) => formatInTimeZone(d, '+10:00', 'yyyy');
 export const formatTickY = (/** @type {number} */ d) => `${d3Format('~s')(d)}%`;

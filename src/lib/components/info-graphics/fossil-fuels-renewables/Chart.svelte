@@ -23,16 +23,16 @@
 	export let historicalDataset = [];
 
 	/** @type {TimeSeriesData[] | []} */
-	export let tsData = [];
+	export let dataset = [];
 
-	/** @type {string[]} */
+	/** @type {string[]} legend id */
 	export let seriesNames = [];
 
-	/** @type {object} */
-	export let seriesColours = {};
-
-	/** @type {object} */
+	/** @type {object} legend label */
 	export let seriesLabels = {};
+
+	/** @type {object} legend colour */
+	export let seriesColours = {};
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
@@ -44,11 +44,11 @@
 	$: chartLeft = md ? 0 : 0;
 	$: chartRight = md ? 0 : 0;
 
-	$: groupedData = groupLonger(tsData, seriesNames);
+	$: groupedData = groupLonger(dataset, seriesNames);
 
 	$: console.log('groupedData', groupedData);
 	$: flatData = flatten(groupedData, 'values');
-	$: latestDatapoint = tsData[tsData.length - 1];
+	$: latestDatapoint = dataset[dataset.length - 1];
 
 	$: chartLabelStyles = md
 		? 'italic text-right text-xs text-dark-grey mr-8 z-10 pointer-events-none relative'
@@ -101,7 +101,7 @@
 
 			<MultiLine {hoverData} />
 			<HoverLayer
-				dataset={tsData}
+				{dataset}
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>
