@@ -77,6 +77,7 @@ export const formatValue = (/** @type {number} */ d) => {
 /** @type {ScenarioKey[]} */
 export const scenarios = ['step_change', 'progressive_change', 'green_energy_exports']; // scenarios in display order
 
+/** @type {Object.<ScenarioKey, string>} */
 export const scenarioLabels = {
 	step_change: 'Step Change',
 	progressive_change: 'Progressive Change',
@@ -85,6 +86,7 @@ export const scenarioLabels = {
 	// hydrogen_superpower: 'Hydrogen Superpower'
 };
 
+/** @type {Object.<ScenarioKey, string>} */
 export const scenarioDescriptions = {
 	step_change:
 		'The Step Change scenario is considered the most likely future for the National Electricity Market (NEM). This scenario takes into account various factors such as ageing generation plants, technical innovation, economics, government policies, energy security, and consumer choice.',

@@ -19,7 +19,7 @@
 
 	import ChartAnnotations from './ChartAnnotations.svelte';
 
-	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
+	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
 
 	export let title = '';
@@ -38,8 +38,8 @@
 	/** @type {string[]} */
 	export let seriesNames = [];
 
-	/** @type {string[]} */
-	export let seriesColours = [];
+	/** @type {Object.<string, string>} legend colour */
+	export let seriesColours = {};
 
 	/** @type {*} */
 	export let xTicks = undefined;
@@ -90,7 +90,7 @@
 		z={zKey}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
-		zRange={seriesColours}
+		zRange={Object.values(seriesColours)}
 		flatData={flatten(stackedData)}
 		data={stackedData}
 	>
@@ -122,11 +122,9 @@
 
 		<Html pointerEvents={false}>
 			<ChartAnnotations {title} {description} />
-		</Html>
 
-		<Html pointerEvents={false}>
 			<HoverText {hoverData} isShapeStack={true} position="bottom">
-				<span class="text-[10px] font-light relative -top-[6px]">
+				<span class="text-[10px] font-light relative -top-[1px]">
 					{formatTickX(hoverTime)}
 				</span>
 			</HoverText>

@@ -9,7 +9,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import InfoGraphicISP from '$lib/components/info-graphics/integrated-system-plan/index.svelte';
-	import Nem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
+	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
@@ -87,7 +87,7 @@
 		</header>
 
 		<section class="my-16">
-			<Nem7DayGeneration data={dataTrackerData} />
+			<InfoGraphicNem7DayGeneration data={dataTrackerData} />
 		</section>
 
 		<footer class="flex justify-center md:hidden">

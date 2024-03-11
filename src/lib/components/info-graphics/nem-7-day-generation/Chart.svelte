@@ -33,14 +33,14 @@
 
 	export let zKey = '';
 
-	/** @type {string[]} */
+	/** @type {string[]} legend id */
 	export let seriesNames = [];
 
-	/** @type {string[]} */
-	export let seriesColours = [];
+	/** @type {Object.<string, string>} legend label */
+	export let seriesLabels = {};
 
-	/** @type {string[]} */
-	export let seriesLabels = [];
+	/** @type {Object.<string, string>} legend colour */
+	export let seriesColours = {};
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData;
@@ -59,8 +59,8 @@
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 	$: hoverKeyValue =
 		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
-	$: hoverKeyColour = hoverKey ? seriesColours[seriesNames.indexOf(hoverKey)] : '';
-	$: hoverKeyLabel = hoverKey ? seriesLabels[seriesNames.indexOf(hoverKey)] : '';
+	$: hoverKeyColour = hoverKey ? seriesColours[hoverKey] : '';
+	$: hoverKeyLabel = hoverKey ? seriesLabels[hoverKey] : '';
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		hoverKey = e.detail.key;
@@ -78,7 +78,7 @@
 		z={zKey}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
-		zRange={seriesColours}
+		zRange={Object.values(seriesColours)}
 		flatData={flatten(stackedData)}
 		data={stackedData}
 	>

@@ -29,8 +29,8 @@
 
 	$: dataset = timeSeriesDatasets.data;
 	$: seriesNames = timeSeriesDatasets.seriesNames.filter((name) => name !== totalId);
-	$: seriesColours = timeSeriesDatasets.seriesColours2;
-	$: seriesLabels = timeSeriesDatasets.seriesLabels2;
+	$: seriesColours = timeSeriesDatasets.seriesColours;
+	$: seriesLabels = timeSeriesDatasets.seriesLabels;
 
 	$: console.log('statsDatasets', statsDatasets, timeSeriesDatasets, seriesLabels);
 </script>

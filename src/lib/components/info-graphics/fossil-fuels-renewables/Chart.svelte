@@ -28,10 +28,10 @@
 	/** @type {string[]} legend id */
 	export let seriesNames = [];
 
-	/** @type {object} legend label */
+	/** @type {Object.<string, string>} legend label */
 	export let seriesLabels = {};
 
-	/** @type {object} legend colour */
+	/** @type {Object.<string, string>} legend colour */
 	export let seriesColours = {};
 
 	/** @type {TimeSeriesData | undefined} */

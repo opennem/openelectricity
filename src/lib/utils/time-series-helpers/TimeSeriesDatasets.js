@@ -1,5 +1,4 @@
 import { rollup } from 'd3-array';
-import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
 import transform from '$lib/utils/time-series-helpers/transform-stats-to-ts';
 import meanReducer from '$lib/utils/time-series-helpers/reducer/mean';
 import sumReducer from '$lib/utils/time-series-helpers/reducer/sum';
@@ -24,16 +23,27 @@ function TimeSeriesDatasets(statsDatasets, statsInterval, statsType, labelReduce
 	this.statsType = statsType || 'history';
 	this.seriesNames = statsDatasets.map((d) => d.id);
 
-	this.seriesLabels = statsDatasets.map((d) => (d.fuel_tech ? fuelTechName(d.fuel_tech) : ''));
-	this.seriesColours = statsDatasets.map((d) =>
-		d.fuel_tech ? fuelTechColour(d.fuel_tech) : '#fff'
-	);
-
 	if (labelReducer) {
-		this.seriesLabels2 = statsDatasets.reduce(labelReducer, {});
+		this.seriesLabels = statsDatasets.reduce(labelReducer, {});
+	} else {
+		this.seriesLabels = statsDatasets.reduce(
+			(/** @type {Object.<string, string>} */ acc, /** @type {StatsData} **/ d) => {
+				acc[d.id] = d.id;
+				return acc;
+			},
+			{}
+		);
 	}
 	if (colourReducer) {
-		this.seriesColours2 = statsDatasets.reduce(colourReducer, {});
+		this.seriesColours = statsDatasets.reduce(colourReducer, {});
+	} else {
+		this.seriesColours = statsDatasets.reduce(
+			(/** @type {Object.<string, string>} */ acc, /** @type {StatsData} **/ d) => {
+				acc[d.id] = '#999'; // TODO: update to set colour based on how many names are in the series
+				return acc;
+			},
+			{}
+		);
 	}
 }
 

@@ -34,7 +34,7 @@
 	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
 	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
 
-	/** @type {{ fuelTechs: string[], outlookEnergyNem: Isp, historyEnergyNemData: StatsData[]  }} */
+	/** @type {{ fuelTechs: string[], outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} */
 	export let data;
 
 	const xKey = 'date';
@@ -46,6 +46,7 @@
 	let selectedScenario = scenarios[0];
 
 	$: outlookData = data.outlookEnergyNem.data;
+	$: console.log('outlookData', data.outlookEnergyNem);
 
 	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
 
@@ -72,12 +73,14 @@
 
 	$: projectionSeriesNames = projectionTimeSeriesDatasets.seriesNames;
 
-	$: projectionSeriesLabels = projectionTimeSeriesDatasets.seriesLabels2;
+	/** @type {Object.<string, string>} */
+	$: projectionSeriesLabels = projectionTimeSeriesDatasets.seriesLabels;
 
-	$: projectionSeriesColours = projectionTimeSeriesDatasets.seriesColours2;
+	/** @type {Object.<string, string>} */
+	$: projectionSeriesColours = projectionTimeSeriesDatasets.seriesColours;
 
 	// Convert historical data to TWh to match ISP
-	$: historicalData = deepCopy(data.historyEnergyNemData).map((d) => {
+	$: historicalData = deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
 		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
 		d.history = { ...d.history, data: historyData };
 		d.units = 'TWh';
@@ -128,6 +131,9 @@
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
+
+	/** @type {TimeSeriesData | undefined} */
+	let historicalHoverData = undefined;
 </script>
 
 <section class="p-4">
@@ -143,8 +149,8 @@
 	</header>
 
 	<div class="grid grid-cols-6 gap-3 my-6">
-		<div class="text-dark-grey text-sm col-span-2 relative">
-			<div class="absolute top-0 z-10">
+		<div class="text-dark-grey col-span-2 relative">
+			<div class="absolute top-0 z-10 text-sm">
 				<div>
 					<p>
 						A range of modelled scenarios exist which envision the evolution of Australia's National
@@ -186,6 +192,9 @@
 				seriesNames={historicalTimeSeriesDatasets.seriesNames}
 				seriesColours={historicalTimeSeriesDatasets.seriesColours}
 				{formatTickX}
+				hoverData={historicalHoverData}
+				on:mousemove={(e) => (historicalHoverData = /** @type {TimeSeriesData} */ (e.detail))}
+				on:mouseout={() => (historicalHoverData = undefined)}
 			/>
 		</div>
 
