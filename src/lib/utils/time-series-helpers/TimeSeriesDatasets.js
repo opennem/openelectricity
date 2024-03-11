@@ -11,43 +11,33 @@ import transformRollingSum12Mth from '$lib/utils/rolling-sum-12-mth';
  * @param {StatsData[]} statsDatasets
  * @param {StatsInterval} statsInterval
  * @param {StatsType} statsType
+ * @param {*} labelReducer
+ * * @param {*} colourReducer
  */
-function TimeSeriesDatasets(statsDatasets, statsInterval, statsType) {
+function TimeSeriesDatasets(statsDatasets, statsInterval, statsType, labelReducer, colourReducer) {
 	/** @type {TimeSeriesData[]} */
 	this.data = [];
-	/** @type {string[]} */
-	this.seriesNames = [];
 
 	this.statsDatasets = statsDatasets;
 	this.statsInterval = statsInterval;
 	this.statsType = statsType || 'history';
+	this.seriesNames = statsDatasets.map((d) => d.id);
 
+	this.seriesLabels = statsDatasets.map((d) => (d.fuel_tech ? fuelTechName(d.fuel_tech) : ''));
 	this.seriesColours = statsDatasets.map((d) =>
 		d.fuel_tech ? fuelTechColour(d.fuel_tech) : '#fff'
 	);
 
-	this.seriesLabels = statsDatasets.map((d) => (d.fuel_tech ? fuelTechName(d.fuel_tech) : ''));
-
-	this.seriesLabels2 = {};
-
-	statsDatasets.forEach((d) => {
-		/** @type {*} */
-		const obj = {};
-		const ft = d.fuel_tech || '';
-
-		if (ft) {
-			obj[d.id] = fuelTechName(ft);
-			this.seriesLabels2 = { ...this.seriesLabels2, ...obj };
-		}
-	});
+	if (labelReducer) {
+		this.seriesLabels2 = statsDatasets.reduce(labelReducer, {});
+	}
+	if (colourReducer) {
+		this.seriesColours2 = statsDatasets.reduce(colourReducer, {});
+	}
 }
 
 TimeSeriesDatasets.prototype.transform = function () {
 	this.data = transform(this.statsDatasets, this.statsInterval, this.statsType);
-	this.seriesNames =
-		this.data && this.data.length
-			? Object.keys(this.data[0]).filter((d) => d !== 'date' && d !== 'time')
-			: [];
 	return this;
 };
 

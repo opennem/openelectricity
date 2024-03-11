@@ -3,6 +3,8 @@
 	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
 	import parseInterval from '$lib/utils/intervals';
 
+	import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
+
 	import Chart from './Chart.svelte';
 
 	/** @type {StatsData[]} */
@@ -33,6 +35,20 @@
 	};
 
 	const totalId = 'au-total';
+	const labelReducer = (
+		/** @type {Object.<string, string>} */ acc,
+		/** @type {StatsData} **/ d
+	) => {
+		acc[d.id] = d.fuel_tech ? fuelTechName(d.fuel_tech) : '';
+		return acc;
+	};
+	const colourReducer = (
+		/** @type {Object.<string, string>} */ acc,
+		/** @type {StatsData} **/ d
+	) => {
+		acc[d.id] = d.fuel_tech ? fuelTechColour(d.fuel_tech) : '';
+		return acc;
+	};
 
 	/** @type {FuelTechCode[]} */
 	const loadFts = ['exports', 'battery_charging', 'pumps'];
@@ -41,18 +57,23 @@
 		.group(fossilRenewablesGroupMap)
 		.addTotalMinusLoads(loadFts, totalId);
 
-	$: timeSeriesDatasets = new TimeSeriesDatasets(statsDatasets.data, parseInterval('1M'), 'history')
+	$: timeSeriesDatasets = new TimeSeriesDatasets(
+		statsDatasets.data,
+		parseInterval('1M'),
+		'history',
+		labelReducer,
+		colourReducer
+	)
 		.transform()
 		.calculate12MthRollingSum()
 		.convertToPercentage(totalId);
 
 	$: tsData = timeSeriesDatasets.data;
 	$: seriesNames = timeSeriesDatasets.seriesNames.filter((name) => name !== totalId);
-	$: seriesColours = timeSeriesDatasets.seriesColours;
-	$: seriesLabels = timeSeriesDatasets.seriesLabels;
-	$: seriesLabels2 = timeSeriesDatasets.seriesLabels2;
+	$: seriesColours = timeSeriesDatasets.seriesColours2;
+	$: seriesLabels = timeSeriesDatasets.seriesLabels2;
 
-	$: console.log('statsDatasets', statsDatasets, timeSeriesDatasets, seriesLabels2);
+	$: console.log('statsDatasets', statsDatasets, timeSeriesDatasets, seriesLabels);
 </script>
 
 <Chart
@@ -61,6 +82,6 @@
 	{tsData}
 	{seriesNames}
 	{seriesColours}
-	seriesLabels={seriesLabels2}
+	{seriesLabels}
 	historicalDataset={statsDatasets.data}
 />

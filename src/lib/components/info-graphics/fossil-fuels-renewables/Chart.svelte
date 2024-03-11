@@ -28,8 +28,8 @@
 	/** @type {string[]} */
 	export let seriesNames = [];
 
-	/** @type {string[]} */
-	export let seriesColours = [];
+	/** @type {object} */
+	export let seriesColours = {};
 
 	/** @type {object} */
 	export let seriesLabels = {};
@@ -78,7 +78,7 @@
 		yDomain={[0, null]}
 		zDomain={seriesNames}
 		zScale={scaleOrdinal()}
-		zRange={seriesColours}
+		zRange={Object.values(seriesColours)}
 		data={groupedData}
 		{flatData}
 	>

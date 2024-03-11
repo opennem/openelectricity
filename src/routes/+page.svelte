@@ -10,7 +10,7 @@
 	import Switch from '$lib/components/Switch.svelte';
 	import IspOverview from '$lib/components/isp/Overview.svelte';
 	import Power7Day from '$lib/components/data-tracker/Power7Day.svelte';
-	import FossilFuelsVsRenewables from '$lib/components/ff-vs-renewables/FfVsRenewables.svelte';
+	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
@@ -68,7 +68,7 @@
 
 <div class="bg-light-warm-grey pt-3 pb-6">
 	<div class="container max-w-none lg:container relative">
-		<FossilFuelsVsRenewables
+		<InfoGraphicFossilFuelsRenewables
 			data={historyEnergyNemData}
 			title={banner_title}
 			description={banner_statement}
