@@ -26,7 +26,7 @@
 		colourReducer
 	)
 		.transform()
-		.rollup(parseInterval('30m'))
+		.rollup(parseInterval('30m'), 'mean')
 		.updateMinMax(loadFts);
 
 	$: dataset = timeSeriesDatasets.data;

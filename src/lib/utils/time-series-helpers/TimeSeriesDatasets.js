@@ -1,10 +1,11 @@
 import { rollup } from 'd3-array';
 import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
 import transform from '$lib/utils/time-series-helpers/transform-stats-to-ts';
-import { key } from '$lib/utils/time-series-helpers/rollup/key';
 import meanReducer from '$lib/utils/time-series-helpers/reducer/mean';
+import sumReducer from '$lib/utils/time-series-helpers/reducer/sum';
 import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 import transformRollingSum12Mth from '$lib/utils/rolling-sum-12-mth';
+import rollUpMap from './rollup/map';
 
 /**
  *
@@ -12,7 +13,7 @@ import transformRollingSum12Mth from '$lib/utils/rolling-sum-12-mth';
  * @param {StatsInterval} statsInterval
  * @param {StatsType} statsType
  * @param {*} labelReducer
- * * @param {*} colourReducer
+ * @param {*} colourReducer
  */
 function TimeSeriesDatasets(statsDatasets, statsInterval, statsType, labelReducer, colourReducer) {
 	/** @type {TimeSeriesData[]} */
@@ -41,15 +42,22 @@ TimeSeriesDatasets.prototype.transform = function () {
 	return this;
 };
 
-TimeSeriesDatasets.prototype.rollup = function (/** @type {StatsInterval} */ targetStatsInterval) {
+TimeSeriesDatasets.prototype.rollup = function (
+	/** @type {StatsInterval} */ targetStatsInterval,
+	/** @type {'sum' | 'mean'} */ reducerType = 'sum'
+) {
+	const reducer = reducerType === 'mean' ? meanReducer : sumReducer;
+	const getKey = rollUpMap(targetStatsInterval);
+	const mappedDataWithKey = this.data.map((d) => {
+		return {
+			...d,
+			key: getKey(d.time)
+		};
+	});
+
 	const rolledUpData = rollup(
-		this.data.map((d) => {
-			return {
-				...d,
-				key: key(d.time, targetStatsInterval.milliseconds)
-			};
-		}),
-		(/** @type {TimeSeriesData[]} */ values) => meanReducer(values, this.seriesNames),
+		mappedDataWithKey,
+		(/** @type {TimeSeriesData[]} */ values) => reducer(values, this.seriesNames),
 		(/** @type {TimeSeriesData} */ d) => d.key
 	);
 	this.data = [...rolledUpData.values()];
@@ -73,12 +81,12 @@ TimeSeriesDatasets.prototype.convertToPercentage = function (
 
 		const total = /** @type {number} */ (d[id]);
 
-		this.seriesNames.forEach((key) => {
-			const seriesValue = /** @type {number} */ (d[key]);
+		this.seriesNames.forEach((name) => {
+			const seriesValue = /** @type {number} */ (d[name]);
 			if (seriesValue && total) {
-				obj[key] = (seriesValue / total) * 100;
+				obj[name] = (seriesValue / total) * 100;
 			} else {
-				obj[key] = 0;
+				obj[name] = 0;
 			}
 		});
 
@@ -88,7 +96,7 @@ TimeSeriesDatasets.prototype.convertToPercentage = function (
 	return this;
 };
 
-TimeSeriesDatasets.prototype.updateMinMax = function (/** @type {string[]} */ loads) {
+TimeSeriesDatasets.prototype.updateMinMax = function (/** @type {string[]} */ loads = []) {
 	this.data = withMinMax(this.data, this.seriesNames, loads);
 	return this;
 };

@@ -3,6 +3,16 @@ import type { DataSeries } from './data_series.types';
 
 export type StatsType = 'history' | 'forecast' | 'projection';
 
+export type StatsInterval = {
+	intervalString: string;
+	key: string;
+	label: string;
+	seconds: number;
+	milliseconds: number;
+	incrementerValue: number;
+	incrementerFn?: Function;
+};
+
 export type Stats = {
 	type: string;
 	version: string;

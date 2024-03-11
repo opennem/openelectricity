@@ -2,8 +2,8 @@
  *
  * @param {number} time
  * @param {number} coeff
- * @returns
+ * @returns {number}
  */
-export function key(time, coeff) {
+export default function (time, coeff) {
 	return Math.round(time / coeff) * coeff;
 }

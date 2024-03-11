@@ -8,7 +8,7 @@
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Switch from '$lib/components/Switch.svelte';
-	import IspOverview from '$lib/components/isp/Overview.svelte';
+	import InfoGraphicISP from '$lib/components/info-graphics/integrated-system-plan/index.svelte';
 	import Nem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
@@ -172,7 +172,7 @@
 </div>
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
-		<IspOverview data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
+		<InfoGraphicISP data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
 	</div>
 </div>
 <div class="bg-light-warm-grey py-40">
