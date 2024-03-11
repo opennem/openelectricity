@@ -7,15 +7,15 @@
 
 	import { formatTickY } from './helpers';
 
-	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
-	import AxisX from '$lib/components/charts/AxisX.svelte';
-	import AxisY from '$lib/components/charts/AxisY.svelte';
-	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
-	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
-	import HoverDots from '$lib/components/charts/HoverDots.svelte';
-	import HoverText from '$lib/components/charts/HoverText.html.svelte';
-	import Overlay from '$lib/components/charts/Overlay.svelte';
-	import HatchPattern from '$lib/components/charts/defs/HatchPattern.svelte';
+	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
+	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
+	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
+	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
+	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
+	import HoverDots from '$lib/components/charts/elements/HoverDots.svelte';
+	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
+	import Overlay from '$lib/components/charts/elements/Overlay.svelte';
+	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
 
 	import ChartAnnotations from './ChartAnnotations.svelte';
 

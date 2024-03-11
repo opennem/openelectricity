@@ -4,9 +4,9 @@
 
 	import { formatFyTickX, formatTickY } from './helpers';
 
-	import Column from '$lib/components/charts/Column.svelte';
-	import AxisX from '$lib/components/charts/AxisX.svelte';
-	import AxisY from '$lib/components/charts/AxisY.svelte';
+	import Column from '$lib/components/charts/elements/Column.svelte';
+	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
+	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
 
 	import KeyHeader from './KeyHeader.svelte';
 

@@ -3,13 +3,13 @@
 
 	import { formatFyTickX, formatTickY } from './helpers';
 
-	import Line from '$lib/components/charts/Line.svelte';
-	import Area from '$lib/components/charts/Area.svelte';
-	import AxisX from '$lib/components/charts/AxisX.svelte';
-	import AxisY from '$lib/components/charts/AxisY.svelte';
-	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
-	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
-	import HoverText from '$lib/components/charts/HoverText.html.svelte';
+	import Line from '$lib/components/charts/elements/Line.svelte';
+	import Area from '$lib/components/charts/elements/Area.svelte';
+	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
+	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
+	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
+	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
+	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
 
 	import KeyHeader from './KeyHeader.svelte';
 

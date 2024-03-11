@@ -3,12 +3,12 @@
 	import { scaleOrdinal } from 'd3-scale';
 	import { formatInTimeZone } from 'date-fns-tz';
 
-	import MultiLine from '$lib/components/charts/MultiLine.svelte';
-	import AxisX from '$lib/components/charts/AxisX.svelte';
-	import AxisY from '$lib/components/charts/AxisY.svelte';
-	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
-	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
-	import HoverText from '$lib/components/charts/HoverText.html.svelte';
+	import MultiLine from '$lib/components/charts/elements/MultiLine.svelte';
+	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
+	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
+	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
+	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
+	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
 	import Annotations from './Annotations.svelte';
 
 	import { formatTickX, formatTickY, xDomain, displayXTicks } from './helpers';

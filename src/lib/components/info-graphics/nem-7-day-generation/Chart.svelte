@@ -7,14 +7,14 @@
 	import nighttimes from '$lib/utils/nighttimes';
 	import dayTicks from '$lib/utils/day-ticks';
 
-	import AreaStacked from '$lib/components/charts/AreaStacked.svelte';
-	import ClipPath from '$lib/components/charts/defs/ClipPath.svelte';
-	import Element from '$lib/components/charts/Element.svelte';
-	import AxisX from '$lib/components/charts/AxisX.svelte';
-	import AxisY from '$lib/components/charts/AxisY.svelte';
-	import HoverLayer from '$lib/components/charts/HoverLayer.svelte';
-	import HoverLine from '$lib/components/charts/HoverLine.html.svelte';
-	import HoverText from '$lib/components/charts/HoverText.html.svelte';
+	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
+	import ClipPath from '$lib/components/charts/elements/defs/ClipPath.svelte';
+	import Element from '$lib/components/charts/elements/Element.svelte';
+	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
+	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
+	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
+	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
+	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
 
 	export const formatTickX = (/** @type {number} */ d) =>
 		formatInTimeZone(d, '+10:00', 'd MMM, h:mm aaa');

@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
 
-	import Arc from '$lib/components/charts/Arc.svelte';
+	import Arc from '$lib/components/charts/elements/Arc.svelte';
 
 	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
 	export let dataset = [];
