@@ -1,27 +1,11 @@
 <script>
-	import { fuelTechOrder } from '$lib/fuel_techs.js';
 	import parseInterval from '$lib/utils/intervals';
-
 	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
 	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
+
+	import { domainGroups, domainOrder, loadFts, labelReducer, colourReducer } from './helpers';
+
 	import Chart from './Chart.svelte';
-
-	/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
-	const historicalEnergyGroupMap = {
-		battery_charging: ['battery_charging'],
-		pumps: ['pumps'],
-		exports: ['exports'],
-		imports: ['imports'],
-		coal: ['coal_black', 'coal_brown'],
-		gas: ['gas_ccgt', 'gas_ocgt', 'gas_recip', 'gas_steam', 'gas_wcmg'],
-		battery_discharging: ['battery_discharging'],
-		hydro: ['hydro'],
-		wind: ['wind'],
-		solar: ['solar_utility', 'solar_rooftop']
-	};
-
-	/** @type {FuelTechCode[]} */
-	const loadFts = ['exports', 'battery_charging', 'pumps'];
 
 	/** @type {StatsData[]} */
 	export let data;
@@ -30,11 +14,17 @@
 
 	$: statsDatasets = new StatsDatasets(data, 'history')
 		.mergeAndInterpolate()
-		.reorder(fuelTechOrder)
 		.invertLoadValues(loadFts)
-		.group(historicalEnergyGroupMap).data;
+		.group(domainGroups)
+		.reorder(domainOrder).data;
 
-	$: timeSeriesDatasets = new TimeSeriesDatasets(statsDatasets, parseInterval('5m'), 'history')
+	$: timeSeriesDatasets = new TimeSeriesDatasets(
+		statsDatasets,
+		parseInterval('5m'),
+		'history',
+		labelReducer,
+		colourReducer
+	)
 		.transform()
 		.rollup(parseInterval('30m'))
 		.updateMinMax(loadFts);
