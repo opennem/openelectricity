@@ -1,4 +1,3 @@
-import { formatInTimeZone } from 'date-fns-tz';
 import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
 
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
