@@ -1,4 +1,4 @@
-import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
+import { fuelTechName, fuelTechColour, fuelTechOrder } from '$lib/fuel_techs.js';
 
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 export const domainGroups = {
@@ -16,20 +16,22 @@ export const domainGroups = {
 	solar: ['solar_utility', 'solar_rooftop']
 };
 
-export const domainOrder = [
-	'battery_charging',
-	'pumps',
-	'exports',
-	'imports',
-	'coal',
-	'bioenergy',
-	'distillate',
-	'gas',
-	'battery_discharging',
-	'hydro',
-	'wind',
-	'solar'
-];
+// export const domainOrder = [
+// 	'battery_charging',
+// 	'pumps',
+// 	'exports',
+// 	'imports',
+// 	'coal',
+// 	'bioenergy',
+// 	'distillate',
+// 	'gas',
+// 	'battery_discharging',
+// 	'hydro',
+// 	'wind',
+// 	'solar'
+// ];
+
+export const domainOrder = fuelTechOrder;
 
 /** @type {FuelTechCode[]} */
 export const loadFts = ['exports', 'battery_charging', 'pumps'];
