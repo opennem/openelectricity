@@ -1,11 +1,11 @@
 <script>
-	import { LayerCake, Svg, Html, flatten, stack } from 'layercake';
+	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
 
 	import { scaleOrdinal } from 'd3-scale';
 
-	import { formatTickY } from './helpers';
+	import { formatTickY, displayXTicks } from './helpers';
 
 	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
@@ -83,8 +83,8 @@
 
 <div class="chart-container">
 	<LayerCake
-		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
-		x={(/** @type {*} */ d) => d.data[xKey]}
+		padding={{ top: 0, right: 10, bottom: 40, left: 0 }}
+		x={(/** @type {*} */ d) => d[xKey] || d.data[xKey]}
 		y={yKey}
 		yDomain={[0, $yTweened]}
 		z={zKey}
@@ -99,25 +99,27 @@
 		</Html>
 
 		<Svg>
+			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
+
+			<HoverLayer {dataset} on:mousemove on:mouseout />
+		</Svg>
+
+		<Svg pointerEvents={false}>
 			<defs>
 				<HatchPattern id="hatch-pattern" />
 			</defs>
-
-			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />
-			<AxisX
-				ticks={xTicks}
-				gridlines={false}
-				formatTick={hoverData ? () => '' : formatTickX}
-				tickMarks={true}
-			/>
-
-			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
 
 			{#if overlay}
 				<Overlay fill="url(#hatch-pattern)" />
 			{/if}
 
-			<HoverLayer {dataset} on:mousemove on:mouseout />
+			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />
+			<AxisX
+				ticks={xTicks || displayXTicks}
+				gridlines={true}
+				formatTick={formatTickX}
+				tickMarks={true}
+			/>
 		</Svg>
 
 		<Html pointerEvents={false}>

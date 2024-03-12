@@ -81,6 +81,7 @@
 			{#if tickMarks === true}
 				<line
 					class="tick-mark"
+					stroke="black"
 					y1={0}
 					y2={6}
 					x1={isBandwidth ? $xScale.bandwidth() / 2 : 0}

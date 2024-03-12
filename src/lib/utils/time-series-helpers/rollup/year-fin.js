@@ -1,6 +1,4 @@
-import getQuarter from 'date-fns/getQuarter';
-import set from 'date-fns/set';
-import subYears from 'date-fns/subYears';
+import { addYears, endOfMonth, subYears, getQuarter, set } from 'date-fns';
 
 /**
  *
@@ -18,11 +16,25 @@ function startOfFinYear(time, quarter) {
 /**
  *
  * @param {number} time
+ * @param {number} quarter
+ * @returns {Date}
+ */
+function endOfFinYear(time, quarter) {
+	// 1, 2 quarter should be this year in june (end of)
+	// 3, 4 quarter should +1 year
+	const end = endOfMonth(set(new Date(time), { month: 5 }));
+	return quarter === 3 || quarter === 4 ? addYears(end, 1) : end;
+}
+
+/**
+ *
+ * @param {number} time
  * @returns {number}
  */
 export default function (time) {
 	const quarter = getQuarter(time);
 	const start = startOfFinYear(time, quarter);
+	const end = endOfFinYear(time, quarter);
 
-	return start.getTime();
+	return end.getTime();
 }

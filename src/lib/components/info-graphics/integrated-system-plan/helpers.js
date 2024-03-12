@@ -1,6 +1,6 @@
 import { format as d3Format } from 'd3-format';
 import { formatInTimeZone } from 'date-fns-tz';
-import { subYears } from 'date-fns';
+import { subYears, startOfYear, format } from 'date-fns';
 
 import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
 
@@ -58,7 +58,7 @@ export const colourReducer = (
 };
 
 export const formatTickX = (/** @type {Date | number} */ d) =>
-	'FY' + formatInTimeZone(d, '+10:00', 'yy');
+	`'` + formatInTimeZone(d, '+10:00', 'yy');
 
 // minus 1 year to display as FY
 export const formatFyTickX = (/** @type {Date | number} */ d) =>
@@ -73,6 +73,8 @@ export const formatValue = (/** @type {number} */ d) => {
 	}
 	return formatted;
 };
+
+export const displayXTicks = (d) => d.map((t) => startOfYear(t));
 
 /** @type {ScenarioKey[]} */
 export const scenarios = ['step_change', 'progressive_change', 'green_energy_exports']; // scenarios in display order

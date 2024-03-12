@@ -1,5 +1,6 @@
 <script>
 	import { formatInTimeZone } from 'date-fns-tz';
+	import { startOfYear } from 'date-fns';
 
 	import deepCopy from '$lib/utils/deep-copy';
 	import {
@@ -102,8 +103,22 @@
 		.rollup(parseInterval('FY'))
 		.updateMinMax();
 
+	// update historical date to start of year (FY) to match ISP
+	$: updatedHistoricalTimeSeriesDatasets = historicalTimeSeriesDatasets.data.map((d) => {
+		console.log('d.date', d.date, startOfYear(d.date));
+		const date = startOfYear(d.date);
+		return { ...d, date, time: date.getTime() };
+	});
+
 	$: filteredHistoricalTimeSeriesDatasets = historicalTimeSeriesDatasets.data.filter(
-		(d) => d.date.getFullYear() < 2023 && d.date.getFullYear() > 1998
+		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 1998
+	);
+
+	$: console.log(
+		'historicalTimeSeriesDatasets',
+		historicalStatsDatasets,
+		historicalTimeSeriesDatasets,
+		updatedHistoricalTimeSeriesDatasets
 	);
 
 	$: sparkLineXTicks = [2025, 2052].map((year) => new Date(`${year}-01-01`));
@@ -182,9 +197,8 @@
 			</div>
 
 			<OverviewChart
-				dataset={filteredHistoricalTimeSeriesDatasets}
+				dataset={updatedHistoricalTimeSeriesDatasets}
 				{xKey}
-				xTicks={[new Date('2000-01-01'), new Date('2012-01-01')]}
 				yKey={[0, 1]}
 				yTicks={0}
 				{yDomain}
@@ -222,7 +236,7 @@
 					{hoverData}
 					overlay={true}
 					bgClass="bg-light-warm-grey"
-					formatTickX={formatFyTickX}
+					{formatTickX}
 					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 					on:mouseout={() => (hoverData = undefined)}
 				/>
