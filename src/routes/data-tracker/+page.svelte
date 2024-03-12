@@ -1,7 +1,7 @@
 <script>
-	import Power7Day from '$lib/components/data-tracker/Power7Day.svelte';
+	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 
 	export let data;
 </script>
 
-<Power7Day data={data.data} />
+<InfoGraphicNem7DayGeneration data={data.data} />
