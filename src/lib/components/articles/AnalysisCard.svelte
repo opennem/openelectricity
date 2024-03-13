@@ -6,10 +6,11 @@
 	export let article;
 
 	$: hasCover = article.cover;
-	$: headerStyles = hasCover ? 'my-8 h-42' : 'my-8 px-6 h-42';
 	$: linkStyles = hasCover
-		? `grid grid-cols-1 gap-4 content-between border-y border-warm-grey text-dark-grey hover:no-underline ${$$restProps.class}`
-		: `bg-light-warm-grey grid grid-cols-1 gap-4 content-between border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`;
+		? `grid grid-cols-1 gap-4 content-between overflow-hidden border-y border-warm-grey text-dark-grey hover:no-underline ${$$restProps.class}`
+		: `bg-light-warm-grey grid grid-cols-1 gap-4 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`;
+	$: headerStyles = hasCover ? 'my-8 h-42' : 'my-8 px-6 h-42';
+
 	$: authorStyles = hasCover
 		? 'flex items-center gap-8 justify-between mt-6'
 		: 'flex items-center gap-8 justify-between px-6 my-6';
@@ -54,11 +55,7 @@
 			</div>
 		</div>
 		{#if hasCover}
-			<img
-				class="rounded-b-lg"
-				src={urlFor(article.cover).width(590).height(346).url()}
-				alt={article.cover.alt}
-			/>
+			<img src={urlFor(article.cover).width(590).height(346).url()} alt={article.cover.alt} />
 		{/if}
 	</div>
 </a>

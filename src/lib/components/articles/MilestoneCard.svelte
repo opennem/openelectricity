@@ -12,7 +12,7 @@
 
 <a
 	href={`/analysis/${article.slug.current}`}
-	class={`grid grid-cols-1 content-between border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`}
+	class={`grid grid-cols-1 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`}
 >
 	<header class="mt-8">
 		<div class="flex items-center justify-between px-8">

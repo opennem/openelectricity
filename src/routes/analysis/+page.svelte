@@ -327,9 +327,9 @@
 					</div>
 				</div>
 			</div>
-			<div class="md:w-9/12 grid grid-cols-3 py-12">
+			<div class="md:w-9/12 grid grid-cols-1 md:grid-cols-3 py-12 gap-8">
 				{#each filteredArticles as article}
-					<ArticleCard {article} />
+					<ArticleCard class="max-h-[400px] min-h-[350px]" {article} />
 				{/each}
 			</div>
 		</div>
