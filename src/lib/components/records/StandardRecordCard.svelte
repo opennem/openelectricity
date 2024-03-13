@@ -1,5 +1,5 @@
 <script>
-	import Icon from '$lib/components/Icon.svelte';
+	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 	import { formatRecordInterval, recordDescription } from '$lib/records';
 	import { format, parseISO } from 'date-fns';
 	import { formatInTimeZone } from 'date-fns-tz';
@@ -12,11 +12,7 @@
 	class={`bg-white border-[0.05rem] border-mid-warm-grey border-solid rounded relative grid record-layout ${$$restProps.class}`}
 >
 	<div class="flex p-6 relative record-desc">
-		<span
-			class={`flex flex-shrink-0 justify-center items-center w-12 h-12 bg-warm-grey rounded-full mr-6`}
-		>
-			<Icon icon={record[0].fueltech} size={16} />
-		</span>
+		<FuelTechTag fueltech={record[0].fueltech} />
 		<h5 class="font-medium">{recordDescription(record[0])}</h5>
 	</div>
 	<div class="p-6">
@@ -25,7 +21,7 @@
 				class={`grid record-value gap-4 leading-base ${i === 0 ? 'text-base' : ' text-mid-grey'}`}
 			>
 				<div class="self-end">
-					<span>{instance.unit === '$' ? '$' : ''}{instance.value.toLocaleString('en-US')}</span>
+					<span>{instance.unit === '$' ? '$' : ''}{instance.value.toLocaleString('en-AU')}</span>
 					{#if instance.unit !== '$' && i === 0}
 						<span class="text-xs text-mid-grey">{instance.unit}</span>
 					{/if}

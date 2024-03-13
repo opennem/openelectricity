@@ -1,3 +1,5 @@
+import type { FuelTechCode } from './fuel_tech.types';
+
 export type Slug = {
 	current: string;
 };
@@ -20,7 +22,7 @@ export type Article = {
 	cover: any;
 	article_type: string;
 	region: string;
-	fueltech: string;
+	fueltech: FuelTechCode;
 	summary: string;
 	author: Author[];
 	tags: Tag[];

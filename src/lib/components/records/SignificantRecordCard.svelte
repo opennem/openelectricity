@@ -1,9 +1,8 @@
 <script>
-	import Icon from '$lib/components/Icon.svelte';
-	import { fuelTechName } from '$lib/fuel_techs';
 	import { formatRecordInterval, recordDescription } from '$lib/records';
 	import { format } from 'date-fns';
 	import { formatInTimeZone } from 'date-fns-tz';
+	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 
 	/** @type {import('$lib/types/record.types').Record[]} */
 	export let record;
@@ -16,13 +15,8 @@
 	class={`bg-white border-[0.05rem] border-mid-warm-grey border-solid rounded relative grid record-layout ${$$restProps.class}`}
 >
 	<div class="p-6 relative">
-		<span
-			class={`inline-flex flex-shrink-0 justify-center items-center h-12 px-4 bg-${record[0].fueltech} rounded-full mr-6 mb-8 text-xs ${highlightTextColor}`}
-		>
-			<Icon icon={record[0].fueltech} size={16} class="mr-2" />
-			{fuelTechName(record[0].fueltech)}
-		</span>
-		<h5 class="font-medium text-lg leading-lg pr-2">{recordDescription(record[0])}</h5>
+		<FuelTechTag fueltech={record[0].fueltech} />
+		<h5 class="font-medium text-lg leading-lg pr-2 mt-8">{recordDescription(record[0])}</h5>
 	</div>
 	<div class={`grain-bg bg-${record[0].fueltech} ${highlightTextColor}`}>
 		<div class="p-6">
