@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg, Html } from 'layercake';
 
-	import { formatTickX, formatTickY, displayXTicks } from './helpers';
+	import { formatFyTickX, formatTickY, displayXTicks } from './helpers';
 
 	import Line from '$lib/components/charts/elements/Line.svelte';
 	import Area from '$lib/components/charts/elements/Area.svelte';
@@ -28,7 +28,7 @@
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
-<div class="p-8 bg-light-warm-grey rounded-lg">
+<div class="py-8 px-12 bg-light-warm-grey rounded-lg">
 	<KeyHeader {key} {title} data={hoverData} />
 
 	<div style="height: 150px;">
@@ -41,7 +41,7 @@
 		>
 			<Svg>
 				<AxisX
-					formatTick={hoverData ? () => '' : formatTickX}
+					formatTick={hoverData ? () => '' : formatFyTickX}
 					ticks={xTicks || displayXTicks}
 					tickMarks={true}
 					gridlines={false}
@@ -54,8 +54,8 @@
 
 			<Html pointerEvents={false}>
 				<HoverText {hoverData} position="bottom">
-					<span class="text-[10px] font-light relative -top-[6px]">
-						{formatTickX(hoverTime)}
+					<span class="text-[10px] block">
+						{formatFyTickX(hoverTime)}
 					</span>
 				</HoverText>
 				<HoverLine {hoverData} yTopOffset={6} lineColour={colour} />

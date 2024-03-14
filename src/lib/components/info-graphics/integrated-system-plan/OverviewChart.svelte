@@ -83,7 +83,7 @@
 
 <div class="chart-container">
 	<LayerCake
-		padding={{ top: 0, right: 10, bottom: 40, left: 0 }}
+		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
 		x={(/** @type {*} */ d) => d[xKey] || d.data[xKey]}
 		y={yKey}
 		yDomain={[0, $yTweened]}
@@ -116,7 +116,7 @@
 			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />
 			<AxisX
 				ticks={xTicks || displayXTicks}
-				gridlines={true}
+				gridlines={false}
 				formatTick={formatTickX}
 				tickMarks={true}
 			/>
@@ -126,7 +126,7 @@
 			<ChartAnnotations {title} {description} />
 
 			<HoverText {hoverData} isShapeStack={true} position="bottom">
-				<span class="text-[10px] font-light relative -top-[1px]">
+				<span class="text-[10px] block">
 					{formatTickX(hoverTime)}
 				</span>
 			</HoverText>
@@ -142,6 +142,6 @@
 <style>
 	.chart-container {
 		width: 100%;
-		height: 650px;
+		height: 680px;
 	}
 </style>

@@ -2,7 +2,7 @@
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
 
-	import { formatTickX, formatTickY } from './helpers';
+	import { formatFyTickX, formatTickY } from './helpers';
 
 	import Column from '$lib/components/charts/elements/Column.svelte';
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
@@ -24,7 +24,7 @@
 	export let hoverData = undefined;
 </script>
 
-<div class="p-8 bg-light-warm-grey rounded-lg">
+<div class="py-8 px-12 bg-light-warm-grey rounded-lg">
 	<KeyHeader {key} {title} data={hoverData} />
 
 	<div style="height: 150px;">
@@ -38,7 +38,7 @@
 		>
 			<Svg>
 				<Column fill={colour} />
-				<AxisX formatTick={formatTickX} ticks={xTicks} gridlines={false} />
+				<AxisX formatTick={formatFyTickX} ticks={xTicks} gridlines={false} />
 				<AxisY formatTick={formatTickY} ticks={2} xTick={4} />
 			</Svg>
 		</LayerCake>

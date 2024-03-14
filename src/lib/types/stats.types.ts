@@ -20,6 +20,7 @@ export type StatsInterval = {
 	milliseconds: number;
 	incrementerValue: number;
 	incrementerFn?: Function;
+	startOfFn: Function;
 };
 
 export type StatsData = {

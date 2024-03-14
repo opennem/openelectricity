@@ -1,8 +1,9 @@
 <script>
 	import { formatInTimeZone } from 'date-fns-tz';
-	import { startOfYear } from 'date-fns';
+	import { addYears, startOfYear, format } from 'date-fns';
 
 	import deepCopy from '$lib/utils/deep-copy';
+	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import {
 		domainGroups,
 		domainOrder,
@@ -62,6 +63,8 @@
 		.group(domainGroups)
 		.reorder(domainOrder);
 
+	$: console.log('projectionStatsDatasets', projectionStatsDatasets);
+
 	$: projectionTimeSeriesDatasets = new TimeSeriesDatasets(
 		projectionStatsDatasets.data,
 		parseInterval('1Y'),
@@ -103,35 +106,25 @@
 		.rollup(parseInterval('FY'))
 		.updateMinMax();
 
-	// update historical date to start of year (FY) to match ISP
+	// update historical date to match ISP
 	$: updatedHistoricalTimeSeriesDatasets = historicalTimeSeriesDatasets.data.map((d) => {
-		console.log('d.date', d.date, startOfYear(d.date));
-		const date = startOfYear(d.date);
+		const date = startOfYear(d.date, 1);
 		return { ...d, date, time: date.getTime() };
 	});
 
-	$: filteredHistoricalTimeSeriesDatasets = historicalTimeSeriesDatasets.data.filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 1998
+	$: filteredHistoricalTimeSeriesDatasets = updatedHistoricalTimeSeriesDatasets.filter(
+		(d) => d.date.getFullYear() < 2024 && d.date.getFullYear() > 1999
 	);
 
-	$: console.log(
-		'historicalTimeSeriesDatasets',
-		historicalStatsDatasets,
-		historicalTimeSeriesDatasets,
-		updatedHistoricalTimeSeriesDatasets
-	);
-
-	$: sparkLineXTicks = [2025, 2052].map((year) => new Date(`${year}-01-01`));
+	$: sparkLineXTicks = [2025, 2052].map((year) => startOfYear(new Date(`${year}-01-01`)));
 
 	/** @type {TimeSeriesData[]} */
 	let sparkBarDataset = [];
 
 	$: {
 		sparkBarDataset = [];
-		[2025, 2031, 2051].forEach((year) => {
-			const data = projectionTimeSeriesDatasets.data.find(
-				(d) => +formatInTimeZone(d.date, '+10:00', 'yyyy') === year
-			);
+		[2025, 2030, 2050].forEach((year) => {
+			const data = projectionTimeSeriesDatasets.data.find((d) => d.date.getFullYear() === year);
 			if (data) {
 				sparkBarDataset.push(data);
 			} else {
@@ -140,8 +133,8 @@
 		});
 	}
 
-	$: sparkBarXTicks = sparkBarDataset.map(
-		(d) => new Date(`${formatInTimeZone(d.date, '+10:00', 'yyyy')}-01-01`)
+	$: sparkBarXTicks = sparkBarDataset.map((d) =>
+		startOfYear(new Date(`${format(d.date, 'yyyy')}-01-01`))
 	);
 
 	/** @type {TimeSeriesData | undefined} */
@@ -166,7 +159,7 @@
 	<div class="grid grid-cols-6 gap-3 my-6">
 		<div class="text-dark-grey col-span-2 relative">
 			<div class="absolute top-0 z-10 text-sm">
-				<div>
+				<div class="mr-16">
 					<p>
 						A range of modelled scenarios exist which envision the evolution of Australia's National
 						Electricity Market (NEM) over the coming decades.
@@ -178,7 +171,7 @@
 					<p>Explore the <strong>draft 2024 AEMO</strong> future scenarios below.</p>
 				</div>
 
-				<div class="grid grid-cols-1 gap-6 mr-36">
+				<div class="grid grid-cols-1 gap-3 mr-48">
 					{#each scenarios as scenario}
 						<button
 							class="rounded-lg border hover:bg-light-warm-grey px-4 py-4 capitalize"
@@ -197,15 +190,26 @@
 			</div>
 
 			<OverviewChart
-				dataset={updatedHistoricalTimeSeriesDatasets}
+				dataset={filteredHistoricalTimeSeriesDatasets}
 				{xKey}
+				xTicks={hoverData || historicalHoverData
+					? [
+							startOfYear(new Date('2000-01-01')),
+							startOfYear(new Date('2010-01-01')),
+							startOfYear(new Date('2020-01-01'))
+					  ]
+					: [
+							startOfYear(new Date('2000-01-01')),
+							startOfYear(new Date('2010-01-01')),
+							startOfYear(new Date('2020-01-01'))
+					  ]}
 				yKey={[0, 1]}
 				yTicks={0}
 				{yDomain}
 				zKey="key"
 				seriesNames={historicalTimeSeriesDatasets.seriesNames}
 				seriesColours={historicalTimeSeriesDatasets.seriesColours}
-				{formatTickX}
+				formatTickX={formatFyTickX}
 				hoverData={historicalHoverData}
 				on:mousemove={(e) => (historicalHoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (historicalHoverData = undefined)}
@@ -221,12 +225,19 @@
 					description={scenarioDescriptions[selectedScenario]}
 					dataset={projectionTimeSeriesDatasets.data}
 					{xKey}
-					xTicks={[
-						new Date('2051-01-01'),
-						new Date('2041-01-01'),
-						new Date('2031-01-01'),
-						new Date('2025-01-01')
-					]}
+					xTicks={hoverData || historicalHoverData
+						? [
+								startOfYear(new Date('2051-01-01')),
+								startOfYear(new Date('2041-01-01')),
+								startOfYear(new Date('2031-01-01')),
+								startOfYear(new Date('2025-01-01'))
+						  ]
+						: [
+								startOfYear(new Date('2051-01-01')),
+								startOfYear(new Date('2041-01-01')),
+								startOfYear(new Date('2031-01-01')),
+								startOfYear(new Date('2025-01-01'))
+						  ]}
 					yKey={[0, 1]}
 					yTicks={2}
 					{yDomain}
@@ -236,7 +247,7 @@
 					{hoverData}
 					overlay={true}
 					bgClass="bg-light-warm-grey"
-					{formatTickX}
+					formatTickX={formatFyTickX}
 					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 					on:mouseout={() => (hoverData = undefined)}
 				/>

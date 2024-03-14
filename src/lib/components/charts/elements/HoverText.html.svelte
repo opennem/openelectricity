@@ -38,13 +38,13 @@
 		if (position === 'top') {
 			style = `left: ${left}px; top: -${textOffsetHeight}px`;
 		} else {
-			style = `left: ${left}px; top: ${$height}px`;
+			style = `left: ${left}px; top: ${$height + 5}px`;
 		}
 	}
 </script>
 
 {#if visible}
-	<div class="absolute" {style} bind:this={textContainer}>
+	<div class="absolute whitespace-nowrap" {style} bind:this={textContainer}>
 		<slot />
 	</div>
 {/if}

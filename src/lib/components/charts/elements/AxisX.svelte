@@ -93,8 +93,8 @@
 				<text
 					x={isBandwidth ? $xScale.bandwidth() / 2 + xTick : xTick}
 					y={yTick}
-					dx=""
-					dy=""
+					dx="0"
+					dy="0"
 					text-anchor={textAnchor(i)}
 				>
 					{formatTick(tick)}
@@ -110,8 +110,8 @@
 
 <style>
 	.tick {
-		font-size: 10px;
-		font-weight: 400;
+		/* font-size: 10px;
+		font-weight: 400; */
 	}
 	line,
 	.tick line {
@@ -120,11 +120,12 @@
 
 	.tick text {
 		fill: #666;
+		font-size: 10px;
 	}
 
 	.tick .tick-mark,
 	.baseline {
-		stroke-dasharray: 0;
+		stroke-dasharray: 1;
 	}
 
 	.axis.snapTicks .tick:last-child text {

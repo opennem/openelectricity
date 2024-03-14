@@ -15,7 +15,7 @@
 
 		const find = d.find((item) => item.data.time === hoverData.time);
 
-		return $yGet(find)[1];
+		return find ? $yGet(find)[1] : 0;
 	};
 
 	$: r = (d) => {

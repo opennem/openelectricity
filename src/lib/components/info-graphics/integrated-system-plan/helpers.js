@@ -1,6 +1,6 @@
 import { format as d3Format } from 'd3-format';
 import { formatInTimeZone } from 'date-fns-tz';
-import { subYears, startOfYear, format } from 'date-fns';
+import { subYears, addYears, startOfYear, format } from 'date-fns';
 
 import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
 
@@ -57,12 +57,11 @@ export const colourReducer = (
 	return acc;
 };
 
-export const formatTickX = (/** @type {Date | number} */ d) =>
-	`'` + formatInTimeZone(d, '+10:00', 'yy');
+export const formatTickX = (/** @type {Date | number} */ d) => {
+	return format(subYears(d, 1), 'yyyy') + '-' + format(d, 'yy');
+};
 
-// minus 1 year to display as FY
-export const formatFyTickX = (/** @type {Date | number} */ d) =>
-	'FY' + formatInTimeZone(subYears(d, 1), '+10:00', 'yy');
+export const formatFyTickX = (/** @type {Date | number} */ d) => 'FY' + format(d, 'yy');
 
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 

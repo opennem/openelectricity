@@ -1,4 +1,11 @@
-import { addMinutes, addMonths, addYears } from 'date-fns';
+import {
+	addMinutes,
+	addMonths,
+	addYears,
+	startOfMinute,
+	startOfMonth,
+	startOfYear
+} from 'date-fns';
 
 /**
  * Parse interval:
@@ -32,18 +39,21 @@ export default function (intervalString) {
 	const length = intervalString.length;
 	const key = intervalString.charAt(length - 1);
 	const incrementerValue = length === 1 ? 1 : parseInt(intervalString.substring(0, length - 1), 10);
-	let incrementerFn;
+	let incrementerFn, startOfFn;
 	let seconds = 0;
 
 	if (durationKeys.includes(key)) {
 		if (key === YEAR) {
 			incrementerFn = /** @type {Function} */ (addYears);
+			startOfFn = /** @type {Function} */ (startOfYear);
 			seconds = incrementerValue * 365 * 24 * 60 * 60;
 		} else if (key === MONTH) {
 			incrementerFn = /** @type {Function} */ (addMonths);
+			startOfFn = /** @type {Function} */ (startOfMonth);
 			seconds = incrementerValue * 30 * 24 * 60 * 60;
 		} else if (key === MINUTES) {
 			incrementerFn = /** @type {Function} */ (addMinutes);
+			startOfFn = /** @type {Function} */ (startOfMinute);
 			seconds = incrementerValue * 60;
 		}
 	} else {
@@ -57,6 +67,7 @@ export default function (intervalString) {
 		seconds,
 		milliseconds: seconds * 1000,
 		incrementerValue,
-		incrementerFn
+		incrementerFn,
+		startOfFn: /** @type {Function} */ (startOfFn)
 	};
 }
