@@ -28,7 +28,7 @@
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
-<div class="py-8 px-12 bg-light-warm-grey rounded-lg">
+<div class="p-8 bg-light-warm-grey rounded-lg">
 	<KeyHeader {key} {title} data={hoverData} />
 
 	<div style="height: 150px;">

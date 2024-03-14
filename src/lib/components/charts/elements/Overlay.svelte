@@ -4,7 +4,7 @@
 	const { width, height, padding } = getContext('LayerCake');
 
 	/** @type {string|null} */
-	export let fill = '#FAF9F6';
+	export let fill = '#FAF9F633';
 </script>
 
 <g class="overlay pointer-events-none" transform="translate({-$padding.left}, 0)">

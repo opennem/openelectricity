@@ -1,5 +1,4 @@
 import { parseISO } from 'date-fns';
-// import { formatInTimeZone } from 'date-fns-tz';
 import useDate from './use-date';
 import parseInterval from '../intervals';
 import timeBucket from './time-bucket';
@@ -18,18 +17,6 @@ export default function (dataset, outputRange, statsType = 'history') {
 	const isLessThanDay = intervalObj.seconds < 86400;
 	const startDate = isLessThanDay ? parseISO(starts[0]) : new Date(useDate(starts[0]));
 	const lastDate = isLessThanDay ? parseISO(lasts[0]) : new Date(useDate(lasts[0]));
-
-	console.log('convert start', intervalObj.startOfFn(startDate));
-	console.log(
-		'bucket start',
-		statsType,
-		timeBucket({
-			start: intervalObj.startOfFn(startDate),
-			last: intervalObj.startOfFn(lastDate),
-			incrementer: intervalObj.incrementerFn,
-			incrementValue: intervalObj.incrementerValue
-		})
-	);
 
 	/** @type {TimeSeriesData[]} */
 	const tsData = timeSeries({

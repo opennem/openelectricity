@@ -81,7 +81,7 @@
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
-<div class="chart-container">
+<div class="chart-container h-[600px] md:h-[680px]">
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
 		x={(/** @type {*} */ d) => d[xKey] || d.data[xKey]}
@@ -142,6 +142,5 @@
 <style>
 	.chart-container {
 		width: 100%;
-		height: 680px;
 	}
 </style>

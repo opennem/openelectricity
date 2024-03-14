@@ -1,15 +1,12 @@
 <script>
-	import { formatInTimeZone } from 'date-fns-tz';
-	import { addYears, startOfYear, format } from 'date-fns';
+	import { startOfYear, format } from 'date-fns';
 
 	import deepCopy from '$lib/utils/deep-copy';
-	import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
 	import {
 		domainGroups,
 		domainOrder,
 		labelReducer,
 		colourReducer,
-		formatTickX,
 		formatFyTickX,
 		scenarios,
 		scenarioLabels,
@@ -146,9 +143,11 @@
 
 <section class="p-4">
 	<header class="grid grid-cols-5">
-		<h1 class="col-span-4">Explore the future of Australia's national electricity market</h1>
+		<h1 class="col-span-5 text-3xl leading-3xl md:text-5xl md:leading-5xl md:col-span-4">
+			Explore the future of Australia's national electricity market
+		</h1>
 
-		<div>
+		<div class="hidden md:block">
 			<ButtonLink href="/isp-tracker">
 				<span>Download Data</span>
 				<Icon icon="arrow-down-tray" size={24} />
@@ -157,9 +156,9 @@
 	</header>
 
 	<div class="grid grid-cols-6 gap-3 my-6">
-		<div class="text-dark-grey col-span-2 relative">
-			<div class="absolute top-0 z-10 text-sm">
-				<div class="mr-16">
+		<div class="text-dark-grey col-span-6 md:col-span-2 relative">
+			<div class="static md:absolute top-0 z-10 text-sm">
+				<div class="md:mr-16">
 					<p>
 						A range of modelled scenarios exist which envision the evolution of Australia's National
 						Electricity Market (NEM) over the coming decades.
@@ -171,10 +170,10 @@
 					<p>Explore the <strong>draft 2024 AEMO</strong> future scenarios below.</p>
 				</div>
 
-				<div class="grid grid-cols-1 gap-3 mr-48">
+				<div class="grid grid-cols-2 md:grid-cols-1 gap-3 md:mr-48">
 					{#each scenarios as scenario}
 						<button
-							class="rounded-lg border hover:bg-light-warm-grey px-4 py-4 capitalize"
+							class="rounded-lg border hover:bg-light-warm-grey px-2 py-4 capitalize"
 							class:border-mid-warm-grey={selectedScenario !== scenario}
 							class:border-dark-grey={selectedScenario === scenario}
 							class:bg-light-warm-grey={selectedScenario === scenario}
@@ -189,73 +188,106 @@
 				</div>
 			</div>
 
-			<OverviewChart
-				dataset={filteredHistoricalTimeSeriesDatasets}
-				{xKey}
-				xTicks={hoverData || historicalHoverData
-					? [
-							startOfYear(new Date('2000-01-01')),
-							startOfYear(new Date('2010-01-01')),
-							startOfYear(new Date('2020-01-01'))
-					  ]
-					: [
-							startOfYear(new Date('2000-01-01')),
-							startOfYear(new Date('2010-01-01')),
-							startOfYear(new Date('2020-01-01'))
-					  ]}
-				yKey={[0, 1]}
-				yTicks={0}
-				{yDomain}
-				zKey="key"
-				seriesNames={historicalTimeSeriesDatasets.seriesNames}
-				seriesColours={historicalTimeSeriesDatasets.seriesColours}
-				formatTickX={formatFyTickX}
-				hoverData={historicalHoverData}
-				on:mousemove={(e) => (historicalHoverData = /** @type {TimeSeriesData} */ (e.detail))}
-				on:mouseout={() => (historicalHoverData = undefined)}
-			/>
-		</div>
-
-		<div class="col-span-4">
-			{#if filteredWithPathwayScenario.length === 0}
-				<p class="mt-6">No data for this scenario and pathway</p>
-			{:else}
+			<div class="invisible absolute md:visible md:relative">
 				<OverviewChart
-					title={`Energy Generation (TWh) under AEMO ${scenarioLabels[selectedScenario]} 2024`}
-					description={scenarioDescriptions[selectedScenario]}
-					dataset={projectionTimeSeriesDatasets.data}
+					dataset={filteredHistoricalTimeSeriesDatasets}
 					{xKey}
 					xTicks={hoverData || historicalHoverData
 						? [
-								startOfYear(new Date('2051-01-01')),
-								startOfYear(new Date('2041-01-01')),
-								startOfYear(new Date('2031-01-01')),
-								startOfYear(new Date('2025-01-01'))
+								startOfYear(new Date('2000-01-01')),
+								startOfYear(new Date('2010-01-01')),
+								startOfYear(new Date('2020-01-01'))
 						  ]
 						: [
-								startOfYear(new Date('2051-01-01')),
-								startOfYear(new Date('2041-01-01')),
-								startOfYear(new Date('2031-01-01')),
-								startOfYear(new Date('2025-01-01'))
+								startOfYear(new Date('2000-01-01')),
+								startOfYear(new Date('2010-01-01')),
+								startOfYear(new Date('2020-01-01'))
 						  ]}
 					yKey={[0, 1]}
-					yTicks={2}
+					yTicks={0}
 					{yDomain}
 					zKey="key"
-					seriesNames={projectionTimeSeriesDatasets.seriesNames}
-					seriesColours={projectionTimeSeriesDatasets.seriesColours}
-					{hoverData}
-					overlay={true}
-					bgClass="bg-light-warm-grey"
+					seriesNames={historicalTimeSeriesDatasets.seriesNames}
+					seriesColours={historicalTimeSeriesDatasets.seriesColours}
 					formatTickX={formatFyTickX}
-					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-					on:mouseout={() => (hoverData = undefined)}
+					hoverData={historicalHoverData}
+					on:mousemove={(e) => (historicalHoverData = /** @type {TimeSeriesData} */ (e.detail))}
+					on:mouseout={() => (historicalHoverData = undefined)}
 				/>
+			</div>
+		</div>
+
+		<div class="col-span-6 md:col-span-4">
+			{#if filteredWithPathwayScenario.length === 0}
+				<p class="mt-6">No data for this scenario and pathway</p>
+			{:else}
+				<div class="relative">
+					<div class="block md:hidden w-[300px] absolute -left-[305px]">
+						<OverviewChart
+							dataset={filteredHistoricalTimeSeriesDatasets}
+							{xKey}
+							xTicks={hoverData || historicalHoverData
+								? [
+										startOfYear(new Date('2000-01-01')),
+										startOfYear(new Date('2010-01-01')),
+										startOfYear(new Date('2020-01-01'))
+								  ]
+								: [
+										startOfYear(new Date('2000-01-01')),
+										startOfYear(new Date('2010-01-01')),
+										startOfYear(new Date('2020-01-01'))
+								  ]}
+							yKey={[0, 1]}
+							yTicks={0}
+							{yDomain}
+							zKey="key"
+							seriesNames={historicalTimeSeriesDatasets.seriesNames}
+							seriesColours={historicalTimeSeriesDatasets.seriesColours}
+							formatTickX={formatFyTickX}
+							hoverData={historicalHoverData}
+							on:mousemove={(e) => (historicalHoverData = /** @type {TimeSeriesData} */ (e.detail))}
+							on:mouseout={() => (historicalHoverData = undefined)}
+						/>
+					</div>
+					<div class="w-full">
+						<OverviewChart
+							title={`Energy Generation (TWh) under AEMO ${scenarioLabels[selectedScenario]} 2024`}
+							description={scenarioDescriptions[selectedScenario]}
+							dataset={projectionTimeSeriesDatasets.data}
+							{xKey}
+							xTicks={hoverData || historicalHoverData
+								? [
+										startOfYear(new Date('2051-01-01')),
+										startOfYear(new Date('2041-01-01')),
+										startOfYear(new Date('2031-01-01')),
+										startOfYear(new Date('2025-01-01'))
+								  ]
+								: [
+										startOfYear(new Date('2051-01-01')),
+										startOfYear(new Date('2041-01-01')),
+										startOfYear(new Date('2031-01-01')),
+										startOfYear(new Date('2025-01-01'))
+								  ]}
+							yKey={[0, 1]}
+							yTicks={2}
+							{yDomain}
+							zKey="key"
+							seriesNames={projectionTimeSeriesDatasets.seriesNames}
+							seriesColours={projectionTimeSeriesDatasets.seriesColours}
+							{hoverData}
+							overlay={true}
+							bgClass="bg-light-warm-grey"
+							formatTickX={formatFyTickX}
+							on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+							on:mouseout={() => (hoverData = undefined)}
+						/>
+					</div>
+				</div>
 			{/if}
 		</div>
 	</div>
 
-	<div class="mt-6 grid grid-cols-5 gap-5">
+	<div class="mt-6 grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-5">
 		{#if dashboard === 'line'}
 			{#each projectionSeriesNames as key}
 				<SparkLineArea

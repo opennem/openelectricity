@@ -105,7 +105,7 @@
 			<h3>{milestones_title}</h3>
 			<SectionLink href="/analysis" title="View all" />
 		</header>
-		<div class="grid grid-cols-4 gap-8">
+		<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
 			{#each milestones as article}
 				<ArticleCard {article} />
 			{/each}
@@ -209,7 +209,7 @@
 			<h3>{analysis_title}</h3>
 			<SectionLink href="/analysis" title="View all Analysis" />
 		</header>
-		<div class="grid grid-cols-4 gap-8">
+		<div class="grid grid-cols-1 md:grid-cols-4 gap-8">
 			{#each articles as article}
 				<ArticleCard {article} />
 			{/each}
