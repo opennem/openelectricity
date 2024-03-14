@@ -32,6 +32,7 @@
 	import parseInterval from '$lib/utils/intervals';
 	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
 	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
+	import { reverse } from 'd3-array';
 
 	/** @type {{ fuelTechs: string[], outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} */
 	export let data;
@@ -287,9 +288,9 @@
 		</div>
 	</div>
 
-	<div class="mt-6 grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-5">
+	<div class="mt-6 grid grid-cols-2 md:grid-cols-6 gap-2 md:gap-5">
 		{#if dashboard === 'line'}
-			{#each projectionSeriesNames as key}
+			{#each [...projectionSeriesNames].reverse() as key}
 				<SparkLineArea
 					dataset={projectionTimeSeriesDatasets.data}
 					{key}
@@ -302,7 +303,7 @@
 				/>
 			{/each}
 		{:else}
-			{#each projectionSeriesNames as key}
+			{#each [...projectionSeriesNames].reverse() as key}
 				<SparkBar
 					dataset={sparkBarDataset}
 					{key}

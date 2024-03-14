@@ -24,7 +24,8 @@ export const domainGroups = {
 	battery: ['battery_discharging', 'battery_VPP_discharging', 'battery_distributed_discharging'],
 
 	wind: ['wind', 'wind_offshore'],
-	solar: ['solar_utility', 'solar_thermal', 'solar_rooftop']
+	solar_utility: ['solar_utility'],
+	solar_rooftop: ['solar_rooftop']
 };
 
 export const domainOrder = [
@@ -38,7 +39,8 @@ export const domainOrder = [
 	// 'battery',
 
 	'wind',
-	'solar'
+	'solar_utility',
+	'solar_rooftop'
 ];
 
 export const labelReducer = (
