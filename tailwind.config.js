@@ -12,6 +12,7 @@ export default {
 			space: ['Space Grotesk', 'sans-serif']
 		},
 		screens: {
+			sm: '640px',
 			md: '1024px',
 			lg: '1440px',
 			xl: '1920px'
@@ -19,7 +20,7 @@ export default {
 		container: {
 			center: true,
 			padding: {
-				DEFAULT: '2rem',
+				DEFAULT: '1.5rem',
 				md: '3rem',
 				lg: '10rem',
 				xl: '24rem'
