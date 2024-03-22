@@ -11,8 +11,8 @@
 	<h3>{mapTitle}</h3>
 	<Switch
 		buttons={[
-			{ label: 'Carbon Intensity', value: 'annual' },
-			{ label: 'Live Flows', value: 'live', icon: 'live' }
+			{ label: 'Live Flows', value: 'live', icon: 'live' },
+			{ label: 'Carbon Intensity', value: 'annual' }
 		]}
 		selected={mapMode}
 		class="justify-center my-4"
