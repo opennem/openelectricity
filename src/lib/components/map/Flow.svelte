@@ -48,7 +48,18 @@
 				stroke="black"
 				stroke-width="1.5"
 			/>
-			<path d="M10 16L4 26L10 36L10 16Z" fill={colour} />
+			<path d="M10 16L4 26L10 36L10 16Z" fill={colour}>
+				<animateTransform
+					attributeName="transform"
+					attributeType="XML"
+					type="translate"
+					from="3 0"
+					to="-3 0"
+					{dur}
+					repeatCount="indefinite"
+				/>
+				<animate attributeName="opacity" {values} {dur} repeatCount="indefinite" />
+			</path>
 		</g>
 	{/if}
 	{#if direction === 'up'}
