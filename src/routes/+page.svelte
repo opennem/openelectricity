@@ -33,7 +33,8 @@
 		scenarios,
 		milestones,
 		dataTrackerData,
-		historyEnergyNemData
+		historyEnergyNemData,
+		mapAllData
 	} = data;
 
 	// Process records
@@ -54,7 +55,7 @@
 
 	// Track map mode and data
 	$: mapMode = 'live';
-	$: mapData = data[mapMode];
+	$: mapData = mapAllData[mapMode];
 
 	// $: console.log('scenarios', scenarios);
 

@@ -10,26 +10,38 @@ export async function load() {
 		`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, chart_title, records_title, analysis_title, goals_title, goals}`
 	);
 
-	/** @type {import('$lib/types/article.types').Article[]} */
-	const articles = await client.fetch(
-		`*[_type == "article" && article_type != "milestone"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
-	);
+	/** @return {Promise<import('$lib/types/article.types').Article[]>} */
+	const articles = async () => {
+		const res = await client.fetch(
+			`*[_type == "article" && article_type != "milestone"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
+		);
+		return res;
+	};
 
-	/** @type {import('$lib/types/article.types').Article[]} */
-	const milestones = await client.fetch(
-		`*[_type == "article" && article_type == "milestone"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
-	);
+	/** @return {Promise<import('$lib/types/article.types').Article[]>} */
+	const milestones = async () => {
+		const res = await client.fetch(
+			`*[_type == "article" && article_type == "milestone"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
+		);
+		return res;
+	};
 
-	const { annual, live } = await energyData();
+	/** @return {Promise<*>} */
+	const energyDataRes = async () => {
+		const res = await energyData();
+		return res;
+	};
+
 	const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
 	if (homepageData && homepageData.length > 0) {
 		return {
 			...homepageData[0],
-			articles,
-			milestones,
-			annual,
-			live,
+			articles: articles(),
+			milestones: milestones(),
+			mapAllData: energyDataRes(),
+			// annual,
+			// live,
 
 			outlookEnergyNem,
 			pathways,
