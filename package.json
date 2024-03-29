@@ -27,7 +27,7 @@
 		"d3-array": "^3.2.4",
 		"d3-interpolate": "^3.0.1",
 		"date-fns": "^2.30.0",
-		"date-fns-tz": "^2.0.0",
+		"date-fns-tz": "^2.0.1",
 		"eslint": "^8.28.0",
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-svelte": "^2.30.0",
