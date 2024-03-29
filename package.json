@@ -10,7 +10,8 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
 		"format": "prettier --plugin-search-dir . --write .",
-		"changeset": "npx changeset"
+		"changeset": "npx changeset",
+		"changeset:version": "npx changeset version"
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.27.1",
