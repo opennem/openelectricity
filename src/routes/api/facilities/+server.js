@@ -13,5 +13,5 @@ export async function GET({ setHeaders }) {
 		const res = Response.json(facilities.sort(byProp('name')));
 		return res;
 	}
-	throw error(404, 'Not found');
+	error(404, 'Not found');
 }

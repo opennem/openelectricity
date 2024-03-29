@@ -98,5 +98,5 @@ export async function POST({ fetch, request }) {
 		return res;
 	}
 
-	throw error(404, 'Not found');
+	error(404, 'Not found');
 }
