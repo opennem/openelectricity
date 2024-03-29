@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity';
 
-/** @type {import('./$types').PageLoad} */
+/** @type {import('./$types').PageServerLoad} */
 export async function load() {
 	const articles = await client.fetch(`*[_type == "article"]{_id, title, slug}`);
 	const tags = await client.fetch(`*[_type == "tag"]{_id, title, slug}`);
