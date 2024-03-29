@@ -48,10 +48,6 @@
 	/** @type {string | undefined} */
 	let hoverKey;
 
-	/** @type {*} */
-	let evt;
-	$: console.log(evt);
-
 	$: stackedData = stack(dataset, seriesNames);
 	$: dailyTicks = dayTicks(dataset[0][xKey], dataset[dataset.length - 1][xKey]);
 	$: maxY = Math.round(Math.max(...dataset.map((d) => d._max || 0)));

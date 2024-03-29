@@ -46,7 +46,6 @@
 	let selectedScenario = scenarios[0];
 
 	$: outlookData = data.outlookEnergyNem.data;
-	$: console.log('outlookData', data.outlookEnergyNem);
 
 	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
 
@@ -60,8 +59,6 @@
 	$: projectionStatsDatasets = new StatsDatasets(filteredWithPathwayScenario, 'projection')
 		.group(domainGroups)
 		.reorder(domainOrder);
-
-	$: console.log('projectionStatsDatasets', projectionStatsDatasets);
 
 	$: projectionTimeSeriesDatasets = new TimeSeriesDatasets(
 		projectionStatsDatasets.data,

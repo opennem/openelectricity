@@ -31,8 +31,6 @@
 	$: seriesNames = timeSeriesDatasets.seriesNames.filter((name) => name !== totalId);
 	$: seriesColours = timeSeriesDatasets.seriesColours;
 	$: seriesLabels = timeSeriesDatasets.seriesLabels;
-
-	$: console.log('statsDatasets', statsDatasets, timeSeriesDatasets, seriesLabels);
 </script>
 
 <Chart

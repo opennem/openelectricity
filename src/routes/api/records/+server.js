@@ -16,8 +16,6 @@ export async function GET(request) {
 		pageParams = `&page=${pageNum}`;
 	}
 
-	console.log(`https://api.dev.opennem.org.au/v4/milestones/?limit=10${dateParams}${pageParams}`);
-
 	const response = await fetch(
 		`https://api.dev.opennem.org.au/v4/milestones/?limit=10${dateParams}${pageParams}`
 	);

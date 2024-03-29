@@ -69,13 +69,7 @@
 	// @ts-ignore
 	// $: datasetMax = maxArr ? Math.max(...maxArr) : 0;
 	$: if (dataset) yTweened.set(maxY);
-
-	$: console.log('maxY', maxY);
 	/** end */
-
-	/** @type {*} */
-	let evt;
-	$: console.log('evt', evt);
 
 	$: stackedData = stack(dataset, seriesNames);
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
@@ -99,7 +93,7 @@
 		</Html>
 
 		<Svg>
-			<AreaStacked on:mousemove={(event) => (evt = event)} on:mouseout />
+			<AreaStacked on:mousemove on:mouseout />
 
 			<HoverLayer {dataset} on:mousemove on:mouseout />
 		</Svg>
