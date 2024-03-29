@@ -4,7 +4,7 @@ The next major iteration of OpenNEM web app.
 
 ## Install
 
-Requires Node.js version 18+.
+Requires Node.js version 20+.
 
 ```bash
 # install node modules
