@@ -4,34 +4,23 @@ import ispData from '$lib/isp';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load() {
-	/** @return {Promise<*>} */
-	const homepageData = async () => {
-		const res = await client.fetch(
-			`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, chart_title, records_title, analysis_title, goals_title, goals}`
-		);
-		return res;
-	};
+	const homepageData = await client.fetch(
+		`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, chart_title, records_title, analysis_title, goals_title, goals}`
+	);
 
-	/** @return {Promise<import('$lib/types/article.types').Article[]>} */
-	const articles = async () => {
-		const res = await client.fetch(
-			`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
-		);
-		return res;
-	};
+	/** @type {Article[]} */
+	const articles = await client.fetch(
+		`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
+	);
 
-	/** @return {Promise<*>} */
-	const energyDataRes = async () => {
-		const res = await energyData();
-		return res;
-	};
+	const energyDataRes = await energyData();
 
 	const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
 	return {
-		homepageData: homepageData(),
-		articles: articles(),
-		mapAllData: energyDataRes(),
+		homepageData,
+		articles,
+		mapAllData: energyDataRes,
 
 		outlookEnergyNem,
 		pathways,
