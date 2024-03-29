@@ -1,5 +1,11 @@
 # opennem-app
 
+## 0.10.1
+
+### Patch Changes
+
+- add publish
+
 ## 0.10.0
 
 ### Minor Changes
