@@ -1,8 +1,12 @@
 import { endOfDay, startOfDay, format, nextDay, addDays } from 'date-fns';
 
-export async function GET(request) {
-	const date = request.url.searchParams.get('date');
-	const pageNum = request.url.searchParams.get('page');
+export async function GET({ url, fetch, setHeaders }) {
+	setHeaders({
+		'cache-control': 'max-age=1800' // 30 mins
+	});
+
+	const date = url.searchParams.get('date');
+	const pageNum = url.searchParams.get('page');
 	let dateParams = '';
 	let pageParams = '';
 
