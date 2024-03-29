@@ -1,6 +1,6 @@
 {
 	"name": "opennem-app",
-	"version": "0.9.0",
+	"version": "0.9.1",
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
@@ -9,8 +9,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
-		"format": "prettier --plugin-search-dir . --write .",
-		"release": "release-it"
+		"format": "prettier --plugin-search-dir . --write ."
 	},
 	"devDependencies": {
 		"@changesets/cli": "^2.27.1",
