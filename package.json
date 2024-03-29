@@ -9,11 +9,13 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
-		"format": "prettier --plugin-search-dir . --write ."
+		"format": "prettier --plugin-search-dir . --write .",
+		"release": "release-it"
 	},
 	"devDependencies": {
 		"@portabletext/svelte": "^2.1.3",
 		"@sanity/client": "^6.5.0",
+		"@sanity/image-url": "^1.0.2",
 		"@sveltejs/adapter-auto": "^2.0.0",
 		"@sveltejs/adapter-cloudflare": "^2.3.3",
 		"@sveltejs/kit": "^1.20.4",
@@ -24,6 +26,7 @@
 		"@types/d3-scale": "^4.0.8",
 		"@types/d3-shape": "^3.1.6",
 		"autoprefixer": "^10.4.16",
+		"chroma-js": "^2.4.2",
 		"d3-array": "^3.2.4",
 		"d3-interpolate": "^3.0.1",
 		"date-fns": "^2.30.0",
@@ -31,24 +34,29 @@
 		"eslint": "^8.28.0",
 		"eslint-config-prettier": "^8.5.0",
 		"eslint-plugin-svelte": "^2.30.0",
+		"js-base64": "^3.7.7",
 		"layercake": "^8.0.2",
 		"postcss": "^8.4.31",
 		"prettier": "^2.8.8",
 		"prettier-plugin-svelte": "^2.10.1",
+		"release-it": "^17.1.1",
 		"svelte": "^4.0.5",
 		"svelte-check": "^3.4.3",
 		"tailwindcss": "^3.4.1",
 		"typescript": "^5.0.0",
+		"uuid": "^9.0.1",
 		"vite": "^4.4.2"
 	},
 	"type": "module",
-	"dependencies": {
-		"@sanity/image-url": "^1.0.2",
-		"chroma-js": "^2.4.2",
-		"install": "^0.13.0",
-		"js-base64": "^3.7.5",
-		"npm": "^10.4.0",
-		"uuid": "^9.0.1",
-		"wcag-color": "^1.1.1"
+	"release-it": {
+		"git": {
+			"tag": true
+		},
+		"github": {
+			"release": true
+		},
+		"npm": {
+			"publish": false
+		}
 	}
 }

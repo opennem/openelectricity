@@ -27,6 +27,4 @@ export async function load() {
 		scenarios,
 		fuelTechs
 	};
-
-	// throw error(404, 'Not found');
 }
