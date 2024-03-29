@@ -20,22 +20,32 @@
 	export let data;
 	const {
 		records,
+		articles,
+		outlookEnergyNem,
+		fuelTechs,
+		scenarios,
+		dataTrackerData,
+		historyEnergyNemData,
+		mapAllData,
+		homepageData
+	} = data;
+
+	const milestones = articles.filter((article) => article.article_type === 'milestone');
+	const analysisArticles = articles.filter((article) => article.article_type === 'analysis');
+
+	if (!homepageData || homepageData.length === 0) {
+		throw new Error('No homepage data found');
+	}
+
+	const {
 		banner_title,
 		banner_statement,
 		milestones_title,
 		chart_title,
 		map_title,
 		records_title,
-		analysis_title,
-		articles,
-		outlookEnergyNem,
-		fuelTechs,
-		scenarios,
-		milestones,
-		dataTrackerData,
-		historyEnergyNemData,
-		mapAllData
-	} = data;
+		analysis_title
+	} = homepageData[0];
 
 	// Process records
 	const dailyRecords = recordsByDay(records);
@@ -211,7 +221,7 @@
 			<SectionLink href="/analysis" title="View all Analysis" />
 		</header>
 		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-			{#each articles as article}
+			{#each analysisArticles as article}
 				<ArticleCard {article} />
 			{/each}
 		</div>

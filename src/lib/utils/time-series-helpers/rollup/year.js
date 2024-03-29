@@ -1,4 +1,4 @@
-import startOfYear from 'date-fns/startOfYear';
+import { startOfYear } from 'date-fns';
 
 /**
  *
