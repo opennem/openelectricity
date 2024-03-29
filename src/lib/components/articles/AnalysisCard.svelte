@@ -15,7 +15,6 @@
 		? 'flex items-center gap-8 justify-between mt-6'
 		: 'flex items-center gap-8 justify-between px-6 my-6';
 
-	$: console.log('article', article);
 	const publishedDate = parse(article.publish_date, 'yyyy-MM-dd', new Date());
 </script>
 

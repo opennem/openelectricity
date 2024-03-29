@@ -6,7 +6,6 @@
 	/** @type {Article} */
 	export let article;
 
-	$: console.log('article', article);
 	const publishedDate = parse(article.publish_date, 'yyyy-MM-dd', new Date());
 </script>
 
