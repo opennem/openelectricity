@@ -1,5 +1,11 @@
 # opennem-app
 
+## 0.11.0
+
+### Minor Changes
+
+- 2e75ce4: test major change
+
 ## 0.10.1
 
 ### Patch Changes
