@@ -1,6 +1,6 @@
 import { client } from '$lib/sanity';
 import { energyData } from '$lib/stats';
-import ispData from '$lib/isp';
+// import ispData from '$lib/isp';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load() {
@@ -15,16 +15,16 @@ export async function load() {
 
 	const energyDataRes = await energyData();
 
-	const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
+	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
 	return {
 		homepageData,
 		articles,
-		mapAllData: energyDataRes,
+		mapAllData: energyDataRes
 
-		outlookEnergyNem,
-		pathways,
-		scenarios,
-		fuelTechs
+		// outlookEnergyNem,
+		// pathways,
+		// scenarios,
+		// fuelTechs
 	};
 }

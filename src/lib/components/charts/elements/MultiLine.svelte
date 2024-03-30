@@ -1,5 +1,7 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
+	import { draw } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
@@ -8,6 +10,12 @@
 	export let hoverData = undefined;
 
 	export let opacity = 1;
+
+	//TODO: refactor transition
+	let show = false;
+	setTimeout(() => {
+		show = true;
+	}, 100);
 
 	$: path = (values) => {
 		return (
@@ -55,12 +63,15 @@
 	}}
 >
 	{#each updatedData as group}
-		<path
-			class="path-line"
-			d={path(group.values)}
-			stroke={$zGet(group)}
-			style="opacity: {opacity};"
-		/>
+		{#if show}
+			<path
+				transition:draw={{ duration: 4000, delay: 1000, easing: quintOut }}
+				class="path-line"
+				d={path(group.values)}
+				stroke={$zGet(group)}
+				style="opacity: {opacity};"
+			/>
+		{/if}
 	{/each}
 </g>
 

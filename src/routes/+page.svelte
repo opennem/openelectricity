@@ -1,10 +1,12 @@
 <script>
 	import { format, isToday } from 'date-fns';
 
+	import ispData from '$lib/isp';
+	import { recordsByDay } from '$lib/records';
+
 	import Map from '$lib/components/map/Map.svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
-	import { recordsByDay } from '$lib/records';
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 	import Switch from '$lib/components/Switch.svelte';
@@ -21,9 +23,9 @@
 	const {
 		records,
 		articles,
-		outlookEnergyNem,
-		fuelTechs,
-		scenarios,
+		// outlookEnergyNem,
+		// fuelTechs,
+		// scenarios,
 		dataTrackerData,
 		historyEnergyNemData,
 		mapAllData,
@@ -32,6 +34,16 @@
 
 	const milestones = articles.filter((article) => article.article_type === 'milestone');
 	const analysisArticles = articles.filter((article) => article.article_type === 'analysis');
+
+	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
+
+	let outlookEnergyNem = null;
+	let fuelTechs = [];
+
+	setTimeout(() => {
+		outlookEnergyNem = ispData().outlookEnergyNem;
+		fuelTechs = ispData().fuelTechs;
+	}, 1000);
 
 	if (!homepageData || homepageData.length === 0) {
 		throw new Error('No homepage data found');
@@ -183,7 +195,9 @@
 </div>
 <div class="bg-white py-16">
 	<div class="container max-w-none lg:container">
-		<InfoGraphicISP data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
+		{#if outlookEnergyNem}
+			<InfoGraphicISP data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
+		{/if}
 	</div>
 </div>
 <div class="bg-light-warm-grey py-40">

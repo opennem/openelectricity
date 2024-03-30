@@ -31,7 +31,32 @@
 	$: seriesNames = timeSeriesDatasets.seriesNames.filter((name) => name !== totalId);
 	$: seriesColours = timeSeriesDatasets.seriesColours;
 	$: seriesLabels = timeSeriesDatasets.seriesLabels;
+
+	let transitionDatasets = [];
+	let index = 0;
+	/** @type {number} */
+	let timeout;
+
+	$: {
+		transitionDatasets.push(dataset[index]);
+		index++;
+		timeout = setTimeout(() => {
+			// console.log('setTimeout', index);
+
+			if (index === dataset.length) {
+				clearTimeout(timeout);
+				return;
+			}
+			transitionDatasets.push(dataset[index]);
+			index++;
+
+			// console.log('transitionDatasets', transitionDatasets);
+		}, 1000);
+	}
 </script>
+
+<!-- dataset={transitionDatasets} -->
+<!-- {dataset} -->
 
 <Chart
 	{title}

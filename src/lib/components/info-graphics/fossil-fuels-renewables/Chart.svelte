@@ -1,4 +1,6 @@
 <script>
+	import { fade } from 'svelte/transition';
+
 	import { LayerCake, Svg, Html, flatten, groupLonger } from 'layercake';
 	import { scaleOrdinal } from 'd3-scale';
 	import { formatInTimeZone } from 'date-fns-tz';
@@ -39,12 +41,20 @@
 
 	let innerWidth = 0;
 
+	//TODO: refactor transition
+	let show = false;
+	setTimeout(() => {
+		show = true;
+	}, 500);
+
 	$: md = innerWidth > 1024;
 	$: chartBottom = md ? 40 : 100;
 	$: chartLeft = md ? 0 : 0;
 	$: chartRight = md ? 0 : 0;
 
-	$: groupedData = groupLonger(dataset, seriesNames);
+	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
+
+	$: console.log('groupedData', groupedData);
 
 	$: flatData = flatten(groupedData, 'values');
 	$: latestDatapoint = dataset[dataset.length - 1];
@@ -114,13 +124,17 @@
 			</HoverText>
 			<HoverLine {hoverData} />
 
-			<Annotations
-				rounded={hoverData !== undefined}
-				annotation={hoverData || latestDatapoint}
-				dataset={historicalDataset}
-				{seriesLabels}
-				showBesideLatestPoint={md}
-			/>
+			{#if show}
+				<div transition:fade={{ delay: 3500, duration: 300 }}>
+					<Annotations
+						rounded={hoverData !== undefined}
+						annotation={hoverData || latestDatapoint}
+						dataset={historicalDataset}
+						{seriesLabels}
+						showBesideLatestPoint={md}
+					/>
+				</div>
+			{/if}
 		</Html>
 	</LayerCake>
 </div>
