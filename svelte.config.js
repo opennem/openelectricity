@@ -23,6 +23,9 @@ const config = {
 			handleHttpError: 'warn'
 		}
 	},
+	vitePlugin: {
+		inspector: true
+	},
 	preprocess: vitePreprocess()
 };
 
