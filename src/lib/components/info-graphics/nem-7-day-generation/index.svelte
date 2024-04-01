@@ -15,7 +15,7 @@
 	$: statsDatasets = new StatsDatasets(data, 'history')
 		.mergeAndInterpolate()
 		.invertLoadValues(loadFts)
-		// .group(domainGroups)
+		.group(domainGroups)
 		.reorder(domainOrder).data;
 
 	$: timeSeriesDatasets = new TimeSeriesDatasets(

@@ -13,25 +13,27 @@ export const domainGroups = {
 	battery_discharging: ['battery_discharging'],
 	hydro: ['hydro'],
 	wind: ['wind'],
-	solar: ['solar_utility', 'solar_rooftop']
+	solar_utility: ['solar_utility'],
+	solar_rooftop: ['solar_rooftop']
 };
 
-// export const domainOrder = [
-// 	'battery_charging',
-// 	'pumps',
-// 	'exports',
-// 	'imports',
-// 	'coal',
-// 	'bioenergy',
-// 	'distillate',
-// 	'gas',
-// 	'battery_discharging',
-// 	'hydro',
-// 	'wind',
-// 	'solar'
-// ];
+export const domainOrder = [
+	'battery_charging',
+	'pumps',
+	'exports',
+	'imports',
+	'coal',
+	'bioenergy',
+	'distillate',
+	'gas',
+	'battery_discharging',
+	'hydro',
+	'wind',
+	'solar_utility',
+	'solar_rooftop'
+];
 
-export const domainOrder = fuelTechOrder;
+// export const domainOrder = fuelTechOrder;
 
 /** @type {FuelTechCode[]} */
 export const loadFts = ['exports', 'battery_charging', 'pumps'];
