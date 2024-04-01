@@ -43,9 +43,13 @@
 
 	//TODO: refactor transition
 	let show = false;
+	let interact = false;
 	setTimeout(() => {
 		show = true;
 	}, 500);
+	setTimeout(() => {
+		interact = true;
+	}, 6000);
 
 	$: md = innerWidth > 1024;
 	$: chartBottom = md ? 40 : 100;
@@ -111,7 +115,8 @@
 			<MultiLine {hoverData} />
 			<HoverLayer
 				{dataset}
-				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+				on:mousemove={(e) =>
+					(hoverData = interact ? /** @type {TimeSeriesData} */ (e.detail) : undefined)}
 				on:mouseout={() => (hoverData = undefined)}
 			/>
 		</Svg>
