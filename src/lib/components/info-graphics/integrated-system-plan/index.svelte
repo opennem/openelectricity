@@ -32,7 +32,6 @@
 	import parseInterval from '$lib/utils/intervals';
 	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
 	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
-	import { reverse } from 'd3-array';
 
 	/** @type {{ fuelTechs: string[], outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} */
 	export let data;
@@ -108,7 +107,7 @@
 	});
 
 	$: filteredHistoricalTimeSeriesDatasets = updatedHistoricalTimeSeriesDatasets.filter(
-		(d) => d.date.getFullYear() < 2024 && d.date.getFullYear() > 1999
+		(d) => d.date.getFullYear() < 2024 && d.date.getFullYear() > 2009
 	);
 
 	$: sparkLineXTicks = [2025, 2052].map((year) => startOfYear(new Date(`${year}-01-01`)));
@@ -153,7 +152,7 @@
 		</div>
 	</header>
 
-	<div class="grid grid-cols-6 gap-3 my-6">
+	<div class="grid grid-cols-6 gap-10 my-6">
 		<div class="text-dark-grey col-span-6 md:col-span-2 relative">
 			<div class="static md:absolute top-0 z-10 text-sm">
 				<div class="md:mr-16">
@@ -190,17 +189,7 @@
 				<OverviewChart
 					dataset={filteredHistoricalTimeSeriesDatasets}
 					{xKey}
-					xTicks={hoverData || historicalHoverData
-						? [
-								startOfYear(new Date('2000-01-01')),
-								startOfYear(new Date('2010-01-01')),
-								startOfYear(new Date('2020-01-01'))
-						  ]
-						: [
-								startOfYear(new Date('2000-01-01')),
-								startOfYear(new Date('2010-01-01')),
-								startOfYear(new Date('2020-01-01'))
-						  ]}
+					xTicks={[startOfYear(new Date('2010-01-01')), startOfYear(new Date('2023-01-01'))]}
 					yKey={[0, 1]}
 					yTicks={0}
 					{yDomain}
@@ -224,17 +213,7 @@
 						<OverviewChart
 							dataset={filteredHistoricalTimeSeriesDatasets}
 							{xKey}
-							xTicks={hoverData || historicalHoverData
-								? [
-										startOfYear(new Date('2000-01-01')),
-										startOfYear(new Date('2010-01-01')),
-										startOfYear(new Date('2020-01-01'))
-								  ]
-								: [
-										startOfYear(new Date('2000-01-01')),
-										startOfYear(new Date('2010-01-01')),
-										startOfYear(new Date('2020-01-01'))
-								  ]}
+							xTicks={[startOfYear(new Date('2010-01-01')), startOfYear(new Date('2023-01-01'))]}
 							yKey={[0, 1]}
 							yTicks={0}
 							{yDomain}
@@ -253,19 +232,12 @@
 							description={scenarioDescriptions[selectedScenario]}
 							dataset={projectionTimeSeriesDatasets.data}
 							{xKey}
-							xTicks={hoverData || historicalHoverData
-								? [
-										startOfYear(new Date('2051-01-01')),
-										startOfYear(new Date('2041-01-01')),
-										startOfYear(new Date('2031-01-01')),
-										startOfYear(new Date('2025-01-01'))
-								  ]
-								: [
-										startOfYear(new Date('2051-01-01')),
-										startOfYear(new Date('2041-01-01')),
-										startOfYear(new Date('2031-01-01')),
-										startOfYear(new Date('2025-01-01'))
-								  ]}
+							xTicks={[
+								startOfYear(new Date('2051-01-01')),
+								startOfYear(new Date('2041-01-01')),
+								startOfYear(new Date('2031-01-01')),
+								startOfYear(new Date('2025-01-01'))
+							]}
 							yKey={[0, 1]}
 							yTicks={2}
 							{yDomain}
