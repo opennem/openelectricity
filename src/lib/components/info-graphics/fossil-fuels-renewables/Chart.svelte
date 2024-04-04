@@ -12,6 +12,8 @@
 	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
 	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
 	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
+	import Element from '$lib/components/charts/elements/Element.svelte';
+
 	import Annotations from './Annotations.svelte';
 
 	import { formatTickX, formatTickY, xDomain, displayXTicks } from './helpers';
@@ -47,7 +49,7 @@
 	let interact = false;
 	setTimeout(() => {
 		show = true;
-	}, 500);
+	}, 1);
 	setTimeout(() => {
 		interact = true;
 	}, 6000);
@@ -65,8 +67,8 @@
 	$: latestDatapoint = dataset[dataset.length - 1];
 
 	$: chartLabelStyles = md
-		? 'italic text-right text-xs text-dark-grey mr-8 z-10 pointer-events-none relative'
-		: 'absolute -top-8 italic text-xs text-dark-grey right-0';
+		? 'text-right text-xs text-mid-grey mr-8 z-10 pointer-events-none relative'
+		: 'absolute -top-8 text-xs text-mid-grey right-0';
 
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
@@ -75,7 +77,7 @@
 
 {#if show}
 	<div
-		class="py-6 md:absolute md:w-6/12 md:mt-[150px] md:ml-24 md:pt-0 md:z-10 md:pointer-events-none"
+		class="py-6 md:absolute md:w-6/12 md:mt-[180px] md:ml-24 md:pt-0 md:z-10 md:pointer-events-none"
 		transition:fly={{ delay: 50, duration: 2000, x: 0, y: -10, opacity: 0, easing: cubicOut }}
 	>
 		<h2 class="text-xl leading-xl font-extrabold md:font-semibold md:text-9xl md:leading-9xl">
@@ -113,6 +115,7 @@
 				tickLabel={!hoverData}
 			/>
 			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
+			<!-- <Element dataset={nightGuides} fill="#33333311" clipPathId="clip-path" /> -->
 
 			<!-- <MultiLine opacity={0.05} /> -->
 

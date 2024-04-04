@@ -3,7 +3,16 @@
 	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
 	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
 
-	import { domainGroups, domainOrder, loadFts, labelReducer, colourReducer } from './helpers';
+	import {
+		domainGroups,
+		domainOrder,
+		loadFts,
+		labelReducer,
+		colourReducer,
+		fuelTechName,
+		fuelTechColour,
+		legend
+	} from './helpers';
 
 	import Chart from './Chart.svelte';
 
@@ -30,6 +39,8 @@
 		.updateMinMax(loadFts);
 
 	$: dataset = timeSeriesDatasets.data;
+
+	$: console.log(domainOrder);
 </script>
 
 {#if dataset.length === 0}
@@ -44,4 +55,13 @@
 		seriesColours={timeSeriesDatasets.seriesColours}
 		seriesLabels={timeSeriesDatasets.seriesLabels}
 	/>
+
+	<dl class="flex justify-center gap-6">
+		{#each legend.toReversed() as d}
+			<dt class="flex items-center gap-2 text-xs text-mid-grey">
+				<span class="w-6 h-6 block rounded" style="background-color: {fuelTechColour(d)}" />
+				<span>{fuelTechName(d)}</span>
+			</dt>
+		{/each}
+	</dl>
 {/if}

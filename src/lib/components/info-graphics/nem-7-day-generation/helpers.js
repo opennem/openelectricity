@@ -53,3 +53,17 @@ export const colourReducer = (
 	acc[d.id] = d.fuel_tech ? fuelTechColour(d.fuel_tech) : '';
 	return acc;
 };
+
+export const legend = [
+	'coal',
+	'bioenergy',
+	'distillate',
+	'gas',
+	'battery_discharging',
+	'hydro',
+	'wind',
+	'solar_utility',
+	'solar_rooftop'
+];
+
+export { fuelTechName, fuelTechColour };

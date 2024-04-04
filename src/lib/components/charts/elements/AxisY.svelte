@@ -58,7 +58,7 @@
 	transform="translate({-$padding.left}, 0)"
 	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
 >
-	{#each tickVals as tick (tick)}
+	{#each tickVals as tick, i (tick)}
 		<g
 			class="tick tick-{tick}"
 			transform="translate({$xRange[0] + (isBandwidth ? $padding.left : 0)}, {$yScale(tick)})"
@@ -66,7 +66,7 @@
 			{#if gridlines !== false}
 				<line
 					class="gridline"
-					{stroke}
+					stroke={i === 0 ? 'black' : stroke}
 					x2="100%"
 					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
 					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}

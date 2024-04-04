@@ -20,6 +20,7 @@
 	import LogoMark from '$lib/images/logo-mark.svelte';
 
 	import { dataTrackerLink } from '$lib/stores/app';
+	import { hr } from 'date-fns/locale';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -78,6 +79,11 @@
 		return remaining > 0;
 	});
 
+	const mapJsons = mapAllData.originalJsons;
+	const mapDataCached = mapAllData.cached;
+
+	console.log('mapJsons', mapJsons, 'cached', mapDataCached);
+
 	// Track map mode and data
 	$: mapMode = 'live';
 	$: mapData = mapAllData[mapMode];
@@ -110,21 +116,17 @@
 		</div>
 	</div>
 
-	<div class="bg-white py-16">
+	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
-			<header class="flex justify-start items-center md:justify-between">
+			<header class="text-center">
 				<h3>{chart_title}</h3>
-				<ButtonLink href={$dataTrackerLink} class="hidden md:flex">
-					View full data tracker
-					<Icon icon="arrow-right-circle" size={24} />
-				</ButtonLink>
 			</header>
 
 			<section class="my-16">
 				<InfoGraphicNem7DayGeneration data={dataTrackerData} />
 			</section>
 
-			<footer class="flex justify-center md:hidden">
+			<footer class="flex justify-center">
 				<ButtonLink href={$dataTrackerLink}>
 					View full data tracker
 					<Icon icon="arrow-right-circle" size={24} />
@@ -133,7 +135,9 @@
 		</div>
 	</div>
 
-	<div class="bg-white py-16">
+	<hr class="w-[90%] mx-auto bg-mid-warm-grey border-0 h-px" />
+
+	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
 			<header class="flex justify-between">
 				<h3>{milestones_title}</h3>
@@ -149,7 +153,7 @@
 
 	<div class="md:bg-light-warm-grey">
 		<div class="container max-w-none lg:container">
-			<div class="md:grid grid-cols-2 gap-36 py-16">
+			<div class="md:grid grid-cols-2 gap-36 py-32">
 				<MapHeader
 					{mapMode}
 					mapTitle={map_title}
@@ -204,7 +208,7 @@
 			</div>
 		</div>
 	</div>
-	<div class="bg-white py-16">
+	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
 			{#if outlookEnergyNem}
 				<InfoGraphicISP data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
@@ -239,7 +243,7 @@
 			</footer>
 		</div>
 	</div>
-	<div class="bg-white py-16">
+	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
 			<header class="flex justify-between">
 				<h3>{analysis_title}</h3>

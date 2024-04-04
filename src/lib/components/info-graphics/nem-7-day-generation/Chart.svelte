@@ -64,6 +64,7 @@
 	};
 
 	$: nightGuides = nighttimes(dataset[0].date, dataset[dataset.length - 1].date);
+	$: console.log('nightGuides', nightGuides);
 </script>
 
 <div class="chart-container h-[300px] md:h-[500px]">
@@ -104,9 +105,7 @@
 					</div>
 				</div>
 			{:else}
-				<div class="italic text-right text-xs text-dark-grey -mt-8">
-					Last 7 days Power Generation (GW)
-				</div>
+				<div class="text-right text-xs text-mid-grey -mt-8">Last 7 days Power Generation (GW)</div>
 			{/if}
 		</Html>
 

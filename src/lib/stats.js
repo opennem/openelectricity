@@ -3,25 +3,34 @@ import { format, isToday } from 'date-fns';
 
 const DISPATCH_CACHE_T = 60 * 5 * 1000;
 
+/**
+ * @type {number | null}
+ */
 export let dispatchTime = null;
 let energyDataStore = null;
 
 export const energyData = async () => {
+	// TODO: this doesn't work as expected, need to fix.
 	// If we have a valid previous dispatch time and cached data,
 	// and the dispatch time is less than the cache expiry time, return the cache
 	if (energyDataStore && dispatchTime && Date.now() - dispatchTime < DISPATCH_CACHE_T) {
+		energyDataStore.cached = true;
 		return energyDataStore;
 	}
+
+	const originalJsons = {};
 
 	// Fetch live flows data from API
 	const flowsResponse = await fetch(`${PUBLIC_FLOWS_API}/nem`);
 	const flows = {};
 
 	if (flowsResponse.ok) {
-		let flowsData = await flowsResponse.json();
-		dispatchTime = Date.parse(flowsData.data[0].history.last);
-
-		flowsData.data.every((region) => {
+		originalJsons.flows = await flowsResponse.json();
+		/**
+		 * get each region's flow latest flow data and dispatch time
+		 */
+		dispatchTime = Date.parse(originalJsons.flows.data[0].history.last);
+		originalJsons.flows.data.forEach((region) => {
 			flows[region.code] = region.history.data[region.history.data.length - 1];
 			return true;
 		});
@@ -32,10 +41,13 @@ export const energyData = async () => {
 	const prices = {};
 
 	if (priceResponse.ok) {
-		let pricesData = await priceResponse.json();
+		originalJsons.prices = await priceResponse.json();
 
-		pricesData.data.every((region) => {
-			prices[region.code] = region.history.data[region.history.data.length - 1] * 1000;
+		/**
+		 * get each region's flow latest price data
+		 */
+		originalJsons.prices.data.every((region) => {
+			prices[region.code] = region.history.data[region.history.data.length - 1];
 			return true;
 		});
 	}
@@ -158,8 +170,10 @@ export const energyData = async () => {
 	};
 
 	energyDataStore = {
+		cached: false,
 		annual,
-		live
+		live,
+		originalJsons
 	};
 
 	return energyDataStore;

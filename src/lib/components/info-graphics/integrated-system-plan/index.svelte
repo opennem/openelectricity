@@ -285,7 +285,7 @@
 		{/if}
 	</div>
 
-	<div class="mx-auto w-[130px] mt-6">
+	<!-- <div class="mx-auto w-[130px] mt-6">
 		<DashboardViewOptions current={dashboard} on:change={(evt) => (dashboard = evt.detail)} />
-	</div>
+	</div> -->
 </section>

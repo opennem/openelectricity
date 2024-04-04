@@ -4,9 +4,7 @@
 </script>
 
 <div class="relative">
-	<div
-		class="italic text-center md:text-right text-[10px] md:text-xs text-dark-grey md:mr-8 mt-3 md:mt-3"
-	>
+	<div class="text-center md:text-right text-[10px] md:text-xs text-mid-grey md:mr-8 mt-3 md:mt-3">
 		{title}
 	</div>
 	<div

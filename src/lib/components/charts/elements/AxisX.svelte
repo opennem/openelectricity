@@ -125,7 +125,7 @@
 
 	.tick .tick-mark,
 	.baseline {
-		stroke-dasharray: 1;
+		stroke-dasharray: 0;
 	}
 
 	.axis.snapTicks .tick:last-child text {

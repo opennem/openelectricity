@@ -80,6 +80,6 @@
 		fill: none;
 		stroke-linejoin: round;
 		stroke-linecap: round;
-		stroke-width: 4px;
+		stroke-width: 6px;
 	}
 </style>
