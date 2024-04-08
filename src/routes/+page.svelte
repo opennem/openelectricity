@@ -20,7 +20,6 @@
 	import LogoMark from '$lib/images/logo-mark.svelte';
 
 	import { dataTrackerLink } from '$lib/stores/app';
-	import { hr } from 'date-fns/locale';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -208,6 +207,7 @@
 			</div>
 		</div>
 	</div>
+
 	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
 			{#if outlookEnergyNem}
@@ -245,9 +245,9 @@
 	</div>
 	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
-			<header class="flex justify-between">
+			<header class="flex justify-between items-center">
 				<h3>{analysis_title}</h3>
-				<SectionLink href="/analysis" title="View all Analysis" />
+				<SectionLink href="/analysis" title="View all analyses" />
 			</header>
 			<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
 				{#each analysisArticles as article}
