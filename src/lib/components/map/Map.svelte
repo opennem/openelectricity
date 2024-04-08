@@ -16,8 +16,13 @@
 	export let mode = 'live';
 	export let data = null;
 	export let flows = null;
+	export let prices = null;
 
 	const absRound = (val) => Math.abs(Math.round(val));
+	const auDollar = new Intl.NumberFormat('en-AU', {
+		style: 'currency',
+		currency: 'AUD'
+	});
 
 	$: stateData = data.rows.reduce((acc, row) => {
 		acc[row.state] = row;
@@ -27,23 +32,28 @@
 	$: priceColourScale = createPriceScale(1000);
 	$: intensityColourScale = createIntensityScale(500);
 
+	$: modeLive = mode === 'live';
+
+	$: tasText = prices && modeLive ? `${auDollar.format(prices.TAS1)}` : stateData.TAS.intensity;
+	$: vicText = prices && modeLive ? `${auDollar.format(prices.VIC1)}` : stateData.VIC.intensity;
+	$: saText = prices && modeLive ? `${auDollar.format(prices.SA1)}` : stateData.SA.intensity;
+	$: qldText = prices && modeLive ? `${auDollar.format(prices.QLD1)}` : stateData.QLD.intensity;
+	$: nswText = prices && modeLive ? `${auDollar.format(prices.NSW1)}` : stateData.NSW.intensity;
+	$: waText = prices && modeLive ? '' : stateData.WA.intensity;
+
 	/**
 	 * Get the fill colour for the state based on the map mode and data
 	 * @param {string} state
 	 * @returns {string}
 	 */
 	$: getStateFillColour = (state) => {
-		if (!data) return '#FFFFFF';
+		// if (!data) return '#FFFFFF';
 
-		let scale = priceColourScale;
-		let key = 'price';
+		const scale = modeLive ? priceColourScale : intensityColourScale;
 
-		if (mode === 'annual') {
-			scale = intensityColourScale;
-			key = 'intensity';
-		}
+		// console.log('.prices[state]', prices, prices[state]);
 
-		return scale(stateData[state][key]);
+		return modeLive ? scale(prices[`${state}1`]) : scale(stateData[state].intensity);
 	};
 
 	/**
@@ -83,7 +93,7 @@
 	{#if data}
 		<!-- PRICE/EMISSIONS LABELS -->
 		<MapLabel
-			text={mode === 'live' ? `$${stateData.TAS.price}` : stateData.TAS.intensity}
+			text={tasText}
 			colour="#000000"
 			x={515}
 			y={552}
@@ -91,40 +101,20 @@
 			textAnchor="left"
 		/><!-- Tas -->
 		<MapLabel text="N/A" colour="#6A6A6A" x={310} y={170} /><!-- NT -->
+		<MapLabel text={saText} colour={getStateTextColour('SA')} x={330} y={330} /><!-- SA -->
 		<MapLabel
-			text={mode === 'live' ? `$${stateData.SA.price}` : stateData.SA.intensity}
-			colour={getStateTextColour('SA')}
-			x={330}
-			y={330}
-		/><!-- SA -->
-		<MapLabel
-			text={mode === 'live' ? `$${stateData.VIC.price}` : stateData.VIC.intensity}
+			text={vicText}
 			colour="#000000"
 			x={560}
 			y={498}
 			bg={true}
 			textAnchor="left"
 		/><!-- VIC -->
-		<MapLabel
-			text={mode === 'live' ? `$${stateData.WA.price}` : stateData.WA.intensity}
-			colour={getStateTextColour('WA')}
-			x={130}
-			y={263}
-		/><!-- WA -->
-		<MapLabel
-			text={mode === 'live' ? `$${stateData.QLD.price}` : stateData.QLD.intensity}
-			colour={getStateTextColour('QLD')}
-			x={480}
-			y={229}
-		/><!-- QLD -->
-		<MapLabel
-			text={mode === 'live' ? `$${stateData.NSW.price}` : stateData.NSW.intensity}
-			colour={getStateTextColour('NSW')}
-			x={500}
-			y={383}
-		/><!-- NSW -->
+		<MapLabel text={waText} colour={getStateTextColour('WA')} x={130} y={263} /><!-- WA -->
+		<MapLabel text={qldText} colour={getStateTextColour('QLD')} x={480} y={229} /><!-- QLD -->
+		<MapLabel text={nswText} colour={getStateTextColour('NSW')} x={500} y={383} /><!-- NSW -->
 
-		{#if flows}
+		{#if modeLive && flows}
 			<!-- FLOWS -->
 			<Flow
 				direction={flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}

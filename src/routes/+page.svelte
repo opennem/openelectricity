@@ -23,6 +23,7 @@
 	const {
 		records,
 		flows,
+		prices,
 		articles,
 		// outlookEnergyNem,
 		// fuelTechs,
@@ -82,6 +83,7 @@
 	console.log('mapJsons', mapJsons, 'cached', mapDataCached);
 
 	console.log('flows', flows);
+	console.log('prices', prices);
 
 	$: allReady =
 		articles.length > 0 &&
@@ -95,7 +97,7 @@
 	<div class="md:bg-light-warm-grey">
 		<div class="container max-w-none lg:container">
 			<div class="md:grid grid-cols-2 gap-36 py-32">
-				<InfoGraphicSystemSnapshot data={mapAllData} title={map_title} {flows} />
+				<InfoGraphicSystemSnapshot data={mapAllData} title={map_title} {flows} {prices} />
 			</div>
 		</div>
 	</div>

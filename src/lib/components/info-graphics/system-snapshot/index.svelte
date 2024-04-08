@@ -2,20 +2,56 @@
 	import { format, isToday } from 'date-fns';
 	import Map from '$lib/components/map/Map.svelte';
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
+	import ColourLegend from '$lib/components/charts/ColourLegend.svelte';
 
 	export let data;
 	export let title = '';
 	export let flows;
+	export let prices;
+
+	const rows = {
+		live: [
+			{ id: 'NSW', label: 'NSW' },
+			{ id: 'QLD', label: 'QLD' },
+			{ id: 'SA', label: 'SA' },
+			{ id: 'TAS', label: 'TAS' },
+			{ id: 'VIC', label: 'VIC' }
+		],
+		annual: [
+			{ id: 'NSW', label: 'NSW' },
+			{ id: 'QLD', label: 'QLD' },
+			{ id: 'SA', label: 'SA' },
+			{ id: 'TAS', label: 'TAS' },
+			{ id: 'VIC', label: 'VIC' },
+			{ id: 'WA', label: 'WA' }
+		]
+	};
+
+	const columns = {
+		live: [
+			{ id: 'state', label: '', unit: '' },
+			{ id: 'price', label: 'Price', unit: '$/MWh' }
+		],
+		annual: [
+			{ id: 'state', label: '', unit: '' },
+			{ id: 'generation', label: 'Generation', unit: 'MW' },
+			{ id: 'renewable', label: 'Renewable', unit: '%' },
+			{ id: 'intensity', label: 'Emission Intensity', unit: 'kgCO₂e/MWh' }
+		]
+	};
 
 	// Track map mode and data
-	$: mapMode = 'live';
+	let mapMode = 'live';
 	$: mapData = data[mapMode];
 	$: dispatchTime = Date.parse(flows.dispatchDateTimeString);
-	$: dispatch = dispatchTime
-		? `${isToday(dispatchTime) ? 'Today ' : ''}${format(dispatchTime, 'HH:mmaaa xxx')}`
-		: '';
+	$: dispatch =
+		mapMode === 'live'
+			? dispatchTime
+				? `${isToday(dispatchTime) ? 'Today ' : ''}${format(dispatchTime, 'HH:mmaaa xxx')}`
+				: ''
+			: 'Avg. past 12 months';
 
-	console.log('flows', flows);
+	$: mapModeRows = rows[mapMode];
 
 	/**
 	 * @param {string} value
@@ -23,16 +59,29 @@
 	function onMapModeChange(value) {
 		mapMode = value;
 	}
+
+	const auDollar = new Intl.NumberFormat('en-AU', {
+		style: 'currency',
+		currency: 'AUD'
+	});
+
+	$: getPrice = (state) => {
+		return auDollar.format(prices.regionPrices[`${state}1`]);
+	};
 </script>
 
 <MapHeader {mapMode} mapTitle={title} onChange={onMapModeChange} {dispatch} class="md:hidden" />
 
-<Map
-	mode={mapMode}
-	data={mapData}
-	flows={flows.regionFlows}
-	class="w-full block h-auto pt-8 md:pt-0"
-/>
+<div>
+	<Map
+		mode={mapMode}
+		data={mapData}
+		flows={flows.regionFlows}
+		prices={prices.regionPrices}
+		class="w-full block h-auto pt-8 md:pt-0"
+	/>
+	<ColourLegend mode={mapMode} />
+</div>
 
 <div class="bg-white rounded-lg md:p-16 text-center">
 	<MapHeader
@@ -46,8 +95,8 @@
 		<table class="text-left w-full">
 			<thead>
 				<tr class="border-b-[0.05rem] border-mid-grey border-solid align-bottom text-xxs">
-					{#each mapData.columns as column}
-						<td class="pb-3 text-left">
+					{#each columns[mapMode] as column}
+						<td class="pb-3 text-right">
 							{#if column.unit}
 								<div class="text-mid-warm-grey">{column.unit}</div>
 							{/if}
@@ -57,13 +106,16 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each mapData.rows as row}
+				{#each mapModeRows as row (row.id)}
 					<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
-						{#each mapData.columns as column, cidx}
-							<td class="py-3 text-sm text-left" class:font-medium={cidx > 0}>
-								{row[column.id]}
+						<td class="py-3 text-sm text-left">
+							{row.label}
+						</td>
+						{#if mapMode === 'live'}
+							<td class="py-3 text-sm text-right">
+								{getPrice(row.id)}
 							</td>
-						{/each}
+						{/if}
 					</tr>
 				{/each}
 			</tbody>

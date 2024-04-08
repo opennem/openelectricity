@@ -59,7 +59,7 @@ export const energyData = async () => {
 			{ id: 'price', label: 'Price', unit: '' },
 			{ id: 'generation', label: 'Generation', unit: 'MW' },
 			{ id: 'renewable', label: 'Renewable', unit: '%' },
-			{ id: 'intensity', label: 'Carbon Intensity', unit: 'KgCO2 / MWh' }
+			{ id: 'intensity', label: 'Emission Intensity', unit: 'kgCO₂e/MWh' }
 		],
 		rows: [
 			{

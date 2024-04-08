@@ -29,11 +29,24 @@ export async function load({ data, fetch }) {
 		};
 	});
 
+	const prices = await fetch('/api/prices').then(async (res) => {
+		const { data: jsonData } = await res.json();
+		const regionPrices = {};
+		jsonData.forEach((region) => {
+			regionPrices[region.code] = region.history.data[region.history.data.length - 1];
+		});
+		return {
+			regionPrices,
+			originalJsons: jsonData
+		};
+	});
+
 	return {
 		...data, // pipe through data from PageServer
 
 		records,
 		flows,
+		prices,
 		dataTrackerData,
 		historyEnergyNemData
 	};
