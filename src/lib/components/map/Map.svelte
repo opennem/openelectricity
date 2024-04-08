@@ -12,9 +12,10 @@
 	import { createIntensityScale, createPriceScale } from '$lib/colours';
 	import chroma from 'chroma-js';
 
-	/** @type {string}*/
+	/** @type {'live' | 'annual'} */
 	export let mode = 'live';
 	export let data = null;
+	export let flows = null;
 
 	const absRound = (val) => Math.abs(Math.round(val));
 
@@ -123,29 +124,29 @@
 			y={383}
 		/><!-- NSW -->
 
-		{#if data.flows}
+		{#if flows}
 			<!-- FLOWS -->
 			<Flow
-				direction={data.flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
-				flow={absRound(data.flows['NSW1->QLD1'])}
+				direction={flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
+				flow={absRound(flows['NSW1->QLD1'])}
 				x={500}
 				y={315}
 			/><!-- QLD <-> NSW -->
 			<Flow
-				direction={data.flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
-				flow={absRound(data.flows['NSW1->VIC1'])}
+				direction={flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
+				flow={absRound(flows['NSW1->VIC1'])}
 				x={480}
 				y={430}
 			/><!-- VIC <-> NSW -->
 			<Flow
-				direction={data.flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
-				flow={absRound(data.flows['TAS1->VIC1'])}
+				direction={flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
+				flow={absRound(flows['TAS1->VIC1'])}
 				x={490}
 				y={495}
 			/><!-- VIC <-> TAS -->
 			<Flow
-				direction={data.flows['SA1->VIC1'] > 0 ? 'right' : 'left'}
-				flow={absRound(data.flows['SA1->VIC1'])}
+				direction={flows['SA1->VIC1'] > 0 ? 'right' : 'left'}
+				flow={absRound(flows['SA1->VIC1'])}
 				x={418}
 				y={440}
 			/><!-- VIC <-> SA -->

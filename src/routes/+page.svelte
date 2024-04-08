@@ -4,27 +4,25 @@
 
 	import ispData from '$lib/isp';
 	import { recordsByDay } from '$lib/records';
+	import { dataTrackerLink } from '$lib/stores/app';
 
-	import Map from '$lib/components/map/Map.svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Icon from '$lib/components/Icon.svelte';
-	import Switch from '$lib/components/Switch.svelte';
 	import InfoGraphicISP from '$lib/components/info-graphics/integrated-system-plan/index.svelte';
 	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
-	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
+	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
 	import LogoMark from '$lib/images/logo-mark.svelte';
-
-	import { dataTrackerLink } from '$lib/stores/app';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
 	const {
 		records,
+		flows,
 		articles,
 		// outlookEnergyNem,
 		// fuelTechs,
@@ -78,14 +76,12 @@
 		return remaining > 0;
 	});
 
+	// TEST map data
 	const mapJsons = mapAllData.originalJsons;
 	const mapDataCached = mapAllData.cached;
-
 	console.log('mapJsons', mapJsons, 'cached', mapDataCached);
 
-	// Track map mode and data
-	$: mapMode = 'live';
-	$: mapData = mapAllData[mapMode];
+	console.log('flows', flows);
 
 	$: allReady =
 		articles.length > 0 &&
@@ -93,18 +89,17 @@
 		dataTrackerData.length > 0 &&
 		historyEnergyNemData.length > 0 &&
 		fuelTechs.length > 0;
-
-	// $: console.log('scenarios', scenarios);
-
-	/**
-	 * @param {string} value
-	 */
-	function onMapModeChange(value) {
-		mapMode = value;
-	}
 </script>
 
 {#if allReady}
+	<div class="md:bg-light-warm-grey">
+		<div class="container max-w-none lg:container">
+			<div class="md:grid grid-cols-2 gap-36 py-32">
+				<InfoGraphicSystemSnapshot data={mapAllData} title={map_title} {flows} />
+			</div>
+		</div>
+	</div>
+
 	<div class="bg-light-warm-grey pt-3 pb-6" transition:fade={{ duration: 500 }}>
 		<div class="container max-w-none lg:container relative">
 			<InfoGraphicFossilFuelsRenewables
@@ -150,64 +145,6 @@
 		</div>
 	</div>
 
-	<div class="md:bg-light-warm-grey">
-		<div class="container max-w-none lg:container">
-			<div class="md:grid grid-cols-2 gap-36 py-32">
-				<MapHeader
-					{mapMode}
-					mapTitle={map_title}
-					onChange={onMapModeChange}
-					dispatch={mapData.dispatch}
-					class="md:hidden"
-				/>
-				<Map mode={mapMode} data={mapData} class="w-full block h-auto pt-8 md:pt-0" />
-				<div>
-					<div class="bg-white rounded-lg md:p-16 text-center">
-						<MapHeader
-							{mapMode}
-							mapTitle={map_title}
-							onChange={onMapModeChange}
-							dispatch={mapData.dispatch}
-							class="hidden md:block"
-						/>
-						<section class="mt-12">
-							<table class="text-left w-full">
-								<thead>
-									<tr class="border-b-[0.05rem] border-mid-grey border-solid align-bottom text-xxs">
-										{#each mapData.columns as column}
-											<td class="pb-3 text-left">
-												{#if column.unit}
-													<div class="text-mid-warm-grey">{column.unit}</div>
-												{/if}
-												{column.label}
-											</td>
-										{/each}
-									</tr>
-								</thead>
-								<tbody>
-									{#each mapData.rows as row}
-										<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
-											{#each mapData.columns as column, cidx}
-												<td class="py-3 text-sm text-left" class:font-medium={cidx > 0}>
-													{row[column.id]}
-												</td>
-											{/each}
-										</tr>
-									{/each}
-								</tbody>
-							</table>
-							{#if mapData.notes}
-								<div class="text-mid-grey pt-8 px-8 text-xs">
-									{#each mapData.notes as note}<div>{note}</div>{/each}
-								</div>
-							{/if}
-						</section>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
 	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
 			{#if outlookEnergyNem}
@@ -215,6 +152,7 @@
 			{/if}
 		</div>
 	</div>
+
 	<div class="bg-light-warm-grey py-40">
 		<div class="container max-w-none lg:container">
 			<header class="text-center">
