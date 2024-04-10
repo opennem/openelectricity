@@ -21,9 +21,14 @@
 	/** @type {import('./$types').PageData} */
 	export let data;
 	const {
-		records,
 		flows,
 		prices,
+
+		regionPower,
+		regionEnergy,
+		regionEmissions,
+
+		records,
 		articles,
 		// outlookEnergyNem,
 		// fuelTechs,
@@ -84,20 +89,26 @@
 
 	console.log('flows', flows);
 	console.log('prices', prices);
+	console.log('regionPower', regionPower);
+	console.log('regionEnergy', regionEnergy);
+	console.log('regionEmissions', regionEmissions);
 
-	$: allReady =
-		articles.length > 0 &&
-		records.length > 0 &&
-		dataTrackerData.length > 0 &&
-		historyEnergyNemData.length > 0 &&
-		fuelTechs.length > 0;
+	$: allReady = dataTrackerData.length > 0 && historyEnergyNemData.length > 0;
 </script>
 
 {#if allReady}
 	<div class="md:bg-light-warm-grey">
 		<div class="container max-w-none lg:container">
 			<div class="md:grid grid-cols-2 gap-36 py-32">
-				<InfoGraphicSystemSnapshot data={mapAllData} title={map_title} {flows} {prices} />
+				<InfoGraphicSystemSnapshot
+					data={mapAllData}
+					title={map_title}
+					{flows}
+					{prices}
+					{regionPower}
+					{regionEnergy}
+					{regionEmissions}
+				/>
 			</div>
 		</div>
 	</div>

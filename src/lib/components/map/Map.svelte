@@ -12,20 +12,27 @@
 	import { createIntensityScale, createPriceScale } from '$lib/colours';
 	import chroma from 'chroma-js';
 
-	import { priceColour } from '$lib/components/info-graphics/system-snapshot/helpers';
+	import {
+		priceColour,
+		intensityColour
+	} from '$lib/components/info-graphics/system-snapshot/helpers';
 
 	/** @type {'live' | 'annual'} */
 	export let mode = 'live';
 	export let data = null;
 	export let flows = null;
 	export let prices = null;
-
-	export let priceColours = [];
+	export let intensity = null;
 
 	const absRound = (val) => Math.abs(Math.round(val));
 	const auDollar = new Intl.NumberFormat('en-AU', {
 		style: 'currency',
 		currency: 'AUD'
+	});
+
+	const auNumber = new Intl.NumberFormat('en-AU', {
+		// minimumFractionDigits: 2,
+		maximumFractionDigits: 0
 	});
 
 	$: stateData = data.rows.reduce((acc, row) => {
@@ -38,12 +45,16 @@
 
 	$: modeLive = mode === 'live';
 
-	$: tasText = prices && modeLive ? `${auDollar.format(prices.TAS1)}` : stateData.TAS.intensity;
-	$: vicText = prices && modeLive ? `${auDollar.format(prices.VIC1)}` : stateData.VIC.intensity;
-	$: saText = prices && modeLive ? `${auDollar.format(prices.SA1)}` : stateData.SA.intensity;
-	$: qldText = prices && modeLive ? `${auDollar.format(prices.QLD1)}` : stateData.QLD.intensity;
-	$: nswText = prices && modeLive ? `${auDollar.format(prices.NSW1)}` : stateData.NSW.intensity;
-	$: waText = prices && modeLive ? '' : stateData.WA.intensity;
+	$: tasText =
+		prices && modeLive ? `${auDollar.format(prices.TAS1)}` : auNumber.format(intensity.TAS);
+	$: vicText =
+		prices && modeLive ? `${auDollar.format(prices.VIC1)}` : auNumber.format(intensity.VIC);
+	$: saText = prices && modeLive ? `${auDollar.format(prices.SA1)}` : auNumber.format(intensity.SA);
+	$: qldText =
+		prices && modeLive ? `${auDollar.format(prices.QLD1)}` : auNumber.format(intensity.QLD);
+	$: nswText =
+		prices && modeLive ? `${auDollar.format(prices.NSW1)}` : auNumber.format(intensity.NSW);
+	$: waText = prices && modeLive ? '' : auNumber.format(intensity.WA);
 
 	/**
 	 * Get the fill colour for the state based on the map mode and data
@@ -59,9 +70,11 @@
 
 		// console.log('prices', state, prices[`${state}1`], priceColour(prices[`${state}1`]));
 
+		// const iColour = state === 'TAS' ? 0 : intensity[state];
+
 		return modeLive
 			? priceColour(prices[`${state}1`]) || '#FFFFFF'
-			: scale(stateData[state].intensity);
+			: intensityColour(intensity[state]);
 	};
 
 	/**

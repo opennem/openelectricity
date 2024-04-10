@@ -41,6 +41,21 @@ export async function load({ data, fetch }) {
 		};
 	});
 
+	const regionPower = await fetch('/api/region-power').then(async (res) => {
+		const jsonData = await res.json();
+		return jsonData;
+	});
+
+	const regionEnergy = await fetch('/api/region-energy').then(async (res) => {
+		const jsonData = await res.json();
+		return jsonData;
+	});
+
+	const regionEmissions = await fetch('/api/region-emissions').then(async (res) => {
+		const jsonData = await res.json();
+		return jsonData;
+	});
+
 	return {
 		...data, // pipe through data from PageServer
 
@@ -48,6 +63,10 @@ export async function load({ data, fetch }) {
 		flows,
 		prices,
 		dataTrackerData,
-		historyEnergyNemData
+		historyEnergyNemData,
+
+		regionPower,
+		regionEnergy,
+		regionEmissions
 	};
 }

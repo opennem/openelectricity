@@ -1,4 +1,5 @@
 import { scaleQuantile, scaleLinear } from 'd3-scale';
+import { id } from 'date-fns/locale';
 export const colourRanges = [0, 0.0625, 0.0656, 0.0688, 0.0813, 0.125, 0.375, 1];
 export const colours = [
 	'#F2F1EE',
@@ -28,9 +29,71 @@ export const priceColour = scaleQuantile(
 );
 
 export const intensityColour = scaleLinear(
-	[0, 100, 200, 300, 400],
-	['#21956C', '#8BB97A', '#E9FFAA', '#A6A36F', '#594929']
+	[0, 100, 200, 300, 400, 500, 600, 700],
+	['#21956C', '#8BB97A', '#E9FFAA', '#A6A36F', '#594929', '#594929', '#594929', '#594929']
 );
 
 console.log('priceColour', priceColour(3000));
 console.log('intensityColour', intensityColour(250));
+
+/** @type {FuelTechCode[]} */
+export const loadFts = ['exports', 'battery_charging', 'pumps'];
+
+/** @type {FuelTechCode[]} */
+export const renewablesFts = [
+	'hydro',
+	'wind',
+	'solar_rooftop',
+	'solar_utility',
+	'bioenergy_biomass'
+];
+
+export function regionGenerationTotal(regions, regionData) {
+	const regionGeneration = {};
+
+	regions.forEach((r) => {
+		const region = regionData[r];
+		const total = region.reduce(
+			(acc, cur) => (loadFts.includes(cur.fuel_tech) ? acc - cur.data : acc + cur.data),
+			0
+		);
+		regionGeneration[r] = total;
+	});
+
+	return regionGeneration;
+}
+
+export function regionRenewablesTotal(regions, regionData) {
+	const regionRenewables = {};
+
+	regions.forEach((r) => {
+		const region = regionData[r];
+		const total = region.reduce(
+			(acc, cur) => (renewablesFts.includes(cur.fuel_tech) ? acc + cur.data : acc),
+			0
+		);
+		regionRenewables[r] = total;
+	});
+
+	return regionRenewables;
+}
+
+export function regionEmissionsTotal(regions, regionData) {
+	const regionEmissions = {};
+
+	regions.forEach((r) => {
+		const region = regionData[r];
+		const total = region.reduce(
+			(acc, cur) =>
+				loadFts.includes(cur.fuel_tech)
+					? cur.fuel_tech === 'exports'
+						? acc - cur.data
+						: acc
+					: acc + cur.data,
+			0
+		);
+		regionEmissions[r] = total;
+	});
+
+	return regionEmissions;
+}

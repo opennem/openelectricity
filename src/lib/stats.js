@@ -106,8 +106,8 @@ export const energyData = async () => {
 			}
 		],
 		notes: [
-			'12 Month rolling average. Updated every day.',
-			'*WA has a capacity market - prices cannot be compared with east coast.'
+			// '12 Month average. Updated every day.'
+			// '*WA has a capacity market - prices cannot be compared with east coast.'
 		]
 	};
 
@@ -165,7 +165,7 @@ export const energyData = async () => {
 		],
 		flows,
 		notes: [
-			'*WA data is based on WA Dispatch time. WA has a capacity market - prices cannot be compared with other states.'
+			// '*WA data is based on WA Dispatch time. WA has a capacity market - prices cannot be compared with other states.'
 		]
 	};
 
