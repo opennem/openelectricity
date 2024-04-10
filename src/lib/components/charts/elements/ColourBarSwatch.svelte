@@ -14,12 +14,11 @@
 	$: rectWidth = $width / ranges.length;
 </script>
 
-<g>
-	<text class="text-sm font-semibold" x="0" y="0">Price</text>
-	{#each ranges as range, i}
-		<g>
-			<rect x={i * rectWidth} y="6" width={rectWidth} height={rectHeight} fill={colours[i]} />
-			<text class="text-xs" x={i * rectWidth} y={rectHeight * 2 + 12}>{labels[i]}</text>
-		</g>
-	{/each}
-</g>
+{#each ranges as range, i}
+	<g>
+		<rect x={i * rectWidth} y="0" width={rectWidth} height={rectHeight} fill={colours[i]} />
+		<text class="text-xs fill-mid-grey font-semibold" x={i * rectWidth} y={rectHeight * 2 + 6}>
+			{labels[i]}
+		</text>
+	</g>
+{/each}

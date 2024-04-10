@@ -2,7 +2,8 @@
 	import { format, isToday } from 'date-fns';
 	import Map from '$lib/components/map/Map.svelte';
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
-	import ColourLegend from '$lib/components/charts/ColourLegend.svelte';
+	import ColourLegend from './ColourLegend.svelte';
+	import { colours, labels, colourRanges, stops } from './helpers.js';
 
 	export let data;
 	export let title = '';
@@ -78,6 +79,7 @@
 		data={mapData}
 		flows={flows.regionFlows}
 		prices={prices.regionPrices}
+		priceColours={colours}
 		class="w-full block h-auto pt-8 md:pt-0"
 	/>
 	<ColourLegend mode={mapMode} />

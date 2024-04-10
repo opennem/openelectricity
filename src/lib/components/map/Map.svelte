@@ -12,11 +12,15 @@
 	import { createIntensityScale, createPriceScale } from '$lib/colours';
 	import chroma from 'chroma-js';
 
+	import { priceColour } from '$lib/components/info-graphics/system-snapshot/helpers';
+
 	/** @type {'live' | 'annual'} */
 	export let mode = 'live';
 	export let data = null;
 	export let flows = null;
 	export let prices = null;
+
+	export let priceColours = [];
 
 	const absRound = (val) => Math.abs(Math.round(val));
 	const auDollar = new Intl.NumberFormat('en-AU', {
@@ -53,7 +57,11 @@
 
 		// console.log('.prices[state]', prices, prices[state]);
 
-		return modeLive ? scale(prices[`${state}1`]) : scale(stateData[state].intensity);
+		// console.log('prices', state, prices[`${state}1`], priceColour(prices[`${state}1`]));
+
+		return modeLive
+			? priceColour(prices[`${state}1`]) || '#FFFFFF'
+			: scale(stateData[state].intensity);
 	};
 
 	/**
@@ -61,7 +69,7 @@
 	 * @param {string} state
 	 */
 	$: getStateTextColour = (state) => {
-		const fill = getStateFillColour(state);
+		const fill = getStateFillColour(state) || '#FFFFFF';
 		return chroma.contrast(fill.toString(), '#FFFFFF') > 4.5 ? '#FFFFFF' : '#000000';
 	};
 </script>
