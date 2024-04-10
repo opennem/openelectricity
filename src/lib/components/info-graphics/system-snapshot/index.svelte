@@ -48,7 +48,7 @@
 		],
 		annual: [
 			{ id: 'state', label: '', unit: '' },
-			{ id: 'intensity', label: 'Emission Intensity', unit: 'kgCO₂e/MWh' },
+			{ id: 'intensity', label: 'Carbon Intensity', unit: 'kgCO₂e/MWh' },
 			{ id: 'generation', label: 'Net Generation', unit: 'GWh' },
 			{ id: 'renewable', label: 'Renewables', unit: '%' }
 		]
