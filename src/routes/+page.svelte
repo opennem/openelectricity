@@ -142,7 +142,7 @@
 		</div>
 	</div>
 
-	<hr class="w-[90%] mx-auto bg-mid-warm-grey border-0 h-px" />
+	<!-- <hr class="w-[90%] mx-auto bg-mid-warm-grey border-0 h-px" />
 
 	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
@@ -156,7 +156,7 @@
 				{/each}
 			</div>
 		</div>
-	</div>
+	</div> -->
 
 	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
@@ -166,7 +166,7 @@
 		</div>
 	</div>
 
-	<div class="bg-light-warm-grey py-40">
+	<!-- <div class="bg-light-warm-grey py-40">
 		<div class="container max-w-none lg:container">
 			<header class="text-center">
 				<h3>{records_title}</h3>
@@ -193,7 +193,8 @@
 				<ButtonLink href="/records" class="inline-flex">View all records</ButtonLink>
 			</footer>
 		</div>
-	</div>
+	</div> -->
+
 	<div class="bg-white py-32">
 		<div class="container max-w-none lg:container">
 			<header class="flex justify-between items-center">
