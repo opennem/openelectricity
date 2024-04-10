@@ -102,7 +102,7 @@
 		{flatData}
 	>
 		<Html pointerEvents={false}>
-			<div class={chartLabelStyles}>NEM 12 Month Rolling Sum (Energy % of total)</div>
+			<div class={chartLabelStyles}>NEM 12 Month Rolling Sum (%)</div>
 		</Html>
 
 		<Svg>
