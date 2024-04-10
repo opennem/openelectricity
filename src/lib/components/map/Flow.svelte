@@ -7,6 +7,12 @@
 
 	const dur = '1.5s';
 	const values = '0.5;1;0';
+
+	let showAnimation = false;
+
+	setInterval(() => {
+		showAnimation = !showAnimation;
+	}, 6000);
 </script>
 
 <svg
@@ -27,16 +33,18 @@
 				stroke-width="1.5"
 			/>
 			<path d="M46.5 36L52.5 26L46.5 16V36Z" fill={colour}>
-				<animateTransform
-					attributeName="transform"
-					attributeType="XML"
-					type="translate"
-					from="-3 0"
-					to="3 0"
-					{dur}
-					repeatCount="indefinite"
-				/>
-				<animate attributeName="opacity" {values} {dur} repeatCount="indefinite" />
+				{#if showAnimation}
+					<animateTransform
+						attributeName="transform"
+						attributeType="XML"
+						type="translate"
+						from="-3 0"
+						to="3 0"
+						{dur}
+						repeatCount="indefinite"
+					/>
+					<animate attributeName="opacity" {values} {dur} repeatCount="indefinite" />
+				{/if}
 			</path>
 		</g>
 	{/if}
@@ -49,16 +57,18 @@
 				stroke-width="1.5"
 			/>
 			<path d="M10 16L4 26L10 36L10 16Z" fill={colour}>
-				<animateTransform
-					attributeName="transform"
-					attributeType="XML"
-					type="translate"
-					from="3 0"
-					to="-3 0"
-					{dur}
-					repeatCount="indefinite"
-				/>
-				<animate attributeName="opacity" {values} {dur} repeatCount="indefinite" />
+				{#if showAnimation}
+					<animateTransform
+						attributeName="transform"
+						attributeType="XML"
+						type="translate"
+						from="3 0"
+						to="-3 0"
+						{dur}
+						repeatCount="indefinite"
+					/>
+					<animate attributeName="opacity" {values} {dur} repeatCount="indefinite" />
+				{/if}
 			</path>
 		</g>
 	{/if}
@@ -71,16 +81,18 @@
 				stroke-width="1.5"
 			/>
 			<path d="M40.377 13L27.5049 5L14.633 13L40.377 13Z" fill={colour}>
-				<animateTransform
-					attributeName="transform"
-					attributeType="XML"
-					type="translate"
-					from="0 3"
-					to="0 -3"
-					{dur}
-					repeatCount="indefinite"
-				/>
-				<animate attributeName="opacity" {values} {dur} repeatCount="indefinite" />
+				{#if showAnimation}
+					<animateTransform
+						attributeName="transform"
+						attributeType="XML"
+						type="translate"
+						from="0 3"
+						to="0 -3"
+						{dur}
+						repeatCount="indefinite"
+					/>
+					<animate attributeName="opacity" {values} {dur} repeatCount="indefinite" />
+				{/if}
 			</path>
 		</g>
 	{/if}
@@ -93,16 +105,18 @@
 				stroke-width="1.5"
 			/>
 			<path d="M14.623 37L27.4951 45L40.367 37L14.623 37Z" fill={colour}>
-				<animateTransform
-					attributeName="transform"
-					attributeType="XML"
-					type="translate"
-					from="0 -3"
-					to="0 3"
-					{dur}
-					repeatCount="indefinite"
-				/>
-				<animate attributeName="opacity" {values} {dur} repeatCount="indefinite" />
+				{#if showAnimation}
+					<animateTransform
+						attributeName="transform"
+						attributeType="XML"
+						type="translate"
+						from="0 -3"
+						to="0 3"
+						{dur}
+						repeatCount="indefinite"
+					/>
+					<animate attributeName="opacity" {values} {dur} repeatCount="indefinite" />
+				{/if}
 			</path>
 		</g>
 	{/if}
