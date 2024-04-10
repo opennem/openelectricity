@@ -1,4 +1,6 @@
 <script>
+	import { afterUpdate } from 'svelte';
+
 	/** @type {string | number | undefined} */
 	export let text = '';
 	export let colour = '#ffffff';
@@ -16,7 +18,11 @@
 	let textElement;
 
 	/** @type {DOMRect | null} */
-	$: textBounds = textElement ? textElement.getBBox() : null;
+	let textBounds = null;
+
+	afterUpdate(() => {
+		textBounds = textElement ? textElement.getBBox() : null;
+	});
 </script>
 
 <g transform={`translate(${x}, ${y})`}>
