@@ -1,4 +1,5 @@
 <script>
+	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { format, isToday } from 'date-fns';
 
@@ -24,9 +25,9 @@
 		flows,
 		prices,
 
-		regionPower,
-		regionEnergy,
-		regionEmissions,
+		// regionPower,
+		// regionEnergy,
+		// regionEmissions,
 
 		records,
 		articles,
@@ -38,6 +39,28 @@
 		mapAllData,
 		homepageData
 	} = data;
+
+	let regionPower;
+	let regionEnergy;
+	let regionEmissions;
+
+	onMount(async () => {
+		console.log('data', data);
+		regionPower = await fetch('/api/region-power').then(async (res) => {
+			const jsonData = await res.json();
+			return jsonData;
+		});
+
+		regionEnergy = await fetch('/api/region-energy').then(async (res) => {
+			const jsonData = await res.json();
+			return jsonData;
+		});
+
+		regionEmissions = await fetch('/api/region-emissions').then(async (res) => {
+			const jsonData = await res.json();
+			return jsonData;
+		});
+	});
 
 	const milestones = articles.filter((article) => article.article_type === 'milestone');
 	const analysisArticles = articles.filter((article) => article.article_type === 'analysis');
@@ -97,22 +120,6 @@
 </script>
 
 {#if allReady}
-	<div class="md:bg-light-warm-grey">
-		<div class="container max-w-none lg:container">
-			<div class="md:grid grid-cols-2 gap-36 py-32">
-				<InfoGraphicSystemSnapshot
-					data={mapAllData}
-					title={map_title}
-					{flows}
-					{prices}
-					{regionPower}
-					{regionEnergy}
-					{regionEmissions}
-				/>
-			</div>
-		</div>
-	</div>
-
 	<div class="bg-light-warm-grey pt-3 pb-6" transition:fade={{ duration: 500 }}>
 		<div class="container max-w-none lg:container relative">
 			<InfoGraphicFossilFuelsRenewables
@@ -141,6 +148,24 @@
 			</footer>
 		</div>
 	</div>
+
+	{#if regionPower && regionEnergy && regionEmissions}
+		<div class="md:bg-light-warm-grey">
+			<div class="container max-w-none lg:container">
+				<div class="md:grid grid-cols-2 gap-36 py-32">
+					<InfoGraphicSystemSnapshot
+						data={mapAllData}
+						title={map_title}
+						{flows}
+						{prices}
+						{regionPower}
+						{regionEnergy}
+						{regionEmissions}
+					/>
+				</div>
+			</div>
+		</div>
+	{/if}
 
 	<!-- <hr class="w-[90%] mx-auto bg-mid-warm-grey border-0 h-px" />
 

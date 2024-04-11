@@ -2,9 +2,9 @@ import { error } from '@sveltejs/kit';
 import { PUBLIC_JSON_API } from '$env/static/public';
 
 export async function GET({ fetch, setHeaders }) {
-	// setHeaders({
-	// 	'cache-control': 'max-age=1800' // 30 mins
-	// });
+	setHeaders({
+		'cache-control': 'max-age=300' // 5 mins
+	});
 
 	const nsw = await fetch(`${PUBLIC_JSON_API}/au/NEM/NSW1/power/7d.json`);
 	const qld = await fetch(`${PUBLIC_JSON_API}/au/NEM/QLD1/power/7d.json`);
