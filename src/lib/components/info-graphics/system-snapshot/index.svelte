@@ -69,7 +69,7 @@
 	);
 
 	let intensity = {};
-	const intensityScale = scaleLinear().domain([0, 900]).range([0, 70]);
+	const intensityScale = scaleLinear().domain([0, 900]).range([0, 100]);
 
 	$: {
 		updateIntensity(emissionsTotal, generationTotal);
@@ -168,8 +168,11 @@
 							{#if !(mapMode === 'annual' && i === 2)}
 								<td
 									class="pb-3"
-									class:text-right={mapMode === 'live' || i > 1}
 									colspan={column.label === 'Carbon Intensity' ? 2 : 1}
+									class:text-left={mapMode === 'annual' && i === 1}
+									class:pl-10={mapMode === 'annual' && i === 1}
+									class:md:pl-2={mapMode === 'annual' && i === 1}
+									class:text-right={!(mapMode === 'annual' && i === 1)}
 								>
 									{#if column.unit}
 										<div class="text-mid-warm-grey">
@@ -201,11 +204,11 @@
 							{/if}
 
 							{#if mapMode === 'annual'}
-								<td class="py-3 text-sm text-right">
+								<td class="py-3 text-sm text-right pl-6 md:pl-0">
 									{auNumber.format(intensity[row.id])}
 								</td>
 
-								<td class="py-3 pl-6">
+								<td class="py-3 pl-3 md:pl-6">
 									<div
 										class="h-4 border border-black"
 										style:background-color={intensityColour(intensity[row.id])}

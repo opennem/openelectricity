@@ -130,7 +130,7 @@
 		</div>
 	</div>
 
-	<div class="bg-white py-32">
+	<div class="bg-white py-16 md:py-32">
 		<div class="container max-w-none lg:container">
 			<header class="text-center">
 				<h3>{chart_title}</h3>
@@ -152,7 +152,7 @@
 	{#if regionPower && regionEnergy && regionEmissions}
 		<div class="md:bg-light-warm-grey">
 			<div class="container max-w-none lg:container">
-				<div class="md:grid grid-cols-2 gap-36 py-32">
+				<div class="md:grid grid-cols-2 gap-36 py-16 md:py-32">
 					<InfoGraphicSystemSnapshot
 						data={mapAllData}
 						title={map_title}
@@ -169,7 +169,7 @@
 
 	<!-- <hr class="w-[90%] mx-auto bg-mid-warm-grey border-0 h-px" />
 
-	<div class="bg-white py-32">
+	<div class="bg-white py-16 md:py-32">
 		<div class="container max-w-none lg:container">
 			<header class="flex justify-between">
 				<h3>{milestones_title}</h3>
@@ -183,7 +183,7 @@
 		</div>
 	</div> -->
 
-	<div class="bg-white py-32">
+	<div class="bg-white py-16 md:py-32">
 		<div class="container max-w-none lg:container">
 			{#if outlookEnergyNem}
 				<InfoGraphicISP data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
@@ -220,7 +220,7 @@
 		</div>
 	</div> -->
 
-	<div class="bg-white py-32">
+	<div class="bg-white py-16 md:py-32">
 		<div class="container max-w-none lg:container">
 			<header class="flex justify-between items-center">
 				<h3>{analysis_title}</h3>
