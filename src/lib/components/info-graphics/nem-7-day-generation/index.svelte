@@ -57,7 +57,7 @@
 		<p class="mt-6">No data</p>
 	</div>
 {:else}
-	<section class="my-16">
+	<section class="mt-16">
 		<Chart
 			{dataset}
 			{xKey}

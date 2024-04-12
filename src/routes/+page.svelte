@@ -125,7 +125,7 @@
 		</div>
 	</div>
 
-	<div class="bg-white py-16 md:py-32">
+	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
 		<InfoGraphicNem7DayGeneration data={dataTrackerData} />
 	</div>
 
@@ -163,7 +163,7 @@
 		</div>
 	</div> -->
 
-	<div class="bg-white py-16 md:py-32">
+	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
 		<div class="container max-w-none lg:container">
 			{#if outlookEnergyNem}
 				<InfoGraphicISP data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
