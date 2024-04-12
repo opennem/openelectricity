@@ -14,10 +14,18 @@
 	/**
 	 * this function looks for the closest date to the mouse position
 	 * and returns the data for that date
-	 * @param {MouseEvent} evt
+	 * @param {MouseEvent|TouchEvent} evt
 	 */
 	function findItem(evt) {
-		const xInvert = $xScale.invert(evt.offsetX);
+		let offsetX;
+		if (evt.offsetX) {
+			offsetX = evt.offsetX;
+		} else {
+			const rect = evt.target.getBoundingClientRect();
+			offsetX = evt.touches[0].clientX - window.scrollY - rect.left;
+		}
+
+		const xInvert = $xScale.invert(offsetX);
 		const closest = closestTo(new Date(xInvert), compareDates);
 		const found = dataset.find((d) => d.time === closest?.getTime());
 		dispatch('mousemove', found);
@@ -35,6 +43,8 @@
 	role="presentation"
 	on:mousemove={findItem}
 	on:mouseout={mouseout}
+	on:touchmove={findItem}
+	on:touchend={mouseout}
 	on:blur={mouseout}
 />
 
