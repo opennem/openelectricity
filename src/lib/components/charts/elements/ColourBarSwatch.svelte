@@ -17,7 +17,7 @@
 {#each ranges as range, i}
 	<g>
 		<rect x={i * rectWidth} y="0" width={rectWidth} height={rectHeight} fill={colours[i]} />
-		<text class="text-xs fill-mid-grey font-semibold" x={i * rectWidth} y={rectHeight * 2 + 6}>
+		<text class="text-xxs fill-mid-grey font-light" x={i * rectWidth} y={rectHeight * 2 + 6}>
 			{labels[i]}
 		</text>
 	</g>

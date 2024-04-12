@@ -11,10 +11,10 @@
 </script>
 
 {#if mode === 'live'}
-	<div class="chart-container" style="width: 300px;">
-		<p class="text-sm font-bold mb-1 flex gap-3 items-center">
+	<div class="chart-container">
+		<p class="text-xs mb-1 flex flex-col md:flex-row gap-0 md:gap-3 pb-3 leading-xs">
 			Price
-			<small class="text-xs text-mid-grey font-semibold">$/MWh</small>
+			<small class="text-xs text-mid-grey font-light">$/MWh</small>
 		</p>
 		<LayerCake>
 			<Svg>
@@ -23,10 +23,10 @@
 		</LayerCake>
 	</div>
 {:else}
-	<div class="chart-container" style="width: 300px;">
-		<p class="text-sm font-bold mb-1 flex gap-3 items-center">
+	<div class="chart-container">
+		<p class="text-xs mb-1 flex flex-col md:flex-row gap-0 md:gap-3 pb-3 leading-xs">
 			Carbon Intensity
-			<small class="text-xs text-mid-grey font-semibold">kgCO₂e/MWh</small>
+			<small class="text-xs text-mid-grey font-light">kgCO₂e/MWh</small>
 		</p>
 		<LayerCake>
 			<Svg>

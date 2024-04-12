@@ -50,13 +50,14 @@
 			stroke-width={strokeWidth}
 		/>
 		{#if showLabels && yValue}
-			<text x={xPos + colWidth / 2} y={$height - colHeight - 5} text-anchor="middle">{yValue}</text>
+			<text
+				class="text-xs"
+				x={xPos + colWidth / 2}
+				y={$height - colHeight - 5}
+				text-anchor="middle"
+			>
+				{yValue}
+			</text>
 		{/if}
 	{/each}
 </g>
-
-<style>
-	text {
-		font-size: 12px;
-	}
-</style>
