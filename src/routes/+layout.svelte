@@ -20,15 +20,19 @@
 	});
 </script>
 
-<div class="w-full h-[40px] bg-black text-white text-center text-sm p-4 font-light">
-	<strong class="font-semibold">OpenNEM</strong> is now
-	<strong class="font-semibold">Open Electricity</strong>.
-	<a
-		href="https://openelectricity.org.au/analysis/from-opennem-to-open-electricity"
-		class="underline text-white"
-	>
-		Read
-	</a> about the update.
+<div class="w-full bg-black text-white text-sm px-8 py-6 font-light md:flex gap-3 justify-center">
+	<div>
+		<strong class="font-semibold">OpenNEM</strong> is now
+		<strong class="font-semibold">Open Electricity</strong>.
+	</div>
+	<div>
+		<a
+			href="https://openelectricity.org.au/analysis/from-opennem-to-open-electricity"
+			class="underline text-white"
+		>
+			Read
+		</a> about the update.
+	</div>
 </div>
 
 <Nav />
