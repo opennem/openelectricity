@@ -120,7 +120,7 @@
 </script>
 
 {#if allReady}
-	<div class="bg-light-warm-grey pt-3 pb-6" transition:fade={{ duration: 500 }}>
+	<div class="bg-light-warm-grey pt-12 pb-6" transition:fade={{ duration: 500 }}>
 		<div class="container max-w-none lg:container relative">
 			<InfoGraphicFossilFuelsRenewables
 				data={historyEnergyNemData}
