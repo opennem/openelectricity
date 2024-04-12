@@ -22,7 +22,7 @@
 			offsetX = evt.offsetX;
 		} else {
 			const rect = evt.target.getBoundingClientRect();
-			offsetX = evt.touches[0].clientX - window.scrollY - rect.left;
+			offsetX = evt.touches[0].clientX - rect.left;
 		}
 
 		const xInvert = $xScale.invert(offsetX);
