@@ -5,7 +5,7 @@ import { energyData } from '$lib/stats';
 /** @type {import('./$types').PageServerLoad} */
 export async function load() {
 	const homepageData = await client.fetch(
-		`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, chart_title, records_title, analysis_title, goals_title, goals}`
+		`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, records_title, analysis_title, goals_title, goals}`
 	);
 
 	/** @type {Article[]} */

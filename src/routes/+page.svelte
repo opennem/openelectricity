@@ -5,12 +5,8 @@
 
 	import ispData from '$lib/isp';
 	import { recordsByDay } from '$lib/records';
-	import { dataTrackerLink } from '$lib/stores/app';
 
 	import SectionLink from '$lib/components/SectionLink.svelte';
-	import RecordCard from '$lib/components/records/RecordCard.svelte';
-	import ButtonLink from '$lib/components/ButtonLink.svelte';
-	import Icon from '$lib/components/Icon.svelte';
 	import InfoGraphicISP from '$lib/components/info-graphics/integrated-system-plan/index.svelte';
 	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
@@ -83,7 +79,6 @@
 		banner_title,
 		banner_statement,
 		milestones_title,
-		chart_title,
 		map_title,
 		records_title,
 		analysis_title
@@ -120,7 +115,7 @@
 </script>
 
 {#if allReady}
-	<div class="bg-light-warm-grey pt-12 pb-6" transition:fade={{ duration: 500 }}>
+	<div class="bg-light-warm-grey py-12" transition:fade={{ duration: 500 }}>
 		<div class="container max-w-none lg:container relative">
 			<InfoGraphicFossilFuelsRenewables
 				data={historyEnergyNemData}
@@ -132,20 +127,7 @@
 
 	<div class="bg-white py-16 md:py-32">
 		<div class="container max-w-none lg:container">
-			<header class="text-center">
-				<h3>{chart_title}</h3>
-			</header>
-
-			<section class="my-16">
-				<InfoGraphicNem7DayGeneration data={dataTrackerData} />
-			</section>
-
-			<footer class="flex justify-center">
-				<ButtonLink href={$dataTrackerLink}>
-					View full data tracker
-					<Icon icon="arrow-right-circle" size={24} />
-				</ButtonLink>
-			</footer>
+			<InfoGraphicNem7DayGeneration data={dataTrackerData} />
 		</div>
 	</div>
 
