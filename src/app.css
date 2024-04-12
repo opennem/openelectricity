@@ -62,7 +62,7 @@ b {
 	h4,
 	h5,
 	h6 {
-		@apply font-bold mb-[0.5em];
+		@apply font-semibold mb-[0.5em];
 	}
 	h1 {
 		@apply text-4xl leading-4xl md:text-9xl md:leading-9xl;
@@ -86,7 +86,7 @@ b {
 		@apply font-space tracking-widest text-base leading-base font-bold;
 	}
 	.subhead-secondary {
-		@apply font-space tracking-wider text-sm leading-sm text-mid-grey uppercase font-medium;
+		@apply font-space tracking-wider text-sm leading-sm text-mid-grey uppercase;
 	}
 	.text-link-large {
 		@apply font-space tracking-wider text-base leading-base text-dark-grey font-bold underline;
