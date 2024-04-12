@@ -150,7 +150,7 @@
 </div>
 
 <div>
-	<div class="bg-white rounded-lg md:p-16 text-center md:w-[500px]">
+	<div class="bg-white rounded-lg md:p-16 text-center md:w-[500px] md:h-[500px]">
 		<MapHeader
 			{mapMode}
 			mapTitle={title}
