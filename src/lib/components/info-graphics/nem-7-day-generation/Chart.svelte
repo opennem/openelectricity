@@ -81,7 +81,7 @@
 	>
 		<Html>
 			{#if hoverData}
-				<div class="flex justify-end gap-1 text-xs leading-xs whitespace-nowrap -mt-8">
+				<div class="flex justify-end gap-1 text-xs leading-xs whitespace-nowrap -mt-8 mr-8">
 					<span class="px-2 py-1 font-light">
 						{formatTickX(hoverTime)}
 					</span>
@@ -105,7 +105,9 @@
 					</div>
 				</div>
 			{:else}
-				<div class="text-right text-xs text-mid-grey -mt-8">Last 7 days Power Generation (GW)</div>
+				<div class="text-right text-xs text-mid-grey -mt-8 mr-8">
+					Last 7 days Power Generation (GW)
+				</div>
 			{/if}
 		</Html>
 
@@ -147,7 +149,7 @@
 				textFill="#00000099"
 				tickMarks={true}
 				ticks={[0, maxY]}
-				xTick={5}
+				xTick={16}
 			/>
 		</Svg>
 

@@ -126,9 +126,7 @@
 	</div>
 
 	<div class="bg-white py-16 md:py-32">
-		<div class="container max-w-none lg:container">
-			<InfoGraphicNem7DayGeneration data={dataTrackerData} />
-		</div>
+		<InfoGraphicNem7DayGeneration data={dataTrackerData} />
 	</div>
 
 	{#if regionPower && regionEnergy && regionEmissions}
