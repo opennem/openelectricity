@@ -26,7 +26,7 @@
 
 {#if $bannerOpen}
 	<div
-		class="relative w-full bg-black text-white text-sm px-8 py-6 font-light md:flex gap-3 justify-center"
+		class="relative w-full bg-black text-white text-sm leading-sm px-6 md:px-8 py-6 font-light md:flex gap-3 justify-center"
 	>
 		<div>
 			<strong class="font-semibold">OpenNEM</strong> is now
@@ -40,9 +40,12 @@
 				Read
 			</a> about the update.
 		</div>
-		<button class="absolute right-12 top-10 md:top-6" on:click={() => ($bannerOpen = false)}
-			><IconXMark classes="w-8 h-8" /></button
+		<button
+			class="absolute right-6 md:right-12 top-10 md:top-6"
+			on:click={() => ($bannerOpen = false)}
 		>
+			<IconXMark classes="w-8 h-8" />
+		</button>
 	</div>
 {/if}
 
