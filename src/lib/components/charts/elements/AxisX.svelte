@@ -94,7 +94,7 @@
 					x={isBandwidth ? $xScale.bandwidth() / 2 + xTick : xTick}
 					y={yTick}
 					dx="0"
-					dy="0"
+					dy="2"
 					text-anchor={textAnchor(i)}
 					class="text-xxs font-light text-mid-warm-grey"
 				>
@@ -125,9 +125,9 @@
 	}
 
 	.axis.snapTicks .tick:last-child text {
-		transform: translateX(3px);
+		transform: translateX(0px);
 	}
 	.axis.snapTicks .tick.tick-0 text {
-		transform: translate(-3px);
+		transform: translate(0px);
 	}
 </style>

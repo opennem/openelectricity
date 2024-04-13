@@ -9,6 +9,8 @@
 	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
 
+	export let strokeWidth = '3px';
+
 	export let opacity = 1;
 
 	//TODO: refactor transition
@@ -69,6 +71,7 @@
 				class="path-line"
 				d={path(group.values)}
 				stroke={$zGet(group)}
+				stroke-width={strokeWidth}
 				style="opacity: {opacity};"
 			/>
 		{/if}
@@ -80,6 +83,5 @@
 		fill: none;
 		stroke-linejoin: round;
 		stroke-linecap: round;
-		stroke-width: 6px;
 	}
 </style>

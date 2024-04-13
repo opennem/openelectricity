@@ -77,13 +77,12 @@
 
 {#if show}
 	<div
-		class="py-6 md:absolute md:w-6/12 md:mt-[180px] md:ml-24 md:pt-0 md:z-10 md:pointer-events-none"
-		transition:fly={{ delay: 50, duration: 2000, x: 0, y: -10, opacity: 0, easing: cubicOut }}
+		class="py-3 md:absolute md:w-6/12 md:mt-[180px] md:ml-24 md:pt-0 md:z-10 md:pointer-events-none"
 	>
-		<h2 class="text-xl leading-xl font-extrabold md:font-semibold md:text-9xl md:leading-9xl">
+		<h2 class="text-3xl leading-3xl md:text-9xl md:leading-9xl">
 			{title}
 		</h2>
-		<p>{@html description}</p>
+		<p class="hidden md:block">{@html description}</p>
 	</div>
 {/if}
 
@@ -115,9 +114,6 @@
 				tickLabel={!hoverData}
 			/>
 			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
-			<!-- <Element dataset={nightGuides} fill="#33333311" clipPathId="clip-path" /> -->
-
-			<!-- <MultiLine opacity={0.05} /> -->
 
 			<MultiLine {hoverData} />
 			<HoverLayer

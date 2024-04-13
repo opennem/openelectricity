@@ -38,7 +38,7 @@
 		if (position === 'top') {
 			style = `left: ${left}px; top: -${textOffsetHeight}px`;
 		} else {
-			style = `left: ${left}px; top: ${$height + 5}px`;
+			style = `left: ${left}px; top: ${$height + 7}px`;
 		}
 	}
 </script>

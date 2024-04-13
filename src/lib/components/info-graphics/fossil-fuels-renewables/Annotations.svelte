@@ -39,7 +39,7 @@
 
 	$: classes = showBesideLatestPoint
 		? ''
-		: 'flex items-center justify-center gap-14 absolute bottom-[-100px] w-full px-12';
+		: 'flex items-center justify-center gap-28 absolute bottom-[-100px] w-full px-12';
 
 	$: getStyles = (/** @type {TimeSeriesData[]} */ values) =>
 		showBesideLatestPoint
