@@ -226,7 +226,9 @@
 	<Sa fill={getStateFillColour('SA')} />
 	<Nt fill="#FFFFFF" /> -->
 
-	<TextureMask />
+	<g class="pointer-events-none">
+		<TextureMask />
+	</g>
 
 	<!-- Vic Arrow -->
 	<circle cx="485.459" cy="457.353" r="3.44336" fill="white" stroke="black" stroke-width="1.5" />
