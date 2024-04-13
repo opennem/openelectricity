@@ -12,8 +12,6 @@
 	const HGAP = 16;
 	const VGAP = 8;
 
-	let className = bg ? 'bg' : '';
-
 	/** @type {SVGTextElement} */
 	let textElement;
 
@@ -40,9 +38,9 @@
 		text-anchor={textAnchor}
 		font-family="DM Sans"
 		font-weight="600"
-		font-size="16"
 		fill={colour}
-		class={className}
+		class="text-xl md:text-base"
+		class:bg
 		bind:this={textElement}
 		x={bg ? HGAP / 2 : 0}
 		y={bg ? VGAP / 2 : 0}

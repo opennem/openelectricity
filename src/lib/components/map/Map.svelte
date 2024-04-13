@@ -14,11 +14,43 @@
 	import Vic from './states/VIC.svelte';
 	import Wa from './states/WA.svelte';
 
+	import CrossBorderExport from '$lib/components/info-graphics/system-snapshot/CrossBorderExport.svelte';
+
 	import {
 		priceColour,
 		intensityColour
 	} from '$lib/components/info-graphics/system-snapshot/helpers';
-	import fi from 'date-fns/locale/fi';
+
+	import { writable } from 'svelte/store';
+	import { createPopperActions } from 'svelte-popperjs';
+	const [popperRef, popperContent] = createPopperActions({
+		placement: 'top',
+		strategy: 'fixed'
+	});
+	const extraOpts = {
+		modifiers: [{ name: 'offset', options: { offset: [0, 8] } }]
+	};
+
+	let x = 0;
+	let y = 0;
+	const mousemove = (ev) => {
+		x = ev.clientX;
+		y = ev.clientY - 8;
+	};
+
+	$: getBoundingClientRect = () => ({
+		width: 0,
+		height: 0,
+		top: y,
+		bottom: y,
+		left: x,
+		right: x
+	});
+	const virtualElement = writable({ getBoundingClientRect });
+	$: $virtualElement = { getBoundingClientRect };
+	popperRef(virtualElement);
+
+	let showTooltip = false;
 
 	/** @type {'live' | 'annual'} */
 	export let mode = 'live';
@@ -28,7 +60,7 @@
 	export let intensity = null;
 	export let highlight;
 
-	const absRound = (val) => Math.abs(Math.round(val));
+	const absRound = (val) => auNumber.format(Math.abs(Math.round(val)));
 	const auDollar = new Intl.NumberFormat('en-AU', {
 		style: 'currency',
 		currency: 'AUD'
@@ -136,8 +168,29 @@
 	function regionLeave() {
 		dispatch('hover');
 	}
+
+	let flowRegions = '';
+	let flowValue = 0;
+
+	function flowEnter(flow, value) {
+		flowRegions = flow;
+		flowValue = value;
+		showTooltip = true;
+	}
+	function flowLeave() {
+		flowRegions = '';
+		flowValue = 0;
+		showTooltip = false;
+	}
 </script>
 
+<svelte:window on:mousemove={mousemove} />
+
+{#if showTooltip}
+	<div class="hidden md:block" use:popperContent={extraOpts}>
+		<CrossBorderExport regions={flowRegions} value={flowValue} />
+	</div>
+{/if}
 <svg
 	width="615"
 	height="578"
@@ -173,7 +226,7 @@
 	<Sa fill={getStateFillColour('SA')} />
 	<Nt fill="#FFFFFF" /> -->
 
-	<!-- <TextureMask /> -->
+	<TextureMask />
 
 	<!-- Vic Arrow -->
 	<circle cx="485.459" cy="457.353" r="3.44336" fill="white" stroke="black" stroke-width="1.5" />
@@ -191,30 +244,61 @@
 
 		{#if modeLive && flows}
 			<!-- FLOWS -->
-			<Flow
-				direction={flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
-				flow={absRound(flows['NSW1->QLD1'])}
-				x={500}
-				y={315}
-			/><!-- QLD <-> NSW -->
-			<Flow
-				direction={flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
-				flow={absRound(flows['NSW1->VIC1'])}
-				x={480}
-				y={430}
-			/><!-- VIC <-> NSW -->
-			<Flow
-				direction={flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
-				flow={absRound(flows['TAS1->VIC1'])}
-				x={490}
-				y={495}
-			/><!-- VIC <-> TAS -->
-			<Flow
-				direction={flows['SA1->VIC1'] > 0 ? 'right' : 'left'}
-				flow={absRound(flows['SA1->VIC1'])}
-				x={418}
-				y={440}
-			/><!-- VIC <-> SA -->
+			<g
+				role="group"
+				use:popperRef
+				on:mouseenter={() => flowEnter('NSW1->QLD1', absRound(flows['NSW1->QLD1']))}
+				on:mouseleave={flowLeave}
+			>
+				<Flow
+					direction={flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
+					flow={absRound(flows['NSW1->QLD1'])}
+					x={500}
+					y={315}
+				/><!-- QLD <-> NSW -->
+			</g>
+
+			<g
+				role="group"
+				use:popperRef
+				on:mouseenter={() => flowEnter('NSW1->VIC1', absRound(flows['NSW1->VIC1']))}
+				on:mouseleave={flowLeave}
+			>
+				<Flow
+					direction={flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
+					flow={absRound(flows['NSW1->VIC1'])}
+					x={480}
+					y={430}
+				/><!-- VIC <-> NSW -->
+			</g>
+
+			<g
+				role="group"
+				use:popperRef
+				on:mouseenter={() => flowEnter('TAS1->VIC1', absRound(flows['TAS1->VIC1']))}
+				on:mouseleave={flowLeave}
+			>
+				<Flow
+					direction={flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
+					flow={absRound(flows['TAS1->VIC1'])}
+					x={490}
+					y={495}
+				/><!-- VIC <-> TAS -->
+			</g>
+
+			<g
+				role="group"
+				use:popperRef
+				on:mouseenter={() => flowEnter('SA1->VIC1', absRound(flows['SA1->VIC1']))}
+				on:mouseleave={flowLeave}
+			>
+				<Flow
+					direction={flows['SA1->VIC1'] > 0 ? 'right' : 'left'}
+					flow={absRound(flows['SA1->VIC1'])}
+					x={418}
+					y={440}
+				/><!-- VIC <-> SA -->
+			</g>
 		{/if}
 	{/if}
 </svg>

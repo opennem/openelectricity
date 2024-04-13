@@ -120,15 +120,7 @@
 			</path>
 		</g>
 	{/if}
-	<text
-		text-anchor="middle"
-		font-family="DM Sans"
-		font-weight="600"
-		font-size="14"
-		fill="#000000"
-		x="27"
-		y="30"
-	>
+	<text text-anchor="middle" fill="#000000" x="27" y="30" class="font-space text-base md:text-sm">
 		{flow}
 	</text>
 </svg>

@@ -6,6 +6,7 @@
 	import MapHeader from '$lib/components/homepage/MapHeader.svelte';
 
 	import ColourLegend from './ColourLegend.svelte';
+	import CrossBorderExport from './CrossBorderExport.svelte';
 	import {
 		intensityColour,
 		regionGenerationTotal,
@@ -81,9 +82,7 @@
 		});
 	}
 
-	$: console.log('prices/intensity', prices.regionPrices, intensity);
-
-	$: console.log('emissionsTotal', emissionsTotal);
+	$: console.log('flows', flows);
 
 	// Track map mode and data
 	let mapMode = 'annual'; // annual
@@ -240,6 +239,17 @@
 			{#if mapData.notes}
 				<div class="text-mid-grey pt-8 px-8 text-xs">
 					{#each mapData.notes as note}<div>{note}</div>{/each}
+				</div>
+			{/if}
+
+			{#if mapMode === 'live'}
+				<div class="md:hidden">
+					<h5 class="text-left mt-8">Cross Border Export</h5>
+					<div class="grid grid-cols-2 gap-4">
+						{#each Object.entries(flows.regionFlows) as [regionFlow, value]}
+							<CrossBorderExport regions={regionFlow} {value} />
+						{/each}
+					</div>
 				</div>
 			{/if}
 		</section>

@@ -8,7 +8,7 @@
 </script>
 
 <header class={$$restProps.class}>
-	<h3>{mapTitle}</h3>
+	<h3 class="text-center">{mapTitle}</h3>
 
 	<div class="my-8 md:my-0">
 		<Switch

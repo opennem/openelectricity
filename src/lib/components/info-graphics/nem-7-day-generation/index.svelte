@@ -68,8 +68,8 @@
 			seriesLabels={timeSeriesDatasets.seriesLabels}
 		/>
 
-		<div class="container max-w-none lg:container">
-			<footer class="block md:flex justify-between">
+		<div class="container max-w-none lg:container md:mt-12">
+			<footer class="block md:flex justify-between items-center">
 				<dl class="flex flex-wrap gap-1">
 					{#each legend.toReversed() as d}
 						<dt class="flex items-center gap-2 text-xs text-mid-grey mr-3">
@@ -80,7 +80,7 @@
 				</dl>
 				<a
 					href={$dataTrackerLink}
-					class="mt-12 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+					class="mt-12 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
 				>
 					View data tracker
 				</a>
