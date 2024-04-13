@@ -234,10 +234,24 @@
 
 	{#if data}
 		<!-- PRICE/EMISSIONS LABELS -->
-		<MapLabel text={tasText} colour="#000000" x={515} y={552} bg={true} /><!-- Tas -->
+		<MapLabel
+			text={tasText}
+			colour="#000000"
+			x={515}
+			y={552}
+			bg={true}
+			textAnchor="left"
+		/><!-- Tas -->
 		<MapLabel text="" colour="#6A6A6A" x={310} y={170} /><!-- NT -->
 		<MapLabel text={saText} colour={getStateTextColour('SA')} x={330} y={330} /><!-- SA -->
-		<MapLabel text={vicText} colour="#000000" x={560} y={498} bg={true} /><!-- VIC -->
+		<MapLabel
+			text={vicText}
+			colour="#000000"
+			x={560}
+			y={498}
+			bg={true}
+			textAnchor="left"
+		/><!-- VIC -->
 		<MapLabel text={waText} colour={getStateTextColour('WA')} x={130} y={263} /><!-- WA -->
 		<MapLabel text={qldText} colour={getStateTextColour('QLD')} x={480} y={229} /><!-- QLD -->
 		<MapLabel text={nswText} colour={getStateTextColour('NSW')} x={500} y={383} /><!-- NSW -->
