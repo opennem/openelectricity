@@ -25,7 +25,7 @@
 	});
 </script>
 
-<g transform={`translate(${x}, ${y})`}>
+<g transform={`translate(${x}, ${y})`} class="pointer-events-none">
 	{#if bg && textBounds}
 		<rect
 			rx="4"

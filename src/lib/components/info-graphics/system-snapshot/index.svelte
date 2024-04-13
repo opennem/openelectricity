@@ -124,6 +124,8 @@
 		return Math.round((renewablesTotal[state] / generationTotal[state]) * 100);
 	}
 
+	let hoverRegion;
+
 	// function getCarbonIntensity(state) {
 	// 	return Math.round(emissionsTotal[state] / generationTotal[state]);
 	// }
@@ -138,7 +140,9 @@
 		flows={flows.regionFlows}
 		prices={prices.regionPrices}
 		{intensity}
+		highlight={hoverRegion}
 		class="w-full block h-auto pt-8 md:pt-0"
+		on:hover={(evt) => (hoverRegion = evt.detail?.region)}
 	/>
 	<div
 		class="absolute bottom-0 md:bottom-6 left-6 md:left-12 md:w-[300px]"
@@ -186,8 +190,13 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each mapModeRows as row, i (row.id)}
-						<tr class="border-b-[0.05rem] border-mid-warm-grey border-solid">
+					{#each mapModeRows as row (row.id)}
+						<tr
+							class="border-b-[0.05rem] border-mid-warm-grey border-solid cursor-pointer"
+							class:bg-light-warm-grey={hoverRegion === row.id}
+							on:mouseenter={() => (hoverRegion = row.id)}
+							on:mouseleave={() => (hoverRegion = undefined)}
+						>
 							<td class="py-3 text-xs text-dark-grey font-light text-left md:w-[100px]">
 								{row.label}
 							</td>

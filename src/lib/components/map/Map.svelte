@@ -1,4 +1,8 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
+	import chroma from 'chroma-js';
+	import { createIntensityScale, createPriceScale } from '$lib/colours';
+
 	import Flow from './Flow.svelte';
 	import MapLabel from './MapLabel.svelte';
 	import TextureMask from './TextureMask.svelte';
@@ -9,13 +13,12 @@
 	import Tas from './states/TAS.svelte';
 	import Vic from './states/VIC.svelte';
 	import Wa from './states/WA.svelte';
-	import { createIntensityScale, createPriceScale } from '$lib/colours';
-	import chroma from 'chroma-js';
 
 	import {
 		priceColour,
 		intensityColour
 	} from '$lib/components/info-graphics/system-snapshot/helpers';
+	import fi from 'date-fns/locale/fi';
 
 	/** @type {'live' | 'annual'} */
 	export let mode = 'live';
@@ -23,6 +26,7 @@
 	export let flows = null;
 	export let prices = null;
 	export let intensity = null;
+	export let highlight;
 
 	const absRound = (val) => Math.abs(Math.round(val));
 	const auDollar = new Intl.NumberFormat('en-AU', {
@@ -34,6 +38,46 @@
 		// minimumFractionDigits: 2,
 		maximumFractionDigits: 0
 	});
+
+	const dispatch = createEventDispatcher();
+
+	const regions = [
+		{
+			id: 'NSW',
+			component: Nsw,
+			interaction: true
+		},
+		{
+			id: 'QLD',
+			component: Qld,
+			interaction: true
+		},
+		{
+			id: 'SA',
+			component: Sa,
+			interaction: true
+		},
+		{
+			id: 'TAS',
+			component: Tas,
+			interaction: true
+		},
+		{
+			id: 'VIC',
+			component: Vic,
+			interaction: true
+		},
+		{
+			id: 'WA',
+			component: Wa,
+			interaction: true
+		},
+		{
+			id: 'NT',
+			component: Nt,
+			interaction: false
+		}
+	];
 
 	$: stateData = data.rows.reduce((acc, row) => {
 		acc[row.state] = row;
@@ -85,6 +129,13 @@
 		const fill = getStateFillColour(state) || '#FFFFFF';
 		return chroma.contrast(fill.toString(), '#FFFFFF') > 4.5 ? '#FFFFFF' : '#000000';
 	};
+
+	function regionEnter(region) {
+		dispatch('hover', { region });
+	}
+	function regionLeave() {
+		dispatch('hover');
+	}
 </script>
 
 <svg
@@ -97,15 +148,32 @@
 	class={`overflow-visible w-full h-auto block ${$$restProps.class}`}
 >
 	<!-- State geometry -->
-	<Tas fill={getStateFillColour('TAS')} />
-	<Nsw fill={getStateFillColour('NSW')} />
+	{#each regions as { id, component, interaction }}
+		<g
+			role="group"
+			on:mouseenter={() => (interaction ? regionEnter(id) : false)}
+			on:mouseleave={() => (interaction ? regionLeave() : false)}
+			on:blur={() => (interaction ? regionLeave() : false)}
+			class:cursor-pointer={interaction}
+		>
+			<svelte:component
+				this={component}
+				fill={interaction ? getStateFillColour(id) : '#fff'}
+				class="{interaction ? 'hover:stroke-dark-grey' : ''} {highlight === id
+					? 'stroke-dark-grey stroke-2'
+					: ''}"
+				style="pointer-events: all"
+			/>
+		</g>
+	{/each}
+	<!-- <Nsw fill={getStateFillColour('NSW')} stroke="black" strokeWidth={2} />
 	<Qld fill={getStateFillColour('QLD')} />
 	<Wa fill={getStateFillColour('WA')} />
 	<Vic fill={getStateFillColour('VIC')} />
 	<Sa fill={getStateFillColour('SA')} />
-	<Nt fill="#FFFFFF" />
+	<Nt fill="#FFFFFF" /> -->
 
-	<TextureMask />
+	<!-- <TextureMask /> -->
 
 	<!-- Vic Arrow -->
 	<circle cx="485.459" cy="457.353" r="3.44336" fill="white" stroke="black" stroke-width="1.5" />
