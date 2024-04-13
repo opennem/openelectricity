@@ -9,7 +9,7 @@
 	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
 
-	export let strokeWidth = '3px';
+	export let strokeWidth = '4px';
 
 	export let opacity = 1;
 

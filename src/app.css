@@ -87,7 +87,7 @@ b {
 		@apply font-space tracking-widest text-base leading-base font-bold;
 	}
 	.subhead-secondary {
-		@apply font-space tracking-wider text-sm leading-sm text-mid-grey uppercase;
+		@apply font-space font-medium tracking-wider text-sm leading-sm text-mid-grey uppercase;
 	}
 	.text-link-large {
 		@apply font-space tracking-wider text-base leading-base text-dark-grey font-bold underline;

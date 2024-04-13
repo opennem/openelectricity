@@ -128,11 +128,10 @@
 	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
 		<InfoGraphicNem7DayGeneration data={dataTrackerData} />
 	</div>
-
 	{#if regionPower && regionEnergy && regionEmissions}
 		<div class="md:bg-light-warm-grey">
 			<div class="container max-w-none lg:container">
-				<div class="md:grid grid-cols-2 gap-36 py-16 md:py-32">
+				<div class="flex flex-col md:flex-row justify-between py-16 md:py-32">
 					<InfoGraphicSystemSnapshot
 						data={mapAllData}
 						title={map_title}
@@ -164,11 +163,9 @@
 	</div> -->
 
 	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
-		<div class="container max-w-none lg:container">
-			{#if outlookEnergyNem}
-				<InfoGraphicISP data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
-			{/if}
-		</div>
+		{#if outlookEnergyNem}
+			<InfoGraphicISP data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
+		{/if}
 	</div>
 
 	<!-- <div class="bg-light-warm-grey py-40">

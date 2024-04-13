@@ -39,6 +39,10 @@
 
 	const xKey = 'date';
 
+	const auNumber = new Intl.NumberFormat('en-AU', {
+		maximumFractionDigits: 0
+	});
+
 	/** @type {'line'|'bar'} */
 	let dashboard = 'line'; // bar
 
@@ -79,8 +83,6 @@
 	$: projectionSeriesColours = projectionTimeSeriesDatasets.seriesColours;
 
 	$: projectionFuelTechIds = projectionStatsDatasets.data.reduce(fuelTechReducer, {});
-
-	$: console.log('projectionFuelTechIds', projectionFuelTechIds);
 
 	// Convert historical data to TWh to match ISP
 	$: historicalData = deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
@@ -141,19 +143,50 @@
 
 	/** @type {TimeSeriesData | undefined} */
 	let historicalHoverData = undefined;
+
+	let generatedCsv = '';
+	$: {
+		generatedCsv = '';
+		generatedCsv +=
+			[
+				'date',
+				...projectionTimeSeriesDatasets.seriesNames.map(
+					(d) => projectionTimeSeriesDatasets.seriesLabels[d]
+				)
+			].join(',') + '\n';
+
+		projectionTimeSeriesDatasets.data.forEach((d) => {
+			const date = format(d.date, 'yyyy');
+			const row = [date];
+			projectionTimeSeriesDatasets.seriesNames.forEach((key) => {
+				row.push(auNumber.format(d[key]));
+			});
+			generatedCsv += row.join(',') + '\n';
+		});
+	}
+
+	$: file = new Blob([generatedCsv], { type: 'text/plain' });
+	$: fileUrl = URL.createObjectURL(file);
 </script>
 
-<section class="p-4">
+<div class="container max-w-none lg:container">
 	<header class="grid grid-cols-5 gap-24">
-		<h1 class="col-span-5 text-3xl leading-3xl md:text-5xl md:leading-5xl md:col-span-4">
+		<h1
+			class="col-span-5 text-3xl leading-[3.7rem] md:text-5xl md:leading-5xl md:col-span-4 md:mr-10"
+		>
 			Explore the future of Australia's national electricity market
 		</h1>
 
 		<div class="hidden md:block">
-			<ButtonLink href="/isp-tracker" class="whitespace-nowrap">
+			<a
+				class="flex gap-6 justify-between items-center rounded-lg font-space border border-black border-solid bg-white p-6 transition-all text-black hover:text-white hover:bg-black hover:no-underline"
+				href={fileUrl}
+				download="{scenarioLabels[selectedScenario]}.csv"
+				target="_download"
+			>
 				<span>Download Data</span>
 				<Icon icon="arrow-down-tray" size={24} />
-			</ButtonLink>
+			</a>
 		</div>
 	</header>
 
@@ -169,14 +202,15 @@
 						These scenarios aim to steer Australia towards a cost-effective, reliable and safe
 						energy system en route to a zero-emissions electricity network.
 					</p>
-					<p>Explore the <strong>draft 2024 AEMO</strong> future scenarios below.</p>
+					<p>Explore the <strong>draft 2024 AEMO</strong></p>
 				</div>
 
-				<div class="grid grid-cols-2 md:grid-cols-1 gap-3 md:mr-48">
+				<div class="flex gap-3">
 					{#each scenarios as scenario}
 						<button
-							class="rounded-lg border hover:bg-light-warm-grey px-2 py-4 capitalize"
+							class="w-full rounded-lg border hover:bg-light-warm-grey px-6 py-4 capitalize text-left leading-sm"
 							class:border-mid-warm-grey={selectedScenario !== scenario}
+							class:text-mid-grey={selectedScenario !== scenario}
 							class:border-dark-grey={selectedScenario === scenario}
 							class:bg-light-warm-grey={selectedScenario === scenario}
 							value={scenario}
@@ -233,7 +267,8 @@
 					</div>
 					<div class="w-full">
 						<OverviewChart
-							title={`Energy Generation (TWh) under AEMO ${scenarioLabels[selectedScenario]} 2024`}
+							title={`Energy Generation (TWh) by Financial Year`}
+							scenarioTitle={scenarioLabels[selectedScenario]}
 							description={scenarioDescriptions[selectedScenario]}
 							dataset={projectionTimeSeriesDatasets.data}
 							{xKey}
@@ -260,9 +295,11 @@
 			{/if}
 		</div>
 	</div>
+</div>
 
+<div class="max-w-none lg:container">
 	<div
-		class="mt-6 grid grid-cols-2 md:grid-cols-6 md:divide-x divide-mid-warm-grey border border-mid-warm-grey"
+		class="mt-6 grid grid-cols-2 md:grid-cols-6 md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
 	>
 		{#if dashboard === 'line'}
 			{#each [...projectionSeriesNames].reverse() as key}
@@ -293,7 +330,13 @@
 		{/if}
 	</div>
 
-	<!-- <div class="mx-auto w-[130px] mt-6">
-		<DashboardViewOptions current={dashboard} on:change={(evt) => (dashboard = evt.detail)} />
-	</div> -->
-</section>
+	<p class="text-xs text-mid-grey px-3 pt-12">
+		Data source:
+		<a
+			href="https://aemo.com.au/energy-systems/electricity/national-electricity-market-nem/nem-forecasting-and-planning/integrated-system-plan-isp"
+			class="text-mid-grey underline"
+		>
+			AEMO Integrated System Plan for the National Electricity Market
+		</a>
+	</p>
+</div>

@@ -23,6 +23,7 @@
 	export let dataset = [];
 
 	export let title = '';
+	export let scenarioTitle = '';
 	export let description = '';
 
 	export let xKey = '';
@@ -75,7 +76,7 @@
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
-<div class="chart-container h-[600px] md:h-[680px]">
+<div class="chart-container h-[600px] md:h-[680px] mb-4">
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
 		x={(/** @type {*} */ d) => d[xKey] || d.data[xKey]}
@@ -118,7 +119,7 @@
 		</Svg>
 
 		<Html pointerEvents={false}>
-			<ChartAnnotations {title} {description} />
+			<ChartAnnotations {title} {description} {scenarioTitle} />
 
 			<HoverText {hoverData} isShapeStack={true} position="bottom">
 				<span class="text-[10px] block">
@@ -132,6 +133,8 @@
 			<HoverDots {dataset} {hoverData} />
 		</Svg> -->
 	</LayerCake>
+
+	<p class="text-xs text-mid-grey relative -top-5 md:hidden">{title}</p>
 </div>
 
 <style>

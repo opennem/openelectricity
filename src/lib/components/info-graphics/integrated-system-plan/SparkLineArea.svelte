@@ -28,8 +28,6 @@
 	export let hoverData = undefined;
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 	$: maxY = Math.round(Math.max(...dataset.map((d) => d[key] || 0)));
-
-	$: console.log('maxY', maxY);
 </script>
 
 <div {...$$restProps}>

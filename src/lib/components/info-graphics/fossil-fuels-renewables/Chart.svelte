@@ -79,7 +79,7 @@
 	<div
 		class="py-3 md:absolute md:w-6/12 md:mt-[180px] md:ml-24 md:pt-0 md:z-10 md:pointer-events-none"
 	>
-		<h2 class="text-3xl leading-3xl md:text-9xl md:leading-9xl">
+		<h2 class="text-3xl leading-[3.7rem] md:text-9xl md:leading-9xl">
 			{title}
 		</h2>
 		<p class="hidden md:block">{@html description}</p>

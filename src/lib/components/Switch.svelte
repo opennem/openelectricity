@@ -20,7 +20,7 @@
 		<button
 			on:click={(e) => onChange(e.currentTarget.value)}
 			{value}
-			class="flex w-full md:w-auto items-center justify-center hover:text-black px-8 py-4 border rounded-xl"
+			class="flex w-full md:w-auto items-center justify-center hover:text-black px-8 py-4 border rounded-xl whitespace-nowrap"
 			class:bg-white={isSelected(value)}
 			class:text-black={isSelected(value)}
 			class:border-black={isSelected(value)}

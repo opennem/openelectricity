@@ -93,10 +93,10 @@ export const scenarios = ['step_change', 'progressive_change', 'green_energy_exp
 
 /** @type {Object.<ScenarioKey, string>} */
 export const scenarioLabels = {
-	step_change: 'Step Change',
-	progressive_change: 'Progressive Change',
+	step_change: 'AEMO Step Change 2024',
+	progressive_change: 'AEMO Progressive Change 2024',
 	// slow_change: 'Slow Change',
-	green_energy_exports: 'Green Energy Exports'
+	green_energy_exports: 'AEMO Green Energy Exports 2024'
 	// hydrogen_superpower: 'Hydrogen Superpower'
 };
 

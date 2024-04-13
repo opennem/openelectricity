@@ -9,8 +9,6 @@
 	export let data = undefined;
 
 	$: value = data ? /** @type {number} */ (data[key]) : 0;
-
-	$: console.log('KeyHeader', key);
 </script>
 
 <header class="">
