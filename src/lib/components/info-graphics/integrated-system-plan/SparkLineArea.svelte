@@ -17,6 +17,7 @@
 	export let dataset = [];
 
 	export let key = '';
+	export let fuelTechId = '';
 	export let title = '';
 	export let colour = '#000';
 
@@ -26,14 +27,17 @@
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	$: maxY = Math.round(Math.max(...dataset.map((d) => d[key] || 0)));
+
+	$: console.log('maxY', maxY);
 </script>
 
-<div class="p-8 bg-light-warm-grey rounded-lg">
-	<KeyHeader {key} {title} data={hoverData} />
+<div {...$$restProps}>
+	<KeyHeader {key} {title} {fuelTechId} data={hoverData} />
 
 	<div style="height: 150px;">
 		<LayerCake
-			padding={{ top: 8, right: 0, bottom: 20, left: 0 }}
+			padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
 			x={'date'}
 			y={key}
 			yDomain={[0, null]}
@@ -43,12 +47,13 @@
 				<AxisX
 					formatTick={hoverData ? () => '' : formatFyTickX}
 					ticks={xTicks || displayXTicks}
-					tickMarks={true}
+					tickMarks={false}
 					gridlines={false}
+					snapTicks={true}
 				/>
-				<AxisY formatTick={formatTickY} ticks={2} />
-				<Line stroke={colour} {hoverData} />
-				<Area fill={`${colour}20`} />
+				<AxisY formatTick={formatTickY} tickMarks={true} ticks={[0, maxY]} />
+				<Line stroke="#353535" {hoverData} strokeWidth="3px" />
+				<Area fill={colour} />
 				<HoverLayer {dataset} on:mousemove on:mouseout />
 			</Svg>
 

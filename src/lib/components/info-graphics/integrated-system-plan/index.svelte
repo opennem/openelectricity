@@ -7,6 +7,7 @@
 		domainOrder,
 		labelReducer,
 		colourReducer,
+		fuelTechReducer,
 		formatFyTickX,
 		scenarios,
 		scenarioLabels,
@@ -77,6 +78,10 @@
 	/** @type {Object.<string, string>} */
 	$: projectionSeriesColours = projectionTimeSeriesDatasets.seriesColours;
 
+	$: projectionFuelTechIds = projectionStatsDatasets.data.reduce(fuelTechReducer, {});
+
+	$: console.log('projectionFuelTechIds', projectionFuelTechIds);
+
 	// Convert historical data to TWh to match ISP
 	$: historicalData = deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
 		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
@@ -139,13 +144,13 @@
 </script>
 
 <section class="p-4">
-	<header class="grid grid-cols-5">
+	<header class="grid grid-cols-5 gap-24">
 		<h1 class="col-span-5 text-3xl leading-3xl md:text-5xl md:leading-5xl md:col-span-4">
 			Explore the future of Australia's national electricity market
 		</h1>
 
 		<div class="hidden md:block">
-			<ButtonLink href="/isp-tracker">
+			<ButtonLink href="/isp-tracker" class="whitespace-nowrap">
 				<span>Download Data</span>
 				<Icon icon="arrow-down-tray" size={24} />
 			</ButtonLink>
@@ -233,10 +238,9 @@
 							dataset={projectionTimeSeriesDatasets.data}
 							{xKey}
 							xTicks={[
-								startOfYear(new Date('2051-01-01')),
-								startOfYear(new Date('2041-01-01')),
-								startOfYear(new Date('2031-01-01')),
-								startOfYear(new Date('2025-01-01'))
+								startOfYear(new Date('2025-01-01')),
+								startOfYear(new Date('2038-01-01')),
+								startOfYear(new Date('2052-01-01'))
 							]}
 							yKey={[0, 1]}
 							yTicks={2}
@@ -257,12 +261,16 @@
 		</div>
 	</div>
 
-	<div class="mt-6 grid grid-cols-2 md:grid-cols-6 gap-2 md:gap-5">
+	<div
+		class="mt-6 grid grid-cols-2 md:grid-cols-6 md:divide-x divide-mid-warm-grey border border-mid-warm-grey"
+	>
 		{#if dashboard === 'line'}
 			{#each [...projectionSeriesNames].reverse() as key}
 				<SparkLineArea
+					class="p-8 even:border-l border-t [&:nth-child(-n+2)]:border-t-0 md:border-0"
 					dataset={projectionTimeSeriesDatasets.data}
 					{key}
+					fuelTechId={projectionFuelTechIds[key]}
 					xTicks={sparkLineXTicks}
 					title={projectionSeriesLabels[key]}
 					colour={projectionSeriesColours[key]}

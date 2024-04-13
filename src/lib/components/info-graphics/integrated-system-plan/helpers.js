@@ -51,6 +51,14 @@ export const labelReducer = (
 	return acc;
 };
 
+export const fuelTechReducer = (
+	/** @type {Object.<string, string>} */ acc,
+	/** @type {StatsData} **/ d
+) => {
+	acc[d.id] = d.fuel_tech ? d.fuel_tech : '';
+	return acc;
+};
+
 export const colourReducer = (
 	/** @type {Object.<string, string>} */ acc,
 	/** @type {StatsData} **/ d
@@ -63,14 +71,17 @@ export const formatTickX = (/** @type {Date | number} */ d) => {
 	return format(subYears(d, 1), 'yyyy') + '-' + format(d, 'yy');
 };
 
-export const formatFyTickX = (/** @type {Date | number} */ d) => 'FY' + format(d, 'yy');
+// export const formatFyTickX = (/** @type {Date | number} */ d) => 'FY' + format(d, 'yy');
+export const formatFyTickX = (/** @type {Date | number} */ d) => {
+	return format(d, 'yyyy');
+};
 
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 
 export const formatValue = (/** @type {number} */ d) => {
 	const formatted = d3Format('.0f')(d);
 	if (formatted !== '0') {
-		return formatted + ' TWh';
+		return formatted;
 	}
 	return formatted;
 };

@@ -96,6 +96,7 @@
 					dx="0"
 					dy="0"
 					text-anchor={textAnchor(i)}
+					class="text-xxs font-light text-mid-warm-grey"
 				>
 					{formatTick(tick)}
 				</text>
@@ -116,11 +117,6 @@
 	line,
 	.tick line {
 		stroke-dasharray: 0;
-	}
-
-	.tick text {
-		fill: #666;
-		font-size: 10px;
 	}
 
 	.tick .tick-mark,

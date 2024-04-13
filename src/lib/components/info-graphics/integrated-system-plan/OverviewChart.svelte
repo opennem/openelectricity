@@ -111,8 +111,9 @@
 			<AxisX
 				ticks={xTicks || displayXTicks}
 				gridlines={false}
-				formatTick={formatTickX}
-				tickMarks={true}
+				formatTick={hoverData ? () => '' : formatTickX}
+				tickMarks={hoverData ? false : true}
+				snapTicks={true}
 			/>
 		</Svg>
 
@@ -127,9 +128,9 @@
 			<HoverLine {hoverData} isShapeStack={true} useDataHeight={true} />
 		</Html>
 
-		<Svg pointerEvents={false}>
+		<!-- <Svg pointerEvents={false}>
 			<HoverDots {dataset} {hoverData} />
-		</Svg>
+		</Svg> -->
 	</LayerCake>
 </div>
 

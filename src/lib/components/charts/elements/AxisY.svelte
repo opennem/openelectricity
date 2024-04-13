@@ -82,6 +82,7 @@
 				/>
 			{/if}
 			<text
+				class="text-xxs font-light text-mid-warm-grey"
 				fill={textFill}
 				x={xTick}
 				y={isBandwidth ? $yScale.bandwidth() / 2 + yTick : yTick}
@@ -96,11 +97,6 @@
 </g>
 
 <style>
-	.tick {
-		font-size: 0.725em;
-		font-weight: 200;
-	}
-
 	.tick .gridline {
 		stroke-dasharray: 0;
 	}

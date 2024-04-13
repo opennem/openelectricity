@@ -81,7 +81,7 @@ b {
 		@apply text-base leading-base;
 	}
 	h6 {
-		@apply text-sm leading-sm;
+		@apply text-sm leading-sm font-medium;
 	}
 	.subhead-primary {
 		@apply font-space tracking-widest text-base leading-base font-bold;

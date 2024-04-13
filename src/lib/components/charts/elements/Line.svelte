@@ -6,6 +6,10 @@
 	/** @type {string} shape's fill colour */
 	export let stroke = '#ababab';
 
+	export let strokeWidth = '2px';
+
+	export let showCircle = false;
+
 	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
 
@@ -16,8 +20,9 @@
 		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');
 </script>
 
-<path class="path-line" d={path} {stroke} />
-{#if hoverData}
+<path class="path-line" d={path} {stroke} stroke-width={strokeWidth} />
+
+{#if showCircle && hoverData}
 	<circle {cx} {cy} r="6" fill={stroke} />
 {/if}
 
@@ -26,6 +31,5 @@
 		fill: none;
 		stroke-linecap: round;
 		stroke-linejoin: round;
-		stroke-width: 2px;
 	}
 </style>
