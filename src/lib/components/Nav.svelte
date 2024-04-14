@@ -21,13 +21,13 @@
 
 <header class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid">
 	<div class="container max-w-none lg:container flex items-center justify-between h-full">
-		<a href="/" class="relative z-40">
+		<a href="/" class="absolute md:relative z-40" class:top-12={mobileNavActive}>
 			<h1 class="m-0 w-[200px]">
 				<img class="block" src="/img/logo.svg" alt="Open Electricity" />
 			</h1>
 		</a>
 		<nav
-			class="block fixed top-0 left-0 h-full w-full z-30 bg-white pt-36 px-8 md:w-auto md:static md:px-4 md:py-2 md:flex md:justify-between md:gap-12 lg:gap-16"
+			class="block fixed top-0 left-0 h-full w-full z-30 bg-white pt-36 px-10 md:w-auto md:static md:px-4 md:py-2 md:flex md:justify-between md:gap-12 lg:gap-16"
 			class:hidden={!mobileNavActive}
 		>
 			{#each navItems as { name, href }}
@@ -40,8 +40,10 @@
 				</a>
 			{/each}
 		</nav>
+
 		<button
-			class="md:hidden relative z-40"
+			class="md:hidden absolute right-10 z-40"
+			class:top-12={mobileNavActive}
 			on:click={() => {
 				mobileNavActive = !mobileNavActive;
 			}}

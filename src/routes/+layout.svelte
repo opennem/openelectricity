@@ -1,5 +1,4 @@
 <script>
-	import { fade } from 'svelte/transition';
 	import { onNavigate } from '$app/navigation';
 	import '../app.css';
 
