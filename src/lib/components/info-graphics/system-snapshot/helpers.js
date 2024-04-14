@@ -45,8 +45,8 @@ export const intensityColour = scaleLinear(
 	['#21956C', '#8BB97A', '#E9FFAA', '#3F2E16']
 );
 
-console.log('priceColour', priceColour(3000));
-console.log('intensityColour', intensityColour(250));
+// console.log('priceColour', priceColour(3000));
+// console.log('intensityColour', intensityColour(250));
 
 /** @type {FuelTechCode[]} */
 export const loadFts = ['exports', 'battery_charging', 'pumps'];

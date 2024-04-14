@@ -82,8 +82,6 @@
 		});
 	}
 
-	$: console.log('flows', flows);
-
 	// Track map mode and data
 	let mapMode = 'annual'; // annual
 	$: mapData = data[mapMode];

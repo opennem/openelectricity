@@ -61,7 +61,7 @@
 
 	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
 
-	$: console.log('groupedData', groupedData);
+	// $: console.log('groupedData', groupedData);
 
 	$: flatData = flatten(groupedData, 'values');
 	$: latestDatapoint = dataset[dataset.length - 1];

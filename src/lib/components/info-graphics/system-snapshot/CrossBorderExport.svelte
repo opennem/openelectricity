@@ -10,7 +10,6 @@
 	});
 
 	$: regionArr = regions.split('->').map((region) => region.slice(0, -1));
-	$: console.log('regionArr', regionArr);
 	$: isReversed = value < 0;
 </script>
 

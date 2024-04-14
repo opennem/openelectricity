@@ -14,7 +14,7 @@ export async function load({ params }) {
 				}
 			}`
 	);
-	console.log(`Loading ${code}`);
+	// console.log(`Loading ${code}`);
 
 	if (data && data.length > 0) {
 		return {

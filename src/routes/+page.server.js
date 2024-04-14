@@ -3,7 +3,7 @@ import { energyData } from '$lib/stats';
 // import ispData from '$lib/isp';
 
 /** @type {import('./$types').PageServerLoad} */
-export async function load() {
+export async function load({ fetch }) {
 	const homepageData = await client.fetch(
 		`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, records_title, analysis_title, goals_title, goals}`
 	);

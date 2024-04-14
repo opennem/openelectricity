@@ -41,7 +41,6 @@
 	let regionEmissions;
 
 	onMount(async () => {
-		console.log('data', data);
 		regionPower = await fetch('/api/region-power').then(async (res) => {
 			const jsonData = await res.json();
 			return jsonData;
@@ -103,13 +102,13 @@
 	// TEST map data
 	const mapJsons = mapAllData.originalJsons;
 	const mapDataCached = mapAllData.cached;
-	console.log('mapJsons', mapJsons, 'cached', mapDataCached);
+	// console.log('mapJsons', mapJsons, 'cached', mapDataCached);
 
-	console.log('flows', flows);
-	console.log('prices', prices);
-	console.log('regionPower', regionPower);
-	console.log('regionEnergy', regionEnergy);
-	console.log('regionEmissions', regionEmissions);
+	// console.log('flows', flows);
+	// console.log('prices', prices);
+	// console.log('regionPower', regionPower);
+	// console.log('regionEnergy', regionEnergy);
+	// console.log('regionEmissions', regionEmissions);
 
 	$: allReady = dataTrackerData.length > 0 && historyEnergyNemData.length > 0;
 </script>

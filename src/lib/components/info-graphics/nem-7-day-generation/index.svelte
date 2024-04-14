@@ -43,7 +43,7 @@
 
 	$: dataset = timeSeriesDatasets.data;
 
-	$: console.log(domainOrder);
+	// $: console.log(domainOrder);
 </script>
 
 <div class="container max-w-none lg:container">
