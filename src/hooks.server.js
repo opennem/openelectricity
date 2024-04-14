@@ -1,9 +1,5 @@
-import Mixpanel from 'mixpanel';
-import { UAParser } from 'ua-parser-js'; // https://docs.uaparser.js.org/v2/
-import { ADMIN_LOGIN, MIXPANEL_API_KEY, MIXPANEL_TRACKING_ON } from '$env/static/private';
+import { ADMIN_LOGIN } from '$env/static/private';
 import { building } from '$app/environment';
-
-const mixpanel = Mixpanel.init(MIXPANEL_API_KEY, { geolocate: true });
 
 /** @type {import('@sveltejs/kit').Handle} */
 export const handle = async ({ event, resolve }) => {
@@ -40,24 +36,6 @@ export const handle = async ({ event, resolve }) => {
 
 	if (responseTime < 1000) {
 		console.log(`🚀 ${route} took ${responseTime.toFixed(2)} ms`);
-	}
-
-	if (MIXPANEL_TRACKING_ON) {
-		const ua = new UAParser(event.request.headers.get('User-Agent'));
-
-		// console.log('event', ua.getBrowser(), ua.getOS(), ua.getDevice(), ua.getCPU());
-
-		const properties = {
-			$browser: ua.getBrowser().name,
-			$browserVersion: ua.getBrowser().version,
-			$device: ua.getDevice().model,
-			$deviceVendor: ua.getDevice().vendor,
-			$os: ua.getOS().name,
-			$osVersion: ua.getOS().version,
-			$cpu: ua.getCPU().architecture
-		};
-
-		mixpanel.track('User-Agent', properties);
 	}
 
 	return response;
