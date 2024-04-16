@@ -21,7 +21,7 @@ const team = [
 		name: 'Simon Holmes à Court',
 		role: 'Product Manager',
 		bio: [
-			"Simon Holmes à Court is an Australian businessman, energy analyst, clean tech investor, climate philanthropist, Director of the Smart Energy Council and the Australian Environmental Grantmakers Network and writes regularly about the transformation of Australia's energy sector. He is the founder and convenor of Climate 200."
+			// "Simon Holmes à Court is an Australian businessman, energy analyst, clean tech investor, climate philanthropist, Director of the Smart Energy Council and the Australian Environmental Grantmakers Network and writes regularly about the transformation of Australia's energy sector. He is the founder and convenor of Climate 200."
 		],
 		social: [
 			{
