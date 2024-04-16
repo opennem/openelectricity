@@ -10,7 +10,8 @@
 		scenarioDescriptions,
 		selectedPathway,
 		scenarioYDomain,
-		modelXTicks
+		modelXTicks,
+		modelSparklineXTicks
 	} from './scenarios';
 	import {
 		domainGroups,
@@ -18,7 +19,8 @@
 		labelReducer,
 		colourReducer,
 		fuelTechReducer,
-		formatFyTickX
+		formatFyTickX,
+		formatValue
 	} from './helpers';
 
 	import {
@@ -33,6 +35,7 @@
 
 	import OverviewChart from './OverviewChart.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
+	import ChartTooltip from './ChartTooltip.svelte';
 
 	import parseInterval from '$lib/utils/intervals';
 	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
@@ -127,7 +130,7 @@
 		(d) => d.date.getFullYear() < 2024 && d.date.getFullYear() > 2009
 	);
 
-	$: sparkLineXTicks = [2025, 2052].map((year) => startOfYear(new Date(`${year}-01-01`)));
+	$: sparkLineXTicks = modelSparklineXTicks[selectedModel.value];
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
@@ -164,19 +167,45 @@
 		selectedModel = evt.detail;
 		selectedScenario = scenarios[selectedModel.value][0];
 	}
+
+	/** @type {string | undefined} */
+	let hoverKey;
+
+	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
+	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	$: hoverKeyValue =
+		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
+	$: hoverKeyColour = hoverKey ? projectionSeriesColours[hoverKey] : '';
+	$: hoverKeyLabel = hoverKey ? projectionSeriesLabels[hoverKey] : '';
+
+	const handleMousemove = (/** @type {*} */ e) => {
+		if (e.detail.key) {
+			hoverKey = e.detail.key;
+			hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+		} else {
+			hoverKey = undefined;
+			hoverData = /** @type {TimeSeriesData} */ (e.detail);
+		}
+	};
+
+	const handleHistoricalMousemove = (/** @type {*} */ e) => {
+		if (e.detail.key) {
+			historicalHoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+		} else {
+			historicalHoverData = /** @type {TimeSeriesData} */ (e.detail);
+		}
+	};
 </script>
 
 <div class="container max-w-none lg:container">
-	<header class="grid grid-cols-5 gap-24">
-		<h1
-			class="col-span-5 text-3xl leading-[3.7rem] md:text-5xl md:leading-5xl md:col-span-4 md:mr-10"
-		>
+	<header class="flex justify-between gap-24 mb-12">
+		<h1 class="text-3xl leading-[3.7rem] mb-4 md:mb-6 md:text-5xl md:leading-5xl">
 			Explore the future of Australia's national electricity market
 		</h1>
 
 		<div class="hidden md:block">
 			<a
-				class="flex gap-6 justify-between items-center rounded-lg font-space border border-black border-solid bg-white p-6 transition-all text-black hover:text-white hover:bg-black hover:no-underline"
+				class="whitespace-nowrap flex gap-6 justify-between items-center rounded-lg font-space border border-black border-solid bg-white p-6 transition-all text-black hover:text-white hover:bg-black hover:no-underline"
 				href={fileUrl}
 				download="{selectedModelScenarioLabels[selectedScenario]}.csv"
 				target="_download"
@@ -187,9 +216,19 @@
 		</div>
 	</header>
 
-	<div class="grid grid-cols-6 gap-10 my-6">
+	<div class="grid grid-cols-6 gap-10 my-6 relative">
+		<div class="absolute -right-8 hidden md:block">
+			<ChartTooltip
+				{hoverData}
+				{hoverKey}
+				defaultText="Energy Generation (TWh) by Financial Year"
+				seriesColours={projectionSeriesColours}
+				seriesLabels={projectionSeriesLabels}
+			/>
+		</div>
+
 		<div class="text-dark-grey col-span-6 md:col-span-2 relative">
-			<div class="static md:absolute top-0 z-10 text-sm">
+			<div class="static md:absolute top-0 z-10 text-sm pb-5">
 				<div class="md:mr-16 mb-8">
 					<p>
 						A range of modelled scenarios exist which envision the evolution of Australia's National
@@ -230,6 +269,15 @@
 				</div>
 			</div>
 
+			<div class="absolute -right-8 mt-10 block md:hidden">
+				<ChartTooltip
+					{hoverData}
+					{hoverKey}
+					seriesColours={projectionSeriesColours}
+					seriesLabels={projectionSeriesLabels}
+				/>
+			</div>
+
 			<div class="invisible absolute md:visible md:relative">
 				<OverviewChart
 					dataset={filteredHistoricalTimeSeriesDatasets}
@@ -244,7 +292,7 @@
 					formatTickX={formatFyTickX}
 					hoverData={historicalHoverData}
 					id="historical-chart"
-					on:mousemove={(e) => (historicalHoverData = /** @type {TimeSeriesData} */ (e.detail))}
+					on:mousemove={handleHistoricalMousemove}
 					on:mouseout={() => (historicalHoverData = undefined)}
 				/>
 			</div>
@@ -270,7 +318,7 @@
 							hoverData={historicalHoverData}
 							id="historical-chart"
 							clip={false}
-							on:mousemove={(e) => (historicalHoverData = /** @type {TimeSeriesData} */ (e.detail))}
+							on:mousemove={handleHistoricalMousemove}
 							on:mouseout={() => (historicalHoverData = undefined)}
 						/>
 					</div>
@@ -293,8 +341,11 @@
 							bgClass="bg-light-warm-grey"
 							id="projection-chart"
 							formatTickX={formatFyTickX}
-							on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-							on:mouseout={() => (hoverData = undefined)}
+							on:mousemove={handleMousemove}
+							on:mouseout={() => {
+								hoverKey = undefined;
+								hoverData = undefined;
+							}}
 						/>
 					</div>
 				</div>

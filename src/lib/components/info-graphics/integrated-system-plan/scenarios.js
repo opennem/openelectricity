@@ -83,3 +83,8 @@ export const modelXTicks = {
 		startOfYear(new Date('2051-01-01'))
 	]
 };
+
+export const modelSparklineXTicks = {
+	aemo2024: [2025, 2052].map((year) => startOfYear(new Date(`${year}-01-01`))),
+	aemo2022: [2024, 2051].map((year) => startOfYear(new Date(`${year}-01-01`)))
+};

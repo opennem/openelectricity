@@ -1,4 +1,5 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
 	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
@@ -61,6 +62,8 @@
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
 	export let formatTickX = (/** @type {*} */ d) => d;
 
+	const dispatch = createEventDispatcher();
+
 	/** TODO: work out transition */
 	const tweenOptions = {
 		duration: 750,
@@ -101,8 +104,8 @@
 				<ClipPath id={`${id}-clip-path`} />
 			</defs>
 
-			<AreaStacked clipPathId={clip ? `${id}-clip-path` : ''} on:mousemove on:mouseout />
 			<HoverLayer {dataset} on:mousemove on:mouseout />
+			<AreaStacked clipPathId={clip ? `${id}-clip-path` : ''} {dataset} on:mousemove on:mouseout />
 		</Svg>
 
 		<Svg pointerEvents={false}>
@@ -125,7 +128,7 @@
 		</Svg>
 
 		<Html pointerEvents={false}>
-			<ChartAnnotations {title} {description} {scenarioTitle} />
+			<ChartAnnotations {description} {scenarioTitle} />
 
 			<HoverText {hoverData} isShapeStack={true} position="bottom">
 				<span class="text-[10px] block">
