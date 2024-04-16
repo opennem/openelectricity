@@ -12,6 +12,8 @@
 	/** @type {string|null} */
 	export let fill = null;
 
+	export let clipPathId = '';
+
 	$: compareDates = [...new Set(dataset.map((d) => d.date))];
 
 	$: areaGen = area()
@@ -54,7 +56,7 @@
 	}
 </script>
 
-<g class="area-group" role="group">
+<g class="area-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
 	{#each $data as d}
 		<path
 			role="presentation"

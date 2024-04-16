@@ -22,19 +22,16 @@
 		colourReducer as historicalColourReducer
 	} from './historical-helpers';
 
-	import ButtonLink from '$lib/components/ButtonLink.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 
 	import OverviewChart from './OverviewChart.svelte';
-	import SparkBar from './SparkBar.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
-	import DashboardViewOptions from './DashboardViewOptions.svelte';
 
 	import parseInterval from '$lib/utils/intervals';
 	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
 	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
 
-	/** @type {{ fuelTechs: string[], outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} */
+	/** @type {{ ispData: *, outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} */
 	export let data;
 
 	const xKey = 'date';
@@ -43,11 +40,14 @@
 		maximumFractionDigits: 0
 	});
 
-	/** @type {'line'|'bar'} */
-	let dashboard = 'line'; // bar
-
 	/** @type {ScenarioKey} */
 	let selectedScenario = scenarios[0];
+
+	let selectedModel = 'aemo2022'; // 'aemo2024';
+
+	$: parsed2022 = data.ispData.parsed2022;
+	$: parsed2024 = data.ispData.parsed2024;
+	$: console.log(parsed2022, parsed2024);
 
 	$: outlookData = data.outlookEnergyNem.data;
 
@@ -57,8 +57,23 @@
 		(d) => d.pathway === selectedPathway
 	);
 
-	$: yDomain =
-		selectedScenario === 'green_energy_exports' ? [0, 1250000 / 1000] : [0, 500000 / 1000];
+	let yDomain = [0, 100];
+
+	$: if (selectedScenario === 'green_energy_exports') {
+		// yDomain = [0, 100000];
+		// setTimeout(() => {
+		// 	yDomain = [0, 1250000 / 1000];
+		// }, 500);
+
+		yDomain = [0, 1250000 / 1000];
+	} else if (selectedScenario === 'progressive_change') {
+		yDomain = [0, 350000 / 1000];
+	} else {
+		yDomain = [0, 500000 / 1000];
+	}
+
+	// $: yDomain =
+	// 	selectedScenario === 'green_energy_exports' ? [0, 1250000 / 1000] : [0, 500000 / 1000];
 
 	$: projectionStatsDatasets = new StatsDatasets(filteredWithPathwayScenario, 'projection')
 		.group(domainGroups)
@@ -118,25 +133,6 @@
 	);
 
 	$: sparkLineXTicks = [2025, 2052].map((year) => startOfYear(new Date(`${year}-01-01`)));
-
-	/** @type {TimeSeriesData[]} */
-	let sparkBarDataset = [];
-
-	$: {
-		sparkBarDataset = [];
-		[2025, 2030, 2050].forEach((year) => {
-			const data = projectionTimeSeriesDatasets.data.find((d) => d.date.getFullYear() === year);
-			if (data) {
-				sparkBarDataset.push(data);
-			} else {
-				console.warn('no data for year', year, projectionTimeSeriesDatasets.data);
-			}
-		});
-	}
-
-	$: sparkBarXTicks = sparkBarDataset.map((d) =>
-		startOfYear(new Date(`${format(d.date, 'yyyy')}-01-01`))
-	);
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = undefined;
@@ -237,6 +233,7 @@
 					seriesColours={historicalTimeSeriesDatasets.seriesColours}
 					formatTickX={formatFyTickX}
 					hoverData={historicalHoverData}
+					id="historical-chart"
 					on:mousemove={(e) => (historicalHoverData = /** @type {TimeSeriesData} */ (e.detail))}
 					on:mouseout={() => (historicalHoverData = undefined)}
 				/>
@@ -261,6 +258,8 @@
 							seriesColours={historicalTimeSeriesDatasets.seriesColours}
 							formatTickX={formatFyTickX}
 							hoverData={historicalHoverData}
+							id="historical-chart"
+							clip={false}
 							on:mousemove={(e) => (historicalHoverData = /** @type {TimeSeriesData} */ (e.detail))}
 							on:mouseout={() => (historicalHoverData = undefined)}
 						/>
@@ -286,6 +285,7 @@
 							{hoverData}
 							overlay={true}
 							bgClass="bg-light-warm-grey"
+							id="projection-chart"
 							formatTickX={formatFyTickX}
 							on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 							on:mouseout={() => (hoverData = undefined)}
@@ -301,33 +301,20 @@
 	<div
 		class="mt-6 grid grid-cols-2 md:grid-cols-6 md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
 	>
-		{#if dashboard === 'line'}
-			{#each [...projectionSeriesNames].reverse() as key}
-				<SparkLineArea
-					class="p-8 even:border-l border-t [&:nth-child(-n+2)]:border-t-0 md:border-0"
-					dataset={projectionTimeSeriesDatasets.data}
-					{key}
-					fuelTechId={projectionFuelTechIds[key]}
-					xTicks={sparkLineXTicks}
-					title={projectionSeriesLabels[key]}
-					colour={projectionSeriesColours[key]}
-					{hoverData}
-					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-					on:mouseout={() => (hoverData = undefined)}
-				/>
-			{/each}
-		{:else}
-			{#each [...projectionSeriesNames].reverse() as key}
-				<SparkBar
-					dataset={sparkBarDataset}
-					{key}
-					xTicks={sparkBarXTicks}
-					title={projectionSeriesLabels[key]}
-					colour={projectionSeriesColours[key]}
-					{hoverData}
-				/>
-			{/each}
-		{/if}
+		{#each [...projectionSeriesNames].reverse() as key}
+			<SparkLineArea
+				class="p-8 even:border-l border-t [&:nth-child(-n+2)]:border-t-0 md:border-0"
+				dataset={projectionTimeSeriesDatasets.data}
+				{key}
+				fuelTechId={projectionFuelTechIds[key]}
+				xTicks={sparkLineXTicks}
+				title={projectionSeriesLabels[key]}
+				colour={projectionSeriesColours[key]}
+				{hoverData}
+				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
+				on:mouseout={() => (hoverData = undefined)}
+			/>
+		{/each}
 	</div>
 
 	<p class="text-xs text-mid-grey px-3 pt-12">

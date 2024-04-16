@@ -4,6 +4,8 @@
 	const { width, height, padding } = getContext('LayerCake');
 
 	export let id = 'clipping-path';
+
+	$: console.log('width', $width, $width + $padding.left + $padding.right);
 </script>
 
 <clipPath {id} transform="translate({-$padding.left}, 0)">

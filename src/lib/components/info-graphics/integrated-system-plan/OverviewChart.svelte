@@ -12,7 +12,7 @@
 	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
 	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
 	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
-	import HoverDots from '$lib/components/charts/elements/HoverDots.svelte';
+	import ClipPath from '$lib/components/charts/elements/defs/ClipPath.svelte';
 	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
 	import Overlay from '$lib/components/charts/elements/Overlay.svelte';
 	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
@@ -25,6 +25,9 @@
 	export let title = '';
 	export let scenarioTitle = '';
 	export let description = '';
+
+	export let id = '';
+	export let clip = true;
 
 	export let xKey = '';
 
@@ -94,18 +97,21 @@
 		</Html>
 
 		<Svg>
-			<AreaStacked on:mousemove on:mouseout />
+			<defs>
+				<ClipPath id={`${id}-clip-path`} />
+			</defs>
 
+			<AreaStacked clipPathId={clip ? `${id}-clip-path` : ''} on:mousemove on:mouseout />
 			<HoverLayer {dataset} on:mousemove on:mouseout />
 		</Svg>
 
 		<Svg pointerEvents={false}>
 			<defs>
-				<HatchPattern id="hatch-pattern" />
+				<HatchPattern id={`${id}-hatch-pattern`} />
 			</defs>
 
 			{#if overlay}
-				<Overlay fill="url(#hatch-pattern)" />
+				<Overlay fill="url(#{`${id}-hatch-pattern`})" />
 			{/if}
 
 			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />

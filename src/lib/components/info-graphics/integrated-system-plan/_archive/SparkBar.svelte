@@ -2,13 +2,13 @@
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleBand } from 'd3-scale';
 
-	import { formatFyTickX, formatTickY } from './helpers';
+	import { formatFyTickX, formatTickY } from '../helpers';
 
 	import Column from '$lib/components/charts/elements/Column.svelte';
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
 	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
 
-	import KeyHeader from './KeyHeader.svelte';
+	import KeyHeader from '../KeyHeader.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];

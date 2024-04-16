@@ -1,9 +1,9 @@
-// import outlookEnergyNem from '$lib/isp-data/isp_outlooks/au/NEM/energy/outlook.json';
+import outlookEnergyNem2022 from '$lib/isp-data/isp_outlooks/au/NEM/energy/outlook.json';
 // import outlookCapacityNem from '$lib/isp-data/isp_outlooks/au/NEM/capacity/outlook.json';
 import outlookEnergyNem from '$lib/isp-data/outlooks2024/au/NEM/energy/outlook.json';
 
-function ispData() {
-	const data = outlookEnergyNem.data;
+function parseIsp(projectionData) {
+	const data = projectionData.data;
 	const updatedDataToTera = data.map((d) => {
 		const projection = { ...d.projection };
 		projection.data = projection.data.map((d) => d / 1000);
@@ -20,13 +20,20 @@ function ispData() {
 
 	return {
 		outlookEnergyNem: {
-			...outlookEnergyNem,
+			...projectionData,
 			data: updatedDataToTera
 		},
 		pathways,
 		scenarios,
 		fuelTechs
 	};
+}
+
+function ispData() {
+	const parsed2022 = parseIsp(outlookEnergyNem2022);
+	const parsed2024 = parseIsp(outlookEnergyNem);
+
+	return { parsed2022, parsed2024 };
 }
 
 export default ispData;

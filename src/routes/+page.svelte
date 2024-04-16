@@ -63,11 +63,9 @@
 	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
 	let outlookEnergyNem = null;
-	let fuelTechs = [];
 
 	setTimeout(() => {
-		outlookEnergyNem = ispData().outlookEnergyNem;
-		fuelTechs = ispData().fuelTechs;
+		outlookEnergyNem = ispData().parsed2024.outlookEnergyNem;
 	}, 250);
 
 	if (!homepageData || homepageData.length === 0) {
@@ -163,7 +161,7 @@
 
 	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
 		{#if outlookEnergyNem}
-			<InfoGraphicISP data={{ fuelTechs, outlookEnergyNem, historyEnergyNemData }} />
+			<InfoGraphicISP data={{ ispData: ispData(), outlookEnergyNem, historyEnergyNemData }} />
 		{/if}
 	</div>
 
