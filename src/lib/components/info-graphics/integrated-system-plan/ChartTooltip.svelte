@@ -20,7 +20,7 @@
 			{formatFyTickX(hoverTime)}
 		</span>
 
-		<div class="bg-warm-grey px-4 py-1 flex gap-6 items-center">
+		<div class="bg-light-warm-grey px-4 py-1 flex gap-6 items-center">
 			{#if hoverKeyValue !== null}
 				<div class="flex items-center gap-2">
 					<div class="flex items-center gap-2">
