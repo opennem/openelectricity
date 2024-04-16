@@ -2,17 +2,22 @@
 	import { startOfYear, format } from 'date-fns';
 
 	import deepCopy from '$lib/utils/deep-copy';
+
+	import {
+		modelSelections,
+		scenarios,
+		scenarioLabels,
+		scenarioDescriptions,
+		selectedPathway,
+		scenarioYDomain
+	} from './scenarios';
 	import {
 		domainGroups,
 		domainOrder,
 		labelReducer,
 		colourReducer,
 		fuelTechReducer,
-		formatFyTickX,
-		scenarios,
-		scenarioLabels,
-		scenarioDescriptions,
-		selectedPathway
+		formatFyTickX
 	} from './helpers';
 
 	import {
@@ -23,6 +28,7 @@
 	} from './historical-helpers';
 
 	import Icon from '$lib/components/Icon.svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
 	import OverviewChart from './OverviewChart.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
@@ -40,40 +46,27 @@
 		maximumFractionDigits: 0
 	});
 
-	/** @type {ScenarioKey} */
-	let selectedScenario = scenarios[0];
+	let selectedModel = modelSelections[0];
+	let selectedScenario = scenarios[selectedModel.value][0];
 
-	let selectedModel = 'aemo2022'; // 'aemo2024';
+	// $: aemo2022 = data.ispData.aemo2022;
+	// $: aemo2024 = data.ispData.aemo2024;
+	// $: console.log(aemo2022, aemo2024);
 
-	$: parsed2022 = data.ispData.parsed2022;
-	$: parsed2024 = data.ispData.parsed2024;
-	$: console.log(parsed2022, parsed2024);
+	$: selectedModelScenarioDescriptions = scenarioDescriptions[selectedModel.value];
+	$: selectedModelScenarioLabels = scenarioLabels[selectedModel.value];
+	$: selectedModelPathway = selectedPathway[selectedModel.value];
+	$: selectedModelYDomain = scenarioYDomain[selectedModel.value];
+	$: selectedModelData = data.ispData[selectedModel.value];
 
-	$: outlookData = data.outlookEnergyNem.data;
-
+	$: outlookData = selectedModelData.outlookEnergyNem.data;
 	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
 
 	$: filteredWithPathwayScenario = filteredWithScenario.filter(
-		(d) => d.pathway === selectedPathway
+		(d) => d.pathway === selectedModelPathway
 	);
 
-	let yDomain = [0, 100];
-
-	$: if (selectedScenario === 'green_energy_exports') {
-		// yDomain = [0, 100000];
-		// setTimeout(() => {
-		// 	yDomain = [0, 1250000 / 1000];
-		// }, 500);
-
-		yDomain = [0, 1250000 / 1000];
-	} else if (selectedScenario === 'progressive_change') {
-		yDomain = [0, 350000 / 1000];
-	} else {
-		yDomain = [0, 500000 / 1000];
-	}
-
-	// $: yDomain =
-	// 	selectedScenario === 'green_energy_exports' ? [0, 1250000 / 1000] : [0, 500000 / 1000];
+	$: yDomain = selectedModelYDomain[selectedScenario];
 
 	$: projectionStatsDatasets = new StatsDatasets(filteredWithPathwayScenario, 'projection')
 		.group(domainGroups)
@@ -163,6 +156,12 @@
 
 	$: file = new Blob([generatedCsv], { type: 'text/plain' });
 	$: fileUrl = URL.createObjectURL(file);
+
+	function handleModelChange(evt) {
+		if (selectedModel.value === evt.detail.value) return;
+		selectedModel = evt.detail;
+		selectedScenario = scenarios[selectedModel.value][0];
+	}
 </script>
 
 <div class="container max-w-none lg:container">
@@ -177,7 +176,7 @@
 			<a
 				class="flex gap-6 justify-between items-center rounded-lg font-space border border-black border-solid bg-white p-6 transition-all text-black hover:text-white hover:bg-black hover:no-underline"
 				href={fileUrl}
-				download="{scenarioLabels[selectedScenario]}.csv"
+				download="{selectedModelScenarioLabels[selectedScenario]}.csv"
 				target="_download"
 			>
 				<span>Download Data</span>
@@ -189,7 +188,7 @@
 	<div class="grid grid-cols-6 gap-10 my-6">
 		<div class="text-dark-grey col-span-6 md:col-span-2 relative">
 			<div class="static md:absolute top-0 z-10 text-sm">
-				<div class="md:mr-16">
+				<div class="md:mr-16 mb-8">
 					<p>
 						A range of modelled scenarios exist which envision the evolution of Australia's National
 						Electricity Market (NEM) over the coming decades.
@@ -198,11 +197,20 @@
 						These scenarios aim to steer Australia towards a cost-effective, reliable and safe
 						energy system en route to a zero-emissions electricity network.
 					</p>
-					<p>Explore the <strong>draft 2024 AEMO</strong></p>
+					<p class="mb-0">Explore the scenarios:</p>
+					<FormSelect
+						options={modelSelections}
+						selected={selectedModel}
+						on:change={handleModelChange}
+					/>
 				</div>
 
-				<div class="flex gap-3">
-					{#each scenarios as scenario}
+				<div
+					class="grid gap-3"
+					class:grid-cols-3={scenarios[selectedModel.value].length === 3}
+					class:grid-cols-2={scenarios[selectedModel.value].length !== 3}
+				>
+					{#each scenarios[selectedModel.value] as scenario}
 						<button
 							class="w-full rounded-lg border hover:bg-light-warm-grey px-6 py-4 capitalize text-left leading-sm"
 							class:border-mid-warm-grey={selectedScenario !== scenario}
@@ -267,8 +275,8 @@
 					<div class="w-full">
 						<OverviewChart
 							title={`Energy Generation (TWh) by Financial Year`}
-							scenarioTitle={scenarioLabels[selectedScenario]}
-							description={scenarioDescriptions[selectedScenario]}
+							scenarioTitle={selectedModelScenarioLabels[selectedScenario]}
+							description={selectedModelScenarioDescriptions[selectedScenario]}
 							dataset={projectionTimeSeriesDatasets.data}
 							{xKey}
 							xTicks={[

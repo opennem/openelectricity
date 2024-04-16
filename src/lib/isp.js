@@ -30,10 +30,10 @@ function parseIsp(projectionData) {
 }
 
 function ispData() {
-	const parsed2022 = parseIsp(outlookEnergyNem2022);
-	const parsed2024 = parseIsp(outlookEnergyNem);
+	const aemo2022 = parseIsp(outlookEnergyNem2022);
+	const aemo2024 = parseIsp(outlookEnergyNem);
 
-	return { parsed2022, parsed2024 };
+	return { aemo2022, aemo2024 };
 }
 
 export default ispData;

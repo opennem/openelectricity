@@ -1,12 +1,16 @@
 <script>
 	import ispData from '$lib/isp';
 	import InfoGraphicISP from '$lib/components/info-graphics/integrated-system-plan/index.svelte';
+	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
 	/** @type {*} */
 	export let data;
-	const { historyEnergyNemData } = data;
+	const { historyEnergyNemData, articles } = data;
 	const isp = ispData();
-	const outlookEnergyNem = isp.parsed2024.outlookEnergyNem;
+	const outlookEnergyNem = isp.aemo2024.outlookEnergyNem;
+	const analysisArticles = articles.filter(
+		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
+	);
 </script>
 
 <div class="bg-light-warm-grey py-6 md:py-4">
@@ -25,4 +29,17 @@
 
 <div class="mt-12 md:mt-24">
 	<InfoGraphicISP data={{ ispData: isp, outlookEnergyNem, historyEnergyNemData }} />
+</div>
+
+<div class="bg-white py-16 md:py-32">
+	<div class="container max-w-none lg:container">
+		<header class="flex justify-between items-center mb-8">
+			<h3>Related analysis</h3>
+		</header>
+		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+			{#each analysisArticles as article}
+				<ArticleCard {article} />
+			{/each}
+		</div>
+	</div>
 </div>

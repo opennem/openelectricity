@@ -65,7 +65,7 @@
 	let outlookEnergyNem = null;
 
 	setTimeout(() => {
-		outlookEnergyNem = ispData().parsed2024.outlookEnergyNem;
+		outlookEnergyNem = ispData().aemo2024.outlookEnergyNem;
 	}, 250);
 
 	if (!homepageData || homepageData.length === 0) {
@@ -196,7 +196,7 @@
 
 	<div class="bg-white py-16 md:py-32">
 		<div class="container max-w-none lg:container">
-			<header class="flex justify-between items-center">
+			<header class="flex justify-between items-center mb-8">
 				<h3>{analysis_title}</h3>
 				<SectionLink href="/analysis" title="View all analyses" />
 			</header>
