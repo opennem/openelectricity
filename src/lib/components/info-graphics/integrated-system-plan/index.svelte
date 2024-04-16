@@ -9,7 +9,8 @@
 		scenarioLabels,
 		scenarioDescriptions,
 		selectedPathway,
-		scenarioYDomain
+		scenarioYDomain,
+		modelXTicks
 	} from './scenarios';
 	import {
 		domainGroups,
@@ -57,6 +58,7 @@
 	$: selectedModelScenarioLabels = scenarioLabels[selectedModel.value];
 	$: selectedModelPathway = selectedPathway[selectedModel.value];
 	$: selectedModelYDomain = scenarioYDomain[selectedModel.value];
+	$: selectedModelXTicks = modelXTicks[selectedModel.value];
 	$: selectedModelData = data.ispData[selectedModel.value];
 
 	$: outlookData = selectedModelData.outlookEnergyNem.data;
@@ -279,11 +281,7 @@
 							description={selectedModelScenarioDescriptions[selectedScenario]}
 							dataset={projectionTimeSeriesDatasets.data}
 							{xKey}
-							xTicks={[
-								startOfYear(new Date('2025-01-01')),
-								startOfYear(new Date('2038-01-01')),
-								startOfYear(new Date('2052-01-01'))
-							]}
+							xTicks={selectedModelXTicks}
 							yKey={[0, 1]}
 							yTicks={2}
 							{yDomain}
