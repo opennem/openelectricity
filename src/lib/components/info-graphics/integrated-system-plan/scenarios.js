@@ -1,3 +1,5 @@
+import { startOfYear, format } from 'date-fns';
+
 export const modelSelections = [
 	{
 		label: 'AEMO Draft 2024 ISP',
@@ -31,21 +33,21 @@ export const scenarioLabels = {
 export const scenarioDescriptions = {
 	aemo2024: {
 		step_change:
-			'The Step Change scenario is considered the most likely future for the National Electricity Market (NEM). This scenario takes into account various factors such as ageing generation plants, technical innovation, economics, government policies, energy security, and consumer choice.',
+			'Step Change reflects a pace of energy transition that supports Australia’s contribution to limit global temperature rise to less than 2°C, with consumer energy resources (CER) contributing strongly to the transition.',
 		progressive_change:
-			'The Progressive Change scenario is designed to assess the potential impact of a gradual and evolving transition toward a low-carbon energy system, taking into account the complexities and challenges associated with achieving decarbonization goals.',
+			'Progressive Change also reflects Australia’s current policies and commitments to decarbonisation, but more challenging economic conditions and supply chain constraints mean slower investment in utility-scale assets and CER.',
 		green_energy_exports:
-			'The Green Energy Exports scenario is a highly ambitious scenario that includes strong global action, significant technological breakthroughs, and a near quadrupling of National Electricity Market (NEM) energy consumption to support a hydrogen export industry. '
+			'Green Energy Exports reflects a very rapid decarbonisation rate to support Australia’s contribution to limit global temperature rise to 1.5°C, including strong electrification and a strong green energy export economy.'
 	},
 	aemo2022: {
 		step_change:
-			'The Step Change scenario is considered the most likely future for the National Electricity Market (NEM). This scenario takes into account various factors such as ageing generation plants, technical innovation, economics, government policies, energy security, and consumer choice.',
+			'Characterised by rapid and coordinated consumer-led transformation, this scenario envisions a swift transition from fossil fuels to renewable energy sources, driven by falling production costs, increased digitalization, and decisive economy-wide actions, ultimately positioning electricity as the primary energy source for heating and transportation by 2050',
 		progressive_change:
-			'The Progressive Change scenario is designed to assess the potential impact of a gradual and evolving transition toward a low-carbon energy system, taking into account the complexities and challenges associated with achieving decarbonization goals.',
+			'With incremental efforts towards an economy-wide net zero emissions target by 2050, this scenario foresees a gradual escalation of emissions reduction measures, supported by government policies, consumer investments in DER, and technological advancements, leading to substantial decarbonization and industrial electrification by the 2040s.',
 		slow_change:
-			'The Slow Change scenario is an unlikely transition scenario that does not meet carbon reduction targets. It takes into account the difficult economic environment following the COVID-19 pandemic, reflecting a slower economy and falling short of the targets.',
+			"Despite widespread adoption of distributed PV and consumer-driven energy management, this scenario presents a sluggish progress towards Australia's emissions reduction goals post-COVID-19, with a risk of industrial closures and insufficient momentum for economy-wide decarbonisation.",
 		hydrogen_superpower:
-			'The Hydrogen Superpower scenario is a highly ambitious scenario that includes strong global action, significant technological breakthroughs, and a near quadrupling of National Electricity Market (NEM) energy consumption to support a hydrogen export industry. '
+			'In a future marked by robust global action and technological breakthroughs, this scenario anticipates a quadrupling of NEM energy consumption to support a burgeoning hydrogen export industry, transforming transport and manufacturing while positioning Australia as a leading player in renewable energy exports, with a gradual transition to hydrogen usage across households and industries.'
 	}
 };
 
@@ -67,4 +69,17 @@ export const scenarioYDomain = {
 		slow_change: [0, 420000 / 1000],
 		hydrogen_superpower: [0, 1500000 / 1000]
 	}
+};
+
+export const modelXTicks = {
+	aemo2024: [
+		startOfYear(new Date('2025-01-01')),
+		startOfYear(new Date('2038-01-01')),
+		startOfYear(new Date('2052-01-01'))
+	],
+	aemo2022: [
+		startOfYear(new Date('2024-01-01')),
+		startOfYear(new Date('2037-01-01')),
+		startOfYear(new Date('2051-01-01'))
+	]
 };
