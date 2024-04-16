@@ -9,7 +9,7 @@
 		{ name: 'Future Scenarios', href: '/isp-tracker' },
 		// { name: 'Latest Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },
-		{ name: 'About', href: '/content/about' }
+		{ name: 'About', href: '/about' }
 	];
 
 	let mobileNavActive = false;
