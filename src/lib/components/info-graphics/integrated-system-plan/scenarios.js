@@ -33,21 +33,21 @@ export const scenarioLabels = {
 export const scenarioDescriptions = {
 	aemo2024: {
 		step_change:
-			'Step Change reflects a pace of energy transition that supports Australia’s contribution to limit global temperature rise to less than 2°C, with consumer energy resources (CER) contributing strongly to the transition.',
+			'Considered the most likely scenario, Step Change forecasts a rapid energy transition aligned with Australia’s emissions reductions commitments within a growing economy.',
 		progressive_change:
-			'Progressive Change also reflects Australia’s current policies and commitments to decarbonisation, but more challenging economic conditions and supply chain constraints mean slower investment in utility-scale assets and CER.',
+			'This scenario reflects a more moderate pace of transition compared to Step Change, characterised by slower economic growth and energy investment.',
 		green_energy_exports:
-			'Green Energy Exports reflects a very rapid decarbonisation rate to support Australia’s contribution to limit global temperature rise to 1.5°C, including strong electrification and a strong green energy export economy.'
+			'This scenario envisions very strong industrial decarbonisation coupled with an aggressive pursuit of low-emission energy exports.'
 	},
 	aemo2022: {
 		step_change:
-			'Characterised by rapid and coordinated consumer-led transformation, this scenario envisions a swift transition from fossil fuels to renewable energy sources, driven by falling production costs, increased digitalization, and decisive economy-wide actions, ultimately positioning electricity as the primary energy source for heating and transportation by 2050',
+			'This scenario envisions a rapid, consumer-led transformation of the energy sector, with coordinated actions taken across the economy to fulfil Australia’s net-zero policy commitments quickly.',
 		progressive_change:
-			'With incremental efforts towards an economy-wide net zero emissions target by 2050, this scenario foresees a gradual escalation of emissions reduction measures, supported by government policies, consumer investments in DER, and technological advancements, leading to substantial decarbonization and industrial electrification by the 2040s.',
+			'Under this scenario, Australia pursues a net-zero emissions target for 2050 progressively, with emissions reduction goals being ramped up over time.',
 		slow_change:
-			"Despite widespread adoption of distributed PV and consumer-driven energy management, this scenario presents a sluggish progress towards Australia's emissions reduction goals post-COVID-19, with a risk of industrial closures and insufficient momentum for economy-wide decarbonisation.",
+			'This scenario envisions a challenging economic environment, where industrial closures are more likely, and the pace towards net-zero emissions is slow.',
 		hydrogen_superpower:
-			'In a future marked by robust global action and technological breakthroughs, this scenario anticipates a quadrupling of NEM energy consumption to support a burgeoning hydrogen export industry, transforming transport and manufacturing while positioning Australia as a leading player in renewable energy exports, with a gradual transition to hydrogen usage across households and industries.'
+			'With strong global action and significant technological breakthroughs, this scenario nearly quadruples NEM energy consumption to support a hydrogen export industry.'
 	}
 };
 
