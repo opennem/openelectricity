@@ -55,8 +55,10 @@
 				class:border-dark-grey={value.style === 'blockquote'}
 				class:mt-12={value.style === 'blockquote'}
 				class:py-12={value.style === 'blockquote'}
-				class:text-4xl={value.style === 'blockquote'}
-				class:leading-4xl={value.style === 'blockquote'}
+				class:text-2xl={value.style === 'blockquote'}
+				class:leading-2xl={value.style === 'blockquote'}
+				class:md:text-4xl={value.style === 'blockquote'}
+				class:md:leading-4xl={value.style === 'blockquote'}
 				class:font-bold={value.style === 'blockquote'}
 				class:not-italic={value.style === 'blockquote'}
 				class:text-dark-grey={value.style === 'blockquote'}

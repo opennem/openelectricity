@@ -18,7 +18,7 @@
 	/>
 
 	{#if portableText.value.alt}
-		<figcaption class="w-3/4 mx-auto font-space text-xs font-medium text-mid-grey mt-6">
+		<figcaption class="md:w-3/4 mx-auto px-4 font-space text-xs font-medium text-mid-grey mt-6">
 			{portableText.value.alt}
 		</figcaption>
 	{/if}
