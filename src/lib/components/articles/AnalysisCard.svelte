@@ -28,6 +28,10 @@
 		<h3 class="font-medium mt-8 line-clamp-4">
 			{article.title}
 		</h3>
+
+		{#if !hasCover}
+			<p class="text-mid-grey text-sm">{article.summary}</p>
+		{/if}
 	</header>
 
 	<div class="grid grid-cols-1 gap-4">

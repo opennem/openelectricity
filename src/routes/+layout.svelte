@@ -33,7 +33,7 @@
 		</div>
 		<div>
 			<a
-				href="https://openelectricity.org.au/analysis/from-opennem-to-open-electricity"
+				href="https://openelectricity.org.au/analysis/welcome-open-electricity"
 				class="underline text-white"
 			>
 				Read

@@ -1,22 +1,115 @@
 <script>
-	import RichText from '$lib/components/text-components/RichText.svelte';
+	import { format } from 'date-fns';
 	import { urlFor } from '$lib/sanity';
+	import RichText from '$lib/components/text-components/RichText.svelte';
+	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
+
+	// $: console.log('analysis', data);
+
+	$: hasCover = data.cover;
+	$: formattedDate = format(new Date(data.publishDate), 'do MMM, yyyy');
 </script>
 
-<div class="container max-w-none lg:container py-12">
-	<header class="">
-		<h1>{data.title}</h1>
-		<div>
-			{#if data.author}
-				{data.author.name}
-				<img src={urlFor(data.author.image).width(200).url()} alt={data.author.image.alt} />
-			{/if}
+<div class="bg-light-warm-grey">
+	<div class="container max-w-none lg:container py-12">
+		<div class="py-14">
+			<a
+				href="/analysis"
+				class="inline-flex gap-4 items-center text-dark-grey hover:text-dark-red underline font-space font-medium text-sm"
+			>
+				<IconChevronLeft class="w-8 h-8" />
+				Back to Analysis
+			</a>
 		</div>
-	</header>
-	{#if data.content}
-		<RichText content={data.content} />
+
+		<header class="bg-light-warm-grey h-[600px]">
+			<h1 class="mb-20">{data.title}</h1>
+
+			<div class="grid grid-cols-4 place-items-start">
+				<div class="flex items-center gap-6">
+					<div class="flex items-center">
+						{#each data.author as author, i}
+							<span class={`w-20 h-20 block grayscale relative ${i > 0 ? '-left-3' : 'left-0'}`}>
+								<img
+									class="rounded-full border border-white"
+									src={urlFor(author.image).width(100).height(100).url()}
+									alt={author.image.alt}
+								/>
+							</span>
+						{/each}
+					</div>
+					<div class="text-sm mt-1">
+						<div class="author flex flex-wrap justify-start gap-1 text-dark-grey">
+							{#each data.author as author, i}
+								{#if i > 0}
+									<span>+</span>
+								{/if}
+								<span>{author.name}</span>
+							{/each}
+						</div>
+
+						<span class="text-mid-grey font-light">{formattedDate}</span>
+					</div>
+				</div>
+
+				<p class="col-span-2 text-dark-grey text-lg leading-xl">{data.summary}</p>
+			</div>
+		</header>
+	</div>
+</div>
+
+<div class="container max-w-none lg:container py-12 -mt-[410px]">
+	{#if hasCover}
+		<figure>
+			<img
+				class="mx-auto block"
+				src={urlFor(data.cover).width(1240).height(695).url()}
+				alt={data.cover.alt}
+			/>
+			{#if data.cover.alt}
+				<figcaption>{data.cover.alt}</figcaption>
+			{/if}
+		</figure>
 	{/if}
+
+	{#if data.content}
+		<div class="mt-36">
+			<RichText content={data.content} />
+		</div>
+	{/if}
+</div>
+
+<div class="container max-w-none lg:container pt-12 pb-36">
+	<div class="flex items-center gap-6 max-w-5xl mx-auto border-y border-mid-warm-grey py-12">
+		<div class="flex items-center">
+			{#each data.author as author, i}
+				<span class={`w-20 h-20 block grayscale relative ${i > 0 ? '-left-3' : 'left-0'}`}>
+					<img
+						class="rounded-full border border-white"
+						src={urlFor(author.image).width(100).height(100).url()}
+						alt={author.image.alt}
+					/>
+				</span>
+			{/each}
+		</div>
+		<div class="text-sm mt-1">
+			<div class="author flex flex-wrap justify-start gap-1 text-dark-grey">
+				{#each data.author as author, i}
+					{#if i > 0}
+						<span>+</span>
+					{/if}
+					<span>{author.name}</span>
+				{/each}
+			</div>
+
+			<div class="author flex flex-wrap justify-start gap-1 text-mid-grey font-light">
+				{#each data.author as author}
+					<span>{author.position}</span>
+				{/each}
+			</div>
+		</div>
+	</div>
 </div>
