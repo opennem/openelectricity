@@ -1,12 +1,11 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { format, isToday } from 'date-fns';
 
 	import ispData from '$lib/isp';
 	import { recordsByDay } from '$lib/records';
 
-	import SectionLink from '$lib/components/SectionLink.svelte';
+	import Meta from '$lib/components/Meta.svelte';
 	import InfoGraphicISP from '$lib/components/info-graphics/integrated-system-plan/index.svelte';
 	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
@@ -110,6 +109,12 @@
 
 	$: allReady = dataTrackerData.length > 0 && historyEnergyNemData.length > 0;
 </script>
+
+<Meta
+	siteTitle="Homepage"
+	description="Open Electricity is a platform for exploring Australia's electricity system."
+	image="/img/preview.jpg"
+/>
 
 {#if allReady}
 	<div class="bg-light-warm-grey py-12" transition:fade={{ duration: 500 }}>
