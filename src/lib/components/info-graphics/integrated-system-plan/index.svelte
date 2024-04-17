@@ -199,7 +199,7 @@
 
 <div class="container max-w-none lg:container">
 	<header class="flex justify-between gap-24 mb-12">
-		<h1 class="text-3xl leading-[3.7rem] mb-4 md:mb-6 md:text-5xl md:leading-5xl">
+		<h1 class="text-3xl leading-[3.7rem] mb-4 md:mb-6 md:text-5xl md:leading-5xl md:max-w-[600px]">
 			Explore the future of Australia's national electricity market
 		</h1>
 
