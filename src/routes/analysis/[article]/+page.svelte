@@ -8,7 +8,7 @@
 	/** @type {import('./$types').PageData} */
 	export let data;
 
-	$: console.log('analysis', data);
+	// $: console.log('analysis', data);
 
 	$: hasCover = data.cover;
 	$: formattedDate = format(new Date(data.publishDate), 'do MMM, yyyy');
@@ -21,8 +21,10 @@
 	image="/img/preview.jpg"
 />
 
-<div class="bg-light-warm-grey">
-	<div class="container max-w-none lg:container py-12">
+<div class="relative">
+	<div class="bg-light-warm-grey absolute w-full h-[750px] z-1" />
+
+	<div class="container max-w-none lg:container py-12 relative z-10">
 		<div class="pb-10 md:py-14">
 			<a
 				href="/analysis"
@@ -33,8 +35,10 @@
 			</a>
 		</div>
 
-		<header class="bg-light-warm-grey" class:md:h-[600px]={hasCover}>
-			<h1 class="md:mb-20 text-3xl leading-3xl md:text-9xl md:leading-9xl">{data.title}</h1>
+		<header>
+			<h1 class="md:mb-20 text-3xl leading-3xl md:text-9xl md:leading-9xl md:mr-20">
+				{data.title}
+			</h1>
 
 			<div class="grid grid-cols-1 md:grid-cols-4 place-items-start">
 				<div class="flex items-center gap-6 order-2 md:order-1">
@@ -72,7 +76,7 @@
 </div>
 
 {#if hasCover}
-	<div class="max-w-none lg:container pb-12 md:py-12 md:-mt-[410px]">
+	<div class="max-w-none lg:container pb-12 md:py-4 relative">
 		<figure>
 			<img class="mx-auto block" src={urlFor(data.cover).height(1390).url()} alt={data.cover.alt} />
 			{#if data.cover.alt}
@@ -82,7 +86,7 @@
 	</div>
 {/if}
 
-<div class="container max-w-none lg:container py-12">
+<div class="container max-w-none lg:container">
 	{#if data.content}
 		<div class="md:mt-24">
 			<RichText content={data.content} />

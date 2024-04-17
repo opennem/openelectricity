@@ -151,56 +151,6 @@ export const fossilRenewablesGroupMap = {
 };
 
 /** @type {Object.<FuelTechCode, string>}} */
-// export const fuelTechColourMap = {
-// 	battery_charging: '#B2DAEF',
-// 	battery_discharging: '#00A2FA',
-// 	battery_VPP_charging: '#B2DAEF',
-// 	battery_VPP_discharging: '#00A2FA',
-// 	battery_distributed_charging: '#B2DAEF',
-// 	battery_distributed_discharging: '#00A2FA',
-// 	battery: '#00A2FA',
-
-// 	bioenergy: '#A3886F',
-// 	bioenergy_biogas: '#4CB9B9',
-// 	bioenergy_biomass: '#1D7A7A',
-
-// 	coal: '#131313',
-// 	coal_black: '#121212',
-// 	coal_brown: '#8B572A',
-
-// 	distillate: '#F35020',
-
-// 	gas: '#FF8813',
-// 	gas_ccgt: '#FDB462',
-// 	gas_ccgt_ccs: '#F1AB4B',
-// 	gas_ocgt: '#FFCD96',
-// 	gas_recip: '#F9DCBC',
-// 	gas_steam: '#F48E1B',
-// 	gas_wcmg: '#B46813',
-// 	gas_hydrogen: '#C75338',
-
-// 	hydro: '#4582B4', // 00A5F1
-// 	pumps: '#88AFD0', // ACE9FE
-
-// 	solar: '#FED500',
-// 	solar_utility: '#FED500',
-// 	solar_thermal: '#FDB200',
-// 	solar_rooftop: '#FFE03D',
-
-// 	wind: '#417505',
-// 	wind_offshore: '#53AD69',
-
-// 	nuclear: '#C75338',
-
-// 	imports: '#44146F',
-// 	exports: '#977AB1',
-// 	interconnector: '#7F7F7F',
-// 	demand_response: '#7F7F7F',
-
-// 	fossil_fuels: '#444444',
-// 	renewables: '#52BCA3'
-// };
-
 export const fuelTechColourMap = {
 	battery_charging: '#4F5FD7',
 	battery_discharging: '#3145CE',

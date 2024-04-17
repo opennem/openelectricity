@@ -7,18 +7,24 @@
 	export let portableText;
 	// let imageWidth = portableText.value.style === 'content' ? 1024 : 1440;
 
-	// console.log(portableText.value);
+	// console.log('image', portableText.value);
+
+	$: hasStyle = portableText.value.style;
 </script>
 
 <figure class="py-12 my-12">
-	<img
-		class="border rounded-xl shadow-lg"
-		src={urlFor(portableText.value).width(2000).url()}
-		alt={portableText.value.alt}
-	/>
+	{#if hasStyle}
+		<img
+			class="border rounded-xl shadow-lg"
+			src={urlFor(portableText.value).width(2000).url()}
+			alt={portableText.value.alt}
+		/>
+	{:else}
+		<img class="" src={urlFor(portableText.value).width(2000).url()} alt={portableText.value.alt} />
+	{/if}
 
 	{#if portableText.value.alt}
-		<figcaption class="md:w-3/4 mx-auto px-4 font-space text-xs font-medium text-mid-grey mt-6">
+		<figcaption class="mx-auto md:px-32 font-space text-xs font-medium text-mid-grey mt-6">
 			{portableText.value.alt}
 		</figcaption>
 	{/if}

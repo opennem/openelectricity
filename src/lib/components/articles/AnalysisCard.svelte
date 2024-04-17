@@ -5,15 +5,24 @@
 	/** @type {Article} */
 	export let article;
 
-	$: hasCover = article.cover;
-	$: linkStyles = hasCover
-		? `grid grid-cols-1 gap-4 content-between overflow-hidden border-y border-warm-grey text-dark-grey hover:no-underline ${$$restProps.class}`
-		: `bg-light-warm-grey grid grid-cols-1 gap-4 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`;
-	$: headerStyles = hasCover ? 'my-8 h-42' : 'my-8 px-6 h-42';
+	// $: console.log('article', article);
 
-	$: authorStyles = hasCover
-		? 'flex items-center gap-8 justify-between mt-6'
-		: 'flex items-center gap-8 justify-between px-6 my-6';
+	$: hasCover = article.cover;
+	$: linkStyles =
+		hasCover && !isSpecialCard
+			? `grid grid-cols-1 gap-4 content-between overflow-hidden border-y border-warm-grey text-dark-grey hover:no-underline ${$$restProps.class}`
+			: `bg-light-warm-grey grid grid-cols-1 gap-4 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`;
+	$: headerStyles = hasCover && !isSpecialCard ? 'my-8 h-42' : 'my-8 px-6 h-42';
+
+	$: authorStyles =
+		hasCover && !isSpecialCard
+			? 'flex items-center gap-8 justify-between mt-6'
+			: 'flex items-center gap-8 justify-between px-6 my-6';
+
+	$: tag = article.tags.length ? article.tags[0] : null;
+
+	$: isSpecialCard = article.title === 'Seeing into the Future of Australia’s Electricity Market';
+	// $: console.log('isSpecialCard', isSpecialCard, article.title);
 
 	const publishedDate = parse(article.publish_date, 'yyyy-MM-dd', new Date());
 </script>
@@ -21,7 +30,9 @@
 <a href={`/analysis/${article.slug.current}`} class={linkStyles}>
 	<header class={headerStyles}>
 		<div class="text-xs flex items-center justify-between">
-			<span class="px-2 rounded-full bg-warm-grey text-dark-grey">Analysis</span>
+			{#if tag}
+				<span class="px-2 rounded-full bg-warm-grey text-dark-grey">{tag.title}</span>
+			{/if}
 			<span>{format(publishedDate, 'dd MMM yyyy')}</span>
 		</div>
 
@@ -29,7 +40,7 @@
 			{article.title}
 		</h3>
 
-		{#if !hasCover}
+		{#if !hasCover || isSpecialCard}
 			<p class="text-mid-grey text-sm">{article.summary}</p>
 		{/if}
 	</header>
@@ -57,7 +68,7 @@
 				{/each}
 			</div>
 		</div>
-		{#if hasCover}
+		{#if hasCover && !isSpecialCard}
 			<img src={urlFor(article.cover).width(590).height(346).url()} alt={article.cover.alt} />
 		{/if}
 	</div>
