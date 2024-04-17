@@ -7,7 +7,7 @@
 	/** @type {import('./$types').PageData} */
 	export let data;
 
-	// $: console.log('analysis', data);
+	$: console.log('analysis', data);
 
 	$: hasCover = data.cover;
 	$: formattedDate = format(new Date(data.publishDate), 'do MMM, yyyy');
@@ -25,7 +25,7 @@
 			</a>
 		</div>
 
-		<header class="bg-light-warm-grey md:h-[600px]">
+		<header class="bg-light-warm-grey" class:md:h-[600px]={hasCover}>
 			<h1 class="md:mb-20 text-3xl leading-3xl md:text-9xl md:leading-9xl">{data.title}</h1>
 
 			<div class="grid grid-cols-1 md:grid-cols-4 place-items-start">
