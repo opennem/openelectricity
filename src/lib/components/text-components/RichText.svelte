@@ -47,6 +47,18 @@
 			>
 				<PortableText value={value.blocks ? value.blocks : value} {components} />
 			</div>
+		{:else if value.style === 'h3'}
+			<div class="mx-auto max-w-5xl portable-override pt-20 pb-6">
+				<PortableText value={value.blocks ? value.blocks : value} {components} />
+			</div>
+		{:else if value.style === 'h6'}
+			<div class="mx-auto max-w-5xl portable-override pt-24">
+				<PortableText value={value.blocks ? value.blocks : value} {components} />
+			</div>
+		{:else if value.listItem === 'number'}
+			<div class="mx-auto max-w-5xl portable-override">
+				<PortableText value={value.blocks ? value.blocks : value} {components} />
+			</div>
 		{:else}
 			<div
 				class="mx-auto max-w-5xl"
@@ -76,5 +88,17 @@
 <style>
 	:global(.blockquote em) {
 		font-style: normal;
+	}
+	:global(.portable-override h6) {
+		@apply text-xs text-mid-grey font-light;
+	}
+	:global(.portable-override h6 a) {
+		@apply text-mid-grey underline;
+	}
+	:global(.portable-override ol) {
+		@apply list-disc list-outside ml-8;
+	}
+	:global(.portable-override ol li) {
+		@apply text-dark-grey;
 	}
 </style>
