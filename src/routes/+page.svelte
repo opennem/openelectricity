@@ -111,7 +111,7 @@
 </script>
 
 <Meta
-	siteTitle="Homepage"
+	title="Homepage"
 	description="Open Electricity is a platform for exploring Australia's electricity system."
 	image="/img/preview.jpg"
 />

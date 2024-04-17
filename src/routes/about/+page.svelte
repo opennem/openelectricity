@@ -1,4 +1,5 @@
 <script>
+	import Meta from '$lib/components/Meta.svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
 	import Social from './Social.svelte';
 	export let data;
@@ -6,6 +7,12 @@
 	console.log(data);
 	const team = data.team;
 </script>
+
+<Meta
+	title="About"
+	description="Open Electricity is a platform for exploring Australia's electricity system."
+	image="/img/preview.jpg"
+/>
 
 <div class="about-header bg-light-warm-grey border-b border-warm-grey">
 	<header class="container max-w-none lg:container flex items-center h-full">

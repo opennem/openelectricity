@@ -25,6 +25,7 @@
 	import { getKeys } from '$lib/utils/keys';
 	import { page } from '$app/stores';
 	import Icon from '$lib/components/Icon.svelte';
+	import Meta from '$lib/components/Meta.svelte';
 
 	/** @type {PageData} */
 	export let data;
@@ -207,6 +208,12 @@
 		history.replaceState(history.state, '', newUrl);
 	};
 </script>
+
+<Meta
+	title="Records"
+	description="Open Electricity is a platform for exploring Australia's electricity system."
+	image="/img/preview.jpg"
+/>
 
 <div class="bg-warm-grey">
 	<div class="container max-w-none lg:container">

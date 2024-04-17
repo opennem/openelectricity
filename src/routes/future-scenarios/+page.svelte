@@ -2,6 +2,7 @@
 	import ispData from '$lib/isp';
 	import InfoGraphicISP from '$lib/components/info-graphics/integrated-system-plan/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
+	import Meta from '$lib/components/Meta.svelte';
 
 	/** @type {*} */
 	export let data;
@@ -12,6 +13,12 @@
 		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
 	);
 </script>
+
+<Meta
+	title="Future Scenarios"
+	description="Open Electricity is a platform for exploring Australia's electricity system."
+	image="/img/preview.jpg"
+/>
 
 <div class="bg-light-warm-grey py-6 md:py-4">
 	<div class="container max-w-none lg:container md:flex items-center gap-3 md:gap-6">

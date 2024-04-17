@@ -1,4 +1,5 @@
 <script>
+	import Meta from '$lib/components/Meta.svelte';
 	import { byProp } from '$lib/utils/sort.js';
 
 	/** @type {import('./$types').PageData} */
@@ -6,6 +7,12 @@
 
 	$: sortedFacilities = data.facilities.sort(byProp('name'));
 </script>
+
+<Meta
+	title="Sitemap"
+	description="Open Electricity is a platform for exploring Australia's electricity system."
+	image="/img/preview.jpg"
+/>
 
 <div class="container max-w-none lg:container">
 	<h1>Sitemap</h1>

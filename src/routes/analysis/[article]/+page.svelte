@@ -3,6 +3,7 @@
 	import { urlFor } from '$lib/sanity';
 	import RichText from '$lib/components/text-components/RichText.svelte';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
+	import Meta from '$lib/components/Meta.svelte';
 
 	/** @type {import('./$types').PageData} */
 	export let data;
@@ -12,6 +13,12 @@
 	$: hasCover = data.cover;
 	$: formattedDate = format(new Date(data.publishDate), 'do MMM, yyyy');
 </script>
+
+<Meta
+	title={data.title}
+	description="Open Electricity is a platform for exploring Australia's electricity system."
+	image="/img/preview.jpg"
+/>
 
 <div class="bg-light-warm-grey">
 	<div class="container max-w-none lg:container py-12">
