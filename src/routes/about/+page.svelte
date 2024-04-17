@@ -22,8 +22,8 @@
 		<p>Open Electricity - An open platform for tracking Australia’s electricity transition.</p>
 
 		<p>
-			Formerly OpenNEM, Open Electricity aims to make the wealth of public data more accessible to a
-			wider audience.
+			Formerly OpenNEM, Open Electricity aims to make the wealth of public electricity data more
+			accessible to a wider audience.
 		</p>
 
 		<p>

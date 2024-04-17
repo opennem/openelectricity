@@ -56,7 +56,9 @@
 					class:rounded-full={rounded}
 					style="background-color: {$zGet(group)}"
 				/>
-				<span class="uppercase font-space font-semibold text-sm md:text-xs text-mid-grey">
+				<span
+					class="whitespace-nowrap uppercase font-space font-semibold text-sm md:text-xs text-mid-grey"
+				>
 					{label(group)}
 				</span>
 			</div>

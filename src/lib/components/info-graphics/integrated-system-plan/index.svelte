@@ -216,7 +216,7 @@
 		</div>
 	</header>
 
-	<div class="grid grid-cols-6 gap-10 my-6 relative">
+	<div class="grid grid-cols-6 gap-10 mt-6 mb-6 md:mb-0 relative">
 		<div class="absolute -right-8 hidden md:block">
 			<ChartTooltip
 				{hoverData}
@@ -356,7 +356,7 @@
 
 <div class="max-w-none lg:container">
 	<div
-		class="mt-6 grid grid-cols-2 md:grid-cols-6 md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
+		class="grid grid-cols-2 md:grid-cols-6 md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
 	>
 		{#each [...projectionSeriesNames].reverse() as key}
 			<SparkLineArea

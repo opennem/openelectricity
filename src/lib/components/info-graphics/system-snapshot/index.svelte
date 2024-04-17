@@ -162,9 +162,7 @@
 		<section class="mt-24 md:mt-12">
 			<table class="text-left w-full">
 				<thead>
-					<tr
-						class="border-b-[0.05rem] border-mid-grey text-mid-grey border-solid align-bottom text-xs"
-					>
+					<tr class="border-b border-mid-warm-grey text-mid-grey align-bottom text-xs">
 						{#each columns[mapMode] as column, i}
 							{#if !(mapMode === 'annual' && i === 2)}
 								<td
@@ -189,7 +187,7 @@
 				<tbody>
 					{#each mapModeRows as row (row.id)}
 						<tr
-							class="border-b-[0.05rem] border-mid-warm-grey border-solid cursor-pointer"
+							class="border-b border-warm-grey cursor-pointer"
 							class:bg-light-warm-grey={hoverRegion === row.id}
 							on:mouseenter={() => (hoverRegion = row.id)}
 							on:mouseleave={() => (hoverRegion = undefined)}
