@@ -30,9 +30,10 @@ function toLocalStorage(store, storageKey) {
 }
 
 /** @type {import('svelte/store').Readable<string>} */
-export const dataTrackerLink = readable(
-	'https://feature-234-site-design-upda.opennem-fe-bl7.pages.dev/'
-);
+// export const dataTrackerLink = readable(
+// 	'https://feature-234-site-design-upda.opennem-fe-bl7.pages.dev/'
+// );
+export const dataTrackerLink = readable('https://explore.openelectricity.org.au/');
 
 export const bannerOpen = writable(fromLocalStorage('bannerOpen', true));
 toLocalStorage(bannerOpen, 'bannerOpen');
