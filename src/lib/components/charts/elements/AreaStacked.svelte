@@ -66,7 +66,6 @@
 			on:mousemove={(e) => findItem(e, d.key)}
 			on:mouseout={mouseout}
 			on:touchmove={(e) => findItem(e, d.key)}
-			on:touchend={mouseout}
 			on:blur={mouseout}
 		/>
 	{/each}

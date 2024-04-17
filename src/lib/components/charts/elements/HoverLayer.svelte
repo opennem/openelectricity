@@ -44,7 +44,6 @@
 	on:mousemove={findItem}
 	on:mouseout={mouseout}
 	on:touchmove={findItem}
-	on:touchend={mouseout}
 	on:blur={mouseout}
 />
 
