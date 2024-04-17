@@ -9,8 +9,6 @@
 	export let siteTitle = 'Open Electricity';
 	const titleWithSuffix = siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle;
 	const fullURI = `${domain}${path}`;
-
-	$: console.log('titleWithSuffix', titleWithSuffix);
 </script>
 
 <svelte:head>
