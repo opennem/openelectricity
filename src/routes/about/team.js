@@ -1,10 +1,11 @@
 const team = [
 	{
 		name: 'Dylan McConnell',
-		role: 'Energy Systems Researcher',
+		role: 'Energy Systems Researcher, UNSW Sydney',
 		bio: [
-			'Dr Dylan McConnell is an energy systems research fellow at the University of Melbourne Climate & Energy College and researcher at the multi-institutional Energy Transition Hub. He has extensive experience in analysing the electricity sector in Australia.',
-			'Dylan’s work is focused on electricity infrastructure and governance, and the energy transition in liberalised electricity markets. He also specialises in operations research and the optimisation of electricity systems. His work has been published in forums including the Journal of Energy Policy, the Journal of Applied Energy, the Electricity Journal, and the Journal of Environmental Sociology.'
+			'Dr Dylan McConnell is an energy systems researcher at the UNSW Sydney. He has extensive experience in analysing the electricity sector in Australia.',
+			'Dylan’s work is focused on electricity infrastructure and governance, and the energy transition in liberalised electricity markets. He also specialises in operations research and the optimisation of electricity systems.',
+			'His work is interdisciplinary and has been published in forums including the Journal of Energy Policy, the Journal of Applied Energy, the Electricity Journal, and the Journal of Environmental Sociology. His work can also be found on The Conversation.'
 		],
 		social: [
 			{
@@ -20,9 +21,7 @@ const team = [
 	{
 		name: 'Simon Holmes à Court',
 		role: 'Product Manager',
-		bio: [
-			// "Simon Holmes à Court is an Australian businessman, energy analyst, clean tech investor, climate philanthropist, Director of the Smart Energy Council and the Australian Environmental Grantmakers Network and writes regularly about the transformation of Australia's energy sector. He is the founder and convenor of Climate 200."
-		],
+		bio: [],
 		social: [
 			{
 				type: 'twitter',

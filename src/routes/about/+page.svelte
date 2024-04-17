@@ -19,11 +19,9 @@
 	<section class="py-12">
 		<h3>Our Mission</h3>
 
-		<p>Open Electricity - An open platform for tracking Australia’s electricity transition.</p>
-
 		<p>
-			Formerly OpenNEM, Open Electricity aims to make the wealth of public electricity data more
-			accessible to a wider audience.
+			Formerly OpenNEM, Open Electricity aims to make the wealth of public National Electricity
+			Market (NEM) and Wholesale Electricity Market (WEM) data more accessible to a wider audience.
 		</p>
 
 		<p>
@@ -115,17 +113,12 @@
 
 				<dd class="text-dark-grey col-span-6 md:pl-12 pt-6 font-light">
 					<p>
-						Open Electricity is supported by <a
+						Open Electricity is a <a
 							class="text-dark-grey underline"
-							href="https://www.superpowerinstitute.com.au">The Superpower Institute</a
-						>. The mission of The Superpower Institute is to build practical knowledge required for
-						a rapid, economically efficient and secure transition that positions Australia as a
-						climate leader and Superpower in the low carbon world economy.
-					</p>
-					<p>
-						Led by Australian Economist Professor Ross Garnaut, the Institute develops knowledge for
-						public interest on assessing, measuring, documenting, and explaining economic,
-						technological and physical progress in building the renewable energy superpower.
+							href="https://www.superpowerinstitute.com.au">Superpower Institute</a
+						> project. The mission of The Superpower Institute is to build practical knowledge required
+						for a rapid, economically efficient and secure transition that positions Australia as a climate
+						leader and Superpower in the low carbon world economy.
 					</p>
 				</dd>
 			</div>
@@ -140,10 +133,11 @@
 				<dd class="text-dark-grey col-span-6 md:pl-12 pt-6 font-light">
 					<p>
 						The evolution of OpenNEM into Open Electricity, marked by a significant uplift in design
-						and features, was made possible due to funding from
-						<a class="text-dark-grey underline" href="https://www.boundless.earth/">Boundless</a>.
-						Boundless’ purpose is to accelerate climate solutions at the scale and speed required
-						for Australia to do its fair share to avert the climate crisis.
+						and features, was made possible due to funding support from <a
+							class="text-dark-grey underline"
+							href="https://www.boundless.earth/">Boundless Earth</a
+						>. Boundless Earth’s purpose is to accelerate climate solutions at the scale and speed
+						required for Australia to do its fair share to avert the climate crisis.
 					</p>
 				</dd>
 			</div>
@@ -157,32 +151,12 @@
 
 				<dd class="text-dark-grey col-span-6 md:pl-12 pt-6 font-light">
 					<p>
-						This project was co-funded by <a
+						The original OpenNEM project was supported by <a
 							class="text-dark-grey underline"
 							href="https://energyconsumersaustralia.com.au/">Energy Consumers Australia</a
 						> as part of its grants process for consumer advocacy projects and research projects for
-						the benefit of consumers of electricity and natural gas.
-					</p>
-				</dd>
-			</div>
-
-			<div
-				class="pt-12 md:pt-0 md:grid md:grid-cols-8 md:divide-x divide-dotted divide-mid-warm-grey"
-			>
-				<dt class="col-span-2 place-self-center">
-					<img src="/img/eth.svg" alt="Energy Transition Hub logo" class="block h-18 w-auto" />
-				</dt>
-
-				<dd class="text-dark-grey col-span-6 md:pl-12 pt-6 font-light">
-					<p>
-						This project is part of the University of Melbourne’s <a
-							class="text-dark-grey underline"
-							href="https://www.climatecollege.unimelb.edu.au/">Climate and Energy College</a
-						>
-						“Live-Emission tracker” project under the
-						<a class="text-dark-grey underline" href="https://www.energy-transition-hub.org/"
-							>Energy Transition Hub</a
-						>.
+						the benefit of consumers of electricity and natural gas. The project was developed and administered
+						at the University of Melbourne’s Climate and Energy College.
 					</p>
 				</dd>
 			</div>
@@ -200,7 +174,7 @@
 				wider audience through a website portal and data access APIs and tools.
 			</p>
 			<p class="text-dark-grey">
-				Our client library enables access to the Opennem API and data sets.
+				Our client library enables access to the OpenNEM API and data sets.
 			</p>
 
 			<SectionLink href="/content/developers" title="View here" classes="underline" />
