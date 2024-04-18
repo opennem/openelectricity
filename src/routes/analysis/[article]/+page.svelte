@@ -22,7 +22,7 @@
 />
 
 <div class="relative">
-	<div class="bg-light-warm-grey absolute w-full h-[750px] z-1" />
+	<div class="bg-light-warm-grey absolute w-full h-[500px] md:h-[750px] z-1" />
 
 	<div class="container max-w-none lg:container py-12 relative z-10">
 		<div class="pb-10 md:py-14">
