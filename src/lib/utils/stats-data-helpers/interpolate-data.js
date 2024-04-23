@@ -12,6 +12,7 @@ export default function (datasets, minIntervalObj, statsType = 'history') {
 	const toBeInterpolated = datasets.filter(
 		(d) => d[statsType].interval !== minIntervalObj?.intervalString
 	);
+
 	const otherDataset = /** @type {StatsData} */ (
 		datasets.find((d) => d[statsType].interval === minIntervalObj?.intervalString)
 	);
@@ -26,6 +27,9 @@ export default function (datasets, minIntervalObj, statsType = 'history') {
 		if (set.forecast) {
 			newSet[statsType].data = [...set[statsType].data, ...set.forecast.data];
 			newSet[statsType].last = set.forecast.last;
+		} else {
+			// TODO: This is a temporary fix for the lack of forecast data
+			newSet[statsType].last = otherDataset.history.last;
 		}
 		const intervalObj = parseInterval(set[statsType].interval);
 
