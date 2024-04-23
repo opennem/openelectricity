@@ -2,8 +2,6 @@
 	import parseInterval from '$lib/utils/intervals';
 	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
 	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
-	import ButtonLink from '$lib/components/ButtonLink.svelte';
-	import Icon from '$lib/components/Icon.svelte';
 	import { dataTrackerLink } from '$lib/stores/app';
 
 	import {
@@ -11,11 +9,11 @@
 		domainOrder,
 		loadFts,
 		labelReducer,
-		colourReducer,
 		fuelTechName,
-		fuelTechColour,
 		legend
 	} from './helpers';
+
+	import { fuelTechColour, colourReducer } from '$lib/stores/theme';
 
 	import Chart from './Chart.svelte';
 
@@ -35,7 +33,7 @@
 		parseInterval('5m'),
 		'history',
 		labelReducer,
-		colourReducer
+		$colourReducer
 	)
 		.transform()
 		.rollup(parseInterval('30m'), 'mean')
@@ -43,7 +41,11 @@
 
 	$: dataset = timeSeriesDatasets.data;
 
-	// $: console.log(domainOrder);
+	$: displayLegend = legend.toReversed().map((d) => ({
+		key: d,
+		label: fuelTechName(d),
+		colour: $fuelTechColour(d)
+	}));
 </script>
 
 <div class="container max-w-none lg:container">
@@ -71,10 +73,10 @@
 		<div class="container max-w-none lg:container md:mt-12">
 			<footer class="block md:flex justify-between items-center">
 				<dl class="flex flex-wrap gap-1">
-					{#each legend.toReversed() as d}
+					{#each displayLegend as { colour, label }}
 						<dt class="flex items-center gap-2 text-xs text-mid-grey mr-3">
-							<span class="w-4 h-4 block" style="background-color: {fuelTechColour(d)}" />
-							<span>{fuelTechName(d)}</span>
+							<span class="w-4 h-4 block" style="background-color: {colour}" />
+							<span>{label}</span>
 						</dt>
 					{/each}
 				</dl>

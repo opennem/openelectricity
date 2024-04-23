@@ -3,7 +3,8 @@
 	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
 	import parseInterval from '$lib/utils/intervals';
 
-	import { domainGroups, loadFts, totalId, labelReducer, colourReducer } from './helpers';
+	import { domainGroups, loadFts, totalId, labelReducer } from './helpers';
+	import { colourReducer } from '$lib/stores/theme';
 
 	import Chart from './Chart.svelte';
 
@@ -21,7 +22,7 @@
 		parseInterval('1M'),
 		'history',
 		labelReducer,
-		colourReducer
+		$colourReducer
 	)
 		.transform()
 		.calculate12MthRollingSum()

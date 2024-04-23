@@ -1,4 +1,4 @@
-import { fuelTechName, fuelTechColour, fuelTechOrder } from '$lib/fuel_techs.js';
+import { fuelTechName } from '$lib/fuel_techs.js';
 
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 export const domainGroups = {
@@ -46,14 +46,7 @@ export const labelReducer = (
 	return acc;
 };
 
-export const colourReducer = (
-	/** @type {Object.<string, string>} */ acc,
-	/** @type {StatsData} **/ d
-) => {
-	acc[d.id] = d.fuel_tech ? fuelTechColour(d.fuel_tech) : '';
-	return acc;
-};
-
+/** @type {FuelTechCode[]} */
 export const legend = [
 	'coal',
 	'bioenergy',
@@ -66,4 +59,4 @@ export const legend = [
 	'solar_rooftop'
 ];
 
-export { fuelTechName, fuelTechColour };
+export { fuelTechName };

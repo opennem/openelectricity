@@ -1,7 +1,5 @@
 import { getKeys } from '$lib/utils/keys';
 
-/** @typedef {import("./types/fuel_tech.types").FuelTechCode} FuelTechCode */
-
 /** @type {Object.<FuelTechCode, string>}} */
 export const fuelTechNameMap = {
 	battery_charging: 'Battery (Charging)',

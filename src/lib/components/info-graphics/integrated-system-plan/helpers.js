@@ -1,8 +1,7 @@
 import { format as d3Format } from 'd3-format';
-import { formatInTimeZone } from 'date-fns-tz';
-import { subYears, addYears, startOfYear, format } from 'date-fns';
+import { subYears, startOfYear, format } from 'date-fns';
 
-import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
+import { fuelTechName } from '$lib/fuel_techs.js';
 
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 export const domainGroups = {
@@ -59,14 +58,6 @@ export const fuelTechReducer = (
 	return acc;
 };
 
-export const colourReducer = (
-	/** @type {Object.<string, string>} */ acc,
-	/** @type {StatsData} **/ d
-) => {
-	acc[d.id] = d.fuel_tech ? fuelTechColour(d.fuel_tech) : '';
-	return acc;
-};
-
 export const formatTickX = (/** @type {Date | number} */ d) => {
 	return format(subYears(d, 1), 'yyyy') + '-' + format(d, 'yy');
 };
@@ -87,29 +78,3 @@ export const formatValue = (/** @type {number} */ d) => {
 };
 
 export const displayXTicks = (d) => d.map((t) => startOfYear(t));
-
-/** @type {ScenarioKey[]} */
-export const scenarios = ['step_change', 'progressive_change', 'green_energy_exports']; // scenarios in display order
-
-/** @type {Object.<ScenarioKey, string>} */
-export const scenarioLabels = {
-	step_change: 'AEMO Step Change 2024',
-	progressive_change: 'AEMO Progressive Change 2024',
-	// slow_change: 'Slow Change',
-	green_energy_exports: 'AEMO Green Energy Exports 2024'
-	// hydrogen_superpower: 'Hydrogen Superpower'
-};
-
-/** @type {Object.<ScenarioKey, string>} */
-export const scenarioDescriptions = {
-	step_change:
-		'The Step Change scenario is considered the most likely future for the National Electricity Market (NEM). This scenario takes into account various factors such as ageing generation plants, technical innovation, economics, government policies, energy security, and consumer choice.',
-	progressive_change:
-		'The Progressive Change scenario is designed to assess the potential impact of a gradual and evolving transition toward a low-carbon energy system, taking into account the complexities and challenges associated with achieving decarbonization goals.',
-	slow_change:
-		'The Slow Change scenario is an unlikely transition scenario that does not meet carbon reduction targets. It takes into account the difficult economic environment following the COVID-19 pandemic, reflecting a slower economy and falling short of the targets.',
-	green_energy_exports:
-		'The Green Energy Exports scenario is a highly ambitious scenario that includes strong global action, significant technological breakthroughs, and a near quadrupling of National Electricity Market (NEM) energy consumption to support a hydrogen export industry. '
-};
-
-export const selectedPathway = 'CDP11 (ODP)';

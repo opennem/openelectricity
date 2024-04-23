@@ -5,9 +5,12 @@
 	import ColourBarRamp from '$lib/components/charts/elements/ColourBarRamp.svelte';
 	import LinearGradient from '$lib/components/charts/elements/defs/LinearGradient.svelte';
 
-	import { colours, labels, colourRanges, stops } from './helpers.js';
+	import { colours, labels, colourRanges } from './helpers.js';
+	import { theme, carbonIntensityStops } from '$lib/stores/theme.js';
 
 	export let mode = 'live';
+
+	$: max = $theme === 'opennem' ? 1000 : 800;
 </script>
 
 {#if mode === 'live'}
@@ -31,9 +34,9 @@
 		<LayerCake>
 			<Svg>
 				<defs>
-					<LinearGradient id="intensity-ramp-gradient" {stops} />
+					<LinearGradient id="intensity-ramp-gradient" stops={$carbonIntensityStops} />
 				</defs>
-				<ColourBarRamp fill="url(#intensity-ramp-gradient)" />
+				<ColourBarRamp fill="url(#intensity-ramp-gradient)" {max} />
 			</Svg>
 		</LayerCake>
 	</div>

@@ -1,12 +1,17 @@
 <script>
+	import { shortcut } from '@svelte-put/shortcut';
+
 	import { onNavigate } from '$app/navigation';
 	import '../app.css';
 
 	import Nav from '$lib/components/Nav.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import IconXMark from '$lib/icons/XMark.svelte';
+	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
 	import { bannerOpen } from '$lib/stores/app';
+
+	let showThemeSwitcher = false;
 
 	onNavigate((navigation) => {
 		// If the browser doesn't support view transitions, return early
@@ -21,7 +26,38 @@
 			});
 		});
 	});
+
+	/**
+	 * @param {import('@svelte-put/shortcut').ShortcutEventDetail} detail
+	 */
+	function handleK(detail) {
+		// console.log('attached node:', detail, detail.node);
+		// console.log('original trigger config:', detail.trigger);
+		showThemeSwitcher = !showThemeSwitcher;
+	}
 </script>
+
+<svelte:window
+	use:shortcut={{
+		trigger: [
+			{
+				key: 'k',
+				modifier: ['ctrl', 'meta'],
+				callback: handleK
+			},
+			{
+				key: 'Escape',
+				callback: () => {
+					showThemeSwitcher = false;
+				}
+			}
+		]
+	}}
+/>
+
+{#if showThemeSwitcher}
+	<ThemeSwitcher on:selected={() => (showThemeSwitcher = false)} />
+{/if}
 
 {#if $bannerOpen}
 	<div

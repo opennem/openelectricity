@@ -17,18 +17,17 @@
 		domainGroups,
 		domainOrder,
 		labelReducer,
-		colourReducer,
 		fuelTechReducer,
-		formatFyTickX,
-		formatValue
+		formatFyTickX
 	} from './helpers';
 
 	import {
 		domainGroups as historicalDomainGroups,
 		domainOrder as historicalDomainOrder,
-		labelReducer as historicalLabelReducer,
-		colourReducer as historicalColourReducer
+		labelReducer as historicalLabelReducer
 	} from './historical-helpers';
+
+	import { colourReducer } from '$lib/stores/theme';
 
 	import Icon from '$lib/components/Icon.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
@@ -82,7 +81,7 @@
 		parseInterval('1Y'),
 		'projection',
 		labelReducer,
-		colourReducer
+		$colourReducer
 	)
 		.transform()
 		.updateMinMax();
@@ -114,7 +113,7 @@
 		parseInterval('1M'),
 		'history',
 		historicalLabelReducer,
-		historicalColourReducer
+		$colourReducer
 	)
 		.transform()
 		.rollup(parseInterval('FY'))

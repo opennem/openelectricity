@@ -43,11 +43,3 @@ export const labelReducer = (
 	acc[d.id] = d.fuel_tech ? fuelTechName(d.fuel_tech) : '';
 	return acc;
 };
-
-export const colourReducer = (
-	/** @type {Object.<string, string>} */ acc,
-	/** @type {StatsData} **/ d
-) => {
-	acc[d.id] = d.fuel_tech ? fuelTechColour(d.fuel_tech) : '';
-	return acc;
-};

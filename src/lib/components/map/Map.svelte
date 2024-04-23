@@ -16,10 +16,9 @@
 
 	import CrossBorderExport from '$lib/components/info-graphics/system-snapshot/CrossBorderExport.svelte';
 
-	import {
-		priceColour,
-		intensityColour
-	} from '$lib/components/info-graphics/system-snapshot/helpers';
+	import { priceColour } from '$lib/components/info-graphics/system-snapshot/helpers';
+
+	import { carbonIntensityColour } from '$lib/stores/theme';
 
 	import { writable } from 'svelte/store';
 	import { createPopperActions } from 'svelte-popperjs';
@@ -111,14 +110,6 @@
 		}
 	];
 
-	$: stateData = data.rows.reduce((acc, row) => {
-		acc[row.state] = row;
-		return acc;
-	}, {});
-
-	$: priceColourScale = createPriceScale(1000);
-	$: intensityColourScale = createIntensityScale(500);
-
 	$: modeLive = mode === 'live';
 
 	$: tasText =
@@ -140,7 +131,7 @@
 	$: getStateFillColour = (state) => {
 		// if (!data) return '#FFFFFF';
 
-		const scale = modeLive ? priceColourScale : intensityColourScale;
+		// const scale = modeLive ? priceColourScale : intensityColourScale;
 
 		// console.log('.prices[state]', prices, prices[state]);
 
@@ -150,7 +141,7 @@
 
 		return modeLive
 			? priceColour(prices[`${state}1`]) || '#FFFFFF'
-			: intensityColour(intensity[state]);
+			: $carbonIntensityColour(intensity[state]);
 	};
 
 	/**

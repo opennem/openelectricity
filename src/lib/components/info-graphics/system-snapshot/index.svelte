@@ -7,12 +7,9 @@
 
 	import ColourLegend from './ColourLegend.svelte';
 	import CrossBorderExport from './CrossBorderExport.svelte';
-	import {
-		intensityColour,
-		regionGenerationTotal,
-		regionRenewablesTotal,
-		regionEmissionsTotal
-	} from './helpers.js';
+	import { regionGenerationTotal, regionRenewablesTotal, regionEmissionsTotal } from './helpers.js';
+
+	import { carbonIntensityColour } from '$lib/stores/theme';
 
 	export let data;
 	export let title = '';
@@ -215,7 +212,7 @@
 								<td class="py-3 pl-3 md:pl-6">
 									<div
 										class="h-4 border border-black"
-										style:background-color={intensityColour(intensity[row.id])}
+										style:background-color={$carbonIntensityColour(intensity[row.id])}
 										style:width={`${intensityScale(intensity[row.id])}px`}
 									/>
 								</td>
