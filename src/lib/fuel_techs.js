@@ -50,7 +50,9 @@ export const fuelTechNameMap = {
 	solar: 'Solar',
 
 	fossil_fuels: 'Fossil Fuels',
-	renewables: 'Renewables'
+	renewables: 'Renewables',
+	fossil: 'Fossil Fuels',
+	renewable: 'Renewables'
 };
 
 export const fuelTechOrder = [
@@ -196,7 +198,9 @@ export const fuelTechColourMap = {
 	demand_response: '#7F7F7F',
 
 	fossil_fuels: '#594929',
-	renewables: '#52A972'
+	renewables: '#52A972',
+	fossil: '#594929',
+	renewable: '#52A972'
 };
 
 export const fuelTechGroups = /** @type {FuelTechCode[]} */ (getKeys(fuelTechGroupMap));

@@ -31,7 +31,11 @@ export type FuelTechCode =
 	| 'bioenergy'
 	| 'coal'
 	| 'gas'
-	| 'solar';
+	| 'solar'
+	| 'fossil_fuels'
+	| 'renewables'
+	| 'fossil'
+	| 'renewable';
 
 export type FuelTech = {
 	_id: string;
