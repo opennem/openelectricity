@@ -1,4 +1,4 @@
-import { startOfYear, format } from 'date-fns';
+import { startOfYear } from 'date-fns';
 
 export const modelSelections = [
 	{

@@ -1,6 +1,6 @@
 import { scaleLinear } from 'd3-scale';
-
 import { derived, writable } from 'svelte/store';
+
 import {
 	fuelTechColourMap as OpenNemFtColours,
 	carbonIntensityColourMap as OpenNemCarbonIntensityColours

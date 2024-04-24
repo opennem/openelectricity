@@ -46,8 +46,10 @@ const fuelTechColourMap = {
 	interconnector: '#7F7F7F',
 	demand_response: '#7F7F7F',
 
-	fossil_fuels: '#444444',
-	renewables: '#52BCA3'
+	fossil_fuels: '#',
+	renewables: '#52BCA3',
+	fossil: '#444444',
+	renewable: '#52BCA3'
 };
 
 const carbonIntensityColourMap = {

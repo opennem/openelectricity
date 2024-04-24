@@ -13,6 +13,8 @@
 		modelXTicks,
 		modelSparklineXTicks
 	} from './scenarios';
+
+	import { groups as ftGroupSelections, groupMap, orderMap } from './fuel-tech-groups';
 	import {
 		domainGroups,
 		domainOrder,
@@ -52,6 +54,13 @@
 	let selectedModel = modelSelections[0];
 	let selectedScenario = scenarios[selectedModel.value][0];
 
+	let selectedFtGroup = ftGroupSelections[0];
+
+	$: group = groupMap[selectedFtGroup.value];
+	$: order = orderMap[selectedFtGroup.value];
+
+	$: console.log('group', group, order);
+
 	// $: aemo2022 = data.ispData.aemo2022;
 	// $: aemo2024 = data.ispData.aemo2024;
 	// $: console.log(aemo2022, aemo2024);
@@ -73,8 +82,8 @@
 	$: yDomain = selectedModelYDomain[selectedScenario];
 
 	$: projectionStatsDatasets = new StatsDatasets(filteredWithPathwayScenario, 'projection')
-		.group(domainGroups)
-		.reorder(domainOrder);
+		.group(group)
+		.reorder(order);
 
 	$: projectionTimeSeriesDatasets = new TimeSeriesDatasets(
 		projectionStatsDatasets.data,
@@ -105,8 +114,8 @@
 	});
 
 	$: historicalStatsDatasets = new StatsDatasets(historicalData, 'history')
-		.group(historicalDomainGroups)
-		.reorder(historicalDomainOrder);
+		.group(group)
+		.reorder(order);
 
 	$: historicalTimeSeriesDatasets = new TimeSeriesDatasets(
 		historicalStatsDatasets.data,
@@ -167,15 +176,13 @@
 		selectedScenario = scenarios[selectedModel.value][0];
 	}
 
+	function handleGroupChange(evt) {
+		if (selectedFtGroup.value === evt.detail.value) return;
+		selectedFtGroup = evt.detail;
+	}
+
 	/** @type {string | undefined} */
 	let hoverKey;
-
-	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	$: hoverKeyValue =
-		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
-	$: hoverKeyColour = hoverKey ? projectionSeriesColours[hoverKey] : '';
-	$: hoverKeyLabel = hoverKey ? projectionSeriesLabels[hoverKey] : '';
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		if (e.detail.key) {
@@ -237,6 +244,7 @@
 						These scenarios aim to steer Australia towards a cost-effective, reliable and safe
 						energy system en route to a zero-emissions electricity network.
 					</p>
+
 					<p class="mb-0">Explore the scenarios:</p>
 					<FormSelect
 						options={modelSelections}
@@ -349,6 +357,20 @@
 					</div>
 				</div>
 			{/if}
+		</div>
+	</div>
+</div>
+
+<div class="container max-w-none lg:container mb-6">
+	<div class="flex items-center gap-2">
+		<p class="mb-0">View:</p>
+
+		<div class="w-[280px]">
+			<FormSelect
+				options={ftGroupSelections}
+				selected={selectedFtGroup}
+				on:change={handleGroupChange}
+			/>
 		</div>
 	</div>
 </div>

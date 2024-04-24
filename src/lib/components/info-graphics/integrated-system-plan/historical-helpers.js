@@ -1,4 +1,4 @@
-import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
+import { fuelTechName } from '$lib/fuel_techs.js';
 
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 export const domainGroups = {
