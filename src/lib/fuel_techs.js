@@ -50,7 +50,9 @@ export const fuelTechNameMap = {
 	solar: 'Solar',
 
 	fossil_fuels: 'Fossil Fuels',
-	renewables: 'Renewables'
+	renewables: 'Renewables',
+	fossil: 'Fossil Fuels',
+	renewable: 'Renewables'
 };
 
 export const fuelTechOrder = [
