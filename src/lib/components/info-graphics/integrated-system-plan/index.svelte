@@ -59,8 +59,6 @@
 	$: group = groupMap[selectedFtGroup.value];
 	$: order = orderMap[selectedFtGroup.value];
 
-	$: console.log('group', group, order);
-
 	// $: aemo2022 = data.ispData.aemo2022;
 	// $: aemo2024 = data.ispData.aemo2024;
 	// $: console.log(aemo2022, aemo2024);
@@ -377,7 +375,9 @@
 
 <div class="max-w-none lg:container">
 	<div
-		class="grid grid-cols-2 md:grid-cols-{projectionSeriesNames.length} md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
+		class="grid grid-cols-2 grid-flow-dense md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
+		class:md:grid-cols-6={projectionSeriesNames.length === 6}
+		class:md:grid-cols-2={projectionSeriesNames.length === 2}
 	>
 		{#each [...projectionSeriesNames].reverse() as key}
 			<SparkLineArea
