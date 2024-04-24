@@ -15,7 +15,6 @@
 	$: percent = data && data._max ? (value / data._max) * 100 : 0;
 
 	$: displayValue = display === 'TWh' ? formatValue(value) : formatValue(percent);
-	$: console.log('data', data);
 </script>
 
 <header class="">
