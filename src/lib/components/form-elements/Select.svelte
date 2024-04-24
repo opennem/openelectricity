@@ -1,7 +1,7 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
-	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
+	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 
 	export let selected;
@@ -18,12 +18,13 @@
 </script>
 
 <div class="relative">
-	{#if selected}
-		<button on:click={() => (showOptions = !showOptions)} class="flex items-center gap-2 py-1">
-			<h5 class="font-medium mb-0">{selected.label}</h5>
-			<IconChevronDown class="w-7 h-7" />
-		</button>
-	{/if}
+	<button
+		on:click={() => (showOptions = !showOptions)}
+		class="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-warm-grey"
+	>
+		<h5 class="font-medium mb-0">{selected?.label}</h5>
+		<IconChevronUpDown class="w-7 h-7" />
+	</button>
 
 	{#if showOptions}
 		<ul
