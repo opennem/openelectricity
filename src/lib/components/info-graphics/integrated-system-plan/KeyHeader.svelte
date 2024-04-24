@@ -8,7 +8,14 @@
 	/** @type {TimeSeriesData | undefined} */
 	export let data = undefined;
 
+	/** @type {'TWh' | '%'} */
+	let display = 'TWh'; // or '%'
+
 	$: value = data ? /** @type {number} */ (data[key]) : 0;
+	$: percent = data && data._max ? (value / data._max) * 100 : 0;
+
+	$: displayValue = display === 'TWh' ? formatValue(value) : formatValue(percent);
+	$: console.log('data', data);
 </script>
 
 <header class="">
@@ -17,10 +24,13 @@
 		<Icon icon={fuelTechId} size={28} />
 	</div>
 
-	<h3 class="h-24 leading-sm mt-4">
+	<h3 class="leading-sm h-24 mt-4">
 		{#if data}
-			{data ? formatValue(value) : '—'}
-			<small class="block text-xs text-mid-grey font-light">TWh</small>
+			{data ? displayValue : '—'}
+			<small class="text-sm text-dark-grey font-light">
+				({data ? `${formatValue(percent)}%` : '—'})
+			</small>
+			<small class="block text-xs text-mid-grey font-light">{display}</small>
 		{/if}
 	</h3>
 </header>

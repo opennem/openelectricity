@@ -377,11 +377,11 @@
 
 <div class="max-w-none lg:container">
 	<div
-		class="grid grid-cols-2 md:grid-cols-6 md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
+		class="grid grid-cols-2 md:grid-cols-{projectionSeriesNames.length} md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
 	>
 		{#each [...projectionSeriesNames].reverse() as key}
 			<SparkLineArea
-				class="p-8 even:border-l border-t [&:nth-child(-n+2)]:border-t-0 md:border-0"
+				class="p-8 even:border-l border-t [&:nth-child(-n+2)]:border-t-0 md:border-0 border-mid-warm-grey"
 				dataset={projectionTimeSeriesDatasets.data}
 				{key}
 				fuelTechId={projectionFuelTechIds[key]}

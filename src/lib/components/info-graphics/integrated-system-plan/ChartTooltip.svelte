@@ -12,6 +12,7 @@
 		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
 	$: hoverKeyColour = hoverKey ? seriesColours[hoverKey] : '';
 	$: hoverKeyLabel = hoverKey ? seriesLabels[hoverKey] : '';
+	$: percent = hoverKeyValue ? (hoverKeyValue / hoverMax) * 100 : 0;
 </script>
 
 {#if hoverData}
@@ -29,6 +30,7 @@
 					</div>
 
 					<strong class="font-semibold">{formatValue(hoverKeyValue)}</strong>
+					<small>— {formatValue(percent)}%</small>
 				</div>
 			{/if}
 
