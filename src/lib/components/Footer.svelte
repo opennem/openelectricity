@@ -1,4 +1,6 @@
 <script>
+	import { version } from '$app/environment';
+
 	import SectionLink from './SectionLink.svelte';
 	let formSubmitting = false;
 	let formSubmitted = false;
@@ -176,6 +178,8 @@
 			</div>
 		</div>
 	</div>
+
+	<div class="text-xs text-center text-mid-warm-grey">{version}</div>
 </footer>
 
 <style lang="postcss">
