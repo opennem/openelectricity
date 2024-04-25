@@ -2,7 +2,8 @@
 	import { page } from '$app/stores';
 	export let type = 'website'; // or article, or music.album etc. See https://ogp.me/#types
 	export let title = '';
-	export let description = '';
+	export let description =
+		"Open Electricity is a platform for exploring Australia's electricity system.";
 	export let image = '/img/preview.jpg';
 	export let path = $page.url.pathname;
 	export let domain = 'https://openelectricity.org.au';

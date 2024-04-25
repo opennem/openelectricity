@@ -1,10 +1,10 @@
 <script>
 	import Meta from '$lib/components/Meta.svelte';
+	import PageHeader from '$lib/components/PageHeader.svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
 	import Social from './Social.svelte';
 	export let data;
 
-	console.log(data);
 	const team = data.team;
 </script>
 
@@ -14,11 +14,7 @@
 	image="/img/preview.jpg"
 />
 
-<div class="about-header bg-light-warm-grey border-b border-warm-grey">
-	<header class="container max-w-none lg:container flex items-center h-full">
-		<h1 class="mt-9">About</h1>
-	</header>
-</div>
+<PageHeader title="About" />
 
 <main class="max-w-5xl mx-auto py-24 px-10 md:px-0">
 	<h2>Open Electricity — An open platform for tracking Australia’s electricity transition.</h2>
@@ -210,13 +206,3 @@
 		</div>
 	</section>
 </main>
-
-<style>
-	.about-header {
-		background-image: url('/img/dot-square.svg');
-		background-position: top -1px center;
-		background-repeat: repeat;
-		height: 24rem;
-		border-bottom: 0.1rem solid #f1f0ed;
-	}
-</style>
