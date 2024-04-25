@@ -1,11 +1,13 @@
 <script>
-	import { fade, fly } from 'svelte/transition';
-	import { cubicOut } from 'svelte/easing';
+	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
+	import { quintOut } from 'svelte/easing';
 
 	import { LayerCake, Svg, Html, flatten, groupLonger } from 'layercake';
 	import { scaleOrdinal } from 'd3-scale';
 	import { formatInTimeZone } from 'date-fns-tz';
 
+	import { isSafari } from '$lib/utils/browser-detect';
 	import MultiLine from '$lib/components/charts/elements/MultiLine.svelte';
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
 	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
@@ -18,8 +20,9 @@
 
 	import { formatTickX, formatTickY, xDomain, displayXTicks } from './helpers';
 
-	export const formatHoverTickX = (/** @type {Date | number} */ d) =>
+	const formatHoverTickX = (/** @type {Date | number} */ d) =>
 		formatInTimeZone(d, '+10:00', 'MMM yyyy');
+	let isSafariBrowser = true;
 
 	export let title = '';
 	export let description = '';
@@ -47,12 +50,6 @@
 	//TODO: refactor transition
 	let show = false;
 	let interact = false;
-	setTimeout(() => {
-		show = true;
-	}, 1);
-	setTimeout(() => {
-		interact = true;
-	}, 6000);
 
 	$: md = innerWidth > 1024;
 	$: chartBottom = md ? 40 : 100;
@@ -71,6 +68,20 @@
 		: 'absolute -top-8 text-xs text-mid-grey right-0';
 
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+
+	onMount(() => {
+		isSafariBrowser = isSafari();
+
+		setTimeout(() => {
+			show = true;
+		}, 1);
+		setTimeout(
+			() => {
+				interact = true;
+			},
+			isSafariBrowser ? 100 : 6000
+		);
+	});
 </script>
 
 <svelte:window bind:innerWidth />
@@ -115,7 +126,12 @@
 			/>
 			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
 
-			<MultiLine {hoverData} />
+			<MultiLine
+				{hoverData}
+				drawDurationObject={isSafariBrowser
+					? { duration: 1, delay: 0 }
+					: { duration: 4000, delay: 1000, easing: quintOut }}
+			/>
 			<HoverLayer
 				{dataset}
 				on:mousemove={(e) =>
@@ -133,7 +149,7 @@
 			<HoverLine {hoverData} />
 
 			{#if show}
-				<div transition:fade={{ delay: 3500, duration: 300 }}>
+				<div transition:fade={isSafariBrowser ? { duration: 300 } : { delay: 3500, duration: 300 }}>
 					<Annotations
 						rounded={hoverData !== undefined}
 						annotation={hoverData || latestDatapoint}

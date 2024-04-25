@@ -1,7 +1,6 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
 	import { draw } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
 
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
@@ -12,6 +11,8 @@
 	export let strokeWidth = '4px';
 
 	export let opacity = 1;
+
+	export let drawDurationObject = { duration: 250, delay: 0 };
 
 	//TODO: refactor transition
 	let show = false;
@@ -67,7 +68,7 @@
 	{#each updatedData as group}
 		{#if show}
 			<path
-				transition:draw={{ duration: 4000, delay: 1000, easing: quintOut }}
+				transition:draw={drawDurationObject}
 				class="path-line"
 				d={path(group.values)}
 				stroke={$zGet(group)}
