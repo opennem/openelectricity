@@ -1,8 +1,9 @@
-import { PUBLIC_FLOWS_API } from '$env/static/public';
+import { PUBLIC_FLOWS_API, PUBLIC_API_KEY } from '$env/static/public';
 
 export async function GET({ fetch, setHeaders }) {
 	setHeaders({
-		'cache-control': 'max-age=0' // 5 mins = 300secs
+		'cache-control': 'max-age=300', // 5 mins = 300secs
+		Authorization: `Bearer ${PUBLIC_API_KEY}`
 	});
 
 	const response = await fetch(`${PUBLIC_FLOWS_API}/nem`);

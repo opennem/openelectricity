@@ -1,8 +1,10 @@
 import { endOfDay, startOfDay, format, nextDay, addDays } from 'date-fns';
+import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
 
 export async function GET({ url, fetch, setHeaders }) {
 	setHeaders({
-		'cache-control': 'max-age=1800' // 30 mins
+		'cache-control': 'max-age=1800', // 30 mins
+		Authorization: `Bearer ${PUBLIC_API_KEY}`
 	});
 
 	const date = url.searchParams.get('date');
@@ -20,9 +22,7 @@ export async function GET({ url, fetch, setHeaders }) {
 		pageParams = `&page=${pageNum}`;
 	}
 
-	const response = await fetch(
-		`https://api.dev.opennem.org.au/v4/milestones/?limit=10${dateParams}${pageParams}`
-	);
+	const response = await fetch(`${PUBLIC_RECORDS_API}?limit=10${dateParams}${pageParams}`);
 
 	if (response.ok) {
 		const data = await response.json();

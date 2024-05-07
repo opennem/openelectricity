@@ -13,13 +13,47 @@ export async function load({ fetch }) {
 		`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
 	);
 
+	const records = await fetch('/api/records').then(async (res) => {
+		const { data: jsonData } = await res.json();
+		return jsonData;
+	});
+
+	const flows = await fetch('/api/flows').then(async (res) => {
+		const { data: jsonData } = await res.json();
+		const regionFlows = {};
+		jsonData.forEach((region) => {
+			regionFlows[region.code] = region.history.data[region.history.data.length - 1];
+		});
+
+		return {
+			dispatchDateTimeString: jsonData[0].history.last,
+			regionFlows,
+			originalJsons: jsonData
+		};
+	});
+
+	const prices = await fetch('/api/prices').then(async (res) => {
+		const { data: jsonData } = await res.json();
+		const regionPrices = {};
+		jsonData.forEach((region) => {
+			regionPrices[region.code] = region.history.data[region.history.data.length - 1];
+		});
+		return {
+			regionPrices,
+			originalJsons: jsonData
+		};
+	});
+
 	// const energyDataRes = await energyData();
 
 	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
 	return {
 		homepageData,
-		articles
+		articles,
+		records,
+		flows,
+		prices
 		// mapAllData: energyDataRes
 
 		// outlookEnergyNem,
