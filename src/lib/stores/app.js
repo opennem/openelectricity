@@ -1,5 +1,6 @@
 import { readable, writable } from 'svelte/store';
 import { browser } from '$app/environment';
+import { PUBLIC_EXPLORE_URL } from '$env/static/public';
 
 // Get value from localStorage if in browser and the value is stored, otherwise fallback
 function fromLocalStorage(storageKey, fallbackValue) {
@@ -30,7 +31,7 @@ function toLocalStorage(store, storageKey) {
 }
 
 /** @type {import('svelte/store').Readable<string>} */
-export const dataTrackerLink = readable('https://explore.openelectricity.org.au/');
+export const dataTrackerLink = readable(PUBLIC_EXPLORE_URL);
 
 export const bannerOpen = writable(fromLocalStorage('bannerOpen', true));
 toLocalStorage(bannerOpen, 'bannerOpen');
