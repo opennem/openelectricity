@@ -11,7 +11,7 @@
 
 	import { carbonIntensityColour } from '$lib/stores/theme';
 
-	export let data;
+	// export let data;
 	export let title = '';
 	export let flows;
 	export let prices;
@@ -81,7 +81,7 @@
 
 	// Track map mode and data
 	let mapMode = 'annual'; // annual
-	$: mapData = data[mapMode];
+	// $: mapData = data[mapMode];
 	$: liveMode = mapMode === 'live';
 	$: dispatchTime = Date.parse(flows.dispatchDateTimeString);
 	$: dispatch =
@@ -130,7 +130,6 @@
 <div class="relative">
 	<Map
 		mode={mapMode}
-		data={mapData}
 		flows={flows.regionFlows}
 		prices={prices.regionPrices}
 		{intensity}
@@ -229,11 +228,11 @@
 					{/each}
 				</tbody>
 			</table>
-			{#if mapData.notes}
+			<!-- {#if mapData.notes}
 				<div class="text-mid-grey pt-8 px-8 text-xs">
 					{#each mapData.notes as note}<div>{note}</div>{/each}
 				</div>
-			{/if}
+			{/if} -->
 
 			{#if mapMode === 'live'}
 				<div class="md:hidden">

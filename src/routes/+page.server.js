@@ -1,5 +1,5 @@
 import { client } from '$lib/sanity';
-import { energyData } from '$lib/stats';
+// import { energyData } from '$lib/stats';
 // import ispData from '$lib/isp';
 
 /** @type {import('./$types').PageServerLoad} */
@@ -13,14 +13,14 @@ export async function load({ fetch }) {
 		`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
 	);
 
-	const energyDataRes = await energyData();
+	// const energyDataRes = await energyData();
 
 	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
 	return {
 		homepageData,
-		articles,
-		mapAllData: energyDataRes
+		articles
+		// mapAllData: energyDataRes
 
 		// outlookEnergyNem,
 		// pathways,

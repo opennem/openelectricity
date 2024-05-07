@@ -31,7 +31,6 @@
 		// scenarios,
 		dataTrackerData,
 		historyEnergyNemData,
-		mapAllData,
 		homepageData
 	} = data;
 
@@ -97,8 +96,8 @@
 	});
 
 	// TEST map data
-	const mapJsons = mapAllData.originalJsons;
-	const mapDataCached = mapAllData.cached;
+	// const mapJsons = mapAllData.originalJsons;
+	// const mapDataCached = mapAllData.cached;
 	// console.log('mapJsons', mapJsons, 'cached', mapDataCached);
 
 	// console.log('flows', flows);
@@ -134,7 +133,6 @@
 			<div class="container max-w-none lg:container">
 				<div class="flex flex-col md:flex-row justify-between py-16 md:py-32">
 					<InfoGraphicSystemSnapshot
-						data={mapAllData}
 						title={map_title}
 						{flows}
 						{prices}

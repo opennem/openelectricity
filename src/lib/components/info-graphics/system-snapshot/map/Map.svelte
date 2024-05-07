@@ -53,7 +53,6 @@
 
 	/** @type {'live' | 'annual'} */
 	export let mode = 'live';
-	export let data = null;
 	export let flows = null;
 	export let prices = null;
 	export let intensity = null;
@@ -225,7 +224,7 @@
 	<circle cx="485.459" cy="457.353" r="3.44336" fill="white" stroke="black" stroke-width="1.5" />
 	<path d="M488.109 458.657L554.594 492.728" stroke="black" stroke-dasharray="3 2" />
 
-	{#if data}
+	{#if flows && prices && intensity}
 		<!-- PRICE/EMISSIONS LABELS -->
 		<MapLabel
 			text={tasText}
