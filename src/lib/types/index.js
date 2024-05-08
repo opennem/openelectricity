@@ -8,3 +8,5 @@
 /** @typedef {import('$lib/types/data_range.types').DataRange} DataRange */
 /** @typedef {import('$lib/types/article.types').Article} Article */
 /** @typedef {import('$lib/types/stats.types').StatsInterval} StatsInterval */
+/** @typedef {import('$lib/types/filters.types').TechnologyFilterDict} TechnologyFilterDict */
+/** @typedef {import('$lib/types/filters.types').TechnologyFilterKey} TechnologyFilterKey  */

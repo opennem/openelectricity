@@ -1,11 +1,5 @@
 <script>
-	/** @typedef {import('$lib/types/filters.types').TechnologyFilterDict} TechnologyFilterDict */
-	/** @typedef {import('$lib/types/filters.types').TechnologyFilterKey} TechnologyFilterKey  */
-	/** @typedef {import('$lib/types/article.types').Article} Article  */
-	/** @typedef {import('./$types').PageData} PageData  */
-
 	import { format } from 'date-fns';
-
 	import FilterContent from '$lib/components/filters/FilterContent.svelte';
 	import FilterSection from '$lib/components/filters/FilterSection.svelte';
 	import FilterSectionHead from '$lib/components/filters/FilterSectionHead.svelte';
@@ -24,7 +18,7 @@
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 
-	/** @type {PageData} */
+	/** @type {import('./$types').PageData} */
 	export let data;
 
 	let showMenu = false;
