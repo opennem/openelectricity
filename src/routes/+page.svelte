@@ -51,7 +51,7 @@
 	let outlookEnergyNem = null;
 
 	setTimeout(() => {
-		outlookEnergyNem = ispData().aemo2024.outlookEnergyNem;
+		outlookEnergyNem = ispData.aemo2024.outlookEnergyNem;
 	}, 250);
 
 	if (!homepageData || homepageData.length === 0) {
@@ -115,7 +115,7 @@
 
 	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
 		{#if outlookEnergyNem}
-			<InfoGraphicISP data={{ ispData: ispData(), outlookEnergyNem, historyEnergyNemData }} />
+			<InfoGraphicISP data={{ ispData, outlookEnergyNem, historyEnergyNemData }} />
 		{/if}
 	</div>
 

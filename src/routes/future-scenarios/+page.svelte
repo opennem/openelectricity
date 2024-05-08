@@ -7,8 +7,7 @@
 	/** @type {*} */
 	export let data;
 	const { historyEnergyNemData, articles } = data;
-	const isp = ispData();
-	const outlookEnergyNem = isp.aemo2024.outlookEnergyNem;
+	const outlookEnergyNem = ispData.aemo2024.outlookEnergyNem;
 	const analysisArticles = articles.filter(
 		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
 	);
@@ -35,7 +34,7 @@
 </div>
 
 <div class="mt-12 md:mt-24">
-	<InfoGraphicISP data={{ ispData: isp, outlookEnergyNem, historyEnergyNemData }} />
+	<InfoGraphicISP data={{ ispData: ispData, outlookEnergyNem, historyEnergyNemData }} />
 </div>
 
 <div class="bg-white py-16 md:py-32">

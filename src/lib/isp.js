@@ -29,11 +29,7 @@ function parseIsp(projectionData) {
 	};
 }
 
-function ispData() {
-	const aemo2022 = parseIsp(outlookEnergyNem2022);
-	const aemo2024 = parseIsp(outlookEnergyNem);
+const aemo2022 = parseIsp(outlookEnergyNem2022);
+const aemo2024 = parseIsp(outlookEnergyNem);
 
-	return { aemo2022, aemo2024 };
-}
-
-export default ispData;
+export default { aemo2022, aemo2024 };
