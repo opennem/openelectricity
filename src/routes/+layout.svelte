@@ -1,6 +1,5 @@
 <script>
 	import { shortcut } from '@svelte-put/shortcut';
-
 	import { onNavigate } from '$app/navigation';
 	import '../app.css';
 
@@ -27,12 +26,7 @@
 		});
 	});
 
-	/**
-	 * @param {import('@svelte-put/shortcut').ShortcutEventDetail} detail
-	 */
-	function handleK(detail) {
-		// console.log('attached node:', detail, detail.node);
-		// console.log('original trigger config:', detail.trigger);
+	function handleCmdK() {
 		showThemeSwitcher = !showThemeSwitcher;
 	}
 </script>
@@ -43,13 +37,11 @@
 			{
 				key: 'k',
 				modifier: ['ctrl', 'meta'],
-				callback: handleK
+				callback: handleCmdK
 			},
 			{
 				key: 'Escape',
-				callback: () => {
-					showThemeSwitcher = false;
-				}
+				callback: () => (showThemeSwitcher = false)
 			}
 		]
 	}}

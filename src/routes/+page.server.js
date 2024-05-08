@@ -1,6 +1,4 @@
 import { client } from '$lib/sanity';
-// import { energyData } from '$lib/stats';
-// import ispData from '$lib/isp';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ fetch }) {
@@ -20,6 +18,7 @@ export async function load({ fetch }) {
 
 	const flows = await fetch('/api/flows').then(async (res) => {
 		const { data: jsonData } = await res.json();
+		/** @type {*} */
 		const regionFlows = {};
 		jsonData.forEach((region) => {
 			regionFlows[region.code] = region.history.data[region.history.data.length - 1];
@@ -34,6 +33,7 @@ export async function load({ fetch }) {
 
 	const prices = await fetch('/api/prices').then(async (res) => {
 		const { data: jsonData } = await res.json();
+		/** @type {*} */
 		const regionPrices = {};
 		jsonData.forEach((region) => {
 			regionPrices[region.code] = region.history.data[region.history.data.length - 1];
@@ -44,9 +44,11 @@ export async function load({ fetch }) {
 		};
 	});
 
-	// const energyDataRes = await energyData();
-
-	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
+	/** Records API */
+	// const records = await fetch('/api/records').then(async (res) => {
+	// 	const { data: jsonData } = await res.json();
+	// 	return jsonData;
+	// });
 
 	return {
 		homepageData,
@@ -54,11 +56,5 @@ export async function load({ fetch }) {
 		records,
 		flows,
 		prices
-		// mapAllData: energyDataRes
-
-		// outlookEnergyNem,
-		// pathways,
-		// scenarios,
-		// fuelTechs
 	};
 }
