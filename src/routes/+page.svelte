@@ -1,10 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
-
 	import ispData from '$lib/isp';
-	import { recordsByDay } from '$lib/records';
-
+	import LogoMark from '$lib/images/logo-mark.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import InfoGraphicISP from '$lib/components/info-graphics/integrated-system-plan/index.svelte';
 	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
@@ -12,23 +10,13 @@
 	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
-	import LogoMark from '$lib/images/logo-mark.svelte';
-
 	/** @type {import('./$types').PageData} */
 	export let data;
 	const {
 		flows,
 		prices,
-
-		// regionPower,
-		// regionEnergy,
-		// regionEmissions,
-
-		records,
+		// records,
 		articles,
-		// outlookEnergyNem,
-		// fuelTechs,
-		// scenarios,
 		dataTrackerData,
 		historyEnergyNemData,
 		homepageData
@@ -55,7 +43,7 @@
 		});
 	});
 
-	const milestones = articles.filter((article) => article.article_type === 'milestone');
+	// const milestones = articles.filter((article) => article.article_type === 'milestone');
 	const analysisArticles = articles.filter((article) => article.article_type === 'analysis');
 
 	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
@@ -70,41 +58,7 @@
 		throw new Error('No homepage data found');
 	}
 
-	const {
-		banner_title,
-		banner_statement,
-		milestones_title,
-		map_title,
-		records_title,
-		analysis_title
-	} = homepageData[0];
-
-	// Process records
-	const dailyRecords = recordsByDay(records);
-	const recordsSlice = [];
-	let remaining = 5;
-	dailyRecords.every((day) => {
-		if (remaining > day.length) {
-			recordsSlice.push(day);
-			remaining -= day.length;
-		} else {
-			recordsSlice.push(day.slice(0, remaining));
-			remaining = 0;
-		}
-
-		return remaining > 0;
-	});
-
-	// TEST map data
-	// const mapJsons = mapAllData.originalJsons;
-	// const mapDataCached = mapAllData.cached;
-	// console.log('mapJsons', mapJsons, 'cached', mapDataCached);
-
-	// console.log('flows', flows);
-	// console.log('prices', prices);
-	// console.log('regionPower', regionPower);
-	// console.log('regionEnergy', regionEnergy);
-	// console.log('regionEmissions', regionEmissions);
+	const { banner_title, banner_statement, map_title, analysis_title } = homepageData[0];
 
 	$: allReady = dataTrackerData.length > 0 && historyEnergyNemData.length > 0;
 </script>
@@ -145,9 +99,7 @@
 		</div>
 	{/if}
 
-	<!-- <hr class="w-[90%] mx-auto bg-mid-warm-grey border-0 h-px" />
-
-	<div class="bg-white py-16 md:py-32">
+	<!-- <div class="bg-white py-16 md:py-32">
 		<div class="container max-w-none lg:container">
 			<header class="flex justify-between">
 				<h3>{milestones_title}</h3>
@@ -166,35 +118,6 @@
 			<InfoGraphicISP data={{ ispData: ispData(), outlookEnergyNem, historyEnergyNemData }} />
 		{/if}
 	</div>
-
-	<!-- <div class="bg-light-warm-grey py-40">
-		<div class="container max-w-none lg:container">
-			<header class="text-center">
-				<h3>{records_title}</h3>
-			</header>
-			<div class="my-14">
-				<div class="mx-auto max-w-[51rem]">
-					{#each recordsSlice as day}
-						<div class="max-w-[51rem] mx-auto">
-							<header class="font-space text-sm uppercase py-8 z-5">
-								{isToday(Date.parse(day[0][0].interval))
-									? 'Today'
-									: format(Date.parse(day[0][0].interval), 'dd LLL, yyyy')}
-							</header>
-							<div>
-								{#each day as record}
-									<RecordCard {record} class="mb-4" />
-								{/each}
-							</div>
-						</div>
-					{/each}
-				</div>
-			</div>
-			<footer class="text-center mt-20">
-				<ButtonLink href="/records" class="inline-flex">View all records</ButtonLink>
-			</footer>
-		</div>
-	</div> -->
 
 	<div class="bg-white py-16 md:py-32">
 		<div class="container max-w-none lg:container">
