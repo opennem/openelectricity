@@ -1,7 +1,7 @@
 <script>
 	import parseInterval from '$lib/utils/intervals';
-	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
-	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
+	import Statistic from '$lib/utils/Statistic';
+	import TimeSeries from '$lib/utils/TimeSeries';
 	import { dataTrackerLink } from '$lib/stores/app';
 
 	import {
@@ -22,13 +22,13 @@
 
 	const xKey = 'date';
 
-	$: statsDatasets = new StatsDatasets(data, 'history')
+	$: statsDatasets = new Statistic(data, 'history')
 		.mergeAndInterpolate()
 		.invertLoadValues(loadFts)
 		.group(domainGroups)
 		.reorder(domainOrder).data;
 
-	$: timeSeriesDatasets = new TimeSeriesDatasets(
+	$: timeSeriesDatasets = new TimeSeries(
 		statsDatasets,
 		parseInterval('5m'),
 		'history',

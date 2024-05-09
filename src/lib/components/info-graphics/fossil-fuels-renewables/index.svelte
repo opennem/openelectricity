@@ -1,6 +1,6 @@
 <script>
-	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
-	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
+	import Statistic from '$lib/utils/Statistic';
+	import TimeSeries from '$lib/utils/TimeSeries';
 	import parseInterval from '$lib/utils/intervals';
 
 	import { domainGroups, loadFts, totalId, labelReducer } from './helpers';
@@ -13,11 +13,11 @@
 	export let title = '';
 	export let description = '';
 
-	$: statsDatasets = new StatsDatasets(data, 'history')
+	$: statsDatasets = new Statistic(data, 'history')
 		.group(domainGroups)
 		.addTotalMinusLoads(loadFts, totalId);
 
-	$: timeSeriesDatasets = new TimeSeriesDatasets(
+	$: timeSeriesDatasets = new TimeSeries(
 		statsDatasets.data,
 		parseInterval('1M'),
 		'history',

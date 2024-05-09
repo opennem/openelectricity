@@ -1,5 +1,5 @@
 import { differenceInMonths, parse } from 'date-fns';
-import useDate from '$lib/utils/time-series-helpers/use-date';
+import useDate from '$lib/utils/TimeSeries/use-date';
 
 /**
  * @param {StatsData[]} jsonData

@@ -1,6 +1,6 @@
 import { parseISO } from 'date-fns';
 import parseInterval from '$lib/utils/intervals';
-import interpolate from '$lib/utils/stats-data-helpers/interpolate-array';
+import interpolate from './interpolate-array';
 
 /**
  *

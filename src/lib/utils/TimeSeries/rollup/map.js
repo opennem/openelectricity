@@ -1,7 +1,7 @@
-import getMonthKey from '$lib/utils/time-series-helpers/rollup/month';
-import getYearKey from '$lib/utils/time-series-helpers/rollup/year';
-import getMinutesKey from '$lib/utils/time-series-helpers/rollup/minutes';
-import getYearFinKey from '$lib/utils/time-series-helpers/rollup/year-fin';
+import getMonthKey from '$lib/utils/TimeSeries/rollup/month';
+import getYearKey from '$lib/utils/TimeSeries/rollup/year';
+import getMinutesKey from '$lib/utils/TimeSeries/rollup/minutes';
+import getYearFinKey from '$lib/utils/TimeSeries/rollup/year-fin';
 
 /**
  *

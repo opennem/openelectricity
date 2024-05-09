@@ -9,14 +9,14 @@ import totalMinusLoadsStats from './total-minus-loads-stats';
  * @param {StatsData[]} data
  * @param {StatsType | undefined} statsType
  */
-function StatsDatasets(data, statsType) {
+function Statistic(data, statsType) {
 	this.originalData = deepCopy(data);
 	this.data = deepCopy(data);
 	this.statsType = statsType || 'history';
 	this.minIntervalObj = getMinInterval(data, this.statsType);
 }
 
-StatsDatasets.prototype.mergeAndInterpolate = function () {
+Statistic.prototype.mergeAndInterpolate = function () {
 	const merged = mergeStatsType(this.data, this.statsType);
 	const interpolated = interpolateDatasets(merged, this.minIntervalObj, this.statsType);
 
@@ -27,7 +27,7 @@ StatsDatasets.prototype.mergeAndInterpolate = function () {
 	return this;
 };
 
-StatsDatasets.prototype.reorder = function (/** @type {string[]} */ domainOrder) {
+Statistic.prototype.reorder = function (/** @type {string[]} */ domainOrder) {
 	/** @type {StatsData[]} */
 	const data = [];
 
@@ -43,7 +43,7 @@ StatsDatasets.prototype.reorder = function (/** @type {string[]} */ domainOrder)
 	return this;
 };
 
-StatsDatasets.prototype.invertLoadValues = function (/** @type {string[]} */ loads) {
+Statistic.prototype.invertLoadValues = function (/** @type {string[]} */ loads) {
 	this.data.forEach((d) => {
 		const ft = d.fuel_tech;
 
@@ -62,7 +62,7 @@ StatsDatasets.prototype.invertLoadValues = function (/** @type {string[]} */ loa
 	return this;
 };
 
-StatsDatasets.prototype.group = function (/** @type {Object} */ groupMap) {
+Statistic.prototype.group = function (/** @type {Object} */ groupMap) {
 	/**
 	 *
 	 * @param {*} groupMap
@@ -116,7 +116,7 @@ StatsDatasets.prototype.group = function (/** @type {Object} */ groupMap) {
 	return this;
 };
 
-StatsDatasets.prototype.addTotalMinusLoads = function (
+Statistic.prototype.addTotalMinusLoads = function (
 	/** @type {FuelTechCode[]} */ loads,
 	/** @type {string} */ id
 ) {
@@ -124,4 +124,4 @@ StatsDatasets.prototype.addTotalMinusLoads = function (
 	return this;
 };
 
-export default StatsDatasets;
+export default Statistic;

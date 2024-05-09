@@ -24,8 +24,8 @@
 	import ChartTooltip from './ChartTooltip.svelte';
 
 	import parseInterval from '$lib/utils/intervals';
-	import StatsDatasets from '$lib/utils/stats-data-helpers/StatsDatasets';
-	import TimeSeriesDatasets from '$lib/utils/time-series-helpers/TimeSeriesDatasets';
+	import Statistic from '$lib/utils/Statistic';
+	import TimeSeries from '$lib/utils/TimeSeries';
 
 	/** @type {{ ispData: *, outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} */
 	export let data;
@@ -64,11 +64,11 @@
 
 	$: yDomain = selectedModelYDomain[selectedScenario];
 
-	$: projectionStatsDatasets = new StatsDatasets(filteredWithPathwayScenario, 'projection')
+	$: projectionStatsDatasets = new Statistic(filteredWithPathwayScenario, 'projection')
 		.group(group)
 		.reorder(order);
 
-	$: projectionTimeSeriesDatasets = new TimeSeriesDatasets(
+	$: projectionTimeSeriesDatasets = new TimeSeries(
 		projectionStatsDatasets.data,
 		parseInterval('1Y'),
 		'projection',
@@ -96,11 +96,9 @@
 		return d;
 	});
 
-	$: historicalStatsDatasets = new StatsDatasets(historicalData, 'history')
-		.group(group)
-		.reorder(order);
+	$: historicalStatsDatasets = new Statistic(historicalData, 'history').group(group).reorder(order);
 
-	$: historicalTimeSeriesDatasets = new TimeSeriesDatasets(
+	$: historicalTimeSeriesDatasets = new TimeSeries(
 		historicalStatsDatasets.data,
 		parseInterval('1M'),
 		'history',

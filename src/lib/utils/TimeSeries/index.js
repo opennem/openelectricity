@@ -1,8 +1,8 @@
 import { rollup } from 'd3-array';
-import transform from '$lib/utils/time-series-helpers/transform-stats-to-ts';
-import meanReducer from '$lib/utils/time-series-helpers/reducer/mean';
-import sumReducer from '$lib/utils/time-series-helpers/reducer/sum';
-import withMinMax from '$lib/utils/time-series-helpers/with-min-max';
+import transform from '$lib/utils/TimeSeries/transform-stats-to-ts';
+import meanReducer from '$lib/utils/TimeSeries/reducer/mean';
+import sumReducer from '$lib/utils/TimeSeries/reducer/sum';
+import withMinMax from '$lib/utils/TimeSeries/with-min-max';
 import transformRollingSum12Mth from '$lib/utils/rolling-sum-12-mth';
 import rollUpMap from './rollup/map';
 
@@ -14,7 +14,7 @@ import rollUpMap from './rollup/map';
  * @param {*} labelReducer
  * @param {*} colourReducer
  */
-function TimeSeriesDatasets(statsDatasets, statsInterval, statsType, labelReducer, colourReducer) {
+function TimeSeries(statsDatasets, statsInterval, statsType, labelReducer, colourReducer) {
 	/** @type {TimeSeriesData[]} */
 	this.data = [];
 
@@ -47,12 +47,12 @@ function TimeSeriesDatasets(statsDatasets, statsInterval, statsType, labelReduce
 	}
 }
 
-TimeSeriesDatasets.prototype.transform = function () {
+TimeSeries.prototype.transform = function () {
 	this.data = transform(this.statsDatasets, this.statsInterval, this.statsType);
 	return this;
 };
 
-TimeSeriesDatasets.prototype.rollup = function (
+TimeSeries.prototype.rollup = function (
 	/** @type {StatsInterval} */ targetStatsInterval,
 	/** @type {'sum' | 'mean'} */ reducerType = 'sum'
 ) {
@@ -74,12 +74,12 @@ TimeSeriesDatasets.prototype.rollup = function (
 	return this;
 };
 
-TimeSeriesDatasets.prototype.calculate12MthRollingSum = function () {
+TimeSeries.prototype.calculate12MthRollingSum = function () {
 	this.data = transformRollingSum12Mth(this.data, this.seriesNames);
 	return this;
 };
 
-TimeSeriesDatasets.prototype.convertToPercentage = function (
+TimeSeries.prototype.convertToPercentage = function (
 	/** @type {string} */ id = 'au.total-minus-loads.history'
 ) {
 	this.data = this.data.map((d) => {
@@ -106,9 +106,9 @@ TimeSeriesDatasets.prototype.convertToPercentage = function (
 	return this;
 };
 
-TimeSeriesDatasets.prototype.updateMinMax = function (/** @type {string[]} */ loads = []) {
+TimeSeries.prototype.updateMinMax = function (/** @type {string[]} */ loads = []) {
 	this.data = withMinMax(this.data, this.seriesNames, loads);
 	return this;
 };
 
-export default TimeSeriesDatasets;
+export default TimeSeries;
