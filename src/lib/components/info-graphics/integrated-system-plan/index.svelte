@@ -1,8 +1,6 @@
 <script>
 	import { startOfYear, format } from 'date-fns';
-
 	import deepCopy from '$lib/utils/deep-copy';
-
 	import {
 		modelSelections,
 		scenarios,
@@ -13,22 +11,9 @@
 		modelXTicks,
 		modelSparklineXTicks
 	} from './scenarios';
-
 	import { groups as ftGroupSelections, groupMap, orderMap } from './fuel-tech-groups';
-	import {
-		domainGroups,
-		domainOrder,
-		labelReducer,
-		fuelTechReducer,
-		formatFyTickX
-	} from './helpers';
-
-	import {
-		domainGroups as historicalDomainGroups,
-		domainOrder as historicalDomainOrder,
-		labelReducer as historicalLabelReducer
-	} from './historical-helpers';
-
+	import { formatFyTickX } from './helpers';
+	import { fuelTechNameReducer, fuelTechReducer } from '$lib/fuel_techs.js';
 	import { colourReducer } from '$lib/stores/theme';
 
 	import Icon from '$lib/components/Icon.svelte';
@@ -87,7 +72,7 @@
 		projectionStatsDatasets.data,
 		parseInterval('1Y'),
 		'projection',
-		labelReducer,
+		fuelTechNameReducer,
 		$colourReducer
 	)
 		.transform()
@@ -119,7 +104,7 @@
 		historicalStatsDatasets.data,
 		parseInterval('1M'),
 		'history',
-		historicalLabelReducer,
+		fuelTechNameReducer,
 		$colourReducer
 	)
 		.transform()

@@ -77,79 +77,6 @@ export const fuelTechOrder = [
 	'solar_rooftop'
 ];
 
-/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
-export const fuelTechGroupMap = {
-	// battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
-	// demand_response: ['demand_response'],
-	// exports: ['exports'],
-
-	// imports: ['imports'],
-
-	coal: ['coal_black', 'coal_brown'],
-
-	gas: [
-		'gas_ccgt',
-		'gas_ccgt_ccs',
-		'gas_ocgt',
-		'gas_recip',
-		'gas_steam',
-		'gas_wcmg',
-		'gas_hydrogen'
-	],
-
-	hydro: ['hydro'],
-
-	// battery: ['battery_discharging', 'battery_VPP_discharging', 'battery_distributed_discharging'],
-
-	wind: ['wind', 'wind_offshore'],
-
-	solar: ['solar_utility', 'solar_thermal', 'solar_rooftop']
-};
-
-/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
-export const historicalEnergyGroupMap = {
-	// battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
-	// demand_response: ['demand_response'],
-	// exports: ['exports'],
-
-	// imports: ['imports'],
-
-	coal: ['coal_black', 'coal_brown'],
-
-	gas: ['gas_ccgt', 'gas_ocgt', 'gas_recip', 'gas_steam', 'gas_wcmg'],
-
-	hydro: ['hydro'],
-
-	// battery: ['battery_discharging'],
-
-	wind: ['wind'],
-
-	solar: ['solar_utility', 'solar_rooftop']
-};
-
-/** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
-export const fossilRenewablesGroupMap = {
-	fossil_fuels: [
-		'coal_black',
-		'coal_brown',
-		'gas_ccgt',
-		'gas_ocgt',
-		'gas_recip',
-		'gas_steam',
-		'gas_wcmg',
-		'distillate'
-	],
-	renewables: [
-		'solar_utility',
-		'solar_rooftop',
-		'wind',
-		'hydro',
-		'bioenergy_biogas',
-		'bioenergy_biomass'
-	]
-	// battery: ['battery_discharging']
-};
-
 /** @type {Object.<FuelTechCode, string>}} */
 export const fuelTechColourMap = {
 	battery_charging: '#4F5FD7',
@@ -203,16 +130,7 @@ export const fuelTechColourMap = {
 	renewable: '#52A972'
 };
 
-export const fuelTechGroups = /** @type {FuelTechCode[]} */ (getKeys(fuelTechGroupMap));
 export const fuelTechNames = getKeys(fuelTechNameMap);
-
-export const historicalEnergyGroups = /** @type {FuelTechCode[]} */ (
-	getKeys(historicalEnergyGroupMap)
-);
-
-export const fossilRenewablesGroups = /** @type {FuelTechCode[]} */ (
-	getKeys(fossilRenewablesGroupMap)
-);
 
 /**
  * @param {Object.<FuelTechCode, FuelTechCode[]>} groupMap
@@ -235,3 +153,24 @@ export const fuelTechName = (ftCode) => fuelTechNameMap[ftCode] || ftCode;
  * @returns {string}
  */
 export const fuelTechColour = (ftCode) => fuelTechColourMap[ftCode] || '#fff';
+
+// REDUCERS
+/**
+ * @param {Object.<string, string>} acc
+ * @param {StatsData} d
+ * @returns {Object.<string, string>}
+ */
+export const fuelTechNameReducer = (acc, d) => {
+	acc[d.id] = d.fuel_tech ? fuelTechName(d.fuel_tech) : '';
+	return acc;
+};
+
+/**
+ * @param {Object.<string, string>} acc
+ * @param {StatsData} d
+ * @returns {Object.<string, string>}
+ */
+export const fuelTechReducer = (acc, d) => {
+	acc[d.id] = d.fuel_tech ? d.fuel_tech : '';
+	return acc;
+};
