@@ -1,6 +1,8 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
+	import { clickoutside } from '@svelte-put/clickoutside';
+
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 
@@ -20,15 +22,19 @@
 <div class="relative">
 	<button
 		on:click={() => (showOptions = !showOptions)}
+		use:clickoutside
+		on:clickoutside={() => (showOptions = false)}
 		class="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-warm-grey"
 	>
-		<h5 class="font-medium mb-0">{selected?.label}</h5>
+		<h5 class="font-medium mb-0 capitalize">
+			{selected && selected.label ? selected?.label : selected.split('_').join(' ')}
+		</h5>
 		<IconChevronUpDown class="w-7 h-7" />
 	</button>
 
 	{#if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col gap-2 w-full rounded-lg z-10 shadow-md p-2"
+			class="border border-mid-grey bg-white absolute flex flex-col gap-2 w-full rounded-lg z-20 shadow-md p-2"
 			in:fly={{ y: -5, duration: 150 }}
 			out:fly={{ y: -5, duration: 150 }}
 		>
@@ -38,7 +44,7 @@
 						class="hover:bg-warm-grey w-full rounded-md py-2 pl-4 pr-6 flex gap-2 items-center justify-between"
 						on:click={() => handleSelect(opt)}
 					>
-						<span>{opt.label}</span>
+						<span class="capitalize">{opt.label}</span>
 						{#if selected && selected.value === opt.value}
 							<IconCheckMark class="w-7 h-7 text-dark-grey" />
 						{/if}
