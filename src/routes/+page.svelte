@@ -4,7 +4,7 @@
 	import ispData from '$lib/isp';
 	import LogoMark from '$lib/images/logo-mark.svelte';
 	import Meta from '$lib/components/Meta.svelte';
-	import InfoGraphicISP from '$lib/components/info-graphics/integrated-system-plan/index.svelte';
+	import InfoGraphicIspPreview from '$lib/components/info-graphics/integrated-system-plan/Preview.svelte';
 	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
 	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
@@ -115,7 +115,7 @@
 
 	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
 		{#if outlookEnergyNem}
-			<InfoGraphicISP data={{ ispData, outlookEnergyNem, historyEnergyNemData }} />
+			<InfoGraphicIspPreview data={{ ispData, outlookEnergyNem, historyEnergyNemData }} />
 		{/if}
 	</div>
 

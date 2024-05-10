@@ -3,8 +3,14 @@
 </script>
 
 <div class="page-header bg-light-warm-grey border-b border-warm-grey">
-	<header class="container max-w-none lg:container flex items-center h-full">
-		<h1 class="mt-9">{title}</h1>
+	<header class="container max-w-none lg:container lg:flex items-center">
+		<div>
+			<slot name="main-heading">
+				<h1 class="pt-32">{title}</h1>
+			</slot>
+		</div>
+
+		<slot name="sub-heading" />
 	</header>
 </div>
 
@@ -13,7 +19,7 @@
 		background-image: url('/img/dot-square.svg');
 		background-position: top -1px center;
 		background-repeat: repeat;
-		height: 24rem;
+		min-height: 24rem;
 		border-bottom: 0.1rem solid #f1f0ed;
 	}
 </style>
