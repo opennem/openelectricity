@@ -3,9 +3,9 @@ const fuelTechColourMap = {
 	battery_charging: '#B2DAEF',
 	battery_discharging: '#00A2FA',
 	battery_VPP_charging: '#B2DAEF',
-	battery_VPP_discharging: '#00A2FA',
+	battery_VPP_discharging: '#45BEFF',
 	battery_distributed_charging: '#B2DAEF',
-	battery_distributed_discharging: '#00A2FA',
+	battery_distributed_discharging: '#84D4FF',
 	battery: '#00A2FA',
 
 	bioenergy: '#A3886F',
@@ -20,7 +20,7 @@ const fuelTechColourMap = {
 
 	gas: '#FF8813',
 	gas_ccgt: '#FDB462',
-	gas_ccgt_ccs: '#DD8018',
+	gas_ccgt_ccs: '#DD8018', //carbon capture and storage
 	gas_ocgt: '#FFCD96',
 	gas_recip: '#F9DCBC',
 	gas_steam: '#F48E1B',

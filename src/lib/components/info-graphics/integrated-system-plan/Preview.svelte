@@ -11,7 +11,7 @@
 		modelXTicks,
 		modelSparklineXTicks
 	} from './scenarios';
-	import { groups as ftGroupSelections, groupMap, orderMap } from './fuel-tech-groups';
+	import { groups as ftGroupSelections, groupMap, orderMap } from './preview-ft-groups';
 	import { formatFyTickX } from './helpers';
 	import { fuelTechNameReducer, fuelTechReducer } from '$lib/fuel_techs.js';
 	import { colourReducer } from '$lib/stores/theme';

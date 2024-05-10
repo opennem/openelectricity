@@ -17,7 +17,7 @@ const defaultGroup = {
 	coal: ['coal_black', 'coal_brown'],
 	gas: [
 		'gas_ccgt',
-		'gas_ccgt_ccs',
+		// 'gas_ccgt_ccs',
 		'gas_ocgt',
 		'gas_recip',
 		'gas_steam',
@@ -41,7 +41,7 @@ const renewablesVsFtGroup = {
 		'coal_black',
 		'coal_brown',
 		'gas_ccgt',
-		'gas_ccgt_ccs',
+		// 'gas_ccgt_ccs',
 		'gas_ocgt',
 		'gas_recip',
 		'gas_steam',

@@ -11,7 +11,7 @@
 		modelXTicks,
 		modelSparklineXTicks
 	} from './scenarios';
-	import { groups as ftGroupSelections, groupMap, orderMap } from './fuel-tech-groups';
+	import { explorerGroups as ftGroupSelections, groupMap, orderMap } from './explorer-ft-groups';
 	import { formatFyTickX } from './helpers';
 	import { fuelTechNameReducer, fuelTechReducer } from '$lib/fuel_techs.js';
 	import { colourReducer } from '$lib/stores/theme';
@@ -60,6 +60,8 @@
 	}));
 
 	$: outlookData = selectedModelData.outlookEnergyNem.data;
+	$: console.log('outlookData', outlookData);
+
 	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
 
 	$: filteredWithPathwayScenario = filteredWithScenario.filter(
@@ -83,6 +85,7 @@
 		.updateMinMax();
 
 	$: projectionSeriesNames = projectionTimeSeriesDatasets.seriesNames;
+	$: console.log('projectionTimeSeriesDatasets', projectionTimeSeriesDatasets);
 
 	/** @type {Object.<string, string>} */
 	$: projectionSeriesLabels = projectionTimeSeriesDatasets.seriesLabels;
@@ -344,13 +347,14 @@
 
 <div class="max-w-none lg:container">
 	<div
-		class="grid grid-cols-2 grid-flow-dense md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
+		class="grid grid-cols-2 grid-flow-dense gap-3"
 		class:md:grid-cols-6={projectionSeriesNames.length === 6}
 		class:md:grid-cols-2={projectionSeriesNames.length === 2}
+		class:md:grid-cols-4={projectionSeriesNames.length !== 2 && projectionSeriesNames.length !== 6}
 	>
 		{#each [...projectionSeriesNames].reverse() as key}
 			<SparkLineArea
-				class="p-8 even:border-l border-t [&:nth-child(-n+2)]:border-t-0 md:border-0 border-mid-warm-grey"
+				class="p-8 border border-mid-warm-grey"
 				dataset={projectionTimeSeriesDatasets.data}
 				{key}
 				fuelTechId={projectionFuelTechIds[key]}

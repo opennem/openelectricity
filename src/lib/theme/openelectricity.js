@@ -3,9 +3,9 @@ const fuelTechColourMap = {
 	battery_charging: '#4F5FD7',
 	battery_discharging: '#3145CE',
 	battery_VPP_charging: '#4F5FD7',
-	battery_VPP_discharging: '#3145CE',
+	battery_VPP_discharging: '#5969D9',
 	battery_distributed_charging: '#4F5FD7',
-	battery_distributed_discharging: '#3145CE',
+	battery_distributed_discharging: '#7682D7',
 	battery: '#3145CE',
 
 	bioenergy: '#069FAF',

@@ -58,7 +58,7 @@
 	transform="translate({-$padding.left}, 0)"
 	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
 >
-	{#each tickVals as tick, i (tick)}
+	{#each tickVals as tick, i (i)}
 		<g
 			class="tick tick-{tick}"
 			transform="translate({$xRange[0] + (isBandwidth ? $padding.left : 0)}, {$yScale(tick)})"
