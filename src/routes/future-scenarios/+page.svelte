@@ -2,7 +2,7 @@
 	import ispData from '$lib/isp';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 
-	import IspPreview from '$lib/components/info-graphics/integrated-system-plan/Preview.svelte';
+	import IspExplorer from '$lib/components/info-graphics/integrated-system-plan/Explorer.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 
@@ -41,7 +41,7 @@
 		</p>
 	</div>
 </PageHeader>
-<!-- <div class="bg-light-warm-grey py-6 md:py-4">
+<div class="bg-light-warm-grey py-6 md:py-4">
 	<div class="container max-w-none lg:container md:flex items-center gap-3 md:gap-6">
 		<span
 			class="inline-block whitespace-nowrap uppercase font-space font-medium tracking-widest text-xs bg-warm-grey py-2 px-4 rounded-full mb-2 md:mb-0"
@@ -53,10 +53,10 @@
 			soon.
 		</div>
 	</div>
-</div> -->
+</div>
 
 <div class="mt-12 md:mt-24">
-	<IspPreview data={{ ispData: ispData, outlookEnergyNem, historyEnergyNemData }} />
+	<IspExplorer data={{ ispData: ispData, outlookEnergyNem, historyEnergyNemData }} />
 </div>
 
 <div class="bg-white py-16 md:py-32">
