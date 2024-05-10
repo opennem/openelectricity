@@ -17,10 +17,10 @@
 	 * @param {MouseEvent|TouchEvent} evt
 	 */
 	function findItem(evt) {
-		let offsetX;
+		let offsetX = 0;
 		if (evt.offsetX) {
 			offsetX = evt.offsetX;
-		} else {
+		} else if (evt.touches) {
 			const rect = evt.target.getBoundingClientRect();
 			offsetX = evt.touches[0].clientX - rect.left;
 		}
