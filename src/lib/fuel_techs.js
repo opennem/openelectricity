@@ -1,5 +1,14 @@
 import { getKeys } from '$lib/utils/keys';
 
+export const loadFuelTechs = [
+	'battery_charging',
+	'battery_VPP_charging',
+	'battery_distributed_charging',
+	'exports',
+	'pumps'
+];
+export const isLoad = (ftCode) => loadFuelTechs.includes(ftCode);
+
 /** @type {Object.<FuelTechCode, string>}} */
 export const fuelTechNameMap = {
 	battery_charging: 'Battery (Charging)',

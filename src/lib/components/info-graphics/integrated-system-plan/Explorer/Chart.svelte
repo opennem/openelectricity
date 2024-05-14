@@ -5,7 +5,7 @@
 
 	import { scaleOrdinal } from 'd3-scale';
 
-	import { formatTickY, displayXTicks } from './helpers';
+	import { formatTickY, displayXTicks } from '../helpers';
 
 	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
@@ -16,16 +16,11 @@
 	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
 	import Overlay from '$lib/components/charts/elements/Overlay.svelte';
 	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
-	import AnnotateLineX from '$lib/components/charts/elements/annotations/LineX.svelte';
-
-	import ChartAnnotations from './ChartAnnotations.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
 
 	export let title = '';
-	export let scenarioTitle = '';
-	export let description = '';
 
 	export let id = '';
 	export let clip = true;
@@ -50,9 +45,6 @@
 	export let xTicks = undefined;
 
 	/** @type {*} */
-	export let xAnnotationLines = [];
-
-	/** @type {*} */
 	export let yTicks = undefined;
 
 	export let overlay = false;
@@ -72,11 +64,11 @@
 	};
 	const yTweened = tweened(/** @type {number|null} */ (null), tweenOptions);
 
-	$: maxY = yDomain ? yDomain[1] : null;
+	// $: maxY = yDomain ? yDomain[1] : null;
 	// $: maxArr = [...dataset.map((d) => d._max)];
 	// @ts-ignore
 	// $: datasetMax = maxArr ? Math.max(...maxArr) : 0;
-	$: if (dataset) yTweened.set(maxY);
+	// $: if (dataset) yTweened.set(maxY);
 	/** end */
 
 	$: stackedData = stack(dataset, seriesNames);
@@ -88,8 +80,8 @@
 		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
 		x={(/** @type {*} */ d) => d[xKey] || d.data[xKey]}
 		y={yKey}
-		yDomain={[0, $yTweened]}
 		z={zKey}
+		{yDomain}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
 		zRange={Object.values(seriesColours)}
@@ -118,10 +110,6 @@
 				<Overlay fill="url(#{`${id}-hatch-pattern`})" />
 			{/if}
 
-			{#each xAnnotationLines as line}
-				<AnnotateLineX xValue={line} />
-			{/each}
-
 			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />
 			<AxisX
 				ticks={xTicks || displayXTicks}
@@ -133,8 +121,6 @@
 		</Svg>
 
 		<Html pointerEvents={false}>
-			<ChartAnnotations {description} {scenarioTitle} />
-
 			<HoverText {hoverData} isShapeStack={true} position="bottom">
 				<span class="text-[10px] block">
 					{formatTickX(hoverTime)}

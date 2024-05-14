@@ -62,7 +62,10 @@ Statistic.prototype.invertLoadValues = function (/** @type {string[]} */ loads) 
 	return this;
 };
 
-Statistic.prototype.group = function (/** @type {Object} */ groupMap) {
+Statistic.prototype.group = function (
+	/** @type {Object} */ groupMap,
+	/** @type {string[]} */ loads = []
+) {
 	/**
 	 *
 	 * @param {*} groupMap
@@ -89,6 +92,7 @@ Statistic.prototype.group = function (/** @type {Object} */ groupMap) {
 				code,
 				fuel_tech: code,
 				id: `au.${code}.grouped.${this.statsType}`,
+				isLoad: loads.includes(code),
 				[this.statsType]: { ...data }
 			};
 

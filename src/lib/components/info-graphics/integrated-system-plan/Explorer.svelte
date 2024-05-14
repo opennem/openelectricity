@@ -12,14 +12,15 @@
 		modelSparklineXTicks
 	} from './scenarios';
 	import { explorerGroups as ftGroupSelections, groupMap, orderMap } from './explorer-ft-groups';
-	import { formatFyTickX } from './helpers';
-	import { fuelTechNameReducer, fuelTechReducer } from '$lib/fuel_techs.js';
+	import { formatFyTickX, formatValue } from './helpers';
+	import { fuelTechNameReducer, fuelTechReducer, isLoad, loadFuelTechs } from '$lib/fuel_techs.js';
 	import { colourReducer } from '$lib/stores/theme';
 
 	import Icon from '$lib/components/Icon.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
 	import OverviewChart from './OverviewChart.svelte';
+	import ExplorerChart from './Explorer/Chart.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 
@@ -68,7 +69,7 @@
 		(d) => d.pathway === selectedModelPathway
 	);
 
-	$: yDomain = selectedModelYDomain[selectedScenario];
+	// $: yDomain = selectedModelYDomain[selectedScenario];
 
 	$: projectionStatsDatasets = new Statistic(filteredWithPathwayScenario, 'projection')
 		.group(group)
@@ -85,7 +86,42 @@
 		.updateMinMax();
 
 	$: projectionSeriesNames = projectionTimeSeriesDatasets.seriesNames;
-	$: console.log('projectionTimeSeriesDatasets', projectionTimeSeriesDatasets);
+
+	$: projectionStatsCharts = new Statistic(filteredWithPathwayScenario, 'projection')
+		.invertLoadValues(loadFuelTechs)
+		.group(group, loadFuelTechs)
+		.reorder(order);
+
+	$: loadData = projectionStatsCharts.data.filter((d) => d.isLoad);
+	$: loadSeries = loadData.map((d) => d.id);
+	$: console.log('loadloadDataSeries', loadData);
+
+	$: projectionTimeSeriesCharts = new TimeSeries(
+		projectionStatsCharts.data,
+		parseInterval('1Y'),
+		'projection',
+		fuelTechNameReducer,
+		$colourReducer
+	)
+		.transform()
+		.updateMinMax(loadSeries);
+
+	$: console.log(
+		'projectionTimeSeriesCharts',
+		projectionTimeSeriesCharts.data,
+		projectionStatsCharts.data,
+		filteredWithPathwayScenario
+	);
+
+	$: maxY = [...projectionTimeSeriesCharts.data.map((d) => d._max)];
+	// @ts-ignore
+	$: datasetMax = maxY ? Math.max(...maxY) : 0;
+	$: minY = [...projectionTimeSeriesCharts.data.map((d) => d._min)];
+	// @ts-ignore
+	$: datasetMin = minY ? Math.min(...minY) : 0;
+
+	$: console.log('datasetMax', datasetMax, datasetMin);
+	$: yDomain = [datasetMin, datasetMax];
 
 	/** @type {Object.<string, string>} */
 	$: projectionSeriesLabels = projectionTimeSeriesDatasets.seriesLabels;
@@ -177,6 +213,8 @@
 	/** @type {string | undefined} */
 	let hoverKey;
 
+	$: console.log('hoverData', hoverData);
+
 	const handleMousemove = (/** @type {*} */ e) => {
 		if (e.detail.key) {
 			hoverKey = e.detail.key;
@@ -248,7 +286,7 @@
 	</div> -->
 </header>
 <div class="px-6">
-	<div class="grid grid-cols-6 gap-10 mt-6 mb-6 md:mb-0 relative">
+	<div class="grid grid-cols-12 gap-10 mt-6 mb-6 md:mb-0 relative">
 		<div class="absolute -right-8 hidden md:block">
 			<ChartTooltip
 				{hoverData}
@@ -259,7 +297,7 @@
 			/>
 		</div>
 
-		<div class="text-dark-grey col-span-6 md:col-span-2 relative">
+		<div class="text-dark-grey col-span-12 md:col-span-2 relative">
 			<div class="absolute -right-8 mt-10 block md:hidden">
 				<ChartTooltip
 					{hoverData}
@@ -270,12 +308,12 @@
 			</div>
 
 			<div class="invisible absolute md:visible md:relative">
-				<OverviewChart
+				<ExplorerChart
 					dataset={filteredHistoricalTimeSeriesDatasets}
 					{xKey}
 					xTicks={[startOfYear(new Date('2010-01-01')), startOfYear(new Date('2023-01-01'))]}
 					yKey={[0, 1]}
-					yTicks={0}
+					yTicks={10}
 					{yDomain}
 					zKey="key"
 					seriesNames={historicalTimeSeriesDatasets.seriesNames}
@@ -289,13 +327,13 @@
 			</div>
 		</div>
 
-		<div class="col-span-6 md:col-span-4">
+		<div class="col-span-12 md:col-span-7">
 			{#if filteredWithPathwayScenario.length === 0}
 				<p class="mt-6">No data for this scenario and pathway</p>
 			{:else}
 				<div class="relative">
 					<div class="block md:hidden w-[300px] absolute -left-[305px]">
-						<OverviewChart
+						<ExplorerChart
 							dataset={filteredHistoricalTimeSeriesDatasets}
 							{xKey}
 							xTicks={[startOfYear(new Date('2010-01-01')), startOfYear(new Date('2023-01-01'))]}
@@ -314,19 +352,17 @@
 						/>
 					</div>
 					<div class="w-full">
-						<OverviewChart
+						<ExplorerChart
 							title={`Energy Generation (TWh) by Financial Year`}
-							scenarioTitle={selectedModelScenarioLabels[selectedScenario]}
-							description={selectedModelScenarioDescriptions[selectedScenario]}
-							dataset={projectionTimeSeriesDatasets.data}
+							dataset={projectionTimeSeriesCharts.data}
 							{xKey}
 							xTicks={selectedModelXTicks}
 							yKey={[0, 1]}
-							yTicks={2}
+							yTicks={10}
 							{yDomain}
 							zKey="key"
-							seriesNames={projectionTimeSeriesDatasets.seriesNames}
-							seriesColours={projectionTimeSeriesDatasets.seriesColours}
+							seriesNames={projectionTimeSeriesCharts.seriesNames}
+							seriesColours={projectionTimeSeriesCharts.seriesColours}
 							{hoverData}
 							overlay={true}
 							bgClass="bg-light-warm-grey"
@@ -341,6 +377,36 @@
 					</div>
 				</div>
 			{/if}
+		</div>
+
+		<div class="col-span-12 md:col-span-3">
+			<table class="md:table-fixed w-full text-xs">
+				<thead>
+					<tr>
+						<th class="text-left w-1/2">All tech</th>
+						<th class="text-right">Energy</th>
+						<th class="text-right">Contribution to demand</th>
+					</tr>
+				</thead>
+
+				<!-- <thead>
+					<tr>
+						<th colspan="3" class="text-left">Sources</th>
+					</tr>
+				</thead> -->
+
+				<tbody>
+					{#each [...projectionTimeSeriesCharts.seriesNames].reverse() as key}
+						<tr>
+							<td class="text-left">{projectionTimeSeriesCharts.seriesLabels[key]}</td>
+							<td class="text-right">{hoverData ? formatValue(hoverData[key]) : '—'}</td>
+							<td class="text-right"
+								>{hoverData ? formatValue((hoverData[key] / hoverData._max) * 100) : '—'}%</td
+							>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
 		</div>
 	</div>
 </div>

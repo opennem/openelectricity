@@ -87,6 +87,10 @@ const detailedOrder = [
 	'battery_VPP_charging',
 	'battery_distributed_charging',
 
+	'battery_discharging',
+	'battery_VPP_discharging',
+	'battery_distributed_discharging',
+
 	'demand_response',
 
 	'coal_black',
@@ -101,10 +105,6 @@ const detailedOrder = [
 	'gas_hydrogen',
 	'hydro',
 
-	'battery_discharging',
-	'battery_VPP_discharging',
-	'battery_distributed_discharging',
-
 	'wind',
 	'wind_offshore',
 	'solar_utility',
@@ -114,6 +114,12 @@ const detailedOrder = [
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 const renewablesVsFtGroup = {
 	battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
+	battery_discharging: [
+		'battery_discharging',
+		'battery_VPP_discharging',
+		'battery_distributed_discharging'
+	],
+
 	demand_response: ['demand_response'],
 	fossil: [
 		'coal_black',
@@ -126,11 +132,6 @@ const renewablesVsFtGroup = {
 		'gas_wcmg',
 		'gas_hydrogen',
 		'distillate'
-	],
-	battery_discharging: [
-		'battery_discharging',
-		'battery_VPP_discharging',
-		'battery_distributed_discharging'
 	],
 	renewable: [
 		'bioenergy_biomass',
@@ -146,13 +147,12 @@ const renewablesVsFtGroup = {
 
 const defaultOrder = [
 	'battery_charging',
+	'battery_discharging',
 	'demand_response',
 
 	'coal',
 	'gas',
 	'hydro',
-
-	'battery_discharging',
 
 	'wind',
 	'solar_utility',
@@ -160,8 +160,8 @@ const defaultOrder = [
 ];
 const renewablesVsFtOrder = [
 	'battery_charging',
-	'demand_response',
 	'battery_discharging',
+	'demand_response',
 	'fossil',
 	'renewable'
 ];

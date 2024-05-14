@@ -318,6 +318,7 @@
 							dataset={projectionTimeSeriesDatasets.data}
 							{xKey}
 							xTicks={selectedModelXTicks}
+							xAnnotationLines={[{ date: selectedModelXTicks[0] }]}
 							yKey={[0, 1]}
 							yTicks={2}
 							{yDomain}
