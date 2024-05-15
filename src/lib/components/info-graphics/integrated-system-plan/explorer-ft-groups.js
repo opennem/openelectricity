@@ -38,6 +38,7 @@ const defaultOrder = [
 	'hydro',
 
 	'wind',
+	'solar_thermal',
 	'solar_utility',
 	'solar_rooftop'
 ];
@@ -68,6 +69,7 @@ const defaultGroup = {
 	],
 
 	wind: ['wind', 'wind_offshore'],
+	solar_thermal: ['solar_thermal'],
 	solar_utility: ['solar_utility'],
 	solar_rooftop: ['solar_rooftop']
 };
@@ -100,6 +102,7 @@ const detailedOrder = [
 
 	'wind',
 	'wind_offshore',
+	'solar_thermal',
 	'solar_utility',
 	'solar_rooftop'
 ];
@@ -133,6 +136,7 @@ const detailedGroup = {
 
 	wind: ['wind'],
 	wind_offshore: ['wind_offshore'],
+	solar_thermal: ['solar_thermal'],
 	solar_utility: ['solar_utility'],
 	solar_rooftop: ['solar_rooftop']
 };

@@ -15,7 +15,7 @@ function parseIsp(projectionData) {
 	});
 
 	const pathways = [...new Set(data.map((d) => d.pathway))].sort();
-	const scenarios = [...new Set(data.map((d) => d.scenario))].sort();
+	const scenarios = [...new Set(data.map((d) => d.scenario))].sort().reverse();
 	const fuelTechs = [...new Set(data.map((d) => d.fuel_tech))].sort();
 
 	return {

@@ -3,6 +3,7 @@
 	import PageHeader from '$lib/components/PageHeader.svelte';
 
 	import IspExplorer from '$lib/components/info-graphics/integrated-system-plan/Explorer.svelte';
+	import Explorer from '$lib/components/info-graphics/integrated-system-plan/Explorer/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 
@@ -10,6 +11,7 @@
 	export let data;
 	const { historyEnergyNemData, articles } = data;
 	const outlookEnergyNem = ispData.aemo2024.outlookEnergyNem;
+
 	const analysisArticles = articles.filter(
 		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
 	);
@@ -56,6 +58,7 @@
 </div>
 
 <div class="mt-12 md:mt-24">
+	<Explorer {ispData} historyData={historyEnergyNemData} />
 	<IspExplorer data={{ ispData: ispData, outlookEnergyNem, historyEnergyNemData }} />
 </div>
 

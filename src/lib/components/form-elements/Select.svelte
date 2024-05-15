@@ -19,6 +19,11 @@
 		dispatch('change', option);
 		showOptions = false;
 	}
+
+	function findSelectedOption() {
+		const find = options.find((opt) => opt.value === selectedValue);
+		return find ? find.label : selectedValue;
+	}
 </script>
 
 <div class="relative">
@@ -29,7 +34,7 @@
 		class="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-warm-grey"
 	>
 		<h5 class="font-medium mb-0 capitalize">
-			{selected && selected.label ? selected?.label : selected.split('_').join(' ')}
+			{selected && selected.label ? selected?.label : findSelectedOption()}
 		</h5>
 		<IconChevronUpDown class="w-7 h-7" />
 	</button>

@@ -17,7 +17,7 @@ export default function (data, statsType = 'history') {
 		(i) => i.seconds === Math.min(...intervalArr.map((i) => i.seconds))
 	);
 
-	if (!minIntervalObj) console.error('No minIntervalObj found', intervalArr);
+	if (!minIntervalObj) console.warn('No minIntervalObj found', intervalArr);
 
 	return /** @type {StatsInterval} */ (minIntervalObj);
 }

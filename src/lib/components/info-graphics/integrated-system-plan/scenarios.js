@@ -52,7 +52,7 @@ export const scenarioDescriptions = {
 };
 
 // Optimal Path
-export const selectedPathway = {
+export const defaultPathway = {
 	aemo2024: 'CDP11 (ODP)',
 	aemo2022: 'CDP12'
 };

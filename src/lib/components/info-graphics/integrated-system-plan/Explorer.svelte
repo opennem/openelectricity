@@ -6,7 +6,7 @@
 		scenarios,
 		scenarioLabels,
 		scenarioDescriptions,
-		// selectedPathway,
+		defaultPathway,
 		scenarioYDomain,
 		modelXTicks,
 		modelSparklineXTicks
@@ -19,7 +19,6 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
-	import OverviewChart from './OverviewChart.svelte';
 	import ExplorerChart from './Explorer/Chart.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
@@ -63,8 +62,7 @@
 		label: p.split('_').join(' ')
 	}));
 	$: {
-		console.log('selectedModelPathways', selectedModelPathways);
-		selectedPathway = selectedModelPathways[0].value;
+		selectedPathway = defaultPathway[selectedModel.value];
 	}
 	$: selectedModelScenarios = scenarios[selectedModel.value].map((s) => ({
 		value: s,
@@ -72,7 +70,6 @@
 	}));
 
 	$: outlookData = selectedModelData.outlookEnergyNem.data;
-	$: console.log('outlookData', outlookData);
 
 	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
 
@@ -80,54 +77,68 @@
 		(d) => d.pathway === selectedPathway
 	);
 
+	$: console.log('filteredWithPathwayScenario', filteredWithPathwayScenario);
+
 	// $: yDomain = selectedModelYDomain[selectedScenario];
 
-	$: projectionStatsDatasets = new Statistic(filteredWithPathwayScenario, 'projection')
-		.group(group)
-		.reorder(order);
+	$: projectionStatsDatasets = filteredWithPathwayScenario.length
+		? new Statistic(filteredWithPathwayScenario, 'projection').group(group).reorder(order)
+		: null;
 
-	$: projectionTimeSeriesDatasets = new TimeSeries(
-		projectionStatsDatasets.data,
-		parseInterval('1Y'),
-		'projection',
-		fuelTechNameReducer,
-		$colourReducer
-	)
-		.transform()
-		.updateMinMax();
+	$: projectionTimeSeriesDatasets = projectionStatsDatasets
+		? new TimeSeries(
+				projectionStatsDatasets.data,
+				parseInterval('1Y'),
+				'projection',
+				fuelTechNameReducer,
+				$colourReducer
+		  )
+				.transform()
+				.updateMinMax()
+		: null;
 
-	$: projectionSeriesNames = projectionTimeSeriesDatasets.seriesNames;
+	$: projectionSeriesNames = projectionTimeSeriesDatasets
+		? projectionTimeSeriesDatasets.seriesNames
+		: [];
 
-	$: projectionStatsCharts = new Statistic(filteredWithPathwayScenario, 'projection')
-		.invertLoadValues(loadFuelTechs)
-		.group(group, loadFuelTechs)
-		.reorder(order);
+	$: projectionStatsCharts = filteredWithPathwayScenario
+		? new Statistic(filteredWithPathwayScenario, 'projection')
+				.invertLoadValues(loadFuelTechs)
+				.group(group, loadFuelTechs)
+				.reorder(order)
+		: null;
 
-	$: loadData = projectionStatsCharts.data.filter((d) => d.isLoad);
+	$: loadData = projectionStatsCharts ? projectionStatsCharts.data.filter((d) => d.isLoad) : [];
 	$: loadSeries = loadData.map((d) => d.id);
 	$: console.log('loadloadDataSeries', loadData);
 
-	$: projectionTimeSeriesCharts = new TimeSeries(
-		projectionStatsCharts.data,
-		parseInterval('1Y'),
-		'projection',
-		fuelTechNameReducer,
-		$colourReducer
-	)
-		.transform()
-		.updateMinMax(loadSeries);
+	$: projectionTimeSeriesCharts = projectionStatsCharts
+		? new TimeSeries(
+				projectionStatsCharts.data,
+				parseInterval('1Y'),
+				'projection',
+				fuelTechNameReducer,
+				$colourReducer
+		  )
+				.transform()
+				.updateMinMax(loadSeries)
+		: null;
 
 	$: console.log(
 		'projectionTimeSeriesCharts',
-		projectionTimeSeriesCharts.data,
-		projectionStatsCharts.data,
+		projectionTimeSeriesCharts?.data,
+		projectionStatsCharts?.data,
 		filteredWithPathwayScenario
 	);
 
-	$: maxY = [...projectionTimeSeriesCharts.data.map((d) => d._max)];
+	$: maxY = projectionTimeSeriesCharts
+		? [...projectionTimeSeriesCharts.data.map((d) => d._max)]
+		: [];
 	// @ts-ignore
 	$: datasetMax = maxY ? Math.max(...maxY) : 0;
-	$: minY = [...projectionTimeSeriesCharts.data.map((d) => d._min)];
+	$: minY = projectionTimeSeriesCharts
+		? [...projectionTimeSeriesCharts.data.map((d) => d._min)]
+		: [];
 	// @ts-ignore
 	$: datasetMin = minY ? Math.min(...minY) : 0;
 
@@ -135,12 +146,18 @@
 	$: yDomain = [datasetMin, datasetMax];
 
 	/** @type {Object.<string, string>} */
-	$: projectionSeriesLabels = projectionTimeSeriesDatasets.seriesLabels;
+	$: projectionSeriesLabels = projectionTimeSeriesDatasets
+		? projectionTimeSeriesDatasets.seriesLabels
+		: {};
 
 	/** @type {Object.<string, string>} */
-	$: projectionSeriesColours = projectionTimeSeriesDatasets.seriesColours;
+	$: projectionSeriesColours = projectionTimeSeriesDatasets
+		? projectionTimeSeriesDatasets.seriesColours
+		: {};
 
-	$: projectionFuelTechIds = projectionStatsDatasets.data.reduce(fuelTechReducer, {});
+	$: projectionFuelTechIds = projectionStatsDatasets
+		? projectionStatsDatasets.data.reduce(fuelTechReducer, {})
+		: {};
 
 	// Convert historical data to TWh to match ISP
 	$: historicalData = deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
@@ -315,7 +332,7 @@
 </header>
 <div class="px-6">
 	<div class="grid grid-cols-12 gap-10 mt-6 mb-6 md:mb-0 relative">
-		<div class="absolute -right-8 hidden md:block">
+		<div class="absolute -top-8 -right-8 hidden md:block">
 			<ChartTooltip
 				{hoverData}
 				{hoverKey}
@@ -326,7 +343,7 @@
 		</div>
 
 		<div class="text-dark-grey col-span-12 md:col-span-2 relative">
-			<div class="absolute -right-8 mt-10 block md:hidden">
+			<div class="absolute -top-8 -right-8 mt-10 block md:hidden">
 				<ChartTooltip
 					{hoverData}
 					{hoverKey}

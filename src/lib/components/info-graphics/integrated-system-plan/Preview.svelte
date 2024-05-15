@@ -6,7 +6,7 @@
 		scenarios,
 		scenarioLabels,
 		scenarioDescriptions,
-		selectedPathway,
+		defaultPathway as selectedPathway,
 		scenarioYDomain,
 		modelXTicks,
 		modelSparklineXTicks
@@ -204,7 +204,7 @@
 	</header>
 
 	<div class="grid grid-cols-6 gap-10 mt-6 mb-6 md:mb-0 relative">
-		<div class="absolute -right-8 hidden md:block">
+		<div class="absolute -top-9 right-8 hidden md:block">
 			<ChartTooltip
 				{hoverData}
 				{hoverKey}
@@ -257,10 +257,11 @@
 				</div>
 			</div>
 
-			<div class="absolute -right-8 mt-10 block md:hidden">
+			<div class="absolute block right-0 md:hidden">
 				<ChartTooltip
 					{hoverData}
 					{hoverKey}
+					defaultText="Energy Generation (TWh) by Financial Year"
 					seriesColours={projectionSeriesColours}
 					seriesLabels={projectionSeriesLabels}
 				/>
