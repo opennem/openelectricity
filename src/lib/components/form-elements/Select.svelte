@@ -13,6 +13,8 @@
 
 	let showOptions = false;
 
+	$: selectedValue = selected && selected.value ? selected.value || selected : selected;
+
 	function handleSelect(option) {
 		dispatch('change', option);
 		showOptions = false;
@@ -45,7 +47,7 @@
 						on:click={() => handleSelect(opt)}
 					>
 						<span class="capitalize">{opt.label}</span>
-						{#if selected && selected.value === opt.value}
+						{#if selectedValue === opt.value}
 							<IconCheckMark class="w-7 h-7 text-dark-grey" />
 						{/if}
 					</button>
