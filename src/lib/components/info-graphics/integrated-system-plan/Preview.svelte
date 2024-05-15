@@ -373,6 +373,7 @@
 				title={projectionSeriesLabels[key]}
 				colour={projectionSeriesColours[key]}
 				{hoverData}
+				showIcon={true}
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>

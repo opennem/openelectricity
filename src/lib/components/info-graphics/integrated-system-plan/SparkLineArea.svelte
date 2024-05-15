@@ -20,6 +20,7 @@
 	export let fuelTechId = '';
 	export let title = '';
 	export let colour = '#000';
+	export let showIcon = false;
 
 	/** @type {Date[] | undefined} */
 	export let xTicks = undefined;
@@ -31,7 +32,7 @@
 </script>
 
 <div {...$$restProps}>
-	<KeyHeader {key} {title} {fuelTechId} data={hoverData} />
+	<KeyHeader {key} {title} {fuelTechId} data={hoverData} {showIcon} />
 
 	<div style="height: 150px;">
 		<LayerCake
