@@ -28,7 +28,8 @@
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	$: maxY = Math.round(Math.max(...dataset.map((d) => d[key] || 0)));
+	$: maxValue = Math.round(Math.max(...dataset.map((d) => d[key] || 0)));
+	$: maxY = maxValue > 0 ? maxValue : 10;
 </script>
 
 <div {...$$restProps}>
@@ -39,7 +40,7 @@
 			padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
 			x={'date'}
 			y={key}
-			yDomain={[0, null]}
+			yDomain={[0, maxY]}
 			data={dataset}
 		>
 			<Svg>
@@ -51,7 +52,7 @@
 					snapTicks={true}
 				/>
 				<AxisY formatTick={formatTickY} tickMarks={true} ticks={[0, maxY]} />
-				<Line stroke="#353535" {hoverData} strokeWidth="3px" />
+				<Line stroke="#353535" {hoverData} strokeWidth="2px" />
 				<Area fill={colour} />
 				<HoverLayer {dataset} on:mousemove on:mouseout />
 			</Svg>
