@@ -6,7 +6,7 @@
 		scenarios,
 		scenarioLabels,
 		scenarioDescriptions,
-		selectedPathway,
+		// selectedPathway,
 		scenarioYDomain,
 		modelXTicks,
 		modelSparklineXTicks
@@ -39,8 +39,11 @@
 
 	let selectedModel = modelSelections[0];
 	let selectedScenario = scenarios[selectedModel.value][0];
+	let selectedPathway = '';
 
 	let selectedFtGroup = ftGroupSelections[0];
+
+	$: ispData = data.ispData;
 
 	$: group = groupMap[selectedFtGroup.value];
 	$: order = orderMap[selectedFtGroup.value];
@@ -51,10 +54,18 @@
 
 	$: selectedModelScenarioDescriptions = scenarioDescriptions[selectedModel.value];
 	$: selectedModelScenarioLabels = scenarioLabels[selectedModel.value];
-	$: selectedModelPathway = selectedPathway[selectedModel.value];
+	// $: selectedModelPathway = selectedPathway[selectedModel.value];
 	$: selectedModelYDomain = scenarioYDomain[selectedModel.value];
 	$: selectedModelXTicks = modelXTicks[selectedModel.value];
-	$: selectedModelData = data.ispData[selectedModel.value];
+	$: selectedModelData = ispData[selectedModel.value];
+	$: selectedModelPathways = selectedModelData.pathways.map((p) => ({
+		value: p,
+		label: p.split('_').join(' ')
+	}));
+	$: {
+		console.log('selectedModelPathways', selectedModelPathways);
+		selectedPathway = selectedModelPathways[0].value;
+	}
 	$: selectedModelScenarios = scenarios[selectedModel.value].map((s) => ({
 		value: s,
 		label: s.split('_').join(' ')
@@ -66,7 +77,7 @@
 	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
 
 	$: filteredWithPathwayScenario = filteredWithScenario.filter(
-		(d) => d.pathway === selectedModelPathway
+		(d) => d.pathway === selectedPathway
 	);
 
 	// $: yDomain = selectedModelYDomain[selectedScenario];
@@ -210,10 +221,13 @@
 		selectedScenario = evt.detail.value;
 	}
 
+	function handlePathwayChange(evt) {
+		if (selectedPathway === evt.detail.value) return;
+		selectedPathway = evt.detail.value;
+	}
+
 	/** @type {string | undefined} */
 	let hoverKey;
-
-	$: console.log('hoverData', hoverData);
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		if (e.detail.key) {
@@ -236,7 +250,9 @@
 
 <!-- container max-w-none lg:container -->
 
-<header class="container max-w-none lg:container flex gap-2 mb-12 divide-x divide-warm-grey">
+<header
+	class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey"
+>
 	<div>
 		<p class="mb-0">Model:</p>
 
@@ -257,6 +273,18 @@
 				options={selectedModelScenarios}
 				selected={selectedScenario}
 				on:change={handleScenarioChange}
+			/>
+		</div>
+	</div>
+
+	<div class="px-6">
+		<p class="mb-0">Pathways:</p>
+
+		<div class="w-[280px]">
+			<FormSelect
+				options={selectedModelPathways}
+				selected={selectedPathway}
+				on:change={handlePathwayChange}
 			/>
 		</div>
 	</div>
@@ -399,10 +427,14 @@
 					{#each [...projectionTimeSeriesCharts.seriesNames].reverse() as key}
 						<tr>
 							<td class="text-left">{projectionTimeSeriesCharts.seriesLabels[key]}</td>
-							<td class="text-right">{hoverData ? formatValue(hoverData[key]) : '—'}</td>
-							<td class="text-right"
-								>{hoverData ? formatValue((hoverData[key] / hoverData._max) * 100) : '—'}%</td
-							>
+							<td class="text-right">
+								{hoverData && hoverData[key] !== 0 ? formatValue(hoverData[key]) : '—'}
+							</td>
+							<td class="text-right">
+								{hoverData && hoverData[key] !== 0 && hoverData._max
+									? formatValue((hoverData[key] / hoverData._max) * 100) + '%'
+									: '—'}
+							</td>
 						</tr>
 					{/each}
 				</tbody>
