@@ -24,11 +24,30 @@ export const explorerGroups = [
 	}
 ];
 
+const defaultOrder = [
+	'battery_charging',
+	'exports',
+
+	'demand_response',
+	'battery_discharging',
+	'imports',
+
+	'coal',
+	'gas',
+	'bioenergy',
+	'hydro',
+
+	'wind',
+	'solar_utility',
+	'solar_rooftop'
+];
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 const defaultGroup = {
 	battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
 	demand_response: ['demand_response'],
+	exports: ['exports'],
 
+	imports: ['imports'],
 	coal: ['coal_black', 'coal_brown'],
 	gas: [
 		'gas_ccgt',
@@ -39,6 +58,7 @@ const defaultGroup = {
 		'gas_wcmg',
 		'gas_hydrogen'
 	],
+	bioenergy: ['bioenergy_biomass'],
 	hydro: ['hydro'],
 
 	battery_discharging: [
@@ -52,6 +72,37 @@ const defaultGroup = {
 	solar_rooftop: ['solar_rooftop']
 };
 
+const detailedOrder = [
+	'battery_charging',
+	'battery_VPP_charging',
+	'battery_distributed_charging',
+
+	'exports',
+
+	'demand_response',
+	'battery_discharging',
+	'battery_VPP_discharging',
+	'battery_distributed_discharging',
+	'imports',
+
+	'coal_black',
+	'coal_brown',
+
+	'gas_ccgt',
+	'gas_ccgt_ccs',
+	'gas_ocgt',
+	'gas_recip',
+	'gas_steam',
+	'gas_wcmg',
+	'gas_hydrogen',
+	'bioenergy_biomass',
+	'hydro',
+
+	'wind',
+	'wind_offshore',
+	'solar_utility',
+	'solar_rooftop'
+];
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 const detailedGroup = {
 	battery_charging: ['battery_charging'],
@@ -59,6 +110,9 @@ const detailedGroup = {
 	battery_distributed_charging: ['battery_distributed_charging'],
 
 	demand_response: ['demand_response'],
+	exports: ['exports'],
+
+	imports: ['imports'],
 
 	coal_black: ['coal_black'],
 	coal_brown: ['coal_brown'],
@@ -70,6 +124,7 @@ const detailedGroup = {
 	gas_steam: ['gas_steam'],
 	gas_wcmg: ['gas_wcmg'],
 	gas_hydrogen: ['gas_hydrogen'],
+	bioenergy_biomass: ['bioenergy_biomass'],
 	hydro: ['hydro'],
 
 	battery_discharging: ['battery_discharging'],
@@ -82,35 +137,16 @@ const detailedGroup = {
 	solar_rooftop: ['solar_rooftop']
 };
 
-const detailedOrder = [
+const renewablesVsFtOrder = [
 	'battery_charging',
-	'battery_VPP_charging',
-	'battery_distributed_charging',
-
-	'battery_discharging',
-	'battery_VPP_discharging',
-	'battery_distributed_discharging',
-
+	'exports',
 	'demand_response',
+	'battery_discharging',
 
-	'coal_black',
-	'coal_brown',
-
-	'gas_ccgt',
-	'gas_ccgt_ccs',
-	'gas_ocgt',
-	'gas_recip',
-	'gas_steam',
-	'gas_wcmg',
-	'gas_hydrogen',
-	'hydro',
-
-	'wind',
-	'wind_offshore',
-	'solar_utility',
-	'solar_rooftop'
+	'imports',
+	'fossil',
+	'renewable'
 ];
-
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 const renewablesVsFtGroup = {
 	battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
@@ -121,6 +157,8 @@ const renewablesVsFtGroup = {
 	],
 
 	demand_response: ['demand_response'],
+	exports: ['exports'],
+	imports: ['imports'],
 	fossil: [
 		'coal_black',
 		'coal_brown',
@@ -130,12 +168,10 @@ const renewablesVsFtGroup = {
 		'gas_recip',
 		'gas_steam',
 		'gas_wcmg',
-		'gas_hydrogen',
-		'distillate'
+		'gas_hydrogen'
 	],
 	renewable: [
 		'bioenergy_biomass',
-		'bioenergy_biogas',
 		'hydro',
 		'wind',
 		'wind_offshore',
@@ -144,27 +180,6 @@ const renewablesVsFtGroup = {
 		'solar_thermal'
 	]
 };
-
-const defaultOrder = [
-	'battery_charging',
-	'battery_discharging',
-	'demand_response',
-
-	'coal',
-	'gas',
-	'hydro',
-
-	'wind',
-	'solar_utility',
-	'solar_rooftop'
-];
-const renewablesVsFtOrder = [
-	'battery_charging',
-	'battery_discharging',
-	'demand_response',
-	'fossil',
-	'renewable'
-];
 
 export const groupMap = {
 	default: defaultGroup,
