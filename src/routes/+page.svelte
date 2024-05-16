@@ -20,6 +20,7 @@
 		dataTrackerData,
 		historyEnergyNemData,
 		homepageData
+		// modelsData
 	} = data;
 
 	let regionPower;

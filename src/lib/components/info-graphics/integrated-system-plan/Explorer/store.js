@@ -8,18 +8,7 @@ import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
 import { colourReducer } from '$lib/stores/theme';
 import { explorerGroups, groupMap, orderMap } from '../explorer-ft-groups';
 
-/**
- *
- * @param {*} projectionData
- * @param {*} historicalData
- */
-export function projectionStore(projectionData, historicalData) {
-	if (!projectionData || !historicalData) {
-		throw new Error('projectionStore: projectionData and historicalData are required');
-	}
-
-	console.log('historicalData', historicalData);
-
+export function modelStore() {
 	const modelOptions = [
 		{
 			value: 'aemo2024',
@@ -32,13 +21,17 @@ export function projectionStore(projectionData, historicalData) {
 			description: "AEMO's 2022 Integrated System Plan"
 		}
 	];
+
+	/** @type {Object.<string, Date[]>} */
 	const xTicks = {
 		aemo2024: [
+			startOfYear(new Date('2011-01-01')),
 			startOfYear(new Date('2025-01-01')),
 			startOfYear(new Date('2038-01-01')),
 			startOfYear(new Date('2052-01-01'))
 		],
 		aemo2022: [
+			startOfYear(new Date('2011-01-01')),
 			startOfYear(new Date('2024-01-01')),
 			startOfYear(new Date('2037-01-01')),
 			startOfYear(new Date('2051-01-01'))
@@ -46,20 +39,68 @@ export function projectionStore(projectionData, historicalData) {
 	};
 
 	const selectedModel = writable(modelOptions[0].value);
+	const modelXTicks = derived(selectedModel, ($selectedModel) => {
+		return xTicks[$selectedModel];
+	});
+
+	return {
+		modelOptions: modelOptions,
+		selectedModel: selectedModel,
+		modelXTicks: modelXTicks
+	};
+}
+
+/**
+ *
+ * @param {*} historicalData
+ */
+export function projectionStore(historicalData) {
+	if (!historicalData) {
+		throw new Error('projectionStore: historicalData are required');
+	}
+
+	// const modelOptions = [
+	// 	{
+	// 		value: 'aemo2024',
+	// 		label: 'AEMO Draft 2024 ISP',
+	// 		description: "AEMO's Draft 2024 Integrated System Plan"
+	// 	},
+	// 	{
+	// 		value: 'aemo2022',
+	// 		label: 'AEMO 2022 ISP',
+	// 		description: "AEMO's 2022 Integrated System Plan"
+	// 	}
+	// ];
+	// const xTicks = {
+	// 	aemo2024: [
+	// 		startOfYear(new Date('2025-01-01')),
+	// 		startOfYear(new Date('2038-01-01')),
+	// 		startOfYear(new Date('2052-01-01'))
+	// 	],
+	// 	aemo2022: [
+	// 		startOfYear(new Date('2024-01-01')),
+	// 		startOfYear(new Date('2037-01-01')),
+	// 		startOfYear(new Date('2051-01-01'))
+	// 	]
+	// };
+
+	const projectionData = writable({ scenarios: [], pathways: [], outlook: { data: [] } });
+
+	// const selectedModel = writable(modelOptions[0].value);
 	const selectedScenario = writable('');
 	const selectedPathway = writable('');
 	const selectedFuelTechGrouping = writable(explorerGroups[0].value);
 
-	const scenarioOptions = derived(selectedModel, ($selectedModel) => {
-		return projectionData[$selectedModel].scenarios.map((scenario) => {
+	const scenarioOptions = derived(projectionData, ($projectionData) => {
+		return $projectionData.scenarios.map((scenario) => {
 			return {
 				value: scenario,
 				label: scenario.split('_').join(' ')
 			};
 		});
 	});
-	const pathwayOptions = derived(selectedModel, ($selectedModel) => {
-		return projectionData[$selectedModel].pathways.map((pathway) => {
+	const pathwayOptions = derived(projectionData, ($projectionData) => {
+		return $projectionData.pathways.map((pathway) => {
 			return {
 				value: pathway,
 				label: pathway.split('_').join(' ')
@@ -68,9 +109,9 @@ export function projectionStore(projectionData, historicalData) {
 	});
 
 	const filteredModelData = derived(
-		[selectedModel, selectedScenario, selectedPathway],
-		([$selectedModel, $selectedScenario, $selectedPathway]) => {
-			return projectionData[$selectedModel].outlookEnergyNem.data.filter(
+		[projectionData, selectedScenario, selectedPathway],
+		([$projectionData, $selectedScenario, $selectedPathway]) => {
+			return $projectionData.outlook.data.filter(
 				(d) => d.scenario === $selectedScenario && d.pathway === $selectedPathway
 			);
 		}
@@ -146,25 +187,29 @@ export function projectionStore(projectionData, historicalData) {
 		}
 	);
 
-	const modelXTicks = derived(selectedModel, ($selectedModel) => {
-		return xTicks[$selectedModel];
-	});
+	// const modelXTicks = derived(selectedModel, ($selectedModel) => {
+	// 	return xTicks[$selectedModel];
+	// });
 
 	// update selected values based on model changes
 	scenarioOptions.subscribe((scenarios) => {
+		if (scenarios.length === 0) return;
 		selectedScenario.set(scenarios[0].value);
 	});
 	pathwayOptions.subscribe((pathways) => {
+		if (pathways.length === 0) return;
 		selectedPathway.set(pathways[0].value);
 	});
 
 	return {
-		selectedModel: selectedModel,
+		projectionData: projectionData,
+
+		// selectedModel: selectedModel,
 		selectedScenario: selectedScenario,
 		selectedPathway: selectedPathway,
 		selectedFuelTechGrouping: selectedFuelTechGrouping,
 
-		modelOptions: modelOptions,
+		// modelOptions: modelOptions,
 		scenarioOptions: scenarioOptions,
 		pathwayOptions: pathwayOptions,
 		fuelTechGroupingOptions: explorerGroups,
@@ -176,7 +221,6 @@ export function projectionStore(projectionData, historicalData) {
 		historicalStatsData: historicalStatsData,
 		historicalTimeSeriesData: historicalTimeSeriesData,
 
-		modelXTicks: modelXTicks,
 		yDomain: yDomain
 	};
 }

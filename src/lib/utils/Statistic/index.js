@@ -91,7 +91,8 @@ Statistic.prototype.group = function (
 				...filtered[0],
 				code,
 				fuel_tech: code,
-				id: `au.${code}.grouped.${this.statsType}`,
+				// id: `au.${code}.grouped.${this.statsType}`,
+				id: `au.${code}.grouped`,
 				isLoad: loads.includes(code),
 				[this.statsType]: { ...data }
 			};

@@ -1,7 +1,7 @@
-import outlookEnergyNem2022 from '$lib/models/aemo-isp-2022/au/NEM/energy/outlook.json';
-import outlookEnergyNem from '$lib/models/aemo-draft-isp-2024/au/NEM/energy/outlook.json';
+import outlookEnergyNem2022 from './aemo-isp-2022/au/NEM/energy/outlook.json';
+import outlookEnergyNem from './aemo-draft-isp-2024/au/NEM/energy/outlook.json';
 
-function parseIsp(projectionData) {
+function parse(projectionData) {
 	const data = projectionData.data;
 	const updatedDataToTera = data.map((d) => {
 		const projection = { ...d.projection };
@@ -28,7 +28,7 @@ function parseIsp(projectionData) {
 	};
 }
 
-const aemo2022 = parseIsp(outlookEnergyNem2022);
-const aemo2024 = parseIsp(outlookEnergyNem);
+const aemo2022 = parse(outlookEnergyNem2022);
+const aemo2024 = parse(outlookEnergyNem);
 
 export default { aemo2022, aemo2024 };

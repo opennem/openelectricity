@@ -3,13 +3,15 @@
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
 	const {
-		selectedModel,
+		// selectedModel,
 		selectedScenario,
 		selectedPathway,
-		modelOptions,
+		// modelOptions,
 		scenarioOptions,
 		pathwayOptions
 	} = getContext('projection-explorer');
+
+	const { selectedModel, modelOptions } = getContext('model');
 </script>
 
 <div>

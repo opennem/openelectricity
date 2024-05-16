@@ -1,5 +1,5 @@
 <script>
-	import ispData from '$lib/isp';
+	import dataModels from '$lib/models';
 	import PageHeader from '$lib/components/PageHeader.svelte';
 
 	import IspExplorer from '$lib/components/info-graphics/integrated-system-plan/Explorer.svelte';
@@ -10,7 +10,9 @@
 	/** @type {*} */
 	export let data;
 	const { historyEnergyNemData, articles } = data;
-	const outlookEnergyNem = ispData.aemo2024.outlookEnergyNem;
+	const outlookEnergyNem = dataModels.aemo2024.outlookEnergyNem;
+
+	$: console.log('data loaded', data);
 
 	const analysisArticles = articles.filter(
 		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
@@ -58,8 +60,8 @@
 </div>
 
 <div class="mt-12 md:mt-24">
-	<Explorer {ispData} historyData={historyEnergyNemData} />
-	<IspExplorer data={{ ispData: ispData, outlookEnergyNem, historyEnergyNemData }} />
+	<Explorer historyData={historyEnergyNemData} />
+	<!-- <IspExplorer data={{ ispData: dataModels, outlookEnergyNem, historyEnergyNemData }} /> -->
 </div>
 
 <div class="bg-white py-16 md:py-32">
