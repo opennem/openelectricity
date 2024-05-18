@@ -1,8 +1,11 @@
 <script>
-	import dataModels from '$lib/models';
+	import { browser } from '$app/environment';
+
+	import getModels from '$lib/models/index2';
+	import getHistory from '$lib/opennem';
+
 	import PageHeader from '$lib/components/PageHeader.svelte';
 
-	import IspExplorer from '$lib/components/info-graphics/integrated-system-plan/Explorer.svelte';
 	import Explorer from '$lib/components/info-graphics/integrated-system-plan/Explorer/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -10,13 +13,23 @@
 	/** @type {*} */
 	export let data;
 	const { historyEnergyNemData, articles } = data;
-	const outlookEnergyNem = dataModels.aemo2024.outlookEnergyNem;
-
-	$: console.log('data loaded', data);
 
 	const analysisArticles = articles.filter(
 		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
 	);
+
+	let selectedModel = 'aemo2024';
+	let selectedRegion = '';
+	let modelsData;
+	let historyData = historyEnergyNemData;
+
+	$: if (browser && selectedModel) {
+		getModels(selectedModel, selectedRegion).then((data) => (modelsData = data));
+	}
+	$: if (browser && selectedRegion) {
+		getHistory(selectedRegion).then((data) => (historyData = data));
+	}
+	$: console.log('historyData', historyData, modelsData);
 </script>
 
 <Meta
@@ -60,7 +73,12 @@
 </div>
 
 <div class="mt-12 md:mt-24">
-	<Explorer historyData={historyEnergyNemData} />
+	<Explorer
+		{historyData}
+		{modelsData}
+		on:selected-model={(evt) => (selectedModel = evt.detail)}
+		on:selected-region={(evt) => (selectedRegion = evt.detail)}
+	/>
 	<!-- <IspExplorer data={{ ispData: dataModels, outlookEnergyNem, historyEnergyNemData }} /> -->
 </div>
 

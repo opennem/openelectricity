@@ -6,7 +6,8 @@ import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
 import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
 import { colourReducer } from '$lib/stores/theme';
-import { explorerGroups, groupMap, orderMap } from '../explorer-ft-groups';
+import { pathwayOrder } from './scenarios';
+import { explorerGroups, groupMap, orderMap } from './explorer-ft-groups';
 
 export function modelStore() {
 	const modelOptions = [
@@ -38,7 +39,41 @@ export function modelStore() {
 		]
 	};
 
+	const regionOptions = [
+		{
+			value: 'NEM',
+			label: 'National Electricity Market',
+			description: 'National Electricity Market'
+		},
+		{
+			value: 'NSW1',
+			label: 'New South Wales',
+			description: 'New South Wales'
+		},
+		{
+			value: 'QLD1',
+			label: 'Queensland',
+			description: 'Queensland'
+		},
+		{
+			value: 'SA1',
+			label: 'South Australia',
+			description: 'South Australia'
+		},
+		{
+			value: 'TAS1',
+			label: 'Tasmania',
+			description: 'Tasmania'
+		},
+		{
+			value: 'VIC1',
+			label: 'Victoria',
+			description: 'Victoria'
+		}
+	];
+
 	const selectedModel = writable(modelOptions[0].value);
+	const selectedRegion = writable(regionOptions[0].value);
 	const modelXTicks = derived(selectedModel, ($selectedModel) => {
 		return xTicks[$selectedModel];
 	});
@@ -46,47 +81,16 @@ export function modelStore() {
 	return {
 		modelOptions: modelOptions,
 		selectedModel: selectedModel,
-		modelXTicks: modelXTicks
+		modelXTicks: modelXTicks,
+		regionOptions: regionOptions,
+		selectedRegion: selectedRegion
 	};
 }
 
-/**
- *
- * @param {*} historicalData
- */
-export function projectionStore(historicalData) {
-	if (!historicalData) {
-		throw new Error('projectionStore: historicalData are required');
-	}
-
-	// const modelOptions = [
-	// 	{
-	// 		value: 'aemo2024',
-	// 		label: 'AEMO Draft 2024 ISP',
-	// 		description: "AEMO's Draft 2024 Integrated System Plan"
-	// 	},
-	// 	{
-	// 		value: 'aemo2022',
-	// 		label: 'AEMO 2022 ISP',
-	// 		description: "AEMO's 2022 Integrated System Plan"
-	// 	}
-	// ];
-	// const xTicks = {
-	// 	aemo2024: [
-	// 		startOfYear(new Date('2025-01-01')),
-	// 		startOfYear(new Date('2038-01-01')),
-	// 		startOfYear(new Date('2052-01-01'))
-	// 	],
-	// 	aemo2022: [
-	// 		startOfYear(new Date('2024-01-01')),
-	// 		startOfYear(new Date('2037-01-01')),
-	// 		startOfYear(new Date('2051-01-01'))
-	// 	]
-	// };
-
+export function projectionStore() {
+	const historicalData = writable([]);
 	const projectionData = writable({ scenarios: [], pathways: [], outlook: { data: [] } });
 
-	// const selectedModel = writable(modelOptions[0].value);
 	const selectedScenario = writable('');
 	const selectedPathway = writable('');
 	const selectedFuelTechGrouping = writable(explorerGroups[0].value);
@@ -100,7 +104,15 @@ export function projectionStore(historicalData) {
 		});
 	});
 	const pathwayOptions = derived(projectionData, ($projectionData) => {
-		return $projectionData.pathways.map((pathway) => {
+		let pathways = [];
+		pathwayOrder.forEach((pathway) => {
+			const find = $projectionData.pathways.find((p) => p === pathway);
+			if (find) {
+				pathways.push(find);
+			}
+		});
+
+		return pathways.map((pathway) => {
 			return {
 				value: pathway,
 				label: pathway.split('_').join(' ')
@@ -159,12 +171,15 @@ export function projectionStore(historicalData) {
 	});
 
 	// Historical data
-	const historicalStatsData = derived([group, order], ([$group, $order]) => {
-		return new Statistic(historicalData, 'history')
-			.invertLoadValues(loadFuelTechs)
-			.group($group, loadFuelTechs)
-			.reorder($order);
-	});
+	const historicalStatsData = derived(
+		[historicalData, group, order],
+		([$historicalData, $group, $order]) => {
+			return new Statistic($historicalData, 'history')
+				.invertLoadValues(loadFuelTechs)
+				.group($group, loadFuelTechs)
+				.reorder($order);
+		}
+	);
 
 	const historicalLoadSeries = derived(historicalStatsData, ($historicalStatsData) => {
 		const filtered = $historicalStatsData.data.filter((d) => d.isLoad);
@@ -187,29 +202,24 @@ export function projectionStore(historicalData) {
 		}
 	);
 
-	// const modelXTicks = derived(selectedModel, ($selectedModel) => {
-	// 	return xTicks[$selectedModel];
-	// });
-
 	// update selected values based on model changes
 	scenarioOptions.subscribe((scenarios) => {
 		if (scenarios.length === 0) return;
 		selectedScenario.set(scenarios[0].value);
 	});
-	pathwayOptions.subscribe((pathways) => {
-		if (pathways.length === 0) return;
-		selectedPathway.set(pathways[0].value);
-	});
+	// pathwayOptions.subscribe((pathways) => {
+	// 	if (pathways.length === 0) return;
+	// 	selectedPathway.set(pathways[0].value);
+	// });
 
 	return {
+		historicalData: historicalData,
 		projectionData: projectionData,
 
-		// selectedModel: selectedModel,
 		selectedScenario: selectedScenario,
 		selectedPathway: selectedPathway,
 		selectedFuelTechGrouping: selectedFuelTechGrouping,
 
-		// modelOptions: modelOptions,
 		scenarioOptions: scenarioOptions,
 		pathwayOptions: pathwayOptions,
 		fuelTechGroupingOptions: explorerGroups,

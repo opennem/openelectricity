@@ -5,7 +5,7 @@
 	const { selectedFuelTechGrouping, fuelTechGroupingOptions } = getContext('projection-explorer');
 </script>
 
-<div class="px-6">
+<div>
 	<p class="mb-0">Grouping:</p>
 
 	<div class="w-[270px]">

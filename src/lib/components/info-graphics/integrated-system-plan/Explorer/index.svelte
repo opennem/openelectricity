@@ -1,64 +1,63 @@
 <script>
-	import { getContext, setContext } from 'svelte';
+	import { getContext, setContext, createEventDispatcher } from 'svelte';
 	import { startOfYear } from 'date-fns';
 
-	import { browser } from '$app/environment';
-	import parser from '$lib/models/parser';
-
 	import deepCopy from '$lib/utils/deep-copy';
-	import { projectionStore, modelStore } from './store';
+	import { projectionStore, modelStore } from '../store';
+	import RegionFilters from './RegionFilters.svelte';
 	import DataFilters from './DataFilters.svelte';
 	import DisplayFilters from './DisplayFilters.svelte';
 	import ExplorerChart from './Chart.svelte';
 	import ChartTooltip from '../ChartTooltip.svelte';
 
-	import { formatFyTickX } from '../helpers';
+	import { formatFyTickX, covertHistoryDataToTWh, mutateHistoryDataDates } from '../helpers';
+	import { defaultPathway } from '../scenarios';
 
 	export let historyData;
+	export let modelsData;
+
+	const dispatchEvent = createEventDispatcher();
 
 	let ready = false;
 
-	// Convert historical data to TWh to match ISP
-	const historicalData = deepCopy(historyData).map((/** @type {StatsData} */ d) => {
-		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
-		d.history = { ...d.history, data: historyData };
-		d.units = 'TWh';
-		return d;
+	setContext('model', modelStore());
+	setContext('projection-explorer', projectionStore());
+
+	const { selectedModel, selectedRegion, modelXTicks } = getContext('model');
+
+	const {
+		historicalData,
+		projectionData,
+		filteredModelData,
+		timeSeriesData,
+		historicalTimeSeriesData,
+		yDomain,
+		pathwayOptions,
+		selectedPathway
+	} = getContext('projection-explorer');
+
+	pathwayOptions.subscribe((pathways) => {
+		if (pathways.length === 0) return;
+
+		const currentSelectedFind = pathways.find((p) => p.value === $selectedPathway);
+		if (currentSelectedFind) return;
+
+		$selectedPathway = defaultPathway[$selectedModel] || pathways[0].value;
 	});
 
-	setContext('model', modelStore());
-	setContext('projection-explorer', projectionStore(historicalData));
-
-	const { projectionData, filteredModelData, timeSeriesData, historicalTimeSeriesData, yDomain } =
-		getContext('projection-explorer');
-
-	const { selectedModel, modelXTicks } = getContext('model');
-
-	// const query = $page.url.searchParams;
-	// $selectedModel = query.get('name');
-
-	// $: console.log('projection context', $filteredModelData, $statsData, $timeSeriesData);
-	// $: console.log('historical context', $historicalStatsData, $historicalTimeSeriesData);
-	$: if (browser && $selectedModel) {
-		fetchModels($selectedModel);
-	}
-
-	/**
-	 *
-	 * @param {string} model
-	 */
-	async function fetchModels(model) {
-		const queryStrings = new URLSearchParams({ name: model });
-		const models = await fetch('/api/models?' + queryStrings);
-		$projectionData = parser(await models.json());
+	$: if (modelsData) {
+		$projectionData = modelsData;
 		ready = true;
 	}
+	$: if (historyData) {
+		$historicalData = covertHistoryDataToTWh(deepCopy(historyData));
+	}
+
+	$: dispatchEvent('selected-model', $selectedModel);
+	$: dispatchEvent('selected-region', $selectedRegion);
 
 	// update historical date to match ISP
-	$: updatedHistoricalTimeSeriesData = $historicalTimeSeriesData.data.map((d) => {
-		const date = startOfYear(d.date, 1);
-		return { ...d, date, time: date.getTime() };
-	});
+	$: updatedHistoricalTimeSeriesData = mutateHistoryDataDates($historicalTimeSeriesData.data);
 	// filter from 2010 and before 2025
 	$: filteredHistoricalTimeSeriesData = updatedHistoricalTimeSeriesData.filter(
 		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
@@ -93,10 +92,14 @@
 </script>
 
 <div class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey">
+	<RegionFilters />
+</div>
+<div class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey">
 	<DataFilters />
+</div>
+<div class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey">
 	<DisplayFilters />
 </div>
-
 {#if ready}
 	<div class="px-2">
 		<ChartTooltip
@@ -142,7 +145,7 @@
 					seriesNames={$timeSeriesData.seriesNames}
 					seriesColours={$timeSeriesData.seriesColours}
 					{hoverData}
-					overlay={false}
+					overlay={true}
 					bgClass="bg-light-warm-grey"
 					id="explorer-projection-chart"
 					formatTickX={formatFyTickX}

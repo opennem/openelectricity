@@ -4,7 +4,7 @@ import parseInterval from '$lib/utils/intervals';
  *
  * @param {StatsData[]} data
  * @param {StatsType} statsType
- * @returns {StatsInterval}
+ * @returns {StatsInterval | undefined}
  */
 export default function (data, statsType = 'history') {
 	// Find out if there are multiple intervals in the dataset
@@ -17,7 +17,7 @@ export default function (data, statsType = 'history') {
 		(i) => i.seconds === Math.min(...intervalArr.map((i) => i.seconds))
 	);
 
-	if (!minIntervalObj) console.warn('No minIntervalObj found', intervalArr);
+	// if (!minIntervalObj) console.warn('No minIntervalObj found', intervalArr);
 
 	return /** @type {StatsInterval} */ (minIntervalObj);
 }

@@ -13,7 +13,7 @@ export default function (outlook) {
 	});
 
 	// grab unique pathways, scenarios, and fuel techs
-	const pathways = [...new Set(data.map((d) => d.pathway))].sort();
+	const pathways = [...new Set(data.map((d) => d.pathway))];
 	const scenarios = [...new Set(data.map((d) => d.scenario))].sort().reverse();
 	const fuelTechs = [...new Set(data.map((d) => d.fuel_tech))].sort();
 
