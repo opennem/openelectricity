@@ -21,5 +21,5 @@ export async function load({ fetch, params, url }) {
 		};
 	}
 
-	// throw error(404, 'Not found');
+	error(404, 'Not found');
 }
