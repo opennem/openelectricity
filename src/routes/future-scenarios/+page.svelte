@@ -38,7 +38,7 @@
 	image="/img/preview.jpg"
 />
 
-<PageHeader>
+<!-- <PageHeader>
 	<div slot="main-heading">
 		<div class="lg:my-36">
 			<strong class="block py-8 font-space uppercase text-mid-grey font-medium text-sm">
@@ -57,7 +57,7 @@
 			system en route to a zero-emissions electricity network.
 		</p>
 	</div>
-</PageHeader>
+</PageHeader> -->
 <div class="bg-light-warm-grey py-6 md:py-4">
 	<div class="container max-w-none lg:container md:flex items-center gap-3 md:gap-6">
 		<span

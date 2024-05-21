@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
+import { PUBLIC_JSON_URL } from '$env/static/public';
 
-const basePath = '/data/models';
+const basePath = PUBLIC_JSON_URL + '/models';
 /** @type {*} */
 const dataPaths = {
 	aemo2022: '/aemo-isp-2022',
@@ -9,7 +10,7 @@ const dataPaths = {
 
 export async function GET({ setHeaders, url, fetch }) {
 	setHeaders({
-		'cache-control': 'max-age=0' // 5 mins = 300secs
+		'cache-control': 'max-age=300' // 5 mins = 300secs
 	});
 
 	const { searchParams } = url;
@@ -24,7 +25,7 @@ export async function GET({ setHeaders, url, fetch }) {
 
 	const res = await fetch(dataPath);
 	if (res.ok) {
-		return res;
+		return Response.json(await res.json());
 	}
 
 	error(404, 'Not found');
