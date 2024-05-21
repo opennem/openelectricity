@@ -12,6 +12,7 @@
 
 	import { formatFyTickX, covertHistoryDataToTWh, mutateHistoryDataDates } from '../helpers';
 	import { defaultPathway } from '../scenarios';
+	import { orderMap } from '../explorer-ft-groups';
 
 	export let historyData;
 	export let modelsData;
@@ -53,6 +54,10 @@
 		$historicalData = covertHistoryDataToTWh(deepCopy(historyData));
 	}
 
+	$: if (modelsData && historyData) {
+		console.log('modelsData && historyData', modelsData, historyData);
+	}
+
 	$: dispatchEvent('selected-model', $selectedModel);
 	$: dispatchEvent('selected-region', $selectedRegion);
 
@@ -89,6 +94,81 @@
 			historicalHoverData = /** @type {TimeSeriesData} */ (e.detail);
 		}
 	};
+
+	$: console.log('combined', $historicalTimeSeriesData, $timeSeriesData);
+
+	$: combinedSeriesNames = [
+		...new Set([...$timeSeriesData.seriesNames, ...$historicalTimeSeriesData.seriesNames])
+	];
+	/** @type {Object.<string, string>} */
+	let combinedSeriesColours = {};
+	/** @type {Object.<string, string>} */
+	let combinedSeriesLabels = {};
+	let combinedHistoryProjectionData = [];
+	let combinedData = [];
+
+	$: {
+		const lastHistory =
+			filteredHistoricalTimeSeriesData[filteredHistoricalTimeSeriesData.length - 1];
+		const firstProjection = $timeSeriesData.data[0];
+
+		console.log(
+			'check',
+			lastHistory?.time,
+			firstProjection?.time,
+			lastHistory?.date,
+			firstProjection?.date
+		);
+		if (lastHistory?.time && firstProjection?.time) {
+			const projectionData =
+				lastHistory?.time === firstProjection?.time
+					? $timeSeriesData.data.slice(1)
+					: $timeSeriesData.data;
+			combinedHistoryProjectionData = [...filteredHistoricalTimeSeriesData, ...projectionData];
+		}
+	}
+
+	$: {
+		let colours = {};
+		let labels = {};
+
+		combinedSeriesNames.forEach((name) => {
+			colours[name] =
+				$historicalTimeSeriesData.seriesColours[name] || $timeSeriesData.seriesColours[name];
+
+			labels[name] =
+				$historicalTimeSeriesData.seriesLabels[name] || $timeSeriesData.seriesLabels[name];
+		});
+
+		combinedSeriesColours = colours;
+		combinedSeriesLabels = labels;
+
+		combinedData = combinedHistoryProjectionData.map((d) => {
+			const obj = {
+				date: d.date,
+				time: d.time,
+				_max: d._max,
+				_min: d._min
+			};
+
+			combinedSeriesNames.forEach((name) => {
+				obj[name] = d[name] || 0;
+			});
+
+			return obj;
+		});
+	}
+
+	$: console.log(
+		'combinedData',
+		$timeSeriesData.data,
+		combinedHistoryProjectionData,
+		combinedSeriesNames,
+		combinedSeriesColours,
+		combinedSeriesLabels,
+		Object.keys(combinedSeriesLabels).length,
+		Object.keys(combinedSeriesColours).length
+	);
 </script>
 
 <div class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey">
@@ -106,9 +186,41 @@
 			{hoverData}
 			{hoverKey}
 			defaultText="Energy Generation (TWh) by Financial Year"
-			seriesColours={$timeSeriesData.seriesColours}
-			seriesLabels={$timeSeriesData.seriesLabels}
+			seriesColours={combinedSeriesColours}
+			seriesLabels={combinedSeriesLabels}
 		/>
+	</div>
+
+	<div class="w-full px-6">
+		{#if $filteredModelData.length}
+			<ExplorerChart
+				title={`Energy Generation (TWh) by Financial Year`}
+				dataset={combinedData}
+				xKey="date"
+				xTicks={$modelXTicks}
+				yKey={[0, 1]}
+				yTicks={10}
+				yDomain={$yDomain}
+				zKey="key"
+				seriesNames={combinedSeriesNames}
+				seriesColours={combinedSeriesColours}
+				{hoverData}
+				overlay={{
+					xStartValue: startOfYear(new Date('2024-01-01')),
+					xEndValue: startOfYear(new Date('2052-01-01'))
+				}}
+				bgClass="bg-light-warm-grey"
+				id="explorer-projection-chart"
+				formatTickX={formatFyTickX}
+				on:mousemove={handleMousemove}
+				on:mouseout={() => {
+					hoverKey = undefined;
+					hoverData = undefined;
+				}}
+			/>
+		{:else}
+			<p class="font-space text-3xl text-center py-12">No data available</p>
+		{/if}
 	</div>
 
 	<div class="grid grid-cols-12 gap-2 mt-6 mb-6 md:mb-0 relative px-2">

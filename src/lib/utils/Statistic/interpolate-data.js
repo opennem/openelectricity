@@ -9,12 +9,14 @@ import interpolate from './interpolate-array';
  * @param {StatsType} statsType
  */
 export default function (datasets, minIntervalObj, statsType = 'history') {
+	const statsObj = (d) => d[statsType] || d.history;
+
 	const toBeInterpolated = datasets.filter(
-		(d) => d[statsType].interval !== minIntervalObj?.intervalString
+		(d) => statsObj(d).interval !== minIntervalObj?.intervalString
 	);
 
 	const otherDataset = /** @type {StatsData} */ (
-		datasets.find((d) => d[statsType].interval === minIntervalObj?.intervalString)
+		datasets.find((d) => statsObj(d).interval === minIntervalObj?.intervalString)
 	);
 
 	/** @type {StatsData[]} */

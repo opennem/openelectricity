@@ -81,6 +81,11 @@ Statistic.prototype.group = function (
 	const grouped = [];
 	const groupKeys = /** @type {FuelTechCode[]} */ (Object.keys(groupMap));
 
+	const start = this.data && this.data.length ? this.data[0][this.statsType].start : '';
+	const last = this.data && this.data.length ? this.data[0][this.statsType].last : '';
+	const interval = this.data && this.data.length ? this.data[0][this.statsType].start : '';
+	const dataLength = this.data && this.data.length ? this.data[0][this.statsType].data.length : 0;
+
 	groupKeys.forEach((code) => {
 		const codes = getCodes(groupMap, code);
 		const filtered = this.data.filter((d) => (d.fuel_tech ? codes.includes(d.fuel_tech) : false));
@@ -112,6 +117,20 @@ Statistic.prototype.group = function (
 				);
 			});
 
+			grouped.push(groupObject);
+		} else {
+			const groupObject = {
+				code,
+				fuel_tech: code,
+				id: `au.${code}.grouped`,
+				isLoad: loads.includes(code),
+				[this.statsType]: {
+					data: dataLength ? new Array(dataLength).fill(0) : [],
+					interval,
+					last,
+					start
+				}
+			};
 			grouped.push(groupObject);
 		}
 	});

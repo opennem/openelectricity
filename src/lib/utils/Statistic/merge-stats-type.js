@@ -7,14 +7,16 @@ import deepCopy from '$lib/utils/deep-copy';
  * @param {StatsType} statsType
  */
 export default function (originalData, statsType = 'history') {
+	const statsObj = (d) => d[statsType] || d.history;
+
 	/** @type {StatsData[]} */
 	const data = deepCopy(originalData);
 
 	if (statsType !== 'forecast') {
 		data.forEach((d) => {
 			if (d.forecast) {
-				d[statsType].data = [...d[statsType].data, ...d.forecast.data];
-				d[statsType].last = d.forecast.last;
+				statsObj(d).data = [...statsObj(d).data, ...d.forecast.data];
+				statsObj(d).last = d.forecast.last;
 			}
 		});
 	}

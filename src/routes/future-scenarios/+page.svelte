@@ -29,7 +29,6 @@
 	$: if (browser && selectedRegion) {
 		getHistory(selectedRegion).then((data) => (historyData = data));
 	}
-	// $: console.log('historyData', historyData, modelsData);
 </script>
 
 <Meta

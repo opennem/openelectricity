@@ -4,7 +4,6 @@
 	import * as eases from 'svelte/easing';
 
 	import { scaleOrdinal } from 'd3-scale';
-	import { startOfYear } from 'date-fns';
 
 	import { formatTickY, displayXTicks } from '../helpers';
 
@@ -92,14 +91,14 @@
 		flatData={flatten(stackedData)}
 		data={stackedData}
 	>
-		<Html pointerEvents={false}>
-			<div class="absolute top-0 left-0 right-0 bottom-0 {bgClass}" role="presentation" />
-		</Html>
-
 		<Svg>
 			<defs>
 				<ClipPath id={`${id}-clip-path`} />
 			</defs>
+
+			{#if overlay}
+				<Overlay fill="#FAF9F699" {...overlay} />
+			{/if}
 
 			<HoverLayer {dataset} on:mousemove on:mouseout />
 			<AreaStacked clipPathId={clip ? `${id}-clip-path` : ''} {dataset} on:mousemove on:mouseout />
