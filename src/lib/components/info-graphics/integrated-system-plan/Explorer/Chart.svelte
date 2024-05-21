@@ -4,6 +4,7 @@
 	import * as eases from 'svelte/easing';
 
 	import { scaleOrdinal } from 'd3-scale';
+	import { startOfYear } from 'date-fns';
 
 	import { formatTickY, displayXTicks } from '../helpers';
 
@@ -47,7 +48,10 @@
 	/** @type {*} */
 	export let yTicks = undefined;
 
-	export let overlay = false;
+	/** If true, overlay will take up the full width of the chart
+	 * If object with xStartValue and xEndValue, overlay will be a range
+	 * @type {*} */
+	export let overlay = null;
 
 	export let bgClass = '';
 
@@ -107,7 +111,7 @@
 			</defs>
 
 			{#if overlay}
-				<Overlay fill="url(#{`${id}-hatch-pattern`})" />
+				<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
 			{/if}
 
 			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />

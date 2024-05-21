@@ -145,7 +145,10 @@
 					seriesNames={$timeSeriesData.seriesNames}
 					seriesColours={$timeSeriesData.seriesColours}
 					{hoverData}
-					overlay={true}
+					overlay={{
+						xStartValue: startOfYear(new Date('2030-01-01')),
+						xEndValue: startOfYear(new Date('2040-01-01'))
+					}}
 					bgClass="bg-light-warm-grey"
 					id="explorer-projection-chart"
 					formatTickX={formatFyTickX}
