@@ -72,6 +72,15 @@
 					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}
 				/>
 			{/if}
+			{#if tick === 0 && gridlines == false}
+				<line
+					{stroke}
+					stroke-dasharray="5"
+					x2="100%"
+					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
+					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}
+				/>
+			{/if}
 			{#if tickMarks === true}
 				<line
 					class="tick-mark"
@@ -98,10 +107,6 @@
 
 <style>
 	.tick .gridline {
-		stroke-dasharray: 0;
-	}
-
-	.tick.tick-0 line {
 		stroke-dasharray: 0;
 	}
 </style>

@@ -114,7 +114,7 @@
 				<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
 			{/if}
 
-			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />
+			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} stroke={'#666'} />
 			<AxisX
 				ticks={xTicks || displayXTicks}
 				gridlines={false}
