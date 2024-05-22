@@ -1,4 +1,5 @@
 export default function (outlook) {
+	// console.log('outlook', outlook);
 	const data = outlook.data;
 
 	// update to TWh before returning

@@ -4,11 +4,13 @@ import parser from './parser';
  *
  * @param {string} model
  * @param {string} region
+ * @param {string} type
  */
-async function fetchModels(model, region) {
+async function fetchModels(model, region, type) {
 	const params = {
 		name: model,
-		region: region && region === 'NEM' ? '' : region
+		region: region && region === 'NEM' ? '' : region,
+		type: type || 'energy'
 	};
 	const queryStrings = new URLSearchParams(params);
 	const models = await fetch('/api/models?' + queryStrings);

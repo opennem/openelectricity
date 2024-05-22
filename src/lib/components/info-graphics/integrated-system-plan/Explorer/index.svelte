@@ -10,9 +10,14 @@
 	import ExplorerChart from './Chart.svelte';
 	import ChartTooltip from '../ChartTooltip.svelte';
 
-	import { formatFyTickX, covertHistoryDataToTWh, mutateHistoryDataDates } from '../helpers';
+	import {
+		formatFyTickX,
+		formatValue,
+		covertHistoryDataToTWh,
+		mutateHistoryDataDates
+	} from '../helpers';
 	import { defaultPathway } from '../scenarios';
-	import { orderMap } from '../explorer-ft-groups';
+	import { reverse } from 'd3-array';
 
 	export let historyData;
 	export let modelsData;
@@ -24,7 +29,13 @@
 	setContext('model', modelStore());
 	setContext('projection-explorer', projectionStore());
 
-	const { selectedModel, selectedRegion, modelXTicks } = getContext('model');
+	const {
+		selectedModel,
+		selectedRegion,
+		selectedDataView,
+		selectedDataDescription,
+		selectedDataLabel
+	} = getContext('model');
 
 	const {
 		historicalData,
@@ -60,6 +71,7 @@
 
 	$: dispatchEvent('selected-model', $selectedModel);
 	$: dispatchEvent('selected-region', $selectedRegion);
+	$: dispatchEvent('selected-data-view', $selectedDataView);
 
 	// update historical date to match ISP
 	$: updatedHistoricalTimeSeriesData = mutateHistoryDataDates($historicalTimeSeriesData.data);
@@ -84,19 +96,6 @@
 		}
 	};
 
-	/** @type {TimeSeriesData | undefined} */
-	let historicalHoverData = undefined;
-
-	const handleHistoricalMousemove = (/** @type {*} */ e) => {
-		if (e.detail?.key) {
-			historicalHoverData = /** @type {TimeSeriesData} */ (e.detail.data);
-		} else {
-			historicalHoverData = /** @type {TimeSeriesData} */ (e.detail);
-		}
-	};
-
-	$: console.log('combined', $historicalTimeSeriesData, $timeSeriesData);
-
 	$: combinedSeriesNames = [
 		...new Set([...$timeSeriesData.seriesNames, ...$historicalTimeSeriesData.seriesNames])
 	];
@@ -112,19 +111,46 @@
 			filteredHistoricalTimeSeriesData[filteredHistoricalTimeSeriesData.length - 1];
 		const firstProjection = $timeSeriesData.data[0];
 
-		console.log(
-			'check',
-			lastHistory?.time,
-			firstProjection?.time,
-			lastHistory?.date,
-			firstProjection?.date
-		);
+		// console.log(
+		// 	'check',
+		// 	lastHistory?.time,
+		// 	firstProjection?.time,
+		// 	lastHistory?.date,
+		// 	firstProjection?.date
+		// );
 		if (lastHistory?.time && firstProjection?.time) {
 			const projectionData =
 				lastHistory?.time === firstProjection?.time
 					? $timeSeriesData.data.slice(1)
 					: $timeSeriesData.data;
-			combinedHistoryProjectionData = [...filteredHistoricalTimeSeriesData, ...projectionData];
+
+			const setLatestEmpty = (data) =>
+				deepCopy(data).map((d, i) => {
+					// set last item to null
+					if (i === data.length - 1) {
+						Object.keys(d).forEach((key) => {
+							if (key !== 'date' && key !== 'time') {
+								d[key] = null;
+							}
+						});
+					}
+					return { ...d, date: new Date(d.time) };
+				});
+
+			const getEmpty = (data) =>
+				deepCopy(data).map((d) => {
+					Object.keys(d).forEach((key) => {
+						if (key !== 'date' && key !== 'time') {
+							d[key] = null;
+						}
+					});
+					return { ...d, date: new Date(d.time) };
+				});
+
+			combinedHistoryProjectionData =
+				$selectedDataView === 'energy'
+					? [...setLatestEmpty(filteredHistoricalTimeSeriesData), ...projectionData]
+					: [...getEmpty(filteredHistoricalTimeSeriesData), ...projectionData];
 		}
 	}
 
@@ -159,16 +185,16 @@
 		});
 	}
 
-	$: console.log(
-		'combinedData',
-		$timeSeriesData.data,
-		combinedHistoryProjectionData,
-		combinedSeriesNames,
-		combinedSeriesColours,
-		combinedSeriesLabels,
-		Object.keys(combinedSeriesLabels).length,
-		Object.keys(combinedSeriesColours).length
-	);
+	// $: console.log(
+	// 	'combinedData',
+	// 	$timeSeriesData.data,
+	// 	combinedHistoryProjectionData,
+	// 	combinedSeriesNames,
+	// 	combinedSeriesColours,
+	// 	combinedSeriesLabels,
+	// 	Object.keys(combinedSeriesLabels).length,
+	// 	Object.keys(combinedSeriesColours).length
+	// );
 </script>
 
 <div class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey">
@@ -181,88 +207,43 @@
 	<DisplayFilters />
 </div>
 {#if ready}
-	<div class="px-2">
-		<ChartTooltip
-			{hoverData}
-			{hoverKey}
-			defaultText="Energy Generation (TWh) by Financial Year"
-			seriesColours={combinedSeriesColours}
-			seriesLabels={combinedSeriesLabels}
-		/>
-	</div>
-
-	<div class="w-full px-6">
-		{#if $filteredModelData.length}
-			<ExplorerChart
-				title={`Energy Generation (TWh) by Financial Year`}
-				dataset={combinedData}
-				xKey="date"
-				xTicks={[
-					startOfYear(new Date('2010-01-01')),
-					startOfYear(new Date('2024-01-01')),
-					startOfYear(new Date('2040-01-01')),
-					startOfYear(new Date('2052-01-01'))
-				]}
-				yKey={[0, 1]}
-				yTicks={10}
-				yDomain={$yDomain}
-				zKey="key"
-				seriesNames={combinedSeriesNames}
-				seriesColours={combinedSeriesColours}
-				{hoverData}
-				overlay={{
-					xStartValue: startOfYear(new Date('2024-01-01')),
-					xEndValue: startOfYear(new Date('2052-01-01'))
-				}}
-				bgClass="bg-light-warm-grey"
-				id="explorer-projection-chart"
-				formatTickX={formatFyTickX}
-				on:mousemove={handleMousemove}
-				on:mouseout={() => {
-					hoverKey = undefined;
-					hoverData = undefined;
-				}}
-			/>
-		{:else}
-			<p class="font-space text-3xl text-center py-12">No data available</p>
-		{/if}
-	</div>
-
-	<div class="grid grid-cols-12 gap-2 mt-6 mb-6 md:mb-0 relative px-2">
-		<div class="col-span-12 md:col-span-2">
-			<ExplorerChart
-				dataset={filteredHistoricalTimeSeriesData}
-				xKey="date"
-				xTicks={[startOfYear(new Date('1999-01-01')), startOfYear(new Date('2024-01-01'))]}
-				yKey={[0, 1]}
-				yTicks={10}
-				yDomain={$yDomain}
-				zKey="key"
-				seriesNames={$historicalTimeSeriesData.seriesNames}
-				seriesColours={$historicalTimeSeriesData.seriesColours}
-				formatTickX={formatFyTickX}
-				hoverData={historicalHoverData}
-				id="explorer-historical-chart"
-				on:mousemove={handleHistoricalMousemove}
-				on:mouseout={() => (historicalHoverData = undefined)}
-			/>
-		</div>
-
-		<div class="col-span-12 md:col-span-10">
+	<div class="grid grid-cols-8 gap-6 px-6">
+		<div class="col-span-8 md:col-span-5">
+			<div class="">
+				<ChartTooltip
+					{hoverData}
+					{hoverKey}
+					defaultText={$selectedDataDescription}
+					seriesColours={combinedSeriesColours}
+					seriesLabels={combinedSeriesLabels}
+				/>
+			</div>
 			{#if $filteredModelData.length}
 				<ExplorerChart
-					title={`Energy Generation (TWh) by Financial Year`}
-					dataset={$timeSeriesData.data}
+					title={$selectedDataDescription}
+					dataset={combinedData}
 					xKey="date"
-					xTicks={$modelXTicks}
+					xTicks={[
+						startOfYear(new Date('2010-01-01')),
+						startOfYear(new Date('2024-01-01')),
+						startOfYear(new Date('2040-01-01')),
+						startOfYear(new Date('2052-01-01'))
+					]}
 					yKey={[0, 1]}
 					yTicks={10}
 					yDomain={$yDomain}
 					zKey="key"
-					seriesNames={$timeSeriesData.seriesNames}
-					seriesColours={$timeSeriesData.seriesColours}
+					seriesNames={combinedSeriesNames}
+					seriesColours={combinedSeriesColours}
 					{hoverData}
-					overlay={true}
+					overlay={{
+						xStartValue: startOfYear(new Date('2025-01-01')),
+						xEndValue: startOfYear(new Date('2052-01-01'))
+					}}
+					blankOverlay={{
+						xStartValue: startOfYear(new Date('2023-01-01')),
+						xEndValue: startOfYear(new Date('2025-01-01'))
+					}}
 					bgClass="bg-light-warm-grey"
 					id="explorer-projection-chart"
 					formatTickX={formatFyTickX}
@@ -276,5 +257,58 @@
 				<p class="font-space text-3xl text-center py-12">No data available</p>
 			{/if}
 		</div>
+
+		<div class="col-span-8 md:col-span-3">
+			<div class="w-full">
+				<table class="table w-full table-fixed text-sm">
+					<thead>
+						<tr>
+							<th class="w-8" />
+							<th />
+							<th class="w-[100px] text-right">{$selectedDataLabel}</th>
+							<th class="w-[100px] text-right">Contribution</th>
+						</tr>
+					</thead>
+
+					<tbody>
+						{#each [...combinedSeriesNames].reverse() as name}
+							<tr>
+								<td>
+									<div
+										class="rounded-full bg-mid-grey w-4 h-4"
+										style="background-color: {combinedSeriesColours[name]}"
+									/>
+								</td>
+								<td class="whitespace-nowrap">
+									{combinedSeriesLabels[name]}
+								</td>
+								<td class="text-right">{hoverData ? formatValue(hoverData[name]) : ''}</td>
+								<td class="text-right">
+									{hoverData ? formatValue((hoverData[name] / hoverData._max) * 100) + '%' : ''}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+
+					<tfoot>
+						<tr>
+							<td />
+							<td class="font-bold">Total</td>
+							<td class="text-right">{hoverData ? formatValue(hoverData._max) : ''}</td>
+							<td />
+						</tr>
+					</tfoot>
+				</table>
+			</div>
+		</div>
 	</div>
 {/if}
+
+<style>
+	th {
+		@apply bg-warm-grey border-t px-3 py-6 border-mid-warm-grey text-xs;
+	}
+	td {
+		@apply px-3 py-2 border-b border-mid-warm-grey;
+	}
+</style>

@@ -19,7 +19,8 @@
 	$: areaGen = area()
 		.x((d) => $xGet(d))
 		.y0((d) => $yScale(d[0]))
-		.y1((d) => $yScale(d[1]));
+		.y1((d) => $yScale(d[1]))
+		.defined((d) => d[0] !== 0 || d[1] !== 0);
 
 	/**
 	 * @param d {[]}

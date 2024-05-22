@@ -103,7 +103,7 @@ Statistic.prototype.group = function (
 			};
 
 			// set the group history.data array to all zeros
-			groupObject[this.statsType].data = groupObject[this.statsType].data.map(() => 0);
+			groupObject[this.statsType].data = groupObject[this.statsType].data.map(() => null);
 
 			// sum each filtered history.data array into group history data
 			filtered.forEach((d) => {
@@ -112,7 +112,7 @@ Statistic.prototype.group = function (
 					 * @param {number | null} d
 					 * @param {number} i
 					 */ (d, i) => {
-						groupObject[this.statsType].data[i] += d || 0;
+						groupObject[this.statsType].data[i] += d || null;
 					}
 				);
 			});
@@ -125,7 +125,7 @@ Statistic.prototype.group = function (
 				id: `au.${code}.grouped`,
 				isLoad: loads.includes(code),
 				[this.statsType]: {
-					data: dataLength ? new Array(dataLength).fill(0) : [],
+					data: dataLength ? new Array(dataLength).fill(null) : [],
 					interval,
 					last,
 					start

@@ -20,11 +20,12 @@
 
 	let selectedModel = 'aemo2024';
 	let selectedRegion = '';
+	let selectedDataView = 'energy';
 	let modelsData;
 	let historyData = historyEnergyNemData;
 
 	$: if (browser && selectedModel) {
-		getModels(selectedModel, selectedRegion).then((data) => (modelsData = data));
+		getModels(selectedModel, selectedRegion, selectedDataView).then((data) => (modelsData = data));
 	}
 	$: if (browser && selectedRegion) {
 		getHistory(selectedRegion).then((data) => (historyData = data));
@@ -77,6 +78,7 @@
 		{modelsData}
 		on:selected-model={(evt) => (selectedModel = evt.detail)}
 		on:selected-region={(evt) => (selectedRegion = evt.detail)}
+		on:selected-data-view={(evt) => (selectedDataView = evt.detail)}
 	/>
 	<!-- <IspExplorer data={{ ispData: dataModels, outlookEnergyNem, historyEnergyNemData }} /> -->
 </div>

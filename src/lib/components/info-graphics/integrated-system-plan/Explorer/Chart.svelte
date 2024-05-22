@@ -52,6 +52,9 @@
 	 * @type {*} */
 	export let overlay = null;
 
+	/** @type {*} */
+	export let blankOverlay = false;
+
 	export let bgClass = '';
 
 	/** @type {TimeSeriesData | undefined}*/
@@ -112,6 +115,10 @@
 			{#if overlay}
 				<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
 			{/if}
+
+			<!-- {#if blankOverlay}
+				<Overlay fill="#fff" {...blankOverlay} />
+			{/if} -->
 
 			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} stroke={'#666'} />
 			<AxisX
