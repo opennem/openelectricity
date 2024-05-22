@@ -125,6 +125,8 @@ export function projectionStore() {
 	const selectedPathway = writable('');
 	const selectedFuelTechGrouping = writable(explorerGroups[0].value);
 
+	const seriesItems = writable([]);
+
 	const scenarioOptions = derived(projectionData, ($projectionData) => {
 		return $projectionData.scenarios.map((scenario) => {
 			return {
@@ -261,6 +263,8 @@ export function projectionStore() {
 		historicalStatsData: historicalStatsData,
 		historicalTimeSeriesData: historicalTimeSeriesData,
 
-		yDomain: yDomain
+		yDomain: yDomain,
+
+		seriesItems: seriesItems
 	};
 }

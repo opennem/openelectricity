@@ -8,16 +8,11 @@
 	import DataFilters from './DataFilters.svelte';
 	import DisplayFilters from './DisplayFilters.svelte';
 	import ExplorerChart from './Chart.svelte';
+	import ExplorerTable from './Table.svelte';
 	import ChartTooltip from '../ChartTooltip.svelte';
 
-	import {
-		formatFyTickX,
-		formatValue,
-		covertHistoryDataToTWh,
-		mutateHistoryDataDates
-	} from '../helpers';
+	import { formatFyTickX, covertHistoryDataToTWh, mutateHistoryDataDates } from '../helpers';
 	import { defaultPathway } from '../scenarios';
-	import { reverse } from 'd3-array';
 
 	export let historyData;
 	export let modelsData;
@@ -29,13 +24,8 @@
 	setContext('model', modelStore());
 	setContext('projection-explorer', projectionStore());
 
-	const {
-		selectedModel,
-		selectedRegion,
-		selectedDataView,
-		selectedDataDescription,
-		selectedDataLabel
-	} = getContext('model');
+	const { selectedModel, selectedRegion, selectedDataView, selectedDataDescription } =
+		getContext('model');
 
 	const {
 		historicalData,
@@ -45,7 +35,8 @@
 		historicalTimeSeriesData,
 		yDomain,
 		pathwayOptions,
-		selectedPathway
+		selectedPathway,
+		seriesItems
 	} = getContext('projection-explorer');
 
 	pathwayOptions.subscribe((pathways) => {
@@ -105,6 +96,7 @@
 	let combinedSeriesLabels = {};
 	let combinedHistoryProjectionData = [];
 	let combinedData = [];
+	let tableItems = [];
 
 	$: {
 		const lastHistory =
@@ -151,7 +143,26 @@
 				$selectedDataView === 'energy'
 					? [...setLatestEmpty(filteredHistoricalTimeSeriesData), ...projectionData]
 					: [...getEmpty(filteredHistoricalTimeSeriesData), ...projectionData];
+
+			$seriesItems = [...combinedSeriesNames].reverse().map((name) => {
+				return { id: name, name: name };
+			});
 		}
+	}
+
+	$: sortedItems = $seriesItems.map((d) => d.id).reverse();
+
+	$: {
+		let colours = {};
+		sortedItems.forEach((name) => {
+			colours[name] =
+				$historicalTimeSeriesData.seriesColours[name] || $timeSeriesData.seriesColours[name];
+		});
+		combinedSeriesColours = colours;
+	}
+
+	function handleSort(e) {
+		$seriesItems = e.detail;
 	}
 
 	$: {
@@ -233,7 +244,7 @@
 					yTicks={10}
 					yDomain={$yDomain}
 					zKey="key"
-					seriesNames={combinedSeriesNames}
+					seriesNames={sortedItems}
 					seriesColours={combinedSeriesColours}
 					{hoverData}
 					overlay={{
@@ -259,56 +270,12 @@
 		</div>
 
 		<div class="col-span-8 md:col-span-3">
-			<div class="w-full">
-				<table class="table w-full table-fixed text-sm">
-					<thead>
-						<tr>
-							<th class="w-8" />
-							<th />
-							<th class="w-[100px] text-right">{$selectedDataLabel}</th>
-							<th class="w-[100px] text-right">Contribution</th>
-						</tr>
-					</thead>
-
-					<tbody>
-						{#each [...combinedSeriesNames].reverse() as name}
-							<tr>
-								<td>
-									<div
-										class="rounded-full bg-mid-grey w-4 h-4"
-										style="background-color: {combinedSeriesColours[name]}"
-									/>
-								</td>
-								<td class="whitespace-nowrap">
-									{combinedSeriesLabels[name]}
-								</td>
-								<td class="text-right">{hoverData ? formatValue(hoverData[name]) : ''}</td>
-								<td class="text-right">
-									{hoverData ? formatValue((hoverData[name] / hoverData._max) * 100) + '%' : ''}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-
-					<tfoot>
-						<tr>
-							<td />
-							<td class="font-bold">Total</td>
-							<td class="text-right">{hoverData ? formatValue(hoverData._max) : ''}</td>
-							<td />
-						</tr>
-					</tfoot>
-				</table>
-			</div>
+			<ExplorerTable
+				{combinedSeriesLabels}
+				{combinedSeriesColours}
+				{hoverData}
+				on:sort={handleSort}
+			/>
 		</div>
 	</div>
 {/if}
-
-<style>
-	th {
-		@apply bg-warm-grey border-t px-3 py-6 border-mid-warm-grey text-xs;
-	}
-	td {
-		@apply px-3 py-2 border-b border-mid-warm-grey;
-	}
-</style>
