@@ -67,6 +67,7 @@
 		<tfoot>
 			<tr>
 				<td />
+				<td />
 				<td class="font-bold">Total</td>
 				<td class="text-right">{hoverData ? formatValue(hoverData._max) : ''}</td>
 				<td />
