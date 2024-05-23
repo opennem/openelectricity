@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 
-	import { dragHandleZone, dragHandle } from 'svelte-dnd-action';
+	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
 	import Bars2 from '$lib/icons/Bars2.svelte';
 	import { formatValue } from '../helpers';
@@ -33,17 +33,16 @@
 		</thead>
 
 		<tbody
-			use:dragHandleZone={{ items: $seriesItems, flipDurationMs }}
+			use:dndzone={{ items: $seriesItems, flipDurationMs }}
 			on:consider={handleSort}
 			on:finalize={handleSort}
 		>
 			{#each $seriesItems as { id, name } (id)}
-				<tr animate:flip={{ duration: flipDurationMs }}>
+				<tr animate:flip={{ duration: flipDurationMs }} class="group">
 					<td>
 						<div
-							use:dragHandle
 							aria-label="drag-handle for {combinedSeriesLabels[name]}"
-							class="w-6 h-6 p-1 flex items-center justify-center hover:bg-warm-grey rounded"
+							class="w-6 h-6 p-1 flex items-center justify-center group-hover:bg-warm-grey rounded"
 						>
 							<Bars2 />
 						</div>

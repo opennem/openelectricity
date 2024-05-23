@@ -96,7 +96,6 @@
 	let combinedSeriesLabels = {};
 	let combinedHistoryProjectionData = [];
 	let combinedData = [];
-	let tableItems = [];
 
 	$: {
 		const lastHistory =
