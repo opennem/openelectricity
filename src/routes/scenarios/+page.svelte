@@ -33,7 +33,7 @@
 </script>
 
 <Meta
-	title="Future Scenarios"
+	title="Scenarios"
 	description="Open Electricity is a platform for exploring Australia's electricity system."
 	image="/img/preview.jpg"
 />
@@ -66,8 +66,7 @@
 			Public Beta
 		</span>
 		<div class="text-mid-grey text-sm font-light">
-			This feature is in development. A more detailed Future Scenarios explorer will be available
-			soon.
+			This feature is in development. A more detailed Scenarios explorer will be available soon.
 		</div>
 	</div>
 </div>

@@ -1,5 +1,5 @@
 <script>
-	import { LayerCake, Svg, Html, flatten, stack } from 'layercake';
+	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
 
@@ -8,6 +8,8 @@
 	import { formatTickY, displayXTicks } from '../helpers';
 
 	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
+	import MultiLine from '$lib/components/charts/elements/MultiLineWithoutHover.svelte';
+
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
 	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
 	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
@@ -25,7 +27,7 @@
 	export let id = '';
 	export let clip = true;
 
-	export let xKey = '';
+	export let xKey = 'date';
 
 	/** @type {number[]} */
 	export let yKey = [];
@@ -55,7 +57,7 @@
 	/** @type {*} */
 	export let blankOverlay = false;
 
-	export let bgClass = '';
+	export let display = 'area'; // line, area
 
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
@@ -78,21 +80,32 @@
 	/** end */
 
 	$: stackedData = stack(dataset, seriesNames);
+	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
+	$: chartData = display === 'area' ? stackedData : groupedData;
+	$: flatData = display === 'area' ? flatten(stackedData) : flatten(groupedData, 'values');
+	$: y = display === 'area' ? yKey : 'value';
+	$: z = display === 'area' ? zKey : 'group';
+
+	$: console.log('groupedData', groupedData);
+
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
 <div class="chart-container h-[600px] md:h-[680px] mb-4">
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
-		x={(/** @type {*} */ d) => d[xKey] || d.data[xKey]}
-		y={yKey}
-		z={zKey}
+		x={(/** @type {*} */ d) => {
+			// return display === 'area' ? d[xKey] || d.data[xKey] : 'date';
+			return d[xKey] || d.data[xKey];
+		}}
+		{y}
+		{z}
 		{yDomain}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
 		zRange={Object.values(seriesColours)}
-		flatData={flatten(stackedData)}
-		data={stackedData}
+		{flatData}
+		data={chartData}
 	>
 		<Svg>
 			<defs>
@@ -104,7 +117,17 @@
 			{/if}
 
 			<HoverLayer {dataset} on:mousemove on:mouseout />
-			<AreaStacked clipPathId={clip ? `${id}-clip-path` : ''} {dataset} on:mousemove on:mouseout />
+
+			{#if display === 'area'}
+				<AreaStacked
+					clipPathId={clip ? `${id}-clip-path` : ''}
+					{dataset}
+					on:mousemove
+					on:mouseout
+				/>
+			{:else}
+				<MultiLine />
+			{/if}
 		</Svg>
 
 		<Svg pointerEvents={false}>
@@ -136,7 +159,8 @@
 					{formatTickX(hoverTime)}
 				</span>
 			</HoverText>
-			<HoverLine {hoverData} isShapeStack={true} useDataHeight={true} />
+			<!-- <HoverLine {hoverData} isShapeStack={true} useDataHeight={true} /> -->
+			<HoverLine {hoverData} />
 		</Html>
 
 		<!-- <Svg pointerEvents={false}>

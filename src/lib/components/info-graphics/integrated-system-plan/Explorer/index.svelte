@@ -24,8 +24,13 @@
 	setContext('model', modelStore());
 	setContext('projection-explorer', projectionStore());
 
-	const { selectedModel, selectedRegion, selectedDataView, selectedDataDescription } =
-		getContext('model');
+	const {
+		selectedModel,
+		selectedRegion,
+		selectedDataView,
+		selectedDataDescription,
+		selectedDisplayView
+	} = getContext('model');
 
 	const {
 		historicalData,
@@ -195,6 +200,9 @@
 		});
 	}
 
+	$: chartDisplay = $selectedDisplayView === 'technology' ? 'area' : 'line';
+	$: console.log('chartDisplay', chartDisplay);
+
 	// $: console.log(
 	// 	'combinedData',
 	// 	$timeSeriesData.data,
@@ -254,7 +262,7 @@
 						xStartValue: startOfYear(new Date('2023-01-01')),
 						xEndValue: startOfYear(new Date('2025-01-01'))
 					}}
-					bgClass="bg-light-warm-grey"
+					display={chartDisplay}
 					id="explorer-projection-chart"
 					formatTickX={formatFyTickX}
 					on:mousemove={handleMousemove}

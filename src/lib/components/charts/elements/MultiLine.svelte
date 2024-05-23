@@ -53,6 +53,8 @@
 				};
 		  })
 		: $data;
+
+	$: console.log('updatedData', updatedData);
 </script>
 
 <g

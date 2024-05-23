@@ -18,7 +18,7 @@
 </div>
 
 <div class="px-6">
-	<p class="mb-0">View:</p>
+	<p class="mb-0">Data:</p>
 
 	<div class="w-[270px]">
 		<FormSelect

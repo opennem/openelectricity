@@ -85,8 +85,20 @@ export function modelStore() {
 		}
 	];
 
+	const displayViewOptions = [
+		{
+			value: 'technology',
+			label: 'Area'
+		},
+		{
+			value: 'region',
+			label: 'Line'
+		}
+	];
+
 	const selectedModel = writable(modelOptions[0].value);
 	const selectedDataView = writable(dataViewOptions[0].value);
+	const selectedDisplayView = writable(displayViewOptions[0].value);
 	const selectedRegion = writable(regionOptions[0].value);
 	const modelXTicks = derived(selectedModel, ($selectedModel) => {
 		return xTicks[$selectedModel];
@@ -113,7 +125,10 @@ export function modelStore() {
 		dataViewOptions: dataViewOptions,
 		selectedDataView: selectedDataView,
 		selectedDataDescription: selectedDataDescription,
-		selectedDataLabel: selectedDataLabel
+		selectedDataLabel: selectedDataLabel,
+
+		displayViewOptions: displayViewOptions,
+		selectedDisplayView: selectedDisplayView
 	};
 }
 
