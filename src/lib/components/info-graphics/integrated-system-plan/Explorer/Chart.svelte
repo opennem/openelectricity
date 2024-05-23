@@ -118,7 +118,7 @@
 
 			<HoverLayer {dataset} on:mousemove on:mouseout />
 
-			{#if display === 'area'}
+			<!-- {#if display === 'area'}
 				<AreaStacked
 					clipPathId={clip ? `${id}-clip-path` : ''}
 					{dataset}
@@ -127,7 +127,15 @@
 				/>
 			{:else}
 				<MultiLine />
-			{/if}
+			{/if} -->
+
+			<AreaStacked
+				clipPathId={clip ? `${id}-clip-path` : ''}
+				{dataset}
+				{display}
+				on:mousemove
+				on:mouseout
+			/>
 		</Svg>
 
 		<Svg pointerEvents={false}>

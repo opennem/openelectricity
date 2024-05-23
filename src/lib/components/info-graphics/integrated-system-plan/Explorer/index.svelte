@@ -143,9 +143,14 @@
 					return { ...d, date: new Date(d.time) };
 				});
 
+			// combinedHistoryProjectionData =
+			// 	$selectedDataView === 'energy'
+			// 		? [...setLatestEmpty(filteredHistoricalTimeSeriesData), ...projectionData]
+			// 		: [...getEmpty(filteredHistoricalTimeSeriesData), ...projectionData];
+
 			combinedHistoryProjectionData =
 				$selectedDataView === 'energy'
-					? [...setLatestEmpty(filteredHistoricalTimeSeriesData), ...projectionData]
+					? [...filteredHistoricalTimeSeriesData, ...projectionData]
 					: [...getEmpty(filteredHistoricalTimeSeriesData), ...projectionData];
 
 			$seriesItems = [...combinedSeriesNames].reverse().map((name) => {
@@ -201,7 +206,6 @@
 	}
 
 	$: chartDisplay = $selectedDisplayView === 'technology' ? 'area' : 'line';
-	$: console.log('chartDisplay', chartDisplay);
 
 	// $: console.log(
 	// 	'combinedData',

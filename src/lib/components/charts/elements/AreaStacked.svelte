@@ -1,9 +1,10 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
+
 	import { area } from 'd3-shape';
 	import { closestTo } from 'date-fns';
 
-	const { data, xGet, xScale, yScale, zGet } = getContext('LayerCake');
+	const { data, xGet, xScale, yScale, zGet, yGet } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
 	/** @type {TimeSeriesData[]} */
@@ -14,6 +15,8 @@
 
 	export let clipPathId = '';
 
+	export let display = 'area';
+
 	$: compareDates = [...new Set(dataset.map((d) => d.date))];
 
 	$: areaGen = area()
@@ -21,6 +24,17 @@
 		.y0((d) => $yScale(d[0]))
 		.y1((d) => $yScale(d[1]))
 		.defined((d) => d[0] !== 0 || d[1] !== 0);
+
+	$: lineGen = (values) => {
+		return values.length
+			? 'M' +
+					values
+						.map((d) => {
+							return $xGet(d) + ',' + $yGet(d);
+						})
+						.join('L')
+			: '';
+	};
 
 	/**
 	 * @param d {[]}
@@ -58,15 +72,17 @@
 </script>
 
 <g class="area-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-	{#each $data as d}
+	{#each $data as d, i (i)}
 		<path
 			role="presentation"
 			class="path-area focus:outline-0"
-			d={areaGen(d)}
-			fill={getZFill(d)}
-			on:mousemove={(e) => findItem(e, d.key)}
+			d={display === 'area' ? areaGen(d) : lineGen(d.values)}
+			fill={display === 'area' ? getZFill(d) : 'transparent'}
+			stroke={display === 'area' ? 'none' : $zGet(d)}
+			stroke-width={display === 'area' ? '0' : '2px'}
+			on:mousemove={(e) => findItem(e, d.key || d.group)}
 			on:mouseout={mouseout}
-			on:touchmove={(e) => findItem(e, d.key)}
+			on:touchmove={(e) => findItem(e, d.key || d.group)}
 			on:blur={mouseout}
 		/>
 	{/each}
