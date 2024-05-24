@@ -134,7 +134,6 @@
 						);
 
 						const outlookObj = {
-							type: filtered[0].type,
 							region: regionModel.region,
 							units: filtered[0].units,
 							id: `${regionModel.region}.${scenario}.${pathway.split(' ').join('_')}`,
