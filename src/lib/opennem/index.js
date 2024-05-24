@@ -1,3 +1,4 @@
+import { flatten } from 'layercake';
 import parser from './parser';
 
 /**
@@ -14,4 +15,13 @@ async function getHistory(region) {
 	return parser(historyJson.data);
 }
 
-export default getHistory;
+async function getAllRegionHistory() {
+	const history = await fetch('/api/energy/all-regions');
+	const historyJson = await history.json();
+
+	const parsed = historyJson.map((d) => parser(d.data));
+	console.log('history all', historyJson, parsed, flatten(parsed));
+	return flatten(parsed);
+}
+
+export { getHistory, getAllRegionHistory };

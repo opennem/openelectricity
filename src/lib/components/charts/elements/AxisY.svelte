@@ -66,7 +66,8 @@
 			{#if gridlines !== false}
 				<line
 					class="gridline"
-					stroke={i === 0 ? 'black' : stroke}
+					{stroke}
+					stroke-dasharray={tick === 0 ? '5' : '3'}
 					x2="100%"
 					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
 					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}
@@ -104,9 +105,3 @@
 		</g>
 	{/each}
 </g>
-
-<style>
-	.tick .gridline {
-		stroke-dasharray: 0;
-	}
-</style>

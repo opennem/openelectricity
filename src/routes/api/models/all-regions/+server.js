@@ -13,20 +13,37 @@ export async function GET({ setHeaders, url, fetch }) {
 		'cache-control': 'max-age=300' // 5 mins = 300secs
 	});
 
+	/**
+	 *
+	 * @param {string[]} urls
+	 */
+	function fetchAll(urls) {
+		return Promise.all(
+			urls.map((url) =>
+				fetch(url)
+					.then((r) => r.json())
+					.then((data) => data)
+					.catch((error) => ({ error, url }))
+			)
+		);
+	}
+
 	const { searchParams } = url;
 	const name = searchParams.get('name') || 'aemo2024';
 	const country = searchParams.get('country') || 'au';
 	const network = searchParams.get('network') || 'NEM';
-	const region = searchParams.get('region') || '';
 	const type = searchParams.get('type') || 'energy';
-	const networkRegion = region ? `${network}/${region}` : network;
 
-	const dataPath = `${basePath}${modelPaths[name]}/${country}/${networkRegion}/${type}/outlook.json`;
+	const regions = ['NSW1', 'QLD1', 'VIC1', 'SA1', 'TAS1'];
+	const dataPaths = regions.map(
+		(region) =>
+			`${basePath}${modelPaths[name]}/${country}/${network}/${region}/${type}/outlook.json`
+	);
 
-	const res = await fetch(dataPath);
-	if (res.ok) {
-		return Response.json(await res.json());
+	const res = await fetchAll(dataPaths);
+	if (res.error) {
+		error(500, 'Error fetching data');
 	}
 
-	error(404, 'Not found');
+	return Response.json(res);
 }

@@ -88,10 +88,21 @@ export function modelStore() {
 	const displayViewOptions = [
 		{
 			value: 'technology',
-			label: 'Area'
+			label: 'Technology'
 		},
 		{
 			value: 'region',
+			label: 'Region'
+		}
+	];
+
+	const chartTypeOptions = [
+		{
+			value: 'area',
+			label: 'Area'
+		},
+		{
+			value: 'line',
 			label: 'Line'
 		}
 	];
@@ -99,6 +110,7 @@ export function modelStore() {
 	const selectedModel = writable(modelOptions[0].value);
 	const selectedDataView = writable(dataViewOptions[0].value);
 	const selectedDisplayView = writable(displayViewOptions[0].value);
+	const selectedChartType = writable(chartTypeOptions[0].value);
 	const selectedRegion = writable(regionOptions[0].value);
 	const modelXTicks = derived(selectedModel, ($selectedModel) => {
 		return xTicks[$selectedModel];
@@ -128,7 +140,10 @@ export function modelStore() {
 		selectedDataLabel: selectedDataLabel,
 
 		displayViewOptions: displayViewOptions,
-		selectedDisplayView: selectedDisplayView
+		selectedDisplayView: selectedDisplayView,
+
+		chartTypeOptions: chartTypeOptions,
+		selectedChartType: selectedChartType
 	};
 }
 
@@ -140,32 +155,35 @@ export function projectionStore() {
 	const selectedPathway = writable('');
 	const selectedFuelTechGrouping = writable(explorerGroups[0].value);
 
+	const scenarioOptions = writable();
+	const pathwayOptions = writable();
+
 	const seriesItems = writable([]);
 
-	const scenarioOptions = derived(projectionData, ($projectionData) => {
-		return $projectionData.scenarios.map((scenario) => {
-			return {
-				value: scenario,
-				label: scenario.split('_').join(' ')
-			};
-		});
-	});
-	const pathwayOptions = derived(projectionData, ($projectionData) => {
-		let pathways = [];
-		pathwayOrder.forEach((pathway) => {
-			const find = $projectionData.pathways.find((p) => p === pathway);
-			if (find) {
-				pathways.push(find);
-			}
-		});
+	// const scenarioOptions = derived(projectionData, ($projectionData) => {
+	// 	return $projectionData.scenarios.map((scenario) => {
+	// 		return {
+	// 			value: scenario,
+	// 			label: scenario.split('_').join(' ')
+	// 		};
+	// 	});
+	// });
+	// const pathwayOptions = derived(projectionData, ($projectionData) => {
+	// 	let pathways = [];
+	// 	pathwayOrder.forEach((pathway) => {
+	// 		const find = $projectionData.pathways.find((p) => p === pathway);
+	// 		if (find) {
+	// 			pathways.push(find);
+	// 		}
+	// 	});
 
-		return pathways.map((pathway) => {
-			return {
-				value: pathway,
-				label: pathway.split('_').join(' ')
-			};
-		});
-	});
+	// 	return pathways.map((pathway) => {
+	// 		return {
+	// 			value: pathway,
+	// 			label: pathway.split('_').join(' ')
+	// 		};
+	// 	});
+	// });
 
 	const filteredModelData = derived(
 		[projectionData, selectedScenario, selectedPathway],
@@ -250,10 +268,12 @@ export function projectionStore() {
 	);
 
 	// update selected values based on model changes
-	scenarioOptions.subscribe((scenarios) => {
-		if (scenarios.length === 0) return;
-		selectedScenario.set(scenarios[0].value);
-	});
+	// scenarioOptions.subscribe((scenarios) => {
+	// 	if (!scenarios) return;
+	// 	if (scenarios.length === 0) return;
+
+	// 	selectedScenario.set(scenarios[0].value);
+	// });
 	// pathwayOptions.subscribe((pathways) => {
 	// 	if (pathways.length === 0) return;
 	// 	selectedPathway.set(pathways[0].value);

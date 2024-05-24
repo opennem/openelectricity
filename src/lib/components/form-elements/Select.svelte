@@ -41,7 +41,7 @@
 
 	{#if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col gap-2 w-full rounded-lg z-20 shadow-md p-2"
+			class="border border-mid-grey bg-white absolute flex flex-col gap-2 rounded-lg z-20 shadow-md p-2"
 			in:fly={{ y: -5, duration: 150 }}
 			out:fly={{ y: -5, duration: 150 }}
 		>
@@ -53,7 +53,7 @@
 					>
 						<span class="capitalize">{opt.label}</span>
 						{#if selectedValue === opt.value}
-							<IconCheckMark class="w-7 h-7 text-dark-grey" />
+							<IconCheckMark class="w-5 h-5 text-dark-grey" />
 						{/if}
 					</button>
 				</li>

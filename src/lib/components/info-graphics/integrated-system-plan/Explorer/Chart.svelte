@@ -8,7 +8,7 @@
 	import { formatTickY, displayXTicks } from '../helpers';
 
 	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
-	import MultiLine from '$lib/components/charts/elements/MultiLineWithoutHover.svelte';
+	import HoverDots from '$lib/components/charts/elements/HoverDots.svelte';
 
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
 	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
@@ -147,11 +147,17 @@
 				<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
 			{/if}
 
-			<!-- {#if blankOverlay}
-				<Overlay fill="#fff" {...blankOverlay} />
-			{/if} -->
+			{#if blankOverlay}
+				<Overlay fill="#ffffffcc" {...blankOverlay} />
+			{/if}
 
-			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} stroke={'#666'} />
+			<AxisY
+				ticks={yTicks}
+				xTick={5}
+				formatTick={formatTickY}
+				gridlines={true}
+				stroke="#33333344"
+			/>
 			<AxisX
 				ticks={xTicks || displayXTicks}
 				gridlines={false}
@@ -171,9 +177,9 @@
 			<HoverLine {hoverData} />
 		</Html>
 
-		<!-- <Svg pointerEvents={false}>
-			<HoverDots {dataset} {hoverData} />
-		</Svg> -->
+		<Svg pointerEvents={false}>
+			<!-- <HoverDots {dataset} {hoverData} /> -->
+		</Svg>
 	</LayerCake>
 
 	<p class="text-xs text-mid-grey relative -top-5 md:hidden">{title}</p>

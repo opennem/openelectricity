@@ -4,9 +4,7 @@
 
 	import deepCopy from '$lib/utils/deep-copy';
 	import { projectionStore, modelStore } from '../store';
-	import RegionFilters from './RegionFilters.svelte';
-	import DataFilters from './DataFilters.svelte';
-	import DisplayFilters from './DisplayFilters.svelte';
+	import Filters from './Filters.svelte';
 	import ExplorerChart from './Chart.svelte';
 	import ExplorerTable from './Table.svelte';
 	import ChartTooltip from '../ChartTooltip.svelte';
@@ -16,6 +14,8 @@
 
 	export let historyData;
 	export let modelsData;
+	export let modelScenarios;
+	export let modelPathways;
 
 	const dispatchEvent = createEventDispatcher();
 
@@ -29,7 +29,8 @@
 		selectedRegion,
 		selectedDataView,
 		selectedDataDescription,
-		selectedDisplayView
+		selectedDisplayView,
+		selectedChartType
 	} = getContext('model');
 
 	const {
@@ -40,18 +41,21 @@
 		historicalTimeSeriesData,
 		yDomain,
 		pathwayOptions,
+		scenarioOptions,
+		selectedScenario,
 		selectedPathway,
 		seriesItems
 	} = getContext('projection-explorer');
 
-	pathwayOptions.subscribe((pathways) => {
-		if (pathways.length === 0) return;
+	$: $scenarioOptions = modelScenarios;
+	$: $pathwayOptions = modelPathways;
 
-		const currentSelectedFind = pathways.find((p) => p.value === $selectedPathway);
-		if (currentSelectedFind) return;
-
-		$selectedPathway = defaultPathway[$selectedModel] || pathways[0].value;
-	});
+	$: if (!$selectedScenario && modelScenarios.length) {
+		$selectedScenario = modelScenarios[0].value;
+	}
+	$: if (!$selectedPathway) {
+		$selectedPathway = defaultPathway[$selectedModel];
+	}
 
 	$: if (modelsData) {
 		$projectionData = modelsData;
@@ -61,13 +65,15 @@
 		$historicalData = covertHistoryDataToTWh(deepCopy(historyData));
 	}
 
-	$: if (modelsData && historyData) {
-		console.log('modelsData && historyData', modelsData, historyData);
-	}
+	$: console.log('Explore modelsData', modelsData);
+	$: console.log('Explore historyData', historyData);
 
 	$: dispatchEvent('selected-model', $selectedModel);
+	$: dispatchEvent('selected-scenario', $selectedScenario);
+	$: dispatchEvent('selected-pathway', $selectedPathway);
 	$: dispatchEvent('selected-region', $selectedRegion);
 	$: dispatchEvent('selected-data-view', $selectedDataView);
+	$: dispatchEvent('selected-display-view', $selectedDisplayView);
 
 	// update historical date to match ISP
 	$: updatedHistoricalTimeSeriesData = mutateHistoryDataDates($historicalTimeSeriesData.data);
@@ -205,7 +211,7 @@
 		});
 	}
 
-	$: chartDisplay = $selectedDisplayView === 'technology' ? 'area' : 'line';
+	$: chartDisplay = $selectedChartType === 'technology' ? 'area' : 'line';
 
 	// $: console.log(
 	// 	'combinedData',
@@ -219,15 +225,10 @@
 	// );
 </script>
 
-<div class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey">
-	<RegionFilters />
+<div class="container max-w-none grid grid-cols-3 gap-3 mb-12">
+	<Filters />
 </div>
-<div class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey">
-	<DataFilters />
-</div>
-<div class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey">
-	<DisplayFilters />
-</div>
+
 {#if ready}
 	<div class="grid grid-cols-8 gap-6 px-6">
 		<div class="col-span-8 md:col-span-5">
@@ -266,7 +267,7 @@
 						xStartValue: startOfYear(new Date('2023-01-01')),
 						xEndValue: startOfYear(new Date('2025-01-01'))
 					}}
-					display={chartDisplay}
+					display={$selectedChartType}
 					id="explorer-projection-chart"
 					formatTickX={formatFyTickX}
 					on:mousemove={handleMousemove}
