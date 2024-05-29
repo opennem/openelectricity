@@ -5,7 +5,8 @@ export const loadFuelTechs = [
 	'battery_VPP_charging',
 	'battery_distributed_charging',
 	'exports',
-	'pumps'
+	'pumps',
+	'total_loads'
 ];
 export const isLoad = (ftCode) => loadFuelTechs.includes(ftCode);
 
@@ -61,7 +62,10 @@ export const fuelTechNameMap = {
 	fossil_fuels: 'Fossil Fuels',
 	renewables: 'Renewables',
 	fossil: 'Fossil Fuels',
-	renewable: 'Renewables'
+	renewable: 'Renewables',
+
+	total_loads: 'All Loads',
+	total_sources: 'All Sources'
 };
 
 export const fuelTechOrder = [
@@ -136,7 +140,10 @@ export const fuelTechColourMap = {
 	fossil_fuels: '#594929',
 	renewables: '#52A972',
 	fossil: '#594929',
-	renewable: '#52A972'
+	renewable: '#52A972',
+
+	total_loads: '#CFA7FF',
+	total_sources: '#251C00'
 };
 
 export const fuelTechNames = getKeys(fuelTechNameMap);

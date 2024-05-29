@@ -1,7 +1,7 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
 
-	import { area } from 'd3-shape';
+	import { area, line } from 'd3-shape';
 	import { closestTo } from 'date-fns';
 
 	const { data, xGet, xScale, yScale, zGet, yGet } = getContext('LayerCake');
@@ -25,16 +25,10 @@
 		.y1((d) => $yScale(d[1]))
 		.defined((d) => d[0] !== 0 || d[1] !== 0);
 
-	$: lineGen = (values) => {
-		return values.length
-			? 'M' +
-					values
-						.map((d) => {
-							return $xGet(d) + ',' + $yGet(d);
-						})
-						.join('L')
-			: '';
-	};
+	$: lineGen = line(
+		(d) => $xGet(d),
+		(d) => $yGet(d)
+	).defined((d) => d.value !== null);
 
 	/**
 	 * @param d {[]}

@@ -5,10 +5,9 @@
 
 	import { scaleOrdinal } from 'd3-scale';
 
-	import { formatTickY, displayXTicks } from '../helpers';
+	import { formatTickY, displayXTicks } from './helpers';
 
 	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
-	import HoverDots from '$lib/components/charts/elements/HoverDots.svelte';
 
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
 	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
@@ -18,6 +17,7 @@
 	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
 	import Overlay from '$lib/components/charts/elements/Overlay.svelte';
 	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
+	import LineX from '$lib/components/charts/elements/annotations/LineX.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
@@ -32,7 +32,7 @@
 	/** @type {number[]} */
 	export let yKey = [];
 
-	/** @type {number[] | undefined} */
+	/** @type {Array.<number | null> | undefined} */
 	export let yDomain = undefined;
 
 	export let zKey = '';
@@ -57,6 +57,9 @@
 	/** @type {*} */
 	export let blankOverlay = false;
 
+	/** @type {*} */
+	export let overlayLine = false;
+
 	export let display = 'area'; // line, area
 
 	/** @type {TimeSeriesData | undefined}*/
@@ -64,6 +67,8 @@
 
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
 	export let formatTickX = (/** @type {*} */ d) => d;
+
+	export let chartHeightClasses = 'h-[400px] md:h-[580px]';
 
 	/** TODO: work out transition */
 	const tweenOptions = {
@@ -86,12 +91,12 @@
 	$: y = display === 'area' ? yKey : 'value';
 	$: z = display === 'area' ? zKey : 'group';
 
-	$: console.log('groupedData', groupedData);
+	// $: console.log('groupedData', groupedData);
 
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
-<div class="chart-container h-[600px] md:h-[680px] mb-4">
+<div class="chart-container mb-4 {chartHeightClasses}">
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
 		x={(/** @type {*} */ d) => {
@@ -113,7 +118,7 @@
 			</defs>
 
 			{#if overlay}
-				<Overlay fill="#FAF9F699" {...overlay} />
+				<Overlay fill="#F1F0ED" {...overlay} />
 			{/if}
 
 			<HoverLayer {dataset} on:mousemove on:mouseout />
@@ -148,7 +153,11 @@
 			{/if}
 
 			{#if blankOverlay}
-				<Overlay fill="#ffffffcc" {...blankOverlay} />
+				<Overlay fill="#ffffff" {...blankOverlay} />
+			{/if}
+
+			{#if overlayLine}
+				<LineX xValue={overlayLine} />
 			{/if}
 
 			<AxisY
@@ -174,6 +183,7 @@
 				</span>
 			</HoverText>
 			<!-- <HoverLine {hoverData} isShapeStack={true} useDataHeight={true} /> -->
+
 			<HoverLine {hoverData} />
 		</Html>
 

@@ -11,6 +11,7 @@ export type FuelTechCode =
 	| 'coal_brown'
 	| 'distillate'
 	| 'gas_ccgt'
+	| 'gas_ccgt_ccs'
 	| 'gas_ocgt'
 	| 'gas_recip'
 	| 'gas_steam'
@@ -35,7 +36,9 @@ export type FuelTechCode =
 	| 'fossil_fuels'
 	| 'renewables'
 	| 'fossil'
-	| 'renewable';
+	| 'renewable'
+	| 'total_sources'
+	| 'total_loads';
 
 export type FuelTech = {
 	_id: string;

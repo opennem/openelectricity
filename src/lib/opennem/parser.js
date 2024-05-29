@@ -7,7 +7,8 @@ import useDate from '$lib/utils/TimeSeries/use-date';
  * @returns {StatsData[]}
  */
 function parser(jsonData) {
-	const energyData = jsonData.filter(
+	const data = jsonData || [];
+	const energyData = data.filter(
 		(/** @type {StatsData} */ d) => d.fuel_tech && d.data_type === 'energy'
 	);
 

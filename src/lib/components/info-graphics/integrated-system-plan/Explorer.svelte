@@ -103,7 +103,7 @@
 
 	$: projectionStatsCharts = filteredWithPathwayScenario
 		? new Statistic(filteredWithPathwayScenario, 'projection')
-				.invertLoadValues(loadFuelTechs)
+				.invertValues(loadFuelTechs)
 				.group(group, loadFuelTechs)
 				.reorder(order)
 		: null;

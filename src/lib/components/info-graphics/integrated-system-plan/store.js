@@ -126,6 +126,9 @@ export function modelStore() {
 		return find ? find.label : '';
 	});
 
+	const scenarioOptions = writable();
+	const pathwayOptions = writable();
+
 	return {
 		modelOptions: modelOptions,
 		selectedModel: selectedModel,
@@ -143,52 +146,27 @@ export function modelStore() {
 		selectedDisplayView: selectedDisplayView,
 
 		chartTypeOptions: chartTypeOptions,
-		selectedChartType: selectedChartType
+		selectedChartType: selectedChartType,
+
+		scenarioOptions: scenarioOptions,
+		pathwayOptions: pathwayOptions
 	};
 }
 
 export function projectionStore() {
 	const historicalData = writable([]);
-	const projectionData = writable({ scenarios: [], pathways: [], outlook: { data: [] } });
+	const projectionData = writable([]);
 
 	const selectedScenario = writable('');
 	const selectedPathway = writable('');
 	const selectedFuelTechGrouping = writable(explorerGroups[0].value);
 
-	const scenarioOptions = writable();
-	const pathwayOptions = writable();
-
 	const seriesItems = writable([]);
-
-	// const scenarioOptions = derived(projectionData, ($projectionData) => {
-	// 	return $projectionData.scenarios.map((scenario) => {
-	// 		return {
-	// 			value: scenario,
-	// 			label: scenario.split('_').join(' ')
-	// 		};
-	// 	});
-	// });
-	// const pathwayOptions = derived(projectionData, ($projectionData) => {
-	// 	let pathways = [];
-	// 	pathwayOrder.forEach((pathway) => {
-	// 		const find = $projectionData.pathways.find((p) => p === pathway);
-	// 		if (find) {
-	// 			pathways.push(find);
-	// 		}
-	// 	});
-
-	// 	return pathways.map((pathway) => {
-	// 		return {
-	// 			value: pathway,
-	// 			label: pathway.split('_').join(' ')
-	// 		};
-	// 	});
-	// });
 
 	const filteredModelData = derived(
 		[projectionData, selectedScenario, selectedPathway],
 		([$projectionData, $selectedScenario, $selectedPathway]) => {
-			return $projectionData.outlook.data.filter(
+			return $projectionData.filter(
 				(d) => d.scenario === $selectedScenario && d.pathway === $selectedPathway
 			);
 		}
@@ -205,7 +183,7 @@ export function projectionStore() {
 		[filteredModelData, group, order],
 		([$filteredModelData, $group, $order]) => {
 			return new Statistic($filteredModelData, 'projection')
-				.invertLoadValues(loadFuelTechs)
+				.invertValues(loadFuelTechs)
 				.group($group, loadFuelTechs)
 				.reorder($order);
 		}
@@ -240,7 +218,7 @@ export function projectionStore() {
 		[historicalData, group, order],
 		([$historicalData, $group, $order]) => {
 			return new Statistic($historicalData, 'history')
-				.invertLoadValues(loadFuelTechs)
+				.invertValues(loadFuelTechs)
 				.group($group, loadFuelTechs)
 				.reorder($order);
 		}
@@ -267,18 +245,6 @@ export function projectionStore() {
 		}
 	);
 
-	// update selected values based on model changes
-	// scenarioOptions.subscribe((scenarios) => {
-	// 	if (!scenarios) return;
-	// 	if (scenarios.length === 0) return;
-
-	// 	selectedScenario.set(scenarios[0].value);
-	// });
-	// pathwayOptions.subscribe((pathways) => {
-	// 	if (pathways.length === 0) return;
-	// 	selectedPathway.set(pathways[0].value);
-	// });
-
 	return {
 		historicalData: historicalData,
 		projectionData: projectionData,
@@ -287,8 +253,6 @@ export function projectionStore() {
 		selectedPathway: selectedPathway,
 		selectedFuelTechGrouping: selectedFuelTechGrouping,
 
-		scenarioOptions: scenarioOptions,
-		pathwayOptions: pathwayOptions,
 		fuelTechGroupingOptions: explorerGroups,
 
 		filteredModelData: filteredModelData,

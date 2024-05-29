@@ -4,5 +4,5 @@
  * @returns {string}
  */
 export default function (dateStr) {
-	return dateStr.split('T')[0];
+	return dateStr ? dateStr.split('T')[0] : '';
 }

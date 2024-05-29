@@ -20,7 +20,6 @@ async function getAllRegionHistory() {
 	const historyJson = await history.json();
 
 	const parsed = historyJson.map((d) => parser(d.data));
-	console.log('history all', historyJson, parsed, flatten(parsed));
 	return flatten(parsed);
 }
 

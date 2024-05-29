@@ -49,7 +49,10 @@ const fuelTechColourMap = {
 	fossil_fuels: '#444444',
 	renewables: '#52BCA3',
 	fossil: '#444444',
-	renewable: '#52BCA3'
+	renewable: '#52BCA3',
+
+	total_loads: '#44146F',
+	total_sources: '#1D7A7A'
 };
 
 const carbonIntensityColourMap = {

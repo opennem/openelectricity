@@ -43,7 +43,7 @@ Statistic.prototype.reorder = function (/** @type {string[]} */ domainOrder) {
 	return this;
 };
 
-Statistic.prototype.invertLoadValues = function (/** @type {string[]} */ loads) {
+Statistic.prototype.invertValues = function (/** @type {string[]} */ loads) {
 	this.data.forEach((d) => {
 		const ft = d.fuel_tech;
 

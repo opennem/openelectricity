@@ -1,28 +1,31 @@
 <script>
 	import { getContext } from 'svelte';
+	import {
+		modelOptions,
+		regionOptions,
+		dataViewOptions,
+		displayViewOptions,
+		chartTypeOptions
+	} from './options';
+	import { groups } from './groups';
 	import Selection from './Selection.svelte';
 
 	const {
 		selectedModel,
-		modelOptions,
 		selectedRegion,
-		regionOptions,
 		selectedDataView,
-		dataViewOptions,
 		selectedDisplayView,
-		displayViewOptions,
 		selectedChartType,
-		chartTypeOptions
-	} = getContext('model');
-
-	const {
 		selectedScenario,
 		selectedPathway,
+
 		scenarioOptions,
-		pathwayOptions,
-		selectedFuelTechGrouping,
-		fuelTechGroupingOptions
-	} = getContext('projection-explorer');
+		pathwayOptions
+	} = getContext('scenario-filters');
+
+	const { selectedGroup } = getContext('scenario-data');
+
+	$: isRegionDisplay = $selectedDisplayView === 'region';
 </script>
 
 <div class="bg-light-warm-grey py-2 px-4 rounded">
@@ -37,11 +40,11 @@
 
 <div class="bg-light-warm-grey py-2 px-4 rounded">
 	<Selection
-		selectLabel="Region:"
-		widthClass="w-[270px]"
-		options={regionOptions}
-		selected={$selectedRegion}
-		on:change={(evt) => ($selectedRegion = evt.detail.value)}
+		selectLabel="Model:"
+		widthClass="w-[240px]"
+		options={modelOptions}
+		selected={$selectedModel}
+		on:change={(evt) => ($selectedModel = evt.detail.value)}
 	/>
 </div>
 
@@ -52,16 +55,6 @@
 		options={dataViewOptions}
 		selected={$selectedDataView}
 		on:change={(evt) => ($selectedDataView = evt.detail.value)}
-	/>
-</div>
-
-<div class="bg-light-warm-grey py-2 px-4 rounded">
-	<Selection
-		selectLabel="Model:"
-		widthClass="w-[240px]"
-		options={modelOptions}
-		selected={$selectedModel}
-		on:change={(evt) => ($selectedModel = evt.detail.value)}
 	/>
 </div>
 
@@ -85,7 +78,19 @@
 	/>
 </div>
 
-<div class="bg-light-warm-grey py-2 px-4 rounded">
+{#if !isRegionDisplay}
+	<div class="bg-light-warm-grey py-2 px-4 rounded">
+		<Selection
+			selectLabel="Region:"
+			widthClass="w-[270px]"
+			options={regionOptions}
+			selected={$selectedRegion}
+			on:change={(evt) => ($selectedRegion = evt.detail.value)}
+		/>
+	</div>
+{/if}
+
+<!-- <div class="bg-light-warm-grey py-2 px-4 rounded">
 	<Selection
 		selectLabel="Chart:"
 		widthClass="w-[270px]"
@@ -93,14 +98,16 @@
 		selected={$selectedChartType}
 		on:change={(evt) => ($selectedChartType = evt.detail.value)}
 	/>
-</div>
+</div> -->
 
-<div class="bg-light-warm-grey py-2 px-4 rounded">
-	<Selection
-		selectLabel="Grouping:"
-		widthClass="w-[270px]"
-		options={fuelTechGroupingOptions}
-		selected={$selectedFuelTechGrouping}
-		on:change={(evt) => ($selectedFuelTechGrouping = evt.detail.value)}
-	/>
-</div>
+{#if !isRegionDisplay}
+	<div class="bg-light-warm-grey py-2 px-4 rounded">
+		<Selection
+			selectLabel="Grouping:"
+			widthClass="w-[270px]"
+			options={groups}
+			selected={$selectedGroup}
+			on:change={(evt) => ($selectedGroup = evt.detail.value)}
+		/>
+	</div>
+{/if}
