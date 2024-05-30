@@ -101,11 +101,15 @@ export const regionsOnlyWithLabels = regionOptions.reduce(
 export const displayViewOptions = [
 	{
 		value: 'technology',
-		label: 'Technology'
+		label: 'By Technology'
 	},
+	// {
+	// 	value: 'technology',
+	// 	label: 'Technology'
+	// },
 	{
 		value: 'region',
-		label: 'Region'
+		label: 'By Region'
 	}
 ];
 

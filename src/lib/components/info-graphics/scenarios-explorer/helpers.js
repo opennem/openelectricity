@@ -32,7 +32,7 @@ export const formatValue = (/** @type {number} */ d) => {
 	return formatted;
 };
 
-export const dataTechnologyGroupOptions = [detailedGroup, simpleGroup, renewablesVsFossilsGroup];
+export const dataTechnologyGroupOptions = [simpleGroup, detailedGroup, renewablesVsFossilsGroup];
 export const dataRegionCompareOptions = [totalsGroup, coalGasGroup, windSolarGroup];
 const allGroupOptions = [...dataTechnologyGroupOptions, ...dataRegionCompareOptions];
 

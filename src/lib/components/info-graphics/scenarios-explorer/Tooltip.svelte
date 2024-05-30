@@ -5,6 +5,7 @@
 	export let seriesColours;
 	export let seriesLabels;
 	export let defaultText = '';
+	export let showTotal = false;
 
 	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
@@ -22,24 +23,28 @@
 				{formatFyTickX(hoverTime)}
 			</span>
 
-			<div class="bg-light-warm-grey px-4 py-1 flex gap-6 items-center">
-				{#if hoverKeyValue !== null}
-					<div class="flex items-center gap-2">
+			{#if hoverKeyValue !== null || showTotal}
+				<div class="bg-light-warm-grey px-4 py-1 flex gap-6 items-center">
+					{#if hoverKeyValue !== null}
 						<div class="flex items-center gap-2">
-							<span class="w-2.5 h-2.5 block" style="background-color: {hoverKeyColour}" />
-							{hoverKeyLabel}
+							<div class="flex items-center gap-2">
+								<span class="w-2.5 h-2.5 block" style="background-color: {hoverKeyColour}" />
+								{hoverKeyLabel}
+							</div>
+
+							<strong class="font-semibold">{formatValue(hoverKeyValue)}</strong>
+							<!-- <small>— {formatValue(percent)}%</small> -->
 						</div>
+					{/if}
 
-						<strong class="font-semibold">{formatValue(hoverKeyValue)}</strong>
-						<!-- <small>— {formatValue(percent)}%</small> -->
-					</div>
-				{/if}
-
-				<span class="flex items-center gap-2">
-					Total
-					<strong class="font-semibold">{formatValue(hoverMax)}</strong>
-				</span>
-			</div>
+					{#if showTotal}
+						<span class="flex items-center gap-2">
+							Total
+							<strong class="font-semibold">{formatValue(hoverMax)}</strong>
+						</span>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	{:else}
 		<div class="h-full text-right text-xs text-mid-grey py-1">

@@ -13,7 +13,7 @@ export const detailedGroup = {
 	labels: detailed.labels
 };
 export const simpleGroup = {
-	label: 'Simple',
+	label: 'Default',
 	value: 'simple',
 	fuelTechs: simple.fuelTechMap,
 	order: simple.order,
@@ -48,7 +48,7 @@ export const windSolarGroup = {
 	labels: windSolar.labels
 };
 
-export const groups = [detailedGroup, simpleGroup, renewablesVsFossilsGroup, totalsGroup];
+export const groups = [simpleGroup, detailedGroup, renewablesVsFossilsGroup, totalsGroup];
 
 /** @type {*} */
 export let groupMap = {};

@@ -15,6 +15,8 @@
 
 	export let clipPathId = '';
 
+	export let highlightId = '';
+
 	export let display = 'area';
 
 	$: compareDates = [...new Set(dataset.map((d) => d.date))];
@@ -29,6 +31,11 @@
 		(d) => $xGet(d),
 		(d) => $yGet(d)
 	).defined((d) => d.value !== null);
+
+	$: opacity = (d) => {
+		if (highlightId === null) return 1;
+		return highlightId === d.key || highlightId === d.group ? 1 : 0.1;
+	};
 
 	/**
 	 * @param d {[]}
@@ -74,6 +81,7 @@
 			fill={display === 'area' ? getZFill(d) : 'transparent'}
 			stroke={display === 'area' ? 'none' : $zGet(d)}
 			stroke-width={display === 'area' ? '0' : '2px'}
+			opacity={opacity(d)}
 			on:mousemove={(e) => findItem(e, d.key || d.group)}
 			on:mouseout={mouseout}
 			on:touchmove={(e) => findItem(e, d.key || d.group)}

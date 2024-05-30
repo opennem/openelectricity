@@ -16,15 +16,19 @@
 
 	import filtersStore from '$lib/components/info-graphics/scenarios-explorer/stores/filters';
 	import dataStore from '$lib/components/info-graphics/scenarios-explorer/stores/data';
+	import cacheStore from '$lib/components/info-graphics/scenarios-explorer/stores/cache';
+
 	import {
 		regionsOnly,
 		defaultModelPathway,
 		defaultPathwayOrder
 	} from '$lib/components/info-graphics/scenarios-explorer/options';
 	import { covertHistoryDataToTWh } from '$lib/components/info-graphics/scenarios-explorer/helpers';
+	import DetailedBreakdown from '$lib/components/info-graphics/scenarios-explorer/DetailedBreakdown.svelte';
 
 	setContext('scenario-filters', filtersStore());
 	setContext('scenario-data', dataStore());
+	setContext('scenario-cache', cacheStore());
 
 	export let data;
 	const { articles } = data;
@@ -206,15 +210,15 @@
 		</p>
 	</div>
 </PageHeader>
-<PublicBetaTag />
+<!-- <PublicBetaTag /> -->
 
-<div class="grid grid-cols-2 md:grid-cols-3 gap-1 md:gap-3 p-2 md:p-12 container">
-	<ScenarioFilters />
-</div>
+<ScenarioFilters />
 
-<div class="p-1 md:p-6">
+<div class="p-1 md:p-6 border-t border-warm-grey">
 	<ScenarioExplorer />
 </div>
+
+<DetailedBreakdown />
 
 <div class="bg-white py-16 md:py-32">
 	<div class="container max-w-none lg:container">

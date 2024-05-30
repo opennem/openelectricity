@@ -33,9 +33,9 @@
 		on:clickoutside={() => (showOptions = false)}
 		class="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-warm-grey"
 	>
-		<h5 class="font-medium mb-0 capitalize">
+		<span class="font-medium mb-0 capitalize">
 			{selected && selected.label ? selected?.label : findSelectedOption()}
-		</h5>
+		</span>
 		<IconChevronUpDown class="w-7 h-7" />
 	</button>
 

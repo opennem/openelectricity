@@ -1,5 +1,8 @@
 <script>
 	import { getContext } from 'svelte';
+
+	import Switch from '$lib/components/Switch.svelte';
+
 	import {
 		modelOptions,
 		regionOptions,
@@ -39,7 +42,72 @@
 	}
 </script>
 
-<div class="bg-light-warm-grey py-2 px-4 rounded">
+<div class="border-b border-warm-grey">
+	<div class="container">
+		<div class="grid grid-cols-3 w-full md:w-2/3 gap-3 my-3">
+			<div class="bg-light-warm-grey py-2 px-4 rounded">
+				<Selection
+					selectLabel="Model:"
+					widthClass="w-[240px]"
+					options={modelOptions}
+					selected={$selectedModel}
+					on:change={(evt) => ($selectedModel = evt.detail.value)}
+				/>
+			</div>
+
+			<div class="bg-light-warm-grey py-2 px-4 rounded">
+				<Selection
+					selectLabel="Scenario:"
+					widthClass="w-[240px]"
+					options={$scenarioOptions}
+					selected={$selectedScenario}
+					on:change={(evt) => ($selectedScenario = evt.detail.value)}
+				/>
+			</div>
+
+			<div class="bg-light-warm-grey py-2 px-4 rounded">
+				<Selection
+					selectLabel="Pathway:"
+					widthClass="w-[200px]"
+					options={$pathwayOptions}
+					selected={$selectedPathway}
+					on:change={(evt) => ($selectedPathway = evt.detail.value)}
+				/>
+			</div>
+		</div>
+	</div>
+</div>
+
+<div class="container flex gap-16 divide-x divide-warm-grey">
+	<Switch
+		buttons={displayViewOptions}
+		selected={$selectedDisplayView}
+		on:change={(evt) => ($selectedDisplayView = evt.detail.value)}
+		class="justify-center my-4"
+	/>
+	<div class="py-2 pl-12 flex items-center gap-2">
+		<div>
+			<Selection
+				options={dataViewOptions}
+				selected={$selectedDataView}
+				on:change={(evt) => ($selectedDataView = evt.detail.value)}
+			/>
+		</div>
+
+		{#if !isRegionDisplay}
+			<div>
+				<Selection
+					widthClass="w-[230px]"
+					options={regionOptions}
+					selected={$selectedRegion}
+					on:change={(evt) => ($selectedRegion = evt.detail.value)}
+				/>
+			</div>
+		{/if}
+	</div>
+</div>
+
+<!-- <div class="bg-light-warm-grey py-2 px-4 rounded">
 	<Selection
 		selectLabel="By:"
 		widthClass="w-[150px]"
@@ -47,59 +115,7 @@
 		selected={$selectedDisplayView}
 		on:change={(evt) => ($selectedDisplayView = evt.detail.value)}
 	/>
-</div>
-
-<div class="bg-light-warm-grey py-2 px-4 rounded">
-	<Selection
-		selectLabel="Model:"
-		widthClass="w-[240px]"
-		options={modelOptions}
-		selected={$selectedModel}
-		on:change={(evt) => ($selectedModel = evt.detail.value)}
-	/>
-</div>
-
-<div class="bg-light-warm-grey py-2 px-4 rounded">
-	<Selection
-		selectLabel="Data:"
-		widthClass="w-[170px]"
-		options={dataViewOptions}
-		selected={$selectedDataView}
-		on:change={(evt) => ($selectedDataView = evt.detail.value)}
-	/>
-</div>
-
-<div class="bg-light-warm-grey py-2 px-4 rounded">
-	<Selection
-		selectLabel="Scenario:"
-		widthClass="w-[240px]"
-		options={$scenarioOptions}
-		selected={$selectedScenario}
-		on:change={(evt) => ($selectedScenario = evt.detail.value)}
-	/>
-</div>
-
-<div class="bg-light-warm-grey py-2 px-4 rounded">
-	<Selection
-		selectLabel="Pathway:"
-		widthClass="w-[200px]"
-		options={$pathwayOptions}
-		selected={$selectedPathway}
-		on:change={(evt) => ($selectedPathway = evt.detail.value)}
-	/>
-</div>
-
-{#if !isRegionDisplay}
-	<div class="bg-light-warm-grey py-2 px-4 rounded">
-		<Selection
-			selectLabel="Region:"
-			widthClass="w-[270px]"
-			options={regionOptions}
-			selected={$selectedRegion}
-			on:change={(evt) => ($selectedRegion = evt.detail.value)}
-		/>
-	</div>
-{/if}
+</div> -->
 
 <!-- <div class="bg-light-warm-grey py-2 px-4 rounded">
 	<Selection
@@ -111,7 +127,7 @@
 	/>
 </div> -->
 
-{#if !isRegionDisplay}
+<!-- {#if !isRegionDisplay}
 	<div class="bg-light-warm-grey py-2 px-4 rounded">
 		<Selection
 			selectLabel="Grouping:"
@@ -121,8 +137,8 @@
 			on:change={(evt) => ($selectedGroup = evt.detail.value)}
 		/>
 	</div>
-{/if}
-
+{/if} -->
+<!-- 
 {#if isRegionDisplay}
 	<div class="bg-light-warm-grey py-2 px-4 rounded">
 		<Selection
@@ -133,4 +149,4 @@
 			on:change={(evt) => ($selectedGroup = evt.detail.value)}
 		/>
 	</div>
-{/if}
+{/if} -->

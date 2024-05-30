@@ -54,6 +54,8 @@
 	 * @type {*} */
 	export let overlay = null;
 
+	export let overlayStroke = 'rgba(236, 233, 230, 0.4)';
+
 	/** @type {*} */
 	export let blankOverlay = false;
 
@@ -69,6 +71,9 @@
 	export let formatTickX = (/** @type {*} */ d) => d;
 
 	export let chartHeightClasses = 'h-[400px] md:h-[580px]';
+
+	/** @type {string | null} */
+	export let highlightId = null;
 
 	/** TODO: work out transition */
 	const tweenOptions = {
@@ -118,7 +123,7 @@
 			</defs>
 
 			{#if overlay}
-				<Overlay fill="#F1F0ED" {...overlay} />
+				<Overlay fill="#FAF9F6" {...overlay} />
 			{/if}
 
 			<HoverLayer {dataset} on:mousemove on:mouseout />
@@ -138,6 +143,7 @@
 				clipPathId={clip ? `${id}-clip-path` : ''}
 				{dataset}
 				{display}
+				{highlightId}
 				on:mousemove
 				on:mouseout
 			/>
@@ -145,7 +151,7 @@
 
 		<Svg pointerEvents={false}>
 			<defs>
-				<HatchPattern id={`${id}-hatch-pattern`} />
+				<HatchPattern id={`${id}-hatch-pattern`} stroke={overlayStroke} />
 			</defs>
 
 			{#if overlay}

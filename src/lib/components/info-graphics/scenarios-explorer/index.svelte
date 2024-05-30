@@ -8,6 +8,7 @@
 	import ExplorerTooltip from './Tooltip.svelte';
 	import ExplorerChart from './Chart.svelte';
 	import ExplorerTable from './Table.svelte';
+	import ExplorerTechnologyTable from './TechnologyTable.svelte';
 	import { processTechnologyData, processRegionData, formatFyTickX } from './helpers';
 	import { dataViewDescription, dataViewlabel } from './options';
 
@@ -35,6 +36,8 @@
 		regionHistoricalTimeSeries
 	} = getContext('scenario-data');
 
+	const { cachedDisplayData } = getContext('scenario-cache');
+
 	let showTable = true;
 
 	let seriesNames = [];
@@ -42,6 +45,7 @@
 	let seriesColours;
 	let seriesLabels;
 	let seriesData = [];
+	let seriesLoadsIds = [];
 	/** @type {Array.<number | null>} */
 	let yDomain = [0, null];
 
@@ -51,8 +55,11 @@
 	/** @type {string | undefined} */
 	let hoverKey;
 
-	/** @type {*} */
-	let cachedDisplayData = {};
+	/** @type {string | null} */
+	let highlightId = null;
+
+	// /** @type {*} */
+	// let cachedDisplayData = {};
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		if (e.detail?.key) {
@@ -102,6 +109,9 @@
 			? { date: startOfYear(new Date('2025-01-01')) }
 			: { date: startOfYear(new Date('2024-01-01')) };
 
+	$: overlayStroke =
+		$selectedDisplayView === 'technology' ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)';
+
 	$: if ($selectedDisplayView === 'technology') {
 		console.log('data by technology');
 
@@ -119,16 +129,17 @@
 			seriesItems = processed.nameOptions;
 			yDomain = [$projectionTimeSeries.minY, $projectionTimeSeries.maxY];
 
-			cachedDisplayData[$selectedDisplayView] = {
+			seriesLoadsIds = $projectionStats.data.filter((d) => d.isLoad).map((d) => d.id);
+
+			$cachedDisplayData[$selectedDisplayView] = {
 				data: seriesData,
 				names: seriesNames,
 				colours: seriesColours,
 				labels: seriesLabels,
 				items: seriesItems,
+				loadIds: seriesLoadsIds,
 				yDomain: yDomain
 			};
-
-			console.log('processed technology', processed);
 		}
 	} else if ($selectedDisplayView === 'region') {
 		console.log('data by region');
@@ -147,7 +158,7 @@
 			seriesItems = processed.nameOptions;
 			yDomain = [0, null];
 
-			cachedDisplayData[$selectedDisplayView] = {
+			$cachedDisplayData[$selectedDisplayView] = {
 				data: seriesData,
 				names: seriesNames,
 				colours: seriesColours,
@@ -165,7 +176,7 @@
 	$: {
 		let colours = {};
 		sortedItems.forEach((name) => {
-			colours[name] = cachedDisplayData[$selectedDisplayView].colours[name];
+			colours[name] = $cachedDisplayData[$selectedDisplayView].colours[name];
 		});
 		seriesColours = colours;
 	}
@@ -177,16 +188,20 @@
 
 {#if seriesData.length > 0}
 	<div class="grid grid-cols-12 gap-4">
-		<div class="col-span-8">
+		<div class="col-span-8 pt-4">
 			<!-- <Toggle checked={showTable} on:click={() => (showTable = !showTable)} /> -->
 
-			<ExplorerTooltip
-				{hoverData}
-				{hoverKey}
-				defaultText={dataViewDescription[$selectedDataView]}
-				{seriesColours}
-				{seriesLabels}
-			/>
+			<div class="relative -top-3">
+				<ExplorerTooltip
+					{hoverData}
+					{hoverKey}
+					defaultText={dataViewDescription[$selectedDataView]}
+					{seriesColours}
+					{seriesLabels}
+					showTotal={$selectedDisplayView === 'technology'}
+				/>
+			</div>
+
 			<ExplorerChart
 				id="scenarios-explorer-chart"
 				dataset={seriesData}
@@ -203,6 +218,8 @@
 				{blankOverlay}
 				{overlayLine}
 				{hoverData}
+				{highlightId}
+				{overlayStroke}
 				on:mousemove={handleMousemove}
 				on:mouseout={() => {
 					hoverKey = undefined;
@@ -212,15 +229,30 @@
 		</div>
 		<div class="col-span-4">
 			{#if showTable}
-				<ExplorerTable
-					valueColumnName={dataViewlabel[$selectedDataView]}
-					{seriesItems}
-					{seriesLabels}
-					{seriesColours}
-					{hoverData}
-					{showContribution}
-					on:sort={handleSort}
-				/>
+				{#if $selectedDisplayView === 'technology'}
+					<ExplorerTechnologyTable
+						valueColumnName={dataViewlabel[$selectedDataView]}
+						{seriesItems}
+						{seriesLabels}
+						{seriesColours}
+						{seriesLoadsIds}
+						{hoverData}
+						{showContribution}
+						on:sort={handleSort}
+						on:highlight={(e) => (highlightId = e.detail.id)}
+					/>
+				{:else}
+					<ExplorerTable
+						valueColumnName={dataViewlabel[$selectedDataView]}
+						{seriesItems}
+						{seriesLabels}
+						{seriesColours}
+						{hoverData}
+						{showContribution}
+						on:sort={handleSort}
+						on:highlight={(e) => (highlightId = e.detail.id)}
+					/>
+				{/if}
 			{/if}
 		</div>
 	</div>
