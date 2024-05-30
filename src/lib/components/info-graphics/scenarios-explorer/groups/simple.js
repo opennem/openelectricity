@@ -30,6 +30,23 @@ export const fuelTechMap = {
 	solar_rooftop: ['solar_rooftop']
 };
 
+/** @type {Object.<FuelTechCode, string>}} */
+export const labels = {
+	battery_charging: 'Battery (Charging)',
+	battery_discharging: 'Battery (Discharging)',
+	demand_response: 'Demand Response',
+	exports: 'Exports',
+	imports: 'Imports',
+	coal: 'Coal',
+	gas: 'Gas',
+	bioenergy: 'Bioenergy',
+	hydro: 'Hydro',
+	wind: 'Wind',
+	solar_thermal: 'Solar (Thermal)',
+	solar_utility: 'Solar (Utility)',
+	solar_rooftop: 'Solar (Rooftop)'
+};
+
 /** @type {FuelTechCode[]} */
 export const order = [
 	'battery_charging',

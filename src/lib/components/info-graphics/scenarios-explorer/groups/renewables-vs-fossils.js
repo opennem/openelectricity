@@ -32,6 +32,17 @@ export const fuelTechMap = {
 	]
 };
 
+/** @type {Object.<FuelTechCode, string>}} */
+export const labels = {
+	battery_charging: 'Battery (Charging)',
+	battery_discharging: 'Battery (Discharging)',
+	demand_response: 'Demand Response',
+	exports: 'Exports',
+	imports: 'Imports',
+	fossil: 'Fossil Fuels',
+	renewable: 'Renewables'
+};
+
 /** @type {FuelTechCode[]} */
 export const order = [
 	'battery_charging',

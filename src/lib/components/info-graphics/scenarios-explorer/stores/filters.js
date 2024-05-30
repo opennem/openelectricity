@@ -7,7 +7,6 @@ import {
 	chartTypeOptions,
 	xTicks
 } from '../options';
-import { groups } from '../groups';
 
 export default function () {
 	const selectedModel = writable(modelOptions[0].value);
@@ -17,7 +16,8 @@ export default function () {
 	const selectedRegion = writable(regionOptions[0].value);
 	const selectedScenario = writable('');
 	const selectedPathway = writable('');
-	const selectedGroup = writable(groups[0].value);
+	const selectedGroup = writable('');
+	const selectedCompareGroup = writable('');
 
 	const scenarioOptions = writable([]);
 	const pathwayOptions = writable([]);
@@ -60,6 +60,8 @@ export default function () {
 		selectedScenario: selectedScenario,
 		selectedPathway: selectedPathway,
 
-		selectedGroup: selectedGroup
+		selectedGroup: selectedGroup,
+
+		selectedCompareGroup: selectedCompareGroup
 	};
 }

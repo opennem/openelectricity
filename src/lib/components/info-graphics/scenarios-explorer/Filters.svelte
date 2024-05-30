@@ -7,7 +7,9 @@
 		displayViewOptions,
 		chartTypeOptions
 	} from './options';
-	import { groups } from './groups';
+
+	import { dataTechnologyGroupOptions, dataRegionCompareOptions } from './helpers';
+
 	import Selection from './Selection.svelte';
 
 	const {
@@ -18,6 +20,7 @@
 		selectedChartType,
 		selectedScenario,
 		selectedPathway,
+		selectedCompareGroup,
 
 		scenarioOptions,
 		pathwayOptions
@@ -25,7 +28,15 @@
 
 	const { selectedGroup } = getContext('scenario-data');
 
+	$selectedGroup = dataTechnologyGroupOptions[0].value;
+	$selectedCompareGroup = dataRegionCompareOptions[0].value;
+
 	$: isRegionDisplay = $selectedDisplayView === 'region';
+	$: if (isRegionDisplay) {
+		$selectedGroup = dataRegionCompareOptions[0].value;
+	} else {
+		$selectedGroup = dataTechnologyGroupOptions[0].value;
+	}
 </script>
 
 <div class="bg-light-warm-grey py-2 px-4 rounded">
@@ -105,7 +116,19 @@
 		<Selection
 			selectLabel="Grouping:"
 			widthClass="w-[270px]"
-			options={groups}
+			options={dataTechnologyGroupOptions}
+			selected={$selectedGroup}
+			on:change={(evt) => ($selectedGroup = evt.detail.value)}
+		/>
+	</div>
+{/if}
+
+{#if isRegionDisplay}
+	<div class="bg-light-warm-grey py-2 px-4 rounded">
+		<Selection
+			selectLabel="Compare:"
+			widthClass="w-[270px]"
+			options={dataRegionCompareOptions}
 			selected={$selectedGroup}
 			on:change={(evt) => ($selectedGroup = evt.detail.value)}
 		/>

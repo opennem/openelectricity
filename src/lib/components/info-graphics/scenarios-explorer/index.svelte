@@ -5,10 +5,10 @@
 
 	import LogoMark from '$lib/images/logo-mark.svelte';
 	import Toggle from '$lib/components/form-elements/Toggle.svelte';
-	import ChartTooltip from '$lib/components/info-graphics/integrated-system-plan/ChartTooltip.svelte';
+	import ExplorerTooltip from './Tooltip.svelte';
 	import ExplorerChart from './Chart.svelte';
 	import ExplorerTable from './Table.svelte';
-	import { processTechnologyData, processRegionData } from './helpers';
+	import { processTechnologyData, processRegionData, formatFyTickX } from './helpers';
 	import { dataViewDescription, dataViewlabel } from './options';
 
 	const {
@@ -34,10 +34,6 @@
 		regionHistoricalStats,
 		regionHistoricalTimeSeries
 	} = getContext('scenario-data');
-
-	const formatFyTickX = (/** @type {Date | number} */ d) => {
-		return format(d, 'yyyy');
-	};
 
 	let showTable = true;
 
@@ -83,6 +79,7 @@
 					startOfYear(new Date('2051-01-01'))
 			  ];
 	$: display = $selectedDisplayView === 'technology' ? 'area' : 'line';
+	$: showContribution = $selectedDisplayView === 'technology';
 	$: overlay =
 		$selectedModel === 'aemo2024'
 			? {
@@ -183,7 +180,7 @@
 		<div class="col-span-8">
 			<!-- <Toggle checked={showTable} on:click={() => (showTable = !showTable)} /> -->
 
-			<ChartTooltip
+			<ExplorerTooltip
 				{hoverData}
 				{hoverKey}
 				defaultText={dataViewDescription[$selectedDataView]}
@@ -221,6 +218,7 @@
 					{seriesLabels}
 					{seriesColours}
 					{hoverData}
+					{showContribution}
 					on:sort={handleSort}
 				/>
 			{/if}

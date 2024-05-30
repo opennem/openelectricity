@@ -2,42 +2,60 @@ import * as detailed from './detailed';
 import * as simple from './simple';
 import * as renewablesVsFossils from './renewables-vs-fossils';
 import * as totals from './totals';
+import * as coalGas from './coal_gas';
+import * as windSolar from './wind_solar';
 
-const detailedGroup = {
+export const detailedGroup = {
 	label: 'Detailed',
 	value: 'detailed',
 	fuelTechs: detailed.fuelTechMap,
-	order: detailed.order
+	order: detailed.order,
+	labels: detailed.labels
 };
-const simpleGroup = {
+export const simpleGroup = {
 	label: 'Simple',
 	value: 'simple',
 	fuelTechs: simple.fuelTechMap,
-	order: simple.order
+	order: simple.order,
+	labels: simple.labels
 };
-const renewablesVsFossilsGroup = {
+export const renewablesVsFossilsGroup = {
 	label: 'Renewables vs Fossil Fuels',
 	value: 'renewables_vs_fossil_fuels',
 	fuelTechs: renewablesVsFossils.fuelTechMap,
-	order: renewablesVsFossils.order
+	order: renewablesVsFossils.order,
+	labels: renewablesVsFossils.labels
 };
-const totalsGroup = {
-	label: 'Totals',
+export const totalsGroup = {
+	label: 'Net Generation',
 	value: 'totals',
 	fuelTechs: totals.fuelTechMap,
-	order: totals.order
+	order: totals.order,
+	labels: totals.labels
+};
+export const coalGasGroup = {
+	label: 'Coal & Gas',
+	value: 'coal_gas',
+	fuelTechs: coalGas.fuelTechMap,
+	order: coalGas.order,
+	labels: coalGas.labels
+};
+export const windSolarGroup = {
+	label: 'Wind & Solar',
+	value: 'wind_solar',
+	fuelTechs: windSolar.fuelTechMap,
+	order: windSolar.order,
+	labels: windSolar.labels
 };
 
-const groups = [detailedGroup, simpleGroup, renewablesVsFossilsGroup, totalsGroup];
+export const groups = [detailedGroup, simpleGroup, renewablesVsFossilsGroup, totalsGroup];
 
 /** @type {*} */
-let groupMap = {};
+export let groupMap = {};
 /** @type {*} */
-let orderMap = {};
+export let orderMap = {};
 
 groups.forEach((group) => {
 	groupMap[group.value] = group.fuelTechs;
 	orderMap[group.value] = group.order;
 });
-
-export { groupMap, orderMap, groups };

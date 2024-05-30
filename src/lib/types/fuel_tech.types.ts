@@ -38,7 +38,9 @@ export type FuelTechCode =
 	| 'fossil'
 	| 'renewable'
 	| 'total_sources'
-	| 'total_loads';
+	| 'total_loads'
+	| 'wind_solar'
+	| 'coal_gas';
 
 export type FuelTech = {
 	_id: string;

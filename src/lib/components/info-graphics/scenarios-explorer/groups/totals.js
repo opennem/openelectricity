@@ -31,5 +31,11 @@ export const fuelTechMap = {
 	]
 };
 
+/** @type {Object.<FuelTechCode, string>}} */
+export const labels = {
+	total_loads: 'All Loads',
+	total_sources: 'All Sources'
+};
+
 /** @type {FuelTechCode[]} */
 export const order = ['total_loads', 'total_sources'];

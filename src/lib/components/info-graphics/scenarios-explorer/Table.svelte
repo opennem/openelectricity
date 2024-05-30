@@ -14,6 +14,7 @@
 	export let seriesLabels;
 	export let seriesColours;
 	export let hoverData;
+	export let showContribution = false;
 
 	function handleSort(e) {
 		dispatchEvent('sort', e.detail.items);
@@ -28,7 +29,9 @@
 				<th class="w-8" />
 				<th />
 				<th class="w-[150px] text-right">{valueColumnName}</th>
-				<th class="w-[100px] text-right">Contribution</th>
+				{#if showContribution}
+					<th class="w-[100px] text-right">Contribution</th>
+				{/if}
 			</tr>
 		</thead>
 
@@ -58,9 +61,12 @@
 						{seriesLabels[name]}
 					</td>
 					<td class="text-right">{hoverData ? formatValue(hoverData[name]) : ''}</td>
-					<td class="text-right">
-						{hoverData ? formatValue((hoverData[name] / hoverData._max) * 100) + '%' : ''}
-					</td>
+
+					{#if showContribution}
+						<td class="text-right">
+							{hoverData ? formatValue((hoverData[name] / hoverData._max) * 100) + '%' : ''}
+						</td>
+					{/if}
 				</tr>
 			{/each}
 		</tbody>
@@ -71,7 +77,9 @@
 				<td />
 				<td class="font-bold">Total</td>
 				<td class="text-right">{hoverData ? formatValue(hoverData._max) : ''}</td>
-				<td />
+				{#if showContribution}
+					<td />
+				{/if}
 			</tr>
 		</tfoot>
 	</table>

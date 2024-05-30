@@ -27,7 +27,7 @@ Statistic.prototype.mergeAndInterpolate = function () {
 	return this;
 };
 
-Statistic.prototype.reorder = function (/** @type {string[]} */ domainOrder) {
+Statistic.prototype.reorder = function (/** @type {Array.<string | FuelTechCode>} */ domainOrder) {
 	/** @type {StatsData[]} */
 	const data = [];
 

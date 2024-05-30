@@ -1,4 +1,4 @@
-import { startOfYear } from 'date-fns';
+import { startOfYear, format } from 'date-fns';
 import { format as d3Format } from 'd3-format';
 
 import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
@@ -7,12 +7,21 @@ import deepCopy from '$lib/utils/deep-copy';
 import Statistic from '$lib/utils/Statistic';
 import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
-import { groupMap, orderMap } from './groups';
+import {
+	detailedGroup,
+	simpleGroup,
+	renewablesVsFossilsGroup,
+	coalGasGroup,
+	windSolarGroup,
+	totalsGroup
+} from './groups';
 import { regionsOnly, regionsOnlyWithColours, regionsOnlyWithLabels } from './options';
 
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
+export const formatFyTickX = (/** @type {Date | number} */ d) => {
+	return format(d, 'yyyy');
+};
 export const displayXTicks = (d) => d.map((t) => startOfYear(t));
-
 export const formatValue = (/** @type {number} */ d) => {
 	if (isNaN(d)) return '—';
 
@@ -23,6 +32,10 @@ export const formatValue = (/** @type {number} */ d) => {
 	return formatted;
 };
 
+export const dataTechnologyGroupOptions = [detailedGroup, simpleGroup, renewablesVsFossilsGroup];
+export const dataRegionCompareOptions = [totalsGroup, coalGasGroup, windSolarGroup];
+const allGroupOptions = [...dataTechnologyGroupOptions, ...dataRegionCompareOptions];
+
 /**
  *
  * @param {*} data
@@ -31,10 +44,14 @@ export const formatValue = (/** @type {number} */ d) => {
  * @returns
  */
 export function createNewStats(data, selectedGroup, type = 'projection') {
+	const group = allGroupOptions.find((d) => d.value === selectedGroup);
+
+	if (!group) console.error('Group not found');
+
 	return new Statistic(data, type)
 		.invertValues(loadFuelTechs)
-		.group(groupMap[selectedGroup], loadFuelTechs)
-		.reorder(orderMap[selectedGroup]);
+		.group(group?.fuelTechs, loadFuelTechs)
+		.reorder(group?.order || []);
 }
 
 /**
