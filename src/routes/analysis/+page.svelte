@@ -1,4 +1,5 @@
 <script>
+	import { onMount } from 'svelte';
 	import { format } from 'date-fns';
 	import FilterContent from '$lib/components/filters/FilterContent.svelte';
 	import FilterSection from '$lib/components/filters/FilterSection.svelte';
@@ -24,36 +25,54 @@
 	let showMenu = false;
 
 	// Grab defaults from URL if present
-	let pURL = $page.url;
-	let technologyArgs = pURL.searchParams
-		.get('technologies')
-		?.split('+')
-		.reduce((acc, current) => {
-			acc[current] = true;
-			return acc;
-		}, {});
+	let pURL = null;
+	let technologyArgs = null;
 
-	let regionArgs = pURL.searchParams
-		.get('region')
-		?.split('+')
-		.reduce((acc, current) => {
-			acc[current] = true;
-			return acc;
-		}, {});
+	let regionArgs = null;
 
 	let showTechnology = false;
 	let showRegions = false;
 	let showDate = false;
-	let searchString = pURL.searchParams.get('search') || '';
+	let searchString = '';
 
-	/** @type {TechnologyFilterDict} */
-	let technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
-	let regionSelections = { ...regionDefaultSelections, ...regionArgs };
+	/** @type {*} */
+	let technologySelections = null;
+	/** @type {*} */
+	let regionSelections = null;
 	let dateChosen = 'none';
 
+	onMount(() => {
+		pURL = $page.url;
+
+		technologyArgs = pURL.searchParams
+			.get('technologies')
+			?.split('+')
+			.reduce((acc, current) => {
+				acc[current] = true;
+				return acc;
+			}, {});
+
+		regionArgs = pURL.searchParams
+			.get('region')
+			?.split('+')
+			.reduce((acc, current) => {
+				acc[current] = true;
+				return acc;
+			}, {});
+
+		searchString = pURL.searchParams.get('search') || '';
+
+		technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
+		regionSelections = { ...regionDefaultSelections, ...regionArgs };
+	});
+
 	$: hasSearchTerm = searchString.trim() !== '';
-	$: hasTechnologySelections = Object.values(technologySelections).find((selection) => selection);
-	$: hasRegionSelections = Object.values(regionSelections).find((selection) => selection);
+	$: hasTechnologySelections = technologySelections
+		? Object.values(technologySelections).find((selection) => selection)
+		: false;
+	$: hasRegionSelections = regionSelections
+		? Object.values(regionSelections).find((selection) => selection)
+		: false;
 	$: hasFilters = hasSearchTerm || hasTechnologySelections || hasRegionSelections;
 
 	$: articlesFilter = (/** @type {Article[]} */ articles) =>
@@ -61,8 +80,12 @@
 			const searchFilter =
 				article.title.toLowerCase().includes(searchString.toLowerCase()) ||
 				searchString.trim() === '';
-			const technologyFilter = technologySelections[article.fueltech] || !hasTechnologySelections;
-			const regionFilter = regionSelections[article.region] || !hasRegionSelections;
+			const technologyFilter = technologySelections
+				? technologySelections[article.fueltech] || !hasTechnologySelections
+				: false;
+			const regionFilter = regionSelections
+				? regionSelections[article.region] || !hasRegionSelections
+				: false;
 			const dateFilter = article.publish_date === dateChosen || dateChosen === 'none';
 
 			return searchFilter && technologyFilter && regionFilter && dateFilter;
