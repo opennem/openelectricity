@@ -9,8 +9,7 @@
 	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
 	import { bannerOpen } from '$lib/stores/app';
-
-	let showThemeSwitcher = false;
+	import { showThemeSwitcher } from '$lib/stores/theme';
 
 	onNavigate((navigation) => {
 		// If the browser doesn't support view transitions, return early
@@ -27,7 +26,7 @@
 	});
 
 	function handleCmdK() {
-		showThemeSwitcher = !showThemeSwitcher;
+		$showThemeSwitcher = !$showThemeSwitcher;
 	}
 </script>
 
@@ -41,14 +40,14 @@
 			},
 			{
 				key: 'Escape',
-				callback: () => (showThemeSwitcher = false)
+				callback: () => ($showThemeSwitcher = false)
 			}
 		]
 	}}
 />
 
-{#if showThemeSwitcher}
-	<ThemeSwitcher on:selected={() => (showThemeSwitcher = false)} />
+{#if $showThemeSwitcher}
+	<ThemeSwitcher on:selected={() => ($showThemeSwitcher = false)} />
 {/if}
 
 {#if $bannerOpen}
