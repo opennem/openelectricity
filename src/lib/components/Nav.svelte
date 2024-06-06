@@ -2,6 +2,9 @@
 	import { page } from '$app/stores';
 	import { afterNavigate } from '$app/navigation';
 	import { dataTrackerLink } from '$lib/stores/app';
+	import IconSwatch from '$lib/icons/Swatch.svelte';
+
+	import { showThemeSwitcher } from '$lib/stores/theme';
 
 	const navItems = [
 		{ name: 'Data Tracker', href: $dataTrackerLink },
@@ -39,6 +42,14 @@
 					{name}
 				</a>
 			{/each}
+			<div class="flex items-center">
+				<button
+					class="p-2 rounded hover:bg-light-warm-grey"
+					on:click={() => ($showThemeSwitcher = !$showThemeSwitcher)}
+				>
+					<IconSwatch />
+				</button>
+			</div>
 		</nav>
 
 		<button

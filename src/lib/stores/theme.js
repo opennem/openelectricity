@@ -10,6 +10,8 @@ import {
 	carbonIntensityColourMap as OpenElectricityCarbonIntensityColours
 } from '$lib/theme/openelectricity';
 
+export const showThemeSwitcher = writable(false);
+
 /** @type {import('svelte/store').Writable<'opennem' | 'openelectricity'>} */
 export const theme = writable('openelectricity');
 
