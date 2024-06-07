@@ -16,13 +16,13 @@ export const modelOptions = [
 export const dataViewOptions = [
 	{
 		value: 'energy',
-		label: 'Energy (TWh)',
+		label: 'Generation (TWh)',
 		description: 'Energy Generation (TWh) by Financial Year'
 	},
 	{
 		value: 'capacity',
-		label: 'Capacity (TW)',
-		description: 'Capacity (TW) by Financial Year'
+		label: 'Capacity (GW)',
+		description: 'Capacity (GW) by Financial Year'
 	}
 ];
 export const dataViewDescription = dataViewOptions.reduce(

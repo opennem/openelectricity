@@ -33,7 +33,7 @@
 	).defined((d) => d.value !== null);
 
 	$: opacity = (d) => {
-		if (highlightId === null) return 1;
+		if (highlightId === null || highlightId === '') return 1;
 		return highlightId === d.key || highlightId === d.group ? 1 : 0.1;
 	};
 

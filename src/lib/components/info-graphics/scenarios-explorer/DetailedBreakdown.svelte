@@ -7,7 +7,7 @@
 	const { selectedModel, selectedScenario, selectedDisplayView } = getContext('scenario-filters');
 	const { cachedDisplayData } = getContext('scenario-cache');
 
-	// $: console.log('cachedDisplayData', $cachedDisplayData[$selectedDisplayView]);
+	$: console.log('cachedDisplayData', $cachedDisplayData[$selectedDisplayView]);
 	$: displayData = $cachedDisplayData[$selectedDisplayView];
 	$: loadIds = displayData ? displayData.loadIds || [] : [];
 	$: displayDataNames = displayData ? displayData.names || [] : [];

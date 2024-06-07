@@ -88,6 +88,8 @@
 	<div class="py-2 pl-12 flex items-center gap-2">
 		<div>
 			<Selection
+				selectLabel="Projection:"
+				widthClass="w-[200px]"
 				options={dataViewOptions}
 				selected={$selectedDataView}
 				on:change={(evt) => ($selectedDataView = evt.detail.value)}
@@ -97,10 +99,35 @@
 		{#if !isRegionDisplay}
 			<div>
 				<Selection
+					selectLabel="Region:"
 					widthClass="w-[230px]"
 					options={regionOptions}
 					selected={$selectedRegion}
 					on:change={(evt) => ($selectedRegion = evt.detail.value)}
+				/>
+			</div>
+		{/if}
+
+		{#if !isRegionDisplay}
+			<div>
+				<Selection
+					selectLabel="Technology Group:"
+					widthClass="w-[270px]"
+					options={dataTechnologyGroupOptions}
+					selected={$selectedGroup}
+					on:change={(evt) => ($selectedGroup = evt.detail.value)}
+				/>
+			</div>
+		{/if}
+
+		{#if isRegionDisplay}
+			<div>
+				<Selection
+					selectLabel="Technology:"
+					widthClass="w-[270px]"
+					options={dataRegionCompareOptions}
+					selected={$selectedGroup}
+					on:change={(evt) => ($selectedGroup = evt.detail.value)}
 				/>
 			</div>
 		{/if}
@@ -137,8 +164,8 @@
 			on:change={(evt) => ($selectedGroup = evt.detail.value)}
 		/>
 	</div>
-{/if} -->
-<!-- 
+{/if}
+
 {#if isRegionDisplay}
 	<div class="bg-light-warm-grey py-2 px-4 rounded">
 		<Selection

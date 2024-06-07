@@ -31,8 +31,8 @@
 	}
 </script>
 
-<div class="w-full">
-	<div class="flex items-center pb-3">
+<div class="w-full pt-12 mt-1">
+	<!-- <div class="flex items-center pb-3">
 		<Selection
 			selectLabel=""
 			widthClass="w-[270px]"
@@ -40,7 +40,7 @@
 			selected={$selectedGroup}
 			on:change={(evt) => ($selectedGroup = evt.detail.value)}
 		/>
-	</div>
+	</div> -->
 
 	<table class="table w-full table-fixed text-sm border border-warm-grey">
 		<thead>
