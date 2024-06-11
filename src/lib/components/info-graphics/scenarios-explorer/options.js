@@ -103,10 +103,10 @@ export const displayViewOptions = [
 		value: 'technology',
 		label: 'By Technology'
 	},
-	// {
-	// 	value: 'technology',
-	// 	label: 'Technology'
-	// },
+	{
+		value: 'scenario',
+		label: 'By Scenario'
+	},
 	{
 		value: 'region',
 		label: 'By Region'

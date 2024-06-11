@@ -79,14 +79,14 @@
 </div>
 
 <div class="container flex gap-16 divide-x divide-warm-grey">
-	<Switch
+	<!-- <Switch
 		buttons={displayViewOptions}
 		selected={$selectedDisplayView}
 		on:change={(evt) => ($selectedDisplayView = evt.detail.value)}
 		class="justify-center my-4"
-	/>
-	<div class="py-2 pl-12 flex items-center gap-2">
-		<div>
+	/> -->
+	<div class="py-2 flex items-center gap-2">
+		<!-- <div>
 			<Selection
 				selectLabel="Projection:"
 				widthClass="w-[200px]"
@@ -94,7 +94,7 @@
 				selected={$selectedDataView}
 				on:change={(evt) => ($selectedDataView = evt.detail.value)}
 			/>
-		</div>
+		</div> -->
 
 		{#if !isRegionDisplay}
 			<div>

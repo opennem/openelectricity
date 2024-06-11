@@ -88,6 +88,17 @@
 			dataView: $selectedDataView
 		});
 	}
+	$: if (browser && $selectedDisplayView === 'scenario') {
+		console.log('get by scenario');
+
+		getScenarioData({
+			model: $selectedModel,
+			scenario: $selectedScenario,
+			pathway: $selectedPathway,
+			dataView: $selectedDataView
+		});
+	}
+
 	$: if (browser && $selectedDisplayView === 'region') {
 		console.log('get by region');
 
@@ -117,6 +128,62 @@
 	}
 
 	/**
+	 * Get data for by scenario view
+	 * @param {*} param0
+	 */
+	async function getScenarioData({ model, region, scenario, pathway, dataView }) {
+		modelsData = await getModels(model, 'NEM', dataView);
+		historyData = await getHistory('NEM');
+
+		console.log('modelsData', modelsData, historyData);
+
+		updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
+
+		const compare = modelsData.scenarios.map((s) => {
+			return {
+				model: model,
+				scenario: s,
+				pathway: 'CDP11 (ODP)'
+			};
+		});
+
+		/** @type {*} */
+		let scenarioProjections = [];
+
+		compare.forEach((scene) => {
+			const filtered = modelsData.outlook.data.filter(
+				(d) => d.scenario === scene.scenario && d.pathway === scene.pathway
+			);
+
+			scenarioProjections.push({
+				model: scene.model,
+				scenario: scene.scenario,
+				pathway: scene.pathway,
+				data: filtered
+			});
+		});
+
+		console.log('scenarioProjections', scenarioProjections);
+
+		// modelsData.forEach((d) => {
+		// 	const filtered = d.outlook.data.filter(
+		// 		(d) => d.scenario === scenario && d.pathway === pathway
+		// 	);
+		// 	scenarioProjections.push({
+		// 		model:
+		// 		data: filtered
+		// 	});
+		// });
+		// $projectionData = modelsData.outlook.data.filter(
+		// 	(d) => d.scenario === scenario && d.pathway === pathway
+		// );
+
+		// $historicalData = covertHistoryDataToTWh(deepCopy(historyData));
+		const convertedHistory = covertHistoryDataToTWh(deepCopy(historyData));
+		console.log('convertedHistory', convertedHistory);
+	}
+
+	/**
 	 * Get data for by region view
 	 * @param {*} param0
 	 */
@@ -139,6 +206,7 @@
 				data: filtered
 			});
 		});
+		console.log('regionProjections', regionProjections);
 		$regionProjectionData = regionProjections;
 
 		/** @type {*} */
@@ -210,7 +278,7 @@
 		</p>
 	</div>
 </PageHeader>
-<!-- <PublicBetaTag /> -->
+<PublicBetaTag />
 
 <ScenarioFilters />
 

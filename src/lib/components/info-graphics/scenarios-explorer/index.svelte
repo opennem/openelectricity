@@ -141,6 +141,34 @@
 				yDomain: yDomain
 			};
 		}
+	} else if ($selectedDisplayView === 'scenario') {
+		console.log('data by scenario');
+
+		const processed = processRegionData({
+			regionProjectionTimeSeries: $regionProjectionTimeSeries,
+			regionHistoricalTimeSeries: $regionHistoricalTimeSeries,
+			selectedDataView: $selectedDataView
+		});
+
+		if (processed) {
+			seriesData = processed.data;
+			seriesNames = processed.names;
+			seriesColours = processed.colours;
+			seriesLabels = processed.labels;
+			seriesItems = processed.nameOptions;
+			yDomain = [0, null];
+
+			$cachedDisplayData[$selectedDisplayView] = {
+				data: seriesData,
+				names: seriesNames,
+				colours: seriesColours,
+				labels: seriesLabels,
+				items: seriesItems,
+				yDomain: yDomain
+			};
+
+			// console.log('processed region', processed);
+		}
 	} else if ($selectedDisplayView === 'region') {
 		console.log('data by region');
 
