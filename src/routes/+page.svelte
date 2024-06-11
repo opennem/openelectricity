@@ -63,7 +63,7 @@
 
 	const { banner_title, banner_statement, map_title, analysis_title } = homepageData[0];
 
-	$: allReady = dataTrackerData.length > 0 && historyEnergyNemData.length > 0;
+	$: allReady = dataTrackerData.length > 0;
 </script>
 
 <Meta
