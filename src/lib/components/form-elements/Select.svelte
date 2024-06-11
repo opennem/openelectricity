@@ -13,9 +13,16 @@
 
 	let showOptions = false;
 
+	$: selectedValue = selected && selected.value ? selected.value || selected : selected;
+
 	function handleSelect(option) {
 		dispatch('change', option);
 		showOptions = false;
+	}
+
+	function findSelectedOption() {
+		const find = options.find((opt) => opt.value === selectedValue);
+		return find ? find.label : selectedValue;
 	}
 </script>
 
@@ -26,15 +33,15 @@
 		on:clickoutside={() => (showOptions = false)}
 		class="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-warm-grey"
 	>
-		<h5 class="font-medium mb-0 capitalize">
-			{selected && selected.label ? selected?.label : selected.split('_').join(' ')}
-		</h5>
+		<span class="font-medium mb-0 capitalize">
+			{selected && selected.label ? selected?.label : findSelectedOption()}
+		</span>
 		<IconChevronUpDown class="w-7 h-7" />
 	</button>
 
 	{#if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col gap-2 w-full rounded-lg z-20 shadow-md p-2"
+			class="border border-mid-grey bg-white absolute flex flex-col gap-2 rounded-lg z-20 shadow-md p-2"
 			in:fly={{ y: -5, duration: 150 }}
 			out:fly={{ y: -5, duration: 150 }}
 		>
@@ -45,8 +52,8 @@
 						on:click={() => handleSelect(opt)}
 					>
 						<span class="capitalize">{opt.label}</span>
-						{#if selected && selected.value === opt.value}
-							<IconCheckMark class="w-7 h-7 text-dark-grey" />
+						{#if selectedValue === opt.value}
+							<IconCheckMark class="w-5 h-5 text-dark-grey" />
 						{/if}
 					</button>
 				</li>

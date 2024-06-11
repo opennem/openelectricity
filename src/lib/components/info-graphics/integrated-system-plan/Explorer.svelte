@@ -6,20 +6,20 @@
 		scenarios,
 		scenarioLabels,
 		scenarioDescriptions,
-		selectedPathway,
+		defaultPathway,
 		scenarioYDomain,
 		modelXTicks,
 		modelSparklineXTicks
 	} from './scenarios';
-	import { groups as ftGroupSelections, groupMap, orderMap } from './fuel-tech-groups';
-	import { formatFyTickX } from './helpers';
-	import { fuelTechNameReducer, fuelTechReducer } from '$lib/fuel_techs.js';
+	import { explorerGroups as ftGroupSelections, groupMap, orderMap } from './explorer-ft-groups';
+	import { formatFyTickX, formatValue } from './helpers';
+	import { fuelTechNameReducer, fuelTechReducer, isLoad, loadFuelTechs } from '$lib/fuel_techs.js';
 	import { colourReducer } from '$lib/stores/theme';
 
 	import Icon from '$lib/components/Icon.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
-	import OverviewChart from './OverviewChart.svelte';
+	import ExplorerChart from './Explorer/Chart.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 
@@ -38,8 +38,11 @@
 
 	let selectedModel = modelSelections[0];
 	let selectedScenario = scenarios[selectedModel.value][0];
+	let selectedPathway = '';
 
 	let selectedFtGroup = ftGroupSelections[0];
+
+	$: ispData = data.ispData;
 
 	$: group = groupMap[selectedFtGroup.value];
 	$: order = orderMap[selectedFtGroup.value];
@@ -50,47 +53,111 @@
 
 	$: selectedModelScenarioDescriptions = scenarioDescriptions[selectedModel.value];
 	$: selectedModelScenarioLabels = scenarioLabels[selectedModel.value];
-	$: selectedModelPathway = selectedPathway[selectedModel.value];
+	// $: selectedModelPathway = selectedPathway[selectedModel.value];
 	$: selectedModelYDomain = scenarioYDomain[selectedModel.value];
 	$: selectedModelXTicks = modelXTicks[selectedModel.value];
-	$: selectedModelData = data.ispData[selectedModel.value];
+	$: selectedModelData = ispData[selectedModel.value];
+	$: selectedModelPathways = selectedModelData.pathways.map((p) => ({
+		value: p,
+		label: p.split('_').join(' ')
+	}));
+	$: {
+		selectedPathway = defaultPathway[selectedModel.value];
+	}
 	$: selectedModelScenarios = scenarios[selectedModel.value].map((s) => ({
 		value: s,
 		label: s.split('_').join(' ')
 	}));
 
 	$: outlookData = selectedModelData.outlookEnergyNem.data;
+
 	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
 
 	$: filteredWithPathwayScenario = filteredWithScenario.filter(
-		(d) => d.pathway === selectedModelPathway
+		(d) => d.pathway === selectedPathway
 	);
 
-	$: yDomain = selectedModelYDomain[selectedScenario];
+	$: console.log('filteredWithPathwayScenario', filteredWithPathwayScenario);
 
-	$: projectionStatsDatasets = new Statistic(filteredWithPathwayScenario, 'projection')
-		.group(group)
-		.reorder(order);
+	// $: yDomain = selectedModelYDomain[selectedScenario];
 
-	$: projectionTimeSeriesDatasets = new TimeSeries(
-		projectionStatsDatasets.data,
-		parseInterval('1Y'),
-		'projection',
-		fuelTechNameReducer,
-		$colourReducer
-	)
-		.transform()
-		.updateMinMax();
+	$: projectionStatsDatasets = filteredWithPathwayScenario.length
+		? new Statistic(filteredWithPathwayScenario, 'projection').group(group).reorder(order)
+		: null;
 
-	$: projectionSeriesNames = projectionTimeSeriesDatasets.seriesNames;
+	$: projectionTimeSeriesDatasets = projectionStatsDatasets
+		? new TimeSeries(
+				projectionStatsDatasets.data,
+				parseInterval('1Y'),
+				'projection',
+				fuelTechNameReducer,
+				$colourReducer
+		  )
+				.transform()
+				.updateMinMax()
+		: null;
+
+	$: projectionSeriesNames = projectionTimeSeriesDatasets
+		? projectionTimeSeriesDatasets.seriesNames
+		: [];
+
+	$: projectionStatsCharts = filteredWithPathwayScenario
+		? new Statistic(filteredWithPathwayScenario, 'projection')
+				.invertValues(loadFuelTechs)
+				.group(group, loadFuelTechs)
+				.reorder(order)
+		: null;
+
+	$: loadData = projectionStatsCharts ? projectionStatsCharts.data.filter((d) => d.isLoad) : [];
+	$: loadSeries = loadData.map((d) => d.id);
+	$: console.log('loadloadDataSeries', loadData);
+
+	$: projectionTimeSeriesCharts = projectionStatsCharts
+		? new TimeSeries(
+				projectionStatsCharts.data,
+				parseInterval('1Y'),
+				'projection',
+				fuelTechNameReducer,
+				$colourReducer
+		  )
+				.transform()
+				.updateMinMax(loadSeries)
+		: null;
+
+	$: console.log(
+		'projectionTimeSeriesCharts',
+		projectionTimeSeriesCharts?.data,
+		projectionStatsCharts?.data,
+		filteredWithPathwayScenario
+	);
+
+	$: maxY = projectionTimeSeriesCharts
+		? [...projectionTimeSeriesCharts.data.map((d) => d._max)]
+		: [];
+	// @ts-ignore
+	$: datasetMax = maxY ? Math.max(...maxY) : 0;
+	$: minY = projectionTimeSeriesCharts
+		? [...projectionTimeSeriesCharts.data.map((d) => d._min)]
+		: [];
+	// @ts-ignore
+	$: datasetMin = minY ? Math.min(...minY) : 0;
+
+	$: console.log('datasetMax', datasetMax, datasetMin);
+	$: yDomain = [datasetMin, datasetMax];
 
 	/** @type {Object.<string, string>} */
-	$: projectionSeriesLabels = projectionTimeSeriesDatasets.seriesLabels;
+	$: projectionSeriesLabels = projectionTimeSeriesDatasets
+		? projectionTimeSeriesDatasets.seriesLabels
+		: {};
 
 	/** @type {Object.<string, string>} */
-	$: projectionSeriesColours = projectionTimeSeriesDatasets.seriesColours;
+	$: projectionSeriesColours = projectionTimeSeriesDatasets
+		? projectionTimeSeriesDatasets.seriesColours
+		: {};
 
-	$: projectionFuelTechIds = projectionStatsDatasets.data.reduce(fuelTechReducer, {});
+	$: projectionFuelTechIds = projectionStatsDatasets
+		? projectionStatsDatasets.data.reduce(fuelTechReducer, {})
+		: {};
 
 	// Convert historical data to TWh to match ISP
 	$: historicalData = deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
@@ -171,6 +238,11 @@
 		selectedScenario = evt.detail.value;
 	}
 
+	function handlePathwayChange(evt) {
+		if (selectedPathway === evt.detail.value) return;
+		selectedPathway = evt.detail.value;
+	}
+
 	/** @type {string | undefined} */
 	let hoverKey;
 
@@ -195,7 +267,9 @@
 
 <!-- container max-w-none lg:container -->
 
-<header class="container max-w-none lg:container flex gap-2 mb-12 divide-x divide-warm-grey">
+<header
+	class="container max-w-none lg:container flex flex-wrap gap-2 mb-12 divide-x divide-warm-grey"
+>
 	<div>
 		<p class="mb-0">Model:</p>
 
@@ -216,6 +290,18 @@
 				options={selectedModelScenarios}
 				selected={selectedScenario}
 				on:change={handleScenarioChange}
+			/>
+		</div>
+	</div>
+
+	<div class="px-6">
+		<p class="mb-0">Pathways:</p>
+
+		<div class="w-[280px]">
+			<FormSelect
+				options={selectedModelPathways}
+				selected={selectedPathway}
+				on:change={handlePathwayChange}
 			/>
 		</div>
 	</div>
@@ -245,8 +331,8 @@
 	</div> -->
 </header>
 <div class="px-6">
-	<div class="grid grid-cols-6 gap-10 mt-6 mb-6 md:mb-0 relative">
-		<div class="absolute -right-8 hidden md:block">
+	<div class="grid grid-cols-12 gap-10 mt-6 mb-6 md:mb-0 relative">
+		<div class="absolute -top-8 -right-8 hidden md:block">
 			<ChartTooltip
 				{hoverData}
 				{hoverKey}
@@ -256,8 +342,8 @@
 			/>
 		</div>
 
-		<div class="text-dark-grey col-span-6 md:col-span-2 relative">
-			<div class="absolute -right-8 mt-10 block md:hidden">
+		<div class="text-dark-grey col-span-12 md:col-span-2 relative">
+			<div class="absolute -top-8 -right-8 mt-10 block md:hidden">
 				<ChartTooltip
 					{hoverData}
 					{hoverKey}
@@ -267,12 +353,12 @@
 			</div>
 
 			<div class="invisible absolute md:visible md:relative">
-				<OverviewChart
+				<ExplorerChart
 					dataset={filteredHistoricalTimeSeriesDatasets}
 					{xKey}
 					xTicks={[startOfYear(new Date('2010-01-01')), startOfYear(new Date('2023-01-01'))]}
 					yKey={[0, 1]}
-					yTicks={0}
+					yTicks={10}
 					{yDomain}
 					zKey="key"
 					seriesNames={historicalTimeSeriesDatasets.seriesNames}
@@ -286,13 +372,13 @@
 			</div>
 		</div>
 
-		<div class="col-span-6 md:col-span-4">
+		<div class="col-span-12 md:col-span-7">
 			{#if filteredWithPathwayScenario.length === 0}
 				<p class="mt-6">No data for this scenario and pathway</p>
 			{:else}
 				<div class="relative">
 					<div class="block md:hidden w-[300px] absolute -left-[305px]">
-						<OverviewChart
+						<ExplorerChart
 							dataset={filteredHistoricalTimeSeriesDatasets}
 							{xKey}
 							xTicks={[startOfYear(new Date('2010-01-01')), startOfYear(new Date('2023-01-01'))]}
@@ -311,19 +397,17 @@
 						/>
 					</div>
 					<div class="w-full">
-						<OverviewChart
+						<ExplorerChart
 							title={`Energy Generation (TWh) by Financial Year`}
-							scenarioTitle={selectedModelScenarioLabels[selectedScenario]}
-							description={selectedModelScenarioDescriptions[selectedScenario]}
-							dataset={projectionTimeSeriesDatasets.data}
+							dataset={projectionTimeSeriesCharts.data}
 							{xKey}
 							xTicks={selectedModelXTicks}
 							yKey={[0, 1]}
-							yTicks={2}
+							yTicks={10}
 							{yDomain}
 							zKey="key"
-							seriesNames={projectionTimeSeriesDatasets.seriesNames}
-							seriesColours={projectionTimeSeriesDatasets.seriesColours}
+							seriesNames={projectionTimeSeriesCharts.seriesNames}
+							seriesColours={projectionTimeSeriesCharts.seriesColours}
 							{hoverData}
 							overlay={true}
 							bgClass="bg-light-warm-grey"
@@ -339,18 +423,53 @@
 				</div>
 			{/if}
 		</div>
+
+		<div class="col-span-12 md:col-span-3">
+			<table class="md:table-fixed w-full text-xs">
+				<thead>
+					<tr>
+						<th class="text-left w-1/2">All tech</th>
+						<th class="text-right">Energy</th>
+						<th class="text-right">Contribution to demand</th>
+					</tr>
+				</thead>
+
+				<!-- <thead>
+					<tr>
+						<th colspan="3" class="text-left">Sources</th>
+					</tr>
+				</thead> -->
+
+				<tbody>
+					{#each [...projectionTimeSeriesCharts.seriesNames].reverse() as key}
+						<tr>
+							<td class="text-left">{projectionTimeSeriesCharts.seriesLabels[key]}</td>
+							<td class="text-right">
+								{hoverData && hoverData[key] !== 0 ? formatValue(hoverData[key]) : '—'}
+							</td>
+							<td class="text-right">
+								{hoverData && hoverData[key] !== 0 && hoverData._max
+									? formatValue((hoverData[key] / hoverData._max) * 100) + '%'
+									: '—'}
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	</div>
 </div>
 
 <div class="max-w-none lg:container">
 	<div
-		class="grid grid-cols-2 grid-flow-dense md:divide-x divide-mid-warm-grey border-t border-b md:border-x border-mid-warm-grey"
+		class="grid grid-cols-2 grid-flow-dense gap-3"
 		class:md:grid-cols-6={projectionSeriesNames.length === 6}
 		class:md:grid-cols-2={projectionSeriesNames.length === 2}
+		class:md:grid-cols-4={projectionSeriesNames.length !== 2 && projectionSeriesNames.length !== 6}
 	>
 		{#each [...projectionSeriesNames].reverse() as key}
 			<SparkLineArea
-				class="p-8 even:border-l border-t [&:nth-child(-n+2)]:border-t-0 md:border-0 border-mid-warm-grey"
+				class="p-8 border border-mid-warm-grey"
 				dataset={projectionTimeSeriesDatasets.data}
 				{key}
 				fuelTechId={projectionFuelTechIds[key]}

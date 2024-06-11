@@ -1,5 +1,8 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
 	import Icon from './Icon.svelte';
+
+	const dispatch = createEventDispatcher();
 
 	/** @type {{ label: string, value: string | number, icon?: string }[]} */
 	export let buttons = [];
@@ -9,6 +12,11 @@
 	export let onChange = () => {};
 
 	$: isSelected = (value) => selected === value;
+
+	function handleClick(e) {
+		onChange(e.currentTarget.value);
+		dispatch('change', { value: e.currentTarget.value });
+	}
 </script>
 
 <!-- selected === value -->
@@ -18,7 +26,7 @@
 >
 	{#each buttons as { label, value, icon }, i}
 		<button
-			on:click={(e) => onChange(e.currentTarget.value)}
+			on:click={handleClick}
 			{value}
 			class="flex w-full md:w-auto items-center justify-center hover:text-black px-8 py-4 border rounded-xl whitespace-nowrap"
 			class:bg-white={isSelected(value)}

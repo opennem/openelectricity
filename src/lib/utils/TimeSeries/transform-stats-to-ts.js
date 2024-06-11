@@ -11,8 +11,8 @@ import timeSeries from './time-series';
  * @returns {TimeSeriesData[]}
  */
 export default function (dataset, outputRange, statsType = 'history') {
-	const starts = [...new Set(dataset.map((d) => d[statsType].start))];
-	const lasts = [...new Set(dataset.map((d) => d[statsType].last))];
+	const starts = [...new Set(dataset.map((d) => d[statsType]?.start))];
+	const lasts = [...new Set(dataset.map((d) => d[statsType]?.last))];
 	const intervalObj = typeof outputRange === 'string' ? parseInterval(outputRange) : outputRange;
 	const isLessThanDay = intervalObj.seconds < 86400;
 	const startDate = isLessThanDay ? parseISO(starts[0]) : new Date(useDate(starts[0]));

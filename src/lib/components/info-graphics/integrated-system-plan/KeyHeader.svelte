@@ -7,6 +7,7 @@
 	export let title = '';
 	/** @type {TimeSeriesData | undefined} */
 	export let data = undefined;
+	export let showIcon = false;
 
 	/** @type {'TWh' | '%'} */
 	let display = 'TWh'; // or '%'
@@ -20,7 +21,9 @@
 <header class="">
 	<div class="flex justify-between items-center">
 		<h6 class="truncate mb-0 col-span-5 text-dark-grey">{title}</h6>
-		<Icon icon={fuelTechId} size={28} />
+		{#if showIcon}
+			<Icon icon={fuelTechId} size={28} />
+		{/if}
 	</div>
 
 	<h3 class="leading-sm h-24 mt-4">

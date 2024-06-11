@@ -52,10 +52,34 @@ export const scenarioDescriptions = {
 };
 
 // Optimal Path
-export const selectedPathway = {
+/** @type {*} */
+export const defaultPathway = {
 	aemo2024: 'CDP11 (ODP)',
 	aemo2022: 'CDP12'
 };
+
+export const pathwayOrder = [
+	'CDP1',
+	'CDP2',
+	'CDP3',
+	'CDP4',
+	'CDP5',
+	'CDP6',
+	'CDP7',
+	'CDP8',
+	'CDP9',
+	'CDP10',
+	'CDP11',
+	'CDP11 (ODP)',
+	'CDP12',
+	'CDP13',
+	'CDP14',
+	'CDP15',
+	'CDP16',
+	'CDP17',
+	'Counterfactual',
+	'Least-cost DP'
+];
 
 export const scenarioYDomain = {
 	aemo2024: {

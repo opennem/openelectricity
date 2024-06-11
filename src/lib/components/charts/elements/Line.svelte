@@ -1,5 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
+	import { line } from 'd3-shape';
 
 	const { data, xGet, yGet } = getContext('LayerCake');
 
@@ -15,12 +16,18 @@
 
 	$: cx = hoverData ? $xGet(hoverData) : 0;
 	$: cy = hoverData ? $yGet(hoverData) : 0;
-
+	$: lineGen = line(
+		(d) => {
+			// console.log(d, $xGet(d), $yGet(d));
+			return $xGet(d);
+		},
+		(d) => $yGet(d)
+	).defined((d) => $yGet(d) !== null);
 	$: path =
 		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');
 </script>
 
-<path class="path-line" d={path} {stroke} stroke-width={strokeWidth} />
+<path class="path-line" d={lineGen($data)} {stroke} stroke-width={strokeWidth} />
 
 {#if showCircle && hoverData}
 	<circle {cx} {cy} r="6" fill={stroke} />

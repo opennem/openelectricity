@@ -1,6 +1,5 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
+	import { LayerCake, Svg, Html, flatten, stack } from 'layercake';
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
 
@@ -17,6 +16,7 @@
 	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
 	import Overlay from '$lib/components/charts/elements/Overlay.svelte';
 	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
+	import AnnotateLineX from '$lib/components/charts/elements/annotations/LineX.svelte';
 
 	import ChartAnnotations from './ChartAnnotations.svelte';
 
@@ -50,6 +50,9 @@
 	export let xTicks = undefined;
 
 	/** @type {*} */
+	export let xAnnotationLines = [];
+
+	/** @type {*} */
 	export let yTicks = undefined;
 
 	export let overlay = false;
@@ -61,8 +64,6 @@
 
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
 	export let formatTickX = (/** @type {*} */ d) => d;
-
-	const dispatch = createEventDispatcher();
 
 	/** TODO: work out transition */
 	const tweenOptions = {
@@ -116,6 +117,10 @@
 			{#if overlay}
 				<Overlay fill="url(#{`${id}-hatch-pattern`})" />
 			{/if}
+
+			{#each xAnnotationLines as line}
+				<AnnotateLineX xValue={line} />
+			{/each}
 
 			<AxisY ticks={yTicks} xTick={5} formatTick={formatTickY} gridlines={false} />
 			<AxisX

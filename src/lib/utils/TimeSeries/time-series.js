@@ -7,6 +7,8 @@ export default function ({ bucket, dataset, dataProp }) {
 	dataset.forEach((ds) => {
 		const id = ds.id;
 		const data = ds[dataProp].data;
+
+		if (!data) return bucket;
 		data.forEach(
 			/**
 			 * @param {number | Date | undefined} d

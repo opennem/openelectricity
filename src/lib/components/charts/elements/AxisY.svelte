@@ -58,7 +58,7 @@
 	transform="translate({-$padding.left}, 0)"
 	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
 >
-	{#each tickVals as tick, i (tick)}
+	{#each tickVals as tick, i (i)}
 		<g
 			class="tick tick-{tick}"
 			transform="translate({$xRange[0] + (isBandwidth ? $padding.left : 0)}, {$yScale(tick)})"
@@ -66,7 +66,17 @@
 			{#if gridlines !== false}
 				<line
 					class="gridline"
-					stroke={i === 0 ? 'black' : stroke}
+					{stroke}
+					stroke-dasharray={tick === 0 ? '5' : '3'}
+					x2="100%"
+					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
+					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}
+				/>
+			{/if}
+			{#if tick === 0 && gridlines == false}
+				<line
+					{stroke}
+					stroke-dasharray="5"
 					x2="100%"
 					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
 					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}
@@ -95,13 +105,3 @@
 		</g>
 	{/each}
 </g>
-
-<style>
-	.tick .gridline {
-		stroke-dasharray: 0;
-	}
-
-	.tick.tick-0 line {
-		stroke-dasharray: 0;
-	}
-</style>

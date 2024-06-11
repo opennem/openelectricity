@@ -24,7 +24,7 @@
 
 	$: statsDatasets = new Statistic(data, 'history')
 		.mergeAndInterpolate()
-		.invertLoadValues(loadFts)
+		.invertValues(loadFts)
 		.group(domainGroups)
 		.reorder(domainOrder).data;
 

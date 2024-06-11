@@ -3,9 +3,9 @@ const fuelTechColourMap = {
 	battery_charging: '#4F5FD7',
 	battery_discharging: '#3145CE',
 	battery_VPP_charging: '#4F5FD7',
-	battery_VPP_discharging: '#3145CE',
+	battery_VPP_discharging: '#5969D9',
 	battery_distributed_charging: '#4F5FD7',
-	battery_distributed_discharging: '#3145CE',
+	battery_distributed_discharging: '#7682D7',
 	battery: '#3145CE',
 
 	bioenergy: '#069FAF',
@@ -48,7 +48,10 @@ const fuelTechColourMap = {
 	fossil_fuels: '#594929',
 	renewables: '#52A972',
 	fossil: '#594929',
-	renewable: '#52A972'
+	renewable: '#52A972',
+
+	total_loads: '#CFA7FF',
+	total_sources: '#251C00'
 };
 
 const carbonIntensityColourMap = {

@@ -8,8 +8,8 @@
 
 	const navItems = [
 		{ name: 'Data Tracker', href: $dataTrackerLink },
-		{ name: 'Facilities Map', href: `${$dataTrackerLink}/facilities` },
-		{ name: 'Future Scenarios', href: '/future-scenarios' },
+		{ name: 'Map', href: `${$dataTrackerLink}/facilities` },
+		{ name: 'Scenarios', href: '/scenarios' },
 		// { name: 'Latest Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },
 		{ name: 'About', href: '/about' }

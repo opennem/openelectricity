@@ -1,7 +1,9 @@
 <script>
 	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
+
 	import ispData from '$lib/isp';
+
 	import LogoMark from '$lib/images/logo-mark.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import InfoGraphicIspPreview from '$lib/components/info-graphics/integrated-system-plan/Preview.svelte';
@@ -20,6 +22,7 @@
 		dataTrackerData,
 		historyEnergyNemData,
 		homepageData
+		// modelsData
 	} = data;
 
 	let regionPower;

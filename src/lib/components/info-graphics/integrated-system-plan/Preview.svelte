@@ -6,12 +6,12 @@
 		scenarios,
 		scenarioLabels,
 		scenarioDescriptions,
-		selectedPathway,
+		defaultPathway as selectedPathway,
 		scenarioYDomain,
 		modelXTicks,
 		modelSparklineXTicks
 	} from './scenarios';
-	import { groups as ftGroupSelections, groupMap, orderMap } from './fuel-tech-groups';
+	import { groups as ftGroupSelections, groupMap, orderMap } from './preview-ft-groups';
 	import { formatFyTickX } from './helpers';
 	import { fuelTechNameReducer, fuelTechReducer } from '$lib/fuel_techs.js';
 	import { colourReducer } from '$lib/stores/theme';
@@ -204,7 +204,7 @@
 	</header>
 
 	<div class="grid grid-cols-6 gap-10 mt-6 mb-6 md:mb-0 relative">
-		<div class="absolute -right-8 hidden md:block">
+		<div class="absolute -top-9 right-8 hidden md:block">
 			<ChartTooltip
 				{hoverData}
 				{hoverKey}
@@ -257,10 +257,11 @@
 				</div>
 			</div>
 
-			<div class="absolute -right-8 mt-10 block md:hidden">
+			<div class="absolute block right-0 md:hidden">
 				<ChartTooltip
 					{hoverData}
 					{hoverKey}
+					defaultText="Energy Generation (TWh) by Financial Year"
 					seriesColours={projectionSeriesColours}
 					seriesLabels={projectionSeriesLabels}
 				/>
@@ -318,6 +319,7 @@
 							dataset={projectionTimeSeriesDatasets.data}
 							{xKey}
 							xTicks={selectedModelXTicks}
+							xAnnotationLines={[{ date: selectedModelXTicks[0] }]}
 							yKey={[0, 1]}
 							yTicks={2}
 							{yDomain}
@@ -372,6 +374,7 @@
 				title={projectionSeriesLabels[key]}
 				colour={projectionSeriesColours[key]}
 				{hoverData}
+				showIcon={true}
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>

@@ -27,7 +27,7 @@ Statistic.prototype.mergeAndInterpolate = function () {
 	return this;
 };
 
-Statistic.prototype.reorder = function (/** @type {string[]} */ domainOrder) {
+Statistic.prototype.reorder = function (/** @type {Array.<string | FuelTechCode>} */ domainOrder) {
 	/** @type {StatsData[]} */
 	const data = [];
 
@@ -43,7 +43,7 @@ Statistic.prototype.reorder = function (/** @type {string[]} */ domainOrder) {
 	return this;
 };
 
-Statistic.prototype.invertLoadValues = function (/** @type {string[]} */ loads) {
+Statistic.prototype.invertValues = function (/** @type {string[]} */ loads) {
 	this.data.forEach((d) => {
 		const ft = d.fuel_tech;
 
@@ -62,7 +62,10 @@ Statistic.prototype.invertLoadValues = function (/** @type {string[]} */ loads) 
 	return this;
 };
 
-Statistic.prototype.group = function (/** @type {Object} */ groupMap) {
+Statistic.prototype.group = function (
+	/** @type {Object} */ groupMap,
+	/** @type {string[]} */ loads = []
+) {
 	/**
 	 *
 	 * @param {*} groupMap
@@ -78,6 +81,11 @@ Statistic.prototype.group = function (/** @type {Object} */ groupMap) {
 	const grouped = [];
 	const groupKeys = /** @type {FuelTechCode[]} */ (Object.keys(groupMap));
 
+	const start = this.data && this.data.length ? this.data[0][this.statsType].start : '';
+	const last = this.data && this.data.length ? this.data[0][this.statsType].last : '';
+	const interval = this.data && this.data.length ? this.data[0][this.statsType].start : '';
+	const dataLength = this.data && this.data.length ? this.data[0][this.statsType].data.length : 0;
+
 	groupKeys.forEach((code) => {
 		const codes = getCodes(groupMap, code);
 		const filtered = this.data.filter((d) => (d.fuel_tech ? codes.includes(d.fuel_tech) : false));
@@ -88,12 +96,14 @@ Statistic.prototype.group = function (/** @type {Object} */ groupMap) {
 				...filtered[0],
 				code,
 				fuel_tech: code,
-				id: `au.${code}.grouped.${this.statsType}`,
+				// id: `au.${code}.grouped.${this.statsType}`,
+				id: `au.${code}.grouped`,
+				isLoad: loads.includes(code),
 				[this.statsType]: { ...data }
 			};
 
 			// set the group history.data array to all zeros
-			groupObject[this.statsType].data = groupObject[this.statsType].data.map(() => 0);
+			groupObject[this.statsType].data = groupObject[this.statsType].data.map(() => null);
 
 			// sum each filtered history.data array into group history data
 			filtered.forEach((d) => {
@@ -102,11 +112,25 @@ Statistic.prototype.group = function (/** @type {Object} */ groupMap) {
 					 * @param {number | null} d
 					 * @param {number} i
 					 */ (d, i) => {
-						groupObject[this.statsType].data[i] += d || 0;
+						groupObject[this.statsType].data[i] += d || null;
 					}
 				);
 			});
 
+			grouped.push(groupObject);
+		} else {
+			const groupObject = {
+				code,
+				fuel_tech: code,
+				id: `au.${code}.grouped`,
+				isLoad: loads.includes(code),
+				[this.statsType]: {
+					data: dataLength ? new Array(dataLength).fill(null) : [],
+					interval,
+					last,
+					start
+				}
+			};
 			grouped.push(groupObject);
 		}
 	});

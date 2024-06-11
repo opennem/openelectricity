@@ -4,7 +4,7 @@
 	const { data, xGet, yGet, xScale, yScale, extents } = getContext('LayerCake');
 
 	/** @type {string} shape fill colour */
-	export let fill = '#ababab10';
+	export let fill = 'transparent';
 
 	$: path =
 		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');

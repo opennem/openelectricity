@@ -22,6 +22,8 @@ function TimeSeries(statsDatasets, statsInterval, statsType, labelReducer, colou
 	this.statsInterval = statsInterval;
 	this.statsType = statsType || 'history';
 	this.seriesNames = statsDatasets.map((d) => d.id);
+	this.minY = 0;
+	this.maxY = 0;
 
 	if (labelReducer) {
 		this.seriesLabels = statsDatasets.reduce(labelReducer, {});
@@ -48,7 +50,9 @@ function TimeSeries(statsDatasets, statsInterval, statsType, labelReducer, colou
 }
 
 TimeSeries.prototype.transform = function () {
-	this.data = transform(this.statsDatasets, this.statsInterval, this.statsType);
+	this.data = this.statsDatasets.length
+		? transform(this.statsDatasets, this.statsInterval, this.statsType)
+		: [];
 	return this;
 };
 
@@ -108,6 +112,11 @@ TimeSeries.prototype.convertToPercentage = function (
 
 TimeSeries.prototype.updateMinMax = function (/** @type {string[]} */ loads = []) {
 	this.data = withMinMax(this.data, this.seriesNames, loads);
+
+	if (this.data) {
+		this.minY = Math.min(...this.data.map((d) => d._min || 0));
+		this.maxY = Math.max(...this.data.map((d) => d._max || 0));
+	}
 	return this;
 };
 

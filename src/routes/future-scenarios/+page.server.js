@@ -1,13 +1,5 @@
-import { client } from '$lib/sanity';
+import { redirect } from '@sveltejs/kit';
 
-/** @type {import('./$types').PageServerLoad} */
-export async function load() {
-	/** @type {Article[]} */
-	const articles = await client.fetch(
-		`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
-	);
-
-	return {
-		articles
-	};
+export function load() {
+	throw redirect(308, '/scenarios');
 }

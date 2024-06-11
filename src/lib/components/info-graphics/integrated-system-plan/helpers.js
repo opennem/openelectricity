@@ -13,6 +13,8 @@ export const formatFyTickX = (/** @type {Date | number} */ d) => {
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 
 export const formatValue = (/** @type {number} */ d) => {
+	if (isNaN(d)) return '—';
+
 	const formatted = d3Format('.0f')(d);
 	if (formatted !== '0') {
 		return formatted;
@@ -21,3 +23,20 @@ export const formatValue = (/** @type {number} */ d) => {
 };
 
 export const displayXTicks = (d) => d.map((t) => startOfYear(t));
+
+// Convert historical data to Terra to match ISP
+export function covertHistoryDataToTWh(data) {
+	return data.map((/** @type {StatsData} */ d) => {
+		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
+		d.history = { ...d.history, data: historyData };
+		d.units = 'TWh';
+		return d;
+	});
+}
+
+export function mutateHistoryDataDates(data) {
+	return data.map((d) => {
+		const date = startOfYear(d.date);
+		return { ...d, date, time: date.getTime() };
+	});
+}
