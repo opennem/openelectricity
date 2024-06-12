@@ -9,8 +9,8 @@ const fuelTechColourMap = {
 	battery: '#00A5F1',
 
 	bioenergy: '#1D7A7A',
-	bioenergy_biogas: '#1D7A7A',
-	bioenergy_biomass: '#4CB9B9',
+	bioenergy_biogas: '#4CB9B9',
+	bioenergy_biomass: '#1D7A7A',
 
 	coal: '#462C16',
 	coal_black: '#121212',
