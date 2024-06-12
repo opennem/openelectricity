@@ -12,7 +12,7 @@ const fuelTechColourMap = {
 	bioenergy_biogas: '#4CB9B9',
 	bioenergy_biomass: '#1D7A7A',
 
-	coal: '#462C16',
+	coal: '#25170C',
 	coal_black: '#121212',
 	coal_brown: '#744A26',
 
