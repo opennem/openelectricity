@@ -8,6 +8,6 @@ export async function load() {
 	);
 
 	return {
-		articles
+		articles: articles.filter((d) => d.article_type !== null)
 	};
 }

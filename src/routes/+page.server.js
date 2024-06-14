@@ -52,7 +52,7 @@ export async function load({ fetch }) {
 
 	return {
 		homepageData,
-		articles,
+		articles: articles.filter((d) => d.article_type !== null),
 		records,
 		flows,
 		prices
