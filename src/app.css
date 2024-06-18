@@ -37,15 +37,6 @@ html {
 	box-sizing: inherit;
 }
 
-html,
-body {
-	overflow-x: hidden;
-	/* max-width: 100vw;
-	
-	margin: 0;
-	padding: 0;
-	height: 100%; */
-}
 body {
 	font-size: theme(fontSize.base);
 	color: theme(colors.dark-grey);

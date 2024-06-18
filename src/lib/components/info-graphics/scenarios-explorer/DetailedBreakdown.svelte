@@ -35,19 +35,21 @@
 	let hoverData = null;
 </script>
 
-<div class="max-w-screen-lg px-6 mx-auto md:grid grid-cols-3 gap-6">
-	<div>
-		<h2 class="font-space uppercase text-sm text-mid-grey mb-12">
-			Learn more about each scenarios
-		</h2>
-		<h3>{scenarioLabels[$selectedModel][$selectedScenario]}</h3>
-		<p>{scenarioDescriptions[$selectedModel][$selectedScenario]}</p>
+<div class=" max-w-screen-lg px-6 mx-auto md:grid grid-cols-2 gap-6">
+	<div class="relative h-auto">
+		<div class="sticky top-0">
+			<h2 class="font-space uppercase text-sm text-mid-grey mb-12">
+				Learn more about each scenarios
+			</h2>
+			<h3>{scenarioLabels[$selectedModel][$selectedScenario]}</h3>
+			<p>{scenarioDescriptions[$selectedModel][$selectedScenario]}</p>
+		</div>
 	</div>
 
-	<div class="col-span-2 grid grid-cols-3 gap-3">
+	<div class="grid grid-cols-3 border-mid-warm-grey">
 		{#each names as key}
 			<SparkLineArea
-				class="p-8 border border-mid-warm-grey"
+				class="p-8 border-mid-warm-grey border-b border-l last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
 				{dataset}
 				{key}
 				{xTicks}
