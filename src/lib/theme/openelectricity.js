@@ -1,12 +1,12 @@
 /** @type {Object.<FuelTechCode, string>}} */
 const fuelTechColourMap = {
-	battery_charging: '#ACE9FE',
-	battery_discharging: '#00A5F1',
-	battery_VPP_charging: '#ACE9FE',
-	battery_VPP_discharging: '#00A5F1',
-	battery_distributed_charging: '#ACE9FE',
-	battery_distributed_discharging: '#00A5F1',
-	battery: '#00A5F1',
+	battery_charging: '#577CFF',
+	battery_discharging: '#3245c9',
+	battery_VPP_charging: '#577CFF',
+	battery_VPP_discharging: '#3245c9',
+	battery_distributed_charging: '#577CFF',
+	battery_distributed_discharging: '#3245c9',
+	battery: '#3245c9',
 
 	bioenergy: '#1D7A7A',
 	bioenergy_biogas: '#4CB9B9',
