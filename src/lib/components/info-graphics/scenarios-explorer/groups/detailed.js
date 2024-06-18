@@ -65,8 +65,8 @@ export const labels = {
 	gas_wcmg: 'Gas (Waste Coal Mine)',
 	gas_hydrogen: 'Gas (Hydrogen)',
 
-	bioenergy_biogas: 'Bioenergy (Bio gas)',
-	bioenergy_biomass: 'Bioenergy (Bio mass)',
+	bioenergy_biogas: 'Bioenergy (Biogas)',
+	bioenergy_biomass: 'Bioenergy (Biomass)',
 
 	hydro: 'Hydro',
 	pumps: 'Pumps',
@@ -92,17 +92,19 @@ export const order = [
 	'demand_response',
 	'imports',
 
-	'coal_black',
 	'coal_brown',
+	'coal_black',
 
-	'bioenergy_biomass',
 	'bioenergy_biogas',
+	'bioenergy_biomass',
 
+	'distillate',
+
+	'gas_steam',
 	'gas_ccgt',
 	'gas_ccgt_ccs',
 	'gas_ocgt',
 	'gas_recip',
-	'gas_steam',
 	'gas_wcmg',
 	'gas_hydrogen',
 

@@ -8,14 +8,16 @@ export const fuelTechMap = {
 	coal: ['coal_black', 'coal_brown'],
 	gas: [
 		'gas_ccgt',
-		// 'gas_ccgt_ccs',
+		'gas_ccgt_ccs',
 		'gas_ocgt',
 		'gas_recip',
 		'gas_steam',
 		'gas_wcmg',
 		'gas_hydrogen'
 	],
-	bioenergy: ['bioenergy_biomass'],
+	distillate: ['distillate'],
+
+	bioenergy: ['bioenergy_biomass', 'bioenergy_biogas'],
 	hydro: ['hydro'],
 
 	battery_discharging: [
@@ -53,12 +55,14 @@ export const order = [
 	'exports',
 
 	'demand_response',
-	'battery_discharging',
 	'imports',
 
 	'coal',
-	'gas',
 	'bioenergy',
+	'distillate',
+	'gas',
+
+	'battery_discharging',
 	'hydro',
 
 	'wind',

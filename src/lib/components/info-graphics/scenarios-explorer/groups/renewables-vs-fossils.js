@@ -13,6 +13,7 @@ export const fuelTechMap = {
 	fossil: [
 		'coal_black',
 		'coal_brown',
+		'distillate',
 		'gas_ccgt',
 		'gas_ccgt_ccs',
 		'gas_ocgt',
@@ -23,6 +24,7 @@ export const fuelTechMap = {
 	],
 	renewable: [
 		'bioenergy_biomass',
+		'bioenergy_biogas',
 		'hydro',
 		'wind',
 		'wind_offshore',
@@ -48,9 +50,8 @@ export const order = [
 	'battery_charging',
 	'exports',
 	'demand_response',
-	'battery_discharging',
-
 	'imports',
 	'fossil',
+	'battery_discharging',
 	'renewable'
 ];

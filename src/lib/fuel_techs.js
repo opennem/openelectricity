@@ -44,8 +44,8 @@ export const fuelTechNameMap = {
 	gas_hydrogen: 'Gas (Hydrogen)',
 	gas: 'Gas',
 
-	bioenergy_biogas: 'Bioenergy (Bio gas)',
-	bioenergy_biomass: 'Bioenergy (Bio mass)',
+	bioenergy_biogas: 'Bioenergy (Biogas)',
+	bioenergy_biomass: 'Bioenergy (Biomass)',
 	bioenergy: 'Bioenergy',
 
 	hydro: 'Hydro',
