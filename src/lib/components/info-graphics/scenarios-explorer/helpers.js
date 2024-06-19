@@ -108,7 +108,7 @@ const getEmpty = (data) =>
 	deepCopy(data).map((d) => {
 		Object.keys(d).forEach((key) => {
 			if (key !== 'date' && key !== 'time') {
-				d[key] = null;
+				d[key] = 0;
 			}
 		});
 		return { ...d, date: new Date(d.time) };

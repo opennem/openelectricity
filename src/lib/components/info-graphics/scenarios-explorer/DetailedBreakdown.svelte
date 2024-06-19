@@ -20,8 +20,16 @@
 			...d
 		};
 
+		// Invert load values back to positive
 		loadIds.forEach((id) => {
 			obj[id] = -d[id];
+		});
+
+		// Fill in any missing data so area chart renders properly
+		displayDataNames.forEach((name) => {
+			if (!obj[name]) {
+				obj[name] = 0;
+			}
 		});
 
 		return obj;
