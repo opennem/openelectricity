@@ -1,6 +1,5 @@
 <script>
 	import { createEventDispatcher, getContext } from 'svelte';
-	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
 	import Bars2 from '$lib/icons/Bars2.svelte';
 	import Selection from './Selection.svelte';
@@ -27,7 +26,7 @@
 	$: loadsTotal = hoverData ? loadItems.reduce((acc, { id }) => acc + hoverData[id], 0) : 0;
 
 	function handleSort(e) {
-		dispatchEvent('sort', e.detail.items);
+		// dispatchEvent('sort', e.detail.items);
 	}
 	/**
 	 *
@@ -38,7 +37,7 @@
 	}
 </script>
 
-<div class="w-full pt-12 mt-1">
+<div class="w-full mt-[32px] max-h-[540px] overflow-y-auto border border-warm-grey">
 	<!-- <div class="flex items-center pb-3">
 		<Selection
 			selectLabel=""
@@ -49,8 +48,8 @@
 		/>
 	</div> -->
 
-	<table class="table w-full table-fixed text-sm border border-warm-grey">
-		<thead class="main-thead">
+	<table class="table w-full table-fixed text-sm">
+		<thead class="main-thead sticky top-0">
 			<tr>
 				<!-- <th class="w-8" /> -->
 				<th class="w-8" />
@@ -67,18 +66,24 @@
 			on:consider={handleSort}
 			on:finalize={handleSort}
 		> -->
-		<thead class="sub-thead">
+		<!-- <thead class="sub-thead">
 			<tr>
 				<th />
 				<th class="text-left">Sources</th>
 				<th class="text-right">{sourcesTotal ? formatValue(sourcesTotal) : ''}</th>
 				<th />
 			</tr>
-		</thead>
-		<tbody>
+		</thead> -->
+		<tbody class="overflow-y-auto">
+			<tr>
+				<th />
+				<th class="text-left">Sources</th>
+				<th class="text-right">{sourcesTotal ? formatValue(sourcesTotal) : ''}</th>
+				<th />
+			</tr>
+
 			{#each sourceItems as { id, name } (id)}
 				<tr
-					animate:flip={{ duration: flipDurationMs }}
 					class="group"
 					on:mouseover={() => handleHighlight(id)}
 					on:mouseleave={() => handleHighlight(null)}
@@ -112,27 +117,16 @@
 					{/if}
 				</tr>
 			{/each}
-		</tbody>
 
-		<thead class="sub-thead">
 			<tr>
 				<th />
 				<th class="text-left">Loads</th>
 				<th class="text-right">{loadsTotal ? formatValue(loadsTotal) : ''}</th>
 				<th />
 			</tr>
-		</thead>
-		<tbody>
+
 			{#each loadItems as { id, name } (id)}
-				<tr animate:flip={{ duration: flipDurationMs }} class="group">
-					<!-- <td>
-						<div
-							aria-label="drag-handle for {seriesLabels[name]}"
-							class="w-6 h-6 p-1 flex items-center justify-center group-hover:bg-warm-grey rounded"
-						>
-							<Bars2 />
-						</div>
-					</td> -->
+				<tr class="group">
 					<td>
 						<div
 							class="rounded-full bg-mid-grey w-4 h-4"
@@ -153,7 +147,33 @@
 			{/each}
 		</tbody>
 
-		<tfoot>
+		<!-- <thead class="sub-thead">
+			
+		</thead>
+		<tbody>
+			{#each loadItems as { id, name } (id)}
+				<tr animate:flip={{ duration: flipDurationMs }} class="group">
+					<td>
+						<div
+							class="rounded-full bg-mid-grey w-4 h-4"
+							style="background-color: {seriesColours[name]}"
+						/>
+					</td>
+					<td class="whitespace-nowrap">
+						{seriesLabels[name]}
+					</td>
+					<td class="text-right">{hoverData ? formatValue(hoverData[name]) : ''}</td>
+
+					{#if showContribution}
+						<td class="text-right">
+							{hoverData ? formatValue((hoverData[name] / hoverData._max) * 100) + '%' : ''}
+						</td>
+					{/if}
+				</tr>
+			{/each}
+		</tbody> -->
+
+		<tfoot class="sticky bottom-0 border-t border-mid-warm-grey">
 			<tr>
 				<!-- <td /> -->
 				<th />
@@ -169,16 +189,14 @@
 
 <style>
 	.main-thead th {
-		@apply bg-light-warm-grey border-t px-3 py-6 border-mid-warm-grey text-xs;
+		@apply bg-light-warm-grey px-3 py-6 text-xs;
 	}
-	.sub-thead th {
-		@apply font-semibold border-b px-3 py-2 border-warm-grey text-xs;
-	}
+
 	td,
 	th {
 		@apply px-3 py-2 text-xs;
 	}
 	tfoot th {
-		@apply bg-light-warm-grey border-t border-mid-warm-grey px-3 py-2;
+		@apply bg-light-warm-grey  px-3 py-2;
 	}
 </style>
