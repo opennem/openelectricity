@@ -57,6 +57,71 @@ export default function () {
 		}
 	);
 
+	/*******
+	 * By Scenario
+	 */
+
+	/** @type {import('svelte/store').Writable<{ id: string, model: string, pathway: string, scenario: string, data: Stats }[]>} */
+	const scenarioProjectionData = writable([]);
+	const scenarioProjectionStats = derived(
+		[scenarioProjectionData, selectedGroup],
+		([$scenarioProjectionData, $selectedGroup]) => {
+			console.log('selectedGroup', $selectedGroup);
+
+			return $scenarioProjectionData.map((d) => {
+				console.log('d', d);
+
+				return {
+					id: d.id,
+					model: d.model,
+					scenario: d.scenario,
+					pathway: d.pathway,
+					stats: createNewStats(d.data, $selectedGroup, 'projection')
+				};
+			});
+		}
+	);
+	const scenarioProjectionTimeSeries = derived(
+		[scenarioProjectionStats, colourReducer],
+		([$scenarioProjectionStats, $colourReducer]) => {
+			return $scenarioProjectionStats.map((d) => {
+				const loads = d.stats.data.filter((d) => d.isLoad).map((d) => d.id);
+				return {
+					id: d.id,
+					model: d.model,
+					scenario: d.scenario,
+					pathway: d.pathway,
+					series: createNewTimeSeries(d.stats.data, $colourReducer, loads, 'projection', '1Y', '')
+				};
+			});
+		}
+	);
+
+	/** @type {import('svelte/store').Writable<Stats[]>} */
+	const scenarioHistoricalData = writable([]);
+	const scenarioHistoricalStats = derived(
+		[scenarioHistoricalData, selectedGroup],
+		([$scenarioHistoricalData, $selectedGroup]) => {
+			return createNewStats($scenarioHistoricalData, $selectedGroup, 'history');
+		}
+	);
+	const scenarioHistoricalTimeSeries = derived(
+		[scenarioHistoricalStats, colourReducer],
+		([$scenarioHistoricalStats, $colourReducer]) => {
+			const loadIds = $scenarioHistoricalStats.data.filter((d) => d.isLoad).map((d) => d.id);
+
+			return createNewTimeSeries(
+				$scenarioHistoricalStats.data,
+				$colourReducer,
+				loadIds,
+				'history',
+				'1M',
+				'FY'
+			);
+		}
+	);
+	/*****/
+
 	/** @type {import('svelte/store').Writable<{ region: string, data: Stats }[]>} */
 	const regionProjectionData = writable([]);
 	const regionProjectionStats = derived(
@@ -100,10 +165,10 @@ export default function () {
 		[regionHistoricalStats, colourReducer],
 		([$regionHistoricalStats, $colourReducer]) => {
 			return $regionHistoricalStats.map((d) => {
-				const loads = d.stats.data.filter((d) => d.isLoad).map((d) => d.id);
+				const loadIds = d.stats.data.filter((d) => d.isLoad).map((d) => d.id);
 				return {
 					region: d.region,
-					series: createNewTimeSeries(d.stats.data, $colourReducer, loads, 'history', '1M', 'FY')
+					series: createNewTimeSeries(d.stats.data, $colourReducer, loadIds, 'history', '1M', 'FY')
 				};
 			});
 		}
@@ -116,6 +181,10 @@ export default function () {
 		projectionStats: projectionStats,
 		projectionTimeSeries: projectionTimeSeries,
 
+		scenarioProjectionData: scenarioProjectionData,
+		scenarioProjectionStats: scenarioProjectionStats,
+		scenarioProjectionTimeSeries: scenarioProjectionTimeSeries,
+
 		regionProjectionData: regionProjectionData,
 		regionProjectionStats: regionProjectionStats,
 		regionProjectionTimeSeries: regionProjectionTimeSeries,
@@ -123,6 +192,10 @@ export default function () {
 		historicalData: historicalData,
 		historicalStats: historicalStats,
 		historicalTimeSeries: historicalTimeSeries,
+
+		scenarioHistoricalData: scenarioHistoricalData,
+		scenarioHistoricalStats: scenarioHistoricalStats,
+		scenarioHistoricalTimeSeries: scenarioHistoricalTimeSeries,
 
 		regionHistoricalData: regionHistoricalData,
 		regionHistoricalStats: regionHistoricalStats,

@@ -11,6 +11,7 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import ScenarioExplorer from '$lib/components/info-graphics/scenarios-explorer/index.svelte';
 	import ScenarioFilters from '$lib/components/info-graphics/scenarios-explorer/Filters-new.svelte';
+	import ScenarioSelection from '$lib/components/info-graphics/scenarios-explorer/ScenarioSelection.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 	import PublicBetaTag from './PublicBetaTag.svelte';
 
@@ -52,6 +53,8 @@
 	const {
 		projectionData,
 		historicalData,
+		scenarioProjectionData,
+		scenarioHistoricalData,
 		regionProjectionData,
 		regionHistoricalData,
 		selectedGroup
@@ -132,6 +135,8 @@
 	 * @param {*} param0
 	 */
 	async function getScenarioData({ model, region, scenario, pathway, dataView }) {
+		// Get all models, scenarios and pathways
+
 		modelsData = await getModels(model, 'NEM', dataView);
 		historyData = await getHistory('NEM');
 
@@ -141,9 +146,10 @@
 
 		const compare = modelsData.scenarios.map((s) => {
 			return {
+				id: model + s + 'CDP11',
 				model: model,
 				scenario: s,
-				pathway: 'CDP11 (ODP)'
+				pathway: 'CDP11 (ODP)' // Use default pathway for now
 			};
 		});
 
@@ -156,6 +162,7 @@
 			);
 
 			scenarioProjections.push({
+				id: scene.id,
 				model: scene.model,
 				scenario: scene.scenario,
 				pathway: scene.pathway,
@@ -163,7 +170,9 @@
 			});
 		});
 
-		console.log('scenarioProjections', scenarioProjections);
+		$scenarioProjectionData = scenarioProjections;
+
+		console.log('$scenarioProjectionData', $scenarioProjectionData);
 
 		// modelsData.forEach((d) => {
 		// 	const filtered = d.outlook.data.filter(
@@ -180,7 +189,9 @@
 
 		// $historicalData = covertHistoryDataToTWh(deepCopy(historyData));
 		const convertedHistory = covertHistoryDataToTWh(deepCopy(historyData));
-		console.log('convertedHistory', convertedHistory);
+
+		$scenarioHistoricalData = convertedHistory;
+		console.log('$scenarioHistoricalData', $scenarioHistoricalData);
 	}
 
 	/**
@@ -281,6 +292,8 @@
 <PublicBetaTag /> -->
 
 <ScenarioFilters />
+
+<ScenarioSelection />
 
 <div class="p-1 md:p-6 border-t border-warm-grey">
 	<ScenarioExplorer />

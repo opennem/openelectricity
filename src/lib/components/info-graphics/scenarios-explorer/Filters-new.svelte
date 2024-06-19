@@ -35,10 +35,12 @@
 	$selectedCompareGroup = dataRegionCompareOptions[0].value;
 
 	$: isRegionDisplay = $selectedDisplayView === 'region';
-	$: if (isRegionDisplay) {
-		$selectedGroup = dataRegionCompareOptions[0].value;
-	} else {
+	$: isScenarioDisplay = $selectedDisplayView === 'scenario';
+	$: isTechnologyDisplay = $selectedDisplayView === 'technology';
+	$: if (isTechnologyDisplay) {
 		$selectedGroup = dataTechnologyGroupOptions[0].value;
+	} else {
+		$selectedGroup = dataRegionCompareOptions[0].value;
 	}
 </script>
 
@@ -96,7 +98,7 @@
 			/>
 		</div>
 
-		{#if !isRegionDisplay}
+		{#if isTechnologyDisplay}
 			<div>
 				<Selection
 					selectLabel="Region:"
@@ -108,7 +110,7 @@
 			</div>
 		{/if}
 
-		{#if !isRegionDisplay}
+		{#if isTechnologyDisplay}
 			<div>
 				<Selection
 					selectLabel="Technology Group:"
@@ -120,7 +122,7 @@
 			</div>
 		{/if}
 
-		{#if isRegionDisplay}
+		{#if isRegionDisplay || isScenarioDisplay}
 			<div>
 				<Selection
 					selectLabel="Technology:"

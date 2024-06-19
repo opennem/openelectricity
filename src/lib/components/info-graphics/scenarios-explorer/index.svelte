@@ -9,7 +9,12 @@
 	import ExplorerChart from './Chart.svelte';
 	import ExplorerTable from './Table.svelte';
 	import ExplorerTechnologyTable from './TechnologyTable.svelte';
-	import { processTechnologyData, processRegionData, formatFyTickX } from './helpers';
+	import {
+		processTechnologyData,
+		processScenarioData,
+		processRegionData,
+		formatFyTickX
+	} from './helpers';
 	import { dataViewDescription, dataViewlabel } from './options';
 
 	const {
@@ -30,6 +35,9 @@
 		historicalTimeSeries,
 		projectionStats,
 		projectionTimeSeries,
+		scenarioProjectionStats,
+		scenarioProjectionTimeSeries,
+		scenarioHistoricalTimeSeries,
 		regionProjectionStats,
 		regionProjectionTimeSeries,
 		regionHistoricalStats,
@@ -144,11 +152,22 @@
 	} else if ($selectedDisplayView === 'scenario') {
 		console.log('data by scenario');
 
-		const processed = processRegionData({
-			regionProjectionTimeSeries: $regionProjectionTimeSeries,
-			regionHistoricalTimeSeries: $regionHistoricalTimeSeries,
+		// const processed = processRegionData({
+		// 	regionProjectionTimeSeries: $regionProjectionTimeSeries,
+		// 	regionHistoricalTimeSeries: $regionHistoricalTimeSeries,
+		// 	selectedDataView: $selectedDataView
+		// });
+
+		console.log('$scenarioProjectionStats', $scenarioProjectionStats);
+		console.log('$scenarioProjectionTimeSeries', $scenarioProjectionTimeSeries);
+
+		const processed = processScenarioData({
+			scenarioProjectionTimeSeries: $scenarioProjectionTimeSeries,
+			scenarioHistoricalTimeSeries: $scenarioHistoricalTimeSeries,
 			selectedDataView: $selectedDataView
 		});
+
+		console.log('processed', processed);
 
 		if (processed) {
 			seriesData = processed.data;

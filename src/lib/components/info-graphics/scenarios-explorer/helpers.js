@@ -177,7 +177,117 @@ export function processTechnologyData({
 }
 
 /**
- * Process data for Technology data view
+ * Process data for Scenario data view
+ * @param {{ scenarioProjectionTimeSeries: { id: string, model: string, scenario: string, pathway: string, series: TimeSeries}[], scenarioHistoricalTimeSeries: {model: string, scenario: string, pathway: string, series: TimeSeries}[], selectedDataView: string }} param0
+ */
+export function processScenarioData({
+	scenarioProjectionTimeSeries,
+	scenarioHistoricalTimeSeries,
+	selectedDataView
+}) {
+	let updatedData = [];
+	let combinedScenarioData = [];
+
+	// Mutate historical dates (update june to jan) to match ISP and filter from 2010 and before 2025
+	const filteredHistoricalTimeSeries = mutateHistoryDataDates(
+		scenarioHistoricalTimeSeries.data
+	).filter((d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009);
+
+	if (scenarioProjectionTimeSeries.length > 0) {
+		const lastHistory = filteredHistoricalTimeSeries[filteredHistoricalTimeSeries.length - 1];
+		const firstProjectionSeriesData = scenarioProjectionTimeSeries[0].series.data;
+		const firstProjectionItem = firstProjectionSeriesData[0];
+
+		console.log(
+			'processing',
+			filteredHistoricalTimeSeries,
+			scenarioProjectionTimeSeries,
+			selectedDataView
+		);
+
+		if (lastHistory?.time && firstProjectionItem?.time) {
+			// if last history time is the same as first projection time, remove the last history data
+			const historyData =
+				lastHistory?.time === firstProjectionItem?.time
+					? filteredHistoricalTimeSeries.slice(0, -1)
+					: filteredHistoricalTimeSeries;
+
+			console.log('is same', lastHistory?.time === firstProjectionItem?.time);
+
+			// console.log('first last', firstProjectionItem, lastHistory, historyData);
+
+			// add all date/time and historical net values to updatedData
+			updatedData = [...historyData, ...firstProjectionSeriesData].map((d, i) => {
+				const historicalNet = i < historyData.length ? d._max : null;
+				return {
+					historicalNet,
+					date: d.date,
+					time: d.time
+				};
+			});
+
+			// add all scenario projection data to updatedData
+			scenarioProjectionTimeSeries.forEach((series) => {
+				series.series.data.forEach((d, i) => {
+					const index = i + historyData.length;
+					updatedData[index][series.id] = d._max; // demand (sources - loads)
+				});
+			});
+
+			// add empty values for scenario projection data before first projection date
+			updatedData.forEach((d) => {
+				scenarioProjectionTimeSeries.forEach((series) => {
+					if (!d[series.id]) {
+						d[series.id] = null;
+					}
+				});
+			});
+
+			console.log('updatedData', updatedData, historyData);
+
+			// combine historical and projection data, adding empty values for historical data for Capacity data view
+			// let data =
+			// 	selectedDataView === 'energy'
+			// 		? [...historyData, ...scenarioProjectionTimeSeries.data]
+			// 		: [...getEmpty(historyData), ...scenarioProjectionTimeSeries.data];
+		}
+	}
+
+	const names = [...scenarioProjectionTimeSeries.map((d) => d.id), 'historicalNet'];
+	const options = names.map((name) => {
+		return { id: name, name: name, colour: name === 'historicalNet' ? 'red' : 'black' };
+	});
+	const colours = options.reduce((acc, curr) => ((acc[curr.id] = curr.colour), acc), {});
+	const labels = options.reduce((acc, curr) => ((acc[curr.id] = curr.name), acc), {});
+
+	return {
+		data: updatedData.map((d) => {
+			/** @type {TimeSeriesData} */
+			const newObj = { ...d };
+			// get min and max values for each time series
+			newObj._max = 0;
+			newObj._min = 0;
+
+			scenarioProjectionTimeSeries.forEach((l) => {
+				// @ts-ignore
+				if (d[l] > newObj._max) {
+					newObj._max = d[l];
+				}
+			});
+
+			return newObj;
+		}),
+		names,
+		nameOptions: names.map((name) => {
+			return { id: name, name: name };
+		}),
+		colours: colours,
+		labels: labels
+	};
+}
+
+/**
+ * Process data for Region data view
  * @param {{ regionProjectionTimeSeries: {region: string, series: TimeSeries}[], regionHistoricalTimeSeries: {region: string, series: TimeSeries}[], selectedDataView: string }} param0
  */
 
