@@ -260,7 +260,7 @@
 />
 <PageHeader>
 	<div slot="main-heading">
-		<div class="lg:my-36">
+		<div class="md:my-36">
 			<strong class="block py-8 font-space uppercase text-mid-grey font-medium text-sm">
 				Scenarios
 			</strong>
@@ -268,7 +268,7 @@
 		</div>
 	</div>
 	<div slot="sub-heading">
-		<p class="lg:mt-24">
+		<p class="md:mt-24">
 			A range of modelled scenarios exist which envision the evolution of Australia's National
 			Electricity Market (NEM) over the coming decades.
 		</p>
