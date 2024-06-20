@@ -1,13 +1,26 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
+
+	const dispatch = createEventDispatcher();
+
 	/** @type {import('svelte/elements').FormEventHandler<HTMLInputElement> | null} */
 	export let changeHandler = null;
 	export let name = '';
 	export let label = '';
 	export let checked = false;
+
+	/** @param {*} event  */
+	function handleChange(event) {
+		dispatch('change', { checked: event.target.checked });
+
+		if (changeHandler) {
+			changeHandler(event);
+		}
+	}
 </script>
 
 <label class={`label ${$$restProps.class}`}>
-	<input type="checkbox" on:change|preventDefault={changeHandler} {name} {checked} />
+	<input type="checkbox" on:change|preventDefault={handleChange} {name} {checked} />
 	<span>{label}</span>
 </label>
 
@@ -18,6 +31,7 @@
 		align-items: center;
 	}
 	.label input[type='checkbox'] {
+		cursor: pointer;
 		appearance: none;
 		width: 1.6rem;
 		height: 1.6rem;

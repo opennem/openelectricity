@@ -1,5 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
+	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 
 	const scenarios = [
 		{
@@ -52,6 +53,10 @@
 			scenario: 'Hydrogen Superpower'
 		}
 	];
+
+	/** @type {'single' | 'nultiple'} */
+	let selectionMode = 'single';
+	let selectedScenarios = [];
 </script>
 
 <div class="border-b border-t border-warm-grey">
@@ -62,9 +67,12 @@
 			<ul class="grid grid-cols-3 gap-3">
 				{#each scenarios as { organisation, year, scenario, draft }}
 					<li
-						class="border border-warm-grey rounded-lg p-4 grid grid-cols-1 gap-6 place-content-between"
+						class="border border-warm-grey rounded-lg p-4 grid grid-cols-1 gap-6 place-content-between hover:bg-warm-grey hover:bg-opacity-10 cursor-pointer"
 					>
-						<span class="text-sm">{scenario}</span>
+						<Checkbox
+							label={scenario}
+							class="w-full justify-between items-center flex-row-reverse text-sm"
+						/>
 
 						<div class="flex justify-between text-xs">
 							<div>
