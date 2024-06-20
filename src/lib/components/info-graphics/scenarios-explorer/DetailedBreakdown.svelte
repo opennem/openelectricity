@@ -57,14 +57,14 @@
 
 			{#if $selectedModel && $selectedScenario}
 				<h3>{scenarioLabels[$selectedModel][$selectedScenario]}</h3>
-				<p>{scenarioSummary[$selectedModel][$selectedScenario]}</p>
+				<p>{scenarioDescriptions[$selectedModel][$selectedScenario]}</p>
 
-				<h5>Five Key Points</h5>
+				<!-- <h5>Five Key Points</h5>
 				<ul class="list-disc list-inside">
 					{#each scenarioKeyPoints[$selectedModel][$selectedScenario] as key}
 						<li>{key}</li>
 					{/each}
-				</ul>
+				</ul> -->
 			{/if}
 		</div>
 	</div>
