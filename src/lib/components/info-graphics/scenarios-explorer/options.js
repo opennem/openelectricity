@@ -124,6 +124,42 @@ export const chartTypeOptions = [
 	}
 ];
 
+export const modelPathways = {
+	aemo2024: [
+		'CDP1',
+		'CDP2',
+		'CDP3',
+		'CDP4',
+		'CDP5',
+		'CDP6',
+		'CDP7',
+		'CDP8',
+		'CDP9',
+		'CDP10',
+		'CDP11 (ODP)',
+		'CDP12',
+		'CDP13',
+		'CDP14',
+		'CDP15',
+		'CDP16',
+		'CDP17',
+		'Counterfactual',
+		'Least-cost DP'
+	],
+	aemo2022: [
+		'CDP2',
+		'CDP5',
+		'CDP6',
+		'CDP8',
+		'CDP9',
+		'CDP10',
+		'CDP11',
+		'CDP12',
+		'CDP13',
+		'Counterfactual'
+	]
+};
+
 // Optimal Path
 /** @type {*} */
 export const defaultModelPathway = {
@@ -151,4 +187,84 @@ export const defaultPathwayOrder = [
 	'CDP17',
 	'Counterfactual',
 	'Least-cost DP'
+];
+
+export const allScenarios = [
+	{
+		id: 'aemo2024-step-change',
+		model: 'aemo2024',
+		organisation: 'AEMO',
+		year: 2024,
+		draft: false,
+		scenario: 'Step Change',
+		scenarioId: 'step_change',
+		pathways: [...modelPathways.aemo2024],
+		defaultPathway: defaultModelPathway.aemo2024
+	},
+	{
+		id: 'aemo2024-progressive-change',
+		model: 'aemo2024',
+		organisation: 'AEMO',
+		year: 2024,
+		draft: false,
+		scenario: 'Progressive Change',
+		scenarioId: 'progressive_change',
+		pathways: [...modelPathways.aemo2024],
+		defaultPathway: defaultModelPathway.aemo2024
+	},
+	{
+		id: 'aemo2024-green-energy-exports',
+		model: 'aemo2024',
+		organisation: 'AEMO',
+		year: 2024,
+		draft: false,
+		scenario: 'Green Energy Exports',
+		scenarioId: 'green_energy_exports',
+		pathways: [...modelPathways.aemo2024],
+		defaultPathway: defaultModelPathway.aemo2024
+	},
+	{
+		id: 'aemo2022-step-change',
+		model: 'aemo2022',
+		organisation: 'AEMO',
+		year: 2022,
+		draft: false,
+		scenario: 'Step Change',
+		scenarioId: 'step_change',
+		pathways: [...modelPathways.aemo2022],
+		defaultPathway: defaultModelPathway.aemo2022
+	},
+	{
+		id: 'aemo2022-slow-change',
+		model: 'aemo2022',
+		organisation: 'AEMO',
+		year: 2022,
+		draft: false,
+		scenario: 'Slow Change',
+		scenarioId: 'slow_change',
+		pathways: [...modelPathways.aemo2022],
+		defaultPathway: defaultModelPathway.aemo2022
+	},
+	{
+		id: 'aemo2022-progressive-change',
+		model: 'aemo2022',
+		organisation: 'AEMO',
+		year: 2022,
+		draft: false,
+		scenario: 'Progressive Change',
+		scenarioId: 'progressive_change',
+		pathways: [...modelPathways.aemo2022],
+		defaultPathway: defaultModelPathway.aemo2022
+	},
+	{
+		id: 'aemo2022-hydrogen-superpower',
+		model: 'aemo2022',
+		organisation: 'AEMO',
+		year: 2022,
+		draft: false,
+		scenario: 'Hydrogen Superpower',
+		scenarioId: 'hydrogen_superpower',
+		pathways: [...modelPathways.aemo2022],
+		defaultPathway: defaultModelPathway.aemo2022
+	}
 ];

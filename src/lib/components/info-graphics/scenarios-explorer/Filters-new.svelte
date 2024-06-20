@@ -45,7 +45,7 @@
 </script>
 
 <div class="border-b border-warm-grey">
-	<div class="container">
+	<div class="container max-w-none">
 		<div class="grid grid-cols-3 w-full md:w-2/3 gap-3 my-3">
 			<div class="bg-light-warm-grey py-2 px-4 rounded">
 				<Selection
@@ -80,7 +80,7 @@
 	</div>
 </div>
 
-<div class="container flex gap-16 divide-x divide-warm-grey">
+<div class="container max-w-none flex gap-16 divide-x divide-warm-grey">
 	<Switch
 		buttons={displayViewOptions}
 		selected={$selectedDisplayView}

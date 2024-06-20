@@ -293,7 +293,9 @@
 
 <ScenarioFilters />
 
-<ScenarioSelection />
+{#if $selectedDisplayView}
+	<ScenarioSelection selectionMode={$selectedDisplayView === 'scenario' ? 'multiple' : 'single'} />
+{/if}
 
 <div class="p-1 md:p-6 border-t border-warm-grey">
 	<ScenarioExplorer />

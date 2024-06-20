@@ -2,7 +2,12 @@
 	import { getContext } from 'svelte';
 	import { startOfYear } from 'date-fns';
 	import SparkLineArea from '$lib/components/info-graphics/integrated-system-plan/SparkLineArea.svelte';
-	import { scenarioLabels, scenarioDescriptions } from './descriptions';
+	import {
+		scenarioLabels,
+		scenarioDescriptions,
+		scenarioSummary,
+		scenarioKeyPoints
+	} from './descriptions';
 
 	const { selectedModel, selectedScenario, selectedDisplayView } = getContext('scenario-filters');
 	const { cachedDisplayData } = getContext('scenario-cache');
@@ -47,10 +52,20 @@
 	<div class="relative h-auto">
 		<div class="sticky top-0">
 			<h2 class="font-space uppercase text-sm text-mid-grey mb-12">
-				Learn more about each scenarios
+				Learn more about each scenario
 			</h2>
-			<h3>{scenarioLabels[$selectedModel][$selectedScenario]}</h3>
-			<p>{scenarioDescriptions[$selectedModel][$selectedScenario]}</p>
+
+			{#if $selectedModel && $selectedScenario}
+				<h3>{scenarioLabels[$selectedModel][$selectedScenario]}</h3>
+				<p>{scenarioSummary[$selectedModel][$selectedScenario]}</p>
+
+				<h5>Five Key Points</h5>
+				<ul class="list-disc list-inside">
+					{#each scenarioKeyPoints[$selectedModel][$selectedScenario] as key}
+						<li>{key}</li>
+					{/each}
+				</ul>
+			{/if}
 		</div>
 	</div>
 

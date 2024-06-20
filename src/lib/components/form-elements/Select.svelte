@@ -8,6 +8,8 @@
 
 	export let selected;
 	export let options = [];
+	export let paddingY = 'py-1';
+	export let paddingX = 'px-2';
 
 	const dispatch = createEventDispatcher();
 
@@ -31,7 +33,7 @@
 		on:click={() => (showOptions = !showOptions)}
 		use:clickoutside
 		on:clickoutside={() => (showOptions = false)}
-		class="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-warm-grey"
+		class="flex items-center gap-2 {paddingX} {paddingY} rounded-lg hover:bg-warm-grey"
 	>
 		<span class="font-medium mb-0 capitalize">
 			{selected && selected.label ? selected?.label : findSelectedOption()}
@@ -46,7 +48,7 @@
 			out:fly={{ y: -5, duration: 150 }}
 		>
 			{#each options as opt}
-				<li>
+				<li class="whitespace-nowrap">
 					<button
 						class="hover:bg-warm-grey w-full rounded-md py-2 pl-4 pr-6 flex gap-2 items-center justify-between"
 						on:click={() => handleSelect(opt)}

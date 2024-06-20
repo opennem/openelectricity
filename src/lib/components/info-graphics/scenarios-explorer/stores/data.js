@@ -69,8 +69,6 @@ export default function () {
 			console.log('selectedGroup', $selectedGroup);
 
 			return $scenarioProjectionData.map((d) => {
-				console.log('d', d);
-
 				return {
 					id: d.id,
 					model: d.model,
