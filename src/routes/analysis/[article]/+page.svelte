@@ -17,8 +17,8 @@
 <Meta
 	title={data.title}
 	type="article"
-	description="Open Electricity is a platform for exploring Australia's electricity system."
-	image="/img/preview.jpg"
+	description={data.summary}
+	image={hasCover ? urlFor(data.cover).height(630).url() : '/img/preview.jpg'}
 />
 
 <div class="relative">
