@@ -44,7 +44,7 @@
 	}
 </script>
 
-<div class="border-b border-warm-grey">
+<!-- <div class="border-b border-warm-grey">
 	<div class="container max-w-none">
 		<div class="grid grid-cols-3 w-full md:w-2/3 gap-3 my-3">
 			<div class="bg-light-warm-grey py-2 px-4 rounded">
@@ -78,7 +78,7 @@
 			</div>
 		</div>
 	</div>
-</div>
+</div> -->
 
 <div class="container max-w-none flex gap-16 divide-x divide-warm-grey">
 	<Switch
@@ -98,7 +98,7 @@
 			/>
 		</div>
 
-		{#if isTechnologyDisplay}
+		{#if isTechnologyDisplay || isScenarioDisplay}
 			<div>
 				<Selection
 					selectLabel="Region:"

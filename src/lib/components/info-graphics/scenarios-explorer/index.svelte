@@ -35,6 +35,7 @@
 		historicalTimeSeries,
 		projectionStats,
 		projectionTimeSeries,
+		scenarioProjectionData,
 		scenarioProjectionStats,
 		scenarioProjectionTimeSeries,
 		scenarioHistoricalTimeSeries,
@@ -93,34 +94,41 @@
 					startOfYear(new Date('2040-01-01')),
 					startOfYear(new Date('2051-01-01'))
 			  ];
-	$: display = $selectedDisplayView === 'technology' ? 'area' : 'line';
-	$: showContribution = $selectedDisplayView === 'technology';
-	$: overlay =
-		$selectedModel === 'aemo2024'
-			? {
-					xStartValue: startOfYear(new Date('2025-01-01')),
-					xEndValue: startOfYear(new Date('2052-01-01'))
-			  }
-			: {
-					xStartValue: startOfYear(new Date('2024-01-01')),
-					xEndValue: startOfYear(new Date('2051-01-01'))
-			  };
-	$: blankOverlay =
-		$selectedModel === 'aemo2024'
-			? {
-					xStartValue: startOfYear(new Date('2023-01-01')),
-					xEndValue: startOfYear(new Date('2025-01-01'))
-			  }
-			: false;
+	$: isTechnologyDisplay = $selectedDisplayView === 'technology';
+	$: isScenarioDisplay = $selectedDisplayView === 'scenario';
+	$: isRegionDisplay = $selectedDisplayView === 'region';
+	$: display = isTechnologyDisplay ? 'area' : 'line';
+	$: showContribution = isTechnologyDisplay;
+	$: overlay = isScenarioDisplay
+		? {
+				xStartValue: startOfYear(new Date('2024-01-01')),
+				xEndValue: startOfYear(new Date('2052-01-01'))
+		  }
+		: $selectedModel === 'aemo2024'
+		? {
+				xStartValue: startOfYear(new Date('2025-01-01')),
+				xEndValue: startOfYear(new Date('2052-01-01'))
+		  }
+		: {
+				xStartValue: startOfYear(new Date('2024-01-01')),
+				xEndValue: startOfYear(new Date('2051-01-01'))
+		  };
+	// $: blankOverlay =
+	// 	$selectedModel === 'aemo2024'
+	// 		? {
+	// 				xStartValue: startOfYear(new Date('2023-01-01')),
+	// 				xEndValue: startOfYear(new Date('2025-01-01'))
+	// 		  }
+	// 		: false;
+	$: blankOverlay = false;
 	$: overlayLine =
-		$selectedModel === 'aemo2024'
+		$selectedModel === 'aemo2024' && !isScenarioDisplay
 			? { date: startOfYear(new Date('2025-01-01')) }
 			: { date: startOfYear(new Date('2024-01-01')) };
 
-	$: overlayStroke =
-		$selectedDisplayView === 'technology' ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)';
+	$: overlayStroke = isTechnologyDisplay ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)';
 
-	$: if ($selectedDisplayView === 'technology') {
+	$: if (isTechnologyDisplay) {
 		console.log('data by technology');
 
 		const processed = processTechnologyData({
@@ -158,10 +166,12 @@
 		// 	selectedDataView: $selectedDataView
 		// });
 
+		console.log('$scenarioProjectionData', $scenarioProjectionData);
 		console.log('$scenarioProjectionStats', $scenarioProjectionStats);
 		console.log('$scenarioProjectionTimeSeries', $scenarioProjectionTimeSeries);
 
 		const processed = processScenarioData({
+			scenarioProjectionData: $scenarioProjectionData,
 			scenarioProjectionTimeSeries: $scenarioProjectionTimeSeries,
 			scenarioHistoricalTimeSeries: $scenarioHistoricalTimeSeries,
 			selectedDataView: $selectedDataView
@@ -245,7 +255,7 @@
 					defaultText={dataViewDescription[$selectedDataView]}
 					{seriesColours}
 					{seriesLabels}
-					showTotal={$selectedDisplayView === 'technology'}
+					showTotal={isTechnologyDisplay}
 				/>
 			</div>
 
@@ -276,7 +286,7 @@
 		</div>
 		<div class="col-span-4">
 			{#if showTable}
-				{#if $selectedDisplayView === 'technology'}
+				{#if isTechnologyDisplay}
 					<ExplorerTechnologyTable
 						valueColumnName={dataViewlabel[$selectedDataView]}
 						{seriesItems}

@@ -1,4 +1,4 @@
-import { startOfYear, format } from 'date-fns';
+import { startOfYear, format, addYears } from 'date-fns';
 import { format as d3Format } from 'd3-format';
 
 import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
@@ -178,9 +178,10 @@ export function processTechnologyData({
 
 /**
  * Process data for Scenario data view
- * @param {{ scenarioProjectionTimeSeries: { id: string, model: string, scenario: string, pathway: string, series: TimeSeries}[], scenarioHistoricalTimeSeries: {model: string, scenario: string, pathway: string, series: TimeSeries}[], selectedDataView: string }} param0
+ * @param {{ scenarioProjectionData: *, scenarioProjectionTimeSeries: { id: string, model: string, scenario: string, pathway: string, series: TimeSeries}[], scenarioHistoricalTimeSeries: {model: string, scenario: string, pathway: string, series: TimeSeries}[], selectedDataView: string }} param0
  */
 export function processScenarioData({
+	scenarioProjectionData,
 	scenarioProjectionTimeSeries,
 	scenarioHistoricalTimeSeries,
 	selectedDataView
@@ -226,11 +227,23 @@ export function processScenarioData({
 				};
 			});
 
+			// add one more year if it doesn't finishes in 2052
+			const lastDate = updatedData[updatedData.length - 1].date;
+			if (lastDate.getFullYear() !== 2052) {
+				const newYear = addYears(lastDate, 1);
+				updatedData.push({
+					historicalNet: null,
+					date: newYear,
+					time: newYear.getTime()
+				});
+			}
+
 			// add all scenario projection data to updatedData
+			// - add based on the date time because different models will have different projection start/end dates
 			scenarioProjectionTimeSeries.forEach((series) => {
 				series.series.data.forEach((d, i) => {
-					const index = i + historyData.length;
-					updatedData[index][series.id] = d._max; // demand (sources - loads)
+					const find = updatedData.find((u) => u.time === d.time);
+					find[series.id] = d._max; // demand (sources - loads)
 				});
 			});
 
@@ -257,7 +270,12 @@ export function processScenarioData({
 	const options = names.map((name) => {
 		return { id: name, name: name, colour: name === 'historicalNet' ? 'red' : 'black' };
 	});
-	const colours = options.reduce((acc, curr) => ((acc[curr.id] = curr.colour), acc), {});
+
+	const colours = scenarioProjectionData.reduce(
+		(acc, curr) => ((acc[curr.id] = curr.colour), acc),
+		{}
+	);
+	colours['historicalNet'] = 'black';
 	const labels = options.reduce((acc, curr) => ((acc[curr.id] = curr.name), acc), {});
 
 	return {

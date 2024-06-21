@@ -199,7 +199,8 @@ export const allScenarios = [
 		scenario: 'Step Change',
 		scenarioId: 'step_change',
 		pathways: [...modelPathways.aemo2024],
-		defaultPathway: defaultModelPathway.aemo2024
+		defaultPathway: defaultModelPathway.aemo2024,
+		colour: '#A078D7'
 	},
 	{
 		id: 'aemo2024-progressive-change',
@@ -210,7 +211,8 @@ export const allScenarios = [
 		scenario: 'Progressive Change',
 		scenarioId: 'progressive_change',
 		pathways: [...modelPathways.aemo2024],
-		defaultPathway: defaultModelPathway.aemo2024
+		defaultPathway: defaultModelPathway.aemo2024,
+		colour: '#F480EE'
 	},
 	{
 		id: 'aemo2024-green-energy-exports',
@@ -221,7 +223,8 @@ export const allScenarios = [
 		scenario: 'Green Energy Exports',
 		scenarioId: 'green_energy_exports',
 		pathways: [...modelPathways.aemo2024],
-		defaultPathway: defaultModelPathway.aemo2024
+		defaultPathway: defaultModelPathway.aemo2024,
+		colour: '#069FAF'
 	},
 	{
 		id: 'aemo2022-step-change',
@@ -232,7 +235,8 @@ export const allScenarios = [
 		scenario: 'Step Change',
 		scenarioId: 'step_change',
 		pathways: [...modelPathways.aemo2022],
-		defaultPathway: defaultModelPathway.aemo2022
+		defaultPathway: defaultModelPathway.aemo2022,
+		colour: '#BDBCBC'
 	},
 	{
 		id: 'aemo2022-slow-change',
@@ -243,7 +247,8 @@ export const allScenarios = [
 		scenario: 'Slow Change',
 		scenarioId: 'slow_change',
 		pathways: [...modelPathways.aemo2022],
-		defaultPathway: defaultModelPathway.aemo2022
+		defaultPathway: defaultModelPathway.aemo2022,
+		colour: '#545353'
 	},
 	{
 		id: 'aemo2022-progressive-change',
@@ -254,7 +259,8 @@ export const allScenarios = [
 		scenario: 'Progressive Change',
 		scenarioId: 'progressive_change',
 		pathways: [...modelPathways.aemo2022],
-		defaultPathway: defaultModelPathway.aemo2022
+		defaultPathway: defaultModelPathway.aemo2022,
+		colour: '#E78114'
 	},
 	{
 		id: 'aemo2022-hydrogen-superpower',
@@ -265,6 +271,7 @@ export const allScenarios = [
 		scenario: 'Hydrogen Superpower',
 		scenarioId: 'hydrogen_superpower',
 		pathways: [...modelPathways.aemo2022],
-		defaultPathway: defaultModelPathway.aemo2022
+		defaultPathway: defaultModelPathway.aemo2022,
+		colour: '#4F5FD7'
 	}
 ];

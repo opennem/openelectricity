@@ -7,7 +7,8 @@
 	import { scenarioLabels, scenarioDescriptions } from './descriptions';
 	import { allScenarios, modelOptions } from './options';
 
-	const { selectedModel, selectedScenario, selectedPathway } = getContext('scenario-filters');
+	const { selectedModel, selectedScenario, selectedPathway, selectedMultipleScenarios } =
+		getContext('scenario-filters');
 
 	/** @type {'single' | 'multiple'} */
 	export let selectionMode = 'single';
@@ -54,8 +55,23 @@
 		$selectedModel = model;
 		$selectedScenario = scenario;
 		$selectedPathway = pathway;
+	}
 
-		// selectedModel, selectedScenario, selectedPathway
+	function updateMultipleScenariosSelection() {
+		const updated = selectedScenarios.map((id) => {
+			const scenarioPathway = selectedScenariosPathways.find((s) => s.id === id);
+			const scenario = allScenarios.find((s) => s.id === id);
+			return {
+				id: scenario?.id + '-' + scenarioPathway.pathway.toLowerCase().split(' ').join('_'),
+				pathway: scenarioPathway.pathway,
+				model: scenario?.model,
+				scenario: scenario?.scenarioId,
+				colour: scenario?.colour
+			};
+		});
+
+		console.log('updateMultipleScenariosSelection', updated);
+		$selectedMultipleScenarios = updated;
 	}
 
 	/**
@@ -69,6 +85,8 @@
 		} else {
 			selectedScenarios = selectedScenarios.filter((scenario) => scenario !== selected);
 		}
+
+		updateMultipleScenariosSelection();
 	}
 
 	/**
@@ -84,6 +102,8 @@
 
 		if (isSingleSelectionMode && focusScenario) {
 			updateData(focusScenario.model, focusScenario.scenarioId, pathway);
+		} else {
+			updateMultipleScenariosSelection();
 		}
 	}
 
@@ -92,7 +112,6 @@
 	 * @param {string }id
 	 */
 	function handleFocusScenarioChange(id) {
-		console.log('handleFocusScenarioChange', id);
 		const scenario = allScenarios.find((scenario) => scenario.id === id);
 		focusScenario = scenario;
 

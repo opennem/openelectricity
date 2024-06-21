@@ -47,7 +47,9 @@
 		selectedChartType,
 
 		scenarioOptions,
-		pathwayOptions
+		pathwayOptions,
+
+		selectedMultipleScenarios
 	} = getContext('scenario-filters');
 
 	const {
@@ -98,7 +100,9 @@
 			model: $selectedModel,
 			scenario: $selectedScenario,
 			pathway: $selectedPathway,
-			dataView: $selectedDataView
+			scenarios: $selectedMultipleScenarios,
+			dataView: $selectedDataView,
+			region: $selectedRegion
 		});
 	}
 
@@ -134,30 +138,47 @@
 	 * Get data for by scenario view
 	 * @param {*} param0
 	 */
-	async function getScenarioData({ model, region, scenario, pathway, dataView }) {
+	async function getScenarioData({ model, scenarios, region, scenario, pathway, dataView }) {
 		// Get all models, scenarios and pathways
 
-		modelsData = await getModels(model, 'NEM', dataView);
-		historyData = await getHistory('NEM');
+		console.log('comparing these scenarios', scenarios);
+
+		modelsData = await getModels(model, region, dataView);
+
+		const aemo2022 = await getModels('aemo2022', region, dataView);
+		const aemo2024 = await getModels('aemo2024', region, dataView);
+
+		const allModels = {
+			aemo2022: aemo2022,
+			aemo2024: aemo2024
+		};
+
+		console.log('aemo2022', aemo2022);
+		console.log('aemo2024', aemo2024);
+
+		historyData = await getHistory(region);
 
 		console.log('modelsData', modelsData, historyData);
 
-		updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
+		// updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
 
-		const compare = modelsData.scenarios.map((s) => {
-			return {
-				id: model + s + 'CDP11',
-				model: model,
-				scenario: s,
-				pathway: 'CDP11 (ODP)' // Use default pathway for now
-			};
-		});
+		const compare = scenarios.length
+			? scenarios
+			: modelsData.scenarios.map((s) => {
+					return {
+						id: model + s + 'CDP11',
+						model: model,
+						scenario: s,
+						pathway: 'CDP11 (ODP)', // Use default pathway for now,
+						colour: 'black'
+					};
+			  });
 
 		/** @type {*} */
 		let scenarioProjections = [];
 
 		compare.forEach((scene) => {
-			const filtered = modelsData.outlook.data.filter(
+			const filtered = allModels[scene.model].outlook.data.filter(
 				(d) => d.scenario === scene.scenario && d.pathway === scene.pathway
 			);
 
@@ -166,6 +187,7 @@
 				model: scene.model,
 				scenario: scene.scenario,
 				pathway: scene.pathway,
+				colour: scene.colour,
 				data: filtered
 			});
 		});
