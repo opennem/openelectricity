@@ -19,7 +19,7 @@
 	}
 </script>
 
-<label class={`label ${$$restProps.class}`}>
+<label class={`label items-center ${$$restProps.class}`}>
 	<input type="checkbox" on:change|preventDefault={handleChange} {name} {checked} />
 	<span>{label}</span>
 </label>
@@ -28,7 +28,6 @@
 	.label {
 		cursor: pointer;
 		display: flex;
-		align-items: center;
 	}
 	.label input[type='checkbox'] {
 		cursor: pointer;
@@ -38,7 +37,6 @@
 		background-color: #fff;
 		border-radius: 0.2rem;
 		border: 0.1rem solid theme(colors.mid-warm-grey);
-		margin-right: 0.6rem;
 	}
 	.label input[type='checkbox']:focus {
 		outline: none;

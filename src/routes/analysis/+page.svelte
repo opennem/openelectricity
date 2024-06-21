@@ -225,6 +225,7 @@
 									<ul>
 										<li class="mb-4">
 											<Checkbox
+												class="gap-4"
 												name="renewables"
 												label="Renewables"
 												changeHandler={fuelTechChange}
@@ -234,6 +235,7 @@
 												{#each getKeys(technologyFilters).filter((t) => technologyFilters[t].renewable) as technology}
 													<li>
 														<Checkbox
+															class="gap-4"
 															name={technology}
 															label={technologyFilters[technology].label}
 															changeHandler={fuelTechChange}
@@ -245,6 +247,7 @@
 										</li>
 										<li>
 											<Checkbox
+												class="gap-4"
 												name="non-renewables"
 												label="Non-renewables"
 												changeHandler={fuelTechChange}
@@ -254,6 +257,7 @@
 												{#each getKeys(technologyFilters).filter((t) => !technologyFilters[t].renewable) as technology}
 													<li>
 														<Checkbox
+															class="gap-4"
 															name={technology}
 															label={technologyFilters[technology].label}
 															changeHandler={fuelTechChange}
@@ -286,6 +290,7 @@
 										{#each getKeys(regionFilters) as region}
 											<li>
 												<Checkbox
+													class="gap-4"
 													name={region}
 													label={regionFilters[region].label}
 													changeHandler={regionChange}
