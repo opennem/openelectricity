@@ -9,7 +9,8 @@ import {
 } from '../options';
 
 export default function () {
-	const selectedModel = writable(modelOptions[0].value);
+	// const selectedModel = writable(modelOptions[0].value);
+	const selectedModel = writable('');
 	const selectedDataView = writable(dataViewOptions[0].value);
 	const selectedDisplayView = writable(displayViewOptions[0].value);
 	const selectedChartType = writable(chartTypeOptions[0].value);

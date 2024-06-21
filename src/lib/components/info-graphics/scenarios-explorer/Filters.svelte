@@ -31,6 +31,7 @@
 
 	const { selectedGroup } = getContext('scenario-data');
 
+	$selectedModel = modelOptions[0].value;
 	$selectedGroup = dataTechnologyGroupOptions[0].value;
 	$selectedCompareGroup = dataRegionCompareOptions[0].value;
 

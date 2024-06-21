@@ -1,10 +1,13 @@
 <script>
-	import { getContext } from 'svelte';
+	import { getContext, onMount } from 'svelte';
 	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
+
 	import { scenarioLabels, scenarioDescriptions } from './descriptions';
-	import { allScenarios } from './options';
+	import { allScenarios, modelOptions } from './options';
+
+	const { selectedModel, selectedScenario, selectedPathway } = getContext('scenario-filters');
 
 	/** @type {'single' | 'multiple'} */
 	export let selectionMode = 'single';
@@ -18,7 +21,42 @@
 		pathway: scenario.defaultPathway
 	}));
 
+	const modelFilterOptions = [
+		{
+			value: 'all',
+			label: 'All models'
+		},
+		...modelOptions
+	];
+	let filterModel = 'all';
+
 	$: isSingleSelectionMode = selectionMode === 'single';
+	$: filteredScenarios =
+		filterModel === 'all'
+			? allScenarios
+			: allScenarios.filter((scenario) => scenario.model === filterModel);
+
+	onMount(() => {
+		if (isSingleSelectionMode) {
+			focusScenario = { ...allScenarios[0] };
+			updateData(focusScenario.model, focusScenario.scenarioId, 'CDP11 (ODP)');
+		}
+	});
+
+	/**
+	 * @param {string} model
+	 * @param {string} scenario
+	 * @param {string} pathway
+	 */
+	function updateData(model, scenario, pathway) {
+		console.log('updateData', model, scenario, pathway);
+
+		$selectedModel = model;
+		$selectedScenario = scenario;
+		$selectedPathway = pathway;
+
+		// selectedModel, selectedScenario, selectedPathway
+	}
 
 	/**
 	 *
@@ -26,53 +64,53 @@
 	 * @param {Boolean} checked
 	 */
 	function handleCheckBoxChange(selected, checked) {
-		console.log('handleCheckBoxChange', selected, checked);
-
 		if (checked) {
 			selectedScenarios = [...selectedScenarios, selected];
 		} else {
 			selectedScenarios = selectedScenarios.filter((scenario) => scenario !== selected);
 		}
-
-		console.log('selectedScenarios', selectedScenarios);
-	}
-
-	function handleRadioChange(selected, checked) {
-		console.log('handleRadioChange', selected, checked);
 	}
 
 	/**
 	 *
 	 * @param {string }id
-	 * @param {string} defaultPathway
+	 * @param {string} pathway
 	 */
-
 	function handlePathwayChange(id, pathway) {
-		console.log('handlePathwayChange', id, pathway);
 		const scenario = selectedScenariosPathways.find((scenario) => scenario.id === id);
 		scenario.pathway = pathway;
 
 		selectedScenariosPathways = [...selectedScenariosPathways];
+
+		if (isSingleSelectionMode && focusScenario) {
+			updateData(focusScenario.model, focusScenario.scenarioId, pathway);
+		}
 	}
 
+	/**
+	 *
+	 * @param {string }id
+	 */
 	function handleFocusScenarioChange(id) {
 		console.log('handleFocusScenarioChange', id);
 		const scenario = allScenarios.find((scenario) => scenario.id === id);
 		focusScenario = scenario;
+
+		if (isSingleSelectionMode) {
+			const scenarioPathway = selectedScenariosPathways.find((scenario) => scenario.id === id);
+
+			if (focusScenario && scenarioPathway) {
+				updateData(focusScenario.model, focusScenario.scenarioId, scenarioPathway.pathway);
+			}
+		}
 	}
 
 	$: focusScenarioId = focusScenario?.id || null;
 
-	$: getPathway =
-		/**
-		 *
-		 * @param {string} id
-		 * @param {string} defaultPathway
-		 */
-		(id, defaultPathway) => {
-			const scenario = selectedScenariosPathways.find((scenario) => scenario.id === id);
-			return scenario ? scenario.pathway : defaultPathway;
-		};
+	$: getPathway = (/** @type {string} */ id, /** @type {string} */ defaultPathway) => {
+		const scenario = selectedScenariosPathways.find((scenario) => scenario.id === id);
+		return scenario ? scenario.pathway : defaultPathway;
+	};
 
 	$: focusScenarioPathways = focusScenario?.pathways || [];
 </script>
@@ -80,10 +118,24 @@
 <div class="border-b border-t border-warm-grey">
 	<div class="max-w-none container grid grid-cols-3 divide-x divide-warm-grey">
 		<div class="p-12 pl-0 col-span-2">
-			<h5>Current Scenarios</h5>
+			<header class="flex justify-between items-center mb-6">
+				<h5 class="font-space uppercase text-sm text-mid-grey">
+					{#if !isSingleSelectionMode}Current{/if} Scenarios
+				</h5>
+
+				<div class="border border-mid-warm-grey text-sm inline-block rounded-md">
+					<FormSelect
+						paddingY="py-2"
+						paddingX="px-4"
+						options={modelFilterOptions}
+						selected={filterModel}
+						on:change={(evt) => (filterModel = evt.detail.value)}
+					/>
+				</div>
+			</header>
 
 			<ul class="grid grid-cols-4 gap-3">
-				{#each allScenarios as { id, organisation, year, scenario, draft, pathways, defaultPathway }}
+				{#each filteredScenarios as { id, organisation, year, scenario, draft, pathways, defaultPathway }}
 					<li>
 						<button
 							class="min-h-36 text-left w-full border rounded-lg p-4 grid grid-cols-1 gap-6 place-content-between hover:border-black"
@@ -95,14 +147,15 @@
 							on:click={() => handleFocusScenarioChange(id)}
 						>
 							{#if isSingleSelectionMode}
-								<div class="flex justify-between items-center text-sm">
+								<div
+									class="flex justify-between items-start text-sm font-semibold text-dark-grey gap-3"
+								>
 									<span>{scenario}</span>
 									<RadioBigButton
 										radioOnly={true}
 										name="peak_low"
 										label={scenario}
 										value={'12'}
-										changeHandler={(evt) => handleRadioChange(id, evt.detail.checked)}
 										checked={focusScenarioId === id}
 									/>
 								</div>
@@ -110,7 +163,7 @@
 								<Checkbox
 									label={scenario}
 									checked={selectedScenarios.includes(id)}
-									class="w-full justify-between items-center flex-row-reverse text-sm"
+									class="w-full justify-between !items-start flex-row-reverse text-sm font-semibold text-dark-grey"
 									on:change={(evt) => handleCheckBoxChange(id, evt.detail.checked)}
 								/>
 							{/if}
