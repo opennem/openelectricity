@@ -15,11 +15,34 @@
 	$: console.log('cachedDisplayData', $cachedDisplayData[$selectedDisplayView]);
 	$: displayData = $cachedDisplayData[$selectedDisplayView];
 	$: loadIds = displayData ? displayData.loadIds || [] : [];
-	$: displayDataNames = displayData ? displayData.names || [] : [];
+	$: displayDataNames = displayData
+		? displayData.names.filter((d) => d !== 'historical') || []
+		: [];
 	$: displayDatasets = displayData ? displayData.data || [] : [];
 
-	$: names =
-		$selectedDisplayView === 'technology' ? [...displayDataNames].reverse() : displayDataNames;
+	$: isTechnologyDisplay = $selectedDisplayView === 'technology';
+	$: isScenarioDisplay = $selectedDisplayView === 'scenario';
+
+	$: overlay = isScenarioDisplay
+		? {
+				xStartValue: startOfYear(new Date('2024-01-01')),
+				xEndValue: startOfYear(new Date('2052-01-01'))
+		  }
+		: $selectedModel === 'aemo2024'
+		? {
+				xStartValue: startOfYear(new Date('2025-01-01')),
+				xEndValue: startOfYear(new Date('2052-01-01'))
+		  }
+		: {
+				xStartValue: startOfYear(new Date('2024-01-01')),
+				xEndValue: startOfYear(new Date('2051-01-01'))
+		  };
+	$: overlayLine =
+		$selectedModel === 'aemo2024' && !isScenarioDisplay
+			? { date: startOfYear(new Date('2025-01-01')) }
+			: { date: startOfYear(new Date('2024-01-01')) };
+
+	$: names = isTechnologyDisplay ? [...displayDataNames].reverse() : displayDataNames;
 	$: dataset = displayDatasets.map((d) => {
 		const obj = {
 			...d
@@ -33,15 +56,22 @@
 		// Fill in any missing data so area chart renders properly
 		displayDataNames.forEach((name) => {
 			if (!obj[name]) {
-				obj[name] = 0;
+				if (isScenarioDisplay && name !== 'historical') {
+					// if it is a scenario display, fill in the historical data
+					obj[name] = obj.historical || 0;
+				} else {
+					obj[name] = 0;
+				}
 			}
 		});
 
 		return obj;
 	});
 
+	$: console.log('dataset', dataset);
+
 	$: xTicks =
-		$selectedModel === 'aemo2024'
+		$selectedModel === 'aemo2024' || isScenarioDisplay
 			? [2010, 2024, 2040, 2052].map((year) => startOfYear(new Date(`${year}-01-01`)))
 			: [2010, 2030, 2051].map((year) => startOfYear(new Date(`${year}-01-01`)));
 
@@ -70,9 +100,12 @@
 	</div>
 
 	<div class="grid grid-cols-3 border-mid-warm-grey">
-		{#each names as key}
+		{#each names as key, i}
 			<SparkLineArea
 				class="p-8 border-mid-warm-grey border-b border-l last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
+				id={`key-${i}`}
+				{overlay}
+				{overlayLine}
 				{dataset}
 				{key}
 				{xTicks}

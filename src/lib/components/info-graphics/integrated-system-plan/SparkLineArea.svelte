@@ -10,17 +10,29 @@
 	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
 	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
 	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
+	import Overlay from '$lib/components/charts/elements/Overlay.svelte';
+	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
+	import LineX from '$lib/components/charts/elements/annotations/LineX.svelte';
 
 	import KeyHeader from './KeyHeader.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
 
+	export let id = '';
 	export let key = '';
 	export let fuelTechId = '';
 	export let title = '';
 	export let colour = '#000';
 	export let showIcon = false;
+
+	/** If true, overlay will take up the full width of the chart
+	 * If object with xStartValue and xEndValue, overlay will be a range
+	 * @type {*} */
+	export let overlay = null;
+	export let overlayStroke = 'rgba(236, 233, 230, 0.4)';
+	/** @type {*} */
+	export let overlayLine = false;
 
 	/** @type {Date[] | undefined} */
 	export let xTicks = undefined;
@@ -44,6 +56,9 @@
 			data={dataset}
 		>
 			<Svg>
+				{#if overlay}
+					<Overlay fill="#FAF9F6" {...overlay} />
+				{/if}
 				<AxisX
 					formatTick={hoverData ? () => '' : formatFyTickX}
 					ticks={xTicks || displayXTicks}
@@ -55,6 +70,18 @@
 				<Line stroke="#353535" {hoverData} strokeWidth="2px" />
 				<Area fill={colour} />
 				<HoverLayer {dataset} on:mousemove on:mouseout />
+			</Svg>
+
+			<Svg pointerEvents={false}>
+				<defs>
+					<HatchPattern id={`${id}-hatch-pattern`} stroke={overlayStroke} />
+				</defs>
+				{#if overlay}
+					<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
+				{/if}
+				{#if overlayLine}
+					<LineX xValue={overlayLine} />
+				{/if}
 			</Svg>
 
 			<Html pointerEvents={false}>
