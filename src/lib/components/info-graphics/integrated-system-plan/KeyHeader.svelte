@@ -20,7 +20,7 @@
 
 <header class="">
 	<div class="flex justify-between items-center">
-		<h6 class="truncate mb-0 col-span-5 text-dark-grey">{title}</h6>
+		<h6 {title} class="truncate mb-0 col-span-5 text-dark-grey">{title}</h6>
 		{#if showIcon}
 			<Icon icon={fuelTechId} size={28} />
 		{/if}
