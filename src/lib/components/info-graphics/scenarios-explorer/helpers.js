@@ -16,6 +16,7 @@ import {
 	totalsGroup
 } from './groups';
 import { regionsOnly, regionsOnlyWithColours, regionsOnlyWithLabels } from './options';
+import { scenarioLabels } from './descriptions';
 
 export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 export const formatFyTickX = (/** @type {Date | number} */ d) => {
@@ -219,9 +220,9 @@ export function processScenarioData({
 
 			// add all date/time and historical net values to updatedData
 			updatedData = [...historyData, ...firstProjectionSeriesData].map((d, i) => {
-				const historicalNet = i < historyData.length ? d._max : null;
+				const historical = i < historyData.length ? d._max : null;
 				return {
-					historicalNet,
+					historical,
 					date: d.date,
 					time: d.time
 				};
@@ -232,7 +233,7 @@ export function processScenarioData({
 			if (lastDate.getFullYear() !== 2052) {
 				const newYear = addYears(lastDate, 1);
 				updatedData.push({
-					historicalNet: null,
+					historical: null,
 					date: newYear,
 					time: newYear.getTime()
 				});
@@ -266,17 +267,22 @@ export function processScenarioData({
 		}
 	}
 
-	const names = [...scenarioProjectionTimeSeries.map((d) => d.id), 'historicalNet'];
+	const names = [...scenarioProjectionTimeSeries.map((d) => d.id), 'historical'];
 	const options = names.map((name) => {
-		return { id: name, name: name, colour: name === 'historicalNet' ? 'red' : 'black' };
+		return { id: name, name: name, colour: name === 'historical' ? 'red' : 'black' };
 	});
 
 	const colours = scenarioProjectionData.reduce(
 		(acc, curr) => ((acc[curr.id] = curr.colour), acc),
 		{}
 	);
-	colours['historicalNet'] = 'black';
-	const labels = options.reduce((acc, curr) => ((acc[curr.id] = curr.name), acc), {});
+	colours['historical'] = 'black';
+	const labels = scenarioProjectionTimeSeries.reduce(
+		(acc, curr) => ((acc[curr.id] = scenarioLabels[curr.model][curr.scenario]), acc),
+		{}
+	);
+	// add History
+	labels['historical'] = 'Historical';
 
 	return {
 		data: updatedData.map((d) => {

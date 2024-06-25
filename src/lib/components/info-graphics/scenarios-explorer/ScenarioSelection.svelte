@@ -57,6 +57,8 @@
 		$selectedPathway = pathway;
 	}
 
+	selectedScenarios = $selectedMultipleScenarios.map((s) => s.model + '-' + s.scenario);
+
 	function updateMultipleScenariosSelection() {
 		const updated = selectedScenarios.map((id) => {
 			const scenarioPathway = selectedScenariosPathways.find((s) => s.id === id);
@@ -103,6 +105,7 @@
 		if (isSingleSelectionMode && focusScenario) {
 			updateData(focusScenario.model, focusScenario.scenarioId, pathway);
 		} else {
+			updateData(focusScenario.model, focusScenario.scenarioId, pathway);
 			updateMultipleScenariosSelection();
 		}
 	}
@@ -115,12 +118,11 @@
 		const scenario = allScenarios.find((scenario) => scenario.id === id);
 		focusScenario = scenario;
 
-		if (isSingleSelectionMode) {
-			const scenarioPathway = selectedScenariosPathways.find((scenario) => scenario.id === id);
+		// updated selected scenarios pathways
+		const scenarioPathway = selectedScenariosPathways.find((scenario) => scenario.id === id);
 
-			if (focusScenario && scenarioPathway) {
-				updateData(focusScenario.model, focusScenario.scenarioId, scenarioPathway.pathway);
-			}
+		if (focusScenario && scenarioPathway) {
+			updateData(focusScenario.model, focusScenario.scenarioId, scenarioPathway.pathway);
 		}
 	}
 

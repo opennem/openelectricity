@@ -191,7 +191,7 @@ export const defaultPathwayOrder = [
 
 export const allScenarios = [
 	{
-		id: 'aemo2024-step-change',
+		id: 'aemo2024-step_change',
 		model: 'aemo2024',
 		organisation: 'AEMO',
 		year: 2024,
@@ -203,7 +203,7 @@ export const allScenarios = [
 		colour: '#A078D7'
 	},
 	{
-		id: 'aemo2024-progressive-change',
+		id: 'aemo2024-progressive_change',
 		model: 'aemo2024',
 		organisation: 'AEMO',
 		year: 2024,
@@ -215,7 +215,7 @@ export const allScenarios = [
 		colour: '#F480EE'
 	},
 	{
-		id: 'aemo2024-green-energy-exports',
+		id: 'aemo2024-green_energy_exports',
 		model: 'aemo2024',
 		organisation: 'AEMO',
 		year: 2024,
@@ -227,7 +227,7 @@ export const allScenarios = [
 		colour: '#069FAF'
 	},
 	{
-		id: 'aemo2022-step-change',
+		id: 'aemo2022-step_change',
 		model: 'aemo2022',
 		organisation: 'AEMO',
 		year: 2022,
@@ -239,7 +239,7 @@ export const allScenarios = [
 		colour: '#BDBCBC'
 	},
 	{
-		id: 'aemo2022-slow-change',
+		id: 'aemo2022-slow_change',
 		model: 'aemo2022',
 		organisation: 'AEMO',
 		year: 2022,
@@ -251,7 +251,7 @@ export const allScenarios = [
 		colour: '#545353'
 	},
 	{
-		id: 'aemo2022-progressive-change',
+		id: 'aemo2022-progressive_change',
 		model: 'aemo2022',
 		organisation: 'AEMO',
 		year: 2022,
@@ -263,7 +263,7 @@ export const allScenarios = [
 		colour: '#E78114'
 	},
 	{
-		id: 'aemo2022-hydrogen-superpower',
+		id: 'aemo2022-hydrogen_superpower',
 		model: 'aemo2022',
 		organisation: 'AEMO',
 		year: 2022,

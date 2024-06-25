@@ -81,6 +81,32 @@
 		}
 	});
 
+	$: if ($selectedMultipleScenarios.length === 0) {
+		$selectedMultipleScenarios = [
+			{
+				id: 'aemo2024-step-change-cdp11_(odp)',
+				model: 'aemo2024',
+				scenario: 'step_change',
+				pathway: 'CDP11 (ODP)',
+				colour: '#A078D7'
+			},
+			{
+				id: 'aemo2024-progressive-change-cdp11_(odp)',
+				model: 'aemo2024',
+				scenario: 'progressive_change',
+				pathway: 'CDP11 (ODP)',
+				colour: '#F480EE'
+			},
+			{
+				id: 'aemo2024-green-energy-exports-cdp11_(odp)',
+				model: 'aemo2024',
+				scenario: 'green_energy_exports',
+				pathway: 'CDP11 (ODP)',
+				colour: '#069FAF'
+			}
+		];
+	}
+
 	// GET Data
 	$: if (browser && $selectedDisplayView === 'technology') {
 		console.log('get by technology');
@@ -161,18 +187,31 @@
 		console.log('modelsData', modelsData, historyData);
 
 		// updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
+		// const defaultScenarios = [
+		// 	{
+		// 		id: 'aemo2024-step-change-cdp11_(odp)',
+		// 		model: 'aemo2024',
+		// 		scenario: 'step_change',
+		// 		pathway: 'CDP11 (ODP)',
+		// 		colour: '#A078D7'
+		// 	},
+		// 	{
+		// 		id: 'aemo2024-progressive-change-cdp11_(odp)',
+		// 		model: 'aemo2024',
+		// 		scenario: 'progressive_change',
+		// 		pathway: 'CDP11 (ODP)',
+		// 		colour: '#F480EE'
+		// 	},
+		// 	{
+		// 		id: 'aemo2024-green-energy-exports-cdp11_(odp)',
+		// 		model: 'aemo2024',
+		// 		scenario: 'green_energy_exports',
+		// 		pathway: 'CDP11 (ODP)',
+		// 		colour: '#069FAF'
+		// 	}
+		// ];
 
-		const compare = scenarios.length
-			? scenarios
-			: modelsData.scenarios.map((s) => {
-					return {
-						id: model + s + 'CDP11',
-						model: model,
-						scenario: s,
-						pathway: 'CDP11 (ODP)', // Use default pathway for now,
-						colour: 'black'
-					};
-			  });
+		const compare = scenarios;
 
 		/** @type {*} */
 		let scenarioProjections = [];
