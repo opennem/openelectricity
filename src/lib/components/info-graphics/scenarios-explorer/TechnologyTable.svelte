@@ -3,6 +3,7 @@
 	import { flip } from 'svelte/animate';
 	import Bars2 from '$lib/icons/Bars2.svelte';
 	import Selection from './Selection.svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
 	import { formatValue, dataTechnologyGroupOptions } from './helpers';
 
@@ -38,22 +39,21 @@
 </script>
 
 <div class="w-full mt-[32px] max-h-[540px] overflow-y-auto border border-warm-grey">
-	<!-- <div class="flex items-center pb-3">
-		<Selection
-			selectLabel=""
-			widthClass="w-[270px]"
-			options={dataTechnologyGroupOptions}
-			selected={$selectedGroup}
-			on:change={(evt) => ($selectedGroup = evt.detail.value)}
-		/>
-	</div> -->
-
 	<table class="table w-full table-fixed text-sm">
 		<thead class="main-thead sticky top-0">
 			<tr>
-				<!-- <th class="w-8" /> -->
 				<th class="w-8" />
-				<th />
+				<th class="text-left">
+					<div class="border border-mid-grey text-xs inline-block rounded-md whitespace-nowrap">
+						<FormSelect
+							paddingY="py-1"
+							paddingX="px-2"
+							options={dataTechnologyGroupOptions}
+							selected={$selectedGroup}
+							on:change={(evt) => ($selectedGroup = evt.detail.value)}
+						/>
+					</div>
+				</th>
 				<th class="w-[150px] text-right">{valueColumnName}</th>
 				{#if showContribution}
 					<th class="w-[100px] text-right">Contribution</th>

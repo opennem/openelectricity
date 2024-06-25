@@ -25,7 +25,7 @@
 		defaultPathwayOrder
 	} from '$lib/components/info-graphics/scenarios-explorer/options';
 	import { covertHistoryDataToTWh } from '$lib/components/info-graphics/scenarios-explorer/helpers';
-	import DetailedBreakdown from '$lib/components/info-graphics/scenarios-explorer/DetailedBreakdown.svelte';
+	import DetailedBreakdown from '$lib/components/info-graphics/scenarios-explorer/DetailedBreakdown-new.svelte';
 
 	setContext('scenario-filters', filtersStore());
 	setContext('scenario-data', dataStore());
@@ -358,7 +358,7 @@
 	<ScenarioSelection selectionMode={$selectedDisplayView === 'scenario' ? 'multiple' : 'single'} />
 {/if}
 
-<div class="p-1 md:p-6 border-t border-warm-grey">
+<div class="p-1 md:p-6 mb-24 border-t border-warm-grey">
 	<ScenarioExplorer />
 </div>
 

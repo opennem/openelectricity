@@ -110,7 +110,7 @@
 			</div>
 		{/if}
 
-		{#if isTechnologyDisplay}
+		<!-- {#if isTechnologyDisplay}
 			<div>
 				<Selection
 					selectLabel="Technology Group:"
@@ -120,9 +120,9 @@
 					on:change={(evt) => ($selectedGroup = evt.detail.value)}
 				/>
 			</div>
-		{/if}
+		{/if} -->
 
-		{#if isRegionDisplay || isScenarioDisplay}
+		<!-- {#if isRegionDisplay || isScenarioDisplay}
 			<div>
 				<Selection
 					selectLabel="Technology:"
@@ -132,7 +132,7 @@
 					on:change={(evt) => ($selectedGroup = evt.detail.value)}
 				/>
 			</div>
-		{/if}
+		{/if} -->
 	</div>
 </div>
 
