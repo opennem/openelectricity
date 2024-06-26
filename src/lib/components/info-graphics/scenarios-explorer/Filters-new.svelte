@@ -18,6 +18,7 @@
 	import { dataTechnologyGroupOptions, dataRegionCompareOptions } from './helpers';
 
 	import Selection from './Selection.svelte';
+	import { scenarios } from '../integrated-system-plan/scenarios';
 
 	const {
 		selectedModel,
@@ -118,20 +119,26 @@
 			</div>
 		{/if}
 
-		<button
-			class="text-sm flex items-center gap-3 justify-center px-8 py-4 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
-			class:border-dark-grey={$showScenarioOptions}
-			class:border-mid-warm-grey={!$showScenarioOptions}
-			on:click={() => ($showScenarioOptions = !$showScenarioOptions)}
-		>
-			{scenarioLabels[$selectedModel][$selectedScenario]}
+		{#if $selectedModel && $selectedScenario}
+			<button
+				class="text-sm flex items-center gap-3 justify-center px-8 py-4 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
+				class:border-dark-grey={$showScenarioOptions}
+				class:border-mid-warm-grey={!$showScenarioOptions}
+				on:click={() => ($showScenarioOptions = !$showScenarioOptions)}
+			>
+				{#if isScenarioDisplay}
+					Update Scenarios
+				{:else}
+					{scenarioLabels[$selectedModel][$selectedScenario]}
+				{/if}
 
-			{#if $showScenarioOptions}
-				<IconMinus />
-			{:else}
-				<IconPlus />
-			{/if}
-		</button>
+				{#if $showScenarioOptions}
+					<IconMinus />
+				{:else}
+					<IconPlus />
+				{/if}
+			</button>
+		{/if}
 
 		<!-- {#if isTechnologyDisplay}
 			<div>
