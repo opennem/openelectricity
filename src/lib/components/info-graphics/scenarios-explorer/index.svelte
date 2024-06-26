@@ -15,7 +15,7 @@
 		processRegionData,
 		formatFyTickX
 	} from './helpers';
-	import { dataViewDescription, dataViewlabel } from './options';
+	import { dataViewDescription, dataViewlabel, dataViewUnits } from './options';
 
 	const {
 		selectedDisplayView,
@@ -31,6 +31,9 @@
 	} = getContext('scenario-filters');
 
 	const {
+		usePercentage,
+		isNetTotalGroup,
+
 		historicalStats,
 		historicalTimeSeries,
 		projectionStats,
@@ -169,12 +172,26 @@
 		console.log('$scenarioProjectionData', $scenarioProjectionData);
 		console.log('$scenarioProjectionStats', $scenarioProjectionStats);
 		console.log('$scenarioProjectionTimeSeries', $scenarioProjectionTimeSeries);
+		console.log('$scenarioHistoricalTimeSeries', $scenarioHistoricalTimeSeries);
+		console.log('usePercentage', $usePercentage);
+		console.log('isNetTotalGroup', $isNetTotalGroup);
+
+		// ? $scenarioHistoricalTimeSeries.seriesNames[0]
+		// 		: 'au.total_sources.grouped'
+
+		const historySeriesName =
+			$isNetTotalGroup && !$usePercentage
+				? '_max'
+				: $isNetTotalGroup && $usePercentage
+				? 'au.total_sources.grouped'
+				: $scenarioHistoricalTimeSeries.seriesNames[0];
 
 		const processed = processScenarioData({
 			scenarioProjectionData: $scenarioProjectionData,
 			scenarioProjectionTimeSeries: $scenarioProjectionTimeSeries,
 			scenarioHistoricalTimeSeries: $scenarioHistoricalTimeSeries,
-			selectedDataView: $selectedDataView
+			selectedDataView: $selectedDataView,
+			historySeriesName: historySeriesName
 		});
 
 		console.log('processed', processed);
@@ -289,6 +306,7 @@
 				{#if isTechnologyDisplay}
 					<ExplorerTechnologyTable
 						valueColumnName={dataViewlabel[$selectedDataView]}
+						units={dataViewUnits[$selectedDataView]}
 						{seriesItems}
 						{seriesLabels}
 						{seriesColours}
@@ -301,6 +319,7 @@
 				{:else}
 					<ExplorerTable
 						valueColumnName={dataViewlabel[$selectedDataView]}
+						units={!$usePercentage || $isNetTotalGroup ? dataViewUnits[$selectedDataView] : '%'}
 						{seriesItems}
 						{seriesLabels}
 						{seriesColours}

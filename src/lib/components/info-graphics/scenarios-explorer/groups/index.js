@@ -2,6 +2,7 @@ import * as detailed from './detailed';
 import * as simple from './simple';
 import * as renewablesVsFossils from './renewables-vs-fossils';
 import * as totals from './totals';
+import * as totalSources from './total-sources';
 import * as coalGas from './coal_gas';
 import * as windSolar from './wind_solar';
 
@@ -47,8 +48,21 @@ export const windSolarGroup = {
 	order: windSolar.order,
 	labels: windSolar.labels
 };
+export const totalSourcesGroup = {
+	label: 'Total Sources',
+	value: 'total_sources',
+	fuelTechs: totalSources.fuelTechMap,
+	order: totalSources.order,
+	labels: totalSources.labels
+};
 
-export const groups = [simpleGroup, detailedGroup, renewablesVsFossilsGroup, totalsGroup];
+export const groups = [
+	simpleGroup,
+	detailedGroup,
+	renewablesVsFossilsGroup,
+	totalsGroup,
+	totalSourcesGroup
+];
 
 /** @type {*} */
 export let groupMap = {};

@@ -13,7 +13,8 @@ import {
 	renewablesVsFossilsGroup,
 	coalGasGroup,
 	windSolarGroup,
-	totalsGroup
+	totalsGroup,
+	totalSourcesGroup
 } from './groups';
 import { regionsOnly, regionsOnlyWithColours, regionsOnlyWithLabels } from './options';
 import { scenarioLabels } from './descriptions';
@@ -35,7 +36,13 @@ export const formatValue = (/** @type {number} */ d) => {
 
 export const dataTechnologyGroupOptions = [simpleGroup, detailedGroup, renewablesVsFossilsGroup];
 export const dataRegionCompareOptions = [totalsGroup, coalGasGroup, windSolarGroup];
-const allGroupOptions = [...dataTechnologyGroupOptions, ...dataRegionCompareOptions];
+
+// totalSourcesGroup is used for calculating percentages
+const allGroupOptions = [
+	...dataTechnologyGroupOptions,
+	...dataRegionCompareOptions,
+	totalSourcesGroup
+];
 
 /**
  *
@@ -179,14 +186,23 @@ export function processTechnologyData({
 
 /**
  * Process data for Scenario data view
- * @param {{ scenarioProjectionData: *, scenarioProjectionTimeSeries: { id: string, model: string, scenario: string, pathway: string, series: TimeSeries}[], scenarioHistoricalTimeSeries: {model: string, scenario: string, pathway: string, series: TimeSeries}[], selectedDataView: string }} param0
+ * @param {{
+ * 	scenarioProjectionData: *,
+ * 	scenarioProjectionTimeSeries: { id: string, model: string, scenario: string, pathway: string, series: TimeSeries}[],
+ * 	scenarioHistoricalTimeSeries: {model: string, scenario: string, pathway: string, series: TimeSeries}[],
+ * 	selectedDataView: string,
+ * 	historySeriesName: string
+ * }} param0
  */
 export function processScenarioData({
 	scenarioProjectionData,
 	scenarioProjectionTimeSeries,
 	scenarioHistoricalTimeSeries,
-	selectedDataView
+	selectedDataView,
+	historySeriesName
 }) {
+	console.log('historySeriesName', historySeriesName);
+
 	let updatedData = [];
 	let combinedScenarioData = [];
 
@@ -220,7 +236,7 @@ export function processScenarioData({
 
 			// add all date/time and historical net values to updatedData
 			updatedData = [...historyData, ...firstProjectionSeriesData].map((d, i) => {
-				const historical = i < historyData.length ? d._max : null;
+				const historical = i < historyData.length ? d[historySeriesName] : null;
 				return {
 					historical,
 					date: d.date,
@@ -294,8 +310,8 @@ export function processScenarioData({
 
 			scenarioProjectionTimeSeries.forEach((l) => {
 				// @ts-ignore
-				if (d[l] > newObj._max) {
-					newObj._max = d[l];
+				if (d[l.id] > newObj._max) {
+					newObj._max = d[l.id];
 				}
 			});
 

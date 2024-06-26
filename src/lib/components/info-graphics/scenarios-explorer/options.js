@@ -16,12 +16,18 @@ export const modelOptions = [
 export const dataViewOptions = [
 	{
 		value: 'energy',
-		label: 'Generation (TWh)',
+		label: 'Generation',
+		longLabel: 'Energy Generation',
+		units: 'TWh',
+		intervalLabel: 'by Financial Year',
 		description: 'Energy Generation (TWh) by Financial Year'
 	},
 	{
 		value: 'capacity',
-		label: 'Capacity (GW)',
+		label: 'Capacity',
+		longLabel: 'Generation Capacity',
+		units: 'GW',
+		intervalLabel: 'by Financial Year',
 		description: 'Capacity (GW) by Financial Year'
 	}
 ];
@@ -31,6 +37,18 @@ export const dataViewDescription = dataViewOptions.reduce(
 );
 export const dataViewlabel = dataViewOptions.reduce(
 	(acc, curr) => ((acc[curr.value] = curr.label), acc),
+	{}
+);
+export const dataViewUnits = dataViewOptions.reduce(
+	(acc, curr) => ((acc[curr.value] = curr.units), acc),
+	{}
+);
+export const dataViewLongLabel = dataViewOptions.reduce(
+	(acc, curr) => ((acc[curr.value] = curr.longLabel), acc),
+	{}
+);
+export const dataViewIntervalLabel = dataViewOptions.reduce(
+	(acc, curr) => ((acc[curr.value] = curr.intervalLabel), acc),
 	{}
 );
 

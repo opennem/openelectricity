@@ -5,9 +5,12 @@ import { createNewStats, createNewTimeSeries } from '../helpers';
 
 export default function () {
 	const selectedGroup = writable(groups[0].value);
+	const usePercentage = writable(true);
 
 	const projectionData = writable([]);
 	const historicalData = writable([]);
+
+	const isNetTotalGroup = derived(selectedGroup, ($selectedGroup) => $selectedGroup === 'totals');
 
 	const projectionStats = derived(
 		[projectionData, selectedGroup],
@@ -64,17 +67,35 @@ export default function () {
 	/** @type {import('svelte/store').Writable<{ id: string, model: string, pathway: string, scenario: string, data: Stats }[]>} */
 	const scenarioProjectionData = writable([]);
 	const scenarioProjectionStats = derived(
-		[scenarioProjectionData, selectedGroup],
-		([$scenarioProjectionData, $selectedGroup]) => {
+		[scenarioProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
+		([$scenarioProjectionData, $selectedGroup, $isNetTotalGroup, $usePercentage]) => {
 			console.log('selectedGroup', $selectedGroup);
 
 			return $scenarioProjectionData.map((d) => {
+				const otherStats = createNewStats(d.data, $selectedGroup, 'projection');
+
+				// only calculate percentage if not net total group
+				if (!$isNetTotalGroup && $usePercentage) {
+					const sourceLoadStats = createNewStats(d.data, 'total_sources', 'projection');
+					const sourcesData = sourceLoadStats.data.find((d) => d.code === 'total_sources');
+					const netData = [...sourcesData.projection.data];
+
+					otherStats.data.forEach((s) => {
+						s.units = '%';
+						s.projection.data.forEach((d, i) => {
+							s.projection.data[i] = (d / netData[i]) * 100;
+						});
+					});
+
+					console.log('projection otherStats', otherStats);
+				}
+
 				return {
 					id: d.id,
 					model: d.model,
 					scenario: d.scenario,
 					pathway: d.pathway,
-					stats: createNewStats(d.data, $selectedGroup, 'projection')
+					stats: otherStats
 				};
 			});
 		}
@@ -100,15 +121,28 @@ export default function () {
 	const scenarioHistoricalStats = derived(
 		[scenarioHistoricalData, selectedGroup],
 		([$scenarioHistoricalData, $selectedGroup]) => {
-			return createNewStats($scenarioHistoricalData, $selectedGroup, 'history');
+			const otherStats = createNewStats($scenarioHistoricalData, $selectedGroup, 'history');
+
+			return otherStats;
 		}
 	);
 	const scenarioHistoricalTimeSeries = derived(
-		[scenarioHistoricalStats, colourReducer],
-		([$scenarioHistoricalStats, $colourReducer]) => {
+		[
+			scenarioHistoricalData,
+			scenarioHistoricalStats,
+			colourReducer,
+			isNetTotalGroup,
+			usePercentage
+		],
+		([
+			$scenarioHistoricalData,
+			$scenarioHistoricalStats,
+			$colourReducer,
+			$isNetTotalGroup,
+			$usePercentage
+		]) => {
 			const loadIds = $scenarioHistoricalStats.data.filter((d) => d.isLoad).map((d) => d.id);
-
-			return createNewTimeSeries(
+			const otherTimeSeries = createNewTimeSeries(
 				$scenarioHistoricalStats.data,
 				$colourReducer,
 				loadIds,
@@ -116,6 +150,33 @@ export default function () {
 				'1M',
 				'FY'
 			);
+
+			// only calculate percentage if not net total group
+			if (!$isNetTotalGroup && $usePercentage) {
+				const sourceStats = createNewStats($scenarioHistoricalData, 'total_sources', 'history');
+				const sourceTimeSeries = createNewTimeSeries(
+					sourceStats.data,
+					$colourReducer,
+					loadIds,
+					'history',
+					'1M',
+					'FY'
+				);
+
+				// calculate percentage
+				const totalSourcesGroupId = sourceTimeSeries.seriesNames[0];
+				const sourceTimeSeriesData = sourceTimeSeries.data;
+
+				otherTimeSeries.data.forEach((s, i) => {
+					otherTimeSeries.seriesNames.forEach((name) => {
+						s[name] = (s[name] / sourceTimeSeriesData[i][totalSourcesGroupId]) * 100;
+					});
+				});
+
+				console.log('historical otherTimeSeries', otherTimeSeries);
+			}
+
+			return otherTimeSeries;
 		}
 	);
 	/*****/
@@ -174,6 +235,8 @@ export default function () {
 
 	return {
 		selectedGroup: selectedGroup,
+		usePercentage: usePercentage,
+		isNetTotalGroup: isNetTotalGroup,
 
 		projectionData: projectionData,
 		projectionStats: projectionStats,

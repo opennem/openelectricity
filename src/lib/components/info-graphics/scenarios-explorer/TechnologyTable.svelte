@@ -11,6 +11,7 @@
 	const dispatchEvent = createEventDispatcher();
 
 	export let valueColumnName = 'value';
+	export let units = '';
 	export let seriesItems;
 	export let seriesLoadsIds;
 	export let seriesLabels;
@@ -56,7 +57,7 @@
 						/>
 					</div>
 				</th>
-				<th class="w-[150px] text-right">{valueColumnName}</th>
+				<th class="w-[150px] text-right">{valueColumnName} ({units})</th>
 				{#if showContribution}
 					<th class="w-[100px] text-right">Contribution</th>
 				{/if}

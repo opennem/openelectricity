@@ -166,8 +166,6 @@
 	 * @param {*} param0
 	 */
 	async function getScenarioData({ model, scenarios, region, scenario, pathway, dataView }) {
-		// Get all models, scenarios and pathways
-
 		console.log('comparing these scenarios', scenarios);
 
 		modelsData = await getModels(model, region, dataView);
@@ -180,44 +178,14 @@
 			aemo2024: aemo2024
 		};
 
-		console.log('aemo2022', aemo2022);
-		console.log('aemo2024', aemo2024);
-
 		historyData = await getHistory(region);
 
 		console.log('modelsData', modelsData, historyData);
 
-		// updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
-		// const defaultScenarios = [
-		// 	{
-		// 		id: 'aemo2024-step-change-cdp11_(odp)',
-		// 		model: 'aemo2024',
-		// 		scenario: 'step_change',
-		// 		pathway: 'CDP11 (ODP)',
-		// 		colour: '#A078D7'
-		// 	},
-		// 	{
-		// 		id: 'aemo2024-progressive-change-cdp11_(odp)',
-		// 		model: 'aemo2024',
-		// 		scenario: 'progressive_change',
-		// 		pathway: 'CDP11 (ODP)',
-		// 		colour: '#F480EE'
-		// 	},
-		// 	{
-		// 		id: 'aemo2024-green-energy-exports-cdp11_(odp)',
-		// 		model: 'aemo2024',
-		// 		scenario: 'green_energy_exports',
-		// 		pathway: 'CDP11 (ODP)',
-		// 		colour: '#069FAF'
-		// 	}
-		// ];
-
-		const compare = scenarios;
-
 		/** @type {*} */
 		let scenarioProjections = [];
 
-		compare.forEach((scene) => {
+		scenarios.forEach((scene) => {
 			const filtered = allModels[scene.model].outlook.data.filter(
 				(d) => d.scenario === scene.scenario && d.pathway === scene.pathway
 			);
