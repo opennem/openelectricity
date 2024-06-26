@@ -357,7 +357,9 @@
 
 {#if $selectedDisplayView}
 	<div
-		class="transition-all"
+		class="transition-all relative"
+		class:z-20={$showScenarioOptions}
+		class:z-0={!$showScenarioOptions}
 		class:opacity-100={$showScenarioOptions}
 		class:h-auto={$showScenarioOptions}
 		class:opacity-0={!$showScenarioOptions}
@@ -369,7 +371,7 @@
 	</div>
 {/if}
 
-<div class="p-1 md:p-6 mb-24 border-t border-warm-grey">
+<div class="p-1 md:p-6 mb-24 border-t border-warm-grey relative z-10">
 	<ScenarioExplorer />
 </div>
 
