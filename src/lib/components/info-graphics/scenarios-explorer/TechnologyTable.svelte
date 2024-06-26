@@ -44,10 +44,12 @@
 			<tr>
 				<th class="w-8" />
 				<th class="text-left">
-					<div class="border border-mid-grey text-xs inline-block rounded-md whitespace-nowrap">
+					<div
+						class="border border-mid-warm-grey text-xs inline-block rounded-md whitespace-nowrap"
+					>
 						<FormSelect
-							paddingY="py-1"
-							paddingX="px-2"
+							paddingY="py-2"
+							paddingX="px-3"
 							options={dataTechnologyGroupOptions}
 							selected={$selectedGroup}
 							on:change={(evt) => ($selectedGroup = evt.detail.value)}

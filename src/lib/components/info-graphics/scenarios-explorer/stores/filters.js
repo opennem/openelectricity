@@ -22,6 +22,8 @@ export default function () {
 
 	const selectedMultipleScenarios = writable([]);
 
+	const showScenarioOptions = writable(false);
+
 	const scenarioOptions = writable([]);
 	const pathwayOptions = writable([]);
 
@@ -67,6 +69,8 @@ export default function () {
 
 		selectedCompareGroup: selectedCompareGroup,
 
-		selectedMultipleScenarios: selectedMultipleScenarios
+		selectedMultipleScenarios: selectedMultipleScenarios,
+
+		showScenarioOptions: showScenarioOptions
 	};
 }

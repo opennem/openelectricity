@@ -49,7 +49,8 @@
 		scenarioOptions,
 		pathwayOptions,
 
-		selectedMultipleScenarios
+		selectedMultipleScenarios,
+		showScenarioOptions
 	} = getContext('scenario-filters');
 
 	const {
@@ -355,7 +356,17 @@
 <ScenarioFilters />
 
 {#if $selectedDisplayView}
-	<ScenarioSelection selectionMode={$selectedDisplayView === 'scenario' ? 'multiple' : 'single'} />
+	<div
+		class="transition-all"
+		class:opacity-100={$showScenarioOptions}
+		class:h-auto={$showScenarioOptions}
+		class:opacity-0={!$showScenarioOptions}
+		class:h-0={!$showScenarioOptions}
+	>
+		<ScenarioSelection
+			selectionMode={$selectedDisplayView === 'scenario' ? 'multiple' : 'single'}
+		/>
+	</div>
 {/if}
 
 <div class="p-1 md:p-6 mb-24 border-t border-warm-grey">

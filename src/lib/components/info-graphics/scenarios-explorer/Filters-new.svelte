@@ -2,6 +2,9 @@
 	import { getContext } from 'svelte';
 
 	import Switch from '$lib/components/Switch.svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import IconPlus from '$lib/icons/Plus.svelte';
+	import IconMinus from '$lib/icons/Minus.svelte';
 
 	import {
 		modelOptions,
@@ -10,6 +13,7 @@
 		displayViewOptions,
 		chartTypeOptions
 	} from './options';
+	import { scenarioLabels } from './descriptions';
 
 	import { dataTechnologyGroupOptions, dataRegionCompareOptions } from './helpers';
 
@@ -24,6 +28,8 @@
 		selectedScenario,
 		selectedPathway,
 		selectedCompareGroup,
+
+		showScenarioOptions,
 
 		scenarioOptions,
 		pathwayOptions
@@ -42,6 +48,8 @@
 	} else {
 		$selectedGroup = dataRegionCompareOptions[0].value;
 	}
+
+	$: console.log('showScenarioOptions', showScenarioOptions);
 </script>
 
 <!-- <div class="border-b border-warm-grey">
@@ -91,7 +99,7 @@
 		<div>
 			<Selection
 				selectLabel="Projection:"
-				widthClass="w-[200px]"
+				widthClass="w-[160px]"
 				options={dataViewOptions}
 				selected={$selectedDataView}
 				on:change={(evt) => ($selectedDataView = evt.detail.value)}
@@ -102,13 +110,28 @@
 			<div>
 				<Selection
 					selectLabel="Region:"
-					widthClass="w-[230px]"
+					widthClass="w-[220px]"
 					options={regionOptions}
 					selected={$selectedRegion}
 					on:change={(evt) => ($selectedRegion = evt.detail.value)}
 				/>
 			</div>
 		{/if}
+
+		<button
+			class="text-sm flex items-center gap-3 justify-center px-8 py-4 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
+			class:border-dark-grey={$showScenarioOptions}
+			class:border-mid-warm-grey={!$showScenarioOptions}
+			on:click={() => ($showScenarioOptions = !$showScenarioOptions)}
+		>
+			{scenarioLabels[$selectedModel][$selectedScenario]}
+
+			{#if $showScenarioOptions}
+				<IconMinus />
+			{:else}
+				<IconPlus />
+			{/if}
+		</button>
 
 		<!-- {#if isTechnologyDisplay}
 			<div>
