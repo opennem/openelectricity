@@ -109,6 +109,53 @@ export function mutateHistoryDataDates(data) {
 	});
 }
 
+export function calculatePercentageDataset(statsData, otherTimeSeries, colourReducer, type) {
+	const sourceLoadStats = createNewStats(statsData.stats.originalData, 'totals', type);
+	const totalsLoadIds = statsData.stats.originalData.filter((d) => d.isLoad).map((d) => d.id);
+
+	let netStatsData = {};
+	let netData = [];
+
+	sourceLoadStats.data.forEach((d, i) => {
+		if (i === 0) {
+			netData = d[type].data.map((v) => v);
+			netStatsData = {
+				...d,
+				[type]: {
+					...d[type],
+					data: netData
+				},
+				id: 'au.net_total',
+				code: 'net_total',
+				fuel_tech: 'net_total',
+				isLoad: false
+			};
+		} else {
+			d[type].data.forEach((v, j) => {
+				netData[j] += v;
+			});
+		}
+	});
+
+	netStatsData[type].data = netData;
+
+	const netTimeSeries = createNewTimeSeries(
+		[netStatsData],
+		colourReducer,
+		totalsLoadIds,
+		type,
+		'1M',
+		'FY'
+	);
+
+	const otherSeriesName = otherTimeSeries.seriesNames[0];
+	otherTimeSeries.data.forEach((s, i) => {
+		s[otherSeriesName] = (s[otherSeriesName] / netTimeSeries.data[i]['au.net_total']) * 100;
+	});
+
+	return otherTimeSeries;
+}
+
 // return empty values for these dates
 // - only for Capacity view because we don't have historical capacity data
 // - to pad out the xAxis
@@ -124,7 +171,11 @@ const getEmpty = (data) =>
 
 /**
  * Process data for Technology data view
- * @param {{ historicalTimeSeries: TimeSeries, projectionTimeSeries: TimeSeries, selectedDataView: string }} param0
+ * @param {{
+ * 	historicalTimeSeries: TimeSeries,
+ * 	projectionTimeSeries: TimeSeries,
+ * 	selectedDataView: string
+ * }} param0
  */
 export function processTechnologyData({
 	historicalTimeSeries,
@@ -328,16 +379,23 @@ export function processScenarioData({
 
 /**
  * Process data for Region data view
- * @param {{ regionProjectionTimeSeries: {region: string, series: TimeSeries}[], regionHistoricalTimeSeries: {region: string, series: TimeSeries}[], selectedDataView: string }} param0
+ * @param {{
+ * 	regionProjectionTimeSeries: {region: string, series: TimeSeries}[],
+ * 	regionHistoricalTimeSeries: {region: string, series: TimeSeries}[],
+ * 	selectedDataView: string,
+ * 	historySeriesName: string
+ * }} param0
  */
-
 export function processRegionData({
 	regionProjectionTimeSeries,
 	regionHistoricalTimeSeries,
-	selectedDataView
+	selectedDataView,
+	historySeriesName
 }) {
 	let updatedData = [];
 	let combinedRegionData = [];
+
+	console.log('processRegionData regionHistoricalTimeSeries', regionHistoricalTimeSeries);
 
 	if (regionProjectionTimeSeries.length > 0 && regionHistoricalTimeSeries.length > 0) {
 		regionHistoricalTimeSeries.forEach((series) => {
@@ -386,7 +444,7 @@ export function processRegionData({
 
 		combinedRegionData.forEach((series) => {
 			series.data.forEach((d, i) => {
-				updatedData[i][series.region] = d._max; // demand (sources - loads)
+				updatedData[i][series.region] = d[historySeriesName]; // demand (sources - loads)
 			});
 		});
 	}

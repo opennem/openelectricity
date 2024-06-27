@@ -1,7 +1,7 @@
 import { derived, writable } from 'svelte/store';
 import { colourReducer } from '$lib/stores/theme';
 import { groups } from '../groups';
-import { createNewStats, createNewTimeSeries } from '../helpers';
+import { createNewStats, createNewTimeSeries, calculatePercentageDataset } from '../helpers';
 
 export default function () {
 	const selectedGroup = writable(groups[0].value);
@@ -76,8 +76,8 @@ export default function () {
 
 				// only calculate percentage if not net total group
 				if (!$isNetTotalGroup && $usePercentage) {
-					const sourceLoadStats = createNewStats(d.data, 'total_sources', 'projection');
-					const sourcesData = sourceLoadStats.data.find((d) => d.code === 'total_sources');
+					const sourceStats = createNewStats(d.data, 'total_sources', 'projection');
+					const sourcesData = sourceStats.data.find((d) => d.code === 'total_sources');
 					const netData = [...sourcesData.projection.data];
 
 					otherStats.data.forEach((s) => {
@@ -184,12 +184,29 @@ export default function () {
 	/** @type {import('svelte/store').Writable<{ region: string, data: Stats }[]>} */
 	const regionProjectionData = writable([]);
 	const regionProjectionStats = derived(
-		[regionProjectionData, selectedGroup],
-		([$regionProjectionData, $selectedGroup]) => {
+		[regionProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
+		([$regionProjectionData, $selectedGroup, $isNetTotalGroup, $usePercentage]) => {
 			return $regionProjectionData.map((d) => {
+				const otherStats = createNewStats(d.data, $selectedGroup, 'projection');
+
+				// only calculate percentage if not net total group
+				if (!$isNetTotalGroup && $usePercentage) {
+					const sourceStats = createNewStats(d.data, 'total_sources', 'projection');
+					const sourcesData = sourceStats.data.find((d) => d.code === 'total_sources');
+					const netData = [...sourcesData.projection.data];
+
+					otherStats.data.forEach((s) => {
+						s.units = '%';
+						s.projection.data.forEach((d, i) => {
+							s.projection.data[i] = (d / netData[i]) * 100;
+						});
+					});
+				}
+				console.log('regionProjectionStats otherStats', otherStats);
+
 				return {
 					region: d.region,
-					stats: createNewStats(d.data, $selectedGroup, 'projection')
+					stats: otherStats
 				};
 			});
 		}
@@ -221,13 +238,35 @@ export default function () {
 		}
 	);
 	const regionHistoricalTimeSeries = derived(
-		[regionHistoricalStats, colourReducer],
-		([$regionHistoricalStats, $colourReducer]) => {
+		[regionHistoricalStats, colourReducer, isNetTotalGroup, usePercentage],
+		([$regionHistoricalStats, $colourReducer, $isNetTotalGroup, $usePercentage]) => {
 			return $regionHistoricalStats.map((d) => {
-				const loadIds = d.stats.data.filter((d) => d.isLoad).map((d) => d.id);
+				const loadIds = d.stats.data.filter((s) => s.isLoad).map((s) => s.id);
+
+				let otherTimeSeries = createNewTimeSeries(
+					d.stats.data,
+					$colourReducer,
+					loadIds,
+					'history',
+					'1M',
+					'FY'
+				);
+
+				// only calculate percentage if not net total group
+				if (!$isNetTotalGroup && $usePercentage) {
+					otherTimeSeries = calculatePercentageDataset(
+						d,
+						otherTimeSeries,
+						$colourReducer,
+						'history'
+					);
+				}
+
+				console.log('regionHistoricalTimeSeries otherTimeSeries', d.region, otherTimeSeries);
+
 				return {
 					region: d.region,
-					series: createNewTimeSeries(d.stats.data, $colourReducer, loadIds, 'history', '1M', 'FY')
+					series: otherTimeSeries
 				};
 			});
 		}

@@ -218,10 +218,15 @@
 	} else if ($selectedDisplayView === 'region') {
 		console.log('data by region');
 
+		const historySeriesName = $isNetTotalGroup
+			? '_max'
+			: $scenarioHistoricalTimeSeries.seriesNames[0];
+
 		const processed = processRegionData({
 			regionProjectionTimeSeries: $regionProjectionTimeSeries,
 			regionHistoricalTimeSeries: $regionHistoricalTimeSeries,
-			selectedDataView: $selectedDataView
+			selectedDataView: $selectedDataView,
+			historySeriesName: historySeriesName
 		});
 
 		if (processed) {
