@@ -2,38 +2,24 @@
 	import { getContext } from 'svelte';
 
 	import Switch from '$lib/components/Switch.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import IconPlus from '$lib/icons/Plus.svelte';
 	import IconMinus from '$lib/icons/Minus.svelte';
 
-	import {
-		modelOptions,
-		regionOptions,
-		dataViewOptions,
-		displayViewOptions,
-		chartTypeOptions
-	} from './options';
-	import { scenarioLabels } from './descriptions';
-
-	import { dataTechnologyGroupOptions, dataRegionCompareOptions } from './helpers';
-
 	import Selection from './Selection.svelte';
-	import { scenarios } from '../integrated-system-plan/scenarios';
+
+	import { regionOptions, dataViewOptions, displayViewOptions } from './options';
+	import { scenarioLabels } from './descriptions';
+	import { dataTechnologyGroupOptions, dataRegionCompareOptions } from './helpers';
 
 	const {
 		selectedModel,
 		selectedRegion,
 		selectedDataView,
 		selectedDisplayView,
-		selectedChartType,
 		selectedScenario,
-		selectedPathway,
 		selectedCompareGroup,
 
-		showScenarioOptions,
-
-		scenarioOptions,
-		pathwayOptions
+		showScenarioOptions
 	} = getContext('scenario-filters');
 
 	const { selectedGroup } = getContext('scenario-data');
@@ -49,45 +35,7 @@
 	} else {
 		$selectedGroup = dataRegionCompareOptions[0].value;
 	}
-
-	$: console.log('showScenarioOptions', showScenarioOptions);
 </script>
-
-<!-- <div class="border-b border-warm-grey">
-	<div class="container max-w-none">
-		<div class="grid grid-cols-3 w-full md:w-2/3 gap-3 my-3">
-			<div class="bg-light-warm-grey py-2 px-4 rounded">
-				<Selection
-					selectLabel="Model:"
-					widthClass="w-[240px]"
-					options={modelOptions}
-					selected={$selectedModel}
-					on:change={(evt) => ($selectedModel = evt.detail.value)}
-				/>
-			</div>
-
-			<div class="bg-light-warm-grey py-2 px-4 rounded">
-				<Selection
-					selectLabel="Scenario:"
-					widthClass="w-[240px]"
-					options={$scenarioOptions}
-					selected={$selectedScenario}
-					on:change={(evt) => ($selectedScenario = evt.detail.value)}
-				/>
-			</div>
-
-			<div class="bg-light-warm-grey py-2 px-4 rounded">
-				<Selection
-					selectLabel="Pathway:"
-					widthClass="w-[200px]"
-					options={$pathwayOptions}
-					selected={$selectedPathway}
-					on:change={(evt) => ($selectedPathway = evt.detail.value)}
-				/>
-			</div>
-		</div>
-	</div>
-</div> -->
 
 <div class="container max-w-none flex gap-16 divide-x divide-warm-grey">
 	<Switch
@@ -96,7 +44,7 @@
 		on:change={(evt) => ($selectedDisplayView = evt.detail.value)}
 		class="justify-center my-4"
 	/>
-	<div class="py-2 flex items-center gap-2 pl-10">
+	<div class="py-2 flex items-center gap-2 pl-10 relative z-40">
 		<div>
 			<Selection
 				selectLabel="Projection:"
@@ -139,73 +87,5 @@
 				{/if}
 			</button>
 		{/if}
-
-		<!-- {#if isTechnologyDisplay}
-			<div>
-				<Selection
-					selectLabel="Technology Group:"
-					widthClass="w-[270px]"
-					options={dataTechnologyGroupOptions}
-					selected={$selectedGroup}
-					on:change={(evt) => ($selectedGroup = evt.detail.value)}
-				/>
-			</div>
-		{/if} -->
-
-		<!-- {#if isRegionDisplay || isScenarioDisplay}
-			<div>
-				<Selection
-					selectLabel="Technology:"
-					widthClass="w-[270px]"
-					options={dataRegionCompareOptions}
-					selected={$selectedGroup}
-					on:change={(evt) => ($selectedGroup = evt.detail.value)}
-				/>
-			</div>
-		{/if} -->
 	</div>
 </div>
-
-<!-- <div class="bg-light-warm-grey py-2 px-4 rounded">
-	<Selection
-		selectLabel="By:"
-		widthClass="w-[150px]"
-		options={displayViewOptions}
-		selected={$selectedDisplayView}
-		on:change={(evt) => ($selectedDisplayView = evt.detail.value)}
-	/>
-</div> -->
-
-<!-- <div class="bg-light-warm-grey py-2 px-4 rounded">
-	<Selection
-		selectLabel="Chart:"
-		widthClass="w-[270px]"
-		options={chartTypeOptions}
-		selected={$selectedChartType}
-		on:change={(evt) => ($selectedChartType = evt.detail.value)}
-	/>
-</div> -->
-
-<!-- {#if !isRegionDisplay}
-	<div class="bg-light-warm-grey py-2 px-4 rounded">
-		<Selection
-			selectLabel="Grouping:"
-			widthClass="w-[270px]"
-			options={dataTechnologyGroupOptions}
-			selected={$selectedGroup}
-			on:change={(evt) => ($selectedGroup = evt.detail.value)}
-		/>
-	</div>
-{/if}
-
-{#if isRegionDisplay}
-	<div class="bg-light-warm-grey py-2 px-4 rounded">
-		<Selection
-			selectLabel="Compare:"
-			widthClass="w-[270px]"
-			options={dataRegionCompareOptions}
-			selected={$selectedGroup}
-			on:change={(evt) => ($selectedGroup = evt.detail.value)}
-		/>
-	</div>
-{/if} -->

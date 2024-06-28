@@ -1,7 +1,12 @@
 import { derived, writable } from 'svelte/store';
 import { colourReducer } from '$lib/stores/theme';
 import { groups } from '../groups';
-import { createNewStats, createNewTimeSeries, calculatePercentageDataset } from '../helpers';
+import {
+	createNewStats,
+	createNewTimeSeries,
+	calculatePercentageStats,
+	calculatePercentageTimeSeries
+} from '../helpers';
 
 export default function () {
 	const selectedGroup = writable(groups[0].value);
@@ -69,25 +74,12 @@ export default function () {
 	const scenarioProjectionStats = derived(
 		[scenarioProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
 		([$scenarioProjectionData, $selectedGroup, $isNetTotalGroup, $usePercentage]) => {
-			console.log('selectedGroup', $selectedGroup);
-
 			return $scenarioProjectionData.map((d) => {
-				const otherStats = createNewStats(d.data, $selectedGroup, 'projection');
+				let otherStats = createNewStats(d.data, $selectedGroup, 'projection');
 
 				// only calculate percentage if not net total group
 				if (!$isNetTotalGroup && $usePercentage) {
-					const sourceStats = createNewStats(d.data, 'total_sources', 'projection');
-					const sourcesData = sourceStats.data.find((d) => d.code === 'total_sources');
-					const netData = [...sourcesData.projection.data];
-
-					otherStats.data.forEach((s) => {
-						s.units = '%';
-						s.projection.data.forEach((d, i) => {
-							s.projection.data[i] = (d / netData[i]) * 100;
-						});
-					});
-
-					console.log('projection otherStats', otherStats);
+					otherStats = calculatePercentageStats(d, otherStats, 'projection');
 				}
 
 				return {
@@ -127,22 +119,10 @@ export default function () {
 		}
 	);
 	const scenarioHistoricalTimeSeries = derived(
-		[
-			scenarioHistoricalData,
-			scenarioHistoricalStats,
-			colourReducer,
-			isNetTotalGroup,
-			usePercentage
-		],
-		([
-			$scenarioHistoricalData,
-			$scenarioHistoricalStats,
-			$colourReducer,
-			$isNetTotalGroup,
-			$usePercentage
-		]) => {
+		[scenarioHistoricalStats, colourReducer, isNetTotalGroup, usePercentage],
+		([$scenarioHistoricalStats, $colourReducer, $isNetTotalGroup, $usePercentage]) => {
 			const loadIds = $scenarioHistoricalStats.data.filter((d) => d.isLoad).map((d) => d.id);
-			const otherTimeSeries = createNewTimeSeries(
+			let otherTimeSeries = createNewTimeSeries(
 				$scenarioHistoricalStats.data,
 				$colourReducer,
 				loadIds,
@@ -152,28 +132,14 @@ export default function () {
 			);
 
 			// only calculate percentage if not net total group
+
 			if (!$isNetTotalGroup && $usePercentage) {
-				const sourceStats = createNewStats($scenarioHistoricalData, 'total_sources', 'history');
-				const sourceTimeSeries = createNewTimeSeries(
-					sourceStats.data,
+				otherTimeSeries = calculatePercentageTimeSeries(
+					$scenarioHistoricalStats.originalData,
+					otherTimeSeries,
 					$colourReducer,
-					loadIds,
-					'history',
-					'1M',
-					'FY'
+					'history'
 				);
-
-				// calculate percentage
-				const totalSourcesGroupId = sourceTimeSeries.seriesNames[0];
-				const sourceTimeSeriesData = sourceTimeSeries.data;
-
-				otherTimeSeries.data.forEach((s, i) => {
-					otherTimeSeries.seriesNames.forEach((name) => {
-						s[name] = (s[name] / sourceTimeSeriesData[i][totalSourcesGroupId]) * 100;
-					});
-				});
-
-				console.log('historical otherTimeSeries', otherTimeSeries);
 			}
 
 			return otherTimeSeries;
@@ -187,22 +153,12 @@ export default function () {
 		[regionProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
 		([$regionProjectionData, $selectedGroup, $isNetTotalGroup, $usePercentage]) => {
 			return $regionProjectionData.map((d) => {
-				const otherStats = createNewStats(d.data, $selectedGroup, 'projection');
+				let otherStats = createNewStats(d.data, $selectedGroup, 'projection');
 
 				// only calculate percentage if not net total group
 				if (!$isNetTotalGroup && $usePercentage) {
-					const sourceStats = createNewStats(d.data, 'total_sources', 'projection');
-					const sourcesData = sourceStats.data.find((d) => d.code === 'total_sources');
-					const netData = [...sourcesData.projection.data];
-
-					otherStats.data.forEach((s) => {
-						s.units = '%';
-						s.projection.data.forEach((d, i) => {
-							s.projection.data[i] = (d / netData[i]) * 100;
-						});
-					});
+					otherStats = calculatePercentageStats(d, otherStats, 'projection');
 				}
-				console.log('regionProjectionStats otherStats', otherStats);
 
 				return {
 					region: d.region,
@@ -254,15 +210,13 @@ export default function () {
 
 				// only calculate percentage if not net total group
 				if (!$isNetTotalGroup && $usePercentage) {
-					otherTimeSeries = calculatePercentageDataset(
-						d,
+					otherTimeSeries = calculatePercentageTimeSeries(
+						d.stats.originalData,
 						otherTimeSeries,
 						$colourReducer,
 						'history'
 					);
 				}
-
-				console.log('regionHistoricalTimeSeries otherTimeSeries', d.region, otherTimeSeries);
 
 				return {
 					region: d.region,

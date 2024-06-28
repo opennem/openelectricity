@@ -109,9 +109,34 @@ export function mutateHistoryDataDates(data) {
 	});
 }
 
-export function calculatePercentageDataset(statsData, otherTimeSeries, colourReducer, type) {
-	const sourceLoadStats = createNewStats(statsData.stats.originalData, 'totals', type);
-	const totalsLoadIds = statsData.stats.originalData.filter((d) => d.isLoad).map((d) => d.id);
+export function calculatePercentageStats(statsData, otherStats, type) {
+	const sourceLoadStats = createNewStats(statsData.data, 'totals', type);
+
+	let netData = [];
+
+	sourceLoadStats.data.forEach((d, i) => {
+		if (i === 0) {
+			netData = d[type].data.map((v) => v);
+		} else {
+			d[type].data.forEach((v, j) => {
+				netData[j] += v;
+			});
+		}
+	});
+
+	otherStats.data.forEach((s) => {
+		s.units = '%';
+		s[type].data.forEach((d, i) => {
+			s[type].data[i] = (d / netData[i]) * 100;
+		});
+	});
+
+	return otherStats;
+}
+
+export function calculatePercentageTimeSeries(dataset, otherTimeSeries, colourReducer, type) {
+	const sourceLoadStats = createNewStats(dataset, 'totals', type);
+	const totalsLoadIds = dataset.filter((d) => d.isLoad).map((d) => d.id);
 
 	let netStatsData = {};
 	let netData = [];
@@ -252,8 +277,6 @@ export function processScenarioData({
 	selectedDataView,
 	historySeriesName
 }) {
-	console.log('historySeriesName', historySeriesName);
-
 	let updatedData = [];
 	let combinedScenarioData = [];
 
@@ -280,8 +303,6 @@ export function processScenarioData({
 				lastHistory?.time === firstProjectionItem?.time
 					? filteredHistoricalTimeSeries.slice(0, -1)
 					: filteredHistoricalTimeSeries;
-
-			console.log('is same', lastHistory?.time === firstProjectionItem?.time);
 
 			// console.log('first last', firstProjectionItem, lastHistory, historyData);
 
@@ -323,8 +344,6 @@ export function processScenarioData({
 					}
 				});
 			});
-
-			console.log('updatedData', updatedData, historyData);
 
 			// combine historical and projection data, adding empty values for historical data for Capacity data view
 			// let data =

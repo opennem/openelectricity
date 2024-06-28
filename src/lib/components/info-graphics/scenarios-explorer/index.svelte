@@ -1,10 +1,9 @@
 <script>
 	import { getContext } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { format, startOfYear } from 'date-fns';
+	import { startOfYear } from 'date-fns';
 
 	import LogoMark from '$lib/images/logo-mark.svelte';
-	import Toggle from '$lib/components/form-elements/Toggle.svelte';
 	import ExplorerTooltip from './Tooltip.svelte';
 	import ExplorerChart from './Chart.svelte';
 	import ExplorerTable from './Table.svelte';
@@ -17,24 +16,12 @@
 	} from './helpers';
 	import { dataViewDescription, dataViewlabel, dataViewUnits } from './options';
 
-	const {
-		selectedDisplayView,
-		selectedModel,
-		selectedScenario,
-		selectedPathway,
-		selectedRegion,
-		selectedDataView,
-		selectedChartType,
-
-		scenarioOptions,
-		pathwayOptions
-	} = getContext('scenario-filters');
+	const { selectedDisplayView, selectedModel, selectedDataView } = getContext('scenario-filters');
 
 	const {
 		usePercentage,
 		isNetTotalGroup,
 
-		historicalStats,
 		historicalTimeSeries,
 		projectionStats,
 		projectionTimeSeries,
@@ -42,9 +29,7 @@
 		scenarioProjectionStats,
 		scenarioProjectionTimeSeries,
 		scenarioHistoricalTimeSeries,
-		regionProjectionStats,
 		regionProjectionTimeSeries,
-		regionHistoricalStats,
 		regionHistoricalTimeSeries
 	} = getContext('scenario-data');
 
@@ -69,9 +54,6 @@
 
 	/** @type {string | null} */
 	let highlightId = null;
-
-	// /** @type {*} */
-	// let cachedDisplayData = {};
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		if (e.detail?.key) {
@@ -132,7 +114,7 @@
 	$: overlayStroke = isTechnologyDisplay ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)';
 
 	$: if (isTechnologyDisplay) {
-		console.log('data by technology');
+		console.log('Process technology data');
 
 		const processed = processTechnologyData({
 			projectionTimeSeries: $projectionTimeSeries,
@@ -161,23 +143,7 @@
 			};
 		}
 	} else if ($selectedDisplayView === 'scenario') {
-		console.log('data by scenario');
-
-		// const processed = processRegionData({
-		// 	regionProjectionTimeSeries: $regionProjectionTimeSeries,
-		// 	regionHistoricalTimeSeries: $regionHistoricalTimeSeries,
-		// 	selectedDataView: $selectedDataView
-		// });
-
-		console.log('$scenarioProjectionData', $scenarioProjectionData);
-		console.log('$scenarioProjectionStats', $scenarioProjectionStats);
-		console.log('$scenarioProjectionTimeSeries', $scenarioProjectionTimeSeries);
-		console.log('$scenarioHistoricalTimeSeries', $scenarioHistoricalTimeSeries);
-		console.log('usePercentage', $usePercentage);
-		console.log('isNetTotalGroup', $isNetTotalGroup);
-
-		// ? $scenarioHistoricalTimeSeries.seriesNames[0]
-		// 		: 'au.total_sources.grouped'
+		console.log('Process scenario data');
 
 		const historySeriesName =
 			$isNetTotalGroup && !$usePercentage
@@ -193,8 +159,6 @@
 			selectedDataView: $selectedDataView,
 			historySeriesName: historySeriesName
 		});
-
-		console.log('processed', processed);
 
 		if (processed) {
 			seriesData = processed.data;
@@ -212,11 +176,9 @@
 				items: seriesItems,
 				yDomain: yDomain
 			};
-
-			// console.log('processed region', processed);
 		}
 	} else if ($selectedDisplayView === 'region') {
-		console.log('data by region');
+		console.log('Process region data');
 
 		const historySeriesName = $isNetTotalGroup
 			? '_max'
@@ -245,8 +207,6 @@
 				items: seriesItems,
 				yDomain: yDomain
 			};
-
-			// console.log('processed region', processed);
 		}
 	}
 
@@ -268,8 +228,6 @@
 {#if seriesData.length > 0}
 	<div class="grid grid-cols-12 gap-4">
 		<div class="col-span-8 pt-4">
-			<!-- <Toggle checked={showTable} on:click={() => (showTable = !showTable)} /> -->
-
 			<div class="relative -top-3">
 				<ExplorerTooltip
 					{hoverData}

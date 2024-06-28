@@ -5,7 +5,6 @@
 	import { getModels, getAllRegionModels } from '$lib/models/index2';
 	import { getHistory, getAllRegionHistory } from '$lib/opennem';
 	import selectOptionsMap from '$lib/utils/select-options-map';
-	import deepCopy from '$lib/utils/deep-copy';
 
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -63,15 +62,6 @@
 		selectedGroup
 	} = getContext('scenario-data');
 
-	/** @type {*} */
-	let modelsData;
-	/** @type {*} */
-	let historyData;
-	/** @type {*} */
-	let allModelsRegionData;
-	/** @type {*} */
-	let allHistoryData;
-
 	$: defaultPathway = defaultModelPathway[$selectedModel];
 
 	selectedDisplayView.subscribe((value) => {
@@ -124,9 +114,6 @@
 		console.log('get by scenario');
 
 		getScenarioData({
-			model: $selectedModel,
-			scenario: $selectedScenario,
-			pathway: $selectedPathway,
 			scenarios: $selectedMultipleScenarios,
 			dataView: $selectedDataView,
 			region: $selectedRegion
@@ -149,8 +136,10 @@
 	 * @param {*} param0
 	 */
 	async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
-		modelsData = await getModels(model, region, dataView);
-		historyData = await getHistory(region);
+		const [historyData, modelsData] = await Promise.all([
+			getHistory(region),
+			getModels(model, region, dataView)
+		]);
 
 		updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
 
@@ -158,32 +147,30 @@
 			(d) => d.scenario === scenario && d.pathway === pathway
 		);
 
-		$historicalData = covertHistoryDataToTWh(deepCopy(historyData));
+		$historicalData = covertHistoryDataToTWh(historyData);
+
+		console.log('technologyProjectionData', $projectionData);
+		console.log('technologyHistoricalData', $historicalData);
 	}
 
 	/**
 	 * Get data for by scenario view
 	 * @param {*} param0
 	 */
-	async function getScenarioData({ model, scenarios, region, scenario, pathway, dataView }) {
-		console.log('comparing these scenarios', scenarios);
-
-		modelsData = await getModels(model, region, dataView);
-
-		const aemo2022 = await getModels('aemo2022', region, dataView);
-		const aemo2024 = await getModels('aemo2024', region, dataView);
+	async function getScenarioData({ scenarios, region, dataView }) {
+		const [historyData, aemo2022, aemo2024] = await Promise.all([
+			getHistory(region),
+			getModels('aemo2022', region, dataView),
+			getModels('aemo2024', region, dataView)
+		]);
 
 		const allModels = {
 			aemo2022: aemo2022,
 			aemo2024: aemo2024
 		};
 
-		historyData = await getHistory(region);
-
-		console.log('modelsData', modelsData, historyData);
-
 		/** @type {*} */
-		let scenarioProjections = [];
+		const scenarioProjections = [];
 
 		scenarios.forEach((scene) => {
 			const filtered = allModels[scene.model].outlook.data.filter(
@@ -201,27 +188,10 @@
 		});
 
 		$scenarioProjectionData = scenarioProjections;
+		$scenarioHistoricalData = covertHistoryDataToTWh(historyData);
 
-		console.log('$scenarioProjectionData', $scenarioProjectionData);
-
-		// modelsData.forEach((d) => {
-		// 	const filtered = d.outlook.data.filter(
-		// 		(d) => d.scenario === scenario && d.pathway === pathway
-		// 	);
-		// 	scenarioProjections.push({
-		// 		model:
-		// 		data: filtered
-		// 	});
-		// });
-		// $projectionData = modelsData.outlook.data.filter(
-		// 	(d) => d.scenario === scenario && d.pathway === pathway
-		// );
-
-		// $historicalData = covertHistoryDataToTWh(deepCopy(historyData));
-		const convertedHistory = covertHistoryDataToTWh(deepCopy(historyData));
-
-		$scenarioHistoricalData = convertedHistory;
-		console.log('$scenarioHistoricalData', $scenarioHistoricalData);
+		console.log('scenarioProjectionData', scenarioProjections);
+		console.log('scenarioHistoricalData', $scenarioHistoricalData);
 	}
 
 	/**
@@ -229,15 +199,16 @@
 	 * @param {*} param0
 	 */
 	async function getRegionData({ model, scenario, pathway, dataView }) {
-		allModelsRegionData = await getAllRegionModels(model, dataView);
-		allHistoryData = await getAllRegionHistory();
+		const [allHistoryData, allModelsRegionData] = await Promise.all([
+			getAllRegionHistory(),
+			getAllRegionModels(model, dataView)
+		]);
 
 		updateScenariosPathways(allModelsRegionData[0].scenarios, allModelsRegionData[0].pathways);
 
-		const converted = covertHistoryDataToTWh(deepCopy(allHistoryData));
-
 		/** @type {*} */
 		let regionProjections = [];
+
 		allModelsRegionData.forEach((d) => {
 			const filtered = d.outlook.data.filter(
 				(d) => d.scenario === scenario && d.pathway === pathway
@@ -247,20 +218,24 @@
 				data: filtered
 			});
 		});
-		console.log('regionProjections', regionProjections);
-		$regionProjectionData = regionProjections;
 
 		/** @type {*} */
 		let regionHistory = [];
+
 		regionsOnly.forEach((region) => {
-			const filtered = converted.filter((d) => d.region === region);
+			const filtered = allHistoryData.filter((d) => d.region === region);
 
 			regionHistory.push({
 				region: region,
-				data: filtered
+				data: covertHistoryDataToTWh(filtered)
 			});
 		});
+
+		$regionProjectionData = regionProjections;
 		$regionHistoricalData = regionHistory;
+
+		console.log('regionProjectionData', regionProjections);
+		console.log('regionHistoricalData', regionHistory);
 	}
 
 	/**
