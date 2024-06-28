@@ -9,10 +9,28 @@
 		scenarioKeyPoints
 	} from './descriptions';
 
-	const { selectedModel, selectedScenario, selectedDisplayView } = getContext('scenario-filters');
+	import { dataViewUnits } from './options';
+
+	const {
+		selectedModel,
+		selectedScenario,
+		selectedDisplayView,
+		selectedDataView,
+		isTechnologyDisplay,
+		isScenarioDisplay
+	} = getContext('scenario-filters');
+
+	const { showPercentage } = getContext('scenario-data');
+
 	const { cachedDisplayData } = getContext('scenario-cache');
 
 	$: console.log('cachedDisplayData', $cachedDisplayData[$selectedDisplayView]);
+
+	$: displayUnit = $isTechnologyDisplay
+		? dataViewUnits[$selectedDataView]
+		: $showPercentage
+		? '% of demand'
+		: dataViewUnits[$selectedDataView];
 	$: displayData = $cachedDisplayData[$selectedDisplayView];
 	$: loadIds = displayData ? displayData.loadIds || [] : [];
 	$: displayDataNames = displayData
@@ -20,10 +38,7 @@
 		: [];
 	$: displayDatasets = displayData ? displayData.data || [] : [];
 
-	$: isTechnologyDisplay = $selectedDisplayView === 'technology';
-	$: isScenarioDisplay = $selectedDisplayView === 'scenario';
-
-	$: overlay = isScenarioDisplay
+	$: overlay = $isScenarioDisplay
 		? {
 				xStartValue: startOfYear(new Date('2024-01-01')),
 				xEndValue: startOfYear(new Date('2052-01-01'))
@@ -38,11 +53,11 @@
 				xEndValue: startOfYear(new Date('2051-01-01'))
 		  };
 	$: overlayLine =
-		$selectedModel === 'aemo2024' && !isScenarioDisplay
+		$selectedModel === 'aemo2024' && !$isScenarioDisplay
 			? { date: startOfYear(new Date('2025-01-01')) }
 			: { date: startOfYear(new Date('2024-01-01')) };
 
-	$: names = isTechnologyDisplay ? [...displayDataNames].reverse() : displayDataNames;
+	$: names = $isTechnologyDisplay ? [...displayDataNames].reverse() : displayDataNames;
 	$: dataset = displayDatasets.map((d) => {
 		const obj = {
 			...d
@@ -56,7 +71,7 @@
 		// Fill in any missing data so area chart renders properly
 		displayDataNames.forEach((name) => {
 			if (!obj[name]) {
-				if (isScenarioDisplay && name !== 'historical') {
+				if ($isScenarioDisplay && name !== 'historical') {
 					// if it is a scenario display, fill in the historical data
 					obj[name] = obj.historical || 0;
 				} else {
@@ -71,7 +86,7 @@
 	$: console.log('dataset', dataset);
 
 	$: xTicks =
-		$selectedModel === 'aemo2024' || isScenarioDisplay
+		$selectedModel === 'aemo2024' || $isScenarioDisplay
 			? [2010, 2024, 2040, 2052].map((year) => startOfYear(new Date(`${year}-01-01`)))
 			: [2010, 2030, 2051].map((year) => startOfYear(new Date(`${year}-01-01`)));
 
@@ -122,6 +137,7 @@
 					title={displayData.labels[key]}
 					colour={displayData.colours[key]}
 					{hoverData}
+					{displayUnit}
 					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 					on:mouseout={() => (hoverData = undefined)}
 				/>

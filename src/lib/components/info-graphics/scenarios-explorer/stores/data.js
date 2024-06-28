@@ -230,6 +230,10 @@ export default function () {
 		selectedGroup: selectedGroup,
 		usePercentage: usePercentage,
 		isNetTotalGroup: isNetTotalGroup,
+		showPercentage: derived(
+			[isNetTotalGroup, usePercentage],
+			([$isNetTotalGroup, $usePercentage]) => !$isNetTotalGroup && $usePercentage
+		),
 
 		projectionData: projectionData,
 		projectionStats: projectionStats,

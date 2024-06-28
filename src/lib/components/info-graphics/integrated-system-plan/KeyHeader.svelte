@@ -27,12 +27,6 @@
 	</div>
 
 	<h3 class="leading-sm h-24 mt-4">
-		{#if data}
-			{data ? displayValue : '—'}
-			<small class="text-sm text-dark-grey font-light">
-				({data ? `${formatValue(percent)}%` : '—'})
-			</small>
-			<small class="block text-xs text-mid-grey font-light">{display}</small>
-		{/if}
+		<slot />
 	</h3>
 </header>

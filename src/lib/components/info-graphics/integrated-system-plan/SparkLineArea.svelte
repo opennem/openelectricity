@@ -1,7 +1,6 @@
 <script>
+	import { getContext } from 'svelte';
 	import { LayerCake, Svg, Html } from 'layercake';
-
-	import { formatFyTickX, formatTickY, displayXTicks } from './helpers';
 
 	import Line from '$lib/components/charts/elements/Line.svelte';
 	import Area from '$lib/components/charts/elements/Area.svelte';
@@ -16,6 +15,10 @@
 
 	import KeyHeader from './KeyHeader.svelte';
 
+	import { formatFyTickX, formatTickY, displayXTicks, formatValue } from './helpers';
+
+	const { isTechnologyDisplay } = getContext('scenario-filters');
+
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
 
@@ -25,6 +28,7 @@
 	export let title = '';
 	export let colour = '#000';
 	export let showIcon = false;
+	export let displayUnit = '';
 
 	/** If true, overlay will take up the full width of the chart
 	 * If object with xStartValue and xEndValue, overlay will be a range
@@ -40,12 +44,26 @@
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	$: hoverValue = hoverData ? hoverData[key] || 0 : 0;
+	$: hoverPercentage = hoverData && hoverData._max ? (hoverValue / hoverData._max) * 100 : 0;
 	$: maxValue = Math.round(Math.max(...dataset.map((d) => d[key] || 0)));
 	$: maxY = maxValue > 0 ? maxValue : 10;
 </script>
 
 <div {...$$restProps}>
-	<KeyHeader {key} {title} {fuelTechId} data={hoverData} {showIcon} />
+	<KeyHeader {key} {title} {fuelTechId} data={hoverData} {showIcon}>
+		{#if hoverData}
+			{formatValue(hoverValue)}
+
+			{#if $isTechnologyDisplay}
+				<small class="text-sm text-dark-grey font-light">
+					({formatValue(hoverPercentage)}%)
+				</small>
+			{/if}
+
+			<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
+		{/if}
+	</KeyHeader>
 
 	<div style="height: 150px;">
 		<LayerCake

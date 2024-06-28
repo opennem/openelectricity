@@ -14,9 +14,22 @@
 		processRegionData,
 		formatFyTickX
 	} from './helpers';
-	import { dataViewDescription, dataViewlabel, dataViewUnits } from './options';
+	import {
+		dataViewDescription,
+		dataViewlabel,
+		dataViewUnits,
+		dataViewLongLabel,
+		dataViewIntervalLabel
+	} from './options';
 
-	const { selectedDisplayView, selectedModel, selectedDataView } = getContext('scenario-filters');
+	const {
+		selectedDisplayView,
+		selectedModel,
+		selectedDataView,
+		isTechnologyDisplay,
+		isScenarioDisplay,
+		isRegionDisplay
+	} = getContext('scenario-filters');
 
 	const {
 		usePercentage,
@@ -79,12 +92,10 @@
 					startOfYear(new Date('2040-01-01')),
 					startOfYear(new Date('2051-01-01'))
 			  ];
-	$: isTechnologyDisplay = $selectedDisplayView === 'technology';
-	$: isScenarioDisplay = $selectedDisplayView === 'scenario';
-	$: isRegionDisplay = $selectedDisplayView === 'region';
-	$: display = isTechnologyDisplay ? 'area' : 'line';
-	$: showContribution = isTechnologyDisplay;
-	$: overlay = isScenarioDisplay
+
+	$: display = $isTechnologyDisplay ? 'area' : 'line';
+	$: showContribution = $isTechnologyDisplay;
+	$: overlay = $isScenarioDisplay
 		? {
 				xStartValue: startOfYear(new Date('2024-01-01')),
 				xEndValue: startOfYear(new Date('2052-01-01'))
@@ -107,13 +118,13 @@
 	// 		: false;
 	$: blankOverlay = false;
 	$: overlayLine =
-		$selectedModel === 'aemo2024' && !isScenarioDisplay
+		$selectedModel === 'aemo2024' && !$isScenarioDisplay
 			? { date: startOfYear(new Date('2025-01-01')) }
 			: { date: startOfYear(new Date('2024-01-01')) };
 
-	$: overlayStroke = isTechnologyDisplay ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)';
+	$: overlayStroke = $isTechnologyDisplay ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)';
 
-	$: if (isTechnologyDisplay) {
+	$: if ($isTechnologyDisplay) {
 		console.log('Process technology data');
 
 		const processed = processTechnologyData({
@@ -220,6 +231,12 @@
 		seriesColours = colours;
 	}
 
+	$: isPercentageView = !$isNetTotalGroup && $usePercentage;
+	$: defaultText =
+		dataViewLongLabel[$selectedDataView] +
+		` (${isPercentageView ? '% of demand' : dataViewUnits[$selectedDataView]}) ` +
+		dataViewIntervalLabel[$selectedDataView];
+
 	function handleSort(e) {
 		seriesItems = e.detail;
 	}
@@ -232,10 +249,10 @@
 				<ExplorerTooltip
 					{hoverData}
 					{hoverKey}
-					defaultText={dataViewDescription[$selectedDataView]}
+					{defaultText}
 					{seriesColours}
 					{seriesLabels}
-					showTotal={isTechnologyDisplay}
+					showTotal={$isTechnologyDisplay}
 				/>
 			</div>
 
@@ -266,7 +283,7 @@
 		</div>
 		<div class="col-span-4">
 			{#if showTable}
-				{#if isTechnologyDisplay}
+				{#if $isTechnologyDisplay}
 					<ExplorerTechnologyTable
 						valueColumnName={dataViewlabel[$selectedDataView]}
 						units={dataViewUnits[$selectedDataView]}

@@ -19,7 +19,11 @@
 		selectedScenario,
 		selectedCompareGroup,
 
-		showScenarioOptions
+		showScenarioOptions,
+
+		isTechnologyDisplay,
+		isScenarioDisplay,
+		isRegionDisplay
 	} = getContext('scenario-filters');
 
 	const { selectedGroup } = getContext('scenario-data');
@@ -27,10 +31,7 @@
 	$selectedGroup = dataTechnologyGroupOptions[0].value;
 	$selectedCompareGroup = dataRegionCompareOptions[0].value;
 
-	$: isRegionDisplay = $selectedDisplayView === 'region';
-	$: isScenarioDisplay = $selectedDisplayView === 'scenario';
-	$: isTechnologyDisplay = $selectedDisplayView === 'technology';
-	$: if (isTechnologyDisplay) {
+	$: if ($isTechnologyDisplay) {
 		$selectedGroup = dataTechnologyGroupOptions[0].value;
 	} else {
 		$selectedGroup = dataRegionCompareOptions[0].value;
@@ -55,7 +56,7 @@
 			/>
 		</div>
 
-		{#if isTechnologyDisplay || isScenarioDisplay}
+		{#if $isTechnologyDisplay || $isScenarioDisplay}
 			<div>
 				<Selection
 					selectLabel="Region:"
@@ -74,7 +75,7 @@
 				class:border-mid-warm-grey={!$showScenarioOptions}
 				on:click={() => ($showScenarioOptions = !$showScenarioOptions)}
 			>
-				{#if isScenarioDisplay}
+				{#if $isScenarioDisplay}
 					Update Scenarios
 				{:else}
 					{scenarioLabels[$selectedModel][$selectedScenario]}

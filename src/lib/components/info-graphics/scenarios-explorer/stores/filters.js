@@ -41,6 +41,19 @@ export default function () {
 		return find ? find.label : '';
 	});
 
+	const isTechnologyDisplay = derived(
+		selectedDisplayView,
+		($selectedDisplayView) => $selectedDisplayView === 'technology'
+	);
+	const isScenarioDisplay = derived(
+		selectedDisplayView,
+		($selectedDisplayView) => $selectedDisplayView === 'scenario'
+	);
+	const isRegionDisplay = derived(
+		selectedDisplayView,
+		($selectedDisplayView) => $selectedDisplayView === 'region'
+	);
+
 	return {
 		modelOptions: modelOptions,
 		selectedModel: selectedModel,
@@ -56,6 +69,10 @@ export default function () {
 
 		displayViewOptions: displayViewOptions,
 		selectedDisplayView: selectedDisplayView,
+
+		isTechnologyDisplay: isTechnologyDisplay,
+		isScenarioDisplay: isScenarioDisplay,
+		isRegionDisplay: isRegionDisplay,
 
 		chartTypeOptions: chartTypeOptions,
 		selectedChartType: selectedChartType,
