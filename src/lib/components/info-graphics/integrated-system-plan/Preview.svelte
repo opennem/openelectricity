@@ -375,6 +375,8 @@
 				colour={projectionSeriesColours[key]}
 				{hoverData}
 				showIcon={true}
+				isTechnologyDisplay={true}
+				displayUnit="TWh"
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>

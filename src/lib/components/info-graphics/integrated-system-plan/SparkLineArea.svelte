@@ -1,5 +1,4 @@
 <script>
-	import { getContext } from 'svelte';
 	import { LayerCake, Svg, Html } from 'layercake';
 
 	import Line from '$lib/components/charts/elements/Line.svelte';
@@ -17,8 +16,6 @@
 
 	import { formatFyTickX, formatTickY, displayXTicks, formatValue } from './helpers';
 
-	const { isTechnologyDisplay } = getContext('scenario-filters');
-
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
 
@@ -29,6 +26,7 @@
 	export let colour = '#000';
 	export let showIcon = false;
 	export let displayUnit = '';
+	export let isTechnologyDisplay = false;
 
 	/** If true, overlay will take up the full width of the chart
 	 * If object with xStartValue and xEndValue, overlay will be a range
@@ -55,7 +53,7 @@
 		{#if hoverData}
 			{formatValue(hoverValue)}
 
-			{#if $isTechnologyDisplay}
+			{#if isTechnologyDisplay}
 				<small class="text-sm text-dark-grey font-light">
 					({formatValue(hoverPercentage)}%)
 				</small>

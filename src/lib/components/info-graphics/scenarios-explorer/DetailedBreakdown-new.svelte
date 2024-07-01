@@ -138,6 +138,7 @@
 					colour={displayData.colours[key]}
 					{hoverData}
 					{displayUnit}
+					isTechnologyDisplay={$isTechnologyDisplay}
 					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 					on:mouseout={() => (hoverData = undefined)}
 				/>

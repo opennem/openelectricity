@@ -112,6 +112,8 @@
 				title={displayData.labels[key]}
 				colour={displayData.colours[key]}
 				{hoverData}
+				isTechnologyDisplay={true}
+				displayUnit={'TWh'}
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>
