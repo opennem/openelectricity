@@ -116,7 +116,7 @@
 	});
 
 	$: filteredHistoricalTimeSeriesDatasets = updatedHistoricalTimeSeriesDatasets.filter(
-		(d) => d.date.getFullYear() < 2024 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009
 	);
 
 	$: sparkLineXTicks = modelSparklineXTicks[selectedModel.value];

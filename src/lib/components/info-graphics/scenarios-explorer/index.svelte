@@ -88,7 +88,7 @@
 			  ]
 			: [
 					startOfYear(new Date('2010-01-01')),
-					startOfYear(new Date('2024-01-01')),
+					startOfYear(new Date('2023-01-01')),
 					startOfYear(new Date('2040-01-01')),
 					startOfYear(new Date('2051-01-01'))
 			  ];
@@ -102,11 +102,11 @@
 		  }
 		: $selectedModel === 'aemo2024'
 		? {
-				xStartValue: startOfYear(new Date('2025-01-01')),
+				xStartValue: startOfYear(new Date('2024-01-01')),
 				xEndValue: startOfYear(new Date('2052-01-01'))
 		  }
 		: {
-				xStartValue: startOfYear(new Date('2024-01-01')),
+				xStartValue: startOfYear(new Date('2023-01-01')),
 				xEndValue: startOfYear(new Date('2051-01-01'))
 		  };
 	// $: blankOverlay =
@@ -119,8 +119,8 @@
 	$: blankOverlay = false;
 	$: overlayLine =
 		$selectedModel === 'aemo2024' && !$isScenarioDisplay
-			? { date: startOfYear(new Date('2025-01-01')) }
-			: { date: startOfYear(new Date('2024-01-01')) };
+			? { date: startOfYear(new Date('2024-01-01')) }
+			: { date: startOfYear(new Date('2023-01-01')) };
 
 	$: overlayStroke = $isTechnologyDisplay ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)';
 

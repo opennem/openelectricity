@@ -30,17 +30,17 @@
 		  }
 		: $selectedModel === 'aemo2024'
 		? {
-				xStartValue: startOfYear(new Date('2025-01-01')),
+				xStartValue: startOfYear(new Date('2024-01-01')),
 				xEndValue: startOfYear(new Date('2052-01-01'))
 		  }
 		: {
-				xStartValue: startOfYear(new Date('2024-01-01')),
+				xStartValue: startOfYear(new Date('2023-01-01')),
 				xEndValue: startOfYear(new Date('2051-01-01'))
 		  };
 	$: overlayLine =
 		$selectedModel === 'aemo2024' && !isScenarioDisplay
-			? { date: startOfYear(new Date('2025-01-01')) }
-			: { date: startOfYear(new Date('2024-01-01')) };
+			? { date: startOfYear(new Date('2024-01-01')) }
+			: { date: startOfYear(new Date('2023-01-01')) };
 
 	$: names = isTechnologyDisplay ? [...displayDataNames].reverse() : displayDataNames;
 	$: dataset = displayDatasets.map((d) => {
@@ -73,7 +73,7 @@
 	$: xTicks =
 		$selectedModel === 'aemo2024' || isScenarioDisplay
 			? [2010, 2024, 2040, 2052].map((year) => startOfYear(new Date(`${year}-01-01`)))
-			: [2010, 2030, 2051].map((year) => startOfYear(new Date(`${year}-01-01`)));
+			: [2010, 2023, 2040, 2051].map((year) => startOfYear(new Date(`${year}-01-01`)));
 
 	let hoverData = null;
 </script>
