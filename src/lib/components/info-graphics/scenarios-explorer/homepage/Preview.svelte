@@ -237,9 +237,15 @@
 		</div>
 	</header>
 
-	<Filters />
+	<div class="md:absolute z-50 md:flex md:mt-12 gap-36">
+		<div class="md:w-[28%]">
+			<Filters />
+		</div>
 
-	<ScenarioDescription />
+		<div class="md:w-[40%]">
+			<ScenarioDescription />
+		</div>
+	</div>
 </div>
 
 <div class="max-w-none lg:container">

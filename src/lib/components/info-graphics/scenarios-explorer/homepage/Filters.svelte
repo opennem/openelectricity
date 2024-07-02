@@ -42,7 +42,7 @@
 	}
 </script>
 
-<div class="relative md:absolute mt-10 z-50 md:w-[380px] text-sm">
+<div class="text-sm">
 	<div class="">
 		<p>
 			A range of modelled scenarios exist which envision the evolution of Australia's National
