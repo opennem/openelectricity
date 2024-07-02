@@ -5,6 +5,8 @@ import * as totals from './totals';
 import * as totalSources from './total-sources';
 import * as coalGas from './coal_gas';
 import * as windSolar from './wind_solar';
+import * as homepagePreview from './homepage-preview';
+import * as homepageRenewablesVsFossils from './homepage-renewables-vs-fossils';
 
 export const detailedGroup = {
 	label: 'Detailed',
@@ -55,13 +57,29 @@ export const totalSourcesGroup = {
 	order: totalSources.order,
 	labels: totalSources.labels
 };
+export const homepagePreviewGroup = {
+	label: 'Default',
+	value: 'homepage_preview',
+	fuelTechs: homepagePreview.fuelTechMap,
+	order: homepagePreview.order,
+	labels: homepagePreview.labels
+};
+export const homepageRenewablesVsFossilsGroup = {
+	label: 'Renewables vs Fossil Fuels',
+	value: 'homepage_renewables_vs_fossil_fuels',
+	fuelTechs: homepageRenewablesVsFossils.fuelTechMap,
+	order: homepageRenewablesVsFossils.order,
+	labels: homepageRenewablesVsFossils.labels
+};
 
 export const groups = [
 	simpleGroup,
 	detailedGroup,
 	renewablesVsFossilsGroup,
 	totalsGroup,
-	totalSourcesGroup
+	totalSourcesGroup,
+	homepagePreviewGroup,
+	homepageRenewablesVsFossilsGroup
 ];
 
 /** @type {*} */

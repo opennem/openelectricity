@@ -6,7 +6,8 @@
 
 	import LogoMark from '$lib/images/logo-mark.svelte';
 	import Meta from '$lib/components/Meta.svelte';
-	import InfoGraphicIspPreview from '$lib/components/info-graphics/integrated-system-plan/Preview.svelte';
+	import InfoGraphicScenariosPreview from '$lib/components/info-graphics/scenarios-explorer/homepage/Preview.svelte';
+
 	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
 	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
@@ -117,9 +118,7 @@
 	</div> -->
 
 	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
-		{#if outlookEnergyNem}
-			<InfoGraphicIspPreview data={{ ispData, outlookEnergyNem, historyEnergyNemData }} />
-		{/if}
+		<InfoGraphicScenariosPreview />
 	</div>
 
 	<div class="bg-white py-16 md:py-32">

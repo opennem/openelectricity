@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 
-	const { padding, xRange, yScale } = getContext('LayerCake');
+	const { padding, xRange, yScale, xScale } = getContext('LayerCake');
 
 	/** @type {boolean} Extend lines from the ticks into the chart. d */
 	export let gridlines = true;
@@ -42,7 +42,14 @@
 	/** @type {string} CSS 'text-anchor' passed to the label. */
 	export let textAnchor = 'start';
 
+	export let yLabelStartPos = null;
+
 	$: isBandwidth = typeof $yScale.bandwidth === 'function';
+
+	$: xStart = yLabelStartPos
+		? $xScale(yLabelStartPos)
+		: $xRange[0] + (isBandwidth ? $padding.left : 0);
+	$: x2 = $xScale($xRange[0]);
 
 	$: tickVals = Array.isArray(ticks)
 		? ticks
@@ -59,10 +66,7 @@
 	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
 >
 	{#each tickVals as tick, i (i)}
-		<g
-			class="tick tick-{tick}"
-			transform="translate({$xRange[0] + (isBandwidth ? $padding.left : 0)}, {$yScale(tick)})"
-		>
+		<g class="tick tick-{tick}" transform="translate({xStart}, {$yScale(tick)})">
 			{#if gridlines !== false}
 				<line
 					class="gridline"

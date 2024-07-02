@@ -1,0 +1,303 @@
+<script>
+	import { setContext, getContext } from 'svelte';
+	import { startOfYear, format } from 'date-fns';
+
+	import { browser } from '$app/environment';
+
+	import selectOptionsMap from '$lib/utils/select-options-map';
+	import { getModels } from '$lib/models/index2';
+	import { getHistory } from '$lib/opennem';
+
+	import filtersStore from '../stores/filters';
+	import dataStore from '../stores/data';
+	import cacheStore from '../stores/cache';
+
+	import {
+		defaultModelPathway,
+		dataViewUnits,
+		dataViewLongLabel,
+		dataViewIntervalLabel
+	} from '../options';
+	import { covertHistoryDataToTWh, processTechnologyData, formatFyTickX } from '../helpers';
+
+	import Icon from '$lib/components/Icon.svelte';
+
+	import Filters from './Filters.svelte';
+	import ExplorerChart from './Chart.svelte';
+	import DetailedBreakdown from './DetailedBreakdown.svelte';
+	import ScenarioDescription from './ScenarioDescription.svelte';
+	import ExplorerTooltip from '../Tooltip.svelte';
+
+	setContext('scenario-filters', filtersStore());
+	setContext('scenario-data', dataStore());
+	setContext('scenario-cache', cacheStore());
+
+	const {
+		selectedDisplayView,
+		selectedModel,
+		selectedScenario,
+		selectedPathway,
+		selectedRegion,
+		selectedDataView,
+		selectedChartType,
+
+		scenarioOptions,
+		pathwayOptions,
+
+		selectedMultipleScenarios,
+		showScenarioOptions
+	} = getContext('scenario-filters');
+
+	const {
+		selectedGroup,
+		projectionStats,
+		projectionData,
+		historicalData,
+		projectionTimeSeries,
+		historicalTimeSeries
+	} = getContext('scenario-data');
+
+	const { cachedDisplayData } = getContext('scenario-cache');
+
+	let seriesNames = [];
+	let seriesItems = [];
+	let seriesColours;
+	let seriesLabels;
+	let seriesData = [];
+	let seriesLoadsIds = [];
+	/** @type {Array.<number | null>} */
+	let yDomain = [0, null];
+	/** @type {TimeSeriesData | undefined} */
+	let hoverData = undefined;
+	/** @type {string | undefined} */
+	let hoverKey;
+
+	$: defaultPathway = defaultModelPathway[$selectedModel];
+
+	$: if (browser) {
+		$selectedGroup = 'homepage_preview';
+		getTechnologyData({
+			model: $selectedModel,
+			region: $selectedRegion,
+			scenario: $selectedScenario,
+			pathway: defaultPathway,
+			dataView: $selectedDataView
+		});
+	}
+
+	$: if ($projectionTimeSeries.data.length > 0 && $historicalTimeSeries.data.length > 0) {
+		const processed = processTechnologyData({
+			projectionTimeSeries: $projectionTimeSeries,
+			historicalTimeSeries: $historicalTimeSeries,
+			selectedDataView: $selectedDataView
+		});
+
+		console.log('processed', processed);
+
+		if (processed) {
+			seriesData = processed.data;
+			seriesNames = processed.names;
+			seriesColours = processed.colours;
+			seriesLabels = processed.labels;
+			seriesItems = processed.nameOptions;
+			yDomain = [
+				$projectionTimeSeries.minY,
+				$projectionTimeSeries.maxY + ($projectionTimeSeries.maxY * 15) / 100
+			];
+
+			seriesLoadsIds = $projectionStats.data.filter((d) => d.isLoad).map((d) => d.id);
+
+			$cachedDisplayData[$selectedDisplayView] = {
+				data: seriesData,
+				names: seriesNames,
+				colours: seriesColours,
+				labels: seriesLabels,
+				items: seriesItems,
+				loadIds: seriesLoadsIds,
+				yDomain: yDomain
+			};
+		}
+	}
+
+	$: xTicks =
+		$selectedModel === 'aemo2024'
+			? [
+					startOfYear(new Date('2010-01-01')),
+					startOfYear(new Date('2024-01-01')),
+					startOfYear(new Date('2040-01-01')),
+					startOfYear(new Date('2052-01-01'))
+			  ]
+			: [
+					startOfYear(new Date('2010-01-01')),
+					startOfYear(new Date('2023-01-01')),
+					startOfYear(new Date('2040-01-01')),
+					startOfYear(new Date('2051-01-01'))
+			  ];
+	$: overlay =
+		$selectedModel === 'aemo2024'
+			? {
+					xStartValue: startOfYear(new Date('2024-01-01')),
+					xEndValue: startOfYear(new Date('2052-01-01'))
+			  }
+			: {
+					xStartValue: startOfYear(new Date('2023-01-01')),
+					xEndValue: startOfYear(new Date('2051-01-01'))
+			  };
+
+	$: overlayLine =
+		$selectedModel === 'aemo2024'
+			? { date: startOfYear(new Date('2024-01-01')) }
+			: { date: startOfYear(new Date('2023-01-01')) };
+
+	$: defaultText =
+		dataViewLongLabel[$selectedDataView] +
+		` (${dataViewUnits[$selectedDataView]}) ` +
+		dataViewIntervalLabel[$selectedDataView];
+
+	const handleMousemove = (/** @type {*} */ e) => {
+		if (e.detail?.key) {
+			hoverKey = e.detail.key;
+			hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+		} else {
+			hoverKey = undefined;
+			hoverData = /** @type {TimeSeriesData} */ (e.detail);
+		}
+	};
+
+	/**
+	 * Get data for by technology view
+	 * @param {*} param0
+	 */
+	async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
+		const [historyData, modelsData] = await Promise.all([
+			getHistory(region),
+			getModels(model, region, dataView)
+		]);
+
+		updateScenarios(modelsData.scenarios);
+
+		$projectionData = modelsData.outlook.data.filter(
+			(d) => d.scenario === scenario && d.pathway === pathway
+		);
+
+		$historicalData = covertHistoryDataToTWh(historyData);
+	}
+
+	/**
+	 *
+	 * @param {*[]} scenarios
+	 */
+	function updateScenarios(scenarios) {
+		scenarioOptions.set(selectOptionsMap(scenarios));
+
+		/**
+		 * set default values if the selected value is not in the updated list
+		 */
+		if (!scenarios.find((d) => d === $selectedScenario)) selectedScenario.set(scenarios[0]);
+	}
+
+	const auNumber = new Intl.NumberFormat('en-AU', {
+		maximumFractionDigits: 0
+	});
+	let generatedCsv = '';
+	$: {
+		generatedCsv = '';
+		generatedCsv += ['date', ...seriesNames.map((d) => seriesLabels[d])].join(',') + '\n';
+
+		seriesData.forEach((d) => {
+			const date = format(d.date, 'yyyy');
+			const row = [date];
+			seriesNames.forEach((key) => {
+				row.push(auNumber.format(d[key]));
+			});
+			generatedCsv += row.join(',') + '\n';
+		});
+	}
+	$: file = new Blob([generatedCsv], { type: 'text/plain' });
+	$: fileUrl = URL.createObjectURL(file);
+	$: fileName = `${$selectedModel}-${$selectedScenario}.csv`;
+</script>
+
+<div class="container max-w-none lg:container relative">
+	<header class="flex justify-between gap-24 mb-12">
+		<h1 class="text-3xl leading-[3.7rem] mb-4 md:mb-6 md:text-5xl md:leading-5xl md:max-w-[600px]">
+			Explore the future of Australia's national electricity market
+		</h1>
+
+		<div class="hidden md:block">
+			<a
+				class="whitespace-nowrap flex gap-6 justify-between items-center rounded-lg font-space border border-black border-solid bg-white p-6 transition-all text-black hover:text-white hover:bg-black hover:no-underline"
+				href={fileUrl}
+				download={fileName}
+				target="_download"
+			>
+				<span>Download Data</span>
+				<Icon icon="arrow-down-tray" size={24} />
+			</a>
+		</div>
+	</header>
+
+	<Filters />
+
+	<ScenarioDescription />
+</div>
+
+<div class="max-w-none lg:container">
+	{#if seriesData.length > 0}
+		<div class="relative">
+			<ExplorerTooltip
+				{hoverData}
+				{hoverKey}
+				{defaultText}
+				{seriesColours}
+				{seriesLabels}
+				showTotal={true}
+			/>
+		</div>
+
+		<ExplorerChart
+			id="scenarios-preview-chart"
+			dataset={seriesData}
+			xKey="date"
+			yKey={[0, 1]}
+			zKey="key"
+			{xTicks}
+			yTicks={3}
+			{yDomain}
+			{seriesNames}
+			{seriesColours}
+			formatTickX={formatFyTickX}
+			display={'area'}
+			{overlay}
+			{overlayLine}
+			{hoverData}
+			yLabelStartPos={startOfYear(new Date('2024-01-01'))}
+			on:mousemove={handleMousemove}
+			on:mouseout={() => {
+				hoverKey = undefined;
+				hoverData = undefined;
+			}}
+		/>
+	{/if}
+</div>
+
+<div class="max-w-none lg:container">
+	<DetailedBreakdown
+		{hoverData}
+		on:mousemove={handleMousemove}
+		on:mouseout={() => {
+			hoverKey = undefined;
+			hoverData = undefined;
+		}}
+	/>
+
+	<p class="text-xs text-mid-grey px-3 pt-12">
+		Data source:
+		<a
+			href="https://aemo.com.au/energy-systems/electricity/national-electricity-market-nem/nem-forecasting-and-planning/integrated-system-plan-isp"
+			class="text-mid-grey underline"
+		>
+			AEMO Integrated System Plan for the National Electricity Market
+		</a>
+	</p>
+</div>

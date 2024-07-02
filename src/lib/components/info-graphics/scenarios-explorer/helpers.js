@@ -14,7 +14,9 @@ import {
 	coalGasGroup,
 	windSolarGroup,
 	totalsGroup,
-	totalSourcesGroup
+	totalSourcesGroup,
+	homepagePreviewGroup,
+	homepageRenewablesVsFossilsGroup
 } from './groups';
 import { regionsOnly, regionsOnlyWithColours, regionsOnlyWithLabels } from './options';
 import { scenarioLabels } from './descriptions';
@@ -36,12 +38,18 @@ export const formatValue = (/** @type {number} */ d) => {
 
 export const dataTechnologyGroupOptions = [simpleGroup, detailedGroup, renewablesVsFossilsGroup];
 export const dataRegionCompareOptions = [totalsGroup, coalGasGroup, windSolarGroup];
+export const homepageDataTechnologyGroupOptions = [
+	homepagePreviewGroup,
+	homepageRenewablesVsFossilsGroup
+];
 
 // totalSourcesGroup is used for calculating percentages
 const allGroupOptions = [
 	...dataTechnologyGroupOptions,
 	...dataRegionCompareOptions,
-	totalSourcesGroup
+	totalSourcesGroup,
+	homepagePreviewGroup,
+	homepageRenewablesVsFossilsGroup
 ];
 
 /**
