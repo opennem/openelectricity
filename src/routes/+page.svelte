@@ -118,7 +118,9 @@
 	</div> -->
 
 	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
-		<InfoGraphicScenariosPreview />
+		{#if outlookEnergyNem}
+			<InfoGraphicScenariosPreview />
+		{/if}
 	</div>
 
 	<div class="bg-white py-16 md:py-32">
