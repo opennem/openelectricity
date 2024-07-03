@@ -16,7 +16,11 @@ import {
 	totalsGroup,
 	totalSourcesGroup,
 	homepagePreviewGroup,
-	homepageRenewablesVsFossilsGroup
+	homepageRenewablesVsFossilsGroup,
+	coalOnlyGroup,
+	gasOnlyGroup,
+	solarOnlyGroup,
+	windOnlyGroup
 } from './groups';
 import { regionsOnly, regionsOnlyWithColours, regionsOnlyWithLabels } from './options';
 import { scenarioLabels } from './descriptions';
@@ -37,7 +41,15 @@ export const formatValue = (/** @type {number} */ d) => {
 };
 
 export const dataTechnologyGroupOptions = [simpleGroup, detailedGroup, renewablesVsFossilsGroup];
-export const dataRegionCompareOptions = [totalsGroup, coalGasGroup, windSolarGroup];
+export const dataRegionCompareOptions = [
+	totalsGroup,
+	coalGasGroup,
+	coalOnlyGroup,
+	gasOnlyGroup,
+	windSolarGroup,
+	windOnlyGroup,
+	solarOnlyGroup
+];
 export const homepageDataTechnologyGroupOptions = [
 	homepagePreviewGroup,
 	homepageRenewablesVsFossilsGroup

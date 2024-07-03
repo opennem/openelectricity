@@ -8,6 +8,11 @@ import * as windSolar from './wind_solar';
 import * as homepagePreview from './homepage-preview';
 import * as homepageRenewablesVsFossils from './homepage-renewables-vs-fossils';
 
+import * as coalOnly from './coal-only';
+import * as gasOnly from './gas-only';
+import * as solarOnly from './solar-only';
+import * as windOnly from './wind-only';
+
 export const detailedGroup = {
 	label: 'Detailed',
 	value: 'detailed',
@@ -72,6 +77,35 @@ export const homepageRenewablesVsFossilsGroup = {
 	labels: homepageRenewablesVsFossils.labels
 };
 
+export const coalOnlyGroup = {
+	label: 'Coal',
+	value: 'coal_only',
+	fuelTechs: coalOnly.fuelTechMap,
+	order: coalOnly.order,
+	labels: coalOnly.labels
+};
+export const gasOnlyGroup = {
+	label: 'Gas',
+	value: 'gas_only',
+	fuelTechs: gasOnly.fuelTechMap,
+	order: gasOnly.order,
+	labels: gasOnly.labels
+};
+export const solarOnlyGroup = {
+	label: 'Solar',
+	value: 'solar_only',
+	fuelTechs: solarOnly.fuelTechMap,
+	order: solarOnly.order,
+	labels: solarOnly.labels
+};
+export const windOnlyGroup = {
+	label: 'Wind',
+	value: 'wind_only',
+	fuelTechs: windOnly.fuelTechMap,
+	order: windOnly.order,
+	labels: windOnly.labels
+};
+
 export const groups = [
 	simpleGroup,
 	detailedGroup,
@@ -79,7 +113,13 @@ export const groups = [
 	totalsGroup,
 	totalSourcesGroup,
 	homepagePreviewGroup,
-	homepageRenewablesVsFossilsGroup
+	homepageRenewablesVsFossilsGroup,
+	coalGasGroup,
+	windSolarGroup,
+	coalOnlyGroup,
+	gasOnlyGroup,
+	solarOnlyGroup,
+	windOnlyGroup
 ];
 
 /** @type {*} */
