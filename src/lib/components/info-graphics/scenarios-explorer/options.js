@@ -79,31 +79,31 @@ export const regionOptions = [
 		value: 'NSW1',
 		label: 'New South Wales',
 		description: 'New South Wales',
-		colour: '#49A4E8'
+		colour: '#A078D7' // 49A4E8
 	},
 	{
 		value: 'QLD1',
 		label: 'Queensland',
 		description: 'Queensland',
-		colour: '#DC3A33'
+		colour: '#F480EE' // DC3A33
 	},
 	{
 		value: 'SA1',
 		label: 'South Australia',
 		description: 'South Australia',
-		colour: '#f7c41d'
+		colour: '#069FAF' // f7c41d
 	},
 	{
 		value: 'TAS1',
 		label: 'Tasmania',
 		description: 'Tasmania',
-		colour: '#65C7AA'
+		colour: '#E78114' // 65C7AA
 	},
 	{
 		value: 'VIC1',
 		label: 'Victoria',
 		description: 'Victoria',
-		colour: '#153BA5'
+		colour: '#4F5FD7' // 153BA5
 	}
 ];
 export const regionsOnly = regionOptions.map((d) => d.value).slice(1);
