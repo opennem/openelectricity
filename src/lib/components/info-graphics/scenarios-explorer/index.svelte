@@ -118,7 +118,7 @@
 	// 		: false;
 	$: blankOverlay = false;
 	$: overlayLine =
-		$selectedModel === 'aemo2024' && !$isScenarioDisplay
+		$selectedModel === 'aemo2024' || $isScenarioDisplay
 			? { date: startOfYear(new Date('2024-01-01')) }
 			: { date: startOfYear(new Date('2023-01-01')) };
 
