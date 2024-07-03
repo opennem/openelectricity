@@ -2,6 +2,7 @@
 	import { getContext } from 'svelte';
 
 	import Switch from '$lib/components/Switch.svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import IconPlus from '$lib/icons/Plus.svelte';
 	import IconMinus from '$lib/icons/Minus.svelte';
 
@@ -45,11 +46,9 @@
 		on:change={(evt) => ($selectedDisplayView = evt.detail.value)}
 		class="justify-center my-4"
 	/>
-	<div class="py-2 flex items-center gap-2 pl-10 relative z-40">
-		<div>
-			<Selection
-				selectLabel="Projection:"
-				widthClass="w-[160px]"
+	<div class="py-2 flex items-center gap-6 pl-10 relative z-40">
+		<div class="text-sm">
+			<FormSelect
 				options={dataViewOptions}
 				selected={$selectedDataView}
 				on:change={(evt) => ($selectedDataView = evt.detail.value)}
@@ -57,10 +56,8 @@
 		</div>
 
 		{#if $isTechnologyDisplay || $isScenarioDisplay}
-			<div>
-				<Selection
-					selectLabel="Region:"
-					widthClass="w-[220px]"
+			<div class="text-sm">
+				<FormSelect
 					options={regionOptions}
 					selected={$selectedRegion}
 					on:change={(evt) => ($selectedRegion = evt.detail.value)}

@@ -71,7 +71,7 @@ export const xTicks = {
 export const regionOptions = [
 	{
 		value: 'NEM',
-		label: 'National Electricity Market',
+		label: 'All Regions',
 		description: 'National Electricity Market',
 		colour: '#e34a33'
 	},
