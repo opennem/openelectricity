@@ -129,9 +129,11 @@
 				<h3>{analysis_title}</h3>
 				<!-- <SectionLink href="/analysis" title="View all analyses" /> -->
 			</header>
-			<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+			<div class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8">
 				{#each analysisArticles as article}
-					<ArticleCard {article} />
+					<div class="snap-start shrink-0 w-[290px]">
+						<ArticleCard {article} />
+					</div>
 				{/each}
 			</div>
 		</div>

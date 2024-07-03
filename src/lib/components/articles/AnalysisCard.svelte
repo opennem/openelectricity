@@ -10,8 +10,8 @@
 	$: hasCover = article.cover;
 	$: linkStyles =
 		hasCover && !isSpecialCard
-			? `grid grid-cols-1 gap-4 content-between overflow-hidden border-y border-warm-grey text-dark-grey hover:no-underline ${$$restProps.class}`
-			: `bg-light-warm-grey grid grid-cols-1 gap-4 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`;
+			? `h-full grid grid-cols-1 gap-4 content-between overflow-hidden border-y border-warm-grey text-dark-grey hover:no-underline ${$$restProps.class}`
+			: `h-full bg-light-warm-grey grid grid-cols-1 gap-4 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`;
 	$: headerStyles = hasCover && !isSpecialCard ? 'my-8 h-42' : 'my-8 px-6 h-42';
 
 	$: authorStyles =
