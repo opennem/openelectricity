@@ -5,7 +5,7 @@
 
 	import { LayerCake, Svg, Html, flatten, groupLonger } from 'layercake';
 	import { scaleOrdinal } from 'd3-scale';
-	import { formatInTimeZone } from 'date-fns-tz';
+	import { format } from 'date-fns';
 
 	import { isSafari } from '$lib/utils/browser-detect';
 	import MultiLine from '$lib/components/charts/elements/MultiLine.svelte';
@@ -20,8 +20,7 @@
 
 	import { formatTickX, formatTickY, xDomain, displayXTicks } from './helpers';
 
-	const formatHoverTickX = (/** @type {Date | number} */ d) =>
-		formatInTimeZone(d, '+10:00', 'MMM yyyy');
+	const formatHoverTickX = (/** @type {Date | number} */ d) => format(d, 'MMM yyyy');
 	let isSafariBrowser = true;
 
 	export let title = '';
@@ -57,7 +56,6 @@
 	$: chartRight = md ? 0 : 0;
 
 	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
-	$: console.log('groupedData', groupedData);
 
 	$: flatData = flatten(groupedData, 'values');
 	$: latestDatapoint = dataset[dataset.length - 1];
