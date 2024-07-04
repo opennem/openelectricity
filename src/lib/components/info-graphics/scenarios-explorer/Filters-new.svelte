@@ -55,7 +55,7 @@
 	$: if (browser) {
 		let query = new URLSearchParams($page.url.searchParams.toString());
 		query.set('filters', compressedQuery);
-		goto(`?${query.toString()}`);
+		goto(`?${query.toString()}#filters`);
 	}
 
 	function handleDisplayViewChange(prevView, view) {
@@ -76,6 +76,7 @@
 </script>
 
 <div class="max-w-none flex gap-16 justify-between px-6 py-6">
+	<a id="filters" class="hidden">Filters</a>
 	<div class="flex gap-16 divide-x divide-warm-grey">
 		<Switch
 			buttons={displayViewOptions}
