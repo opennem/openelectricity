@@ -13,9 +13,9 @@ export const domainGroups = {
 	battery_discharging: ['battery_discharging'],
 	hydro: ['hydro'],
 	wind: ['wind'],
-	solar: ['solar_utility', 'solar_rooftop']
-	// solar_utility: ['solar_utility'],
-	// solar_rooftop: ['solar_rooftop']
+	// solar: ['solar_utility', 'solar_rooftop']
+	solar_utility: ['solar_utility'],
+	solar_rooftop: ['solar_rooftop']
 };
 
 export const domainOrder = [
@@ -30,7 +30,7 @@ export const domainOrder = [
 	'battery_discharging',
 	'hydro',
 	'wind',
-	'solar',
+	// 'solar',
 	'solar_utility',
 	'solar_rooftop'
 ];
