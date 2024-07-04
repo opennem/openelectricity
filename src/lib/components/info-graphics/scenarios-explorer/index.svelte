@@ -246,7 +246,13 @@
 {#if seriesData.length > 0}
 	<div class="grid grid-cols-12 gap-4">
 		<div class="col-span-8 pt-4">
-			<div class="relative -top-3">
+			{#if $selectedDataView === 'capacity'}
+				<h4 class="opacity-30 font-space uppercase font-normal text-xs absolute top-0 mt-6 z-50">
+					Historical Capacity Unavailable
+				</h4>
+			{/if}
+
+			<div class="relative">
 				<ExplorerTooltip
 					{hoverData}
 					{hoverKey}

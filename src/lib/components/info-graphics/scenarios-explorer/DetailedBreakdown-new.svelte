@@ -93,7 +93,7 @@
 	let hoverData = null;
 </script>
 
-<div class="max-w-screen-lg px-6 mx-auto md:grid grid-cols-2">
+<div class="container max-w-none lg:container px-6 mx-auto md:grid grid-cols-2">
 	<div class="relative h-auto">
 		<div class="sticky top-0 pr-48">
 			<h2 class="font-space uppercase text-sm text-mid-grey mb-12">

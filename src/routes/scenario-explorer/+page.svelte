@@ -275,7 +275,7 @@
 	description="Open Electricity is a platform for exploring Australia's electricity system."
 	image="/img/preview.jpg"
 />
-<!-- <PageHeader>
+<PageHeader>
 	<div slot="main-heading">
 		<div class="lg:my-36">
 			<strong class="block py-8 font-space uppercase text-mid-grey font-medium text-sm">
@@ -295,7 +295,7 @@
 		</p>
 	</div>
 </PageHeader>
-<PublicBetaTag /> -->
+<!-- <PublicBetaTag /> -->
 
 <ScenarioFilters />
 

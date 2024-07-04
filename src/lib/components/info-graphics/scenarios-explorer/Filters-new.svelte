@@ -10,6 +10,8 @@
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import IconPlus from '$lib/icons/Plus.svelte';
 	import IconMinus from '$lib/icons/Minus.svelte';
+	import IconShare from '$lib/icons/Share.svelte';
+	import IconArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
 
 	import Selection from './Selection.svelte';
 
@@ -73,51 +75,62 @@
 	}
 </script>
 
-<div class="container max-w-none flex gap-16 divide-x divide-warm-grey">
-	<Switch
-		buttons={displayViewOptions}
-		selected={$selectedDisplayView}
-		on:change={(evt) => handleDisplayViewChange($selectedDisplayView, evt.detail.value)}
-		class="justify-center my-4"
-	/>
-	<div class="py-2 flex items-center gap-6 pl-10 relative z-40">
-		<div class="text-sm">
-			<FormSelect
-				options={dataViewOptions}
-				selected={$selectedDataView}
-				on:change={(evt) => ($selectedDataView = evt.detail.value)}
-			/>
-		</div>
-
-		{#if $isTechnologyDisplay || $isScenarioDisplay}
-			<div class="text-sm">
+<div class="max-w-none flex gap-16 justify-between px-6 py-6">
+	<div class="flex gap-16 divide-x divide-warm-grey">
+		<Switch
+			buttons={displayViewOptions}
+			selected={$selectedDisplayView}
+			on:change={(evt) => handleDisplayViewChange($selectedDisplayView, evt.detail.value)}
+			class="justify-center my-4"
+		/>
+		<div class="py-2 flex items-center gap-6 pl-10 relative z-40">
+			<div class="">
 				<FormSelect
-					options={regionOptions}
-					selected={$selectedRegion}
-					on:change={(evt) => ($selectedRegion = evt.detail.value)}
+					options={dataViewOptions}
+					selected={$selectedDataView}
+					on:change={(evt) => ($selectedDataView = evt.detail.value)}
 				/>
 			</div>
-		{/if}
 
-		{#if $selectedModel && $selectedScenario}
-			<button
-				class="text-sm flex items-center gap-3 justify-center px-8 py-4 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
-				class:border-dark-grey={$showScenarioOptions}
-				class:border-mid-warm-grey={!$showScenarioOptions}
-				on:click={() => ($showScenarioOptions = !$showScenarioOptions)}
-			>
-				{#if $isScenarioDisplay}
-					Update Scenarios
-				{:else}
-					{scenarioLabels[$selectedModel][$selectedScenario]}
-				{/if}
+			{#if $isTechnologyDisplay || $isScenarioDisplay}
+				<div class="">
+					<FormSelect
+						options={regionOptions}
+						selected={$selectedRegion}
+						on:change={(evt) => ($selectedRegion = evt.detail.value)}
+					/>
+				</div>
+			{/if}
 
-				{#if $showScenarioOptions}
-					<IconMinus />
-				{:else}
-					<IconPlus />
-				{/if}
-			</button>
-		{/if}
+			{#if $selectedModel && $selectedScenario}
+				<button
+					class="text-sm flex items-center gap-3 justify-center px-8 py-4 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
+					class:border-dark-grey={$showScenarioOptions}
+					class:border-mid-warm-grey={!$showScenarioOptions}
+					on:click={() => ($showScenarioOptions = !$showScenarioOptions)}
+				>
+					{#if $isScenarioDisplay}
+						Update Scenarios
+					{:else}
+						{scenarioLabels[$selectedModel][$selectedScenario]}
+					{/if}
+
+					{#if $showScenarioOptions}
+						<IconMinus />
+					{:else}
+						<IconPlus />
+					{/if}
+				</button>
+			{/if}
+		</div>
+	</div>
+
+	<div class="flex items-center gap-2 border-l border-warm-grey pl-16 pr-8">
+		<button class="bg-black text-white p-3 rounded-lg transition-all hover:bg-dark-grey">
+			<IconArrowDownTray class="size-8" />
+		</button>
+		<button class="bg-black text-white p-3 rounded-lg transition-all hover:bg-dark-grey">
+			<IconShare class="size-8" />
+		</button>
 	</div>
 </div>

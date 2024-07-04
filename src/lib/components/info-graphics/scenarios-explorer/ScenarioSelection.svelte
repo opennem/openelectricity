@@ -172,8 +172,8 @@
 	$: focusScenarioPathways = focusScenario?.pathways || [];
 </script>
 
-<div class="border-b border-t border-warm-grey">
-	<div class="max-w-none container grid grid-cols-3 divide-x divide-warm-grey">
+<div class="border-t border-warm-grey">
+	<div class="grid grid-cols-3 divide-x divide-warm-grey px-6">
 		<div class="p-12 pl-0 col-span-2">
 			<header class="flex justify-between items-center mb-6">
 				<h5 class="font-space uppercase text-sm text-mid-grey">
