@@ -14,6 +14,8 @@
 	export let selectionMode = 'single';
 	/** @type {*} */
 	let focusScenario = null;
+	/** @type {*} */
+	let focusPathway = null;
 	/** @type {string[]} */
 	let selectedScenarios = [];
 	/** @type {*[]} */
@@ -38,10 +40,29 @@
 			: allScenarios.filter((scenario) => scenario.model === filterModel);
 
 	onMount(() => {
-		if (isSingleSelectionMode) {
-			focusScenario = { ...allScenarios[0] };
-			updateData(focusScenario.model, focusScenario.scenarioId, 'CDP11 (ODP)');
+		console.log('selectedModel, selectedScenario, selectedPathway, selectedMultipleScenarios', {
+			$selectedModel,
+			$selectedScenario,
+			$selectedPathway,
+			$selectedMultipleScenarios
+		});
+
+		const findScenario = allScenarios.find(
+			(s) => s.model === $selectedModel && s.scenarioId === $selectedScenario
+		);
+
+		focusPathway = $selectedPathway;
+
+		if (findScenario) {
+			focusScenario = { ...findScenario };
 		}
+
+		selectedScenarios = $selectedMultipleScenarios.map((s) => s.model + '-' + s.scenario);
+
+		selectedScenariosPathways = $selectedMultipleScenarios.map((s) => ({
+			id: s.model + '-' + s.scenario,
+			pathway: s.pathway
+		}));
 	});
 
 	/**
@@ -57,15 +78,14 @@
 		$selectedPathway = pathway;
 	}
 
-	selectedScenarios = $selectedMultipleScenarios.map((s) => s.model + '-' + s.scenario);
-
 	function updateMultipleScenariosSelection() {
 		const updated = selectedScenarios.map((id) => {
 			const scenarioPathway = selectedScenariosPathways.find((s) => s.id === id);
 			const scenario = allScenarios.find((s) => s.id === id);
+			const pathway = scenarioPathway ? scenarioPathway.pathway : scenario?.defaultPathway;
 			return {
-				id: scenario?.id + '-' + scenarioPathway.pathway.toLowerCase().split(' ').join('_'),
-				pathway: scenarioPathway.pathway,
+				id: scenario?.id + '-' + pathway.toLowerCase().split(' ').join('_'),
+				pathway: pathway,
 				model: scenario?.model,
 				scenario: scenario?.scenarioId,
 				colour: scenario?.colour
@@ -74,6 +94,10 @@
 
 		console.log('updateMultipleScenariosSelection', updated);
 		$selectedMultipleScenarios = updated;
+		selectedScenariosPathways = updated.map((s) => ({
+			id: s.model + '-' + s.scenario,
+			pathway: s.pathway
+		}));
 	}
 
 	/**
@@ -97,10 +121,14 @@
 	 * @param {string} pathway
 	 */
 	function handlePathwayChange(id, pathway) {
-		const scenario = selectedScenariosPathways.find((scenario) => scenario.id === id);
-		scenario.pathway = pathway;
+		focusPathway = pathway;
 
-		selectedScenariosPathways = [...selectedScenariosPathways];
+		const scenario = selectedScenariosPathways.find((scenario) => scenario.id === id);
+
+		if (scenario) {
+			scenario.pathway = pathway;
+			selectedScenariosPathways = [...selectedScenariosPathways];
+		}
 
 		if (isSingleSelectionMode && focusScenario) {
 			updateData(focusScenario.model, focusScenario.scenarioId, pathway);
@@ -116,21 +144,29 @@
 	 */
 	function handleFocusScenarioChange(id) {
 		const scenario = allScenarios.find((scenario) => scenario.id === id);
-		focusScenario = scenario;
+		focusScenario = { ...scenario };
 
 		// updated selected scenarios pathways
-		const scenarioPathway = selectedScenariosPathways.find((scenario) => scenario.id === id);
+		// const scenarioPathway = selectedScenariosPathways.find((scenario) => scenario.id === id);
 
-		if (focusScenario && scenarioPathway) {
-			updateData(focusScenario.model, focusScenario.scenarioId, scenarioPathway.pathway);
+		if (focusScenario && focusPathway) {
+			const isPathwayInScenario = focusScenario.pathways.find((p) => p === focusPathway);
+
+			if (!isPathwayInScenario) {
+				focusPathway = focusScenario.defaultPathway;
+			}
+
+			updateData(focusScenario.model, focusScenario.scenarioId, focusPathway);
 		}
 	}
 
 	$: focusScenarioId = focusScenario?.id || null;
 
-	$: getPathway = (/** @type {string} */ id, /** @type {string} */ defaultPathway) => {
-		const scenario = selectedScenariosPathways.find((scenario) => scenario.id === id);
-		return scenario ? scenario.pathway : defaultPathway;
+	$: getPathway = () => {
+		const scenario = selectedScenariosPathways.find(
+			(scenario) => scenario.id === focusScenario?.id
+		);
+		return scenario ? scenario.pathway : focusScenario?.defaultPathway;
 	};
 
 	$: focusScenarioPathways = focusScenario?.pathways || [];
@@ -227,7 +263,7 @@
 						paddingY="py-3"
 						paddingX="px-4"
 						options={focusScenarioPathways.map((pathway) => ({ value: pathway, label: pathway }))}
-						selected={getPathway(focusScenarioId, focusScenario?.defaultPathway)}
+						selected={isSingleSelectionMode ? focusPathway : getPathway()}
 						on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
 					/>
 				</div>

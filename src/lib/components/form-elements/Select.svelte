@@ -35,7 +35,7 @@
 		on:clickoutside={() => (showOptions = false)}
 		class="flex items-center gap-2 {paddingX} {paddingY} rounded-lg hover:bg-warm-grey"
 	>
-		<span class="font-medium mb-0 capitalize">
+		<span class="font-semibold mb-0 capitalize">
 			{selected && selected.label ? selected?.label : findSelectedOption()}
 		</span>
 		<IconChevronUpDown class="w-7 h-7" />

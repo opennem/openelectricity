@@ -23,7 +23,6 @@
 		selectedChartType,
 		selectedScenario,
 		selectedPathway,
-		selectedCompareGroup,
 
 		scenarioOptions,
 		pathwayOptions
@@ -33,7 +32,6 @@
 
 	$selectedModel = modelOptions[0].value;
 	$selectedGroup = dataTechnologyGroupOptions[0].value;
-	$selectedCompareGroup = dataRegionCompareOptions[0].value;
 
 	$: isRegionDisplay = $selectedDisplayView === 'region';
 	$: if (isRegionDisplay) {

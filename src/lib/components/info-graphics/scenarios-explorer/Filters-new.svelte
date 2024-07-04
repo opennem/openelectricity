@@ -1,5 +1,10 @@
 <script>
 	import { getContext } from 'svelte';
+	import lzString from 'lz-string';
+
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { browser } from '$app/environment';
 
 	import Switch from '$lib/components/Switch.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
@@ -18,9 +23,11 @@
 		selectedDataView,
 		selectedDisplayView,
 		selectedScenario,
-		selectedCompareGroup,
+		selectedPathway,
 
 		showScenarioOptions,
+
+		selectedMultipleScenarios,
 
 		isTechnologyDisplay,
 		isScenarioDisplay,
@@ -29,13 +36,40 @@
 
 	const { selectedGroup } = getContext('scenario-data');
 
-	$selectedGroup = dataTechnologyGroupOptions[0].value;
-	$selectedCompareGroup = dataRegionCompareOptions[0].value;
+	// $selectedGroup = dataTechnologyGroupOptions[0].value;
 
-	$: if ($isTechnologyDisplay) {
-		$selectedGroup = dataTechnologyGroupOptions[0].value;
-	} else {
-		$selectedGroup = dataRegionCompareOptions[0].value;
+	$: queryObj = {
+		model: $selectedModel,
+		region: $selectedRegion,
+		dataView: $selectedDataView,
+		displayView: $selectedDisplayView,
+		scenario: $selectedScenario,
+		pathway: $selectedPathway,
+		group: $selectedGroup,
+		multipleScenarios: $selectedMultipleScenarios
+	};
+	$: compressedQuery = lzString.compressToEncodedURIComponent(JSON.stringify(queryObj));
+	$: decompressedQuery = JSON.parse(lzString.decompressFromEncodedURIComponent(compressedQuery));
+	$: if (browser) {
+		let query = new URLSearchParams($page.url.searchParams.toString());
+		query.set('filters', compressedQuery);
+		goto(`?${query.toString()}`);
+	}
+
+	function handleDisplayViewChange(prevView, view) {
+		$selectedDisplayView = view;
+
+		const keepSelectedGroup =
+			(prevView === 'region' && view === 'scenario') ||
+			(prevView === 'scenario' && view === 'region');
+		console.log('prev', prevView, 'view', view, 'shouldUpdate', keepSelectedGroup);
+
+		if (keepSelectedGroup) return;
+		if (view === 'technology') {
+			$selectedGroup = dataTechnologyGroupOptions[0].value;
+		} else {
+			$selectedGroup = dataRegionCompareOptions[0].value;
+		}
 	}
 </script>
 
@@ -43,7 +77,7 @@
 	<Switch
 		buttons={displayViewOptions}
 		selected={$selectedDisplayView}
-		on:change={(evt) => ($selectedDisplayView = evt.detail.value)}
+		on:change={(evt) => handleDisplayViewChange($selectedDisplayView, evt.detail.value)}
 		class="justify-center my-4"
 	/>
 	<div class="py-2 flex items-center gap-6 pl-10 relative z-40">

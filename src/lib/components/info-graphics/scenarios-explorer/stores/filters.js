@@ -7,20 +7,20 @@ import {
 	chartTypeOptions,
 	xTicks
 } from '../options';
+import { fi } from 'date-fns/locale';
 
-export default function () {
+export default function (filters) {
 	// const selectedModel = writable(modelOptions[0].value);
-	const selectedModel = writable('');
-	const selectedDataView = writable(dataViewOptions[0].value);
-	const selectedDisplayView = writable(displayViewOptions[0].value);
-	const selectedChartType = writable(chartTypeOptions[0].value);
-	const selectedRegion = writable(regionOptions[0].value);
-	const selectedScenario = writable('');
-	const selectedPathway = writable('');
-	const selectedGroup = writable('');
-	const selectedCompareGroup = writable('');
+	const selectedModel = writable(filters?.model || modelOptions[0].value);
+	const selectedDataView = writable(filters?.dataView || dataViewOptions[0].value);
+	const selectedDisplayView = writable(filters?.displayView || displayViewOptions[0].value);
+	const selectedChartType = writable(filters?.chartType || chartTypeOptions[0].value);
+	const selectedRegion = writable(filters?.region || regionOptions[0].value);
+	const selectedScenario = writable(filters?.scenario || '');
+	const selectedPathway = writable(filters?.pathway || '');
+	const selectedGroup = writable(filters?.group || '');
 
-	const selectedMultipleScenarios = writable([]);
+	const selectedMultipleScenarios = writable(filters?.multipleScenarios || []);
 
 	const showScenarioOptions = writable(false);
 
@@ -83,8 +83,6 @@ export default function () {
 		selectedPathway: selectedPathway,
 
 		selectedGroup: selectedGroup,
-
-		selectedCompareGroup: selectedCompareGroup,
 
 		selectedMultipleScenarios: selectedMultipleScenarios,
 

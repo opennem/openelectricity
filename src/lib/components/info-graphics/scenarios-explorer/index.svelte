@@ -223,8 +223,9 @@
 
 	// TODO: reorder
 	$: sortedItems = seriesItems.map((d) => d.id).reverse();
-	$: {
+	$: if ($cachedDisplayData[$selectedDisplayView]) {
 		let colours = {};
+		console.log('seriesColours', seriesColours);
 		sortedItems.forEach((name) => {
 			colours[name] = $cachedDisplayData[$selectedDisplayView].colours[name];
 		});

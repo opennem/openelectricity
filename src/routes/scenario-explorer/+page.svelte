@@ -26,15 +26,16 @@
 	import { covertHistoryDataToTWh } from '$lib/components/info-graphics/scenarios-explorer/helpers';
 	import DetailedBreakdown from '$lib/components/info-graphics/scenarios-explorer/DetailedBreakdown-new.svelte';
 
-	setContext('scenario-filters', filtersStore());
-	setContext('scenario-data', dataStore());
-	setContext('scenario-cache', cacheStore());
-
 	export let data;
-	const { articles } = data;
+	const { articles, filters } = data;
 	const analysisArticles = articles.filter(
 		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
 	);
+
+	console.log('filters', filters);
+	setContext('scenario-filters', filtersStore(filters));
+	setContext('scenario-data', dataStore(filters));
+	setContext('scenario-cache', cacheStore());
 
 	const {
 		selectedDisplayView,
@@ -64,13 +65,13 @@
 
 	$: defaultPathway = defaultModelPathway[$selectedModel];
 
-	selectedDisplayView.subscribe((value) => {
-		if (value === 'technology') {
-			$selectedGroup = 'detailed';
-		} else if (value === 'region') {
-			$selectedGroup = 'totals';
-		}
-	});
+	// selectedDisplayView.subscribe((value) => {
+	// 	if (value === 'technology') {
+	// 		$selectedGroup = 'detailed';
+	// 	} else if (value === 'region') {
+	// 		$selectedGroup = 'totals';
+	// 	}
+	// });
 
 	$: if ($selectedMultipleScenarios.length === 0) {
 		$selectedMultipleScenarios = [

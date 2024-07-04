@@ -20,7 +20,6 @@
 		selectedDataView,
 		selectedDisplayView,
 		selectedScenario,
-		selectedCompareGroup,
 
 		showScenarioOptions,
 
@@ -33,7 +32,6 @@
 
 	$selectedModel = modelOptions[0].value;
 	$selectedGroup = dataTechnologyGroupOptions[0].value;
-	$selectedCompareGroup = dataRegionCompareOptions[0].value;
 
 	$: if ($isTechnologyDisplay) {
 		$selectedGroup = dataTechnologyGroupOptions[0].value;

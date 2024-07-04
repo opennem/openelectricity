@@ -8,8 +8,8 @@ import {
 	calculatePercentageTimeSeries
 } from '../helpers';
 
-export default function () {
-	const selectedGroup = writable(groups[0].value);
+export default function (filters) {
+	const selectedGroup = writable(filters?.group || groups[0].value);
 	const usePercentage = writable(true);
 
 	const projectionData = writable([]);
