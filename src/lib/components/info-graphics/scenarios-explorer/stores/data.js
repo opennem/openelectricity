@@ -5,6 +5,7 @@ import {
 	createNewStats,
 	createNewProjectionStats,
 	createNewTimeSeries,
+	calculatePercentageStats,
 	calculateProjectionPercentageStats,
 	calculatePercentageTimeSeries
 } from '../helpers';
@@ -18,10 +19,16 @@ export default function (filters) {
 
 	const isNetTotalGroup = derived(selectedGroup, ($selectedGroup) => $selectedGroup === 'totals');
 
+	const projectionModel = derived(projectionData, ($projectionData) => {
+		return $projectionData[0]?.model;
+	});
+
 	const projectionStats = derived(
-		[projectionData, selectedGroup],
-		([$projectionData, $selectedGroup]) => {
-			return createNewProjectionStats($projectionData, $selectedGroup, 'projection');
+		[projectionModel, projectionData, selectedGroup],
+		([$projectionModel, $projectionData, $selectedGroup]) => {
+			return $projectionModel === 'aemo2022' // because of inconsistent data
+				? createNewStats($projectionData, $selectedGroup, 'projection')
+				: createNewProjectionStats($projectionData, $selectedGroup, 'projection');
 		}
 	);
 	const projectionLoadSeries = derived(projectionStats, ($projectionStats) => {
@@ -76,11 +83,17 @@ export default function (filters) {
 		[scenarioProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
 		([$scenarioProjectionData, $selectedGroup, $isNetTotalGroup, $usePercentage]) => {
 			return $scenarioProjectionData.map((d) => {
-				let otherStats = createNewProjectionStats(d.data, $selectedGroup, 'projection');
+				let otherStats =
+					d.model === 'aemo2022'
+						? createNewStats(d.data, $selectedGroup, 'projection')
+						: createNewProjectionStats(d.data, $selectedGroup, 'projection');
 
 				// only calculate percentage if not net total group
 				if (!$isNetTotalGroup && $usePercentage) {
-					otherStats = calculateProjectionPercentageStats(d, otherStats, 'projection');
+					otherStats =
+						d.model === 'aemo2022'
+							? calculatePercentageStats(d, otherStats, 'projection')
+							: calculateProjectionPercentageStats(d, otherStats, 'projection');
 				}
 
 				return {
@@ -150,15 +163,32 @@ export default function (filters) {
 
 	/** @type {import('svelte/store').Writable<{ region: string, data: Stats }[]>} */
 	const regionProjectionData = writable([]);
+	const regionProjectionModel = derived(regionProjectionData, ($regionProjectionData) => {
+		return $regionProjectionData.length ? $regionProjectionData[0].data[0].model : '';
+	});
 	const regionProjectionStats = derived(
-		[regionProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
-		([$regionProjectionData, $selectedGroup, $isNetTotalGroup, $usePercentage]) => {
+		[regionProjectionModel, regionProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
+		([
+			$regionProjectionModel,
+			$regionProjectionData,
+			$selectedGroup,
+			$isNetTotalGroup,
+			$usePercentage
+		]) => {
 			return $regionProjectionData.map((d) => {
-				let otherStats = createNewProjectionStats(d.data, $selectedGroup, 'projection');
+				console.log('regionProjectionModel', $regionProjectionModel);
+
+				let otherStats =
+					$regionProjectionModel === 'aemo2022'
+						? createNewStats(d.data, $selectedGroup, 'projection')
+						: createNewProjectionStats(d.data, $selectedGroup, 'projection');
 
 				// only calculate percentage if not net total group
 				if (!$isNetTotalGroup && $usePercentage) {
-					otherStats = calculateProjectionPercentageStats(d, otherStats, 'projection');
+					otherStats =
+						$regionProjectionModel === 'aemo2022'
+							? calculatePercentageStats(d, otherStats, 'projection')
+							: calculateProjectionPercentageStats(d, otherStats, 'projection');
 				}
 
 				return {

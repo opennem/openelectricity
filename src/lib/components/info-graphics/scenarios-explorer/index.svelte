@@ -234,7 +234,9 @@
 	$: isPercentageView = !$isNetTotalGroup && $usePercentage;
 	$: defaultText =
 		dataViewLongLabel[$selectedDataView] +
-		` (${isPercentageView ? '% of demand' : dataViewUnits[$selectedDataView]}) ` +
+		` (${
+			!$isTechnologyDisplay && isPercentageView ? '% of demand' : dataViewUnits[$selectedDataView]
+		}) ` +
 		dataViewIntervalLabel[$selectedDataView];
 
 	function handleSort(e) {

@@ -76,11 +76,6 @@ export function createNewProjectionStats(data, selectedGroup, type = 'projection
 
 	if (!group) console.error('Group not found');
 
-	console.log(
-		'createNewProjectionStats',
-		new Statistic(data, type).group(group?.fuelTechs, loadFuelTechs).reorder(group?.order || [])
-	);
-
 	return new Statistic(data, type)
 		.group(group?.fuelTechs, loadFuelTechs)
 		.reorder(group?.order || []);
@@ -158,6 +153,31 @@ export function mutateProjectionDataDates(data) {
 		const date = startOfYear(addYears(d.date, 1));
 		return { ...d, date, time: date.getTime() };
 	});
+}
+
+export function calculatePercentageStats(statsData, otherStats, type) {
+	const sourceLoadStats = createNewStats(statsData.data, 'totals', type);
+
+	let netData = [];
+
+	sourceLoadStats.data.forEach((d, i) => {
+		if (i === 0) {
+			netData = d[type].data.map((v) => v);
+		} else {
+			d[type].data.forEach((v, j) => {
+				netData[j] += v;
+			});
+		}
+	});
+
+	otherStats.data.forEach((s) => {
+		s.units = '%';
+		s[type].data.forEach((d, i) => {
+			s[type].data[i] = (d / netData[i]) * 100;
+		});
+	});
+
+	return otherStats;
 }
 
 export function calculateProjectionPercentageStats(statsData, otherStats, type) {

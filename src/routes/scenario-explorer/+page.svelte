@@ -148,9 +148,14 @@
 
 		updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
 
-		$projectionData = modelsData.outlook.data.filter(
-			(d) => d.scenario === scenario && d.pathway === pathway
-		);
+		$projectionData = modelsData.outlook.data
+			.filter((d) => d.scenario === scenario && d.pathway === pathway)
+			.map((d) => {
+				return {
+					...d,
+					model: model
+				};
+			});
 
 		$historicalData = covertHistoryDataToTWh(historyData);
 
@@ -179,9 +184,14 @@
 
 		try {
 			scenarios.forEach((scene) => {
-				const filtered = allModels[scene.model].outlook.data.filter(
-					(d) => d.scenario === scene.scenario && d.pathway === scene.pathway
-				);
+				const filtered = allModels[scene.model].outlook.data
+					.filter((d) => d.scenario === scene.scenario && d.pathway === scene.pathway)
+					.map((d) => {
+						return {
+							...d,
+							model: scene.model
+						};
+					});
 
 				scenarioProjections.push({
 					id: scene.id,
@@ -223,9 +233,14 @@
 		let regionProjections = [];
 
 		allModelsRegionData.forEach((d) => {
-			const filtered = d.outlook.data.filter(
-				(d) => d.scenario === scenario && d.pathway === pathway
-			);
+			const filtered = d.outlook.data
+				.filter((d) => d.scenario === scenario && d.pathway === pathway)
+				.map((d) => {
+					return {
+						...d,
+						model: model
+					};
+				});
 			regionProjections.push({
 				region: d.outlook.region,
 				data: filtered
