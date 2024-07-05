@@ -3,8 +3,8 @@ import { startOfYear } from 'date-fns';
 export const modelOptions = [
 	{
 		value: 'aemo2024',
-		label: 'AEMO Draft 2024 ISP',
-		description: "AEMO's Draft 2024 Integrated System Plan"
+		label: 'AEMO 2024 ISP',
+		description: "AEMO's 2024 Integrated System Plan"
 	},
 	{
 		value: 'aemo2022',
@@ -154,16 +154,24 @@ export const modelPathways = {
 		'CDP8',
 		'CDP9',
 		'CDP10',
-		'CDP11 (ODP)',
+		'CDP11',
 		'CDP12',
 		'CDP13',
 		'CDP14',
 		'CDP15',
 		'CDP16',
 		'CDP17',
-		'Counterfactual',
-		'Least-cost DP'
+		'CDP18',
+		'CDP19',
+		'CDP20',
+		'CDP21',
+		'CDP22',
+		'CDP23',
+		'CDP24',
+		'CDP25',
+		'Counterfactual'
 	],
+
 	aemo2022: [
 		'CDP2',
 		'CDP5',
@@ -181,7 +189,7 @@ export const modelPathways = {
 // Optimal Path
 /** @type {*} */
 export const defaultModelPathway = {
-	aemo2024: 'CDP11 (ODP)',
+	aemo2024: 'CDP14',
 	aemo2022: 'CDP12'
 };
 export const defaultPathwayOrder = [
@@ -196,15 +204,21 @@ export const defaultPathwayOrder = [
 	'CDP9',
 	'CDP10',
 	'CDP11',
-	'CDP11 (ODP)',
 	'CDP12',
 	'CDP13',
 	'CDP14',
 	'CDP15',
 	'CDP16',
 	'CDP17',
-	'Counterfactual',
-	'Least-cost DP'
+	'CDP18',
+	'CDP19',
+	'CDP20',
+	'CDP21',
+	'CDP22',
+	'CDP23',
+	'CDP24',
+	'CDP25',
+	'Counterfactual'
 ];
 
 export const allScenarios = [
@@ -213,7 +227,7 @@ export const allScenarios = [
 		model: 'aemo2024',
 		organisation: 'AEMO',
 		year: 2024,
-		draft: true,
+		draft: false,
 		scenario: 'Step Change',
 		scenarioId: 'step_change',
 		pathways: [...modelPathways.aemo2024],
@@ -225,7 +239,7 @@ export const allScenarios = [
 		model: 'aemo2024',
 		organisation: 'AEMO',
 		year: 2024,
-		draft: true,
+		draft: false,
 		scenario: 'Progressive Change',
 		scenarioId: 'progressive_change',
 		pathways: [...modelPathways.aemo2024],
@@ -237,13 +251,14 @@ export const allScenarios = [
 		model: 'aemo2024',
 		organisation: 'AEMO',
 		year: 2024,
-		draft: true,
+		draft: false,
 		scenario: 'Green Energy Exports',
 		scenarioId: 'green_energy_exports',
 		pathways: [...modelPathways.aemo2024],
 		defaultPathway: defaultModelPathway.aemo2024,
 		colour: '#069FAF'
 	},
+
 	{
 		id: 'aemo2022-step_change',
 		model: 'aemo2022',

@@ -23,6 +23,7 @@ export const fuelTechMap = {
 		'gas_hydrogen'
 	],
 	renewable: [
+		'bioenergy',
 		'bioenergy_biomass',
 		'bioenergy_biogas',
 		'hydro',

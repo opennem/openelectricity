@@ -89,7 +89,8 @@
 		const processed = processTechnologyData({
 			projectionTimeSeries: $projectionTimeSeries,
 			historicalTimeSeries: $historicalTimeSeries,
-			selectedDataView: $selectedDataView
+			selectedDataView: $selectedDataView,
+			selectedModel: $selectedModel
 		});
 
 		console.log('processed', processed);

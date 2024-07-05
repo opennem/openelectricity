@@ -71,6 +71,28 @@ const allGroupOptions = [
  * @param {StatsType} type
  * @returns
  */
+export function createNewProjectionStats(data, selectedGroup, type = 'projection') {
+	const group = allGroupOptions.find((d) => d.value === selectedGroup);
+
+	if (!group) console.error('Group not found');
+
+	console.log(
+		'createNewProjectionStats',
+		new Statistic(data, type).group(group?.fuelTechs, loadFuelTechs).reorder(group?.order || [])
+	);
+
+	return new Statistic(data, type)
+		.group(group?.fuelTechs, loadFuelTechs)
+		.reorder(group?.order || []);
+}
+
+/**
+ *
+ * @param {*} data
+ * @param {*} selectedGroup
+ * @param {StatsType} type
+ * @returns
+ */
 export function createNewStats(data, selectedGroup, type = 'projection') {
 	const group = allGroupOptions.find((d) => d.value === selectedGroup);
 
@@ -121,7 +143,8 @@ export function covertHistoryDataToTWh(data) {
 		return d;
 	});
 }
-// Mutate history data dates to match ISP FY format
+
+// Mutate history data dates to start of FY year
 export function mutateHistoryDataDates(data) {
 	return data.map((d) => {
 		const date = startOfYear(d.date);
@@ -129,8 +152,16 @@ export function mutateHistoryDataDates(data) {
 	});
 }
 
-export function calculatePercentageStats(statsData, otherStats, type) {
-	const sourceLoadStats = createNewStats(statsData.data, 'totals', type);
+// Mutate projection data dates to start of FY year
+export function mutateProjectionDataDates(data) {
+	return data.map((d) => {
+		const date = startOfYear(addYears(d.date, 1));
+		return { ...d, date, time: date.getTime() };
+	});
+}
+
+export function calculateProjectionPercentageStats(statsData, otherStats, type) {
+	const sourceLoadStats = createNewProjectionStats(statsData.data, 'totals', type);
 
 	let netData = [];
 
@@ -214,39 +245,60 @@ const getEmpty = (data) =>
 		return { ...d, date: new Date(d.time) };
 	});
 
+function updateTimeSeriesData(historyTimeSeries, projectionTimeSeries, selectedModel) {
+	// Mutate historical dates (update june to jan) to match ISP and filter from 2010 and before 2025
+	const updatedHistoricalTimeSeriesData = mutateHistoryDataDates(historyTimeSeries.data).filter(
+		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+	);
+
+	// Mutate proejction dates (update july to jan next year)
+	const updatedProjectionTimeSeriesData =
+		selectedModel === 'aemo2022'
+			? projectionTimeSeries.data
+			: mutateProjectionDataDates(projectionTimeSeries.data);
+
+	return {
+		updatedHistoricalTimeSeriesData: updatedHistoricalTimeSeriesData,
+		updatedProjectionTimeSeriesData: updatedProjectionTimeSeriesData
+	};
+}
+
 /**
  * Process data for Technology data view
  * @param {{
  * 	historicalTimeSeries: TimeSeries,
  * 	projectionTimeSeries: TimeSeries,
  * 	selectedDataView: string
+ *  selectedModel: string
  * }} param0
  */
 export function processTechnologyData({
 	historicalTimeSeries,
 	projectionTimeSeries,
-	selectedDataView
+	selectedDataView,
+	selectedModel
 }) {
-	// Mutate historical dates (update june to jan) to match ISP and filter from 2010 and before 2025
-	const filteredHistoricalTimeSeries = mutateHistoryDataDates(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+	const { updatedHistoricalTimeSeriesData, updatedProjectionTimeSeriesData } = updateTimeSeriesData(
+		historicalTimeSeries,
+		projectionTimeSeries,
+		selectedModel
 	);
 
-	const lastHistory = filteredHistoricalTimeSeries[filteredHistoricalTimeSeries.length - 1];
-	const firstProjection = projectionTimeSeries.data[0];
+	const lastHistory = updatedHistoricalTimeSeriesData[updatedHistoricalTimeSeriesData.length - 1];
+	const firstProjection = updatedProjectionTimeSeriesData[0];
 
 	if (lastHistory?.time && firstProjection?.time) {
 		// if last history time is the same as first projection time, remove the last history data
 		const historyData =
 			lastHistory?.time === firstProjection?.time
-				? filteredHistoricalTimeSeries.slice(0, -1)
-				: filteredHistoricalTimeSeries;
+				? updatedHistoricalTimeSeriesData.slice(0, -1)
+				: updatedHistoricalTimeSeriesData;
 
 		// combine historical and projection data, adding empty values for historical data for Capacity data view
 		let data =
 			selectedDataView === 'energy'
-				? [...historyData, ...projectionTimeSeries.data]
-				: [...getEmpty(historyData), ...projectionTimeSeries.data];
+				? [...historyData, ...updatedProjectionTimeSeriesData]
+				: [...getEmpty(historyData), ...updatedProjectionTimeSeriesData];
 
 		// combine projection and historical series names to make sure they are all included in the time series
 		let names = [
@@ -285,7 +337,7 @@ export function processTechnologyData({
  * @param {{
  * 	scenarioProjectionData: *,
  * 	scenarioProjectionTimeSeries: { id: string, model: string, scenario: string, pathway: string, series: TimeSeries}[],
- * 	scenarioHistoricalTimeSeries: {model: string, scenario: string, pathway: string, series: TimeSeries}[],
+ * 	scenarioHistoricalTimeSeries: {model: string, scenario: string, pathway: string, data: TimeSeries},
  * 	selectedDataView: string,
  * 	historySeriesName: string
  * }} param0
@@ -298,37 +350,62 @@ export function processScenarioData({
 	historySeriesName
 }) {
 	let updatedData = [];
-	let combinedScenarioData = [];
 
-	// Mutate historical dates (update june to jan) to match ISP and filter from 2010 and before 2025
-	const filteredHistoricalTimeSeries = mutateHistoryDataDates(
-		scenarioHistoricalTimeSeries.data
-	).filter((d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009);
+	console.log('historySeriesName', historySeriesName);
 
 	if (scenarioProjectionTimeSeries.length > 0) {
-		const lastHistory = filteredHistoricalTimeSeries[filteredHistoricalTimeSeries.length - 1];
-		const firstProjectionSeriesData = scenarioProjectionTimeSeries[0].series.data;
+		// Mutate historical dates (update june to jan) to match ISP and filter from 2010 and before 2025
+		const updatedHistoricalTimeSeriesData = mutateHistoryDataDates(
+			scenarioHistoricalTimeSeries.data
+		).filter((d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009);
+
+		// Mutate projection dates (update july to jan next year)
+		const updatedProjectionTimeSeriesDataArray = scenarioProjectionTimeSeries.map((d) => {
+			const updatedSeries = {
+				...d.series,
+				data: d.model === 'aemo2022' ? d.series.data : mutateProjectionDataDates(d.series.data) // only mutate dates that are not start of year
+			};
+			return {
+				...d,
+				series: updatedSeries
+			};
+		});
+
+		const lastHistory = updatedHistoricalTimeSeriesData[updatedHistoricalTimeSeriesData.length - 1];
+		const firstProjectionSeriesData = updatedProjectionTimeSeriesDataArray[0].series.data;
 		const firstProjectionItem = firstProjectionSeriesData[0];
 
 		console.log(
 			'processing',
-			filteredHistoricalTimeSeries,
+			updatedHistoricalTimeSeriesData,
 			scenarioProjectionTimeSeries,
-			selectedDataView
+			selectedDataView,
+			firstProjectionSeriesData
 		);
 
 		if (lastHistory?.time && firstProjectionItem?.time) {
 			// if last history time is the same as first projection time, remove the last history data
+
+			console.log(
+				'lastHistory?.time === firstProjectionItem?.time',
+				lastHistory?.time,
+				firstProjectionItem?.time
+			);
 			const historyData =
 				lastHistory?.time === firstProjectionItem?.time
-					? filteredHistoricalTimeSeries.slice(0, -1)
-					: filteredHistoricalTimeSeries;
+					? updatedHistoricalTimeSeriesData.slice(0, -1)
+					: updatedHistoricalTimeSeriesData;
 
 			// console.log('first last', firstProjectionItem, lastHistory, historyData);
 
 			// add all date/time and historical net values to updatedData
 			updatedData = [...historyData, ...firstProjectionSeriesData].map((d, i) => {
-				const historical = i < historyData.length ? d[historySeriesName] : null;
+				const historical =
+					i < historyData.length
+						? historySeriesName === '_max'
+							? d['au.total_sources.grouped'] - d['au.total_loads.grouped']
+							: d[historySeriesName]
+						: null;
 				return {
 					historical,
 					date: d.date,
@@ -349,7 +426,7 @@ export function processScenarioData({
 
 			// add all scenario projection data to updatedData
 			// - add based on the date time because different models will have different projection start/end dates
-			scenarioProjectionTimeSeries.forEach((series) => {
+			updatedProjectionTimeSeriesDataArray.forEach((series) => {
 				series.series.data.forEach((d, i) => {
 					const find = updatedData.find((u) => u.time === d.time);
 					find[series.id] = d._max; // demand (sources - loads)
@@ -358,12 +435,14 @@ export function processScenarioData({
 
 			// add empty values for scenario projection data before first projection date
 			updatedData.forEach((d) => {
-				scenarioProjectionTimeSeries.forEach((series) => {
+				updatedProjectionTimeSeriesDataArray.forEach((series) => {
 					if (!d[series.id]) {
 						d[series.id] = null;
 					}
 				});
 			});
+
+			console.log('updatedData', updatedData);
 
 			// combine historical and projection data, adding empty values for historical data for Capacity data view
 			// let data =
@@ -422,14 +501,16 @@ export function processScenarioData({
  * 	regionProjectionTimeSeries: {region: string, series: TimeSeries}[],
  * 	regionHistoricalTimeSeries: {region: string, series: TimeSeries}[],
  * 	selectedDataView: string,
- * 	historySeriesName: string
+ * 	historySeriesName: string,
+ *  selectedModel: string
  * }} param0
  */
 export function processRegionData({
 	regionProjectionTimeSeries,
 	regionHistoricalTimeSeries,
 	selectedDataView,
-	historySeriesName
+	historySeriesName,
+	selectedModel
 }) {
 	let updatedData = [];
 	let combinedRegionData = [];
@@ -442,6 +523,17 @@ export function processRegionData({
 				(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
 			);
 		});
+
+		// Mutate projection dates (update july to jan next year)
+		regionProjectionTimeSeries.forEach((series) => {
+			series.series.data =
+				selectedModel === 'aemo2022'
+					? series.series.data
+					: mutateProjectionDataDates(series.series.data);
+		});
+
+		console.log('regionHistoricalTimeSeries', regionHistoricalTimeSeries);
+		console.log('regionProjectionTimeSeries', regionProjectionTimeSeries);
 
 		const firstHistoricalSeriesData = regionHistoricalTimeSeries[0].series.data;
 		const lastHistoryItem = firstHistoricalSeriesData[firstHistoricalSeriesData.length - 1];
@@ -483,7 +575,10 @@ export function processRegionData({
 
 		combinedRegionData.forEach((series) => {
 			series.data.forEach((d, i) => {
-				updatedData[i][series.region] = d[historySeriesName]; // demand (sources - loads)
+				updatedData[i][series.region] =
+					historySeriesName === '_max'
+						? d['au.total_sources.grouped'] - d['au.total_loads.grouped'] // net (sources - loads)
+						: d[historySeriesName];
 			});
 		});
 	}

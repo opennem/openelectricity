@@ -10,7 +10,7 @@
 
 	import { modelOptions, dataViewOptions, displayViewOptions } from '../options';
 	import { scenarioLabels } from '../descriptions';
-	import { dataTechnologyGroupOptions, dataRegionCompareOptions } from '../helpers';
+	import { homepageDataTechnologyGroupOptions, dataRegionCompareOptions } from '../helpers';
 
 	const {
 		selectedModel,
@@ -31,10 +31,10 @@
 	const { selectedGroup } = getContext('scenario-data');
 
 	$selectedModel = modelOptions[0].value;
-	$selectedGroup = dataTechnologyGroupOptions[0].value;
+	$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
 
 	$: if ($isTechnologyDisplay) {
-		$selectedGroup = dataTechnologyGroupOptions[0].value;
+		$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
 	} else {
 		$selectedGroup = dataRegionCompareOptions[0].value;
 	}

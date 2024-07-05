@@ -3,8 +3,9 @@ import { colourReducer } from '$lib/stores/theme';
 import { groups } from '../groups';
 import {
 	createNewStats,
+	createNewProjectionStats,
 	createNewTimeSeries,
-	calculatePercentageStats,
+	calculateProjectionPercentageStats,
 	calculatePercentageTimeSeries
 } from '../helpers';
 
@@ -20,7 +21,7 @@ export default function (filters) {
 	const projectionStats = derived(
 		[projectionData, selectedGroup],
 		([$projectionData, $selectedGroup]) => {
-			return createNewStats($projectionData, $selectedGroup, 'projection');
+			return createNewProjectionStats($projectionData, $selectedGroup, 'projection');
 		}
 	);
 	const projectionLoadSeries = derived(projectionStats, ($projectionStats) => {
@@ -75,11 +76,11 @@ export default function (filters) {
 		[scenarioProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
 		([$scenarioProjectionData, $selectedGroup, $isNetTotalGroup, $usePercentage]) => {
 			return $scenarioProjectionData.map((d) => {
-				let otherStats = createNewStats(d.data, $selectedGroup, 'projection');
+				let otherStats = createNewProjectionStats(d.data, $selectedGroup, 'projection');
 
 				// only calculate percentage if not net total group
 				if (!$isNetTotalGroup && $usePercentage) {
-					otherStats = calculatePercentageStats(d, otherStats, 'projection');
+					otherStats = calculateProjectionPercentageStats(d, otherStats, 'projection');
 				}
 
 				return {
@@ -153,11 +154,11 @@ export default function (filters) {
 		[regionProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
 		([$regionProjectionData, $selectedGroup, $isNetTotalGroup, $usePercentage]) => {
 			return $regionProjectionData.map((d) => {
-				let otherStats = createNewStats(d.data, $selectedGroup, 'projection');
+				let otherStats = createNewProjectionStats(d.data, $selectedGroup, 'projection');
 
 				// only calculate percentage if not net total group
 				if (!$isNetTotalGroup && $usePercentage) {
-					otherStats = calculatePercentageStats(d, otherStats, 'projection');
+					otherStats = calculateProjectionPercentageStats(d, otherStats, 'projection');
 				}
 
 				return {

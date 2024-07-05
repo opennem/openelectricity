@@ -5,7 +5,7 @@ const basePath = PUBLIC_JSON_URL + '/models';
 /** @type {*} */
 const modelPaths = {
 	aemo2022: '/aemo-isp-2022',
-	aemo2024: '/aemo-draft-isp-2024'
+	aemo2024: '/aemo-isp-2024'
 };
 
 export async function GET({ setHeaders, url, fetch }) {

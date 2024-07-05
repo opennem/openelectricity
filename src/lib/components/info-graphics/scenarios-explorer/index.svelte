@@ -130,7 +130,8 @@
 		const processed = processTechnologyData({
 			projectionTimeSeries: $projectionTimeSeries,
 			historicalTimeSeries: $historicalTimeSeries,
-			selectedDataView: $selectedDataView
+			selectedDataView: $selectedDataView,
+			selectedModel: $selectedModel
 		});
 
 		if (processed) {
@@ -156,12 +157,9 @@
 	} else if ($selectedDisplayView === 'scenario') {
 		console.log('Process scenario data');
 
-		const historySeriesName =
-			$isNetTotalGroup && !$usePercentage
-				? '_max'
-				: $isNetTotalGroup && $usePercentage
-				? 'au.total_sources.grouped'
-				: $scenarioHistoricalTimeSeries.seriesNames[0];
+		const historySeriesName = $isNetTotalGroup
+			? '_max'
+			: $scenarioHistoricalTimeSeries.seriesNames[0];
 
 		const processed = processScenarioData({
 			scenarioProjectionData: $scenarioProjectionData,
@@ -199,7 +197,8 @@
 			regionProjectionTimeSeries: $regionProjectionTimeSeries,
 			regionHistoricalTimeSeries: $regionHistoricalTimeSeries,
 			selectedDataView: $selectedDataView,
-			historySeriesName: historySeriesName
+			historySeriesName: historySeriesName,
+			selectedModel: $selectedModel
 		});
 
 		if (processed) {

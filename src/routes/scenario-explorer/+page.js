@@ -7,6 +7,7 @@ export async function load({ data, url }) {
 	return {
 		...data, // pipe through data from PageServer
 
-		filters: filters ? JSON.parse(lzString.decompressFromEncodedURIComponent(filters)) : null
+		// filters: filters ? JSON.parse(lzString.decompressFromEncodedURIComponent(filters)) : null
+		filters: null
 	};
 }

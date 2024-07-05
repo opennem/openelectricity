@@ -4,6 +4,7 @@ export const fuelTechMap = {
 		'battery_charging',
 		'battery_VPP_charging',
 		'battery_distributed_charging',
+		'pumps',
 		'exports',
 		'demand_response'
 	],
@@ -21,13 +22,14 @@ export const fuelTechMap = {
 		'gas_steam',
 		'gas_wcmg',
 		'gas_hydrogen',
+		'bioenergy',
 		'bioenergy_biomass',
+		'bioenergy_biogas',
 		'hydro',
 		'wind',
 		'wind_offshore',
 		'solar_utility',
-		'solar_rooftop',
-		'solar_thermal'
+		'solar_rooftop'
 	]
 };
 

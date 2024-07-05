@@ -13,8 +13,8 @@ export function modelStore() {
 	const modelOptions = [
 		{
 			value: 'aemo2024',
-			label: 'AEMO Draft 2024 ISP',
-			description: "AEMO's Draft 2024 Integrated System Plan"
+			label: 'AEMO 2024 ISP',
+			description: "AEMO's 2024 Integrated System Plan"
 		},
 		{
 			value: 'aemo2022',

@@ -1,6 +1,8 @@
 <script>
 	import { setContext, getContext } from 'svelte';
 	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 
 	import { getModels, getAllRegionModels } from '$lib/models/index2';
 	import { getHistory, getAllRegionHistory } from '$lib/opennem';
@@ -76,24 +78,24 @@
 	$: if ($selectedMultipleScenarios.length === 0) {
 		$selectedMultipleScenarios = [
 			{
-				id: 'aemo2024-step-change-cdp11_(odp)',
+				id: 'aemo2024-step-change-cdp14',
 				model: 'aemo2024',
 				scenario: 'step_change',
-				pathway: 'CDP11 (ODP)',
+				pathway: 'CDP14',
 				colour: '#A078D7'
 			},
 			{
-				id: 'aemo2024-progressive-change-cdp11_(odp)',
+				id: 'aemo2024-progressive-change-cdp14',
 				model: 'aemo2024',
 				scenario: 'progressive_change',
-				pathway: 'CDP11 (ODP)',
+				pathway: 'CDP14',
 				colour: '#F480EE'
 			},
 			{
-				id: 'aemo2024-green-energy-exports-cdp11_(odp)',
+				id: 'aemo2024-green-energy-exports-cdp14',
 				model: 'aemo2024',
 				scenario: 'green_energy_exports',
-				pathway: 'CDP11 (ODP)',
+				pathway: 'CDP14',
 				colour: '#069FAF'
 			}
 		];
@@ -142,6 +144,8 @@
 			getModels(model, region, dataView)
 		]);
 
+		console.log('modelsData', modelsData);
+
 		updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
 
 		$projectionData = modelsData.outlook.data.filter(
@@ -173,26 +177,34 @@
 		/** @type {*} */
 		const scenarioProjections = [];
 
-		scenarios.forEach((scene) => {
-			const filtered = allModels[scene.model].outlook.data.filter(
-				(d) => d.scenario === scene.scenario && d.pathway === scene.pathway
-			);
+		try {
+			scenarios.forEach((scene) => {
+				const filtered = allModels[scene.model].outlook.data.filter(
+					(d) => d.scenario === scene.scenario && d.pathway === scene.pathway
+				);
 
-			scenarioProjections.push({
-				id: scene.id,
-				model: scene.model,
-				scenario: scene.scenario,
-				pathway: scene.pathway,
-				colour: scene.colour,
-				data: filtered
+				scenarioProjections.push({
+					id: scene.id,
+					model: scene.model,
+					scenario: scene.scenario,
+					pathway: scene.pathway,
+					colour: scene.colour,
+					data: filtered
+				});
 			});
-		});
 
-		$scenarioProjectionData = scenarioProjections;
-		$scenarioHistoricalData = covertHistoryDataToTWh(historyData);
+			$scenarioProjectionData = scenarioProjections;
+			$scenarioHistoricalData = covertHistoryDataToTWh(historyData);
 
-		console.log('scenarioProjectionData', scenarioProjections);
-		console.log('scenarioHistoricalData', $scenarioHistoricalData);
+			console.log('scenarioProjectionData', scenarioProjections);
+			console.log('scenarioHistoricalData', $scenarioHistoricalData);
+		} catch (error) {
+			// TODO: update
+			let query = new URLSearchParams($page.url.searchParams.toString());
+			goto(`?${query.toString()}#filters`);
+
+			console.error('Error getting scenario data', error);
+		}
 	}
 
 	/**

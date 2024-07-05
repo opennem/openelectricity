@@ -17,7 +17,7 @@ export const fuelTechMap = {
 	],
 	distillate: ['distillate'],
 
-	bioenergy: ['bioenergy_biomass', 'bioenergy_biogas'],
+	bioenergy: ['bioenergy', 'bioenergy_biomass', 'bioenergy_biogas'],
 	hydro: ['hydro'],
 
 	battery_discharging: [
@@ -27,7 +27,6 @@ export const fuelTechMap = {
 	],
 
 	wind: ['wind', 'wind_offshore'],
-	solar_thermal: ['solar_thermal'],
 	solar_utility: ['solar_utility'],
 	solar_rooftop: ['solar_rooftop']
 };
@@ -44,7 +43,6 @@ export const labels = {
 	bioenergy: 'Bioenergy',
 	hydro: 'Hydro',
 	wind: 'Wind',
-	solar_thermal: 'Solar (Thermal)',
 	solar_utility: 'Solar (Utility)',
 	solar_rooftop: 'Solar (Rooftop)'
 };
@@ -66,7 +64,6 @@ export const order = [
 	'hydro',
 
 	'wind',
-	'solar_thermal',
 	'solar_utility',
 	'solar_rooftop'
 ];

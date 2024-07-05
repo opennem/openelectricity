@@ -19,12 +19,14 @@ export const fuelTechMap = {
 	gas_steam: ['gas_steam'],
 	gas_wcmg: ['gas_wcmg'],
 	gas_hydrogen: ['gas_hydrogen'],
-	bioenergy_biomass: ['bioenergy_biomass'],
-	bioenergy_biogas: ['bioenergy_biogas'],
+	// bioenergy_biomass: ['bioenergy_biomass'],
+	// bioenergy_biogas: ['bioenergy_biogas'],
+	bioenergy: ['bioenergy', 'bioenergy_biomass', 'bioenergy_biogas'],
+
 	distillate: ['distillate'],
 
 	hydro: ['hydro'],
-	pumps: ['pumps'],
+	// pumps: ['pumps'],
 
 	battery_discharging: ['battery_discharging'],
 	battery_VPP_discharging: ['battery_VPP_discharging'],
@@ -32,7 +34,7 @@ export const fuelTechMap = {
 
 	wind: ['wind'],
 	wind_offshore: ['wind_offshore'],
-	solar_thermal: ['solar_thermal'],
+	// solar_thermal: ['solar_thermal'],
 	solar_utility: ['solar_utility'],
 	solar_rooftop: ['solar_rooftop']
 };
@@ -63,19 +65,19 @@ export const labels = {
 	gas_recip: 'Gas (Reciprocating)',
 	gas_steam: 'Gas (Steam)',
 	gas_wcmg: 'Gas (Waste Coal Mine)',
-	gas_hydrogen: 'Gas (Hydrogen)',
+	// gas_hydrogen: 'Gas (Hydrogen)',
 
 	bioenergy_biogas: 'Bioenergy (Biogas)',
 	bioenergy_biomass: 'Bioenergy (Biomass)',
+	bioenergy: 'Bioenergy',
 
 	hydro: 'Hydro',
-	pumps: 'Pumps',
+	// pumps: 'Pumps',
 
 	wind: 'Wind',
 	wind_offshore: 'Wind (Offshore)',
 
 	solar_utility: 'Solar (Utility)',
-	solar_thermal: 'Solar (Thermal)',
 	solar_rooftop: 'Solar (Rooftop)'
 };
 
@@ -85,7 +87,7 @@ export const order = [
 	'battery_VPP_charging',
 	'battery_distributed_charging',
 
-	'pumps',
+	// 'pumps',
 
 	'exports',
 
@@ -95,8 +97,9 @@ export const order = [
 	'coal_brown',
 	'coal_black',
 
-	'bioenergy_biogas',
-	'bioenergy_biomass',
+	'bioenergy',
+	// 'bioenergy_biogas',
+	// 'bioenergy_biomass',
 
 	'distillate',
 
@@ -106,7 +109,7 @@ export const order = [
 	'gas_ocgt',
 	'gas_recip',
 	'gas_wcmg',
-	'gas_hydrogen',
+	// 'gas_hydrogen',
 
 	'battery_discharging',
 	'battery_VPP_discharging',
@@ -117,7 +120,6 @@ export const order = [
 	'wind',
 	'wind_offshore',
 
-	'solar_thermal',
 	'solar_utility',
 	'solar_rooftop'
 ];

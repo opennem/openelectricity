@@ -8,13 +8,23 @@ import parser from './parser';
  * @param {string} type
  */
 async function getModels(model, region, type) {
-	const params = {
+	let params = {
 		name: model,
 		region: region && region === 'NEM' ? '' : region,
 		type: type || 'energy'
 	};
-	const queryStrings = new URLSearchParams(params);
-	const models = await fetch('/api/models?' + queryStrings);
+	let queryStrings = new URLSearchParams(params);
+	let models = await fetch('/api/models?' + queryStrings);
+
+	if (!models.ok) {
+		// default to NEM if not found
+		params.name = 'aemo2024';
+		params.region = '';
+		params.type = 'energy';
+		queryStrings = new URLSearchParams(params);
+		models = await fetch('/api/models?' + queryStrings);
+	}
+
 	return parser(await models.json());
 }
 

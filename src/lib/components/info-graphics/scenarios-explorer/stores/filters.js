@@ -16,8 +16,8 @@ export default function (filters) {
 	const selectedDisplayView = writable(filters?.displayView || displayViewOptions[0].value);
 	const selectedChartType = writable(filters?.chartType || chartTypeOptions[0].value);
 	const selectedRegion = writable(filters?.region || regionOptions[0].value);
-	const selectedScenario = writable(filters?.scenario || '');
-	const selectedPathway = writable(filters?.pathway || '');
+	const selectedScenario = writable(filters?.scenario || 'step_change');
+	const selectedPathway = writable(filters?.pathway || 'CDP14');
 	const selectedGroup = writable(filters?.group || '');
 
 	const selectedMultipleScenarios = writable(filters?.multipleScenarios || []);

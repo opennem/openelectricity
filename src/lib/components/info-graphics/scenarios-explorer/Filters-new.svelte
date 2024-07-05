@@ -113,7 +113,9 @@
 					{#if $isScenarioDisplay}
 						Update Scenarios
 					{:else}
-						{scenarioLabels[$selectedModel][$selectedScenario]}
+						{scenarioLabels[$selectedModel]
+							? scenarioLabels[$selectedModel][$selectedScenario]
+							: ''}
 					{/if}
 
 					{#if $showScenarioOptions}

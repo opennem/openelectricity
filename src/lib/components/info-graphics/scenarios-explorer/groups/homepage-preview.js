@@ -17,7 +17,7 @@ export const fuelTechMap = {
 	],
 	distillate: ['distillate'],
 
-	bioenergy: ['bioenergy_biomass', 'bioenergy_biogas'],
+	bioenergy: ['bioenergy', 'bioenergy_biomass', 'bioenergy_biogas'],
 	hydro: ['hydro'],
 
 	battery_discharging: [

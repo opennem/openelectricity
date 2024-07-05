@@ -19,18 +19,17 @@ export const fuelTechMap = {
 		'gas_ocgt',
 		'gas_recip',
 		'gas_steam',
-		'gas_wcmg',
-		'gas_hydrogen'
+		'gas_wcmg'
 	],
 	renewable: [
+		'bioenergy',
 		'bioenergy_biomass',
 		'bioenergy_biogas',
 		'hydro',
 		'wind',
 		'wind_offshore',
 		'solar_utility',
-		'solar_rooftop',
-		'solar_thermal'
+		'solar_rooftop'
 	]
 };
 

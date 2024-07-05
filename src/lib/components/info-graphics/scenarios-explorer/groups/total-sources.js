@@ -14,7 +14,11 @@ export const fuelTechMap = {
 		'gas_steam',
 		'gas_wcmg',
 		'gas_hydrogen',
+		'distillate',
+
+		'bioenergy',
 		'bioenergy_biomass',
+		'bioenergy_biogas',
 		'hydro',
 		'wind',
 		'wind_offshore',
