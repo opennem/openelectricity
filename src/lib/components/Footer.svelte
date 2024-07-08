@@ -106,7 +106,7 @@
 				</p>
 				<p>
 					Our data sources and open-source code are available for review and collaboration, aimed at
-					fostering a spirit of openness and shared learning in industry and the methane research
+					fostering a spirit of openness and shared learning in industry and the scientific research
 					community.
 				</p>
 				<div class="flex items-center justify-between mt-16">
