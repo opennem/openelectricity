@@ -4,7 +4,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
-	import { getModels, getAllRegionModels } from '$lib/models/index2';
+	import { getScenarioJson } from '$lib/scenarios';
 	import { getHistory, getAllRegionHistory } from '$lib/opennem';
 	import selectOptionsMap from '$lib/utils/select-options-map';
 
@@ -21,6 +21,7 @@
 	import cacheStore from '$lib/components/info-graphics/scenarios-explorer/stores/cache';
 
 	import {
+		allScenarios,
 		regionsOnly,
 		defaultModelPathway,
 		defaultPathwayOrder
@@ -139,23 +140,30 @@
 	 * @param {*} param0
 	 */
 	async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
-		const [historyData, modelsData] = await Promise.all([
+		const [historyData, scenarioData] = await Promise.all([
 			getHistory(region),
-			getModels(model, region, dataView)
+			getScenarioJson(model, scenario)
 		]);
+		const scenarios = allScenarios.filter((d) => d.model === model);
 
-		console.log('modelsData', modelsData);
+		updateScenariosPathways(
+			scenarios.map((d) => d.scenarioId),
+			scenarioData.pathways
+		);
 
-		updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
+		const filteredScenarioData = scenarioData.data.filter(
+			(d) =>
+				d.pathway === pathway &&
+				d.region.toLowerCase() === region.toLowerCase() &&
+				d.type === dataView
+		);
 
-		$projectionData = modelsData.outlook.data
-			.filter((d) => d.scenario === scenario && d.pathway === pathway)
-			.map((d) => {
-				return {
-					...d,
-					model: model
-				};
-			});
+		$projectionData = filteredScenarioData.map((d) => {
+			return {
+				...d,
+				model: model
+			};
+		});
 
 		$historicalData = covertHistoryDataToTWh(historyData);
 
@@ -168,30 +176,30 @@
 	 * @param {*} param0
 	 */
 	async function getScenarioData({ scenarios, region, dataView }) {
-		const [historyData, aemo2022, aemo2024] = await Promise.all([
+		const promises = await Promise.all([
 			getHistory(region),
-			getModels('aemo2022', region, dataView),
-			getModels('aemo2024', region, dataView)
+			...scenarios.map((d) => getScenarioJson(d.model, d.scenario))
 		]);
 
-		const allModels = {
-			aemo2022: aemo2022,
-			aemo2024: aemo2024
-		};
+		console.log('promises', promises);
+		const historyData = promises[0];
+		const scenarioData = promises.slice(1);
+
+		console.log('scenarioData', scenarioData);
 
 		/** @type {*} */
 		const scenarioProjections = [];
 
 		try {
-			scenarios.forEach((scene) => {
-				const filtered = allModels[scene.model].outlook.data
-					.filter((d) => d.scenario === scene.scenario && d.pathway === scene.pathway)
-					.map((d) => {
-						return {
-							...d,
-							model: scene.model
-						};
-					});
+			scenarios.forEach((scene, i) => {
+				const sceneData = scenarioData[i].data;
+
+				const filteredScenarioData = sceneData.filter(
+					(d) =>
+						d.pathway === scene.pathway &&
+						d.region.toLowerCase() === region.toLowerCase() &&
+						d.type === dataView
+				);
 
 				scenarioProjections.push({
 					id: scene.id,
@@ -199,14 +207,14 @@
 					scenario: scene.scenario,
 					pathway: scene.pathway,
 					colour: scene.colour,
-					data: filtered
+					data: filteredScenarioData
 				});
 			});
 
 			$scenarioProjectionData = scenarioProjections;
 			$scenarioHistoricalData = covertHistoryDataToTWh(historyData);
 
-			console.log('scenarioProjectionData', scenarioProjections);
+			console.log('scenarioProjections', scenarioProjections);
 			console.log('scenarioHistoricalData', $scenarioHistoricalData);
 		} catch (error) {
 			// TODO: update
@@ -222,30 +230,19 @@
 	 * @param {*} param0
 	 */
 	async function getRegionData({ model, scenario, pathway, dataView }) {
-		const [allHistoryData, allModelsRegionData] = await Promise.all([
+		const [allHistoryData, scenarioData] = await Promise.all([
 			getAllRegionHistory(),
-			getAllRegionModels(model, dataView)
+			getScenarioJson(model, scenario)
 		]);
+		const scenarios = allScenarios.filter((d) => d.model === model);
 
-		updateScenariosPathways(allModelsRegionData[0].scenarios, allModelsRegionData[0].pathways);
+		console.log('dataView', dataView);
+		console.log('scenarioData', scenarioData);
 
-		/** @type {*} */
-		let regionProjections = [];
-
-		allModelsRegionData.forEach((d) => {
-			const filtered = d.outlook.data
-				.filter((d) => d.scenario === scenario && d.pathway === pathway)
-				.map((d) => {
-					return {
-						...d,
-						model: model
-					};
-				});
-			regionProjections.push({
-				region: d.outlook.region,
-				data: filtered
-			});
-		});
+		updateScenariosPathways(
+			scenarios.map((d) => d.scenarioId),
+			scenarioData.pathways
+		);
 
 		/** @type {*} */
 		let regionHistory = [];
@@ -259,11 +256,31 @@
 			});
 		});
 
+		/** @type {*} */
+		let regionProjections = [];
+		regionsOnly.forEach((region) => {
+			const filtered = scenarioData.data.filter(
+				(d) =>
+					d.pathway === pathway &&
+					d.region.toLowerCase() === region.toLowerCase() &&
+					d.type === dataView
+			);
+			regionProjections.push({
+				region: region,
+				data: filtered.map((d) => {
+					return {
+						...d,
+						model: model
+					};
+				})
+			});
+		});
+
 		$regionProjectionData = regionProjections;
 		$regionHistoricalData = regionHistory;
 
-		console.log('regionProjectionData', regionProjections);
-		console.log('regionHistoricalData', regionHistory);
+		console.log('regionProjections', regionProjections);
+		console.log('regionHistory', regionHistory);
 	}
 
 	/**

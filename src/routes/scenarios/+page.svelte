@@ -3,6 +3,8 @@
 	import { browser } from '$app/environment';
 
 	import { getModels, getAllRegionModels } from '$lib/models/index2';
+	import { getScenarioJson } from '$lib/scenarios';
+
 	import { getHistory, getAllRegionHistory } from '$lib/opennem';
 	import selectOptionsMap from '$lib/utils/select-options-map';
 	import deepCopy from '$lib/utils/deep-copy';
@@ -19,6 +21,7 @@
 	import cacheStore from '$lib/components/info-graphics/scenarios-explorer/stores/cache';
 
 	import {
+		allScenarios,
 		regionsOnly,
 		defaultModelPathway,
 		defaultPathwayOrder
@@ -115,16 +118,32 @@
 	 * @param {*} param0
 	 */
 	async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
-		modelsData = await getModels(model, region, dataView);
-		historyData = await getHistory(region);
+		const [historyData, scenarioData] = await Promise.all([
+			getHistory(region),
+			getScenarioJson(model, scenario)
+		]);
+		const scenarios = allScenarios.filter((d) => d.model === model);
 
-		updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
-
-		$projectionData = modelsData.outlook.data.filter(
-			(d) => d.scenario === scenario && d.pathway === pathway
+		updateScenariosPathways(
+			scenarios.map((d) => d.scenarioId),
+			scenarioData.pathways
 		);
 
-		$historicalData = covertHistoryDataToTWh(deepCopy(historyData));
+		const filteredScenarioData = scenarioData.data.filter(
+			(d) =>
+				d.pathway === pathway &&
+				d.region.toLowerCase() === region.toLowerCase() &&
+				d.type === dataView
+		);
+
+		$projectionData = filteredScenarioData.map((d) => {
+			return {
+				...d,
+				model: model
+			};
+		});
+
+		$historicalData = covertHistoryDataToTWh(historyData);
 	}
 
 	/**

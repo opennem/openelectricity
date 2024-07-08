@@ -5,7 +5,7 @@
 	import { browser } from '$app/environment';
 
 	import selectOptionsMap from '$lib/utils/select-options-map';
-	import { getModels } from '$lib/models/index2';
+	import { getScenarioJson } from '$lib/scenarios';
 	import { getHistory } from '$lib/opennem';
 
 	import filtersStore from '../stores/filters';
@@ -13,6 +13,7 @@
 	import cacheStore from '../stores/cache';
 
 	import {
+		allScenarios,
 		defaultModelPathway,
 		dataViewUnits,
 		dataViewLongLabel,
@@ -170,16 +171,27 @@
 	 * @param {*} param0
 	 */
 	async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
-		const [historyData, modelsData] = await Promise.all([
+		const [historyData, scenarioData] = await Promise.all([
 			getHistory(region),
-			getModels(model, region, dataView)
+			getScenarioJson(model, scenario)
 		]);
+		const scenarios = allScenarios.filter((d) => d.model === model);
 
-		updateScenarios(modelsData.scenarios);
+		updateScenarios(scenarios.map((d) => d.scenarioId));
 
-		$projectionData = modelsData.outlook.data.filter(
-			(d) => d.scenario === scenario && d.pathway === pathway
+		const filteredScenarioData = scenarioData.data.filter(
+			(d) =>
+				d.pathway === pathway &&
+				d.region.toLowerCase() === region.toLowerCase() &&
+				d.type === dataView
 		);
+
+		$projectionData = filteredScenarioData.map((d) => {
+			return {
+				...d,
+				model: model
+			};
+		});
 
 		$historicalData = covertHistoryDataToTWh(historyData);
 	}

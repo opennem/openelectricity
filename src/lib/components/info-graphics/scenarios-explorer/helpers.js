@@ -71,23 +71,6 @@ const allGroupOptions = [
  * @param {StatsType} type
  * @returns
  */
-export function createNewProjectionStats(data, selectedGroup, type = 'projection') {
-	const group = allGroupOptions.find((d) => d.value === selectedGroup);
-
-	if (!group) console.error('Group not found');
-
-	return new Statistic(data, type)
-		.group(group?.fuelTechs, loadFuelTechs)
-		.reorder(group?.order || []);
-}
-
-/**
- *
- * @param {*} data
- * @param {*} selectedGroup
- * @param {StatsType} type
- * @returns
- */
 export function createNewStats(data, selectedGroup, type = 'projection') {
 	const group = allGroupOptions.find((d) => d.value === selectedGroup);
 
@@ -157,31 +140,6 @@ export function mutateProjectionDataDates(data) {
 
 export function calculatePercentageStats(statsData, otherStats, type) {
 	const sourceLoadStats = createNewStats(statsData.data, 'totals', type);
-
-	let netData = [];
-
-	sourceLoadStats.data.forEach((d, i) => {
-		if (i === 0) {
-			netData = d[type].data.map((v) => v);
-		} else {
-			d[type].data.forEach((v, j) => {
-				netData[j] += v;
-			});
-		}
-	});
-
-	otherStats.data.forEach((s) => {
-		s.units = '%';
-		s[type].data.forEach((d, i) => {
-			s[type].data[i] = (d / netData[i]) * 100;
-		});
-	});
-
-	return otherStats;
-}
-
-export function calculateProjectionPercentageStats(statsData, otherStats, type) {
-	const sourceLoadStats = createNewProjectionStats(statsData.data, 'totals', type);
 
 	let netData = [];
 
