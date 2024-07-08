@@ -230,10 +230,7 @@ function updateTimeSeriesData(historyTimeSeries, projectionTimeSeries, selectedM
 	);
 
 	// Mutate proejction dates (update july to jan next year)
-	const updatedProjectionTimeSeriesData =
-		selectedModel === 'aemo2022'
-			? projectionTimeSeries.data
-			: mutateProjectionDataDates(projectionTimeSeries.data);
+	const updatedProjectionTimeSeriesData = mutateProjectionDataDates(projectionTimeSeries.data);
 
 	return {
 		updatedHistoricalTimeSeriesData: updatedHistoricalTimeSeriesData,
@@ -341,7 +338,7 @@ export function processScenarioData({
 		const updatedProjectionTimeSeriesDataArray = scenarioProjectionTimeSeries.map((d) => {
 			const updatedSeries = {
 				...d.series,
-				data: d.model === 'aemo2022' ? d.series.data : mutateProjectionDataDates(d.series.data) // only mutate dates that are not start of year
+				data: mutateProjectionDataDates(d.series.data) // only mutate dates that are not start of year
 			};
 			return {
 				...d,
@@ -504,10 +501,7 @@ export function processRegionData({
 
 		// Mutate projection dates (update july to jan next year)
 		regionProjectionTimeSeries.forEach((series) => {
-			series.series.data =
-				selectedModel === 'aemo2022'
-					? series.series.data
-					: mutateProjectionDataDates(series.series.data);
+			series.series.data = mutateProjectionDataDates(series.series.data);
 		});
 
 		console.log('regionHistoricalTimeSeries', regionHistoricalTimeSeries);
