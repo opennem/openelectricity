@@ -8,8 +8,9 @@ export async function GET({ fetch, url, setHeaders }) {
 
 	const { searchParams } = url;
 	const country = searchParams.get('country') || 'au';
-	const network = searchParams.get('network') || 'NEM';
-	const region = searchParams.get('region') || '';
+	const network = searchParams.get('network') ? searchParams.get('network')?.toUpperCase() : 'NEM';
+	const region =
+		searchParams.get('region') === '_all' ? '' : searchParams.get('region')?.toUpperCase() || '';
 	const type = searchParams.get('type') || 'energy';
 	const networkRegion = region ? `${network}/${region}` : network;
 

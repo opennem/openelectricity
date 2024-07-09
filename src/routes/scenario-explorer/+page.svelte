@@ -248,7 +248,9 @@
 		let regionHistory = [];
 
 		regionsOnly.forEach((region) => {
-			const filtered = allHistoryData.filter((d) => d.region === region);
+			const filtered = allHistoryData.filter(
+				(d) => d.region.toLowerCase() === region.toLowerCase()
+			);
 
 			regionHistory.push({
 				region: region,

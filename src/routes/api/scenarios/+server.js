@@ -1,7 +1,8 @@
 import { error } from '@sveltejs/kit';
 import { PUBLIC_JSON_URL } from '$env/static/public';
 
-const basePath = PUBLIC_JSON_URL + '/models';
+const basePath = PUBLIC_JSON_URL + '/models/v2';
+
 /** @type {*} */
 const modelPaths = {
 	aemo2022: '/2022_ISP_final',

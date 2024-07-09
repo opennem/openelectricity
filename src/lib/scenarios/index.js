@@ -1,4 +1,3 @@
-import { flatten } from 'layercake';
 import parser from './parser';
 
 /**
