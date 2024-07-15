@@ -78,7 +78,8 @@
 	$: articlesFilter = (/** @type {Article[]} */ articles) =>
 		articles?.filter((article) => {
 			const searchFilter =
-				article.title.toLowerCase().includes(searchString.toLowerCase()) ||
+				article.title.toLowerCase().includes(searchString.toLowerCase()) || 
+				article.author.some(author => author.name.toLocaleLowerCase().includes(searchString.toLocaleLowerCase())) ||
 				searchString.trim() === '';
 			const technologyFilter = technologySelections
 				? technologySelections[article.fueltech] || !hasTechnologySelections
