@@ -176,6 +176,7 @@
 			<div
 				class="records-sidebar-fill records-sidebar min-w-[27rem] w-full md:w-3/12 bg-white py-8 md:py-14 md:pr-8 relative border-solid md:border-r-[0.05rem] border-mid-warm-grey"
 			>
+				<div class="h-fit sticky top-0">
 				<div class="flex justify-between">
 					<h1 class="text-2xl leading-2xl md:text-3xl md:leading-3xl mb-0">Analysis</h1>
 					<Button
@@ -356,6 +357,7 @@
 						</FilterSection>
 					</div>
 				</div>
+			</div>
 			</div>
 			<div class="md:w-9/12 grid grid-cols-1 md:grid-cols-3 py-12 gap-8">
 				{#each filteredArticles as article}
