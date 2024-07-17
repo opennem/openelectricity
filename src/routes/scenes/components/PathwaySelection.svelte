@@ -8,7 +8,7 @@
 
 	/** @type {*} */
 	export let selectedScenario = null;
-	/** @type {*} */
+	/** @type {string} */
 	export let selectedPathway = '';
 	/** @type {string[]}*/
 	export let pathways = [];

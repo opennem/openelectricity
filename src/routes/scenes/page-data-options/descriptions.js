@@ -1,3 +1,6 @@
+/**
+ * @type {ScenarioContent}
+ */
 export const scenarioLabels = {
 	aemo2024: {
 		step_change: 'AEMO Step Change 2024',
@@ -12,6 +15,9 @@ export const scenarioLabels = {
 	}
 };
 
+/**
+ * @type {ScenarioContent}
+ */
 export const scenarioDescriptions = {
 	aemo2024: {
 		step_change:
@@ -33,6 +39,9 @@ export const scenarioDescriptions = {
 	}
 };
 
+/**
+ * @type {ScenarioContent}
+ */
 export const scenarioSummary = {
 	aemo2024: {
 		step_change:
@@ -56,6 +65,9 @@ export const scenarioSummary = {
 	}
 };
 
+/**
+ * @type {ScenarioContent}
+ */
 export const scenarioKeyPoints = {
 	aemo2024: {
 		step_change: [
@@ -115,6 +127,9 @@ export const scenarioKeyPoints = {
 	}
 };
 
+/**
+ * @type {ScenarioContent}
+ */
 export const scenarioParagraphs = {
 	aemo2024: {
 		step_change: [

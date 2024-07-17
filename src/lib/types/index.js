@@ -10,3 +10,11 @@
 /** @typedef {import('$lib/types/stats.types').StatsInterval} StatsInterval */
 /** @typedef {import('$lib/types/filters.types').TechnologyFilterDict} TechnologyFilterDict */
 /** @typedef {import('$lib/types/filters.types').TechnologyFilterKey} TechnologyFilterKey  */
+
+/** @typedef {'technology' | 'scenario' | 'region'} ScenarioViewSection */
+/** @typedef {{ value: ScenarioViewSection, label: string}} ScenarioViewSectionOption */
+
+/** @typedef {Object.<string, Object<string, string | string[]>>} ScenarioContent */
+/** @typedef {{id: string, value: string, model: string, label: string, colour: string}} ScenarioPathwayOption */
+/** @typedef {{id: string, value: string, model: string, pathway: string}} ScenarioPathway */
+/** @typedef {{id: string, model: string, scenario: string, pathway: string}} ScenarioSelect */

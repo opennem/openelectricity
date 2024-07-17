@@ -1,9 +1,15 @@
 <script>
+	import { setContext, getContext } from 'svelte';
+
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
 
+	import filtersStore from './stores/filters';
+
 	export let data;
 	const { articles, filters } = data;
+
+	setContext('scenario-filters', filtersStore());
 
 	$: console.log(articles, filters);
 </script>

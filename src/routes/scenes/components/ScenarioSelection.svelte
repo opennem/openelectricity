@@ -1,37 +1,39 @@
 <script>
+	import { getContext, onMount } from 'svelte';
 	import { modelOptions, scenarioOptions, defaultModelPathway } from '../page-data-options/models';
 	import PathwaySelection from './PathwaySelection.svelte';
 	import ScenarioButton from './ScenarioButton.svelte';
 
-	/** @typedef {{model: string, scenario: string, pathway: string}} ScenarioSelect */
-
-	/** @type {'radio' | 'checkbox'} */
-	export let selectionMode = 'radio';
-
-	/** @type {ScenarioSelect} */
-	let radioData = {
-		model: '',
-		scenario: '',
-		pathway: ''
-	};
-	/** @type {ScenarioSelect[]} */
-	let checkboxData = [];
+	const { singleSelectionData, multiSelectionData, isSingleSelectionMode } =
+		getContext('scenario-filters');
 
 	/** @type {string[]} */
 	let selectedScenarios = [];
 	/** @type {string | null} */
 	let focusScenarioId = null;
-
-	let scenariosPathways = scenarioOptions.map((s) => ({
+	/** @type {ScenarioPathway[]} */
+	let scenariosPathways = scenarioOptions.map((/**@type {*} */ s) => ({
 		id: s.id,
 		value: s.value,
 		model: s.model,
 		pathway: defaultModelPathway[s.model]
 	}));
 
-	$: isRadioMode = selectionMode === 'radio';
-	$: scenarioPathway = scenariosPathways.find((s) => s.id === focusScenarioId);
-	$: focusScenario = scenarioOptions.find((s) => s.id === focusScenarioId);
+	onMount(() => {
+		// update checkboxes and relevant pathways
+		selectedScenarios = $multiSelectionData.map((s) => s.id);
+		$multiSelectionData.forEach((s) => {
+			const find = scenariosPathways.find((sp) => sp.id === s.id);
+			if (find) {
+				find.pathway = s.pathway;
+			}
+		});
+
+		// update focus/radio selection
+		focusScenarioId = $singleSelectionData.id;
+	});
+
+	$: focusScenario = scenarioOptions.find((/**@type {*} */ s) => s.id === focusScenarioId);
 	$: focusScenarioModel = focusScenario
 		? modelOptions.find((m) => m.value === focusScenario.model)
 		: null;
@@ -42,9 +44,12 @@
 	// $: console.log('focusPathways', focusPathways);
 
 	$: {
-		// update radioData
+		const scenarioPathway = scenariosPathways.find((s) => s.id === focusScenarioId);
+
+		// update singleSelectionData
 		if (scenarioPathway) {
-			radioData = {
+			$singleSelectionData = {
+				id: scenarioPathway.id,
 				model: scenarioPathway.model,
 				scenario: scenarioPathway.value,
 				pathway: scenarioPathway.pathway
@@ -52,20 +57,8 @@
 		}
 	}
 
-	$: {
-		// update checkboxData
-		checkboxData = selectedScenarios.map((id) => {
-			const find = scenariosPathways.find((s) => s.id === id);
-			return {
-				model: find.model,
-				scenario: find.value,
-				pathway: find.pathway
-			};
-		});
-	}
-
-	$: console.log('radioData', radioData);
-	$: console.log('checkboxData', checkboxData);
+	$: console.log('singleSelectionData', $singleSelectionData);
+	$: console.log('multiSelectionData', $multiSelectionData);
 
 	/**
 	 *
@@ -78,6 +71,17 @@
 		} else {
 			selectedScenarios = selectedScenarios.filter((scenario) => scenario !== selected);
 		}
+
+		// update multiSelectionData
+		$multiSelectionData = selectedScenarios.map((id) => {
+			const find = scenariosPathways.find((s) => s.id === id);
+			return {
+				id: find?.id,
+				model: find?.model,
+				scenario: find?.value,
+				pathway: find?.pathway
+			};
+		});
 	}
 
 	/**
@@ -87,8 +91,9 @@
 	 */
 	function handlePathwayChange(id, pathway) {
 		const scenarioPathway = scenariosPathways.find((s) => s.id === id);
-		scenarioPathway.pathway = pathway;
+		if (!scenarioPathway) return;
 
+		scenarioPathway.pathway = pathway;
 		scenariosPathways = [...scenariosPathways];
 	}
 </script>
@@ -107,9 +112,9 @@
 								<ScenarioButton
 									{model}
 									{scenario}
-									{isRadioMode}
+									isRadioMode={$isSingleSelectionMode}
 									{isChecked}
-									highlightBg={isRadioMode ? isFocussed : isChecked}
+									highlightBg={$isSingleSelectionMode ? isFocussed : isChecked}
 									highlightBorder={isFocussed}
 									on:click={() => (focusScenarioId = scenario.id)}
 									on:change={(evt) => handleCheckBoxChange(scenario.id, evt.detail.checked)}
@@ -125,7 +130,7 @@
 				<PathwaySelection
 					pathways={focusPathways}
 					selectedScenario={focusScenario}
-					selectedPathway={scenarioPathway.pathway}
+					selectedPathway={$singleSelectionData?.pathway}
 					on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
 				/>
 			{/if}
