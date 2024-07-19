@@ -26,6 +26,7 @@ function TimeSeries(statsDatasets, statsInterval, statsType, labelReducer, colou
 	this.maxY = 0;
 
 	if (labelReducer) {
+		/** @type {Object.<string, string>} */
 		this.seriesLabels = statsDatasets.reduce(labelReducer, {});
 	} else {
 		this.seriesLabels = statsDatasets.reduce(
@@ -37,6 +38,7 @@ function TimeSeries(statsDatasets, statsInterval, statsType, labelReducer, colou
 		);
 	}
 	if (colourReducer) {
+		/** @type {Object.<string, string>} */
 		this.seriesColours = statsDatasets.reduce(colourReducer, {});
 	} else {
 		this.seriesColours = statsDatasets.reduce(
