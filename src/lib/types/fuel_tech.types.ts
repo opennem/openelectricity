@@ -5,6 +5,7 @@ export type FuelTechCode =
 	| 'battery_VPP_discharging'
 	| 'battery_distributed_charging'
 	| 'battery_distributed_discharging'
+	| 'battery'
 	| 'bioenergy_biogas'
 	| 'bioenergy_biomass'
 	| 'coal_black'
