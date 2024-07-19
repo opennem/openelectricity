@@ -20,7 +20,8 @@ import {
 	coalOnlyGroup,
 	gasOnlyGroup,
 	solarOnlyGroup,
-	windOnlyGroup
+	windOnlyGroup,
+	totalEmissionsGroup
 } from './groups';
 import { regionsOnly, regionsOnlyWithColours, regionsOnlyWithLabels } from './options';
 import { scenarioLabels } from './descriptions';
@@ -61,8 +62,11 @@ const allGroupOptions = [
 	...dataRegionCompareOptions,
 	totalSourcesGroup,
 	homepagePreviewGroup,
-	homepageRenewablesVsFossilsGroup
+	homepageRenewablesVsFossilsGroup,
+	totalEmissionsGroup
 ];
+
+export const totalEmissionsGroupOptions = [totalEmissionsGroup];
 
 /**
  *
@@ -107,6 +111,7 @@ export function createNewTimeSeries(
 		fuelTechNameReducer,
 		colourReducer
 	);
+
 	return rollupInterval
 		? ts.transform().rollup(parseInterval(rollupInterval)).updateMinMax(loadSeries)
 		: ts.transform().updateMinMax(loadSeries);
@@ -120,6 +125,30 @@ export function covertHistoryDataToTWh(data) {
 		d.units = 'TWh';
 		return d;
 	});
+}
+
+// Merge historical emissions data into total
+export function mergeHistoricalEmissionsData(historyData) {
+	const firstData = historyData[0];
+	const combinedHistoryData = {
+		...firstData,
+		id: `au.${firstData.region || firstData.network}.emissions.total`,
+		code: 'fossil_fuels',
+		fuel_tech: 'fossil_fuels',
+		units: 'tCO₂e',
+		history: {
+			...firstData.history,
+			data: [...firstData.history.data.map(() => 0)]
+		}
+	};
+
+	historyData.forEach((d) => {
+		d.history.data.forEach((v, j) => {
+			const newValue = v;
+			combinedHistoryData.history.data[j] += newValue || 0;
+		});
+	});
+	return [combinedHistoryData];
 }
 
 // Mutate history data dates to start of FY year
@@ -259,6 +288,13 @@ export function processTechnologyData({
 		selectedModel
 	);
 
+	console.log(
+		'updatedHistoricalTimeSeriesData',
+		historicalTimeSeries,
+		updatedHistoricalTimeSeriesData
+	);
+	console.log('updatedProjectionTimeSeriesData', updatedProjectionTimeSeriesData);
+
 	const lastHistory = updatedHistoricalTimeSeriesData[updatedHistoricalTimeSeriesData.length - 1];
 	const firstProjection = updatedProjectionTimeSeriesData[0];
 
@@ -271,7 +307,7 @@ export function processTechnologyData({
 
 		// combine historical and projection data, adding empty values for historical data for Capacity data view
 		let data =
-			selectedDataView === 'energy'
+			selectedDataView === 'energy' || selectedDataView === 'emissions'
 				? [...historyData, ...updatedProjectionTimeSeriesData]
 				: [...getEmpty(historyData), ...updatedProjectionTimeSeriesData];
 
@@ -293,6 +329,14 @@ export function processTechnologyData({
 				historicalTimeSeries.seriesLabels[name] || projectionTimeSeries.seriesLabels[name];
 		});
 
+		const maxY = [...data.map((d) => d._max)];
+		// @ts-ignore
+		const datasetMax = maxY ? Math.max(...maxY) : 0;
+
+		const minY = [...data.map((d) => d._min)];
+		// @ts-ignore
+		const datasetMin = minY ? Math.min(...minY) : 0;
+
 		return {
 			data,
 			names,
@@ -300,7 +344,9 @@ export function processTechnologyData({
 				return { id: name, name: name };
 			}),
 			colours,
-			labels
+			labels,
+			maxY: datasetMax,
+			minY: datasetMin
 		};
 	}
 
@@ -327,6 +373,7 @@ export function processScenarioData({
 	let updatedData = [];
 
 	console.log('historySeriesName', historySeriesName);
+	console.log('scenarioHistoricalTimeSeries', scenarioHistoricalTimeSeries);
 
 	if (scenarioProjectionTimeSeries.length > 0) {
 		// Mutate historical dates (update june to jan) to match ISP and filter from 2010 and before 2025
@@ -345,6 +392,9 @@ export function processScenarioData({
 				series: updatedSeries
 			};
 		});
+
+		console.log('updatedHistoricalTimeSeriesData', updatedHistoricalTimeSeriesData);
+		console.log('updatedProjectionTimeSeriesDataArray', updatedProjectionTimeSeriesDataArray);
 
 		const lastHistory = updatedHistoricalTimeSeriesData[updatedHistoricalTimeSeriesData.length - 1];
 		const firstProjectionSeriesData = updatedProjectionTimeSeriesDataArray[0].series.data;
@@ -377,10 +427,14 @@ export function processScenarioData({
 			updatedData = [...historyData, ...firstProjectionSeriesData].map((d, i) => {
 				const historical =
 					i < historyData.length
-						? historySeriesName === '_max'
+						? selectedDataView === 'emissions'
+							? d[historySeriesName]
+							: historySeriesName === '_max'
 							? d['au.total_sources.grouped'] - d['au.total_loads.grouped']
 							: d[historySeriesName]
 						: null;
+
+				// console.log('historical', d, d[historySeriesName], historical, d.date, d.time);
 				return {
 					historical,
 					date: d.date,
@@ -525,7 +579,7 @@ export function processRegionData({
 
 				// combine historical and projection data, adding empty values for historical data for Capacity data view
 				let data =
-					selectedDataView === 'energy'
+					selectedDataView === 'energy' || selectedDataView === 'emissions'
 						? [...historyData, ...projectionData.series.data]
 						: [...getEmpty(historyData), ...projectionData.series.data];
 
@@ -548,7 +602,9 @@ export function processRegionData({
 		combinedRegionData.forEach((series) => {
 			series.data.forEach((d, i) => {
 				updatedData[i][series.region] =
-					historySeriesName === '_max'
+					selectedDataView === 'emissions'
+						? d[historySeriesName]
+						: historySeriesName === '_max'
 						? d['au.total_sources.grouped'] - d['au.total_loads.grouped'] // net (sources - loads)
 						: d[historySeriesName];
 			});

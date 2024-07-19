@@ -26,8 +26,13 @@
 		defaultModelPathway,
 		defaultPathwayOrder
 	} from '$lib/components/info-graphics/scenarios-explorer/options';
-	import { covertHistoryDataToTWh } from '$lib/components/info-graphics/scenarios-explorer/helpers';
+	import {
+		covertHistoryDataToTWh,
+		mergeHistoricalEmissionsData
+	} from '$lib/components/info-graphics/scenarios-explorer/helpers';
 	import DetailedBreakdown from '$lib/components/info-graphics/scenarios-explorer/DetailedBreakdown-new.svelte';
+
+	import { getTechnologyData } from './helpers.js';
 
 	export let data;
 	const { articles, filters } = data;
@@ -106,12 +111,21 @@
 	$: if (browser && $selectedDisplayView === 'technology') {
 		console.log('get by technology');
 
+		const scenarios = allScenarios.filter((d) => d.model === $selectedModel);
 		getTechnologyData({
 			model: $selectedModel,
 			region: $selectedRegion,
 			scenario: $selectedScenario,
 			pathway: $selectedPathway,
 			dataView: $selectedDataView
+		}).then(({ history, projection, pathways }) => {
+			updateScenariosPathways(
+				scenarios.map((d) => d.scenarioId),
+				pathways
+			);
+
+			$projectionData = projection;
+			$historicalData = history;
 		});
 	}
 	$: if (browser && $selectedDisplayView === 'scenario') {
@@ -139,37 +153,59 @@
 	 * Get data for by technology view
 	 * @param {*} param0
 	 */
-	async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
-		const [historyData, scenarioData] = await Promise.all([
-			getHistory(region),
-			getScenarioJson(model, scenario)
-		]);
-		const scenarios = allScenarios.filter((d) => d.model === model);
+	// async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
+	// 	const [historyData, scenarioData] = await Promise.all([
+	// 		getHistory(region, dataView),
+	// 		getScenarioJson(model, scenario)
+	// 	]);
+	// 	const scenarios = allScenarios.filter((d) => d.model === model);
+	// 	/** @type {*} */
+	// 	let energyHistoryData = [];
 
-		updateScenariosPathways(
-			scenarios.map((d) => d.scenarioId),
-			scenarioData.pathways
-		);
+	// 	if (dataView === 'emissions') {
+	// 		const mergedEmissionsData = mergeHistoricalEmissionsData(historyData);
+	// 		// also fetch energy data to calculate emissions intensity
+	// 		energyHistoryData = await getHistory(region, 'energy');
 
-		const filteredScenarioData = scenarioData.data.filter(
-			(d) =>
-				d.pathway === pathway &&
-				d.region.toLowerCase() === region.toLowerCase() &&
-				d.type === dataView
-		);
+	// 		// emissions / energy delivered (generation + storage_discharging - storage_charging)
 
-		$projectionData = filteredScenarioData.map((d) => {
-			return {
-				...d,
-				model: model
-			};
-		});
+	// 		console.log('energyHistoryData', energyHistoryData);
+	// 		console.log('mergedEmissionsData', mergedEmissionsData);
+	// 	}
 
-		$historicalData = covertHistoryDataToTWh(historyData);
+	// 	console.log('historyData', historyData);
+	// 	console.log('scenarioData', scenarioData);
 
-		console.log('technologyProjectionData', $projectionData);
-		console.log('technologyHistoricalData', $historicalData);
-	}
+	// 	updateScenariosPathways(
+	// 		scenarios.map((d) => d.scenarioId),
+	// 		scenarioData.pathways
+	// 	);
+
+	// 	const filteredScenarioData = scenarioData.data.filter(
+	// 		(d) =>
+	// 			d.pathway === pathway &&
+	// 			d.region.toLowerCase() === region.toLowerCase() &&
+	// 			d.type === dataView
+	// 	);
+
+	// 	console.log('filteredScenarioData', filteredScenarioData);
+
+	// 	$projectionData = filteredScenarioData.map((d) => {
+	// 		return {
+	// 			...d,
+	// 			model: model,
+	// 			fuel_tech: dataView === 'emissions' ? 'fossil_fuels' : d.fuel_tech // change to fossil_fuels for emissions
+	// 		};
+	// 	});
+
+	// 	$historicalData =
+	// 		dataView === 'emissions'
+	// 			? mergeHistoricalEmissionsData(historyData)
+	// 			: covertHistoryDataToTWh(historyData);
+
+	// 	console.log('technologyProjectionData', $projectionData);
+	// 	console.log('technologyHistoricalData', $historicalData);
+	// }
 
 	/**
 	 * Get data for by scenario view
@@ -177,15 +213,12 @@
 	 */
 	async function getScenarioData({ scenarios, region, dataView }) {
 		const promises = await Promise.all([
-			getHistory(region),
+			getHistory(region, dataView),
 			...scenarios.map((d) => getScenarioJson(d.model, d.scenario))
 		]);
 
-		console.log('promises', promises);
 		const historyData = promises[0];
 		const scenarioData = promises.slice(1);
-
-		console.log('scenarioData', scenarioData);
 
 		/** @type {*} */
 		const scenarioProjections = [];
@@ -207,12 +240,20 @@
 					scenario: scene.scenario,
 					pathway: scene.pathway,
 					colour: scene.colour,
-					data: filteredScenarioData
+					data: filteredScenarioData.map((d) => {
+						return {
+							...d,
+							fuel_tech: dataView === 'emissions' ? 'fossil_fuels' : d.fuel_tech // change to fossil_fuels for emissions
+						};
+					})
 				});
 			});
 
 			$scenarioProjectionData = scenarioProjections;
-			$scenarioHistoricalData = covertHistoryDataToTWh(historyData);
+			$scenarioHistoricalData =
+				dataView === 'emissions'
+					? mergeHistoricalEmissionsData(historyData)
+					: covertHistoryDataToTWh(historyData);
 
 			console.log('scenarioProjections', scenarioProjections);
 			console.log('scenarioHistoricalData', $scenarioHistoricalData);
@@ -231,7 +272,7 @@
 	 */
 	async function getRegionData({ model, scenario, pathway, dataView }) {
 		const [allHistoryData, scenarioData] = await Promise.all([
-			getAllRegionHistory(),
+			getAllRegionHistory(dataView),
 			getScenarioJson(model, scenario)
 		]);
 		const scenarios = allScenarios.filter((d) => d.model === model);
@@ -254,25 +295,32 @@
 
 			regionHistory.push({
 				region: region,
-				data: covertHistoryDataToTWh(filtered)
+				// data: covertHistoryDataToTWh(filtered),
+				data:
+					dataView === 'emissions'
+						? mergeHistoricalEmissionsData(filtered)
+						: covertHistoryDataToTWh(filtered)
 			});
 		});
 
 		/** @type {*} */
 		let regionProjections = [];
 		regionsOnly.forEach((region) => {
+			const filterRegion =
+				dataView === 'emissions' && model === 'aemo2022' ? '_all' : region.toLowerCase();
+
 			const filtered = scenarioData.data.filter(
 				(d) =>
-					d.pathway === pathway &&
-					d.region.toLowerCase() === region.toLowerCase() &&
-					d.type === dataView
+					d.pathway === pathway && d.region.toLowerCase() === filterRegion && d.type === dataView
 			);
+			console.log('***filteer', region, filtered, scenarioData);
 			regionProjections.push({
 				region: region,
 				data: filtered.map((d) => {
 					return {
 						...d,
-						model: model
+						model: model,
+						fuel_tech: dataView === 'emissions' ? 'fossil_fuels' : d.fuel_tech // change to fossil_fuels for emissions
 					};
 				})
 			});

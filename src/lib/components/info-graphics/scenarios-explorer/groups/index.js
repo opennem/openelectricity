@@ -13,6 +13,8 @@ import * as gasOnly from './gas-only';
 import * as solarOnly from './solar-only';
 import * as windOnly from './wind-only';
 
+import * as totalEmissions from './total-emissions';
+
 export const detailedGroup = {
 	label: 'Detailed',
 	value: 'detailed',
@@ -106,6 +108,14 @@ export const windOnlyGroup = {
 	labels: windOnly.labels
 };
 
+export const totalEmissionsGroup = {
+	label: 'Emissions',
+	value: 'fossil_fuels_emissions',
+	fuelTechs: totalEmissions.fuelTechMap,
+	order: totalEmissions.order,
+	labels: totalEmissions.labels
+};
+
 export const groups = [
 	simpleGroup,
 	detailedGroup,
@@ -119,7 +129,8 @@ export const groups = [
 	coalOnlyGroup,
 	gasOnlyGroup,
 	solarOnlyGroup,
-	windOnlyGroup
+	windOnlyGroup,
+	totalEmissionsGroup
 ];
 
 /** @type {*} */

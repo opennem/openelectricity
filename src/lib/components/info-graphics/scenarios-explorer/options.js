@@ -22,6 +22,16 @@ export const dataViewOptions = [
 		intervalLabel: 'by Financial Year',
 		description: 'Energy Generation (TWh) by Financial Year'
 	},
+
+	{
+		value: 'emissions',
+		label: 'Emissions',
+		longLabel: 'Emissions',
+		units: 'MtCO₂e',
+		intervalLabel: 'by Financial Year',
+		description: 'Emissions (MtCO₂e) by Financial Year'
+	},
+
 	{
 		value: 'capacity',
 		label: 'Capacity',

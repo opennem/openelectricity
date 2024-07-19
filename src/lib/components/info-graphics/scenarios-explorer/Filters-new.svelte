@@ -17,7 +17,11 @@
 
 	import { regionOptions, dataViewOptions, displayViewOptions } from './options';
 	import { scenarioLabels } from './descriptions';
-	import { dataTechnologyGroupOptions, dataRegionCompareOptions } from './helpers';
+	import {
+		dataTechnologyGroupOptions,
+		dataRegionCompareOptions,
+		totalEmissionsGroupOptions
+	} from './helpers';
 
 	const {
 		selectedModel,
@@ -58,13 +62,28 @@
 		goto(`?${query.toString()}#filters`);
 	}
 
+	// update selectedGroup based on selectedDataView
+	$: if ($selectedDataView === 'emissions') {
+		console.log('totalEmissionsGroupOptions', totalEmissionsGroupOptions);
+		$selectedGroup = totalEmissionsGroupOptions[0].value;
+	} else {
+		// if ($selectedGroup === totalEmissionsGroupOptions[0].value) {
+		// }
+
+		if ($selectedDisplayView === 'technology') {
+			$selectedGroup = dataTechnologyGroupOptions[0].value;
+		} else {
+			$selectedGroup = dataRegionCompareOptions[0].value;
+		}
+	}
+
 	function handleDisplayViewChange(prevView, view) {
 		$selectedDisplayView = view;
 
 		const keepSelectedGroup =
 			(prevView === 'region' && view === 'scenario') ||
 			(prevView === 'scenario' && view === 'region');
-		console.log('prev', prevView, 'view', view, 'shouldUpdate', keepSelectedGroup);
+		// console.log('prev', prevView, 'view', view, 'shouldUpdate', keepSelectedGroup);
 
 		if (keepSelectedGroup) return;
 		if (view === 'technology') {
