@@ -43,8 +43,15 @@
 	// $: console.log('focusScenarioModel', focusScenarioModel);
 	// $: console.log('focusPathways', focusPathways);
 
-	$: {
-		const scenarioPathway = scenariosPathways.find((s) => s.id === focusScenarioId);
+	$: console.log('singleSelectionData', $singleSelectionData);
+	$: console.log('multiSelectionData', $multiSelectionData);
+
+	/**
+	 * @param {string} id
+	 */
+	function handleScenarioButtonClick(id) {
+		const scenarioPathway = scenariosPathways.find((s) => s.id === id);
+		focusScenarioId = id;
 
 		// update singleSelectionData
 		if (scenarioPathway) {
@@ -56,9 +63,6 @@
 			};
 		}
 	}
-
-	$: console.log('singleSelectionData', $singleSelectionData);
-	$: console.log('multiSelectionData', $multiSelectionData);
 
 	/**
 	 *
@@ -95,6 +99,13 @@
 
 		scenarioPathway.pathway = pathway;
 		scenariosPathways = [...scenariosPathways];
+
+		$singleSelectionData = {
+			id: scenarioPathway.id,
+			model: scenarioPathway.model,
+			scenario: scenarioPathway.value,
+			pathway: scenarioPathway.pathway
+		};
 	}
 </script>
 
@@ -116,7 +127,7 @@
 									{isChecked}
 									highlightBg={$isSingleSelectionMode ? isFocussed : isChecked}
 									highlightBorder={isFocussed}
-									on:click={() => (focusScenarioId = scenario.id)}
+									on:click={() => handleScenarioButtonClick(scenario.id)}
 									on:change={(evt) => handleCheckBoxChange(scenario.id, evt.detail.checked)}
 								/>
 							</li>

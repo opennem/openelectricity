@@ -1,5 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
+	import { startOfYear } from 'date-fns';
 
 	import Switch from '$lib/components/Switch.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
@@ -11,6 +12,9 @@
 	import { regionOptions } from '../page-data-options/regions';
 	import { scenarioLabels } from '../page-data-options/descriptions';
 	import { modelOptions } from '../page-data-options/models';
+	import { groupOptions } from '../page-data-options/groups';
+	import { chartXTicks } from '../page-data-options/chart-ticks';
+	import { formatFyTickX } from '../page-data-options/formatters';
 	import ScenarioSelection from './ScenarioSelection.svelte';
 
 	const {
@@ -21,9 +25,13 @@
 		selectedViewSection,
 		selectedDataType,
 		selectedRegion,
+		selectedFuelTechGroup,
 		isTechnologyViewSection,
-		isScenarioViewSection
+		isScenarioViewSection,
+		isSingleSelectionMode
 	} = getContext('scenario-filters');
+
+	const { xTicks, formatTickX, chartOverlay, chartOverlayLine } = getContext('scenario-data-viz');
 
 	let showScenarioOptions = false;
 
@@ -52,6 +60,30 @@
 
 		$selectedDataType = 'energy';
 		$selectedRegion = '_all';
+		$selectedFuelTechGroup = 'simple';
+
+		$formatTickX = formatFyTickX;
+	}
+
+	$: {
+		// TODO: if singleselection model changes, update xTicks, otherwise use default xTicks
+		$xTicks = chartXTicks[$singleSelectionData.model];
+	}
+	$: if (
+		$isScenarioViewSection ||
+		($isSingleSelectionMode && $singleSelectionModel === 'aemo2024')
+	) {
+		$chartOverlay = {
+			xStartValue: startOfYear(new Date('2024-01-01')),
+			xEndValue: startOfYear(new Date('2052-01-01'))
+		};
+		$chartOverlayLine = { date: startOfYear(new Date('2024-01-01')) };
+	} else {
+		$chartOverlay = {
+			xStartValue: startOfYear(new Date('2023-01-01')),
+			xEndValue: startOfYear(new Date('2051-01-01'))
+		};
+		$chartOverlayLine = { date: startOfYear(new Date('2023-01-01')) };
 	}
 
 	/**
@@ -88,6 +120,12 @@
 					on:change={(evt) => ($selectedRegion = evt.detail.value)}
 				/>
 			{/if}
+
+			<FormSelect
+				options={groupOptions}
+				selected={$selectedFuelTechGroup}
+				on:change={(evt) => ($selectedFuelTechGroup = evt.detail.value)}
+			/>
 
 			{#if $singleSelectionModel && $singleSelectionScenario}
 				<button

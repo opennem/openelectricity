@@ -2,6 +2,7 @@ import { derived, writable } from 'svelte/store';
 
 export default function () {
 	const selectedRegion = writable('');
+	const selectedFuelTechGroup = writable('');
 
 	/** @type {import('svelte/store').Writable<ScenarioSelect>} */
 	const singleSelectionData = writable();
@@ -17,6 +18,9 @@ export default function () {
 	});
 	const isScenarioViewSection = derived(selectedViewSection, ($selectedViewSection) => {
 		return $selectedViewSection === 'scenario';
+	});
+	const isRegionViewSection = derived(selectedViewSection, ($selectedViewSection) => {
+		return $selectedViewSection === 'region';
 	});
 
 	// derived selection mode based on view section
@@ -38,6 +42,7 @@ export default function () {
 
 	return {
 		selectedRegion,
+		selectedFuelTechGroup,
 
 		selectionMode,
 		isSingleSelectionMode,
@@ -53,6 +58,7 @@ export default function () {
 		selectedDataType,
 
 		isTechnologyViewSection,
-		isScenarioViewSection
+		isScenarioViewSection,
+		isRegionViewSection
 	};
 }
