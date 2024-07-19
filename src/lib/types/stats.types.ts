@@ -35,5 +35,6 @@ export type StatsData = {
 	colour?: string;
 	scenario?: string;
 	pathway?: string;
+	region?: string;
 	key?: string | number | Date;
 };
