@@ -1,4 +1,6 @@
 /** @typedef {import('$lib/types/fuel_tech.types').FuelTechCode} FuelTechCode */
+/** @typedef {{label: string, value: string, order: FuelTechCode[], fuelTechs: Object.<FuelTechCode, FuelTechCode[]>, labels: Object.<FuelTechCode, string>}} FuelTechGroup */
+
 /** @typedef {import('$lib/types/stats.types').Stats} Stats */
 /** @typedef {import('$lib/types/stats.types').StatsType} StatsType */
 /** @typedef {import('$lib/types/stats.types').StatsData} StatsData */
@@ -12,6 +14,8 @@
 /** @typedef {import('$lib/types/filters.types').TechnologyFilterKey} TechnologyFilterKey  */
 
 /** @typedef {'technology' | 'scenario' | 'region'} ScenarioViewSection */
+/** @typedef {'energy' | 'emissions' | 'capacity'} ScenarioDataType */
+
 /** @typedef {{ value: ScenarioViewSection, label: string}} ScenarioViewSectionOption */
 
 /** @typedef {Object.<string, Object<string, string | string[]>>} ScenarioContent */
