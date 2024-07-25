@@ -24,10 +24,7 @@
 
 	export let title = '';
 
-	let id = getSeqId();
 	export let clip = true;
-
-	console.log('getSeqId', id);
 
 	export let xKey = 'date';
 
@@ -79,6 +76,8 @@
 
 	/** @type {string | null} */
 	export let highlightId = null;
+
+	const id = getSeqId();
 
 	/** TODO: work out transition */
 	const tweenOptions = {
