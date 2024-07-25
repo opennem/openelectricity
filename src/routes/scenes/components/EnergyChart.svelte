@@ -15,7 +15,7 @@
 		chartOverlay,
 		chartOverlayLine,
 		chartOverlayHatchStroke
-	} = getContext('scenario-data-viz');
+	} = getContext('energy-data-viz');
 
 	// $: console.log('seriesData', $seriesData);
 	// $: console.log('seriesNames', $seriesNames);
@@ -33,7 +33,6 @@
 
 {#if $seriesNames.length}
 	<Chart
-		id="scenarios-explorer-chart"
 		dataset={$seriesData}
 		xKey="date"
 		yKey={[0, 1]}

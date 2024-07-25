@@ -31,7 +31,8 @@
 		isSingleSelectionMode
 	} = getContext('scenario-filters');
 
-	const { xTicks, formatTickX, chartOverlay, chartOverlayLine } = getContext('scenario-data-viz');
+	const generatonDataVizStore = getContext('energy-data-viz');
+	const capacityDataVizStore = getContext('capacity-data-viz');
 
 	let showScenarioOptions = false;
 
@@ -62,28 +63,40 @@
 		$selectedRegion = '_all';
 		$selectedFuelTechGroup = 'simple';
 
-		$formatTickX = formatFyTickX;
+		// update all chart ticks
+		generatonDataVizStore.formatTickX.set(formatFyTickX);
+		capacityDataVizStore.formatTickX.set(formatFyTickX);
+	}
+
+	/**
+	 * @param {string} start
+	 * @param {string} end
+	 */
+	function updateChartOverlayDates(start, end) {
+		const overlayDates = {
+			xStartValue: startOfYear(new Date(start)),
+			xEndValue: startOfYear(new Date(end))
+		};
+		const overlayLineDate = { date: startOfYear(new Date(start)) };
+
+		generatonDataVizStore.chartOverlay.set(overlayDates);
+		capacityDataVizStore.chartOverlay.set(overlayDates);
+		generatonDataVizStore.chartOverlayLine.set(overlayLineDate);
+		capacityDataVizStore.chartOverlayLine.set(overlayLineDate);
 	}
 
 	$: {
 		// TODO: if singleselection model changes, update xTicks, otherwise use default xTicks
-		$xTicks = chartXTicks[$singleSelectionData.model];
+		generatonDataVizStore.xTicks.set(chartXTicks[$singleSelectionData.model]);
+		capacityDataVizStore.xTicks.set(chartXTicks[$singleSelectionData.model]);
 	}
 	$: if (
 		$isScenarioViewSection ||
 		($isSingleSelectionMode && $singleSelectionModel === 'aemo2024')
 	) {
-		$chartOverlay = {
-			xStartValue: startOfYear(new Date('2024-01-01')),
-			xEndValue: startOfYear(new Date('2052-01-01'))
-		};
-		$chartOverlayLine = { date: startOfYear(new Date('2024-01-01')) };
+		updateChartOverlayDates('2024-01-01', '2052-01-01');
 	} else {
-		$chartOverlay = {
-			xStartValue: startOfYear(new Date('2023-01-01')),
-			xEndValue: startOfYear(new Date('2051-01-01'))
-		};
-		$chartOverlayLine = { date: startOfYear(new Date('2023-01-01')) };
+		updateChartOverlayDates('2023-01-01', '2051-01-01');
 	}
 
 	/**

@@ -7,8 +7,8 @@
 	import { scaleOrdinal } from 'd3-scale';
 	import { format } from 'd3-format';
 
+	import getSeqId from '$lib/utils/html-id-gen';
 	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
-
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
 	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
 	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
@@ -24,8 +24,10 @@
 
 	export let title = '';
 
-	export let id = '';
+	let id = getSeqId();
 	export let clip = true;
+
+	console.log('getSeqId', id);
 
 	export let xKey = 'date';
 

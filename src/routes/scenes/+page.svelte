@@ -5,7 +5,8 @@
 
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
-	import DataViz from './components/DataViz.svelte';
+	import EnergyChart from './components/EnergyChart.svelte';
+	import CapacityChart from './components/CapacityChart.svelte';
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
 	import { fetchTechnologyViewData } from './page-data-options/fetch';
@@ -15,7 +16,8 @@
 	const { articles, filters } = data;
 
 	setContext('scenario-filters', filtersStore());
-	setContext('scenario-data-viz', dataVizStore());
+	setContext('energy-data-viz', dataVizStore());
+	setContext('capacity-data-viz', dataVizStore());
 
 	const {
 		isTechnologyViewSection,
@@ -25,8 +27,8 @@
 		selectedFuelTechGroup,
 		multiSelectionData
 	} = getContext('scenario-filters');
-	const { seriesData, seriesNames, seriesColours, seriesLabels, nameOptions, yDomain } =
-		getContext('scenario-data-viz');
+	const energyDataVizStore = getContext('energy-data-viz');
+	const capacityDataVizStore = getContext('capacity-data-viz');
 
 	$: console.log(articles, filters);
 
@@ -37,24 +39,44 @@
 			pathway: $singleSelectionData.pathway,
 			region: $selectedRegion,
 			dataType: $selectedDataType
-		}).then(({ projection, history }) => {
-			console.log('projection', projection);
-			console.log('history', history);
-			const processed = processTechnologyData({
-				projection,
-				history,
-				group: $selectedFuelTechGroup,
-				dataType: $selectedDataType,
-				colourReducer: $colourReducer
-			});
+		}).then(
+			({
+				projectionEnergyData,
+				projectionCapacityData,
+				projectionEmissionsData,
+				historyEnergyData,
+				historyCapacityData,
+				historyEmisssionsData
+			}) => {
+				const processed = processTechnologyData({
+					projection: projectionEnergyData,
+					history: historyEnergyData,
+					group: $selectedFuelTechGroup,
+					dataType: 'energy',
+					colourReducer: $colourReducer
+				});
 
-			if (processed) {
-				updateDataVizStore(processed);
+				const processedCapacity = processTechnologyData({
+					projection: projectionCapacityData,
+					history: historyCapacityData,
+					group: $selectedFuelTechGroup,
+					dataType: 'capacity',
+					colourReducer: $colourReducer
+				});
+
+				if (processed) {
+					updateDataVizStore(energyDataVizStore, processed);
+				}
+
+				if (processedCapacity) {
+					updateDataVizStore(capacityDataVizStore, processedCapacity);
+				}
 			}
-		});
+		);
 	}
 
 	/**
+	 * @param {*} store
 	 * @param {{
 	 * seriesData: TimeSeriesData[],
 	 * seriesNames: string[],
@@ -64,19 +86,23 @@
 	 * yDomain: number[]
 	 * }} p
 	 */
-	function updateDataVizStore(p) {
-		$seriesData = p.seriesData;
-		$seriesNames = p.seriesNames;
-		$seriesColours = p.seriesColours;
-		$seriesLabels = p.seriesLabels;
-		$nameOptions = p.nameOptions;
-		$yDomain = p.yDomain;
+	function updateDataVizStore(store, p) {
+		store.seriesData.set(p.seriesData);
+		store.seriesNames.set(p.seriesNames);
+		store.seriesColours.set(p.seriesColours);
+		store.seriesLabels.set(p.seriesLabels);
+		store.nameOptions.set(p.nameOptions);
+		store.yDomain.set(p.yDomain);
 	}
 </script>
 
 <Filters />
 
-<DataViz />
+<h3>Generation</h3>
+<EnergyChart />
+
+<h3>Capacity</h3>
+<CapacityChart />
 
 <ArticlesSection
 	analysisArticles={articles.filter(
