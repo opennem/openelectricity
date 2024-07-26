@@ -1,14 +1,16 @@
 import { startOfYear, addYears } from 'date-fns';
 
-// Merge historical emissions data into total
+/**
+ * Merge historical emissions data into total
+ * @param {StatsData[]} historyData
+ * @returns {StatsData[]}
+ */
 export function mergeHistoricalEmissionsData(historyData) {
 	const firstData = historyData[0];
 	const combinedHistoryData = {
 		...firstData,
-		id: `au.${firstData.region || firstData.network}.emissions.total`,
-		code: 'fossil_fuels',
-		fuel_tech: 'fossil_fuels',
-		units: 'tCO₂e',
+		id: 'au.emissions.total',
+		code: 'none',
 		history: {
 			...firstData.history,
 			data: [...firstData.history.data.map(() => 0)]

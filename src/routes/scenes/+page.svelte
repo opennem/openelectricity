@@ -6,11 +6,12 @@
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
 	import EnergyChart from './components/EnergyChart.svelte';
+	import EmissionsChart from './components/EmissionsChart.svelte';
 	import CapacityChart from './components/CapacityChart.svelte';
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
 	import { fetchTechnologyViewData } from './page-data-options/fetch';
-	import { processTechnologyData } from './page-data-options/process';
+	import { processTechnologyData, processEmissionsData } from './page-data-options/process';
 
 	export let data;
 	const { articles, filters } = data;
@@ -18,6 +19,7 @@
 	setContext('scenario-filters', filtersStore());
 	setContext('energy-data-viz', dataVizStore());
 	setContext('capacity-data-viz', dataVizStore());
+	setContext('emissions-data-viz', dataVizStore());
 
 	const {
 		isTechnologyViewSection,
@@ -29,6 +31,7 @@
 	} = getContext('scenario-filters');
 	const energyDataVizStore = getContext('energy-data-viz');
 	const capacityDataVizStore = getContext('capacity-data-viz');
+	const emissionsDataVizStore = getContext('emissions-data-viz');
 
 	$: console.log(articles, filters);
 
@@ -48,13 +51,20 @@
 				historyCapacityData,
 				historyEmisssionsData
 			}) => {
-				const processed = processTechnologyData({
+				const processedEnergy = processTechnologyData({
 					projection: projectionEnergyData,
 					history: historyEnergyData,
 					group: $selectedFuelTechGroup,
 					dataType: 'energy',
 					colourReducer: $colourReducer
 				});
+
+				const processedEmissions = processEmissionsData({
+					projection: projectionEmissionsData,
+					history: historyEmisssionsData
+				});
+
+				console.log('processedEmissions', processedEmissions);
 
 				const processedCapacity = processTechnologyData({
 					projection: projectionCapacityData,
@@ -64,12 +74,16 @@
 					colourReducer: $colourReducer
 				});
 
-				if (processed) {
-					updateDataVizStore(energyDataVizStore, processed);
+				if (processedEnergy) {
+					updateDataVizStore(energyDataVizStore, processedEnergy);
 				}
 
 				if (processedCapacity) {
 					updateDataVizStore(capacityDataVizStore, processedCapacity);
+				}
+
+				if (processedEmissions) {
+					updateDataVizStore(emissionsDataVizStore, processedEmissions);
 				}
 			}
 		);
@@ -100,6 +114,9 @@
 
 <h3>Generation</h3>
 <EnergyChart />
+
+<h3>Emissions</h3>
+<EmissionsChart />
 
 <h3>Capacity</h3>
 <CapacityChart />

@@ -16,6 +16,7 @@
 	import { chartXTicks } from '../page-data-options/chart-ticks';
 	import { formatFyTickX } from '../page-data-options/formatters';
 	import ScenarioSelection from './ScenarioSelection.svelte';
+	import { get } from 'svelte/store';
 
 	const {
 		singleSelectionData,
@@ -31,8 +32,11 @@
 		isSingleSelectionMode
 	} = getContext('scenario-filters');
 
-	const generatonDataVizStore = getContext('energy-data-viz');
-	const capacityDataVizStore = getContext('capacity-data-viz');
+	const dataVizStores = [
+		getContext('energy-data-viz'),
+		getContext('emissions-data-viz'),
+		getContext('capacity-data-viz')
+	];
 
 	let showScenarioOptions = false;
 
@@ -63,9 +67,9 @@
 		$selectedRegion = '_all';
 		$selectedFuelTechGroup = 'simple';
 
-		// update all chart ticks
-		generatonDataVizStore.formatTickX.set(formatFyTickX);
-		capacityDataVizStore.formatTickX.set(formatFyTickX);
+		dataVizStores.forEach((store) => {
+			store.formatTickX.set(formatFyTickX);
+		});
 	}
 
 	/**
@@ -79,16 +83,17 @@
 		};
 		const overlayLineDate = { date: startOfYear(new Date(start)) };
 
-		generatonDataVizStore.chartOverlay.set(overlayDates);
-		capacityDataVizStore.chartOverlay.set(overlayDates);
-		generatonDataVizStore.chartOverlayLine.set(overlayLineDate);
-		capacityDataVizStore.chartOverlayLine.set(overlayLineDate);
+		dataVizStores.forEach((store) => {
+			store.chartOverlay.set(overlayDates);
+			store.chartOverlayLine.set(overlayLineDate);
+		});
 	}
 
 	$: {
 		// TODO: if singleselection model changes, update xTicks, otherwise use default xTicks
-		generatonDataVizStore.xTicks.set(chartXTicks[$singleSelectionData.model]);
-		capacityDataVizStore.xTicks.set(chartXTicks[$singleSelectionData.model]);
+		dataVizStores.forEach((store) => {
+			store.xTicks.set(chartXTicks[$singleSelectionData.model]);
+		});
 	}
 	$: if (
 		$isScenarioViewSection ||

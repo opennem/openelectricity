@@ -4,7 +4,7 @@ import parseInterval from '$lib/utils/intervals';
 
 import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
 import { fuelTechMap, orderMap } from './groups';
-import { mutateDatesToStartOfYear } from './utils';
+import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils';
 
 /**
  * @param {{
@@ -146,5 +146,60 @@ export function processTechnologyData({ projection, history, group, dataType, co
 		seriesLabels: {},
 		nameOptions: [],
 		yDomain: []
+	};
+}
+
+/**
+ * @param {{
+ * projection: StatsData[],
+ * history: StatsData[]}} param0
+ */
+export function processEmissionsData({ projection, history }) {
+	console.log('emissions', projection);
+	// mutate projection id
+	// projection.forEach((d) => {
+	// 	d.id = 'au.emissions.total';
+	// });
+	const projectionStats = new Statistic(projection, 'projection');
+
+	const merged = mergeHistoricalEmissionsData(history);
+	const historicalStats = new Statistic(merged, 'history');
+
+	console.log('projectionStats', projectionStats);
+	console.log('historicalStats', historicalStats);
+
+	const projectionTimeSeries = new TimeSeries(
+		projectionStats.data,
+		parseInterval('1Y'),
+		'projection',
+		undefined,
+		undefined
+	)
+		.transform()
+		.updateMinMax();
+
+	const historicalTimeSeries = new TimeSeries(
+		historicalStats.data,
+		parseInterval('1M'),
+		'history',
+		undefined,
+		undefined
+	)
+		.transform()
+		.rollup(parseInterval('FY'))
+		.updateMinMax();
+
+	console.log('projectionTimeSeries', projectionTimeSeries);
+	console.log('historicalTimeSeries', historicalTimeSeries);
+
+	return {
+		seriesData: historicalTimeSeries.data,
+		seriesNames: historicalTimeSeries.seriesNames,
+		seriesColours: historicalTimeSeries.seriesColours, // custom colour
+		seriesLabels: historicalTimeSeries.seriesLabels, // custom label
+		nameOptions: [...historicalTimeSeries.seriesNames].map((name) => {
+			return { label: name, value: name };
+		}),
+		yDomain: [historicalTimeSeries.minY, historicalTimeSeries.maxY]
 	};
 }
