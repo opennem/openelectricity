@@ -63,5 +63,8 @@
 		"npm": {
 			"publish": false
 		}
+	},
+	"dependencies": {
+		"vitest": "^2.0.4"
 	}
 }
