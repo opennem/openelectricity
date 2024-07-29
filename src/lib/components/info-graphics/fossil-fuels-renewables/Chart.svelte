@@ -124,6 +124,13 @@
 			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
 
 			<MultiLine
+				opacity={0.1}
+				drawDurationObject={isSafariBrowser
+					? { duration: 1, delay: 0 }
+					: { duration: 4000, delay: 1000, easing: quintOut }}
+			/>
+
+			<MultiLine
 				{hoverData}
 				drawDurationObject={isSafariBrowser
 					? { duration: 1, delay: 0 }
