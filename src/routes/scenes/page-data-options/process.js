@@ -138,6 +138,7 @@ export function processTechnologyData({ projection, history, group, dataType, co
 			}),
 			seriesColours,
 			seriesLabels,
+			seriesLoadsIds: projectionLoadSeries,
 			yDomain: [datasetMin, datasetMax]
 		};
 	}
@@ -148,6 +149,7 @@ export function processTechnologyData({ projection, history, group, dataType, co
 		seriesColours: {},
 		seriesLabels: {},
 		nameOptions: [],
+		seriesLoadsIds: [],
 		yDomain: []
 	};
 }

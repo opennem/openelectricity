@@ -6,7 +6,7 @@ export const formatFyTickX = (/** @type {Date | number} */ d) => {
 };
 
 export const formatValue = (/** @type {number} */ d) => {
-	if (isNaN(d)) return '—';
+	if (d === null || isNaN(d)) return '—';
 
 	const formatted = d3Format('.0f')(d);
 	if (formatted !== '0') {

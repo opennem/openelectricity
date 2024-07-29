@@ -9,6 +9,7 @@
 	import EmissionsChart from './components/EmissionsChart.svelte';
 	import CapacityChart from './components/CapacityChart.svelte';
 	import IntensityChart from './components/IntensityChart.svelte';
+	import Table from './components/Table.svelte';
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
 	import { fetchTechnologyViewData } from './page-data-options/fetch';
@@ -49,13 +50,7 @@
 		{}
 	);
 
-	console.log('dataVizStores', dataVizStores);
-
-	/** @type {TimeSeriesData | undefined} */
-	let hoverData = undefined;
-
-	/** @type {string | undefined} */
-	let hoverKey;
+	let seriesLoadsIds = [];
 
 	$: console.log(articles, filters);
 
@@ -82,6 +77,8 @@
 					dataType: 'energy',
 					colourReducer: $colourReducer
 				});
+
+				seriesLoadsIds = processedEnergy.seriesLoadsIds;
 
 				const processedEmissions = processEmissionsData({
 					projection: projectionEmissionsData,
@@ -200,17 +197,25 @@
 
 <Filters />
 
-<h3>Generation</h3>
-<EnergyChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+<div class="max-w-none px-6 py-6 flex gap-6">
+	<div class="w-full">
+		<h3 class="font-light text-sm">Generation (GWh)</h3>
+		<EnergyChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 
-<h3>Emissions</h3>
-<EmissionsChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+		<h3 class="font-light text-sm">Emissions (tCO2e)</h3>
+		<EmissionsChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 
-<h3>Intensity</h3>
-<IntensityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+		<h3 class="font-light text-sm">Intensity (kgCO2e/MWh)</h3>
+		<IntensityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 
-<h3>Capacity</h3>
-<CapacityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+		<h3 class="font-light text-sm">Capacity (MW)</h3>
+		<CapacityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+	</div>
+
+	<div class="w-[40%]">
+		<Table {seriesLoadsIds} />
+	</div>
+</div>
 
 <ArticlesSection
 	analysisArticles={articles.filter(
