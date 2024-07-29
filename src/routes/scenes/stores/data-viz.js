@@ -36,6 +36,23 @@ export default function () {
 
 	const chartOverlayHatchStroke = writable('rgba(236, 233, 230, 0.4)');
 
+	// /** @type {import('svelte/store').Writable<TimeSeriesData | undefined>} */
+	// const hoverData = writable();
+
+	/** @type {import('svelte/store').Writable<string | undefined>} */
+	const hoverKey = writable();
+
+	/** @type {import('svelte/store').Writable<number | undefined>} */
+	const hoverTime = writable();
+
+	const hoverData = derived([seriesData, hoverTime], ([$seriesData, $hoverTime]) => {
+		if (!$hoverTime) return;
+
+		const data = $seriesData.find((d) => d.time === $hoverTime);
+
+		return data;
+	});
+
 	return {
 		seriesData,
 		seriesNames,
@@ -48,6 +65,9 @@ export default function () {
 		chartType,
 		chartOverlay,
 		chartOverlayLine,
-		chartOverlayHatchStroke
+		chartOverlayHatchStroke,
+		hoverKey,
+		hoverTime,
+		hoverData
 	};
 }

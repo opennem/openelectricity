@@ -21,8 +21,9 @@ export function processTechnologyData({ projection, history, group, dataType, co
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
-	const projectionLoadSeries = projectionStats.data.filter((/** @type {*} */ d) => d.isLoad);
-
+	const projectionLoadSeries = projectionStats.data
+		.filter((/** @type {*} */ d) => d.isLoad)
+		.map((d) => d.id);
 	const projectionTimeSeries = new TimeSeries(
 		projectionStats.data,
 		parseInterval('1Y'),
@@ -43,7 +44,9 @@ export function processTechnologyData({ projection, history, group, dataType, co
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
-	const historicalLoadSeries = historicalStats.data.filter((/** @type {*} */ d) => d.isLoad);
+	const historicalLoadSeries = historicalStats.data
+		.filter((/** @type {*} */ d) => d.isLoad)
+		.map((d) => d.id);
 
 	// Capacity is already in FY
 	const historicalTimeSeries =
@@ -155,11 +158,10 @@ export function processTechnologyData({ projection, history, group, dataType, co
  * history: StatsData[]}} param0
  */
 export function processEmissionsData({ projection, history }) {
-	console.log('emissions', projection);
 	// mutate projection id
-	// projection.forEach((d) => {
-	// 	d.id = 'au.emissions.total';
-	// });
+	projection.forEach((d) => {
+		d.id = 'au.emissions.total';
+	});
 	const projectionStats = new Statistic(projection, 'projection');
 
 	const merged = mergeHistoricalEmissionsData(history);
@@ -177,6 +179,8 @@ export function processEmissionsData({ projection, history }) {
 	)
 		.transform()
 		.updateMinMax();
+	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
+	const updatedProjectionTS = mutateDatesToStartOfYear(projectionTimeSeries.data, 1);
 
 	const historicalTimeSeries = new TimeSeries(
 		historicalStats.data,
@@ -189,11 +193,67 @@ export function processEmissionsData({ projection, history }) {
 		.rollup(parseInterval('FY'))
 		.updateMinMax();
 
-	console.log('projectionTimeSeries', projectionTimeSeries);
-	console.log('historicalTimeSeries', historicalTimeSeries);
+	const updatedHistoricalTS = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
+		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+	);
+	console.log('updatedProjectionTS', updatedProjectionTS);
+	console.log('updatedHistoricalTS', updatedHistoricalTS);
+
+	/********* processing Combined series */
+	const lastHistory = updatedHistoricalTS[updatedHistoricalTS.length - 1];
+	const firstProjection = updatedProjectionTS[0];
+
+	if (lastHistory?.time && firstProjection?.time) {
+		// if last history time is the same as first projection time, remove the last history data
+		const historyData =
+			lastHistory?.time === firstProjection?.time
+				? updatedHistoricalTS.slice(0, -1)
+				: updatedHistoricalTS;
+
+		// combine historical and projection data
+		const seriesData = [...historyData, ...updatedProjectionTS];
+
+		// combine projection and historical series names to make sure they are all included in the time series
+		const seriesNames = [
+			...new Set([...projectionTimeSeries.seriesNames, ...historicalTimeSeries.seriesNames])
+		];
+
+		// combine projection and historical series colours and labels
+		/** @type {*} */
+		const seriesColours = {};
+		/** @type {*} */
+		const seriesLabels = {};
+		seriesNames.forEach((name) => {
+			seriesColours[name] =
+				historicalTimeSeries.seriesColours[name] || projectionTimeSeries.seriesColours[name];
+
+			seriesLabels[name] =
+				historicalTimeSeries.seriesLabels[name] || projectionTimeSeries.seriesLabels[name];
+		});
+
+		const maxY = [...seriesData.map((d) => d._max)];
+		// @ts-ignore
+		const datasetMax = maxY ? Math.max(...maxY) : 0;
+
+		const minY = [...seriesData.map((d) => d._min)];
+		// @ts-ignore
+		const datasetMin = minY ? Math.min(...minY) : 0;
+		/********* end of processing Combined series */
+
+		return {
+			seriesData,
+			seriesNames,
+			nameOptions: [...seriesNames].reverse().map((name) => {
+				return { label: name, value: name };
+			}),
+			seriesColours,
+			seriesLabels,
+			yDomain: [datasetMin, datasetMax]
+		};
+	}
 
 	return {
-		seriesData: historicalTimeSeries.data,
+		seriesData: updatedHistoricalTS,
 		seriesNames: historicalTimeSeries.seriesNames,
 		seriesColours: historicalTimeSeries.seriesColours, // custom colour
 		seriesLabels: historicalTimeSeries.seriesLabels, // custom label

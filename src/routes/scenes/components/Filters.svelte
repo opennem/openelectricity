@@ -16,7 +16,6 @@
 	import { chartXTicks } from '../page-data-options/chart-ticks';
 	import { formatFyTickX } from '../page-data-options/formatters';
 	import ScenarioSelection from './ScenarioSelection.svelte';
-	import { get } from 'svelte/store';
 
 	const {
 		singleSelectionData,
@@ -35,7 +34,8 @@
 	const dataVizStores = [
 		getContext('energy-data-viz'),
 		getContext('emissions-data-viz'),
-		getContext('capacity-data-viz')
+		getContext('capacity-data-viz'),
+		getContext('intensity-data-viz')
 	];
 
 	let showScenarioOptions = false;
@@ -125,11 +125,11 @@
 		/>
 
 		<div class="py-2 flex items-center gap-6 pl-10 relative z-40">
-			<FormSelect
+			<!-- <FormSelect
 				options={dataTypeOptions}
 				selected={$selectedDataType}
 				on:change={(evt) => ($selectedDataType = evt.detail.value)}
-			/>
+			/> -->
 
 			{#if $isTechnologyViewSection || $isScenarioViewSection}
 				<FormSelect

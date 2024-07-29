@@ -16,7 +16,7 @@
 		chartOverlayLine,
 		chartOverlayHatchStroke,
 		hoverData
-	} = getContext('emissions-data-viz');
+	} = getContext('intensity-data-viz');
 
 	// $: console.log('seriesData', $seriesData);
 </script>
@@ -24,7 +24,7 @@
 {#if $seriesNames.length}
 	<Tooltip
 		hoverData={$hoverData}
-		hoverKey="au.emissions.total"
+		hoverKey="au.emission_intensity"
 		seriesColours={$seriesColours}
 		seriesLabels={$seriesLabels}
 	/>
