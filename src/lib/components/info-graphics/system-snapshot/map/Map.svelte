@@ -5,7 +5,7 @@
 
 	import Flow from './Flow.svelte';
 	import MapLabel from './MapLabel.svelte';
-	import TextureMask from './TextureMask.svelte';
+	// import TextureMask from './TextureMask.svelte';
 	import Nsw from './states/NSW.svelte';
 	import Nt from './states/NT.svelte';
 	import Qld from './states/QLD.svelte';
@@ -216,9 +216,9 @@
 	<Sa fill={getStateFillColour('SA')} />
 	<Nt fill="#FFFFFF" /> -->
 
-	<g class="pointer-events-none">
+	<!-- <g class="pointer-events-none">
 		<TextureMask />
-	</g>
+	</g> -->
 
 	<!-- Vic Arrow -->
 	<circle cx="485.459" cy="457.353" r="3.44336" fill="white" stroke="black" stroke-width="1.5" />
