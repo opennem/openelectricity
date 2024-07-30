@@ -166,7 +166,7 @@
 
 <div class="max-w-none p-12 flex gap-12">
 	<div class="w-full">
-		<h3 class="font-light text-sm">Generation (GWh)</h3>
+		<h5>Generation (GWh)</h5>
 		<EnergyChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 
 		<!-- <div class="grid grid-cols-2 gap-12">
@@ -174,16 +174,16 @@
 		</div> -->
 
 		<div>
-			<h3 class="font-light text-sm">Emissions (tCO2e)</h3>
+			<h5>Emissions (tCO2e)</h5>
 			<EmissionsChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 		</div>
 
 		<div>
-			<h3 class="font-light text-sm">Intensity (kgCO2e/MWh)</h3>
+			<h5>Intensity (kgCO2e/MWh)</h5>
 			<IntensityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 		</div>
 
-		<h3 class="font-light text-sm">Capacity (MW)</h3>
+		<h5>Capacity (MW)</h5>
 		<CapacityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 	</div>
 
