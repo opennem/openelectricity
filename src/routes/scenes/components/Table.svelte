@@ -1,14 +1,17 @@
 <script>
 	import { getContext } from 'svelte';
-
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import { groupOptions } from '../page-data-options/groups';
 	import { formatValue } from '../page-data-options/formatters';
 
 	/** @type {string[]} */
 	export let seriesLoadsIds = [];
 
+	const { selectedFuelTechGroup } = getContext('scenario-filters');
 	const {
 		seriesNames: energySeriesNames,
 		seriesLabels: energySeriesLabels,
+		seriesColours: energySeriesColours,
 		hoverData: energyHoverData
 	} = getContext('energy-data-viz');
 
@@ -63,102 +66,175 @@
 		: 0;
 </script>
 
-<div class="sticky top-0 text-xs flex flex-col gap-12">
+<div class="sticky top-6 flex flex-col gap-12 border border-warm-grey">
 	<table class="w-full table-fixed">
-		<thead>
+		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
 			<tr>
-				<th />
-				<th><span class="block">Generation</span><small class="font-light">GWh</small></th>
-				<th><span class="block">Capacity</span><small class="font-light">MW</small></th>
+				<th class="w-[50%]">
+					<div
+						class="border border-mid-warm-grey text-xs inline-block rounded-md whitespace-nowrap"
+					>
+						<FormSelect
+							paddingY="py-2"
+							paddingX="px-4"
+							options={groupOptions}
+							selected={$selectedFuelTechGroup}
+							on:change={(evt) => ($selectedFuelTechGroup = evt.detail.value)}
+						/>
+					</div>
+				</th>
+				<th>
+					<div class="flex flex-col items-end">
+						<span class="block">Generation</span>
+						<small class="font-light text-xxs">GWh</small>
+					</div>
+				</th>
+				<th>
+					<div class="flex flex-col items-end">
+						<span class="block">Capacity</span>
+						<small class="font-light text-xxs">MW</small>
+					</div>
+				</th>
 			</tr>
 		</thead>
 
 		<thead>
 			<tr>
-				<th class="!border-warm-grey">Sources</th>
-				<th class="!border-warm-grey">{formatValue(energySourcesTotal)}</th>
-				<th class="!border-warm-grey">{formatValue(capacitySourcesTotal)}</th>
+				<th>Sources</th>
+				<th>
+					<div class="flex flex-col items-end">
+						{formatValue(energySourcesTotal)}
+					</div>
+				</th>
+				<th>
+					<div class="flex flex-col items-end">
+						{formatValue(capacitySourcesTotal)}
+					</div>
+				</th>
 			</tr>
 		</thead>
 
-		<tbody>
-			{#each sourceNames as name}
+		<tbody class="border-b border-warm-grey">
+			{#each sourceNames as name, i}
 				<tr>
-					<td>{$energySeriesLabels[name]}</td>
-					<td>{$energyHoverData ? formatValue($energyHoverData[name]) : ''}</td>
-					<td>{$capacityHoverData ? formatValue($capacityHoverData[name]) : ''}</td>
+					<td class:!pb-8={i === sourceNames.length - 1}>
+						<div class="flex items-center gap-2">
+							<div
+								class="w-4 h-4 rounded-full"
+								style="background-color: {$energySeriesColours[name]}"
+							/>
+							<span>
+								{$energySeriesLabels[name]}
+							</span>
+						</div>
+					</td>
+					<td>
+						<div class="flex flex-col items-end">
+							{$energyHoverData ? formatValue($energyHoverData[name]) : ''}
+						</div>
+					</td>
+					<td>
+						<div class="flex flex-col items-end">
+							{$capacityHoverData ? formatValue($capacityHoverData[name]) : ''}
+						</div>
+					</td>
 				</tr>
 			{/each}
 		</tbody>
 
 		<thead>
 			<tr>
-				<th class="!border-warm-grey">Loads</th>
-				<th class="!border-warm-grey">{formatValue(energyLoadsTotal)}</th>
-				<th class="!border-warm-grey" />
+				<th>Loads</th>
+				<th>
+					<div class="flex flex-col items-end">
+						{formatValue(energyLoadsTotal)}
+					</div>
+				</th>
+				<th />
 			</tr>
 		</thead>
 
 		<tbody>
 			{#each loadNames as name}
 				<tr>
-					<td>{$energySeriesLabels[name]}</td>
-					<td>{$energyHoverData ? formatValue($energyHoverData[name]) : ''}</td>
-					<td>{$capacityHoverData ? formatValue($capacityHoverData[name]) : ''}</td>
+					<td>
+						<div class="flex items-center gap-2">
+							<div
+								class="w-4 h-4 rounded-full"
+								style="background-color: {$energySeriesColours[name]}"
+							/>
+							<span>
+								{$energySeriesLabels[name]}
+							</span>
+						</div>
+					</td>
+					<td>
+						<div class="flex flex-col items-end">
+							{$energyHoverData ? formatValue($energyHoverData[name]) : ''}
+						</div>
+					</td>
+					<td>
+						<div class="flex flex-col items-end">
+							{$capacityHoverData ? formatValue($capacityHoverData[name]) : ''}
+						</div>
+					</td>
 				</tr>
 			{/each}
 		</tbody>
 	</table>
 
 	<table class="w-full table-fixed">
-		<thead>
+		<thead class="main-thead bg-light-warm-grey border-b border-t border-warm-grey">
 			<tr>
-				<th />
-				<th><span class="block">Volume</span><small class="font-light">tCO2e</small></th>
-				<th><span class="block">Intensity</span><small class="font-light">kgCO2e/MWh</small></th>
+				<th class="w-[50%]" />
+				<th>
+					<div class="flex flex-col items-end">
+						<span class="block">Volume</span>
+						<small class="font-light text-xxs">tCO2e</small>
+					</div>
+				</th>
+				<th>
+					<div class="flex flex-col items-end">
+						<span class="block">Intensity</span>
+						<small class="font-light text-xxs">kgCO2e/MWh</small>
+					</div>
+				</th>
 			</tr>
 		</thead>
 		<tbody>
 			<tr>
-				<th class="!border-b-0">Emissions</th>
-				<td>{$emissionsHoverData ? formatValue($emissionsHoverData['au.emissions.total']) : ''}</td>
-				<td
-					>{$intensityHoverData
-						? formatValue($intensityHoverData['au.emission_intensity'])
-						: ''}</td
-				>
+				<th>
+					<div class="flex items-center gap-2">
+						<div class="w-4 h-4 rounded-full" style="background-color: #999" />
+						<span>Emissions</span>
+					</div>
+				</th>
+				<td>
+					<div class="flex flex-col items-end">
+						{$emissionsHoverData ? formatValue($emissionsHoverData['au.emissions.total']) : ''}
+					</div>
+				</td>
+				<td>
+					<div class="flex flex-col items-end">
+						{$intensityHoverData ? formatValue($intensityHoverData['au.emission_intensity']) : ''}
+					</div>
+				</td>
 			</tr>
 		</tbody>
 	</table>
-
-	<!-- <table class="w-full table-fixed">
-		<thead>
-			<tr>
-				<th />
-				<th><span class="block">Capacity</span><small class="font-light">MW</small></th>
-			</tr>
-		</thead>
-
-		<thead>
-			<tr>
-				<th class="!border-warm-grey">Total</th>
-				<th class="!border-warm-grey">{formatValue(capacitySourcesTotal)}</th>
-			</tr>
-		</thead>
-
-		<tbody>
-			{#each $capacitySeriesNames as name}
-				<tr>
-					<td>{$capacitySeriesLabels[name]}</td>
-					<td>{$capacityHoverData ? formatValue($capacityHoverData[name]) : ''}</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table> -->
 </div>
 
 <style>
+	.main-thead th {
+		@apply px-8 py-6 text-xs font-semibold;
+	}
 	th {
-		@apply text-left border-b border-mid-warm-grey;
+		@apply text-left px-6 pt-6 pb-2 font-semibold;
+	}
+	td {
+		@apply px-6 py-2 text-sm;
+	}
+	tfoot th {
+		@apply bg-light-warm-grey px-3 py-2;
 	}
 </style>

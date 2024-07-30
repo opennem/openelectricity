@@ -13,7 +13,12 @@
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
 	import { fetchTechnologyViewData } from './page-data-options/fetch';
-	import { processTechnologyData, processEmissionsData } from './page-data-options/process';
+	import {
+		processGenerationData,
+		processCapacityData,
+		processEmissionsData,
+		processIntensityData
+	} from './page-data-options/process-technology';
 
 	export let data;
 	const { articles, filters } = data;
@@ -50,6 +55,7 @@
 		{}
 	);
 
+	/** @type {string[] | undefined} */
 	let seriesLoadsIds = [];
 
 	$: console.log(articles, filters);
@@ -70,11 +76,10 @@
 				historyCapacityData,
 				historyEmisssionsData
 			}) => {
-				const processedEnergy = processTechnologyData({
+				const processedEnergy = processGenerationData({
 					projection: projectionEnergyData,
 					history: historyEnergyData,
 					group: $selectedFuelTechGroup,
-					dataType: 'energy',
 					colourReducer: $colourReducer
 				});
 
@@ -85,47 +90,17 @@
 					history: historyEmisssionsData
 				});
 
-				const processedCapacity = processTechnologyData({
+				const processedCapacity = processCapacityData({
 					projection: projectionCapacityData,
 					history: historyCapacityData,
 					group: $selectedFuelTechGroup,
-					dataType: 'capacity',
 					colourReducer: $colourReducer
 				});
 
-				// calculate intensity
-				// use net generaiton (_max) for intensity -
-				// TODO: recalculate total generation - check opennem to see what fuel tech to include..
-				const emissionsTotalData = processedEmissions.seriesData;
-				const generationsNetTotalData = processedEnergy.seriesData.map((d) => {
-					return {
-						time: d.time,
-						date: d.date,
-						'au.net_generation.total': d._max
-					};
+				const processedIntensity = processIntensityData({
+					processedEmissions,
+					processedEnergy
 				});
-				const intensityData = emissionsTotalData.map((d, i) => {
-					return {
-						time: d.time,
-						date: d.date,
-						'au.emission_intensity':
-							d['au.emissions.total'] / generationsNetTotalData[i]['au.net_generation.total']
-					};
-				});
-
-				// console.log('emissionsTotalData', emissionsTotalData);
-				// console.log('generationsNetTotalData', generationsNetTotalData);
-				// console.log('intensityData', intensityData, processedEmissions);
-
-				const processedEmissionIntensity = {
-					seriesData: intensityData,
-					seriesNames: ['au.emission_intensity'],
-					seriesColours: { 'au.emission_intensity': '#000' },
-					seriesLabels: { 'au.emission_intensity': 'Emission Intensity' },
-					nameOptions: [{ label: 'Emission Intensity', value: 'au.emission_intensity' }],
-					yDomain: [0, 1600],
-					chartType: /** @type {'area' | 'line'} */ ('line')
-				};
 
 				dataVizStoreNames.forEach((name) => {
 					const store = dataVizStores[name];
@@ -140,7 +115,7 @@
 							updateDataVizStore(store, processedEmissions);
 							break;
 						case 'intensity-data-viz':
-							updateDataVizStore(store, processedEmissionIntensity);
+							updateDataVizStore(store, processedIntensity);
 							break;
 					}
 				});
@@ -150,15 +125,7 @@
 
 	/**
 	 * @param {*} store
-	 * @param {{
-	 * seriesData: TimeSeriesData[],
-	 * seriesNames: string[],
-	 * seriesColours: Object.<string, string>,
-	 * seriesLabels: Object.<string, string>,
-	 * nameOptions: { label: string, value: string }[],
-	 * yDomain: number[],
-	 * chartType?: 'area' | 'line'
-	 * }} p
+	 * @param {ProcessedDataViz} p
 	 */
 	function updateDataVizStore(store, p) {
 		store.seriesData.set(p.seriesData);
@@ -197,16 +164,24 @@
 
 <Filters />
 
-<div class="max-w-none px-6 py-6 flex gap-6">
+<div class="max-w-none p-12 flex gap-12">
 	<div class="w-full">
 		<h3 class="font-light text-sm">Generation (GWh)</h3>
 		<EnergyChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 
-		<h3 class="font-light text-sm">Emissions (tCO2e)</h3>
-		<EmissionsChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+		<!-- <div class="grid grid-cols-2 gap-12">
+			
+		</div> -->
 
-		<h3 class="font-light text-sm">Intensity (kgCO2e/MWh)</h3>
-		<IntensityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+		<div>
+			<h3 class="font-light text-sm">Emissions (tCO2e)</h3>
+			<EmissionsChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+		</div>
+
+		<div>
+			<h3 class="font-light text-sm">Intensity (kgCO2e/MWh)</h3>
+			<IntensityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+		</div>
 
 		<h3 class="font-light text-sm">Capacity (MW)</h3>
 		<CapacityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />

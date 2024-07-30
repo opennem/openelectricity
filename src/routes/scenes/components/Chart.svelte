@@ -72,7 +72,7 @@
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
 	export let formatTickX = (/** @type {*} */ d) => d;
 
-	export let chartHeightClasses = 'h-[200px] md:h-[250px]';
+	export let chartHeightClasses = 'h-[150px] md:h-[200px]';
 
 	/** @type {string | null} */
 	export let highlightId = null;

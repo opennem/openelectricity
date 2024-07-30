@@ -139,11 +139,11 @@
 				/>
 			{/if}
 
-			<FormSelect
+			<!-- <FormSelect
 				options={groupOptions}
 				selected={$selectedFuelTechGroup}
 				on:change={(evt) => ($selectedFuelTechGroup = evt.detail.value)}
-			/>
+			/> -->
 
 			{#if $singleSelectionModel && $singleSelectionScenario}
 				<button

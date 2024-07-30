@@ -45,6 +45,7 @@
 		overlayLine={$chartOverlayLine}
 		overlayStroke={$chartOverlayHatchStroke}
 		hoverData={$hoverData}
+		chartHeightClasses="h-[400px] md:h-[450px]"
 		on:mousemove
 		on:mouseout
 	/>

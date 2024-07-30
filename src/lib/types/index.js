@@ -22,3 +22,5 @@
 /** @typedef {{id: string, value: string, model: string, label: string, colour: string}} ScenarioPathwayOption */
 /** @typedef {{id: string, value: string, model: string, pathway: string}} ScenarioPathway */
 /** @typedef {{id: string, model: string, scenario: string, pathway: string}} ScenarioSelect */
+
+/** @typedef {import('$lib/types/processed-data-viz.types').ProcessedDataViz} ProcessedDataViz */
