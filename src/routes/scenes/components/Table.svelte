@@ -209,16 +209,16 @@
 						<span>Emissions</span>
 					</div>
 				</th>
-				<td>
+				<th>
 					<div class="flex flex-col items-end">
 						{$emissionsHoverData ? formatValue($emissionsHoverData['au.emissions.total']) : ''}
 					</div>
-				</td>
-				<td>
+				</th>
+				<th>
 					<div class="flex flex-col items-end">
 						{$intensityHoverData ? formatValue($intensityHoverData['au.emission_intensity']) : ''}
 					</div>
-				</td>
+				</th>
 			</tr>
 		</tbody>
 	</table>
