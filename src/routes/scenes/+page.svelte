@@ -10,6 +10,8 @@
 	import CapacityChart from './components/CapacityChart.svelte';
 	import IntensityChart from './components/IntensityChart.svelte';
 	import Table from './components/Table.svelte';
+	import ScenarioDescription from './components/ScenarioDescription.svelte';
+	import ScenarioSparklines from './components/ScenarioSparklines.svelte';
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
 	import { fetchTechnologyViewData } from './page-data-options/fetch';
@@ -190,6 +192,14 @@
 	<div class="w-[40%]">
 		<Table {seriesLoadsIds} />
 	</div>
+</div>
+
+<div class="container max-w-none lg:container px-6 mx-auto md:grid grid-cols-2">
+	<div class="relative h-auto">
+		<ScenarioDescription />
+	</div>
+
+	<ScenarioSparklines />
 </div>
 
 <ArticlesSection
