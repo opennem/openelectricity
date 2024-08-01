@@ -3,7 +3,6 @@ import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
 
 export async function GET({ url, fetch, setHeaders }) {
 	setHeaders({
-		'cache-control': 'max-age=1800', // 30 mins
 		Authorization: `Bearer ${PUBLIC_API_KEY}`
 	});
 
@@ -25,7 +24,6 @@ export async function GET({ url, fetch, setHeaders }) {
 	// const metricParams =
 	// '&metric=generation&metric=emissions&metric=price&metric=demand&metric=energy';
 	const metricParams = '';
-
 	const fuelTechs = [
 		'coal',
 		'gas',
