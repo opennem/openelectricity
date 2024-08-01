@@ -37,7 +37,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	];
 
 	const fuelTechParams = fuelTechs.map((tech) => `&fuel_tech=${tech}`).join('');
-	const path = `${PUBLIC_RECORDS_API}?limit=1000${fuelTechParams}${metricParams}${dateParams}${pageParams}`;
+	const path = `${PUBLIC_RECORDS_API}?limit=1000${metricParams}${dateParams}${pageParams}`;
 	const response = await fetch(path);
 
 	if (response.ok) {
