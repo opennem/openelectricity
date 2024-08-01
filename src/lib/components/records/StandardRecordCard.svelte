@@ -6,6 +6,8 @@
 
 	/** @type {import('$lib/types/record.types').Record[]} */
 	export let record;
+
+	$: console.log('record', record);
 </script>
 
 <div
