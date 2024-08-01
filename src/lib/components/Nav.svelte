@@ -6,7 +6,7 @@
 		{ name: 'Tracker', href: $dataTrackerLink },
 		{ name: 'Facilities', href: `${$dataTrackerLink}/facilities` },
 		{ name: 'Scenarios', href: '/scenarios' },
-		// { name: 'Latest Records', href: '/records' },
+		{ name: 'Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },
 		{ name: 'About', href: '/about' }
 	];
