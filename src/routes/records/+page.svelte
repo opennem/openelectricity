@@ -30,6 +30,8 @@
 	/** @type {PageData} */
 	export let data;
 
+	$: console.log('data', data);
+
 	const PAGE_LENGTH = 50;
 	let recordsData = data.records;
 	let currentPage = 1;
