@@ -2,9 +2,9 @@ import { error } from '@sveltejs/kit';
 
 export async function load({ fetch, url }) {
 	try {
-		const date = url.searchParams.get('date');
+		// const date = url.searchParams.get('date');
 		// const fuelTechs = url.searchParams.get('fuel_techs');
-
+		const date = null;
 		let dateParams = date ? `?date=${date}` : '';
 		const data = await fetch(`/api/records${dateParams}`);
 

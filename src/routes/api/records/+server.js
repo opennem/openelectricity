@@ -7,21 +7,21 @@ export async function GET({ url, fetch, setHeaders }) {
 		Authorization: `Bearer ${PUBLIC_API_KEY}`
 	});
 
-	const date = url.searchParams.get('date');
-	const pageNum = url.searchParams.get('page');
+	// const date = url.searchParams.get('date');
+	// const pageNum = url.searchParams.get('page');
 	// const fuelTechs = url.searchParams.get('fuel_techs');
 	let dateParams = '';
 	let pageParams = '';
 
-	const f = 'yyyy-MM-dd';
+	// const f = 'yyyy-MM-dd';
 
-	if (date) {
-		// dateParams = `&date_start=${date}&date_end=${format(addDays(new Date(date), 1), f)}`;
-	}
+	// if (date) {
+	// 	dateParams = `&date_start=${date}&date_end=${format(addDays(new Date(date), 1), f)}`;
+	// }
 
-	if (pageNum) {
-		pageParams = `&page=${pageNum}`;
-	}
+	// if (pageNum) {
+	// 	pageParams = `&page=${pageNum}`;
+	// }
 	// const metricParams =
 	// '&metric=generation&metric=emissions&metric=price&metric=demand&metric=energy';
 	const metricParams = '';

@@ -37,22 +37,24 @@
 	let currentPage = 1;
 
 	// Grab defaults from URL if present
-	let pURL = $page.url;
-	let technologyArgs = pURL.searchParams
-		.get('technologies')
-		?.split('+')
-		.reduce((acc, current) => {
-			acc[current] = true;
-			return acc;
-		}, {});
+	// let pURL = $page.url;
+	// let technologyArgs = pURL.searchParams
+	// 	.get('technologies')
+	// 	?.split('+')
+	// 	.reduce((acc, current) => {
+	// 		acc[current] = true;
+	// 		return acc;
+	// 	}, {});
 
-	let regionArgs = pURL.searchParams
-		.get('region')
-		?.split('+')
-		.reduce((acc, current) => {
-			acc[current] = true;
-			return acc;
-		}, {});
+	// let regionArgs = pURL.searchParams
+	// 	.get('region')
+	// 	?.split('+')
+	// 	.reduce((acc, current) => {
+	// 		acc[current] = true;
+	// 		return acc;
+	// 	}, {});
+	let technologyArgs = {};
+	let regionArgs = {};
 
 	let isLoading = false;
 
@@ -63,12 +65,15 @@
 	let showDate = false;
 	let showLoadMore = data.count > PAGE_LENGTH;
 
-	let searchString = pURL.searchParams.get('search') || '';
+	// let searchString = pURL.searchParams.get('search') || '';
+	let searchString = '';
 	/** @type {TechnologyFilterDict} */
 	let technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
 	let regionSelections = { ...regionDefaultSelections, ...regionArgs };
-	let peakLowSelection = pURL.searchParams.get('peak-low') || 'all';
-	let dateSelection = pURL.searchParams.get('date') || 'none';
+	// let peakLowSelection = pURL.searchParams.get('peak-low') || 'all';
+	let peakLowSelection = 'all';
+	// let dateSelection = pURL.searchParams.get('date') || 'none';
+	let dateSelection = 'none';
 	let dateChosen = 'none';
 
 	$: hasSearchTerm = searchString.trim() !== '';
