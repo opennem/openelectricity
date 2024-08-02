@@ -167,6 +167,53 @@
 	</section>
 
 	<section class="py-12">
+		<h3>Other Supporters</h3>
+		<dl
+			class="flex flex-col gap-8 mt-8 divide-y md:divide-y-0 divide-dotted divide-mid-warm-grey border-y md:border-y-0 border-dotted border-mid-warm-grey"
+		>
+			<div
+				class="pt-12 md:pt-0 md:grid md:grid-cols-8 md:divide-x divide-dotted divide-mid-warm-grey"
+			>
+				<dt class="col-span-2 place-self-center">
+					<img
+						src="/img/supporters/DO_Logo_icon_black.png"
+						alt="Digital Ocean logo"
+						class="block h-16 w-auto"
+					/>
+				</dt>
+
+				<dd class="text-dark-grey col-span-6 md:pl-12 pt-6 font-light">
+					<p>
+						<a class="text-dark-grey underline" href="https://www.digitalocean.com/">
+							DigitalOcean
+						</a>
+						— Cloud Infrastructure for Developers
+					</p>
+				</dd>
+			</div>
+
+			<div
+				class="pt-12 md:pt-0 md:grid md:grid-cols-8 md:divide-x divide-dotted divide-mid-warm-grey"
+			>
+				<dt class="col-span-2 place-self-center">
+					<img
+						src="/img/supporters/sentry-glyph-dark-400x367.svg"
+						alt="Sentry logo"
+						class="block h-16 w-auto"
+					/>
+				</dt>
+
+				<dd class="text-dark-grey col-span-6 md:pl-12 pt-6 font-light">
+					<p>
+						<a class="text-dark-grey underline" href="https://sentry.io/"> Sentry </a>
+						— Application Performance Monitoring & Error Tracking Software
+					</p>
+				</dd>
+			</div>
+		</dl>
+	</section>
+
+	<section class="py-12">
 		<h3>Get involved</h3>
 
 		<div class="mt-10">
