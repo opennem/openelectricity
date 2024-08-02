@@ -1,5 +1,5 @@
 <script>
-	import StackedArea from '$lib/components/charts/StackedArea.svelte';
+	import StackedAreaChart from '$lib/components/charts/StackedAreaChart.svelte';
 	import Tooltip from './Tooltip.svelte';
 
 	export let store;
@@ -34,7 +34,7 @@
 		showTotal={true}
 	/>
 
-	<StackedArea
+	<StackedAreaChart
 		dataset={$seriesData}
 		xKey="date"
 		yKey={[0, 1]}

@@ -1,0 +1,142 @@
+<script>
+	import { LayerCake, Svg, Html } from 'layercake';
+
+	import getSeqId from '$lib/utils/html-id-gen';
+	import Line from './elements/Line.svelte';
+	import Area from './elements/Area.svelte';
+	import AxisX from './elements/AxisX.svelte';
+	import AxisY from './elements/AxisY.svelte';
+	import HoverLayer from './elements/HoverLayer.svelte';
+	import HoverLine from './elements/HoverLine.html.svelte';
+	import ClipPath from './elements/defs/ClipPath.svelte';
+	import HoverText from './elements/HoverText.html.svelte';
+	import Overlay from './elements/Overlay.svelte';
+	import HatchPattern from './elements/defs/HatchPattern.svelte';
+	import LineX from './elements/annotations/LineX.svelte';
+
+	/** @type {TimeSeriesData[]} */
+	export let dataset = [];
+
+	export let title = '';
+
+	export let clip = true;
+
+	export let xKey = 'date';
+
+	export let yKey = '';
+
+	/** @type {Array.<number | null> | undefined} */
+	export let yDomain = undefined;
+
+	export let zKey = '';
+
+	/** @type {*} */
+	export let xTicks = undefined;
+
+	/** @type {*} */
+	export let yTicks = undefined;
+
+	/** If true, overlay will take up the full width of the chart
+	 * If object with xStartValue and xEndValue, overlay will be a range
+	 * @type {*} */
+	export let overlay = null;
+
+	export let overlayStroke = 'rgba(236, 233, 230, 0.4)';
+
+	/** @type {*} */
+	export let overlayLine = false;
+
+	/** @type {TimeSeriesData | undefined}*/
+	export let hoverData = undefined;
+
+	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
+	export let formatTickX = (/** @type {*} */ d) => d;
+	export let formatTickY = (/** @type {number} */ d) => d;
+
+	export let chartHeightClasses = '';
+
+	/** @type {string | null} */
+	export let highlightId = null;
+
+	const id = getSeqId();
+	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
+
+	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
+
+	// $: console.log('groupedData', groupedData);
+
+	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+</script>
+
+<div class="chart-container mb-4 {heightClasses}">
+	<LayerCake
+		padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
+		x={xKey}
+		y={yKey}
+		{yDomain}
+		data={dataset}
+	>
+		<Svg>
+			<defs>
+				<ClipPath id={`${id}-clip-path`} />
+			</defs>
+
+			{#if overlay}
+				<Overlay fill="#FAF9F6" {...overlay} />
+			{/if}
+
+			<AxisY
+				ticks={yTicks}
+				xTick={5}
+				formatTick={formatTickY}
+				gridlines={true}
+				stroke="#33333344"
+			/>
+			<AxisX
+				ticks={xTicks}
+				gridlines={false}
+				formatTick={hoverData ? () => '' : formatTickX}
+				tickMarks={hoverData ? false : true}
+				snapTicks={true}
+			/>
+
+			<Line
+				clipPathId={clip ? `${id}-clip-path` : ''}
+				stroke="#353535"
+				{hoverData}
+				strokeWidth="2px"
+			/>
+			<Area clipPathId={clip ? `${id}-clip-path` : ''} fill={zKey} />
+			<HoverLayer {dataset} on:mousemove on:mouseout />
+		</Svg>
+
+		<Svg pointerEvents={false}>
+			<defs>
+				<HatchPattern id={`${id}-hatch-pattern`} stroke={overlayStroke} />
+			</defs>
+			{#if overlay}
+				<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
+			{/if}
+			{#if overlayLine}
+				<LineX xValue={overlayLine} />
+			{/if}
+		</Svg>
+
+		<Html pointerEvents={false}>
+			<HoverText {hoverData} position="bottom">
+				<span class="text-[10px] block">
+					{formatTickX(hoverTime)}
+				</span>
+			</HoverText>
+			<HoverLine {hoverData} yTopOffset={6} lineColour={zKey} />
+		</Html>
+	</LayerCake>
+
+	<p class="text-xs text-mid-grey relative -top-5 md:hidden">{title}</p>
+</div>
+
+<style>
+	.chart-container {
+		width: 100%;
+	}
+</style>

@@ -6,11 +6,14 @@
 	/** @type {string} shape fill colour */
 	export let fill = 'transparent';
 
+	export let clipPathId = '';
+
 	$: path =
 		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');
 
 	let area = '';
 
+	// TODO need to check for .defined values
 	$: {
 		const yRange = $yScale.range();
 		area =
@@ -27,4 +30,6 @@
 	}
 </script>
 
-<path class="path-area" d={area} {fill} />
+<g class="area-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+	<path class="path-area" d={area} {fill} />
+</g>
