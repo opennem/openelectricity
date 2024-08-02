@@ -2,22 +2,18 @@
 	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
-
-	import { startOfYear } from 'date-fns';
 	import { scaleOrdinal } from 'd3-scale';
-	import { format } from 'd3-format';
-
 	import getSeqId from '$lib/utils/html-id-gen';
-	import AreaStacked from '$lib/components/charts/elements/AreaStacked.svelte';
-	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
-	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
-	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
-	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
-	import ClipPath from '$lib/components/charts/elements/defs/ClipPath.svelte';
-	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
-	import Overlay from '$lib/components/charts/elements/Overlay.svelte';
-	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
-	import LineX from '$lib/components/charts/elements/annotations/LineX.svelte';
+	import AreaStacked from './elements/AreaStacked.svelte';
+	import AxisX from './elements/AxisX.svelte';
+	import AxisY from './elements/AxisY.svelte';
+	import HoverLayer from './elements/HoverLayer.svelte';
+	import HoverLine from './elements/HoverLine.html.svelte';
+	import ClipPath from './elements/defs/ClipPath.svelte';
+	import HoverText from './elements/HoverText.html.svelte';
+	import Overlay from './elements/Overlay.svelte';
+	import HatchPattern from './elements/defs/HatchPattern.svelte';
+	import LineX from './elements/annotations/LineX.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
@@ -27,9 +23,6 @@
 	export let clip = true;
 
 	export let xKey = 'date';
-
-	export let formatTickY = (/** @type {number} */ d) => format('~s')(d);
-	export let displayXTicks = (d) => d.map((t) => startOfYear(t));
 
 	/** @type {number[]} */
 	export let yKey = [];
@@ -71,13 +64,15 @@
 
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
 	export let formatTickX = (/** @type {*} */ d) => d;
+	export let formatTickY = (/** @type {number} */ d) => d;
 
-	export let chartHeightClasses = 'h-[150px] md:h-[200px]';
+	export let chartHeightClasses = '';
 
 	/** @type {string | null} */
 	export let highlightId = null;
 
 	const id = getSeqId();
+	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
 
 	/** TODO: work out transition */
 	const tweenOptions = {
@@ -100,12 +95,14 @@
 	$: y = chartType === 'area' ? yKey : 'value';
 	$: z = chartType === 'area' ? zKey : 'group';
 
+	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
+
 	// $: console.log('groupedData', groupedData);
 
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 </script>
 
-<div class="chart-container mb-4 {chartHeightClasses}">
+<div class="chart-container mb-4 {heightClasses}">
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
 		x={(/** @type {*} */ d) => {
@@ -178,7 +175,7 @@
 				stroke="#33333344"
 			/>
 			<AxisX
-				ticks={xTicks || displayXTicks}
+				ticks={xTicks}
 				gridlines={false}
 				formatTick={hoverData ? () => '' : formatTickX}
 				tickMarks={hoverData ? false : true}

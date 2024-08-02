@@ -5,13 +5,10 @@
 
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
-	import EnergyChart from './components/EnergyChart.svelte';
-	import EmissionsChart from './components/EmissionsChart.svelte';
-	import CapacityChart from './components/CapacityChart.svelte';
-	import IntensityChart from './components/IntensityChart.svelte';
+	import ScenarioChart from './components/ScenarioChart.svelte';
 	import Table from './components/Table.svelte';
 	import ScenarioDescription from './components/ScenarioDescription.svelte';
-	import ScenarioSparklines from './components/ScenarioSparklines.svelte';
+	import ScenarioMiniCharts from './components/ScenarioMiniCharts.svelte';
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
 	import { fetchTechnologyViewData } from './page-data-options/fetch';
@@ -29,9 +26,9 @@
 
 	const dataVizStoreNames = [
 		'energy-data-viz',
-		'capacity-data-viz',
 		'emissions-data-viz',
-		'intensity-data-viz'
+		'intensity-data-viz',
+		'capacity-data-viz'
 	];
 	dataVizStoreNames.forEach((name) => {
 		setContext(name, dataVizStore());
@@ -108,16 +105,26 @@
 					const store = dataVizStores[name];
 					switch (name) {
 						case 'energy-data-viz':
-							updateDataVizStore(store, processedEnergy);
+							updateDataVizStore(
+								'Generation (GWh)',
+								store,
+								processedEnergy,
+								'h-[400px] md:h-[450px]'
+							);
 							break;
 						case 'capacity-data-viz':
-							updateDataVizStore(store, processedCapacity);
+							updateDataVizStore(
+								'Capacity (MW)',
+								store,
+								processedCapacity,
+								'h-[400px] md:h-[450px]'
+							);
 							break;
 						case 'emissions-data-viz':
-							updateDataVizStore(store, processedEmissions);
+							updateDataVizStore('Emissions (tCO2e)', store, processedEmissions);
 							break;
 						case 'intensity-data-viz':
-							updateDataVizStore(store, processedIntensity);
+							updateDataVizStore('Intensity (kgCO2e/MWh)', store, processedIntensity);
 							break;
 					}
 				});
@@ -126,10 +133,13 @@
 	}
 
 	/**
+	 * @param {string} title
 	 * @param {*} store
 	 * @param {ProcessedDataViz} p
+	 * @param {string} [chartHeightClasses]
 	 */
-	function updateDataVizStore(store, p) {
+	function updateDataVizStore(title, store, p, chartHeightClasses) {
+		store.title.set(title);
 		store.seriesData.set(p.seriesData);
 		store.seriesNames.set(p.seriesNames);
 		store.seriesColours.set(p.seriesColours);
@@ -137,6 +147,7 @@
 		store.nameOptions.set(p.nameOptions);
 		store.yDomain.set(p.yDomain);
 		store.chartType.set(p.chartType);
+		store.chartHeightClasses.set(chartHeightClasses);
 	}
 
 	/**
@@ -168,25 +179,13 @@
 
 <div class="max-w-none p-12 flex gap-12">
 	<div class="w-full">
-		<h5>Generation (GWh)</h5>
-		<EnergyChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
-
-		<!-- <div class="grid grid-cols-2 gap-12">
-			
-		</div> -->
-
-		<div>
-			<h5>Emissions (tCO2e)</h5>
-			<EmissionsChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
-		</div>
-
-		<div>
-			<h5>Intensity (kgCO2e/MWh)</h5>
-			<IntensityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
-		</div>
-
-		<h5>Capacity (MW)</h5>
-		<CapacityChart on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+		{#each dataVizStoreNames as name}
+			<ScenarioChart
+				store={dataVizStores[name]}
+				on:mousemove={handleMousemove}
+				on:mouseout={handleMouseout}
+			/>
+		{/each}
 	</div>
 
 	<div class="w-[40%]">
@@ -199,7 +198,7 @@
 		<ScenarioDescription />
 	</div>
 
-	<ScenarioSparklines />
+	<ScenarioMiniCharts />
 </div>
 
 <ArticlesSection

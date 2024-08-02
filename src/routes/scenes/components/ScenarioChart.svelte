@@ -1,9 +1,11 @@
 <script>
-	import { getContext } from 'svelte';
-	import Chart from './Chart.svelte';
+	import StackedArea from '$lib/components/charts/StackedArea.svelte';
 	import Tooltip from './Tooltip.svelte';
 
+	export let store;
+
 	const {
+		title,
 		seriesData,
 		seriesNames,
 		seriesColours,
@@ -11,25 +13,28 @@
 		yDomain,
 		xTicks,
 		formatTickX,
+		formatTickY,
 		chartType,
 		chartOverlay,
 		chartOverlayLine,
 		chartOverlayHatchStroke,
+		chartHeightClasses,
+		hoverKey,
 		hoverData
-	} = getContext('emissions-data-viz');
-
-	// $: console.log('seriesData', $seriesData);
+	} = store;
 </script>
 
+<h5>{$title}</h5>
 {#if $seriesNames.length}
 	<Tooltip
 		hoverData={$hoverData}
-		hoverKey="au.emissions.total"
+		hoverKey={$hoverKey}
 		seriesColours={$seriesColours}
 		seriesLabels={$seriesLabels}
+		showTotal={true}
 	/>
 
-	<Chart
+	<StackedArea
 		dataset={$seriesData}
 		xKey="date"
 		yKey={[0, 1]}
@@ -39,11 +44,13 @@
 		seriesNames={$seriesNames}
 		seriesColours={$seriesColours}
 		formatTickX={$formatTickX}
+		formatTickY={$formatTickY}
 		chartType={$chartType}
 		overlay={$chartOverlay}
 		overlayLine={$chartOverlayLine}
 		overlayStroke={$chartOverlayHatchStroke}
 		hoverData={$hoverData}
+		chartHeightClasses={$chartHeightClasses}
 		on:mousemove
 		on:mouseout
 	/>

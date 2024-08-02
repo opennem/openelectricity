@@ -1,6 +1,9 @@
 import { derived, writable } from 'svelte/store';
+import { format } from 'd3-format';
 
 export default function () {
+	const title = writable('');
+
 	/** @type {import('svelte/store').Writable<TimeSeriesData[]>} */
 	const seriesData = writable([]);
 
@@ -25,6 +28,9 @@ export default function () {
 	/** @type {import('svelte/store').Writable<Function>} */
 	const formatTickX = writable((/** @type {*} */ d) => d);
 
+	/** @type {import('svelte/store').Writable<Function>} */
+	const formatTickY = writable((/** @type {number} */ d) => format('~s')(d));
+
 	/** @type {import('svelte/store').Writable<'area' | 'line'>} */
 	const chartType = writable('area');
 
@@ -36,8 +42,7 @@ export default function () {
 
 	const chartOverlayHatchStroke = writable('rgba(236, 233, 230, 0.4)');
 
-	// /** @type {import('svelte/store').Writable<TimeSeriesData | undefined>} */
-	// const hoverData = writable();
+	const chartHeightClasses = writable('');
 
 	/** @type {import('svelte/store').Writable<string | undefined>} */
 	const hoverKey = writable();
@@ -54,6 +59,7 @@ export default function () {
 	});
 
 	return {
+		title,
 		seriesData,
 		seriesNames,
 		seriesColours,
@@ -62,10 +68,12 @@ export default function () {
 		yDomain,
 		xTicks,
 		formatTickX,
+		formatTickY,
 		chartType,
 		chartOverlay,
 		chartOverlayLine,
 		chartOverlayHatchStroke,
+		chartHeightClasses,
 		hoverKey,
 		hoverTime,
 		hoverData
