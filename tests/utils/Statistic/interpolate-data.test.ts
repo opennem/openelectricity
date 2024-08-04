@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import interpolateData from '$lib/utils/Statistic/interpolate-data'
-import data from "./power-2.json" assert { type: 'json' };
+import data from "./interpolate-data-test.json" assert { type: 'json' };
 import {startOfMinute, addMinutes} from 'date-fns';
 
 describe("Interpolate dataset", () => {

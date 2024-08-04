@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import getMinInterval from '$lib/utils/Statistic/min-interval';
-import data from './power.json' assert { type: 'json' };
+import data from './min-intervals-data.json' assert { type: 'json' };
 
 describe("Find smallest interval", () => {
     test("should return the smallest interval", () =>{

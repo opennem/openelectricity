@@ -24,4 +24,8 @@ describe("Test data interpolation between data points", () => {
             +   0.182,
             +   0.111,])
     })
+
+    test("Should return the orginal data if the input array's length is 1", () => {
+        expect(interpolate([1], 30, 5)).toStrictEqual([1])
+    })
 })
