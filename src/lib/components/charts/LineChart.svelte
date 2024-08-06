@@ -66,6 +66,9 @@
 	// $: console.log('groupedData', groupedData);
 
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	$: clipPathId = clip ? `${id}-clip-path` : '';
+	$: maxValue = Math.round(Math.max(...dataset.map((d) => d[yKey] || 0)));
+	$: maxY = maxValue > 0 ? maxValue + (maxValue * 10) / 100 : 10;
 </script>
 
 <div class="chart-container mb-4 {heightClasses}">
@@ -73,7 +76,7 @@
 		padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
 		x={xKey}
 		y={yKey}
-		{yDomain}
+		yDomain={[0, maxY]}
 		data={dataset}
 	>
 		<Svg>
@@ -100,13 +103,10 @@
 				snapTicks={true}
 			/>
 
-			<Line
-				clipPathId={clip ? `${id}-clip-path` : ''}
-				stroke="#353535"
-				{hoverData}
-				strokeWidth="2px"
-			/>
-			<Area clipPathId={clip ? `${id}-clip-path` : ''} fill={zKey} />
+			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+				<Line stroke="#353535" {hoverData} strokeWidth="2px" />
+				<Area fill={zKey} />
+			</g>
 			<HoverLayer {dataset} on:mousemove on:mouseout />
 		</Svg>
 
