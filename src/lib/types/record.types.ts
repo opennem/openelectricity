@@ -7,6 +7,7 @@ export type Record = {
 	interval: string;
 	value: number;
 	unit: string;
+	value_unit: string;
 	network: string;
 	network_region: 'QLD1' | 'NSW1' | 'VIC1' | 'SA1' | 'TAS1' | 'WEM';
 	fueltech: FuelTechCode;

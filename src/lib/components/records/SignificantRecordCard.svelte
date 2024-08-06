@@ -15,8 +15,10 @@
 	class={`bg-white border-[0.05rem] border-mid-warm-grey border-solid rounded relative grid record-layout ${$$restProps.class}`}
 >
 	<div class="p-6 relative">
-		<FuelTechTag fueltech={record[0].fueltech} />
-		<h5 class="font-medium text-lg leading-lg pr-2 mt-8">{recordDescription(record[0])}</h5>
+		{#if record[0].fueltech}
+			<FuelTechTag fueltech={record[0].fueltech} />
+		{/if}
+		<h5 class="font-medium text-lg leading-lg pr-2 mt-8">{record[0].description}</h5>
 	</div>
 	<div class={`grain-bg bg-${record[0].fueltech} ${highlightTextColor}`}>
 		<div class="p-6">
@@ -31,7 +33,7 @@
 							>{instance.unit === '$' ? '$' : ''}{instance.value.toLocaleString('en-US')}</span
 						>
 						{#if instance.unit !== '$' && i === 0}
-							<span class="text-xs">{instance.unit}</span>
+							<span class="text-xs">{instance.value_unit}</span>
 						{/if}
 					</div>
 					<div class="self-end text-right text-xs">
