@@ -13,7 +13,7 @@
 		intensityDataVizStore: getContext('intensity-data-viz')
 	};
 
-	let selectedStoreName = 'capacityDataVizStore';
+	let selectedStoreName = 'energyDataVizStore';
 
 	const stores = [
 		{ value: 'energyDataVizStore', label: 'Generation' },
@@ -22,7 +22,17 @@
 	];
 
 	$: selectedStore = dataVizStores[selectedStoreName];
-	$: console.log('selectedStoreName', selectedStoreName, selectedStore);
+	$: seriesNames = selectedStore.seriesNames;
+	$: seriesLabels = selectedStore.seriesLabels;
+	$: seriesColours = selectedStore.seriesColours;
+	$: xTicks = selectedStore.xTicks;
+	$: formatTickX = selectedStore.formatTickX;
+	$: formatTickY = selectedStore.formatTickY;
+	$: chartOverlay = selectedStore.chartOverlay;
+	$: chartOverlayLine = selectedStore.chartOverlayLine;
+	$: chartOverlayHatchStroke = selectedStore.chartOverlayHatchStroke;
+	$: hoverData = selectedStore.hoverData;
+	$: seriesData = selectedStore.seriesData;
 </script>
 
 <ScenarioDescription />
@@ -34,5 +44,17 @@
 		on:change={(evt) => (selectedStoreName = evt.detail.value)}
 		class="justify-center my-4"
 	/>
-	<MiniCharts store={selectedStore} />
+	<MiniCharts
+		seriesNames={$seriesNames}
+		seriesLabels={$seriesLabels}
+		seriesColours={$seriesColours}
+		xTicks={$xTicks}
+		formatTickX={$formatTickX}
+		formatTickY={$formatTickY}
+		chartOverlay={$chartOverlay}
+		chartOverlayLine={$chartOverlayLine}
+		chartOverlayHatchStroke={$chartOverlayHatchStroke}
+		hoverData={$hoverData}
+		seriesData={$seriesData}
+	/>
 </div>
