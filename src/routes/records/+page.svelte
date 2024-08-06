@@ -120,6 +120,7 @@
 			if (pageNum > 0) {
 				currentPage = pageNum;
 				recordsData = [...recordsData, ...recordsResponse.data];
+				console.log('updated recordsData', params, recordsData);
 			} else {
 				recordsData = recordsResponse.data;
 			}

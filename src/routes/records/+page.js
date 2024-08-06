@@ -6,6 +6,7 @@ export async function load({ fetch, url }) {
 		// const fuelTechs = url.searchParams.get('fuel_techs');
 		const date = null;
 		let dateParams = date ? `?date=${date}` : '';
+		console.log('dateParams', date);
 		const data = await fetch(`/api/records${dateParams}`);
 
 		if (data && data.ok) {
