@@ -8,7 +8,9 @@ export async function GET({ url, fetch, setHeaders }) {
 	});
 
 	// const date = url.searchParams.get('date');
-	const pageNum = url.searchParams.get('page');
+	const { searchParams } = url;
+
+	const pageNum = searchParams.get('page');
 	// const fuelTechs = url.searchParams.get('fuel_techs');
 	let dateParams = '';
 	let pageParams = '';
@@ -36,6 +38,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	// 	'battery_charging',
 	// 	'battery_discharging'
 	// ];
+	/** @type {string[]} */
 	const fuelTechs = [];
 	const fuelTechParams = fuelTechs.map((tech) => `&fuel_tech=${tech}`).join('');
 	const path = `${PUBLIC_RECORDS_API}?limit=100${fuelTechParams}${metricParams}${dateParams}${pageParams}`;
