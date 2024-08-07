@@ -37,7 +37,7 @@
 
 <ScenarioDescription />
 
-<div>
+<section>
 	<Switch
 		buttons={stores}
 		selected={selectedStoreName}
@@ -56,5 +56,7 @@
 		chartOverlayHatchStroke={$chartOverlayHatchStroke}
 		hoverData={$hoverData}
 		seriesData={$seriesData}
+		on:mousemove
+		on:mouseout
 	/>
-</div>
+</section>

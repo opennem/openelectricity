@@ -7,7 +7,6 @@
 	import Filters from './components/Filters.svelte';
 	import ScenarioChart from './components/ScenarioChart.svelte';
 	import Table from './components/Table.svelte';
-	import ScenarioDescription from './components/ScenarioDescription.svelte';
 	import ScenarioDetailed from './components/ScenarioDetailed.svelte';
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
@@ -194,7 +193,7 @@
 </div>
 
 <div class="container max-w-none lg:container px-6 mx-auto md:grid grid-cols-2">
-	<ScenarioDetailed />
+	<ScenarioDetailed on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 </div>
 
 <ArticlesSection
