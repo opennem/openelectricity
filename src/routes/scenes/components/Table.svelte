@@ -1,12 +1,15 @@
 <script>
-	import { getContext } from 'svelte';
+	import { getContext, createEventDispatcher } from 'svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import { formatValue } from '$lib/utils/formatters';
 	import { groupOptions } from '../page-data-options/groups';
-	import { formatValue } from '../page-data-options/formatters';
 
 	/** @type {string[]} */
 	export let seriesLoadsIds = [];
+	/** @type {string[]} */
+	export let hiddenRowNames = [];
 
+	const dispatch = createEventDispatcher();
 	const { selectedFuelTechGroup } = getContext('scenario-filters');
 	const {
 		seriesNames: energySeriesNames,
@@ -18,8 +21,8 @@
 	const { hoverData: emissionsHoverData } = getContext('emissions-data-viz');
 	const { hoverData: intensityHoverData } = getContext('intensity-data-viz');
 	const {
-		seriesNames: capacitySeriesNames,
-		seriesLabels: capacitySeriesLabels,
+		// seriesNames: capacitySeriesNames,
+		// seriesLabels: capacitySeriesLabels,
 		hoverData: capacityHoverData
 	} = getContext('capacity-data-viz');
 
@@ -64,7 +67,34 @@
 				0
 		  )
 		: 0;
+
+	let isMetaPressed = false;
+
+	/**
+	 * @param {string} name
+	 */
+	function handleRowClick(name) {
+		dispatch('row-click', { name, isMetaPressed, allNames: $energySeriesNames });
+	}
+
+	function handleKeyup() {
+		isMetaPressed = false;
+	}
+
+	/**
+	 * @param {KeyboardEvent} evt
+	 */
+	function handleKeydown(evt) {
+		if (evt.metaKey || evt.altKey) {
+			console.log(' key pressed', evt.altKey, evt.metaKey);
+			isMetaPressed = true;
+		} else {
+			isMetaPressed = false;
+		}
+	}
 </script>
+
+<svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
 
 <div class="sticky top-6 flex flex-col gap-12 border border-warm-grey">
 	<table class="w-full table-fixed">
@@ -116,16 +146,19 @@
 
 		<tbody class="border-b border-warm-grey">
 			{#each sourceNames as name, i}
-				<tr>
-					<td class:!pb-8={i === sourceNames.length - 1}>
+				<tr on:click={() => handleRowClick(name)}>
+					<td
+						class:!pb-8={i === sourceNames.length - 1}
+						class:opacity-50={hiddenRowNames.includes(name)}
+					>
 						<div class="flex items-center gap-2">
 							<div
 								class="w-4 h-4 rounded-full"
 								style="background-color: {$energySeriesColours[name]}"
 							/>
-							<span>
+							<div>
 								{$energySeriesLabels[name]}
-							</span>
+							</div>
 						</div>
 					</td>
 					<td>

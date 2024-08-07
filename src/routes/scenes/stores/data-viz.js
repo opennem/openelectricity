@@ -1,5 +1,7 @@
 import { derived, writable } from 'svelte/store';
-import { format } from 'd3-format';
+import { getNumberFormat } from '$lib/utils/formatters';
+
+const numberFormat = getNumberFormat();
 
 export default function () {
 	const title = writable('');
@@ -29,7 +31,7 @@ export default function () {
 	const formatTickX = writable((/** @type {*} */ d) => d);
 
 	/** @type {import('svelte/store').Writable<Function>} */
-	const formatTickY = writable((/** @type {number} */ d) => format('~s')(d));
+	const formatTickY = writable((/** @type {number} */ d) => numberFormat.format(d));
 
 	/** @type {import('svelte/store').Writable<'area' | 'line'>} */
 	const chartType = writable('area');
@@ -58,6 +60,17 @@ export default function () {
 		return data;
 	});
 
+	function reset() {
+		seriesData.set([]);
+		seriesNames.set([]);
+		seriesColours.set({});
+		seriesLabels.set({});
+		nameOptions.set([]);
+		yDomain.set([]);
+		xTicks.set([]);
+		chartType.set('area');
+	}
+
 	return {
 		title,
 		seriesData,
@@ -76,6 +89,8 @@ export default function () {
 		chartHeightClasses,
 		hoverKey,
 		hoverTime,
-		hoverData
+		hoverData,
+
+		reset
 	};
 }

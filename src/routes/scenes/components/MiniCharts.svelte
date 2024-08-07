@@ -1,8 +1,8 @@
 <script>
 	import LineChart from '$lib/components/charts/LineChart.svelte';
-	import Icon from '$lib/components/Icon.svelte';
+	// import Icon from '$lib/components/Icon.svelte';
 
-	import { formatValue } from '../page-data-options/formatters.js';
+	import { formatValue } from '$lib/utils/formatters.js';
 
 	export let seriesNames;
 	export let seriesLabels;
@@ -14,15 +14,27 @@
 	export let chartOverlayLine;
 	export let chartOverlayHatchStroke;
 	export let hoverData;
+
+	/** @type {TimeSeriesData[]} */
 	export let seriesData;
 
 	$: keys = [...seriesNames].reverse();
+	/**
+	 * @param {string} key
+	 * @returns {number}
+	 */
+	function getMaxValue(key) {
+		const values = /** @type {number[]} */ (seriesData.map((d) => d[key] || 0));
+		const maxValue = Math.round(Math.max(...values));
+		return maxValue < 10 ? 10 : maxValue;
+	}
 </script>
 
 <div class="grid grid-cols-3 border-mid-warm-grey">
 	{#each keys as key}
 		{@const title = seriesLabels[key]}
 		{@const hoverValue = hoverData ? hoverData[key] || 0 : 0}
+		{@const maxValue = getMaxValue(key)}
 		<section
 			class="p-8 border-mid-warm-grey border-b border-l last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
 		>
@@ -48,6 +60,7 @@
 				yKey={key}
 				zKey={seriesColours[key]}
 				{xTicks}
+				yTicks={[0, maxValue]}
 				{formatTickX}
 				{formatTickY}
 				overlay={chartOverlay}

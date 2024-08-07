@@ -6,6 +6,7 @@
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import IconPlus from '$lib/icons/Plus.svelte';
 	import IconMinus from '$lib/icons/Minus.svelte';
+	import { formatFyTickX } from '$lib/utils/formatters';
 
 	import { viewSectionOptions } from '../page-data-options/view-sections';
 	import { dataTypeOptions } from '../page-data-options/data-types';
@@ -14,7 +15,6 @@
 	import { modelOptions } from '../page-data-options/models';
 	import { groupOptions } from '../page-data-options/groups';
 	import { chartXTicks } from '../page-data-options/chart-ticks';
-	import { formatFyTickX } from '../page-data-options/formatters';
 	import ScenarioSelection from './ScenarioSelection.svelte';
 
 	const {

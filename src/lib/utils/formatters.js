@@ -1,5 +1,9 @@
 import { format } from 'date-fns';
-import { format as d3Format } from 'd3-format';
+
+export const getNumberFormat = (maximumFractionDigits = 0) =>
+	new Intl.NumberFormat('en-AU', {
+		maximumFractionDigits
+	});
 
 export const formatFyTickX = (/** @type {Date | number} */ d) => {
 	return format(d, 'yyyy');
@@ -8,7 +12,7 @@ export const formatFyTickX = (/** @type {Date | number} */ d) => {
 export const formatValue = (/** @type {number} */ d) => {
 	if (d === null || isNaN(d)) return '—';
 
-	const formatted = d3Format('.0f')(d);
+	const formatted = getNumberFormat().format(d);
 	if (formatted !== '0') {
 		return formatted;
 	}

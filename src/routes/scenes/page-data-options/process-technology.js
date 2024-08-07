@@ -108,7 +108,7 @@ function combineHistoryProjection({
  */
 export function processGenerationData({ projection, history, group, colourReducer }) {
 	/********* processing Projection */
-	const projectionStats = new Statistic(projection, 'projection')
+	const projectionStats = new Statistic(projection, 'projection', 'GWh')
 		.invertValues(loadFuelTechs)
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
@@ -129,7 +129,7 @@ export function processGenerationData({ projection, history, group, colourReduce
 	/********* end of processing Projection */
 
 	/********* processing Historical */
-	const historicalStats = new Statistic(history, 'history')
+	const historicalStats = new Statistic(history, 'history', 'GWh')
 		.invertValues(loadFuelTechs)
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
@@ -173,7 +173,7 @@ export function processGenerationData({ projection, history, group, colourReduce
  */
 export function processCapacityData({ projection, history, group, colourReducer }) {
 	/********* processing Projection */
-	const projectionStats = new Statistic(projection, 'projection')
+	const projectionStats = new Statistic(projection, 'projection', 'MW')
 		.invertValues(loadFuelTechs)
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
@@ -195,7 +195,7 @@ export function processCapacityData({ projection, history, group, colourReducer 
 	/********* end of processing Projection */
 
 	/********* processing Historical */
-	const historicalStats = new Statistic(history, 'history')
+	const historicalStats = new Statistic(history, 'history', 'MW')
 		.invertValues(loadFuelTechs)
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
@@ -238,10 +238,10 @@ export function processEmissionsData({ projection, history }) {
 	projection.forEach((d) => {
 		d.id = 'au.emissions.total';
 	});
-	const projectionStats = new Statistic(projection, 'projection');
+	const projectionStats = new Statistic(projection, 'projection', 'tCO2e');
 
 	const merged = mergeHistoricalEmissionsData(history);
-	const historicalStats = new Statistic(merged, 'history');
+	const historicalStats = new Statistic(merged, 'history', 'tCO2e');
 
 	const projectionTimeSeries = new TimeSeries(
 		projectionStats.data,

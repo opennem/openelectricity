@@ -3,6 +3,8 @@
 	import Tooltip from './Tooltip.svelte';
 
 	export let store;
+	/** @type {string[]} */
+	export let hiddenRowNames = [];
 
 	const {
 		title,
@@ -22,10 +24,16 @@
 		hoverKey,
 		hoverData
 	} = store;
+
+	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
+	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
+	$: console.log('seriesColours', colours);
+
+	// Object.values(seriesColours)
 </script>
 
 <h5>{$title}</h5>
-{#if $seriesNames.length}
+{#if names.length}
 	<Tooltip
 		hoverData={$hoverData}
 		hoverKey={$hoverKey}
@@ -41,8 +49,8 @@
 		zKey="key"
 		xTicks={$xTicks}
 		yDomain={$yDomain}
-		seriesNames={$seriesNames}
-		seriesColours={$seriesColours}
+		seriesNames={names}
+		zRange={colours}
 		formatTickX={$formatTickX}
 		formatTickY={$formatTickY}
 		chartType={$chartType}

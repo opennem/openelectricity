@@ -35,8 +35,8 @@
 	/** @type {string[]} */
 	export let seriesNames = [];
 
-	/** @type {Object.<string, string>} legend colour */
-	export let seriesColours = {};
+	/** @type {string[]} legend colour */
+	export let zRange = [];
 
 	/** @type {*} */
 	export let xTicks = undefined;
@@ -114,7 +114,7 @@
 		{yDomain}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
-		zRange={Object.values(seriesColours)}
+		{zRange}
 		{flatData}
 		data={chartData}
 	>

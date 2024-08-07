@@ -56,6 +56,9 @@
 	/** @type {string[] | undefined} */
 	let seriesLoadsIds = [];
 
+	/** @type {string[]} */
+	let hiddenRowNames = [];
+
 	$: console.log(articles, filters);
 
 	$: if ($isTechnologyViewSection) {
@@ -83,10 +86,13 @@
 
 				seriesLoadsIds = processedEnergy.seriesLoadsIds;
 
-				const processedEmissions = processEmissionsData({
-					projection: projectionEmissionsData,
-					history: historyEmisssionsData
-				});
+				const processedEmissions =
+					projectionEmissionsData.length > 0
+						? processEmissionsData({
+								projection: projectionEmissionsData,
+								history: historyEmisssionsData
+						  })
+						: undefined;
 
 				const processedCapacity = processCapacityData({
 					projection: projectionCapacityData,
@@ -95,10 +101,12 @@
 					colourReducer: $colourReducer
 				});
 
-				const processedIntensity = processIntensityData({
-					processedEmissions,
-					processedEnergy
-				});
+				const processedIntensity = processedEmissions
+					? processIntensityData({
+							processedEmissions,
+							processedEnergy
+					  })
+					: undefined;
 
 				dataVizStoreNames.forEach((name) => {
 					const store = dataVizStores[name];
@@ -120,10 +128,14 @@
 							);
 							break;
 						case 'emissions-data-viz':
-							updateDataVizStore('Emissions (tCO2e)', store, processedEmissions);
+							processedEmissions
+								? updateDataVizStore('Emissions (tCO2e)', store, processedEmissions)
+								: store.reset();
 							break;
 						case 'intensity-data-viz':
-							updateDataVizStore('Intensity (kgCO2e/MWh)', store, processedIntensity);
+							processedIntensity
+								? updateDataVizStore('Intensity (kgCO2e/MWh)', store, processedIntensity)
+								: store.reset();
 							break;
 					}
 				});
@@ -161,17 +173,42 @@
 		});
 	}
 
-	const handleMousemove = (/** @type {*} */ e) => {
-		if (e.detail?.key) {
-			updateStoreHover(e.detail.key, e.detail.data);
+	/**
+	 * @param {*} evt
+	 */
+	function handleMousemove(evt) {
+		if (evt.detail?.key) {
+			updateStoreHover(evt.detail.key, evt.detail.data);
 		} else {
-			updateStoreHover(undefined, e.detail);
+			updateStoreHover(undefined, evt.detail);
 		}
-	};
-
-	const handleMouseout = () => {
+	}
+	function handleMouseout() {
 		updateStoreHover(undefined, undefined);
-	};
+	}
+
+	/**
+	 * @param {CustomEvent<{ name: string, isMetaPressed: boolean, allNames: string[] }>} evt
+	 */
+	function toggleRow(evt) {
+		const name = evt.detail.name;
+		const isMetaPressed = evt.detail.isMetaPressed;
+		const allNames = evt.detail.allNames;
+
+		if (isMetaPressed) {
+			hiddenRowNames = allNames.filter((n) => n !== name);
+		} else {
+			if (hiddenRowNames.includes(name)) {
+				hiddenRowNames = hiddenRowNames.filter((n) => n !== name);
+			} else {
+				hiddenRowNames = [...hiddenRowNames, name];
+
+				if (hiddenRowNames.length === allNames.length) {
+					hiddenRowNames = [];
+				}
+			}
+		}
+	}
 </script>
 
 <Filters />
@@ -181,6 +218,7 @@
 		{#each dataVizStoreNames as name}
 			<ScenarioChart
 				store={dataVizStores[name]}
+				{hiddenRowNames}
 				on:mousemove={handleMousemove}
 				on:mouseout={handleMouseout}
 			/>
@@ -188,7 +226,7 @@
 	</div>
 
 	<div class="w-[40%]">
-		<Table {seriesLoadsIds} />
+		<Table {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
 	</div>
 </div>
 

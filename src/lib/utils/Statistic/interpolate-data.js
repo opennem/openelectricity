@@ -5,7 +5,7 @@ import interpolate from './interpolate-array';
 /**
  *
  * @param {StatsData[]} datasets
- * @param {StatsInterval} minIntervalObj
+ * @param {StatsInterval | undefined} minIntervalObj
  * @param {StatsType} statsType
  */
 export default function (datasets, minIntervalObj, statsType = 'history') {
