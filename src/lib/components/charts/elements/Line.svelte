@@ -1,6 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
-	import { line } from 'd3-shape';
+	import { line, curveLinear } from 'd3-shape';
 
 	const { data, xGet, yGet } = getContext('LayerCake');
 
@@ -13,6 +13,8 @@
 
 	export let showDots = false;
 
+	export let curveType = curveLinear;
+
 	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
 
@@ -24,7 +26,9 @@
 			return $xGet(d);
 		},
 		(d) => $yGet(d)
-	).defined((d) => $yGet(d) !== null);
+	)
+		.curve(curveType)
+		.defined((d) => $yGet(d) !== null);
 	$: path =
 		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');
 </script>

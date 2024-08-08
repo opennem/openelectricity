@@ -1,5 +1,7 @@
 <script>
 	import { LayerCake, Svg, Html } from 'layercake';
+	import { curveStepAfter } from 'd3-shape';
+
 	import Line from '$lib/components/charts/elements/Line.svelte';
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
 	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
@@ -37,7 +39,7 @@
 		<Svg>
 			<AxisX formatTick={formatTickX} ticks={4} />
 			<AxisY />
-			<Line stroke="#353535" strokeWidth="1px" showDots={true} />
+			<Line curveType={curveStepAfter} stroke="#353535" strokeWidth="1px" showDots={true} />
 		</Svg>
 	</LayerCake>
 </div>
