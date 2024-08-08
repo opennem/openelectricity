@@ -24,8 +24,11 @@ export async function load({ fetch, url }) {
 	// 	};
 	// }
 
+	const pageParam = url.searchParams.get('page');
+
 	return {
-		records: []
+		records: [],
+		page: pageParam ? parseInt(pageParam) : 1
 	};
 
 	// error(404, 'Not found');

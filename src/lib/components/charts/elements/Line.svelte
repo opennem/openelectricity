@@ -11,6 +11,8 @@
 
 	export let showCircle = false;
 
+	export let showDots = false;
+
 	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
 
@@ -30,7 +32,13 @@
 <path class="path-line" d={lineGen($data)} {stroke} stroke-width={strokeWidth} />
 
 {#if showCircle && hoverData}
-	<circle {cx} {cy} r="6" fill={stroke} />
+	<circle {cx} {cy} r="10" fill={stroke} />
+{/if}
+
+{#if showDots}
+	{#each $data as d}
+		<circle cx={$xGet(d)} cy={$yGet(d)} r="3" fill={stroke} fill-opacity="0.3" />
+	{/each}
 {/if}
 
 <style>
