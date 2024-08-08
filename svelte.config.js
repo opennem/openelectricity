@@ -14,15 +14,7 @@ const config = {
 		adapter: adapter({
 			routes: {
 				include: ['/*'],
-				exclude: [
-					'<build>',
-					'<files>',
-					'/analysis/*',
-					'/facility/*',
-					'/content/*',
-					'/isp/*',
-					'/records'
-				]
+				exclude: ['<build>', '<files>', '/analysis/*', '/content/*', '/isp/*']
 			}
 		}),
 		prerender: {
