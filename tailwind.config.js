@@ -9,7 +9,8 @@ export default {
 	theme: {
 		fontFamily: {
 			sans: ['DM Sans', 'sans-serif'],
-			space: ['Space Grotesk', 'sans-serif']
+			space: ['Space Grotesk', 'sans-serif'],
+			mono: ['monospace']
 		},
 		screens: {
 			sm: '640px',

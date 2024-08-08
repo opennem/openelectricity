@@ -2,25 +2,46 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 
+	import RecordHistoryChart from '../components/RecordHistoryChart.svelte';
+
 	export let data;
-	let recordsData = [];
-	let totalRecords = 0;
+
+	let historyData = [];
+	let totalHistory = 0;
+	let valueUnit = '';
+	let period = '';
+
 	let currentPage = data.page || 1;
 	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
 
-	$: fetchRecords(currentPage);
-	$: totalPages = Math.ceil(totalRecords / 100);
+	$: id = data.id;
+	$: totalPages = Math.ceil(totalHistory / 100);
 	$: currentLastRecordIndex = currentStartRecordIndex + 99;
 	$: lastRecordIndex =
-		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
+		currentLastRecordIndex > totalHistory ? totalHistory : currentLastRecordIndex;
 
-	async function fetchRecords(page = 1) {
+	$: fetchRecord(id, currentPage);
+
+	/**
+	 * Fetch a single record
+	 * @param {string} recordId
+	 * @param {number} page
+	 */
+	async function fetchRecord(recordId, page = 1) {
+		console.log('fetching record', recordId, page);
 		if (browser) {
-			const res = await fetch(`/api/records?page=${page}`);
+			const id = encodeURIComponent(recordId);
+			const res = await fetch(`/api/records/${id}?page=${page}`);
 			const jsonData = await res.json();
-			recordsData = jsonData.data;
-			totalRecords = jsonData.total_records;
-			console.log('all records', jsonData);
+
+			historyData = jsonData.data;
+			totalHistory = jsonData.total_records;
+
+			if (historyData.length > 0) {
+				valueUnit = historyData[0].value_unit;
+				period = historyData[0].period;
+			}
+			console.log('record', jsonData);
 		}
 	}
 
@@ -31,15 +52,17 @@
 	function updateCurrentPage(page) {
 		currentPage = page;
 		currentStartRecordIndex = (page - 1) * 100 + 1;
-		goto(`/records?page=${page}`, { replaceState: true });
+
+		goto(`/records/${id}?page=${page}`, { replaceState: true });
 	}
 </script>
 
 <header class="text-center mt-12">
-	<h4>{totalRecords} records</h4>
+	<h4>{id} — {totalHistory} records</h4>
+	<h5>{period} — {valueUnit}</h5>
 </header>
 
-{#if recordsData.length > 0}
+{#if historyData.length > 0}
 	<div class="py-5 flex justify-center gap-16">
 		<button
 			class="border rounded text-xs py-1 px-4"
@@ -57,50 +80,42 @@
 			on:click={() => updateCurrentPage(currentPage + 1)}>Next</button
 		>
 	</div>
-	<div class="py-5 px-10">
+
+	<RecordHistoryChart data={historyData} />
+
+	<div class="p-10">
 		<table class="w-full text-xs border p-2">
 			<thead>
 				<tr class="border-b">
 					<th>No</th>
 					<th>Interval</th>
 
-					<th>Record ID</th>
 					<th>Description</th>
 					<th>Value</th>
-					<th>Value Unit</th>
-					<th>Network</th>
-					<th>Region</th>
-					<th>Metric</th>
-					<th>Aggregate</th>
+
 					<th>Significance</th>
 					<th />
 				</tr>
 			</thead>
 			<tbody>
-				{#each recordsData as record, i}
+				{#each historyData as record, i}
 					<tr class="border-b hover:bg-mid-warm-grey">
 						<td>{currentStartRecordIndex + i}</td>
 						<td>{record.interval}</td>
 
-						<td>{record.record_id}</td>
 						<td>{record.description}</td>
 						<td class="font-mono">{record.value}</td>
-						<td>{record.value_unit}</td>
 
-						<td>{record.network_id}</td>
-						<td>{record.network_region}</td>
-
-						<td>{record.metric}</td>
-						<td>{record.aggregate}</td>
 						<td>{record.significance}</td>
 
 						<td>
-							<a
+							<!-- <a
 								class="block m-1 p-1 border text-mid-grey bg-light-warm-grey"
 								href="/records/{encodeURIComponent(record.record_id)}"
 							>
 								History
-							</a>
+							</a> -->
+							<span class="text-xxs italic">Link to Tracker Data</span>
 						</td>
 					</tr>
 				{/each}
