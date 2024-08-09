@@ -1,6 +1,6 @@
 {
 	"name": "opennem-app",
-	"version": "1.11.0",
+	"version": "1.12.0",
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
@@ -10,58 +10,47 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
 		"format": "prettier --plugin-search-dir . --write .",
-		"release": "release-it"
+		"release": "npx changeset version"
 	},
 	"devDependencies": {
-		"@portabletext/svelte": "^2.1.7",
-		"@sanity/client": "^6.5.0",
+		"@changesets/cli": "^2.27.7",
+		"@portabletext/svelte": "^2.1.11",
+		"@sanity/client": "^6.21.1",
 		"@sanity/image-url": "^1.0.2",
-		"@svelte-put/clickoutside": "^3.0.1",
-		"@svelte-put/shortcut": "^3.1.0",
-		"@sveltejs/adapter-cloudflare": "^4.4.0",
-		"@sveltejs/kit": "^2.0.0",
-		"@sveltejs/vite-plugin-svelte": "^3.0.0",
-		"@tailwindcss/forms": "^0.5.6",
-		"@tailwindcss/typography": "^0.5.10",
+		"@svelte-put/clickoutside": "^3.0.2",
+		"@svelte-put/shortcut": "^3.1.1",
+		"@sveltejs/adapter-cloudflare": "^4.7.0",
+		"@sveltejs/kit": "^2.5.20",
+		"@sveltejs/vite-plugin-svelte": "^3.1.1",
+		"@tailwindcss/forms": "^0.5.7",
+		"@tailwindcss/typography": "^0.5.14",
 		"@types/chroma-js": "^2.4.4",
 		"@types/d3-format": "^3.0.4",
 		"@types/d3-scale": "^4.0.8",
 		"@types/d3-shape": "^3.1.6",
-		"autoprefixer": "^10.4.16",
-		"chroma-js": "^2.4.2",
+		"autoprefixer": "^10.4.20",
+		"chroma-js": "^2.6.0",
 		"d3-array": "^3.2.4",
 		"d3-interpolate": "^3.0.1",
 		"date-fns": "^2.30.0",
 		"date-fns-tz": "^2.0.1",
-		"eslint": "^8.28.0",
-		"eslint-config-prettier": "^8.5.0",
-		"eslint-plugin-svelte": "^2.30.0",
+		"eslint": "^8.57.0",
+		"eslint-config-prettier": "^8.10.0",
+		"eslint-plugin-svelte": "^2.43.0",
 		"js-base64": "^3.7.7",
-		"layercake": "^8.0.2",
+		"layercake": "^8.3.4",
 		"lz-string": "^1.5.0",
-		"postcss": "^8.4.31",
+		"postcss": "^8.4.41",
 		"prettier": "^2.8.8",
 		"prettier-plugin-svelte": "^2.10.1",
-		"release-it": "^17.1.1",
-		"svelte": "^4.0.5",
-		"svelte-check": "^3.4.3",
-		"svelte-dnd-action": "^0.9.47",
+		"svelte": "^4.2.18",
+		"svelte-check": "^3.8.5",
+		"svelte-dnd-action": "^0.9.49",
 		"svelte-popperjs": "^1.3.2",
-		"tailwindcss": "^3.4.1",
-		"typescript": "^5.0.0",
+		"tailwindcss": "^3.4.9",
+		"typescript": "^5.5.4",
 		"uuid": "^9.0.1",
-		"vite": "^5.0.0"
+		"vite": "^5.4.0"
 	},
-	"type": "module",
-	"release-it": {
-		"git": {
-			"tag": true
-		},
-		"github": {
-			"release": true
-		},
-		"npm": {
-			"publish": false
-		}
-	}
+	"type": "module"
 }
