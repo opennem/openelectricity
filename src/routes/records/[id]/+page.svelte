@@ -1,6 +1,7 @@
 <script>
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
+	import { parseISO } from 'date-fns';
 
 	import RecordHistoryChart from '../components/RecordHistoryChart.svelte';
 
@@ -14,13 +15,51 @@
 	let currentPage = data.page || 1;
 	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
 
+	let issueInstanceIds = [];
+
+	$: console.log('issueInstanceIds', issueInstanceIds);
+
 	$: id = data.id;
 	$: totalPages = Math.ceil(totalHistory / 100);
 	$: currentLastRecordIndex = currentStartRecordIndex + 99;
 	$: lastRecordIndex =
 		currentLastRecordIndex > totalHistory ? totalHistory : currentLastRecordIndex;
-
 	$: fetchRecord(id, currentPage);
+
+	$: timeSeriesData = historyData
+		.map((record) => {
+			const date = parseISO(record.interval);
+			return {
+				...record,
+				date,
+				time: date.getTime(),
+				value: record.value
+			};
+		})
+		.sort((a, b) => b.time - a.time);
+
+	$: aggregate = historyData[0]?.aggregate;
+
+	$: {
+		issueInstanceIds = [];
+
+		timeSeriesData.forEach((d, i) => {
+			const current = d.value;
+			const next = timeSeriesData[i + 1]?.value;
+
+			console.log('check', i, current, next, aggregate);
+
+			// High peak check - if the current value is lower than the next value
+			if (aggregate === 'high' && next && current < next) {
+				issueInstanceIds.push(d.instance_id);
+			}
+
+			// Low peak check - if the current value is higher than the next value
+			if (aggregate === 'low' && next && current > next) {
+				issueInstanceIds.push(d.instance_id);
+			}
+		});
+	}
 
 	/**
 	 * Fetch a single record
@@ -55,14 +94,28 @@
 
 		goto(`/records/${id}?page=${page}`, { replaceState: true });
 	}
+
+	$: hasIssue = (id) => {
+		return issueInstanceIds.includes(id);
+	};
 </script>
 
-<header class="text-center mt-12">
-	<h4>{id} — {totalHistory} records</h4>
-	<h5>{period} — {valueUnit}</h5>
+<header class=" my-12 mx-10 pb-12 flex justify-center border-b border-mid-warm-grey items-center">
+	<div class="text-center">
+		<h5>{id} — {totalHistory} records</h5>
+		<h6>{period} — {valueUnit}</h6>
+	</div>
+	<!-- <div>
+		<button
+			class="border rounded py-1 px-4 bg-light-warm-grey font-semibold"
+			on:click={() => updateCurrentPage(currentPage + 1)}
+		>
+			Check data
+		</button>
+	</div> -->
 </header>
 
-{#if historyData.length > 0}
+{#if timeSeriesData.length > 0}
 	<div class="py-5 flex justify-center gap-16">
 		<button
 			class="border rounded text-xs py-1 px-4"
@@ -81,42 +134,42 @@
 		>
 	</div>
 
-	<RecordHistoryChart data={historyData} />
+	<RecordHistoryChart data={[...timeSeriesData].reverse()} {issueInstanceIds} />
 
 	<div class="p-10">
 		<table class="w-full text-xs border p-2">
 			<thead>
 				<tr class="border-b">
-					<th>No</th>
+					<!-- <th>No</th> -->
 					<th>Interval</th>
 
 					<th>Description</th>
 					<th>Value</th>
 
-					<th>Significance</th>
-					<th />
+					<!-- <th>Significance</th> -->
+					<th>Instance</th>
+					<!-- <th /> -->
 				</tr>
 			</thead>
 			<tbody>
-				{#each historyData as record, i}
-					<tr class="border-b hover:bg-mid-warm-grey">
-						<td>{currentStartRecordIndex + i}</td>
+				{#each timeSeriesData as record, i}
+					<tr
+						class:bg-error-red={hasIssue(record.instance_id)}
+						class:text-white={hasIssue(record.instance_id)}
+						class="border-b hover:bg-mid-warm-grey"
+					>
+						<!-- <td>{currentStartRecordIndex + i}</td> -->
 						<td>{record.interval}</td>
 
 						<td>{record.description}</td>
 						<td class="font-mono">{record.value}</td>
 
-						<td>{record.significance}</td>
+						<!-- <td>{record.significance}</td> -->
+						<td>{record.instance_id}</td>
 
-						<td>
-							<!-- <a
-								class="block m-1 p-1 border text-mid-grey bg-light-warm-grey"
-								href="/records/{encodeURIComponent(record.record_id)}"
-							>
-								History
-							</a> -->
+						<!-- <td>
 							<span class="text-xxs italic">Link to Tracker Data</span>
-						</td>
+						</td> -->
 					</tr>
 				{/each}
 			</tbody>
