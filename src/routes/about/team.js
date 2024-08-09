@@ -39,8 +39,8 @@ const team = [
 		bio: [],
 		social: [
 			{
-				type: 'twitter',
-				href: 'https://twitter.com/chienleng'
+				type: 'linkedin',
+				href: 'https://www.linkedin.com/in/steventan/'
 			}
 		]
 	},
