@@ -9,8 +9,7 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
-		"format": "prettier --plugin-search-dir . --write .",
-		"release": "release-it"
+		"format": "prettier --plugin-search-dir . --write ."
 	},
 	"devDependencies": {
 		"@portabletext/svelte": "^2.1.7",
@@ -42,7 +41,6 @@
 		"postcss": "^8.4.31",
 		"prettier": "^2.8.8",
 		"prettier-plugin-svelte": "^2.10.1",
-		"release-it": "^17.1.1",
 		"svelte": "^4.0.5",
 		"svelte-check": "^3.4.3",
 		"svelte-dnd-action": "^0.9.47",
@@ -52,16 +50,5 @@
 		"uuid": "^9.0.1",
 		"vite": "^5.0.0"
 	},
-	"type": "module",
-	"release-it": {
-		"git": {
-			"tag": true
-		},
-		"github": {
-			"release": true
-		},
-		"npm": {
-			"publish": false
-		}
-	}
+	"type": "module"
 }
