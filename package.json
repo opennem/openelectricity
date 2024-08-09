@@ -9,9 +9,11 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
 		"lint": "prettier --plugin-search-dir . --check . && eslint .",
-		"format": "prettier --plugin-search-dir . --write ."
+		"format": "prettier --plugin-search-dir . --write .",
+		"release": "npx changeset version"
 	},
 	"devDependencies": {
+		"@changesets/cli": "^2.27.7",
 		"@portabletext/svelte": "^2.1.7",
 		"@sanity/client": "^6.5.0",
 		"@sanity/image-url": "^1.0.2",
