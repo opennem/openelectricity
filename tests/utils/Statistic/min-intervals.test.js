@@ -3,21 +3,21 @@ import getMinInterval from '$lib/utils/Statistic/min-interval';
 import data from './min-intervals-data.json' assert { type: 'json' };
 
 describe("Find smallest interval", () => {
-    test("should return the smallest interval", () =>{
+    test("should return smallest interval without provided StatType (default to history)", () =>{
         expect(getMinInterval(data)?.intervalString).toBe("5m")
     })
 })
 
 describe("Find smallest interval between forecasts", () => {
-    test("should return smallest interval", () => {
+    test("should return smallest interval between forecasts", () => {
 
         expect(getMinInterval(data, 'forecast')?.intervalString).toBe("5m")
     })
 })
 
-describe("Find smallest interval between histories since statType is not provided", () => {
+describe("Find smallest interval between histories", () => {
     test("should return smallest interval between histories", () => {
 
-        expect(getMinInterval(data)?.intervalString,).toBe("5m")
+        expect(getMinInterval(data, 'history')?.intervalString,).toBe("5m")
     })
 })

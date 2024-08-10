@@ -1,11 +1,12 @@
-import { describe, expect, test } from 'vitest'
-import interpolateData from '$lib/utils/Statistic/interpolate-data'
+import { describe, expect, test } from 'vitest';
+import interpolateData from '$lib/utils/Statistic/interpolate-data';
 import data from "./interpolate-data-test.json" assert { type: 'json' };
 import {startOfMinute, addMinutes} from 'date-fns';
 
 describe("Interpolate dataset", () => {
 
-    let mockMinIntervalObject: StatsInterval = {
+    /** @type {StatsInterval} */
+    let mockMinIntervalObject = {
         intervalString: '5m',
         key: 'm',
         label: 'Minutes',
@@ -15,7 +16,7 @@ describe("Interpolate dataset", () => {
         incrementerFn: addMinutes,
         startOfFn: startOfMinute
 
-    }
+    };
     test("should return interpolated data from 30 minutes inteval to 5 minutes interval", () => {
         expect(interpolateData(data, mockMinIntervalObject, "history")[0].history.data).toStrictEqual([ 4993.833333333334,
             +   5191.666666666667,
