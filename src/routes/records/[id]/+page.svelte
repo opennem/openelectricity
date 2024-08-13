@@ -47,8 +47,6 @@
 			const current = d.value;
 			const next = timeSeriesData[i + 1]?.value;
 
-			console.log('check', i, current, next, aggregate);
-
 			// High peak check - if the current value is lower than the next value
 			if (aggregate === 'high' && next && current < next) {
 				issueInstanceIds.push(d.instance_id);

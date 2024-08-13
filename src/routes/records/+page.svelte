@@ -63,6 +63,7 @@
 				<tr class="border-b">
 					<th>No</th>
 					<th>Interval</th>
+					<th>Period</th>
 
 					<th>Record ID</th>
 					<th>Description</th>
@@ -70,6 +71,7 @@
 					<th>Value Unit</th>
 					<th>Network</th>
 					<th>Region</th>
+					<th>Fuel Tech</th>
 					<th>Metric</th>
 					<th>Aggregate</th>
 					<th>Significance</th>
@@ -81,6 +83,7 @@
 					<tr class="border-b hover:bg-mid-warm-grey">
 						<td>{currentStartRecordIndex + i}</td>
 						<td>{record.interval}</td>
+						<td>{record.period}</td>
 
 						<td>{record.record_id}</td>
 						<td>{record.description}</td>
@@ -88,7 +91,8 @@
 						<td>{record.value_unit}</td>
 
 						<td>{record.network_id}</td>
-						<td>{record.network_region}</td>
+						<td>{record.network_region || ''}</td>
+						<td>{record.fueltech_id || ''}</td>
 
 						<td>{record.metric}</td>
 						<td>{record.aggregate}</td>
