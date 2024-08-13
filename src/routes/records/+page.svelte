@@ -2,21 +2,28 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import regionOptions from './page-data-options/regions.js';
+
 	export let data;
 	let recordsData = [];
 	let totalRecords = 0;
 	let currentPage = data.page || 1;
 	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
 
-	$: fetchRecords(currentPage);
+	let selectedRegion = 'nem';
+
+	$: fetchRecords(currentPage, selectedRegion);
 	$: totalPages = Math.ceil(totalRecords / 100);
 	$: currentLastRecordIndex = currentStartRecordIndex + 99;
 	$: lastRecordIndex =
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
-	async function fetchRecords(page = 1) {
+	async function fetchRecords(page = 1, region = selectedRegion) {
+		console.log('region', region);
+
 		if (browser) {
-			const res = await fetch(`/api/records?page=${page}`);
+			const res = await fetch(`/api/records?page=${page}&region=${region}`);
 			const jsonData = await res.json();
 			recordsData = jsonData.data;
 			totalRecords = jsonData.total_records;
@@ -37,6 +44,14 @@
 
 <header class="text-center mt-12">
 	<h4>{totalRecords} records</h4>
+
+	<div class="flex justify-center">
+		<FormSelect
+			options={regionOptions}
+			selected={selectedRegion}
+			on:change={(evt) => (selectedRegion = evt.detail.value)}
+		/>
+	</div>
 </header>
 
 {#if recordsData.length > 0}

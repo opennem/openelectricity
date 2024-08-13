@@ -7,6 +7,9 @@
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 
 	export let selected;
+	/**
+	 * @type {{label: string, value: string}[]}
+	 */
 	export let options = [];
 	export let paddingY = 'py-1';
 	export let paddingX = 'px-2';
