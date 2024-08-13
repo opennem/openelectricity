@@ -11,9 +11,11 @@ export async function GET({ url, fetch, setHeaders }) {
 	const { searchParams } = url;
 
 	const pageNum = searchParams.get('page');
+	const region = searchParams.get('region');
 	// const fuelTechs = url.searchParams.get('fuel_techs');
 	let dateParams = '';
 	let pageParams = '';
+	let regionParams = '';
 
 	// const f = 'yyyy-MM-dd';
 
@@ -23,6 +25,9 @@ export async function GET({ url, fetch, setHeaders }) {
 
 	if (pageNum) {
 		pageParams = `&page=${pageNum}`;
+	}
+	if (region && region !== 'nem') {
+		regionParams = `&network=NEM&network_region=${region.toUpperCase()}`;
 	}
 	// const metricParams =
 	// '&metric=generation&metric=emissions&metric=price&metric=demand&metric=energy';
@@ -41,7 +46,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	/** @type {string[]} */
 	const fuelTechs = [];
 	const fuelTechParams = fuelTechs.map((tech) => `&fuel_tech=${tech}`).join('');
-	const path = `${PUBLIC_RECORDS_API}?limit=100${fuelTechParams}${metricParams}${dateParams}${pageParams}`;
+	const path = `${PUBLIC_RECORDS_API}?limit=100${fuelTechParams}${metricParams}${dateParams}${pageParams}${regionParams}`;
 	const response = await fetch(path);
 
 	if (response.ok) {
