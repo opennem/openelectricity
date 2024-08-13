@@ -18,6 +18,7 @@
 	const id = 'record-chart-' + new Date().getTime();
 
 	$: {
+		// brushed data should have at least 2 points to be able to draw a line
 		brushedData = data.slice(
 			(brushExtents[0] || 0) * data.length,
 			(brushExtents[1] || 1) * data.length
