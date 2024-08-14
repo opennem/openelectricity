@@ -23,12 +23,14 @@ export async function load({ fetch, url }) {
 	// 		records: []
 	// 	};
 	// }
-
-	const pageParam = url.searchParams.get('page');
+	const { searchParams } = url;
+	const pageParam = searchParams.get('page');
+	const regionsParam = searchParams.get('regions');
 
 	return {
 		records: [],
-		page: pageParam ? parseInt(pageParam) : 1
+		page: pageParam ? parseInt(pageParam) : 1,
+		regions: regionsParam ? regionsParam.split(',') : []
 	};
 
 	// error(404, 'Not found');
