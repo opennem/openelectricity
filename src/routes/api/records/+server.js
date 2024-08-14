@@ -11,7 +11,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	const { searchParams } = url;
 
 	const pageNum = searchParams.get('page');
-	const region = searchParams.get('region');
+	const regions = searchParams.get('regions');
 	// const fuelTechs = url.searchParams.get('fuel_techs');
 	let dateParams = '';
 	let pageParams = '';
@@ -26,9 +26,29 @@ export async function GET({ url, fetch, setHeaders }) {
 	if (pageNum) {
 		pageParams = `&page=${pageNum}`;
 	}
-	if (region && region !== 'nem') {
-		regionParams = `&network=NEM&network_region=${region.toUpperCase()}`;
+
+	if (regions) {
+		const regionArr = regions.split(',');
+
+		// if all regions are selected, we don't need to specify the network
+		// - the 6 regions are nem, nsw1, qld1, sa1, tas1, vic1
+		if (regionArr.length === 6) {
+			regionParams = '';
+		} else {
+			const withoutNem = regionArr.filter((r) => r !== 'nem');
+
+			if (withoutNem.length > 0) {
+				regionParams =
+					`&network=NEM` + withoutNem.map((r) => `&network_region=${r.toUpperCase()}`).join('');
+			} else {
+				// only nem
+				regionParams = `&network=NEM`;
+			}
+		}
 	}
+
+	console.log('regionParams', regionParams);
+
 	// const metricParams =
 	// '&metric=generation&metric=emissions&metric=price&metric=demand&metric=energy';
 	const metricParams = '';

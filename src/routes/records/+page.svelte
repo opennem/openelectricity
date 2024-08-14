@@ -2,8 +2,7 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import regionOptions from './page-data-options/regions.js';
+	import Filters from './components/Filters.svelte';
 
 	export let data;
 	let recordsData = [];
@@ -11,22 +10,29 @@
 	let currentPage = data.page || 1;
 	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
 
-	let selectedRegion = 'nem';
 	let errorMessage = '';
 
-	$: fetchRecords(currentPage, selectedRegion);
+	/** @type {string[]} */
+	let checkedRegions =
+		data.regions && data.regions.length
+			? data.regions
+			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+
+	$: fetchRecords(currentPage, checkedRegions);
 	$: totalPages = Math.ceil(totalRecords / 100);
 	$: currentLastRecordIndex = currentStartRecordIndex + 99;
 	$: lastRecordIndex =
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
-	async function fetchRecords(page = 1, region = selectedRegion) {
-		console.log('region', region);
-
+	fetchRecords(currentPage, checkedRegions);
+	async function fetchRecords(page = 1, regions = checkedRegions) {
+		const validRegions = regions.filter((r) => r !== '_all');
+		const regionsParam =
+			regions.length === 0 || regions.length === 7 ? '' : '&regions=' + validRegions.join(',');
 		if (browser) {
-			const res = await fetch(`/api/records?page=${page}&region=${region}`);
+			const res = await fetch(`/api/records?page=${page}${regionsParam}`);
 			const jsonData = await res.json();
-			console.log('jsonData', jsonData);
+
 			if (jsonData.success) {
 				errorMessage = '';
 				recordsData = jsonData.data;
@@ -46,20 +52,28 @@
 	function updateCurrentPage(page) {
 		currentPage = page;
 		currentStartRecordIndex = (page - 1) * 100 + 1;
-		goto(`/records?page=${page}`, { replaceState: true });
+
+		const regionsParam = checkedRegions.join(',');
+		goto(`/records?page=${page}&regions=${regionsParam}`, { replaceState: true });
+	}
+
+	/**
+	 * Handle filters apply
+	 * @param {{checkedRegions: string[]}} detail
+	 */
+	function handleFiltersApply(detail) {
+		console.log('Regions', detail.checkedRegions);
+		checkedRegions = detail.checkedRegions;
+		updateCurrentPage(1);
 	}
 </script>
 
-<header class="text-center mt-12">
-	<h4>{totalRecords} records</h4>
+<header class=" mt-12">
+	<Filters on:apply={(evt) => handleFiltersApply(evt.detail)} />
 
-	<div class="flex justify-center">
-		<FormSelect
-			options={regionOptions}
-			selected={selectedRegion}
-			on:change={(evt) => (selectedRegion = evt.detail.value)}
-		/>
-	</div>
+	<hr class="my-10" />
+
+	<h4 class="text-center">{totalRecords} records</h4>
 </header>
 
 {#if errorMessage}
@@ -70,21 +84,37 @@
 
 {#if recordsData.length > 0}
 	<div class="py-5 flex justify-center gap-16">
-		<button
-			class="border rounded text-xs py-1 px-4"
-			class:invisible={currentPage === 1}
-			on:click={() => updateCurrentPage(currentPage - 1)}>Previous</button
-		>
+		<div class="flex gap-5">
+			<button
+				class="border rounded text-xs py-1 px-4"
+				class:invisible={currentPage === 1}
+				on:click={() => updateCurrentPage(1)}>Back to first page</button
+			>
+			<button
+				class="border rounded text-xs py-1 px-4"
+				class:invisible={currentPage === 1}
+				on:click={() => updateCurrentPage(currentPage - 1)}>Previous</button
+			>
+		</div>
+
 		<div class="text-xs text-center">
 			Page {currentPage} of {totalPages}
 			<br />
 			({currentStartRecordIndex} to {lastRecordIndex})
 		</div>
-		<button
-			class="border rounded text-xs py-1 px-4"
-			class:invisible={currentPage === totalPages}
-			on:click={() => updateCurrentPage(currentPage + 1)}>Next</button
-		>
+
+		<div class="flex gap-5">
+			<button
+				class="border rounded text-xs py-1 px-4"
+				class:invisible={currentPage === totalPages}
+				on:click={() => updateCurrentPage(currentPage + 1)}>Next</button
+			>
+			<button
+				class="border rounded text-xs py-1 px-4"
+				class:invisible={currentPage === totalPages}
+				on:click={() => updateCurrentPage(totalPages)}>Jump to last page</button
+			>
+		</div>
 	</div>
 	<div class="py-5 px-10">
 		<table class="w-full text-xs border p-2">
