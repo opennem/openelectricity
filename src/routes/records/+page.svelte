@@ -12,6 +12,7 @@
 	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
 
 	let selectedRegion = 'nem';
+	let errorMessage = '';
 
 	$: fetchRecords(currentPage, selectedRegion);
 	$: totalPages = Math.ceil(totalRecords / 100);
@@ -25,9 +26,16 @@
 		if (browser) {
 			const res = await fetch(`/api/records?page=${page}&region=${region}`);
 			const jsonData = await res.json();
-			recordsData = jsonData.data;
-			totalRecords = jsonData.total_records;
-			console.log('all records', jsonData);
+			console.log('jsonData', jsonData);
+			if (jsonData.success) {
+				errorMessage = '';
+				recordsData = jsonData.data;
+				totalRecords = jsonData.total_records;
+			} else {
+				recordsData = [];
+				totalRecords = 0;
+				errorMessage = jsonData.error;
+			}
 		}
 	}
 
@@ -53,6 +61,12 @@
 		/>
 	</div>
 </header>
+
+{#if errorMessage}
+	<div class="flex items-center justify-center h-64">
+		<p class="text-red">{errorMessage}</p>
+	</div>
+{/if}
 
 {#if recordsData.length > 0}
 	<div class="py-5 flex justify-center gap-16">
