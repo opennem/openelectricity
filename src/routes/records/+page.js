@@ -24,13 +24,18 @@ export async function load({ fetch, url }) {
 	// 	};
 	// }
 	const { searchParams } = url;
-	const pageParam = searchParams.get('page');
-	const regionsParam = searchParams.get('regions');
+	const page = searchParams.get('page');
+	const regions = searchParams.get('regions');
+	const periods = searchParams.get('periods');
+	const fuelTechs = searchParams.get('fuelTechs');
 
 	return {
 		records: [],
-		page: pageParam ? parseInt(pageParam) : 1,
-		regions: regionsParam ? regionsParam.split(',') : []
+		page: page ? parseInt(page) : 1,
+		regions: regions ? regions.split(',') : [],
+		periods: periods ? periods.split(',') : [],
+		stringFilter: searchParams.get('recordIdFilter') || '',
+		fuelTechs: fuelTechs ? fuelTechs.split(',') : []
 	};
 
 	// error(404, 'Not found');
