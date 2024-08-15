@@ -3,6 +3,12 @@
 	import { goto } from '$app/navigation';
 
 	import Filters from './components/Filters.svelte';
+	import {
+		regionOptions,
+		aggregateOptions,
+		periodOptions,
+		fuelTechOptions
+	} from './page-data-options/filters.js';
 
 	export let data;
 	let recordsData = [];
@@ -18,19 +24,61 @@
 			? data.regions
 			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 
-	$: fetchRecords(currentPage, checkedRegions);
+	/** @type {string[]} */
+	let checkedFuelTechs =
+		data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : fuelTechOptions.map((i) => i.value);
+
+	/** @type {string[]} */
+	let checkedPeriods =
+		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value);
+
+	let recordIdSearch = data.stringFilter || '';
+
+	$: fetchRecords(currentPage, checkedRegions, checkedPeriods);
 	$: totalPages = Math.ceil(totalRecords / 100);
 	$: currentLastRecordIndex = currentStartRecordIndex + 99;
 	$: lastRecordIndex =
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
-	fetchRecords(currentPage, checkedRegions);
-	async function fetchRecords(page = 1, regions = checkedRegions) {
+	function getFilterParams({ regions, periods, fuelTechs, stringFilter }) {
 		const validRegions = regions.filter((r) => r !== '_all');
 		const regionsParam =
 			regions.length === 0 || regions.length === 7 ? '' : '&regions=' + validRegions.join(',');
+		const periodsParam =
+			periods.length === periodOptions.length ? '' : '&periods=' + periods.join(',');
+
+		const fuelTechParams =
+			fuelTechs.length === fuelTechOptions.length ? '' : '&fuelTechs=' + fuelTechs.join(',');
+
+		const recordIdSearchParam = stringFilter
+			? `&recordIdFilter=${encodeURIComponent(stringFilter.trim())}`
+			: '';
+
+		return {
+			regionsParam,
+			periodsParam,
+			recordIdSearchParam,
+			fuelTechParams
+		};
+	}
+
+	async function fetchRecords(
+		page = 1,
+		regions = checkedRegions,
+		periods = checkedPeriods,
+		fuelTechs = checkedFuelTechs
+	) {
+		const { regionsParam, periodsParam, recordIdSearchParam, fuelTechParams } = getFilterParams({
+			regions,
+			periods,
+			stringFilter: recordIdSearch,
+			fuelTechs
+		});
+
 		if (browser) {
-			const res = await fetch(`/api/records?page=${page}${regionsParam}`);
+			const res = await fetch(
+				`/api/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}`
+			);
 			const jsonData = await res.json();
 
 			if (jsonData.success) {
@@ -53,23 +101,43 @@
 		currentPage = page;
 		currentStartRecordIndex = (page - 1) * 100 + 1;
 
-		const regionsParam = checkedRegions.join(',');
-		goto(`/records?page=${page}&regions=${regionsParam}`, { replaceState: true });
+		const { regionsParam, periodsParam, recordIdSearchParam, fuelTechParams } = getFilterParams({
+			regions: checkedRegions,
+			periods: checkedPeriods,
+			stringFilter: recordIdSearch,
+			fuelTechs: checkedFuelTechs
+		});
+
+		goto(
+			`/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}`,
+			{
+				replaceState: true
+			}
+		);
 	}
 
 	/**
 	 * Handle filters apply
-	 * @param {{checkedRegions: string[]}} detail
+	 * @param {{checkedRegions: string[], checkedPeriods: string[], checkedFuelTechs: string[], recordIdSearch: string}} detail
 	 */
 	function handleFiltersApply(detail) {
 		console.log('Regions', detail.checkedRegions);
 		checkedRegions = detail.checkedRegions;
+		checkedPeriods = detail.checkedPeriods;
+		recordIdSearch = detail.recordIdSearch;
+		checkedFuelTechs = detail.checkedFuelTechs;
 		updateCurrentPage(1);
 	}
 </script>
 
 <header class=" mt-12">
-	<Filters on:apply={(evt) => handleFiltersApply(evt.detail)} />
+	<Filters
+		initCheckedRegions={checkedRegions}
+		initCheckedPeriods={checkedPeriods}
+		initRecordIdSearch={recordIdSearch}
+		initCheckedFuelTechs={checkedFuelTechs}
+		on:apply={(evt) => handleFiltersApply(evt.detail)}
+	/>
 
 	<hr class="my-10" />
 
