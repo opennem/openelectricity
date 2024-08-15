@@ -72,6 +72,10 @@ const periodOptions = [
 		label: 'Quarter'
 	},
 	{
+		value: 'season',
+		label: 'Season'
+	},
+	{
 		value: 'year',
 		label: 'Year'
 	},
