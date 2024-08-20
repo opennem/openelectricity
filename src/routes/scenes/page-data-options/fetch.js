@@ -126,6 +126,12 @@ async function fetchTechnologyViewData({ model, region, scenario, pathway, dataT
 			getScenarios(model, scenario)
 		]);
 
+	// TODO: check why 2022 emissions is duplicated
+	// console.log(
+	// 	'scenarioData',
+	// 	scenarioData.filter((d) => d.type === 'emissions')
+	// );
+
 	const projectionEnergyData = scenarioData
 		.filter((d) => filterScenarioData({ d, pathway, region, dataType: 'energy' }))
 		.map((d) => remappedProjectionData(d, model));
@@ -138,12 +144,12 @@ async function fetchTechnologyViewData({ model, region, scenario, pathway, dataT
 		.filter((d) => filterScenarioData({ d, pathway, region, dataType: 'emissions' }))
 		.map((d) => remappedProjectionData(d, model));
 
-	console.log('projectionEnergyData', projectionEnergyData);
-	console.log('projectionCapacityData', projectionCapacityData);
-	console.log('projectionEmissionsData', projectionEmissionsData);
-	console.log('historyEnergyData', historyEnergyData);
-	console.log('historyCapacityData', historyCapacityData);
-	console.log('historyEmisssionsData', historyEmisssionsData);
+	// console.log('projectionEnergyData', projectionEnergyData);
+	// console.log('projectionCapacityData', projectionCapacityData);
+	// console.log('projectionEmissionsData', projectionEmissionsData);
+	// console.log('historyEnergyData', historyEnergyData);
+	// console.log('historyCapacityData', historyCapacityData);
+	// console.log('historyEmisssionsData', historyEmisssionsData);
 
 	return {
 		projectionEnergyData,
@@ -155,4 +161,72 @@ async function fetchTechnologyViewData({ model, region, scenario, pathway, dataT
 	};
 }
 
-export { fetchTechnologyViewData };
+/**
+ *
+ * @param {{
+ *  scenarios: ScenarioSelect[],
+ * 	region: string
+ * }} param0
+ * @returns {Promise<{
+ * projectionsData: {
+ * 	id: string,
+ * 	model: string,
+ * 	scenario: string,
+ * 	pathway: string,
+ * 	projectionEnergyData: StatsData[],
+ * 	projectionCapacityData: StatsData[],
+ * 	projectionEmissionsData: StatsData[]
+ * }[],
+ * historyEnergyData: StatsData[],
+ * historyCapacityData: StatsData[],
+ * historyEmisssionsData: StatsData[]
+ * }>}
+ */
+async function fetchScenarioViewData({ scenarios, region }) {
+	/** @type {StatsData[][]} */
+	const [historyEmisssionsData, historyEnergyData, historyCapacityData] = await Promise.all([
+		getHistory(region, 'emissions'),
+		getHistory(region, 'energy'),
+		getHistory(region, 'capacity')
+	]);
+
+	/** @type {StatsData[][]} */
+	const scenariosProjection = await Promise.all(
+		scenarios.map((s) => getScenarios(s.model, s.scenario))
+	);
+
+	const projectionsData = scenarios.map((s, i) => {
+		const projectionEnergyData = scenariosProjection[i]
+			.filter((d) => filterScenarioData({ d, pathway: s.pathway, region, dataType: 'energy' }))
+			.map((d) => remappedProjectionData(d, s.model));
+
+		const projectionCapacityData = scenariosProjection[i]
+			.filter((d) => filterScenarioData({ d, pathway: s.pathway, region, dataType: 'capacity' }))
+			.map((d) => remappedProjectionData(d, s.model));
+
+		const projectionEmissionsData = scenariosProjection[i]
+			.filter((d) => filterScenarioData({ d, pathway: s.pathway, region, dataType: 'emissions' }))
+			.map((d) => remappedProjectionData(d, s.model));
+
+		return {
+			...s,
+			projectionEnergyData,
+			projectionCapacityData,
+			projectionEmissionsData
+		};
+	});
+
+	// console.log('projectionsData', projectionsData);
+	// console.log('historyEnergyData', historyEnergyData);
+	// console.log('historyCapacityData', historyCapacityData);
+	// console.log('historyEmisssionsData', historyEmisssionsData);
+
+	return {
+		projectionsData,
+		historyEnergyData,
+		historyCapacityData,
+		historyEmisssionsData
+	};
+}
+
+export { fetchTechnologyViewData, fetchScenarioViewData };

@@ -134,10 +134,10 @@ const order = [
 ];
 
 /** @type {FuelTechGroup} */
-export default {
+export default Object.freeze({
 	label: 'Detailed',
 	value: 'detailed',
 	fuelTechs: fuelTechMap,
 	order: order,
 	labels: labels
-};
+});

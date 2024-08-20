@@ -36,6 +36,8 @@ export default function () {
 	/** @type {import('svelte/store').Writable<'area' | 'line'>} */
 	const chartType = writable('area');
 
+	const isChartTypeArea = derived(chartType, ($chartType) => $chartType === 'area');
+
 	/** @type {import('svelte/store').Writable<{ xStartValue: Date, xEndValue: Date }>} */
 	const chartOverlay = writable();
 
@@ -83,6 +85,7 @@ export default function () {
 		formatTickX,
 		formatTickY,
 		chartType,
+		isChartTypeArea,
 		chartOverlay,
 		chartOverlayLine,
 		chartOverlayHatchStroke,

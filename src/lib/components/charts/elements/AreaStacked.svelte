@@ -30,7 +30,7 @@
 	$: lineGen = line(
 		(d) => $xGet(d),
 		(d) => $yGet(d)
-	).defined((d) => d.value !== null);
+	).defined((d) => d.value !== null && !isNaN(d.value));
 
 	$: opacity = (d) => {
 		if (highlightId === null || highlightId === '') return 1;

@@ -6,17 +6,14 @@
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
 	import ScenarioChart from './components/ScenarioChart.svelte';
-	import Table from './components/Table.svelte';
+	import TableTechnology from './components/TableTechnology.svelte';
+	import TableScenario from './components/TableScenario.svelte';
 	import ScenarioDetailed from './components/ScenarioDetailed.svelte';
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
-	import { fetchTechnologyViewData } from './page-data-options/fetch';
-	import {
-		processGenerationData,
-		processCapacityData,
-		processEmissionsData,
-		processIntensityData
-	} from './page-data-options/process-technology';
+	import { fetchTechnologyViewData, fetchScenarioViewData } from './page-data-options/fetch';
+	import processTechnology from './page-data-options/process-technology';
+	import processScenario from './page-data-options/process-scenario';
 
 	export let data;
 	const { articles, filters } = data;
@@ -35,6 +32,7 @@
 
 	const {
 		isTechnologyViewSection,
+		isScenarioViewSection,
 		selectedRegion,
 		selectedDataType,
 		singleSelectionData,
@@ -77,7 +75,7 @@
 				historyCapacityData,
 				historyEmisssionsData
 			}) => {
-				const processedEnergy = processGenerationData({
+				const processedEnergy = processTechnology.generation({
 					projection: projectionEnergyData,
 					history: historyEnergyData,
 					group: $selectedFuelTechGroup,
@@ -88,13 +86,13 @@
 
 				const processedEmissions =
 					projectionEmissionsData.length > 0
-						? processEmissionsData({
+						? processTechnology.emissions({
 								projection: projectionEmissionsData,
 								history: historyEmisssionsData
 						  })
 						: undefined;
 
-				const processedCapacity = processCapacityData({
+				const processedCapacity = processTechnology.capacity({
 					projection: projectionCapacityData,
 					history: historyCapacityData,
 					group: $selectedFuelTechGroup,
@@ -102,7 +100,7 @@
 				});
 
 				const processedIntensity = processedEmissions
-					? processIntensityData({
+					? processTechnology.intensity({
 							processedEmissions,
 							processedEnergy
 					  })
@@ -132,6 +130,72 @@
 								? updateDataVizStore('Emissions (tCO2e)', store, processedEmissions)
 								: store.reset();
 							break;
+						case 'intensity-data-viz':
+							processedIntensity
+								? updateDataVizStore('Intensity (kgCO2e/MWh)', store, processedIntensity)
+								: store.reset();
+							break;
+					}
+				});
+			}
+		);
+	}
+
+	$: if ($isScenarioViewSection) {
+		fetchScenarioViewData({ scenarios: $multiSelectionData, region: $selectedRegion }).then(
+			({ projectionsData, historyEnergyData, historyEmisssionsData, historyCapacityData }) => {
+				const processedEnergy = processScenario.generation({
+					projections: projectionsData,
+					history: historyEnergyData,
+					group: $selectedFuelTechGroup
+				});
+
+				const processedCapacity = processScenario.capacity({
+					projections: projectionsData,
+					history: historyCapacityData,
+					group: $selectedFuelTechGroup
+				});
+
+				const processedEmissions = processScenario.emissions({
+					projections: projectionsData,
+					history: historyEmisssionsData,
+					group: $selectedFuelTechGroup
+				});
+
+				const processedIntensity = processedEmissions
+					? processScenario.intensity({
+							processedEmissions,
+							processedEnergy
+					  })
+					: undefined;
+
+				dataVizStoreNames.forEach((name) => {
+					const store = dataVizStores[name];
+					switch (name) {
+						case 'energy-data-viz':
+							updateDataVizStore(
+								'Generation (GWh)',
+								store,
+								processedEnergy,
+								'h-[400px] md:h-[450px]'
+							);
+							break;
+
+						case 'capacity-data-viz':
+							updateDataVizStore(
+								'Capacity (MW)',
+								store,
+								processedCapacity,
+								'h-[400px] md:h-[450px]'
+							);
+							break;
+
+						case 'emissions-data-viz':
+							processedEmissions
+								? updateDataVizStore('Emissions (tCO2e)', store, processedEmissions)
+								: store.reset();
+							break;
+
 						case 'intensity-data-viz':
 							processedIntensity
 								? updateDataVizStore('Intensity (kgCO2e/MWh)', store, processedIntensity)
@@ -214,7 +278,7 @@
 <Filters />
 
 <div class="max-w-none p-12 flex gap-12">
-	<div class="w-full">
+	<div class="w-[50%]">
 		{#each dataVizStoreNames as name}
 			<ScenarioChart
 				store={dataVizStores[name]}
@@ -225,8 +289,13 @@
 		{/each}
 	</div>
 
-	<div class="w-[40%]">
-		<Table {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
+	<div class="w-[50%]">
+		{#if $isTechnologyViewSection}
+			<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
+		{/if}
+		{#if $isScenarioViewSection}
+			<TableScenario {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
+		{/if}
 	</div>
 </div>
 

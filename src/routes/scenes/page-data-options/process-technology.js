@@ -3,7 +3,7 @@ import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
 
 import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
-import { fuelTechMap, orderMap } from './groups';
+import { fuelTechMap, orderMap } from './groups-technology';
 import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils';
 
 /**
@@ -106,7 +106,8 @@ function combineHistoryProjection({
  * }} param0
  * @returns {ProcessedDataViz}
  */
-export function processGenerationData({ projection, history, group, colourReducer }) {
+function generation({ projection, history, group, colourReducer }) {
+	console.log('colourReducer', colourReducer);
 	/********* processing Projection */
 	const projectionStats = new Statistic(projection, 'projection', 'GWh')
 		.invertValues(loadFuelTechs)
@@ -136,7 +137,6 @@ export function processGenerationData({ projection, history, group, colourReduce
 
 	const historicalLoadSeries = getLoadIds(historicalStats.data);
 
-	// Capacity is already in FY
 	const historicalTimeSeries = new TimeSeries(
 		historicalStats.data,
 		parseInterval('1M'),
@@ -148,7 +148,6 @@ export function processGenerationData({ projection, history, group, colourReduce
 		.rollup(parseInterval('FY'))
 		.updateMinMax(historicalLoadSeries);
 
-	// Capacity is already in FY
 	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
 		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
@@ -171,7 +170,7 @@ export function processGenerationData({ projection, history, group, colourReduce
  * }} param0
  * @returns {ProcessedDataViz}
  */
-export function processCapacityData({ projection, history, group, colourReducer }) {
+function capacity({ projection, history, group, colourReducer }) {
 	/********* processing Projection */
 	const projectionStats = new Statistic(projection, 'projection', 'MW')
 		.invertValues(loadFuelTechs)
@@ -233,7 +232,7 @@ export function processCapacityData({ projection, history, group, colourReducer 
  * history: StatsData[]}} param0
  * @returns {ProcessedDataViz}
  */
-export function processEmissionsData({ projection, history }) {
+function emissions({ projection, history }) {
 	// mutate projection id
 	projection.forEach((d) => {
 		d.id = 'au.emissions.total';
@@ -286,7 +285,7 @@ export function processEmissionsData({ projection, history }) {
  * @param {{processedEmissions: ProcessedDataViz, processedEnergy: ProcessedDataViz}} param0
  * @returns {ProcessedDataViz}
  */
-export function processIntensityData({ processedEmissions, processedEnergy }) {
+function intensity({ processedEmissions, processedEnergy }) {
 	// calculate intensity
 	// use net generaiton (_max) for intensity -
 	// TODO: recalculate total generation - check opennem to see what fuel tech to include..
@@ -321,3 +320,10 @@ export function processIntensityData({ processedEmissions, processedEnergy }) {
 		chartType: 'line'
 	};
 }
+
+export default {
+	generation,
+	capacity,
+	emissions,
+	intensity
+};

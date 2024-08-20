@@ -31,7 +31,7 @@ function TimeSeries(statsDatasets, statsInterval, statsType, labelReducer, colou
 	} else {
 		this.seriesLabels = statsDatasets.reduce(
 			(/** @type {Object.<string, string>} */ acc, /** @type {StatsData} **/ d) => {
-				acc[d.id] = d.id;
+				acc[d.id] = d.label || d.id;
 				return acc;
 			},
 			{}
@@ -43,7 +43,7 @@ function TimeSeries(statsDatasets, statsInterval, statsType, labelReducer, colou
 	} else {
 		this.seriesColours = statsDatasets.reduce(
 			(/** @type {Object.<string, string>} */ acc, /** @type {StatsData} **/ d) => {
-				acc[d.id] = '#999'; // TODO: update to set colour based on how many names are in the series
+				acc[d.id] = d.colour || '#999'; // TODO: update to set colour based on how many names are in the series
 				return acc;
 			},
 			{}

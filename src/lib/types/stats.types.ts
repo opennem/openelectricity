@@ -36,6 +36,7 @@ export type StatsData = {
 	scenario?: string;
 	pathway?: string;
 	region?: string;
+	label?: string;
 	key?: string | number | Date;
 	isLoad?: boolean;
 };

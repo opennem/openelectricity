@@ -17,6 +17,7 @@
 		formatTickX,
 		formatTickY,
 		chartType,
+		isChartTypeArea,
 		chartOverlay,
 		chartOverlayLine,
 		chartOverlayHatchStroke,
@@ -27,9 +28,6 @@
 
 	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
 	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
-	$: console.log('seriesColours', colours);
-
-	// Object.values(seriesColours)
 </script>
 
 <h5>{$title}</h5>
@@ -39,7 +37,7 @@
 		hoverKey={$hoverKey}
 		seriesColours={$seriesColours}
 		seriesLabels={$seriesLabels}
-		showTotal={true}
+		showTotal={$isChartTypeArea ? true : false}
 	/>
 
 	<StackedAreaChart

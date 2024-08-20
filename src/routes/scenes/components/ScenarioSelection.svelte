@@ -106,6 +106,17 @@
 			scenario: scenarioPathway.value,
 			pathway: scenarioPathway.pathway
 		};
+
+		// update multiSelectionData
+		$multiSelectionData = selectedScenarios.map((id) => {
+			const find = scenariosPathways.find((s) => s.id === id);
+			return {
+				id: find?.id,
+				model: find?.model,
+				scenario: find?.value,
+				pathway: find?.pathway
+			};
+		});
 	}
 </script>
 

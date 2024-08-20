@@ -4,7 +4,7 @@ export type ProcessedDataViz = {
 	seriesColours: { [key: string]: string };
 	seriesLabels: { [key: string]: string };
 	nameOptions: { label: string; value: string }[];
-	yDomain: number[];
+	yDomain: Array<number | null>;
 	seriesLoadsIds?: string[];
 	chartType?: 'area' | 'line';
 };

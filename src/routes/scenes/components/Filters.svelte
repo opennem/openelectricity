@@ -13,7 +13,8 @@
 	import { regionOptions } from '../page-data-options/regions';
 	import { scenarioLabels } from '../page-data-options/descriptions';
 	import { modelOptions } from '../page-data-options/models';
-	import { groupOptions } from '../page-data-options/groups';
+	import { groupOptions as groupTechnologyOptions } from '../page-data-options/groups-technology';
+	import { groupOptions as groupScenarioOptions } from '../page-data-options/groups-scenario';
 	import { chartXTicks } from '../page-data-options/chart-ticks';
 	import ScenarioSelection from './ScenarioSelection.svelte';
 
@@ -43,7 +44,7 @@
 	init();
 
 	function init() {
-		$selectedViewSection = 'technology';
+		$selectedViewSection = 'scenario'; // scenario, technology, region
 
 		const defaultModel = modelOptions[0];
 
@@ -65,7 +66,12 @@
 
 		$selectedDataType = 'energy';
 		$selectedRegion = '_all';
-		$selectedFuelTechGroup = 'simple';
+
+		if ($isTechnologyViewSection) {
+			$selectedFuelTechGroup = groupTechnologyOptions[0].value;
+		} else if ($isScenarioViewSection) {
+			$selectedFuelTechGroup = groupScenarioOptions[0].value;
+		}
 
 		dataVizStores.forEach((store) => {
 			store.formatTickX.set(formatFyTickX);
@@ -105,12 +111,25 @@
 	}
 
 	/**
+	 * When switching views, reset the data stores and fuel tech group
 	 * @param {ScenarioViewSection} prevView
 	 * @param {ScenarioViewSection} view
 	 */
 	function handleDisplayViewChange(prevView, view) {
 		console.log('prevView', prevView, 'view', view);
+		if (prevView === view) return;
+
 		$selectedViewSection = view;
+
+		if (view === 'technology') {
+			$selectedFuelTechGroup = groupTechnologyOptions[0].value;
+		} else if (view === 'scenario') {
+			$selectedFuelTechGroup = groupScenarioOptions[0].value;
+		}
+
+		dataVizStores.forEach((store) => {
+			store.reset();
+		});
 	}
 </script>
 

@@ -124,7 +124,7 @@ export const modelOptions = [
 				model: AEMO_2024_ISP,
 				value: id,
 				label: label,
-				colour: 'black'
+				colour: '#000'
 			}))
 		],
 		pathways: [...modelPathways[AEMO_2024_ISP]],
@@ -142,16 +142,29 @@ export const modelOptions = [
 			model: AEMO_2022_ISP,
 			value: id,
 			label: label,
-			colour: 'black'
+			colour: '#000'
 		})),
 		pathways: [...modelPathways[AEMO_2022_ISP]],
 		defaultPathway: defaultModelPathway[AEMO_2022_ISP]
 	}
 ];
 
+let colourIndex = 0;
+const maxColours = secondaryColourPalette.length;
+modelOptions.forEach((model) => {
+	model.scenarios.forEach((scenario) => {
+		scenario.colour = secondaryColourPalette[colourIndex % maxColours];
+		colourIndex++;
+	});
+});
+
 /** @type {*} */
 export const scenarioOptions = modelOptions.reduce((acc, curr) => [...acc, ...curr.scenarios], []);
-console.log(scenarioOptions);
+export const scenarioColourMap = scenarioOptions.reduce((acc, curr) => {
+	acc[curr.id] = curr.colour;
+	return acc;
+}, {});
+console.log('scenarioOptions', scenarioOptions, scenarioColourMap);
 
 // add secondary colours to scenarios
 // let colourIndex = 0;
