@@ -44,7 +44,7 @@
 	init();
 
 	function init() {
-		$selectedViewSection = 'scenario'; // scenario, technology, region
+		$selectedViewSection = 'region'; // scenario, technology, region
 
 		const defaultModel = modelOptions[0];
 
@@ -69,7 +69,7 @@
 
 		if ($isTechnologyViewSection) {
 			$selectedFuelTechGroup = groupTechnologyOptions[0].value;
-		} else if ($isScenarioViewSection) {
+		} else {
 			$selectedFuelTechGroup = groupScenarioOptions[0].value;
 		}
 
@@ -123,7 +123,7 @@
 
 		if (view === 'technology') {
 			$selectedFuelTechGroup = groupTechnologyOptions[0].value;
-		} else if (view === 'scenario') {
+		} else {
 			$selectedFuelTechGroup = groupScenarioOptions[0].value;
 		}
 

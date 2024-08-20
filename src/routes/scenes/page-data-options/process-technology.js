@@ -107,7 +107,6 @@ function combineHistoryProjection({
  * @returns {ProcessedDataViz}
  */
 function generation({ projection, history, group, colourReducer }) {
-	console.log('colourReducer', colourReducer);
 	/********* processing Projection */
 	const projectionStats = new Statistic(projection, 'projection', 'GWh')
 		.invertValues(loadFuelTechs)

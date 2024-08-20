@@ -69,7 +69,7 @@ export default function () {
 		seriesLabels.set({});
 		nameOptions.set([]);
 		yDomain.set([]);
-		xTicks.set([]);
+		// xTicks.set([]);
 		chartType.set('area');
 	}
 

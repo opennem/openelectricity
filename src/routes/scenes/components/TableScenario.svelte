@@ -2,12 +2,13 @@
 	import { getContext, createEventDispatcher } from 'svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { formatValue } from '$lib/utils/formatters';
-	import { groupOptions } from '../page-data-options/groups-scenario';
 
 	/** @type {string[]} */
 	export let seriesLoadsIds = [];
 	/** @type {string[]} */
 	export let hiddenRowNames = [];
+	/** @type {{label: string, value: string}[]} */
+	export let groupOptions = [];
 
 	const dispatch = createEventDispatcher();
 	const { selectedFuelTechGroup } = getContext('scenario-filters');

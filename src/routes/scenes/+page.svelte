@@ -11,9 +11,18 @@
 	import ScenarioDetailed from './components/ScenarioDetailed.svelte';
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
-	import { fetchTechnologyViewData, fetchScenarioViewData } from './page-data-options/fetch';
+	import { regionOptions } from './page-data-options/regions';
+	import { groupOptions as scenarioGroups } from './page-data-options/groups-scenario';
+	import { groupOptions as regionGroups } from './page-data-options/groups-region';
+
+	import {
+		fetchTechnologyViewData,
+		fetchScenarioViewData,
+		fetchRegionViewData
+	} from './page-data-options/fetch';
 	import processTechnology from './page-data-options/process-technology';
 	import processScenario from './page-data-options/process-scenario';
+	import processRegion from './page-data-options/process-region';
 
 	export let data;
 	const { articles, filters } = data;
@@ -33,6 +42,7 @@
 	const {
 		isTechnologyViewSection,
 		isScenarioViewSection,
+		isRegionViewSection,
 		selectedRegion,
 		selectedDataType,
 		singleSelectionData,
@@ -207,6 +217,76 @@
 		);
 	}
 
+	$: if ($isRegionViewSection) {
+		console.log('region view');
+
+		const regionsOnly = regionOptions.filter((r) => r.value !== '_all');
+
+		fetchRegionViewData({
+			regions: regionsOnly,
+			model: $singleSelectionData.model,
+			scenario: $singleSelectionData.scenario,
+			pathway: $singleSelectionData.pathway
+		}).then((regionsData) => {
+			const processedEnergy = processRegion.generation({
+				regionsData,
+				group: $selectedFuelTechGroup
+			});
+
+			console.log('processedEnergy', processedEnergy);
+
+			const processedCapacity = processRegion.capacity({
+				regionsData,
+				group: $selectedFuelTechGroup
+			});
+
+			console.log('processedCapacity', processedCapacity);
+
+			const processedEmissions = processRegion.emissions({
+				regionsData,
+				group: $selectedFuelTechGroup
+			});
+
+			console.log('processedEmissions', processedEmissions);
+
+			const processedIntensity = processedEmissions
+				? processRegion.intensity({
+						processedEmissions,
+						processedEnergy
+				  })
+				: undefined;
+
+			console.log('processedIntensity', processedIntensity);
+
+			dataVizStoreNames.forEach((name) => {
+				const store = dataVizStores[name];
+				switch (name) {
+					case 'energy-data-viz':
+						updateDataVizStore(
+							'Generation (GWh)',
+							store,
+							processedEnergy,
+							'h-[400px] md:h-[450px]'
+						);
+						break;
+					case 'capacity-data-viz':
+						updateDataVizStore('Capacity (MW)', store, processedCapacity, 'h-[400px] md:h-[450px]');
+						break;
+					case 'emissions-data-viz':
+						processedEmissions
+							? updateDataVizStore('Emissions (tCO2e)', store, processedEmissions)
+							: store.reset();
+						break;
+					case 'intensity-data-viz':
+						processedIntensity
+							? updateDataVizStore('Intensity (kgCO2e/MWh)', store, processedIntensity)
+							: store.reset();
+						break;
+				}
+			});
+		});
+	}
+
 	/**
 	 * @param {string} title
 	 * @param {*} store
@@ -294,7 +374,20 @@
 			<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
 		{/if}
 		{#if $isScenarioViewSection}
-			<TableScenario {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
+			<TableScenario
+				groupOptions={scenarioGroups}
+				{seriesLoadsIds}
+				{hiddenRowNames}
+				on:row-click={toggleRow}
+			/>
+		{/if}
+		{#if $isRegionViewSection}
+			<TableScenario
+				groupOptions={regionGroups}
+				{seriesLoadsIds}
+				{hiddenRowNames}
+				on:row-click={toggleRow}
+			/>
 		{/if}
 	</div>
 </div>

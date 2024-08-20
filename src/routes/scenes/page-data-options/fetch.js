@@ -229,4 +229,40 @@ async function fetchScenarioViewData({ scenarios, region }) {
 	};
 }
 
-export { fetchTechnologyViewData, fetchScenarioViewData };
+async function fetchRegionViewData({ regions, model, scenario, pathway }) {
+	console.log('regions', regions);
+
+	const regionsData = [...regions];
+	const scenarioData = await getScenarios(model, scenario);
+
+	for (const r of regionsData) {
+		const [regionHistoricalEnergy, regionHistoricalCapacity, regionHistoricalEmissions] =
+			await Promise.all([
+				getHistory(r.value.toUpperCase(), 'energy'),
+				getHistory(r.value.toUpperCase(), 'capacity'),
+				getHistory(r.value.toUpperCase(), 'emissions')
+			]);
+
+		r.id = r.value;
+
+		r.projectionEnergyData = scenarioData
+			.filter((d) => filterScenarioData({ d, pathway, region: r.value, dataType: 'energy' }))
+			.map((d) => remappedProjectionData(d, model));
+
+		r.projectionCapacityData = scenarioData
+			.filter((d) => filterScenarioData({ d, pathway, region: r.value, dataType: 'capacity' }))
+			.map((d) => remappedProjectionData(d, model));
+
+		r.projectionEmissionsData = scenarioData
+			.filter((d) => filterScenarioData({ d, pathway, region: r.value, dataType: 'emissions' }))
+			.map((d) => remappedProjectionData(d, model));
+
+		r.historicalEnergyData = regionHistoricalEnergy;
+		r.historicalCapacityData = regionHistoricalCapacity;
+		r.historicalEmissionsData = regionHistoricalEmissions;
+	}
+
+	return regionsData;
+}
+
+export { fetchTechnologyViewData, fetchScenarioViewData, fetchRegionViewData };
