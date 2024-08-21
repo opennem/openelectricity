@@ -265,7 +265,7 @@
 		@apply text-left px-6 pt-6 pb-2 font-semibold;
 	}
 	td {
-		@apply px-6 py-2 text-sm;
+		@apply px-2 py-1 text-sm;
 	}
 	tfoot th {
 		@apply bg-light-warm-grey px-3 py-2;

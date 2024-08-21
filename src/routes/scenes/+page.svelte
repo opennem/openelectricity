@@ -1,8 +1,10 @@
 <script>
 	import { setContext, getContext } from 'svelte';
+	import { fade } from 'svelte/transition';
 
 	import { colourReducer } from '$lib/stores/theme';
 
+	import LogoMark from '$lib/images/logo-mark.svelte';
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
 	import ScenarioChart from './components/ScenarioChart.svelte';
@@ -67,9 +69,13 @@
 	/** @type {string[]} */
 	let hiddenRowNames = [];
 
+	let fetching = false;
+
 	$: console.log(articles, filters);
 
 	$: if ($isTechnologyViewSection) {
+		fetching = true;
+
 		fetchTechnologyViewData({
 			model: $singleSelectionData.model,
 			scenario: $singleSelectionData.scenario,
@@ -147,11 +153,15 @@
 							break;
 					}
 				});
+
+				fetching = false;
 			}
 		);
 	}
 
 	$: if ($isScenarioViewSection) {
+		fetching = true;
+
 		fetchScenarioViewData({ scenarios: $multiSelectionData, region: $selectedRegion }).then(
 			({ projectionsData, historyEnergyData, historyEmisssionsData, historyCapacityData }) => {
 				const processedEnergy = processScenario.generation({
@@ -213,12 +223,14 @@
 							break;
 					}
 				});
+
+				fetching = false;
 			}
 		);
 	}
 
 	$: if ($isRegionViewSection) {
-		console.log('region view');
+		fetching = true;
 
 		const regionsOnly = regionOptions.filter((r) => r.value !== '_all');
 
@@ -284,6 +296,8 @@
 						break;
 				}
 			});
+
+			fetching = false;
 		});
 	}
 
@@ -357,44 +371,53 @@
 
 <Filters />
 
-<div class="max-w-none p-12 flex gap-12">
-	<div class="w-[50%]">
-		{#each dataVizStoreNames as name}
-			<ScenarioChart
-				store={dataVizStores[name]}
-				{hiddenRowNames}
-				on:mousemove={handleMousemove}
-				on:mouseout={handleMouseout}
-			/>
-		{/each}
+{#if fetching}
+	<div
+		class="h-screen bg-light-warm-grey flex justify-center items-center"
+		transition:fade={{ duration: 250 }}
+	>
+		<LogoMark />
+	</div>
+{:else}
+	<div class="max-w-none p-12 flex gap-12">
+		<div class="w-[50%]">
+			{#each dataVizStoreNames as name}
+				<ScenarioChart
+					store={dataVizStores[name]}
+					{hiddenRowNames}
+					on:mousemove={handleMousemove}
+					on:mouseout={handleMouseout}
+				/>
+			{/each}
+		</div>
+
+		<div class="w-[50%]">
+			{#if $isTechnologyViewSection}
+				<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
+			{/if}
+			{#if $isScenarioViewSection}
+				<TableScenario
+					groupOptions={scenarioGroups}
+					{seriesLoadsIds}
+					{hiddenRowNames}
+					on:row-click={toggleRow}
+				/>
+			{/if}
+			{#if $isRegionViewSection}
+				<TableScenario
+					groupOptions={regionGroups}
+					{seriesLoadsIds}
+					{hiddenRowNames}
+					on:row-click={toggleRow}
+				/>
+			{/if}
+		</div>
 	</div>
 
-	<div class="w-[50%]">
-		{#if $isTechnologyViewSection}
-			<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
-		{/if}
-		{#if $isScenarioViewSection}
-			<TableScenario
-				groupOptions={scenarioGroups}
-				{seriesLoadsIds}
-				{hiddenRowNames}
-				on:row-click={toggleRow}
-			/>
-		{/if}
-		{#if $isRegionViewSection}
-			<TableScenario
-				groupOptions={regionGroups}
-				{seriesLoadsIds}
-				{hiddenRowNames}
-				on:row-click={toggleRow}
-			/>
-		{/if}
+	<div class="container max-w-none lg:container px-6 mx-auto md:grid grid-cols-2">
+		<ScenarioDetailed on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 	</div>
-</div>
-
-<div class="container max-w-none lg:container px-6 mx-auto md:grid grid-cols-2">
-	<ScenarioDetailed on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
-</div>
+{/if}
 
 <ArticlesSection
 	analysisArticles={articles.filter(
