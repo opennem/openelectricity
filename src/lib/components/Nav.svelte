@@ -23,7 +23,7 @@
 </script>
 
 <header class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid">
-	<div class="container max-w-none lg:container flex items-center justify-between h-full">
+	<div class="max-w-none px-10 md:px-16 flex items-center justify-between h-full">
 		<div
 			class="absolute md:relative z-40 flex items-center gap-6"
 			class:top-[18.5px]={mobileNavActive}
@@ -41,7 +41,7 @@
 		</div>
 
 		<nav
-			class="block fixed top-0 left-0 h-full w-full z-30 bg-white pt-36 px-10 md:w-auto md:static md:px-4 md:py-2 md:flex md:justify-between md:gap-12 lg:gap-16"
+			class="block fixed top-0 left-0 h-full w-full z-30 bg-white pt-36 px-10 md:w-auto md:static md:px-0 md:py-2 md:flex md:justify-between md:gap-12 lg:gap-16"
 			class:hidden={!mobileNavActive}
 		>
 			{#each navItems as { name, href }}
@@ -53,14 +53,14 @@
 					{name}
 				</a>
 			{/each}
-			<div class="flex items-center">
+			<!-- <div class="flex items-center">
 				<button
 					class="p-2 rounded hover:bg-light-warm-grey"
 					on:click={() => ($showThemeSwitcher = !$showThemeSwitcher)}
 				>
 					<IconSwatch />
 				</button>
-			</div>
+			</div> -->
 		</nav>
 
 		<button
@@ -107,7 +107,8 @@
 		display: block;
 		width: 0.8rem;
 		height: 0.8rem;
-		border: 0.1rem solid theme(colors.black);
+		/* border: 0.1rem solid theme(colors.black); */
+		border: 0.1rem solid transparent;
 		margin-left: 1rem;
 		opacity: 0;
 	}

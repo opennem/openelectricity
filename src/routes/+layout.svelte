@@ -67,7 +67,7 @@
 			</a> about the update.
 		</div>
 		<button
-			class="absolute right-10 md:right-12 top-10 md:top-6"
+			class="absolute right-10 md:right-16 top-10 md:top-6"
 			on:click={() => ($bannerOpen = false)}
 		>
 			<IconXMark classes="w-8 h-8" />
