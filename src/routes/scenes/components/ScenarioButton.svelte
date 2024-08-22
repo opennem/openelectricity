@@ -1,6 +1,7 @@
 <script>
 	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
+	import { modelLogoPath } from '../page-data-options/models';
 
 	/** @type {{label: string, id: string} | null} */
 	export let scenario = null;
@@ -15,14 +16,14 @@
 
 {#if model && scenario}
 	<button
-		class="min-h-36 text-left w-full border rounded-lg p-4 grid grid-cols-1 gap-6 place-content-between hover:border-black"
+		class="min-h-24 text-left w-full border rounded-lg p-4 grid grid-cols-1 gap-6 place-content-between hover:border-black"
 		class:bg-light-warm-grey={highlightBg}
 		class:border-black={highlightBorder}
 		class:border-warm-grey={!highlightBorder}
 		on:click
 	>
 		{#if isRadioMode}
-			<div class="flex justify-between items-start text-sm font-semibold text-dark-grey gap-3">
+			<div class="flex justify-between items-start text-sm font-medium text-dark-grey gap-3">
 				<span>{scenario.label}</span>
 				<RadioBigButton
 					radioOnly={true}
@@ -41,15 +42,16 @@
 			/>
 		{/if}
 
-		<div class="flex justify-between text-xs">
+		<div class="flex items-center text-mid-grey justify-between text-xs">
+			<span class="w-24 grayscale">
+				<img src={modelLogoPath[model.organisation]} alt="{model.organisation} logo" />
+			</span>
 			<div>
 				{model.year}
 				{#if model.draft}
 					<span>Draft</span>
 				{/if}
 			</div>
-
-			<span>{model.organisation}</span>
 		</div>
 	</button>
 {/if}

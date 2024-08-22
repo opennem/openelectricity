@@ -1,10 +1,9 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
-	import Icon from './Icon.svelte';
 
 	const dispatch = createEventDispatcher();
 
-	/** @type {{ label: string, value: string | number, icon?: string }[]} */
+	/** @type {{ label: string, value: string | number, icon?: *, size?: string }[]} */
 	export let buttons = [];
 	/** @type {string | number } */
 	export let selected = '';
@@ -24,11 +23,11 @@
 <div
 	class={`flex text-sm md:inline-flex rounded-xl bg-light-warm-grey border border-solid border-mid-warm-grey ${$$restProps.class}`}
 >
-	{#each buttons as { label, value, icon }, i}
+	{#each buttons as { label, value, icon, size }}
 		<button
 			on:click={handleClick}
 			{value}
-			class="flex w-full md:w-auto items-center justify-center hover:text-black px-8 py-4 border rounded-xl whitespace-nowrap"
+			class="flex w-full gap-3 md:w-auto items-center justify-center hover:text-black px-8 py-4 border rounded-xl whitespace-nowrap"
 			class:bg-white={isSelected(value)}
 			class:text-black={isSelected(value)}
 			class:border-black={isSelected(value)}
@@ -36,14 +35,10 @@
 			class:text-mid-grey={!isSelected(value)}
 			class:border-transparent={!isSelected(value)}
 		>
-			{label}
 			{#if icon}
-				<Icon
-					{icon}
-					size={16}
-					class={`ml-4 ${selected === value ? 'text-success-green' : 'text-transparent'}`}
-				/>
+				<svelte:component this={icon} class={size} />
 			{/if}
+			{label}
 		</button>
 	{/each}
 </div>

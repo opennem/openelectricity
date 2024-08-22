@@ -5,6 +5,9 @@
 	import { colourReducer } from '$lib/stores/theme';
 
 	import LogoMark from '$lib/images/logo-mark.svelte';
+	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
+	import Meta from '$lib/components/Meta.svelte';
+
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
 	import ScenarioChart from './components/ScenarioChart.svelte';
@@ -369,6 +372,25 @@
 	}
 </script>
 
+<!-- TODO: Update preview image -->
+<Meta
+	title="Scenarios"
+	description="Explore the future of Australia's national electricity market."
+	image="/img/preview.jpg"
+/>
+
+<PageHeaderSimple>
+	<div slot="main-heading">
+		<h1 class="tracking-widest text-center">Scenario Explorer</h1>
+	</div>
+	<div slot="sub-heading">
+		<p class="text-sm text-center w-full md:w-[556px] mx-auto">
+			These scenarios aim to steer Australia towards a cost-effective, reliable and safe energy
+			system en route to a zero-emissions electricity network.
+		</p>
+	</div>
+</PageHeaderSimple>
+
 <Filters />
 
 {#if fetching}
@@ -379,7 +401,7 @@
 		<LogoMark />
 	</div>
 {:else}
-	<div class="max-w-none p-12 flex gap-12">
+	<div class="max-w-none px-16 p-12 flex gap-12">
 		<div class="w-[50%]">
 			{#each dataVizStoreNames as name}
 				<ScenarioChart

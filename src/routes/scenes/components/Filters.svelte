@@ -2,7 +2,7 @@
 	import { getContext } from 'svelte';
 	import { startOfYear } from 'date-fns';
 
-	import Switch from '$lib/components/Switch.svelte';
+	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import IconPlus from '$lib/icons/Plus.svelte';
 	import IconMinus from '$lib/icons/Minus.svelte';
@@ -44,7 +44,7 @@
 	init();
 
 	function init() {
-		$selectedViewSection = 'region'; // scenario, technology, region
+		$selectedViewSection = 'technology'; // scenario, technology, region
 
 		const defaultModel = modelOptions[0];
 
@@ -133,7 +133,9 @@
 	}
 </script>
 
-<div class="max-w-none flex gap-16 justify-between px-6 py-6">
+<div
+	class="max-w-none flex gap-10 md:gap-16 justify-between px-10 md:px-16 py-6 border-b border-warm-grey"
+>
 	<a id="filters" class="hidden">Filters</a>
 	<div class="flex gap-16 divide-x divide-warm-grey">
 		<Switch

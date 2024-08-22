@@ -1,9 +1,9 @@
-import { scenarios } from '$lib/components/info-graphics/integrated-system-plan/scenarios';
 import secondaryColourPalette from '$lib/theme/secondary-colour-palette';
 
 /**
  * How to define the model scenarios and pathways
  * - set constants for the model names
+ * - define the model logo paths
  * - define the scenarios for each model
  * - define the pathways for each model
  * - define the default pathway for each model
@@ -15,6 +15,10 @@ import secondaryColourPalette from '$lib/theme/secondary-colour-palette';
 
 export const AEMO_2022_ISP = 'aemo2022';
 export const AEMO_2024_ISP = 'aemo2024';
+
+export const modelLogoPath = {
+	AEMO: '/img/model-providers/aemo-logo.png' // https://gel.aemo.com.au/docs/branding/logo
+};
 
 export const modelScenarios = {
 	[AEMO_2024_ISP]: [

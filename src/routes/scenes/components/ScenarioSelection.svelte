@@ -120,42 +120,40 @@
 	}
 </script>
 
-<div class="border-t border-warm-grey">
-	<div class="grid grid-cols-3 divide-x divide-warm-grey px-6">
-		<div class="p-12 pl-0 col-span-2">
-			{#each modelOptions as model}
-				<div class="pb-6">
-					<h5 class="font-space uppercase text-sm text-mid-grey">{model.label}</h5>
-					<ul class="grid grid-cols-4 gap-3">
-						{#each model.scenarios as scenario}
-							{@const isFocussed = focusScenarioId === scenario.id}
-							{@const isChecked = selectedScenarios.includes(scenario.id)}
-							<li>
-								<ScenarioButton
-									{model}
-									{scenario}
-									isRadioMode={$isSingleSelectionMode}
-									{isChecked}
-									highlightBg={$isSingleSelectionMode ? isFocussed : isChecked}
-									highlightBorder={isFocussed}
-									on:click={() => handleScenarioButtonClick(scenario.id)}
-									on:change={(evt) => handleCheckBoxChange(scenario.id, evt.detail.checked)}
-								/>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			{/each}
-		</div>
-		<div class="p-12 pr-0">
-			{#if focusScenarioId}
-				<PathwaySelection
-					pathways={focusPathways}
-					selectedScenario={focusScenario}
-					selectedPathway={$singleSelectionData?.pathway}
-					on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
-				/>
-			{/if}
-		</div>
+<div class="grid grid-cols-3 divide-x divide-warm-grey border-b border-warm-grey">
+	<div class="p-10 md:p-16 col-span-2">
+		{#each modelOptions as model, i}
+			<div class:pb-8={i === 0}>
+				<h5 class="font-space uppercase text-sm text-mid-grey pl-1">{model.label}</h5>
+				<ul class="grid grid-cols-4 gap-3">
+					{#each model.scenarios as scenario}
+						{@const isFocussed = focusScenarioId === scenario.id}
+						{@const isChecked = selectedScenarios.includes(scenario.id)}
+						<li>
+							<ScenarioButton
+								{model}
+								{scenario}
+								isRadioMode={$isSingleSelectionMode}
+								{isChecked}
+								highlightBg={$isSingleSelectionMode ? isFocussed : isChecked}
+								highlightBorder={isFocussed}
+								on:click={() => handleScenarioButtonClick(scenario.id)}
+								on:change={(evt) => handleCheckBoxChange(scenario.id, evt.detail.checked)}
+							/>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		{/each}
+	</div>
+	<div class="p-10 md:p-16">
+		{#if focusScenarioId}
+			<PathwaySelection
+				pathways={focusPathways}
+				selectedScenario={focusScenario}
+				selectedPathway={$singleSelectionData?.pathway}
+				on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
+			/>
+		{/if}
 	</div>
 </div>
