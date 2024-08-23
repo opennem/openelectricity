@@ -1,7 +1,7 @@
 export const regionOptions = [
 	{
 		value: '_all',
-		label: 'NEM',
+		label: 'NEM Regions',
 		description: 'National Electricity Market',
 		colour: '#e34a33'
 	},

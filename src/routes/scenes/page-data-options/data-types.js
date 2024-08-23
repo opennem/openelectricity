@@ -27,6 +27,13 @@ export const dataTypeOptions = [
 	}
 ];
 
+export const dataTypeDisplayOptions = [
+	{ value: 'generation', label: 'Generation' },
+	{ value: 'emissions', label: 'Emissions' },
+	{ value: 'intensity', label: 'Intensity' },
+	{ value: 'capacity', label: 'Capacity' }
+];
+
 export const dataTypeDescription = dataTypeOptions.reduce(
 	(acc, curr) => ((acc[curr.value] = curr.description), acc),
 	{}

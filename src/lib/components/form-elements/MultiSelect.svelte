@@ -3,10 +3,14 @@
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 
+	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
+	import Checkbox from '$lib/components/form-elements/RadioBigButton.svelte';
 
+	/** @type {string[]} */
 	export let selected;
+	export let label = '';
 	export let options = [];
 	export let paddingY = 'py-1';
 	export let paddingX = 'px-2';
@@ -15,28 +19,22 @@
 
 	let showOptions = false;
 
-	$: selectedValue = selected && selected.value ? selected.value || selected : selected;
-
 	function handleSelect(option) {
+		console.log('option', option);
 		dispatch('change', option);
-		showOptions = false;
-	}
-
-	function findSelectedOption() {
-		const find = options.find((opt) => opt.value === selectedValue);
-		return find ? find.label : selectedValue;
+		// showOptions = false;
 	}
 </script>
 
 <div class="relative">
 	<button
-		on:click={() => (showOptions = !showOptions)}
+		on:click={() => (showOptions = true)}
 		use:clickoutside
 		on:clickoutside={() => (showOptions = false)}
 		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg hover:bg-warm-grey"
 	>
 		<span class="font-semibold mb-0 capitalize">
-			{selected && selected.label ? selected?.label : findSelectedOption()}
+			{label}
 		</span>
 		<IconChevronUpDown class="w-7 h-7" />
 	</button>
@@ -51,13 +49,21 @@
 				<li class="whitespace-nowrap">
 					<button
 						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
-						class:text-mid-grey={selectedValue !== opt.value}
-						class:text-black={selectedValue === opt.value}
+						class:text-mid-grey={!selected.includes(opt.value)}
+						class:text-black={selected.includes(opt.value)}
 						on:click={() => handleSelect(opt)}
 					>
 						<span class="capitalize">{opt.label}</span>
 
-						<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
+						<div
+							class="border rounded size-7"
+							class:border-mid-warm-grey={!selected.includes(opt.value)}
+							class:border-dark-grey={selected.includes(opt.value)}
+						>
+							{#if selected.includes(opt.value)}
+								<IconCheckMark />
+							{/if}
+						</div>
 					</button>
 				</li>
 			{/each}

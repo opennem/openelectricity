@@ -35,12 +35,24 @@
 	setContext('scenario-filters', filtersStore());
 
 	const dataVizStoreNames = [
-		'energy-data-viz',
-		'emissions-data-viz',
-		'intensity-data-viz',
-		'capacity-data-viz'
+		{
+			name: 'energy-data-viz',
+			chart: 'generation'
+		},
+		{
+			name: 'emissions-data-viz',
+			chart: 'emissions'
+		},
+		{
+			name: 'intensity-data-viz',
+			chart: 'intensity'
+		},
+		{
+			name: 'capacity-data-viz',
+			chart: 'capacity'
+		}
 	];
-	dataVizStoreNames.forEach((name) => {
+	dataVizStoreNames.forEach(({ name }) => {
 		setContext(name, dataVizStore());
 	});
 
@@ -50,6 +62,7 @@
 		isRegionViewSection,
 		selectedRegion,
 		selectedDataType,
+		selectedCharts,
 		singleSelectionData,
 		selectedFuelTechGroup,
 		multiSelectionData
@@ -58,9 +71,9 @@
 	const dataVizStores = dataVizStoreNames.reduce(
 		/**
 		 * @param {Object.<string, *>} acc
-		 * @param {string} name
-		 */ (acc, name) => {
-			acc[name] = getContext(name);
+		 * @param {{name: string}} curr
+		 */ (acc, curr) => {
+			acc[curr.name] = getContext(curr.name);
 			return acc;
 		},
 		{}
@@ -125,7 +138,7 @@
 					  })
 					: undefined;
 
-				dataVizStoreNames.forEach((name) => {
+				dataVizStoreNames.forEach(({ name }) => {
 					const store = dataVizStores[name];
 					switch (name) {
 						case 'energy-data-viz':
@@ -192,7 +205,7 @@
 					  })
 					: undefined;
 
-				dataVizStoreNames.forEach((name) => {
+				dataVizStoreNames.forEach(({ name }) => {
 					const store = dataVizStores[name];
 					switch (name) {
 						case 'energy-data-viz':
@@ -273,7 +286,7 @@
 
 			console.log('processedIntensity', processedIntensity);
 
-			dataVizStoreNames.forEach((name) => {
+			dataVizStoreNames.forEach(({ name }) => {
 				const store = dataVizStores[name];
 				switch (name) {
 					case 'energy-data-viz':
@@ -327,7 +340,7 @@
 	 * @param {TimeSeriesData | undefined} hoverData
 	 */
 	function updateStoreHover(hoverKey, hoverData) {
-		dataVizStoreNames.forEach((name) => {
+		dataVizStoreNames.forEach(({ name }) => {
 			const store = dataVizStores[name];
 			store.hoverTime.set(hoverData ? hoverData.time : undefined);
 			store.hoverKey.set(hoverKey);
@@ -403,13 +416,15 @@
 {:else}
 	<div class="max-w-none px-16 p-12 flex gap-12">
 		<div class="w-[50%]">
-			{#each dataVizStoreNames as name}
-				<ScenarioChart
-					store={dataVizStores[name]}
-					{hiddenRowNames}
-					on:mousemove={handleMousemove}
-					on:mouseout={handleMouseout}
-				/>
+			{#each dataVizStoreNames as { name, chart }}
+				{#if $selectedCharts.includes(chart)}
+					<ScenarioChart
+						store={dataVizStores[name]}
+						{hiddenRowNames}
+						on:mousemove={handleMousemove}
+						on:mouseout={handleMouseout}
+					/>
+				{/if}
 			{/each}
 		</div>
 

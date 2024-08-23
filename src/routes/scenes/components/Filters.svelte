@@ -4,12 +4,13 @@
 
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
 	import IconPlus from '$lib/icons/Plus.svelte';
 	import IconMinus from '$lib/icons/Minus.svelte';
 	import { formatFyTickX } from '$lib/utils/formatters';
 
 	import { viewSectionOptions } from '../page-data-options/view-sections';
-	import { dataTypeOptions } from '../page-data-options/data-types';
+	import { dataTypeDisplayOptions } from '../page-data-options/data-types';
 	import { regionOptions } from '../page-data-options/regions';
 	import { scenarioLabels } from '../page-data-options/descriptions';
 	import { modelOptions } from '../page-data-options/models';
@@ -25,6 +26,7 @@
 		singleSelectionScenario,
 		selectedViewSection,
 		selectedDataType,
+		selectedCharts,
 		selectedRegion,
 		selectedFuelTechGroup,
 		isTechnologyViewSection,
@@ -45,6 +47,7 @@
 
 	function init() {
 		$selectedViewSection = 'technology'; // scenario, technology, region
+		$selectedCharts = ['generation', 'emissions', 'intensity', 'capacity'];
 
 		const defaultModel = modelOptions[0];
 
@@ -131,6 +134,17 @@
 			store.reset();
 		});
 	}
+
+	/**
+	 * @param {string} dataType
+	 */
+	function handleDataTypeChange(dataType) {
+		if ($selectedCharts.includes(dataType)) {
+			$selectedCharts = $selectedCharts.filter((d) => d !== dataType);
+		} else {
+			$selectedCharts = [...$selectedCharts, dataType];
+		}
+	}
 </script>
 
 <div
@@ -146,19 +160,26 @@
 		/>
 
 		<div class="py-2 flex items-center gap-6 pl-10 relative z-40">
-			<!-- <FormSelect
-				options={dataTypeOptions}
-				selected={$selectedDataType}
-				on:change={(evt) => ($selectedDataType = evt.detail.value)}
-			/> -->
-
-			{#if $isTechnologyViewSection || $isScenarioViewSection}
-				<FormSelect
-					options={regionOptions}
-					selected={$selectedRegion}
-					on:change={(evt) => ($selectedRegion = evt.detail.value)}
+			<div class="flex items-center">
+				<FormMultiSelect
+					options={dataTypeDisplayOptions}
+					selected={$selectedCharts}
+					label="Charts"
+					paddingX="px-7"
+					paddingY="py-3"
+					on:change={(evt) => handleDataTypeChange(evt.detail.value)}
 				/>
-			{/if}
+
+				{#if $isTechnologyViewSection || $isScenarioViewSection}
+					<FormSelect
+						options={regionOptions}
+						selected={$selectedRegion}
+						paddingX="px-7"
+						paddingY="py-3"
+						on:change={(evt) => ($selectedRegion = evt.detail.value)}
+					/>
+				{/if}
+			</div>
 
 			<!-- <FormSelect
 				options={groupOptions}

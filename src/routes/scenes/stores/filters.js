@@ -12,6 +12,7 @@ export default function () {
 	/** @type {import('svelte/store').Writable<ScenarioViewSection | ''>} */
 	const selectedViewSection = writable('');
 	const selectedDataType = writable('');
+	const selectedCharts = writable([]);
 
 	const isTechnologyViewSection = derived(selectedViewSection, ($selectedViewSection) => {
 		return $selectedViewSection === 'technology';
@@ -56,6 +57,7 @@ export default function () {
 
 		selectedViewSection,
 		selectedDataType,
+		selectedCharts,
 
 		isTechnologyViewSection,
 		isScenarioViewSection,
