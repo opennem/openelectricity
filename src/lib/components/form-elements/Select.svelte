@@ -10,6 +10,7 @@
 	export let options = [];
 	export let paddingY = 'py-1';
 	export let paddingX = 'px-2';
+	export let selectedLabelClass = 'font-semibold';
 
 	const dispatch = createEventDispatcher();
 
@@ -35,7 +36,7 @@
 		on:clickoutside={() => (showOptions = false)}
 		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg hover:bg-warm-grey"
 	>
-		<span class="font-semibold mb-0 capitalize">
+		<span class="{selectedLabelClass} mb-0 capitalize">
 			{selected && selected.label ? selected?.label : findSelectedOption()}
 		</span>
 		<IconChevronUpDown class="w-7 h-7" />

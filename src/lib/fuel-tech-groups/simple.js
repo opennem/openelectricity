@@ -80,7 +80,7 @@ const order = [
 
 /** @type {FuelTechGroup} */
 export default Object.freeze({
-	label: 'Default',
+	label: 'Simplified',
 	value: 'simple',
 	fuelTechs: fuelTechMap,
 	order: order,
