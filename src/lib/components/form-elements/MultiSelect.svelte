@@ -59,9 +59,10 @@
 							class="border rounded size-7"
 							class:border-mid-warm-grey={!selected.includes(opt.value)}
 							class:border-dark-grey={selected.includes(opt.value)}
+							class:bg-warm-grey={selected.includes(opt.value)}
 						>
 							{#if selected.includes(opt.value)}
-								<IconCheckMark />
+								<IconCheckMark class="size-6" />
 							{/if}
 						</div>
 					</button>

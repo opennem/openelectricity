@@ -8,11 +8,18 @@
 /** @type {Object.<FuelTechCode, FuelTechCode[]>}} */
 const fuelTechMap = {
 	battery_charging: ['battery_charging', 'battery_VPP_charging', 'battery_distributed_charging'],
-	demand_response: ['demand_response'],
+	pumps: ['pumps'],
 	exports: ['exports'],
 
+	demand_response: ['demand_response'],
 	imports: ['imports'],
+
 	coal: ['coal_black', 'coal_brown'],
+
+	bioenergy: ['bioenergy', 'bioenergy_biomass', 'bioenergy_biogas'],
+
+	distillate: ['distillate'],
+
 	gas: [
 		'gas_ccgt',
 		'gas_ccgt_ccs',
@@ -22,10 +29,6 @@ const fuelTechMap = {
 		'gas_wcmg',
 		'gas_hydrogen'
 	],
-	distillate: ['distillate'],
-
-	bioenergy: ['bioenergy', 'bioenergy_biomass', 'bioenergy_biogas'],
-	hydro: ['hydro'],
 
 	battery: ['battery'],
 	battery_discharging: [
@@ -34,7 +37,10 @@ const fuelTechMap = {
 		'battery_distributed_discharging'
 	],
 
+	hydro: ['hydro'],
+
 	wind: ['wind', 'wind_offshore'],
+
 	solar_utility: ['solar_utility'],
 	solar_rooftop: ['solar_rooftop']
 };
@@ -51,6 +57,7 @@ const labels = {
 	gas: 'Gas',
 	bioenergy: 'Bioenergy',
 	hydro: 'Hydro',
+	pumps: 'Pumps',
 	wind: 'Wind',
 	solar_utility: 'Solar (Utility)',
 	solar_rooftop: 'Solar (Rooftop)'
@@ -59,21 +66,27 @@ const labels = {
 /** @type {FuelTechCode[]} */
 const order = [
 	'battery_charging',
+	'pumps',
 	'exports',
 
 	'demand_response',
 	'imports',
 
 	'coal',
+
 	'bioenergy',
+
 	'distillate',
+
 	'gas',
 
 	'battery',
 	'battery_discharging',
+
 	'hydro',
 
 	'wind',
+
 	'solar_utility',
 	'solar_rooftop'
 ];

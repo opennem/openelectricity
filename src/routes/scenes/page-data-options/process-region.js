@@ -5,8 +5,6 @@ import deepCopy from '$lib/utils/deep-copy';
 import { loadFuelTechs } from '$lib/fuel_techs.js';
 
 import { fuelTechMap, orderMap } from './groups-region';
-import { scenarioLabels } from './descriptions';
-import { scenarioColourMap } from './models';
 import { mutateDatesToStartOfYear } from './utils';
 
 /**
@@ -94,10 +92,12 @@ function combineHistoryProjection({ historicalTimeSeries, projectionTimeSeries }
  * 	historicalCapacityData: StatsData[],
  * 	historicalEmissionsData: StatsData[]
  * }[],
- * group: string}} param0
+ * includeBatteryAndLoads: boolean}} param0
  * @returns
  */
-function generation({ regionsData, group }) {
+function generation({ regionsData, includeBatteryAndLoads }) {
+	const group = includeBatteryAndLoads ? 'sources_loads' : 'sources_without_battery';
+
 	/********* processing Projection */
 	const projectionsStats = regionsData.map((region) => {
 		return {
@@ -117,17 +117,20 @@ function generation({ regionsData, group }) {
 	/** @type {StatsData[]} */
 	const regionProjectionStats = [];
 	projectionsStats.forEach((projection) => {
-		const dataLoads = projection.stats.data[0].projection.data;
-		const dataSources = projection.stats.data[1].projection.data;
-		const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
-
 		const netGenerationStats = deepCopy(projection.stats.data[0]);
 		netGenerationStats.id = `${projection.id}`;
 		netGenerationStats.code = null;
 		netGenerationStats.fuel_tech = null;
 		netGenerationStats.label = projection.label;
 		netGenerationStats.colour = projection.colour;
-		netGenerationStats.projection.data = netGenerationData;
+
+		if (includeBatteryAndLoads) {
+			const dataLoads = projection.stats.data[0].projection.data;
+			const dataSources = projection.stats.data[1].projection.data;
+			const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+
+			netGenerationStats.projection.data = netGenerationData;
+		}
 
 		regionProjectionStats.push(netGenerationStats);
 	});
@@ -163,17 +166,20 @@ function generation({ regionsData, group }) {
 	/** @type {StatsData[]} */
 	const regionHistoricalStats = [];
 	historicalStats.forEach((history) => {
-		const dataLoads = history.stats.data[0].history.data;
-		const dataSources = history.stats.data[1].history.data;
-		const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
-
 		const netGenerationStats = deepCopy(history.stats.data[0]);
 		netGenerationStats.id = `${history.id}`;
 		netGenerationStats.code = null;
 		netGenerationStats.fuel_tech = null;
 		netGenerationStats.label = history.label;
 		netGenerationStats.colour = history.colour;
-		netGenerationStats.history.data = netGenerationData;
+
+		if (includeBatteryAndLoads) {
+			const dataLoads = history.stats.data[0].history.data;
+			const dataSources = history.stats.data[1].history.data;
+			const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+
+			netGenerationStats.history.data = netGenerationData;
+		}
 
 		regionHistoricalStats.push(netGenerationStats);
 	});
@@ -214,10 +220,12 @@ function generation({ regionsData, group }) {
  * 	historicalCapacityData: StatsData[],
  * 	historicalEmissionsData: StatsData[]
  * }[],
- * group: string}} param0
+ * includeBatteryAndLoads: boolean}} param0
  * @returns
  */
-function capacity({ regionsData, group }) {
+function capacity({ regionsData, includeBatteryAndLoads }) {
+	const group = includeBatteryAndLoads ? 'sources_loads' : 'sources_without_battery';
+
 	/********* processing Projection */
 	const projectionsStats = regionsData.map((region) => {
 		return {
@@ -237,17 +245,20 @@ function capacity({ regionsData, group }) {
 	/** @type {StatsData[]} */
 	const regionProjectionStats = [];
 	projectionsStats.forEach((projection) => {
-		const dataLoads = projection.stats.data[0].projection.data;
-		const dataSources = projection.stats.data[1].projection.data;
-		const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
-
 		const netGenerationStats = deepCopy(projection.stats.data[0]);
 		netGenerationStats.id = `${projection.id}`;
 		netGenerationStats.code = null;
 		netGenerationStats.fuel_tech = null;
 		netGenerationStats.label = projection.label;
 		netGenerationStats.colour = projection.colour;
-		netGenerationStats.projection.data = netGenerationData;
+
+		if (includeBatteryAndLoads) {
+			const dataLoads = projection.stats.data[0].projection.data;
+			const dataSources = projection.stats.data[1].projection.data;
+			const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+
+			netGenerationStats.projection.data = netGenerationData;
+		}
 
 		regionProjectionStats.push(netGenerationStats);
 	});
@@ -283,17 +294,20 @@ function capacity({ regionsData, group }) {
 	/** @type {StatsData[]} */
 	const regionHistoricalStats = [];
 	historicalStats.forEach((history) => {
-		const dataLoads = history.stats.data[0].history.data;
-		const dataSources = history.stats.data[1].history.data;
-		const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
-
 		const netGenerationStats = deepCopy(history.stats.data[0]);
 		netGenerationStats.id = `${history.id}`;
 		netGenerationStats.code = null;
 		netGenerationStats.fuel_tech = null;
 		netGenerationStats.label = history.label;
 		netGenerationStats.colour = history.colour;
-		netGenerationStats.history.data = netGenerationData;
+
+		if (includeBatteryAndLoads) {
+			const dataLoads = history.stats.data[0].history.data;
+			const dataSources = history.stats.data[1].history.data;
+			const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+
+			netGenerationStats.history.data = netGenerationData;
+		}
 
 		regionHistoricalStats.push(netGenerationStats);
 	});

@@ -91,10 +91,12 @@ function combineHistoryProjection({ historicalTimeSeries, projectionTimeSeries }
  * 	projectionEnergyData: StatsData[],
  * 	projectionCapacityData: StatsData[],
  * 	projectionEmissionsData: StatsData[]
- * }[], history:  StatsData[], group: string}} param0
+ * }[], history:  StatsData[], includeBatteryAndLoads: boolean}} param0
  * @returns
  */
-function generation({ projections, history, group }) {
+function generation({ projections, history, includeBatteryAndLoads }) {
+	const group = includeBatteryAndLoads ? 'sources_loads' : 'sources_without_battery';
+
 	/********* processing Projection */
 	const projectionsStats = projections.map((projection) => {
 		return {
@@ -116,17 +118,19 @@ function generation({ projections, history, group }) {
 	const scenarioProjectionStats = [];
 
 	projectionsStats.forEach((projection) => {
-		const dataLoads = projection.stats.data[0].projection.data;
-		const dataSources = projection.stats.data[1].projection.data;
-		const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
-
 		const netGenerationStats = deepCopy(projection.stats.data[0]);
 		netGenerationStats.id = `${projection.id}`;
 		netGenerationStats.code = null;
 		netGenerationStats.fuel_tech = null;
 		netGenerationStats.label = scenarioLabels[projection.model][projection.scenario];
 		netGenerationStats.colour = scenarioColourMap[projection.id];
-		netGenerationStats.projection.data = netGenerationData;
+
+		if (includeBatteryAndLoads) {
+			const dataLoads = projection.stats.data[0].projection.data;
+			const dataSources = projection.stats.data[1].projection.data;
+			const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+			netGenerationStats.projection.data = netGenerationData;
+		}
 
 		scenarioProjectionStats.push(netGenerationStats);
 	});
@@ -149,16 +153,20 @@ function generation({ projections, history, group }) {
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
-	const dataLoads = historicalStats.data[0].history.data;
-	const dataSources = historicalStats.data[1].history.data;
-	const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
 	const netGenerationStats = deepCopy(historicalStats.data[0]);
 	netGenerationStats.id = `historical`;
 	netGenerationStats.code = null;
 	netGenerationStats.fuel_tech = null;
 	netGenerationStats.label = 'Historical';
 	netGenerationStats.colour = '#000';
-	netGenerationStats.history.data = netGenerationData;
+
+	if (includeBatteryAndLoads) {
+		const dataLoads = historicalStats.data[0].history.data;
+		const dataSources = historicalStats.data[1].history.data;
+		const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+
+		netGenerationStats.history.data = netGenerationData;
+	}
 
 	const historicalTimeSeries = new TimeSeries(
 		[netGenerationStats],
@@ -193,10 +201,12 @@ function generation({ projections, history, group }) {
  * 	projectionEnergyData: StatsData[],
  * 	projectionCapacityData: StatsData[],
  * 	projectionEmissionsData: StatsData[]
- * }[], history:  StatsData[], group: string}} param0
+ * }[], history:  StatsData[], includeBatteryAndLoads: boolean}} param0
  * @returns
  */
-function capacity({ projections, history, group }) {
+function capacity({ projections, history, includeBatteryAndLoads }) {
+	const group = includeBatteryAndLoads ? 'sources_loads' : 'sources_without_battery';
+
 	/********* processing Projection */
 	const projectionsStats = projections.map((projection) => {
 		return {
@@ -218,7 +228,8 @@ function capacity({ projections, history, group }) {
 
 	projectionsStats.forEach((projection) => {
 		// total_sources is the second data in the projection stats
-		const capacityStats = deepCopy(projection.stats.data[1]);
+		const index = includeBatteryAndLoads ? 1 : 0;
+		const capacityStats = deepCopy(projection.stats.data[index]);
 		capacityStats.id = `${projection.id}`;
 		capacityStats.code = null;
 		capacityStats.fuel_tech = null;
@@ -250,17 +261,21 @@ function capacity({ projections, history, group }) {
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
-	// total_sources is the second data in the historical stats
-	const dataLoads = historicalStats.data[0].history.data;
-	const dataSources = historicalStats.data[1].history.data;
-	const netCapacityData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
 	const netCapacityStats = deepCopy(historicalStats.data[0]);
 	netCapacityStats.id = `historical`;
 	netCapacityStats.code = null;
 	netCapacityStats.fuel_tech = null;
 	netCapacityStats.label = 'Historical';
 	netCapacityStats.colour = '#000';
-	netCapacityStats.history.data = netCapacityData;
+
+	if (includeBatteryAndLoads) {
+		// total_sources is the second data in the historical stats
+		const dataLoads = historicalStats.data[0].history.data;
+		const dataSources = historicalStats.data[1].history.data;
+		const netCapacityData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+
+		netCapacityStats.history.data = netCapacityData;
+	}
 
 	const historicalTimeSeries = new TimeSeries(
 		[netCapacityStats],

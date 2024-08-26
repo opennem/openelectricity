@@ -26,14 +26,15 @@ const fuelTechMap = {
 	gas_steam: ['gas_steam'],
 	gas_wcmg: ['gas_wcmg'],
 	gas_hydrogen: ['gas_hydrogen'],
-	// bioenergy_biomass: ['bioenergy_biomass'],
-	// bioenergy_biogas: ['bioenergy_biogas'],
-	bioenergy: ['bioenergy', 'bioenergy_biomass', 'bioenergy_biogas'],
+
+	bioenergy_biomass: ['bioenergy_biomass'],
+	bioenergy_biogas: ['bioenergy_biogas'],
+	bioenergy: ['bioenergy'],
 
 	distillate: ['distillate'],
 
 	hydro: ['hydro'],
-	// pumps: ['pumps'],
+	pumps: ['pumps'],
 	battery: ['battery'],
 	battery_discharging: ['battery_discharging'],
 	battery_VPP_discharging: ['battery_VPP_discharging'],
@@ -80,7 +81,7 @@ const labels = {
 	bioenergy: 'Bioenergy',
 
 	hydro: 'Hydro',
-	// pumps: 'Pumps',
+	pumps: 'Pumps',
 
 	wind: 'Wind',
 	wind_offshore: 'Wind (Offshore)',
@@ -95,7 +96,7 @@ const order = [
 	'battery_VPP_charging',
 	'battery_distributed_charging',
 
-	// 'pumps',
+	'pumps',
 
 	'exports',
 
@@ -106,8 +107,8 @@ const order = [
 	'coal_black',
 
 	'bioenergy',
-	// 'bioenergy_biogas',
-	// 'bioenergy_biomass',
+	'bioenergy_biogas',
+	'bioenergy_biomass',
 
 	'distillate',
 
@@ -117,7 +118,7 @@ const order = [
 	'gas_ocgt',
 	'gas_recip',
 	'gas_wcmg',
-	// 'gas_hydrogen',
+	'gas_hydrogen',
 
 	'battery',
 	'battery_discharging',

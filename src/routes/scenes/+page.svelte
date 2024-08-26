@@ -7,13 +7,16 @@
 	import LogoMark from '$lib/images/logo-mark.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';
+	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
 	import ScenarioChart from './components/ScenarioChart.svelte';
+	import TableHeader from './components/TableHeader.svelte';
 	import TableTechnology from './components/TableTechnology.svelte';
-	import TableScenario from './components/TableScenario.svelte';
+	import TableScenario from './components/TableScenarioRegion.svelte';
 	import ScenarioDetailed from './components/ScenarioDetailed.svelte';
+
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
 	import { regionOptions } from './page-data-options/regions';
@@ -65,7 +68,8 @@
 		selectedCharts,
 		singleSelectionData,
 		selectedFuelTechGroup,
-		multiSelectionData
+		multiSelectionData,
+		includeBatteryAndLoads
 	} = getContext('scenario-filters');
 
 	const dataVizStores = dataVizStoreNames.reduce(
@@ -111,7 +115,8 @@
 					projection: projectionEnergyData,
 					history: historyEnergyData,
 					group: $selectedFuelTechGroup,
-					colourReducer: $colourReducer
+					colourReducer: $colourReducer,
+					includeBatteryAndLoads: $includeBatteryAndLoads
 				});
 
 				seriesLoadsIds = processedEnergy.seriesLoadsIds;
@@ -128,7 +133,8 @@
 					projection: projectionCapacityData,
 					history: historyCapacityData,
 					group: $selectedFuelTechGroup,
-					colourReducer: $colourReducer
+					colourReducer: $colourReducer,
+					includeBatteryAndLoads: $includeBatteryAndLoads
 				});
 
 				const processedIntensity = processedEmissions
@@ -183,13 +189,15 @@
 				const processedEnergy = processScenario.generation({
 					projections: projectionsData,
 					history: historyEnergyData,
-					group: $selectedFuelTechGroup
+					// group: $selectedFuelTechGroup,
+					includeBatteryAndLoads: $includeBatteryAndLoads
 				});
 
 				const processedCapacity = processScenario.capacity({
 					projections: projectionsData,
 					history: historyCapacityData,
-					group: $selectedFuelTechGroup
+					// group: $selectedFuelTechGroup,
+					includeBatteryAndLoads: $includeBatteryAndLoads
 				});
 
 				const processedEmissions = processScenario.emissions({
@@ -258,14 +266,16 @@
 		}).then((regionsData) => {
 			const processedEnergy = processRegion.generation({
 				regionsData,
-				group: $selectedFuelTechGroup
+				// group: $selectedFuelTechGroup,
+				includeBatteryAndLoads: $includeBatteryAndLoads
 			});
 
 			console.log('processedEnergy', processedEnergy);
 
 			const processedCapacity = processRegion.capacity({
 				regionsData,
-				group: $selectedFuelTechGroup
+				// group: $selectedFuelTechGroup,
+				includeBatteryAndLoads: $includeBatteryAndLoads
 			});
 
 			console.log('processedCapacity', processedCapacity);
@@ -406,16 +416,24 @@
 
 <Filters />
 
-{#if fetching}
+<!-- {#if fetching}
 	<div
 		class="h-screen bg-light-warm-grey flex justify-center items-center"
 		transition:fade={{ duration: 250 }}
 	>
 		<LogoMark />
 	</div>
-{:else}
-	<div class="max-w-none px-16 p-12 flex gap-12">
-		<div class="w-[50%]">
+{:else} -->
+<div class="max-w-none px-16 p-12 flex gap-12">
+	<section class="w-[100%]">
+		{#if fetching}
+			<div
+				class="h-screen bg-light-warm-grey flex justify-center items-center"
+				transition:fade={{ duration: 250 }}
+			>
+				<LogoMark />
+			</div>
+		{:else}
 			{#each dataVizStoreNames as { name, chart }}
 				{#if $selectedCharts.includes(chart)}
 					<ScenarioChart
@@ -426,35 +444,37 @@
 					/>
 				{/if}
 			{/each}
-		</div>
+		{/if}
+	</section>
 
-		<div class="w-[50%]">
-			{#if $isTechnologyViewSection}
-				<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
-			{/if}
-			{#if $isScenarioViewSection}
-				<TableScenario
-					groupOptions={scenarioGroups}
-					{seriesLoadsIds}
-					{hiddenRowNames}
-					on:row-click={toggleRow}
-				/>
-			{/if}
-			{#if $isRegionViewSection}
-				<TableScenario
-					groupOptions={regionGroups}
-					{seriesLoadsIds}
-					{hiddenRowNames}
-					on:row-click={toggleRow}
-				/>
-			{/if}
-		</div>
-	</div>
+	<section class="max-w-[450px]">
+		{#if $isTechnologyViewSection}
+			<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
+		{/if}
+		{#if $isScenarioViewSection}
+			<TableScenario
+				title="Scenario"
+				groupOptions={scenarioGroups}
+				{seriesLoadsIds}
+				{hiddenRowNames}
+				on:row-click={toggleRow}
+			/>
+		{/if}
+		{#if $isRegionViewSection}
+			<TableScenario
+				title="Region"
+				groupOptions={regionGroups}
+				{seriesLoadsIds}
+				{hiddenRowNames}
+				on:row-click={toggleRow}
+			/>
+		{/if}
+	</section>
+</div>
 
-	<div class="container max-w-none lg:container px-6 mx-auto md:grid grid-cols-2">
-		<ScenarioDetailed on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
-	</div>
-{/if}
+<div class="container max-w-none lg:container px-6 mx-auto md:grid grid-cols-2">
+	<ScenarioDetailed on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+</div>
 
 <ArticlesSection
 	analysisArticles={articles.filter(

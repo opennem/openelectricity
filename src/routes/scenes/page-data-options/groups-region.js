@@ -1,4 +1,5 @@
 import sourcesLoadsGroup from '$lib/fuel-tech-groups/sources-loads';
+import sourcesWithoutBattery from '$lib/fuel-tech-groups/sources-without-battery';
 
 // Customise group labels
 export const netGroup = {
@@ -6,7 +7,7 @@ export const netGroup = {
 	label: 'Net Generation'
 };
 
-export const groups = [netGroup];
+export const groups = [netGroup, sourcesWithoutBattery];
 export const groupOptions = groups.map((group) => ({
 	label: group.label,
 	value: group.value

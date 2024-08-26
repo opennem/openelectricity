@@ -14,6 +14,8 @@ export default function () {
 	const selectedDataType = writable('');
 	const selectedCharts = writable([]);
 
+	const includeBatteryAndLoads = writable(true);
+
 	const isTechnologyViewSection = derived(selectedViewSection, ($selectedViewSection) => {
 		return $selectedViewSection === 'technology';
 	});
@@ -61,6 +63,8 @@ export default function () {
 
 		isTechnologyViewSection,
 		isScenarioViewSection,
-		isRegionViewSection
+		isRegionViewSection,
+
+		includeBatteryAndLoads
 	};
 }

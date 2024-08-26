@@ -4,6 +4,7 @@ import parseInterval from '$lib/utils/intervals';
 
 import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
 import { fuelTechMap, orderMap } from './groups-technology';
+import excludeBatteryAndLoads from './exclude-battery-and-loads';
 import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils';
 
 /**
@@ -103,14 +104,19 @@ function combineHistoryProjection({
  * history: StatsData[],
  * group: string,
  * colourReducer: *
+ * includeBatteryAndLoads: boolean
  * }} param0
  * @returns {ProcessedDataViz}
  */
-function generation({ projection, history, group, colourReducer }) {
+function generation({ projection, history, group, colourReducer, includeBatteryAndLoads }) {
+	const fuelTechs = includeBatteryAndLoads
+		? fuelTechMap[group]
+		: excludeBatteryAndLoads(fuelTechMap[group]);
+
 	/********* processing Projection */
 	const projectionStats = new Statistic(projection, 'projection', 'GWh')
 		.invertValues(loadFuelTechs)
-		.group(fuelTechMap[group], loadFuelTechs)
+		.group(fuelTechs, loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
 	const projectionLoadSeries = getLoadIds(projectionStats.data);
@@ -131,7 +137,7 @@ function generation({ projection, history, group, colourReducer }) {
 	/********* processing Historical */
 	const historicalStats = new Statistic(history, 'history', 'GWh')
 		.invertValues(loadFuelTechs)
-		.group(fuelTechMap[group], loadFuelTechs)
+		.group(fuelTechs, loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
 	const historicalLoadSeries = getLoadIds(historicalStats.data);
@@ -166,14 +172,19 @@ function generation({ projection, history, group, colourReducer }) {
  * history: StatsData[],
  * group: string,
  * colourReducer: *
+ * includeBatteryAndLoads: boolean
  * }} param0
  * @returns {ProcessedDataViz}
  */
-function capacity({ projection, history, group, colourReducer }) {
+function capacity({ projection, history, group, colourReducer, includeBatteryAndLoads }) {
+	const fuelTechs = includeBatteryAndLoads
+		? fuelTechMap[group]
+		: excludeBatteryAndLoads(fuelTechMap[group]);
+
 	/********* processing Projection */
 	const projectionStats = new Statistic(projection, 'projection', 'MW')
 		.invertValues(loadFuelTechs)
-		.group(fuelTechMap[group], loadFuelTechs)
+		.group(fuelTechs, loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
 	const projectionLoadSeries = getLoadIds(projectionStats.data);
@@ -195,7 +206,7 @@ function capacity({ projection, history, group, colourReducer }) {
 	/********* processing Historical */
 	const historicalStats = new Statistic(history, 'history', 'MW')
 		.invertValues(loadFuelTechs)
-		.group(fuelTechMap[group], loadFuelTechs)
+		.group(fuelTechs, loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
 	const historicalLoadSeries = getLoadIds(historicalStats.data);

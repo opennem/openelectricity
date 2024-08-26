@@ -4,6 +4,7 @@
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { formatValue } from '$lib/utils/formatters';
 	import { groupOptions } from '../page-data-options/groups-technology';
+	import TableHeader from './TableHeader.svelte';
 
 	/** @type {string[]} */
 	export let seriesLoadsIds = [];
@@ -11,7 +12,7 @@
 	export let hiddenRowNames = [];
 
 	const dispatch = createEventDispatcher();
-	const { selectedFuelTechGroup } = getContext('scenario-filters');
+	const { selectedFuelTechGroup, includeBatteryAndLoads } = getContext('scenario-filters');
 	const {
 		seriesNames: energySeriesNames,
 		seriesLabels: energySeriesLabels,
@@ -28,6 +29,8 @@
 	} = getContext('capacity-data-viz');
 
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
+
+	$: hoverTime = $energyHoverData ? $energyHoverData['time'] : null;
 
 	$: sourceNames = $energySeriesNames
 		.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
@@ -105,11 +108,17 @@
 
 <svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
 
-<div class="sticky top-6 flex flex-col gap-12 border border-warm-grey">
-	<table class="w-full table-fixed">
+<div class="sticky top-10 flex flex-col gap-2">
+	<TableHeader
+		includeBatteryAndLoads={$includeBatteryAndLoads}
+		{hoverTime}
+		on:change={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+	/>
+
+	<table class="w-full table-fixed border border-warm-grey mb-8">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
 			<tr>
-				<th class="w-[50%]">
+				<th class="w-[60%]">
 					<div class="flex items-center gap-4">
 						<span class="block text-dark-grey text-sm font-semibold ml-3">Technology</span>
 						<div
@@ -128,13 +137,13 @@
 				</th>
 				<th>
 					<div class="flex flex-col items-end">
-						<span class="block">Generation</span>
+						<span class="block text-xs">Generation</span>
 						<small class="font-light text-xxs">GWh</small>
 					</div>
 				</th>
 				<th>
 					<div class="flex flex-col items-end mr-3">
-						<span class="block">Capacity</span>
+						<span class="block text-xs">Capacity</span>
 						<small class="font-light text-xxs">MW</small>
 					</div>
 				</th>
@@ -198,76 +207,86 @@
 			{/each}
 		</tbody>
 
-		<thead>
-			<tr>
-				<th class="border-b border-warm-grey">
-					<span class="ml-3"> Loads </span>
-				</th>
-				<th class="border-b border-warm-grey">
-					<div class="flex flex-col items-end">
-						{formatValue(energyLoadsTotal)}
-					</div>
-				</th>
-				<th class="border-b border-warm-grey" />
-			</tr>
-		</thead>
-
-		<tbody>
-			{#each loadNames as name, i}
-				<tr
-					on:click={() => handleRowClick(name)}
-					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
-				>
-					<td
-						class:!pb-8={i === sourceNames.length - 1}
-						class:opacity-50={hiddenRowNames.includes(name)}
-						class="px-2 py-1.5"
-					>
-						<div class="flex items-center gap-3 ml-3">
-							{#if hiddenRowNames.includes(name)}
-								<div
-									class="w-4 h-4 border rounded-full bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
-								/>
-							{:else}
-								<div
-									class="w-4 h-4 border rounded-full"
-									style:background-color={$energySeriesColours[name]}
-									style:border-color={darken($energySeriesColours[name])}
-								/>
-							{/if}
-							<span>
-								{$energySeriesLabels[name]}
-							</span>
-						</div>
-					</td>
-					<td class="px-2 py-1.5">
+		{#if loadNames.length > 0}
+			<thead>
+				<tr>
+					<th class="border-b border-warm-grey">
+						<span class="ml-3"> Loads </span>
+					</th>
+					<th class="border-b border-warm-grey">
 						<div class="flex flex-col items-end">
-							{$energyHoverData ? formatValue($energyHoverData[name]) : ''}
+							{formatValue(energyLoadsTotal)}
 						</div>
-					</td>
-					<td class="px-2 py-1.5">
-						<div class="flex flex-col items-end mr-3">
-							{$capacityHoverData ? formatValue($capacityHoverData[name]) : ''}
-						</div>
-					</td>
+					</th>
+					<th class="border-b border-warm-grey" />
 				</tr>
-			{/each}
-		</tbody>
+			</thead>
+
+			<tbody>
+				{#each loadNames as name, i}
+					<tr
+						on:click={() => handleRowClick(name)}
+						class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
+					>
+						<td
+							class:!pb-8={i === sourceNames.length - 1}
+							class:opacity-50={hiddenRowNames.includes(name)}
+							class="px-2 py-1.5"
+						>
+							<div class="flex items-center gap-3 ml-3">
+								{#if hiddenRowNames.includes(name)}
+									<div
+										class="w-4 h-4 border rounded-full bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+									/>
+								{:else}
+									<div
+										class="w-4 h-4 border rounded-full"
+										style:background-color={$energySeriesColours[name]}
+										style:border-color={darken($energySeriesColours[name])}
+									/>
+								{/if}
+								<span>
+									{$energySeriesLabels[name]}
+								</span>
+							</div>
+						</td>
+						<td class="px-2 py-1.5">
+							<div class="flex flex-col items-end">
+								{$energyHoverData ? formatValue($energyHoverData[name]) : ''}
+							</div>
+						</td>
+						<td class="px-2 py-1.5">
+							<div class="flex flex-col items-end mr-3">
+								{$capacityHoverData ? formatValue($capacityHoverData[name]) : ''}
+							</div>
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		{/if}
+
+		<tfoot>
+			<tr>
+				<td class="h-4" />
+			</tr>
+		</tfoot>
 	</table>
 
-	<table class="w-full table-fixed">
+	<table class="w-full table-fixed border border-warm-grey">
 		<thead class="main-thead bg-light-warm-grey border-b border-t border-warm-grey">
 			<tr>
-				<th class="w-[50%]" />
+				<th class="w-[60%]">
+					<span class="block text-dark-grey text-sm font-semibold ml-3">Impact</span>
+				</th>
 				<th>
 					<div class="flex flex-col items-end">
-						<span class="block">Volume</span>
+						<span class="block text-xs">Volume</span>
 						<small class="font-light text-xxs">tCO2e</small>
 					</div>
 				</th>
 				<th>
 					<div class="flex flex-col items-end mr-3">
-						<span class="block">Intensity</span>
+						<span class="block text-xs">Intensity</span>
 						<small class="font-light text-xxs">kgCO2e/MWh</small>
 					</div>
 				</th>
@@ -275,7 +294,7 @@
 		</thead>
 		<tbody>
 			<tr class="text-sm">
-				<th class="px-2 py-1.5">
+				<th class="px-2 !py-6">
 					<div class="flex items-center gap-3 ml-3">
 						<div
 							class="w-4 h-4 border rounded-full"
@@ -285,12 +304,12 @@
 					</div>
 				</th>
 
-				<th class="px-2 py-1.5">
+				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end">
 						{$emissionsHoverData ? formatValue($emissionsHoverData['au.emissions.total']) : ''}
 					</div>
 				</th>
-				<th class="px-2 py-1.5">
+				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end mr-3">
 						{$intensityHoverData ? formatValue($intensityHoverData['au.emission_intensity']) : ''}
 					</div>

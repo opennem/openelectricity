@@ -1,17 +1,16 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { formatValue } from '$lib/utils/formatters';
+	import TableHeader from './TableHeader.svelte';
 
 	/** @type {string[]} */
 	export let seriesLoadsIds = [];
 	/** @type {string[]} */
 	export let hiddenRowNames = [];
-	/** @type {{label: string, value: string}[]} */
-	export let groupOptions = [];
+	export let title = '';
 
 	const dispatch = createEventDispatcher();
-	const { selectedFuelTechGroup } = getContext('scenario-filters');
+	const { includeBatteryAndLoads } = getContext('scenario-filters');
 	const {
 		seriesNames: energySeriesNames,
 		seriesLabels: energySeriesLabels,
@@ -29,45 +28,11 @@
 
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
 
+	$: hoverTime = $energyHoverData ? $energyHoverData['time'] : null;
+
 	$: sourceNames = $energySeriesNames
 		.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
 		.reverse();
-
-	$: loadNames = $energySeriesNames
-		.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
-		.reverse();
-
-	$: energySourcesTotal = $energyHoverData
-		? sourceNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyHoverData[id],
-				0
-		  )
-		: 0;
-	$: energyLoadsTotal = $energyHoverData
-		? loadNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyHoverData[id],
-				0
-		  )
-		: 0;
-
-	$: capacitySourcesTotal = $capacityHoverData
-		? sourceNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $capacityHoverData[id],
-				0
-		  )
-		: 0;
 
 	let isMetaPressed = false;
 
@@ -97,22 +62,18 @@
 
 <svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
 
-<div class="sticky top-6 flex flex-col gap-12 border border-warm-grey">
-	<table class="w-full table-fixed">
+<div class="sticky top-10 flex flex-col gap-2">
+	<TableHeader
+		includeBatteryAndLoads={$includeBatteryAndLoads}
+		{hoverTime}
+		on:change={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+	/>
+
+	<table class="w-full table-fixed border border-warm-grey">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
 			<tr>
-				<th class="w-[50%]">
-					<div
-						class="border border-mid-warm-grey text-xs inline-block rounded-md whitespace-nowrap"
-					>
-						<FormSelect
-							paddingY="py-2"
-							paddingX="px-4"
-							options={groupOptions}
-							selected={$selectedFuelTechGroup}
-							on:change={(evt) => ($selectedFuelTechGroup = evt.detail.value)}
-						/>
-					</div>
+				<th class="w-[40%]">
+					<span class="block text-dark-grey text-sm font-semibold ml-3">{title}</span>
 				</th>
 				<th>
 					<div class="flex flex-col items-end">
