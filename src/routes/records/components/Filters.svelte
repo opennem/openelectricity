@@ -2,12 +2,14 @@
 	import { createEventDispatcher } from 'svelte';
 	import CheckboxTree from '$lib/components/form-elements/CheckboxTree.svelte';
 	import Switch from '$lib/components/Switch.svelte';
+	import Radio from '$lib/components/form-elements/Radio.svelte';
 
 	import {
 		regionOptions,
 		aggregateOptions,
 		periodOptions,
-		fuelTechOptions
+		fuelTechOptions,
+		metricOptions
 	} from '../page-data-options/filters.js';
 
 	const dispatch = createEventDispatcher();
@@ -16,8 +18,11 @@
 	export let initCheckedPeriods;
 	export let initRecordIdSearch;
 	export let initCheckedFuelTechs;
+	export let initCheckedAggregates;
+	// export let initCheckedMetrics;
+	export let initSelectedMetric;
 
-	let filterMode = 'text'; // or checkboxes
+	let filterMode = 'checkboxes'; // text or checkboxes
 
 	/** @type {string[]} */
 	let checkedRegions = initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
@@ -26,13 +31,18 @@
 	let indeterminateRegions = [];
 
 	/** @type {string[]} */
-	let checkedAggregates = ['low', 'high'];
-
-	/** @type {string[]} */
 	let checkedPeriods = initCheckedPeriods || periodOptions.map((i) => i.value);
 
 	/** @type {string[]} */
 	let checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((i) => i.value);
+
+	/** @type {string[]} */
+	let checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
+
+	// /** @type {string[]} */
+	// let checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
+
+	let selectedMetric = initSelectedMetric || 'all';
 
 	let recordIdSearch = initRecordIdSearch || '';
 
@@ -40,6 +50,8 @@
 		checkedRegions = initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 		checkedPeriods = initCheckedPeriods || periodOptions.map((i) => i.value);
 		checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((i) => i.value);
+		checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
+		selectedMetric = initSelectedMetric || 'all';
 		indeterminateRegions = [];
 	} else {
 		recordIdSearch = initRecordIdSearch || '';
@@ -89,19 +101,57 @@
 		}
 	}
 
+	function handleAggregateChange(value) {
+		if (checkedAggregates.includes(value)) {
+			if (checkedAggregates.length === 1) {
+				checkedAggregates = aggregateOptions.map((i) => i.value);
+			} else {
+				checkedAggregates = checkedAggregates.filter((i) => i !== value);
+			}
+		} else {
+			checkedAggregates = [...checkedAggregates, value];
+		}
+	}
+
+	function handleMetricChange(value) {
+		if (checkedMetrics.includes(value)) {
+			if (checkedMetrics.length === 1) {
+				checkedMetrics = metricOptions.map((i) => i.value);
+			} else {
+				checkedMetrics = checkedMetrics.filter((i) => i !== value);
+			}
+		} else {
+			checkedMetrics = [...checkedMetrics, value];
+		}
+	}
+
 	function handleApplyClick() {
 		// console.log('Apply clicked', checkedRegions);
-		dispatch('apply', { checkedRegions, checkedPeriods, recordIdSearch, checkedFuelTechs });
+		dispatchApply();
 	}
 
 	function handleResetClick() {
 		checkedRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 		checkedPeriods = periodOptions.map((i) => i.value);
 		checkedFuelTechs = fuelTechOptions.map((i) => i.value);
+		checkedAggregates = aggregateOptions.map((i) => i.value);
+		// checkedMetrics = metricOptions.map((i) => i.value);
+		selectedMetric = 'all';
 		indeterminateRegions = [];
 		recordIdSearch = '';
 
-		dispatch('apply', { checkedRegions, checkedPeriods, recordIdSearch, checkedFuelTechs });
+		dispatchApply();
+	}
+
+	function dispatchApply() {
+		dispatch('apply', {
+			checkedRegions,
+			checkedPeriods,
+			recordIdSearch,
+			checkedFuelTechs,
+			checkedAggregates,
+			selectedMetric
+		});
 	}
 </script>
 
@@ -158,6 +208,41 @@
 				checked={checkedPeriods}
 				on:change={(evt) => handlePeriodChange(evt.detail.node)}
 			/>
+		</div>
+
+		<div class="px-10">
+			<h5>Aggregate</h5>
+			<CheckboxTree
+				nodes={aggregateOptions}
+				checked={checkedAggregates}
+				on:change={(evt) => handleAggregateChange(evt.detail.node)}
+			/>
+		</div>
+
+		<div class="px-10">
+			<h5>Metric</h5>
+			<!-- <CheckboxTree
+				nodes={metricOptions}
+				checked={checkedMetrics}
+				on:change={(evt) => handleMetricChange(evt.detail.node)}
+			/> -->
+
+			<Radio
+				name="metric"
+				label="All"
+				value="all"
+				checked={selectedMetric}
+				on:change={() => (selectedMetric = 'all')}
+			/>
+			{#each metricOptions as metric}
+				<Radio
+					name="metric"
+					label={metric.label}
+					value={metric.value}
+					checked={selectedMetric}
+					on:change={() => (selectedMetric = metric.value)}
+				/>
+			{/each}
 		</div>
 	</div>
 {/if}

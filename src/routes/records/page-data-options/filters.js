@@ -128,4 +128,27 @@ const fuelTechOptions = [
 	}
 ];
 
-export { regionOptions, aggregateOptions, periodOptions, fuelTechOptions };
+const metricOptions = [
+	{
+		value: 'power',
+		label: 'Power'
+	},
+	{
+		value: 'energy',
+		label: 'Energy'
+	},
+	{
+		value: 'demand',
+		label: 'Demand'
+	},
+	{
+		value: 'price',
+		label: 'Price'
+	},
+	{
+		value: 'emissions',
+		label: 'Emissions'
+	}
+];
+
+export { regionOptions, aggregateOptions, periodOptions, fuelTechOptions, metricOptions };

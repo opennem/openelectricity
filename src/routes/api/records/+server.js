@@ -14,7 +14,9 @@ export async function GET({ url, fetch, setHeaders }) {
 	const regions = searchParams.get('regions');
 	const periods = searchParams.get('periods');
 	const recordIdFilter = searchParams.get('recordIdFilter');
-	const fuelTechs = url.searchParams.get('fuelTechs');
+	const fuelTechs = searchParams.get('fuelTechs');
+	const aggregates = searchParams.get('aggregates');
+	const metric = searchParams.get('metric');
 
 	let dateParams = '';
 	let pageParams = '';
@@ -22,6 +24,8 @@ export async function GET({ url, fetch, setHeaders }) {
 	let periodParms = '';
 	let recordIdFilterParams = '';
 	let fuelTechParams = '';
+	let aggregateParams = '';
+	let metricParams = '';
 
 	// const f = 'yyyy-MM-dd';
 
@@ -42,6 +46,17 @@ export async function GET({ url, fetch, setHeaders }) {
 			.split(',')
 			.map((i) => `&period=${i}`)
 			.join('');
+	}
+
+	if (aggregates) {
+		aggregateParams = aggregates
+			.split(',')
+			.map((i) => `&aggregate=${i}`)
+			.join('');
+	}
+
+	if (metric) {
+		metricParams = metric === 'all' ? '' : `&metric=${metric}`;
 	}
 
 	if (fuelTechs) {
@@ -98,7 +113,7 @@ export async function GET({ url, fetch, setHeaders }) {
 
 	// const metricParams =
 	// '&metric=generation&metric=emissions&metric=price&metric=demand&metric=energy';
-	const metricParams = '';
+	// const metricParams = '';
 	// const fuelTechs = [
 	// 	'coal',
 	// 	'gas',
@@ -112,7 +127,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	// ];
 	// const fuelTechs = [];
 	// const fuelTechParams = fuelTechs.map((tech) => `&fuel_tech=${tech}`).join('');
-	const path = `${PUBLIC_RECORDS_API}?limit=100${fuelTechParams}${metricParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}`;
+	const path = `${PUBLIC_RECORDS_API}?limit=100${fuelTechParams}${metricParams}${aggregateParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}`;
 
 	console.log('path', path);
 	const response = await fetch(path);
