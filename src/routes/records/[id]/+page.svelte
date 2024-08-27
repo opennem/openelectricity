@@ -96,6 +96,15 @@
 	$: hasIssue = (id) => {
 		return issueInstanceIds.includes(id);
 	};
+
+	// remove seconds and time difference from timestamp
+	function removeSeconds(timestamp) {
+		return timestamp.slice(0, -9);
+	}
+
+	const auNumber = new Intl.NumberFormat('en-AU', {
+		maximumFractionDigits: 0
+	});
 </script>
 
 <header class=" my-12 mx-10 pb-12 flex justify-center border-b border-mid-warm-grey items-center">
@@ -135,17 +144,22 @@
 	<RecordHistoryChart data={[...timeSeriesData].reverse()} {issueInstanceIds} />
 
 	<div class="p-10">
-		<table class="w-full text-xs border p-2">
+		<table class="w-full text-xs border border-mid-warm-grey p-2">
 			<thead>
-				<tr class="border-b">
+				<tr class="border-b border-mid-warm-grey">
+					<th colspan="2" class="!text-center">Current Record</th>
+					<th />
+				</tr>
+			</thead>
+
+			<thead>
+				<tr class="border-b border-mid-warm-grey">
 					<!-- <th>No</th> -->
 					<th>Interval</th>
-
-					<th>Description</th>
-					<th>Value</th>
+					<th class="!text-right">Value & unit</th>
 
 					<!-- <th>Significance</th> -->
-					<th>Instance</th>
+					<th class="!text-right">Instance</th>
 					<!-- <th /> -->
 				</tr>
 			</thead>
@@ -154,16 +168,21 @@
 					<tr
 						class:bg-error-red={hasIssue(record.instance_id)}
 						class:text-white={hasIssue(record.instance_id)}
-						class="border-b hover:bg-mid-warm-grey"
+						class="border-b border-mid-warm-grey hover:bg-warm-grey"
 					>
 						<!-- <td>{currentStartRecordIndex + i}</td> -->
-						<td>{record.interval}</td>
-
-						<td>{record.description}</td>
-						<td class="font-mono">{record.value}</td>
+						<td class="font-mono text-dark-grey">
+							{removeSeconds(record.interval)}
+						</td>
+						<td>
+							<div class="flex justify-end gap-1">
+								<span class="font-mono text-black">{auNumber.format(record.value)}</span>
+								<span class="text-mid-grey">{record.value_unit}</span>
+							</div>
+						</td>
 
 						<!-- <td>{record.significance}</td> -->
-						<td>{record.instance_id}</td>
+						<td class="!text-right">{record.instance_id}</td>
 
 						<!-- <td>
 							<span class="text-xxs italic">Link to Tracker Data</span>
@@ -178,6 +197,6 @@
 <style>
 	td,
 	th {
-		@apply border-r p-1 align-top;
+		@apply border-r border-mid-warm-grey p-1 align-top text-left;
 	}
 </style>
