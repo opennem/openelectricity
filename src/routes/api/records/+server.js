@@ -16,7 +16,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	const recordIdFilter = searchParams.get('recordIdFilter');
 	const fuelTechs = searchParams.get('fuelTechs');
 	const aggregates = searchParams.get('aggregates');
-	const metric = searchParams.get('metric');
+	const metrics = searchParams.get('metrics');
 
 	let dateParams = '';
 	let pageParams = '';
@@ -54,9 +54,11 @@ export async function GET({ url, fetch, setHeaders }) {
 			.map((i) => `&aggregate=${i}`)
 			.join('');
 	}
-
-	if (metric) {
-		metricParams = metric === 'all' ? '' : `&metric=${metric}`;
+	if (metrics) {
+		metricParams = metrics
+			.split(',')
+			.map((i) => `&metric=${i}`)
+			.join('');
 	}
 
 	if (fuelTechs) {

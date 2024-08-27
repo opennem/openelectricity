@@ -25,7 +25,7 @@
 </script>
 
 {#key checked}
-	<ul class="pl-9">
+	<ul class="pl-3">
 		{#each nodes as node (node.value)}
 			<li>
 				<FormCheckbox
