@@ -135,7 +135,7 @@
 	}
 </script>
 
-<header class="my-24 flex justify-center">
+<header class="my-24 flex flex-col w-1/2 mx-auto text-center gap-6">
 	<!-- <Filters
 		initCheckedRegions={checkedRegions}
 		initCheckedPeriods={checkedPeriods}
@@ -149,7 +149,11 @@
 	<img
 		src="https://upload.wikimedia.org/wikipedia/commons/1/19/Under_construction_graphic.gif"
 		alt="Under construction"
+		class="w-1/2 mx-auto"
 	/>
+
+	<a href="/records/all">All records</a>
+	<a href="/records/record_ids">Record IDs</a>
 </header>
 
 <style>

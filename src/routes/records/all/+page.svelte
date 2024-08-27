@@ -187,6 +187,15 @@
 
 		updateCurrentPage(1);
 	}
+
+	// remove seconds and time difference from timestamp
+	function removeSeconds(timestamp) {
+		return timestamp.slice(0, -9);
+	}
+
+	const auNumber = new Intl.NumberFormat('en-AU', {
+		maximumFractionDigits: 0
+	});
 </script>
 
 <header class=" mt-12">
@@ -246,21 +255,28 @@
 		</div>
 	</div>
 	<div class="py-5 px-10">
-		<table class="w-full text-xs border p-2">
+		<table class="w-full text-xs border border-mid-warm-grey p-2">
 			<thead>
-				<tr class="border-b">
-					<th>No</th>
-					<th>Interval</th>
-					<th>Period</th>
-
+				<tr class="border-b border-mid-warm-grey">
+					<th colspan="2" />
+					<th colspan="2" class="!text-center">Current Record</th>
+					<th colspan="8" />
+				</tr>
+			</thead>
+			<thead>
+				<tr class="border-b border-mid-warm-grey">
+					<th>No.</th>
 					<th>Record ID</th>
-					<th>Description</th>
-					<th>Value</th>
-					<th>Value Unit</th>
+
+					<th>Interval</th>
+					<th class="!text-right">Value & unit</th>
+
 					<th>Network</th>
 					<th>Region</th>
 					<th>Fuel Tech</th>
+
 					<th>Metric</th>
+					<th>Period</th>
 					<th>Aggregate</th>
 					<th>Significance</th>
 					<th />
@@ -268,27 +284,32 @@
 			</thead>
 			<tbody>
 				{#each recordsData as record, i}
-					<tr class="border-b hover:bg-mid-warm-grey">
+					<tr class="border-b border-mid-warm-grey hover:bg-warm-grey">
 						<td>{currentStartRecordIndex + i}</td>
-						<td>{record.interval}</td>
-						<td>{record.period}</td>
-
 						<td>{record.record_id}</td>
-						<td>{record.description}</td>
-						<td class="font-mono">{record.value}</td>
-						<td>{record.value_unit}</td>
+
+						<td>
+							{removeSeconds(record.interval)}
+						</td>
+						<td>
+							<div class="flex justify-end gap-1">
+								<span class="font-mono text-black">{auNumber.format(record.value)}</span>
+								<span class="text-mid-grey">{record.value_unit}</span>
+							</div>
+						</td>
 
 						<td>{record.network_id}</td>
-						<td>{record.network_region || ''}</td>
+						<td>{record.network_region || 'all'}</td>
 						<td>{record.fueltech_id || ''}</td>
 
+						<td>{record.period}</td>
 						<td>{record.metric}</td>
 						<td>{record.aggregate}</td>
 						<td>{record.significance}</td>
 
 						<td>
 							<a
-								class="block m-1 p-1 border text-mid-grey bg-light-warm-grey"
+								class="p-1 text-xxs border border-mid-warm-grey text-mid-grey bg-light-warm-grey"
 								href="/records/{encodeURIComponent(record.record_id)}"
 							>
 								History
@@ -304,6 +325,6 @@
 <style>
 	td,
 	th {
-		@apply border-r p-1 align-top;
+		@apply border-r border-mid-warm-grey p-1 align-top text-left;
 	}
 </style>
