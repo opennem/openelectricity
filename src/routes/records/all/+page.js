@@ -29,7 +29,7 @@ export async function load({ fetch, url }) {
 	const periods = searchParams.get('periods');
 	const fuelTechs = searchParams.get('fuelTechs');
 	const aggregates = searchParams.get('aggregates');
-	const metric = searchParams.get('metric');
+	const metrics = searchParams.get('metrics');
 
 	return {
 		records: [],
@@ -37,7 +37,7 @@ export async function load({ fetch, url }) {
 		regions: regions ? regions.split(',') : [],
 		periods: periods ? periods.split(',') : [],
 		aggregates: aggregates ? aggregates.split(',') : [],
-		metric,
+		metrics: metrics ? metrics.split(',') : [],
 		stringFilter: searchParams.get('recordIdFilter') || '',
 		fuelTechs: fuelTechs ? fuelTechs.split(',') : []
 	};

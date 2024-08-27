@@ -19,8 +19,7 @@
 	export let initRecordIdSearch;
 	export let initCheckedFuelTechs;
 	export let initCheckedAggregates;
-	// export let initCheckedMetrics;
-	export let initSelectedMetric;
+	export let initCheckedMetrics;
 
 	let filterMode = 'checkboxes'; // text or checkboxes
 
@@ -39,10 +38,8 @@
 	/** @type {string[]} */
 	let checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
 
-	// /** @type {string[]} */
-	// let checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
-
-	let selectedMetric = initSelectedMetric || 'all';
+	/** @type {string[]} */
+	let checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
 
 	let recordIdSearch = initRecordIdSearch || '';
 
@@ -51,7 +48,7 @@
 		checkedPeriods = initCheckedPeriods || periodOptions.map((i) => i.value);
 		checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((i) => i.value);
 		checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
-		selectedMetric = initSelectedMetric || 'all';
+		checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
 		indeterminateRegions = [];
 	} else {
 		recordIdSearch = initRecordIdSearch || '';
@@ -135,8 +132,7 @@
 		checkedPeriods = periodOptions.map((i) => i.value);
 		checkedFuelTechs = fuelTechOptions.map((i) => i.value);
 		checkedAggregates = aggregateOptions.map((i) => i.value);
-		// checkedMetrics = metricOptions.map((i) => i.value);
-		selectedMetric = 'all';
+		checkedMetrics = metricOptions.map((i) => i.value);
 		indeterminateRegions = [];
 		recordIdSearch = '';
 
@@ -150,7 +146,7 @@
 			recordIdSearch,
 			checkedFuelTechs,
 			checkedAggregates,
-			selectedMetric
+			checkedMetrics
 		});
 	}
 </script>
@@ -221,28 +217,11 @@
 
 		<div class="px-10">
 			<h5>Metric</h5>
-			<!-- <CheckboxTree
+			<CheckboxTree
 				nodes={metricOptions}
 				checked={checkedMetrics}
 				on:change={(evt) => handleMetricChange(evt.detail.node)}
-			/> -->
-
-			<Radio
-				name="metric"
-				label="All"
-				value="all"
-				checked={selectedMetric}
-				on:change={() => (selectedMetric = 'all')}
 			/>
-			{#each metricOptions as metric}
-				<Radio
-					name="metric"
-					label={metric.label}
-					value={metric.value}
-					checked={selectedMetric}
-					on:change={() => (selectedMetric = metric.value)}
-				/>
-			{/each}
 		</div>
 	</div>
 {/if}

@@ -6,7 +6,8 @@
 	import {
 		aggregateOptions,
 		periodOptions,
-		fuelTechOptions
+		fuelTechOptions,
+		metricOptions
 	} from '../page-data-options/filters.js';
 
 	export let data;
@@ -37,8 +38,8 @@
 			? data.aggregates
 			: aggregateOptions.map((i) => i.value);
 
-	// let checkedMetrics =
-	// 	data.metrics && data.metrics.length ? data.metrics : metricOptions.map((i) => i.value);
+	let checkedMetrics =
+		data.metrics && data.metrics.length ? data.metrics : metricOptions.map((i) => i.value);
 
 	let selectedMetric = data.metric || 'all';
 
@@ -50,6 +51,7 @@
 		checkedPeriods,
 		checkedFuelTechs,
 		checkedAggregates,
+		checkedMetrics,
 		selectedMetric
 	);
 	$: totalPages = Math.ceil(totalRecords / 100);
@@ -57,7 +59,7 @@
 	$: lastRecordIndex =
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
-	function getFilterParams({ regions, periods, fuelTechs, stringFilter, aggregates, metric }) {
+	function getFilterParams({ regions, periods, fuelTechs, stringFilter, aggregates, metrics }) {
 		const validRegions = regions.filter((r) => r !== '_all');
 
 		const regionsParam =
@@ -69,7 +71,8 @@
 		const aggregatesParam =
 			aggregates.length === aggregateOptions.length ? '' : '&aggregates=' + aggregates.join(',');
 
-		const metricParam = metric ? '&metric=' + metric : '';
+		const metricsParam =
+			metrics.length === metricOptions.length ? '' : '&metrics=' + metrics.join(',');
 
 		const fuelTechParams =
 			fuelTechs.length === fuelTechOptions.length ? '' : '&fuelTechs=' + fuelTechs.join(',');
@@ -84,7 +87,7 @@
 			recordIdSearchParam,
 			fuelTechParams,
 			aggregatesParam,
-			metricParam
+			metricsParam
 		};
 	}
 
@@ -94,7 +97,7 @@
 		periods = checkedPeriods,
 		fuelTechs = checkedFuelTechs,
 		aggregates = checkedAggregates,
-		metric = selectedMetric
+		metrics = checkedMetrics
 	) {
 		const {
 			regionsParam,
@@ -102,19 +105,19 @@
 			recordIdSearchParam,
 			fuelTechParams,
 			aggregatesParam,
-			metricParam
+			metricsParam
 		} = getFilterParams({
 			regions,
 			periods,
 			stringFilter: recordIdSearch,
 			fuelTechs,
 			aggregates,
-			metric
+			metrics
 		});
 
 		if (browser) {
 			const res = await fetch(
-				`/api/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricParam}`
+				`/api/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}`
 			);
 			const jsonData = await res.json();
 
@@ -144,18 +147,18 @@
 			recordIdSearchParam,
 			fuelTechParams,
 			aggregatesParam,
-			metricParam
+			metricsParam
 		} = getFilterParams({
 			regions: checkedRegions,
 			periods: checkedPeriods,
 			stringFilter: recordIdSearch,
 			fuelTechs: checkedFuelTechs,
 			aggregates: checkedAggregates,
-			metric: selectedMetric
+			metrics: checkedMetrics
 		});
 
 		goto(
-			`/records/all?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricParam}`,
+			`/records/all?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}`,
 			{
 				replaceState: true
 			}
@@ -169,7 +172,7 @@
 	 * 	checkedPeriods: string[],
 	 * 	checkedFuelTechs: string[],
 	 * 	checkedAggregates: string[],
-	 * 	selectedMetric: string,
+	 *  checkedMetrics: string[],
 	 * 	recordIdSearch: string
 	 * }} detail
 	 */
@@ -180,9 +183,8 @@
 		recordIdSearch = detail.recordIdSearch;
 		checkedFuelTechs = detail.checkedFuelTechs;
 		checkedAggregates = detail.checkedAggregates;
-		selectedMetric = detail.selectedMetric;
+		checkedMetrics = detail.checkedMetrics;
 
-		console.log('selectedMetric', selectedMetric);
 		updateCurrentPage(1);
 	}
 </script>
@@ -194,7 +196,7 @@
 		initRecordIdSearch={recordIdSearch}
 		initCheckedFuelTechs={checkedFuelTechs}
 		initCheckedAggregates={checkedAggregates}
-		initSelectedMetric={selectedMetric}
+		initCheckedMetrics={checkedMetrics}
 		on:apply={(evt) => handleFiltersApply(evt.detail)}
 	/>
 
