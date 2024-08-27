@@ -452,22 +452,10 @@
 			<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
 		{/if}
 		{#if $isScenarioViewSection}
-			<TableScenario
-				title="Scenario"
-				groupOptions={scenarioGroups}
-				{seriesLoadsIds}
-				{hiddenRowNames}
-				on:row-click={toggleRow}
-			/>
+			<TableScenario title="Scenario" {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
 		{/if}
 		{#if $isRegionViewSection}
-			<TableScenario
-				title="Region"
-				groupOptions={regionGroups}
-				{seriesLoadsIds}
-				{hiddenRowNames}
-				on:row-click={toggleRow}
-			/>
+			<TableScenario title="Region" {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
 		{/if}
 	</section>
 </div>

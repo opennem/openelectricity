@@ -11,6 +11,7 @@ export function mergeHistoricalEmissionsData(historyData) {
 		...firstData,
 		id: 'au.emissions.total',
 		code: 'none',
+		fuel_tech: null,
 		history: {
 			...firstData.history,
 			data: [...firstData.history.data.map(() => 0)]
@@ -18,8 +19,9 @@ export function mergeHistoricalEmissionsData(historyData) {
 	};
 
 	historyData.forEach((d) => {
+		const isExports = d.fuel_tech === 'exports';
 		d.history.data.forEach((v, j) => {
-			const newValue = v;
+			const newValue = isExports ? -v : v;
 			combinedHistoryData.history.data[j] += newValue || 0;
 		});
 	});

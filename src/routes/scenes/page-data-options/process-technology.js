@@ -237,12 +237,21 @@ function capacity({ projection, history, group, colourReducer, includeBatteryAnd
 }
 
 /**
+    when viewing generation:
+    sum(all emissions from visible sources except imports) / energy from all of the above
+
+    when viewing consumption:
+    sum(all emissions from visible sources) minus exports / energy from all of the above
+ */
+/**
+ *
  * @param {{
  * projection: StatsData[],
  * history: StatsData[]}} param0
  * @returns {ProcessedDataViz}
  */
 function emissions({ projection, history }) {
+	console.log('technology emissions', projection, history);
 	// mutate projection id
 	projection.forEach((d) => {
 		d.id = 'au.emissions.total';
@@ -326,7 +335,7 @@ function intensity({ processedEmissions, processedEnergy }) {
 		seriesColours: { 'au.emission_intensity': '#000' },
 		seriesLabels: { 'au.emission_intensity': 'Emission Intensity' },
 		nameOptions: [{ label: 'Emission Intensity', value: 'au.emission_intensity' }],
-		yDomain: [0, 1600],
+		yDomain: [0, 1500],
 		chartType: 'line'
 	};
 }

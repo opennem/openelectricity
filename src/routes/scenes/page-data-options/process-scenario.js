@@ -7,7 +7,7 @@ import { loadFuelTechs } from '$lib/fuel_techs.js';
 import { fuelTechMap, orderMap } from './groups-scenario';
 import { scenarioLabels } from './descriptions';
 import { scenarioColourMap } from './models';
-import { mutateDatesToStartOfYear } from './utils';
+import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils';
 
 /**
  * @param {{
@@ -139,8 +139,8 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 		scenarioProjectionStats,
 		parseInterval('1Y'),
 		'projection',
-		null,
-		null
+		undefined,
+		undefined
 	).transform();
 
 	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
@@ -172,8 +172,8 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 		[netGenerationStats],
 		parseInterval('1M'),
 		'history',
-		null,
-		null
+		undefined,
+		undefined
 	)
 		.transform()
 		.rollup(parseInterval('FY'));
@@ -243,8 +243,8 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 		scenarioProjectionStats,
 		parseInterval('1Y'),
 		'projection',
-		null,
-		null
+		undefined,
+		undefined
 	).transform();
 
 	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
@@ -281,8 +281,8 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 		[netCapacityStats],
 		parseInterval('1Y'),
 		'history',
-		null,
-		null
+		undefined,
+		undefined
 	).transform();
 
 	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
@@ -315,6 +315,8 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
  * @returns
  */
 function emissions({ projections, history, group }) {
+	console.log('scenario emissions', projections, history);
+
 	/********* processing Projection */
 	const projectionsStats = projections.map((projection) => {
 		return {
@@ -345,8 +347,8 @@ function emissions({ projections, history, group }) {
 		scenarioProjectionStats,
 		parseInterval('1Y'),
 		'projection',
-		null,
-		null
+		undefined,
+		undefined
 	).transform();
 
 	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
@@ -357,28 +359,18 @@ function emissions({ projections, history, group }) {
 	// console.log('emissions projectionTimeSeries', projectionTimeSeries);
 
 	/********* processing Historical */
-	const historicalStats = new Statistic(history, 'history', 'tCO2e')
-		.invertValues(loadFuelTechs)
-		.group(fuelTechMap[group], loadFuelTechs)
-		.reorder(orderMap[group] || []);
-
-	const dataLoads = historicalStats.data[0].history.data;
-	const dataSources = historicalStats.data[1].history.data;
-	const netEmissionsData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
-	const netEmissionsStats = deepCopy(historicalStats.data[0]);
-	netEmissionsStats.id = `historical`;
-	netEmissionsStats.code = null;
-	netEmissionsStats.fuel_tech = null;
-	netEmissionsStats.label = 'Historical';
-	netEmissionsStats.colour = '#000';
-	netEmissionsStats.history.data = netEmissionsData;
+	const merged = mergeHistoricalEmissionsData(history);
+	const historicalStats = new Statistic(merged, 'history', 'tCO2e');
+	historicalStats.data[0].id = 'historical';
+	historicalStats.data[0].label = 'Historical';
+	historicalStats.data[0].colour = '#000';
 
 	const historicalTimeSeries = new TimeSeries(
-		[netEmissionsStats],
+		historicalStats.data,
 		parseInterval('1M'),
 		'history',
-		null,
-		null
+		undefined,
+		undefined
 	)
 		.transform()
 		.rollup(parseInterval('FY'));
@@ -422,6 +414,9 @@ function intensity({ processedEmissions, processedEnergy }) {
 
 		return obj;
 	});
+
+	processedIntensity.yDomain = [0, 1500];
+	processedIntensity.chartType = 'line';
 
 	return processedIntensity;
 }

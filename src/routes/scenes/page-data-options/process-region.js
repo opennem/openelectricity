@@ -5,7 +5,7 @@ import deepCopy from '$lib/utils/deep-copy';
 import { loadFuelTechs } from '$lib/fuel_techs.js';
 
 import { fuelTechMap, orderMap } from './groups-region';
-import { mutateDatesToStartOfYear } from './utils';
+import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils';
 
 /**
  * @param {{
@@ -139,8 +139,8 @@ function generation({ regionsData, includeBatteryAndLoads }) {
 		regionProjectionStats,
 		parseInterval('1Y'),
 		'projection',
-		null,
-		null
+		undefined,
+		undefined
 	).transform();
 
 	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
@@ -188,8 +188,8 @@ function generation({ regionsData, includeBatteryAndLoads }) {
 		regionHistoricalStats,
 		parseInterval('1M'),
 		'history',
-		null,
-		null
+		undefined,
+		undefined
 	)
 		.transform()
 		.rollup(parseInterval('FY'));
@@ -267,8 +267,8 @@ function capacity({ regionsData, includeBatteryAndLoads }) {
 		regionProjectionStats,
 		parseInterval('1Y'),
 		'projection',
-		null,
-		null
+		undefined,
+		undefined
 	).transform();
 
 	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
@@ -316,8 +316,8 @@ function capacity({ regionsData, includeBatteryAndLoads }) {
 		regionHistoricalStats,
 		parseInterval('1Y'),
 		'history',
-		null,
-		null
+		undefined,
+		undefined
 	).transform();
 
 	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
@@ -378,8 +378,8 @@ function emissions({ regionsData, group }) {
 		regionProjectionStats,
 		parseInterval('1Y'),
 		'projection',
-		null,
-		null
+		undefined,
+		undefined
 	).transform();
 
 	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
@@ -393,15 +393,17 @@ function emissions({ regionsData, group }) {
 	/********* processing Historical */
 	const historicalStats = regionsData.map((region) => {
 		console.log('region.historicalEmissionsData', region, region.historicalEmissionsData);
+		const merged = mergeHistoricalEmissionsData(region.historicalEmissionsData);
+		const historicalStats = new Statistic(merged, 'history', 'tCO2e');
+		historicalStats.data[0].id = region.id;
+		historicalStats.data[0].label = region.label;
+		historicalStats.data[0].colour = region.colour;
 
 		return {
 			id: region.id,
 			label: region.label,
 			colour: region.colour,
-			stats: new Statistic(region.historicalEmissionsData, 'history', 'tCO2e')
-				.invertValues(loadFuelTechs)
-				.group(fuelTechMap[group], loadFuelTechs)
-				.reorder(orderMap[group] || [])
+			stats: historicalStats
 		};
 	});
 
@@ -411,27 +413,15 @@ function emissions({ regionsData, group }) {
 	/** @type {StatsData[]} */
 	const regionHistoricalStats = [];
 	historicalStats.forEach((history) => {
-		const dataLoads = history.stats.data[0].history.data;
-		const dataSources = history.stats.data[1].history.data;
-		const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
-
-		const netGenerationStats = deepCopy(history.stats.data[0]);
-		netGenerationStats.id = `${history.id}`;
-		netGenerationStats.code = null;
-		netGenerationStats.fuel_tech = null;
-		netGenerationStats.label = history.label;
-		netGenerationStats.colour = history.colour;
-		netGenerationStats.history.data = netGenerationData;
-
-		regionHistoricalStats.push(netGenerationStats);
+		regionHistoricalStats.push(history.stats.data[0]);
 	});
 
 	const historicalTimeSeries = new TimeSeries(
 		regionHistoricalStats,
 		parseInterval('1M'),
 		'history',
-		null,
-		null
+		undefined,
+		undefined
 	)
 		.transform()
 		.rollup(parseInterval('FY'));
@@ -475,6 +465,9 @@ function intensity({ processedEmissions, processedEnergy }) {
 
 		return obj;
 	});
+
+	processedIntensity.yDomain = [0, 1500];
+	processedIntensity.chartType = 'line';
 
 	return processedIntensity;
 }
