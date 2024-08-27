@@ -125,7 +125,8 @@
 					projectionEmissionsData.length > 0
 						? processTechnology.emissions({
 								projection: projectionEmissionsData,
-								history: historyEmisssionsData
+								history: historyEmisssionsData,
+								includeBatteryAndLoads: $includeBatteryAndLoads
 						  })
 						: undefined;
 

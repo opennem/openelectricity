@@ -247,10 +247,12 @@ function capacity({ projection, history, group, colourReducer, includeBatteryAnd
  *
  * @param {{
  * projection: StatsData[],
- * history: StatsData[]}} param0
+ * history: StatsData[],
+ * includeBatteryAndLoads: boolean
+ * }} param0
  * @returns {ProcessedDataViz}
  */
-function emissions({ projection, history }) {
+function emissions({ projection, history, includeBatteryAndLoads }) {
 	console.log('technology emissions', projection, history);
 	// mutate projection id
 	projection.forEach((d) => {
@@ -258,7 +260,7 @@ function emissions({ projection, history }) {
 	});
 	const projectionStats = new Statistic(projection, 'projection', 'tCO2e');
 
-	const merged = mergeHistoricalEmissionsData(history);
+	const merged = mergeHistoricalEmissionsData(history, includeBatteryAndLoads);
 	const historicalStats = new Statistic(merged, 'history', 'tCO2e');
 
 	const projectionTimeSeries = new TimeSeries(

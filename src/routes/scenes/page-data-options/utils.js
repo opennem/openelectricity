@@ -3,9 +3,10 @@ import { startOfYear, addYears } from 'date-fns';
 /**
  * Merge historical emissions data into total
  * @param {StatsData[]} historyData
+ * @param {boolean} includeBatteryAndLoads
  * @returns {StatsData[]}
  */
-export function mergeHistoricalEmissionsData(historyData) {
+export function mergeHistoricalEmissionsData(historyData, includeBatteryAndLoads) {
 	const firstData = historyData[0];
 	const combinedHistoryData = {
 		...firstData,
@@ -21,7 +22,7 @@ export function mergeHistoricalEmissionsData(historyData) {
 	historyData.forEach((d) => {
 		const isExports = d.fuel_tech === 'exports';
 		d.history.data.forEach((v, j) => {
-			const newValue = isExports ? -v : v;
+			const newValue = includeBatteryAndLoads ? (isExports ? -v : v) : isExports ? 0 : v;
 			combinedHistoryData.history.data[j] += newValue || 0;
 		});
 	});
