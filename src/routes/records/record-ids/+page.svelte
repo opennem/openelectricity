@@ -232,7 +232,7 @@
 						<td>{currentStartRecordIndex + i}</td>
 						<td>{record.record_id}</td>
 
-						<td>
+						<td class="font-mono text-dark-grey">
 							{removeSeconds(record.interval)}
 						</td>
 						<td>
