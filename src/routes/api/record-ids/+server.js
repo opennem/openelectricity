@@ -16,7 +16,7 @@ export async function GET({ url, fetch, setHeaders }) {
 
 	const path = `${PUBLIC_RECORDS_API}/record_ids`;
 
-	console.log('path', path);
+	console.log('records-id path', path);
 
 	const response = await fetch(path);
 

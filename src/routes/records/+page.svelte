@@ -153,7 +153,7 @@
 	/>
 
 	<a href="/records/all">All records</a>
-	<a href="/records/record_ids">Record IDs</a>
+	<a href="/records/record-ids">Record IDs</a>
 </header>
 
 <style>
