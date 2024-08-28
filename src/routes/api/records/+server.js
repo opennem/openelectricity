@@ -129,9 +129,9 @@ export async function GET({ url, fetch, setHeaders }) {
 	// ];
 	// const fuelTechs = [];
 	// const fuelTechParams = fuelTechs.map((tech) => `&fuel_tech=${tech}`).join('');
-	const path = `${PUBLIC_RECORDS_API}?limit=100${fuelTechParams}${metricParams}${aggregateParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}`;
+	const path = `${PUBLIC_RECORDS_API}/records?limit=100${fuelTechParams}${metricParams}${aggregateParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}`;
 
-	console.log('path', path);
+	console.log('records path', path);
 	const response = await fetch(path);
 
 	if (response.ok) {

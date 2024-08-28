@@ -14,7 +14,7 @@ export async function GET({ url, fetch, setHeaders }) {
 		pageParams = `&page=${page}`;
 	}
 
-	const path = `${PUBLIC_RECORDS_API}/record_ids`;
+	const path = `${PUBLIC_RECORDS_API}/record_id`;
 
 	console.log('records-id path', path);
 
