@@ -313,6 +313,7 @@
 		store.baseUnit.set(p.baseUnit);
 		store.prefix.set(p.prefix);
 		store.displayPrefix.set(p.displayPrefix);
+		store.allowedPrefixes.set(p.allowedPrefixes);
 	}
 
 	/**

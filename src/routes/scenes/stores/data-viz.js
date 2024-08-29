@@ -1,4 +1,4 @@
-import { derived, writable } from 'svelte/store';
+import { get, derived, writable } from 'svelte/store';
 import { getNumberFormat } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
 
@@ -6,6 +6,13 @@ const numberFormat = getNumberFormat();
 
 export default function () {
 	const title = writable('');
+
+	const allowedPrefixes = writable([]);
+
+	const allowPrefixSwitch = derived(
+		allowedPrefixes,
+		($allowedPrefixes) => $allowedPrefixes && $allowedPrefixes.length > 1
+	);
 
 	// const displayUnit = writable('');
 	const baseUnit = writable('');
@@ -94,6 +101,17 @@ export default function () {
 		return data;
 	});
 
+	function getNextPrefix() {
+		/** @type {SiPrefix[]} */
+		const $prefixes = get(allowedPrefixes);
+		const $displayPrefix = get(displayPrefix);
+
+		if (!$prefixes) return '';
+
+		const index = $prefixes.indexOf($displayPrefix);
+		return index === $prefixes.length - 1 ? $prefixes[0] : $prefixes[index + 1];
+	}
+
 	function reset() {
 		seriesData.set([]);
 		seriesNames.set([]);
@@ -107,6 +125,8 @@ export default function () {
 
 	return {
 		title,
+		allowPrefixSwitch,
+		allowedPrefixes,
 		displayUnit,
 		baseUnit,
 		prefix,
@@ -134,6 +154,7 @@ export default function () {
 		focusTime,
 		focusData,
 
-		reset
+		reset,
+		getNextPrefix
 	};
 }

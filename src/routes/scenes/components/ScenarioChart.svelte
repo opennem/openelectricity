@@ -1,6 +1,5 @@
 <script>
 	import { getContext } from 'svelte';
-	import { getNextPrefix } from '$lib/utils/si-units';
 	import StackedAreaChart from '$lib/components/charts/StackedAreaChart.svelte';
 	import Tooltip from './Tooltip.svelte';
 
@@ -10,6 +9,7 @@
 
 	const {
 		title,
+		allowPrefixSwitch,
 		displayPrefix,
 		displayUnit,
 		convertAndFormatValue,
@@ -28,23 +28,18 @@
 		chartHeightClasses,
 		hoverKey,
 		hoverData,
-		focusData
+		focusData,
+		getNextPrefix
 	} = store;
 
 	const { singleSelectionModelScenarioLabel, singleSelectionPathway, selectedRegionLabel } =
 		getContext('scenario-filters');
 
-	// unit
-	// model
-	// scenario
-	// pathway
-	// region
-
 	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
 	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
 
 	function moveToNextDisplayPrefix() {
-		$displayPrefix = getNextPrefix($displayPrefix);
+		$displayPrefix = getNextPrefix();
 	}
 </script>
 
@@ -56,12 +51,16 @@
 					{$title}
 				</h5>
 
-				<button
-					class="font-light text-sm text-mid-grey hover:underline"
-					on:click={moveToNextDisplayPrefix}
-				>
-					{$displayUnit || ''}
-				</button>
+				{#if $allowPrefixSwitch}
+					<button
+						class="font-light text-sm text-mid-grey hover:underline"
+						on:click={moveToNextDisplayPrefix}
+					>
+						{$displayUnit || ''}
+					</button>
+				{:else}
+					<span class="font-light text-sm text-mid-grey">{$displayUnit || ''}</span>
+				{/if}
 
 				<span class="font-light text-sm text-mid-grey">—</span>
 

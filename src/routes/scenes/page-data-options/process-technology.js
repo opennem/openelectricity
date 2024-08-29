@@ -24,7 +24,8 @@ function getLoadIds(statsData) {
  * projectionLoadSeries: string[],
  * baseUnit: string,
  * prefix: SiPrefix,
- * displayPrefix: SiPrefix
+ * displayPrefix: SiPrefix,
+ * allowedPrefixes: SiPrefix[]
  * }} param0
  * @returns {ProcessedDataViz}
  */
@@ -34,7 +35,8 @@ function combineHistoryProjection({
 	projectionLoadSeries,
 	baseUnit = '',
 	prefix = '',
-	displayPrefix = ''
+	displayPrefix = '',
+	allowedPrefixes = []
 }) {
 	console.log('combineHistoryProjection', baseUnit, prefix);
 	const historicalTimeSeriesData = historicalTimeSeries.data;
@@ -93,7 +95,8 @@ function combineHistoryProjection({
 			yDomain: [datasetMin, datasetMax],
 			prefix,
 			baseUnit,
-			displayPrefix
+			displayPrefix,
+			allowedPrefixes
 		};
 	}
 
@@ -107,7 +110,8 @@ function combineHistoryProjection({
 		yDomain: [],
 		prefix,
 		baseUnit,
-		displayPrefix
+		displayPrefix,
+		allowedPrefixes
 	};
 }
 
@@ -178,7 +182,8 @@ function generation({ projection, history, group, colourReducer, includeBatteryA
 		projectionLoadSeries,
 		baseUnit: projectionStats.baseUnit,
 		prefix: projectionStats.prefix,
-		displayPrefix: 'T'
+		displayPrefix: 'T',
+		allowedPrefixes: ['G', 'T']
 	});
 }
 
@@ -251,7 +256,8 @@ function capacity({ projection, history, group, colourReducer, includeBatteryAnd
 		projectionLoadSeries,
 		baseUnit: projectionStats.baseUnit,
 		prefix: projectionStats.prefix,
-		displayPrefix: 'G'
+		displayPrefix: 'G',
+		allowedPrefixes: ['M', 'G']
 	});
 }
 
@@ -316,7 +322,8 @@ function emissions({ projection, history, includeBatteryAndLoads }) {
 			projectionLoadSeries: [],
 			baseUnit: projectionStats.baseUnit,
 			prefix: projectionStats.prefix,
-			displayPrefix: 'k'
+			displayPrefix: 'k',
+			allowedPrefixes: ['k', 'M']
 		}),
 		seriesLabels: { 'au.emissions.total': 'Emissions Volume' },
 		nameOptions: [{ label: 'Emissions Volume', value: 'au.emissions.total' }]

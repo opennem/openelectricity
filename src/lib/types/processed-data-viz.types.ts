@@ -10,4 +10,5 @@ export type ProcessedDataViz = {
 	prefix?: SiPrefix;
 	displayPrefix?: SiPrefix;
 	baseUnit?: string;
+	allowedPrefixes?: SiPrefix[];
 };
