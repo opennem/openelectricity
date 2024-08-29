@@ -7,4 +7,5 @@ export type ProcessedDataViz = {
 	yDomain: Array<number | null>;
 	seriesLoadsIds?: string[];
 	chartType?: 'area' | 'line';
+	unit?: string;
 };

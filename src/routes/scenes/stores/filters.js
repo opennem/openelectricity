@@ -1,4 +1,6 @@
 import { derived, writable } from 'svelte/store';
+import { scenarioLabels } from '../page-data-options/descriptions';
+import { regionsWithShortLabels } from '../page-data-options/regions';
 
 export default function () {
 	const selectedRegion = writable('');
@@ -26,6 +28,10 @@ export default function () {
 		return $selectedViewSection === 'region';
 	});
 
+	const selectedRegionLabel = derived(selectedRegion, ($selectedRegion) => {
+		return regionsWithShortLabels[$selectedRegion];
+	});
+
 	// derived selection mode based on view section
 	const selectionMode = derived(isScenarioViewSection, ($isScenarioViewSection) => {
 		return $isScenarioViewSection ? 'multiple' : 'single';
@@ -42,9 +48,16 @@ export default function () {
 	const singleSelectionPathway = derived(singleSelectionData, ($singleSelectionData) => {
 		return $singleSelectionData?.pathway;
 	});
+	const singleSelectionModelScenarioLabel = derived(
+		[singleSelectionModel, singleSelectionScenario],
+		([$singleSelectionModel, $singleSelectionScenario]) => {
+			return scenarioLabels[$singleSelectionModel][$singleSelectionScenario];
+		}
+	);
 
 	return {
 		selectedRegion,
+		selectedRegionLabel,
 		selectedFuelTechGroup,
 
 		selectionMode,
@@ -56,6 +69,7 @@ export default function () {
 		singleSelectionModel,
 		singleSelectionScenario,
 		singleSelectionPathway,
+		singleSelectionModelScenarioLabel,
 
 		selectedViewSection,
 		selectedDataType,

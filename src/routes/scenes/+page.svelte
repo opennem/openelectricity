@@ -309,6 +309,7 @@
 		store.yDomain.set(p.yDomain);
 		store.chartType.set(p.chartType);
 		store.chartHeightClasses.set(chartHeightClasses);
+		store.unit.set(p.unit);
 	}
 
 	/**
@@ -394,14 +395,6 @@
 
 <Filters />
 
-<!-- {#if fetching}
-	<div
-		class="h-screen bg-light-warm-grey flex justify-center items-center"
-		transition:fade={{ duration: 250 }}
-	>
-		<LogoMark />
-	</div>
-{:else} -->
 <div class="max-w-none px-16 p-12 flex gap-12">
 	<section class="w-[100%]">
 		{#if fetching}

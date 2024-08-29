@@ -6,6 +6,8 @@ const numberFormat = getNumberFormat();
 export default function () {
 	const title = writable('');
 
+	const unit = writable('');
+
 	/** @type {import('svelte/store').Writable<TimeSeriesData[]>} */
 	const seriesData = writable([]);
 
@@ -86,6 +88,7 @@ export default function () {
 
 	return {
 		title,
+		unit,
 		seriesData,
 		seriesNames,
 		seriesColours,

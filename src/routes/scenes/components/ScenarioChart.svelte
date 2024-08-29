@@ -1,4 +1,5 @@
 <script>
+	import { getContext } from 'svelte';
 	import StackedAreaChart from '$lib/components/charts/StackedAreaChart.svelte';
 	import Tooltip from './Tooltip.svelte';
 
@@ -8,6 +9,7 @@
 
 	const {
 		title,
+		unit,
 		seriesData,
 		seriesNames,
 		seriesColours,
@@ -27,6 +29,9 @@
 		focusData
 	} = store;
 
+	const { singleSelectionModelScenarioLabel, singleSelectionPathway, selectedRegionLabel } =
+		getContext('scenario-filters');
+
 	// unit
 	// model
 	// scenario
@@ -44,9 +49,11 @@
 				<h5 class="m-0">
 					{$title}
 
-					<span class="text-sm font-light text-mid-grey">GWh</span>
+					<span class="text-sm font-light text-mid-grey">{$unit || ''}</span>
 
-					<span class="text-sm font-light text-mid-grey">— AEMO Step Change 2024 (CDP12), NEM</span>
+					<span class="text-sm font-light text-mid-grey">
+						— {$singleSelectionModelScenarioLabel} ({$singleSelectionPathway}), {$selectedRegionLabel}
+					</span>
 				</h5>
 			</div>
 

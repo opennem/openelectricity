@@ -21,14 +21,16 @@ function getLoadIds(statsData) {
  * @param {{
  * historicalTimeSeries: TimeSeries,
  * projectionTimeSeries: TimeSeries,
- * projectionLoadSeries: string[]
+ * projectionLoadSeries: string[],
+ * unit: string
  * }} param0
  * @returns {ProcessedDataViz}
  */
 function combineHistoryProjection({
 	historicalTimeSeries,
 	projectionTimeSeries,
-	projectionLoadSeries
+	projectionLoadSeries,
+	unit = ''
 }) {
 	const historicalTimeSeriesData = historicalTimeSeries.data;
 	const projectionTimeSeriesData = projectionTimeSeries.data;
@@ -83,7 +85,8 @@ function combineHistoryProjection({
 			seriesColours,
 			seriesLabels,
 			seriesLoadsIds: projectionLoadSeries,
-			yDomain: [datasetMin, datasetMax]
+			yDomain: [datasetMin, datasetMax],
+			unit
 		};
 	}
 
@@ -94,7 +97,8 @@ function combineHistoryProjection({
 		seriesLabels: {},
 		nameOptions: [],
 		seriesLoadsIds: [],
-		yDomain: []
+		yDomain: [],
+		unit: ''
 	};
 }
 
@@ -162,7 +166,8 @@ function generation({ projection, history, group, colourReducer, includeBatteryA
 	return combineHistoryProjection({
 		historicalTimeSeries,
 		projectionTimeSeries,
-		projectionLoadSeries
+		projectionLoadSeries,
+		unit: 'GWh'
 	});
 }
 
