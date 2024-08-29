@@ -337,7 +337,7 @@ function intensity({ processedEmissions, processedEnergy }) {
 		seriesColours: { 'au.emission_intensity': '#000' },
 		seriesLabels: { 'au.emission_intensity': 'Emission Intensity' },
 		nameOptions: [{ label: 'Emission Intensity', value: 'au.emission_intensity' }],
-		yDomain: [0, 1500],
+		yDomain: [0, 1200],
 		chartType: 'line'
 	};
 }

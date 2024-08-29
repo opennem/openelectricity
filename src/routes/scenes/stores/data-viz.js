@@ -62,6 +62,17 @@ export default function () {
 		return data;
 	});
 
+	/** @type {import('svelte/store').Writable<number | undefined>} */
+	const focusTime = writable();
+
+	const focusData = derived([seriesData, focusTime], ([$seriesData, $focusTime]) => {
+		if (!$focusTime) return;
+
+		const data = $seriesData.find((d) => d.time === $focusTime);
+
+		return data;
+	});
+
 	function reset() {
 		seriesData.set([]);
 		seriesNames.set([]);
@@ -93,6 +104,8 @@ export default function () {
 		hoverKey,
 		hoverTime,
 		hoverData,
+		focusTime,
+		focusData,
 
 		reset
 	};

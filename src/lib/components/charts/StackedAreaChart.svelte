@@ -54,13 +54,16 @@
 	/** @type {*} */
 	export let blankOverlay = false;
 
-	/** @type {*} */
-	export let overlayLine = false;
+	/** @type {{ date: Date } | undefined} */
+	export let overlayLine = undefined;
 
 	export let chartType = 'area'; // line, area
 
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
+
+	/** @type {TimeSeriesData | undefined}*/
+	export let focusData = undefined;
 
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
 	export let formatTickX = (/** @type {*} */ d) => d;
@@ -68,8 +71,8 @@
 
 	export let chartHeightClasses = '';
 
-	/** @type {string | null} */
-	export let highlightId = null;
+	/** @type {string | undefined} */
+	export let highlightId = '';
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
@@ -100,6 +103,9 @@
 	// $: console.log('groupedData', groupedData);
 
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	$: focusTime = focusData ? focusData.time || 0 : 0;
+
+	// $: console.log('stackedArea focusData', focusData);
 </script>
 
 <div class="chart-container mb-4 {heightClasses}">
@@ -127,7 +133,7 @@
 				<Overlay fill="#FAF9F6" {...overlay} />
 			{/if}
 
-			<HoverLayer {dataset} on:mousemove on:mouseout />
+			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup />
 
 			<!-- {#if display === 'area'}
 				<AreaStacked
@@ -147,12 +153,15 @@
 				{highlightId}
 				on:mousemove
 				on:mouseout
+				on:pointerup
 			/>
 		</Svg>
 
 		<Svg pointerEvents={false}>
 			<defs>
 				<HatchPattern id={`${id}-hatch-pattern`} stroke={overlayStroke} />
+
+				<ClipPath id={`${id}-clip-path`} />
 			</defs>
 
 			{#if overlay}
@@ -168,6 +177,7 @@
 			{/if}
 
 			<AxisY
+				clipPathId={clip ? `${id}-clip-path` : ''}
 				ticks={yTicks}
 				xTick={5}
 				formatTick={formatTickY}
@@ -189,8 +199,14 @@
 					{formatTickX(hoverTime)}
 				</span>
 			</HoverText>
-			<!-- <HoverLine {hoverData} isShapeStack={true} useDataHeight={true} /> -->
 
+			<!-- <HoverText hoverData={focusData} isShapeStack={true} position="bottom">
+				<span class="text-[10px] block">
+					{formatTickX(focusTime)}
+				</span>
+			</HoverText> -->
+
+			<HoverLine hoverData={focusData} lineColour="#C74523" borderStyle="dashed" />
 			<HoverLine {hoverData} />
 		</Html>
 

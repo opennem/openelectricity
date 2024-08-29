@@ -145,36 +145,11 @@
 					  })
 					: undefined;
 
-				dataVizStoreNames.forEach(({ name }) => {
-					const store = dataVizStores[name];
-					switch (name) {
-						case 'energy-data-viz':
-							updateDataVizStore(
-								'Generation (GWh)',
-								store,
-								processedEnergy,
-								'h-[400px] md:h-[450px]'
-							);
-							break;
-						case 'capacity-data-viz':
-							updateDataVizStore(
-								'Capacity (MW)',
-								store,
-								processedCapacity,
-								'h-[400px] md:h-[450px]'
-							);
-							break;
-						case 'emissions-data-viz':
-							processedEmissions
-								? updateDataVizStore('Emissions (tCO2e)', store, processedEmissions)
-								: store.reset();
-							break;
-						case 'intensity-data-viz':
-							processedIntensity
-								? updateDataVizStore('Intensity (kgCO2e/MWh)', store, processedIntensity)
-								: store.reset();
-							break;
-					}
+				updateAllStores({
+					processedEnergy,
+					processedCapacity,
+					processedEmissions,
+					processedIntensity
 				});
 
 				fetching = false;
@@ -214,39 +189,11 @@
 					  })
 					: undefined;
 
-				dataVizStoreNames.forEach(({ name }) => {
-					const store = dataVizStores[name];
-					switch (name) {
-						case 'energy-data-viz':
-							updateDataVizStore(
-								'Generation (GWh)',
-								store,
-								processedEnergy,
-								'h-[400px] md:h-[450px]'
-							);
-							break;
-
-						case 'capacity-data-viz':
-							updateDataVizStore(
-								'Capacity (MW)',
-								store,
-								processedCapacity,
-								'h-[400px] md:h-[450px]'
-							);
-							break;
-
-						case 'emissions-data-viz':
-							processedEmissions
-								? updateDataVizStore('Emissions (tCO2e)', store, processedEmissions)
-								: store.reset();
-							break;
-
-						case 'intensity-data-viz':
-							processedIntensity
-								? updateDataVizStore('Intensity (kgCO2e/MWh)', store, processedIntensity)
-								: store.reset();
-							break;
-					}
+				updateAllStores({
+					processedEnergy,
+					processedCapacity,
+					processedEmissions,
+					processedIntensity
 				});
 
 				fetching = false;
@@ -297,34 +244,52 @@
 
 			console.log('processedIntensity', processedIntensity);
 
-			dataVizStoreNames.forEach(({ name }) => {
-				const store = dataVizStores[name];
-				switch (name) {
-					case 'energy-data-viz':
-						updateDataVizStore(
-							'Generation (GWh)',
-							store,
-							processedEnergy,
-							'h-[400px] md:h-[450px]'
-						);
-						break;
-					case 'capacity-data-viz':
-						updateDataVizStore('Capacity (MW)', store, processedCapacity, 'h-[400px] md:h-[450px]');
-						break;
-					case 'emissions-data-viz':
-						processedEmissions
-							? updateDataVizStore('Emissions (tCO2e)', store, processedEmissions)
-							: store.reset();
-						break;
-					case 'intensity-data-viz':
-						processedIntensity
-							? updateDataVizStore('Intensity (kgCO2e/MWh)', store, processedIntensity)
-							: store.reset();
-						break;
-				}
+			updateAllStores({
+				processedEnergy,
+				processedCapacity,
+				processedEmissions,
+				processedIntensity
 			});
 
 			fetching = false;
+		});
+	}
+
+	/**
+	 *
+	 * @param {{
+	 * 		processedEnergy: ProcessedDataViz,
+	 * 		processedCapacity: ProcessedDataViz,
+	 * 		processedEmissions: ProcessedDataViz | undefined,
+	 * 		processedIntensity: ProcessedDataViz | undefined
+	 * }} param0
+	 */
+	function updateAllStores({
+		processedEnergy,
+		processedCapacity,
+		processedEmissions,
+		processedIntensity
+	}) {
+		dataVizStoreNames.forEach(({ name }) => {
+			const store = dataVizStores[name];
+			switch (name) {
+				case 'energy-data-viz':
+					updateDataVizStore('Generation', store, processedEnergy, 'h-[400px] md:h-[450px]');
+					break;
+				case 'capacity-data-viz':
+					updateDataVizStore('Capacity', store, processedCapacity, 'h-[400px] md:h-[450px]');
+					break;
+				case 'emissions-data-viz':
+					processedEmissions
+						? updateDataVizStore('Emissions', store, processedEmissions)
+						: store.reset();
+					break;
+				case 'intensity-data-viz':
+					processedIntensity
+						? updateDataVizStore('Intensity', store, processedIntensity)
+						: store.reset();
+					break;
+			}
 		});
 	}
 
@@ -359,7 +324,7 @@
 	}
 
 	/**
-	 * @param {*} evt
+	 * @param {CustomEvent<{ data: TimeSeriesData, key: string }> | CustomEvent<TimeSeriesData>} evt
 	 */
 	function handleMousemove(evt) {
 		if (evt.detail?.key) {
@@ -370,6 +335,18 @@
 	}
 	function handleMouseout() {
 		updateStoreHover(undefined, undefined);
+	}
+
+	/**
+	 * @param {CustomEvent<TimeSeriesData>} evt
+	 */
+	function handlePointerup(evt) {
+		const focusTime = evt.detail?.time;
+
+		dataVizStoreNames.forEach(({ name }) => {
+			const store = dataVizStores[name];
+			store.focusTime.set(focusTime || undefined);
+		});
 	}
 
 	/**
@@ -442,6 +419,7 @@
 						{hiddenRowNames}
 						on:mousemove={handleMousemove}
 						on:mouseout={handleMouseout}
+						on:pointerup={handlePointerup}
 					/>
 				{/if}
 			{/each}

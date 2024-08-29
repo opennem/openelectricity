@@ -28,7 +28,23 @@
 		const xInvert = $xScale.invert(offsetX);
 		const closest = closestTo(new Date(xInvert), compareDates);
 		const found = dataset.find((d) => d.time === closest?.getTime());
-		dispatch('mousemove', found);
+		return found;
+	}
+
+	/**
+	 * @param {MouseEvent|TouchEvent} evt
+	 */
+	function pointermove(evt) {
+		const item = findItem(evt);
+		dispatch('mousemove', item);
+	}
+
+	/**
+	 * @param {MouseEvent|TouchEvent} evt
+	 */
+	function pointerup(evt) {
+		const item = findItem(evt);
+		dispatch('pointerup', item);
 	}
 
 	function mouseout() {
@@ -41,9 +57,10 @@
 	height={rectHeight}
 	fill="transparent"
 	role="presentation"
-	on:mousemove={findItem}
+	on:mousemove={pointermove}
 	on:mouseout={mouseout}
-	on:touchmove={findItem}
+	on:touchmove={pointermove}
+	on:pointerup={pointerup}
 	on:blur={mouseout}
 />
 

@@ -17,20 +17,24 @@
 		seriesNames: energySeriesNames,
 		seriesLabels: energySeriesLabels,
 		seriesColours: energySeriesColours,
-		hoverData: energyHoverData
+		hoverTime: energyHoverTime,
+		hoverData: energyHoverData,
+		focusData: energyFocusData,
+		focusTime: energyFocusTime
 	} = getContext('energy-data-viz');
 
-	const { hoverData: emissionsHoverData } = getContext('emissions-data-viz');
-	const { hoverData: intensityHoverData } = getContext('intensity-data-viz');
+	const { hoverData: emissionsHoverData, focusData: emissionsFocusData } =
+		getContext('emissions-data-viz');
+	const { hoverData: intensityHoverData, focusData: intensityFocusData } =
+		getContext('intensity-data-viz');
 	const {
 		// seriesNames: capacitySeriesNames,
 		// seriesLabels: capacitySeriesLabels,
-		hoverData: capacityHoverData
+		hoverData: capacityHoverData,
+		focusData: capacityFocusData
 	} = getContext('capacity-data-viz');
 
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
-
-	$: hoverTime = $energyHoverData ? $energyHoverData['time'] : null;
 
 	$: sourceNames = $energySeriesNames
 		.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
@@ -49,6 +53,15 @@
 				(acc, id) => acc + $energyHoverData[id],
 				0
 		  )
+		: $energyFocusData
+		? sourceNames.reduce(
+				/**
+				 * @param {number} acc
+				 * @param {string} id
+				 */
+				(acc, id) => acc + $energyFocusData[id],
+				0
+		  )
 		: 0;
 	$: energyLoadsTotal = $energyHoverData
 		? loadNames.reduce(
@@ -57,6 +70,15 @@
 				 * @param {string} id
 				 */
 				(acc, id) => acc + $energyHoverData[id],
+				0
+		  )
+		: $energyFocusData
+		? loadNames.reduce(
+				/**
+				 * @param {number} acc
+				 * @param {string} id
+				 */
+				(acc, id) => acc + $energyFocusData[id],
 				0
 		  )
 		: 0;
@@ -68,6 +90,15 @@
 				 * @param {string} id
 				 */
 				(acc, id) => acc + $capacityHoverData[id],
+				0
+		  )
+		: $capacityFocusData
+		? sourceNames.reduce(
+				/**
+				 * @param {number} acc
+				 * @param {string} id
+				 */
+				(acc, id) => acc + $capacityFocusData[id],
 				0
 		  )
 		: 0;
@@ -111,7 +142,7 @@
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
 		includeBatteryAndLoads={$includeBatteryAndLoads}
-		{hoverTime}
+		hoverTime={$energyHoverTime || $energyFocusTime}
 		on:change={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
 	/>
 
@@ -195,12 +226,20 @@
 					</td>
 					<td class="px-2 py-1.5">
 						<div class="flex flex-col items-end">
-							{$energyHoverData ? formatValue($energyHoverData[name]) : ''}
+							{$energyHoverData
+								? formatValue($energyHoverData[name])
+								: $energyFocusData
+								? formatValue($energyFocusData[name])
+								: ''}
 						</div>
 					</td>
 					<td class="px-2 py-1.5">
 						<div class="flex flex-col items-end mr-3">
-							{$capacityHoverData ? formatValue($capacityHoverData[name]) : ''}
+							{$capacityHoverData
+								? formatValue($capacityHoverData[name])
+								: $capacityFocusData
+								? formatValue($capacityFocusData[name])
+								: ''}
 						</div>
 					</td>
 				</tr>
@@ -252,12 +291,20 @@
 						</td>
 						<td class="px-2 py-1.5">
 							<div class="flex flex-col items-end">
-								{$energyHoverData ? formatValue($energyHoverData[name]) : ''}
+								{$energyHoverData
+									? formatValue($energyHoverData[name])
+									: $energyFocusData
+									? formatValue($energyFocusData[name])
+									: ''}
 							</div>
 						</td>
 						<td class="px-2 py-1.5">
 							<div class="flex flex-col items-end mr-3">
-								{$capacityHoverData ? formatValue($capacityHoverData[name]) : ''}
+								{$capacityHoverData
+									? formatValue($capacityHoverData[name])
+									: $capacityFocusData
+									? formatValue($capacityFocusData[name])
+									: ''}
 							</div>
 						</td>
 					</tr>
@@ -306,12 +353,20 @@
 
 				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end">
-						{$emissionsHoverData ? formatValue($emissionsHoverData['au.emissions.total']) : ''}
+						{$emissionsHoverData
+							? formatValue($emissionsHoverData['au.emissions.total'])
+							: $emissionsFocusData
+							? formatValue($emissionsFocusData['au.emissions.total'])
+							: ''}
 					</div>
 				</th>
 				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end mr-3">
-						{$intensityHoverData ? formatValue($intensityHoverData['au.emission_intensity']) : ''}
+						{$intensityHoverData
+							? formatValue($intensityHoverData['au.emission_intensity'])
+							: $intensityFocusData
+							? formatValue($intensityFocusData['au.emission_intensity'])
+							: ''}
 					</div>
 				</th>
 			</tr>

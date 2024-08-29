@@ -8,6 +8,8 @@
 
 	export let lineColour = '#333';
 
+	export let borderStyle = 'solid';
+
 	export let yTopOffset = 0;
 
 	export let isShapeStack = false;
@@ -49,11 +51,14 @@
 	{#if useDataHeight}
 		<div
 			style="left: {x - 1}px; top: {y[0]}px; height: {y[1] -
-				y[0]}px; border-left-color: {lineColour}"
+				y[0]}px; border-left-color: {lineColour}; border-style: {borderStyle}"
 			class="hover-line"
 		/>
 	{:else}
-		<div style="left: {x - 1}px;" class="hover-line" />
+		<div
+			style="left: {x - 1}px; border-left-color: {lineColour}; border-style: {borderStyle}"
+			class="hover-line"
+		/>
 	{/if}
 {/if}
 

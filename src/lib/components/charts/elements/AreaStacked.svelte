@@ -64,7 +64,25 @@
 		const closest = closestTo(new Date(xInvert), compareDates);
 		const found = dataset.find((d) => d.time === closest?.getTime());
 
-		dispatch('mousemove', { data: found, key });
+		return { data: found, key };
+	}
+
+	/**
+	 * @param {MouseEvent|TouchEvent} evt
+	 * @param {string} key
+	 */
+	function pointermove(evt, key) {
+		const item = findItem(evt, key);
+		dispatch('mousemove', item);
+	}
+
+	/**
+	 * @param {MouseEvent|TouchEvent} evt
+	 * @param {string} key
+	 */
+	function pointerup(evt, key) {
+		const item = findItem(evt, key);
+		dispatch('pointerup', item.data);
 	}
 
 	function mouseout() {
@@ -82,10 +100,11 @@
 			stroke={display === 'area' ? 'none' : $zGet(d)}
 			stroke-width={display === 'area' ? '0' : '2px'}
 			opacity={opacity(d)}
-			on:mousemove={(e) => findItem(e, d.key || d.group)}
+			on:mousemove={(e) => pointermove(e, d.key || d.group)}
 			on:mouseout={mouseout}
-			on:touchmove={(e) => findItem(e, d.key || d.group)}
+			on:touchmove={(e) => pointermove(e, d.key || d.group)}
 			on:blur={mouseout}
+			on:pointerup={(e) => pointerup(e, d.key || d.group)}
 		/>
 	{/each}
 </g>

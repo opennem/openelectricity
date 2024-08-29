@@ -466,7 +466,7 @@ function intensity({ processedEmissions, processedEnergy }) {
 		return obj;
 	});
 
-	processedIntensity.yDomain = [0, 1500];
+	processedIntensity.yDomain = [0, 1200];
 	processedIntensity.chartType = 'line';
 
 	return processedIntensity;
