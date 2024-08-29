@@ -7,13 +7,17 @@
 	export let defaultText = '';
 	export let showTotal = false;
 
+	/** @type {Function} */
+	export let convertAndFormatValue = (/** @type {number} */ value) => value;
+
 	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 	$: hoverKeyValue =
 		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
+	$: convertedValue =
+		hoverKeyValue || hoverKeyValue === 0 ? convertAndFormatValue(hoverKeyValue) : NaN;
 	$: hoverKeyColour = hoverKey ? seriesColours[hoverKey] : '';
 	$: hoverKeyLabel = hoverKey ? seriesLabels[hoverKey] : '';
-	// $: percent = hoverKeyValue ? (hoverKeyValue / hoverMax) * 100 : 0;
 </script>
 
 <div class="h-6">
@@ -32,8 +36,7 @@
 								{hoverKeyLabel}
 							</div>
 
-							<strong class="font-semibold">{formatValue(hoverKeyValue)}</strong>
-							<!-- <small>— {formatValue(percent)}%</small> -->
+							<strong class="font-semibold">{formatValue(convertedValue)}</strong>
 						</div>
 					{/if}
 

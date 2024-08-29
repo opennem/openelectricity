@@ -20,18 +20,30 @@
 		hoverTime: energyHoverTime,
 		hoverData: energyHoverData,
 		focusData: energyFocusData,
-		focusTime: energyFocusTime
+		focusTime: energyFocusTime,
+		convertAndFormatValue: energyConvertAndFormatValue,
+		displayUnit: energyDisplayUnit
 	} = getContext('energy-data-viz');
 
-	const { hoverData: emissionsHoverData, focusData: emissionsFocusData } =
-		getContext('emissions-data-viz');
-	const { hoverData: intensityHoverData, focusData: intensityFocusData } =
-		getContext('intensity-data-viz');
+	const {
+		hoverData: emissionsHoverData,
+		focusData: emissionsFocusData,
+		convertAndFormatValue: emissionsConvertAndFormatValue,
+		displayUnit: emissionsDisplayUnit
+	} = getContext('emissions-data-viz');
+	const {
+		hoverData: intensityHoverData,
+		focusData: intensityFocusData,
+		convertAndFormatValue: intensityConvertAndFormatvalue,
+		displayUnit: intensityDisplayUnit
+	} = getContext('intensity-data-viz');
 	const {
 		// seriesNames: capacitySeriesNames,
 		// seriesLabels: capacitySeriesLabels,
 		hoverData: capacityHoverData,
-		focusData: capacityFocusData
+		focusData: capacityFocusData,
+		convertAndFormatValue: capacityConvertAndFormatValue,
+		displayUnit: capacityDisplayUnit
 	} = getContext('capacity-data-viz');
 
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
@@ -169,13 +181,13 @@
 				<th>
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Generation</span>
-						<small class="font-light text-xxs">GWh</small>
+						<small class="font-light text-xxs">{$energyDisplayUnit}</small>
 					</div>
 				</th>
 				<th>
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Capacity</span>
-						<small class="font-light text-xxs">MW</small>
+						<small class="font-light text-xxs">{$capacityDisplayUnit}</small>
 					</div>
 				</th>
 			</tr>
@@ -188,12 +200,12 @@
 				</th>
 				<th class="border-b border-warm-grey">
 					<div class="flex flex-col items-end">
-						{formatValue(energySourcesTotal)}
+						{$energyConvertAndFormatValue(energySourcesTotal)}
 					</div>
 				</th>
 				<th class="border-b border-warm-grey">
 					<div class="flex flex-col items-end mr-3">
-						{formatValue(capacitySourcesTotal)}
+						{$capacityConvertAndFormatValue(capacitySourcesTotal)}
 					</div>
 				</th>
 			</tr>
@@ -227,18 +239,18 @@
 					<td class="px-2 py-1.5">
 						<div class="flex flex-col items-end">
 							{$energyHoverData
-								? formatValue($energyHoverData[name])
+								? $energyConvertAndFormatValue($energyHoverData[name])
 								: $energyFocusData
-								? formatValue($energyFocusData[name])
+								? $energyConvertAndFormatValue($energyFocusData[name])
 								: ''}
 						</div>
 					</td>
 					<td class="px-2 py-1.5">
 						<div class="flex flex-col items-end mr-3">
 							{$capacityHoverData
-								? formatValue($capacityHoverData[name])
+								? $capacityConvertAndFormatValue($capacityHoverData[name])
 								: $capacityFocusData
-								? formatValue($capacityFocusData[name])
+								? $capacityConvertAndFormatValue($capacityFocusData[name])
 								: ''}
 						</div>
 					</td>
@@ -254,7 +266,7 @@
 					</th>
 					<th class="border-b border-warm-grey">
 						<div class="flex flex-col items-end">
-							{formatValue(energyLoadsTotal)}
+							{$energyConvertAndFormatValue(energyLoadsTotal)}
 						</div>
 					</th>
 					<th class="border-b border-warm-grey" />
@@ -292,18 +304,18 @@
 						<td class="px-2 py-1.5">
 							<div class="flex flex-col items-end">
 								{$energyHoverData
-									? formatValue($energyHoverData[name])
+									? $energyConvertAndFormatValue($energyHoverData[name])
 									: $energyFocusData
-									? formatValue($energyFocusData[name])
+									? $energyConvertAndFormatValue($energyFocusData[name])
 									: ''}
 							</div>
 						</td>
 						<td class="px-2 py-1.5">
 							<div class="flex flex-col items-end mr-3">
 								{$capacityHoverData
-									? formatValue($capacityHoverData[name])
+									? $capacityConvertAndFormatValue($capacityHoverData[name])
 									: $capacityFocusData
-									? formatValue($capacityFocusData[name])
+									? $capacityConvertAndFormatValue($capacityFocusData[name])
 									: ''}
 							</div>
 						</td>
@@ -328,13 +340,13 @@
 				<th>
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Volume</span>
-						<small class="font-light text-xxs">tCO2e</small>
+						<small class="font-light text-xxs">{$emissionsDisplayUnit}</small>
 					</div>
 				</th>
 				<th>
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Intensity</span>
-						<small class="font-light text-xxs">kgCO2e/MWh</small>
+						<small class="font-light text-xxs">{$intensityDisplayUnit}</small>
 					</div>
 				</th>
 			</tr>
@@ -354,18 +366,18 @@
 				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end">
 						{$emissionsHoverData
-							? formatValue($emissionsHoverData['au.emissions.total'])
+							? $emissionsConvertAndFormatValue($emissionsHoverData['au.emissions.total'])
 							: $emissionsFocusData
-							? formatValue($emissionsFocusData['au.emissions.total'])
+							? $emissionsConvertAndFormatValue($emissionsFocusData['au.emissions.total'])
 							: ''}
 					</div>
 				</th>
 				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end mr-3">
 						{$intensityHoverData
-							? formatValue($intensityHoverData['au.emission_intensity'])
+							? $intensityConvertAndFormatvalue($intensityHoverData['au.emission_intensity'])
 							: $intensityFocusData
-							? formatValue($intensityFocusData['au.emission_intensity'])
+							? $intensityConvertAndFormatvalue($intensityFocusData['au.emission_intensity'])
 							: ''}
 					</div>
 				</th>

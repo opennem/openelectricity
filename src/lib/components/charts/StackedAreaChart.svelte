@@ -187,18 +187,18 @@
 			<AxisX
 				ticks={xTicks}
 				gridlines={false}
-				formatTick={hoverData ? () => '' : formatTickX}
-				tickMarks={hoverData ? false : true}
+				formatTick={formatTickX}
+				tickMarks={true}
 				snapTicks={true}
 			/>
 		</Svg>
 
 		<Html pointerEvents={false}>
-			<HoverText {hoverData} isShapeStack={true} position="bottom">
+			<!-- <HoverText {hoverData} isShapeStack={true} position="bottom">
 				<span class="text-[10px] block">
 					{formatTickX(hoverTime)}
 				</span>
-			</HoverText>
+			</HoverText> -->
 
 			<!-- <HoverText hoverData={focusData} isShapeStack={true} position="bottom">
 				<span class="text-[10px] block">

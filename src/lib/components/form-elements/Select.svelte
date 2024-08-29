@@ -44,7 +44,7 @@
 
 	{#if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-20 shadow-md p-2 text-sm"
+			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm"
 			in:fly={{ y: -5, duration: 150 }}
 			out:fly={{ y: -5, duration: 150 }}
 		>

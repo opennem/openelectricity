@@ -1,5 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
+	import { getNextPrefix } from '$lib/utils/si-units';
 	import StackedAreaChart from '$lib/components/charts/StackedAreaChart.svelte';
 	import Tooltip from './Tooltip.svelte';
 
@@ -9,7 +10,9 @@
 
 	const {
 		title,
-		unit,
+		displayPrefix,
+		displayUnit,
+		convertAndFormatValue,
 		seriesData,
 		seriesNames,
 		seriesColours,
@@ -17,7 +20,6 @@
 		yDomain,
 		xTicks,
 		formatTickX,
-		formatTickY,
 		chartType,
 		isChartTypeArea,
 		chartOverlay,
@@ -40,21 +42,32 @@
 
 	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
 	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
+
+	function moveToNextDisplayPrefix() {
+		$displayPrefix = getNextPrefix($displayPrefix);
+	}
 </script>
 
 <section>
 	{#if names.length}
 		<header>
-			<div>
-				<h5 class="m-0">
+			<div class="flex gap-2 items-center">
+				<h5 class="m-0 leading-none">
 					{$title}
-
-					<span class="text-sm font-light text-mid-grey">{$unit || ''}</span>
-
-					<span class="text-sm font-light text-mid-grey">
-						— {$singleSelectionModelScenarioLabel} ({$singleSelectionPathway}), {$selectedRegionLabel}
-					</span>
 				</h5>
+
+				<button
+					class="font-light text-sm text-mid-grey hover:underline"
+					on:click={moveToNextDisplayPrefix}
+				>
+					{$displayUnit || ''}
+				</button>
+
+				<span class="font-light text-sm text-mid-grey">—</span>
+
+				<span class="font-light text-sm text-mid-grey">
+					{$singleSelectionModelScenarioLabel} ({$singleSelectionPathway}), {$selectedRegionLabel}
+				</span>
 			</div>
 
 			<Tooltip
@@ -62,6 +75,7 @@
 				hoverKey={$hoverKey}
 				seriesColours={$seriesColours}
 				seriesLabels={$seriesLabels}
+				convertAndFormatValue={$convertAndFormatValue}
 				showTotal={$isChartTypeArea ? true : false}
 			/>
 		</header>
@@ -72,11 +86,12 @@
 			yKey={[0, 1]}
 			zKey="key"
 			xTicks={$xTicks}
+			yTicks={2}
 			yDomain={$yDomain}
 			seriesNames={names}
 			zRange={colours}
 			formatTickX={$formatTickX}
-			formatTickY={$formatTickY}
+			formatTickY={$convertAndFormatValue}
 			chartType={$chartType}
 			overlay={$chartOverlay}
 			overlayLine={$chartOverlayLine}

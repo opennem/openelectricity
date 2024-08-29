@@ -22,7 +22,9 @@ function getLoadIds(statsData) {
  * historicalTimeSeries: TimeSeries,
  * projectionTimeSeries: TimeSeries,
  * projectionLoadSeries: string[],
- * unit: string
+ * baseUnit: string,
+ * prefix: SiPrefix,
+ * displayPrefix: SiPrefix
  * }} param0
  * @returns {ProcessedDataViz}
  */
@@ -30,8 +32,11 @@ function combineHistoryProjection({
 	historicalTimeSeries,
 	projectionTimeSeries,
 	projectionLoadSeries,
-	unit = ''
+	baseUnit = '',
+	prefix = '',
+	displayPrefix = ''
 }) {
+	console.log('combineHistoryProjection', baseUnit, prefix);
 	const historicalTimeSeriesData = historicalTimeSeries.data;
 	const projectionTimeSeriesData = projectionTimeSeries.data;
 
@@ -86,7 +91,9 @@ function combineHistoryProjection({
 			seriesLabels,
 			seriesLoadsIds: projectionLoadSeries,
 			yDomain: [datasetMin, datasetMax],
-			unit
+			prefix,
+			baseUnit,
+			displayPrefix
 		};
 	}
 
@@ -98,7 +105,9 @@ function combineHistoryProjection({
 		nameOptions: [],
 		seriesLoadsIds: [],
 		yDomain: [],
-		unit: ''
+		prefix,
+		baseUnit,
+		displayPrefix
 	};
 }
 
@@ -167,7 +176,9 @@ function generation({ projection, history, group, colourReducer, includeBatteryA
 		historicalTimeSeries,
 		projectionTimeSeries,
 		projectionLoadSeries,
-		unit: 'GWh'
+		baseUnit: projectionStats.baseUnit,
+		prefix: projectionStats.prefix,
+		displayPrefix: 'T'
 	});
 }
 
@@ -237,7 +248,10 @@ function capacity({ projection, history, group, colourReducer, includeBatteryAnd
 	return combineHistoryProjection({
 		historicalTimeSeries,
 		projectionTimeSeries,
-		projectionLoadSeries
+		projectionLoadSeries,
+		baseUnit: projectionStats.baseUnit,
+		prefix: projectionStats.prefix,
+		displayPrefix: 'G'
 	});
 }
 
@@ -299,7 +313,10 @@ function emissions({ projection, history, includeBatteryAndLoads }) {
 		...combineHistoryProjection({
 			historicalTimeSeries,
 			projectionTimeSeries,
-			projectionLoadSeries: []
+			projectionLoadSeries: [],
+			baseUnit: projectionStats.baseUnit,
+			prefix: projectionStats.prefix,
+			displayPrefix: 'k'
 		}),
 		seriesLabels: { 'au.emissions.total': 'Emissions Volume' },
 		nameOptions: [{ label: 'Emissions Volume', value: 'au.emissions.total' }]
@@ -343,7 +360,10 @@ function intensity({ processedEmissions, processedEnergy }) {
 		seriesLabels: { 'au.emission_intensity': 'Emission Intensity' },
 		nameOptions: [{ label: 'Emission Intensity', value: 'au.emission_intensity' }],
 		yDomain: [0, 1200],
-		chartType: 'line'
+		chartType: 'line',
+		baseUnit: 'kgCO2e/MWh',
+		prefix: '',
+		displayPrefix: ''
 	};
 }
 

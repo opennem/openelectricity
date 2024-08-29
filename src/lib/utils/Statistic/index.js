@@ -1,5 +1,5 @@
 import deepCopy from '../deep-copy';
-import { siPrefixes, parseUnit, convertValue } from '../si-units';
+import { parseUnit } from '../si-units';
 import getMinInterval from './min-interval';
 import mergeStatsType from './merge-stats-type';
 import interpolateDatasets from './interpolate-data';
@@ -19,8 +19,9 @@ function Statistic(data, statsType, unit = '') {
 
 	this.statsUnit = unit;
 
-	const { multiplier, baseUnit } = parseUnit(unit);
-	this.multiplier = multiplier;
+	const { baseUnit, prefix } = parseUnit(unit);
+
+	this.prefix = prefix;
 	this.baseUnit = baseUnit;
 }
 
@@ -48,20 +49,6 @@ Statistic.prototype.reorder = function (/** @type {Array.<string | FuelTechCode>
 	});
 
 	this.data = data;
-	return this;
-};
-
-Statistic.prototype.convertValues = function (/** @type {SiPrefix} */ prefix) {
-	this.data.forEach((/** @type {StatsData} */ d) => {
-		d[this.statsType].data = d[this.statsType].data.map((/** @type {number | null} */ value) => {
-			if (value === null) return null;
-			return convertValue(value / this.multiplier, prefix);
-		});
-	});
-
-	this.statsUnit = prefix + this.baseUnit;
-	this.multiplier = siPrefixes[prefix];
-
 	return this;
 };
 

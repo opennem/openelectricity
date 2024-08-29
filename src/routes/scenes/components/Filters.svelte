@@ -31,7 +31,8 @@
 		selectedFuelTechGroup,
 		isTechnologyViewSection,
 		isScenarioViewSection,
-		isSingleSelectionMode
+		isSingleSelectionMode,
+		showScenarioOptions
 	} = getContext('scenario-filters');
 
 	const dataVizStores = [
@@ -40,8 +41,6 @@
 		getContext('capacity-data-viz'),
 		getContext('intensity-data-viz')
 	];
-
-	let showScenarioOptions = false;
 
 	init();
 
@@ -190,9 +189,9 @@
 			{#if $singleSelectionModel && $singleSelectionScenario}
 				<button
 					class="text-sm flex items-center gap-3 justify-center px-8 py-4 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
-					class:border-dark-grey={showScenarioOptions}
-					class:border-mid-warm-grey={!showScenarioOptions}
-					on:click={() => (showScenarioOptions = !showScenarioOptions)}
+					class:border-dark-grey={$showScenarioOptions}
+					class:border-mid-warm-grey={!$showScenarioOptions}
+					on:click={() => ($showScenarioOptions = !$showScenarioOptions)}
 				>
 					{#if $isScenarioViewSection}
 						Update Scenarios
@@ -200,7 +199,7 @@
 						{scenarioLabels[$singleSelectionModel][$singleSelectionScenario]}
 					{/if}
 
-					{#if showScenarioOptions}
+					{#if $showScenarioOptions}
 						<IconMinus />
 					{:else}
 						<IconPlus />
@@ -214,12 +213,12 @@
 {#if $selectedViewSection}
 	<div
 		class="transition-all relative"
-		class:z-20={showScenarioOptions}
-		class:z-0={!showScenarioOptions}
-		class:opacity-100={showScenarioOptions}
-		class:h-auto={showScenarioOptions}
-		class:opacity-0={!showScenarioOptions}
-		class:h-0={!showScenarioOptions}
+		class:z-20={$showScenarioOptions}
+		class:z-0={!$showScenarioOptions}
+		class:opacity-100={$showScenarioOptions}
+		class:h-auto={$showScenarioOptions}
+		class:opacity-0={!$showScenarioOptions}
+		class:h-0={!$showScenarioOptions}
 	>
 		<ScenarioSelection />
 	</div>

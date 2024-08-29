@@ -43,7 +43,7 @@
 		{/if}
 
 		<div class="flex items-center text-mid-grey justify-between text-xs">
-			<span class="w-24 grayscale">
+			<span class="w-20 grayscale">
 				<img src={modelLogoPath[model.organisation]} alt="{model.organisation} logo" />
 			</span>
 			<div>

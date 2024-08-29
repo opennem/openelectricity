@@ -1,12 +1,24 @@
 import { derived, writable } from 'svelte/store';
 import { getNumberFormat } from '$lib/utils/formatters';
+import { convert } from '$lib/utils/si-units';
 
 const numberFormat = getNumberFormat();
 
 export default function () {
 	const title = writable('');
 
-	const unit = writable('');
+	// const displayUnit = writable('');
+	const baseUnit = writable('');
+
+	/** @type {import('svelte/store').Writable<SiPrefix>} */
+	const prefix = writable('');
+
+	/** @type {import('svelte/store').Writable<SiPrefix>} */
+	const displayPrefix = writable('');
+
+	const displayUnit = derived([displayPrefix, baseUnit], ([$displayPrefix, $baseUnit]) => {
+		return ($displayPrefix || '') + $baseUnit;
+	});
 
 	/** @type {import('svelte/store').Writable<TimeSeriesData[]>} */
 	const seriesData = writable([]);
@@ -34,6 +46,13 @@ export default function () {
 
 	/** @type {import('svelte/store').Writable<Function>} */
 	const formatTickY = writable((/** @type {number} */ d) => numberFormat.format(d));
+
+	const convertAndFormatValue = derived([prefix, displayPrefix], ([$prefix, $displayPrefix]) => {
+		return (/** @type {number} */ d) => {
+			const converted = convert($prefix, $displayPrefix, d);
+			return isNaN(converted) ? '—' : numberFormat.format(converted);
+		};
+	});
 
 	/** @type {import('svelte/store').Writable<'area' | 'line'>} */
 	const chartType = writable('area');
@@ -88,7 +107,12 @@ export default function () {
 
 	return {
 		title,
-		unit,
+		displayUnit,
+		baseUnit,
+		prefix,
+		displayPrefix,
+		convertAndFormatValue,
+
 		seriesData,
 		seriesNames,
 		seriesColours,

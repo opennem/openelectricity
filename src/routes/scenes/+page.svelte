@@ -69,7 +69,8 @@
 		singleSelectionData,
 		selectedFuelTechGroup,
 		multiSelectionData,
-		includeBatteryAndLoads
+		includeBatteryAndLoads,
+		showScenarioOptions
 	} = getContext('scenario-filters');
 
 	const dataVizStores = dataVizStoreNames.reduce(
@@ -309,7 +310,9 @@
 		store.yDomain.set(p.yDomain);
 		store.chartType.set(p.chartType);
 		store.chartHeightClasses.set(chartHeightClasses);
-		store.unit.set(p.unit);
+		store.baseUnit.set(p.baseUnit);
+		store.prefix.set(p.prefix);
+		store.displayPrefix.set(p.displayPrefix);
 	}
 
 	/**
@@ -395,7 +398,8 @@
 
 <Filters />
 
-<div class="max-w-none px-16 p-12 flex gap-12">
+<!-- WORKAROUND: class:relative={!$showScenarioOptions} to allow Pathway dropdown to layer above -->
+<div class="max-w-none px-16 p-12 flex gap-12 z-30" class:relative={!$showScenarioOptions}>
 	<section class="w-[100%]">
 		{#if fetching}
 			<div

@@ -5,6 +5,7 @@ import { regionsWithShortLabels } from '../page-data-options/regions';
 export default function () {
 	const selectedRegion = writable('');
 	const selectedFuelTechGroup = writable('');
+	const showScenarioOptions = writable(false);
 
 	/** @type {import('svelte/store').Writable<ScenarioSelect>} */
 	const singleSelectionData = writable();
@@ -79,6 +80,7 @@ export default function () {
 		isScenarioViewSection,
 		isRegionViewSection,
 
-		includeBatteryAndLoads
+		includeBatteryAndLoads,
+		showScenarioOptions
 	};
 }
