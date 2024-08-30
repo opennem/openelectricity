@@ -48,6 +48,9 @@ export default function () {
 	/** @type {import('svelte/store').Writable<Date[]>} */
 	const xTicks = writable([]);
 
+	/** @type {import('svelte/store').Writable<Date[]>} */
+	const miniXTicks = writable([]);
+
 	/** @type {import('svelte/store').Writable<Function>} */
 	const formatTickX = writable((/** @type {*} */ d) => d);
 
@@ -140,6 +143,7 @@ export default function () {
 		nameOptions,
 		yDomain,
 		xTicks,
+		miniXTicks,
 		formatTickX,
 		formatTickY,
 		chartType,

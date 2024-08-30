@@ -1,5 +1,5 @@
 <script>
-	import { formatFyTickX, formatValue } from '$lib/utils/formatters';
+	import { formatFyTickX } from '$lib/utils/formatters';
 	export let hoverData;
 	export let hoverKey;
 	export let seriesColours;

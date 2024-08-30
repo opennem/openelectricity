@@ -25,7 +25,7 @@
 	$: seriesNames = selectedStore.seriesNames;
 	$: seriesLabels = selectedStore.seriesLabels;
 	$: seriesColours = selectedStore.seriesColours;
-	$: xTicks = selectedStore.xTicks;
+	$: xTicks = selectedStore.miniXTicks;
 	$: formatTickX = selectedStore.formatTickX;
 	$: formatTickY = selectedStore.formatTickY;
 	$: chartOverlay = selectedStore.chartOverlay;

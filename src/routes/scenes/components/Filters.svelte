@@ -16,7 +16,7 @@
 	import { modelOptions } from '../page-data-options/models';
 	import { groupOptions as groupTechnologyOptions } from '../page-data-options/groups-technology';
 	import { groupOptions as groupScenarioOptions } from '../page-data-options/groups-scenario';
-	import { chartXTicks } from '../page-data-options/chart-ticks';
+	import { chartXTicks, miniChartXTicks } from '../page-data-options/chart-ticks';
 	import ScenarioSelection from './ScenarioSelection.svelte';
 
 	const {
@@ -101,6 +101,7 @@
 		// TODO: if singleselection model changes, update xTicks, otherwise use default xTicks
 		dataVizStores.forEach((store) => {
 			store.xTicks.set(chartXTicks[$singleSelectionData.model]);
+			store.miniXTicks.set(miniChartXTicks[$singleSelectionData.model]);
 		});
 	}
 	$: if (

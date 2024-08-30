@@ -20,3 +20,17 @@ export const chartXTicks = {
 		startOfYear(new Date('2050-01-01'))
 	]
 };
+
+/** @type {Object.<string, Date[]>} */
+export const miniChartXTicks = {
+	[AEMO_2024_ISP]: [
+		startOfYear(new Date('2010-01-01')),
+		startOfYear(new Date('2024-01-01')),
+		startOfYear(new Date('2050-01-01'))
+	],
+	[AEMO_2022_ISP]: [
+		startOfYear(new Date('2010-01-01')),
+		startOfYear(new Date('2023-01-01')),
+		startOfYear(new Date('2050-01-01'))
+	]
+};
