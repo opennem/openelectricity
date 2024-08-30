@@ -7,7 +7,6 @@
 	import AxisX from './elements/AxisX.svelte';
 	import AxisY from './elements/AxisY.svelte';
 	import HoverLayer from './elements/HoverLayer.svelte';
-	import HoverLine from './elements/HoverLine.html.svelte';
 	import ClipPath from './elements/defs/ClipPath.svelte';
 	import HoverText from './elements/HoverText.html.svelte';
 	import Overlay from './elements/Overlay.svelte';
@@ -128,8 +127,13 @@
 					{formatTickX(hoverTime)}
 				</span>
 			</HoverText>
-			<HoverLine {hoverData} yTopOffset={6} lineColour={zKey} />
 		</Html>
+
+		<Svg pointerEvents={false}>
+			{#if hoverData}
+				<LineX xValue={hoverData} strokeArray="none" />
+			{/if}
+		</Svg>
 	</LayerCake>
 
 	<p class="text-xs text-mid-grey relative -top-5 md:hidden">{title}</p>
