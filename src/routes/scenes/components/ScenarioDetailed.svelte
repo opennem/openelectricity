@@ -27,12 +27,13 @@
 	$: seriesColours = selectedStore.seriesColours;
 	$: xTicks = selectedStore.miniXTicks;
 	$: formatTickX = selectedStore.formatTickX;
-	$: formatTickY = selectedStore.formatTickY;
+	$: formatTickY = selectedStore.convertAndFormatValue;
 	$: chartOverlay = selectedStore.chartOverlay;
 	$: chartOverlayLine = selectedStore.chartOverlayLine;
 	$: chartOverlayHatchStroke = selectedStore.chartOverlayHatchStroke;
 	$: hoverData = selectedStore.hoverData;
 	$: seriesData = selectedStore.seriesData;
+	$: displayUnit = selectedStore.displayUnit;
 </script>
 
 <ScenarioDescription />
@@ -59,6 +60,7 @@
 		chartOverlayHatchStroke={$chartOverlayHatchStroke}
 		hoverData={$hoverData}
 		seriesData={$seriesData}
+		displayUnit={$displayUnit}
 		on:mousemove
 		on:mouseout
 	/>

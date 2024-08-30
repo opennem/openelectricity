@@ -2,8 +2,6 @@
 	import LineChart from '$lib/components/charts/LineChart.svelte';
 	// import Icon from '$lib/components/Icon.svelte';
 
-	import { formatValue } from '$lib/utils/formatters.js';
-
 	export let seriesNames;
 	export let seriesLabels;
 	export let seriesColours;
@@ -14,6 +12,7 @@
 	export let chartOverlayLine;
 	export let chartOverlayHatchStroke;
 	export let hoverData;
+	export let displayUnit = '';
 
 	/** @type {TimeSeriesData[]} */
 	export let seriesData;
@@ -48,8 +47,8 @@
 
 				<h3 class="leading-sm h-24 mt-4">
 					{#if hoverData}
-						{formatValue(hoverValue)}
-						<!-- <small class="block text-xs text-mid-grey font-light">{displayUnit}</small> -->
+						{formatTickY(hoverValue)}
+						<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
 					{/if}
 				</h3>
 			</header>
