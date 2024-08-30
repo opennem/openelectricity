@@ -38,6 +38,8 @@
 	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
 	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
 
+	$: console.log('title isChartTypeArea', $title, $isChartTypeArea);
+
 	function moveToNextDisplayPrefix() {
 		$displayPrefix = getNextPrefix();
 	}
@@ -70,11 +72,11 @@
 			</div>
 
 			<Tooltip
-				hoverData={$hoverData || $focusData}
+				hoverData={$hoverData}
 				hoverKey={$hoverKey}
 				seriesColours={$seriesColours}
 				seriesLabels={$seriesLabels}
-				convertAndFormatValue={$convertAndFormatValue}
+				{convertAndFormatValue}
 				showTotal={$isChartTypeArea ? true : false}
 			/>
 		</header>
@@ -90,7 +92,7 @@
 			seriesNames={names}
 			zRange={colours}
 			formatTickX={$formatTickX}
-			formatTickY={$convertAndFormatValue}
+			formatTickY={convertAndFormatValue}
 			chartType={$chartType}
 			overlay={$chartOverlay}
 			overlayLine={$chartOverlayLine}

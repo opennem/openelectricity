@@ -22,14 +22,18 @@
 		focusData: energyFocusData,
 		focusTime: energyFocusTime,
 		convertAndFormatValue: energyConvertAndFormatValue,
-		displayUnit: energyDisplayUnit
+		displayUnit: energyDisplayUnit,
+		displayPrefix: energyDisplayPrefix,
+		getNextPrefix: getEnergyNextPrefix
 	} = getContext('energy-data-viz');
 
 	const {
 		hoverData: emissionsHoverData,
 		focusData: emissionsFocusData,
 		convertAndFormatValue: emissionsConvertAndFormatValue,
-		displayUnit: emissionsDisplayUnit
+		displayUnit: emissionsDisplayUnit,
+		displayPrefix: emissionsDisplayPrefix,
+		getNextPrefix: getEmissionsNextPrefix
 	} = getContext('emissions-data-viz');
 	const {
 		hoverData: intensityHoverData,
@@ -43,7 +47,9 @@
 		hoverData: capacityHoverData,
 		focusData: capacityFocusData,
 		convertAndFormatValue: capacityConvertAndFormatValue,
-		displayUnit: capacityDisplayUnit
+		displayUnit: capacityDisplayUnit,
+		displayPrefix: capacityDisplayPrefix,
+		getNextPrefix: getCapacityNextPrefix
 	} = getContext('capacity-data-viz');
 
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
@@ -181,13 +187,23 @@
 				<th>
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Generation</span>
-						<small class="font-light text-xxs">{$energyDisplayUnit}</small>
+						<button
+							class="font-light text-xxs hover:underline"
+							on:click={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
+						>
+							{$energyDisplayUnit}
+						</button>
 					</div>
 				</th>
 				<th>
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Capacity</span>
-						<small class="font-light text-xxs">{$capacityDisplayUnit}</small>
+						<button
+							class="font-light text-xxs hover:underline"
+							on:click={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
+						>
+							{$capacityDisplayUnit}
+						</button>
 					</div>
 				</th>
 			</tr>
@@ -200,12 +216,12 @@
 				</th>
 				<th class="border-b border-warm-grey">
 					<div class="flex flex-col items-end">
-						{$energyConvertAndFormatValue(energySourcesTotal)}
+						{energyConvertAndFormatValue(energySourcesTotal)}
 					</div>
 				</th>
 				<th class="border-b border-warm-grey">
 					<div class="flex flex-col items-end mr-3">
-						{$capacityConvertAndFormatValue(capacitySourcesTotal)}
+						{capacityConvertAndFormatValue(capacitySourcesTotal)}
 					</div>
 				</th>
 			</tr>
@@ -239,18 +255,18 @@
 					<td class="px-2 py-1.5">
 						<div class="flex flex-col items-end">
 							{$energyHoverData
-								? $energyConvertAndFormatValue($energyHoverData[name])
+								? energyConvertAndFormatValue($energyHoverData[name])
 								: $energyFocusData
-								? $energyConvertAndFormatValue($energyFocusData[name])
+								? energyConvertAndFormatValue($energyFocusData[name])
 								: ''}
 						</div>
 					</td>
 					<td class="px-2 py-1.5">
 						<div class="flex flex-col items-end mr-3">
 							{$capacityHoverData
-								? $capacityConvertAndFormatValue($capacityHoverData[name])
+								? capacityConvertAndFormatValue($capacityHoverData[name])
 								: $capacityFocusData
-								? $capacityConvertAndFormatValue($capacityFocusData[name])
+								? capacityConvertAndFormatValue($capacityFocusData[name])
 								: ''}
 						</div>
 					</td>
@@ -266,7 +282,7 @@
 					</th>
 					<th class="border-b border-warm-grey">
 						<div class="flex flex-col items-end">
-							{$energyConvertAndFormatValue(energyLoadsTotal)}
+							{energyConvertAndFormatValue(energyLoadsTotal)}
 						</div>
 					</th>
 					<th class="border-b border-warm-grey" />
@@ -304,18 +320,18 @@
 						<td class="px-2 py-1.5">
 							<div class="flex flex-col items-end">
 								{$energyHoverData
-									? $energyConvertAndFormatValue($energyHoverData[name])
+									? energyConvertAndFormatValue($energyHoverData[name])
 									: $energyFocusData
-									? $energyConvertAndFormatValue($energyFocusData[name])
+									? energyConvertAndFormatValue($energyFocusData[name])
 									: ''}
 							</div>
 						</td>
 						<td class="px-2 py-1.5">
 							<div class="flex flex-col items-end mr-3">
 								{$capacityHoverData
-									? $capacityConvertAndFormatValue($capacityHoverData[name])
+									? capacityConvertAndFormatValue($capacityHoverData[name])
 									: $capacityFocusData
-									? $capacityConvertAndFormatValue($capacityFocusData[name])
+									? capacityConvertAndFormatValue($capacityFocusData[name])
 									: ''}
 							</div>
 						</td>
@@ -340,7 +356,12 @@
 				<th>
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Volume</span>
-						<small class="font-light text-xxs">{$emissionsDisplayUnit}</small>
+						<button
+							class="font-light text-xxs hover:underline"
+							on:click={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
+						>
+							{$emissionsDisplayUnit}
+						</button>
 					</div>
 				</th>
 				<th>
@@ -366,18 +387,18 @@
 				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end">
 						{$emissionsHoverData
-							? $emissionsConvertAndFormatValue($emissionsHoverData['au.emissions.total'])
+							? emissionsConvertAndFormatValue($emissionsHoverData['au.emissions.total'])
 							: $emissionsFocusData
-							? $emissionsConvertAndFormatValue($emissionsFocusData['au.emissions.total'])
+							? emissionsConvertAndFormatValue($emissionsFocusData['au.emissions.total'])
 							: ''}
 					</div>
 				</th>
 				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end mr-3">
 						{$intensityHoverData
-							? $intensityConvertAndFormatvalue($intensityHoverData['au.emission_intensity'])
+							? intensityConvertAndFormatvalue($intensityHoverData['au.emission_intensity'])
 							: $intensityFocusData
-							? $intensityConvertAndFormatvalue($intensityFocusData['au.emission_intensity'])
+							? intensityConvertAndFormatvalue($intensityFocusData['au.emission_intensity'])
 							: ''}
 					</div>
 				</th>

@@ -38,12 +38,15 @@
 <ScenarioDescription />
 
 <section>
-	<Switch
-		buttons={stores}
-		selected={selectedStoreName}
-		on:change={(evt) => (selectedStoreName = evt.detail.value)}
-		class="justify-center my-4"
-	/>
+	<div class="flex justify-center mb-12">
+		<Switch
+			buttons={stores}
+			selected={selectedStoreName}
+			on:change={(evt) => (selectedStoreName = evt.detail.value)}
+			class="justify-center"
+		/>
+	</div>
+
 	<MiniCharts
 		seriesNames={$seriesNames}
 		seriesLabels={$seriesLabels}

@@ -11,12 +11,19 @@
 	export let convertAndFormatValue = (/** @type {number} */ value) => value;
 
 	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
+
+	$: convertedMax = hoverMax || hoverMax === 0 ? convertAndFormatValue(hoverMax) : NaN;
+
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+
 	$: hoverKeyValue =
 		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
+
 	$: convertedValue =
 		hoverKeyValue || hoverKeyValue === 0 ? convertAndFormatValue(hoverKeyValue) : NaN;
+
 	$: hoverKeyColour = hoverKey ? seriesColours[hoverKey] : '';
+
 	$: hoverKeyLabel = hoverKey ? seriesLabels[hoverKey] : '';
 </script>
 
@@ -36,14 +43,14 @@
 								{hoverKeyLabel}
 							</div>
 
-							<strong class="font-semibold">{formatValue(convertedValue)}</strong>
+							<strong class="font-semibold">{convertedValue}</strong>
 						</div>
 					{/if}
 
 					{#if showTotal}
 						<span class="flex items-center gap-2">
 							Total
-							<strong class="font-semibold">{formatValue(hoverMax)}</strong>
+							<strong class="font-semibold">{convertedMax}</strong>
 						</span>
 					{/if}
 				</div>

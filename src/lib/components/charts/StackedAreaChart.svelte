@@ -103,7 +103,7 @@
 	// $: console.log('groupedData', groupedData);
 
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	$: focusTime = focusData ? focusData.time || 0 : 0;
+	// $: focusTime = focusData ? focusData.time || 0 : 0;
 
 	// $: console.log('stackedArea focusData', focusData);
 </script>
@@ -206,12 +206,16 @@
 				</span>
 			</HoverText> -->
 
-			<HoverLine hoverData={focusData} lineColour="#C74523" borderStyle="dashed" />
-			<HoverLine {hoverData} />
+			<!-- <HoverLine hoverData={focusData} lineColour="#C74523" borderStyle="dashed" /> -->
+			<!-- <HoverLine {hoverData} /> -->
 		</Html>
 
 		<Svg pointerEvents={false}>
 			<!-- <HoverDots {dataset} {hoverData} /> -->
+			{#if hoverData}
+				<LineX xValue={hoverData} strokeArray="none" />
+			{/if}
+			<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
 		</Svg>
 	</LayerCake>
 

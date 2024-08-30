@@ -11,7 +11,7 @@
 
 <div class="relative h-auto">
 	<div class="sticky top-0 pr-48">
-		<h2 class="font-space uppercase text-sm text-mid-grey mb-12">Learn more about each scenario</h2>
+		<!-- <h2 class="font-space uppercase text-sm text-mid-grey mb-12">Learn more about each scenario</h2> -->
 
 		{#if $singleSelectionScenario}
 			<h3 class="mb-12">{scenarioLabels[$singleSelectionModel][$singleSelectionScenario]}</h3>

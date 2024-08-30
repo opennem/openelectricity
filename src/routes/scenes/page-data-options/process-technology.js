@@ -25,7 +25,8 @@ function getLoadIds(statsData) {
  * baseUnit: string,
  * prefix: SiPrefix,
  * displayPrefix: SiPrefix,
- * allowedPrefixes: SiPrefix[]
+ * allowedPrefixes: SiPrefix[],
+ * chartType: 'area' | 'line'
  * }} param0
  * @returns {ProcessedDataViz}
  */
@@ -36,7 +37,8 @@ function combineHistoryProjection({
 	baseUnit = '',
 	prefix = '',
 	displayPrefix = '',
-	allowedPrefixes = []
+	allowedPrefixes = [],
+	chartType = 'area'
 }) {
 	console.log('combineHistoryProjection', baseUnit, prefix);
 	const historicalTimeSeriesData = historicalTimeSeries.data;
@@ -96,7 +98,8 @@ function combineHistoryProjection({
 			prefix,
 			baseUnit,
 			displayPrefix,
-			allowedPrefixes
+			allowedPrefixes,
+			chartType
 		};
 	}
 
@@ -111,7 +114,8 @@ function combineHistoryProjection({
 		prefix,
 		baseUnit,
 		displayPrefix,
-		allowedPrefixes
+		allowedPrefixes,
+		chartType
 	};
 }
 

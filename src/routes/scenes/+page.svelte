@@ -1,5 +1,5 @@
 <script>
-	import { setContext, getContext } from 'svelte';
+	import { setContext, getContext, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 
 	import { colourReducer } from '$lib/stores/theme';
@@ -91,7 +91,6 @@
 	let hiddenRowNames = [];
 
 	let fetching = false;
-
 	$: console.log(articles, filters);
 
 	$: if ($isTechnologyViewSection) {
@@ -376,6 +375,20 @@
 			}
 		}
 	}
+
+	function setDefaultFocusTime() {
+		// set 2030 as the default focus time
+		dataVizStoreNames.forEach(({ name }) => {
+			const store = dataVizStores[name];
+			store.focusTime.set(1893416400000);
+		});
+	}
+
+	onMount(() => {
+		setTimeout(() => {
+			setDefaultFocusTime();
+		}, 1500);
+	});
 </script>
 
 <!-- TODO: Update preview image -->
@@ -400,9 +413,24 @@
 <Filters />
 
 <!-- WORKAROUND: class:relative={!$showScenarioOptions} to allow Pathway dropdown to layer above -->
-<div class="max-w-none px-16 p-12 flex gap-12 z-30" class:relative={!$showScenarioOptions}>
-	<section class="w-[100%]">
-		{#if fetching}
+<div
+	class="max-w-none px-16 p-12 flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
+	class:relative={!$showScenarioOptions}
+>
+	<section class="w-full flex flex-col gap-12">
+		{#each dataVizStoreNames as { name, chart }}
+			{#if $selectedCharts.includes(chart)}
+				<ScenarioChart
+					store={dataVizStores[name]}
+					{hiddenRowNames}
+					on:mousemove={handleMousemove}
+					on:mouseout={handleMouseout}
+					on:pointerup={handlePointerup}
+				/>
+			{/if}
+		{/each}
+
+		<!-- {#if fetching}
 			<div
 				class="h-screen bg-light-warm-grey flex justify-center items-center"
 				transition:fade={{ duration: 250 }}
@@ -421,7 +449,7 @@
 					/>
 				{/if}
 			{/each}
-		{/if}
+		{/if} -->
 	</section>
 
 	<section class="max-w-[450px]">
@@ -437,7 +465,7 @@
 	</section>
 </div>
 
-<div class="container max-w-none lg:container px-6 mx-auto md:grid grid-cols-2">
+<div class="container max-w-none lg:container px-18 md:grid grid-cols-2">
 	<ScenarioDetailed on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 </div>
 
