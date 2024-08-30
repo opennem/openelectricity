@@ -216,12 +216,12 @@
 				</th>
 				<th class="border-b border-warm-grey">
 					<div class="flex flex-col items-end">
-						{energyConvertAndFormatValue(energySourcesTotal)}
+						{$energyConvertAndFormatValue(energySourcesTotal)}
 					</div>
 				</th>
 				<th class="border-b border-warm-grey">
 					<div class="flex flex-col items-end mr-3">
-						{capacityConvertAndFormatValue(capacitySourcesTotal)}
+						{$capacityConvertAndFormatValue(capacitySourcesTotal)}
 					</div>
 				</th>
 			</tr>
@@ -255,18 +255,18 @@
 					<td class="px-2 py-1.5">
 						<div class="flex flex-col items-end">
 							{$energyHoverData
-								? energyConvertAndFormatValue($energyHoverData[name])
+								? $energyConvertAndFormatValue($energyHoverData[name])
 								: $energyFocusData
-								? energyConvertAndFormatValue($energyFocusData[name])
+								? $energyConvertAndFormatValue($energyFocusData[name])
 								: ''}
 						</div>
 					</td>
 					<td class="px-2 py-1.5">
 						<div class="flex flex-col items-end mr-3">
 							{$capacityHoverData
-								? capacityConvertAndFormatValue($capacityHoverData[name])
+								? $capacityConvertAndFormatValue($capacityHoverData[name])
 								: $capacityFocusData
-								? capacityConvertAndFormatValue($capacityFocusData[name])
+								? $capacityConvertAndFormatValue($capacityFocusData[name])
 								: ''}
 						</div>
 					</td>
@@ -282,7 +282,7 @@
 					</th>
 					<th class="border-b border-warm-grey">
 						<div class="flex flex-col items-end">
-							{energyConvertAndFormatValue(energyLoadsTotal)}
+							{$energyConvertAndFormatValue(energyLoadsTotal)}
 						</div>
 					</th>
 					<th class="border-b border-warm-grey" />
@@ -320,18 +320,18 @@
 						<td class="px-2 py-1.5">
 							<div class="flex flex-col items-end">
 								{$energyHoverData
-									? energyConvertAndFormatValue($energyHoverData[name])
+									? $energyConvertAndFormatValue($energyHoverData[name])
 									: $energyFocusData
-									? energyConvertAndFormatValue($energyFocusData[name])
+									? $energyConvertAndFormatValue($energyFocusData[name])
 									: ''}
 							</div>
 						</td>
 						<td class="px-2 py-1.5">
 							<div class="flex flex-col items-end mr-3">
 								{$capacityHoverData
-									? capacityConvertAndFormatValue($capacityHoverData[name])
+									? $capacityConvertAndFormatValue($capacityHoverData[name])
 									: $capacityFocusData
-									? capacityConvertAndFormatValue($capacityFocusData[name])
+									? $capacityConvertAndFormatValue($capacityFocusData[name])
 									: ''}
 							</div>
 						</td>
@@ -387,18 +387,18 @@
 				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end">
 						{$emissionsHoverData
-							? emissionsConvertAndFormatValue($emissionsHoverData['au.emissions.total'])
+							? $emissionsConvertAndFormatValue($emissionsHoverData['au.emissions.total'])
 							: $emissionsFocusData
-							? emissionsConvertAndFormatValue($emissionsFocusData['au.emissions.total'])
+							? $emissionsConvertAndFormatValue($emissionsFocusData['au.emissions.total'])
 							: ''}
 					</div>
 				</th>
 				<th class="px-2 !py-6">
 					<div class="flex flex-col items-end mr-3">
 						{$intensityHoverData
-							? intensityConvertAndFormatvalue($intensityHoverData['au.emission_intensity'])
+							? $intensityConvertAndFormatvalue($intensityHoverData['au.emission_intensity'])
 							: $intensityFocusData
-							? intensityConvertAndFormatvalue($intensityFocusData['au.emission_intensity'])
+							? $intensityConvertAndFormatvalue($intensityFocusData['au.emission_intensity'])
 							: ''}
 					</div>
 				</th>

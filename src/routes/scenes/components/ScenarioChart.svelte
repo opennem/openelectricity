@@ -76,7 +76,7 @@
 				hoverKey={$hoverKey}
 				seriesColours={$seriesColours}
 				seriesLabels={$seriesLabels}
-				{convertAndFormatValue}
+				convertAndFormatValue={$convertAndFormatValue}
 				showTotal={$isChartTypeArea ? true : false}
 			/>
 		</header>
@@ -92,7 +92,7 @@
 			seriesNames={names}
 			zRange={colours}
 			formatTickX={$formatTickX}
-			formatTickY={convertAndFormatValue}
+			formatTickY={$convertAndFormatValue}
 			chartType={$chartType}
 			overlay={$chartOverlay}
 			overlayLine={$chartOverlayLine}

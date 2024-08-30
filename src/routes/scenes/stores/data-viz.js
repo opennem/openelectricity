@@ -54,12 +54,12 @@ export default function () {
 	/** @type {import('svelte/store').Writable<Function>} */
 	const formatTickY = writable((/** @type {number} */ d) => numberFormat.format(d));
 
-	// const convertAndFormatValue = derived([prefix, displayPrefix], ([$prefix, $displayPrefix]) => {
-	// 	return (/** @type {number} */ d) => {
-	// 		const converted = convert($prefix, $displayPrefix, d);
-	// 		return isNaN(converted) ? '—' : numberFormat.format(converted);
-	// 	};
-	// });
+	const convertAndFormatValue = derived([prefix, displayPrefix], ([$prefix, $displayPrefix]) => {
+		return (/** @type {number} */ d) => {
+			const converted = convert($prefix, $displayPrefix, d);
+			return isNaN(converted) ? '—' : numberFormat.format(converted);
+		};
+	});
 
 	/** @type {import('svelte/store').Writable<'area' | 'line'>} */
 	const chartType = writable('area');
@@ -110,19 +110,6 @@ export default function () {
 
 		const index = $prefixes.indexOf($displayPrefix);
 		return index === $prefixes.length - 1 ? $prefixes[0] : $prefixes[index + 1];
-	}
-
-	/**
-	 *
-	 * @param {number} d
-	 * @returns
-	 */
-	function convertAndFormatValue(d) {
-		const $prefix = get(prefix);
-		const $displayPrefix = get(displayPrefix);
-
-		const converted = convert($prefix, $displayPrefix, d);
-		return isNaN(converted) ? '—' : numberFormat.format(converted);
 	}
 
 	function reset() {
