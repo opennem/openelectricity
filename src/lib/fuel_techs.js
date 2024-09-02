@@ -4,6 +4,7 @@ export const loadFuelTechs = [
 	'battery_charging',
 	'battery_VPP_charging',
 	'battery_distributed_charging',
+	'storage_charging',
 	'exports',
 	'pumps',
 	'total_loads'
@@ -15,6 +16,9 @@ export const fuelTechNameMap = {
 	battery_charging: 'Battery (Charging)',
 	battery_VPP_charging: 'Battery (VPP Charging)',
 	battery_distributed_charging: 'Battery (Distributed Charging)',
+
+	storage_discharging: 'Storage (Discharging)',
+	storage_charging: 'Storage (Charging)',
 
 	demand_response: 'Demand Response',
 	exports: 'Exports',

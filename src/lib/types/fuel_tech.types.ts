@@ -1,4 +1,6 @@
 export type FuelTechCode =
+	| 'storage_charging'
+	| 'storage_discharging'
 	| 'battery_charging'
 	| 'battery_discharging'
 	| 'battery_VPP_charging'

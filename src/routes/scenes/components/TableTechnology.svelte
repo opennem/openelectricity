@@ -153,13 +153,6 @@
 		// @ts-ignore
 		return color(colorString).darker(0.5).formatHex();
 	}
-
-	/**
-	 * @param {string} name
-	 */
-	function getCapacityName(name) {
-		return name === 'au.battery_discharging.grouped' ? 'au.battery.grouped' : name;
-	}
 </script>
 
 <svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
@@ -271,9 +264,9 @@
 					<td class="px-2 py-1">
 						<div class="flex flex-col items-end mr-3">
 							{$capacityHoverData
-								? $capacityConvertAndFormatValue($capacityHoverData[getCapacityName(name)])
+								? $capacityConvertAndFormatValue($capacityHoverData[name])
 								: $capacityFocusData
-								? $capacityConvertAndFormatValue($capacityFocusData[getCapacityName(name)])
+								? $capacityConvertAndFormatValue($capacityFocusData[name])
 								: ''}
 						</div>
 					</td>
@@ -310,11 +303,11 @@
 							<div class="flex items-center gap-3 ml-3">
 								{#if hiddenRowNames.includes(name)}
 									<div
-										class="w-4 h-4 border rounded-full bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+										class="w-5 h-5 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 									/>
 								{:else}
 									<div
-										class="w-4 h-4 border rounded-full"
+										class="w-5 h-5 border rounded"
 										style:background-color={$energySeriesColours[name]}
 										style:border-color={darken($energySeriesColours[name])}
 									/>
@@ -384,7 +377,7 @@
 				<th class="px-2 !py-6">
 					<div class="flex items-center gap-3 ml-3">
 						<div
-							class="w-4 h-4 border rounded-full"
+							class="w-5 h-5 border rounded"
 							style="background-color: #999; border-color: {darken('#999')}"
 						/>
 						<span>Emissions</span>
