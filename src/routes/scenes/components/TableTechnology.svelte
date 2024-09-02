@@ -51,6 +51,7 @@
 		getNextPrefix: getCapacityNextPrefix
 	} = getContext('capacity-data-viz');
 
+	// $: console.log('energySeriesNames', $energySeriesNames);
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
 
 	$: sourceNames = $energySeriesNames
@@ -152,6 +153,13 @@
 		// @ts-ignore
 		return color(colorString).darker(0.5).formatHex();
 	}
+
+	/**
+	 * @param {string} name
+	 */
+	function getCapacityName(name) {
+		return name === 'au.battery_discharging.grouped' ? 'au.battery.grouped' : name;
+	}
 </script>
 
 <svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
@@ -232,26 +240,26 @@
 					on:click={() => handleRowClick(name)}
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
 				>
-					<td class:opacity-50={hiddenRowNames.includes(name)} class="px-2 py-1.5">
+					<td class:opacity-50={hiddenRowNames.includes(name)} class="px-2 py-1">
 						<div class="flex items-center gap-3 ml-3">
 							{#if hiddenRowNames.includes(name)}
 								<div
-									class="w-4 h-4 border rounded-full bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+									class="w-5 h-5 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 								/>
 							{:else}
 								<div
-									class="w-4 h-4 border rounded-full"
+									class="w-5 h-5 border rounded"
 									style:background-color={$energySeriesColours[name]}
 									style:border-color={darken($energySeriesColours[name])}
 								/>
 							{/if}
 
-							<div>
+							<span>
 								{$energySeriesLabels[name]}
-							</div>
+							</span>
 						</div>
 					</td>
-					<td class="px-2 py-1.5">
+					<td class="px-2 py-1">
 						<div class="flex flex-col items-end">
 							{$energyHoverData
 								? $energyConvertAndFormatValue($energyHoverData[name])
@@ -260,12 +268,12 @@
 								: ''}
 						</div>
 					</td>
-					<td class="px-2 py-1.5">
+					<td class="px-2 py-1">
 						<div class="flex flex-col items-end mr-3">
 							{$capacityHoverData
-								? $capacityConvertAndFormatValue($capacityHoverData[name])
+								? $capacityConvertAndFormatValue($capacityHoverData[getCapacityName(name)])
 								: $capacityFocusData
-								? $capacityConvertAndFormatValue($capacityFocusData[name])
+								? $capacityConvertAndFormatValue($capacityFocusData[getCapacityName(name)])
 								: ''}
 						</div>
 					</td>
@@ -297,7 +305,7 @@
 						<td
 							class:!pb-8={i === sourceNames.length - 1}
 							class:opacity-50={hiddenRowNames.includes(name)}
-							class="px-2 py-1.5"
+							class="px-2 py-1"
 						>
 							<div class="flex items-center gap-3 ml-3">
 								{#if hiddenRowNames.includes(name)}
@@ -316,7 +324,7 @@
 								</span>
 							</div>
 						</td>
-						<td class="px-2 py-1.5">
+						<td class="px-2 py-1">
 							<div class="flex flex-col items-end">
 								{$energyHoverData
 									? $energyConvertAndFormatValue($energyHoverData[name])
@@ -325,7 +333,7 @@
 									: ''}
 							</div>
 						</td>
-						<td class="px-2 py-1.5">
+						<td class="px-2 py-1">
 							<div class="flex flex-col items-end mr-3">
 								{$capacityHoverData
 									? $capacityConvertAndFormatValue($capacityHoverData[name])
@@ -411,6 +419,6 @@
 		@apply px-2 py-6 text-sm font-medium;
 	}
 	th {
-		@apply text-left px-2 py-1.5 pt-6 font-medium;
+		@apply text-left px-2 py-1 pt-6 font-medium;
 	}
 </style>
