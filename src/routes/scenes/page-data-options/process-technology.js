@@ -21,26 +21,27 @@ function getLoadIds(statsData) {
  * @param {{
  * historicalTimeSeries: TimeSeries,
  * projectionTimeSeries: TimeSeries,
- * projectionLoadSeries: string[],
+ * loadSeries: string[],
+ * order: FuelTechCode[],
  * baseUnit: string,
  * prefix: SiPrefix,
  * displayPrefix: SiPrefix,
  * allowedPrefixes: SiPrefix[],
- * chartType: 'area' | 'line'
+ * chartType?: 'area' | 'line'
  * }} param0
  * @returns {ProcessedDataViz}
  */
 function combineHistoryProjection({
 	historicalTimeSeries,
 	projectionTimeSeries,
-	projectionLoadSeries,
+	loadSeries,
+	order,
 	baseUnit = '',
 	prefix = '',
 	displayPrefix = '',
 	allowedPrefixes = [],
 	chartType = 'area'
 }) {
-	console.log('combineHistoryProjection', baseUnit, prefix);
 	const historicalTimeSeriesData = historicalTimeSeries.data;
 	const projectionTimeSeriesData = projectionTimeSeries.data;
 
@@ -58,10 +59,37 @@ function combineHistoryProjection({
 		// combine historical and projection data
 		const seriesData = [...historyData, ...projectionTimeSeriesData];
 
-		// combine projection and historical series names to make sure they are all included in the time series
-		const seriesNames = [
-			...new Set([...projectionTimeSeries.seriesNames, ...historicalTimeSeries.seriesNames])
-		];
+		/** @type string[] */
+		let seriesNames = [];
+
+		// if order is provided, use it to order the series
+		if (order) {
+			const combinedStats = [
+				...projectionTimeSeries.statsDatasets,
+				...historicalTimeSeries.statsDatasets
+			];
+
+			order.forEach((code) => {
+				const stats = combinedStats.find((d) => d.code === code);
+				if (stats) {
+					seriesNames.push(stats.id);
+				}
+			});
+		} else {
+			// combine projection and historical series names to make sure they are all included in the time series
+			seriesNames = [
+				...new Set([...projectionTimeSeries.seriesNames, ...historicalTimeSeries.seriesNames])
+			];
+		}
+
+		// populate missing data with nulls
+		seriesData.forEach((d) => {
+			seriesNames.forEach((name) => {
+				if (!d[name]) {
+					d[name] = null;
+				}
+			});
+		});
 
 		// combine projection and historical series colours and labels
 		/** @type {*} */
@@ -93,7 +121,7 @@ function combineHistoryProjection({
 			}),
 			seriesColours,
 			seriesLabels,
-			seriesLoadsIds: projectionLoadSeries,
+			seriesLoadsIds: loadSeries,
 			yDomain: [datasetMin, datasetMax],
 			prefix,
 			baseUnit,
@@ -183,7 +211,8 @@ function generation({ projection, history, group, colourReducer, includeBatteryA
 	return combineHistoryProjection({
 		historicalTimeSeries,
 		projectionTimeSeries,
-		projectionLoadSeries,
+		loadSeries: [...new Set([...projectionLoadSeries, ...historicalLoadSeries])],
+		order: orderMap[group],
 		baseUnit: projectionStats.baseUnit,
 		prefix: projectionStats.prefix,
 		displayPrefix: 'T',
@@ -257,7 +286,8 @@ function capacity({ projection, history, group, colourReducer, includeBatteryAnd
 	return combineHistoryProjection({
 		historicalTimeSeries,
 		projectionTimeSeries,
-		projectionLoadSeries,
+		loadSeries: [...new Set([...projectionLoadSeries, ...historicalLoadSeries])],
+		order: orderMap[group],
 		baseUnit: projectionStats.baseUnit,
 		prefix: projectionStats.prefix,
 		displayPrefix: 'G',
@@ -323,7 +353,8 @@ function emissions({ projection, history, includeBatteryAndLoads }) {
 		...combineHistoryProjection({
 			historicalTimeSeries,
 			projectionTimeSeries,
-			projectionLoadSeries: [],
+			loadSeries: [],
+			order: [],
 			baseUnit: projectionStats.baseUnit,
 			prefix: projectionStats.prefix,
 			displayPrefix: 'k',

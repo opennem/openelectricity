@@ -129,21 +129,22 @@ Statistic.prototype.group = function (
 			});
 
 			grouped.push(groupObject);
-		} else {
-			const groupObject = {
-				code,
-				fuel_tech: code,
-				id: `au.${code}.grouped`,
-				isLoad: loads.includes(code),
-				[this.statsType]: {
-					data: dataLength ? new Array(dataLength).fill(null) : [],
-					interval,
-					last,
-					start
-				}
-			};
-			grouped.push(groupObject);
 		}
+		// else {
+		// 	const groupObject = {
+		// 		code,
+		// 		fuel_tech: code,
+		// 		id: `au.${code}.grouped`,
+		// 		isLoad: loads.includes(code),
+		// 		[this.statsType]: {
+		// 			data: dataLength ? new Array(dataLength).fill(null) : [],
+		// 			interval,
+		// 			last,
+		// 			start
+		// 		}
+		// 	};
+		// 	grouped.push(groupObject);
+		// }
 	});
 
 	this.data = grouped;

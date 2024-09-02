@@ -38,8 +38,6 @@
 	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
 	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
 
-	$: console.log('title isChartTypeArea', $title, $isChartTypeArea);
-
 	function moveToNextDisplayPrefix() {
 		$displayPrefix = getNextPrefix();
 	}

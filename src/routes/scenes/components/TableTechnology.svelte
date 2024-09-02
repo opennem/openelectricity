@@ -2,7 +2,6 @@
 	import { getContext, createEventDispatcher } from 'svelte';
 	import { color } from 'd3-color';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import { formatValue } from '$lib/utils/formatters';
 	import { groupOptions } from '../page-data-options/groups-technology';
 	import TableHeader from './TableHeader.svelte';
 

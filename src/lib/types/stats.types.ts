@@ -30,6 +30,7 @@ export type StatsData = {
 	type: string;
 	network: string;
 	units: string;
+	code?: string;
 	fuel_tech?: FuelTechCode;
 	data_type?: string;
 	colour?: string;
