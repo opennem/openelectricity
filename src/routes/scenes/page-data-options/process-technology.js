@@ -363,6 +363,7 @@ function emissions({ projection, history, includeBatteryAndLoads }) {
 			allowedPrefixes: ['k', 'M']
 		}),
 		seriesLabels: { 'au.emissions.total': 'Emissions Volume' },
+		seriesColours: { 'au.emissions.total': '#444444' },
 		nameOptions: [{ label: 'Emissions Volume', value: 'au.emissions.total' }]
 	};
 }
@@ -400,7 +401,7 @@ function intensity({ processedEmissions, processedEnergy }) {
 	return {
 		seriesData: intensityData,
 		seriesNames: ['au.emission_intensity'],
-		seriesColours: { 'au.emission_intensity': '#000' },
+		seriesColours: { 'au.emission_intensity': '#444444' },
 		seriesLabels: { 'au.emission_intensity': 'Emission Intensity' },
 		nameOptions: [{ label: 'Emission Intensity', value: 'au.emission_intensity' }],
 		yDomain: [0, 1200],

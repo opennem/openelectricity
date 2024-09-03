@@ -378,7 +378,7 @@
 					<div class="flex items-center gap-3 ml-3">
 						<div
 							class="w-5 h-5 border rounded"
-							style="background-color: #999; border-color: {darken('#999')}"
+							style="background-color: #444444; border-color: {darken('#444444')}"
 						/>
 						<span>Emissions</span>
 					</div>
