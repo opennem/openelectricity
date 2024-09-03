@@ -14,6 +14,7 @@
 	import Overlay from './elements/Overlay.svelte';
 	import HatchPattern from './elements/defs/HatchPattern.svelte';
 	import LineX from './elements/annotations/LineX.svelte';
+	import Dot from './elements/annotations/Dot.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
@@ -91,12 +92,13 @@
 	// $: if (dataset) yTweened.set(maxY);
 	/** end */
 
+	$: isArea = chartType === 'area';
 	$: stackedData = stack(dataset, seriesNames);
 	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
-	$: chartData = chartType === 'area' ? stackedData : groupedData;
-	$: flatData = chartType === 'area' ? flatten(stackedData) : flatten(groupedData, 'values');
-	$: y = chartType === 'area' ? yKey : 'value';
-	$: z = chartType === 'area' ? zKey : 'group';
+	$: chartData = isArea ? stackedData : groupedData;
+	$: flatData = isArea ? flatten(stackedData) : dataset;
+	$: y = isArea ? yKey : 'value';
+	$: z = isArea ? zKey : 'group';
 
 	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
 
@@ -214,9 +216,16 @@
 			<!-- <HoverDots {dataset} {hoverData} /> -->
 			{#if hoverData}
 				<LineX xValue={hoverData} strokeArray="none" />
+				{#if !isArea}
+					<Dot value={hoverData} r={4} />
+				{/if}
 			{/if}
 			{#if focusData}
 				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+				{#if !isArea}
+					<circle cx="0" cy="0" r="10" fill="black" />
+					<Dot value={focusData} r={4} fill="#C74523" />
+				{/if}
 			{/if}
 		</Svg>
 	</LayerCake>

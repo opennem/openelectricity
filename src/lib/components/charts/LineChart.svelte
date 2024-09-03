@@ -12,6 +12,7 @@
 	import Overlay from './elements/Overlay.svelte';
 	import HatchPattern from './elements/defs/HatchPattern.svelte';
 	import LineX from './elements/annotations/LineX.svelte';
+	import Dot from './elements/annotations/Dot.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
@@ -139,9 +140,11 @@
 		<Svg pointerEvents={false}>
 			{#if hoverData}
 				<LineX xValue={hoverData} strokeArray="none" />
+				<Dot value={hoverData} r={4} />
 			{/if}
 			{#if focusData}
 				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+				<Dot value={focusData} r={4} fill="#C74523" />
 			{/if}
 		</Svg>
 	</LayerCake>

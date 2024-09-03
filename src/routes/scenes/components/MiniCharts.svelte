@@ -52,13 +52,28 @@
 	function isLoad(key) {
 		return seriesLoadsIds.includes(key);
 	}
+
+	/**
+	 * @param {TimeSeriesData | undefined} data
+	 * @param {string} key
+	 */
+	function getUpdatedData(data, key) {
+		if (!data) return undefined;
+		const updatedData = { ...data };
+		if (isLoad(key)) {
+			updatedData[key] = data[key] ? -data[key] : data[key];
+		}
+		return updatedData;
+	}
 </script>
 
 <div class="grid {gridColClass} border-mid-warm-grey">
 	{#each keys as key}
 		{@const title = seriesLabels[key]}
-		{@const hoverValue = hoverData ? (isLoad(key) ? -hoverData[key] || 0 : hoverData[key] || 0) : 0}
-		{@const focusValue = focusData ? (isLoad(key) ? -focusData[key] || 0 : focusData[key] || 0) : 0}
+		{@const updatedHoverData = getUpdatedData(hoverData, key)}
+		{@const updatedFocusData = getUpdatedData(focusData, key)}
+		{@const hoverValue = updatedHoverData ? updatedHoverData[key] || '—' : '—'}
+		{@const focusValue = updatedFocusData ? updatedFocusData[key] || '—' : '—'}
 		{@const maxValue = getMaxValue(key)}
 		<section
 			class="p-8 border-mid-warm-grey border-b {gridBorderLeft} last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
@@ -106,8 +121,8 @@
 				overlay={chartOverlay}
 				overlayLine={chartOverlayLine}
 				overlayStroke={chartOverlayHatchStroke}
-				{hoverData}
-				{focusData}
+				hoverData={updatedHoverData}
+				focusData={updatedFocusData}
 				{showArea}
 				chartHeightClasses="h-[150px]"
 				on:mousemove

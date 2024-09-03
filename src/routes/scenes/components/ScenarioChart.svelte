@@ -1,6 +1,8 @@
 <script>
 	import { getContext } from 'svelte';
 	import StackedAreaChart from '$lib/components/charts/StackedAreaChart.svelte';
+	import LineChart from '$lib/components/charts/LineChart.svelte';
+
 	import Tooltip from './Tooltip.svelte';
 
 	export let store;
@@ -79,28 +81,51 @@
 			/>
 		</header>
 
-		<StackedAreaChart
-			dataset={$seriesData}
-			xKey="date"
-			yKey={[0, 1]}
-			zKey="key"
-			xTicks={$xTicks}
-			yTicks={2}
-			yDomain={$yDomain}
-			seriesNames={names}
-			zRange={colours}
-			formatTickX={$formatTickX}
-			formatTickY={$convertAndFormatValue}
-			chartType={$chartType}
-			overlay={$chartOverlay}
-			overlayLine={$chartOverlayLine}
-			overlayStroke={$chartOverlayHatchStroke}
-			hoverData={$hoverData}
-			focusData={$focusData}
-			chartHeightClasses={$chartHeightClasses}
-			on:mousemove
-			on:mouseout
-			on:pointerup
-		/>
+		{#if $isChartTypeArea}
+			<StackedAreaChart
+				dataset={$seriesData}
+				xKey="date"
+				yKey={[0, 1]}
+				zKey="key"
+				xTicks={$xTicks}
+				yTicks={2}
+				yDomain={$yDomain}
+				seriesNames={names}
+				zRange={colours}
+				formatTickX={$formatTickX}
+				formatTickY={$convertAndFormatValue}
+				chartType={$chartType}
+				overlay={$chartOverlay}
+				overlayLine={$chartOverlayLine}
+				overlayStroke={$chartOverlayHatchStroke}
+				hoverData={$hoverData}
+				focusData={$focusData}
+				chartHeightClasses={$chartHeightClasses}
+				on:mousemove
+				on:mouseout
+				on:pointerup
+			/>
+		{:else}
+			<LineChart
+				dataset={$seriesData}
+				xKey="date"
+				yKey={$seriesNames[0]}
+				zKey={colours[0]}
+				xTicks={$xTicks}
+				yTicks={2}
+				formatTickX={$formatTickX}
+				formatTickY={$convertAndFormatValue}
+				overlay={$chartOverlay}
+				overlayLine={$chartOverlayLine}
+				overlayStroke={$chartOverlayHatchStroke}
+				hoverData={$hoverData}
+				focusData={$focusData}
+				showArea={false}
+				chartHeightClasses={$chartHeightClasses}
+				on:mousemove
+				on:mouseout
+				on:pointerup
+			/>
+		{/if}
 	{/if}
 </section>
