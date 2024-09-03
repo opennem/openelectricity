@@ -7,7 +7,9 @@ const batteryAndLoads = [
 	'battery_distributed_charging',
 	'battery',
 	'exports',
-	'pumps'
+	'pumps',
+	'storage_discharging',
+	'storage_charging'
 ];
 
 /**

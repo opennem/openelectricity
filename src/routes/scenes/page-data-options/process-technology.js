@@ -63,7 +63,7 @@ function combineHistoryProjection({
 		let seriesNames = [];
 
 		// if order is provided, use it to order the series
-		if (order) {
+		if (order && order.length > 0) {
 			const combinedStats = [
 				...projectionTimeSeries.statsDatasets,
 				...historicalTimeSeries.statsDatasets
@@ -161,6 +161,8 @@ function generation({ projection, history, group, colourReducer, includeBatteryA
 	const fuelTechs = includeBatteryAndLoads
 		? fuelTechMap[group]
 		: excludeBatteryAndLoads(fuelTechMap[group]);
+
+	console.log('fuelTechs', fuelTechs);
 
 	/********* processing Projection */
 	const projectionStats = new Statistic(projection, 'projection', 'GWh')
