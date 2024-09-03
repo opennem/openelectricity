@@ -13,6 +13,7 @@
 	export let chartOverlayLine;
 	export let chartOverlayHatchStroke;
 	export let hoverData;
+	export let focusData;
 	export let displayUnit = '';
 
 	/** @type {TimeSeriesData[]} */
@@ -52,6 +53,7 @@
 	{#each keys as key}
 		{@const title = seriesLabels[key]}
 		{@const hoverValue = hoverData ? (isLoad(key) ? -hoverData[key] || 0 : hoverData[key] || 0) : 0}
+		{@const focusValue = focusData ? (isLoad(key) ? -focusData[key] || 0 : focusData[key] || 0) : 0}
 		{@const maxValue = getMaxValue(key)}
 		<section
 			class="p-8 border-mid-warm-grey border-b border-l last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
@@ -64,13 +66,28 @@
 					{/if} -->
 				</div>
 
-				<h3 class="leading-sm h-24 mt-4">
+				<h3 class="leading-sm h-14 mt-4 mb-0">
 					{#if hoverData}
 						{formatTickY(hoverValue)}
+						<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
+					{:else if focusData}
+						{formatTickY(focusValue)}
 						<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
 					{/if}
 				</h3>
 			</header>
+
+			<div class="text-right h-8">
+				{#if hoverData}
+					<span class="text-mid-grey text-xs">
+						{formatTickX(hoverData.time)}
+					</span>
+				{:else if focusData}
+					<span class="text-mid-grey text-xs">
+						{formatTickX(focusData.time)}
+					</span>
+				{/if}
+			</div>
 
 			<LineChart
 				{dataset}
@@ -85,9 +102,11 @@
 				overlayLine={chartOverlayLine}
 				overlayStroke={chartOverlayHatchStroke}
 				{hoverData}
+				{focusData}
 				chartHeightClasses="h-[150px]"
 				on:mousemove
 				on:mouseout
+				on:pointerup
 			/>
 		</section>
 	{/each}

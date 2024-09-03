@@ -48,6 +48,9 @@
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
 
+	/** @type {TimeSeriesData | undefined}*/
+	export let focusData = undefined;
+
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
 	export let formatTickX = (/** @type {*} */ d) => d;
 	export let formatTickY = (/** @type {number} */ d) => d;
@@ -97,8 +100,8 @@
 			<AxisX
 				ticks={xTicks}
 				gridlines={false}
-				formatTick={hoverData ? () => '' : formatTickX}
-				tickMarks={hoverData ? false : true}
+				formatTick={formatTickX}
+				tickMarks={true}
 				snapTicks={true}
 			/>
 
@@ -106,7 +109,7 @@
 				<Line stroke="#353535" {hoverData} strokeWidth="2px" />
 				<Area fill={zKey} />
 			</g>
-			<HoverLayer {dataset} on:mousemove on:mouseout />
+			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup />
 		</Svg>
 
 		<Svg pointerEvents={false}>
@@ -121,17 +124,20 @@
 			{/if}
 		</Svg>
 
-		<Html pointerEvents={false}>
+		<!-- <Html pointerEvents={false}>
 			<HoverText {hoverData} position="bottom">
 				<span class="text-[10px] block">
 					{formatTickX(hoverTime)}
 				</span>
 			</HoverText>
-		</Html>
+		</Html> -->
 
 		<Svg pointerEvents={false}>
 			{#if hoverData}
 				<LineX xValue={hoverData} strokeArray="none" />
+			{/if}
+			{#if focusData}
+				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
 			{/if}
 		</Svg>
 	</LayerCake>

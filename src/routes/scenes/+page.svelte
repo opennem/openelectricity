@@ -84,6 +84,8 @@
 		{}
 	);
 
+	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
+
 	/** @type {string[] | undefined} */
 	let seriesLoadsIds = [];
 
@@ -346,10 +348,12 @@
 	 */
 	function handlePointerup(evt) {
 		const focusTime = evt.detail?.time;
+		const isSame = focusTime ? $energyFocusTime === focusTime : false;
+		const time = isSame ? undefined : focusTime;
 
 		dataVizStoreNames.forEach(({ name }) => {
 			const store = dataVizStores[name];
-			store.focusTime.set(focusTime || undefined);
+			store.focusTime.set(time);
 		});
 	}
 
@@ -466,7 +470,12 @@
 </div>
 
 <div class="container max-w-none lg:container px-18 md:grid grid-cols-2">
-	<ScenarioDetailed {seriesLoadsIds} on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+	<ScenarioDetailed
+		{seriesLoadsIds}
+		on:mousemove={handleMousemove}
+		on:mouseout={handleMouseout}
+		on:pointerup={handlePointerup}
+	/>
 </div>
 
 <ArticlesSection

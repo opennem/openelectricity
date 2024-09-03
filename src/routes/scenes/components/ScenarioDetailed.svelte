@@ -35,6 +35,7 @@
 	$: chartOverlayLine = selectedStore.chartOverlayLine;
 	$: chartOverlayHatchStroke = selectedStore.chartOverlayHatchStroke;
 	$: hoverData = selectedStore.hoverData;
+	$: focusData = selectedStore.focusData;
 	$: seriesData = selectedStore.seriesData;
 	$: displayUnit = selectedStore.displayUnit;
 </script>
@@ -62,10 +63,12 @@
 		chartOverlayLine={$chartOverlayLine}
 		chartOverlayHatchStroke={$chartOverlayHatchStroke}
 		hoverData={$hoverData}
+		focusData={$focusData}
 		seriesData={$seriesData}
 		displayUnit={$displayUnit}
 		{seriesLoadsIds}
 		on:mousemove
 		on:mouseout
+		on:pointerup
 	/>
 </section>

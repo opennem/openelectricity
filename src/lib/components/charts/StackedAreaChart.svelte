@@ -215,7 +215,9 @@
 			{#if hoverData}
 				<LineX xValue={hoverData} strokeArray="none" />
 			{/if}
-			<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+			{#if focusData}
+				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+			{/if}
 		</Svg>
 	</LayerCake>
 
