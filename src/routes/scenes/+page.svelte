@@ -466,7 +466,7 @@
 </div>
 
 <div class="container max-w-none lg:container px-18 md:grid grid-cols-2">
-	<ScenarioDetailed on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
+	<ScenarioDetailed {seriesLoadsIds} on:mousemove={handleMousemove} on:mouseout={handleMouseout} />
 </div>
 
 <ArticlesSection

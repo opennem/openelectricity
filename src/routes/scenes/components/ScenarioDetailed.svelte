@@ -5,6 +5,9 @@
 	import ScenarioDescription from './ScenarioDescription.svelte';
 	import MiniCharts from './MiniCharts.svelte';
 
+	/** @type {string[]} */
+	export let seriesLoadsIds = [];
+
 	/** @type {Object.<string, *>} */
 	const dataVizStores = {
 		energyDataVizStore: getContext('energy-data-viz'),
@@ -61,6 +64,7 @@
 		hoverData={$hoverData}
 		seriesData={$seriesData}
 		displayUnit={$displayUnit}
+		{seriesLoadsIds}
 		on:mousemove
 		on:mouseout
 	/>

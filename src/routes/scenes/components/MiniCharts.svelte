@@ -1,5 +1,6 @@
 <script>
 	import LineChart from '$lib/components/charts/LineChart.svelte';
+	import id from 'date-fns/locale/id';
 	// import Icon from '$lib/components/Icon.svelte';
 
 	export let seriesNames;
@@ -17,22 +18,40 @@
 	/** @type {TimeSeriesData[]} */
 	export let seriesData;
 
+	/** @type {string[]} */
+	export let seriesLoadsIds = [];
+
 	$: keys = [...seriesNames].reverse();
 	/**
 	 * @param {string} key
 	 * @returns {number}
 	 */
 	function getMaxValue(key) {
-		const values = /** @type {number[]} */ (seriesData.map((d) => d[key] || 0));
+		const values = /** @type {number[]} */ (dataset.map((d) => d[key] || 0));
 		const maxValue = Math.round(Math.max(...values));
 		return maxValue < 10 ? 10 : maxValue;
+	}
+
+	$: dataset = seriesData.map((d) => {
+		const obj = { ...d };
+		seriesLoadsIds.forEach((id) => {
+			obj[id] = d[id] ? -d[id] : d[id];
+		});
+		return obj;
+	});
+
+	/**
+	 * @param {string} key
+	 */
+	function isLoad(key) {
+		return seriesLoadsIds.includes(key);
 	}
 </script>
 
 <div class="grid grid-cols-3 border-mid-warm-grey">
 	{#each keys as key}
 		{@const title = seriesLabels[key]}
-		{@const hoverValue = hoverData ? hoverData[key] || 0 : 0}
+		{@const hoverValue = hoverData ? (isLoad(key) ? -hoverData[key] || 0 : hoverData[key] || 0) : 0}
 		{@const maxValue = getMaxValue(key)}
 		<section
 			class="p-8 border-mid-warm-grey border-b border-l last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
@@ -54,7 +73,7 @@
 			</header>
 
 			<LineChart
-				dataset={seriesData}
+				{dataset}
 				xKey="date"
 				yKey={key}
 				zKey={seriesColours[key]}
