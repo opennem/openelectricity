@@ -24,6 +24,8 @@
 		{ value: 'capacityDataVizStore', label: 'Capacity' }
 	];
 
+	$: isEmissionsView = selectedStoreName === 'emissionsDataVizStore';
+
 	$: selectedStore = dataVizStores[selectedStoreName];
 	$: seriesNames = selectedStore.seriesNames;
 	$: seriesLabels = selectedStore.seriesLabels;
@@ -38,6 +40,16 @@
 	$: focusData = selectedStore.focusData;
 	$: seriesData = selectedStore.seriesData;
 	$: displayUnit = selectedStore.displayUnit;
+
+	$: intensityStore = dataVizStores.intensityDataVizStore;
+	$: intensitySeriesNames = intensityStore.seriesNames;
+	$: intensityFormatTickY = intensityStore.convertAndFormatValue;
+	$: intensitySeriesLabels = intensityStore.seriesLabels;
+	$: intensitySeriesColours = intensityStore.seriesColours;
+	$: intensityHoverData = intensityStore.hoverData;
+	$: intensityFocusData = intensityStore.focusData;
+	$: intensitySeriesData = intensityStore.seriesData;
+	$: intensityDisplayUnit = intensityStore.displayUnit;
 </script>
 
 <ScenarioDescription />
@@ -52,23 +64,70 @@
 		/>
 	</div>
 
-	<MiniCharts
-		seriesNames={$seriesNames}
-		seriesLabels={$seriesLabels}
-		seriesColours={$seriesColours}
-		xTicks={$xTicks}
-		formatTickX={$formatTickX}
-		formatTickY={$formatTickY}
-		chartOverlay={$chartOverlay}
-		chartOverlayLine={$chartOverlayLine}
-		chartOverlayHatchStroke={$chartOverlayHatchStroke}
-		hoverData={$hoverData}
-		focusData={$focusData}
-		seriesData={$seriesData}
-		displayUnit={$displayUnit}
-		{seriesLoadsIds}
-		on:mousemove
-		on:mouseout
-		on:pointerup
-	/>
+	{#if isEmissionsView}
+		<div class="grid grid-cols-3">
+			<MiniCharts
+				seriesNames={$seriesNames}
+				seriesLabels={$seriesLabels}
+				seriesColours={$seriesColours}
+				xTicks={$xTicks}
+				formatTickX={$formatTickX}
+				formatTickY={$formatTickY}
+				chartOverlay={$chartOverlay}
+				chartOverlayLine={$chartOverlayLine}
+				chartOverlayHatchStroke={$chartOverlayHatchStroke}
+				hoverData={$hoverData}
+				focusData={$focusData}
+				seriesData={$seriesData}
+				displayUnit={$displayUnit}
+				{seriesLoadsIds}
+				gridColClass="grid-cols-1"
+				on:mousemove
+				on:mouseout
+				on:pointerup
+			/>
+			<MiniCharts
+				seriesNames={$intensitySeriesNames}
+				seriesLabels={$intensitySeriesLabels}
+				seriesColours={$intensitySeriesColours}
+				xTicks={$xTicks}
+				formatTickX={$formatTickX}
+				formatTickY={$intensityFormatTickY}
+				chartOverlay={$chartOverlay}
+				chartOverlayLine={$chartOverlayLine}
+				chartOverlayHatchStroke={$chartOverlayHatchStroke}
+				hoverData={$intensityHoverData}
+				focusData={$intensityFocusData}
+				seriesData={$intensitySeriesData}
+				displayUnit={$intensityDisplayUnit}
+				showArea={false}
+				{seriesLoadsIds}
+				gridColClass="grid-cols-1"
+				gridBorderLeft=""
+				on:mousemove
+				on:mouseout
+				on:pointerup
+			/>
+		</div>
+	{:else}
+		<MiniCharts
+			seriesNames={$seriesNames}
+			seriesLabels={$seriesLabels}
+			seriesColours={$seriesColours}
+			xTicks={$xTicks}
+			formatTickX={$formatTickX}
+			formatTickY={$formatTickY}
+			chartOverlay={$chartOverlay}
+			chartOverlayLine={$chartOverlayLine}
+			chartOverlayHatchStroke={$chartOverlayHatchStroke}
+			hoverData={$hoverData}
+			focusData={$focusData}
+			seriesData={$seriesData}
+			displayUnit={$displayUnit}
+			{seriesLoadsIds}
+			on:mousemove
+			on:mouseout
+			on:pointerup
+		/>
+	{/if}
 </section>

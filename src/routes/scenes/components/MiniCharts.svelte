@@ -1,6 +1,5 @@
 <script>
 	import LineChart from '$lib/components/charts/LineChart.svelte';
-	import id from 'date-fns/locale/id';
 	// import Icon from '$lib/components/Icon.svelte';
 
 	export let seriesNames;
@@ -21,6 +20,12 @@
 
 	/** @type {string[]} */
 	export let seriesLoadsIds = [];
+
+	export let showArea = true;
+
+	export let gridColClass = 'grid-cols-3';
+
+	export let gridBorderLeft = 'border-l';
 
 	$: keys = [...seriesNames].reverse();
 	/**
@@ -49,14 +54,14 @@
 	}
 </script>
 
-<div class="grid grid-cols-3 border-mid-warm-grey">
+<div class="grid {gridColClass} border-mid-warm-grey">
 	{#each keys as key}
 		{@const title = seriesLabels[key]}
 		{@const hoverValue = hoverData ? (isLoad(key) ? -hoverData[key] || 0 : hoverData[key] || 0) : 0}
 		{@const focusValue = focusData ? (isLoad(key) ? -focusData[key] || 0 : focusData[key] || 0) : 0}
 		{@const maxValue = getMaxValue(key)}
 		<section
-			class="p-8 border-mid-warm-grey border-b border-l last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
+			class="p-8 border-mid-warm-grey border-b {gridBorderLeft} last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
 		>
 			<header>
 				<div class="flex justify-between items-center">
@@ -103,6 +108,7 @@
 				overlayStroke={chartOverlayHatchStroke}
 				{hoverData}
 				{focusData}
+				{showArea}
 				chartHeightClasses="h-[150px]"
 				on:mousemove
 				on:mouseout

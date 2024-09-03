@@ -60,6 +60,8 @@
 	/** @type {string | null} */
 	export let highlightId = null;
 
+	export let showArea = true;
+
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
 
@@ -107,7 +109,9 @@
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
 				<Line stroke="#353535" {hoverData} strokeWidth="2px" />
-				<Area fill={zKey} />
+				{#if showArea}
+					<Area fill={zKey} />
+				{/if}
 			</g>
 			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup />
 		</Svg>
