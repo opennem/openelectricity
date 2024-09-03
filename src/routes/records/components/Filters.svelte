@@ -20,6 +20,7 @@
 	export let initCheckedFuelTechs;
 	export let initCheckedAggregates;
 	export let initCheckedMetrics;
+	export let initSelectedSignificance;
 
 	let filterMode = 'checkboxes'; // text or checkboxes
 
@@ -41,6 +42,8 @@
 	/** @type {string[]} */
 	let checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
 
+	let selectedSignificance = initSelectedSignificance || 9;
+
 	let recordIdSearch = initRecordIdSearch || '';
 
 	$: if (filterMode === 'text') {
@@ -49,6 +52,7 @@
 		checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((i) => i.value);
 		checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
 		checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
+		selectedSignificance = initSelectedSignificance || 9;
 		indeterminateRegions = [];
 	} else {
 		recordIdSearch = initRecordIdSearch || '';
@@ -135,6 +139,7 @@
 		checkedMetrics = metricOptions.map((i) => i.value);
 		indeterminateRegions = [];
 		recordIdSearch = '';
+		selectedSignificance = 9;
 
 		dispatchApply();
 	}
@@ -146,7 +151,8 @@
 			recordIdSearch,
 			checkedFuelTechs,
 			checkedAggregates,
-			checkedMetrics
+			checkedMetrics,
+			selectedSignificance
 		});
 	}
 </script>
@@ -221,6 +227,41 @@
 				nodes={metricOptions}
 				checked={checkedMetrics}
 				on:change={(evt) => handleMetricChange(evt.detail.node)}
+			/>
+		</div>
+
+		<div class="px-10">
+			<h5>Significance</h5>
+			<Radio
+				name="significance"
+				label="9+"
+				value={9}
+				checked={selectedSignificance}
+				on:change={() => (selectedSignificance = 9)}
+			/>
+
+			<Radio
+				name="significance"
+				label="6+"
+				value={6}
+				checked={selectedSignificance}
+				on:change={() => (selectedSignificance = 6)}
+			/>
+
+			<Radio
+				name="significance"
+				label="3+"
+				value={3}
+				checked={selectedSignificance}
+				on:change={() => (selectedSignificance = 3)}
+			/>
+
+			<Radio
+				name="significance"
+				label="1+"
+				value={1}
+				checked={selectedSignificance}
+				on:change={() => (selectedSignificance = 1)}
 			/>
 		</div>
 	</div>

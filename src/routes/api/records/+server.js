@@ -17,6 +17,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	const fuelTechs = searchParams.get('fuelTechs');
 	const aggregates = searchParams.get('aggregates');
 	const metrics = searchParams.get('metrics');
+	const significance = searchParams.get('significance');
 
 	let dateParams = '';
 	let pageParams = '';
@@ -26,6 +27,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	let fuelTechParams = '';
 	let aggregateParams = '';
 	let metricParams = '';
+	let significanceParams = '';
 
 	// const f = 'yyyy-MM-dd';
 
@@ -66,6 +68,10 @@ export async function GET({ url, fetch, setHeaders }) {
 			.split(',')
 			.map((i) => `&fueltech_id=${i}`)
 			.join('');
+	}
+
+	if (significance) {
+		significanceParams = `&significance=${significance}`;
 	}
 
 	if (regions) {
@@ -129,7 +135,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	// ];
 	// const fuelTechs = [];
 	// const fuelTechParams = fuelTechs.map((tech) => `&fuel_tech=${tech}`).join('');
-	const path = `${PUBLIC_RECORDS_API}/records?limit=100${fuelTechParams}${metricParams}${aggregateParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}`;
+	const path = `${PUBLIC_RECORDS_API}/records?limit=100${fuelTechParams}${metricParams}${aggregateParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}${significanceParams}`;
 
 	console.log('records path', path);
 	const response = await fetch(path);
