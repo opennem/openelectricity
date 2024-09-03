@@ -20,7 +20,6 @@ const batteryAndLoads = [
 export default function (fuelTechs) {
 	const filterKeys = Object.keys(fuelTechs).filter((key) => !batteryAndLoads.includes(key));
 
-	console.log('filterkeys', filterKeys, fuelTechs);
 	return filterKeys.reduce((/** @type Object.<FuelTechCode, FuelTechCode[]> */ acc, key) => {
 		acc[key] = fuelTechs[key];
 		return acc;
