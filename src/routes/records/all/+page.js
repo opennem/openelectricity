@@ -30,6 +30,7 @@ export async function load({ fetch, url }) {
 	const fuelTechs = searchParams.get('fuelTechs');
 	const aggregates = searchParams.get('aggregates');
 	const metrics = searchParams.get('metrics');
+	const significance = searchParams.get('significance');
 
 	return {
 		records: [],
@@ -39,7 +40,8 @@ export async function load({ fetch, url }) {
 		aggregates: aggregates ? aggregates.split(',') : [],
 		metrics: metrics ? metrics.split(',') : [],
 		stringFilter: searchParams.get('recordIdFilter') || '',
-		fuelTechs: fuelTechs ? fuelTechs.split(',') : []
+		fuelTechs: fuelTechs ? fuelTechs.split(',') : [],
+		significance: significance ? parseInt(significance) : null
 	};
 
 	// error(404, 'Not found');

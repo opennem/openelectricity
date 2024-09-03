@@ -41,7 +41,7 @@
 	let checkedMetrics =
 		data.metrics && data.metrics.length ? data.metrics : metricOptions.map((i) => i.value);
 
-	let selectedMetric = data.metric || 'all';
+	let selectedSignificance = data.significance || 9;
 
 	let recordIdSearch = data.stringFilter || '';
 
@@ -52,14 +52,22 @@
 		checkedFuelTechs,
 		checkedAggregates,
 		checkedMetrics,
-		selectedMetric
+		selectedSignificance
 	);
 	$: totalPages = Math.ceil(totalRecords / 100);
 	$: currentLastRecordIndex = currentStartRecordIndex + 99;
 	$: lastRecordIndex =
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
-	function getFilterParams({ regions, periods, fuelTechs, stringFilter, aggregates, metrics }) {
+	function getFilterParams({
+		regions,
+		periods,
+		fuelTechs,
+		stringFilter,
+		aggregates,
+		metrics,
+		significance
+	}) {
 		const validRegions = regions.filter((r) => r !== '_all');
 
 		const regionsParam =
@@ -81,13 +89,16 @@
 			? `&recordIdFilter=${encodeURIComponent(stringFilter.trim())}`
 			: '';
 
+		const significanceParam = significance ? `&significance=${significance}` : '';
+
 		return {
 			regionsParam,
 			periodsParam,
 			recordIdSearchParam,
 			fuelTechParams,
 			aggregatesParam,
-			metricsParam
+			metricsParam,
+			significanceParam
 		};
 	}
 
@@ -97,7 +108,8 @@
 		periods = checkedPeriods,
 		fuelTechs = checkedFuelTechs,
 		aggregates = checkedAggregates,
-		metrics = checkedMetrics
+		metrics = checkedMetrics,
+		significance = selectedSignificance
 	) {
 		const {
 			regionsParam,
@@ -105,19 +117,21 @@
 			recordIdSearchParam,
 			fuelTechParams,
 			aggregatesParam,
-			metricsParam
+			metricsParam,
+			significanceParam
 		} = getFilterParams({
 			regions,
 			periods,
 			stringFilter: recordIdSearch,
 			fuelTechs,
 			aggregates,
-			metrics
+			metrics,
+			significance
 		});
 
 		if (browser) {
 			const res = await fetch(
-				`/api/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}`
+				`/api/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}${significanceParam}`
 			);
 			const jsonData = await res.json();
 
@@ -147,18 +161,20 @@
 			recordIdSearchParam,
 			fuelTechParams,
 			aggregatesParam,
-			metricsParam
+			metricsParam,
+			significanceParam
 		} = getFilterParams({
 			regions: checkedRegions,
 			periods: checkedPeriods,
 			stringFilter: recordIdSearch,
 			fuelTechs: checkedFuelTechs,
 			aggregates: checkedAggregates,
-			metrics: checkedMetrics
+			metrics: checkedMetrics,
+			significance: selectedSignificance
 		});
 
 		goto(
-			`/records/all?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}`,
+			`/records/all?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}${significanceParam}`,
 			{
 				replaceState: true
 			}
@@ -173,17 +189,19 @@
 	 * 	checkedFuelTechs: string[],
 	 * 	checkedAggregates: string[],
 	 *  checkedMetrics: string[],
+	 * 	selectedSignificance: number,
 	 * 	recordIdSearch: string
 	 * }} detail
 	 */
 	function handleFiltersApply(detail) {
-		console.log('Regions', detail.checkedRegions);
+		console.log('Filters', detail);
 		checkedRegions = detail.checkedRegions;
 		checkedPeriods = detail.checkedPeriods;
 		recordIdSearch = detail.recordIdSearch;
 		checkedFuelTechs = detail.checkedFuelTechs;
 		checkedAggregates = detail.checkedAggregates;
 		checkedMetrics = detail.checkedMetrics;
+		selectedSignificance = detail.selectedSignificance;
 
 		updateCurrentPage(1);
 	}
@@ -206,6 +224,7 @@
 		initCheckedFuelTechs={checkedFuelTechs}
 		initCheckedAggregates={checkedAggregates}
 		initCheckedMetrics={checkedMetrics}
+		initSelectedSignificance={selectedSignificance}
 		on:apply={(evt) => handleFiltersApply(evt.detail)}
 	/>
 
