@@ -48,25 +48,27 @@
 <section>
 	{#if names.length}
 		<header>
-			<div class="flex gap-2 items-center">
-				<h5 class="m-0 leading-none">
-					{$title}
-				</h5>
+			<div class="md:flex gap-2 items-center px-10 md:px-0">
+				<div class="flex gap-2 items-center">
+					<h5 class="m-0 leading-none">
+						{$title}
+					</h5>
 
-				{#if $allowPrefixSwitch}
-					<button
-						class="font-light text-sm text-mid-grey hover:underline"
-						on:click={moveToNextDisplayPrefix}
-					>
-						{$displayUnit || ''}
-					</button>
-				{:else}
-					<span class="font-light text-sm text-mid-grey">{$displayUnit || ''}</span>
-				{/if}
+					{#if $allowPrefixSwitch}
+						<button
+							class="font-light text-sm text-mid-grey hover:underline"
+							on:click={moveToNextDisplayPrefix}
+						>
+							{$displayUnit || ''}
+						</button>
+					{:else}
+						<span class="font-light text-sm text-mid-grey">{$displayUnit || ''}</span>
+					{/if}
 
-				<span class="font-light text-sm text-mid-grey">—</span>
+					<span class="hidden md:block font-light text-sm text-mid-grey">—</span>
+				</div>
 
-				<span class="font-light text-sm text-mid-grey">
+				<span class="font-light text-xs md:text-sm text-mid-grey relative -top-1 md:top-0">
 					{$singleSelectionModelScenarioLabel} ({$singleSelectionPathway}), {$selectedRegionLabel}
 				</span>
 			</div>

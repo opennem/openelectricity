@@ -16,7 +16,7 @@
 
 {#if model && scenario}
 	<button
-		class="min-h-24 text-left w-full border rounded-lg p-4 grid grid-cols-1 gap-6 place-content-between hover:border-black"
+		class="min-h-24 text-left w-full md:border md:rounded-lg p-4 grid grid-cols-1 gap-6 place-content-between md:hover:border-black"
 		class:bg-light-warm-grey={highlightBg}
 		class:border-black={highlightBorder}
 		class:border-warm-grey={!highlightBorder}
@@ -41,6 +41,8 @@
 				on:change
 			/>
 		{/if}
+
+		<slot />
 
 		<div class="flex items-center text-mid-grey justify-between text-xs">
 			<span class="w-20 grayscale">

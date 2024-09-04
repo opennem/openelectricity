@@ -65,7 +65,7 @@
 	</div>
 
 	{#if isEmissionsView}
-		<div class="grid grid-cols-3">
+		<div class="grid grid-cols-2 md:grid-cols-3">
 			<MiniCharts
 				seriesNames={$seriesNames}
 				seriesLabels={$seriesLabels}

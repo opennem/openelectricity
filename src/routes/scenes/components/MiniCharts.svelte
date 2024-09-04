@@ -23,7 +23,7 @@
 
 	export let showArea = true;
 
-	export let gridColClass = 'grid-cols-3';
+	export let gridColClass = 'grid-cols-2 md:grid-cols-3';
 
 	export let gridBorderLeft = 'border-l';
 
@@ -76,7 +76,7 @@
 		{@const focusValue = updatedFocusData ? updatedFocusData[key] || '—' : '—'}
 		{@const maxValue = getMaxValue(key)}
 		<section
-			class="p-8 border-mid-warm-grey border-b {gridBorderLeft} last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
+			class="p-8 border-mid-warm-grey border-b {gridBorderLeft} last:border-r [&:nth-child(2n)]:border-r [&:nth-child(-n+2)]:border-t md:[&:nth-child(3n)]:border-r md:[&:nth-child(-n+3)]:border-t"
 		>
 			<header>
 				<div class="flex justify-between items-center">

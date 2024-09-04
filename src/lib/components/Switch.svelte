@@ -22,7 +22,7 @@
 <!-- selected === value -->
 
 <div
-	class={`flex text-sm md:inline-flex rounded-xl bg-light-warm-grey border border-solid border-mid-warm-grey ${$$restProps.class}`}
+	class={`flex md:inline-flex text-sm w-full md:w-auto mx-10 md:mx-0 rounded-xl bg-light-warm-grey border border-solid border-mid-warm-grey ${$$restProps.class}`}
 >
 	{#each buttons as { label, value, icon }, i}
 		<button

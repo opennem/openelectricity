@@ -5,8 +5,13 @@
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
+	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
+	import Button from '$lib/components/form-elements/Button2.svelte';
+	import Modal from '$lib/components/Modal.svelte';
 	import IconPlus from '$lib/icons/Plus.svelte';
 	import IconMinus from '$lib/icons/Minus.svelte';
+	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	// import IconXMark from '$lib/icons/XMark.svelte';
 	import { formatFyTickX } from '$lib/utils/formatters';
 
 	import { viewSectionOptions } from '../page-data-options/view-sections';
@@ -145,22 +150,102 @@
 			$selectedCharts = [...$selectedCharts, dataType];
 		}
 	}
+
+	let showMobileFilterOptions = false;
 </script>
+
+{#if showMobileFilterOptions}
+	<Modal
+		maxWidthClass=""
+		class="!fixed bg-white top-0 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain !rounded-none !my-0 pt-0 px-0 z-50"
+	>
+		<header
+			class="sticky top-0 z-50 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
+		>
+			<h3 class="mb-2">Filters</h3>
+			<!-- 
+			<div>
+				<ButtonIcon
+					class="border-0 hover:bg-transparent hover:!text-black"
+					on:click={handleFiltersClick}
+				>
+					<span class="underline font-bold">Close</span>
+				</ButtonIcon>
+			</div> -->
+		</header>
+
+		<section class="p-10 w-full flex gap-24">
+			<FormMultiSelect
+				options={dataTypeDisplayOptions}
+				selected={$selectedCharts}
+				label="Charts"
+				paddingX=""
+				staticDisplay={true}
+				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+				on:change={(evt) => handleDataTypeChange(evt.detail.value)}
+			/>
+
+			{#if $isTechnologyViewSection || $isScenarioViewSection}
+				<FormSelect
+					formLabel="Region"
+					options={regionOptions}
+					selected={$selectedRegion}
+					paddingX=""
+					staticDisplay={true}
+					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+					on:change={(evt) => ($selectedRegion = evt.detail.value)}
+				/>
+			{/if}
+		</section>
+
+		<!-- <h4 class="font-space uppercase text-sm text-dark-grey border-t border-warm-grey p-10">
+			Scenarios
+		</h4> -->
+		<ScenarioSelection mobileView={true} />
+
+		<div slot="buttons" class="flex gap-3">
+			<!-- <Button class="w-full">Cancel</Button> -->
+			<Button
+				class="!bg-dark-grey text-white hover:!bg-black w-full"
+				on:click={() => (showMobileFilterOptions = false)}>Close</Button
+			>
+		</div>
+	</Modal>
+{/if}
 
 <div
 	class="max-w-none flex gap-10 md:gap-16 justify-between px-10 md:px-16 py-6 border-b border-warm-grey"
 >
-	<a id="filters" class="hidden">Filters</a>
-	<div class="flex gap-16 divide-x divide-warm-grey">
-		<Switch
-			buttons={viewSectionOptions}
-			selected={$selectedViewSection}
-			on:change={(evt) => handleDisplayViewChange($selectedViewSection, evt.detail.value)}
-			class="justify-center my-4"
-		/>
+	<div class="w-full flex items-center justify-between md:justify-start gap-8 md:gap-18">
+		<div class="sm:hidden">
+			<FormSelect
+				options={viewSectionOptions}
+				selected={$selectedViewSection}
+				paddingX="px-4"
+				paddingY="py-3"
+				on:change={(evt) => handleDisplayViewChange($selectedViewSection, evt.detail.value)}
+			/>
+		</div>
 
-		<div class="py-2 flex items-center gap-6 pl-10 relative z-40">
-			<div class="flex items-center">
+		<div class="hidden sm:block">
+			<Switch
+				buttons={viewSectionOptions}
+				selected={$selectedViewSection}
+				on:change={(evt) => handleDisplayViewChange($selectedViewSection, evt.detail.value)}
+				class="justify-center my-4"
+			/>
+		</div>
+
+		<div class="md:hidden pl-8 ml-4 border-l border-warm-grey">
+			<ButtonIcon on:click={() => (showMobileFilterOptions = true)}>
+				<IconAdjustmentsHorizontal class="size-10" />
+			</ButtonIcon>
+		</div>
+
+		<div
+			class="hidden md:flex py-2 items-center gap-6 pl-4 ml-4 relative z-40 border-l border-warm-grey"
+		>
+			<div class="flex items-center whitespace-nowrap">
 				<FormMultiSelect
 					options={dataTypeDisplayOptions}
 					selected={$selectedCharts}

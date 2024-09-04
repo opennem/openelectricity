@@ -7,6 +7,8 @@
 	const { singleSelectionData, multiSelectionData, isSingleSelectionMode } =
 		getContext('scenario-filters');
 
+	export let mobileView = false;
+
 	/** @type {string[]} */
 	let selectedScenarios = [];
 	/** @type {string | null} */
@@ -120,16 +122,23 @@
 	}
 </script>
 
-<div class="grid grid-cols-3 divide-x divide-warm-grey border-b border-warm-grey">
-	<div class="p-10 md:p-16 col-span-2">
+<div class="grid grid-cols-1 md:grid-cols-3 divide-x divide-warm-grey md:border-b border-warm-grey">
+	<div class="p-0 md:p-16 col-span-2">
 		{#each modelOptions as model, i}
 			<div class:pb-8={i === 0}>
-				<h5 class="font-space uppercase text-sm text-mid-grey pl-1">{model.label}</h5>
-				<ul class="grid grid-cols-4 gap-3">
+				<h5
+					class="font-space uppercase text-sm text-mid-grey px-10 py-2 mb-0 md:pb-2 md:pl-1 text-right border-y border-warm-grey md:border-0 md:text-left"
+				>
+					{model.label}
+				</h5>
+				<ul class="grid grid-cols-1 md:grid-cols-4 md:gap-3">
 					{#each model.scenarios as scenario}
 						{@const isFocussed = focusScenarioId === scenario.id}
 						{@const isChecked = selectedScenarios.includes(scenario.id)}
-						<li>
+						<li
+							class:bg-light-warm-grey={isFocussed}
+							class="border-b border-warm-grey px-6 last:border-0 md:border-0 md:px-0"
+						>
 							<ScenarioButton
 								{model}
 								{scenario}
@@ -139,21 +148,37 @@
 								highlightBorder={isFocussed}
 								on:click={() => handleScenarioButtonClick(scenario.id)}
 								on:change={(evt) => handleCheckBoxChange(scenario.id, evt.detail.checked)}
-							/>
+							>
+								{#if mobileView && isFocussed}
+									<div>
+										<PathwaySelection
+											showTitle={false}
+											position="top"
+											align="right"
+											pathways={focusPathways}
+											selectedScenario={focusScenario}
+											selectedPathway={$singleSelectionData?.pathway}
+											on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
+										/>
+									</div>
+								{/if}
+							</ScenarioButton>
 						</li>
 					{/each}
 				</ul>
 			</div>
 		{/each}
 	</div>
-	<div class="p-10 md:p-16">
-		{#if focusScenarioId}
-			<PathwaySelection
-				pathways={focusPathways}
-				selectedScenario={focusScenario}
-				selectedPathway={$singleSelectionData?.pathway}
-				on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
-			/>
-		{/if}
-	</div>
+	{#if !mobileView}
+		<div class="p-10 md:p-16">
+			{#if focusScenarioId}
+				<PathwaySelection
+					pathways={focusPathways}
+					selectedScenario={focusScenario}
+					selectedPathway={$singleSelectionData?.pathway}
+					on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
+				/>
+			{/if}
+		</div>
+	{/if}
 </div>

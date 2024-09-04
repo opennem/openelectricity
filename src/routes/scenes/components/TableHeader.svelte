@@ -6,7 +6,7 @@
 	export let hoverTime = null;
 </script>
 
-<header class="flex justify-between h-12">
+<header class="flex justify-between h-12 px-10 md:px-0">
 	<div>
 		<Checkbox
 			name="includeBatteryAndLoads"

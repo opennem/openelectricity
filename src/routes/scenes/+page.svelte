@@ -418,7 +418,7 @@
 
 <!-- WORKAROUND: class:relative={!$showScenarioOptions} to allow Pathway dropdown to layer above -->
 <div
-	class="max-w-none px-16 p-12 flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
+	class="max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
 	class:relative={!$showScenarioOptions}
 >
 	<section class="w-full flex flex-col gap-12">
@@ -456,7 +456,7 @@
 		{/if} -->
 	</section>
 
-	<section class="max-w-[450px]">
+	<section class="md:max-w-[450px] md:w-[40%]">
 		{#if $isTechnologyViewSection}
 			<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
 		{/if}
@@ -469,7 +469,7 @@
 	</section>
 </div>
 
-<div class="container max-w-none lg:container px-18 md:grid grid-cols-2">
+<div class="max-w-none lg:container md:px-18 md:grid grid-cols-2">
 	<ScenarioDetailed
 		{seriesLoadsIds}
 		on:mousemove={handleMousemove}
