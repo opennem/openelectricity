@@ -34,8 +34,12 @@
 		getNextPrefix
 	} = store;
 
-	const { singleSelectionModelScenarioLabel, singleSelectionPathway, selectedRegionLabel } =
-		getContext('scenario-filters');
+	const {
+		singleSelectionModelScenarioLabel,
+		singleSelectionPathway,
+		selectedRegionLabel,
+		isScenarioViewSection
+	} = getContext('scenario-filters');
 
 	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
 	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
@@ -83,7 +87,7 @@
 			/>
 		</header>
 
-		{#if $isChartTypeArea}
+		{#if $isChartTypeArea || $isScenarioViewSection}
 			<StackedAreaChart
 				dataset={$seriesData}
 				xKey="date"

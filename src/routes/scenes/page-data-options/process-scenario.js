@@ -13,10 +13,21 @@ import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils'
  * @param {{
  * historicalTimeSeries: TimeSeries,
  * projectionTimeSeries: TimeSeries,
+ * baseUnit: string,
+ * prefix: SiPrefix,
+ * displayPrefix: SiPrefix,
+ * allowedPrefixes: SiPrefix[],
  * }} param0
  * @returns {ProcessedDataViz}
  */
-function combineHistoryProjection({ historicalTimeSeries, projectionTimeSeries }) {
+function combineHistoryProjection({
+	historicalTimeSeries,
+	projectionTimeSeries,
+	baseUnit = '',
+	prefix = '',
+	displayPrefix = '',
+	allowedPrefixes = []
+}) {
 	const historicalTimeSeriesData = historicalTimeSeries.data;
 	const projectionTimeSeriesData = projectionTimeSeries.data;
 
@@ -65,6 +76,10 @@ function combineHistoryProjection({ historicalTimeSeries, projectionTimeSeries }
 			seriesColours,
 			seriesLabels,
 			yDomain: [0, null],
+			prefix,
+			baseUnit,
+			displayPrefix,
+			allowedPrefixes,
 			chartType: 'line'
 		};
 	}
@@ -76,7 +91,12 @@ function combineHistoryProjection({ historicalTimeSeries, projectionTimeSeries }
 		seriesLabels: {},
 		nameOptions: [],
 		seriesLoadsIds: [],
-		yDomain: []
+		yDomain: [],
+		prefix,
+		baseUnit,
+		displayPrefix,
+		allowedPrefixes,
+		chartType: 'area'
 	};
 }
 
@@ -186,7 +206,11 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 
 	return combineHistoryProjection({
 		historicalTimeSeries,
-		projectionTimeSeries
+		projectionTimeSeries,
+		baseUnit: projectionsStats[0].stats.baseUnit,
+		prefix: projectionsStats[0].stats.prefix,
+		displayPrefix: 'T',
+		allowedPrefixes: ['G', 'T']
 	});
 }
 
@@ -228,8 +252,11 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 
 	projectionsStats.forEach((projection) => {
 		// total_sources is the second data in the projection stats
+		// TODO: update this to be more reliable
 		const index = includeBatteryAndLoads ? 1 : 0;
-		const capacityStats = deepCopy(projection.stats.data[index]);
+		const capacityStats = projection.stats.data[index]
+			? deepCopy(projection.stats.data[index])
+			: deepCopy(projection.stats.data[0]);
 		capacityStats.id = `${projection.id}`;
 		capacityStats.code = null;
 		capacityStats.fuel_tech = null;
@@ -296,7 +323,11 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 
 	return combineHistoryProjection({
 		historicalTimeSeries,
-		projectionTimeSeries
+		projectionTimeSeries,
+		baseUnit: projectionsStats[0].stats.baseUnit,
+		prefix: projectionsStats[0].stats.prefix,
+		displayPrefix: 'G',
+		allowedPrefixes: ['M', 'G']
 	});
 }
 
@@ -311,10 +342,10 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
  * 	projectionEnergyData: StatsData[],
  * 	projectionCapacityData: StatsData[],
  * 	projectionEmissionsData: StatsData[]
- * }[], history:  StatsData[], group: string}} param0
+ * }[], history:  StatsData[], includeBatteryAndLoads: boolean}} param0
  * @returns
  */
-function emissions({ projections, history, group }) {
+function emissions({ projections, history, includeBatteryAndLoads }) {
 	console.log('scenario emissions', projections, history);
 
 	/********* processing Projection */
@@ -359,7 +390,7 @@ function emissions({ projections, history, group }) {
 	// console.log('emissions projectionTimeSeries', projectionTimeSeries);
 
 	/********* processing Historical */
-	const merged = mergeHistoricalEmissionsData(history);
+	const merged = mergeHistoricalEmissionsData(history, includeBatteryAndLoads);
 	const historicalStats = new Statistic(merged, 'history', 'tCO2e');
 	historicalStats.data[0].id = 'historical';
 	historicalStats.data[0].label = 'Historical';
@@ -388,7 +419,11 @@ function emissions({ projections, history, group }) {
 
 	return combineHistoryProjection({
 		historicalTimeSeries,
-		projectionTimeSeries
+		projectionTimeSeries,
+		baseUnit: projectionsStats[0].stats.baseUnit,
+		prefix: projectionsStats[0].stats.prefix,
+		displayPrefix: 'k',
+		allowedPrefixes: ['k', 'M']
 	});
 }
 /**
@@ -417,6 +452,10 @@ function intensity({ processedEmissions, processedEnergy }) {
 
 	processedIntensity.yDomain = [0, 1200];
 	processedIntensity.chartType = 'line';
+	processedIntensity.prefix = '';
+	processedIntensity.baseUnit = 'kgCO2e/MWh';
+	processedIntensity.displayPrefix = '';
+	processedIntensity.allowedPrefixes = [];
 
 	return processedIntensity;
 }

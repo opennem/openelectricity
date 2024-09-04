@@ -96,7 +96,7 @@
 	$: stackedData = stack(dataset, seriesNames);
 	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
 	$: chartData = isArea ? stackedData : groupedData;
-	$: flatData = isArea ? flatten(stackedData) : dataset;
+	$: flatData = isArea ? flatten(stackedData) : flatten(groupedData, 'values');
 	$: y = isArea ? yKey : 'value';
 	$: z = isArea ? zKey : 'group';
 
@@ -106,8 +106,6 @@
 
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
 	// $: focusTime = focusData ? focusData.time || 0 : 0;
-
-	// $: console.log('stackedArea focusData', focusData);
 </script>
 
 <div class="chart-container mb-4 {heightClasses}">
@@ -216,16 +214,9 @@
 			<!-- <HoverDots {dataset} {hoverData} /> -->
 			{#if hoverData}
 				<LineX xValue={hoverData} strokeArray="none" />
-				{#if !isArea}
-					<Dot value={hoverData} r={4} />
-				{/if}
 			{/if}
 			{#if focusData}
 				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
-				{#if !isArea}
-					<circle cx="0" cy="0" r="10" fill="black" />
-					<Dot value={focusData} r={4} fill="#C74523" />
-				{/if}
 			{/if}
 		</Svg>
 	</LayerCake>
