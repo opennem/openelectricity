@@ -12,7 +12,9 @@
 	let readMore = false;
 </script>
 
-<div class="relative h-auto px-10 pb-10 border-b border-warm-grey md:border-0 mb-10 md:mb-0">
+<div
+	class="relative h-auto px-10 pb-10 md:px-16 lg:px-0 border-b border-warm-grey md:border-0 mb-10 md:mb-0"
+>
 	<div class="sticky top-0 md:pr-48">
 		<!-- <h2 class="font-space uppercase text-sm text-mid-grey mb-12">Learn more about each scenario</h2> -->
 
