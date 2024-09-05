@@ -41,7 +41,7 @@
 	let checkedMetrics =
 		data.metrics && data.metrics.length ? data.metrics : metricOptions.map((i) => i.value);
 
-	let selectedSignificance = data.significance || 9;
+	let selectedSignificance = data.significance || 0;
 
 	let recordIdSearch = data.stringFilter || '';
 
