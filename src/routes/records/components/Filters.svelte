@@ -42,7 +42,7 @@
 	/** @type {string[]} */
 	let checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
 
-	let selectedSignificance = initSelectedSignificance || 9;
+	let selectedSignificance = initSelectedSignificance || 0;
 
 	let recordIdSearch = initRecordIdSearch || '';
 
@@ -52,7 +52,7 @@
 		checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((i) => i.value);
 		checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
 		checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
-		selectedSignificance = initSelectedSignificance || 9;
+		selectedSignificance = initSelectedSignificance || 0;
 		indeterminateRegions = [];
 	} else {
 		recordIdSearch = initRecordIdSearch || '';
@@ -139,7 +139,7 @@
 		checkedMetrics = metricOptions.map((i) => i.value);
 		indeterminateRegions = [];
 		recordIdSearch = '';
-		selectedSignificance = 9;
+		selectedSignificance = 0;
 
 		dispatchApply();
 	}
@@ -262,6 +262,14 @@
 				value={1}
 				checked={selectedSignificance}
 				on:change={() => (selectedSignificance = 1)}
+			/>
+
+			<Radio
+				name="significance"
+				label="All"
+				value={0}
+				checked={selectedSignificance}
+				on:change={() => (selectedSignificance = 0)}
 			/>
 		</div>
 	</div>
