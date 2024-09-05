@@ -56,6 +56,10 @@ const aggregateOptions = [
 
 const periodOptions = [
 	{
+		value: 'interval',
+		label: 'Interval'
+	},
+	{
 		value: 'day',
 		label: 'Day'
 	},
