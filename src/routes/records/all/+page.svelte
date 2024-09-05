@@ -294,8 +294,8 @@
 					<th>Region</th>
 					<th>Fuel Tech</th>
 
-					<th>Metric</th>
 					<th>Period</th>
+					<th>Metric</th>
 					<th>Aggregate</th>
 					<th>Significance</th>
 					<th />
