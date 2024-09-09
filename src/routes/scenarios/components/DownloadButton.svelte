@@ -79,7 +79,7 @@
 			out:fly={{ y: -5, duration: 150 }}
 		>
 			<li
-				class="px-4 py-2 border-b border-mid-grey text-mid-grey whitespace-nowrap font-space text-sm font-medium"
+				class="px-4 py-2 border-b border-warm-grey text-mid-grey whitespace-nowrap font-space text-xs"
 			>
 				Download as CSV
 			</li>
