@@ -42,8 +42,10 @@
 		>
 			{#each navItems as { name, href }}
 				<a
-					class="text-lg font-medium flex items-center mb-8 md:text-sm md:mb-0 hover:no-underline text-dark-grey"
-					class:active={$page.url.pathname === href}
+					class="text-lg font-medium flex items-center mb-8 md:text-sm md:mb-0"
+					class:text-mid-grey={$page.url.pathname !== href}
+					class:text-black={$page.url.pathname === href}
+					class:font-semibold={$page.url.pathname === href}
 					{href}
 				>
 					{name}
@@ -89,10 +91,6 @@
 </header>
 
 <style lang="postcss">
-	nav a.active {
-		font-weight: theme(fontWeight.bold);
-	}
-
 	/* burger menu states */
 	.burger circle {
 		opacity: 1;
