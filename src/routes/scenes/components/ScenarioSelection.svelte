@@ -45,8 +45,8 @@
 	// $: console.log('focusScenarioModel', focusScenarioModel);
 	// $: console.log('focusPathways', focusPathways);
 
-	$: console.log('singleSelectionData', $singleSelectionData);
-	$: console.log('multiSelectionData', $multiSelectionData);
+	// $: console.log('singleSelectionData', $singleSelectionData);
+	// $: console.log('multiSelectionData', $multiSelectionData);
 
 	/**
 	 * @param {string} id

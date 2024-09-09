@@ -59,6 +59,7 @@
 	role="presentation"
 	on:mousemove={pointermove}
 	on:mouseout={mouseout}
+	on:mousedown
 	on:touchmove={pointermove}
 	on:pointerup={pointerup}
 	on:blur={mouseout}

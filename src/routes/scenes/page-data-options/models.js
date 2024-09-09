@@ -164,11 +164,18 @@ modelOptions.forEach((model) => {
 
 /** @type {*} */
 export const scenarioOptions = modelOptions.reduce((acc, curr) => [...acc, ...curr.scenarios], []);
+export const modelLabelMap = modelOptions.reduce((acc, curr) => {
+	acc[curr.value] = curr.label;
+	return acc;
+}, {});
 export const scenarioColourMap = scenarioOptions.reduce((acc, curr) => {
 	acc[curr.id] = curr.colour;
 	return acc;
 }, {});
-console.log('scenarioOptions', scenarioOptions, scenarioColourMap);
+export const scenarioLabelMap = scenarioOptions.reduce((acc, curr) => {
+	acc[curr.id] = curr.label;
+	return acc;
+}, {});
 
 // add secondary colours to scenarios
 // let colourIndex = 0;

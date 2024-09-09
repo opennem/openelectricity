@@ -9,6 +9,9 @@
 	/** @type {string[]} */
 	export let hiddenRowNames = [];
 
+	/** @type {FuelTechCode[]}*/
+	export let seriesLoadsIds = [];
+
 	const {
 		title,
 		allowPrefixSwitch,
@@ -29,6 +32,7 @@
 		chartOverlayHatchStroke,
 		chartHeightClasses,
 		hoverKey,
+		hoverTime,
 		hoverData,
 		focusData,
 		getNextPrefix
@@ -38,11 +42,54 @@
 		singleSelectionModelScenarioLabel,
 		singleSelectionPathway,
 		selectedRegionLabel,
-		isScenarioViewSection
+		isScenarioViewSection,
+		isRegionViewSection
 	} = getContext('scenario-filters');
 
 	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
+	$: loadIds = names.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d));
 	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
+
+	$: updatedSeriesData = $seriesData.map((d) => {
+		/** @type {TimeSeriesData} */
+		const newObj = { ...d };
+		// get min and max values for each time series
+		newObj._max = 0;
+		newObj._min = 0;
+		names.forEach((l) => {
+			const value = d[l] || 0;
+			if ($isChartTypeArea) {
+				if (newObj._max || newObj._max === 0) newObj._max += +value;
+			} else {
+				if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
+			}
+		});
+		loadIds.forEach((l) => {
+			const value = d[l] || 0;
+			if ($isChartTypeArea) {
+				if (newObj._min || newObj._min === 0) newObj._min += +value;
+			} else {
+				if (newObj._min || newObj._min === 0) newObj._min = Math.min(newObj._min, +value);
+			}
+		});
+
+		return newObj;
+	});
+
+	$: updatedYDomain = (() => {
+		const addTenPercent = (val) => val + val * 0.1;
+		const maxY = updatedSeriesData.map((d) => d._max);
+		// @ts-ignore
+		const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
+
+		const minY = updatedSeriesData.map((d) => d._min);
+		// @ts-ignore
+		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
+
+		return [datasetMin, datasetMax];
+	})();
+
+	$: updatedHoverData = $hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null;
 
 	function moveToNextDisplayPrefix() {
 		$displayPrefix = getNextPrefix();
@@ -78,7 +125,7 @@
 			</div>
 
 			<Tooltip
-				hoverData={$hoverData}
+				hoverData={updatedHoverData}
 				hoverKey={$hoverKey}
 				seriesColours={$seriesColours}
 				seriesLabels={$seriesLabels}
@@ -87,15 +134,15 @@
 			/>
 		</header>
 
-		{#if $isChartTypeArea || $isScenarioViewSection}
+		{#if $isChartTypeArea || $isScenarioViewSection || $isRegionViewSection}
 			<StackedAreaChart
-				dataset={$seriesData}
+				dataset={updatedSeriesData}
 				xKey="date"
 				yKey={[0, 1]}
 				zKey="key"
 				xTicks={$xTicks}
 				yTicks={2}
-				yDomain={$yDomain}
+				yDomain={updatedYDomain}
 				seriesNames={names}
 				zRange={colours}
 				formatTickX={$formatTickX}

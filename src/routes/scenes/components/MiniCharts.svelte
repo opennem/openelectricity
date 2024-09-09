@@ -1,6 +1,9 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
 	import LineChart from '$lib/components/charts/LineChart.svelte';
 	// import Icon from '$lib/components/Icon.svelte';
+
+	import { scenarioLabelMap } from '../page-data-options/models';
 
 	export let seriesNames;
 	export let seriesLabels;
@@ -14,6 +17,9 @@
 	export let hoverData;
 	export let focusData;
 	export let displayUnit = '';
+	export let isButton = false;
+	export let selectedScenarioId = '';
+	export let seriesPathways = null;
 
 	/** @type {TimeSeriesData[]} */
 	export let seriesData;
@@ -24,19 +30,19 @@
 	export let showArea = true;
 
 	export let gridColClass = 'grid-cols-2 md:grid-cols-3';
+	export let sectionBorderClass = '';
 
-	export let gridBorderLeft = 'border-l';
+	const dispatch = createEventDispatcher();
+
+	$: tag = isButton ? 'button' : 'header';
 
 	$: keys = [...seriesNames].reverse();
-	/**
-	 * @param {string} key
-	 * @returns {number}
-	 */
-	function getMaxValue(key) {
+
+	$: getMaxValue = (/** @type {string} */ key) => {
 		const values = /** @type {number[]} */ (dataset.map((d) => d[key] || 0));
 		const maxValue = Math.round(Math.max(...values));
 		return maxValue < 10 ? 10 : maxValue;
-	}
+	};
 
 	$: dataset = seriesData.map((d) => {
 		const obj = { ...d };
@@ -65,22 +71,45 @@
 		}
 		return updatedData;
 	}
+
+	/**
+	 * @param {string} key
+	 */
+	function handleScenarioClick(key) {
+		if (isButton) {
+			dispatch('scenario-click', { key });
+		}
+	}
 </script>
 
-<div class="grid {gridColClass} border-mid-warm-grey">
+<div class="grid {gridColClass} gap-3">
 	{#each keys as key}
-		{@const title = seriesLabels[key]}
+		{@const title = scenarioLabelMap[key] || seriesLabels[key]}
 		{@const updatedHoverData = getUpdatedData(hoverData, key)}
 		{@const updatedFocusData = getUpdatedData(focusData, key)}
 		{@const hoverValue = updatedHoverData ? updatedHoverData[key] || '—' : '—'}
 		{@const focusValue = updatedFocusData ? updatedFocusData[key] || '—' : '—'}
-		{@const maxValue = getMaxValue(key)}
+		{@const yTicks = [0, getMaxValue(key)]}
 		<section
-			class="p-8 border-mid-warm-grey border-b {gridBorderLeft} last:border-r [&:nth-child(2n)]:border-r [&:nth-child(-n+2)]:border-t md:[&:nth-child(3n)]:border-r md:[&:nth-child(-n+3)]:border-t"
+			class="p-8 border-warm-grey border"
+			class:rounded-xl={isButton}
+			class:hover:!border-mid-warm-grey={isButton}
+			class:!border-mid-grey={selectedScenarioId === key}
+			class:shadow-xl={selectedScenarioId === key}
 		>
-			<header>
-				<div class="flex justify-between items-center">
+			<svelte:element
+				this={tag}
+				class="block w-full text-left"
+				role={isButton ? 'button' : 'header'}
+				tabindex={isButton ? 0 : undefined}
+				aria-label={title}
+				on:mousedown={() => handleScenarioClick(key)}
+			>
+				<div class="flex flex-col">
 					<h6 {title} class="truncate mb-0 col-span-5 text-dark-grey">{title}</h6>
+					{#if seriesPathways && seriesPathways[key]}
+						<small class="text-xs text-mid-grey">{seriesPathways[key]}</small>
+					{/if}
 					<!-- {#if fuelTechId}
 						<Icon icon={fuelTechId} size={28} />
 					{/if} -->
@@ -95,7 +124,7 @@
 						<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
 					{/if}
 				</h3>
-			</header>
+			</svelte:element>
 
 			<div class="text-right h-8">
 				{#if hoverData}
@@ -115,7 +144,7 @@
 				yKey={key}
 				zKey={seriesColours[key]}
 				{xTicks}
-				yTicks={[0, maxValue]}
+				{yTicks}
 				{formatTickX}
 				{formatTickY}
 				overlay={chartOverlay}
@@ -128,6 +157,7 @@
 				on:mousemove
 				on:mouseout
 				on:pointerup
+				on:mousedown={() => handleScenarioClick(key)}
 			/>
 		</section>
 	{/each}

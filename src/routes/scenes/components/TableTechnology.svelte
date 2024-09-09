@@ -139,7 +139,6 @@
 	 */
 	function handleKeydown(evt) {
 		if (evt.metaKey || evt.altKey) {
-			console.log(' key pressed', evt.altKey, evt.metaKey);
 			isMetaPressed = true;
 		} else {
 			isMetaPressed = false;
@@ -152,6 +151,23 @@
 	function darken(colorString) {
 		// @ts-ignore
 		return color(colorString).darker(0.5).formatHex();
+	}
+
+	// get string before () in label
+	/**
+	 * @param {string} label
+	 */
+	function getLabel(label) {
+		return label.split(' (')[0];
+	}
+
+	// get string inside () in label
+	/**
+	 * @param {string} label
+	 */
+	function getSublabel(label) {
+		const labelArr = label.split(' (');
+		return labelArr.length > 1 ? `(${labelArr[1].slice(0, -1)})` : '';
 	}
 </script>
 
@@ -169,7 +185,7 @@
 			<tr>
 				<th class="w-[60%]">
 					<div class="flex items-center gap-4">
-						<span class="block text-dark-grey text-sm font-semibold ml-3">Technology</span>
+						<span class="block text-dark-grey text-sm font-medium ml-3">Technology</span>
 						<div
 							class="border border-mid-warm-grey text-xs inline-block rounded-md whitespace-nowrap"
 						>
@@ -228,28 +244,30 @@
 		</thead>
 
 		<tbody>
-			{#each sourceNames as name, i}
+			{#each sourceNames as name}
 				<tr
 					on:click={() => handleRowClick(name)}
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
+					class:opacity-50={hiddenRowNames.includes(name)}
 				>
-					<td class:opacity-50={hiddenRowNames.includes(name)} class="px-2 py-1">
+					<td class="px-2 py-1">
 						<div class="flex items-center gap-3 ml-3">
 							{#if hiddenRowNames.includes(name)}
 								<div
-									class="w-5 h-5 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 								/>
 							{:else}
 								<div
-									class="w-5 h-5 border rounded"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded"
 									style:background-color={$energySeriesColours[name]}
 									style:border-color={darken($energySeriesColours[name])}
 								/>
 							{/if}
 
-							<span>
-								{$energySeriesLabels[name]}
-							</span>
+							<div>
+								{getLabel($energySeriesLabels[name])}
+								<span class="text-mid-grey">{getSublabel($energySeriesLabels[name])}</span>
+							</div>
 						</div>
 					</td>
 					<td class="px-2 py-1">
@@ -294,27 +312,26 @@
 					<tr
 						on:click={() => handleRowClick(name)}
 						class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
+						class:opacity-50={hiddenRowNames.includes(name)}
 					>
-						<td
-							class:!pb-8={i === sourceNames.length - 1}
-							class:opacity-50={hiddenRowNames.includes(name)}
-							class="px-2 py-1"
-						>
+						<td class:!pb-8={i === sourceNames.length - 1} class="px-2 py-1">
 							<div class="flex items-center gap-3 ml-3">
 								{#if hiddenRowNames.includes(name)}
 									<div
-										class="w-5 h-5 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+										class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 									/>
 								{:else}
 									<div
-										class="w-5 h-5 border rounded"
+										class="w-6 h-6 min-w-6 min-h-6 border rounded"
 										style:background-color={$energySeriesColours[name]}
 										style:border-color={darken($energySeriesColours[name])}
 									/>
 								{/if}
-								<span>
-									{$energySeriesLabels[name]}
-								</span>
+
+								<div>
+									{getLabel($energySeriesLabels[name])}
+									<span class="text-mid-grey">{getSublabel($energySeriesLabels[name])}</span>
+								</div>
 							</div>
 						</td>
 						<td class="px-2 py-1">
@@ -377,7 +394,7 @@
 				<th class="px-2 !py-6">
 					<div class="flex items-center gap-3 ml-3">
 						<div
-							class="w-5 h-5 border rounded"
+							class="w-6 h-6 min-w-6 min-h-6 border rounded"
 							style="background-color: #444444; border-color: {darken('#444444')}"
 						/>
 						<span>Emissions</span>

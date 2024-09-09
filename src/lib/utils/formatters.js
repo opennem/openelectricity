@@ -1,8 +1,9 @@
 import { format } from 'date-fns';
 
-export const getNumberFormat = (maximumFractionDigits = 0) =>
+export const getNumberFormat = (maximumFractionDigits = 0, useGrouping = true) =>
 	new Intl.NumberFormat('en-AU', {
-		maximumFractionDigits
+		maximumFractionDigits,
+		useGrouping
 	});
 
 export const formatFyTickX = (/** @type {Date | number} */ d) => {

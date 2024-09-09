@@ -162,8 +162,6 @@ function generation({ projection, history, group, colourReducer, includeBatteryA
 		? fuelTechMap[group]
 		: excludeBatteryAndLoads(fuelTechMap[group]);
 
-	console.log('fuelTechs', fuelTechs);
-
 	/********* processing Projection */
 	const projectionStats = new Statistic(projection, 'projection', 'GWh')
 		.invertValues(loadFuelTechs)
@@ -314,7 +312,6 @@ function capacity({ projection, history, group, colourReducer, includeBatteryAnd
  * @returns {ProcessedDataViz}
  */
 function emissions({ projection, history, includeBatteryAndLoads }) {
-	console.log('technology emissions', projection, history);
 	// mutate projection id
 	projection.forEach((d) => {
 		d.id = 'au.emissions.total';

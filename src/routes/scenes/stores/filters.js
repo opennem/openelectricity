@@ -17,7 +17,7 @@ export default function () {
 	const selectedDataType = writable('');
 	const selectedCharts = writable([]);
 
-	const includeBatteryAndLoads = writable(true);
+	const includeBatteryAndLoads = writable(false);
 
 	const isTechnologyViewSection = derived(selectedViewSection, ($selectedViewSection) => {
 		return $selectedViewSection === 'technology';
@@ -56,6 +56,19 @@ export default function () {
 		}
 	);
 
+	const filterShortName = derived(
+		[selectedRegion, selectedFuelTechGroup, singleSelectionData],
+		([$selectedRegion, $selectedFuelTechGroup, $singleSelectionData]) => {
+			const region = regionsWithShortLabels[$selectedRegion];
+			const fuelTechGroup = $selectedFuelTechGroup;
+			const model = $singleSelectionData?.model;
+			const scenario = $singleSelectionData?.scenario;
+			const pathway = $singleSelectionData?.pathway;
+
+			return `${region}-${model}-${scenario}-${pathway}`;
+		}
+	);
+
 	return {
 		selectedRegion,
 		selectedRegionLabel,
@@ -81,6 +94,8 @@ export default function () {
 		isRegionViewSection,
 
 		includeBatteryAndLoads,
-		showScenarioOptions
+		showScenarioOptions,
+
+		filterShortName
 	};
 }

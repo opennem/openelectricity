@@ -7,21 +7,22 @@
 	import LogoMark from '$lib/images/logo-mark.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';
-	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
 	import ScenarioChart from './components/ScenarioChart.svelte';
-	import TableHeader from './components/TableHeader.svelte';
 	import TableTechnology from './components/TableTechnology.svelte';
-	import TableScenario from './components/TableScenarioRegion.svelte';
-	import ScenarioDetailed from './components/ScenarioDetailed.svelte';
+	import TableScenario from './components/TableScenario.svelte';
+	import TableRegion from './components/TableRegion.svelte';
+	import DetailedTechnology from './components/DetailedTechnology.svelte';
+	import DetailedScenario from './components/DetailedScenario.svelte';
+	import DetailedRegion from './components/DetailedRegion.svelte';
 
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
 	import { regionOptions } from './page-data-options/regions';
-	import { groupOptions as scenarioGroups } from './page-data-options/groups-scenario';
-	import { groupOptions as regionGroups } from './page-data-options/groups-region';
+	// import { groupOptions as scenarioGroups } from './page-data-options/groups-scenario';
+	// import { groupOptions as regionGroups } from './page-data-options/groups-region';
 
 	import {
 		fetchTechnologyViewData,
@@ -86,7 +87,7 @@
 
 	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
 
-	/** @type {string[] | undefined} */
+	/** @type {FuelTechCode[] | undefined} */
 	let seriesLoadsIds = [];
 
 	/** @type {string[]} */
@@ -228,14 +229,14 @@
 				includeBatteryAndLoads: $includeBatteryAndLoads
 			});
 
-			console.log('processedCapacity', processedCapacity);
+			// console.log('processedCapacity', processedCapacity);
 
 			const processedEmissions = processRegion.emissions({
 				regionsData,
-				group: $selectedFuelTechGroup
+				includeBatteryAndLoads: $includeBatteryAndLoads
 			});
 
-			console.log('processedEmissions', processedEmissions);
+			// console.log('processedEmissions', processedEmissions);
 
 			const processedIntensity = processedEmissions
 				? processRegion.intensity({
@@ -244,7 +245,7 @@
 				  })
 				: undefined;
 
-			console.log('processedIntensity', processedIntensity);
+			// console.log('processedIntensity', processedIntensity);
 
 			updateAllStores({
 				processedEnergy,
@@ -421,12 +422,21 @@
 	class="max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
 	class:relative={!$showScenarioOptions}
 >
-	<section class="w-full flex flex-col gap-12">
+	{#if fetching}
+		<div
+			class="h-screen bg-light-warm-grey flex justify-center items-center"
+			transition:fade={{ duration: 250 }}
+		>
+			<LogoMark />
+		</div>
+	{/if}
+	<section class="w-full flex flex-col gap-12 md:w-[60%]">
 		{#each dataVizStoreNames as { name, chart }}
 			{#if $selectedCharts.includes(chart)}
 				<ScenarioChart
 					store={dataVizStores[name]}
 					{hiddenRowNames}
+					{seriesLoadsIds}
 					on:mousemove={handleMousemove}
 					on:mouseout={handleMouseout}
 					on:pointerup={handlePointerup}
@@ -456,26 +466,47 @@
 		{/if} -->
 	</section>
 
-	<section class="md:max-w-[450px] md:w-[40%]">
-		{#if $isTechnologyViewSection}
+	{#if $isTechnologyViewSection}
+		<section class="md:w-[40%]">
 			<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
-		{/if}
-		{#if $isScenarioViewSection}
-			<TableScenario title="Scenario" {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
-		{/if}
-		{#if $isRegionViewSection}
-			<TableScenario title="Region" {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
-		{/if}
-	</section>
+		</section>
+	{/if}
+	{#if $isScenarioViewSection}
+		<section class="md:w-[40%]">
+			<TableScenario title="Scenario" {hiddenRowNames} on:row-click={toggleRow} />
+		</section>
+	{/if}
+	{#if $isRegionViewSection}
+		<section class="md:w-[40%]">
+			<TableRegion title="Region" {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
+		</section>
+	{/if}
 </div>
 
-<div class="max-w-none lg:container md:px-18 md:grid grid-cols-2">
-	<ScenarioDetailed
-		{seriesLoadsIds}
-		on:mousemove={handleMousemove}
-		on:mouseout={handleMouseout}
-		on:pointerup={handlePointerup}
-	/>
+<div class="container max-w-none lg:container md:grid grid-cols-2">
+	{#if $isTechnologyViewSection}
+		<DetailedTechnology
+			{seriesLoadsIds}
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	{/if}
+	{#if $isScenarioViewSection}
+		<DetailedScenario
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	{/if}
+
+	{#if $isRegionViewSection}
+		<DetailedRegion
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	{/if}
 </div>
 
 <ArticlesSection

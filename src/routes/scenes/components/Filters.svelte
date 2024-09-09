@@ -11,8 +11,12 @@
 	import IconPlus from '$lib/icons/Plus.svelte';
 	import IconMinus from '$lib/icons/Minus.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import IconShare from '$lib/icons/Share.svelte';
+	import IconClipboardDocumentCheck from '$lib/icons/ClipboardDocumentCheck.svelte';
+
 	// import IconXMark from '$lib/icons/XMark.svelte';
 	import { formatFyTickX } from '$lib/utils/formatters';
+	import { writeToClipboard } from '$lib/utils/clipboard';
 
 	import { viewSectionOptions } from '../page-data-options/view-sections';
 	import { dataTypeDisplayOptions } from '../page-data-options/data-types';
@@ -23,6 +27,7 @@
 	import { groupOptions as groupScenarioOptions } from '../page-data-options/groups-scenario';
 	import { chartXTicks, miniChartXTicks } from '../page-data-options/chart-ticks';
 	import ScenarioSelection from './ScenarioSelection.svelte';
+	import DownloadButton from './DownloadButton.svelte';
 
 	const {
 		singleSelectionData,
@@ -46,6 +51,9 @@
 		getContext('capacity-data-viz'),
 		getContext('intensity-data-viz')
 	];
+
+	let showMobileFilterOptions = false;
+	let copying = false;
 
 	init();
 
@@ -71,6 +79,21 @@
 			pathway: defaultModel.defaultPathway
 		}));
 
+		// let allSelections = [];
+		// // load all selections
+		// modelOptions.forEach((model) => {
+		// 	allSelections = [
+		// 		...allSelections,
+		// 		...model.scenarios.map((s) => ({
+		// 			id: s.id,
+		// 			model: model.value,
+		// 			scenario: s.value,
+		// 			pathway: model.defaultPathway
+		// 		}))
+		// 	];
+		// });
+		// $multiSelectionData = allSelections;
+
 		$selectedDataType = 'energy';
 		$selectedRegion = '_all';
 
@@ -94,7 +117,7 @@
 			xStartValue: startOfYear(new Date(start)),
 			xEndValue: startOfYear(new Date(end))
 		};
-		const overlayLineDate = { date: startOfYear(new Date(start)) };
+		const overlayLineDate = { date: overlayDates.xStartValue };
 
 		dataVizStores.forEach((store) => {
 			store.chartOverlay.set(overlayDates);
@@ -105,8 +128,13 @@
 	$: {
 		// TODO: if singleselection model changes, update xTicks, otherwise use default xTicks
 		dataVizStores.forEach((store) => {
-			store.xTicks.set(chartXTicks[$singleSelectionData.model]);
-			store.miniXTicks.set(miniChartXTicks[$singleSelectionData.model]);
+			if ($isScenarioViewSection) {
+				store.xTicks.set(chartXTicks['aemo2024']);
+				store.miniXTicks.set(miniChartXTicks['aemo2024']);
+			} else {
+				store.xTicks.set(chartXTicks[$singleSelectionData.model]);
+				store.miniXTicks.set(miniChartXTicks[$singleSelectionData.model]);
+			}
 		});
 	}
 	$: if (
@@ -151,7 +179,14 @@
 		}
 	}
 
-	let showMobileFilterOptions = false;
+	function copyLink() {
+		copying = true;
+		const url = window.location.href;
+		writeToClipboard(url);
+		setTimeout(() => {
+			copying = false;
+		}, 1000);
+	}
 </script>
 
 {#if showMobileFilterOptions}
@@ -293,6 +328,21 @@
 				</button>
 			{/if}
 		</div>
+	</div>
+
+	<div class="hidden sm:flex items-center gap-4 border-l border-warm-grey pl-8">
+		<DownloadButton />
+
+		<button
+			class="bg-black text-white p-3 rounded-lg transition-all hover:bg-dark-grey"
+			on:click={copyLink}
+		>
+			{#if copying}
+				<IconClipboardDocumentCheck class="size-8" />
+			{:else}
+				<IconShare class="size-8" />
+			{/if}
+		</button>
 	</div>
 </div>
 

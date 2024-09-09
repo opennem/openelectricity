@@ -114,7 +114,7 @@
 					<Area fill={zKey} />
 				{/if}
 			</g>
-			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup />
+			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup on:mousedown />
 		</Svg>
 
 		<Svg pointerEvents={false}>

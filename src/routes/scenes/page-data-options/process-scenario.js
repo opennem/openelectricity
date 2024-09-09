@@ -39,14 +39,15 @@ function combineHistoryProjection({
 	const firstProjection = projectionTimeSeriesData[0];
 
 	if (lastHistory?.time && firstProjection?.time) {
-		// if last history time is the same as first projection time, remove the last history data
-		const historyData =
+		// if last history time is the same as first projection time, remove the first projection data
+		// this is to avoid duplicate data points for comparing multiple scenarios of different years
+		const projectionData =
 			lastHistory?.time === firstProjection?.time
-				? historicalTimeSeriesData.slice(0, -1)
-				: historicalTimeSeriesData;
+				? projectionTimeSeriesData.slice(1)
+				: projectionTimeSeriesData;
 
 		// combine historical and projection data
-		const seriesData = [...historyData, ...projectionTimeSeriesData];
+		const seriesData = [...historicalTimeSeriesData, ...projectionData];
 
 		// combine projection and historical series names to make sure they are all included in the time series
 		const seriesNames = [
@@ -138,33 +139,88 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 	const scenarioProjectionStats = [];
 
 	projectionsStats.forEach((projection) => {
-		const netGenerationStats = deepCopy(projection.stats.data[0]);
-		netGenerationStats.id = `${projection.id}`;
-		netGenerationStats.code = null;
-		netGenerationStats.fuel_tech = null;
-		netGenerationStats.label = scenarioLabels[projection.model][projection.scenario];
-		netGenerationStats.colour = scenarioColourMap[projection.id];
+		if (projection.stats.data.length) {
+			const netGenerationStats = deepCopy(projection.stats.data[0]);
+			netGenerationStats.id = `${projection.id}`;
+			netGenerationStats.code = null;
+			netGenerationStats.fuel_tech = null;
+			netGenerationStats.label = scenarioLabels[projection.model][projection.scenario];
+			netGenerationStats.colour = scenarioColourMap[projection.id];
 
-		if (includeBatteryAndLoads) {
-			const dataLoads = projection.stats.data[0].projection.data;
-			const dataSources = projection.stats.data[1].projection.data;
-			const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
-			netGenerationStats.projection.data = netGenerationData;
+			if (includeBatteryAndLoads) {
+				const dataLoads = projection.stats.data[0].projection.data;
+				const dataSources = projection.stats.data[1].projection.data;
+				const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+				netGenerationStats.projection.data = netGenerationData;
+			}
+
+			scenarioProjectionStats.push(netGenerationStats);
 		}
-
-		scenarioProjectionStats.push(netGenerationStats);
 	});
 
-	const projectionTimeSeries = new TimeSeries(
-		scenarioProjectionStats,
-		parseInterval('1Y'),
-		'projection',
-		undefined,
-		undefined
-	).transform();
+	// group by start date and create time series for each start date
+	const starts = [...new Set(scenarioProjectionStats.map((d) => d.projection?.start))].map((d) => {
+		const stats = scenarioProjectionStats.filter((s) => s.projection?.start === d);
+		const timeSeries = new TimeSeries(
+			stats,
+			parseInterval('1Y'),
+			'projection',
+			undefined,
+			undefined
+		).transform();
 
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
-	projectionTimeSeries.data = mutateDatesToStartOfYear(projectionTimeSeries.data, 1);
+		// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
+		timeSeries.data = mutateDatesToStartOfYear(timeSeries.data, 1);
+
+		return {
+			start: d,
+			stats,
+			timeSeries
+		};
+	});
+
+	/** @type {TimeSeriesData[]} */
+	let mergedTimeSeriesData = [];
+	starts.forEach((start) => {
+		if (mergedTimeSeriesData.length === 0) {
+			mergedTimeSeriesData = [...start.timeSeries.data];
+		} else {
+			start.timeSeries.data.forEach((d, i) => {
+				const index = mergedTimeSeriesData.findIndex((m) => m.date.getTime() === d.date.getTime());
+				if (index !== -1) {
+					mergedTimeSeriesData[index] = {
+						...mergedTimeSeriesData[index],
+						...d
+					};
+				} else {
+					mergedTimeSeriesData.push(d);
+				}
+			});
+		}
+	});
+
+	// sort the merged time series
+	mergedTimeSeriesData.sort((a, b) => a.time - b.time);
+
+	// combine all the time series
+	/** @type {*} */
+	const projectionTimeSeries = starts.reduce(
+		(acc, start) => {
+			return {
+				data: [],
+				seriesNames: [...acc.seriesNames, ...start.timeSeries.seriesNames],
+				seriesColours: { ...acc.seriesColours, ...start.timeSeries.seriesColours },
+				seriesLabels: { ...acc.seriesLabels, ...start.timeSeries.seriesLabels },
+				statsType: 'projection',
+				maxY: 0,
+				minY: 0,
+				statsInterval: start.timeSeries.statsInterval
+			};
+		},
+		{ data: [], seriesNames: [], seriesColours: {}, seriesLabels: {} }
+	);
+
+	projectionTimeSeries.data = mergedTimeSeriesData;
 	/********* end of processing Projection */
 
 	/********* processing Historical */
@@ -296,9 +352,10 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 	netCapacityStats.colour = '#000';
 
 	if (includeBatteryAndLoads) {
-		// total_sources is the second data in the historical stats
-		const dataLoads = historicalStats.data[0].history.data;
-		const dataSources = historicalStats.data[1].history.data;
+		const totalSources = historicalStats.data.find((d) => d.fuel_tech === 'total_sources');
+		const totalLoads = historicalStats.data.find((d) => d.fuel_tech === 'total_loads');
+		const dataLoads = totalLoads ? totalLoads.history.data : [];
+		const dataSources = totalSources.history.data;
 		const netCapacityData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
 
 		netCapacityStats.history.data = netCapacityData;
@@ -346,8 +403,6 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
  * @returns
  */
 function emissions({ projections, history, includeBatteryAndLoads }) {
-	console.log('scenario emissions', projections, history);
-
 	/********* processing Projection */
 	const projectionsStats = projections.map((projection) => {
 		return {
@@ -363,7 +418,6 @@ function emissions({ projections, history, includeBatteryAndLoads }) {
 	const scenarioProjectionStats = [];
 
 	projectionsStats.forEach((projection) => {
-		// total_sources is the second data in the projection stats
 		const emissionStats = deepCopy(projection.stats.data[0]);
 		emissionStats.id = `${projection.id}`;
 		emissionStats.code = null;
@@ -394,7 +448,7 @@ function emissions({ projections, history, includeBatteryAndLoads }) {
 	const historicalStats = new Statistic(merged, 'history', 'tCO2e');
 	historicalStats.data[0].id = 'historical';
 	historicalStats.data[0].label = 'Historical';
-	historicalStats.data[0].colour = '#000';
+	historicalStats.data[0].colour = '#444444';
 
 	const historicalTimeSeries = new TimeSeries(
 		historicalStats.data,

@@ -7,23 +7,28 @@
 		scenarioKeyPoints,
 		scenarioParagraphs
 	} from '../page-data-options/descriptions';
+
+	export let model = null;
+	export let scenario = null;
+
 	const { singleSelectionModel, singleSelectionScenario } = getContext('scenario-filters');
 
 	let readMore = false;
+
+	$: selectedModel = model || $singleSelectionModel;
+	$: selectedScenario = scenario || $singleSelectionScenario;
 </script>
 
-<div
-	class="relative h-auto px-10 pb-10 md:px-16 lg:px-0 border-b border-warm-grey md:border-0 mb-10 md:mb-0"
->
+<div class="relative h-auto pb-10 border-b border-warm-grey md:border-0 mb-10 md:mb-0">
 	<div class="sticky top-0 md:pr-48">
 		<!-- <h2 class="font-space uppercase text-sm text-mid-grey mb-12">Learn more about each scenario</h2> -->
 
-		{#if $singleSelectionScenario}
-			<h3 class="mb-12">{scenarioLabels[$singleSelectionModel][$singleSelectionScenario]}</h3>
-			<p>{scenarioSummary[$singleSelectionModel][$singleSelectionScenario]}</p>
+		{#if selectedModel}
+			<h3 class="mb-12">{scenarioLabels[selectedModel][selectedScenario]}</h3>
+			<p>{scenarioSummary[selectedModel][selectedScenario]}</p>
 
 			<ul class="list-disc list-outside pl-12 my-12">
-				{#each scenarioKeyPoints[$singleSelectionModel][$singleSelectionScenario] as key}
+				{#each scenarioKeyPoints[selectedModel][selectedScenario] as key}
 					<li class="font-bold">{key}</li>
 				{/each}
 			</ul>
@@ -33,9 +38,9 @@
 			{/if}
 
 			<div class="hidden md:block" class:!block={readMore}>
-				{#each scenarioParagraphs[$singleSelectionModel][$singleSelectionScenario] as paragraph, i}
+				{#each scenarioParagraphs[selectedModel][selectedScenario] as paragraph, i}
 					<p class="my-12">
-						{#if scenarioParagraphs[$singleSelectionModel][$singleSelectionScenario].length - 1 === i}
+						{#if scenarioParagraphs[selectedModel][selectedScenario].length - 1 === i}
 							<strong>Net zero summary: </strong>
 						{/if}
 						{paragraph}

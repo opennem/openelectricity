@@ -10,7 +10,7 @@
 	<div>
 		<Checkbox
 			name="includeBatteryAndLoads"
-			label="Include Battery and Loads"
+			label="Include Storage and Loads"
 			checked={includeBatteryAndLoads}
 			on:change
 		/>

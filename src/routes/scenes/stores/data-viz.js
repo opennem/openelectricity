@@ -1,4 +1,5 @@
 import { get, derived, writable } from 'svelte/store';
+import { format } from 'date-fns';
 import { getNumberFormat } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
 
@@ -64,6 +65,14 @@ export default function () {
 		};
 	});
 
+	const convertValue = derived([prefix, displayPrefix], ([$prefix, $displayPrefix]) => {
+		return (/** @type {number} */ d) => {
+			const formatter = getNumberFormat(0, false);
+			const converted = convert($prefix, $displayPrefix, d);
+			return isNaN(converted) ? '—' : formatter.format(converted);
+		};
+	});
+
 	/** @type {import('svelte/store').Writable<'area' | 'line'>} */
 	const chartType = writable('area');
 
@@ -104,6 +113,27 @@ export default function () {
 		return data;
 	});
 
+	const seriesCsvData = derived(
+		[seriesData, seriesNames, seriesLabels, convertValue],
+		([$seriesData, $seriesNames, $seriesLabels, $convertValue]) => {
+			if (!$seriesData) return '';
+
+			let csv = '';
+			csv += ['date', ...$seriesNames.map((d) => $seriesLabels[d])].join(',') + '\n';
+
+			$seriesData.forEach((d) => {
+				const date = format(d.date, 'yyyy');
+				const row = [date];
+				$seriesNames.forEach((key) => {
+					row.push($convertValue(d[key]));
+				});
+				csv += row.join(',') + '\n';
+			});
+
+			return csv;
+		}
+	);
+
 	function getNextPrefix() {
 		/** @type {SiPrefix[]} */
 		const $prefixes = get(allowedPrefixes);
@@ -135,8 +165,10 @@ export default function () {
 		prefix,
 		displayPrefix,
 		convertAndFormatValue,
+		convertValue,
 
 		seriesData,
+		seriesCsvData,
 		seriesNames,
 		seriesColours,
 		seriesLabels,

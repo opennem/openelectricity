@@ -5,9 +5,6 @@
 	import ScenarioDescription from './ScenarioDescription.svelte';
 	import MiniCharts from './MiniCharts.svelte';
 
-	/** @type {string[]} */
-	export let seriesLoadsIds = [];
-
 	/** @type {Object.<string, *>} */
 	const dataVizStores = {
 		energyDataVizStore: getContext('energy-data-viz'),
@@ -65,9 +62,9 @@
 	</div>
 
 	{#if isEmissionsView}
-		<div class="grid grid-cols-2 md:grid-cols-3">
+		<div class="grid grid-cols-2 gap-3">
 			<MiniCharts
-				seriesNames={$seriesNames}
+				seriesNames={[...$seriesNames].reverse()}
 				seriesLabels={$seriesLabels}
 				seriesColours={$seriesColours}
 				xTicks={$xTicks}
@@ -80,14 +77,13 @@
 				focusData={$focusData}
 				seriesData={$seriesData}
 				displayUnit={$displayUnit}
-				{seriesLoadsIds}
 				gridColClass="grid-cols-1"
 				on:mousemove
 				on:mouseout
 				on:pointerup
 			/>
 			<MiniCharts
-				seriesNames={$intensitySeriesNames}
+				seriesNames={[...$seriesNames].reverse()}
 				seriesLabels={$intensitySeriesLabels}
 				seriesColours={$intensitySeriesColours}
 				xTicks={$xTicks}
@@ -101,9 +97,7 @@
 				seriesData={$intensitySeriesData}
 				displayUnit={$intensityDisplayUnit}
 				showArea={false}
-				{seriesLoadsIds}
 				gridColClass="grid-cols-1"
-				gridBorderLeft=""
 				on:mousemove
 				on:mouseout
 				on:pointerup
@@ -111,7 +105,7 @@
 		</div>
 	{:else}
 		<MiniCharts
-			seriesNames={$seriesNames}
+			seriesNames={[...$seriesNames].reverse()}
 			seriesLabels={$seriesLabels}
 			seriesColours={$seriesColours}
 			xTicks={$xTicks}
@@ -124,7 +118,6 @@
 			focusData={$focusData}
 			seriesData={$seriesData}
 			displayUnit={$displayUnit}
-			{seriesLoadsIds}
 			on:mousemove
 			on:mouseout
 			on:pointerup

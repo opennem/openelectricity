@@ -49,7 +49,7 @@
 	$: xStart = yLabelStartPos
 		? $xScale(yLabelStartPos)
 		: $xRange[0] + (isBandwidth ? $padding.left : 0);
-	$: x2 = $xScale($xRange[0]);
+	// $: x2 = $xScale($xRange[0]);
 
 	$: tickVals = Array.isArray(ticks)
 		? ticks
