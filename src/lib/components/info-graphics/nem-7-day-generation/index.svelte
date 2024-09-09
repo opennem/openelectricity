@@ -84,7 +84,7 @@
 					href={$dataTrackerLink}
 					class="mt-12 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
 				>
-					View data tracker
+					View tracker
 				</a>
 			</footer>
 		</div>

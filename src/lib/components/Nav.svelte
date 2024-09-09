@@ -3,8 +3,8 @@
 	import { afterNavigate } from '$app/navigation';
 	import { dataTrackerLink } from '$lib/stores/app';
 	const navItems = [
-		{ name: 'Data Tracker', href: $dataTrackerLink },
-		{ name: 'Map', href: `${$dataTrackerLink}/facilities` },
+		{ name: 'Tracker', href: $dataTrackerLink },
+		{ name: 'Facilities', href: `${$dataTrackerLink}/facilities` },
 		{ name: 'Scenarios', href: '/scenarios' },
 		// { name: 'Latest Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },
