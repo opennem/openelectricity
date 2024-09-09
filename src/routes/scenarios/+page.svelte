@@ -475,7 +475,7 @@
 	{/if}
 </div>
 
-<div class="container max-w-none lg:container md:grid grid-cols-2">
+<div class="container max-w-none lg:container md:grid grid-cols-2 px-0 md:px-16 lg:px-40">
 	{#if $isTechnologyViewSection}
 		<DetailedTechnology
 			{seriesLoadsIds}

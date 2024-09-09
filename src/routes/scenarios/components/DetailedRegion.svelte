@@ -49,7 +49,9 @@
 	$: intensityDisplayUnit = intensityStore.displayUnit;
 </script>
 
-<ScenarioDescription />
+<div class="px-10 md:px-0">
+	<ScenarioDescription />
+</div>
 
 <section>
 	<div class="flex justify-center mb-12">

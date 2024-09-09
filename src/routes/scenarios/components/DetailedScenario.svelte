@@ -122,9 +122,11 @@
 	// $: console.log('hoverData', hoverData);
 </script>
 
-<ScenarioDescription model={selectedScenario.model} scenario={selectedScenario.scenario} />
+<div class="px-10 md:px-0">
+	<ScenarioDescription model={selectedScenario.model} scenario={selectedScenario.scenario} />
+</div>
 
-<section>
+<section class="px-5 md:px-0">
 	<div class="flex justify-center mb-12">
 		<Switch
 			buttons={stores}
@@ -138,7 +140,7 @@
 		{@const names = scenarios.map((d) => d.id).reverse()}
 
 		<section class="mb-12">
-			<h6 class="font-space text-mid-grey">{modelLabelMap[model]}</h6>
+			<h6 class="font-space text-mid-grey pl-5 md:pl-0">{modelLabelMap[model]}</h6>
 
 			{#if isEmissionsView}
 				<div class="grid grid-cols-2 gap-3">
