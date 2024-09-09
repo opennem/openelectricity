@@ -198,18 +198,13 @@
 			class="sticky top-0 z-50 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
 		>
 			<h3 class="mb-2">Filters</h3>
-			<!-- 
-			<div>
-				<ButtonIcon
-					class="border-0 hover:bg-transparent hover:!text-black"
-					on:click={handleFiltersClick}
-				>
-					<span class="underline font-bold">Close</span>
-				</ButtonIcon>
-			</div> -->
+
+			<div class="mb-2">
+				<IconAdjustmentsHorizontal class="size-10" />
+			</div>
 		</header>
 
-		<section class="p-10 w-full flex gap-24">
+		<section class="p-10 w-full flex gap-12">
 			<FormMultiSelect
 				options={dataTypeDisplayOptions}
 				selected={$selectedCharts}

@@ -34,7 +34,7 @@
 	}
 </script>
 
-<div class="relative">
+<div class="relative w-full">
 	<button
 		on:click={() => (showOptions = !showOptions)}
 		use:clickoutside
@@ -56,7 +56,7 @@
 	{#if staticDisplay}
 		<ul class="flex flex-col mt-1">
 			{#each options as opt}
-				<li class="whitespace-nowrap">
+				<li class="whitespace-nowrap border-b border-warm-grey">
 					<button
 						class="w-full px-0 py-1 flex gap-4 items-center"
 						class:text-mid-grey={selectedValue !== opt.value}

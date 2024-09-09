@@ -23,13 +23,12 @@
 	let showOptions = false;
 
 	function handleSelect(option) {
-		console.log('option', option);
 		dispatch('change', option);
 		// showOptions = false;
 	}
 </script>
 
-<div class="relative">
+<div class="relative w-full">
 	<button
 		on:click={() => (showOptions = true)}
 		use:clickoutside
@@ -49,7 +48,7 @@
 	{#if staticDisplay}
 		<ul class="flex flex-col mt-1">
 			{#each options as opt}
-				<li class="whitespace-nowrap">
+				<li class="whitespace-nowrap border-b border-warm-grey">
 					<button
 						class="w-full px-0 py-1 flex gap-4 items-center"
 						class:text-mid-grey={!selected.includes(opt.value)}
