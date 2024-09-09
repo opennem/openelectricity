@@ -238,7 +238,7 @@
 		</h1>
 
 		<div class="hidden md:block">
-			<a
+			<!-- <a
 				class="whitespace-nowrap flex gap-6 justify-between items-center rounded-lg font-space border border-black border-solid bg-white p-6 transition-all text-black hover:text-white hover:bg-black hover:no-underline"
 				href={fileUrl}
 				download={fileName}
@@ -246,6 +246,13 @@
 			>
 				<span>Download Data</span>
 				<Icon icon="arrow-down-tray" size={24} />
+			</a> -->
+
+			<a
+				href="/scenarios"
+				class="mt-12 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+			>
+				View scenario explorer
 			</a>
 		</div>
 	</header>

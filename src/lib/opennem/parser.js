@@ -4,24 +4,25 @@ import useDate from '$lib/utils/TimeSeries/use-date';
 /**
  * Parse and update the data to match the start and last dates of the dataset.
  * @param {StatsData[]} jsonData
+ * @param {string} dataType
  * @returns {StatsData[]}
  */
-function parser(jsonData) {
+function parser(jsonData, dataType = 'energy') {
 	const data = jsonData || [];
-	const energyData = data.filter(
-		(/** @type {StatsData} */ d) => d.fuel_tech && d.data_type === 'energy'
+	const filteredData = data.filter(
+		(/** @type {StatsData} */ d) => d.fuel_tech && d.data_type === dataType
 	);
 
 	const parseAndUseDate = (/** @type {string} */ dateStr) =>
 		parse(useDate(dateStr), 'yyyy-MM-dd', new Date());
 
 	// match up the history data to same start and last, using coal_black as the reference since it always exists in the dataset
-	const coalBlack = energyData.find((d) => d.fuel_tech === 'coal_black');
+	const coalBlack = filteredData.find((d) => d.fuel_tech === 'coal_black');
 	const dataStart = coalBlack?.history.start || '1998-12-01';
 	const dataLast = coalBlack?.history.last || '2023-12-01';
 
 	// pad out data to match start and last dates
-	energyData.forEach((d) => {
+	filteredData.forEach((d) => {
 		const startDiff = differenceInMonths(
 			parseAndUseDate(d.history.start),
 			parseAndUseDate(dataStart)
@@ -42,7 +43,7 @@ function parser(jsonData) {
 		}
 	});
 
-	return energyData;
+	return filteredData;
 }
 
 export default parser;

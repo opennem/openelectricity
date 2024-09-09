@@ -5,7 +5,8 @@
 	export let strokeArray = '2, 2';
 	export let strokeColour = 'black';
 
-	export let xValue = 0;
+	/** @type {{date: Date} | undefined} */
+	export let xValue = undefined;
 
 	let x = 0;
 

@@ -77,7 +77,7 @@ export default function (filters) {
 				let otherStats = createNewStats(d.data, $selectedGroup, 'projection');
 
 				// only calculate percentage if not net total group
-				if (!$isNetTotalGroup && $usePercentage) {
+				if ($selectedGroup !== 'fossil_fuels_emissions' && !$isNetTotalGroup && $usePercentage) {
 					otherStats = calculatePercentageStats(d, otherStats, 'projection');
 				}
 
@@ -118,8 +118,14 @@ export default function (filters) {
 		}
 	);
 	const scenarioHistoricalTimeSeries = derived(
-		[scenarioHistoricalStats, colourReducer, isNetTotalGroup, usePercentage],
-		([$scenarioHistoricalStats, $colourReducer, $isNetTotalGroup, $usePercentage]) => {
+		[scenarioHistoricalStats, selectedGroup, colourReducer, isNetTotalGroup, usePercentage],
+		([
+			$scenarioHistoricalStats,
+			$selectedGroup,
+			$colourReducer,
+			$isNetTotalGroup,
+			$usePercentage
+		]) => {
 			const loadIds = $scenarioHistoricalStats.data.filter((d) => d.isLoad).map((d) => d.id);
 			let otherTimeSeries = createNewTimeSeries(
 				$scenarioHistoricalStats.data,
@@ -131,8 +137,7 @@ export default function (filters) {
 			);
 
 			// only calculate percentage if not net total group
-
-			if (!$isNetTotalGroup && $usePercentage) {
+			if ($selectedGroup !== 'fossil_fuels_emissions' && !$isNetTotalGroup && $usePercentage) {
 				otherTimeSeries = calculatePercentageTimeSeries(
 					$scenarioHistoricalStats.originalData,
 					otherTimeSeries,
@@ -149,7 +154,10 @@ export default function (filters) {
 	/** @type {import('svelte/store').Writable<{ region: string, data: Stats }[]>} */
 	const regionProjectionData = writable([]);
 	const regionProjectionModel = derived(regionProjectionData, ($regionProjectionData) => {
-		return $regionProjectionData.length ? $regionProjectionData[0].data[0].model : '';
+		console.log('$regionProjectionData[0].data', $regionProjectionData);
+		return $regionProjectionData.length && $regionProjectionData[0].data.length
+			? $regionProjectionData[0].data[0].model
+			: '';
 	});
 	const regionProjectionStats = derived(
 		[regionProjectionModel, regionProjectionData, selectedGroup, isNetTotalGroup, usePercentage],
@@ -161,12 +169,12 @@ export default function (filters) {
 			$usePercentage
 		]) => {
 			return $regionProjectionData.map((d) => {
-				console.log('regionProjectionModel', $regionProjectionModel);
+				console.log('regionProjectionModel', $regionProjectionModel, d);
 
 				let otherStats = createNewStats(d.data, $selectedGroup, 'projection');
 
 				// only calculate percentage if not net total group
-				if (!$isNetTotalGroup && $usePercentage) {
+				if ($selectedGroup !== 'fossil_fuels_emissions' && !$isNetTotalGroup && $usePercentage) {
 					otherStats = calculatePercentageStats(d, otherStats, 'projection');
 				}
 
@@ -182,6 +190,7 @@ export default function (filters) {
 		([$regionProjectionStats, $colourReducer]) => {
 			return $regionProjectionStats.map((d) => {
 				const loads = d.stats.data.filter((d) => d.isLoad).map((d) => d.id);
+				console.log('derived', d, loads);
 				return {
 					region: d.region,
 					series: createNewTimeSeries(d.stats.data, $colourReducer, loads, 'projection', '1Y', '')
@@ -204,8 +213,14 @@ export default function (filters) {
 		}
 	);
 	const regionHistoricalTimeSeries = derived(
-		[regionHistoricalStats, colourReducer, isNetTotalGroup, usePercentage],
-		([$regionHistoricalStats, $colourReducer, $isNetTotalGroup, $usePercentage]) => {
+		[regionHistoricalStats, selectedGroup, colourReducer, isNetTotalGroup, usePercentage],
+		([
+			$regionHistoricalStats,
+			$selectedGroup,
+			$colourReducer,
+			$isNetTotalGroup,
+			$usePercentage
+		]) => {
 			return $regionHistoricalStats.map((d) => {
 				const loadIds = d.stats.data.filter((s) => s.isLoad).map((s) => s.id);
 
@@ -219,7 +234,7 @@ export default function (filters) {
 				);
 
 				// only calculate percentage if not net total group
-				if (!$isNetTotalGroup && $usePercentage) {
+				if ($selectedGroup !== 'fossil_fuels_emissions' && !$isNetTotalGroup && $usePercentage) {
 					otherTimeSeries = calculatePercentageTimeSeries(
 						d.stats.originalData,
 						otherTimeSeries,

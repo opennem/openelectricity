@@ -7,6 +7,8 @@ const fuelTechColourMap = {
 	battery_distributed_charging: '#B2DAEF',
 	battery_distributed_discharging: '#84D4FF',
 	battery: '#00A2FA',
+	storage_discharging: '#00A2FA',
+	storage_charging: '#B2DAEF',
 
 	bioenergy: '#1D7A7A',
 	bioenergy_biogas: '#4CB9B9',

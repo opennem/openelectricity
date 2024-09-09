@@ -26,22 +26,24 @@ function TimeSeries(statsDatasets, statsInterval, statsType, labelReducer, colou
 	this.maxY = 0;
 
 	if (labelReducer) {
+		/** @type {Object.<string, string>} */
 		this.seriesLabels = statsDatasets.reduce(labelReducer, {});
 	} else {
 		this.seriesLabels = statsDatasets.reduce(
 			(/** @type {Object.<string, string>} */ acc, /** @type {StatsData} **/ d) => {
-				acc[d.id] = d.id;
+				acc[d.id] = d.label || d.id;
 				return acc;
 			},
 			{}
 		);
 	}
 	if (colourReducer) {
+		/** @type {Object.<string, string>} */
 		this.seriesColours = statsDatasets.reduce(colourReducer, {});
 	} else {
 		this.seriesColours = statsDatasets.reduce(
 			(/** @type {Object.<string, string>} */ acc, /** @type {StatsData} **/ d) => {
-				acc[d.id] = '#999'; // TODO: update to set colour based on how many names are in the series
+				acc[d.id] = d.colour || '#999'; // TODO: update to set colour based on how many names are in the series
 				return acc;
 			},
 			{}

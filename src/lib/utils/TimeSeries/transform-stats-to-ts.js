@@ -15,6 +15,12 @@ export default function (dataset, outputRange, statsType = 'history') {
 	const lasts = [...new Set(dataset.map((d) => d[statsType]?.last))];
 	const intervalObj = typeof outputRange === 'string' ? parseInterval(outputRange) : outputRange;
 	const isLessThanDay = intervalObj.seconds < 86400;
+
+	// if (starts.length > 1 || lasts.length > 1) {
+	// 	console.log('there are different start or last dates in the dataset');
+	// 	console.log('starts', starts);
+	// 	console.log('lasts', lasts);
+	// }
 	const startDate = isLessThanDay ? parseISO(starts[0]) : new Date(useDate(starts[0]));
 	const lastDate = isLessThanDay ? parseISO(lasts[0]) : new Date(useDate(lasts[0]));
 

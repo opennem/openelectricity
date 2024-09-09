@@ -140,7 +140,7 @@
 			seriesColours = processed.colours;
 			seriesLabels = processed.labels;
 			seriesItems = processed.nameOptions;
-			yDomain = [$projectionTimeSeries.minY, $projectionTimeSeries.maxY];
+			yDomain = [processed.minY, processed.maxY];
 
 			seriesLoadsIds = $projectionStats.data.filter((d) => d.isLoad).map((d) => d.id);
 
@@ -192,6 +192,8 @@
 		const historySeriesName = $isNetTotalGroup
 			? '_max'
 			: $scenarioHistoricalTimeSeries.seriesNames[0];
+
+		console.log('regionProjectionTimeSeries', $regionProjectionTimeSeries);
 
 		const processed = processRegionData({
 			regionProjectionTimeSeries: $regionProjectionTimeSeries,

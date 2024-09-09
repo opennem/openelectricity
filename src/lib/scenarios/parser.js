@@ -7,8 +7,11 @@ export default function (scenarioData) {
 	// update to TWh before returning
 	const updatedDataToTera = (data) =>
 		data.map((d) => {
+			const isTypeEmissions = d.type === 'emissions';
 			const projection = { ...d.projection };
-			projection.data = projection.data.map((d) => d / 1000);
+			projection.data = isTypeEmissions
+				? projection.data.map((d) => d)
+				: projection.data.map((d) => d / 1000);
 
 			return {
 				...d,

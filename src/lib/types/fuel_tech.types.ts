@@ -1,10 +1,13 @@
 export type FuelTechCode =
+	| 'storage_charging'
+	| 'storage_discharging'
 	| 'battery_charging'
 	| 'battery_discharging'
 	| 'battery_VPP_charging'
 	| 'battery_VPP_discharging'
 	| 'battery_distributed_charging'
 	| 'battery_distributed_discharging'
+	| 'battery'
 	| 'bioenergy_biogas'
 	| 'bioenergy_biomass'
 	| 'coal_black'

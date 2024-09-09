@@ -1,4 +1,5 @@
-import deepCopy from '$lib/utils/deep-copy';
+import deepCopy from '../deep-copy';
+import { parseUnit } from '../si-units';
 import getMinInterval from './min-interval';
 import mergeStatsType from './merge-stats-type';
 import interpolateDatasets from './interpolate-data';
@@ -8,12 +9,20 @@ import totalMinusLoadsStats from './total-minus-loads-stats';
  *
  * @param {StatsData[]} data
  * @param {StatsType | undefined} statsType
+ * @param {string} unit
  */
-function Statistic(data, statsType) {
+function Statistic(data, statsType, unit = '') {
 	this.originalData = deepCopy(data);
 	this.data = deepCopy(data);
 	this.statsType = statsType || 'history';
 	this.minIntervalObj = getMinInterval(data, this.statsType);
+
+	this.statsUnit = unit;
+
+	const { baseUnit, prefix } = parseUnit(unit);
+
+	this.prefix = prefix;
+	this.baseUnit = baseUnit;
 }
 
 Statistic.prototype.mergeAndInterpolate = function () {
@@ -33,7 +42,7 @@ Statistic.prototype.reorder = function (/** @type {Array.<string | FuelTechCode>
 
 	// Reorder
 	domainOrder.forEach((domain) => {
-		const find = this.data.find((d) => d.fuel_tech === domain);
+		const find = this.data.find((/** @type {StatsData} */ d) => d.fuel_tech === domain);
 		if (find) {
 			data.push(deepCopy(find));
 		}
@@ -44,7 +53,7 @@ Statistic.prototype.reorder = function (/** @type {Array.<string | FuelTechCode>
 };
 
 Statistic.prototype.invertValues = function (/** @type {string[]} */ loads) {
-	this.data.forEach((d) => {
+	this.data.forEach((/** @type {StatsData} */ d) => {
 		const ft = d.fuel_tech;
 
 		if (ft && loads.includes(ft)) {
@@ -77,7 +86,7 @@ Statistic.prototype.group = function (
 		return [groupCode];
 	};
 
-	/** @type {StatsData[]} */
+	/** @type {*} */
 	const grouped = [];
 	const groupKeys = /** @type {FuelTechCode[]} */ (Object.keys(groupMap));
 
@@ -88,7 +97,9 @@ Statistic.prototype.group = function (
 
 	groupKeys.forEach((code) => {
 		const codes = getCodes(groupMap, code);
-		const filtered = this.data.filter((d) => (d.fuel_tech ? codes.includes(d.fuel_tech) : false));
+		const filtered = this.data.filter((/** @type {StatsData} */ d) =>
+			d.fuel_tech ? codes.includes(d.fuel_tech) : false
+		);
 
 		if (filtered.length > 0) {
 			const data = filtered[0][this.statsType];
@@ -106,7 +117,7 @@ Statistic.prototype.group = function (
 			groupObject[this.statsType].data = groupObject[this.statsType].data.map(() => null);
 
 			// sum each filtered history.data array into group history data
-			filtered.forEach((d) => {
+			filtered.forEach((/** @type {StatsData} */ d) => {
 				d[this.statsType].data.forEach(
 					/**
 					 * @param {number | null} d
@@ -118,21 +129,22 @@ Statistic.prototype.group = function (
 			});
 
 			grouped.push(groupObject);
-		} else {
-			const groupObject = {
-				code,
-				fuel_tech: code,
-				id: `au.${code}.grouped`,
-				isLoad: loads.includes(code),
-				[this.statsType]: {
-					data: dataLength ? new Array(dataLength).fill(null) : [],
-					interval,
-					last,
-					start
-				}
-			};
-			grouped.push(groupObject);
 		}
+		// else {
+		// 	const groupObject = {
+		// 		code,
+		// 		fuel_tech: code,
+		// 		id: `au.${code}.grouped`,
+		// 		isLoad: loads.includes(code),
+		// 		[this.statsType]: {
+		// 			data: dataLength ? new Array(dataLength).fill(null) : [],
+		// 			interval,
+		// 			last,
+		// 			start
+		// 		}
+		// 	};
+		// 	grouped.push(groupObject);
+		// }
 	});
 
 	this.data = grouped;

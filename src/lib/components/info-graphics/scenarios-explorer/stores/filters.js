@@ -7,7 +7,6 @@ import {
 	chartTypeOptions,
 	xTicks
 } from '../options';
-import { fi } from 'date-fns/locale';
 
 export default function (filters) {
 	// const selectedModel = writable(modelOptions[0].value);

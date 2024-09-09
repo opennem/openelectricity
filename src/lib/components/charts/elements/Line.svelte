@@ -11,6 +11,8 @@
 
 	export let showCircle = false;
 
+	export let clipPathId = '';
+
 	/** @type {TimeSeriesData | undefined} */
 	export let hoverData = undefined;
 
@@ -22,16 +24,18 @@
 			return $xGet(d);
 		},
 		(d) => $yGet(d)
-	).defined((d) => $yGet(d) !== null);
-	$: path =
-		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');
+	).defined((d) => $yGet(d) !== null && $yGet(d) !== undefined && !isNaN($yGet(d)));
+	// $: path =
+	// 	'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');
 </script>
 
-<path class="path-line" d={lineGen($data)} {stroke} stroke-width={strokeWidth} />
+<g class="line-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+	<path class="path-line" d={lineGen($data)} {stroke} stroke-width={strokeWidth} />
 
-{#if showCircle && hoverData}
-	<circle {cx} {cy} r="6" fill={stroke} />
-{/if}
+	{#if showCircle && hoverData}
+		<circle {cx} {cy} r="6" fill={stroke} />
+	{/if}
+</g>
 
 <style>
 	.path-line {

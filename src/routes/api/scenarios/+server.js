@@ -10,9 +10,9 @@ const modelPaths = {
 };
 
 export async function GET({ setHeaders, url, fetch }) {
-	setHeaders({
-		'cache-control': 'max-age=3600' // 5 mins = 300secs
-	});
+	// setHeaders({
+	// 	'cache-control': 'max-age=0'
+	// });
 
 	const { searchParams } = url;
 	const name = searchParams.get('name') || '';

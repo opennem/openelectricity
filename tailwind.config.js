@@ -71,7 +71,7 @@ export default {
 			'normal-wide': '0.014rem',
 			wide: '0.016rem',
 			wider: '0.063rem',
-			widest: '0.072rem'
+			widest: '0.15rem'
 		},
 		colors: {
 			transparent: 'transparent',

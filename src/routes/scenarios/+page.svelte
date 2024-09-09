@@ -1,321 +1,508 @@
 <script>
-	import { setContext, getContext } from 'svelte';
-	import { browser } from '$app/environment';
+	import { setContext, getContext, onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 
-	import { getModels, getAllRegionModels } from '$lib/models/index2';
-	import { getScenarioJson } from '$lib/scenarios';
+	import { colourReducer } from '$lib/stores/theme';
 
-	import { getHistory, getAllRegionHistory } from '$lib/opennem';
-	import selectOptionsMap from '$lib/utils/select-options-map';
-	import deepCopy from '$lib/utils/deep-copy';
-
-	import PageHeader from '$lib/components/PageHeader.svelte';
+	import LogoMark from '$lib/images/logo-mark.svelte';
+	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';
-	import ScenarioExplorer from '$lib/components/info-graphics/scenarios-explorer/index.svelte';
-	import ScenarioFilters from '$lib/components/info-graphics/scenarios-explorer/Filters.svelte';
-	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
-	import PublicBetaTag from './PublicBetaTag.svelte';
 
-	import filtersStore from '$lib/components/info-graphics/scenarios-explorer/stores/filters';
-	import dataStore from '$lib/components/info-graphics/scenarios-explorer/stores/data';
-	import cacheStore from '$lib/components/info-graphics/scenarios-explorer/stores/cache';
+	import ArticlesSection from './components/ArticlesSection.svelte';
+	import Filters from './components/Filters.svelte';
+	import ScenarioChart from './components/ScenarioChart.svelte';
+	import TableTechnology from './components/TableTechnology.svelte';
+	import TableScenario from './components/TableScenario.svelte';
+	import TableRegion from './components/TableRegion.svelte';
+	import DetailedTechnology from './components/DetailedTechnology.svelte';
+	import DetailedScenario from './components/DetailedScenario.svelte';
+	import DetailedRegion from './components/DetailedRegion.svelte';
+
+	import filtersStore from './stores/filters';
+	import dataVizStore from './stores/data-viz';
+	import { regionOptions } from './page-data-options/regions';
+	// import { groupOptions as scenarioGroups } from './page-data-options/groups-scenario';
+	// import { groupOptions as regionGroups } from './page-data-options/groups-region';
 
 	import {
-		allScenarios,
-		regionsOnly,
-		defaultModelPathway,
-		defaultPathwayOrder
-	} from '$lib/components/info-graphics/scenarios-explorer/options';
-	import { covertHistoryDataToTWh } from '$lib/components/info-graphics/scenarios-explorer/helpers';
-	import DetailedBreakdown from '$lib/components/info-graphics/scenarios-explorer/DetailedBreakdown.svelte';
-
-	setContext('scenario-filters', filtersStore());
-	setContext('scenario-data', dataStore());
-	setContext('scenario-cache', cacheStore());
+		fetchTechnologyViewData,
+		fetchScenarioViewData,
+		fetchRegionViewData
+	} from './page-data-options/fetch';
+	import processTechnology from './page-data-options/process-technology';
+	import processScenario from './page-data-options/process-scenario';
+	import processRegion from './page-data-options/process-region';
 
 	export let data;
-	const { articles } = data;
-	const analysisArticles = articles.filter(
-		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
-	);
+	const { articles, filters } = data;
 
-	const {
-		selectedDisplayView,
-		selectedModel,
-		selectedScenario,
-		selectedPathway,
-		selectedRegion,
-		selectedDataView,
-		selectedChartType,
+	setContext('scenario-filters', filtersStore());
 
-		scenarioOptions,
-		pathwayOptions
-	} = getContext('scenario-filters');
-
-	const {
-		projectionData,
-		historicalData,
-		regionProjectionData,
-		regionHistoricalData,
-		selectedGroup
-	} = getContext('scenario-data');
-
-	/** @type {*} */
-	let modelsData;
-	/** @type {*} */
-	let historyData;
-	/** @type {*} */
-	let allModelsRegionData;
-	/** @type {*} */
-	let allHistoryData;
-
-	$: defaultPathway = defaultModelPathway[$selectedModel];
-
-	selectedDisplayView.subscribe((value) => {
-		if (value === 'technology') {
-			$selectedGroup = 'detailed';
-		} else if (value === 'region') {
-			$selectedGroup = 'totals';
+	const dataVizStoreNames = [
+		{
+			name: 'energy-data-viz',
+			chart: 'generation'
+		},
+		{
+			name: 'emissions-data-viz',
+			chart: 'emissions'
+		},
+		{
+			name: 'intensity-data-viz',
+			chart: 'intensity'
+		},
+		{
+			name: 'capacity-data-viz',
+			chart: 'capacity'
 		}
+	];
+	dataVizStoreNames.forEach(({ name }) => {
+		setContext(name, dataVizStore());
 	});
 
-	// GET Data
-	$: if (browser && $selectedDisplayView === 'technology') {
-		console.log('get by technology');
+	const {
+		isTechnologyViewSection,
+		isScenarioViewSection,
+		isRegionViewSection,
+		selectedRegion,
+		selectedDataType,
+		selectedCharts,
+		singleSelectionData,
+		selectedFuelTechGroup,
+		multiSelectionData,
+		includeBatteryAndLoads,
+		showScenarioOptions
+	} = getContext('scenario-filters');
 
-		getTechnologyData({
-			model: $selectedModel,
+	const dataVizStores = dataVizStoreNames.reduce(
+		/**
+		 * @param {Object.<string, *>} acc
+		 * @param {{name: string}} curr
+		 */ (acc, curr) => {
+			acc[curr.name] = getContext(curr.name);
+			return acc;
+		},
+		{}
+	);
+
+	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
+
+	/** @type {FuelTechCode[] | undefined} */
+	let seriesLoadsIds = [];
+
+	/** @type {string[]} */
+	let hiddenRowNames = [];
+
+	let fetching = false;
+	$: console.log(articles, filters);
+
+	$: if ($isTechnologyViewSection) {
+		fetching = true;
+
+		fetchTechnologyViewData({
+			model: $singleSelectionData.model,
+			scenario: $singleSelectionData.scenario,
+			pathway: $singleSelectionData.pathway,
 			region: $selectedRegion,
-			scenario: $selectedScenario,
-			pathway: $selectedPathway,
-			dataView: $selectedDataView
-		});
-	}
-	$: if (browser && $selectedDisplayView === 'scenario') {
-		console.log('get by scenario');
+			dataType: $selectedDataType
+		}).then(
+			({
+				projectionEnergyData,
+				projectionCapacityData,
+				projectionEmissionsData,
+				historyEnergyData,
+				historyCapacityData,
+				historyEmisssionsData
+			}) => {
+				const processedEnergy = processTechnology.generation({
+					projection: projectionEnergyData,
+					history: historyEnergyData,
+					group: $selectedFuelTechGroup,
+					colourReducer: $colourReducer,
+					includeBatteryAndLoads: $includeBatteryAndLoads
+				});
 
-		getScenarioData({
-			model: $selectedModel,
-			scenario: $selectedScenario,
-			pathway: $selectedPathway,
-			dataView: $selectedDataView
-		});
-	}
+				seriesLoadsIds = processedEnergy.seriesLoadsIds;
 
-	$: if (browser && $selectedDisplayView === 'region') {
-		console.log('get by region');
+				const processedEmissions =
+					projectionEmissionsData.length > 0
+						? processTechnology.emissions({
+								projection: projectionEmissionsData,
+								history: historyEmisssionsData,
+								includeBatteryAndLoads: $includeBatteryAndLoads
+						  })
+						: undefined;
 
-		getRegionData({
-			model: $selectedModel,
-			scenario: $selectedScenario,
-			pathway: $selectedPathway,
-			dataView: $selectedDataView
-		});
-	}
+				const processedCapacity = processTechnology.capacity({
+					projection: projectionCapacityData,
+					history: historyCapacityData,
+					group: $selectedFuelTechGroup,
+					colourReducer: $colourReducer,
+					includeBatteryAndLoads: $includeBatteryAndLoads
+				});
 
-	/**
-	 * Get data for by technology view
-	 * @param {*} param0
-	 */
-	async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
-		const [historyData, scenarioData] = await Promise.all([
-			getHistory(region),
-			getScenarioJson(model, scenario)
-		]);
-		const scenarios = allScenarios.filter((d) => d.model === model);
+				const processedIntensity = processedEmissions
+					? processTechnology.intensity({
+							processedEmissions,
+							processedEnergy
+					  })
+					: undefined;
 
-		updateScenariosPathways(
-			scenarios.map((d) => d.scenarioId),
-			scenarioData.pathways
+				updateAllStores({
+					processedEnergy,
+					processedCapacity,
+					processedEmissions,
+					processedIntensity
+				});
+
+				fetching = false;
+			}
 		);
+	}
 
-		const filteredScenarioData = scenarioData.data.filter(
-			(d) =>
-				d.pathway === pathway &&
-				d.region.toLowerCase() === region.toLowerCase() &&
-				d.type === dataView
+	$: if ($isScenarioViewSection) {
+		fetching = true;
+
+		fetchScenarioViewData({ scenarios: $multiSelectionData, region: $selectedRegion }).then(
+			({ projectionsData, historyEnergyData, historyEmisssionsData, historyCapacityData }) => {
+				const processedEnergy = processScenario.generation({
+					projections: projectionsData,
+					history: historyEnergyData,
+					// group: $selectedFuelTechGroup,
+					includeBatteryAndLoads: $includeBatteryAndLoads
+				});
+
+				const processedCapacity = processScenario.capacity({
+					projections: projectionsData,
+					history: historyCapacityData,
+					// group: $selectedFuelTechGroup,
+					includeBatteryAndLoads: $includeBatteryAndLoads
+				});
+
+				const processedEmissions = processScenario.emissions({
+					projections: projectionsData,
+					history: historyEmisssionsData,
+					group: $selectedFuelTechGroup
+				});
+
+				const processedIntensity = processedEmissions
+					? processScenario.intensity({
+							processedEmissions,
+							processedEnergy
+					  })
+					: undefined;
+
+				updateAllStores({
+					processedEnergy,
+					processedCapacity,
+					processedEmissions,
+					processedIntensity
+				});
+
+				fetching = false;
+			}
 		);
-
-		$projectionData = filteredScenarioData.map((d) => {
-			return {
-				...d,
-				model: model
-			};
-		});
-
-		$historicalData = covertHistoryDataToTWh(historyData);
 	}
 
-	/**
-	 * Get data for by scenario view
-	 * @param {*} param0
-	 */
-	async function getScenarioData({ model, region, scenario, pathway, dataView }) {
-		modelsData = await getModels(model, 'NEM', dataView);
-		historyData = await getHistory('NEM');
+	$: if ($isRegionViewSection) {
+		fetching = true;
 
-		console.log('modelsData', modelsData, historyData);
+		const regionsOnly = regionOptions.filter((r) => r.value !== '_all');
 
-		updateScenariosPathways(modelsData.scenarios, modelsData.pathways);
-
-		const compare = modelsData.scenarios.map((s) => {
-			return {
-				model: model,
-				scenario: s,
-				pathway: 'CDP14'
-			};
-		});
-
-		/** @type {*} */
-		let scenarioProjections = [];
-
-		compare.forEach((scene) => {
-			const filtered = modelsData.outlook.data.filter(
-				(d) => d.scenario === scene.scenario && d.pathway === scene.pathway
-			);
-
-			scenarioProjections.push({
-				model: scene.model,
-				scenario: scene.scenario,
-				pathway: scene.pathway,
-				data: filtered
+		fetchRegionViewData({
+			regions: regionsOnly,
+			model: $singleSelectionData.model,
+			scenario: $singleSelectionData.scenario,
+			pathway: $singleSelectionData.pathway
+		}).then((regionsData) => {
+			const processedEnergy = processRegion.generation({
+				regionsData,
+				// group: $selectedFuelTechGroup,
+				includeBatteryAndLoads: $includeBatteryAndLoads
 			});
-		});
 
-		console.log('scenarioProjections', scenarioProjections);
+			console.log('processedEnergy', processedEnergy);
 
-		// modelsData.forEach((d) => {
-		// 	const filtered = d.outlook.data.filter(
-		// 		(d) => d.scenario === scenario && d.pathway === pathway
-		// 	);
-		// 	scenarioProjections.push({
-		// 		model:
-		// 		data: filtered
-		// 	});
-		// });
-		// $projectionData = modelsData.outlook.data.filter(
-		// 	(d) => d.scenario === scenario && d.pathway === pathway
-		// );
-
-		// $historicalData = covertHistoryDataToTWh(deepCopy(historyData));
-		const convertedHistory = covertHistoryDataToTWh(deepCopy(historyData));
-		console.log('convertedHistory', convertedHistory);
-	}
-
-	/**
-	 * Get data for by region view
-	 * @param {*} param0
-	 */
-	async function getRegionData({ model, scenario, pathway, dataView }) {
-		allModelsRegionData = await getAllRegionModels(model, dataView);
-		allHistoryData = await getAllRegionHistory();
-
-		updateScenariosPathways(allModelsRegionData[0].scenarios, allModelsRegionData[0].pathways);
-
-		const converted = covertHistoryDataToTWh(deepCopy(allHistoryData));
-
-		/** @type {*} */
-		let regionProjections = [];
-		allModelsRegionData.forEach((d) => {
-			const filtered = d.outlook.data.filter(
-				(d) => d.scenario === scenario && d.pathway === pathway
-			);
-			regionProjections.push({
-				region: d.outlook.region,
-				data: filtered
+			const processedCapacity = processRegion.capacity({
+				regionsData,
+				// group: $selectedFuelTechGroup,
+				includeBatteryAndLoads: $includeBatteryAndLoads
 			});
-		});
-		console.log('regionProjections', regionProjections);
-		$regionProjectionData = regionProjections;
 
-		/** @type {*} */
-		let regionHistory = [];
-		regionsOnly.forEach((region) => {
-			const filtered = converted.filter((d) => d.region === region);
+			// console.log('processedCapacity', processedCapacity);
 
-			regionHistory.push({
-				region: region,
-				data: filtered
+			const processedEmissions = processRegion.emissions({
+				regionsData,
+				includeBatteryAndLoads: $includeBatteryAndLoads
 			});
+
+			// console.log('processedEmissions', processedEmissions);
+
+			const processedIntensity = processedEmissions
+				? processRegion.intensity({
+						processedEmissions,
+						processedEnergy
+				  })
+				: undefined;
+
+			// console.log('processedIntensity', processedIntensity);
+
+			updateAllStores({
+				processedEnergy,
+				processedCapacity,
+				processedEmissions,
+				processedIntensity
+			});
+
+			fetching = false;
 		});
-		$regionHistoricalData = regionHistory;
 	}
 
 	/**
 	 *
-	 * @param {*[]} scenarios
-	 * @param {*[]} pathways
+	 * @param {{
+	 * 		processedEnergy: ProcessedDataViz,
+	 * 		processedCapacity: ProcessedDataViz,
+	 * 		processedEmissions: ProcessedDataViz | undefined,
+	 * 		processedIntensity: ProcessedDataViz | undefined
+	 * }} param0
 	 */
-	function updateScenariosPathways(scenarios, pathways) {
-		/** @type {string[]} */
-		let sortedPathways = [];
-		defaultPathwayOrder.forEach((pathway) => {
-			if (pathways.find((d) => d === pathway)) {
-				sortedPathways.push(pathway);
+	function updateAllStores({
+		processedEnergy,
+		processedCapacity,
+		processedEmissions,
+		processedIntensity
+	}) {
+		dataVizStoreNames.forEach(({ name }) => {
+			const store = dataVizStores[name];
+			switch (name) {
+				case 'energy-data-viz':
+					updateDataVizStore('Generation', store, processedEnergy, 'h-[400px] md:h-[450px]');
+					break;
+				case 'capacity-data-viz':
+					updateDataVizStore('Capacity', store, processedCapacity, 'h-[400px] md:h-[450px]');
+					break;
+				case 'emissions-data-viz':
+					processedEmissions
+						? updateDataVizStore('Emissions', store, processedEmissions)
+						: store.reset();
+					break;
+				case 'intensity-data-viz':
+					processedIntensity
+						? updateDataVizStore('Intensity', store, processedIntensity)
+						: store.reset();
+					break;
 			}
 		});
-
-		scenarioOptions.set(selectOptionsMap(scenarios));
-		pathwayOptions.set(selectOptionsMap(sortedPathways));
-
-		/**
-		 * set default values if the selected value is not in the updated list
-		 */
-		console.log(
-			'selectedScenario',
-			$selectedScenario,
-			scenarios,
-			scenarios.find((d) => d === $selectedScenario)
-		);
-		if (!scenarios.find((d) => d === $selectedScenario)) selectedScenario.set(scenarios[0]);
-		if (!pathways.find((d) => d === $selectedPathway)) selectedPathway.set(defaultPathway);
 	}
+
+	/**
+	 * @param {string} title
+	 * @param {*} store
+	 * @param {ProcessedDataViz} p
+	 * @param {string} [chartHeightClasses]
+	 */
+	function updateDataVizStore(title, store, p, chartHeightClasses) {
+		store.title.set(title);
+		store.seriesData.set(p.seriesData);
+		store.seriesNames.set(p.seriesNames);
+		store.seriesColours.set(p.seriesColours);
+		store.seriesLabels.set(p.seriesLabels);
+		store.nameOptions.set(p.nameOptions);
+		store.yDomain.set(p.yDomain);
+		store.chartType.set(p.chartType);
+		store.chartHeightClasses.set(chartHeightClasses);
+		store.baseUnit.set(p.baseUnit);
+		store.prefix.set(p.prefix);
+		store.displayPrefix.set(p.displayPrefix);
+		store.allowedPrefixes.set(p.allowedPrefixes);
+	}
+
+	/**
+	 * @param {string | undefined} hoverKey
+	 * @param {TimeSeriesData | undefined} hoverData
+	 */
+	function updateStoreHover(hoverKey, hoverData) {
+		dataVizStoreNames.forEach(({ name }) => {
+			const store = dataVizStores[name];
+			store.hoverTime.set(hoverData ? hoverData.time : undefined);
+			store.hoverKey.set(hoverKey);
+		});
+	}
+
+	/**
+	 * @param {CustomEvent<{ data: TimeSeriesData, key: string }> | CustomEvent<TimeSeriesData>} evt
+	 */
+	function handleMousemove(evt) {
+		if (evt.detail?.key) {
+			updateStoreHover(evt.detail.key, evt.detail.data);
+		} else {
+			updateStoreHover(undefined, evt.detail);
+		}
+	}
+	function handleMouseout() {
+		updateStoreHover(undefined, undefined);
+	}
+
+	/**
+	 * @param {CustomEvent<TimeSeriesData>} evt
+	 */
+	function handlePointerup(evt) {
+		const focusTime = evt.detail?.time;
+		const isSame = focusTime ? $energyFocusTime === focusTime : false;
+		const time = isSame ? undefined : focusTime;
+
+		dataVizStoreNames.forEach(({ name }) => {
+			const store = dataVizStores[name];
+			store.focusTime.set(time);
+		});
+	}
+
+	/**
+	 * @param {CustomEvent<{ name: string, isMetaPressed: boolean, allNames: string[] }>} evt
+	 */
+	function toggleRow(evt) {
+		const name = evt.detail.name;
+		const isMetaPressed = evt.detail.isMetaPressed;
+		const allNames = evt.detail.allNames;
+
+		if (isMetaPressed) {
+			hiddenRowNames = allNames.filter((n) => n !== name);
+		} else {
+			if (hiddenRowNames.includes(name)) {
+				hiddenRowNames = hiddenRowNames.filter((n) => n !== name);
+			} else {
+				hiddenRowNames = [...hiddenRowNames, name];
+
+				if (hiddenRowNames.length === allNames.length) {
+					hiddenRowNames = [];
+				}
+			}
+		}
+	}
+
+	function setDefaultFocusTime() {
+		// set 2030 as the default focus time
+		dataVizStoreNames.forEach(({ name }) => {
+			const store = dataVizStores[name];
+			store.focusTime.set(1893416400000);
+		});
+	}
+
+	onMount(() => {
+		setTimeout(() => {
+			setDefaultFocusTime();
+		}, 1500);
+	});
 </script>
 
+<!-- TODO: Update preview image -->
 <Meta
 	title="Scenarios"
-	description="Open Electricity is a platform for exploring Australia's electricity system."
+	description="Explore the future of Australia's national electricity market."
 	image="/img/preview.jpg"
 />
-<PageHeader>
+
+<PageHeaderSimple>
 	<div slot="main-heading">
-		<div class="md:my-36">
-			<strong class="block py-8 font-space uppercase text-mid-grey font-medium text-sm">
-				Scenarios
-			</strong>
-			<h1>Explore the future of Australia's national electricity market</h1>
-		</div>
+		<h1 class="tracking-widest text-center">Scenario Explorer</h1>
 	</div>
 	<div slot="sub-heading">
-		<p class="md:mt-24">
-			A range of modelled scenarios exist which envision the evolution of Australia's National
-			Electricity Market (NEM) over the coming decades.
-		</p>
-		<p>
+		<p class="text-sm text-center w-full md:w-[556px] mx-auto">
 			These scenarios aim to steer Australia towards a cost-effective, reliable and safe energy
 			system en route to a zero-emissions electricity network.
 		</p>
 	</div>
-</PageHeader>
-<PublicBetaTag />
+</PageHeaderSimple>
 
-<ScenarioFilters />
+<Filters />
 
-<div class="p-1 md:p-6 border-t border-warm-grey">
-	<ScenarioExplorer />
-</div>
+<!-- WORKAROUND: class:relative={!$showScenarioOptions} to allow Pathway dropdown to layer above -->
+<div
+	class="max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
+	class:relative={!$showScenarioOptions}
+>
+	<section class="w-full flex flex-col gap-12 md:w-[60%]">
+		{#each dataVizStoreNames as { name, chart }}
+			{#if $selectedCharts.includes(chart)}
+				<ScenarioChart
+					store={dataVizStores[name]}
+					{hiddenRowNames}
+					{seriesLoadsIds}
+					on:mousemove={handleMousemove}
+					on:mouseout={handleMouseout}
+					on:pointerup={handlePointerup}
+				/>
+			{/if}
+		{/each}
 
-<DetailedBreakdown />
-
-<div class="bg-white py-16 md:py-32">
-	<div class="container max-w-none lg:container">
-		<header class="flex justify-between items-center mb-8">
-			<h3>Related analysis</h3>
-		</header>
-		<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-			{#each analysisArticles as article}
-				<ArticleCard {article} />
+		<!-- {#if fetching}
+			<div
+				class="h-screen bg-light-warm-grey flex justify-center items-center"
+				transition:fade={{ duration: 250 }}
+			>
+				<LogoMark />
+			</div>
+		{:else}
+			{#each dataVizStoreNames as { name, chart }}
+				{#if $selectedCharts.includes(chart)}
+					<ScenarioChart
+						store={dataVizStores[name]}
+						{hiddenRowNames}
+						on:mousemove={handleMousemove}
+						on:mouseout={handleMouseout}
+						on:pointerup={handlePointerup}
+					/>
+				{/if}
 			{/each}
-		</div>
-	</div>
+		{/if} -->
+	</section>
+
+	{#if $isTechnologyViewSection}
+		<section class="md:w-[40%]">
+			<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
+		</section>
+	{/if}
+	{#if $isScenarioViewSection}
+		<section class="md:w-[40%]">
+			<TableScenario title="Scenario" {hiddenRowNames} on:row-click={toggleRow} />
+		</section>
+	{/if}
+	{#if $isRegionViewSection}
+		<section class="md:w-[40%]">
+			<TableRegion title="Region" {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
+		</section>
+	{/if}
 </div>
+
+<div class="container max-w-none lg:container md:grid grid-cols-2 px-0 md:px-16 lg:px-40">
+	{#if $isTechnologyViewSection}
+		<DetailedTechnology
+			{seriesLoadsIds}
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	{/if}
+	{#if $isScenarioViewSection}
+		<DetailedScenario
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	{/if}
+
+	{#if $isRegionViewSection}
+		<DetailedRegion
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	{/if}
+</div>
+
+<ArticlesSection
+	analysisArticles={articles.filter(
+		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
+	)}
+/>
