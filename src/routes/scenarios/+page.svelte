@@ -422,14 +422,6 @@
 	class="max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
 	class:relative={!$showScenarioOptions}
 >
-	{#if fetching}
-		<div
-			class="h-screen bg-light-warm-grey flex justify-center items-center"
-			transition:fade={{ duration: 250 }}
-		>
-			<LogoMark />
-		</div>
-	{/if}
 	<section class="w-full flex flex-col gap-12 md:w-[60%]">
 		{#each dataVizStoreNames as { name, chart }}
 			{#if $selectedCharts.includes(chart)}
