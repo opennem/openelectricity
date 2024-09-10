@@ -16,7 +16,7 @@
 	// $: percent = hoverKeyValue ? (hoverKeyValue / hoverMax) * 100 : 0;
 </script>
 
-<div class="h-9">
+<div class="h-9 mr-10 lg:mr-0">
 	{#if hoverData}
 		<div class="h-full items-center flex justify-end gap-1 text-xs leading-xs whitespace-nowrap">
 			<span class="px-2 py-1 font-light">

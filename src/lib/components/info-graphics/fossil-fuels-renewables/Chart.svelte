@@ -61,7 +61,7 @@
 	$: latestDatapoint = dataset[dataset.length - 1];
 
 	$: chartLabelStyles = md
-		? 'text-right text-xs text-mid-grey mr-8 z-10 pointer-events-none relative -mt-8'
+		? 'text-right text-xs text-mid-grey mr-0 z-10 pointer-events-none relative -mt-8'
 		: 'absolute -top-8 text-xs text-mid-grey right-0';
 
 	$: hoverTime = hoverData ? hoverData.time || 0 : 0;

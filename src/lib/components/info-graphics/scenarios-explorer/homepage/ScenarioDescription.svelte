@@ -5,7 +5,7 @@
 	const { selectedModel, selectedScenario } = getContext('scenario-filters');
 </script>
 
-<div class="mt-12">
+<div class="mt-12 pointer-events-none">
 	<h6 class="subhead-secondary mb-6 md:block hidden">
 		{scenarioLabels[$selectedModel][$selectedScenario]}
 	</h6>
