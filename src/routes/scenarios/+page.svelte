@@ -409,8 +409,9 @@
 	</div>
 	<div slot="sub-heading">
 		<p class="text-sm text-center w-full md:w-[556px] mx-auto">
-			These scenarios aim to steer Australia towards a cost-effective, reliable and safe energy
-			system en route to a zero-emissions electricity network.
+			Explore the future of Australia’s electricity market. A range of modelled scenarios exist
+			which envision the future of the NEM. These scenarios aim to steer Australia towards a
+			cost-effective, reliable and safe energy system en route to a zero-emissions network
 		</p>
 	</div>
 </PageHeaderSimple>
