@@ -47,15 +47,13 @@ export const scenarioSummary = {
 		step_change:
 			'An accelerated transition which fulfils Australia’s emissions reduction commitments in a growing economy, with faster coal retirements and significant investments in new technologies.',
 		progressive_change:
-			'A steady transition towards renewable energy that reflects slower economic growth and energy investment.',
-
+			'A steady transition towards renewable energy that reflects slower economic growth and slower transition of the energy sector.',
 		green_energy_exports:
-			'A transformational scenario where Australia becomes a global leader in low-emission energy exports, requiring extensive new transmission infrastructure.'
+			'A transformational scenario where Australia expands “green commodity” exports, involving rapid delivery of a larger energy system.'
 	},
 	aemo2022: {
 		step_change:
 			'A rapid consumer-led transition to renewable energy, aiming to achieve net zero emissions ahead of 2050.',
-
 		progressive_change:
 			'A moderate pace of transition focussed on steady progress towards a net zero emissions 2050 target.',
 		slow_change:
@@ -87,10 +85,10 @@ export const scenarioKeyPoints = {
 		],
 
 		green_energy_exports: [
-			'Major increase in renewable energy capacity for hydrogen production and export',
+			'Major increase in renewable energy capacity for hydrogen production and export of green commodities',
 			'Extensive new transmission infrastructure',
 			'Substantial economic impact and job creation',
-			'Support for global emissions reductions',
+			'Strong decarbonisation activities to limit temperature increase to 1.5°C',
 			'About 26,000km of new transmission required by 2050'
 		]
 	},
@@ -133,21 +131,21 @@ export const scenarioKeyPoints = {
 export const scenarioParagraphs = {
 	aemo2024: {
 		step_change: [
-			'The Step Change scenario envisions a rapid transition to renewable energy, with an accelerated timeline for coal plant retirements. This scenario targets a faster deployment of renewable energy capacity, requiring 6GW of new renewable energy per year to replace retiring coal plants and meet increased electricity demand. The transition is driven by strong policy commitments and substantial investments in battery storage and gas-powered generation for firming.',
-			'This scenario emphasises the integration of consumer energy resources, such as rooftop solar and battery storage, to enhance grid stability and reduce emissions. By 2034, over half of detached homes in the NEM would have rooftop solar, rising to 79% in 2050. The adoption of EVs is expected to rise significantly (97% by 2050), contributing to increased electricity demand and supporting the overall transition.',
+			'The Step Change scenario involves a transition of the power system that is consistent with Australia’s contribution to limiting global temperature rise to 2°C.  This scenario has strong emphasis on the role and integration of consumer energy resources, such as rooftop solar and battery storage. It also includes strong electrification across transport and industry, as well as small amounts of hydrogen for domestic industrial loads.',
+			'This scenario results in a rapid transition to renewable energy, with an accelerated timeline for coal plant retirements. A faster deployment of renewable energy capacity, 6GW of new utility scale renewable energy per year, is required to replace retiring coal plants and meet increased electricity demand.  The scenario also includes substantial investments in battery storage and as well as some gas-powered generation for firming.  By 2034, over half of detached homes in the NEM would have rooftop solar, rising to 79% in 2050. The adoption of EVs is expected to rise significantly (97% by 2050), contributing to increased electricity demand and supporting the overall transition.',
 			'This scenario aims to achieve net zero emissions by 2050, with a rapid transition to renewable energy driven by strong policy commitments and substantial investments in new technologies.'
 		],
 
 		progressive_change: [
-			'The Progressive Change scenario under the 2024 Integrated System Plan reflects updated policies and stronger commitments to emissions reductions, targeting a 43% reduction by 2030. This scenario anticipates a steady deployment of renewable energy, with a focus on achieving interim emissions and renewable energy targets. The pace of transition is moderate but consistent, supported by increased investments in energy efficiency and consumer-owned storage.',
+			'The Progressive Change scenario under the 2024 Integrated System Plan reflects updated policies and stronger commitments to emissions reductions, targeting a 43% reduction by 2030. This scenario anticipates a slower deployment of renewable energy due to supply change headwinds and higher costs. International and economic factors result in some industrial loads closing.',
 			'This scenario sees the retirement of coal-fired power stations (only 4GW would remain by 2034-35) and a gradual increase in renewable energy capacity, including solar, wind and battery storage. The adoption of EVs accelerates (63% by 2050), contributing to increased electricity demand. The integration of consumer energy resources, such as rooftop solar and batteries, plays a significant role.',
 			'This scenario targets net zero emissions by 2050, with a moderate but consistent pace of transition supported by updated policies and increased investments in clean energy technologies.'
 		],
 
 		green_energy_exports: [
-			'The Green Energy Exports scenario envisions Australia capitalising on its renewable energy resources to become a leading exporter of hydrogen. This scenario involves a major increase in renewable energy capacity supported by significant investments in new transmission infrastructure to facilitate hydrogen production and export. The energy mix is dominated by large-scale wind and solar projects, with substantial contributions from batter storage and gas-powered generation for firming.',
-			'The scenario requires over 26,000km of new transmission lines by 2050 to support the export infrastructure. The economic impact is substantial, with new job opportunities and economic growth driven by the renewable energy and hydrogen export industries. This scenario supports global emissions reductions by providing low-emission energy solutions to international markets.',
-			'This scenario aims to achieve net zero emissions by 2050, with a focus on hydrogen exports and extensive investments in renewable energy and transmission infrastructure to support global emissions reductions.'
+			'The Green Energy Exports scenario envisions Australia capitalising on its renewable energy resources to become a green energy exporter , via hydrogen and other energy-intensive products . This scenario involves a major increase in renewable energy capacity supported by significant investments in new transmission infrastructure to facilitate the development of a green energy export economy . This scenario involves a more rapid transformation of the power system, consistent with limiting global temperature rise to 1.5°C.',
+			'In this scenario, the energy mix is dominated by large-scale wind and solar projects, with substantial contributions from battery storage and gas-powered generation for firming. The scenario requires over 26,000km of new transmission lines by 2050 to support the green energy export industries. The economic impact is substantial, with new job opportunities and economic growth driven by the renewable energy and export industries. This scenario supports global emissions reductions by providing low-emission energy solutions to international markets.',
+			'This scenario aims to achieve a rapid transformation of the economy with a focus on green energy exports and extensive investments in renewable energy and transmission infrastructure, and consistent with limiting global temperature rise to 1.5°C.'
 		]
 	},
 	aemo2022: {
@@ -164,7 +162,7 @@ export const scenarioParagraphs = {
 		slow_change: [
 			'This scenario forecasts a slow pace of transition, with continued reliance on existing fossil fuel infrastructure into the 2040s, and the gradual integration of renewable energy. Specifically, coal-fired power generation remains a significant part of the energy mix for a longer period, with a slower decline than that forecast in the Step Change and Hydrogen Superpower scenarios.',
 			'The Slow Change also forecasts slower investments in new transmission lines and battery storage infrastructure, and a failure to meet EV adoption targets. The Slow Change scenario was voted the NEM’s least likely future scenario, according to a panel of energy market experts convened by AEMO.',
-			'he Slow Change scenario falls short of achieving net zero emissions by 2050. The slower pace of transition and limited policy support result in moderate emissions reductions but fail to meet the net zero target. '
+			'The Slow Change scenario falls short of achieving net zero emissions by 2050. The slower pace of transition and limited policy support result in moderate emissions reductions but fail to meet the net zero target.'
 		],
 		hydrogen_superpower: [
 			'The Hydrogen Superpower scenario envisions Australia leveraging its abundant renewable energy resources to become a major exporter of hydrogen. This scenario involves strong global action on climate change and significant technological breakthroughs, which support the development of a hydrogen export industry. As a result, the demand for renewable energy nearly quadruples to meet both domestic needs and export markets, transforming transport and domestic manufacturing. Renewable energy exports become a significant part of Australia’s economy, retaining its place as a global energy resource.',
