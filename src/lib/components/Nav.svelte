@@ -29,11 +29,6 @@
 					<img class="block" src="/img/logo.svg" alt="Open Electricity" />
 				</h1>
 			</a>
-			<span
-				class="inline-block whitespace-nowrap uppercase font-space font-medium tracking-widest text-xs bg-warm-grey py-2 px-4 rounded-full mb-2 md:mb-0"
-			>
-				Public Beta
-			</span>
 		</div>
 
 		<nav
