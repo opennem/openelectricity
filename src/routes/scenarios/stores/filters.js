@@ -57,15 +57,15 @@ export default function () {
 	);
 
 	const filterShortName = derived(
-		[selectedRegion, selectedFuelTechGroup, singleSelectionData],
-		([$selectedRegion, $selectedFuelTechGroup, $singleSelectionData]) => {
+		[selectedRegion, selectedFuelTechGroup, singleSelectionData, isScenarioViewSection],
+		([$selectedRegion, $selectedFuelTechGroup, $singleSelectionData, $isScenarioViewSection]) => {
 			const region = regionsWithShortLabels[$selectedRegion];
 			const fuelTechGroup = $selectedFuelTechGroup;
 			const model = $singleSelectionData?.model;
 			const scenario = $singleSelectionData?.scenario;
 			const pathway = $singleSelectionData?.pathway;
 
-			return `${region}-${model}-${scenario}-${pathway}`;
+			return $isScenarioViewSection ? `${region}` : `${region}-${model}-${scenario}-${pathway}`;
 		}
 	);
 
