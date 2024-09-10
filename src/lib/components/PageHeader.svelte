@@ -3,10 +3,10 @@
 </script>
 
 <div class="page-header bg-light-warm-grey border-b border-warm-grey">
-	<header class="container max-w-none md:container md:flex items-center">
+	<header class="container max-w-none md:container md:flex items-center justify-center">
 		<div>
 			<slot name="main-heading">
-				<h1 class="pt-32">{title}</h1>
+				<h1 class="tracking-widest pt-32">{title}</h1>
 			</slot>
 		</div>
 
