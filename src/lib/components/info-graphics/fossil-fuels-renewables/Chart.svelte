@@ -109,7 +109,7 @@
 		{flatData}
 	>
 		<Html pointerEvents={false}>
-			<div class={chartLabelStyles}>NEM 12 Month Rolling Sum (%)</div>
+			<div class={chartLabelStyles}>NEM 12 Month Average (%)</div>
 		</Html>
 
 		<Svg>
