@@ -101,8 +101,11 @@
 
 				<h5>Transparency & Accountability</h5>
 				<p>
-					We are committed to upholding the Open, Accessible, Auditable Data Framework, ensuring
-					that our data and methodology are transparent, verifiable, and easily accessible to all.
+					We are committed to upholding the <a
+						href="https://www.superpowerinstitute.com.au/open-data-tools"
+						target="_blank">Open, Accessible, Auditable Data Framework</a
+					>, ensuring that our data and methodology are transparent, verifiable, and easily
+					accessible to all.
 				</p>
 				<p>
 					Our data sources and open-source code are available for review and collaboration, aimed at
