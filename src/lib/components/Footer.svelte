@@ -115,11 +115,11 @@
 				<div class="flex items-center justify-between mt-16">
 					<div class="flex gap-8 items-center">
 						<a href="https://openmethane.org" target="_blank">
-							<img src="/img/om.svg" alt="Open Methane logo" class="block h-7 w-auto mt-2" />
+							<img src="/img/om-new.svg" alt="Open Methane logo" class="block h-7 w-auto mt-2" />
 						</a>
 						<a href="https://www.superpowerinstitute.com.au/" target="_blank">
 							<img
-								src="/img/superpower.svg"
+								src="/img/superpower-new.svg"
 								alt="The Superpower Institute logo"
 								class="block h-10 w-auto"
 							/>
