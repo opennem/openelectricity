@@ -78,8 +78,10 @@
 	$: articlesFilter = (/** @type {Article[]} */ articles) =>
 		articles?.filter((article) => {
 			const searchFilter =
-				article.title.toLowerCase().includes(searchString.toLowerCase()) || 
-				article.author.some(author => author.name.toLocaleLowerCase().includes(searchString.toLocaleLowerCase())) ||
+				article.title.toLowerCase().includes(searchString.toLowerCase()) ||
+				article.author.some((author) =>
+					author.name.toLocaleLowerCase().includes(searchString.toLocaleLowerCase())
+				) ||
 				searchString.trim() === '';
 			const technologyFilter = technologySelections
 				? technologySelections[article.fueltech] || !hasTechnologySelections
@@ -177,189 +179,20 @@
 				class="records-sidebar-fill records-sidebar min-w-[27rem] w-full md:w-3/12 bg-white py-8 md:py-14 md:pr-8 relative border-solid md:border-r-[0.05rem] border-mid-warm-grey"
 			>
 				<div class="h-fit sticky top-0">
-				<div class="flex justify-between">
-					<h1 class="text-2xl leading-2xl md:text-3xl md:leading-3xl mb-0">Analysis</h1>
-					<Button
+					<div class="flex justify-between">
+						<h1 class="text-2xl leading-2xl md:text-3xl md:leading-3xl mb-0">Analysis</h1>
+						<!-- <Button
 						secondary={true}
 						class="text-black flex-shrink-0 w-16 h-16 flex justify-center align-middle md:hidden"
 						active={showMenu}
 						clickHandler={() => {
 							showMenu = !showMenu;
 						}}><Icon icon="filter" /></Button
-					>
-				</div>
-				<div class={`${showMenu ? 'block' : 'hidden'} md:block`}>
-					<FilterSectionHead
-						title="Filters"
-						clearTitle="Clear all"
-						{hasFilters}
-						clearHandler={clearAllFilters}
-					/>
-					<div>
-						<FilterSection>
-							<FilterContent>
-								<TextInput
-									class="w-full bg-[url('/img/search.svg')] bg-no-repeat bg-[center_left_1rem] pl-14"
-									placeholder="Search all records"
-									value={searchString}
-									changeHandler={(e) => {
-										searchString = e.currentTarget.value;
-										setQueryString();
-									}}
-								/>
-							</FilterContent>
-						</FilterSection>
-						<FilterSection>
-							<FilterSectionHead
-								title="Technology"
-								isOpen={showTechnology}
-								toggleHandler={() => (showTechnology = !showTechnology)}
-								hasFilters={hasTechnologySelections}
-								clearHandler={() => {
-									getKeys(technologySelections).forEach((technology) => {
-										technologySelections[technology] = false;
-									});
-									setQueryString();
-								}}
-							/>
-							{#if showTechnology}
-								<FilterContent>
-									<ul>
-										<li class="mb-4">
-											<Checkbox
-												class="gap-4"
-												name="renewables"
-												label="Renewables"
-												changeHandler={fuelTechChange}
-												checked={technologySelections['renewables']}
-											/>
-											<ul class="ml-8">
-												{#each getKeys(technologyFilters).filter((t) => technologyFilters[t].renewable) as technology}
-													<li>
-														<Checkbox
-															class="gap-4"
-															name={technology}
-															label={technologyFilters[technology].label}
-															changeHandler={fuelTechChange}
-															checked={technologySelections[technology]}
-														/>
-													</li>
-												{/each}
-											</ul>
-										</li>
-										<li>
-											<Checkbox
-												class="gap-4"
-												name="non-renewables"
-												label="Non-renewables"
-												changeHandler={fuelTechChange}
-												checked={technologySelections['non-renewables']}
-											/>
-											<ul class="ml-8">
-												{#each getKeys(technologyFilters).filter((t) => !technologyFilters[t].renewable) as technology}
-													<li>
-														<Checkbox
-															class="gap-4"
-															name={technology}
-															label={technologyFilters[technology].label}
-															changeHandler={fuelTechChange}
-															checked={technologySelections[technology]}
-														/>
-													</li>
-												{/each}
-											</ul>
-										</li>
-									</ul>
-								</FilterContent>
-							{/if}
-						</FilterSection>
-						<FilterSection>
-							<FilterSectionHead
-								title="Regions"
-								isOpen={showRegions}
-								toggleHandler={() => (showRegions = !showRegions)}
-								hasFilters={hasRegionSelections}
-								clearHandler={() => {
-									getKeys(regionSelections).forEach((region) => {
-										regionSelections[region] = false;
-									});
-									setQueryString();
-								}}
-							/>
-							{#if showRegions}
-								<FilterContent>
-									<ul>
-										{#each getKeys(regionFilters) as region}
-											<li>
-												<Checkbox
-													class="gap-4"
-													name={region}
-													label={regionFilters[region].label}
-													changeHandler={regionChange}
-													checked={regionSelections[region]}
-												/>
-											</li>
-										{/each}
-									</ul>
-								</FilterContent>
-							{/if}
-						</FilterSection>
-						<FilterSection>
-							<FilterSectionHead
-								title="Date"
-								isOpen={showDate}
-								toggleHandler={() => (showDate = !showDate)}
-								hasFilters={dateChosen !== 'none'}
-								clearHandler={() => {
-									dateChosen = 'none';
-									setQueryString();
-									// fetchArticles();
-								}}
-							/>
-							{#if showDate}
-								<FilterContent>
-									<div class="flex gap-4">
-										<TextInput
-											type="date"
-											class="appearance-none w-full bg-no-repeat"
-											value={dateChosen !== 'none'
-												? format(new Date(dateChosen), 'yyyy-MM-dd')
-												: ''}
-											changeHandler={(e) => {
-												dateChosen = e.currentTarget.value;
-												setQueryString();
-											}}
-										/>
-									</div>
-									<!-- {#if dateChosen !== 'none'}
-										<div class="py-8 grid gap-4 grid-cols-2">
-											<Button
-												secondary={true}
-												clickHandler={() => {
-													dateChosen = dateSelection;
-													setQueryString();
-													fetchArticles();
-												}}>Cancel</Button
-											>
-											<Button
-												clickHandler={(e) => {
-													dateSelection = dateChosen;
-													dateChosen = 'none';
-
-													setQueryString();
-													fetchArticles();
-												}}>Apply</Button
-											>
-										</div>
-									{/if} -->
-								</FilterContent>
-							{/if}
-						</FilterSection>
+					> -->
 					</div>
 				</div>
-				</div>
 			</div>
-			<div class="md:w-9/12 grid grid-cols-1 md:grid-cols-3 py-12 gap-8">
+			<div class="grid grid-cols-1 md:grid-cols-3 py-12 gap-8">
 				{#each filteredArticles as article}
 					<ArticleCard class="max-h-[400px] min-h-[350px]" {article} />
 				{/each}
