@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.15.0
+
+### Minor Changes
+
+- UI changes and updates
+
 ## 1.14.0
 
 ### Minor Changes
