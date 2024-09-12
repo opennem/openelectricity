@@ -20,6 +20,7 @@
 
 	import filtersStore from './stores/filters';
 	import dataVizStore from './stores/data-viz';
+	import byScenarioStore from './stores/by-scenario';
 	import { regionOptions } from './page-data-options/regions';
 	// import { groupOptions as scenarioGroups } from './page-data-options/groups-scenario';
 	// import { groupOptions as regionGroups } from './page-data-options/groups-region';
@@ -37,6 +38,7 @@
 	const { articles, filters } = data;
 
 	setContext('scenario-filters', filtersStore());
+	setContext('by-scenario', byScenarioStore());
 
 	const dataVizStoreNames = [
 		{
@@ -73,6 +75,7 @@
 		includeBatteryAndLoads,
 		showScenarioOptions
 	} = getContext('scenario-filters');
+	const { selectionData } = getContext('by-scenario');
 
 	const dataVizStores = dataVizStoreNames.reduce(
 		/**
@@ -163,6 +166,8 @@
 	$: if ($isScenarioViewSection) {
 		fetching = true;
 
+		$selectionData = $multiSelectionData;
+
 		fetchScenarioViewData({ scenarios: $multiSelectionData, region: $selectedRegion }).then(
 			({ projectionsData, historyEnergyData, historyEmisssionsData, historyCapacityData }) => {
 				const processedEnergy = processScenario.generation({
@@ -191,6 +196,19 @@
 							processedEnergy
 					  })
 					: undefined;
+
+				// process colours
+				const updatedSeriesColours = processScenario.getScenarioColours(
+					processedEnergy.seriesNames
+				);
+
+				// update colours
+				processedEnergy.seriesColours = updatedSeriesColours;
+				processedCapacity.seriesColours = updatedSeriesColours;
+				processedEmissions.seriesColours = updatedSeriesColours;
+				if (processedIntensity) {
+					processedIntensity.seriesColours = updatedSeriesColours;
+				}
 
 				updateAllStores({
 					processedEnergy,

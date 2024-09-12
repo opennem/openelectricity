@@ -22,7 +22,7 @@
 	import { dataTypeDisplayOptions } from '../page-data-options/data-types';
 	import { regionOptions } from '../page-data-options/regions';
 	import { scenarioLabels } from '../page-data-options/descriptions';
-	import { modelOptions } from '../page-data-options/models';
+	import { modelOptions, modelScenarioPathwayOptions } from '../page-data-options/models';
 	import { groupOptions as groupTechnologyOptions } from '../page-data-options/groups-technology';
 	import { groupOptions as groupScenarioOptions } from '../page-data-options/groups-scenario';
 	import { chartXTicks, miniChartXTicks } from '../page-data-options/chart-ticks';
@@ -58,7 +58,7 @@
 	init();
 
 	function init() {
-		$selectedViewSection = 'technology'; // scenario, technology, region
+		$selectedViewSection = 'scenario'; // scenario, technology, region
 		$selectedCharts = ['generation', 'emissions', 'intensity', 'capacity'];
 
 		const defaultModel = modelOptions[0];
@@ -72,12 +72,15 @@
 		};
 
 		// default to the first model and all its scenarios
-		$multiSelectionData = defaultModel.scenarios.map((s) => ({
-			id: s.id,
-			model: defaultModel.value,
-			scenario: s.value,
-			pathway: defaultModel.defaultPathway
-		}));
+		$multiSelectionData = defaultModel.scenarios.map((s) =>
+			modelScenarioPathwayOptions.find((m) => m.id === `${s.id}-${defaultModel.defaultPathway}`)
+		);
+		// {
+		// 	id: s.id,
+		// 	model: defaultModel.value,
+		// 	scenario: s.value,
+		// 	pathway: defaultModel.defaultPathway
+		// }
 
 		// let allSelections = [];
 		// // load all selections

@@ -1,6 +1,11 @@
 <script>
 	import { getContext, onMount } from 'svelte';
-	import { modelOptions, scenarioOptions, defaultModelPathway } from '../page-data-options/models';
+	import {
+		modelOptions,
+		scenarioOptions,
+		modelScenarioPathwayOptions,
+		defaultModelPathway
+	} from '../page-data-options/models';
 	import PathwaySelection from './PathwaySelection.svelte';
 	import ScenarioButton from './ScenarioButton.svelte';
 
@@ -23,13 +28,7 @@
 
 	onMount(() => {
 		// update checkboxes and relevant pathways
-		selectedScenarios = $multiSelectionData.map((s) => s.id);
-		$multiSelectionData.forEach((s) => {
-			const find = scenariosPathways.find((sp) => sp.id === s.id);
-			if (find) {
-				find.pathway = s.pathway;
-			}
-		});
+		selectedScenarios = [...new Set($multiSelectionData.map((s) => `${s.model}-${s.scenario}`))];
 
 		// update focus/radio selection
 		focusScenarioId = $singleSelectionData.id;
@@ -41,12 +40,17 @@
 		: null;
 	$: focusPathways = focusScenarioModel ? focusScenarioModel.pathways : [];
 
-	// $: console.log('focusScenario', focusScenario);
+	$: selectedPathways = focusScenarioId
+		? $multiSelectionData
+				.filter((d) => d.model === focusScenario.model && d.scenario === focusScenario.value)
+				.map((d) => d.pathway)
+		: [];
+
+	// $: console.log('selectedPathways', selectedPathways);
 	// $: console.log('focusScenarioModel', focusScenarioModel);
 	// $: console.log('focusPathways', focusPathways);
 
 	// $: console.log('singleSelectionData', $singleSelectionData);
-	// $: console.log('multiSelectionData', $multiSelectionData);
 
 	/**
 	 * @param {string} id
@@ -73,21 +77,21 @@
 	 */
 	function handleCheckBoxChange(selected, checked) {
 		if (checked) {
+			const newScenarioPathway = {
+				id: `${selected}-${defaultModelPathway[focusScenario.model]}`,
+				model: focusScenario.model,
+				scenario: focusScenario.value,
+				pathway: defaultModelPathway[focusScenario.model]
+			};
 			selectedScenarios = [...selectedScenarios, selected];
+			$multiSelectionData = [...$multiSelectionData, newScenarioPathway];
 		} else {
 			selectedScenarios = selectedScenarios.filter((scenario) => scenario !== selected);
+			// update multiSelectionData
+			$multiSelectionData = $multiSelectionData.filter((s) =>
+				selectedScenarios.includes(`${s.model}-${s.scenario}`)
+			);
 		}
-
-		// update multiSelectionData
-		$multiSelectionData = selectedScenarios.map((id) => {
-			const find = scenariosPathways.find((s) => s.id === id);
-			return {
-				id: find?.id,
-				model: find?.model,
-				scenario: find?.value,
-				pathway: find?.pathway
-			};
-		});
 	}
 
 	/**
@@ -108,17 +112,23 @@
 			scenario: scenarioPathway.value,
 			pathway: scenarioPathway.pathway
 		};
+	}
 
-		// update multiSelectionData
-		$multiSelectionData = selectedScenarios.map((id) => {
-			const find = scenariosPathways.find((s) => s.id === id);
-			return {
-				id: find?.id,
-				model: find?.model,
-				scenario: find?.value,
-				pathway: find?.pathway
-			};
-		});
+	/**
+	 *
+	 * @param {string | null} id
+	 * @param {string[]} pathways
+	 */
+	function handlePathwaysChange(id, pathways) {
+		// make sure it has at least one entry in multiSelectionData (aka checked) before adding
+		if (!$multiSelectionData.find((s) => `${s.model}-${s.scenario}` === id)) return;
+
+		const scenarioPathways = pathways.map((pathway) =>
+			modelScenarioPathwayOptions.find((d) => d.id === `${id}-${pathway}`)
+		);
+		const filtered = $multiSelectionData.filter((s) => `${s.model}-${s.scenario}` !== id);
+
+		$multiSelectionData = [...filtered, ...scenarioPathways];
 	}
 </script>
 
@@ -155,10 +165,14 @@
 											showTitle={false}
 											position="top"
 											align="right"
+											isRadioMode={$isSingleSelectionMode}
 											pathways={focusPathways}
 											selectedScenario={focusScenario}
 											selectedPathway={$singleSelectionData?.pathway}
+											{selectedPathways}
 											on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
+											on:change-multiple={(evt) =>
+												handlePathwaysChange(focusScenarioId, evt.detail.value)}
 										/>
 									</div>
 								{/if}
@@ -173,10 +187,13 @@
 		<div class="p-10 md:p-16">
 			{#if focusScenarioId}
 				<PathwaySelection
+					isRadioMode={$isSingleSelectionMode}
 					pathways={focusPathways}
 					selectedScenario={focusScenario}
 					selectedPathway={$singleSelectionData?.pathway}
+					{selectedPathways}
 					on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
+					on:change-multiple={(evt) => handlePathwaysChange(focusScenarioId, evt.detail.value)}
 				/>
 			{/if}
 		</div>
