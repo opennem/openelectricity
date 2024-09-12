@@ -1,11 +1,13 @@
 <script>
 	import { createEventDispatcher } from 'svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
 
 	import { scenarioLabels, scenarioDescriptions } from '../page-data-options/descriptions';
 
 	const dispatch = createEventDispatcher();
 
+	export let isRadioMode = false;
 	/** @type {*} */
 	export let selectedScenario = null;
 	/** @type {string} */
@@ -18,10 +20,26 @@
 	export let position = 'bottom';
 	export let align = 'left';
 
+	/** @type {*} */
+	export let selectedPathways = [];
+
 	/** @param {*} event */
 	function handlePathwayChange(event) {
 		dispatch('change', { value: event.detail.value });
 	}
+
+	/** @param {*} event */
+	function handlePathwaysChange(event) {
+		let updated = [];
+		if (selectedPathways.includes(event.detail.value)) {
+			updated = selectedPathways.filter((pathway) => pathway !== event.detail.value);
+		} else {
+			updated = [...selectedPathways, event.detail.value];
+		}
+		dispatch('change-multiple', { value: updated });
+	}
+
+	$: options = pathways.map((pathway) => ({ value: pathway, label: pathway }));
 </script>
 
 {#if showTitle}
@@ -36,15 +54,30 @@
 {/if}
 
 <div class="flex" class:justify-end={align === 'right'}>
-	<div class="border border-mid-grey text-sm inline-block rounded-md">
-		<FormSelect
-			paddingY="py-3"
-			paddingX="px-4"
-			{position}
-			{align}
-			options={pathways.map((pathway) => ({ value: pathway, label: pathway }))}
-			selected={selectedPathway}
-			on:change={handlePathwayChange}
-		/>
-	</div>
+	{#if isRadioMode}
+		<div class="border border-mid-grey text-sm inline-block rounded-md">
+			<FormSelect
+				paddingY="py-3"
+				paddingX="px-4"
+				{position}
+				{align}
+				{options}
+				selected={selectedPathway}
+				on:change={handlePathwayChange}
+			/>
+		</div>
+	{:else}
+		<div class="border border-mid-grey text-sm inline-block rounded-md">
+			<FormMultiSelect
+				{position}
+				{align}
+				{options}
+				selected={selectedPathways}
+				label="Pathways"
+				paddingY="py-3"
+				paddingX="px-4"
+				on:change={handlePathwaysChange}
+			/>
+		</div>
+	{/if}
 </div>

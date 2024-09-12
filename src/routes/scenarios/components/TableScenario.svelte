@@ -1,7 +1,6 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
 	import { color } from 'd3-color';
-
 	import { scenarioLabelMap } from '../page-data-options/models';
 	import { modelLabelMap } from '../page-data-options/models';
 	import TableHeader from './TableHeader.svelte';
@@ -11,7 +10,8 @@
 	export let title = '';
 
 	const dispatch = createEventDispatcher();
-	const { includeBatteryAndLoads, multiSelectionData } = getContext('scenario-filters');
+	const { includeBatteryAndLoads } = getContext('scenario-filters');
+	const { orderedModelScenarioPathways } = getContext('by-scenario');
 	const {
 		seriesNames: energySeriesNames,
 		seriesLabels: energySeriesLabels,
@@ -53,13 +53,10 @@
 
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
 
-	$: selectedModels = [...new Set($multiSelectionData.map((d) => d.model))].map((d) => {
-		const scenarios = $multiSelectionData.filter((e) => e.model === d);
-		return {
-			model: d,
-			scenarios
-		};
-	});
+	// $: orderedModels = Object.keys(modelScenarios).filter((d) => selectedModels.find((e) => e.model === d);
+	// $: console.log('selectedModels', selectedModels);
+	// $: console.log('orderedModels', orderedModels);
+	// $: console.log('orderedModelScenarioPathways', $orderedModelScenarioPathways);
 
 	let isMetaPressed = false;
 
@@ -226,82 +223,87 @@
 		</tbody>
 
 		<tbody class="border-b border-warm-grey">
-			{#each selectedModels as { model, scenarios }}
+			{#each $orderedModelScenarioPathways as { model, scenarios }}
 				<tr>
 					<th colspan="5" class="!pb-0">
 						<h6 class="ml-3 mb-0 pb-2 border-b border-warm-grey mr-3">{modelLabelMap[model]}</h6>
 					</th>
 				</tr>
 
-				<tr>
-					<td colspan="5" class="h-2" />
-				</tr>
+				{#each scenarios as { scenario, pathways }}
+					{@const scenarioId = `${model}-${scenario}`}
 
-				{#each scenarios as { id, pathway }}
-					<tr
-						class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-1"
-						on:click={() => handleRowClick(id)}
-						class:opacity-50={hiddenRowNames.includes(id)}
-					>
-						<td class="px-2 py-1">
-							<div class="flex items-start gap-3 ml-3">
-								{#if hiddenRowNames.includes(id)}
-									<div
-										class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey relative top-1"
-									/>
-								{:else}
-									<div
-										class="w-6 h-6 min-w-6 min-h-6 border rounded relative top-1"
-										style:background-color={$energySeriesColours[id]}
-										style:border-color={darken($energySeriesColours[id])}
-									/>
-								{/if}
-								<div>
-									{scenarioLabelMap[id] || $energySeriesLabels[id]}
-									<span class="text-mid-grey font-normal block text-xs">{pathway}</span>
-								</div>
-							</div>
-						</td>
-
-						<td class="px-2 py-1">
-							<div class="flex flex-col items-end">
-								{$energyHoverData
-									? $energyConvertAndFormatValue($energyHoverData[id])
-									: $energyFocusData
-									? $energyConvertAndFormatValue($energyFocusData[id])
-									: ''}
-							</div>
-						</td>
-
-						<td class="px-2 py-1">
-							<div class="flex flex-col items-end">
-								{$capacityHoverData
-									? $capacityConvertAndFormatValue($capacityHoverData[id])
-									: $capacityFocusData
-									? $capacityConvertAndFormatValue($capacityFocusData[id])
-									: ''}
-							</div>
-						</td>
-
-						<td class="px-2 py-1">
-							<div class="flex flex-col items-end">
-								{$emissionsHoverData
-									? $emissionsConvertAndFormatValue($emissionsHoverData[id])
-									: $emissionsFocusData
-									? $emissionsConvertAndFormatValue($emissionsFocusData[id])
-									: ''}
-							</div>
-						</td>
-						<td class="px-2 py-1">
-							<div class="flex flex-col items-end mr-3">
-								{$intensityHoverData
-									? $intensityConvertAndFormatvalue($intensityHoverData[id])
-									: $intensityFocusData
-									? $intensityConvertAndFormatvalue($intensityFocusData[id])
-									: ''}
-							</div>
+					<tr>
+						<td colspan="5" class="!pb-0">
+							<span class="ml-5 mt-3 block font-space text-xs">
+								{scenarioLabelMap[scenarioId] || ''}
+							</span>
 						</td>
 					</tr>
+					{#each pathways as pathway}
+						{@const id = `${model}-${scenario}-${pathway}`}
+						<tr
+							class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-1"
+							on:click={() => handleRowClick(id)}
+							class:opacity-50={hiddenRowNames.includes(id)}
+						>
+							<td class="px-2 py-1">
+								<div class="flex items-start gap-3 ml-3">
+									{#if hiddenRowNames.includes(id)}
+										<div
+											class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey relative top-1"
+										/>
+									{:else}
+										<div
+											class="w-6 h-6 min-w-6 min-h-6 border rounded relative top-1"
+											style:background-color={$energySeriesColours[id]}
+											style:border-color={darken($energySeriesColours[id])}
+										/>
+									{/if}
+									<div class="text-mid-grey font-normal block">{pathway}</div>
+								</div>
+							</td>
+
+							<td class="px-2 py-1">
+								<div class="flex flex-col items-end">
+									{$energyHoverData
+										? $energyConvertAndFormatValue($energyHoverData[id])
+										: $energyFocusData
+										? $energyConvertAndFormatValue($energyFocusData[id])
+										: ''}
+								</div>
+							</td>
+
+							<td class="px-2 py-1">
+								<div class="flex flex-col items-end">
+									{$capacityHoverData
+										? $capacityConvertAndFormatValue($capacityHoverData[id])
+										: $capacityFocusData
+										? $capacityConvertAndFormatValue($capacityFocusData[id])
+										: ''}
+								</div>
+							</td>
+
+							<td class="px-2 py-1">
+								<div class="flex flex-col items-end">
+									{$emissionsHoverData
+										? $emissionsConvertAndFormatValue($emissionsHoverData[id])
+										: $emissionsFocusData
+										? $emissionsConvertAndFormatValue($emissionsFocusData[id])
+										: ''}
+								</div>
+							</td>
+							<td class="px-2 py-1">
+								<div class="flex flex-col items-end mr-3">
+									{$intensityHoverData
+										? $intensityConvertAndFormatvalue($intensityHoverData[id])
+										: $intensityFocusData
+										? $intensityConvertAndFormatvalue($intensityFocusData[id])
+										: ''}
+								</div>
+							</td>
+						</tr>
+					{/each}
 				{/each}
 				<tr>
 					<td colspan="5" class="h-4" />

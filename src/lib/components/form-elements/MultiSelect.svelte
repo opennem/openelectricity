@@ -17,6 +17,8 @@
 	export let paddingX = 'px-2';
 	export let staticDisplay = false;
 	export let selectedLabelClass = 'font-semibold mb-0 capitalize';
+	export let position = 'bottom'; // top, bottom
+	export let align = 'left'; // left, right
 
 	const dispatch = createEventDispatcher();
 
@@ -28,11 +30,9 @@
 	}
 </script>
 
-<div class="relative w-full">
+<div class="relative w-full" use:clickoutside on:clickoutside={() => (showOptions = false)}>
 	<button
-		on:click={() => (showOptions = true)}
-		use:clickoutside
-		on:clickoutside={() => (showOptions = false)}
+		on:click={() => (showOptions = !showOptions)}
 		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg"
 		class:hover:bg-warm-grey={!showOptions}
 	>
@@ -73,7 +73,11 @@
 		</ul>
 	{:else if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-20 shadow-md p-2 text-sm"
+			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-96 overflow-y-scroll"
+			class:top-16={position === 'bottom'}
+			class:bottom-16={position === 'top'}
+			class:left-0={align === 'left'}
+			class:right-0={align === 'right'}
 			in:fly={{ y: -5, duration: 150 }}
 			out:fly={{ y: -5, duration: 150 }}
 		>

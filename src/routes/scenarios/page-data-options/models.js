@@ -10,7 +10,8 @@ import secondaryColourPalette from '$lib/theme/secondary-colour-palette';
  * - define the model options
  * - define the scenario options
  * - set the secondary colours for the scenarios
- * - set the default pathway order
+ * - set the default pathway
+ * - set the default model, scenario and pathway order
  */
 
 export const AEMO_2022_ISP = 'aemo2022';
@@ -20,6 +21,7 @@ export const modelLogoPath = {
 	AEMO: '/img/model-providers/aemo-logo.png' // https://gel.aemo.com.au/docs/branding/logo
 };
 
+// also the order of the models and scenarios
 export const modelScenarios = {
 	[AEMO_2024_ISP]: [
 		{ id: 'step_change', label: 'Step Change' },
@@ -164,6 +166,22 @@ modelOptions.forEach((model) => {
 
 /** @type {*} */
 export const scenarioOptions = modelOptions.reduce((acc, curr) => [...acc, ...curr.scenarios], []);
+
+// create a list of unique ids for every mutation of model, scenario and pathway
+export const modelScenarioPathwayOptions = modelOptions.reduce((acc, model) => {
+	model.scenarios.forEach((scenario) => {
+		model.pathways.forEach((pathway) => {
+			acc.push({
+				id: `${model.value}-${scenario.value}-${pathway}`,
+				model: model.value,
+				scenario: scenario.value,
+				pathway: pathway
+			});
+		});
+	});
+	return acc;
+}, []);
+
 export const modelLabelMap = modelOptions.reduce((acc, curr) => {
 	acc[curr.value] = curr.label;
 	return acc;

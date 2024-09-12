@@ -2,7 +2,8 @@
 	import { getContext } from 'svelte';
 	import Switch from '$lib/components/Switch.svelte';
 
-	import { modelLabelMap } from '../page-data-options/models';
+	import { modelLabelMap, scenarioLabelMap } from '../page-data-options/models';
+
 	import ScenarioDescription from './ScenarioDescription.svelte';
 	import MiniCharts from './MiniCharts.svelte';
 
@@ -14,6 +15,7 @@
 		intensityDataVizStore: getContext('intensity-data-viz')
 	};
 	const { multiSelectionData } = getContext('scenario-filters');
+	const { orderedModelScenarioPathways } = getContext('by-scenario');
 
 	const stores = [
 		{ value: 'energyDataVizStore', label: 'Generation' },
@@ -23,12 +25,16 @@
 
 	let selectedStoreName = 'energyDataVizStore';
 	let selectedScenarioId = '';
+	let selectedScenarioPathwayId = '';
 
 	$: if (!selectedScenarioId) {
-		selectedScenarioId = $multiSelectionData[0].id;
+		selectedScenarioId = $multiSelectionData[0].model + '-' + $multiSelectionData[0].scenario;
+		selectedScenarioPathwayId = $multiSelectionData[0].id;
 	}
 
-	$: selectedScenario = $multiSelectionData.find((d) => d.id === selectedScenarioId);
+	$: selectedScenario = $multiSelectionData.find(
+		(d) => `${d.model}-${d.scenario}` === selectedScenarioId
+	);
 
 	$: isEmissionsView = selectedStoreName === 'emissionsDataVizStore';
 
@@ -120,10 +126,54 @@
 	}
 
 	// $: console.log('hoverData', hoverData);
+
+	/**
+	 * @param {CustomEvent} evt
+	 */
+	function handleScenarioSelect(evt) {
+		// key includes pathway, remove before assigning
+		const keyArr = evt.detail.key.split('-');
+		selectedScenarioId = keyArr[0] + '-' + keyArr[1];
+		selectedScenarioPathwayId = evt.detail.key;
+	}
+
+	/**
+	 * @param {string} model
+	 * @param {*[]} scenarios
+	 */
+	function getNames(model, scenarios) {
+		/** @type {string[]} */
+		const names = [];
+		scenarios.forEach((d) => {
+			d.pathways.forEach((e) => {
+				names.push(`${model}-${d.scenario}-${e}`);
+			});
+		});
+		return names.reverse();
+	}
+
+	/**
+	 * @param {string} model
+	 * @param {*[]} scenarios
+	 */
+	function getLabels(model, scenarios) {
+		/** @type {Object.<string, string>} */
+		const labels = {};
+
+		scenarios.forEach((d) => {
+			d.pathways.forEach((e) => {
+				labels[`${model}-${d.scenario}-${e}`] = scenarioLabelMap[`${model}-${d.scenario}`];
+			});
+		});
+
+		return labels;
+	}
 </script>
 
 <div class="px-10 md:px-0">
-	<ScenarioDescription model={selectedScenario.model} scenario={selectedScenario.scenario} />
+	{#if selectedScenario}
+		<ScenarioDescription model={selectedScenario.model} scenario={selectedScenario.scenario} />
+	{/if}
 </div>
 
 <section class="px-5 md:px-0">
@@ -136,19 +186,18 @@
 		/>
 	</div>
 
-	{#each selectedModels as { model, scenarios }, i}
-		{@const names = scenarios.map((d) => d.id).reverse()}
-
+	{#each $orderedModelScenarioPathways as { model, scenarios }}
+		{@const names = getNames(model, scenarios)}
+		{@const labels = getLabels(model, scenarios)}
 		<section class="mb-12">
 			<h6 class="font-space text-mid-grey pl-5 md:pl-0">{modelLabelMap[model]}</h6>
-
 			{#if isEmissionsView}
 				<div class="grid grid-cols-2 gap-3">
 					<MiniCharts
 						isButton={true}
-						{selectedScenarioId}
+						selected={selectedScenarioPathwayId}
 						seriesNames={names}
-						seriesLabels={$seriesLabels}
+						seriesLabels={labels}
 						seriesColours={$seriesColours}
 						{seriesPathways}
 						xTicks={$xTicks}
@@ -165,13 +214,13 @@
 						on:mousemove
 						on:mouseout
 						on:pointerup
-						on:scenario-click={(evt) => (selectedScenarioId = evt.detail.key)}
+						on:scenario-click={handleScenarioSelect}
 					/>
 					<MiniCharts
 						isButton={true}
-						{selectedScenarioId}
+						selected={selectedScenarioPathwayId}
 						seriesNames={names}
-						seriesLabels={$intensitySeriesLabels}
+						seriesLabels={labels}
 						seriesColours={$intensitySeriesColours}
 						{seriesPathways}
 						xTicks={$xTicks}
@@ -189,15 +238,15 @@
 						on:mousemove
 						on:mouseout
 						on:pointerup
-						on:scenario-click={(evt) => (selectedScenarioId = evt.detail.key)}
+						on:scenario-click={handleScenarioSelect}
 					/>
 				</div>
 			{:else}
 				<MiniCharts
 					isButton={true}
-					{selectedScenarioId}
+					selected={selectedScenarioPathwayId}
 					seriesNames={names}
-					seriesLabels={$seriesLabels}
+					seriesLabels={labels}
 					seriesColours={$seriesColours}
 					{seriesPathways}
 					xTicks={$xTicks}
@@ -213,7 +262,7 @@
 					on:mousemove
 					on:mouseout
 					on:pointerup
-					on:scenario-click={(evt) => (selectedScenarioId = evt.detail.key)}
+					on:scenario-click={handleScenarioSelect}
 				/>
 			{/if}
 		</section>

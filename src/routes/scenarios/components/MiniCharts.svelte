@@ -18,7 +18,7 @@
 	export let focusData;
 	export let displayUnit = '';
 	export let isButton = false;
-	export let selectedScenarioId = '';
+	export let selected = '';
 	export let seriesPathways = null;
 
 	/** @type {TimeSeriesData[]} */
@@ -94,8 +94,8 @@
 			class="p-8 border-warm-grey border"
 			class:rounded-xl={isButton}
 			class:hover:!border-mid-warm-grey={isButton}
-			class:!border-mid-grey={selectedScenarioId === key}
-			class:shadow-xl={selectedScenarioId === key}
+			class:!border-mid-grey={selected === key}
+			class:shadow-xl={selected === key}
 		>
 			<svelte:element
 				this={tag}

@@ -1,3 +1,4 @@
+import { color } from 'd3-color';
 import Statistic from '$lib/utils/Statistic';
 import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
@@ -145,7 +146,7 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 			netGenerationStats.code = null;
 			netGenerationStats.fuel_tech = null;
 			netGenerationStats.label = scenarioLabels[projection.model][projection.scenario];
-			netGenerationStats.colour = scenarioColourMap[projection.id];
+			netGenerationStats.colour = scenarioColourMap[`${projection.model}-${projection.scenario}`];
 
 			if (includeBatteryAndLoads) {
 				const dataLoads = projection.stats.data[0].projection.data;
@@ -313,13 +314,16 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 		const capacityStats = projection.stats.data[index]
 			? deepCopy(projection.stats.data[index])
 			: deepCopy(projection.stats.data[0]);
-		capacityStats.id = `${projection.id}`;
-		capacityStats.code = null;
-		capacityStats.fuel_tech = null;
-		capacityStats.label = scenarioLabels[projection.model][projection.scenario];
-		capacityStats.colour = scenarioColourMap[projection.id];
 
-		scenarioProjectionStats.push(capacityStats);
+		if (capacityStats) {
+			capacityStats.id = `${projection.id}`;
+			capacityStats.code = null;
+			capacityStats.fuel_tech = null;
+			capacityStats.label = scenarioLabels[projection.model][projection.scenario];
+			capacityStats.colour = scenarioColourMap[`${projection.model}-${projection.scenario}`];
+
+			scenarioProjectionStats.push(capacityStats);
+		}
 	});
 
 	const projectionTimeSeries = new TimeSeries(
@@ -419,13 +423,16 @@ function emissions({ projections, history, includeBatteryAndLoads }) {
 
 	projectionsStats.forEach((projection) => {
 		const emissionStats = deepCopy(projection.stats.data[0]);
-		emissionStats.id = `${projection.id}`;
-		emissionStats.code = null;
-		emissionStats.fuel_tech = null;
-		emissionStats.label = scenarioLabels[projection.model][projection.scenario];
-		emissionStats.colour = scenarioColourMap[projection.id];
 
-		scenarioProjectionStats.push(emissionStats);
+		if (emissionStats) {
+			emissionStats.id = `${projection.id}`;
+			emissionStats.code = null;
+			emissionStats.fuel_tech = null;
+			emissionStats.label = scenarioLabels[projection.model][projection.scenario];
+			emissionStats.colour = scenarioColourMap[`${projection.model}-${projection.scenario}`];
+
+			scenarioProjectionStats.push(emissionStats);
+		}
 	});
 
 	const projectionTimeSeries = new TimeSeries(
@@ -514,9 +521,52 @@ function intensity({ processedEmissions, processedEnergy }) {
 	return processedIntensity;
 }
 
+function getScenarioColours(seriesNames) {
+	const scenarioPathways = seriesNames.filter((name) => name !== 'historical');
+
+	const scenarioPathwayDetails = scenarioPathways.map((name) => {
+		const [model, scenario, pathway] = name.split('-');
+		return {
+			model,
+			scenario,
+			pathway
+		};
+	});
+
+	const scenarioColourCounter = scenarioPathwayDetails.reduce(
+		(acc, { model, scenario, pathway }) => {
+			const key = `${model}-${scenario}`;
+			if (acc[key]) {
+				acc[key].push(`${model}-${scenario}-${pathway}`);
+			} else {
+				acc[key] = [`${model}-${scenario}-${pathway}`];
+			}
+			return acc;
+		},
+		{}
+	);
+
+	let newColours = {
+		historical: '#000'
+	};
+	Object.keys(scenarioColourCounter).forEach((key) => {
+		const colour = scenarioColourMap[key] || '#000';
+		let names = scenarioColourCounter[key];
+
+		names.forEach((name, i) => {
+			newColours[name] = color(colour)
+				.brighter(i * 0.3)
+				.formatHex();
+		});
+	});
+
+	return newColours;
+}
+
 export default {
 	generation,
 	capacity,
 	emissions,
-	intensity
+	intensity,
+	getScenarioColours
 };
