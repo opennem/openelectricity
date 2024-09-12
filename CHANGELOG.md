@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.16.0
+
+### Minor Changes
+
+- Allow pathway comparison in By Scenario view
+
 ## 1.15.1
 
 ### Patch Changes
