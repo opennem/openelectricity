@@ -58,7 +58,7 @@
 	init();
 
 	function init() {
-		$selectedViewSection = 'scenario'; // scenario, technology, region
+		$selectedViewSection = 'technology'; // scenario, technology, region
 		$selectedCharts = ['generation', 'emissions', 'intensity', 'capacity'];
 
 		const defaultModel = modelOptions[0];
