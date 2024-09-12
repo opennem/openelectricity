@@ -43,7 +43,7 @@
 				<div class="flex items-center justify-center flex-shrink-0">
 					<img src="/img/logo.svg" alt="Open Electricity logo" class="block h-8 w-auto mr-8 mt-2" />
 					<img
-						src="/img/superpower.svg"
+						src="/img/superpower-new.svg"
 						alt="The Superpower Institute logo"
 						class="block h-12 w-auto"
 					/>
