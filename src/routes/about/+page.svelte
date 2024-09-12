@@ -108,7 +108,7 @@
 			>
 				<dt class="col-span-2 place-self-center">
 					<img
-						src="/img/superpower.svg"
+						src="/img/superpower-new.svg"
 						alt="The Superpower Institute logo"
 						class="block h-12 w-auto"
 					/>

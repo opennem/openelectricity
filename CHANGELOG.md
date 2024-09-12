@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.15.1
+
+### Patch Changes
+
+- fix new filename for TSI logo
+
 ## 1.15.0
 
 ### Minor Changes
