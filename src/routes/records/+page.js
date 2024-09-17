@@ -23,6 +23,7 @@ export async function load({ fetch, url }) {
 	// 		records: []
 	// 	};
 	// }
+
 	const { searchParams } = url;
 	const page = searchParams.get('page');
 	const regions = searchParams.get('regions');

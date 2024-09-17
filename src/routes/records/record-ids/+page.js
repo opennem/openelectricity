@@ -28,14 +28,20 @@ export async function load({ fetch, url }) {
 	const regions = searchParams.get('regions');
 	const periods = searchParams.get('periods');
 	const fuelTechs = searchParams.get('fuelTechs');
+	const aggregates = searchParams.get('aggregates');
+	const metrics = searchParams.get('metrics');
+	const significance = searchParams.get('significance');
 
 	return {
 		records: [],
 		page: page ? parseInt(page) : 1,
 		regions: regions ? regions.split(',') : [],
 		periods: periods ? periods.split(',') : [],
+		aggregates: aggregates ? aggregates.split(',') : [],
+		metrics: metrics ? metrics.split(',') : [],
 		stringFilter: searchParams.get('recordIdFilter') || '',
-		fuelTechs: fuelTechs ? fuelTechs.split(',') : []
+		fuelTechs: fuelTechs ? fuelTechs.split(',') : [],
+		significance: significance ? parseInt(significance) : null
 	};
 
 	// error(404, 'Not found');

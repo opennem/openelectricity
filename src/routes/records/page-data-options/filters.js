@@ -64,8 +64,8 @@ const periodOptions = [
 		label: 'Day'
 	},
 	{
-		value: 'week',
-		label: 'Week'
+		value: '7d',
+		label: '7D'
 	},
 	{
 		value: 'month',
@@ -129,6 +129,18 @@ const fuelTechOptions = [
 	{
 		value: 'gas',
 		label: 'Gas'
+	},
+	{
+		value: 'demand',
+		label: 'Demand'
+	},
+	{
+		value: 'renewables',
+		label: 'Renewables'
+	},
+	{
+		value: 'fossils',
+		label: 'Fossils'
 	}
 ];
 
@@ -150,8 +162,16 @@ const metricOptions = [
 		label: 'Price'
 	},
 	{
+		value: 'market_value',
+		label: 'Market Value'
+	},
+	{
 		value: 'emissions',
 		label: 'Emissions'
+	},
+	{
+		value: 'proportion',
+		label: 'Proportion'
 	}
 ];
 

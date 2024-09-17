@@ -1,4 +1,3 @@
-import { endOfDay, startOfDay, format, nextDay, addDays } from 'date-fns';
 import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
 
 export async function GET({ url, fetch, setHeaders }) {
@@ -59,7 +58,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	if (metrics) {
 		metricParams = metrics
 			.split(',')
-			.map((i) => `&metric=${i}`)
+			.map((i) => `&milestone_type=${i}`)
 			.join('');
 	}
 
