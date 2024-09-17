@@ -15,7 +15,7 @@
 		intensityDataVizStore: getContext('intensity-data-viz')
 	};
 	const { multiSelectionData } = getContext('scenario-filters');
-	const { orderedModelScenarioPathways } = getContext('by-scenario');
+	const { orderedModelScenarioPathways, isScenarioViewSection } = getContext('by-scenario');
 
 	const stores = [
 		{ value: 'energyDataVizStore', label: 'Generation' },
@@ -40,7 +40,6 @@
 
 	$: selectedStore = dataVizStores[selectedStoreName];
 	$: seriesNames = selectedStore.seriesNames;
-	$: seriesLabels = selectedStore.seriesLabels;
 	$: seriesColours = selectedStore.seriesColours;
 	$: xTicks = selectedStore.miniXTicks;
 	$: formatTickX = selectedStore.formatTickX;
@@ -58,22 +57,11 @@
 	$: intensityStore = dataVizStores.intensityDataVizStore;
 	$: intensitySeriesNames = intensityStore.seriesNames;
 	$: intensityFormatTickY = intensityStore.convertAndFormatValue;
-	$: intensitySeriesLabels = intensityStore.seriesLabels;
 	$: intensitySeriesColours = intensityStore.seriesColours;
 	$: intensityHoverData = intensityStore.hoverData;
 	$: intensityFocusData = intensityStore.focusData;
-	$: intensityHoverTime = intensityStore.hoverTime;
-	$: intensityFocusTime = intensityStore.focusTime;
 	$: intensitySeriesData = intensityStore.seriesData;
 	$: intensityDisplayUnit = intensityStore.displayUnit;
-
-	$: selectedModels = [...new Set($multiSelectionData.map((d) => d.model))].map((d) => {
-		const scenarios = $multiSelectionData.filter((e) => e.model === d);
-		return {
-			model: d,
-			scenarios
-		};
-	});
 
 	$: seriesPathways = $multiSelectionData.reduce((acc, d) => {
 		acc[d.id] = d.pathway;
@@ -170,29 +158,79 @@
 	}
 </script>
 
-<div class="px-10 md:px-0">
-	{#if selectedScenario}
-		<ScenarioDescription model={selectedScenario.model} scenario={selectedScenario.scenario} />
-	{/if}
-</div>
-
-<section class="px-5 md:px-0">
-	<div class="flex justify-center mb-12">
-		<Switch
-			buttons={stores}
-			selected={selectedStoreName}
-			on:change={(evt) => (selectedStoreName = evt.detail.value)}
-			class="justify-center"
-		/>
+<div class="container max-w-none lg:container md:grid grid-cols-2 px-0 md:px-16 lg:px-40">
+	<div class="px-10 md:px-0">
+		{#if selectedScenario}
+			<ScenarioDescription model={selectedScenario.model} scenario={selectedScenario.scenario} />
+		{/if}
 	</div>
 
-	{#each $orderedModelScenarioPathways as { model, scenarios }}
-		{@const names = getNames(model, scenarios)}
-		{@const labels = getLabels(model, scenarios)}
-		<section class="mb-12">
-			<h6 class="font-space text-mid-grey pl-5 md:pl-0">{modelLabelMap[model]}</h6>
-			{#if isEmissionsView}
-				<div class="grid grid-cols-2 gap-3">
+	<section class="px-5 md:px-0">
+		<div class="flex justify-center mb-12">
+			<Switch
+				buttons={stores}
+				selected={selectedStoreName}
+				on:change={(evt) => (selectedStoreName = evt.detail.value)}
+				class="justify-center"
+			/>
+		</div>
+
+		{#each $orderedModelScenarioPathways as { model, scenarios }}
+			{@const names = getNames(model, scenarios)}
+			{@const labels = getLabels(model, scenarios)}
+			<section class="mb-12">
+				<h6 class="font-space text-mid-grey pl-5 md:pl-0">{modelLabelMap[model]}</h6>
+				{#if isEmissionsView}
+					<div class="grid grid-cols-2 gap-3">
+						<MiniCharts
+							isButton={true}
+							selected={selectedScenarioPathwayId}
+							seriesNames={names}
+							seriesLabels={labels}
+							seriesColours={$seriesColours}
+							{seriesPathways}
+							xTicks={$xTicks}
+							formatTickX={$formatTickX}
+							formatTickY={$formatTickY}
+							chartOverlay={$chartOverlay}
+							chartOverlayLine={$chartOverlayLine}
+							chartOverlayHatchStroke={$chartOverlayHatchStroke}
+							{hoverData}
+							{focusData}
+							seriesData={mergedSeriesData}
+							displayUnit={$displayUnit}
+							gridColClass="grid-cols-1"
+							on:mousemove
+							on:mouseout
+							on:pointerup
+							on:scenario-click={handleScenarioSelect}
+						/>
+						<MiniCharts
+							isButton={true}
+							selected={selectedScenarioPathwayId}
+							seriesNames={names}
+							seriesLabels={labels}
+							seriesColours={$intensitySeriesColours}
+							{seriesPathways}
+							xTicks={$xTicks}
+							formatTickX={$formatTickX}
+							formatTickY={$intensityFormatTickY}
+							chartOverlay={$chartOverlay}
+							chartOverlayLine={$chartOverlayLine}
+							chartOverlayHatchStroke={$chartOverlayHatchStroke}
+							hoverData={$intensityHoverData}
+							focusData={$intensityFocusData}
+							seriesData={mergedIntensityData}
+							displayUnit={$intensityDisplayUnit}
+							showArea={false}
+							gridColClass="grid-cols-1"
+							on:mousemove
+							on:mouseout
+							on:pointerup
+							on:scenario-click={handleScenarioSelect}
+						/>
+					</div>
+				{:else}
 					<MiniCharts
 						isButton={true}
 						selected={selectedScenarioPathwayId}
@@ -210,61 +248,13 @@
 						{focusData}
 						seriesData={mergedSeriesData}
 						displayUnit={$displayUnit}
-						gridColClass="grid-cols-1"
 						on:mousemove
 						on:mouseout
 						on:pointerup
 						on:scenario-click={handleScenarioSelect}
 					/>
-					<MiniCharts
-						isButton={true}
-						selected={selectedScenarioPathwayId}
-						seriesNames={names}
-						seriesLabels={labels}
-						seriesColours={$intensitySeriesColours}
-						{seriesPathways}
-						xTicks={$xTicks}
-						formatTickX={$formatTickX}
-						formatTickY={$intensityFormatTickY}
-						chartOverlay={$chartOverlay}
-						chartOverlayLine={$chartOverlayLine}
-						chartOverlayHatchStroke={$chartOverlayHatchStroke}
-						hoverData={$intensityHoverData}
-						focusData={$intensityFocusData}
-						seriesData={mergedIntensityData}
-						displayUnit={$intensityDisplayUnit}
-						showArea={false}
-						gridColClass="grid-cols-1"
-						on:mousemove
-						on:mouseout
-						on:pointerup
-						on:scenario-click={handleScenarioSelect}
-					/>
-				</div>
-			{:else}
-				<MiniCharts
-					isButton={true}
-					selected={selectedScenarioPathwayId}
-					seriesNames={names}
-					seriesLabels={labels}
-					seriesColours={$seriesColours}
-					{seriesPathways}
-					xTicks={$xTicks}
-					formatTickX={$formatTickX}
-					formatTickY={$formatTickY}
-					chartOverlay={$chartOverlay}
-					chartOverlayLine={$chartOverlayLine}
-					chartOverlayHatchStroke={$chartOverlayHatchStroke}
-					{hoverData}
-					{focusData}
-					seriesData={mergedSeriesData}
-					displayUnit={$displayUnit}
-					on:mousemove
-					on:mouseout
-					on:pointerup
-					on:scenario-click={handleScenarioSelect}
-				/>
-			{/if}
-		</section>
-	{/each}
-</section>
+				{/if}
+			</section>
+		{/each}
+	</section>
+</div>
