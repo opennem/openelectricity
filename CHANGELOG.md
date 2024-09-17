@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.17.0
+
+### Minor Changes
+
+- hide aemo2022 scenario descriptions
+
 ## 1.16.0
 
 ### Minor Changes
