@@ -231,7 +231,7 @@
 
 	<hr class="my-10" />
 
-	<h4 class="text-center">{totalRecords} records</h4>
+	<h4 class="text-center">{totalRecords} record IDs</h4>
 </header>
 
 {#if errorMessage}
