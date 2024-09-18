@@ -8,11 +8,7 @@
 	const team = data.team;
 </script>
 
-<Meta
-	title="About"
-	description="Open Electricity is a platform for exploring Australia's electricity system."
-	image="/img/preview.jpg"
-/>
+<Meta title="About" image="/img/preview.jpg" />
 
 <PageHeader title="About" />
 

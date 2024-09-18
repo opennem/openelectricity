@@ -67,10 +67,7 @@
 	$: allReady = dataTrackerData.length > 0;
 </script>
 
-<Meta
-	description="Open Electricity is a platform for exploring Australia's electricity system."
-	image="/img/preview.jpg"
-/>
+<Meta image="/img/preview.jpg" />
 
 {#if allReady}
 	<div class="bg-light-warm-grey py-12" transition:fade={{ duration: 500 }}>
