@@ -10,10 +10,11 @@ export const formatFyTickX = (/** @type {Date | number} */ d) => {
 	return format(d, 'yyyy');
 };
 
-export const formatValue = (/** @type {number} */ d) => {
+export const formatValue = (/** @type {number | null | undefined} */ d) => {
 	if (d === null || isNaN(d)) return '—';
 
-	const formatted = getNumberFormat().format(d);
+	const maximumFractionDigits = Math.abs(d) < 11 ? 2 : 0;
+	const formatted = getNumberFormat(maximumFractionDigits).format(d);
 	if (formatted !== '0') {
 		return formatted;
 	}

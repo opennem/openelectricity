@@ -15,7 +15,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	const recordIdFilter = searchParams.get('recordIdFilter');
 	const fuelTechs = searchParams.get('fuelTechs');
 	const aggregates = searchParams.get('aggregates');
-	const metrics = searchParams.get('metrics');
+	const metrics = searchParams.get('metrics') || searchParams.get('milestone_types');
 	const significance = searchParams.get('significance');
 
 	let dateParams = '';

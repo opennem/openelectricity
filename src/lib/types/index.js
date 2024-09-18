@@ -25,3 +25,5 @@
 /** @typedef {'' | 'k' | 'M' | 'G' | 'T'} SiPrefix */
 
 /** @typedef {import('$lib/types/processed-data-viz.types').ProcessedDataViz} ProcessedDataViz */
+
+/** @typedef {import('$lib/types/record.types').MilestoneRecord} MilestoneRecord */
