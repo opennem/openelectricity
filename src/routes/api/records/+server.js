@@ -10,6 +10,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	const { searchParams } = url;
 
 	const pageNum = searchParams.get('page');
+	const pageSize = searchParams.get('pageSize');
 	const regions = searchParams.get('regions');
 	const periods = searchParams.get('periods');
 	const recordIdFilter = searchParams.get('recordIdFilter');
@@ -36,6 +37,10 @@ export async function GET({ url, fetch, setHeaders }) {
 
 	if (pageNum) {
 		pageParams = `&page=${pageNum}`;
+	}
+
+	if (pageSize) {
+		pageParams += `&limit=${pageSize}`;
 	}
 
 	if (recordIdFilter) {
@@ -106,6 +111,9 @@ export async function GET({ url, fetch, setHeaders }) {
 		regionParams = '&record_filter=NEM';
 	}
 
+	console.log('pageNum/Size', pageNum, pageSize);
+	console.log('pageParams', pageParams);
+	console.log('-----');
 	console.log('periods', periods);
 	console.log('periodParms', periodParms);
 	console.log('-----');
@@ -134,7 +142,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	// ];
 	// const fuelTechs = [];
 	// const fuelTechParams = fuelTechs.map((tech) => `&fuel_tech=${tech}`).join('');
-	const path = `${PUBLIC_RECORDS_API}/records?limit=100${fuelTechParams}${metricParams}${aggregateParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}${significanceParams}`;
+	const path = `${PUBLIC_RECORDS_API}/records?${fuelTechParams}${metricParams}${aggregateParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}${significanceParams}`;
 
 	console.log('records path', path);
 	const response = await fetch(path);

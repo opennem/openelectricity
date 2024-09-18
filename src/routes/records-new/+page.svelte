@@ -20,6 +20,7 @@
 	/** @type {MilestoneRecord[]} */
 	let recordsData = [];
 	let totalRecords = 0;
+	let pageSize = 1000;
 	let currentPage = data.page || 1;
 	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
 
@@ -153,7 +154,7 @@
 
 		if (browser) {
 			const res = await fetch(
-				`/api/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${milestoneTypesParam}${significanceParam}`
+				`/api/records?page=${page}&pageSize=${pageSize}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${milestoneTypesParam}${significanceParam}`
 			);
 			const jsonData = await res.json();
 

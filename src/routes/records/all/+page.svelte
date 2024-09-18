@@ -11,10 +11,11 @@
 	} from '../page-data-options/filters.js';
 
 	export let data;
+	let pageSize = 1000;
 	let recordsData = [];
 	let totalRecords = 0;
 	let currentPage = data.page || 1;
-	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
+	let currentStartRecordIndex = (currentPage - 1) * pageSize + 1;
 
 	let errorMessage = '';
 
@@ -54,8 +55,8 @@
 		checkedMetrics,
 		selectedSignificance
 	);
-	$: totalPages = Math.ceil(totalRecords / 100);
-	$: currentLastRecordIndex = currentStartRecordIndex + 99;
+	$: totalPages = Math.ceil(totalRecords / pageSize);
+	$: currentLastRecordIndex = currentStartRecordIndex + pageSize - 1;
 	$: lastRecordIndex =
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
@@ -131,7 +132,7 @@
 
 		if (browser) {
 			const res = await fetch(
-				`/api/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}${significanceParam}`
+				`/api/records?page=${page}&pageSize=${pageSize}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}${significanceParam}`
 			);
 			const jsonData = await res.json();
 
@@ -153,7 +154,7 @@
 	 */
 	function updateCurrentPage(page) {
 		currentPage = page;
-		currentStartRecordIndex = (page - 1) * 100 + 1;
+		currentStartRecordIndex = (page - 1) * pageSize + 1;
 
 		const {
 			regionsParam,
