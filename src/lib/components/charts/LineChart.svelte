@@ -33,6 +33,8 @@
 	/** @type {*} */
 	export let xTicks = undefined;
 
+	export let snapXTicks = true;
+
 	/** @type {*} */
 	export let yTicks = undefined;
 
@@ -45,6 +47,10 @@
 
 	/** @type {*} */
 	export let overlayLine = false;
+
+	export let curveType = undefined;
+
+	export let strokeWidth = '2px';
 
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
@@ -81,7 +87,7 @@
 		padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
 		x={xKey}
 		y={yKey}
-		yDomain={[0, maxY]}
+		{yDomain}
 		data={dataset}
 	>
 		<Svg>
@@ -105,11 +111,11 @@
 				gridlines={false}
 				formatTick={formatTickX}
 				tickMarks={true}
-				snapTicks={true}
+				snapTicks={snapXTicks}
 			/>
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-				<Line stroke="#353535" {hoverData} strokeWidth="2px" />
+				<Line stroke="#353535" {hoverData} {strokeWidth} {curveType} />
 				{#if showArea}
 					<Area fill={zKey} />
 				{/if}

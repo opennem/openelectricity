@@ -1,13 +1,58 @@
 <script>
+	import { setContext, getContext } from 'svelte';
+
 	import { parseISO, format } from 'date-fns';
 	import { browser } from '$app/environment';
 	import { formatValue } from '$lib/utils/formatters.js';
+	import dataVizStore from '$lib/components/charts/stores/data-viz';
+	import HistoryChart from '../components/HistoryChart.svelte';
 
 	export let data;
+
+	setContext('record-history-data-viz', dataVizStore());
+	const {
+		title,
+		seriesNames,
+		seriesData,
+		chartType,
+		formatTickX,
+		focusTime,
+		hoverTime,
+		hoverKey,
+		convertAndFormatValue,
+		chartHeightClasses
+	} = getContext('record-history-data-viz');
 
 	/** @type {MilestoneRecord[]} */
 	let historyData = [];
 	let totalHistory = 0;
+
+	$: if (sortedHistoryData.length) {
+		const period = sortedHistoryData[0].period;
+		$title = sortedHistoryData[0].description;
+		$seriesNames = ['value'];
+		$seriesData = [...sortedHistoryData].reverse();
+		$chartType = 'line';
+		$chartHeightClasses = 'h-[500px]';
+
+		// TODO: move this somewhere else to be reused
+		/**
+		 * @type {Object<string, string>}
+		 */
+		const formatStrings = {
+			interval: 'Pp',
+			day: 'd MMM yyyy',
+			'7d': 'd MMM yyyy',
+			month: 'MMM yyyy',
+			quarter: 'MMM yyyy',
+			season: 'MMM yyyy',
+			year: 'yyyy',
+			financial_year: 'yyyy'
+		};
+
+		$formatTickX = (/** @type {Date} */ date) =>
+			format(date, formatStrings[period] || 'd MMM yyyy, h:mma');
+	}
 
 	$: id = data.id;
 	$: fetchRecord(id);
@@ -17,6 +62,7 @@
 	$: currentRecord = sortedHistoryData.length ? sortedHistoryData[0] : null;
 	$: previousRecord =
 		sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null;
+	$: isPeriodInterval = currentRecord?.period === 'interval';
 
 	$: sortedHistoryData = historyData
 		.map((record) => {
@@ -44,6 +90,29 @@
 			totalHistory = jsonData.total_records;
 		}
 	}
+
+	/**
+	 * @param {CustomEvent<{time: number}>} evt
+	 */
+	function handleMousemove(evt) {
+		$hoverTime = evt.detail.time;
+	}
+
+	function handleMouseout() {
+		$hoverTime = undefined;
+		$hoverKey = undefined;
+	}
+
+	/**
+	 * @param {CustomEvent<{time: number}>} evt
+	 */
+	function handlePointerup(evt) {
+		const pointerTime = evt.detail.time;
+		const isSame = pointerTime ? $focusTime === pointerTime : false;
+		const time = isSame ? undefined : pointerTime;
+
+		$focusTime = time;
+	}
 </script>
 
 <div class="container py-12">
@@ -58,17 +127,14 @@
 			<div class="p-6">
 				<h6>Previous Record</h6>
 				<div>
-					<span class="text-3xl">{formatValue(previousRecord?.value)}</span>
+					<span class="text-2xl">{$convertAndFormatValue(previousRecord?.value)}</span>
 					<span>{previousRecord?.value_unit}</span>
 				</div>
 
 				<div>
 					<time datetime={previousRecord?.interval}>
 						<span class="text-dark-grey">
-							{previousRecord ? format(previousRecord?.date, 'd MMM yyyy') : ''}
-						</span>
-						<span class="text-xs text-mid-grey">
-							{previousRecord ? format(previousRecord?.date, 'h:mma') : ''}
+							{previousRecord ? $formatTickX(previousRecord?.date, 'd MMM yyyy') : ''}
 						</span>
 					</time>
 				</div>
@@ -77,17 +143,14 @@
 				<span>Current Record</span>
 
 				<div>
-					<span class="text-3xl">{formatValue(currentRecord?.value)}</span>
+					<span class="text-2xl">{$convertAndFormatValue(currentRecord?.value)}</span>
 					<span>{currentRecord?.value_unit}</span>
 				</div>
 
 				<div>
 					<time datetime={currentRecord?.interval}>
 						<span class="text-dark-grey">
-							{currentRecord ? format(currentRecord?.date, 'd MMM yyyy') : ''}
-						</span>
-						<span class="text-xs text-mid-grey">
-							{currentRecord ? format(currentRecord?.date, 'h:mma') : ''}
+							{currentRecord ? $formatTickX(currentRecord?.date, 'd MMM yyyy') : ''}
 						</span>
 					</time>
 				</div>
@@ -96,23 +159,38 @@
 	</header>
 
 	<main class="grid grid-cols-10 gap-10">
-		<div class="col-span-6 bg-white p-16 h-[500px]">chart</div>
-
-		<table class="col-span-4 bg-white text-sm">
-			<thead>
-				<tr>
-					<th class="px-4 py-2 text-left">Date & Time</th>
-					<th class="px-4 py-2 text-right">{currentRecord?.value_unit}</th>
-				</tr>
-			</thead>
-			<tbody>
-				{#each sortedHistoryData as record}
-					<tr class="border-b border-light-warm-grey">
-						<td class="px-4 py-2">{format(record.date, 'd MMM yyyy, h:mma')}</td>
-						<td class="px-4 py-2 text-right">{formatValue(record.value)}</td>
+		<div class="col-span-6 bg-white p-16">
+			<HistoryChart
+				on:mousemove={handleMousemove}
+				on:mouseout={handleMouseout}
+				on:pointerup={handlePointerup}
+			/>
+		</div>
+		<div class="col-span-4">
+			<table class="bg-white text-sm w-full">
+				<thead>
+					<tr>
+						<th class="px-4 py-2 text-left">Date</th>
+						<th class="px-4 py-2 text-right">{currentRecord?.value_unit}</th>
 					</tr>
-				{/each}
-			</tbody>
-		</table>
+				</thead>
+				<tbody>
+					{#each sortedHistoryData as record}
+						<tr
+							class="border-b border-light-warm-grey pointer hover:bg-light-warm-grey"
+							class:font-semibold={record.time === $focusTime}
+							class:text-red={record.time === $focusTime}
+							on:mousemove={() => handleMousemove({ detail: { time: record.time } })}
+							on:mouseout={handleMouseout}
+							on:blur={handleMouseout}
+							on:pointerup={() => handlePointerup({ detail: { time: record.time } })}
+						>
+							<td class="px-4 py-2">{$formatTickX(record.date)}</td>
+							<td class="px-4 py-2 text-right">{$convertAndFormatValue(record.value)}</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
 	</main>
 </div>

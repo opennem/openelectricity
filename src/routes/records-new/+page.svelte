@@ -5,6 +5,8 @@
 
 	import { browser } from '$app/environment';
 
+	import Meta from '$lib/components/Meta.svelte';
+
 	import { formatValue } from '$lib/utils/formatters.js';
 
 	import {
@@ -194,6 +196,8 @@
 	$: console.log('rolledUpRecords', rolledUpRecords);
 	$: console.log('sortedRolledUpRecords', sortedRolledUpRecords);
 </script>
+
+<Meta title="Records" image="/img/preview.jpg" />
 
 <div class="grid grid-cols-6 divide-x">
 	<div class="col-span-2 flex justify-end">

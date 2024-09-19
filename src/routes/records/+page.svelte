@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 
+	import Meta from '$lib/components/Meta.svelte';
 	import Filters from './components/Filters.svelte';
 	import {
 		regionOptions,
@@ -134,6 +135,8 @@
 		updateCurrentPage(1);
 	}
 </script>
+
+<Meta title="Records" image="/img/preview.jpg" />
 
 <header class="my-24 flex flex-col w-1/2 mx-auto text-center gap-6">
 	<!-- <Filters

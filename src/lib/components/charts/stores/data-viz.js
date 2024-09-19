@@ -85,7 +85,7 @@ export default function () {
 
 	const chartOverlayHatchStroke = writable('rgba(236, 233, 230, 0.4)');
 
-	const chartHeightClasses = writable('');
+	const chartHeightClasses = writable('h-[400px] md:h-[450px]');
 
 	/** @type {import('svelte/store').Writable<string | undefined>} */
 	const hoverKey = writable();
