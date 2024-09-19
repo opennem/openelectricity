@@ -17,6 +17,6 @@
 			</div>
 		</div>
 	{:else}
-		<div class="h-full text-right text-xs text-mid-grey py-1">default text</div>
+		<!-- <div class="h-full text-right text-xs text-mid-grey py-1">default text</div> -->
 	{/if}
 </div>

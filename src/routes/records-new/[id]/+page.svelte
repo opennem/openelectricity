@@ -40,7 +40,7 @@
 		 * @type {Object<string, string>}
 		 */
 		const formatStrings = {
-			interval: 'Pp',
+			interval: 'd MMM yyyy, h:mma',
 			day: 'd MMM yyyy',
 			'7d': 'd MMM yyyy',
 			month: 'MMM yyyy',
@@ -125,7 +125,7 @@
 
 		<div class="col-span-4 grid grid-cols-2 divide-x divide-light-warm-grey bg-white">
 			<div class="p-6">
-				<h6>Previous Record</h6>
+				<span>Previous Record</span>
 				<div>
 					<span class="text-2xl">{$convertAndFormatValue(previousRecord?.value)}</span>
 					<span>{previousRecord?.value_unit}</span>
