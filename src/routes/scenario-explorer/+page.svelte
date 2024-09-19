@@ -364,11 +364,7 @@
 	}
 </script>
 
-<Meta
-	title="Scenarios"
-	description="Open Electricity is a platform for exploring Australia's electricity system."
-	image="/img/preview.jpg"
-/>
+<Meta title="Scenarios" image="/img/preview.jpg" />
 <PageHeader>
 	<div slot="main-heading">
 		<div class="lg:my-36">

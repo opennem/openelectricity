@@ -8,11 +8,7 @@
 	$: sortedFacilities = data.facilities.sort(byProp('name'));
 </script>
 
-<Meta
-	title="Sitemap"
-	description="Open Electricity is a platform for exploring Australia's electricity system."
-	image="/img/preview.jpg"
-/>
+<Meta title="Sitemap" image="/img/preview.jpg" />
 
 <div class="container max-w-none lg:container">
 	<h1>Sitemap</h1>

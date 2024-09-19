@@ -155,10 +155,3 @@
 	<a href="/records/all">All records</a>
 	<a href="/records/record-ids">Record IDs</a>
 </header>
-
-<style>
-	td,
-	th {
-		@apply border-r p-1 align-top;
-	}
-</style>

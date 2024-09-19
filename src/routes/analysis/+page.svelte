@@ -166,11 +166,7 @@
 	};
 </script>
 
-<Meta
-	title="Analysis"
-	description="Open Electricity is a platform for exploring Australia's electricity system."
-	image="/img/preview.jpg"
-/>
+<Meta title="Analysis" image="/img/preview.jpg" />
 
 <div>
 	<div class="container max-w-none lg:container">
