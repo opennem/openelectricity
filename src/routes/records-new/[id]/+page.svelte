@@ -95,7 +95,7 @@
 	 * @param {CustomEvent<{time: number}>} evt
 	 */
 	function handleMousemove(evt) {
-		$hoverTime = evt.detail.time;
+		$hoverTime = evt.detail?.time;
 	}
 
 	function handleMouseout() {
@@ -177,9 +177,10 @@
 				<tbody>
 					{#each sortedHistoryData as record}
 						<tr
-							class="border-b border-light-warm-grey pointer hover:bg-light-warm-grey"
+							class="border-b border-light-warm-grey pointer hover:bg-warm-grey"
 							class:font-semibold={record.time === $focusTime}
 							class:text-red={record.time === $focusTime}
+							class:bg-warm-grey={record.time === $hoverTime}
 							on:mousemove={() => handleMousemove({ detail: { time: record.time } })}
 							on:mouseout={handleMouseout}
 							on:blur={handleMouseout}
