@@ -15,7 +15,6 @@ export default function () {
 		($allowedPrefixes) => $allowedPrefixes && $allowedPrefixes.length > 1
 	);
 
-	// const displayUnit = writable('');
 	const baseUnit = writable('');
 
 	/** @type {import('svelte/store').Writable<SiPrefix>} */
@@ -153,7 +152,7 @@ export default function () {
 		nameOptions.set([]);
 		yDomain.set([]);
 		// xTicks.set([]);
-		chartType.set('area');
+		chartType.set('line');
 	}
 
 	return {
