@@ -3,7 +3,9 @@
   Adds a brush component to create a range between 0 and 1. Bind to the `min` and `max` props to use them in other components. See the [brushable example](https://layercake.graphcics/example/Brush) for use.
  -->
 <script>
+	import { getContext, createEventDispatcher } from 'svelte';
 	import clamp from '$lib/utils/clamp';
+	const { xGet, x, xScale, xDomain } = getContext('LayerCake');
 
 	/** @type {Number} min - The brush's min value. Useful to bind to. */
 	export let min;
@@ -12,6 +14,8 @@
 	export let max;
 
 	let brush;
+
+	const dispatch = createEventDispatcher();
 
 	const p = (x) => {
 		const { left, right } = brush.getBoundingClientRect();
@@ -89,6 +93,17 @@
 
 	$: left = 100 * min;
 	$: right = 100 * (1 - max);
+	$: if (min !== null) {
+		// console.log('left/right', left, right);
+		console.log('invert', $xScale.invert(min), $xScale.invert(max));
+		// console.log('xScaleDomain', $xScale.domain());
+		// console.log('xScaleRange', $xScale.range());
+
+		dispatch('brushed', {
+			start: $xScale.invert(min),
+			end: $xScale.invert(max)
+		});
+	}
 </script>
 
 <div

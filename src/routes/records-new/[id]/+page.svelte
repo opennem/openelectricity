@@ -10,6 +10,7 @@
 	export let data;
 
 	setContext('record-history-data-viz', dataVizStore());
+	setContext('date-brush-data-viz', dataVizStore());
 	const {
 		title,
 		seriesNames,
@@ -22,6 +23,14 @@
 		convertAndFormatValue,
 		chartHeightClasses
 	} = getContext('record-history-data-viz');
+	const {
+		seriesNames: brushSeriesNames,
+		seriesData: brushSeriesData,
+		focusTime: brushFocusTime,
+		hoverTime: brushHoverTime,
+		hoverKey: brushHoverKey,
+		chartType: brushChartType
+	} = getContext('date-brush-data-viz');
 
 	/** @type {MilestoneRecord[]} */
 	let historyData = [];
@@ -34,6 +43,11 @@
 		$seriesData = [...sortedHistoryData].reverse();
 		$chartType = 'line';
 		$chartHeightClasses = 'h-[500px]';
+
+		// date brush - REFACTOR this
+		$brushSeriesNames = ['value'];
+		$brushSeriesData = [...sortedHistoryData].reverse();
+		$brushChartType = 'line';
 
 		// TODO: move this somewhere else to be reused
 		/**
@@ -96,11 +110,13 @@
 	 */
 	function handleMousemove(evt) {
 		$hoverTime = evt.detail?.time;
+		$brushHoverTime = evt.detail?.time;
 	}
 
 	function handleMouseout() {
 		$hoverTime = undefined;
 		$hoverKey = undefined;
+		$brushHoverTime = undefined;
 	}
 
 	/**
@@ -112,6 +128,7 @@
 		const time = isSame ? undefined : pointerTime;
 
 		$focusTime = time;
+		$brushFocusTime = time;
 	}
 </script>
 

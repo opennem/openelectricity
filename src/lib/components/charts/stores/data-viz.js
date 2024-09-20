@@ -17,6 +17,13 @@ export default function () {
 
 	const baseUnit = writable('');
 
+	const curveType = writable();
+	const snapXTicks = writable(false);
+	const strokeWidth = writable('2px');
+
+	// Line chart specific
+	const showLineArea = writable(true);
+
 	/** @type {import('svelte/store').Writable<SiPrefix>} */
 	const prefix = writable('');
 
@@ -45,8 +52,10 @@ export default function () {
 	/** @type {import('svelte/store').Writable<number[]>} */
 	const yDomain = writable([]);
 
-	/** @type {import('svelte/store').Writable<Date[]>} */
+	/** @type {import('svelte/store').Writable<Date[] | number>} */
 	const xTicks = writable([]);
+	/** @type {import('svelte/store').Writable<Date[] | number>} */
+	const yTicks = writable([]);
 
 	/** @type {import('svelte/store').Writable<Date[]>} */
 	const miniXTicks = writable([]);
@@ -174,10 +183,13 @@ export default function () {
 		nameOptions,
 		yDomain,
 		xTicks,
+		yTicks,
 		miniXTicks,
+		snapXTicks,
 		formatTickX,
 		formatTickY,
 		chartType,
+		curveType,
 		isChartTypeArea,
 		chartOverlay,
 		chartOverlayLine,
@@ -188,6 +200,8 @@ export default function () {
 		hoverData,
 		focusTime,
 		focusData,
+		strokeWidth,
+		showLineArea,
 
 		reset,
 		getNextPrefix
