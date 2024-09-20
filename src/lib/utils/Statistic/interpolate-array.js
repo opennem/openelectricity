@@ -3,6 +3,9 @@ import { interpolate } from 'd3-interpolate';
 // function to interpolate data from 30 to 5 minute interval
 export default function (dataArray, original, target) {
 	const ratio = original / target;
+	if (ratio === Infinity)
+		// prevent infinite inner loop caused by 0 target interval
+		return dataArray;
 	const interpolatedData = [];
 	for (let i = 0; i < dataArray.length; i++) {
 		if (i === dataArray.length - 1) {
