@@ -9,13 +9,14 @@ export async function GET({ url, fetch, setHeaders }) {
 	// const date = url.searchParams.get('date');
 	const { searchParams } = url;
 
-	// const pageNum = searchParams.get('page');
+	const pageNum = searchParams.get('page');
+	const pageSize = searchParams.get('pageSize');
 	const regions = searchParams.get('regions');
 	const periods = searchParams.get('periods');
 	const recordIdFilter = searchParams.get('recordIdFilter');
 	const fuelTechs = searchParams.get('fuelTechs');
 	const aggregates = searchParams.get('aggregates');
-	const metrics = searchParams.get('metrics');
+	const metrics = searchParams.get('metrics') || searchParams.get('milestone_types');
 	const significance = searchParams.get('significance');
 
 	let dateParams = '';
@@ -34,9 +35,13 @@ export async function GET({ url, fetch, setHeaders }) {
 	// 	dateParams = `&date_start=${date}&date_end=${format(addDays(new Date(date), 1), f)}`;
 	// }
 
-	// if (pageNum) {
-	// 	pageParams = `&page=${pageNum}`;
-	// }
+	if (pageNum) {
+		pageParams = `&page=${pageNum}`;
+	}
+
+	if (pageSize) {
+		pageParams += `&limit=${pageSize}`;
+	}
 
 	if (recordIdFilter) {
 		recordIdFilterParams = `&record_id_filter=${recordIdFilter}`;
@@ -74,38 +79,39 @@ export async function GET({ url, fetch, setHeaders }) {
 	}
 
 	if (regions) {
+		console.log('regions', regions);
 		const regionArr = regions.split(',');
 
-		// if all regions are selected, we don't need to specify the network
-		// - the 6 regions are nem, nsw1, qld1, sa1, tas1, vic1
-		// if (regionArr.length === 6) {
-		// 	regionParams = '';
-		// } else {
-		// 	const withoutNem = regionArr.filter((r) => r !== 'nem');
+		const withoutNetworks = regionArr.filter((r) => r !== 'nem' && r !== 'wem');
 
-		// 	if (withoutNem.length > 0) {
-		// 		regionParams =
-		// 			`&network=NEM` + withoutNem.map((r) => `&network_region=${r.toUpperCase()}`).join('');
-		// 	} else {
-		// 		// only nem
-		// 		regionParams = `&network=NEM`;
-		// 	}
-		// }
-
-		const withoutNem = regionArr.filter((r) => r !== 'nem');
-
-		if (withoutNem.length > 0) {
+		if (withoutNetworks.length > 0) {
+			const hasWem = regionArr.includes('wem');
 			regionParams =
-				`&network=NEM` + withoutNem.map((r) => `&network_region=${r.toUpperCase()}`).join('');
+				`&network=NEM` + withoutNetworks.map((r) => `&network_region=${r.toUpperCase()}`).join('');
+
+			if (hasWem) {
+				regionParams += '&network=WEM';
+			}
 		} else {
-			// only nem,
-			regionParams = `&network=NEM`;
+			const hasNem = regionArr.includes('nem');
+			const hasWem = regionArr.includes('wem');
+
+			if (hasNem) {
+				regionParams += '&network=NEM';
+			}
+			if (hasWem) {
+				regionParams += '&network=WEM';
+			}
 		}
 	} else {
 		// if no regions are selected, we default to all regions, switch to record_filter
-		regionParams = '&record_filter=NEM';
+		console.log('no regions selected');
+		// regionParams = '&record_filter=NEM&record_filter=WEM';
 	}
 
+	console.log('pageNum/Size', pageNum, pageSize);
+	console.log('pageParams', pageParams);
+	console.log('-----');
 	console.log('periods', periods);
 	console.log('periodParms', periodParms);
 	console.log('-----');
@@ -136,7 +142,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	// const fuelTechParams = fuelTechs.map((tech) => `&fuel_tech=${tech}`).join('');
 	const path = `${PUBLIC_RECORDS_API}/record_id?${fuelTechParams}${metricParams}${aggregateParams}${dateParams}${pageParams}${regionParams}${periodParms}${recordIdFilterParams}${significanceParams}`;
 
-	console.log('records path', path);
+	console.log('record_id path', path);
 	const response = await fetch(path);
 
 	if (response.ok) {

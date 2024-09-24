@@ -28,17 +28,11 @@ const regionOptions = [
 						label: 'Victoria'
 					}
 				]
+			},
+			{
+				value: 'wem',
+				label: 'Wholesale Electricity Market (WEM)'
 			}
-			// {
-			// 	value: 'WEMDE',
-			// 	label: 'WEM Dispatch Engine',
-			// 	children: [
-			// 		{
-			// 			value: 'WEM',
-			// 			label: 'Western Australia (SWIS)'
-			// 		}
-			// 	]
-			// }
 		]
 	}
 ];

@@ -28,7 +28,7 @@
 	let checkedRegions = initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 
 	/** @type {string[]} */
-	let indeterminateRegions = [];
+	let indeterminateRegions = checkedRegions.length === 8 ? [] : ['_all'];
 
 	/** @type {string[]} */
 	let checkedPeriods = initCheckedPeriods || periodOptions.map((i) => i.value);
@@ -66,20 +66,29 @@
 	 */
 	function handleRegionChange(region) {
 		if (region === '_all') {
-			checkedRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+			checkedRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem'];
 			indeterminateRegions = [];
 		} else if (checkedRegions.includes(region)) {
 			indeterminateRegions = ['_all'];
 			if (isMetaPressed) {
 				checkedRegions = [region];
+			} else if (checkedRegions.length === 1) {
+				indeterminateRegions = [];
+				checkedRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem'];
 			} else {
 				checkedRegions = checkedRegions.filter((r) => r !== region);
 			}
 		} else {
-			checkedRegions = [...checkedRegions, region];
+			if (isMetaPressed) {
+				indeterminateRegions = ['_all'];
+				checkedRegions = [region];
+			} else {
+				checkedRegions = [...checkedRegions, region];
 
-			if (checkedRegions.length === 7) {
-				indeterminateRegions = [];
+				// all regions including _all
+				if (checkedRegions.length === 8) {
+					indeterminateRegions = [];
+				}
 			}
 		}
 	}

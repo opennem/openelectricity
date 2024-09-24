@@ -22,7 +22,7 @@
 	let checkedRegions =
 		data.regions && data.regions.length
 			? data.regions
-			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem'];
 
 	/** @type {string[]} */
 	let checkedFuelTechs =
@@ -71,8 +71,9 @@
 	}) {
 		const validRegions = regions.filter((r) => r !== '_all');
 
+		// 8 as in ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem']
 		const regionsParam =
-			regions.length === 0 || regions.length === 7 ? '' : '&regions=' + validRegions.join(',');
+			regions.length === 0 || regions.length === 8 ? '' : '&regions=' + validRegions.join(',');
 
 		const periodsParam =
 			periods.length === periodOptions.length ? '' : '&periods=' + periods.join(',');

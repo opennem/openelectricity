@@ -79,36 +79,34 @@ export async function GET({ url, fetch, setHeaders }) {
 	}
 
 	if (regions) {
+		console.log('regions', regions);
 		const regionArr = regions.split(',');
 
-		// if all regions are selected, we don't need to specify the network
-		// - the 6 regions are nem, nsw1, qld1, sa1, tas1, vic1
-		// if (regionArr.length === 6) {
-		// 	regionParams = '';
-		// } else {
-		// 	const withoutNem = regionArr.filter((r) => r !== 'nem');
+		const withoutNetworks = regionArr.filter((r) => r !== 'nem' && r !== 'wem');
 
-		// 	if (withoutNem.length > 0) {
-		// 		regionParams =
-		// 			`&network=NEM` + withoutNem.map((r) => `&network_region=${r.toUpperCase()}`).join('');
-		// 	} else {
-		// 		// only nem
-		// 		regionParams = `&network=NEM`;
-		// 	}
-		// }
-
-		const withoutNem = regionArr.filter((r) => r !== 'nem');
-
-		if (withoutNem.length > 0) {
+		if (withoutNetworks.length > 0) {
+			const hasWem = regionArr.includes('wem');
 			regionParams =
-				`&network=NEM` + withoutNem.map((r) => `&network_region=${r.toUpperCase()}`).join('');
+				`&network=NEM` + withoutNetworks.map((r) => `&network_region=${r.toUpperCase()}`).join('');
+
+			if (hasWem) {
+				regionParams += '&network=WEM';
+			}
 		} else {
-			// only nem,
-			regionParams = `&network=NEM`;
+			const hasNem = regionArr.includes('nem');
+			const hasWem = regionArr.includes('wem');
+
+			if (hasNem) {
+				regionParams += '&network=NEM';
+			}
+			if (hasWem) {
+				regionParams += '&network=WEM';
+			}
 		}
 	} else {
 		// if no regions are selected, we default to all regions, switch to record_filter
-		regionParams = '&record_filter=NEM';
+		console.log('no regions selected');
+		// regionParams = '&record_filter=NEM&record_filter=WEM';
 	}
 
 	console.log('pageNum/Size', pageNum, pageSize);

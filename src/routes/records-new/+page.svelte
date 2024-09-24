@@ -94,7 +94,7 @@
 		const validRegions = regions.filter((r) => r !== '_all');
 
 		const regionsParam =
-			regions.length === 0 || regions.length === 7 ? '' : '&regions=' + validRegions.join(',');
+			regions.length === 0 || regions.length === 8 ? '' : '&regions=' + validRegions.join(',');
 
 		const periodsParam =
 			periods.length === periodOptions.length ? '' : '&periods=' + periods.join(',');
