@@ -65,14 +65,16 @@
 	 * @param {string} region
 	 */
 	function handleRegionChange(region) {
-		if (isMetaPressed) {
-			checkedRegions = [region];
-		} else if (region === '_all') {
+		if (region === '_all') {
 			checkedRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 			indeterminateRegions = [];
 		} else if (checkedRegions.includes(region)) {
 			indeterminateRegions = ['_all'];
-			checkedRegions = checkedRegions.filter((r) => r !== region);
+			if (isMetaPressed) {
+				checkedRegions = [region];
+			} else {
+				checkedRegions = checkedRegions.filter((r) => r !== region);
+			}
 		} else {
 			checkedRegions = [...checkedRegions, region];
 
