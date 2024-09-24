@@ -6,6 +6,8 @@
 
 	/** @typedef {{label: string, value: string, children?: {label: string, value: string}[]}} Node */
 
+	export let name = 'checkbox-tree';
+
 	/** @type {Node[]} */
 	export let nodes = [];
 
@@ -29,7 +31,7 @@
 		{#each nodes as node (node.value)}
 			<li>
 				<FormCheckbox
-					name={node.value}
+					name={`${name}-${node.value}`}
 					label={node.label}
 					checked={checked.includes(node.value)}
 					indeterminate={indeterminate.includes(node.value)}

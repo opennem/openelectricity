@@ -140,6 +140,15 @@
 		}
 	}
 
+	/**
+	 * Handle filter mode change
+	 * @param {CustomEvent} evt
+	 */
+	function handleFilterModeChange(evt) {
+		handleResetClick();
+		filterMode = evt.detail.value;
+	}
+
 	function handleApplyClick() {
 		// console.log('Apply clicked', checkedRegions);
 		dispatchApply();
@@ -196,7 +205,7 @@
 		]}
 		selected={filterMode}
 		class="text-xs"
-		on:change={(evt) => (filterMode = evt.detail.value)}
+		on:change={handleFilterModeChange}
 	/>
 </div>
 {#if filterMode === 'text'}
@@ -218,6 +227,7 @@
 		<div class="px-10">
 			<h5>Regions</h5>
 			<CheckboxTree
+				name="regions"
 				nodes={regionOptions}
 				checked={checkedRegions}
 				indeterminate={indeterminateRegions}
@@ -228,6 +238,7 @@
 		<div class="px-10">
 			<h5>Fuel Technology</h5>
 			<CheckboxTree
+				name="fuel-techs"
 				nodes={fuelTechOptions}
 				checked={checkedFuelTechs}
 				on:change={(evt) => handleFuelTechChange(evt.detail.node)}
@@ -237,6 +248,7 @@
 		<div class="px-10">
 			<h5>Periods</h5>
 			<CheckboxTree
+				name="periods"
 				nodes={periodOptions}
 				checked={checkedPeriods}
 				on:change={(evt) => handlePeriodChange(evt.detail.node)}
@@ -246,6 +258,7 @@
 		<div class="px-10">
 			<h5>Aggregate</h5>
 			<CheckboxTree
+				name="aggregates"
 				nodes={aggregateOptions}
 				checked={checkedAggregates}
 				on:change={(evt) => handleAggregateChange(evt.detail.node)}
@@ -253,8 +266,9 @@
 		</div>
 
 		<div class="px-10">
-			<h5>Metric</h5>
+			<h5>Milestone Type</h5>
 			<CheckboxTree
+				name="milestone-types"
 				nodes={metricOptions}
 				checked={checkedMetrics}
 				on:change={(evt) => handleMetricChange(evt.detail.node)}
