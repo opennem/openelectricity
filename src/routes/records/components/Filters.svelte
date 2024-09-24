@@ -46,6 +46,8 @@
 
 	let recordIdSearch = initRecordIdSearch || '';
 
+	let isMetaPressed = false;
+
 	$: if (filterMode === 'text') {
 		checkedRegions = initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 		checkedPeriods = initCheckedPeriods || periodOptions.map((i) => i.value);
@@ -63,7 +65,9 @@
 	 * @param {string} region
 	 */
 	function handleRegionChange(region) {
-		if (region === '_all') {
+		if (isMetaPressed) {
+			checkedRegions = [region];
+		} else if (region === '_all') {
 			checkedRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 			indeterminateRegions = [];
 		} else if (checkedRegions.includes(region)) {
@@ -79,7 +83,9 @@
 	}
 
 	function handlePeriodChange(period) {
-		if (checkedPeriods.includes(period)) {
+		if (isMetaPressed) {
+			checkedPeriods = [period];
+		} else if (checkedPeriods.includes(period)) {
 			if (checkedPeriods.length === 1) {
 				checkedPeriods = periodOptions.map((i) => i.value);
 			} else {
@@ -91,7 +97,9 @@
 	}
 
 	function handleFuelTechChange(fuelTech) {
-		if (checkedFuelTechs.includes(fuelTech)) {
+		if (isMetaPressed) {
+			checkedFuelTechs = [fuelTech];
+		} else if (checkedFuelTechs.includes(fuelTech)) {
 			if (checkedFuelTechs.length === 1) {
 				checkedFuelTechs = fuelTechOptions.map((i) => i.value);
 			} else {
@@ -103,7 +111,9 @@
 	}
 
 	function handleAggregateChange(value) {
-		if (checkedAggregates.includes(value)) {
+		if (isMetaPressed) {
+			checkedAggregates = [value];
+		} else if (checkedAggregates.includes(value)) {
 			if (checkedAggregates.length === 1) {
 				checkedAggregates = aggregateOptions.map((i) => i.value);
 			} else {
@@ -115,7 +125,9 @@
 	}
 
 	function handleMetricChange(value) {
-		if (checkedMetrics.includes(value)) {
+		if (isMetaPressed) {
+			checkedMetrics = [value];
+		} else if (checkedMetrics.includes(value)) {
 			if (checkedMetrics.length === 1) {
 				checkedMetrics = metricOptions.map((i) => i.value);
 			} else {
@@ -155,7 +167,24 @@
 			selectedSignificance
 		});
 	}
+
+	function handleKeyup() {
+		isMetaPressed = false;
+	}
+
+	/**
+	 * @param {KeyboardEvent} evt
+	 */
+	function handleKeydown(evt) {
+		if (evt.metaKey || evt.altKey) {
+			isMetaPressed = true;
+		} else {
+			isMetaPressed = false;
+		}
+	}
 </script>
+
+<svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
 
 <div class="flex justify-center my-8">
 	<Switch
