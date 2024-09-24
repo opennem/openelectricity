@@ -49,6 +49,8 @@ export default function () {
 	/** @type {import('svelte/store').Writable<{ label: string, value: string }[]>} */
 	const nameOptions = writable([]);
 
+	/** @type {import('svelte/store').Writable<number[] | undefined>} */
+	const xDomain = writable();
 	/** @type {import('svelte/store').Writable<number[]>} */
 	const yDomain = writable([]);
 
@@ -181,6 +183,7 @@ export default function () {
 		seriesColours,
 		seriesLabels,
 		nameOptions,
+		xDomain,
 		yDomain,
 		xTicks,
 		yTicks,

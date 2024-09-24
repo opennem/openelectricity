@@ -28,6 +28,7 @@
 		focusData,
 		chartHeightClasses,
 		curveType,
+		xDomain,
 		yDomain,
 		strokeWidth,
 		showLineArea: showArea
@@ -71,6 +72,7 @@
 		x={xKey}
 		y={yKey}
 		yDomain={$yDomain}
+		xDomain={$xDomain}
 		data={$dataset}
 	>
 		<Svg>
@@ -124,14 +126,16 @@
 		</Svg>
 
 		<Svg pointerEvents={false}>
-			{#if $hoverData}
-				<LineX xValue={$hoverData} strokeArray="none" />
-				<Dot value={$hoverData} r={4} />
-			{/if}
-			{#if $focusData}
-				<LineX xValue={$focusData} strokeArray="none" strokeColour="#C74523" />
-				<Dot value={$focusData} r={4} fill="#C74523" />
-			{/if}
+			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+				{#if $hoverData}
+					<LineX xValue={$hoverData} strokeArray="none" />
+					<Dot value={$hoverData} r={4} />
+				{/if}
+				{#if $focusData}
+					<LineX xValue={$focusData} strokeArray="none" strokeColour="#C74523" />
+					<Dot value={$focusData} r={4} fill="#C74523" />
+				{/if}
+			</g>
 		</Svg>
 	</LayerCake>
 

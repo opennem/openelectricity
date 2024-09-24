@@ -7,13 +7,19 @@
 	import clamp from '$lib/utils/clamp';
 	const { xGet, x, xScale, xDomain } = getContext('LayerCake');
 
-	/** @type {Number} min - The brush's min value. Useful to bind to. */
-	export let min;
+	/** @type {number | null} min - The brush's min value. Useful to bind to. */
+	let min;
 
-	/** @type {Number} max - The brush's max value. Useful to bind to. */
-	export let max;
+	/** @type {number | null} max - The brush's max value. Useful to bind to. */
+	let max;
 
+	/** @type {*} */
 	let brush;
+
+	export function clear() {
+		min = null;
+		max = null;
+	}
 
 	const dispatch = createEventDispatcher();
 
@@ -65,11 +71,6 @@
 		};
 	};
 
-	const clear = () => {
-		min = null;
-		max = null;
-	};
-
 	const reset = handler((start, p) => {
 		min = clamp(Math.min(start.p, p), 0, 1);
 		max = clamp(Math.max(start.p, p), 0, 1);
@@ -91,17 +92,18 @@
 		max = p < start.min ? start.min : p;
 	});
 
-	$: left = 100 * min;
-	$: right = 100 * (1 - max);
-	$: if (min !== null) {
-		// console.log('left/right', left, right);
-		console.log('invert', $xScale.invert(min), $xScale.invert(max));
-		// console.log('xScaleDomain', $xScale.domain());
-		// console.log('xScaleRange', $xScale.range());
+	$: left = min ? 100 * min : 0;
+	$: right = max ? 100 * (1 - max) : 1;
+	$: if (min !== null && max !== null) {
+		const range = $xScale.range();
+		const start = min * range[1];
+		const end = max * range[1];
+		const invertStart = $xScale.invert(start);
+		const invertEnd = $xScale.invert(end);
 
 		dispatch('brushed', {
-			start: $xScale.invert(min),
-			end: $xScale.invert(max)
+			start: invertStart,
+			end: invertEnd
 		});
 	}
 </script>
@@ -112,6 +114,7 @@
 	on:mousedown|stopPropagation={reset}
 	on:touchstart|stopPropagation={reset}
 	role="slider"
+	aria-valuenow={min}
 	aria-valuemin={min}
 	aria-valuemax={max}
 	aria-valuetext="{min} to {max}"
@@ -124,6 +127,7 @@
 			on:touchstart|stopPropagation={move}
 			style="left: {left}%; right: {right}%"
 			role="slider"
+			aria-valuenow={min}
 			aria-valuemin={min}
 			aria-valuemax={max}
 			aria-valuetext="{min} to {max}"
@@ -135,8 +139,7 @@
 			on:touchstart|stopPropagation={adjust_min}
 			style="left: {left}%"
 			role="slider"
-			aria-valuemin={min}
-			aria-valuemax={max}
+			aria-valuenow={min}
 			aria-valuetext="{min} to {max}"
 			tabindex="0"
 		/>
@@ -146,8 +149,7 @@
 			on:touchstart|stopPropagation={adjust_max}
 			style="right: {right}%"
 			role="slider"
-			aria-valuemin={min}
-			aria-valuemax={max}
+			aria-valuenow={max}
 			aria-valuetext="{min} to {max}"
 			tabindex="0"
 		/>

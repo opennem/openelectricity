@@ -13,6 +13,7 @@
 		xTicks,
 		yTicks,
 		formatTickX,
+		xDomain,
 		yDomain,
 		convertAndFormatValue,
 		hoverData,
@@ -22,11 +23,13 @@
 		showLineArea
 	} = getContext('record-history-data-viz');
 	const historyStore = getContext('record-history-data-viz');
+
 	const {
 		curveType: brushCurveType,
 		xTicks: brushXTicks,
 		yTicks: brushYTicks,
 		strokeWidth: brushStrokeWidth,
+		xDomain: brushXDomain,
 		yDomain: brushYDomain
 	} = getContext('date-brush-data-viz');
 	const dateBrushStore = getContext('date-brush-data-viz');
@@ -61,14 +64,30 @@
 	 * @param {CustomEvent} evt
 	 */
 	function handleBrushed(evt) {
-		console.log('evt', evt.detail);
-		const brushedDates = [new Date(evt.detail.start), new Date(evt.detail.end)];
-		const brushedTimes = [evt.detail.start, evt.detail.end];
-		console.log('brushedDates', brushedDates);
+		$xDomain = [evt.detail.start, evt.detail.end];
+	}
+
+	function handleReset() {
+		$xDomain = undefined;
+		$brushXDomain = undefined;
 	}
 </script>
 
 <Tooltip {xValue} {yValue} />
 
 <LineChartWithContext store={historyStore} on:mousemove on:mouseout on:pointerup />
-<DateBrush store={dateBrushStore} on:brushed={handleBrushed} />
+
+<div class="pt-4">
+	<DateBrush store={dateBrushStore} dataXDomain={$xDomain} on:brushed={handleBrushed} />
+</div>
+
+<div class="h-4 grid grid-cols-7">
+	{#if $xDomain}
+		<button
+			on:click={handleReset}
+			class="col-start-4 text-sm flex items-center gap-3 justify-center px-4 py-2 border rounded-xl whitespace-nowrap bg-white text-dark-grey hover:text-white hover:bg-dark-grey"
+		>
+			reset
+		</button>
+	{/if}
+</div>

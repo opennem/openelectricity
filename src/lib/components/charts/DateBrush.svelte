@@ -1,5 +1,4 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import { LayerCake, Svg, Html } from 'layercake';
 	import getSeqId from '$lib/utils/html-id-gen';
 	import Line from './elements/Line.svelte';
@@ -8,39 +7,25 @@
 
 	export let store;
 
-	const dispatch = createEventDispatcher();
+	const { seriesNames: yKeys, seriesData: dataset, curveType, yDomain, strokeWidth } = store;
 
-	const {
-		seriesNames: yKeys,
-		seriesData: dataset,
-		xTicks,
-		yTicks,
-		snapXTicks,
-		formatTickX,
-		hoverData,
-		focusData,
-		curveType,
-		yDomain,
-		strokeWidth
-	} = store;
-
+	export let dataXDomain;
 	export let xKey = 'date';
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[100px]';
 	const clipPathId = `${id}-clip-path`;
 
-	let brushExtents = [null, null];
-	let xStart = 0;
-
-	$: xStart = brushExtents[0] || 0;
+	/** @type {*} */
+	let brushComponent;
 
 	$: yKey = $yKeys[0] || '';
+	$: if (!dataXDomain) {
+		brushComponent?.clear();
+	}
 </script>
 
 <div class="w-full {defaultChartHeightClasses}">
-	<!-- xDomain={[new Date('2000-01-01').getTime(), new Date('2025-01-01').getTime()]} -->
-
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
 		x={xKey}
@@ -59,7 +44,7 @@
 		</Svg>
 
 		<Html>
-			<Brush bind:min={brushExtents[0]} bind:max={brushExtents[1]} on:brushed />
+			<Brush bind:this={brushComponent} on:brushed />
 		</Html>
 	</LayerCake>
 </div>
