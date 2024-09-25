@@ -2,7 +2,6 @@ import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
 
 export async function GET({ url, fetch, setHeaders }) {
 	setHeaders({
-		'cache-control': 'max-age=0',
 		Authorization: `Bearer ${PUBLIC_API_KEY}`
 	});
 

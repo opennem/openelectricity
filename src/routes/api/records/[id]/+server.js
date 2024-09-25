@@ -9,10 +9,15 @@ export async function GET({ params, url, fetch, setHeaders }) {
 	const { searchParams } = url;
 	const recordId = params.id;
 	const page = searchParams.get('page');
+	const pageSize = searchParams.get('pageSize');
 	let pageParams = '';
 
 	if (page) {
 		pageParams = `&page=${page}`;
+	}
+
+	if (pageSize) {
+		pageParams = `${pageParams}&limit=${pageSize}`;
 	}
 
 	const path = `${PUBLIC_RECORDS_API}/history/${recordId}?${pageParams}`;

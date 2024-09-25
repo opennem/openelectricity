@@ -3,9 +3,9 @@
 
 	import { parseISO, format } from 'date-fns';
 	import { browser } from '$app/environment';
-	import { formatValue } from '$lib/utils/formatters.js';
 	import dataVizStore from '$lib/components/charts/stores/data-viz';
 	import HistoryChart from '../components/HistoryChart.svelte';
+	import formatStrings from '../page-data-options/formatters';
 
 	export let data;
 
@@ -48,21 +48,6 @@
 		$brushSeriesNames = ['value'];
 		$brushSeriesData = [...sortedHistoryData].reverse();
 		$brushChartType = 'line';
-
-		// TODO: move this somewhere else to be reused
-		/**
-		 * @type {Object<string, string>}
-		 */
-		const formatStrings = {
-			interval: 'd MMM yyyy, h:mma',
-			day: 'd MMM yyyy',
-			'7d': 'd MMM yyyy',
-			month: 'MMM yyyy',
-			quarter: 'MMM yyyy',
-			season: 'MMM yyyy',
-			year: 'yyyy',
-			financial_year: 'yyyy'
-		};
 
 		$formatTickX = (/** @type {Date} */ date) =>
 			format(date, formatStrings[period] || 'd MMM yyyy, h:mma');
