@@ -6,6 +6,7 @@
 
 	/** @type {string} shape's fill colour */
 	export let stroke = '#ababab';
+	export let strokeArray = 'none';
 
 	export let strokeWidth = '2px';
 
@@ -36,7 +37,13 @@
 </script>
 
 <g class="line-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-	<path class="path-line" d={lineGen($data)} {stroke} stroke-width={strokeWidth} />
+	<path
+		class="path-line"
+		d={lineGen($data)}
+		{stroke}
+		stroke-width={strokeWidth}
+		stroke-dasharray={strokeArray}
+	/>
 
 	{#if showCircle && hoverData}
 		<circle {cx} {cy} r="10" fill={stroke} />

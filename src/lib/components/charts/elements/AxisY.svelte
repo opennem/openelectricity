@@ -70,14 +70,14 @@
 			{#if gridlines !== false}
 				<line
 					class="gridline"
-					{stroke}
-					stroke-dasharray={tick === 0 ? '5' : '3'}
+					stroke={tick === 0 ? '#353535' : stroke}
+					stroke-dasharray={tick === 0 ? 'none' : '3'}
 					x2="100%"
 					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
 					y2={isBandwidth ? $yScale.bandwidth() / 2 : 0}
 				/>
 			{/if}
-			{#if tick === 0 && gridlines == false}
+			{#if tick === 0 && gridlines === false}
 				<line
 					{stroke}
 					stroke-dasharray="5"

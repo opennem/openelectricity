@@ -81,7 +81,7 @@
 	<DateBrush store={dateBrushStore} dataXDomain={$xDomain} on:brushed={handleBrushed} />
 </div>
 
-<div class="h-4 grid grid-cols-7">
+<div class="h-4 grid grid-cols-7 mt-6">
 	{#if $xDomain}
 		<button
 			on:click={handleReset}

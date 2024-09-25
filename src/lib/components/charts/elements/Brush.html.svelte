@@ -5,7 +5,7 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
 	import clamp from '$lib/utils/clamp';
-	const { xGet, x, xScale, xDomain } = getContext('LayerCake');
+	const { xScale } = getContext('LayerCake');
 
 	/** @type {number | null} min - The brush's min value. Useful to bind to. */
 	let min;
@@ -160,8 +160,7 @@
 	.brush-outer {
 		position: relative;
 		width: 100%;
-		height: calc(100% + 5px);
-		top: -5px;
+		height: 100%;
 	}
 
 	.brush-inner {
@@ -169,8 +168,10 @@
 		height: 100%;
 		cursor: move;
 		/* mix-blend-mode: difference; */
-		background-color: #cccccc90;
-		/* border: 1px solid #000; */
+		background: #f1f0ed;
+
+		border-left: 1px solid #c6c6c6;
+		border-right: 1px solid #c6c6c6;
 	}
 
 	.brush-handle {

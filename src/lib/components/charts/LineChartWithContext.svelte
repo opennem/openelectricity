@@ -93,7 +93,9 @@
 			/>
 			<AxisX
 				ticks={$xTicks}
-				gridlines={false}
+				gridlines={true}
+				strokeArray="3"
+				stroke="#33333344"
 				formatTick={$formatTickX}
 				tickMarks={true}
 				snapTicks={$snapXTicks}
