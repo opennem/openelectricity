@@ -28,7 +28,7 @@
 		{
 			fuelTech: 'renewables',
 			label: 'Renewables',
-			ids: ['power.interval.high', 'energy.day.high']
+			ids: ['proportion.interval.high', 'proportion.day.high']
 		},
 		{
 			fuelTech: 'coal',
