@@ -94,7 +94,7 @@
 
 	$: left = min ? 100 * min : 0;
 	$: right = max ? 100 * (1 - max) : 1;
-	$: if (min !== null && max !== null) {
+	$: if (min && max) {
 		const range = $xScale.range();
 		const start = min * range[1];
 		const end = max * range[1];
