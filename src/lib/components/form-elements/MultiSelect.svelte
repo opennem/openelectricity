@@ -73,7 +73,7 @@
 		</ul>
 	{:else if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-96 overflow-y-scroll"
+			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[500px] overflow-y-scroll"
 			class:top-16={position === 'bottom'}
 			class:bottom-16={position === 'top'}
 			class:left-0={align === 'left'}
