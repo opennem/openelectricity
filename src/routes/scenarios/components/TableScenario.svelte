@@ -178,7 +178,7 @@
 				</td>
 
 				<td class="px-2 py-1">
-					<div class="flex flex-col items-end">
+					<div class="font-mono flex flex-col items-end">
 						{$energyHoverData
 							? $energyConvertAndFormatValue($energyHoverData['historical'])
 							: $energyFocusData
@@ -188,7 +188,7 @@
 				</td>
 
 				<td class="px-2 py-1">
-					<div class="flex flex-col items-end">
+					<div class="font-mono flex flex-col items-end">
 						{$capacityHoverData
 							? $capacityConvertAndFormatValue($capacityHoverData['historical'])
 							: $capacityFocusData
@@ -198,7 +198,7 @@
 				</td>
 
 				<td class="px-2 py-1">
-					<div class="flex flex-col items-end">
+					<div class="font-mono flex flex-col items-end">
 						{$emissionsHoverData
 							? $emissionsConvertAndFormatValue($emissionsHoverData['historical'])
 							: $emissionsFocusData
@@ -207,7 +207,7 @@
 					</div>
 				</td>
 				<td class="px-2 py-1">
-					<div class="flex flex-col items-end mr-3">
+					<div class="font-mono flex flex-col items-end mr-3">
 						{$intensityHoverData
 							? $intensityConvertAndFormatvalue($intensityHoverData['historical'])
 							: $intensityFocusData
@@ -265,7 +265,7 @@
 							</td>
 
 							<td class="px-2 py-1">
-								<div class="flex flex-col items-end">
+								<div class="font-mono flex flex-col items-end">
 									{$energyHoverData
 										? $energyConvertAndFormatValue($energyHoverData[id])
 										: $energyFocusData
@@ -275,7 +275,7 @@
 							</td>
 
 							<td class="px-2 py-1">
-								<div class="flex flex-col items-end">
+								<div class="font-mono flex flex-col items-end">
 									{$capacityHoverData
 										? $capacityConvertAndFormatValue($capacityHoverData[id])
 										: $capacityFocusData
@@ -285,7 +285,7 @@
 							</td>
 
 							<td class="px-2 py-1">
-								<div class="flex flex-col items-end">
+								<div class="font-mono flex flex-col items-end">
 									{$emissionsHoverData
 										? $emissionsConvertAndFormatValue($emissionsHoverData[id])
 										: $emissionsFocusData
@@ -294,7 +294,7 @@
 								</div>
 							</td>
 							<td class="px-2 py-1">
-								<div class="flex flex-col items-end mr-3">
+								<div class="font-mono flex flex-col items-end mr-3">
 									{$intensityHoverData
 										? $intensityConvertAndFormatvalue($intensityHoverData[id])
 										: $intensityFocusData

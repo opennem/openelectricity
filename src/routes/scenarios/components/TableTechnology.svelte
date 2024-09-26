@@ -231,12 +231,12 @@
 					<span class="ml-3"> Sources </span>
 				</th>
 				<th class="border-b border-warm-grey">
-					<div class="flex flex-col items-end">
+					<div class="font-mono flex flex-col items-end">
 						{$energyConvertAndFormatValue(energySourcesTotal)}
 					</div>
 				</th>
 				<th class="border-b border-warm-grey">
-					<div class="flex flex-col items-end mr-3">
+					<div class="font-mono flex flex-col items-end mr-3">
 						{$capacityConvertAndFormatValue(capacitySourcesTotal)}
 					</div>
 				</th>
@@ -271,7 +271,7 @@
 						</div>
 					</td>
 					<td class="px-2 py-1">
-						<div class="flex flex-col items-end">
+						<div class="font-mono flex flex-col items-end">
 							{$energyHoverData
 								? $energyConvertAndFormatValue($energyHoverData[name])
 								: $energyFocusData
@@ -280,7 +280,7 @@
 						</div>
 					</td>
 					<td class="px-2 py-1">
-						<div class="flex flex-col items-end mr-3">
+						<div class="font-mono flex flex-col items-end mr-3">
 							{$capacityHoverData
 								? $capacityConvertAndFormatValue($capacityHoverData[name])
 								: $capacityFocusData
@@ -299,7 +299,7 @@
 						<span class="ml-3"> Loads </span>
 					</th>
 					<th class="border-b border-warm-grey">
-						<div class="flex flex-col items-end">
+						<div class="font-mono flex flex-col items-end">
 							{$energyConvertAndFormatValue(energyLoadsTotal)}
 						</div>
 					</th>
@@ -335,7 +335,7 @@
 							</div>
 						</td>
 						<td class="px-2 py-1">
-							<div class="flex flex-col items-end">
+							<div class="font-mono flex flex-col items-end">
 								{$energyHoverData
 									? $energyConvertAndFormatValue($energyHoverData[name])
 									: $energyFocusData
@@ -344,7 +344,7 @@
 							</div>
 						</td>
 						<td class="px-2 py-1">
-							<div class="flex flex-col items-end mr-3">
+							<div class="font-mono flex flex-col items-end mr-3">
 								{$capacityHoverData
 									? $capacityConvertAndFormatValue($capacityHoverData[name])
 									: $capacityFocusData
@@ -402,7 +402,7 @@
 				</th>
 
 				<th class="px-2 !py-6">
-					<div class="flex flex-col items-end">
+					<div class="font-mono flex flex-col items-end">
 						{$emissionsHoverData
 							? $emissionsConvertAndFormatValue($emissionsHoverData['au.emissions.total'])
 							: $emissionsFocusData
@@ -411,7 +411,7 @@
 					</div>
 				</th>
 				<th class="px-2 !py-6">
-					<div class="flex flex-col items-end mr-3">
+					<div class="font-mono flex flex-col items-end mr-3">
 						{$intensityHoverData
 							? $intensityConvertAndFormatvalue($intensityHoverData['au.emission_intensity'])
 							: $intensityFocusData
