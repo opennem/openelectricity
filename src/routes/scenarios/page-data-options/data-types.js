@@ -1,3 +1,5 @@
+import optionsReducer from '$lib/utils/options-reducer';
+
 export const dataTypeOptions = [
 	{
 		value: 'energy',
@@ -34,23 +36,8 @@ export const dataTypeDisplayOptions = [
 	{ value: 'capacity', label: 'Capacity' }
 ];
 
-export const dataTypeDescription = dataTypeOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.description), acc),
-	{}
-);
-export const dataTypelabel = dataTypeOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.label), acc),
-	{}
-);
-export const dataTypeUnits = dataTypeOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.units), acc),
-	{}
-);
-export const dataTypeLongLabel = dataTypeOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.longLabel), acc),
-	{}
-);
-export const dataTypeIntervalLabel = dataTypeOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.intervalLabel), acc),
-	{}
-);
+export const dataTypeDescription = optionsReducer(dataTypeOptions, 'value', 'description');
+export const dataTypelabel = optionsReducer(dataTypeOptions);
+export const dataTypeUnits = optionsReducer(dataTypeOptions, 'value', 'units');
+export const dataTypeLongLabel = optionsReducer(dataTypeOptions, 'value', 'longLabel');
+export const dataTypeIntervalLabel = optionsReducer(dataTypeOptions, 'value', 'intervalLabel');

@@ -4,7 +4,7 @@
 	import { browser } from '$app/environment';
 	import { getNumberFormat } from '$lib/utils/formatters';
 
-	import formatStrings from '../page-data-options/formatters';
+	import { formatStrings } from '../page-data-options/formatters';
 	import getRelativeTime from '../page-data-options/relative-time';
 
 	export let region;

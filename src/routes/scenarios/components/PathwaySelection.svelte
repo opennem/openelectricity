@@ -30,11 +30,17 @@
 
 	/** @param {*} event */
 	function handlePathwaysChange(event) {
+		const value = event.detail.value;
+		const isMetaPressed = event.detail.isMetaPressed;
 		let updated = [];
-		if (selectedPathways.includes(event.detail.value)) {
-			updated = selectedPathways.filter((pathway) => pathway !== event.detail.value);
+
+		if (isMetaPressed) {
+			updated = [value];
+		} else if (selectedPathways.includes(value)) {
+			const filtered = selectedPathways.filter((pathway) => pathway !== value);
+			updated = filtered.length === 0 ? [value] : filtered;
 		} else {
-			updated = [...selectedPathways, event.detail.value];
+			updated = [...selectedPathways, value];
 		}
 		dispatch('change-multiple', { value: updated });
 	}

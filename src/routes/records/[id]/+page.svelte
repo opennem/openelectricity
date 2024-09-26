@@ -3,9 +3,11 @@
 
 	import { parseISO, format } from 'date-fns';
 	import { browser } from '$app/environment';
+	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 	import dataVizStore from '$lib/components/charts/stores/data-viz';
+
 	import HistoryChart from '../components/HistoryChart.svelte';
-	import formatStrings from '../page-data-options/formatters';
+	import { formatStrings, formatStringsLong } from '../page-data-options/formatters';
 
 	export let data;
 
@@ -35,6 +37,7 @@
 	/** @type {MilestoneRecord[]} */
 	let historyData = [];
 	let totalHistory = 0;
+	let loading = false;
 
 	$: if (sortedHistoryData.length) {
 		const period = sortedHistoryData[0].period;
@@ -81,12 +84,14 @@
 	 */
 	async function fetchRecord(recordId, page = 1) {
 		if (browser) {
+			loading = true;
 			const id = encodeURIComponent(recordId);
 			const res = await fetch(`/api/records/${id}?page=${page}`);
 			const jsonData = await res.json();
 
 			historyData = jsonData.data;
 			totalHistory = jsonData.total_records;
+			loading = false;
 		}
 	}
 
@@ -117,83 +122,81 @@
 	}
 </script>
 
-<div class="container py-12">
-	<header class="grid grid-cols-10 gap-10 mb-10">
-		<div class="col-span-6 flex flex-col">
-			<span>{currentRecord?.fueltech_id}</span>
-			<span class="text-lg">{currentRecord?.description}</span>
-			<span>{currentRecord?.period}</span>
-		</div>
+{#if loading}
+	<div>Loading...</div>
+{:else}
+	<div class="container py-12">
+		<header class="grid grid-cols-10 gap-10 mb-10">
+			<div class="col-span-6 flex flex-col">
+				{#if currentRecord?.fueltech_id}
+					<span class="justify-self-start">
+						<FuelTechTag fueltech={currentRecord?.fueltech_id} />
+					</span>
+				{/if}
 
-		<div class="col-span-4 grid grid-cols-2 divide-x divide-light-warm-grey bg-white">
-			<div class="p-6">
-				<span>Previous Record</span>
-				<div>
-					<span class="text-2xl">{$convertAndFormatValue(previousRecord?.value)}</span>
-					<span>{previousRecord?.value_unit}</span>
-				</div>
+				<span class="text-lg">{currentRecord?.description}</span>
+				<span>{currentRecord?.period}</span>
+			</div>
 
-				<div>
-					<time datetime={previousRecord?.interval}>
-						<span class="text-dark-grey">
-							{previousRecord ? $formatTickX(previousRecord?.date, 'd MMM yyyy') : ''}
-						</span>
-					</time>
+			<div class="col-span-4 grid grid-cols-2 divide-x divide-light-warm-grey bg-white">
+				<div class="p-6">
+					<span>Current Record</span>
+
+					<div>
+						<span class="text-2xl">{$convertAndFormatValue(currentRecord?.value)}</span>
+						<span>{currentRecord?.value_unit}</span>
+					</div>
+
+					<div>
+						<time datetime={currentRecord?.interval}>
+							<span class="text-dark-grey">
+								{currentRecord
+									? format(currentRecord?.date, formatStringsLong[currentRecord.period])
+									: ''}
+							</span>
+						</time>
+					</div>
 				</div>
 			</div>
-			<div class="p-6">
-				<span>Current Record</span>
+		</header>
 
-				<div>
-					<span class="text-2xl">{$convertAndFormatValue(currentRecord?.value)}</span>
-					<span>{currentRecord?.value_unit}</span>
-				</div>
-
-				<div>
-					<time datetime={currentRecord?.interval}>
-						<span class="text-dark-grey">
-							{currentRecord ? $formatTickX(currentRecord?.date, 'd MMM yyyy') : ''}
-						</span>
-					</time>
-				</div>
+		<main class="grid grid-cols-10 gap-10">
+			<div class="col-span-6 bg-white p-16">
+				<HistoryChart
+					on:mousemove={handleMousemove}
+					on:mouseout={handleMouseout}
+					on:pointerup={handlePointerup}
+				/>
 			</div>
-		</div>
-	</header>
-
-	<main class="grid grid-cols-10 gap-10">
-		<div class="col-span-6 bg-white p-16">
-			<HistoryChart
-				on:mousemove={handleMousemove}
-				on:mouseout={handleMouseout}
-				on:pointerup={handlePointerup}
-			/>
-		</div>
-		<div class="col-span-4">
-			<table class="bg-white text-sm w-full">
-				<thead>
-					<tr>
-						<th class="px-4 py-2 text-left">Date</th>
-						<th class="px-4 py-2 text-right">{currentRecord?.value_unit}</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each sortedHistoryData as record}
-						<tr
-							class="border-b border-light-warm-grey pointer hover:bg-warm-grey"
-							class:font-semibold={record.time === $focusTime}
-							class:text-red={record.time === $focusTime}
-							class:bg-warm-grey={record.time === $hoverTime}
-							on:mousemove={() => handleMousemove({ detail: { time: record.time } })}
-							on:mouseout={handleMouseout}
-							on:blur={handleMouseout}
-							on:pointerup={() => handlePointerup({ detail: { time: record.time } })}
-						>
-							<td class="px-4 py-2">{$formatTickX(record.date)}</td>
-							<td class="px-4 py-2 text-right">{$convertAndFormatValue(record.value)}</td>
+			<div class="col-span-4">
+				<table class="bg-white text-sm w-full">
+					<thead>
+						<tr>
+							<th class="px-4 py-2 text-left">Date</th>
+							<th class="px-4 py-2 text-right">{currentRecord?.value_unit}</th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</div>
-	</main>
-</div>
+					</thead>
+					<tbody>
+						{#each sortedHistoryData as record}
+							<tr
+								class="border-b border-light-warm-grey pointer hover:bg-warm-grey"
+								class:font-semibold={record.time === $focusTime}
+								class:text-red={record.time === $focusTime}
+								class:bg-warm-grey={record.time === $hoverTime}
+								on:mousemove={() => handleMousemove({ detail: { time: record.time } })}
+								on:mouseout={handleMouseout}
+								on:blur={handleMouseout}
+								on:pointerup={() => handlePointerup({ detail: { time: record.time } })}
+							>
+								<td class="px-4 py-2 font-mono text-dark-grey">{$formatTickX(record.date)}</td>
+								<td class="px-4 py-2 text-right font-mono text-dark-grey"
+									>{$convertAndFormatValue(record.value)}</td
+								>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+		</main>
+	</div>
+{/if}

@@ -1,4 +1,6 @@
-const regionOptions = [
+import optionsReducer from '$lib/utils/options-reducer';
+
+export const regionOptions = [
 	{
 		value: '_all',
 		label: 'All Regions',
@@ -43,7 +45,7 @@ const regionOptions = [
 	}
 ];
 
-const aggregateOptions = [
+export const aggregateOptions = [
 	{
 		value: 'low',
 		label: 'Low'
@@ -54,7 +56,7 @@ const aggregateOptions = [
 	}
 ];
 
-const periodOptions = [
+export const periodOptions = [
 	{
 		value: 'interval',
 		label: 'Interval'
@@ -88,8 +90,9 @@ const periodOptions = [
 		label: 'Financial Year'
 	}
 ];
+export const periodLabel = optionsReducer(periodOptions);
 
-const fuelTechOptions = [
+export const fuelTechOptions = [
 	{
 		value: 'solar',
 		label: 'Solar'
@@ -143,8 +146,9 @@ const fuelTechOptions = [
 		label: 'Fossils'
 	}
 ];
+export const fuelTechLabel = optionsReducer(fuelTechOptions);
 
-const milestoneTypeOptions = [
+export const milestoneTypeOptions = [
 	{
 		value: 'power',
 		label: 'Power'
@@ -152,10 +156,6 @@ const milestoneTypeOptions = [
 	{
 		value: 'energy',
 		label: 'Energy'
-	},
-	{
-		value: 'demand',
-		label: 'Demand'
 	},
 	{
 		value: 'price',
@@ -174,5 +174,4 @@ const milestoneTypeOptions = [
 		label: 'Proportion'
 	}
 ];
-
-export { regionOptions, aggregateOptions, periodOptions, fuelTechOptions, milestoneTypeOptions };
+export const milestoneTypeLabel = optionsReducer(milestoneTypeOptions);

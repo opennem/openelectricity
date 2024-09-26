@@ -1,4 +1,5 @@
 <script>
+	import { setContext, getContext } from 'svelte';
 	import { group, rollup } from 'd3-array';
 	import { timeDay, timeMonth } from 'd3-time';
 
@@ -6,18 +7,28 @@
 
 	import Meta from '$lib/components/Meta.svelte';
 	import Switch from '$lib/components/Switch.svelte';
+	import IconXMark from '$lib/icons/XMark.svelte';
 
 	import PinnedRecords from './components/PinnedRecords.svelte';
 	import List from './components/List.svelte';
+	import Filters from './components/Filters.svelte';
 	import fetchRecords from './page-data-options/fetch';
 	import {
 		aggregateOptions,
 		periodOptions,
 		fuelTechOptions,
-		milestoneTypeOptions
-	} from './page-data-options/filters.js';
+		milestoneTypeOptions,
+		fuelTechLabel,
+		milestoneTypeLabel,
+		periodLabel
+	} from './page-data-options/filters';
+	import filtersStore from './stores/filters';
 
 	export let data;
+
+	setContext('records-filters', filtersStore());
+
+	const { selectedFuelTechs, selectedMetrics, selectedPeriods } = getContext('records-filters');
 
 	const regions = [
 		{ value: 'au.nem', shortValue: '', label: 'NEM' },
@@ -68,10 +79,10 @@
 		fetchRecords(
 			currentPage,
 			checkedRegions,
-			checkedPeriods,
-			checkedFuelTechs,
+			$selectedPeriods,
+			$selectedFuelTechs,
 			checkedAggregates,
-			checkedMilestoneTypes,
+			$selectedMetrics,
 			selectedSignificance,
 			recordIdSearch,
 			pageSize
@@ -125,8 +136,8 @@
 		</section>
 	</div> -->
 
-<div>
-	<section class="container my-12">
+<div class="bg-light-warm-grey">
+	<section class="container py-12">
 		<h2 class="text-center">Records</h2>
 
 		<div class="flex justify-center mb-12">
@@ -140,14 +151,80 @@
 
 		<PinnedRecords region={selectedRegion} />
 	</section>
+</div>
 
-	<div class="h-[50px] bg-warm-grey py-6">
-		<div class="container">
-			<h6>Filters</h6>
+<div class="border-y border-warm-grey py-6">
+	<Filters />
+</div>
+
+<div class="container grid grid-cols-6 divide-x divide-warm-grey py-12">
+	<div class="col-span-2 pl-7 pr-12">
+		<div class="sticky top-10">
+			{#if $selectedFuelTechs.length || $selectedMetrics.length || $selectedPeriods.length}
+				<h4>Filters</h4>
+			{/if}
+
+			{#if $selectedFuelTechs.length}
+				<h6 class="mt-10">Technology</h6>
+			{/if}
+			<div class="flex gap-2 flex-wrap">
+				{#each $selectedFuelTechs as fuelTech}
+					<div
+						class="bg-light-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
+					>
+						<span>{fuelTechLabel[fuelTech]}</span>
+						<button
+							class="bg-warm-grey hover:bg-mid-warm-grey rounded-full p-2 text-mid-grey"
+							on:click={() =>
+								($selectedFuelTechs = $selectedFuelTechs.filter((d) => d !== fuelTech))}
+						>
+							<IconXMark class="size-6" />
+						</button>
+					</div>
+				{/each}
+			</div>
+
+			{#if $selectedMetrics.length}
+				<h6 class="mt-10">Metric</h6>
+			{/if}
+			<div class="flex gap-2 flex-wrap">
+				{#each $selectedMetrics as metric}
+					<div
+						class="bg-light-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
+					>
+						<span>{milestoneTypeLabel[metric]}</span>
+						<button
+							class="bg-warm-grey hover:bg-mid-warm-grey rounded-full p-2 text-mid-grey"
+							on:click={() => ($selectedMetrics = $selectedMetrics.filter((d) => d !== metric))}
+						>
+							<IconXMark class="size-6" />
+						</button>
+					</div>
+				{/each}
+			</div>
+
+			{#if $selectedPeriods.length}
+				<h6 class="mt-10">Period</h6>
+			{/if}
+			<div class="flex gap-2 flex-wrap">
+				{#each $selectedPeriods as period}
+					<div
+						class="bg-light-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
+					>
+						<span>{periodLabel[period]}</span>
+						<button
+							class="bg-warm-grey hover:bg-mid-warm-grey rounded-full p-2 text-mid-grey"
+							on:click={() => ($selectedPeriods = $selectedPeriods.filter((d) => d !== period))}
+						>
+							<IconXMark class="size-6" />
+						</button>
+					</div>
+				{/each}
+			</div>
 		</div>
 	</div>
 
-	<main class="bg-light-warm-grey min-h-[600px] py-12">
+	<main class="min-h-[600px] col-span-4 pl-12">
 		<List {rolledUpRecords} />
 	</main>
 </div>

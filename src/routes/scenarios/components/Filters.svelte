@@ -173,9 +173,12 @@
 
 	/**
 	 * @param {string} dataType
+	 * @param {boolean} isMetaPressed
 	 */
-	function handleDataTypeChange(dataType) {
-		if ($selectedCharts.includes(dataType)) {
+	function handleDataTypeChange(dataType, isMetaPressed) {
+		if (isMetaPressed) {
+			$selectedCharts = [dataType];
+		} else if ($selectedCharts.includes(dataType)) {
 			$selectedCharts = $selectedCharts.filter((d) => d !== dataType);
 		} else {
 			$selectedCharts = [...$selectedCharts, dataType];
@@ -215,7 +218,7 @@
 				paddingX=""
 				staticDisplay={true}
 				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-				on:change={(evt) => handleDataTypeChange(evt.detail.value)}
+				on:change={(evt) => handleDataTypeChange(evt.detail.value, evt.detail.isMetaPressed)}
 			/>
 
 			{#if $isTechnologyViewSection || $isScenarioViewSection}
@@ -285,7 +288,7 @@
 					label="Charts"
 					paddingX="px-7"
 					paddingY="py-3"
-					on:change={(evt) => handleDataTypeChange(evt.detail.value)}
+					on:change={(evt) => handleDataTypeChange(evt.detail.value, evt.detail.isMetaPressed)}
 				/>
 
 				{#if $isTechnologyViewSection || $isScenarioViewSection}

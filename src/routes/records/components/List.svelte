@@ -7,10 +7,10 @@
 
 <div class="w-[600px] mx-auto">
 	{#each [...rolledUpRecords] as [month, days]}
-		<p class="sticky top-0 bg-light-warm-grey py-4 mt-4">{format(month, 'MMMM yyyy')}</p>
+		<p class="sticky top-0 bg-white py-4 mt-4">{format(month, 'MMMM yyyy')}</p>
 
 		{#each [...days] as [day, { date, records, time }]}
-			<p class="sticky top-14 bg-light-warm-grey py-2 text-xs">
+			<p class="sticky top-14 bg-white py-2 text-xs border-b border-warm-grey">
 				{format(day, 'EEE, dd MMM')}
 			</p>
 

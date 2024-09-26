@@ -148,10 +148,6 @@ const metricOptions = [
 		label: 'Energy'
 	},
 	{
-		value: 'demand',
-		label: 'Demand'
-	},
-	{
 		value: 'price',
 		label: 'Price'
 	},
