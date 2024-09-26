@@ -5,14 +5,16 @@
 	/** @type {FuelTechCode} */
 	export let fueltech;
 
-	$: highlightTextColor = fueltech === 'gas' || fueltech === 'solar' ? 'text-black' : 'text-white';
+	$: highlightTextColor = fueltech === 'solar' ? 'text-black' : 'text-white';
 </script>
 
 <span
-	class={`inline-flex gap-2 flex-shrink-0 justify-center items-center h-12 px-4 bg-${fueltech} rounded-full text-xs ${highlightTextColor}`}
+	class={`inline-flex gap-2 flex-shrink-0 justify-center items-center py-2 px-5 bg-${fueltech} rounded-full text-[13px] ${highlightTextColor}`}
 >
-	<Icon icon={fueltech} size={16} />
-	<slot>
-		{fuelTechName(fueltech)}
-	</slot>
+	<Icon icon={fueltech} size={18} />
+	<span class="relative top-[1px]">
+		<slot>
+			{fuelTechName(fueltech)}
+		</slot>
+	</span>
 </span>
