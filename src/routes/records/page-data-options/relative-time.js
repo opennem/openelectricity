@@ -5,7 +5,7 @@ const unitsInSec = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinit
 const unitStrings = ['second', 'minute', 'hour', 'day', 'week', 'month', 'year'];
 
 // Initialize Intl.RelativeTimeFormat
-const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+const rtf = new Intl.RelativeTimeFormat('en-AU', { numeric: 'auto', style: 'short' });
 
 function getRelativeTime(date) {
 	// Calculate the difference in seconds between the given date and the current date

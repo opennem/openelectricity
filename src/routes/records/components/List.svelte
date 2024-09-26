@@ -35,6 +35,7 @@
 									<li class="text-sm text-mid-grey flex items-center justify-between">
 										<div>
 											<span
+												class="font-mono"
 												class:text-base={i === 0}
 												class:text-dark-grey={i === 0}
 												class:text-lg={significant}

@@ -109,6 +109,7 @@
 					const fuelTech = data[0].fueltech_id;
 					const recordId = data[0].record_id;
 					const aggregate = data[0].aggregate;
+					const description = data[0].description;
 
 					const date = parseISO(interval);
 
@@ -120,6 +121,7 @@
 							unit,
 							interval,
 							period,
+							description,
 							date,
 							time: date.getTime()
 						};
@@ -133,6 +135,7 @@
 								unit,
 								interval,
 								period,
+								description,
 								date,
 								time: date.getTime()
 							};
@@ -151,21 +154,27 @@
 		{#if recordData}
 			<a
 				href="/records/{recordData.recordId}"
-				class="text-black block border border-mid-warm-grey rounded-xl min-h-48 p-6"
+				class="text-black bg-white border border-mid-warm-grey rounded-xl min-h-48 p-6 flex flex-col justify-between"
 			>
-				<h6>{label}</h6>
-				<!-- {recordData.recordId} -->
-				<div class="text-sm">
-					<small>{recordData.period} / {recordData.aggregate}</small>
-					<div>
+				<div>
+					<h6>{label}</h6>
+					<!-- {recordData.recordId} -->
+					<div class="leading-base">
+						<!-- <small>{recordData.period} / {recordData.aggregate}</small> -->
+						{recordData.description}
+					</div>
+				</div>
+
+				<div class="border-t flex justify-between items-center">
+					<div class="text-sm">
 						{getNumberFormat().format(recordData.value)}
 						<small>{recordData.unit}</small>
 					</div>
-					<time>{formatDate(recordData.interval, recordData.period)}</time>
+					<time class="text-xxs">{formatDate(recordData.interval, recordData.period)}</time>
 				</div>
 			</a>
 		{:else}
-			<div class="text-black block border border-mid-warm-grey rounded-xl min-h-48 p-6">
+			<div class="text-black bg-white block border border-mid-warm-grey rounded-xl min-h-48 p-6">
 				<h6>{label}</h6>
 				<!-- <div>no record data</div> -->
 			</div>

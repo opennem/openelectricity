@@ -145,7 +145,7 @@
 				buttons={regions}
 				selected={selectedRegion}
 				on:change={(evt) => (selectedRegion = evt.detail.value)}
-				class="justify-center"
+				class="justify-center bg-white"
 			/>
 		</div>
 
