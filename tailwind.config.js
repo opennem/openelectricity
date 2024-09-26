@@ -10,7 +10,7 @@ export default {
 		fontFamily: {
 			sans: ['DM Sans', 'sans-serif'],
 			space: ['Space Grotesk', 'sans-serif'],
-			mono: ['monospace']
+			mono: ['Chivo Mono', 'monospace']
 		},
 		screens: {
 			sm: '640px',
