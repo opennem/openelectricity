@@ -2,6 +2,7 @@
 	import { getContext } from 'svelte';
 	import { startOfYear } from 'date-fns';
 
+	import { regionOptions } from '$lib/regions';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
@@ -20,7 +21,6 @@
 
 	import { viewSectionOptions } from '../page-data-options/view-sections';
 	import { dataTypeDisplayOptions } from '../page-data-options/data-types';
-	import { regionOptions } from '../page-data-options/regions';
 	import { scenarioLabels } from '../page-data-options/descriptions';
 	import { modelOptions, modelScenarioPathwayOptions } from '../page-data-options/models';
 	import { groupOptions as groupTechnologyOptions } from '../page-data-options/groups-technology';

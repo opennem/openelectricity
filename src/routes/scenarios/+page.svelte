@@ -2,6 +2,7 @@
 	import { setContext, getContext, onMount } from 'svelte';
 
 	import { colourReducer } from '$lib/stores/theme';
+	import { regionOptions } from '$lib/regions';
 
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -20,7 +21,6 @@
 
 	import filtersStore from './stores/filters';
 	import byScenarioStore from './stores/by-scenario';
-	import { regionOptions } from './page-data-options/regions';
 
 	import {
 		fetchTechnologyViewData,
