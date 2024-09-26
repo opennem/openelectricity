@@ -150,7 +150,7 @@
 
 		{#if recordData}
 			<a
-				href="/records-new/{recordData.recordId}"
+				href="/records/{recordData.recordId}"
 				class="text-black block border border-mid-warm-grey rounded-xl min-h-48 p-6"
 			>
 				<h6>{label}</h6>
@@ -181,7 +181,7 @@
 				{@const recordId = `${region}.${fuelTech}.${id}`}
 				{@const recordData = records.find((record) => record.id === recordId)}
 
-				<a href="/records-new/{recordId}" class="text-black block text-xxs">{recordId}</a>
+				<a href="/records/{recordId}" class="text-black block text-xxs">{recordId}</a>
 
 				{#if recordData}
 					{#await recordData.data}

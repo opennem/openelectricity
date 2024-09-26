@@ -1,4 +1,4 @@
-export async function load({ params, url }) {
+export async function load({ params, fetch, url }) {
 	const id = params.id;
 	const pageParam = url.searchParams.get('page');
 

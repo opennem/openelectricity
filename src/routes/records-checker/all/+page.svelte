@@ -178,7 +178,7 @@
 		});
 
 		goto(
-			`/records/all?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}${significanceParam}`,
+			`/records-checker/all?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}${significanceParam}`,
 			{
 				replaceState: true
 			}

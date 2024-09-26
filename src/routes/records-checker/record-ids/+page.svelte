@@ -176,7 +176,7 @@
 		});
 
 		goto(
-			`/records/record-ids?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}${significanceParam}`,
+			`/records-checker/record-ids?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${metricsParam}${significanceParam}`,
 			{
 				replaceState: true
 			}

@@ -1,29 +1,45 @@
 <script>
+	import { group, rollup } from 'd3-array';
+	import { timeDay, timeMonth } from 'd3-time';
+
 	import { browser } from '$app/environment';
-	import { goto } from '$app/navigation';
 
 	import Meta from '$lib/components/Meta.svelte';
-	import Filters from './components/Filters.svelte';
+	import Switch from '$lib/components/Switch.svelte';
+
+	import PinnedRecords from './components/PinnedRecords.svelte';
+	import List from './components/List.svelte';
+	import fetchRecords from './page-data-options/fetch';
 	import {
-		regionOptions,
 		aggregateOptions,
 		periodOptions,
-		fuelTechOptions
+		fuelTechOptions,
+		milestoneTypeOptions
 	} from './page-data-options/filters.js';
 
 	export let data;
-	let recordsData = [];
-	let totalRecords = 0;
-	let currentPage = data.page || 1;
-	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
+
+	const regions = [
+		{ value: 'au.nem', shortValue: '', label: 'NEM' },
+		{ value: 'au.nem.nsw1', shortValue: 'nsw1', label: 'NSW' },
+		{ value: 'au.nem.qld1', shortValue: 'qld1', label: 'QLD' },
+		{ value: 'au.nem.sa1', shortValue: 'sa1', label: 'SA' },
+		{ value: 'au.nem.tas1', shortValue: 'tas1', label: 'TAS' },
+		{ value: 'au.nem.vic1', shortValue: 'vic1', label: 'VIC' }
+	];
+	let selectedRegion = regions[0].value;
 
 	let errorMessage = '';
+	/** @type {MilestoneRecord[]} */
+	let recordsData = [];
+	let totalRecords = 0;
+	let pageSize = 500;
+	let currentPage = data.page || 1;
+	let currentStartRecordIndex = (currentPage - 1) * pageSize + 1;
 
+	//TODO: refactor to store
 	/** @type {string[]} */
-	let checkedRegions =
-		data.regions && data.regions.length
-			? data.regions
-			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+	let checkedRegions = data.regions && data.regions.length ? data.regions : ['nem'];
 
 	/** @type {string[]} */
 	let checkedFuelTechs =
@@ -33,128 +49,105 @@
 	let checkedPeriods =
 		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value);
 
+	/** @type {string[]} */
+	let checkedAggregates =
+		data.aggregates && data.aggregates.length
+			? data.aggregates
+			: aggregateOptions.map((i) => i.value);
+
+	let checkedMilestoneTypes =
+		data.milestoneTypes && data.milestoneTypes.length
+			? data.milestoneTypes
+			: milestoneTypeOptions.map((i) => i.value);
+
+	let selectedSignificance = data.significance || 0;
+
 	let recordIdSearch = data.stringFilter || '';
 
-	$: fetchRecords(currentPage, checkedRegions, checkedPeriods);
+	$: if (browser) {
+		fetchRecords(
+			currentPage,
+			checkedRegions,
+			checkedPeriods,
+			checkedFuelTechs,
+			checkedAggregates,
+			checkedMilestoneTypes,
+			selectedSignificance,
+			recordIdSearch,
+			pageSize
+		).then((res) => {
+			errorMessage = res.errorMessage;
+			recordsData = res.recordsData;
+			totalRecords = res.totalRecords;
+		});
+	}
+
+	$: {
+		let selectedRegionShortValue = regions.find((r) => r.value === selectedRegion)?.shortValue;
+		if (selectedRegionShortValue) {
+			checkedRegions = [selectedRegionShortValue];
+		}
+	}
+
 	$: totalPages = Math.ceil(totalRecords / 100);
 	$: currentLastRecordIndex = currentStartRecordIndex + 99;
 	$: lastRecordIndex =
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
-	function getFilterParams({ regions, periods, fuelTechs, stringFilter }) {
-		const validRegions = regions.filter((r) => r !== '_all');
-		const regionsParam =
-			regions.length === 0 || regions.length === 7 ? '' : '&regions=' + validRegions.join(',');
-		const periodsParam =
-			periods.length === periodOptions.length ? '' : '&periods=' + periods.join(',');
-
-		const fuelTechParams =
-			fuelTechs.length === fuelTechOptions.length ? '' : '&fuelTechs=' + fuelTechs.join(',');
-
-		const recordIdSearchParam = stringFilter
-			? `&recordIdFilter=${encodeURIComponent(stringFilter.trim())}`
-			: '';
-
-		return {
-			regionsParam,
-			periodsParam,
-			recordIdSearchParam,
-			fuelTechParams
-		};
-	}
-
-	async function fetchRecords(
-		page = 1,
-		regions = checkedRegions,
-		periods = checkedPeriods,
-		fuelTechs = checkedFuelTechs
-	) {
-		const { regionsParam, periodsParam, recordIdSearchParam, fuelTechParams } = getFilterParams({
-			regions,
-			periods,
-			stringFilter: recordIdSearch,
-			fuelTechs
-		});
-
-		if (browser) {
-			const res2 = await fetch('/api/record-ids?page=' + page);
-			const jsonData2 = await res2.json();
-
-			// const res = await fetch(
-			// 	`/api/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}`
-			// );
-			// const jsonData = await res.json();
-
-			// console.log('res2', jsonData2);
-
-			if (jsonData2.success) {
-				errorMessage = '';
-				recordsData = jsonData2.data;
-				totalRecords = jsonData2.data.length;
-			} else {
-				recordsData = [];
-				totalRecords = 0;
-				errorMessage = jsonData2.error;
-			}
-		}
-	}
-
-	/**
-	 * Update the current page
-	 * @param {number} page
-	 */
-	function updateCurrentPage(page) {
-		currentPage = page;
-		currentStartRecordIndex = (page - 1) * 100 + 1;
-
-		const { regionsParam, periodsParam, recordIdSearchParam, fuelTechParams } = getFilterParams({
-			regions: checkedRegions,
-			periods: checkedPeriods,
-			stringFilter: recordIdSearch,
-			fuelTechs: checkedFuelTechs
-		});
-
-		goto(
-			`/records?page=${page}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}`,
-			{
-				replaceState: true
-			}
-		);
-	}
-
-	/**
-	 * Handle filters apply
-	 * @param {{checkedRegions: string[], checkedPeriods: string[], checkedFuelTechs: string[], recordIdSearch: string}} detail
-	 */
-	function handleFiltersApply(detail) {
-		console.log('Regions', detail.checkedRegions);
-		checkedRegions = detail.checkedRegions;
-		checkedPeriods = detail.checkedPeriods;
-		recordIdSearch = detail.recordIdSearch;
-		checkedFuelTechs = detail.checkedFuelTechs;
-		updateCurrentPage(1);
-	}
+	$: rolledUpRecords = rollup(
+		recordsData,
+		(/** @type {MilestoneRecord[]} */ d) => {
+			const latestTime = d.map((d) => d.time).reduce((a, b) => Math.max(a, b), 0);
+			return {
+				time: latestTime,
+				date: new Date(latestTime),
+				records: group(d, (d) => d.record_id)
+			};
+		},
+		(/** @type {MilestoneRecord} */ d) => timeMonth(d.date),
+		(/** @type {MilestoneRecord} */ d) => timeDay(d.date)
+	);
+	// $: sortedRolledUpRecords = Array.from(rolledUpRecords.values()).sort((a, b) => b.time - a.time);
+	$: console.log('rolledUpRecords', rolledUpRecords);
+	// $: console.log('sortedRolledUpRecords', sortedRolledUpRecords);
 </script>
 
 <Meta title="Records" image="/img/preview.jpg" />
 
-<header class="my-24 flex flex-col w-1/2 mx-auto text-center gap-6">
-	<!-- <Filters
-		initCheckedRegions={checkedRegions}
-		initCheckedPeriods={checkedPeriods}
-		initRecordIdSearch={recordIdSearch}
-		initCheckedFuelTechs={checkedFuelTechs}
-		on:apply={(evt) => handleFiltersApply(evt.detail)}
-	/>
+<!-- <div class="grid grid-cols-6 divide-x">
+	<div class="col-span-2 flex justify-end">
+		<section class="w-[400px] bg-mid-grey">
+			<h2>Records</h2>
 
-	<hr class="my-10" /> -->
+			<div>
+				<h4>Filters</h4>
+			</div>
+		</section>
+	</div> -->
 
-	<img
-		src="https://upload.wikimedia.org/wikipedia/commons/1/19/Under_construction_graphic.gif"
-		alt="Under construction"
-		class="w-1/2 mx-auto"
-	/>
+<div>
+	<section class="container my-12">
+		<h2 class="text-center">Records</h2>
 
-	<a href="/records/all">All records</a>
-	<a href="/records/record-ids">Record IDs</a>
-</header>
+		<div class="flex justify-center mb-12">
+			<Switch
+				buttons={regions}
+				selected={selectedRegion}
+				on:change={(evt) => (selectedRegion = evt.detail.value)}
+				class="justify-center"
+			/>
+		</div>
+
+		<PinnedRecords region={selectedRegion} />
+	</section>
+
+	<div class="h-[50px] bg-warm-grey py-6">
+		<div class="container">
+			<h6>Filters</h6>
+		</div>
+	</div>
+
+	<main class="bg-light-warm-grey min-h-[600px] py-12">
+		<List {rolledUpRecords} />
+	</main>
+</div>

@@ -28,17 +28,11 @@ const regionOptions = [
 						label: 'Victoria'
 					}
 				]
+			},
+			{
+				value: 'wem',
+				label: 'Wholesale Electricity Market (WEM)'
 			}
-			// {
-			// 	value: 'WEMDE',
-			// 	label: 'WEM Dispatch Engine',
-			// 	children: [
-			// 		{
-			// 			value: 'WEM',
-			// 			label: 'Western Australia (SWIS)'
-			// 		}
-			// 	]
-			// }
 		]
 	}
 ];
@@ -144,7 +138,7 @@ const fuelTechOptions = [
 	}
 ];
 
-const milestoneTypeOptions = [
+const metricOptions = [
 	{
 		value: 'power',
 		label: 'Power'
@@ -175,4 +169,4 @@ const milestoneTypeOptions = [
 	}
 ];
 
-export { regionOptions, aggregateOptions, periodOptions, fuelTechOptions, milestoneTypeOptions };
+export { regionOptions, aggregateOptions, periodOptions, fuelTechOptions, metricOptions };

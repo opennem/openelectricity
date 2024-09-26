@@ -21,7 +21,7 @@
 					{@const lastest3Records = value.slice(0, 3)}
 					<li>
 						<a
-							href="/records-new/{encodeURIComponent(latest.record_id)}"
+							href="/records/{encodeURIComponent(latest.record_id)}"
 							class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-6 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
 						>
 							<div class="col-span-6 p-8" class:text-lg={significant}>
@@ -71,7 +71,7 @@
 					{@const lastest3Records = value.slice(0, 3)}
 					<li>
 						<a
-							href="/records-new/{encodeURIComponent(latest.record_id)}"
+							href="/records/{encodeURIComponent(latest.record_id)}"
 							class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-6 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
 						>
 							<div class="col-span-6 p-8" class:text-lg={significant}>
