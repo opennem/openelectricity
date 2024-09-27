@@ -15,6 +15,7 @@
 			<th class="px-4 py-2 text-left">Record</th>
 			<th />
 			<th />
+			<th />
 		</tr>
 	</thead>
 	<tbody>
@@ -41,6 +42,10 @@
 
 				<td class="px-4 py-2 font-mono text-dark-grey">
 					{record.value_unit}
+				</td>
+
+				<td class="px-4 py-2 font-mono text-xxs text-dark-grey">
+					{record.network_region || record.network_id}
 				</td>
 			</tr>
 		{/each}

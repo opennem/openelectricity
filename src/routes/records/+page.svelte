@@ -33,7 +33,7 @@
 		getContext('records-filters');
 
 	const regions = [
-		{ value: 'au.nem', shortValue: '', label: 'NEM' },
+		{ value: 'au.nem', shortValue: 'nem', label: 'NEM' },
 		{ value: 'au.nem.nsw1', shortValue: 'nsw1', label: 'NSW' },
 		{ value: 'au.nem.qld1', shortValue: 'qld1', label: 'QLD' },
 		{ value: 'au.nem.sa1', shortValue: 'sa1', label: 'SA' },
@@ -98,6 +98,7 @@
 
 	$: {
 		let selectedRegionShortValue = regions.find((r) => r.value === selectedRegion)?.shortValue;
+		console.log('selectedRegionShortValue', selectedRegionShortValue);
 		if (selectedRegionShortValue) {
 			checkedRegions = [selectedRegionShortValue];
 		}
