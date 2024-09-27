@@ -75,9 +75,11 @@
 												{/if}
 											</div>
 
-											<time datetime={record.interval} class="text-xs font-mono">
-												{format(record.date, 'h:mma')}
-											</time>
+											{#if record.period === 'interval'}
+												<time datetime={record.interval} class="text-xs font-mono">
+													{format(record.date, 'h:mma')}
+												</time>
+											{/if}
 										</li>
 									{/each}
 								</ol>
