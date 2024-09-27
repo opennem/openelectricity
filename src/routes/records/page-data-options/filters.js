@@ -111,11 +111,11 @@ export const fuelTechOptions = [
 	},
 	{
 		value: 'battery_charging',
-		label: 'Battery (Charging)'
+		label: 'Battery charge'
 	},
 	{
 		value: 'battery_discharging',
-		label: 'Battery (Discharging)'
+		label: 'Battery discharge'
 	},
 	{
 		value: 'bioenergy',

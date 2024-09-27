@@ -3,7 +3,7 @@
 
 	const dispatch = createEventDispatcher();
 
-	/** @type {{ label: string, value: string | number, icon?: *, size?: string }[]} */
+	/** @type {{ label?: string, value: string | number, icon?: *, size?: string }[]} */
 	export let buttons = [];
 	/** @type {string | number } */
 	export let selected = '';
@@ -38,7 +38,9 @@
 			{#if icon}
 				<svelte:component this={icon} class={size} />
 			{/if}
-			{label}
+			{#if label}
+				{label}
+			{/if}
 		</button>
 	{/each}
 </div>

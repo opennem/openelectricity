@@ -11,6 +11,7 @@
 
 	import PinnedRecords from './components/PinnedRecords.svelte';
 	import List from './components/List.svelte';
+	import Table from './components/Table.svelte';
 	import Filters from './components/Filters.svelte';
 	import fetchRecords from './page-data-options/fetch';
 	import {
@@ -28,7 +29,8 @@
 
 	setContext('records-filters', filtersStore());
 
-	const { selectedFuelTechs, selectedMetrics, selectedPeriods } = getContext('records-filters');
+	const { selectedView, selectedFuelTechs, selectedMetrics, selectedPeriods } =
+		getContext('records-filters');
 
 	const regions = [
 		{ value: 'au.nem', shortValue: '', label: 'NEM' },
@@ -160,74 +162,80 @@
 	<Filters />
 </div>
 
-<div class="md:container md:grid grid-cols-6 md:divide-x divide-warm-grey py-12">
-	<div class="col-span-2 pl-7 pr-12">
-		<div class="sticky top-10">
-			{#if $selectedFuelTechs.length || $selectedMetrics.length || $selectedPeriods.length}
-				<h4>Filters</h4>
-			{/if}
+{#if $selectedView === 'list'}
+	<div class="md:container md:grid grid-cols-6 md:divide-x divide-warm-grey py-12">
+		<div class="col-span-2 pl-7 pr-12">
+			<div class="sticky top-10">
+				{#if $selectedFuelTechs.length || $selectedMetrics.length || $selectedPeriods.length}
+					<h4>Filters</h4>
+				{/if}
 
-			{#if $selectedFuelTechs.length}
-				<h6 class="mt-10">Technology</h6>
-			{/if}
-			<div class="flex gap-2 flex-wrap">
-				{#each $selectedFuelTechs as fuelTech}
-					<div
-						class="bg-light-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
-					>
-						<span>{fuelTechLabel[fuelTech]}</span>
-						<button
-							class="bg-warm-grey hover:bg-mid-warm-grey rounded-full p-2 text-mid-grey"
-							on:click={() =>
-								($selectedFuelTechs = $selectedFuelTechs.filter((d) => d !== fuelTech))}
+				{#if $selectedFuelTechs.length}
+					<h6 class="mt-10">Technology</h6>
+				{/if}
+				<div class="flex gap-2 flex-wrap">
+					{#each $selectedFuelTechs as fuelTech}
+						<div
+							class="bg-light-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
 						>
-							<IconXMark class="size-6" />
-						</button>
-					</div>
-				{/each}
-			</div>
+							<span>{fuelTechLabel[fuelTech]}</span>
+							<button
+								class="bg-warm-grey hover:bg-mid-warm-grey rounded-full p-2 text-mid-grey"
+								on:click={() =>
+									($selectedFuelTechs = $selectedFuelTechs.filter((d) => d !== fuelTech))}
+							>
+								<IconXMark class="size-6" />
+							</button>
+						</div>
+					{/each}
+				</div>
 
-			{#if $selectedMetrics.length}
-				<h6 class="mt-10">Metric</h6>
-			{/if}
-			<div class="flex gap-2 flex-wrap">
-				{#each $selectedMetrics as metric}
-					<div
-						class="bg-light-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
-					>
-						<span>{milestoneTypeLabel[metric]}</span>
-						<button
-							class="bg-warm-grey hover:bg-mid-warm-grey rounded-full p-2 text-mid-grey"
-							on:click={() => ($selectedMetrics = $selectedMetrics.filter((d) => d !== metric))}
+				{#if $selectedMetrics.length}
+					<h6 class="mt-10">Metric</h6>
+				{/if}
+				<div class="flex gap-2 flex-wrap">
+					{#each $selectedMetrics as metric}
+						<div
+							class="bg-light-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
 						>
-							<IconXMark class="size-6" />
-						</button>
-					</div>
-				{/each}
-			</div>
+							<span>{milestoneTypeLabel[metric]}</span>
+							<button
+								class="bg-warm-grey hover:bg-mid-warm-grey rounded-full p-2 text-mid-grey"
+								on:click={() => ($selectedMetrics = $selectedMetrics.filter((d) => d !== metric))}
+							>
+								<IconXMark class="size-6" />
+							</button>
+						</div>
+					{/each}
+				</div>
 
-			{#if $selectedPeriods.length}
-				<h6 class="mt-10">Period</h6>
-			{/if}
-			<div class="flex gap-2 flex-wrap">
-				{#each $selectedPeriods as period}
-					<div
-						class="bg-light-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
-					>
-						<span>{periodLabel[period]}</span>
-						<button
-							class="bg-warm-grey hover:bg-mid-warm-grey rounded-full p-2 text-mid-grey"
-							on:click={() => ($selectedPeriods = $selectedPeriods.filter((d) => d !== period))}
+				{#if $selectedPeriods.length}
+					<h6 class="mt-10">Period</h6>
+				{/if}
+				<div class="flex gap-2 flex-wrap">
+					{#each $selectedPeriods as period}
+						<div
+							class="bg-light-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
 						>
-							<IconXMark class="size-6" />
-						</button>
-					</div>
-				{/each}
+							<span>{periodLabel[period]}</span>
+							<button
+								class="bg-warm-grey hover:bg-mid-warm-grey rounded-full p-2 text-mid-grey"
+								on:click={() => ($selectedPeriods = $selectedPeriods.filter((d) => d !== period))}
+							>
+								<IconXMark class="size-6" />
+							</button>
+						</div>
+					{/each}
+				</div>
 			</div>
 		</div>
-	</div>
 
-	<main class="min-h-[600px] col-span-4 md:pl-12 px-6">
-		<List {rolledUpRecords} />
-	</main>
-</div>
+		<main class="min-h-[600px] col-span-4 md:pl-12 px-6">
+			<List {rolledUpRecords} />
+		</main>
+	</div>
+{:else}
+	<div class="md:container">
+		<Table dataset={recordsData} />
+	</div>
+{/if}

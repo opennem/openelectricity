@@ -3,6 +3,8 @@
 
 	import { browser } from '$app/environment';
 	import { getNumberFormat } from '$lib/utils/formatters';
+	import Icon from '$lib/components/Icon.svelte';
+	import { fuelTechColourMap } from '$lib/fuel_techs';
 
 	import { formatStrings } from '../page-data-options/formatters';
 	import getRelativeTime from '../page-data-options/relative-time';
@@ -49,6 +51,8 @@
 		renewables: null,
 		coal: null
 	};
+
+	let loading = false;
 
 	/**
 	 * Format a date
@@ -99,6 +103,7 @@
 	$: if (region && records.length) {
 		const promises = records.map((record) => record.data);
 
+		loading = true;
 		Promise.all(promises).then((responses) => {
 			responses.forEach((data) => {
 				if (data.length) {
@@ -147,6 +152,8 @@
 					}
 				}
 			});
+
+			loading = false;
 		});
 	}
 </script>
@@ -157,37 +164,51 @@
 	{#each pinned as { fuelTech, label }}
 		{@const recordData = recordMap[fuelTech]}
 		<div class="snap-start shrink-0 w-[200px] md:w-auto">
-			{#if recordData}
-				<a
-					href="/records/{recordData.recordId}"
-					class="text-black bg-white border border-mid-warm-grey rounded-xl min-h-48 p-6 flex flex-col justify-between"
-				>
-					<div>
-						<h6>{label}</h6>
-						<!-- {recordData.recordId} -->
-						<div class="leading-base">
-							<!-- <small>{recordData.period} / {recordData.aggregate}</small> -->
-							{recordDescription(
-								recordData.period,
-								recordData.aggregate,
-								recordData.metric,
-								fuelTech
-							)}
-						</div>
-					</div>
+			{#if !loading}
+				{#if recordData}
+					<a
+						href="/records/{recordData.recordId}"
+						class="text-black bg-white border border-mid-warm-grey rounded-xl p-6 h-full grid grid-cols-1 gap-4 content-between transition-all"
+					>
+						<div>
+							<!-- <h6>{label}</h6> -->
+							<Icon icon={fuelTech} size={32} />
+							<!-- {recordData.recordId} -->
 
-					<div class="border-t flex justify-between items-center">
-						<div class="text-sm">
-							{getNumberFormat().format(recordData.value)}
-							<small>{recordData.unit}</small>
+							<div class="leading-base my-6">
+								<!-- <small>{recordData.period} / {recordData.aggregate}</small> -->
+								{recordDescription(
+									recordData.period,
+									recordData.aggregate,
+									recordData.metric,
+									fuelTech
+								)}
+							</div>
 						</div>
-						<time class="text-xxs">{formatDate(recordData.interval, recordData.period)}</time>
+
+						<div
+							class="border-t-2 flex justify-between items-center"
+							style="border-color: {fuelTechColourMap[fuelTech]}"
+						>
+							<div class="text-sm">
+								{getNumberFormat().format(recordData.value)}
+								<small>{recordData.unit}</small>
+							</div>
+							<time class="text-xxs">{formatDate(recordData.interval, recordData.period)}</time>
+						</div>
+					</a>
+				{:else}
+					<div class="text-black block border border-mid-warm-grey rounded-xl h-full p-6">
+						<Icon icon={fuelTech} size={32} />
 					</div>
-				</a>
+				{/if}
 			{:else}
-				<div class="text-black bg-white block border border-mid-warm-grey rounded-xl min-h-48 p-6">
-					<h6>{label}</h6>
-					<!-- <div>no record data</div> -->
+				<div class="text-black block border border-mid-warm-grey rounded-xl h-72 p-6 animate-pulse">
+					<Icon icon={fuelTech} size={32} />
+
+					<div role="status" class="text-black animate-pulse">
+						<div class="bg-mid-warm-grey h-full w-full rounded-full" />
+					</div>
 				</div>
 			{/if}
 		</div>

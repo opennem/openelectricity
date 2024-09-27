@@ -27,36 +27,36 @@ const periodAggregateMap = {
 };
 
 /**
- * @type {Object.<string, string>}
+ * @type {Object.<string, string[]>}
  */
 const metricPeriodMap = {
-	'power.interval': 'level of',
-	'power.day': 'generation',
-	'power.7d': 'generation',
-	'power.month': 'generation',
-	'power.quarter': 'generation',
-	'power.year': 'generation',
-	'power.financial_year': 'generation',
+	'power.interval': ['level of', 'generation'],
+	'power.day': ['generation'],
+	'power.7d': ['generation'],
+	'power.month': ['generation'],
+	'power.quarter': ['generation'],
+	'power.year': ['generation'],
+	'power.financial_year': ['generation'],
 
-	'energy.interval': 'level of',
-	'energy.day': 'generation',
-	'energy.7d': 'generation',
-	'energy.month': 'generation',
-	'energy.quarter': 'generation',
-	'energy.year': 'generation',
-	'energy.financial_year': 'generation',
+	'energy.interval': ['level of', 'generation'],
+	'energy.day': ['generation'],
+	'energy.7d': ['generation'],
+	'energy.month': ['generation'],
+	'energy.quarter': ['generation'],
+	'energy.year': ['generation'],
+	'energy.financial_year': ['generation'],
 
-	'proportion.interval': 'proportion of',
-	'proportion.day': 'proportion',
-	'proportion.7d': 'proportion',
-	'proportion.month': 'proportion',
-	'proportion.quarter': 'proportion',
-	'proportion.year': 'proportion',
-	'proportion.financial_year': 'proportion',
+	'proportion.interval': ['proportion of'],
+	'proportion.day': ['proportion'],
+	'proportion.7d': ['proportion'],
+	'proportion.month': ['proportion'],
+	'proportion.quarter': ['proportion'],
+	'proportion.year': ['proportion'],
+	'proportion.financial_year': ['proportion'],
 
-	price: 'price',
-	market_value: 'market value',
-	emissions: 'emissions'
+	price: ['price'],
+	market_value: ['market value'],
+	emissions: ['emissions']
 };
 
 /**
@@ -84,10 +84,10 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 
 	if (period === 'interval') {
 		if (!fuelTech && metric === 'power') {
-			return `${periodAggregate[0]} ${metricPeriod} ${metric}`;
+			return `${periodAggregate[0]} ${metricPeriod[0]} ${metric}`;
 		}
-		return `${periodAggregate[0]} ${metricPeriod} ${ftLabel}`;
+		return `${periodAggregate[0]} ${metricPeriod[0]} ${ftLabel} ${metricPeriod[1]}`;
 	}
 
-	return `${periodAggregate[0]} ${ftLabel} ${metricPeriod} ${periodAggregate[1]}`;
+	return `${periodAggregate[0]} ${ftLabel} ${metricPeriod[0]} ${periodAggregate[1]}`;
 }
