@@ -5,9 +5,6 @@
 
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
-	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
-	import Checkbox from '$lib/components/form-elements/RadioBigButton.svelte';
-	import { set } from 'date-fns';
 
 	/** @type {string[]} */
 	export let selected;
