@@ -8,7 +8,7 @@
 	export let rolledUpRecords;
 </script>
 
-<div class="w-[600px] mx-auto">
+<div class="md:w-[600px] mx-auto">
 	{#each [...rolledUpRecords] as [month, days]}
 		<div class="mt-20 first:mt-0">
 			<p

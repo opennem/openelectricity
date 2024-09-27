@@ -53,7 +53,7 @@
 </script>
 
 <div class="container">
-	<div class="inline-flex justify-start">
+	<div class="md:inline-flex justify-start">
 		<FormMultiSelect
 			options={fuelTechOptions}
 			selected={$selectedFuelTechs}

@@ -151,80 +151,45 @@
 	}
 </script>
 
-<div class="grid grid-cols-5 gap-4">
+<div
+	class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8 md:grid grid-cols-5 md:gap-4"
+>
 	{#each pinned as { fuelTech, label }}
 		{@const recordData = recordMap[fuelTech]}
+		<div class="snap-start shrink-0 w-[200px] md:w-auto">
+			{#if recordData}
+				<a
+					href="/records/{recordData.recordId}"
+					class="text-black bg-white border border-mid-warm-grey rounded-xl min-h-48 p-6 flex flex-col justify-between"
+				>
+					<div>
+						<h6>{label}</h6>
+						<!-- {recordData.recordId} -->
+						<div class="leading-base">
+							<!-- <small>{recordData.period} / {recordData.aggregate}</small> -->
+							{recordDescription(
+								recordData.period,
+								recordData.aggregate,
+								recordData.metric,
+								fuelTech
+							)}
+						</div>
+					</div>
 
-		{#if recordData}
-			<a
-				href="/records/{recordData.recordId}"
-				class="text-black bg-white border border-mid-warm-grey rounded-xl min-h-48 p-6 flex flex-col justify-between"
-			>
-				<div>
+					<div class="border-t flex justify-between items-center">
+						<div class="text-sm">
+							{getNumberFormat().format(recordData.value)}
+							<small>{recordData.unit}</small>
+						</div>
+						<time class="text-xxs">{formatDate(recordData.interval, recordData.period)}</time>
+					</div>
+				</a>
+			{:else}
+				<div class="text-black bg-white block border border-mid-warm-grey rounded-xl min-h-48 p-6">
 					<h6>{label}</h6>
-					<!-- {recordData.recordId} -->
-					<div class="leading-base">
-						<!-- <small>{recordData.period} / {recordData.aggregate}</small> -->
-						{recordDescription(
-							recordData.period,
-							recordData.aggregate,
-							recordData.metric,
-							fuelTech
-						)}
-					</div>
+					<!-- <div>no record data</div> -->
 				</div>
-
-				<div class="border-t flex justify-between items-center">
-					<div class="text-sm">
-						{getNumberFormat().format(recordData.value)}
-						<small>{recordData.unit}</small>
-					</div>
-					<time class="text-xxs">{formatDate(recordData.interval, recordData.period)}</time>
-				</div>
-			</a>
-		{:else}
-			<div class="text-black bg-white block border border-mid-warm-grey rounded-xl min-h-48 p-6">
-				<h6>{label}</h6>
-				<!-- <div>no record data</div> -->
-			</div>
-		{/if}
-	{/each}
-</div>
-<!-- 
-<div class="grid grid-cols-5 gap-4">
-	{#each pinned as { fuelTech, label, ids }}
-		<div class="border border-mid-warm-grey rounded-xl h-[200px] p-6">
-			<h6>{label}</h6>
-			{#each ids as id}
-				{@const recordId = `${region}.${fuelTech}.${id}`}
-				{@const recordData = records.find((record) => record.id === recordId)}
-
-				<a href="/records/{recordId}" class="text-black block text-xxs">{recordId}</a>
-
-				{#if recordData}
-					{#await recordData.data}
-						<p>Loading...</p>
-					{:then data}
-						{#if data.length}
-							{@const value = data[0].value}
-							{@const unit = data[0].value_unit}
-							{@const interval = data[0].interval}
-							{@const period = data[0].period}
-
-							<div class="text-sm">
-								<small>{period}</small>
-								<div>
-									{getNumberFormat().format(value)}
-									<small>{unit}</small>
-								</div>
-								<time>{formatDate(interval, period)}</time>
-							</div>
-						{/if}
-					{:catch error}
-						<p class="text-xxs text-dark-red">{error.message}</p>
-					{/await}
-				{/if}
-			{/each}
+			{/if}
 		</div>
 	{/each}
-</div> -->
+</div>

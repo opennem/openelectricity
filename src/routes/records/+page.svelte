@@ -137,7 +137,7 @@
 	</div> -->
 
 <div class="bg-light-warm-grey">
-	<section class="container py-12">
+	<section class="md:container py-12">
 		<h2 class="text-center">Records</h2>
 
 		<div class="flex justify-center mb-12">
@@ -145,11 +145,13 @@
 				buttons={regions}
 				selected={selectedRegion}
 				on:change={(evt) => (selectedRegion = evt.detail.value)}
-				class="justify-center bg-white"
+				class="justify-center bg-white text-xxs md:text-sm"
 			/>
 		</div>
 
-		<PinnedRecords region={selectedRegion} />
+		<div class="px-6 md:px-0">
+			<PinnedRecords region={selectedRegion} />
+		</div>
 	</section>
 </div>
 
@@ -157,7 +159,7 @@
 	<Filters />
 </div>
 
-<div class="container grid grid-cols-6 divide-x divide-warm-grey py-12">
+<div class="md:container md:grid grid-cols-6 md:divide-x divide-warm-grey py-12">
 	<div class="col-span-2 pl-7 pr-12">
 		<div class="sticky top-10">
 			{#if $selectedFuelTechs.length || $selectedMetrics.length || $selectedPeriods.length}
@@ -224,7 +226,7 @@
 		</div>
 	</div>
 
-	<main class="min-h-[600px] col-span-4 pl-12">
+	<main class="min-h-[600px] col-span-4 md:pl-12 px-6">
 		<List {rolledUpRecords} />
 	</main>
 </div>
