@@ -148,7 +148,7 @@
 						{#if currentRecord.network_region}
 							in {regionsWithLabels[currentRecord.network_region.toLowerCase()]}
 						{:else}
-							in {currentRecord.network_id}
+							in the {currentRecord.network_id}
 						{/if}
 					{/if}
 				</span>
