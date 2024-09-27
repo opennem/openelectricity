@@ -187,14 +187,16 @@
 						</div>
 
 						<div
-							class="border-t-2 flex justify-between items-center"
+							class="border-t-4 flex justify-between items-baseline pt-2"
 							style="border-color: {fuelTechColourMap[fuelTech]}"
 						>
-							<div class="text-sm">
+							<div class="">
 								{getNumberFormat().format(recordData.value)}
-								<small>{recordData.unit}</small>
+								<small class="text-mid-grey">{recordData.unit}</small>
 							</div>
-							<time class="text-xxs">{formatDate(recordData.interval, recordData.period)}</time>
+							<time class="text-xxs text-mid-grey">
+								{formatDate(recordData.interval, recordData.period)}
+							</time>
 						</div>
 					</a>
 				{:else}
