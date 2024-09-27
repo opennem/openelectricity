@@ -36,7 +36,8 @@
 		{ value: 'au.nem.qld1', shortValue: 'qld1', label: 'QLD' },
 		{ value: 'au.nem.sa1', shortValue: 'sa1', label: 'SA' },
 		{ value: 'au.nem.tas1', shortValue: 'tas1', label: 'TAS' },
-		{ value: 'au.nem.vic1', shortValue: 'vic1', label: 'VIC' }
+		{ value: 'au.nem.vic1', shortValue: 'vic1', label: 'VIC' },
+		{ value: 'au.wem', shortValue: 'wem', label: 'WA' }
 	];
 	let selectedRegion = regions[0].value;
 
