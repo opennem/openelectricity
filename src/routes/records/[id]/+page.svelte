@@ -5,9 +5,11 @@
 	import { browser } from '$app/environment';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 	import dataVizStore from '$lib/components/charts/stores/data-viz';
+	import { regionsWithLabels } from '$lib/regions';
 
 	import HistoryChart from '../components/HistoryChart.svelte';
 	import { formatStrings, formatStringsLong } from '../page-data-options/formatters';
+	import recordDescription from '../page-data-options/record-description';
 
 	export let data;
 
@@ -134,8 +136,23 @@
 					</span>
 				{/if}
 
-				<span class="text-lg">{currentRecord?.description}</span>
-				<span>{currentRecord?.period}</span>
+				<span class="text-lg">
+					{#if currentRecord}
+						{recordDescription(
+							currentRecord.period || '',
+							currentRecord.aggregate || '',
+							currentRecord.metric || '',
+							currentRecord.fueltech_id || ''
+						)}
+
+						{#if currentRecord.network_region}
+							in {regionsWithLabels[currentRecord.network_region.toLowerCase()]}
+						{:else}
+							in {currentRecord.network_id}
+						{/if}
+					{/if}
+				</span>
+				<!-- <span>{currentRecord?.period}</span> -->
 			</div>
 
 			<div class="col-span-4 grid grid-cols-2 divide-x divide-light-warm-grey bg-white">

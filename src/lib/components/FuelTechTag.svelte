@@ -4,17 +4,23 @@
 
 	/** @type {FuelTechCode} */
 	export let fueltech;
+	export let iconSize = 18;
+	export let textSize = 13;
+	export let showText = true;
 
 	$: highlightTextColor = fueltech === 'solar' ? 'text-black' : 'text-white';
 </script>
 
-<span
-	class={`inline-flex gap-2 flex-shrink-0 justify-center items-center py-2 px-5 bg-${fueltech} rounded-full text-[13px] ${highlightTextColor}`}
+<div
+	class={`inline-flex gap-2 flex-shrink-0 justify-center items-center py-2 px-5 bg-${fueltech} rounded-full  ${highlightTextColor}`}
+	style={`font-size: ${textSize}px;`}
 >
-	<Icon icon={fueltech} size={18} />
-	<span class="relative top-[1px]">
-		<slot>
-			{fuelTechName(fueltech)}
-		</slot>
-	</span>
-</span>
+	<Icon icon={fueltech} size={iconSize} />
+	{#if showText}
+		<span class="relative top-[1px]">
+			<slot>
+				{fuelTechName(fueltech)}
+			</slot>
+		</span>
+	{/if}
+</div>

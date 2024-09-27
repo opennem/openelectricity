@@ -9,7 +9,6 @@
 	} from '../page-data-options/filters.js';
 
 	const { selectedFuelTechs, selectedMetrics, selectedPeriods } = getContext('records-filters');
-
 	/**
 	 * @param {string} value
 	 * @param {boolean} isMetaPressed

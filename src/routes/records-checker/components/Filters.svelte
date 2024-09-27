@@ -255,6 +255,16 @@
 		</div>
 
 		<div class="px-10">
+			<h5>Milestone Type</h5>
+			<CheckboxTree
+				name="milestone-types"
+				nodes={metricOptions}
+				checked={checkedMetrics}
+				on:change={(evt) => handleMetricChange(evt.detail.node)}
+			/>
+		</div>
+
+		<div class="px-10">
 			<h5>Periods</h5>
 			<CheckboxTree
 				name="periods"
@@ -271,16 +281,6 @@
 				nodes={aggregateOptions}
 				checked={checkedAggregates}
 				on:change={(evt) => handleAggregateChange(evt.detail.node)}
-			/>
-		</div>
-
-		<div class="px-10">
-			<h5>Milestone Type</h5>
-			<CheckboxTree
-				name="milestone-types"
-				nodes={metricOptions}
-				checked={checkedMetrics}
-				on:change={(evt) => handleMetricChange(evt.detail.node)}
 			/>
 		</div>
 

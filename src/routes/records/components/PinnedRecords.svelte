@@ -6,6 +6,7 @@
 
 	import { formatStrings } from '../page-data-options/formatters';
 	import getRelativeTime from '../page-data-options/relative-time';
+	import recordDescription from '../page-data-options/record-description';
 
 	export let region;
 
@@ -110,6 +111,7 @@
 					const recordId = data[0].record_id;
 					const aggregate = data[0].aggregate;
 					const description = data[0].description;
+					const metric = data[0].metric;
 
 					const date = parseISO(interval);
 
@@ -122,6 +124,7 @@
 							interval,
 							period,
 							description,
+							metric,
 							date,
 							time: date.getTime()
 						};
@@ -136,6 +139,7 @@
 								interval,
 								period,
 								description,
+								metric,
 								date,
 								time: date.getTime()
 							};
@@ -161,7 +165,12 @@
 					<!-- {recordData.recordId} -->
 					<div class="leading-base">
 						<!-- <small>{recordData.period} / {recordData.aggregate}</small> -->
-						{recordData.description}
+						{recordDescription(
+							recordData.period,
+							recordData.aggregate,
+							recordData.metric,
+							fuelTech
+						)}
 					</div>
 				</div>
 
