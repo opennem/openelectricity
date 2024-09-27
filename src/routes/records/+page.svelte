@@ -71,7 +71,7 @@
 			? data.milestoneTypes
 			: milestoneTypeOptions.map((i) => i.value);
 
-	let selectedSignificance = data.significance || 0;
+	let selectedSignificance = data.significance || 9;
 
 	let recordIdSearch = data.stringFilter || '';
 
