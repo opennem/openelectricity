@@ -98,7 +98,6 @@
 
 	$: {
 		let selectedRegionShortValue = regions.find((r) => r.value === selectedRegion)?.shortValue;
-		console.log('selectedRegionShortValue', selectedRegionShortValue);
 		if (selectedRegionShortValue) {
 			checkedRegions = [selectedRegionShortValue];
 		}

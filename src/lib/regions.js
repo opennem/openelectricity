@@ -42,6 +42,13 @@ export const regionOptions = [
 		shortLabel: 'VIC',
 		description: 'Victoria',
 		colour: '#4F5FD7' // 153BA5
+	},
+	{
+		value: 'wem',
+		label: 'Western Australia',
+		shortLabel: 'WA',
+		description: 'Western Australia',
+		colour: '#BDBCBC'
 	}
 ];
 

@@ -147,6 +147,8 @@
 
 						{#if currentRecord.network_region}
 							in {regionsWithLabels[currentRecord.network_region.toLowerCase()]}
+						{:else if regionsWithLabels[currentRecord.network_id.toLowerCase()]}
+							in {regionsWithLabels[currentRecord.network_id.toLowerCase()]}
 						{:else}
 							in the {currentRecord.network_id}
 						{/if}
