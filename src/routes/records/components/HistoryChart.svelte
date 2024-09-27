@@ -1,8 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import { curveStepAfter } from 'd3-shape';
-
-	import LineChart from '$lib/components/charts/LineChart.svelte';
+	import { format } from 'date-fns';
 
 	import LineChartWithContext from '$lib/components/charts/LineChartWithContext.svelte';
 	import DateBrush from '$lib/components/charts/DateBrush.svelte';
@@ -76,7 +75,13 @@
 
 <Tooltip {xValue} {yValue} />
 
-<LineChartWithContext store={historyStore} on:mousemove on:mouseout on:pointerup />
+<LineChartWithContext
+	store={historyStore}
+	customFormatTickX={(d) => format(d, 'd MMM')}
+	on:mousemove
+	on:mouseout
+	on:pointerup
+/>
 
 <div class="pt-4">
 	<DateBrush store={dateBrushStore} dataXDomain={$xDomain} on:brushed={handleBrushed} />

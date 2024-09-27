@@ -53,6 +53,9 @@
 	/** @type {string | null} */
 	export let highlightId = null;
 
+	/** @type {*} */
+	export let customFormatTickX = null;
+
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
 
@@ -96,7 +99,7 @@
 				gridlines={true}
 				strokeArray="3"
 				stroke="#33333344"
-				formatTick={$formatTickX}
+				formatTick={customFormatTickX || $formatTickX}
 				tickMarks={true}
 				snapTicks={$snapXTicks}
 			/>
