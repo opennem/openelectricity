@@ -12,13 +12,13 @@
 	{#each [...rolledUpRecords] as [month, days]}
 		<div class="mt-20 first:mt-0">
 			<p
-				class="sticky top-0 z-20 bg-white pt-6 pb-4 mb-0 border-b border-warm-grey font-space uppercase"
+				class="sticky top-0 z-20 bg-white/80 backdrop-blur-sm pt-6 pb-4 mb-0 border-b border-warm-grey font-space uppercase"
 			>
 				{format(month, 'MMMM yyyy')}
 			</p>
 
 			{#each [...days] as [day, { date, records, time }]}
-				<p class="sticky top-[50px] z-10 bg-white py-2 text-xs font-space">
+				<p class="sticky top-[50px] z-10 bg-white/80 backdrop-blur-sm py-2 text-xs font-space">
 					{format(day, 'EEE, dd MMM')}
 				</p>
 

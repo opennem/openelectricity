@@ -4,10 +4,10 @@ const unitsInSec = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinit
 // Array equivalent to the above but in the string representation of the units
 const unitStrings = ['second', 'minute', 'hour', 'day', 'week', 'month', 'year'];
 
-// Initialize Intl.RelativeTimeFormat
-const rtf = new Intl.RelativeTimeFormat('en-AU', { numeric: 'auto', style: 'short' });
+function getRelativeTime(date, style = 'short') {
+	// Initialize Intl.RelativeTimeFormat
+	const rtf = new Intl.RelativeTimeFormat('en-AU', { numeric: 'auto', style });
 
-function getRelativeTime(date) {
 	// Calculate the difference in seconds between the given date and the current date
 	const secondsDiff = Math.round((date - Date.now()) / 1000);
 

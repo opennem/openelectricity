@@ -56,10 +56,13 @@
 	/** @type {*} */
 	export let customFormatTickX = null;
 
+	/** @type {string} */
+	export let heightClasses = '';
+
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
 
-	$: heightClasses = $chartHeightClasses || defaultChartHeightClasses;
+	$: heightClasses = heightClasses || $chartHeightClasses || defaultChartHeightClasses;
 
 	// $: console.log('groupedData', groupedData);
 

@@ -190,7 +190,7 @@
 							class="border-t-4 flex justify-between items-baseline pt-2"
 							style="border-color: {fuelTechColourMap[fuelTech]}"
 						>
-							<div class="">
+							<div>
 								{getNumberFormat().format(recordData.value)}
 								<small class="text-mid-grey">{recordData.unit}</small>
 							</div>

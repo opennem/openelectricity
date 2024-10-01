@@ -1,8 +1,5 @@
 <script>
 	import { setContext, getContext } from 'svelte';
-	import { group, rollup } from 'd3-array';
-	import { timeDay, timeMonth } from 'd3-time';
-
 	import { browser } from '$app/environment';
 
 	import Meta from '$lib/components/Meta.svelte';
@@ -24,6 +21,7 @@
 		periodLabel
 	} from './page-data-options/filters';
 	import filtersStore from './stores/filters';
+	import groupByMonthDay from './page-data-options/group-by-month-day';
 
 	export let data;
 
@@ -108,19 +106,7 @@
 	$: lastRecordIndex =
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
-	$: rolledUpRecords = rollup(
-		recordsData,
-		(/** @type {MilestoneRecord[]} */ d) => {
-			const latestTime = d.map((d) => d.time).reduce((a, b) => Math.max(a, b), 0);
-			return {
-				time: latestTime,
-				date: new Date(latestTime),
-				records: group(d, (d) => d.record_id)
-			};
-		},
-		(/** @type {MilestoneRecord} */ d) => timeMonth(d.date),
-		(/** @type {MilestoneRecord} */ d) => timeDay(d.date)
-	);
+	$: rolledUpRecords = groupByMonthDay(recordsData);
 	// $: sortedRolledUpRecords = Array.from(rolledUpRecords.values()).sort((a, b) => b.time - a.time);
 	$: console.log('rolledUpRecords', rolledUpRecords);
 	// $: console.log('sortedRolledUpRecords', sortedRolledUpRecords);

@@ -2,9 +2,9 @@
  * @type {Object<string, string>}
  */
 const formatStringsLong = {
-	interval: 'd MMM yyyy, h:mma',
-	day: 'd MMM yyyy',
-	'7d': 'd MMM yyyy',
+	interval: 'dd MMM yyyy, h:mma',
+	day: 'dd MMM yyyy',
+	'7d': 'dd MMM yyyy',
 	month: 'MMM yyyy',
 	quarter: 'MMM yyyy',
 	season: 'MMM yyyy',

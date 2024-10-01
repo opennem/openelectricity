@@ -19,6 +19,10 @@
 	export function clear() {
 		min = null;
 		max = null;
+		dispatch('brushed', {
+			start: null,
+			end: null
+		});
 	}
 
 	const dispatch = createEventDispatcher();
@@ -95,6 +99,10 @@
 	$: left = min ? 100 * min : 0;
 	$: right = max ? 100 * (1 - max) : 1;
 	$: if (min && max) {
+		dispatchBrushed();
+	}
+
+	function dispatchBrushed() {
 		const range = $xScale.range();
 		const start = min * range[1];
 		const end = max * range[1];

@@ -151,27 +151,49 @@ export const fuelTechLabel = optionsReducer(fuelTechOptions);
 export const milestoneTypeOptions = [
 	{
 		value: 'power',
-		label: 'Power'
+		label: 'Power',
+		displayPrefix: 'M',
+		allowedPrefixes: ['M', 'G']
 	},
 	{
 		value: 'energy',
-		label: 'Energy'
+		label: 'Energy',
+		displayPrefix: 'M',
+		allowedPrefixes: ['M', 'G']
 	},
 	{
 		value: 'price',
-		label: 'Price'
+		label: 'Price',
+		displayPrefix: '',
+		allowedPrefixes: []
 	},
 	{
 		value: 'market_value',
-		label: 'Market Value'
+		label: 'Market Value',
+		displayPrefix: '',
+		allowedPrefixes: []
 	},
 	{
 		value: 'emissions',
-		label: 'Emissions'
+		label: 'Emissions',
+		displayPrefix: '',
+		allowedPrefixes: []
 	},
 	{
 		value: 'proportion',
-		label: 'Proportion'
+		label: 'Proportion',
+		displayPrefix: '',
+		allowedPrefixes: []
 	}
 ];
 export const milestoneTypeLabel = optionsReducer(milestoneTypeOptions);
+export const milestoneTypeDisplayPrefix = optionsReducer(
+	milestoneTypeOptions,
+	'value',
+	'displayPrefix'
+);
+export const milestoneTypeDisplayAllowedPrefixes = optionsReducer(
+	milestoneTypeOptions,
+	'value',
+	'allowedPrefixes'
+);
