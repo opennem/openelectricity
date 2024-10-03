@@ -3,7 +3,7 @@ import { fuelTechLabel } from '../page-data-options/filters';
 /**
  * @type {Object.<string, string[]>}
  */
-const periodAggregateMap = {
+export const periodAggregateMap = {
 	'interval.high': ['Highest ever'],
 	'interval.low': ['Lowest ever'],
 
@@ -29,7 +29,7 @@ const periodAggregateMap = {
 /**
  * @type {Object.<string, string[]>}
  */
-const metricPeriodMap = {
+export const metricPeriodMap = {
 	'power.interval': ['level of', 'generation'],
 	'power.day': ['generation'],
 	'power.7d': ['generation'],
@@ -62,11 +62,11 @@ const metricPeriodMap = {
 /**
  * Generates a description based on fuel technology, period, aggregate, and metric.
  *
- * @param {string} period - The period.
- * @param {string} aggregate - The aggregate.
- * @param {string} metric - The metric.
- * @param {string} [fuelTech] - The fuel technology.
- * @returns {string} - The generated description.
+ * @param {string} period
+ * @param {string} aggregate
+ * @param {string} metric
+ * @param {string} [fuelTech]
+ * @returns {string}
  */
 export default function generateDescription(period, aggregate, metric, fuelTech) {
 	if (!period || !aggregate || !metric) {
