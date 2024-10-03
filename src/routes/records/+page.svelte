@@ -6,6 +6,7 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import IconXMark from '$lib/icons/XMark.svelte';
+	import { regionsWithLabels } from '$lib/regions';
 
 	import PinnedRecords from './components/PinnedRecords.svelte';
 	import List from './components/List.svelte';
@@ -135,7 +136,7 @@
 </script>
 
 <Meta
-	title="Records"
+	title={`${regionsWithLabels[$selectedRegion]} Records`}
 	description="Track historical and current records of Australia's electricity grid with Open Electricity's record tracker"
 	image="/img/preview.jpg"
 />

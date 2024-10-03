@@ -53,7 +53,6 @@ export const regionOptions = [
 ];
 
 export const regionsOnly = regionOptions.map((d) => d.value).slice(1);
-
 export const regionsWithShortLabels = optionsReducer(regionOptions, 'value', 'shortLabel');
 export const regionsWithLabels = optionsReducer(regionOptions, 'value', 'label');
 export const regionsWithColours = optionsReducer(regionOptions, 'value', 'colour');
