@@ -51,5 +51,3 @@
 		{/each}
 	</tbody>
 </table>
-
-<h1>table</h1>

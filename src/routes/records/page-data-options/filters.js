@@ -197,3 +197,58 @@ export const milestoneTypeDisplayAllowedPrefixes = optionsReducer(
 	'value',
 	'allowedPrefixes'
 );
+
+/**
+ *
+ * @param {*} param0
+ * @returns
+ */
+export function getFilterParams({
+	regions,
+	periods,
+	fuelTechs,
+	stringFilter,
+	aggregates,
+	metrics,
+	significance
+}) {
+	const validRegions = regions.filter((r) => r !== '_all');
+
+	// 8 as in ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem']
+	const regionsParam =
+		regions.length === 0 || regions.length === 8 ? '' : '&regions=' + validRegions.join(',');
+
+	const periodsParam =
+		periods.length === periodOptions.length || periods.length === 0
+			? ''
+			: '&periods=' + periods.join(',');
+
+	const aggregatesParam =
+		aggregates.length === aggregateOptions.length ? '' : '&aggregates=' + aggregates.join(',');
+
+	const metricsParam =
+		metrics.length === milestoneTypeOptions.length || metrics.length === 0
+			? ''
+			: '&metrics=' + metrics.join(',');
+
+	const fuelTechParams =
+		fuelTechs.length === fuelTechOptions.length || fuelTechs.length === 0
+			? ''
+			: '&fuel_techs=' + fuelTechs.join(',');
+
+	const recordIdSearchParam = stringFilter
+		? `&recordIdFilter=${encodeURIComponent(stringFilter.trim())}`
+		: '';
+
+	const significanceParam = significance ? `&significance=${significance}` : '';
+
+	return {
+		regionsParam,
+		periodsParam,
+		recordIdSearchParam,
+		fuelTechParams,
+		aggregatesParam,
+		metricsParam,
+		significanceParam
+	};
+}

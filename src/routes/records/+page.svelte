@@ -1,5 +1,6 @@
 <script>
 	import { setContext, getContext } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
 
 	import Meta from '$lib/components/Meta.svelte';
@@ -13,12 +14,10 @@
 	import fetchRecords from './page-data-options/fetch';
 	import {
 		aggregateOptions,
-		periodOptions,
-		fuelTechOptions,
-		milestoneTypeOptions,
 		fuelTechLabel,
 		milestoneTypeLabel,
-		periodLabel
+		periodLabel,
+		getFilterParams
 	} from './page-data-options/filters';
 	import filtersStore from './stores/filters';
 	import groupByMonthDay from './page-data-options/group-by-month-day';
@@ -27,19 +26,25 @@
 
 	setContext('records-filters', filtersStore());
 
-	const { selectedView, selectedFuelTechs, selectedMetrics, selectedPeriods } =
-		getContext('records-filters');
+	const {
+		selectedView,
+		selectedRegion,
+		selectedRegions,
+		selectedFuelTechs,
+		selectedMetrics,
+		selectedPeriods
+	} = getContext('records-filters');
 
+	// TODO: refactor to store
 	const regions = [
-		{ value: 'au.nem', shortValue: 'nem', label: 'NEM' },
-		{ value: 'au.nem.nsw1', shortValue: 'nsw1', label: 'NSW' },
-		{ value: 'au.nem.qld1', shortValue: 'qld1', label: 'QLD' },
-		{ value: 'au.nem.sa1', shortValue: 'sa1', label: 'SA' },
-		{ value: 'au.nem.tas1', shortValue: 'tas1', label: 'TAS' },
-		{ value: 'au.nem.vic1', shortValue: 'vic1', label: 'VIC' },
-		{ value: 'au.wem', shortValue: 'wem', label: 'WA' }
+		{ longValue: 'au.nem', value: 'nem', label: 'NEM' },
+		{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW' },
+		{ longValue: 'au.nem.qld1', value: 'qld1', label: 'QLD' },
+		{ longValue: 'au.nem.sa1', value: 'sa1', label: 'SA' },
+		{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS' },
+		{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC' },
+		{ longValue: 'au.wem', value: 'wem', label: 'WA' }
 	];
-	let selectedRegion = regions[0].value;
 
 	let errorMessage = '';
 	/** @type {MilestoneRecord[]} */
@@ -49,17 +54,12 @@
 	let currentPage = data.page || 1;
 	let currentStartRecordIndex = (currentPage - 1) * pageSize + 1;
 
-	//TODO: refactor to store
-	/** @type {string[]} */
-	let checkedRegions = data.regions && data.regions.length ? data.regions : ['nem'];
+	console.log('data.regions', data.regions);
 
-	/** @type {string[]} */
-	let checkedFuelTechs =
-		data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : fuelTechOptions.map((i) => i.value);
-
-	/** @type {string[]} */
-	let checkedPeriods =
-		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value);
+	$selectedRegions = data.regions && data.regions.length ? data.regions : ['nem'];
+	$selectedFuelTechs = data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : [];
+	$selectedPeriods = data.periods && data.periods.length ? data.periods : [];
+	$selectedMetrics = data.metrics && data.metrics.length ? data.metrics : [];
 
 	/** @type {string[]} */
 	let checkedAggregates =
@@ -67,19 +67,13 @@
 			? data.aggregates
 			: aggregateOptions.map((i) => i.value);
 
-	let checkedMilestoneTypes =
-		data.milestoneTypes && data.milestoneTypes.length
-			? data.milestoneTypes
-			: milestoneTypeOptions.map((i) => i.value);
-
 	let selectedSignificance = data.significance || 9;
-
 	let recordIdSearch = data.stringFilter || '';
 
 	$: if (browser) {
 		fetchRecords(
 			currentPage,
-			checkedRegions,
+			$selectedRegions,
 			$selectedPeriods,
 			$selectedFuelTechs,
 			checkedAggregates,
@@ -94,12 +88,14 @@
 		});
 	}
 
-	$: {
-		let selectedRegionShortValue = regions.find((r) => r.value === selectedRegion)?.shortValue;
-		if (selectedRegionShortValue) {
-			checkedRegions = [selectedRegionShortValue];
-		}
+	$: if (
+		browser &&
+		($selectedRegions || $selectedPeriods || $selectedFuelTechs || $selectedMetrics)
+	) {
+		updateCurrentPage(1);
 	}
+
+	$: selectedLongValueRegion = regions.find((r) => r.value === $selectedRegion)?.longValue;
 
 	$: totalPages = Math.ceil(totalRecords / 100);
 	$: currentLastRecordIndex = currentStartRecordIndex + 99;
@@ -107,12 +103,42 @@
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
 	$: rolledUpRecords = groupByMonthDay(recordsData);
-	// $: sortedRolledUpRecords = Array.from(rolledUpRecords.values()).sort((a, b) => b.time - a.time);
-	$: console.log('rolledUpRecords', rolledUpRecords);
-	// $: console.log('sortedRolledUpRecords', sortedRolledUpRecords);
+	// $: console.log('rolledUpRecords', rolledUpRecords);
+
+	/**
+	 * Update the current page
+	 * @param {number} page
+	 */
+	function updateCurrentPage(page) {
+		currentPage = page;
+		currentStartRecordIndex = (page - 1) * pageSize + 1;
+
+		const { regionsParam, periodsParam, fuelTechParams, metricsParam } = getFilterParams({
+			regions: $selectedRegions,
+			periods: $selectedPeriods,
+			stringFilter: recordIdSearch,
+			fuelTechs: $selectedFuelTechs,
+			aggregates: checkedAggregates,
+			metrics: $selectedMetrics,
+			significance: selectedSignificance
+		});
+
+		console.log('regionsParam', regionsParam);
+		console.log('periodsParam', periodsParam);
+		console.log('fuelTechParams', fuelTechParams);
+		console.log('metricsParam', metricsParam);
+
+		goto(`/records?page=${page}${regionsParam}${periodsParam}${fuelTechParams}${metricsParam}`, {
+			replaceState: true
+		});
+	}
 </script>
 
-<Meta title="Records" image="/img/preview.jpg" />
+<Meta
+	title="Records"
+	description="Track historical and current records of Australia's electricity grid with Open Electricity's record tracker"
+	image="/img/preview.jpg"
+/>
 
 <!-- <div class="grid grid-cols-6 divide-x">
 	<div class="col-span-2 flex justify-end">
@@ -132,14 +158,14 @@
 		<div class="flex justify-center mb-12">
 			<Switch
 				buttons={regions}
-				selected={selectedRegion}
-				on:change={(evt) => (selectedRegion = evt.detail.value)}
+				selected={$selectedRegion}
+				on:change={(evt) => ($selectedRegions = [evt.detail.value])}
 				class="justify-center bg-white text-xxs md:text-sm"
 			/>
 		</div>
 
 		<div class="px-6 md:px-0">
-			<PinnedRecords region={selectedRegion} />
+			<PinnedRecords region={selectedLongValueRegion} />
 		</div>
 	</section>
 </div>
@@ -221,7 +247,7 @@
 		</main>
 	</div>
 {:else}
-	<div class="md:container">
+	<div class="md:container p-6">
 		<Table dataset={recordsData} />
 	</div>
 {/if}
