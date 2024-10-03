@@ -23,6 +23,9 @@ export default function () {
 
 	// Line chart specific
 	const showLineArea = writable(true);
+	const lineColour = writable('rgba(0, 0, 0, 0.7)'); // CSS colour
+	const dotStroke = writable('rgba(0, 0, 0, 0.7)'); // CSS colour
+	const dotFill = writable('white'); // CSS colour
 
 	/** @type {import('svelte/store').Writable<SiPrefix>} */
 	const prefix = writable('');
@@ -203,8 +206,12 @@ export default function () {
 		hoverData,
 		focusTime,
 		focusData,
+
 		strokeWidth,
 		showLineArea,
+		lineColour,
+		dotStroke,
+		dotFill,
 
 		reset,
 		getNextPrefix

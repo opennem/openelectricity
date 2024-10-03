@@ -39,9 +39,6 @@
 	$: if (!dataXDomain) {
 		brushComponent?.clear();
 	}
-
-	$: console.log('hoverData', $hoverData);
-	$: console.log('focusData', $focusData);
 </script>
 
 <div class="w-full {defaultChartHeightClasses} bg-light-warm-grey">

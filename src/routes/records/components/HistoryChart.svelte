@@ -82,8 +82,6 @@
 		  })
 		: undefined;
 
-	$: console.log('axisXTicks', axisXTicks);
-
 	/**
 	 * @param {CustomEvent} evt
 	 */
@@ -107,7 +105,7 @@
 	}
 </script>
 
-<div class="flex justify-between item">
+<div class="flex justify-between item p-6 ml-2">
 	{#if $allowPrefixSwitch}
 		<button
 			class="font-light text-sm text-mid-grey hover:underline"
@@ -121,11 +119,12 @@
 
 	<Tooltip {xValue} {yValue} />
 </div>
-<div class="wrapper gap-3 h-full">
+<div class="wrapper gap-6 p-6 pt-0 pb-10 h-full">
 	<LineChartWithContext
 		store={historyStore}
 		customFormatTickX={(d) => format(d, 'd MMM')}
 		heightClasses="h-auto"
+		showDots={true}
 		on:mousemove
 		on:mouseout
 		on:pointerup
@@ -137,27 +136,11 @@
 		dataXDomain={brushedRange}
 		on:brushed={handleBrushed}
 	/>
-
-	<!-- <div>
-		<div class="">
-		</div>
-
-		<div class="h-4 grid grid-cols-7 mt-6">
-			{#if $xDomain}
-				<button
-					on:click={handleReset}
-					class="col-start-4 text-sm flex items-center gap-3 justify-center px-4 py-2 border rounded-xl whitespace-nowrap bg-white text-dark-grey hover:text-white hover:bg-dark-grey"
-				>
-					reset
-				</button>
-			{/if}
-		</div>
-	</div> -->
 </div>
 
 <style>
 	.wrapper {
 		display: grid;
-		grid-template-rows: 5fr 1fr;
+		grid-template-rows: 5fr 120px;
 	}
 </style>

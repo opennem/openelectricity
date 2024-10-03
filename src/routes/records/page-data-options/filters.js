@@ -177,7 +177,7 @@ export const milestoneTypeOptions = [
 		value: 'emissions',
 		label: 'Emissions',
 		displayPrefix: '',
-		allowedPrefixes: []
+		allowedPrefixes: ['', 'k']
 	},
 	{
 		value: 'proportion',

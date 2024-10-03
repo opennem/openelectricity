@@ -12,13 +12,15 @@
 	{#each [...rolledUpRecords] as [month, days]}
 		<div class="mt-20 first:mt-0">
 			<p
-				class="sticky top-0 z-20 bg-white/80 backdrop-blur-sm pt-6 pb-4 mb-0 border-b border-warm-grey font-space uppercase"
+				class="sticky top-0 z-20 bg-light-warm-grey/80 backdrop-blur-sm pt-6 pb-4 mb-0 border-b border-warm-grey font-space uppercase"
 			>
 				{format(month, 'MMMM yyyy')}
 			</p>
 
 			{#each [...days] as [day, { date, records, time }]}
-				<p class="sticky top-[50px] z-10 bg-white/80 backdrop-blur-sm py-2 text-xs font-space">
+				<p
+					class="sticky top-[50px] z-10 bg-light-warm-grey/80 backdrop-blur-sm py-2 text-xs font-space"
+				>
 					{format(day, 'EEE, dd MMM')}
 				</p>
 
@@ -32,17 +34,17 @@
 								href="/records/{encodeURIComponent(latest.record_id)}"
 								class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-6 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
 							>
-								<div class="col-span-6 p-8">
-									<!-- {#if latest.fueltech_id}
-										<span class="justify-self-start">
+								<div class="col-span-6 py-8 px-6 flex align-middle gap-4">
+									{#if latest.fueltech_id}
+										<span class="relative -top-[2px]">
 											<FuelTechTag
+												pxClass="px-2"
 												showText={false}
-												iconSize={16}
-												textSize={11}
+												iconSize={14}
 												fueltech={latest.fueltech_id}
 											/>
 										</span>
-									{/if} -->
+									{/if}
 									<div
 										class=" leading-base"
 										class:text-lg={significant}
@@ -54,7 +56,7 @@
 											latest.metric,
 											latest.fueltech_id
 										)}
-										<small class="block text-xxs text-mid-warm-grey">{latest.record_id}</small>
+										<!-- <small class="block text-xxs text-mid-warm-grey">{latest.record_id}</small> -->
 									</div>
 								</div>
 

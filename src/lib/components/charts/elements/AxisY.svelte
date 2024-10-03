@@ -57,7 +57,7 @@
 		? $yScale.domain()
 		: typeof ticks === 'function'
 		? ticks($yScale.ticks())
-		: $yScale.ticks(ticks);
+		: $yScale.nice().ticks(ticks);
 </script>
 
 <g

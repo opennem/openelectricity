@@ -1,9 +1,10 @@
 <script>
 	import { setContext, getContext } from 'svelte';
-
 	import { parseISO, format } from 'date-fns';
 	import { browser } from '$app/environment';
 	import { parseUnit } from '$lib/utils/si-units';
+
+	import Meta from '$lib/components/Meta.svelte';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 	import dataVizStore from '$lib/components/charts/stores/data-viz';
 	import { regionsWithLabels } from '$lib/regions';
@@ -149,12 +150,41 @@
 	function moveToNextDisplayPrefix() {
 		$displayPrefix = getNextPrefix();
 	}
+
+	$: getRecordTitle = (record) => {
+		if (!record) return 'Record';
+
+		let desc = recordDescription(
+			record.period || '',
+			record.aggregate || '',
+			record.metric || '',
+			record.fueltech_id || ''
+		);
+
+		if (record.network_region) {
+			desc += ` in ${regionsWithLabels[record.network_region.toLowerCase()]}`;
+		} else if (regionsWithLabels[record.network_id.toLowerCase()]) {
+			desc += ` in ${regionsWithLabels[record.network_id.toLowerCase()]}`;
+		} else {
+			desc += ` in the ${record.network_id}`;
+		}
+
+		return desc;
+	};
+
+	$: pageTitle = getRecordTitle(currentRecord);
 </script>
+
+<Meta
+	title={pageTitle}
+	description="Track historical and current records of Australia's electricity grid with Open Electricity's record tracker"
+	image="/img/preview.jpg"
+/>
 
 {#if loading}
 	<div>Loading...</div>
 {:else}
-	<div class="md:grid wrapper gap-6 p-16 md:h-[calc(100vh-100px)] z-10 overflow-auto">
+	<div class="md:grid wrapper gap-6 p-16 pb-32 md:h-[calc(100vh-100px)] z-10 overflow-auto">
 		<div class="py-6">
 			{#if currentRecord?.fueltech_id}
 				<span class="justify-self-start">
@@ -163,22 +193,7 @@
 			{/if}
 
 			<h2 class="mt-4">
-				{#if currentRecord}
-					{recordDescription(
-						currentRecord.period || '',
-						currentRecord.aggregate || '',
-						currentRecord.metric || '',
-						currentRecord.fueltech_id || ''
-					)}
-
-					{#if currentRecord.network_region}
-						in {regionsWithLabels[currentRecord.network_region.toLowerCase()]}
-					{:else if regionsWithLabels[currentRecord.network_id.toLowerCase()]}
-						in {regionsWithLabels[currentRecord.network_id.toLowerCase()]}
-					{:else}
-						in the {currentRecord.network_id}
-					{/if}
-				{/if}
+				{pageTitle}
 			</h2>
 		</div>
 
@@ -276,6 +291,8 @@
 		</div>
 	</div>
 {/if}
+
+<hr class="border-warm-grey border-0.5" />
 
 <style>
 	.wrapper {

@@ -31,7 +31,10 @@
 		xDomain,
 		yDomain,
 		strokeWidth,
-		showLineArea: showArea
+		showLineArea: showArea,
+		lineColour,
+		dotStroke,
+		dotFill
 	} = store;
 
 	export let clip = true;
@@ -58,6 +61,8 @@
 
 	/** @type {string} */
 	export let heightClasses = '';
+
+	export let showDots = false;
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
@@ -109,10 +114,13 @@
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
 				<Line
-					stroke="#353535"
+					stroke={$lineColour}
 					hoverData={$hoverData}
 					strokeWidth={$strokeWidth}
 					curveType={$curveType}
+					{showDots}
+					dotStroke={$dotStroke}
+					dotFill={$dotFill}
 				/>
 				{#if $showArea}
 					<Area fill={zKey} />

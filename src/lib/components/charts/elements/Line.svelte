@@ -14,6 +14,9 @@
 
 	export let clipPathId = '';
 	export let showDots = false;
+	export let dotFill = 'none';
+	export let dotStroke = '#ababab';
+	export let dotOpacity = 0.3;
 
 	export let curveType = curveLinear;
 
@@ -51,7 +54,14 @@
 
 	{#if showDots}
 		{#each $data as d}
-			<circle cx={$xGet(d)} cy={$yGet(d)} r="3" fill={stroke} fill-opacity="0.3" />
+			<circle
+				cx={$xGet(d)}
+				cy={$yGet(d)}
+				r="3"
+				fill={dotFill}
+				stroke={dotStroke}
+				fill-opacity={dotOpacity}
+			/>
 		{/each}
 	{/if}
 </g>
