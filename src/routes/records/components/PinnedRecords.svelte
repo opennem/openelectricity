@@ -168,7 +168,7 @@
 				{#if recordData}
 					<a
 						href="/records/{recordData.recordId}"
-						class="text-black bg-white border border-mid-warm-grey rounded-xl p-6 h-full grid grid-cols-1 gap-4 content-between transition-all"
+						class="text-black bg-white border border-mid-warm-grey hover:border-dark-grey !no-underline rounded-xl p-6 h-full grid grid-cols-1 gap-4 content-between transition-all"
 					>
 						<div>
 							<!-- <h6>{label}</h6> -->
