@@ -68,7 +68,6 @@
 				stroke="#ccc"
 				formatTick={$formatTickX}
 				tickMarks={false}
-				snapTicks={true}
 			/>
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
