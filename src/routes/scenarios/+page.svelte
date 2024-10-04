@@ -2,7 +2,7 @@
 	import { setContext, getContext, onMount } from 'svelte';
 
 	import { colourReducer } from '$lib/stores/theme';
-	import { regionOptions } from '$lib/regions';
+	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
 
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';

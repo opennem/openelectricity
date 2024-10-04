@@ -1,6 +1,6 @@
 <script>
 	import { LayerCake, Svg, Html, flatten, stack } from 'layercake';
-	import { scaleOrdinal } from 'd3-scale';
+	import { scaleOrdinal, scaleUtc } from 'd3-scale';
 	import { format as d3Format } from 'd3-format';
 	import { formatInTimeZone } from 'date-fns-tz';
 
@@ -73,6 +73,7 @@
 		x={(/** @type {*} */ d) => d[xKey] || d.data[xKey]}
 		y={yKey}
 		z={zKey}
+		xScale={scaleUtc()}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
 		zRange={Object.values(seriesColours)}

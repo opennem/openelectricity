@@ -2,7 +2,7 @@
 	import { getContext } from 'svelte';
 	import { startOfYear } from 'date-fns';
 
-	import { regionOptions } from '$lib/regions';
+	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';

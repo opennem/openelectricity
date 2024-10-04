@@ -5,7 +5,7 @@
 
 	import LineChartWithContext from '$lib/components/charts/LineChartWithContext.svelte';
 	import DateBrush from '$lib/components/charts/DateBrush.svelte';
-
+	import ResetZoom from '$lib/components/charts/elements/ResetZoom.html.svelte';
 	import Tooltip from './Tooltip.svelte';
 
 	const {
@@ -39,7 +39,7 @@
 	const dateBrushStore = getContext('date-brush-data-viz');
 
 	$curveType = curveStepAfter;
-	$xTicks = 4;
+	$xTicks = 10;
 	$yTicks = 3;
 	$strokeWidth = '1px';
 	$showLineArea = false;
@@ -62,6 +62,7 @@
 		$brushYDomain = [0, datasetMax];
 	}
 
+	$: console.log('formatTickX', $formatTickX);
 	$: xValue = $hoverTime ? $formatTickX($hoverTime) : '';
 	$: yValue = $hoverData ? $convertAndFormatValue($hoverData.value) + ' ' + $displayUnit : '';
 	$: xRange =
@@ -72,10 +73,12 @@
 			  ]
 			: undefined;
 	$: if (xRange) {
+		console.log('$seriesData', $seriesData);
+		console.log('xRange', xRange);
 		$xDomain = xRange;
 		$brushXDomain = xRange;
 	}
-	$: axisXTicks = xRange
+	$: axisXTicks = $xTicks = xRange
 		? eachYearOfInterval({
 				start: xRange[0],
 				end: xRange[1]
@@ -103,6 +106,11 @@
 	function moveToNextDisplayPrefix() {
 		$displayPrefix = getNextPrefix();
 	}
+
+	function handleZoomReset() {
+		$xDomain = xRange;
+		brushedRange = undefined;
+	}
 </script>
 
 <div class="flex justify-between item p-6 ml-2">
@@ -119,7 +127,12 @@
 
 	<Tooltip {xValue} {yValue} />
 </div>
-<div class="wrapper gap-6 p-6 pt-0 pb-10 h-full">
+<div class="wrapper gap-6 p-6 pt-0 pb-10 h-full relative">
+	{#if brushedRange}
+		<div class="absolute top-2 right-6 z-10">
+			<ResetZoom on:click={handleZoomReset} />
+		</div>
+	{/if}
 	<LineChartWithContext
 		store={historyStore}
 		customFormatTickX={(d) => format(d, 'd MMM')}

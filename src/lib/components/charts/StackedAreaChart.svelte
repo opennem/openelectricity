@@ -2,7 +2,7 @@
 	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
-	import { scaleOrdinal } from 'd3-scale';
+	import { scaleOrdinal, scaleUtc } from 'd3-scale';
 	import getSeqId from '$lib/utils/html-id-gen';
 	import AreaStacked from './elements/AreaStacked.svelte';
 	import AxisX from './elements/AxisX.svelte';
@@ -118,6 +118,7 @@
 		{y}
 		{z}
 		{yDomain}
+		xScale={scaleUtc()}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
 		{zRange}

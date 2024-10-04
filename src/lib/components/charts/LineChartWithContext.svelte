@@ -1,5 +1,6 @@
 <script>
 	import { LayerCake, Svg } from 'layercake';
+	import { scaleUtc } from 'd3-scale';
 
 	import getSeqId from '$lib/utils/html-id-gen';
 	import Line from './elements/Line.svelte';
@@ -72,6 +73,7 @@
 	// $: console.log('groupedData', groupedData);
 
 	$: clipPathId = clip ? `${id}-clip-path` : '';
+	$: clipPathAxisId = clip ? `${id}-clip-path-axis` : '';
 	$: yKey = $yKeys[0] || '';
 	$: maxValue = Math.round(Math.max(...$dataset.map((d) => d[yKey] || 0)));
 	$: maxY = maxValue > 0 ? maxValue + (maxValue * 10) / 100 : 10;
@@ -82,13 +84,15 @@
 		padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
 		x={xKey}
 		y={yKey}
+		xScale={scaleUtc()}
 		yDomain={$yDomain}
 		xDomain={$xDomain}
 		data={$dataset}
 	>
 		<Svg>
 			<defs>
-				<ClipPath id={`${id}-clip-path`} />
+				<ClipPath id={clipPathId} />
+				<ClipPath customPaddingLeft={20} customPaddingRight={20} id={clipPathAxisId} />
 			</defs>
 
 			{#if overlay}
@@ -110,6 +114,7 @@
 				formatTick={customFormatTickX || $formatTickX}
 				tickMarks={true}
 				snapTicks={$snapXTicks}
+				clipPathId={clipPathAxisId}
 			/>
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>

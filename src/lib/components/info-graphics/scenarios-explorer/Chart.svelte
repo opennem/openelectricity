@@ -3,7 +3,7 @@
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
 
-	import { scaleOrdinal } from 'd3-scale';
+	import { scaleOrdinal, scaleUtc } from 'd3-scale';
 
 	import { formatTickY, displayXTicks } from './helpers';
 
@@ -111,6 +111,7 @@
 		{y}
 		{z}
 		{yDomain}
+		xScale={scaleUtc()}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
 		zRange={Object.values(seriesColours)}

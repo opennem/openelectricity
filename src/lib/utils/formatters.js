@@ -1,5 +1,8 @@
 import { format } from 'date-fns';
 
+/** @typedef {"long" | "short" | "numeric" | "2-digit" | "narrow" | undefined}  DateTimeFormatMonthStyles */
+/** @typedef {"full" | "long" | "medium" | "short" | undefined} DateTimeFormatDateTimeStyles */
+
 export const getNumberFormat = (maximumFractionDigits = 0, useGrouping = true) =>
 	new Intl.NumberFormat('en-AU', {
 		maximumFractionDigits,
@@ -20,3 +23,71 @@ export const formatValue = (/** @type {number | null | undefined} */ d) => {
 	}
 	return formatted;
 };
+
+/**
+ *
+ * @param {Date} date
+ * @param {DateTimeFormatDateTimeStyles} dateStyle
+ * @param {DateTimeFormatDateTimeStyles} timeStyle
+ * @param {string} timeZone
+ * @returns
+ */
+export function getFormattedDateTime(
+	date,
+	dateStyle = 'full',
+	timeStyle = 'long',
+	timeZone = 'Australia/Sydney'
+) {
+	return new Intl.DateTimeFormat('en-AU', {
+		dateStyle,
+		timeStyle,
+		timeZone
+	}).format(date);
+}
+
+/**
+ *
+ * @param {Date} date
+ * @param {string} timeZone
+ * @returns
+ */
+export function getFormattedTime(date, timeZone = 'Australia/Sydney') {
+	return new Intl.DateTimeFormat('en-AU', {
+		timeStyle: 'short',
+		timeZone
+	}).format(date);
+}
+
+/**
+ *
+ * @param {Date} date
+ * @param {DateTimeFormatMonthStyles} [month]
+ * @param {string} timeZone
+ * @returns
+ */
+export function getFormattedMonth(date, month, timeZone = 'Australia/Sydney') {
+	return new Intl.DateTimeFormat('en-AU', {
+		year: 'numeric',
+		month,
+		timeZone
+	}).format(date);
+}
+
+/**
+ *
+ * @param {Date} date
+ * @param {"long" | "short" | "narrow" | undefined} [weekday]
+ * @param {DateTimeFormatMonthStyles} [month]
+ * @param {"numeric" | "2-digit" | undefined} [year]
+ * @param {string} [timeZone]
+ * @returns
+ */
+export function getFormattedDate(date, weekday, month, year, timeZone = 'Australia/Sydney') {
+	return new Intl.DateTimeFormat('en-AU', {
+		month,
+		weekday,
+		day: 'numeric',
+		year,
+		timeZone
+	}).format(date);
+}

@@ -1,5 +1,6 @@
 <script>
 	import { LayerCake, Svg, Html } from 'layercake';
+	import { scaleUtc } from 'd3-scale';
 
 	import Line from '$lib/components/charts/elements/Line.svelte';
 	import Area from '$lib/components/charts/elements/Area.svelte';
@@ -68,6 +69,7 @@
 			padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
 			x={'date'}
 			y={key}
+			xScale={scaleUtc()}
 			yDomain={[0, maxY]}
 			data={dataset}
 		>

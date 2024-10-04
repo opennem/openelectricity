@@ -1,6 +1,10 @@
 <script>
-	import { format } from 'date-fns';
-	import { formatValue } from '$lib/utils/formatters.js';
+	import {
+		formatValue,
+		getFormattedDate,
+		getFormattedMonth,
+		getFormattedDateTime
+	} from '$lib/utils/formatters.js';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 	import recordDescription from '../page-data-options/record-description';
 
@@ -28,10 +32,17 @@
 					<div class="w-1 h-[20px] bg-{record.fueltech_id}" />
 				</td>
 				<td class="px-4 py-2 font-mono text-xs">
-					{format(record.date, 'dd MMM yyyy')}
 					{#if record.period === 'interval'}
 						<time datetime={record.interval}>
-							{format(record.date, 'h:mma')}
+							{getFormattedDateTime(record.date, 'medium', 'short')}
+						</time>
+					{:else if record.period === 'day'}
+						<time datetime={record.interval}>
+							{getFormattedDate(record.date, undefined, 'short', 'numeric')}
+						</time>
+					{:else}
+						<time datetime={record.interval}>
+							{getFormattedMonth(record.date, 'short')}
 						</time>
 					{/if}
 				</td>

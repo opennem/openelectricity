@@ -52,6 +52,7 @@ export const regionOptions = [
 	}
 ];
 
+export const regionsNemOnlyOptions = regionOptions.filter((d) => d.value !== 'wem');
 export const regionsOnly = regionOptions.map((d) => d.value).slice(1);
 export const regionsWithShortLabels = optionsReducer(regionOptions, 'value', 'shortLabel');
 export const regionsWithLabels = optionsReducer(regionOptions, 'value', 'label');

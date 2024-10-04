@@ -3,6 +3,11 @@
 	import { parseISO, format } from 'date-fns';
 	import { browser } from '$app/environment';
 	import { parseUnit } from '$lib/utils/si-units';
+	import {
+		getFormattedDate,
+		getFormattedMonth,
+		getFormattedDateTime
+	} from '$lib/utils/formatters.js';
 
 	import Meta from '$lib/components/Meta.svelte';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
@@ -10,7 +15,6 @@
 	import { regionsWithLabels } from '$lib/regions';
 
 	import HistoryChart from '../components/HistoryChart.svelte';
-	import { formatStrings, formatStringsLong } from '../page-data-options/formatters';
 	import {
 		milestoneTypeDisplayPrefix,
 		milestoneTypeDisplayAllowedPrefixes
@@ -76,10 +80,8 @@
 		$brushSeriesNames = ['value'];
 		$brushSeriesData = [...sortedHistoryData].reverse();
 		$brushChartType = 'line';
-		$brushFormatTickX = (/** @type {Date} */ date) => format(date, 'yyyy');
-
-		$formatTickX = (/** @type {Date} */ date) =>
-			format(date, formatStrings[period] || 'd MMM yyyy, h:mma');
+		$brushFormatTickX = (/** @type {Date} */ date) => getFormattedMonth(date, undefined);
+		$formatTickX = timeFormatter(period);
 	}
 
 	$: id = data.id;
@@ -102,6 +104,27 @@
 			};
 		})
 		.sort((a, b) => b.time - a.time);
+
+	/**
+	 * @param {string} period
+	 */
+	function timeFormatter(period) {
+		if (period === 'interval') {
+			return function (/** @type {Date} */ date) {
+				return getFormattedDateTime(date, 'medium', 'short');
+			};
+		}
+
+		if (period === 'day') {
+			return function (/** @type {Date} */ date) {
+				return getFormattedDate(date, undefined, 'short', 'numeric');
+			};
+		}
+
+		return function (/** @type {Date} */ date) {
+			return getFormattedMonth(date, 'short');
+		};
+	}
 
 	/**
 	 * Fetch a single record
@@ -265,7 +288,10 @@
 								class="px-4 py-2 font-mono text-dark-grey"
 								class:text-red={record.time === $focusTime}
 							>
-								{format(record.date, formatStringsLong[record.period])}
+								<!-- {format(record.date, formatStringsLong[record.period])} -->
+								<time datetime={record.interval}>
+									{timeFormatter(record.period)(record.date)}
+								</time>
 							</td>
 							<td
 								class="px-4 py-2 text-right font-mono text-dark-grey"
