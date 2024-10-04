@@ -98,9 +98,10 @@
 
 	$: left = min ? 100 * min : 0;
 	$: right = max ? 100 * (1 - max) : 1;
-	$: if (min && max) {
+	$: if ((min || min === 0) && (max || max === 0)) {
 		dispatchBrushed();
 	}
+	$: console.log({ min, max, left, right });
 
 	function dispatchBrushed() {
 		const range = $xScale.range();
