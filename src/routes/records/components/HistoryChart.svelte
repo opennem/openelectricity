@@ -1,11 +1,24 @@
 <script>
 	import { getContext } from 'svelte';
 	import { curveStepAfter } from 'd3-shape';
-	import { format, startOfYear, addYears, eachYearOfInterval } from 'date-fns';
+	import { timeYear } from 'd3-time';
+
+	import {
+		format,
+		startOfYear,
+		endOfYear,
+		addYears,
+		addMonths,
+		subYears,
+		subMonths,
+		eachYearOfInterval
+	} from 'date-fns';
+	import { getFormattedMonth } from '$lib/utils/formatters.js';
 
 	import LineChartWithContext from '$lib/components/charts/LineChartWithContext.svelte';
 	import DateBrush from '$lib/components/charts/DateBrush.svelte';
 	import ResetZoom from '$lib/components/charts/elements/ResetZoom.html.svelte';
+	import getXTicks from '../page-data-options/get-x-ticks';
 	import Tooltip from './Tooltip.svelte';
 
 	const {
@@ -39,7 +52,7 @@
 	const dateBrushStore = getContext('date-brush-data-viz');
 
 	$curveType = curveStepAfter;
-	$xTicks = 10;
+	$xTicks = 5;
 	$yTicks = 3;
 	$strokeWidth = '1px';
 	$showLineArea = false;
@@ -62,7 +75,6 @@
 		$brushYDomain = [0, datasetMax];
 	}
 
-	$: console.log('formatTickX', $formatTickX);
 	$: xValue = $hoverTime ? $formatTickX($hoverTime) : '';
 	$: yValue = $hoverData ? $convertAndFormatValue($hoverData.value) + ' ' + $displayUnit : '';
 	$: xRange =
@@ -73,17 +85,14 @@
 			  ]
 			: undefined;
 	$: if (xRange) {
-		console.log('$seriesData', $seriesData);
+		// console.log('$seriesData', $seriesData);
 		console.log('xRange', xRange);
 		$xDomain = xRange;
 		$brushXDomain = xRange;
 	}
-	$: axisXTicks = $xTicks = xRange
-		? eachYearOfInterval({
-				start: xRange[0],
-				end: xRange[1]
-		  })
-		: undefined;
+
+	$: axisXTicks = xRange ? timeYear.every(2)?.range(xRange[0], xRange[1]) : undefined;
+	$: $xTicks = axisXTicks && !brushedRange ? axisXTicks : 5;
 
 	/**
 	 * @param {CustomEvent} evt
@@ -135,7 +144,7 @@
 	{/if}
 	<LineChartWithContext
 		store={historyStore}
-		customFormatTickX={(d) => format(d, 'd MMM')}
+		customFormatTickX={(d) => getXTicks(d, brushedRange || xRange)}
 		heightClasses="h-auto"
 		showDots={true}
 		on:mousemove

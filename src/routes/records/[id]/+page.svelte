@@ -6,7 +6,8 @@
 	import {
 		getFormattedDate,
 		getFormattedMonth,
-		getFormattedDateTime
+		getFormattedDateTime,
+		getFormattedTime
 	} from '$lib/utils/formatters.js';
 
 	import Meta from '$lib/components/Meta.svelte';
@@ -66,9 +67,11 @@
 		const metric = sortedHistoryData[0].metric;
 		const parsed = parseUnit(sortedHistoryData[0].value_unit);
 
+		const sortedData = [...sortedHistoryData].reverse();
+
 		$title = sortedHistoryData[0].description;
 		$seriesNames = ['value'];
-		$seriesData = [...sortedHistoryData].reverse();
+		$seriesData = sortedData;
 		$chartType = 'line';
 		$chartHeightClasses = 'h-[500px]';
 		$baseUnit = parsed.baseUnit;
@@ -76,9 +79,8 @@
 		$displayPrefix = milestoneTypeDisplayPrefix[metric];
 		$allowedPrefixes = milestoneTypeDisplayAllowedPrefixes[metric];
 
-		// date brush - REFACTOR this
 		$brushSeriesNames = ['value'];
-		$brushSeriesData = [...sortedHistoryData].reverse();
+		$brushSeriesData = sortedData;
 		$brushChartType = 'line';
 		$brushFormatTickX = (/** @type {Date} */ date) => getFormattedMonth(date, undefined);
 		$formatTickX = timeFormatter(period);
@@ -105,6 +107,8 @@
 		})
 		.sort((a, b) => b.time - a.time);
 
+	let prevDay = '';
+
 	/**
 	 * @param {string} period
 	 */
@@ -117,7 +121,37 @@
 
 		if (period === 'day') {
 			return function (/** @type {Date} */ date) {
-				return getFormattedDate(date, undefined, 'short', 'numeric');
+				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
+			};
+		}
+
+		return function (/** @type {Date} */ date) {
+			return getFormattedMonth(date, 'short');
+		};
+	}
+
+	/**
+	 * @param {string} period
+	 * @param {boolean} [timeOnly]
+	 */
+	function tableTimeFormatter(period, timeOnly = false) {
+		if (period === 'interval') {
+			return function (/** @type {Date} */ date) {
+				const day = getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
+				if (!prevDay || day !== prevDay) {
+					prevDay = day;
+					return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
+				}
+
+				if (timeOnly) return getFormattedTime(date);
+
+				return '';
+			};
+		}
+
+		if (period === 'day') {
+			return function (/** @type {Date} */ date) {
+				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
 			};
 		}
 
@@ -255,7 +289,7 @@
 		<div class="md:overflow-y-auto rounded-lg border border-warm-grey">
 			<table class="bg-white text-sm w-full">
 				<thead>
-					<tr class="sticky top-0 bg-light-warm-grey/60 backdrop-blur-xl">
+					<tr class="sticky top-0 z-10 bg-light-warm-grey/60 backdrop-blur-xl">
 						<th class="text-left">
 							<div class="px-4 py-2">Date</div>
 						</th>
@@ -285,14 +319,20 @@
 							on:pointerup={() => handlePointerup({ detail: { time: record.time } })}
 						>
 							<td
-								class="px-4 py-2 font-mono text-dark-grey"
+								class="pl-4 py-2 font-mono text-dark-grey grid grid-cols-2 gap-1"
 								class:text-red={record.time === $focusTime}
 							>
-								<!-- {format(record.date, formatStringsLong[record.period])} -->
 								<time datetime={record.interval}>
-									{timeFormatter(record.period)(record.date)}
+									{tableTimeFormatter(record.period)(record.date)}
 								</time>
+
+								{#if record.period === 'interval'}
+									<time datetime={record.interval}>
+										{tableTimeFormatter(record.period, true)(record.date)}
+									</time>
+								{/if}
 							</td>
+
 							<td
 								class="px-4 py-2 text-right font-mono text-dark-grey"
 								class:text-red={record.time === $focusTime}
@@ -303,7 +343,7 @@
 					{/each}
 				</tbody>
 
-				<thead>
+				<tfoot>
 					<tr class="sticky bottom-0 bg-light-warm-grey/60 backdrop-blur-xl">
 						<th class="text-left">
 							<div class="px-4 py-2">Total records</div>
@@ -312,7 +352,7 @@
 							<div class="px-4 py-2">{sortedHistoryData.length}</div>
 						</th>
 					</tr>
-				</thead>
+				</tfoot>
 			</table>
 		</div>
 	</div>

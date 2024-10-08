@@ -77,16 +77,17 @@ export function getFormattedMonth(date, month, timeZone = 'Australia/Sydney') {
  *
  * @param {Date} date
  * @param {"long" | "short" | "narrow" | undefined} [weekday]
+ * @param {"numeric" | "2-digit" | undefined} [day]
  * @param {DateTimeFormatMonthStyles} [month]
  * @param {"numeric" | "2-digit" | undefined} [year]
  * @param {string} [timeZone]
  * @returns
  */
-export function getFormattedDate(date, weekday, month, year, timeZone = 'Australia/Sydney') {
+export function getFormattedDate(date, weekday, day, month, year, timeZone = 'Australia/Sydney') {
 	return new Intl.DateTimeFormat('en-AU', {
 		month,
 		weekday,
-		day: 'numeric',
+		day,
 		year,
 		timeZone
 	}).format(date);

@@ -38,7 +38,7 @@
 						</time>
 					{:else if record.period === 'day'}
 						<time datetime={record.interval}>
-							{getFormattedDate(record.date, undefined, 'short', 'numeric')}
+							{getFormattedDate(record.date, undefined, 'numeric', 'short', 'numeric')}
 						</time>
 					{:else}
 						<time datetime={record.interval}>

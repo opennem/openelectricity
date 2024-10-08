@@ -16,7 +16,7 @@ function groupByMonthDay(data) {
 
 			return {
 				time: latestTime,
-				date: getFormattedDate(new Date(latestTime), 'short', 'short'),
+				date: getFormattedDate(new Date(latestTime), 'short', 'numeric', 'short'),
 				records: group(intervalDayRecords, (r) => r.record_id),
 				nonIntervalDayRecords: nonIntervalDayRecords
 			};
