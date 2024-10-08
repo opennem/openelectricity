@@ -3,16 +3,7 @@
 	import { curveStepAfter } from 'd3-shape';
 	import { timeYear } from 'd3-time';
 
-	import {
-		format,
-		startOfYear,
-		endOfYear,
-		addYears,
-		addMonths,
-		subYears,
-		subMonths,
-		eachYearOfInterval
-	} from 'date-fns';
+	import { startOfYear, addYears } from 'date-fns';
 	import { getFormattedMonth } from '$lib/utils/formatters.js';
 
 	import LineChartWithContext from '$lib/components/charts/LineChartWithContext.svelte';
@@ -85,14 +76,29 @@
 			  ]
 			: undefined;
 	$: if (xRange) {
-		// console.log('$seriesData', $seriesData);
-		// console.log('xRange', xRange);
 		$xDomain = xRange;
 		$brushXDomain = xRange;
 	}
 
 	$: axisXTicks = xRange ? timeYear.every(2)?.range(xRange[0], xRange[1]) : undefined;
 	$: $xTicks = axisXTicks && !brushedRange ? axisXTicks : 5;
+
+	// insert the first and last item in xRange into axisXTicks
+	$: if (axisXTicks && xRange) {
+		const xStartYear = getFormattedMonth(xRange[0], undefined);
+		const tickStartYear = getFormattedMonth(axisXTicks[0], undefined);
+		const xEndYear = getFormattedMonth(xRange[1], undefined);
+		const tickEndYear = getFormattedMonth(axisXTicks[axisXTicks.length - 1], undefined);
+
+		// if not the same year, insert the first item in xRange into axisXTicks
+		if (xStartYear !== tickStartYear) {
+			axisXTicks.unshift(xRange[0]);
+		}
+		// if not the same year, insert the last item in xRange into axisXTicks
+		if (xEndYear !== tickEndYear) {
+			axisXTicks.push(xRange[1]);
+		}
+	}
 
 	/**
 	 * @param {CustomEvent} evt
