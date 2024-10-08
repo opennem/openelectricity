@@ -24,4 +24,6 @@
 	}
 </script>
 
-<svelte:component this={icon} class="size-{sizeClass}" />
+<div class="size-{sizeClass}">
+	<svelte:component this={icon} class="size-{sizeClass}" />
+</div>
