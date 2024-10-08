@@ -1,14 +1,14 @@
 <script>
 	import { setContext, getContext } from 'svelte';
-	import { parseISO, format } from 'date-fns';
+	import { fade } from 'svelte/transition';
+	import { parseISO } from 'date-fns';
 	import { browser } from '$app/environment';
 	import { parseUnit } from '$lib/utils/si-units';
 	import {
 		getFormattedDate,
 		getFormattedMonth,
 		getFormattedDateTime,
-		getFormattedTime,
-		getNumberFormat
+		getFormattedTime
 	} from '$lib/utils/formatters.js';
 
 	import Meta from '$lib/components/Meta.svelte';
@@ -252,7 +252,15 @@
 />
 
 {#if loading}
-	<div>Loading...</div>
+	<div
+		transition:fade
+		class="md:grid wrapper gap-6 p-16 pb-32 md:h-[calc(100vh-100px)] z-10 overflow-auto animate-pulse"
+	>
+		<div class="bg-mid-warm-grey rounded-lg h-[128px]" />
+		<div class="bg-mid-warm-grey rounded-lg" />
+		<div class="bg-mid-warm-grey rounded-lg" />
+		<div class="bg-mid-warm-grey rounded-lg" />
+	</div>
 {:else}
 	<div class="md:grid wrapper gap-6 p-16 pb-32 md:h-[calc(100vh-100px)] z-10 overflow-auto">
 		<div class="py-6">
