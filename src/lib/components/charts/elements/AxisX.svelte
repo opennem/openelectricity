@@ -43,8 +43,6 @@
 
 	$: isBandwidth = typeof $xScale.bandwidth === 'function';
 
-	$: console.log('ticks', ticks);
-
 	$: tickVals = Array.isArray(ticks)
 		? ticks
 		: isBandwidth

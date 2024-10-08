@@ -86,7 +86,7 @@
 			: undefined;
 	$: if (xRange) {
 		// console.log('$seriesData', $seriesData);
-		console.log('xRange', xRange);
+		// console.log('xRange', xRange);
 		$xDomain = xRange;
 		$brushXDomain = xRange;
 	}

@@ -62,7 +62,7 @@
 	let loading = false;
 
 	$: if (sortedHistoryData.length) {
-		console.log('sortedHistoryData', sortedHistoryData[0]);
+		// console.log('sortedHistoryData', sortedHistoryData[0]);
 		const period = sortedHistoryData[0].period;
 		const metric = sortedHistoryData[0].metric;
 		const parsed = parseUnit(sortedHistoryData[0].value_unit);
@@ -88,9 +88,9 @@
 
 	$: id = data.id;
 	$: fetchRecord(id);
-	$: console.log('id', id);
-	$: console.log('historyData', historyData);
-	$: console.log('sortedHistoryData', sortedHistoryData);
+	// $: console.log('id', id);
+	// $: console.log('historyData', historyData);
+	// $: console.log('sortedHistoryData', sortedHistoryData);
 	$: currentRecord = sortedHistoryData.length ? sortedHistoryData[0] : null;
 	$: previousRecord =
 		sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null;
