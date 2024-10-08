@@ -9,7 +9,6 @@ export default function () {
 	const title = writable('');
 
 	const allowedPrefixes = writable([]);
-
 	const allowPrefixSwitch = derived(
 		allowedPrefixes,
 		($allowedPrefixes) => $allowedPrefixes && $allowedPrefixes.length > 1
@@ -71,12 +70,17 @@ export default function () {
 	/** @type {import('svelte/store').Writable<Function>} */
 	const formatTickY = writable((/** @type {number} */ d) => numberFormat.format(d));
 
-	const convertAndFormatValue = derived([prefix, displayPrefix], ([$prefix, $displayPrefix]) => {
-		return (/** @type {number} */ d) => {
-			const converted = convert($prefix, $displayPrefix, d);
-			return isNaN(converted) ? '—' : numberFormat.format(converted);
-		};
-	});
+	const maximumFractionDigits = writable(0);
+
+	const convertAndFormatValue = derived(
+		[prefix, displayPrefix, maximumFractionDigits],
+		([$prefix, $displayPrefix, $maximumFractionDigits]) => {
+			return (/** @type {number} */ d) => {
+				const converted = convert($prefix, $displayPrefix, d);
+				return isNaN(converted) ? '—' : getNumberFormat($maximumFractionDigits).format(converted);
+			};
+		}
+	);
 
 	const convertValue = derived([prefix, displayPrefix], ([$prefix, $displayPrefix]) => {
 		return (/** @type {number} */ d) => {
@@ -179,6 +183,7 @@ export default function () {
 		displayPrefix,
 		convertAndFormatValue,
 		convertValue,
+		maximumFractionDigits,
 
 		seriesData,
 		seriesCsvData,

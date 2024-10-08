@@ -156,6 +156,10 @@
 			loading = false;
 		});
 	}
+
+	function getMaximumFractionDigits(ft) {
+		return ft === 'renewables' ? 1 : 0;
+	}
 </script>
 
 <div
@@ -191,7 +195,7 @@
 							style="border-color: {fuelTechColourMap[fuelTech]}"
 						>
 							<div>
-								{getNumberFormat().format(recordData.value)}
+								{getNumberFormat(getMaximumFractionDigits(fuelTech)).format(recordData.value)}
 								<small class="text-mid-grey">{recordData.unit}</small>
 							</div>
 							<time class="text-xxs text-mid-grey">

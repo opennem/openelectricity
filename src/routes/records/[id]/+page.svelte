@@ -7,7 +7,8 @@
 		getFormattedDate,
 		getFormattedMonth,
 		getFormattedDateTime,
-		getFormattedTime
+		getFormattedTime,
+		getNumberFormat
 	} from '$lib/utils/formatters.js';
 
 	import Meta from '$lib/components/Meta.svelte';
@@ -44,7 +45,8 @@
 		allowedPrefixes,
 		allowPrefixSwitch,
 		displayUnit,
-		getNextPrefix
+		getNextPrefix,
+		maximumFractionDigits
 	} = getContext('record-history-data-viz');
 	const {
 		seriesNames: brushSeriesNames,
@@ -66,6 +68,7 @@
 		const period = sortedHistoryData[0].period;
 		const metric = sortedHistoryData[0].metric;
 		const parsed = parseUnit(sortedHistoryData[0].value_unit);
+		console.log('metric', metric);
 
 		const sortedData = [...sortedHistoryData].reverse();
 
@@ -78,6 +81,10 @@
 		$prefix = parsed.prefix;
 		$displayPrefix = milestoneTypeDisplayPrefix[metric];
 		$allowedPrefixes = milestoneTypeDisplayAllowedPrefixes[metric];
+
+		if (metric === 'proportion') {
+			$maximumFractionDigits = 1;
+		}
 
 		$brushSeriesNames = ['value'];
 		$brushSeriesData = sortedData;
@@ -325,10 +332,10 @@
 							on:pointerup={() => handlePointerup({ detail: { time: record.time } })}
 						>
 							<td
-								class="pl-4 py-2 font-mono text-dark-grey grid grid-cols-2 gap-1"
+								class="pl-4 py-2 font-mono text-dark-grey flex"
 								class:text-red={record.time === $focusTime}
 							>
-								<time datetime={record.interval}>
+								<time datetime={record.interval} class="w-44">
 									{tableTimeFormatter(record.period)(record.date)}
 								</time>
 
