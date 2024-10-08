@@ -155,6 +155,12 @@
 			};
 		}
 
+		if (period === 'year') {
+			return function (/** @type {Date} */ date) {
+				return getFormattedMonth(date, undefined);
+			};
+		}
+
 		return function (/** @type {Date} */ date) {
 			return getFormattedMonth(date, 'short');
 		};
