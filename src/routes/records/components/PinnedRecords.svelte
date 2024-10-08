@@ -80,8 +80,6 @@
 		return data;
 	}
 
-	$: console.log('region', region);
-
 	$: if (region && browser) {
 		records = [];
 		recordMap = {

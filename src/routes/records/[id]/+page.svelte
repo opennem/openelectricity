@@ -103,6 +103,15 @@
 		sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null;
 	$: isPeriodInterval = currentRecord?.period === 'interval';
 
+	$: console.log('currentRecord', currentRecord);
+	$: timestamp = currentRecord?.time;
+	$: recordId = currentRecord?.record_id;
+	$: previewImageLocation =
+		recordId && timestamp
+			? `https://browser-worker.opennem2161.workers.dev/?key=${recordId}-${timestamp}`
+			: '/img/preview.jpg';
+	$: console.log('previewImageLocation', previewImageLocation);
+
 	$: sortedHistoryData = historyData
 		.map((record) => {
 			const date = parseISO(record.interval);
@@ -248,8 +257,9 @@
 <Meta
 	title={pageTitle}
 	description="Track historical and current records of Australia's electricity grid with Open Electricity's record tracker"
-	image="/img/preview.jpg"
 />
+
+<!-- image={previewImageLocation} -->
 
 {#if loading}
 	<div
