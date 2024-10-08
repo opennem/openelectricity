@@ -117,7 +117,9 @@ export default {
 			bioenergy: '#1D7A7A',
 			coal: '#25170C',
 			gas: '#E87809',
-			solar: '#FED500'
+			solar: '#FED500',
+			renewables: '#52A972',
+			fossils: '#594929'
 		},
 
 		extend: {
