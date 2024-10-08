@@ -30,7 +30,7 @@ export const periodAggregateMap = {
  * @type {Object.<string, string[]>}
  */
 export const metricPeriodMap = {
-	'power.interval': ['level of', 'generation'],
+	'power.interval': ['generation'],
 	'power.day': ['generation'],
 	'power.7d': ['generation'],
 	'power.month': ['generation'],
@@ -38,7 +38,7 @@ export const metricPeriodMap = {
 	'power.year': ['generation'],
 	'power.financial_year': ['generation'],
 
-	'energy.interval': ['level of', 'generation'],
+	'energy.interval': ['generation'],
 	'energy.day': ['generation'],
 	'energy.7d': ['generation'],
 	'energy.month': ['generation'],
@@ -100,7 +100,7 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 			return `${periodAggregate[0]} ${metricPeriod[0]}`;
 		}
 
-		return `${periodAggregate[0]} ${metricPeriod[0]} ${ftLabel} ${metricPeriod[1] || ''}`;
+		return `${periodAggregate[0]} ${ftLabel}  ${metricPeriod[0]}`;
 	}
 
 	if (isBattery) {
