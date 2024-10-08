@@ -1,11 +1,10 @@
 <script>
 	import {
-		formatValue,
 		getFormattedDate,
 		getFormattedMonth,
 		getFormattedDateTime
 	} from '$lib/utils/formatters.js';
-	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
+	import { formatRecordValue } from '../page-data-options/formatters';
 	import FuelTechIcon from './FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 
@@ -75,7 +74,7 @@
 				</td>
 
 				<td class="px-4 py-2 text-right font-mono">
-					{formatValue(record.value)}
+					{formatRecordValue(record.value, record.fueltech_id)}
 				</td>
 
 				<td class="px-4 py-2 font-mono">

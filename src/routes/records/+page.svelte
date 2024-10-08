@@ -165,7 +165,7 @@
 			/>
 		</div>
 
-		<div class="px-6 md:px-0">
+		<div class="p-6 md:px-0">
 			<PinnedRecords region={selectedLongValueRegion} />
 		</div>
 	</section>

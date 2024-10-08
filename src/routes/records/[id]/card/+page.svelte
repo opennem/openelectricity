@@ -4,8 +4,8 @@
 	import { browser } from '$app/environment';
 	import Icon from '$lib/components/Icon.svelte';
 	import { fuelTechColourMap } from '$lib/fuel_techs';
-	import { getNumberFormat } from '$lib/utils/formatters';
 
+	import { formatRecordValue } from '../../page-data-options/formatters';
 	import recordDescription from '../../page-data-options/record-description';
 	import getRelativeTime from '../../page-data-options/relative-time';
 
@@ -51,10 +51,6 @@
 		const data = jsonData.data && jsonData.data.length ? jsonData.data[0] : {};
 		return data;
 	}
-
-	function getMaximumFractionDigits(ft) {
-		return ft === 'renewables' ? 1 : 0;
-	}
 </script>
 
 <div class="py-12">
@@ -83,7 +79,7 @@
 				style="border-color: {fuelTechColourMap[fuelTech]}"
 			>
 				<div>
-					{getNumberFormat(getMaximumFractionDigits(fuelTech)).format(currentRecord.value)}
+					{formatRecordValue(currentRecord.value, fuelTech)}
 					<small class="text-mid-grey">{currentRecord.value_unit}</small>
 				</div>
 				<time class="text-xxs text-mid-grey">

@@ -1,6 +1,6 @@
 <script>
-	import { formatValue, getFormattedTime, getFormattedDateTime } from '$lib/utils/formatters.js';
-	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
+	import { getFormattedTime } from '$lib/utils/formatters.js';
+	import { formatRecordValue } from '../page-data-options/formatters';
 	import FuelTechIcon from './FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 
@@ -88,7 +88,7 @@
 													class="font-mono text-base text-dark-grey"
 													class:text-lg={significant}
 												>
-													{formatValue(record.value)}
+													{formatRecordValue(record.value, record.fueltech_id)}
 												</span>
 												<span class="text-xs">{record.value_unit}</span>
 											</div>
@@ -170,7 +170,7 @@
 															class:text-dark-grey={i === 0}
 															class:text-lg={significant}
 														>
-															{formatValue(record.value)}
+															{formatRecordValue(record.value, record.fueltech_id)}
 														</span>
 														{#if i === 0}
 															<span class="text-xs">{record.value_unit}</span>

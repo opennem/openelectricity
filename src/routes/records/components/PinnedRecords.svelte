@@ -1,17 +1,18 @@
 <script>
-	import { parseISO, format, formatRelative } from 'date-fns';
-
+	import { parseISO } from 'date-fns';
 	import { browser } from '$app/environment';
-	import { getNumberFormat } from '$lib/utils/formatters';
 	import Icon from '$lib/components/Icon.svelte';
 	import { fuelTechColourMap } from '$lib/fuel_techs';
 
-	import { formatStrings } from '../page-data-options/formatters';
+	import { formatRecordValue } from '../page-data-options/formatters';
 	import getRelativeTime from '../page-data-options/relative-time';
 	import recordDescription from '../page-data-options/record-description';
 
 	export let region;
 
+	/**
+	 * @type {{ fuelTech: FuelTechCode, label: string, ids: string[] }[]}
+	 */
 	const pinned = [
 		{
 			fuelTech: 'solar',
@@ -154,16 +155,12 @@
 			loading = false;
 		});
 	}
-
-	function getMaximumFractionDigits(ft) {
-		return ft === 'renewables' ? 1 : 0;
-	}
 </script>
 
 <div
 	class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8 md:grid grid-cols-5 md:gap-4"
 >
-	{#each pinned as { fuelTech, label }}
+	{#each pinned as { fuelTech }}
 		{@const recordData = recordMap[fuelTech]}
 		<div class="snap-start shrink-0 w-[200px] md:w-auto">
 			{#if !loading}
@@ -193,7 +190,7 @@
 							style="border-color: {fuelTechColourMap[fuelTech]}"
 						>
 							<div>
-								{getNumberFormat(getMaximumFractionDigits(fuelTech)).format(recordData.value)}
+								{formatRecordValue(recordData.value, fuelTech)}
 								<small class="text-mid-grey">{recordData.unit}</small>
 							</div>
 							<time class="text-xxs text-mid-grey">
