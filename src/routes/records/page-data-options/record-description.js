@@ -100,12 +100,12 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 			return `${periodAggregate[0]} ${metricPeriod[0]}`;
 		}
 
-		return `${periodAggregate[0]} ${metricPeriod[0]} ${ftLabel} ${metricPeriod[1]}`;
+		return `${periodAggregate[0]} ${metricPeriod[0]} ${ftLabel} ${metricPeriod[1] || ''}`;
 	}
 
 	if (isBattery) {
 		return `${periodAggregate[0]} ${ftLabel} ${periodAggregate[1]}`;
 	}
 
-	return `${periodAggregate[0]} ${ftLabel} ${metricPeriod[0]} ${periodAggregate[1]}`;
+	return `${periodAggregate[0]} ${ftLabel} ${metricPeriod[0]} ${periodAggregate[1] || ''}`;
 }
