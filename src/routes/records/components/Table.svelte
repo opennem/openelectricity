@@ -6,6 +6,7 @@
 		getFormattedDateTime
 	} from '$lib/utils/formatters.js';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
+	import FuelTechIcon from './FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 
 	export let dataset;
@@ -16,7 +17,6 @@
 <table class="bg-white text-sm w-full">
 	<thead>
 		<tr class="border-b border-warm-grey sticky top-0 bg-white/80 backdrop-blur-sm z-10">
-			<th />
 			<th class="px-4 py-4 text-left">Date</th>
 			<th class="px-4 py-4 text-left">Record</th>
 			<th />
@@ -28,9 +28,9 @@
 	<tbody>
 		{#each dataset as record}
 			<tr class="border-b border-light-warm-grey pointer hover:bg-warm-grey text-mid-grey">
-				<td class="px-4 py-2">
+				<!-- <td class="px-4 py-2">
 					<div class="w-1 h-[20px] bg-{record.fueltech_id}" />
-				</td>
+				</td> -->
 				<td class="px-4 py-2 font-mono text-xs">
 					{#if record.period === 'interval'}
 						<time datetime={record.interval}>
@@ -50,10 +50,17 @@
 				<td class="px-4 py-2">
 					<a
 						href="/records/{encodeURIComponent(record.record_id)}"
-						class="text-base text-dark-grey"
+						class="text-base text-dark-grey flex items-center gap-4"
 					>
 						{#if record.fueltech_id}
-							<span class="relative top-[2px] z-0">
+							<span
+								class="bg-{record.fueltech_id} rounded-full p-2 place-self-start"
+								class:text-black={record.fueltech_id === 'solar'}
+								class:text-white={record.fueltech_id !== 'solar'}
+							>
+								<FuelTechIcon fuelTech={record.fueltech_id} sizeClass={5} />
+							</span>
+							<!-- <span class="relative top-[2px] z-0">
 								<FuelTechTag
 									pxClass="size-12"
 									showBgColour={false}
@@ -61,7 +68,7 @@
 									iconSize={18}
 									fueltech={record.fueltech_id}
 								/>
-							</span>
+							</span> -->
 						{/if}
 						{recordDescription(record.period, record.aggregate, record.metric, record.fueltech_id)}
 					</a>

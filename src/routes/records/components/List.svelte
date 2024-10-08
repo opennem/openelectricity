@@ -1,6 +1,7 @@
 <script>
 	import { formatValue, getFormattedTime, getFormattedDateTime } from '$lib/utils/formatters.js';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
+	import FuelTechIcon from './FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 
 	export let rolledUpRecords;
@@ -44,14 +45,21 @@
 								>
 									<div class="col-span-6 py-8 px-6 flex align-middle gap-4">
 										{#if record.fueltech_id}
-											<span class="relative -top-[2px]">
+											<span
+												class="relative -top-[2px] bg-{record.fueltech_id} rounded-full p-2 place-self-start"
+												class:text-black={record.fueltech_id === 'solar'}
+												class:text-white={record.fueltech_id !== 'solar'}
+											>
+												<FuelTechIcon fuelTech={record.fueltech_id} sizeClass={5} />
+											</span>
+											<!-- <span class="relative -top-[2px]">
 												<FuelTechTag
 													pxClass="px-2"
 													showText={false}
 													iconSize={14}
 													fueltech={record.fueltech_id}
 												/>
-											</span>
+											</span> -->
 										{/if}
 										<div
 											class="leading-base"
@@ -116,14 +124,21 @@
 									>
 										<div class="col-span-6 py-8 px-6 flex align-middle gap-4">
 											{#if latest.fueltech_id}
-												<span class="relative -top-[2px]">
+												<span
+													class="relative -top-[2px] bg-{latest.fueltech_id} rounded-full p-2 place-self-start"
+													class:text-black={latest.fueltech_id === 'solar'}
+													class:text-white={latest.fueltech_id !== 'solar'}
+												>
+													<FuelTechIcon fuelTech={latest.fueltech_id} sizeClass={5} />
+												</span>
+												<!-- <span class="relative -top-[2px]">
 													<FuelTechTag
 														pxClass="px-2"
 														showText={false}
 														iconSize={14}
 														fueltech={latest.fueltech_id}
 													/>
-												</span>
+												</span> -->
 											{/if}
 											<div
 												class="leading-base"
