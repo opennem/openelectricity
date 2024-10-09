@@ -31,7 +31,7 @@ export const periodAggregateMap = {
  */
 export const metricPeriodMap = {
 	'power.interval': ['generation'],
-	'power.day': ['generation'],
+	'power.day': ['instantaneous', 'generation'],
 	'power.7d': ['generation'],
 	'power.month': ['generation'],
 	'power.quarter': ['generation'],
@@ -104,7 +104,15 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 	}
 
 	if (isBattery) {
+		if (metric === 'power') {
+			return `${periodAggregate[0]} ${metricPeriod[0]} ${ftLabel}`;
+		}
+
 		return `${periodAggregate[0]} ${ftLabel} ${periodAggregate[1]}`;
+	}
+
+	if (metric === 'power') {
+		return `${periodAggregate[0]} ${metricPeriod[0]} ${ftLabel} ${metricPeriod[1] || ''}`;
 	}
 
 	return `${periodAggregate[0]} ${ftLabel} ${metricPeriod[0]} ${periodAggregate[1] || ''}`;
