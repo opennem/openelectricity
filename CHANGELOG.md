@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.18.0
+
+### Minor Changes
+
+- Prep for records release
+
 ## 1.17.1
 
 ### Patch Changes
