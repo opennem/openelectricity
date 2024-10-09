@@ -1,6 +1,6 @@
 import { get, derived, writable } from 'svelte/store';
 import { format } from 'date-fns';
-import { getNumberFormat } from '$lib/utils/formatters';
+import { getNumberFormat, getFormattedDateTime } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
 
 const numberFormat = getNumberFormat();
@@ -139,7 +139,7 @@ export default function () {
 			csv += ['date', ...$seriesNames.map((d) => $seriesLabels[d])].join(',') + '\n';
 
 			$seriesData.forEach((d) => {
-				const date = format(d.date, 'yyyy');
+				const date = d.date.toLocaleDateString() + ' ' + d.date.toLocaleTimeString();
 				const row = [date];
 				$seriesNames.forEach((key) => {
 					row.push($convertValue(d[key]));

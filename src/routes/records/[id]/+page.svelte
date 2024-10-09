@@ -16,6 +16,7 @@
 	import dataVizStore from '$lib/components/charts/stores/data-viz';
 	import { regionsWithLabels } from '$lib/regions';
 
+	import PageNav from '../components/PageNav.svelte';
 	import HistoryChart from '../components/HistoryChart.svelte';
 	import {
 		milestoneTypeDisplayPrefix,
@@ -31,6 +32,7 @@
 	const {
 		title,
 		seriesNames,
+		seriesLabels,
 		seriesData,
 		chartType,
 		formatTickX,
@@ -92,6 +94,7 @@
 		$brushFormatTickX = (/** @type {Date} */ date) => getFormattedMonth(date, undefined);
 		$formatTickX = timeFormatter(period);
 	}
+	$: $seriesLabels = { value: $displayUnit || '' };
 
 	$: id = data.id;
 	$: fetchRecord(id);
@@ -260,12 +263,14 @@
 	image={previewImageLocation}
 />
 
-<!-- image={previewImageLocation} -->
+<div class="px-16 pt-10 pb-0">
+	<PageNav />
+</div>
 
 {#if loading}
 	<div
 		transition:fade
-		class="md:grid wrapper gap-6 p-16 pb-32 md:h-[calc(100vh-100px)] z-10 overflow-auto animate-pulse"
+		class="md:grid wrapper gap-6 px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 overflow-auto animate-pulse"
 	>
 		<div class="bg-mid-warm-grey rounded-lg h-[128px]" />
 		<div class="bg-mid-warm-grey rounded-lg" />
@@ -273,7 +278,7 @@
 		<div class="bg-mid-warm-grey rounded-lg" />
 	</div>
 {:else}
-	<div class="md:grid wrapper gap-6 p-16 pb-32 md:h-[calc(100vh-100px)] z-10 overflow-auto">
+	<div class="md:grid wrapper gap-6 px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 overflow-auto">
 		<div class="py-6">
 			{#if currentRecord?.fueltech_id}
 				<span class="justify-self-start">
