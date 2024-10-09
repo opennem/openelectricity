@@ -28,7 +28,8 @@
 		allowPrefixSwitch,
 		getNextPrefix,
 		displayPrefix,
-		displayUnit
+		displayUnit,
+		timeZone
 	} = getContext('record-history-data-viz');
 	const historyStore = getContext('record-history-data-viz');
 
@@ -85,10 +86,11 @@
 
 	// insert the first and last item in xRange into axisXTicks
 	$: if (axisXTicks && xRange) {
-		const xStartYear = getFormattedMonth(xRange[0], undefined);
-		const tickStartYear = getFormattedMonth(axisXTicks[0], undefined);
-		const xEndYear = getFormattedMonth(xRange[1], undefined);
-		const tickEndYear = getFormattedMonth(axisXTicks[axisXTicks.length - 1], undefined);
+		console.log('timeZone', $timeZone);
+		const xStartYear = getFormattedMonth(xRange[0], undefined, $timeZone);
+		const tickStartYear = getFormattedMonth(axisXTicks[0], undefined, $timeZone);
+		const xEndYear = getFormattedMonth(xRange[1], undefined, $timeZone);
+		const tickEndYear = getFormattedMonth(axisXTicks[axisXTicks.length - 1], undefined, $timeZone);
 
 		// if not the same year, insert the first item in xRange into axisXTicks
 		if (xStartYear !== tickStartYear) {

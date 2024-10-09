@@ -13,10 +13,18 @@ function groupByMonthDay(data) {
 			const nonIntervalDayRecords = d.filter((r) => r.period !== 'interval' && r.period !== 'day');
 			const latestTime = intervalDayRecords.map((r) => r.time).reduce((a, b) => Math.max(a, b), 0);
 			// console.log('rolled d', nonIntervalDayRecords, intervalDayRecords);
-
+			const isWem = d[0].network_id === 'wem';
+			const timeZone = isWem ? 'Australia/Perth' : undefined;
 			return {
 				time: latestTime,
-				date: getFormattedDate(new Date(latestTime), 'short', 'numeric', 'short'),
+				date: getFormattedDate(
+					new Date(latestTime),
+					'short',
+					'numeric',
+					'short',
+					undefined,
+					timeZone
+				),
 				records: group(intervalDayRecords, (r) => r.record_id),
 				nonIntervalDayRecords: nonIntervalDayRecords
 			};

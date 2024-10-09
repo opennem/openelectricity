@@ -12,7 +12,8 @@
 		displayPrefix,
 		allowPrefixSwitch,
 		displayUnit,
-		getNextPrefix
+		getNextPrefix,
+		timeZone
 	} = getContext('record-history-data-viz');
 
 	let prevDay = '';
@@ -24,13 +25,13 @@
 	function tableTimeFormatter(period, timeOnly = false) {
 		if (period === 'interval') {
 			return function (/** @type {Date} */ date) {
-				const day = getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
+				const day = getFormattedDate(date, undefined, 'numeric', 'short', 'numeric', $timeZone);
 				if (!prevDay || day !== prevDay) {
 					prevDay = day;
-					return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
+					return day;
 				}
 
-				if (timeOnly) return getFormattedTime(date);
+				if (timeOnly) return getFormattedTime(date, $timeZone);
 
 				return '';
 			};
@@ -38,18 +39,18 @@
 
 		if (period === 'day') {
 			return function (/** @type {Date} */ date) {
-				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
+				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric', $timeZone);
 			};
 		}
 
 		if (period === 'year') {
 			return function (/** @type {Date} */ date) {
-				return getFormattedMonth(date, undefined);
+				return getFormattedMonth(date, undefined, $timeZone);
 			};
 		}
 
 		return function (/** @type {Date} */ date) {
-			return getFormattedMonth(date, 'short');
+			return getFormattedMonth(date, 'short', $timeZone);
 		};
 	}
 
@@ -95,7 +96,7 @@
 						class:text-red={record.time === $focusTime}
 					>
 						<time datetime={record.interval} class="w-44">
-							{tableTimeFormatter(record.period)(record.date)}
+							{tableTimeFormatter(record.period, false)(record.date)}
 						</time>
 
 						{#if record.period === 'interval'}

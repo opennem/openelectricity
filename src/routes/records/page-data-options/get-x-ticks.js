@@ -1,5 +1,4 @@
 import { differenceInCalendarMonths } from 'date-fns';
-
 import { getFormattedDate, getFormattedMonth } from '$lib/utils/formatters.js';
 
 export default function (d, range) {

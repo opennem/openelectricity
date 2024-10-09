@@ -52,14 +52,6 @@
 											>
 												<FuelTechIcon fuelTech={record.fueltech_id} sizeClass={5} />
 											</span>
-											<!-- <span class="relative -top-[2px]">
-												<FuelTechTag
-													pxClass="px-2"
-													showText={false}
-													iconSize={14}
-													fueltech={record.fueltech_id}
-												/>
-											</span> -->
 										{/if}
 										<div
 											class="leading-base"
@@ -162,6 +154,8 @@
 
 										<ol class="col-span-4 p-8 rounded-r-lg" class:bg-gas_recip={significant}>
 											{#each lastest3Records as record, i}
+												{@const isWem = record.network_id === 'wem'}
+												{@const timeZone = isWem ? 'Australia/Perth' : undefined}
 												<li class="text-sm text-mid-grey flex items-center justify-between">
 													<div>
 														<span
@@ -179,7 +173,7 @@
 
 													{#if record.period === 'interval'}
 														<time datetime={record.interval} class="text-xs font-mono">
-															{getFormattedTime(record.date)}
+															{getFormattedTime(record.date, timeZone)}
 														</time>
 													{/if}
 												</li>

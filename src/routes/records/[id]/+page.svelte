@@ -48,7 +48,8 @@
 		allowPrefixSwitch,
 		displayUnit,
 		getNextPrefix,
-		maximumFractionDigits
+		maximumFractionDigits,
+		timeZone
 	} = getContext('record-history-data-viz');
 	const {
 		seriesNames: brushSeriesNames,
@@ -66,14 +67,21 @@
 	let loading = false;
 	let error = false;
 
-	$: if (sortedHistoryData.length) {
+	$: if (historyData.length) {
 		// console.log('sortedHistoryData', sortedHistoryData[0]);
 		const period = sortedHistoryData[0].period;
 		const metric = sortedHistoryData[0].metric;
 		const parsed = parseUnit(sortedHistoryData[0].value_unit);
 		console.log('metric', metric);
-
+		const isWem = sortedHistoryData[0].network_id === 'WEM';
 		const sortedData = [...sortedHistoryData].reverse();
+
+		if (isWem) {
+			console.log('isWem', sortedHistoryData[0].network_id);
+			$timeZone = 'Australia/Perth';
+		} else {
+			$timeZone = undefined;
+		}
 
 		$title = sortedHistoryData[0].description;
 		$seriesNames = ['value'];
@@ -92,8 +100,8 @@
 		$brushSeriesNames = ['value'];
 		$brushSeriesData = sortedData;
 		$brushChartType = 'line';
-		$brushFormatTickX = (/** @type {Date} */ date) => getFormattedMonth(date, undefined);
-		$formatTickX = timeFormatter(period);
+		$brushFormatTickX = (/** @type {Date} */ date) => getFormattedMonth(date, undefined, $timeZone);
+		$formatTickX = timeFormatter(period, $timeZone);
 	}
 	$: $seriesLabels = { value: $displayUnit || '' };
 
@@ -130,22 +138,23 @@
 
 	/**
 	 * @param {string} period
+	 * @param {string} timeZone
 	 */
-	function timeFormatter(period) {
+	function timeFormatter(period, timeZone) {
 		if (period === 'interval') {
 			return function (/** @type {Date} */ date) {
-				return getFormattedDateTime(date, 'medium', 'short');
+				return getFormattedDateTime(date, 'medium', 'short', timeZone);
 			};
 		}
 
 		if (period === 'day') {
 			return function (/** @type {Date} */ date) {
-				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
+				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric', timeZone);
 			};
 		}
 
 		return function (/** @type {Date} */ date) {
-			return getFormattedMonth(date, 'short');
+			return getFormattedMonth(date, 'short', timeZone);
 		};
 	}
 
@@ -234,9 +243,7 @@
 	image="/img/preview.jpg"
 />
 
-<div class="px-10 md:px-16 pt-10 pb-0">
-	<PageNav {id} record={currentRecord} />
-</div>
+<PageNav {id} record={currentRecord} />
 
 {#if error}
 	<div class="flex h-96 items-center justify-center">

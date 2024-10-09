@@ -114,16 +114,62 @@
 	}
 </script>
 
-<div class="flex justify-between items-center">
+<div class="hidden md:flex gap-2 items-center px-10 py-5 md:px-16">
+	<div class="text-nowrap">
+		<FormSelect
+			options={regions.map((r) => ({ label: r.label, value: r.value }))}
+			selected={regionId}
+			formLabel="Region"
+			paddingX="px-4"
+			paddingY="py-3"
+			on:change={handleRegionChange}
+		/>
+	</div>
+
+	<div class="text-nowrap">
+		<FormSelect
+			options={fuelTechOptions}
+			selected={fuelTech}
+			formLabel="Technology"
+			paddingX="px-4"
+			paddingY="py-3"
+			on:change={handleFuelTechChange}
+		/>
+	</div>
+
+	<div class="text-nowrap">
+		<FormSelect
+			options={milestoneTypeOptions}
+			selected={metric}
+			formLabel="Metric"
+			paddingX="px-4"
+			paddingY="py-3"
+			on:change={handleMetricChange}
+		/>
+	</div>
+
+	<div class="text-nowrap">
+		<FormSelect
+			options={periodOptions}
+			selected={period}
+			formLabel="Period"
+			paddingX="px-4"
+			paddingY="py-3"
+			on:change={handlePeriodChange}
+		/>
+	</div>
+</div>
+
+<div class="flex justify-between items-center bg-white px-10 py-5 md:px-16">
 	<div class="flex gap-6 items-center divide-x divide-warm-grey">
 		<a href="/records" class="flex items-center gap-2 text-dark-grey font-space text-sm">
 			<span class="rounded-full border border-dark-grey p-1 block">
 				<IconChevronLeft class="size-4 relative -left-[1px]" stroke-width="3" />
 			</span>
-			Back
+			Back to records
 		</a>
 
-		<div class="flex gap-2 items-center pl-6">
+		<!-- <div class="flex gap-2 items-center pl-6">
 			<div class="text-nowrap">
 				<FormSelect
 					options={regions.map((r) => ({ label: r.label, value: r.value }))}
@@ -167,7 +213,7 @@
 					on:change={handlePeriodChange}
 				/>
 			</div>
-		</div>
+		</div> -->
 	</div>
 
 	{#if record}

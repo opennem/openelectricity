@@ -26,6 +26,8 @@
 
 	<tbody>
 		{#each dataset as record}
+			{@const isWem = record.network_id === 'wem'}
+			{@const timeZone = isWem ? 'Australia/Perth' : undefined}
 			<tr class="border-b border-light-warm-grey pointer hover:bg-warm-grey text-mid-grey">
 				<!-- <td class="px-4 py-2">
 					<div class="w-1 h-[20px] bg-{record.fueltech_id}" />
@@ -33,15 +35,15 @@
 				<td class="px-4 py-2 font-mono text-xs">
 					{#if record.period === 'interval'}
 						<time datetime={record.interval}>
-							{getFormattedDateTime(record.date, 'medium', 'short')}
+							{getFormattedDateTime(record.date, 'medium', 'short', timeZone)}
 						</time>
 					{:else if record.period === 'day'}
 						<time datetime={record.interval}>
-							{getFormattedDate(record.date, undefined, 'numeric', 'short', 'numeric')}
+							{getFormattedDate(record.date, undefined, 'numeric', 'short', 'numeric', timeZone)}
 						</time>
 					{:else}
 						<time datetime={record.interval}>
-							{getFormattedMonth(record.date, 'short')}
+							{getFormattedMonth(record.date, 'short', timeZone)}
 						</time>
 					{/if}
 				</td>

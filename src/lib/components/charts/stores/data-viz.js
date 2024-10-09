@@ -1,6 +1,6 @@
 import { get, derived, writable } from 'svelte/store';
 import { format } from 'date-fns';
-import { getNumberFormat, getFormattedDateTime } from '$lib/utils/formatters';
+import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
 
 const numberFormat = getNumberFormat();
@@ -19,6 +19,8 @@ export default function () {
 	const curveType = writable();
 	const snapXTicks = writable(false);
 	const strokeWidth = writable('2px');
+
+	const timeZone = writable('Australia/Sydney');
 
 	// Line chart specific
 	const showLineArea = writable(true);
@@ -131,15 +133,17 @@ export default function () {
 	});
 
 	const seriesCsvData = derived(
-		[seriesData, seriesNames, seriesLabels, convertValue],
-		([$seriesData, $seriesNames, $seriesLabels, $convertValue]) => {
+		[seriesData, seriesNames, seriesLabels, convertValue, timeZone],
+		([$seriesData, $seriesNames, $seriesLabels, $convertValue, $timeZone]) => {
 			if (!$seriesData) return '';
 
 			let csv = '';
 			csv += ['date', ...$seriesNames.map((d) => $seriesLabels[d])].join(',') + '\n';
 
 			$seriesData.forEach((d) => {
-				const date = d.date.toLocaleDateString() + ' ' + d.date.toLocaleTimeString();
+				const day = getFormattedDate(d.date, undefined, 'numeric', 'short', 'numeric', $timeZone);
+				const time = getFormattedTime(d.date, $timeZone);
+				const date = day + ' ' + time;
 				const row = [date];
 				$seriesNames.forEach((key) => {
 					row.push($convertValue(d[key]));
@@ -184,6 +188,7 @@ export default function () {
 		convertAndFormatValue,
 		convertValue,
 		maximumFractionDigits,
+		timeZone,
 
 		seriesData,
 		seriesCsvData,
