@@ -109,11 +109,11 @@
 	$: console.log('currentRecord', currentRecord);
 	$: timestamp = currentRecord?.time;
 	$: recordId = currentRecord?.record_id;
-	$: previewImageLocation =
+	$: workerImageLocation =
 		recordId && timestamp
 			? `https://browser-worker.opennem2161.workers.dev/?key=${recordId}-${timestamp}`
 			: '/img/preview.jpg';
-	$: console.log('previewImageLocation', previewImageLocation);
+	$: console.log('workerImageLocation', workerImageLocation);
 
 	$: sortedHistoryData = historyData
 		.map((record) => {
@@ -260,7 +260,7 @@
 <Meta
 	title={pageTitle}
 	description="Track historical and current records of Australia's electricity grid with Open Electricity's record tracker"
-	image={previewImageLocation}
+	image="/img/preview.jpg"
 />
 
 <div class="px-16 pt-10 pb-0">
