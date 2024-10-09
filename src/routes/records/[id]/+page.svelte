@@ -64,6 +64,7 @@
 	let historyData = [];
 	let totalHistory = 0;
 	let loading = false;
+	let error = false;
 
 	$: if (sortedHistoryData.length) {
 		// console.log('sortedHistoryData', sortedHistoryData[0]);
@@ -109,6 +110,7 @@
 	$: console.log('currentRecord', currentRecord);
 	$: timestamp = currentRecord?.time;
 	$: recordId = currentRecord?.record_id;
+
 	$: workerImageLocation =
 		recordId && timestamp
 			? `https://browser-worker.opennem2161.workers.dev/?key=${recordId}-${timestamp}`
@@ -155,12 +157,19 @@
 	async function fetchRecord(recordId, page = 1) {
 		if (browser) {
 			loading = true;
+			error = false;
 			const id = encodeURIComponent(recordId);
 			const res = await fetch(`/api/records/${id}?page=${page}`);
 			const jsonData = await res.json();
 
-			historyData = jsonData.data;
-			totalHistory = jsonData.total_records;
+			if (jsonData.total_records) {
+				historyData = jsonData.data;
+				totalHistory = jsonData.total_records;
+			} else {
+				historyData = [];
+				totalHistory = 0;
+				error = true;
+			}
 			loading = false;
 		}
 	}
@@ -226,10 +235,14 @@
 />
 
 <div class="px-10 md:px-16 pt-10 pb-0">
-	<PageNav />
+	<PageNav record={currentRecord} />
 </div>
 
-{#if loading}
+{#if error}
+	<div class="flex h-96 items-center justify-center">
+		<p>Record not found.</p>
+	</div>
+{:else if loading}
 	<div
 		transition:fade
 		class="md:grid wrapper flex flex-col gap-6 px-10 md:px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 md:overflow-auto animate-pulse"
