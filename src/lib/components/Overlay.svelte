@@ -4,7 +4,7 @@
 
 <div
 	transition:fade={{
-		duration: 200
+		duration: 25
 	}}
 	class="relative z-50"
 	role="dialog"

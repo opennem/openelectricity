@@ -4,15 +4,31 @@
 
 	/** @type {FuelTechCode} */
 	export let fueltech;
+	export let iconSize = 18;
+	export let textSize = 13;
+	export let showText = true;
+	export let pxClass = 'px-5';
+	export let showBgColour = true;
 
-	$: highlightTextColor = fueltech === 'gas' || fueltech === 'solar' ? 'text-black' : 'text-white';
+	$: bgClass = showBgColour ? `bg-${fueltech}` : '';
+	$: highlightTextColor = showBgColour
+		? fueltech === 'solar'
+			? 'text-black'
+			: 'text-white'
+		: 'text-black';
 </script>
 
-<span
-	class={`inline-flex gap-2 flex-shrink-0 justify-center items-center h-12 px-4 bg-${fueltech} rounded-full text-xs ${highlightTextColor}`}
+<div
+	class={`inline-flex gap-2 flex-shrink-0 justify-center items-center py-2 ${pxClass} ${bgClass} rounded-full  ${highlightTextColor}`}
+	style={`font-size: ${textSize}px;`}
+	title={fuelTechName(fueltech)}
 >
-	<Icon icon={fueltech} size={16} />
-	<slot>
-		{fuelTechName(fueltech)}
-	</slot>
-</span>
+	<Icon icon={fueltech} size={iconSize} />
+	{#if showText}
+		<span class="relative top-[1px]">
+			<slot>
+				{fuelTechName(fueltech)}
+			</slot>
+		</span>
+	{/if}
+</div>

@@ -1,5 +1,6 @@
 <script>
 	import { LayerCake, Svg, Html } from 'layercake';
+	import { scaleUtc } from 'd3-scale';
 
 	import getSeqId from '$lib/utils/html-id-gen';
 	import Line from './elements/Line.svelte';
@@ -33,6 +34,8 @@
 	/** @type {*} */
 	export let xTicks = undefined;
 
+	export let snapXTicks = true;
+
 	/** @type {*} */
 	export let yTicks = undefined;
 
@@ -45,6 +48,10 @@
 
 	/** @type {*} */
 	export let overlayLine = false;
+
+	export let curveType = undefined;
+
+	export let strokeWidth = '2px';
 
 	/** @type {TimeSeriesData | undefined}*/
 	export let hoverData = undefined;
@@ -78,10 +85,11 @@
 
 <div class="chart-container mb-4 {heightClasses}">
 	<LayerCake
-		padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
+		padding={{ top: 0, right: 0, bottom: 0, left: 0 }}
 		x={xKey}
 		y={yKey}
-		yDomain={[0, maxY]}
+		xScale={scaleUtc()}
+		{yDomain}
 		data={dataset}
 	>
 		<Svg>
@@ -99,19 +107,20 @@
 				formatTick={formatTickY}
 				gridlines={true}
 				stroke="#33333344"
+				{clipPathId}
 			/>
 			<AxisX
 				ticks={xTicks}
 				gridlines={false}
 				formatTick={formatTickX}
 				tickMarks={true}
-				snapTicks={true}
+				snapTicks={snapXTicks}
 			/>
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-				<Line stroke="#353535" {hoverData} strokeWidth="2px" />
+				<Line {clipPathId} stroke="#353535" {hoverData} {strokeWidth} {curveType} />
 				{#if showArea}
-					<Area fill={zKey} />
+					<Area {clipPathId} fill={zKey} />
 				{/if}
 			</g>
 			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup on:mousedown />
@@ -138,14 +147,16 @@
 		</Html> -->
 
 		<Svg pointerEvents={false}>
-			{#if hoverData}
-				<LineX xValue={hoverData} strokeArray="none" />
-				<Dot value={hoverData} r={4} />
-			{/if}
-			{#if focusData}
-				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
-				<Dot value={focusData} r={4} fill="#C74523" />
-			{/if}
+			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+				{#if hoverData}
+					<LineX xValue={hoverData} strokeArray="none" />
+					<Dot value={hoverData} r={4} />
+				{/if}
+				{#if focusData}
+					<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+					<Dot value={focusData} r={4} fill="#C74523" />
+				{/if}
+			</g>
 		</Svg>
 	</LayerCake>
 

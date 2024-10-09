@@ -36,7 +36,7 @@
 	}
 </script>
 
-<footer class="mb-32">
+<footer class="mb-32 relative z-10">
 	<div class="bg-light-warm-grey py-16">
 		<div class="container max-w-none lg:container">
 			<div class="flex flex-col md:flex-row gap-8 md:gap-0">

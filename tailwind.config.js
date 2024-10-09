@@ -9,7 +9,8 @@ export default {
 	theme: {
 		fontFamily: {
 			sans: ['DM Sans', 'sans-serif'],
-			space: ['Space Grotesk', 'sans-serif']
+			space: ['Space Grotesk', 'sans-serif'],
+			mono: ['Chivo Mono', 'monospace']
 		},
 		screens: {
 			sm: '640px',
@@ -89,34 +90,36 @@ export default {
 			'success-green': '#70D26E',
 
 			/* Fuel techs */
-			battery_charging: '#A9D5ED',
-			battery_discharging: '#0098F9',
-			bioenergy_biogas: '#43B0B0',
-			bioenergy_biomass: '#1B6F6F',
-			coal_black: '#131313',
-			coal_brown: '#804D25',
-			distillate: '#F1461D',
-			gas_ccgt: '#FDAB57',
-			gas_ocgt: '#FFC68B',
-			gas_recip: '#F8D7B4',
-			gas_steam: '#F2831A',
-			gas_wcmg: '#AB5D14',
-			hydro: '#3C77AB',
-			pumps: '#7DA6CA',
-			solar_utility: '#FECF00',
-			solar_thermal: '',
-			solar_rooftop: '#FFDB35',
-			wind: '#396A09',
-			nuclear: '#FF0000',
-			imports: '#00FF00',
-			exports: '#8C6FA8',
-			interconnector: '#0000FF',
+			battery_charging: '#577CFF',
+			battery_discharging: '#3245c9',
+			bioenergy_biogas: '#4CB9B9',
+			bioenergy_biomass: '#1D7A7A',
+			coal_black: '#121212',
+			coal_brown: '#744A26',
+			distillate: '#E15C34',
+			gas_ccgt: '#FDB462',
+			gas_ocgt: '#FFCD96',
+			gas_recip: '#F9DCBC',
+			gas_steam: '#F48E1B',
+			gas_wcmg: '#B46813',
+			hydro: '#5EA0C0',
+			pumps: '#88AFD0',
+			solar_utility: '#FED500',
+			solar_thermal: '#FDB200',
+			solar_rooftop: '#FFF58D',
+			wind: '#2C7629',
+			nuclear: '#C75338',
+			imports: '#521986',
+			exports: '#927BAD',
+			interconnector: '#7F7F7F',
 
 			/* Fuel tech groups */
-			bioenergy: '#43B0B0',
-			coal: '#131313',
-			gas: '#FDAB57',
-			solar: '#FFDB35'
+			bioenergy: '#1D7A7A',
+			coal: '#25170C',
+			gas: '#E87809',
+			solar: '#FED500',
+			renewables: '#52A972',
+			fossils: '#594929'
 		},
 
 		extend: {

@@ -1,6 +1,6 @@
 import { derived, writable } from 'svelte/store';
+import { regionsWithShortLabels } from '$lib/regions';
 import { scenarioLabels } from '../page-data-options/descriptions';
-import { regionsWithShortLabels } from '../page-data-options/regions';
 
 export default function () {
 	const selectedRegion = writable('');

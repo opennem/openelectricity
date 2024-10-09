@@ -6,14 +6,18 @@
 
 	/** @type {import('$lib/types/record.types').Record[]} */
 	export let record;
+
+	// $: console.log('record', record);
 </script>
 
 <div
 	class={`bg-white border-[0.05rem] border-mid-warm-grey border-solid rounded relative grid record-layout ${$$restProps.class}`}
 >
 	<div class="flex p-6 relative record-desc">
-		<FuelTechTag fueltech={record[0].fueltech} />
-		<h5 class="font-medium">{recordDescription(record[0])}</h5>
+		{#if record[0].fueltech}
+			<FuelTechTag fueltech={record[0].fueltech} />
+		{/if}
+		<h5 class="font-medium">{record[0].description}</h5>
 	</div>
 	<div class="p-6">
 		{#each record as instance, i}
@@ -23,7 +27,7 @@
 				<div class="self-end">
 					<span>{instance.unit === '$' ? '$' : ''}{instance.value.toLocaleString('en-AU')}</span>
 					{#if instance.unit !== '$' && i === 0}
-						<span class="text-xs text-mid-grey">{instance.unit}</span>
+						<span class="text-xs text-mid-grey">{instance.value_unit}</span>
 					{/if}
 				</div>
 				<div class="self-end text-right text-xs">

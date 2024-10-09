@@ -3,7 +3,7 @@
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
 
-	import { scaleOrdinal } from 'd3-scale';
+	import { scaleOrdinal, scaleUtc } from 'd3-scale';
 
 	import { formatTickY, displayXTicks } from './helpers';
 
@@ -86,6 +86,7 @@
 <div class="chart-container h-[600px] md:h-[680px] mb-4">
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
+		xScale={scaleUtc()}
 		x={(/** @type {*} */ d) => d[xKey] || d.data[xKey]}
 		y={yKey}
 		yDomain={[0, $yTweened]}

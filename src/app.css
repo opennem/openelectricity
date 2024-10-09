@@ -13,6 +13,15 @@
 	font-weight: 700;
 }
 @font-face {
+	font-family: 'Chivo Mono';
+	src: url('/fonts/ChivoMono-VariableFont_wght.ttf');
+}
+@font-face {
+	font-family: 'Chivo Mono';
+	src: url('/fonts/ChivoMono-VariableFont_wght.ttf');
+	font-weight: 600;
+}
+@font-face {
 	font-family: 'Space Grotesk';
 	src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
 }
@@ -21,6 +30,7 @@
 	src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
 	font-weight: 600;
 }
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

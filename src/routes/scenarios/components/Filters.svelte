@@ -2,6 +2,7 @@
 	import { getContext } from 'svelte';
 	import { startOfYear } from 'date-fns';
 
+	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
@@ -20,7 +21,6 @@
 
 	import { viewSectionOptions } from '../page-data-options/view-sections';
 	import { dataTypeDisplayOptions } from '../page-data-options/data-types';
-	import { regionOptions } from '../page-data-options/regions';
 	import { scenarioLabels } from '../page-data-options/descriptions';
 	import { modelOptions, modelScenarioPathwayOptions } from '../page-data-options/models';
 	import { groupOptions as groupTechnologyOptions } from '../page-data-options/groups-technology';
@@ -173,9 +173,12 @@
 
 	/**
 	 * @param {string} dataType
+	 * @param {boolean} isMetaPressed
 	 */
-	function handleDataTypeChange(dataType) {
-		if ($selectedCharts.includes(dataType)) {
+	function handleDataTypeChange(dataType, isMetaPressed) {
+		if (isMetaPressed) {
+			$selectedCharts = [dataType];
+		} else if ($selectedCharts.includes(dataType)) {
 			$selectedCharts = $selectedCharts.filter((d) => d !== dataType);
 		} else {
 			$selectedCharts = [...$selectedCharts, dataType];
@@ -215,7 +218,7 @@
 				paddingX=""
 				staticDisplay={true}
 				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-				on:change={(evt) => handleDataTypeChange(evt.detail.value)}
+				on:change={(evt) => handleDataTypeChange(evt.detail.value, evt.detail.isMetaPressed)}
 			/>
 
 			{#if $isTechnologyViewSection || $isScenarioViewSection}
@@ -285,7 +288,7 @@
 					label="Charts"
 					paddingX="px-7"
 					paddingY="py-3"
-					on:change={(evt) => handleDataTypeChange(evt.detail.value)}
+					on:change={(evt) => handleDataTypeChange(evt.detail.value, evt.detail.isMetaPressed)}
 				/>
 
 				{#if $isTechnologyViewSection || $isScenarioViewSection}

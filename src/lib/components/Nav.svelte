@@ -1,12 +1,12 @@
 <script>
 	import { page } from '$app/stores';
 	import { afterNavigate } from '$app/navigation';
-	import { dataTrackerLink } from '$lib/stores/app';
+	import { dataTrackerLink, parsedFeatureFlags } from '$lib/stores/app';
 	const navItems = [
 		{ name: 'Tracker', href: $dataTrackerLink },
 		{ name: 'Facilities', href: `${$dataTrackerLink}/facilities` },
 		{ name: 'Scenarios', href: '/scenarios' },
-		// { name: 'Latest Records', href: '/records' },
+		{ name: 'Records', href: '/records', show: parsedFeatureFlags['show_records'] },
 		{ name: 'Analysis', href: '/analysis' },
 		{ name: 'About', href: '/about' }
 	];
@@ -35,16 +35,18 @@
 			class="block fixed top-0 left-0 h-full w-full z-30 bg-white pt-36 px-10 md:w-auto md:static md:px-0 md:py-2 md:flex md:justify-between md:gap-16 lg:gap-20"
 			class:hidden={!mobileNavActive}
 		>
-			{#each navItems as { name, href }}
-				<a
-					class="text-lg font-medium flex items-center mb-8 md:text-sm md:mb-0"
-					class:text-mid-grey={$page.url.pathname !== href}
-					class:text-black={$page.url.pathname === href}
-					class:font-semibold={$page.url.pathname === href}
-					{href}
-				>
-					{name}
-				</a>
+			{#each navItems as { name, href, show }}
+				{#if show !== false}
+					<a
+						class="text-lg font-medium flex items-center mb-8 md:text-sm md:mb-0"
+						class:text-mid-grey={$page.url.pathname !== href}
+						class:text-black={$page.url.pathname === href}
+						class:font-semibold={$page.url.pathname === href}
+						{href}
+					>
+						{name}
+					</a>
+				{/if}
 			{/each}
 		</nav>
 

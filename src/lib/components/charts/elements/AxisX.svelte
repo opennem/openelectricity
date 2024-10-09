@@ -20,6 +20,8 @@
 	/** @type {string} [stroke='#000'] - The gridline's stroke colour. */
 	export let stroke = '#efefef';
 
+	export let strokeArray = 'none';
+
 	export let clipPathId = '';
 
 	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
@@ -75,7 +77,15 @@
 	{#each tickVals as tick, i (tick)}
 		<g class="tick tick-{i}" transform="translate({$xScale(tick)}, {Math.max(...$yRange)})">
 			{#if gridlines !== false}
-				<line class="gridline" {stroke} y1={$height * -1} y2="0" x1="0" x2="0" />
+				<line
+					class="gridline"
+					{stroke}
+					stroke-dasharray={strokeArray}
+					y1={$height * -1}
+					y2="0"
+					x1="0"
+					x2="0"
+				/>
 			{/if}
 
 			{#if tickMarks === true}
@@ -110,20 +120,6 @@
 </g>
 
 <style>
-	.tick {
-		/* font-size: 10px;
-		font-weight: 400; */
-	}
-	line,
-	.tick line {
-		stroke-dasharray: 0;
-	}
-
-	.tick .tick-mark,
-	.baseline {
-		stroke-dasharray: 0;
-	}
-
 	.axis.snapTicks .tick:last-child text {
 		transform: translateX(0px);
 	}

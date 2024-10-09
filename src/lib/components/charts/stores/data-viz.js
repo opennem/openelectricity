@@ -1,6 +1,6 @@
 import { get, derived, writable } from 'svelte/store';
 import { format } from 'date-fns';
-import { getNumberFormat } from '$lib/utils/formatters';
+import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
 
 const numberFormat = getNumberFormat();
@@ -9,14 +9,24 @@ export default function () {
 	const title = writable('');
 
 	const allowedPrefixes = writable([]);
-
 	const allowPrefixSwitch = derived(
 		allowedPrefixes,
 		($allowedPrefixes) => $allowedPrefixes && $allowedPrefixes.length > 1
 	);
 
-	// const displayUnit = writable('');
 	const baseUnit = writable('');
+
+	const curveType = writable();
+	const snapXTicks = writable(false);
+	const strokeWidth = writable('2px');
+
+	const timeZone = writable('Australia/Sydney');
+
+	// Line chart specific
+	const showLineArea = writable(true);
+	const lineColour = writable('rgba(0, 0, 0, 0.7)'); // CSS colour
+	const dotStroke = writable('rgba(0, 0, 0, 0.7)'); // CSS colour
+	const dotFill = writable('white'); // CSS colour
 
 	/** @type {import('svelte/store').Writable<SiPrefix>} */
 	const prefix = writable('');
@@ -43,11 +53,15 @@ export default function () {
 	/** @type {import('svelte/store').Writable<{ label: string, value: string }[]>} */
 	const nameOptions = writable([]);
 
+	/** @type {import('svelte/store').Writable<number[] | undefined>} */
+	const xDomain = writable();
 	/** @type {import('svelte/store').Writable<number[]>} */
 	const yDomain = writable([]);
 
-	/** @type {import('svelte/store').Writable<Date[]>} */
+	/** @type {import('svelte/store').Writable<Date[] | number>} */
 	const xTicks = writable([]);
+	/** @type {import('svelte/store').Writable<Date[] | number>} */
+	const yTicks = writable([]);
 
 	/** @type {import('svelte/store').Writable<Date[]>} */
 	const miniXTicks = writable([]);
@@ -58,12 +72,17 @@ export default function () {
 	/** @type {import('svelte/store').Writable<Function>} */
 	const formatTickY = writable((/** @type {number} */ d) => numberFormat.format(d));
 
-	const convertAndFormatValue = derived([prefix, displayPrefix], ([$prefix, $displayPrefix]) => {
-		return (/** @type {number} */ d) => {
-			const converted = convert($prefix, $displayPrefix, d);
-			return isNaN(converted) ? '—' : numberFormat.format(converted);
-		};
-	});
+	const maximumFractionDigits = writable(0);
+
+	const convertAndFormatValue = derived(
+		[prefix, displayPrefix, maximumFractionDigits],
+		([$prefix, $displayPrefix, $maximumFractionDigits]) => {
+			return (/** @type {number} */ d) => {
+				const converted = convert($prefix, $displayPrefix, d);
+				return isNaN(converted) ? '—' : getNumberFormat($maximumFractionDigits).format(converted);
+			};
+		}
+	);
 
 	const convertValue = derived([prefix, displayPrefix], ([$prefix, $displayPrefix]) => {
 		return (/** @type {number} */ d) => {
@@ -86,7 +105,7 @@ export default function () {
 
 	const chartOverlayHatchStroke = writable('rgba(236, 233, 230, 0.4)');
 
-	const chartHeightClasses = writable('');
+	const chartHeightClasses = writable('h-[400px] md:h-[450px]');
 
 	/** @type {import('svelte/store').Writable<string | undefined>} */
 	const hoverKey = writable();
@@ -114,15 +133,17 @@ export default function () {
 	});
 
 	const seriesCsvData = derived(
-		[seriesData, seriesNames, seriesLabels, convertValue],
-		([$seriesData, $seriesNames, $seriesLabels, $convertValue]) => {
+		[seriesData, seriesNames, seriesLabels, convertValue, timeZone],
+		([$seriesData, $seriesNames, $seriesLabels, $convertValue, $timeZone]) => {
 			if (!$seriesData) return '';
 
 			let csv = '';
 			csv += ['date', ...$seriesNames.map((d) => $seriesLabels[d])].join(',') + '\n';
 
 			$seriesData.forEach((d) => {
-				const date = format(d.date, 'yyyy');
+				const day = getFormattedDate(d.date, undefined, 'numeric', 'short', 'numeric', $timeZone);
+				const time = getFormattedTime(d.date, $timeZone);
+				const date = day + ' ' + time;
 				const row = [date];
 				$seriesNames.forEach((key) => {
 					row.push($convertValue(d[key]));
@@ -153,7 +174,7 @@ export default function () {
 		nameOptions.set([]);
 		yDomain.set([]);
 		// xTicks.set([]);
-		chartType.set('area');
+		chartType.set('line');
 	}
 
 	return {
@@ -166,6 +187,8 @@ export default function () {
 		displayPrefix,
 		convertAndFormatValue,
 		convertValue,
+		maximumFractionDigits,
+		timeZone,
 
 		seriesData,
 		seriesCsvData,
@@ -173,12 +196,16 @@ export default function () {
 		seriesColours,
 		seriesLabels,
 		nameOptions,
+		xDomain,
 		yDomain,
 		xTicks,
+		yTicks,
 		miniXTicks,
+		snapXTicks,
 		formatTickX,
 		formatTickY,
 		chartType,
+		curveType,
 		isChartTypeArea,
 		chartOverlay,
 		chartOverlayLine,
@@ -189,6 +216,12 @@ export default function () {
 		hoverData,
 		focusTime,
 		focusData,
+
+		strokeWidth,
+		showLineArea,
+		lineColour,
+		dotStroke,
+		dotFill,
 
 		reset,
 		getNextPrefix

@@ -15,7 +15,8 @@
 	export let formLabel = '';
 	export let staticDisplay = false;
 	export let position = 'bottom'; // top, bottom
-	export let align = 'left'; // left, right
+	export let align = 'left'; // left, right, middle
+	export let widthClass = 'w-full';
 
 	const dispatch = createEventDispatcher();
 
@@ -30,11 +31,13 @@
 
 	function findSelectedOption() {
 		const find = options.find((opt) => opt.value === selectedValue);
-		return find ? find.label : selectedValue;
+		return find ? find.label : selectedValue || formLabel;
 	}
+
+	$: translateToMiddle = align === 'middle' ? 'left-1/2 transform -translate-x-1/2' : '';
 </script>
 
-<div class="relative w-full">
+<div class="relative {widthClass}">
 	<button
 		on:click={() => (showOptions = !showOptions)}
 		use:clickoutside
@@ -46,7 +49,7 @@
 			<span class={selectedLabelClass}>{formLabel}</span>
 		{:else}
 			<span class="{selectedLabelClass} mb-0 capitalize">
-				{selected && selected.label ? selected?.label : findSelectedOption()}
+				{selected && selected.label ? selected?.label : findSelectedOption() || formLabel}
 			</span>
 
 			<IconChevronUpDown class="w-7 h-7" />
@@ -71,7 +74,7 @@
 		</ul>
 	{:else if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-96 overflow-y-scroll"
+			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-96 overflow-y-scroll {translateToMiddle}"
 			class:top-16={position === 'bottom'}
 			class:bottom-16={position === 'top'}
 			class:left-0={align === 'left'}

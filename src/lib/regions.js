@@ -1,3 +1,5 @@
+import optionsReducer from '$lib/utils/options-reducer';
+
 export const regionOptions = [
 	{
 		value: '_all',
@@ -40,21 +42,18 @@ export const regionOptions = [
 		shortLabel: 'VIC',
 		description: 'Victoria',
 		colour: '#4F5FD7' // 153BA5
+	},
+	{
+		value: 'wem',
+		label: 'Western Australia',
+		shortLabel: 'WA',
+		description: 'Western Australia',
+		colour: '#BDBCBC'
 	}
 ];
-/**
- * @type {Object.<string, Object<string, string | string[]>>}
- */
-export const regionsWithShortLabels = regionOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.shortLabel), acc),
-	{}
-);
+
+export const regionsNemOnlyOptions = regionOptions.filter((d) => d.value !== 'wem');
 export const regionsOnly = regionOptions.map((d) => d.value).slice(1);
-export const regionsOnlyWithColours = regionOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.colour), acc),
-	{}
-);
-export const regionsOnlyWithLabels = regionOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.label), acc),
-	{}
-);
+export const regionsWithShortLabels = optionsReducer(regionOptions, 'value', 'shortLabel');
+export const regionsWithLabels = optionsReducer(regionOptions, 'value', 'label');
+export const regionsWithColours = optionsReducer(regionOptions, 'value', 'colour');

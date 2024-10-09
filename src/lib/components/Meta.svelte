@@ -7,7 +7,7 @@
 	export let path = $page.url.pathname;
 	export let domain = 'https://openelectricity.org.au';
 	export let siteTitle = 'Open Electricity';
-	const titleWithSuffix = siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle;
+	$: titleWithSuffix = siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle;
 	const fullURI = `${domain}${path}`;
 </script>
 

@@ -189,7 +189,7 @@
 					</td>
 
 					<td class="px-2 py-1">
-						<div class="flex flex-col items-end">
+						<div class="font-mono flex flex-col items-end">
 							{$energyHoverData
 								? $energyConvertAndFormatValue($energyHoverData[name])
 								: $energyFocusData
@@ -199,7 +199,7 @@
 					</td>
 
 					<td class="px-2 py-1">
-						<div class="flex flex-col items-end">
+						<div class="font-mono flex flex-col items-end">
 							{$capacityHoverData
 								? $capacityConvertAndFormatValue($capacityHoverData[name])
 								: $capacityFocusData
@@ -209,7 +209,7 @@
 					</td>
 
 					<td class="px-2 py-1">
-						<div class="flex flex-col items-end">
+						<div class="font-mono flex flex-col items-end">
 							{$emissionsHoverData
 								? $emissionsConvertAndFormatValue($emissionsHoverData[name])
 								: $emissionsFocusData
@@ -218,7 +218,7 @@
 						</div>
 					</td>
 					<td class="px-2 py-1">
-						<div class="flex flex-col items-end mr-3">
+						<div class="font-mono flex flex-col items-end mr-3">
 							{$intensityHoverData
 								? $intensityConvertAndFormatvalue($intensityHoverData[name])
 								: $intensityFocusData

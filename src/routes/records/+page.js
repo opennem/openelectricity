@@ -1,25 +1,24 @@
-import { error } from '@sveltejs/kit';
+export async function load({ url }) {
+	const { searchParams } = url;
+	const page = searchParams.get('page');
+	const regions = searchParams.get('regions');
+	const periods = searchParams.get('periods');
+	const fuelTechs = searchParams.get('fuel_techs');
+	// const aggregates = searchParams.get('aggregates');
+	const metrics = searchParams.get('metrics');
+	// const significance = searchParams.get('significance');
 
-export async function load({ fetch, params, url }) {
-	try {
-		const date = url.searchParams.get('date');
-		let dateParams = date ? `?date=${date}` : '';
-		const data = await fetch(`/api/records${dateParams}`);
-
-		if (data && data.ok) {
-			const recordsResponse = await data.json();
-
-			return {
-				records: recordsResponse.data,
-				count: recordsResponse.total_records
-			};
-		}
-	} catch (e) {
-		console.log(e);
-		return {
-			records: []
-		};
-	}
-
-	error(404, 'Not found');
+	return {
+		page: page ? parseInt(page) : 1,
+		regions: regions ? regions.split(',') : [],
+		periods: periods ? periods.split(',') : [],
+		// aggregates: aggregates ? aggregates.split(',') : [],
+		aggregates: [], // ignore for now
+		metrics: metrics ? metrics.split(',') : [],
+		// stringFilter: searchParams.get('recordIdFilter') || '',
+		stringFilter: '', // ignore for now
+		fuelTechs: fuelTechs ? fuelTechs.split(',') : [],
+		// significance: significance ? parseInt(significance) : null
+		significance: 9 // always 9+
+	};
 }

@@ -5,8 +5,6 @@
 
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
-	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
-	import Checkbox from '$lib/components/form-elements/RadioBigButton.svelte';
 
 	/** @type {string[]} */
 	export let selected;
@@ -23,17 +21,46 @@
 	const dispatch = createEventDispatcher();
 
 	let showOptions = false;
+	let isMetaPressed = false;
 
+	/**
+	 * @param {*} option
+	 */
 	function handleSelect(option) {
-		dispatch('change', option);
+		dispatch('change', {
+			value: option.value,
+			isMetaPressed
+		});
 		// showOptions = false;
 	}
+
+	function handleKeyup() {
+		isMetaPressed = false;
+	}
+
+	/**
+	 * @param {KeyboardEvent} evt
+	 */
+	function handleKeydown(evt) {
+		if (evt.metaKey || evt.altKey) {
+			isMetaPressed = true;
+		} else {
+			isMetaPressed = false;
+		}
+
+		// Reset meta key after 2 seconds
+		setTimeout(() => {
+			isMetaPressed = false;
+		}, 5000);
+	}
 </script>
+
+<svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
 
 <div class="relative w-full" use:clickoutside on:clickoutside={() => (showOptions = false)}>
 	<button
 		on:click={() => (showOptions = !showOptions)}
-		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg"
+		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap"
 		class:hover:bg-warm-grey={!showOptions}
 	>
 		<span class={selectedLabelClass}>
@@ -73,7 +100,7 @@
 		</ul>
 	{:else if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-96 overflow-y-scroll"
+			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[500px] overflow-y-scroll"
 			class:top-16={position === 'bottom'}
 			class:bottom-16={position === 'top'}
 			class:left-0={align === 'left'}

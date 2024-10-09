@@ -16,7 +16,7 @@
 /** @typedef {'technology' | 'scenario' | 'region'} ScenarioViewSection */
 /** @typedef {'energy' | 'emissions' | 'capacity'} ScenarioDataType */
 
-/** @typedef {{ value: ScenarioViewSection, label: string, icon: *, size: string}} ScenarioViewSectionOption */
+/** @typedef {{ value: string, label?: string, icon: *, size: string}} ViewSectionOption */
 
 /** @typedef {Object.<string, Object<string, string | string[]>>} ScenarioContent */
 /** @typedef {{id: string, value: string, model: string, label: string, colour: string}} ScenarioPathwayOption */
@@ -25,3 +25,5 @@
 /** @typedef {'' | 'k' | 'M' | 'G' | 'T'} SiPrefix */
 
 /** @typedef {import('$lib/types/processed-data-viz.types').ProcessedDataViz} ProcessedDataViz */
+
+/** @typedef {import('$lib/types/record.types').MilestoneRecord} MilestoneRecord */

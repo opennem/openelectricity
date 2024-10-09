@@ -1,12 +1,13 @@
 <script>
 	import { setContext, getContext, onMount } from 'svelte';
-	import { fade } from 'svelte/transition';
 
 	import { colourReducer } from '$lib/stores/theme';
+	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
 
-	import LogoMark from '$lib/images/logo-mark.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';
+
+	import dataVizStore from '$lib/components/charts/stores/data-viz';
 
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
@@ -19,11 +20,7 @@
 	import DetailedRegion from './components/DetailedRegion.svelte';
 
 	import filtersStore from './stores/filters';
-	import dataVizStore from './stores/data-viz';
 	import byScenarioStore from './stores/by-scenario';
-	import { regionOptions } from './page-data-options/regions';
-	// import { groupOptions as scenarioGroups } from './page-data-options/groups-scenario';
-	// import { groupOptions as regionGroups } from './page-data-options/groups-region';
 
 	import {
 		fetchTechnologyViewData,

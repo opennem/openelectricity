@@ -4,7 +4,7 @@
 	import { quintOut } from 'svelte/easing';
 
 	import { LayerCake, Svg, Html, flatten, groupLonger } from 'layercake';
-	import { scaleOrdinal } from 'd3-scale';
+	import { scaleOrdinal, scaleUtc } from 'd3-scale';
 	import { format } from 'date-fns';
 
 	import { isSafari } from '$lib/utils/browser-detect';
@@ -14,7 +14,6 @@
 	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
 	import HoverLayer from '$lib/components/charts/elements/HoverLayer.svelte';
 	import HoverText from '$lib/components/charts/elements/HoverText.html.svelte';
-	import Element from '$lib/components/charts/elements/Element.svelte';
 
 	import Annotations from './Annotations.svelte';
 
@@ -103,6 +102,7 @@
 		{xDomain}
 		yDomain={[0, null]}
 		zDomain={seriesNames}
+		xScale={scaleUtc()}
 		zScale={scaleOrdinal()}
 		zRange={Object.values(seriesColours)}
 		data={groupedData}
@@ -119,6 +119,8 @@
 				tickMarks={true}
 				gridlines={true}
 				snapTicks={true}
+				strokeArray="3"
+				stroke="#efefef"
 				tickLabel={!hoverData}
 			/>
 			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
