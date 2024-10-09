@@ -27,7 +27,7 @@
 		{@const monthRecords = getNonIntervalDayRecords(days)}
 		<div class="mt-20 first:mt-0">
 			<p
-				class="sticky top-0 z-20 bg-light-warm-grey/80 backdrop-blur-sm pt-6 pb-4 mb-0 border-b border-warm-grey font-space uppercase"
+				class="sticky top-0 z-20 bg-light-warm-grey/80 backdrop-blur-sm pt-6 pb-4 pl-6 md:pl-0 mb-0 border-b border-warm-grey font-space uppercase"
 			>
 				{month}
 			</p>
@@ -107,7 +107,7 @@
 				{#if nonIntervalDayLength === 0}
 					<div>
 						<p
-							class="sticky top-[50px] z-10 bg-light-warm-grey/80 backdrop-blur-sm py-2 text-xs font-space"
+							class="sticky top-[50px] z-10 bg-light-warm-grey/80 mt-10 py-2 pl-6 md:pl-0 backdrop-blur-sm text-xs font-space"
 						>
 							{date}
 						</p>

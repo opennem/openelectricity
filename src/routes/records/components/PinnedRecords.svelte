@@ -157,25 +157,20 @@
 	}
 </script>
 
-<div
-	class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8 md:grid grid-cols-5 md:gap-4"
->
+<div class="overflow-auto flex items-stretch snap-x snap-mandatory md:grid grid-cols-5 md:gap-4">
 	{#each pinned as { fuelTech }}
 		{@const recordData = recordMap[fuelTech]}
-		<div class="snap-start shrink-0 w-[200px] md:w-auto">
+		<div class="snap-start px-10 pr-5 last:pr-10 md:p-0 md:last:pr-0 shrink-0 w-[320px] md:w-auto">
 			{#if !loading}
 				{#if recordData}
 					<a
 						href="/records/{recordData.recordId}"
-						class="text-black bg-white border border-mid-warm-grey hover:border-dark-grey !no-underline rounded-xl p-6 h-full grid grid-cols-1 gap-4 content-between transition-all"
+						class="text-black bg-white border border-mid-warm-grey hover:border-dark-grey !no-underline rounded-xl p-8 md:p-6 h-full min-h-[300px] md:min-h-96 grid grid-cols-1 gap-4 content-between transition-all"
 					>
 						<div>
-							<!-- <h6>{label}</h6> -->
 							<Icon icon={fuelTech} size={32} />
-							<!-- {recordData.recordId} -->
 
-							<div class="leading-base my-6">
-								<!-- <small>{recordData.period} / {recordData.aggregate}</small> -->
+							<div class="text-2xl leading-2xl md:text-base md:leading-base my-6">
 								{recordDescription(
 									recordData.period,
 									recordData.aggregate,
@@ -189,11 +184,11 @@
 							class="border-t-4 flex justify-between items-baseline pt-2"
 							style="border-color: {fuelTechColourMap[fuelTech]}"
 						>
-							<div>
+							<div class="text-lg md:text-base">
 								{formatRecordValue(recordData.value, fuelTech)}
 								<small class="text-mid-grey">{recordData.unit}</small>
 							</div>
-							<time class="text-xxs text-mid-grey">
+							<time class="md:text-xxs text-mid-grey">
 								{formatDate(recordData.interval, recordData.period)}
 							</time>
 						</div>

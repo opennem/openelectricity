@@ -7,8 +7,7 @@
 	import {
 		getFormattedDate,
 		getFormattedMonth,
-		getFormattedDateTime,
-		getFormattedTime
+		getFormattedDateTime
 	} from '$lib/utils/formatters.js';
 
 	import Meta from '$lib/components/Meta.svelte';
@@ -24,6 +23,7 @@
 	} from '../page-data-options/filters';
 	import recordDescription from '../page-data-options/record-description';
 	import getRelativeTime from '../page-data-options/relative-time';
+	import HistoryTable from '../components/HistoryTable.svelte';
 
 	export let data;
 
@@ -126,8 +126,6 @@
 		})
 		.sort((a, b) => b.time - a.time);
 
-	let prevDay = '';
-
 	/**
 	 * @param {string} period
 	 */
@@ -141,42 +139,6 @@
 		if (period === 'day') {
 			return function (/** @type {Date} */ date) {
 				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
-			};
-		}
-
-		return function (/** @type {Date} */ date) {
-			return getFormattedMonth(date, 'short');
-		};
-	}
-
-	/**
-	 * @param {string} period
-	 * @param {boolean} [timeOnly]
-	 */
-	function tableTimeFormatter(period, timeOnly = false) {
-		if (period === 'interval') {
-			return function (/** @type {Date} */ date) {
-				const day = getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
-				if (!prevDay || day !== prevDay) {
-					prevDay = day;
-					return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
-				}
-
-				if (timeOnly) return getFormattedTime(date);
-
-				return '';
-			};
-		}
-
-		if (period === 'day') {
-			return function (/** @type {Date} */ date) {
-				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
-			};
-		}
-
-		if (period === 'year') {
-			return function (/** @type {Date} */ date) {
-				return getFormattedMonth(date, undefined);
 			};
 		}
 
@@ -263,14 +225,14 @@
 	image="/img/preview.jpg"
 />
 
-<div class="px-16 pt-10 pb-0">
+<div class="px-10 md:px-16 pt-10 pb-0">
 	<PageNav />
 </div>
 
 {#if loading}
 	<div
 		transition:fade
-		class="md:grid wrapper gap-6 px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 overflow-auto animate-pulse"
+		class="md:grid wrapper flex flex-col gap-6 px-10 md:px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 md:overflow-auto animate-pulse"
 	>
 		<div class="bg-mid-warm-grey rounded-lg h-[128px]" />
 		<div class="bg-mid-warm-grey rounded-lg" />
@@ -278,20 +240,24 @@
 		<div class="bg-mid-warm-grey rounded-lg" />
 	</div>
 {:else}
-	<div class="md:grid wrapper gap-6 px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 overflow-auto">
-		<div class="py-6">
+	<div
+		class="md:grid wrapper flex flex-col md:gap-6 px-0 md:px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 md:overflow-auto"
+	>
+		<div class="py-6 px-10 md:px-0">
 			{#if currentRecord?.fueltech_id}
 				<span class="justify-self-start">
 					<FuelTechTag fueltech={currentRecord?.fueltech_id} />
 				</span>
 			{/if}
 
-			<h2 class="mt-4">
+			<h2 class="mt-4 mb-0">
 				{pageTitle}
 			</h2>
 		</div>
 
-		<div class="bg-white px-6 py-6 rounded-lg border border-warm-grey flex flex-col justify-center">
+		<div
+			class="bg-white mx-10 md:mx-0 mb-10 md:mb-0 px-6 py-6 rounded-lg border border-warm-grey flex flex-col justify-center"
+		>
 			<h5 class="font-space uppercase text-mid-grey text-sm font-medium mb-0">Current Record</h5>
 
 			<div>
@@ -315,7 +281,7 @@
 			</time>
 		</div>
 
-		<div class="bg-white p-4 rounded-lg border border-warm-grey">
+		<div class="bg-white p-4 md:rounded-lg md:border border-warm-grey">
 			<HistoryChart
 				on:mousemove={handleMousemove}
 				on:mouseout={handleMouseout}
@@ -323,75 +289,15 @@
 			/>
 		</div>
 
-		<div class="md:overflow-y-auto rounded-lg border border-warm-grey">
-			<table class="bg-white text-sm w-full">
-				<thead>
-					<tr class="sticky top-0 z-10 bg-light-warm-grey/60 backdrop-blur-xl">
-						<th class="text-left">
-							<div class="px-4 py-2">Date</div>
-						</th>
-						<th class="text-right">
-							{#if $allowPrefixSwitch}
-								<div class="px-4 py-2">
-									<button class="hover:underline" on:click={moveToNextDisplayPrefix}>
-										{$displayUnit || ''}
-									</button>
-								</div>
-							{:else}
-								<div class="px-4 py-2">{$displayUnit || ''}</div>
-							{/if}
-						</th>
-					</tr>
-				</thead>
+		<div class="md:hidden h-10 bg-white" />
 
-				<tbody>
-					{#each sortedHistoryData as record}
-						<tr
-							class="border-b border-light-warm-grey pointer hover:bg-warm-grey"
-							class:font-semibold={record.time === $focusTime}
-							class:bg-warm-grey={record.time === $hoverTime}
-							on:mousemove={() => handleMousemove({ detail: { time: record.time } })}
-							on:mouseout={handleMouseout}
-							on:blur={handleMouseout}
-							on:pointerup={() => handlePointerup({ detail: { time: record.time } })}
-						>
-							<td
-								class="pl-4 py-2 font-mono text-dark-grey flex"
-								class:text-red={record.time === $focusTime}
-							>
-								<time datetime={record.interval} class="w-44">
-									{tableTimeFormatter(record.period)(record.date)}
-								</time>
-
-								{#if record.period === 'interval'}
-									<time datetime={record.interval}>
-										{tableTimeFormatter(record.period, true)(record.date)}
-									</time>
-								{/if}
-							</td>
-
-							<td
-								class="px-4 py-2 text-right font-mono text-dark-grey"
-								class:text-red={record.time === $focusTime}
-							>
-								{$convertAndFormatValue(record.value)}
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-
-				<tfoot>
-					<tr class="sticky bottom-0 bg-light-warm-grey/60 backdrop-blur-xl">
-						<th class="text-left">
-							<div class="px-4 py-2">Total records</div>
-						</th>
-						<th class="text-right">
-							<div class="px-4 py-2">{sortedHistoryData.length}</div>
-						</th>
-					</tr>
-				</tfoot>
-			</table>
-		</div>
+		<HistoryTable
+			{sortedHistoryData}
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:blur={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
 	</div>
 {/if}
 

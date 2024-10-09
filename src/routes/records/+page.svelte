@@ -5,21 +5,16 @@
 
 	import Meta from '$lib/components/Meta.svelte';
 	import Switch from '$lib/components/Switch.svelte';
-	import IconXMark from '$lib/icons/XMark.svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { regionsWithLabels } from '$lib/regions';
 
 	import PinnedRecords from './components/PinnedRecords.svelte';
 	import List from './components/List.svelte';
 	import Table from './components/Table.svelte';
 	import Filters from './components/Filters.svelte';
+	import FilterTags from './components/FilterTags.svelte';
 	import fetchRecords from './page-data-options/fetch';
-	import {
-		aggregateOptions,
-		fuelTechLabel,
-		milestoneTypeLabel,
-		periodLabel,
-		getFilterParams
-	} from './page-data-options/filters';
+	import { aggregateOptions, getFilterParams } from './page-data-options/filters';
 	import filtersStore from './stores/filters';
 	import groupByMonthDay from './page-data-options/group-by-month-day';
 
@@ -38,13 +33,13 @@
 
 	// TODO: refactor to store
 	const regions = [
-		{ longValue: 'au.nem', value: 'nem', label: 'NEM' },
-		{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW' },
-		{ longValue: 'au.nem.qld1', value: 'qld1', label: 'QLD' },
-		{ longValue: 'au.nem.sa1', value: 'sa1', label: 'SA' },
-		{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS' },
-		{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC' },
-		{ longValue: 'au.wem', value: 'wem', label: 'WA' }
+		{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
+		{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW', longLabel: 'New South Wales' },
+		{ longValue: 'au.nem.qld1', value: 'qld1', label: 'QLD', longLabel: 'Queensland' },
+		{ longValue: 'au.nem.sa1', value: 'sa1', label: 'SA', longLabel: 'South Australia' },
+		{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS', longLabel: 'Tasmania' },
+		{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC', longLabel: 'Victoria' },
+		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
 	];
 
 	let errorMessage = '';
@@ -124,11 +119,6 @@
 			significance: selectedSignificance
 		});
 
-		console.log('regionsParam', regionsParam);
-		console.log('periodsParam', periodsParam);
-		console.log('fuelTechParams', fuelTechParams);
-		console.log('metricsParam', metricsParam);
-
 		goto(`/records?page=${page}${regionsParam}${periodsParam}${fuelTechParams}${metricsParam}`, {
 			replaceState: true
 		});
@@ -141,22 +131,23 @@
 	image="/img/preview.jpg"
 />
 
-<!-- <div class="grid grid-cols-6 divide-x">
-	<div class="col-span-2 flex justify-end">
-		<section class="w-[400px] bg-mid-grey">
-			<h2>Records</h2>
-
-			<div>
-				<h4>Filters</h4>
-			</div>
-		</section>
-	</div> -->
-
 <div class="bg-light-warm-grey">
 	<section class="md:container py-12">
-		<h2 class="text-center">Records</h2>
+		<div class="flex items-center gap-2 justify-between md:justify-center pl-10 pr-5 md:px-0">
+			<h2 class="text-xl md:text-2xl mb-0 md:mb-12">Records</h2>
+			<div class="md:hidden flex justify-center text-sm">
+				<FormSelect
+					options={regions.map((r) => ({ label: r.longLabel, value: r.value }))}
+					selected={$selectedRegion}
+					paddingX="px-4"
+					paddingY="py-3"
+					align="right"
+					on:change={(evt) => ($selectedRegions = [evt.detail.value])}
+				/>
+			</div>
+		</div>
 
-		<div class="flex justify-center mb-12">
+		<div class="hidden md:flex justify-center mb-12">
 			<Switch
 				buttons={regions}
 				selected={$selectedRegion}
@@ -165,7 +156,7 @@
 			/>
 		</div>
 
-		<div class="p-6 md:px-0">
+		<div class="py-10 md:py-6">
 			<PinnedRecords region={selectedLongValueRegion} />
 		</div>
 	</section>
@@ -178,69 +169,9 @@
 <div class="bg-light-warm-grey">
 	{#if $selectedView === 'list'}
 		<div class="md:container md:grid grid-cols-6 md:divide-x divide-warm-grey py-12">
-			<div class="col-span-2 pl-7 pr-12">
-				<div class="sticky top-10">
-					{#if $selectedFuelTechs.length || $selectedMetrics.length || $selectedPeriods.length}
-						<h4>Filters</h4>
-					{/if}
-
-					{#if $selectedFuelTechs.length}
-						<h6 class="mt-10">Technology</h6>
-					{/if}
-					<div class="flex gap-2 flex-wrap">
-						{#each $selectedFuelTechs as fuelTech}
-							<div
-								class="bg-white border border-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
-							>
-								<span>{fuelTechLabel[fuelTech]}</span>
-								<button
-									class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-									on:click={() =>
-										($selectedFuelTechs = $selectedFuelTechs.filter((d) => d !== fuelTech))}
-								>
-									<IconXMark class="size-6" />
-								</button>
-							</div>
-						{/each}
-					</div>
-
-					{#if $selectedMetrics.length}
-						<h6 class="mt-10">Metric</h6>
-					{/if}
-					<div class="flex gap-2 flex-wrap">
-						{#each $selectedMetrics as metric}
-							<div
-								class="bg-white border border-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
-							>
-								<span>{milestoneTypeLabel[metric]}</span>
-								<button
-									class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-									on:click={() => ($selectedMetrics = $selectedMetrics.filter((d) => d !== metric))}
-								>
-									<IconXMark class="size-6" />
-								</button>
-							</div>
-						{/each}
-					</div>
-
-					{#if $selectedPeriods.length}
-						<h6 class="mt-10">Period</h6>
-					{/if}
-					<div class="flex gap-2 flex-wrap">
-						{#each $selectedPeriods as period}
-							<div
-								class="bg-white border border-warm-grey text-xs rounded-full flex justify-between items-center gap-3 pl-5"
-							>
-								<span>{periodLabel[period]}</span>
-								<button
-									class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-									on:click={() => ($selectedPeriods = $selectedPeriods.filter((d) => d !== period))}
-								>
-									<IconXMark class="size-6" />
-								</button>
-							</div>
-						{/each}
-					</div>
+			<div class="col-span-2 px-10 md:pl-7 md:pr-12">
+				<div class="sticky top-10 hidden md:block">
+					<FilterTags />
 				</div>
 			</div>
 

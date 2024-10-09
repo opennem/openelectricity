@@ -142,16 +142,17 @@
 
 	<Tooltip {xValue} {yValue} />
 </div>
-<div class="wrapper gap-6 p-6 pt-0 pb-10 h-full relative">
+<div class="wrapper md:grid flex flex-col gap-6 p-6 pt-0 pb-10 h-full relative">
 	{#if brushedRange}
 		<div class="absolute top-2 right-6 z-10">
 			<ResetZoom on:click={handleZoomReset} />
 		</div>
 	{/if}
+
 	<LineChartWithContext
 		store={historyStore}
 		customFormatTickX={(d) => getXTicks(d, brushedRange || xRange)}
-		heightClasses="h-auto"
+		heightClasses="h-[300px] md:h-auto"
 		showDots={true}
 		on:mousemove
 		on:mouseout
@@ -168,7 +169,6 @@
 
 <style>
 	.wrapper {
-		display: grid;
 		grid-template-rows: 5fr 120px;
 	}
 </style>

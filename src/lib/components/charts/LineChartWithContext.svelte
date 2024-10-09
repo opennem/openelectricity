@@ -160,5 +160,5 @@
 		</Svg>
 	</LayerCake>
 
-	<p class="text-xs text-mid-grey relative -top-5 md:hidden">{$title}</p>
+	<!-- <p class="text-xs text-mid-grey relative -top-5 md:hidden">{$title}</p> -->
 </div>

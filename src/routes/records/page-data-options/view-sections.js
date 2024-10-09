@@ -6,11 +6,13 @@ export const viewSectionOptions = [
 	{
 		value: 'list',
 		icon: IconQueueList,
-		size: 'size-6'
+		size: 'size-6',
+		label: 'List'
 	},
 	{
 		value: 'table',
 		icon: IconTableCells,
-		size: 'size-6'
+		size: 'size-6',
+		label: 'Table'
 	}
 ];
