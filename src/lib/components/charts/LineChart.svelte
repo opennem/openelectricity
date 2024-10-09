@@ -85,7 +85,7 @@
 
 <div class="chart-container mb-4 {heightClasses}">
 	<LayerCake
-		padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
+		padding={{ top: 0, right: 0, bottom: 0, left: 0 }}
 		x={xKey}
 		y={yKey}
 		xScale={scaleUtc()}
@@ -107,6 +107,7 @@
 				formatTick={formatTickY}
 				gridlines={true}
 				stroke="#33333344"
+				{clipPathId}
 			/>
 			<AxisX
 				ticks={xTicks}
@@ -117,9 +118,9 @@
 			/>
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-				<Line stroke="#353535" {hoverData} {strokeWidth} {curveType} />
+				<Line {clipPathId} stroke="#353535" {hoverData} {strokeWidth} {curveType} />
 				{#if showArea}
-					<Area fill={zKey} />
+					<Area {clipPathId} fill={zKey} />
 				{/if}
 			</g>
 			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup on:mousedown />
