@@ -31,7 +31,7 @@
 
 	function findSelectedOption() {
 		const find = options.find((opt) => opt.value === selectedValue);
-		return find ? find.label : selectedValue;
+		return find ? find.label : selectedValue || formLabel;
 	}
 
 	$: translateToMiddle = align === 'middle' ? 'left-1/2 transform -translate-x-1/2' : '';
@@ -49,7 +49,7 @@
 			<span class={selectedLabelClass}>{formLabel}</span>
 		{:else}
 			<span class="{selectedLabelClass} mb-0 capitalize">
-				{selected && selected.label ? selected?.label : findSelectedOption()}
+				{selected && selected.label ? selected?.label : findSelectedOption() || formLabel}
 			</span>
 
 			<IconChevronUpDown class="w-7 h-7" />

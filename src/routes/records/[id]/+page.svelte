@@ -102,7 +102,7 @@
 	// $: console.log('id', id);
 	// $: console.log('historyData', historyData);
 	// $: console.log('sortedHistoryData', sortedHistoryData);
-	$: currentRecord = sortedHistoryData.length ? sortedHistoryData[0] : null;
+	$: currentRecord = sortedHistoryData.length ? sortedHistoryData[0] : undefined;
 	$: previousRecord =
 		sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null;
 	$: isPeriodInterval = currentRecord?.period === 'interval';
@@ -235,7 +235,7 @@
 />
 
 <div class="px-10 md:px-16 pt-10 pb-0">
-	<PageNav record={currentRecord} />
+	<PageNav {id} record={currentRecord} />
 </div>
 
 {#if error}

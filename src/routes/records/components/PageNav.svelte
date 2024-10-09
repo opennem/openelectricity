@@ -21,37 +21,44 @@
 		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
 	];
 
-	/** @type {MilestoneRecord} */
+	/** @type {MilestoneRecord | undefined} */
 	export let record;
+	export let id;
 
-	$: fuelTech = record?.fueltech_id;
-	$: region = record?.network_region || record?.network_id;
-	$: metric = record?.metric;
-	$: period = record?.period;
-	$: aggregate = record?.aggregate;
-
-	$: regionId = region ? region.toLowerCase() : '';
+	// $: console.log('id', id);
+	$: idArr = id.split('.');
+	$: isNetwork = idArr.length === 6;
+	$: region = isNetwork ? [idArr[0], idArr[1]].join('.') : [idArr[0], idArr[1], idArr[2]].join('.');
+	$: fuelTech = isNetwork ? idArr[2] : idArr[3];
+	$: metric = isNetwork ? idArr[3] : idArr[4];
+	$: period = isNetwork ? idArr[4] : idArr[5];
+	$: aggregate = isNetwork ? idArr[5] : idArr[6];
+	// $: console.log('check', region, fuelTech, metric, period, aggregate);
+	$: regionId = regions.find((r) => r.longValue === region)?.value || '';
 
 	/**
 	 * @param {CustomEvent} evt
 	 */
 	function handleRegionChange(evt) {
-		goToRecord({
-			region: evt.detail.value,
-			fuelTech,
-			metric,
-			period,
-			aggregate
-		});
+		const findRegion = regions.find((r) => r.value === evt.detail.value);
+		if (findRegion) {
+			goToRecord({
+				region: findRegion.longValue,
+				fuelTech,
+				metric,
+				period,
+				aggregate
+			});
+		}
 	}
 
 	/**
 	 * @param {CustomEvent} evt
 	 */
 	function handleFuelTechChange(evt) {
-		if (regionId) {
+		if (region) {
 			goToRecord({
-				region: regionId,
+				region,
 				fuelTech: evt.detail.value,
 				metric,
 				period,
@@ -64,9 +71,9 @@
 	 * @param {CustomEvent} evt
 	 */
 	function handleMetricChange(evt) {
-		if (regionId) {
+		if (region) {
 			goToRecord({
-				region: regionId,
+				region,
 				fuelTech,
 				metric: evt.detail.value,
 				period,
@@ -79,9 +86,9 @@
 	 * @param {CustomEvent} evt
 	 */
 	function handlePeriodChange(evt) {
-		if (regionId) {
+		if (region) {
 			goToRecord({
-				region: regionId,
+				region,
 				fuelTech,
 				metric,
 				period: evt.detail.value,
@@ -95,15 +102,15 @@
 	 * @param {{region: string, fuelTech: string, metric: string, period: string, aggregate: string}} param0
 	 */
 	function goToRecord({ region, fuelTech, metric, period, aggregate }) {
-		const findRegion = regions.find((r) => r.value === region);
+		// const findRegion = regions.find((r) => r.value === region);
 
-		console.log(
-			`/records/${findRegion?.longValue || ''}.${fuelTech}.${metric}.${period}.${aggregate}`
-		);
+		console.log(`/records/${region}.${fuelTech}.${metric}.${period}.${aggregate}`);
 
-		goto(`/records/${findRegion?.longValue || ''}.${fuelTech}.${metric}.${period}.${aggregate}`, {
-			replaceState: true
-		});
+		// window.location = `/records/${
+		// 	region
+		// }.${fuelTech}.${metric}.${period}.${aggregate}`;
+
+		goto(`/records/${region}.${fuelTech}.${metric}.${period}.${aggregate}`);
 	}
 </script>
 
@@ -116,41 +123,51 @@
 			Back
 		</a>
 
-		{#if record}
-			<div class="flex gap-1 items-center pl-6">
+		<div class="flex gap-2 items-center pl-6">
+			<div class="text-nowrap">
 				<FormSelect
 					options={regions.map((r) => ({ label: r.label, value: r.value }))}
 					selected={regionId}
+					formLabel="Region"
 					paddingX="px-4"
 					paddingY="py-3"
 					on:change={handleRegionChange}
 				/>
+			</div>
 
+			<div class="text-nowrap">
 				<FormSelect
 					options={fuelTechOptions}
 					selected={fuelTech}
+					formLabel="Technology"
 					paddingX="px-4"
 					paddingY="py-3"
 					on:change={handleFuelTechChange}
 				/>
+			</div>
 
+			<div class="text-nowrap">
 				<FormSelect
 					options={milestoneTypeOptions}
 					selected={metric}
+					formLabel="Metric"
 					paddingX="px-4"
 					paddingY="py-3"
 					on:change={handleMetricChange}
 				/>
+			</div>
 
+			<div class="text-nowrap">
 				<FormSelect
 					options={periodOptions}
 					selected={period}
+					formLabel="Period"
 					paddingX="px-4"
 					paddingY="py-3"
 					on:change={handlePeriodChange}
 				/>
 			</div>
-		{/if}
+		</div>
 	</div>
 
 	{#if record}
