@@ -261,7 +261,7 @@
 	</div>
 {:else}
 	<div
-		class="md:grid wrapper flex flex-col md:gap-6 px-0 md:px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 md:overflow-auto"
+		class="md:grid wrapper flex flex-col md:gap-6 px-0 md:px-16 pt-10 pb-32 md:h-[calc(100vh-190px)] z-10 md:overflow-auto"
 	>
 		<div class="py-6 px-10 md:px-0">
 			{#if currentRecord?.fueltech_id}
