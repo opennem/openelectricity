@@ -119,7 +119,7 @@
 {/if}
 
 <div class="container">
-	<div class="flex justify-end items-center">
+	<div class="flex justify-end md:justify-between items-center">
 		<div class="hidden md:inline-flex justify-start items-center">
 			<FormMultiSelect
 				options={fuelTechOptions}
