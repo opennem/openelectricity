@@ -13,8 +13,11 @@ import totalMinusLoadsStats from './total-minus-loads-stats';
  */
 function Statistic(data, statsType, unit = '') {
 	this.originalData = deepCopy(data);
+	/** @type {StatsData[]} */
 	this.data = deepCopy(data);
+	/** @type {StatsType} */
 	this.statsType = statsType || 'history';
+	/** @type {StatsInterval | undefined} */
 	this.minIntervalObj = getMinInterval(data, this.statsType);
 
 	this.statsUnit = unit;
@@ -42,7 +45,7 @@ Statistic.prototype.reorder = function (/** @type {Array.<string | FuelTechCode>
 
 	// Reorder
 	domainOrder.forEach((domain) => {
-		const find = this.data.find((/** @type {StatsData} */ d) => d.fuel_tech === domain);
+		const find = this.data.find((d) => d.fuel_tech === domain);
 		if (find) {
 			data.push(deepCopy(find));
 		}
@@ -52,7 +55,7 @@ Statistic.prototype.reorder = function (/** @type {Array.<string | FuelTechCode>
 	return this;
 };
 
-Statistic.prototype.invertValues = function (/** @type {string[]} */ loads) {
+Statistic.prototype.invertValues = function (/** @type {FuelTechCode[]} */ loads) {
 	this.data.forEach((/** @type {StatsData} */ d) => {
 		const ft = d.fuel_tech;
 
@@ -72,13 +75,13 @@ Statistic.prototype.invertValues = function (/** @type {string[]} */ loads) {
 };
 
 Statistic.prototype.group = function (
-	/** @type {Object} */ groupMap,
-	/** @type {string[]} */ loads = []
+	/** @type {Object.<string, FuelTechCode[]>} groupMap */ groupMap,
+	/** @type {FuelTechCode[]} */ loads = []
 ) {
 	/**
 	 *
-	 * @param {*} groupMap
-	 * @param {*} groupCode
+	 * @param {Object.<FuelTechCode, FuelTechCode[]>} groupMap
+	 * @param {FuelTechCode} groupCode
 	 * @returns
 	 */
 	const getCodes = (groupMap, groupCode) => {
@@ -97,9 +100,7 @@ Statistic.prototype.group = function (
 
 	groupKeys.forEach((code) => {
 		const codes = getCodes(groupMap, code);
-		const filtered = this.data.filter((/** @type {StatsData} */ d) =>
-			d.fuel_tech ? codes.includes(d.fuel_tech) : false
-		);
+		const filtered = this.data.filter((d) => (d.fuel_tech ? codes.includes(d.fuel_tech) : false));
 
 		if (filtered.length > 0) {
 			const data = filtered[0][this.statsType];
@@ -117,7 +118,7 @@ Statistic.prototype.group = function (
 			groupObject[this.statsType].data = groupObject[this.statsType].data.map(() => null);
 
 			// sum each filtered history.data array into group history data
-			filtered.forEach((/** @type {StatsData} */ d) => {
+			filtered.forEach((d) => {
 				d[this.statsType].data.forEach(
 					/**
 					 * @param {number | null} d
