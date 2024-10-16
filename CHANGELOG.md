@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.18.1
+
+### Patch Changes
+
+- add GA for stats comparison
+
 ## 1.18.0
 
 ### Minor Changes
