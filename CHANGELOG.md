@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.18.2
+
+### Patch Changes
+
+- Fix email address
+
 ## 1.18.1
 
 ### Patch Changes
