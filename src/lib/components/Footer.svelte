@@ -78,7 +78,7 @@
 				<p>
 					<strong>For any inquiries</strong>, suggestions, or feedback, contact the Open Electricity
 					team at
-					<a href="mailto:inquiries@openelectricity.com.au">inquiries@openelectricity.com.au</a>
+					<a href="mailto:inquiries@openelectricity.org.au">inquiries@openelectricity.com.au</a>
 				</p>
 				<h5>Acknowledgement of Country</h5>
 				<p>
