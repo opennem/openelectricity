@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.18.3
+
+### Patch Changes
+
+- fix email link
+
 ## 1.18.2
 
 ### Patch Changes
