@@ -253,7 +253,7 @@
 			<g
 				role="group"
 				use:popperRef
-				on:mouseenter={() => flowEnter('NSW1->QLD1', absRound(flows['NSW1->QLD1']))}
+				on:mouseenter={() => flowEnter('NSW1->QLD1', flows['NSW1->QLD1'])}
 				on:mouseleave={flowLeave}
 			>
 				<Flow
@@ -267,7 +267,7 @@
 			<g
 				role="group"
 				use:popperRef
-				on:mouseenter={() => flowEnter('NSW1->VIC1', absRound(flows['NSW1->VIC1']))}
+				on:mouseenter={() => flowEnter('NSW1->VIC1', flows['NSW1->VIC1'])}
 				on:mouseleave={flowLeave}
 			>
 				<Flow
@@ -281,7 +281,7 @@
 			<g
 				role="group"
 				use:popperRef
-				on:mouseenter={() => flowEnter('TAS1->VIC1', absRound(flows['TAS1->VIC1']))}
+				on:mouseenter={() => flowEnter('TAS1->VIC1', flows['TAS1->VIC1'])}
 				on:mouseleave={flowLeave}
 			>
 				<Flow
@@ -295,7 +295,7 @@
 			<g
 				role="group"
 				use:popperRef
-				on:mouseenter={() => flowEnter('SA1->VIC1', absRound(flows['SA1->VIC1']))}
+				on:mouseenter={() => flowEnter('SA1->VIC1', flows['SA1->VIC1'])}
 				on:mouseleave={flowLeave}
 			>
 				<Flow
