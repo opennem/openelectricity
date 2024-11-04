@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.18.4
+
+### Patch Changes
+
+- fix issue where the interconnector tooltip is showing the wrong direction
+
 ## 1.18.3
 
 ### Patch Changes
