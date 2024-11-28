@@ -9,6 +9,7 @@ export async function load({ fetch }) {
 		if (!response.ok) {
 			throw new Error(`HTTP error: ${response.status}`);
 		}
+		/** @type {EmberCountry[]} */
 		const countries = await response.json();
 		return { countries };
 	} catch (error) {

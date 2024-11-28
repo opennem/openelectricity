@@ -1,12 +1,47 @@
 <script>
+	import { setContext, getContext } from 'svelte';
+	import { colourReducer } from '$lib/stores/theme';
+
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import Filters from './components/Filters.svelte';
 
+	import dataVizStore from '$lib/components/charts/stores/data-viz';
+	import filtersStore from './stores/filters';
+
 	export let data;
+
+	const dataVizStoreNames = [
+		{
+			name: 'energy-data-viz',
+			chart: 'generation'
+		},
+		{
+			name: 'emissions-data-viz',
+			chart: 'emissions'
+		}
+	];
+	dataVizStoreNames.forEach(({ name }) => {
+		setContext(name, dataVizStore());
+	});
+	setContext('ember-filters', filtersStore());
+
+	const dataVizStores = dataVizStoreNames.reduce(
+		/**
+		 * @param {Object.<string, *>} acc
+		 * @param {{name: string}} curr
+		 */ (acc, curr) => {
+			acc[curr.name] = getContext(curr.name);
+			return acc;
+		},
+		{}
+	);
+	const { selectedRegion } = getContext('ember-filters');
 
 	let error = false;
 	let errorMsg = '';
+	let fetching = false;
+	let dataset;
 
 	$: console.log(data);
 	$: countries = data.countries;
@@ -14,6 +49,22 @@
 		console.error(data.error);
 		error = true;
 		errorMsg = data.error;
+	}
+
+	$: fetchData($selectedRegion);
+
+	/**
+	 * @param {string} region
+	 */
+	async function fetchData(region) {
+		if (region) {
+			fetching = true;
+			const res = await fetch(`/api/ember-bridge/?region=${region}`);
+			const json = await res.json();
+			console.log(json);
+			dataset = json.data;
+			fetching = false;
+		}
 	}
 </script>
 
@@ -41,6 +92,12 @@
 	</div>
 {:else}
 	<section class="md:container py-12">
-		<Filters {countries} />
+		{#if countries}
+			<Filters {countries} />
+		{/if}
+
+		{#if fetching}
+			<p class="text-center">Fetching data...</p>
+		{/if}
 	</section>
 {/if}
