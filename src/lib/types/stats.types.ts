@@ -41,3 +41,13 @@ export type StatsData = {
 	key?: string | number | Date;
 	isLoad?: boolean;
 };
+
+export type StatsInstance = {
+	baseUnit: string;
+	data: StatsData[];
+	minIntervalObj: StatsInterval | undefined;
+	originalData: StatsData[];
+	prefix: string;
+	statsType: StatsType;
+	statsUnit: string;
+};

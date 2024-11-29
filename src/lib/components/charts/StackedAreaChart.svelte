@@ -45,6 +45,9 @@
 	/** @type {*} */
 	export let yTicks = undefined;
 
+	/** @type {Boolean} */
+	export let snapTicks = true;
+
 	/** If true, overlay will take up the full width of the chart
 	 * If object with xStartValue and xEndValue, overlay will be a range
 	 * @type {*} */
@@ -190,7 +193,7 @@
 				gridlines={false}
 				formatTick={formatTickX}
 				tickMarks={true}
-				snapTicks={true}
+				{snapTicks}
 			/>
 		</Svg>
 

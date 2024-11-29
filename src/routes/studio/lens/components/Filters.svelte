@@ -1,23 +1,31 @@
 <script>
 	import { getContext } from 'svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
 	/** @type {EmberCountry[]} */
 	export let countries;
 
-	const { selectedRegion } = getContext('ember-filters');
+	const { selectedRegion } = getContext('filters');
 
-	$: countryOptions = countries.map((country) => ({
-		label: country.name,
-		value: country.iso
-	}));
+	$selectedRegion = 'x-WRD';
+
+	// iso string begins with `x-` for regions
+	$: regionsOnly = countries.filter((country) => country.iso.startsWith('x-'));
+	$: countriesOnly = countries.filter((country) => !country.iso.startsWith('x-'));
 </script>
 
-<FormSelect
-	formLabel="Region / Country"
-	options={countryOptions}
-	selected={$selectedRegion}
-	paddingX="px-7"
-	paddingY="py-3"
-	on:change={(evt) => ($selectedRegion = evt.detail.value)}
-/>
+<select
+	class="flex flex-col gap-2 border-dark-grey outline-none bg-light-warm-grey p-4 rounded-lg text-sm"
+	bind:value={$selectedRegion}
+>
+	<optgroup label="Regions">
+		{#each regionsOnly as region}
+			<option value={region.iso}>{region.name}</option>
+		{/each}
+	</optgroup>
+
+	<optgroup label="Countries">
+		{#each countriesOnly as country}
+			<option value={country.iso}>{country.name}</option>
+		{/each}
+	</optgroup>
+</select>

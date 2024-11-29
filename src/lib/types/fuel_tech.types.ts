@@ -29,6 +29,7 @@ export type FuelTechCode =
 	| 'wind_offshore'
 	| 'nuclear'
 	| 'imports'
+	| 'import'
 	| 'exports'
 	| 'interconnector'
 	| 'demand_response'
@@ -43,7 +44,8 @@ export type FuelTechCode =
 	| 'total_sources'
 	| 'total_loads'
 	| 'wind_solar'
-	| 'coal_gas';
+	| 'coal_gas'
+	| 'oil';
 
 export type FuelTech = {
 	_id: string;

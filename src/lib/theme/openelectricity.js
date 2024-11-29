@@ -19,6 +19,7 @@ const fuelTechColourMap = {
 	coal_brown: '#744A26',
 
 	distillate: '#E15C34',
+	oil: '#E15C34',
 
 	gas: '#E87809',
 	gas_ccgt: '#FDB462',
@@ -43,6 +44,7 @@ const fuelTechColourMap = {
 	nuclear: '#C75338',
 
 	imports: '#521986',
+	import: '#521986',
 	exports: '#927BAD',
 	interconnector: '#7F7F7F',
 	demand_response: '#7F7F7F',

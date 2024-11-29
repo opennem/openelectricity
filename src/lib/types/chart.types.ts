@@ -12,3 +12,15 @@ export type TimeSeriesGroupData = {
 	group: string;
 	value: number | string;
 };
+
+export type TimeSeriesInstance = {
+	data: TimeSeriesData[];
+	maxY: number;
+	minY: number;
+	seriesColours: { [key: string]: string };
+	seriesLabels: { [key: string]: string };
+	seriesNames: string[];
+	statsInterval: StatsInterval;
+	statsDatasets: StatsData[];
+	statsType: string;
+};

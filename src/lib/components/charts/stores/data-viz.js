@@ -1,5 +1,4 @@
 import { get, derived, writable } from 'svelte/store';
-import { format } from 'date-fns';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
 
