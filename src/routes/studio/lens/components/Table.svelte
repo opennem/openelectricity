@@ -3,7 +3,7 @@
 	import { color } from 'd3-color';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { groupOptions } from '../page-data-options/groups';
-	// import TableHeader from './TableHeader.svelte';
+	import TableHeader from './TableHeader.svelte';
 
 	/** @type {string[]} */
 	export let seriesLoadsIds = [];
@@ -26,14 +26,16 @@
 		getNextPrefix: getEnergyNextPrefix
 	} = getContext('energy-data-viz');
 
-	// const {
-	// 	hoverData: emissionsHoverData,
-	// 	focusData: emissionsFocusData,
-	// 	convertAndFormatValue: emissionsConvertAndFormatValue,
-	// 	displayUnit: emissionsDisplayUnit,
-	// 	displayPrefix: emissionsDisplayPrefix,
-	// 	getNextPrefix: getEmissionsNextPrefix
-	// } = getContext('emissions-data-viz');
+	const {
+		seriesNames: emissionsSeriesNames,
+		hoverData: emissionsHoverData,
+		focusData: emissionsFocusData,
+		convertAndFormatValue: emissionsConvertAndFormatValue,
+		displayUnit: emissionsDisplayUnit,
+		displayPrefix: emissionsDisplayPrefix,
+		getNextPrefix: getEmissionsNextPrefix
+	} = getContext('emissions-data-viz');
+
 	// const {
 	// 	hoverData: intensityHoverData,
 	// 	focusData: intensityFocusData,
@@ -62,6 +64,20 @@
 		.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
 		.reverse();
 
+	$: combinedSeriesNames = [
+		...[...$energySeriesNames].reverse(),
+		...[...$emissionsSeriesNames].reverse()
+	];
+	$: uniqueSeriesWithoutType = [
+		...new Set(
+			combinedSeriesNames.map((id) => {
+				const parts = id.split('.');
+				parts.pop();
+				return parts.join('.');
+			})
+		)
+	];
+
 	$: energySourcesTotal = $energyHoverData
 		? sourceNames.reduce(
 				/**
@@ -81,6 +97,7 @@
 				0
 		  )
 		: 0;
+
 	$: energyLoadsTotal = $energyHoverData
 		? loadNames.reduce(
 				/**
@@ -97,6 +114,26 @@
 				 * @param {string} id
 				 */
 				(acc, id) => acc + $energyFocusData[id],
+				0
+		  )
+		: 0;
+
+	$: emissionsTotal = $emissionsHoverData
+		? $emissionsSeriesNames.reduce(
+				/**
+				 * @param {number} acc
+				 * @param {string} id
+				 */
+				(acc, id) => acc + $emissionsHoverData[id],
+				0
+		  )
+		: $emissionsFocusData
+		? $emissionsSeriesNames.reduce(
+				/**
+				 * @param {number} acc
+				 * @param {string} id
+				 */
+				(acc, id) => acc + $emissionsFocusData[id],
 				0
 		  )
 		: 0;
@@ -154,11 +191,7 @@
 <svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
 
 <div class="sticky top-10 flex flex-col gap-2">
-	<!-- <TableHeader
-		includeBatteryAndLoads={$includeBatteryAndLoads}
-		hoverTime={$energyHoverTime || $energyFocusTime}
-		on:change={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
-	/> -->
+	<TableHeader hoverTime={$energyHoverTime || $energyFocusTime} />
 
 	<table class="w-full table-fixed border border-warm-grey mb-8">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
@@ -168,8 +201,9 @@
 						<span class="block text-dark-grey text-sm font-medium ml-3">Technology</span>
 					</div>
 				</th>
+
 				<th>
-					<div class="flex flex-col items-end mr-3">
+					<div class="flex flex-col items-end">
 						<span class="block text-xs">Generation</span>
 						<button
 							class="font-light text-xxs hover:underline"
@@ -179,55 +213,87 @@
 						</button>
 					</div>
 				</th>
+
+				<th>
+					<div class="flex flex-col items-end mr-3">
+						<span class="block text-xs">Emissions</span>
+						<button
+							class="font-light text-xxs hover:underline"
+							on:click={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
+						>
+							{$emissionsDisplayUnit}
+						</button>
+					</div>
+				</th>
 			</tr>
 		</thead>
 
 		<thead>
 			<tr>
 				<th class="border-b border-warm-grey">
-					<span class="ml-3"> Sources </span>
+					<span class="ml-3"> Technology </span>
 				</th>
+
+				<th class="border-b border-warm-grey">
+					<div class="font-mono flex flex-col items-end">
+						{$energyConvertAndFormatValue(energySourcesTotal)}
+					</div>
+				</th>
+
 				<th class="border-b border-warm-grey">
 					<div class="font-mono flex flex-col items-end mr-3">
-						{$energyConvertAndFormatValue(energySourcesTotal)}
+						{$emissionsConvertAndFormatValue(emissionsTotal)}
 					</div>
 				</th>
 			</tr>
 		</thead>
 
 		<tbody>
-			{#each sourceNames as name}
+			{#each uniqueSeriesWithoutType as name}
+				{@const energyName = `${name}.energy`}
+				{@const emissionsName = `${name}.emissions`}
 				<tr
-					on:click={() => handleRowClick(name)}
+					on:click={() => handleRowClick(energyName)}
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
-					class:opacity-50={hiddenRowNames.includes(name)}
+					class:opacity-50={hiddenRowNames.includes(energyName)}
 				>
 					<td class="px-2 py-1">
 						<div class="flex items-center gap-3 ml-3">
-							{#if hiddenRowNames.includes(name)}
+							{#if hiddenRowNames.includes(energyName)}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 								/>
 							{:else}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded"
-									style:background-color={$energySeriesColours[name]}
-									style:border-color={darken($energySeriesColours[name])}
+									style:background-color={$energySeriesColours[energyName]}
+									style:border-color={darken($energySeriesColours[energyName])}
 								/>
 							{/if}
 
 							<div>
-								{getLabel($energySeriesLabels[name])}
-								<span class="text-mid-grey">{getSublabel($energySeriesLabels[name])}</span>
+								{getLabel($energySeriesLabels[energyName])}
+								<span class="text-mid-grey">{getSublabel($energySeriesLabels[energyName])}</span>
 							</div>
 						</div>
 					</td>
+
+					<td class="px-2 py-1">
+						<div class="font-mono flex flex-col items-end">
+							{$energyHoverData
+								? $energyConvertAndFormatValue($energyHoverData[energyName])
+								: $energyFocusData
+								? $energyConvertAndFormatValue($energyFocusData[energyName])
+								: ''}
+						</div>
+					</td>
+
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end mr-3">
-							{$energyHoverData
-								? $energyConvertAndFormatValue($energyHoverData[name])
-								: $energyFocusData
-								? $energyConvertAndFormatValue($energyFocusData[name])
+							{$emissionsHoverData
+								? $emissionsConvertAndFormatValue($emissionsHoverData[emissionsName])
+								: $emissionsFocusData
+								? $emissionsConvertAndFormatValue($emissionsFocusData[emissionsName])
 								: ''}
 						</div>
 					</td>

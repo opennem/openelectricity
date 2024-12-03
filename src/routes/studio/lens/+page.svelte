@@ -75,8 +75,6 @@
 			colourReducer: $colourReducer
 		});
 
-		console.log('processEmissions', processedEmissions);
-
 		dataVizStoreNames.forEach(({ name }) => {
 			const store = dataVizStores[name];
 			switch (name) {
