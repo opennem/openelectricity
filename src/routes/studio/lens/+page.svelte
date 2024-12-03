@@ -20,7 +20,7 @@
 	const dataVizStoreNames = [
 		{
 			name: 'energy-data-viz',
-			chart: 'generation'
+			chart: 'energy'
 		},
 		{
 			name: 'emissions-data-viz',
@@ -68,20 +68,39 @@
 		const emissionsData = dataset.filter((d) => d.type === 'emissions');
 
 		// Process data
-		const processed = process({ history: energyData, colourReducer: $colourReducer });
+		const processed = process({ history: energyData, unit: 'TWh', colourReducer: $colourReducer });
+		const processedEmissions = process({
+			history: emissionsData,
+			unit: 'MtCO2e',
+			colourReducer: $colourReducer
+		});
+
+		console.log('processEmissions', processedEmissions);
 
 		dataVizStoreNames.forEach(({ name }) => {
 			const store = dataVizStores[name];
 			switch (name) {
 				case 'energy-data-viz':
 					updateDataVizStore(
-						'Generation',
+						'Energy',
 						store,
 						processed.stats,
 						processed.timeseries,
 						'T',
 						['G', 'T'],
 						'h-[400px] md:h-[450px]'
+					);
+					break;
+
+				case 'emissions-data-viz':
+					updateDataVizStore(
+						'Emissions',
+						store,
+						processedEmissions.stats,
+						processedEmissions.timeseries,
+						'M',
+						['M', 'G'],
+						'h-[300px] md:h-[350px]'
 					);
 					break;
 			}

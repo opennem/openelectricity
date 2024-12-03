@@ -109,13 +109,7 @@
 					{:else}
 						<span class="font-light text-sm text-mid-grey">{$displayUnit || ''}</span>
 					{/if}
-
-					<span class="hidden md:block font-light text-sm text-mid-grey">—</span>
 				</div>
-
-				<span class="font-light text-xs md:text-sm text-mid-grey relative -top-1 md:top-0">
-					{$selectedRegionLabel}
-				</span>
 			</div>
 
 			<Tooltip

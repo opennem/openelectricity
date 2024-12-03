@@ -7,19 +7,20 @@ import { fuelTechMap, orderMap, labelReducer } from './groups';
  *
  * @param {{
  * history: StatsData[],
+ * unit: string,
  * colourReducer: *
  * }} param0
  * @returns {{
  * stats: StatsInstance,
  * timeseries: TimeSeriesInstance}}
  */
-function process({ history, colourReducer }) {
+function process({ history, unit, colourReducer }) {
 	console.log(history);
 	const group = 'detailed';
 	const fuelTechs = fuelTechMap[group];
 
 	/********* processing */
-	const stats = new Statistic(history, 'history', 'TWh')
+	const stats = new Statistic(history, 'history', unit)
 		.group(fuelTechs, [], true)
 		.reorder(orderMap[group] || []);
 
