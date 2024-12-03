@@ -20,7 +20,7 @@
 	/** @type {string} [stroke='#000'] - The gridline's stroke colour. */
 	export let stroke = '#efefef';
 
-	export let strokeArray = 'none';
+	export let strokeArray = '3';
 
 	export let clipPathId = '';
 
@@ -76,11 +76,11 @@
 >
 	{#each tickVals as tick, i (tick)}
 		<g class="tick tick-{i}" transform="translate({$xScale(tick)}, {Math.max(...$yRange)})">
-			{#if gridlines !== false}
+			{#if gridlines === true}
 				<line
 					class="gridline"
-					{stroke}
-					stroke-dasharray={strokeArray}
+					stroke={i === 0 || i === tickVals.length - 1 ? '#F1F0ED' : stroke}
+					stroke-dasharray={i === 0 || i === tickVals.length - 1 ? 'none' : strokeArray}
 					y1={$height * -1}
 					y2="0"
 					x1="0"

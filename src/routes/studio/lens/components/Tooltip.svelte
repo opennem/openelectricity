@@ -27,7 +27,7 @@
 	$: hoverKeyLabel = hoverKey ? seriesLabels[hoverKey] : '';
 </script>
 
-<div class="h-6">
+<div class="h-[21px]">
 	{#if hoverData}
 		<div class="h-full items-center flex justify-end gap-1 text-xs leading-xs whitespace-nowrap">
 			<span class="px-2 py-1 font-light">

@@ -48,6 +48,10 @@
 	/** @type {Boolean} */
 	export let snapTicks = true;
 
+	export let xGridlines = false;
+
+	export let chartPadding = { top: 0, right: 0, bottom: 40, left: 0 };
+
 	/** If true, overlay will take up the full width of the chart
 	 * If object with xStartValue and xEndValue, overlay will be a range
 	 * @type {*} */
@@ -113,7 +117,7 @@
 
 <div class="chart-container mb-4 {heightClasses}">
 	<LayerCake
-		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
+		padding={chartPadding}
 		x={(/** @type {*} */ d) => {
 			// return display === 'area' ? d[xKey] || d.data[xKey] : 'date';
 			return d[xKey] || d.data[xKey];
@@ -190,10 +194,11 @@
 			/>
 			<AxisX
 				ticks={xTicks}
-				gridlines={false}
+				gridlines={xGridlines}
 				formatTick={formatTickX}
 				tickMarks={true}
 				{snapTicks}
+				stroke="#33333344"
 			/>
 		</Svg>
 

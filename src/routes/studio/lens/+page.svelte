@@ -156,7 +156,6 @@
 		store.allowedPrefixes.set(allowedPrefixes);
 		store.xTicks.set([
 			startOfYear(new Date('2000-01-01')),
-			startOfYear(new Date('2000-01-01')),
 			startOfYear(new Date('2005-01-01')),
 			startOfYear(new Date('2010-01-01')),
 			startOfYear(new Date('2015-01-01')),
@@ -275,7 +274,7 @@
 		{/each}
 	</section>
 
-	<section class="md:w-[40%]" class:blur-sm={fetching}>
+	<section class="md:w-[40%] mt-6" class:blur-sm={fetching}>
 		<Table {hiddenRowNames} on:row-click={toggleRow} />
 	</section>
 </div>

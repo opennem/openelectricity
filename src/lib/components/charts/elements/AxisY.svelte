@@ -67,7 +67,7 @@
 >
 	{#each tickVals as tick, i (i)}
 		<g class="tick tick-{tick}" transform="translate({xStart}, {$yScale(tick)})">
-			{#if gridlines !== false}
+			{#if gridlines === true}
 				<line
 					class="gridline"
 					stroke={tick === 0 ? '#353535' : stroke}
