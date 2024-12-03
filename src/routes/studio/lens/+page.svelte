@@ -266,7 +266,7 @@
 	<section class="w-full flex flex-col gap-12 md:w-[60%]" class:blur-sm={fetching}>
 		{#each dataVizStoreNames as { name, chart }}
 			<Chart
-				{hiddenRowNames}
+				hiddenRowNames={hiddenRowNames.map((d) => `${d}.${chart}`)}
 				store={dataVizStores[name]}
 				on:mousemove={handleMousemove}
 				on:mouseout={handleMouseout}

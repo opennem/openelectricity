@@ -144,7 +144,7 @@
 	 * @param {string} name
 	 */
 	function handleRowClick(name) {
-		dispatch('row-click', { name, isMetaPressed, allNames: $energySeriesNames });
+		dispatch('row-click', { name, isMetaPressed, allNames: uniqueSeriesWithoutType });
 	}
 
 	function handleKeyup() {
@@ -253,13 +253,13 @@
 				{@const energyName = `${name}.energy`}
 				{@const emissionsName = `${name}.emissions`}
 				<tr
-					on:click={() => handleRowClick(energyName)}
+					on:click={() => handleRowClick(name)}
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
-					class:opacity-50={hiddenRowNames.includes(energyName)}
+					class:opacity-50={hiddenRowNames.includes(name)}
 				>
 					<td class="px-2 py-1">
 						<div class="flex items-center gap-3 ml-3">
-							{#if hiddenRowNames.includes(energyName)}
+							{#if hiddenRowNames.includes(name)}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 								/>
