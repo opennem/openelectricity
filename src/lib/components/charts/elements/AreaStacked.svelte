@@ -22,8 +22,6 @@
 	/** @type {*} */
 	export let curveType = curveLinear;
 
-	$: console.log('curveType', curveType);
-
 	$: compareDates = [...new Set(dataset.map((d) => d.date))];
 
 	$: areaGen = area()

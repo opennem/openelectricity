@@ -14,8 +14,6 @@
 		};
 	});
 
-	$: console.log('curveType', $curveType, $curveOptions);
-
 	/**
 	 * @param {string} value
 	 */
