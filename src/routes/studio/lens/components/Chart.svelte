@@ -103,7 +103,7 @@
 	{#if names.length}
 		<div use:clickoutside on:clickoutside={() => (showOptions = false)}>
 			<header
-				class="bg-light-warm-grey rounded-lg px-1 h-[28px] flex align-bottom items-center relative z-20"
+				class="bg-light-warm-grey rounded-lg px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
 				class:rounded-bl-none={showOptions}
 			>
 				<div class="md:flex gap-1 items-center">
@@ -137,7 +137,7 @@
 				<div
 					in:fly={{ y: -20, duration: 240 }}
 					out:fly={{ y: -20, duration: 240 }}
-					class="bg-mid-warm-grey/10 p-6 border border-t-0 border-light-warm-grey rounded-b-lg absolute z-10 backdrop-blur-sm inset-shadow flex gap-6 flex-col"
+					class="bg-light-warm-grey/80 shadow-inner p-6 rounded-b-lg absolute z-10 backdrop-blur-sm inset-shadow flex gap-6 flex-col"
 				>
 					<ChartOptions {store} />
 				</div>
