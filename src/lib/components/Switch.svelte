@@ -11,6 +11,11 @@
 	/** @type {(value: string) => void} */
 	export let onChange = () => {};
 
+	export let xPad = 8;
+	export let yPad = 4;
+	export let textSize = 'sm';
+	export let roundedSize = 'xl';
+
 	$: isSelected = (value) => selected === value;
 
 	function handleClick(e) {
@@ -19,16 +24,14 @@
 	}
 </script>
 
-<!-- selected === value -->
-
 <div
-	class={`flex md:inline-flex text-sm w-full md:w-auto mx-10 md:mx-0 rounded-xl bg-light-warm-grey border border-solid border-mid-warm-grey ${$$restProps.class}`}
+	class={`flex md:inline-flex text-${textSize} w-full md:w-auto mx-10 md:mx-0 rounded-${roundedSize} bg-light-warm-grey border border-solid border-mid-warm-grey ${$$restProps.class}`}
 >
 	{#each buttons as { label, value, icon }, i}
 		<button
 			on:click={handleClick}
 			{value}
-			class="flex w-full md:w-auto items-center justify-center hover:text-black px-8 py-4 border rounded-xl whitespace-nowrap"
+			class="flex w-full md:w-auto items-center justify-center hover:text-black px-{xPad} py-{yPad} border rounded-{roundedSize} whitespace-nowrap"
 			class:bg-white={isSelected(value)}
 			class:text-black={isSelected(value)}
 			class:border-black={isSelected(value)}

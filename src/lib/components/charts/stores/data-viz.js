@@ -1,4 +1,5 @@
-import { get, derived, writable } from 'svelte/store';
+import { curveStep, curveLinear, curveMonotoneX } from 'd3-shape';
+import { get, readable, derived, writable } from 'svelte/store';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
 
@@ -15,7 +16,29 @@ export default function () {
 
 	const baseUnit = writable('');
 
-	const curveType = writable();
+	const curveOptions = readable([
+		{
+			label: 'Smooth',
+			value: 'smooth',
+			curveFunction: curveMonotoneX
+		},
+		{
+			label: 'Straight',
+			value: 'straight',
+			curveFunction: curveLinear
+		},
+		{
+			label: 'Step',
+			value: 'step',
+			curveFunction: curveStep
+		}
+	]);
+	const curveType = writable('straight');
+	const curveFunction = derived([curveOptions, curveType], ([$curveOptions, $curveType]) => {
+		const option = $curveOptions.find((d) => d.value === $curveType);
+		return option ? option.curveFunction : null;
+	});
+
 	const snapXTicks = writable(false);
 	const strokeWidth = writable('2px');
 
@@ -204,7 +227,9 @@ export default function () {
 		formatTickX,
 		formatTickY,
 		chartType,
+		curveOptions,
 		curveType,
+		curveFunction,
 		isChartTypeArea,
 		chartOverlay,
 		chartOverlayLine,

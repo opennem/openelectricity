@@ -79,6 +79,8 @@
 
 	export let chartHeightClasses = '';
 
+	export let curveFunction = null;
+
 	/** @type {string | undefined} */
 	export let highlightId = '';
 
@@ -159,6 +161,7 @@
 				{dataset}
 				display={chartType}
 				{highlightId}
+				curveType={$curveFunction}
 				on:mousemove
 				on:mouseout
 				on:pointerup

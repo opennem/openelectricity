@@ -149,9 +149,10 @@
 		);
 		store.yDomain.set([ts.minY, ts.maxY]);
 		store.chartType.set('area');
+		store.curveType.set('straight');
 		store.chartHeightClasses.set(chartHeightClasses);
-		store.baseUnit.set(stats.baseUnit); // TODO: get from stats
-		store.prefix.set(stats.prefix); // TODO: get from stats
+		store.baseUnit.set(stats.baseUnit);
+		store.prefix.set(stats.prefix);
 		store.displayPrefix.set(displayPrefix); // TODO: set from
 		store.allowedPrefixes.set(allowedPrefixes);
 		store.xTicks.set([

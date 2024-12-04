@@ -1,7 +1,7 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
 
-	import { area, line } from 'd3-shape';
+	import { area, line, curveLinear } from 'd3-shape';
 	import { closestTo } from 'date-fns';
 
 	const { data, xGet, xScale, yScale, zGet, yGet } = getContext('LayerCake');
@@ -19,18 +19,26 @@
 
 	export let display = 'area';
 
+	/** @type {*} */
+	export let curveType = curveLinear;
+
+	$: console.log('curveType', curveType);
+
 	$: compareDates = [...new Set(dataset.map((d) => d.date))];
 
 	$: areaGen = area()
 		.x((d) => $xGet(d))
 		.y0((d) => $yScale(d[0]))
 		.y1((d) => $yScale(d[1]))
+		.curve(curveType)
 		.defined((d) => !isNaN(d[0]) && !isNaN(d[1]));
 
 	$: lineGen = line(
 		(d) => $xGet(d),
 		(d) => $yGet(d)
-	).defined((d) => d.value !== null && !isNaN(d.value));
+	)
+		.curve(curveType)
+		.defined((d) => d.value !== null && !isNaN(d.value));
 
 	$: opacity = (d) => {
 		if (highlightId === null || highlightId === '') return 1;
