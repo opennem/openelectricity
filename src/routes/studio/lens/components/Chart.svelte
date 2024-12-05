@@ -106,7 +106,7 @@
 				class="bg-light-warm-grey rounded-lg px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
 				class:rounded-bl-none={showOptions}
 			>
-				<div class="md:flex gap-1 items-center">
+				<div class="flex gap-1 items-center">
 					<button
 						class="text-mid-warm-grey hover:text-dark-grey"
 						on:click={() => (showOptions = !showOptions)}
