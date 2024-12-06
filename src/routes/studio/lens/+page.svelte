@@ -1,6 +1,6 @@
 <script>
 	import { setContext, getContext, onMount } from 'svelte';
-	import { startOfYear } from 'date-fns';
+	import { addYears, startOfYear, eachYearOfInterval } from 'date-fns';
 	import { goto } from '$app/navigation';
 	import { colourReducer } from '$lib/stores/theme';
 	import { formatFyTickX } from '$lib/utils/formatters';
@@ -100,7 +100,7 @@
 						processed.stats,
 						processed.timeseries,
 						'T',
-						['G', 'T'],
+						['M', 'G', 'T'],
 						'h-[400px] md:h-[450px]'
 					);
 					break;
@@ -112,7 +112,7 @@
 						processedEmissions.stats,
 						processedEmissions.timeseries,
 						'M',
-						['M', 'G'],
+						['k', 'M', 'G'],
 						'h-[300px] md:h-[350px]'
 					);
 					break;
@@ -126,14 +126,14 @@
 	 */
 	async function fetchData(region, interval) {
 		if (region) {
+			goto(`?region=${region}&interval=${interval}`, { noScroll: true });
+
 			fetching = true;
 			const res = await fetch(`/api/ember-bridge/?region=${region}&interval=${interval}`);
 			const json = await res.json();
 			console.log(json);
 			dataset = json.data;
 			fetching = false;
-
-			goto(`?region=${region}&interval=${interval}`, { noScroll: true });
 		}
 	}
 
@@ -157,6 +157,46 @@
 	) {
 		console.log('updateDataVizStore', title, stats, ts);
 
+		/**
+		 * @param {*[]} array
+		 * @param {number} x
+		 */
+		function popEveryXItem(array, x = 3) {
+			const result = [array[0]];
+
+			// Loop through the array, skipping the first and last elements
+			for (let i = 1; i < array.length - 1; i++) {
+				if (i % x === 0) {
+					result.push(array[i]);
+				}
+			}
+
+			// Add the last element back
+			result.push(array[array.length - 1]);
+
+			return result;
+		}
+
+		// TODO: move this to utils
+		function getMonthlyXTicks() {
+			const start = ts.data[0].date;
+			const end = ts.data[ts.data.length - 1].date;
+
+			const newEnd = startOfYear(addYears(end, 1));
+			const years = eachYearOfInterval({ start, end: newEnd });
+
+			return undefined;
+		}
+
+		function getYearlyXTicks() {
+			const start = ts.data[0].date;
+			const end = ts.data[ts.data.length - 1].date;
+
+			const years = popEveryXItem(eachYearOfInterval({ start, end: end }));
+
+			return years;
+		}
+
 		store.title.set(title);
 		store.seriesData.set(ts.data);
 		store.seriesNames.set(ts.seriesNames);
@@ -177,14 +217,9 @@
 		store.allowedPrefixes.set(allowedPrefixes);
 		store.xTicks.set(
 			$selectedInterval === 'yearly'
-				? [
-						startOfYear(new Date('2000-01-01')),
-						startOfYear(new Date('2005-01-01')),
-						startOfYear(new Date('2010-01-01')),
-						startOfYear(new Date('2015-01-01')),
-						startOfYear(new Date('2020-01-01')),
-						startOfYear(new Date('2023-01-01'))
-				  ]
+				? getYearlyXTicks()
+				: $selectedInterval === 'monthly'
+				? getMonthlyXTicks()
 				: undefined
 		);
 		store.formatTickX.set(formatFyTickX);
