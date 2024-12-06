@@ -1,11 +1,12 @@
 <script>
-	import { formatFyTickX } from '$lib/utils/formatters';
+	import { getFormattedMonth } from '$lib/utils/formatters';
 	export let hoverData;
 	export let hoverKey;
 	export let seriesColours;
 	export let seriesLabels;
 	export let defaultText = '';
 	export let showTotal = false;
+	export let yearOnly = false;
 
 	/** @type {Function} */
 	export let convertAndFormatValue = (/** @type {number} */ value) => value;
@@ -14,7 +15,7 @@
 
 	$: convertedMax = hoverMax || hoverMax === 0 ? convertAndFormatValue(hoverMax) : NaN;
 
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	$: hoverDate = hoverData ? hoverData.date || undefined : undefined;
 
 	$: hoverKeyValue =
 		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
@@ -31,7 +32,11 @@
 	{#if hoverData}
 		<div class="h-full items-center flex justify-end gap-1 text-xs leading-xs whitespace-nowrap">
 			<span class="px-2 py-1 font-light">
-				{formatFyTickX(hoverTime)}
+				{#if yearOnly}
+					{getFormattedMonth(hoverDate)}
+				{:else}
+					{getFormattedMonth(hoverDate, 'short')}
+				{/if}
 			</span>
 
 			{#if hoverKeyValue !== null || showTotal}

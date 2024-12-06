@@ -45,7 +45,7 @@
 		curveFunction
 	} = store;
 
-	// const { selectedRegionLabel } = getContext('filters');
+	const { selectedInterval } = getContext('filters');
 
 	let showOptions = false;
 
@@ -150,6 +150,7 @@
 			seriesLabels={$seriesLabels}
 			convertAndFormatValue={$convertAndFormatValue}
 			showTotal={$isChartTypeArea ? true : false}
+			yearOnly={$selectedInterval === 'yearly'}
 		/>
 
 		<div class="border-warm-grey border-t">

@@ -11,15 +11,13 @@
 	export let hiddenRowNames = [];
 
 	const dispatch = createEventDispatcher();
-	const { selectedFuelTechGroup } = getContext('filters');
+	const { selectedInterval } = getContext('filters');
 	const {
 		seriesNames: energySeriesNames,
 		seriesLabels: energySeriesLabels,
 		seriesColours: energySeriesColours,
-		hoverTime: energyHoverTime,
 		hoverData: energyHoverData,
 		focusData: energyFocusData,
-		focusTime: energyFocusTime,
 		convertAndFormatValue: energyConvertAndFormatValue,
 		displayUnit: energyDisplayUnit,
 		displayPrefix: energyDisplayPrefix,
@@ -191,7 +189,10 @@
 <svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
 
 <div class="sticky top-10 flex flex-col gap-2">
-	<TableHeader hoverTime={$energyHoverTime || $energyFocusTime} />
+	<TableHeader
+		date={$energyHoverData?.date || $energyFocusData?.date}
+		yearOnly={$selectedInterval === 'yearly'}
+	/>
 
 	<table class="w-full table-fixed border border-warm-grey mb-8">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
