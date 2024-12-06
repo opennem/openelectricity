@@ -231,7 +231,7 @@
 		<thead>
 			<tr>
 				<th class="border-b border-warm-grey">
-					<span class="ml-3"> Total </span>
+					<span class="ml-3"> Net total </span>
 				</th>
 
 				<th class="border-b border-warm-grey">

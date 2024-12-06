@@ -165,7 +165,7 @@
 		);
 		store.yDomain.set([ts.minY, ts.maxY]);
 		store.chartType.set('area');
-		store.curveType.set('straight');
+		store.curveType.set('step');
 		store.chartHeightClasses.set(chartHeightClasses);
 		store.baseUnit.set(stats.baseUnit);
 		store.prefix.set(stats.prefix);
