@@ -66,11 +66,9 @@
 			} else {
 				if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
 			}
-		});
-		loadIds.forEach((l) => {
-			const value = d[l] || 0;
+
 			if ($isChartTypeArea) {
-				if (newObj._min || newObj._min === 0) newObj._min += +value;
+				if ((newObj._min || newObj._min === 0) && value < 0) newObj._min += +value;
 			} else {
 				if (newObj._min || newObj._min === 0) newObj._min = Math.min(newObj._min, +value);
 			}
@@ -86,6 +84,7 @@
 		const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
 
 		const minY = updatedSeriesData.map((d) => d._min);
+
 		// @ts-ignore
 		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
 

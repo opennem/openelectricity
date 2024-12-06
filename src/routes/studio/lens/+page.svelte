@@ -70,6 +70,13 @@
 	$: if ($selectedRegion) {
 		fetchData($selectedRegion);
 	}
+
+	// $: if ($page.state && $page.state.dataset && $page.state.region) {
+	// 	console.log('page.state', $page.state.dataset, $page.state.region);
+	// 	dataset = $page.state.dataset;
+	// 	$selectedRegion = $page.state.region;
+	// }
+
 	$: if (dataset && dataset.length > 0) {
 		const energyData = dataset.filter((d) => d.type === 'energy');
 		const emissionsData = dataset.filter((d) => d.type === 'emissions');
@@ -117,14 +124,14 @@
 	 */
 	async function fetchData(region) {
 		if (region) {
-			goto(`?region=${region}`);
-
 			fetching = true;
 			const res = await fetch(`/api/ember-bridge/?region=${region}`);
 			const json = await res.json();
 			console.log(json);
 			dataset = json.data;
 			fetching = false;
+
+			goto(`?region=${region}`, { noScroll: true });
 		}
 	}
 
@@ -262,7 +269,7 @@
 		<p class="text-dark-red font-semibold">{errorMsg}</p>
 	</div>
 {:else}
-	<section class="md:container py-12 flex justify-center">
+	<section class="md:container py-12 flex justify-center" id="filters">
 		{#if $countries && $countries.length}
 			<Filters countries={$countries} />
 		{/if}

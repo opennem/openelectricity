@@ -250,8 +250,19 @@
 
 		<tbody>
 			{#each uniqueSeriesWithoutType as name}
+				{@const isImports = name.includes('import')}
 				{@const energyName = `${name}.energy`}
 				{@const emissionsName = `${name}.emissions`}
+				{@const energyValue = $energyHoverData
+					? $energyHoverData[energyName]
+					: $energyFocusData
+					? $energyFocusData[energyName]
+					: ''}
+				{@const emissionsValue = $emissionsHoverData
+					? $emissionsHoverData[emissionsName]
+					: $emissionsFocusData
+					? $emissionsFocusData[emissionsName]
+					: ''}
 				<tr
 					on:click={() => handleRowClick(name)}
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
@@ -272,7 +283,9 @@
 							{/if}
 
 							<div>
-								{getLabel($energySeriesLabels[energyName])}
+								{isImports && energyValue < 0
+									? 'Export'
+									: getLabel($energySeriesLabels[energyName])}
 								<span class="text-mid-grey">{getSublabel($energySeriesLabels[energyName])}</span>
 							</div>
 						</div>
@@ -280,21 +293,13 @@
 
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end">
-							{$energyHoverData
-								? $energyConvertAndFormatValue($energyHoverData[energyName])
-								: $energyFocusData
-								? $energyConvertAndFormatValue($energyFocusData[energyName])
-								: ''}
+							{$energyConvertAndFormatValue(energyValue)}
 						</div>
 					</td>
 
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end mr-3">
-							{$emissionsHoverData
-								? $emissionsConvertAndFormatValue($emissionsHoverData[emissionsName])
-								: $emissionsFocusData
-								? $emissionsConvertAndFormatValue($emissionsFocusData[emissionsName])
-								: ''}
+							{$emissionsConvertAndFormatValue(emissionsValue)}
 						</div>
 					</td>
 				</tr>
