@@ -15,7 +15,6 @@ import { fuelTechMap, orderMap, labelReducer } from './groups';
  * timeseries: TimeSeriesInstance}}
  */
 function process({ history, unit, colourReducer }) {
-	console.log(history);
 	const group = 'detailed';
 	const fuelTechs = fuelTechMap[group];
 
@@ -35,8 +34,8 @@ function process({ history, unit, colourReducer }) {
 		.updateMinMax();
 	/********* end of processing Projection */
 
-	console.log(stats);
-	console.log(timeseries);
+	// console.log(stats);
+	// console.log(timeseries);
 
 	return {
 		stats,

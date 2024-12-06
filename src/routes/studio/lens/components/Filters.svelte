@@ -6,8 +6,6 @@
 
 	const { selectedRegion } = getContext('filters');
 
-	$selectedRegion = 'x-WRD';
-
 	// iso string begins with `x-` for regions
 	$: regionsOnly = countries.filter((country) => country.iso.startsWith('x-'));
 	$: countriesOnly = countries.filter((country) => !country.iso.startsWith('x-'));
@@ -15,6 +13,7 @@
 
 <select
 	class="flex flex-col gap-2 border-dark-grey outline-none bg-light-warm-grey p-4 rounded-lg text-sm"
+	name="region"
 	bind:value={$selectedRegion}
 >
 	<optgroup label="Regions">

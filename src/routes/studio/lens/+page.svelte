@@ -1,6 +1,7 @@
 <script>
-	import { setContext, getContext } from 'svelte';
+	import { setContext, getContext, onMount } from 'svelte';
 	import { startOfYear } from 'date-fns';
+	import { goto } from '$app/navigation';
 	import { colourReducer } from '$lib/stores/theme';
 	import { formatFyTickX } from '$lib/utils/formatters';
 
@@ -54,15 +55,21 @@
 	/** @type {string[]} */
 	let hiddenRowNames = [];
 
-	$: console.log(data);
-	$: $countries = data.countries;
+	$countries = data.countries;
+
+	onMount(() => {
+		$selectedRegion = data.region;
+	});
+
 	$: if (data.error) {
 		console.error(data.error);
 		error = true;
 		errorMsg = data.error;
 	}
 
-	$: fetchData($selectedRegion);
+	$: if ($selectedRegion) {
+		fetchData($selectedRegion);
+	}
 	$: if (dataset && dataset.length > 0) {
 		const energyData = dataset.filter((d) => d.type === 'energy');
 		const emissionsData = dataset.filter((d) => d.type === 'emissions');
@@ -110,6 +117,8 @@
 	 */
 	async function fetchData(region) {
 		if (region) {
+			goto(`?region=${region}`);
+
 			fetching = true;
 			const res = await fetch(`/api/ember-bridge/?region=${region}`);
 			const json = await res.json();
