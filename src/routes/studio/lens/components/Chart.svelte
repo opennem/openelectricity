@@ -198,7 +198,6 @@
 					focusData={$focusData}
 					showArea={false}
 					chartHeightClasses={$chartHeightClasses}
-					{curveFunction}
 					on:mousemove
 					on:mouseout
 					on:pointerup

@@ -76,11 +76,14 @@
 >
 	{#each tickVals as tick, i (tick)}
 		<g class="tick tick-{i}" transform="translate({$xScale(tick)}, {Math.max(...$yRange)})">
+			<!-- stroke={i === 0 || i === tickVals.length - 1 ? '#F1F0ED' : stroke}
+					stroke-dasharray={i === 0 || i === tickVals.length - 1 ? 'none' : strokeArray} -->
+
 			{#if gridlines === true}
 				<line
 					class="gridline"
-					stroke={i === 0 || i === tickVals.length - 1 ? '#F1F0ED' : stroke}
-					stroke-dasharray={i === 0 || i === tickVals.length - 1 ? 'none' : strokeArray}
+					{stroke}
+					stroke-dasharray={strokeArray}
 					y1={$height * -1}
 					y2="0"
 					x1="0"

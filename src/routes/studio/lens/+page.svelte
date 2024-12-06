@@ -45,7 +45,7 @@
 	);
 	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
 
-	const { selectedRegion, countries } = getContext('filters');
+	const { selectedRegion, countries, selectedInterval } = getContext('filters');
 
 	let error = false;
 	let errorMsg = '';
@@ -59,6 +59,7 @@
 
 	onMount(() => {
 		$selectedRegion = data.region;
+		$selectedInterval = data.interval;
 	});
 
 	$: if (data.error) {
@@ -67,8 +68,8 @@
 		errorMsg = data.error;
 	}
 
-	$: if ($selectedRegion) {
-		fetchData($selectedRegion);
+	$: if ($selectedRegion && $selectedInterval) {
+		fetchData($selectedRegion, $selectedInterval);
 	}
 
 	// $: if ($page.state && $page.state.dataset && $page.state.region) {
@@ -121,17 +122,18 @@
 
 	/**
 	 * @param {string} region
+	 * @param {string} interval
 	 */
-	async function fetchData(region) {
+	async function fetchData(region, interval) {
 		if (region) {
 			fetching = true;
-			const res = await fetch(`/api/ember-bridge/?region=${region}`);
+			const res = await fetch(`/api/ember-bridge/?region=${region}&interval=${interval}`);
 			const json = await res.json();
 			console.log(json);
 			dataset = json.data;
 			fetching = false;
 
-			goto(`?region=${region}`, { noScroll: true });
+			goto(`?region=${region}&interval=${interval}`, { noScroll: true });
 		}
 	}
 
@@ -153,6 +155,8 @@
 		allowedPrefixes,
 		chartHeightClasses
 	) {
+		console.log('updateDataVizStore', title, stats, ts);
+
 		store.title.set(title);
 		store.seriesData.set(ts.data);
 		store.seriesNames.set(ts.seriesNames);
@@ -165,20 +169,24 @@
 		);
 		store.yDomain.set([ts.minY, ts.maxY]);
 		store.chartType.set('area');
-		store.curveType.set('step');
+		store.curveType.set('smooth');
 		store.chartHeightClasses.set(chartHeightClasses);
 		store.baseUnit.set(stats.baseUnit);
 		store.prefix.set(stats.prefix);
 		store.displayPrefix.set(displayPrefix); // TODO: set from
 		store.allowedPrefixes.set(allowedPrefixes);
-		store.xTicks.set([
-			startOfYear(new Date('2000-01-01')),
-			startOfYear(new Date('2005-01-01')),
-			startOfYear(new Date('2010-01-01')),
-			startOfYear(new Date('2015-01-01')),
-			startOfYear(new Date('2020-01-01')),
-			startOfYear(new Date('2023-01-01'))
-		]);
+		store.xTicks.set(
+			$selectedInterval === 'yearly'
+				? [
+						startOfYear(new Date('2000-01-01')),
+						startOfYear(new Date('2005-01-01')),
+						startOfYear(new Date('2010-01-01')),
+						startOfYear(new Date('2015-01-01')),
+						startOfYear(new Date('2020-01-01')),
+						startOfYear(new Date('2023-01-01'))
+				  ]
+				: undefined
+		);
 		store.formatTickX.set(formatFyTickX);
 	}
 
@@ -279,16 +287,40 @@
 <div
 	class="max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-t border-warm-grey pb-24 mb-24"
 >
-	<section class="w-full flex flex-col gap-12 md:w-[60%]" class:blur-sm={fetching}>
-		{#each dataVizStoreNames as { name, chart }}
-			<Chart
-				hiddenRowNames={hiddenRowNames.map((d) => `${d}.${chart}`)}
-				store={dataVizStores[name]}
-				on:mousemove={handleMousemove}
-				on:mouseout={handleMouseout}
-				on:pointerup={handlePointerup}
-			/>
-		{/each}
+	<section class="w-full flex flex-col gap-12 md:w-[60%]">
+		{#if fetching}
+			<div class="flex justify-center items-center mt-72">
+				<div role="status">
+					<svg
+						aria-hidden="true"
+						class="size-16 text-mid-warm-grey animate-spin dark:text-mid-grey fill-dark-grey"
+						viewBox="0 0 100 101"
+						fill="none"
+						xmlns="http://www.w3.org/2000/svg"
+					>
+						<path
+							d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+							fill="currentColor"
+						/>
+						<path
+							d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+							fill="currentFill"
+						/>
+					</svg>
+					<span class="sr-only">Loading...</span>
+				</div>
+			</div>
+		{:else}
+			{#each dataVizStoreNames as { name, chart }}
+				<Chart
+					hiddenRowNames={hiddenRowNames.map((d) => `${d}.${chart}`)}
+					store={dataVizStores[name]}
+					on:mousemove={handleMousemove}
+					on:mouseout={handleMouseout}
+					on:pointerup={handlePointerup}
+				/>
+			{/each}
+		{/if}
 	</section>
 
 	<section class="md:w-[40%] mt-6" class:blur-sm={fetching}>
