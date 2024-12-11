@@ -53,6 +53,10 @@
 	/** @type {StatsData[]} */
 	let dataset;
 
+	let touchDelay = 500;
+	/** @type {*} */
+	let touchTimer = null;
+
 	$countries = data.countries;
 
 	onMount(() => {
@@ -270,6 +274,23 @@
 			store.focusTime.set(time);
 		});
 	}
+
+	/**
+	 * @param {CustomEvent<{ name: string }>} evt
+	 */
+	function handleTouchstart(evt) {
+		console.log('touchstart', evt.detail.name);
+		touchTimer = setTimeout(() => {
+			dataVizStoreNames.forEach(({ name, chart }) => {
+				const store = dataVizStores[name];
+				store.updateHiddenSeriesNames(`${evt.detail.name}.${chart}`, true);
+			});
+		}, touchDelay);
+	}
+
+	function handleTouchend() {
+		clearTimeout(touchTimer);
+	}
 </script>
 
 <Meta
@@ -341,6 +362,6 @@
 	</section>
 
 	<section class="md:w-[40%] mt-6" class:blur-sm={fetching}>
-		<Table on:row-click={toggleRow} />
+		<Table on:row-click={toggleRow} on:touchstart={handleTouchstart} on:touchend={handleTouchend} />
 	</section>
 </div>

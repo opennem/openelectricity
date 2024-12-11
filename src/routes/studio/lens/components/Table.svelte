@@ -149,6 +149,13 @@
 		dispatch('row-click', { name, isMetaPressed, allNames: uniqueSeriesWithoutType });
 	}
 
+	/**
+	 * @param {string} name
+	 */
+	function handleTouchstart(name) {
+		dispatch('touchstart', { name });
+	}
+
 	function handleKeyup() {
 		isMetaPressed = false;
 	}
@@ -283,6 +290,8 @@
 					: ''}
 				<tr
 					on:click={() => handleRowClick(name)}
+					on:touchstart={() => handleTouchstart(name)}
+					on:touchend
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
 					class:opacity-50={$energyHiddenSeriesNames.includes(energyName)}
 				>
