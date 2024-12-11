@@ -96,21 +96,58 @@
 	}
 </script>
 
-<g class="area-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+{#if display === 'line'}
 	{#each $data as d, i (i)}
+		{#if d.values.length > 1}
+			{#each d.values as point (point.time)}
+				<circle
+					class="focus:outline-0"
+					role="presentation"
+					cx={$xGet(point)}
+					cy={$yGet(point)}
+					r="5"
+					fill={$zGet(d)}
+					stroke={$zGet(d)}
+					stroke-width="2"
+					opacity={0}
+					on:mousemove={(e) => pointermove(e, d.key || d.group)}
+					on:mouseout={mouseout}
+					on:touchmove={(e) => pointermove(e, d.key || d.group)}
+					on:blur={mouseout}
+					on:pointerup={(e) => pointerup(e, d.key || d.group)}
+				/>
+			{/each}
+		{/if}
+
 		<path
 			role="presentation"
-			class="path-area focus:outline-0"
-			d={display === 'area' ? areaGen(d) : lineGen(d.values)}
-			fill={display === 'area' ? getZFill(d) : 'transparent'}
-			stroke={display === 'area' ? 'none' : $zGet(d)}
-			stroke-width={display === 'area' ? '0' : '2px'}
+			class="path-area focus:outline-0 pointer-events-none"
+			d={lineGen(d.values)}
+			fill="transparent"
+			stroke={$zGet(d)}
+			stroke-width="2px"
 			opacity={opacity(d)}
-			on:mousemove={(e) => pointermove(e, d.key || d.group)}
-			on:mouseout={mouseout}
-			on:touchmove={(e) => pointermove(e, d.key || d.group)}
-			on:blur={mouseout}
-			on:pointerup={(e) => pointerup(e, d.key || d.group)}
 		/>
 	{/each}
-</g>
+{/if}
+
+{#if display === 'area'}
+	<g class="area-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+		{#each $data as d, i (i)}
+			<path
+				role="presentation"
+				class="path-area focus:outline-0"
+				d={areaGen(d)}
+				fill={getZFill(d)}
+				stroke={'none'}
+				stroke-width={'0'}
+				opacity={opacity(d)}
+				on:mousemove={(e) => pointermove(e, d.key || d.group)}
+				on:mouseout={mouseout}
+				on:touchmove={(e) => pointermove(e, d.key || d.group)}
+				on:blur={mouseout}
+				on:pointerup={(e) => pointerup(e, d.key || d.group)}
+			/>
+		{/each}
+	</g>
+{/if}

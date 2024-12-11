@@ -3,8 +3,18 @@
 
 	export let store;
 
-	const { allowPrefixSwitch, allowedPrefixes, displayPrefix, baseUnit, curveType, curveOptions } =
-		store;
+	const {
+		allowPrefixSwitch,
+		allowedPrefixes,
+		displayPrefix,
+		baseUnit,
+		chartTypeOptions,
+		chartType,
+		dataMeasurementOptions,
+		dataMeasurementType,
+		curveType,
+		curveOptions
+	} = store;
 
 	// $: console.log('allowedPrefixes', $allowedPrefixes, $displayPrefix, $baseUnit);
 	$: unitOptions = $allowedPrefixes.map((/** @type {string} */ prefix) => {
@@ -13,91 +23,62 @@
 			value: prefix
 		};
 	});
-
-	/**
-	 * @param {string} value
-	 */
-	function handleUnitChange(value) {
-		$displayPrefix = value;
-	}
-
-	/**
-	 * @param {string} value
-	 */
-	function handleStyleChange(value) {
-		$curveType = value;
-	}
 </script>
 
-<!-- 
-<div>
-	<h6>Data</h6>
-	<Switch
-		buttons={[
-			{
-				label: 'Absolute',
-				value: 'absolute'
-			},
-			{
-				label: 'Proportion',
-				value: 'proportion'
-			},
-			{
-				label: 'Change',
-				value: 'change'
-			},
-			{
-				label: 'Growth',
-				value: 'growth'
-			}
-		]}
-		selected={'absolute'}
-	/>
-</div>
-
-<div>
-	<h6>Style</h6>
-	<Switch
-		buttons={[
-			{
-				label: 'Smooth',
-				value: 'smooth'
-			},
-			{
-				label: 'Straight',
-				value: 'straight'
-			},
-			{
-				label: 'Step',
-				value: 'step'
-			}
-		]}
-		selected={'straight'}
-	/>
-</div> -->
-
-<div class="flex gap-4 items-center">
-	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Style</span>
-	<Switch
-		buttons={$curveOptions}
-		selected={$curveType}
-		xPad={4}
-		yPad={2}
-		textSize="xs"
-		on:change={(evt) => handleStyleChange(evt.detail.value)}
-	/>
-</div>
-
-{#if $allowPrefixSwitch}
-	<div class="flex gap-4 items-center">
-		<span class="font-space font-semibold uppercase text-xs text-mid-grey">Units</span>
+<!-- <div class="grid grid-cols-5 gap-4 items-center">
+	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Data</span>
+	<div class="col-span-4">
 		<Switch
-			buttons={unitOptions}
-			selected={$displayPrefix}
+			buttons={$dataMeasurementOptions}
+			selected={$dataMeasurementType}
 			xPad={4}
 			yPad={2}
 			textSize="xs"
-			on:change={(evt) => handleUnitChange(evt.detail.value)}
+			on:change={(evt) => ($dataMeasurementType = evt.detail.value)}
 		/>
+	</div>
+</div> -->
+
+<div class="grid grid-cols-5 gap-4 items-center">
+	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Chart</span>
+	<div class="col-span-4">
+		<Switch
+			buttons={$chartTypeOptions}
+			selected={$chartType}
+			xPad={4}
+			yPad={2}
+			textSize="xs"
+			on:change={(evt) => ($chartType = evt.detail.value)}
+		/>
+	</div>
+</div>
+
+<div class="grid grid-cols-5 gap-4 items-center">
+	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Style</span>
+	<div class="col-span-4">
+		<Switch
+			buttons={$curveOptions}
+			selected={$curveType}
+			xPad={4}
+			yPad={2}
+			textSize="xs"
+			on:change={(evt) => ($curveType = evt.detail.value)}
+		/>
+	</div>
+</div>
+
+{#if $allowPrefixSwitch}
+	<div class="grid grid-cols-5 gap-4 items-center">
+		<span class="font-space font-semibold uppercase text-xs text-mid-grey">Units</span>
+		<div class="col-span-4">
+			<Switch
+				buttons={unitOptions}
+				selected={$displayPrefix}
+				xPad={4}
+				yPad={2}
+				textSize="xs"
+				on:change={(evt) => ($displayPrefix = evt.detail.value)}
+			/>
+		</div>
 	</div>
 {/if}

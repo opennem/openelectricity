@@ -25,7 +25,7 @@
 </script>
 
 <div
-	class={`flex md:inline-flex text-${textSize} w-full md:w-auto mx-10 md:mx-0 rounded-${roundedSize} bg-light-warm-grey border border-solid border-mid-warm-grey ${$$restProps.class}`}
+	class={`flex md:inline-flex text-${textSize} w-auto mx-10 md:mx-0 rounded-${roundedSize} bg-light-warm-grey border border-solid border-mid-warm-grey ${$$restProps.class}`}
 >
 	{#each buttons as { label, value, icon }, i}
 		<button

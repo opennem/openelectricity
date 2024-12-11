@@ -1,29 +1,21 @@
 <script>
 	import { getContext } from 'svelte';
-	const { padding, xGet, yGet } = getContext('LayerCake');
+	const { padding, xGet, yGet, zGet } = getContext('LayerCake');
 
 	/** @type {TimeSeriesData | undefined} */
 	export let value = undefined;
-	export let r = 6;
-	export let fill = '#444';
-	let cx = 0;
-	let cy = 0;
-	let showCircle = true;
+	export let yKey = undefined;
+	export let r = 5;
+	export let fill = 'black';
 
-	$: if (value) {
-		cx = $xGet(value);
-		cy = $yGet(value);
-
-		if (cx === undefined || cy === undefined) {
-			showCircle = false;
-		} else {
-			showCircle = true;
-		}
-	}
+	$: cx = value ? $xGet(value) : undefined;
+	$: cy = value && yKey ? $yGet({ value: value[yKey] }) : undefined;
+	$: fill = value && yKey ? $zGet({ group: yKey }) : fill;
+	$: showCircle = cx !== undefined && cy !== undefined;
 </script>
 
 <g class="overlay pointer-events-none" transform="translate({-$padding.left}, 0)">
 	{#if showCircle}
-		<circle {cx} {cy} {r} stroke-width="0.7" stroke="white" {fill} />
+		<circle {cx} {cy} {r} {fill} />
 	{/if}
 </g>

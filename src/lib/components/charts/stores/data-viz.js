@@ -16,6 +16,20 @@ export default function () {
 
 	const baseUnit = writable('');
 
+	const dataMeasurementOptions = readable([
+		{
+			label: 'Absolute',
+			value: 'absolute',
+			dataFunction: (/** @type {number} */ d) => d
+		},
+		{
+			label: 'Proportion',
+			value: 'proportion',
+			dataFunction: (/** @type {number} */ d) => d
+		}
+	]);
+	const dataMeasurementType = writable('absolute');
+
 	const curveOptions = readable([
 		{
 			label: 'Smooth',
@@ -44,11 +58,12 @@ export default function () {
 
 	const timeZone = writable('Australia/Sydney');
 
-	// Line chart specific
+	/*** Line chart specific  */
 	const showLineArea = writable(true);
 	const lineColour = writable('rgba(0, 0, 0, 0.7)'); // CSS colour
 	const dotStroke = writable('rgba(0, 0, 0, 0.7)'); // CSS colour
 	const dotFill = writable('white'); // CSS colour
+	/*** /end Line chart specific  */
 
 	/** @type {import('svelte/store').Writable<SiPrefix>} */
 	const prefix = writable('');
@@ -114,9 +129,19 @@ export default function () {
 		};
 	});
 
+	const chartTypeOptions = readable([
+		{
+			label: 'Area',
+			value: 'area'
+		},
+		{
+			label: 'Line',
+			value: 'line'
+		}
+	]);
+
 	/** @type {import('svelte/store').Writable<'area' | 'line'>} */
 	const chartType = writable('area');
-
 	const isChartTypeArea = derived(chartType, ($chartType) => $chartType === 'area');
 
 	/** @type {import('svelte/store').Writable<{ xStartValue: Date, xEndValue: Date }>} */
@@ -212,6 +237,13 @@ export default function () {
 		maximumFractionDigits,
 		timeZone,
 
+		dataMeasurementOptions,
+		dataMeasurementType,
+
+		chartTypeOptions,
+		chartType,
+		isChartTypeArea,
+
 		seriesData,
 		seriesCsvData,
 		seriesNames,
@@ -226,11 +258,9 @@ export default function () {
 		snapXTicks,
 		formatTickX,
 		formatTickY,
-		chartType,
 		curveOptions,
 		curveType,
 		curveFunction,
-		isChartTypeArea,
 		chartOverlay,
 		chartOverlayLine,
 		chartOverlayHatchStroke,

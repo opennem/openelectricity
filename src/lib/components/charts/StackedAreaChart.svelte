@@ -1,4 +1,5 @@
 <script>
+	import { createEventDispatcher } from 'svelte';
 	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
@@ -15,6 +16,7 @@
 	import HatchPattern from './elements/defs/HatchPattern.svelte';
 	import LineX from './elements/annotations/LineX.svelte';
 	import Dot from './elements/annotations/Dot.svelte';
+	// import HoverDots from './elements/HoverDots.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
@@ -25,7 +27,7 @@
 
 	export let xKey = 'date';
 
-	/** @type {number[]} */
+	/** @type {number[] | number} */
 	export let yKey = [];
 
 	/** @type {Array.<number | null> | undefined} */
@@ -86,6 +88,7 @@
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
+	const dispatch = createEventDispatcher();
 
 	/** TODO: work out transition */
 	const tweenOptions = {
@@ -94,13 +97,10 @@
 	};
 	const yTweened = tweened(/** @type {number|null} */ (null), tweenOptions);
 
-	// $: maxY = yDomain ? yDomain[1] : null;
-	// $: maxArr = [...dataset.map((d) => d._max)];
-	// @ts-ignore
-	// $: datasetMax = maxArr ? Math.max(...maxArr) : 0;
-	// $: if (dataset) yTweened.set(maxY);
-	/** end */
+	/** @type {string | undefined} */
+	let hoverKey;
 
+	$: isLine = chartType === 'line';
 	$: isArea = chartType === 'area';
 	$: stackedData = stack(dataset, seriesNames);
 	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
@@ -111,10 +111,17 @@
 
 	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
 
-	// $: console.log('groupedData', groupedData);
-
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	// $: focusTime = focusData ? focusData.time || 0 : 0;
+	/**
+	 * @param {CustomEvent<{ data: TimeSeriesData, key: string }> | CustomEvent<TimeSeriesData>} evt
+	 */
+	function handleMousemove(evt) {
+		hoverKey = evt.detail?.key;
+		dispatch('mousemove', evt.detail);
+	}
+	function handleMouseout() {
+		hoverKey = undefined;
+		dispatch('mouseout');
+	}
 </script>
 
 <div class="chart-container mb-4 {heightClasses}">
@@ -157,13 +164,12 @@
 			{/if} -->
 
 			<AreaStacked
-				clipPathId={clip ? `${id}-clip-path` : ''}
 				{dataset}
 				display={chartType}
 				{highlightId}
 				curveType={$curveFunction}
-				on:mousemove
-				on:mouseout
+				on:mousemove={handleMousemove}
+				on:mouseout={handleMouseout}
 				on:pointerup
 			/>
 		</Svg>
@@ -188,13 +194,13 @@
 			{/if}
 
 			<AxisY
-				clipPathId={clip ? `${id}-clip-path` : ''}
 				ticks={yTicks}
 				xTick={5}
 				formatTick={formatTickY}
 				gridlines={true}
 				stroke="#33333344"
 			/>
+
 			<AxisX
 				ticks={xTicks}
 				gridlines={xGridlines}
@@ -223,12 +229,14 @@
 		</Html>
 
 		<Svg pointerEvents={false}>
-			<!-- <HoverDots {dataset} {hoverData} /> -->
 			{#if hoverData}
 				<LineX xValue={hoverData} strokeArray="none" />
 			{/if}
 			{#if focusData}
 				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+			{/if}
+			{#if isLine}
+				<Dot value={hoverData} yKey={hoverKey} />
 			{/if}
 		</Svg>
 	</LayerCake>

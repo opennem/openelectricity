@@ -88,7 +88,7 @@
 		// @ts-ignore
 		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
 
-		return [datasetMin, datasetMax];
+		return [Math.floor(datasetMin), Math.ceil(datasetMax)];
 	})();
 
 	$: updatedHoverData = $hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null;
@@ -100,9 +100,9 @@
 
 <section class="relative">
 	{#if names.length}
-		<div use:clickoutside on:clickoutside={() => (showOptions = false)}>
+		<div use:clickoutside on:clickoutside={() => (showOptions = false)} class="sticky top-0 z-20">
 			<header
-				class="bg-light-warm-grey rounded-lg px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
+				class="bg-light-warm-grey rounded-t-lg px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
 				class:rounded-bl-none={showOptions}
 			>
 				<div class="flex gap-1 items-center">
@@ -143,67 +143,46 @@
 			{/if}
 		</div>
 
-		<Tooltip
-			hoverData={updatedHoverData}
-			hoverKey={$hoverKey}
-			seriesColours={$seriesColours}
-			seriesLabels={$seriesLabels}
-			convertAndFormatValue={$convertAndFormatValue}
-			showTotal={$isChartTypeArea ? true : false}
-			yearOnly={$selectedInterval === 'yearly'}
-		/>
+		<div class="sticky top-11 z-20">
+			<Tooltip
+				hoverData={updatedHoverData}
+				hoverKey={$hoverKey}
+				seriesColours={$seriesColours}
+				seriesLabels={$seriesLabels}
+				convertAndFormatValue={$convertAndFormatValue}
+				showTotal={$isChartTypeArea ? true : false}
+				yearOnly={$selectedInterval === 'yearly'}
+			/>
+		</div>
 
 		<div class="border-warm-grey border-t">
-			{#if $isChartTypeArea}
-				<StackedAreaChart
-					dataset={updatedSeriesData}
-					xKey="time"
-					yKey={[0, 1]}
-					zKey="key"
-					xTicks={$xTicks}
-					yTicks={2}
-					yDomain={updatedYDomain}
-					seriesNames={names}
-					zRange={colours}
-					formatTickX={$formatTickX}
-					formatTickY={$convertAndFormatValue}
-					chartType={$chartType}
-					overlay={$chartOverlay}
-					overlayLine={$chartOverlayLine}
-					overlayStroke={$chartOverlayHatchStroke}
-					hoverData={$hoverData}
-					focusData={$focusData}
-					chartHeightClasses={$chartHeightClasses}
-					snapTicks={true}
-					xGridlines={true}
-					chartPadding={{ top: 0, right: 0, bottom: 20, left: 0 }}
-					{curveFunction}
-					on:mousemove
-					on:mouseout
-					on:pointerup
-				/>
-			{:else}
-				<LineChart
-					dataset={$seriesData}
-					xKey="date"
-					yKey={$seriesNames[0]}
-					zKey={colours[0]}
-					xTicks={$xTicks}
-					yTicks={2}
-					formatTickX={$formatTickX}
-					formatTickY={$convertAndFormatValue}
-					overlay={$chartOverlay}
-					overlayLine={$chartOverlayLine}
-					overlayStroke={$chartOverlayHatchStroke}
-					hoverData={$hoverData}
-					focusData={$focusData}
-					showArea={false}
-					chartHeightClasses={$chartHeightClasses}
-					on:mousemove
-					on:mouseout
-					on:pointerup
-				/>
-			{/if}
+			<StackedAreaChart
+				dataset={updatedSeriesData}
+				xKey="time"
+				yKey={[0, 1]}
+				zKey="key"
+				xTicks={$xTicks}
+				yTicks={2}
+				yDomain={updatedYDomain}
+				seriesNames={names}
+				zRange={colours}
+				formatTickX={$formatTickX}
+				formatTickY={$convertAndFormatValue}
+				chartType={$chartType}
+				overlay={$chartOverlay}
+				overlayLine={$chartOverlayLine}
+				overlayStroke={$chartOverlayHatchStroke}
+				hoverData={$hoverData}
+				focusData={$focusData}
+				chartHeightClasses={$chartHeightClasses}
+				snapTicks={true}
+				xGridlines={true}
+				chartPadding={{ top: 0, right: 0, bottom: 20, left: 0 }}
+				{curveFunction}
+				on:mousemove
+				on:mouseout
+				on:pointerup
+			/>
 		</div>
 	{/if}
 </section>

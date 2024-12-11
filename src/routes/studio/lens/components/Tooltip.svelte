@@ -30,8 +30,8 @@
 
 <div class="h-[21px]">
 	{#if hoverData}
-		<div class="h-full items-center flex justify-end gap-1 text-xs leading-xs whitespace-nowrap">
-			<span class="px-2 py-1 font-light">
+		<div class="h-full items-center flex justify-end text-xs leading-xs whitespace-nowrap">
+			<span class="px-3 py-1 font-light bg-white/40">
 				{#if yearOnly}
 					{getFormattedMonth(hoverDate)}
 				{:else}
