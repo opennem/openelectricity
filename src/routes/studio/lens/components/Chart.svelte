@@ -130,7 +130,7 @@
 				<div
 					in:fly={{ y: -20, duration: 240 }}
 					out:fly={{ y: -20, duration: 240 }}
-					class="bg-warm-grey/40 shadow-inner p-6 rounded-b-lg absolute z-10 backdrop-blur-sm inset-shadow flex gap-6 flex-col"
+					class="bg-white/60 shadow-inner p-6 rounded-b-lg absolute z-10 backdrop-blur-lg inset-shadow flex gap-6 flex-col"
 				>
 					<ChartOptions {store} />
 				</div>
