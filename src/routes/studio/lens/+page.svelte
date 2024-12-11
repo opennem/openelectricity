@@ -52,8 +52,6 @@
 	let fetching = false;
 	/** @type {StatsData[]} */
 	let dataset;
-	/** @type {string[]} */
-	let hiddenRowNames = [];
 
 	$countries = data.countries;
 
@@ -155,8 +153,6 @@
 		allowedPrefixes,
 		chartHeightClasses
 	) {
-		console.log('updateDataVizStore', title, stats, ts);
-
 		/**
 		 * @param {*[]} array
 		 * @param {number} x
@@ -229,23 +225,10 @@
 	 * @param {CustomEvent<{ name: string, isMetaPressed: boolean, allNames: string[] }>} evt
 	 */
 	function toggleRow(evt) {
-		const name = evt.detail.name;
-		const isMetaPressed = evt.detail.isMetaPressed;
-		const allNames = evt.detail.allNames;
-
-		if (isMetaPressed) {
-			hiddenRowNames = allNames.filter((n) => n !== name);
-		} else {
-			if (hiddenRowNames.includes(name)) {
-				hiddenRowNames = hiddenRowNames.filter((n) => n !== name);
-			} else {
-				hiddenRowNames = [...hiddenRowNames, name];
-
-				if (hiddenRowNames.length === allNames.length) {
-					hiddenRowNames = [];
-				}
-			}
-		}
+		dataVizStoreNames.forEach(({ name, chart }) => {
+			const store = dataVizStores[name];
+			store.updateHiddenSeriesNames(`${evt.detail.name}.${chart}`, evt.detail.isMetaPressed);
+		});
 	}
 
 	/**
@@ -346,9 +329,8 @@
 				</div>
 			</div>
 		{:else}
-			{#each dataVizStoreNames as { name, chart }}
+			{#each dataVizStoreNames as { name }}
 				<Chart
-					hiddenRowNames={hiddenRowNames.map((d) => `${d}.${chart}`)}
 					store={dataVizStores[name]}
 					on:mousemove={handleMousemove}
 					on:mouseout={handleMouseout}
@@ -359,6 +341,6 @@
 	</section>
 
 	<section class="md:w-[40%] mt-6" class:blur-sm={fetching}>
-		<Table {hiddenRowNames} on:row-click={toggleRow} />
+		<Table on:row-click={toggleRow} />
 	</section>
 </div>

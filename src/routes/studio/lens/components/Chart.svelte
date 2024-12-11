@@ -4,19 +4,12 @@
 	import { clickoutside } from '@svelte-put/clickoutside';
 
 	import StackedAreaChart from '$lib/components/charts/StackedAreaChart.svelte';
-	import LineChart from '$lib/components/charts/LineChart.svelte';
 	import ChartOptions from './ChartOptions.svelte';
 	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
-	import XMark from '$lib/icons/XMark.svelte';
 
 	import Tooltip from './Tooltip.svelte';
 
 	export let store;
-	/** @type {string[]} */
-	export let hiddenRowNames = [];
-
-	/** @type {FuelTechCode[]}*/
-	export let seriesLoadsIds = [];
 
 	const {
 		title,
@@ -24,15 +17,16 @@
 		displayPrefix,
 		displayUnit,
 		convertAndFormatValue,
-		seriesData,
-		seriesNames,
-		seriesColours,
+		seriesScaledData,
+		isDataScaleTypeProportion,
+		visibleSeriesNames,
+		visibleSeriesColours,
 		seriesLabels,
-		yDomain,
 		xTicks,
 		formatTickX,
 		chartType,
 		isChartTypeArea,
+		isChartTypeLine,
 		chartOverlay,
 		chartOverlayLine,
 		chartOverlayHatchStroke,
@@ -49,17 +43,13 @@
 
 	let showOptions = false;
 
-	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
-	$: loadIds = names.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d));
-	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
-
-	$: updatedSeriesData = $seriesData.map((d) => {
+	$: updatedSeriesData = $seriesScaledData.map((d) => {
 		/** @type {TimeSeriesData} */
 		const newObj = { ...d };
 		// get min and max values for each time series
 		newObj._max = 0;
 		newObj._min = 0;
-		names.forEach((l) => {
+		$visibleSeriesNames.forEach((l) => {
 			const value = d[l] || 0;
 			if ($isChartTypeArea) {
 				if (newObj._max || newObj._max === 0) newObj._max += +value;
@@ -78,6 +68,8 @@
 	});
 
 	$: updatedYDomain = (() => {
+		if ($isDataScaleTypeProportion && !$isChartTypeLine) return [0, 100];
+
 		const addTenPercent = (val) => val + val * 0.1;
 		const maxY = updatedSeriesData.map((d) => d._max);
 		// @ts-ignore
@@ -99,7 +91,7 @@
 </script>
 
 <section class="relative">
-	{#if names.length}
+	{#if $visibleSeriesNames.length}
 		<div use:clickoutside on:clickoutside={() => (showOptions = false)} class="sticky top-0 z-20">
 			<header
 				class="bg-light-warm-grey rounded-t-lg px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
@@ -118,7 +110,9 @@
 							{$title}
 						</h6>
 
-						{#if $allowPrefixSwitch}
+						{#if $isDataScaleTypeProportion}
+							<span class="font-light text-xs text-mid-grey">%</span>
+						{:else if $allowPrefixSwitch}
 							<button
 								class="font-light text-xs text-mid-grey hover:underline"
 								on:click={moveToNextDisplayPrefix}
@@ -147,10 +141,10 @@
 			<Tooltip
 				hoverData={updatedHoverData}
 				hoverKey={$hoverKey}
-				seriesColours={$seriesColours}
+				seriesColours={$visibleSeriesColours}
 				seriesLabels={$seriesLabels}
 				convertAndFormatValue={$convertAndFormatValue}
-				showTotal={$isChartTypeArea ? true : false}
+				showTotal={$isChartTypeArea && !$isDataScaleTypeProportion ? true : false}
 				yearOnly={$selectedInterval === 'yearly'}
 			/>
 		</div>
@@ -164,10 +158,10 @@
 				xTicks={$xTicks}
 				yTicks={2}
 				yDomain={updatedYDomain}
-				seriesNames={names}
-				zRange={colours}
+				seriesNames={$visibleSeriesNames}
+				zRange={$visibleSeriesColours}
 				formatTickX={$formatTickX}
-				formatTickY={$convertAndFormatValue}
+				formatTickY={$isDataScaleTypeProportion ? (d) => d : $convertAndFormatValue}
 				chartType={$chartType}
 				overlay={$chartOverlay}
 				overlayLine={$chartOverlayLine}

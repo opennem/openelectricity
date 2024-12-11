@@ -3,6 +3,31 @@ import { get, readable, derived, writable } from 'svelte/store';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
 
+/**
+ *
+ * @param {TimeSeriesData} d
+ * @param {string[]} domains
+ * @returns
+ */
+function proportionTransform(d, domains) {
+	let total = 0;
+	const updated = {
+		...d
+	};
+
+	domains.forEach((e) => {
+		const value = /** @type {number} **/ (d[e]);
+		total += value > 0 ? value : 0;
+	});
+
+	domains.forEach((e) => {
+		const value = /** @type {number} **/ (d[e]);
+		updated[e] = value > 0 ? (value / total) * 100 : 0;
+	});
+
+	return updated;
+}
+
 const numberFormat = getNumberFormat();
 
 export default function () {
@@ -16,19 +41,31 @@ export default function () {
 
 	const baseUnit = writable('');
 
-	const dataMeasurementOptions = readable([
+	const dataScaleOptions = readable([
 		{
 			label: 'Absolute',
-			value: 'absolute',
-			dataFunction: (/** @type {number} */ d) => d
+			value: 'absolute'
 		},
 		{
 			label: 'Proportion',
 			value: 'proportion',
-			dataFunction: (/** @type {number} */ d) => d
+			dataScaleFunction: proportionTransform
 		}
 	]);
-	const dataMeasurementType = writable('absolute');
+	const dataScaleType = writable('absolute');
+	const dataScaleFunction = derived(
+		[dataScaleOptions, dataScaleType],
+		([$dataScaleOptions, $dataScaleType]) => {
+			const option = $dataScaleOptions.find((d) => d.value === $dataScaleType);
+			return option && option.dataScaleFunction
+				? option.dataScaleFunction
+				: (/** @type {*} */ d) => d;
+		}
+	);
+	const isDataScaleTypeProportion = derived(
+		dataScaleType,
+		($dataScaleType) => $dataScaleType === 'proportion'
+	);
 
 	const curveOptions = readable([
 		{
@@ -81,8 +118,25 @@ export default function () {
 	/** @type {import('svelte/store').Writable<string[]>} */
 	const seriesNames = writable([]);
 
+	/** @type {import('svelte/store').Writable<string[]>} */
+	const hiddenSeriesNames = writable([]);
+
+	const visibleSeriesNames = derived(
+		[seriesNames, hiddenSeriesNames],
+		([$seriesNames, $hiddenSeriesNames]) => {
+			return $seriesNames.filter((n) => !$hiddenSeriesNames.includes(n));
+		}
+	);
+
 	/** @type {import('svelte/store').Writable<Object.<string, string>>} */
 	const seriesColours = writable({});
+
+	const visibleSeriesColours = derived(
+		[seriesColours, visibleSeriesNames],
+		([$seriesColours, $visibleSeriesNames]) => {
+			return $visibleSeriesNames.map((/** @type {string} */ d) => $seriesColours[d]);
+		}
+	);
 
 	/** @type {import('svelte/store').Writable<Object.<string, string>>} */
 	const seriesLabels = writable({});
@@ -143,6 +197,7 @@ export default function () {
 	/** @type {import('svelte/store').Writable<'area' | 'line'>} */
 	const chartType = writable('area');
 	const isChartTypeArea = derived(chartType, ($chartType) => $chartType === 'area');
+	const isChartTypeLine = derived(chartType, ($chartType) => $chartType === 'line');
 
 	/** @type {import('svelte/store').Writable<{ xStartValue: Date, xEndValue: Date }>} */
 	const chartOverlay = writable();
@@ -153,6 +208,22 @@ export default function () {
 	const chartOverlayHatchStroke = writable('rgba(236, 233, 230, 0.4)');
 
 	const chartHeightClasses = writable('h-[400px] md:h-[450px]');
+
+	const seriesScaledData = derived(
+		[seriesData, visibleSeriesNames, dataScaleFunction],
+		([$seriesData, $visibleSeriesNames, $dataScaleFunction]) => {
+			if (!$seriesData) return [];
+			return [...$seriesData].map((d) => $dataScaleFunction(d, $visibleSeriesNames));
+		}
+	);
+
+	const seriesProportionData = derived(
+		[seriesData, visibleSeriesNames],
+		([$seriesData, $visibleSeriesNames]) => {
+			if (!$seriesData) return [];
+			return [...$seriesData].map((d) => proportionTransform(d, $visibleSeriesNames));
+		}
+	);
 
 	/** @type {import('svelte/store').Writable<string | undefined>} */
 	const hoverKey = writable();
@@ -168,6 +239,28 @@ export default function () {
 		return data;
 	});
 
+	const hoverScaledData = derived(
+		[seriesScaledData, hoverTime],
+		([$seriesScaledData, $hoverTime]) => {
+			if (!$hoverTime) return;
+
+			const data = $seriesScaledData.find((d) => d.time === $hoverTime);
+
+			return data;
+		}
+	);
+
+	const hoverProportionData = derived(
+		[seriesProportionData, hoverTime],
+		([$seriesProportionData, $hoverTime]) => {
+			if (!$hoverTime) return;
+
+			const data = $seriesProportionData.find((d) => d.time === $hoverTime);
+
+			return data;
+		}
+	);
+
 	/** @type {import('svelte/store').Writable<number | undefined>} */
 	const focusTime = writable();
 
@@ -178,6 +271,28 @@ export default function () {
 
 		return data;
 	});
+
+	const focusScaledData = derived(
+		[seriesScaledData, focusTime],
+		([$seriesScaledData, $focusTime]) => {
+			if (!$focusTime) return;
+
+			const data = $seriesScaledData.find((d) => d.time === $focusTime);
+
+			return data;
+		}
+	);
+
+	const focusProportionData = derived(
+		[seriesProportionData, focusTime],
+		([$seriesProportionData, $focusTime]) => {
+			if (!$focusTime) return;
+
+			const data = $seriesProportionData.find((d) => d.time === $focusTime);
+
+			return data;
+		}
+	);
 
 	const seriesCsvData = derived(
 		[seriesData, seriesNames, seriesLabels, convertValue, timeZone],
@@ -213,6 +328,36 @@ export default function () {
 		return index === $prefixes.length - 1 ? $prefixes[0] : $prefixes[index + 1];
 	}
 
+	function formatValue(/** @type {number} */ d) {
+		const $maximumFractionDigits = get(maximumFractionDigits);
+		return getNumberFormat($maximumFractionDigits).format(d);
+	}
+
+	/**
+	 *
+	 * @param {string} name
+	 * @param {boolean} isMetaPressed
+	 */
+	function updateHiddenSeriesNames(name, isMetaPressed) {
+		const $seriesNames = get(seriesNames);
+		const $hiddenSeriesNames = get(hiddenSeriesNames);
+
+		if (isMetaPressed) {
+			hiddenSeriesNames.set($seriesNames.filter((n) => n !== name));
+		} else {
+			if ($hiddenSeriesNames.includes(name)) {
+				hiddenSeriesNames.set($hiddenSeriesNames.filter((n) => n !== name));
+			} else {
+				// if all series are going to be hidden, then show all instead
+				if ($hiddenSeriesNames.length === $seriesNames.length - 1) {
+					hiddenSeriesNames.set([]);
+				} else {
+					hiddenSeriesNames.set([...$hiddenSeriesNames, name]);
+				}
+			}
+		}
+	}
+
 	function reset() {
 		seriesData.set([]);
 		seriesNames.set([]);
@@ -237,19 +382,27 @@ export default function () {
 		maximumFractionDigits,
 		timeZone,
 
-		dataMeasurementOptions,
-		dataMeasurementType,
+		dataScaleOptions,
+		dataScaleType,
+		dataScaleFunction,
+		isDataScaleTypeProportion,
 
 		chartTypeOptions,
 		chartType,
 		isChartTypeArea,
+		isChartTypeLine,
 
 		seriesData,
 		seriesCsvData,
+		seriesScaledData,
 		seriesNames,
+		visibleSeriesNames,
+		hiddenSeriesNames,
 		seriesColours,
+		visibleSeriesColours,
 		seriesLabels,
 		nameOptions,
+
 		xDomain,
 		yDomain,
 		xTicks,
@@ -265,11 +418,16 @@ export default function () {
 		chartOverlayLine,
 		chartOverlayHatchStroke,
 		chartHeightClasses,
+
 		hoverKey,
 		hoverTime,
 		hoverData,
+		hoverScaledData,
+		hoverProportionData,
 		focusTime,
 		focusData,
+		focusScaledData,
+		focusProportionData,
 
 		strokeWidth,
 		showLineArea,
@@ -278,6 +436,8 @@ export default function () {
 		dotFill,
 
 		reset,
-		getNextPrefix
+		getNextPrefix,
+		updateHiddenSeriesNames,
+		formatValue
 	};
 }

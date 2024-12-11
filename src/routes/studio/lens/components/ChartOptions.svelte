@@ -10,8 +10,8 @@
 		baseUnit,
 		chartTypeOptions,
 		chartType,
-		dataMeasurementOptions,
-		dataMeasurementType,
+		dataScaleOptions,
+		dataScaleType,
 		curveType,
 		curveOptions
 	} = store;
@@ -25,19 +25,19 @@
 	});
 </script>
 
-<!-- <div class="grid grid-cols-5 gap-4 items-center">
+<div class="grid grid-cols-5 gap-4 items-center">
 	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Data</span>
 	<div class="col-span-4">
 		<Switch
-			buttons={$dataMeasurementOptions}
-			selected={$dataMeasurementType}
+			buttons={$dataScaleOptions}
+			selected={$dataScaleType}
 			xPad={4}
 			yPad={2}
 			textSize="xs"
-			on:change={(evt) => ($dataMeasurementType = evt.detail.value)}
+			on:change={(evt) => ($dataScaleType = evt.detail.value)}
 		/>
 	</div>
-</div> -->
+</div>
 
 <div class="grid grid-cols-5 gap-4 items-center">
 	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Chart</span>

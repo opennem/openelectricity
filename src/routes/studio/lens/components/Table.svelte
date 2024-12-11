@@ -7,25 +7,29 @@
 
 	/** @type {string[]} */
 	export let seriesLoadsIds = [];
-	/** @type {string[]} */
-	export let hiddenRowNames = [];
 
 	const dispatch = createEventDispatcher();
 	const { selectedInterval } = getContext('filters');
 	const {
 		seriesNames: energySeriesNames,
+		hiddenSeriesNames: energyHiddenSeriesNames,
+		visibleSeriesNames: energyVisibleSeriesNames,
 		seriesLabels: energySeriesLabels,
 		seriesColours: energySeriesColours,
 		hoverData: energyHoverData,
+		hoverProportionData: energyHoverProportionData,
 		focusData: energyFocusData,
+		focusProportionData: energyFocusProportionData,
 		convertAndFormatValue: energyConvertAndFormatValue,
 		displayUnit: energyDisplayUnit,
 		displayPrefix: energyDisplayPrefix,
-		getNextPrefix: getEnergyNextPrefix
+		getNextPrefix: getEnergyNextPrefix,
+		formatValue
 	} = getContext('energy-data-viz');
 
 	const {
 		seriesNames: emissionsSeriesNames,
+		visibleSeriesNames: emissionsVisibleSeriesNames,
 		hoverData: emissionsHoverData,
 		focusData: emissionsFocusData,
 		convertAndFormatValue: emissionsConvertAndFormatValue,
@@ -54,11 +58,11 @@
 	// $: console.log('energySeriesNames', $energySeriesNames);
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
 
-	$: sourceNames = $energySeriesNames
+	$: sourceNames = $energyVisibleSeriesNames
 		.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
 		.reverse();
 
-	$: loadNames = $energySeriesNames
+	$: loadNames = $energyVisibleSeriesNames
 		.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
 		.reverse();
 
@@ -117,7 +121,7 @@
 		: 0;
 
 	$: emissionsTotal = $emissionsHoverData
-		? $emissionsSeriesNames.reduce(
+		? $emissionsVisibleSeriesNames.reduce(
 				/**
 				 * @param {number} acc
 				 * @param {string} id
@@ -126,7 +130,7 @@
 				0
 		  )
 		: $emissionsFocusData
-		? $emissionsSeriesNames.reduce(
+		? $emissionsVisibleSeriesNames.reduce(
 				/**
 				 * @param {number} acc
 				 * @param {string} id
@@ -197,9 +201,16 @@
 	<table class="w-full table-fixed border border-warm-grey mb-8">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
 			<tr>
-				<th class="w-[60%]">
+				<th class="w-[45%]">
 					<div class="flex items-center gap-4">
 						<span class="block text-dark-grey text-sm font-medium ml-3">Technology</span>
+					</div>
+				</th>
+
+				<th>
+					<div class="flex flex-col items-end">
+						<span class="block text-xs">Contribution</span>
+						<span class="font-light text-xxs">%</span>
 					</div>
 				</th>
 
@@ -234,6 +245,7 @@
 				<th class="border-b border-warm-grey">
 					<span class="ml-3"> Net total </span>
 				</th>
+				<th class="border-b border-warm-grey" />
 
 				<th class="border-b border-warm-grey">
 					<div class="font-mono flex flex-col items-end">
@@ -259,6 +271,11 @@
 					: $energyFocusData
 					? $energyFocusData[energyName]
 					: ''}
+				{@const energyPercent = $energyHoverProportionData
+					? $energyHoverProportionData[energyName]
+					: $energyFocusProportionData
+					? $energyFocusProportionData[energyName]
+					: ''}
 				{@const emissionsValue = $emissionsHoverData
 					? $emissionsHoverData[emissionsName]
 					: $emissionsFocusData
@@ -267,11 +284,11 @@
 				<tr
 					on:click={() => handleRowClick(name)}
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
-					class:opacity-50={hiddenRowNames.includes(name)}
+					class:opacity-50={$energyHiddenSeriesNames.includes(energyName)}
 				>
 					<td class="px-2 py-1">
 						<div class="flex items-center gap-3 ml-3">
-							{#if hiddenRowNames.includes(name)}
+							{#if $energyHiddenSeriesNames.includes(energyName)}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 								/>
@@ -289,6 +306,17 @@
 									: getLabel($energySeriesLabels[energyName])}
 								<span class="text-mid-grey">{getSublabel($energySeriesLabels[energyName])}</span>
 							</div>
+						</div>
+					</td>
+
+					<td class="px-2 py-1">
+						<div class="font-mono text-xs flex items-center justify-end gap-1">
+							{#if $energyVisibleSeriesNames.includes(energyName)}
+								<span>
+									{formatValue(energyPercent)}
+								</span>
+								<small>%</small>
+							{/if}
 						</div>
 					</td>
 
