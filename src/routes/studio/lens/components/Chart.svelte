@@ -94,7 +94,7 @@
 	{#if $visibleSeriesNames.length}
 		<div use:clickoutside on:clickoutside={() => (showOptions = false)} class="sticky top-0 z-20">
 			<header
-				class="bg-light-warm-grey rounded-t-lg px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
+				class="bg-light-warm-grey px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
 				class:rounded-bl-none={showOptions}
 			>
 				<div class="flex gap-1 items-center">
