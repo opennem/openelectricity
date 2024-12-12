@@ -7,7 +7,8 @@
 	/** @type {EmberCountry[]} */
 	export let countries;
 
-	const { selectedRegion, selectedRange, selectedInterval } = getContext('filters');
+	const { selectedRegion, selectedRange, selectedInterval, calculate12MthRollingSum } =
+		getContext('filters');
 
 	$selectedRange = 'monthly';
 	$selectedInterval = '1M';
@@ -52,10 +53,10 @@
 					label: 'Monthly',
 					value: 'monthly'
 				},
-				// {
-				// 	label: '12 mth rolling',
-				// 	value: '12-month-rolling'
-				// },
+				{
+					label: '12 mth rolling',
+					value: '12-month-rolling'
+				},
 				{
 					label: 'Yearly',
 					value: 'yearly'
@@ -87,6 +88,30 @@
 				{
 					label: 'Year',
 					value: '1Y'
+				}
+			]}
+			selected={$selectedInterval}
+			xPad={4}
+			yPad={2}
+			textSize="sm"
+			on:change={(evt) => handleIntervalChange(evt.detail.value)}
+		/>
+	{/if}
+
+	{#if $selectedRange === '12-month-rolling'}
+		<Switch
+			buttons={[
+				{
+					label: 'Month',
+					value: '1M'
+				},
+				{
+					label: 'Quarter',
+					value: '1Q'
+				},
+				{
+					label: 'Half Year',
+					value: '6M'
 				}
 			]}
 			selected={$selectedInterval}

@@ -2,7 +2,7 @@
 	import { getContext } from 'svelte';
 	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 
-	const { selectedInterval } = getContext('filters');
+	const { selectedInterval, is12MthRollingSum } = getContext('filters');
 
 	export let hoverData;
 	export let hoverKey;
@@ -39,6 +39,7 @@
 				{#if yearOnly}
 					{formatDateBasedOnInterval(hoverDate)}
 				{:else}
+					{$is12MthRollingSum ? 'Year to' : ''}
 					{formatDateBasedOnInterval(hoverDate, $selectedInterval)}
 				{/if}
 			</span>

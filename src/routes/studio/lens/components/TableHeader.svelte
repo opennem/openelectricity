@@ -5,7 +5,7 @@
 	export let yearOnly = false;
 	export let date;
 
-	const { selectedInterval } = getContext('filters');
+	const { selectedInterval, is12MthRollingSum } = getContext('filters');
 </script>
 
 <header class="flex justify-end h-12 px-10 md:px-0">
@@ -14,6 +14,7 @@
 			{#if yearOnly}
 				{formatDateBasedOnInterval(date)}
 			{:else}
+				{$is12MthRollingSum ? 'Year to' : ''}
 				{formatDateBasedOnInterval(date, $selectedInterval)}
 			{/if}
 		</span>

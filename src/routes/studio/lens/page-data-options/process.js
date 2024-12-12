@@ -9,17 +9,16 @@ import { fuelTechMap, orderMap, labelReducer } from './groups';
  * history: StatsData[],
  * unit: string,
  * colourReducer: *
- * targetInterval?: string
+ * targetInterval?: string,
+ * calculate12MthRollingSum: boolean,
  * }} param0
  * @returns {{
  * stats: StatsInstance,
  * timeseries: TimeSeriesInstance}}
  */
-function process({ history, unit, colourReducer, targetInterval }) {
+function process({ history, unit, colourReducer, targetInterval, calculate12MthRollingSum }) {
 	const group = 'detailed';
 	const fuelTechs = fuelTechMap[group];
-
-	console.log('history', history);
 
 	/********* processing */
 	const stats = new Statistic(history, 'history', unit)
@@ -28,7 +27,7 @@ function process({ history, unit, colourReducer, targetInterval }) {
 
 	targetInterval = targetInterval || stats.minIntervalObj?.intervalString || '1Y';
 
-	const timeseries = new TimeSeries(
+	const timeseriesInstance = new TimeSeries(
 		stats.data,
 		parseInterval(stats.minIntervalObj?.intervalString || '1Y'),
 		'history',
@@ -36,8 +35,11 @@ function process({ history, unit, colourReducer, targetInterval }) {
 		colourReducer
 	)
 		.transform()
-		.rollup(parseInterval(targetInterval))
-		.updateMinMax();
+		.rollup(parseInterval(targetInterval));
+
+	const timeseries = calculate12MthRollingSum
+		? timeseriesInstance.calculate12MthRollingSum().updateMinMax()
+		: timeseriesInstance.updateMinMax();
 	/********* end of processing Projection */
 
 	console.log('timeseries', timeseries);

@@ -44,7 +44,6 @@
 		{}
 	);
 	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
-
 	const { selectedRegion, countries, selectedRange, selectedInterval } = getContext('filters');
 
 	let error = false;
@@ -79,19 +78,20 @@
 	$: emissionsData = dataset ? dataset.filter((d) => d.type === 'emissions') : [];
 
 	$: if (dataset && dataset.length > 0) {
-		console.log('selectedInterval', $selectedInterval);
-
 		// Process data
 		const processed = process({
 			history: energyData,
 			unit: 'TWh',
 			colourReducer: $colourReducer,
+			calculate12MthRollingSum: $selectedRange === '12-month-rolling',
 			targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
 		});
 		const processedEmissions = process({
 			history: emissionsData,
 			unit: 'MtCO2e',
-			colourReducer: $colourReducer
+			calculate12MthRollingSum: $selectedRange === '12-month-rolling',
+			colourReducer: $colourReducer,
+			targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
 		});
 
 		dataVizStoreNames.forEach(({ name }) => {
@@ -131,13 +131,14 @@
 	async function fetchData(region, range) {
 		if (region) {
 			let gotoPath = `?region=${region}&range=${range}`;
-			if (range === 'monthly') {
+			if (range !== 'yearly') {
 				gotoPath += `&interval=${$selectedInterval}`;
 			}
 			goto(gotoPath, { noScroll: true });
 
 			fetching = true;
-			const res = await fetch(`/api/ember-bridge/?region=${region}&range=${range}`);
+			const apiRange = range === '12-month-rolling' ? 'monthly' : range;
+			const res = await fetch(`/api/ember-bridge/?region=${region}&range=${apiRange}`);
 			const json = await res.json();
 			console.log(json);
 			dataset = json.data;

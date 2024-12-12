@@ -16,11 +16,17 @@ export default function () {
 		}
 	);
 
+	const is12MthRollingSum = derived(
+		selectedRange,
+		($selectedRange) => $selectedRange === '12-month-rolling'
+	);
+
 	return {
 		countries,
 		selectedRegion,
 		selectedRegionLabel,
 		selectedRange,
-		selectedInterval
+		selectedInterval,
+		is12MthRollingSum
 	};
 }
