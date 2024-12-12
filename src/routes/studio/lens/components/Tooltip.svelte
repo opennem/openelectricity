@@ -1,5 +1,9 @@
 <script>
-	import { getFormattedMonth } from '$lib/utils/formatters';
+	import { getContext } from 'svelte';
+	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
+
+	const { selectedInterval } = getContext('filters');
+
 	export let hoverData;
 	export let hoverKey;
 	export let seriesColours;
@@ -33,9 +37,9 @@
 		<div class="h-full items-center flex justify-end text-xs leading-xs whitespace-nowrap">
 			<span class="px-3 py-1 font-light bg-white/40">
 				{#if yearOnly}
-					{getFormattedMonth(hoverDate)}
+					{formatDateBasedOnInterval(hoverDate)}
 				{:else}
-					{getFormattedMonth(hoverDate, 'short')}
+					{formatDateBasedOnInterval(hoverDate, $selectedInterval)}
 				{/if}
 			</span>
 
