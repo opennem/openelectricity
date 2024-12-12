@@ -6,9 +6,9 @@ export async function GET({ fetch, url }) {
 
 	const { searchParams } = url;
 	const region = searchParams.get('region') || 'x-WRD';
-	const interval = searchParams.get('interval') || 'yearly'; // yearly, monthly
+	const range = searchParams.get('range') || 'yearly'; // yearly, monthly
 
-	const dataPath = `${PUBLIC_EMBER_BRIDGE_API}/v4/ember/${region}/${interval}.json`;
+	const dataPath = `${PUBLIC_EMBER_BRIDGE_API}/v4/ember/${region}/${range}.json`;
 	console.log('/api/ember-bridge/', dataPath);
 
 	const res = await fetch(dataPath);

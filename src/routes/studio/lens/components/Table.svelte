@@ -9,7 +9,7 @@
 	export let seriesLoadsIds = [];
 
 	const dispatch = createEventDispatcher();
-	const { selectedInterval } = getContext('filters');
+	const { selectedRange } = getContext('filters');
 	const {
 		seriesNames: energySeriesNames,
 		hiddenSeriesNames: energyHiddenSeriesNames,
@@ -202,7 +202,7 @@
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
 		date={$energyHoverData?.date || $energyFocusData?.date}
-		yearOnly={$selectedInterval === 'yearly'}
+		yearOnly={$selectedRange === 'yearly'}
 	/>
 
 	<table class="w-full table-fixed border border-warm-grey mb-8">

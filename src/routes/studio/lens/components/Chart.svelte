@@ -39,7 +39,7 @@
 		curveFunction
 	} = store;
 
-	const { selectedInterval } = getContext('filters');
+	const { selectedRange } = getContext('filters');
 
 	let showOptions = false;
 
@@ -145,7 +145,7 @@
 				seriesLabels={$seriesLabels}
 				convertAndFormatValue={$convertAndFormatValue}
 				showTotal={$isChartTypeArea && !$isDataScaleTypeProportion ? true : false}
-				yearOnly={$selectedInterval === 'yearly'}
+				yearOnly={$selectedRange === 'yearly'}
 			/>
 		</div>
 

@@ -45,7 +45,7 @@
 	);
 	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
 
-	const { selectedRegion, countries, selectedInterval } = getContext('filters');
+	const { selectedRegion, countries, selectedRange } = getContext('filters');
 
 	let error = false;
 	let errorMsg = '';
@@ -61,7 +61,7 @@
 
 	onMount(() => {
 		$selectedRegion = data.region;
-		$selectedInterval = data.interval;
+		$selectedRange = data.range;
 	});
 
 	$: if (data.error) {
@@ -70,8 +70,8 @@
 		errorMsg = data.error;
 	}
 
-	$: if ($selectedRegion && $selectedInterval) {
-		fetchData($selectedRegion, $selectedInterval);
+	$: if ($selectedRegion && $selectedRange) {
+		fetchData($selectedRegion, $selectedRange);
 	}
 
 	// $: if ($page.state && $page.state.dataset && $page.state.region) {
@@ -124,14 +124,14 @@
 
 	/**
 	 * @param {string} region
-	 * @param {string} interval
+	 * @param {string} range
 	 */
-	async function fetchData(region, interval) {
+	async function fetchData(region, range) {
 		if (region) {
-			goto(`?region=${region}&interval=${interval}`, { noScroll: true });
+			goto(`?region=${region}&range=${range}`, { noScroll: true });
 
 			fetching = true;
-			const res = await fetch(`/api/ember-bridge/?region=${region}&interval=${interval}`);
+			const res = await fetch(`/api/ember-bridge/?region=${region}&range=${range}`);
 			const json = await res.json();
 			console.log(json);
 			dataset = json.data;
@@ -216,9 +216,9 @@
 		store.displayPrefix.set(displayPrefix); // TODO: set from
 		store.allowedPrefixes.set(allowedPrefixes);
 		store.xTicks.set(
-			$selectedInterval === 'yearly'
+			$selectedRange === 'yearly'
 				? getYearlyXTicks()
-				: $selectedInterval === 'monthly'
+				: $selectedRange === 'monthly'
 				? getMonthlyXTicks()
 				: undefined
 		);
@@ -279,7 +279,6 @@
 	 * @param {CustomEvent<{ name: string }>} evt
 	 */
 	function handleTouchstart(evt) {
-		console.log('touchstart', evt.detail.name);
 		touchTimer = setTimeout(() => {
 			dataVizStoreNames.forEach(({ name, chart }) => {
 				const store = dataVizStores[name];

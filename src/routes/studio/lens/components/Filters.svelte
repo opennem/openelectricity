@@ -6,9 +6,9 @@
 	/** @type {EmberCountry[]} */
 	export let countries;
 
-	const { selectedRegion, selectedInterval } = getContext('filters');
+	const { selectedRegion, selectedRange } = getContext('filters');
 
-	$selectedInterval = 'yearly';
+	$selectedRange = 'yearly';
 
 	// iso string begins with `x-` for regions
 	$: regionsOnly = countries.filter((country) => country.iso.startsWith('x-'));
@@ -45,10 +45,10 @@
 				value: 'yearly'
 			}
 		]}
-		selected={$selectedInterval}
+		selected={$selectedRange}
 		xPad={4}
 		yPad={2}
 		textSize="sm"
-		on:change={(evt) => ($selectedInterval = evt.detail.value)}
+		on:change={(evt) => ($selectedRange = evt.detail.value)}
 	/>
 </div>

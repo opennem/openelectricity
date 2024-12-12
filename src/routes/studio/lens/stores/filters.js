@@ -4,7 +4,7 @@ export default function () {
 	/** @type {import('svelte/store').Writable<EmberCountry[]>} */
 	const countries = writable([]);
 	const selectedRegion = writable('');
-	const selectedInterval = writable('');
+	const selectedRange = writable('');
 
 	// Derived store
 	const selectedRegionLabel = derived(
@@ -19,6 +19,6 @@ export default function () {
 		countries,
 		selectedRegion,
 		selectedRegionLabel,
-		selectedInterval
+		selectedRange
 	};
 }
