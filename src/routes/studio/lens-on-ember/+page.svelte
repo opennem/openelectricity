@@ -300,14 +300,14 @@
 </script>
 
 <Meta
-	title="The Studio — Lens"
+	title="The Studio — Lens on Ember"
 	description="Lens visualises energy and emissions data from regions around the world using Open Electricity's visualisation components."
 	image="/img/preview.jpg"
 />
 
 <PageHeaderSimple>
 	<div slot="main-heading">
-		<h1 class="tracking-widest text-center">Lens</h1>
+		<h1 class="tracking-widest text-center">Lens on Ember</h1>
 	</div>
 	<div slot="sub-heading">
 		<p class="text-sm text-center w-full md:w-[800px] mx-auto">
