@@ -45,7 +45,7 @@
 	);
 	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
 
-	const { selectedRegion, countries, selectedRange } = getContext('filters');
+	const { selectedRegion, countries, selectedRange, selectedInterval } = getContext('filters');
 
 	let error = false;
 	let errorMsg = '';
@@ -62,6 +62,7 @@
 	onMount(() => {
 		$selectedRegion = data.region;
 		$selectedRange = data.range;
+		$selectedInterval = data.interval;
 	});
 
 	$: if (data.error) {
@@ -74,18 +75,19 @@
 		fetchData($selectedRegion, $selectedRange);
 	}
 
-	// $: if ($page.state && $page.state.dataset && $page.state.region) {
-	// 	console.log('page.state', $page.state.dataset, $page.state.region);
-	// 	dataset = $page.state.dataset;
-	// 	$selectedRegion = $page.state.region;
-	// }
+	$: energyData = dataset ? dataset.filter((d) => d.type === 'energy') : [];
+	$: emissionsData = dataset ? dataset.filter((d) => d.type === 'emissions') : [];
 
 	$: if (dataset && dataset.length > 0) {
-		const energyData = dataset.filter((d) => d.type === 'energy');
-		const emissionsData = dataset.filter((d) => d.type === 'emissions');
+		console.log('selectedInterval', $selectedInterval);
 
 		// Process data
-		const processed = process({ history: energyData, unit: 'TWh', colourReducer: $colourReducer });
+		const processed = process({
+			history: energyData,
+			unit: 'TWh',
+			colourReducer: $colourReducer,
+			targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
+		});
 		const processedEmissions = process({
 			history: emissionsData,
 			unit: 'MtCO2e',
@@ -128,7 +130,11 @@
 	 */
 	async function fetchData(region, range) {
 		if (region) {
-			goto(`?region=${region}&range=${range}`, { noScroll: true });
+			let gotoPath = `?region=${region}&range=${range}`;
+			if (range === 'monthly') {
+				gotoPath += `&interval=${$selectedInterval}`;
+			}
+			goto(gotoPath, { noScroll: true });
 
 			fetching = true;
 			const res = await fetch(`/api/ember-bridge/?region=${region}&range=${range}`);

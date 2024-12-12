@@ -9,20 +9,24 @@ import { fuelTechMap, orderMap, labelReducer } from './groups';
  * history: StatsData[],
  * unit: string,
  * colourReducer: *
+ * targetInterval?: string
  * }} param0
  * @returns {{
  * stats: StatsInstance,
  * timeseries: TimeSeriesInstance}}
  */
-function process({ history, unit, colourReducer }) {
+function process({ history, unit, colourReducer, targetInterval }) {
 	const group = 'detailed';
 	const fuelTechs = fuelTechMap[group];
+
 	console.log('history', history);
 
 	/********* processing */
 	const stats = new Statistic(history, 'history', unit)
 		.group(fuelTechs, [], true)
 		.reorder(orderMap[group] || []);
+
+	targetInterval = targetInterval || stats.minIntervalObj?.intervalString || '1Y';
 
 	const timeseries = new TimeSeries(
 		stats.data,
@@ -32,6 +36,7 @@ function process({ history, unit, colourReducer }) {
 		colourReducer
 	)
 		.transform()
+		.rollup(parseInterval(targetInterval))
 		.updateMinMax();
 	/********* end of processing Projection */
 

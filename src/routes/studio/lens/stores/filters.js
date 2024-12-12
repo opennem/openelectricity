@@ -5,6 +5,7 @@ export default function () {
 	const countries = writable([]);
 	const selectedRegion = writable('');
 	const selectedRange = writable('');
+	const selectedInterval = writable('');
 
 	// Derived store
 	const selectedRegionLabel = derived(
@@ -19,6 +20,7 @@ export default function () {
 		countries,
 		selectedRegion,
 		selectedRegionLabel,
-		selectedRange
+		selectedRange,
+		selectedInterval
 	};
 }
