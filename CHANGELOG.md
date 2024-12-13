@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.19.0
+
+### Minor Changes
+
+- 3173158: update to support v4 jsons
+
 ## 1.18.4
 
 ### Patch Changes
