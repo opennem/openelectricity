@@ -4,18 +4,22 @@
 
 	/** @type {TimeSeriesData | undefined} */
 	export let value = undefined;
-	export let yKey = undefined;
+	/** @type {string[]} */
+	export let domains = [];
+	// export let yKey = undefined;
 	export let r = 5;
-	export let fill = 'black';
-
-	$: cx = value ? $xGet(value) : undefined;
-	$: cy = value && yKey ? $yGet({ value: value[yKey] }) : undefined;
-	$: fill = value && yKey ? $zGet({ group: yKey }) : fill;
-	$: showCircle = cx !== undefined && cy !== undefined;
+	// $: showCircle = cx !== undefined && cy !== undefined;
 </script>
 
 <g class="overlay pointer-events-none" transform="translate({-$padding.left}, 0)">
-	{#if showCircle}
-		<circle {cx} {cy} {r} {fill} />
+	{#if value}
+		{#each domains as domain, i (i)}
+			{@const cx = $xGet(value)}
+			{@const cy = $yGet({ value: value[domain] })}
+			{@const fill = $zGet({ group: domain })}
+			{#if cx && cy}
+				<circle {cx} {cy} {r} {fill} />
+			{/if}
+		{/each}
 	{/if}
 </g>

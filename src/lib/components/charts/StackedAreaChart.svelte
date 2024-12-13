@@ -1,5 +1,4 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
@@ -88,7 +87,6 @@
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
-	const dispatch = createEventDispatcher();
 
 	/** TODO: work out transition */
 	const tweenOptions = {
@@ -96,9 +94,6 @@
 		easing: eases.cubicInOut
 	};
 	const yTweened = tweened(/** @type {number|null} */ (null), tweenOptions);
-
-	/** @type {string | undefined} */
-	let hoverKey;
 
 	$: isLine = chartType === 'line';
 	$: isArea = chartType === 'area';
@@ -110,18 +105,6 @@
 	$: z = isArea ? zKey : 'group';
 
 	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
-
-	/**
-	 * @param {CustomEvent<{ data: TimeSeriesData, key: string }> | CustomEvent<TimeSeriesData>} evt
-	 */
-	function handleMousemove(evt) {
-		hoverKey = evt.detail?.key;
-		dispatch('mousemove', evt.detail);
-	}
-	function handleMouseout() {
-		hoverKey = undefined;
-		dispatch('mouseout');
-	}
 </script>
 
 <div class="chart-container mb-4 {heightClasses}">
@@ -168,8 +151,8 @@
 				display={chartType}
 				{highlightId}
 				curveType={$curveFunction}
-				on:mousemove={handleMousemove}
-				on:mouseout={handleMouseout}
+				on:mousemove
+				on:mouseout
 				on:pointerup
 			/>
 		</Svg>
@@ -236,7 +219,7 @@
 				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
 			{/if}
 			{#if isLine}
-				<Dot value={hoverData} yKey={hoverKey} />
+				<Dot domains={seriesNames} value={hoverData} />
 			{/if}
 		</Svg>
 	</LayerCake>

@@ -4,12 +4,12 @@ import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/
 import { convert } from '$lib/utils/si-units';
 
 /**
- *
  * @param {TimeSeriesData} d
+ * @param {TimeSeriesData[]} dataset
  * @param {string[]} domains
  * @returns
  */
-function proportionTransform(d, domains) {
+function proportionTransform(d, dataset, domains) {
 	let total = 0;
 	const updated = {
 		...d
@@ -23,6 +23,27 @@ function proportionTransform(d, domains) {
 	domains.forEach((e) => {
 		const value = /** @type {number} **/ (d[e]);
 		updated[e] = value > 0 ? (value / total) * 100 : 0;
+	});
+
+	return updated;
+}
+
+/**
+ * @param {TimeSeriesData} d
+ * @param {TimeSeriesData[]} dataset
+ * @param {string[]} domains
+ * @returns
+ */
+function changeSinceTransform(d, dataset, domains) {
+	const changeCompare = dataset[0];
+	const updated = {
+		...d
+	};
+
+	domains.forEach((e) => {
+		const value = /** @type {number} **/ (d[e]);
+		const compareValue = /** @type {number} **/ (changeCompare[e] || 0);
+		updated[e] = value - compareValue;
 	});
 
 	return updated;
@@ -50,6 +71,11 @@ export default function () {
 			label: 'Proportion',
 			value: 'proportion',
 			dataScaleFunction: proportionTransform
+		},
+		{
+			label: 'Change since',
+			value: 'changeSince',
+			dataScaleFunction: changeSinceTransform
 		}
 	]);
 	const dataScaleType = writable('absolute');
@@ -213,7 +239,7 @@ export default function () {
 		[seriesData, visibleSeriesNames, dataScaleFunction],
 		([$seriesData, $visibleSeriesNames, $dataScaleFunction]) => {
 			if (!$seriesData) return [];
-			return [...$seriesData].map((d) => $dataScaleFunction(d, $visibleSeriesNames));
+			return [...$seriesData].map((d) => $dataScaleFunction(d, $seriesData, $visibleSeriesNames));
 		}
 	);
 
@@ -221,7 +247,7 @@ export default function () {
 		[seriesData, visibleSeriesNames],
 		([$seriesData, $visibleSeriesNames]) => {
 			if (!$seriesData) return [];
-			return [...$seriesData].map((d) => proportionTransform(d, $visibleSeriesNames));
+			return [...$seriesData].map((d) => proportionTransform(d, $seriesData, $visibleSeriesNames));
 		}
 	);
 

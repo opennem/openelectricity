@@ -21,6 +21,7 @@
 		isDataScaleTypeProportion,
 		visibleSeriesNames,
 		visibleSeriesColours,
+		seriesColours,
 		seriesLabels,
 		xTicks,
 		formatTickX,
@@ -33,8 +34,8 @@
 		chartHeightClasses,
 		hoverKey,
 		hoverTime,
-		hoverData,
-		focusData,
+		hoverScaledData,
+		focusScaledData,
 		getNextPrefix,
 		curveFunction
 	} = store;
@@ -43,14 +44,14 @@
 
 	let showOptions = false;
 
-	$: updatedSeriesData = $seriesScaledData.map((d) => {
+	$: updatedSeriesData = $seriesScaledData.map((/** @type {TimeSeriesData} */ d) => {
 		/** @type {TimeSeriesData} */
 		const newObj = { ...d };
 		// get min and max values for each time series
 		newObj._max = 0;
 		newObj._min = 0;
-		$visibleSeriesNames.forEach((l) => {
-			const value = d[l] || 0;
+		$visibleSeriesNames.forEach((/** @type {string} */ l) => {
+			const value = /** @type {number} */ (d[l] || 0);
 			if ($isChartTypeArea) {
 				if (newObj._max || newObj._max === 0) newObj._max += +value;
 			} else {
@@ -67,9 +68,11 @@
 		return newObj;
 	});
 
-	$: updatedYDomain = (() => {
-		if ($isDataScaleTypeProportion && !$isChartTypeLine) return [0, 100];
-
+	/** @type {*} */
+	let yDomain = undefined;
+	$: if ($isDataScaleTypeProportion && !$isChartTypeLine) {
+		yDomain = [0, 100];
+	} else {
 		const addTenPercent = (val) => val + val * 0.1;
 		const maxY = updatedSeriesData.map((d) => d._max);
 		// @ts-ignore
@@ -80,8 +83,25 @@
 		// @ts-ignore
 		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
 
-		return [Math.floor(datasetMin), Math.ceil(datasetMax)];
-	})();
+		yDomain = [Math.floor(datasetMin), Math.ceil(datasetMax)];
+	}
+	// $: updatedYDomain = (() => {
+	// 	if ($isDataScaleTypeProportion && !$isChartTypeLine) return [0, 100];
+
+	// 	const addTenPercent = (val) => val + val * 0.1;
+	// 	const maxY = updatedSeriesData.map((d) => d._max);
+	// 	// @ts-ignore
+	// 	const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
+
+	// 	const minY = updatedSeriesData.map((d) => d._min);
+
+	// 	// @ts-ignore
+	// 	const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
+
+	// 	console.log('datasetMin', datasetMin, 'datasetMax', datasetMax);
+
+	// 	return [Math.floor(datasetMin), Math.ceil(datasetMax)];
+	// })();
 
 	$: updatedHoverData = $hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null;
 
@@ -141,7 +161,7 @@
 			<Tooltip
 				hoverData={updatedHoverData}
 				hoverKey={$hoverKey}
-				seriesColours={$visibleSeriesColours}
+				seriesColours={$seriesColours}
 				seriesLabels={$seriesLabels}
 				convertAndFormatValue={$convertAndFormatValue}
 				showTotal={$isChartTypeArea && !$isDataScaleTypeProportion ? true : false}
@@ -157,7 +177,7 @@
 				zKey="key"
 				xTicks={$xTicks}
 				yTicks={2}
-				yDomain={updatedYDomain}
+				{yDomain}
 				seriesNames={$visibleSeriesNames}
 				zRange={$visibleSeriesColours}
 				formatTickX={$formatTickX}
@@ -166,12 +186,13 @@
 				overlay={$chartOverlay}
 				overlayLine={$chartOverlayLine}
 				overlayStroke={$chartOverlayHatchStroke}
-				hoverData={$hoverData}
-				focusData={$focusData}
+				hoverData={$hoverScaledData}
+				focusData={$focusScaledData}
 				chartHeightClasses={$chartHeightClasses}
 				snapTicks={true}
 				xGridlines={true}
 				chartPadding={{ top: 0, right: 0, bottom: 20, left: 0 }}
+				highlightId={$hoverKey}
 				{curveFunction}
 				on:mousemove
 				on:mouseout

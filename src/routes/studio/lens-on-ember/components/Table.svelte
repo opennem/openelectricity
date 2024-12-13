@@ -24,7 +24,8 @@
 		displayUnit: energyDisplayUnit,
 		displayPrefix: energyDisplayPrefix,
 		getNextPrefix: getEnergyNextPrefix,
-		formatValue
+		formatValue,
+		hoverKey: energyHoverKey
 	} = getContext('energy-data-viz');
 
 	const {
@@ -35,7 +36,8 @@
 		convertAndFormatValue: emissionsConvertAndFormatValue,
 		displayUnit: emissionsDisplayUnit,
 		displayPrefix: emissionsDisplayPrefix,
-		getNextPrefix: getEmissionsNextPrefix
+		getNextPrefix: getEmissionsNextPrefix,
+		hoverKey: emissionsHoverKey
 	} = getContext('emissions-data-viz');
 
 	// const {
@@ -195,6 +197,19 @@
 		const labelArr = label.split(' (');
 		return labelArr.length > 1 ? `(${labelArr[1].slice(0, -1)})` : '';
 	}
+
+	/**
+	 * @param {string} energyName
+	 * @param {string} emissionsName
+	 */
+	function handleMouseenter(energyName, emissionsName) {
+		$energyHoverKey = energyName;
+		$emissionsHoverKey = emissionsName;
+	}
+	function handleMouseleave() {
+		$energyHoverKey = undefined;
+		$emissionsHoverKey = undefined;
+	}
 </script>
 
 <svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
@@ -290,6 +305,8 @@
 					: ''}
 				<tr
 					on:click={() => handleRowClick(name)}
+					on:mouseenter={() => handleMouseenter(energyName, emissionsName)}
+					on:mouseleave={() => handleMouseleave()}
 					on:touchstart={() => handleTouchstart(name)}
 					on:touchend
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"

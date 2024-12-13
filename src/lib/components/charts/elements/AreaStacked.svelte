@@ -106,10 +106,8 @@
 					cx={$xGet(point)}
 					cy={$yGet(point)}
 					r="5"
-					fill={$zGet(d)}
-					stroke={$zGet(d)}
-					stroke-width="2"
-					opacity={0}
+					fill="transparent"
+					stroke-width="0"
 					on:mousemove={(e) => pointermove(e, d.key || d.group)}
 					on:mouseout={mouseout}
 					on:touchmove={(e) => pointermove(e, d.key || d.group)}
@@ -125,7 +123,7 @@
 			d={lineGen(d.values)}
 			fill="transparent"
 			stroke={$zGet(d)}
-			stroke-width="2px"
+			stroke-width={'1.5'}
 			opacity={opacity(d)}
 		/>
 	{/each}
