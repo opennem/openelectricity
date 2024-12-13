@@ -38,9 +38,13 @@
 		.curve(curveType)
 		.defined((d) => d.value !== null && !isNaN(d.value));
 
-	$: opacity = (d) => {
+	$: lineOpacity = (d) => {
 		if (highlightId === null || highlightId === '') return 1;
-		return highlightId === d.key || highlightId === d.group ? 1 : 0.1;
+		return highlightId === d.key || highlightId === d.group ? 1 : 0.3;
+	};
+	$: areaOpacity = (d) => {
+		if (highlightId === null || highlightId === '') return 1;
+		return highlightId === d.key || highlightId === d.group ? 1 : 0.5;
 	};
 
 	/**
@@ -124,7 +128,7 @@
 			fill="transparent"
 			stroke={$zGet(d)}
 			stroke-width={'1.5'}
-			opacity={opacity(d)}
+			opacity={lineOpacity(d)}
 		/>
 	{/each}
 {/if}
@@ -139,7 +143,7 @@
 				fill={getZFill(d)}
 				stroke={'none'}
 				stroke-width={'0'}
-				opacity={opacity(d)}
+				opacity={areaOpacity(d)}
 				on:mousemove={(e) => pointermove(e, d.key || d.group)}
 				on:mouseout={mouseout}
 				on:touchmove={(e) => pointermove(e, d.key || d.group)}
