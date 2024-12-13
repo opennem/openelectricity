@@ -36,6 +36,55 @@ Statistic.prototype.mergeAndInterpolate = function () {
 	return this;
 };
 
+Statistic.prototype.interpolateSolarRooftopData = function () {
+	/**
+	 * TODO: Move this function to a more appropriate location
+	 * @param {*} array
+	 * @returns
+	 */
+	function interpolateNulls(array) {
+		let result = [...array]; // Clone the array to avoid modifying the original
+
+		for (let i = 0; i < result.length; i++) {
+			if (result[i] === null) {
+				// Find the previous non-null value
+				let prevIndex = i - 1;
+				while (prevIndex >= 0 && result[prevIndex] === null) {
+					prevIndex--;
+				}
+
+				// Find the next non-null value
+				let nextIndex = i + 1;
+				while (nextIndex < result.length && result[nextIndex] === null) {
+					nextIndex++;
+				}
+
+				if (prevIndex >= 0 && nextIndex < result.length) {
+					// Perform linear interpolation
+					const prevValue = result[prevIndex];
+					const nextValue = result[nextIndex];
+					const step = (nextValue - prevValue) / (nextIndex - prevIndex);
+					result[i] = prevValue + step * (i - prevIndex);
+				} else if (prevIndex >= 0) {
+					// If there's no next value, propagate the last known value
+					result[i] = result[prevIndex];
+				} else if (nextIndex < result.length) {
+					// If there's no previous value, propagate the next known value
+					result[i] = result[nextIndex];
+				}
+			}
+		}
+
+		return result;
+	}
+
+	const solarRooftopData = this.data.find((d) => d.fuel_tech === 'solar_rooftop');
+	if (solarRooftopData) {
+		solarRooftopData.history.data = interpolateNulls(solarRooftopData.history.data);
+	}
+	return this;
+};
+
 Statistic.prototype.reorder = function (/** @type {Array.<string | FuelTechCode>} */ domainOrder) {
 	/** @type {StatsData[]} */
 	const data = [];
