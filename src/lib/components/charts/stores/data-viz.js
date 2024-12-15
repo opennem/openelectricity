@@ -243,13 +243,10 @@ export default function () {
 		}
 	);
 
-	const seriesProportionData = derived(
-		[seriesData, visibleSeriesNames],
-		([$seriesData, $visibleSeriesNames]) => {
-			if (!$seriesData) return [];
-			return [...$seriesData].map((d) => proportionTransform(d, $seriesData, $visibleSeriesNames));
-		}
-	);
+	const seriesProportionData = derived([seriesData, seriesNames], ([$seriesData, $seriesNames]) => {
+		if (!$seriesData) return [];
+		return [...$seriesData].map((d) => proportionTransform(d, $seriesData, $seriesNames));
+	});
 
 	/** @type {import('svelte/store').Writable<string | undefined>} */
 	const hoverKey = writable();

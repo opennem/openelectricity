@@ -337,12 +337,10 @@
 
 					<td class="px-2 py-1">
 						<div class="font-mono text-xs flex items-center justify-end gap-1">
-							{#if $energyVisibleSeriesNames.includes(energyName)}
-								<span>
-									{formatValue(energyPercent)}
-								</span>
-								<small>%</small>
-							{/if}
+							<span>
+								{formatValue(energyPercent)}
+							</span>
+							<small>%</small>
 						</div>
 					</td>
 
