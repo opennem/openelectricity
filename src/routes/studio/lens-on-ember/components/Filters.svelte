@@ -7,8 +7,7 @@
 	/** @type {EmberCountry[]} */
 	export let countries;
 
-	const { selectedRegion, selectedRange, selectedInterval, calculate12MthRollingSum } =
-		getContext('filters');
+	const { selectedRegion, selectedRange, selectedInterval } = getContext('filters');
 
 	$selectedRange = 'monthly';
 	$selectedInterval = '1M';

@@ -43,7 +43,9 @@
 		},
 		{}
 	);
-	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
+	const { focusTime: energyFocusTime, displayPrefix: energyDisplayPrefix } =
+		dataVizStores['energy-data-viz'];
+	const { displayPrefix: emissionsDisplayPrefix } = dataVizStores['emissions-data-viz'];
 	const { selectedRegion, countries, selectedRange, selectedInterval } = getContext('filters');
 
 	let error = false;
@@ -103,7 +105,7 @@
 						store,
 						processed.stats,
 						processed.timeseries,
-						'T',
+						$energyDisplayPrefix || 'T',
 						['M', 'G', 'T'],
 						'h-[400px] md:h-[450px]'
 					);
@@ -115,7 +117,7 @@
 						store,
 						processedEmissions.stats,
 						processedEmissions.timeseries,
-						'M',
+						$emissionsDisplayPrefix || 'M',
 						['k', 'M', 'G'],
 						'h-[300px] md:h-[350px]'
 					);
@@ -215,13 +217,7 @@
 			})
 		);
 		store.yDomain.set([ts.minY, ts.maxY]);
-		store.chartType.set('area');
-		store.curveType.set('smooth');
 		store.chartHeightClasses.set(chartHeightClasses);
-		store.baseUnit.set(stats.baseUnit);
-		store.prefix.set(stats.prefix);
-		store.displayPrefix.set(displayPrefix); // TODO: set from
-		store.allowedPrefixes.set(allowedPrefixes);
 		store.xTicks.set(
 			$selectedRange === 'yearly'
 				? getYearlyXTicks()
@@ -230,6 +226,14 @@
 				: undefined
 		);
 		store.formatTickX.set(formatFyTickX);
+
+		if (!store.$chartType) store.$chartType = 'area';
+		if (!store.$curveType) store.$curveType = 'smooth';
+
+		store.baseUnit.set(stats.baseUnit);
+		store.prefix.set(stats.prefix);
+		store.allowedPrefixes.set(allowedPrefixes);
+		store.displayPrefix.set(displayPrefix);
 	}
 
 	/**
