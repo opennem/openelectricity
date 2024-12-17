@@ -119,7 +119,9 @@ export default {
 			gas: '#E87809',
 			solar: '#FED500',
 			renewables: '#52A972',
-			fossils: '#594929'
+			fossils: '#594929',
+
+			demand: '#6A6A6A'
 		},
 
 		extend: {
