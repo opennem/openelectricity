@@ -35,6 +35,8 @@ function proportionTransform(d, dataset, domains) {
  * @returns
  */
 function changeSinceTransform(d, dataset, domains) {
+	if (dataset.length === 0) return d;
+
 	const changeCompare = dataset[0];
 	const updated = {
 		...d
