@@ -37,7 +37,8 @@
 		hoverScaledData,
 		focusScaledData,
 		getNextPrefix,
-		curveFunction
+		curveFunction,
+		xDomain
 	} = store;
 
 	const { selectedRange } = getContext('filters');
@@ -112,7 +113,11 @@
 
 <section class="relative">
 	{#if $visibleSeriesNames.length}
-		<div use:clickoutside on:clickoutside={() => (showOptions = false)} class="sticky top-0 z-20">
+		<div
+			use:clickoutside
+			on:clickoutside={() => (showOptions = false)}
+			class="sticky top-[110px] z-20"
+		>
 			<header
 				class="bg-light-warm-grey px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
 				class:rounded-bl-none={showOptions}
@@ -178,6 +183,7 @@
 				xTicks={$xTicks}
 				yTicks={2}
 				{yDomain}
+				xDomain={$xDomain}
 				seriesNames={$visibleSeriesNames}
 				zRange={$visibleSeriesColours}
 				formatTickX={$formatTickX}

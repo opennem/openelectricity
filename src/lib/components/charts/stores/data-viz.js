@@ -236,10 +236,19 @@ export default function () {
 	const chartHeightClasses = writable('h-[400px] md:h-[450px]');
 
 	const seriesScaledData = derived(
-		[seriesData, visibleSeriesNames, dataScaleFunction],
-		([$seriesData, $visibleSeriesNames, $dataScaleFunction]) => {
+		[seriesData, visibleSeriesNames, dataScaleType, xDomain, dataScaleFunction],
+		([$seriesData, $visibleSeriesNames, $dataScaleType, $xDomain, $dataScaleFunction]) => {
 			if (!$seriesData) return [];
-			return [...$seriesData].map((d) => $dataScaleFunction(d, $seriesData, $visibleSeriesNames));
+			const isChangeSince = $dataScaleType === 'changeSince';
+			const filteredSeriesData =
+				isChangeSince && $xDomain && $xDomain[0] && $xDomain[1]
+					? $seriesData.filter(
+							(d) => d.time >= $xDomain[0].getTime() && d.time <= $xDomain[1].getTime()
+					  )
+					: $seriesData;
+			return [...$seriesData].map((d) =>
+				$dataScaleFunction(d, filteredSeriesData, $visibleSeriesNames)
+			);
 		}
 	);
 

@@ -214,7 +214,7 @@
 
 <svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
 
-<div class="sticky top-10 flex flex-col gap-2">
+<div class="sticky top-[120px] flex flex-col gap-2">
 	<TableHeader
 		date={$energyHoverData?.date || $energyFocusData?.date}
 		yearOnly={$selectedRange === 'yearly'}

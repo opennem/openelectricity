@@ -18,6 +18,7 @@
 		seriesNames: yKeys,
 		seriesData: dataset,
 		curveType,
+		curveFunction,
 		yDomain,
 		strokeWidth,
 		xDomain,
@@ -41,6 +42,8 @@
 	$: if (!dataXDomain) {
 		brushComponent?.clear();
 	}
+
+	$: cType = typeof $curveType === 'function' ? $curveType : $curveFunction;
 </script>
 
 <div class="w-full {defaultChartHeightClasses} bg-light-warm-grey">
@@ -85,12 +88,12 @@
 			</g>
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-				<Line stroke="#353535" strokeWidth={$strokeWidth} strokeArray="2" curveType={$curveType} />
+				<Line stroke="#353535" strokeWidth={$strokeWidth} strokeArray="2" curveType={cType} />
 			</g>
 
 			{#if dataXDomain}
 				<g clip-path={clipPathId ? `url(#${clipPathId}-custom)` : ''}>
-					<Line stroke="black" strokeWidth="1.5" curveType={$curveType} />
+					<Line stroke="black" strokeWidth="1.5" curveType={cType} />
 				</g>
 			{/if}
 		</Svg>

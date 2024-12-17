@@ -33,6 +33,7 @@ export type FuelTechCode =
 	| 'exports'
 	| 'interconnector'
 	| 'demand_response'
+	| 'demand'
 	| 'bioenergy'
 	| 'coal'
 	| 'gas'

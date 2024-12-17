@@ -3,9 +3,12 @@
 	import { addYears, startOfYear, eachYearOfInterval } from 'date-fns';
 	import { goto } from '$app/navigation';
 	import { colourReducer } from '$lib/stores/theme';
-	import { formatFyTickX } from '$lib/utils/formatters';
+	import { formatFyTickX, getFormattedMonth } from '$lib/utils/formatters';
 
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
+	import DateBrush from '$lib/components/charts/DateBrush.svelte';
+	import ResetZoom from '$lib/components/charts/elements/ResetZoom.html.svelte';
+
 	import Meta from '$lib/components/Meta.svelte';
 	import Filters from './components/Filters.svelte';
 	import Chart from './components/Chart.svelte';
@@ -15,6 +18,7 @@
 	import filtersStore from './stores/filters';
 
 	import process from './page-data-options/process';
+	import processDemand from './page-data-options/process-demand';
 
 	export let data;
 
@@ -32,6 +36,7 @@
 		setContext(name, dataVizStore());
 	});
 	setContext('filters', filtersStore());
+	setContext('date-brush-data-viz', dataVizStore());
 
 	const dataVizStores = dataVizStoreNames.reduce(
 		/**
@@ -47,6 +52,7 @@
 		dataVizStores['energy-data-viz'];
 	const { displayPrefix: emissionsDisplayPrefix } = dataVizStores['emissions-data-viz'];
 	const { selectedRegion, countries, selectedRange, selectedInterval } = getContext('filters');
+	const dateBrushStore = getContext('date-brush-data-viz');
 
 	let error = false;
 	let errorMsg = '';
@@ -77,10 +83,12 @@
 	}
 
 	$: energyData = dataset ? dataset.filter((d) => d.type === 'energy') : [];
+	$: energyDemandData = energyData ? energyData.filter((d) => d.fuel_tech === 'demand') : [];
 	$: emissionsData = dataset ? dataset.filter((d) => d.type === 'emissions') : [];
 
 	$: if (dataset && dataset.length > 0) {
 		// Process data
+		console.log('processing data');
 		const processed = process({
 			history: energyData,
 			unit: 'TWh',
@@ -95,6 +103,26 @@
 			colourReducer: $colourReducer,
 			targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
 		});
+		const processedDemand = processDemand({
+			history: energyDemandData,
+			unit: 'TWh',
+			colourReducer: $colourReducer,
+			calculate12MthRollingSum: $selectedRange === '12-month-rolling',
+			targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
+		});
+
+		console.log('processedDemand', processedDemand);
+
+		dateBrushStore.seriesData.set(processedDemand.timeseries.data);
+		dateBrushStore.seriesNames.set(processedDemand.timeseries.seriesNames);
+		dateBrushStore.seriesColours.set(processedDemand.timeseries.seriesColours);
+		dateBrushStore.seriesLabels.set(processedDemand.timeseries.seriesLabels);
+		dateBrushStore.yDomain.set([null, null]);
+
+		dateBrushStore.chartType.set('line');
+		dateBrushStore.formatTickX.set((/** @type {Date} */ date) =>
+			getFormattedMonth(date, 'short', 'Australia/Sydney')
+		);
 
 		dataVizStoreNames.forEach(({ name }) => {
 			const store = dataVizStores[name];
@@ -301,6 +329,35 @@
 	function handleTouchend() {
 		clearTimeout(touchTimer);
 	}
+
+	/** @type {*} */
+	let brushedRange;
+	/**
+	 * @param {CustomEvent} evt
+	 */
+	function handleBrushed(evt) {
+		if (evt.detail.start === evt.detail.end) {
+			dataVizStoreNames.forEach(({ name }) => {
+				const store = dataVizStores[name];
+				store.xDomain.set([null, null]);
+			});
+			brushedRange = undefined;
+			return;
+		}
+		dataVizStoreNames.forEach(({ name }) => {
+			const store = dataVizStores[name];
+			store.xDomain.set([evt.detail.start, evt.detail.end]);
+		});
+		brushedRange = [evt.detail.start, evt.detail.end];
+	}
+
+	function handleZoomReset() {
+		dataVizStoreNames.forEach(({ name }) => {
+			const store = dataVizStores[name];
+			store.xDomain.set([null, null]);
+		});
+		brushedRange = undefined;
+	}
 </script>
 
 <Meta
@@ -334,6 +391,16 @@
 {/if}
 
 <div
+	class="w-full pb-10 md:p-16 md:pt-0 sticky top-0 left-1 right-1 bg-white z-30 border-t border-warm-grey"
+>
+	<DateBrush
+		store={dateBrushStore}
+		axisXTicks={undefined}
+		dataXDomain={brushedRange}
+		on:brushed={handleBrushed}
+	/>
+</div>
+<div
 	class="max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-t border-warm-grey pb-24 mb-24"
 >
 	<section class="w-full flex flex-col gap-12 md:w-[60%]">
@@ -361,12 +428,19 @@
 			</div>
 		{:else}
 			{#each dataVizStoreNames as { name }}
-				<Chart
-					store={dataVizStores[name]}
-					on:mousemove={handleMousemove}
-					on:mouseout={handleMouseout}
-					on:pointerup={handlePointerup}
-				/>
+				<div class="relative">
+					{#if brushedRange}
+						<div class="absolute top-24 right-6 z-10">
+							<ResetZoom on:click={handleZoomReset} />
+						</div>
+					{/if}
+					<Chart
+						store={dataVizStores[name]}
+						on:mousemove={handleMousemove}
+						on:mouseout={handleMouseout}
+						on:pointerup={handlePointerup}
+					/>
+				</div>
 			{/each}
 		{/if}
 	</section>

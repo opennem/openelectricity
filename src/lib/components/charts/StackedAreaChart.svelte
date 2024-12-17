@@ -32,6 +32,9 @@
 	/** @type {Array.<number | null> | undefined} */
 	export let yDomain = undefined;
 
+	/** @type {*} */
+	export let xDomain = undefined;
+
 	export let zKey = '';
 
 	/** @type {string[]} */
@@ -103,6 +106,7 @@
 	$: flatData = isArea ? flatten(stackedData) : flatten(groupedData, 'values');
 	$: y = isArea ? yKey : 'value';
 	$: z = isArea ? zKey : 'group';
+	$: clipPathId = clip ? `${id}-clip-path` : '';
 
 	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
 </script>
@@ -117,6 +121,7 @@
 		{y}
 		{z}
 		{yDomain}
+		{xDomain}
 		xScale={scaleUtc()}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
@@ -126,7 +131,7 @@
 	>
 		<Svg>
 			<defs>
-				<ClipPath id={`${id}-clip-path`} />
+				<ClipPath id={clipPathId} />
 			</defs>
 
 			{#if overlay}
@@ -146,15 +151,17 @@
 				<MultiLine />
 			{/if} -->
 
-			<AreaStacked
-				{dataset}
-				display={chartType}
-				{highlightId}
-				curveType={$curveFunction}
-				on:mousemove
-				on:mouseout
-				on:pointerup
-			/>
+			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+				<AreaStacked
+					{dataset}
+					display={chartType}
+					{highlightId}
+					curveType={$curveFunction}
+					on:mousemove
+					on:mouseout
+					on:pointerup
+				/>
+			</g>
 		</Svg>
 
 		<Svg pointerEvents={false}>
