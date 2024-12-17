@@ -1,5 +1,29 @@
 # opennem-app
 
+## 1.19.0
+
+### Minor Changes
+
+- 3173158: update to support v4 jsons
+
+## 1.18.4
+
+### Patch Changes
+
+- fix issue where the interconnector tooltip is showing the wrong direction
+
+## 1.18.3
+
+### Patch Changes
+
+- fix email link
+
+## 1.18.2
+
+### Patch Changes
+
+- Fix email address
+
 ## 1.18.1
 
 ### Patch Changes
