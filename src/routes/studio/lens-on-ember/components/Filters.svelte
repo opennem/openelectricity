@@ -91,8 +91,8 @@
 		</optgroup>
 	</select>
 
-	<div class="flex gap-5 md:gap-10 justify-between px-6 md:px-0">
-		<div class="flex gap-5 items-center">
+	<div class="flex gap-5 md:gap-10 justify-between px-2 md:px-0">
+		<div class="flex gap-2 md:gap-5 items-center">
 			<span class="font-mono text-xs text-mid-grey">Dataset</span>
 			<div class="md:hidden">
 				<FormSelect
@@ -116,29 +116,31 @@
 			</div>
 		</div>
 
-		<div class="flex gap-5 items-center">
-			<span class="font-mono text-xs text-mid-grey">Interval</span>
-			<div class="md:hidden">
-				<FormSelect
-					paddingX="px-4"
-					paddingY="py-3"
-					align="right"
-					selectedLabelClass="text-sm font-semibold whitespace-nowrap"
-					options={$selectedRange === 'monthly' ? monthlyIntervalOptions : rollingIntervalOptions}
-					selected={$selectedInterval}
-					on:change={(evt) => handleIntervalChange(evt.detail.value)}
-				/>
+		{#if $selectedRange !== 'yearly'}
+			<div class="flex gap-2 md:gap-5 items-center">
+				<span class="font-mono text-xs text-mid-grey">Interval</span>
+				<div class="md:hidden">
+					<FormSelect
+						paddingX="px-4"
+						paddingY="py-3"
+						align="right"
+						selectedLabelClass="text-sm font-semibold whitespace-nowrap"
+						options={$selectedRange === 'monthly' ? monthlyIntervalOptions : rollingIntervalOptions}
+						selected={$selectedInterval}
+						on:change={(evt) => handleIntervalChange(evt.detail.value)}
+					/>
+				</div>
+				<div class="hidden md:block">
+					<Switch
+						buttons={$selectedRange === 'monthly' ? monthlyIntervalOptions : rollingIntervalOptions}
+						selected={$selectedInterval}
+						xPad={4}
+						yPad={2}
+						textSize="sm"
+						on:change={(evt) => handleIntervalChange(evt.detail.value)}
+					/>
+				</div>
 			</div>
-			<div class="hidden md:block">
-				<Switch
-					buttons={$selectedRange === 'monthly' ? monthlyIntervalOptions : rollingIntervalOptions}
-					selected={$selectedInterval}
-					xPad={4}
-					yPad={2}
-					textSize="sm"
-					on:change={(evt) => handleIntervalChange(evt.detail.value)}
-				/>
-			</div>
-		</div>
+		{/if}
 	</div>
 </div>
