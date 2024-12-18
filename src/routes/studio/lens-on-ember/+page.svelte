@@ -20,6 +20,46 @@
 	import process from './page-data-options/process';
 	import processDemand from './page-data-options/process-demand';
 
+	/**
+	 * @param {*[]} array
+	 * @param {number} x
+	 */
+	function popEveryXItem(array, x = 3) {
+		const result = [array[0]];
+
+		// Loop through the array, skipping the first and last elements
+		for (let i = 1; i < array.length - 1; i++) {
+			if (i % x === 0) {
+				result.push(array[i]);
+			}
+		}
+
+		// Add the last element back
+		result.push(array[array.length - 1]);
+
+		return result;
+	}
+
+	// TODO: move this to utils
+	function getMonthlyXTicks(ts) {
+		const start = ts.data[0].date;
+		const end = ts.data[ts.data.length - 1].date;
+
+		const newEnd = startOfYear(addYears(end, 1));
+		const years = eachYearOfInterval({ start, end: newEnd });
+
+		return undefined;
+	}
+
+	function getYearlyXTicks(ts) {
+		const start = ts.data[0].date;
+		const end = ts.data[ts.data.length - 1].date;
+
+		const years = popEveryXItem(eachYearOfInterval({ start, end: end }));
+
+		return years;
+	}
+
 	export let data;
 
 	const dataVizStoreNames = [
@@ -120,9 +160,14 @@
 		dateBrushStore.yDomain.set([0, null]);
 
 		dateBrushStore.chartType.set('line');
-		dateBrushStore.formatTickX.set((/** @type {Date} */ date) =>
-			getFormattedMonth(date, 'short', 'Australia/Sydney')
+		dateBrushStore.xTicks.set(
+			$selectedRange === 'yearly'
+				? getYearlyXTicks(processedDemand.timeseries)
+				: $selectedRange === 'monthly'
+				? getMonthlyXTicks(processedDemand.timeseries)
+				: undefined
 		);
+		dateBrushStore.formatTickX.set(formatFyTickX);
 
 		dataVizStoreNames.forEach(({ name }) => {
 			const store = dataVizStores[name];
@@ -194,46 +239,6 @@
 		allowedPrefixes,
 		chartHeightClasses
 	) {
-		/**
-		 * @param {*[]} array
-		 * @param {number} x
-		 */
-		function popEveryXItem(array, x = 3) {
-			const result = [array[0]];
-
-			// Loop through the array, skipping the first and last elements
-			for (let i = 1; i < array.length - 1; i++) {
-				if (i % x === 0) {
-					result.push(array[i]);
-				}
-			}
-
-			// Add the last element back
-			result.push(array[array.length - 1]);
-
-			return result;
-		}
-
-		// TODO: move this to utils
-		function getMonthlyXTicks() {
-			const start = ts.data[0].date;
-			const end = ts.data[ts.data.length - 1].date;
-
-			const newEnd = startOfYear(addYears(end, 1));
-			const years = eachYearOfInterval({ start, end: newEnd });
-
-			return undefined;
-		}
-
-		function getYearlyXTicks() {
-			const start = ts.data[0].date;
-			const end = ts.data[ts.data.length - 1].date;
-
-			const years = popEveryXItem(eachYearOfInterval({ start, end: end }));
-
-			return years;
-		}
-
 		store.title.set(title);
 		store.seriesData.set(ts.data);
 		store.seriesNames.set(ts.seriesNames);
@@ -248,9 +253,9 @@
 		store.chartHeightClasses.set(chartHeightClasses);
 		store.xTicks.set(
 			$selectedRange === 'yearly'
-				? getYearlyXTicks()
+				? getYearlyXTicks(ts)
 				: $selectedRange === 'monthly'
-				? getMonthlyXTicks()
+				? getMonthlyXTicks(ts)
 				: undefined
 		);
 		store.formatTickX.set(formatFyTickX);
