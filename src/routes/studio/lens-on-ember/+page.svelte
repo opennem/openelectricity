@@ -117,7 +117,7 @@
 		dateBrushStore.seriesNames.set(processedDemand.timeseries.seriesNames);
 		dateBrushStore.seriesColours.set(processedDemand.timeseries.seriesColours);
 		dateBrushStore.seriesLabels.set(processedDemand.timeseries.seriesLabels);
-		dateBrushStore.yDomain.set([null, null]);
+		dateBrushStore.yDomain.set([0, null]);
 
 		dateBrushStore.chartType.set('line');
 		dateBrushStore.formatTickX.set((/** @type {Date} */ date) =>

@@ -3,11 +3,58 @@
 	import { pushState } from '$app/navigation';
 
 	import Switch from '$lib/components/Switch.svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
 	/** @type {EmberCountry[]} */
 	export let countries;
 
 	const { selectedRegion, selectedRange, selectedInterval } = getContext('filters');
+	const rangeOptions = [
+		{
+			label: 'Monthly',
+			value: 'monthly'
+		},
+		{
+			label: '12 mth rolling',
+			value: '12-month-rolling'
+		},
+		{
+			label: 'Yearly',
+			value: 'yearly'
+		}
+	];
+	const monthlyIntervalOptions = [
+		{
+			label: 'Month',
+			value: '1M'
+		},
+		{
+			label: 'Quarter',
+			value: '1Q'
+		},
+		{
+			label: 'Half Year',
+			value: '6M'
+		},
+		{
+			label: 'Year',
+			value: '1Y'
+		}
+	];
+	const rollingIntervalOptions = [
+		{
+			label: 'Month',
+			value: '1M'
+		},
+		{
+			label: 'Quarter',
+			value: '1Q'
+		},
+		{
+			label: 'Half Year',
+			value: '6M'
+		}
+	];
 
 	$selectedRange = 'monthly';
 	$selectedInterval = '1M';
@@ -25,7 +72,7 @@
 	}
 </script>
 
-<div class="flex gap-10">
+<div class="flex flex-col md:flex-row gap-5 md:gap-10">
 	<select
 		class="flex flex-col gap-2 border-dark-grey outline-none bg-light-warm-grey p-4 rounded-lg text-sm"
 		name="region"
@@ -44,80 +91,53 @@
 		</optgroup>
 	</select>
 
-	<div class="flex gap-5 items-center">
-		<span class="font-mono text-xs text-mid-grey">Dataset</span>
-		<Switch
-			buttons={[
-				{
-					label: 'Monthly',
-					value: 'monthly'
-				},
-				{
-					label: '12 mth rolling',
-					value: '12-month-rolling'
-				},
-				{
-					label: 'Yearly',
-					value: 'yearly'
-				}
-			]}
-			selected={$selectedRange}
-			xPad={4}
-			yPad={2}
-			textSize="sm"
-			on:change={(evt) => ($selectedRange = evt.detail.value)}
-		/>
+	<div class="flex gap-10">
+		<div class="flex gap-5 items-center">
+			<span class="font-mono text-xs text-mid-grey">Dataset</span>
+			<div class="md:hidden">
+				<FormSelect
+					paddingX="px-4"
+					paddingY="py-3"
+					selectedLabelClass="font-semibold whitespace-nowrap"
+					options={rangeOptions}
+					selected={$selectedRange}
+					on:change={(evt) => ($selectedRange = evt.detail.value)}
+				/>
+			</div>
+			<div class="hidden md:block">
+				<Switch
+					buttons={rangeOptions}
+					selected={$selectedRange}
+					xPad={4}
+					yPad={2}
+					textSize="sm"
+					on:change={(evt) => ($selectedRange = evt.detail.value)}
+				/>
+			</div>
+		</div>
+
+		<div class="flex gap-5 items-center">
+			<span class="font-mono text-xs text-mid-grey">Interval</span>
+			<div class="md:hidden">
+				<FormSelect
+					paddingX="px-4"
+					paddingY="py-3"
+					selectedLabelClass="font-semibold whitespace-nowrap"
+					options={$selectedRange === 'monthly' ? monthlyIntervalOptions : rollingIntervalOptions}
+					selected={$selectedInterval}
+					on:change={(evt) => handleIntervalChange(evt.detail.value)}
+				/>
+			</div>
+			<div class="hidden md:block">
+				<Switch
+					buttons={$selectedRange === 'monthly' ? monthlyIntervalOptions : rollingIntervalOptions}
+					selected={$selectedInterval}
+					xPad={4}
+					yPad={2}
+					textSize="sm"
+					on:change={(evt) => handleIntervalChange(evt.detail.value)}
+				/>
+			</div>
+		</div>
 	</div>
-
-	{#if $selectedRange === 'monthly'}
-		<Switch
-			buttons={[
-				{
-					label: 'Month',
-					value: '1M'
-				},
-				{
-					label: 'Quarter',
-					value: '1Q'
-				},
-				{
-					label: 'Half Year',
-					value: '6M'
-				},
-				{
-					label: 'Year',
-					value: '1Y'
-				}
-			]}
-			selected={$selectedInterval}
-			xPad={4}
-			yPad={2}
-			textSize="sm"
-			on:change={(evt) => handleIntervalChange(evt.detail.value)}
-		/>
-	{/if}
-
-	{#if $selectedRange === '12-month-rolling'}
-		<Switch
-			buttons={[
-				{
-					label: 'Month',
-					value: '1M'
-				},
-				{
-					label: 'Quarter',
-					value: '1Q'
-				},
-				{
-					label: 'Half Year',
-					value: '6M'
-				}
-			]}
-			selected={$selectedInterval}
-			xPad={4}
-			yPad={2}
-			textSize="sm"
-			on:change={(evt) => handleIntervalChange(evt.detail.value)}
-		/>
-	{/if}
 </div>
