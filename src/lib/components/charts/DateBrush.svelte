@@ -21,6 +21,7 @@
 		curveFunction,
 		yDomain,
 		strokeWidth,
+		strokeArray,
 		xDomain,
 		formatTickX,
 		hoverData,
@@ -30,6 +31,7 @@
 	export let dataXDomain;
 	export let axisXTicks;
 	export let xKey = 'date';
+	export let brushedLineStroke = '#C74523';
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[70px]';
@@ -88,12 +90,17 @@
 			</g>
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-				<Line stroke="#353535" strokeWidth={$strokeWidth} strokeArray="2" curveType={cType} />
+				<Line
+					stroke="#353535"
+					strokeWidth={$strokeWidth}
+					strokeArray={$strokeArray}
+					curveType={cType}
+				/>
 			</g>
 
 			{#if dataXDomain}
 				<g clip-path={clipPathId ? `url(#${clipPathId}-custom)` : ''}>
-					<Line stroke="black" strokeWidth="1.5" curveType={cType} />
+					<Line stroke={brushedLineStroke} strokeWidth="1.5" curveType={cType} />
 				</g>
 			{/if}
 		</Svg>

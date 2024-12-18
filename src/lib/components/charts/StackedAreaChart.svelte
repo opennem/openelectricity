@@ -168,66 +168,49 @@
 			<defs>
 				<HatchPattern id={`${id}-hatch-pattern`} stroke={overlayStroke} />
 
-				<ClipPath id={`${id}-clip-path`} />
+				<ClipPath id={clipPathId} />
 			</defs>
 
-			{#if overlay}
-				<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
-			{/if}
+			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+				{#if overlay}
+					<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
+				{/if}
 
-			{#if blankOverlay}
-				<Overlay fill="#ffffff" {...blankOverlay} />
-			{/if}
+				{#if blankOverlay}
+					<Overlay fill="#ffffff" {...blankOverlay} />
+				{/if}
 
-			{#if overlayLine}
-				<LineX xValue={overlayLine} />
-			{/if}
+				{#if overlayLine}
+					<LineX xValue={overlayLine} />
+				{/if}
 
-			<AxisY
-				ticks={yTicks}
-				xTick={5}
-				formatTick={formatTickY}
-				gridlines={true}
-				stroke="#33333344"
-			/>
+				<AxisY
+					ticks={yTicks}
+					xTick={5}
+					formatTick={formatTickY}
+					gridlines={true}
+					stroke="#33333344"
+				/>
 
-			<AxisX
-				ticks={xTicks}
-				gridlines={xGridlines}
-				formatTick={formatTickX}
-				tickMarks={true}
-				{snapTicks}
-				stroke="#33333344"
-			/>
-		</Svg>
+				<AxisX
+					ticks={xTicks}
+					gridlines={xGridlines}
+					formatTick={formatTickX}
+					tickMarks={true}
+					{snapTicks}
+					stroke="#33333344"
+				/>
 
-		<Html pointerEvents={false}>
-			<!-- <HoverText {hoverData} isShapeStack={true} position="bottom">
-				<span class="text-[10px] block">
-					{formatTickX(hoverTime)}
-				</span>
-			</HoverText> -->
-
-			<!-- <HoverText hoverData={focusData} isShapeStack={true} position="bottom">
-				<span class="text-[10px] block">
-					{formatTickX(focusTime)}
-				</span>
-			</HoverText> -->
-
-			<!-- <HoverLine hoverData={focusData} lineColour="#C74523" borderStyle="dashed" /> -->
-			<!-- <HoverLine {hoverData} /> -->
-		</Html>
-
-		<Svg pointerEvents={false}>
-			{#if hoverData}
-				<LineX xValue={hoverData} strokeArray="none" />
-			{/if}
-			{#if focusData}
-				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
-			{/if}
-			{#if isLine}
-				<Dot domains={seriesNames} value={hoverData} />
-			{/if}
+				{#if hoverData}
+					<LineX xValue={hoverData} strokeArray="none" />
+				{/if}
+				{#if focusData}
+					<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+				{/if}
+				{#if isLine}
+					<Dot domains={seriesNames} value={hoverData} />
+				{/if}
+			</g>
 		</Svg>
 	</LayerCake>
 

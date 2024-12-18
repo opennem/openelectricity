@@ -168,6 +168,8 @@
 				: undefined
 		);
 		dateBrushStore.formatTickX.set(formatFyTickX);
+		dateBrushStore.strokeWidth.set(1);
+		dateBrushStore.strokeArray.set(3);
 
 		dataVizStoreNames.forEach(({ name }) => {
 			const store = dataVizStores[name];
@@ -396,19 +398,17 @@
 {/if}
 
 <div
-	class="w-full pb-10 md:p-16 md:pt-0 sticky top-0 left-1 right-1 bg-white z-30 border-t border-warm-grey"
->
-	<DateBrush
-		store={dateBrushStore}
-		axisXTicks={undefined}
-		dataXDomain={brushedRange}
-		on:brushed={handleBrushed}
-	/>
-</div>
-<div
-	class="max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-t border-warm-grey pb-24 mb-24"
+	class="max-w-none py-10 md:p-16 md:pt-10 md:flex gap-12 z-30 border-b border-t border-warm-grey mb-24"
 >
 	<section class="w-full flex flex-col gap-12 md:w-[60%]">
+		<div class="w-full sticky top-0 bg-white z-30">
+			<DateBrush
+				store={dateBrushStore}
+				axisXTicks={undefined}
+				dataXDomain={brushedRange}
+				on:brushed={handleBrushed}
+			/>
+		</div>
 		{#if fetching}
 			<div class="flex justify-center items-center mt-72">
 				<div role="status">
@@ -450,7 +450,7 @@
 		{/if}
 	</section>
 
-	<section class="md:w-[40%] mt-6" class:blur-sm={fetching}>
+	<section class="md:w-[40%]" class:blur-sm={fetching}>
 		<Table on:row-click={toggleRow} on:touchstart={handleTouchstart} on:touchend={handleTouchend} />
 	</section>
 </div>

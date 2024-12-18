@@ -116,7 +116,7 @@
 		<div
 			use:clickoutside
 			on:clickoutside={() => (showOptions = false)}
-			class="sticky top-[110px] z-20"
+			class="sticky top-[90px] z-20"
 		>
 			<header
 				class="bg-light-warm-grey px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"

@@ -120,6 +120,7 @@ export default function () {
 
 	const snapXTicks = writable(false);
 	const strokeWidth = writable('2px');
+	const strokeArray = writable('4');
 
 	const timeZone = writable('Australia/Sydney');
 
@@ -464,6 +465,7 @@ export default function () {
 		focusProportionData,
 
 		strokeWidth,
+		strokeArray,
 		showLineArea,
 		lineColour,
 		dotStroke,
