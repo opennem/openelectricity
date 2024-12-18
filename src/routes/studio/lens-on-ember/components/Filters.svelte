@@ -72,7 +72,7 @@
 	}
 </script>
 
-<div class="flex flex-col md:flex-row gap-5 md:gap-10">
+<div class="w-full px-6 md:px-0 flex flex-col md:flex-row gap-5 md:gap-10">
 	<select
 		class="flex flex-col gap-2 border-dark-grey outline-none bg-light-warm-grey p-4 rounded-lg text-sm"
 		name="region"
@@ -91,14 +91,14 @@
 		</optgroup>
 	</select>
 
-	<div class="flex gap-10">
+	<div class="flex gap-5 md:gap-10 justify-between px-6 md:px-0">
 		<div class="flex gap-5 items-center">
 			<span class="font-mono text-xs text-mid-grey">Dataset</span>
 			<div class="md:hidden">
 				<FormSelect
 					paddingX="px-4"
 					paddingY="py-3"
-					selectedLabelClass="font-semibold whitespace-nowrap"
+					selectedLabelClass="text-sm font-semibold whitespace-nowrap"
 					options={rangeOptions}
 					selected={$selectedRange}
 					on:change={(evt) => ($selectedRange = evt.detail.value)}
@@ -122,7 +122,8 @@
 				<FormSelect
 					paddingX="px-4"
 					paddingY="py-3"
-					selectedLabelClass="font-semibold whitespace-nowrap"
+					align="right"
+					selectedLabelClass="text-sm font-semibold whitespace-nowrap"
 					options={$selectedRange === 'monthly' ? monthlyIntervalOptions : rollingIntervalOptions}
 					selected={$selectedInterval}
 					on:change={(evt) => handleIntervalChange(evt.detail.value)}
