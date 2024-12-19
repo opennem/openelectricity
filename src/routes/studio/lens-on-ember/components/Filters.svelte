@@ -72,7 +72,7 @@
 	}
 </script>
 
-<div class="w-full px-6 md:px-0 flex flex-col md:flex-row gap-5 md:gap-10">
+<div class="w-full px-6 md:px-0 flex flex-col md:flex-row gap-5 md:gap-10 justify-center">
 	<select
 		class="flex flex-col gap-2 border-dark-grey outline-none bg-light-warm-grey p-4 rounded-lg text-sm"
 		name="region"

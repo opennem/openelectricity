@@ -107,6 +107,7 @@
 	$: y = isArea ? yKey : 'value';
 	$: z = isArea ? zKey : 'group';
 	$: clipPathId = clip ? `${id}-clip-path` : '';
+	$: clipPathAxisId = clip ? `${id}-clip-path-axis` : '';
 
 	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
 </script>
@@ -167,7 +168,6 @@
 		<Svg pointerEvents={false}>
 			<defs>
 				<HatchPattern id={`${id}-hatch-pattern`} stroke={overlayStroke} />
-
 				<ClipPath id={clipPathId} />
 			</defs>
 
@@ -184,6 +184,25 @@
 					<LineX xValue={overlayLine} />
 				{/if}
 
+				{#if hoverData}
+					<LineX xValue={hoverData} strokeArray="none" />
+				{/if}
+				{#if focusData}
+					<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+				{/if}
+				{#if isLine}
+					<Dot domains={seriesNames} value={hoverData} />
+				{/if}
+			</g>
+		</Svg>
+
+		<Svg pointerEvents={false}>
+			<defs>
+				<HatchPattern id={`${id}-hatch-pattern`} stroke={overlayStroke} />
+				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
+			</defs>
+
+			<g clip-path={clipPathAxisId ? `url(#${clipPathAxisId})` : ''}>
 				<AxisY
 					ticks={yTicks}
 					xTick={5}
@@ -200,16 +219,6 @@
 					{snapTicks}
 					stroke="#33333344"
 				/>
-
-				{#if hoverData}
-					<LineX xValue={hoverData} strokeArray="none" />
-				{/if}
-				{#if focusData}
-					<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
-				{/if}
-				{#if isLine}
-					<Dot domains={seriesNames} value={hoverData} />
-				{/if}
 			</g>
 		</Svg>
 	</LayerCake>

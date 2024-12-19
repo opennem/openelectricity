@@ -3,7 +3,7 @@
 	import { addYears, startOfYear, eachYearOfInterval } from 'date-fns';
 	import { goto } from '$app/navigation';
 	import { colourReducer } from '$lib/stores/theme';
-	import { formatFyTickX, getFormattedMonth } from '$lib/utils/formatters';
+	import { formatFyTickX, getFormattedMonth, getFormattedDate } from '$lib/utils/formatters';
 
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import DateBrush from '$lib/components/charts/DateBrush.svelte';
@@ -13,6 +13,7 @@
 	import Filters from './components/Filters.svelte';
 	import Chart from './components/Chart.svelte';
 	import Table from './components/Table.svelte';
+	import TableHeader from './components/TableHeader.svelte';
 
 	import dataVizStore from '$lib/components/charts/stores/data-viz';
 	import filtersStore from './stores/filters';
@@ -88,8 +89,12 @@
 		},
 		{}
 	);
-	const { focusTime: energyFocusTime, displayPrefix: energyDisplayPrefix } =
-		dataVizStores['energy-data-viz'];
+	const {
+		focusTime: energyFocusTime,
+		displayPrefix: energyDisplayPrefix,
+		hoverData: energyHoverData,
+		focusData: energyFocusData
+	} = dataVizStores['energy-data-viz'];
 	const { displayPrefix: emissionsDisplayPrefix } = dataVizStores['emissions-data-viz'];
 	const { selectedRegion, countries, selectedRange, selectedInterval } = getContext('filters');
 	const dateBrushStore = getContext('date-brush-data-viz');
@@ -160,16 +165,29 @@
 		dateBrushStore.yDomain.set([0, null]);
 
 		dateBrushStore.chartType.set('line');
-		dateBrushStore.xTicks.set(
-			$selectedRange === 'yearly'
-				? getYearlyXTicks(processedDemand.timeseries)
-				: $selectedRange === 'monthly'
-				? getMonthlyXTicks(processedDemand.timeseries)
-				: undefined
-		);
-		dateBrushStore.formatTickX.set(formatFyTickX);
+
+		if ($selectedRange === 'yearly') {
+			dateBrushStore.xTicks.set(getYearlyXTicks(processedDemand.timeseries));
+
+			dateBrushStore.formatTickX.set((/** @type {*} */ d) =>
+				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+			);
+		} else if ($selectedRange === '12-month-rolling') {
+			dateBrushStore.xTicks.set(6);
+
+			dateBrushStore.formatTickX.set((/** @type {*} */ d) =>
+				getFormattedDate(d, undefined, undefined, 'short', 'numeric')
+			);
+		} else {
+			dateBrushStore.xTicks.set(getMonthlyXTicks(processedDemand.timeseries));
+
+			dateBrushStore.formatTickX.set((/** @type {*} */ d) =>
+				getFormattedDate(d, undefined, undefined, 'short', '2-digit')
+			);
+		}
+
 		dateBrushStore.strokeWidth.set(1);
-		dateBrushStore.strokeArray.set(3);
+		dateBrushStore.strokeArray.set(1);
 
 		dataVizStoreNames.forEach(({ name }) => {
 			const store = dataVizStores[name];
@@ -253,14 +271,23 @@
 		);
 		store.yDomain.set([ts.minY, ts.maxY]);
 		store.chartHeightClasses.set(chartHeightClasses);
-		store.xTicks.set(
-			$selectedRange === 'yearly'
-				? getYearlyXTicks(ts)
-				: $selectedRange === 'monthly'
-				? getMonthlyXTicks(ts)
-				: undefined
-		);
-		store.formatTickX.set(formatFyTickX);
+
+		if ($selectedRange === 'yearly') {
+			store.xTicks.set(getYearlyXTicks(ts));
+			store.formatTickX.set((/** @type {*} */ d) =>
+				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+			);
+		} else if ($selectedRange === '12-month-rolling') {
+			store.xTicks.set(6);
+			store.formatTickX.set((/** @type {*} */ d) =>
+				getFormattedDate(d, undefined, undefined, 'short', 'numeric')
+			);
+		} else {
+			store.xTicks.set(getMonthlyXTicks(ts));
+			store.formatTickX.set((/** @type {*} */ d) =>
+				getFormattedDate(d, undefined, undefined, 'short', '2-digit')
+			);
+		}
 
 		if (!store.$chartType) store.$chartType = 'area';
 		if (!store.$curveType) store.$curveType = 'smooth';
@@ -397,18 +424,26 @@
 	</section>
 {/if}
 
-<div
-	class="max-w-none py-10 md:p-16 md:pt-10 md:flex gap-12 z-30 border-b border-t border-warm-grey mb-24"
->
+<div class="w-full sticky top-0 bg-white z-30 md:px-16 md:py-10">
+	<TableHeader
+		store={dataVizStores['energy-data-viz']}
+		date={$energyHoverData?.date || $energyFocusData?.date}
+		yearOnly={$selectedRange === 'yearly'}
+	/>
+	<DateBrush
+		store={dateBrushStore}
+		hoverDataX={$energyHoverData}
+		focusDataX={$energyFocusData}
+		axisXTicks={undefined}
+		dataXDomain={brushedRange}
+		defaultChartHeightClasses="h-[25px]"
+		showLineData={false}
+		on:brushed={handleBrushed}
+	/>
+</div>
+
+<div class="max-w-none py-10 md:p-16 md:pt-10 md:flex gap-12 z-30 border-b border-warm-grey mb-24">
 	<section class="w-full flex flex-col gap-12 md:w-[60%]">
-		<div class="w-full sticky top-0 bg-white z-30">
-			<DateBrush
-				store={dateBrushStore}
-				axisXTicks={undefined}
-				dataXDomain={brushedRange}
-				on:brushed={handleBrushed}
-			/>
-		</div>
 		{#if fetching}
 			<div class="flex justify-center items-center mt-72">
 				<div role="status">

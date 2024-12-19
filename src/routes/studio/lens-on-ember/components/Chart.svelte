@@ -116,7 +116,7 @@
 		<div
 			use:clickoutside
 			on:clickoutside={() => (showOptions = false)}
-			class="sticky top-[90px] z-20"
+			class="sticky top-[74px] md:top-[105px] z-20"
 		>
 			<header
 				class="bg-light-warm-grey px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
@@ -162,7 +162,7 @@
 			{/if}
 		</div>
 
-		<div class="sticky top-11 z-20">
+		<div class="sticky top-[110px] z-20">
 			<Tooltip
 				hoverData={updatedHoverData}
 				hoverKey={$hoverKey}
@@ -195,7 +195,7 @@
 				hoverData={$hoverScaledData}
 				focusData={$focusScaledData}
 				chartHeightClasses={$chartHeightClasses}
-				snapTicks={true}
+				snapTicks={false}
 				xGridlines={true}
 				chartPadding={{ top: 0, right: 0, bottom: 20, left: 0 }}
 				highlightId={$hoverKey}
