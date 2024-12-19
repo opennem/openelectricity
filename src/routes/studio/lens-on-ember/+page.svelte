@@ -307,7 +307,10 @@
 	function toggleRow(evt) {
 		dataVizStoreNames.forEach(({ name, chart }) => {
 			const store = dataVizStores[name];
-			store.updateHiddenSeriesNames(`${evt.detail.name}.${chart}`, evt.detail.isMetaPressed);
+			store.updateHiddenSeriesNames(
+				`${evt.detail.name}.${chart}.grouped`,
+				evt.detail.isMetaPressed
+			);
 		});
 	}
 
