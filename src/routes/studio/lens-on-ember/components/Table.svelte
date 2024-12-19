@@ -75,9 +75,9 @@
 	$: uniqueSeriesWithoutType = [
 		...new Set(
 			combinedSeriesNames.map((id) => {
+				// only want the first part of the id
 				const parts = id.split('.');
-				parts.pop();
-				return parts.join('.');
+				return parts[0];
 			})
 		)
 	];
@@ -178,7 +178,7 @@
 	 */
 	function darken(colorString) {
 		// @ts-ignore
-		return color(colorString).darker(0.5).formatHex();
+		return colorString ? color(colorString).darker(0.5).formatHex() : 'transparent';
 	}
 
 	// get string before () in label
@@ -293,8 +293,8 @@
 		<tbody>
 			{#each uniqueSeriesWithoutType as name}
 				{@const isImports = name.includes('import')}
-				{@const energyName = `${name}.energy`}
-				{@const emissionsName = `${name}.emissions`}
+				{@const energyName = `${name}.energy.grouped`}
+				{@const emissionsName = `${name}.emissions.grouped`}
 				{@const energyValue = $energyHoverData
 					? $energyHoverData[energyName]
 					: $energyFocusData
@@ -334,10 +334,12 @@
 							{/if}
 
 							<div>
-								{isImports && energyValue < 0
-									? 'Export'
-									: getLabel($energySeriesLabels[energyName])}
-								<span class="text-mid-grey">{getSublabel($energySeriesLabels[energyName])}</span>
+								{#if $energySeriesLabels[energyName]}
+									{isImports && energyValue < 0 ? 'Export' : $energySeriesLabels[energyName]}
+								{:else}
+									{energyName}
+								{/if}
+								<!-- <span class="text-mid-grey">{getSublabel($energySeriesLabels[energyName])}</span> -->
 							</div>
 						</div>
 					</td>

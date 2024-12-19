@@ -29,7 +29,7 @@ function process({
 
 	/********* processing */
 	const stats = new Statistic(history, 'history', unit)
-		.group(fuelTechs, [], true)
+		.group(fuelTechs, [], false)
 		.reorder(orderMap[group] || []);
 
 	targetInterval = targetInterval || stats.minIntervalObj?.intervalString || '1Y';
