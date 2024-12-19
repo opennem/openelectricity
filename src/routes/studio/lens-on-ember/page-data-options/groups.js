@@ -1,7 +1,8 @@
 import detailedGroup from '$lib/fuel-tech-groups/lens/detailed';
-import renewablesVfossilsGroup from '$lib/fuel-tech-groups/lens/renewablesvfossils';
+import renewablesFossilsGroup from '$lib/fuel-tech-groups/lens/renewables-fossils';
+import vreResidual from '$lib/fuel-tech-groups/lens/vre-residual';
 
-export const groups = [detailedGroup, renewablesVfossilsGroup];
+export const groups = [detailedGroup, renewablesFossilsGroup, vreResidual];
 export const groupOptions = groups.map((group) => ({
 	label: group.label,
 	value: group.value

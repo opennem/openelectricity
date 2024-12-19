@@ -227,7 +227,7 @@
 							<FormSelect
 								paddingY="py-2"
 								paddingX="px-4"
-								selectedLabelClass="font-medium text-xxs"
+								selectedLabelClass="font-medium text-xs"
 								options={groupOptions}
 								selected={$selectedFuelTechGroup}
 								on:change={(evt) => ($selectedFuelTechGroup = evt.detail.value)}

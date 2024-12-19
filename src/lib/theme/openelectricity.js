@@ -55,7 +55,10 @@ const fuelTechColourMap = {
 	renewable: '#52A972',
 
 	total_loads: '#CFA7FF',
-	total_sources: '#251C00'
+	total_sources: '#251C00',
+
+	vre: '#069FAF',
+	residual: '#545353'
 };
 
 const carbonIntensityColourMap = {

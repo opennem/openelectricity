@@ -37,7 +37,7 @@ const fuelTechNameReducer = (acc, d) => {
 
 /** @type {FuelTechGroup} */
 export default Object.freeze({
-	label: 'Renewables vs Fossils',
+	label: 'Renewables/Fossils',
 	value: 'rvf',
 	fuelTechs: fuelTechMap,
 	order,
