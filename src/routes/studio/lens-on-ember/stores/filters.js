@@ -6,6 +6,7 @@ export default function () {
 	const selectedRegion = writable('');
 	const selectedRange = writable('');
 	const selectedInterval = writable('');
+	const selectedFuelTechGroup = writable('rvf');
 
 	// Derived store
 	const selectedRegionLabel = derived(
@@ -27,6 +28,7 @@ export default function () {
 		selectedRegionLabel,
 		selectedRange,
 		selectedInterval,
-		is12MthRollingSum
+		is12MthRollingSum,
+		selectedFuelTechGroup
 	};
 }

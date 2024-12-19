@@ -96,7 +96,8 @@
 		focusData: energyFocusData
 	} = dataVizStores['energy-data-viz'];
 	const { displayPrefix: emissionsDisplayPrefix } = dataVizStores['emissions-data-viz'];
-	const { selectedRegion, countries, selectedRange, selectedInterval } = getContext('filters');
+	const { selectedRegion, countries, selectedRange, selectedInterval, selectedFuelTechGroup } =
+		getContext('filters');
 	const dateBrushStore = getContext('date-brush-data-viz');
 
 	let error = false;
@@ -136,6 +137,7 @@
 		console.log('processing data');
 		const processed = process({
 			history: energyData,
+			group: $selectedFuelTechGroup,
 			unit: 'TWh',
 			colourReducer: $colourReducer,
 			calculate12MthRollingSum: $selectedRange === '12-month-rolling',
@@ -143,6 +145,7 @@
 		});
 		const processedEmissions = process({
 			history: emissionsData,
+			group: $selectedFuelTechGroup,
 			unit: 'MtCO2e',
 			calculate12MthRollingSum: $selectedRange === '12-month-rolling',
 			colourReducer: $colourReducer,

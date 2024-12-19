@@ -7,6 +7,7 @@ import { fuelTechMap, orderMap, labelReducer } from './groups';
  *
  * @param {{
  * history: StatsData[],
+ * group: string,
  * unit: string,
  * colourReducer: *
  * targetInterval?: string,
@@ -16,8 +17,14 @@ import { fuelTechMap, orderMap, labelReducer } from './groups';
  * stats: StatsInstance,
  * timeseries: TimeSeriesInstance}}
  */
-function process({ history, unit, colourReducer, targetInterval, calculate12MthRollingSum }) {
-	const group = 'detailed';
+function process({
+	history,
+	group,
+	unit,
+	colourReducer,
+	targetInterval,
+	calculate12MthRollingSum
+}) {
 	const fuelTechs = fuelTechMap[group];
 
 	/********* processing */

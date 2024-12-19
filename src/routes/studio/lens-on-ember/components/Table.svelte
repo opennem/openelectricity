@@ -9,7 +9,7 @@
 	export let seriesLoadsIds = [];
 
 	const dispatch = createEventDispatcher();
-	const { selectedRange } = getContext('filters');
+	const { selectedFuelTechGroup } = getContext('filters');
 	const {
 		seriesNames: energySeriesNames,
 		hiddenSeriesNames: energyHiddenSeriesNames,
@@ -220,7 +220,19 @@
 			<tr>
 				<th class="w-[45%]">
 					<div class="flex items-center gap-4">
-						<span class="block text-dark-grey text-sm font-medium ml-3">Technology</span>
+						<!-- <span class="block text-dark-grey text-sm font-medium ml-3">Technology</span> -->
+						<div
+							class="border border-mid-warm-grey text-xs inline-block rounded-md whitespace-nowrap ml-3"
+						>
+							<FormSelect
+								paddingY="py-2"
+								paddingX="px-4"
+								selectedLabelClass="font-medium text-xxs"
+								options={groupOptions}
+								selected={$selectedFuelTechGroup}
+								on:change={(evt) => ($selectedFuelTechGroup = evt.detail.value)}
+							/>
+						</div>
 					</div>
 				</th>
 
