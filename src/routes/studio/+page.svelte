@@ -5,29 +5,34 @@
 	const projects = [
 		{
 			title: 'Records',
-			description:
-				'Records tracks significant events in the history of the Australian electricity market.',
+			description: 'Tracks significant events in the history of the Australian electricity market.',
 			link: '/records',
 			disabled: true
 		},
 		{
 			title: 'Lens on Ember',
-			description: 'Lens visualises energy and emissions data from regions around the world.',
+			description: 'Visualises energy and emissions data from regions around the world.',
 			link: '/studio/lens-on-ember'
 		},
 		{
 			title: 'Lens on Australia’s electricity system and market',
-			description: 'Lens visualises energy, pricing and emissions data from Australia.',
+			description: 'Visualises energy, pricing and emissions data from Australia.',
 			link: '/studio/lens-on-au',
 			disabled: true
+		},
+		{
+			title: 'Atlas on Australia’s power generation facilities',
+			description: 'Exploring power generation facilities from Australia.',
+			link: '/studio/atlas-on-au-power-generation-facilities',
+			disabled: true
+		},
+		{
+			title: 'Lens on Australia’s emissions projections 2024',
+			description:
+				'Visualises the latest estimates of Australia’s greenhouse gas emissions to 2040.',
+			link: '/studio/lens-on-au-emissions-projections',
+			disabled: true
 		}
-		// {
-		// 	title: 'Lens on Australia’s emissions projections 2024',
-		// 	description:
-		// 		'Lens visualises the latest estimates of Australia’s greenhouse gas emissions to 2040.',
-		// 	link: '/studio/lens-on-au-emissions-projections',
-		// 	disabled: true
-		// }
 	];
 </script>
 
