@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.19.2
+
+### Patch Changes
+
+- remove rooftop solar interpolation
+
 ## 1.19.1
 
 ### Patch Changes
