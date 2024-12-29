@@ -15,7 +15,7 @@ export default function ({ bucket, dataset, dataProp }) {
 			 * @param {number} i
 			 */
 			(d, i) => {
-				bucket[i][id] = d;
+				if (bucket[i]) bucket[i][id] = d;
 			}
 		);
 	});
