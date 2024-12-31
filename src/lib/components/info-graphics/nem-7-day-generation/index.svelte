@@ -24,7 +24,6 @@
 
 	$: statsDatasets = new Statistic(data, 'history')
 		.mergeAndInterpolate()
-		.interpolateSolarRooftopData()
 		.invertValues(loadFts)
 		.group(domainGroups)
 		.reorder(domainOrder).data;
