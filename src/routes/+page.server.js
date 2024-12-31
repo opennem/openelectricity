@@ -11,11 +11,6 @@ export async function load({ fetch }) {
 		`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
 	);
 
-	const records = await fetch('/api/records').then(async (res) => {
-		const { data: jsonData } = await res.json();
-		return jsonData;
-	});
-
 	const flows = await fetch('/api/flows').then(async (res) => {
 		const { data: jsonData } = await res.json();
 		/** @type {*} */
@@ -44,16 +39,9 @@ export async function load({ fetch }) {
 		};
 	});
 
-	/** Records API */
-	// const records = await fetch('/api/records').then(async (res) => {
-	// 	const { data: jsonData } = await res.json();
-	// 	return jsonData;
-	// });
-
 	return {
 		homepageData,
 		articles: articles.filter((d) => d.article_type !== null),
-		records,
 		flows,
 		prices
 	};

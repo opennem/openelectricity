@@ -1,5 +1,17 @@
 # opennem-app
 
+## 1.19.2
+
+### Patch Changes
+
+- remove rooftop solar interpolation
+
+## 1.19.1
+
+### Patch Changes
+
+- fix issue where the homepage is not loading
+
 ## 1.19.0
 
 ### Minor Changes
