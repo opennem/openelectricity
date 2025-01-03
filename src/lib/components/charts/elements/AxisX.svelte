@@ -74,7 +74,7 @@
 	class:snapTicks
 	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
 >
-	<rect class="axis-background" x="0" y={$height} width={$width} height={20} fill="white" />
+	<rect class="axis-background" x="0" y={$height} width={$width} height={20} fill="transparent" />
 	{#each tickVals as tick, i (tick)}
 		<g class="tick tick-{i}" transform="translate({$xScale(tick)}, {Math.max(...$yRange)})">
 			<!-- stroke={i === 0 || i === tickVals.length - 1 ? '#F1F0ED' : stroke}
