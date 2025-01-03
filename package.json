@@ -1,6 +1,6 @@
 {
 	"name": "opennem-app",
-	"version": "1.19.2",
+	"version": "1.20.1",
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",

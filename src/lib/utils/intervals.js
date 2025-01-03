@@ -8,6 +8,7 @@ import {
 } from 'date-fns';
 
 /**
+ * TODO: add jsdoc
  * Parse interval:
  * - years = Y
  * - quarters = Q
@@ -18,17 +19,21 @@ import {
  * - minutes = m
  * - seconds = s
  */
-const durationKeys = ['s', 'm', 'h', 'd', 'w', 'M', 'Q', 'Y'];
-
 export const YEAR = 'Y';
+export const YEAR_HALF = '6M';
+export const QUARTER = 'Q';
 export const MONTH = 'M';
-export const MINUTES = 'm';
+export const MINUTE = 'm';
+// const durationKeys = ['s', 'm', 'h', 'd', 'w', 'M', 'Q', 'Y'];
+const durationKeys = [MINUTE, MONTH, QUARTER, YEAR_HALF, YEAR];
 
 /** @type {Object.<string, string>} */
 export const INTERVAL_LABELS = {};
 INTERVAL_LABELS[YEAR] = 'Year';
+INTERVAL_LABELS[YEAR_HALF] = 'Half Year';
+INTERVAL_LABELS[QUARTER] = 'Quarter';
 INTERVAL_LABELS[MONTH] = 'Month';
-INTERVAL_LABELS[MINUTES] = 'Minutes';
+INTERVAL_LABELS[MINUTE] = 'Minute';
 
 /**
  *
@@ -47,11 +52,19 @@ export default function (intervalString) {
 			incrementerFn = /** @type {Function} */ (addYears);
 			startOfFn = /** @type {Function} */ (startOfYear);
 			seconds = incrementerValue * 365 * 24 * 60 * 60;
+		} else if (key === YEAR_HALF) {
+			incrementerFn = /** @type {Function} */ ((/** @type {*} */ d) => addMonths(d, 6));
+			startOfFn = /** @type {Function} */ (startOfMonth);
+			seconds = 6 * 30 * 24 * 60 * 60;
+		} else if (key === QUARTER) {
+			incrementerFn = /** @type {Function} */ ((/** @type {*} */ d) => addMonths(d, 3));
+			startOfFn = /** @type {Function} */ (startOfMonth);
+			seconds = incrementerValue * 3 * 30 * 24 * 60 * 60;
 		} else if (key === MONTH) {
 			incrementerFn = /** @type {Function} */ (addMonths);
 			startOfFn = /** @type {Function} */ (startOfMonth);
 			seconds = incrementerValue * 30 * 24 * 60 * 60;
-		} else if (key === MINUTES) {
+		} else if (key === MINUTE) {
 			incrementerFn = /** @type {Function} */ (addMinutes);
 			startOfFn = /** @type {Function} */ (startOfMinute);
 			seconds = incrementerValue * 60;

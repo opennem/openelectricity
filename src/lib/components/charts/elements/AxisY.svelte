@@ -57,17 +57,13 @@
 		? $yScale.domain()
 		: typeof ticks === 'function'
 		? ticks($yScale.ticks())
-		: $yScale.nice().ticks(ticks);
+		: $yScale.ticks(ticks);
 </script>
 
-<g
-	class="axis y-axis pointer-events-none"
-	transform="translate({-$padding.left}, 0)"
-	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
->
+<g class="axis y-axis pointer-events-none" transform="translate({-$padding.left}, 0)">
 	{#each tickVals as tick, i (i)}
 		<g class="tick tick-{tick}" transform="translate({xStart}, {$yScale(tick)})">
-			{#if gridlines !== false}
+			{#if gridlines === true}
 				<line
 					class="gridline"
 					stroke={tick === 0 ? '#353535' : stroke}

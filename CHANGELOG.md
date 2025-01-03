@@ -1,5 +1,18 @@
 # opennem-app
 
+## 1.20.1
+
+### Patch Changes
+
+- eff46a0: fix issue where x-axis background is set to white
+
+## 1.20.0
+
+### Minor Changes
+
+- f534c66: setup Studio routes
+- 33dd562: Merge studio routes
+
 ## 1.19.2
 
 ### Patch Changes

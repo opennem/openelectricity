@@ -154,7 +154,7 @@
 				{/if}
 				{#if $focusData}
 					<LineX xValue={$focusData} strokeArray="none" strokeColour="#C74523" />
-					<Dot value={$focusData} r={4} fill="#C74523" />
+					<!-- <Dot value={$focusData} r={4} {yKey} /> -->
 				{/if}
 			</g>
 		</Svg>

@@ -1,6 +1,6 @@
 /**
  * Note: this will mutate the bucket array
- * @param {{ bucket: TimeSeriesData[], dataset: StatsData[], dataProp: string}} param0
+ * @param {{ bucket: TimeSeriesData[], dataset: { [key: string]: any }[], dataProp: string}} param0
  * @returns {TimeSeriesData[]}
  */
 export default function ({ bucket, dataset, dataProp }) {

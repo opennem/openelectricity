@@ -1,7 +1,6 @@
 import { readable, writable } from 'svelte/store';
 import { browser } from '$app/environment';
 import { PUBLIC_EXPLORE_URL, PUBLIC_FEATURE_FLAGS } from '$env/static/public';
-import { de } from 'date-fns/locale';
 
 console.log('PUBLIC_FEATURE_FLAGS', JSON.parse(PUBLIC_FEATURE_FLAGS));
 

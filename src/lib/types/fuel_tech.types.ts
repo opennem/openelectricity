@@ -29,9 +29,11 @@ export type FuelTechCode =
 	| 'wind_offshore'
 	| 'nuclear'
 	| 'imports'
+	| 'import'
 	| 'exports'
 	| 'interconnector'
 	| 'demand_response'
+	| 'demand'
 	| 'bioenergy'
 	| 'coal'
 	| 'gas'
@@ -43,7 +45,10 @@ export type FuelTechCode =
 	| 'total_sources'
 	| 'total_loads'
 	| 'wind_solar'
-	| 'coal_gas';
+	| 'coal_gas'
+	| 'oil'
+	| 'vre' // Variable Renewable Energy
+	| 'residual'; // Residual;
 
 export type FuelTech = {
 	_id: string;

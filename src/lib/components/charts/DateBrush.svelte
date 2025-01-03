@@ -18,20 +18,27 @@
 		seriesNames: yKeys,
 		seriesData: dataset,
 		curveType,
+		curveFunction,
 		yDomain,
 		strokeWidth,
+		strokeArray,
 		xDomain,
 		formatTickX,
 		hoverData,
-		focusData
+		focusData,
+		xTicks
 	} = store;
 
 	export let dataXDomain;
 	export let axisXTicks;
 	export let xKey = 'date';
+	export let brushedLineStroke = '#C74523';
+	export let defaultChartHeightClasses = 'h-[70px]';
+	export let showLineData = true;
+	export let hoverDataX;
+	export let focusDataX;
 
 	const id = getSeqId();
-	const defaultChartHeightClasses = 'h-[70px]';
 	const clipPathId = `${id}-clip-path`;
 
 	/** @type {*} */
@@ -41,6 +48,10 @@
 	$: if (!dataXDomain) {
 		brushComponent?.clear();
 	}
+	$: hoverD = hoverDataX || $hoverData;
+	$: focusD = focusDataX || $focusData;
+
+	$: cType = typeof $curveType === 'function' ? $curveType : $curveFunction;
 </script>
 
 <div class="w-full {defaultChartHeightClasses} bg-light-warm-grey">
@@ -64,7 +75,7 @@
 			</defs>
 
 			<AxisX
-				ticks={axisXTicks}
+				ticks={$xTicks}
 				yTick={10}
 				gridlines={true}
 				strokeArray="3 6"
@@ -74,24 +85,31 @@
 			/>
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-				{#if $hoverData}
-					<LineX xValue={$hoverData} strokeArray="none" />
-					<Dot value={$hoverData} r={4} />
+				{#if hoverD}
+					<LineX xValue={hoverD} strokeArray="none" />
+					<Dot value={hoverD} r={4} />
 				{/if}
-				{#if $focusData}
-					<LineX xValue={$focusData} strokeArray="none" strokeColour="#C74523" />
-					<Dot value={$focusData} r={4} fill="#C74523" />
+				{#if focusD}
+					<LineX xValue={focusD} strokeArray="none" strokeColour="#C74523" />
+					<!-- <Dot value={focusD} r={4} fill="#C74523" /> -->
 				{/if}
 			</g>
 
-			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-				<Line stroke="#353535" strokeWidth={$strokeWidth} strokeArray="2" curveType={$curveType} />
-			</g>
-
-			{#if dataXDomain}
-				<g clip-path={clipPathId ? `url(#${clipPathId}-custom)` : ''}>
-					<Line stroke="black" strokeWidth="1.5" curveType={$curveType} />
+			{#if showLineData}
+				<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+					<Line
+						stroke="#353535"
+						strokeWidth={$strokeWidth}
+						strokeArray={$strokeArray}
+						curveType={cType}
+					/>
 				</g>
+
+				{#if dataXDomain}
+					<g clip-path={clipPathId ? `url(#${clipPathId}-custom)` : ''}>
+						<Line stroke={brushedLineStroke} strokeWidth="1.5" curveType={cType} />
+					</g>
+				{/if}
 			{/if}
 		</Svg>
 	</LayerCake>

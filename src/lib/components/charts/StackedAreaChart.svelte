@@ -15,6 +15,7 @@
 	import HatchPattern from './elements/defs/HatchPattern.svelte';
 	import LineX from './elements/annotations/LineX.svelte';
 	import Dot from './elements/annotations/Dot.svelte';
+	// import HoverDots from './elements/HoverDots.svelte';
 
 	/** @type {TimeSeriesData[]} */
 	export let dataset = [];
@@ -25,11 +26,14 @@
 
 	export let xKey = 'date';
 
-	/** @type {number[]} */
+	/** @type {number[] | number} */
 	export let yKey = [];
 
 	/** @type {Array.<number | null> | undefined} */
 	export let yDomain = undefined;
+
+	/** @type {*} */
+	export let xDomain = undefined;
 
 	export let zKey = '';
 
@@ -44,6 +48,13 @@
 
 	/** @type {*} */
 	export let yTicks = undefined;
+
+	/** @type {Boolean} */
+	export let snapTicks = true;
+
+	export let xGridlines = false;
+
+	export let chartPadding = { top: 0, right: 0, bottom: 40, left: 0 };
 
 	/** If true, overlay will take up the full width of the chart
 	 * If object with xStartValue and xEndValue, overlay will be a range
@@ -72,6 +83,8 @@
 
 	export let chartHeightClasses = '';
 
+	export let curveFunction = null;
+
 	/** @type {string | undefined} */
 	export let highlightId = '';
 
@@ -85,13 +98,7 @@
 	};
 	const yTweened = tweened(/** @type {number|null} */ (null), tweenOptions);
 
-	// $: maxY = yDomain ? yDomain[1] : null;
-	// $: maxArr = [...dataset.map((d) => d._max)];
-	// @ts-ignore
-	// $: datasetMax = maxArr ? Math.max(...maxArr) : 0;
-	// $: if (dataset) yTweened.set(maxY);
-	/** end */
-
+	$: isLine = chartType === 'line';
 	$: isArea = chartType === 'area';
 	$: stackedData = stack(dataset, seriesNames);
 	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
@@ -99,18 +106,15 @@
 	$: flatData = isArea ? flatten(stackedData) : flatten(groupedData, 'values');
 	$: y = isArea ? yKey : 'value';
 	$: z = isArea ? zKey : 'group';
+	$: clipPathId = clip ? `${id}-clip-path` : '';
+	$: clipPathAxisId = clip ? `${id}-clip-path-axis` : '';
 
 	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
-
-	// $: console.log('groupedData', groupedData);
-
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	// $: focusTime = focusData ? focusData.time || 0 : 0;
 </script>
 
 <div class="chart-container mb-4 {heightClasses}">
 	<LayerCake
-		padding={{ top: 0, right: 0, bottom: 40, left: 0 }}
+		padding={chartPadding}
 		x={(/** @type {*} */ d) => {
 			// return display === 'area' ? d[xKey] || d.data[xKey] : 'date';
 			return d[xKey] || d.data[xKey];
@@ -118,6 +122,7 @@
 		{y}
 		{z}
 		{yDomain}
+		{xDomain}
 		xScale={scaleUtc()}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
@@ -127,7 +132,7 @@
 	>
 		<Svg>
 			<defs>
-				<ClipPath id={`${id}-clip-path`} />
+				<ClipPath id={clipPathId} />
 			</defs>
 
 			{#if overlay}
@@ -147,78 +152,74 @@
 				<MultiLine />
 			{/if} -->
 
-			<AreaStacked
-				clipPathId={clip ? `${id}-clip-path` : ''}
-				{dataset}
-				display={chartType}
-				{highlightId}
-				on:mousemove
-				on:mouseout
-				on:pointerup
-			/>
+			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+				<AreaStacked
+					{dataset}
+					display={chartType}
+					{highlightId}
+					curveType={$curveFunction}
+					on:mousemove
+					on:mouseout
+					on:pointerup
+				/>
+			</g>
 		</Svg>
 
 		<Svg pointerEvents={false}>
 			<defs>
 				<HatchPattern id={`${id}-hatch-pattern`} stroke={overlayStroke} />
-
-				<ClipPath id={`${id}-clip-path`} />
+				<ClipPath id={clipPathId} />
 			</defs>
 
-			{#if overlay}
-				<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
-			{/if}
+			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+				{#if overlay}
+					<Overlay fill="url(#{`${id}-hatch-pattern`})" {...overlay} />
+				{/if}
 
-			{#if blankOverlay}
-				<Overlay fill="#ffffff" {...blankOverlay} />
-			{/if}
+				{#if blankOverlay}
+					<Overlay fill="#ffffff" {...blankOverlay} />
+				{/if}
 
-			{#if overlayLine}
-				<LineX xValue={overlayLine} />
-			{/if}
+				{#if overlayLine}
+					<LineX xValue={overlayLine} />
+				{/if}
 
-			<AxisY
-				clipPathId={clip ? `${id}-clip-path` : ''}
-				ticks={yTicks}
-				xTick={5}
-				formatTick={formatTickY}
-				gridlines={true}
-				stroke="#33333344"
-			/>
-			<AxisX
-				ticks={xTicks}
-				gridlines={false}
-				formatTick={formatTickX}
-				tickMarks={true}
-				snapTicks={true}
-			/>
+				{#if hoverData}
+					<LineX xValue={hoverData} strokeArray="none" />
+				{/if}
+				{#if focusData}
+					<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+				{/if}
+				{#if isLine}
+					<Dot domains={seriesNames} value={hoverData} />
+				{/if}
+			</g>
 		</Svg>
 
-		<Html pointerEvents={false}>
-			<!-- <HoverText {hoverData} isShapeStack={true} position="bottom">
-				<span class="text-[10px] block">
-					{formatTickX(hoverTime)}
-				</span>
-			</HoverText> -->
-
-			<!-- <HoverText hoverData={focusData} isShapeStack={true} position="bottom">
-				<span class="text-[10px] block">
-					{formatTickX(focusTime)}
-				</span>
-			</HoverText> -->
-
-			<!-- <HoverLine hoverData={focusData} lineColour="#C74523" borderStyle="dashed" /> -->
-			<!-- <HoverLine {hoverData} /> -->
-		</Html>
-
 		<Svg pointerEvents={false}>
-			<!-- <HoverDots {dataset} {hoverData} /> -->
-			{#if hoverData}
-				<LineX xValue={hoverData} strokeArray="none" />
-			{/if}
-			{#if focusData}
-				<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
-			{/if}
+			<defs>
+				<HatchPattern id={`${id}-hatch-pattern`} stroke={overlayStroke} />
+				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
+			</defs>
+
+			<g clip-path={clipPathAxisId ? `url(#${clipPathAxisId})` : ''}>
+				<AxisY
+					ticks={yTicks}
+					xTick={5}
+					formatTick={formatTickY}
+					gridlines={true}
+					stroke="#33333344"
+				/>
+
+				<AxisX
+					ticks={xTicks}
+					gridlines={xGridlines}
+					formatTick={formatTickX}
+					tickMarks={true}
+					{snapTicks}
+					stroke="#33333344"
+				/>
+			</g>
 		</Svg>
 	</LayerCake>
 
