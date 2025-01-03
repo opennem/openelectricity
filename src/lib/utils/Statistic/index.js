@@ -122,7 +122,8 @@ Statistic.prototype.invertValues = function (/** @type {string[]} */ loads) {
 
 Statistic.prototype.group = function (
 	/** @type {Object} */ groupMap,
-	/** @type {string[]} */ loads = []
+	/** @type {string[]} */ loads = [],
+	/** @type {boolean} */ useProvidedId = false
 ) {
 	/**
 	 *
@@ -152,12 +153,13 @@ Statistic.prototype.group = function (
 
 		if (filtered.length > 0) {
 			const data = filtered[0][this.statsType];
+			const type = filtered[0].type;
 			const groupObject = {
 				...filtered[0],
 				code,
 				fuel_tech: code,
 				// id: `au.${code}.grouped.${this.statsType}`,
-				id: `au.${code}.grouped`,
+				id: useProvidedId ? filtered[0].id : `${code}.${type}.grouped`,
 				isLoad: loads.includes(code),
 				[this.statsType]: { ...data }
 			};

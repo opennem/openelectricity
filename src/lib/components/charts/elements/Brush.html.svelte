@@ -176,10 +176,10 @@
 		height: 100%;
 		cursor: move;
 		/* mix-blend-mode: difference; */
-		background: #f1f0ed;
+		background: #963f2937;
 
-		border-left: 1px solid #c6c6c6;
-		border-right: 1px solid #c6c6c6;
+		/* border-left: 2px solid white;
+		border-right: 2px solid white; */
 	}
 
 	.brush-handle {

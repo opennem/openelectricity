@@ -38,6 +38,7 @@ export const fuelTechNameMap = {
 	nuclear: 'Nuclear',
 
 	distillate: 'Distillate',
+	oil: 'Oil',
 
 	gas_ccgt: 'Gas (CCGT)',
 	gas_ccgt_ccs: 'Gas (CCGT CCS)',
@@ -82,6 +83,7 @@ export const fuelTechOrder = [
 	'bioenergy_biogas',
 	'bioenergy_biomass',
 	'distillate',
+	'oil',
 	'gas_steam',
 	'gas_ccgt',
 	'gas_ocgt',
@@ -113,6 +115,7 @@ export const fuelTechColourMap = {
 	coal_brown: '#675B42',
 
 	distillate: '#E46E56',
+	oil: '#E15C34',
 
 	gas: '#E78114',
 	gas_ccgt: '#ED9C2C',

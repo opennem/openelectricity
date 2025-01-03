@@ -20,7 +20,7 @@
 	/** @type {string} [stroke='#000'] - The gridline's stroke colour. */
 	export let stroke = '#efefef';
 
-	export let strokeArray = 'none';
+	export let strokeArray = '3';
 
 	export let clipPathId = '';
 
@@ -74,9 +74,13 @@
 	class:snapTicks
 	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
 >
+	<rect class="axis-background" x="0" y={$height} width={$width} height={20} fill="white" />
 	{#each tickVals as tick, i (tick)}
 		<g class="tick tick-{i}" transform="translate({$xScale(tick)}, {Math.max(...$yRange)})">
-			{#if gridlines !== false}
+			<!-- stroke={i === 0 || i === tickVals.length - 1 ? '#F1F0ED' : stroke}
+					stroke-dasharray={i === 0 || i === tickVals.length - 1 ? 'none' : strokeArray} -->
+
+			{#if gridlines === true}
 				<line
 					class="gridline"
 					{stroke}

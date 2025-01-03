@@ -1,7 +1,7 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
 
-	import { area, line } from 'd3-shape';
+	import { area, line, curveLinear } from 'd3-shape';
 	import { closestTo } from 'date-fns';
 
 	const { data, xGet, xScale, yScale, zGet, yGet } = getContext('LayerCake');
@@ -19,22 +19,32 @@
 
 	export let display = 'area';
 
+	/** @type {*} */
+	export let curveType = curveLinear;
+
 	$: compareDates = [...new Set(dataset.map((d) => d.date))];
 
 	$: areaGen = area()
 		.x((d) => $xGet(d))
 		.y0((d) => $yScale(d[0]))
 		.y1((d) => $yScale(d[1]))
+		.curve(curveType)
 		.defined((d) => !isNaN(d[0]) && !isNaN(d[1]));
 
 	$: lineGen = line(
 		(d) => $xGet(d),
 		(d) => $yGet(d)
-	).defined((d) => d.value !== null && !isNaN(d.value));
+	)
+		.curve(curveType)
+		.defined((d) => d.value !== null && !isNaN(d.value));
 
-	$: opacity = (d) => {
+	$: lineOpacity = (d) => {
 		if (highlightId === null || highlightId === '') return 1;
-		return highlightId === d.key || highlightId === d.group ? 1 : 0.1;
+		return highlightId === d.key || highlightId === d.group ? 1 : 0.3;
+	};
+	$: areaOpacity = (d) => {
+		if (highlightId === null || highlightId === '') return 1;
+		return highlightId === d.key || highlightId === d.group ? 1 : 0.5;
 	};
 
 	/**
@@ -90,21 +100,56 @@
 	}
 </script>
 
-<g class="area-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+{#if display === 'line'}
 	{#each $data as d, i (i)}
+		{#if d.values.length > 1}
+			{#each d.values as point (point.time)}
+				<circle
+					class="focus:outline-0"
+					role="presentation"
+					cx={$xGet(point)}
+					cy={$yGet(point)}
+					r="5"
+					fill="transparent"
+					stroke-width="0"
+					on:mousemove={(e) => pointermove(e, d.key || d.group)}
+					on:mouseout={mouseout}
+					on:touchmove={(e) => pointermove(e, d.key || d.group)}
+					on:blur={mouseout}
+					on:pointerup={(e) => pointerup(e, d.key || d.group)}
+				/>
+			{/each}
+		{/if}
+
 		<path
 			role="presentation"
-			class="path-area focus:outline-0"
-			d={display === 'area' ? areaGen(d) : lineGen(d.values)}
-			fill={display === 'area' ? getZFill(d) : 'transparent'}
-			stroke={display === 'area' ? 'none' : $zGet(d)}
-			stroke-width={display === 'area' ? '0' : '2px'}
-			opacity={opacity(d)}
-			on:mousemove={(e) => pointermove(e, d.key || d.group)}
-			on:mouseout={mouseout}
-			on:touchmove={(e) => pointermove(e, d.key || d.group)}
-			on:blur={mouseout}
-			on:pointerup={(e) => pointerup(e, d.key || d.group)}
+			class="path-area focus:outline-0 pointer-events-none"
+			d={lineGen(d.values)}
+			fill="transparent"
+			stroke={$zGet(d)}
+			stroke-width={'1.5'}
+			opacity={lineOpacity(d)}
 		/>
 	{/each}
-</g>
+{/if}
+
+{#if display === 'area'}
+	<g class="area-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
+		{#each $data as d, i (i)}
+			<path
+				role="presentation"
+				class="path-area focus:outline-0"
+				d={areaGen(d)}
+				fill={getZFill(d)}
+				stroke={'none'}
+				stroke-width={'0'}
+				opacity={areaOpacity(d)}
+				on:mousemove={(e) => pointermove(e, d.key || d.group)}
+				on:mouseout={mouseout}
+				on:touchmove={(e) => pointermove(e, d.key || d.group)}
+				on:blur={mouseout}
+				on:pointerup={(e) => pointerup(e, d.key || d.group)}
+			/>
+		{/each}
+	</g>
+{/if}
