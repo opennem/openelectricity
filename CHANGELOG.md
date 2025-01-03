@@ -1,5 +1,11 @@
 # opennem-app
 
+## 1.20.1
+
+### Patch Changes
+
+- eff46a0: fix issue where x-axis background is set to white
+
 ## 1.20.0
 
 ### Minor Changes
