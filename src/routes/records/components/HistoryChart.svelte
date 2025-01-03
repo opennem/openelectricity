@@ -21,6 +21,7 @@
 		yDomain,
 		convertAndFormatValue,
 		hoverData,
+		focusData,
 		hoverTime,
 		curveType,
 		strokeWidth,
@@ -163,6 +164,8 @@
 
 	<DateBrush
 		store={dateBrushStore}
+		hoverDataX={$hoverData}
+		focusDataX={$focusData}
 		{axisXTicks}
 		dataXDomain={brushedRange}
 		on:brushed={handleBrushed}

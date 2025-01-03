@@ -1,5 +1,6 @@
 <script>
 	import { getContext, createEventDispatcher } from 'svelte';
+	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 	import { getFormattedDate, getFormattedMonth, getFormattedTime } from '$lib/utils/formatters.js';
 
 	export let sortedHistoryData;
@@ -48,6 +49,12 @@
 				return getFormattedMonth(date, undefined, $timeZone);
 			};
 		}
+
+		// if (period === 'quarter') {
+		// 	return function (/** @type {Date} */ date) {
+		// 		return formatDateBasedOnInterval(date, '1Q');
+		// 	};
+		// }
 
 		return function (/** @type {Date} */ date) {
 			return getFormattedMonth(date, 'short', $timeZone);
