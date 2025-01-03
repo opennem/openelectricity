@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { parseISO } from 'date-fns';
 
 	import { browser } from '$app/environment';
@@ -9,21 +11,13 @@
 	import recordDescription from '../../page-data-options/record-description';
 	import getRelativeTime from '../../page-data-options/relative-time';
 
-	export let data;
+	let { data } = $props();
 
 	const id = data.id;
 	/** @type {MilestoneRecord} */
-	let currentRecord;
+	let currentRecord = $state();
 
-	$: if (browser) {
-		fetchRecord(id).then((record) => {
-			console.log('record', record);
 
-			currentRecord = record;
-		});
-	}
-
-	$: fuelTech = currentRecord?.fueltech_id || '';
 
 	/**
 	 * Format a date
@@ -51,6 +45,16 @@
 		const data = jsonData.data && jsonData.data.length ? jsonData.data[0] : {};
 		return data;
 	}
+	run(() => {
+		if (browser) {
+			fetchRecord(id).then((record) => {
+				console.log('record', record);
+
+				currentRecord = record;
+			});
+		}
+	});
+	let fuelTech = $derived(currentRecord?.fueltech_id || '');
 </script>
 
 <div class="py-12">

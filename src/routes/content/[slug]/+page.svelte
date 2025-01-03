@@ -2,8 +2,14 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import RichText from '$lib/components/text-components/RichText.svelte';
 
-	/** @type {import('./$types').PageData} */
-	export let data;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('./$types').PageData} data
+	 */
+
+	/** @type {Props} */
+	let { data } = $props();
 </script>
 
 <Meta title={data.title} image="/img/preview.jpg" />

@@ -1,14 +1,22 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext, createEventDispatcher } from 'svelte';
 
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
-	export let strokeWidth = '4px';
 
-	export let opacity = 1;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [strokeWidth]
+	 * @property {number} [opacity]
+	 */
 
-	$: path = (values) => {
+	/** @type {Props} */
+	let { strokeWidth = '4px', opacity = 1 } = $props();
+
+	let path = $derived((values) => {
 		return values.length
 			? 'M' +
 					values
@@ -17,18 +25,20 @@
 						})
 						.join('L')
 			: '';
-	};
+	});
 
-	$: console.log('$data', $data);
+	run(() => {
+		console.log('$data', $data);
+	});
 </script>
 
 <g
 	class="line-group"
 	role="group"
-	on:mouseout={() => {
+	onmouseout={() => {
 		dispatch('mouseout');
 	}}
-	on:blur={() => {
+	onblur={() => {
 		dispatch('mouseout');
 	}}
 >

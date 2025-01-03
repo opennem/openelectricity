@@ -22,31 +22,41 @@
 			class="flex flex-col gap-8 mt-8 divide-y md:divide-y-0 divide-dotted divide-mid-warm-grey border-y md:border-y-0 border-dotted border-mid-warm-grey"
 		>
 			<Resource>
-				<IconDocumentText slot="icon" class="w-12 h-12" />
+				{#snippet icon()}
+								<IconDocumentText  class="w-12 h-12" />
+							{/snippet}
 				<h5>Developer Documentation</h5>
 				<a href="https://developers.opennem.org.au">https://developers.opennem.org.au</a>
 			</Resource>
 
 			<Resource>
-				<IconGlobeAlt slot="icon" class="w-12 h-12" />
+				{#snippet icon()}
+								<IconGlobeAlt  class="w-12 h-12" />
+							{/snippet}
 				<h5>OpenAPI</h5>
 				<a href="https://api.opennem.org.au/docs">https://api.opennem.org.au/docs</a>
 			</Resource>
 
 			<Resource>
-				<IconGithub slot="icon" class="w-12 h-12" />
+				{#snippet icon()}
+								<IconGithub  class="w-12 h-12" />
+							{/snippet}
 				<h5>GitHub</h5>
 				<a href="https://github.com/opennem">https://github.com/opennem</a>
 			</Resource>
 
 			<Resource>
-				<IconPypi slot="icon" class="w-14 h-14" />
+				{#snippet icon()}
+								<IconPypi  class="w-14 h-14" />
+							{/snippet}
 				<h5>Python Package Index</h5>
 				<a href="https://pypi.org/project/opennem">https://pypi.org/project/opennem</a>
 			</Resource>
 
 			<Resource>
-				<IconTwitter slot="icon" class="w-12 h-12" />
+				{#snippet icon()}
+								<IconTwitter  class="w-12 h-12" />
+							{/snippet}
 				<h5>Social Media</h5>
 				<a href="https://twitter.com/opennem">https://twitter.com/opennem</a>
 			</Resource>

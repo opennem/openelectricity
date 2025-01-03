@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 	import Switch from '$lib/components/Switch.svelte';
 
@@ -23,57 +25,59 @@
 		{ value: 'capacityDataVizStore', label: 'Capacity' }
 	];
 
-	let selectedStoreName = 'energyDataVizStore';
-	let selectedScenarioId = '';
-	let selectedScenarioPathwayId = '';
+	let selectedStoreName = $state('energyDataVizStore');
+	let selectedScenarioId = $state('');
+	let selectedScenarioPathwayId = $state('');
 
-	$: if (!selectedScenarioId) {
-		selectedScenarioId = $multiSelectionData[0].model + '-' + $multiSelectionData[0].scenario;
-		selectedScenarioPathwayId = $multiSelectionData[0].id;
-	}
+	run(() => {
+		if (!selectedScenarioId) {
+			selectedScenarioId = $multiSelectionData[0].model + '-' + $multiSelectionData[0].scenario;
+			selectedScenarioPathwayId = $multiSelectionData[0].id;
+		}
+	});
 
-	$: selectedScenario = $multiSelectionData.find(
+	let selectedScenario = $derived($multiSelectionData.find(
 		(d) => `${d.model}-${d.scenario}` === selectedScenarioId
-	);
+	));
 
-	$: isEmissionsView = selectedStoreName === 'emissionsDataVizStore';
+	let isEmissionsView = $derived(selectedStoreName === 'emissionsDataVizStore');
 
-	$: selectedStore = dataVizStores[selectedStoreName];
-	$: seriesNames = selectedStore.seriesNames;
-	$: seriesColours = selectedStore.seriesColours;
-	$: xTicks = selectedStore.miniXTicks;
-	$: formatTickX = selectedStore.formatTickX;
-	$: formatTickY = selectedStore.convertAndFormatValue;
-	$: chartOverlay = selectedStore.chartOverlay;
-	$: chartOverlayLine = selectedStore.chartOverlayLine;
-	$: chartOverlayHatchStroke = selectedStore.chartOverlayHatchStroke;
+	let selectedStore = $derived(dataVizStores[selectedStoreName]);
+	let seriesNames = $derived(selectedStore.seriesNames);
+	let seriesColours = $derived(selectedStore.seriesColours);
+	let xTicks = $derived(selectedStore.miniXTicks);
+	let formatTickX = $derived(selectedStore.formatTickX);
+	let formatTickY = $derived(selectedStore.convertAndFormatValue);
+	let chartOverlay = $derived(selectedStore.chartOverlay);
+	let chartOverlayLine = $derived(selectedStore.chartOverlayLine);
+	let chartOverlayHatchStroke = $derived(selectedStore.chartOverlayHatchStroke);
 	// $: hoverData = selectedStore.hoverData;
 	// $: focusData = selectedStore.focusData;
-	$: hoverTime = selectedStore.hoverTime;
-	$: focusTime = selectedStore.focusTime;
-	$: seriesData = selectedStore.seriesData;
-	$: displayUnit = selectedStore.displayUnit;
+	let hoverTime = $derived(selectedStore.hoverTime);
+	let focusTime = $derived(selectedStore.focusTime);
+	let seriesData = $derived(selectedStore.seriesData);
+	let displayUnit = $derived(selectedStore.displayUnit);
 
-	$: intensityStore = dataVizStores.intensityDataVizStore;
-	$: intensitySeriesNames = intensityStore.seriesNames;
-	$: intensityFormatTickY = intensityStore.convertAndFormatValue;
-	$: intensitySeriesColours = intensityStore.seriesColours;
-	$: intensityHoverData = intensityStore.hoverData;
-	$: intensityFocusData = intensityStore.focusData;
-	$: intensitySeriesData = intensityStore.seriesData;
-	$: intensityDisplayUnit = intensityStore.displayUnit;
+	let intensityStore = $derived(dataVizStores.intensityDataVizStore);
+	let intensitySeriesNames = $derived(intensityStore.seriesNames);
+	let intensityFormatTickY = $derived(intensityStore.convertAndFormatValue);
+	let intensitySeriesColours = $derived(intensityStore.seriesColours);
+	let intensityHoverData = $derived(intensityStore.hoverData);
+	let intensityFocusData = $derived(intensityStore.focusData);
+	let intensitySeriesData = $derived(intensityStore.seriesData);
+	let intensityDisplayUnit = $derived(intensityStore.displayUnit);
 
-	$: seriesPathways = $multiSelectionData.reduce((acc, d) => {
+	let seriesPathways = $derived($multiSelectionData.reduce((acc, d) => {
 		acc[d.id] = d.pathway;
 		return acc;
-	}, {});
+	}, {}));
 
 	/** @type {TimeSeriesData[]} */
-	let mergedSeriesData = [];
-	$: seriesNamesWithoutHistorical = $seriesNames.filter(
+	let mergedSeriesData = $state([]);
+	let seriesNamesWithoutHistorical = $derived($seriesNames.filter(
 		(/** @type {string} */ name) => name !== 'historical'
-	);
-	$: {
+	));
+	run(() => {
 		mergedSeriesData = $seriesData.map((/** @type {TimeSeriesData} */ d) => {
 			const obj = {
 				...d
@@ -88,16 +92,16 @@
 
 			return obj;
 		});
-	}
-	$: hoverData = mergedSeriesData.find((d) => d.time === $hoverTime);
-	$: focusData = mergedSeriesData.find((d) => d.time === $focusTime);
+	});
+	let hoverData = $derived(mergedSeriesData.find((d) => d.time === $hoverTime));
+	let focusData = $derived(mergedSeriesData.find((d) => d.time === $focusTime));
 
 	/** @type {TimeSeriesData[]} */
-	let mergedIntensityData = [];
-	$: intensitySeriesNamesWithoutHistorical = $intensitySeriesNames.filter(
+	let mergedIntensityData = $state([]);
+	let intensitySeriesNamesWithoutHistorical = $derived($intensitySeriesNames.filter(
 		(/** @type {string} */ name) => name !== 'historical'
-	);
-	$: {
+	));
+	run(() => {
 		mergedIntensityData = $intensitySeriesData.map((/** @type {TimeSeriesData} */ d) => {
 			const obj = {
 				...d
@@ -111,7 +115,7 @@
 
 			return obj;
 		});
-	}
+	});
 
 	// $: console.log('hoverData', hoverData);
 

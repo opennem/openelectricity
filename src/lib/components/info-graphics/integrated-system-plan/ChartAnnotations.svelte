@@ -1,6 +1,12 @@
 <script>
-	export let scenarioTitle = '';
-	export let description = '';
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [scenarioTitle]
+	 * @property {string} [description]
+	 */
+
+	/** @type {Props} */
+	let { scenarioTitle = '', description = '' } = $props();
 </script>
 
 <div class="relative">

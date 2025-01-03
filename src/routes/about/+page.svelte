@@ -3,7 +3,7 @@
 	import PageHeader from '$lib/components/PageHeader.svelte';
 	import SectionLink from '$lib/components/SectionLink.svelte';
 	import Social from './Social.svelte';
-	export let data;
+	let { data } = $props();
 
 	const team = data.team;
 </script>

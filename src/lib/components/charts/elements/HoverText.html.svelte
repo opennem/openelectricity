@@ -1,28 +1,36 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 
 	const { xGet, height } = getContext('LayerCake');
 
-	/** @type {TimeSeriesData | undefined} */
-	export let hoverData = undefined;
+	
 
-	export let isShapeStack = false;
 
-	/** @type {'top' | 'bottom'} */
-	export let position = 'top';
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData | undefined} [hoverData]
+	 * @property {boolean} [isShapeStack]
+	 * @property {'top' | 'bottom'} [position]
+	 * @property {import('svelte').Snippet} [children]
+	 */
 
-	let visible = false;
-	let style = '';
+	/** @type {Props} */
+	let {
+		hoverData = undefined,
+		isShapeStack = false,
+		position = 'top',
+		children
+	} = $props();
+
+	let visible = $state(false);
+	let style = $state('');
 
 	/** @type {HTMLElement} */
-	let textContainer;
+	let textContainer = $state();
 
-	$: if (hoverData) {
-		updateCoords(hoverData);
-		visible = true;
-	} else {
-		visible = false;
-	}
 
 	/**
 	 * @param {TimeSeriesData} d
@@ -41,10 +49,18 @@
 			style = `left: ${left}px; top: ${$height + 7}px`;
 		}
 	}
+	run(() => {
+		if (hoverData) {
+			updateCoords(hoverData);
+			visible = true;
+		} else {
+			visible = false;
+		}
+	});
 </script>
 
 {#if visible}
 	<div class="absolute whitespace-nowrap" {style} bind:this={textContainer}>
-		<slot />
+		{@render children?.()}
 	</div>
 {/if}

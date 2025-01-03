@@ -1,6 +1,12 @@
 <script>
-	/** @type {import('$lib/types/unit.types').Unit[]} */
-	export let data = [];
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('$lib/types/unit.types').Unit[]} [data]
+	 */
+
+	/** @type {Props} */
+	let { data = [] } = $props();
 
 	const columns = [
 		{ header: 'Unit', prop: 'code' },
@@ -18,10 +24,10 @@
 		 */
 		(d, prop) => d[prop];
 
-	$: units = data.map((unit) => ({
+	let units = $derived(data.map((unit) => ({
 		...unit,
 		code: decodeURIComponent(unit.code)
-	}));
+	})));
 </script>
 
 <table class="w-full my-4">

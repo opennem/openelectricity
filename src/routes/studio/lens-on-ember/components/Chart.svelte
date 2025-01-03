@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
@@ -9,7 +11,7 @@
 
 	import Tooltip from './Tooltip.svelte';
 
-	export let store;
+	let { store } = $props();
 
 	const {
 		title,
@@ -43,9 +45,9 @@
 
 	const { selectedRange } = getContext('filters');
 
-	let showOptions = false;
+	let showOptions = $state(false);
 
-	$: updatedSeriesData = $seriesScaledData.map((/** @type {TimeSeriesData} */ d) => {
+	let updatedSeriesData = $derived($seriesScaledData.map((/** @type {TimeSeriesData} */ d) => {
 		/** @type {TimeSeriesData} */
 		const newObj = { ...d };
 		// get min and max values for each time series
@@ -67,25 +69,27 @@
 		});
 
 		return newObj;
-	});
+	}));
 
 	/** @type {*} */
-	let yDomain = undefined;
-	$: if ($isDataScaleTypeProportion && !$isChartTypeLine) {
-		yDomain = [0, 100];
-	} else {
-		const addTenPercent = (val) => val + val * 0.1;
-		const maxY = updatedSeriesData.map((d) => d._max);
-		// @ts-ignore
-		const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
+	let yDomain = $state(undefined);
+	run(() => {
+		if ($isDataScaleTypeProportion && !$isChartTypeLine) {
+			yDomain = [0, 100];
+		} else {
+			const addTenPercent = (val) => val + val * 0.1;
+			const maxY = updatedSeriesData.map((d) => d._max);
+			// @ts-ignore
+			const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
 
-		const minY = updatedSeriesData.map((d) => d._min);
+			const minY = updatedSeriesData.map((d) => d._min);
 
-		// @ts-ignore
-		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
+			// @ts-ignore
+			const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
 
-		yDomain = [Math.floor(datasetMin), Math.ceil(datasetMax)];
-	}
+			yDomain = [Math.floor(datasetMin), Math.ceil(datasetMax)];
+		}
+	});
 	// $: updatedYDomain = (() => {
 	// 	if ($isDataScaleTypeProportion && !$isChartTypeLine) return [0, 100];
 
@@ -104,7 +108,7 @@
 	// 	return [Math.floor(datasetMin), Math.ceil(datasetMax)];
 	// })();
 
-	$: updatedHoverData = $hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null;
+	let updatedHoverData = $derived($hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null);
 
 	function moveToNextDisplayPrefix() {
 		$displayPrefix = getNextPrefix();
@@ -115,7 +119,7 @@
 	{#if $visibleSeriesNames.length}
 		<div
 			use:clickoutside
-			on:clickoutside={() => (showOptions = false)}
+			onclickoutside={() => (showOptions = false)}
 			class="sticky top-[74px] md:top-[105px] z-20"
 		>
 			<header
@@ -125,7 +129,7 @@
 				<div class="flex gap-1 items-center">
 					<button
 						class="text-mid-warm-grey hover:text-dark-grey"
-						on:click={() => (showOptions = !showOptions)}
+						onclick={() => (showOptions = !showOptions)}
 					>
 						<EllipsisVertical class="size-8" />
 					</button>
@@ -140,7 +144,7 @@
 						{:else if $allowPrefixSwitch}
 							<button
 								class="font-light text-xs text-mid-grey hover:underline"
-								on:click={moveToNextDisplayPrefix}
+								onclick={moveToNextDisplayPrefix}
 							>
 								{$displayUnit || ''}
 							</button>

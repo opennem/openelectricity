@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 
@@ -11,19 +13,19 @@
 		fuelTechOptions
 	} from './page-data-options/filters.js';
 
-	export let data;
+	let { data } = $props();
 	let recordsData = [];
-	let totalRecords = 0;
-	let currentPage = data.page || 1;
-	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
+	let totalRecords = $state(0);
+	let currentPage = $state(data.page || 1);
+	let currentStartRecordIndex = $state((currentPage - 1) * 100 + 1);
 
 	let errorMessage = '';
 
 	/** @type {string[]} */
 	let checkedRegions =
-		data.regions && data.regions.length
+		$state(data.regions && data.regions.length
 			? data.regions
-			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']);
 
 	/** @type {string[]} */
 	let checkedFuelTechs =
@@ -31,15 +33,10 @@
 
 	/** @type {string[]} */
 	let checkedPeriods =
-		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value);
+		$state(data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value));
 
 	let recordIdSearch = data.stringFilter || '';
 
-	$: fetchRecords(currentPage, checkedRegions, checkedPeriods);
-	$: totalPages = Math.ceil(totalRecords / 100);
-	$: currentLastRecordIndex = currentStartRecordIndex + 99;
-	$: lastRecordIndex =
-		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
 	function getFilterParams({ regions, periods, fuelTechs, stringFilter }) {
 		const validRegions = regions.filter((r) => r !== '_all');
@@ -134,6 +131,13 @@
 		checkedFuelTechs = detail.checkedFuelTechs;
 		updateCurrentPage(1);
 	}
+	run(() => {
+		fetchRecords(currentPage, checkedRegions, checkedPeriods);
+	});
+	let totalPages = $derived(Math.ceil(totalRecords / 100));
+	let currentLastRecordIndex = $derived(currentStartRecordIndex + 99);
+	let lastRecordIndex =
+		$derived(currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex);
 </script>
 
 <Meta title="Records" image="/img/preview.jpg" />

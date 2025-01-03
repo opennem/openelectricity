@@ -1,11 +1,21 @@
 <script>
-	export let disabled = false;
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [disabled]
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let { disabled = false, children, ...rest } = $props();
 </script>
 
 <button
-	on:click
-	class="button rounded-lg border-solid border border-black p-3 font-space appearance-none font-medium bg-white hover:bg-dark-grey text-dark-grey hover:text-white {$$restProps.class}"
+	onclick={bubble('click')}
+	class="button rounded-lg border-solid border border-black p-3 font-space appearance-none font-medium bg-white hover:bg-dark-grey text-dark-grey hover:text-white {rest.class}"
 	{disabled}
 >
-	<slot />
+	{@render children?.()}
 </button>

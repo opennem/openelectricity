@@ -1,12 +1,21 @@
 <script>
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { getContext, createEventDispatcher } from 'svelte';
 	import { color } from 'd3-color';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { groupOptions } from '../page-data-options/groups';
 	import TableHeader from './TableHeader.svelte';
 
-	/** @type {string[]} */
-	export let seriesLoadsIds = [];
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string[]} [seriesLoadsIds]
+	 */
+
+	/** @type {Props} */
+	let { seriesLoadsIds = [] } = $props();
 
 	const dispatch = createEventDispatcher();
 	const { selectedFuelTechGroup } = getContext('filters');
@@ -60,19 +69,19 @@
 	// $: console.log('energySeriesNames', $energySeriesNames);
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
 
-	$: sourceNames = $energyVisibleSeriesNames
+	let sourceNames = $derived($energyVisibleSeriesNames
 		.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
-		.reverse();
+		.reverse());
 
-	$: loadNames = $energyVisibleSeriesNames
+	let loadNames = $derived($energyVisibleSeriesNames
 		.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
-		.reverse();
+		.reverse());
 
-	$: combinedSeriesNames = [
+	let combinedSeriesNames = $derived([
 		...[...$energySeriesNames].reverse(),
 		...[...$emissionsSeriesNames].reverse()
-	];
-	$: uniqueSeriesWithoutType = [
+	]);
+	let uniqueSeriesWithoutType = $derived([
 		...new Set(
 			combinedSeriesNames.map((id) => {
 				// only want the first part of the id
@@ -80,9 +89,9 @@
 				return parts[0];
 			})
 		)
-	];
+	]);
 
-	$: energySourcesTotal = $energyHoverData
+	let energySourcesTotal = $derived($energyHoverData
 		? sourceNames.reduce(
 				/**
 				 * @param {number} acc
@@ -100,9 +109,9 @@
 				(acc, id) => acc + $energyFocusData[id],
 				0
 		  )
-		: 0;
+		: 0);
 
-	$: energyLoadsTotal = $energyHoverData
+	let energyLoadsTotal = $derived($energyHoverData
 		? loadNames.reduce(
 				/**
 				 * @param {number} acc
@@ -120,9 +129,9 @@
 				(acc, id) => acc + $energyFocusData[id],
 				0
 		  )
-		: 0;
+		: 0);
 
-	$: emissionsTotal = $emissionsHoverData
+	let emissionsTotal = $derived($emissionsHoverData
 		? $emissionsVisibleSeriesNames.reduce(
 				/**
 				 * @param {number} acc
@@ -140,7 +149,7 @@
 				(acc, id) => acc + $emissionsFocusData[id],
 				0
 		  )
-		: 0;
+		: 0);
 
 	let isMetaPressed = false;
 
@@ -212,7 +221,7 @@
 	}
 </script>
 
-<svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
+<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
 
 <div class="sticky top-[105px] flex flex-col gap-2">
 	<table class="w-full table-fixed border border-warm-grey mb-8">
@@ -248,7 +257,7 @@
 						<span class="block text-xs">Generation</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
+							onclick={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
 						>
 							{$energyDisplayUnit}
 						</button>
@@ -260,7 +269,7 @@
 						<span class="block text-xs">Emissions</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
+							onclick={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
 						>
 							{$emissionsDisplayUnit}
 						</button>
@@ -274,7 +283,7 @@
 				<th class="border-b border-warm-grey">
 					<span class="ml-3"> Net total </span>
 				</th>
-				<th class="border-b border-warm-grey" />
+				<th class="border-b border-warm-grey"></th>
 
 				<th class="border-b border-warm-grey">
 					<div class="font-mono flex flex-col items-end">
@@ -311,11 +320,11 @@
 					? $emissionsFocusData[emissionsName]
 					: ''}
 				<tr
-					on:click={() => handleRowClick(name)}
-					on:mouseenter={() => handleMouseenter(energyName, emissionsName)}
-					on:mouseleave={() => handleMouseleave()}
-					on:touchstart={() => handleTouchstart(name)}
-					on:touchend
+					onclick={() => handleRowClick(name)}
+					onmouseenter={() => handleMouseenter(energyName, emissionsName)}
+					onmouseleave={() => handleMouseleave()}
+					ontouchstart={() => handleTouchstart(name)}
+					ontouchend={bubble('touchend')}
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
 					class:opacity-50={$energyHiddenSeriesNames.includes(energyName)}
 				>
@@ -324,13 +333,13 @@
 							{#if $energyHiddenSeriesNames.includes(energyName)}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
-								/>
+								></div>
 							{:else}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded"
 									style:background-color={$energySeriesColours[energyName]}
 									style:border-color={darken($energySeriesColours[energyName])}
-								/>
+								></div>
 							{/if}
 
 							<div>
@@ -370,7 +379,7 @@
 
 		<tfoot>
 			<tr>
-				<td class="h-4" />
+				<td class="h-4"></td>
 			</tr>
 		</tfoot>
 	</table>

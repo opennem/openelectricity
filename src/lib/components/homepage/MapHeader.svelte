@@ -1,13 +1,25 @@
 <script>
 	import Switch from '../Switch.svelte';
-	export let mapTitle = '';
-	export let mapMode = '';
-	export let dispatch = '';
-	/** @type {(value: string) => void} */
-	export let onChange;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [mapTitle]
+	 * @property {string} [mapMode]
+	 * @property {string} [dispatch]
+	 * @property {(value: string) => void} onChange
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let {
+		mapTitle = '',
+		mapMode = '',
+		dispatch = '',
+		onChange,
+		...rest
+	} = $props();
 </script>
 
-<header class={$$restProps.class}>
+<header class={rest.class}>
 	<h3 class="text-center">{mapTitle}</h3>
 
 	<div class="my-8 md:my-0">

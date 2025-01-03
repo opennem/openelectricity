@@ -2,7 +2,13 @@
 	import { createEventDispatcher } from 'svelte';
 	import Icon from '$lib/components/Icon.svelte';
 
-	export let current = 'line';
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [current]
+	 */
+
+	/** @type {Props} */
+	let { current = 'line' } = $props();
 
 	const dispatch = createEventDispatcher();
 
@@ -17,7 +23,7 @@
 		}
 	];
 
-	$: optionsLength = options.length;
+	let optionsLength = $derived(options.length);
 </script>
 
 <div class="flex">
@@ -35,7 +41,7 @@
 			class:rounded-md={current === name}
 			class:border-black={current === name}
 			class:border-mid-warm-grey={current !== name}
-			on:click={() => dispatch('change', name)}
+			onclick={() => dispatch('change', name)}
 		>
 			<span class="flex justify-center text-dark-grey">
 				<Icon {icon} size={19} />

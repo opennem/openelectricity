@@ -1,8 +1,14 @@
 <script>
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
-	/** @type {*} */
-	export let analysisArticles = [];
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {*} [analysisArticles]
+	 */
+
+	/** @type {Props} */
+	let { analysisArticles = [] } = $props();
 </script>
 
 <div class="bg-white py-16 md:py-32">

@@ -13,8 +13,14 @@
 	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
-	/** @type {import('./$types').PageData} */
-	export let data;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('./$types').PageData} data
+	 */
+
+	/** @type {Props} */
+	let { data } = $props();
 	const {
 		flows,
 		prices,
@@ -26,9 +32,9 @@
 		// modelsData
 	} = data;
 
-	let regionPower;
-	let regionEnergy;
-	let regionEmissions;
+	let regionPower = $state();
+	let regionEnergy = $state();
+	let regionEmissions = $state();
 
 	onMount(async () => {
 		regionPower = await fetch('/api/region-power').then(async (res) => {
@@ -52,7 +58,7 @@
 
 	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
-	let outlookEnergyNem = null;
+	let outlookEnergyNem = $state(null);
 
 	setTimeout(() => {
 		outlookEnergyNem = ispData.aemo2024.outlookEnergyNem;
@@ -64,7 +70,7 @@
 
 	const { banner_title, banner_statement, map_title, analysis_title } = homepageData[0];
 
-	$: allReady = dataTrackerData.length > 0;
+	let allReady = $derived(dataTrackerData.length > 0);
 </script>
 
 <Meta image="/img/preview.jpg" />

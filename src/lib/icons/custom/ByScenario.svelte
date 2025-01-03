@@ -1,9 +1,14 @@
+<script>
+	/** @type {{ [key: string]: any }} */
+	let { ...rest } = $props();
+</script>
+
 <svg
 	viewBox="0 0 16 16"
 	fill="currentColor"
 	xmlns="http://www.w3.org/2000/svg"
 	class="size-6"
-	{...$$restProps}
+	{...rest}
 >
 	<path
 		d="M1 1.5V14H15.5H16V15H15.5H0.5H0V14.5V1.5V1H1V1.5ZM14.8438 4.875L10.3438 9.375L10 9.71875L9.625 9.375L7 6.71875L3.84375 9.875L3.5 10.2188L2.78125 9.5L3.125 9.15625L6.625 5.65625L7 5.3125L7.34375 5.65625L10 8.3125L14.125 4.15625L14.5 3.8125L15.1875 4.5L14.8438 4.875Z"

@@ -10,19 +10,25 @@
 	const { selectedModel, selectedScenario, selectedPathway, selectedMultipleScenarios } =
 		getContext('scenario-filters');
 
-	/** @type {'single' | 'multiple'} */
-	export let selectionMode = 'single';
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {'single' | 'multiple'} [selectionMode]
+	 */
+
+	/** @type {Props} */
+	let { selectionMode = 'single' } = $props();
 	/** @type {*} */
-	let focusScenario = null;
+	let focusScenario = $state(null);
 	/** @type {*} */
-	let focusPathway = null;
+	let focusPathway = $state(null);
 	/** @type {string[]} */
-	let selectedScenarios = [];
+	let selectedScenarios = $state([]);
 	/** @type {*[]} */
-	let selectedScenariosPathways = allScenarios.map((scenario) => ({
+	let selectedScenariosPathways = $state(allScenarios.map((scenario) => ({
 		id: scenario.id,
 		pathway: scenario.defaultPathway
-	}));
+	})));
 
 	const modelFilterOptions = [
 		{
@@ -31,13 +37,13 @@
 		},
 		...modelOptions
 	];
-	let filterModel = 'all';
+	let filterModel = $state('all');
 
-	$: isSingleSelectionMode = selectionMode === 'single';
-	$: filteredScenarios =
-		filterModel === 'all'
+	let isSingleSelectionMode = $derived(selectionMode === 'single');
+	let filteredScenarios =
+		$derived(filterModel === 'all'
 			? allScenarios
-			: allScenarios.filter((scenario) => scenario.model === filterModel);
+			: allScenarios.filter((scenario) => scenario.model === filterModel));
 
 	onMount(() => {
 		console.log('selectedModel, selectedScenario, selectedPathway, selectedMultipleScenarios', {
@@ -160,16 +166,16 @@
 		}
 	}
 
-	$: focusScenarioId = focusScenario?.id || null;
+	let focusScenarioId = $derived(focusScenario?.id || null);
 
-	$: getPathway = () => {
+	let getPathway = $derived(() => {
 		const scenario = selectedScenariosPathways.find(
 			(scenario) => scenario.id === focusScenario?.id
 		);
 		return scenario ? scenario.pathway : focusScenario?.defaultPathway;
-	};
+	});
 
-	$: focusScenarioPathways = focusScenario?.pathways || [];
+	let focusScenarioPathways = $derived(focusScenario?.pathways || []);
 </script>
 
 <div class="border-t border-warm-grey">
@@ -201,7 +207,7 @@
 								: selectedScenarios.includes(id)}
 							class:border-black={focusScenarioId === id}
 							class:border-warm-grey={focusScenarioId !== id}
-							on:click={() => handleFocusScenarioChange(id)}
+							onclick={() => handleFocusScenarioChange(id)}
 						>
 							{#if isSingleSelectionMode}
 								<div

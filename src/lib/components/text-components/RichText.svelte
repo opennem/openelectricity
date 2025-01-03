@@ -1,12 +1,20 @@
 <script type="ts">
+	import { run } from 'svelte/legacy';
+
 	import { PortableText } from '@portabletext/svelte';
 	import Image from '$lib/components/text-components/Image.svelte';
 
-	export let content = null;
-	let values = [];
-	let current = [];
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [content]
+	 */
 
-	$: {
+	/** @type {Props} */
+	let { content = null } = $props();
+	let values = $state([]);
+	let current = $state([]);
+
+	run(() => {
 		values = [];
 		current = [];
 
@@ -31,10 +39,12 @@
 		});
 
 		values.push([...current]);
-	}
+	});
 	const components = { types: { image: Image } };
 
-	$: console.log(content);
+	run(() => {
+		console.log(content);
+	});
 </script>
 
 {#if content}

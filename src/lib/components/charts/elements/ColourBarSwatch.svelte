@@ -3,15 +3,21 @@
 
 	const { width } = getContext('LayerCake');
 
-	/** @type {*[]} */
-	export let ranges = [];
-	/** @type {*[]} */
-	export let colours = [];
-	/** @type {*[]} */
-	export let labels = [];
+	
+	
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {*[]} [ranges]
+	 * @property {*[]} [colours]
+	 * @property {*[]} [labels]
+	 */
+
+	/** @type {Props} */
+	let { ranges = [], colours = [], labels = [] } = $props();
 
 	const rectHeight = 10;
-	$: rectWidth = $width / ranges.length;
+	let rectWidth = $derived($width / ranges.length);
 </script>
 
 {#each ranges as range, i}

@@ -22,7 +22,7 @@
 				<span>{fuelTechLabel[fuelTech]}</span>
 				<button
 					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-					on:click={() => ($selectedFuelTechs = $selectedFuelTechs.filter((d) => d !== fuelTech))}
+					onclick={() => ($selectedFuelTechs = $selectedFuelTechs.filter((d) => d !== fuelTech))}
 				>
 					<IconXMark class="size-6" />
 				</button>
@@ -43,7 +43,7 @@
 				<span>{milestoneTypeLabel[metric]}</span>
 				<button
 					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-					on:click={() => ($selectedMetrics = $selectedMetrics.filter((d) => d !== metric))}
+					onclick={() => ($selectedMetrics = $selectedMetrics.filter((d) => d !== metric))}
 				>
 					<IconXMark class="size-6" />
 				</button>
@@ -64,7 +64,7 @@
 				<span>{periodLabel[period]}</span>
 				<button
 					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-					on:click={() => ($selectedPeriods = $selectedPeriods.filter((d) => d !== period))}
+					onclick={() => ($selectedPeriods = $selectedPeriods.filter((d) => d !== period))}
 				>
 					<IconXMark class="size-6" />
 				</button>

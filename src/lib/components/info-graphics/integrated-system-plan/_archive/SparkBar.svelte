@@ -10,18 +10,31 @@
 
 	import KeyHeader from '../KeyHeader.svelte';
 
-	/** @type {TimeSeriesData[]} */
-	export let dataset = [];
+	
 
-	export let key = '';
-	export let title = '';
-	export let colour = '#000';
 
-	/** @type {Date[] | undefined} */
-	export let xTicks = undefined;
+	
 
-	/** @type {TimeSeriesData | undefined}*/
-	export let hoverData = undefined;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData[]} [dataset]
+	 * @property {string} [key]
+	 * @property {string} [title]
+	 * @property {string} [colour]
+	 * @property {Date[] | undefined} [xTicks]
+	 * @property {TimeSeriesData | undefined} [hoverData]
+	 */
+
+	/** @type {Props} */
+	let {
+		dataset = [],
+		key = '',
+		title = '',
+		colour = '#000',
+		xTicks = undefined,
+		hoverData = undefined
+	} = $props();
 </script>
 
 <div class="p-8 bg-light-warm-grey rounded-lg">

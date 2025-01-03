@@ -5,12 +5,18 @@
 
 	import Tooltip from './Tooltip.svelte';
 
-	export let store;
-	/** @type {string[]} */
-	export let hiddenRowNames = [];
+	
 
-	/** @type {FuelTechCode[]}*/
-	export let seriesLoadsIds = [];
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} store
+	 * @property {string[]} [hiddenRowNames]
+	 * @property {FuelTechCode[]} [seriesLoadsIds]
+	 */
+
+	/** @type {Props} */
+	let { store, hiddenRowNames = [], seriesLoadsIds = [] } = $props();
 
 	const {
 		title,
@@ -46,11 +52,11 @@
 		isRegionViewSection
 	} = getContext('scenario-filters');
 
-	$: names = $seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d));
-	$: loadIds = names.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d));
-	$: colours = names.map((/** @type {string} */ d) => $seriesColours[d]);
+	let names = $derived($seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d)));
+	let loadIds = $derived(names.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d)));
+	let colours = $derived(names.map((/** @type {string} */ d) => $seriesColours[d]));
 
-	$: updatedSeriesData = $seriesData.map((d) => {
+	let updatedSeriesData = $derived($seriesData.map((d) => {
 		/** @type {TimeSeriesData} */
 		const newObj = { ...d };
 		// get min and max values for each time series
@@ -74,9 +80,9 @@
 		});
 
 		return newObj;
-	});
+	}));
 
-	$: updatedYDomain = (() => {
+	let updatedYDomain = $derived((() => {
 		const addTenPercent = (val) => val + val * 0.1;
 		const maxY = updatedSeriesData.map((d) => d._max);
 		// @ts-ignore
@@ -87,9 +93,9 @@
 		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
 
 		return [datasetMin, datasetMax];
-	})();
+	})());
 
-	$: updatedHoverData = $hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null;
+	let updatedHoverData = $derived($hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null);
 
 	function moveToNextDisplayPrefix() {
 		$displayPrefix = getNextPrefix();
@@ -108,7 +114,7 @@
 					{#if $allowPrefixSwitch}
 						<button
 							class="font-light text-sm text-mid-grey hover:underline"
-							on:click={moveToNextDisplayPrefix}
+							onclick={moveToNextDisplayPrefix}
 						>
 							{$displayUnit || ''}
 						</button>

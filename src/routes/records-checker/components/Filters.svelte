@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { createEventDispatcher } from 'svelte';
 	import CheckboxTree from '$lib/components/form-elements/CheckboxTree.svelte';
 	import Switch from '$lib/components/Switch.svelte';
@@ -14,51 +16,55 @@
 
 	const dispatch = createEventDispatcher();
 
-	export let initCheckedRegions;
-	export let initCheckedPeriods;
-	export let initRecordIdSearch;
-	export let initCheckedFuelTechs;
-	export let initCheckedAggregates;
-	export let initCheckedMetrics;
-	export let initSelectedSignificance;
+	let {
+		initCheckedRegions,
+		initCheckedPeriods,
+		initRecordIdSearch,
+		initCheckedFuelTechs,
+		initCheckedAggregates,
+		initCheckedMetrics,
+		initSelectedSignificance
+	} = $props();
 
-	let filterMode = 'checkboxes'; // text or checkboxes
-
-	/** @type {string[]} */
-	let checkedRegions = initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
-
-	/** @type {string[]} */
-	let indeterminateRegions = checkedRegions.length === 8 ? [] : ['_all'];
+	let filterMode = $state('checkboxes'); // text or checkboxes
 
 	/** @type {string[]} */
-	let checkedPeriods = initCheckedPeriods || periodOptions.map((i) => i.value);
+	let checkedRegions = $state(initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']);
 
 	/** @type {string[]} */
-	let checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((i) => i.value);
+	let indeterminateRegions = $state(checkedRegions.length === 8 ? [] : ['_all']);
 
 	/** @type {string[]} */
-	let checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
+	let checkedPeriods = $state(initCheckedPeriods || periodOptions.map((i) => i.value));
 
 	/** @type {string[]} */
-	let checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
+	let checkedFuelTechs = $state(initCheckedFuelTechs || fuelTechOptions.map((i) => i.value));
 
-	let selectedSignificance = initSelectedSignificance || 0;
+	/** @type {string[]} */
+	let checkedAggregates = $state(initCheckedAggregates || aggregateOptions.map((i) => i.value));
 
-	let recordIdSearch = initRecordIdSearch || '';
+	/** @type {string[]} */
+	let checkedMetrics = $state(initCheckedMetrics || metricOptions.map((i) => i.value));
+
+	let selectedSignificance = $state(initSelectedSignificance || 0);
+
+	let recordIdSearch = $state(initRecordIdSearch || '');
 
 	let isMetaPressed = false;
 
-	$: if (filterMode === 'text') {
-		checkedRegions = initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
-		checkedPeriods = initCheckedPeriods || periodOptions.map((i) => i.value);
-		checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((i) => i.value);
-		checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
-		checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
-		selectedSignificance = initSelectedSignificance || 0;
-		indeterminateRegions = [];
-	} else {
-		recordIdSearch = initRecordIdSearch || '';
-	}
+	run(() => {
+		if (filterMode === 'text') {
+			checkedRegions = initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+			checkedPeriods = initCheckedPeriods || periodOptions.map((i) => i.value);
+			checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((i) => i.value);
+			checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
+			checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
+			selectedSignificance = initSelectedSignificance || 0;
+			indeterminateRegions = [];
+		} else {
+			recordIdSearch = initRecordIdSearch || '';
+		}
+	});
 
 	/**
 	 * Handle region change
@@ -204,7 +210,7 @@
 	}
 </script>
 
-<svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
+<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
 
 <div class="flex justify-center my-8">
 	<Switch
@@ -329,8 +335,8 @@
 	</div>
 {/if}
 <div class="flex justify-center gap-5 mt-10">
-	<button class="border rounded p-3" on:click={handleResetClick}> Reset </button>
-	<button class="border rounded p-3 bg-dark-grey text-white" on:click={handleApplyClick}>
+	<button class="border rounded p-3" onclick={handleResetClick}> Reset </button>
+	<button class="border rounded p-3 bg-dark-grey text-white" onclick={handleApplyClick}>
 		Apply
 	</button>
 </div>

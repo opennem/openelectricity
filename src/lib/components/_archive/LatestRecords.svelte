@@ -4,9 +4,15 @@
 	import RecordCard from '$lib/components/records/RecordCard.svelte';
 	import ButtonLink from '$lib/components/ButtonLink.svelte';
 
-	/** @type {*}*/
-	export let records = [];
-	export let recordsTitle = 'Latest Records';
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {*} [records]
+	 * @property {string} [recordsTitle]
+	 */
+
+	/** @type {Props} */
+	let { records = [], recordsTitle = 'Latest Records' } = $props();
 
 	// Process records
 	const dailyRecords = recordsByDay(records);

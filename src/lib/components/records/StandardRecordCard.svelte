@@ -4,14 +4,20 @@
 	import { format, parseISO } from 'date-fns';
 	import { formatInTimeZone } from 'date-fns-tz';
 
-	/** @type {import('$lib/types/record.types').Record[]} */
-	export let record;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('$lib/types/record.types').Record[]} record - $: console.log('record', record);
+	 */
 
-	// $: console.log('record', record);
+	/** @type {Props & { [key: string]: any }} */
+	let { record, ...rest } = $props();
+
+	
 </script>
 
 <div
-	class={`bg-white border-[0.05rem] border-mid-warm-grey border-solid rounded relative grid record-layout ${$$restProps.class}`}
+	class={`bg-white border-[0.05rem] border-mid-warm-grey border-solid rounded relative grid record-layout ${rest.class}`}
 >
 	<div class="flex p-6 relative record-desc">
 		{#if record[0].fueltech}

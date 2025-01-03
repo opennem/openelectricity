@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 
@@ -10,57 +12,43 @@
 		metricOptions
 	} from '../page-data-options/filters.js';
 
-	export let data;
+	let { data } = $props();
 	let pageSize = 1000;
-	let recordsData = [];
-	let totalRecords = 0;
-	let currentPage = data.page || 1;
-	let currentStartRecordIndex = (currentPage - 1) * pageSize + 1;
+	let recordsData = $state([]);
+	let totalRecords = $state(0);
+	let currentPage = $state(data.page || 1);
+	let currentStartRecordIndex = $state((currentPage - 1) * pageSize + 1);
 
-	let errorMessage = '';
+	let errorMessage = $state('');
 
 	/** @type {string[]} */
 	let checkedRegions =
-		data.regions && data.regions.length
+		$state(data.regions && data.regions.length
 			? data.regions
-			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem'];
+			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem']);
 
 	/** @type {string[]} */
 	let checkedFuelTechs =
-		data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : fuelTechOptions.map((i) => i.value);
+		$state(data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : fuelTechOptions.map((i) => i.value));
 
 	/** @type {string[]} */
 	let checkedPeriods =
-		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value);
+		$state(data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value));
 
 	/** @type {string[]} */
 	let checkedAggregates =
-		data.aggregates && data.aggregates.length
+		$state(data.aggregates && data.aggregates.length
 			? data.aggregates
-			: aggregateOptions.map((i) => i.value);
+			: aggregateOptions.map((i) => i.value));
 
 	let checkedMetrics =
-		data.metrics && data.metrics.length ? data.metrics : metricOptions.map((i) => i.value);
+		$state(data.metrics && data.metrics.length ? data.metrics : metricOptions.map((i) => i.value));
 
-	let selectedSignificance = data.significance || 0;
+	let selectedSignificance = $state(data.significance || 0);
 
-	let recordIdSearch = data.stringFilter || '';
+	let recordIdSearch = $state(data.stringFilter || '');
 
-	$: console.log('data.metaRespones', data.metadata);
 
-	$: fetchRecords(
-		currentPage,
-		checkedRegions,
-		checkedPeriods,
-		checkedFuelTechs,
-		checkedAggregates,
-		checkedMetrics,
-		selectedSignificance
-	);
-	$: totalPages = Math.ceil(totalRecords / pageSize);
-	$: currentLastRecordIndex = currentStartRecordIndex + pageSize - 1;
-	$: lastRecordIndex =
-		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
 	function getFilterParams({
 		regions,
@@ -218,6 +206,24 @@
 	const auNumber = new Intl.NumberFormat('en-AU', {
 		maximumFractionDigits: 0
 	});
+	run(() => {
+		console.log('data.metaRespones', data.metadata);
+	});
+	run(() => {
+		fetchRecords(
+			currentPage,
+			checkedRegions,
+			checkedPeriods,
+			checkedFuelTechs,
+			checkedAggregates,
+			checkedMetrics,
+			selectedSignificance
+		);
+	});
+	let totalPages = $derived(Math.ceil(totalRecords / pageSize));
+	let currentLastRecordIndex = $derived(currentStartRecordIndex + pageSize - 1);
+	let lastRecordIndex =
+		$derived(currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex);
 </script>
 
 <header class=" mt-12">
@@ -249,12 +255,12 @@
 			<button
 				class="border rounded text-xs py-1 px-4"
 				class:invisible={currentPage === 1}
-				on:click={() => updateCurrentPage(1)}>Back to first page</button
+				onclick={() => updateCurrentPage(1)}>Back to first page</button
 			>
 			<button
 				class="border rounded text-xs py-1 px-4"
 				class:invisible={currentPage === 1}
-				on:click={() => updateCurrentPage(currentPage - 1)}>Previous</button
+				onclick={() => updateCurrentPage(currentPage - 1)}>Previous</button
 			>
 		</div>
 
@@ -268,12 +274,12 @@
 			<button
 				class="border rounded text-xs py-1 px-4"
 				class:invisible={currentPage === totalPages}
-				on:click={() => updateCurrentPage(currentPage + 1)}>Next</button
+				onclick={() => updateCurrentPage(currentPage + 1)}>Next</button
 			>
 			<button
 				class="border rounded text-xs py-1 px-4"
 				class:invisible={currentPage === totalPages}
-				on:click={() => updateCurrentPage(totalPages)}>Jump to last page</button
+				onclick={() => updateCurrentPage(totalPages)}>Jump to last page</button
 			>
 		</div>
 	</div>
@@ -281,9 +287,9 @@
 		<table class="w-full text-xs border border-mid-warm-grey p-2">
 			<thead>
 				<tr class="border-b border-mid-warm-grey">
-					<th colspan="2" />
+					<th colspan="2"></th>
 					<th colspan="2" class="!text-center">Current Record</th>
-					<th colspan="8" />
+					<th colspan="8"></th>
 				</tr>
 			</thead>
 			<thead>
@@ -302,7 +308,7 @@
 					<th>Metric</th>
 					<th>Aggregate</th>
 					<th>Significance</th>
-					<th />
+					<th></th>
 				</tr>
 			</thead>
 			<tbody>

@@ -1,15 +1,24 @@
 <script>
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { getContext, createEventDispatcher } from 'svelte';
 	import { closestTo } from 'date-fns';
 
 	const { xScale, width, height } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
-	/** @type {TimeSeriesData[]} */
-	export let dataset = [];
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData[]} [dataset]
+	 */
 
-	$: compareDates = [...new Set(dataset.map((d) => d.date))];
-	$: rectHeight = $height ? Math.abs($height) : 0;
+	/** @type {Props} */
+	let { dataset = [] } = $props();
+
+	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
+	let rectHeight = $derived($height ? Math.abs($height) : 0);
 
 	/**
 	 * this function looks for the closest date to the mouse position
@@ -57,12 +66,12 @@
 	height={rectHeight}
 	fill="transparent"
 	role="presentation"
-	on:mousemove={pointermove}
-	on:mouseout={mouseout}
-	on:mousedown
-	on:touchmove={pointermove}
-	on:pointerup={pointerup}
-	on:blur={mouseout}
+	onmousemove={pointermove}
+	onmouseout={mouseout}
+	onmousedown={bubble('mousedown')}
+	ontouchmove={pointermove}
+	onpointerup={pointerup}
+	onblur={mouseout}
 />
 
 <style>

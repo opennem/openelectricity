@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 	import { startOfYear } from 'date-fns';
 
@@ -52,8 +54,8 @@
 		getContext('intensity-data-viz')
 	];
 
-	let showMobileFilterOptions = false;
-	let copying = false;
+	let showMobileFilterOptions = $state(false);
+	let copying = $state(false);
 
 	init();
 
@@ -128,7 +130,7 @@
 		});
 	}
 
-	$: {
+	run(() => {
 		// TODO: if singleselection model changes, update xTicks, otherwise use default xTicks
 		dataVizStores.forEach((store) => {
 			if ($isScenarioViewSection) {
@@ -139,15 +141,17 @@
 				store.miniXTicks.set(miniChartXTicks[$singleSelectionData.model]);
 			}
 		});
-	}
-	$: if (
-		$isScenarioViewSection ||
-		($isSingleSelectionMode && $singleSelectionModel === 'aemo2024')
-	) {
-		updateChartOverlayDates('2024-01-01', '2052-01-01');
-	} else {
-		updateChartOverlayDates('2023-01-01', '2051-01-01');
-	}
+	});
+	run(() => {
+		if (
+			$isScenarioViewSection ||
+			($isSingleSelectionMode && $singleSelectionModel === 'aemo2024')
+		) {
+			updateChartOverlayDates('2024-01-01', '2052-01-01');
+		} else {
+			updateChartOverlayDates('2023-01-01', '2051-01-01');
+		}
+	});
 
 	/**
 	 * When switching views, reset the data stores and fuel tech group
@@ -239,13 +243,15 @@
 		</h4> -->
 		<ScenarioSelection mobileView={true} />
 
-		<div slot="buttons" class="flex gap-3">
-			<!-- <Button class="w-full">Cancel</Button> -->
-			<Button
-				class="!bg-dark-grey text-white hover:!bg-black w-full"
-				on:click={() => (showMobileFilterOptions = false)}>Close</Button
-			>
-		</div>
+		{#snippet buttons()}
+				<div  class="flex gap-3">
+				<!-- <Button class="w-full">Cancel</Button> -->
+				<Button
+					class="!bg-dark-grey text-white hover:!bg-black w-full"
+					on:click={() => (showMobileFilterOptions = false)}>Close</Button
+				>
+			</div>
+			{/snippet}
 	</Modal>
 {/if}
 
@@ -313,7 +319,7 @@
 					class="text-sm flex items-center gap-3 justify-center px-8 py-4 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
 					class:border-dark-grey={$showScenarioOptions}
 					class:border-mid-warm-grey={!$showScenarioOptions}
-					on:click={() => ($showScenarioOptions = !$showScenarioOptions)}
+					onclick={() => ($showScenarioOptions = !$showScenarioOptions)}
 				>
 					{#if $isScenarioViewSection}
 						Update Scenarios
@@ -336,7 +342,7 @@
 
 		<button
 			class="bg-black text-white p-3 rounded-lg transition-all hover:bg-dark-grey"
-			on:click={copyLink}
+			onclick={copyLink}
 		>
 			{#if copying}
 				<IconClipboardDocumentCheck class="size-8" />

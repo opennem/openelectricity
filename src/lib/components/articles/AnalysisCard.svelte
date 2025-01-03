@@ -2,29 +2,35 @@
 	import { format, parse } from 'date-fns';
 	import { urlFor } from '$lib/sanity';
 
-	/** @type {Article} */
-	export let article;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {Article} article
+	 */
 
-	// $: console.log('article', article);
+	/** @type {Props & { [key: string]: any }} */
+	let { article, ...rest } = $props();
 
-	$: hasCover = article.cover;
-	$: linkStyles =
-		hasCover && !isSpecialCard
-			? `h-full grid grid-cols-1 gap-4 content-between overflow-hidden border-y border-warm-grey text-dark-grey hover:no-underline ${$$restProps.class}`
-			: `h-full bg-light-warm-grey grid grid-cols-1 gap-4 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`;
-	$: headerStyles = hasCover && !isSpecialCard ? 'my-8 h-42' : 'my-8 px-6 h-42';
 
-	$: authorStyles =
-		hasCover && !isSpecialCard
-			? 'flex items-center gap-8 justify-between mt-6'
-			: 'flex items-center gap-8 justify-between px-6 my-6';
 
-	$: tag = article.tags.length ? article.tags[0] : null;
 
-	$: isSpecialCard = article.title === 'Seeing into the Future of Australia’s Electricity Market';
 	// $: console.log('isSpecialCard', isSpecialCard, article.title);
 
 	const publishedDate = parse(article.publish_date, 'yyyy-MM-dd', new Date());
+	// $: console.log('article', article);
+
+	let hasCover = $derived(article.cover);
+	let isSpecialCard = $derived(article.title === 'Seeing into the Future of Australia’s Electricity Market');
+	let linkStyles =
+		$derived(hasCover && !isSpecialCard
+			? `h-full grid grid-cols-1 gap-4 content-between overflow-hidden border-y border-warm-grey text-dark-grey hover:no-underline ${rest.class}`
+			: `h-full bg-light-warm-grey grid grid-cols-1 gap-4 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${rest.class}`);
+	let headerStyles = $derived(hasCover && !isSpecialCard ? 'my-8 h-42' : 'my-8 px-6 h-42');
+	let authorStyles =
+		$derived(hasCover && !isSpecialCard
+			? 'flex items-center gap-8 justify-between mt-6'
+			: 'flex items-center gap-8 justify-between px-6 my-6');
+	let tag = $derived(article.tags.length ? article.tags[0] : null);
 </script>
 
 <a href={`/analysis/${article.slug.current}`} class={linkStyles}>

@@ -1,31 +1,40 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 
 	const { xGet, yGet, height } = getContext('LayerCake');
 
-	/** @type {TimeSeriesData | undefined} */
-	export let hoverData = undefined;
+	
 
-	export let lineColour = '#333';
 
-	export let borderStyle = 'solid';
 
-	export let yTopOffset = 0;
 
-	export let isShapeStack = false;
 
-	export let useDataHeight = false;
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData | undefined} [hoverData]
+	 * @property {string} [lineColour]
+	 * @property {string} [borderStyle]
+	 * @property {number} [yTopOffset]
+	 * @property {boolean} [isShapeStack]
+	 * @property {boolean} [useDataHeight]
+	 */
 
-	let visible = false;
-	let x = 0;
-	let y = [0, 0];
+	/** @type {Props} */
+	let {
+		hoverData = undefined,
+		lineColour = '#333',
+		borderStyle = 'solid',
+		yTopOffset = 0,
+		isShapeStack = false,
+		useDataHeight = false
+	} = $props();
 
-	$: if (hoverData) {
-		updateLineCoords(hoverData);
-		visible = true;
-	} else {
-		visible = false;
-	}
+	let visible = $state(false);
+	let x = $state(0);
+	let y = $state([0, 0]);
+
 
 	/**
 	 * @param {TimeSeriesData | undefined} d
@@ -45,6 +54,14 @@
 			y = [$yGet(d) + yTopOffset > $height ? $height : $yGet(d) + yTopOffset, $height];
 		}
 	}
+	run(() => {
+		if (hoverData) {
+			updateLineCoords(hoverData);
+			visible = true;
+		} else {
+			visible = false;
+		}
+	});
 </script>
 
 {#if visible}
@@ -53,12 +70,12 @@
 			style="left: {x - 1}px; top: {y[0]}px; height: {y[1] -
 				y[0]}px; border-left-color: {lineColour}; border-style: {borderStyle}"
 			class="hover-line"
-		/>
+		></div>
 	{:else}
 		<div
 			style="left: {x - 1}px; border-left-color: {lineColour}; border-style: {borderStyle}"
 			class="hover-line"
-		/>
+		></div>
 	{/if}
 {/if}
 

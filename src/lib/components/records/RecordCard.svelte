@@ -2,13 +2,19 @@
 	import SignificantRecordCard from './SignificantRecordCard.svelte';
 	import StandardRecordCard from './StandardRecordCard.svelte';
 
-	/** @type {import('$lib/types/record.types').Record[]} */
-	export let record;
-	$: isSignificant = record[0].significance > 6;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('$lib/types/record.types').Record[]} record
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let { record, ...rest } = $props();
+	let isSignificant = $derived(record[0].significance > 6);
 </script>
 
 {#if isSignificant}
-	<SignificantRecordCard {record} class={$$restProps.class} />
+	<SignificantRecordCard {record} class={rest.class} />
 {:else}
-	<StandardRecordCard {record} class={$$restProps.class} />
+	<StandardRecordCard {record} class={rest.class} />
 {/if}

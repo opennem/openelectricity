@@ -2,19 +2,25 @@
 	import { getContext } from 'svelte';
 	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 
-	export let yearOnly = false;
-	export let date;
-	export let store;
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [yearOnly]
+	 * @property {any} date
+	 * @property {any} store
+	 */
+
+	/** @type {Props} */
+	let { yearOnly = false, date, store } = $props();
 
 	const { selectedInterval, is12MthRollingSum } = getContext('filters');
 	const { xDomain, seriesData } = store;
 
-	$: dateRange =
-		$xDomain && $xDomain.length === 2 && $xDomain[0] && $xDomain[1]
+	let dateRange =
+		$derived($xDomain && $xDomain.length === 2 && $xDomain[0] && $xDomain[1]
 			? $xDomain
 			: $seriesData.length
 			? [$seriesData[0].date, $seriesData[$seriesData.length - 1].date]
-			: null;
+			: null);
 </script>
 
 <header class="flex justify-center h-12 px-10 md:px-0">

@@ -20,50 +20,64 @@
 	import { formatTickX, formatTickY, xDomain, displayXTicks } from './helpers';
 
 	const formatHoverTickX = (/** @type {Date | number} */ d) => format(d, 'MMM yyyy');
-	let isSafariBrowser = true;
+	let isSafariBrowser = $state(true);
 
-	export let title = '';
-	export let description = '';
 
-	/** @type {StatsData[]} */
-	export let historicalDataset = [];
+	
 
-	/** @type {TimeSeriesData[] | []} */
-	export let dataset = [];
+	
 
-	/** @type {string[]} legend id */
-	export let seriesNames = [];
+	
 
-	/** @type {Object.<string, string>} legend label */
-	export let seriesLabels = {};
+	
 
-	/** @type {Object.<string, string>} legend colour */
-	export let seriesColours = {};
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [title]
+	 * @property {string} [description]
+	 * @property {StatsData[]} [historicalDataset]
+	 * @property {TimeSeriesData[] | []} [dataset]
+	 * @property {string[]} [seriesNames]
+	 * @property {Object.<string, string>} [seriesLabels]
+	 * @property {Object.<string, string>} [seriesColours]
+	 */
+
+	/** @type {Props} */
+	let {
+		title = '',
+		description = '',
+		historicalDataset = [],
+		dataset = [],
+		seriesNames = [],
+		seriesLabels = {},
+		seriesColours = {}
+	} = $props();
 
 	/** @type {TimeSeriesData | undefined} */
-	let hoverData = undefined;
+	let hoverData = $state(undefined);
 
-	let innerWidth = 0;
+	let innerWidth = $state(0);
 
 	//TODO: refactor transition
-	let show = false;
-	let interact = false;
+	let show = $state(false);
+	let interact = $state(false);
 
-	$: md = innerWidth > 1024;
-	$: chartBottom = md ? 40 : 100;
-	$: chartLeft = md ? 0 : 0;
-	$: chartRight = md ? 0 : 0;
+	let md = $derived(innerWidth > 1024);
+	let chartBottom = $derived(md ? 40 : 100);
+	let chartLeft = $derived(md ? 0 : 0);
+	let chartRight = $derived(md ? 0 : 0);
 
-	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
+	let groupedData = $derived(dataset ? groupLonger(dataset, seriesNames) : []);
 
-	$: flatData = flatten(groupedData, 'values');
-	$: latestDatapoint = dataset[dataset.length - 1];
+	let flatData = $derived(flatten(groupedData, 'values'));
+	let latestDatapoint = $derived(dataset[dataset.length - 1]);
 
-	$: chartLabelStyles = md
+	let chartLabelStyles = $derived(md
 		? 'text-right text-xs text-mid-grey mr-0 z-10 pointer-events-none relative -mt-8'
-		: 'absolute -top-8 text-xs text-mid-grey right-0';
+		: 'absolute -top-8 text-xs text-mid-grey right-0');
 
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 
 	onMount(() => {
 		isSafariBrowser = isSafari();

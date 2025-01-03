@@ -8,16 +8,22 @@
 
 	import Chart from './Chart.svelte';
 
-	/** @type {StatsData[]} */
-	export let data;
-	export let title = '';
-	export let description = '';
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {StatsData[]} data
+	 * @property {string} [title]
+	 * @property {string} [description]
+	 */
 
-	$: statsDatasets = new Statistic(data, 'history')
+	/** @type {Props} */
+	let { data, title = '', description = '' } = $props();
+
+	let statsDatasets = $derived(new Statistic(data, 'history')
 		.group(domainGroups)
-		.addTotalMinusLoads(loadFts, totalId);
+		.addTotalMinusLoads(loadFts, totalId));
 
-	$: timeSeriesDatasets = new TimeSeries(
+	let timeSeriesDatasets = $derived(new TimeSeries(
 		statsDatasets.data,
 		parseInterval('1M'),
 		'history',
@@ -26,12 +32,12 @@
 	)
 		.transform()
 		.calculate12MthRollingSum()
-		.convertToPercentage(totalId);
+		.convertToPercentage(totalId));
 
-	$: dataset = timeSeriesDatasets.data;
-	$: seriesNames = timeSeriesDatasets.seriesNames.filter((name) => name !== totalId);
-	$: seriesColours = timeSeriesDatasets.seriesColours;
-	$: seriesLabels = timeSeriesDatasets.seriesLabels;
+	let dataset = $derived(timeSeriesDatasets.data);
+	let seriesNames = $derived(timeSeriesDatasets.seriesNames.filter((name) => name !== totalId));
+	let seriesColours = $derived(timeSeriesDatasets.seriesColours);
+	let seriesLabels = $derived(timeSeriesDatasets.seriesLabels);
 </script>
 
 <Chart

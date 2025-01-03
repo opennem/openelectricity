@@ -1,16 +1,22 @@
 <script>
 	import IconChevronTripleRight from '$lib/icons/ChevronTripleRight.svelte';
 
-	export let regions = '';
-	export let value = 0;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [regions]
+	 * @property {number} [value]
+	 */
+
+	/** @type {Props} */
+	let { regions = '', value = 0 } = $props();
 
 	const absRound = (val) => auNumber.format(Math.abs(Math.round(val)));
 	const auNumber = new Intl.NumberFormat('en-AU', {
 		maximumFractionDigits: 0
 	});
 
-	$: regionArr = regions.split('->').map((region) => region.slice(0, -1));
-	$: isReversed = value < 0;
+	let regionArr = $derived(regions.split('->').map((region) => region.slice(0, -1)));
+	let isReversed = $derived(value < 0);
 </script>
 
 <div class="rounded-lg border border-warm-grey p-4 bg-white">

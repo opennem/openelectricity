@@ -4,28 +4,46 @@
 
 	const { data, xGet, yGet } = getContext('LayerCake');
 
-	/** @type {string} shape's fill colour */
-	export let stroke = '#ababab';
-	export let strokeArray = 'none';
+	
 
-	export let strokeWidth = '2px';
 
-	export let showCircle = false;
 
-	export let clipPathId = '';
-	export let showDots = false;
-	export let dotFill = 'none';
-	export let dotStroke = '#ababab';
-	export let dotOpacity = 0.3;
 
-	export let curveType = curveLinear;
 
-	/** @type {TimeSeriesData | undefined} */
-	export let hoverData = undefined;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [stroke]
+	 * @property {string} [strokeArray]
+	 * @property {string} [strokeWidth]
+	 * @property {boolean} [showCircle]
+	 * @property {string} [clipPathId]
+	 * @property {boolean} [showDots]
+	 * @property {string} [dotFill]
+	 * @property {string} [dotStroke]
+	 * @property {number} [dotOpacity]
+	 * @property {any} [curveType]
+	 * @property {TimeSeriesData | undefined} [hoverData]
+	 */
 
-	$: cx = hoverData ? $xGet(hoverData) : 0;
-	$: cy = hoverData ? $yGet(hoverData) : 0;
-	$: lineGen = line(
+	/** @type {Props} */
+	let {
+		stroke = '#ababab',
+		strokeArray = 'none',
+		strokeWidth = '2px',
+		showCircle = false,
+		clipPathId = '',
+		showDots = false,
+		dotFill = 'none',
+		dotStroke = '#ababab',
+		dotOpacity = 0.3,
+		curveType = curveLinear,
+		hoverData = undefined
+	} = $props();
+
+	let cx = $derived(hoverData ? $xGet(hoverData) : 0);
+	let cy = $derived(hoverData ? $yGet(hoverData) : 0);
+	let lineGen = $derived(line(
 		(d) => {
 			// console.log(d, $xGet(d), $yGet(d));
 			return $xGet(d);
@@ -33,10 +51,10 @@
 		(d) => $yGet(d)
 	)
 		.curve(curveType)
-		.defined((d) => $yGet(d) !== null && $yGet(d) !== undefined && !isNaN($yGet(d)));
+		.defined((d) => $yGet(d) !== null && $yGet(d) !== undefined && !isNaN($yGet(d))));
 
-	$: path =
-		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L');
+	let path =
+		$derived('M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L'));
 </script>
 
 <g class="line-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>

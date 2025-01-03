@@ -1,3 +1,8 @@
+<script>
+	/** @type {{ [key: string]: any }} */
+	let { ...rest } = $props();
+</script>
+
 <svg
 	width="17"
 	height="17"
@@ -5,7 +10,7 @@
 	fill="none"
 	stroke="currentColor"
 	class="size-6"
-	{...$$restProps}
+	{...rest}
 	xmlns="http://www.w3.org/2000/svg"
 >
 	<rect

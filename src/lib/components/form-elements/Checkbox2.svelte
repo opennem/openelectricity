@@ -1,8 +1,22 @@
 <script>
-	export let name = '';
-	export let label = '';
-	export let checked = false;
-	export let indeterminate = false;
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [name]
+	 * @property {string} [label]
+	 * @property {boolean} [checked]
+	 * @property {boolean} [indeterminate]
+	 */
+
+	/** @type {Props} */
+	let {
+		name = '',
+		label = '',
+		checked = $bindable(false),
+		indeterminate = $bindable(false)
+	} = $props();
 </script>
 
 <div class="relative flex items-center select-none">
@@ -13,7 +27,7 @@
 		type="checkbox"
 		bind:checked
 		bind:indeterminate
-		on:change
+		onchange={bubble('change')}
 		class="size-6 rounded border-gray-300 text-dark-grey focus:ring-dark-grey"
 	/>
 	<div class="ml-3 text-sm">

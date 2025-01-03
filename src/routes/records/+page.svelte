@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { setContext, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -18,7 +20,7 @@
 	import filtersStore from './stores/filters';
 	import groupByMonthDay from './page-data-options/group-by-month-day';
 
-	export let data;
+	let { data } = $props();
 
 	setContext('records-filters', filtersStore());
 
@@ -42,13 +44,13 @@
 		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
 	];
 
-	let errorMessage = '';
+	let errorMessage = $state('');
 	/** @type {MilestoneRecord[]} */
-	let recordsData = [];
-	let totalRecords = 0;
+	let recordsData = $state([]);
+	let totalRecords = $state(0);
 	let pageSize = 500;
-	let currentPage = data.page || 1;
-	let currentStartRecordIndex = (currentPage - 1) * pageSize + 1;
+	let currentPage = $state(data.page || 1);
+	let currentStartRecordIndex = $state((currentPage - 1) * pageSize + 1);
 
 	console.log('data.regions', data.regions);
 
@@ -66,39 +68,10 @@
 	let selectedSignificance = data.significance || 9;
 	let recordIdSearch = data.stringFilter || '';
 
-	$: if (browser) {
-		fetchRecords(
-			currentPage,
-			$selectedRegions,
-			$selectedPeriods,
-			$selectedFuelTechs,
-			checkedAggregates,
-			$selectedMetrics,
-			selectedSignificance,
-			recordIdSearch,
-			pageSize
-		).then((res) => {
-			errorMessage = res.errorMessage;
-			recordsData = res.recordsData;
-			totalRecords = res.totalRecords;
-		});
-	}
 
-	$: if (
-		browser &&
-		($selectedRegions || $selectedPeriods || $selectedFuelTechs || $selectedMetrics)
-	) {
-		updateCurrentPage(1);
-	}
 
-	$: selectedLongValueRegion = regions.find((r) => r.value === $selectedRegion)?.longValue;
 
-	$: totalPages = Math.ceil(totalRecords / 100);
-	$: currentLastRecordIndex = currentStartRecordIndex + 99;
-	$: lastRecordIndex =
-		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
-	$: rolledUpRecords = groupByMonthDay(recordsData);
 	// $: console.log('rolledUpRecords', rolledUpRecords);
 
 	/**
@@ -123,6 +96,39 @@
 			replaceState: true
 		});
 	}
+	run(() => {
+		if (browser) {
+			fetchRecords(
+				currentPage,
+				$selectedRegions,
+				$selectedPeriods,
+				$selectedFuelTechs,
+				checkedAggregates,
+				$selectedMetrics,
+				selectedSignificance,
+				recordIdSearch,
+				pageSize
+			).then((res) => {
+				errorMessage = res.errorMessage;
+				recordsData = res.recordsData;
+				totalRecords = res.totalRecords;
+			});
+		}
+	});
+	run(() => {
+		if (
+			browser &&
+			($selectedRegions || $selectedPeriods || $selectedFuelTechs || $selectedMetrics)
+		) {
+			updateCurrentPage(1);
+		}
+	});
+	let selectedLongValueRegion = $derived(regions.find((r) => r.value === $selectedRegion)?.longValue);
+	let totalPages = $derived(Math.ceil(totalRecords / 100));
+	let currentLastRecordIndex = $derived(currentStartRecordIndex + 99);
+	let lastRecordIndex =
+		$derived(currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex);
+	let rolledUpRecords = $derived(groupByMonthDay(recordsData));
 </script>
 
 <Meta

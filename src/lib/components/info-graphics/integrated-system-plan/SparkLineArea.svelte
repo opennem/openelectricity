@@ -17,39 +17,60 @@
 
 	import { formatFyTickX, formatTickY, displayXTicks, formatValue } from './helpers';
 
-	/** @type {TimeSeriesData[]} */
-	export let dataset = [];
+	
 
-	export let id = '';
-	export let key = '';
-	export let fuelTechId = '';
-	export let title = '';
-	export let colour = '#000';
-	export let showIcon = false;
-	export let displayUnit = '';
-	export let isTechnologyDisplay = false;
 
-	/** If true, overlay will take up the full width of the chart
-	 * If object with xStartValue and xEndValue, overlay will be a range
-	 * @type {*} */
-	export let overlay = null;
-	export let overlayStroke = 'rgba(236, 233, 230, 0.4)';
-	/** @type {*} */
-	export let overlayLine = false;
+	
+	
 
-	/** @type {Date[] | undefined} */
-	export let xTicks = undefined;
+	
 
-	/** @type {TimeSeriesData | undefined}*/
-	export let hoverData = undefined;
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	$: hoverValue = hoverData ? hoverData[key] || 0 : 0;
-	$: hoverPercentage = hoverData && hoverData._max ? (hoverValue / hoverData._max) * 100 : 0;
-	$: maxValue = Math.round(Math.max(...dataset.map((d) => d[key] || 0)));
-	$: maxY = maxValue > 0 ? maxValue : 10;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData[]} [dataset]
+	 * @property {string} [id]
+	 * @property {string} [key]
+	 * @property {string} [fuelTechId]
+	 * @property {string} [title]
+	 * @property {string} [colour]
+	 * @property {boolean} [showIcon]
+	 * @property {string} [displayUnit]
+	 * @property {boolean} [isTechnologyDisplay]
+	 * @property {*} [overlay] - If true, overlay will take up the full width of the chart
+If object with xStartValue and xEndValue, overlay will be a range
+	 * @property {string} [overlayStroke]
+	 * @property {*} [overlayLine]
+	 * @property {Date[] | undefined} [xTicks]
+	 * @property {TimeSeriesData | undefined} [hoverData]
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let {
+		dataset = [],
+		id = '',
+		key = '',
+		fuelTechId = '',
+		title = '',
+		colour = '#000',
+		showIcon = false,
+		displayUnit = '',
+		isTechnologyDisplay = false,
+		overlay = null,
+		overlayStroke = 'rgba(236, 233, 230, 0.4)',
+		overlayLine = false,
+		xTicks = undefined,
+		hoverData = undefined,
+		...rest
+	} = $props();
+	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
+	let hoverValue = $derived(hoverData ? hoverData[key] || 0 : 0);
+	let hoverPercentage = $derived(hoverData && hoverData._max ? (hoverValue / hoverData._max) * 100 : 0);
+	let maxValue = $derived(Math.round(Math.max(...dataset.map((d) => d[key] || 0))));
+	let maxY = $derived(maxValue > 0 ? maxValue : 10);
 </script>
 
-<div {...$$restProps}>
+<div {...rest}>
 	<KeyHeader {key} {title} {fuelTechId} data={hoverData} {showIcon}>
 		{#if hoverData}
 			{formatValue(hoverValue)}

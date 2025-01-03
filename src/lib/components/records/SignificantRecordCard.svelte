@@ -4,15 +4,21 @@
 	import { formatInTimeZone } from 'date-fns-tz';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 
-	/** @type {import('$lib/types/record.types').Record[]} */
-	export let record;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('$lib/types/record.types').Record[]} record
+	 */
 
-	$: highlightTextColor =
-		record[0].fueltech === 'gas' || record[0].fueltech === 'solar' ? 'text-black' : 'text-white';
+	/** @type {Props & { [key: string]: any }} */
+	let { record, ...rest } = $props();
+
+	let highlightTextColor =
+		$derived(record[0].fueltech === 'gas' || record[0].fueltech === 'solar' ? 'text-black' : 'text-white');
 </script>
 
 <div
-	class={`bg-white border-[0.05rem] border-mid-warm-grey border-solid rounded relative grid record-layout ${$$restProps.class}`}
+	class={`bg-white border-[0.05rem] border-mid-warm-grey border-solid rounded relative grid record-layout ${rest.class}`}
 >
 	<div class="p-6 relative">
 		{#if record[0].fueltech}
@@ -45,7 +51,7 @@
 		<div
 			style={`background-image: url(/img/records/${record[0].fueltech}.png)`}
 			class={`h-44 bg-no-repeat bg-top bg-cover`}
-		/>
+		></div>
 	</div>
 </div>
 

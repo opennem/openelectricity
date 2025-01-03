@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { setContext, getContext, onMount } from 'svelte';
 
 	import { colourReducer } from '$lib/stores/theme';
@@ -31,7 +33,7 @@
 	import processScenario from './page-data-options/process-scenario';
 	import processRegion from './page-data-options/process-region';
 
-	export let data;
+	let { data } = $props();
 	const { articles, filters } = data;
 
 	setContext('scenario-filters', filtersStore());
@@ -88,190 +90,15 @@
 	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
 
 	/** @type {FuelTechCode[] | undefined} */
-	let seriesLoadsIds = [];
+	let seriesLoadsIds = $state([]);
 
 	/** @type {string[]} */
-	let hiddenRowNames = [];
+	let hiddenRowNames = $state([]);
 
-	let fetching = false;
-	$: console.log(articles, filters);
+	let fetching = $state(false);
 
-	$: if ($isTechnologyViewSection) {
-		fetching = true;
 
-		fetchTechnologyViewData({
-			model: $singleSelectionData.model,
-			scenario: $singleSelectionData.scenario,
-			pathway: $singleSelectionData.pathway,
-			region: $selectedRegion,
-			dataType: $selectedDataType
-		}).then(
-			({
-				projectionEnergyData,
-				projectionCapacityData,
-				projectionEmissionsData,
-				historyEnergyData,
-				historyCapacityData,
-				historyEmisssionsData
-			}) => {
-				const processedEnergy = processTechnology.generation({
-					projection: projectionEnergyData,
-					history: historyEnergyData,
-					group: $selectedFuelTechGroup,
-					colourReducer: $colourReducer,
-					includeBatteryAndLoads: $includeBatteryAndLoads
-				});
 
-				seriesLoadsIds = processedEnergy.seriesLoadsIds;
-
-				const processedEmissions =
-					projectionEmissionsData.length > 0
-						? processTechnology.emissions({
-								projection: projectionEmissionsData,
-								history: historyEmisssionsData,
-								includeBatteryAndLoads: $includeBatteryAndLoads
-						  })
-						: undefined;
-
-				const processedCapacity = processTechnology.capacity({
-					projection: projectionCapacityData,
-					history: historyCapacityData,
-					group: $selectedFuelTechGroup,
-					colourReducer: $colourReducer,
-					includeBatteryAndLoads: $includeBatteryAndLoads
-				});
-
-				const processedIntensity = processedEmissions
-					? processTechnology.intensity({
-							processedEmissions,
-							processedEnergy
-					  })
-					: undefined;
-
-				updateAllStores({
-					processedEnergy,
-					processedCapacity,
-					processedEmissions,
-					processedIntensity
-				});
-
-				fetching = false;
-			}
-		);
-	}
-
-	$: if ($isScenarioViewSection) {
-		fetching = true;
-
-		$selectionData = $multiSelectionData;
-
-		fetchScenarioViewData({ scenarios: $multiSelectionData, region: $selectedRegion }).then(
-			({ projectionsData, historyEnergyData, historyEmisssionsData, historyCapacityData }) => {
-				const processedEnergy = processScenario.generation({
-					projections: projectionsData,
-					history: historyEnergyData,
-					// group: $selectedFuelTechGroup,
-					includeBatteryAndLoads: $includeBatteryAndLoads
-				});
-
-				const processedCapacity = processScenario.capacity({
-					projections: projectionsData,
-					history: historyCapacityData,
-					// group: $selectedFuelTechGroup,
-					includeBatteryAndLoads: $includeBatteryAndLoads
-				});
-
-				const processedEmissions = processScenario.emissions({
-					projections: projectionsData,
-					history: historyEmisssionsData,
-					group: $selectedFuelTechGroup
-				});
-
-				const processedIntensity = processedEmissions
-					? processScenario.intensity({
-							processedEmissions,
-							processedEnergy
-					  })
-					: undefined;
-
-				// process colours
-				const updatedSeriesColours = processScenario.getScenarioColours(
-					processedEnergy.seriesNames
-				);
-
-				// update colours
-				processedEnergy.seriesColours = updatedSeriesColours;
-				processedCapacity.seriesColours = updatedSeriesColours;
-				processedEmissions.seriesColours = updatedSeriesColours;
-				if (processedIntensity) {
-					processedIntensity.seriesColours = updatedSeriesColours;
-				}
-
-				updateAllStores({
-					processedEnergy,
-					processedCapacity,
-					processedEmissions,
-					processedIntensity
-				});
-
-				fetching = false;
-			}
-		);
-	}
-
-	$: if ($isRegionViewSection) {
-		fetching = true;
-
-		const regionsOnly = regionOptions.filter((r) => r.value !== '_all');
-
-		fetchRegionViewData({
-			regions: regionsOnly,
-			model: $singleSelectionData.model,
-			scenario: $singleSelectionData.scenario,
-			pathway: $singleSelectionData.pathway
-		}).then((regionsData) => {
-			const processedEnergy = processRegion.generation({
-				regionsData,
-				// group: $selectedFuelTechGroup,
-				includeBatteryAndLoads: $includeBatteryAndLoads
-			});
-
-			console.log('processedEnergy', processedEnergy);
-
-			const processedCapacity = processRegion.capacity({
-				regionsData,
-				// group: $selectedFuelTechGroup,
-				includeBatteryAndLoads: $includeBatteryAndLoads
-			});
-
-			// console.log('processedCapacity', processedCapacity);
-
-			const processedEmissions = processRegion.emissions({
-				regionsData,
-				includeBatteryAndLoads: $includeBatteryAndLoads
-			});
-
-			// console.log('processedEmissions', processedEmissions);
-
-			const processedIntensity = processedEmissions
-				? processRegion.intensity({
-						processedEmissions,
-						processedEnergy
-				  })
-				: undefined;
-
-			// console.log('processedIntensity', processedIntensity);
-
-			updateAllStores({
-				processedEnergy,
-				processedCapacity,
-				processedEmissions,
-				processedIntensity
-			});
-
-			fetching = false;
-		});
-	}
 
 	/**
 	 *
@@ -409,6 +236,189 @@
 			setDefaultFocusTime();
 		}, 1500);
 	});
+	run(() => {
+		console.log(articles, filters);
+	});
+	run(() => {
+		if ($isTechnologyViewSection) {
+			fetching = true;
+
+			fetchTechnologyViewData({
+				model: $singleSelectionData.model,
+				scenario: $singleSelectionData.scenario,
+				pathway: $singleSelectionData.pathway,
+				region: $selectedRegion,
+				dataType: $selectedDataType
+			}).then(
+				({
+					projectionEnergyData,
+					projectionCapacityData,
+					projectionEmissionsData,
+					historyEnergyData,
+					historyCapacityData,
+					historyEmisssionsData
+				}) => {
+					const processedEnergy = processTechnology.generation({
+						projection: projectionEnergyData,
+						history: historyEnergyData,
+						group: $selectedFuelTechGroup,
+						colourReducer: $colourReducer,
+						includeBatteryAndLoads: $includeBatteryAndLoads
+					});
+
+					seriesLoadsIds = processedEnergy.seriesLoadsIds;
+
+					const processedEmissions =
+						projectionEmissionsData.length > 0
+							? processTechnology.emissions({
+									projection: projectionEmissionsData,
+									history: historyEmisssionsData,
+									includeBatteryAndLoads: $includeBatteryAndLoads
+							  })
+							: undefined;
+
+					const processedCapacity = processTechnology.capacity({
+						projection: projectionCapacityData,
+						history: historyCapacityData,
+						group: $selectedFuelTechGroup,
+						colourReducer: $colourReducer,
+						includeBatteryAndLoads: $includeBatteryAndLoads
+					});
+
+					const processedIntensity = processedEmissions
+						? processTechnology.intensity({
+								processedEmissions,
+								processedEnergy
+						  })
+						: undefined;
+
+					updateAllStores({
+						processedEnergy,
+						processedCapacity,
+						processedEmissions,
+						processedIntensity
+					});
+
+					fetching = false;
+				}
+			);
+		}
+	});
+	run(() => {
+		if ($isScenarioViewSection) {
+			fetching = true;
+
+			$selectionData = $multiSelectionData;
+
+			fetchScenarioViewData({ scenarios: $multiSelectionData, region: $selectedRegion }).then(
+				({ projectionsData, historyEnergyData, historyEmisssionsData, historyCapacityData }) => {
+					const processedEnergy = processScenario.generation({
+						projections: projectionsData,
+						history: historyEnergyData,
+						// group: $selectedFuelTechGroup,
+						includeBatteryAndLoads: $includeBatteryAndLoads
+					});
+
+					const processedCapacity = processScenario.capacity({
+						projections: projectionsData,
+						history: historyCapacityData,
+						// group: $selectedFuelTechGroup,
+						includeBatteryAndLoads: $includeBatteryAndLoads
+					});
+
+					const processedEmissions = processScenario.emissions({
+						projections: projectionsData,
+						history: historyEmisssionsData,
+						group: $selectedFuelTechGroup
+					});
+
+					const processedIntensity = processedEmissions
+						? processScenario.intensity({
+								processedEmissions,
+								processedEnergy
+						  })
+						: undefined;
+
+					// process colours
+					const updatedSeriesColours = processScenario.getScenarioColours(
+						processedEnergy.seriesNames
+					);
+
+					// update colours
+					processedEnergy.seriesColours = updatedSeriesColours;
+					processedCapacity.seriesColours = updatedSeriesColours;
+					processedEmissions.seriesColours = updatedSeriesColours;
+					if (processedIntensity) {
+						processedIntensity.seriesColours = updatedSeriesColours;
+					}
+
+					updateAllStores({
+						processedEnergy,
+						processedCapacity,
+						processedEmissions,
+						processedIntensity
+					});
+
+					fetching = false;
+				}
+			);
+		}
+	});
+	run(() => {
+		if ($isRegionViewSection) {
+			fetching = true;
+
+			const regionsOnly = regionOptions.filter((r) => r.value !== '_all');
+
+			fetchRegionViewData({
+				regions: regionsOnly,
+				model: $singleSelectionData.model,
+				scenario: $singleSelectionData.scenario,
+				pathway: $singleSelectionData.pathway
+			}).then((regionsData) => {
+				const processedEnergy = processRegion.generation({
+					regionsData,
+					// group: $selectedFuelTechGroup,
+					includeBatteryAndLoads: $includeBatteryAndLoads
+				});
+
+				console.log('processedEnergy', processedEnergy);
+
+				const processedCapacity = processRegion.capacity({
+					regionsData,
+					// group: $selectedFuelTechGroup,
+					includeBatteryAndLoads: $includeBatteryAndLoads
+				});
+
+				// console.log('processedCapacity', processedCapacity);
+
+				const processedEmissions = processRegion.emissions({
+					regionsData,
+					includeBatteryAndLoads: $includeBatteryAndLoads
+				});
+
+				// console.log('processedEmissions', processedEmissions);
+
+				const processedIntensity = processedEmissions
+					? processRegion.intensity({
+							processedEmissions,
+							processedEnergy
+					  })
+					: undefined;
+
+				// console.log('processedIntensity', processedIntensity);
+
+				updateAllStores({
+					processedEnergy,
+					processedCapacity,
+					processedEmissions,
+					processedIntensity
+				});
+
+				fetching = false;
+			});
+		}
+	});
 </script>
 
 <!-- TODO: Update preview image -->
@@ -419,9 +429,11 @@
 />
 
 <PageHeaderSimple>
+	<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
 	<div slot="main-heading">
 		<h1 class="tracking-widest text-center">Scenario Explorer</h1>
 	</div>
+	<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
 	<div slot="sub-heading">
 		<p class="text-sm text-center w-full md:w-[600px] mx-auto">
 			Explore the future of Australia’s electricity market. A range of modelled scenarios exist

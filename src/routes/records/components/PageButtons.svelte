@@ -7,7 +7,7 @@
 
 	const { title, seriesCsvData } = getContext('record-history-data-viz');
 
-	let copying = false;
+	let copying = $state(false);
 	function copyLink() {
 		copying = true;
 		const url = window.location.href;
@@ -17,9 +17,9 @@
 		}, 1000);
 	}
 
-	$: file = new Blob([$seriesCsvData], { type: 'text/plain' });
-	$: fileUrl = URL.createObjectURL(file);
-	$: fileName = `${$title.split(' ').join('-')}.csv`;
+	let file = $derived(new Blob([$seriesCsvData], { type: 'text/plain' }));
+	let fileUrl = $derived(URL.createObjectURL(file));
+	let fileName = $derived(`${$title.split(' ').join('-')}.csv`);
 </script>
 
 <div class="flex gap-3">
@@ -33,7 +33,7 @@
 
 	<button
 		class="bg-black text-white p-3 rounded-lg transition-all hover:bg-dark-grey"
-		on:click={copyLink}
+		onclick={copyLink}
 	>
 		{#if copying}
 			<IconClipboardDocumentCheck class="size-8" />

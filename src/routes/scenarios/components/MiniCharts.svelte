@@ -5,52 +5,65 @@
 
 	import { scenarioLabelMap } from '../page-data-options/models';
 
-	export let seriesNames;
-	export let seriesLabels;
-	export let seriesColours;
-	export let xTicks;
-	export let formatTickX;
-	export let formatTickY;
-	export let chartOverlay;
-	export let chartOverlayLine;
-	export let chartOverlayHatchStroke;
-	export let hoverData;
-	export let focusData;
-	export let displayUnit = '';
-	export let isButton = false;
-	export let selected = '';
-	export let seriesPathways = null;
 
-	/** @type {TimeSeriesData[]} */
-	export let seriesData;
+	
 
-	/** @type {string[]} */
-	export let seriesLoadsIds = [];
+	
 
-	export let showArea = true;
 
-	export let gridColClass = 'grid-cols-2 md:grid-cols-3';
-	export let sectionBorderClass = '';
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} seriesNames
+	 * @property {any} seriesLabels
+	 * @property {any} seriesColours
+	 * @property {any} xTicks
+	 * @property {any} formatTickX
+	 * @property {any} formatTickY
+	 * @property {any} chartOverlay
+	 * @property {any} chartOverlayLine
+	 * @property {any} chartOverlayHatchStroke
+	 * @property {any} hoverData
+	 * @property {any} focusData
+	 * @property {string} [displayUnit]
+	 * @property {boolean} [isButton]
+	 * @property {string} [selected]
+	 * @property {any} [seriesPathways]
+	 * @property {TimeSeriesData[]} seriesData
+	 * @property {string[]} [seriesLoadsIds]
+	 * @property {boolean} [showArea]
+	 * @property {string} [gridColClass]
+	 * @property {string} [sectionBorderClass]
+	 */
+
+	/** @type {Props} */
+	let {
+		seriesNames,
+		seriesLabels,
+		seriesColours,
+		xTicks,
+		formatTickX,
+		formatTickY,
+		chartOverlay,
+		chartOverlayLine,
+		chartOverlayHatchStroke,
+		hoverData,
+		focusData,
+		displayUnit = '',
+		isButton = false,
+		selected = '',
+		seriesPathways = null,
+		seriesData,
+		seriesLoadsIds = [],
+		showArea = true,
+		gridColClass = 'grid-cols-2 md:grid-cols-3',
+		sectionBorderClass = ''
+	} = $props();
 
 	const dispatch = createEventDispatcher();
 
-	$: tag = isButton ? 'button' : 'header';
 
-	$: keys = [...seriesNames].reverse();
 
-	$: getMaxValue = (/** @type {string} */ key) => {
-		const values = /** @type {number[]} */ (dataset.map((d) => d[key] || 0));
-		const maxValue = Math.round(Math.max(...values));
-		return maxValue < 10 ? 10 : maxValue;
-	};
 
-	$: dataset = seriesData.map((d) => {
-		const obj = { ...d };
-		seriesLoadsIds.forEach((id) => {
-			obj[id] = d[id] ? -d[id] : d[id];
-		});
-		return obj;
-	});
 
 	/**
 	 * @param {string} key
@@ -80,6 +93,20 @@
 			dispatch('scenario-click', { key });
 		}
 	}
+	let tag = $derived(isButton ? 'button' : 'header');
+	let keys = $derived([...seriesNames].reverse());
+	let dataset = $derived(seriesData.map((d) => {
+		const obj = { ...d };
+		seriesLoadsIds.forEach((id) => {
+			obj[id] = d[id] ? -d[id] : d[id];
+		});
+		return obj;
+	}));
+	let getMaxValue = $derived((/** @type {string} */ key) => {
+		const values = /** @type {number[]} */ (dataset.map((d) => d[key] || 0));
+		const maxValue = Math.round(Math.max(...values));
+		return maxValue < 10 ? 10 : maxValue;
+	});
 </script>
 
 <div class="grid {gridColClass} gap-3">
@@ -103,7 +130,7 @@
 				role={isButton ? 'button' : 'header'}
 				tabindex={isButton ? 0 : undefined}
 				aria-label={title}
-				on:mousedown={() => handleScenarioClick(key)}
+				onmousedown={() => handleScenarioClick(key)}
 			>
 				<div class="flex flex-col">
 					<h6 {title} class="truncate mb-0 col-span-5 text-dark-grey">{title}</h6>

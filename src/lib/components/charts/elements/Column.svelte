@@ -7,26 +7,37 @@
 
 	const { data, xGet, yGet, x, yRange, xScale, y, height } = getContext('LayerCake');
 
-	/** @type {string} [fill='#00e047'] - The shape's fill colour. */
-	export let fill = '#00e047';
+	
 
-	/** @type {string} [stroke='#000'] - The shape's stroke colour. */
-	export let stroke = '#000';
+	
 
-	/** @type {number} [strokeWidth=0] - The shape's stroke width. */
-	export let strokeWidth = 0;
+	
 
-	/** @type {boolean} [false] - Show the numbers for each column */
-	export let showLabels = false;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [fill]
+	 * @property {string} [stroke]
+	 * @property {number} [strokeWidth]
+	 * @property {boolean} [showLabels]
+	 */
 
-	$: columnWidth = (/** @type {*} */ d) => {
+	/** @type {Props} */
+	let {
+		fill = '#00e047',
+		stroke = '#000',
+		strokeWidth = 0,
+		showLabels = false
+	} = $props();
+
+	let columnWidth = $derived((/** @type {*} */ d) => {
 		const vals = $xGet(d);
 		return Math.abs(vals[1] - vals[0]);
-	};
+	});
 
-	$: columnHeight = (/** @type {*} */ d) => {
+	let columnHeight = $derived((/** @type {*} */ d) => {
 		return $yRange[0] - $yGet(d);
-	};
+	});
 </script>
 
 <g class="column-group">

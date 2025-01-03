@@ -2,10 +2,16 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import { byProp } from '$lib/utils/sort.js';
 
-	/** @type {import('./$types').PageData} */
-	export let data;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('./$types').PageData} data
+	 */
 
-	$: sortedFacilities = data.facilities.sort(byProp('name'));
+	/** @type {Props} */
+	let { data } = $props();
+
+	let sortedFacilities = $derived(data.facilities.sort(byProp('name')));
 </script>
 
 <Meta title="Sitemap" image="/img/preview.jpg" />

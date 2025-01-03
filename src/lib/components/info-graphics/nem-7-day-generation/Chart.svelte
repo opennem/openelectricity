@@ -23,47 +23,61 @@
 	export const formatTickY = (/** @type {number} */ d) => d3Format('.1f')(d / 1000) + ' GW';
 	// export const formatTickY = (/** @type {number} */ d) => d3Format('.0f')(d) + ' MW';
 
-	/** @type {TimeSeriesData[]} */
-	export let dataset = [];
+	
 
-	export let xKey = '';
 
-	/** @type {number[]} */
-	export let yKey = [];
+	
 
-	export let zKey = '';
 
-	/** @type {string[]} legend id */
-	export let seriesNames = [];
+	
 
-	/** @type {Object.<string, string>} legend label */
-	export let seriesLabels = {};
+	
 
-	/** @type {Object.<string, string>} legend colour */
-	export let seriesColours = {};
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData[]} [dataset]
+	 * @property {string} [xKey]
+	 * @property {number[]} [yKey]
+	 * @property {string} [zKey]
+	 * @property {string[]} [seriesNames]
+	 * @property {Object.<string, string>} [seriesLabels]
+	 * @property {Object.<string, string>} [seriesColours]
+	 */
+
+	/** @type {Props} */
+	let {
+		dataset = [],
+		xKey = '',
+		yKey = [],
+		zKey = '',
+		seriesNames = [],
+		seriesLabels = {},
+		seriesColours = {}
+	} = $props();
 
 	/** @type {TimeSeriesData | undefined} */
-	let hoverData;
+	let hoverData = $state();
 
 	/** @type {string | undefined} */
-	let hoverKey;
+	let hoverKey = $state();
 
-	$: stackedData = stack(dataset, seriesNames);
-	$: dailyTicks = dayTicks(dataset[0][xKey], dataset[dataset.length - 1][xKey]);
-	$: maxY = Math.round(Math.max(...dataset.map((d) => d._max || 0)));
-	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	$: hoverKeyValue =
-		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
-	$: hoverKeyColour = hoverKey ? seriesColours[hoverKey] : '';
-	$: hoverKeyLabel = hoverKey ? seriesLabels[hoverKey] : '';
+	let stackedData = $derived(stack(dataset, seriesNames));
+	let dailyTicks = $derived(dayTicks(dataset[0][xKey], dataset[dataset.length - 1][xKey]));
+	let maxY = $derived(Math.round(Math.max(...dataset.map((d) => d._max || 0))));
+	let hoverMax = $derived(hoverData ? hoverData._max || 0 : 0);
+	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
+	let hoverKeyValue =
+		$derived(hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null);
+	let hoverKeyColour = $derived(hoverKey ? seriesColours[hoverKey] : '');
+	let hoverKeyLabel = $derived(hoverKey ? seriesLabels[hoverKey] : '');
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		hoverKey = e.detail.key;
 		hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
 	};
 
-	$: nightGuides = nighttimes(dataset[0].date, dataset[dataset.length - 1].date);
+	let nightGuides = $derived(nighttimes(dataset[0].date, dataset[dataset.length - 1].date));
 	// $: console.log('nightGuides', nightGuides);
 </script>
 
@@ -93,7 +107,7 @@
 						{#if hoverKeyValue !== null}
 							<div class="flex items-center gap-2">
 								<div class="flex items-center gap-2">
-									<span class="w-2.5 h-2.5 block" style="background-color: {hoverKeyColour}" />
+									<span class="w-2.5 h-2.5 block" style="background-color: {hoverKeyColour}"></span>
 									{hoverKeyLabel}
 								</div>
 

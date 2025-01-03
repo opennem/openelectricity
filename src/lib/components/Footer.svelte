@@ -1,14 +1,16 @@
 <script>
+	import { preventDefault } from 'svelte/legacy';
+
 	import { version } from '$app/environment';
 
 	import SectionLink from './SectionLink.svelte';
-	let formSubmitting = false;
-	let formSubmitted = false;
+	let formSubmitting = $state(false);
+	let formSubmitted = $state(false);
 
 	/**
 	 * @type {HTMLInputElement}
 	 */
-	let emailField;
+	let emailField = $state();
 
 	async function signup(/** @type {{ currentTarget: HTMLFormElement | undefined; }} */ event) {
 		formSubmitting = true;
@@ -52,7 +54,7 @@
 					<strong>Stay Connected</strong> — Sign up to be notified of platform updates, events and the
 					latest analysis.
 				</div>
-				<form class="flex md:w-5/12 flex-shrink-0 items-center" on:submit|preventDefault={signup}>
+				<form class="flex md:w-5/12 flex-shrink-0 items-center" onsubmit={preventDefault(signup)}>
 					<input
 						type="email"
 						name="email"

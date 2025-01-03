@@ -5,10 +5,16 @@
 	import { groupOptions } from '../page-data-options/groups-technology';
 	import TableHeader from './TableHeader.svelte';
 
-	/** @type {string[]} */
-	export let seriesLoadsIds = [];
-	/** @type {string[]} */
-	export let hiddenRowNames = [];
+	
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string[]} [seriesLoadsIds]
+	 * @property {string[]} [hiddenRowNames]
+	 */
+
+	/** @type {Props} */
+	let { seriesLoadsIds = [], hiddenRowNames = [] } = $props();
 
 	const dispatch = createEventDispatcher();
 	const { selectedFuelTechGroup, includeBatteryAndLoads } = getContext('scenario-filters');
@@ -54,15 +60,15 @@
 	// $: console.log('energySeriesNames', $energySeriesNames);
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
 
-	$: sourceNames = $energySeriesNames
+	let sourceNames = $derived($energySeriesNames
 		.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
-		.reverse();
+		.reverse());
 
-	$: loadNames = $energySeriesNames
+	let loadNames = $derived($energySeriesNames
 		.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
-		.reverse();
+		.reverse());
 
-	$: energySourcesTotal = $energyHoverData
+	let energySourcesTotal = $derived($energyHoverData
 		? sourceNames.reduce(
 				/**
 				 * @param {number} acc
@@ -80,8 +86,8 @@
 				(acc, id) => acc + $energyFocusData[id],
 				0
 		  )
-		: 0;
-	$: energyLoadsTotal = $energyHoverData
+		: 0);
+	let energyLoadsTotal = $derived($energyHoverData
 		? loadNames.reduce(
 				/**
 				 * @param {number} acc
@@ -99,9 +105,9 @@
 				(acc, id) => acc + $energyFocusData[id],
 				0
 		  )
-		: 0;
+		: 0);
 
-	$: capacitySourcesTotal = $capacityHoverData
+	let capacitySourcesTotal = $derived($capacityHoverData
 		? sourceNames.reduce(
 				/**
 				 * @param {number} acc
@@ -119,7 +125,7 @@
 				(acc, id) => acc + $capacityFocusData[id],
 				0
 		  )
-		: 0;
+		: 0);
 
 	let isMetaPressed = false;
 
@@ -171,7 +177,7 @@
 	}
 </script>
 
-<svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
+<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
 
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
@@ -205,7 +211,7 @@
 						<span class="block text-xs">Generation</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
+							onclick={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
 						>
 							{$energyDisplayUnit}
 						</button>
@@ -216,7 +222,7 @@
 						<span class="block text-xs">Capacity</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
+							onclick={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
 						>
 							{$capacityDisplayUnit}
 						</button>
@@ -246,7 +252,7 @@
 		<tbody>
 			{#each sourceNames as name}
 				<tr
-					on:click={() => handleRowClick(name)}
+					onclick={() => handleRowClick(name)}
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
 					class:opacity-50={hiddenRowNames.includes(name)}
 				>
@@ -255,13 +261,13 @@
 							{#if hiddenRowNames.includes(name)}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
-								/>
+								></div>
 							{:else}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded"
 									style:background-color={$energySeriesColours[name]}
 									style:border-color={darken($energySeriesColours[name])}
-								/>
+								></div>
 							{/if}
 
 							<div>
@@ -303,14 +309,14 @@
 							{$energyConvertAndFormatValue(energyLoadsTotal)}
 						</div>
 					</th>
-					<th class="border-b border-warm-grey" />
+					<th class="border-b border-warm-grey"></th>
 				</tr>
 			</thead>
 
 			<tbody>
 				{#each loadNames as name, i}
 					<tr
-						on:click={() => handleRowClick(name)}
+						onclick={() => handleRowClick(name)}
 						class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
 						class:opacity-50={hiddenRowNames.includes(name)}
 					>
@@ -319,13 +325,13 @@
 								{#if hiddenRowNames.includes(name)}
 									<div
 										class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
-									/>
+									></div>
 								{:else}
 									<div
 										class="w-6 h-6 min-w-6 min-h-6 border rounded"
 										style:background-color={$energySeriesColours[name]}
 										style:border-color={darken($energySeriesColours[name])}
-									/>
+									></div>
 								{/if}
 
 								<div>
@@ -359,7 +365,7 @@
 
 		<tfoot>
 			<tr>
-				<td class="h-4" />
+				<td class="h-4"></td>
 			</tr>
 		</tfoot>
 	</table>
@@ -375,7 +381,7 @@
 						<span class="block text-xs">Volume</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
+							onclick={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
 						>
 							{$emissionsDisplayUnit}
 						</button>
@@ -396,7 +402,7 @@
 						<div
 							class="w-6 h-6 min-w-6 min-h-6 border rounded"
 							style="background-color: #444444; border-color: {darken('#444444')}"
-						/>
+						></div>
 						<span>Emissions</span>
 					</div>
 				</th>

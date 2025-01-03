@@ -3,9 +3,15 @@
 
 	const { width } = getContext('LayerCake');
 
-	export let min = 0;
-	export let max = 800;
-	export let fill = '';
+	/**
+	 * @typedef {Object} Props
+	 * @property {number} [min]
+	 * @property {number} [max]
+	 * @property {string} [fill]
+	 */
+
+	/** @type {Props} */
+	let { min = 0, max = 800, fill = '' } = $props();
 
 	const rectHeight = 10;
 </script>

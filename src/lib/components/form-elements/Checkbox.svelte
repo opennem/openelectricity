@@ -1,13 +1,27 @@
 <script>
+	import { preventDefault } from 'svelte/legacy';
+
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
 
-	/** @type {import('svelte/elements').FormEventHandler<HTMLInputElement> | null} */
-	export let changeHandler = null;
-	export let name = '';
-	export let label = '';
-	export let checked = false;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('svelte/elements').FormEventHandler<HTMLInputElement> | null} [changeHandler]
+	 * @property {string} [name]
+	 * @property {string} [label]
+	 * @property {boolean} [checked]
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let {
+		changeHandler = null,
+		name = '',
+		label = '',
+		checked = false,
+		...rest
+	} = $props();
 
 	/** @param {*} event  */
 	function handleChange(event) {
@@ -19,8 +33,8 @@
 	}
 </script>
 
-<label class={`label items-center ${$$restProps.class}`}>
-	<input type="checkbox" on:change|preventDefault={handleChange} {name} {checked} />
+<label class={`label items-center ${rest.class}`}>
+	<input type="checkbox" onchange={preventDefault(handleChange)} {name} {checked} />
 	<span>{label}</span>
 </label>
 

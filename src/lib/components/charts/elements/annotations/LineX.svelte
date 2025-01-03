@@ -1,18 +1,28 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 	const { padding, xGet, height } = getContext('LayerCake');
 
-	export let strokeArray = '2, 2';
-	export let strokeColour = 'black';
 
-	/** @type {{date: Date} | undefined} */
-	export let xValue = undefined;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [strokeArray]
+	 * @property {string} [strokeColour]
+	 * @property {{date: Date} | undefined} [xValue]
+	 */
 
-	let x = 0;
+	/** @type {Props} */
+	let { strokeArray = '2, 2', strokeColour = 'black', xValue = undefined } = $props();
 
-	$: if (xValue) {
-		x = $xGet(xValue);
-	}
+	let x = $state(0);
+
+	run(() => {
+		if (xValue) {
+			x = $xGet(xValue);
+		}
+	});
 </script>
 
 <g class="overlay pointer-events-none" transform="translate({-$padding.left}, 0)">

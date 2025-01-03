@@ -4,19 +4,34 @@
 
 	const dispatch = createEventDispatcher();
 
-	/** @type {{ label: string, value: string | number, icon?: string }[]} */
-	export let buttons = [];
-	/** @type {string | number } */
-	export let selected = '';
-	/** @type {(value: string) => void} */
-	export let onChange = () => {};
+	
+	
+	
 
-	export let xPad = 8;
-	export let yPad = 4;
-	export let textSize = 'sm';
-	export let roundedSize = 'xl';
+	/**
+	 * @typedef {Object} Props
+	 * @property {{ label: string, value: string | number, icon?: string }[]} [buttons]
+	 * @property {string | number } [selected]
+	 * @property {(value: string) => void} [onChange]
+	 * @property {number} [xPad]
+	 * @property {number} [yPad]
+	 * @property {string} [textSize]
+	 * @property {string} [roundedSize]
+	 */
 
-	$: isSelected = (value) => selected === value;
+	/** @type {Props & { [key: string]: any }} */
+	let {
+		buttons = [],
+		selected = '',
+		onChange = () => {},
+		xPad = 8,
+		yPad = 4,
+		textSize = 'sm',
+		roundedSize = 'xl',
+		...rest
+	} = $props();
+
+	let isSelected = $derived((value) => selected === value);
 
 	function handleClick(e) {
 		onChange(e.currentTarget.value);
@@ -25,11 +40,11 @@
 </script>
 
 <div
-	class={`flex md:inline-flex text-${textSize} w-auto mx-10 md:mx-0 rounded-${roundedSize} bg-light-warm-grey border border-solid border-mid-warm-grey ${$$restProps.class}`}
+	class={`flex md:inline-flex text-${textSize} w-auto mx-10 md:mx-0 rounded-${roundedSize} bg-light-warm-grey border border-solid border-mid-warm-grey ${rest.class}`}
 >
 	{#each buttons as { label, value, icon }, i}
 		<button
-			on:click={handleClick}
+			onclick={handleClick}
 			{value}
 			class="flex w-full md:w-auto items-center justify-center hover:text-black px-{xPad} py-{yPad} border rounded-{roundedSize} whitespace-nowrap"
 			class:bg-white={isSelected(value)}

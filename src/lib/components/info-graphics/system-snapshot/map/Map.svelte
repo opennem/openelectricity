@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { createEventDispatcher } from 'svelte';
 	import chroma from 'chroma-js';
 	import { createIntensityScale, createPriceScale } from '$lib/colours';
@@ -30,33 +32,48 @@
 		modifiers: [{ name: 'offset', options: { offset: [0, 8] } }]
 	};
 
-	let x = 0;
-	let y = 0;
+	let x = $state(0);
+	let y = $state(0);
 	const mousemove = (ev) => {
 		x = ev.clientX;
 		y = ev.clientY - 8;
 	};
 
-	$: getBoundingClientRect = () => ({
+	let getBoundingClientRect = $derived(() => ({
 		width: 0,
 		height: 0,
 		top: y,
 		bottom: y,
 		left: x,
 		right: x
-	});
+	}));
 	const virtualElement = writable({ getBoundingClientRect });
-	$: $virtualElement = { getBoundingClientRect };
+	run(() => {
+		$virtualElement = { getBoundingClientRect };
+	});
 	popperRef(virtualElement);
 
-	let showTooltip = false;
+	let showTooltip = $state(false);
 
-	/** @type {'live' | 'annual'} */
-	export let mode = 'live';
-	export let flows = null;
-	export let prices = null;
-	export let intensity = null;
-	export let highlight;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {'live' | 'annual'} [mode]
+	 * @property {any} [flows]
+	 * @property {any} [prices]
+	 * @property {any} [intensity]
+	 * @property {any} highlight
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let {
+		mode = 'live',
+		flows = null,
+		prices = null,
+		intensity = null,
+		highlight,
+		...rest
+	} = $props();
 
 	const absRound = (val) => auNumber.format(Math.abs(Math.round(val)));
 	const auDollar = new Intl.NumberFormat('en-AU', {
@@ -109,25 +126,25 @@
 		}
 	];
 
-	$: modeLive = mode === 'live';
+	let modeLive = $derived(mode === 'live');
 
-	$: tasText =
-		prices && modeLive ? `${auDollar.format(prices.TAS1)}` : auNumber.format(intensity.TAS);
-	$: vicText =
-		prices && modeLive ? `${auDollar.format(prices.VIC1)}` : auNumber.format(intensity.VIC);
-	$: saText = prices && modeLive ? `${auDollar.format(prices.SA1)}` : auNumber.format(intensity.SA);
-	$: qldText =
-		prices && modeLive ? `${auDollar.format(prices.QLD1)}` : auNumber.format(intensity.QLD);
-	$: nswText =
-		prices && modeLive ? `${auDollar.format(prices.NSW1)}` : auNumber.format(intensity.NSW);
-	$: waText = prices && modeLive ? '' : auNumber.format(intensity.WA);
+	let tasText =
+		$derived(prices && modeLive ? `${auDollar.format(prices.TAS1)}` : auNumber.format(intensity.TAS));
+	let vicText =
+		$derived(prices && modeLive ? `${auDollar.format(prices.VIC1)}` : auNumber.format(intensity.VIC));
+	let saText = $derived(prices && modeLive ? `${auDollar.format(prices.SA1)}` : auNumber.format(intensity.SA));
+	let qldText =
+		$derived(prices && modeLive ? `${auDollar.format(prices.QLD1)}` : auNumber.format(intensity.QLD));
+	let nswText =
+		$derived(prices && modeLive ? `${auDollar.format(prices.NSW1)}` : auNumber.format(intensity.NSW));
+	let waText = $derived(prices && modeLive ? '' : auNumber.format(intensity.WA));
 
 	/**
 	 * Get the fill colour for the state based on the map mode and data
 	 * @param {string} state
 	 * @returns {string}
 	 */
-	$: getStateFillColour = (state) => {
+	let getStateFillColour = $derived((state) => {
 		// if (!data) return '#FFFFFF';
 
 		// const scale = modeLive ? priceColourScale : intensityColourScale;
@@ -141,16 +158,16 @@
 		return modeLive
 			? priceColour(prices[`${state}1`]) || '#FFFFFF'
 			: $carbonIntensityColour(intensity[state]);
-	};
+	});
 
 	/**
 	 * Get the text colour for a state, making sure it has contrast to the fill colour
 	 * @param {string} state
 	 */
-	$: getStateTextColour = (state) => {
+	let getStateTextColour = $derived((state) => {
 		const fill = getStateFillColour(state) || '#FFFFFF';
 		return chroma.contrast(fill.toString(), '#FFFFFF') > 4.5 ? '#FFFFFF' : '#000000';
-	};
+	});
 
 	function regionEnter(region) {
 		dispatch('hover', { region });
@@ -159,8 +176,8 @@
 		dispatch('hover');
 	}
 
-	let flowRegions = '';
-	let flowValue = 0;
+	let flowRegions = $state('');
+	let flowValue = $state(0);
 
 	function flowEnter(flow, value) {
 		flowRegions = flow;
@@ -174,7 +191,7 @@
 	}
 </script>
 
-<svelte:window on:mousemove={mousemove} />
+<svelte:window onmousemove={mousemove} />
 
 {#if showTooltip}
 	<div class="hidden md:block" use:popperContent={extraOpts}>
@@ -188,19 +205,19 @@
 	fill="none"
 	xmlns="http://www.w3.org/2000/svg"
 	xmlns:xlink="http://www.w3.org/1999/xlink"
-	class={`overflow-visible w-full h-auto block ${$$restProps.class}`}
+	class={`overflow-visible w-full h-auto block ${rest.class}`}
 >
 	<!-- State geometry -->
 	{#each regions as { id, component, interaction }}
+		{@const SvelteComponent = component}
 		<g
 			role="group"
-			on:mouseenter={() => (interaction ? regionEnter(id) : false)}
-			on:mouseleave={() => (interaction ? regionLeave() : false)}
-			on:blur={() => (interaction ? regionLeave() : false)}
+			onmouseenter={() => (interaction ? regionEnter(id) : false)}
+			onmouseleave={() => (interaction ? regionLeave() : false)}
+			onblur={() => (interaction ? regionLeave() : false)}
 			class:cursor-pointer={interaction}
 		>
-			<svelte:component
-				this={component}
+			<SvelteComponent
 				fill={interaction ? getStateFillColour(id) : '#fff'}
 				class="{interaction ? 'hover:stroke-dark-grey' : ''} {highlight === id
 					? 'stroke-dark-grey stroke-2'
@@ -253,8 +270,8 @@
 			<g
 				role="group"
 				use:popperRef
-				on:mouseenter={() => flowEnter('NSW1->QLD1', flows['NSW1->QLD1'])}
-				on:mouseleave={flowLeave}
+				onmouseenter={() => flowEnter('NSW1->QLD1', flows['NSW1->QLD1'])}
+				onmouseleave={flowLeave}
 			>
 				<Flow
 					direction={flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
@@ -267,8 +284,8 @@
 			<g
 				role="group"
 				use:popperRef
-				on:mouseenter={() => flowEnter('NSW1->VIC1', flows['NSW1->VIC1'])}
-				on:mouseleave={flowLeave}
+				onmouseenter={() => flowEnter('NSW1->VIC1', flows['NSW1->VIC1'])}
+				onmouseleave={flowLeave}
 			>
 				<Flow
 					direction={flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
@@ -281,8 +298,8 @@
 			<g
 				role="group"
 				use:popperRef
-				on:mouseenter={() => flowEnter('TAS1->VIC1', flows['TAS1->VIC1'])}
-				on:mouseleave={flowLeave}
+				onmouseenter={() => flowEnter('TAS1->VIC1', flows['TAS1->VIC1'])}
+				onmouseleave={flowLeave}
 			>
 				<Flow
 					direction={flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
@@ -295,8 +312,8 @@
 			<g
 				role="group"
 				use:popperRef
-				on:mouseenter={() => flowEnter('SA1->VIC1', flows['SA1->VIC1'])}
-				on:mouseleave={flowLeave}
+				onmouseenter={() => flowEnter('SA1->VIC1', flows['SA1->VIC1'])}
+				onmouseleave={flowLeave}
 			>
 				<Flow
 					direction={flows['SA1->VIC1'] > 0 ? 'right' : 'left'}

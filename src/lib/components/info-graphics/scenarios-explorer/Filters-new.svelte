@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 	import lzString from 'lz-string';
 
@@ -44,7 +46,7 @@
 
 	// $selectedGroup = dataTechnologyGroupOptions[0].value;
 
-	$: queryObj = {
+	let queryObj = $derived({
 		model: $selectedModel,
 		region: $selectedRegion,
 		dataView: $selectedDataView,
@@ -53,29 +55,33 @@
 		pathway: $selectedPathway,
 		group: $selectedGroup,
 		multipleScenarios: $selectedMultipleScenarios
-	};
-	$: compressedQuery = lzString.compressToEncodedURIComponent(JSON.stringify(queryObj));
-	$: decompressedQuery = JSON.parse(lzString.decompressFromEncodedURIComponent(compressedQuery));
-	$: if (browser) {
-		let query = new URLSearchParams($page.url.searchParams.toString());
-		query.set('filters', compressedQuery);
-		goto(`?${query.toString()}#filters`);
-	}
+	});
+	let compressedQuery = $derived(lzString.compressToEncodedURIComponent(JSON.stringify(queryObj)));
+	let decompressedQuery = $derived(JSON.parse(lzString.decompressFromEncodedURIComponent(compressedQuery)));
+	run(() => {
+		if (browser) {
+			let query = new URLSearchParams($page.url.searchParams.toString());
+			query.set('filters', compressedQuery);
+			goto(`?${query.toString()}#filters`);
+		}
+	});
 
 	// update selectedGroup based on selectedDataView
-	$: if ($selectedDataView === 'emissions') {
-		console.log('totalEmissionsGroupOptions', totalEmissionsGroupOptions);
-		$selectedGroup = totalEmissionsGroupOptions[0].value;
-	} else {
-		// if ($selectedGroup === totalEmissionsGroupOptions[0].value) {
-		// }
-
-		if ($selectedDisplayView === 'technology') {
-			$selectedGroup = dataTechnologyGroupOptions[0].value;
+	run(() => {
+		if ($selectedDataView === 'emissions') {
+			console.log('totalEmissionsGroupOptions', totalEmissionsGroupOptions);
+			$selectedGroup = totalEmissionsGroupOptions[0].value;
 		} else {
-			$selectedGroup = dataRegionCompareOptions[0].value;
+			// if ($selectedGroup === totalEmissionsGroupOptions[0].value) {
+			// }
+
+			if ($selectedDisplayView === 'technology') {
+				$selectedGroup = dataTechnologyGroupOptions[0].value;
+			} else {
+				$selectedGroup = dataRegionCompareOptions[0].value;
+			}
 		}
-	}
+	});
 
 	function handleDisplayViewChange(prevView, view) {
 		$selectedDisplayView = view;
@@ -127,7 +133,7 @@
 					class="text-sm flex items-center gap-3 justify-center px-8 py-4 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
 					class:border-dark-grey={$showScenarioOptions}
 					class:border-mid-warm-grey={!$showScenarioOptions}
-					on:click={() => ($showScenarioOptions = !$showScenarioOptions)}
+					onclick={() => ($showScenarioOptions = !$showScenarioOptions)}
 				>
 					{#if $isScenarioDisplay}
 						Update Scenarios

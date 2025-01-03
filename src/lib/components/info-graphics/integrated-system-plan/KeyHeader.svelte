@@ -2,20 +2,34 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { formatValue } from './helpers';
 
-	export let key = '';
-	export let fuelTechId = '';
-	export let title = '';
-	/** @type {TimeSeriesData | undefined} */
-	export let data = undefined;
-	export let showIcon = false;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [key]
+	 * @property {string} [fuelTechId]
+	 * @property {string} [title]
+	 * @property {TimeSeriesData | undefined} [data]
+	 * @property {boolean} [showIcon]
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props} */
+	let {
+		key = '',
+		fuelTechId = '',
+		title = '',
+		data = undefined,
+		showIcon = false,
+		children
+	} = $props();
 
 	/** @type {'TWh' | '%'} */
 	let display = 'TWh'; // or '%'
 
-	$: value = data ? /** @type {number} */ (data[key]) : 0;
-	$: percent = data && data._max ? (value / data._max) * 100 : 0;
+	let value = $derived(data ? /** @type {number} */ (data[key]) : 0);
+	let percent = $derived(data && data._max ? (value / data._max) * 100 : 0);
 
-	$: displayValue = display === 'TWh' ? formatValue(value) : formatValue(percent);
+	let displayValue = $derived(display === 'TWh' ? formatValue(value) : formatValue(percent));
 </script>
 
 <header class="">
@@ -27,6 +41,6 @@
 	</div>
 
 	<h3 class="leading-sm h-24 mt-4">
-		<slot />
+		{@render children?.()}
 	</h3>
 </header>
