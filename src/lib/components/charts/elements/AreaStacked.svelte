@@ -7,45 +7,58 @@
 	const { data, xGet, xScale, yScale, zGet, yGet } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
-	/** @type {TimeSeriesData[]} */
-	export let dataset = [];
+	
 
-	/** @type {string|null} */
-	export let fill = null;
+	
 
-	export let clipPathId = '';
 
-	export let highlightId = '';
 
-	export let display = 'area';
 
-	/** @type {*} */
-	export let curveType = curveLinear;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData[]} [dataset]
+	 * @property {string|null} [fill]
+	 * @property {string} [clipPathId]
+	 * @property {string} [highlightId]
+	 * @property {string} [display]
+	 * @property {*} [curveType]
+	 */
 
-	$: compareDates = [...new Set(dataset.map((d) => d.date))];
+	/** @type {Props} */
+	let {
+		dataset = [],
+		fill = null,
+		clipPathId = '',
+		highlightId = '',
+		display = 'area',
+		curveType = curveLinear
+	} = $props();
 
-	$: areaGen = area()
+	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
+
+	let areaGen = $derived(area()
 		.x((d) => $xGet(d))
 		.y0((d) => $yScale(d[0]))
 		.y1((d) => $yScale(d[1]))
 		.curve(curveType)
-		.defined((d) => !isNaN(d[0]) && !isNaN(d[1]));
+		.defined((d) => !isNaN(d[0]) && !isNaN(d[1])));
 
-	$: lineGen = line(
+	let lineGen = $derived(line(
 		(d) => $xGet(d),
 		(d) => $yGet(d)
 	)
 		.curve(curveType)
-		.defined((d) => d.value !== null && !isNaN(d.value));
+		.defined((d) => d.value !== null && !isNaN(d.value)));
 
-	$: lineOpacity = (d) => {
+	let lineOpacity = $derived((d) => {
 		if (highlightId === null || highlightId === '') return 1;
 		return highlightId === d.key || highlightId === d.group ? 1 : 0.3;
-	};
-	$: areaOpacity = (d) => {
+	});
+	let areaOpacity = $derived((d) => {
 		if (highlightId === null || highlightId === '') return 1;
 		return highlightId === d.key || highlightId === d.group ? 1 : 0.5;
-	};
+	});
 
 	/**
 	 * @param d {[]}
@@ -112,11 +125,11 @@
 					r="5"
 					fill="transparent"
 					stroke-width="0"
-					on:mousemove={(e) => pointermove(e, d.key || d.group)}
-					on:mouseout={mouseout}
-					on:touchmove={(e) => pointermove(e, d.key || d.group)}
-					on:blur={mouseout}
-					on:pointerup={(e) => pointerup(e, d.key || d.group)}
+					onmousemove={(e) => pointermove(e, d.key || d.group)}
+					onmouseout={mouseout}
+					ontouchmove={(e) => pointermove(e, d.key || d.group)}
+					onblur={mouseout}
+					onpointerup={(e) => pointerup(e, d.key || d.group)}
 				/>
 			{/each}
 		{/if}
@@ -144,11 +157,11 @@
 				stroke={'none'}
 				stroke-width={'0'}
 				opacity={areaOpacity(d)}
-				on:mousemove={(e) => pointermove(e, d.key || d.group)}
-				on:mouseout={mouseout}
-				on:touchmove={(e) => pointermove(e, d.key || d.group)}
-				on:blur={mouseout}
-				on:pointerup={(e) => pointerup(e, d.key || d.group)}
+				onmousemove={(e) => pointermove(e, d.key || d.group)}
+				onmouseout={mouseout}
+				ontouchmove={(e) => pointermove(e, d.key || d.group)}
+				onblur={mouseout}
+				onpointerup={(e) => pointerup(e, d.key || d.group)}
 			/>
 		{/each}
 	</g>

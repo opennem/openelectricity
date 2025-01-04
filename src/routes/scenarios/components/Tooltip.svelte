@@ -1,30 +1,44 @@
 <script>
 	import { formatFyTickX } from '$lib/utils/formatters';
-	export let hoverData;
-	export let hoverKey;
-	export let seriesColours;
-	export let seriesLabels;
-	export let defaultText = '';
-	export let showTotal = false;
 
-	/** @type {Function} */
-	export let convertAndFormatValue = (/** @type {number} */ value) => value;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} hoverData
+	 * @property {any} hoverKey
+	 * @property {any} seriesColours
+	 * @property {any} seriesLabels
+	 * @property {string} [defaultText]
+	 * @property {boolean} [showTotal]
+	 * @property {Function} [convertAndFormatValue]
+	 */
 
-	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
+	/** @type {Props} */
+	let {
+		hoverData,
+		hoverKey,
+		seriesColours,
+		seriesLabels,
+		defaultText = '',
+		showTotal = false,
+		convertAndFormatValue = (/** @type {number} */ value) => value
+	} = $props();
 
-	$: convertedMax = hoverMax || hoverMax === 0 ? convertAndFormatValue(hoverMax) : NaN;
+	let hoverMax = $derived(hoverData ? hoverData._max || 0 : 0);
 
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	let convertedMax = $derived(hoverMax || hoverMax === 0 ? convertAndFormatValue(hoverMax) : NaN);
 
-	$: hoverKeyValue =
-		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
+	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 
-	$: convertedValue =
-		hoverKeyValue || hoverKeyValue === 0 ? convertAndFormatValue(hoverKeyValue) : NaN;
+	let hoverKeyValue =
+		$derived(hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null);
 
-	$: hoverKeyColour = hoverKey ? seriesColours[hoverKey] : '';
+	let convertedValue =
+		$derived(hoverKeyValue || hoverKeyValue === 0 ? convertAndFormatValue(hoverKeyValue) : NaN);
 
-	$: hoverKeyLabel = hoverKey ? seriesLabels[hoverKey] : '';
+	let hoverKeyColour = $derived(hoverKey ? seriesColours[hoverKey] : '');
+
+	let hoverKeyLabel = $derived(hoverKey ? seriesLabels[hoverKey] : '');
 </script>
 
 <div class="h-6">
@@ -39,7 +53,7 @@
 					{#if hoverKeyValue !== null}
 						<div class="flex items-center gap-2">
 							<div class="flex items-center gap-2">
-								<span class="w-2.5 h-2.5 block" style="background-color: {hoverKeyColour}" />
+								<span class="w-2.5 h-2.5 block" style="background-color: {hoverKeyColour}"></span>
 								{hoverKeyLabel}
 							</div>
 

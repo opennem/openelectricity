@@ -1,9 +1,15 @@
 <script>
-	export let fuelTech;
-	export let sizeClass = 6;
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} fuelTech
+	 * @property {number} [sizeClass]
+	 */
+
+	/** @type {Props} */
+	let { fuelTech, sizeClass = 6 } = $props();
 
 	/** @type {*} */
-	let icon;
+	let icon = $derived(module.default);
 
 	/**
 	 * @param {string} fuelTech
@@ -15,15 +21,13 @@
 			.join('');
 	}
 
-	$: fuelTechIconName = fuelTechName(fuelTech);
+	let fuelTechIconName = $derived(fuelTechName(fuelTech));
 
-	$: {
-		import(`$lib/icons/fuel-techs/${fuelTechIconName}Sm.svelte`).then((module) => {
-			icon = module.default;
-		});
-	}
+	
+
+	const SvelteComponent = $derived(icon);
 </script>
 
 <div class="size-{sizeClass}">
-	<svelte:component this={icon} class="size-{sizeClass}" />
+	<SvelteComponent class="size-{sizeClass}" />
 </div>

@@ -12,12 +12,18 @@
 	const { singleSelectionData, multiSelectionData, isSingleSelectionMode } =
 		getContext('scenario-filters');
 
-	export let mobileView = false;
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [mobileView]
+	 */
+
+	/** @type {Props} */
+	let { mobileView = false } = $props();
 
 	/** @type {string[]} */
-	let selectedScenarios = [];
+	let selectedScenarios = $state([]);
 	/** @type {string | null} */
-	let focusScenarioId = null;
+	let focusScenarioId = $state(null);
 	/** @type {ScenarioPathway[]} */
 	let scenariosPathways = scenarioOptions.map((/**@type {*} */ s) => ({
 		id: s.id,
@@ -34,17 +40,17 @@
 		focusScenarioId = $singleSelectionData.id;
 	});
 
-	$: focusScenario = scenarioOptions.find((/**@type {*} */ s) => s.id === focusScenarioId);
-	$: focusScenarioModel = focusScenario
+	let focusScenario = $derived(scenarioOptions.find((/**@type {*} */ s) => s.id === focusScenarioId));
+	let focusScenarioModel = $derived(focusScenario
 		? modelOptions.find((m) => m.value === focusScenario.model)
-		: null;
-	$: focusPathways = focusScenarioModel ? focusScenarioModel.pathways : [];
+		: null);
+	let focusPathways = $derived(focusScenarioModel ? focusScenarioModel.pathways : []);
 
-	$: selectedPathways = focusScenarioId
+	let selectedPathways = $derived(focusScenarioId
 		? $multiSelectionData
 				.filter((d) => d.model === focusScenario.model && d.scenario === focusScenario.value)
 				.map((d) => d.pathway)
-		: [];
+		: []);
 
 	// $: console.log('selectedPathways', selectedPathways);
 	// $: console.log('focusScenarioModel', focusScenarioModel);

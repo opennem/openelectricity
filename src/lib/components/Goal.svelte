@@ -1,6 +1,12 @@
 <script>
-	export let goal = '';
-	export let index = 1;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [goal]
+	 * @property {number} [index]
+	 */
+
+	/** @type {Props} */
+	let { goal = '', index = 1 } = $props();
 </script>
 
 <div class="goal">

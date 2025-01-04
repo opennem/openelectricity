@@ -1,29 +1,43 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { LayerCake, Svg } from 'layercake';
 
 	import Arc from '$lib/components/charts/elements/Arc.svelte';
 
-	/** @type {import('$lib/types/chart.types').TimeSeriesData[]} */
-	export let dataset = [];
+	
 
-	/** @type {number[]} */
-	export let xDomain = [];
+	
 
-	/** @type {number[]} */
-	export let markerLines = [];
+	
 
-	/** @type {string} */
-	export let xKey = '';
+	
 
-	export let fill = 'lightgrey';
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('$lib/types/chart.types').TimeSeriesData[]} [dataset]
+	 * @property {number[]} [xDomain]
+	 * @property {number[]} [markerLines]
+	 * @property {string} [xKey]
+	 * @property {string} [fill]
+	 */
 
-	$: xMin = xDomain ? xDomain[0] : 0;
-	$: xMax = xDomain ? xDomain[1] : 0;
+	/** @type {Props} */
+	let {
+		dataset = [],
+		xDomain = [],
+		markerLines = [],
+		xKey = '',
+		fill = 'lightgrey'
+	} = $props();
+
+	let xMin = $derived(xDomain ? xDomain[0] : 0);
+	let xMax = $derived(xDomain ? xDomain[1] : 0);
 
 	/** @type {{ start: number, end: number }[]} */
-	let arcs = [];
+	let arcs = $state([]);
 
-	$: {
+	run(() => {
 		arcs = [];
 
 		if (markerLines.length > 0) {
@@ -37,7 +51,7 @@
 		} else {
 			arcs.push({ start: xMin, end: xMax });
 		}
-	}
+	});
 </script>
 
 <div class="chart-container">

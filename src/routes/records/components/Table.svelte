@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import {
 		getFormattedDate,
 		getFormattedMonth,
@@ -8,9 +10,11 @@
 	import FuelTechIcon from './FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 
-	export let dataset;
+	let { dataset } = $props();
 
-	$: console.log('dataset', dataset);
+	run(() => {
+		console.log('dataset', dataset);
+	});
 </script>
 
 <table class="bg-white text-sm w-full">
@@ -18,8 +22,8 @@
 		<tr class="border-b border-warm-grey sticky top-0 bg-white/80 backdrop-blur-sm z-10">
 			<th class="px-4 py-4 text-left">Date</th>
 			<th class="px-4 py-4 text-left">Record</th>
-			<th />
-			<th />
+			<th></th>
+			<th></th>
 			<th class="px-4 py-4 text-right">Region</th>
 		</tr>
 	</thead>

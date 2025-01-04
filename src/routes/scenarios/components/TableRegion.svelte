@@ -3,11 +3,17 @@
 	import { color } from 'd3-color';
 	import TableHeader from './TableHeader.svelte';
 
-	/** @type {string[]} */
-	export let seriesLoadsIds = [];
-	/** @type {string[]} */
-	export let hiddenRowNames = [];
-	export let title = '';
+	
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string[]} [seriesLoadsIds]
+	 * @property {string[]} [hiddenRowNames]
+	 * @property {string} [title]
+	 */
+
+	/** @type {Props} */
+	let { seriesLoadsIds = [], hiddenRowNames = [], title = '' } = $props();
 
 	const dispatch = createEventDispatcher();
 	const { includeBatteryAndLoads } = getContext('scenario-filters');
@@ -85,7 +91,7 @@
 	}
 </script>
 
-<svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
+<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
 
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
@@ -105,7 +111,7 @@
 						<span class="block text-xs">Generation</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
+							onclick={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
 						>
 							{$energyDisplayUnit}
 						</button>
@@ -117,7 +123,7 @@
 						<span class="block text-xs">Capacity</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
+							onclick={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
 						>
 							{$capacityDisplayUnit}
 						</button>
@@ -129,7 +135,7 @@
 						<span class="block text-xs">Emissions</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
+							onclick={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
 						>
 							{$emissionsDisplayUnit}
 						</button>
@@ -146,12 +152,12 @@
 
 		<tbody class="border-b border-warm-grey">
 			<tr>
-				<td colspan="5" class="h-4" />
+				<td colspan="5" class="h-4"></td>
 			</tr>
 			{#each $energySeriesNames as name, i}
 				<tr
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm"
-					on:click={() => handleRowClick(name)}
+					onclick={() => handleRowClick(name)}
 					class:opacity-50={hiddenRowNames.includes(name)}
 				>
 					<!-- <td
@@ -174,13 +180,13 @@
 							{#if hiddenRowNames.includes(name)}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey relative top-1"
-								/>
+								></div>
 							{:else}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded relative top-1"
 									style:background-color={$energySeriesColours[name]}
 									style:border-color={darken($energySeriesColours[name])}
-								/>
+								></div>
 							{/if}
 							<div>
 								{$energySeriesLabels[name]}
@@ -229,7 +235,7 @@
 				</tr>
 			{/each}
 			<tr>
-				<td colspan="5" class="h-4" />
+				<td colspan="5" class="h-4"></td>
 			</tr>
 		</tbody>
 	</table>

@@ -1,6 +1,5 @@
 <script>
-	export let yValue;
-	export let xValue;
+	let { yValue, xValue } = $props();
 </script>
 
 <div class="h-6">

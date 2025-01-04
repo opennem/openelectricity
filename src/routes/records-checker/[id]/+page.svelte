@@ -1,63 +1,28 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { parseISO } from 'date-fns';
 
 	import RecordHistoryChart from '../components/RecordHistoryChart.svelte';
 
-	export let data;
+	let { data } = $props();
 
-	let historyData = [];
-	let totalHistory = 0;
-	let valueUnit = '';
-	let period = '';
+	let historyData = $state([]);
+	let totalHistory = $state(0);
+	let valueUnit = $state('');
+	let period = $state('');
 
-	let currentPage = data.page || 1;
-	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
+	let currentPage = $state(data.page || 1);
+	let currentStartRecordIndex = $state((currentPage - 1) * 100 + 1);
 
-	let issueInstanceIds = [];
+	let issueInstanceIds = $state([]);
 
-	$: console.log('issueInstanceIds', issueInstanceIds);
 
-	$: id = data.id;
-	$: totalPages = Math.ceil(totalHistory / 100);
-	$: currentLastRecordIndex = currentStartRecordIndex + 99;
-	$: lastRecordIndex =
-		currentLastRecordIndex > totalHistory ? totalHistory : currentLastRecordIndex;
-	$: fetchRecord(id, currentPage);
 
-	$: timeSeriesData = historyData
-		.map((record) => {
-			const date = parseISO(record.interval);
-			return {
-				...record,
-				date,
-				time: date.getTime(),
-				value: record.value
-			};
-		})
-		.sort((a, b) => b.time - a.time);
 
-	$: aggregate = historyData[0]?.aggregate;
 
-	$: {
-		issueInstanceIds = [];
-
-		timeSeriesData.forEach((d, i) => {
-			const current = d.value;
-			const next = timeSeriesData[i + 1]?.value;
-
-			// High peak check - if the current value is lower than the next value
-			if (aggregate === 'high' && next && current < next) {
-				issueInstanceIds.push(d.instance_id);
-			}
-
-			// Low peak check - if the current value is higher than the next value
-			if (aggregate === 'low' && next && current > next) {
-				issueInstanceIds.push(d.instance_id);
-			}
-		});
-	}
 
 	/**
 	 * Fetch a single record
@@ -93,9 +58,6 @@
 		goto(`/records/${id}?page=${page}`, { replaceState: true });
 	}
 
-	$: hasIssue = (id) => {
-		return issueInstanceIds.includes(id);
-	};
 
 	// remove seconds and time difference from timestamp
 	function removeSeconds(timestamp) {
@@ -104,6 +66,50 @@
 
 	const auNumber = new Intl.NumberFormat('en-AU', {
 		maximumFractionDigits: 0
+	});
+	let timeSeriesData = $derived(historyData
+		.map((record) => {
+			const date = parseISO(record.interval);
+			return {
+				...record,
+				date,
+				time: date.getTime(),
+				value: record.value
+			};
+		})
+		.sort((a, b) => b.time - a.time));
+	let aggregate = $derived(historyData[0]?.aggregate);
+	run(() => {
+		issueInstanceIds = [];
+
+		timeSeriesData.forEach((d, i) => {
+			const current = d.value;
+			const next = timeSeriesData[i + 1]?.value;
+
+			// High peak check - if the current value is lower than the next value
+			if (aggregate === 'high' && next && current < next) {
+				issueInstanceIds.push(d.instance_id);
+			}
+
+			// Low peak check - if the current value is higher than the next value
+			if (aggregate === 'low' && next && current > next) {
+				issueInstanceIds.push(d.instance_id);
+			}
+		});
+	});
+	run(() => {
+		console.log('issueInstanceIds', issueInstanceIds);
+	});
+	let id = $derived(data.id);
+	let totalPages = $derived(Math.ceil(totalHistory / 100));
+	let currentLastRecordIndex = $derived(currentStartRecordIndex + 99);
+	let lastRecordIndex =
+		$derived(currentLastRecordIndex > totalHistory ? totalHistory : currentLastRecordIndex);
+	run(() => {
+		fetchRecord(id, currentPage);
+	});
+	let hasIssue = $derived((id) => {
+		return issueInstanceIds.includes(id);
 	});
 </script>
 
@@ -127,7 +133,7 @@
 		<button
 			class="border rounded text-xs py-1 px-4"
 			class:invisible={currentPage === 1}
-			on:click={() => updateCurrentPage(currentPage - 1)}>Previous</button
+			onclick={() => updateCurrentPage(currentPage - 1)}>Previous</button
 		>
 		<div class="text-xs text-center">
 			Page {currentPage} of {totalPages}
@@ -137,7 +143,7 @@
 		<button
 			class="border rounded text-xs py-1 px-4"
 			class:invisible={currentPage === totalPages}
-			on:click={() => updateCurrentPage(currentPage + 1)}>Next</button
+			onclick={() => updateCurrentPage(currentPage + 1)}>Next</button
 		>
 	</div>
 
@@ -148,7 +154,7 @@
 			<thead>
 				<tr class="border-b border-mid-warm-grey">
 					<th colspan="2" class="!text-center">Current Record</th>
-					<th />
+					<th></th>
 				</tr>
 			</thead>
 

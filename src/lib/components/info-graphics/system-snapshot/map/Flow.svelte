@@ -1,14 +1,26 @@
 <script>
-	export let flow = 0;
-	export let x = 0;
-	export let y = 0;
-	export let direction = 'left';
-	export let colour = 'black';
+	/**
+	 * @typedef {Object} Props
+	 * @property {number} [flow]
+	 * @property {number} [x]
+	 * @property {number} [y]
+	 * @property {string} [direction]
+	 * @property {string} [colour]
+	 */
+
+	/** @type {Props} */
+	let {
+		flow = 0,
+		x = 0,
+		y = 0,
+		direction = 'left',
+		colour = 'black'
+	} = $props();
 
 	const dur = '1.5s';
 	const values = '0.5;1;0';
 
-	let showAnimation = false;
+	let showAnimation = $state(false);
 
 	setInterval(() => {
 		showAnimation = !showAnimation;

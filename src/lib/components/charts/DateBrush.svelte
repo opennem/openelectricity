@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { LayerCake, Svg, Html } from 'layercake';
 	import { scaleUtc } from 'd3-scale';
 
@@ -12,7 +14,6 @@
 	import ClipPathCustom from './elements/defs/ClipPathCustom.svelte';
 	import Brush from './elements/Brush.html.svelte';
 
-	export let store;
 
 	const {
 		seriesNames: yKeys,
@@ -29,29 +30,48 @@
 		xTicks
 	} = store;
 
-	export let dataXDomain;
-	export let axisXTicks;
-	export let xKey = 'date';
-	export let brushedLineStroke = '#C74523';
-	export let defaultChartHeightClasses = 'h-[70px]';
-	export let showLineData = true;
-	export let hoverDataX;
-	export let focusDataX;
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} store
+	 * @property {any} dataXDomain
+	 * @property {any} axisXTicks
+	 * @property {string} [xKey]
+	 * @property {string} [brushedLineStroke]
+	 * @property {string} [defaultChartHeightClasses]
+	 * @property {boolean} [showLineData]
+	 * @property {any} hoverDataX
+	 * @property {any} focusDataX
+	 */
+
+	/** @type {Props} */
+	let {
+		store,
+		dataXDomain,
+		axisXTicks,
+		xKey = 'date',
+		brushedLineStroke = '#C74523',
+		defaultChartHeightClasses = 'h-[70px]',
+		showLineData = true,
+		hoverDataX,
+		focusDataX
+	} = $props();
 
 	const id = getSeqId();
 	const clipPathId = `${id}-clip-path`;
 
 	/** @type {*} */
-	let brushComponent;
+	let brushComponent = $state();
 
-	$: yKey = $yKeys[0] || '';
-	$: if (!dataXDomain) {
-		brushComponent?.clear();
-	}
-	$: hoverD = hoverDataX || $hoverData;
-	$: focusD = focusDataX || $focusData;
+	let yKey = $derived($yKeys[0] || '');
+	run(() => {
+		if (!dataXDomain) {
+			brushComponent?.clear();
+		}
+	});
+	let hoverD = $derived(hoverDataX || $hoverData);
+	let focusD = $derived(focusDataX || $focusData);
 
-	$: cType = typeof $curveType === 'function' ? $curveType : $curveFunction;
+	let cType = $derived(typeof $curveType === 'function' ? $curveType : $curveFunction);
 </script>
 
 <div class="w-full {defaultChartHeightClasses} bg-light-warm-grey">

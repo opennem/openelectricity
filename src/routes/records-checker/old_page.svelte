@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	/** @typedef {import('$lib/types/filters.types').TechnologyFilterDict} TechnologyFilterDict */
 	/** @typedef {import('$lib/types/filters.types').TechnologyFilterKey} TechnologyFilterKey  */
 	/** @typedef {import('$lib/types/record.types').Record} Record  */
@@ -28,14 +30,22 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 
-	/** @type {PageData} */
-	export let data;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {PageData} data
+	 */
 
-	$: console.log('data', data);
+	/** @type {Props} */
+	let { data } = $props();
+
+	run(() => {
+		console.log('data', data);
+	});
 
 	const PAGE_LENGTH = 50;
-	let recordsData = data.records;
-	let currentPage = 1;
+	let recordsData = $state(data.records);
+	let currentPage = $state(1);
 
 	// Grab defaults from URL if present
 	// let pURL = $page.url;
@@ -57,33 +67,33 @@
 	let technologyArgs = {};
 	let regionArgs = {};
 
-	let isLoading = false;
+	let isLoading = $state(false);
 
-	let showMenu = false;
-	let showTechnology = false;
-	let showRegions = false;
-	let showPeakLow = false;
-	let showDate = false;
-	let showLoadMore = data.count > PAGE_LENGTH;
+	let showMenu = $state(false);
+	let showTechnology = $state(false);
+	let showRegions = $state(false);
+	let showPeakLow = $state(false);
+	let showDate = $state(false);
+	let showLoadMore = $state(data.count > PAGE_LENGTH);
 
 	// let searchString = pURL.searchParams.get('search') || '';
-	let searchString = '';
+	let searchString = $state('');
 	/** @type {TechnologyFilterDict} */
-	let technologySelections = { ...technologyDefaultSelections, ...technologyArgs };
-	let regionSelections = { ...regionDefaultSelections, ...regionArgs };
+	let technologySelections = $state({ ...technologyDefaultSelections, ...technologyArgs });
+	let regionSelections = $state({ ...regionDefaultSelections, ...regionArgs });
 	// let peakLowSelection = pURL.searchParams.get('peak-low') || 'all';
-	let peakLowSelection = 'all';
+	let peakLowSelection = $state('all');
 	// let dateSelection = pURL.searchParams.get('date') || 'none';
-	let dateSelection = 'none';
-	let dateChosen = 'none';
+	let dateSelection = $state('none');
+	let dateChosen = $state('none');
 
-	$: hasSearchTerm = searchString.trim() !== '';
-	$: hasTechnologySelections = Object.values(technologySelections).find((selection) => selection);
-	$: hasRegionSelections = Object.values(regionSelections).find((selection) => selection);
-	$: hasFilters =
-		hasSearchTerm || hasTechnologySelections || hasRegionSelections || peakLowSelection !== 'all';
+	let hasSearchTerm = $derived(searchString.trim() !== '');
+	let hasTechnologySelections = $derived(Object.values(technologySelections).find((selection) => selection));
+	let hasRegionSelections = $derived(Object.values(regionSelections).find((selection) => selection));
+	let hasFilters =
+		$derived(hasSearchTerm || hasTechnologySelections || hasRegionSelections || peakLowSelection !== 'all');
 
-	$: recordsFilter = (/** @type {Record[]} */ records) =>
+	let recordsFilter = $derived((/** @type {Record[]} */ records) =>
 		records?.filter((/** @type {Record} */ record) => {
 			const searchFilter =
 				!record.description ||
@@ -98,10 +108,10 @@
 			const peakLowFilter = peakLowSelection === 'all' || record.record_type === peakLowSelection;
 
 			return searchFilter && technologyFilter && regionFilter && peakLowFilter;
-		});
+		}));
 
-	$: filteredRecords = recordsFilter(recordsData) || [];
-	$: dailyRecords = recordsByDay(filteredRecords);
+	let filteredRecords = $derived(recordsFilter(recordsData) || []);
+	let dailyRecords = $derived(recordsByDay(filteredRecords));
 
 	let mounted = false;
 

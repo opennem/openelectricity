@@ -3,14 +3,20 @@
 
 	const dispatch = createEventDispatcher();
 
-	/** @type {{ label?: string, value: string | number, icon?: *, size?: string }[]} */
-	export let buttons = [];
-	/** @type {string | number } */
-	export let selected = '';
-	/** @type {(value: string) => void} */
-	export let onChange = () => {};
+	
+	
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {{ label?: string, value: string | number, icon?: *, size?: string }[]} [buttons]
+	 * @property {string | number } [selected]
+	 * @property {(value: string) => void} [onChange]
+	 */
 
-	$: isSelected = (value) => selected === value;
+	/** @type {Props & { [key: string]: any }} */
+	let { buttons = [], selected = '', onChange = () => {}, ...rest } = $props();
+
+	let isSelected = $derived((value) => selected === value);
 
 	function handleClick(e) {
 		onChange(e.currentTarget.value);
@@ -21,11 +27,11 @@
 <!-- selected === value -->
 
 <div
-	class={`flex text-sm md:inline-flex rounded-xl bg-light-warm-grey border border-solid border-mid-warm-grey ${$$restProps.class}`}
+	class={`flex text-sm md:inline-flex rounded-xl bg-light-warm-grey border border-solid border-mid-warm-grey ${rest.class}`}
 >
 	{#each buttons as { label, value, icon, size }}
 		<button
-			on:click={handleClick}
+			onclick={handleClick}
 			{value}
 			class="flex w-full gap-3 md:w-auto items-center justify-center hover:text-black px-4 py-4 md:px-8 md:py-4 border rounded-xl whitespace-nowrap"
 			class:bg-white={isSelected(value)}
@@ -36,7 +42,8 @@
 			class:border-transparent={!isSelected(value)}
 		>
 			{#if icon}
-				<svelte:component this={icon} class={size} />
+				{@const SvelteComponent = icon}
+				<SvelteComponent class={size} />
 			{/if}
 			{#if label}
 				{label}

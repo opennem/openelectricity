@@ -2,20 +2,35 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { fuelTechName } from '$lib/fuel_techs';
 
-	/** @type {FuelTechCode} */
-	export let fueltech;
-	export let iconSize = 18;
-	export let textSize = 13;
-	export let showText = true;
-	export let pxClass = 'px-5';
-	export let showBgColour = true;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {FuelTechCode} fueltech
+	 * @property {number} [iconSize]
+	 * @property {number} [textSize]
+	 * @property {boolean} [showText]
+	 * @property {string} [pxClass]
+	 * @property {boolean} [showBgColour]
+	 * @property {import('svelte').Snippet} [children]
+	 */
 
-	$: bgClass = showBgColour ? `bg-${fueltech}` : '';
-	$: highlightTextColor = showBgColour
+	/** @type {Props} */
+	let {
+		fueltech,
+		iconSize = 18,
+		textSize = 13,
+		showText = true,
+		pxClass = 'px-5',
+		showBgColour = true,
+		children
+	} = $props();
+
+	let bgClass = $derived(showBgColour ? `bg-${fueltech}` : '');
+	let highlightTextColor = $derived(showBgColour
 		? fueltech === 'solar'
 			? 'text-black'
 			: 'text-white'
-		: 'text-black';
+		: 'text-black');
 </script>
 
 <div
@@ -26,9 +41,9 @@
 	<Icon icon={fueltech} size={iconSize} />
 	{#if showText}
 		<span class="relative top-[1px]">
-			<slot>
+			{#if children}{@render children()}{:else}
 				{fuelTechName(fueltech)}
-			</slot>
+			{/if}
 		</span>
 	{/if}
 </div>

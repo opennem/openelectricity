@@ -1,10 +1,19 @@
 <script>
-	export let checked = false;
+	import { createBubbler } from 'svelte/legacy';
 
-	$: background = checked ? 'bg-dark-grey' : 'bg-warm-grey';
-	$: position = checked ? 'translate-x-3' : '-translate-x-3';
-	$: crossfade = checked ? 'opacity-0 duration-100 ease-out' : 'opacity-100 duration-200 ease-in';
-	$: checkfade = checked ? 'opacity-100 duration-200 ease-in' : 'opacity-0 duration-100 ease-out';
+	const bubble = createBubbler();
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [checked]
+	 */
+
+	/** @type {Props} */
+	let { checked = false } = $props();
+
+	let background = $derived(checked ? 'bg-dark-grey' : 'bg-warm-grey');
+	let position = $derived(checked ? 'translate-x-3' : '-translate-x-3');
+	let crossfade = $derived(checked ? 'opacity-0 duration-100 ease-out' : 'opacity-100 duration-200 ease-in');
+	let checkfade = $derived(checked ? 'opacity-100 duration-200 ease-in' : 'opacity-0 duration-100 ease-out');
 </script>
 
 <label for="toggle" class="flex gap-6 justify-center items-center">
@@ -12,7 +21,7 @@
 
 	<!-- Enabled: "bg-indigo-600", Not Enabled: "bg-gray-200" -->
 	<button
-		on:click
+		onclick={bubble('click')}
 		type="button"
 		class="{background} relative inline-flex h-10 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-dark-grey focus:ring-offset-2"
 		role="switch"

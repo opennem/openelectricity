@@ -1,13 +1,27 @@
 <script>
 	import { page } from '$app/stores';
-	export let type = 'website'; // or article, or music.album etc. See https://ogp.me/#types
-	export let title = '';
-	export let description = "An open platform for tracking Australia's electricity transition";
-	export let image = '/img/preview.jpg';
-	export let path = $page.url.pathname;
-	export let domain = 'https://openelectricity.org.au';
-	export let siteTitle = 'Open Electricity';
-	$: titleWithSuffix = siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [type] - or article, or music.album etc. See https://ogp.me/#types
+	 * @property {string} [title]
+	 * @property {string} [description]
+	 * @property {string} [image]
+	 * @property {any} [path]
+	 * @property {string} [domain]
+	 * @property {string} [siteTitle]
+	 */
+
+	/** @type {Props} */
+	let {
+		type = 'website',
+		title = '',
+		description = "An open platform for tracking Australia's electricity transition",
+		image = '/img/preview.jpg',
+		path = $page.url.pathname,
+		domain = 'https://openelectricity.org.au',
+		siteTitle = 'Open Electricity'
+	} = $props();
+	let titleWithSuffix = $derived(siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle);
 	const fullURI = `${domain}${path}`;
 </script>
 
