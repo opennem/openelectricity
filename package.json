@@ -1,7 +1,10 @@
 {
-	"name": "opennem-app",
+	"name": "open-electriciy-web",
 	"version": "1.20.1",
 	"private": true,
+	"engines": {
+		"node": ">=22.0.0"
+	},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
@@ -38,7 +41,7 @@
 		"eslint-config-prettier": "^8.10.0",
 		"eslint-plugin-svelte": "^2.43.0",
 		"js-base64": "^3.7.7",
-		"layercake": "^8.3.4",
+		"layercake": "^8.4.2",
 		"lz-string": "^1.5.0",
 		"postcss": "^8.4.41",
 		"prettier": "^2.8.8",
