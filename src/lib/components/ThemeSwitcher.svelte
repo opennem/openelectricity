@@ -7,7 +7,7 @@
 	import { createEventDispatcher } from 'svelte';
 
 	const dispatch = createEventDispatcher();
-	let selectedTheme = $theme;
+	let selectedTheme = $state($theme);
 
 	onMount(() => {
 		document.querySelector('select').focus();
@@ -31,7 +31,7 @@
 				multiple
 				tabindex="0"
 				class="text-lg flex flex-col gap-2 border-dark-grey outline-none bg-light-warm-grey p-2 rounded-lg w-full"
-				on:change={(e) => (selectedTheme = e.target.value)}
+				onchange={(e) => (selectedTheme = e.target.value)}
 				use:shortcut={{
 					trigger: {
 						key: 'Enter',
@@ -46,12 +46,12 @@
 		</div>
 
 		<div class="flex justify-end gap-4 mt-4">
-			<button class="px-4 py-2 rounded-lg hover:bg-light-warm-grey" on:click={handleCancel}>
+			<button class="px-4 py-2 rounded-lg hover:bg-light-warm-grey" onclick={handleCancel}>
 				Cancel
 			</button>
 			<button
 				class="px-4 py-2 rounded-lg bg-warm-grey hover:bg-mid-warm-grey hover:text-black"
-				on:click={handleReturn}
+				onclick={handleReturn}
 			>
 				Change
 			</button>

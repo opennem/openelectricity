@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { parseISO } from 'date-fns';
 	import { browser } from '$app/environment';
 	import Icon from '$lib/components/Icon.svelte';
@@ -8,7 +10,7 @@
 	import getRelativeTime from '../page-data-options/relative-time';
 	import recordDescription from '../page-data-options/record-description';
 
-	export let region;
+	let { region } = $props();
 
 	/**
 	 * @type {{ fuelTech: FuelTechCode, label: string, ids: string[] }[]}
@@ -42,18 +44,18 @@
 	];
 
 	/** @type {{ id: string, data: Promise<any> }[]} */
-	let records = [];
+	let records = $state([]);
 
 	/** @type {{ [key: string]: * }} */
-	let recordMap = {
+	let recordMap = $state({
 		solar: null,
 		wind: null,
 		battery_discharging: null,
 		renewables: null,
 		coal: null
-	};
+	});
 
-	let loading = false;
+	let loading = $state(false);
 
 	/**
 	 * Format a date
@@ -81,60 +83,53 @@
 		return data;
 	}
 
-	$: if (region && browser) {
-		records = [];
-		recordMap = {
-			solar: null,
-			wind: null,
-			battery_discharging: null,
-			renewables: null,
-			coal: null
-		};
-		pinned.forEach(({ fuelTech, ids }) => {
-			ids.forEach((id) => {
-				// console.log('fetching', `${region}.${fuelTech}.${id}`);
-				const recordId = `${region}.${fuelTech}.${id}`;
-				records.push({ id: recordId, data: fetchRecord(recordId) });
+	$effect(() => {
+		if (region && browser) {
+			/** @type {{ id: string, data: Promise<any> }[]} */
+			let newRecords = [];
+			recordMap = {
+				solar: null,
+				wind: null,
+				battery_discharging: null,
+				renewables: null,
+				coal: null
+			};
+			pinned.forEach(({ fuelTech, ids }) => {
+				ids.forEach((id) => {
+					const recordId = `${region}.${fuelTech}.${id}`;
+					newRecords.push({ id: recordId, data: fetchRecord(recordId) });
+				});
 			});
-		});
-	}
 
-	$: if (region && records.length) {
-		const promises = records.map((record) => record.data);
+			records = newRecords;
+		}
+	});
 
-		loading = true;
-		Promise.all(promises).then((responses) => {
-			responses.forEach((data) => {
-				if (data.length) {
-					// console.log('data', data[0]);
-					const value = data[0].value;
-					const unit = data[0].value_unit;
-					const interval = data[0].interval;
-					const period = data[0].period;
-					const fuelTech = data[0].fueltech_id;
-					const recordId = data[0].record_id;
-					const aggregate = data[0].aggregate;
-					const description = data[0].description;
-					const metric = data[0].metric;
+	let recordMapCache = $derived(recordMap);
 
-					const date = parseISO(interval);
+	$effect(() => {
+		if (region && records.length) {
+			const promises = records.map((record) => record.data);
 
-					if (recordMap[fuelTech] === null) {
-						recordMap[fuelTech] = {
-							recordId,
-							aggregate,
-							value,
-							unit,
-							interval,
-							period,
-							description,
-							metric,
-							date,
-							time: date.getTime()
-						};
-					} else {
-						// check if the date is newer
-						if (date.getTime() > recordMap[fuelTech].time) {
+			loading = true;
+			Promise.all(promises).then((responses) => {
+				responses.forEach((data) => {
+					if (data.length) {
+						// console.log('data', data[0]);
+						const value = data[0].value;
+						const unit = data[0].value_unit;
+						const interval = data[0].interval;
+						const period = data[0].period;
+						const fuelTech = data[0].fueltech_id;
+						const recordId = data[0].record_id;
+						const aggregate = data[0].aggregate;
+						const description = data[0].description;
+						const metric = data[0].metric;
+
+						const date = parseISO(interval);
+						const time = date.getTime();
+
+						if (recordMapCache[fuelTech] === null || time > recordMapCache[fuelTech].time) {
 							recordMap[fuelTech] = {
 								recordId,
 								aggregate,
@@ -145,16 +140,16 @@
 								description,
 								metric,
 								date,
-								time: date.getTime()
+								time
 							};
 						}
 					}
-				}
-			});
+				});
 
-			loading = false;
-		});
-	}
+				loading = false;
+			});
+		}
+	});
 </script>
 
 <div class="overflow-auto flex items-stretch snap-x snap-mandatory md:grid grid-cols-5 md:gap-4">
@@ -203,7 +198,7 @@
 					<Icon icon={fuelTech} size={32} />
 
 					<div role="status" class="text-black animate-pulse">
-						<div class="bg-mid-warm-grey h-full w-full rounded-full" />
+						<div class="bg-mid-warm-grey h-full w-full rounded-full"></div>
 					</div>
 				</div>
 			{/if}

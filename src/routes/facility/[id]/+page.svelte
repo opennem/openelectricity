@@ -1,22 +1,27 @@
 <script>
 	import { fade } from 'svelte/transition';
-	import { PortableText, toPlainText } from '@portabletext/svelte';
+	import { PortableText, toPlainText } from '@chienleng/portabletext-svelte-5';
 	import { byProp } from '$lib/utils/sort';
 	import { selectedRangeLabel, selectedIntervalLabel } from '../store';
 	import RangeIntervalSelection from './RangeIntervalSelection.svelte';
 	import UnitTable from './UnitTable.svelte';
 	import FacilityList from './FacilityList.svelte';
 
-	/** @type {import('./$types').PageData} */
-	export let data;
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('./$types').PageData} data
+	 */
+
+	/** @type {Props} */
+	let { data } = $props();
 
 	let selected = data.facility.code || '';
 
-	$: facility = data.facility;
+	let facility = $derived(data.facility);
 	// TODO: should have an alternate image for the og:image
-	$: mainPhoto = facility.photos && facility.photos[0];
-	$: units = facility.units.sort(byProp('code'));
-	$: pageTitle = `OpenNEM Facility — ${facility.name}`;
+	let mainPhoto = $derived(facility.photos && facility.photos[0]);
+	let units = $derived(facility.units.sort(byProp('code')));
+	let pageTitle = $derived(`OpenNEM Facility — ${facility.name}`);
 </script>
 
 <svelte:head>
@@ -50,7 +55,7 @@
 				{$selectedRangeLabel}/{$selectedIntervalLabel}
 			</h5>
 
-			<div class="w-full h-[300px] bg-slate-200 rounded-md" />
+			<div class="w-full h-[300px] bg-slate-200 rounded-md"></div>
 
 			<UnitTable data={units} />
 		</section>

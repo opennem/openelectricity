@@ -5,8 +5,14 @@
 
 	import IconArrowDownTray from '$lib/icons/ArrowDownTray.svelte';
 
-	export let position = 'bottom'; // top, bottom
-	export let align = 'right'; // left, right
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [position] - top, bottom
+	 * @property {string} [align] - left, right
+	 */
+
+	/** @type {Props} */
+	let { position = 'bottom', align = 'right' } = $props();
 
 	/**
 	 * @type {Object.<string, *>}
@@ -20,8 +26,8 @@
 
 	const { filterShortName } = getContext('scenario-filters');
 
-	let showOptions = false;
-	let downloadKey = '';
+	let showOptions = $state(false);
+	let downloadKey = $state('');
 
 	/** @type {{label: string, value: string}[]} */
 	let options = [
@@ -43,12 +49,12 @@
 		}
 	];
 
-	$: selectedStore = downloadKey ? dataVizStores[downloadKey] : null;
-	$: seriesCsvData = selectedStore ? selectedStore.seriesCsvData : null;
+	let selectedStore = $derived(downloadKey ? dataVizStores[downloadKey] : null);
+	let seriesCsvData = $derived(selectedStore ? selectedStore.seriesCsvData : null);
 
-	$: file = new Blob([$seriesCsvData], { type: 'text/plain' });
-	$: fileUrl = URL.createObjectURL(file);
-	$: fileName = `${$filterShortName}-${downloadKey}.csv`;
+	let file = $derived(new Blob([$seriesCsvData], { type: 'text/plain' }));
+	let fileUrl = $derived(URL.createObjectURL(file));
+	let fileName = $derived(`${$filterShortName}-${downloadKey}.csv`);
 
 	/**
 	 * @param {{ label: string, value: string }} option
@@ -61,9 +67,9 @@
 <div class="relative">
 	<button
 		class="bg-black text-white p-3 rounded-lg transition-all hover:bg-dark-grey"
-		on:click={() => (showOptions = !showOptions)}
+		onclick={() => (showOptions = !showOptions)}
 		use:clickoutside
-		on:clickoutside={() => (showOptions = false)}
+		onclickoutside={() => (showOptions = false)}
 	>
 		<IconArrowDownTray class="size-8" />
 	</button>
@@ -89,7 +95,7 @@
 						href={fileUrl}
 						download={fileName}
 						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between text-black !no-underline"
-						on:pointerenter={() => handleSelect(opt)}
+						onpointerenter={() => handleSelect(opt)}
 					>
 						<span class="capitalize">{opt.label}</span>
 					</a>

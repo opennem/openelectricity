@@ -8,9 +8,15 @@
 	import { colours, labels, colourRanges } from './helpers.js';
 	import { theme, carbonIntensityStops } from '$lib/stores/theme.js';
 
-	export let mode = 'live';
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [mode]
+	 */
 
-	$: max = $theme === 'opennem' ? 1000 : 800;
+	/** @type {Props} */
+	let { mode = 'live' } = $props();
+
+	let max = $derived($theme === 'opennem' ? 1000 : 800);
 </script>
 
 {#if mode === 'live'}

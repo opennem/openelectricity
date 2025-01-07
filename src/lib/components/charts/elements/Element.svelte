@@ -3,24 +3,36 @@
 
 	const { xGet, height } = getContext('LayerCake');
 
-	/** @type {*[]} */
-	export let dataset = [];
+	
 
-	/** @type {string} [fill='#00e047'] - The shape's fill colour. */
-	export let fill = '#00e047';
+	
 
-	/** @type {string} [stroke='#000'] - The shape's stroke colour. */
-	export let stroke = '#000';
+	
 
-	/** @type {number} [strokeWidth=0] - The shape's stroke width. */
-	export let strokeWidth = 0;
+	
 
-	export let clipPathId = '';
+	/**
+	 * @typedef {Object} Props
+	 * @property {*[]} [dataset]
+	 * @property {string} [fill]
+	 * @property {string} [stroke]
+	 * @property {number} [strokeWidth]
+	 * @property {string} [clipPathId]
+	 */
 
-	$: columnWidth = (/** @type {*} */ d) => {
+	/** @type {Props} */
+	let {
+		dataset = [],
+		fill = '#00e047',
+		stroke = '#000',
+		strokeWidth = 0,
+		clipPathId = ''
+	} = $props();
+
+	let columnWidth = $derived((/** @type {*} */ d) => {
 		const vals = $xGet({ date: d });
 		return Math.abs(vals[1] - vals[0]);
-	};
+	});
 </script>
 
 <g>

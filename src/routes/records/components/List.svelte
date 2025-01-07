@@ -4,7 +4,7 @@
 	import FuelTechIcon from './FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 
-	export let rolledUpRecords;
+	let { rolledUpRecords } = $props();
 
 	/**
 	 * @param {*} days

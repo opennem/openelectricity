@@ -1,9 +1,13 @@
 <script>
-	export let fuelTech;
-	export let sizeClass = 6;
+	import GlobeAlt from '$lib/icons/GlobeAlt.svelte';
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} fuelTech
+	 * @property {number} [sizeClass]
+	 */
 
-	/** @type {*} */
-	let icon;
+	/** @type {Props} */
+	let { fuelTech, sizeClass = 6 } = $props();
 
 	/**
 	 * @param {string} fuelTech
@@ -15,15 +19,16 @@
 			.join('');
 	}
 
-	$: fuelTechIconName = fuelTechName(fuelTech);
-
-	$: {
-		import(`$lib/icons/fuel-techs/${fuelTechIconName}Sm.svelte`).then((module) => {
-			icon = module.default;
-		});
-	}
+	let fuelTechIconName = $derived(fuelTechName(fuelTech));
 </script>
 
-<div class="size-{sizeClass}">
-	<svelte:component this={icon} class="size-{sizeClass}" />
-</div>
+{#await import(`$lib/icons/fuel-techs/${fuelTechIconName}Sm.svelte`)}
+	<div class="size-{sizeClass}">
+		<GlobeAlt class="size-{sizeClass}" />
+	</div>
+{:then module}
+	{@const SvelteComponent = module.default}
+	<div class="size-{sizeClass}">
+		<SvelteComponent class="size-{sizeClass}" />
+	</div>
+{/await}

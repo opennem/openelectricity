@@ -103,7 +103,7 @@ function remappedProjectionData(data, model) {
 
 /**
  * Fetch and process data for technology view
- * @param {{ model: string, region: string, scenario: string, pathway: string, dataType: ScenarioDataType }} param0
+ * @param {{ model: string, region: string, scenario: string, pathway: string }} param0
  * @returns {Promise<{
  * projectionEnergyData: StatsData[],
  * projectionCapacityData: StatsData[],
@@ -113,7 +113,7 @@ function remappedProjectionData(data, model) {
  * historyEmisssionsData: StatsData[]
  * }>}
  */
-async function fetchTechnologyViewData({ model, region, scenario, pathway, dataType }) {
+async function fetchTechnologyViewData({ model, region, scenario, pathway }) {
 	// TODO: check which dataTypes are toggled and fetch accordingly
 	// fetch all for now
 

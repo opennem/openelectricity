@@ -10,6 +10,13 @@
 
 	import { bannerOpen } from '$lib/stores/app';
 	import { showThemeSwitcher } from '$lib/stores/theme';
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props} */
+	let { children } = $props();
 
 	onNavigate((navigation) => {
 		// If the browser doesn't support view transitions, return early
@@ -68,7 +75,7 @@
 		</div>
 		<button
 			class="absolute right-10 md:right-16 top-10 md:top-6"
-			on:click={() => ($bannerOpen = false)}
+			onclick={() => ($bannerOpen = false)}
 		>
 			<IconXMark classes="w-8 h-8" />
 		</button>
@@ -78,7 +85,7 @@
 <Nav />
 
 <main class="flex-grow">
-	<slot />
+	{@render children?.()}
 </main>
 
 <Footer />

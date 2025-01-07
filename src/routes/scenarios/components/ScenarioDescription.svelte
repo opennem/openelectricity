@@ -9,18 +9,24 @@
 		scenarioDescriptions
 	} from '../page-data-options/descriptions';
 
-	export let model = null;
-	export let scenario = null;
-	export let showDescription = true;
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [model]
+	 * @property {any} [scenario]
+	 * @property {boolean} [showDescription]
+	 */
+
+	/** @type {Props} */
+	let { model = null, scenario = null, showDescription = true } = $props();
 
 	const { singleSelectionModel, singleSelectionScenario } = getContext('scenario-filters');
 
-	let readMore = false;
+	let readMore = $state(false);
 
-	$: selectedModel = model || $singleSelectionModel;
-	$: selectedScenario = scenario || $singleSelectionScenario;
+	let selectedModel = $derived(model || $singleSelectionModel);
+	let selectedScenario = $derived(scenario || $singleSelectionScenario);
 
-	$: isAemo2024 = selectedModel === 'aemo2024';
+	let isAemo2024 = $derived(selectedModel === 'aemo2024');
 </script>
 
 {#if showDescription}

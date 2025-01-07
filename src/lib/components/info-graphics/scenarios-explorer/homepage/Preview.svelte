@@ -60,101 +60,18 @@
 
 	const { cachedDisplayData } = getContext('scenario-cache');
 
-	let seriesNames = [];
-	let seriesItems = [];
-	let seriesColours;
-	let seriesLabels;
-	let seriesData = [];
-	let seriesLoadsIds = [];
+	let seriesNames = $state([]);
+	let seriesItems = $state([]);
+	let seriesColours = $state();
+	let seriesLabels = $state();
+	let seriesData = $state([]);
+	let seriesLoadsIds = $state([]);
 	/** @type {Array.<number | null>} */
-	let yDomain = [0, null];
+	let yDomain = $state([0, null]);
 	/** @type {TimeSeriesData | undefined} */
-	let hoverData = undefined;
+	let hoverData = $state(undefined);
 	/** @type {string | undefined} */
-	let hoverKey;
-
-	$: defaultPathway = defaultModelPathway[$selectedModel];
-
-	$: if (browser) {
-		$selectedGroup = 'homepage_preview';
-		getTechnologyData({
-			model: $selectedModel,
-			region: $selectedRegion,
-			scenario: $selectedScenario,
-			pathway: defaultPathway,
-			dataView: $selectedDataView
-		});
-	}
-
-	$: if ($projectionTimeSeries.data.length > 0 && $historicalTimeSeries.data.length > 0) {
-		const processed = processTechnologyData({
-			projectionTimeSeries: $projectionTimeSeries,
-			historicalTimeSeries: $historicalTimeSeries,
-			selectedDataView: $selectedDataView,
-			selectedModel: $selectedModel
-		});
-
-		console.log('processed', processed);
-
-		if (processed) {
-			seriesData = processed.data;
-			seriesNames = processed.names;
-			seriesColours = processed.colours;
-			seriesLabels = processed.labels;
-			seriesItems = processed.nameOptions;
-			yDomain = [
-				$projectionTimeSeries.minY,
-				$projectionTimeSeries.maxY + ($projectionTimeSeries.maxY * 15) / 100
-			];
-
-			seriesLoadsIds = $projectionStats.data.filter((d) => d.isLoad).map((d) => d.id);
-
-			$cachedDisplayData[$selectedDisplayView] = {
-				data: seriesData,
-				names: seriesNames,
-				colours: seriesColours,
-				labels: seriesLabels,
-				items: seriesItems,
-				loadIds: seriesLoadsIds,
-				yDomain: yDomain
-			};
-		}
-	}
-
-	$: xTicks =
-		$selectedModel === 'aemo2024'
-			? [
-					startOfYear(new Date('2010-01-01')),
-					startOfYear(new Date('2024-01-01')),
-					startOfYear(new Date('2040-01-01')),
-					startOfYear(new Date('2052-01-01'))
-			  ]
-			: [
-					startOfYear(new Date('2010-01-01')),
-					startOfYear(new Date('2023-01-01')),
-					startOfYear(new Date('2040-01-01')),
-					startOfYear(new Date('2051-01-01'))
-			  ];
-	$: overlay =
-		$selectedModel === 'aemo2024'
-			? {
-					xStartValue: startOfYear(new Date('2024-01-01')),
-					xEndValue: startOfYear(new Date('2052-01-01'))
-			  }
-			: {
-					xStartValue: startOfYear(new Date('2023-01-01')),
-					xEndValue: startOfYear(new Date('2051-01-01'))
-			  };
-
-	$: overlayLine =
-		$selectedModel === 'aemo2024'
-			? { date: startOfYear(new Date('2024-01-01')) }
-			: { date: startOfYear(new Date('2023-01-01')) };
-
-	$: defaultText =
-		dataViewLongLabel[$selectedDataView] +
-		` (${dataViewUnits[$selectedDataView]}) ` +
-		dataViewIntervalLabel[$selectedDataView];
+	let hoverKey = $state();
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		if (e.detail?.key) {
@@ -212,10 +129,105 @@
 	const auNumber = new Intl.NumberFormat('en-AU', {
 		maximumFractionDigits: 0
 	});
-	let generatedCsv = '';
-	$: {
+	let generatedCsv = $state('');
+	let defaultPathway = $derived(defaultModelPathway[$selectedModel]);
+
+	$selectedGroup = 'homepage_preview';
+
+	$effect(() => {
+		if (browser) {
+			getTechnologyData({
+				model: $selectedModel,
+				region: $selectedRegion,
+				scenario: $selectedScenario,
+				pathway: defaultPathway,
+				dataView: $selectedDataView
+			});
+		}
+	});
+	$effect(() => {
+		if ($projectionTimeSeries.data.length > 0 && $historicalTimeSeries.data.length > 0) {
+			const processed = processTechnologyData({
+				projectionTimeSeries: $projectionTimeSeries,
+				historicalTimeSeries: $historicalTimeSeries,
+				selectedDataView: $selectedDataView,
+				selectedModel: $selectedModel
+			});
+
+			console.log('processed', processed);
+
+			if (processed) {
+				update(processed);
+			}
+		}
+	});
+
+	function update(processed) {
+		seriesData = processed.data;
+		seriesNames = processed.names;
+		seriesColours = processed.colours;
+		seriesLabels = processed.labels;
+		seriesItems = processed.nameOptions;
+
+		const minMaxY = [
+			$projectionTimeSeries.minY,
+			$projectionTimeSeries.maxY + ($projectionTimeSeries.maxY * 15) / 100
+		];
+		yDomain = minMaxY;
+
+		const loadIds = $projectionStats.data.filter((d) => d.isLoad).map((d) => d.id);
+		seriesLoadsIds = loadIds;
+
+		$cachedDisplayData[$selectedDisplayView] = {
+			data: processed.data,
+			names: processed.names,
+			colours: processed.colours,
+			labels: processed.labels,
+			items: processed.nameOptions,
+			loadIds: loadIds,
+			yDomain: minMaxY
+		};
+	}
+
+	let xTicks = $derived(
+		$selectedModel === 'aemo2024'
+			? [
+					startOfYear(new Date('2010-01-01')),
+					startOfYear(new Date('2024-01-01')),
+					startOfYear(new Date('2040-01-01')),
+					startOfYear(new Date('2052-01-01'))
+				]
+			: [
+					startOfYear(new Date('2010-01-01')),
+					startOfYear(new Date('2023-01-01')),
+					startOfYear(new Date('2040-01-01')),
+					startOfYear(new Date('2051-01-01'))
+				]
+	);
+	let overlay = $derived(
+		$selectedModel === 'aemo2024'
+			? {
+					xStartValue: startOfYear(new Date('2024-01-01')),
+					xEndValue: startOfYear(new Date('2052-01-01'))
+				}
+			: {
+					xStartValue: startOfYear(new Date('2023-01-01')),
+					xEndValue: startOfYear(new Date('2051-01-01'))
+				}
+	);
+	let overlayLine = $derived(
+		$selectedModel === 'aemo2024'
+			? { date: startOfYear(new Date('2024-01-01')) }
+			: { date: startOfYear(new Date('2023-01-01')) }
+	);
+	let defaultText = $derived(
+		dataViewLongLabel[$selectedDataView] +
+			` (${dataViewUnits[$selectedDataView]}) ` +
+			dataViewIntervalLabel[$selectedDataView]
+	);
+	$effect(() => {
 		generatedCsv = '';
-		generatedCsv += ['date', ...seriesNames.map((d) => seriesLabels[d])].join(',') + '\n';
+		let newGeneratedCsv = ['date', ...seriesNames.map((d) => seriesLabels[d])].join(',') + '\n';
 
 		seriesData.forEach((d) => {
 			const date = format(d.date, 'yyyy');
@@ -223,12 +235,13 @@
 			seriesNames.forEach((key) => {
 				row.push(auNumber.format(d[key]));
 			});
-			generatedCsv += row.join(',') + '\n';
+			newGeneratedCsv += row.join(',') + '\n';
 		});
-	}
-	$: file = new Blob([generatedCsv], { type: 'text/plain' });
-	$: fileUrl = URL.createObjectURL(file);
-	$: fileName = `${$selectedModel}-${$selectedScenario}.csv`;
+		generatedCsv = newGeneratedCsv;
+	});
+	let file = $derived(new Blob([generatedCsv], { type: 'text/plain' }));
+	let fileUrl = $derived(URL.createObjectURL(file));
+	let fileName = $derived(`${$selectedModel}-${$selectedScenario}.csv`);
 </script>
 
 <div class="container max-w-none lg:container relative">

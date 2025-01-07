@@ -3,61 +3,77 @@
 
 	const { padding, xRange, yScale, xScale } = getContext('LayerCake');
 
-	/** @type {boolean} Extend lines from the ticks into the chart. d */
-	export let gridlines = true;
+	
 
-	/** @type {boolean} Show a vertical mark for each tick. */
-	export let tickMarks = false;
+	
 
-	/** @type {string} [stroke='#efefef'] - The gridline's stroke colour. */
-	export let stroke = '#efefef';
+	
 
-	/** @type {string} [fill='#666'] - The text's fill colour. */
-	export let textFill = '#666';
+	
 
-	export let clipPathId = '';
 
-	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
-	export let formatTick = (/** @type {*} */ d) => d;
+	
 
-	/** @type {*}
-	 * If this is a number, it passes that along to the [d3Scale.ticks](https://github.com/d3/d3-scale) function.
-	 * If this is an array, hardcodes the ticks to those values.
-	 * If it's a function, passes along the default tick values and expects an array of tick values in return.
+	
+
+	
+
+	
+
+	
+
+	
+
+	
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [gridlines]
+	 * @property {boolean} [tickMarks]
+	 * @property {string} [stroke]
+	 * @property {string} [textFill]
+	 * @property {string} [clipPathId]
+	 * @property {Function} [formatTick]
+	 * @property {*} [ticks]
+	 * @property {number} [xTick]
+	 * @property {number} [yTick]
+	 * @property {number} [dxTick]
+	 * @property {number} [dyTick]
+	 * @property {string} [textAnchor]
+	 * @property {any} [yLabelStartPos]
 	 */
-	export let ticks = 4;
 
-	/** @type {number} How far over to position the text marker. */
-	export let xTick = 0;
+	/** @type {Props} */
+	let {
+		gridlines = true,
+		tickMarks = false,
+		stroke = '#efefef',
+		textFill = '#666',
+		clipPathId = '',
+		formatTick = (/** @type {*} */ d) => d,
+		ticks = 4,
+		xTick = 0,
+		yTick = 0,
+		dxTick = 0,
+		dyTick = -4,
+		textAnchor = 'start',
+		yLabelStartPos = null
+	} = $props();
 
-	/** @type {number} How far up and down to position the text marker.  */
-	export let yTick = 0;
+	let isBandwidth = $derived(typeof $yScale.bandwidth === 'function');
 
-	/** @type {number} Any optional value passed to the `dx` attribute on the text marker and tick mark (if visible). This is ignored on the text marker if your scale is ordinal. */
-	export let dxTick = 0;
-
-	/** @type {number} Any optional value passed to the `dy` attribute on the text marker and tick mark (if visible). This is ignored on the text marker if your scale is ordinal. */
-	export let dyTick = -4;
-
-	/** @type {string} CSS 'text-anchor' passed to the label. */
-	export let textAnchor = 'start';
-
-	export let yLabelStartPos = null;
-
-	$: isBandwidth = typeof $yScale.bandwidth === 'function';
-
-	$: xStart = yLabelStartPos
+	let xStart = $derived(yLabelStartPos
 		? $xScale(yLabelStartPos)
-		: $xRange[0] + (isBandwidth ? $padding.left : 0);
+		: $xRange[0] + (isBandwidth ? $padding.left : 0));
 	// $: x2 = $xScale($xRange[0]);
 
-	$: tickVals = Array.isArray(ticks)
+	let tickVals = $derived(Array.isArray(ticks)
 		? ticks
 		: isBandwidth
 		? $yScale.domain()
 		: typeof ticks === 'function'
 		? ticks($yScale.ticks())
-		: $yScale.ticks(ticks);
+		: $yScale.ticks(ticks));
 </script>
 
 <g class="axis y-axis pointer-events-none" transform="translate({-$padding.left}, 0)">

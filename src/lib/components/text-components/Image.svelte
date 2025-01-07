@@ -3,13 +3,17 @@
 	// import type { CustomBlockComponentProps } from '@portabletext/svelte';
 
 	// Property custom blocks receive from @portabletext/svelte when redered
-	/** @type {import('@portabletext/svelte').CustomBlockComponentProps} */
-	export let portableText;
+
+	interface Props {
+		portableText: import('@chienleng/portabletext-svelte-5').CustomBlockComponentProps;
+	}
+
+	let { portableText }: Props = $props();
 	// let imageWidth = portableText.value.style === 'content' ? 1024 : 1440;
 
 	// console.log('image', portableText.value);
 
-	$: hasStyle = portableText.value.style;
+	let hasStyle = $derived(portableText.value.style);
 </script>
 
 <figure class="py-12 my-12">

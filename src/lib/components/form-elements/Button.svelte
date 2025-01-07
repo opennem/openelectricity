@@ -1,17 +1,31 @@
 <script>
-	/** @type {import('svelte/elements').MouseEventHandler<HTMLButtonElement> | null} */
-	export let clickHandler = null;
-	export let secondary = false;
-	export let active = false;
-	export let disabled = false;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('svelte/elements').MouseEventHandler<HTMLButtonElement> | null} [clickHandler]
+	 * @property {boolean} [secondary]
+	 * @property {boolean} [active]
+	 * @property {boolean} [disabled]
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let {
+		clickHandler = null,
+		secondary = false,
+		active = false,
+		disabled = false,
+		children,
+		...rest
+	} = $props();
 </script>
 
 <button
-	on:click={clickHandler}
-	class="button rounded-md border-solid border-[0.1rem] border-black p-4 font-space appearance-none text-sm font-medium bg-black text-white ${$$restProps.class}"
+	onclick={clickHandler}
+	class="button rounded-md border-solid border-[0.1rem] border-black p-4 font-space appearance-none text-sm font-medium bg-black text-white ${rest.class}"
 	class:secondary
 	class:active
-	{disabled}><slot /></button
+	{disabled}>{@render children?.()}</button
 >
 
 <style lang="postcss">

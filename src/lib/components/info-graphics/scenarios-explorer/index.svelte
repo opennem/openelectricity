@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { startOfYear } from 'date-fns';
@@ -50,23 +52,23 @@
 
 	let showTable = true;
 
-	let seriesNames = [];
-	let seriesItems = [];
-	let seriesColours;
-	let seriesLabels;
-	let seriesData = [];
-	let seriesLoadsIds = [];
+	let seriesNames = $state([]);
+	let seriesItems = $state([]);
+	let seriesColours = $state();
+	let seriesLabels = $state();
+	let seriesData = $state([]);
+	let seriesLoadsIds = $state([]);
 	/** @type {Array.<number | null>} */
-	let yDomain = [0, null];
+	let yDomain = $state([0, null]);
 
 	/** @type {TimeSeriesData | undefined} */
-	let hoverData = undefined;
+	let hoverData = $state(undefined);
 
 	/** @type {string | undefined} */
-	let hoverKey;
+	let hoverKey = $state();
 
 	/** @type {string | null} */
-	let highlightId = null;
+	let highlightId = $state(null);
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		if (e.detail?.key) {
@@ -78,8 +80,8 @@
 		}
 	};
 
-	$: xTicks =
-		$selectedModel === 'aemo2024'
+	let xTicks =
+		$derived($selectedModel === 'aemo2024'
 			? [
 					startOfYear(new Date('2010-01-01')),
 					startOfYear(new Date('2024-01-01')),
@@ -91,11 +93,11 @@
 					startOfYear(new Date('2023-01-01')),
 					startOfYear(new Date('2040-01-01')),
 					startOfYear(new Date('2051-01-01'))
-			  ];
+			  ]);
 
-	$: display = $isTechnologyDisplay ? 'area' : 'line';
-	$: showContribution = $isTechnologyDisplay;
-	$: overlay = $isScenarioDisplay
+	let display = $derived($isTechnologyDisplay ? 'area' : 'line');
+	let showContribution = $derived($isTechnologyDisplay);
+	let overlay = $derived($isScenarioDisplay
 		? {
 				xStartValue: startOfYear(new Date('2024-01-01')),
 				xEndValue: startOfYear(new Date('2052-01-01'))
@@ -108,7 +110,7 @@
 		: {
 				xStartValue: startOfYear(new Date('2023-01-01')),
 				xEndValue: startOfYear(new Date('2051-01-01'))
-		  };
+		  });
 	// $: blankOverlay =
 	// 	$selectedModel === 'aemo2024'
 	// 		? {
@@ -116,130 +118,134 @@
 	// 				xEndValue: startOfYear(new Date('2025-01-01'))
 	// 		  }
 	// 		: false;
-	$: blankOverlay = false;
-	$: overlayLine =
-		$selectedModel === 'aemo2024' || $isScenarioDisplay
+	let blankOverlay = $derived(false);
+	let overlayLine =
+		$derived($selectedModel === 'aemo2024' || $isScenarioDisplay
 			? { date: startOfYear(new Date('2024-01-01')) }
-			: { date: startOfYear(new Date('2023-01-01')) };
+			: { date: startOfYear(new Date('2023-01-01')) });
 
-	$: overlayStroke = $isTechnologyDisplay ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)';
+	let overlayStroke = $derived($isTechnologyDisplay ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)');
 
-	$: if ($isTechnologyDisplay) {
-		console.log('Process technology data');
+	run(() => {
+		if ($isTechnologyDisplay) {
+			console.log('Process technology data');
 
-		const processed = processTechnologyData({
-			projectionTimeSeries: $projectionTimeSeries,
-			historicalTimeSeries: $historicalTimeSeries,
-			selectedDataView: $selectedDataView,
-			selectedModel: $selectedModel
-		});
+			const processed = processTechnologyData({
+				projectionTimeSeries: $projectionTimeSeries,
+				historicalTimeSeries: $historicalTimeSeries,
+				selectedDataView: $selectedDataView,
+				selectedModel: $selectedModel
+			});
 
-		if (processed) {
-			seriesData = processed.data;
-			seriesNames = processed.names;
-			seriesColours = processed.colours;
-			seriesLabels = processed.labels;
-			seriesItems = processed.nameOptions;
-			yDomain = [processed.minY, processed.maxY];
+			if (processed) {
+				seriesData = processed.data;
+				seriesNames = processed.names;
+				seriesColours = processed.colours;
+				seriesLabels = processed.labels;
+				seriesItems = processed.nameOptions;
+				yDomain = [processed.minY, processed.maxY];
 
-			seriesLoadsIds = $projectionStats.data.filter((d) => d.isLoad).map((d) => d.id);
+				seriesLoadsIds = $projectionStats.data.filter((d) => d.isLoad).map((d) => d.id);
 
-			$cachedDisplayData[$selectedDisplayView] = {
-				data: seriesData,
-				names: seriesNames,
-				colours: seriesColours,
-				labels: seriesLabels,
-				items: seriesItems,
-				loadIds: seriesLoadsIds,
-				yDomain: yDomain
-			};
+				$cachedDisplayData[$selectedDisplayView] = {
+					data: seriesData,
+					names: seriesNames,
+					colours: seriesColours,
+					labels: seriesLabels,
+					items: seriesItems,
+					loadIds: seriesLoadsIds,
+					yDomain: yDomain
+				};
+			}
+		} else if ($selectedDisplayView === 'scenario') {
+			console.log('Process scenario data');
+
+			const historySeriesName = $isNetTotalGroup
+				? '_max'
+				: $scenarioHistoricalTimeSeries.seriesNames[0];
+
+			const processed = processScenarioData({
+				scenarioProjectionData: $scenarioProjectionData,
+				scenarioProjectionTimeSeries: $scenarioProjectionTimeSeries,
+				scenarioHistoricalTimeSeries: $scenarioHistoricalTimeSeries,
+				selectedDataView: $selectedDataView,
+				historySeriesName: historySeriesName
+			});
+
+			if (processed) {
+				seriesData = processed.data;
+				seriesNames = processed.names;
+				seriesColours = processed.colours;
+				seriesLabels = processed.labels;
+				seriesItems = processed.nameOptions;
+				yDomain = [0, null];
+
+				$cachedDisplayData[$selectedDisplayView] = {
+					data: seriesData,
+					names: seriesNames,
+					colours: seriesColours,
+					labels: seriesLabels,
+					items: seriesItems,
+					yDomain: yDomain
+				};
+			}
+		} else if ($selectedDisplayView === 'region') {
+			console.log('Process region data');
+
+			const historySeriesName = $isNetTotalGroup
+				? '_max'
+				: $scenarioHistoricalTimeSeries.seriesNames[0];
+
+			console.log('regionProjectionTimeSeries', $regionProjectionTimeSeries);
+
+			const processed = processRegionData({
+				regionProjectionTimeSeries: $regionProjectionTimeSeries,
+				regionHistoricalTimeSeries: $regionHistoricalTimeSeries,
+				selectedDataView: $selectedDataView,
+				historySeriesName: historySeriesName,
+				selectedModel: $selectedModel
+			});
+
+			if (processed) {
+				seriesData = processed.data;
+				seriesNames = processed.names;
+				seriesColours = processed.colours;
+				seriesLabels = processed.labels;
+				seriesItems = processed.nameOptions;
+				yDomain = [0, null];
+
+				$cachedDisplayData[$selectedDisplayView] = {
+					data: seriesData,
+					names: seriesNames,
+					colours: seriesColours,
+					labels: seriesLabels,
+					items: seriesItems,
+					yDomain: yDomain
+				};
+			}
 		}
-	} else if ($selectedDisplayView === 'scenario') {
-		console.log('Process scenario data');
-
-		const historySeriesName = $isNetTotalGroup
-			? '_max'
-			: $scenarioHistoricalTimeSeries.seriesNames[0];
-
-		const processed = processScenarioData({
-			scenarioProjectionData: $scenarioProjectionData,
-			scenarioProjectionTimeSeries: $scenarioProjectionTimeSeries,
-			scenarioHistoricalTimeSeries: $scenarioHistoricalTimeSeries,
-			selectedDataView: $selectedDataView,
-			historySeriesName: historySeriesName
-		});
-
-		if (processed) {
-			seriesData = processed.data;
-			seriesNames = processed.names;
-			seriesColours = processed.colours;
-			seriesLabels = processed.labels;
-			seriesItems = processed.nameOptions;
-			yDomain = [0, null];
-
-			$cachedDisplayData[$selectedDisplayView] = {
-				data: seriesData,
-				names: seriesNames,
-				colours: seriesColours,
-				labels: seriesLabels,
-				items: seriesItems,
-				yDomain: yDomain
-			};
-		}
-	} else if ($selectedDisplayView === 'region') {
-		console.log('Process region data');
-
-		const historySeriesName = $isNetTotalGroup
-			? '_max'
-			: $scenarioHistoricalTimeSeries.seriesNames[0];
-
-		console.log('regionProjectionTimeSeries', $regionProjectionTimeSeries);
-
-		const processed = processRegionData({
-			regionProjectionTimeSeries: $regionProjectionTimeSeries,
-			regionHistoricalTimeSeries: $regionHistoricalTimeSeries,
-			selectedDataView: $selectedDataView,
-			historySeriesName: historySeriesName,
-			selectedModel: $selectedModel
-		});
-
-		if (processed) {
-			seriesData = processed.data;
-			seriesNames = processed.names;
-			seriesColours = processed.colours;
-			seriesLabels = processed.labels;
-			seriesItems = processed.nameOptions;
-			yDomain = [0, null];
-
-			$cachedDisplayData[$selectedDisplayView] = {
-				data: seriesData,
-				names: seriesNames,
-				colours: seriesColours,
-				labels: seriesLabels,
-				items: seriesItems,
-				yDomain: yDomain
-			};
-		}
-	}
+	});
 
 	// TODO: reorder
-	$: sortedItems = seriesItems.map((d) => d.id).reverse();
-	$: if ($cachedDisplayData[$selectedDisplayView]) {
-		let colours = {};
-		console.log('seriesColours', seriesColours);
-		sortedItems.forEach((name) => {
-			colours[name] = $cachedDisplayData[$selectedDisplayView].colours[name];
-		});
-		seriesColours = colours;
-	}
+	let sortedItems = $derived(seriesItems.map((d) => d.id).reverse());
+	run(() => {
+		if ($cachedDisplayData[$selectedDisplayView]) {
+			let colours = {};
+			console.log('seriesColours', seriesColours);
+			sortedItems.forEach((name) => {
+				colours[name] = $cachedDisplayData[$selectedDisplayView].colours[name];
+			});
+			seriesColours = colours;
+		}
+	});
 
-	$: isPercentageView = !$isNetTotalGroup && $usePercentage;
-	$: defaultText =
-		dataViewLongLabel[$selectedDataView] +
+	let isPercentageView = $derived(!$isNetTotalGroup && $usePercentage);
+	let defaultText =
+		$derived(dataViewLongLabel[$selectedDataView] +
 		` (${
 			!$isTechnologyDisplay && isPercentageView ? '% of demand' : dataViewUnits[$selectedDataView]
 		}) ` +
-		dataViewIntervalLabel[$selectedDataView];
+		dataViewIntervalLabel[$selectedDataView]);
 
 	function handleSort(e) {
 		seriesItems = e.detail;

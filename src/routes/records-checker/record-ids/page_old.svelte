@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 
@@ -10,19 +12,19 @@
 		fuelTechOptions
 	} from '../page-data-options/filters.js';
 
-	export let data;
-	let recordsData = [];
-	let totalRecords = 0;
-	let currentPage = data.page || 1;
-	let currentStartRecordIndex = (currentPage - 1) * 100 + 1;
+	let { data } = $props();
+	let recordsData = $state([]);
+	let totalRecords = $state(0);
+	let currentPage = $state(data.page || 1);
+	let currentStartRecordIndex = $state((currentPage - 1) * 100 + 1);
 
-	let errorMessage = '';
+	let errorMessage = $state('');
 
 	/** @type {string[]} */
 	let checkedRegions =
-		data.regions && data.regions.length
+		$state(data.regions && data.regions.length
 			? data.regions
-			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']);
 
 	/** @type {string[]} */
 	let checkedFuelTechs =
@@ -30,17 +32,11 @@
 
 	/** @type {string[]} */
 	let checkedPeriods =
-		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value);
+		$state(data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value));
 
 	let recordIdSearch = data.stringFilter || '';
 
-	$: fetchRecords(currentPage, checkedRegions, checkedPeriods);
-	$: totalPages = Math.ceil(totalRecords / 100);
-	$: currentLastRecordIndex = currentStartRecordIndex + 99;
-	$: lastRecordIndex =
-		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex;
 
-	$: console.log('data', data);
 
 	function getFilterParams({ regions, periods, fuelTechs, stringFilter }) {
 		const validRegions = regions.filter((r) => r !== '_all');
@@ -144,6 +140,16 @@
 	const auNumber = new Intl.NumberFormat('en-AU', {
 		maximumFractionDigits: 0
 	});
+	run(() => {
+		fetchRecords(currentPage, checkedRegions, checkedPeriods);
+	});
+	let totalPages = $derived(Math.ceil(totalRecords / 100));
+	let currentLastRecordIndex = $derived(currentStartRecordIndex + 99);
+	let lastRecordIndex =
+		$derived(currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex);
+	run(() => {
+		console.log('data', data);
+	});
 </script>
 
 <header class=" mt-12">
@@ -204,9 +210,9 @@
 		<table class="w-full text-xs border border-mid-warm-grey p-2">
 			<thead>
 				<tr class="border-b border-mid-warm-grey">
-					<th colspan="2" />
+					<th colspan="2"></th>
 					<th colspan="2" class="!text-center">Current Record</th>
-					<th colspan="8" />
+					<th colspan="8"></th>
 				</tr>
 			</thead>
 			<thead>
@@ -225,7 +231,7 @@
 					<th>Period</th>
 					<th>Aggregate</th>
 					<th>Significance</th>
-					<th />
+					<th></th>
 				</tr>
 			</thead>
 			<tbody>

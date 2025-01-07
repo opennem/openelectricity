@@ -5,9 +5,15 @@
 	import { modelLabelMap } from '../page-data-options/models';
 	import TableHeader from './TableHeader.svelte';
 
-	/** @type {string[]} */
-	export let hiddenRowNames = [];
-	export let title = '';
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string[]} [hiddenRowNames]
+	 * @property {string} [title]
+	 */
+
+	/** @type {Props} */
+	let { hiddenRowNames = [], title = '' } = $props();
 
 	const dispatch = createEventDispatcher();
 	const { includeBatteryAndLoads } = getContext('scenario-filters');
@@ -91,7 +97,7 @@
 	}
 </script>
 
-<svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
+<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
 
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
@@ -110,7 +116,7 @@
 						<span class="block text-xs">Generation</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
+							onclick={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
 						>
 							{$energyDisplayUnit}
 						</button>
@@ -122,7 +128,7 @@
 						<span class="block text-xs">Capacity</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
+							onclick={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
 						>
 							{$capacityDisplayUnit}
 						</button>
@@ -134,7 +140,7 @@
 						<span class="block text-xs">Emissions</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							on:click={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
+							onclick={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
 						>
 							{$emissionsDisplayUnit}
 						</button>
@@ -151,13 +157,13 @@
 
 		<tbody>
 			<tr>
-				<td colspan="5" class="h-4" />
+				<td colspan="5" class="h-4"></td>
 			</tr>
 
 			<!-- historical-->
 			<tr
 				class="hover:bg-light-warm-grey group cursor-pointer text-sm"
-				on:click={() => handleRowClick('historical')}
+				onclick={() => handleRowClick('historical')}
 				class:opacity-50={hiddenRowNames.includes('historical')}
 			>
 				<td class="px-2 py-1">
@@ -165,13 +171,13 @@
 						{#if hiddenRowNames.includes('historical')}
 							<div
 								class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
-							/>
+							></div>
 						{:else}
 							<div
 								class="w-6 h-6 min-w-6 min-h-6 border rounded"
 								style:background-color={$energySeriesColours['historical']}
 								style:border-color={darken($energySeriesColours['historical'])}
-							/>
+							></div>
 						{/if}
 						<div>Historical</div>
 					</div>
@@ -218,7 +224,7 @@
 			</tr>
 
 			<tr>
-				<td colspan="5" class="h-4" />
+				<td colspan="5" class="h-4"></td>
 			</tr>
 		</tbody>
 
@@ -244,7 +250,7 @@
 						{@const id = `${model}-${scenario}-${pathway}`}
 						<tr
 							class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-1"
-							on:click={() => handleRowClick(id)}
+							onclick={() => handleRowClick(id)}
 							class:opacity-50={hiddenRowNames.includes(id)}
 						>
 							<td class="px-2 py-1">
@@ -252,13 +258,13 @@
 									{#if hiddenRowNames.includes(id)}
 										<div
 											class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey relative top-1"
-										/>
+										></div>
 									{:else}
 										<div
 											class="w-6 h-6 min-w-6 min-h-6 border rounded relative top-1"
 											style:background-color={$energySeriesColours[id]}
 											style:border-color={darken($energySeriesColours[id])}
-										/>
+										></div>
 									{/if}
 									<div class="text-mid-grey font-normal block">{pathway}</div>
 								</div>
@@ -306,7 +312,7 @@
 					{/each}
 				{/each}
 				<tr>
-					<td colspan="5" class="h-4" />
+					<td colspan="5" class="h-4"></td>
 				</tr>
 			{/each}
 		</tbody>
