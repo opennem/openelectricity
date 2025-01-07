@@ -40,17 +40,21 @@
 		focusScenarioId = $singleSelectionData.id;
 	});
 
-	let focusScenario = $derived(scenarioOptions.find((/**@type {*} */ s) => s.id === focusScenarioId));
-	let focusScenarioModel = $derived(focusScenario
-		? modelOptions.find((m) => m.value === focusScenario.model)
-		: null);
+	let focusScenario = $derived(
+		scenarioOptions.find((/**@type {*} */ s) => s.id === focusScenarioId)
+	);
+	let focusScenarioModel = $derived(
+		focusScenario ? modelOptions.find((m) => m.value === focusScenario.model) : null
+	);
 	let focusPathways = $derived(focusScenarioModel ? focusScenarioModel.pathways : []);
 
-	let selectedPathways = $derived(focusScenarioId
-		? $multiSelectionData
-				.filter((d) => d.model === focusScenario.model && d.scenario === focusScenario.value)
-				.map((d) => d.pathway)
-		: []);
+	let selectedPathways = $derived(
+		focusScenarioId
+			? $multiSelectionData
+					.filter((d) => d.model === focusScenario.model && d.scenario === focusScenario.value)
+					.map((d) => d.pathway)
+			: []
+	);
 
 	// $: console.log('selectedPathways', selectedPathways);
 	// $: console.log('focusScenarioModel', focusScenarioModel);
@@ -151,10 +155,7 @@
 					{#each model.scenarios as scenario}
 						{@const isFocussed = focusScenarioId === scenario.id}
 						{@const isChecked = selectedScenarios.includes(scenario.id)}
-						<li
-							class:bg-light-warm-grey={isFocussed}
-							class="border-b border-warm-grey px-6 last:border-0 md:border-0 md:px-0"
-						>
+						<li class="border-b border-warm-grey px-6 last:border-0 md:border-0 md:px-0">
 							<ScenarioButton
 								{model}
 								{scenario}

@@ -29,16 +29,18 @@
 	let selectedScenarioId = $state('');
 	let selectedScenarioPathwayId = $state('');
 
-	run(() => {
-		if (!selectedScenarioId) {
+	let isSelectedScenarioIdEmpty = $derived(selectedScenarioId === '');
+
+	$effect(() => {
+		if (isSelectedScenarioIdEmpty) {
 			selectedScenarioId = $multiSelectionData[0].model + '-' + $multiSelectionData[0].scenario;
 			selectedScenarioPathwayId = $multiSelectionData[0].id;
 		}
 	});
 
-	let selectedScenario = $derived($multiSelectionData.find(
-		(d) => `${d.model}-${d.scenario}` === selectedScenarioId
-	));
+	let selectedScenario = $derived(
+		$multiSelectionData.find((d) => `${d.model}-${d.scenario}` === selectedScenarioId)
+	);
 
 	let isEmissionsView = $derived(selectedStoreName === 'emissionsDataVizStore');
 
@@ -67,16 +69,18 @@
 	let intensitySeriesData = $derived(intensityStore.seriesData);
 	let intensityDisplayUnit = $derived(intensityStore.displayUnit);
 
-	let seriesPathways = $derived($multiSelectionData.reduce((acc, d) => {
-		acc[d.id] = d.pathway;
-		return acc;
-	}, {}));
+	let seriesPathways = $derived(
+		$multiSelectionData.reduce((acc, d) => {
+			acc[d.id] = d.pathway;
+			return acc;
+		}, {})
+	);
 
 	/** @type {TimeSeriesData[]} */
 	let mergedSeriesData = $state([]);
-	let seriesNamesWithoutHistorical = $derived($seriesNames.filter(
-		(/** @type {string} */ name) => name !== 'historical'
-	));
+	let seriesNamesWithoutHistorical = $derived(
+		$seriesNames.filter((/** @type {string} */ name) => name !== 'historical')
+	);
 	run(() => {
 		mergedSeriesData = $seriesData.map((/** @type {TimeSeriesData} */ d) => {
 			const obj = {
@@ -98,9 +102,9 @@
 
 	/** @type {TimeSeriesData[]} */
 	let mergedIntensityData = $state([]);
-	let intensitySeriesNamesWithoutHistorical = $derived($intensitySeriesNames.filter(
-		(/** @type {string} */ name) => name !== 'historical'
-	));
+	let intensitySeriesNamesWithoutHistorical = $derived(
+		$intensitySeriesNames.filter((/** @type {string} */ name) => name !== 'historical')
+	);
 	run(() => {
 		mergedIntensityData = $intensitySeriesData.map((/** @type {TimeSeriesData} */ d) => {
 			const obj = {
