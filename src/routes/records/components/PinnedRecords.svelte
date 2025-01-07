@@ -83,9 +83,10 @@
 		return data;
 	}
 
-	run(() => {
+	$effect(() => {
 		if (region && browser) {
-			records = [];
+			/** @type {{ id: string, data: Promise<any> }[]} */
+			let newRecords = [];
 			recordMap = {
 				solar: null,
 				wind: null,
@@ -95,15 +96,18 @@
 			};
 			pinned.forEach(({ fuelTech, ids }) => {
 				ids.forEach((id) => {
-					// console.log('fetching', `${region}.${fuelTech}.${id}`);
 					const recordId = `${region}.${fuelTech}.${id}`;
-					records.push({ id: recordId, data: fetchRecord(recordId) });
+					newRecords.push({ id: recordId, data: fetchRecord(recordId) });
 				});
 			});
+
+			records = newRecords;
 		}
 	});
 
-	run(() => {
+	let recordMapCache = $derived(recordMap);
+
+	$effect(() => {
 		if (region && records.length) {
 			const promises = records.map((record) => record.data);
 
@@ -123,8 +127,9 @@
 						const metric = data[0].metric;
 
 						const date = parseISO(interval);
+						const time = date.getTime();
 
-						if (recordMap[fuelTech] === null) {
+						if (recordMapCache[fuelTech] === null || time > recordMapCache[fuelTech].time) {
 							recordMap[fuelTech] = {
 								recordId,
 								aggregate,
@@ -135,24 +140,8 @@
 								description,
 								metric,
 								date,
-								time: date.getTime()
+								time
 							};
-						} else {
-							// check if the date is newer
-							if (date.getTime() > recordMap[fuelTech].time) {
-								recordMap[fuelTech] = {
-									recordId,
-									aggregate,
-									value,
-									unit,
-									interval,
-									period,
-									description,
-									metric,
-									date,
-									time: date.getTime()
-								};
-							}
 						}
 					}
 				});
