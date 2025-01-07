@@ -15,72 +15,100 @@
 	import LineX from './elements/annotations/LineX.svelte';
 	import Dot from './elements/annotations/Dot.svelte';
 
-	/** @type {TimeSeriesData[]} */
-	export let dataset = [];
+	
 
-	export let title = '';
 
-	export let clip = true;
 
-	export let xKey = 'date';
 
-	export let yKey = '';
 
-	/** @type {Array.<number | null> | undefined} */
-	export let yDomain = undefined;
+	
 
-	export let zKey = '';
 
-	/** @type {*} */
-	export let xTicks = undefined;
+	
 
-	export let snapXTicks = true;
 
-	/** @type {*} */
-	export let yTicks = undefined;
+	
 
-	/** If true, overlay will take up the full width of the chart
-	 * If object with xStartValue and xEndValue, overlay will be a range
-	 * @type {*} */
-	export let overlay = null;
+	
 
-	export let overlayStroke = 'rgba(236, 233, 230, 0.4)';
 
-	/** @type {*} */
-	export let overlayLine = false;
+	
 
-	export let curveType = undefined;
 
-	export let strokeWidth = '2px';
 
-	/** @type {TimeSeriesData | undefined}*/
-	export let hoverData = undefined;
+	
 
-	/** @type {TimeSeriesData | undefined}*/
-	export let focusData = undefined;
+	
 
-	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
-	export let formatTickX = (/** @type {*} */ d) => d;
-	export let formatTickY = (/** @type {number} */ d) => d;
+	
 
-	export let chartHeightClasses = '';
 
-	/** @type {string | null} */
-	export let highlightId = null;
+	
 
-	export let showArea = true;
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData[]} [dataset]
+	 * @property {string} [title]
+	 * @property {boolean} [clip]
+	 * @property {string} [xKey]
+	 * @property {string} [yKey]
+	 * @property {Array.<number | null> | undefined} [yDomain]
+	 * @property {string} [zKey]
+	 * @property {*} [xTicks]
+	 * @property {boolean} [snapXTicks]
+	 * @property {*} [yTicks]
+	 * @property {*} [overlay] - If true, overlay will take up the full width of the chart
+If object with xStartValue and xEndValue, overlay will be a range
+	 * @property {string} [overlayStroke]
+	 * @property {*} [overlayLine]
+	 * @property {any} [curveType]
+	 * @property {string} [strokeWidth]
+	 * @property {TimeSeriesData | undefined} [hoverData]
+	 * @property {TimeSeriesData | undefined} [focusData]
+	 * @property {Function} [formatTickX]
+	 * @property {any} [formatTickY]
+	 * @property {string} [chartHeightClasses]
+	 * @property {string | null} [highlightId]
+	 * @property {boolean} [showArea]
+	 */
+
+	/** @type {Props} */
+	let {
+		dataset = [],
+		title = '',
+		clip = true,
+		xKey = 'date',
+		yKey = '',
+		yDomain = undefined,
+		zKey = '',
+		xTicks = undefined,
+		snapXTicks = true,
+		yTicks = undefined,
+		overlay = null,
+		overlayStroke = 'rgba(236, 233, 230, 0.4)',
+		overlayLine = false,
+		curveType = undefined,
+		strokeWidth = '2px',
+		hoverData = undefined,
+		focusData = undefined,
+		formatTickX = (/** @type {*} */ d) => d,
+		formatTickY = (/** @type {number} */ d) => d,
+		chartHeightClasses = '',
+		highlightId = null,
+		showArea = true
+	} = $props();
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
 
-	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
+	let heightClasses = $derived(chartHeightClasses || defaultChartHeightClasses);
 
 	// $: console.log('groupedData', groupedData);
 
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	$: clipPathId = clip ? `${id}-clip-path` : '';
-	$: maxValue = Math.round(Math.max(...dataset.map((d) => d[yKey] || 0)));
-	$: maxY = maxValue > 0 ? maxValue + (maxValue * 10) / 100 : 10;
+	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
+	let clipPathId = $derived(clip ? `${id}-clip-path` : '');
+	let maxValue = $derived(Math.round(Math.max(...dataset.map((d) => d[yKey] || 0))));
+	let maxY = $derived(maxValue > 0 ? maxValue + (maxValue * 10) / 100 : 10);
 </script>
 
 <div class="chart-container mb-4 {heightClasses}">

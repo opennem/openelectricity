@@ -1,7 +1,7 @@
 <script>
 	import Switch from '$lib/components/Switch.svelte';
 
-	export let store;
+	let { store } = $props();
 
 	const {
 		allowPrefixSwitch,
@@ -17,12 +17,12 @@
 	} = store;
 
 	// $: console.log('allowedPrefixes', $allowedPrefixes, $displayPrefix, $baseUnit);
-	$: unitOptions = $allowedPrefixes.map((/** @type {string} */ prefix) => {
+	let unitOptions = $derived($allowedPrefixes.map((/** @type {string} */ prefix) => {
 		return {
 			label: `${prefix}${$baseUnit}`,
 			value: prefix
 		};
-	});
+	}));
 </script>
 
 <div class="grid grid-cols-5 gap-4 items-center">

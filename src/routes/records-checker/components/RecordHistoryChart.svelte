@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { LayerCake, Svg, Html } from 'layercake';
 	import { curveStepAfter } from 'd3-shape';
 
@@ -9,15 +11,14 @@
 	import Brush from '$lib/components/charts/elements/Brush.html.svelte';
 	import ClipPath from '$lib/components/charts/elements/defs/ClipPath.svelte';
 
-	export let data;
-	export let issueInstanceIds = [];
+	let { data, issueInstanceIds = [] } = $props();
 
-	let brushExtents = [null, null];
-	let brushedData = [];
+	let brushExtents = $state([null, null]);
+	let brushedData = $state([]);
 
 	const id = 'record-chart-' + new Date().getTime();
 
-	$: {
+	run(() => {
 		// brushed data should have at least 2 points to be able to draw a line
 		brushedData = data.slice(
 			(brushExtents[0] || 0) * data.length,
@@ -26,13 +27,15 @@
 		if (brushedData.length < 2) {
 			brushedData = data.slice(brushExtents[0] * data.length, brushExtents[0] * data.length + 2);
 		}
-	}
+	});
 
-	$: isBrushed = brushExtents[0] !== null && brushExtents[1] !== null;
+	let isBrushed = $derived(brushExtents[0] !== null && brushExtents[1] !== null);
 
-	$: console.log('time series data', data);
+	run(() => {
+		console.log('time series data', data);
+	});
 
-	$: annotatedData = data.filter((d) => issueInstanceIds.includes(d.instance_id));
+	let annotatedData = $derived(data.filter((d) => issueInstanceIds.includes(d.instance_id)));
 
 	const formatTickX = (d) => {
 		const date = new Date(d);
@@ -75,7 +78,7 @@
 	<button
 		class="border rounded text-xs py-1 px-4"
 		class:invisible={!isBrushed}
-		on:click={() => (brushExtents = [null, null])}
+		onclick={() => (brushExtents = [null, null])}
 	>
 		reset
 	</button>

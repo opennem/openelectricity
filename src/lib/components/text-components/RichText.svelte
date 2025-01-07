@@ -1,40 +1,46 @@
-<script type="ts">
-	import { PortableText } from '@portabletext/svelte';
+<script lang="ts">
+	import { PortableText } from '@chienleng/portabletext-svelte-5';
 	import Image from '$lib/components/text-components/Image.svelte';
 
-	export let content = null;
-	let values = [];
-	let current = [];
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} [content]
+	 */
 
-	$: {
-		values = [];
-		current = [];
+	/** @type {Props} */
+	let { content = null } = $props();
+	let values = $state([]);
+	let current = $state([]);
 
-		content.forEach((block) => {
-			if (block._type === 'image' && block.style === 'wide') {
-				if (current.length !== 0) {
-					values.push({
-						type: 'narrow',
-						blocks: [...current]
-					});
-				}
+	content.forEach((block) => {
+		if (block._type === 'image' && block.style === 'wide') {
+			current = [];
+		} else {
+			current.push(block);
+		}
+	});
 
+	content.forEach((block) => {
+		if (block._type === 'image' && block.style === 'wide') {
+			if (current.length !== 0) {
 				values.push({
-					type: 'wide',
-					blocks: [block]
+					type: 'narrow',
+					blocks: [...current]
 				});
-
-				current = [];
-			} else {
-				current.push(block);
 			}
-		});
 
-		values.push([...current]);
-	}
+			values.push({
+				type: 'wide',
+				blocks: [block]
+			});
+		}
+	});
+
+	values.push([...current]);
+
 	const components = { types: { image: Image } };
 
-	$: console.log(content);
+	console.log(content);
 </script>
 
 {#if content}

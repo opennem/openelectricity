@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 
 	import Switch from '$lib/components/Switch.svelte';
@@ -33,11 +35,13 @@
 	$selectedModel = modelOptions[0].value;
 	$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
 
-	$: if ($isTechnologyDisplay) {
-		$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
-	} else {
-		$selectedGroup = dataRegionCompareOptions[0].value;
-	}
+	run(() => {
+		if ($isTechnologyDisplay) {
+			$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
+		} else {
+			$selectedGroup = dataRegionCompareOptions[0].value;
+		}
+	});
 </script>
 
 <div class="text-sm">
@@ -76,7 +80,7 @@
 				class:bg-white={$selectedScenario !== value}
 				class:bg-light-warm-grey={$selectedScenario === value}
 				{value}
-				on:click={() => ($selectedScenario = value)}
+				onclick={() => ($selectedScenario = value)}
 			>
 				{label}
 			</button>

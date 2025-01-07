@@ -1,8 +1,20 @@
 <script>
-	export let href = '';
-	export let title = '';
-	export let classes = '';
-	let hover = false;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [href]
+	 * @property {string} [title]
+	 * @property {string} [classes]
+	 * @property {import('svelte').Snippet} [children]
+	 */
+
+	/** @type {Props} */
+	let {
+		href = '',
+		title = '',
+		classes = '',
+		children
+	} = $props();
+	let hover = $state(false);
 
 	function toggleHover() {
 		hover = !hover;
@@ -12,12 +24,12 @@
 <a
 	class={`flex items-center gap-3 font-bold font-space transition-all text-dark-grey hover:text-red ${classes} hover:no-underline`}
 	{href}
-	on:mouseenter={toggleHover}
-	on:mouseleave={toggleHover}
+	onmouseenter={toggleHover}
+	onmouseleave={toggleHover}
 >
 	{title}
 
-	<slot>
+	{#if children}{@render children()}{:else}
 		<svg
 			class="transition-all"
 			class:translate-x-1={hover}
@@ -40,5 +52,5 @@
 				class={`transition-all ${hover ? 'stroke-red' : 'stroke-black'}`}
 			/>
 		</svg>
-	</slot>
+	{/if}
 </a>

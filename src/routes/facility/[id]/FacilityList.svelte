@@ -1,17 +1,23 @@
 <script>
 	import { goto } from '$app/navigation';
 
-	export let selected = '';
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [selected]
+	 */
+
+	/** @type {Props} */
+	let { selected = $bindable('') } = $props();
 
 	/** @type {import('$lib/types/facility.types').Facility[]} */
-	let facilities = [];
+	let facilities = $state([]);
 
 	async function getFacilities() {
 		facilities = await fetch('/api/facilities').then((r) => r.json());
 	}
 </script>
 
-<form on:change={() => goto(`/facility/${selected}`)} class="my-6 text-right">
+<form onchange={() => goto(`/facility/${selected}`)} class="my-6 text-right">
 	{#await getFacilities()}
 		<div>fetching...</div>
 	{:then}

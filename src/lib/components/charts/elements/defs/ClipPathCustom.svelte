@@ -3,11 +3,17 @@
 
 	const { width, height, padding, xScale } = getContext('LayerCake');
 
-	export let id = 'clipping-path';
-	export let domain;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [id]
+	 * @property {any} domain
+	 */
 
-	$: w = domain ? $xScale(domain[1]) - $xScale(domain[0]) : $width + $padding.left + $padding.right;
-	$: x = domain ? $xScale(domain[0]) : 0;
+	/** @type {Props} */
+	let { id = 'clipping-path', domain } = $props();
+
+	let w = $derived(domain ? $xScale(domain[1]) - $xScale(domain[0]) : $width + $padding.left + $padding.right);
+	let x = $derived(domain ? $xScale(domain[0]) : 0);
 </script>
 
 <clipPath {id} transform="translate({-$padding.left}, 0)">

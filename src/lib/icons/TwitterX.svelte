@@ -1,9 +1,14 @@
+<script>
+	/** @type {{ [key: string]: any }} */
+	let { ...rest } = $props();
+</script>
+
 <svg
 	role="img"
 	viewBox="0 0 24 24"
 	xmlns="http://www.w3.org/2000/svg"
 	class="w-6 h-6"
-	{...$$restProps}
+	{...rest}
 >
 	<title>X</title>
 	<path

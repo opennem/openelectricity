@@ -11,13 +11,27 @@
 	const flipDurationMs = 200;
 	const dispatchEvent = createEventDispatcher();
 
-	export let valueColumnName = 'value';
-	export let units = '';
-	export let seriesItems;
-	export let seriesLabels;
-	export let seriesColours;
-	export let hoverData;
-	export let showContribution = false;
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [valueColumnName]
+	 * @property {string} [units]
+	 * @property {any} seriesItems
+	 * @property {any} seriesLabels
+	 * @property {any} seriesColours
+	 * @property {any} hoverData
+	 * @property {boolean} [showContribution]
+	 */
+
+	/** @type {Props} */
+	let {
+		valueColumnName = 'value',
+		units = '',
+		seriesItems,
+		seriesLabels,
+		seriesColours,
+		hoverData,
+		showContribution = false
+	} = $props();
 
 	const { selectedGroup } = getContext('scenario-data');
 
@@ -37,7 +51,7 @@
 	<table class="table w-full table-fixed text-sm border border-warm-grey">
 		<thead>
 			<tr>
-				<th class="w-8" />
+				<th class="w-8"></th>
 				<th class="text-left">
 					<div
 						class="border border-mid-warm-grey text-xs inline-block rounded-md whitespace-nowrap"
@@ -68,9 +82,9 @@
 				<tr
 					animate:flip={{ duration: flipDurationMs }}
 					class="group"
-					on:mouseover={() => handleHighlight(id)}
-					on:mouseleave={() => handleHighlight(null)}
-					on:focus={() => handleHighlight(id)}
+					onmouseover={() => handleHighlight(id)}
+					onmouseleave={() => handleHighlight(null)}
+					onfocus={() => handleHighlight(id)}
 				>
 					<!-- <td>
 						<div
@@ -84,7 +98,7 @@
 						<div
 							class="rounded-full bg-mid-grey w-4 h-4"
 							style="background-color: {seriesColours[name]}"
-						/>
+						></div>
 					</td>
 					<td class="whitespace-nowrap group-hover:bg-light-warm-grey">
 						{seriesLabels[name]}

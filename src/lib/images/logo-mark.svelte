@@ -1,5 +1,11 @@
 <script>
-	export let classes = 'w-24 h-24';
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [classes]
+	 */
+
+	/** @type {Props} */
+	let { classes = 'w-24 h-24' } = $props();
 </script>
 
 <svg

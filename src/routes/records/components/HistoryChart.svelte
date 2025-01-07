@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 	import { curveStepAfter } from 'd3-shape';
 	import { timeYear } from 'd3-time';
@@ -56,52 +58,60 @@
 	$brushStrokeWidth = '1px';
 
 	/** @type {*} */
-	let brushedRange;
+	let brushedRange = $state();
 
-	$: if ($seriesData.length) {
-		const addTenPercent = (val) => val + val * 0.1;
-		const maxY = $seriesData.map((d) => d.value);
-		// @ts-ignore
-		const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
+	run(() => {
+		if ($seriesData.length) {
+			const addTenPercent = (val) => val + val * 0.1;
+			const maxY = $seriesData.map((d) => d.value);
+			// @ts-ignore
+			const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
 
-		$yDomain = [0, datasetMax];
-		$brushYDomain = [0, datasetMax];
-	}
+			$yDomain = [0, datasetMax];
+			$brushYDomain = [0, datasetMax];
+		}
+	});
 
-	$: xValue = $hoverTime ? $formatTickX($hoverTime) : '';
-	$: yValue = $hoverData ? $convertAndFormatValue($hoverData.value) + ' ' + $displayUnit : '';
-	$: xRange =
-		$seriesData.length > 1
+	let xValue = $derived($hoverTime ? $formatTickX($hoverTime) : '');
+	let yValue = $derived($hoverData ? $convertAndFormatValue($hoverData.value) + ' ' + $displayUnit : '');
+	let xRange =
+		$derived($seriesData.length > 1
 			? [
 					startOfYear($seriesData[0].date),
 					startOfYear(addYears($seriesData[$seriesData.length - 1].date, 1))
 			  ]
-			: undefined;
-	$: if (xRange) {
-		$xDomain = xRange;
-		$brushXDomain = xRange;
-	}
+			: undefined);
+	run(() => {
+		if (xRange) {
+			$xDomain = xRange;
+			$brushXDomain = xRange;
+		}
+	});
 
-	$: axisXTicks = xRange ? timeYear.every(2)?.range(xRange[0], xRange[1]) : undefined;
-	$: $xTicks = axisXTicks && !brushedRange ? axisXTicks : 5;
+	let axisXTicks = $derived(xRange ? timeYear.every(2)?.range(xRange[0], xRange[1]) : undefined);
+	run(() => {
+		$xTicks = axisXTicks && !brushedRange ? axisXTicks : 5;
+	});
 
 	// insert the first and last item in xRange into axisXTicks
-	$: if (axisXTicks && xRange) {
-		console.log('timeZone', $timeZone);
-		const xStartYear = getFormattedMonth(xRange[0], undefined, $timeZone);
-		const tickStartYear = getFormattedMonth(axisXTicks[0], undefined, $timeZone);
-		const xEndYear = getFormattedMonth(xRange[1], undefined, $timeZone);
-		const tickEndYear = getFormattedMonth(axisXTicks[axisXTicks.length - 1], undefined, $timeZone);
+	run(() => {
+		if (axisXTicks && xRange) {
+			console.log('timeZone', $timeZone);
+			const xStartYear = getFormattedMonth(xRange[0], undefined, $timeZone);
+			const tickStartYear = getFormattedMonth(axisXTicks[0], undefined, $timeZone);
+			const xEndYear = getFormattedMonth(xRange[1], undefined, $timeZone);
+			const tickEndYear = getFormattedMonth(axisXTicks[axisXTicks.length - 1], undefined, $timeZone);
 
-		// if not the same year, insert the first item in xRange into axisXTicks
-		if (xStartYear !== tickStartYear) {
-			axisXTicks.unshift(xRange[0]);
+			// if not the same year, insert the first item in xRange into axisXTicks
+			if (xStartYear !== tickStartYear) {
+				axisXTicks.unshift(xRange[0]);
+			}
+			// if not the same year, insert the last item in xRange into axisXTicks
+			if (xEndYear !== tickEndYear) {
+				axisXTicks.push(xRange[1]);
+			}
 		}
-		// if not the same year, insert the last item in xRange into axisXTicks
-		if (xEndYear !== tickEndYear) {
-			axisXTicks.push(xRange[1]);
-		}
-	}
+	});
 
 	/**
 	 * @param {CustomEvent} evt
@@ -135,7 +145,7 @@
 	{#if $allowPrefixSwitch}
 		<button
 			class="font-light text-sm text-mid-grey hover:underline"
-			on:click={moveToNextDisplayPrefix}
+			onclick={moveToNextDisplayPrefix}
 		>
 			{$displayUnit || ''}
 		</button>

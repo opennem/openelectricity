@@ -19,61 +19,88 @@
 	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
 	import LineX from '$lib/components/charts/elements/annotations/LineX.svelte';
 
-	/** @type {TimeSeriesData[]} */
-	export let dataset = [];
+	
 
-	export let title = '';
 
-	export let id = '';
-	export let clip = true;
 
-	export let xKey = 'date';
 
-	/** @type {number[]} */
-	export let yKey = [];
+	
 
-	/** @type {Array.<number | null> | undefined} */
-	export let yDomain = undefined;
+	
 
-	export let zKey = '';
 
-	/** @type {string[]} */
-	export let seriesNames = [];
+	
 
-	/** @type {Object.<string, string>} legend colour */
-	export let seriesColours = {};
+	
 
-	/** @type {*} */
-	export let xTicks = undefined;
+	
 
-	/** @type {*} */
-	export let yTicks = undefined;
+	
 
-	/** If true, overlay will take up the full width of the chart
-	 * If object with xStartValue and xEndValue, overlay will be a range
-	 * @type {*} */
-	export let overlay = null;
+	
 
-	export let overlayStroke = 'rgba(236, 233, 230, 0.4)';
 
-	/** @type {*} */
-	export let blankOverlay = false;
+	
 
-	/** @type {*} */
-	export let overlayLine = false;
+	
 
-	export let display = 'area'; // line, area
 
-	/** @type {TimeSeriesData | undefined}*/
-	export let hoverData = undefined;
+	
 
-	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
-	export let formatTickX = (/** @type {*} */ d) => d;
+	
 
-	export let chartHeightClasses = 'h-[400px] md:h-[580px]';
 
-	/** @type {string | null} */
-	export let highlightId = null;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData[]} [dataset]
+	 * @property {string} [title]
+	 * @property {string} [id]
+	 * @property {boolean} [clip]
+	 * @property {string} [xKey]
+	 * @property {number[]} [yKey]
+	 * @property {Array.<number | null> | undefined} [yDomain]
+	 * @property {string} [zKey]
+	 * @property {string[]} [seriesNames]
+	 * @property {Object.<string, string>} [seriesColours]
+	 * @property {*} [xTicks]
+	 * @property {*} [yTicks]
+	 * @property {*} [overlay] - If true, overlay will take up the full width of the chart
+If object with xStartValue and xEndValue, overlay will be a range
+	 * @property {string} [overlayStroke]
+	 * @property {*} [blankOverlay]
+	 * @property {*} [overlayLine]
+	 * @property {string} [display] - line, area
+	 * @property {TimeSeriesData | undefined} [hoverData]
+	 * @property {Function} [formatTickX]
+	 * @property {string} [chartHeightClasses]
+	 * @property {string | null} [highlightId]
+	 */
+
+	/** @type {Props} */
+	let {
+		dataset = [],
+		title = '',
+		id = '',
+		clip = true,
+		xKey = 'date',
+		yKey = [],
+		yDomain = undefined,
+		zKey = '',
+		seriesNames = [],
+		seriesColours = {},
+		xTicks = undefined,
+		yTicks = undefined,
+		overlay = null,
+		overlayStroke = 'rgba(236, 233, 230, 0.4)',
+		blankOverlay = false,
+		overlayLine = false,
+		display = 'area',
+		hoverData = undefined,
+		formatTickX = (/** @type {*} */ d) => d,
+		chartHeightClasses = 'h-[400px] md:h-[580px]',
+		highlightId = null
+	} = $props();
 
 	/** TODO: work out transition */
 	const tweenOptions = {
@@ -89,16 +116,16 @@
 	// $: if (dataset) yTweened.set(maxY);
 	/** end */
 
-	$: stackedData = stack(dataset, seriesNames);
-	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
-	$: chartData = display === 'area' ? stackedData : groupedData;
-	$: flatData = display === 'area' ? flatten(stackedData) : flatten(groupedData, 'values');
-	$: y = display === 'area' ? yKey : 'value';
-	$: z = display === 'area' ? zKey : 'group';
+	let stackedData = $derived(stack(dataset, seriesNames));
+	let groupedData = $derived(dataset ? groupLonger(dataset, seriesNames) : []);
+	let chartData = $derived(display === 'area' ? stackedData : groupedData);
+	let flatData = $derived(display === 'area' ? flatten(stackedData) : flatten(groupedData, 'values'));
+	let y = $derived(display === 'area' ? yKey : 'value');
+	let z = $derived(display === 'area' ? zKey : 'group');
 
 	// $: console.log('groupedData', groupedData);
 
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
+	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 </script>
 
 <div class="chart-container mb-4 {chartHeightClasses}">

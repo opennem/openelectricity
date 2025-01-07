@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { format, isToday } from 'date-fns';
 	import { scaleLinear } from 'd3-scale';
 
@@ -11,13 +13,26 @@
 
 	import { carbonIntensityColour } from '$lib/stores/theme';
 
-	// export let data;
-	export let title = '';
-	export let flows;
-	export let prices;
-	export let regionPower;
-	export let regionEnergy;
-	export let regionEmissions;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [title] - export let data;
+	 * @property {any} flows
+	 * @property {any} prices
+	 * @property {any} regionPower
+	 * @property {any} regionEnergy
+	 * @property {any} regionEmissions
+	 */
+
+	/** @type {Props} */
+	let {
+		title = '',
+		flows,
+		prices,
+		regionPower,
+		regionEnergy,
+		regionEmissions
+	} = $props();
 
 	const rows = {
 		live: [
@@ -53,25 +68,10 @@
 		]
 	};
 
-	$: generationTotal = regionGenerationTotal(
-		liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
-		liveMode ? regionPower : regionEnergy
-	);
-	$: renewablesTotal = regionRenewablesTotal(
-		liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
-		liveMode ? regionPower : regionEnergy
-	);
-	$: emissionsTotal = regionEmissionsTotal(
-		!liveMode ? rows.annual.map((d) => d.id) : [],
-		!liveMode ? regionEmissions : []
-	);
 
-	let intensity = {};
+	let intensity = $state({});
 	const intensityScale = scaleLinear().domain([0, 900]).range([0, 100]);
 
-	$: {
-		updateIntensity(emissionsTotal, generationTotal);
-	}
 
 	function updateIntensity(emissionsTotal, generationTotal) {
 		rows.annual.forEach((row) => {
@@ -80,18 +80,8 @@
 	}
 
 	// Track map mode and data
-	let mapMode = 'annual'; // annual
-	// $: mapData = data[mapMode];
-	$: liveMode = mapMode === 'live';
-	$: dispatchTime = Date.parse(flows.dispatchDateTimeString);
-	$: dispatch =
-		mapMode === 'live'
-			? dispatchTime
-				? `${isToday(dispatchTime) ? 'Today ' : ''}${format(dispatchTime, 'HH:mmaaa xxx')}`
-				: ''
-			: 'Avg. past 12 months';
+	let mapMode = $state('annual'); // annual
 
-	$: mapModeRows = rows[mapMode];
 
 	/**
 	 * @param {string} value
@@ -110,19 +100,44 @@
 		maximumFractionDigits: 0
 	});
 
-	$: getPrice = (state) => {
-		return auDollar.format(prices.regionPrices[`${state}1`]);
-	};
 
 	function getRenewablePercent(state) {
 		return Math.round((renewablesTotal[state] / generationTotal[state]) * 100);
 	}
 
-	let hoverRegion;
+	let hoverRegion = $state();
 
 	// function getCarbonIntensity(state) {
 	// 	return Math.round(emissionsTotal[state] / generationTotal[state]);
 	// }
+	// $: mapData = data[mapMode];
+	let liveMode = $derived(mapMode === 'live');
+	let generationTotal = $derived(regionGenerationTotal(
+		liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
+		liveMode ? regionPower : regionEnergy
+	));
+	let renewablesTotal = $derived(regionRenewablesTotal(
+		liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
+		liveMode ? regionPower : regionEnergy
+	));
+	let emissionsTotal = $derived(regionEmissionsTotal(
+		!liveMode ? rows.annual.map((d) => d.id) : [],
+		!liveMode ? regionEmissions : []
+	));
+	run(() => {
+		updateIntensity(emissionsTotal, generationTotal);
+	});
+	let dispatchTime = $derived(Date.parse(flows.dispatchDateTimeString));
+	let dispatch =
+		$derived(mapMode === 'live'
+			? dispatchTime
+				? `${isToday(dispatchTime) ? 'Today ' : ''}${format(dispatchTime, 'HH:mmaaa xxx')}`
+				: ''
+			: 'Avg. past 12 months');
+	let mapModeRows = $derived(rows[mapMode]);
+	let getPrice = $derived((state) => {
+		return auDollar.format(prices.regionPrices[`${state}1`]);
+	});
 </script>
 
 <MapHeader {mapMode} mapTitle={title} onChange={onMapModeChange} {dispatch} class="md:hidden" />
@@ -185,8 +200,8 @@
 						<tr
 							class="border-b border-warm-grey cursor-pointer"
 							class:bg-light-warm-grey={hoverRegion === row.id}
-							on:mouseenter={() => (hoverRegion = row.id)}
-							on:mouseleave={() => (hoverRegion = undefined)}
+							onmouseenter={() => (hoverRegion = row.id)}
+							onmouseleave={() => (hoverRegion = undefined)}
 						>
 							<td class="py-3 text-xs text-dark-grey font-light text-left md:w-[100px]">
 								{row.label}
@@ -213,7 +228,7 @@
 										class="h-4 border border-black"
 										style:background-color={$carbonIntensityColour(intensity[row.id])}
 										style:width={`${intensityScale(intensity[row.id])}px`}
-									/>
+									></div>
 								</td>
 
 								<td class="py-3 text-sm text-right">

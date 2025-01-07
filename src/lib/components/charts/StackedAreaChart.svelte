@@ -17,76 +17,109 @@
 	import Dot from './elements/annotations/Dot.svelte';
 	// import HoverDots from './elements/HoverDots.svelte';
 
-	/** @type {TimeSeriesData[]} */
-	export let dataset = [];
+	
 
-	export let title = '';
 
-	export let clip = true;
 
-	export let xKey = 'date';
 
-	/** @type {number[] | number} */
-	export let yKey = [];
+	
 
-	/** @type {Array.<number | null> | undefined} */
-	export let yDomain = undefined;
+	
 
-	/** @type {*} */
-	export let xDomain = undefined;
+	
 
-	export let zKey = '';
 
-	/** @type {string[]} */
-	export let seriesNames = [];
+	
 
-	/** @type {string[]} legend colour */
-	export let zRange = [];
+	
 
-	/** @type {*} */
-	export let xTicks = undefined;
+	
 
-	/** @type {*} */
-	export let yTicks = undefined;
+	
 
-	/** @type {Boolean} */
-	export let snapTicks = true;
+	
 
-	export let xGridlines = false;
 
-	export let chartPadding = { top: 0, right: 0, bottom: 40, left: 0 };
 
-	/** If true, overlay will take up the full width of the chart
-	 * If object with xStartValue and xEndValue, overlay will be a range
-	 * @type {*} */
-	export let overlay = null;
+	
 
-	export let overlayStroke = 'rgba(236, 233, 230, 0.4)';
 
-	/** @type {*} */
-	export let blankOverlay = false;
+	
 
-	/** @type {{ date: Date } | undefined} */
-	export let overlayLine = undefined;
+	
 
-	export let chartType = 'area'; // line, area
 
-	/** @type {TimeSeriesData | undefined}*/
-	export let hoverData = undefined;
+	
 
-	/** @type {TimeSeriesData | undefined}*/
-	export let focusData = undefined;
+	
 
-	/** @type {Function} A function that passes the current tick value and expects a nicely formatted value in return. */
-	export let formatTickX = (/** @type {*} */ d) => d;
-	export let formatTickY = (/** @type {number} */ d) => d;
+	
 
-	export let chartHeightClasses = '';
 
-	export let curveFunction = null;
 
-	/** @type {string | undefined} */
-	export let highlightId = '';
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData[]} [dataset]
+	 * @property {string} [title]
+	 * @property {boolean} [clip]
+	 * @property {string} [xKey]
+	 * @property {number[] | number} [yKey]
+	 * @property {Array.<number | null> | undefined} [yDomain]
+	 * @property {*} [xDomain]
+	 * @property {string} [zKey]
+	 * @property {string[]} [seriesNames]
+	 * @property {string[]} [zRange]
+	 * @property {*} [xTicks]
+	 * @property {*} [yTicks]
+	 * @property {Boolean} [snapTicks]
+	 * @property {boolean} [xGridlines]
+	 * @property {any} [chartPadding]
+	 * @property {*} [overlay] - If true, overlay will take up the full width of the chart
+If object with xStartValue and xEndValue, overlay will be a range
+	 * @property {string} [overlayStroke]
+	 * @property {*} [blankOverlay]
+	 * @property {{ date: Date } | undefined} [overlayLine]
+	 * @property {string} [chartType] - line, area
+	 * @property {TimeSeriesData | undefined} [hoverData]
+	 * @property {TimeSeriesData | undefined} [focusData]
+	 * @property {Function} [formatTickX]
+	 * @property {any} [formatTickY]
+	 * @property {string} [chartHeightClasses]
+	 * @property {any} [curveFunction]
+	 * @property {string | undefined} [highlightId]
+	 */
+
+	/** @type {Props} */
+	let {
+		dataset = [],
+		title = '',
+		clip = true,
+		xKey = 'date',
+		yKey = [],
+		yDomain = undefined,
+		xDomain = undefined,
+		zKey = '',
+		seriesNames = [],
+		zRange = [],
+		xTicks = undefined,
+		yTicks = undefined,
+		snapTicks = true,
+		xGridlines = false,
+		chartPadding = { top: 0, right: 0, bottom: 40, left: 0 },
+		overlay = null,
+		overlayStroke = 'rgba(236, 233, 230, 0.4)',
+		blankOverlay = false,
+		overlayLine = undefined,
+		chartType = 'area',
+		hoverData = undefined,
+		focusData = undefined,
+		formatTickX = (/** @type {*} */ d) => d,
+		formatTickY = (/** @type {number} */ d) => d,
+		chartHeightClasses = '',
+		curveFunction = null,
+		highlightId = ''
+	} = $props();
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
@@ -98,18 +131,18 @@
 	};
 	const yTweened = tweened(/** @type {number|null} */ (null), tweenOptions);
 
-	$: isLine = chartType === 'line';
-	$: isArea = chartType === 'area';
-	$: stackedData = stack(dataset, seriesNames);
-	$: groupedData = dataset ? groupLonger(dataset, seriesNames) : [];
-	$: chartData = isArea ? stackedData : groupedData;
-	$: flatData = isArea ? flatten(stackedData) : flatten(groupedData, 'values');
-	$: y = isArea ? yKey : 'value';
-	$: z = isArea ? zKey : 'group';
-	$: clipPathId = clip ? `${id}-clip-path` : '';
-	$: clipPathAxisId = clip ? `${id}-clip-path-axis` : '';
+	let isLine = $derived(chartType === 'line');
+	let isArea = $derived(chartType === 'area');
+	let stackedData = $derived(stack(dataset, seriesNames));
+	let groupedData = $derived(dataset ? groupLonger(dataset, seriesNames) : []);
+	let chartData = $derived(isArea ? stackedData : groupedData);
+	let flatData = $derived(isArea ? flatten(stackedData) : flatten(groupedData, 'values'));
+	let y = $derived(isArea ? yKey : 'value');
+	let z = $derived(isArea ? zKey : 'group');
+	let clipPathId = $derived(clip ? `${id}-clip-path` : '');
+	let clipPathAxisId = $derived(clip ? `${id}-clip-path-axis` : '');
 
-	$: heightClasses = chartHeightClasses || defaultChartHeightClasses;
+	let heightClasses = $derived(chartHeightClasses || defaultChartHeightClasses);
 </script>
 
 <div class="chart-container mb-4 {heightClasses}">

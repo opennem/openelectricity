@@ -1,6 +1,11 @@
+<script>
+	/** @type {{ [key: string]: any }} */
+	let { ...rest } = $props();
+</script>
+
 <svg
 	class="size-6"
-	{...$$restProps}
+	{...rest}
 	viewBox="0 0 216 216"
 	fill="none"
 	stroke="currentColor"

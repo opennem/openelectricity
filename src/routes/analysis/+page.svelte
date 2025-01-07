@@ -19,8 +19,14 @@
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 
-	/** @type {import('./$types').PageData} */
-	export let data;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('./$types').PageData} data
+	 */
+
+	/** @type {Props} */
+	let { data } = $props();
 
 	let showMenu = false;
 
@@ -33,12 +39,12 @@
 	let showTechnology = false;
 	let showRegions = false;
 	let showDate = false;
-	let searchString = '';
+	let searchString = $state('');
 
 	/** @type {*} */
-	let technologySelections = null;
+	let technologySelections = $state(null);
 	/** @type {*} */
-	let regionSelections = null;
+	let regionSelections = $state(null);
 	let dateChosen = 'none';
 
 	onMount(() => {
@@ -66,16 +72,16 @@
 		regionSelections = { ...regionDefaultSelections, ...regionArgs };
 	});
 
-	$: hasSearchTerm = searchString.trim() !== '';
-	$: hasTechnologySelections = technologySelections
+	let hasSearchTerm = $derived(searchString.trim() !== '');
+	let hasTechnologySelections = $derived(technologySelections
 		? Object.values(technologySelections).find((selection) => selection)
-		: false;
-	$: hasRegionSelections = regionSelections
+		: false);
+	let hasRegionSelections = $derived(regionSelections
 		? Object.values(regionSelections).find((selection) => selection)
-		: false;
-	$: hasFilters = hasSearchTerm || hasTechnologySelections || hasRegionSelections;
+		: false);
+	let hasFilters = $derived(hasSearchTerm || hasTechnologySelections || hasRegionSelections);
 
-	$: articlesFilter = (/** @type {Article[]} */ articles) =>
+	let articlesFilter = $derived((/** @type {Article[]} */ articles) =>
 		articles?.filter((article) => {
 			const searchFilter =
 				article.title.toLowerCase().includes(searchString.toLowerCase()) ||
@@ -92,9 +98,9 @@
 			const dateFilter = article.publish_date === dateChosen || dateChosen === 'none';
 
 			return searchFilter && technologyFilter && regionFilter && dateFilter;
-		});
+		}));
 
-	$: filteredArticles = articlesFilter(data.articles) || [];
+	let filteredArticles = $derived(articlesFilter(data.articles) || []);
 
 	const clearAllFilters = () => {
 		getKeys(technologySelections).forEach((technology) => {

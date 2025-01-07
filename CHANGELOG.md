@@ -1,5 +1,11 @@
 # opennem-app
 
+## 2.0.0
+
+### Major Changes
+
+- d540291: upgrade to Svelte 5
+
 ## 1.20.1
 
 ### Patch Changes

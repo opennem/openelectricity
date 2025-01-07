@@ -3,18 +3,20 @@
   Adds a brush component to create a range between 0 and 1. Bind to the `min` and `max` props to use them in other components. See the [brushable example](https://layercake.graphcics/example/Brush) for use.
  -->
 <script>
+	import { run, stopPropagation } from 'svelte/legacy';
+
 	import { getContext, createEventDispatcher } from 'svelte';
 	import clamp from '$lib/utils/clamp';
 	const { xScale } = getContext('LayerCake');
 
 	/** @type {number | null} min - The brush's min value. Useful to bind to. */
-	let min;
+	let min = $state();
 
 	/** @type {number | null} max - The brush's max value. Useful to bind to. */
-	let max;
+	let max = $state();
 
 	/** @type {*} */
-	let brush;
+	let brush = $state();
 
 	export function clear() {
 		min = null;
@@ -96,11 +98,6 @@
 		max = p < start.min ? start.min : p;
 	});
 
-	$: left = min ? 100 * min : 0;
-	$: right = max ? 100 * (1 - max) : 1;
-	$: if ((min || min === 0) && (max || max === 0)) {
-		dispatchBrushed();
-	}
 
 	function dispatchBrushed() {
 		const range = $xScale.range();
@@ -114,13 +111,20 @@
 			end: invertEnd
 		});
 	}
+	let left = $derived(min ? 100 * min : 0);
+	let right = $derived(max ? 100 * (1 - max) : 1);
+	run(() => {
+		if ((min || min === 0) && (max || max === 0)) {
+			dispatchBrushed();
+		}
+	});
 </script>
 
 <div
 	bind:this={brush}
 	class="brush-outer"
-	on:mousedown|stopPropagation={reset}
-	on:touchstart|stopPropagation={reset}
+	onmousedown={stopPropagation(reset)}
+	ontouchstart={stopPropagation(reset)}
 	role="slider"
 	aria-valuenow={min}
 	aria-valuemin={min}
@@ -131,8 +135,8 @@
 	{#if min !== null}
 		<div
 			class="brush-inner"
-			on:mousedown|stopPropagation={move}
-			on:touchstart|stopPropagation={move}
+			onmousedown={stopPropagation(move)}
+			ontouchstart={stopPropagation(move)}
 			style="left: {left}%; right: {right}%"
 			role="slider"
 			aria-valuenow={min}
@@ -140,27 +144,27 @@
 			aria-valuemax={max}
 			aria-valuetext="{min} to {max}"
 			tabindex="0"
-		/>
+		></div>
 		<div
 			class="brush-handle"
-			on:mousedown|stopPropagation={adjust_min}
-			on:touchstart|stopPropagation={adjust_min}
+			onmousedown={stopPropagation(adjust_min)}
+			ontouchstart={stopPropagation(adjust_min)}
 			style="left: {left}%"
 			role="slider"
 			aria-valuenow={min}
 			aria-valuetext="{min} to {max}"
 			tabindex="0"
-		/>
+		></div>
 		<div
 			class="brush-handle"
-			on:mousedown|stopPropagation={adjust_max}
-			on:touchstart|stopPropagation={adjust_max}
+			onmousedown={stopPropagation(adjust_max)}
+			ontouchstart={stopPropagation(adjust_max)}
 			style="right: {right}%"
 			role="slider"
 			aria-valuenow={max}
 			aria-valuetext="{min} to {max}"
 			tabindex="0"
-		/>
+		></div>
 	{/if}
 </div>
 

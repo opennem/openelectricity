@@ -18,7 +18,7 @@
 	const { selectedView, selectedFuelTechs, selectedMetrics, selectedPeriods } =
 		getContext('records-filters');
 
-	let showMobileFilterOptions = false;
+	let showMobileFilterOptions = $state(false);
 
 	/**
 	 * @param {string} value
@@ -109,12 +109,14 @@
 			/>
 		</section>
 
-		<div slot="buttons" class="flex gap-3">
-			<Button
-				class="!bg-dark-grey text-white hover:!bg-black w-full"
-				on:click={() => (showMobileFilterOptions = false)}>Close</Button
-			>
-		</div>
+		{#snippet buttons()}
+				<div  class="flex gap-3">
+				<Button
+					class="!bg-dark-grey text-white hover:!bg-black w-full"
+					on:click={() => (showMobileFilterOptions = false)}>Close</Button
+				>
+			</div>
+			{/snippet}
 	</Modal>
 {/if}
 

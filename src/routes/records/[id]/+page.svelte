@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { setContext, getContext } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { parseISO } from 'date-fns';
@@ -25,7 +27,7 @@
 	import getRelativeTime from '../page-data-options/relative-time';
 	import HistoryTable from '../components/HistoryTable.svelte';
 
-	export let data;
+	let { data } = $props();
 
 	setContext('record-history-data-viz', dataVizStore());
 	setContext('date-brush-data-viz', dataVizStore());
@@ -62,79 +64,15 @@
 	} = getContext('date-brush-data-viz');
 
 	/** @type {MilestoneRecord[]} */
-	let historyData = [];
+	let historyData = $state([]);
 	let totalHistory = 0;
-	let loading = false;
-	let error = false;
+	let loading = $state(false);
+	let error = $state(false);
 
-	$: if (historyData.length) {
-		// console.log('sortedHistoryData', sortedHistoryData[0]);
-		const period = sortedHistoryData[0].period;
-		const metric = sortedHistoryData[0].metric;
-		const parsed = parseUnit(sortedHistoryData[0].value_unit);
-		console.log('metric', metric);
-		const isWem = sortedHistoryData[0].network_id === 'WEM';
-		const sortedData = [...sortedHistoryData].reverse();
 
-		if (isWem) {
-			console.log('isWem', sortedHistoryData[0].network_id);
-			$timeZone = 'Australia/Perth';
-		} else {
-			$timeZone = undefined;
-		}
 
-		$title = sortedHistoryData[0].description;
-		$seriesNames = ['value'];
-		$seriesData = sortedData;
-		$chartType = 'line';
-		$chartHeightClasses = 'h-[500px]';
-		$baseUnit = parsed.baseUnit;
-		$prefix = parsed.prefix;
-		$displayPrefix = milestoneTypeDisplayPrefix[metric];
-		$allowedPrefixes = milestoneTypeDisplayAllowedPrefixes[metric];
 
-		if (metric === 'proportion') {
-			$maximumFractionDigits = 1;
-		}
 
-		$brushSeriesNames = ['value'];
-		$brushSeriesData = sortedData;
-		$brushChartType = 'line';
-		$brushFormatTickX = (/** @type {Date} */ date) => getFormattedMonth(date, undefined, $timeZone);
-		$formatTickX = timeFormatter(period, $timeZone);
-	}
-	$: $seriesLabels = { value: $displayUnit || '' };
-
-	$: id = data.id;
-	$: fetchRecord(id);
-	// $: console.log('id', id);
-	// $: console.log('historyData', historyData);
-	// $: console.log('sortedHistoryData', sortedHistoryData);
-	$: currentRecord = sortedHistoryData.length ? sortedHistoryData[0] : undefined;
-	$: previousRecord =
-		sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null;
-	$: isPeriodInterval = currentRecord?.period === 'interval';
-
-	$: console.log('currentRecord', currentRecord);
-	$: timestamp = currentRecord?.time;
-	$: recordId = currentRecord?.record_id;
-
-	$: workerImageLocation =
-		recordId && timestamp
-			? `https://browser-worker.opennem2161.workers.dev/?key=${recordId}-${timestamp}`
-			: '/img/preview.jpg';
-	$: console.log('workerImageLocation', workerImageLocation);
-
-	$: sortedHistoryData = historyData
-		.map((record) => {
-			const date = parseISO(record.interval);
-			return {
-				...record,
-				date,
-				time: date.getTime()
-			};
-		})
-		.sort((a, b) => b.time - a.time);
 
 	/**
 	 * @param {string} period
@@ -213,7 +151,82 @@
 		$displayPrefix = getNextPrefix();
 	}
 
-	$: getRecordTitle = (record) => {
+
+	let sortedHistoryData = $derived(historyData
+		.map((record) => {
+			const date = parseISO(record.interval);
+			return {
+				...record,
+				date,
+				time: date.getTime()
+			};
+		})
+		.sort((a, b) => b.time - a.time));
+	run(() => {
+		if (historyData.length) {
+			// console.log('sortedHistoryData', sortedHistoryData[0]);
+			const period = sortedHistoryData[0].period;
+			const metric = sortedHistoryData[0].metric;
+			const parsed = parseUnit(sortedHistoryData[0].value_unit);
+			console.log('metric', metric);
+			const isWem = sortedHistoryData[0].network_id === 'WEM';
+			const sortedData = [...sortedHistoryData].reverse();
+
+			if (isWem) {
+				console.log('isWem', sortedHistoryData[0].network_id);
+				$timeZone = 'Australia/Perth';
+			} else {
+				$timeZone = undefined;
+			}
+
+			$title = sortedHistoryData[0].description;
+			$seriesNames = ['value'];
+			$seriesData = sortedData;
+			$chartType = 'line';
+			$chartHeightClasses = 'h-[500px]';
+			$baseUnit = parsed.baseUnit;
+			$prefix = parsed.prefix;
+			$displayPrefix = milestoneTypeDisplayPrefix[metric];
+			$allowedPrefixes = milestoneTypeDisplayAllowedPrefixes[metric];
+
+			if (metric === 'proportion') {
+				$maximumFractionDigits = 1;
+			}
+
+			$brushSeriesNames = ['value'];
+			$brushSeriesData = sortedData;
+			$brushChartType = 'line';
+			$brushFormatTickX = (/** @type {Date} */ date) => getFormattedMonth(date, undefined, $timeZone);
+			$formatTickX = timeFormatter(period, $timeZone);
+		}
+	});
+	run(() => {
+		$seriesLabels = { value: $displayUnit || '' };
+	});
+	let id = $derived(data.id);
+	run(() => {
+		fetchRecord(id);
+	});
+	// $: console.log('id', id);
+	// $: console.log('historyData', historyData);
+	// $: console.log('sortedHistoryData', sortedHistoryData);
+	let currentRecord = $derived(sortedHistoryData.length ? sortedHistoryData[0] : undefined);
+	let previousRecord =
+		$derived(sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null);
+	let isPeriodInterval = $derived(currentRecord?.period === 'interval');
+	run(() => {
+		console.log('currentRecord', currentRecord);
+	});
+	let timestamp = $derived(currentRecord?.time);
+	let recordId = $derived(currentRecord?.record_id);
+	let workerImageLocation =
+		$derived(recordId && timestamp
+			? `https://browser-worker.opennem2161.workers.dev/?key=${recordId}-${timestamp}`
+			: '/img/preview.jpg');
+	run(() => {
+		console.log('workerImageLocation', workerImageLocation);
+	});
+	let getRecordTitle = $derived((record) => {
 		if (!record) return 'Record';
 
 		let desc = recordDescription(
@@ -232,9 +245,8 @@
 		}
 
 		return desc;
-	};
-
-	$: pageTitle = getRecordTitle(currentRecord);
+	});
+	let pageTitle = $derived(getRecordTitle(currentRecord));
 </script>
 
 <Meta
@@ -254,10 +266,10 @@
 		transition:fade
 		class="md:grid wrapper flex flex-col gap-6 px-10 md:px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 md:overflow-auto animate-pulse"
 	>
-		<div class="bg-mid-warm-grey rounded-lg h-[128px]" />
-		<div class="bg-mid-warm-grey rounded-lg" />
-		<div class="bg-mid-warm-grey rounded-lg" />
-		<div class="bg-mid-warm-grey rounded-lg" />
+		<div class="bg-mid-warm-grey rounded-lg h-[128px]"></div>
+		<div class="bg-mid-warm-grey rounded-lg"></div>
+		<div class="bg-mid-warm-grey rounded-lg"></div>
+		<div class="bg-mid-warm-grey rounded-lg"></div>
 	</div>
 {:else}
 	<div
@@ -286,7 +298,7 @@
 				</span>
 
 				{#if $allowPrefixSwitch}
-					<button class="text-mid-grey text-sm hover:underline" on:click={moveToNextDisplayPrefix}>
+					<button class="text-mid-grey text-sm hover:underline" onclick={moveToNextDisplayPrefix}>
 						{$displayUnit || ''}
 					</button>
 				{:else}
@@ -309,7 +321,7 @@
 			/>
 		</div>
 
-		<div class="md:hidden h-10 bg-white" />
+		<div class="md:hidden h-10 bg-white"></div>
 
 		<HistoryTable
 			{sortedHistoryData}

@@ -3,15 +3,21 @@
 	import { urlFor } from '$lib/sanity';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 
-	/** @type {Article} */
-	export let article;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {Article} article
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let { article, ...rest } = $props();
 
 	const publishedDate = parse(article.publish_date, 'yyyy-MM-dd', new Date());
 </script>
 
 <a
 	href={`/analysis/${article.slug.current}`}
-	class={`grid grid-cols-1 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${$$restProps.class}`}
+	class={`grid grid-cols-1 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${rest.class}`}
 >
 	<header class="mt-8">
 		<div class="flex items-center justify-between px-8">
@@ -32,7 +38,7 @@
 		<div
 			style={`background-image: url(/img/records/${article.fueltech}.png)`}
 			class="h-[172px] bg-no-repeat bg-top bg-cover rounded-b-lg"
-		/>
+		></div>
 	{/if}
 </a>
 

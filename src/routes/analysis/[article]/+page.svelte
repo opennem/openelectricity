@@ -5,13 +5,19 @@
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 
-	/** @type {import('./$types').PageData} */
-	export let data;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('./$types').PageData} data
+	 */
+
+	/** @type {Props} */
+	let { data } = $props();
 
 	// $: console.log('analysis', data);
 
-	$: hasCover = data.cover;
-	$: formattedDate = format(new Date(data.publishDate), 'do MMM, yyyy');
+	let hasCover = $derived(data.cover);
+	let formattedDate = $derived(format(new Date(data.publishDate), 'do MMM, yyyy'));
 </script>
 
 <Meta
@@ -22,7 +28,7 @@
 />
 
 <div class="relative">
-	<div class="bg-light-warm-grey absolute w-full h-[500px] md:h-[750px] z-1" />
+	<div class="bg-light-warm-grey absolute w-full h-[500px] md:h-[750px] z-1"></div>
 
 	<div class="container max-w-none lg:container py-12 relative z-10">
 		<div class="pb-10 md:py-14">

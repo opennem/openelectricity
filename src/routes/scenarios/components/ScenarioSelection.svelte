@@ -12,12 +12,18 @@
 	const { singleSelectionData, multiSelectionData, isSingleSelectionMode } =
 		getContext('scenario-filters');
 
-	export let mobileView = false;
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [mobileView]
+	 */
+
+	/** @type {Props} */
+	let { mobileView = false } = $props();
 
 	/** @type {string[]} */
-	let selectedScenarios = [];
+	let selectedScenarios = $state([]);
 	/** @type {string | null} */
-	let focusScenarioId = null;
+	let focusScenarioId = $state(null);
 	/** @type {ScenarioPathway[]} */
 	let scenariosPathways = scenarioOptions.map((/**@type {*} */ s) => ({
 		id: s.id,
@@ -34,17 +40,21 @@
 		focusScenarioId = $singleSelectionData.id;
 	});
 
-	$: focusScenario = scenarioOptions.find((/**@type {*} */ s) => s.id === focusScenarioId);
-	$: focusScenarioModel = focusScenario
-		? modelOptions.find((m) => m.value === focusScenario.model)
-		: null;
-	$: focusPathways = focusScenarioModel ? focusScenarioModel.pathways : [];
+	let focusScenario = $derived(
+		scenarioOptions.find((/**@type {*} */ s) => s.id === focusScenarioId)
+	);
+	let focusScenarioModel = $derived(
+		focusScenario ? modelOptions.find((m) => m.value === focusScenario.model) : null
+	);
+	let focusPathways = $derived(focusScenarioModel ? focusScenarioModel.pathways : []);
 
-	$: selectedPathways = focusScenarioId
-		? $multiSelectionData
-				.filter((d) => d.model === focusScenario.model && d.scenario === focusScenario.value)
-				.map((d) => d.pathway)
-		: [];
+	let selectedPathways = $derived(
+		focusScenarioId
+			? $multiSelectionData
+					.filter((d) => d.model === focusScenario.model && d.scenario === focusScenario.value)
+					.map((d) => d.pathway)
+			: []
+	);
 
 	// $: console.log('selectedPathways', selectedPathways);
 	// $: console.log('focusScenarioModel', focusScenarioModel);
@@ -145,10 +155,7 @@
 					{#each model.scenarios as scenario}
 						{@const isFocussed = focusScenarioId === scenario.id}
 						{@const isChecked = selectedScenarios.includes(scenario.id)}
-						<li
-							class:bg-light-warm-grey={isFocussed}
-							class="border-b border-warm-grey px-6 last:border-0 md:border-0 md:px-0"
-						>
+						<li class="border-b border-warm-grey px-6 last:border-0 md:border-0 md:px-0">
 							<ScenarioButton
 								{model}
 								{scenario}

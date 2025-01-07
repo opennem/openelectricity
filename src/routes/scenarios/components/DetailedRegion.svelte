@@ -15,7 +15,7 @@
 
 	const { singleSelectionModel } = getContext('scenario-filters');
 
-	let selectedStoreName = 'energyDataVizStore';
+	let selectedStoreName = $state('energyDataVizStore');
 
 	const stores = [
 		{ value: 'energyDataVizStore', label: 'Generation' },
@@ -23,33 +23,33 @@
 		{ value: 'capacityDataVizStore', label: 'Capacity' }
 	];
 
-	$: isEmissionsView = selectedStoreName === 'emissionsDataVizStore';
+	let isEmissionsView = $derived(selectedStoreName === 'emissionsDataVizStore');
 
-	$: selectedStore = dataVizStores[selectedStoreName];
-	$: seriesNames = selectedStore.seriesNames;
-	$: seriesLabels = selectedStore.seriesLabels;
-	$: seriesColours = selectedStore.seriesColours;
-	$: xTicks = selectedStore.miniXTicks;
-	$: formatTickX = selectedStore.formatTickX;
-	$: formatTickY = selectedStore.convertAndFormatValue;
-	$: chartOverlay = selectedStore.chartOverlay;
-	$: chartOverlayLine = selectedStore.chartOverlayLine;
-	$: chartOverlayHatchStroke = selectedStore.chartOverlayHatchStroke;
-	$: hoverData = selectedStore.hoverData;
-	$: focusData = selectedStore.focusData;
-	$: seriesData = selectedStore.seriesData;
-	$: displayUnit = selectedStore.displayUnit;
+	let selectedStore = $derived(dataVizStores[selectedStoreName]);
+	let seriesNames = $derived(selectedStore.seriesNames);
+	let seriesLabels = $derived(selectedStore.seriesLabels);
+	let seriesColours = $derived(selectedStore.seriesColours);
+	let xTicks = $derived(selectedStore.miniXTicks);
+	let formatTickX = $derived(selectedStore.formatTickX);
+	let formatTickY = $derived(selectedStore.convertAndFormatValue);
+	let chartOverlay = $derived(selectedStore.chartOverlay);
+	let chartOverlayLine = $derived(selectedStore.chartOverlayLine);
+	let chartOverlayHatchStroke = $derived(selectedStore.chartOverlayHatchStroke);
+	let hoverData = $derived(selectedStore.hoverData);
+	let focusData = $derived(selectedStore.focusData);
+	let seriesData = $derived(selectedStore.seriesData);
+	let displayUnit = $derived(selectedStore.displayUnit);
 
-	$: intensityStore = dataVizStores.intensityDataVizStore;
-	$: intensityFormatTickY = intensityStore.convertAndFormatValue;
-	$: intensitySeriesLabels = intensityStore.seriesLabels;
-	$: intensitySeriesColours = intensityStore.seriesColours;
-	$: intensityHoverData = intensityStore.hoverData;
-	$: intensityFocusData = intensityStore.focusData;
-	$: intensitySeriesData = intensityStore.seriesData;
-	$: intensityDisplayUnit = intensityStore.displayUnit;
+	let intensityStore = $derived(dataVizStores.intensityDataVizStore);
+	let intensityFormatTickY = $derived(intensityStore.convertAndFormatValue);
+	let intensitySeriesLabels = $derived(intensityStore.seriesLabels);
+	let intensitySeriesColours = $derived(intensityStore.seriesColours);
+	let intensityHoverData = $derived(intensityStore.hoverData);
+	let intensityFocusData = $derived(intensityStore.focusData);
+	let intensitySeriesData = $derived(intensityStore.seriesData);
+	let intensityDisplayUnit = $derived(intensityStore.displayUnit);
 
-	$: isAemo2024 = $singleSelectionModel === 'aemo2024';
+	let isAemo2024 = $derived($singleSelectionModel === 'aemo2024');
 </script>
 
 <div

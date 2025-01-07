@@ -21,20 +21,26 @@
 		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
 	];
 
-	/** @type {MilestoneRecord | undefined} */
-	export let record;
-	export let id;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {MilestoneRecord | undefined} record
+	 * @property {any} id
+	 */
+
+	/** @type {Props} */
+	let { record, id } = $props();
 
 	// $: console.log('id', id);
-	$: idArr = id.split('.');
-	$: isNetwork = idArr.length === 6;
-	$: region = isNetwork ? [idArr[0], idArr[1]].join('.') : [idArr[0], idArr[1], idArr[2]].join('.');
-	$: fuelTech = isNetwork ? idArr[2] : idArr[3];
-	$: metric = isNetwork ? idArr[3] : idArr[4];
-	$: period = isNetwork ? idArr[4] : idArr[5];
-	$: aggregate = isNetwork ? idArr[5] : idArr[6];
+	let idArr = $derived(id.split('.'));
+	let isNetwork = $derived(idArr.length === 6);
+	let region = $derived(isNetwork ? [idArr[0], idArr[1]].join('.') : [idArr[0], idArr[1], idArr[2]].join('.'));
+	let fuelTech = $derived(isNetwork ? idArr[2] : idArr[3]);
+	let metric = $derived(isNetwork ? idArr[3] : idArr[4]);
+	let period = $derived(isNetwork ? idArr[4] : idArr[5]);
+	let aggregate = $derived(isNetwork ? idArr[5] : idArr[6]);
 	// $: console.log('check', region, fuelTech, metric, period, aggregate);
-	$: regionId = regions.find((r) => r.longValue === region)?.value || '';
+	let regionId = $derived(regions.find((r) => r.longValue === region)?.value || '');
 
 	/**
 	 * @param {CustomEvent} evt

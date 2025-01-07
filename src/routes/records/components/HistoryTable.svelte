@@ -1,9 +1,12 @@
 <script>
+	import { createBubbler } from 'svelte/legacy';
+
+	const bubble = createBubbler();
 	import { getContext, createEventDispatcher } from 'svelte';
 	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 	import { getFormattedDate, getFormattedMonth, getFormattedTime } from '$lib/utils/formatters.js';
 
-	export let sortedHistoryData;
+	let { sortedHistoryData } = $props();
 
 	const dispatch = createEventDispatcher();
 	const {
@@ -76,7 +79,7 @@
 				<th class="text-right">
 					{#if $allowPrefixSwitch}
 						<div class="px-4 py-2">
-							<button class="hover:underline" on:click={moveToNextDisplayPrefix}>
+							<button class="hover:underline" onclick={moveToNextDisplayPrefix}>
 								{$displayUnit || ''}
 							</button>
 						</div>
@@ -93,10 +96,10 @@
 					class="border-b border-light-warm-grey pointer hover:bg-warm-grey"
 					class:font-semibold={record.time === $focusTime}
 					class:bg-warm-grey={record.time === $hoverTime}
-					on:mousemove={() => dispatch('mousemove', { time: record.time })}
-					on:mouseout
-					on:blur
-					on:pointerup={() => dispatch('pointerup', { time: record.time })}
+					onmousemove={() => dispatch('mousemove', { time: record.time })}
+					onmouseout={bubble('mouseout')}
+					onblur={bubble('blur')}
+					onpointerup={() => dispatch('pointerup', { time: record.time })}
 				>
 					<td
 						class="pl-4 py-2 font-mono text-dark-grey flex"

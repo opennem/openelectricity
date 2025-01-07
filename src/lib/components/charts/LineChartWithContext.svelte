@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleUtc } from 'd3-scale';
 
@@ -14,7 +16,6 @@
 	import LineX from './elements/annotations/LineX.svelte';
 	import Dot from './elements/annotations/Dot.svelte';
 
-	export let store;
 
 	const {
 		title,
@@ -38,45 +39,65 @@
 		dotFill
 	} = store;
 
-	export let clip = true;
 
-	export let xKey = 'date';
 
-	export let zKey = '';
 
-	/** If true, overlay will take up the full width of the chart
-	 * If object with xStartValue and xEndValue, overlay will be a range
-	 * @type {*} */
-	export let overlay = null;
+	
 
-	export let overlayStroke = 'rgba(236, 233, 230, 0.4)';
 
-	/** @type {*} */
-	export let overlayLine = false;
+	
 
-	/** @type {string | null} */
-	export let highlightId = null;
+	
 
-	/** @type {*} */
-	export let customFormatTickX = null;
+	
 
-	/** @type {string} */
-	export let heightClasses = '';
+	
 
-	export let showDots = false;
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} store
+	 * @property {boolean} [clip]
+	 * @property {string} [xKey]
+	 * @property {string} [zKey]
+	 * @property {*} [overlay] - If true, overlay will take up the full width of the chart
+If object with xStartValue and xEndValue, overlay will be a range
+	 * @property {string} [overlayStroke]
+	 * @property {*} [overlayLine]
+	 * @property {string | null} [highlightId]
+	 * @property {*} [customFormatTickX]
+	 * @property {string} [heightClasses]
+	 * @property {boolean} [showDots]
+	 */
+
+	/** @type {Props} */
+	let {
+		store,
+		clip = true,
+		xKey = 'date',
+		zKey = '',
+		overlay = null,
+		overlayStroke = 'rgba(236, 233, 230, 0.4)',
+		overlayLine = false,
+		highlightId = null,
+		customFormatTickX = null,
+		heightClasses = $bindable(''),
+		showDots = false
+	} = $props();
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
 
-	$: heightClasses = heightClasses || $chartHeightClasses || defaultChartHeightClasses;
+	run(() => {
+		heightClasses = heightClasses || $chartHeightClasses || defaultChartHeightClasses;
+	});
 
 	// $: console.log('groupedData', groupedData);
 
-	$: clipPathId = clip ? `${id}-clip-path` : '';
-	$: clipPathAxisId = clip ? `${id}-clip-path-axis` : '';
-	$: yKey = $yKeys[0] || '';
-	$: maxValue = Math.round(Math.max(...$dataset.map((d) => d[yKey] || 0)));
-	$: maxY = maxValue > 0 ? maxValue + (maxValue * 10) / 100 : 10;
+	let clipPathId = $derived(clip ? `${id}-clip-path` : '');
+	let clipPathAxisId = $derived(clip ? `${id}-clip-path-axis` : '');
+	let yKey = $derived($yKeys[0] || '');
+	let maxValue = $derived(Math.round(Math.max(...$dataset.map((d) => d[yKey] || 0))));
+	let maxY = $derived(maxValue > 0 ? maxValue + (maxValue * 10) / 100 : 10);
 </script>
 
 <div class="w-full {heightClasses}">

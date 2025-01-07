@@ -6,23 +6,40 @@
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
 
-	export let selected;
-	/** @type {{label: string, value: string}[]} */
-	export let options = [];
-	export let paddingY = 'py-1';
-	export let paddingX = 'px-2';
-	export let selectedLabelClass = 'font-semibold';
-	export let formLabel = '';
-	export let staticDisplay = false;
-	export let position = 'bottom'; // top, bottom
-	export let align = 'left'; // left, right, middle
-	export let widthClass = 'w-full';
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} selected
+	 * @property {{label: string, value: string}[]} [options]
+	 * @property {string} [paddingY]
+	 * @property {string} [paddingX]
+	 * @property {string} [selectedLabelClass]
+	 * @property {string} [formLabel]
+	 * @property {boolean} [staticDisplay]
+	 * @property {string} [position] - top, bottom
+	 * @property {string} [align] - left, right, middle
+	 * @property {string} [widthClass]
+	 */
+
+	/** @type {Props} */
+	let {
+		selected,
+		options = [],
+		paddingY = 'py-1',
+		paddingX = 'px-2',
+		selectedLabelClass = 'font-semibold',
+		formLabel = '',
+		staticDisplay = false,
+		position = 'bottom',
+		align = 'left',
+		widthClass = 'w-full'
+	} = $props();
 
 	const dispatch = createEventDispatcher();
 
-	let showOptions = false;
+	let showOptions = $state(false);
 
-	$: selectedValue = selected && selected.value ? selected.value || selected : selected;
+	let selectedValue = $derived(selected && selected.value ? selected.value || selected : selected);
 
 	function handleSelect(option) {
 		dispatch('change', option);
@@ -34,14 +51,14 @@
 		return find ? find.label : selectedValue || formLabel;
 	}
 
-	$: translateToMiddle = align === 'middle' ? 'left-1/2 transform -translate-x-1/2' : '';
+	let translateToMiddle = $derived(align === 'middle' ? 'left-1/2 transform -translate-x-1/2' : '');
 </script>
 
 <div class="relative {widthClass}">
 	<button
-		on:click={() => (showOptions = !showOptions)}
+		onclick={() => (showOptions = !showOptions)}
 		use:clickoutside
-		on:clickoutside={() => (showOptions = false)}
+		onclickoutside={() => (showOptions = false)}
 		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg"
 		class:hover:bg-warm-grey={!staticDisplay}
 	>
@@ -64,7 +81,7 @@
 						class="w-full px-0 py-1 flex gap-4 items-center"
 						class:text-mid-grey={selectedValue !== opt.value}
 						class:text-black={selectedValue === opt.value}
-						on:click={() => handleSelect(opt)}
+						onclick={() => handleSelect(opt)}
 					>
 						<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
 						<span class="capitalize">{opt.label}</span>
@@ -88,7 +105,7 @@
 						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
 						class:text-mid-grey={selectedValue !== opt.value}
 						class:text-black={selectedValue === opt.value}
-						on:click={() => handleSelect(opt)}
+						onclick={() => handleSelect(opt)}
 					>
 						<span class="capitalize">{opt.label}</span>
 
