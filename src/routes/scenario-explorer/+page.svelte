@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { setContext, getContext } from 'svelte';
 	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
@@ -34,7 +36,7 @@
 
 	import { getTechnologyData } from './helpers.js';
 
-	export let data;
+	let { data } = $props();
 	const { articles, filters } = data;
 	const analysisArticles = articles.filter(
 		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
@@ -71,83 +73,9 @@
 		selectedGroup
 	} = getContext('scenario-data');
 
-	$: defaultPathway = defaultModelPathway[$selectedModel];
 
-	// selectedDisplayView.subscribe((value) => {
-	// 	if (value === 'technology') {
-	// 		$selectedGroup = 'detailed';
-	// 	} else if (value === 'region') {
-	// 		$selectedGroup = 'totals';
-	// 	}
-	// });
 
-	$: if ($selectedMultipleScenarios.length === 0) {
-		$selectedMultipleScenarios = [
-			{
-				id: 'aemo2024-step-change-cdp14',
-				model: 'aemo2024',
-				scenario: 'step_change',
-				pathway: 'CDP14',
-				colour: '#A078D7'
-			},
-			{
-				id: 'aemo2024-progressive-change-cdp14',
-				model: 'aemo2024',
-				scenario: 'progressive_change',
-				pathway: 'CDP14',
-				colour: '#F480EE'
-			},
-			{
-				id: 'aemo2024-green-energy-exports-cdp14',
-				model: 'aemo2024',
-				scenario: 'green_energy_exports',
-				pathway: 'CDP14',
-				colour: '#069FAF'
-			}
-		];
-	}
 
-	// GET Data
-	$: if (browser && $selectedDisplayView === 'technology') {
-		console.log('get by technology');
-
-		const scenarios = allScenarios.filter((d) => d.model === $selectedModel);
-		getTechnologyData({
-			model: $selectedModel,
-			region: $selectedRegion,
-			scenario: $selectedScenario,
-			pathway: $selectedPathway,
-			dataView: $selectedDataView
-		}).then(({ history, projection, pathways }) => {
-			updateScenariosPathways(
-				scenarios.map((d) => d.scenarioId),
-				pathways
-			);
-
-			$projectionData = projection;
-			$historicalData = history;
-		});
-	}
-	$: if (browser && $selectedDisplayView === 'scenario') {
-		console.log('get by scenario');
-
-		getScenarioData({
-			scenarios: $selectedMultipleScenarios,
-			dataView: $selectedDataView,
-			region: $selectedRegion
-		});
-	}
-
-	$: if (browser && $selectedDisplayView === 'region') {
-		console.log('get by region');
-
-		getRegionData({
-			model: $selectedModel,
-			scenario: $selectedScenario,
-			pathway: $selectedPathway,
-			dataView: $selectedDataView
-		});
-	}
 
 	/**
 	 * Get data for by technology view
@@ -362,10 +290,93 @@
 		if (!scenarios.find((d) => d === $selectedScenario)) selectedScenario.set(scenarios[0]);
 		if (!pathways.find((d) => d === $selectedPathway)) selectedPathway.set(defaultPathway);
 	}
+	let defaultPathway = $derived(defaultModelPathway[$selectedModel]);
+	// selectedDisplayView.subscribe((value) => {
+	// 	if (value === 'technology') {
+	// 		$selectedGroup = 'detailed';
+	// 	} else if (value === 'region') {
+	// 		$selectedGroup = 'totals';
+	// 	}
+	// });
+
+	run(() => {
+		if ($selectedMultipleScenarios.length === 0) {
+			$selectedMultipleScenarios = [
+				{
+					id: 'aemo2024-step-change-cdp14',
+					model: 'aemo2024',
+					scenario: 'step_change',
+					pathway: 'CDP14',
+					colour: '#A078D7'
+				},
+				{
+					id: 'aemo2024-progressive-change-cdp14',
+					model: 'aemo2024',
+					scenario: 'progressive_change',
+					pathway: 'CDP14',
+					colour: '#F480EE'
+				},
+				{
+					id: 'aemo2024-green-energy-exports-cdp14',
+					model: 'aemo2024',
+					scenario: 'green_energy_exports',
+					pathway: 'CDP14',
+					colour: '#069FAF'
+				}
+			];
+		}
+	});
+	// GET Data
+	run(() => {
+		if (browser && $selectedDisplayView === 'technology') {
+			console.log('get by technology');
+
+			const scenarios = allScenarios.filter((d) => d.model === $selectedModel);
+			getTechnologyData({
+				model: $selectedModel,
+				region: $selectedRegion,
+				scenario: $selectedScenario,
+				pathway: $selectedPathway,
+				dataView: $selectedDataView
+			}).then(({ history, projection, pathways }) => {
+				updateScenariosPathways(
+					scenarios.map((d) => d.scenarioId),
+					pathways
+				);
+
+				$projectionData = projection;
+				$historicalData = history;
+			});
+		}
+	});
+	run(() => {
+		if (browser && $selectedDisplayView === 'scenario') {
+			console.log('get by scenario');
+
+			getScenarioData({
+				scenarios: $selectedMultipleScenarios,
+				dataView: $selectedDataView,
+				region: $selectedRegion
+			});
+		}
+	});
+	run(() => {
+		if (browser && $selectedDisplayView === 'region') {
+			console.log('get by region');
+
+			getRegionData({
+				model: $selectedModel,
+				scenario: $selectedScenario,
+				pathway: $selectedPathway,
+				dataView: $selectedDataView
+			});
+		}
+	});
 </script>
 
 <Meta title="Scenarios" image="/img/preview.jpg" />
 <PageHeader>
+	<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
 	<div slot="main-heading">
 		<div class="lg:my-36">
 			<strong class="block py-8 font-space uppercase text-mid-grey font-medium text-sm">
@@ -374,6 +385,7 @@
 			<h1>Explore the future of Australia's national electricity market</h1>
 		</div>
 	</div>
+	<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
 	<div slot="sub-heading">
 		<p class="lg:mt-24">
 			A range of modelled scenarios exist which envision the evolution of Australia's National

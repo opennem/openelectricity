@@ -49,9 +49,11 @@
 />
 
 <PageHeaderSimple>
+	<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
 	<div slot="main-heading">
 		<h1 class="tracking-widest text-center">The Studio</h1>
 	</div>
+	<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
 	<div slot="sub-heading">
 		<p class="text-sm text-center w-full md:w-[800px] mx-auto">
 			The Studio is a space for the experimental exploration of data projects. While some of these

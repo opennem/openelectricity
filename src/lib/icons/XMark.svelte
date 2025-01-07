@@ -1,3 +1,8 @@
+<script>
+	/** @type {{ [key: string]: any }} */
+	let { ...rest } = $props();
+</script>
+
 <svg
 	xmlns="http://www.w3.org/2000/svg"
 	fill="none"
@@ -5,7 +10,7 @@
 	stroke-width="1.5"
 	stroke="currentColor"
 	class="size-6"
-	{...$$restProps}
+	{...rest}
 >
 	<path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
 </svg>

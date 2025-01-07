@@ -5,22 +5,33 @@
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
-	/** @type {TimeSeriesData | undefined} */
-	export let hoverData = undefined;
+	
 
-	export let strokeWidth = '4px';
 
-	export let opacity = 1;
 
-	export let drawDurationObject = { duration: 250, delay: 0 };
+	/**
+	 * @typedef {Object} Props
+	 * @property {TimeSeriesData | undefined} [hoverData]
+	 * @property {string} [strokeWidth]
+	 * @property {number} [opacity]
+	 * @property {any} [drawDurationObject]
+	 */
+
+	/** @type {Props} */
+	let {
+		hoverData = undefined,
+		strokeWidth = '4px',
+		opacity = 1,
+		drawDurationObject = { duration: 250, delay: 0 }
+	} = $props();
 
 	//TODO: refactor transition
-	let show = false;
+	let show = $state(false);
 	setTimeout(() => {
 		show = true;
 	}, 100);
 
-	$: path = (values) => {
+	let path = $derived((values) => {
 		return (
 			'M' +
 			values
@@ -29,22 +40,22 @@
 				})
 				.join('L')
 		);
-	};
+	});
 
-	$: cx = (values) => {
+	let cx = $derived((values) => {
 		if (!hoverData) return 0;
 		const time = hoverData.time;
 		const find = values.find((item) => item.time === time);
 		return $xGet(find);
-	};
-	$: cy = (values) => {
+	});
+	let cy = $derived((values) => {
 		if (!hoverData) return 0;
 		const time = hoverData.time;
 		const find = values.find((item) => item.time === time);
 		return $yGet(find);
-	};
+	});
 
-	$: updatedData = hoverData
+	let updatedData = $derived(hoverData
 		? $data.map((d) => {
 				const time = hoverData.time;
 				return {
@@ -52,16 +63,16 @@
 					values: d.values.filter((v) => v.time <= time)
 				};
 		  })
-		: $data;
+		: $data);
 </script>
 
 <g
 	class="line-group"
 	role="group"
-	on:mouseout={() => {
+	onmouseout={() => {
 		dispatch('mouseout');
 	}}
-	on:blur={() => {
+	onblur={() => {
 		dispatch('mouseout');
 	}}
 >

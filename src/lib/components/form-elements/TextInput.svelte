@@ -1,15 +1,29 @@
 <script>
-	/** @type {import('svelte/elements').FormEventHandler<HTMLInputElement> | null} */
-	export let changeHandler = null;
-	export let placeholder = '';
-	export let value = '';
-	export let type = 'text';
+	import { preventDefault } from 'svelte/legacy';
+
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('svelte/elements').FormEventHandler<HTMLInputElement> | null} [changeHandler]
+	 * @property {string} [placeholder]
+	 * @property {string} [value]
+	 * @property {string} [type]
+	 */
+
+	/** @type {Props & { [key: string]: any }} */
+	let {
+		changeHandler = null,
+		placeholder = '',
+		value = '',
+		type = 'text',
+		...rest
+	} = $props();
 </script>
 
 <input
 	{type}
-	class={`rounded-md border-solid placeholder:font-light border-[0.05rem] border-mid-warm-grey p-4 font-sans text-sm placeholder:text-mid-warm-grey focus:ring-0 focus:border-dark-grey ${$$restProps.class}`}
+	class={`rounded-md border-solid placeholder:font-light border-[0.05rem] border-mid-warm-grey p-4 font-sans text-sm placeholder:text-mid-warm-grey focus:ring-0 focus:border-dark-grey ${rest.class}`}
 	{placeholder}
 	{value}
-	on:input|preventDefault={changeHandler}
+	oninput={preventDefault(changeHandler)}
 />

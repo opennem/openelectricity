@@ -7,21 +7,37 @@
 
 	const dispatch = createEventDispatcher();
 
-	export let isRadioMode = false;
-	/** @type {*} */
-	export let selectedScenario = null;
-	/** @type {string} */
-	export let selectedPathway = '';
-	/** @type {string[]}*/
-	export let pathways = [];
+	
+	
+	
 
-	export let showTitle = true;
-	export let showDescription = true;
-	export let position = 'bottom';
-	export let align = 'left';
 
-	/** @type {*} */
-	export let selectedPathways = [];
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {boolean} [isRadioMode]
+	 * @property {*} [selectedScenario]
+	 * @property {string} [selectedPathway]
+	 * @property {string[]} [pathways]
+	 * @property {boolean} [showTitle]
+	 * @property {boolean} [showDescription]
+	 * @property {string} [position]
+	 * @property {string} [align]
+	 * @property {*} [selectedPathways]
+	 */
+
+	/** @type {Props} */
+	let {
+		isRadioMode = false,
+		selectedScenario = null,
+		selectedPathway = '',
+		pathways = [],
+		showTitle = true,
+		showDescription = true,
+		position = 'bottom',
+		align = 'left',
+		selectedPathways = []
+	} = $props();
 
 	/** @param {*} event */
 	function handlePathwayChange(event) {
@@ -45,7 +61,7 @@
 		dispatch('change-multiple', { value: updated });
 	}
 
-	$: options = pathways.map((pathway) => ({ value: pathway, label: pathway }));
+	let options = $derived(pathways.map((pathway) => ({ value: pathway, label: pathway })));
 </script>
 
 {#if showTitle}

@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { startOfYear, format } from 'date-fns';
 	import deepCopy from '$lib/utils/deep-copy';
 	import {
@@ -27,8 +29,14 @@
 	import Statistic from '$lib/utils/Statistic';
 	import TimeSeries from '$lib/utils/TimeSeries';
 
-	/** @type {{ ispData: *, outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} */
-	export let data;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {{ ispData: *, outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} data
+	 */
+
+	/** @type {Props} */
+	let { data } = $props();
 
 	const xKey = 'date';
 
@@ -36,56 +44,58 @@
 		maximumFractionDigits: 0
 	});
 
-	let selectedModel = modelSelections[0];
-	let selectedScenario = scenarios[selectedModel.value][0];
-	let selectedPathway = '';
+	let selectedModel = $state(modelSelections[0]);
+	let selectedScenario = $state(scenarios[selectedModel.value][0]);
+	let selectedPathway = $state('');
 
-	let selectedFtGroup = ftGroupSelections[0];
+	let selectedFtGroup = $state(ftGroupSelections[0]);
 
-	$: ispData = data.ispData;
+	let ispData = $derived(data.ispData);
 
-	$: group = groupMap[selectedFtGroup.value];
-	$: order = orderMap[selectedFtGroup.value];
+	let group = $derived(groupMap[selectedFtGroup.value]);
+	let order = $derived(orderMap[selectedFtGroup.value]);
 
 	// $: aemo2022 = data.ispData.aemo2022;
 	// $: aemo2024 = data.ispData.aemo2024;
 	// $: console.log(aemo2022, aemo2024);
 
-	$: selectedModelScenarioDescriptions = scenarioDescriptions[selectedModel.value];
-	$: selectedModelScenarioLabels = scenarioLabels[selectedModel.value];
+	let selectedModelScenarioDescriptions = $derived(scenarioDescriptions[selectedModel.value]);
+	let selectedModelScenarioLabels = $derived(scenarioLabels[selectedModel.value]);
 	// $: selectedModelPathway = selectedPathway[selectedModel.value];
-	$: selectedModelYDomain = scenarioYDomain[selectedModel.value];
-	$: selectedModelXTicks = modelXTicks[selectedModel.value];
-	$: selectedModelData = ispData[selectedModel.value];
-	$: selectedModelPathways = selectedModelData.pathways.map((p) => ({
+	let selectedModelYDomain = $derived(scenarioYDomain[selectedModel.value]);
+	let selectedModelXTicks = $derived(modelXTicks[selectedModel.value]);
+	let selectedModelData = $derived(ispData[selectedModel.value]);
+	let selectedModelPathways = $derived(selectedModelData.pathways.map((p) => ({
 		value: p,
 		label: p.split('_').join(' ')
-	}));
-	$: {
+	})));
+	run(() => {
 		selectedPathway = defaultPathway[selectedModel.value];
-	}
-	$: selectedModelScenarios = scenarios[selectedModel.value].map((s) => ({
+	});
+	let selectedModelScenarios = $derived(scenarios[selectedModel.value].map((s) => ({
 		value: s,
 		label: s.split('_').join(' ')
-	}));
+	})));
 
-	$: outlookData = selectedModelData.outlookEnergyNem.data;
+	let outlookData = $derived(selectedModelData.outlookEnergyNem.data);
 
-	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
+	let filteredWithScenario = $derived(outlookData.filter((d) => d.scenario === selectedScenario));
 
-	$: filteredWithPathwayScenario = filteredWithScenario.filter(
+	let filteredWithPathwayScenario = $derived(filteredWithScenario.filter(
 		(d) => d.pathway === selectedPathway
-	);
+	));
 
-	$: console.log('filteredWithPathwayScenario', filteredWithPathwayScenario);
+	run(() => {
+		console.log('filteredWithPathwayScenario', filteredWithPathwayScenario);
+	});
 
 	// $: yDomain = selectedModelYDomain[selectedScenario];
 
-	$: projectionStatsDatasets = filteredWithPathwayScenario.length
+	let projectionStatsDatasets = $derived(filteredWithPathwayScenario.length
 		? new Statistic(filteredWithPathwayScenario, 'projection').group(group).reorder(order)
-		: null;
+		: null);
 
-	$: projectionTimeSeriesDatasets = projectionStatsDatasets
+	let projectionTimeSeriesDatasets = $derived(projectionStatsDatasets
 		? new TimeSeries(
 				projectionStatsDatasets.data,
 				parseInterval('1Y'),
@@ -95,24 +105,26 @@
 		  )
 				.transform()
 				.updateMinMax()
-		: null;
+		: null);
 
-	$: projectionSeriesNames = projectionTimeSeriesDatasets
+	let projectionSeriesNames = $derived(projectionTimeSeriesDatasets
 		? projectionTimeSeriesDatasets.seriesNames
-		: [];
+		: []);
 
-	$: projectionStatsCharts = filteredWithPathwayScenario
+	let projectionStatsCharts = $derived(filteredWithPathwayScenario
 		? new Statistic(filteredWithPathwayScenario, 'projection')
 				.invertValues(loadFuelTechs)
 				.group(group, loadFuelTechs)
 				.reorder(order)
-		: null;
+		: null);
 
-	$: loadData = projectionStatsCharts ? projectionStatsCharts.data.filter((d) => d.isLoad) : [];
-	$: loadSeries = loadData.map((d) => d.id);
-	$: console.log('loadloadDataSeries', loadData);
+	let loadData = $derived(projectionStatsCharts ? projectionStatsCharts.data.filter((d) => d.isLoad) : []);
+	let loadSeries = $derived(loadData.map((d) => d.id));
+	run(() => {
+		console.log('loadloadDataSeries', loadData);
+	});
 
-	$: projectionTimeSeriesCharts = projectionStatsCharts
+	let projectionTimeSeriesCharts = $derived(projectionStatsCharts
 		? new TimeSeries(
 				projectionStatsCharts.data,
 				parseInterval('1Y'),
@@ -122,54 +134,58 @@
 		  )
 				.transform()
 				.updateMinMax(loadSeries)
-		: null;
+		: null);
 
-	$: console.log(
-		'projectionTimeSeriesCharts',
-		projectionTimeSeriesCharts?.data,
-		projectionStatsCharts?.data,
-		filteredWithPathwayScenario
-	);
+	run(() => {
+		console.log(
+			'projectionTimeSeriesCharts',
+			projectionTimeSeriesCharts?.data,
+			projectionStatsCharts?.data,
+			filteredWithPathwayScenario
+		);
+	});
 
-	$: maxY = projectionTimeSeriesCharts
+	let maxY = $derived(projectionTimeSeriesCharts
 		? [...projectionTimeSeriesCharts.data.map((d) => d._max)]
-		: [];
+		: []);
 	// @ts-ignore
-	$: datasetMax = maxY ? Math.max(...maxY) : 0;
-	$: minY = projectionTimeSeriesCharts
+	let datasetMax = $derived(maxY ? Math.max(...maxY) : 0);
+	let minY = $derived(projectionTimeSeriesCharts
 		? [...projectionTimeSeriesCharts.data.map((d) => d._min)]
-		: [];
+		: []);
 	// @ts-ignore
-	$: datasetMin = minY ? Math.min(...minY) : 0;
+	let datasetMin = $derived(minY ? Math.min(...minY) : 0);
 
-	$: console.log('datasetMax', datasetMax, datasetMin);
-	$: yDomain = [datasetMin, datasetMax];
+	run(() => {
+		console.log('datasetMax', datasetMax, datasetMin);
+	});
+	let yDomain = $derived([datasetMin, datasetMax]);
 
 	/** @type {Object.<string, string>} */
-	$: projectionSeriesLabels = projectionTimeSeriesDatasets
+	let projectionSeriesLabels = $derived(projectionTimeSeriesDatasets
 		? projectionTimeSeriesDatasets.seriesLabels
-		: {};
+		: {});
 
 	/** @type {Object.<string, string>} */
-	$: projectionSeriesColours = projectionTimeSeriesDatasets
+	let projectionSeriesColours = $derived(projectionTimeSeriesDatasets
 		? projectionTimeSeriesDatasets.seriesColours
-		: {};
+		: {});
 
-	$: projectionFuelTechIds = projectionStatsDatasets
+	let projectionFuelTechIds = $derived(projectionStatsDatasets
 		? projectionStatsDatasets.data.reduce(fuelTechReducer, {})
-		: {};
+		: {});
 
 	// Convert historical data to TWh to match ISP
-	$: historicalData = deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
+	let historicalData = $derived(deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
 		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
 		d.history = { ...d.history, data: historyData };
 		d.units = 'TWh';
 		return d;
-	});
+	}));
 
-	$: historicalStatsDatasets = new Statistic(historicalData, 'history').group(group).reorder(order);
+	let historicalStatsDatasets = $derived(new Statistic(historicalData, 'history').group(group).reorder(order));
 
-	$: historicalTimeSeriesDatasets = new TimeSeries(
+	let historicalTimeSeriesDatasets = $derived(new TimeSeries(
 		historicalStatsDatasets.data,
 		parseInterval('1M'),
 		'history',
@@ -178,28 +194,28 @@
 	)
 		.transform()
 		.rollup(parseInterval('FY'))
-		.updateMinMax();
+		.updateMinMax());
 
 	// update historical date to match ISP
-	$: updatedHistoricalTimeSeriesDatasets = historicalTimeSeriesDatasets.data.map((d) => {
+	let updatedHistoricalTimeSeriesDatasets = $derived(historicalTimeSeriesDatasets.data.map((d) => {
 		const date = startOfYear(d.date, 1);
 		return { ...d, date, time: date.getTime() };
-	});
+	}));
 
-	$: filteredHistoricalTimeSeriesDatasets = updatedHistoricalTimeSeriesDatasets.filter(
+	let filteredHistoricalTimeSeriesDatasets = $derived(updatedHistoricalTimeSeriesDatasets.filter(
 		(d) => d.date.getFullYear() < 2024 && d.date.getFullYear() > 2009
-	);
+	));
 
-	$: sparkLineXTicks = modelSparklineXTicks[selectedModel.value];
-
-	/** @type {TimeSeriesData | undefined} */
-	let hoverData = undefined;
+	let sparkLineXTicks = $derived(modelSparklineXTicks[selectedModel.value]);
 
 	/** @type {TimeSeriesData | undefined} */
-	let historicalHoverData = undefined;
+	let hoverData = $state(undefined);
 
-	let generatedCsv = '';
-	$: {
+	/** @type {TimeSeriesData | undefined} */
+	let historicalHoverData = $state(undefined);
+
+	let generatedCsv = $state('');
+	run(() => {
 		generatedCsv = '';
 		generatedCsv +=
 			[
@@ -217,10 +233,10 @@
 			});
 			generatedCsv += row.join(',') + '\n';
 		});
-	}
+	});
 
-	$: file = new Blob([generatedCsv], { type: 'text/plain' });
-	$: fileUrl = URL.createObjectURL(file);
+	let file = $derived(new Blob([generatedCsv], { type: 'text/plain' }));
+	let fileUrl = $derived(URL.createObjectURL(file));
 
 	function handleModelChange(evt) {
 		if (selectedModel.value === evt.detail.value) return;
@@ -244,7 +260,7 @@
 	}
 
 	/** @type {string | undefined} */
-	let hoverKey;
+	let hoverKey = $state();
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		if (e.detail.key) {

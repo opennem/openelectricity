@@ -17,18 +17,24 @@
 
 	import Chart from './Chart.svelte';
 
-	/** @type {StatsData[]} */
-	export let data;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {StatsData[]} data
+	 */
+
+	/** @type {Props} */
+	let { data } = $props();
 
 	const xKey = 'date';
 
-	$: statsDatasets = new Statistic(data, 'history')
+	let statsDatasets = $derived(new Statistic(data, 'history')
 		.mergeAndInterpolate()
 		.invertValues(loadFts)
 		.group(domainGroups)
-		.reorder(domainOrder).data;
+		.reorder(domainOrder).data);
 
-	$: timeSeriesDatasets = new TimeSeries(
+	let timeSeriesDatasets = $derived(new TimeSeries(
 		statsDatasets,
 		parseInterval('5m'),
 		'history',
@@ -37,15 +43,15 @@
 	)
 		.transform()
 		.rollup(parseInterval('30m'), 'mean')
-		.updateMinMax(loadFts);
+		.updateMinMax(loadFts));
 
-	$: dataset = timeSeriesDatasets.data;
+	let dataset = $derived(timeSeriesDatasets.data);
 
-	$: displayLegend = legend.toReversed().map((d) => ({
+	let displayLegend = $derived(legend.toReversed().map((d) => ({
 		key: d,
 		label: fuelTechName(d),
 		colour: $fuelTechColour(d)
-	}));
+	})));
 </script>
 
 <div class="container max-w-none lg:container">
@@ -75,7 +81,7 @@
 				<dl class="flex flex-wrap gap-1">
 					{#each displayLegend as { colour, label }}
 						<dt class="flex items-center gap-2 text-xs text-mid-grey mr-3">
-							<span class="w-4 h-4 block" style="background-color: {colour}" />
+							<span class="w-4 h-4 block" style="background-color: {colour}"></span>
 							<span>{label}</span>
 						</dt>
 					{/each}

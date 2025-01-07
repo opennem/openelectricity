@@ -5,8 +5,14 @@
 	import Switch from '$lib/components/Switch.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
-	/** @type {EmberCountry[]} */
-	export let countries;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {EmberCountry[]} countries
+	 */
+
+	/** @type {Props} */
+	let { countries } = $props();
 
 	const { selectedRegion, selectedRange, selectedInterval } = getContext('filters');
 	const rangeOptions = [
@@ -60,8 +66,8 @@
 	$selectedInterval = '1M';
 
 	// iso string begins with `x-` for regions
-	$: regionsOnly = countries.filter((country) => country.iso.startsWith('x-'));
-	$: countriesOnly = countries.filter((country) => !country.iso.startsWith('x-'));
+	let regionsOnly = $derived(countries.filter((country) => country.iso.startsWith('x-')));
+	let countriesOnly = $derived(countries.filter((country) => !country.iso.startsWith('x-')));
 
 	/**
 	 * @param {string} interval

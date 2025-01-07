@@ -1,9 +1,17 @@
 <script>
 	import { fade } from 'svelte/transition';
 
-	export let maxWidthClass = 'max-w-screen-md';
+	/**
+	 * @typedef {Object} Props
+	 * @property {string} [maxWidthClass]
+	 * @property {import('svelte').Snippet} [children]
+	 * @property {import('svelte').Snippet} [buttons]
+	 */
 
-	$: classProps = $$restProps.class;
+	/** @type {Props & { [key: string]: any }} */
+	let { maxWidthClass = 'max-w-screen-md', children, buttons, ...rest } = $props();
+
+	let classProps = $derived(rest.class);
 </script>
 
 <div
@@ -11,9 +19,9 @@
 	class={`grid grid-cols-1 content-between relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 shadow-xl transition-all w-full sm:my-8 sm:p-6 ${maxWidthClass} ${classProps}`}
 >
 	<div class="overflow-y-auto">
-		<slot />
+		{@render children?.()}
 	</div>
 	<div class="mt-0 border-t border-warm-grey px-10 py-6">
-		<slot name="buttons" />
+		{@render buttons?.()}
 	</div>
 </div>

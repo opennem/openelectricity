@@ -1,18 +1,30 @@
 <script>
 	import { formatFyTickX, formatValue } from './helpers.js';
-	export let hoverData;
-	export let hoverKey;
-	export let seriesColours;
-	export let seriesLabels;
-	export let defaultText = '';
+	/**
+	 * @typedef {Object} Props
+	 * @property {any} hoverData
+	 * @property {any} hoverKey
+	 * @property {any} seriesColours
+	 * @property {any} seriesLabels
+	 * @property {string} [defaultText]
+	 */
 
-	$: hoverMax = hoverData ? hoverData._max || 0 : 0;
-	$: hoverTime = hoverData ? hoverData.time || 0 : 0;
-	$: hoverKeyValue =
-		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null;
-	$: hoverKeyColour = hoverKey ? seriesColours[hoverKey] : '';
-	$: hoverKeyLabel = hoverKey ? seriesLabels[hoverKey] : '';
-	$: percent = hoverKeyValue ? (hoverKeyValue / hoverMax) * 100 : 0;
+	/** @type {Props} */
+	let {
+		hoverData,
+		hoverKey,
+		seriesColours,
+		seriesLabels,
+		defaultText = ''
+	} = $props();
+
+	let hoverMax = $derived(hoverData ? hoverData._max || 0 : 0);
+	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
+	let hoverKeyValue =
+		$derived(hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null);
+	let hoverKeyColour = $derived(hoverKey ? seriesColours[hoverKey] : '');
+	let hoverKeyLabel = $derived(hoverKey ? seriesLabels[hoverKey] : '');
+	let percent = $derived(hoverKeyValue ? (hoverKeyValue / hoverMax) * 100 : 0);
 </script>
 
 <div class="h-9">
@@ -26,7 +38,7 @@
 				{#if hoverKeyValue !== null}
 					<div class="flex items-center gap-2">
 						<div class="flex items-center gap-2">
-							<span class="w-2.5 h-2.5 block" style="background-color: {hoverKeyColour}" />
+							<span class="w-2.5 h-2.5 block" style="background-color: {hoverKeyColour}"></span>
 							{hoverKeyLabel}
 						</div>
 

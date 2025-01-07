@@ -6,21 +6,37 @@
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 
-	/** @type {string[]} */
-	export let selected;
-	export let label = '';
-	/** @type {{label: string, value: string}[]} */
-	export let options = [];
-	export let paddingY = 'py-1';
-	export let paddingX = 'px-2';
-	export let staticDisplay = false;
-	export let selectedLabelClass = 'font-semibold mb-0 capitalize';
-	export let position = 'bottom'; // top, bottom
-	export let align = 'left'; // left, right
+	
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {string[]} selected
+	 * @property {string} [label]
+	 * @property {{label: string, value: string}[]} [options]
+	 * @property {string} [paddingY]
+	 * @property {string} [paddingX]
+	 * @property {boolean} [staticDisplay]
+	 * @property {string} [selectedLabelClass]
+	 * @property {string} [position] - top, bottom
+	 * @property {string} [align] - left, right
+	 */
+
+	/** @type {Props} */
+	let {
+		selected,
+		label = '',
+		options = [],
+		paddingY = 'py-1',
+		paddingX = 'px-2',
+		staticDisplay = false,
+		selectedLabelClass = 'font-semibold mb-0 capitalize',
+		position = 'bottom',
+		align = 'left'
+	} = $props();
 
 	const dispatch = createEventDispatcher();
 
-	let showOptions = false;
+	let showOptions = $state(false);
 	let isMetaPressed = false;
 
 	/**
@@ -55,11 +71,11 @@
 	}
 </script>
 
-<svelte:window on:keyup={handleKeyup} on:keydown={handleKeydown} />
+<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
 
-<div class="relative w-full" use:clickoutside on:clickoutside={() => (showOptions = false)}>
+<div class="relative w-full" use:clickoutside onclickoutside={() => (showOptions = false)}>
 	<button
-		on:click={() => (showOptions = !showOptions)}
+		onclick={() => (showOptions = !showOptions)}
 		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap"
 		class:hover:bg-warm-grey={!showOptions}
 	>
@@ -80,7 +96,7 @@
 						class="w-full px-0 py-1 flex gap-4 items-center"
 						class:text-mid-grey={!selected.includes(opt.value)}
 						class:text-black={selected.includes(opt.value)}
-						on:click={() => handleSelect(opt)}
+						onclick={() => handleSelect(opt)}
 					>
 						<div
 							class="border rounded size-7"
@@ -114,7 +130,7 @@
 						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
 						class:text-mid-grey={!selected.includes(opt.value)}
 						class:text-black={selected.includes(opt.value)}
-						on:click={() => handleSelect(opt)}
+						onclick={() => handleSelect(opt)}
 					>
 						<span class="capitalize">{opt.label}</span>
 

@@ -11,7 +11,7 @@
 		{ name: 'About', href: '/about' }
 	];
 
-	let mobileNavActive = false;
+	let mobileNavActive = $state(false);
 
 	afterNavigate(() => {
 		mobileNavActive = false;
@@ -53,7 +53,7 @@
 		<button
 			class="md:hidden absolute right-10 z-40"
 			class:top-[24.5px]={mobileNavActive}
-			on:click={() => {
+			onclick={() => {
 				mobileNavActive = !mobileNavActive;
 			}}
 		>

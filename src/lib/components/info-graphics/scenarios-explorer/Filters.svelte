@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { getContext } from 'svelte';
 
 	import Switch from '$lib/components/Switch.svelte';
@@ -33,12 +35,14 @@
 	$selectedModel = modelOptions[0].value;
 	$selectedGroup = dataTechnologyGroupOptions[0].value;
 
-	$: isRegionDisplay = $selectedDisplayView === 'region';
-	$: if (isRegionDisplay) {
-		$selectedGroup = dataRegionCompareOptions[0].value;
-	} else {
-		$selectedGroup = dataTechnologyGroupOptions[0].value;
-	}
+	let isRegionDisplay = $derived($selectedDisplayView === 'region');
+	run(() => {
+		if (isRegionDisplay) {
+			$selectedGroup = dataRegionCompareOptions[0].value;
+		} else {
+			$selectedGroup = dataTechnologyGroupOptions[0].value;
+		}
+	});
 </script>
 
 <div class="border-b border-warm-grey">

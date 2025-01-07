@@ -1,4 +1,6 @@
 <script>
+	import { run } from 'svelte/legacy';
+
 	import { startOfYear, format } from 'date-fns';
 	import deepCopy from '$lib/utils/deep-copy';
 	import {
@@ -27,8 +29,14 @@
 	import Statistic from '$lib/utils/Statistic';
 	import TimeSeries from '$lib/utils/TimeSeries';
 
-	/** @type {{ ispData: *, outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} */
-	export let data;
+	
+	/**
+	 * @typedef {Object} Props
+	 * @property {{ ispData: *, outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} data
+	 */
+
+	/** @type {Props} */
+	let { data } = $props();
 
 	const xKey = 'date';
 
@@ -36,39 +44,39 @@
 		maximumFractionDigits: 0
 	});
 
-	let selectedModel = modelSelections[0];
-	let selectedScenario = scenarios[selectedModel.value][0];
+	let selectedModel = $state(modelSelections[0]);
+	let selectedScenario = $state(scenarios[selectedModel.value][0]);
 
-	let selectedFtGroup = ftGroupSelections[0];
+	let selectedFtGroup = $state(ftGroupSelections[0]);
 
-	$: group = groupMap[selectedFtGroup.value];
-	$: order = orderMap[selectedFtGroup.value];
+	let group = $derived(groupMap[selectedFtGroup.value]);
+	let order = $derived(orderMap[selectedFtGroup.value]);
 
 	// $: aemo2022 = data.ispData.aemo2022;
 	// $: aemo2024 = data.ispData.aemo2024;
 	// $: console.log(aemo2022, aemo2024);
 
-	$: selectedModelScenarioDescriptions = scenarioDescriptions[selectedModel.value];
-	$: selectedModelScenarioLabels = scenarioLabels[selectedModel.value];
-	$: selectedModelPathway = selectedPathway[selectedModel.value];
-	$: selectedModelYDomain = scenarioYDomain[selectedModel.value];
-	$: selectedModelXTicks = modelXTicks[selectedModel.value];
-	$: selectedModelData = data.ispData[selectedModel.value];
+	let selectedModelScenarioDescriptions = $derived(scenarioDescriptions[selectedModel.value]);
+	let selectedModelScenarioLabels = $derived(scenarioLabels[selectedModel.value]);
+	let selectedModelPathway = $derived(selectedPathway[selectedModel.value]);
+	let selectedModelYDomain = $derived(scenarioYDomain[selectedModel.value]);
+	let selectedModelXTicks = $derived(modelXTicks[selectedModel.value]);
+	let selectedModelData = $derived(data.ispData[selectedModel.value]);
 
-	$: outlookData = selectedModelData.outlookEnergyNem.data;
-	$: filteredWithScenario = outlookData.filter((d) => d.scenario === selectedScenario);
+	let outlookData = $derived(selectedModelData.outlookEnergyNem.data);
+	let filteredWithScenario = $derived(outlookData.filter((d) => d.scenario === selectedScenario));
 
-	$: filteredWithPathwayScenario = filteredWithScenario.filter(
+	let filteredWithPathwayScenario = $derived(filteredWithScenario.filter(
 		(d) => d.pathway === selectedModelPathway
-	);
+	));
 
-	$: yDomain = selectedModelYDomain[selectedScenario];
+	let yDomain = $derived(selectedModelYDomain[selectedScenario]);
 
-	$: projectionStatsDatasets = new Statistic(filteredWithPathwayScenario, 'projection')
+	let projectionStatsDatasets = $derived(new Statistic(filteredWithPathwayScenario, 'projection')
 		.group(group)
-		.reorder(order);
+		.reorder(order));
 
-	$: projectionTimeSeriesDatasets = new TimeSeries(
+	let projectionTimeSeriesDatasets = $derived(new TimeSeries(
 		projectionStatsDatasets.data,
 		parseInterval('1Y'),
 		'projection',
@@ -76,29 +84,29 @@
 		$colourReducer
 	)
 		.transform()
-		.updateMinMax();
+		.updateMinMax());
 
-	$: projectionSeriesNames = projectionTimeSeriesDatasets.seriesNames;
-
-	/** @type {Object.<string, string>} */
-	$: projectionSeriesLabels = projectionTimeSeriesDatasets.seriesLabels;
+	let projectionSeriesNames = $derived(projectionTimeSeriesDatasets.seriesNames);
 
 	/** @type {Object.<string, string>} */
-	$: projectionSeriesColours = projectionTimeSeriesDatasets.seriesColours;
+	let projectionSeriesLabels = $derived(projectionTimeSeriesDatasets.seriesLabels);
 
-	$: projectionFuelTechIds = projectionStatsDatasets.data.reduce(fuelTechReducer, {});
+	/** @type {Object.<string, string>} */
+	let projectionSeriesColours = $derived(projectionTimeSeriesDatasets.seriesColours);
+
+	let projectionFuelTechIds = $derived(projectionStatsDatasets.data.reduce(fuelTechReducer, {}));
 
 	// Convert historical data to TWh to match ISP
-	$: historicalData = deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
+	let historicalData = $derived(deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
 		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
 		d.history = { ...d.history, data: historyData };
 		d.units = 'TWh';
 		return d;
-	});
+	}));
 
-	$: historicalStatsDatasets = new Statistic(historicalData, 'history').group(group).reorder(order);
+	let historicalStatsDatasets = $derived(new Statistic(historicalData, 'history').group(group).reorder(order));
 
-	$: historicalTimeSeriesDatasets = new TimeSeries(
+	let historicalTimeSeriesDatasets = $derived(new TimeSeries(
 		historicalStatsDatasets.data,
 		parseInterval('1M'),
 		'history',
@@ -107,28 +115,28 @@
 	)
 		.transform()
 		.rollup(parseInterval('FY'))
-		.updateMinMax();
+		.updateMinMax());
 
 	// update historical date to match ISP
-	$: updatedHistoricalTimeSeriesDatasets = historicalTimeSeriesDatasets.data.map((d) => {
+	let updatedHistoricalTimeSeriesDatasets = $derived(historicalTimeSeriesDatasets.data.map((d) => {
 		const date = startOfYear(d.date, 1);
 		return { ...d, date, time: date.getTime() };
-	});
+	}));
 
-	$: filteredHistoricalTimeSeriesDatasets = updatedHistoricalTimeSeriesDatasets.filter(
+	let filteredHistoricalTimeSeriesDatasets = $derived(updatedHistoricalTimeSeriesDatasets.filter(
 		(d) => d.date.getFullYear() > 2009
-	);
+	));
 
-	$: sparkLineXTicks = modelSparklineXTicks[selectedModel.value];
-
-	/** @type {TimeSeriesData | undefined} */
-	let hoverData = undefined;
+	let sparkLineXTicks = $derived(modelSparklineXTicks[selectedModel.value]);
 
 	/** @type {TimeSeriesData | undefined} */
-	let historicalHoverData = undefined;
+	let hoverData = $state(undefined);
 
-	let generatedCsv = '';
-	$: {
+	/** @type {TimeSeriesData | undefined} */
+	let historicalHoverData = $state(undefined);
+
+	let generatedCsv = $state('');
+	run(() => {
 		generatedCsv = '';
 		generatedCsv +=
 			[
@@ -146,10 +154,10 @@
 			});
 			generatedCsv += row.join(',') + '\n';
 		});
-	}
+	});
 
-	$: file = new Blob([generatedCsv], { type: 'text/plain' });
-	$: fileUrl = URL.createObjectURL(file);
+	let file = $derived(new Blob([generatedCsv], { type: 'text/plain' }));
+	let fileUrl = $derived(URL.createObjectURL(file));
 
 	function handleModelChange(evt) {
 		if (selectedModel.value === evt.detail.value) return;
@@ -163,7 +171,7 @@
 	}
 
 	/** @type {string | undefined} */
-	let hoverKey;
+	let hoverKey = $state();
 
 	const handleMousemove = (/** @type {*} */ e) => {
 		if (e.detail.key) {
@@ -247,7 +255,7 @@
 							class:border-dark-grey={selectedScenario === scenario}
 							class:bg-light-warm-grey={selectedScenario === scenario}
 							value={scenario}
-							on:click={() => {
+							onclick={() => {
 								selectedScenario = scenario;
 							}}
 						>
