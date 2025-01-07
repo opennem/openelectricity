@@ -14,22 +14,6 @@
 	import ClipPathCustom from './elements/defs/ClipPathCustom.svelte';
 	import Brush from './elements/Brush.html.svelte';
 
-
-	const {
-		seriesNames: yKeys,
-		seriesData: dataset,
-		curveType,
-		curveFunction,
-		yDomain,
-		strokeWidth,
-		strokeArray,
-		xDomain,
-		formatTickX,
-		hoverData,
-		focusData,
-		xTicks
-	} = store;
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} store
@@ -58,6 +42,21 @@
 
 	const id = getSeqId();
 	const clipPathId = `${id}-clip-path`;
+
+	const {
+		seriesNames: yKeys,
+		seriesData: dataset,
+		curveType,
+		curveFunction,
+		yDomain,
+		strokeWidth,
+		strokeArray,
+		xDomain,
+		formatTickX,
+		hoverData,
+		focusData,
+		xTicks
+	} = store;
 
 	/** @type {*} */
 	let brushComponent = $state();

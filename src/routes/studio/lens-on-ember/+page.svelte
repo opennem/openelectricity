@@ -1,7 +1,5 @@
 <script>
-	import { run } from 'svelte/legacy';
-
-	import { setContext, getContext, onMount } from 'svelte';
+	import { setContext, getContext } from 'svelte';
 	import { addYears, startOfYear, eachYearOfInterval } from 'date-fns';
 	import { goto } from '$app/navigation';
 	import { colourReducer } from '$lib/stores/theme';
@@ -114,15 +112,11 @@
 
 	$countries = data.countries;
 
-	onMount(() => {
+	$effect(() => {
 		$selectedRegion = data.region;
 		$selectedRange = data.range;
 		$selectedInterval = data.interval;
 	});
-
-
-
-
 
 	/**
 	 * @param {string} region
@@ -148,7 +142,7 @@
 
 	/**
 	 * @param {string} title
-	 * @param {*} store
+	 * @param {string} name
 	 * @param {StatsInstance} stats
 	 * @param {TimeSeriesInstance} ts
 	 * @param {string} displayPrefix
@@ -157,13 +151,14 @@
 	 */
 	function updateDataVizStore(
 		title,
-		store,
+		name,
 		stats,
 		ts,
 		displayPrefix,
 		allowedPrefixes,
 		chartHeightClasses
 	) {
+		const store = dataVizStores[name];
 		store.title.set(title);
 		store.seriesData.set(ts.data);
 		store.seriesNames.set(ts.seriesNames);
@@ -300,61 +295,104 @@
 		});
 		brushedRange = undefined;
 	}
-	run(() => {
+	$effect(() => {
 		if (data.error) {
 			console.error(data.error);
 			error = true;
 			errorMsg = data.error;
 		}
 	});
-	run(() => {
+	$effect(() => {
 		if ($selectedRegion && $selectedRange) {
+			console.log('fetching data');
 			fetchData($selectedRegion, $selectedRange);
 		}
 	});
 	let energyData = $derived(dataset ? dataset.filter((d) => d.type === 'energy') : []);
-	let energyDemandData = $derived(energyData ? energyData.filter((d) => d.fuel_tech === 'demand') : []);
+	let energyDemandData = $derived(
+		energyData ? energyData.filter((d) => d.fuel_tech === 'demand') : []
+	);
 	let emissionsData = $derived(dataset ? dataset.filter((d) => d.type === 'emissions') : []);
-	run(() => {
-		if (dataset && dataset.length > 0) {
-			// Process data
-			console.log('processing data');
-			const processed = process({
-				history: energyData,
-				group: $selectedFuelTechGroup,
-				unit: 'TWh',
-				colourReducer: $colourReducer,
-				calculate12MthRollingSum: $selectedRange === '12-month-rolling',
-				targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
-			});
-			const processedEmissions = process({
-				history: emissionsData,
-				group: $selectedFuelTechGroup,
-				unit: 'MtCO2e',
-				calculate12MthRollingSum: $selectedRange === '12-month-rolling',
-				colourReducer: $colourReducer,
-				targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
-			});
-			const processedDemand = processDemand({
-				history: energyDemandData,
-				unit: 'TWh',
-				colourReducer: $colourReducer,
-				calculate12MthRollingSum: $selectedRange === '12-month-rolling',
-				targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
-			});
+	let processedEnergyData = $derived(
+		energyData.length > 0
+			? process({
+					history: energyData,
+					group: $selectedFuelTechGroup,
+					unit: 'TWh',
+					colourReducer: $colourReducer,
+					calculate12MthRollingSum: $selectedRange === '12-month-rolling',
+					targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
+				})
+			: null
+	);
+	let processedEmissionsData = $derived(
+		emissionsData.length > 0
+			? process({
+					history: emissionsData,
+					group: $selectedFuelTechGroup,
+					unit: 'MtCO2e',
+					calculate12MthRollingSum: $selectedRange === '12-month-rolling',
+					colourReducer: $colourReducer,
+					targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
+				})
+			: null
+	);
+	let processedDemandData = $derived(
+		energyDemandData.length > 0
+			? processDemand({
+					history: energyDemandData,
+					unit: 'TWh',
+					colourReducer: $colourReducer,
+					calculate12MthRollingSum: $selectedRange === '12-month-rolling',
+					targetInterval: $selectedRange === 'yearly' ? '1Y' : $selectedInterval
+				})
+			: null
+	);
 
-			console.log('processedDemand', processedDemand);
+	$effect(() => {
+		if (processedEnergyData && processedEmissionsData) {
+			dataVizStoreNames.forEach(({ name }) => {
+				switch (name) {
+					case 'energy-data-viz':
+						updateDataVizStore(
+							'Energy',
+							name,
+							processedEnergyData.stats,
+							processedEnergyData.timeseries,
+							$energyDisplayPrefix || 'T',
+							['M', 'G', 'T'],
+							'h-[400px] md:h-[450px]'
+						);
+						break;
 
-			dateBrushStore.seriesData.set(processedDemand.timeseries.data);
-			dateBrushStore.seriesNames.set(processedDemand.timeseries.seriesNames);
-			dateBrushStore.seriesColours.set(processedDemand.timeseries.seriesColours);
-			dateBrushStore.seriesLabels.set(processedDemand.timeseries.seriesLabels);
+					case 'emissions-data-viz':
+						updateDataVizStore(
+							'Emissions',
+							name,
+							processedEmissionsData.stats,
+							processedEmissionsData.timeseries,
+							$emissionsDisplayPrefix || 'M',
+							['k', 'M', 'G'],
+							'h-[300px] md:h-[350px]'
+						);
+						break;
+				}
+			});
+		}
+	});
+
+	$effect(() => {
+		if (processedDemandData) {
+			dateBrushStore.seriesData.set(processedDemandData.timeseries.data);
+			dateBrushStore.seriesNames.set(processedDemandData.timeseries.seriesNames);
+			dateBrushStore.seriesColours.set(processedDemandData.timeseries.seriesColours);
+			dateBrushStore.seriesLabels.set(processedDemandData.timeseries.seriesLabels);
 			dateBrushStore.yDomain.set([0, null]);
 
 			dateBrushStore.chartType.set('line');
 
 			if ($selectedRange === 'yearly') {
-				dateBrushStore.xTicks.set(getYearlyXTicks(processedDemand.timeseries));
+				dateBrushStore.xTicks.set(getYearlyXTicks(processedDemandData.timeseries));
 
 				dateBrushStore.formatTickX.set((/** @type {*} */ d) =>
 					getFormattedDate(d, undefined, undefined, undefined, 'numeric')
@@ -366,44 +404,14 @@
 					getFormattedDate(d, undefined, undefined, 'short', 'numeric')
 				);
 			} else {
-				dateBrushStore.xTicks.set(getMonthlyXTicks(processedDemand.timeseries));
+				dateBrushStore.xTicks.set(getMonthlyXTicks(processedDemandData.timeseries));
 
 				dateBrushStore.formatTickX.set((/** @type {*} */ d) =>
 					getFormattedDate(d, undefined, undefined, 'short', '2-digit')
 				);
 			}
-
 			dateBrushStore.strokeWidth.set(1);
 			dateBrushStore.strokeArray.set(1);
-
-			dataVizStoreNames.forEach(({ name }) => {
-				const store = dataVizStores[name];
-				switch (name) {
-					case 'energy-data-viz':
-						updateDataVizStore(
-							'Energy',
-							store,
-							processed.stats,
-							processed.timeseries,
-							$energyDisplayPrefix || 'T',
-							['M', 'G', 'T'],
-							'h-[400px] md:h-[450px]'
-						);
-						break;
-
-					case 'emissions-data-viz':
-						updateDataVizStore(
-							'Emissions',
-							store,
-							processedEmissions.stats,
-							processedEmissions.timeseries,
-							$emissionsDisplayPrefix || 'M',
-							['k', 'M', 'G'],
-							'h-[300px] md:h-[350px]'
-						);
-						break;
-				}
-			});
 		}
 	});
 </script>
