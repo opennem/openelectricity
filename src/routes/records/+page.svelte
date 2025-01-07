@@ -68,10 +68,6 @@
 	let selectedSignificance = data.significance || 9;
 	let recordIdSearch = data.stringFilter || '';
 
-
-
-
-
 	// $: console.log('rolledUpRecords', rolledUpRecords);
 
 	/**
@@ -123,11 +119,14 @@
 			updateCurrentPage(1);
 		}
 	});
-	let selectedLongValueRegion = $derived(regions.find((r) => r.value === $selectedRegion)?.longValue);
+	let selectedLongValueRegion = $derived(
+		regions.find((r) => r.value === $selectedRegion)?.longValue
+	);
 	let totalPages = $derived(Math.ceil(totalRecords / 100));
 	let currentLastRecordIndex = $derived(currentStartRecordIndex + 99);
-	let lastRecordIndex =
-		$derived(currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex);
+	let lastRecordIndex = $derived(
+		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex
+	);
 	let rolledUpRecords = $derived(groupByMonthDay(recordsData));
 </script>
 

@@ -11,10 +11,6 @@
 	import recordDescription from '../page-data-options/record-description';
 
 	let { dataset } = $props();
-
-	run(() => {
-		console.log('dataset', dataset);
-	});
 </script>
 
 <table class="bg-white text-sm w-full">
