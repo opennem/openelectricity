@@ -126,7 +126,7 @@
 			{/each}
 		</tbody>
 
-		<tfoot>
+		<!-- <tfoot>
 			<tr class="sticky bottom-0 bg-light-warm-grey/60 backdrop-blur-xl">
 				<th class="text-left">
 					<div class="px-4 py-2">Total records</div>
@@ -135,6 +135,6 @@
 					<div class="px-4 py-2">{sortedHistoryData.length}</div>
 				</th>
 			</tr>
-		</tfoot>
+		</tfoot> -->
 	</table>
 </div>
