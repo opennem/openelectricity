@@ -21,34 +21,49 @@
 	let errorMessage = $state('');
 
 	/** @type {string[]} */
-	let checkedRegions =
-		$state(data.regions && data.regions.length
+	let checkedRegions = $state(
+		data.regions && data.regions.length
 			? data.regions
-			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem']);
+			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem']
+	);
 
 	/** @type {string[]} */
-	let checkedFuelTechs =
-		$state(data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : fuelTechOptions.map((i) => i.value));
+	let checkedFuelTechs = $state(
+		data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : fuelTechOptions.map((i) => i.value)
+	);
 
 	/** @type {string[]} */
-	let checkedPeriods =
-		$state(data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value));
+	let checkedPeriods = $state(
+		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value)
+	);
 
 	/** @type {string[]} */
-	let checkedAggregates =
-		$state(data.aggregates && data.aggregates.length
+	let checkedAggregates = $state(
+		data.aggregates && data.aggregates.length
 			? data.aggregates
-			: aggregateOptions.map((i) => i.value));
+			: aggregateOptions.map((i) => i.value)
+	);
 
-	let checkedMetrics =
-		$state(data.metrics && data.metrics.length ? data.metrics : metricOptions.map((i) => i.value));
+	let checkedMetrics = $state(
+		data.metrics && data.metrics.length ? data.metrics : metricOptions.map((i) => i.value)
+	);
 
 	let selectedSignificance = $state(data.significance || 0);
 
 	let recordIdSearch = $state(data.stringFilter || '');
 
-
-
+	/**
+	 * Get the filter params
+	 * @param {{
+	 * 	regions: string[],
+	 * 	periods: string[],
+	 * 	fuelTechs: string[],
+	 * 	stringFilter: string,
+	 * 	aggregates: string[],
+	 * 	metrics: string[],
+	 * 	significance: number
+	 * }} params
+	 */
 	function getFilterParams({
 		regions,
 		periods,
@@ -220,8 +235,9 @@
 		);
 	});
 	let currentLastRecordIndex = $derived(currentStartRecordIndex + 99);
-	let lastRecordIndex =
-		$derived(currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex);
+	let lastRecordIndex = $derived(
+		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex
+	);
 </script>
 
 <header class=" mt-12">

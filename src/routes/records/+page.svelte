@@ -92,7 +92,7 @@
 			replaceState: true
 		});
 	}
-	run(() => {
+	$effect(() => {
 		if (browser) {
 			fetchRecords(
 				currentPage,
@@ -111,7 +111,7 @@
 			});
 		}
 	});
-	run(() => {
+	$effect(() => {
 		if (
 			browser &&
 			($selectedRegions || $selectedPeriods || $selectedFuelTechs || $selectedMetrics)

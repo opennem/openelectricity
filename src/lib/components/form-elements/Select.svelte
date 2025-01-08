@@ -6,7 +6,6 @@
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} selected
@@ -91,7 +90,7 @@
 		</ul>
 	{:else if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-96 overflow-y-scroll {translateToMiddle}"
+			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[450px] overflow-y-scroll {translateToMiddle}"
 			class:top-16={position === 'bottom'}
 			class:bottom-16={position === 'top'}
 			class:left-0={align === 'left'}

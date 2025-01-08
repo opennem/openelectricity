@@ -144,6 +144,10 @@ export const fuelTechOptions = [
 	{
 		value: 'fossils',
 		label: 'Fossils'
+	},
+	{
+		value: null,
+		label: 'All'
 	}
 ];
 export const fuelTechLabel = optionsReducer(fuelTechOptions);
