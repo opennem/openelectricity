@@ -16,43 +16,6 @@
 	import LineX from './elements/annotations/LineX.svelte';
 	import Dot from './elements/annotations/Dot.svelte';
 
-
-	const {
-		title,
-		seriesNames: yKeys,
-		seriesData: dataset,
-		xTicks,
-		yTicks,
-		snapXTicks,
-		formatTickX,
-		convertAndFormatValue: formatTickY,
-		hoverData,
-		focusData,
-		chartHeightClasses,
-		curveType,
-		xDomain,
-		yDomain,
-		strokeWidth,
-		showLineArea: showArea,
-		lineColour,
-		dotStroke,
-		dotFill
-	} = store;
-
-
-
-
-	
-
-
-	
-
-	
-
-	
-
-	
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} store
@@ -83,6 +46,28 @@ If object with xStartValue and xEndValue, overlay will be a range
 		heightClasses = $bindable(''),
 		showDots = false
 	} = $props();
+
+	const {
+		title,
+		seriesNames: yKeys,
+		seriesData: dataset,
+		xTicks,
+		yTicks,
+		snapXTicks,
+		formatTickX,
+		convertAndFormatValue: formatTickY,
+		hoverData,
+		focusData,
+		chartHeightClasses,
+		curveType,
+		xDomain,
+		yDomain,
+		strokeWidth,
+		showLineArea: showArea,
+		lineColour,
+		dotStroke,
+		dotFill
+	} = store;
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
