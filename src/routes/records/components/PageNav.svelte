@@ -31,17 +31,6 @@
 
 	/** @type {Props} */
 	let { id, currentRecord, recordIds } = $props();
-
-	/**
-	 * @param {MilestoneRecord} record
-	 * @returns {string}
-	 */
-	function getRegionLongValue(record) {
-		if (!record) return '';
-		let network_region = record.network_region ? `.${record.network_region.toLowerCase()}` : '';
-		return `au.${record.network_id.toLowerCase()}${network_region}`;
-	}
-
 	let recordByRecordId = $derived.by(() => {
 		if (!id) return null;
 		let idArr = id.split('.');
@@ -86,6 +75,16 @@
 		};
 	});
 	let record = $derived(currentRecord || recordByRecordId);
+
+	/**
+	 * @param {MilestoneRecord} record
+	 * @returns {string}
+	 */
+	function getRegionLongValue(record) {
+		if (!record) return '';
+		let network_region = record.network_region ? `.${record.network_region.toLowerCase()}` : '';
+		return `au.${record.network_id.toLowerCase()}${network_region}`;
+	}
 
 	// $effect(() => {
 	// 	console.log('id', id);
@@ -361,65 +360,65 @@
 	</a>
 </div>
 
-<div class="flex justify-between gap-6 items-center bg-white px-10 py-5 md:px-16 auto">
-	<div class="flex gap-6 items-center">
-		<div class="text-nowrap">
-			<FormSelect
-				options={availableRegionsOptions}
-				selected={region}
-				formLabel="Region"
-				paddingX="px-4"
-				paddingY="py-3"
-				on:change={handleRegionChange}
-			/>
+{#if record}
+	<div class="flex justify-between gap-6 items-center bg-white px-10 py-5 md:px-16 auto">
+		<div class="flex gap-6 items-center">
+			<div class="text-nowrap">
+				<FormSelect
+					options={availableRegionsOptions}
+					selected={region}
+					formLabel="Region"
+					paddingX="px-4"
+					paddingY="py-3"
+					on:change={handleRegionChange}
+				/>
+			</div>
+
+			<div class="text-nowrap">
+				<FormSelect
+					options={availableFuelTechsOptions}
+					selected={fuelTech}
+					formLabel="Technology"
+					paddingX="px-4"
+					paddingY="py-3"
+					on:change={handleFuelTechChange}
+				/>
+			</div>
+
+			<div class="text-nowrap">
+				<FormSelect
+					options={availableMetricsOptions}
+					selected={metric}
+					formLabel="Metric"
+					paddingX="px-4"
+					paddingY="py-3"
+					on:change={handleMetricChange}
+				/>
+			</div>
+
+			<div class="text-nowrap">
+				<FormSelect
+					options={availablePeriodsOptions}
+					selected={period}
+					formLabel="Period"
+					paddingX="px-4"
+					paddingY="py-3"
+					on:change={handlePeriodChange}
+				/>
+			</div>
+
+			<div class="text-nowrap">
+				<FormSelect
+					options={availableAggregatesOptions}
+					selected={aggregate}
+					formLabel="Aggregate"
+					paddingX="px-4"
+					paddingY="py-3"
+					on:change={handleAggregateChange}
+				/>
+			</div>
 		</div>
 
-		<div class="text-nowrap">
-			<FormSelect
-				options={availableFuelTechsOptions}
-				selected={fuelTech}
-				formLabel="Technology"
-				paddingX="px-4"
-				paddingY="py-3"
-				on:change={handleFuelTechChange}
-			/>
-		</div>
-
-		<div class="text-nowrap">
-			<FormSelect
-				options={availableMetricsOptions}
-				selected={metric}
-				formLabel="Metric"
-				paddingX="px-4"
-				paddingY="py-3"
-				on:change={handleMetricChange}
-			/>
-		</div>
-
-		<div class="text-nowrap">
-			<FormSelect
-				options={availablePeriodsOptions}
-				selected={period}
-				formLabel="Period"
-				paddingX="px-4"
-				paddingY="py-3"
-				on:change={handlePeriodChange}
-			/>
-		</div>
-
-		<div class="text-nowrap">
-			<FormSelect
-				options={availableAggregatesOptions}
-				selected={aggregate}
-				formLabel="Aggregate"
-				paddingX="px-4"
-				paddingY="py-3"
-				on:change={handleAggregateChange}
-			/>
-		</div>
-	</div>
-
-	{#if record}
 		<PageButtons />
-	{/if}
-</div>
+	</div>
+{/if}
