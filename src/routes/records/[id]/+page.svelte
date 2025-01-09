@@ -256,7 +256,9 @@
 	image="/img/preview.jpg"
 />
 
-<PageNav {id} {currentRecord} recordIds={data.recordIds} />
+{#if id}
+	<PageNav {id} {currentRecord} recordIds={data.recordIds} />
+{/if}
 
 {#if error}
 	<div class="flex h-96 items-center justify-center">
