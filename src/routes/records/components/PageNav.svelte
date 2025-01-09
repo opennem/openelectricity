@@ -24,29 +24,82 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {MilestoneRecord} record
+	 * @property {string} [id]
+	 * @property {MilestoneRecord} [currentRecord]
 	 * @property {*} recordIds
 	 */
 
 	/** @type {Props} */
-	let { record, recordIds } = $props();
+	let { id, currentRecord, recordIds } = $props();
 
 	/**
 	 * @param {MilestoneRecord} record
 	 * @returns {string}
 	 */
 	function getRegionLongValue(record) {
+		if (!record) return '';
 		let network_region = record.network_region ? `.${record.network_region.toLowerCase()}` : '';
 		return `au.${record.network_id.toLowerCase()}${network_region}`;
 	}
 
+	let recordByRecordId = $derived.by(() => {
+		if (!id) return null;
+		let idArr = id.split('.');
+		// length:
+		// 5: network only without fueltech
+		// 6: network only with fueltech
+		// 7: network with network_region and fueltech
+		let isNetworkOnlyWithoutFueltech = idArr.length === 5;
+		let isNetworkOnlyWithFueltech = idArr.length === 6;
+		let isNetworkWithNetworkRegionAndFueltech = idArr.length === 7;
+
+		let network_id = idArr[1];
+		let network_region = isNetworkWithNetworkRegionAndFueltech ? idArr[2] : null;
+		let fueltech_id = isNetworkOnlyWithoutFueltech
+			? null
+			: isNetworkOnlyWithFueltech
+				? idArr[2]
+				: idArr[3];
+		let metric = isNetworkOnlyWithoutFueltech
+			? idArr[2]
+			: isNetworkOnlyWithFueltech
+				? idArr[3]
+				: idArr[4];
+		let period = isNetworkOnlyWithoutFueltech
+			? idArr[3]
+			: isNetworkOnlyWithFueltech
+				? idArr[4]
+				: idArr[5];
+		let aggregate = isNetworkOnlyWithoutFueltech
+			? idArr[4]
+			: isNetworkOnlyWithFueltech
+				? idArr[5]
+				: idArr[6];
+
+		return {
+			network_region,
+			network_id,
+			fueltech_id,
+			metric,
+			period,
+			aggregate
+		};
+	});
+	let record = $derived(currentRecord || recordByRecordId);
+
+	// $effect(() => {
+	// 	console.log('id', id);
+	// 	console.log('currentRecord', currentRecord);
+	// 	console.log('recordByRecordId', recordByRecordId);
+	// });
+
 	let region = $derived(
 		regions.find((r) => r.longValue === getRegionLongValue(record))?.longValue || ''
 	);
-	let fuelTech = $derived(record.fueltech_id || null);
-	let metric = $derived(record.metric);
-	let period = $derived(record.period);
-	let aggregate = $derived(record.aggregate);
+	let fuelTech = $derived(record?.fueltech_id || null);
+	let metric = $derived(record?.metric || null);
+	let period = $derived(record?.period || null);
+	let aggregate = $derived(record?.aggregate || null);
 
 	let removeDuplicateOptions =
 		/** @type {(r: { value: string }, index: number, self: { value: string }[]) => boolean} */ (
@@ -59,7 +112,7 @@
 		a.label.localeCompare(b.label);
 
 	// check the recordIds and return as options (i.e. { label: 'NSW', value: 'au.nem.nsw1' 	})
-	let availableRegionsOptions = $derived(
+	let availableRegions = $derived(
 		recordIds
 			.filter((r) =>
 				fuelTech
@@ -78,8 +131,17 @@
 			})
 			.filter(removeDuplicateOptions)
 	);
+	let availableRegionsOptions = $derived(
+		regions.map((r) => ({
+			label: r.label,
+			value: r.longValue,
+			labelClassName: availableRegions.find((m) => m.value === r.longValue)
+				? ''
+				: 'italic text-mid-warm-grey'
+		}))
+	);
 
-	let availableFuelTechsOptions = $derived(
+	let availableFuelTechs = $derived(
 		recordIds
 			.filter(
 				(r) =>
@@ -89,14 +151,22 @@
 					r.aggregate === aggregate
 			)
 			.map((r) => ({
-				label: fuelTechOptions.find((ft) => ft.value === r.fueltech_id)?.label || '',
+				label: fuelTechOptions.find((ft) => ft.value === r.fueltech_id)?.label || r.fueltech_id,
 				value: r.fueltech_id
 			}))
 			.filter(removeDuplicateOptions)
 			.sort(orderByLabel)
 	);
+	let availableFuelTechsOptions = $derived(
+		fuelTechOptions.map((r) => ({
+			...r,
+			labelClassName: availableFuelTechs.find((m) => m.value === r.value)
+				? ''
+				: 'italic text-mid-warm-grey'
+		}))
+	);
 
-	let availableMetricsOptions = $derived(
+	let availableMetrics = $derived(
 		recordIds
 			.filter((r) =>
 				fuelTech
@@ -116,8 +186,16 @@
 			.filter(removeDuplicateOptions)
 			.sort(orderByLabel)
 	);
+	let availableMetricsOptions = $derived(
+		milestoneTypeOptions.map((r) => ({
+			...r,
+			labelClassName: availableMetrics.find((m) => m.value === r.value)
+				? ''
+				: 'italic text-mid-warm-grey'
+		}))
+	);
 
-	let availablePeriodsOptions = $derived(
+	let availablePeriods = $derived(
 		recordIds
 			.filter((r) =>
 				fuelTech
@@ -137,8 +215,16 @@
 			.filter(removeDuplicateOptions)
 			.sort(orderByLabel)
 	);
+	let availablePeriodsOptions = $derived(
+		periodOptions.map((r) => ({
+			...r,
+			labelClassName: availablePeriods.find((m) => m.value === r.value)
+				? ''
+				: 'italic text-mid-warm-grey'
+		}))
+	);
 
-	let availableAggregatesOptions = $derived(
+	let availableAggregates = $derived(
 		recordIds
 			.filter((r) =>
 				fuelTech
@@ -158,10 +244,18 @@
 			.filter(removeDuplicateOptions)
 			.sort(orderByLabel)
 	);
+	let availableAggregatesOptions = $derived(
+		aggregateOptions.map((r) => ({
+			...r,
+			labelClassName: availableAggregates.find((m) => m.value === r.value)
+				? ''
+				: 'italic text-mid-warm-grey'
+		}))
+	);
 
 	// $effect(() => {
 	// 	console.log('region', region);
-	// 	console.log('availableRegionsOptions', availableRegionsOptions);
+	// 	console.log('availableRegionsOptions', availableRegionsOptions, availableRegions);
 	// 	console.log('availableFuelTechsOptions', availableFuelTechsOptions);
 	// 	console.log('availableMetricsOptions', availableMetricsOptions);
 	// 	console.log('availablePeriodsOptions', availablePeriodsOptions);

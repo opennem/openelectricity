@@ -9,7 +9,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} selected
-	 * @property {{label: string, value: string}[]} [options]
+	 * @property {{label: string, value: string | number | null, labelClassName?: string}[]} [options]
 	 * @property {string} [paddingY]
 	 * @property {string} [paddingX]
 	 * @property {string} [selectedLabelClass]
@@ -37,7 +37,6 @@
 	const dispatch = createEventDispatcher();
 
 	let showOptions = $state(false);
-
 	let selectedValue = $derived(selected && selected.value ? selected.value || selected : selected);
 
 	function handleSelect(option) {
@@ -106,7 +105,7 @@
 						class:text-black={selectedValue === opt.value}
 						onclick={() => handleSelect(opt)}
 					>
-						<span class="capitalize">{opt.label}</span>
+						<span class="capitalize {opt.labelClassName}">{opt.label}</span>
 
 						<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
 					</button>

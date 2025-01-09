@@ -256,13 +256,13 @@
 	image="/img/preview.jpg"
 />
 
-{#if currentRecord}
-	<PageNav record={currentRecord} recordIds={data.recordIds} />
-{/if}
+<PageNav {id} {currentRecord} recordIds={data.recordIds} />
 
 {#if error}
 	<div class="flex h-96 items-center justify-center">
-		<p>Record not found.</p>
+		<p>
+			There is no tracking for <span class="font-medium">{id}</span>
+		</p>
 	</div>
 {:else if loading}
 	<div

@@ -94,6 +94,19 @@ export const periodLabel = optionsReducer(periodOptions);
 
 export const fuelTechOptions = [
 	{
+		value: null,
+		label: 'All'
+	},
+	{
+		value: 'renewables',
+		label: 'Renewables'
+	},
+	{
+		value: 'fossils',
+		label: 'Fossils'
+	},
+
+	{
 		value: 'solar',
 		label: 'Solar'
 	},
@@ -136,18 +149,6 @@ export const fuelTechOptions = [
 	{
 		value: 'demand',
 		label: 'Demand'
-	},
-	{
-		value: 'renewables',
-		label: 'Renewables'
-	},
-	{
-		value: 'fossils',
-		label: 'Fossils'
-	},
-	{
-		value: null,
-		label: 'All'
 	}
 ];
 export const fuelTechLabel = optionsReducer(fuelTechOptions);
