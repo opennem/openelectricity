@@ -1,6 +1,4 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { setContext, getContext } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { parseISO } from 'date-fns';
@@ -158,7 +156,7 @@
 			})
 			.sort((a, b) => b.time - a.time)
 	);
-	run(() => {
+	$effect(() => {
 		if (historyData.length) {
 			// console.log('sortedHistoryData', sortedHistoryData[0]);
 			const period = sortedHistoryData[0].period;
@@ -195,32 +193,17 @@
 			$formatTickX = timeFormatter(period, $timeZone);
 		}
 	});
-	run(() => {
+	$effect(() => {
 		$seriesLabels = { value: $displayUnit || '' };
 	});
 	let id = $derived(data.id);
-	run(() => {
+	$effect(() => {
 		fetchRecord(id);
 	});
-	// $: console.log('id', id);
-	// $: console.log('historyData', historyData);
-	// $: console.log('sortedHistoryData', sortedHistoryData);
 	let currentRecord = $derived(sortedHistoryData.length ? sortedHistoryData[0] : undefined);
-	// let previousRecord = $derived(
-	// 	sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null
-	// );
-	// let isPeriodInterval = $derived(currentRecord?.period === 'interval');
-	// let timestamp = $derived(currentRecord?.time);
-	// let recordId = $derived(currentRecord?.record_id);
-	// let workerImageLocation = $derived(
-	// 	recordId && timestamp
-	// 		? `https://browser-worker.opennem2161.workers.dev/?key=${recordId}-${timestamp}`
-	// 		: '/img/preview.jpg'
-	// );
-	// run(() => {
-	// 	console.log('workerImageLocation', workerImageLocation);
-	// });
-	let getRecordTitle = $derived((record) => {
+
+	let pageTitle = $derived.by(() => {
+		let record = currentRecord;
 		if (!record) return 'Record';
 
 		let desc = recordDescription(
@@ -240,7 +223,6 @@
 
 		return desc;
 	});
-	let pageTitle = $derived(getRecordTitle(currentRecord));
 </script>
 
 <Meta
