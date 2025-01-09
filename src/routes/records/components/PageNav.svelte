@@ -411,6 +411,8 @@
 			</div>
 		</div>
 
-		<PageButtons />
+		{#if currentRecord}
+			<PageButtons />
+		{/if}
 	</div>
 {/if}
