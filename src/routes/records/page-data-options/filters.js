@@ -48,11 +48,11 @@ export const regionOptions = [
 export const aggregateOptions = [
 	{
 		value: 'low',
-		label: 'Low'
+		label: 'Lowest'
 	},
 	{
 		value: 'high',
-		label: 'High'
+		label: 'Highest'
 	}
 ];
 
