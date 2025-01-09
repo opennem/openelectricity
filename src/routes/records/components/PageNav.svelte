@@ -278,65 +278,57 @@
 	 * @param {CustomEvent} evt
 	 */
 	function handleFuelTechChange(evt) {
-		if (region) {
-			goToRecord({
-				region,
-				fuelTech: evt.detail.value,
-				metric,
-				period,
-				aggregate
-			});
-		}
+		goToRecord({
+			region,
+			fuelTech: evt.detail.value,
+			metric,
+			period,
+			aggregate
+		});
 	}
 
 	/**
 	 * @param {CustomEvent} evt
 	 */
 	function handleMetricChange(evt) {
-		if (region) {
-			goToRecord({
-				region,
-				fuelTech,
-				metric: evt.detail.value,
-				period,
-				aggregate
-			});
-		}
+		goToRecord({
+			region,
+			fuelTech,
+			metric: evt.detail.value,
+			period,
+			aggregate
+		});
 	}
 
 	/**
 	 * @param {CustomEvent} evt
 	 */
 	function handlePeriodChange(evt) {
-		if (region) {
-			goToRecord({
-				region,
-				fuelTech,
-				metric,
-				period: evt.detail.value,
-				aggregate
-			});
-		}
+		goToRecord({
+			region,
+			fuelTech,
+			metric,
+			period: evt.detail.value,
+			aggregate
+		});
 	}
 
 	/**
 	 * @param {CustomEvent} evt
 	 */
 	function handleAggregateChange(evt) {
-		if (region) {
-			goToRecord({
-				region,
-				fuelTech,
-				metric,
-				period,
-				aggregate: evt.detail.value
-			});
-		}
+		goToRecord({
+			region,
+			fuelTech,
+			metric,
+			period,
+			aggregate: evt.detail.value
+		});
 	}
 
 	/**
 	 * Go to records page
-	 * @param {{region: string, fuelTech: string, metric: string, period: string, aggregate: string}} param0
+	 * @param {{region: string |null, fuelTech: string |null, metric: string |null, period: string |null, aggregate: string |null}} param0
 	 */
 	function goToRecord({ region, fuelTech, metric, period, aggregate }) {
 		// const findRegion = regions.find((r) => r.value === region);
@@ -419,6 +411,6 @@
 			</div>
 		</div>
 
-		<PageButtons />
+		<!-- <PageButtons /> -->
 	</div>
 {/if}
