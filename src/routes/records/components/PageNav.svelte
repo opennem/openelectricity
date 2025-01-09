@@ -411,6 +411,6 @@
 			</div>
 		</div>
 
-		<!-- <PageButtons /> -->
+		<PageButtons />
 	</div>
 {/if}
