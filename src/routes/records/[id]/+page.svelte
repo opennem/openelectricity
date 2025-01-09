@@ -29,8 +29,6 @@
 
 	let { data } = $props();
 
-	console.log('data', data);
-
 	setContext('record-history-data-viz', dataVizStore());
 	setContext('date-brush-data-viz', dataVizStore());
 	const {
@@ -166,12 +164,10 @@
 			const period = sortedHistoryData[0].period;
 			const metric = sortedHistoryData[0].metric;
 			const parsed = parseUnit(sortedHistoryData[0].value_unit);
-			console.log('metric', metric);
 			const isWem = sortedHistoryData[0].network_id === 'WEM';
 			const sortedData = [...sortedHistoryData].reverse();
 
 			if (isWem) {
-				console.log('isWem', sortedHistoryData[0].network_id);
 				$timeZone = 'Australia/Perth';
 			} else {
 				$timeZone = undefined;
@@ -210,23 +206,20 @@
 	// $: console.log('historyData', historyData);
 	// $: console.log('sortedHistoryData', sortedHistoryData);
 	let currentRecord = $derived(sortedHistoryData.length ? sortedHistoryData[0] : undefined);
-	let previousRecord = $derived(
-		sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null
-	);
-	let isPeriodInterval = $derived(currentRecord?.period === 'interval');
-	run(() => {
-		console.log('currentRecord', currentRecord);
-	});
-	let timestamp = $derived(currentRecord?.time);
-	let recordId = $derived(currentRecord?.record_id);
-	let workerImageLocation = $derived(
-		recordId && timestamp
-			? `https://browser-worker.opennem2161.workers.dev/?key=${recordId}-${timestamp}`
-			: '/img/preview.jpg'
-	);
-	run(() => {
-		console.log('workerImageLocation', workerImageLocation);
-	});
+	// let previousRecord = $derived(
+	// 	sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null
+	// );
+	// let isPeriodInterval = $derived(currentRecord?.period === 'interval');
+	// let timestamp = $derived(currentRecord?.time);
+	// let recordId = $derived(currentRecord?.record_id);
+	// let workerImageLocation = $derived(
+	// 	recordId && timestamp
+	// 		? `https://browser-worker.opennem2161.workers.dev/?key=${recordId}-${timestamp}`
+	// 		: '/img/preview.jpg'
+	// );
+	// run(() => {
+	// 	console.log('workerImageLocation', workerImageLocation);
+	// });
 	let getRecordTitle = $derived((record) => {
 		if (!record) return 'Record';
 
