@@ -6,13 +6,11 @@
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 
-	
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} selected
 	 * @property {string} [label]
-	 * @property {{label: string, value: string}[]} [options]
+	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean}[] | undefined} [options]
 	 * @property {string} [paddingY]
 	 * @property {string} [paddingX]
 	 * @property {boolean} [staticDisplay]
@@ -91,27 +89,33 @@
 	{#if staticDisplay}
 		<ul class="flex flex-col mt-1">
 			{#each options as opt}
-				<li class="whitespace-nowrap border-b border-warm-grey">
-					<button
-						class="w-full px-0 py-1 flex gap-4 items-center"
-						class:text-mid-grey={!selected.includes(opt.value)}
-						class:text-black={selected.includes(opt.value)}
-						onclick={() => handleSelect(opt)}
-					>
-						<div
-							class="border rounded size-7"
-							class:border-mid-warm-grey={!selected.includes(opt.value)}
-							class:border-dark-grey={selected.includes(opt.value)}
-							class:bg-warm-grey={selected.includes(opt.value)}
+				{#if opt.divider}
+					<li class="whitespace-nowrap">
+						<div class="w-full h-px bg-warm-grey"></div>
+					</li>
+				{:else}
+					<li class="whitespace-nowrap border-b border-warm-grey">
+						<button
+							class="w-full px-0 py-1 flex gap-4 items-center"
+							class:text-mid-grey={!selected.includes(opt.value)}
+							class:text-black={selected.includes(opt.value)}
+							onclick={() => handleSelect(opt)}
 						>
-							{#if selected.includes(opt.value)}
-								<IconCheckMark class="size-6" />
-							{/if}
-						</div>
+							<div
+								class="border rounded size-7"
+								class:border-mid-warm-grey={!selected.includes(opt.value)}
+								class:border-dark-grey={selected.includes(opt.value)}
+								class:bg-warm-grey={selected.includes(opt.value)}
+							>
+								{#if selected.includes(opt.value)}
+									<IconCheckMark class="size-6" />
+								{/if}
+							</div>
 
-						<span class="capitalize">{opt.label}</span>
-					</button>
-				</li>
+							<span class="capitalize">{opt.label}</span>
+						</button>
+					</li>
+				{/if}
 			{/each}
 		</ul>
 	{:else if showOptions}
@@ -125,27 +129,33 @@
 			out:fly={{ y: -5, duration: 150 }}
 		>
 			{#each options as opt}
-				<li class="whitespace-nowrap">
-					<button
-						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
-						class:text-mid-grey={!selected.includes(opt.value)}
-						class:text-black={selected.includes(opt.value)}
-						onclick={() => handleSelect(opt)}
-					>
-						<span class="capitalize">{opt.label}</span>
-
-						<div
-							class="border rounded size-7"
-							class:border-mid-warm-grey={!selected.includes(opt.value)}
-							class:border-dark-grey={selected.includes(opt.value)}
-							class:bg-warm-grey={selected.includes(opt.value)}
+				{#if opt.divider}
+					<li class="whitespace-nowrap">
+						<div class="w-full h-px bg-warm-grey"></div>
+					</li>
+				{:else}
+					<li class="whitespace-nowrap">
+						<button
+							class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
+							class:text-mid-grey={!selected.includes(opt.value)}
+							class:text-black={selected.includes(opt.value)}
+							onclick={() => handleSelect(opt)}
 						>
-							{#if selected.includes(opt.value)}
-								<IconCheckMark class="size-6" />
-							{/if}
-						</div>
-					</button>
-				</li>
+							<span class="capitalize">{opt.label}</span>
+
+							<div
+								class="border rounded size-7"
+								class:border-mid-warm-grey={!selected.includes(opt.value)}
+								class:border-dark-grey={selected.includes(opt.value)}
+								class:bg-warm-grey={selected.includes(opt.value)}
+							>
+								{#if selected.includes(opt.value)}
+									<IconCheckMark class="size-6" />
+								{/if}
+							</div>
+						</button>
+					</li>
+				{/if}
 			{/each}
 		</ul>
 	{/if}
