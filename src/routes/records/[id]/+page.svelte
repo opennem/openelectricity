@@ -1,6 +1,4 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { setContext, getContext } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { parseISO } from 'date-fns';
@@ -26,8 +24,17 @@
 	import recordDescription from '../page-data-options/record-description';
 	import getRelativeTime from '../page-data-options/relative-time';
 	import HistoryTable from '../components/HistoryTable.svelte';
+	import { recordState } from '../stores/state.svelte';
 
 	let { data } = $props();
+	$inspect('data', data.id);
+	$inspect('recordState.id', recordState.id);
+	$inspect('recordState.recordByRecordId', recordState.recordByRecordId);
+
+	$effect(() => {
+		recordState.id = data.id;
+		recordState.recordIds = data.recordIds;
+	});
 
 	setContext('record-history-data-viz', dataVizStore());
 	setContext('date-brush-data-viz', dataVizStore());
@@ -39,6 +46,7 @@
 		chartType,
 		formatTickX,
 		focusTime,
+		focusData,
 		hoverTime,
 		hoverKey,
 		convertAndFormatValue,
@@ -64,15 +72,9 @@
 	} = getContext('date-brush-data-viz');
 
 	/** @type {MilestoneRecord[]} */
-	let historyData = $state([]);
-	let totalHistory = 0;
+	let historyData = $state.raw([]);
 	let loading = $state(false);
 	let error = $state(false);
-
-
-
-
-
 
 	/**
 	 * @param {string} period
@@ -103,6 +105,7 @@
 	 */
 	async function fetchRecord(recordId, page = 1) {
 		if (browser) {
+			recordState.record = null;
 			loading = true;
 			error = false;
 			const id = encodeURIComponent(recordId);
@@ -111,10 +114,8 @@
 
 			if (jsonData.total_records) {
 				historyData = jsonData.data;
-				totalHistory = jsonData.total_records;
 			} else {
 				historyData = [];
-				totalHistory = 0;
 				error = true;
 			}
 			loading = false;
@@ -151,29 +152,29 @@
 		$displayPrefix = getNextPrefix();
 	}
 
-
-	let sortedHistoryData = $derived(historyData
-		.map((record) => {
-			const date = parseISO(record.interval);
-			return {
-				...record,
-				date,
-				time: date.getTime()
-			};
-		})
-		.sort((a, b) => b.time - a.time));
-	run(() => {
+	let sortedHistoryData = $derived(
+		historyData
+			.map((record) => {
+				const date = record.interval ? parseISO(record.interval) : new Date();
+				return {
+					...record,
+					date,
+					time: date.getTime()
+				};
+			})
+			.sort((a, b) => b.time - a.time)
+	);
+	$effect(() => {
 		if (historyData.length) {
+			recordState.record = sortedHistoryData[0];
 			// console.log('sortedHistoryData', sortedHistoryData[0]);
 			const period = sortedHistoryData[0].period;
 			const metric = sortedHistoryData[0].metric;
 			const parsed = parseUnit(sortedHistoryData[0].value_unit);
-			console.log('metric', metric);
 			const isWem = sortedHistoryData[0].network_id === 'WEM';
 			const sortedData = [...sortedHistoryData].reverse();
 
 			if (isWem) {
-				console.log('isWem', sortedHistoryData[0].network_id);
 				$timeZone = 'Australia/Perth';
 			} else {
 				$timeZone = undefined;
@@ -196,37 +197,21 @@
 			$brushSeriesNames = ['value'];
 			$brushSeriesData = sortedData;
 			$brushChartType = 'line';
-			$brushFormatTickX = (/** @type {Date} */ date) => getFormattedMonth(date, undefined, $timeZone);
+			$brushFormatTickX = (/** @type {Date} */ date) =>
+				getFormattedMonth(date, undefined, $timeZone);
 			$formatTickX = timeFormatter(period, $timeZone);
 		}
 	});
-	run(() => {
+	$effect(() => {
 		$seriesLabels = { value: $displayUnit || '' };
 	});
-	let id = $derived(data.id);
-	run(() => {
-		fetchRecord(id);
+
+	$effect(() => {
+		if (recordState.id) fetchRecord(recordState.id);
 	});
-	// $: console.log('id', id);
-	// $: console.log('historyData', historyData);
-	// $: console.log('sortedHistoryData', sortedHistoryData);
-	let currentRecord = $derived(sortedHistoryData.length ? sortedHistoryData[0] : undefined);
-	let previousRecord =
-		$derived(sortedHistoryData.length && sortedHistoryData.length > 1 ? sortedHistoryData[1] : null);
-	let isPeriodInterval = $derived(currentRecord?.period === 'interval');
-	run(() => {
-		console.log('currentRecord', currentRecord);
-	});
-	let timestamp = $derived(currentRecord?.time);
-	let recordId = $derived(currentRecord?.record_id);
-	let workerImageLocation =
-		$derived(recordId && timestamp
-			? `https://browser-worker.opennem2161.workers.dev/?key=${recordId}-${timestamp}`
-			: '/img/preview.jpg');
-	run(() => {
-		console.log('workerImageLocation', workerImageLocation);
-	});
-	let getRecordTitle = $derived((record) => {
+
+	let pageTitle = $derived.by(() => {
+		let record = recordState.record;
 		if (!record) return 'Record';
 
 		let desc = recordDescription(
@@ -246,7 +231,6 @@
 
 		return desc;
 	});
-	let pageTitle = $derived(getRecordTitle(currentRecord));
 </script>
 
 <Meta
@@ -255,11 +239,15 @@
 	image="/img/preview.jpg"
 />
 
-<PageNav {id} record={currentRecord} />
+{#if recordState.id}
+	<PageNav />
+{/if}
 
 {#if error}
 	<div class="flex h-96 items-center justify-center">
-		<p>Record not found.</p>
+		<p>
+			There is no tracking for <span class="font-medium">{recordState.id}</span>
+		</p>
 	</div>
 {:else if loading}
 	<div
@@ -273,20 +261,8 @@
 	</div>
 {:else}
 	<div
-		class="md:grid wrapper flex flex-col md:gap-6 px-0 md:px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 md:overflow-auto"
+		class="md:grid wrapper flex flex-col md:gap-6 px-0 md:px-16 pt-10 pb-32 md:h-[calc(100vh-190px)] z-10 md:overflow-auto"
 	>
-		<div class="py-6 px-10 md:px-0">
-			{#if currentRecord?.fueltech_id}
-				<span class="justify-self-start">
-					<FuelTechTag fueltech={currentRecord?.fueltech_id} />
-				</span>
-			{/if}
-
-			<h2 class="mt-4 mb-0">
-				{pageTitle}
-			</h2>
-		</div>
-
 		<div
 			class="bg-white mx-10 md:mx-0 mb-10 md:mb-0 px-6 py-6 rounded-lg border border-warm-grey flex flex-col justify-center"
 		>
@@ -294,7 +270,7 @@
 
 			<div>
 				<span class="text-3xl text-dark-grey font-medium leading-3xl">
-					{$convertAndFormatValue(currentRecord?.value)}
+					{$convertAndFormatValue(recordState.record?.value)}
 				</span>
 
 				{#if $allowPrefixSwitch}
@@ -306,22 +282,24 @@
 				{/if}
 			</div>
 
-			<time datetime={currentRecord?.interval}>
+			<time datetime={recordState.record?.interval}>
 				<span class="text-dark-grey text-sm">
-					{currentRecord ? getRelativeTime(currentRecord?.date, 'long') : ''}
+					{recordState.record ? getRelativeTime(recordState.record?.date, 'long') : ''}
 				</span>
 			</time>
 		</div>
 
-		<div class="bg-white p-4 md:rounded-lg md:border border-warm-grey">
-			<HistoryChart
-				on:mousemove={handleMousemove}
-				on:mouseout={handleMouseout}
-				on:pointerup={handlePointerup}
-			/>
-		</div>
+		<div class="py-6 px-10 md:px-6">
+			{#if recordState.recordByRecordId?.fueltech_id}
+				<span class="justify-self-start">
+					<FuelTechTag fueltech={recordState.recordByRecordId?.fueltech_id} />
+				</span>
+			{/if}
 
-		<div class="md:hidden h-10 bg-white"></div>
+			<h2 class="mt-4 mb-0">
+				{pageTitle}
+			</h2>
+		</div>
 
 		<HistoryTable
 			{sortedHistoryData}
@@ -330,6 +308,14 @@
 			on:blur={handleMouseout}
 			on:pointerup={handlePointerup}
 		/>
+
+		<div class="bg-white p-4 md:rounded-lg md:border border-warm-grey">
+			<HistoryChart
+				on:mousemove={handleMousemove}
+				on:mouseout={handleMouseout}
+				on:pointerup={handlePointerup}
+			/>
+		</div>
 	</div>
 {/if}
 
@@ -337,7 +323,7 @@
 
 <style>
 	.wrapper {
-		grid-template-columns: 5fr 2fr;
+		grid-template-columns: 2fr 5fr;
 		grid-template-rows: 1fr 9fr;
 	}
 </style>

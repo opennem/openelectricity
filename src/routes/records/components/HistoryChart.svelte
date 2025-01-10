@@ -23,7 +23,9 @@
 		yDomain,
 		convertAndFormatValue,
 		hoverData,
+		focusData,
 		hoverTime,
+		focusTime,
 		curveType,
 		strokeWidth,
 		showLineArea,
@@ -71,15 +73,18 @@
 		}
 	});
 
-	let xValue = $derived($hoverTime ? $formatTickX($hoverTime) : '');
-	let yValue = $derived($hoverData ? $convertAndFormatValue($hoverData.value) + ' ' + $displayUnit : '');
-	let xRange =
-		$derived($seriesData.length > 1
+	let xData = $derived($hoverTime || $focusTime);
+	let yData = $derived($hoverData || $focusData);
+	let xValue = $derived(xData ? $formatTickX(xData) : '');
+	let yValue = $derived(yData ? $convertAndFormatValue(yData.value) + ' ' + $displayUnit : '');
+	let xRange = $derived(
+		$seriesData.length > 1
 			? [
 					startOfYear($seriesData[0].date),
 					startOfYear(addYears($seriesData[$seriesData.length - 1].date, 1))
-			  ]
-			: undefined);
+				]
+			: undefined
+	);
 	run(() => {
 		if (xRange) {
 			$xDomain = xRange;
@@ -99,7 +104,11 @@
 			const xStartYear = getFormattedMonth(xRange[0], undefined, $timeZone);
 			const tickStartYear = getFormattedMonth(axisXTicks[0], undefined, $timeZone);
 			const xEndYear = getFormattedMonth(xRange[1], undefined, $timeZone);
-			const tickEndYear = getFormattedMonth(axisXTicks[axisXTicks.length - 1], undefined, $timeZone);
+			const tickEndYear = getFormattedMonth(
+				axisXTicks[axisXTicks.length - 1],
+				undefined,
+				$timeZone
+			);
 
 			// if not the same year, insert the first item in xRange into axisXTicks
 			if (xStartYear !== tickStartYear) {
@@ -173,6 +182,8 @@
 
 	<DateBrush
 		store={dateBrushStore}
+		hoverDataX={$hoverData}
+		focusDataX={$focusData}
 		{axisXTicks}
 		dataXDomain={brushedRange}
 		on:brushed={handleBrushed}

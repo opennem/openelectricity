@@ -3,6 +3,7 @@
 
 	const bubble = createBubbler();
 	import { getContext, createEventDispatcher } from 'svelte';
+	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 	import { getFormattedDate, getFormattedMonth, getFormattedTime } from '$lib/utils/formatters.js';
 
 	let { sortedHistoryData } = $props();
@@ -51,6 +52,12 @@
 				return getFormattedMonth(date, undefined, $timeZone);
 			};
 		}
+
+		// if (period === 'quarter') {
+		// 	return function (/** @type {Date} */ date) {
+		// 		return formatDateBasedOnInterval(date, '1Q');
+		// 	};
+		// }
 
 		return function (/** @type {Date} */ date) {
 			return getFormattedMonth(date, 'short', $timeZone);
@@ -119,7 +126,7 @@
 			{/each}
 		</tbody>
 
-		<tfoot>
+		<!-- <tfoot>
 			<tr class="sticky bottom-0 bg-light-warm-grey/60 backdrop-blur-xl">
 				<th class="text-left">
 					<div class="px-4 py-2">Total records</div>
@@ -128,6 +135,6 @@
 					<div class="px-4 py-2">{sortedHistoryData.length}</div>
 				</th>
 			</tr>
-		</tfoot>
+		</tfoot> -->
 	</table>
 </div>

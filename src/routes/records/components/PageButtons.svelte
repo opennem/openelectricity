@@ -16,10 +16,10 @@
 			copying = false;
 		}, 1000);
 	}
-
+	let fileTitle = $derived($title || 'Open Electricity Record');
 	let file = $derived(new Blob([$seriesCsvData], { type: 'text/plain' }));
 	let fileUrl = $derived(URL.createObjectURL(file));
-	let fileName = $derived(`${$title.split(' ').join('-')}.csv`);
+	let fileName = $derived(`${fileTitle.split(' ').join('-')}.csv`);
 </script>
 
 <div class="flex gap-3">

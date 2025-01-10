@@ -78,7 +78,7 @@ export async function GET({ url, fetch, setHeaders }) {
 	}
 
 	if (regions) {
-		console.log('regions', regions);
+		console.log('api regions', regions);
 		const regionArr = regions.split(',');
 
 		const withoutNetworks = regionArr.filter((r) => r !== 'nem' && r !== 'wem');
@@ -105,6 +105,8 @@ export async function GET({ url, fetch, setHeaders }) {
 	} else {
 		// if no regions are selected, we default to all regions, switch to record_filter
 		console.log('no regions selected');
+		// regionParams += '&network=NEM';
+		// regionParams += '&network=WEM';
 		// regionParams = '&record_filter=NEM&record_filter=WEM';
 	}
 

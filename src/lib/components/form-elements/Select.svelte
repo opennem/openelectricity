@@ -6,11 +6,10 @@
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} selected
-	 * @property {{label: string, value: string}[]} [options]
+	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean}[] | undefined} [options]
 	 * @property {string} [paddingY]
 	 * @property {string} [paddingX]
 	 * @property {string} [selectedLabelClass]
@@ -38,7 +37,6 @@
 	const dispatch = createEventDispatcher();
 
 	let showOptions = $state(false);
-
 	let selectedValue = $derived(selected && selected.value ? selected.value || selected : selected);
 
 	function handleSelect(option) {
@@ -76,22 +74,28 @@
 	{#if staticDisplay}
 		<ul class="flex flex-col mt-1">
 			{#each options as opt}
-				<li class="whitespace-nowrap border-b border-warm-grey">
-					<button
-						class="w-full px-0 py-1 flex gap-4 items-center"
-						class:text-mid-grey={selectedValue !== opt.value}
-						class:text-black={selectedValue === opt.value}
-						onclick={() => handleSelect(opt)}
-					>
-						<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
-						<span class="capitalize">{opt.label}</span>
-					</button>
-				</li>
+				{#if opt.divider}
+					<li class="whitespace-nowrap">
+						<div class="w-full h-px bg-warm-grey"></div>
+					</li>
+				{:else}
+					<li class="whitespace-nowrap border-b border-warm-grey">
+						<button
+							class="w-full px-0 py-1 flex gap-4 items-center"
+							class:text-mid-grey={selectedValue !== opt.value}
+							class:text-black={selectedValue === opt.value}
+							onclick={() => handleSelect(opt)}
+						>
+							<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
+							<span class="capitalize">{opt.label}</span>
+						</button>
+					</li>
+				{/if}
 			{/each}
 		</ul>
 	{:else if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-96 overflow-y-scroll {translateToMiddle}"
+			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[450px] overflow-y-scroll {translateToMiddle}"
 			class:top-16={position === 'bottom'}
 			class:bottom-16={position === 'top'}
 			class:left-0={align === 'left'}
@@ -100,18 +104,24 @@
 			out:fly={{ y: -5, duration: 150 }}
 		>
 			{#each options as opt}
-				<li class="whitespace-nowrap">
-					<button
-						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
-						class:text-mid-grey={selectedValue !== opt.value}
-						class:text-black={selectedValue === opt.value}
-						onclick={() => handleSelect(opt)}
-					>
-						<span class="capitalize">{opt.label}</span>
+				{#if opt.divider}
+					<li class="whitespace-nowrap">
+						<div class="w-full h-px bg-warm-grey"></div>
+					</li>
+				{:else}
+					<li class="whitespace-nowrap">
+						<button
+							class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
+							class:text-mid-grey={selectedValue !== opt.value}
+							class:text-black={selectedValue === opt.value}
+							onclick={() => handleSelect(opt)}
+						>
+							<span class="capitalize {opt.labelClassName}">{opt.label}</span>
 
-						<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
-					</button>
-				</li>
+							<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
+						</button>
+					</li>
+				{/if}
 			{/each}
 		</ul>
 	{/if}

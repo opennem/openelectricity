@@ -247,7 +247,7 @@ export default function () {
 				isChangeSince && $xDomain && $xDomain[0] && $xDomain[1]
 					? $seriesData.filter(
 							(d) => d.time >= $xDomain[0].getTime() && d.time <= $xDomain[1].getTime()
-					  )
+						)
 					: $seriesData;
 			return [...$seriesData].map((d) =>
 				$dataScaleFunction(d, filteredSeriesData, $visibleSeriesNames)
@@ -332,7 +332,7 @@ export default function () {
 	const seriesCsvData = derived(
 		[seriesData, seriesNames, seriesLabels, convertValue, timeZone],
 		([$seriesData, $seriesNames, $seriesLabels, $convertValue, $timeZone]) => {
-			if (!$seriesData) return '';
+			if ($seriesData.length === 0) return '';
 
 			let csv = '';
 			csv += ['date', ...$seriesNames.map((d) => $seriesLabels[d])].join(',') + '\n';

@@ -30,5 +30,5 @@ export async function GET({ params, url, fetch, setHeaders }) {
 		return Response.json(data);
 	}
 
-	return Response.json({ error: 'Error reading from milestones API.' }, { status: 500 });
+	return Response.json({ error: 'Error reading from milestones API.' }, { status: 200 });
 }
