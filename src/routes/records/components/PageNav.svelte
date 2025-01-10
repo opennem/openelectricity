@@ -3,6 +3,7 @@
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import {
+		regions,
 		fuelTechOptions,
 		milestoneTypeOptions,
 		periodOptions,
@@ -10,17 +11,6 @@
 	} from '../page-data-options/filters.js';
 	import { recordState } from '../stores/state.svelte';
 	import PageButtons from './PageButtons.svelte';
-
-	// TODO: refactor to store
-	const regions = [
-		{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
-		{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW', longLabel: 'New South Wales' },
-		{ longValue: 'au.nem.qld1', value: 'qld1', label: 'QLD', longLabel: 'Queensland' },
-		{ longValue: 'au.nem.sa1', value: 'sa1', label: 'SA', longLabel: 'South Australia' },
-		{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS', longLabel: 'Tasmania' },
-		{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC', longLabel: 'Victoria' },
-		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
-	];
 
 	$inspect('pagenav recordState.id', recordState.id);
 	$inspect('pagenav recordState.recordByRecordId', recordState.recordByRecordId);
@@ -81,6 +71,7 @@
 		regions.map((r) => ({
 			label: r.label,
 			value: r.longValue,
+			divider: r.divider,
 			labelClassName: availableRegions?.find((m) => m.value === r.longValue)
 				? ''
 				: 'italic text-mid-warm-grey'
