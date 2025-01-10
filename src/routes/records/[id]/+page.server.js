@@ -14,6 +14,7 @@ export async function load({ fetch }) {
 		const nemRegionsRecordIdsData = await nemRegionsRecordIds.json();
 
 		// return unique record_ids sorted by record_id string
+		/** @type {MilestoneRecord[]} */
 		const recordIds = [
 			...new Set([...nemWemRecordIdsData.data, ...nemRegionsRecordIdsData.data])
 		].sort((a, b) => a.record_id.localeCompare(b.record_id));

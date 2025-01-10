@@ -2,13 +2,13 @@
 	import { goto } from '$app/navigation';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
-
 	import {
 		fuelTechOptions,
 		milestoneTypeOptions,
 		periodOptions,
 		aggregateOptions
 	} from '../page-data-options/filters.js';
+	import { recordState } from '../stores/state.svelte';
 	import PageButtons from './PageButtons.svelte';
 
 	// TODO: refactor to store
@@ -22,62 +22,11 @@
 		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
 	];
 
-	/**
-	 * @typedef {Object} Props
-	 * @property {string} [id]
-	 * @property {MilestoneRecord} [currentRecord]
-	 * @property {*} recordIds
-	 */
-
-	/** @type {Props} */
-	let { id, currentRecord, recordIds } = $props();
-	let recordByRecordId = $derived.by(() => {
-		if (!id) return null;
-		let idArr = id.split('.');
-		// length:
-		// 5: network only without fueltech
-		// 6: network only with fueltech
-		// 7: network with network_region and fueltech
-		let isNetworkOnlyWithoutFueltech = idArr.length === 5;
-		let isNetworkOnlyWithFueltech = idArr.length === 6;
-		let isNetworkWithNetworkRegionAndFueltech = idArr.length === 7;
-
-		let network_id = idArr[1];
-		let network_region = isNetworkWithNetworkRegionAndFueltech ? idArr[2] : null;
-		let fueltech_id = isNetworkOnlyWithoutFueltech
-			? null
-			: isNetworkOnlyWithFueltech
-				? idArr[2]
-				: idArr[3];
-		let metric = isNetworkOnlyWithoutFueltech
-			? idArr[2]
-			: isNetworkOnlyWithFueltech
-				? idArr[3]
-				: idArr[4];
-		let period = isNetworkOnlyWithoutFueltech
-			? idArr[3]
-			: isNetworkOnlyWithFueltech
-				? idArr[4]
-				: idArr[5];
-		let aggregate = isNetworkOnlyWithoutFueltech
-			? idArr[4]
-			: isNetworkOnlyWithFueltech
-				? idArr[5]
-				: idArr[6];
-
-		return {
-			network_region,
-			network_id,
-			fueltech_id,
-			metric,
-			period,
-			aggregate
-		};
-	});
-	let record = $derived(currentRecord || recordByRecordId);
+	$inspect('pagenav recordState.id', recordState.id);
+	$inspect('pagenav recordState.recordByRecordId', recordState.recordByRecordId);
 
 	/**
-	 * @param {MilestoneRecord} record
+	 * @param {MilestoneRecord | null} record
 	 * @returns {string}
 	 */
 	function getRegionLongValue(record) {
@@ -86,34 +35,32 @@
 		return `au.${record.network_id.toLowerCase()}${network_region}`;
 	}
 
-	// $effect(() => {
-	// 	console.log('id', id);
-	// 	console.log('currentRecord', currentRecord);
-	// 	console.log('recordByRecordId', recordByRecordId);
-	// });
-
 	let region = $derived(
-		regions.find((r) => r.longValue === getRegionLongValue(record))?.longValue || ''
+		regions.find((r) => r.longValue === getRegionLongValue(recordState.recordByRecordId))
+			?.longValue || ''
 	);
-	let fuelTech = $derived(record?.fueltech_id || null);
-	let metric = $derived(record?.metric || null);
-	let period = $derived(record?.period || null);
-	let aggregate = $derived(record?.aggregate || null);
+	let fuelTech = $derived(recordState.recordByRecordId?.fueltech_id || null);
+	let metric = $derived(recordState.recordByRecordId?.metric || null);
+	let period = $derived(recordState.recordByRecordId?.period || null);
+	let aggregate = $derived(recordState.recordByRecordId?.aggregate || null);
 
 	let removeDuplicateOptions =
-		/** @type {(r: { value: string }, index: number, self: { value: string }[]) => boolean} */ (
+		/** @type {(r: { value: string | undefined }, index: number, self: { value: string | undefined }[]) => boolean} */ (
 			r,
 			index,
 			self
 		) => index === self.findIndex((t) => t.value === r.value);
 
-	let orderByLabel = /** @type {(a: { label: string }, b: { label: string }) => number} */ (a, b) =>
-		a.label.localeCompare(b.label);
+	let orderByLabel =
+		/** @type {(a: { label: string | undefined }, b: { label: string | undefined }) => number} */ (
+			a,
+			b
+		) => (a.label || '').localeCompare(b.label || '');
 
 	// check the recordIds and return as options (i.e. { label: 'NSW', value: 'au.nem.nsw1' 	})
 	let availableRegions = $derived(
-		recordIds
-			.filter((r) =>
+		recordState.recordIds
+			?.filter((r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
 						r.metric === metric &&
@@ -134,15 +81,15 @@
 		regions.map((r) => ({
 			label: r.label,
 			value: r.longValue,
-			labelClassName: availableRegions.find((m) => m.value === r.longValue)
+			labelClassName: availableRegions?.find((m) => m.value === r.longValue)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
 	);
 
 	let availableFuelTechs = $derived(
-		recordIds
-			.filter(
+		recordState.recordIds
+			?.filter(
 				(r) =>
 					getRegionLongValue(r) === region &&
 					r.metric === metric &&
@@ -159,15 +106,15 @@
 	let availableFuelTechsOptions = $derived(
 		fuelTechOptions.map((r) => ({
 			...r,
-			labelClassName: availableFuelTechs.find((m) => m.value === r.value)
+			labelClassName: availableFuelTechs?.find((m) => m.value === r.value)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
 	);
 
 	let availableMetrics = $derived(
-		recordIds
-			.filter((r) =>
+		recordState.recordIds
+			?.filter((r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
 						getRegionLongValue(r) === region &&
@@ -188,15 +135,15 @@
 	let availableMetricsOptions = $derived(
 		milestoneTypeOptions.map((r) => ({
 			...r,
-			labelClassName: availableMetrics.find((m) => m.value === r.value)
+			labelClassName: availableMetrics?.find((m) => m.value === r.value)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
 	);
 
 	let availablePeriods = $derived(
-		recordIds
-			.filter((r) =>
+		recordState.recordIds
+			?.filter((r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
 						getRegionLongValue(r) === region &&
@@ -217,15 +164,15 @@
 	let availablePeriodsOptions = $derived(
 		periodOptions.map((r) => ({
 			...r,
-			labelClassName: availablePeriods.find((m) => m.value === r.value)
+			labelClassName: availablePeriods?.find((m) => m.value === r.value)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
 	);
 
 	let availableAggregates = $derived(
-		recordIds
-			.filter((r) =>
+		recordState.recordIds
+			?.filter((r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
 						getRegionLongValue(r) === region &&
@@ -246,19 +193,11 @@
 	let availableAggregatesOptions = $derived(
 		aggregateOptions.map((r) => ({
 			...r,
-			labelClassName: availableAggregates.find((m) => m.value === r.value)
+			labelClassName: availableAggregates?.find((m) => m.value === r.value)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
 	);
-
-	// $effect(() => {
-	// 	console.log('region', region);
-	// 	console.log('availableRegionsOptions', availableRegionsOptions, availableRegions);
-	// 	console.log('availableFuelTechsOptions', availableFuelTechsOptions);
-	// 	console.log('availableMetricsOptions', availableMetricsOptions);
-	// 	console.log('availablePeriodsOptions', availablePeriodsOptions);
-	// });
 
 	/**
 	 * @param {CustomEvent} evt
@@ -352,7 +291,9 @@
 	</a>
 </div>
 
-{#if record}
+{#if recordState.id}
+	{@const px = 'px-4'}
+	{@const py = 'py-3'}
 	<div class="flex justify-between gap-6 items-center bg-white px-10 py-5 md:px-16 auto">
 		<div class="flex gap-6 items-center">
 			<div class="text-nowrap">
@@ -360,8 +301,8 @@
 					options={availableRegionsOptions}
 					selected={region}
 					formLabel="Region"
-					paddingX="px-4"
-					paddingY="py-3"
+					paddingX={px}
+					paddingY={py}
 					on:change={handleRegionChange}
 				/>
 			</div>
@@ -371,8 +312,8 @@
 					options={availableFuelTechsOptions}
 					selected={fuelTech}
 					formLabel="Technology"
-					paddingX="px-4"
-					paddingY="py-3"
+					paddingX={px}
+					paddingY={py}
 					on:change={handleFuelTechChange}
 				/>
 			</div>
@@ -382,8 +323,8 @@
 					options={availableMetricsOptions}
 					selected={metric}
 					formLabel="Metric"
-					paddingX="px-4"
-					paddingY="py-3"
+					paddingX={px}
+					paddingY={py}
 					on:change={handleMetricChange}
 				/>
 			</div>
@@ -393,8 +334,8 @@
 					options={availablePeriodsOptions}
 					selected={period}
 					formLabel="Period"
-					paddingX="px-4"
-					paddingY="py-3"
+					paddingX={px}
+					paddingY={py}
 					on:change={handlePeriodChange}
 				/>
 			</div>
@@ -404,14 +345,14 @@
 					options={availableAggregatesOptions}
 					selected={aggregate}
 					formLabel="Aggregate"
-					paddingX="px-4"
-					paddingY="py-3"
+					paddingX={px}
+					paddingY={py}
 					on:change={handleAggregateChange}
 				/>
 			</div>
 		</div>
 
-		{#if currentRecord}
+		{#if recordState.record}
 			<PageButtons />
 		{/if}
 	</div>
