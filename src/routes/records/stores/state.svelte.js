@@ -1,3 +1,12 @@
+import { regions, fuelTechOptions } from '../page-data-options/filters';
+
+/**
+ * @param {string | undefined} v
+ */
+function checkFuelTech(v) {
+	return fuelTechOptions.find((ft) => ft.value === v);
+}
+
 class State {
 	/** @type {string | null} */
 	id = $state(null);
@@ -11,35 +20,28 @@ class State {
 	/** @type {MilestoneRecord | null} */
 	recordByRecordId = $derived.by(() => {
 		if (!this.id) return null;
-		let idArr = this.id.split('.');
-		// length:
-		// 5: network only without fueltech
-		// 6: network only with fueltech
-		// 7: network with network_region and fueltech
-		let isNetworkOnlyWithoutFueltech = idArr.length === 5;
-		let isNetworkOnlyWithFueltech = idArr.length === 6;
-		let isNetworkWithNetworkRegionAndFueltech = idArr.length === 7;
 
+		let idArr = this.id.split('.');
+
+		// network_id is the second item in the array
 		let network_id = idArr[1];
-		let network_region = isNetworkWithNetworkRegionAndFueltech ? idArr[2] : null;
+
+		// confirm the third item in the array is a network_region (i.e. au.nem.nsw1)
+		// if not, then the first two items are the network_id (i.e. au.nem)
+		let hasNetworkRegion = regions.find((r) => idArr[2] === r.value);
+		let network_region = hasNetworkRegion ? idArr[2] : null;
+
+		// if hasNetworkRegion, then check if there is fuelTech in the fourth item in the array
+		// if not, then check if there is fuelTech in the third item in the array
+		let hasFuelTech = hasNetworkRegion ? checkFuelTech(idArr[3]) : checkFuelTech(idArr[2]);
 		let fueltech_id = /** @type {FuelTechCode | undefined} */ (
-			isNetworkOnlyWithoutFueltech ? undefined : isNetworkOnlyWithFueltech ? idArr[2] : idArr[3]
+			hasFuelTech ? hasFuelTech.value : undefined
 		);
-		let metric = isNetworkOnlyWithoutFueltech
-			? idArr[2]
-			: isNetworkOnlyWithFueltech
-				? idArr[3]
-				: idArr[4];
-		let period = isNetworkOnlyWithoutFueltech
-			? idArr[3]
-			: isNetworkOnlyWithFueltech
-				? idArr[4]
-				: idArr[5];
-		let aggregate = isNetworkOnlyWithoutFueltech
-			? idArr[4]
-			: isNetworkOnlyWithFueltech
-				? idArr[5]
-				: idArr[6];
+
+		// last three items are the metric, period, and aggregate
+		let metric = idArr[idArr.length - 3];
+		let period = idArr[idArr.length - 2];
+		let aggregate = idArr[idArr.length - 1];
 
 		return {
 			network_region,
