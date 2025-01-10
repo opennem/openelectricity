@@ -10,32 +10,36 @@
 		baseUnit,
 		chartTypeOptions,
 		chartType,
-		dataScaleOptions,
-		dataScaleType,
+		dataTransformOptions,
+		dataTransformType,
 		curveType,
 		curveOptions
 	} = store;
 
 	// $: console.log('allowedPrefixes', $allowedPrefixes, $displayPrefix, $baseUnit);
-	let unitOptions = $derived($allowedPrefixes.map((/** @type {string} */ prefix) => {
-		return {
-			label: `${prefix}${$baseUnit}`,
-			value: prefix
-		};
-	}));
+	let unitOptions = $derived(
+		$allowedPrefixes.map((/** @type {string} */ prefix) => {
+			return {
+				label: `${prefix}${$baseUnit}`,
+				value: prefix
+			};
+		})
+	);
 </script>
 
 <div class="grid grid-cols-5 gap-4 items-center">
 	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Data</span>
 	<div class="col-span-4">
-		<Switch
-			buttons={$dataScaleOptions}
-			selected={$dataScaleType}
-			xPad={4}
-			yPad={2}
-			textSize="xs"
-			on:change={(evt) => ($dataScaleType = evt.detail.value)}
-		/>
+		<div class="flex gap-2">
+			<Switch
+				buttons={$dataTransformOptions}
+				selected={$dataTransformType}
+				xPad={4}
+				yPad={2}
+				textSize="xs"
+				on:change={(evt) => ($dataTransformType = evt.detail.value)}
+			/>
+		</div>
 	</div>
 </div>
 

@@ -12,7 +12,7 @@ describe('proportion', () => {
 		};
 
 		const domains = ['coal', 'gas', 'solar'];
-		const result = proportion(data, domains);
+		const result = proportion({ datapoint: data, domains });
 
 		expect(result.coal).toBe(50); // (100/200) * 100
 		expect(result.gas).toBe(25); // (50/200) * 100
@@ -29,7 +29,7 @@ describe('proportion', () => {
 		};
 
 		const domains = ['coal', 'gas', 'solar'];
-		const result = proportion(data, domains);
+		const result = proportion({ datapoint: data, domains });
 
 		expect(result.coal).toBe(60); // (120/200) * 100
 		expect(result.gas).toBe(0);
@@ -46,7 +46,7 @@ describe('proportion', () => {
 		};
 
 		const domains = ['coal', 'gas', 'solar'];
-		const result = proportion(data, domains);
+		const result = proportion({ datapoint: data, domains });
 
 		expect(result.coal).toBe(50); // (100/200) * 100
 		expect(result.gas).toBe(0);
@@ -63,7 +63,7 @@ describe('proportion', () => {
 		};
 
 		const domains = ['coal', 'gas', 'solar'];
-		const result = proportion(data, domains);
+		const result = proportion({ datapoint: data, domains });
 
 		expect(result.coal).toBe(0);
 		expect(result.gas).toBe(0);

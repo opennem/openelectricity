@@ -20,7 +20,7 @@
 		displayUnit,
 		convertAndFormatValue,
 		seriesScaledData,
-		isDataScaleTypeProportion,
+		isDataTransformTypeProportion,
 		visibleSeriesNames,
 		visibleSeriesColours,
 		seriesColours,
@@ -47,34 +47,36 @@
 
 	let showOptions = $state(false);
 
-	let updatedSeriesData = $derived($seriesScaledData.map((/** @type {TimeSeriesData} */ d) => {
-		/** @type {TimeSeriesData} */
-		const newObj = { ...d };
-		// get min and max values for each time series
-		newObj._max = 0;
-		newObj._min = 0;
-		$visibleSeriesNames.forEach((/** @type {string} */ l) => {
-			const value = /** @type {number} */ (d[l] || 0);
-			if ($isChartTypeArea) {
-				if (newObj._max || newObj._max === 0) newObj._max += +value;
-			} else {
-				if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
-			}
+	let updatedSeriesData = $derived(
+		$seriesScaledData.map((/** @type {TimeSeriesData} */ d) => {
+			/** @type {TimeSeriesData} */
+			const newObj = { ...d };
+			// get min and max values for each time series
+			newObj._max = 0;
+			newObj._min = 0;
+			$visibleSeriesNames.forEach((/** @type {string} */ l) => {
+				const value = /** @type {number} */ (d[l] || 0);
+				if ($isChartTypeArea) {
+					if (newObj._max || newObj._max === 0) newObj._max += +value;
+				} else {
+					if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
+				}
 
-			if ($isChartTypeArea) {
-				if ((newObj._min || newObj._min === 0) && value < 0) newObj._min += +value;
-			} else {
-				if (newObj._min || newObj._min === 0) newObj._min = Math.min(newObj._min, +value);
-			}
-		});
+				if ($isChartTypeArea) {
+					if ((newObj._min || newObj._min === 0) && value < 0) newObj._min += +value;
+				} else {
+					if (newObj._min || newObj._min === 0) newObj._min = Math.min(newObj._min, +value);
+				}
+			});
 
-		return newObj;
-	}));
+			return newObj;
+		})
+	);
 
 	/** @type {*} */
 	let yDomain = $state(undefined);
 	run(() => {
-		if ($isDataScaleTypeProportion && !$isChartTypeLine) {
+		if ($isDataTransformTypeProportion && !$isChartTypeLine) {
 			yDomain = [0, 100];
 		} else {
 			const addTenPercent = (val) => val + val * 0.1;
@@ -91,7 +93,7 @@
 		}
 	});
 	// $: updatedYDomain = (() => {
-	// 	if ($isDataScaleTypeProportion && !$isChartTypeLine) return [0, 100];
+	// 	if ($isDataTransformTypeProportion && !$isChartTypeLine) return [0, 100];
 
 	// 	const addTenPercent = (val) => val + val * 0.1;
 	// 	const maxY = updatedSeriesData.map((d) => d._max);
@@ -108,7 +110,9 @@
 	// 	return [Math.floor(datasetMin), Math.ceil(datasetMax)];
 	// })();
 
-	let updatedHoverData = $derived($hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null);
+	let updatedHoverData = $derived(
+		$hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null
+	);
 
 	function moveToNextDisplayPrefix() {
 		$displayPrefix = getNextPrefix();
@@ -139,7 +143,7 @@
 							{$title}
 						</h6>
 
-						{#if $isDataScaleTypeProportion}
+						{#if $isDataTransformTypeProportion}
 							<span class="font-light text-xs text-mid-grey">%</span>
 						{:else if $allowPrefixSwitch}
 							<button
@@ -173,7 +177,7 @@
 				seriesColours={$seriesColours}
 				seriesLabels={$seriesLabels}
 				convertAndFormatValue={$convertAndFormatValue}
-				showTotal={$isChartTypeArea && !$isDataScaleTypeProportion ? true : false}
+				showTotal={$isChartTypeArea && !$isDataTransformTypeProportion ? true : false}
 				yearOnly={$selectedRange === 'yearly'}
 			/>
 		</div>
@@ -191,7 +195,7 @@
 				seriesNames={$visibleSeriesNames}
 				zRange={$visibleSeriesColours}
 				formatTickX={$formatTickX}
-				formatTickY={$isDataScaleTypeProportion ? (d) => d : $convertAndFormatValue}
+				formatTickY={$isDataTransformTypeProportion ? (d) => d : $convertAndFormatValue}
 				chartType={$chartType}
 				overlay={$chartOverlay}
 				overlayLine={$chartOverlayLine}

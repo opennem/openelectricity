@@ -1,21 +1,20 @@
 /**
- * @param {TimeSeriesData} d
- * @param {string[]} domains
+ * @param {{datapoint: TimeSeriesData, domains: string[]}} params
  * @returns
  */
-export default function proportion(d, domains) {
+export default function proportion({ datapoint, domains }) {
 	let total = 0;
 	let updated = {
-		...d
+		...datapoint
 	};
 
 	domains.forEach((e) => {
-		const value = /** @type {number} **/ (d[e]);
+		const value = /** @type {number} **/ (datapoint[e]);
 		total += value > 0 ? value : 0;
 	});
 
 	domains.forEach((e) => {
-		const value = /** @type {number} **/ (d[e]);
+		const value = /** @type {number} **/ (datapoint[e]);
 		updated[e] = value > 0 ? (value / total) * 100 : 0;
 	});
 
