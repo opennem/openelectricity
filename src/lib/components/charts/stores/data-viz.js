@@ -2,54 +2,8 @@ import { curveStep, curveLinear, curveMonotoneX } from 'd3-shape';
 import { get, readable, derived, writable } from 'svelte/store';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
-
-/**
- * @param {TimeSeriesData} d
- * @param {TimeSeriesData[]} dataset
- * @param {string[]} domains
- * @returns
- */
-function proportionTransform(d, dataset, domains) {
-	let total = 0;
-	const updated = {
-		...d
-	};
-
-	domains.forEach((e) => {
-		const value = /** @type {number} **/ (d[e]);
-		total += value > 0 ? value : 0;
-	});
-
-	domains.forEach((e) => {
-		const value = /** @type {number} **/ (d[e]);
-		updated[e] = value > 0 ? (value / total) * 100 : 0;
-	});
-
-	return updated;
-}
-
-/**
- * @param {TimeSeriesData} d
- * @param {TimeSeriesData[]} dataset
- * @param {string[]} domains
- * @returns
- */
-function changeSinceTransform(d, dataset, domains) {
-	if (dataset.length === 0) return d;
-
-	const changeCompare = dataset[0];
-	const updated = {
-		...d
-	};
-
-	domains.forEach((e) => {
-		const value = /** @type {number} **/ (d[e]);
-		const compareValue = /** @type {number} **/ (changeCompare[e] || 0);
-		updated[e] = value - compareValue;
-	});
-
-	return updated;
-}
+import transformToProportion from '$lib/utils/data-transform/proportion';
+import transformToChangeSince from '$lib/utils/data-transform/change-since';
 
 const numberFormat = getNumberFormat();
 
@@ -64,7 +18,7 @@ export default function () {
 
 	const baseUnit = writable('');
 
-	const dataScaleOptions = readable([
+	const dataTransformOptions = readable([
 		{
 			label: 'Absolute',
 			value: 'absolute'
@@ -72,27 +26,27 @@ export default function () {
 		{
 			label: 'Proportion',
 			value: 'proportion',
-			dataScaleFunction: proportionTransform
+			dataTransformFunction: transformToProportion
 		},
 		{
 			label: 'Change since',
 			value: 'changeSince',
-			dataScaleFunction: changeSinceTransform
+			dataTransformFunction: transformToChangeSince
 		}
 	]);
-	const dataScaleType = writable('absolute');
-	const dataScaleFunction = derived(
-		[dataScaleOptions, dataScaleType],
-		([$dataScaleOptions, $dataScaleType]) => {
-			const option = $dataScaleOptions.find((d) => d.value === $dataScaleType);
-			return option && option.dataScaleFunction
-				? option.dataScaleFunction
-				: (/** @type {*} */ d) => d;
+	const dataTransformType = writable('absolute');
+	const dataTransformFunction = derived(
+		[dataTransformOptions, dataTransformType],
+		([$dataTransformOptions, $dataTransformType]) => {
+			const option = $dataTransformOptions.find((d) => d.value === $dataTransformType);
+			return option && option.dataTransformFunction
+				? option.dataTransformFunction
+				: (/** @type {{datapoint: TimeSeriesData}} */ { datapoint }) => datapoint;
 		}
 	);
-	const isDataScaleTypeProportion = derived(
-		dataScaleType,
-		($dataScaleType) => $dataScaleType === 'proportion'
+	const isDataTransformTypeProportion = derived(
+		dataTransformType,
+		($dataTransformType) => $dataTransformType === 'proportion'
 	);
 
 	const curveOptions = readable([
@@ -239,25 +193,29 @@ export default function () {
 	const chartHeightClasses = writable('h-[400px] md:h-[450px]');
 
 	const seriesScaledData = derived(
-		[seriesData, visibleSeriesNames, dataScaleType, xDomain, dataScaleFunction],
-		([$seriesData, $visibleSeriesNames, $dataScaleType, $xDomain, $dataScaleFunction]) => {
+		[seriesData, visibleSeriesNames, dataTransformType, xDomain, dataTransformFunction],
+		([$seriesData, $visibleSeriesNames, $dataTransformType, $xDomain, $dataTransformFunction]) => {
 			if (!$seriesData) return [];
-			const isChangeSince = $dataScaleType === 'changeSince';
+			const isChangeSince = $dataTransformType === 'changeSince';
 			const filteredSeriesData =
 				isChangeSince && $xDomain && $xDomain[0] && $xDomain[1]
-					? $seriesData.filter(
-							(d) => d.time >= $xDomain[0].getTime() && d.time <= $xDomain[1].getTime()
-						)
+					? $seriesData.filter((d) => d.time >= $xDomain[0] && d.time <= $xDomain[1])
 					: $seriesData;
 			return [...$seriesData].map((d) =>
-				$dataScaleFunction(d, filteredSeriesData, $visibleSeriesNames)
+				$dataTransformFunction({
+					datapoint: d,
+					dataset: filteredSeriesData,
+					domains: $visibleSeriesNames
+				})
 			);
 		}
 	);
 
 	const seriesProportionData = derived([seriesData, seriesNames], ([$seriesData, $seriesNames]) => {
 		if (!$seriesData) return [];
-		return [...$seriesData].map((d) => proportionTransform(d, $seriesData, $seriesNames));
+		return [...$seriesData].map((d) =>
+			transformToProportion({ datapoint: d, domains: $seriesNames })
+		);
 	});
 
 	/** @type {import('svelte/store').Writable<string | undefined>} */
@@ -417,10 +375,10 @@ export default function () {
 		maximumFractionDigits,
 		timeZone,
 
-		dataScaleOptions,
-		dataScaleType,
-		dataScaleFunction,
-		isDataScaleTypeProportion,
+		dataTransformOptions,
+		dataTransformType,
+		dataTransformFunction,
+		isDataTransformTypeProportion,
 
 		chartTypeOptions,
 		chartType,
