@@ -64,12 +64,13 @@
 	run(() => {
 		if ($seriesData.length) {
 			const addTenPercent = (val) => val + val * 0.1;
-			const maxY = $seriesData.map((d) => d.value);
+			const yValue = $seriesData.map((d) => d.value);
 			// @ts-ignore
-			const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
+			const datasetMax = yValue ? addTenPercent(Math.max(...yValue)) : 0;
+			const datasetMin = yValue ? addTenPercent(Math.min(...yValue)) : 0;
 
-			$yDomain = [0, datasetMax];
-			$brushYDomain = [0, datasetMax];
+			$yDomain = [datasetMin, datasetMax];
+			$brushYDomain = [datasetMin, datasetMax];
 		}
 	});
 

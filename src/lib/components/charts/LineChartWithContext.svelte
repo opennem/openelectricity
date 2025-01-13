@@ -23,7 +23,6 @@
 	 * @property {string} [xKey]
 	 * @property {string} [zKey]
 	 * @property {*} [overlay] - If true, overlay will take up the full width of the chart
-If object with xStartValue and xEndValue, overlay will be a range
 	 * @property {string} [overlayStroke]
 	 * @property {*} [overlayLine]
 	 * @property {string | null} [highlightId]
