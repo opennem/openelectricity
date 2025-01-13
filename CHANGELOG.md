@@ -1,5 +1,12 @@
 # opennem-app
 
+## 2.1.1
+
+### Patch Changes
+
+- d96fe47: refactor and add vitest
+- d96fe47: fix issue where min y is not set for record history chart
+
 ## 2.1.0
 
 ### Minor Changes
