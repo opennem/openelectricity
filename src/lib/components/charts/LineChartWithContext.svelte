@@ -29,6 +29,7 @@
 	 * @property {*} [customFormatTickX]
 	 * @property {string} [heightClasses]
 	 * @property {boolean} [showDots]
+	 * @property {any[]} [useDataset]
 	 */
 
 	/** @type {Props} */
@@ -42,14 +43,14 @@
 		overlayLine = false,
 		highlightId = null,
 		customFormatTickX = null,
-		heightClasses = $bindable(''),
-		showDots = false
+		showDots = false,
+		useDataset = []
 	} = $props();
 
 	const {
 		title,
 		seriesNames: yKeys,
-		seriesData: dataset,
+		seriesData,
 		xTicks,
 		yTicks,
 		snapXTicks,
@@ -71,17 +72,11 @@
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
 
-	run(() => {
-		heightClasses = heightClasses || $chartHeightClasses || defaultChartHeightClasses;
-	});
-
-	// $: console.log('groupedData', groupedData);
-
+	let heightClasses = $derived($chartHeightClasses || defaultChartHeightClasses);
 	let clipPathId = $derived(clip ? `${id}-clip-path` : '');
 	let clipPathAxisId = $derived(clip ? `${id}-clip-path-axis` : '');
 	let yKey = $derived($yKeys[0] || '');
-	let maxValue = $derived(Math.round(Math.max(...$dataset.map((d) => d[yKey] || 0))));
-	let maxY = $derived(maxValue > 0 ? maxValue + (maxValue * 10) / 100 : 10);
+	let dataset = $derived(useDataset || $seriesData);
 </script>
 
 <div class="w-full {heightClasses}">
@@ -92,7 +87,7 @@
 		xScale={scaleUtc()}
 		yDomain={$yDomain}
 		xDomain={$xDomain}
-		data={$dataset}
+		data={dataset}
 	>
 		<Svg>
 			<defs>
@@ -136,7 +131,7 @@
 					<Area fill={zKey} />
 				{/if}
 			</g>
-			<HoverLayer dataset={$dataset} on:mousemove on:mouseout on:pointerup on:mousedown />
+			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup on:mousedown />
 		</Svg>
 
 		<Svg pointerEvents={false}>

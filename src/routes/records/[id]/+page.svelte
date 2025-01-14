@@ -184,7 +184,7 @@
 			$seriesNames = ['value'];
 			$seriesData = sortedData;
 			$chartType = 'line';
-			$chartHeightClasses = 'h-[500px]';
+			$chartHeightClasses = 'h-[300px] md:h-auto';
 			$baseUnit = parsed.baseUnit;
 			$prefix = parsed.prefix;
 			$displayPrefix = milestoneTypeDisplayPrefix[metric];
