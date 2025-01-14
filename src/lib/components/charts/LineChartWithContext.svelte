@@ -72,10 +72,10 @@
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
 
-	let heightClasses = $derived($chartHeightClasses || defaultChartHeightClasses);
 	let clipPathId = $derived(clip ? `${id}-clip-path` : '');
 	let clipPathAxisId = $derived(clip ? `${id}-clip-path-axis` : '');
 	let yKey = $derived($yKeys[0] || '');
+	let heightClasses = $derived($chartHeightClasses || defaultChartHeightClasses);
 	let dataset = $derived(useDataset || $seriesData);
 </script>
 
