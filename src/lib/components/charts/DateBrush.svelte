@@ -25,6 +25,7 @@
 	 * @property {boolean} [showLineData]
 	 * @property {any} hoverDataX
 	 * @property {any} focusDataX
+	 * @property {any[]} [useDataset]
 	 */
 
 	/** @type {Props} */
@@ -37,7 +38,8 @@
 		defaultChartHeightClasses = 'h-[70px]',
 		showLineData = true,
 		hoverDataX,
-		focusDataX
+		focusDataX,
+		useDataset = []
 	} = $props();
 
 	const id = getSeqId();
@@ -45,7 +47,7 @@
 
 	const {
 		seriesNames: yKeys,
-		seriesData: dataset,
+		seriesData,
 		curveType,
 		curveFunction,
 		yDomain,
@@ -69,7 +71,7 @@
 	});
 	let hoverD = $derived(hoverDataX || $hoverData);
 	let focusD = $derived(focusDataX || $focusData);
-
+	let dataset = $derived(useDataset || $seriesData);
 	let cType = $derived(typeof $curveType === 'function' ? $curveType : $curveFunction);
 </script>
 
@@ -81,7 +83,7 @@
 		xScale={scaleUtc()}
 		xDomain={$xDomain}
 		yDomain={$yDomain}
-		data={$dataset}
+		data={dataset}
 	>
 		<Html>
 			<Brush bind:this={brushComponent} on:brushed />

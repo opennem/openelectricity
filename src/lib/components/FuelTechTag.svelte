@@ -2,7 +2,6 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { fuelTechName } from '$lib/fuel_techs';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {FuelTechCode} fueltech
@@ -26,11 +25,9 @@
 	} = $props();
 
 	let bgClass = $derived(showBgColour ? `bg-${fueltech}` : '');
-	let highlightTextColor = $derived(showBgColour
-		? fueltech === 'solar'
-			? 'text-black'
-			: 'text-white'
-		: 'text-black');
+	let highlightTextColor = $derived(
+		showBgColour ? (fueltech === 'solar' ? 'text-black' : 'text-white') : 'text-black'
+	);
 </script>
 
 <div
@@ -41,7 +38,9 @@
 	<Icon icon={fueltech} size={iconSize} />
 	{#if showText}
 		<span class="relative top-[1px]">
-			{#if children}{@render children()}{:else}
+			{#if children}
+				{@render children()}
+			{:else}
 				{fuelTechName(fueltech)}
 			{/if}
 		</span>

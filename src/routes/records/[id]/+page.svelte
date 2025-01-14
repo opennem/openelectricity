@@ -24,6 +24,7 @@
 	import recordDescription from '../page-data-options/record-description';
 	import getRelativeTime from '../page-data-options/relative-time';
 	import HistoryTable from '../components/HistoryTable.svelte';
+	import TrackerChart from '../components/TrackerChart.svelte';
 	import { recordState } from '../stores/state.svelte';
 
 	let { data } = $props();
@@ -184,7 +185,7 @@
 			$seriesNames = ['value'];
 			$seriesData = sortedData;
 			$chartType = 'line';
-			$chartHeightClasses = 'h-[500px]';
+			$chartHeightClasses = 'h-[300px] md:h-auto';
 			$baseUnit = parsed.baseUnit;
 			$prefix = parsed.prefix;
 			$displayPrefix = milestoneTypeDisplayPrefix[metric];
@@ -252,7 +253,7 @@
 {:else if loading}
 	<div
 		transition:fade
-		class="md:grid wrapper flex flex-col gap-6 px-10 md:px-16 pt-10 pb-32 md:h-[calc(100vh-120px)] z-10 md:overflow-auto animate-pulse"
+		class="md:grid wrapper flex flex-col gap-6 px-10 md:px-16 pt-10 pb-32 md:h-[calc(100vh-240px)] z-10 animate-pulse"
 	>
 		<div class="bg-mid-warm-grey rounded-lg h-[128px]"></div>
 		<div class="bg-mid-warm-grey rounded-lg"></div>
@@ -261,7 +262,7 @@
 	</div>
 {:else}
 	<div
-		class="md:grid wrapper flex flex-col md:gap-6 px-0 md:px-16 pt-10 pb-32 md:h-[calc(100vh-190px)] z-10 md:overflow-auto"
+		class="md:grid wrapper flex flex-col md:gap-6 px-0 md:px-16 pt-10 md:h-[70vh] md:min-h-[700px] z-10"
 	>
 		<div
 			class="bg-white mx-10 md:mx-0 mb-10 md:mb-0 px-6 py-6 rounded-lg border border-warm-grey flex flex-col justify-center"
@@ -290,11 +291,12 @@
 		</div>
 
 		<div class="py-6 px-10 md:px-6">
-			{#if recordState.recordByRecordId?.fueltech_id}
-				<span class="justify-self-start">
-					<FuelTechTag fueltech={recordState.recordByRecordId?.fueltech_id} />
-				</span>
-			{/if}
+			<span class="justify-self-start">
+				<FuelTechTag
+					fueltech={recordState.recordByRecordId?.fueltech_id || 'demand'}
+					showText={!!recordState.recordByRecordId?.fueltech_id}
+				/>
+			</span>
 
 			<h2 class="mt-4 mb-0">
 				{pageTitle}
@@ -317,6 +319,12 @@
 			/>
 		</div>
 	</div>
+
+	<!-- <div class="px-0 md:px-16 pt-10 pb-32 md:pb-0">
+		<div class="bg-white p-4 md:rounded-lg md:border border-warm-grey">
+			<TrackerChart />
+		</div>
+	</div> -->
 {/if}
 
 <hr class="border-warm-grey border-0.5" />

@@ -61,32 +61,41 @@
 	/** @type {*} */
 	let brushedRange = $state();
 
-	run(() => {
+	$effect(() => {
 		if ($seriesData.length) {
-			const addTenPercent = (val) => val + val * 0.1;
-			const yValue = $seriesData.map((d) => d.value);
+			let addTenPercent = (val) => val + val * 0.1;
+			let yValue = $seriesData.map((d) => d.value);
 			// @ts-ignore
-			const datasetMax = yValue ? addTenPercent(Math.max(...yValue)) : 0;
-			const datasetMin = yValue ? addTenPercent(Math.min(...yValue)) : 0;
+			let datasetMax = yValue ? addTenPercent(Math.max(...yValue)) : 0;
+			let datasetMin = yValue < 0 ? addTenPercent(Math.min(...yValue)) : 0;
 
 			$yDomain = [datasetMin, datasetMax];
 			$brushYDomain = [datasetMin, datasetMax];
 		}
 	});
 
+	let currentDate = new Date();
+	let newPointDate = addYears(currentDate, 1);
 	let xData = $derived($hoverTime || $focusTime);
 	let yData = $derived($hoverData || $focusData);
 	let xValue = $derived(xData ? $formatTickX(xData) : '');
 	let yValue = $derived(yData ? $convertAndFormatValue(yData.value) + ' ' + $displayUnit : '');
 	let xRange = $derived(
-		$seriesData.length > 1
-			? [
-					startOfYear($seriesData[0].date),
-					startOfYear(addYears($seriesData[$seriesData.length - 1].date, 1))
-				]
-			: undefined
+		$seriesData.length > 1 ? [startOfYear($seriesData[0].date), currentDate] : undefined
 	);
-	run(() => {
+	let updatedSeriesData = $derived(
+		$seriesData.length
+			? [
+					...$seriesData,
+					{
+						...$seriesData[$seriesData.length - 1],
+						date: newPointDate,
+						time: newPointDate.getTime()
+					}
+				]
+			: []
+	);
+	$effect(() => {
 		if (xRange) {
 			$xDomain = xRange;
 			$brushXDomain = xRange;
@@ -94,14 +103,14 @@
 	});
 
 	let axisXTicks = $derived(xRange ? timeYear.every(2)?.range(xRange[0], xRange[1]) : undefined);
-	run(() => {
+	$effect(() => {
 		$xTicks = axisXTicks && !brushedRange ? axisXTicks : 5;
 	});
 
 	// insert the first and last item in xRange into axisXTicks
-	run(() => {
+	$effect(() => {
 		if (axisXTicks && xRange) {
-			console.log('timeZone', $timeZone);
+			$inspect('timeZone', $timeZone);
 			const xStartYear = getFormattedMonth(xRange[0], undefined, $timeZone);
 			const tickStartYear = getFormattedMonth(axisXTicks[0], undefined, $timeZone);
 			const xEndYear = getFormattedMonth(xRange[1], undefined, $timeZone);
@@ -174,8 +183,8 @@
 	<LineChartWithContext
 		store={historyStore}
 		customFormatTickX={(d) => getXTicks(d, brushedRange || xRange)}
-		heightClasses="h-[300px] md:h-auto"
 		showDots={true}
+		useDataset={updatedSeriesData}
 		on:mousemove
 		on:mouseout
 		on:pointerup
@@ -187,6 +196,7 @@
 		focusDataX={$focusData}
 		{axisXTicks}
 		dataXDomain={brushedRange}
+		useDataset={updatedSeriesData}
 		on:brushed={handleBrushed}
 	/>
 </div>
