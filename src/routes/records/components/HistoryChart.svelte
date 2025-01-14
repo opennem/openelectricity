@@ -61,7 +61,7 @@
 	/** @type {*} */
 	let brushedRange = $state();
 
-	run(() => {
+	$effect(() => {
 		if ($seriesData.length) {
 			let addTenPercent = (val) => val + val * 0.1;
 			let yValue = $seriesData.map((d) => d.value);
@@ -95,8 +95,7 @@
 				]
 			: []
 	);
-	$inspect(updatedSeriesData);
-	run(() => {
+	$effect(() => {
 		if (xRange) {
 			$xDomain = xRange;
 			$brushXDomain = xRange;
@@ -104,14 +103,14 @@
 	});
 
 	let axisXTicks = $derived(xRange ? timeYear.every(2)?.range(xRange[0], xRange[1]) : undefined);
-	run(() => {
+	$effect(() => {
 		$xTicks = axisXTicks && !brushedRange ? axisXTicks : 5;
 	});
 
 	// insert the first and last item in xRange into axisXTicks
-	run(() => {
+	$effect(() => {
 		if (axisXTicks && xRange) {
-			console.log('timeZone', $timeZone);
+			$inspect('timeZone', $timeZone);
 			const xStartYear = getFormattedMonth(xRange[0], undefined, $timeZone);
 			const tickStartYear = getFormattedMonth(axisXTicks[0], undefined, $timeZone);
 			const xEndYear = getFormattedMonth(xRange[1], undefined, $timeZone);
