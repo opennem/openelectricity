@@ -290,11 +290,12 @@
 		</div>
 
 		<div class="py-6 px-10 md:px-6">
-			{#if recordState.recordByRecordId?.fueltech_id}
-				<span class="justify-self-start">
-					<FuelTechTag fueltech={recordState.recordByRecordId?.fueltech_id} />
-				</span>
-			{/if}
+			<span class="justify-self-start">
+				<FuelTechTag
+					fueltech={recordState.recordByRecordId?.fueltech_id || 'demand'}
+					showText={!!recordState.recordByRecordId?.fueltech_id}
+				/>
+			</span>
 
 			<h2 class="mt-4 mb-0">
 				{pageTitle}
