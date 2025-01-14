@@ -77,6 +77,7 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 	const ftLabel = fuelTech ? fuelTechLabel[fuelTech]?.toLowerCase() : '';
 	const isBattery =
 		fuelTech === 'battery' || fuelTech === 'battery_discharging' || fuelTech === 'battery_charging';
+	const isPumps = fuelTech === 'pumps';
 	const isPrice = metric === 'price';
 	const isMarketValue = metric === 'market_value';
 	const isEmissions = metric === 'emissions';
@@ -96,11 +97,19 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 			return `${periodAggregate[0]} ${ftLabel}`;
 		}
 
+		if (isPumps) {
+			return `${periodAggregate[0]} pumped-storage`;
+		}
+
 		if (isPrice || isMarketValue || isEmissions) {
 			return `${periodAggregate[0]} ${metricPeriod[0]}`;
 		}
 
 		return `${periodAggregate[0]} ${ftLabel}  ${metricPeriod[0]}`;
+	}
+
+	if (isPumps) {
+		return `${periodAggregate[0]} pumped-storage ${periodAggregate[1]}`;
 	}
 
 	if (isBattery) {
