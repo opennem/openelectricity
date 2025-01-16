@@ -11,16 +11,11 @@ const fuelTechMap = {
 	pumps: ['pumps'],
 	exports: ['exports'],
 
-	demand_response: ['demand_response'],
 	imports: ['imports'],
-
-	coal: ['coal_black', 'coal_brown'],
-
-	bioenergy: ['bioenergy', 'bioenergy_biomass', 'bioenergy_biogas'],
-
-	distillate: ['distillate'],
-
-	gas: [
+	fossil: [
+		'coal_black',
+		'coal_brown',
+		'distillate',
 		'gas_ccgt',
 		'gas_ccgt_ccs',
 		'gas_ocgt',
@@ -29,37 +24,32 @@ const fuelTechMap = {
 		'gas_wcmg',
 		'gas_hydrogen'
 	],
-
-	battery: ['battery'],
+	renewable: [
+		'bioenergy',
+		'bioenergy_biomass',
+		'bioenergy_biogas',
+		'hydro',
+		'wind',
+		'wind_offshore',
+		'solar_utility',
+		'solar_rooftop'
+	],
 	battery_discharging: [
 		'battery_discharging',
 		'battery_VPP_discharging',
 		'battery_distributed_discharging'
-	],
-
-	hydro: ['hydro'],
-
-	wind: ['wind', 'wind_offshore'],
-
-	solar: ['solar_utility', 'solar_rooftop']
+	]
 };
 
 /** @type {Object.<FuelTechCode, string>}} */
 const labels = {
-	battery: 'Battery',
 	battery_charging: 'Battery (Charging)',
 	battery_discharging: 'Battery (Discharging)',
-	demand_response: 'Demand Response',
+	pumps: 'Pumps',
 	exports: 'Exports',
 	imports: 'Imports',
-	coal: 'Coal',
-	gas: 'Gas',
-	bioenergy: 'Bioenergy',
-	hydro: 'Hydro',
-	pumps: 'Pumps',
-	wind: 'Wind',
-	solar: 'Solar',
-	distillate: 'Distillate'
+	fossil: 'Fossils',
+	renewable: 'Renewables'
 };
 
 /** @type {FuelTechCode[]} */
@@ -67,26 +57,10 @@ const order = [
 	'battery_charging',
 	'pumps',
 	'exports',
-
-	'demand_response',
 	'imports',
-
-	'coal',
-
-	'bioenergy',
-
-	'distillate',
-
-	'gas',
-
-	'battery',
 	'battery_discharging',
-
-	'hydro',
-
-	'wind',
-
-	'solar'
+	'fossil',
+	'renewable'
 ];
 
 // REDUCERS
@@ -102,8 +76,8 @@ const fuelTechNameReducer = (acc, d) => {
 
 /** @type {FuelTechGroup} */
 export default Object.freeze({
-	label: 'Simplified',
-	value: 'simple',
+	label: 'Renewables/Fossils',
+	value: 'rvf',
 	fuelTechs: fuelTechMap,
 	order,
 	labels,

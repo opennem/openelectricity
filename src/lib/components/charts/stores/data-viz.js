@@ -132,9 +132,9 @@ export default function () {
 	/** @type {import('svelte/store').Writable<number[]>} */
 	const yDomain = writable([]);
 
-	/** @type {import('svelte/store').Writable<Date[] | number>} */
+	/** @type {import('svelte/store').Writable<Date[] | number | undefined>} */
 	const xTicks = writable([]);
-	/** @type {import('svelte/store').Writable<Date[] | number>} */
+	/** @type {import('svelte/store').Writable<Date[] | number> | undefined} */
 	const yTicks = writable([]);
 
 	/** @type {import('svelte/store').Writable<Date[]>} */

@@ -134,11 +134,23 @@ const order = [
 	'solar_rooftop'
 ];
 
+// REDUCERS
+/**
+ * @param {Object.<string, string>} acc
+ * @param {StatsData} d
+ * @returns {Object.<string, string>}
+ */
+const fuelTechNameReducer = (acc, d) => {
+	acc[d.id] = d.fuel_tech ? labels[d.fuel_tech] : '';
+	return acc;
+};
+
 /** @type {FuelTechGroup} */
 export default Object.freeze({
 	label: 'Detailed',
 	value: 'detailed',
 	fuelTechs: fuelTechMap,
-	order: order,
-	labels: labels
+	order,
+	labels,
+	fuelTechNameReducer
 });

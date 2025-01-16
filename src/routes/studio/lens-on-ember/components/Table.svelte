@@ -3,12 +3,10 @@
 
 	const bubble = createBubbler();
 	import { getContext, createEventDispatcher } from 'svelte';
-	import { color } from 'd3-color';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import darken from '$lib/utils/colour-darken';
 	import { groupOptions } from '../page-data-options/groups';
-	import TableHeader from './TableHeader.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} [seriesLoadsIds]
@@ -69,13 +67,17 @@
 	// $: console.log('energySeriesNames', $energySeriesNames);
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
 
-	let sourceNames = $derived($energyVisibleSeriesNames
-		.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
-		.reverse());
+	let sourceNames = $derived(
+		$energyVisibleSeriesNames
+			.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
+			.reverse()
+	);
 
-	let loadNames = $derived($energyVisibleSeriesNames
-		.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
-		.reverse());
+	let loadNames = $derived(
+		$energyVisibleSeriesNames
+			.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
+			.reverse()
+	);
 
 	let combinedSeriesNames = $derived([
 		...[...$energySeriesNames].reverse(),
@@ -91,65 +93,71 @@
 		)
 	]);
 
-	let energySourcesTotal = $derived($energyHoverData
-		? sourceNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyHoverData[id],
-				0
-		  )
-		: $energyFocusData
-		? sourceNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyFocusData[id],
-				0
-		  )
-		: 0);
+	let energySourcesTotal = $derived(
+		$energyHoverData
+			? sourceNames.reduce(
+					/**
+					 * @param {number} acc
+					 * @param {string} id
+					 */
+					(acc, id) => acc + $energyHoverData[id],
+					0
+				)
+			: $energyFocusData
+				? sourceNames.reduce(
+						/**
+						 * @param {number} acc
+						 * @param {string} id
+						 */
+						(acc, id) => acc + $energyFocusData[id],
+						0
+					)
+				: 0
+	);
 
-	let energyLoadsTotal = $derived($energyHoverData
-		? loadNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyHoverData[id],
-				0
-		  )
-		: $energyFocusData
-		? loadNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyFocusData[id],
-				0
-		  )
-		: 0);
+	let energyLoadsTotal = $derived(
+		$energyHoverData
+			? loadNames.reduce(
+					/**
+					 * @param {number} acc
+					 * @param {string} id
+					 */
+					(acc, id) => acc + $energyHoverData[id],
+					0
+				)
+			: $energyFocusData
+				? loadNames.reduce(
+						/**
+						 * @param {number} acc
+						 * @param {string} id
+						 */
+						(acc, id) => acc + $energyFocusData[id],
+						0
+					)
+				: 0
+	);
 
-	let emissionsTotal = $derived($emissionsHoverData
-		? $emissionsVisibleSeriesNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $emissionsHoverData[id],
-				0
-		  )
-		: $emissionsFocusData
-		? $emissionsVisibleSeriesNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $emissionsFocusData[id],
-				0
-		  )
-		: 0);
+	let emissionsTotal = $derived(
+		$emissionsHoverData
+			? $emissionsVisibleSeriesNames.reduce(
+					/**
+					 * @param {number} acc
+					 * @param {string} id
+					 */
+					(acc, id) => acc + $emissionsHoverData[id],
+					0
+				)
+			: $emissionsFocusData
+				? $emissionsVisibleSeriesNames.reduce(
+						/**
+						 * @param {number} acc
+						 * @param {string} id
+						 */
+						(acc, id) => acc + $emissionsFocusData[id],
+						0
+					)
+				: 0
+	);
 
 	let isMetaPressed = false;
 
@@ -180,14 +188,6 @@
 		} else {
 			isMetaPressed = false;
 		}
-	}
-
-	/**
-	 * @param {string} colorString
-	 */
-	function darken(colorString) {
-		// @ts-ignore
-		return colorString ? color(colorString).darker(0.5).formatHex() : 'transparent';
 	}
 
 	// get string before () in label
@@ -307,18 +307,18 @@
 				{@const energyValue = $energyHoverData
 					? $energyHoverData[energyName]
 					: $energyFocusData
-					? $energyFocusData[energyName]
-					: ''}
+						? $energyFocusData[energyName]
+						: ''}
 				{@const energyPercent = $energyHoverProportionData
 					? $energyHoverProportionData[energyName]
 					: $energyFocusProportionData
-					? $energyFocusProportionData[energyName]
-					: ''}
+						? $energyFocusProportionData[energyName]
+						: ''}
 				{@const emissionsValue = $emissionsHoverData
 					? $emissionsHoverData[emissionsName]
 					: $emissionsFocusData
-					? $emissionsFocusData[emissionsName]
-					: ''}
+						? $emissionsFocusData[emissionsName]
+						: ''}
 				<tr
 					onclick={() => handleRowClick(name)}
 					onmouseenter={() => handleMouseenter(energyName, emissionsName)}

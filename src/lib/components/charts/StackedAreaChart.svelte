@@ -17,47 +17,6 @@
 	import Dot from './elements/annotations/Dot.svelte';
 	// import HoverDots from './elements/HoverDots.svelte';
 
-	
-
-
-
-
-	
-
-	
-
-	
-
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-
-	
-
-	
-
-
-	
-
-	
-
-	
-
-
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]

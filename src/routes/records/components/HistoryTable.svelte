@@ -6,7 +6,7 @@
 	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 	import { getFormattedDate, getFormattedMonth, getFormattedTime } from '$lib/utils/formatters.js';
 
-	let { sortedHistoryData } = $props();
+	let { sortedHistoryData, brushedRange } = $props();
 
 	const dispatch = createEventDispatcher();
 	const {
@@ -43,21 +43,21 @@
 
 		if (period === 'day') {
 			return function (/** @type {Date} */ date) {
-				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric', $timeZone);
+				return formatDateBasedOnInterval(date, '1d');
 			};
 		}
 
 		if (period === 'year') {
 			return function (/** @type {Date} */ date) {
-				return getFormattedMonth(date, undefined, $timeZone);
+				return formatDateBasedOnInterval(date, '1Y');
 			};
 		}
 
-		// if (period === 'quarter') {
-		// 	return function (/** @type {Date} */ date) {
-		// 		return formatDateBasedOnInterval(date, '1Q');
-		// 	};
-		// }
+		if (period === 'quarter') {
+			return function (/** @type {Date} */ date) {
+				return formatDateBasedOnInterval(date, '1Q');
+			};
+		}
 
 		return function (/** @type {Date} */ date) {
 			return getFormattedMonth(date, 'short', $timeZone);
@@ -67,10 +67,17 @@
 	function moveToNextDisplayPrefix() {
 		$displayPrefix = getNextPrefix();
 	}
+
+	/**
+	 * @param {Date} time
+	 */
+	function isBetween(time) {
+		return time >= brushedRange[0] && time <= brushedRange[1];
+	}
 </script>
 
-<div class="h-[450px] md:h-auto overflow-y-auto rounded-lg border border-warm-grey">
-	<table class="bg-white text-sm w-full">
+<div class="overflow-y-auto rounded-lg border border-warm-grey h-full">
+	<table class="bg-white text-xs w-full">
 		<thead>
 			<tr class="sticky top-0 z-10 bg-light-warm-grey/60 backdrop-blur-xl">
 				<th class="text-left">
@@ -91,11 +98,12 @@
 		</thead>
 
 		<tbody>
-			{#each sortedHistoryData as record}
+			{#each sortedHistoryData as record (record.time)}
 				<tr
 					class="border-b border-light-warm-grey pointer hover:bg-warm-grey"
 					class:font-semibold={record.time === $focusTime}
 					class:bg-warm-grey={record.time === $hoverTime}
+					class:hidden={brushedRange && !isBetween(record.time)}
 					onmousemove={() => dispatch('mousemove', { time: record.time })}
 					onmouseout={bubble('mouseout')}
 					onblur={bubble('blur')}

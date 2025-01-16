@@ -18,7 +18,6 @@
 	 * @typedef {Object} Props
 	 * @property {any} store
 	 * @property {any} dataXDomain
-	 * @property {any} axisXTicks
 	 * @property {string} [xKey]
 	 * @property {string} [brushedLineStroke]
 	 * @property {string} [defaultChartHeightClasses]
@@ -32,7 +31,6 @@
 	let {
 		store,
 		dataXDomain,
-		axisXTicks,
 		xKey = 'date',
 		brushedLineStroke = '#C74523',
 		defaultChartHeightClasses = 'h-[70px]',

@@ -3,6 +3,8 @@
 	import { fade } from 'svelte/transition';
 	import { parseISO } from 'date-fns';
 	import { browser } from '$app/environment';
+	import useDate from '$lib/utils/TimeSeries/use-date';
+	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 	import { parseUnit } from '$lib/utils/si-units';
 	import {
 		getFormattedDate,
@@ -24,8 +26,9 @@
 	import recordDescription from '../page-data-options/record-description';
 	import getRelativeTime from '../page-data-options/relative-time';
 	import HistoryTable from '../components/HistoryTable.svelte';
-	import TrackerChart from '../components/TrackerChart.svelte';
+	import Tracker from '../components/Tracker.svelte';
 	import { recordState } from '../stores/state.svelte';
+	import FuelTechIcon from '../components/FuelTechIcon.svelte';
 
 	let { data } = $props();
 	$inspect('data', data.id);
@@ -76,6 +79,7 @@
 	let historyData = $state.raw([]);
 	let loading = $state(false);
 	let error = $state(false);
+	let period = $derived(recordState.recordByRecordId?.period || null);
 
 	/**
 	 * @param {string} period
@@ -90,7 +94,19 @@
 
 		if (period === 'day') {
 			return function (/** @type {Date} */ date) {
-				return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric', timeZone);
+				return formatDateBasedOnInterval(date, '1d');
+			};
+		}
+
+		if (period === 'year') {
+			return function (/** @type {Date} */ date) {
+				return formatDateBasedOnInterval(date, '1Y');
+			};
+		}
+
+		if (period === 'quarter') {
+			return function (/** @type {Date} */ date) {
+				return formatDateBasedOnInterval(date, '1Q');
 			};
 		}
 
@@ -114,6 +130,8 @@
 			const jsonData = await res.json();
 
 			if (jsonData.total_records) {
+				$focusTime = undefined;
+				$brushFocusTime = undefined;
 				historyData = jsonData.data;
 			} else {
 				historyData = [];
@@ -156,7 +174,11 @@
 	let sortedHistoryData = $derived(
 		historyData
 			.map((record) => {
-				const date = record.interval ? parseISO(record.interval) : new Date();
+				const date = record.interval
+					? period === 'interval'
+						? parseISO(record.interval)
+						: parseISO(useDate(record.interval))
+					: new Date();
 				return {
 					...record,
 					date,
@@ -185,7 +207,7 @@
 			$seriesNames = ['value'];
 			$seriesData = sortedData;
 			$chartType = 'line';
-			$chartHeightClasses = 'h-[300px] md:h-auto';
+			$chartHeightClasses = 'h-[300px]';
 			$baseUnit = parsed.baseUnit;
 			$prefix = parsed.prefix;
 			$displayPrefix = milestoneTypeDisplayPrefix[metric];
@@ -261,77 +283,44 @@
 		<div class="bg-mid-warm-grey rounded-lg"></div>
 	</div>
 {:else}
-	<div
-		class="md:grid wrapper flex flex-col md:gap-6 px-0 md:px-16 pt-10 md:h-[70vh] md:min-h-[700px] z-10"
-	>
-		<div
-			class="bg-white mx-10 md:mx-0 mb-10 md:mb-0 px-6 py-6 rounded-lg border border-warm-grey flex flex-col justify-center"
-		>
-			<h5 class="font-space uppercase text-mid-grey text-sm font-medium mb-0">Current Record</h5>
+	{@const ftId = recordState.recordByRecordId?.fueltech_id || 'demand'}
+	<div class="flex gap-6 px-10 md:px-16 my-10">
+		<div class="flex items-center gap-6">
+			<!-- <span>
+				<FuelTechTag fueltech={ftId} showText={false} />
+			</span> -->
 
-			<div>
-				<span class="text-3xl text-dark-grey font-medium leading-3xl">
-					{$convertAndFormatValue(recordState.record?.value)}
-				</span>
-
-				{#if $allowPrefixSwitch}
-					<button class="text-mid-grey text-sm hover:underline" onclick={moveToNextDisplayPrefix}>
-						{$displayUnit || ''}
-					</button>
-				{:else}
-					<span class="text-mid-grey text-sm">{$displayUnit || ''}</span>
-				{/if}
-			</div>
-
-			<time datetime={recordState.record?.interval}>
-				<span class="text-dark-grey text-sm">
-					{recordState.record ? getRelativeTime(recordState.record?.date, 'long') : ''}
-				</span>
-			</time>
-		</div>
-
-		<div class="py-6 px-10 md:px-6">
-			<span class="justify-self-start">
-				<FuelTechTag
-					fueltech={recordState.recordByRecordId?.fueltech_id || 'demand'}
-					showText={!!recordState.recordByRecordId?.fueltech_id}
-				/>
+			<span
+				class="bg-{ftId} rounded-full p-3 place-self-start"
+				class:text-black={ftId === 'solar'}
+				class:text-white={ftId !== 'solar'}
+			>
+				<FuelTechIcon fuelTech={ftId} sizeClass={10} />
 			</span>
 
-			<h2 class="mt-4 mb-0">
+			<h2 class="leading-none text-lg font-medium mb-0">
 				{pageTitle}
 			</h2>
 		</div>
+	</div>
 
-		<HistoryTable
-			{sortedHistoryData}
-			on:mousemove={handleMousemove}
-			on:mouseout={handleMouseout}
-			on:blur={handleMouseout}
-			on:pointerup={handlePointerup}
-		/>
-
-		<div class="bg-white p-4 md:rounded-lg md:border border-warm-grey">
+	<div class="grid grid-cols-1 md:grid-cols-{$focusTime ? 2 : 1} gap-5 px-0 md:px-16 mb-10">
+		<div class="w-full">
 			<HistoryChart
+				{sortedHistoryData}
 				on:mousemove={handleMousemove}
 				on:mouseout={handleMouseout}
 				on:pointerup={handlePointerup}
+				on:blur={handleMouseout}
 			/>
 		</div>
-	</div>
 
-	<!-- <div class="px-0 md:px-16 pt-10 pb-32 md:pb-0">
-		<div class="bg-white p-4 md:rounded-lg md:border border-warm-grey">
-			<TrackerChart />
-		</div>
-	</div> -->
+		{#if $focusTime}
+			<div class="w-full">
+				<Tracker />
+			</div>
+		{/if}
+	</div>
 {/if}
 
 <hr class="border-warm-grey border-0.5" />
-
-<style>
-	.wrapper {
-		grid-template-columns: 2fr 5fr;
-		grid-template-rows: 1fr 9fr;
-	}
-</style>
