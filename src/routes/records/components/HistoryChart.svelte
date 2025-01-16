@@ -7,13 +7,16 @@
 
 	import { startOfYear, addYears } from 'date-fns';
 	import { getFormattedMonth } from '$lib/utils/formatters.js';
+	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 
 	import LineChartWithContext from '$lib/components/charts/LineChartWithContext.svelte';
 	import DateBrush from '$lib/components/charts/DateBrush.svelte';
 	import ResetZoom from '$lib/components/charts/elements/ResetZoom.html.svelte';
 	import getXTicks from '../page-data-options/get-x-ticks';
 	import Tooltip from './Tooltip.svelte';
+	import HistoryTable from './HistoryTable.svelte';
 
+	let { sortedHistoryData } = $props();
 	const {
 		seriesData,
 		xTicks,
@@ -159,37 +162,7 @@
 	}
 </script>
 
-<div class="flex justify-between item p-6 ml-2">
-	{#if $allowPrefixSwitch}
-		<button
-			class="font-light text-sm text-mid-grey hover:underline"
-			onclick={moveToNextDisplayPrefix}
-		>
-			{$displayUnit || ''}
-		</button>
-	{:else}
-		<span class="font-light text-sm text-mid-grey">{$displayUnit || ''}</span>
-	{/if}
-
-	<Tooltip {xValue} {yValue} />
-</div>
-<div class="wrapper md:grid flex flex-col gap-6 p-6 pt-0 pb-10 h-full relative">
-	{#if brushedRange}
-		<div class="absolute top-2 right-6 z-10">
-			<ResetZoom on:click={handleZoomReset} />
-		</div>
-	{/if}
-
-	<LineChartWithContext
-		store={historyStore}
-		customFormatTickX={(d) => getXTicks(d, brushedRange || xRange)}
-		showDots={true}
-		useDataset={updatedSeriesData}
-		on:mousemove
-		on:mouseout
-		on:pointerup
-	/>
-
+<div class="w-full bg-white p-6 rounded-lg border border-warm-grey">
 	<DateBrush
 		store={dateBrushStore}
 		hoverDataX={$hoverData}
@@ -199,10 +172,49 @@
 		useDataset={updatedSeriesData}
 		on:brushed={handleBrushed}
 	/>
-</div>
 
-<style>
-	.wrapper {
-		grid-template-rows: 5fr 120px;
-	}
-</style>
+	<div class="grid grid-cols-[5fr_2fr] grid-rows-[405px] gap-6 mt-10">
+		<div class="relative">
+			<div class="flex justify-between item py-6">
+				{#if $allowPrefixSwitch}
+					<button
+						class="font-light text-sm text-mid-grey hover:underline"
+						onclick={moveToNextDisplayPrefix}
+					>
+						{$displayUnit || ''}
+					</button>
+				{:else}
+					<span class="font-light text-sm text-mid-grey">{$displayUnit || ''}</span>
+				{/if}
+
+				<Tooltip {xValue} {yValue} />
+			</div>
+
+			{#if brushedRange}
+				<div class="absolute top-16 right-6 z-10">
+					<ResetZoom on:click={handleZoomReset} />
+				</div>
+			{/if}
+
+			<LineChartWithContext
+				store={historyStore}
+				customFormatTickX={(d) => getXTicks(d, brushedRange || xRange)}
+				showDots={true}
+				useDataset={updatedSeriesData}
+				on:mousemove
+				on:mouseout
+				on:pointerup
+			/>
+		</div>
+		<div class="">
+			<HistoryTable
+				{sortedHistoryData}
+				{brushedRange}
+				on:mousemove
+				on:mouseout
+				on:blur
+				on:pointerup
+			/>
+		</div>
+	</div>
+</div>

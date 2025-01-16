@@ -1,8 +1,10 @@
 import {
 	addMinutes,
+	addDays,
 	addMonths,
 	addYears,
 	startOfMinute,
+	startOfDay,
 	startOfMonth,
 	startOfYear
 } from 'date-fns';
@@ -23,9 +25,10 @@ export const YEAR = 'Y';
 export const YEAR_HALF = '6M';
 export const QUARTER = 'Q';
 export const MONTH = 'M';
+export const DAY = 'd';
 export const MINUTE = 'm';
 // const durationKeys = ['s', 'm', 'h', 'd', 'w', 'M', 'Q', 'Y'];
-const durationKeys = [MINUTE, MONTH, QUARTER, YEAR_HALF, YEAR];
+const durationKeys = [MINUTE, DAY, MONTH, QUARTER, YEAR_HALF, YEAR];
 
 /** @type {Object.<string, string>} */
 export const INTERVAL_LABELS = {};
@@ -33,6 +36,7 @@ INTERVAL_LABELS[YEAR] = 'Year';
 INTERVAL_LABELS[YEAR_HALF] = 'Half Year';
 INTERVAL_LABELS[QUARTER] = 'Quarter';
 INTERVAL_LABELS[MONTH] = 'Month';
+INTERVAL_LABELS[DAY] = 'Day';
 INTERVAL_LABELS[MINUTE] = 'Minute';
 
 /**
@@ -64,6 +68,10 @@ export default function (intervalString) {
 			incrementerFn = /** @type {Function} */ (addMonths);
 			startOfFn = /** @type {Function} */ (startOfMonth);
 			seconds = incrementerValue * 30 * 24 * 60 * 60;
+		} else if (key === DAY) {
+			incrementerFn = /** @type {Function} */ (addDays);
+			startOfFn = /** @type {Function} */ (startOfDay);
+			seconds = incrementerValue * 24 * 60 * 60;
 		} else if (key === MINUTE) {
 			incrementerFn = /** @type {Function} */ (addMinutes);
 			startOfFn = /** @type {Function} */ (startOfMinute);

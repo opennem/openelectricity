@@ -2,27 +2,6 @@
 	import { getContext } from 'svelte';
 	const { width, height, xScale, yRange } = getContext('LayerCake');
 
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
-
-	
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {boolean} [gridlines]
@@ -57,13 +36,15 @@
 
 	let isBandwidth = $derived(typeof $xScale.bandwidth === 'function');
 
-	let tickVals = $derived(Array.isArray(ticks)
-		? ticks
-		: isBandwidth
-		? $xScale.domain()
-		: typeof ticks === 'function'
-		? ticks($xScale.ticks())
-		: $xScale.ticks(ticks));
+	let tickVals = $derived(
+		Array.isArray(ticks)
+			? ticks
+			: isBandwidth
+				? $xScale.domain()
+				: typeof ticks === 'function'
+					? ticks($xScale.ticks())
+					: $xScale.ticks(ticks)
+	);
 
 	/**
 	 *

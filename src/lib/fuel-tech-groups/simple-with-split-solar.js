@@ -41,7 +41,8 @@ const fuelTechMap = {
 
 	wind: ['wind', 'wind_offshore'],
 
-	solar: ['solar_utility', 'solar_rooftop']
+	solar_utility: ['solar_utility'],
+	solar_rooftop: ['solar_rooftop']
 };
 
 /** @type {Object.<FuelTechCode, string>}} */
@@ -58,7 +59,8 @@ const labels = {
 	hydro: 'Hydro',
 	pumps: 'Pumps',
 	wind: 'Wind',
-	solar: 'Solar',
+	solar_utility: 'Solar (Utility)',
+	solar_rooftop: 'Solar (Rooftop)',
 	distillate: 'Distillate'
 };
 
@@ -86,7 +88,8 @@ const order = [
 
 	'wind',
 
-	'solar'
+	'solar_utility',
+	'solar_rooftop'
 ];
 
 // REDUCERS

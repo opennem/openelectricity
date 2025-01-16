@@ -104,7 +104,7 @@
 	let errorMsg = $state('');
 	let fetching = $state(false);
 	/** @type {StatsData[]} */
-	let dataset = $state();
+	let dataset = $state([]);
 
 	let touchDelay = 500;
 	/** @type {*} */
@@ -458,7 +458,6 @@
 		store={dateBrushStore}
 		hoverDataX={$energyHoverData}
 		focusDataX={$energyFocusData}
-		axisXTicks={undefined}
 		dataXDomain={brushedRange}
 		defaultChartHeightClasses="h-[25px]"
 		showLineData={false}
