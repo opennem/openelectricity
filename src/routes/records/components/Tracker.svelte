@@ -178,7 +178,7 @@
 
 {#if notSupported}
 	<div class="flex flex-col items-center justify-center h-full">
-		<p>Soon.</p>
+		<p>Choose a record.</p>
 	</div>
 {:else}
 	<div class="w-full h-[50px] bg-light-warm-grey p-6 rounded-lg mb-[24px]"></div>

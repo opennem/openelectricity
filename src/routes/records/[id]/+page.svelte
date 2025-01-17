@@ -81,6 +81,7 @@
 	let loading = $state(false);
 	let error = $state(false);
 	let period = $derived(recordState.recordByRecordId?.period || null);
+	let showTracker = $state(false);
 
 	/**
 	 * @param {string} period
@@ -166,6 +167,7 @@
 
 		$focusTime = time;
 		$brushFocusTime = time;
+		showTracker = true;
 	}
 
 	function moveToNextDisplayPrefix() {
@@ -301,7 +303,7 @@
 		</div>
 	</div>
 
-	<div class="grid grid-cols-1 md:grid-cols-{$focusTime ? 2 : 1} gap-5 px-0 md:px-16 mb-10">
+	<div class="grid grid-cols-1 md:grid-cols-{showTracker ? 2 : 1} gap-5 px-0 md:px-16 mb-10">
 		<div class="w-full">
 			<!-- <div class="flex items-center gap-6 my-10">
 				<span
@@ -326,11 +328,11 @@
 			/>
 		</div>
 
-		{#if $focusTime}
+		{#if showTracker}
 			<div in:fly={{ x: 100 }} class="bg-white rounded-lg p-6 md:border border-warm-grey relative">
 				<button
 					class="absolute right-0 top-0 md:-right-5 md:-top-5"
-					onclick={() => ($focusTime = undefined)}
+					onclick={() => (showTracker = false)}
 				>
 					<IconXCircle class="size-8 md:size-12" />
 				</button>
