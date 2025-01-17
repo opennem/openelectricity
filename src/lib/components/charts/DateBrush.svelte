@@ -33,7 +33,7 @@
 		dataXDomain,
 		xKey = 'date',
 		brushedLineStroke = '#C74523',
-		defaultChartHeightClasses = 'h-[70px]',
+		defaultChartHeightClasses = 'h-[50px]',
 		showLineData = true,
 		hoverDataX,
 		focusDataX,
@@ -73,7 +73,7 @@
 	let cType = $derived(typeof $curveType === 'function' ? $curveType : $curveFunction);
 </script>
 
-<div class="w-full {defaultChartHeightClasses} bg-light-warm-grey">
+<div class="w-full {defaultChartHeightClasses} bg-light-warm-grey rounded-lg">
 	<LayerCake
 		padding={{ top: 0, right: 0, bottom: 0, left: 0 }}
 		x={xKey}

@@ -7,14 +7,6 @@
 	const { data, xGet, xScale, yScale, zGet, yGet } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
-	
-
-	
-
-
-
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]
@@ -37,19 +29,23 @@
 
 	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
 
-	let areaGen = $derived(area()
-		.x((d) => $xGet(d))
-		.y0((d) => $yScale(d[0]))
-		.y1((d) => $yScale(d[1]))
-		.curve(curveType)
-		.defined((d) => !isNaN(d[0]) && !isNaN(d[1])));
+	let areaGen = $derived(
+		area()
+			.x((d) => $xGet(d))
+			.y0((d) => $yScale(d[0]))
+			.y1((d) => $yScale(d[1]))
+			.curve(curveType)
+			.defined((d) => !isNaN(d[0]) && !isNaN(d[1]))
+	);
 
-	let lineGen = $derived(line(
-		(d) => $xGet(d),
-		(d) => $yGet(d)
-	)
-		.curve(curveType)
-		.defined((d) => d.value !== null && !isNaN(d.value)));
+	let lineGen = $derived(
+		line(
+			(d) => $xGet(d),
+			(d) => $yGet(d)
+		)
+			.curve(curveType)
+			.defined((d) => d.value !== null && !isNaN(d.value))
+	);
 
 	let lineOpacity = $derived((d) => {
 		if (highlightId === null || highlightId === '') return 1;

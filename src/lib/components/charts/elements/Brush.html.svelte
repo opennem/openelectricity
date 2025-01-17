@@ -98,7 +98,6 @@
 		max = p < start.min ? start.min : p;
 	});
 
-
 	function dispatchBrushed() {
 		const range = $xScale.range();
 		const start = min * range[1];
@@ -122,7 +121,7 @@
 
 <div
 	bind:this={brush}
-	class="brush-outer"
+	class="brush-outer rounded-lg"
 	onmousedown={stopPropagation(reset)}
 	ontouchstart={stopPropagation(reset)}
 	role="slider"
@@ -134,7 +133,7 @@
 >
 	{#if min !== null}
 		<div
-			class="brush-inner"
+			class="brush-inner rounded-lg"
 			onmousedown={stopPropagation(move)}
 			ontouchstart={stopPropagation(move)}
 			style="left: {left}%; right: {right}%"

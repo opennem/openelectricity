@@ -1,21 +1,13 @@
 <script>
 	import { run } from 'svelte/legacy';
 
-	import { fly } from 'svelte/transition';
-	import { clickoutside } from '@svelte-put/clickoutside';
-
 	import StackedAreaChart from '$lib/components/charts/StackedAreaChart.svelte';
-	import ChartOptions from './TrackerChartOptions.svelte';
-	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
 	import Tooltip from './TrackerTooltip.svelte';
+	import ChartHeader from '$lib/components/charts/ChartHeader.svelte';
 
 	let { store, intervalString } = $props();
 
 	const {
-		title,
-		allowPrefixSwitch,
-		displayPrefix,
-		displayUnit,
 		convertAndFormatValue,
 		seriesScaledData,
 		isDataTransformTypeProportion,
@@ -37,12 +29,8 @@
 		focusTime,
 		hoverScaledData,
 		focusScaledData,
-		getNextPrefix,
-		curveFunction,
-		xDomain
+		curveFunction
 	} = store;
-
-	let showOptions = $state(false);
 
 	let updatedSeriesData = $derived(
 		$seriesScaledData.map((/** @type {TimeSeriesData} */ d) => {
@@ -97,10 +85,6 @@
 		$focusTime ? updatedSeriesData.find((d) => d.time === $focusTime) : null
 	);
 
-	function moveToNextDisplayPrefix() {
-		$displayPrefix = getNextPrefix();
-	}
-
 	/**
 	 * @param {string | undefined} key
 	 * @param {TimeSeriesData | undefined} hoverData
@@ -136,52 +120,9 @@
 </script>
 
 <section class="relative">
-	{#if $visibleSeriesNames.length}
-		<div use:clickoutside onclickoutside={() => (showOptions = false)}>
-			<header
-				class="bg-light-warm-grey px-1 h-[28px] flex align-bottom items-center relative z-20 border-b border-warm-grey"
-				class:rounded-bl-none={showOptions}
-			>
-				<div class="flex gap-1 items-center">
-					<button
-						class="text-mid-warm-grey hover:text-dark-grey"
-						onclick={() => (showOptions = !showOptions)}
-					>
-						<EllipsisVertical class="size-8" />
-					</button>
+	<ChartHeader {store} />
 
-					<div class="flex gap-2 items-baseline top-[1px] relative">
-						<h6 class="m-0 leading-none">
-							{$title}
-						</h6>
-
-						{#if $isDataTransformTypeProportion}
-							<span class="font-light text-xs text-mid-grey">%</span>
-						{:else if $allowPrefixSwitch}
-							<button
-								class="font-light text-xs text-mid-grey hover:underline"
-								onclick={moveToNextDisplayPrefix}
-							>
-								{$displayUnit || ''}
-							</button>
-						{:else}
-							<span class="font-light text-xs text-mid-grey">{$displayUnit || ''}</span>
-						{/if}
-					</div>
-				</div>
-			</header>
-
-			{#if showOptions}
-				<div
-					in:fly={{ y: -20, duration: 240 }}
-					out:fly={{ y: -20, duration: 240 }}
-					class="bg-white/60 shadow-inner p-6 rounded-b-lg absolute z-10 backdrop-blur-lg inset-shadow flex gap-6 flex-col"
-				>
-					<ChartOptions {store} />
-				</div>
-			{/if}
-		</div>
-
+	<div class="mb-6">
 		<Tooltip
 			hoverData={updatedHoverData || updatedFocusData}
 			hoverKey={$hoverKey}
@@ -191,33 +132,35 @@
 			showTotal={$isChartTypeArea && !$isDataTransformTypeProportion ? true : false}
 			{intervalString}
 		/>
+	</div>
 
-		<div class="border-warm-grey border-t">
-			<StackedAreaChart
-				dataset={updatedSeriesData}
-				xKey="time"
-				yKey={[0, 1]}
-				zKey="key"
-				xTicks={$xTicks}
-				yTicks={2}
-				{yDomain}
-				seriesNames={$visibleSeriesNames}
-				zRange={$visibleSeriesColours}
-				formatTickX={$formatTickX}
-				formatTickY={$isDataTransformTypeProportion ? (d) => d : $convertAndFormatValue}
-				chartType={$chartType}
-				overlay={$chartOverlay}
-				overlayLine={$chartOverlayLine}
-				overlayStroke={$chartOverlayHatchStroke}
-				hoverData={$hoverScaledData}
-				focusData={$focusScaledData}
-				chartHeightClasses={$chartHeightClasses}
-				highlightId={$hoverKey}
-				{curveFunction}
-				on:mousemove={handleMousemove}
-				on:mouseout={handleMouseout}
-				on:pointerup={handlePointerup}
-			/>
-		</div>
-	{/if}
+	<div class="border-warm-grey border-t">
+		<StackedAreaChart
+			dataset={updatedSeriesData}
+			xKey="time"
+			yKey={[0, 1]}
+			zKey="key"
+			xTicks={$xTicks}
+			yTicks={2}
+			{yDomain}
+			seriesNames={$visibleSeriesNames}
+			zRange={$visibleSeriesColours}
+			formatTickX={$formatTickX}
+			formatTickY={$isDataTransformTypeProportion ? (d) => d : $convertAndFormatValue}
+			chartType={$chartType}
+			overlay={$chartOverlay}
+			overlayLine={$chartOverlayLine}
+			overlayStroke={$chartOverlayHatchStroke}
+			hoverData={$hoverScaledData}
+			focusData={$focusScaledData}
+			chartHeightClasses={$chartHeightClasses}
+			highlightId={$hoverKey}
+			chartPadding={{ top: 0, right: 0, bottom: 20, left: 0 }}
+			showFocusDot={$visibleSeriesNames.length === 1}
+			{curveFunction}
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	</div>
 </section>

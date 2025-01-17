@@ -150,11 +150,10 @@
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
 				{#if $hoverData}
 					<LineX xValue={$hoverData} strokeArray="none" />
-					<Dot value={$hoverData} r={4} />
 				{/if}
 				{#if $focusData}
 					<LineX xValue={$focusData} strokeArray="none" strokeColour="#C74523" />
-					<!-- <Dot value={$focusData} r={4} {yKey} /> -->
+					<Dot domains={['value']} value={$focusData} r={5} colour="#C74523" />
 				{/if}
 			</g>
 		</Svg>
