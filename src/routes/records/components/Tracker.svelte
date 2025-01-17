@@ -39,6 +39,8 @@
 		year: '1Y'
 	});
 
+	$inspect('focusData', $focusData);
+
 	let focusDate = $derived($focusData?.date);
 	let focusTime = $derived($focusData?.time);
 	/** @type {'power' | 'energy' | 'emissions'} */
@@ -55,6 +57,10 @@
 	let isPeriodAvailable = $derived(
 		period === 'day' || period === 'month' || period === 'quarter' || period === 'year'
 	);
+	let isStepCurve = $derived(
+		period === 'day' || period === 'month' || period === 'quarter' || period === 'year'
+	);
+	let fuelTechGroup = $state('simple');
 
 	/** @type {StatsData[]} */
 	let dataset = $state.raw([]);
@@ -65,7 +71,7 @@
 		dataFilteredByType.length > 0
 			? process({
 					history: dataFilteredByType,
-					group: 'simple',
+					group: fuelTechGroup,
 					unit: dataFilteredByType[0].units,
 					colourReducer: $colourReducer,
 					targetInterval: periodTargetIntervalMap[period]
@@ -83,8 +89,8 @@
 			trackerDataVizStore.seriesNames.set(ts.seriesNames);
 			trackerDataVizStore.seriesColours.set(ts.seriesColours);
 			trackerDataVizStore.seriesLabels.set(ts.seriesLabels);
-
-			console.log('ts.data', ts.data);
+			trackerDataVizStore.chartHeightClasses.set('h-[505px]');
+			trackerDataVizStore.curveType.set(isStepCurve ? 'step' : 'smooth');
 
 			trackerDataVizStore.yDomain.set([ts.minY, ts.maxY]);
 			trackerDataVizStore.xTicks.set(undefined);
@@ -125,7 +131,12 @@
 		const fueltechId = $focusData?.fueltech_id;
 		// find series name that contains fueltechId
 		const focusId = $seriesNames.find((/** @type {string} */ name) => name.includes(fueltechId));
+		const isRenewablesOrFossils =
+			$focusData?.fueltech_id === 'renewables' || $focusData?.fueltech_id === 'fossils';
 		trackerDataVizStore.focusTime.set(focusTime);
+		if (isRenewablesOrFossils) {
+			fuelTechGroup = 'rvf';
+		}
 		if (focusId) {
 			trackerDataVizStore.updateHiddenSeriesNames(focusId, true);
 		}
@@ -166,24 +177,18 @@
 </script>
 
 {#if notSupported}
-	<div
-		class="flex flex-col items-center justify-center h-full bg-white p-4 md:rounded-lg md:border border-warm-grey"
-	>
+	<div class="flex flex-col items-center justify-center h-full">
 		<p>Soon.</p>
 	</div>
 {:else}
-	<div
-		class="grid grid-cols-[5fr_2fr] md:gap-6 bg-white p-4 md:rounded-lg md:border border-warm-grey"
-	>
-		<div class="">
-			<TrackerChart store={trackerDataVizStore} intervalString={periodTargetIntervalMap[period]} />
-		</div>
-		<div class="">
-			<TrackerTable
-				on:row-click={toggleRow}
-				on:touchstart={handleTouchstart}
-				on:touchend={handleTouchend}
-			/>
-		</div>
+	<div class="w-full h-[50px] bg-light-warm-grey p-6 rounded-lg mb-[24px]"></div>
+	<div class="grid grid-cols-[6fr_3fr] grid-rows-[1fr] md:gap-6">
+		<TrackerChart store={trackerDataVizStore} intervalString={periodTargetIntervalMap[period]} />
+
+		<TrackerTable
+			on:row-click={toggleRow}
+			on:touchstart={handleTouchstart}
+			on:touchend={handleTouchend}
+		/>
 	</div>
 {/if}

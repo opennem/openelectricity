@@ -1,6 +1,6 @@
 <script>
 	import { setContext, getContext } from 'svelte';
-	import { fade } from 'svelte/transition';
+	import { fade, fly } from 'svelte/transition';
 	import { parseISO } from 'date-fns';
 	import { browser } from '$app/environment';
 	import useDate from '$lib/utils/TimeSeries/use-date';
@@ -13,7 +13,8 @@
 	} from '$lib/utils/formatters.js';
 
 	import Meta from '$lib/components/Meta.svelte';
-	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
+	import IconXCircle from '$lib/icons/XCircle.svelte';
+	// import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 	import dataVizStore from '$lib/components/charts/stores/data-viz';
 	import { regionsWithLabels } from '$lib/regions';
 
@@ -24,8 +25,8 @@
 		milestoneTypeDisplayAllowedPrefixes
 	} from '../page-data-options/filters';
 	import recordDescription from '../page-data-options/record-description';
-	import getRelativeTime from '../page-data-options/relative-time';
-	import HistoryTable from '../components/HistoryTable.svelte';
+	// import getRelativeTime from '../page-data-options/relative-time';
+	// import HistoryTable from '../components/HistoryTable.svelte';
 	import Tracker from '../components/Tracker.svelte';
 	import { recordState } from '../stores/state.svelte';
 	import FuelTechIcon from '../components/FuelTechIcon.svelte';
@@ -203,11 +204,11 @@
 				$timeZone = undefined;
 			}
 
-			$title = sortedHistoryData[0].description;
+			$title = metric;
 			$seriesNames = ['value'];
 			$seriesData = sortedData;
 			$chartType = 'line';
-			$chartHeightClasses = 'h-[300px]';
+			$chartHeightClasses = 'h-[500px]';
 			$baseUnit = parsed.baseUnit;
 			$prefix = parsed.prefix;
 			$displayPrefix = milestoneTypeDisplayPrefix[metric];
@@ -286,10 +287,6 @@
 	{@const ftId = recordState.recordByRecordId?.fueltech_id || 'demand'}
 	<div class="flex gap-6 px-10 md:px-16 my-10">
 		<div class="flex items-center gap-6">
-			<!-- <span>
-				<FuelTechTag fueltech={ftId} showText={false} />
-			</span> -->
-
 			<span
 				class="bg-{ftId} rounded-full p-3 place-self-start"
 				class:text-black={ftId === 'solar'}
@@ -298,7 +295,7 @@
 				<FuelTechIcon fuelTech={ftId} sizeClass={10} />
 			</span>
 
-			<h2 class="leading-none text-lg font-medium mb-0">
+			<h2 class="leading-lg text-lg font-medium mb-0">
 				{pageTitle}
 			</h2>
 		</div>
@@ -306,6 +303,20 @@
 
 	<div class="grid grid-cols-1 md:grid-cols-{$focusTime ? 2 : 1} gap-5 px-0 md:px-16 mb-10">
 		<div class="w-full">
+			<!-- <div class="flex items-center gap-6 my-10">
+				<span
+					class="bg-{ftId} rounded-full p-3 place-self-start"
+					class:text-black={ftId === 'solar'}
+					class:text-white={ftId !== 'solar'}
+				>
+					<FuelTechIcon fuelTech={ftId} sizeClass={10} />
+				</span>
+
+				<h2 class=" leading-lg text-lg font-medium mb-0">
+					{pageTitle}
+				</h2>
+			</div> -->
+
 			<HistoryChart
 				{sortedHistoryData}
 				on:mousemove={handleMousemove}
@@ -316,7 +327,13 @@
 		</div>
 
 		{#if $focusTime}
-			<div class="w-full">
+			<div in:fly={{ x: 100 }} class="bg-white rounded-lg p-6 md:border border-warm-grey relative">
+				<button
+					class="absolute right-0 top-0 md:-right-5 md:-top-5"
+					onclick={() => ($focusTime = undefined)}
+				>
+					<IconXCircle class="size-8 md:size-12" />
+				</button>
 				<Tracker />
 			</div>
 		{/if}

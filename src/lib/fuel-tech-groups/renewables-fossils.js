@@ -12,7 +12,7 @@ const fuelTechMap = {
 	exports: ['exports'],
 
 	imports: ['imports'],
-	fossil: [
+	fossils: [
 		'coal_black',
 		'coal_brown',
 		'distillate',
@@ -24,7 +24,7 @@ const fuelTechMap = {
 		'gas_wcmg',
 		'gas_hydrogen'
 	],
-	renewable: [
+	renewables: [
 		'bioenergy',
 		'bioenergy_biomass',
 		'bioenergy_biogas',
@@ -48,8 +48,8 @@ const labels = {
 	pumps: 'Pumps',
 	exports: 'Exports',
 	imports: 'Imports',
-	fossil: 'Fossils',
-	renewable: 'Renewables'
+	fossils: 'Fossils',
+	renewables: 'Renewables'
 };
 
 /** @type {FuelTechCode[]} */
@@ -59,8 +59,8 @@ const order = [
 	'exports',
 	'imports',
 	'battery_discharging',
-	'fossil',
-	'renewable'
+	'fossils',
+	'renewables'
 ];
 
 // REDUCERS

@@ -42,6 +42,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 	 * @property {string} [chartType] - line, area
 	 * @property {TimeSeriesData | undefined} [hoverData]
 	 * @property {TimeSeriesData | undefined} [focusData]
+	 * @property {boolean} [showFocusDot]
 	 * @property {Function} [formatTickX]
 	 * @property {any} [formatTickY]
 	 * @property {string} [chartHeightClasses]
@@ -73,6 +74,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 		chartType = 'area',
 		hoverData = undefined,
 		focusData = undefined,
+		showFocusDot = false,
 		formatTickX = (/** @type {*} */ d) => d,
 		formatTickY = (/** @type {number} */ d) => d,
 		chartHeightClasses = '',
@@ -104,7 +106,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 	let heightClasses = $derived(chartHeightClasses || defaultChartHeightClasses);
 </script>
 
-<div class="chart-container mb-4 {heightClasses}">
+<div class="chart-container {heightClasses}">
 	<LayerCake
 		padding={chartPadding}
 		x={(/** @type {*} */ d) => {
@@ -181,6 +183,14 @@ If object with xStartValue and xEndValue, overlay will be a range
 				{/if}
 				{#if focusData}
 					<LineX xValue={focusData} strokeArray="none" strokeColour="#C74523" />
+					{#if showFocusDot}
+						<Dot
+							domains={seriesNames}
+							value={$state.snapshot(focusData)}
+							isStacked={true}
+							colour="#C74523"
+						/>
+					{/if}
 				{/if}
 				{#if isLine}
 					<Dot domains={seriesNames} value={hoverData} />

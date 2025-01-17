@@ -12,6 +12,8 @@
 	import LineChartWithContext from '$lib/components/charts/LineChartWithContext.svelte';
 	import DateBrush from '$lib/components/charts/DateBrush.svelte';
 	import ResetZoom from '$lib/components/charts/elements/ResetZoom.html.svelte';
+	import ChartHeader from '$lib/components/charts/ChartHeader.svelte';
+
 	import getXTicks from '../page-data-options/get-x-ticks';
 	import Tooltip from './Tooltip.svelte';
 	import HistoryTable from './HistoryTable.svelte';
@@ -147,15 +149,6 @@
 		brushedRange = [evt.detail.start, evt.detail.end];
 	}
 
-	// function handleReset() {
-	// 	$xDomain = undefined;
-	// 	$brushXDomain = undefined;
-	// }
-
-	function moveToNextDisplayPrefix() {
-		$displayPrefix = getNextPrefix();
-	}
-
 	function handleZoomReset() {
 		$xDomain = xRange;
 		brushedRange = undefined;
@@ -167,31 +160,21 @@
 		store={dateBrushStore}
 		hoverDataX={$hoverData}
 		focusDataX={$focusData}
-		{axisXTicks}
 		dataXDomain={brushedRange}
 		useDataset={updatedSeriesData}
 		on:brushed={handleBrushed}
 	/>
 
-	<div class="grid grid-cols-[5fr_2fr] grid-rows-[405px] gap-6 mt-10">
+	<div class="grid grid-cols-[5fr_2fr] grid-rows-[570px] gap-6 mt-10">
 		<div class="relative">
-			<div class="flex justify-between item py-6">
-				{#if $allowPrefixSwitch}
-					<button
-						class="font-light text-sm text-mid-grey hover:underline"
-						onclick={moveToNextDisplayPrefix}
-					>
-						{$displayUnit || ''}
-					</button>
-				{:else}
-					<span class="font-light text-sm text-mid-grey">{$displayUnit || ''}</span>
-				{/if}
+			<ChartHeader store={historyStore} displayOptions={false} />
 
+			<div class="flex justify-end mb-6">
 				<Tooltip {xValue} {yValue} />
 			</div>
 
 			{#if brushedRange}
-				<div class="absolute top-16 right-6 z-10">
+				<div class="absolute top-24 right-3 z-10">
 					<ResetZoom on:click={handleZoomReset} />
 				</div>
 			{/if}

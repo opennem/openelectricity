@@ -41,6 +41,7 @@ export type FuelTechCode =
 	| 'fossil_fuels'
 	| 'renewables'
 	| 'fossil'
+	| 'fossils'
 	| 'renewable'
 	| 'total_sources'
 	| 'total_loads'

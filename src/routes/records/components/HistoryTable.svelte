@@ -64,10 +64,6 @@
 		};
 	}
 
-	function moveToNextDisplayPrefix() {
-		$displayPrefix = getNextPrefix();
-	}
-
 	/**
 	 * @param {Date} time
 	 */
@@ -86,7 +82,7 @@
 				<th class="text-right">
 					{#if $allowPrefixSwitch}
 						<div class="px-4 py-2">
-							<button class="hover:underline" onclick={moveToNextDisplayPrefix}>
+							<button class="hover:underline" onclick={() => ($displayPrefix = getNextPrefix())}>
 								{$displayUnit || ''}
 							</button>
 						</div>

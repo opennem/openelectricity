@@ -51,6 +51,7 @@ const fuelTechColourMap = {
 
 	fossil_fuels: '#594929',
 	renewables: '#52A972',
+	fossils: '#594929',
 	fossil: '#594929',
 	renewable: '#52A972',
 
