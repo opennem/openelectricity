@@ -1,18 +1,34 @@
 <script>
 	import { getContext, setContext } from 'svelte';
+	import { startOfYear } from 'date-fns';
+
 	import { colourReducer } from '$lib/stores/theme';
 	import dataVizStore from '$lib/components/charts/stores/data-viz';
 	import { getFormattedDate } from '$lib/utils/formatters';
+	import DateBrush from '$lib/components/charts/DateBrush.svelte';
+	import ResetZoom from '$lib/components/charts/elements/ResetZoom.html.svelte';
 
 	import process from '../page-data-options/tracker/process';
 	import TrackerChart from './TrackerChart.svelte';
 	import TrackerTable from './TrackerTable.svelte';
 
 	setContext('tracker-data-viz', dataVizStore());
+	setContext('tracker-date-brush', dataVizStore());
 
 	let trackerDataVizStore = getContext('tracker-data-viz');
+	let trackerDateBrushStore = getContext('tracker-date-brush');
 	let { focusData } = getContext('record-history-data-viz');
-	let { seriesNames } = getContext('tracker-data-viz');
+	let {
+		seriesNames,
+		seriesData,
+		xDomain,
+		focusData: trackerFocusData,
+		hoverData: trackerHoverData
+	} = getContext('tracker-data-viz');
+	let { xTicks: trackerBrushXTicks, yTicks: trackerBrushYTicks } = getContext('tracker-date-brush');
+
+	$trackerBrushXTicks = 4;
+	$trackerBrushYTicks = 3;
 
 	let notSupported = $state(false);
 
@@ -38,8 +54,6 @@
 		quarter: '1Q',
 		year: '1Y'
 	});
-
-	$inspect('focusData', $focusData);
 
 	let focusDate = $derived($focusData?.date);
 	let focusTime = $derived($focusData?.time);
@@ -78,6 +92,14 @@
 				})
 			: null
 	);
+	/** @type {*} */
+	let brushedRange = $state();
+	let xRange = $derived(
+		$seriesData.length > 1
+			? [$seriesData[0].date, $seriesData[$seriesData.length - 1].date]
+			: undefined
+	);
+
 	$inspect('processedData', processedData);
 
 	$effect(() => {
@@ -102,6 +124,13 @@
 			trackerDataVizStore.prefix.set(stats.prefix);
 			trackerDataVizStore.allowedPrefixes.set(metricsPrefixMap[metric].allowedPrefixes);
 			trackerDataVizStore.displayPrefix.set(metricsPrefixMap[metric].displayPrefix);
+
+			trackerDateBrushStore.xTicks.set(undefined);
+			trackerDateBrushStore.seriesData.set(ts.data);
+			trackerDateBrushStore.seriesNames.set(ts.seriesNames);
+			trackerDateBrushStore.formatTickX.set((/** @type {*} */ d) =>
+				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+			);
 		}
 	});
 
@@ -134,11 +163,32 @@
 		const isRenewablesOrFossils =
 			$focusData?.fueltech_id === 'renewables' || $focusData?.fueltech_id === 'fossils';
 		trackerDataVizStore.focusTime.set(focusTime);
+
 		if (isRenewablesOrFossils) {
 			fuelTechGroup = 'rvf';
 		}
 		if (focusId) {
 			trackerDataVizStore.updateHiddenSeriesNames(focusId, true);
+		}
+	});
+
+	$effect(() => {
+		if (focusTime) {
+			let findIndex = $seriesData.findIndex(
+				(/** @type {TimeSeriesData} */ d) => d.time === focusTime
+			);
+
+			if (findIndex === -1) return;
+
+			handleZoomReset();
+
+			let startIndex = findIndex - 10;
+			if (startIndex < 0) startIndex = 0;
+			let endIndex = findIndex + 10;
+			if (endIndex > $seriesData.length - 1) endIndex = $seriesData.length - 1;
+
+			$xDomain = [$seriesData[startIndex].date, $seriesData[endIndex].date];
+			brushedRange = [$seriesData[startIndex].date, $seriesData[endIndex].date];
 		}
 	});
 
@@ -174,6 +224,24 @@
 	function handleTouchend() {
 		clearTimeout(touchTimer);
 	}
+
+	/**
+	 * @param {CustomEvent} evt
+	 */
+	function handleBrushed(evt) {
+		if (evt.detail.start === evt.detail.end) {
+			$xDomain = xRange;
+			brushedRange = undefined;
+			return;
+		}
+		$xDomain = [evt.detail.start, evt.detail.end];
+		brushedRange = [evt.detail.start, evt.detail.end];
+	}
+
+	function handleZoomReset() {
+		$xDomain = xRange;
+		brushedRange = undefined;
+	}
 </script>
 
 {#if notSupported}
@@ -181,9 +249,24 @@
 		<p>Choose a record.</p>
 	</div>
 {:else}
-	<div class="w-full h-[50px] bg-light-warm-grey p-6 rounded-lg mb-[24px]"></div>
-	<div class="grid grid-cols-[6fr_3fr] grid-rows-[1fr] md:gap-6">
-		<TrackerChart store={trackerDataVizStore} intervalString={periodTargetIntervalMap[period]} />
+	<!-- <div class="w-full h-[50px] bg-light-warm-grey p-6 rounded-lg mb-[24px]"></div> -->
+	<DateBrush
+		store={trackerDateBrushStore}
+		hoverDataX={$trackerHoverData}
+		focusDataX={$trackerFocusData}
+		dataXDomain={brushedRange}
+		useDataset={$seriesData}
+		on:brushed={handleBrushed}
+	/>
+	<div class="grid grid-cols-[6fr_3fr] grid-rows-[1fr] md:gap-6 mt-[25px]">
+		<div class="relative">
+			{#if brushedRange}
+				<div class="absolute top-24 right-3 z-10">
+					<ResetZoom on:click={handleZoomReset} />
+				</div>
+			{/if}
+			<TrackerChart store={trackerDataVizStore} intervalString={periodTargetIntervalMap[period]} />
+		</div>
 
 		<TrackerTable
 			on:row-click={toggleRow}

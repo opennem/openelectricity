@@ -13,10 +13,6 @@
 
 	/** @type {Props} */
 	let { value = undefined, domains = [], r = 5, isStacked = false, colour } = $props();
-
-	$effect(() => {
-		$inspect('domains', domains);
-	});
 </script>
 
 <g class="overlay pointer-events-none" transform="translate({-$padding.left}, 0)">
