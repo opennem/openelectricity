@@ -1,6 +1,4 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { LayerCake, Svg, Html } from 'layercake';
 	import { scaleUtc } from 'd3-scale';
 
@@ -22,8 +20,8 @@
 	 * @property {string} [brushedLineStroke]
 	 * @property {string} [defaultChartHeightClasses]
 	 * @property {boolean} [showLineData]
-	 * @property {any} hoverDataX
-	 * @property {any} focusDataX
+	 * @property {any} [hoverDataX]
+	 * @property {any} [focusDataX]
 	 * @property {any[]} [useDataset]
 	 */
 
@@ -35,8 +33,8 @@
 		brushedLineStroke = '#C74523',
 		defaultChartHeightClasses = 'h-[50px]',
 		showLineData = true,
-		hoverDataX,
-		focusDataX,
+		hoverDataX = undefined,
+		focusDataX = undefined,
 		useDataset = []
 	} = $props();
 
@@ -62,7 +60,7 @@
 	let brushComponent = $state();
 
 	let yKey = $derived($yKeys[0] || '');
-	run(() => {
+	$effect(() => {
 		if (!dataXDomain) {
 			brushComponent?.clear();
 		}

@@ -29,7 +29,8 @@
 		focusTime,
 		hoverScaledData,
 		focusScaledData,
-		curveFunction
+		curveFunction,
+		xDomain
 	} = store;
 
 	let updatedSeriesData = $derived(
@@ -143,6 +144,7 @@
 			xTicks={$xTicks}
 			yTicks={2}
 			{yDomain}
+			xDomain={$xDomain}
 			seriesNames={$visibleSeriesNames}
 			zRange={$visibleSeriesColours}
 			formatTickX={$formatTickX}
