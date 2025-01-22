@@ -16,6 +16,7 @@
 	 * @property {*} [ticks]
 	 * @property {number} [xTick]
 	 * @property {number} [yTick]
+	 * @property {'start' | 'middle' | 'end'} [textAnchorPosition]
 	 */
 
 	/** @type {Props} */
@@ -31,7 +32,8 @@
 		formatTick = (/** @type {*} */ d) => d,
 		ticks = undefined,
 		xTick = 0,
-		yTick = 16
+		yTick = 16,
+		textAnchorPosition = 'middle'
 	} = $props();
 
 	let isBandwidth = $derived(typeof $xScale.bandwidth === 'function');
@@ -60,7 +62,7 @@
 				return 'end';
 			}
 		}
-		return 'middle';
+		return textAnchorPosition;
 	}
 </script>
 
@@ -119,10 +121,4 @@
 </g>
 
 <style>
-	.axis.snapTicks .tick:last-child text {
-		transform: translateX(0px);
-	}
-	.axis.snapTicks .tick.tick-0 text {
-		transform: translate(0px);
-	}
 </style>

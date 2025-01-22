@@ -7,8 +7,10 @@
 	import { getFormattedDate } from '$lib/utils/formatters';
 	import DateBrush from '$lib/components/charts/DateBrush.svelte';
 	import ResetZoom from '$lib/components/charts/elements/ResetZoom.html.svelte';
+	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 
 	import process from '../page-data-options/tracker/process';
+	import { getTickXFormatter } from '../page-data-options/get-x-tick-formatter';
 	import TrackerChart from './TrackerChart.svelte';
 	import TrackerTable from './TrackerTable.svelte';
 
@@ -27,9 +29,6 @@
 	} = getContext('tracker-data-viz');
 	let { xTicks: trackerBrushXTicks, yTicks: trackerBrushYTicks } = getContext('tracker-date-brush');
 
-	$trackerBrushXTicks = 4;
-	$trackerBrushYTicks = 3;
-
 	let notSupported = $state(false);
 
 	let metricsPrefixMap = Object.freeze({
@@ -46,6 +45,7 @@
 			displayPrefix: ''
 		}
 	});
+
 	let periodTargetIntervalMap = Object.freeze({
 		interval: '5m',
 		day: '1d',
@@ -68,6 +68,8 @@
 	let isPeriodInterval = $derived(period === 'interval');
 	let isPeriodDay = $derived(period === 'day');
 	let isPeriodMonth = $derived(period === 'month');
+	let isPeriodQuarter = $derived(period === 'quarter');
+	let isPeriodYear = $derived(period === 'year');
 	let isPeriodAvailable = $derived(
 		period === 'day' || period === 'month' || period === 'quarter' || period === 'year'
 	);
@@ -114,16 +116,12 @@
 			trackerDataVizStore.chartHeightClasses.set('h-[505px]');
 			trackerDataVizStore.curveType.set(isStepCurve ? 'step' : 'smooth');
 
-			trackerDataVizStore.yDomain.set([ts.minY, ts.maxY]);
-			trackerDataVizStore.xTicks.set(undefined);
-			trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
-				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
-			);
-
 			trackerDataVizStore.baseUnit.set(stats.baseUnit);
 			trackerDataVizStore.prefix.set(stats.prefix);
 			trackerDataVizStore.allowedPrefixes.set(metricsPrefixMap[metric].allowedPrefixes);
 			trackerDataVizStore.displayPrefix.set(metricsPrefixMap[metric].displayPrefix);
+
+			trackerDataVizStore.yDomain.set([ts.minY, ts.maxY]);
 
 			trackerDateBrushStore.xTicks.set(undefined);
 			trackerDateBrushStore.seriesData.set(ts.data);
@@ -131,6 +129,98 @@
 			trackerDateBrushStore.formatTickX.set((/** @type {*} */ d) =>
 				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
 			);
+
+			if (isPeriodDay) {
+				trackerDataVizStore.xTicks.set(12);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, 'short', undefined)
+				);
+
+				trackerDateBrushStore.xTicks.set(12);
+				trackerDateBrushStore.formatTickX.set((/** @type {*} */ d) => {
+					let formatted = getFormattedDate(d, undefined, undefined, 'short', undefined);
+
+					if (formatted === 'Jan') {
+						return getFormattedDate(d, undefined, undefined, 'short', '2-digit');
+					}
+
+					return formatted;
+				});
+			} else if (isPeriodMonth) {
+				trackerDataVizStore.xTicks.set(8);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+				);
+			} else if (isPeriodQuarter) {
+				trackerDataVizStore.xTicks.set(8);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+				);
+			} else if (isPeriodYear) {
+				trackerDataVizStore.xTicks.set(8);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+				);
+			} else {
+				trackerDataVizStore.xTicks.set(undefined);
+				trackerDataVizStore.formatTickX.set(undefined);
+			}
+		}
+	});
+
+	$effect(() => {
+		if (brushedRange) {
+			if (isPeriodDay) {
+				trackerDataVizStore.xTicks.set(4);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, 'numeric', 'short', undefined)
+				);
+			} else if (isPeriodMonth) {
+				trackerDataVizStore.xTicks.set(8);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, 'short', '2-digit')
+				);
+			} else if (isPeriodQuarter) {
+				trackerDataVizStore.xTicks.set(4);
+
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					// getFormattedDate(d, undefined, undefined, 'short', 'numeric')
+					formatDateBasedOnInterval(d, '1Q')
+				);
+			} else if (isPeriodYear) {
+				trackerDataVizStore.xTicks.set(4);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+				);
+			} else {
+				trackerDataVizStore.xTicks.set(undefined);
+				trackerDataVizStore.formatTickX.set(undefined);
+			}
+		} else {
+			if (isPeriodDay) {
+				trackerDataVizStore.xTicks.set(12);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, 'short', undefined)
+				);
+			} else if (isPeriodMonth) {
+				trackerDataVizStore.xTicks.set(8);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+				);
+			} else if (isPeriodQuarter) {
+				trackerDataVizStore.xTicks.set(8);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+				);
+			} else if (isPeriodYear) {
+				trackerDataVizStore.xTicks.set(8);
+				trackerDataVizStore.formatTickX.set((/** @type {*} */ d) =>
+					getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+				);
+			} else {
+				trackerDataVizStore.xTicks.set(undefined);
+				trackerDataVizStore.formatTickX.set(undefined);
+			}
 		}
 	});
 
@@ -172,25 +262,25 @@
 		}
 	});
 
-	$effect(() => {
-		if (focusTime) {
-			let findIndex = $seriesData.findIndex(
-				(/** @type {TimeSeriesData} */ d) => d.time === focusTime
-			);
+	// $effect(() => {
+	// 	if (focusTime) {
+	// 		let findIndex = $seriesData.findIndex(
+	// 			(/** @type {TimeSeriesData} */ d) => d.time === focusTime
+	// 		);
 
-			if (findIndex === -1) return;
+	// 		if (findIndex === -1) return;
 
-			handleZoomReset();
+	// 		handleZoomReset();
 
-			let startIndex = findIndex - 10;
-			if (startIndex < 0) startIndex = 0;
-			let endIndex = findIndex + 10;
-			if (endIndex > $seriesData.length - 1) endIndex = $seriesData.length - 1;
+	// 		let startIndex = findIndex - 10;
+	// 		if (startIndex < 0) startIndex = 0;
+	// 		let endIndex = findIndex + 10;
+	// 		if (endIndex > $seriesData.length - 1) endIndex = $seriesData.length - 1;
 
-			$xDomain = [$seriesData[startIndex].date, $seriesData[endIndex].date];
-			brushedRange = [$seriesData[startIndex].date, $seriesData[endIndex].date];
-		}
-	});
+	// 		$xDomain = [$seriesData[startIndex].date, $seriesData[endIndex].date];
+	// 		brushedRange = [$seriesData[startIndex].date, $seriesData[endIndex].date];
+	// 	}
+	// });
 
 	/**
 	 * @param {string} dataPath
@@ -256,6 +346,7 @@
 		focusDataX={$trackerFocusData}
 		dataXDomain={brushedRange}
 		useDataset={$seriesData}
+		textAnchorPosition="start"
 		on:brushed={handleBrushed}
 	/>
 	<div class="grid grid-cols-[6fr_3fr] grid-rows-[1fr] md:gap-6 mt-[25px]">
