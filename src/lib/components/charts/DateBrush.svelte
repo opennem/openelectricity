@@ -23,6 +23,8 @@
 	 * @property {any} [hoverDataX]
 	 * @property {any} [focusDataX]
 	 * @property {any[]} [useDataset]
+	 * @property {boolean} [snapTicks]
+	 * @property {'start' | 'middle' | 'end'} [textAnchorPosition]
 	 */
 
 	/** @type {Props} */
@@ -35,7 +37,9 @@
 		showLineData = true,
 		hoverDataX = undefined,
 		focusDataX = undefined,
-		useDataset = []
+		useDataset = [],
+		snapTicks = false,
+		textAnchorPosition = 'middle'
 	} = $props();
 
 	const id = getSeqId();
@@ -99,6 +103,8 @@
 				stroke="#ccc"
 				formatTick={$formatTickX}
 				tickMarks={false}
+				{snapTicks}
+				{textAnchorPosition}
 			/>
 
 			<g clip-path={clipPathId ? `url(#${clipPathId})` : ''}>

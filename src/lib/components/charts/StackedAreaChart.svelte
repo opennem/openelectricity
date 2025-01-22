@@ -48,6 +48,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 	 * @property {string} [chartHeightClasses]
 	 * @property {any} [curveFunction]
 	 * @property {string | undefined} [highlightId]
+	 * @property {*} [customFormatTickX]
 	 */
 
 	/** @type {Props} */
@@ -79,7 +80,8 @@ If object with xStartValue and xEndValue, overlay will be a range
 		formatTickY = (/** @type {number} */ d) => d,
 		chartHeightClasses = '',
 		curveFunction = null,
-		highlightId = ''
+		highlightId = '',
+		customFormatTickX = null
 	} = $props();
 
 	const id = getSeqId();
@@ -216,7 +218,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 				<AxisX
 					ticks={xTicks}
 					gridlines={xGridlines}
-					formatTick={formatTickX}
+					formatTick={customFormatTickX || formatTickX}
 					tickMarks={true}
 					{snapTicks}
 					stroke="#33333344"

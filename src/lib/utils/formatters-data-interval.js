@@ -6,10 +6,12 @@ import { getFormattedMonth, getFormattedDate } from '$lib/utils/formatters';
  * @returns
  */
 function getQuarter(month) {
-	if (month === 'January') return 'Q1';
-	if (month === 'April') return 'Q2';
+	if (month === 'Jan') return 'Q1';
+	if (month === 'Apr') return 'Q2';
 	if (month === 'July') return 'Q3';
-	if (month === 'October') return 'Q4';
+	if (month === 'Oct') return 'Q4';
+
+	return month;
 }
 /**
  * @param {Date} date
@@ -19,16 +21,16 @@ function getQuarter(month) {
 export default function format(date, interval) {
 	switch (interval) {
 		case '1d':
-			return getFormattedDate(date, undefined, 'numeric', 'short', 'numeric');
+			return getFormattedDate(date, 'short', 'numeric', 'numeric', '2-digit');
 
 		case '1M':
 			return getFormattedMonth(date, 'short');
 
 		case '1Q': {
 			return (
-				getQuarter(getFormattedDate(date, undefined, undefined, 'long', undefined)) +
+				getQuarter(getFormattedDate(date, undefined, undefined, 'short', undefined)) +
 				' ' +
-				getFormattedMonth(date)
+				getFormattedDate(date, undefined, undefined, undefined, 'numeric')
 			);
 		}
 		case '6M': {

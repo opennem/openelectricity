@@ -5,7 +5,7 @@
 	import Tooltip from './TrackerTooltip.svelte';
 	import ChartHeader from '$lib/components/charts/ChartHeader.svelte';
 
-	let { store, intervalString } = $props();
+	let { store, intervalString, customFormatTickX } = $props();
 
 	const {
 		convertAndFormatValue,
@@ -159,7 +159,9 @@
 			highlightId={$hoverKey}
 			chartPadding={{ top: 0, right: 0, bottom: 20, left: 0 }}
 			showFocusDot={$visibleSeriesNames.length === 1}
+			snapTicks={false}
 			{curveFunction}
+			{customFormatTickX}
 			on:mousemove={handleMousemove}
 			on:mouseout={handleMouseout}
 			on:pointerup={handlePointerup}

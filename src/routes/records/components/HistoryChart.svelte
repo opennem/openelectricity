@@ -14,7 +14,7 @@
 	import ResetZoom from '$lib/components/charts/elements/ResetZoom.html.svelte';
 	import ChartHeader from '$lib/components/charts/ChartHeader.svelte';
 
-	import getXTicks from '../page-data-options/get-x-ticks';
+	import { getTickXFormatter } from '../page-data-options/get-x-tick-formatter';
 	import Tooltip from './Tooltip.svelte';
 	import HistoryTable from './HistoryTable.svelte';
 
@@ -59,12 +59,15 @@
 	$showLineArea = false;
 
 	$brushCurveType = curveStepAfter;
-	$brushXTicks = 4;
+	$brushXTicks = 5;
 	$brushYTicks = 3;
 	$brushStrokeWidth = '1px';
 
 	/** @type {*} */
 	let brushedRange = $state();
+	let customFormatTickX = $derived(getTickXFormatter($xDomain));
+
+	$inspect('customFormatTickX', customFormatTickX);
 
 	$effect(() => {
 		if ($seriesData.length) {
@@ -76,6 +79,7 @@
 
 			$yDomain = [datasetMin, datasetMax];
 			$brushYDomain = [datasetMin, datasetMax];
+			// $brushXTicks = getYearlyXTicks($seriesData);
 		}
 	});
 
@@ -107,35 +111,6 @@
 		}
 	});
 
-	let axisXTicks = $derived(xRange ? timeYear.every(2)?.range(xRange[0], xRange[1]) : undefined);
-	$effect(() => {
-		$xTicks = axisXTicks && !brushedRange ? axisXTicks : 5;
-	});
-
-	// insert the first and last item in xRange into axisXTicks
-	$effect(() => {
-		if (axisXTicks && xRange) {
-			$inspect('timeZone', $timeZone);
-			const xStartYear = getFormattedMonth(xRange[0], undefined, $timeZone);
-			const tickStartYear = getFormattedMonth(axisXTicks[0], undefined, $timeZone);
-			const xEndYear = getFormattedMonth(xRange[1], undefined, $timeZone);
-			const tickEndYear = getFormattedMonth(
-				axisXTicks[axisXTicks.length - 1],
-				undefined,
-				$timeZone
-			);
-
-			// if not the same year, insert the first item in xRange into axisXTicks
-			if (xStartYear !== tickStartYear) {
-				axisXTicks.unshift(xRange[0]);
-			}
-			// if not the same year, insert the last item in xRange into axisXTicks
-			if (xEndYear !== tickEndYear) {
-				axisXTicks.push(xRange[1]);
-			}
-		}
-	});
-
 	/**
 	 * @param {CustomEvent} evt
 	 */
@@ -162,6 +137,7 @@
 		focusDataX={$focusData}
 		dataXDomain={brushedRange}
 		useDataset={updatedSeriesData}
+		textAnchorPosition="start"
 		on:brushed={handleBrushed}
 	/>
 
@@ -181,7 +157,7 @@
 
 			<LineChartWithContext
 				store={historyStore}
-				customFormatTickX={(d) => getXTicks(d, brushedRange || xRange)}
+				{customFormatTickX}
 				showDots={true}
 				useDataset={updatedSeriesData}
 				on:mousemove
