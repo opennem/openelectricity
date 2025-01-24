@@ -2,19 +2,21 @@
 	import { createBubbler } from 'svelte/legacy';
 
 	const bubble = createBubbler();
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext } from 'svelte';
 	import { closestTo } from 'date-fns';
 
 	const { xScale, width, height } = getContext('LayerCake');
-	const dispatch = createEventDispatcher();
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]
+	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} onmousemove
+	 * @property {() => void} onmouseout
+	 * @property {(evt: { data: TimeSeriesData }) => void} onpointerup
 	 */
 
 	/** @type {Props} */
-	let { dataset = [] } = $props();
+	let { dataset = [], onmousemove, onmouseout, onpointerup } = $props();
 
 	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
 	let rectHeight = $derived($height ? Math.abs($height) : 0);
@@ -44,7 +46,7 @@
 	 */
 	function pointermove(evt) {
 		const item = findItem(evt);
-		dispatch('mousemove', item);
+		onmousemove?.(item);
 	}
 
 	/**
@@ -52,11 +54,11 @@
 	 */
 	function pointerup(evt) {
 		const item = findItem(evt);
-		dispatch('pointerup', item);
+		onpointerup?.(item);
 	}
 
 	function mouseout() {
-		dispatch('mouseout');
+		onmouseout?.();
 	}
 </script>
 

@@ -1,6 +1,9 @@
 import { setContext, getContext } from 'svelte';
+import { getFormattedDate } from '$lib/utils/formatters';
 
-let filterKey = Symbol('filters');
+/** @typedef {'monthly' | '12-month-rolling' | 'yearly'} RangeType */
+
+const FILTERS_KEY = Symbol('filters');
 
 export class FiltersState {
 	/** @type {EmberCountry[] | undefined} */
@@ -20,6 +23,25 @@ export class FiltersState {
 			value: 'yearly'
 		}
 	];
+
+	/** @type {Record<RangeType, {xTicks: number | undefined, formatTickX: (d: Date) => string}>} */
+	xTicksAndFormatters = {
+		monthly: {
+			xTicks: undefined,
+			formatTickX: (/** @type {Date} */ d) =>
+				getFormattedDate(d, undefined, undefined, 'short', '2-digit')
+		},
+		'12-month-rolling': {
+			xTicks: 6,
+			formatTickX: (/** @type {Date} */ d) =>
+				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+		},
+		yearly: {
+			xTicks: 6,
+			formatTickX: (/** @type {Date} */ d) =>
+				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+		}
+	};
 
 	monthlyIntervals = [
 		{
@@ -58,8 +80,8 @@ export class FiltersState {
 	/** @type {string} */
 	selectedRegion = $state('');
 
-	/** @type {string} */
-	selectedRange = $state('');
+	/** @type {RangeType | undefined} */
+	selectedRange = $state();
 
 	/** @type {string} */
 	selectedInterval = $state('');
@@ -82,11 +104,21 @@ export class FiltersState {
 	/** @type {boolean} */
 	isYearly = $derived(this.selectedRange === 'yearly');
 
+	selectedRangeXTicks = $derived(
+		this.selectedRange ? this.xTicksAndFormatters[this.selectedRange].xTicks : undefined
+	);
+
+	selectedRangeFormatTickX = $derived(
+		this.selectedRange
+			? this.xTicksAndFormatters[this.selectedRange].formatTickX
+			: (/** @type {*} */ d) => d
+	);
+
 	/**
 	 * @param {{
 	 *  countries: EmberCountry[],
 	 *  selectedRegion: string,
-	 *  selectedRange: string,
+	 *  selectedRange: RangeType,
 	 *  selectedInterval: string
 	 * }} props
 	 */
@@ -102,12 +134,12 @@ export class FiltersState {
  * @param {FiltersState} filters
  */
 export function setFiltersContext(filters) {
-	setContext(filterKey, filters);
+	setContext(FILTERS_KEY, filters);
 }
 
 /**
  * @returns {FiltersState}
  */
 export function getFiltersContext() {
-	return getContext(filterKey);
+	return getContext(FILTERS_KEY);
 }

@@ -5,22 +5,16 @@
 	import Switch from '$lib/components/Switch.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
-	let filtersCxt = getFiltersContext();
+	let cxt = getFiltersContext();
 
 	// iso string begins with `x-` for regions
-	let regionsOnly = $derived(
-		filtersCxt.countries?.filter((country) => country.iso.startsWith('x-'))
-	);
-	let countriesOnly = $derived(
-		filtersCxt.countries?.filter((country) => !country.iso.startsWith('x-'))
-	);
+	let regionsOnly = $derived(cxt.countries?.filter((country) => country.iso.startsWith('x-')));
+	let countriesOnly = $derived(cxt.countries?.filter((country) => !country.iso.startsWith('x-')));
 
 	$effect(() => {
-		if (filtersCxt.selectedRegion && filtersCxt.selectedRange && filtersCxt.selectedInterval) {
-			let intervalQuery = filtersCxt.isYearly ? '' : `&interval=${filtersCxt.selectedInterval}`;
-			goto(
-				`?region=${filtersCxt.selectedRegion}&range=${filtersCxt.selectedRange}${intervalQuery}`
-			);
+		if (cxt.selectedRegion && cxt.selectedRange && cxt.selectedInterval) {
+			let intervalQuery = cxt.isYearly ? '' : `&interval=${cxt.selectedInterval}`;
+			goto(`?region=${cxt.selectedRegion}&range=${cxt.selectedRange}${intervalQuery}`);
 		}
 	});
 </script>
@@ -29,7 +23,7 @@
 	<select
 		class="flex flex-col gap-2 border-dark-grey outline-none bg-light-warm-grey p-4 rounded-lg text-sm"
 		name="region"
-		bind:value={filtersCxt.selectedRegion}
+		bind:value={cxt.selectedRegion}
 	>
 		{#if regionsOnly}
 			<optgroup label="Regions">
@@ -56,24 +50,24 @@
 					paddingX="px-4"
 					paddingY="py-3"
 					selectedLabelClass="text-sm font-semibold whitespace-nowrap"
-					options={filtersCxt.ranges}
-					selected={filtersCxt.selectedRange}
-					on:change={(evt) => (filtersCxt.selectedRange = evt.detail.value)}
+					options={cxt.ranges}
+					selected={cxt.selectedRange}
+					on:change={(evt) => (cxt.selectedRange = evt.detail.value)}
 				/>
 			</div>
 			<div class="hidden md:block">
 				<Switch
-					buttons={filtersCxt.ranges}
-					selected={filtersCxt.selectedRange}
+					buttons={cxt.ranges}
+					selected={cxt.selectedRange}
 					xPad={4}
 					yPad={2}
 					textSize="sm"
-					on:change={(evt) => (filtersCxt.selectedRange = evt.detail.value)}
+					on:change={(evt) => (cxt.selectedRange = evt.detail.value)}
 				/>
 			</div>
 		</div>
 
-		{#if !filtersCxt.isYearly}
+		{#if !cxt.isYearly}
 			<div class="flex gap-2 md:gap-5 items-center">
 				<span class="font-mono text-xs text-mid-grey">Interval</span>
 				<div class="md:hidden">
@@ -82,23 +76,19 @@
 						paddingY="py-3"
 						align="right"
 						selectedLabelClass="text-sm font-semibold whitespace-nowrap"
-						options={filtersCxt.isMonthly
-							? filtersCxt.monthlyIntervals
-							: filtersCxt.rollingIntervals}
-						selected={filtersCxt.selectedInterval}
-						on:change={(evt) => (filtersCxt.selectedInterval = evt.detail.value)}
+						options={cxt.isMonthly ? cxt.monthlyIntervals : cxt.rollingIntervals}
+						selected={cxt.selectedInterval}
+						on:change={(evt) => (cxt.selectedInterval = evt.detail.value)}
 					/>
 				</div>
 				<div class="hidden md:block">
 					<Switch
-						buttons={filtersCxt.isMonthly
-							? filtersCxt.monthlyIntervals
-							: filtersCxt.rollingIntervals}
-						selected={filtersCxt.selectedInterval}
+						buttons={cxt.isMonthly ? cxt.monthlyIntervals : cxt.rollingIntervals}
+						selected={cxt.selectedInterval}
 						xPad={4}
 						yPad={2}
 						textSize="sm"
-						on:change={(evt) => (filtersCxt.selectedInterval = evt.detail.value)}
+						on:change={(evt) => (cxt.selectedInterval = evt.detail.value)}
 					/>
 				</div>
 			</div>

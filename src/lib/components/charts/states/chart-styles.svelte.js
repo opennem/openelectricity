@@ -1,3 +1,5 @@
+import getSeqId from '$lib/utils/html-id-gen';
+
 export default class ChartStylesState {
 	/** @type {boolean} */
 	snapXTicks = $state(false);
@@ -15,6 +17,15 @@ export default class ChartStylesState {
 	/** @type {string} */
 	dotFill = $state('white');
 
+	/** @type {boolean} */
+	xGridlines = $state(true);
+
+	/** @type {string} */
+	yAxisStroke = $state('#33333344');
+
+	/** @type {string} */
+	xAxisStroke = $state('#33333344');
+
 	// Chart overlay
 	/** @type {{ xStartValue: Date, xEndValue: Date } | undefined} */
 	chartOverlay = $state();
@@ -25,4 +36,14 @@ export default class ChartStylesState {
 
 	/** @type {string} */
 	chartHeightClasses = $state('h-[400px] md:h-[450px]');
+
+	/** @type {Object.<string, number>} */
+	chartPadding = $state({ top: 0, right: 0, bottom: 40, left: 0 });
+
+	/** @type {boolean} */
+	chartClip = $state(true);
+
+	// This is used to generate unique ids for the chart elements - for clip paths.
+	/** @type {string} */
+	htmlId = getSeqId();
 }

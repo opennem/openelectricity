@@ -5,6 +5,10 @@ import ChartStyles from './chart-styles.svelte.js';
 import { transformToProportion } from '$lib/utils/data-transform/index.js';
 
 export default class ChartState {
+	key;
+	chartOptions = $state();
+	chartStyles = $state();
+
 	/** @type {string} */
 	title = $state('');
 
@@ -43,8 +47,29 @@ export default class ChartState {
 	/** @type {Object.<string, string>} */
 	seriesColours = $state({});
 
+	/** @type {string[]} */
+	visibleSeriesColours = $derived(this.visibleSeriesNames.map((name) => this.seriesColours[name]));
+
 	/** @type {Object.<string, string>} */
 	seriesLabels = $state({});
+
+	/** @type {string} */
+	xKey = $state('date');
+
+	/** @type {Function} */
+	x = $derived((/** @type {*} */ d) => d[this.xKey] || d.data[this.xKey]);
+
+	/** @type {*} */
+	yKey = $state([]);
+
+	/** @type {string} */
+	y = $derived(this.chartOptions.isChartTypeArea ? this.yKey : 'value');
+
+	/** @type {string} */
+	zKey = $state('key');
+
+	/** @type {string} */
+	z = $derived(this.chartOptions.isChartTypeArea ? this.zKey : 'group');
 
 	/** @type {*} */
 	xDomain = $state();
@@ -109,6 +134,9 @@ export default class ChartState {
 	});
 
 	/** @type {string | undefined} */
+	highlightName = $state();
+
+	/** @type {string | undefined} */
 	hoverKey = $state();
 
 	/** @type {number | undefined} */
@@ -159,9 +187,25 @@ export default class ChartState {
 		});
 	});
 
-	constructor() {
+	/**
+	 * @param {Object} options
+	 * @param {symbol} options.key
+	 * @param {string} options.title
+	 * @param {SiPrefix} options.displayPrefix
+	 * @param {SiPrefix[]} options.allowedPrefixes
+	 * @param {string} options.baseUnit
+	 * @param {Object} options.chartStyles
+	 * @param {string} options.chartStyles.chartHeightClasses
+	 */
+	constructor({ key, title, displayPrefix, allowedPrefixes, baseUnit, chartStyles }) {
+		this.key = key;
 		this.chartOptions = new ChartOptions();
 		this.chartStyles = new ChartStyles();
+		this.title = title;
+		this.displayPrefix = displayPrefix;
+		this.allowedPrefixes = allowedPrefixes;
+		this.baseUnit = baseUnit;
+		this.chartStyles.chartHeightClasses = chartStyles.chartHeightClasses;
 	}
 
 	getNextPrefix() {
