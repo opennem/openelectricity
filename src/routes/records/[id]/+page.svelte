@@ -28,6 +28,7 @@
 	// import getRelativeTime from '../page-data-options/relative-time';
 	// import HistoryTable from '../components/HistoryTable.svelte';
 	import Tracker from '../components/Tracker.svelte';
+	import MiniTracker from '../components/MiniTracker.svelte';
 	import { recordState } from '../stores/state.svelte';
 	import FuelTechIcon from '../components/FuelTechIcon.svelte';
 
@@ -336,7 +337,7 @@
 				>
 					<IconXCircle class="size-8 md:size-12" />
 				</button>
-				<Tracker />
+				<MiniTracker />
 			</div>
 		{/if}
 	</div>

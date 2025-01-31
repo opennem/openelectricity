@@ -9,12 +9,12 @@ export default function proportion({ datapoint, domains }) {
 	};
 
 	domains.forEach((e) => {
-		const value = /** @type {number} **/ (datapoint[e]);
+		let value = /** @type {number} **/ (datapoint[e]);
 		total += value > 0 ? value : 0;
 	});
 
 	domains.forEach((e) => {
-		const value = /** @type {number} **/ (datapoint[e]);
+		let value = /** @type {number} **/ (datapoint[e]);
 		updated[e] = value > 0 ? (value / total) * 100 : 0;
 	});
 

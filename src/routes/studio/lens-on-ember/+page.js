@@ -1,3 +1,5 @@
+/** @typedef {import('./states/filters.d.ts').RangeType} RangeType */
+
 export async function load({ data, url }) {
 	const { searchParams } = url;
 	const region = searchParams.get('region') || 'x-WRD';
@@ -8,7 +10,7 @@ export async function load({ data, url }) {
 		...data, // pipe through data from PageServer
 
 		region,
-		range,
+		range: /** @type {RangeType} */ (range),
 		interval
 	};
 }
