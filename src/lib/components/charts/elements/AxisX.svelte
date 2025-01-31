@@ -16,6 +16,7 @@
 	 * @property {*} [ticks]
 	 * @property {number} [xTick]
 	 * @property {number} [yTick]
+	 * @property {string} [fill]
 	 * @property {'start' | 'middle' | 'end'} [textAnchorPosition]
 	 */
 
@@ -33,6 +34,7 @@
 		ticks = undefined,
 		xTick = 0,
 		yTick = 16,
+		fill = 'white',
 		textAnchorPosition = 'middle'
 	} = $props();
 
@@ -71,7 +73,7 @@
 	class:snapTicks
 	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
 >
-	<rect class="axis-background" x="0" y={$height} width={$width} height={20} fill="transparent" />
+	<rect class="axis-background" x="0" y={$height} width={$width} height={20} {fill} />
 	{#each tickVals as tick, i (tick)}
 		<g class="tick tick-{i}" transform="translate({$xScale(tick)}, {Math.max(...$yRange)})">
 			<!-- stroke={i === 0 || i === tickVals.length - 1 ? '#F1F0ED' : stroke}

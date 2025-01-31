@@ -3,7 +3,7 @@
 
 	const bubble = createBubbler();
 	import { getContext } from 'svelte';
-	import { closestTo } from 'date-fns';
+	import closestTo from 'date-fns/closestTo';
 
 	const { xScale, width, height } = getContext('LayerCake');
 
@@ -12,7 +12,7 @@
 	 * @property {TimeSeriesData[]} [dataset]
 	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} onmousemove
 	 * @property {() => void} onmouseout
-	 * @property {(evt: { data: TimeSeriesData }) => void} onpointerup
+	 * @property {(evt: TimeSeriesData) => void} onpointerup
 	 */
 
 	/** @type {Props} */

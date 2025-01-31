@@ -17,51 +17,46 @@ export default class ChartOptionsState {
 		},
 		{
 			label: 'Proportion',
-			value: 'proportion',
-			dataTransformFunction: transformToProportion
+			value: 'proportion'
 		},
 		{
 			label: 'Change since',
-			value: 'changeSince',
-			dataTransformFunction: transformToChangeSince
+			value: 'changeSince'
 		}
 	]);
+	dataTransformFunctionsMap = Object.freeze({
+		absolute: (/** @type {{datapoint: TimeSeriesData}} */ { datapoint }) => datapoint,
+		proportion: transformToProportion,
+		changeSince: transformToChangeSince
+	});
 	/** @type {DataTransformType} */
 	selectedDataTransformType = $state(DEFAULT_DATA_TRANSFORM_TYPE);
-	dataTransformFunction = $derived.by(() => {
-		const option = this.dataTransformOptions.find(
-			(d) => d.value === this.selectedDataTransformType
-		);
-		return option && option.dataTransformFunction
-			? option.dataTransformFunction
-			: (/** @type {{datapoint: TimeSeriesData}} */ { datapoint }) => datapoint;
-	});
+	dataTransformFunction = $derived(this.dataTransformFunctionsMap[this.selectedDataTransformType]);
 	isDataTransformTypeProportion = $derived(this.selectedDataTransformType === 'proportion');
 
 	// Curve options
 	curveOptions = Object.freeze([
 		{
 			label: 'Smooth',
-			value: 'smooth',
-			curveFunction: curveMonotoneX
+			value: 'smooth'
 		},
 		{
 			label: 'Straight',
-			value: 'straight',
-			curveFunction: curveLinear
+			value: 'straight'
 		},
 		{
 			label: 'Step',
-			value: 'step',
-			curveFunction: curveStep
+			value: 'step'
 		}
 	]);
+	curveFunctionsMap = Object.freeze({
+		smooth: curveMonotoneX,
+		straight: curveLinear,
+		step: curveStep
+	});
 	/** @type {CurveType} */
 	selectedCurveType = $state(DEFAULT_CURVE_TYPE);
-	curveFunction = $derived.by(() => {
-		const option = this.curveOptions.find((d) => d.value === this.selectedCurveType);
-		return option ? option.curveFunction : null;
-	});
+	curveFunction = $derived(this.curveFunctionsMap[this.selectedCurveType]);
 
 	// Chart type options
 	chartTypeOptions = Object.freeze([
@@ -79,14 +74,39 @@ export default class ChartOptionsState {
 	isChartTypeArea = $derived(this.selectedChartType === 'area');
 	isChartTypeLine = $derived(this.selectedChartType === 'line');
 
-	/** @param {{ dataTransformType?: DataTransformType, curveType?: CurveType, chartType?: ChartType }} params */
+	/** @type {SiPrefix[]} */
+	allowedPrefixes = $state([]);
+
+	/** @type {boolean} */
+	allowPrefixSwitch = $derived(this.allowedPrefixes && this.allowedPrefixes.length > 1);
+
+	/** @type {string} */
+	baseUnit = $state('');
+
+	/** @type {SiPrefix} */
+	prefix = $state('');
+
+	/** @type {SiPrefix} */
+	displayPrefix = $state('');
+
+	displayUnit = $derived((this.displayPrefix || '') + this.baseUnit);
+
+	/** @param {{dataTransformType?: DataTransformType, curveType?: CurveType, chartType?: ChartType, allowedPrefixes?: SiPrefix[], baseUnit?: string, prefix?: SiPrefix, displayPrefix?: SiPrefix }} params */
 	constructor({
 		dataTransformType = DEFAULT_DATA_TRANSFORM_TYPE,
 		curveType = DEFAULT_CURVE_TYPE,
-		chartType = DEFAULT_CHART_TYPE
+		chartType = DEFAULT_CHART_TYPE,
+		allowedPrefixes = [],
+		baseUnit = '',
+		prefix = '',
+		displayPrefix = ''
 	} = {}) {
 		this.selectedDataTransformType = dataTransformType;
 		this.selectedCurveType = curveType;
 		this.selectedChartType = chartType;
+		this.allowedPrefixes = allowedPrefixes;
+		this.baseUnit = baseUnit;
+		this.prefix = prefix;
+		this.displayPrefix = displayPrefix;
 	}
 }

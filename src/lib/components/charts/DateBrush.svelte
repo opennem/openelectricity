@@ -1,6 +1,6 @@
 <script>
 	import { LayerCake, Svg, Html } from 'layercake';
-	import { scaleUtc } from 'd3-scale';
+	import { scaleTime } from 'd3-scale';
 
 	import getSeqId from '$lib/utils/html-id-gen';
 	import Line from './elements/Line.svelte';
@@ -80,7 +80,7 @@
 		padding={{ top: 0, right: 0, bottom: 0, left: 0 }}
 		x={xKey}
 		y={yKey}
-		xScale={scaleUtc()}
+		xScale={scaleTime()}
 		xDomain={$xDomain}
 		yDomain={$yDomain}
 		data={dataset}

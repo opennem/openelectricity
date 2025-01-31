@@ -1,100 +1,45 @@
 <script>
-	import { getContext } from 'svelte';
-	import { pushState } from '$app/navigation';
+	import { goto } from '$app/navigation';
+	import { getFiltersContext } from '../states/filters.svelte';
 
 	import Switch from '$lib/components/Switch.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
-	
-	/**
-	 * @typedef {Object} Props
-	 * @property {EmberCountry[]} countries
-	 */
-
-	/** @type {Props} */
-	let { countries } = $props();
-
-	const { selectedRegion, selectedRange, selectedInterval } = getContext('filters');
-	const rangeOptions = [
-		{
-			label: 'Monthly',
-			value: 'monthly'
-		},
-		{
-			label: '12 mth rolling',
-			value: '12-month-rolling'
-		},
-		{
-			label: 'Yearly',
-			value: 'yearly'
-		}
-	];
-	const monthlyIntervalOptions = [
-		{
-			label: 'Month',
-			value: '1M'
-		},
-		{
-			label: 'Quarter',
-			value: '1Q'
-		},
-		{
-			label: 'Half Year',
-			value: '6M'
-		},
-		{
-			label: 'Year',
-			value: '1Y'
-		}
-	];
-	const rollingIntervalOptions = [
-		{
-			label: 'Month',
-			value: '1M'
-		},
-		{
-			label: 'Quarter',
-			value: '1Q'
-		},
-		{
-			label: 'Half Year',
-			value: '6M'
-		}
-	];
-
-	$selectedRange = 'monthly';
-	$selectedInterval = '1M';
+	let cxt = getFiltersContext();
 
 	// iso string begins with `x-` for regions
-	let regionsOnly = $derived(countries.filter((country) => country.iso.startsWith('x-')));
-	let countriesOnly = $derived(countries.filter((country) => !country.iso.startsWith('x-')));
+	let regionsOnly = $derived(cxt.countries?.filter((country) => country.iso.startsWith('x-')));
+	let countriesOnly = $derived(cxt.countries?.filter((country) => !country.iso.startsWith('x-')));
 
-	/**
-	 * @param {string} interval
-	 */
-	function handleIntervalChange(interval) {
-		$selectedInterval = interval;
-		pushState(`?region=${$selectedRegion}&range=${$selectedRange}&interval=${interval}`, {});
-	}
+	$effect(() => {
+		if (cxt.selectedRegion && cxt.selectedRange && cxt.selectedInterval) {
+			let intervalQuery = cxt.isYearly ? '' : `&interval=${cxt.selectedInterval}`;
+			goto(`?region=${cxt.selectedRegion}&range=${cxt.selectedRange}${intervalQuery}`);
+		}
+	});
 </script>
 
 <div class="w-full px-6 md:px-0 flex flex-col md:flex-row gap-5 md:gap-10 justify-center">
 	<select
 		class="flex flex-col gap-2 border-dark-grey outline-none bg-light-warm-grey p-4 rounded-lg text-sm"
 		name="region"
-		bind:value={$selectedRegion}
+		bind:value={cxt.selectedRegion}
 	>
-		<optgroup label="Regions">
-			{#each regionsOnly as region}
-				<option value={region.iso}>{region.name}</option>
-			{/each}
-		</optgroup>
+		{#if regionsOnly}
+			<optgroup label="Regions">
+				{#each regionsOnly as region}
+					<option value={region.iso}>{region.name}</option>
+				{/each}
+			</optgroup>
+		{/if}
 
-		<optgroup label="Countries">
-			{#each countriesOnly as country}
-				<option value={country.iso}>{country.name}</option>
-			{/each}
-		</optgroup>
+		{#if countriesOnly}
+			<optgroup label="Countries">
+				{#each countriesOnly as country}
+					<option value={country.iso}>{country.name}</option>
+				{/each}
+			</optgroup>
+		{/if}
 	</select>
 
 	<div class="flex gap-5 md:gap-10 justify-between px-2 md:px-0">
@@ -105,24 +50,24 @@
 					paddingX="px-4"
 					paddingY="py-3"
 					selectedLabelClass="text-sm font-semibold whitespace-nowrap"
-					options={rangeOptions}
-					selected={$selectedRange}
-					on:change={(evt) => ($selectedRange = evt.detail.value)}
+					options={cxt.ranges}
+					selected={cxt.selectedRange}
+					on:change={(evt) => (cxt.selectedRange = evt.detail.value)}
 				/>
 			</div>
 			<div class="hidden md:block">
 				<Switch
-					buttons={rangeOptions}
-					selected={$selectedRange}
+					buttons={cxt.ranges}
+					selected={cxt.selectedRange}
 					xPad={4}
 					yPad={2}
 					textSize="sm"
-					on:change={(evt) => ($selectedRange = evt.detail.value)}
+					on:change={(evt) => (cxt.selectedRange = evt.detail.value)}
 				/>
 			</div>
 		</div>
 
-		{#if $selectedRange !== 'yearly'}
+		{#if !cxt.isYearly}
 			<div class="flex gap-2 md:gap-5 items-center">
 				<span class="font-mono text-xs text-mid-grey">Interval</span>
 				<div class="md:hidden">
@@ -131,19 +76,19 @@
 						paddingY="py-3"
 						align="right"
 						selectedLabelClass="text-sm font-semibold whitespace-nowrap"
-						options={$selectedRange === 'monthly' ? monthlyIntervalOptions : rollingIntervalOptions}
-						selected={$selectedInterval}
-						on:change={(evt) => handleIntervalChange(evt.detail.value)}
+						options={cxt.isMonthly ? cxt.monthlyIntervals : cxt.rollingIntervals}
+						selected={cxt.selectedInterval}
+						on:change={(evt) => (cxt.selectedInterval = evt.detail.value)}
 					/>
 				</div>
 				<div class="hidden md:block">
 					<Switch
-						buttons={$selectedRange === 'monthly' ? monthlyIntervalOptions : rollingIntervalOptions}
-						selected={$selectedInterval}
+						buttons={cxt.isMonthly ? cxt.monthlyIntervals : cxt.rollingIntervals}
+						selected={cxt.selectedInterval}
 						xPad={4}
 						yPad={2}
 						textSize="sm"
-						on:change={(evt) => handleIntervalChange(evt.detail.value)}
+						on:change={(evt) => (cxt.selectedInterval = evt.detail.value)}
 					/>
 				</div>
 			</div>

@@ -1,10 +1,8 @@
 <script>
 	import { getContext } from 'svelte';
-
 	import { area, line, curveLinear } from 'd3-shape';
-	import { closestTo } from 'date-fns';
-
-	const { data, xGet, xScale, yScale, zGet, yGet } = getContext('LayerCake');
+	import closestTo from 'date-fns/closestTo';
+	const { data, xGet, xScale, yScale, yGet, z } = getContext('LayerCake');
 
 	/**
 	 * @typedef {Object} Props
@@ -14,9 +12,10 @@
 	 * @property {string} [highlightId]
 	 * @property {string} [display]
 	 * @property {*} [curveType]
+	 * @property {Object.<string, string>} [seriesColours]
 	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} onmousemove
 	 * @property {() => void} onmouseout
-	 * @property {(evt: { data: TimeSeriesData }) => void} onpointerup
+	 * @property {(evt: TimeSeriesData) => void} onpointerup
 	 */
 
 	/** @type {Props} */
@@ -27,6 +26,7 @@
 		highlightId = '',
 		display = 'area',
 		curveType = curveLinear,
+		seriesColours = {},
 		onmousemove,
 		onmouseout,
 		onpointerup
@@ -60,14 +60,6 @@
 		if (highlightId === null || highlightId === '') return 1;
 		return highlightId === d.key || highlightId === d.group ? 1 : 0.5;
 	});
-
-	/**
-	 * @param d {[]}
-	 * @returns {string}
-	 */
-	function getZFill(d) {
-		return fill ? fill : $zGet(d);
-	}
 
 	/**
 	 * this function looks for the closest date to the mouse position
@@ -140,7 +132,7 @@
 			class="path-area focus:outline-0 pointer-events-none"
 			d={lineGen(d.values)}
 			fill="transparent"
-			stroke={$zGet(d)}
+			stroke={seriesColours[$z(d)]}
 			stroke-width={'1.5'}
 			opacity={lineOpacity(d)}
 		/>
@@ -154,7 +146,7 @@
 				role="presentation"
 				class="path-area focus:outline-0"
 				d={areaGen(d)}
-				fill={getZFill(d)}
+				fill={seriesColours[$z(d)]}
 				stroke={'none'}
 				stroke-width={'0'}
 				opacity={areaOpacity(d)}

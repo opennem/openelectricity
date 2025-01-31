@@ -1,7 +1,7 @@
 import { setContext, getContext } from 'svelte';
 import { getFormattedDate } from '$lib/utils/formatters';
 
-/** @typedef {'monthly' | '12-month-rolling' | 'yearly'} RangeType */
+/** @typedef {import('./filters.d.ts').RangeType} RangeType */
 
 const FILTERS_KEY = Symbol('filters');
 
@@ -24,21 +24,27 @@ export class FiltersState {
 		}
 	];
 
-	/** @type {Record<RangeType, {xTicks: number | undefined, formatTickX: (d: Date) => string}>} */
+	/** @type {Record<RangeType, {xTicks: number | undefined, formatTickX: (d: Date) => string, formatX: (d: Date) => string}>} */
 	xTicksAndFormatters = {
 		monthly: {
 			xTicks: undefined,
 			formatTickX: (/** @type {Date} */ d) =>
+				getFormattedDate(d, undefined, undefined, 'short', '2-digit'),
+			formatX: (/** @type {Date} */ d) =>
 				getFormattedDate(d, undefined, undefined, 'short', '2-digit')
 		},
 		'12-month-rolling': {
 			xTicks: 6,
 			formatTickX: (/** @type {Date} */ d) =>
-				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+				getFormattedDate(d, undefined, undefined, 'short', 'numeric'),
+			formatX: (/** @type {Date} */ d) =>
+				'Year to ' + getFormattedDate(d, undefined, undefined, 'short', 'numeric')
 		},
 		yearly: {
 			xTicks: 6,
 			formatTickX: (/** @type {Date} */ d) =>
+				getFormattedDate(d, undefined, undefined, undefined, 'numeric'),
+			formatX: (/** @type {Date} */ d) =>
 				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
 		}
 	};
@@ -114,11 +120,17 @@ export class FiltersState {
 			: (/** @type {*} */ d) => d
 	);
 
+	selectedRangeFormatX = $derived(
+		this.selectedRange
+			? this.xTicksAndFormatters[this.selectedRange].formatX
+			: (/** @type {*} */ d) => d
+	);
+
 	/**
 	 * @param {{
 	 *  countries: EmberCountry[],
 	 *  selectedRegion: string,
-	 *  selectedRange: RangeType,
+	 *  selectedRange: RangeType | undefined,
 	 *  selectedInterval: string
 	 * }} props
 	 */

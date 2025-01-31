@@ -1,25 +1,20 @@
 <script>
-	import checkAndGetContext from '$lib/utils/check-and-get-context.js';
-	import StackedAreaChartWithContext from '$lib/components/charts/StackedAreaChartWithContext.svelte';
+	import StackedAreaLineChartWithContext from '$lib/components/charts/StackedAreaLineChartWithContext.svelte';
+	import ChartHeaderWithContext from '$lib/components/charts/ChartHeaderWithContext.svelte';
+	import ChartTooltipWithContext from '$lib/components/charts/ChartTooltipWithContext.svelte';
 
 	/** @typedef {{ data: TimeSeriesData, key?: string }} ChartEvent */
 
 	/** @type {{
 		cxtKey: symbol,
-		onmousemove: (evt: ChartEvent) => void,
+		displayOptions: boolean,
+		onmousemove: (evt: ChartEvent | TimeSeriesData) => void,
 		onmouseout: () => void,
-		onpointerup: (evt: ChartEvent) => void
+		onpointerup: (evt: TimeSeriesData) => void
 	}} */
 	let props = $props();
-	/** @type {import('$lib/components/charts/states/chart.svelte.js').default} */
-	let cxt = checkAndGetContext(props.cxtKey);
-
-	$inspect('lens chart title', cxt.title);
-	$inspect('lens chart series scaled data', cxt.seriesScaledData);
 </script>
 
-<div class="p-10">
-	{#if cxt.seriesScaledData.length > 0}
-		<StackedAreaChartWithContext {...props} />
-	{/if}
-</div>
+<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions} />
+<ChartTooltipWithContext cxtKey={props.cxtKey} />
+<StackedAreaLineChartWithContext {...props} />

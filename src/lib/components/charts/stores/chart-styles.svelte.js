@@ -7,6 +7,8 @@ export default class ChartStylesState {
 	strokeWidth = $state('2px');
 	/** @type {string} */
 	strokeArray = $state('4');
+	/** @type {string} */
+	xTextAnchorPosition = $state('middle');
 
 	/** @type {boolean} */
 	showLineArea = $state(true);

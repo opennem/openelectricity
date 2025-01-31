@@ -12,23 +12,8 @@ export default class ChartState {
 	/** @type {string} */
 	title = $state('');
 
-	/** @type {SiPrefix[]} */
-	allowedPrefixes = $state([]);
-
-	/** @type {boolean} */
-	allowPrefixSwitch = $derived(this.allowedPrefixes && this.allowedPrefixes.length > 1);
-
-	/** @type {string} */
-	baseUnit = $state('');
-
 	/** @type {string} */
 	timeZone = $state('Australia/Sydney');
-
-	/** @type {SiPrefix} */
-	prefix = $state('');
-
-	/** @type {SiPrefix} */
-	displayPrefix = $state('');
 
 	/** @type {TimeSeriesData[]} */
 	seriesData = $state([]);
@@ -75,7 +60,23 @@ export default class ChartState {
 	xDomain = $state();
 
 	/** @type {*} */
-	yDomain = $state();
+	// yDomain = $state();
+	yDomain = $derived.by(() => {
+		if (this.chartOptions.isDataTransformTypeProportion && !this.chartOptions.isChartTypeLine) {
+			return [0, 100];
+		}
+
+		const addTenPercent = (/** @type {number} */ val) => val + val * 0.1;
+		const maxY = this.seriesScaledDataWithMinMax.map((d) => d._max);
+		// @ts-ignore
+		const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
+
+		const minY = this.seriesScaledDataWithMinMax.map((d) => d._min);
+		// @ts-ignore
+		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
+
+		return [Math.floor(datasetMin), Math.ceil(datasetMax)];
+	});
 
 	/** @type {*} */
 	xTicks = $state();
@@ -98,13 +99,13 @@ export default class ChartState {
 	/** @type {Function} */
 	convertValue = $derived((/** @type {number} */ d) => {
 		const formatter = getNumberFormat(0, false);
-		const converted = convert(this.prefix, this.displayPrefix, d);
+		const converted = convert(this.chartOptions.prefix, this.chartOptions.displayPrefix, d);
 		return isNaN(converted) ? '—' : formatter.format(converted);
 	});
 
 	/** @type {Function} */
 	convertAndFormatValue = $derived((/** @type {number} */ d) => {
-		const converted = convert(this.prefix, this.displayPrefix, d);
+		const converted = convert(this.chartOptions.prefix, this.chartOptions.displayPrefix, d);
 		return isNaN(converted) ? '—' : getNumberFormat(this.maximumFractionDigits).format(converted);
 	});
 
@@ -121,7 +122,7 @@ export default class ChartState {
 			this.chartOptions.dataTransformFunction({
 				datapoint: d,
 				dataset: filteredSeriesData,
-				domains: this.seriesNames
+				domains: this.visibleSeriesNames
 			})
 		);
 	});
@@ -132,6 +133,29 @@ export default class ChartState {
 			transformToProportion({ datapoint: d, domains: this.seriesNames })
 		);
 	});
+
+	seriesScaledDataWithMinMax = $derived(
+		$state.snapshot(this.seriesScaledData).map((d) => {
+			const newObj = { ...d };
+			newObj._max = 0;
+			newObj._min = 0;
+			this.visibleSeriesNames.forEach((name) => {
+				const value = d[name];
+				if (this.chartOptions.isChartTypeArea) {
+					if (newObj._max || newObj._max === 0) newObj._max += +value;
+				} else {
+					if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
+				}
+
+				if (this.chartOptions.isChartTypeArea) {
+					if ((newObj._min || newObj._min === 0) && value < 0) newObj._min += +value;
+				} else {
+					if (newObj._min || newObj._min === 0) newObj._min = Math.min(newObj._min, +value);
+				}
+			});
+			return newObj;
+		})
+	);
 
 	/** @type {string | undefined} */
 	highlightName = $state();
@@ -191,30 +215,36 @@ export default class ChartState {
 	 * @param {Object} options
 	 * @param {symbol} options.key
 	 * @param {string} options.title
+	 * @param {SiPrefix} options.prefix
 	 * @param {SiPrefix} options.displayPrefix
 	 * @param {SiPrefix[]} options.allowedPrefixes
 	 * @param {string} options.baseUnit
-	 * @param {Object} options.chartStyles
-	 * @param {string} options.chartStyles.chartHeightClasses
+	 * @param {Object} [options.chartStyles]
+	 * @param {string} [options.chartStyles.chartHeightClasses]
 	 */
-	constructor({ key, title, displayPrefix, allowedPrefixes, baseUnit, chartStyles }) {
+	constructor({ key, title, prefix, displayPrefix, allowedPrefixes, baseUnit, chartStyles }) {
 		this.key = key;
-		this.chartOptions = new ChartOptions();
+		this.chartOptions = new ChartOptions({
+			prefix,
+			displayPrefix,
+			allowedPrefixes,
+			baseUnit
+		});
 		this.chartStyles = new ChartStyles();
 		this.title = title;
-		this.displayPrefix = displayPrefix;
-		this.allowedPrefixes = allowedPrefixes;
-		this.baseUnit = baseUnit;
-		this.chartStyles.chartHeightClasses = chartStyles.chartHeightClasses;
+
+		if (chartStyles) {
+			this.chartStyles.chartHeightClasses = chartStyles.chartHeightClasses;
+		}
 	}
 
 	getNextPrefix() {
-		if (!this.allowedPrefixes) return '';
+		if (!this.chartOptions.allowedPrefixes) return '';
 
-		let index = this.allowedPrefixes.indexOf(this.displayPrefix);
-		return index === this.allowedPrefixes.length - 1
-			? this.allowedPrefixes[0]
-			: this.allowedPrefixes[index + 1];
+		let index = this.chartOptions.allowedPrefixes.indexOf(this.chartOptions.displayPrefix);
+		return index === this.chartOptions.allowedPrefixes.length - 1
+			? this.chartOptions.allowedPrefixes[0]
+			: this.chartOptions.allowedPrefixes[index + 1];
 	}
 
 	formatValue(/** @type {number} */ d) {
@@ -223,9 +253,9 @@ export default class ChartState {
 
 	/**
 	 * @param {string} name
-	 * @param {boolean} isMetaPressed
+	 * @param {boolean} [isMetaPressed]
 	 */
-	updateHiddenSeriesNames(name, isMetaPressed) {
+	updateHiddenSeriesNames(name, isMetaPressed = false) {
 		if (isMetaPressed) {
 			this.hiddenSeriesNames = this.seriesNames.filter((n) => n !== name);
 		} else {
@@ -240,12 +270,5 @@ export default class ChartState {
 				}
 			}
 		}
-	}
-
-	reset() {
-		this.seriesData = [];
-		this.seriesNames = [];
-		this.seriesColours = {};
-		this.seriesLabels = {};
 	}
 }

@@ -1,21 +1,22 @@
 <script>
 	import { LayerCake, Svg, flatten, stack, groupLonger } from 'layercake';
-	import { scaleOrdinal, scaleUtc } from 'd3-scale';
+	import { scaleOrdinal, scaleTime } from 'd3-scale';
 	import checkAndGetContext from '$lib/utils/check-and-get-context.js';
-	import AreaStacked from './elements2/AreaStacked.svelte';
+	import StackedAreaLine from './elements2/StackedAreaLine.svelte';
 	import HoverLayer from './elements2/HoverLayer.svelte';
 	import AxisY from './elements/AxisY.svelte';
 	import AxisX from './elements/AxisX.svelte';
 	import ClipPath from './elements/defs/ClipPath.svelte';
 	import HatchPattern from './elements/defs/HatchPattern.svelte';
 	import LineX from './elements/annotations/LineX.svelte';
+	import Dot from './elements/annotations/Dot.svelte';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {symbol} cxtKey
 	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} onmousemove
 	 * @property {() => void} onmouseout
-	 * @property {(evt: { data: TimeSeriesData }) => void} onpointerup
+	 * @property {(evt: TimeSeriesData) => void} onpointerup
 	 */
 
 	/** @type {Props} */
@@ -26,10 +27,10 @@
 	let id = chartStyles.htmlId;
 	let clip = chartStyles.chartClip;
 	let stackedData = $derived(
-		cxt.seriesScaledData.length > 0 ? stack(cxt.seriesScaledData, cxt.seriesNames) : []
+		cxt.seriesScaledData.length > 0 ? stack(cxt.seriesScaledData, cxt.visibleSeriesNames) : []
 	);
 	let groupedData = $derived(
-		cxt.seriesScaledData.length > 0 ? groupLonger(cxt.seriesScaledData, cxt.seriesNames) : []
+		cxt.seriesScaledData.length > 0 ? groupLonger(cxt.seriesScaledData, cxt.visibleSeriesNames) : []
 	);
 	let chartData = $derived(cxt.chartOptions.isChartTypeArea ? stackedData : groupedData);
 	let flatData = $derived(
@@ -50,7 +51,7 @@
 		yDomain={cxt.yDomain}
 		xDomain={cxt.xDomain}
 		zDomain={cxt.seriesNames}
-		xScale={scaleUtc()}
+		xScale={scaleTime()}
 		zScale={scaleOrdinal()}
 		zRange={cxt.visibleSeriesColours}
 		data={chartData}
@@ -60,12 +61,16 @@
 			<defs>
 				<ClipPath id={clipPathId} />
 			</defs>
+
 			<HoverLayer dataset={cxt.seriesScaledData} {onmousemove} {onmouseout} {onpointerup} />
+
 			<g clip-path={clipPath}>
-				<AreaStacked
+				<StackedAreaLine
 					dataset={cxt.seriesScaledData}
 					display={cxt.chartOptions.selectedChartType}
 					curveType={cxt.chartOptions.curveFunction}
+					seriesColours={cxt.seriesColours}
+					highlightId={cxt.hoverKey}
 					{onmousemove}
 					{onmouseout}
 					{onpointerup}
@@ -82,6 +87,16 @@
 				{#if cxt.hoverData}
 					<LineX xValue={cxt.hoverData} strokeArray="none" />
 				{/if}
+
+				{#if cxt.focusData}
+					<LineX xValue={cxt.focusData} strokeArray="none" strokeColour="#C74523" />
+					<!-- <Dot
+						domains={cxt.seriesNames}
+						value={$state.snapshot(cxt.focusData)}
+						isStacked={true}
+						colour="#C74523"
+					/> -->
+				{/if}
 			</g>
 		</Svg>
 
@@ -94,7 +109,9 @@
 				<AxisY
 					ticks={cxt.yTicks}
 					xTick={5}
-					formatTick={cxt.formatY}
+					formatTick={cxt.chartOptions.isDataTransformTypeProportion
+						? (/** @type {any} */ d) => d
+						: cxt.convertAndFormatValue}
 					gridlines={true}
 					stroke={cxt.chartStyles.yAxisStroke}
 				/>

@@ -57,7 +57,7 @@
 		onclick={() => (showOptions = !showOptions)}
 		use:clickoutside
 		onclickoutside={() => (showOptions = false)}
-		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg"
+		class="flex items-center gap-2 {paddingX} {paddingY} rounded-lg"
 		class:hover:bg-warm-grey={!staticDisplay}
 	>
 		{#if staticDisplay}

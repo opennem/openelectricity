@@ -7,11 +7,13 @@ import { fuelTechMap, orderMap, labelReducer } from './groups';
  *
  * @param {{
  * history: StatsData[],
- * group: string,
  * unit: string,
  * colourReducer: *
  * targetInterval?: string,
  * calculate12MthRollingSum: boolean,
+ * fuelTechMap: { [key: string]: string[] },
+ * fuelTechOrder: string[],
+ * labelReducer: *
  * }} param0
  * @returns {{
  * stats: StatsInstance,
@@ -19,18 +21,18 @@ import { fuelTechMap, orderMap, labelReducer } from './groups';
  */
 function process({
 	history,
-	group,
+	fuelTechMap,
+	fuelTechOrder,
 	unit,
 	colourReducer,
+	labelReducer,
 	targetInterval,
 	calculate12MthRollingSum
 }) {
-	const fuelTechs = fuelTechMap[group];
-
 	/********* processing */
 	const stats = new Statistic(history, 'history', unit)
-		.group(fuelTechs, [], false)
-		.reorder(orderMap[group] || []);
+		.group(fuelTechMap, [], false)
+		.reorder(fuelTechOrder);
 
 	targetInterval = targetInterval || stats.minIntervalObj?.intervalString || '1Y';
 
@@ -38,7 +40,7 @@ function process({
 		stats.data,
 		parseInterval(stats.minIntervalObj?.intervalString || '1Y'),
 		'history',
-		labelReducer[group],
+		labelReducer,
 		colourReducer
 	)
 		.transform()
@@ -48,8 +50,6 @@ function process({
 		? timeseriesInstance.calculate12MthRollingSum().updateMinMax()
 		: timeseriesInstance.updateMinMax();
 	/********* end of processing Projection */
-
-	console.log('timeseries', timeseries);
 
 	return {
 		stats,
