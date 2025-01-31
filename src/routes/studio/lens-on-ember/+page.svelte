@@ -86,33 +86,13 @@
 
 	$effect(() => {
 		if (processedEnergyData) {
-			let cxt = chartCxts['energy-chart'];
-			let ts = processedEnergyData.timeseries;
-
-			cxt.seriesData = ts.data;
-			cxt.seriesNames = ts.seriesNames;
-			cxt.seriesColours = ts.seriesColours;
-			cxt.seriesLabels = ts.seriesLabels;
-
-			cxt.xTicks = filtersCxt.selectedRangeXTicks;
-			cxt.formatTickX = filtersCxt.selectedRangeFormatTickX;
-			cxt.formatX = filtersCxt.selectedRangeFormatX;
+			updateCxt('energy-chart', processedEnergyData.timeseries);
 		}
 	});
 
 	$effect(() => {
 		if (processedEmissionsData) {
-			let cxt = chartCxts['emissions-chart'];
-			let ts = processedEmissionsData.timeseries;
-
-			cxt.seriesData = ts.data;
-			cxt.seriesNames = ts.seriesNames;
-			cxt.seriesColours = ts.seriesColours;
-			cxt.seriesLabels = ts.seriesLabels;
-
-			cxt.xTicks = filtersCxt.selectedRangeXTicks;
-			cxt.formatTickX = filtersCxt.selectedRangeFormatTickX;
-			cxt.formatX = filtersCxt.selectedRangeFormatX;
+			updateCxt('emissions-chart', processedEmissionsData.timeseries);
 		}
 	});
 
@@ -135,6 +115,22 @@
 			cxt.chartStyles.strokeWidth = 1;
 		}
 	});
+
+	/**
+	 * @param {string} cxtName
+	 * @param {TimeSeriesInstance} ts
+	 */
+	function updateCxt(cxtName, ts) {
+		let cxt = chartCxts[cxtName];
+		cxt.seriesData = ts.data;
+		cxt.seriesNames = ts.seriesNames;
+		cxt.seriesColours = ts.seriesColours;
+		cxt.seriesLabels = ts.seriesLabels;
+
+		cxt.xTicks = filtersCxt.selectedRangeXTicks;
+		cxt.formatTickX = filtersCxt.selectedRangeFormatTickX;
+		cxt.formatX = filtersCxt.selectedRangeFormatX;
+	}
 
 	/**
 	 * @param {string | undefined} hoverKey

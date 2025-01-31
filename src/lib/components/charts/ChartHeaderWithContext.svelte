@@ -8,7 +8,7 @@
 	/** @type {{ cxtKey: symbol, displayOptions: boolean }} */
 	let { displayOptions = true, cxtKey } = $props();
 
-	/** @type {import('$lib/components/charts/states/chart.svelte.js').default} */
+	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
 	let cxt = checkAndGetContext(cxtKey);
 
 	let showOptions = $state(false);

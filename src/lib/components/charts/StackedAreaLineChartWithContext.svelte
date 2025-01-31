@@ -14,14 +14,14 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {symbol} cxtKey
-	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} onmousemove
-	 * @property {() => void} onmouseout
-	 * @property {(evt: TimeSeriesData) => void} onpointerup
+	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(evt: TimeSeriesData) => void} [onpointerup]
 	 */
 
 	/** @type {Props} */
 	let { cxtKey, onmousemove, onmouseout, onpointerup } = $props();
-	/** @type {import('$lib/components/charts/states/chart.svelte.js').default} */
+	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
 	let cxt = checkAndGetContext(cxtKey);
 	let chartStyles = cxt.chartStyles;
 	let id = chartStyles.htmlId;

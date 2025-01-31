@@ -7,14 +7,14 @@
 
 	/** @type {{
 		cxtKey: symbol,
-		displayOptions: boolean,
-		onmousemove: (evt: ChartEvent | TimeSeriesData) => void,
-		onmouseout: () => void,
-		onpointerup: (evt: TimeSeriesData) => void
+		displayOptions?: boolean,
+		onmousemove?: (evt: ChartEvent | TimeSeriesData) => void,
+		onmouseout?: () => void,
+		onpointerup?: (evt: TimeSeriesData) => void
 	}} */
 	let props = $props();
 </script>
 
-<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions} />
+<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions || true} />
 <ChartTooltipWithContext cxtKey={props.cxtKey} />
 <StackedAreaLineChartWithContext {...props} />

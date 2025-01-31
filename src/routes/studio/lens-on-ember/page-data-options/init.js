@@ -1,6 +1,6 @@
 import { setContext, getContext } from 'svelte';
 import { FiltersState, setFiltersContext, getFiltersContext } from '../states/filters.svelte';
-import ChartState from '$lib/components/charts/stores/chart.svelte.js';
+import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
 
 /** @typedef {import('../states/filters.d.ts').RangeType} RangeType */
 
@@ -57,7 +57,7 @@ export default function (data) {
 
 	// Setup Chart context
 	Object.entries(chartCxtsMeta).forEach(([_, options]) => {
-		setContext(options.key, new ChartState(options));
+		setContext(options.key, new ChartStore(options));
 	});
 
 	let dateBrushCxtKey = Symbol('date-brush');
@@ -65,7 +65,7 @@ export default function (data) {
 	// Setup Date Brush context
 	setContext(
 		dateBrushCxtKey,
-		new ChartState({
+		new ChartStore({
 			key: dateBrushCxtKey,
 			title: 'Date Brush',
 			prefix: 'M',
@@ -80,7 +80,7 @@ export default function (data) {
 	let chartCxts = Object.entries(chartCxtsMeta).reduce((acc, [name, { key }]) => {
 		acc[name] = getContext(key);
 		return acc;
-	}, /** @type {Record<string, ChartState>} */ ({}));
+	}, /** @type {Record<string, ChartStore>} */ ({}));
 
 	let dateBrushCxt = getContext(dateBrushCxtKey);
 

@@ -14,7 +14,9 @@
 	$effect(() => {
 		if (cxt.selectedRegion && cxt.selectedRange && cxt.selectedInterval) {
 			let intervalQuery = cxt.isYearly ? '' : `&interval=${cxt.selectedInterval}`;
-			goto(`?region=${cxt.selectedRegion}&range=${cxt.selectedRange}${intervalQuery}`);
+			goto(`?region=${cxt.selectedRegion}&range=${cxt.selectedRange}${intervalQuery}`, {
+				noScroll: true
+			});
 		}
 	});
 </script>

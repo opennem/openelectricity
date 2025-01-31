@@ -4,7 +4,7 @@ import ChartOptions from './chart-options.svelte.js';
 import ChartStyles from './chart-styles.svelte.js';
 import { transformToProportion } from '$lib/utils/data-transform/index.js';
 
-export default class ChartState {
+export default class ChartStore {
 	key;
 	chartOptions = $state();
 	chartStyles = $state();
@@ -214,11 +214,11 @@ export default class ChartState {
 	/**
 	 * @param {Object} options
 	 * @param {symbol} options.key
-	 * @param {string} options.title
-	 * @param {SiPrefix} options.prefix
-	 * @param {SiPrefix} options.displayPrefix
-	 * @param {SiPrefix[]} options.allowedPrefixes
-	 * @param {string} options.baseUnit
+	 * @param {string} [options.title]
+	 * @param {SiPrefix} [options.prefix]
+	 * @param {SiPrefix} [options.displayPrefix]
+	 * @param {SiPrefix[]} [options.allowedPrefixes]
+	 * @param {string} [options.baseUnit]
 	 * @param {Object} [options.chartStyles]
 	 * @param {string} [options.chartStyles.chartHeightClasses]
 	 */
@@ -231,7 +231,7 @@ export default class ChartState {
 			baseUnit
 		});
 		this.chartStyles = new ChartStyles();
-		this.title = title;
+		this.title = title ?? '';
 
 		if (chartStyles) {
 			this.chartStyles.chartHeightClasses = chartStyles.chartHeightClasses;
