@@ -1,5 +1,21 @@
 # opennem-app
 
+## 2.2.0
+
+### Minor Changes
+
+- a5c8fa0: add date brush to tracker chart
+- a20243c: refactor chart components
+- 7bdbddc: refactor and redesigns record history page with tracker view support
+- 0143469: record history - tracker history updates
+
+### Patch Changes
+
+- a20243c: use clippathId for y axis clippath
+- a20243c: show fetch error
+- fd7b1d7: setup xaxis formatters
+- a20243c: add fill to axis background
+
 ## 2.1.2
 
 ### Patch Changes
