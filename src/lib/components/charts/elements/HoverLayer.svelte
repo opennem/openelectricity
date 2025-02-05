@@ -8,7 +8,6 @@
 	const { xScale, width, height } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]

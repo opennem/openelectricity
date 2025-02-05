@@ -14,11 +14,12 @@ function getQuarter(month) {
 	return month;
 }
 /**
- * @param {Date} date
+ * @param {Date | undefined} date
  * @param {string} [interval]
  * @returns
  */
 export default function format(date, interval) {
+	if (!date) return '';
 	switch (interval) {
 		case '1d':
 			return getFormattedDate(date, 'short', 'numeric', 'numeric', '2-digit');

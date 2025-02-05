@@ -14,7 +14,15 @@ export async function GET({ fetch, url }) {
 	const res = await fetch(dataPath);
 
 	if (res.ok) {
-		return res;
+		try {
+			const data = await res.json();
+			return new Response(JSON.stringify(data));
+		} catch (err) {
+			console.error('Error parsing JSON', err);
+			return new Response(JSON.stringify({ error: 'Error parsing JSON', bodyText: res.body }), {
+				status: 500
+			});
+		}
 	}
 
 	error(404, 'Not found');

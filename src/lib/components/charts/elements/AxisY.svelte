@@ -3,29 +3,6 @@
 
 	const { padding, xRange, yScale, xScale } = getContext('LayerCake');
 
-	
-
-	
-
-	
-
-	
-
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
-	
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {boolean} [gridlines]
@@ -62,21 +39,27 @@
 
 	let isBandwidth = $derived(typeof $yScale.bandwidth === 'function');
 
-	let xStart = $derived(yLabelStartPos
-		? $xScale(yLabelStartPos)
-		: $xRange[0] + (isBandwidth ? $padding.left : 0));
+	let xStart = $derived(
+		yLabelStartPos ? $xScale(yLabelStartPos) : $xRange[0] + (isBandwidth ? $padding.left : 0)
+	);
 	// $: x2 = $xScale($xRange[0]);
 
-	let tickVals = $derived(Array.isArray(ticks)
-		? ticks
-		: isBandwidth
-		? $yScale.domain()
-		: typeof ticks === 'function'
-		? ticks($yScale.ticks())
-		: $yScale.ticks(ticks));
+	let tickVals = $derived(
+		Array.isArray(ticks)
+			? ticks
+			: isBandwidth
+				? $yScale.domain()
+				: typeof ticks === 'function'
+					? ticks($yScale.ticks())
+					: $yScale.ticks(ticks)
+	);
 </script>
 
-<g class="axis y-axis pointer-events-none" transform="translate({-$padding.left}, 0)">
+<g
+	class="axis y-axis pointer-events-none"
+	transform="translate({-$padding.left}, 0)"
+	clip-path={clipPathId ? `url(#${clipPathId})` : ''}
+>
 	{#each tickVals as tick, i (i)}
 		<g class="tick tick-{tick}" transform="translate({xStart}, {$yScale(tick)})">
 			{#if gridlines === true}

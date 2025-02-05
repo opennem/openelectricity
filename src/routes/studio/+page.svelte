@@ -17,8 +17,7 @@
 		{
 			title: 'Lens on Australia’s electricity system and market',
 			description: 'Visualises energy, pricing and emissions data from Australia.',
-			link: '/studio/lens-on-au',
-			disabled: true
+			link: '/studio/lens-on-au-grid'
 		},
 		{
 			title: 'Atlas on Australia’s power generation facilities',

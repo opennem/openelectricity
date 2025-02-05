@@ -8,7 +8,7 @@ export async function load({ data, url }) {
 		...data, // pipe through data from PageServer
 
 		region,
-		range,
+		range: /** @type {RangeType} */ (range),
 		interval
 	};
 }

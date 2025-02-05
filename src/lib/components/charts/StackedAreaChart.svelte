@@ -2,7 +2,7 @@
 	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
 	import { tweened } from 'svelte/motion';
 	import * as eases from 'svelte/easing';
-	import { scaleOrdinal, scaleUtc } from 'd3-scale';
+	import { scaleOrdinal, scaleTime } from 'd3-scale';
 	import getSeqId from '$lib/utils/html-id-gen';
 	import AreaStacked from './elements/AreaStacked.svelte';
 	import AxisX from './elements/AxisX.svelte';
@@ -119,7 +119,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 		{z}
 		{yDomain}
 		{xDomain}
-		xScale={scaleUtc()}
+		xScale={scaleTime()}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
 		{zRange}

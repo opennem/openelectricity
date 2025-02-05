@@ -1,6 +1,8 @@
+import { loadFuelTechs } from '$lib/fuel_techs';
 import Statistic from '$lib/utils/Statistic';
 import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
+import { fuelTechMap, orderMap, labelReducer } from './groups';
 
 /**
  *
@@ -9,15 +11,30 @@ import parseInterval from '$lib/utils/intervals';
  * unit: string,
  * colourReducer: *
  * targetInterval?: string,
- * calculate12MthRollingSum: boolean,
+ * calculate12MthRollingSum?: boolean,
+ * fuelTechMap: { [key: string]: string[] },
+ * fuelTechOrder: string[],
+ * labelReducer: *
  * }} param0
  * @returns {{
  * stats: StatsInstance,
  * timeseries: TimeSeriesInstance}}
  */
-function process({ history, unit, colourReducer, targetInterval, calculate12MthRollingSum }) {
+function process({
+	history,
+	fuelTechMap,
+	fuelTechOrder,
+	unit,
+	colourReducer,
+	labelReducer,
+	targetInterval,
+	calculate12MthRollingSum = false
+}) {
 	/********* processing */
-	const stats = new Statistic(history, 'history', unit).group({ demand: ['demand'] }, [], true);
+	const stats = new Statistic(history, 'history', unit)
+		.invertValues(loadFuelTechs)
+		.group(fuelTechMap, [], false)
+		.reorder(fuelTechOrder);
 
 	targetInterval = targetInterval || stats.minIntervalObj?.intervalString || '1Y';
 
@@ -25,8 +42,8 @@ function process({ history, unit, colourReducer, targetInterval, calculate12MthR
 		stats.data,
 		parseInterval(stats.minIntervalObj?.intervalString || '1Y'),
 		'history',
-		() => 'Demand',
-		() => 'red'
+		labelReducer,
+		colourReducer
 	)
 		.transform()
 		.rollup(parseInterval(targetInterval));
@@ -35,9 +52,6 @@ function process({ history, unit, colourReducer, targetInterval, calculate12MthR
 		? timeseriesInstance.calculate12MthRollingSum().updateMinMax()
 		: timeseriesInstance.updateMinMax();
 	/********* end of processing Projection */
-
-	console.log('stats', stats);
-	console.log('timeseries', timeseries);
 
 	return {
 		stats,
