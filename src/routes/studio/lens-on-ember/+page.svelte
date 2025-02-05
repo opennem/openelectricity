@@ -16,21 +16,31 @@
 	let { chartCxts, dateBrushCxt, filtersCxt } = init(data);
 
 	let fetching = $state(false);
+	let error = $state(false);
 	/** @type {StatsData[]} */
 	let dataset = $state([]);
 	/** @type {Record<string, StatsData[]>} */
 	let cachedDataset = $state({});
 
+	dateBrushCxt.chartStyles.chartHeightClasses = 'h-[50px] mb-10';
+	dateBrushCxt.chartStyles.strokeWidth = 1;
+
 	$effect(() => {
 		if (filtersCxt.selectedRegion && filtersCxt.selectedRange) {
 			let key = filtersCxt.selectedRegion + filtersCxt.selectedRange;
+			error = false;
 			if (cachedDataset[key]) {
 				dataset = cachedDataset[key];
 			} else {
 				fetching = true;
 				fetchData(filtersCxt.selectedRegion, filtersCxt.selectedRange).then((data) => {
-					dataset = data;
-					cachedDataset[key] = data;
+					if (data) {
+						dataset = data;
+						cachedDataset[key] = data;
+					} else {
+						console.error('Error fetching data', data);
+						error = true;
+					}
 					fetching = false;
 				});
 			}
@@ -110,9 +120,6 @@
 			cxt.xTicks = filtersCxt.valueFormatters.ticks(ts.data);
 			cxt.formatX = filtersCxt.valueFormatters.format;
 			cxt.formatTickX = filtersCxt.valueFormatters.formatTick;
-
-			cxt.chartStyles.chartHeightClasses = 'h-[50px] mb-10';
-			cxt.chartStyles.strokeWidth = 1;
 		}
 	});
 
@@ -256,25 +263,34 @@
 		</div>
 	{/if}
 
-	<div class="md:grid md:grid-cols-[8fr_6fr] lg:grid-cols-[8fr_4fr] gap-4" class:blur-sm={fetching}>
-		<div class="flex flex-col gap-1">
-			{#each Object.values(chartCxts) as cxt}
-				<LensChart
-					cxtKey={cxt.key}
-					displayOptions={true}
-					{onmousemove}
-					{onmouseout}
-					{onpointerup}
-				/>
-			{/each}
+	{#if error}
+		<div class="grid place-items-center h-[400px]">
+			<div class="text-dark-red">Error fetching data</div>
+		</div>
+	{:else}
+		<div
+			class="md:grid md:grid-cols-[8fr_6fr] lg:grid-cols-[8fr_4fr] gap-4"
+			class:blur-sm={fetching}
+		>
+			<div class="flex flex-col gap-1">
+				{#each Object.values(chartCxts) as cxt}
+					<LensChart
+						cxtKey={cxt.key}
+						displayOptions={true}
+						{onmousemove}
+						{onmouseout}
+						{onpointerup}
+					/>
+				{/each}
+			</div>
+
+			<div class="relative">
+				<Table {chartCxts} />
+			</div>
 		</div>
 
-		<div class="relative">
-			<Table {chartCxts} />
+		<div class="sticky bottom-8 pt-4 bg-white z-30" class:blur-sm={fetching}>
+			<DateBrushWithContext cxtKey={dateBrushCxt.key} {brushedRange} {onbrush} />
 		</div>
-	</div>
-
-	<div class="sticky bottom-8 pt-4 bg-white z-30" class:blur-sm={fetching}>
-		<DateBrushWithContext cxtKey={dateBrushCxt.key} {brushedRange} {onbrush} />
-	</div>
+	{/if}
 </main>
