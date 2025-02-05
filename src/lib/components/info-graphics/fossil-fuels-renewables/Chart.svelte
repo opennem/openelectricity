@@ -128,6 +128,7 @@
 				strokeArray="3"
 				stroke="#efefef"
 				tickLabel={!hoverData}
+				fill="transparent"
 			/>
 			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
 
