@@ -1,14 +1,11 @@
 import { setContext, getContext } from 'svelte';
 import { INTERVAL_LABELS } from '$lib/utils/intervals';
-import { rangeIntervalMap } from '../page-data-options/config';
 import rangeIntervalXFormattersGetters from '$lib/utils/range-interval-ticks-formatters';
-
+import { rangeIntervalMap } from '../helpers/config';
+import { regionsWithLabels } from '../helpers/regions';
 const FILTERS_KEY = Symbol('filters');
 
 export class FiltersState {
-	/** @type {EmberCountry[] | undefined} */
-	countries = $state([]);
-
 	ranges = Object.keys(rangeIntervalMap).map((d) => ({
 		label: rangeIntervalMap[d].label,
 		value: d
@@ -24,7 +21,7 @@ export class FiltersState {
 	selectedInterval = $state('');
 
 	/** @type {string} */
-	selectedFuelTechGroup = $state('rvf');
+	selectedFuelTechGroup = $state('detailed');
 
 	/** @type {{label: string, value: string}[] | undefined} */
 	selectedRangeIntervals = $derived.by(() => {
@@ -41,19 +38,7 @@ export class FiltersState {
 	});
 
 	/** @type {string} */
-	selectedRegionLabel = $derived.by(() => {
-		const find = this.countries?.find((country) => country.iso === this.selectedRegion);
-		return find ? find.name : '';
-	});
-
-	/** @type {boolean} */
-	is12MthRollingSum = $derived(this.selectedRange === '12-month-rolling');
-
-	/** @type {boolean} */
-	isMonthly = $derived(this.selectedRange === 'monthly');
-
-	/** @type {boolean} */
-	isYearly = $derived(this.selectedRange === 'yearly');
+	selectedRegionLabel = $derived(regionsWithLabels[this.selectedRegion] || this.selectedRegion);
 
 	valueFormatters = $derived(
 		this.selectedRange
@@ -67,14 +52,12 @@ export class FiltersState {
 
 	/**
 	 * @param {{
-	 *  countries: EmberCountry[],
 	 *  selectedRegion: string,
 	 *  selectedRange: RangeType | undefined,
 	 *  selectedInterval: string
 	 * }} props
 	 */
-	constructor({ countries, selectedRegion, selectedRange, selectedInterval }) {
-		this.countries = countries;
+	constructor({ selectedRegion, selectedRange, selectedInterval }) {
 		this.selectedRegion = selectedRegion;
 		this.selectedRange = selectedRange;
 		this.selectedInterval = selectedInterval;

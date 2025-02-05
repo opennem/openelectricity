@@ -1,11 +1,11 @@
 import { setContext, getContext } from 'svelte';
-import { FiltersState, setFiltersContext, getFiltersContext } from '../states/filters.svelte';
+import { FiltersState, setFiltersContext, getFiltersContext } from '../stores/filters.svelte';
 import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
 import { chartCxtsOptions, dateBrushCxtOptions } from './config';
 
 /**
  * @param {{
- * countries?: EmberCountry[],
+ * dataset?: StatsData[],
  * region?: string,
  * range?: RangeType,
  * interval?: string
@@ -15,7 +15,6 @@ export default function (data) {
 	// Setup Filter context
 	setFiltersContext(
 		new FiltersState({
-			countries: data.countries ?? [],
 			selectedRegion: data.region ?? '',
 			selectedRange: data.range,
 			selectedInterval: data.interval ?? ''
@@ -27,8 +26,8 @@ export default function (data) {
 		setContext(options.key, new ChartStore(options));
 	});
 
-	// Setup Date Brush context
-	setContext(dateBrushCxtOptions.key, new ChartStore(dateBrushCxtOptions));
+	// // Setup Date Brush context
+	// setContext(dateBrushCxtOptions.key, new ChartStore(dateBrushCxtOptions));
 
 	let filtersCxt = getFiltersContext();
 
@@ -37,11 +36,11 @@ export default function (data) {
 		return acc;
 	}, /** @type {Record<string, ChartStore>} */ ({}));
 
-	let dateBrushCxt = getContext(dateBrushCxtOptions.key);
+	// let dateBrushCxt = getContext(dateBrushCxtOptions.key);
 
 	return {
 		chartCxts,
-		dateBrushCxt,
+		// dateBrushCxt,
 		filtersCxt
 	};
 }

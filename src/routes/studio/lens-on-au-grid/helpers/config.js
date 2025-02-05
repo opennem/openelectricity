@@ -10,23 +10,14 @@
 
 /** @type {Record<string, chartCxtOptions>} */
 export let chartCxtsOptions = {
-	'energy-chart': {
-		key: Symbol('energy-chart'),
-		title: 'Energy',
-		prefix: 'T',
-		displayPrefix: 'T',
-		allowedPrefixes: ['M', 'G', 'T'],
-		baseUnit: 'Wh',
-		chartStyles: { chartHeightClasses: 'h-[400px] md:h-[450px]' }
-	},
-	'emissions-chart': {
-		key: Symbol('emissions-chart'),
-		title: 'Emissions',
+	'power-energy-chart': {
+		key: Symbol('power-energy-chart'),
+		title: 'Generation',
 		prefix: 'M',
 		displayPrefix: 'M',
-		allowedPrefixes: ['k', 'M', 'G'],
-		baseUnit: 'tCO2e',
-		chartStyles: { chartHeightClasses: 'h-[300px] md:h-[350px]' }
+		allowedPrefixes: ['M', 'G'],
+		baseUnit: 'W',
+		chartStyles: { chartHeightClasses: 'h-[400px] md:h-[450px]' }
 	}
 };
 
@@ -37,20 +28,24 @@ export let dateBrushCxtOptions = {
 	prefix: 'M',
 	displayPrefix: 'M',
 	allowedPrefixes: ['M'],
-	baseUnit: 'Wh'
+	baseUnit: 'W'
 };
 
 /** @type {Record<string, {label: string, intervals?: string[]}>} */
 export let rangeIntervalMap = {
-	monthly: {
-		label: 'Monthly',
-		intervals: ['1M', '1Q', '6M', '1Y']
-	},
-	'12-month-rolling': {
-		label: '12 mth rolling',
-		intervals: ['1M', '1Q', '6M']
-	},
-	yearly: {
-		label: 'Yearly'
+	'7d': {
+		label: '7d',
+		intervals: ['5m', '30m']
 	}
+	// monthly: {
+	// 	label: 'Monthly',
+	// 	intervals: ['1M', '1Q', '6M', '1Y']
+	// },
+	// '12-month-rolling': {
+	// 	label: '12 mth rolling',
+	// 	intervals: ['1M', '1Q', '6M']
+	// },
+	// yearly: {
+	// 	label: 'Yearly'
+	// }
 };

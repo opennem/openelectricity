@@ -7,6 +7,20 @@ import popEveryXItem from '$lib/utils/pop-every-x-item';
  * this controls the number of x-axis ticks and the formatting of the x-axis labels and x value.
  * @type {Record<string, {ticks: Record<string, ((d?: any) => Date[] | number)>, format: Record<string, (d: Date) => string>, formatTick: Record<string, (d: Date) => string>}>} */
 let rangeIntervalXFormatters = {
+	'7d': {
+		ticks: {
+			default: () => 8
+		},
+		format: {
+			default: (/** @type {Date} */ d) =>
+				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+		},
+		formatTick: {
+			default: (/** @type {Date} */ d) =>
+				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+		}
+	},
+
 	monthly: {
 		ticks: {
 			default: () => 8,

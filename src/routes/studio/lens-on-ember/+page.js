@@ -1,5 +1,3 @@
-/** @typedef {import('./states/filters.d.ts').RangeType} RangeType */
-
 export async function load({ data, url }) {
 	const { searchParams } = url;
 	const region = searchParams.get('region') || 'x-WRD';
