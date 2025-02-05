@@ -1,5 +1,7 @@
 import { setContext, getContext } from 'svelte';
-import { getFormattedDate } from '$lib/utils/formatters';
+import { INTERVAL_LABELS } from '$lib/utils/intervals';
+import { rangeIntervalMap } from '../page-data-options/config';
+import rangeIntervalXFormattersGetters from '$lib/utils/range-interval-ticks-formatters';
 
 /** @typedef {import('./filters.d.ts').RangeType} RangeType */
 
@@ -9,79 +11,10 @@ export class FiltersState {
 	/** @type {EmberCountry[] | undefined} */
 	countries = $state([]);
 
-	ranges = [
-		{
-			label: 'Monthly',
-			value: 'monthly'
-		},
-		{
-			label: '12 mth rolling',
-			value: '12-month-rolling'
-		},
-		{
-			label: 'Yearly',
-			value: 'yearly'
-		}
-	];
-
-	/** @type {Record<RangeType, {xTicks: number | undefined, formatTickX: (d: Date) => string, formatX: (d: Date) => string}>} */
-	xTicksAndFormatters = {
-		monthly: {
-			xTicks: undefined,
-			formatTickX: (/** @type {Date} */ d) =>
-				getFormattedDate(d, undefined, undefined, 'short', '2-digit'),
-			formatX: (/** @type {Date} */ d) =>
-				getFormattedDate(d, undefined, undefined, 'short', '2-digit')
-		},
-		'12-month-rolling': {
-			xTicks: 6,
-			formatTickX: (/** @type {Date} */ d) =>
-				getFormattedDate(d, undefined, undefined, 'short', 'numeric'),
-			formatX: (/** @type {Date} */ d) =>
-				'Year to ' + getFormattedDate(d, undefined, undefined, 'short', 'numeric')
-		},
-		yearly: {
-			xTicks: 6,
-			formatTickX: (/** @type {Date} */ d) =>
-				getFormattedDate(d, undefined, undefined, undefined, 'numeric'),
-			formatX: (/** @type {Date} */ d) =>
-				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
-		}
-	};
-
-	monthlyIntervals = [
-		{
-			label: 'Month',
-			value: '1M'
-		},
-		{
-			label: 'Quarter',
-			value: '1Q'
-		},
-		{
-			label: 'Half Year',
-			value: '6M'
-		},
-		{
-			label: 'Year',
-			value: '1Y'
-		}
-	];
-
-	rollingIntervals = [
-		{
-			label: 'Month',
-			value: '1M'
-		},
-		{
-			label: 'Quarter',
-			value: '1Q'
-		},
-		{
-			label: 'Half Year',
-			value: '6M'
-		}
-	];
+	ranges = Object.keys(rangeIntervalMap).map((d) => ({
+		label: rangeIntervalMap[d].label,
+		value: d
+	}));
 
 	/** @type {string} */
 	selectedRegion = $state('');
@@ -94,6 +27,20 @@ export class FiltersState {
 
 	/** @type {string} */
 	selectedFuelTechGroup = $state('rvf');
+
+	/** @type {{label: string, value: string}[] | undefined} */
+	selectedRangeIntervals = $derived.by(() => {
+		if (!this.selectedRange) return undefined;
+
+		let range = rangeIntervalMap[this.selectedRange];
+
+		if (!range.intervals) return undefined;
+
+		return range.intervals.map((interval) => ({
+			label: INTERVAL_LABELS[interval],
+			value: interval
+		}));
+	});
 
 	/** @type {string} */
 	selectedRegionLabel = $derived.by(() => {
@@ -110,20 +57,14 @@ export class FiltersState {
 	/** @type {boolean} */
 	isYearly = $derived(this.selectedRange === 'yearly');
 
-	selectedRangeXTicks = $derived(
-		this.selectedRange ? this.xTicksAndFormatters[this.selectedRange].xTicks : undefined
-	);
-
-	selectedRangeFormatTickX = $derived(
+	valueFormatters = $derived(
 		this.selectedRange
-			? this.xTicksAndFormatters[this.selectedRange].formatTickX
-			: (/** @type {*} */ d) => d
-	);
-
-	selectedRangeFormatX = $derived(
-		this.selectedRange
-			? this.xTicksAndFormatters[this.selectedRange].formatX
-			: (/** @type {*} */ d) => d
+			? rangeIntervalXFormattersGetters(this.selectedRange, this.selectedInterval)
+			: {
+					ticks: () => undefined,
+					format: (/** @type {*} */ d) => d,
+					formatTick: (/** @type {*} */ d) => d
+				}
 	);
 
 	/**

@@ -31,13 +31,14 @@ export const MINUTE = 'm';
 const durationKeys = [MINUTE, DAY, MONTH, QUARTER, YEAR_HALF, YEAR];
 
 /** @type {Object.<string, string>} */
-export const INTERVAL_LABELS = {};
-INTERVAL_LABELS[YEAR] = 'Year';
-INTERVAL_LABELS[YEAR_HALF] = 'Half Year';
-INTERVAL_LABELS[QUARTER] = 'Quarter';
-INTERVAL_LABELS[MONTH] = 'Month';
-INTERVAL_LABELS[DAY] = 'Day';
-INTERVAL_LABELS[MINUTE] = 'Minute';
+export const INTERVAL_LABELS = {
+	[`1${YEAR}`]: 'Year',
+	[`6${MONTH}`]: 'Half Year',
+	[`1${QUARTER}`]: 'Quarter',
+	[`1${MONTH}`]: 'Month',
+	[`1${DAY}`]: 'Day',
+	[`5${MINUTE}`]: '5 mins'
+};
 
 /**
  *
@@ -84,7 +85,7 @@ export default function (intervalString) {
 	return {
 		intervalString,
 		key,
-		label: INTERVAL_LABELS[key],
+		label: INTERVAL_LABELS[intervalString],
 		seconds,
 		milliseconds: seconds * 1000,
 		incrementerValue,

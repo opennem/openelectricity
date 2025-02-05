@@ -22,16 +22,6 @@
 	const formatHoverTickX = (/** @type {Date | number} */ d) => format(d, 'MMM yyyy');
 	let isSafariBrowser = $state(true);
 
-
-	
-
-	
-
-	
-
-	
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [title]
@@ -73,9 +63,11 @@
 	let flatData = $derived(flatten(groupedData, 'values'));
 	let latestDatapoint = $derived(dataset[dataset.length - 1]);
 
-	let chartLabelStyles = $derived(md
-		? 'text-right text-xs text-mid-grey mr-0 z-10 pointer-events-none relative -mt-8'
-		: 'absolute -top-8 text-xs text-mid-grey right-0');
+	let chartLabelStyles = $derived(
+		md
+			? 'text-right text-xs text-mid-grey mr-0 z-10 pointer-events-none relative -mt-8'
+			: 'absolute -top-8 text-xs text-mid-grey right-0'
+	);
 
 	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 

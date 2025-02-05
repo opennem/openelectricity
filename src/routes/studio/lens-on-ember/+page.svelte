@@ -13,7 +13,7 @@
 	import Table from './components/Table.svelte';
 
 	let { data } = $props();
-	let { chartCxtsMeta, chartCxts, dateBrushCxt, filtersCxt } = init(data);
+	let { chartCxts, dateBrushCxt, filtersCxt } = init(data);
 
 	let fetching = $state(false);
 	/** @type {StatsData[]} */
@@ -45,7 +45,7 @@
 		energyData.length > 0
 			? process({
 					history: energyData,
-					unit: chartCxtsMeta['energy-chart'].baseUnit,
+					unit: chartCxts['energy-chart'].chartOptions.baseUnit,
 					colourReducer: $colourReducer,
 					calculate12MthRollingSum: filtersCxt.is12MthRollingSum,
 					fuelTechMap: fuelTechMap[filtersCxt.selectedFuelTechGroup],
@@ -59,7 +59,7 @@
 		emissionsData.length > 0
 			? process({
 					history: emissionsData,
-					unit: chartCxtsMeta['emissions-chart'].baseUnit,
+					unit: chartCxts['emissions-chart'].chartOptions.baseUnit,
 					colourReducer: $colourReducer,
 					calculate12MthRollingSum: filtersCxt.is12MthRollingSum,
 					fuelTechMap: fuelTechMap[filtersCxt.selectedFuelTechGroup],
@@ -73,7 +73,7 @@
 		demandData.length > 0
 			? process({
 					history: demandData,
-					unit: dateBrushCxt.baseUnit,
+					unit: dateBrushCxt.chartOptions.baseUnit,
 					colourReducer: () => 'red',
 					calculate12MthRollingSum: filtersCxt.is12MthRollingSum,
 					fuelTechMap: { demand: ['demand'] },
@@ -107,9 +107,9 @@
 			cxt.seriesLabels = ts.seriesLabels;
 
 			cxt.yKey = ts.seriesNames[0];
-			cxt.xTicks = filtersCxt.selectedRangeXTicks;
-			cxt.formatTickX = filtersCxt.selectedRangeFormatTickX;
-			cxt.formatX = filtersCxt.selectedRangeFormatX;
+			cxt.xTicks = filtersCxt.valueFormatters.ticks(ts.data);
+			cxt.formatX = filtersCxt.valueFormatters.format;
+			cxt.formatTickX = filtersCxt.valueFormatters.formatTick;
 
 			cxt.chartStyles.chartHeightClasses = 'h-[50px] mb-10';
 			cxt.chartStyles.strokeWidth = 1;
@@ -127,9 +127,9 @@
 		cxt.seriesColours = ts.seriesColours;
 		cxt.seriesLabels = ts.seriesLabels;
 
-		cxt.xTicks = filtersCxt.selectedRangeXTicks;
-		cxt.formatTickX = filtersCxt.selectedRangeFormatTickX;
-		cxt.formatX = filtersCxt.selectedRangeFormatX;
+		cxt.xTicks = filtersCxt.valueFormatters.ticks(ts.data);
+		cxt.formatX = filtersCxt.valueFormatters.format;
+		cxt.formatTickX = filtersCxt.valueFormatters.formatTick;
 	}
 
 	/**
@@ -162,8 +162,10 @@
 			// if the start and end of the xDomain are the same, reset and clear the xDomain
 			if (xDomain && xDomain[0].getTime() === xDomain[1].getTime()) {
 				cxt.xDomain = undefined;
+				cxt.xTicks = filtersCxt.valueFormatters.ticks(cxt.seriesData);
 			} else {
 				cxt.xDomain = xDomain;
+				cxt.xTicks = xDomain ? 5 : filtersCxt.valueFormatters.ticks(cxt.seriesData);
 			}
 		});
 	}

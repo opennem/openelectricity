@@ -69,7 +69,7 @@
 			</div>
 		</div>
 
-		{#if !cxt.isYearly}
+		{#if cxt.selectedRangeIntervals}
 			<div class="flex gap-2 md:gap-5 items-center">
 				<span class="font-mono text-xs text-mid-grey">Interval</span>
 				<div class="md:hidden">
@@ -78,14 +78,14 @@
 						paddingY="py-3"
 						align="right"
 						selectedLabelClass="text-sm font-semibold whitespace-nowrap"
-						options={cxt.isMonthly ? cxt.monthlyIntervals : cxt.rollingIntervals}
+						options={cxt.selectedRangeIntervals}
 						selected={cxt.selectedInterval}
 						on:change={(evt) => (cxt.selectedInterval = evt.detail.value)}
 					/>
 				</div>
 				<div class="hidden md:block">
 					<Switch
-						buttons={cxt.isMonthly ? cxt.monthlyIntervals : cxt.rollingIntervals}
+						buttons={cxt.selectedRangeIntervals}
 						selected={cxt.selectedInterval}
 						xPad={4}
 						yPad={2}
