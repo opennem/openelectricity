@@ -15,36 +15,6 @@
 	import LineX from './elements/annotations/LineX.svelte';
 	import Dot from './elements/annotations/Dot.svelte';
 
-	
-
-
-
-
-
-	
-
-
-	
-
-
-	
-
-	
-
-
-	
-
-
-
-	
-
-	
-
-	
-
-
-	
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]
@@ -122,7 +92,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 	>
 		<Svg>
 			<defs>
-				<ClipPath id={`${id}-clip-path`} />
+				<ClipPath id={clipPathId} />
 			</defs>
 
 			{#if overlay}
@@ -137,6 +107,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 				stroke="#33333344"
 				{clipPathId}
 			/>
+
 			<AxisX
 				ticks={xTicks}
 				gridlines={false}

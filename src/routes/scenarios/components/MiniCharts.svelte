@@ -5,12 +5,6 @@
 
 	import { scenarioLabelMap } from '../page-data-options/models';
 
-
-	
-
-	
-
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} seriesNames
@@ -61,10 +55,6 @@
 
 	const dispatch = createEventDispatcher();
 
-
-
-
-
 	/**
 	 * @param {string} key
 	 */
@@ -95,13 +85,15 @@
 	}
 	let tag = $derived(isButton ? 'button' : 'header');
 	let keys = $derived([...seriesNames].reverse());
-	let dataset = $derived(seriesData.map((d) => {
-		const obj = { ...d };
-		seriesLoadsIds.forEach((id) => {
-			obj[id] = d[id] ? -d[id] : d[id];
-		});
-		return obj;
-	}));
+	let dataset = $derived(
+		seriesData.map((d) => {
+			const obj = { ...d };
+			seriesLoadsIds.forEach((id) => {
+				obj[id] = d[id] ? -d[id] : d[id];
+			});
+			return obj;
+		})
+	);
 	let getMaxValue = $derived((/** @type {string} */ key) => {
 		const values = /** @type {number[]} */ (dataset.map((d) => d[key] || 0));
 		const maxValue = Math.round(Math.max(...values));
