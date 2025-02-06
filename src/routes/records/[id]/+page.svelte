@@ -27,8 +27,7 @@
 	import recordDescription from '../page-data-options/record-description';
 	// import getRelativeTime from '../page-data-options/relative-time';
 	// import HistoryTable from '../components/HistoryTable.svelte';
-	import Tracker from '../components/Tracker.svelte';
-	import MiniTracker from '../components/MiniTracker.svelte';
+	import MiniTracker from '../components/MiniTracker/index.svelte';
 	import { recordState } from '../stores/state.svelte';
 	import FuelTechIcon from '../components/FuelTechIcon.svelte';
 
@@ -304,7 +303,11 @@
 		</div>
 	</div>
 
-	<div class="grid grid-cols-1 md:grid-cols-{showTracker ? 2 : 1} gap-5 px-0 md:px-16 mb-10">
+	<div
+		class="grid grid-cols-1 gap-5 px-0 md:px-16 mb-10"
+		class:md:grid-cols-[5fr_2fr]={showTracker}
+		class:md:grid-cols-1={!showTracker}
+	>
 		<div class="w-full">
 			<!-- <div class="flex items-center gap-6 my-10">
 				<span
@@ -330,14 +333,14 @@
 		</div>
 
 		{#if showTracker}
-			<div in:fly={{ x: 100 }} class="bg-white rounded-lg p-6 md:border border-warm-grey relative">
+			<div class="bg-white rounded-lg p-6 md:border border-warm-grey relative">
 				<button
 					class="absolute right-0 top-0 md:-right-5 md:-top-5"
 					onclick={() => (showTracker = false)}
 				>
 					<IconXCircle class="size-8 md:size-12" />
 				</button>
-				<MiniTracker />
+				<MiniTracker focusData={$focusData} />
 			</div>
 		{/if}
 	</div>

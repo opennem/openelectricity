@@ -40,7 +40,7 @@ function process({
 
 	const timeseriesInstance = new TimeSeries(
 		stats.data,
-		parseInterval(intervalString),
+		parseInterval(stats.minIntervalObj?.intervalString || '1Y'),
 		'history',
 		labelReducer,
 		colourReducer

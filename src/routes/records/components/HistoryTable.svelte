@@ -109,12 +109,12 @@
 						class="pl-4 py-2 font-mono text-dark-grey flex"
 						class:text-red={record.time === $focusTime}
 					>
-						<time datetime={record.interval} class="w-44">
+						<time datetime={record.interval} class="w-44 whitespace-nowrap">
 							{tableTimeFormatter(record.period, false)(record.date)}
 						</time>
 
 						{#if record.period === 'interval'}
-							<time datetime={record.interval}>
+							<time datetime={record.interval} class="whitespace-nowrap">
 								{tableTimeFormatter(record.period, true)(record.date)}
 							</time>
 						{/if}

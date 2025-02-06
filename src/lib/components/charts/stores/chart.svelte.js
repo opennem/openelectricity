@@ -2,12 +2,14 @@ import { convert } from '$lib/utils/si-units';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import ChartOptions from './chart-options.svelte.js';
 import ChartStyles from './chart-styles.svelte.js';
+import ChartTooltips from './chart-tooltips.svelte.js';
 import { transformToProportion } from '$lib/utils/data-transform/index.js';
 
 export default class ChartStore {
 	key;
 	chartOptions = $state();
 	chartStyles = $state();
+	chartTooltips = $state();
 
 	/** @type {string} */
 	title = $state('');
@@ -16,7 +18,7 @@ export default class ChartStore {
 	timeZone = $state('Australia/Sydney');
 
 	/** @type {TimeSeriesData[]} */
-	seriesData = $state([]);
+	seriesData = $state.raw([]);
 
 	/** @type {string[]} */
 	seriesNames = $state([]);
@@ -231,6 +233,7 @@ export default class ChartStore {
 			baseUnit
 		});
 		this.chartStyles = new ChartStyles();
+		this.chartTooltips = new ChartTooltips();
 		this.title = title ?? '';
 
 		if (chartStyles) {

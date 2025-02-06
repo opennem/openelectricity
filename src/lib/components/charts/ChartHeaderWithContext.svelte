@@ -1,7 +1,7 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import checkAndGetContext from '$lib/utils/check-and-get-context.js';
+	import getContext from '$lib/utils/get-context.js';
 	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
 	import ChartOptionsWithContext from './ChartOptionsWithContext.svelte';
 
@@ -9,7 +9,7 @@
 	let { displayOptions = true, cxtKey } = $props();
 
 	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
-	let cxt = checkAndGetContext(cxtKey);
+	let cxt = getContext(cxtKey);
 
 	let showOptions = $state(false);
 </script>
