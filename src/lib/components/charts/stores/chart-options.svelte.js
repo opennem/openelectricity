@@ -112,4 +112,12 @@ export default class ChartOptionsState {
 		this.prefix = prefix;
 		this.displayPrefix = displayPrefix;
 	}
+
+	setStepCurve() {
+		this.selectedCurveType = 'step';
+	}
+
+	setSmoothCurve() {
+		this.selectedCurveType = 'smooth';
+	}
 }

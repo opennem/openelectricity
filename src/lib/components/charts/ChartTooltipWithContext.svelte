@@ -1,22 +1,26 @@
 <script>
-	import checkAndGetContext from '$lib/utils/check-and-get-context.js';
+	import getContext from '$lib/utils/get-context.js';
 
-	/** @type {{ cxtKey: symbol, defaultText?: string, showTotal?: boolean }} */
-	let { cxtKey, defaultText = '', showTotal = true } = $props();
+	/** @type {{ cxtKey: symbol, defaultText?: string }} */
+	let { cxtKey, defaultText = '' } = $props();
 
 	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
-	let cxt = checkAndGetContext(cxtKey);
+	let cxt = getContext(cxtKey);
 
 	let useData = $derived(cxt.hoverData || cxt.focusData);
 	let max = $derived(useData ? useData._max || 0 : 0);
 	let convertedMax = $derived(max || max === 0 ? cxt.convertAndFormatValue(max) : '');
 	let valueDate = $derived(useData ? useData.date || undefined : undefined);
-	let valueKey = $derived(useData && cxt.hoverKey ? useData[cxt.hoverKey] || undefined : undefined);
+	let cxtValueKey = $derived(cxt.chartTooltips.valueKey || cxt.hoverKey);
+	let valueKey = $derived(useData && cxtValueKey ? useData[cxtValueKey] || undefined : undefined);
 	let convertedValue = $derived(
 		valueKey || valueKey === 0 ? cxt.convertAndFormatValue(valueKey) : ''
 	);
-	let hoverKeyColour = $derived(cxt.hoverKey ? cxt.seriesColours[cxt.hoverKey] : '');
-	let hoverKeyLabel = $derived(cxt.hoverKey ? cxt.seriesLabels[cxt.hoverKey] : '');
+	let hoverKeyColour = $derived(cxtValueKey ? cxt.seriesColours[cxtValueKey] : '');
+	let hoverKeyLabel = $derived(cxtValueKey ? cxt.seriesLabels[cxtValueKey] : '');
+	let showTotal = $derived(cxt.chartTooltips.showTotal);
+
+	$inspect('valueKey', cxt.chartTooltips.valueKey);
 </script>
 
 <div class="h-[21px]">

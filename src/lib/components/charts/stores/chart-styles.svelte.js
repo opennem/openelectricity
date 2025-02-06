@@ -20,6 +20,9 @@ export default class ChartStylesState {
 	dotFill = $state('white');
 
 	/** @type {boolean} */
+	showFocusDot = $state(false);
+
+	/** @type {boolean} */
 	xGridlines = $state(true);
 
 	/** @type {string} */

@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg, flatten, stack, groupLonger } from 'layercake';
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
-	import checkAndGetContext from '$lib/utils/check-and-get-context.js';
+	import getContext from '$lib/utils/get-context.js';
 	import StackedAreaLine from './elements2/StackedAreaLine.svelte';
 	import HoverLayer from './elements2/HoverLayer.svelte';
 	import AxisY from './elements/AxisY.svelte';
@@ -24,7 +24,7 @@
 	/** @type {Props} */
 	let { cxtKey, onmousemove, onmouseout, onpointerup } = $props();
 	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
-	let cxt = checkAndGetContext(cxtKey);
+	let cxt = getContext(cxtKey);
 	let chartStyles = cxt.chartStyles;
 	let id = chartStyles.htmlId;
 	let clip = chartStyles.chartClip;
@@ -94,12 +94,12 @@
 
 				{#if cxt.focusData}
 					<LineX xValue={cxt.focusData} strokeArray="none" strokeColour="#C74523" />
-					<!-- <Dot
-						domains={cxt.seriesNames}
+					<Dot
+						domains={cxt.visibleSeriesNames}
 						value={$state.snapshot(cxt.focusData)}
 						isStacked={true}
 						colour="#C74523"
-					/> -->
+					/>
 				{/if}
 			</g>
 		</Svg>
