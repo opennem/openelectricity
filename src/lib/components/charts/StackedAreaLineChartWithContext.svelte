@@ -75,7 +75,6 @@
 					curveType={cxt.chartOptions.curveFunction}
 					seriesColours={cxt.seriesColours}
 					highlightId={cxt.chartOptions.allowHoverHighlight ? cxt.hoverKey : undefined}
-					{...cxt.chartStyles}
 					{onmousemove}
 					{onmouseout}
 					{onpointerup}
@@ -95,14 +94,12 @@
 
 				{#if cxt.focusData}
 					<LineX xValue={cxt.focusData} strokeArray="none" strokeColour="#C74523" />
-					{#if cxt.chartStyles.showFocusDot}
-						<Dot
-							domains={cxt.visibleSeriesNames}
-							value={$state.snapshot(cxt.focusData)}
-							isStacked={true}
-							colour="#C74523"
-						/>
-					{/if}
+					<Dot
+						domains={cxt.visibleSeriesNames}
+						value={$state.snapshot(cxt.focusData)}
+						isStacked={true}
+						colour="#C74523"
+					/>
 				{/if}
 			</g>
 		</Svg>

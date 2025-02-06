@@ -1,107 +1,258 @@
 <script>
-	import { fade } from 'svelte/transition';
+	import { setContext, getContext } from 'svelte';
+	import { fade, fly } from 'svelte/transition';
+	import { parseISO } from 'date-fns';
+	import { browser } from '$app/environment';
+	import useDate from '$lib/utils/TimeSeries/use-date';
+	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
+	import { parseUnit } from '$lib/utils/si-units';
+	import {
+		getFormattedDate,
+		getFormattedMonth,
+		getFormattedDateTime
+	} from '$lib/utils/formatters.js';
+
 	import Meta from '$lib/components/Meta.svelte';
 	import IconXCircle from '$lib/icons/XCircle.svelte';
+	// import FuelTechTag from '$lib/components/FuelTechTag.svelte';
+	import dataVizStore from '$lib/components/charts/stores/data-viz';
 	import { regionsWithLabels } from '$lib/regions';
-	import PageNav from './RecordHistory/PageNav.svelte';
+
+	import PageNav from '../components/PageNav.svelte';
+	import HistoryChart from '../components/HistoryChart.svelte';
+	import {
+		milestoneTypeDisplayPrefix,
+		milestoneTypeDisplayAllowedPrefixes
+	} from '../page-data-options/filters';
 	import recordDescription from '../page-data-options/record-description';
-	import MiniTracker from './MiniTracker/Chart.svelte';
-	import RecordHistory from './RecordHistory/index.svelte';
-	import { recordState } from './RecordHistory/stores/state.svelte';
+	// import getRelativeTime from '../page-data-options/relative-time';
+	// import HistoryTable from '../components/HistoryTable.svelte';
+	import MiniTracker from '../components/MiniTracker/index.svelte';
+	import { recordState } from '../stores/state.svelte';
 	import FuelTechIcon from '../components/FuelTechIcon.svelte';
-	import init from './RecordHistory/helpers/init';
-	import fetchRecord from './RecordHistory/helpers/fetch';
-	import process from './RecordHistory/helpers/process';
+
 	let { data } = $props();
+	$inspect('data', data.id);
+	$inspect('recordState.id', recordState.id);
+	$inspect('recordState.recordByRecordId', recordState.recordByRecordId);
 
+	$effect(() => {
+		recordState.id = data.id;
+		recordState.recordIds = data.recordIds;
+	});
+
+	setContext('record-history-data-viz', dataVizStore());
+	setContext('date-brush-data-viz', dataVizStore());
+	const {
+		title,
+		seriesNames,
+		seriesLabels,
+		seriesData,
+		chartType,
+		formatTickX,
+		focusTime,
+		focusData,
+		hoverTime,
+		hoverKey,
+		convertAndFormatValue,
+		chartHeightClasses,
+		baseUnit,
+		prefix,
+		displayPrefix,
+		allowedPrefixes,
+		allowPrefixSwitch,
+		displayUnit,
+		getNextPrefix,
+		maximumFractionDigits,
+		timeZone
+	} = getContext('record-history-data-viz');
+	const {
+		seriesNames: brushSeriesNames,
+		seriesData: brushSeriesData,
+		focusTime: brushFocusTime,
+		hoverTime: brushHoverTime,
+		hoverKey: brushHoverKey,
+		chartType: brushChartType,
+		formatTickX: brushFormatTickX
+	} = getContext('date-brush-data-viz');
+
+	/** @type {MilestoneRecord[]} */
+	let historyData = $state.raw([]);
 	let loading = $state(false);
+	let error = $state(false);
+	let period = $derived(recordState.recordByRecordId?.period || null);
 	let showTracker = $state(false);
-	let period = $derived(data.period || '');
-
-	let { chartCxt, dateBrushCxt } = init(period);
-
-	recordState.recordIds = data.recordIds;
-
-	$effect(() => {
-		recordState.id = data.record_id;
-		recordState.error = false;
-		recordState.selectedTime = undefined;
-	});
-
-	$inspect('data props', data);
-
-	$effect(() => {
-		let id = recordState.id;
-		if (id) {
-			recordState.error = false;
-			fetchRecord(id)
-				.then((data) => {
-					if (data) {
-						updateCxt(process({ data, period }));
-					} else {
-						recordState.error = true;
-					}
-				})
-				.catch((error) => {
-					console.error('error fetching record', error);
-				});
-		}
-	});
 
 	/**
-	 * @param {{
-	 * milestones: MilestoneRecord[],
-	 * seriesData: TimeSeriesData[],
-	 * xDomain: [Date, Date]
-	 * }} data
+	 * @param {string} period
+	 * @param {string} timeZone
 	 */
-	function updateCxt({ milestones, seriesData, xDomain }) {
-		let record = milestones[0];
-		chartCxt.title = record.metric;
+	function timeFormatter(period, timeZone) {
+		if (period === 'interval') {
+			return function (/** @type {Date} */ date) {
+				return getFormattedDateTime(date, 'medium', 'short', timeZone);
+			};
+		}
 
-		chartCxt.seriesData = seriesData;
-		chartCxt.seriesNames = ['value'];
-		chartCxt.seriesColours = { value: '#777' };
-		chartCxt.seriesLabels = { value: '' };
-		chartCxt.xDomain = xDomain;
+		if (period === 'day') {
+			return function (/** @type {Date} */ date) {
+				return formatDateBasedOnInterval(date, '1d');
+			};
+		}
 
-		dateBrushCxt.seriesData = seriesData;
-		dateBrushCxt.seriesNames = ['value'];
-		dateBrushCxt.seriesColours = { value: '#777' };
-		dateBrushCxt.seriesLabels = { value: '' };
-		dateBrushCxt.xDomain = xDomain;
-		dateBrushCxt.yKey = 'value';
+		if (period === 'year') {
+			return function (/** @type {Date} */ date) {
+				return formatDateBasedOnInterval(date, '1Y');
+			};
+		}
 
-		chartCxt.chartOptions.setLineChart();
+		if (period === 'quarter') {
+			return function (/** @type {Date} */ date) {
+				return formatDateBasedOnInterval(date, '1Q');
+			};
+		}
 
-		recordState.milestones = milestones;
+		return function (/** @type {Date} */ date) {
+			return getFormattedMonth(date, 'short', timeZone);
+		};
 	}
 
 	/**
-	 * @param {number} time
+	 * Fetch a single record
+	 * @param {string} recordId
+	 * @param {number} page
 	 */
-	function handleOnFocus(time) {
-		recordState.selectedTime = time;
+	async function fetchRecord(recordId, page = 1) {
+		if (browser) {
+			recordState.record = null;
+			loading = true;
+			error = false;
+			const id = encodeURIComponent(recordId);
+			const res = await fetch(`/api/records/${id}?page=${page}`);
+			const jsonData = await res.json();
+
+			if (jsonData.total_records) {
+				$focusTime = undefined;
+				$brushFocusTime = undefined;
+				historyData = jsonData.data;
+			} else {
+				historyData = [];
+				error = true;
+			}
+			loading = false;
+		}
+	}
+
+	/**
+	 * @param {CustomEvent<{time: number}>} evt
+	 */
+	function handleMousemove(evt) {
+		$hoverTime = evt.detail?.time;
+		$brushHoverTime = evt.detail?.time;
+	}
+
+	function handleMouseout() {
+		$hoverTime = undefined;
+		$hoverKey = undefined;
+		$brushHoverTime = undefined;
+	}
+
+	/**
+	 * @param {CustomEvent<{time: number}>} evt
+	 */
+	function handlePointerup(evt) {
+		const pointerTime = evt.detail.time;
+		const isSame = pointerTime ? $focusTime === pointerTime : false;
+		const time = isSame ? undefined : pointerTime;
+
+		$focusTime = time;
+		$brushFocusTime = time;
 		showTracker = true;
 	}
 
+	function moveToNextDisplayPrefix() {
+		$displayPrefix = getNextPrefix();
+	}
+
+	let sortedHistoryData = $derived(
+		historyData
+			.map((record) => {
+				const date = record.interval
+					? period === 'interval'
+						? parseISO(record.interval)
+						: parseISO(useDate(record.interval))
+					: new Date();
+				return {
+					...record,
+					date,
+					time: date.getTime()
+				};
+			})
+			.sort((a, b) => b.time - a.time)
+	);
+	$effect(() => {
+		if (historyData.length) {
+			recordState.record = sortedHistoryData[0];
+			// console.log('sortedHistoryData', sortedHistoryData[0]);
+			const period = sortedHistoryData[0].period;
+			const metric = sortedHistoryData[0].metric;
+			const parsed = parseUnit(sortedHistoryData[0].value_unit);
+			const isWem = sortedHistoryData[0].network_id === 'WEM';
+			const sortedData = [...sortedHistoryData].reverse();
+
+			if (isWem) {
+				$timeZone = 'Australia/Perth';
+			} else {
+				$timeZone = undefined;
+			}
+
+			$title = metric;
+			$seriesNames = ['value'];
+			$seriesData = sortedData;
+			$chartType = 'line';
+			$chartHeightClasses = 'h-[500px]';
+			$baseUnit = parsed.baseUnit;
+			$prefix = parsed.prefix;
+			$displayPrefix = milestoneTypeDisplayPrefix[metric];
+			$allowedPrefixes = milestoneTypeDisplayAllowedPrefixes[metric];
+
+			if (metric === 'proportion') {
+				$maximumFractionDigits = 1;
+			}
+
+			$brushSeriesNames = ['value'];
+			$brushSeriesData = sortedData;
+			$brushChartType = 'line';
+			$brushFormatTickX = (/** @type {Date} */ date) =>
+				getFormattedMonth(date, undefined, $timeZone);
+			$formatTickX = timeFormatter(period, $timeZone);
+		}
+	});
+	$effect(() => {
+		$seriesLabels = { value: $displayUnit || '' };
+	});
+
+	$effect(() => {
+		if (recordState.id) fetchRecord(recordState.id);
+	});
+
 	let pageTitle = $derived.by(() => {
-		if (!data) return 'Record';
+		let record = recordState.record;
+		if (!record) return 'Record';
 
 		let desc = recordDescription(
-			data.period || '',
-			data.aggregate || '',
-			data.metric || '',
-			data.fueltech_id || ''
+			record.period || '',
+			record.aggregate || '',
+			record.metric || '',
+			record.fueltech_id || ''
 		);
-		let networkId = data.network_id?.toLowerCase();
 
-		if (data.network_region) {
-			desc += ` in ${regionsWithLabels[data.network_region.toLowerCase()]}`;
-		} else if (networkId && regionsWithLabels[networkId]) {
-			desc += ` in ${regionsWithLabels[networkId]}`;
+		if (record.network_region) {
+			desc += ` in ${regionsWithLabels[record.network_region.toLowerCase()]}`;
+		} else if (regionsWithLabels[record.network_id.toLowerCase()]) {
+			desc += ` in ${regionsWithLabels[record.network_id.toLowerCase()]}`;
 		} else {
-			desc += ` in the ${networkId?.toUpperCase()}`;
+			desc += ` in the ${record.network_id}`;
 		}
 
 		return desc;
@@ -114,20 +265,11 @@
 	image="/img/preview.jpg"
 />
 
-{#if data.record_id}
-	<PageNav
-		record_id={data.record_id}
-		network_id={data.network_id}
-		network_region={data.network_region}
-		fueltech_id={data.fueltech_id}
-		metric={data.metric}
-		period={data.period}
-		aggregate={data.aggregate}
-		recordIds={data.recordIds}
-	/>
+{#if recordState.id}
+	<PageNav />
 {/if}
 
-{#if recordState.error}
+{#if error}
 	<div class="flex h-96 items-center justify-center">
 		<p>
 			There is no tracking for <span class="font-medium">{recordState.id}</span>
@@ -144,7 +286,7 @@
 		<div class="bg-mid-warm-grey rounded-lg"></div>
 	</div>
 {:else}
-	{@const ftId = data.fueltech_id || 'demand'}
+	{@const ftId = recordState.recordByRecordId?.fueltech_id || 'demand'}
 	<div class="flex gap-6 px-10 md:px-16 my-10">
 		<div class="flex items-center gap-6">
 			<span
@@ -162,14 +304,32 @@
 	</div>
 
 	<div
-		class="grid grid-cols-2 gap-5 px-0 md:px-16 mb-10"
+		class="grid grid-cols-1 gap-5 px-0 md:px-16 mb-10"
 		class:md:grid-cols-[5fr_2fr]={showTracker}
 		class:md:grid-cols-1={!showTracker}
 	>
-		<div class="w-full p-6 bg-white rounded-lg border border-warm-grey">
-			{#if period && data.record_id}
-				<RecordHistory {chartCxt} {dateBrushCxt} {period} onfocus={handleOnFocus} />
-			{/if}
+		<div class="w-full">
+			<!-- <div class="flex items-center gap-6 my-10">
+				<span
+					class="bg-{ftId} rounded-full p-3 place-self-start"
+					class:text-black={ftId === 'solar'}
+					class:text-white={ftId !== 'solar'}
+				>
+					<FuelTechIcon fuelTech={ftId} sizeClass={10} />
+				</span>
+
+				<h2 class=" leading-lg text-lg font-medium mb-0">
+					{pageTitle}
+				</h2>
+			</div> -->
+
+			<HistoryChart
+				{sortedHistoryData}
+				on:mousemove={handleMousemove}
+				on:mouseout={handleMouseout}
+				on:pointerup={handlePointerup}
+				on:blur={handleMouseout}
+			/>
 		</div>
 
 		{#if showTracker}
@@ -180,7 +340,7 @@
 				>
 					<IconXCircle class="size-8 md:size-12" />
 				</button>
-				<MiniTracker record={recordState.selectedMilestone} />
+				<MiniTracker focusData={$focusData} />
 			</div>
 		{/if}
 	</div>
