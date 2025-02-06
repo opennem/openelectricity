@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg, Html } from 'layercake';
 	import { scaleTime } from 'd3-scale';
-	import checkAndGetContext from '$lib/utils/check-and-get-context.js';
+	import getContext from '$lib/utils/get-context.js';
 
 	import Line from './elements/Line.svelte';
 	import AxisX from './elements/AxisX.svelte';
@@ -31,8 +31,8 @@
 		onbrush
 	} = $props();
 
-	/** @type {import('$lib/components/charts/states/chart.svelte.js').default} */
-	let cxt = checkAndGetContext(cxtKey);
+	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
+	let cxt = getContext(cxtKey);
 
 	let chartStyles = cxt.chartStyles;
 	let id = chartStyles.htmlId;

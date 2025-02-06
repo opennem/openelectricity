@@ -22,7 +22,7 @@ export default function format(date, interval) {
 	if (!date) return '';
 	switch (interval) {
 		case '1d':
-			return getFormattedDate(date, 'short', 'numeric', 'numeric', '2-digit');
+			return getFormattedDate(date, 'short', 'numeric', 'short', 'numeric');
 
 		case '1M':
 			return getFormattedMonth(date, 'short');
