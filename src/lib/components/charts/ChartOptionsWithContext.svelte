@@ -1,12 +1,12 @@
 <script>
-	import checkAndGetContext from '$lib/utils/check-and-get-context.js';
+	import getContext from '$lib/utils/get-context.js';
 	import Switch from '$lib/components/Switch.svelte';
 
 	/** @type {{ cxtKey: symbol }} */
 	let { cxtKey } = $props();
 
-	/** @type {import('$lib/components/charts/states/chart.svelte.js').default} */
-	let cxt = checkAndGetContext(cxtKey);
+	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
+	let cxt = getContext(cxtKey);
 
 	let unitOptions = $derived(
 		cxt.chartOptions.allowedPrefixes.map((/** @type {string} */ prefix) => {

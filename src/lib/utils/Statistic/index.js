@@ -138,7 +138,7 @@ Statistic.prototype.group = function (
 
 	/** @type {*} */
 	const grouped = [];
-	const groupKeys = /** @type {FuelTechCode[]} */ (Object.keys(groupMap));
+	const groupKeys = groupMap ? /** @type {FuelTechCode[]} */ (Object.keys(groupMap)) : [];
 
 	const start = this.data && this.data.length ? this.data[0][this.statsType].start : '';
 	const last = this.data && this.data.length ? this.data[0][this.statsType].last : '';
