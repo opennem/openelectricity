@@ -5,7 +5,6 @@ import { xTickValueFormatters } from './config';
  * @param {string} period
  */
 export default function (period) {
-	console.log('period', period);
 	let chartKey = Symbol('record-history');
 	let dateBrushKey = Symbol('date-brush');
 
