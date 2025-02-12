@@ -5,7 +5,7 @@
 	import EllipsisVertical from '$lib/icons/EllipsisVertical.svelte';
 	import ChartOptionsWithContext from './ChartOptionsWithContext.svelte';
 
-	/** @type {{ cxtKey: symbol, displayOptions: boolean }} */
+	/** @type {{ cxtKey: symbol, displayOptions?: boolean }} */
 	let { displayOptions = true, cxtKey } = $props();
 
 	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
