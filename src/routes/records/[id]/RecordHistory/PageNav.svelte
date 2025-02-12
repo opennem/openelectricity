@@ -25,9 +25,7 @@
 		return `au.${record.network_id.toLowerCase()}${network_region}`;
 	}
 
-	let regionLongValue = $derived(
-		`au.${network_id ? network_id.toLowerCase() : ''}${network_region ? `.${network_region.toLowerCase()}` : ''}`
-	);
+	let regionLongValue = `au.${network_id ? network_id.toLowerCase() : ''}${network_region ? `.${network_region.toLowerCase()}` : ''}`;
 	let region = $derived(regions.find((r) => r.longValue === regionLongValue)?.longValue || '');
 	let fuelTech = $derived(fueltech_id || null);
 

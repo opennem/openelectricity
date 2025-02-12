@@ -18,9 +18,6 @@
 	);
 	let hoverKeyColour = $derived(cxtValueKey ? cxt.seriesColours[cxtValueKey] : '');
 	let hoverKeyLabel = $derived(cxtValueKey ? cxt.seriesLabels[cxtValueKey] : '');
-	let showTotal = $derived(cxt.chartTooltips.showTotal);
-
-	$inspect('valueKey', cxt.chartTooltips.valueKey);
 </script>
 
 <div class="h-[21px]">
@@ -30,7 +27,7 @@
 				{cxt.formatX(valueDate)}
 			</span>
 
-			{#if valueKey || showTotal}
+			{#if valueKey || cxt.chartTooltips.showTotal}
 				<div class="bg-light-warm-grey px-4 py-1 flex gap-4 items-center">
 					{#if valueKey}
 						<div class="flex items-center gap-2">
@@ -43,7 +40,7 @@
 						</div>
 					{/if}
 
-					{#if showTotal}
+					{#if cxt.chartTooltips.showTotal}
 						<span class="flex items-center gap-2">
 							Total
 							<strong class="font-semibold">{convertedMax} {cxt.chartOptions.displayUnit}</strong>

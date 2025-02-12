@@ -29,9 +29,6 @@ export default class ChartStylesState {
 	showFocusDot = $state(false);
 
 	/** @type {boolean} */
-	showFocusDot = $state(false);
-
-	/** @type {boolean} */
 	xGridlines = $state(true);
 
 	/** @type {string} */
