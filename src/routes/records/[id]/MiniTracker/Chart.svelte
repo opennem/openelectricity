@@ -24,7 +24,7 @@
 	/** @type {StatsData[]} */
 	let dataset = $state.raw([]);
 	/** @type {Record<string, StatsData[]>} */
-	let cachedDataset = $state({});
+	let cachedDatasets = $state({});
 	/** @type {Date[] | undefined} */
 	let brushedRange = $state();
 
@@ -33,18 +33,39 @@
 	let period = $derived(record?.period);
 	let fuelTechId = $derived(record?.fueltech_id);
 	let chartOptions = $derived(chartOptionsMap[metric]);
+	let isDemand = $derived(fuelTechId === 'demand');
+
+	let demandDataset = $derived(
+		dataset
+			.filter((d) => d.id.includes('demand'))
+			.map((d) => ({
+				...d,
+				fuel_tech: /** @type {FuelTechCode} */ ('demand')
+			}))
+	);
+	let demandId = $derived(demandDataset[0].id);
 
 	let processedData = $derived(
 		dataset.length > 0 && fuelTechId && period
-			? process({
-					history: dataset,
-					unit: dataset[0].units,
-					colourReducer: $colourReducer,
-					fuelTechMap: fuelTechMap[fuelTechGroupMap[fuelTechId]],
-					fuelTechOrder: orderMap[fuelTechGroupMap[fuelTechId]],
-					labelReducer: labelReducer[fuelTechGroupMap[fuelTechId]],
-					targetInterval: periodIntervalMap[period]
-				})
+			? isDemand
+				? process({
+						history: demandDataset,
+						unit: demandDataset[0].units,
+						colourReducer: $colourReducer,
+						fuelTechMap: { [demandId]: ['demand'] },
+						fuelTechOrder: [demandId],
+						labelReducer: () => 'Demand',
+						targetInterval: periodIntervalMap[period]
+					})
+				: process({
+						history: dataset,
+						unit: dataset[0].units,
+						colourReducer: $colourReducer,
+						fuelTechMap: fuelTechMap[fuelTechGroupMap[fuelTechId]],
+						fuelTechOrder: orderMap[fuelTechGroupMap[fuelTechId]],
+						labelReducer: labelReducer[fuelTechGroupMap[fuelTechId]],
+						targetInterval: periodIntervalMap[period]
+					})
 			: null
 	);
 
@@ -62,17 +83,17 @@
 	$effect(() => {
 		if (record) {
 			let cacheKey = getDataPath(record);
-			if (cachedDataset[cacheKey]) {
+			if (cachedDatasets[cacheKey]) {
 				console.log('get from cache', cacheKey);
 
-				dataset = cachedDataset[cacheKey];
+				dataset = cachedDatasets[cacheKey];
 			} else {
 				fetchData(cacheKey).then((d) => {
 					if (!d) return;
 					updateCxt();
 					dataset = d.filter((d) => d.type === metric);
 
-					cachedDataset[cacheKey] = dataset;
+					cachedDatasets[cacheKey] = dataset;
 				});
 			}
 		}
@@ -91,6 +112,7 @@
 			dateBrushCxt.seriesNames = ts.seriesNames;
 			dateBrushCxt.seriesColours = ts.seriesColours;
 			dateBrushCxt.seriesLabels = ts.seriesLabels;
+			dateBrushCxt.focusTime = focusTime;
 
 			dateBrushCxt.xTicks = xTickValueFormatters[period].ticks;
 			dateBrushCxt.formatTickX = xTickValueFormatters[period].formatTick;
@@ -131,8 +153,11 @@
 	 * @param {TimeSeriesData | undefined} hoverData
 	 */
 	function updateChartHover(hoverKey, hoverData) {
-		chartCxt.hoverTime = hoverData ? hoverData.time : undefined;
+		let hoverTime = hoverData ? hoverData.time : undefined;
+		chartCxt.hoverTime = hoverTime;
 		chartCxt.hoverKey = hoverKey;
+		dateBrushCxt.hoverTime = hoverTime;
+		dateBrushCxt.hoverKey = hoverKey;
 	}
 
 	/**
