@@ -4,13 +4,6 @@
 
 	const { data, xGet, yGet } = getContext('LayerCake');
 
-	
-
-
-
-
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [stroke]
@@ -43,18 +36,21 @@
 
 	let cx = $derived(hoverData ? $xGet(hoverData) : 0);
 	let cy = $derived(hoverData ? $yGet(hoverData) : 0);
-	let lineGen = $derived(line(
-		(d) => {
-			// console.log(d, $xGet(d), $yGet(d));
-			return $xGet(d);
-		},
-		(d) => $yGet(d)
-	)
-		.curve(curveType)
-		.defined((d) => $yGet(d) !== null && $yGet(d) !== undefined && !isNaN($yGet(d))));
+	let lineGen = $derived(
+		line(
+			(d) => {
+				// console.log(d, $xGet(d), $yGet(d));
+				return $xGet(d);
+			},
+			(d) => $yGet(d)
+		)
+			.curve(curveType)
+			.defined((d) => $yGet(d) !== null && $yGet(d) !== undefined && !isNaN($yGet(d)))
+	);
 
-	let path =
-		$derived('M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L'));
+	let path = $derived(
+		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L')
+	);
 </script>
 
 <g class="line-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
