@@ -16,7 +16,7 @@
 
 	let loading = $state(false);
 	let showTracker = $state(false);
-	let period = data.period || '';
+	let period = $derived(data.period || '');
 
 	let { chartCxt, dateBrushCxt } = init(period);
 
