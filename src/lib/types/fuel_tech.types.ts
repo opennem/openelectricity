@@ -49,7 +49,8 @@ export type FuelTechCode =
 	| 'coal_gas'
 	| 'oil'
 	| 'vre' // Variable Renewable Energy
-	| 'residual'; // Residual;
+	| 'residual' // Residual;
+	| 'demand';
 
 export type FuelTech = {
 	_id: string;
