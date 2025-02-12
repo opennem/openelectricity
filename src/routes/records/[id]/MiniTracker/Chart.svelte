@@ -14,7 +14,7 @@
 	} from './helpers/config';
 	import { filterData, getDataPath } from './helpers/utils';
 
-	let { focusData } = $props();
+	let { record } = $props();
 	let { chartCxt, dateBrushCxt } = init();
 
 	chartCxt.chartStyles.chartHeightClasses = 'h-[520px]';
@@ -28,17 +28,14 @@
 	/** @type {Date[] | undefined} */
 	let brushedRange = $state();
 
-	let metric = $derived(focusData?.metric);
+	let metric = $derived(record?.metric);
 	/** @type {import('./helpers/types').Period} */
-	let period = $derived(focusData?.period);
-	let fuelTechId = $derived(focusData?.fueltech_id);
+	let period = $derived(record?.period);
+	let fuelTechId = $derived(record?.fueltech_id);
 	let chartOptions = $derived(chartOptionsMap[metric]);
 
-	$inspect('focusData', focusData);
-	$inspect('fuelTechId', fuelTechId);
-
 	let processedData = $derived(
-		dataset.length > 0
+		dataset.length > 0 && fuelTechId && period
 			? process({
 					history: dataset,
 					unit: dataset[0].units,
@@ -63,15 +60,18 @@
 	}
 
 	$effect(() => {
-		if (focusData) {
-			let cacheKey = getDataPath(focusData);
+		if (record) {
+			let cacheKey = getDataPath(record);
 			if (cachedDataset[cacheKey]) {
+				console.log('get from cache', cacheKey);
+
 				dataset = cachedDataset[cacheKey];
 			} else {
 				fetchData(cacheKey).then((d) => {
 					if (!d) return;
 					updateCxt();
 					dataset = d.filter((d) => d.type === metric);
+
 					cachedDataset[cacheKey] = dataset;
 				});
 			}
@@ -82,7 +82,10 @@
 		if (processedData) {
 			let cxt = chartCxt;
 			let ts = processedData.timeseries;
-			let focusTime = focusData?.time;
+			let focusTime = record?.time;
+			// filter series names that doesn't include fueltech_id
+			let hiddenSeriesNames = ts.seriesNames.filter((n) => !n.includes(fuelTechId));
+			let shownSeries = ts.seriesNames.find((n) => n.includes(fuelTechId));
 
 			dateBrushCxt.seriesData = ts.data;
 			dateBrushCxt.seriesNames = ts.seriesNames;
@@ -92,6 +95,7 @@
 			dateBrushCxt.xTicks = xTickValueFormatters[period].ticks;
 			dateBrushCxt.formatTickX = xTickValueFormatters[period].formatTick;
 			dateBrushCxt.formatX = xTickValueFormatters[period].format;
+			dateBrushCxt.yKey = shownSeries || 'value';
 
 			// let filteredData = filterData(ts.data, focusTime, 20);
 			// brushedRange = [filteredData[0].date, filteredData[filteredData.length - 1].date];
@@ -109,9 +113,6 @@
 			cxt.formatTickX = xTickValueFormatters[period].formatTick;
 			cxt.formatX = xTickValueFormatters[period].format;
 
-			// filter series names that doesn't include fueltech_id
-			let hiddenSeriesNames = ts.seriesNames.filter((n) => !n.includes(fuelTechId));
-			let shownSeries = ts.seriesNames.find((n) => n.includes(fuelTechId));
 			cxt.hiddenSeriesNames = hiddenSeriesNames;
 
 			if (metric === 'power') {
@@ -154,7 +155,6 @@
 	 */
 	function onbrush(xDomain) {
 		brushedRange = xDomain;
-		// updateChartXDomain(evt);
 
 		// if the start and end of the xDomain are the same, reset and clear the xDomain
 		if (xDomain && xDomain[0].getTime() === xDomain[1].getTime()) {

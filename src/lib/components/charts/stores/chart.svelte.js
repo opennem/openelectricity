@@ -61,13 +61,10 @@ export default class ChartStore {
 	/** @type {*} */
 	xDomain = $state();
 
-	/** @type {*} */
-	// yDomain = $state();
 	yDomain = $derived.by(() => {
 		if (this.chartOptions.isDataTransformTypeProportion && !this.chartOptions.isChartTypeLine) {
 			return [0, 100];
 		}
-
 		const addTenPercent = (/** @type {number} */ val) => val + val * 0.1;
 		const maxY = this.seriesScaledDataWithMinMax.map((d) => d._max);
 		// @ts-ignore
@@ -76,7 +73,6 @@ export default class ChartStore {
 		const minY = this.seriesScaledDataWithMinMax.map((d) => d._min);
 		// @ts-ignore
 		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
-
 		return [Math.floor(datasetMin), Math.ceil(datasetMax)];
 	});
 
@@ -149,7 +145,7 @@ export default class ChartStore {
 					if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
 				}
 
-				if (this.chartOptions.isChartTypeArea) {
+				if (this.chartOptions.isChartTypeArea || this.chartOptions.isChartTypeLine) {
 					if ((newObj._min || newObj._min === 0) && value < 0) newObj._min += +value;
 				} else {
 					if (newObj._min || newObj._min === 0) newObj._min = Math.min(newObj._min, +value);
