@@ -11,13 +11,19 @@ export default class ChartStylesState {
 	xTextAnchorPosition = $state('middle');
 
 	/** @type {boolean} */
-	showLineArea = $state(true);
+	showLineArea = $state(false);
+	/** @type {boolean} */
+	showLineDots = $state(false);
 	/** @type {string} */
-	lineColour = $state('rgba(0, 0, 0, 0.7)');
+	lineColour = $state('#777');
 	/** @type {string} */
-	dotStroke = $state('rgba(0, 0, 0, 0.7)');
+	dotStrokeWidth = $state('1px');
+	/** @type {string} */
+	dotStroke = $state('#777');
 	/** @type {string} */
 	dotFill = $state('white');
+	/** @type {number} */
+	dotRadius = $state(3);
 
 	/** @type {boolean} */
 	showFocusDot = $state(false);

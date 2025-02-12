@@ -75,6 +75,7 @@
 					curveType={cxt.chartOptions.curveFunction}
 					seriesColours={cxt.seriesColours}
 					highlightId={cxt.chartOptions.allowHoverHighlight ? cxt.hoverKey : undefined}
+					{...cxt.chartStyles}
 					{onmousemove}
 					{onmouseout}
 					{onpointerup}

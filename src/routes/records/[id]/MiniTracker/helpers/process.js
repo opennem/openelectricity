@@ -2,7 +2,6 @@ import { loadFuelTechs } from '$lib/fuel_techs';
 import Statistic from '$lib/utils/Statistic';
 import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
-import { fuelTechMap, orderMap, labelReducer } from './groups';
 
 /**
  *

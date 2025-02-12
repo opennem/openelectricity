@@ -3,6 +3,7 @@
 	import { area, line, curveLinear } from 'd3-shape';
 	import closestTo from 'date-fns/closestTo';
 	const { data, xGet, xScale, yScale, yGet, z } = getContext('LayerCake');
+	import Area from '../elements/Area.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -13,6 +14,13 @@
 	 * @property {string} [display]
 	 * @property {*} [curveType]
 	 * @property {Object.<string, string>} [seriesColours]
+	 * @property {string} [strokeWidth]
+	 * @property {boolean} [showLineDots]
+	 * @property {boolean} [showLineArea]
+	 * @property {string} [dotStroke]
+	 * @property {string} [dotFill]
+	 * @property {number} [dotRadius]
+	 * @property {string} [dotStrokeWidth]
 	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} onmousemove
 	 * @property {() => void} onmouseout
 	 * @property {(evt: TimeSeriesData) => void} onpointerup
@@ -27,6 +35,13 @@
 		display = 'area',
 		curveType = curveLinear,
 		seriesColours = {},
+		strokeWidth = '1.5',
+		showLineDots = false,
+		showLineArea = false,
+		dotStroke = 'black',
+		dotFill = 'white',
+		dotRadius = 3,
+		dotStrokeWidth = '1px',
 		onmousemove,
 		onmouseout,
 		onpointerup
@@ -108,16 +123,17 @@
 
 {#if display === 'line'}
 	{#each $data as d, i (i)}
-		{#if d.values.length > 1}
+		{#if showLineDots && d.values.length > 1}
 			{#each d.values as point (point.time)}
 				<circle
 					class="focus:outline-0"
 					role="presentation"
 					cx={$xGet(point)}
 					cy={$yGet(point)}
-					r="5"
-					fill="transparent"
-					stroke-width="0"
+					r={dotRadius}
+					fill={dotFill}
+					stroke={dotStroke}
+					stroke-width={dotStrokeWidth}
 					onmousemove={(e) => pointermove(e, d.key || d.group)}
 					onmouseout={mouseout}
 					ontouchmove={(e) => pointermove(e, d.key || d.group)}
@@ -133,9 +149,14 @@
 			d={lineGen(d.values)}
 			fill="transparent"
 			stroke={seriesColours[$z(d)]}
-			stroke-width={'1.5'}
+			stroke-width={strokeWidth}
 			opacity={lineOpacity(d)}
 		/>
+
+		<!-- TODO: this is not working -->
+		<!-- {#if showLineArea}
+			<Area fill={seriesColours[$z(d)]} />
+		{/if} -->
 	{/each}
 {/if}
 

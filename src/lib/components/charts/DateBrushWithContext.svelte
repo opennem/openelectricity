@@ -86,7 +86,7 @@
 				textAnchorPosition={cxt.chartStyles.xTextAnchorPosition}
 			/>
 
-			<g clip-path={clipPathCustom}>
+			<g clip-path={clipPath}>
 				{#if cxt.hoverData}
 					<LineX xValue={cxt.hoverData} strokeArray="none" />
 					<Dot value={cxt.hoverData} r={4} />
