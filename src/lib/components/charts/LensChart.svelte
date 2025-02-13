@@ -15,6 +15,8 @@
 	let props = $props();
 </script>
 
-<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions || true} />
-<ChartTooltipWithContext cxtKey={props.cxtKey} />
-<StackedAreaLineChartWithContext {...props} />
+<div>
+	<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions} />
+	<ChartTooltipWithContext cxtKey={props.cxtKey} />
+	<StackedAreaLineChartWithContext {...props} />
+</div>
