@@ -101,7 +101,7 @@
 		} else if (networkId && regionsWithLabels[networkId]) {
 			desc += ` in ${regionsWithLabels[networkId]}`;
 		} else {
-			desc += ` in the ${networkId}`;
+			desc += ` in the ${networkId?.toUpperCase()}`;
 		}
 
 		return desc;
