@@ -10,9 +10,9 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]
-	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} onmousemove
-	 * @property {() => void} onmouseout
-	 * @property {(evt: TimeSeriesData) => void} onpointerup
+	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(evt: TimeSeriesData) => void} [onpointerup]
 	 */
 
 	/** @type {Props} */

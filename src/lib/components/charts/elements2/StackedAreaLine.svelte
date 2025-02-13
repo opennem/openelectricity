@@ -3,7 +3,7 @@
 	import { area, line, curveLinear } from 'd3-shape';
 	import closestTo from 'date-fns/closestTo';
 	const { data, xGet, xScale, yScale, yGet, z } = getContext('LayerCake');
-	import Area from '../elements/Area.svelte';
+	// import Area from '../elements/Area.svelte';
 
 	/**
 	 * @typedef {Object} Props
