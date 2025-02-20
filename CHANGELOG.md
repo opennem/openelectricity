@@ -1,5 +1,11 @@
 # opennem-app
 
+## 2.3.0
+
+### Minor Changes
+
+- refactor 7 day power chart
+
 ## 2.2.2
 
 ### Patch Changes
