@@ -1,5 +1,5 @@
 <script>
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
 	import { dataTrackerLink, parsedFeatureFlags } from '$lib/stores/app';
 	const navItems = [
@@ -39,9 +39,9 @@
 				{#if show !== false}
 					<a
 						class="text-lg font-medium flex items-center mb-8 md:text-sm md:mb-0"
-						class:text-mid-grey={$page.url.pathname !== href}
-						class:text-black={$page.url.pathname === href}
-						class:font-semibold={$page.url.pathname === href}
+						class:text-mid-grey={!page.url.pathname.includes(href)}
+						class:text-black={page.url.pathname.includes(href)}
+						class:font-semibold={page.url.pathname.includes(href)}
 						{href}
 					>
 						{name}
@@ -51,6 +51,7 @@
 		</nav>
 
 		<button
+			aria-label="Toggle mobile navigation"
 			class="md:hidden absolute right-10 z-40"
 			class:top-[24.5px]={mobileNavActive}
 			onclick={() => {
