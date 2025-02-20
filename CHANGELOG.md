@@ -1,5 +1,11 @@
 # opennem-app
 
+## 2.2.2
+
+### Patch Changes
+
+- ee70121: fix issue (again) where page data props are not reactive
+
 ## 2.2.1
 
 ### Patch Changes
