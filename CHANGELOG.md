@@ -1,5 +1,11 @@
 # opennem-app
 
+## 2.2.1
+
+### Patch Changes
+
+- fix issue where datatracker page props are not reactive
+
 ## 2.2.0
 
 ### Minor Changes
