@@ -4,7 +4,6 @@
 
 	import ispData from '$lib/isp';
 
-	import LogoMark from '$lib/images/logo-mark.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import InfoGraphicScenariosPreview from '$lib/components/info-graphics/scenarios-explorer/homepage/Preview.svelte';
 
@@ -63,44 +62,41 @@
 	}
 
 	const { banner_title, banner_statement, map_title, analysis_title } = homepageData[0];
-
-	let allReady = $derived(historyEnergyNemData.length > 0);
 </script>
 
 <Meta image="/img/preview.jpg" />
 
-{#if allReady}
-	<div class="bg-light-warm-grey py-12" transition:fade={{ duration: 500 }}>
-		<div class="container max-w-none lg:container relative">
-			<InfoGraphicFossilFuelsRenewables
-				data={historyEnergyNemData}
-				title={banner_title}
-				description={banner_statement}
-			/>
-		</div>
+<div class="bg-light-warm-grey py-12" transition:fade={{ duration: 500 }}>
+	<div class="container max-w-none lg:container relative">
+		<InfoGraphicFossilFuelsRenewables
+			data={historyEnergyNemData}
+			title={banner_title}
+			description={banner_statement}
+		/>
 	</div>
+</div>
 
-	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
-		<InfoGraphicNem7DayGeneration />
-	</div>
-	{#if regionPower && regionEnergy && regionEmissions}
-		<div class="md:bg-light-warm-grey">
-			<div class="container max-w-none lg:container">
-				<div class="flex flex-col md:flex-row justify-between py-16 md:py-32">
-					<InfoGraphicSystemSnapshot
-						title={map_title}
-						{flows}
-						{prices}
-						{regionPower}
-						{regionEnergy}
-						{regionEmissions}
-					/>
-				</div>
+<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
+	<InfoGraphicNem7DayGeneration />
+</div>
+{#if regionPower && regionEnergy && regionEmissions}
+	<div class="md:bg-light-warm-grey">
+		<div class="container max-w-none lg:container">
+			<div class="flex flex-col md:flex-row justify-between py-16 md:py-32">
+				<InfoGraphicSystemSnapshot
+					title={map_title}
+					{flows}
+					{prices}
+					{regionPower}
+					{regionEnergy}
+					{regionEmissions}
+				/>
 			</div>
 		</div>
-	{/if}
+	</div>
+{/if}
 
-	<!-- <div class="bg-white py-16 md:py-32">
+<!-- <div class="bg-white py-16 md:py-32">
 		<div class="container max-w-none lg:container">
 			<header class="flex justify-between">
 				<h3>{milestones_title}</h3>
@@ -114,32 +110,24 @@
 		</div>
 	</div> -->
 
-	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
-		{#if outlookEnergyNem}
-			<InfoGraphicScenariosPreview />
-		{/if}
-	</div>
+<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
+	{#if outlookEnergyNem}
+		<InfoGraphicScenariosPreview />
+	{/if}
+</div>
 
-	<div class="bg-white py-16 md:py-32">
-		<div class="container max-w-none lg:container">
-			<header class="flex justify-between items-center mb-8">
-				<h3>{analysis_title}</h3>
-				<!-- <SectionLink href="/analysis" title="View all analyses" /> -->
-			</header>
-			<div class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8">
-				{#each analysisArticles as article}
-					<div class="snap-start shrink-0 w-[290px]">
-						<ArticleCard {article} />
-					</div>
-				{/each}
-			</div>
+<div class="bg-white py-16 md:py-32">
+	<div class="container max-w-none lg:container">
+		<header class="flex justify-between items-center mb-8">
+			<h3>{analysis_title}</h3>
+			<!-- <SectionLink href="/analysis" title="View all analyses" /> -->
+		</header>
+		<div class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8">
+			{#each analysisArticles as article}
+				<div class="snap-start shrink-0 w-[290px]">
+					<ArticleCard {article} />
+				</div>
+			{/each}
 		</div>
 	</div>
-{:else}
-	<div
-		class="h-screen bg-light-warm-grey flex justify-center items-center"
-		transition:fade={{ duration: 250 }}
-	>
-		<LogoMark />
-	</div>
-{/if}
+</div>
