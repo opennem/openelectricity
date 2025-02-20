@@ -13,7 +13,6 @@
 	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('./$types').PageData} data
@@ -30,7 +29,7 @@
 		historyEnergyNemData,
 		homepageData
 		// modelsData
-	} = data;
+	} = $derived(data);
 
 	let regionPower = $state();
 	let regionEnergy = $state();
