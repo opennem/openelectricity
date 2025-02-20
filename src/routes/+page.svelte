@@ -24,7 +24,6 @@
 	let regionPower = $state();
 	let regionEnergy = $state();
 	let regionEmissions = $state();
-	let dataTrackerData = $derived(data.dataTrackerData);
 	let homepageData = $derived(data.homepageData);
 	let historyEnergyNemData = $derived(data.historyEnergyNemData);
 	let articles = $derived(data.articles);
@@ -65,7 +64,7 @@
 
 	const { banner_title, banner_statement, map_title, analysis_title } = homepageData[0];
 
-	let allReady = $derived(dataTrackerData.length > 0);
+	let allReady = $derived(historyEnergyNemData.length > 0);
 </script>
 
 <Meta image="/img/preview.jpg" />
@@ -82,7 +81,7 @@
 	</div>
 
 	<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
-		<InfoGraphicNem7DayGeneration data={dataTrackerData} />
+		<InfoGraphicNem7DayGeneration />
 	</div>
 	{#if regionPower && regionEnergy && regionEmissions}
 		<div class="md:bg-light-warm-grey">

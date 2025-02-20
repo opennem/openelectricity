@@ -4,6 +4,18 @@ import ChartOptions from './chart-options.svelte.js';
 import ChartStyles from './chart-styles.svelte.js';
 import { transformToProportion } from '$lib/utils/data-transform/index.js';
 
+/**
+ * @typedef {Object} chartCxtOptions
+ * @property {symbol} key
+ * @property {string} [title]
+ * @property {SiPrefix} [prefix]
+ * @property {SiPrefix} [displayPrefix]
+ * @property {SiPrefix[]} [allowedPrefixes]
+ * @property {string} [baseUnit]
+ * @property {Object} [chartStyles]
+ * @property {string} [chartStyles.chartHeightClasses]
+ */
+
 export default class ChartStore {
 	key;
 	chartOptions = $state();
@@ -60,8 +72,12 @@ export default class ChartStore {
 	xDomain = $state();
 
 	/** @type {*} */
-	// yDomain = $state();
+	customYDomain = $state();
 	yDomain = $derived.by(() => {
+		if (this.customYDomain) {
+			return this.customYDomain;
+		}
+
 		if (this.chartOptions.isDataTransformTypeProportion && !this.chartOptions.isChartTypeLine) {
 			return [0, 100];
 		}
@@ -211,16 +227,14 @@ export default class ChartStore {
 		});
 	});
 
+	/** @type {Date[][]} */
+	shadingData = $state([]);
+
+	/** @type {string} */
+	shadingFill = $state('#33333311');
+
 	/**
-	 * @param {Object} options
-	 * @param {symbol} options.key
-	 * @param {string} [options.title]
-	 * @param {SiPrefix} [options.prefix]
-	 * @param {SiPrefix} [options.displayPrefix]
-	 * @param {SiPrefix[]} [options.allowedPrefixes]
-	 * @param {string} [options.baseUnit]
-	 * @param {Object} [options.chartStyles]
-	 * @param {string} [options.chartStyles.chartHeightClasses]
+	 * @param {chartCxtOptions} options
 	 */
 	constructor({ key, title, prefix, displayPrefix, allowedPrefixes, baseUnit, chartStyles }) {
 		this.key = key;

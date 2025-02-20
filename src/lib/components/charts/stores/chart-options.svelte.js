@@ -91,6 +91,9 @@ export default class ChartOptionsState {
 
 	displayUnit = $derived((this.displayPrefix || '') + this.baseUnit);
 
+	/** @type {boolean} */
+	allowHoverHighlight = $state(true);
+
 	/** @param {{dataTransformType?: DataTransformType, curveType?: CurveType, chartType?: ChartType, allowedPrefixes?: SiPrefix[], baseUnit?: string, prefix?: SiPrefix, displayPrefix?: SiPrefix }} params */
 	constructor({
 		dataTransformType = DEFAULT_DATA_TRANSFORM_TYPE,

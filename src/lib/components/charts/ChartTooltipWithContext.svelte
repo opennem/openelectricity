@@ -4,7 +4,7 @@
 	/** @type {{ cxtKey: symbol, defaultText?: string, showTotal?: boolean }} */
 	let { cxtKey, defaultText = '', showTotal = true } = $props();
 
-	/** @type {import('$lib/components/charts/states/chart.svelte.js').default} */
+	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
 	let cxt = checkAndGetContext(cxtKey);
 
 	let useData = $derived(cxt.hoverData || cxt.focusData);
@@ -35,14 +35,14 @@
 								{hoverKeyLabel}
 							</div>
 
-							<strong class="font-semibold">{convertedValue}</strong>
+							<strong class="font-semibold">{convertedValue} {cxt.chartOptions.displayUnit}</strong>
 						</div>
 					{/if}
 
 					{#if showTotal}
 						<span class="flex items-center gap-2">
 							Total
-							<strong class="font-semibold">{convertedMax}</strong>
+							<strong class="font-semibold">{convertedMax} {cxt.chartOptions.displayUnit}</strong>
 						</span>
 					{/if}
 				</div>

@@ -10,7 +10,9 @@
 	import HatchPattern from './elements/defs/HatchPattern.svelte';
 	import LineX from './elements/annotations/LineX.svelte';
 	import Dot from './elements/annotations/Dot.svelte';
+	import Shading from './elements/Element.svelte';
 
+	/**
 	/**
 	 * @typedef {Object} Props
 	 * @property {symbol} cxtKey
@@ -62,6 +64,8 @@
 				<ClipPath id={clipPathId} />
 			</defs>
 
+			<Shading dataset={cxt.shadingData} fill={cxt.shadingFill} clipPathId="clip-path" />
+
 			<HoverLayer dataset={cxt.seriesScaledData} {onmousemove} {onmouseout} {onpointerup} />
 
 			<g clip-path={clipPath}>
@@ -70,7 +74,7 @@
 					display={cxt.chartOptions.selectedChartType}
 					curveType={cxt.chartOptions.curveFunction}
 					seriesColours={cxt.seriesColours}
-					highlightId={cxt.hoverKey}
+					highlightId={cxt.chartOptions.allowHoverHighlight ? cxt.hoverKey : undefined}
 					{onmousemove}
 					{onmouseout}
 					{onpointerup}

@@ -3,14 +3,6 @@
 
 	const { xGet, height } = getContext('LayerCake');
 
-	
-
-	
-
-	
-
-	
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {*[]} [dataset]
