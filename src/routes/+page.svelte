@@ -20,20 +20,16 @@
 
 	/** @type {Props} */
 	let { data } = $props();
-	const {
-		flows,
-		prices,
-		// records,
-		articles,
-		dataTrackerData,
-		historyEnergyNemData,
-		homepageData
-		// modelsData
-	} = $derived(data);
 
 	let regionPower = $state();
 	let regionEnergy = $state();
 	let regionEmissions = $state();
+	let dataTrackerData = $derived(data.dataTrackerData);
+	let homepageData = $derived(data.homepageData);
+	let historyEnergyNemData = $derived(data.historyEnergyNemData);
+	let articles = $derived(data.articles);
+	let flows = $derived(data.flows);
+	let prices = $derived(data.prices);
 
 	onMount(async () => {
 		regionPower = await fetch('/api/region-power').then(async (res) => {
