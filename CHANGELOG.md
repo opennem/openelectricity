@@ -1,5 +1,11 @@
 # opennem-app
 
+## 2.3.1
+
+### Patch Changes
+
+- 2f36d80: remove loading animation
+
 ## 2.3.0
 
 ### Minor Changes
