@@ -1,5 +1,11 @@
 # opennem-app
 
+## 2.3.2
+
+### Patch Changes
+
+- bug fix and font update
+
 ## 2.3.1
 
 ### Patch Changes
