@@ -3,10 +3,7 @@ import { PUBLIC_JSON_URL } from '$env/static/public';
 
 const basePath = PUBLIC_JSON_URL + '/capacity';
 
-export async function GET({ setHeaders, url, fetch }) {
-	setHeaders({
-		'cache-control': 'max-age=604800' // 1 week
-	});
+export async function GET({ url, fetch }) {
 	const { searchParams } = url;
 
 	const region =

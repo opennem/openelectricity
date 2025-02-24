@@ -1,11 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { PUBLIC_JSON_API } from '$env/static/public';
 
-export async function GET({ fetch, url, setHeaders }) {
-	setHeaders({
-		'cache-control': 'max-age=604800' // 1 week
-	});
-
+export async function GET({ fetch, url }) {
 	const { searchParams } = url;
 	const country = searchParams.get('country') || 'au';
 	const network = searchParams.get('network') ? searchParams.get('network')?.toUpperCase() : 'NEM';
