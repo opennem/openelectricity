@@ -13,12 +13,12 @@
 	font-weight: 700;
 }
 @font-face {
-	font-family: 'Chivo Mono';
-	src: url('/fonts/ChivoMono-VariableFont_wght.ttf');
+	font-family: 'DM Mono';
+	src: url('/fonts/DMMono-Regular.ttf');
 }
 @font-face {
-	font-family: 'Chivo Mono';
-	src: url('/fonts/ChivoMono-VariableFont_wght.ttf');
+	font-family: 'DM Mono';
+	src: url('/fonts/DMMono-Medium.ttf');
 	font-weight: 600;
 }
 @font-face {
