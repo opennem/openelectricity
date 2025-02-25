@@ -1,21 +1,35 @@
 <script>
+	import { formatInTimeZone } from 'date-fns-tz';
+
 	import { colourReducer } from '$lib/stores/theme';
 	import LensChart from '$lib/components/charts/LensChart.svelte';
 	import DateBrushWithContext from '$lib/components/charts/DateBrushWithContext.svelte';
 	import init from './helpers/init';
-	import fetchData from './helpers/fetch';
+	import { fetchEnergyData, fetchOEData } from './helpers/fetch';
 	import process from './helpers/process';
 	import { fuelTechMap, orderMap, labelReducer } from './helpers/groups';
 	import {
 		periodIntervalMap,
+		apiIntervalMap,
 		fuelTechGroupMap,
 		chartOptionsMap,
 		xTickValueFormatters
 	} from './helpers/config';
 	import { filterData, getDataPath } from './helpers/utils';
 
+	import OpenElectricityClient from '@openelectricity/client';
+	import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+	const client = new OpenElectricityClient({
+		apiKey: PUBLIC_OE_API_KEY,
+		baseUrl: PUBLIC_OE_API_URL
+	});
+
 	let { record } = $props();
+	/** @type {import('./helpers/types').Record} */
+	let { metric, period, fueltech_id: fuelTechId, interval } = record;
 	let { chartCxt, dateBrushCxt } = init();
+
+	$inspect('record', record);
 
 	chartCxt.chartStyles.chartHeightClasses = 'h-[520px]';
 	dateBrushCxt.chartStyles.chartHeightClasses = 'h-[50px] mb-10';
@@ -28,12 +42,10 @@
 	/** @type {Date[] | undefined} */
 	let brushedRange = $state();
 
-	let metric = $derived(record?.metric);
-	/** @type {import('./helpers/types').Period} */
-	let period = $derived(record?.period);
-	let fuelTechId = $derived(record?.fueltech_id);
 	let chartOptions = $derived(chartOptionsMap[metric]);
 	let isDemand = $derived(fuelTechId === 'demand');
+	/** @type {import('@openelectricity/client').DataInterval | undefined} */
+	let apiInterval = $derived(apiIntervalMap[period]);
 
 	let demandDataset = $derived(
 		dataset
@@ -80,15 +92,85 @@
 		options.baseUnit = chartOptions.baseUnit;
 	}
 
+	/**
+	 * @param {Date} date
+	 * @returns {string}
+	 */
+	function getNetworkDate(date) {
+		let dateStr = formatInTimeZone(date, '+10:00', 'yyyy-MM-dd');
+		let timeStr = formatInTimeZone(date, '+10:00', 'HH:mm:ss');
+		return `${dateStr}T${timeStr}`;
+	}
+
 	$effect(() => {
 		if (record) {
+			// console.log('period', period, apiInterval);
+			console.log('interval', interval);
+
+			// set dateStart and dateEnd to 3 days before and after the interval
+			let dateStart = new Date(interval);
+			dateStart.setDate(dateStart.getDate() - 3);
+			let dateEnd = new Date(interval);
+			dateEnd.setDate(dateEnd.getDate() + 4);
+
+			let dateStartStr = getNetworkDate(dateStart);
+			let dateEndStr = getNetworkDate(dateEnd);
+
+			console.log('dateStartStr', dateStartStr);
+			console.log('dateEndStr', dateEndStr);
+
+			// client
+			// 	.getNetworkData('NEM', ['energy'], {
+			// 		interval: '1h',
+			// 		dateStart: '2024-01-01T00:00:00',
+			// 		dateEnd: '2024-01-02T00:00:00',
+			// 		primaryGrouping: 'network_region'
+			// 	})
+			// 	.then((d) => {
+			// 		console.log('energy', d.data);
+			// 	});
+
+			// if (metric === 'power') {
+			// 	client
+			// 		.getNetworkData('NEM', ['power'], {
+			// 			interval: apiInterval,
+			// 			primaryGrouping: 'network',
+			// 			dateStart: dateStartStr,
+			// 			dateEnd: dateEndStr,
+			// 			secondaryGrouping: 'fueltech_group'
+			// 		})
+			// 		.then((d) => {
+			// 			console.log('power', d.data);
+			// 		});
+			// } else if (metric === 'energy') {
+			// 	client
+			// 		.getNetworkData('NEM', ['energy'], {
+			// 			interval: apiInterval,
+			// 			primaryGrouping: 'network',
+			// 			secondaryGrouping: 'fueltech_group',
+			// 			dateStart: dateStartStr,
+			// 			dateEnd: dateEndStr
+			// 		})
+			// 		.then((d) => {
+			// 			console.log('energy', d.data);
+			// 		});
+			// }
+
+			// fetch('/api/oe')
+			// 	.then((d) => {
+			// 		console.log('oe', d);
+			// 	})
+			// 	.catch((e) => {
+			// 		console.error('error', e);
+			// 	});
+
 			let cacheKey = getDataPath(record);
 			if (cachedDatasets[cacheKey]) {
 				console.log('get from cache', cacheKey);
 
 				dataset = cachedDatasets[cacheKey];
 			} else {
-				fetchData(cacheKey).then((d) => {
+				fetchEnergyData(cacheKey).then((d) => {
 					if (!d) return;
 					updateCxt();
 					dataset = d.filter((d) => d.type === metric);

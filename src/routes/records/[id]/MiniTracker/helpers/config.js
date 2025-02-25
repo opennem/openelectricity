@@ -57,6 +57,16 @@ export let periodIntervalMap = {
 	year: '1Y'
 };
 
+/** @type {Record<import('./types').Period, import('@openelectricity/client').DataInterval>} */
+export let apiIntervalMap = {
+	interval: '5m',
+	day: '1d',
+	'7d': '7d',
+	month: '1M',
+	quarter: '3M',
+	year: '1y'
+};
+
 /** @type {Record<string, string>} */
 export let fuelTechGroupMap = {
 	all: 'rvf',

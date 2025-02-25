@@ -6,3 +6,10 @@ export type ChartOptions = {
 	allowedPrefixes: string[];
 	baseUnit: string;
 };
+
+export type Record = {
+	metric: string;
+	period: Period;
+	interval: string;
+	fueltech_id: string;
+};
