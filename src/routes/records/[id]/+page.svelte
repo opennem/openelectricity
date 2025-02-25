@@ -12,15 +12,14 @@
 	import init from './RecordHistory/helpers/init';
 	import fetchRecord from './RecordHistory/helpers/fetch';
 	import process from './RecordHistory/helpers/process';
-	let { data } = $props();
 
+	let { data } = $props();
+	let { period, recordIds } = data;
 	let loading = $state(false);
 	let showTracker = $state(false);
-	let period = $derived(data.period || '');
-
 	let { chartCxt, dateBrushCxt } = init(period);
 
-	recordState.recordIds = data.recordIds;
+	recordState.recordIds = recordIds;
 
 	$effect(() => {
 		recordState.id = data.record_id;
@@ -28,13 +27,11 @@
 		recordState.selectedTime = undefined;
 	});
 
-	$inspect('data props', data);
-
 	$effect(() => {
-		let id = recordState.id;
-		if (id) {
+		if (recordState.id) {
 			recordState.error = false;
-			fetchRecord(id)
+
+			fetchRecord(recordState.id)
 				.then((data) => {
 					if (data) {
 						updateCxt(process({ data, period }));
@@ -180,7 +177,9 @@
 				>
 					<IconXCircle class="size-8 md:size-12" />
 				</button>
-				<MiniTracker record={recordState.selectedMilestone} />
+				{#if recordState.selectedMilestone}
+					<MiniTracker record={recordState.selectedMilestone} />
+				{/if}
 			</div>
 		{/if}
 	</div>

@@ -2,7 +2,7 @@ import { setContext, getContext } from 'svelte';
 import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
 import { xTickValueFormatters } from './config';
 /**
- * @param {string} period
+ * @param {string | undefined} period
  */
 export default function (period) {
 	let chartKey = Symbol('record-history');
@@ -25,10 +25,6 @@ export default function (period) {
 	let chartCxt = getContext(chartKey);
 	let dateBrushCxt = getContext(dateBrushKey);
 
-	chartCxt.xTicks = xTickValueFormatters[period].ticks;
-	chartCxt.formatTickX = xTickValueFormatters[period].formatTick;
-	chartCxt.formatX = xTickValueFormatters[period].format;
-
 	chartCxt.chartOptions.setStepAfterCurve();
 
 	chartCxt.chartStyles.chartHeightClasses = 'h-[520px]';
@@ -45,11 +41,18 @@ export default function (period) {
 
 	dateBrushCxt.chartStyles.chartHeightClasses = 'h-[50px] mb-10';
 	dateBrushCxt.chartStyles.strokeWidth = 1;
-	dateBrushCxt.xTicks = xTickValueFormatters[period].ticks;
-	dateBrushCxt.formatTickX = xTickValueFormatters[period].formatTick;
-	dateBrushCxt.formatX = xTickValueFormatters[period].format;
 
 	dateBrushCxt.chartOptions.setStepAfterCurve();
+
+	if (period) {
+		chartCxt.xTicks = xTickValueFormatters[period].ticks;
+		chartCxt.formatTickX = xTickValueFormatters[period].formatTick;
+		chartCxt.formatX = xTickValueFormatters[period].format;
+
+		dateBrushCxt.xTicks = xTickValueFormatters[period].ticks;
+		dateBrushCxt.formatTickX = xTickValueFormatters[period].formatTick;
+		dateBrushCxt.formatX = xTickValueFormatters[period].format;
+	}
 
 	return {
 		chartCxt,

@@ -4,7 +4,7 @@ import useDate from '$lib/utils/TimeSeries/use-date';
 /**
  * @param {{
  * data: MilestoneRecord[],
- * period: string
+ * period: string | undefined
  * }} param0
  * @returns {{
  * milestones: MilestoneRecord[],

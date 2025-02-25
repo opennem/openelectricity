@@ -1,6 +1,5 @@
 <script>
 	import { goto } from '$app/navigation';
-	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import {
 		regions,
@@ -270,19 +269,10 @@
 	}
 </script>
 
-<div class="flex px-10 py-8 md:px-16">
-	<a href="/records" class="flex items-center gap-2 text-dark-grey font-space text-sm">
-		<span class="rounded-full border border-dark-grey p-1 block">
-			<IconChevronLeft class="size-4 relative -left-[1px]" stroke-width="3" />
-		</span>
-		Back to records
-	</a>
-</div>
-
 {#if record_id}
 	{@const px = 'px-4'}
 	{@const py = 'py-3'}
-	<div class="flex justify-between gap-6 items-center bg-white px-10 py-5 md:px-16 auto">
+	<div class="text-sm flex justify-between gap-6 items-center bg-white px-10 py-2 md:px-16 auto">
 		<div class="flex gap-6 items-center">
 			<div class="text-nowrap">
 				<FormSelect
