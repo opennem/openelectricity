@@ -272,7 +272,7 @@
 {#if record_id}
 	{@const px = 'px-4'}
 	{@const py = 'py-3'}
-	<div class="text-sm flex justify-between gap-6 items-center bg-white px-10 py-2 md:px-16 auto">
+	<div class="text-sm flex justify-between gap-6 items-center bg-white px-6 py-2 md:px-12 auto">
 		<div class="flex gap-6 items-center">
 			<div class="text-nowrap">
 				<FormSelect
