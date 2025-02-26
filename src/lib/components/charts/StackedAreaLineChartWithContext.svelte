@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg, flatten, stack, groupLonger } from 'layercake';
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
-	import checkAndGetContext from '$lib/utils/check-and-get-context.js';
+	import getContext from '$lib/utils/get-context.js';
 	import StackedAreaLine from './elements2/StackedAreaLine.svelte';
 	import HoverLayer from './elements2/HoverLayer.svelte';
 	import AxisY from './elements/AxisY.svelte';
@@ -24,7 +24,7 @@
 	/** @type {Props} */
 	let { cxtKey, onmousemove, onmouseout, onpointerup } = $props();
 	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
-	let cxt = checkAndGetContext(cxtKey);
+	let cxt = getContext(cxtKey);
 	let chartStyles = cxt.chartStyles;
 	let id = chartStyles.htmlId;
 	let clip = chartStyles.chartClip;
@@ -75,6 +75,7 @@
 					curveType={cxt.chartOptions.curveFunction}
 					seriesColours={cxt.seriesColours}
 					highlightId={cxt.chartOptions.allowHoverHighlight ? cxt.hoverKey : undefined}
+					{...cxt.chartStyles}
 					{onmousemove}
 					{onmouseout}
 					{onpointerup}
@@ -90,16 +91,27 @@
 			<g clip-path={clipPath}>
 				{#if cxt.hoverData}
 					<LineX xValue={cxt.hoverData} strokeArray="none" />
+					{#if cxt.chartStyles.showHoverDot}
+						<Dot
+							domains={cxt.visibleSeriesNames}
+							value={$state.snapshot(cxt.hoverData)}
+							isStacked={true}
+							colour="#33333333"
+							r={8}
+						/>
+					{/if}
 				{/if}
 
 				{#if cxt.focusData}
 					<LineX xValue={cxt.focusData} strokeArray="none" strokeColour="#C74523" />
-					<!-- <Dot
-						domains={cxt.seriesNames}
-						value={$state.snapshot(cxt.focusData)}
-						isStacked={true}
-						colour="#C74523"
-					/> -->
+					{#if cxt.chartStyles.showFocusDot}
+						<Dot
+							domains={cxt.visibleSeriesNames}
+							value={$state.snapshot(cxt.focusData)}
+							isStacked={true}
+							colour="#C74523"
+						/>
+					{/if}
 				{/if}
 			</g>
 		</Svg>
@@ -118,6 +130,7 @@
 						: cxt.convertAndFormatValue}
 					gridlines={true}
 					stroke={cxt.chartStyles.yAxisStroke}
+					zeroValueStroke={cxt.chartStyles.zeroValueStroke}
 				/>
 
 				<AxisX

@@ -4,13 +4,6 @@
 
 	const { data, xGet, yGet } = getContext('LayerCake');
 
-	
-
-
-
-
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [stroke]
@@ -18,10 +11,11 @@
 	 * @property {string} [strokeWidth]
 	 * @property {boolean} [showCircle]
 	 * @property {string} [clipPathId]
-	 * @property {boolean} [showDots]
+	 * @property {boolean} [showLineDots]
 	 * @property {string} [dotFill]
 	 * @property {string} [dotStroke]
 	 * @property {number} [dotOpacity]
+	 * @property {number} [dotRadius]
 	 * @property {any} [curveType]
 	 * @property {TimeSeriesData | undefined} [hoverData]
 	 */
@@ -33,28 +27,32 @@
 		strokeWidth = '2px',
 		showCircle = false,
 		clipPathId = '',
-		showDots = false,
+		showLineDots = false,
 		dotFill = 'none',
 		dotStroke = '#ababab',
 		dotOpacity = 0.3,
+		dotRadius = 3,
 		curveType = curveLinear,
 		hoverData = undefined
 	} = $props();
 
 	let cx = $derived(hoverData ? $xGet(hoverData) : 0);
 	let cy = $derived(hoverData ? $yGet(hoverData) : 0);
-	let lineGen = $derived(line(
-		(d) => {
-			// console.log(d, $xGet(d), $yGet(d));
-			return $xGet(d);
-		},
-		(d) => $yGet(d)
-	)
-		.curve(curveType)
-		.defined((d) => $yGet(d) !== null && $yGet(d) !== undefined && !isNaN($yGet(d))));
+	let lineGen = $derived(
+		line(
+			(d) => {
+				// console.log(d, $xGet(d), $yGet(d));
+				return $xGet(d);
+			},
+			(d) => $yGet(d)
+		)
+			.curve(curveType)
+			.defined((d) => $yGet(d) !== null && $yGet(d) !== undefined && !isNaN($yGet(d)))
+	);
 
-	let path =
-		$derived('M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L'));
+	let path = $derived(
+		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L')
+	);
 </script>
 
 <g class="line-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
@@ -70,12 +68,12 @@
 		<circle {cx} {cy} r="10" fill={stroke} />
 	{/if}
 
-	{#if showDots}
+	{#if showLineDots}
 		{#each $data as d}
 			<circle
 				cx={$xGet(d)}
 				cy={$yGet(d)}
-				r="3"
+				r={dotRadius}
 				fill={dotFill}
 				stroke={dotStroke}
 				fill-opacity={dotOpacity}

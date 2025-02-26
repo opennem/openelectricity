@@ -2,7 +2,6 @@ import { loadFuelTechs } from '$lib/fuel_techs';
 import Statistic from '$lib/utils/Statistic';
 import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
-import { fuelTechMap, orderMap, labelReducer } from './groups';
 
 /**
  *
@@ -40,7 +39,7 @@ function process({
 
 	const timeseriesInstance = new TimeSeries(
 		stats.data,
-		parseInterval(intervalString),
+		parseInterval(stats.minIntervalObj?.intervalString || '1Y'),
 		'history',
 		labelReducer,
 		colourReducer

@@ -9,6 +9,8 @@
 
 	let { onbrush } = $props();
 
+	let mouse = $state({ x: 0, y: 0 });
+
 	/** @type {number | null} min - The brush's min value. Useful to bind to. */
 	let min = $state(null);
 
@@ -17,6 +19,10 @@
 
 	/** @type {*} */
 	let brush = $state();
+	/** @type {*} */
+	let brushInner = $state();
+	/** @type {*} */
+	let tooltip = $state();
 
 	let left = $derived(min ? 100 * min : 0);
 	let right = $derived(max ? 100 * (1 - max) : 1);
@@ -27,6 +33,18 @@
 
 		onbrush();
 	}
+
+	// this prevents the brush from being too small
+	$effect(() => {
+		if (min === null || max === null) return;
+		let range = (max - min) * 100;
+		if (range < 0.5) {
+			min = null;
+			max = null;
+
+			onbrush();
+		}
+	});
 
 	const p = (x) => {
 		const { left, right } = brush.getBoundingClientRect();
@@ -118,25 +136,83 @@
 			dispatchBrushed();
 		}
 	});
+
+	// get tooltip position based on mouse position and whether it's on the left or right side of the brush and top or bottom
+	function getTooltipPosition(mouse) {
+		if (!brush || !tooltip) return;
+		const rect = brush.getBoundingClientRect();
+		const tooltipWidth = tooltip.clientWidth;
+		const tooltipHeight = tooltip.clientHeight;
+		const isOnLeft = mouse.x < rect.left + rect.width / 2;
+		const isOnRight = mouse.x > rect.left + rect.width / 2;
+
+		if (isOnLeft) {
+			return {
+				left: mouse.x + 10,
+				top: mouse.y - tooltipHeight / 2
+			};
+		}
+
+		if (isOnRight) {
+			return {
+				left: mouse.x - tooltipWidth - 10,
+				top: mouse.y - tooltipHeight / 2
+			};
+		}
+
+		return {
+			left: mouse.x - tooltipWidth / 2,
+			top: mouse.y - tooltipHeight / 2
+		};
+	}
+
+	function getTooltipStyles(pos) {
+		if (!pos) return;
+		return `left: ${pos.left}px; top: ${pos.top}px`;
+	}
+	let pos = $derived(getTooltipPosition(mouse));
+	let styles = $derived(getTooltipStyles(pos));
+
+	let tooltipText = $state('');
+	$effect(() => {
+		if (min == null && max == null) {
+			tooltipText = '';
+		}
+	});
 </script>
 
-<div
-	bind:this={brush}
-	class="brush-outer rounded-lg"
-	onmousedown={reset}
-	ontouchstart={reset}
-	role="slider"
-	aria-valuenow={min}
-	aria-valuemin={min}
-	aria-valuemax={max}
-	aria-valuetext="{min} to {max}"
-	tabindex="0"
->
+<div class="relative w-full h-full">
+	<div
+		bind:this={brush}
+		class="brush-outer rounded-lg"
+		class:cursor-col-resize={min === null && max === null}
+		class:cursor-zoom-out={min !== null && max !== null}
+		onmousedown={reset}
+		ontouchstart={reset}
+		onpointermove={(event) => {
+			tooltipText = min !== null && max !== null ? 'Reset' : '';
+			mouse.x = event.clientX;
+			mouse.y = event.clientY;
+		}}
+		role="slider"
+		aria-valuenow={min}
+		aria-valuemin={min}
+		aria-valuemax={max}
+		aria-valuetext="{min} to {max}"
+		tabindex="0"
+	></div>
+
 	{#if min !== null}
 		<div
+			bind:this={brushInner}
 			class="brush-inner rounded-lg"
 			onmousedown={move}
 			ontouchstart={move}
+			onpointermove={(event) => {
+				tooltipText = '';
+				mouse.x = event.clientX;
+				mouse.y = event.clientY;
+			}}
 			style="left: {left}%; right: {right}%"
 			role="slider"
 			aria-valuenow={min}
@@ -166,11 +242,19 @@
 			tabindex="0"
 		></div>
 	{/if}
+
+	<!-- <div
+		bind:this={tooltip}
+		class="fixed z-10 top-0 left-0 bg-dark-grey text-white px-1 text-xxs rounded-md pointer-events-none"
+		style={styles}
+	>
+		{tooltipText}
+	</div> -->
 </div>
 
 <style>
 	.brush-outer {
-		position: relative;
+		position: absolute;
 		width: 100%;
 		height: 100%;
 	}
@@ -180,7 +264,7 @@
 		height: 100%;
 		cursor: move;
 		/* mix-blend-mode: difference; */
-		background: #963f2937;
+		background: #eae8e3;
 
 		/* border-left: 2px solid white;
 		border-right: 2px solid white; */
