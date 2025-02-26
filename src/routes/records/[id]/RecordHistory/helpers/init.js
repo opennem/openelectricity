@@ -1,10 +1,7 @@
 import { setContext, getContext } from 'svelte';
 import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
-import { xTickValueFormatters } from './config';
-/**
- * @param {string | undefined} period
- */
-export default function (period) {
+
+export default function () {
 	let chartKey = Symbol('record-history');
 	let dateBrushKey = Symbol('date-brush');
 
@@ -27,32 +24,27 @@ export default function (period) {
 
 	chartCxt.chartOptions.setStepAfterCurve();
 
-	chartCxt.chartStyles.chartHeightClasses = 'h-[520px]';
-	chartCxt.chartStyles.strokeWidth = '1';
-	chartCxt.chartStyles.showLineDots = true;
-	// TODO: this should be dynamic based on the record metric
-	chartCxt.chartOptions.prefix = 'M';
-	chartCxt.chartOptions.displayPrefix = 'M';
-	chartCxt.chartOptions.allowedPrefixes = ['M', 'G'];
-	chartCxt.chartOptions.baseUnit = 'Wh';
+	chartCxt.chartStyles.chartHeightClasses = 'h-[490px]';
+	chartCxt.chartStyles.chartPadding = { top: 0, right: 0, bottom: 30, left: 0 };
+	chartCxt.chartStyles.strokeWidth = '1.5';
+	chartCxt.chartStyles.showLineDots = false;
+	chartCxt.chartStyles.dotFill = '#77777733';
+	chartCxt.chartStyles.yAxisStroke = '#eee';
+	chartCxt.chartStyles.xAxisStroke = 'transparent';
+	chartCxt.chartStyles.showFocusDot = true;
+	chartCxt.chartStyles.showHoverDot = true;
 
 	chartCxt.chartTooltips.showTotal = false;
 	chartCxt.chartTooltips.valueKey = 'value';
 
-	dateBrushCxt.chartStyles.chartHeightClasses = 'h-[50px] mb-10';
-	dateBrushCxt.chartStyles.strokeWidth = 1;
-
+	dateBrushCxt.chartStyles.chartHeightClasses = 'h-[40px]';
+	dateBrushCxt.chartStyles.strokeWidth = '0px';
+	dateBrushCxt.chartStyles.showLineDots = true;
+	dateBrushCxt.chartStyles.dotFill = '#333333';
+	dateBrushCxt.chartStyles.dotStroke = 'transparent';
+	dateBrushCxt.chartStyles.dotOpacity = 0.3;
+	dateBrushCxt.chartStyles.dotRadius = 2.5;
 	dateBrushCxt.chartOptions.setStepAfterCurve();
-
-	if (period) {
-		chartCxt.xTicks = xTickValueFormatters[period].ticks;
-		chartCxt.formatTickX = xTickValueFormatters[period].formatTick;
-		chartCxt.formatX = xTickValueFormatters[period].format;
-
-		dateBrushCxt.xTicks = xTickValueFormatters[period].ticks;
-		dateBrushCxt.formatTickX = xTickValueFormatters[period].formatTick;
-		dateBrushCxt.formatX = xTickValueFormatters[period].format;
-	}
 
 	return {
 		chartCxt,

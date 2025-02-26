@@ -11,10 +11,11 @@
 	 * @property {string} [strokeWidth]
 	 * @property {boolean} [showCircle]
 	 * @property {string} [clipPathId]
-	 * @property {boolean} [showDots]
+	 * @property {boolean} [showLineDots]
 	 * @property {string} [dotFill]
 	 * @property {string} [dotStroke]
 	 * @property {number} [dotOpacity]
+	 * @property {number} [dotRadius]
 	 * @property {any} [curveType]
 	 * @property {TimeSeriesData | undefined} [hoverData]
 	 */
@@ -26,10 +27,11 @@
 		strokeWidth = '2px',
 		showCircle = false,
 		clipPathId = '',
-		showDots = false,
+		showLineDots = false,
 		dotFill = 'none',
 		dotStroke = '#ababab',
 		dotOpacity = 0.3,
+		dotRadius = 3,
 		curveType = curveLinear,
 		hoverData = undefined
 	} = $props();
@@ -66,12 +68,12 @@
 		<circle {cx} {cy} r="10" fill={stroke} />
 	{/if}
 
-	{#if showDots}
+	{#if showLineDots}
 		{#each $data as d}
 			<circle
 				cx={$xGet(d)}
 				cy={$yGet(d)}
-				r="3"
+				r={dotRadius}
 				fill={dotFill}
 				stroke={dotStroke}
 				fill-opacity={dotOpacity}

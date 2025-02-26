@@ -23,16 +23,22 @@ export default class ChartStylesState {
 	/** @type {string} */
 	dotFill = $state('white');
 	/** @type {number} */
+	dotOpacity = $state(0.3);
+	/** @type {number} */
 	dotRadius = $state(3);
 
 	/** @type {boolean} */
 	showFocusDot = $state(false);
+	/** @type {boolean} */
+	showHoverDot = $state(false);
 
 	/** @type {boolean} */
 	xGridlines = $state(true);
 
 	/** @type {string} */
 	yAxisStroke = $state('#33333344');
+	/** @type {string} */
+	zeroValueStroke = $state('#33333344');
 
 	/** @type {string} */
 	xAxisStroke = $state('#33333344');

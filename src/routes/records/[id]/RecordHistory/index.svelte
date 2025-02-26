@@ -2,9 +2,9 @@
 	import LensChart from '$lib/components/charts/LensChart.svelte';
 	import DateBrushWithContext from '$lib/components/charts/DateBrushWithContext.svelte';
 	import Table from './Table.svelte';
-	let { chartCxt, dateBrushCxt, period, onfocus } = $props();
+	let { chartCxt, dateBrushCxt, period, defaultXDomain, onfocus } = $props();
 	/** @type {Date[] | undefined} */
-	let brushedRange = $state();
+	let brushedRange = $state(defaultXDomain);
 
 	/**
 	 * @param {string | undefined} hoverKey
@@ -56,25 +56,31 @@
 	function onbrush(xDomain) {
 		brushedRange = xDomain;
 
-		// if the start and end of the xDomain are the same, reset and clear the xDomain
-		if (xDomain && xDomain[0].getTime() === xDomain[1].getTime()) {
-			chartCxt.xDomain = undefined;
-		} else {
+		if (xDomain) {
 			chartCxt.xDomain = xDomain;
+		} else {
+			chartCxt.xDomain = defaultXDomain;
 		}
 	}
 </script>
 
-<DateBrushWithContext cxtKey={dateBrushCxt.key} {brushedRange} {onbrush} />
-<div class="grid grid-cols-[5fr_2fr] grid-rows-[570px] gap-6 mt-10">
-	<LensChart
-		cxtKey={chartCxt.key}
-		displayOptions={false}
-		{onmousemove}
-		{onmouseout}
-		{onpointerup}
-	/>
+<div class="grid grid-cols-[2fr_5fr] grid-rows-[570px] gap-6 mb-6">
+	<Table cxtKey={chartCxt.key} {brushedRange} {period} {onmousemove} {onmouseout} {onpointerup} />
+
 	<div>
-		<Table cxtKey={chartCxt.key} {brushedRange} {period} {onmousemove} {onmouseout} {onpointerup} />
+		<div class="rounded-lg border border-warm-grey">
+			<LensChart
+				cxtKey={chartCxt.key}
+				displayOptions={false}
+				showHeader={false}
+				{onmousemove}
+				{onmouseout}
+				{onpointerup}
+			/>
+		</div>
+
+		<div class="mt-6 px-6 bg-light-warm-grey border border-warm-grey rounded-lg">
+			<DateBrushWithContext cxtKey={dateBrushCxt.key} {brushedRange} {onbrush} />
+		</div>
 	</div>
 </div>

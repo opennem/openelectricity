@@ -1,5 +1,4 @@
 import { parseISO, addYears, startOfYear } from 'date-fns';
-import useDate from '$lib/utils/TimeSeries/use-date';
 
 /**
  * @param {{
@@ -18,11 +17,8 @@ function process({ data, period }) {
 
 	let sorted = data
 		.map((record) => {
-			const date = record.interval
-				? period === 'interval'
-					? parseISO(record.interval)
-					: parseISO(useDate(record.interval))
-				: new Date();
+			const date = record.interval ? parseISO(record.interval) : new Date();
+
 			return {
 				...record,
 				date,

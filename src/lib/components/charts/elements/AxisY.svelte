@@ -18,6 +18,7 @@
 	 * @property {number} [dyTick]
 	 * @property {string} [textAnchor]
 	 * @property {any} [yLabelStartPos]
+	 * @property {string} [zeroValueStroke]
 	 */
 
 	/** @type {Props} */
@@ -34,7 +35,8 @@
 		dxTick = 0,
 		dyTick = -4,
 		textAnchor = 'start',
-		yLabelStartPos = null
+		yLabelStartPos = null,
+		zeroValueStroke = '#353535'
 	} = $props();
 
 	let isBandwidth = $derived(typeof $yScale.bandwidth === 'function');
@@ -65,7 +67,7 @@
 			{#if gridlines === true}
 				<line
 					class="gridline"
-					stroke={tick === 0 ? '#353535' : stroke}
+					stroke={tick === 0 ? zeroValueStroke : stroke}
 					stroke-dasharray={tick === 0 ? 'none' : '3'}
 					x2="100%"
 					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}

@@ -91,6 +91,15 @@
 			<g clip-path={clipPath}>
 				{#if cxt.hoverData}
 					<LineX xValue={cxt.hoverData} strokeArray="none" />
+					{#if cxt.chartStyles.showHoverDot}
+						<Dot
+							domains={cxt.visibleSeriesNames}
+							value={$state.snapshot(cxt.hoverData)}
+							isStacked={true}
+							colour="#33333333"
+							r={8}
+						/>
+					{/if}
 				{/if}
 
 				{#if cxt.focusData}
@@ -121,6 +130,7 @@
 						: cxt.convertAndFormatValue}
 					gridlines={true}
 					stroke={cxt.chartStyles.yAxisStroke}
+					zeroValueStroke={cxt.chartStyles.zeroValueStroke}
 				/>
 
 				<AxisX

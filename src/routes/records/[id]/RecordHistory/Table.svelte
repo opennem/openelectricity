@@ -16,31 +16,9 @@
 	/** @type {Props} */
 	let { cxtKey, brushedRange, period, onmousemove, onmouseout, onpointerup } = $props();
 	let cxt = getContext(cxtKey);
-	let prevDay = '';
 
 	// remove last data and reverse array - last data is a duplicate to pad out the chart
 	let seriesData = $derived([...cxt.seriesData].reverse().slice(1));
-
-	/**
-	 * @param {boolean} [timeOnly]
-	 */
-	function tableTimeFormatter(timeOnly = false) {
-		if (period === 'interval') {
-			return function (/** @type {Date} */ date) {
-				const day = getFormattedDate(date, undefined, 'numeric', 'short', 'numeric', cxt.timeZone);
-				if (!prevDay || day !== prevDay) {
-					prevDay = day;
-					return day;
-				}
-
-				if (timeOnly) return getFormattedTime(date, cxt.timeZone);
-
-				return '';
-			};
-		}
-
-		return period ? xTickValueFormatters[period].format : xTickValueFormatters.year.format;
-	}
 
 	/**
 	 * @param {Date} time
@@ -49,16 +27,50 @@
 		if (!brushedRange) return true;
 		return time >= brushedRange[0] && time <= brushedRange[1];
 	}
+
+	/**
+	 * @param {Date} currentDate
+	 * @param {Date} prevDate
+	 * @returns {string}
+	 */
+	function getIntervalDate(currentDate, prevDate) {
+		let currentFormatDate = new Intl.DateTimeFormat('en-AU', {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric',
+			timeZone: cxt.timeZone
+		}).format(currentDate);
+
+		let nextFormatDate = new Intl.DateTimeFormat('en-AU', {
+			day: 'numeric',
+			month: 'short',
+			year: 'numeric',
+			timeZone: cxt.timeZone
+		}).format(prevDate);
+
+		if (currentFormatDate === nextFormatDate) {
+			return '';
+		}
+
+		return currentFormatDate;
+	}
 </script>
 
 <div class="overflow-y-auto rounded-lg border border-warm-grey h-full">
 	<table class="bg-white text-xs w-full">
 		<thead>
-			<tr class="sticky top-0 z-10 bg-light-warm-grey/60 backdrop-blur-xl">
+			<tr class="sticky top-0 z-10 bg-light-warm-grey backdrop-blur-xl">
 				<th class="text-left">
-					<div class="px-4 py-2">Date</div>
+					<div class="pl-4 py-2">Date</div>
 				</th>
-				<th class="text-right">
+
+				{#if period === 'interval'}
+					<th class="text-right">
+						<div class="pl-4 py-2">Time</div>
+					</th>
+				{/if}
+
+				<th class="text-right w-1/2">
 					{#if cxt.chartOptions.allowPrefixSwitch}
 						<div class="px-4 py-2">
 							<button
@@ -76,7 +88,7 @@
 		</thead>
 
 		<tbody>
-			{#each seriesData as record (record.time)}
+			{#each seriesData as record, index (index)}
 				<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 				<tr
 					class="border-b border-light-warm-grey pointer hover:bg-warm-grey"
@@ -88,19 +100,35 @@
 					onpointerup={() => onpointerup({ time: record.time, date: record.date })}
 				>
 					<td
-						class="pl-4 py-2 font-mono text-dark-grey flex"
+						class="pl-4 py-2 font-mono text-dark-grey whitespace-nowrap"
 						class:text-red={record.time === cxt.focusTime}
 					>
-						<time datetime={record.interval} class="w-44 whitespace-nowrap">
-							{tableTimeFormatter(false)(record.date)}
-						</time>
-
 						{#if period === 'interval'}
-							<time datetime={record.interval} class="whitespace-nowrap">
-								{tableTimeFormatter(true)(record.date)}
+							<!-- if previous record is the same date, then return empty string -->
+							<time datetime={record.interval}>
+								{getIntervalDate(record.date, seriesData[index - 1]?.date)}
+							</time>
+						{:else}
+							<time datetime={record.interval}>
+								{cxt.formatXWithTimeZone(record.date)}
 							</time>
 						{/if}
 					</td>
+
+					{#if period === 'interval'}
+						<td
+							class="py-2 font-mono text-dark-grey text-right whitespace-nowrap"
+							class:text-red={record.time === cxt.focusTime}
+						>
+							<time datetime={record.interval}>
+								{new Intl.DateTimeFormat('en-AU', {
+									hour: 'numeric',
+									minute: 'numeric',
+									timeZone: cxt.timeZone
+								}).format(record.date)}
+							</time>
+						</td>
+					{/if}
 
 					<td
 						class="px-4 py-2 text-right font-mono text-dark-grey"

@@ -99,21 +99,12 @@
 
 			{#if showLineData}
 				<g clip-path={clipPath}>
-					<Line
-						stroke="#353535"
-						strokeWidth={chartStyles.strokeWidth}
-						strokeArray={chartStyles.strokeArray}
-						curveType={cxt.chartOptions.curveFunction}
-					/>
+					<Line stroke="#353535" {...chartStyles} />
 				</g>
 
 				{#if brushedRange}
 					<g clip-path={clipPathCustom}>
-						<Line
-							stroke={brushedLineStroke}
-							strokeWidth="1.5"
-							curveType={cxt.chartOptions.curveFunction}
-						/>
+						<Line {...chartStyles} strokeWidth="0" dotOpacity={0.8} />
 					</g>
 				{/if}
 			{/if}

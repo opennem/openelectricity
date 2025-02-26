@@ -27,7 +27,7 @@ export default class ChartStore {
 	title = $state('');
 
 	/** @type {string} */
-	timeZone = $state('Australia/Sydney');
+	timeZone = $state('+10:00');
 
 	/** @type {TimeSeriesData[]} */
 	seriesData = $state.raw([]);
@@ -105,6 +105,9 @@ export default class ChartStore {
 
 	/** @type {Function} */
 	formatX = $state((/** @type {*} */ d) => d);
+
+	/** @type {Function} */
+	formatXWithTimeZone = $derived((/** @type {*} */ d) => this.formatX(d, this.timeZone));
 
 	/** @type {Function} */
 	formatY = $state((/** @type {*} */ d) => d);

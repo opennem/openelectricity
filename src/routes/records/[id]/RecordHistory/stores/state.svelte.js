@@ -16,6 +16,9 @@ class State {
 
 	/** @type {MilestoneRecord | undefined} */
 	selectedMilestone = $derived(this.milestones.find((m) => m.time === this.selectedTime));
+
+	/** @type {MilestoneRecord | undefined} */
+	latestMilestone = $derived(this.milestones[this.milestones.length - 1]);
 }
 
 export const recordState = new State();

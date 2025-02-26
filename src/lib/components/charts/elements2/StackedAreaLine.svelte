@@ -124,7 +124,7 @@
 {#if display === 'line'}
 	{#each $data as d, i (i)}
 		{#if showLineDots && d.values.length > 1}
-			{#each d.values as point (point.time)}
+			{#each d.values as point}
 				<circle
 					class="focus:outline-0"
 					role="presentation"

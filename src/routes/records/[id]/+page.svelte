@@ -12,14 +12,17 @@
 	import init from './RecordHistory/helpers/init';
 	import fetchRecord from './RecordHistory/helpers/fetch';
 	import process from './RecordHistory/helpers/process';
-
+	import { xTickValueFormatters } from './RecordHistory/helpers/config';
 	let { data } = $props();
-	let { period, recordIds } = data;
+	let { period, recordIds } = $derived(data);
 	let loading = $state(false);
 	let showTracker = $state(false);
-	let { chartCxt, dateBrushCxt } = init(period);
+	let defaultXDomain = $state();
+	let { chartCxt, dateBrushCxt } = init();
 
 	recordState.recordIds = recordIds;
+
+	$inspect('recordState.latestMilestone', recordState.latestMilestone);
 
 	$effect(() => {
 		recordState.id = data.record_id;
@@ -45,6 +48,19 @@
 		}
 	});
 
+	$effect(() => {
+		console.log('period', period);
+		if (period) {
+			chartCxt.xTicks = xTickValueFormatters[period].ticks;
+			chartCxt.formatTickX = xTickValueFormatters[period].formatTick;
+			chartCxt.formatX = xTickValueFormatters[period].format;
+
+			dateBrushCxt.xTicks = xTickValueFormatters[period].ticks;
+			dateBrushCxt.formatTickX = xTickValueFormatters[period].formatTick;
+			dateBrushCxt.formatX = xTickValueFormatters[period].format;
+		}
+	});
+
 	/**
 	 * @param {{
 	 * milestones: MilestoneRecord[],
@@ -54,13 +70,37 @@
 	 */
 	function updateCxt({ milestones, seriesData, xDomain }) {
 		let record = milestones[0];
+		console.log('record', record);
+		let isWem = record.network_id === 'WEM';
 		chartCxt.title = record.metric;
+		chartCxt.timeZone = isWem ? '+08:00' : '+10:00';
 
 		chartCxt.seriesData = seriesData;
 		chartCxt.seriesNames = ['value'];
-		chartCxt.seriesColours = { value: '#777' };
+		chartCxt.seriesColours = { value: '#999' };
 		chartCxt.seriesLabels = { value: '' };
 		chartCxt.xDomain = xDomain;
+		defaultXDomain = xDomain;
+
+		chartCxt.chartOptions.setLineChart();
+
+		// this should be dynamic based on the record metric
+		if (record.metric === 'power') {
+			chartCxt.chartOptions.prefix = 'M';
+			chartCxt.chartOptions.displayPrefix = 'M';
+			chartCxt.chartOptions.allowedPrefixes = ['M', 'G'];
+			chartCxt.chartOptions.baseUnit = 'Wh';
+		} else if (record.metric === 'energy') {
+			chartCxt.chartOptions.prefix = 'M';
+			chartCxt.chartOptions.displayPrefix = 'M';
+			chartCxt.chartOptions.allowedPrefixes = ['M', 'G'];
+			chartCxt.chartOptions.baseUnit = 'Wh';
+		} else if (record.metric === 'emissions') {
+			chartCxt.chartOptions.prefix = '';
+			chartCxt.chartOptions.displayPrefix = 'k';
+			chartCxt.chartOptions.allowedPrefixes = ['', 'k'];
+			chartCxt.chartOptions.baseUnit = 'tCO2e';
+		}
 
 		dateBrushCxt.seriesData = seriesData;
 		dateBrushCxt.seriesNames = ['value'];
@@ -68,8 +108,6 @@
 		dateBrushCxt.seriesLabels = { value: '' };
 		dateBrushCxt.xDomain = xDomain;
 		dateBrushCxt.yKey = 'value';
-
-		chartCxt.chartOptions.setLineChart();
 
 		recordState.milestones = milestones;
 	}
@@ -112,16 +150,18 @@
 />
 
 {#if data.record_id}
-	<PageNav
-		record_id={data.record_id}
-		network_id={data.network_id}
-		network_region={data.network_region}
-		fueltech_id={data.fueltech_id}
-		metric={data.metric}
-		period={data.period}
-		aggregate={data.aggregate}
-		recordIds={data.recordIds}
-	/>
+	<div class="border-b-[0.05rem] border-mid-warm-grey">
+		<PageNav
+			record_id={data.record_id}
+			network_id={data.network_id}
+			network_region={data.network_region}
+			fueltech_id={data.fueltech_id}
+			metric={data.metric}
+			period={data.period}
+			aggregate={data.aggregate}
+			recordIds={data.recordIds}
+		/>
+	</div>
 {/if}
 
 {#if recordState.error}
@@ -142,35 +182,57 @@
 	</div>
 {:else}
 	{@const ftId = data.fueltech_id || 'demand'}
-	<div class="flex gap-6 px-10 md:px-16 my-10">
-		<div class="flex items-center gap-6">
-			<span
-				class="bg-{ftId} rounded-full p-3 place-self-start"
-				class:text-black={ftId === 'solar'}
-				class:text-white={ftId !== 'solar'}
-			>
-				<FuelTechIcon fuelTech={ftId} sizeClass={10} />
-			</span>
-
-			<h2 class="leading-lg text-lg font-medium mb-0">
-				{pageTitle}
-			</h2>
-		</div>
-	</div>
 
 	<div
-		class="grid grid-cols-2 gap-5 px-0 md:px-16 mb-10"
+		class="grid divide-x divide-mid-warm-grey py-6 px-10 md:px-16"
 		class:md:grid-cols-[5fr_2fr]={showTracker}
 		class:md:grid-cols-1={!showTracker}
 	>
-		<div class="w-full p-6 bg-white rounded-lg border border-warm-grey">
+		<section class="">
+			<header class="flex justify-between items-center mb-6">
+				<div class="flex items-center gap-6">
+					<span
+						class="bg-{ftId} rounded-full p-3 place-self-start"
+						class:text-black={ftId === 'solar'}
+						class:text-white={ftId !== 'solar'}
+					>
+						<FuelTechIcon fuelTech={ftId} sizeClass={10} />
+					</span>
+
+					<h2 class="leading-lg text-lg font-medium mb-0">
+						{pageTitle}
+					</h2>
+				</div>
+
+				<div class="flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey">
+					<div class="text-xs text-mid-warm-grey font-space font-semibold uppercase">
+						Current record
+					</div>
+					<span class="text-xs">
+						{chartCxt.formatXWithTimeZone(recordState.latestMilestone?.date)}
+					</span>
+					<div class="text-2xl leading-none font-medium text-right">
+						{chartCxt.convertAndFormatValue(recordState.latestMilestone?.value)}
+						<small class="text-xs">
+							{chartCxt.chartOptions.displayUnit}
+						</small>
+					</div>
+				</div>
+			</header>
+
 			{#if period && data.record_id}
-				<RecordHistory {chartCxt} {dateBrushCxt} {period} onfocus={handleOnFocus} />
+				<RecordHistory
+					{chartCxt}
+					{dateBrushCxt}
+					{period}
+					{defaultXDomain}
+					onfocus={handleOnFocus}
+				/>
 			{/if}
-		</div>
+		</section>
 
 		{#if showTracker}
-			<div class="bg-white rounded-lg p-6 md:border border-warm-grey relative">
+			<div class=" relative">
 				<button
 					class="absolute right-0 top-0 md:-right-5 md:-top-5"
 					onclick={() => (showTracker = false)}
