@@ -67,19 +67,17 @@
 <div class="grid grid-cols-[2fr_5fr] grid-rows-[570px] gap-6 mb-6">
 	<Table cxtKey={chartCxt.key} {brushedRange} {period} {onmousemove} {onmouseout} {onpointerup} />
 
-	<div>
-		<div class="rounded-lg border border-warm-grey">
-			<LensChart
-				cxtKey={chartCxt.key}
-				displayOptions={false}
-				showHeader={false}
-				{onmousemove}
-				{onmouseout}
-				{onpointerup}
-			/>
-		</div>
+	<div class="rounded-lg border border-warm-grey">
+		<LensChart
+			cxtKey={chartCxt.key}
+			displayOptions={false}
+			showHeader={false}
+			{onmousemove}
+			{onmouseout}
+			{onpointerup}
+		/>
 
-		<div class="mt-6 px-6 bg-light-warm-grey border border-warm-grey rounded-lg">
+		<div class="m-6 mt-0 bg-light-warm-grey rounded-lg">
 			<DateBrushWithContext cxtKey={dateBrushCxt.key} {brushedRange} {onbrush} />
 		</div>
 	</div>

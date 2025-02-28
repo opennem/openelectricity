@@ -6,6 +6,7 @@
 	import PageNav from './RecordHistory/PageNav.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import MiniTracker from './MiniTracker/Chart.svelte';
+	import MiniTracker2 from './MiniTracker/index.svelte';
 	import RecordHistory from './RecordHistory/index.svelte';
 	import { recordState } from './RecordHistory/stores/state.svelte';
 	import FuelTechIcon from '../components/FuelTechIcon.svelte';
@@ -13,15 +14,20 @@
 	import fetchRecord from './RecordHistory/helpers/fetch';
 	import process from './RecordHistory/helpers/process';
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
+
 	let { data } = $props();
 	let { period, recordIds } = $derived(data);
 	let loading = $state(false);
 	let showTracker = $state(false);
 	let defaultXDomain = $state();
 	let { chartCxt, dateBrushCxt } = init();
+	let headerRef = $state();
+	let headerHeight = $derived.by(() => headerRef?.getBoundingClientRect().height);
 
 	recordState.recordIds = recordIds;
 
+	$inspect('headerHeight', headerHeight);
+	$inspect('headerRef', headerRef?.offsetHeight, headerRef?.offsetTop);
 	$inspect('recordState.latestMilestone', recordState.latestMilestone);
 
 	$effect(() => {
@@ -89,7 +95,7 @@
 			chartCxt.chartOptions.prefix = 'M';
 			chartCxt.chartOptions.displayPrefix = 'M';
 			chartCxt.chartOptions.allowedPrefixes = ['M', 'G'];
-			chartCxt.chartOptions.baseUnit = 'Wh';
+			chartCxt.chartOptions.baseUnit = 'W';
 		} else if (record.metric === 'energy') {
 			chartCxt.chartOptions.prefix = 'M';
 			chartCxt.chartOptions.displayPrefix = 'M';
@@ -150,7 +156,7 @@
 />
 
 {#if data.record_id}
-	<div class="border-b-[0.05rem] border-mid-warm-grey">
+	<div class="bg-light-warm-grey">
 		<PageNav
 			record_id={data.record_id}
 			network_id={data.network_id}
@@ -184,12 +190,12 @@
 	{@const ftId = data.fueltech_id || 'demand'}
 
 	<div
-		class="grid divide-x divide-mid-warm-grey py-6 px-10 md:px-16"
+		class="grid py-6 px-10 md:px-16"
 		class:md:grid-cols-[5fr_2fr]={showTracker}
 		class:md:grid-cols-1={!showTracker}
 	>
 		<section class="">
-			<header class="flex justify-between items-center mb-6">
+			<header bind:this={headerRef} class="flex justify-between items-center mb-6">
 				<div class="flex items-center gap-6">
 					<span
 						class="bg-{ftId} rounded-full p-3 place-self-start"
@@ -232,15 +238,13 @@
 		</section>
 
 		{#if showTracker}
-			<div class=" relative">
-				<button
-					class="absolute right-0 top-0 md:-right-5 md:-top-5"
-					onclick={() => (showTracker = false)}
-				>
-					<IconXCircle class="size-8 md:size-12" />
-				</button>
+			<div style="margin-top: {headerHeight}px" class="flex flex-col items-end gap-6 ml-6">
+				<button onclick={() => (showTracker = false)}> Close </button>
+
 				{#if recordState.selectedMilestone}
-					<MiniTracker record={recordState.selectedMilestone} />
+					<div class=" bg-light-warm-grey rounded-lg w-full">
+						<MiniTracker2 record={recordState.selectedMilestone} timeZone={chartCxt.timeZone} />
+					</div>
 				{/if}
 			</div>
 		{/if}

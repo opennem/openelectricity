@@ -1,5 +1,4 @@
 import { parseISO, addYears, startOfYear } from 'date-fns';
-
 /**
  * @param {{
  * data: MilestoneRecord[],

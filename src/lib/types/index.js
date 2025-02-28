@@ -29,7 +29,7 @@
 /** @typedef {import('$lib/types/processed-data-viz.types').ProcessedDataViz} ProcessedDataViz */
 
 /** @typedef {import('$lib/types/record.types').MilestoneRecord} MilestoneRecord */
-
+/** @typedef {import('$lib/types/record.types').Period} Period */
 /** @typedef {import('$lib/types/ember-bridge.types').EmberCountry} EmberCountry */
 
 /** @typedef {'7d' | 'monthly' | '12-month-rolling' | 'yearly'} RangeType */

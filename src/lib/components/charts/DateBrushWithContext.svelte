@@ -79,6 +79,7 @@
 				yTick={10}
 				gridlines={true}
 				strokeArray="3 6"
+				fill="transparent"
 				stroke="#ccc"
 				formatTick={cxt.formatTickX}
 				tickMarks={false}
