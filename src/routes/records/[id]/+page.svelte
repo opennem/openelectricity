@@ -18,11 +18,10 @@
 	let { data } = $props();
 	let { period, recordIds } = $derived(data);
 	let loading = $state(false);
-	let showTracker = $state(false);
 	let defaultXDomain = $state();
 	let { chartCxt, dateBrushCxt } = init();
 	let headerRef = $state();
-	let headerHeight = $derived.by(() => headerRef?.getBoundingClientRect().height);
+	let headerHeight = $derived.by(() => headerRef?.getBoundingClientRect().height - 9);
 
 	recordState.recordIds = recordIds;
 
@@ -39,6 +38,7 @@
 	$effect(() => {
 		if (recordState.id) {
 			recordState.error = false;
+			recordState.showTracker = false;
 
 			fetchRecord(recordState.id)
 				.then((data) => {
@@ -123,7 +123,6 @@
 	 */
 	function handleOnFocus(time) {
 		recordState.selectedTime = time;
-		showTracker = true;
 	}
 
 	let pageTitle = $derived.by(() => {
@@ -189,13 +188,14 @@
 {:else}
 	{@const ftId = data.fueltech_id || 'demand'}
 
-	<div
-		class="grid py-6 px-10 md:px-16"
-		class:md:grid-cols-[5fr_2fr]={showTracker}
-		class:md:grid-cols-1={!showTracker}
-	>
-		<section class="">
-			<header bind:this={headerRef} class="flex justify-between items-center mb-6">
+	<div class="grid py-6 px-10 md:px-16 grid-cols-1">
+		<section>
+			<header
+				bind:this={headerRef}
+				class="grid items-center mb-6"
+				class:grid-cols-[5fr_2fr_2fr]={recordState.showTracker}
+				class:grid-cols-[5fr_2fr]={!recordState.showTracker}
+			>
 				<div class="flex items-center gap-6">
 					<span
 						class="bg-{ftId} rounded-full p-3 place-self-start"
@@ -210,7 +210,7 @@
 					</h2>
 				</div>
 
-				<div class="flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey">
+				<div class="flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey mr-3">
 					<div class="text-xs text-mid-warm-grey font-space font-semibold uppercase">
 						Current record
 					</div>
@@ -237,17 +237,17 @@
 			{/if}
 		</section>
 
-		{#if showTracker}
-			<div style="margin-top: {headerHeight}px" class="flex flex-col items-end gap-6 ml-6">
+		<!-- {#if showTracker}
+			<div style="margin-top: {headerHeight}px" class="flex flex-col items-end">
 				<button onclick={() => (showTracker = false)}> Close </button>
 
 				{#if recordState.selectedMilestone}
-					<div class=" bg-light-warm-grey rounded-lg w-full">
+					<div class="bg-light-warm-grey rounded-r-lg w-full border border-l-0 border-warm-grey">
 						<MiniTracker2 record={recordState.selectedMilestone} timeZone={chartCxt.timeZone} />
 					</div>
 				{/if}
 			</div>
-		{/if}
+		{/if} -->
 	</div>
 {/if}
 

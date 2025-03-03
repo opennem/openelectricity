@@ -29,9 +29,9 @@ export let chartOptions = Object.freeze({
 		baseUnit: 'tCO2e'
 	},
 	market_value: {
-		prefix: 'M',
-		displayPrefix: 'M',
-		allowedPrefixes: ['M', 'G'],
-		baseUnit: 'USD'
+		prefix: '',
+		displayPrefix: '',
+		allowedPrefixes: [''],
+		baseUnit: 'AUD'
 	}
 });

@@ -61,35 +61,37 @@
 	async function fetchData(record) {
 		if (!browser || !record.date) return;
 		let apiInterval = apiIntervalMap[record.period];
+		let isIntervalPeriod = record.period === 'interval';
 		let isNetworkRegion = record.network_region;
+		let fuelTechId = record.fueltech_id;
 		let primaryGrouping = /** @type {import('@openelectricity/client').DataPrimaryGrouping} */ (
 			isNetworkRegion ? 'network_region' : 'network'
 		);
+		let secondaryGrouping =
+			/** @type {import('@openelectricity/client').DataSecondaryGrouping[]} */ (['fueltech_group']);
 
 		let { dateStart, dateEnd, withTime } = getDateRange(record.date, record.period);
 		let dateStartFormatted = plainDateTime(dateStart, timeZone, withTime);
 		let dateEndFormatted = plainDateTime(dateEnd, timeZone, withTime);
 
+		let clientOptions = {
+			interval: apiInterval,
+			dateStart: dateStartFormatted,
+			dateEnd: dateEndFormatted,
+			primaryGrouping,
+			secondaryGrouping
+		};
+
 		console.log('record', record);
 		console.log('record.interval', record.interval);
 		console.log('dateStartFormatted', dateStart, dateStartFormatted);
 		console.log('dateEndFormatted', dateEnd, dateEndFormatted);
-		console.log(record.network_id, record.metric, {
-			interval: apiInterval,
-			dateStart: dateStartFormatted,
-			dateEnd: dateEndFormatted,
-			primaryGrouping
-		});
+		console.log(record.network_id, record.metric, clientOptions);
 
 		let res;
 
 		try {
-			res = await client.getNetworkData(record.network_id, [record.metric], {
-				interval: apiInterval,
-				dateStart: dateStartFormatted,
-				dateEnd: dateEndFormatted,
-				primaryGrouping
-			});
+			res = await client.getNetworkData(record.network_id, [record.metric], clientOptions);
 		} catch (e) {
 			console.error('error', e);
 		}
@@ -97,17 +99,25 @@
 		if (res?.response.success) {
 			let data = res.response.data;
 			let results = data[0].results;
-			let statsData;
+			let result;
+
+			console.log('data', data);
 
 			if (isNetworkRegion) {
 				// get only the network_region data
-				statsData = results.find((result) => result.columns.region === record.network_region);
+				result = results.filter((d) => d.columns.region === record.network_region);
 			} else {
-				statsData = results[0];
+				result = results;
 			}
 
-			// convert statsData to a time series
-			let timeSeries = statsData?.data.map((d) => {
+			if (fuelTechId && result) {
+				result = result.find((d) => d.columns.fueltech_group === fuelTechId);
+			} else {
+				result = result[0];
+			}
+
+			// convert result to a time series
+			let timeSeries = result?.data.map((d) => {
 				let date = new Date(d[0]);
 				return {
 					dateStr: d[0],
@@ -131,12 +141,24 @@
 			chartCxt.seriesData = timeSeries;
 			chartCxt.seriesNames = ['value'];
 			chartCxt.seriesColours = { value: fuelTechColourMap[record.fueltech_id || 'demand'] };
-			chartCxt.seriesLabels = { value: record.metric };
+			chartCxt.seriesLabels = { value: '' };
 			chartCxt.focusTime = record.time;
+			chartCxt.chartTooltips.valueKey = 'value';
+
+			if (isIntervalPeriod) {
+				chartCxt.chartOptions.setSmoothCurve();
+			} else {
+				chartCxt.chartOptions.setStepCurve();
+			}
 		} else {
 			console.error('no data', res);
 		}
 	}
 </script>
 
-<LensChart cxtKey={chartCxt.key} displayOptions={false} />
+<LensChart
+	cxtKey={chartCxt.key}
+	displayOptions={false}
+	showHeader={false}
+	tooltipWrapperStyles="border-b border-warm-grey"
+/>

@@ -110,6 +110,7 @@
 					dy="2"
 					text-anchor={textAnchor(i)}
 					class="text-xxs font-light text-mid-warm-grey"
+					filter="url(#f1)"
 				>
 					{formatTick(tick)}
 				</text>
@@ -121,6 +122,3 @@
 		<line class="baseline" y1={$height + 0.5} y2={$height + 0.5} x1="0" x2={$width} />
 	{/if}
 </g>
-
-<style>
-</style>

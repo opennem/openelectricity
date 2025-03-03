@@ -44,6 +44,7 @@ export default function () {
 	dateBrushCxt.chartStyles.dotStroke = 'transparent';
 	dateBrushCxt.chartStyles.dotOpacity = 0.3;
 	dateBrushCxt.chartStyles.dotRadius = 2.5;
+	dateBrushCxt.chartStyles.xAxisFill = 'transparent';
 	dateBrushCxt.chartOptions.setStepAfterCurve();
 
 	return {

@@ -1,6 +1,8 @@
 <script>
 	import LensChart from '$lib/components/charts/LensChart.svelte';
 	import DateBrushWithContext from '$lib/components/charts/DateBrushWithContext.svelte';
+	import { recordState } from './stores/state.svelte';
+	import MiniTracker2 from '../MiniTracker/index.svelte';
 	import Table from './Table.svelte';
 	let { chartCxt, dateBrushCxt, period, defaultXDomain, onfocus } = $props();
 	/** @type {Date[] | undefined} */
@@ -48,6 +50,7 @@
 	function onpointerup(evt) {
 		updateChartFocus(evt.time);
 		onfocus(evt.time);
+		recordState.showTracker = true;
 	}
 
 	/**
@@ -64,7 +67,11 @@
 	}
 </script>
 
-<div class="grid grid-cols-[2fr_5fr] grid-rows-[570px] gap-6 mb-6">
+<div
+	class="grid grid-cols-[2fr_5fr] grid-rows-[570px] gap-6 mb-6"
+	class:grid-cols-[2fr_5fr_2fr]={recordState.showTracker}
+	class:grid-cols-[2fr_5fr]={!recordState.showTracker}
+>
 	<Table cxtKey={chartCxt.key} {brushedRange} {period} {onmousemove} {onmouseout} {onpointerup} />
 
 	<div class="rounded-lg border border-warm-grey">
@@ -81,4 +88,16 @@
 			<DateBrushWithContext cxtKey={dateBrushCxt.key} {brushedRange} {onbrush} />
 		</div>
 	</div>
+
+	{#if recordState.showTracker}
+		<div class="flex flex-col items-end relative top-[-24px]">
+			<button onclick={() => (recordState.showTracker = false)}> Close </button>
+
+			{#if recordState.selectedMilestone}
+				<div class="bg-light-warm-grey rounded-lg w-full border border-warm-grey">
+					<MiniTracker2 record={recordState.selectedMilestone} timeZone={chartCxt.timeZone} />
+				</div>
+			{/if}
+		</div>
+	{/if}
 </div>

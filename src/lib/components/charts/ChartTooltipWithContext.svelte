@@ -1,8 +1,8 @@
 <script>
 	import getContext from '$lib/utils/get-context.js';
 
-	/** @type {{ cxtKey: symbol, defaultText?: string }} */
-	let { cxtKey, defaultText = '' } = $props();
+	/** @type {{ cxtKey: symbol, defaultText?: string, wrapperStyles?: string }} */
+	let { cxtKey, defaultText = '', wrapperStyles = '' } = $props();
 
 	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
 	let cxt = getContext(cxtKey);
@@ -20,11 +20,11 @@
 	let hoverKeyLabel = $derived(cxtValueKey ? cxt.seriesLabels[cxtValueKey] : '');
 </script>
 
-<div class="h-[21px]">
+<div class="h-[21px] {wrapperStyles}">
 	{#if useData}
 		<div class="h-full items-center flex justify-end text-xs leading-xs whitespace-nowrap">
 			<span class="px-3 py-1 font-light bg-white/40">
-				{cxt.formatX(valueDate)}
+				{cxt.formatXWithTimeZone(valueDate)}
 			</span>
 
 			{#if valueKey || cxt.chartTooltips.showTotal}

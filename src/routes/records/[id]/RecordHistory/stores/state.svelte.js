@@ -19,6 +19,9 @@ class State {
 
 	/** @type {MilestoneRecord | undefined} */
 	latestMilestone = $derived(this.milestones[this.milestones.length - 1]);
+
+	/** @type {boolean} */
+	showTracker = $state(false);
 }
 
 export const recordState = new State();

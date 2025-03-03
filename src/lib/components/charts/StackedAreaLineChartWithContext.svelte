@@ -62,6 +62,7 @@
 		<Svg>
 			<defs>
 				<ClipPath id={clipPathId} />
+				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
 			</defs>
 
 			<Shading dataset={cxt.shadingData} fill={cxt.shadingFill} clipPathId="clip-path" />
@@ -117,10 +118,6 @@
 		</Svg>
 
 		<Svg pointerEvents={false}>
-			<defs>
-				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
-			</defs>
-
 			<g clip-path={clipPathAxis}>
 				<AxisY
 					ticks={cxt.yTicks}
@@ -140,6 +137,7 @@
 					tickMarks={true}
 					snapTicks={cxt.chartStyles.snapXTicks}
 					stroke={cxt.chartStyles.xAxisStroke}
+					fill={cxt.chartStyles.xAxisFill}
 				/>
 			</g>
 		</Svg>

@@ -11,7 +11,8 @@
 		showHeader?: boolean,
 		onmousemove?: (evt: ChartEvent | TimeSeriesData) => void,
 		onmouseout?: () => void,
-		onpointerup?: (evt: TimeSeriesData) => void
+		onpointerup?: (evt: TimeSeriesData) => void,
+		tooltipWrapperStyles?: string
 	}} */
 	let props = $props();
 	let { showHeader = true } = props;
@@ -21,7 +22,7 @@
 	{#if showHeader}
 		<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions} />
 	{/if}
-	<ChartTooltipWithContext cxtKey={props.cxtKey} />
+	<ChartTooltipWithContext cxtKey={props.cxtKey} wrapperStyles={props.tooltipWrapperStyles} />
 	<div class="px-6">
 		<StackedAreaLineChartWithContext {...props} />
 	</div>

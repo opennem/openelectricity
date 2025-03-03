@@ -79,8 +79,8 @@
 				yTick={10}
 				gridlines={true}
 				strokeArray="3 6"
-				fill="transparent"
-				stroke="#ccc"
+				fill={cxt.chartStyles.xAxisFill}
+				stroke={cxt.chartStyles.xAxisStroke}
 				formatTick={cxt.formatTickX}
 				tickMarks={false}
 				snapTicks={cxt.chartStyles.snapXTicks}

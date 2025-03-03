@@ -43,6 +43,9 @@ export default class ChartStylesState {
 	/** @type {string} */
 	xAxisStroke = $state('#33333344');
 
+	/** @type {string} */
+	xAxisFill = $state('white');
+
 	// Chart overlay
 	/** @type {{ xStartValue: Date, xEndValue: Date } | undefined} */
 	chartOverlay = $state();
