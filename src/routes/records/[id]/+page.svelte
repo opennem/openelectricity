@@ -1,12 +1,9 @@
 <script>
 	import { fade } from 'svelte/transition';
 	import Meta from '$lib/components/Meta.svelte';
-	import IconXCircle from '$lib/icons/XCircle.svelte';
 	import { regionsWithLabels } from '$lib/regions';
 	import PageNav from './RecordHistory/PageNav.svelte';
 	import recordDescription from '../page-data-options/record-description';
-	import MiniTracker from './MiniTracker/Chart.svelte';
-	import MiniTracker2 from './MiniTracker/index.svelte';
 	import RecordHistory from './RecordHistory/index.svelte';
 	import { recordState } from './RecordHistory/stores/state.svelte';
 	import FuelTechIcon from '../components/FuelTechIcon.svelte';
