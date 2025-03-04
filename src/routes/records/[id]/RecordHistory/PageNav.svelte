@@ -217,11 +217,18 @@
 	 * @param {CustomEvent} evt
 	 */
 	function handleMetricChange(evt) {
+		let recordPeriod = period;
+		if (evt.detail.value === 'power' && recordPeriod !== 'interval') {
+			recordPeriod = 'interval';
+		}
+		if (evt.detail.value !== 'power' && recordPeriod === 'interval') {
+			recordPeriod = 'day';
+		}
 		goToRecord({
 			region,
 			fuelTech,
 			metric: evt.detail.value,
-			period,
+			period: recordPeriod,
 			aggregate
 		});
 	}
@@ -230,10 +237,17 @@
 	 * @param {CustomEvent} evt
 	 */
 	function handlePeriodChange(evt) {
+		let recordMetric = metric;
+		if (evt.detail.value === 'interval' && recordMetric !== 'power') {
+			recordMetric = 'power';
+		}
+		if (evt.detail.value !== 'interval' && recordMetric === 'power') {
+			recordMetric = 'energy';
+		}
 		goToRecord({
 			region,
 			fuelTech,
-			metric,
+			metric: recordMetric,
 			period: evt.detail.value,
 			aggregate
 		});
