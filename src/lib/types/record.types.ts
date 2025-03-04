@@ -1,4 +1,4 @@
-import type { NetworkCode, DataMetric } from '@openelectricity/client';
+import type { NetworkCode, DataMetric } from 'openelectricity';
 import type { FuelTechCode } from './fuel_tech.types';
 
 export type MilestoneRecord = {

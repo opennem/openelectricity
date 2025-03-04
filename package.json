@@ -19,7 +19,6 @@
 	"devDependencies": {
 		"@changesets/cli": "^2.27.7",
 		"@chienleng/portabletext-svelte-5": "^3.0.0",
-		"@openelectricity/client": "^0.4.0",
 		"@sanity/client": "^6.21.1",
 		"@sanity/image-url": "^1.0.2",
 		"@svelte-put/clickoutside": "^4.0.0",
@@ -45,6 +44,7 @@
 		"js-base64": "^3.7.7",
 		"layercake": "^8.4.2",
 		"lz-string": "^1.5.0",
+		"openelectricity": "^0.4.3",
 		"postcss": "^8.4.41",
 		"prettier": "^3.1.0",
 		"prettier-plugin-svelte": "^3.2.6",

@@ -1,7 +1,7 @@
 <script>
 	import { addDays, addMonths, addYears, subDays, subMonths, subYears } from 'date-fns';
 	import { browser } from '$app/environment';
-	import OpenElectricityClient from '@openelectricity/client';
+	import OpenElectricityClient from 'openelectricity';
 	import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { plainDateTime } from '$lib/utils/date-parser';
@@ -64,11 +64,12 @@
 		let isIntervalPeriod = record.period === 'interval';
 		let isNetworkRegion = record.network_region;
 		let fuelTechId = record.fueltech_id;
-		let primaryGrouping = /** @type {import('@openelectricity/client').DataPrimaryGrouping} */ (
+		let primaryGrouping = /** @type {import('openelectricity').DataPrimaryGrouping} */ (
 			isNetworkRegion ? 'network_region' : 'network'
 		);
-		let secondaryGrouping =
-			/** @type {import('@openelectricity/client').DataSecondaryGrouping[]} */ (['fueltech_group']);
+		let secondaryGrouping = /** @type {import('openelectricity').DataSecondaryGrouping[]} */ ([
+			'fueltech_group'
+		]);
 
 		let { dateStart, dateEnd, withTime } = getDateRange(record.date, record.period);
 		let dateStartFormatted = plainDateTime(dateStart, timeZone, withTime);

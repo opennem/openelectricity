@@ -17,7 +17,7 @@
 	} from './helpers/config';
 	import { filterData, getDataPath } from './helpers/utils';
 
-	import OpenElectricityClient from '@openelectricity/client';
+	import OpenElectricityClient from 'openelectricity';
 	import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 	const client = new OpenElectricityClient({
 		apiKey: PUBLIC_OE_API_KEY,
@@ -44,7 +44,7 @@
 
 	let chartOptions = $derived(chartOptionsMap[metric]);
 	let isDemand = $derived(fuelTechId === 'demand');
-	/** @type {import('@openelectricity/client').DataInterval | undefined} */
+	/** @type {import('openelectricity').DataInterval | undefined} */
 	let apiInterval = $derived(apiIntervalMap[period]);
 
 	let demandDataset = $derived(

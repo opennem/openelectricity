@@ -1,5 +1,4 @@
 import { error } from '@sveltejs/kit';
-import OpenElectricityClient from '@openelectricity/client';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 
 export async function GET({ url, setHeaders }) {

@@ -57,7 +57,7 @@ export let periodIntervalMap = {
 	year: '1Y'
 };
 
-/** @type {Record<import('./types').Period, import('@openelectricity/client').DataInterval>} */
+/** @type {Record<import('./types').Period, import('openelectricity').DataInterval>} */
 export let apiIntervalMap = {
 	interval: '5m',
 	day: '1d',
