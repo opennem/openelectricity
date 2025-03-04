@@ -17,6 +17,7 @@
 
 	let { record, timeZone } = $props();
 	let { chartCxt } = init();
+	let errorMessage = $state('');
 
 	$inspect('record', record);
 	$inspect('timeZone', timeZone);
@@ -92,9 +93,12 @@
 		let res;
 
 		try {
+			chartCxt.seriesData = [];
+			errorMessage = '';
 			res = await client.getNetworkData(record.network_id, [record.metric], clientOptions);
 		} catch (e) {
 			console.error('error', e);
+			errorMessage = 'Error fetching data. Check the console for more details.';
 		}
 
 		if (res?.response.success) {
@@ -175,11 +179,17 @@
 	}
 </script>
 
-<LensChart
-	cxtKey={chartCxt.key}
-	displayOptions={false}
-	showHeader={false}
-	tooltipWrapperStyles="border-b border-warm-grey"
-	{onmousemove}
-	{onmouseout}
-/>
+{#if errorMessage}
+	<div class="text-dark-red h-[485px] flex items-center justify-center text-center px-4">
+		{errorMessage}
+	</div>
+{:else}
+	<LensChart
+		cxtKey={chartCxt.key}
+		displayOptions={false}
+		showHeader={false}
+		tooltipWrapperStyles="border-b border-warm-grey"
+		{onmousemove}
+		{onmouseout}
+	/>
+{/if}
