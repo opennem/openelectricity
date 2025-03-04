@@ -50,8 +50,8 @@
 			return { dateStart, dateEnd, withTime: false };
 		}
 
-		let dateStart = subDays(date, 2);
-		let dateEnd = addDays(date, 2);
+		let dateStart = subDays(date, 1);
+		let dateEnd = addDays(date, 1);
 		return { dateStart, dateEnd, withTime: true };
 	}
 
@@ -155,6 +155,24 @@
 			console.error('no data', res);
 		}
 	}
+
+	/**
+	 * @param {{ data: TimeSeriesData, key?: string } | TimeSeriesData} evt
+	 */
+	function onmousemove(evt) {
+		let key = /** @type {string | undefined} */ (evt.key);
+		let data = key
+			? /** @type {TimeSeriesData | undefined} */ (evt.data)
+			: /** @type {TimeSeriesData | undefined} */ (evt);
+		let hoverTime = data ? data.time : undefined;
+		chartCxt.hoverTime = hoverTime;
+		chartCxt.hoverKey = key;
+	}
+
+	function onmouseout() {
+		chartCxt.hoverTime = undefined;
+		chartCxt.hoverKey = undefined;
+	}
 </script>
 
 <LensChart
@@ -162,4 +180,6 @@
 	displayOptions={false}
 	showHeader={false}
 	tooltipWrapperStyles="border-b border-warm-grey"
+	{onmousemove}
+	{onmouseout}
 />
