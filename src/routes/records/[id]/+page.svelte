@@ -1,4 +1,5 @@
 <script>
+	import { page } from '$app/state';
 	import { fade } from 'svelte/transition';
 	import Meta from '$lib/components/Meta.svelte';
 	import { regionsWithLabels } from '$lib/regions';
@@ -11,19 +12,15 @@
 	import fetchRecord from './RecordHistory/helpers/fetch';
 	import process from './RecordHistory/helpers/process';
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
-
+	import { goto } from '$app/navigation';
 	let { data } = $props();
-	let { period, recordIds } = $derived(data);
+	let { period, recordIds, focusTime } = $derived(data);
 	let loading = $state(false);
 	let defaultXDomain = $state();
 	let { chartCxt, dateBrushCxt } = init();
-	let headerRef = $state();
-	let headerHeight = $derived.by(() => headerRef?.getBoundingClientRect().height - 9);
 
 	recordState.recordIds = recordIds;
 
-	$inspect('headerHeight', headerHeight);
-	$inspect('headerRef', headerRef?.offsetHeight, headerRef?.offsetTop);
 	$inspect('recordState.latestMilestone', recordState.latestMilestone);
 
 	$effect(() => {
@@ -115,11 +112,28 @@
 		recordState.milestones = milestones;
 	}
 
+	$effect(() => {
+		if (focusTime) {
+			let time = parseInt(focusTime);
+			recordState.selectedTime = time;
+			chartCxt.focusTime = time;
+			recordState.showTracker = true;
+		}
+	});
+
+	$inspect('focusTime', focusTime);
+	$inspect('recordState.selectedTime', recordState.selectedTime);
+	$inspect('selectedMilestone', recordState.selectedMilestone);
+
 	/**
 	 * @param {number} time
 	 */
 	function handleOnFocus(time) {
-		recordState.selectedTime = time;
+		// recordState.selectedTime = time;
+
+		let query = new URLSearchParams(page.url.searchParams.toString());
+		query.set('focusTime', time.toString());
+		goto(`?${query.toString()}`, { noScroll: true });
 	}
 
 	let pageTitle = $derived.by(() => {
@@ -188,7 +202,6 @@
 	<div class="grid py-6 px-10 md:px-16 grid-cols-1">
 		<section>
 			<header
-				bind:this={headerRef}
 				class="grid items-center mb-6"
 				class:grid-cols-[5fr_2fr_2fr]={recordState.showTracker}
 				class:grid-cols-[5fr_2fr]={!recordState.showTracker}
