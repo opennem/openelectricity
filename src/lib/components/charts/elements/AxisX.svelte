@@ -110,7 +110,6 @@
 					dy="2"
 					text-anchor={textAnchor(i)}
 					class="text-xxs font-light text-mid-warm-grey"
-					filter="url(#f1)"
 				>
 					{formatTick(tick)}
 				</text>

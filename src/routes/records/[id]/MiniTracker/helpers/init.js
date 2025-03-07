@@ -2,25 +2,25 @@ import { setContext, getContext } from 'svelte';
 import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
 
 export default function () {
-	let trackerKey = Symbol('mini-tracker');
-	let dateBrushKey = Symbol('date-brush');
+	let chartKey = Symbol('mini-tracker');
 
 	setContext(
-		trackerKey,
+		chartKey,
 		new ChartStore({
-			key: trackerKey
+			key: chartKey
 		})
 	);
 
-	setContext(
-		dateBrushKey,
-		new ChartStore({
-			key: dateBrushKey
-		})
-	);
+	let chartCxt = getContext(chartKey);
+
+	chartCxt.chartStyles.chartHeightClasses = 'h-[485px]';
+	chartCxt.chartStyles.chartPadding = { top: 0, right: 0, bottom: 25, left: 0 };
+	chartCxt.chartTooltips.showTotal = false;
+	chartCxt.chartStyles.yAxisStroke = '#999';
+	chartCxt.chartStyles.xAxisStroke = 'transparent';
+	chartCxt.chartStyles.xAxisFill = 'transparent';
 
 	return {
-		chartCxt: getContext(trackerKey),
-		dateBrushCxt: getContext(dateBrushKey)
+		chartCxt
 	};
 }

@@ -118,6 +118,16 @@
 		</Svg>
 
 		<Svg pointerEvents={false}>
+			<!-- <defs>
+				<filter id="f1" x="-30%" y="-30%" width="160%" height="160%">
+					<feGaussianBlur stdDeviation="10 10" result="glow" />
+					<feMerge>
+						<feMergeNode in="glow" />
+						<feMergeNode in="glow" />
+						<feMergeNode in="glow" />
+					</feMerge>
+				</filter>
+			</defs> -->
 			<g clip-path={clipPathAxis}>
 				<AxisY
 					ticks={cxt.yTicks}

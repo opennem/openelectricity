@@ -54,7 +54,40 @@
 
 		return currentFormatDate;
 	}
+
+	/**
+	 * @param {KeyboardEvent} event
+	 */
+	function handleKeydown(event) {
+		if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+		event.preventDefault();
+
+		if (cxt.focusTime) {
+			if (event.key === 'ArrowUp') {
+				let find = seriesData.findIndex((record) => record.time === cxt.focusTime);
+				if (find !== -1 && find > 0) {
+					handlePointerUp(seriesData[find - 1]);
+				}
+			}
+			if (event.key === 'ArrowDown') {
+				let find = seriesData.findIndex((record) => record.time === cxt.focusTime);
+				if (find !== -1 && find < seriesData.length - 1) {
+					handlePointerUp(seriesData[find + 1]);
+				}
+			}
+		}
+	}
+
+	/**
+	 * @param {TimeSeriesData} record
+	 */
+	function handlePointerUp(record) {
+		console.log('pointer up');
+		onpointerup({ time: record.time, date: record.date });
+	}
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="overflow-y-auto rounded-lg border border-warm-grey h-full">
 	<table class="bg-white text-xs w-full">
@@ -97,7 +130,7 @@
 					class:hidden={brushedRange && !isBetween(record.time)}
 					onmousemove={() => onmousemove({ time: record.time, date: record.date })}
 					{onmouseout}
-					onpointerup={() => onpointerup({ time: record.time, date: record.date })}
+					onpointerup={() => handlePointerUp(record)}
 				>
 					<td
 						class="pl-4 py-2 font-mono text-dark-grey whitespace-nowrap"

@@ -6,9 +6,9 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { plainDateTime } from '$lib/utils/date-parser';
 	import LensChart from '$lib/components/charts/LensChart.svelte';
-	import init from './helpers2/init';
-	import { apiIntervalMap, chartOptions } from './helpers2/config';
-	import xTickValueFormatters from './helpers2/xtick-value-formatters';
+	import init from './helpers/init';
+	import { apiIntervalMap, chartOptions } from './helpers/config';
+	import xTickValueFormatters from './helpers/xtick-value-formatters';
 
 	const client = new OpenElectricityClient({
 		apiKey: PUBLIC_OE_API_KEY,
@@ -51,8 +51,8 @@
 			return { dateStart, dateEnd, withTime: false };
 		}
 
-		let dateStart = subDays(date, 1);
-		let dateEnd = addDays(date, 1);
+		let dateStart = subDays(date, 5);
+		let dateEnd = addDays(date, 2);
 		return { dateStart, dateEnd, withTime: true };
 	}
 
@@ -95,7 +95,10 @@
 		try {
 			chartCxt.seriesData = [];
 			errorMessage = '';
+			let perf = performance.now();
 			res = await client.getNetworkData(record.network_id, [record.metric], clientOptions);
+			let perf2 = performance.now();
+			console.log('[client.getNetworkData] data returned in', (perf2 - perf) / 1000, 'seconds');
 		} catch (e) {
 			console.error('error', e);
 			errorMessage = 'Error fetching data. Check the console for more details.';
