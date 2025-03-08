@@ -1,4 +1,5 @@
 <script>
+	import { slide } from 'svelte/transition';
 	import LensChart from '$lib/components/charts/LensChart.svelte';
 	import DateBrushWithContext from '$lib/components/charts/DateBrushWithContext.svelte';
 	import IconXMark from '$lib/icons/XMark.svelte';
@@ -23,12 +24,11 @@
 	}
 
 	/**
-	 * @param {number} time
+	 * @param {number | undefined} time
 	 */
 	function updateChartFocus(time) {
-		let isSame = chartCxt.focusTime === time;
-		chartCxt.focusTime = isSame ? undefined : time;
-		dateBrushCxt.focusTime = isSame ? undefined : time;
+		chartCxt.focusTime = time;
+		dateBrushCxt.focusTime = time;
 	}
 
 	/**
@@ -50,8 +50,9 @@
 	 * @param {TimeSeriesData} evt
 	 */
 	function onpointerup(evt) {
-		updateChartFocus(evt.time);
-		onfocus(evt.time);
+		let isSame = chartCxt.focusTime === evt.time;
+		updateChartFocus(isSame ? undefined : evt.time);
+		onfocus(isSame ? undefined : evt.time);
 		recordState.showTracker = true;
 	}
 
@@ -92,7 +93,7 @@
 	</div>
 
 	{#if recordState.showTracker}
-		<div class="relative">
+		<div class="relative" transition:slide={{ axis: 'x' }}>
 			<button
 				class="absolute left-1 top-1 text-mid-warm-grey hover:text-dark-grey"
 				onclick={() => (recordState.showTracker = false)}

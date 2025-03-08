@@ -33,6 +33,7 @@ function getInterval(d, timeZone) {
 	}).format(d);
 
 	let date = new Intl.DateTimeFormat('en-AU', {
+		weekday: 'short',
 		day: 'numeric',
 		month: 'short',
 		year: 'numeric',

@@ -34,20 +34,20 @@
 	 */
 	function getDateRange(date, period) {
 		if (period === 'day') {
-			let dateStart = subDays(date, 30);
-			let dateEnd = addDays(date, 30);
+			let dateStart = subDays(date, 32);
+			let dateEnd = addDays(date, 32);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
 		if (period === 'month') {
-			let dateStart = subMonths(date, 6);
-			let dateEnd = addMonths(date, 6);
+			let dateStart = subMonths(date, 10);
+			let dateEnd = addMonths(date, 10);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
 		if (period === 'quarter') {
-			let dateStart = subMonths(date, 18);
-			let dateEnd = addMonths(date, 18);
+			let dateStart = subMonths(date, 26);
+			let dateEnd = addMonths(date, 26);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
@@ -155,7 +155,7 @@
 			});
 
 			chartCxt.chartOptions.prefix = chartOptions[record.metric].prefix;
-			chartCxt.chartOptions.displayPrefix = chartOptions[record.metric].displayPrefix;
+			// chartCxt.chartOptions.displayPrefix = chartOptions[record.metric].displayPrefix;
 			chartCxt.chartOptions.allowedPrefixes = chartOptions[record.metric].allowedPrefixes;
 			chartCxt.chartOptions.baseUnit = chartOptions[record.metric].baseUnit;
 

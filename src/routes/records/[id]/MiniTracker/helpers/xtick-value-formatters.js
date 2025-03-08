@@ -33,6 +33,7 @@ function getInterval(d, timeZone) {
 	}).format(d);
 
 	let date = new Intl.DateTimeFormat('en-AU', {
+		weekday: 'short',
 		day: 'numeric',
 		month: 'short',
 		year: 'numeric',
@@ -45,10 +46,10 @@ function getInterval(d, timeZone) {
 /** @type {Record<string, {ticks: number, format: dateFormatter, formatTick: dateFormatter}>} */
 let xTickValueFormatters = {
 	interval: {
-		ticks: 4,
+		ticks: 3,
 		format: (d, timeZone) => getInterval(d, timeZone),
 		formatTick: (d, timeZone) =>
-			new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone }).format(d)
+			new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short', timeZone }).format(d)
 	},
 	day: {
 		ticks: 4,
@@ -61,10 +62,10 @@ let xTickValueFormatters = {
 				timeZone
 			}).format(d),
 		formatTick: (d, timeZone) =>
-			new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone }).format(d)
+			new Intl.DateTimeFormat('en-AU', { month: 'short', year: '2-digit', timeZone }).format(d)
 	},
 	month: {
-		ticks: 4,
+		ticks: 3,
 		format: (d, timeZone) =>
 			new Intl.DateTimeFormat('en-AU', {
 				month: 'short',
@@ -72,7 +73,7 @@ let xTickValueFormatters = {
 				timeZone
 			}).format(d),
 		formatTick: (d, timeZone) =>
-			new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone }).format(d)
+			new Intl.DateTimeFormat('en-AU', { month: 'short', year: '2-digit', timeZone }).format(d)
 	},
 	quarter: {
 		ticks: 4,

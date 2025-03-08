@@ -1,15 +1,15 @@
 <script>
+	import { fade } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { fade } from 'svelte/transition';
 	import Meta from '$lib/components/Meta.svelte';
 	import { regionsWithLabels } from '$lib/regions';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import PageNav from './RecordHistory/PageNav.svelte';
+	import FuelTechIcon from '../components/FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
+	import PageNav from './RecordHistory/PageNav.svelte';
 	import RecordHistory from './RecordHistory/index.svelte';
 	import { recordState } from './RecordHistory/stores/state.svelte';
-	import FuelTechIcon from '../components/FuelTechIcon.svelte';
 	import init from './RecordHistory/helpers/init';
 	import fetchRecord from './RecordHistory/helpers/fetch';
 	import process from './RecordHistory/helpers/process';
@@ -125,7 +125,13 @@
 	 */
 	function handleOnFocus(time) {
 		let query = new URLSearchParams(page.url.searchParams.toString());
-		query.set('focusTime', time.toString());
+
+		if (time) {
+			query.set('focusTime', time.toString());
+		} else {
+			query.delete('focusTime');
+		}
+
 		goto(`?${query.toString()}`, { noScroll: true });
 	}
 
