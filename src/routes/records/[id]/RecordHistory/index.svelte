@@ -1,8 +1,10 @@
 <script>
 	import LensChart from '$lib/components/charts/LensChart.svelte';
 	import DateBrushWithContext from '$lib/components/charts/DateBrushWithContext.svelte';
+	import IconXMark from '$lib/icons/XMark.svelte';
+
 	import { recordState } from './stores/state.svelte';
-	import MiniTracker2 from '../MiniTracker/index.svelte';
+	import MiniTracker from '../MiniTracker/index.svelte';
 	import Table from './Table.svelte';
 	let { chartCxt, dateBrushCxt, period, defaultXDomain, onfocus } = $props();
 	/** @type {Date[] | undefined} */
@@ -68,7 +70,7 @@
 </script>
 
 <div
-	class="grid grid-cols-[2fr_5fr] grid-rows-[570px] gap-6 mb-6"
+	class="grid grid-rows-[570px] gap-6 mb-6"
 	class:grid-cols-[2fr_5fr_2fr]={recordState.showTracker}
 	class:grid-cols-[2fr_5fr]={!recordState.showTracker}
 >
@@ -90,14 +92,23 @@
 	</div>
 
 	{#if recordState.showTracker}
-		<div class="flex flex-col items-end relative top-[-24px]">
-			<button onclick={() => (recordState.showTracker = false)}> Close </button>
+		<div class="relative">
+			<button
+				class="absolute left-1 top-1 text-mid-warm-grey hover:text-dark-grey"
+				onclick={() => (recordState.showTracker = false)}
+			>
+				<IconXMark />
+			</button>
 
-			{#if recordState.selectedMilestone}
-				<div class="bg-light-warm-grey rounded-lg w-full border border-warm-grey">
-					<MiniTracker2 record={recordState.selectedMilestone} timeZone={chartCxt.timeZone} />
-				</div>
-			{/if}
+			<div class="bg-light-warm-grey rounded-lg w-full h-[508px] border border-warm-grey">
+				{#if recordState.selectedMilestone}
+					<MiniTracker
+						record={recordState.selectedMilestone}
+						timeZone={chartCxt.timeZone}
+						displayPrefix={chartCxt.chartOptions.displayPrefix}
+					/>
+				{/if}
+			</div>
 		</div>
 	{/if}
 </div>

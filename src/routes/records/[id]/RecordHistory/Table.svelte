@@ -59,17 +59,23 @@
 	 * @param {KeyboardEvent} event
 	 */
 	function handleKeydown(event) {
-		if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+		if (
+			event.key !== 'ArrowUp' &&
+			event.key !== 'ArrowDown' &&
+			event.key !== 'ArrowLeft' &&
+			event.key !== 'ArrowRight'
+		)
+			return;
 		event.preventDefault();
 
 		if (cxt.focusTime) {
-			if (event.key === 'ArrowUp') {
+			if (event.key === 'ArrowUp' || event.key === 'ArrowRight') {
 				let find = seriesData.findIndex((record) => record.time === cxt.focusTime);
 				if (find !== -1 && find > 0) {
 					handlePointerUp(seriesData[find - 1]);
 				}
 			}
-			if (event.key === 'ArrowDown') {
+			if (event.key === 'ArrowDown' || event.key === 'ArrowLeft') {
 				let find = seriesData.findIndex((record) => record.time === cxt.focusTime);
 				if (find !== -1 && find < seriesData.length - 1) {
 					handlePointerUp(seriesData[find + 1]);
@@ -82,7 +88,6 @@
 	 * @param {TimeSeriesData} record
 	 */
 	function handlePointerUp(record) {
-		console.log('pointer up');
 		onpointerup({ time: record.time, date: record.date });
 	}
 </script>
@@ -124,9 +129,10 @@
 			{#each seriesData as record, index (index)}
 				<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 				<tr
-					class="border-b border-light-warm-grey pointer hover:bg-warm-grey"
+					class="pointer hover:bg-warm-grey"
 					class:font-semibold={record.time === cxt.focusTime}
-					class:bg-warm-grey={record.time === cxt.hoverTime}
+					class:bg-warm-grey={record.time === cxt.focusTime}
+					class:bg-light-warm-grey={record.time === cxt.hoverTime}
 					class:hidden={brushedRange && !isBetween(record.time)}
 					onmousemove={() => onmousemove({ time: record.time, date: record.date })}
 					{onmouseout}

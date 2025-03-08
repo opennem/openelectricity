@@ -1,4 +1,5 @@
 <script>
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { fade } from 'svelte/transition';
 	import Meta from '$lib/components/Meta.svelte';
@@ -12,7 +13,6 @@
 	import fetchRecord from './RecordHistory/helpers/fetch';
 	import process from './RecordHistory/helpers/process';
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
-	import { goto } from '$app/navigation';
 	let { data } = $props();
 	let { period, recordIds, focusTime } = $derived(data);
 	let loading = $state(false);
@@ -121,6 +121,10 @@
 		}
 	});
 
+	$effect(() => {
+		recordState.selectedTime = chartCxt.focusTime;
+	});
+
 	$inspect('focusTime', focusTime);
 	$inspect('recordState.selectedTime', recordState.selectedTime);
 	$inspect('selectedMilestone', recordState.selectedMilestone);
@@ -201,11 +205,7 @@
 
 	<div class="grid py-6 px-10 md:px-16 grid-cols-1">
 		<section>
-			<header
-				class="grid items-center mb-6"
-				class:grid-cols-[5fr_2fr_2fr]={recordState.showTracker}
-				class:grid-cols-[5fr_2fr]={!recordState.showTracker}
-			>
+			<header class="grid grid-cols-[7fr_2fr] items-center mb-6">
 				<div class="flex items-center gap-6">
 					<span
 						class="bg-{ftId} rounded-full p-3 place-self-start"
@@ -220,14 +220,16 @@
 					</h2>
 				</div>
 
-				<div class="flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey mr-3">
+				<div
+					class="inline-flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey text-right ml-2"
+				>
 					<div class="text-xs text-mid-warm-grey font-space font-semibold uppercase">
 						Current record
 					</div>
 					<span class="text-xs">
 						{chartCxt.formatXWithTimeZone(recordState.latestMilestone?.date)}
 					</span>
-					<div class="text-2xl leading-none font-medium text-right">
+					<div class="text-2xl leading-none font-medium">
 						{chartCxt.convertAndFormatValue(recordState.latestMilestone?.value)}
 						<small class="text-xs">
 							{chartCxt.chartOptions.displayUnit}
@@ -246,18 +248,6 @@
 				/>
 			{/if}
 		</section>
-
-		<!-- {#if showTracker}
-			<div style="margin-top: {headerHeight}px" class="flex flex-col items-end">
-				<button onclick={() => (showTracker = false)}> Close </button>
-
-				{#if recordState.selectedMilestone}
-					<div class="bg-light-warm-grey rounded-r-lg w-full border border-l-0 border-warm-grey">
-						<MiniTracker2 record={recordState.selectedMilestone} timeZone={chartCxt.timeZone} />
-					</div>
-				{/if}
-			</div>
-		{/if} -->
 	</div>
 {/if}
 

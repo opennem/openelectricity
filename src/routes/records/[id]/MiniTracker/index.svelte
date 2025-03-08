@@ -9,20 +9,24 @@
 	import init from './helpers/init';
 	import { apiIntervalMap, chartOptions } from './helpers/config';
 	import xTickValueFormatters from './helpers/xtick-value-formatters';
-
+	import LogoMark from '$lib/images/logo-mark.svelte';
 	const client = new OpenElectricityClient({
 		apiKey: PUBLIC_OE_API_KEY,
 		baseUrl: PUBLIC_OE_API_URL
 	});
 
-	let { record, timeZone } = $props();
+	let { record, timeZone, displayPrefix } = $props();
 	let { chartCxt } = init();
 	let errorMessage = $state('');
+	let isLoading = $state(false);
 
-	$inspect('record', record);
-	$inspect('timeZone', timeZone);
 	$effect(() => {
+		$inspect('record', record);
 		fetchData(record);
+	});
+
+	$effect(() => {
+		chartCxt.chartOptions.displayPrefix = displayPrefix;
 	});
 
 	/**
@@ -30,18 +34,21 @@
 	 * @param {string} period
 	 */
 	function getDateRange(date, period) {
-		console.log('date', date);
-		console.log('period', period);
-
 		if (period === 'day') {
 			let dateStart = subDays(date, 30);
 			let dateEnd = addDays(date, 30);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
-		if (period === 'month' || period === 'quarter') {
+		if (period === 'month') {
 			let dateStart = subMonths(date, 6);
 			let dateEnd = addMonths(date, 6);
+			return { dateStart, dateEnd, withTime: false };
+		}
+
+		if (period === 'quarter') {
+			let dateStart = subMonths(date, 18);
+			let dateEnd = addMonths(date, 18);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
@@ -68,9 +75,14 @@
 		let primaryGrouping = /** @type {import('openelectricity').DataPrimaryGrouping} */ (
 			isNetworkRegion ? 'network_region' : 'network'
 		);
-		let secondaryGrouping = /** @type {import('openelectricity').DataSecondaryGrouping[]} */ ([
-			'fueltech_group'
-		]);
+		console.log('fuelTechId', fuelTechId);
+		let isDemand = fuelTechId === 'demand';
+		let isFossilsOrRenewables = fuelTechId === 'fossils' || fuelTechId === 'renewables';
+		let secondaryGrouping = fuelTechId
+			? /** @type {import('openelectricity').DataSecondaryGrouping[]} */ (
+					isFossilsOrRenewables ? ['renewable'] : ['fueltech_group']
+				)
+			: undefined;
 
 		let { dateStart, dateEnd, withTime } = getDateRange(record.date, record.period);
 		let dateStartFormatted = plainDateTime(dateStart, timeZone, withTime);
@@ -95,13 +107,22 @@
 		try {
 			chartCxt.seriesData = [];
 			errorMessage = '';
+			isLoading = true;
 			let perf = performance.now();
-			res = await client.getNetworkData(record.network_id, [record.metric], clientOptions);
+			res = isDemand
+				? await client.getMarket(record.network_id, ['demand'], clientOptions)
+				: await client.getNetworkData(record.network_id, [record.metric], clientOptions);
 			let perf2 = performance.now();
-			console.log('[client.getNetworkData] data returned in', (perf2 - perf) / 1000, 'seconds');
+			console.log(
+				'[OE client.getNetworkData] data returned in ',
+				((perf2 - perf) / 1000).toFixed(2),
+				'seconds'
+			);
+			isLoading = false;
 		} catch (e) {
 			console.error('error', e);
 			errorMessage = 'Error fetching data. Check the console for more details.';
+			isLoading = false;
 		}
 
 		if (res?.response.success) {
@@ -119,7 +140,13 @@
 			}
 
 			if (fuelTechId && result) {
-				result = result.find((d) => d.columns.fueltech_group === fuelTechId);
+				if (fuelTechId === 'fossils') {
+					result = result.find((d) => !d.columns.renewable);
+				} else if (fuelTechId === 'renewables') {
+					result = result.find((d) => d.columns.renewable);
+				} else {
+					result = result.find((d) => d.columns.fueltech_group === fuelTechId);
+				}
 			} else {
 				result = result[0];
 			}
@@ -185,6 +212,12 @@
 {#if errorMessage}
 	<div class="text-dark-red h-[485px] flex items-center justify-center text-center px-4">
 		{errorMessage}
+	</div>
+{:else if isLoading}
+	<div
+		class="text-dark-grey h-[485px] flex items-center justify-center text-center px-4 bg-warm-grey animate-pulse rounded-lg"
+	>
+		<LogoMark classes="w-12 h-12" />
 	</div>
 {:else}
 	<LensChart
