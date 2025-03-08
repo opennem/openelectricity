@@ -65,7 +65,7 @@
 				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
 			</defs>
 
-			<Shading dataset={cxt.shadingData} fill={cxt.shadingFill} clipPathId="clip-path" />
+			<Shading dataset={cxt.shadingData} fill={cxt.shadingFill} {clipPathId} />
 
 			<HoverLayer dataset={cxt.seriesScaledData} {onmousemove} {onmouseout} {onpointerup} />
 

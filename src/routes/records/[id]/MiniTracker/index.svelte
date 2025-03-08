@@ -6,6 +6,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { plainDateTime } from '$lib/utils/date-parser';
 	import LensChart from '$lib/components/charts/LensChart.svelte';
+	import nighttimes from '$lib/utils/nighttimes';
 	import init from './helpers/init';
 	import { apiIntervalMap, chartOptions } from './helpers/config';
 	import xTickValueFormatters from './helpers/xtick-value-formatters';
@@ -69,6 +70,7 @@
 		if (!browser || !record.date) return;
 		let apiInterval = apiIntervalMap[record.period];
 		let isIntervalPeriod = record.period === 'interval';
+		let isWem = record.network_id === 'WEM';
 		let isNetworkRegion = record.network_region;
 		let fuelTechId = record.fueltech_id;
 		let primaryGrouping = /** @type {import('openelectricity').DataPrimaryGrouping} */ (
@@ -122,8 +124,6 @@
 			let results = data[0].results;
 			let result;
 
-			console.log('data', data);
-
 			if (isNetworkRegion) {
 				// get only the network_region data
 				result = results.filter((d) => d.columns.region === record.network_region);
@@ -168,6 +168,15 @@
 			chartCxt.seriesLabels = { value: '' };
 			chartCxt.focusTime = record.time;
 			chartCxt.chartTooltips.valueKey = 'value';
+
+			if (timeSeries && isIntervalPeriod) {
+				chartCxt.shadingData = nighttimes(
+					timeSeries[0].date,
+					timeSeries[timeSeries.length - 1].date,
+					isWem ? '+08:00' : '+10:00'
+				);
+				chartCxt.shadingFill = '#33333311';
+			}
 
 			if (isIntervalPeriod) {
 				chartCxt.chartOptions.setSmoothCurve();

@@ -4,16 +4,17 @@ import { zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
  *
  * @param {Date} start
  * @param {Date} end
+ * @param {string} [offset]
  * @returns {Date[][]}
  */
-export default function (start, end) {
+export default function (start, end, offset = '+10:00') {
 	const nighttimes = [];
 
 	let dStart = subDays(start, 1);
 
 	while (isBefore(dStart, end)) {
-		const formattedStart = formatInTimeZone(dStart, '+10:00', 'yyyy-MM-dd 22:00:00');
-		const startTime = zonedTimeToUtc(formattedStart, '+10:00');
+		const formattedStart = formatInTimeZone(dStart, offset, 'yyyy-MM-dd 22:00:00');
+		const startTime = zonedTimeToUtc(formattedStart, offset);
 		const endTime = addHours(startTime, 9);
 		nighttimes.push([startTime, endTime]);
 		dStart = addDays(dStart, 1);
