@@ -12,11 +12,12 @@
 	let convertedMax = $derived(max || max === 0 ? cxt.convertAndFormatValue(max) : '');
 	let valueDate = $derived(useData ? useData.date || undefined : undefined);
 	let cxtValueKey = $derived(cxt.chartTooltips.valueKey || cxt.hoverKey);
+	let cxtValueColour = $derived(cxt.chartTooltips.valueColour || cxt.seriesColours[cxtValueKey]);
 	let valueKey = $derived(useData && cxtValueKey ? useData[cxtValueKey] || undefined : undefined);
 	let convertedValue = $derived(
 		valueKey || valueKey === 0 ? cxt.convertAndFormatValue(valueKey) : ''
 	);
-	let hoverKeyColour = $derived(cxtValueKey ? cxt.seriesColours[cxtValueKey] : '');
+	let hoverKeyColour = $derived(cxtValueKey ? cxtValueColour : '');
 	let hoverKeyLabel = $derived(cxtValueKey ? cxt.seriesLabels[cxtValueKey] : '');
 </script>
 

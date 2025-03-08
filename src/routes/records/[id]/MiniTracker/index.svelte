@@ -75,7 +75,6 @@
 		let primaryGrouping = /** @type {import('openelectricity').DataPrimaryGrouping} */ (
 			isNetworkRegion ? 'network_region' : 'network'
 		);
-		console.log('fuelTechId', fuelTechId);
 		let isDemand = fuelTechId === 'demand';
 		let isFossilsOrRenewables = fuelTechId === 'fossils' || fuelTechId === 'renewables';
 		let secondaryGrouping = fuelTechId
@@ -95,12 +94,6 @@
 			primaryGrouping,
 			secondaryGrouping
 		};
-
-		console.log('record', record);
-		console.log('record.interval', record.interval);
-		console.log('dateStartFormatted', dateStart, dateStartFormatted);
-		console.log('dateEndFormatted', dateEnd, dateEndFormatted);
-		console.log(record.network_id, record.metric, clientOptions);
 
 		let res;
 
@@ -161,8 +154,6 @@
 					value: d[1]
 				};
 			});
-
-			console.log('timeSeries', timeSeries);
 
 			chartCxt.chartOptions.prefix = chartOptions[record.metric].prefix;
 			chartCxt.chartOptions.displayPrefix = chartOptions[record.metric].displayPrefix;

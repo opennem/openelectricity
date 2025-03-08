@@ -4,4 +4,8 @@ export default class ChartTooltipsState {
 
 	/** @type {string | undefined} */
 	valueKey = $state();
+
+	/** replace seriesColours
+	 * @type {string | undefined} */
+	valueColour = $state();
 }

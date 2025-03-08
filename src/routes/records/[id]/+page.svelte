@@ -4,6 +4,7 @@
 	import { fade } from 'svelte/transition';
 	import Meta from '$lib/components/Meta.svelte';
 	import { regionsWithLabels } from '$lib/regions';
+	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import PageNav from './RecordHistory/PageNav.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import RecordHistory from './RecordHistory/index.svelte';
@@ -13,6 +14,7 @@
 	import fetchRecord from './RecordHistory/helpers/fetch';
 	import process from './RecordHistory/helpers/process';
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
+
 	let { data } = $props();
 	let { period, recordIds, focusTime } = $derived(data);
 	let loading = $state(false);
@@ -20,8 +22,6 @@
 	let { chartCxt, dateBrushCxt } = init();
 
 	recordState.recordIds = recordIds;
-
-	$inspect('recordState.latestMilestone', recordState.latestMilestone);
 
 	$effect(() => {
 		recordState.id = data.record_id;
@@ -70,7 +70,6 @@
 	 */
 	function updateCxt({ milestones, seriesData, xDomain }) {
 		let record = milestones[0];
-		console.log('record', record);
 		let isWem = record.network_id === 'WEM';
 		chartCxt.title = record.metric;
 		chartCxt.timeZone = isWem ? '+08:00' : '+10:00';
@@ -82,9 +81,10 @@
 		chartCxt.xDomain = xDomain;
 		defaultXDomain = xDomain;
 
+		chartCxt.chartTooltips.valueColour = fuelTechColourMap[record.fueltech_id || 'demand'];
 		chartCxt.chartOptions.setLineChart();
 
-		// this should be dynamic based on the record metric
+		// TODO: refactor this bit into a config object
 		if (record.metric === 'power') {
 			chartCxt.chartOptions.prefix = 'M';
 			chartCxt.chartOptions.displayPrefix = 'M';
@@ -125,16 +125,10 @@
 		recordState.selectedTime = chartCxt.focusTime;
 	});
 
-	$inspect('focusTime', focusTime);
-	$inspect('recordState.selectedTime', recordState.selectedTime);
-	$inspect('selectedMilestone', recordState.selectedMilestone);
-
 	/**
 	 * @param {number} time
 	 */
 	function handleOnFocus(time) {
-		// recordState.selectedTime = time;
-
 		let query = new URLSearchParams(page.url.searchParams.toString());
 		query.set('focusTime', time.toString());
 		goto(`?${query.toString()}`, { noScroll: true });
