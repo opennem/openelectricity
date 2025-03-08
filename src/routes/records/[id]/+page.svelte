@@ -49,7 +49,6 @@
 	});
 
 	$effect(() => {
-		console.log('period', period);
 		if (period) {
 			chartCxt.xTicks = xTickValueFormatters[period].ticks;
 			chartCxt.formatTickX = xTickValueFormatters[period].formatTick;
@@ -58,6 +57,15 @@
 			dateBrushCxt.xTicks = xTickValueFormatters[period].ticks;
 			dateBrushCxt.formatTickX = xTickValueFormatters[period].formatTick;
 			dateBrushCxt.formatX = xTickValueFormatters[period].format;
+		}
+	});
+
+	$effect(() => {
+		if (focusTime) {
+			let time = parseInt(focusTime);
+			recordState.selectedTime = time;
+			chartCxt.focusTime = time;
+			recordState.showTracker = true;
 		}
 	});
 
@@ -111,19 +119,6 @@
 
 		recordState.milestones = milestones;
 	}
-
-	$effect(() => {
-		if (focusTime) {
-			let time = parseInt(focusTime);
-			recordState.selectedTime = time;
-			chartCxt.focusTime = time;
-			recordState.showTracker = true;
-		}
-	});
-
-	$effect(() => {
-		recordState.selectedTime = chartCxt.focusTime;
-	});
 
 	/**
 	 * @param {number} time

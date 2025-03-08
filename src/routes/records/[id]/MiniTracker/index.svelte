@@ -21,7 +21,6 @@
 	let isLoading = $state(false);
 
 	$effect(() => {
-		$inspect('record', record);
 		fetchData(record);
 	});
 
@@ -163,7 +162,6 @@
 			chartCxt.xTicks = xTickValueFormatters[record.period].ticks;
 			chartCxt.formatTickX = xTickValueFormatters[record.period].formatTick;
 			chartCxt.formatX = xTickValueFormatters[record.period].format;
-
 			chartCxt.seriesData = timeSeries;
 			chartCxt.seriesNames = ['value'];
 			chartCxt.seriesColours = { value: fuelTechColourMap[record.fueltech_id || 'demand'] };
