@@ -1,6 +1,5 @@
 <script>
 	import { goto } from '$app/navigation';
-	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import {
 		regions,
@@ -8,15 +7,15 @@
 		milestoneTypeOptions,
 		periodOptions,
 		aggregateOptions
-	} from '../page-data-options/filters.js';
-	import { recordState } from '../stores/state.svelte';
+	} from '../../page-data-options/filters.js';
+	// import { recordState } from './stores/state.svelte.js';
 	import PageButtons from './PageButtons.svelte';
 
-	$inspect('pagenav recordState.id', recordState.id);
-	$inspect('pagenav recordState.recordByRecordId', recordState.recordByRecordId);
+	let { record_id, network_id, network_region, fueltech_id, metric, period, aggregate, recordIds } =
+		$props();
 
 	/**
-	 * @param {MilestoneRecord | null} record
+	 * @param {MilestoneRecord | undefined} record
 	 * @returns {string}
 	 */
 	function getRegionLongValue(record) {
@@ -25,14 +24,11 @@
 		return `au.${record.network_id.toLowerCase()}${network_region}`;
 	}
 
-	let region = $derived(
-		regions.find((r) => r.longValue === getRegionLongValue(recordState.recordByRecordId))
-			?.longValue || ''
+	let regionLongValue = $derived(
+		`au.${network_id ? network_id.toLowerCase() : ''}${network_region ? `.${network_region.toLowerCase()}` : ''}`
 	);
-	let fuelTech = $derived(recordState.recordByRecordId?.fueltech_id || null);
-	let metric = $derived(recordState.recordByRecordId?.metric || null);
-	let period = $derived(recordState.recordByRecordId?.period || null);
-	let aggregate = $derived(recordState.recordByRecordId?.aggregate || null);
+	let region = $derived(regions.find((r) => r.longValue === regionLongValue)?.longValue || '');
+	let fuelTech = $derived(fueltech_id || null);
 
 	let removeDuplicateOptions =
 		/** @type {(r: { value: string | undefined }, index: number, self: { value: string | undefined }[]) => boolean} */ (
@@ -49,7 +45,7 @@
 
 	// check the recordIds and return as options (i.e. { label: 'NSW', value: 'au.nem.nsw1' 	})
 	let availableRegions = $derived(
-		recordState.recordIds
+		recordIds
 			?.filter((r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
@@ -79,7 +75,7 @@
 	);
 
 	let availableFuelTechs = $derived(
-		recordState.recordIds
+		recordIds
 			?.filter(
 				(r) =>
 					getRegionLongValue(r) === region &&
@@ -104,7 +100,7 @@
 	);
 
 	let availableMetrics = $derived(
-		recordState.recordIds
+		recordIds
 			?.filter((r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
@@ -133,7 +129,7 @@
 	);
 
 	let availablePeriods = $derived(
-		recordState.recordIds
+		recordIds
 			?.filter((r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
@@ -162,7 +158,7 @@
 	);
 
 	let availableAggregates = $derived(
-		recordState.recordIds
+		recordIds
 			?.filter((r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
@@ -221,11 +217,18 @@
 	 * @param {CustomEvent} evt
 	 */
 	function handleMetricChange(evt) {
+		let recordPeriod = period;
+		if (evt.detail.value === 'power' && recordPeriod !== 'interval') {
+			recordPeriod = 'interval';
+		}
+		if (evt.detail.value !== 'power' && recordPeriod === 'interval') {
+			recordPeriod = 'day';
+		}
 		goToRecord({
 			region,
 			fuelTech,
 			metric: evt.detail.value,
-			period,
+			period: recordPeriod,
 			aggregate
 		});
 	}
@@ -234,10 +237,17 @@
 	 * @param {CustomEvent} evt
 	 */
 	function handlePeriodChange(evt) {
+		let recordMetric = metric;
+		if (evt.detail.value === 'interval' && recordMetric !== 'power') {
+			recordMetric = 'power';
+		}
+		if (evt.detail.value !== 'interval' && recordMetric === 'power') {
+			recordMetric = 'energy';
+		}
 		goToRecord({
 			region,
 			fuelTech,
-			metric,
+			metric: recordMetric,
 			period: evt.detail.value,
 			aggregate
 		});
@@ -273,19 +283,10 @@
 	}
 </script>
 
-<div class="flex px-10 py-8 md:px-16">
-	<a href="/records" class="flex items-center gap-2 text-dark-grey font-space text-sm">
-		<span class="rounded-full border border-dark-grey p-1 block">
-			<IconChevronLeft class="size-4 relative -left-[1px]" stroke-width="3" />
-		</span>
-		Back to records
-	</a>
-</div>
-
-{#if recordState.id}
+{#if record_id}
 	{@const px = 'px-4'}
 	{@const py = 'py-3'}
-	<div class="flex justify-between gap-6 items-center bg-white px-10 py-5 md:px-16 auto">
+	<div class="text-sm flex justify-between gap-6 items-center px-6 py-2 md:px-12 auto">
 		<div class="flex gap-6 items-center">
 			<div class="text-nowrap">
 				<FormSelect
@@ -343,8 +344,8 @@
 			</div>
 		</div>
 
-		{#if recordState.record}
-			<PageButtons />
+		{#if record_id}
+			<!-- <PageButtons /> -->
 		{/if}
 	</div>
 {/if}

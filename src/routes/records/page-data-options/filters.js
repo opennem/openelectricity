@@ -77,10 +77,10 @@ export const periodOptions = [
 		value: 'day',
 		label: 'Day'
 	},
-	{
-		value: '7d',
-		label: '7D'
-	},
+	// {
+	// 	value: '7d',
+	// 	label: '7D'
+	// },
 	{
 		value: 'month',
 		label: 'Month'
@@ -89,18 +89,18 @@ export const periodOptions = [
 		value: 'quarter',
 		label: 'Quarter'
 	},
-	{
-		value: 'season',
-		label: 'Season'
-	},
+	// {
+	// 	value: 'season',
+	// 	label: 'Season'
+	// },
 	{
 		value: 'year',
 		label: 'Year'
-	},
-	{
-		value: 'financial_year',
-		label: 'Financial Year'
 	}
+	// {
+	// 	value: 'financial_year',
+	// 	label: 'Financial Year'
+	// }
 ];
 export const periodLabel = optionsReducer(periodOptions);
 
@@ -182,18 +182,18 @@ export const milestoneTypeOptions = [
 		displayPrefix: 'M',
 		allowedPrefixes: ['M', 'G']
 	},
-	{
-		value: 'price',
-		label: 'Price',
-		displayPrefix: '',
-		allowedPrefixes: []
-	},
-	{
-		value: 'market_value',
-		label: 'Market Value',
-		displayPrefix: '',
-		allowedPrefixes: []
-	},
+	// {
+	// 	value: 'price',
+	// 	label: 'Price',
+	// 	displayPrefix: '',
+	// 	allowedPrefixes: []
+	// },
+	// {
+	// 	value: 'market_value',
+	// 	label: 'Market Value',
+	// 	displayPrefix: '',
+	// 	allowedPrefixes: []
+	// },
 	{
 		value: 'emissions',
 		label: 'Emissions',

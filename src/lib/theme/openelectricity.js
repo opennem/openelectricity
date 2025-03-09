@@ -59,7 +59,8 @@ const fuelTechColourMap = {
 	total_sources: '#251C00',
 
 	vre: '#069FAF',
-	residual: '#545353'
+	residual: '#545353',
+	demand: '#6A6A6A'
 };
 
 const carbonIntensityColourMap = {

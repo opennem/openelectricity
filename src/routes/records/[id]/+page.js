@@ -1,11 +1,23 @@
+import { error } from '@sveltejs/kit';
+import parseId from './RecordHistory/helpers/parse-id';
+
 export async function load({ data, params, url }) {
-	const id = params.id;
-	const pageParam = url.searchParams.get('page');
+	const { searchParams } = url;
+	const focusTime = searchParams.get('focusTime');
 
-	return {
-		...data, // pipe through data from PageServer
+	let id = params.id;
 
-		id,
-		page: pageParam ? parseInt(pageParam) : 1
-	};
+	if (id) {
+		let parsed = parseId(id);
+
+		return {
+			...data, // pipe through data from PageServer
+			...parsed,
+			focusTime
+		};
+	} else {
+		error(404, {
+			message: 'Record ID not found.'
+		});
+	}
 }

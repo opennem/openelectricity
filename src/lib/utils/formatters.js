@@ -92,3 +92,47 @@ export function getFormattedDate(date, weekday, day, month, year, timeZone) {
 		timeZone
 	}).format(date);
 }
+
+/**
+ * @typedef {Object} FormatDateTimeOptions
+ * @property {Date} date
+ * @property {"numeric" | "2-digit" | undefined} [hour]
+ * @property {"numeric" | "2-digit" | undefined} [minute]
+ * @property {"numeric" | "2-digit" | undefined} [second]
+ * @property {"narrow" | "short" | "long" | undefined} [dayPeriod]
+ * @property {"long" | "short" | "narrow" | undefined} [weekday]
+ * @property {"numeric" | "2-digit" | undefined} [day]
+ * @property {DateTimeFormatMonthStyles} [month]
+ * @property {"numeric" | "2-digit" | undefined} [year]
+ * @property {string} [timeZone]
+ */
+
+/**
+ *
+ * @param {FormatDateTimeOptions} options
+ * @returns {string}
+ */
+export function formatDateTime({
+	date,
+	hour,
+	minute,
+	second,
+	dayPeriod,
+	weekday,
+	day,
+	month,
+	year,
+	timeZone = '+10:00'
+}) {
+	return new Intl.DateTimeFormat('en-AU', {
+		hour,
+		minute,
+		second,
+		dayPeriod,
+		weekday,
+		day,
+		month,
+		year,
+		timeZone
+	}).format(date);
+}

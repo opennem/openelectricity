@@ -11,22 +11,40 @@ export default class ChartStylesState {
 	xTextAnchorPosition = $state('middle');
 
 	/** @type {boolean} */
-	showLineArea = $state(true);
+	showLineArea = $state(false);
+	/** @type {boolean} */
+	showLineDots = $state(false);
 	/** @type {string} */
-	lineColour = $state('rgba(0, 0, 0, 0.7)');
+	lineColour = $state('#777');
 	/** @type {string} */
-	dotStroke = $state('rgba(0, 0, 0, 0.7)');
+	dotStrokeWidth = $state('1px');
+	/** @type {string} */
+	dotStroke = $state('#777');
 	/** @type {string} */
 	dotFill = $state('white');
+	/** @type {number} */
+	dotOpacity = $state(0.3);
+	/** @type {number} */
+	dotRadius = $state(3);
+
+	/** @type {boolean} */
+	showFocusDot = $state(false);
+	/** @type {boolean} */
+	showHoverDot = $state(false);
 
 	/** @type {boolean} */
 	xGridlines = $state(true);
 
 	/** @type {string} */
 	yAxisStroke = $state('#33333344');
+	/** @type {string} */
+	zeroValueStroke = $state('#33333344');
 
 	/** @type {string} */
 	xAxisStroke = $state('#33333344');
+
+	/** @type {string} */
+	xAxisFill = $state('white');
 
 	// Chart overlay
 	/** @type {{ xStartValue: Date, xEndValue: Date } | undefined} */

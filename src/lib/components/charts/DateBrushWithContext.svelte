@@ -1,7 +1,7 @@
 <script>
 	import { LayerCake, Svg, Html } from 'layercake';
 	import { scaleTime } from 'd3-scale';
-	import checkAndGetContext from '$lib/utils/check-and-get-context.js';
+	import getContext from '$lib/utils/get-context.js';
 
 	import Line from './elements/Line.svelte';
 	import AxisX from './elements/AxisX.svelte';
@@ -31,8 +31,8 @@
 		onbrush
 	} = $props();
 
-	/** @type {import('$lib/components/charts/states/chart.svelte.js').default} */
-	let cxt = checkAndGetContext(cxtKey);
+	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
+	let cxt = getContext(cxtKey);
 
 	let chartStyles = cxt.chartStyles;
 	let id = chartStyles.htmlId;
@@ -79,14 +79,15 @@
 				yTick={10}
 				gridlines={true}
 				strokeArray="3 6"
-				stroke="#ccc"
+				fill={cxt.chartStyles.xAxisFill}
+				stroke={cxt.chartStyles.xAxisStroke}
 				formatTick={cxt.formatTickX}
 				tickMarks={false}
 				snapTicks={cxt.chartStyles.snapXTicks}
 				textAnchorPosition={cxt.chartStyles.xTextAnchorPosition}
 			/>
 
-			<g clip-path={clipPathCustom}>
+			<g clip-path={clipPath}>
 				{#if cxt.hoverData}
 					<LineX xValue={cxt.hoverData} strokeArray="none" />
 					<Dot value={cxt.hoverData} r={4} />
@@ -99,21 +100,12 @@
 
 			{#if showLineData}
 				<g clip-path={clipPath}>
-					<Line
-						stroke="#353535"
-						strokeWidth={chartStyles.strokeWidth}
-						strokeArray={chartStyles.strokeArray}
-						curveType={cxt.chartOptions.curveFunction}
-					/>
+					<Line stroke="#353535" {...chartStyles} />
 				</g>
 
 				{#if brushedRange}
 					<g clip-path={clipPathCustom}>
-						<Line
-							stroke={brushedLineStroke}
-							strokeWidth="1.5"
-							curveType={cxt.chartOptions.curveFunction}
-						/>
+						<Line {...chartStyles} strokeWidth="0" dotOpacity={0.8} />
 					</g>
 				{/if}
 			{/if}

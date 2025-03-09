@@ -2,6 +2,7 @@ import { convert } from '$lib/utils/si-units';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import ChartOptions from './chart-options.svelte.js';
 import ChartStyles from './chart-styles.svelte.js';
+import ChartTooltips from './chart-tooltips.svelte.js';
 import { transformToProportion } from '$lib/utils/data-transform/index.js';
 
 /**
@@ -20,15 +21,16 @@ export default class ChartStore {
 	key;
 	chartOptions = $state();
 	chartStyles = $state();
+	chartTooltips = $state();
 
 	/** @type {string} */
 	title = $state('');
 
 	/** @type {string} */
-	timeZone = $state('Australia/Sydney');
+	timeZone = $state('+10:00');
 
 	/** @type {TimeSeriesData[]} */
-	seriesData = $state([]);
+	seriesData = $state.raw([]);
 
 	/** @type {string[]} */
 	seriesNames = $state([]);
@@ -81,7 +83,6 @@ export default class ChartStore {
 		if (this.chartOptions.isDataTransformTypeProportion && !this.chartOptions.isChartTypeLine) {
 			return [0, 100];
 		}
-
 		const addTenPercent = (/** @type {number} */ val) => val + val * 0.1;
 		const maxY = this.seriesScaledDataWithMinMax.map((d) => d._max);
 		// @ts-ignore
@@ -90,7 +91,6 @@ export default class ChartStore {
 		const minY = this.seriesScaledDataWithMinMax.map((d) => d._min);
 		// @ts-ignore
 		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
-
 		return [Math.floor(datasetMin), Math.ceil(datasetMax)];
 	});
 
@@ -104,7 +104,13 @@ export default class ChartStore {
 	formatTickX = $state((/** @type {*} */ d) => d); // this is used for formatting the x-axis ticks
 
 	/** @type {Function} */
+	formatTickXWithTimeZone = $derived((/** @type {*} */ d) => this.formatTickX(d, this.timeZone));
+
+	/** @type {Function} */
 	formatX = $state((/** @type {*} */ d) => d);
+
+	/** @type {Function} */
+	formatXWithTimeZone = $derived((/** @type {*} */ d) => this.formatX(d, this.timeZone));
 
 	/** @type {Function} */
 	formatY = $state((/** @type {*} */ d) => d);
@@ -163,7 +169,7 @@ export default class ChartStore {
 					if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
 				}
 
-				if (this.chartOptions.isChartTypeArea) {
+				if (this.chartOptions.isChartTypeArea || this.chartOptions.isChartTypeLine) {
 					if ((newObj._min || newObj._min === 0) && value < 0) newObj._min += +value;
 				} else {
 					if (newObj._min || newObj._min === 0) newObj._min = Math.min(newObj._min, +value);
@@ -245,6 +251,7 @@ export default class ChartStore {
 			baseUnit
 		});
 		this.chartStyles = new ChartStyles();
+		this.chartTooltips = new ChartTooltips();
 		this.title = title ?? '';
 
 		if (chartStyles) {

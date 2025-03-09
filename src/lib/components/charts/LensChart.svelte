@@ -8,13 +8,22 @@
 	/** @type {{
 		cxtKey: symbol,
 		displayOptions?: boolean,
+		showHeader?: boolean,
 		onmousemove?: (evt: ChartEvent | TimeSeriesData) => void,
 		onmouseout?: () => void,
-		onpointerup?: (evt: TimeSeriesData) => void
+		onpointerup?: (evt: TimeSeriesData) => void,
+		tooltipWrapperStyles?: string
 	}} */
 	let props = $props();
+	let { showHeader = true } = props;
 </script>
 
-<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions || true} />
-<ChartTooltipWithContext cxtKey={props.cxtKey} />
-<StackedAreaLineChartWithContext {...props} />
+<div>
+	{#if showHeader}
+		<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions} />
+	{/if}
+	<ChartTooltipWithContext cxtKey={props.cxtKey} wrapperStyles={props.tooltipWrapperStyles} />
+	<div class="px-6">
+		<StackedAreaLineChartWithContext {...props} />
+	</div>
+</div>

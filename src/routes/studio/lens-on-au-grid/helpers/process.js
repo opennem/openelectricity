@@ -36,17 +36,17 @@ function process({
 		.group(fuelTechMap, [], false)
 		.reorder(fuelTechOrder);
 
-	targetInterval = targetInterval || stats.minIntervalObj?.intervalString || '1Y';
+	let intervalString = targetInterval || stats.minIntervalObj?.intervalString || '1Y';
 
 	const timeseriesInstance = new TimeSeries(
 		stats.data,
-		parseInterval(stats.minIntervalObj?.intervalString || '1Y'),
+		parseInterval(intervalString),
 		'history',
 		labelReducer,
 		colourReducer
 	)
 		.transform()
-		.rollup(parseInterval(targetInterval));
+		.rollup(parseInterval(intervalString));
 
 	const timeseries = calculate12MthRollingSum
 		? timeseriesInstance.calculate12MthRollingSum().updateMinMax()
