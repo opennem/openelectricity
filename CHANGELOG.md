@@ -1,5 +1,11 @@
 # opennem-app
 
+## 2.4.0
+
+### Minor Changes
+
+- 366882b: Record History beta release
+
 ## 2.3.3
 
 ### Patch Changes
