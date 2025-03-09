@@ -108,7 +108,7 @@
 				: await client.getNetworkData(record.network_id, [record.metric], clientOptions);
 			let perf2 = performance.now();
 			console.log(
-				'[OE client.getNetworkData] data returned in ',
+				`[OE client.${isDemand ? 'getMarket' : 'getNetworkData'}] data returned in`,
 				((perf2 - perf) / 1000).toFixed(2),
 				'seconds'
 			);
@@ -131,7 +131,9 @@
 				result = results;
 			}
 
-			if (fuelTechId && result) {
+			if (isDemand) {
+				result = result[0];
+			} else if (fuelTechId && result) {
 				if (fuelTechId === 'fossils') {
 					result = result.find((d) => !d.columns.renewable);
 				} else if (fuelTechId === 'renewables') {
