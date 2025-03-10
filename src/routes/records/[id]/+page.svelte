@@ -215,8 +215,9 @@
 					</h2>
 				</div>
 
-				<div
-					class="inline-flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey text-right ml-2"
+				<button
+					class="inline-flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey text-right ml-2 border border-transparent hover:border-mid-warm-grey transition-border duration-200"
+					onclick={() => handleOnFocus(recordState.latestMilestone?.time || 0)}
 				>
 					<div class="text-xs text-mid-warm-grey font-space font-semibold uppercase">
 						Current record
@@ -230,7 +231,7 @@
 							{chartCxt.chartOptions.displayUnit}
 						</small>
 					</div>
-				</div>
+				</button>
 			</header>
 
 			{#if period && data.record_id}
