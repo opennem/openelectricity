@@ -90,6 +90,7 @@
 		let dateStartFormatted = plainDateTime(dateStart, timeZone, withTime);
 		let dateEndFormatted = plainDateTime(dateEnd, timeZone, withTime);
 
+		/** @type {import('openelectricity').INetworkTimeSeriesParams} */
 		let clientOptions = {
 			interval: apiInterval,
 			dateStart: dateStartFormatted,
@@ -97,6 +98,15 @@
 			primaryGrouping,
 			secondaryGrouping
 		};
+
+		if (fuelTechId && !isFossilsOrRenewables) {
+			clientOptions.fueltech_group =
+				/** @type {import('openelectricity').UnitFueltechGroupType[]} */ ([fuelTechId]);
+		}
+
+		if (isNetworkRegion) {
+			clientOptions.network_region = /** @type {string | undefined} */ (record.network_region);
+		}
 
 		let res;
 
@@ -124,27 +134,15 @@
 		if (res?.response.success) {
 			let data = res.response.data;
 			let results = data[0].results;
-			let result;
+			/** @type {import('openelectricity').ITimeSeriesResult | undefined} */
+			let result = results[0];
 
-			if (isNetworkRegion) {
-				// get only the network_region data
-				result = results.filter((d) => d.columns.region === record.network_region);
-			} else {
-				result = results;
-			}
-
-			if (isDemand) {
-				result = result[0];
-			} else if (fuelTechId && result) {
+			if (fuelTechId && result) {
 				if (fuelTechId === 'fossils') {
-					result = result.find((d) => !d.columns.renewable);
+					result = results.find((d) => !d.columns.renewable);
 				} else if (fuelTechId === 'renewables') {
-					result = result.find((d) => d.columns.renewable);
-				} else {
-					result = result.find((d) => d.columns.fueltech_group === fuelTechId);
+					result = results.find((d) => d.columns.renewable);
 				}
-			} else {
-				result = result[0];
 			}
 
 			// convert result to a time series
