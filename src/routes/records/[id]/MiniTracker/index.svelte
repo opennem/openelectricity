@@ -77,6 +77,8 @@
 			isNetworkRegion ? 'network_region' : 'network'
 		);
 		let isDemand = fuelTechId === 'demand';
+		/** @type {import('openelectricity').MarketMetric} */
+		let demandMetric = isIntervalPeriod ? 'demand' : 'demand_energy';
 		let isFossilsOrRenewables = fuelTechId === 'fossils' || fuelTechId === 'renewables';
 		let secondaryGrouping = fuelTechId
 			? /** @type {import('openelectricity').DataSecondaryGrouping[]} */ (
@@ -104,7 +106,7 @@
 			isLoading = true;
 			let perf = performance.now();
 			res = isDemand
-				? await client.getMarket(record.network_id, ['demand'], clientOptions)
+				? await client.getMarket(record.network_id, [demandMetric], clientOptions)
 				: await client.getNetworkData(record.network_id, [record.metric], clientOptions);
 			let perf2 = performance.now();
 			console.log(
