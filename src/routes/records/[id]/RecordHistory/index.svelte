@@ -93,7 +93,7 @@
 	</div>
 
 	{#if recordState.showTracker}
-		<div class="relative" transition:slide={{ axis: 'x' }}>
+		<div class="relative" in:slide={{ axis: 'x' }}>
 			<button
 				class="absolute left-1 top-1 text-mid-warm-grey hover:text-dark-grey"
 				onclick={() => (recordState.showTracker = false)}
