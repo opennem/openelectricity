@@ -41,20 +41,20 @@
 		}
 
 		if (period === 'month') {
-			let dateStart = subMonths(date, 10);
-			let dateEnd = addMonths(date, 10);
+			let dateStart = subMonths(date, 24);
+			let dateEnd = addMonths(date, 24);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
 		if (period === 'quarter') {
-			let dateStart = subMonths(date, 26);
-			let dateEnd = addMonths(date, 26);
+			let dateStart = subMonths(date, 36);
+			let dateEnd = addMonths(date, 36);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
 		if (period === 'year') {
-			let dateStart = subYears(date, 4);
-			let dateEnd = addYears(date, 4);
+			let dateStart = subYears(date, 10);
+			let dateEnd = addYears(date, 10);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
