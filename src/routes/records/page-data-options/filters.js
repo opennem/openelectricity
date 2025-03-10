@@ -199,13 +199,13 @@ export const milestoneTypeOptions = [
 		label: 'Emissions',
 		displayPrefix: '',
 		allowedPrefixes: ['', 'k']
-	},
-	{
-		value: 'proportion',
-		label: 'Proportion',
-		displayPrefix: '',
-		allowedPrefixes: []
 	}
+	// {
+	// 	value: 'proportion',
+	// 	label: 'Proportion',
+	// 	displayPrefix: '',
+	// 	allowedPrefixes: []
+	// }
 ];
 export const milestoneTypeLabel = optionsReducer(milestoneTypeOptions);
 export const milestoneTypeDisplayPrefix = optionsReducer(
