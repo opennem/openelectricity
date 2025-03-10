@@ -38,6 +38,7 @@ function process({ data, period }) {
 		return {
 			date: record.date,
 			time: record.time,
+			recordedDateTimeStr: record.interval,
 			value: record.value,
 			_min: record.value,
 			_max: record.value

@@ -3,7 +3,7 @@ export type TimeSeriesData = {
 	date: Date;
 	_max?: number;
 	_min?: number;
-	[key: string]: number | Date | null | undefined;
+	[key: string]: number | string | Date | null | undefined;
 };
 
 export type TimeSeriesGroupData = {

@@ -52,7 +52,7 @@
 	function onpointerup(evt) {
 		let isSame = chartCxt.focusTime === evt.time;
 		updateChartFocus(isSame ? undefined : evt.time);
-		onfocus(isSame ? undefined : evt.time);
+		onfocus(isSame ? undefined : evt.recordedDateTimeStr);
 		recordState.showTracker = true;
 	}
 
