@@ -88,7 +88,11 @@
 	 * @param {TimeSeriesData} record
 	 */
 	function handlePointerUp(record) {
-		onpointerup({ time: record.time, date: record.date });
+		onpointerup({
+			time: record.time,
+			date: record.date,
+			recordedDateTimeStr: record.recordedDateTimeStr
+		});
 	}
 </script>
 
