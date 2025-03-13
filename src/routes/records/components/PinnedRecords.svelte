@@ -67,13 +67,7 @@
 		{
 			fuelTech: 'coal',
 			label: 'Coal',
-			ids: [
-				'power.interval.low',
-				'energy.day.low',
-				'energy.month.low',
-				'energy.quarter.low',
-				'energy.year.low'
-			]
+			ids: ['power.interval.low']
 		}
 	];
 
