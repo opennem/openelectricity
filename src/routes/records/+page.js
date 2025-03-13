@@ -9,7 +9,7 @@ export async function load({ url }) {
 	// const significance = searchParams.get('significance');
 
 	return {
-		page: page ? parseInt(page) : 1,
+		// page: page ? parseInt(page) : 1,
 		regions: regions ? regions.split(',') : [],
 		periods: periods ? periods.split(',') : [],
 		// aggregates: aggregates ? aggregates.split(',') : [],
