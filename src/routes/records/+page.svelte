@@ -86,7 +86,12 @@
 			significance: selectedSignificance
 		});
 
-		goto(`/records?page=${page}${regionsParam}${periodsParam}${fuelTechParams}${metricsParam}`, {
+		let regionsParam2 = regionsParam;
+		if (regionsParam2.charAt(0) !== '?') {
+			regionsParam2 = '?' + regionsParam2.slice(1);
+		}
+
+		goto(`/records${regionsParam2}${periodsParam}${fuelTechParams}${metricsParam}`, {
 			noScroll: true
 		});
 	}
