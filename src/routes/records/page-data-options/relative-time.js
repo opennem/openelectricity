@@ -1,23 +1,31 @@
-// Array representing one minute, hour, day, week, month, etc. in seconds
-const unitsInSec = [60, 3600, 86400, 86400 * 7, 86400 * 30, 86400 * 365, Infinity];
+// in miliseconds
+let units = {
+	year: 24 * 60 * 60 * 1000 * 365,
+	month: (24 * 60 * 60 * 1000 * 365) / 12,
+	day: 24 * 60 * 60 * 1000,
+	hour: 60 * 60 * 1000,
+	minute: 60 * 1000,
+	second: 1000
+};
 
-// Array equivalent to the above but in the string representation of the units
-const unitStrings = ['second', 'minute', 'hour', 'day', 'week', 'month', 'year'];
+/**
+ *
+ * @param {Date} date
+ * @returns
+ */
+function getRelativeTime(date) {
+	let rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
-function getRelativeTime(date, style = 'short') {
-	// Initialize Intl.RelativeTimeFormat
-	const rtf = new Intl.RelativeTimeFormat('en-AU', { numeric: 'auto', style });
+	let getRelativeTime = (d1, d2 = new Date()) => {
+		var elapsed = d1 - d2;
 
-	// Calculate the difference in seconds between the given date and the current date
-	const secondsDiff = Math.round((date - Date.now()) / 1000);
+		// "Math.abs" accounts for both "past" & "future" scenarios
+		for (var u in units)
+			if (Math.abs(elapsed) > units[u] || u == 'second')
+				return rtf.format(Math.round(elapsed / units[u]), u);
+	};
 
-	// Find the appropriate unit based on the seconds difference
-	const unitIndex = unitsInSec.findIndex((cutoff) => cutoff > Math.abs(secondsDiff));
-
-	// Get the divisor to convert seconds to the appropriate unit
-	const divisor = unitIndex ? unitsInSec[unitIndex - 1] : 1;
-
-	return rtf.format(Math.floor(secondsDiff / divisor), unitStrings[unitIndex]);
+	return getRelativeTime(date);
 }
 
 export default getRelativeTime;

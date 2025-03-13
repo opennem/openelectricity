@@ -7,12 +7,12 @@ export const viewSectionOptions = [
 		value: 'list',
 		icon: IconQueueList,
 		size: 'size-6',
-		label: 'List'
+		label: ''
 	},
 	{
 		value: 'table',
 		icon: IconTableCells,
 		size: 'size-6',
-		label: 'Table'
+		label: ''
 	}
 ];

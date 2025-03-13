@@ -12,6 +12,8 @@ export const regions = [
 	{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
 ];
 
+export const networkRegionsOnly = ['nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+
 export const regionOptions = [
 	{
 		value: '_all',

@@ -1,5 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
@@ -7,6 +8,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
 
+	import { regions } from '../page-data-options/filters.js';
 	import { viewSectionOptions } from '../page-data-options/view-sections';
 
 	import {
@@ -15,7 +17,7 @@
 		periodOptions
 	} from '../page-data-options/filters.js';
 
-	const { selectedView, selectedFuelTechs, selectedMetrics, selectedPeriods } =
+	const { selectedView, selectedRegions, selectedFuelTechs, selectedMetrics, selectedPeriods } =
 		getContext('records-filters');
 
 	let showMobileFilterOptions = $state(false);
@@ -61,6 +63,31 @@
 			$selectedPeriods = [...$selectedPeriods, value];
 		}
 	}
+
+	/**
+	 * @param {string} value
+	 * @param {boolean} isMetaPressed
+	 */
+	function handleRegionChange(value, isMetaPressed) {
+		if (isMetaPressed) {
+			$selectedRegions = [value];
+		} else if ($selectedRegions.includes(value)) {
+			$selectedRegions = $selectedRegions.filter((item) => item !== value);
+		} else {
+			$selectedRegions = [...$selectedRegions, value];
+		}
+	}
+
+	let regionOptions = $derived(
+		regions.map((r) => ({
+			label: r.label,
+			value: r.value,
+			divider: r.divider,
+			labelClassName: regions?.find((m) => m.value === r.longValue)
+				? ''
+				: 'italic text-mid-warm-grey'
+		}))
+	);
 </script>
 
 {#if showMobileFilterOptions}
@@ -77,6 +104,17 @@
 				<IconAdjustmentsHorizontal class="size-10" />
 			</div>
 		</header>
+
+		<section class="p-10 pb-0 w-full flex gap-5">
+			<FormMultiSelect
+				options={regionOptions}
+				selected={$selectedRegions}
+				label="Region"
+				paddingX=""
+				staticDisplay={true}
+				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+			/>
+		</section>
 
 		<section class="p-10 pb-0 w-full flex gap-5">
 			<FormMultiSelect
@@ -110,13 +148,13 @@
 		</section>
 
 		{#snippet buttons()}
-				<div  class="flex gap-3">
+			<div class="flex gap-3">
 				<Button
 					class="!bg-dark-grey text-white hover:!bg-black w-full"
 					on:click={() => (showMobileFilterOptions = false)}>Close</Button
 				>
 			</div>
-			{/snippet}
+		{/snippet}
 	</Modal>
 {/if}
 
@@ -124,10 +162,19 @@
 	<div class="flex justify-end md:justify-between items-center">
 		<div class="hidden md:inline-flex justify-start items-center">
 			<FormMultiSelect
+				options={regionOptions}
+				selected={$selectedRegions}
+				label="Region"
+				paddingX="pl-5 pr-4"
+				paddingY="py-3"
+				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+			/>
+
+			<FormMultiSelect
 				options={fuelTechOptions}
 				selected={$selectedFuelTechs}
 				label="Technology"
-				paddingX="px-7"
+				paddingX="pl-5 pr-4"
 				paddingY="py-3"
 				on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
 			/>
@@ -136,7 +183,7 @@
 				options={milestoneTypeOptions}
 				selected={$selectedMetrics}
 				label="Metric"
-				paddingX="px-7"
+				paddingX="px-4"
 				paddingY="py-3"
 				on:change={(evt) => handleMetricChange(evt.detail.value, evt.detail.isMetaPressed)}
 			/>
@@ -145,7 +192,7 @@
 				options={periodOptions}
 				selected={$selectedPeriods}
 				label="Period"
-				paddingX="px-7"
+				paddingX="px-4"
 				paddingY="py-3"
 				on:change={(evt) => handlePeriodChange(evt.detail.value, evt.detail.isMetaPressed)}
 			/>
@@ -156,7 +203,7 @@
 				buttons={viewSectionOptions}
 				selected={$selectedView}
 				on:change={(evt) => ($selectedView = evt.detail.value)}
-				class="justify-center my-4"
+				class="justify-center"
 			/>
 		</div>
 

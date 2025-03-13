@@ -48,13 +48,11 @@
 	/** @type {MilestoneRecord[]} */
 	let recordsData = $state([]);
 	let totalRecords = $state(0);
-	let pageSize = 500;
+	let pageSize = 250;
 	let currentPage = $state(data.page || 1);
 	let currentStartRecordIndex = $state((currentPage - 1) * pageSize + 1);
 
-	console.log('data.regions', data.regions);
-
-	$selectedRegions = data.regions && data.regions.length ? data.regions : ['nem'];
+	$selectedRegions = data.regions && data.regions.length ? data.regions : [];
 	$selectedFuelTechs = data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : [];
 	$selectedPeriods = data.periods && data.periods.length ? data.periods : [];
 	$selectedMetrics = data.metrics && data.metrics.length ? data.metrics : [];
@@ -65,7 +63,7 @@
 			? data.aggregates
 			: aggregateOptions.map((i) => i.value);
 
-	let selectedSignificance = data.significance || 9;
+	let selectedSignificance = data.significance || 8;
 	let recordIdSearch = data.stringFilter || '';
 
 	// $: console.log('rolledUpRecords', rolledUpRecords);
@@ -89,14 +87,14 @@
 		});
 
 		goto(`/records?page=${page}${regionsParam}${periodsParam}${fuelTechParams}${metricsParam}`, {
-			replaceState: true
+			noScroll: true
 		});
 	}
 	$effect(() => {
 		if (browser) {
 			fetchRecords(
 				currentPage,
-				$selectedRegions,
+				$state.snapshot($selectedRegions),
 				$selectedPeriods,
 				$selectedFuelTechs,
 				checkedAggregates,
@@ -128,6 +126,8 @@
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex
 	);
 	let rolledUpRecords = $derived(groupByMonthDay(recordsData));
+
+	$inspect('recordsData', recordsData);
 </script>
 
 <Meta
@@ -140,7 +140,7 @@
 	<section class="md:container py-12">
 		<div class="flex items-center gap-2 justify-between md:justify-center pl-10 pr-5 md:px-0">
 			<h2 class="text-xl md:text-2xl mb-0 md:mb-12">Records</h2>
-			<div class="md:hidden flex justify-center text-sm">
+			<!-- <div class="md:hidden flex justify-center text-sm">
 				<FormSelect
 					options={regions.map((r) => ({ label: r.longLabel, value: r.value }))}
 					selected={$selectedRegion}
@@ -149,44 +149,50 @@
 					align="right"
 					on:change={(evt) => ($selectedRegions = [evt.detail.value])}
 				/>
-			</div>
+			</div> -->
 		</div>
 
-		<div class="hidden md:flex justify-center mb-12">
+		<!-- <div class="hidden md:flex justify-center mb-12">
 			<Switch
 				buttons={regions}
 				selected={$selectedRegion}
 				on:change={(evt) => ($selectedRegions = [evt.detail.value])}
 				class="justify-center bg-white text-xxs md:text-sm"
 			/>
-		</div>
+		</div> -->
 
 		<div class="py-10 md:py-6">
-			<PinnedRecords region={selectedLongValueRegion} />
+			<PinnedRecords />
 		</div>
 	</section>
 </div>
 
-<div class="border-y border-warm-grey py-6">
+<div class="bg-light-warm-grey pt-10">
+	<div class="md:container pb-1">
+		<h4 class="mx-5 font-space text-mid-grey uppercase text-sm tracking-wider">Most recent</h4>
+	</div>
+</div>
+
+<div class="border-y border-warm-grey py-3">
 	<Filters />
 </div>
 
-<div class="bg-light-warm-grey">
-	{#if $selectedView === 'list'}
-		<div class="md:container md:grid grid-cols-6 md:divide-x divide-warm-grey py-12">
-			<div class="col-span-2 px-10 md:pl-7 md:pr-12">
-				<div class="sticky top-10 hidden md:block">
-					<FilterTags />
-				</div>
+<div class="">
+	<div class="md:container md:grid grid-cols-8 md:divide-x divide-warm-grey py-12">
+		<div class="col-span-2 px-10 md:pl-7 md:pr-12">
+			<div class="sticky top-10 hidden md:block">
+				<FilterTags />
 			</div>
+		</div>
 
-			<main class="min-h-[600px] col-span-4 md:pl-12 px-6">
+		{#if $selectedView === 'list'}
+			<main class="min-h-[600px] col-span-6 md:pl-12 px-6">
 				<List {rolledUpRecords} />
 			</main>
-		</div>
-	{:else}
-		<div class="md:container p-6">
-			<Table dataset={recordsData} />
-		</div>
-	{/if}
+		{:else}
+			<main class="min-h-[600px] col-span-6 md:pl-6 pr-0">
+				<Table dataset={recordsData} />
+			</main>
+		{/if}
+	</div>
 </div>

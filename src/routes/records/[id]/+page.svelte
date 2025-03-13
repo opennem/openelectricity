@@ -215,8 +215,11 @@
 				</div>
 
 				<button
-					class="inline-flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey text-right ml-2 border border-transparent hover:border-mid-warm-grey transition-border duration-200"
+					class="inline-flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey text-right ml-2 border hover:border-mid-warm-grey transition-border duration-200"
 					onclick={() => handleOnFocus(recordState.latestMilestone?.interval || '')}
+					class:border-transparent={recordState.latestMilestone?.time !== recordState.selectedTime}
+					class:border-mid-warm-grey={recordState.latestMilestone?.time ===
+						recordState.selectedTime}
 				>
 					<div class="text-xs text-mid-warm-grey font-space font-semibold uppercase">
 						Current record

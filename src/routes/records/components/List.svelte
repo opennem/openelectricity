@@ -1,9 +1,9 @@
 <script>
-	import { getFormattedTime } from '$lib/utils/formatters.js';
+	import { regionsWithLabels } from '$lib/regions';
 	import { formatRecordValue } from '../page-data-options/formatters';
 	import FuelTechIcon from './FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
-
+	import { regions } from '../page-data-options/filters';
 	let { rolledUpRecords } = $props();
 
 	/**
@@ -20,14 +20,54 @@
 		});
 		return records;
 	}
+
+	/**
+	 * Get the region label
+	 * @param {string} networkId
+	 * @param {string | undefined} networkRegion
+	 * @returns {string}
+	 */
+	function getRegionLabel(networkId, networkRegion) {
+		if (networkRegion) {
+			return (
+				regions.find(({ value }) => value === networkRegion.toLowerCase())?.label || networkRegion
+			);
+		}
+		return regions.find(({ value }) => value === networkId.toLowerCase())?.label || networkId;
+	}
+
+	/**
+	 * Get the record description
+	 * @param {MilestoneRecord} record
+	 * @returns {string}
+	 */
+	function getRecordDescription(record) {
+		let desc = recordDescription(
+			record.period,
+			record.aggregate,
+			record.metric,
+			record.fueltech_id
+		);
+		let networkId = record.network_id?.toLowerCase();
+
+		if (record.network_region) {
+			desc += ` in ${regionsWithLabels[record.network_region.toLowerCase()]}`;
+		} else if (networkId && regionsWithLabels[networkId]) {
+			desc += ` in ${regionsWithLabels[networkId]}`;
+		} else {
+			desc += ` in the ${networkId?.toUpperCase()}`;
+		}
+
+		return desc;
+	}
 </script>
 
 <div class="md:w-[600px] mx-auto">
 	{#each [...rolledUpRecords] as [month, days]}
 		{@const monthRecords = getNonIntervalDayRecords(days)}
-		<div class="mt-20 first:mt-0">
+		<div class="mt-10 first:mt-0">
 			<p
-				class="sticky top-0 z-20 bg-light-warm-grey/80 backdrop-blur-sm pt-6 pb-4 pl-6 md:pl-0 mb-0 border-b border-warm-grey font-space uppercase"
+				class="sticky top-0 z-20 bg-white/80 backdrop-blur-sm pt-6 pb-4 pl-6 md:pl-0 mb-0 border-b border-warm-grey font-space uppercase"
 			>
 				{month}
 			</p>
@@ -36,34 +76,34 @@
 				<div>
 					<ul>
 						{#each records as record}
-							{@const significant = record.significance > 11}
-
+							{@const significant = record.significance > 9}
+							{@const path = `/records/${encodeURIComponent(record.record_id)}?focusDateTime=${encodeURIComponent(record.interval)}`}
 							<li>
 								<a
-									href="/records/{encodeURIComponent(record.record_id)}"
-									class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-6 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
+									href={path}
+									class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-3 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
 								>
 									<div class="col-span-6 py-8 px-6 flex align-middle gap-4">
-										{#if record.fueltech_id}
+										<div class="place-self-start flex flex-col gap-1 items-center relative -top-2">
 											<span
-												class="relative -top-[2px] bg-{record.fueltech_id} rounded-full p-2 place-self-start"
+												class=" bg-{record.fueltech_id || 'demand'} rounded-full p-2 block"
 												class:text-black={record.fueltech_id === 'solar'}
 												class:text-white={record.fueltech_id !== 'solar'}
 											>
-												<FuelTechIcon fuelTech={record.fueltech_id} sizeClass={5} />
+												<FuelTechIcon fuelTech={record.fueltech_id || 'demand'} sizeClass={8} />
 											</span>
-										{/if}
+											<!-- <div class="text-xs text-mid-grey font-space">
+												{getRegionLabel(record.network_id, record.network_region)}
+											</div> -->
+										</div>
+
 										<div
 											class="leading-base"
 											class:text-lg={significant}
 											class:leading-lg={significant}
 										>
-											{recordDescription(
-												record.period,
-												record.aggregate,
-												record.metric,
-												record.fueltech_id
-											)}
+											{getRecordDescription(record)}
+
 											<!-- <small class="block text-xs">
 												{getFormattedDateTime(record.date)}<br />
 												{record.interval}<br />
@@ -82,7 +122,7 @@
 												>
 													{formatRecordValue(record.value, record.fueltech_id)}
 												</span>
-												<span class="text-xs">{record.value_unit}</span>
+												<span class="text-xs font-mono">{record.value_unit}</span>
 											</div>
 										</li>
 									</ol>
@@ -99,7 +139,7 @@
 				{#if nonIntervalDayLength === 0}
 					<div>
 						<p
-							class="sticky top-[50px] z-10 bg-light-warm-grey/80 mt-10 py-2 pl-6 md:pl-0 backdrop-blur-sm text-xs font-space"
+							class="sticky top-[50px] z-10 bg-white/80 mt-6 mb-2 py-2 pl-6 md:pl-0 backdrop-blur-sm text-xs font-space"
 						>
 							{date}
 						</p>
@@ -109,40 +149,43 @@
 								{@const latest = value[0]}
 								{@const significant = latest.significance > 11}
 								{@const lastest3Records = value.slice(0, 3)}
+								{@const path = `/records/${encodeURIComponent(latest.record_id)}?focusDateTime=${encodeURIComponent(latest.interval)}`}
 								<li>
 									<a
-										href="/records/{encodeURIComponent(latest.record_id)}"
-										class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-6 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
+										href={path}
+										class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-3 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
 									>
 										<div class="col-span-6 py-8 px-6 flex align-middle gap-4">
-											{#if latest.fueltech_id}
+											<div
+												class="place-self-start flex flex-col gap-1 items-center relative -top-2"
+											>
 												<span
-													class="relative -top-[2px] bg-{latest.fueltech_id} rounded-full p-2 place-self-start"
+													class=" bg-{latest.fueltech_id || 'demand'} rounded-full p-2 block"
 													class:text-black={latest.fueltech_id === 'solar'}
 													class:text-white={latest.fueltech_id !== 'solar'}
 												>
-													<FuelTechIcon fuelTech={latest.fueltech_id} sizeClass={5} />
+													<FuelTechIcon fuelTech={latest.fueltech_id || 'demand'} sizeClass={8} />
 												</span>
-												<!-- <span class="relative -top-[2px]">
-													<FuelTechTag
-														pxClass="px-2"
-														showText={false}
-														iconSize={14}
-														fueltech={latest.fueltech_id}
-													/>
-												</span> -->
-											{/if}
+												<!-- <div class="text-xs text-mid-grey font-space">
+													{getRegionLabel(latest.network_id, latest.network_region)}
+												</div> -->
+											</div>
+											<!-- 
+											<span
+												class="relative -top-[5px] bg-{latest.fueltech_id ||
+													'demand'} rounded-full p-2 place-self-start"
+												class:text-black={latest.fueltech_id === 'solar'}
+												class:text-white={latest.fueltech_id !== 'solar'}
+											>
+												<FuelTechIcon fuelTech={latest.fueltech_id || 'demand'} sizeClass={8} />
+											</span> -->
+
 											<div
 												class="leading-base"
 												class:text-lg={significant}
 												class:leading-lg={significant}
 											>
-												{recordDescription(
-													latest.period,
-													latest.aggregate,
-													latest.metric,
-													latest.fueltech_id
-												)}
+												{getRecordDescription(latest)}
 												<!-- <small class="block text-xs">
 													{getFormattedDateTime(latest.date)}<br />
 													{latest.interval}<br />
@@ -154,8 +197,11 @@
 
 										<ol class="col-span-4 p-8 rounded-r-lg" class:bg-gas_recip={significant}>
 											{#each lastest3Records as record, i}
-												{@const isWem = record.network_id === 'wem'}
-												{@const timeZone = isWem ? 'Australia/Perth' : undefined}
+												{@const formattedDate = new Intl.DateTimeFormat('en-AU', {
+													hour: 'numeric',
+													minute: 'numeric',
+													timeZone: record.timeZone
+												}).format(record.time)}
 												<li class="text-sm text-mid-grey flex items-center justify-between">
 													<div>
 														<span
@@ -167,13 +213,13 @@
 															{formatRecordValue(record.value, record.fueltech_id)}
 														</span>
 														{#if i === 0}
-															<span class="text-xs">{record.value_unit}</span>
+															<span class="text-xs font-mono">{record.value_unit}</span>
 														{/if}
 													</div>
 
 													{#if record.period === 'interval'}
 														<time datetime={record.interval} class="text-xs font-mono">
-															{getFormattedTime(record.date, timeZone)}
+															{formattedDate}
 														</time>
 													{/if}
 												</li>

@@ -3,7 +3,8 @@ import {
 	aggregateOptions,
 	periodOptions,
 	fuelTechOptions,
-	milestoneTypeOptions
+	milestoneTypeOptions,
+	networkRegionsOnly
 } from './filters.js';
 
 /**
@@ -110,18 +111,66 @@ async function fetchRecords(
 	const res = await fetch(
 		`/api/records?page=${page}&pageSize=${pageSize}${regionsParam}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${milestoneTypesParam}${significanceParam}`
 	);
+	let res2 = null;
+	let jsonData2 = null;
+
+	if (networkRegionsOnly.some((d) => regions.includes(d))) {
+		if (regions.includes('nem') || regions.includes('wem')) {
+			// WORKAROUND: if the regions contain both network and regions,
+			// then need to make another call to fetch network data as the api query can't return both network and region data
+			let networks = regions.filter((r) => r === 'nem' || r === 'wem');
+			let networkParams = `&regions=${networks.join(',')}`;
+			res2 = await fetch(
+				`/api/records?page=${page}&pageSize=${pageSize}${networkParams}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${milestoneTypesParam}${significanceParam}`
+			);
+		}
+	} else if (regions.length === 0) {
+		// WORKAROUND: if no regions are selected, then we need to make another call to fetch region records
+		let allRegionsParams = `&regions=${networkRegionsOnly.join(',')}`;
+		res2 = await fetch(
+			`/api/records?page=${page}&pageSize=${pageSize}${allRegionsParams}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${milestoneTypesParam}${significanceParam}`
+		);
+	}
+
 	const jsonData = await res.json();
+	if (res2) {
+		jsonData2 = await res2.json();
+	}
 
 	if (jsonData.success) {
 		errorMessage = '';
 		recordsData = jsonData.data.map((d) => {
+			const isWem = d.network_id === 'WEM';
+			const timeZone = isWem ? '+08:00' : '+10:00';
 			const parsedInterval = parseISO(d.interval);
 			return {
 				...d,
 				date: parsedInterval,
-				time: parsedInterval.getTime()
+				time: parsedInterval.getTime(),
+				timeZone
 			};
 		});
+
+		if (jsonData2) {
+			recordsData = [
+				...recordsData,
+				...jsonData2.data.map((d) => {
+					const isWem = d.network_id === 'WEM';
+					const timeZone = isWem ? '+08:00' : '+10:00';
+					const parsedInterval = parseISO(d.interval);
+					return {
+						...d,
+						date: parsedInterval,
+						time: parsedInterval.getTime(),
+						timeZone
+					};
+				})
+			];
+
+			// sort recordsData by date descending
+			recordsData.sort((a, b) => b.date.getTime() - a.date.getTime());
+		}
+
 		totalRecords = jsonData.total_records;
 	} else {
 		errorMessage = jsonData.error;

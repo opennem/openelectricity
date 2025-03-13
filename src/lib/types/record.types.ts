@@ -18,6 +18,7 @@ export type MilestoneRecord = {
 	value_unit?: string;
 	date?: Date;
 	time?: number;
+	timeZone?: string;
 };
 
 export type DailyRecords = {

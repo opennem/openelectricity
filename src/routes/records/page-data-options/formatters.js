@@ -45,7 +45,7 @@ function formatRecordValue(value, fuelTech) {
 	if (value === null || value === undefined || isNaN(value)) {
 		return '—';
 	}
-	return getNumberFormat(getMaximumFractionDigits(fuelTech)).format(value);
+	return getNumberFormat(0).format(value);
 }
 
 export { formatStrings, formatStringsLong, formatRecordValue };
