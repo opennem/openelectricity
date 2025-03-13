@@ -216,8 +216,9 @@
 		>
 			{#if !loading}
 				{#if recordData}
+					{@const path = `/records/${encodeURIComponent(recordData.recordId)}?focusDateTime=${encodeURIComponent(recordData.interval)}`}
 					<a
-						href="/records/{recordData.recordId}"
+						href={path}
 						class="text-black bg-white border border-mid-warm-grey hover:border-dark-grey !no-underline rounded-xl p-6 h-full min-h-[200px] grid grid-cols-1 gap-4 content-between transition-all"
 					>
 						<div>
