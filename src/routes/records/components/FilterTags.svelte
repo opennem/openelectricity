@@ -1,12 +1,23 @@
 <script>
 	import { getContext } from 'svelte';
 	import IconXMark from '$lib/icons/XMark.svelte';
-	import { regionsWithLabels } from '$lib/regions';
-
 	import { fuelTechLabel, milestoneTypeLabel, periodLabel } from '../page-data-options/filters';
 
 	const { selectedRegions, selectedFuelTechs, selectedMetrics, selectedPeriods } =
 		getContext('records-filters');
+
+	/**
+	 * @type {{ [key: string]: string }}
+	 */
+	const regionsLabels = {
+		nem: 'NEM',
+		nsw1: 'NSW',
+		qld1: 'QLD',
+		sa1: 'SA',
+		tas1: 'TAS',
+		vic1: 'VIC',
+		wem: 'WA'
+	};
 </script>
 
 {#if $selectedFuelTechs.length || $selectedMetrics.length || $selectedPeriods.length}
@@ -22,7 +33,7 @@
 			<div
 				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
 			>
-				<span class="whitespace-nowrap">{regionsWithLabels[region]}</span>
+				<span class="whitespace-nowrap">{regionsLabels[region]}</span>
 				<button
 					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
 					onclick={() => ($selectedRegions = $selectedRegions.filter((d) => d !== region))}

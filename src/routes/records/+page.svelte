@@ -131,8 +131,6 @@
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex
 	);
 	let rolledUpRecords = $derived(groupByMonthDay(recordsData));
-
-	$inspect('recordsData', recordsData);
 </script>
 
 <Meta
