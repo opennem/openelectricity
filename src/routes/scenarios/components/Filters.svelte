@@ -14,12 +14,8 @@
 	import IconPlus from '$lib/icons/Plus.svelte';
 	import IconMinus from '$lib/icons/Minus.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import IconShare from '$lib/icons/Share.svelte';
-	import IconClipboardDocumentCheck from '$lib/icons/ClipboardDocumentCheck.svelte';
 
-	// import IconXMark from '$lib/icons/XMark.svelte';
 	import { formatFyTickX } from '$lib/utils/formatters';
-	import { writeToClipboard } from '$lib/utils/clipboard';
 
 	import { viewSectionOptions } from '../page-data-options/view-sections';
 	import { dataTypeDisplayOptions } from '../page-data-options/data-types';
@@ -30,6 +26,7 @@
 	import { chartXTicks, miniChartXTicks } from '../page-data-options/chart-ticks';
 	import ScenarioSelection from './ScenarioSelection.svelte';
 	import DownloadButton from './DownloadButton.svelte';
+	import LinkCopyButton from '$lib/components/LinkCopyButton.svelte';
 
 	const {
 		singleSelectionData,
@@ -55,7 +52,6 @@
 	];
 
 	let showMobileFilterOptions = $state(false);
-	let copying = $state(false);
 
 	init();
 
@@ -188,15 +184,6 @@
 			$selectedCharts = [...$selectedCharts, dataType];
 		}
 	}
-
-	function copyLink() {
-		copying = true;
-		const url = window.location.href;
-		writeToClipboard(url);
-		setTimeout(() => {
-			copying = false;
-		}, 1000);
-	}
 </script>
 
 {#if showMobileFilterOptions}
@@ -244,14 +231,14 @@
 		<ScenarioSelection mobileView={true} />
 
 		{#snippet buttons()}
-				<div  class="flex gap-3">
+			<div class="flex gap-3">
 				<!-- <Button class="w-full">Cancel</Button> -->
 				<Button
 					class="!bg-dark-grey text-white hover:!bg-black w-full"
 					on:click={() => (showMobileFilterOptions = false)}>Close</Button
 				>
 			</div>
-			{/snippet}
+		{/snippet}
 	</Modal>
 {/if}
 
@@ -339,17 +326,7 @@
 
 	<div class="hidden sm:flex items-center gap-4 border-l border-warm-grey pl-8">
 		<DownloadButton />
-
-		<button
-			class="bg-black text-white p-3 rounded-lg transition-all hover:bg-dark-grey"
-			onclick={copyLink}
-		>
-			{#if copying}
-				<IconClipboardDocumentCheck class="size-8" />
-			{:else}
-				<IconShare class="size-8" />
-			{/if}
-		</button>
+		<LinkCopyButton />
 	</div>
 </div>
 
