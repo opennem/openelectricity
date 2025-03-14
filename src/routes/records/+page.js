@@ -19,6 +19,6 @@ export async function load({ url }) {
 		stringFilter: '', // ignore for now
 		fuelTechs: fuelTechs ? fuelTechs.split(',') : [],
 		// significance: significance ? parseInt(significance) : null
-		significance: 8 // always 8+
+		significance: 9 // always 9+
 	};
 }
