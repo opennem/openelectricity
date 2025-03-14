@@ -13,13 +13,15 @@
 	}
 </script>
 
-<button
-	class="bg-black text-white p-3 rounded-lg transition-all hover:bg-dark-grey"
-	onclick={copyLink}
->
-	{#if copying}
-		<IconClipboardDocumentCheck class="size-8" />
-	{:else}
-		<IconShare class="size-8" />
-	{/if}
-</button>
+<div class="relative">
+	<button
+		class="bg-black text-white p-3 rounded-lg transition-all hover:bg-dark-grey"
+		onclick={copyLink}
+	>
+		{#if copying}
+			<IconClipboardDocumentCheck class="size-8" />
+		{:else}
+			<IconShare class="size-8" />
+		{/if}
+	</button>
+</div>

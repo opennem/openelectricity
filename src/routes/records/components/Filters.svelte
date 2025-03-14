@@ -7,6 +7,7 @@
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
+	import LinkCopyButton from '$lib/components/LinkCopyButton.svelte';
 
 	import { regions } from '../page-data-options/filters.js';
 	import { viewSectionOptions } from '../page-data-options/view-sections';
@@ -198,13 +199,17 @@
 			/>
 		</div>
 
-		<div class="hidden md:block">
+		<div class="hidden md:flex items-center gap-8 border-l border-warm-grey pl-8">
 			<Switch
 				buttons={viewSectionOptions}
 				selected={$selectedView}
 				on:change={(evt) => ($selectedView = evt.detail.value)}
 				class="justify-center"
 			/>
+
+			<div class="border-l border-warm-grey pl-8">
+				<LinkCopyButton />
+			</div>
 		</div>
 
 		<div class="md:hidden pl-8 ml-4 border-l border-warm-grey">
