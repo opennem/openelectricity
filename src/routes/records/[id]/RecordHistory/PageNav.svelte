@@ -9,7 +9,7 @@
 		aggregateOptions
 	} from '../../page-data-options/filters.js';
 	// import { recordState } from './stores/state.svelte.js';
-	import PageButtons from './PageButtons.svelte';
+	import LinkCopyButton from '$lib/components/LinkCopyButton.svelte';
 
 	let { record_id, network_id, network_region, fueltech_id, metric, period, aggregate, recordIds } =
 		$props();
@@ -345,7 +345,9 @@
 		</div>
 
 		{#if record_id}
-			<!-- <PageButtons /> -->
+			<div class="pr-4">
+				<LinkCopyButton />
+			</div>
 		{/if}
 	</div>
 {/if}
