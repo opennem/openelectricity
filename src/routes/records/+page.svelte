@@ -190,7 +190,7 @@
 			/>
 		</div>
 
-		<div class="py-10 md:py-6">
+		<div class="pb-10 pt-5 md:pb-6 md:pt-3">
 			<PinnedRecords selectedRegions={$selectedRegions} />
 		</div>
 	</section>
