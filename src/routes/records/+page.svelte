@@ -1,6 +1,4 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { setContext, getContext } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { browser } from '$app/environment';
@@ -8,7 +6,10 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
+
 	import { regionsWithLabels } from '$lib/regions';
+	import { regions } from './page-data-options/filters.js';
 
 	import PinnedRecords from './components/PinnedRecords.svelte';
 	import List from './components/List.svelte';
@@ -32,17 +33,6 @@
 		selectedMetrics,
 		selectedPeriods
 	} = getContext('records-filters');
-
-	// TODO: refactor to store
-	const regions = [
-		{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
-		{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW', longLabel: 'New South Wales' },
-		{ longValue: 'au.nem.qld1', value: 'qld1', label: 'QLD', longLabel: 'Queensland' },
-		{ longValue: 'au.nem.sa1', value: 'sa1', label: 'SA', longLabel: 'South Australia' },
-		{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS', longLabel: 'Tasmania' },
-		{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC', longLabel: 'Victoria' },
-		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
-	];
 
 	let errorMessage = $state('');
 	/** @type {MilestoneRecord[]} */
@@ -131,6 +121,31 @@
 		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex
 	);
 	let rolledUpRecords = $derived(groupByMonthDay(recordsData));
+
+	let regionOptions = $derived(
+		regions.map((r) => ({
+			label: r.label,
+			value: r.value,
+			divider: r.divider,
+			labelClassName: regions?.find((m) => m.value === r.longValue)
+				? ''
+				: 'italic text-mid-warm-grey'
+		}))
+	);
+
+	/**
+	 * @param {string} value
+	 * @param {boolean} isMetaPressed
+	 */
+	function handleRegionChange(value, isMetaPressed) {
+		if (isMetaPressed) {
+			$selectedRegions = [value];
+		} else if ($selectedRegions.includes(value)) {
+			$selectedRegions = $selectedRegions.filter((item) => item !== value);
+		} else {
+			$selectedRegions = [...$selectedRegions, value];
+		}
+	}
 </script>
 
 <Meta
@@ -164,8 +179,19 @@
 			/>
 		</div> -->
 
+		<div class="inline-flex">
+			<FormMultiSelect
+				options={regionOptions}
+				selected={$selectedRegions}
+				label={$selectedRegions.length ? `Region (${$selectedRegions.length})` : 'Region'}
+				paddingX="pl-5 pr-4"
+				paddingY="py-3"
+				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+			/>
+		</div>
+
 		<div class="py-10 md:py-6">
-			<PinnedRecords />
+			<PinnedRecords selectedRegions={$selectedRegions} />
 		</div>
 	</section>
 </div>

@@ -3,14 +3,17 @@
 	import { fade } from 'svelte/transition';
 
 	import ispData from '$lib/isp';
+	import { parsedFeatureFlags } from '$lib/stores/app';
 
+	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import InfoGraphicScenariosPreview from '$lib/components/info-graphics/scenarios-explorer/homepage/Preview.svelte';
-
 	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
 	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
+	import PinnedRecords from './records/components/PinnedRecords.svelte';
+	import { regions } from './records/page-data-options/filters.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -62,11 +65,37 @@
 	}
 
 	const { banner_title, banner_statement, map_title, analysis_title } = homepageData[0];
+
+	let selectedRegions = $state([]);
+	let regionOptions = $derived(
+		regions.map((r) => ({
+			label: r.label,
+			value: r.value,
+			divider: r.divider,
+			labelClassName: regions?.find((m) => m.value === r.longValue)
+				? ''
+				: 'italic text-mid-warm-grey'
+		}))
+	);
+
+	/**
+	 * @param {string} value
+	 * @param {boolean} isMetaPressed
+	 */
+	function handleRegionChange(value, isMetaPressed) {
+		if (isMetaPressed) {
+			selectedRegions = [value];
+		} else if (selectedRegions.includes(value)) {
+			selectedRegions = selectedRegions.filter((item) => item !== value);
+		} else {
+			selectedRegions = [...selectedRegions, value];
+		}
+	}
 </script>
 
 <Meta image="/img/preview.jpg" />
 
-<div class="bg-light-warm-grey py-12" transition:fade={{ duration: 500 }}>
+<div class="bg-light-warm-grey py-12" in:fade={{ duration: 400 }}>
 	<div class="container max-w-none lg:container relative">
 		<InfoGraphicFossilFuelsRenewables
 			data={historyEnergyNemData}
@@ -79,6 +108,37 @@
 <div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
 	<InfoGraphicNem7DayGeneration />
 </div>
+
+{#if parsedFeatureFlags['show_records']}
+	<div class="bg-light-warm-grey py-16 md:py-32 border-b border-warm-grey">
+		<div class="container max-w-none lg:container">
+			<h3 class="text-center">Notable records</h3>
+
+			<div class="inline-flex mb-3">
+				<FormMultiSelect
+					options={regionOptions}
+					selected={selectedRegions}
+					label={selectedRegions.length ? `Region (${selectedRegions.length})` : 'Region'}
+					paddingX="pl-5 pr-4"
+					paddingY="py-3"
+					on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+				/>
+			</div>
+
+			<PinnedRecords {selectedRegions} />
+
+			<div class="flex justify-end mt-16">
+				<a
+					href="/records"
+					class="mt-12 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+				>
+					View records
+				</a>
+			</div>
+		</div>
+	</div>
+{/if}
+
 {#if regionPower && regionEnergy && regionEmissions}
 	<div class="md:bg-light-warm-grey">
 		<div class="container max-w-none lg:container">

@@ -6,6 +6,8 @@
 	import recordDescription from '../page-data-options/record-description';
 	import FuelTechIcon from './FuelTechIcon.svelte';
 
+	let { selectedRegions = [] } = $props();
+
 	const regions = [
 		{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
 		{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW', longLabel: 'New South Wales' },
@@ -111,6 +113,18 @@
 		return data;
 	}
 
+	let regionOptions = $derived.by(() => {
+		if (selectedRegions.length === 0) {
+			return regions;
+		}
+		return selectedRegions.map((region) => {
+			let regionData = regions.find((r) => r.value === region);
+			return regionData;
+		});
+	});
+
+	$inspect(regionOptions);
+
 	$effect(() => {
 		if (browser) {
 			/** @type {{ id: string, data: Promise<any> }[]} */
@@ -122,7 +136,7 @@
 				renewables: null,
 				coal: null
 			};
-			regions.forEach(({ longValue }) => {
+			regionOptions.forEach(({ longValue }) => {
 				pinned.forEach(({ fuelTech, ids }) => {
 					ids.forEach((id) => {
 						const recordId = `${longValue}.${fuelTech}.${id}`;
@@ -138,7 +152,7 @@
 	let recordMapCache = $derived(recordMap);
 
 	$effect(() => {
-		if (records.length) {
+		if (regionOptions.length) {
 			const promises = records.map((record) => record.data);
 
 			loading = true;
@@ -201,7 +215,7 @@
 	}
 </script>
 
-<h4 class="mx-5 font-space text-mid-grey uppercase text-sm tracking-wider">Notable</h4>
+<!-- <h4 class="mx-5 font-space text-mid-grey uppercase text-sm tracking-wider">Notable</h4> -->
 <div class="overflow-auto flex items-stretch snap-x snap-mandatory md:grid grid-cols-5 md:gap-4">
 	{#each pinned as { fuelTech }}
 		{@const recordData = recordMap[fuelTech]}
