@@ -30,7 +30,11 @@ export default class ChartStylesState {
 	/** @type {boolean} */
 	showFocusDot = $state(false);
 	/** @type {boolean} */
+	showFocusYLine = $state(false);
+	/** @type {boolean} */
 	showHoverDot = $state(false);
+	/** @type {boolean} */
+	showHoverYLine = $state(false);
 
 	/** @type {boolean} */
 	xGridlines = $state(true);

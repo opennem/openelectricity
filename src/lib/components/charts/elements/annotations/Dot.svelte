@@ -22,7 +22,8 @@
 			{@const cy = isStacked ? $yScale(value[domain]) : $yGet({ value: value[domain] })}
 			{@const fill = colour ? colour : $zGet({ group: domain })}
 			{#if cx && cy}
-				<circle {cx} {cy} {r} {fill} />
+				<circle {cx} {cy} r="2" {fill} />
+				<circle {cx} {cy} {r} fill={fill + '66'} />
 			{/if}
 		{/each}
 	{/if}

@@ -91,24 +91,33 @@
 
 			<g clip-path={clipPath}>
 				{#if cxt.hoverData}
-					<LineX xValue={cxt.hoverData} strokeArray="none" />
+					<LineX
+						xValue={cxt.hoverData}
+						yValue={cxt.chartStyles.showHoverYLine ? cxt.hoverData : undefined}
+						strokeArray="none"
+					/>
 					{#if cxt.chartStyles.showHoverDot}
 						<Dot
 							domains={cxt.visibleSeriesNames}
 							value={$state.snapshot(cxt.hoverData)}
 							isStacked={true}
-							colour="#33333333"
+							colour="#333333"
 							r={8}
 						/>
 					{/if}
 				{/if}
 
 				{#if cxt.focusData}
-					<LineX xValue={cxt.focusData} strokeArray="none" strokeColour="#C74523" />
+					<LineX
+						xValue={cxt.focusData}
+						yValue={cxt.chartStyles.showFocusYLine ? cxt.focusData : undefined}
+						strokeArray="none"
+						strokeColour="#C7452399"
+					/>
 					{#if cxt.chartStyles.showFocusDot}
 						<Dot
 							domains={cxt.visibleSeriesNames}
-							value={$state.snapshot(cxt.focusData)}
+							value={cxt.focusData}
 							isStacked={true}
 							colour="#C74523"
 						/>
