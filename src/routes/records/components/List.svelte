@@ -100,7 +100,6 @@
 				<div>
 					<ul>
 						{#each records as record}
-							{@const significant = record.significance > 9}
 							{@const path = `/records/${encodeURIComponent(record.record_id)}?focusDateTime=${encodeURIComponent(record.interval)}`}
 							<li>
 								<a
@@ -121,11 +120,7 @@
 											</div> -->
 										</div>
 
-										<div
-											class="leading-base"
-											class:text-lg={significant}
-											class:leading-lg={significant}
-										>
+										<div class="leading-base">
 											{getRecordDescription(record)}
 
 											<!-- <small class="block text-xs">
@@ -137,13 +132,10 @@
 										</div>
 									</div>
 
-									<ol class="col-span-4 p-8 rounded-r-lg" class:bg-gas_recip={significant}>
+									<ol class="col-span-4 p-8 rounded-r-lg">
 										<li class="text-sm text-mid-grey flex items-center justify-between">
 											<div>
-												<span
-													class="font-mono text-base text-dark-grey"
-													class:text-lg={significant}
-												>
+												<span class="font-mono text-base text-dark-grey">
 													{formatRecordValue(record.value, record.fueltech_id)}
 												</span>
 												<span class="text-xs font-mono">{record.value_unit}</span>
@@ -169,7 +161,6 @@
 				<div>
 					<ul>
 						{#each records as record}
-							{@const significant = record.significance > 9}
 							{@const path = `/records/${encodeURIComponent(record.record_id)}?focusDateTime=${encodeURIComponent(record.interval)}`}
 							<li>
 								<a
@@ -190,11 +181,7 @@
 											</div> -->
 										</div>
 
-										<div
-											class="leading-base"
-											class:text-lg={significant}
-											class:leading-lg={significant}
-										>
+										<div class="leading-base">
 											{getRecordDescription(record)}
 
 											<!-- <small class="block text-xs">
@@ -206,13 +193,10 @@
 										</div>
 									</div>
 
-									<ol class="col-span-4 p-8 rounded-r-lg" class:bg-gas_recip={significant}>
+									<ol class="col-span-4 p-8 rounded-r-lg">
 										<li class="text-sm text-mid-grey flex items-center justify-between">
 											<div>
-												<span
-													class="font-mono text-base text-dark-grey"
-													class:text-lg={significant}
-												>
+												<span class="font-mono text-base text-dark-grey">
 													{formatRecordValue(record.value, record.fueltech_id)}
 												</span>
 												<span class="text-xs font-mono">{record.value_unit}</span>
@@ -240,7 +224,6 @@
 						<ul>
 							{#each [...records] as [key, value]}
 								{@const latest = value[0]}
-								{@const significant = latest.significance > 11}
 								{@const lastest3Records = value.slice(0, 3)}
 								{@const path = `/records/${encodeURIComponent(latest.record_id)}?focusDateTime=${encodeURIComponent(latest.interval)}`}
 								<li>
@@ -273,11 +256,7 @@
 												<FuelTechIcon fuelTech={latest.fueltech_id || 'demand'} sizeClass={8} />
 											</span> -->
 
-											<div
-												class="leading-base"
-												class:text-lg={significant}
-												class:leading-lg={significant}
-											>
+											<div class="leading-base">
 												{getRecordDescription(latest)}
 												<!-- <small class="block text-xs">
 													{getFormattedDateTime(latest.date)}<br />
@@ -288,7 +267,7 @@
 											</div>
 										</div>
 
-										<ol class="col-span-4 p-8 rounded-r-lg" class:bg-gas_recip={significant}>
+										<ol class="col-span-4 p-8 rounded-r-lg">
 											{#each lastest3Records as record, i}
 												{@const formattedDate = new Intl.DateTimeFormat('en-AU', {
 													hour: 'numeric',
@@ -301,7 +280,6 @@
 															class="font-mono"
 															class:text-base={i === 0}
 															class:text-dark-grey={i === 0}
-															class:text-lg={significant}
 														>
 															{formatRecordValue(record.value, record.fueltech_id)}
 														</span>
