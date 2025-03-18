@@ -52,7 +52,7 @@ let xTickValueFormatters = {
 			new Intl.DateTimeFormat('en-AU', { day: 'numeric', month: 'short', timeZone }).format(d)
 	},
 	day: {
-		ticks: 4,
+		ticks: 3,
 		format: (d, timeZone) =>
 			new Intl.DateTimeFormat('en-AU', {
 				weekday: 'short',
@@ -76,13 +76,13 @@ let xTickValueFormatters = {
 			new Intl.DateTimeFormat('en-AU', { month: 'short', year: '2-digit', timeZone }).format(d)
 	},
 	quarter: {
-		ticks: 4,
+		ticks: 3,
 		format: (d, timeZone) => getQuarter(d, timeZone),
 		formatTick: (d, timeZone) =>
 			new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone }).format(d)
 	},
 	year: {
-		ticks: 4,
+		ticks: 3,
 		format: (d, timeZone) =>
 			new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone }).format(d),
 		formatTick: (d, timeZone) =>
