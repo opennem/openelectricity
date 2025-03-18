@@ -1,6 +1,5 @@
 import { group, rollup } from 'd3-array';
-import { getFormattedMonth, getFormattedDate } from '$lib/utils/formatters';
-import { xTickValueFormatters } from '../[id]/RecordHistory/helpers/config';
+import { getFormattedDate } from '$lib/utils/formatters';
 /**
  *
  * @param {MilestoneRecord[]} data
@@ -31,6 +30,7 @@ function groupByMonthDay(data) {
 				nonIntervalDayRecords: nonIntervalDayRecords
 			};
 		},
+
 		(/** @type {MilestoneRecord} */ d) => {
 			// console.log('getFormattedMonth', d);
 			return new Intl.DateTimeFormat('en-AU', {
