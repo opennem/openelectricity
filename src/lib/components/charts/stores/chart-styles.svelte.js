@@ -61,6 +61,8 @@ export default class ChartStylesState {
 	/** @type {string} */
 	chartHeightClasses = $state('h-[400px] md:h-[450px]');
 
+	chartHeight = $derived(this.chartHeightClasses.replace('h-[', '').replace('px]', ''));
+
 	/** @type {Object.<string, number>} */
 	chartPadding = $state({ top: 0, right: 0, bottom: 40, left: 0 });
 

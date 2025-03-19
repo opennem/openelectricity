@@ -16,8 +16,8 @@
 		baseUrl: PUBLIC_OE_API_URL
 	});
 
-	let { record, timeZone, displayPrefix } = $props();
-	let { chartCxt } = init();
+	let { record, timeZone, displayPrefix, chartHeight } = $props();
+	let { chartCxt } = init(chartHeight);
 	let errorMessage = $state('');
 	let isLoading = $state(false);
 
@@ -210,12 +210,12 @@
 </script>
 
 {#if errorMessage}
-	<div class="text-dark-red h-[485px] flex items-center justify-center text-center px-4">
+	<div class="text-dark-red h-[{chartHeight}px] flex items-center justify-center text-center px-4">
 		{errorMessage}
 	</div>
 {:else if isLoading}
 	<div
-		class="text-dark-grey h-[485px] flex items-center justify-center text-center px-4 bg-warm-grey animate-pulse rounded-lg"
+		class="text-dark-grey h-[{chartHeight}px] flex items-center justify-center text-center px-4 bg-warm-grey animate-pulse rounded-lg"
 	>
 		<LogoMark classes="w-12 h-12" />
 	</div>

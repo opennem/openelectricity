@@ -44,7 +44,7 @@
 	let clipPathAxis = $derived(clipPathAxisId ? `url(#${clipPathAxisId})` : '');
 </script>
 
-<div class="w-full {chartStyles.chartHeightClasses}">
+<div class="w-full {chartStyles.chartHeightClasses}" style="height: {chartStyles.chartHeight}px">
 	<LayerCake
 		padding={chartStyles.chartPadding}
 		x={cxt.x}

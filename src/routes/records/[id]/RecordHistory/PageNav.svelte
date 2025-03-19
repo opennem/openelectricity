@@ -1,6 +1,10 @@
 <script>
 	import { goto } from '$app/navigation';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
+	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import Modal from '$lib/components/Modal.svelte';
+	import Button from '$lib/components/form-elements/Button2.svelte';
 	import {
 		regions,
 		fuelTechOptions,
@@ -23,6 +27,8 @@
 		let network_region = record.network_region ? `.${record.network_region.toLowerCase()}` : '';
 		return `au.${record.network_id.toLowerCase()}${network_region}`;
 	}
+
+	let showMobileFilterOptions = $state(false);
 
 	let regionLongValue = $derived(
 		`au.${network_id ? network_id.toLowerCase() : ''}${network_region ? `.${network_region.toLowerCase()}` : ''}`
@@ -284,11 +290,80 @@
 </script>
 
 {#if record_id}
-	{@const px = 'px-4'}
+	{@const px = showMobileFilterOptions ? 'px-7' : 'px-4'}
 	{@const py = 'py-3'}
-	<div class="text-sm flex justify-between gap-6 items-center px-6 py-2 md:px-12 auto">
+
+	{#if showMobileFilterOptions}
+		<Modal
+			maxWidthClass=""
+			class="!fixed bg-white top-0 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain !rounded-none !my-0 pt-0 px-0 z-50"
+		>
+			<header
+				class="sticky top-0 z-50 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
+			>
+				<h3 class="mb-2">Filters</h3>
+
+				<div class="mb-2">
+					<IconAdjustmentsHorizontal class="size-10" />
+				</div>
+			</header>
+
+			<div class="grid grid-cols-2 gap-10 p-10 pb-0">
+				<FormSelect
+					options={availableRegionsOptions}
+					selected={region}
+					formLabel="Region"
+					paddingX={px}
+					paddingY={py}
+					staticDisplay={true}
+					on:change={handleRegionChange}
+				/>
+
+				<FormSelect
+					options={availableMetricsOptions}
+					selected={metric}
+					formLabel="Metric"
+					paddingX={px}
+					paddingY={py}
+					staticDisplay={true}
+					on:change={handleMetricChange}
+				/>
+
+				<FormSelect
+					options={availablePeriodsOptions}
+					selected={period}
+					formLabel="Period"
+					paddingX={px}
+					paddingY={py}
+					staticDisplay={true}
+					on:change={handlePeriodChange}
+				/>
+
+				<FormSelect
+					options={availableAggregatesOptions}
+					selected={aggregate}
+					formLabel="Aggregate"
+					paddingX={px}
+					paddingY={py}
+					staticDisplay={true}
+					on:change={handleAggregateChange}
+				/>
+			</div>
+
+			{#snippet buttons()}
+				<div class="flex gap-3">
+					<Button
+						class="!bg-dark-grey text-white hover:!bg-black w-full"
+						on:click={() => (showMobileFilterOptions = false)}>Close</Button
+					>
+				</div>
+			{/snippet}
+		</Modal>
+	{/if}
+
+	<div class="text-sm flex justify-between gap-6 items-center px-6 py-2 md:px-12">
 		<div class="flex gap-6 items-center">
-			<div class="text-nowrap">
+			<div class="hidden sm:block text-nowrap">
 				<FormSelect
 					options={availableRegionsOptions}
 					selected={region}
@@ -310,7 +385,7 @@
 				/>
 			</div>
 
-			<div class="text-nowrap">
+			<div class="hidden sm:block text-nowrap">
 				<FormSelect
 					options={availableMetricsOptions}
 					selected={metric}
@@ -321,7 +396,7 @@
 				/>
 			</div>
 
-			<div class="text-nowrap">
+			<div class="hidden sm:block text-nowrap">
 				<FormSelect
 					options={availablePeriodsOptions}
 					selected={period}
@@ -332,7 +407,7 @@
 				/>
 			</div>
 
-			<div class="text-nowrap">
+			<div class="hidden sm:block text-nowrap">
 				<FormSelect
 					options={availableAggregatesOptions}
 					selected={aggregate}
@@ -344,10 +419,14 @@
 			</div>
 		</div>
 
-		{#if record_id}
-			<div class="pr-4">
-				<LinkCopyButton />
-			</div>
-		{/if}
+		<div class="sm:hidden pl-8 ml-4 border-l border-warm-grey">
+			<ButtonIcon on:click={() => (showMobileFilterOptions = true)}>
+				<IconAdjustmentsHorizontal class="size-10" />
+			</ButtonIcon>
+		</div>
+
+		<div class="pr-4 hidden sm:block">
+			<LinkCopyButton />
+		</div>
 	</div>
 {/if}

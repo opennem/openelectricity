@@ -68,16 +68,31 @@
 			chartCxt.xDomain = defaultXDomain;
 		}
 	}
+
+	let showTable = $state(false);
+
+	// TODO: move to State
+	let innerWidth = $state(0);
+	let isMobile = $derived(innerWidth < 640);
+
+	$effect(() => {
+		if (isMobile) {
+			chartCxt.chartStyles.chartHeightClasses = 'h-[290px]';
+			dateBrushCxt.chartStyles.chartHeightClasses = 'h-[40px]';
+		} else {
+			chartCxt.chartStyles.chartHeightClasses = 'h-[490px]';
+			dateBrushCxt.chartStyles.chartHeightClasses = 'h-[40px]';
+		}
+	});
+
+	$inspect(isMobile);
+	$inspect(innerWidth);
 </script>
 
-<div
-	class="grid grid-rows-[570px] gap-6 mb-6"
-	class:grid-cols-[2fr_5fr_2fr]={recordState.showTracker}
-	class:grid-cols-[2fr_5fr]={!recordState.showTracker}
->
-	<Table cxtKey={chartCxt.key} {brushedRange} {period} {onmousemove} {onmouseout} {onpointerup} />
+<svelte:window bind:innerWidth />
 
-	<div class="rounded-lg border border-warm-grey">
+{#if isMobile}
+	<div>
 		<LensChart
 			cxtKey={chartCxt.key}
 			displayOptions={false}
@@ -93,7 +108,7 @@
 	</div>
 
 	{#if recordState.showTracker}
-		<div class="relative" in:slide={{ axis: 'x' }}>
+		<div class="relative mx-6" in:slide={{ axis: 'y' }}>
 			<button
 				class="absolute left-1 top-1 text-mid-warm-grey hover:text-dark-grey"
 				onclick={() => (recordState.showTracker = false)}
@@ -101,15 +116,61 @@
 				<IconXMark />
 			</button>
 
-			<div class="bg-light-warm-grey rounded-lg w-full h-[508px] border border-warm-grey">
+			<div class="bg-light-warm-grey rounded-lg w-full h-[260px] border border-warm-grey">
 				{#if recordState.selectedMilestone}
 					<MiniTracker
 						record={recordState.selectedMilestone}
 						timeZone={chartCxt.timeZone}
 						displayPrefix={chartCxt.chartOptions.displayPrefix}
+						chartHeight={240}
 					/>
 				{/if}
 			</div>
 		</div>
 	{/if}
-</div>
+{:else}
+	<div
+		class="grid grid-cols-1 gap-6 mb-6 grid-rows-[570px]"
+		class:grid-cols-[2fr_5fr_2fr]={recordState.showTracker}
+		class:grid-cols-[2fr_5fr]={!recordState.showTracker}
+	>
+		<Table cxtKey={chartCxt.key} {brushedRange} {period} {onmousemove} {onmouseout} {onpointerup} />
+
+		<div class="rounded-lg border border-warm-grey">
+			<LensChart
+				cxtKey={chartCxt.key}
+				displayOptions={false}
+				showHeader={false}
+				{onmousemove}
+				{onmouseout}
+				{onpointerup}
+			/>
+
+			<div class="m-6 mt-0 bg-light-warm-grey rounded-lg">
+				<DateBrushWithContext cxtKey={dateBrushCxt.key} {brushedRange} {onbrush} />
+			</div>
+		</div>
+
+		{#if recordState.showTracker}
+			<div class="relative" in:slide={{ axis: 'x' }}>
+				<button
+					class="absolute left-1 top-1 text-mid-warm-grey hover:text-dark-grey"
+					onclick={() => (recordState.showTracker = false)}
+				>
+					<IconXMark />
+				</button>
+
+				<div class="bg-light-warm-grey rounded-lg w-full h-[508px] border border-warm-grey">
+					{#if recordState.selectedMilestone}
+						<MiniTracker
+							record={recordState.selectedMilestone}
+							timeZone={chartCxt.timeZone}
+							displayPrefix={chartCxt.chartOptions.displayPrefix}
+							chartHeight={485}
+						/>
+					{/if}
+				</div>
+			</div>
+		{/if}
+	</div>
+{/if}

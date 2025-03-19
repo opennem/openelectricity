@@ -135,6 +135,7 @@
 			defaultText="Last 7 days Power Generation (GW)"
 		/>
 	</div>
+
 	<StackedAreaLineChartWithContext cxtKey={chartCxt.key} {onmousemove} {onmouseout} {onpointerup} />
 
 	<div class="container max-w-none lg:container md:mt-12">

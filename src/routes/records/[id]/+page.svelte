@@ -197,9 +197,9 @@
 {:else}
 	{@const ftId = data.fueltech_id || 'demand'}
 
-	<div class="grid py-6 px-10 md:px-16 grid-cols-1">
+	<div class="grid py-6 px-0 md:px-16 grid-cols-1">
 		<section>
-			<header class="grid grid-cols-[7fr_2fr] items-center mb-6">
+			<header class="grid grid-cols-1 sm:grid-cols-[7fr_2fr] items-center mb-6 px-10 md:px-0">
 				<div class="flex items-center gap-6">
 					<span
 						class="bg-{ftId} rounded-full p-3 place-self-start"
@@ -215,7 +215,7 @@
 				</div>
 
 				<button
-					class="inline-flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey text-right ml-2 border hover:border-mid-warm-grey transition-border duration-200"
+					class="inline-flex flex-col text-dark-grey rounded-2xl px-8 py-6 bg-light-warm-grey text-right sm:ml-2 border hover:border-mid-warm-grey transition-border duration-200"
 					onclick={() => handleOnFocus(recordState.latestMilestone?.interval || '')}
 					class:border-transparent={recordState.latestMilestone?.time !== recordState.selectedTime}
 					class:border-mid-warm-grey={recordState.latestMilestone?.time ===
@@ -224,14 +224,17 @@
 					<div class="text-xs text-mid-warm-grey font-space font-semibold uppercase">
 						Current record
 					</div>
-					<span class="text-xs">
-						{chartCxt.formatXWithTimeZone(recordState.latestMilestone?.date)}
-					</span>
-					<div class="text-2xl leading-none font-medium">
-						{chartCxt.convertAndFormatValue(recordState.latestMilestone?.value)}
-						<small class="text-xs">
-							{chartCxt.chartOptions.displayUnit}
-						</small>
+
+					<div>
+						<span class="text-xs">
+							{chartCxt.formatXWithTimeZone(recordState.latestMilestone?.date)}
+						</span>
+						<div class="text-2xl leading-none font-medium">
+							{chartCxt.convertAndFormatValue(recordState.latestMilestone?.value)}
+							<small class="text-xs">
+								{chartCxt.chartOptions.displayUnit}
+							</small>
+						</div>
 					</div>
 				</button>
 			</header>
