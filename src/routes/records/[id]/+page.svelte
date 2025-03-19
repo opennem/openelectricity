@@ -164,7 +164,7 @@
 />
 
 {#if data.record_id}
-	<div class="bg-light-warm-grey">
+	<div class="bg-light-warm-grey sticky top-0 z-50 shadow-sm">
 		<PageNav
 			record_id={data.record_id}
 			network_id={data.network_id}
