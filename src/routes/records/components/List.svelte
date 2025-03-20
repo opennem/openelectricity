@@ -104,9 +104,9 @@
 							<li>
 								<a
 									href={path}
-									class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-3 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
+									class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-3 grid grid-cols-1 md:grid-cols-10 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-mid-warm-grey"
 								>
-									<div class="col-span-6 py-8 px-6 flex align-middle gap-4">
+									<div class="md:col-span-6 py-8 px-6 flex align-middle gap-4">
 										<div class="place-self-start flex flex-col gap-1 items-center relative -top-2">
 											<span
 												class=" bg-{record.fueltech_id || 'demand'} rounded-full p-2 block"
@@ -132,7 +132,7 @@
 										</div>
 									</div>
 
-									<ol class="col-span-4 p-8 rounded-r-lg">
+									<ol class="md:col-span-4 p-8 md:rounded-r-lg">
 										<li class="text-sm text-mid-grey flex items-center justify-between">
 											<div>
 												<span class="font-mono text-base text-dark-grey">
@@ -165,9 +165,9 @@
 							<li>
 								<a
 									href={path}
-									class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-3 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
+									class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-3 grid grid-cols-1 md:grid-cols-10 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-mid-warm-grey"
 								>
-									<div class="col-span-6 py-8 px-6 flex align-middle gap-4">
+									<div class="md:col-span-6 py-8 px-6 flex align-middle gap-4">
 										<div class="place-self-start flex flex-col gap-1 items-center relative -top-2">
 											<span
 												class=" bg-{record.fueltech_id || 'demand'} rounded-full p-2 block"
@@ -193,7 +193,7 @@
 										</div>
 									</div>
 
-									<ol class="col-span-4 p-8 rounded-r-lg">
+									<ol class="md:col-span-4 p-8 md:rounded-r-lg">
 										<li class="text-sm text-mid-grey flex items-center justify-between">
 											<div>
 												<span class="font-mono text-base text-dark-grey">
@@ -229,9 +229,9 @@
 								<li>
 									<a
 										href={path}
-										class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-3 grid grid-cols-10 gap-4 divide-x divide-mid-warm-grey"
+										class="hover:no-underline bg-white hover:bg-warm-grey text-dark-grey rounded-lg border border-mid-warm-grey mb-3 grid grid-cols-1 md:grid-cols-10 md:gap-4 divide-y md:divide-y-0 md:divide-x divide-mid-warm-grey"
 									>
-										<div class="col-span-6 py-8 px-6 flex align-middle gap-4">
+										<div class="md:col-span-6 py-8 px-6 flex align-middle gap-4">
 											<div
 												class="place-self-start flex flex-col gap-1 items-center relative -top-2"
 											>
@@ -242,32 +242,14 @@
 												>
 													<FuelTechIcon fuelTech={latest.fueltech_id || 'demand'} sizeClass={8} />
 												</span>
-												<!-- <div class="text-xs text-mid-grey font-space">
-													{getRegionLabel(latest.network_id, latest.network_region)}
-												</div> -->
 											</div>
-											<!-- 
-											<span
-												class="relative -top-[5px] bg-{latest.fueltech_id ||
-													'demand'} rounded-full p-2 place-self-start"
-												class:text-black={latest.fueltech_id === 'solar'}
-												class:text-white={latest.fueltech_id !== 'solar'}
-											>
-												<FuelTechIcon fuelTech={latest.fueltech_id || 'demand'} sizeClass={8} />
-											</span> -->
 
 											<div class="leading-base">
 												{getRecordDescription(latest)}
-												<!-- <small class="block text-xs">
-													{getFormattedDateTime(latest.date)}<br />
-													{latest.interval}<br />
-													{latest.period}
-												</small> -->
-												<!-- <small class="block text-xxs text-mid-warm-grey">{latest.record_id}</small> -->
 											</div>
 										</div>
 
-										<ol class="col-span-4 p-8 rounded-r-lg">
+										<ol class="md:col-span-4 p-8 md:rounded-r-lg">
 											{#each lastest3Records as record, i}
 												{@const formattedDate = new Intl.DateTimeFormat('en-AU', {
 													hour: 'numeric',
