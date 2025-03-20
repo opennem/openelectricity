@@ -230,8 +230,6 @@
 						class="text-black bg-white border border-mid-warm-grey hover:border-dark-grey !no-underline rounded-xl p-6 h-full min-h-[200px] grid grid-cols-1 gap-4 content-between transition-all"
 					>
 						<div>
-							<!-- <Icon icon={fuelTech} size={32} /> -->
-
 							<div class="flex items-center gap-2 justify-between">
 								<span
 									class="bg-{fuelTech} rounded-full p-3 inline-block"
@@ -240,7 +238,7 @@
 								>
 									<FuelTechIcon {fuelTech} sizeClass={12} />
 								</span>
-								<div class="text-xs text-mid-grey font-space">
+								<div class="text-sm text-mid-grey">
 									{getRegionLabel(recordData.networkId, recordData.networkRegion)}
 								</div>
 							</div>
@@ -255,17 +253,17 @@
 							</div>
 						</div>
 
-						<div class="flex flex-col items-end">
+						<div
+							class="flex flex-col items-start lg:flex-row lg:items-center lg:justify-between border-t border-mid-warm-grey pt-6"
+						>
+							<div class="font-mono">
+								{formatRecordValue(recordData.value, fuelTech)}
+								<small class="text-mid-grey">{recordData.unit}</small>
+							</div>
+
 							<time class="text-xxs text-mid-grey">
 								{formatDate(recordData.interval, recordData.period)}
 							</time>
-							<!-- style="border-color: {fuelTechColourMap[fuelTech]}" -->
-							<div class="border-t border-mid-warm-grey flex justify-end items-baseline w-full">
-								<div class="font-mono">
-									{formatRecordValue(recordData.value, fuelTech)}
-									<small class="text-mid-grey">{recordData.unit}</small>
-								</div>
-							</div>
 						</div>
 					</a>
 				{:else}
