@@ -99,7 +99,7 @@
 		<div class="max-w-none md:container">
 			<h3 class="md:text-center px-10 md:px-0">Notable records</h3>
 
-			<div class="mb-3 mt-5 px-7 md:px-0">
+			<div class="mb-3 mt-5 px-7 md:px-5">
 				<FormSelect
 					paddingY="py-2"
 					paddingX="px-3"
