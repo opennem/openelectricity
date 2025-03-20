@@ -22,7 +22,9 @@
 	{#if showHeader}
 		<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions} />
 	{/if}
-	<ChartTooltipWithContext cxtKey={props.cxtKey} wrapperStyles={props.tooltipWrapperStyles} />
+	<div style="padding-right: var(--pad-right);">
+		<ChartTooltipWithContext cxtKey={props.cxtKey} wrapperStyles={props.tooltipWrapperStyles} />
+	</div>
 	<div class="px-6">
 		<StackedAreaLineChartWithContext {...props} />
 	</div>
