@@ -1,3 +1,5 @@
+import { intlFormatDistance } from 'date-fns';
+
 // in miliseconds
 let units = {
 	year: 24 * 60 * 60 * 1000 * 365,
@@ -14,18 +16,19 @@ let units = {
  * @returns
  */
 function getRelativeTime(date) {
-	let rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
+	return intlFormatDistance(date, new Date());
+	// let rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
 
-	let getRelativeTime = (d1, d2 = new Date()) => {
-		var elapsed = d1 - d2;
+	// let getRelativeTime = (d1, d2 = new Date()) => {
+	// 	var elapsed = d1 - d2;
 
-		// "Math.abs" accounts for both "past" & "future" scenarios
-		for (var u in units)
-			if (Math.abs(elapsed) > units[u] || u == 'second')
-				return rtf.format(Math.round(elapsed / units[u]), u);
-	};
+	// 	// "Math.abs" accounts for both "past" & "future" scenarios
+	// 	for (var u in units)
+	// 		if (Math.abs(elapsed) > units[u] || u == 'second')
+	// 			return rtf.format(Math.round(elapsed / units[u]), u);
+	// };
 
-	return getRelativeTime(date);
+	// return getRelativeTime(date);
 }
 
 export default getRelativeTime;
