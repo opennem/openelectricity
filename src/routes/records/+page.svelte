@@ -146,6 +146,17 @@
 			$selectedRegions = [...$selectedRegions, value];
 		}
 	}
+
+	let regionLabel = $derived.by(() => {
+		if ($selectedRegions.length === 0) {
+			return 'Region';
+		} else if ($selectedRegions.length === 1) {
+			let region = regions.find((r) => r.value === $selectedRegions[0]);
+			return region?.longLabel || $selectedRegions[0];
+		} else {
+			return `Regions (${$selectedRegions.length})`;
+		}
+	});
 </script>
 
 <Meta
@@ -179,11 +190,11 @@
 			/>
 		</div> -->
 
-		<div class="inline-flex">
+		<div class="inline-flex ml-5 mt-5">
 			<FormMultiSelect
 				options={regionOptions}
 				selected={$selectedRegions}
-				label={$selectedRegions.length ? `Region (${$selectedRegions.length})` : 'Region'}
+				label={regionLabel}
 				paddingX="pl-5 pr-4"
 				paddingY="py-3"
 				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
@@ -202,7 +213,7 @@
 	</div>
 </div>
 
-<div class="border-y border-warm-grey py-3">
+<div class="border-y border-warm-grey py-3" style="z-index: 999;">
 	<Filters />
 </div>
 
