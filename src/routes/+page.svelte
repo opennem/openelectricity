@@ -5,7 +5,7 @@
 	import ispData from '$lib/isp';
 	import { parsedFeatureFlags } from '$lib/stores/app';
 
-	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import InfoGraphicScenariosPreview from '$lib/components/info-graphics/scenarios-explorer/homepage/Preview.svelte';
 	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
@@ -66,31 +66,16 @@
 
 	const { banner_title, banner_statement, map_title, analysis_title } = homepageData[0];
 
-	let selectedRegions = $state([]);
+	let selectedRecordRegion = $state('');
+	let selectedRegions = $derived(selectedRecordRegion ? [selectedRecordRegion] : []);
 	let regionOptions = $derived(
-		regions.map((r) => ({
-			label: r.label,
-			value: r.value,
-			divider: r.divider,
-			labelClassName: regions?.find((m) => m.value === r.longValue)
-				? ''
-				: 'italic text-mid-warm-grey'
-		}))
+		regions
+			.filter((r) => r.value)
+			.map((r) => ({
+				label: r.longLabel,
+				value: r.value
+			}))
 	);
-
-	/**
-	 * @param {string} value
-	 * @param {boolean} isMetaPressed
-	 */
-	function handleRegionChange(value, isMetaPressed) {
-		if (isMetaPressed) {
-			selectedRegions = [value];
-		} else if (selectedRegions.includes(value)) {
-			selectedRegions = selectedRegions.filter((item) => item !== value);
-		} else {
-			selectedRegions = [...selectedRegions, value];
-		}
-	}
 </script>
 
 <Meta image="/img/preview.jpg" />
@@ -111,26 +96,26 @@
 
 {#if parsedFeatureFlags['show_records']}
 	<div class="bg-light-warm-grey py-16 md:py-32 border-b border-warm-grey">
-		<div class="container max-w-none lg:container">
-			<h3 class="text-center">Notable records</h3>
+		<div class="max-w-none md:container">
+			<h3 class="md:text-center px-10 md:px-0">Notable records</h3>
 
-			<div class="inline-flex mb-3">
-				<FormMultiSelect
+			<div class="mb-3 mt-5 px-7 md:px-0">
+				<FormSelect
+					paddingY="py-2"
+					paddingX="px-3"
 					options={regionOptions}
-					selected={selectedRegions}
-					label={selectedRegions.length ? `Region (${selectedRegions.length})` : 'Region'}
-					paddingX="pl-5 pr-4"
-					paddingY="py-3"
-					on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+					selected={selectedRecordRegion}
+					formLabel="All"
+					on:change={(evt) => (selectedRecordRegion = evt.detail.value)}
 				/>
 			</div>
 
 			<PinnedRecords {selectedRegions} />
 
-			<div class="flex justify-end mt-16">
+			<div class="flex justify-end mt-5 md:mt-16 px-10 md:px-0">
 				<a
 					href="/records"
-					class="mt-12 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+					class="mt-12 md:mt-0 block w-full md:w-auto text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
 				>
 					View records
 				</a>
