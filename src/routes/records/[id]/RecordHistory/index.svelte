@@ -2,6 +2,7 @@
 	import { slide } from 'svelte/transition';
 	import LensChart from '$lib/components/charts/LensChart.svelte';
 	import DateBrushWithContext from '$lib/components/charts/DateBrushWithContext.svelte';
+	import Switch from '$lib/components/Switch.svelte';
 	import IconXMark from '$lib/icons/XMark.svelte';
 
 	import { recordState } from './stores/state.svelte';
@@ -73,7 +74,7 @@
 
 	// TODO: move to State
 	let innerWidth = $state(0);
-	let isMobile = $derived(innerWidth < 640);
+	let isMobile = $derived(innerWidth < 1024);
 
 	$effect(() => {
 		if (isMobile) {
@@ -87,28 +88,66 @@
 
 	$inspect(isMobile);
 	$inspect(innerWidth);
+
+	/** @type {'table' | 'chart'} */
+	let selectedDisplayView = $state('table');
 </script>
 
 <svelte:window bind:innerWidth />
 
 {#if isMobile}
-	<div>
-		<LensChart
-			cxtKey={chartCxt.key}
-			displayOptions={false}
-			showHeader={false}
-			{onmousemove}
-			{onmouseout}
-			{onpointerup}
+	<div class="mb-10">
+		<Switch
+			buttons={[
+				{
+					value: 'chart',
+					label: 'Chart'
+				},
+				{
+					value: 'table',
+					label: 'Table'
+				}
+			]}
+			selected={selectedDisplayView}
+			xPad={4}
+			yPad={3}
+			textSize="sm"
+			on:change={(evt) => (selectedDisplayView = evt.detail.value)}
 		/>
-
-		<div class="m-6 mt-0 bg-light-warm-grey rounded-lg">
-			<DateBrushWithContext cxtKey={dateBrushCxt.key} {brushedRange} {onbrush} />
-		</div>
 	</div>
 
+	{#if selectedDisplayView === 'table'}
+		<div class="h-[351px] overflow-y-auto mx-10">
+			<Table
+				cxtKey={chartCxt.key}
+				{brushedRange}
+				{period}
+				{onmousemove}
+				{onmouseout}
+				{onpointerup}
+			/>
+		</div>
+	{/if}
+
+	{#if selectedDisplayView === 'chart'}
+		<div style="--pad-right: 25px;">
+			<LensChart
+				cxtKey={chartCxt.key}
+				displayOptions={false}
+				showHeader={false}
+				{onmousemove}
+				{onmouseout}
+				{onpointerup}
+			/>
+
+			<div class="m-6 mt-0 bg-light-warm-grey rounded-lg">
+				<DateBrushWithContext cxtKey={dateBrushCxt.key} {brushedRange} {onbrush} />
+			</div>
+		</div>
+	{/if}
+
 	{#if recordState.showTracker}
-		<div class="relative mx-6 mt-14 md:mt-0" in:slide={{ axis: 'y' }}>
+		<div class="relative mx-6 mt-10 md:mt-0" in:slide={{ axis: 'y' }}>
 			<button
 				class="absolute left-1 top-1 text-mid-warm-grey hover:text-dark-grey"
 				onclick={() => (recordState.showTracker = false)}
@@ -130,7 +169,7 @@
 	{/if}
 {:else}
 	<div
-		class="grid grid-cols-1 gap-6 mb-6 grid-rows-[570px]"
+		class="grid grid-cols-1 gap-6 mb-6 grid-rows-[570px] relative z-10"
 		class:grid-cols-[2fr_5fr_2fr]={recordState.showTracker}
 		class:grid-cols-[2fr_5fr]={!recordState.showTracker}
 	>
