@@ -175,7 +175,7 @@
 {#if data.record_id}
 	<div
 		class="bg-light-warm-grey sticky top-0 shadow-sm"
-		style="z-index: {filterOptionsVisible ? '45' : 'auto'}"
+		style="z-index: {filterOptionsVisible ? '9999' : '99'}"
 	>
 		<PageNav
 			record_id={data.record_id}
