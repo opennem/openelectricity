@@ -15,8 +15,17 @@
 	// import { recordState } from './stores/state.svelte.js';
 	import LinkCopyButton from '$lib/components/LinkCopyButton.svelte';
 
-	let { record_id, network_id, network_region, fueltech_id, metric, period, aggregate, recordIds } =
-		$props();
+	let {
+		record_id,
+		network_id,
+		network_region,
+		fueltech_id,
+		metric,
+		period,
+		aggregate,
+		recordIds,
+		onfilterchange
+	} = $props();
 
 	/**
 	 * @param {MilestoneRecord | undefined} record
@@ -29,6 +38,10 @@
 	}
 
 	let showMobileFilterOptions = $state(false);
+
+	$effect(() => {
+		onfilterchange?.(showMobileFilterOptions);
+	});
 
 	let regionLongValue = $derived(
 		`au.${network_id ? network_id.toLowerCase() : ''}${network_region ? `.${network_region.toLowerCase()}` : ''}`
@@ -299,7 +312,7 @@
 			class="!fixed bg-white top-0 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain !rounded-none !my-0 pt-0 px-0 z-50"
 		>
 			<header
-				class="sticky top-0 z-50 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
+				class="sticky top-0 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
 			>
 				<h3 class="mb-2">Filters</h3>
 
