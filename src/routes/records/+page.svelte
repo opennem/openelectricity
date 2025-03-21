@@ -154,7 +154,7 @@
 			let region = regions.find((r) => r.value === $selectedRegions[0]);
 			return region?.longLabel || $selectedRegions[0];
 		} else {
-			return `Regions (${$selectedRegions.length})`;
+			return `${$selectedRegions.length} Regions`;
 		}
 	});
 </script>
