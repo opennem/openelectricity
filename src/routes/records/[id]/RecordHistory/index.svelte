@@ -90,7 +90,7 @@
 	$inspect(innerWidth);
 
 	/** @type {'table' | 'chart'} */
-	let selectedDisplayView = $state('table');
+	let selectedDisplayView = $state('chart');
 </script>
 
 <svelte:window bind:innerWidth />
