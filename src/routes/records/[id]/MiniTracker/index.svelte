@@ -35,26 +35,26 @@
 	 */
 	function getDateRange(date, period) {
 		if (period === 'day') {
-			let dateStart = subDays(date, 32);
-			let dateEnd = addDays(date, 32);
+			let dateStart = subDays(date, 48);
+			let dateEnd = addDays(date, 16);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
 		if (period === 'month') {
-			let dateStart = subMonths(date, 24);
-			let dateEnd = addMonths(date, 24);
+			let dateStart = subMonths(date, 36);
+			let dateEnd = addMonths(date, 12);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
 		if (period === 'quarter') {
-			let dateStart = subMonths(date, 36);
-			let dateEnd = addMonths(date, 36);
+			let dateStart = subMonths(date, 60);
+			let dateEnd = addMonths(date, 24);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
 		if (period === 'year') {
-			let dateStart = subYears(date, 10);
-			let dateEnd = addYears(date, 10);
+			let dateStart = subYears(date, 15);
+			let dateEnd = addYears(date, 5);
 			return { dateStart, dateEnd, withTime: false };
 		}
 
