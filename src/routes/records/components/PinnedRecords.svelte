@@ -123,8 +123,6 @@
 		});
 	});
 
-	$inspect(regionOptions);
-
 	$effect(() => {
 		if (browser) {
 			/** @type {{ id: string, data: Promise<any> }[]} */

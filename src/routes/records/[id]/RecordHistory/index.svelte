@@ -86,9 +86,6 @@
 		}
 	});
 
-	$inspect(isMobile);
-	$inspect(innerWidth);
-
 	/** @type {'table' | 'chart'} */
 	let selectedDisplayView = $state('chart');
 </script>

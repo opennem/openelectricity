@@ -217,7 +217,7 @@
 	<div
 		class="text-dark-grey h-[{chartHeight}px] flex items-center justify-center text-center px-4 bg-warm-grey animate-pulse rounded-lg"
 	>
-		<LogoMark classes="w-12 h-12" />
+		<!-- <LogoMark classes="w-12 h-12" /> -->
 	</div>
 {:else}
 	<LensChart
