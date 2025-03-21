@@ -89,6 +89,17 @@
 				: 'italic text-mid-warm-grey'
 		}))
 	);
+
+	let regionLabel = $derived.by(() => {
+		if ($selectedRegions.length === 0) {
+			return 'Region';
+		} else if ($selectedRegions.length === 1) {
+			let region = regions.find((r) => r.value === $selectedRegions[0]);
+			return region?.longLabel || $selectedRegions[0];
+		} else {
+			return `${$selectedRegions.length} Regions`;
+		}
+	});
 </script>
 
 {#if showMobileFilterOptions}
@@ -115,9 +126,6 @@
 				staticDisplay={true}
 				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
 			/>
-		</section>
-
-		<section class="p-10 pb-0 w-full flex gap-5">
 			<FormMultiSelect
 				options={fuelTechOptions}
 				selected={$selectedFuelTechs}
@@ -165,7 +173,7 @@
 			<FormMultiSelect
 				options={regionOptions}
 				selected={$selectedRegions}
-				label="Region"
+				label={regionLabel}
 				paddingX="pl-5 pr-4"
 				paddingY="py-3"
 				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
