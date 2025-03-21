@@ -303,7 +303,7 @@
 </script>
 
 {#if record_id}
-	{@const px = showMobileFilterOptions ? 'px-7' : 'px-4'}
+	{@const px = showMobileFilterOptions ? '' : 'px-4'}
 	{@const py = 'py-3'}
 
 	{#if showMobileFilterOptions}
