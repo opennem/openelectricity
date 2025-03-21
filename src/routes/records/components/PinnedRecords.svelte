@@ -6,7 +6,7 @@
 	import recordDescription from '../page-data-options/record-description';
 	import FuelTechIcon from './FuelTechIcon.svelte';
 
-	let { selectedRegions = [] } = $props();
+	let { selectedRegions = [], showRegionLabel = true } = $props();
 
 	const regions = [
 		{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
@@ -238,9 +238,12 @@
 								>
 									<FuelTechIcon {fuelTech} sizeClass={12} />
 								</span>
-								<div class="text-sm text-mid-grey">
-									{getRegionLabel(recordData.networkId, recordData.networkRegion)}
-								</div>
+
+								{#if showRegionLabel}
+									<div class="text-sm text-mid-grey">
+										{getRegionLabel(recordData.networkId, recordData.networkRegion)}
+									</div>
+								{/if}
 							</div>
 
 							<div class="my-8 leading-base">

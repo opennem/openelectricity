@@ -70,7 +70,7 @@
 	let selectedRegions = $derived(selectedRecordRegion ? [selectedRecordRegion] : []);
 	let regionOptions = $derived(
 		regions
-			.filter((r) => r.value)
+			.filter((r) => r.value && r.longLabel)
 			.map((r) => ({
 				label: r.longLabel,
 				value: r.value
@@ -103,14 +103,14 @@
 				<FormSelect
 					paddingY="py-2"
 					paddingX="px-3"
-					options={regionOptions}
+					options={[{ label: 'All regions', value: '' }, ...regionOptions]}
 					selected={selectedRecordRegion}
-					formLabel="All"
+					formLabel="All regions"
 					on:change={(evt) => (selectedRecordRegion = evt.detail.value)}
 				/>
 			</div>
 
-			<PinnedRecords {selectedRegions} />
+			<PinnedRecords {selectedRegions} showRegionLabel={selectedRecordRegion === ''} />
 
 			<div class="flex justify-end mt-5 md:mt-16 px-10 md:px-0">
 				<a
