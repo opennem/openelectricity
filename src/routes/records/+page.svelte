@@ -213,7 +213,7 @@
 	</div>
 </div>
 
-<div class="border-y border-warm-grey py-3" style="z-index: 999;">
+<div class="border-y border-warm-grey py-3 relative" style="z-index: 9999;">
 	<Filters />
 </div>
 
