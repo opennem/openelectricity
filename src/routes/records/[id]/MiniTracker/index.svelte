@@ -1,8 +1,6 @@
 <script>
 	import { addDays, addMonths, addYears, subDays, subMonths, subYears } from 'date-fns';
 	import { browser } from '$app/environment';
-	import OpenElectricityClient from 'openelectricity';
-	import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { plainDateTime } from '$lib/utils/date-parser';
 	import LensChart from '$lib/components/charts/LensChart.svelte';
@@ -10,11 +8,6 @@
 	import init from './helpers/init';
 	import { apiIntervalMap, chartOptions } from './helpers/config';
 	import xTickValueFormatters from './helpers/xtick-value-formatters';
-	import LogoMark from '$lib/images/logo-mark.svelte';
-	const client = new OpenElectricityClient({
-		apiKey: PUBLIC_OE_API_KEY,
-		baseUrl: PUBLIC_OE_API_URL
-	});
 
 	let { record, timeZone, displayPrefix, chartHeight } = $props();
 	let { chartCxt } = init(chartHeight);
@@ -73,57 +66,40 @@
 		let isWem = record.network_id === 'WEM';
 		let isNetworkRegion = record.network_region;
 		let fuelTechId = record.fueltech_id;
-		let primaryGrouping = /** @type {import('openelectricity').DataPrimaryGrouping} */ (
-			isNetworkRegion ? 'network_region' : 'network'
-		);
+		let primaryGrouping = isNetworkRegion ? 'network_region' : 'network';
 		let isDemand = fuelTechId === 'demand';
-		/** @type {import('openelectricity').MarketMetric} */
 		let demandMetric = isIntervalPeriod ? 'demand' : 'demand_energy';
 		let isFossilsOrRenewables = fuelTechId === 'fossils' || fuelTechId === 'renewables';
-		let secondaryGrouping = fuelTechId
-			? /** @type {import('openelectricity').DataSecondaryGrouping[]} */ (
-					isFossilsOrRenewables ? ['renewable'] : ['fueltech_group']
-				)
+		let secondaryGroupingStr = fuelTechId
+			? isFossilsOrRenewables
+				? 'renewable'
+				: 'fueltech_group'
 			: undefined;
 
 		let { dateStart, dateEnd, withTime } = getDateRange(record.date, record.period);
 		let dateStartFormatted = plainDateTime(dateStart, timeZone, withTime);
 		let dateEndFormatted = plainDateTime(dateEnd, timeZone, withTime);
 
-		/** @type {import('openelectricity').INetworkTimeSeriesParams} */
-		let clientOptions = {
-			interval: apiInterval,
-			dateStart: dateStartFormatted,
-			dateEnd: dateEndFormatted,
-			primaryGrouping,
-			secondaryGrouping
-		};
+		let res;
+
+		let oePath = `/api/openelectricity?dataType=${isDemand ? 'market' : 'network'}&networkId=${record.network_id}&metric=${isDemand ? demandMetric : record.metric}&interval=${apiInterval}&dateStart=${dateStartFormatted}&dateEnd=${dateEndFormatted}&primaryGrouping=${primaryGrouping}&secondaryGrouping=${secondaryGroupingStr}`;
 
 		if (fuelTechId && !isFossilsOrRenewables) {
-			clientOptions.fueltech_group =
-				/** @type {import('openelectricity').UnitFueltechGroupType[]} */ ([fuelTechId]);
+			oePath += `&fueltechGroup=${fuelTechId}`;
 		}
 
 		if (isNetworkRegion) {
-			clientOptions.network_region = /** @type {string | undefined} */ (record.network_region);
+			oePath += `&networkRegion=${record.network_region}`;
 		}
-
-		let res;
 
 		try {
 			chartCxt.seriesData = [];
 			errorMessage = '';
 			isLoading = true;
-			let perf = performance.now();
-			res = isDemand
-				? await client.getMarket(record.network_id, [demandMetric], clientOptions)
-				: await client.getNetworkData(record.network_id, [record.metric], clientOptions);
-			let perf2 = performance.now();
-			console.log(
-				`[OE client.${isDemand ? 'getMarket' : 'getNetworkData'}] data returned in`,
-				((perf2 - perf) / 1000).toFixed(2),
-				'seconds'
-			);
+
+			let res2 = await fetch(oePath);
+			res = await res2.json();
+
 			isLoading = false;
 		} catch (e) {
 			console.error('error', e);
@@ -131,10 +107,9 @@
 			isLoading = false;
 		}
 
-		if (res?.response.success) {
-			let data = res.response.data;
+		if (res?.success) {
+			let data = res.data;
 			let results = data[0].results;
-			/** @type {import('openelectricity').ITimeSeriesResult | undefined} */
 			let result = results[0];
 
 			if (fuelTechId && result) {
