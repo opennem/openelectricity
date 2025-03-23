@@ -141,20 +141,6 @@
 	</div>
 {/if}
 
-<!-- <div class="bg-white py-16 md:py-32">
-		<div class="container max-w-none lg:container">
-			<header class="flex justify-between">
-				<h3>{milestones_title}</h3>
-				<SectionLink href="/analysis" title="View all" />
-			</header>
-			<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
-				{#each milestones as article}
-					<ArticleCard {article} />
-				{/each}
-			</div>
-		</div>
-	</div> -->
-
 <div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
 	{#if outlookEnergyNem}
 		<InfoGraphicScenariosPreview />
