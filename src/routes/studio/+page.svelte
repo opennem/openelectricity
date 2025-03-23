@@ -6,8 +6,7 @@
 		{
 			title: 'Records',
 			description: 'Tracks significant events in the history of the Australian electricity market.',
-			link: '/records',
-			disabled: true
+			link: '/records'
 		},
 		{
 			title: 'Lens on Ember',
