@@ -82,7 +82,11 @@
 
 		let res;
 
-		let oePath = `/api/openelectricity?dataType=${isDemand ? 'market' : 'network'}&networkId=${record.network_id}&metric=${isDemand ? demandMetric : record.metric}&interval=${apiInterval}&dateStart=${dateStartFormatted}&dateEnd=${dateEndFormatted}&primaryGrouping=${primaryGrouping}&secondaryGrouping=${secondaryGroupingStr}`;
+		let oePath = `/api/openelectricity?dataType=${isDemand ? 'market' : 'network'}&networkId=${record.network_id}&metric=${isDemand ? demandMetric : record.metric}&interval=${apiInterval}&dateStart=${dateStartFormatted}&dateEnd=${dateEndFormatted}&primaryGrouping=${primaryGrouping}`;
+
+		if (secondaryGroupingStr) {
+			oePath += `&secondaryGrouping=${secondaryGroupingStr}`;
+		}
 
 		if (fuelTechId && !isFossilsOrRenewables) {
 			oePath += `&fueltechGroup=${fuelTechId}`;
