@@ -20,6 +20,17 @@
 	// remove last data and reverse array - last data is a duplicate to pad out the chart
 	let seriesData = $derived([...cxt.seriesData].reverse().slice(1));
 
+	let tableBody = $state();
+
+	$effect(() => {
+		if (tableBody && cxt.focusTime) {
+			let focussedRow = tableBody.querySelector('.focussed');
+			if (focussedRow) {
+				focussedRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
+			}
+		}
+	});
+
 	/**
 	 * @param {Date} time
 	 */
@@ -129,11 +140,12 @@
 			</tr>
 		</thead>
 
-		<tbody>
+		<tbody bind:this={tableBody}>
 			{#each seriesData as record, index (index)}
 				<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 				<tr
 					class="pointer hover:bg-warm-grey"
+					class:focussed={record.time === cxt.focusTime}
 					class:font-semibold={record.time === cxt.focusTime}
 					class:bg-warm-grey={record.time === cxt.focusTime}
 					class:bg-light-warm-grey={record.time === cxt.hoverTime}
