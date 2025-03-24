@@ -26,7 +26,7 @@
 		if (tableBody && cxt.focusTime) {
 			let focussedRow = tableBody.querySelector('.focussed');
 			if (focussedRow) {
-				focussedRow.scrollIntoView({ behavior: 'smooth', block: 'end' });
+				focussedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
 			}
 		}
 	});
