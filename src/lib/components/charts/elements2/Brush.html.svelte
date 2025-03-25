@@ -253,6 +253,10 @@
 </div>
 
 <style>
+	/* css var for brush handle color */
+	:root {
+		--brush-handle-color: #e0603f;
+	}
 	.brush-outer {
 		position: absolute;
 		width: 100%;
@@ -264,10 +268,8 @@
 		height: 100%;
 		cursor: move;
 		/* mix-blend-mode: difference; */
-		background: #eae8e3;
-
-		/* border-left: 2px solid white;
-		border-right: 2px solid white; */
+		background-color: #eae8e3;
+		border: 1px solid var(--brush-handle-color);
 	}
 
 	.brush-handle {
@@ -284,5 +286,16 @@
 		left: -4px;
 		height: 100%;
 		background: transparent;
+	}
+	.brush-handle::after {
+		position: absolute;
+		content: '';
+		width: 6px;
+		left: -3px;
+		height: 50%;
+		top: 25%;
+		background-color: var(--brush-handle-color);
+		border-radius: 4px;
+		z-index: 9999;
 	}
 </style>
