@@ -5,9 +5,9 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { fuelTechColourMap } from '$lib/fuel_techs';
 
-	import { formatRecordValue } from '../../page-data-options/formatters';
-	import recordDescription from '../../page-data-options/record-description';
-	import getRelativeTime from '../../page-data-options/relative-time';
+	import { formatRecordValue } from '../../../(main)/records/page-data-options/formatters';
+	import recordDescription from '../../../(main)/records/page-data-options/record-description';
+	import getRelativeTime from '../../../(main)/records/page-data-options/relative-time';
 
 	let { data } = $props();
 	let { record_id, network_id, network_region, focusDateTime } = $derived(data);

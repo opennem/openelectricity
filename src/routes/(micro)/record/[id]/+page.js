@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import parseId from '../RecordHistory/helpers/parse-id';
+import parseId from '../../../(main)/records/[id]/RecordHistory/helpers/parse-id';
 
 export async function load({ data, params, url }) {
 	const { searchParams } = url;
