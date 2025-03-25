@@ -1,6 +1,4 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { parseISO } from 'date-fns';
 
 	import { browser } from '$app/environment';
@@ -12,12 +10,12 @@
 	import getRelativeTime from '../../page-data-options/relative-time';
 
 	let { data } = $props();
+	let { record_id, network_id, network_region, focusDateTime } = $derived(data);
 
-	const id = data.id;
+	const id = record_id;
+
 	/** @type {MilestoneRecord} */
 	let currentRecord = $state();
-
-
 
 	/**
 	 * Format a date
@@ -45,8 +43,8 @@
 		const data = jsonData.data && jsonData.data.length ? jsonData.data[0] : {};
 		return data;
 	}
-	run(() => {
-		if (browser) {
+	$effect(() => {
+		if (browser && id) {
 			fetchRecord(id).then((record) => {
 				console.log('record', record);
 
@@ -55,6 +53,30 @@
 		}
 	});
 	let fuelTech = $derived(currentRecord?.fueltech_id || '');
+
+	const regions = [
+		{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
+		{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW', longLabel: 'New South Wales' },
+		{ longValue: 'au.nem.qld1', value: 'qld1', label: 'QLD', longLabel: 'Queensland' },
+		{ longValue: 'au.nem.sa1', value: 'sa1', label: 'SA', longLabel: 'South Australia' },
+		{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS', longLabel: 'Tasmania' },
+		{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC', longLabel: 'Victoria' },
+		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
+	];
+	/**
+	 * Get the region label
+	 * @param {string} networkId
+	 * @param {string | undefined} networkRegion
+	 * @returns {string}
+	 */
+	function getRegionLabel(networkId, networkRegion) {
+		if (networkRegion) {
+			return (
+				regions.find(({ value }) => value === networkRegion.toLowerCase())?.label || networkRegion
+			);
+		}
+		return regions.find(({ value }) => value === networkId.toLowerCase())?.label || networkId;
+	}
 </script>
 
 <div class="py-12">
@@ -76,6 +98,14 @@
 						fuelTech
 					)}
 				</div>
+
+				<div class="text-sm text-mid-grey">
+					{getRegionLabel(network_id, network_region)}
+				</div>
+
+				<div class="text-mid-grey text-xs">
+					look for {focusDateTime}
+				</div>
 			</div>
 
 			<div
@@ -87,7 +117,8 @@
 					<small class="text-mid-grey">{currentRecord.value_unit}</small>
 				</div>
 				<time class="text-xxs text-mid-grey">
-					{formatDate(currentRecord.interval, currentRecord.period)}
+					<!-- {formatDate(currentRecord.interval, currentRecord.period)} -->
+					{currentRecord.interval}
 				</time>
 			</div>
 		</div>

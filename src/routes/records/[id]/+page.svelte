@@ -169,7 +169,7 @@
 <Meta
 	title={pageTitle}
 	description="Track historical and current records of Australia's electricity grid with Open Electricity's record tracker"
-	image="/img/preview.jpg"
+	image={`/api/cloudflare/screenshot?key=${data.record_id}~${focusDateTime}`}
 />
 
 {#if data.record_id}
