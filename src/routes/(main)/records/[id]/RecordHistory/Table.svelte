@@ -19,14 +19,19 @@
 
 	// remove last data and reverse array - last data is a duplicate to pad out the chart
 	let seriesData = $derived([...cxt.seriesData].reverse().slice(1));
-
-	let tableBody = $state();
+	let tableRef = $state();
+	let tableHeaderRef = $state();
+	let tableHeaderHeight = $derived(tableHeaderRef?.clientHeight);
 
 	$effect(() => {
-		if (tableBody && cxt.focusTime) {
-			let focussedRow = tableBody.querySelector('.focussed');
+		if (tableRef && cxt.focusTime) {
+			let focussedRow = tableRef.querySelector('.focussed');
 			if (focussedRow) {
-				focussedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				focussedRow.scrollIntoView({
+					behavior: 'smooth',
+					block: 'nearest',
+					inline: 'start'
+				});
 			}
 		}
 	});
@@ -109,10 +114,10 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div class="overflow-y-auto rounded-lg border border-warm-grey h-full">
-	<table class="bg-white text-xs w-full">
+<div class="rounded-lg border border-warm-grey h-full">
+	<table bind:this={tableHeaderRef} class="bg-white text-xs w-full">
 		<thead>
-			<tr class="sticky top-0 z-10 bg-light-warm-grey backdrop-blur-xl">
+			<tr class=" bg-light-warm-grey backdrop-blur-xl header-row">
 				<th class="text-left">
 					<div class="pl-4 py-2">Date</div>
 				</th>
@@ -139,60 +144,63 @@
 				</th>
 			</tr>
 		</thead>
-
-		<tbody bind:this={tableBody}>
-			{#each seriesData as record, index (index)}
-				<!-- svelte-ignore a11y_mouse_events_have_key_events -->
-				<tr
-					class="pointer hover:bg-warm-grey"
-					class:focussed={record.time === cxt.focusTime}
-					class:font-semibold={record.time === cxt.focusTime}
-					class:bg-warm-grey={record.time === cxt.focusTime}
-					class:bg-light-warm-grey={record.time === cxt.hoverTime}
-					class:hidden={brushedRange && !isBetween(record.time)}
-					onmousemove={() => onmousemove({ time: record.time, date: record.date })}
-					{onmouseout}
-					onpointerup={() => handlePointerUp(record)}
-				>
-					<td
-						class="pl-4 py-2 font-mono text-dark-grey whitespace-nowrap"
-						class:text-red={record.time === cxt.focusTime}
+	</table>
+	<div class="overflow-y-auto" style="height: calc(100% - {tableHeaderHeight}px)">
+		<table bind:this={tableRef} class="bg-white text-xs w-full">
+			<tbody>
+				{#each seriesData as record, index (index)}
+					<!-- svelte-ignore a11y_mouse_events_have_key_events -->
+					<tr
+						class="pointer hover:bg-warm-grey"
+						class:focussed={record.time === cxt.focusTime}
+						class:font-semibold={record.time === cxt.focusTime}
+						class:bg-warm-grey={record.time === cxt.focusTime}
+						class:bg-light-warm-grey={record.time === cxt.hoverTime}
+						class:hidden={brushedRange && !isBetween(record.time)}
+						onmousemove={() => onmousemove({ time: record.time, date: record.date })}
+						{onmouseout}
+						onpointerup={() => handlePointerUp(record)}
 					>
-						{#if period === 'interval'}
-							<!-- if previous record is the same date, then return empty string -->
-							<time datetime={record.interval}>
-								{getIntervalDate(record.date, seriesData[index - 1]?.date)}
-							</time>
-						{:else}
-							<time datetime={record.interval}>
-								{cxt.formatXWithTimeZone(record.date)}
-							</time>
-						{/if}
-					</td>
-
-					{#if period === 'interval'}
 						<td
-							class="py-2 font-mono text-dark-grey text-right whitespace-nowrap"
+							class="pl-4 py-2 font-mono text-dark-grey whitespace-nowrap"
 							class:text-red={record.time === cxt.focusTime}
 						>
-							<time datetime={record.interval}>
-								{new Intl.DateTimeFormat('en-AU', {
-									hour: 'numeric',
-									minute: 'numeric',
-									timeZone: cxt.timeZone
-								}).format(record.date)}
-							</time>
+							{#if period === 'interval'}
+								<!-- if previous record is the same date, then return empty string -->
+								<time datetime={record.interval}>
+									{getIntervalDate(record.date, seriesData[index - 1]?.date)}
+								</time>
+							{:else}
+								<time datetime={record.interval}>
+									{cxt.formatXWithTimeZone(record.date)}
+								</time>
+							{/if}
 						</td>
-					{/if}
 
-					<td
-						class="px-4 py-2 text-right font-mono text-dark-grey"
-						class:text-red={record.time === cxt.focusTime}
-					>
-						{cxt.convertAndFormatValue(record.value)}
-					</td>
-				</tr>
-			{/each}
-		</tbody>
-	</table>
+						{#if period === 'interval'}
+							<td
+								class="py-2 font-mono text-dark-grey text-right whitespace-nowrap"
+								class:text-red={record.time === cxt.focusTime}
+							>
+								<time datetime={record.interval}>
+									{new Intl.DateTimeFormat('en-AU', {
+										hour: 'numeric',
+										minute: 'numeric',
+										timeZone: cxt.timeZone
+									}).format(record.date)}
+								</time>
+							</td>
+						{/if}
+
+						<td
+							class="px-4 py-2 text-right font-mono text-dark-grey w-1/2"
+							class:text-red={record.time === cxt.focusTime}
+						>
+							{cxt.convertAndFormatValue(record.value)}
+						</td>
+					</tr>
+				{/each}
+			</tbody>
+		</table>
+	</div>
 </div>
