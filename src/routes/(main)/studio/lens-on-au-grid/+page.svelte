@@ -73,6 +73,7 @@
 	 * @param {{ data: TimeSeriesData, key?: string } | TimeSeriesData} evt
 	 */
 	function onmousemove(evt) {
+		if (!evt) return;
 		let key = /** @type {string | undefined} */ (evt.key);
 		let data = key
 			? /** @type {TimeSeriesData | undefined} */ (evt.data)

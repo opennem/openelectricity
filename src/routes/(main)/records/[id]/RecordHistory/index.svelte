@@ -36,6 +36,7 @@
 	 * @param {{ data: TimeSeriesData, key?: string } | TimeSeriesData} evt
 	 */
 	function onmousemove(evt) {
+		if (!evt) return;
 		let key = /** @type {string | undefined} */ (evt.key);
 		let data = key
 			? /** @type {TimeSeriesData | undefined} */ (evt.data)
@@ -197,14 +198,12 @@
 				</button>
 
 				<div class="bg-light-warm-grey rounded-lg w-full h-[508px] border border-warm-grey">
-					{#if recordState.selectedMilestone}
-						<MiniTracker
-							record={recordState.selectedMilestone}
-							timeZone={chartCxt.timeZone}
-							displayPrefix={chartCxt.chartOptions.displayPrefix}
-							chartHeight={485}
-						/>
-					{/if}
+					<MiniTracker
+						record={recordState.selectedMilestone}
+						timeZone={chartCxt.timeZone}
+						displayPrefix={chartCxt.chartOptions.displayPrefix}
+						chartHeight={485}
+					/>
 				</div>
 			</div>
 		{/if}

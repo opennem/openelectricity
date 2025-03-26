@@ -60,7 +60,7 @@
 	 * @param {MilestoneRecord} record
 	 */
 	async function fetchData(record) {
-		if (!browser || !record.date) return;
+		if (!browser || !record?.date) return;
 		let apiInterval = apiIntervalMap[record.period];
 		let isIntervalPeriod = record.period === 'interval';
 		let isWem = record.network_id === 'WEM';
@@ -97,7 +97,7 @@
 		}
 
 		try {
-			chartCxt.seriesData = [];
+			// chartCxt.seriesData = [];
 			errorMessage = '';
 			isLoading = true;
 
@@ -173,6 +173,7 @@
 	 * @param {{ data: TimeSeriesData, key?: string } | TimeSeriesData} evt
 	 */
 	function onmousemove(evt) {
+		if (!evt) return;
 		let key = /** @type {string | undefined} */ (evt.key);
 		let data = key
 			? /** @type {TimeSeriesData | undefined} */ (evt.data)
@@ -192,19 +193,13 @@
 	<div class="text-dark-red h-[{chartHeight}px] flex items-center justify-center text-center px-4">
 		{errorMessage}
 	</div>
-{:else if isLoading}
-	<div
-		class="text-dark-grey h-[{chartHeight}px] flex items-center justify-center text-center px-4 bg-warm-grey animate-pulse rounded-lg"
-	>
-		<!-- <LogoMark classes="w-12 h-12" /> -->
-	</div>
-{:else}
-	<LensChart
-		cxtKey={chartCxt.key}
-		displayOptions={false}
-		showHeader={false}
-		tooltipWrapperStyles="border-b border-warm-grey"
-		{onmousemove}
-		{onmouseout}
-	/>
 {/if}
+
+<LensChart
+	cxtKey={chartCxt.key}
+	displayOptions={false}
+	showHeader={false}
+	tooltipWrapperStyles="border-b border-warm-grey"
+	{onmousemove}
+	{onmouseout}
+/>
