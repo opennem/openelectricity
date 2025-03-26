@@ -28,7 +28,7 @@
 			let focussedRow = tableRef.querySelector('.focussed');
 			if (focussedRow) {
 				focussedRow.scrollIntoView({
-					behavior: 'smooth',
+					behavior: 'instant',
 					block: 'nearest',
 					inline: 'start'
 				});
