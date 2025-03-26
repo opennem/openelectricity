@@ -118,7 +118,7 @@
 {#if currentRecord}
 	{@const ftId = fueltech_id || 'demand'}
 	<div
-		class="w-[1180px] h-full m-[10px] text-black bg-white grid grid-cols-1 gap-4 content-between"
+		class="w-[1100px] h-full m-[50px] text-black bg-white grid grid-cols-1 gap-4 content-between"
 	>
 		<div class="border-b border-mid-warm-grey p-6">
 			<header class="flex gap-12 justify-between items-center mb-10">
