@@ -54,7 +54,7 @@
 		let isSame = chartCxt.focusTime === evt.time;
 		updateChartFocus(isSame ? undefined : evt.time);
 		onfocus(isSame ? undefined : evt.recordedDateTimeStr);
-		recordState.showTracker = true;
+		recordState.showTracker = isSame ? false : true;
 	}
 
 	/**
