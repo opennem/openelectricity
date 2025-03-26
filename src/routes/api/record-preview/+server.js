@@ -7,7 +7,6 @@ export async function GET({ url }) {
 	if (!key) {
 		return new Response('No key provided', { status: 400 });
 	}
-
 	const res = await fetch(`${CLOUDFLARE_WORKER_URL}/?key=${key}`);
 
 	if (res.ok) {

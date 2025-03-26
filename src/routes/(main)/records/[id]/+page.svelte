@@ -164,12 +164,14 @@
 	function handleFilterChange(showMobileFilterOptions) {
 		filterOptionsVisible = showMobileFilterOptions;
 	}
+
+	$inspect('latest', recordState.latestMilestone?.time);
 </script>
 
 <Meta
 	title={pageTitle}
 	description="Track historical and current records of Australia's electricity grid with Open Electricity's record tracker"
-	image={`https://openelectricity.org.au/api/record-preview?key=${data.record_id}`}
+	image={`/api/record-preview?key=${data.record_id}~${recordState.latestMilestone?.time}`}
 />
 
 {#if data.record_id}
@@ -190,6 +192,10 @@
 		/>
 	</div>
 {/if}
+
+<!-- <div>
+	<img src="/api/record-preview?key={data.record_id}~{recordState.latestMilestone?.time}" alt="" />
+</div> -->
 
 {#if recordState.error}
 	<div class="flex h-96 items-center justify-center">

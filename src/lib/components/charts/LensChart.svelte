@@ -9,22 +9,25 @@
 		cxtKey: symbol,
 		displayOptions?: boolean,
 		showHeader?: boolean,
+		showTooltip?: boolean,
 		onmousemove?: (evt: ChartEvent | TimeSeriesData) => void,
 		onmouseout?: () => void,
 		onpointerup?: (evt: TimeSeriesData) => void,
 		tooltipWrapperStyles?: string
 	}} */
 	let props = $props();
-	let { showHeader = true } = props;
+	let { showHeader = true, showTooltip = true } = props;
 </script>
 
 <div>
 	{#if showHeader}
 		<ChartHeaderWithContext cxtKey={props.cxtKey} displayOptions={props.displayOptions} />
 	{/if}
-	<div style="padding-right: var(--pad-right);">
-		<ChartTooltipWithContext cxtKey={props.cxtKey} wrapperStyles={props.tooltipWrapperStyles} />
-	</div>
+	{#if showTooltip}
+		<div style="padding-right: var(--pad-right);">
+			<ChartTooltipWithContext cxtKey={props.cxtKey} wrapperStyles={props.tooltipWrapperStyles} />
+		</div>
+	{/if}
 	<div class="px-6">
 		<StackedAreaLineChartWithContext {...props} />
 	</div>

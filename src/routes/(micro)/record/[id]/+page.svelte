@@ -2,20 +2,32 @@
 	import { parseISO } from 'date-fns';
 
 	import { browser } from '$app/environment';
+	import { regionsWithLabels } from '$lib/regions';
+	import { getNumberFormat } from '$lib/utils/formatters';
+
 	import Icon from '$lib/components/Icon.svelte';
 	import { fuelTechColourMap } from '$lib/fuel_techs';
+	import FuelTechIcon from '../../../(main)/records/components/FuelTechIcon.svelte';
 
 	import { formatRecordValue } from '../../../(main)/records/page-data-options/formatters';
 	import recordDescription from '../../../(main)/records/page-data-options/record-description';
 	import getRelativeTime from '../../../(main)/records/page-data-options/relative-time';
+	import { xTickValueFormatters } from '../../../(main)/records/[id]/RecordHistory/helpers/config';
+
+	import MiniTracker from './components/MiniTracker.svelte';
 
 	let { data } = $props();
-	let { record_id, network_id, network_region, focusDateTime } = $derived(data);
+	let { record_id, fueltech_id, period, network_id, network_region } = $derived(data);
 
 	const id = record_id;
 
 	/** @type {MilestoneRecord} */
 	let currentRecord = $state();
+
+	$inspect('period', period);
+
+	let formatX = $derived(xTickValueFormatters[period].format);
+	$inspect('formatX', formatX);
 
 	/**
 	 * Format a date
@@ -47,12 +59,36 @@
 		if (browser && id) {
 			fetchRecord(id).then((record) => {
 				console.log('record', record);
+				let date = new Date(record.interval);
 
 				currentRecord = record;
+				currentRecord.date = date;
+				currentRecord.time = date.getTime();
 			});
 		}
 	});
-	let fuelTech = $derived(currentRecord?.fueltech_id || '');
+
+	let pageTitle = $derived.by(() => {
+		if (!data) return 'Record';
+
+		let desc = recordDescription(
+			data.period || '',
+			data.aggregate || '',
+			data.metric || '',
+			data.fueltech_id || ''
+		);
+		let networkId = data.network_id?.toLowerCase();
+
+		if (data.network_region) {
+			desc += ` in ${regionsWithLabels[data.network_region.toLowerCase()]}`;
+		} else if (networkId && regionsWithLabels[networkId]) {
+			desc += ` in ${regionsWithLabels[networkId]}`;
+		} else {
+			desc += ` in the ${networkId?.toUpperCase()}`;
+		}
+
+		return desc;
+	});
 
 	const regions = [
 		{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
@@ -79,48 +115,48 @@
 	}
 </script>
 
-<div class="py-12">
-	{#if currentRecord}
-		<div
-			class="max-w-[350px] mx-auto text-black bg-white border border-mid-warm-grey rounded-xl p-6 h-full grid grid-cols-1 gap-4 content-between"
-		>
-			<div>
-				<!-- <h6>{label}</h6> -->
-				<Icon icon={fuelTech} size={32} />
-				<!-- {recordData.recordId} -->
+{#if currentRecord}
+	{@const ftId = fueltech_id || 'demand'}
+	<div
+		class="max-w-[1180px] h-full m-[10px] p-6 text-black bg-white border border-mid-warm-grey rounded-xl grid grid-cols-1 gap-4 content-between"
+	>
+		<header>
+			<div class="flex items-center gap-6 pt-5 md:pt-0">
+				<span
+					class="bg-{ftId} rounded-full p-3 place-self-start"
+					class:text-black={ftId === 'solar'}
+					class:text-white={ftId !== 'solar'}
+				>
+					<FuelTechIcon fuelTech={ftId} sizeClass={10} />
+				</span>
 
-				<div class="leading-base my-6">
-					<!-- <small>{recordData.period} / {recordData.aggregate}</small> -->
-					{recordDescription(
-						currentRecord.period,
-						currentRecord.aggregate,
-						currentRecord.metric,
-						fuelTech
-					)}
-				</div>
-
-				<div class="text-sm text-mid-grey">
-					{getRegionLabel(network_id, network_region)}
-				</div>
-
-				<div class="text-mid-grey text-xs">
-					look for {focusDateTime}
-				</div>
+				<h2 class="leading-lg text-lg font-medium mb-0">
+					{pageTitle}
+				</h2>
 			</div>
 
 			<div
-				class="border-t-4 flex justify-between items-baseline pt-2"
-				style="border-color: {fuelTechColourMap[fuelTech]}"
+				class="flex md:flex-col md:justify-end text-dark-grey rounded-2xl px-8 pt-6 pb-4 bg-light-warm-grey md:ml-2"
 			>
-				<div>
-					{formatRecordValue(currentRecord.value, fuelTech)}
-					<small class="text-mid-grey">{currentRecord.value_unit}</small>
+				<div class="text-xs text-mid-grey font-space uppercase w-full text-left">
+					Current record
 				</div>
-				<time class="text-xxs text-mid-grey">
-					<!-- {formatDate(currentRecord.interval, currentRecord.period)} -->
-					{currentRecord.interval}
-				</time>
+
+				<div class="text-right w-full">
+					<div class="text-2xl leading-none font-semibold">
+						{getNumberFormat(0).format(currentRecord.value || 0)}
+						<small class="text-xs font-mono">
+							{currentRecord.value_unit}
+						</small>
+					</div>
+
+					<span class="text-xs font-light text-mid-grey">
+						{formatX(currentRecord.date)}
+					</span>
+				</div>
 			</div>
-		</div>
-	{/if}
-</div>
+		</header>
+
+		<MiniTracker record={currentRecord} />
+	</div>
+{/if}
