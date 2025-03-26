@@ -25,7 +25,7 @@
 		}
 	});
 
-	function init(chartHeight = 485) {
+	function init(chartHeight = 400) {
 		let chartKey = Symbol('mini-tracker');
 
 		setContext(
