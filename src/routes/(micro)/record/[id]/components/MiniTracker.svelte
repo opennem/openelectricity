@@ -25,7 +25,7 @@
 		}
 	});
 
-	function init(chartHeight = 400) {
+	function init(chartHeight = 350) {
 		let chartKey = Symbol('mini-tracker');
 
 		setContext(
@@ -170,6 +170,10 @@
 			chartCxt.seriesLabels = { value: '' };
 			chartCxt.focusTime = record.time;
 			chartCxt.chartTooltips.valueKey = 'value';
+			chartCxt.useFormatY = true;
+			chartCxt.formatY = () => '';
+			chartCxt.chartStyles.xTextClasses = 'text-lg text-mid-warm-grey';
+			chartCxt.chartStyles.xAxisYTick = 23;
 
 			if (timeSeries && isIntervalPeriod) {
 				chartCxt.shadingData = nighttimes(
@@ -191,4 +195,10 @@
 	}
 </script>
 
-<LensChart cxtKey={chartCxt.key} displayOptions={false} showHeader={false} showTooltip={false} />
+<LensChart
+	cxtKey={chartCxt.key}
+	displayOptions={false}
+	showHeader={false}
+	showTooltip={false}
+	chartPaddingClasses="p-0"
+/>

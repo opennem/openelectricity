@@ -10,6 +10,11 @@ export default class ChartStylesState {
 	/** @type {string} */
 	xTextAnchorPosition = $state('middle');
 
+	/** @type {string} */
+	xTextClasses = $state('text-xxs font-light text-mid-warm-grey');
+	/** @type {number} */
+	xAxisYTick = $state(16);
+
 	/** @type {boolean} */
 	showLineArea = $state(false);
 	/** @type {boolean} */

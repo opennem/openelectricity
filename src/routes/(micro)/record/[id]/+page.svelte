@@ -118,45 +118,51 @@
 {#if currentRecord}
 	{@const ftId = fueltech_id || 'demand'}
 	<div
-		class="max-w-[1180px] h-full m-[10px] p-6 text-black bg-white border border-mid-warm-grey rounded-xl grid grid-cols-1 gap-4 content-between"
+		class="w-[1180px] h-full m-[10px] text-black bg-white grid grid-cols-1 gap-4 content-between"
 	>
-		<header>
-			<div class="flex items-center gap-6 pt-5 md:pt-0">
-				<span
-					class="bg-{ftId} rounded-full p-3 place-self-start"
-					class:text-black={ftId === 'solar'}
-					class:text-white={ftId !== 'solar'}
-				>
-					<FuelTechIcon fuelTech={ftId} sizeClass={10} />
-				</span>
+		<div class="border-b border-mid-warm-grey p-6">
+			<header class="flex gap-12 justify-between items-center mb-10">
+				<div class="flex flex-col gap-6 pt-5 md:pt-0">
+					<span
+						class="bg-{ftId} rounded-full p-3 place-self-start"
+						class:text-black={ftId === 'solar'}
+						class:text-white={ftId !== 'solar'}
+					>
+						<FuelTechIcon fuelTech={ftId} sizeClass={16} />
+					</span>
 
-				<h2 class="leading-lg text-lg font-medium mb-0">
-					{pageTitle}
-				</h2>
-			</div>
-
-			<div
-				class="flex md:flex-col md:justify-end text-dark-grey rounded-2xl px-8 pt-6 pb-4 bg-light-warm-grey md:ml-2"
-			>
-				<div class="text-xs text-mid-grey font-space uppercase w-full text-left">
-					Current record
+					<h2 class="leading-3xl text-3xl font-medium mb-0">
+						{pageTitle}
+					</h2>
 				</div>
 
-				<div class="text-right w-full">
-					<div class="text-2xl leading-none font-semibold">
-						{getNumberFormat(0).format(currentRecord.value || 0)}
-						<small class="text-xs font-mono">
-							{currentRecord.value_unit}
-						</small>
+				<div
+					class="flex md:flex-col md:justify-end text-dark-grey rounded-2xl px-8 pt-6 pb-4 bg-light-warm-grey md:ml-2"
+				>
+					<div class="text-xl text-mid-grey font-space uppercase w-full text-left">
+						Current record
 					</div>
 
-					<span class="text-xs font-light text-mid-grey">
-						{formatX(currentRecord.date)}
-					</span>
-				</div>
-			</div>
-		</header>
+					<div class="text-right w-full whitespace-nowrap">
+						<div class="text-7xl leading-none font-semibold">
+							{getNumberFormat(0).format(currentRecord.value || 0)}
+							<small class="text-xl font-mono">
+								{currentRecord.value_unit}
+							</small>
+						</div>
 
-		<MiniTracker record={currentRecord} />
+						<span class="text-xl font-light text-mid-grey">
+							{formatX(currentRecord.date)}
+						</span>
+					</div>
+				</div>
+			</header>
+
+			<MiniTracker record={currentRecord} />
+		</div>
+
+		<div class="p-6 pt-0 flex justify-end">
+			<img src="/img/logo.svg" alt="Open Electricity logo" class="block h-10 w-auto my-5" />
+		</div>
 	</div>
 {/if}

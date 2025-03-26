@@ -18,6 +18,7 @@
 	 * @property {number} [yTick]
 	 * @property {string} [fill]
 	 * @property {'start' | 'middle' | 'end'} [textAnchorPosition]
+	 * @property {string} [xTextClasses]
 	 */
 
 	/** @type {Props} */
@@ -35,7 +36,8 @@
 		xTick = 0,
 		yTick = 16,
 		fill = 'white',
-		textAnchorPosition = 'middle'
+		textAnchorPosition = 'middle',
+		xTextClasses = 'text-xxs font-light text-mid-warm-grey'
 	} = $props();
 
 	let isBandwidth = $derived(typeof $xScale.bandwidth === 'function');
@@ -109,7 +111,7 @@
 					dx="0"
 					dy="2"
 					text-anchor={textAnchor(i)}
-					class="text-xxs font-light text-mid-warm-grey"
+					class={xTextClasses}
 				>
 					{formatTick(tick)}
 				</text>

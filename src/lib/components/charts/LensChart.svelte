@@ -13,10 +13,11 @@
 		onmousemove?: (evt: ChartEvent | TimeSeriesData) => void,
 		onmouseout?: () => void,
 		onpointerup?: (evt: TimeSeriesData) => void,
-		tooltipWrapperStyles?: string
+		tooltipWrapperStyles?: string,
+		chartPaddingClasses?: string
 	}} */
 	let props = $props();
-	let { showHeader = true, showTooltip = true } = props;
+	let { showHeader = true, showTooltip = true, chartPaddingClasses = 'px-6' } = props;
 </script>
 
 <div>
@@ -28,7 +29,7 @@
 			<ChartTooltipWithContext cxtKey={props.cxtKey} wrapperStyles={props.tooltipWrapperStyles} />
 		</div>
 	{/if}
-	<div class="px-6">
+	<div class={chartPaddingClasses}>
 		<StackedAreaLineChartWithContext {...props} />
 	</div>
 </div>

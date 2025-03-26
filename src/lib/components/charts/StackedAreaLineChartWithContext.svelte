@@ -141,9 +141,11 @@
 				<AxisY
 					ticks={cxt.yTicks}
 					xTick={5}
-					formatTick={cxt.chartOptions.isDataTransformTypeProportion
-						? (/** @type {any} */ d) => d
-						: cxt.convertAndFormatValue}
+					formatTick={cxt.useFormatY
+						? cxt.formatY
+						: cxt.chartOptions.isDataTransformTypeProportion
+							? (/** @type {any} */ d) => d
+							: cxt.convertAndFormatValue}
 					gridlines={true}
 					stroke={cxt.chartStyles.yAxisStroke}
 					zeroValueStroke={cxt.chartStyles.zeroValueStroke}
@@ -157,6 +159,8 @@
 					snapTicks={cxt.chartStyles.snapXTicks}
 					stroke={cxt.chartStyles.xAxisStroke}
 					fill={cxt.chartStyles.xAxisFill}
+					xTextClasses={cxt.chartStyles.xTextClasses}
+					yTick={cxt.chartStyles.xAxisYTick}
 				/>
 			</g>
 		</Svg>

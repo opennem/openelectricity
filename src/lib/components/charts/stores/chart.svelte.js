@@ -112,6 +112,9 @@ export default class ChartStore {
 	/** @type {Function} */
 	formatXWithTimeZone = $derived((/** @type {*} */ d) => this.formatX(d, this.timeZone));
 
+	/** @type {boolean} */
+	useFormatY = $state(false);
+
 	/** @type {Function} */
 	formatY = $state((/** @type {*} */ d) => d);
 
