@@ -3,7 +3,7 @@ import parseId from './RecordHistory/helpers/parse-id';
 
 export async function load({ data, params, url }) {
 	const { searchParams } = url;
-	const focusDateTime = searchParams.get('focusDateTime');
+	// const focusDateTime = searchParams.get('focusDateTime');
 
 	let id = params.id;
 
@@ -12,8 +12,7 @@ export async function load({ data, params, url }) {
 
 		return {
 			...data, // pipe through data from PageServer
-			...parsed,
-			focusDateTime
+			...parsed
 		};
 	} else {
 		error(404, {

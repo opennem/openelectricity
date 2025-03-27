@@ -81,7 +81,7 @@ function getOEPath(record, focusDateTime) {
 	return oePath;
 }
 
-export async function load({ data, params, url, fetch }) {
+export async function load({ params, url, fetch }) {
 	const { searchParams } = url;
 	const focusDateTime = searchParams.get('focusDateTime');
 
