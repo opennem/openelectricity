@@ -5,18 +5,15 @@
 	import recordDescription from '../../../(main)/records/page-data-options/record-description';
 	import { xTickValueFormatters } from '../../../(main)/records/[id]/RecordHistory/helpers/config';
 	import MiniTracker from './components/MiniTracker.svelte';
-	import { microRecordState } from './state.svelte';
 
 	let { data } = $props();
-	let { record, trackerData, timeZone, period, focusDateTime, focusTime, fuelTechId, metric } =
+	let { record, timeSeries, focusRecord, timeZone, period, focusTime, fuelTechId, metric } =
 		$derived(data);
 
 	/** @type {MilestoneRecord} */
 	let currentRecord = $derived(record);
 	let formatX = $derived(xTickValueFormatters[period].format);
-	let recordSetOnDate = $derived(
-		formatX(microRecordState.focusRecord?.date || new Date(), timeZone)
-	);
+	let recordSetOnDate = $derived(formatX(focusRecord.date, timeZone));
 
 	let pageTitle = $derived.by(() => {
 		if (!currentRecord) return 'Record';
@@ -76,24 +73,16 @@
 							{recordSetOnDate}
 						</span>
 						<div class="text-7xl leading-none font-semibold text-dark-grey">
-							{getNumberFormat(0).format(microRecordState.focusRecord?.value || 0)}
+							{getNumberFormat(0).format(focusRecord.value)}
 							<small class="text-xl font-mono">
-								{currentRecord.value_unit}
+								{focusRecord.value_unit}
 							</small>
 						</div>
 					</div>
 				</div>
 			</header>
 
-			<MiniTracker
-				record={currentRecord}
-				{focusTime}
-				{trackerData}
-				{fuelTechId}
-				{metric}
-				{period}
-				{timeZone}
-			/>
+			<MiniTracker record={currentRecord} {focusTime} {timeSeries} {metric} {period} {timeZone} />
 		</div>
 
 		<div class="p-6 pt-0 flex justify-end">

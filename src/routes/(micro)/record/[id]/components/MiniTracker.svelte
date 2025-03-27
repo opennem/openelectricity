@@ -8,45 +8,15 @@
 	import { chartOptions } from '../../../../(main)/records/[id]/MiniTracker/helpers/config';
 	import xTickValueFormatters from '../../../../(main)/records/[id]/MiniTracker/helpers/xtick-value-formatters';
 
-	let { record, focusTime, trackerData, fuelTechId, metric, period, timeZone } = $props();
+	let data = $props();
+	let { record, focusTime, timeSeries, metric, period, timeZone } = $derived(data);
 	let focusOn = $derived(focusTime ? new Date(focusTime) : undefined);
 	let chartCxt = init();
 
 	$effect(() => {
-		if (focusOn && chartCxt.seriesData.length > 0) {
-			let findFocusData = chartCxt.seriesData.find((d) => d.time === focusOn.getTime());
-			if (findFocusData) {
-				microRecordState.focusRecord = findFocusData;
-			}
-		}
-	});
-
-	$effect(() => {
-		if (trackerData) {
-			let data = trackerData.data;
-			let results = data[0].results;
-			let result = results[0];
+		if (timeSeries.length > 0) {
 			let dataMetric = /** @type {import('openelectricity').DataMetric} */ (metric);
 			let isIntervalPeriod = period === 'interval';
-
-			if (fuelTechId && result) {
-				if (fuelTechId === 'fossils') {
-					result = results.find((d) => !d.columns.renewable);
-				} else if (fuelTechId === 'renewables') {
-					result = results.find((d) => d.columns.renewable);
-				}
-			}
-
-			// convert result to a time series
-			let timeSeries = result?.data.map((d) => {
-				let date = new Date(d[0]);
-				return {
-					dateStr: d[0],
-					date,
-					time: date.getTime(),
-					value: d[1]
-				};
-			});
 
 			chartCxt.chartOptions.prefix = chartOptions[dataMetric].prefix;
 			chartCxt.chartOptions.displayPrefix = chartOptions[dataMetric].displayPrefix;

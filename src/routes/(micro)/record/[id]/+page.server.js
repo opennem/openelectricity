@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { parse, addDays, addMonths, addYears, subDays, subMonths, subYears } from 'date-fns';
+import { addDays, addMonths, addYears, subDays, subMonths, subYears } from 'date-fns';
 import { plainDateTime } from '$lib/utils/date-parser';
 import { apiIntervalMap } from '../../../(main)/records/[id]/MiniTracker/helpers/config';
 
@@ -82,26 +82,27 @@ function getOEPath(record, focusTime) {
 }
 
 export async function load({ params, url, fetch }) {
-	const { searchParams } = url;
-	const focusTime = searchParams.get('focusTime') || '';
-
+	let { searchParams } = url;
+	let focusTimeStr = searchParams.get('focusTime') || '';
+	let focusTime = parseInt(focusTimeStr);
 	let id = params.id;
 
 	if (id) {
-		const res = await fetch(`/api/records/${id}?pageSize=1`);
-		const jsonData = await res.json();
-
+		let res = await fetch(`/api/records/${id}?pageSize=1`);
+		let jsonData = await res.json();
 		let trackerRes;
 		let trackerData;
+		let timeSeries;
 		let timeZone;
 		let period = 'interval';
 		let fuelTechId;
 		let metric;
+		let focusRecord;
 
 		// console.log('jsonData', jsonData);
 		if (jsonData.data.length > 0) {
 			let firstRecord = jsonData.data[0];
-			let oePath = getOEPath(firstRecord, parseInt(focusTime));
+			let oePath = getOEPath(firstRecord, focusTime);
 
 			timeZone = firstRecord.network_id === 'WEM' ? '+08:00' : '+10:00';
 
@@ -109,23 +110,46 @@ export async function load({ params, url, fetch }) {
 			fuelTechId = firstRecord.fueltech_id;
 			metric = firstRecord.metric;
 
-			console.log('oePath', oePath);
-
 			if (oePath) {
 				trackerRes = await fetch(oePath);
 				trackerData = await trackerRes.json();
-				console.log('trackerData', trackerData);
+
+				let data = trackerData.data;
+				let results = data[0].results;
+				let result = results[0];
+
+				if (fuelTechId && result) {
+					if (fuelTechId === 'fossils') {
+						result = results.find((d) => !d.columns.renewable);
+					} else if (fuelTechId === 'renewables') {
+						result = results.find((d) => d.columns.renewable);
+					}
+				}
+
+				// convert result to a time series
+				timeSeries = result.data.map((d) => {
+					let date = new Date(d[0]);
+					return {
+						dateStr: d[0],
+						date,
+						time: date.getTime(),
+						value: d[1]
+					};
+				});
+
+				focusRecord = timeSeries.find((d) => d.time === focusTime);
 			}
 		}
 
 		return {
-			focusTime: parseInt(focusTime),
+			focusTime,
 			record: jsonData.data[0],
-			trackerData,
+			timeSeries,
 			timeZone,
 			period,
 			fuelTechId,
-			metric
+			metric,
+			focusRecord
 		};
 	} else {
 		error(404, {
