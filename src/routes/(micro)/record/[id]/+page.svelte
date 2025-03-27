@@ -15,19 +15,27 @@
 	import { xTickValueFormatters } from '../../../(main)/records/[id]/RecordHistory/helpers/config';
 
 	import MiniTracker from './components/MiniTracker.svelte';
-
+	import { microRecordState } from './state.svelte';
 	let { data } = $props();
-	let { record_id, fueltech_id, period, network_id, network_region } = $derived(data);
+	let { record_id, fueltech_id, period, focusDateTime, network_id, network_region } =
+		$derived(data);
+
+	$inspect('focusDateTime', focusDateTime);
+	$inspect('data', data);
 
 	const id = record_id;
 
 	/** @type {MilestoneRecord} */
 	let currentRecord = $state();
 
-	$inspect('period', period);
-
+	let isWem = $derived(network_id === 'wem');
+	let timeZone = $derived(isWem ? '+08:00' : '+10:00');
 	let formatX = $derived(xTickValueFormatters[period].format);
-	$inspect('formatX', formatX);
+	let recordSetOnDate = $derived(formatX(microRecordState.focusRecord?.date, timeZone));
+
+	// $inspect('recordSetOnDate', recordSetOnDate);
+	// $inspect('network_id', network_id);
+	// $inspect('timeZone', timeZone);
 
 	/**
 	 * Format a date
@@ -137,28 +145,29 @@
 				</div>
 
 				<div
-					class="flex md:flex-col md:justify-end text-dark-grey rounded-2xl px-8 pt-6 pb-4 bg-light-warm-grey md:ml-2"
+					class="flex md:flex-col md:justify-end rounded-2xl px-8 pt-6 pb-4 bg-light-warm-grey md:ml-2"
 				>
-					<div class="text-xl text-mid-grey font-space uppercase w-full text-left">
-						Current record
+					<div
+						class="md:text-right text-lg text-mid-grey font-space uppercase w-full text-left border-b border-mid-warm-grey pb-2 mb-2"
+					>
+						Record set on
 					</div>
 
 					<div class="text-right w-full whitespace-nowrap">
-						<div class="text-7xl leading-none font-semibold">
-							{getNumberFormat(0).format(currentRecord.value || 0)}
+						<span class="text-2xl font-medium text-mid-grey">
+							{recordSetOnDate}
+						</span>
+						<div class="text-7xl leading-none font-semibold text-dark-grey">
+							{getNumberFormat(0).format(microRecordState.focusRecord?.value || 0)}
 							<small class="text-xl font-mono">
 								{currentRecord.value_unit}
 							</small>
 						</div>
-
-						<span class="text-xl font-light text-mid-grey">
-							{formatX(currentRecord.date)}
-						</span>
 					</div>
 				</div>
 			</header>
 
-			<MiniTracker record={currentRecord} />
+			<MiniTracker record={currentRecord} {focusDateTime} />
 		</div>
 
 		<div class="p-6 pt-0 flex justify-end">

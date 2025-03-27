@@ -9,6 +9,7 @@
 	import LensChart from '$lib/components/charts/LensChart.svelte';
 
 	import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
+	import { microRecordState } from '../state.svelte';
 
 	import {
 		apiIntervalMap,
@@ -16,12 +17,23 @@
 	} from '../../../../(main)/records/[id]/MiniTracker/helpers/config';
 	import xTickValueFormatters from '../../../../(main)/records/[id]/MiniTracker/helpers/xtick-value-formatters';
 
-	let { record } = $props();
+	let { record, focusDateTime } = $props();
+	let focusOn = $derived(focusDateTime ? new Date(focusDateTime) : undefined);
 	let chartCxt = init();
 
 	$effect(() => {
 		if (record) {
 			fetchData(record);
+		}
+	});
+
+	$effect(() => {
+		if (focusOn && chartCxt.seriesData.length > 0) {
+			let findFocusData = chartCxt.seriesData.find((d) => d.time === focusOn.getTime());
+			if (findFocusData) {
+				console.log('findFocusData', findFocusData);
+				microRecordState.focusRecord = findFocusData;
+			}
 		}
 	});
 
@@ -104,7 +116,7 @@
 				: 'fueltech_group'
 			: undefined;
 
-		let { dateStart, dateEnd, withTime } = getDateRange(record.date, record.period);
+		let { dateStart, dateEnd, withTime } = getDateRange(focusOn || record.date, record.period);
 		let dateStartFormatted = plainDateTime(dateStart, timeZone, withTime);
 		let dateEndFormatted = plainDateTime(dateEnd, timeZone, withTime);
 
@@ -125,7 +137,6 @@
 		}
 
 		try {
-			chartCxt.seriesData = [];
 			let res2 = await fetch(oePath);
 			res = await res2.json();
 		} catch (e) {
@@ -168,10 +179,10 @@
 			chartCxt.seriesNames = ['value'];
 			chartCxt.seriesColours = { value: fuelTechColourMap[record.fueltech_id || 'demand'] };
 			chartCxt.seriesLabels = { value: '' };
-			chartCxt.focusTime = record.time;
+			chartCxt.focusTime = focusOn?.getTime() || record.time;
 			chartCxt.chartTooltips.valueKey = 'value';
-			chartCxt.useFormatY = true;
-			chartCxt.formatY = () => '';
+			// chartCxt.useFormatY = true;
+			// chartCxt.formatY = () => '';
 			chartCxt.chartStyles.xTextClasses = 'text-lg text-mid-warm-grey';
 			chartCxt.chartStyles.xAxisYTick = 23;
 
