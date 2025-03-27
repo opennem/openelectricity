@@ -1,94 +1,35 @@
 <script>
-	import { parseISO } from 'date-fns';
-
-	import { browser } from '$app/environment';
 	import { regionsWithLabels } from '$lib/regions';
 	import { getNumberFormat } from '$lib/utils/formatters';
-
-	import Icon from '$lib/components/Icon.svelte';
-	import { fuelTechColourMap } from '$lib/fuel_techs';
 	import FuelTechIcon from '../../../(main)/records/components/FuelTechIcon.svelte';
-
-	import { formatRecordValue } from '../../../(main)/records/page-data-options/formatters';
 	import recordDescription from '../../../(main)/records/page-data-options/record-description';
-	import getRelativeTime from '../../../(main)/records/page-data-options/relative-time';
 	import { xTickValueFormatters } from '../../../(main)/records/[id]/RecordHistory/helpers/config';
-
 	import MiniTracker from './components/MiniTracker.svelte';
 	import { microRecordState } from './state.svelte';
+
 	let { data } = $props();
-	let { record_id, fueltech_id, period, focusDateTime, network_id, network_region } =
-		$derived(data);
-
-	$inspect('focusDateTime', focusDateTime);
-	$inspect('data', data);
-
-	const id = record_id;
+	let { record, trackerData, timeZone, period, focusDateTime, fuelTechId, metric } = $derived(data);
 
 	/** @type {MilestoneRecord} */
-	let currentRecord = $state();
-
-	let isWem = $derived(network_id === 'wem');
-	let timeZone = $derived(isWem ? '+08:00' : '+10:00');
+	let currentRecord = $derived(record);
 	let formatX = $derived(xTickValueFormatters[period].format);
-	let recordSetOnDate = $derived(formatX(microRecordState.focusRecord?.date, timeZone));
-
-	// $inspect('recordSetOnDate', recordSetOnDate);
-	// $inspect('network_id', network_id);
-	// $inspect('timeZone', timeZone);
-
-	/**
-	 * Format a date
-	 * @param {string} interval
-	 * @param {string} period
-	 */
-	function formatDate(interval, period) {
-		const date = parseISO(interval);
-		// return format(date, formatStrings[period] || 'd MMM yyyy, h:mma');
-		return getRelativeTime(date);
-	}
-
-	/**
-	 * Fetch a single record
-	 * @param {string} recordId
-	 */
-	async function fetchRecord(recordId) {
-		const id = encodeURIComponent(recordId);
-		const res = await fetch(`/api/records/${id}?pageSize=1`);
-		const jsonData = await res.json();
-
-		if (jsonData.error) {
-			return [];
-		}
-		const data = jsonData.data && jsonData.data.length ? jsonData.data[0] : {};
-		return data;
-	}
-	$effect(() => {
-		if (browser && id) {
-			fetchRecord(id).then((record) => {
-				console.log('record', record);
-				let date = new Date(record.interval);
-
-				currentRecord = record;
-				currentRecord.date = date;
-				currentRecord.time = date.getTime();
-			});
-		}
-	});
+	let recordSetOnDate = $derived(
+		formatX(microRecordState.focusRecord?.date || new Date(), timeZone)
+	);
 
 	let pageTitle = $derived.by(() => {
-		if (!data) return 'Record';
+		if (!currentRecord) return 'Record';
 
 		let desc = recordDescription(
-			data.period || '',
-			data.aggregate || '',
-			data.metric || '',
-			data.fueltech_id || ''
+			currentRecord.period || '',
+			currentRecord.aggregate || '',
+			currentRecord.metric || '',
+			currentRecord.fueltech_id || ''
 		);
-		let networkId = data.network_id?.toLowerCase();
+		let networkId = currentRecord.network_id?.toLowerCase();
 
-		if (data.network_region) {
-			desc += ` in ${regionsWithLabels[data.network_region.toLowerCase()]}`;
+		if (currentRecord.network_region) {
+			desc += ` in ${regionsWithLabels[currentRecord.network_region.toLowerCase()]}`;
 		} else if (networkId && regionsWithLabels[networkId]) {
 			desc += ` in ${regionsWithLabels[networkId]}`;
 		} else {
@@ -97,34 +38,10 @@
 
 		return desc;
 	});
-
-	const regions = [
-		{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
-		{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW', longLabel: 'New South Wales' },
-		{ longValue: 'au.nem.qld1', value: 'qld1', label: 'QLD', longLabel: 'Queensland' },
-		{ longValue: 'au.nem.sa1', value: 'sa1', label: 'SA', longLabel: 'South Australia' },
-		{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS', longLabel: 'Tasmania' },
-		{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC', longLabel: 'Victoria' },
-		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
-	];
-	/**
-	 * Get the region label
-	 * @param {string} networkId
-	 * @param {string | undefined} networkRegion
-	 * @returns {string}
-	 */
-	function getRegionLabel(networkId, networkRegion) {
-		if (networkRegion) {
-			return (
-				regions.find(({ value }) => value === networkRegion.toLowerCase())?.label || networkRegion
-			);
-		}
-		return regions.find(({ value }) => value === networkId.toLowerCase())?.label || networkId;
-	}
 </script>
 
 {#if currentRecord}
-	{@const ftId = fueltech_id || 'demand'}
+	{@const ftId = fuelTechId || 'demand'}
 	<div
 		class="w-[1100px] h-full m-[50px] text-black bg-white grid grid-cols-1 gap-4 content-between"
 	>
@@ -167,7 +84,15 @@
 				</div>
 			</header>
 
-			<MiniTracker record={currentRecord} {focusDateTime} />
+			<MiniTracker
+				record={currentRecord}
+				{focusDateTime}
+				{trackerData}
+				{fuelTechId}
+				{metric}
+				{period}
+				{timeZone}
+			/>
 		</div>
 
 		<div class="p-6 pt-0 flex justify-end">
