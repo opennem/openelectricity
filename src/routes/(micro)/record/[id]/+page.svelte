@@ -8,7 +8,8 @@
 	import { microRecordState } from './state.svelte';
 
 	let { data } = $props();
-	let { record, trackerData, timeZone, period, focusDateTime, fuelTechId, metric } = $derived(data);
+	let { record, trackerData, timeZone, period, focusDateTime, focusTime, fuelTechId, metric } =
+		$derived(data);
 
 	/** @type {MilestoneRecord} */
 	let currentRecord = $derived(record);
@@ -86,7 +87,7 @@
 
 			<MiniTracker
 				record={currentRecord}
-				{focusDateTime}
+				{focusTime}
 				{trackerData}
 				{fuelTechId}
 				{metric}

@@ -167,7 +167,7 @@
 
 	$inspect('latest', recordState.latestMilestone?.time);
 
-	let key = $derived(encodeURIComponent(`${data.record_id}~${focusDateTime}`));
+	let key = $derived(encodeURIComponent(`${data.record_id}~${recordState.selectedTime}`));
 </script>
 
 <Meta

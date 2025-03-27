@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { addDays, addMonths, addYears, subDays, subMonths, subYears } from 'date-fns';
+import { parse, addDays, addMonths, addYears, subDays, subMonths, subYears } from 'date-fns';
 import { plainDateTime } from '$lib/utils/date-parser';
 import { apiIntervalMap } from '../../../(main)/records/[id]/MiniTracker/helpers/config';
 
@@ -39,11 +39,11 @@ function getDateRange(date, period) {
 
 /**
  * @param {MilestoneRecord} record
- * @param {string | null} focusDateTime
+ * @param {number | null} focusTime
  */
-function getOEPath(record, focusDateTime) {
+function getOEPath(record, focusTime) {
 	if (!record) return null;
-	let focusOn = focusDateTime ? new Date(focusDateTime) : record.date || new Date();
+	let focusOn = focusTime ? new Date(focusTime) : record.date || new Date();
 	let apiInterval = apiIntervalMap[record.period];
 	let isIntervalPeriod = record.period === 'interval';
 	let isWem = record.network_id === 'WEM';
@@ -83,7 +83,7 @@ function getOEPath(record, focusDateTime) {
 
 export async function load({ params, url, fetch }) {
 	const { searchParams } = url;
-	const focusDateTime = searchParams.get('focusDateTime');
+	const focusTime = searchParams.get('focusTime') || '';
 
 	let id = params.id;
 
@@ -101,7 +101,7 @@ export async function load({ params, url, fetch }) {
 		// console.log('jsonData', jsonData);
 		if (jsonData.data.length > 0) {
 			let firstRecord = jsonData.data[0];
-			let oePath = getOEPath(firstRecord, focusDateTime);
+			let oePath = getOEPath(firstRecord, parseInt(focusTime));
 
 			timeZone = firstRecord.network_id === 'WEM' ? '+08:00' : '+10:00';
 
@@ -119,7 +119,7 @@ export async function load({ params, url, fetch }) {
 		}
 
 		return {
-			focusDateTime,
+			focusTime: parseInt(focusTime),
 			record: jsonData.data[0],
 			trackerData,
 			timeZone,

@@ -8,8 +8,8 @@
 	import { chartOptions } from '../../../../(main)/records/[id]/MiniTracker/helpers/config';
 	import xTickValueFormatters from '../../../../(main)/records/[id]/MiniTracker/helpers/xtick-value-formatters';
 
-	let { record, focusDateTime, trackerData, fuelTechId, metric, period, timeZone } = $props();
-	let focusOn = $derived(focusDateTime ? new Date(focusDateTime) : undefined);
+	let { record, focusTime, trackerData, fuelTechId, metric, period, timeZone } = $props();
+	let focusOn = $derived(focusTime ? new Date(focusTime) : undefined);
 	let chartCxt = init();
 
 	$effect(() => {
