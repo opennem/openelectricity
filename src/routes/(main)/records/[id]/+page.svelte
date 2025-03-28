@@ -233,7 +233,8 @@
 					</span>
 
 					<h2 class="leading-lg text-lg font-medium mb-0">
-						<a href={`/record/${data.record_id}?focusTime=${data.focusTime}`}>{pageTitle}</a>
+						<!-- <a href={`/record/${data.record_id}?focusTime=${data.focusTime}`}>{pageTitle}</a> -->
+						{pageTitle}
 					</h2>
 				</div>
 
