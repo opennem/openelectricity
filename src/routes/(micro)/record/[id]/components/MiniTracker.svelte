@@ -51,7 +51,7 @@
 		}
 	}
 
-	function init(chartHeight = 280) {
+	function init(chartHeight = 385) {
 		let chartKey = Symbol('mini-tracker');
 
 		setContext(
@@ -65,11 +65,15 @@
 
 		cxt.chartTooltips.showTotal = false;
 		cxt.chartStyles.chartHeightClasses = `h-[${chartHeight}px]`;
-		cxt.chartStyles.chartPadding = { top: 0, right: 0, bottom: 25, left: 0 };
+		cxt.chartStyles.chartPadding = { top: 0, right: 0, bottom: 30, left: 0 };
 		cxt.chartStyles.yAxisStroke = '#999';
 		cxt.chartStyles.xAxisStroke = 'transparent';
 		cxt.chartStyles.xAxisFill = 'transparent';
 		cxt.chartStyles.showFocusDot = true;
+		cxt.chartStyles.focusYLineDotBorderColour = '#ffffff';
+		cxt.chartStyles.focusYLineDotRadius = 10;
+		cxt.chartStyles.focusYLineDotColour = '#000000';
+		cxt.chartStyles.focusYLineStrokeColour = '#000000';
 
 		return cxt;
 	}

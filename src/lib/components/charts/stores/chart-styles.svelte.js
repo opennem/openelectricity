@@ -36,6 +36,16 @@ export default class ChartStylesState {
 	showFocusDot = $state(false);
 	/** @type {boolean} */
 	showFocusYLine = $state(false);
+
+	/** @type {string} */
+	focusYLineStrokeColour = $state('#C7452399');
+	/** @type {string} */
+	focusYLineDotColour = $state('#C74523');
+	/** @type {string | null} */
+	focusYLineDotBorderColour = $state(null);
+	/** @type {number} */
+	focusYLineDotRadius = $state(5);
+
 	/** @type {boolean} */
 	showHoverDot = $state(false);
 	/** @type {boolean} */

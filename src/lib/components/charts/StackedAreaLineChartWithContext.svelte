@@ -112,14 +112,16 @@
 						xValue={cxt.focusData}
 						yValue={cxt.chartStyles.showFocusYLine ? cxt.focusData : undefined}
 						strokeArray="none"
-						strokeColour="#C7452399"
+						strokeColour={cxt.chartStyles.focusYLineStrokeColour}
 					/>
 					{#if cxt.chartStyles.showFocusDot}
 						<Dot
 							domains={cxt.visibleSeriesNames}
 							value={cxt.focusData}
 							isStacked={true}
-							colour="#C74523"
+							colour={cxt.chartStyles.focusYLineDotColour}
+							dotBorderColour={cxt.chartStyles.focusYLineDotBorderColour}
+							r={cxt.chartStyles.focusYLineDotRadius}
 						/>
 					{/if}
 				{/if}

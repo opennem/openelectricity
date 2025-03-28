@@ -84,12 +84,14 @@ function getOEPath(record, focusTime) {
 export async function load({ params, url, fetch }) {
 	let { searchParams } = url;
 	let focusTimeStr = searchParams.get('focusTime') || '';
+
 	let focusTime = parseInt(focusTimeStr);
 	let id = params.id;
 
 	if (id) {
 		let res = await fetch(`/api/records/${id}?pageSize=1`);
 		let jsonData = await res.json();
+
 		let trackerRes;
 		let trackerData;
 		let timeSeries;
@@ -102,6 +104,10 @@ export async function load({ params, url, fetch }) {
 		// console.log('jsonData', jsonData);
 		if (jsonData.data.length > 0) {
 			let firstRecord = jsonData.data[0];
+			if (!focusTimeStr || focusTimeStr === 'null') {
+				focusTime = new Date(firstRecord.interval).getTime();
+			}
+
 			let oePath = getOEPath(firstRecord, focusTime);
 
 			timeZone = firstRecord.network_id === 'WEM' ? '+08:00' : '+10:00';
