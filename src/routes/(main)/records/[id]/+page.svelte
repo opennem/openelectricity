@@ -271,7 +271,6 @@
 
 						<span class="text-xs font-light text-mid-grey">
 							{chartCxt.formatXWithTimeZone(recordState.latestMilestone?.date)}
-							{chartCxt.formatXWithTimeZone(chartCxt.focusTime)}
 						</span>
 					</div>
 				</button>
