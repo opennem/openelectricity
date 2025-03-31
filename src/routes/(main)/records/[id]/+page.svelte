@@ -5,6 +5,7 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import { regionsWithLabels } from '$lib/regions';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import FuelTechIcon from '../components/FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import PageNav from './RecordHistory/PageNav.svelte';
@@ -222,19 +223,31 @@
 			<header
 				class="grid grid-cols-1 md:grid-cols-[7fr_2fr] items-center mb-6 px-10 md:px-0 gap-10 md:gap-0"
 			>
-				<div class="flex items-center gap-6 pt-5 md:pt-0">
-					<span
-						class="bg-{ftId} rounded-full p-3 place-self-start"
-						class:text-black={ftId === 'solar'}
-						class:text-white={ftId !== 'solar'}
-					>
-						<FuelTechIcon fuelTech={ftId} sizeClass={10} />
-					</span>
+				<div>
+					<div class="mb-3">
+						<a
+							href="/records"
+							class="inline-flex gap-4 items-center text-dark-grey hover:text-dark-red underline font-space font-medium text-sm"
+						>
+							<IconChevronLeft class="w-8 h-8" />
+							Record Feed
+						</a>
+					</div>
 
-					<h2 class="leading-lg text-lg font-medium mb-0">
-						<!-- <a href={`/record/${data.record_id}?focusTime=${data.focusTime}`}>{pageTitle}</a> -->
-						{pageTitle}
-					</h2>
+					<div class="flex items-center gap-6 pt-5 md:pt-0">
+						<span
+							class="bg-{ftId} rounded-full p-3 place-self-start"
+							class:text-black={ftId === 'solar'}
+							class:text-white={ftId !== 'solar'}
+						>
+							<FuelTechIcon fuelTech={ftId} sizeClass={10} />
+						</span>
+
+						<h2 class="leading-lg text-lg font-medium mb-0">
+							<!-- <a href={`/record/${data.record_id}?focusTime=${data.focusTime}`}>{pageTitle}</a> -->
+							{pageTitle}
+						</h2>
+					</div>
 				</div>
 
 				<button
