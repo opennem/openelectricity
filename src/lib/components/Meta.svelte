@@ -9,6 +9,7 @@
 	 * @property {any} [path]
 	 * @property {string} [domain]
 	 * @property {string} [siteTitle]
+	 * @property {boolean} [useSuffix]
 	 */
 
 	/** @type {Props} */
@@ -19,9 +20,13 @@
 		image = '/img/preview.jpg',
 		path = $page.url.pathname,
 		domain = 'https://openelectricity.org.au',
-		siteTitle = 'Open Electricity'
+		siteTitle = 'Open Electricity',
+		useSuffix = true
 	} = $props();
-	let titleWithSuffix = $derived(siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle);
+	let titleWithSuffix = $derived(
+		siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle
+	);
+	let pageTitle = $derived(useSuffix ? titleWithSuffix : title);
 	const fullURI = `${domain}${path}`;
 </script>
 
@@ -30,12 +35,10 @@
 	<meta property="og:url" content={fullURI} />
 	<meta property="twitter:url" content={fullURI} />
 
-	{#if titleWithSuffix}
-		<title>{titleWithSuffix}</title>
-		<meta name="title" content={titleWithSuffix} />
-		<meta property="og:title" content={titleWithSuffix} />
-		<meta property="twitter:title" content={titleWithSuffix} />
-	{/if}
+	<title>{titleWithSuffix}</title>
+	<meta name="title" content={pageTitle} />
+	<meta property="og:title" content={pageTitle} />
+	<meta property="twitter:title" content={pageTitle} />
 
 	{#if description}
 		<meta name="description" content={description} />

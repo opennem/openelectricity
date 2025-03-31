@@ -165,14 +165,13 @@
 		filterOptionsVisible = showMobileFilterOptions;
 	}
 
-	$inspect('latest', recordState.latestMilestone?.time);
-
 	let key = $derived(encodeURIComponent(`${data.record_id}~${data.focusTime}`));
 </script>
 
 <Meta
 	title={pageTitle}
-	description="Track historical and current records of Australia's electricity grid with Open Electricity's record tracker"
+	useSuffix={false}
+	description={`Record | ${chartCxt.formatXWithTimeZone(chartCxt.focusTime)}`}
 	image={`https://openelectricity.org.au/api/record-preview?key=${key}`}
 />
 
@@ -259,6 +258,7 @@
 
 						<span class="text-xs font-light text-mid-grey">
 							{chartCxt.formatXWithTimeZone(recordState.latestMilestone?.date)}
+							{chartCxt.formatXWithTimeZone(chartCxt.focusTime)}
 						</span>
 					</div>
 				</button>
