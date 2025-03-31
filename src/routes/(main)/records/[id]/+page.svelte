@@ -167,12 +167,13 @@
 	}
 
 	let key = $derived(encodeURIComponent(`${data.record_id}~${data.focusTime}`));
+	let description = $derived(`Record | ${chartCxt.formatXWithTimeZone(chartCxt.focusTime)}`);
 </script>
 
 <Meta
 	title={pageTitle}
 	useSuffix={false}
-	description={`Record | ${chartCxt.formatXWithTimeZone(chartCxt.focusTime)}`}
+	{description}
 	image={`https://openelectricity.org.au/api/record-preview?key=${key}`}
 />
 
