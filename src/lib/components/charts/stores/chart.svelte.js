@@ -101,7 +101,7 @@ export default class ChartStore {
 	yTicks = $state();
 
 	/** @type {Function} */
-	formatTickX = $state((/** @type {*} */ d) => d); // this is used for formatting the x-axis ticks
+	formatTickX = $state((/** @type {*} */ d) => (d.getTime() === 0 ? '' : d)); // this is used for formatting the x-axis ticks
 
 	/** @type {Function} */
 	formatTickXWithTimeZone = $derived((/** @type {*} */ d) => this.formatTickX(d, this.timeZone));
