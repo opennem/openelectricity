@@ -1,19 +1,25 @@
 import { error } from '@sveltejs/kit';
 import parseId from './RecordHistory/helpers/parse-id';
+import { xTickValueFormatters } from './RecordHistory/helpers/config';
 
 export async function load({ data, params, url }) {
-	// const { searchParams } = url;
-	const parsedFocusDateTime = data.focusDateTime ? new Date(data.focusDateTime) : null;
-
 	let id = params.id;
 
 	if (id) {
 		let parsed = parseId(id);
+		let isWEM = parsed?.network_id === 'wem';
+		let timeZone = isWEM ? '+08:00' : '+10:00';
+		let formattedDateTime = '';
+
+		if (parsed?.period) {
+			const formatX = xTickValueFormatters[parsed?.period].format;
+			formattedDateTime = data.focusTime ? formatX(new Date(data.focusTime), timeZone) : '';
+		}
 
 		return {
 			...data, // pipe through data from PageServer
 			...parsed,
-			parsedFocusDateTime
+			formattedDateTime
 		};
 	} else {
 		error(404, {
