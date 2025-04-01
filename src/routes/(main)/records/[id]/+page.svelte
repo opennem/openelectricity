@@ -67,6 +67,8 @@
 			recordState.selectedTime = date.getTime();
 			chartCxt.focusTime = date.getTime();
 			recordState.showTracker = true;
+		} else if (recordState.latestMilestone) {
+			handleOnFocus(recordState.latestMilestone.interval);
 		}
 	});
 	/**
