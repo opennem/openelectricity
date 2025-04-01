@@ -64,7 +64,7 @@
 			timeZone: cxt.timeZone
 		}).format(prevDate);
 
-		if (currentFormatDate === nextFormatDate) {
+		if (prevDate && currentFormatDate === nextFormatDate) {
 			return '';
 		}
 
