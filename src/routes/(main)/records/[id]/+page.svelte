@@ -231,7 +231,7 @@
 							class="inline-flex gap-4 items-center text-dark-grey hover:text-dark-red underline font-space font-medium text-sm"
 						>
 							<IconChevronLeft class="w-8 h-8" />
-							Record Feed
+							All Records
 						</a>
 					</div>
 
