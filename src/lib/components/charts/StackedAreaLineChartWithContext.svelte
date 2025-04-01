@@ -87,9 +87,10 @@
 		<Svg pointerEvents={false}>
 			<defs>
 				<ClipPath id={clipPathId} />
+				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
 			</defs>
 
-			<g clip-path={clipPath}>
+			<g clip-path={clipPathAxis}>
 				{#if cxt.hoverData}
 					<LineX
 						xValue={cxt.hoverData}
