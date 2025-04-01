@@ -2,8 +2,8 @@ import { error } from '@sveltejs/kit';
 import parseId from './RecordHistory/helpers/parse-id';
 
 export async function load({ data, params, url }) {
-	const { searchParams } = url;
-	// const focusDateTime = searchParams.get('focusDateTime');
+	// const { searchParams } = url;
+	const parsedFocusDateTime = data.focusDateTime ? new Date(data.focusDateTime) : null;
 
 	let id = params.id;
 
@@ -12,7 +12,8 @@ export async function load({ data, params, url }) {
 
 		return {
 			...data, // pipe through data from PageServer
-			...parsed
+			...parsed,
+			parsedFocusDateTime
 		};
 	} else {
 		error(404, {

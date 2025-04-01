@@ -17,7 +17,7 @@
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
 
 	let { data } = $props();
-	let { period, recordIds, focusDateTime } = $derived(data);
+	let { period, recordIds, focusDateTime, parsedFocusDateTime } = $derived(data);
 	let loading = $state(false);
 	let defaultXDomain = $state();
 	let { chartCxt, dateBrushCxt } = init();
@@ -167,7 +167,7 @@
 	}
 
 	let key = $derived(encodeURIComponent(`${data.record_id}~${data.focusTime}`));
-	let description = $derived(`Record | ${chartCxt.formatXWithTimeZone(chartCxt.focusTime)}`);
+	let description = $derived(`Record | ${chartCxt.formatXWithTimeZone(parsedFocusDateTime)}`);
 </script>
 
 <Meta
