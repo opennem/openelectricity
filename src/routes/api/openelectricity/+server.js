@@ -66,10 +66,20 @@ export async function GET({ url, setHeaders }) {
 
 	if (dataType === 'network') {
 		let networkMetric = /** @type {import('openelectricity').DataMetric} */ (metric);
+		let start = performance.now();
 		res = await client.getNetworkData(networkId, [networkMetric], clientOptions);
+		let end = performance.now();
+		let responseTime = end - start;
+
+		console.log(`getNetworkData took ${responseTime.toFixed(2)} ms`);
 	} else {
 		let marketMetric = /** @type {import('openelectricity').MarketMetric} */ (metric);
+		let start = performance.now();
 		res = await client.getMarket(networkId, [marketMetric], clientOptions);
+		let end = performance.now();
+		let responseTime = end - start;
+
+		console.log(`getMarket took ${responseTime.toFixed(2)} ms`);
 	}
 
 	return Response.json(res.response);
