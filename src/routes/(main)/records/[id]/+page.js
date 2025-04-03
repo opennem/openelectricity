@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { xTickValueFormatters } from './RecordHistory/helpers/config';
-
+// import parseId from './RecordHistory/helpers/parse-id';
 export async function load({ data, params, fetch }) {
 	let id = params.id;
 
@@ -10,7 +10,7 @@ export async function load({ data, params, fetch }) {
 
 		let returnedData = {};
 
-		if (jsonData.data.length > 0) {
+		if (jsonData.success && jsonData.total_records > 0) {
 			let firstRecord = /** @type {MilestoneRecord} */ (jsonData.data[0]);
 			let isWEM = firstRecord.network_id === 'WEM';
 			let timeZone = isWEM ? '+08:00' : '+10:00';
@@ -30,13 +30,9 @@ export async function load({ data, params, fetch }) {
 				...returnedData
 			};
 		}
-
-		error(500, {
-			message: 'There was an error loading the record.'
-		});
-	} else {
-		error(404, {
-			message: 'Record ID not found.'
-		});
 	}
+
+	error(404, {
+		message: 'Record ID ' + id + ' not found'
+	});
 }
