@@ -26,7 +26,7 @@ export default function () {
 
 	chartCxt.chartStyles.chartHeightClasses = 'h-[490px]';
 	chartCxt.chartStyles.chartPadding = { top: 0, right: 0, bottom: 30, left: 0 };
-	chartCxt.chartStyles.strokeWidth = '1.5';
+	chartCxt.chartStyles.strokeWidth = '2';
 	chartCxt.chartStyles.showLineDots = false;
 	chartCxt.chartStyles.dotFill = '#77777733';
 	chartCxt.chartStyles.yAxisStroke = '#eee';

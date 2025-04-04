@@ -84,7 +84,7 @@
 
 		chartCxt.seriesData = seriesData;
 		chartCxt.seriesNames = ['value'];
-		chartCxt.seriesColours = { value: '#999' };
+		chartCxt.seriesColours = { value: '#000000' };
 		chartCxt.seriesLabels = { value: '' };
 		chartCxt.xDomain = xDomain;
 		defaultXDomain = xDomain;
