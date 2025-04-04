@@ -176,6 +176,7 @@
 	title={pageTitle}
 	useSuffix={false}
 	{description}
+	domain={page.url.origin}
 	image={`${page.url.origin}/api/record-preview?key=${key}`}
 />
 
