@@ -168,13 +168,15 @@
 
 	let key = $derived(encodeURIComponent(`${data.record_id}~${data.focusTime}`));
 	let description = $derived(`Record | ${data.formattedDateTime}`);
+
+	//
 </script>
 
 <Meta
 	title={pageTitle}
 	useSuffix={false}
 	{description}
-	image={`https://openelectricity.org.au/api/record-preview?key=${key}`}
+	image={`${page.url.origin}/api/record-preview?key=${key}`}
 />
 
 {#if data.record_id}
