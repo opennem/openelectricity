@@ -3,8 +3,8 @@ export async function load({ fetch, url }) {
 		const nemWemRecordIds = await fetch('/api/record-ids');
 		const nemRegionsRecordIds = await fetch('/api/record-ids?regions=nsw1,qld1,sa1,tas1,vic1');
 		const { searchParams } = url;
-		const focusDateTime = searchParams.get('focusDateTime');
-		const focusTime = focusDateTime ? new Date(focusDateTime).getTime() : null;
+		const focus = searchParams.get('focus');
+		const focusTime = focus ? new Date(focus).getTime() : null;
 
 		if (!nemWemRecordIds.ok) {
 			throw new Error(`HTTP error: ${nemWemRecordIds.status}`);
@@ -22,7 +22,7 @@ export async function load({ fetch, url }) {
 			...new Set([...nemWemRecordIdsData.data, ...nemRegionsRecordIdsData.data])
 		].sort((a, b) => a.record_id.localeCompare(b.record_id));
 
-		return { recordIds, focusDateTime, focusTime };
+		return { recordIds, focus, focusTime };
 	} catch (error) {
 		console.error(error);
 		return { error: 'Unable to fetch record ids' };

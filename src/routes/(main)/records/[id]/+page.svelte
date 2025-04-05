@@ -17,7 +17,7 @@
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
 
 	let { data } = $props();
-	let { period, recordIds, focusDateTime } = $derived(data);
+	let { period, recordIds, focus } = $derived(data);
 	let loading = $state(false);
 	let defaultXDomain = $state();
 	let { chartCxt, dateBrushCxt } = init();
@@ -62,9 +62,9 @@
 	});
 
 	$effect(() => {
-		if (focusDateTime) {
-			let fixedFocusDateTime = focusDateTime.replace(' ', '+');
-			let date = new Date(fixedFocusDateTime);
+		if (focus) {
+			let focusDateTime = focus.replace(' ', '+');
+			let date = new Date(focusDateTime);
 			recordState.selectedTime = date.getTime();
 			chartCxt.focusTime = date.getTime();
 			recordState.showTracker = true;
@@ -126,7 +126,7 @@
 	 */
 	function handleOnFocus(dateTimeStr) {
 		if (dateTimeStr) {
-			goto(`?focusDateTime=${dateTimeStr}`, { noScroll: true });
+			goto(`?focus=${dateTimeStr}`, { noScroll: true });
 		} else {
 			goto(`?`, { noScroll: true });
 		}

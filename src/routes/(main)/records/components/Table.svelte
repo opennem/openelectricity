@@ -40,7 +40,7 @@
 				record.time,
 				record.timeZone
 			)}
-			{@const path = `/records/${encodeURIComponent(record.record_id)}?focusDateTime=${record.interval}`}
+			{@const path = `/records/${encodeURIComponent(record.record_id)}?focus=${record.interval}`}
 			<tr class="border-b border-warm-grey pointer hover:bg-warm-grey text-mid-grey">
 				<td class="px-2 py-2">
 					<a href={path} class="text-dark-grey flex items-center gap-2">
