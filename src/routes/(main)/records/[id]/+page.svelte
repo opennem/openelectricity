@@ -63,7 +63,8 @@
 
 	$effect(() => {
 		if (focusDateTime) {
-			let date = new Date(focusDateTime);
+			let fixedFocusDateTime = focusDateTime.replace(' ', '+');
+			let date = new Date(fixedFocusDateTime);
 			recordState.selectedTime = date.getTime();
 			chartCxt.focusTime = date.getTime();
 			recordState.showTracker = true;
@@ -124,15 +125,11 @@
 	 * @param {string} [dateTimeStr]
 	 */
 	function handleOnFocus(dateTimeStr) {
-		let query = new URLSearchParams(page.url.searchParams.toString());
-
 		if (dateTimeStr) {
-			query.set('focusDateTime', dateTimeStr);
+			goto(`?focusDateTime=${dateTimeStr}`, { noScroll: true });
 		} else {
-			query.delete('focusDateTime');
+			goto(`?`, { noScroll: true });
 		}
-
-		goto(`?${query.toString()}`, { noScroll: true });
 	}
 
 	let pageTitle = $derived.by(() => {

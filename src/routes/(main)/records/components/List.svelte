@@ -100,7 +100,7 @@
 				<div>
 					<ul>
 						{#each records as record}
-							{@const path = `/records/${encodeURIComponent(record.record_id)}?focusDateTime=${encodeURIComponent(record.interval)}`}
+							{@const path = `/records/${encodeURIComponent(record.record_id)}?focusDateTime=${record.interval}`}
 							<li>
 								<a
 									href={path}
@@ -161,7 +161,7 @@
 				<div>
 					<ul>
 						{#each records as record}
-							{@const path = `/records/${encodeURIComponent(record.record_id)}?focusDateTime=${encodeURIComponent(record.interval)}`}
+							{@const path = `/records/${encodeURIComponent(record.record_id)}?focusDateTime=${record.interval}`}
 							<li>
 								<a
 									href={path}
@@ -225,7 +225,7 @@
 							{#each [...records] as [key, value]}
 								{@const latest = value[0]}
 								{@const lastest3Records = value.slice(0, 3)}
-								{@const path = `/records/${encodeURIComponent(latest.record_id)}?focusDateTime=${encodeURIComponent(latest.interval)}`}
+								{@const path = `/records/${encodeURIComponent(latest.record_id)}?focusDateTime=${latest.interval}`}
 								<li>
 									<a
 										href={path}
