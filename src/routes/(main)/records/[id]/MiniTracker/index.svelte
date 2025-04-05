@@ -22,6 +22,10 @@
 		chartCxt.chartOptions.displayPrefix = displayPrefix;
 	});
 
+	$effect(() => {
+		chartCxt.chartStyles.chartHeightClasses = `h-[${chartHeight}px]`;
+	});
+
 	/**
 	 * @param {Date} date
 	 * @param {string} period

@@ -76,13 +76,14 @@
 	// TODO: move to State
 	let innerWidth = $state(0);
 	let isMobile = $derived(innerWidth < 1024);
+	let isMd = $derived(innerWidth < 1440);
 
 	$effect(() => {
 		if (isMobile) {
 			chartCxt.chartStyles.chartHeightClasses = 'h-[290px]';
 			dateBrushCxt.chartStyles.chartHeightClasses = 'h-[40px]';
 		} else {
-			chartCxt.chartStyles.chartHeightClasses = 'h-[490px]';
+			chartCxt.chartStyles.chartHeightClasses = 'h-[490px] lg:h-[640px]';
 			dateBrushCxt.chartStyles.chartHeightClasses = 'h-[40px]';
 		}
 	});
@@ -167,7 +168,7 @@
 	{/if}
 {:else}
 	<div
-		class="grid grid-cols-1 gap-6 mb-6 grid-rows-[570px] relative z-10"
+		class="grid grid-cols-1 gap-6 mb-6 grid-rows-[570px] lg:grid-rows-[720px] relative z-10"
 		class:grid-cols-[2fr_5fr_2fr]={recordState.showTracker}
 		class:grid-cols-[2fr_5fr]={!recordState.showTracker}
 	>
@@ -197,12 +198,14 @@
 					<IconXMark />
 				</button>
 
-				<div class="bg-light-warm-grey rounded-lg w-full h-[508px] border border-warm-grey">
+				<div
+					class="bg-light-warm-grey rounded-lg w-full h-[508px] lg:h-[658px] border border-warm-grey"
+				>
 					<MiniTracker
 						record={recordState.selectedMilestone}
 						timeZone={chartCxt.timeZone}
 						displayPrefix={chartCxt.chartOptions.displayPrefix}
-						chartHeight={485}
+						chartHeight={isMd ? 485 : 635}
 					/>
 				</div>
 			</div>

@@ -166,8 +166,6 @@
 
 	let key = $derived(encodeURIComponent(`${data.record_id}~${data.focusTime}`));
 	let description = $derived(`Record | ${data.formattedDateTime}`);
-
-	//
 </script>
 
 <Meta
