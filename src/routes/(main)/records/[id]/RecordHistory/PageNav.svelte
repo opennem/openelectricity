@@ -322,46 +322,60 @@
 				</div>
 			</header>
 
-			<div class="grid grid-cols-2 gap-10 p-10 pb-0">
-				<FormSelect
-					options={availableRegionsOptions}
-					selected={region}
-					formLabel="Region"
-					paddingX={px}
-					paddingY={py}
-					staticDisplay={true}
-					on:change={handleRegionChange}
-				/>
+			<div class="grid grid-cols-2 gap-20 px-10 pt-5 pb-0">
+				<div class="flex flex-col gap-6">
+					<FormSelect
+						options={availableFuelTechsOptions}
+						selected={fuelTech}
+						formLabel="Technology"
+						paddingX={px}
+						paddingY={py}
+						staticDisplay={true}
+						on:change={handleFuelTechChange}
+					/>
 
-				<FormSelect
-					options={availableMetricsOptions}
-					selected={metric}
-					formLabel="Metric"
-					paddingX={px}
-					paddingY={py}
-					staticDisplay={true}
-					on:change={handleMetricChange}
-				/>
+					<FormSelect
+						options={availableAggregatesOptions}
+						selected={aggregate}
+						formLabel="Aggregate"
+						paddingX={px}
+						paddingY={py}
+						staticDisplay={true}
+						on:change={handleAggregateChange}
+					/>
+				</div>
 
-				<FormSelect
-					options={availablePeriodsOptions}
-					selected={period}
-					formLabel="Period"
-					paddingX={px}
-					paddingY={py}
-					staticDisplay={true}
-					on:change={handlePeriodChange}
-				/>
+				<div class="flex flex-col gap-6">
+					<FormSelect
+						options={availableRegionsOptions}
+						selected={region}
+						formLabel="Region"
+						paddingX={px}
+						paddingY={py}
+						staticDisplay={true}
+						on:change={handleRegionChange}
+					/>
 
-				<FormSelect
-					options={availableAggregatesOptions}
-					selected={aggregate}
-					formLabel="Aggregate"
-					paddingX={px}
-					paddingY={py}
-					staticDisplay={true}
-					on:change={handleAggregateChange}
-				/>
+					<FormSelect
+						options={availableMetricsOptions}
+						selected={metric}
+						formLabel="Metric"
+						paddingX={px}
+						paddingY={py}
+						staticDisplay={true}
+						on:change={handleMetricChange}
+					/>
+
+					<FormSelect
+						options={availablePeriodsOptions}
+						selected={period}
+						formLabel="Period"
+						paddingX={px}
+						paddingY={py}
+						staticDisplay={true}
+						on:change={handlePeriodChange}
+					/>
+				</div>
 			</div>
 
 			{#snippet buttons()}
@@ -379,7 +393,7 @@
 		<div class="flex gap-4 md:gap-6 items-center">
 			<a
 				href="/records"
-				class="inline-flex gap-2 md:gap-4 items-center text-dark-grey hover:text-dark-red underline font-space font-medium text-xs mr-0 md:text-sm md:mr-6"
+				class="inline-flex gap-2 md:gap-4 items-center text-dark-grey hover:text-dark-red underline font-space font-medium text-sm mr-0 md:mr-6"
 			>
 				<IconChevronLeft class="w-8 h-8" />
 				All Records
@@ -396,7 +410,7 @@
 				/>
 			</div>
 
-			<div class="text-nowrap">
+			<div class="hidden sm:block text-nowrap">
 				<FormSelect
 					options={availableFuelTechsOptions}
 					selected={fuelTech}

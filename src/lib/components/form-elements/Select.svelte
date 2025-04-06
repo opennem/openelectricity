@@ -61,7 +61,7 @@
 		class:hover:bg-warm-grey={!staticDisplay}
 	>
 		{#if staticDisplay}
-			<span class={selectedLabelClass}>{formLabel}</span>
+			<span class="{selectedLabelClass} font-space text-sm">{formLabel}</span>
 		{:else}
 			<span class="{selectedLabelClass} mb-0 capitalize">
 				{selected && selected.label ? selected?.label : findSelectedOption() || formLabel}
@@ -81,7 +81,7 @@
 				{:else}
 					<li class="whitespace-nowrap border-b border-warm-grey">
 						<button
-							class="w-full px-0 py-1 flex gap-4 items-center"
+							class="w-full px-0 py-1 flex gap-4 items-center text-sm"
 							class:text-mid-grey={selectedValue !== opt.value}
 							class:text-black={selectedValue === opt.value}
 							onclick={() => handleSelect(opt)}
