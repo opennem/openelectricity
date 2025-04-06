@@ -5,7 +5,7 @@
 	// Property custom blocks receive from @portabletext/svelte when redered
 
 	interface Props {
-		portableText: import('@chienleng/portabletext-svelte-5').CustomBlockComponentProps;
+		portableText: import('@portabletext/svelte').CustomBlockComponentProps;
 	}
 
 	let { portableText }: Props = $props();

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PortableText } from '@chienleng/portabletext-svelte-5';
+	import { PortableText } from '@portabletext/svelte';
 	import Image from '$lib/components/text-components/Image.svelte';
 
 	/**

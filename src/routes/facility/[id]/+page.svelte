@@ -1,6 +1,6 @@
 <script>
 	import { fade } from 'svelte/transition';
-	import { PortableText, toPlainText } from '@chienleng/portabletext-svelte-5';
+	import { PortableText, toPlainText } from '@portabletext/svelte';
 	import { byProp } from '$lib/utils/sort';
 	import { selectedRangeLabel, selectedIntervalLabel } from '../store';
 	import RangeIntervalSelection from './RangeIntervalSelection.svelte';
