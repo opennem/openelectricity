@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
+	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
@@ -374,8 +375,16 @@
 		</Modal>
 	{/if}
 
-	<div class="text-sm flex justify-between gap-6 items-center px-6 py-2 md:px-12">
-		<div class="flex gap-6 items-center">
+	<div class="text-sm flex justify-between gap-2 md:gap-6 items-center px-6 py-2 md:px-12">
+		<div class="flex gap-4 md:gap-6 items-center">
+			<a
+				href="/records"
+				class="inline-flex gap-2 md:gap-4 items-center text-dark-grey hover:text-dark-red underline font-space font-medium text-xs mr-0 md:text-sm md:mr-6"
+			>
+				<IconChevronLeft class="w-8 h-8" />
+				All Records
+			</a>
+
 			<div class="hidden sm:block text-nowrap">
 				<FormSelect
 					options={availableRegionsOptions}
