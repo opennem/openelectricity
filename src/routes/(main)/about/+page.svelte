@@ -223,7 +223,7 @@
 				Our client library enables access to the OpenNEM API and data sets.
 			</p>
 
-			<SectionLink href="/content/developers" title="View here" classes="underline" />
+			<SectionLink href="/developer" title="View here" classes="underline" />
 
 			<p class="text-dark-grey mt-8">
 				For developers interested in contributing to the project, accessing our codebase or
