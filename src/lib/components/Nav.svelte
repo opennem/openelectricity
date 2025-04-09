@@ -1,12 +1,12 @@
 <script>
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
-	import { dataTrackerLink, parsedFeatureFlags } from '$lib/stores/app';
+	import { dataTrackerLink } from '$lib/stores/app';
 	const navItems = [
 		{ name: 'Tracker', href: $dataTrackerLink },
 		{ name: 'Facilities', href: `${$dataTrackerLink}/facilities` },
 		{ name: 'Scenarios', href: '/scenarios' },
-		{ name: 'Records', href: '/records', show: parsedFeatureFlags['show_records'] },
+		{ name: 'Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },
 		{ name: 'About', href: '/about' }
 	];

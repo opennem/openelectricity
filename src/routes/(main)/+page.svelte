@@ -3,7 +3,6 @@
 	import { fade } from 'svelte/transition';
 
 	import ispData from '$lib/isp';
-	import { parsedFeatureFlags } from '$lib/stores/app';
 
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -94,35 +93,33 @@
 	<InfoGraphicNem7DayGeneration />
 </div>
 
-{#if parsedFeatureFlags['show_records']}
-	<div class="bg-light-warm-grey py-16 md:py-32 border-b border-warm-grey">
-		<div class="max-w-none md:container">
-			<h3 class="md:text-center px-10 md:px-0">Notable records</h3>
+<div class="bg-light-warm-grey py-16 md:py-32 border-b border-warm-grey">
+	<div class="max-w-none md:container">
+		<h3 class="md:text-center px-10 md:px-0">Notable records</h3>
 
-			<div class="mb-3 mt-5 px-7 md:px-5">
-				<FormSelect
-					paddingY="py-2"
-					paddingX="px-3"
-					options={[{ label: 'All regions', value: '' }, ...regionOptions]}
-					selected={selectedRecordRegion}
-					formLabel="All regions"
-					on:change={(evt) => (selectedRecordRegion = evt.detail.value)}
-				/>
-			</div>
+		<div class="mb-3 mt-5 px-7 md:px-5">
+			<FormSelect
+				paddingY="py-2"
+				paddingX="px-3"
+				options={[{ label: 'All regions', value: '' }, ...regionOptions]}
+				selected={selectedRecordRegion}
+				formLabel="All regions"
+				on:change={(evt) => (selectedRecordRegion = evt.detail.value)}
+			/>
+		</div>
 
-			<PinnedRecords {selectedRegions} showRegionLabel={selectedRecordRegion === ''} />
+		<PinnedRecords {selectedRegions} showRegionLabel={selectedRecordRegion === ''} />
 
-			<div class="flex justify-end mt-5 md:mt-16 px-10 md:px-0">
-				<a
-					href="/records"
-					class="mt-12 md:mt-0 block w-full md:w-auto text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
-				>
-					View records
-				</a>
-			</div>
+		<div class="flex justify-end mt-5 md:mt-16 px-10 md:px-0">
+			<a
+				href="/records"
+				class="mt-12 md:mt-0 block w-full md:w-auto text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+			>
+				View records
+			</a>
 		</div>
 	</div>
-{/if}
+</div>
 
 {#if regionPower && regionEnergy && regionEmissions}
 	<div class="md:bg-light-warm-grey">
