@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.0.0
+
+### Major Changes
+
+- Records release
+
 ## 2.4.0
 
 ### Minor Changes
