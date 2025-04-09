@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { PortableText } from '@portabletext/svelte';
-	import { Tweet } from 'sveltekit-embed';
+	import { Tweet, YouTube } from 'sveltekit-embed';
 
 	import Image from '$lib/components/text-components/Image.svelte';
 
@@ -135,6 +135,57 @@
 		return null;
 	}
 
+	/**
+	 * Checks if a block contains a YouTube link
+	 * @param {Block} block - The block to check
+	 * @returns {boolean} True if the block contains a YouTube link
+	 */
+	function isYouTubeLink(block: Block): boolean {
+		if (!block.children || !block.markDefs) return false;
+
+		return block.children.some((child: { text: string; marks?: string[] }) => {
+			if (!child.marks) return false;
+			return child.marks.some((mark: string) => {
+				const markDef = block.markDefs?.find((def: { _key: string }) => def._key === mark);
+				return (
+					markDef?._type === 'link' &&
+					(markDef.href?.includes('youtube.com') || markDef.href?.includes('youtu.be'))
+				);
+			});
+		});
+	}
+
+	/**
+	 * Extracts the YouTube video ID from a block
+	 * @param {Block} block - The block to extract the video ID from
+	 * @returns {string | null} The YouTube video ID or null if not found
+	 */
+	function getYouTubeId(block: Block): string | null {
+		if (!block.children || !block.markDefs) return null;
+
+		for (const child of block.children) {
+			if (!child.marks) continue;
+			for (const mark of child.marks) {
+				const markDef = block.markDefs?.find((def: { _key: string }) => def._key === mark);
+				if (
+					markDef?._type === 'link' &&
+					(markDef.href?.includes('youtube.com') || markDef.href?.includes('youtu.be'))
+				) {
+					// Handle youtu.be links
+					if (markDef.href.includes('youtu.be')) {
+						const url = new URL(markDef.href);
+						return url.pathname.slice(1); // Remove leading slash
+					}
+
+					// Handle youtube.com links
+					const url = new URL(markDef.href);
+					return url.searchParams.get('v');
+				}
+			}
+		}
+		return null;
+	}
+
 	console.log(content);
 </script>
 
@@ -163,6 +214,10 @@
 		{:else if isXLink(value)}
 			<div class="mx-auto max-w-5xl my-8">
 				<Tweet tweetLink={getXUrl(value) ?? ''} theme="dark" />
+			</div>
+		{:else if isYouTubeLink(value)}
+			<div class="mx-auto max-w-[800px] my-8 mb-24">
+				<YouTube youTubeId={getYouTubeId(value) ?? ''} modestBranding={true} />
 			</div>
 		{:else}
 			<div
