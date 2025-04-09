@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.0.1
+
+### Patch Changes
+
+- adjust portabletext padding
+
 ## 3.0.0
 
 ### Major Changes

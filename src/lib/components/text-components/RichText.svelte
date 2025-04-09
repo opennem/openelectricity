@@ -212,11 +212,11 @@
 				<PortableText value={value.blocks ? value.blocks : value} {components} />
 			</div>
 		{:else if isXLink(value)}
-			<div class="mx-auto max-w-5xl my-8">
+			<div class="mx-auto max-w-5xl my-24">
 				<Tweet tweetLink={getXUrl(value) ?? ''} theme="dark" />
 			</div>
 		{:else if isYouTubeLink(value)}
-			<div class="mx-auto max-w-[800px] my-8 mb-24">
+			<div class="mx-auto max-w-[800px] my-24">
 				<YouTube youTubeId={getYouTubeId(value) ?? ''} modestBranding={true} />
 			</div>
 		{:else}
