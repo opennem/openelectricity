@@ -6,7 +6,8 @@
 		{
 			title: 'Records',
 			description: 'Tracks significant events in the history of the Australian electricity market.',
-			link: '/records'
+			link: '/records',
+			released: true
 		},
 		{
 			title: 'Lens on Ember',
@@ -14,20 +15,20 @@
 			link: '/studio/lens-on-ember'
 		},
 		{
-			title: 'Lens on Australia’s electricity system and market',
+			title: "Lens on Australia's electricity system and market",
 			description: 'Visualises energy, pricing and emissions data from Australia.',
 			link: '/studio/lens-on-au-grid'
 		},
 		{
-			title: 'Atlas on Australia’s power generation facilities',
+			title: "Atlas on Australia's power generation facilities",
 			description: 'Exploring power generation facilities from Australia.',
 			link: '/studio/atlas-on-au-power-generation-facilities',
 			disabled: true
 		},
 		{
-			title: 'Lens on Australia’s emissions projections 2024',
+			title: "Lens on Australia's emissions projections 2024",
 			description:
-				'Visualises the latest estimates of Australia’s greenhouse gas emissions to 2040.',
+				"Visualises the latest estimates of Australia's greenhouse gas emissions to 2040.",
 			link: '/studio/lens-on-au-emissions-projections',
 			disabled: true
 		}
@@ -59,8 +60,15 @@
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
 		{#each projects as project}
 			<div
-				class="bg-dark-grey p-8 rounded-xl grid grid-cols-1 gap-8 content-between text-light-warm-grey"
+				class="bg-dark-grey p-8 rounded-xl grid grid-cols-1 gap-8 content-between text-light-warm-grey relative"
 			>
+				{#if project.released}
+					<div
+						class="absolute top-2 -right-1.5 bg-success-green text-dark-grey text-xs px-6 py-1 rounded"
+					>
+						Released
+					</div>
+				{/if}
 				<div>
 					<h2 class="text-lg font-light font-space leading-lg">
 						{project.title}
