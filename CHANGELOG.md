@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.1.1
+
+### Patch Changes
+
+- e21c916: update preview image path
+
 ## 3.1.0
 
 ### Minor Changes
