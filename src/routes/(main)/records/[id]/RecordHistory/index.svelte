@@ -54,7 +54,7 @@
 	function onpointerup(evt) {
 		let isSame = chartCxt.focusTime === evt.time;
 		updateChartFocus(isSame ? undefined : evt.time);
-		onfocus(isSame ? undefined : evt.recordedDateTimeStr);
+		onfocus(isSame ? undefined : evt.time, isSame ? undefined : evt.recordedDateTimeStr);
 		recordState.showTracker = isSame ? false : true;
 	}
 

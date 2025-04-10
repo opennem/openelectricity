@@ -1,10 +1,17 @@
+import { isValid } from 'date-fns';
+
 export async function load({ fetch, url }) {
 	try {
 		const nemWemRecordIds = await fetch('/api/record-ids');
 		const nemRegionsRecordIds = await fetch('/api/record-ids?regions=nsw1,qld1,sa1,tas1,vic1');
 		const { searchParams } = url;
 		const focus = searchParams.get('focus');
-		const focusTime = focus ? new Date(focus).getTime() : null;
+
+		let focusTime = null;
+
+		if (focus) {
+			focusTime = isValid(new Date(focus)) ? new Date(focus).getTime() : parseInt(focus);
+		}
 
 		if (!nemWemRecordIds.ok) {
 			throw new Error(`HTTP error: ${nemWemRecordIds.status}`);

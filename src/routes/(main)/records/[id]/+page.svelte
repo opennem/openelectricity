@@ -16,7 +16,7 @@
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
 
 	let { data } = $props();
-	let { period, recordIds, focus } = $derived(data);
+	let { period, recordIds, focusTime } = $derived(data);
 	let loading = $state(false);
 	let defaultXDomain = $state();
 	let { chartCxt, dateBrushCxt } = init();
@@ -61,10 +61,9 @@
 	});
 
 	$effect(() => {
-		if (focus) {
-			let date = new Date(focus);
-			recordState.selectedTime = date.getTime();
-			chartCxt.focusTime = date.getTime();
+		if (focusTime) {
+			recordState.selectedTime = focusTime;
+			chartCxt.focusTime = focusTime;
 			recordState.showTracker = true;
 		}
 	});
@@ -120,12 +119,13 @@
 	}
 
 	/**
+	 * @param {number} time
 	 * @param {string} [dateTimeStr]
 	 */
-	function handleOnFocus(dateTimeStr) {
+	function handleOnFocus(time, dateTimeStr) {
 		let query = new URLSearchParams(page.url.searchParams.toString());
 		if (dateTimeStr) {
-			query.set('focus', dateTimeStr);
+			query.set('focus', time.toString());
 		} else {
 			query.delete('focus');
 		}
@@ -241,7 +241,11 @@
 
 				<button
 					class="flex md:flex-col md:justify-end text-dark-grey rounded-2xl px-8 pt-6 pb-4 bg-light-warm-grey md:ml-2 border hover:border-mid-warm-grey transition-border duration-200"
-					onclick={() => handleOnFocus(recordState.latestMilestone?.interval || '')}
+					onclick={() =>
+						handleOnFocus(
+							recordState.latestMilestone?.time || 0,
+							recordState.latestMilestone?.interval || ''
+						)}
 					class:border-transparent={recordState.latestMilestone?.time !== recordState.selectedTime}
 					class:border-mid-warm-grey={recordState.latestMilestone?.time ===
 						recordState.selectedTime}
