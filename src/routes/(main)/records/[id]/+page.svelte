@@ -130,9 +130,9 @@
 			let datetime = dateTimeStr.slice(0, -6).replaceAll(':', '_');
 			offset = offset[0] === '+' ? offset.slice(1) : offset;
 
-			query.set('focus', time.toString());
 			query.set('datetime', datetime);
 			query.set('offset', offset);
+			query.set('focus', time.toString());
 		} else {
 			query.delete('focus');
 			query.delete('datetime');
