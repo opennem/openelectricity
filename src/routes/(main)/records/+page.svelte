@@ -160,9 +160,9 @@
 </script>
 
 <Meta
-	title={`${regionsWithLabels[$selectedRegion] || 'NEM'} Records`}
-	description="Track historical and current records of Australia's electricity grid with Open Electricity's record tracker"
-	image="/img/preview.jpg"
+	title="Records"
+	description="Real-time records from the Australian electricity network"
+	image="/img/records-preview.jpg"
 />
 
 <div class="bg-light-warm-grey">
