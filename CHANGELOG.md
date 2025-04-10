@@ -1,5 +1,12 @@
 # opennem-app
 
+## 3.1.2
+
+### Patch Changes
+
+- 405a1ec: update preview path
+- e069c74: reorder query
+
 ## 3.1.1
 
 ### Patch Changes
