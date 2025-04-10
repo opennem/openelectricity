@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.1.0
+
+### Minor Changes
+
+- Update Records meta description and image. Support for user friendly date time offset in url
+
 ## 3.0.1
 
 ### Patch Changes
