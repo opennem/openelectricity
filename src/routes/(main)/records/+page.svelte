@@ -162,7 +162,7 @@
 <Meta
 	title="Records"
 	description="Real-time records from the Australian electricity network"
-	image="/img/records-preview.jpg"
+	image="https://openelectricity.org.au/img/records-preview.jpg"
 />
 
 <div class="bg-light-warm-grey">
