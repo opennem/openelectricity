@@ -14,7 +14,7 @@
 	import fetchRecord from './RecordHistory/helpers/fetch';
 	import process from './RecordHistory/helpers/process';
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
-
+	import dateTimeQuery from '../page-data-options/date-time-query';
 	let { data } = $props();
 	let { period, recordIds, focusTime } = $derived(data);
 	let loading = $state(false);
@@ -124,10 +124,19 @@
 	 */
 	function handleOnFocus(time, dateTimeStr) {
 		let query = new URLSearchParams(page.url.searchParams.toString());
+
 		if (dateTimeStr) {
+			let offset = dateTimeStr.slice(-6).replaceAll(':', '_');
+			let datetime = dateTimeStr.slice(0, -6).replaceAll(':', '_');
+			offset = offset[0] === '+' ? offset.slice(1) : offset;
+
 			query.set('focus', time.toString());
+			query.set('datetime', datetime);
+			query.set('offset', offset);
 		} else {
 			query.delete('focus');
+			query.delete('datetime');
+			query.delete('offset');
 		}
 		goto(`?${query.toString()}`, { noScroll: true });
 	}

@@ -4,6 +4,7 @@
 	import FuelTechIcon from './FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import { regions } from '../page-data-options/filters';
+	import dateTimeQuery from '../page-data-options/date-time-query';
 	let { rolledUpRecords } = $props();
 
 	// $inspect('rolledUpRecords', rolledUpRecords);
@@ -100,7 +101,7 @@
 				<div>
 					<ul>
 						{#each records as record}
-							{@const path = `/records/${encodeURIComponent(record.record_id)}?focus=${record.time}`}
+							{@const path = `/records/${encodeURIComponent(record.record_id)}?${dateTimeQuery(record.interval)}&focus=${record.time}`}
 							<li>
 								<a
 									href={path}
@@ -161,7 +162,7 @@
 				<div>
 					<ul>
 						{#each records as record}
-							{@const path = `/records/${encodeURIComponent(record.record_id)}?focus=${record.time}`}
+							{@const path = `/records/${encodeURIComponent(record.record_id)}?${dateTimeQuery(record.interval)}&focus=${record.time}`}
 							<li>
 								<a
 									href={path}
@@ -225,7 +226,7 @@
 							{#each [...records] as [key, value]}
 								{@const latest = value[0]}
 								{@const lastest3Records = value.slice(0, 3)}
-								{@const path = `/records/${encodeURIComponent(latest.record_id)}?focus=${latest.time}`}
+								{@const path = `/records/${encodeURIComponent(latest.record_id)}?${dateTimeQuery(latest.interval)}&focus=${latest.time}`}
 								<li>
 									<a
 										href={path}

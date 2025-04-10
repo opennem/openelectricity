@@ -5,6 +5,7 @@
 	import getRelativeTime from '../page-data-options/relative-time';
 	import recordDescription from '../page-data-options/record-description';
 	import FuelTechIcon from './FuelTechIcon.svelte';
+	import dateTimeQuery from '../page-data-options/date-time-query';
 
 	let { selectedRegions = [], showRegionLabel = true } = $props();
 
@@ -221,7 +222,7 @@
 		>
 			{#if !loading}
 				{#if recordData}
-					{@const path = `/records/${encodeURIComponent(recordData.recordId)}?focus=${recordData.time}`}
+					{@const path = `/records/${encodeURIComponent(recordData.recordId)}?${dateTimeQuery(recordData.interval)}&focus=${recordData.time}`}
 					<a
 						href={path}
 						class="text-black bg-white border border-mid-warm-grey hover:border-dark-grey !no-underline rounded-xl p-6 h-full min-h-[200px] grid grid-cols-1 gap-4 content-between transition-all"

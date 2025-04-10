@@ -4,7 +4,7 @@
 	import recordDescription from '../page-data-options/record-description';
 	import { xTickValueFormatters } from '../[id]/RecordHistory/helpers/config';
 	import { regions } from '../page-data-options/filters';
-
+	import dateTimeQuery from '../page-data-options/date-time-query';
 	let { dataset } = $props();
 
 	/**
@@ -40,7 +40,7 @@
 				record.time,
 				record.timeZone
 			)}
-			{@const path = `/records/${encodeURIComponent(record.record_id)}?focus=${record.time}`}
+			{@const path = `/records/${encodeURIComponent(record.record_id)}?${dateTimeQuery(record.interval)}&focus=${record.time}`}
 			<tr class="border-b border-warm-grey pointer hover:bg-warm-grey text-mid-grey">
 				<td class="px-2 py-2">
 					<a href={path} class="text-dark-grey flex items-center gap-2">
