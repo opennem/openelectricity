@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.2.0
+
+### Minor Changes
+
+- test Plausible analytics
+
 ## 3.1.2
 
 ### Patch Changes
