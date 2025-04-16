@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.3.0
+
+### Minor Changes
+
+- e4a455d: mailchimp integration
+
 ## 3.2.0
 
 ### Minor Changes
