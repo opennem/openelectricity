@@ -1,6 +1,4 @@
 <script>
-	import { preventDefault } from 'svelte/legacy';
-
 	import { version } from '$app/environment';
 
 	import SectionLink from './SectionLink.svelte';
@@ -12,14 +10,18 @@
 	 */
 	let emailField = $state();
 
-	async function signup(/** @type {{ currentTarget: HTMLFormElement | undefined; }} */ event) {
+	/**
+	 * @param {SubmitEvent} event
+	 */
+	async function signup(event) {
+		event.preventDefault();
 		formSubmitting = true;
 
-		const data = new FormData(event.currentTarget);
+		// const data = new FormData(event.target);
 
 		await fetch('/api/signup', {
-			method: 'POST',
-			body: JSON.stringify({ email: data.get('email') })
+			method: 'PUT',
+			body: JSON.stringify({ email: emailField.value })
 		});
 
 		formSubmitting = false;
@@ -54,7 +56,7 @@
 					<strong>Stay Connected</strong> — Sign up to be notified of platform updates, events and the
 					latest analysis.
 				</div>
-				<form class="flex md:w-5/12 flex-shrink-0 items-center" onsubmit={preventDefault(signup)}>
+				<form class="flex md:w-5/12 flex-shrink-0 items-center" onsubmit={signup}>
 					<input
 						type="email"
 						name="email"
