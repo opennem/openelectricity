@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.4.0
+
+### Minor Changes
+
+- improve signup flow design
+
 ## 3.3.0
 
 ### Minor Changes

@@ -1,6 +1,6 @@
 <script>
 	import { version } from '$app/environment';
-
+	import { fade } from 'svelte/transition';
 	import SectionLink from './SectionLink.svelte';
 	let formSubmitting = $state(false);
 	let formSubmitted = $state(false);
@@ -9,6 +9,8 @@
 	 * @type {HTMLInputElement}
 	 */
 	let emailField = $state();
+	let subscriptionStatus = $state(null);
+	let pendingSubscription = $derived(subscriptionStatus === 'pending');
 
 	/**
 	 * @param {SubmitEvent} event
@@ -17,22 +19,38 @@
 		event.preventDefault();
 		formSubmitting = true;
 
-		// const data = new FormData(event.target);
-
-		await fetch('/api/signup', {
+		const response = await fetch('/api/signup', {
 			method: 'PUT',
 			body: JSON.stringify({ email: emailField.value })
 		});
 
+		const { status, email } = await response.json();
+		subscriptionStatus = status;
+
 		formSubmitting = false;
-		formSubmitted = true;
+
+		if (status === 'pending') {
+			await /** @type {Promise<void>} */ (
+				new Promise((resolve) => {
+					setTimeout(() => {
+						formSubmitted = true;
+						resolve();
+					}, 5000);
+				})
+			);
+		} else {
+			formSubmitted = true;
+		}
 
 		// Wait 2 seconds after form is submitted, then clear and reset the form
 		await /** @type {Promise<void>} */ (
 			new Promise((resolve) => {
 				setTimeout(() => {
 					formSubmitted = false;
-					emailField.value = '';
+					if (emailField) {
+						emailField.value = '';
+					}
+					subscriptionStatus = null;
 					resolve();
 				}, 2000);
 			})
@@ -56,20 +74,37 @@
 					<strong>Stay Connected</strong> — Sign up to be notified of platform updates, events and the
 					latest analysis.
 				</div>
-				<form class="flex md:w-5/12 flex-shrink-0 items-center" onsubmit={signup}>
-					<input
-						type="email"
-						name="email"
-						placeholder="Email Address"
-						class="w-full h-20 rounded-full pl-8 pr-28 inherit text-[1.4rem] focus:ring-red focus:border-red"
-						bind:this={emailField}
-					/>
-					<button
-						type="submit"
-						class="h-20 rounded-full bg-white border border-black px-12 font-bold ml-[-5rem]"
-						disabled={formSubmitting || formSubmitted}
-						>{formSubmitting ? 'Processing...' : formSubmitted ? 'Subscribed' : 'Subscribe'}</button
-					>
+
+				<form class="flex md:w-5/12 flex-shrink-0 items-center justify-end" onsubmit={signup}>
+					{#if pendingSubscription}
+						<div
+							class="rounded-full whitespace-nowrap flex items-center justify-center px-12 py-6 bg-mid-warm-grey text-dark-warm-grey font-semibold"
+						>
+							Check your email to complete subscription.
+						</div>
+					{:else}
+						<input
+							type="email"
+							name="email"
+							placeholder="Email Address"
+							class="w-full h-20 rounded-full pl-8 pr-28 inherit text-[1.4rem] focus:ring-red focus:border-red"
+							bind:this={emailField}
+							disabled={formSubmitting || formSubmitted}
+						/>
+						<button
+							type="submit"
+							class="h-20 rounded-full bg-white border border-black px-12 font-bold ml-[-5rem]"
+							disabled={formSubmitting || formSubmitted}
+						>
+							{#if formSubmitting}
+								Processing...
+							{:else if formSubmitted}
+								Subscribed
+							{:else}
+								Subscribe
+							{/if}
+						</button>
+					{/if}
 				</form>
 			</div>
 		</div>

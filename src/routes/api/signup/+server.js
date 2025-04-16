@@ -21,7 +21,11 @@ export async function PUT({ request }) {
 	);
 
 	const data = await response.json();
-	return json(data.email_address);
+
+	return json({
+		email: data.email_address,
+		status: data.status
+	});
 }
 
 // This handler will respond to POST, PATCH, DELETE, etc.
