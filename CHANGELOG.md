@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.5.0
+
+### Minor Changes
+
+- implement article previews
+
 ## 3.4.0
 
 ### Minor Changes

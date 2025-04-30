@@ -185,8 +185,6 @@
 		}
 		return null;
 	}
-
-	console.log(content);
 </script>
 
 {#if content}

@@ -24,8 +24,6 @@
 	let feedbackButtonRef = $state();
 	let feedbackButtonPosition = $derived(feedbackButtonRef?.getBoundingClientRect());
 
-	$inspect('feedbackButtonPosition', feedbackButtonPosition);
-
 	onNavigate((navigation) => {
 		// If the browser doesn't support view transitions, return early
 		// @ts-ignore

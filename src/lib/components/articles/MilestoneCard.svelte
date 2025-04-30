@@ -3,20 +3,19 @@
 	import { urlFor } from '$lib/sanity';
 	import FuelTechTag from '$lib/components/FuelTechTag.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {Article} article
 	 */
 
 	/** @type {Props & { [key: string]: any }} */
-	let { article, ...rest } = $props();
+	let { article, preview = false, ...rest } = $props();
 
 	const publishedDate = parse(article.publish_date, 'yyyy-MM-dd', new Date());
 </script>
 
 <a
-	href={`/analysis/${article.slug.current}`}
+	href={`${preview ? '/analysis/drafts' : '/analysis'}/${article.slug.current}`}
 	class={`grid grid-cols-1 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${rest.class}`}
 >
 	<header class="mt-8">
