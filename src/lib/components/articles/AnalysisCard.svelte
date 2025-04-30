@@ -33,10 +33,7 @@
 	let tag = $derived(article.tags && article.tags.length ? article.tags[0] : null);
 </script>
 
-<a
-	href={`${preview ? '/analysis/drafts' : '/analysis'}/${article.slug.current}`}
-	class={linkStyles}
->
+<a href={`${preview ? '/article-drafts' : '/analysis'}/${article.slug.current}`} class={linkStyles}>
 	<header class={headerStyles}>
 		<div class="text-xs flex items-center justify-between">
 			{#if tag}

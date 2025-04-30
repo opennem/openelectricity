@@ -32,7 +32,7 @@
 	<div class="container max-w-none lg:container py-12 relative z-10">
 		<div class="pb-10 md:py-14">
 			<a
-				href="/analysis/drafts"
+				href="/article-drafts"
 				class="inline-flex gap-4 items-center text-dark-grey hover:text-dark-red underline font-space font-medium text-sm"
 			>
 				<IconChevronLeft class="w-8 h-8" />
