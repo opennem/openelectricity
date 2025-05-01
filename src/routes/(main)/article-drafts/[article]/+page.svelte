@@ -50,11 +50,19 @@
 					<div class="flex items-center">
 						{#each data.author as author, i}
 							<span class={`w-20 h-20 block grayscale relative ${i > 0 ? '-left-3' : 'left-0'}`}>
-								<img
-									class="rounded-full border border-white"
-									src={urlFor(author.image).width(100).height(100).url()}
-									alt={author.image.alt}
-								/>
+								{#if author.image}
+									<img
+										class="rounded-full border border-white"
+										src={urlFor(author.image).width(100).height(100).url()}
+										alt={author.image.alt}
+									/>
+								{:else}
+									<img
+										class="rounded-full border border-white p-2"
+										src="/favicon.png"
+										alt="author"
+									/>
+								{/if}
 							</span>
 						{/each}
 					</div>

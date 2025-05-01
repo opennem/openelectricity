@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.5.2
+
+### Patch Changes
+
+- fix issue when the site breaks when there is no author image
+
 ## 3.5.1
 
 ### Patch Changes
