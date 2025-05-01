@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.5.3
+
+### Patch Changes
+
+- update portabletext links styles
+
 ## 3.5.2
 
 ### Patch Changes

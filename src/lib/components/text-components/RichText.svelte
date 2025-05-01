@@ -219,7 +219,7 @@
 			</div>
 		{:else}
 			<div
-				class="mx-auto max-w-5xl"
+				class="mx-auto max-w-5xl portable-override"
 				class:blockquote={value.style === 'blockquote'}
 				class:border-t={value.style === 'blockquote'}
 				class:border-dark-grey={value.style === 'blockquote'}
@@ -249,6 +249,9 @@
 	}
 	:global(.portable-override h6) {
 		@apply text-xs text-mid-grey font-light;
+	}
+	:global(.portable-override a) {
+		@apply text-black hover:text-dark-red underline;
 	}
 	:global(.portable-override h6 a) {
 		@apply text-mid-grey underline;
