@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.6.2
+
+### Patch Changes
+
+- show author bio
+
 ## 3.6.1
 
 ### Patch Changes
