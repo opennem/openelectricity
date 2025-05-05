@@ -108,7 +108,7 @@
 </div>
 
 <div class="container max-w-none lg:container pt-12 pb-36">
-	<div class="flex items-center gap-6 max-w-5xl mx-auto border-y border-mid-warm-grey py-12">
+	<div class="flex items-start gap-6 max-w-5xl mx-auto border-y border-mid-warm-grey py-12">
 		<div class="flex items-center">
 			{#each data.author as author, i}
 				<span class={`w-20 h-20 block grayscale relative ${i > 0 ? '-left-3' : 'left-0'}`}>
@@ -120,8 +120,8 @@
 				</span>
 			{/each}
 		</div>
-		<div class="text-sm mt-1">
-			<div class="author flex flex-wrap justify-start gap-1 text-dark-grey">
+		<div class="text-sm mt-2">
+			<div class="author flex flex-wrap justify-start gap-1 font-bold">
 				{#each data.author as author, i}
 					{#if i > 0}
 						<span>+</span>
@@ -133,6 +133,12 @@
 			<div class="author flex flex-wrap justify-start gap-1 text-mid-grey font-light">
 				{#each data.author as author}
 					<span>{author.position}</span>
+				{/each}
+			</div>
+
+			<div class="author-bio text-mid-grey mt-4">
+				{#each data.author as author}
+					<span>{author.bio}</span>
 				{/each}
 			</div>
 		</div>
