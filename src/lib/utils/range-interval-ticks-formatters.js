@@ -2,6 +2,45 @@ import { eachYearOfInterval } from 'date-fns';
 import { getFormattedDate } from '$lib/utils/formatters';
 import popEveryXItem from '$lib/utils/pop-every-x-item';
 
+/**
+ * @param {Date} d
+ * @param {string} [timeZone]
+ * @returns {string}
+ */
+export function getFormattedDateTimeWithTimezone(d, timeZone = '+10:00') {
+	let time = new Intl.DateTimeFormat('en-AU', {
+		hour: 'numeric',
+		minute: 'numeric',
+		timeZone
+	}).format(d);
+
+	let date = new Intl.DateTimeFormat('en-AU', {
+		weekday: 'short',
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric',
+		timeZone
+	}).format(d);
+
+	return `${date}, ${time}`;
+}
+
+/**
+ * @param {Date} d
+ * @param {string} [timeZone]
+ * @returns {string}
+ */
+export function getFormattedDayDateWithTimezone(d, timeZone = '+10:00') {
+	let date = new Intl.DateTimeFormat('en-AU', {
+		weekday: 'short',
+		day: 'numeric',
+		month: 'short',
+		timeZone
+	}).format(d);
+
+	return `${date}`;
+}
+
 /** for each range, the ticks, format, and formatTick are defined.
  * use `default` for the default value.
  * this controls the number of x-axis ticks and the formatting of the x-axis labels and x value.
@@ -12,12 +51,12 @@ let rangeIntervalXFormatters = {
 			default: () => 8
 		},
 		format: {
-			default: (/** @type {Date} */ d) =>
-				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+			default: (/** @type {Date} */ d, timeZone = '+10:00') =>
+				getFormattedDateTimeWithTimezone(d, timeZone)
 		},
 		formatTick: {
-			default: (/** @type {Date} */ d) =>
-				getFormattedDate(d, undefined, undefined, undefined, 'numeric')
+			default: (/** @type {Date} */ d, timeZone = '+10:00') =>
+				getFormattedDayDateWithTimezone(d, undefined, 'numeric', 'short', undefined, timeZone)
 		}
 	},
 

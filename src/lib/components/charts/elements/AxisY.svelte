@@ -19,6 +19,7 @@
 	 * @property {string} [textAnchor]
 	 * @property {any} [yLabelStartPos]
 	 * @property {string} [zeroValueStroke]
+	 * @property {boolean} [showLastTick]
 	 */
 
 	/** @type {Props} */
@@ -36,7 +37,8 @@
 		dyTick = -4,
 		textAnchor = 'start',
 		yLabelStartPos = null,
-		zeroValueStroke = '#353535'
+		zeroValueStroke = '#353535',
+		showLastTick = true
 	} = $props();
 
 	let isBandwidth = $derived(typeof $yScale.bandwidth === 'function');
@@ -94,6 +96,7 @@
 			{/if}
 			<text
 				class="text-xxs font-light text-mid-warm-grey"
+				class:hidden={i === tickVals.length - 1 && !showLastTick}
 				fill={textFill}
 				x={xTick}
 				y={isBandwidth ? $yScale.bandwidth() / 2 + yTick : yTick}

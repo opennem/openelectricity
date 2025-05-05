@@ -36,6 +36,8 @@ export default class ChartStylesState {
 	showFocusDot = $state(false);
 	/** @type {boolean} */
 	showFocusYLine = $state(false);
+	/** @type {boolean} */
+	showLastYTick = $state(true);
 
 	/** @type {string} */
 	focusYLineStrokeColour = $state('#C7452399');
