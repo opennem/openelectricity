@@ -152,6 +152,7 @@
 					gridlines={true}
 					stroke={cxt.chartStyles.yAxisStroke}
 					zeroValueStroke={cxt.chartStyles.zeroValueStroke}
+					showLastTick={cxt.chartStyles.showLastYTick}
 				/>
 
 				<AxisX

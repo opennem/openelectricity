@@ -1,5 +1,17 @@
 # opennem-app
 
+## 3.6.0
+
+### Minor Changes
+
+- WIP widget preview
+
+## 3.5.4
+
+### Patch Changes
+
+- check sanity image contains asset prop before getting url
+
 ## 3.5.3
 
 ### Patch Changes

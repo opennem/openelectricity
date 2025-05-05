@@ -4,10 +4,6 @@
 
 	const dispatch = createEventDispatcher();
 
-	
-	
-	
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {{ label: string, value: string | number, icon?: string }[]} [buttons]

@@ -83,7 +83,7 @@ export function getFormattedMonth(date, month, timeZone = 'Australia/Sydney') {
  * @param {string} [timeZone]
  * @returns
  */
-export function getFormattedDate(date, weekday, day, month, year, timeZone) {
+export function getFormattedDate(date, weekday, day, month, year, timeZone = '+10:00') {
 	return new Intl.DateTimeFormat('en-AU', {
 		month,
 		weekday,
