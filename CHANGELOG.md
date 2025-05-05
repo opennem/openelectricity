@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.6.1
+
+### Patch Changes
+
+- fix issue where styles were added to image
+
 ## 3.6.0
 
 ### Minor Changes

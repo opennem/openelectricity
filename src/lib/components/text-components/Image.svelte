@@ -20,7 +20,7 @@
 	{#if hasStyle}
 		<img class="border rounded-xl shadow-lg" src={hasImageUrl} alt={portableText.value.alt} />
 	{:else}
-		<img class="border rounded-xl shadow-lg" src={hasImageUrl} alt={portableText.value.alt} />
+		<img src={hasImageUrl} alt={portableText.value.alt} />
 	{/if}
 
 	{#if portableText.value.alt}
