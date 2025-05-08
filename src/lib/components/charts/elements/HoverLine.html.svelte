@@ -5,12 +5,6 @@
 
 	const { xGet, yGet, height } = getContext('LayerCake');
 
-	
-
-
-
-
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData | undefined} [hoverData]
@@ -34,7 +28,6 @@
 	let visible = $state(false);
 	let x = $state(0);
 	let y = $state([0, 0]);
-
 
 	/**
 	 * @param {TimeSeriesData | undefined} d

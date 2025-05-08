@@ -5,7 +5,7 @@
  * baseUnit: string,
  * displayPrefix: SiPrefix,
  * allowedPrefixes: SiPrefix[],
- * chartStyles?: { chartHeightClasses: string, xAxisFill: string, showLastYTick: boolean }
+ * chartStyles?: { chartHeightClasses: string, xAxisFill: string, showLastYTick: boolean, chartPadding: { top: number, right: number, bottom: number, left: number } }
  * }} chartCxtOptions */
 
 /** @type {Record<string, chartCxtOptions>} */
@@ -19,20 +19,11 @@ export let chartCxtsOptions = {
 		baseUnit: 'W',
 		chartStyles: {
 			chartHeightClasses: 'h-[230px]',
+			chartPadding: { top: 0, right: 0, bottom: 40, left: 0 },
 			xAxisFill: 'rgb(250, 249, 246)',
 			showLastYTick: false
 		}
 	}
-};
-
-/** @type {chartCxtOptions} */
-export let dateBrushCxtOptions = {
-	key: Symbol('date-brush'),
-	title: 'Date Brush',
-	prefix: 'M',
-	displayPrefix: 'M',
-	allowedPrefixes: ['M'],
-	baseUnit: 'W'
 };
 
 /** @type {Record<string, {label: string, intervals?: string[]}>} */

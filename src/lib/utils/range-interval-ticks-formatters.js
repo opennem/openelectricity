@@ -32,7 +32,6 @@ export function getFormattedDateTimeWithTimezone(d, timeZone = '+10:00') {
  */
 export function getFormattedDayDateWithTimezone(d, timeZone = '+10:00') {
 	let date = new Intl.DateTimeFormat('en-AU', {
-		weekday: 'short',
 		day: 'numeric',
 		month: 'short',
 		timeZone
@@ -56,7 +55,7 @@ let rangeIntervalXFormatters = {
 		},
 		formatTick: {
 			default: (/** @type {Date} */ d, timeZone = '+10:00') =>
-				getFormattedDayDateWithTimezone(d, undefined, 'numeric', 'short', undefined, timeZone)
+				getFormattedDayDateWithTimezone(d, timeZone)
 		}
 	},
 

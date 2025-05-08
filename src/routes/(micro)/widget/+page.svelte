@@ -1,13 +1,16 @@
 <script>
+	import { clickoutside } from '@svelte-put/clickoutside';
+	import { goto } from '$app/navigation';
 	import { colourReducer } from '$lib/stores/theme';
 	import LensChart from '$lib/components/charts/LensChart.svelte';
+	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 
 	import init from './helpers/init';
 	import process from './helpers/process';
 	import { fuelTechMap, orderMap, labelReducer } from './helpers/groups';
-	import { goto } from '$app/navigation';
-
+	import TopTips from './TopTips.svelte';
+	import BottomTips from './BottomTips.svelte';
 	const { data } = $props();
 	let { dataset, region, range, interval } = $derived(data);
 	let { filtersCxt, chartCxt } = init(data);
@@ -90,38 +93,48 @@
 	function updateCxt(ts) {
 		let cxt = chartCxt;
 
+		let isNem = region === 'NEM';
+
 		// only show data for the last three days
 		cxt.seriesData = ts.data.filter((d) => d.time > Date.now() - 3 * 24 * 60 * 60 * 1000);
 		cxt.seriesNames = ts.seriesNames;
 		cxt.seriesColours = ts.seriesColours;
 		cxt.seriesLabels = ts.seriesLabels;
 
+		cxt.timeZone = isNem ? '+10:00' : '+08:00';
 		cxt.xTicks = 3;
 		cxt.formatX = filtersCxt.valueFormatters.format;
 		cxt.formatTickX = filtersCxt.valueFormatters.formatTick;
 	}
 
 	/**
-	 * @param {Event} evt
+	 * @param {string} region
 	 */
-	function gotoRegion(evt) {
-		if (evt.target) {
-			goto(`/widget?region=${/** @type {HTMLSelectElement} */ (evt.target).value}`);
-		}
+	function gotoRegion(region) {
+		dropdownOpen = false;
+		goto(`/widget?region=${region}`);
+	}
+
+	let dropdownOpen = $state(false);
+	function showDropdown() {
+		dropdownOpen = !dropdownOpen;
 	}
 </script>
 
 {#snippet customHeader()}
-	<div class="h-[25px]"></div>
+	<TopTips cxtKey={chartCxt.key} />
 {/snippet}
 
 {#snippet customTooltips()}
-	<!-- <div class="absolute bottom-0 left-0 right-0 bg-warm-grey z-10 text-xxs py-1 px-2">
-		bottom tips
-	</div> -->
+	<div class="absolute z-10 w-full -bottom-4">
+		<BottomTips cxtKey={chartCxt.key} />
+	</div>
 {/snippet}
 
-<div class="h-[265px] w-[300px] mx-auto bg-light-warm-grey rounded-lg shadow-sm">
+<div
+	class="h-[265px] w-[300px] mx-auto bg-light-warm-grey rounded-lg shadow-sm relative overflow-hidden"
+>
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="h-[230px] relative z-0">
 		<LensChart
 			cxtKey={chartCxt.key}
@@ -131,27 +144,60 @@
 			chartPaddingClasses="p-0"
 			{onmousemove}
 			{onmouseout}
-			{onpointerup}
 			{customHeader}
 			{customTooltips}
 		/>
 	</div>
-	<div class="h-[35px] flex items-center justify-between px-2 pt-3">
-		<div class="flex items-center gap-2">
-			<div class="ml-2">
-				<div class="text-xxs font-light text-dark-grey flex items-center gap-1">
-					<span class="font-semibold">WEM</span>
-					<IconChevronUpDown class="w-4 h-4" />
-				</div>
+	<div
+		class="h-[35px] flex items-center justify-between px-2 pt-3 relative z-10"
+		use:clickoutside
+		onclickoutside={() => (dropdownOpen = false)}
+	>
+		{#if dropdownOpen}
+			<div
+				class="fixed bg-white p-1 rounded-lg shadow-sm -mt-32 text-xxs font-light text-dark-grey flex flex-col gap-2"
+			>
+				<button
+					class="rounded px-2 py-1 hover:bg-warm-grey flex justify-between items-center gap-2"
+					onclick={() => gotoRegion('NEM')}
+				>
+					NEM
+					{#if filtersCxt.selectedRegion === 'NEM'}
+						<span>
+							<IconCheckMark class="w-4 h-4" />
+						</span>
+					{/if}
+				</button>
+				<button
+					class="rounded px-2 py-1 hover:bg-warm-grey flex justify-between items-center gap-2"
+					onclick={() => gotoRegion('WEM')}
+				>
+					WEM
+					{#if filtersCxt.selectedRegion === 'WEM'}
+						<span>
+							<IconCheckMark class="w-4 h-4" />
+						</span>
+					{/if}
+				</button>
 			</div>
-		</div>
+		{/if}
+
+		<button
+			class="text-xxs font-light text-dark-grey flex items-center gap-1 hover:bg-warm-grey rounded-lg px-2 py-1"
+			onclick={showDropdown}
+		>
+			<span class="font-semibold">{filtersCxt.selectedRegion}</span>
+			<IconChevronUpDown class="w-4 h-4" />
+		</button>
 
 		<div class="h-[22px] w-[22px]">
-			<img
-				class="rounded-full border border-white"
-				alt="Open Electricitylogo"
-				src="https://cdn.sanity.io/images/bjedimft/production/733425af36605bbe3df6a7b053e99f1eea24520c-512x512.png?w=50&amp;h=50"
-			/>
+			<a href="https://explore.openelectricity.org.au" title="Open Electricity" target="_blank">
+				<img
+					class="rounded-full border border-white"
+					alt="Open Electricity"
+					src="https://cdn.sanity.io/images/bjedimft/production/733425af36605bbe3df6a7b053e99f1eea24520c-512x512.png?w=50&amp;h=50"
+				/>
+			</a>
 		</div>
 	</div>
 </div>

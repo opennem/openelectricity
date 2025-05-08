@@ -17,6 +17,11 @@ import { transformToProportion } from '$lib/utils/data-transform/index.js';
  * @property {string} [chartStyles.chartHeightClasses]
  * @property {string} [chartStyles.xAxisFill]
  * @property {boolean} [chartStyles.showLastYTick]
+ * @property {Object} [chartStyles.chartPadding]
+ * @property {number} [chartStyles.chartPadding.top]
+ * @property {number} [chartStyles.chartPadding.right]
+ * @property {number} [chartStyles.chartPadding.bottom]
+ * @property {number} [chartStyles.chartPadding.left]
  */
 
 export default class ChartStore {
@@ -263,6 +268,7 @@ export default class ChartStore {
 			this.chartStyles.chartHeightClasses = chartStyles.chartHeightClasses;
 			this.chartStyles.xAxisFill = chartStyles.xAxisFill;
 			this.chartStyles.showLastYTick = chartStyles.showLastYTick;
+			this.chartStyles.chartPadding = chartStyles.chartPadding;
 		}
 	}
 

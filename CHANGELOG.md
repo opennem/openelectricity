@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.7.0
+
+### Minor Changes
+
+- OE widget
+
 ## 3.6.3
 
 ### Patch Changes

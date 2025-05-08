@@ -2,7 +2,6 @@ import { loadFuelTechs } from '$lib/fuel_techs';
 import Statistic from '$lib/utils/Statistic';
 import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
-import { fuelTechMap, orderMap, labelReducer } from './groups';
 
 /**
  *
@@ -30,9 +29,9 @@ function process({
 	targetInterval,
 	calculate12MthRollingSum = false
 }) {
-	console.log('history', history);
+	// console.log('history', history);
 	let historyWithoutLoad = history.filter((d) => !loadFuelTechs.includes(d.fuel_tech || ''));
-	console.log('historyWithoutLoad', historyWithoutLoad);
+	// console.log('historyWithoutLoad', historyWithoutLoad);
 
 	/********* processing */
 	const stats = new Statistic(historyWithoutLoad, 'history', unit)

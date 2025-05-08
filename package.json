@@ -1,6 +1,6 @@
 {
 	"name": "open-electriciy-web",
-	"version": "3.6.3",
+	"version": "3.7.0",
 	"private": true,
 	"engines": {
 		"node": ">=v22.12.0"
