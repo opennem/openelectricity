@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.8.0
+
+### Minor Changes
+
+- secure article-drafts with basic auth
+
 ## 3.7.0
 
 ### Minor Changes

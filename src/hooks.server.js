@@ -1,7 +1,23 @@
 import { building } from '$app/environment';
+import { ARTICLE_LOGIN } from '$env/static/private';
 
 /** @type {import('@sveltejs/kit').Handle} */
 export const handle = async ({ event, resolve }) => {
+	let url = new URL(event.request.url);
+
+	if (url.pathname.startsWith('/article-drafts')) {
+		const auth = event.request.headers.get('Authorization');
+
+		if (auth !== `Basic ${btoa(ARTICLE_LOGIN)}`) {
+			return new Response('Not authorized', {
+				status: 401,
+				headers: {
+					'WWW-Authenticate': 'Basic realm="User Visible Realm", charset="UTF-8"'
+				}
+			});
+		}
+	}
+
 	if (building) {
 		const response = await resolve(event);
 
