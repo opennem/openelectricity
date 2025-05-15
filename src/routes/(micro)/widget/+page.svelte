@@ -131,9 +131,7 @@
 	</div>
 {/snippet}
 
-<div
-	class="h-[265px] w-[300px] mx-auto bg-light-warm-grey rounded-lg shadow-sm relative overflow-hidden"
->
+<div class="h-[265px] bg-light-warm-grey rounded-lg shadow-sm relative overflow-hidden">
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="h-[230px] relative z-0">
 		<LensChart
