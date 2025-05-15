@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.8.1
+
+### Patch Changes
+
+- a07e768: fix issue where widget's width should be flexible
+
 ## 3.8.0
 
 ### Minor Changes
