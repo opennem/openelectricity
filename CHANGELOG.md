@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.8.2
+
+### Patch Changes
+
+- fix issue where flows and price apis are not returning data
+
 ## 3.8.1
 
 ### Patch Changes
