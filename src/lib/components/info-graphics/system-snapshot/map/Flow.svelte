@@ -1,7 +1,7 @@
 <script>
 	/**
 	 * @typedef {Object} Props
-	 * @property {number} [flow]
+	 * @property {number | string} [flow]
 	 * @property {number} [x]
 	 * @property {number} [y]
 	 * @property {string} [direction]
@@ -9,13 +9,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		flow = 0,
-		x = 0,
-		y = 0,
-		direction = 'left',
-		colour = 'black'
-	} = $props();
+	let { flow = 0, x = 0, y = 0, direction = 'left', colour = 'black' } = $props();
 
 	const dur = '1.5s';
 	const values = '0.5;1;0';
