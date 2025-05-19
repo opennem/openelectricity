@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.8.3
+
+### Patch Changes
+
+- show — when flow/price is not available
+
 ## 3.8.2
 
 ### Patch Changes
