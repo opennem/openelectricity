@@ -13,16 +13,25 @@ export async function load({ fetch }) {
 
 	const flows = await fetch('/api/flows').then(async (res) => {
 		const { data: jsonData } = await res.json();
+
 		/** @type {*} */
 		const regionFlows = {};
-		jsonData.forEach((region) => {
-			regionFlows[region.code] = region.history.data[region.history.data.length - 1];
-		});
+		if (jsonData) {
+			jsonData.forEach((region) => {
+				regionFlows[region.code] = region.history.data[region.history.data.length - 1];
+			});
+
+			return {
+				dispatchDateTimeString: jsonData[0].history.last,
+				regionFlows,
+				originalJsons: jsonData
+			};
+		}
 
 		return {
-			dispatchDateTimeString: jsonData[0].history.last,
+			dispatchDateTimeString: '',
 			regionFlows,
-			originalJsons: jsonData
+			originalJsons: null
 		};
 	});
 
@@ -30,12 +39,20 @@ export async function load({ fetch }) {
 		const { data: jsonData } = await res.json();
 		/** @type {*} */
 		const regionPrices = {};
-		jsonData.forEach((region) => {
-			regionPrices[region.code] = region.history.data[region.history.data.length - 1];
-		});
+
+		if (jsonData) {
+			jsonData.forEach((region) => {
+				regionPrices[region.code] = region.history.data[region.history.data.length - 1];
+			});
+			return {
+				regionPrices,
+				originalJsons: jsonData
+			};
+		}
+
 		return {
 			regionPrices,
-			originalJsons: jsonData
+			originalJsons: null
 		};
 	});
 

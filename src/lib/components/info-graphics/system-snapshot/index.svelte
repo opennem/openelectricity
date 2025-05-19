@@ -13,7 +13,6 @@
 
 	import { carbonIntensityColour } from '$lib/stores/theme';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [title] - export let data;
@@ -25,14 +24,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		title = '',
-		flows,
-		prices,
-		regionPower,
-		regionEnergy,
-		regionEmissions
-	} = $props();
+	let { title = '', flows, prices, regionPower, regionEnergy, regionEmissions } = $props();
 
 	const rows = {
 		live: [
@@ -68,10 +60,8 @@
 		]
 	};
 
-
 	let intensity = $state({});
 	const intensityScale = scaleLinear().domain([0, 900]).range([0, 100]);
-
 
 	function updateIntensity(emissionsTotal, generationTotal) {
 		rows.annual.forEach((row) => {
@@ -81,7 +71,6 @@
 
 	// Track map mode and data
 	let mapMode = $state('annual'); // annual
-
 
 	/**
 	 * @param {string} value
@@ -100,7 +89,6 @@
 		maximumFractionDigits: 0
 	});
 
-
 	function getRenewablePercent(state) {
 		return Math.round((renewablesTotal[state] / generationTotal[state]) * 100);
 	}
@@ -112,31 +100,40 @@
 	// }
 	// $: mapData = data[mapMode];
 	let liveMode = $derived(mapMode === 'live');
-	let generationTotal = $derived(regionGenerationTotal(
-		liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
-		liveMode ? regionPower : regionEnergy
-	));
-	let renewablesTotal = $derived(regionRenewablesTotal(
-		liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
-		liveMode ? regionPower : regionEnergy
-	));
-	let emissionsTotal = $derived(regionEmissionsTotal(
-		!liveMode ? rows.annual.map((d) => d.id) : [],
-		!liveMode ? regionEmissions : []
-	));
+	let generationTotal = $derived(
+		regionGenerationTotal(
+			liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
+			liveMode ? regionPower : regionEnergy
+		)
+	);
+	let renewablesTotal = $derived(
+		regionRenewablesTotal(
+			liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
+			liveMode ? regionPower : regionEnergy
+		)
+	);
+	let emissionsTotal = $derived(
+		regionEmissionsTotal(
+			!liveMode ? rows.annual.map((d) => d.id) : [],
+			!liveMode ? regionEmissions : []
+		)
+	);
 	run(() => {
 		updateIntensity(emissionsTotal, generationTotal);
 	});
 	let dispatchTime = $derived(Date.parse(flows.dispatchDateTimeString));
-	let dispatch =
-		$derived(mapMode === 'live'
+	let dispatch = $derived(
+		mapMode === 'live'
 			? dispatchTime
 				? `${isToday(dispatchTime) ? 'Today ' : ''}${format(dispatchTime, 'HH:mmaaa xxx')}`
 				: ''
-			: 'Avg. past 12 months');
+			: 'Avg. past 12 months'
+	);
 	let mapModeRows = $derived(rows[mapMode]);
 	let getPrice = $derived((state) => {
-		return auDollar.format(prices.regionPrices[`${state}1`]);
+		return prices.regionPrices[`${state}1`]
+			? auDollar.format(prices.regionPrices[`${state}1`])
+			: '—';
 	});
 </script>
 

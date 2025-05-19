@@ -55,7 +55,6 @@
 
 	let showTooltip = $state(false);
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {'live' | 'annual'} [mode]
@@ -128,15 +127,31 @@
 
 	let modeLive = $derived(mode === 'live');
 
-	let tasText =
-		$derived(prices && modeLive ? `${auDollar.format(prices.TAS1)}` : auNumber.format(intensity.TAS));
-	let vicText =
-		$derived(prices && modeLive ? `${auDollar.format(prices.VIC1)}` : auNumber.format(intensity.VIC));
-	let saText = $derived(prices && modeLive ? `${auDollar.format(prices.SA1)}` : auNumber.format(intensity.SA));
-	let qldText =
-		$derived(prices && modeLive ? `${auDollar.format(prices.QLD1)}` : auNumber.format(intensity.QLD));
-	let nswText =
-		$derived(prices && modeLive ? `${auDollar.format(prices.NSW1)}` : auNumber.format(intensity.NSW));
+	let tasText = $derived(
+		prices && modeLive
+			? `${prices.TAS1 ? auDollar.format(prices.TAS1) : '—'}`
+			: auNumber.format(intensity.TAS)
+	);
+	let vicText = $derived(
+		prices && modeLive
+			? `${prices.VIC1 ? auDollar.format(prices.VIC1) : '—'}`
+			: auNumber.format(intensity.VIC)
+	);
+	let saText = $derived(
+		prices && modeLive
+			? `${prices.SA1 ? auDollar.format(prices.SA1) : '—'}`
+			: auNumber.format(intensity.SA)
+	);
+	let qldText = $derived(
+		prices && modeLive
+			? `${prices.QLD1 ? auDollar.format(prices.QLD1) : '—'}`
+			: auNumber.format(intensity.QLD)
+	);
+	let nswText = $derived(
+		prices && modeLive
+			? `${prices.NSW1 ? auDollar.format(prices.NSW1) : '—'}`
+			: auNumber.format(intensity.NSW)
+	);
 	let waText = $derived(prices && modeLive ? '' : auNumber.format(intensity.WA));
 
 	/**
@@ -189,6 +204,9 @@
 		flowValue = 0;
 		showTooltip = false;
 	}
+
+	// function to check if the value is a number
+	const isNumber = (val) => !isNaN(val);
 </script>
 
 <svelte:window onmousemove={mousemove} />
@@ -275,7 +293,7 @@
 			>
 				<Flow
 					direction={flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
-					flow={absRound(flows['NSW1->QLD1'])}
+					flow={isNumber(flows['NSW1->QLD1']) ? absRound(flows['NSW1->QLD1']) : '—'}
 					x={500}
 					y={315}
 				/><!-- QLD <-> NSW -->
@@ -289,7 +307,7 @@
 			>
 				<Flow
 					direction={flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
-					flow={absRound(flows['NSW1->VIC1'])}
+					flow={isNumber(flows['NSW1->VIC1']) ? absRound(flows['NSW1->VIC1']) : '—'}
 					x={480}
 					y={430}
 				/><!-- VIC <-> NSW -->
@@ -303,7 +321,7 @@
 			>
 				<Flow
 					direction={flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
-					flow={absRound(flows['TAS1->VIC1'])}
+					flow={isNumber(flows['TAS1->VIC1']) ? absRound(flows['TAS1->VIC1']) : '—'}
 					x={490}
 					y={495}
 				/><!-- VIC <-> TAS -->
@@ -317,7 +335,7 @@
 			>
 				<Flow
 					direction={flows['SA1->VIC1'] > 0 ? 'right' : 'left'}
-					flow={absRound(flows['SA1->VIC1'])}
+					flow={isNumber(flows['SA1->VIC1']) ? absRound(flows['SA1->VIC1']) : '—'}
 					x={418}
 					y={440}
 				/><!-- VIC <-> SA -->
