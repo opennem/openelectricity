@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.8.4
+
+### Patch Changes
+
+- replace plausible with fathom
+
 ## 3.8.3
 
 ### Patch Changes
