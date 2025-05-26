@@ -1,5 +1,12 @@
 # opennem-app
 
+## 3.8.5
+
+### Patch Changes
+
+- remove records banner
+- show text where flows and price data are currently unavailable
+
 ## 3.8.4
 
 ### Patch Changes
