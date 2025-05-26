@@ -63,38 +63,20 @@
 	<ThemeSwitcher on:selected={() => ($showThemeSwitcher = false)} />
 {/if}
 
-{#if isRecordsRoute}
-	<div
-		class="relative w-full bg-black text-white text-sm leading-sm px-10 md:px-8 py-6 font-light md:flex gap-3 justify-center"
+<!-- <div
+	class="relative w-full bg-black text-white text-sm leading-sm px-10 md:px-8 py-6 font-light md:flex gap-3 justify-center"
+>
+	<div>abc</div>
+
+	<button
+		class="absolute right-10 md:right-16 top-10 md:top-6"
+		onclick={() => ($bannerOpen = false)}
 	>
-		<!-- <div>
-			<strong class="font-semibold">OpenNEM</strong> is now
-			<strong class="font-semibold">Open Electricity</strong>.
-		</div>
-		<div>
-			<a
-				href="https://openelectricity.org.au/analysis/welcome-open-electricity"
-				class="underline text-white"
-			>
-				Read
-			</a> about the update.
-		</div> -->
+		<IconXMark classes="w-8 h-8" />
+	</button>
+</div> -->
 
-		<div>
-			This feature is currently in beta and under active development.
-			<!-- Send us your
-			<button bind:this={feedbackButtonRef} class="underline">feedback</button>. -->
-		</div>
-
-		<!-- <button
-			class="absolute right-10 md:right-16 top-10 md:top-6"
-			onclick={() => ($bannerOpen = false)}
-		>
-			<IconXMark classes="w-8 h-8" />
-		</button> -->
-	</div>
-
-	<!-- {#if feedbackButtonPosition}
+<!-- {#if feedbackButtonPosition}
 		<div
 			class="absolute z-50 bg-white border border-warm-grey rounded-lg px-8 py-6 shadow-lg"
 			style="transform: translate({feedbackButtonPosition?.x}px, {feedbackButtonPosition?.y}px)"
@@ -113,7 +95,6 @@
 			</form>
 		</div>
 	{/if} -->
-{/if}
 
 <Nav />
 
