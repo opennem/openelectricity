@@ -1,6 +1,6 @@
 <script>
 	import Switch from '../Switch.svelte';
-	
+
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [mapTitle]
@@ -10,13 +10,7 @@
 	 */
 
 	/** @type {Props & { [key: string]: any }} */
-	let {
-		mapTitle = '',
-		mapMode = '',
-		dispatch = '',
-		onChange,
-		...rest
-	} = $props();
+	let { mapTitle = '', mapMode = '', dispatch = '', onChange, ...rest } = $props();
 </script>
 
 <header class={rest.class}>
@@ -37,6 +31,12 @@
 	{#if dispatch}
 		<div class="font-space text-mid-grey uppercase text-sm tracking-wider text-center">
 			{dispatch}
+		</div>
+	{/if}
+
+	{#if mapMode === 'live'}
+		<div class="font-space text-dark-red uppercase text-xxs tracking-wider text-center">
+			Live flows and price data are currently unavailable.
 		</div>
 	{/if}
 </header>
