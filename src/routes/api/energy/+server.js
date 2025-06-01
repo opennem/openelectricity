@@ -15,6 +15,12 @@ export async function GET({ fetch, url }) {
 	console.log('api/energy/', dataPath);
 
 	// const res = await fetch(`${PUBLIC_JSON_API}/au/NEM/energy/all.json`);
+
+	console.log('dataPath', dataPath);
+
+	// https://data.openelectricity.org.au/v4/stats/au/NEM/energy/2025.json
+	// https://data.openelectricity.org.au/v4/stats/au/NEM/energy/2024.json
+
 	const res = await fetch(dataPath);
 
 	if (res.ok) {

@@ -26,7 +26,8 @@
 	let regionEnergy = $state();
 	let regionEmissions = $state();
 	let homepageData = $derived(data.homepageData);
-	let historyEnergyNemData = $derived(data.historyEnergyNemData);
+	let allNemEnergyData = $derived(data.allNemEnergyData);
+	let dailyNemEnergyData = $derived(data.dailyNemEnergyData);
 	let articles = $derived(data.articles);
 	let flows = $derived(data.flows);
 	let prices = $derived(data.prices);
@@ -82,7 +83,8 @@
 <div class="bg-light-warm-grey py-12" in:fade={{ duration: 400 }}>
 	<div class="container max-w-none lg:container relative">
 		<InfoGraphicFossilFuelsRenewables
-			data={historyEnergyNemData}
+			{dailyNemEnergyData}
+			{allNemEnergyData}
 			title={banner_title}
 			description={banner_statement}
 		/>

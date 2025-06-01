@@ -1,5 +1,6 @@
 import { range } from 'd3-array';
 import { format as d3Format } from 'd3-format';
+import { format as formatDate } from 'date-fns';
 import { formatInTimeZone } from 'date-fns-tz';
 import { fuelTechName, fuelTechColour } from '$lib/fuel_techs.js';
 
@@ -45,6 +46,7 @@ export const colourReducer = (
 };
 
 export const formatTickX = (/** @type {Date} */ d) => formatInTimeZone(d, '+10:00', 'yyyy');
+export const formatTickX2 = (/** @type {Date} */ d) => formatDate(d, 'MMM yyyy');
 export const formatTickY = (/** @type {number} */ d) => `${d3Format('~s')(d)}%`;
 
 const years = getYears();
@@ -52,6 +54,7 @@ export const xDomain = [
 	new Date(years[0], 0, 1).getTime(),
 	new Date(years[years.length - 1], 0, 1).getTime()
 ];
+
 export const displayXTicks = years.map((year) => new Date(`${year}-01-01`));
 
 /**

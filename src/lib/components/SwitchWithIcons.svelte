@@ -3,13 +3,10 @@
 
 	const dispatch = createEventDispatcher();
 
-	
-	
-	
 	/**
 	 * @typedef {Object} Props
-	 * @property {{ label?: string, value: string | number, icon?: *, size?: string }[]} [buttons]
-	 * @property {string | number } [selected]
+	 * @property {{ label?: string, value: string | number | boolean, icon?: *, size?: string }[]} [buttons]
+	 * @property {string | number | boolean } [selected]
 	 * @property {(value: string) => void} [onChange]
 	 */
 

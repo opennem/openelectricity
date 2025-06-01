@@ -1,14 +1,16 @@
 <script>
 	import { getContext } from 'svelte';
-	import { format } from 'd3-format';
+	import { format as formatD3 } from 'd3-format';
+	import { format as formatDate } from 'date-fns';
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {TimeSeriesData} annotation
+	 * @property {TimeSeriesData | *} annotation
 	 * @property {StatsData[]} dataset
 	 * @property {boolean} [rounded]
 	 * @property {boolean} [showBesideLatestPoint]
 	 * @property {any} [seriesLabels]
+	 * @property {Date | number} [time]
 	 */
 
 	/** @type {Props} */
@@ -17,11 +19,12 @@
 		dataset,
 		rounded = false,
 		showBesideLatestPoint = false,
-		seriesLabels = {}
+		seriesLabels = {},
+		time
 	} = $props();
 
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
-	const formatY = format('.1f');
+	const formatY = formatD3('.1f');
 
 	let left = $derived((/** @type {TimeSeriesData[]} */ values) => {
 		const latest = values[values.length - 1];
@@ -45,20 +48,27 @@
 
 	let classes = $derived(
 		showBesideLatestPoint
-			? ''
-			: 'flex items-center justify-center gap-28 absolute bottom-[-100px] w-full px-12'
+			? 'flex items-start gap-12 absolute right-12 -top-24'
+			: 'flex items-start justify-end gap-28 absolute bottom-[-100px] w-full px-12'
 	);
 
 	let getStyles = $derived((/** @type {TimeSeriesData[]} */ values) =>
-		showBesideLatestPoint
-			? `top: ${top(values) - 9}px; left: ${left(values) + 10}px;`
-			: `bottom: -100px; left: 0`
+		showBesideLatestPoint ? `` : `bottom: -100px; left: 0`
 	);
 </script>
 
 <div class={classes}>
+	<div class="">
+		{#if time}
+			<div class="text-xs font-light hidden md:block">
+				{formatDate(time, 'MMM yyyy')}
+			</div>
+		{:else}
+			<div class="text-xs font-light">Average for the last 12 months</div>
+		{/if}
+	</div>
 	{#each $data as group}
-		<div class:absolute={showBesideLatestPoint} style={getStyles(group.values)}>
+		<div style={getStyles(group.values)}>
 			<div class="flex items-center gap-4">
 				<span
 					class="w-5 h-5 bg-black block"
