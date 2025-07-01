@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.8.7
+
+### Patch Changes
+
+- remove banner
+
 ## 3.8.6
 
 ### Patch Changes
