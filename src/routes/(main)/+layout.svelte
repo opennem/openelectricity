@@ -76,20 +76,20 @@
 	</button>
 </div> -->
 
-<!-- <div
+<div
 	class="relative w-full bg-black text-white text-sm leading-sm px-10 md:px-8 py-6 font-light md:flex gap-3 justify-center"
 >
 	<div>
 		We're updating our Facilities page and your feedback helps! Take our
 		<a
-			href="https://docs.google.com/forms/d/1k8nNb08uqDcmTcwU8tu6ckN0KpJu8nTkASJfBnyuvso/edit?ts=68621610"
+			href="https://docs.google.com/forms/d/e/1FAIpQLSfhGRg43hUUV4d229e44GfLFtEmS_vsJ8FaBOoS5MdHk-VNFw/viewform?usp=sharing&ouid=105526448285097294979"
 			target="_blank"
 			class="underline text-white"
 		>
 			survey
 		</a>.
 	</div>
-</div> -->
+</div>
 
 <!-- {#if feedbackButtonPosition}
 		<div

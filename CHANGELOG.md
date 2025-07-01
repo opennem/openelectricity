@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.8.8
+
+### Patch Changes
+
+- survery banner
+
 ## 3.8.7
 
 ### Patch Changes
