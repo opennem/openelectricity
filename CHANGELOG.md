@@ -1,5 +1,16 @@
 # opennem-app
 
+## 3.9.0
+
+### Minor Changes
+
+- 10431c4: adjust article card height and limit to 4 articles in homepage.
+- bf15855: add tldr component to article page
+
+### Patch Changes
+
+- bf15855: remove survey banner
+
 ## 3.8.8
 
 ### Patch Changes
