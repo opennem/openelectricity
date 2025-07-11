@@ -198,7 +198,7 @@
 			</div>
 			<div class="grid grid-cols-1 md:grid-cols-3 py-12 gap-8">
 				{#each filteredArticles as article}
-					<ArticleCard class="max-h-[400px] min-h-[350px]" {article} preview={true} />
+					<ArticleCard class="min-h-[350px]" {article} preview={true} />
 				{/each}
 			</div>
 		</div>

@@ -24,7 +24,7 @@
 			? `h-full grid grid-cols-1 gap-4 content-between overflow-hidden border-y border-warm-grey text-dark-grey hover:no-underline ${rest.class}`
 			: `h-full bg-light-warm-grey grid grid-cols-1 gap-4 content-between overflow-hidden border border-warm-grey rounded-lg text-dark-grey hover:no-underline ${rest.class}`
 	);
-	let headerStyles = $derived(hasCover && !isSpecialCard ? 'my-8 h-42' : 'my-8 px-6 h-42');
+	let headerStyles = $derived(hasCover && !isSpecialCard ? 'my-8' : 'my-8 px-6');
 	let authorStyles = $derived(
 		hasCover && !isSpecialCard
 			? 'flex items-center gap-8 justify-between mt-6'
