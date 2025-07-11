@@ -19,7 +19,6 @@
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('./$types').PageData} data
@@ -73,12 +72,14 @@
 	});
 
 	let hasSearchTerm = $derived(searchString.trim() !== '');
-	let hasTechnologySelections = $derived(technologySelections
-		? Object.values(technologySelections).find((selection) => selection)
-		: false);
-	let hasRegionSelections = $derived(regionSelections
-		? Object.values(regionSelections).find((selection) => selection)
-		: false);
+	let hasTechnologySelections = $derived(
+		technologySelections
+			? Object.values(technologySelections).find((selection) => selection)
+			: false
+	);
+	let hasRegionSelections = $derived(
+		regionSelections ? Object.values(regionSelections).find((selection) => selection) : false
+	);
 	let hasFilters = $derived(hasSearchTerm || hasTechnologySelections || hasRegionSelections);
 
 	let articlesFilter = $derived((/** @type {Article[]} */ articles) =>
@@ -98,7 +99,8 @@
 			const dateFilter = article.publish_date === dateChosen || dateChosen === 'none';
 
 			return searchFilter && technologyFilter && regionFilter && dateFilter;
-		}));
+		})
+	);
 
 	let filteredArticles = $derived(articlesFilter(data.articles) || []);
 
@@ -196,7 +198,7 @@
 			</div>
 			<div class="grid grid-cols-1 md:grid-cols-3 py-12 gap-8">
 				{#each filteredArticles as article}
-					<ArticleCard class="max-h-[400px] min-h-[350px]" {article} />
+					<ArticleCard class="min-h-[350px]" {article} />
 				{/each}
 			</div>
 		</div>
