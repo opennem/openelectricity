@@ -49,7 +49,9 @@
 	});
 
 	// const milestones = articles.filter((article) => article.article_type === 'milestone');
-	const analysisArticles = articles.filter((article) => article.article_type === 'analysis');
+	const analysisArticles = articles
+		.filter((article) => article.article_type === 'analysis')
+		.slice(0, 4);
 
 	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
