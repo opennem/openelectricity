@@ -76,7 +76,7 @@
 	</button>
 </div> -->
 
-<div
+<!-- <div
 	class="relative w-full bg-black text-white text-sm leading-sm px-10 md:px-8 py-6 font-light md:flex gap-3 justify-center"
 >
 	<div>
@@ -89,7 +89,7 @@
 			survey
 		</a>.
 	</div>
-</div>
+</div> -->
 
 <!-- {#if feedbackButtonPosition}
 		<div
