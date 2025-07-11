@@ -13,8 +13,6 @@
 	/** @type {Props} */
 	let { data } = $props();
 
-	// $: console.log('analysis', data);
-
 	let hasCover = $derived(data.cover);
 	let formattedDate = $derived(format(new Date(data.publishDate), 'do MMM, yyyy'));
 </script>
@@ -98,6 +96,16 @@
 		</figure>
 	</div>
 {/if}
+
+<div class="container max-w-none lg:container">
+	{#if data.tldr}
+		<div class="md:mt-24 max-w-[800px] mx-auto px-0 md:px-32 mb-12 md:mb-0">
+			<div class="bg-light-warm-grey pt-10 pb-5 border border-warm-grey rounded-lg px-10">
+				<RichText content={data.tldr} />
+			</div>
+		</div>
+	{/if}
+</div>
 
 <div class="container max-w-none lg:container">
 	{#if data.content}
