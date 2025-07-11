@@ -79,7 +79,7 @@
 			</div>
 		</div>
 		{#if hasCover && !isSpecialCard}
-			<img src={urlFor(article.cover).width(590).height(346).url()} alt={article.cover.alt} />
+			<img src={urlFor(article.cover).width(1020).height(574).url()} alt={article.cover.alt} />
 		{/if}
 	</div>
 </a>
