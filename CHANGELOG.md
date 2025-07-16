@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.10.1
+
+### Patch Changes
+
+- add newsletter link to footer
+
 ## 3.10.0
 
 ### Minor Changes
