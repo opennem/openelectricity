@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.10.0
+
+### Minor Changes
+
+- 969c080: newsletter page
+
 ## 3.9.0
 
 ### Minor Changes
