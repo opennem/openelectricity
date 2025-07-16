@@ -2,60 +2,7 @@
 	import { version } from '$app/environment';
 	import { fade } from 'svelte/transition';
 	import SectionLink from './SectionLink.svelte';
-	let formSubmitting = $state(false);
-	let formSubmitted = $state(false);
-
-	/**
-	 * @type {HTMLInputElement}
-	 */
-	let emailField = $state();
-	let subscriptionStatus = $state(null);
-	let pendingSubscription = $derived(subscriptionStatus === 'pending');
-
-	/**
-	 * @param {SubmitEvent} event
-	 */
-	async function signup(event) {
-		event.preventDefault();
-		formSubmitting = true;
-
-		const response = await fetch('/api/signup', {
-			method: 'PUT',
-			body: JSON.stringify({ email: emailField.value })
-		});
-
-		const { status, email } = await response.json();
-		subscriptionStatus = status;
-
-		formSubmitting = false;
-
-		if (status === 'pending') {
-			await /** @type {Promise<void>} */ (
-				new Promise((resolve) => {
-					setTimeout(() => {
-						formSubmitted = true;
-						resolve();
-					}, 5000);
-				})
-			);
-		} else {
-			formSubmitted = true;
-		}
-
-		// Wait 2 seconds after form is submitted, then clear and reset the form
-		await /** @type {Promise<void>} */ (
-			new Promise((resolve) => {
-				setTimeout(() => {
-					formSubmitted = false;
-					if (emailField) {
-						emailField.value = '';
-					}
-					subscriptionStatus = null;
-					resolve();
-				}, 2000);
-			})
-		);
-	}
+	import SignUpForm from './SignUpForm.svelte';
 </script>
 
 <footer class="mb-32 relative z-10">
@@ -75,37 +22,7 @@
 					latest analysis.
 				</div>
 
-				<form class="flex md:w-5/12 flex-shrink-0 items-center justify-end" onsubmit={signup}>
-					{#if pendingSubscription}
-						<div
-							class="rounded-full whitespace-nowrap flex items-center justify-center px-12 py-6 bg-mid-warm-grey text-dark-warm-grey font-semibold"
-						>
-							Check your email to complete subscription.
-						</div>
-					{:else}
-						<input
-							type="email"
-							name="email"
-							placeholder="Email Address"
-							class="w-full h-20 rounded-full pl-8 pr-28 inherit text-[1.4rem] focus:ring-red focus:border-red"
-							bind:this={emailField}
-							disabled={formSubmitting || formSubmitted}
-						/>
-						<button
-							type="submit"
-							class="h-20 rounded-full bg-white border border-black px-12 font-bold ml-[-5rem]"
-							disabled={formSubmitting || formSubmitted}
-						>
-							{#if formSubmitting}
-								Processing...
-							{:else if formSubmitted}
-								Subscribed
-							{:else}
-								Subscribe
-							{/if}
-						</button>
-					{/if}
-				</form>
+				<SignUpForm class="md:w-5/12" />
 			</div>
 		</div>
 	</div>
@@ -119,7 +36,7 @@
 					team at
 					<a href="mailto:inquiries@openelectricity.org.au">inquiries@openelectricity.org.au</a>
 				</p>
-				<h5>Acknowledgement of Country</h5>
+				<h5 class="mt-12">Acknowledgement of Country</h5>
 				<p>
 					We pay our respects to the Traditional Custodians of the lands on which we live and work,
 					as well as the Traditional Custodians of the lands and waters we may visit during our
@@ -132,13 +49,13 @@
 				</p>
 			</div>
 			<div class="mt-16 md:mt-0">
-				<p class="flex flex-col gap-4 md:flex-row md:gap-8 text-base mb-8">
+				<p class="flex flex-col gap-4 md:flex-row md:gap-12 text-base mb-8">
 					<SectionLink href="/about" title="About" />
 					<SectionLink href="/developer" title="Developer Resources" />
-					<!-- <SectionLink href="/content/about" title="Status Page" /> -->
+					<!-- <SectionLink href="/newsletter" title="Newsletter" /> -->
 				</p>
 
-				<h5>Transparency & Accountability</h5>
+				<h5 class="mt-12">Transparency & Accountability</h5>
 				<p>
 					We are committed to upholding the <a
 						href="https://www.superpowerinstitute.com.au/open-data-tools"
