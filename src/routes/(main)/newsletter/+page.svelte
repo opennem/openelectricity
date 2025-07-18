@@ -37,7 +37,7 @@
 			<h3 class="mb-0">The Dispatch</h3>
 			<p class="text-mid-grey">
 				Each month, energy analyst Lynton Hoey rounds up the most interesting shifts in the grid –
-				new records, infrastructure updates, and other signals of change in Australia’s electricity
+				new records, infrastructure updates, and other signals of change in Australia's electricity
 				system.
 			</p>
 		</div>
@@ -48,9 +48,9 @@
 			</div>
 			<h3 class="mb-0">Reality Check</h3>
 			<p class="text-mid-grey">
-				A quarterly series by energy analyst Allan O’Neil, offering a clear-eyed look at how
-				Australia’s electricity system is really tracking – using fresh data, grounded analysis and
-				Open Electricity’s system-wide tools.
+				A quarterly series by energy analyst Allan O'Neil, offering a clear-eyed look at how
+				Australia's electricity system is really tracking – using fresh data, grounded analysis and
+				Open Electricity's system-wide tools.
 			</p>
 		</div>
 
@@ -60,8 +60,8 @@
 			</div>
 			<h3 class="mb-0">Platform Updates</h3>
 			<p class="text-mid-grey">
-				Stay across whats new on Open Electricity - from feature rollouts and improvements to news
-				and special announcements. Delivered as needed, when there’s something worth knowing.
+				Stay across what's new on Open Electricity - from feature rollouts and improvements to news
+				and special announcements. Delivered as needed, whenever there's something worth knowing.
 			</p>
 		</div>
 	</div>
