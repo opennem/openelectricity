@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.10.2
+
+### Patch Changes
+
+- fix punctuation and update to ‘whenever’
+
 ## 3.10.1
 
 ### Patch Changes
