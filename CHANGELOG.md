@@ -1,5 +1,12 @@
 # opennem-app
 
+## 3.10.3
+
+### Patch Changes
+
+- add external link icon
+- add banner for newsletter signup
+
 ## 3.10.2
 
 ### Patch Changes
