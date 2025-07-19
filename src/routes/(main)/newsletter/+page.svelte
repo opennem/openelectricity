@@ -1,6 +1,7 @@
 <script>
 	import Meta from '$lib/components/Meta.svelte';
 	import SignUpForm from '$lib/components/SignUpForm.svelte';
+	import ArrowTopRightOnSquare from '$lib/icons/ArrowTopRightOnSquare.svelte';
 </script>
 
 <Meta
@@ -20,9 +21,11 @@
 
 	<a
 		href="https://us13.campaign-archive.com/home/?u=1ba96f433b791b4dc263f909c&id=24d88b07aa"
-		class="mt-12 underline text-black"
+		class="mt-12 underline text-black flex items-center gap-2"
+		target="_blank"
 	>
 		View past issues
+		<ArrowTopRightOnSquare class="size-8" />
 	</a>
 </header>
 
