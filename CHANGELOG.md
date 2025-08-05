@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.11.0
+
+### Minor Changes
+
+- 34b1923: add 'View analysis' CTA button
+
 ## 3.10.3
 
 ### Patch Changes
