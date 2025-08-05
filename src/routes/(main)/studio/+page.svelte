@@ -31,6 +31,11 @@
 				"Visualises the latest estimates of Australia's greenhouse gas emissions to 2040.",
 			link: '/studio/lens-on-au-emissions-projections',
 			disabled: true
+		},
+		{
+			title: 'TrackerGrid',
+			description: 'A new data visualization tool for tracking and analyzing grid data.',
+			link: '/studio/tracker-grid'
 		}
 	];
 </script>
