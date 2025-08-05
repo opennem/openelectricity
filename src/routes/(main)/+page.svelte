@@ -159,5 +159,14 @@
 				</div>
 			{/each}
 		</div>
+
+		<div class="flex justify-end mt-5 md:mt-16 px-10 md:px-0">
+			<a
+				href="/analysis"
+				class="mt-12 md:mt-0 block w-full md:w-auto text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+			>
+				View analysis
+			</a>
+		</div>
 	</div>
 </div>
