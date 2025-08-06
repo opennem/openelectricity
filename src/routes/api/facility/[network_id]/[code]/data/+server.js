@@ -1,4 +1,5 @@
 import { error } from '@sveltejs/kit';
+// https://github.com/opennem/openelectricity-typescript
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 
