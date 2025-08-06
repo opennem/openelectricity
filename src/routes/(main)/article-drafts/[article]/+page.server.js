@@ -16,12 +16,13 @@ const client = createClient({
 export async function load({ params }) {
 	const data = await client.fetch(
 		`*[_type == "article" && slug.current == "${params.article}"]
-			{_id, title, content, cover, summary, publish_date, author[]->}`
+			{_id, title, tldr, content, cover, summary, publish_date, author[]->}`
 	);
 
 	if (data && data.length > 0) {
 		return {
 			title: data[0].title,
+			tldr: data[0].tldr,
 			content: data[0].content,
 			author: data[0].author,
 			cover: data[0].cover,

@@ -1,5 +1,65 @@
 # opennem-app
 
+## 3.11.0
+
+### Minor Changes
+
+- 34b1923: add 'View analysis' CTA button
+
+## 3.10.3
+
+### Patch Changes
+
+- add external link icon
+- add banner for newsletter signup
+
+## 3.10.2
+
+### Patch Changes
+
+- fix punctuation and update to ‘whenever’
+
+## 3.10.1
+
+### Patch Changes
+
+- add newsletter link to footer
+
+## 3.10.0
+
+### Minor Changes
+
+- 969c080: newsletter page
+
+## 3.9.0
+
+### Minor Changes
+
+- 10431c4: adjust article card height and limit to 4 articles in homepage.
+- bf15855: add tldr component to article page
+
+### Patch Changes
+
+- bf15855: remove survey banner
+
+## 3.8.8
+
+### Patch Changes
+
+- survery banner
+
+## 3.8.7
+
+### Patch Changes
+
+- remove banner
+
+## 3.8.6
+
+### Patch Changes
+
+- add survery banner
+
 ## 3.8.5
 
 ### Patch Changes

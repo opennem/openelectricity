@@ -49,7 +49,9 @@
 	});
 
 	// const milestones = articles.filter((article) => article.article_type === 'milestone');
-	const analysisArticles = articles.filter((article) => article.article_type === 'analysis');
+	const analysisArticles = articles
+		.filter((article) => article.article_type === 'analysis')
+		.slice(0, 6);
 
 	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
 
@@ -156,6 +158,15 @@
 					<ArticleCard {article} />
 				</div>
 			{/each}
+		</div>
+
+		<div class="flex justify-end mt-5 md:mt-16 lg:mr-8">
+			<a
+				href="/analysis"
+				class="mt-12 md:mt-0 block w-full md:w-auto text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+			>
+				View analysis
+			</a>
 		</div>
 	</div>
 </div>

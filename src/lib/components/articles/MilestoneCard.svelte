@@ -30,7 +30,7 @@
 	{#if article.cover}
 		<img
 			class="rounded-b-lg"
-			src={urlFor(article.cover).width(590).height(346).url()}
+			src={urlFor(article.cover).width(1020).height(574).url()}
 			alt={article.cover.alt}
 		/>
 	{:else}
