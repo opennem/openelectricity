@@ -10,7 +10,9 @@
 	image="/img/newsletter/Newsletter_Preview.png"
 />
 
-<header class="flex flex-col items-center justify-center max-w-5xl mt-36 mb-24 mx-auto text-center">
+<header
+	class="flex flex-col items-center justify-center max-w-5xl mt-36 mb-24 mx-auto text-center text-base"
+>
 	<h1 class="text-3xl leading-3xl px-6 md:px-0">Sign up for Open Electricity updates</h1>
 	<p class="px-6 md:px-0">
 		Get monthly and quarterly analysis, plus updates on new features and platform developments -
@@ -29,7 +31,7 @@
 	</a>
 </header>
 
-<main class="container max-w-none md:container mb-36">
+<main class="container max-w-none md:container mb-36 text-base">
 	<h5 class="text-sm font-space font-medium uppercase tracking-wider">What you'll receive</h5>
 
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-12 mt-8">

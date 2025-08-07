@@ -131,7 +131,7 @@
 	</div>
 {/snippet}
 
-<div class="h-[265px] bg-light-warm-grey rounded-lg shadow-sm relative overflow-hidden">
+<div class="h-[265px] bg-light-warm-grey rounded-lg shadow-xs relative overflow-hidden">
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="h-[230px] relative z-0">
 		<LensChart
@@ -153,10 +153,10 @@
 	>
 		{#if dropdownOpen}
 			<div
-				class="fixed bg-white p-1 rounded-lg shadow-sm -mt-32 text-xxs font-light text-dark-grey flex flex-col gap-2"
+				class="fixed bg-white p-1 rounded-lg shadow-xs -mt-32 text-xxs font-light text-dark-grey flex flex-col gap-2"
 			>
 				<button
-					class="rounded px-2 py-1 hover:bg-warm-grey flex justify-between items-center gap-2"
+					class="rounded-sm px-2 py-1 hover:bg-warm-grey flex justify-between items-center gap-2"
 					onclick={() => gotoRegion('NEM')}
 				>
 					NEM
@@ -167,7 +167,7 @@
 					{/if}
 				</button>
 				<button
-					class="rounded px-2 py-1 hover:bg-warm-grey flex justify-between items-center gap-2"
+					class="rounded-sm px-2 py-1 hover:bg-warm-grey flex justify-between items-center gap-2"
 					onclick={() => gotoRegion('WEM')}
 				>
 					WEM

@@ -85,7 +85,7 @@
 	<table class="w-full table-fixed">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
 			<tr>
-				<th class="w-[45%]">
+				<th class="w-[45%] px-2 py-6 text-sm font-medium text-left">
 					<div class="flex items-center gap-4">
 						<div
 							class="border border-mid-warm-grey text-xs inline-block rounded-md whitespace-nowrap ml-3"
@@ -102,14 +102,14 @@
 					</div>
 				</th>
 
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Contribution</span>
 						<span class="font-light text-xxs">%</span>
 					</div>
 				</th>
 
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Generation</span>
 						<button
@@ -121,7 +121,7 @@
 					</div>
 				</th>
 
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Emissions</span>
 						<button
@@ -173,11 +173,11 @@
 						<div class="flex items-center gap-3 ml-3">
 							{#if energyCxt.hiddenSeriesNames.includes(energyName)}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 								></div>
 							{:else}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
 									style:background-color={energyCxt.seriesColours[energyName]}
 									style:border-color={darken(energyCxt.seriesColours[energyName])}
 								></div>
@@ -218,12 +218,3 @@
 		</tbody>
 	</table>
 </div>
-
-<style>
-	.main-thead th {
-		@apply px-2 py-6 text-sm font-medium;
-	}
-	th {
-		@apply text-left px-2 py-1 pt-6 font-medium;
-	}
-</style>

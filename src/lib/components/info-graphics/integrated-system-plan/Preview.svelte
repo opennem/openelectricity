@@ -374,7 +374,7 @@
 	>
 		{#each [...projectionSeriesNames].reverse() as key}
 			<SparkLineArea
-				class="p-8 even:border-l border-t [&:nth-child(-n+2)]:border-t-0 md:border-0 border-mid-warm-grey"
+				class="p-8 even:border-l border-t nth-[-n+2]:border-t-0 md:border-0 border-mid-warm-grey"
 				dataset={projectionTimeSeriesDatasets.data}
 				{key}
 				fuelTechId={projectionFuelTechIds[key]}

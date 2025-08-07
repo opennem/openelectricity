@@ -180,14 +180,14 @@
 	<div class="container max-w-none lg:container">
 		<div class="block md:flex gap-8">
 			<div
-				class="records-sidebar-fill records-sidebar min-w-[27rem] w-full md:w-3/12 bg-white py-8 md:py-14 md:pr-8 relative border-solid md:border-r-[0.05rem] border-mid-warm-grey"
+				class="records-sidebar-fill records-sidebar min-w-108 w-full md:w-3/12 bg-white py-8 md:py-14 md:pr-8 relative border-solid md:border-r-[0.05rem] border-mid-warm-grey"
 			>
 				<div class="h-fit sticky top-0">
 					<div class="flex justify-between">
 						<h1 class="text-2xl leading-2xl md:text-3xl md:leading-3xl mb-0">Analysis</h1>
 						<!-- <Button
 						secondary={true}
-						class="text-black flex-shrink-0 w-16 h-16 flex justify-center align-middle md:hidden"
+						class="text-black shrink-0 w-16 h-16 flex justify-center align-middle md:hidden"
 						active={showMenu}
 						clickHandler={() => {
 							showMenu = !showMenu;

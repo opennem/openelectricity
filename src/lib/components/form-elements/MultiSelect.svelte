@@ -102,7 +102,7 @@
 							onclick={() => handleSelect(opt)}
 						>
 							<div
-								class="border rounded size-7"
+								class="border rounded-sm size-7"
 								class:border-mid-warm-grey={!selected.includes(opt.value)}
 								class:border-dark-grey={selected.includes(opt.value)}
 								class:bg-warm-grey={selected.includes(opt.value)}
@@ -144,7 +144,7 @@
 							<span class="capitalize">{opt.label}</span>
 
 							<div
-								class="border rounded size-7"
+								class="border rounded-sm size-7"
 								class:border-mid-warm-grey={!selected.includes(opt.value)}
 								class:border-dark-grey={selected.includes(opt.value)}
 								class:bg-warm-grey={selected.includes(opt.value)}

@@ -1,60 +1,174 @@
-@font-face {
-	font-family: 'DM Sans';
-	src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
+@import 'tailwindcss';
+
+@config '../tailwind.config.js';
+
+/* Background colors for fuel techs */
+.bg-battery_charging {
+	background-color: #577cff;
 }
-@font-face {
-	font-family: 'DM Sans';
-	src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
-	font-weight: 600;
+.bg-battery_discharging {
+	background-color: #3245c9;
 }
-@font-face {
-	font-family: 'DM Sans';
-	src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
-	font-weight: 700;
+.bg-bioenergy_biogas {
+	background-color: #4cb9b9;
 }
-@font-face {
-	font-family: 'DM Mono';
-	src: url('/fonts/DMMono-Regular.ttf');
+.bg-bioenergy_biomass {
+	background-color: #1d7a7a;
 }
-@font-face {
-	font-family: 'DM Mono';
-	src: url('/fonts/DMMono-Medium.ttf');
-	font-weight: 600;
+.bg-coal_black {
+	background-color: #121212;
 }
-@font-face {
-	font-family: 'Space Grotesk';
-	src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
+.bg-coal_brown {
+	background-color: #744a26;
 }
-@font-face {
-	font-family: 'Space Grotesk';
-	src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
-	font-weight: 600;
+.bg-distillate {
+	background-color: #e15c34;
+}
+.bg-gas_ccgt {
+	background-color: #fdb462;
+}
+.bg-gas_ocgt {
+	background-color: #ffcd96;
+}
+.bg-gas_recip {
+	background-color: #f9dcbc;
+}
+.bg-gas_steam {
+	background-color: #f48e1b;
+}
+.bg-gas_wcmg {
+	background-color: #b46813;
+}
+.bg-hydro {
+	background-color: #5ea0c0;
+}
+.bg-pumps {
+	background-color: #88afd0;
+}
+.bg-solar_utility {
+	background-color: #fed500;
+}
+.bg-solar_thermal {
+	background-color: #fdb200;
+}
+.bg-solar_rooftop {
+	background-color: #fff58d;
+}
+.bg-wind {
+	background-color: #2c7629;
+}
+.bg-nuclear {
+	background-color: #c75338;
+}
+.bg-imports {
+	background-color: #521986;
+}
+.bg-exports {
+	background-color: #927bad;
+}
+.bg-interconnector {
+	background-color: #7f7f7f;
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-html {
-	box-sizing: border-box;
-	/* 1rem = 10px */
-	font-size: 62.5%;
-	background-color: theme(colors.white);
+/* Background colors for fuel tech groups */
+.bg-bioenergy {
+	background-color: #1d7a7a;
 }
-*,
-*:before,
-*:after {
-	box-sizing: inherit;
+.bg-coal {
+	background-color: #25170c;
 }
-
-body {
-	font-size: theme(fontSize.base);
-	color: theme(colors.dark-grey);
-	/* min-height: 100%; */
+.bg-gas {
+	background-color: #e87809;
+}
+.bg-solar {
+	background-color: #fed500;
+}
+.bg-renewables {
+	background-color: #52a972;
+}
+.bg-fossils {
+	background-color: #594929;
 }
 
-b {
-	font-weight: 600;
+.bg-demand {
+	background-color: #6a6a6a;
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-gray-200, currentcolor);
+	}
+}
+
+@layer base {
+	@font-face {
+		font-family: 'DM Sans';
+		src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
+	}
+	@font-face {
+		font-family: 'DM Sans';
+		src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
+		font-weight: 600;
+	}
+	@font-face {
+		font-family: 'DM Sans';
+		src: url('/fonts/DMSans-VariableFont_opsz,wght.ttf');
+		font-weight: 700;
+	}
+	@font-face {
+		font-family: 'DM Mono';
+		src: url('/fonts/DMMono-Regular.ttf');
+	}
+	@font-face {
+		font-family: 'DM Mono';
+		src: url('/fonts/DMMono-Medium.ttf');
+		font-weight: 600;
+	}
+	@font-face {
+		font-family: 'Space Grotesk';
+		src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
+	}
+	@font-face {
+		font-family: 'Space Grotesk';
+		src: url('/fonts/SpaceGrotesk-VariableFont_wght.ttf');
+		font-weight: 600;
+	}
+}
+
+@layer utilities {
+	html {
+		box-sizing: border-box;
+		/* 1rem = 10px */
+		font-size: 62.5%;
+		background-color: var(--color-white);
+	}
+	*,
+	*:before,
+	*:after {
+		box-sizing: inherit;
+	}
+
+	body {
+		font-size: var(--text-base);
+		color: var(--color-dark-grey);
+		/* min-height: 100%; */
+	}
+
+	b {
+		font-weight: 600;
+	}
 }
 
 @layer base {
@@ -114,5 +228,33 @@ b {
 		z-index: 10;
 		opacity: 0.4;
 		filter: contrast(170%) brightness(100%);
+	}
+
+	.blockquote em {
+		font-style: normal;
+	}
+	.portable-override {
+		@apply text-base;
+	}
+	.portable-override h6 {
+		@apply text-xs text-mid-grey font-light;
+	}
+	.portable-override a {
+		@apply text-black hover:text-dark-red underline;
+	}
+	.portable-override h6 a {
+		@apply text-mid-grey underline;
+	}
+	.portable-override ol {
+		@apply list-decimal list-outside ml-8;
+	}
+	.portable-override ol li {
+		@apply text-dark-grey;
+	}
+	.portable-override ul {
+		@apply list-disc list-outside ml-8;
+	}
+	.portable-override ul li {
+		@apply text-dark-grey;
 	}
 }

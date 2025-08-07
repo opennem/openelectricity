@@ -23,14 +23,14 @@
 </script>
 
 <Overlay>
-	<Modal maxWidthClass="max-w-screen-sm">
+	<Modal maxWidthClass="max-w-(--breakpoint-sm)">
 		<h4>Theme</h4>
 
 		<div class="flex flex-col gap-1 mt-4">
 			<select
 				multiple
 				tabindex="0"
-				class="text-lg flex flex-col gap-2 border-dark-grey outline-none bg-light-warm-grey p-2 rounded-lg w-full"
+				class="text-lg flex flex-col gap-2 border-dark-grey outline-hidden bg-light-warm-grey p-2 rounded-lg w-full"
 				onchange={(e) => (selectedTheme = e.target.value)}
 				use:shortcut={{
 					trigger: {

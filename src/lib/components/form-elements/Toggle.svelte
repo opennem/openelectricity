@@ -23,7 +23,7 @@
 	<button
 		onclick={bubble('click')}
 		type="button"
-		class="{background} relative inline-flex h-10 w-16 flex-shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-dark-grey focus:ring-offset-2"
+		class="{background} relative inline-flex h-10 w-16 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-dark-grey focus:ring-offset-2"
 		role="switch"
 		aria-checked="false"
 		name="toggle"
@@ -31,7 +31,7 @@
 		<span class="sr-only">Use setting</span>
 		<!-- Enabled: "translate-x-5", Not Enabled: "translate-x-0" -->
 		<span
-			class="{position} pointer-events-none relative inline-block h-8 w-8 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+			class="{position} pointer-events-none relative inline-block h-8 w-8 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out"
 		>
 			<!-- Enabled: "opacity-0 duration-100 ease-out", Not Enabled: "opacity-100 duration-200 ease-in" -->
 			<span

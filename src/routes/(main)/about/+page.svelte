@@ -15,7 +15,7 @@
 <main class="max-w-5xl mx-auto py-24 px-10 md:px-0">
 	<h2>Open Electricity — An open platform for tracking Australia’s electricity transition.</h2>
 
-	<section class="py-12">
+	<section class="py-12 text-base">
 		<h3>Our Mission</h3>
 
 		<p>
@@ -56,7 +56,7 @@
 						</div>
 					</dt>
 					{#if member.bio.length > 0}
-						<dd class="pt-6">
+						<dd class="pt-6 text-base">
 							{#each member.bio as paragraph}
 								<p>{paragraph}</p>
 							{/each}
@@ -67,7 +67,7 @@
 		</dl>
 	</section>
 
-	<section class="py-12">
+	<section class="py-12 text-base">
 		<h3>Transparency & Accountability</h3>
 		<p class="text-dark-grey">
 			Open Electricity is developed under the Open, Accessible, Auditable Data (OAAD) framework.
@@ -81,15 +81,11 @@
 		</p>
 	</section>
 
-	<section class="py-12">
+	<section class="py-12 text-base">
 		<h3>Partnership & Funders</h3>
 
-		<dl
-			class="flex flex-col gap-8 mt-8 divide-y md:divide-y-0 divide-dotted divide-mid-warm-grey border-y md:border-y-0 border-dotted border-mid-warm-grey"
-		>
-			<div
-				class="pt-12 md:pt-0 md:grid md:grid-cols-8 md:divide-x divide-dotted divide-mid-warm-grey"
-			>
+		<dl class="flex flex-col gap-8 mt-8 border-y md:border-y-0 border-dotted border-mid-warm-grey">
+			<div class="pt-12 md:pt-0 md:grid md:grid-cols-8">
 				<dt class="col-span-2 place-self-center">
 					<img src="/img/trimtab.png" alt="Trimtab Foundation logo" class="block h-12 w-auto" />
 				</dt>
@@ -99,9 +95,7 @@
 				</dd>
 			</div>
 
-			<div
-				class="pt-12 md:pt-0 md:grid md:grid-cols-8 md:divide-x divide-dotted divide-mid-warm-grey"
-			>
+			<div class="pt-12 md:pt-0 md:grid md:grid-cols-8">
 				<dt class="col-span-2 place-self-center">
 					<img
 						src="/img/superpower-new.svg"
@@ -122,9 +116,7 @@
 				</dd>
 			</div>
 
-			<div
-				class="pt-12 md:pt-0 md:grid md:grid-cols-8 md:divide-x divide-dotted divide-mid-warm-grey"
-			>
+			<div class="pt-12 md:pt-0 md:grid md:grid-cols-8">
 				<dt class="col-span-2 place-self-center">
 					<img src="/img/boundless.svg" alt="Boundless logo" class="block h-6 w-auto" />
 				</dt>
@@ -141,9 +133,7 @@
 				</dd>
 			</div>
 
-			<div
-				class="pt-12 md:pt-0 md:grid md:grid-cols-8 md:divide-x divide-dotted divide-mid-warm-grey"
-			>
+			<div class="pt-12 md:pt-0 md:grid md:grid-cols-8">
 				<dt class="col-span-2 place-self-center">
 					<img src="/img/eca.svg" alt="Energy Consumers Australia logo" class="block h-16 w-auto" />
 				</dt>
@@ -162,14 +152,12 @@
 		</dl>
 	</section>
 
-	<section class="py-12">
+	<section class="py-12 text-base">
 		<h3>Other Supporters</h3>
 		<dl
 			class="flex flex-col gap-8 mt-8 divide-y md:divide-y-0 divide-dotted divide-mid-warm-grey border-y md:border-y-0 border-dotted border-mid-warm-grey"
 		>
-			<div
-				class="pt-12 md:pt-0 md:grid md:grid-cols-8 md:divide-x divide-dotted divide-mid-warm-grey"
-			>
+			<div class="pt-12 md:pt-0 md:grid md:grid-cols-8">
 				<dt class="col-span-2 place-self-center">
 					<img
 						src="/img/supporters/DO_Logo_icon_black.png"
@@ -188,9 +176,7 @@
 				</dd>
 			</div>
 
-			<div
-				class="pt-12 md:pt-0 md:grid md:grid-cols-8 md:divide-x divide-dotted divide-mid-warm-grey"
-			>
+			<div class="pt-12 md:pt-0 md:grid md:grid-cols-8">
 				<dt class="col-span-2 place-self-center">
 					<img
 						src="/img/supporters/sentry-glyph-dark-400x367.svg"
@@ -209,7 +195,7 @@
 		</dl>
 	</section>
 
-	<section class="py-12">
+	<section class="py-12 text-base">
 		<h3>Get involved</h3>
 
 		<div class="mt-10">

@@ -3,10 +3,6 @@
 
 	const { width, height, padding, xGet } = getContext('LayerCake');
 
-	
-
-	
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string|null} [fill]

@@ -213,11 +213,11 @@
 	</div>
 </div>
 
-<div class="border-y border-warm-grey py-3 relative" style="z-index: 9999;">
+<div class="border-y border-warm-grey py-3 relative text-base" style="z-index: 9999;">
 	<Filters />
 </div>
 
-<div class="">
+<div class="text-base">
 	<div class="md:container md:grid grid-cols-8 md:divide-x divide-warm-grey py-12">
 		<div class="col-span-2 px-10 md:pl-7 md:pr-12">
 			<div class="sticky top-10 hidden md:block">

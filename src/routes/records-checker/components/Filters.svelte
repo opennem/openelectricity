@@ -230,7 +230,7 @@
 			<input
 				bind:value={recordIdSearch}
 				type="search"
-				class="border rounded p-3 w-full"
+				class="border rounded-sm p-3 w-full"
 				placeholder="Search by record ID"
 			/>
 		</div>
@@ -335,8 +335,8 @@
 	</div>
 {/if}
 <div class="flex justify-center gap-5 mt-10">
-	<button class="border rounded p-3" onclick={handleResetClick}> Reset </button>
-	<button class="border rounded p-3 bg-dark-grey text-white" onclick={handleApplyClick}>
+	<button class="border rounded-sm p-3" onclick={handleResetClick}> Reset </button>
+	<button class="border rounded-sm p-3 bg-dark-grey text-white" onclick={handleApplyClick}>
 		Apply
 	</button>
 </div>

@@ -19,11 +19,6 @@
 
 	let issueInstanceIds = $state([]);
 
-
-
-
-
-
 	/**
 	 * Fetch a single record
 	 * @param {string} recordId
@@ -58,7 +53,6 @@
 		goto(`/records/${id}?page=${page}`, { replaceState: true });
 	}
 
-
 	// remove seconds and time difference from timestamp
 	function removeSeconds(timestamp) {
 		return timestamp.slice(0, -9);
@@ -67,17 +61,19 @@
 	const auNumber = new Intl.NumberFormat('en-AU', {
 		maximumFractionDigits: 0
 	});
-	let timeSeriesData = $derived(historyData
-		.map((record) => {
-			const date = parseISO(record.interval);
-			return {
-				...record,
-				date,
-				time: date.getTime(),
-				value: record.value
-			};
-		})
-		.sort((a, b) => b.time - a.time));
+	let timeSeriesData = $derived(
+		historyData
+			.map((record) => {
+				const date = parseISO(record.interval);
+				return {
+					...record,
+					date,
+					time: date.getTime(),
+					value: record.value
+				};
+			})
+			.sort((a, b) => b.time - a.time)
+	);
 	let aggregate = $derived(historyData[0]?.aggregate);
 	run(() => {
 		issueInstanceIds = [];
@@ -103,8 +99,9 @@
 	let id = $derived(data.id);
 	let totalPages = $derived(Math.ceil(totalHistory / 100));
 	let currentLastRecordIndex = $derived(currentStartRecordIndex + 99);
-	let lastRecordIndex =
-		$derived(currentLastRecordIndex > totalHistory ? totalHistory : currentLastRecordIndex);
+	let lastRecordIndex = $derived(
+		currentLastRecordIndex > totalHistory ? totalHistory : currentLastRecordIndex
+	);
 	run(() => {
 		fetchRecord(id, currentPage);
 	});
@@ -120,7 +117,7 @@
 	</div>
 	<!-- <div>
 		<button
-			class="border rounded py-1 px-4 bg-light-warm-grey font-semibold"
+			class="border rounded-sm py-1 px-4 bg-light-warm-grey font-semibold"
 			on:click={() => updateCurrentPage(currentPage + 1)}
 		>
 			Check data
@@ -131,7 +128,7 @@
 {#if timeSeriesData.length > 0}
 	<div class="py-5 flex justify-center gap-16">
 		<button
-			class="border rounded text-xs py-1 px-4"
+			class="border rounded-sm text-xs py-1 px-4"
 			class:invisible={currentPage === 1}
 			onclick={() => updateCurrentPage(currentPage - 1)}>Previous</button
 		>
@@ -141,7 +138,7 @@
 			({currentStartRecordIndex} to {lastRecordIndex})
 		</div>
 		<button
-			class="border rounded text-xs py-1 px-4"
+			class="border rounded-sm text-xs py-1 px-4"
 			class:invisible={currentPage === totalPages}
 			onclick={() => updateCurrentPage(currentPage + 1)}>Next</button
 		>
@@ -153,19 +150,21 @@
 		<table class="w-full text-xs border border-mid-warm-grey p-2">
 			<thead>
 				<tr class="border-b border-mid-warm-grey">
-					<th colspan="2" class="!text-center">Current Record</th>
-					<th></th>
+					<th colspan="2" class="text-center border-r border-mid-warm-grey p-1 align-top"
+						>Current Record</th
+					>
+					<th class="border-r border-mid-warm-grey p-1 align-top text-left"></th>
 				</tr>
 			</thead>
 
 			<thead>
 				<tr class="border-b border-mid-warm-grey">
 					<!-- <th>No</th> -->
-					<th>Interval</th>
-					<th class="!text-right">Value & unit</th>
+					<th class="border-r border-mid-warm-grey p-1 align-top text-left">Interval</th>
+					<th class="text-right border-r border-mid-warm-grey p-1 align-top">Value & unit</th>
 
 					<!-- <th>Significance</th> -->
-					<th class="!text-right">Instance</th>
+					<th class="text-right border-r border-mid-warm-grey p-1 align-top">Instance</th>
 					<!-- <th /> -->
 				</tr>
 			</thead>
@@ -177,10 +176,12 @@
 						class="border-b border-mid-warm-grey hover:bg-warm-grey"
 					>
 						<!-- <td>{currentStartRecordIndex + i}</td> -->
-						<td class="font-mono text-dark-grey">
+						<td
+							class="font-mono text-dark-grey border-r border-mid-warm-grey p-1 align-top text-left"
+						>
 							{removeSeconds(record.interval)}
 						</td>
-						<td>
+						<td class="text-right border-r border-mid-warm-grey p-1 align-top">
 							<div class="flex justify-end gap-1">
 								<span class="font-mono text-black">{auNumber.format(record.value)}</span>
 								<span class="text-mid-grey">{record.value_unit}</span>
@@ -188,7 +189,9 @@
 						</td>
 
 						<!-- <td>{record.significance}</td> -->
-						<td class="!text-right">{record.instance_id}</td>
+						<td class="text-right border-r border-mid-warm-grey p-1 align-top"
+							>{record.instance_id}</td
+						>
 
 						<!-- <td>
 							<span class="text-xxs italic">Link to Tracker Data</span>
@@ -199,10 +202,3 @@
 		</table>
 	</div>
 {/if}
-
-<style>
-	td,
-	th {
-		@apply border-r border-mid-warm-grey p-1 align-top text-left;
-	}
-</style>

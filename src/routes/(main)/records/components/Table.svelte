@@ -25,7 +25,7 @@
 
 <table class="bg-white text-sm w-full">
 	<thead>
-		<tr class="border-b border-warm-grey sticky top-0 bg-white/80 backdrop-blur-sm z-10">
+		<tr class="border-b border-warm-grey sticky top-0 bg-white/80 backdrop-blur-xs z-10">
 			<th></th>
 			<th class="px-4 py-4 text-right">Region</th>
 			<th></th>

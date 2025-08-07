@@ -105,7 +105,7 @@
 {#if showMobileFilterOptions}
 	<Modal
 		maxWidthClass=""
-		class="!fixed bg-white top-0 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain !rounded-none !my-0 pt-0 px-0 z-50"
+		class="fixed! bg-white top-0 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain rounded-none! my-0! pt-0 px-0 z-50"
 	>
 		<header
 			class="sticky top-0 z-50 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
@@ -159,7 +159,7 @@
 		{#snippet buttons()}
 			<div class="flex gap-3">
 				<Button
-					class="!bg-dark-grey text-white hover:!bg-black w-full"
+					class="bg-dark-grey! text-white hover:bg-black! w-full"
 					on:click={() => (showMobileFilterOptions = false)}>Close</Button
 				>
 			</div>

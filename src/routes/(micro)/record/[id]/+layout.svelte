@@ -8,6 +8,6 @@
 	let { children } = $props();
 </script>
 
-<main class="flex-grow">
+<main class="grow">
 	{@render children?.()}
 </main>

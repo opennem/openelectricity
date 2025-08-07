@@ -65,7 +65,7 @@
 </script>
 
 <div
-	class="h-[25px] text-xxs py-1 px-2 rounded border-warm-grey text-mid-grey {wrapperStyles}"
+	class="h-[25px] text-xxs py-1 px-2 rounded-sm border-warm-grey text-mid-grey {wrapperStyles}"
 	class:border={useData}
 	class:bg-white={useData}
 >

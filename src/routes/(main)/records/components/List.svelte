@@ -91,7 +91,7 @@
 		<div class="mt-10 first:mt-0">
 			{#if yearRecords.length}
 				<p
-					class="sticky top-0 z-20 bg-white/80 backdrop-blur-sm pt-6 pb-4 pl-6 md:pl-0 mb-0 border-b border-warm-grey font-space uppercase"
+					class="sticky top-0 z-20 bg-white/80 backdrop-blur-xs pt-6 pb-4 pl-6 md:pl-0 mb-0 border-b border-warm-grey font-space uppercase"
 				>
 					{yearRecords[0][0]}
 				</p>
@@ -152,7 +152,7 @@
 
 			{#if monthRecords.length || !yearRecords.length}
 				<p
-					class="sticky top-0 z-20 bg-white/80 backdrop-blur-sm pt-6 pb-4 pl-6 md:pl-0 mb-0 border-b border-warm-grey font-space uppercase"
+					class="sticky top-0 z-20 bg-white/80 backdrop-blur-xs pt-6 pb-4 pl-6 md:pl-0 mb-0 border-b border-warm-grey font-space uppercase"
 				>
 					{month}
 				</p>
@@ -217,7 +217,7 @@
 				{#if nonIntervalDayLength === 0}
 					<div>
 						<p
-							class="sticky top-[50px] z-10 bg-white/80 mt-6 mb-2 py-2 pl-6 md:pl-0 backdrop-blur-sm text-xs font-space"
+							class="sticky top-[50px] z-10 bg-white/80 mt-6 mb-2 py-2 pl-6 md:pl-0 backdrop-blur-xs text-xs font-space"
 						>
 							{date}
 						</p>

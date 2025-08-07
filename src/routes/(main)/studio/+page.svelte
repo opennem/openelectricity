@@ -69,7 +69,7 @@
 			>
 				{#if project.released}
 					<div
-						class="absolute top-2 -right-1.5 bg-success-green text-dark-grey text-xs px-6 py-1 rounded"
+						class="absolute top-2 -right-1.5 bg-success-green text-dark-grey text-xs px-6 py-1 rounded-sm"
 					>
 						Released
 					</div>

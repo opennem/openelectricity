@@ -186,7 +186,7 @@
 
 {#if data.record_id}
 	<div
-		class="bg-light-warm-grey sticky top-0 shadow-sm"
+		class="bg-light-warm-grey sticky top-0 shadow-xs"
 		style="z-index: {filterOptionsVisible ? '9999' : '99'}"
 	>
 		<PageNav

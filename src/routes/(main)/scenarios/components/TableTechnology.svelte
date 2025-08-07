@@ -5,8 +5,6 @@
 	import { groupOptions } from '../page-data-options/groups-technology';
 	import TableHeader from './TableHeader.svelte';
 
-	
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} [seriesLoadsIds]
@@ -60,72 +58,78 @@
 	// $: console.log('energySeriesNames', $energySeriesNames);
 	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
 
-	let sourceNames = $derived($energySeriesNames
-		.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
-		.reverse());
+	let sourceNames = $derived(
+		$energySeriesNames.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d)).reverse()
+	);
 
-	let loadNames = $derived($energySeriesNames
-		.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
-		.reverse());
+	let loadNames = $derived(
+		$energySeriesNames.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d)).reverse()
+	);
 
-	let energySourcesTotal = $derived($energyHoverData
-		? sourceNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyHoverData[id],
-				0
-		  )
-		: $energyFocusData
-		? sourceNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyFocusData[id],
-				0
-		  )
-		: 0);
-	let energyLoadsTotal = $derived($energyHoverData
-		? loadNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyHoverData[id],
-				0
-		  )
-		: $energyFocusData
-		? loadNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $energyFocusData[id],
-				0
-		  )
-		: 0);
+	let energySourcesTotal = $derived(
+		$energyHoverData
+			? sourceNames.reduce(
+					/**
+					 * @param {number} acc
+					 * @param {string} id
+					 */
+					(acc, id) => acc + $energyHoverData[id],
+					0
+				)
+			: $energyFocusData
+				? sourceNames.reduce(
+						/**
+						 * @param {number} acc
+						 * @param {string} id
+						 */
+						(acc, id) => acc + $energyFocusData[id],
+						0
+					)
+				: 0
+	);
+	let energyLoadsTotal = $derived(
+		$energyHoverData
+			? loadNames.reduce(
+					/**
+					 * @param {number} acc
+					 * @param {string} id
+					 */
+					(acc, id) => acc + $energyHoverData[id],
+					0
+				)
+			: $energyFocusData
+				? loadNames.reduce(
+						/**
+						 * @param {number} acc
+						 * @param {string} id
+						 */
+						(acc, id) => acc + $energyFocusData[id],
+						0
+					)
+				: 0
+	);
 
-	let capacitySourcesTotal = $derived($capacityHoverData
-		? sourceNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $capacityHoverData[id],
-				0
-		  )
-		: $capacityFocusData
-		? sourceNames.reduce(
-				/**
-				 * @param {number} acc
-				 * @param {string} id
-				 */
-				(acc, id) => acc + $capacityFocusData[id],
-				0
-		  )
-		: 0);
+	let capacitySourcesTotal = $derived(
+		$capacityHoverData
+			? sourceNames.reduce(
+					/**
+					 * @param {number} acc
+					 * @param {string} id
+					 */
+					(acc, id) => acc + $capacityHoverData[id],
+					0
+				)
+			: $capacityFocusData
+				? sourceNames.reduce(
+						/**
+						 * @param {number} acc
+						 * @param {string} id
+						 */
+						(acc, id) => acc + $capacityFocusData[id],
+						0
+					)
+				: 0
+	);
 
 	let isMetaPressed = false;
 
@@ -189,7 +193,7 @@
 	<table class="w-full table-fixed border border-warm-grey mb-8">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
 			<tr>
-				<th class="w-[60%]">
+				<th class="w-[60%] px-2 py-6 text-sm font-medium">
 					<div class="flex items-center gap-4">
 						<span class="block text-dark-grey text-sm font-medium ml-3">Technology</span>
 						<div
@@ -206,7 +210,7 @@
 						</div>
 					</div>
 				</th>
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Generation</span>
 						<button
@@ -217,7 +221,7 @@
 						</button>
 					</div>
 				</th>
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Capacity</span>
 						<button
@@ -233,15 +237,15 @@
 
 		<thead>
 			<tr>
-				<th class="border-b border-warm-grey">
+				<th class="border-b border-warm-grey px-2 py-1 pt-6 text-sm font-medium text-left">
 					<span class="ml-3"> Sources </span>
 				</th>
-				<th class="border-b border-warm-grey">
+				<th class="border-b border-warm-grey px-2 py-1 pt-6 text-sm font-medium">
 					<div class="font-mono flex flex-col items-end">
 						{$energyConvertAndFormatValue(energySourcesTotal)}
 					</div>
 				</th>
-				<th class="border-b border-warm-grey">
+				<th class="border-b border-warm-grey px-2 py-1 pt-6 text-sm font-medium">
 					<div class="font-mono flex flex-col items-end mr-3">
 						{$capacityConvertAndFormatValue(capacitySourcesTotal)}
 					</div>
@@ -260,11 +264,11 @@
 						<div class="flex items-center gap-3 ml-3">
 							{#if hiddenRowNames.includes(name)}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 								></div>
 							{:else}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
 									style:background-color={$energySeriesColours[name]}
 									style:border-color={darken($energySeriesColours[name])}
 								></div>
@@ -281,8 +285,8 @@
 							{$energyHoverData
 								? $energyConvertAndFormatValue($energyHoverData[name])
 								: $energyFocusData
-								? $energyConvertAndFormatValue($energyFocusData[name])
-								: ''}
+									? $energyConvertAndFormatValue($energyFocusData[name])
+									: ''}
 						</div>
 					</td>
 					<td class="px-2 py-1">
@@ -290,8 +294,8 @@
 							{$capacityHoverData
 								? $capacityConvertAndFormatValue($capacityHoverData[name])
 								: $capacityFocusData
-								? $capacityConvertAndFormatValue($capacityFocusData[name])
-								: ''}
+									? $capacityConvertAndFormatValue($capacityFocusData[name])
+									: ''}
 						</div>
 					</td>
 				</tr>
@@ -301,15 +305,15 @@
 		{#if loadNames.length > 0}
 			<thead>
 				<tr>
-					<th class="border-b border-warm-grey">
+					<th class="border-b border-warm-grey px-2 py-1 pt-6 text-sm font-medium text-left">
 						<span class="ml-3"> Loads </span>
 					</th>
-					<th class="border-b border-warm-grey">
+					<th class="border-b border-warm-grey px-2 py-1 pt-6 text-sm font-medium">
 						<div class="font-mono flex flex-col items-end">
 							{$energyConvertAndFormatValue(energyLoadsTotal)}
 						</div>
 					</th>
-					<th class="border-b border-warm-grey"></th>
+					<th class="border-b border-warm-grey px-2 py-1 text-sm font-medium"></th>
 				</tr>
 			</thead>
 
@@ -324,11 +328,11 @@
 							<div class="flex items-center gap-3 ml-3">
 								{#if hiddenRowNames.includes(name)}
 									<div
-										class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+										class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 									></div>
 								{:else}
 									<div
-										class="w-6 h-6 min-w-6 min-h-6 border rounded"
+										class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
 										style:background-color={$energySeriesColours[name]}
 										style:border-color={darken($energySeriesColours[name])}
 									></div>
@@ -345,8 +349,8 @@
 								{$energyHoverData
 									? $energyConvertAndFormatValue($energyHoverData[name])
 									: $energyFocusData
-									? $energyConvertAndFormatValue($energyFocusData[name])
-									: ''}
+										? $energyConvertAndFormatValue($energyFocusData[name])
+										: ''}
 							</div>
 						</td>
 						<td class="px-2 py-1">
@@ -354,8 +358,8 @@
 								{$capacityHoverData
 									? $capacityConvertAndFormatValue($capacityHoverData[name])
 									: $capacityFocusData
-									? $capacityConvertAndFormatValue($capacityFocusData[name])
-									: ''}
+										? $capacityConvertAndFormatValue($capacityFocusData[name])
+										: ''}
 							</div>
 						</td>
 					</tr>
@@ -373,10 +377,10 @@
 	<table class="w-full table-fixed border border-warm-grey">
 		<thead class="main-thead bg-light-warm-grey border-b border-t border-warm-grey">
 			<tr>
-				<th class="w-[60%]">
+				<th class="w-[60%] px-2 py-6 text-sm font-medium text-left">
 					<span class="block text-dark-grey text-sm font-semibold ml-3">Impact</span>
 				</th>
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Volume</span>
 						<button
@@ -387,7 +391,7 @@
 						</button>
 					</div>
 				</th>
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Intensity</span>
 						<small class="font-light text-xxs">{$intensityDisplayUnit}</small>
@@ -397,44 +401,35 @@
 		</thead>
 		<tbody>
 			<tr class="text-sm">
-				<th class="px-2 !py-6">
+				<th class="px-2 py-6! text-sm font-medium">
 					<div class="flex items-center gap-3 ml-3">
 						<div
-							class="w-6 h-6 min-w-6 min-h-6 border rounded"
+							class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
 							style="background-color: #444444; border-color: {darken('#444444')}"
 						></div>
 						<span>Emissions</span>
 					</div>
 				</th>
 
-				<th class="px-2 !py-6">
+				<th class="px-2 py-6! text-sm font-medium">
 					<div class="font-mono flex flex-col items-end">
 						{$emissionsHoverData
 							? $emissionsConvertAndFormatValue($emissionsHoverData['au.emissions.total'])
 							: $emissionsFocusData
-							? $emissionsConvertAndFormatValue($emissionsFocusData['au.emissions.total'])
-							: ''}
+								? $emissionsConvertAndFormatValue($emissionsFocusData['au.emissions.total'])
+								: ''}
 					</div>
 				</th>
-				<th class="px-2 !py-6">
+				<th class="px-2 py-6! text-sm font-medium">
 					<div class="font-mono flex flex-col items-end mr-3">
 						{$intensityHoverData
 							? $intensityConvertAndFormatvalue($intensityHoverData['au.emission_intensity'])
 							: $intensityFocusData
-							? $intensityConvertAndFormatvalue($intensityFocusData['au.emission_intensity'])
-							: ''}
+								? $intensityConvertAndFormatvalue($intensityFocusData['au.emission_intensity'])
+								: ''}
 					</div>
 				</th>
 			</tr>
 		</tbody>
 	</table>
 </div>
-
-<style>
-	.main-thead th {
-		@apply px-2 py-6 text-sm font-medium;
-	}
-	th {
-		@apply text-left px-2 py-1 pt-6 font-medium;
-	}
-</style>

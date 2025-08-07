@@ -214,7 +214,9 @@
 	}
 </script>
 
-<div class="overflow-auto flex items-stretch snap-x snap-mandatory md:grid grid-cols-5 md:gap-4">
+<div
+	class="text-base overflow-auto flex items-stretch snap-x snap-mandatory md:grid grid-cols-5 md:gap-4"
+>
 	{#each pinned as { fuelTech }}
 		{@const recordData = recordMap[fuelTech]}
 		<div
@@ -225,7 +227,7 @@
 					{@const path = `/records/${encodeURIComponent(recordData.recordId)}?${dateTimeQuery(recordData.interval)}&focus=${recordData.time}`}
 					<a
 						href={path}
-						class="text-black bg-white border border-mid-warm-grey hover:border-dark-grey !no-underline rounded-xl p-6 h-full min-h-[200px] grid grid-cols-1 gap-4 content-between transition-all"
+						class="text-black bg-white border border-mid-warm-grey hover:border-dark-grey no-underline! rounded-xl p-6 h-full min-h-[200px] grid grid-cols-1 gap-4 content-between transition-all"
 					>
 						<div>
 							<div class="flex items-center gap-2 justify-between">

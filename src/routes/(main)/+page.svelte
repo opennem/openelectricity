@@ -99,7 +99,7 @@
 	<div class="max-w-none md:container">
 		<h3 class="md:text-center px-10 md:px-0">Notable records</h3>
 
-		<div class="mb-3 mt-5 px-7 md:px-5">
+		<div class="mb-3 mt-5 px-7 md:px-5 text-base">
 			<FormSelect
 				paddingY="py-2"
 				paddingX="px-3"
@@ -115,7 +115,7 @@
 		<div class="flex justify-end mt-5 md:mt-16 px-10 md:px-0">
 			<a
 				href="/records"
-				class="mt-12 md:mt-0 block w-full md:w-auto text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+				class="text-base mt-12 md:mt-0 block w-full md:w-auto text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
 			>
 				View records
 			</a>
@@ -163,7 +163,7 @@
 		<div class="flex justify-end mt-5 md:mt-16 lg:mr-8">
 			<a
 				href="/analysis"
-				class="mt-12 md:mt-0 block w-full md:w-auto text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+				class="text-base mt-12 md:mt-0 block w-full md:w-auto text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
 			>
 				View analysis
 			</a>

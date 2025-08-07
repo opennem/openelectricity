@@ -31,13 +31,13 @@
 </script>
 
 <div
-	class={`inline-flex gap-2 flex-shrink-0 justify-center items-center py-2 ${pxClass} ${bgClass} rounded-full  ${highlightTextColor}`}
+	class={`inline-flex gap-2 shrink-0 justify-center items-center py-2 ${pxClass} ${bgClass} rounded-full  ${highlightTextColor}`}
 	style={`font-size: ${textSize}px;`}
 	title={fuelTechName(fueltech)}
 >
 	<Icon icon={fueltech} size={iconSize} />
 	{#if showText}
-		<span class="relative top-[1px]">
+		<span class="relative top-px">
 			{#if children}
 				{@render children()}
 			{:else}

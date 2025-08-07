@@ -9,7 +9,7 @@
 	 */
 
 	/** @type {Props & { [key: string]: any }} */
-	let { maxWidthClass = 'max-w-screen-md', children, buttons, ...rest } = $props();
+	let { maxWidthClass = 'max-w-(--breakpoint-md)', children, buttons, ...rest } = $props();
 
 	let classProps = $derived(rest.class);
 </script>

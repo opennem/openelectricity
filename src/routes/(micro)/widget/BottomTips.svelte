@@ -10,7 +10,7 @@
 </script>
 
 {#if useData}
-	<div class="h-[25px] bg-white text-xxs rounded border border-warm-grey {wrapperStyles}">
+	<div class="h-[25px] bg-white text-xxs rounded-sm border border-warm-grey {wrapperStyles}">
 		<div class="h-full items-center flex justify-center whitespace-nowrap">
 			{cxt.formatXWithTimeZone(valueDate)}
 		</div>

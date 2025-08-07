@@ -28,7 +28,7 @@
 		bind:checked
 		bind:indeterminate
 		onchange={bubble('change')}
-		class="size-6 rounded border-gray-300 text-dark-grey focus:ring-dark-grey"
+		class="size-6 rounded-sm border-gray-300 text-dark-grey focus:ring-dark-grey"
 	/>
 	<div class="ml-3 text-sm">
 		<label for={name}>{label}</label>
