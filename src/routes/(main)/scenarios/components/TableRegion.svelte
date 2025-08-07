@@ -3,8 +3,6 @@
 	import { color } from 'd3-color';
 	import TableHeader from './TableHeader.svelte';
 
-	
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} [seriesLoadsIds]
@@ -103,10 +101,10 @@
 	<table class="w-full border border-warm-grey">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
 			<tr>
-				<th class="w-[40%]">
+				<th class="w-[40%] px-2 py-6 text-sm font-medium text-left">
 					<span class="block text-dark-grey text-sm font-medium ml-3">{title}</span>
 				</th>
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Generation</span>
 						<button
@@ -118,7 +116,7 @@
 					</div>
 				</th>
 
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Capacity</span>
 						<button
@@ -130,7 +128,7 @@
 					</div>
 				</th>
 
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Emissions</span>
 						<button
@@ -141,7 +139,7 @@
 						</button>
 					</div>
 				</th>
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Intensity</span>
 						<small class="font-light text-xxs">{$intensityDisplayUnit}</small>
@@ -199,8 +197,8 @@
 							{$energyHoverData
 								? $energyConvertAndFormatValue($energyHoverData[name])
 								: $energyFocusData
-								? $energyConvertAndFormatValue($energyFocusData[name])
-								: ''}
+									? $energyConvertAndFormatValue($energyFocusData[name])
+									: ''}
 						</div>
 					</td>
 
@@ -209,8 +207,8 @@
 							{$capacityHoverData
 								? $capacityConvertAndFormatValue($capacityHoverData[name])
 								: $capacityFocusData
-								? $capacityConvertAndFormatValue($capacityFocusData[name])
-								: ''}
+									? $capacityConvertAndFormatValue($capacityFocusData[name])
+									: ''}
 						</div>
 					</td>
 
@@ -219,8 +217,8 @@
 							{$emissionsHoverData
 								? $emissionsConvertAndFormatValue($emissionsHoverData[name])
 								: $emissionsFocusData
-								? $emissionsConvertAndFormatValue($emissionsFocusData[name])
-								: ''}
+									? $emissionsConvertAndFormatValue($emissionsFocusData[name])
+									: ''}
 						</div>
 					</td>
 					<td class="px-2 py-1">
@@ -228,8 +226,8 @@
 							{$intensityHoverData
 								? $intensityConvertAndFormatvalue($intensityHoverData[name])
 								: $intensityFocusData
-								? $intensityConvertAndFormatvalue($intensityFocusData[name])
-								: ''}
+									? $intensityConvertAndFormatvalue($intensityFocusData[name])
+									: ''}
 						</div>
 					</td>
 				</tr>
@@ -240,12 +238,3 @@
 		</tbody>
 	</table>
 </div>
-
-<style>
-	.main-thead th {
-		@apply px-2 py-6 text-sm font-medium;
-	}
-	th {
-		@apply text-left px-2 py-1 pt-6 font-medium;
-	}
-</style>

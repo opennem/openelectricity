@@ -242,30 +242,3 @@
 		</div> -->
 	{/each}
 {/if}
-
-<style>
-	:global(.blockquote em) {
-		font-style: normal;
-	}
-	:global(.portable-override h6) {
-		@apply text-xs text-mid-grey font-light;
-	}
-	:global(.portable-override a) {
-		@apply text-black hover:text-dark-red underline;
-	}
-	:global(.portable-override h6 a) {
-		@apply text-mid-grey underline;
-	}
-	:global(.portable-override ol) {
-		@apply list-decimal list-outside ml-8;
-	}
-	:global(.portable-override ol li) {
-		@apply text-dark-grey;
-	}
-	:global(.portable-override ul) {
-		@apply list-disc list-outside ml-8;
-	}
-	:global(.portable-override ul li) {
-		@apply text-dark-grey;
-	}
-</style>

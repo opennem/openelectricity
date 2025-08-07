@@ -5,7 +5,6 @@
 	import { modelLabelMap } from '../page-data-options/models';
 	import TableHeader from './TableHeader.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} [hiddenRowNames]
@@ -108,10 +107,10 @@
 	<table class="w-full border border-warm-grey mb-8">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">
 			<tr>
-				<th class="w-[40%]">
+				<th class="w-[40%] px-2 py-6 text-sm font-medium text-left">
 					<span class="block text-dark-grey text-sm font-medium ml-3">{title}</span>
 				</th>
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Generation</span>
 						<button
@@ -123,7 +122,7 @@
 					</div>
 				</th>
 
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Capacity</span>
 						<button
@@ -135,7 +134,7 @@
 					</div>
 				</th>
 
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end">
 						<span class="block text-xs">Emissions</span>
 						<button
@@ -146,7 +145,7 @@
 						</button>
 					</div>
 				</th>
-				<th>
+				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Intensity</span>
 						<small class="font-light text-xxs">{$intensityDisplayUnit}</small>
@@ -166,7 +165,7 @@
 				onclick={() => handleRowClick('historical')}
 				class:opacity-50={hiddenRowNames.includes('historical')}
 			>
-				<td class="px-2 py-1">
+				<td class="px-2 py-1 align-top">
 					<div class="flex items-center gap-3 ml-3">
 						{#if hiddenRowNames.includes('historical')}
 							<div
@@ -183,42 +182,42 @@
 					</div>
 				</td>
 
-				<td class="px-2 py-1">
+				<td class="px-2 py-1 align-top">
 					<div class="font-mono flex flex-col items-end">
 						{$energyHoverData
 							? $energyConvertAndFormatValue($energyHoverData['historical'])
 							: $energyFocusData
-							? $energyConvertAndFormatValue($energyFocusData['historical'])
-							: ''}
+								? $energyConvertAndFormatValue($energyFocusData['historical'])
+								: ''}
 					</div>
 				</td>
 
-				<td class="px-2 py-1">
+				<td class="px-2 py-1 align-top">
 					<div class="font-mono flex flex-col items-end">
 						{$capacityHoverData
 							? $capacityConvertAndFormatValue($capacityHoverData['historical'])
 							: $capacityFocusData
-							? $capacityConvertAndFormatValue($capacityFocusData['historical'])
-							: ''}
+								? $capacityConvertAndFormatValue($capacityFocusData['historical'])
+								: ''}
 					</div>
 				</td>
 
-				<td class="px-2 py-1">
+				<td class="px-2 py-1 align-top">
 					<div class="font-mono flex flex-col items-end">
 						{$emissionsHoverData
 							? $emissionsConvertAndFormatValue($emissionsHoverData['historical'])
 							: $emissionsFocusData
-							? $emissionsConvertAndFormatValue($emissionsFocusData['historical'])
-							: ''}
+								? $emissionsConvertAndFormatValue($emissionsFocusData['historical'])
+								: ''}
 					</div>
 				</td>
-				<td class="px-2 py-1">
+				<td class="px-2 py-1 align-top">
 					<div class="font-mono flex flex-col items-end mr-3">
 						{$intensityHoverData
 							? $intensityConvertAndFormatvalue($intensityHoverData['historical'])
 							: $intensityFocusData
-							? $intensityConvertAndFormatvalue($intensityFocusData['historical'])
-							: ''}
+								? $intensityConvertAndFormatvalue($intensityFocusData['historical'])
+								: ''}
 					</div>
 				</td>
 			</tr>
@@ -231,7 +230,7 @@
 		<tbody class="border-b border-warm-grey">
 			{#each $orderedModelScenarioPathways as { model, scenarios }}
 				<tr>
-					<th colspan="5" class="!pb-0">
+					<th colspan="5" class="pb-0 align-top text-left px-2 pt-1 font-medium">
 						<h6 class="ml-3 mb-0 pb-2 border-b border-warm-grey mr-3">{modelLabelMap[model]}</h6>
 					</th>
 				</tr>
@@ -240,7 +239,7 @@
 					{@const scenarioId = `${model}-${scenario}`}
 
 					<tr>
-						<td colspan="5" class="!pb-0">
+						<td colspan="5" class="!pb-0 align-top">
 							<span class="ml-5 mt-3 block font-space text-xs">
 								{scenarioLabelMap[scenarioId] || ''}
 							</span>
@@ -253,7 +252,7 @@
 							onclick={() => handleRowClick(id)}
 							class:opacity-50={hiddenRowNames.includes(id)}
 						>
-							<td class="px-2 py-1">
+							<td class="px-2 py-1 align-top">
 								<div class="flex items-start gap-3 ml-3">
 									{#if hiddenRowNames.includes(id)}
 										<div
@@ -270,42 +269,42 @@
 								</div>
 							</td>
 
-							<td class="px-2 py-1">
+							<td class="px-2 py-1 align-top">
 								<div class="font-mono flex flex-col items-end">
 									{$energyHoverData
 										? $energyConvertAndFormatValue($energyHoverData[id])
 										: $energyFocusData
-										? $energyConvertAndFormatValue($energyFocusData[id])
-										: ''}
+											? $energyConvertAndFormatValue($energyFocusData[id])
+											: ''}
 								</div>
 							</td>
 
-							<td class="px-2 py-1">
+							<td class="px-2 py-1 align-top">
 								<div class="font-mono flex flex-col items-end">
 									{$capacityHoverData
 										? $capacityConvertAndFormatValue($capacityHoverData[id])
 										: $capacityFocusData
-										? $capacityConvertAndFormatValue($capacityFocusData[id])
-										: ''}
+											? $capacityConvertAndFormatValue($capacityFocusData[id])
+											: ''}
 								</div>
 							</td>
 
-							<td class="px-2 py-1">
+							<td class="px-2 py-1 align-top">
 								<div class="font-mono flex flex-col items-end">
 									{$emissionsHoverData
 										? $emissionsConvertAndFormatValue($emissionsHoverData[id])
 										: $emissionsFocusData
-										? $emissionsConvertAndFormatValue($emissionsFocusData[id])
-										: ''}
+											? $emissionsConvertAndFormatValue($emissionsFocusData[id])
+											: ''}
 								</div>
 							</td>
-							<td class="px-2 py-1">
+							<td class="px-2 py-1 align-top">
 								<div class="font-mono flex flex-col items-end mr-3">
 									{$intensityHoverData
 										? $intensityConvertAndFormatvalue($intensityHoverData[id])
 										: $intensityFocusData
-										? $intensityConvertAndFormatvalue($intensityFocusData[id])
-										: ''}
+											? $intensityConvertAndFormatvalue($intensityFocusData[id])
+											: ''}
 								</div>
 							</td>
 						</tr>
@@ -318,15 +317,3 @@
 		</tbody>
 	</table>
 </div>
-
-<style>
-	.main-thead th {
-		@apply px-2 py-6 text-sm font-medium;
-	}
-	th {
-		@apply text-left px-2 py-1 pt-6 font-medium;
-	}
-	td {
-		@apply align-top;
-	}
-</style>

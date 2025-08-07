@@ -115,4 +115,29 @@ b {
 		opacity: 0.4;
 		filter: contrast(170%) brightness(100%);
 	}
+
+	.blockquote em {
+		font-style: normal;
+	}
+	.portable-override h6 {
+		@apply text-xs text-mid-grey font-light;
+	}
+	.portable-override a {
+		@apply text-black hover:text-dark-red underline;
+	}
+	.portable-override h6 a {
+		@apply text-mid-grey underline;
+	}
+	.portable-override ol {
+		@apply list-decimal list-outside ml-8;
+	}
+	.portable-override ol li {
+		@apply text-dark-grey;
+	}
+	.portable-override ul {
+		@apply list-disc list-outside ml-8;
+	}
+	.portable-override ul li {
+		@apply text-dark-grey;
+	}
 }

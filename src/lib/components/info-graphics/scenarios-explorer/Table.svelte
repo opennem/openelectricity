@@ -35,9 +35,6 @@
 
 	const { selectedGroup } = getContext('scenario-data');
 
-	function handleSort(e) {
-		dispatchEvent('sort', e.detail.items);
-	}
 	/**
 	 *
 	 * @param {string|null} id
@@ -51,8 +48,8 @@
 	<table class="table w-full table-fixed text-sm border border-warm-grey">
 		<thead>
 			<tr>
-				<th class="w-8"></th>
-				<th class="text-left">
+				<th class="w-8 bg-light-warm-grey border-t px-3 py-6 border-mid-warm-grey text-xs"></th>
+				<th class="text-left bg-light-warm-grey border-t px-3 py-6 border-mid-warm-grey text-xs">
 					<div
 						class="border border-mid-warm-grey text-xs inline-block rounded-md whitespace-nowrap"
 					>
@@ -65,9 +62,15 @@
 						/>
 					</div>
 				</th>
-				<th class="w-[150px] text-right">{valueColumnName} ({units})</th>
+				<th
+					class="w-[150px] text-right bg-light-warm-grey border-t px-3 py-6 border-mid-warm-grey text-xs"
+					>{valueColumnName} ({units})</th
+				>
 				{#if showContribution}
-					<th class="w-[100px] text-right">Contribution</th>
+					<th
+						class="w-[100px] text-right bg-light-warm-grey border-t px-3 py-6 border-mid-warm-grey text-xs"
+						>Contribution</th
+					>
 				{/if}
 			</tr>
 		</thead>
@@ -94,21 +97,25 @@
 							<Bars2 />
 						</div>
 					</td> -->
-					<td class="group-hover:bg-light-warm-grey">
+					<td class="group-hover:bg-light-warm-grey px-3 py-2 border-b border-warm-grey">
 						<div
 							class="rounded-full bg-mid-grey w-4 h-4"
 							style="background-color: {seriesColours[name]}"
 						></div>
 					</td>
-					<td class="whitespace-nowrap group-hover:bg-light-warm-grey">
+					<td
+						class="whitespace-nowrap group-hover:bg-light-warm-grey px-3 py-2 border-b border-warm-grey"
+					>
 						{seriesLabels[name]}
 					</td>
-					<td class="text-right group-hover:bg-light-warm-grey"
+					<td class="text-right group-hover:bg-light-warm-grey px-3 py-2 border-b border-warm-grey"
 						>{hoverData ? formatValue(hoverData[name]) : ''}</td
 					>
 
 					{#if showContribution}
-						<td class="text-right group-hover:bg-light-warm-grey">
+						<td
+							class="text-right group-hover:bg-light-warm-grey px-3 py-2 border-b border-warm-grey"
+						>
 							{hoverData ? formatValue((hoverData[name] / hoverData._max) * 100) + '%' : ''}
 						</td>
 					{/if}
@@ -117,12 +124,3 @@
 		</tbody>
 	</table>
 </div>
-
-<style>
-	th {
-		@apply bg-light-warm-grey border-t px-3 py-6 border-mid-warm-grey text-xs;
-	}
-	td {
-		@apply px-3 py-2 border-b border-warm-grey;
-	}
-</style>

@@ -39,8 +39,12 @@
 	// $: console.log('seriesItems', seriesItems, seriesLoadsIds);
 	let sourceItems = $derived(seriesItems.filter((d) => !seriesLoadsIds.includes(d.id)));
 	let loadItems = $derived(seriesItems.filter((d) => seriesLoadsIds.includes(d.id)));
-	let sourcesTotal = $derived(hoverData ? sourceItems.reduce((acc, { id }) => acc + hoverData[id], 0) : 0);
-	let loadsTotal = $derived(hoverData ? loadItems.reduce((acc, { id }) => acc + hoverData[id], 0) : 0);
+	let sourcesTotal = $derived(
+		hoverData ? sourceItems.reduce((acc, { id }) => acc + hoverData[id], 0) : 0
+	);
+	let loadsTotal = $derived(
+		hoverData ? loadItems.reduce((acc, { id }) => acc + hoverData[id], 0) : 0
+	);
 
 	function handleSort(e) {
 		// dispatchEvent('sort', e.detail.items);
@@ -58,8 +62,8 @@
 	<table class="table w-full table-fixed text-sm">
 		<thead class="main-thead sticky top-0">
 			<tr>
-				<th class="w-8"></th>
-				<th class="text-left">
+				<th class="w-8 bg-light-warm-grey px-3 py-6 text-xs"></th>
+				<th class="text-left bg-light-warm-grey px-3 py-6 text-xs">
 					<div
 						class="border border-mid-warm-grey text-xs inline-block rounded-md whitespace-nowrap"
 					>
@@ -72,9 +76,11 @@
 						/>
 					</div>
 				</th>
-				<th class="w-[150px] text-right">{valueColumnName} ({units})</th>
+				<th class="w-[150px] text-right bg-light-warm-grey px-3 py-6 text-xs"
+					>{valueColumnName} ({units})</th
+				>
 				{#if showContribution}
-					<th class="w-[100px] text-right">Contribution</th>
+					<th class="w-[100px] text-right bg-light-warm-grey px-3 py-6 text-xs">Contribution</th>
 				{/if}
 			</tr>
 		</thead>
@@ -94,10 +100,11 @@
 		</thead> -->
 		<tbody class="overflow-y-auto">
 			<tr>
-				<th></th>
-				<th class="text-left">Sources</th>
-				<th class="text-right">{sourcesTotal ? formatValue(sourcesTotal) : ''}</th>
-				<th></th>
+				<th class="px-3 py-2 text-xs"></th>
+				<th class="text-left px-3 py-2 text-xs">Sources</th>
+				<th class="text-right px-3 py-2 text-xs">{sourcesTotal ? formatValue(sourcesTotal) : ''}</th
+				>
+				<th class="px-3 py-2 text-xs"></th>
 			</tr>
 
 			{#each sourceItems as { id, name } (id)}
@@ -115,21 +122,21 @@
 							<Bars2 />
 						</div>
 					</td> -->
-					<td class="group-hover:bg-light-warm-grey">
+					<td class="group-hover:bg-light-warm-grey px-3 py-2 text-xs">
 						<div
 							class="rounded-full bg-mid-grey w-4 h-4"
 							style="background-color: {seriesColours[name]}"
 						></div>
 					</td>
-					<td class="whitespace-nowrap group-hover:bg-light-warm-grey">
+					<td class="whitespace-nowrap group-hover:bg-light-warm-grey px-3 py-2 text-xs">
 						{seriesLabels[name]}
 					</td>
-					<td class="text-right group-hover:bg-light-warm-grey"
+					<td class="text-right group-hover:bg-light-warm-grey px-3 py-2 text-xs"
 						>{hoverData ? formatValue(hoverData[name]) : ''}</td
 					>
 
 					{#if showContribution}
-						<td class="text-right group-hover:bg-light-warm-grey">
+						<td class="text-right group-hover:bg-light-warm-grey px-3 py-2 text-xs">
 							{hoverData ? formatValue((hoverData[name] / hoverData._max) * 100) + '%' : ''}
 						</td>
 					{/if}
@@ -137,27 +144,27 @@
 			{/each}
 
 			<tr>
-				<th></th>
-				<th class="text-left">Loads</th>
-				<th class="text-right">{loadsTotal ? formatValue(loadsTotal) : ''}</th>
-				<th></th>
+				<th class="px-3 py-2 text-xs"></th>
+				<th class="text-left px-3 py-2 text-xs">Loads</th>
+				<th class="text-right px-3 py-2 text-xs">{loadsTotal ? formatValue(loadsTotal) : ''}</th>
+				<th class="px-3 py-2 text-xs"></th>
 			</tr>
 
 			{#each loadItems as { id, name } (id)}
 				<tr class="group">
-					<td>
+					<td class="px-3 py-2 text-xs">
 						<div
 							class="rounded-full bg-mid-grey w-4 h-4"
 							style="background-color: {seriesColours[name]}"
 						></div>
 					</td>
-					<td class="whitespace-nowrap">
+					<td class="whitespace-nowrap px-3 py-2 text-xs">
 						{seriesLabels[name]}
 					</td>
 					<td class="text-right">{hoverData ? formatValue(hoverData[name]) : ''}</td>
 
 					{#if showContribution}
-						<td class="text-right">
+						<td class="text-right px-3 py-2 text-xs">
 							{hoverData ? formatValue((hoverData[name] / hoverData._max) * 100) + '%' : ''}
 						</td>
 					{/if}
@@ -194,27 +201,15 @@
 		<tfoot class="sticky bottom-0 border-t border-mid-warm-grey">
 			<tr>
 				<!-- <td /> -->
-				<th></th>
-				<th class="text-left">Net</th>
-				<th class="text-right">{hoverData ? formatValue(hoverData._max) : ''}</th>
+				<th class="bg-light-warm-grey px-3 py-2 text-xs"></th>
+				<th class="text-left bg-light-warm-grey px-3 py-2 text-xs">Net</th>
+				<th class="text-right bg-light-warm-grey px-3 py-2 text-xs">
+					{hoverData ? formatValue(hoverData._max) : ''}
+				</th>
 				{#if showContribution}
-					<th></th>
+					<th class="bg-light-warm-grey px-3 py-2 text-xs"></th>
 				{/if}
 			</tr>
 		</tfoot>
 	</table>
 </div>
-
-<style>
-	.main-thead th {
-		@apply bg-light-warm-grey px-3 py-6 text-xs;
-	}
-
-	td,
-	th {
-		@apply px-3 py-2 text-xs;
-	}
-	tfoot th {
-		@apply bg-light-warm-grey  px-3 py-2;
-	}
-</style>
