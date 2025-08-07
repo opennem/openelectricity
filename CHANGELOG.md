@@ -1,5 +1,15 @@
 # opennem-app
 
+## 3.12.0
+
+### Minor Changes
+
+- 1db2cb5: upgrade to tailwind v4
+
+### Patch Changes
+
+- adjust text size after upgrade
+
 ## 3.11.0
 
 ### Minor Changes
