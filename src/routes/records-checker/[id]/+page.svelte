@@ -117,7 +117,7 @@
 	</div>
 	<!-- <div>
 		<button
-			class="border rounded py-1 px-4 bg-light-warm-grey font-semibold"
+			class="border rounded-sm py-1 px-4 bg-light-warm-grey font-semibold"
 			on:click={() => updateCurrentPage(currentPage + 1)}
 		>
 			Check data
@@ -128,7 +128,7 @@
 {#if timeSeriesData.length > 0}
 	<div class="py-5 flex justify-center gap-16">
 		<button
-			class="border rounded text-xs py-1 px-4"
+			class="border rounded-sm text-xs py-1 px-4"
 			class:invisible={currentPage === 1}
 			onclick={() => updateCurrentPage(currentPage - 1)}>Previous</button
 		>
@@ -138,7 +138,7 @@
 			({currentStartRecordIndex} to {lastRecordIndex})
 		</div>
 		<button
-			class="border rounded text-xs py-1 px-4"
+			class="border rounded-sm text-xs py-1 px-4"
 			class:invisible={currentPage === totalPages}
 			onclick={() => updateCurrentPage(currentPage + 1)}>Next</button
 		>

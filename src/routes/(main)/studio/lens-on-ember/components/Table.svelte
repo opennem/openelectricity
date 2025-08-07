@@ -173,11 +173,11 @@
 						<div class="flex items-center gap-3 ml-3">
 							{#if energyCxt.hiddenSeriesNames.includes(energyName)}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 								></div>
 							{:else}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
 									style:background-color={energyCxt.seriesColours[energyName]}
 									style:border-color={darken(energyCxt.seriesColours[energyName])}
 								></div>

@@ -267,12 +267,12 @@
 	<!-- <div class="py-5 flex justify-center gap-16">
 		<div class="flex gap-5">
 			<button
-				class="border rounded text-xs py-1 px-4"
+				class="border rounded-sm text-xs py-1 px-4"
 				class:invisible={currentPage === 1}
 				on:click={() => updateCurrentPage(1)}>Back to first page</button
 			>
 			<button
-				class="border rounded text-xs py-1 px-4"
+				class="border rounded-sm text-xs py-1 px-4"
 				class:invisible={currentPage === 1}
 				on:click={() => updateCurrentPage(currentPage - 1)}>Previous</button
 			>
@@ -286,12 +286,12 @@
 
 		<div class="flex gap-5">
 			<button
-				class="border rounded text-xs py-1 px-4"
+				class="border rounded-sm text-xs py-1 px-4"
 				class:invisible={currentPage === totalPages}
 				on:click={() => updateCurrentPage(currentPage + 1)}>Next</button
 			>
 			<button
-				class="border rounded text-xs py-1 px-4"
+				class="border rounded-sm text-xs py-1 px-4"
 				class:invisible={currentPage === totalPages}
 				on:click={() => updateCurrentPage(totalPages)}>Jump to last page</button
 			>

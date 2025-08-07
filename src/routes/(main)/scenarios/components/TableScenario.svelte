@@ -169,11 +169,11 @@
 					<div class="flex items-center gap-3 ml-3">
 						{#if hiddenRowNames.includes('historical')}
 							<div
-								class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+								class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 							></div>
 						{:else}
 							<div
-								class="w-6 h-6 min-w-6 min-h-6 border rounded"
+								class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
 								style:background-color={$energySeriesColours['historical']}
 								style:border-color={darken($energySeriesColours['historical'])}
 							></div>
@@ -239,7 +239,7 @@
 					{@const scenarioId = `${model}-${scenario}`}
 
 					<tr>
-						<td colspan="5" class="!pb-0 align-top">
+						<td colspan="5" class="pb-0! align-top">
 							<span class="ml-5 mt-3 block font-space text-xs">
 								{scenarioLabelMap[scenarioId] || ''}
 							</span>
@@ -256,11 +256,11 @@
 								<div class="flex items-start gap-3 ml-3">
 									{#if hiddenRowNames.includes(id)}
 										<div
-											class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey relative top-1"
+											class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey relative top-1"
 										></div>
 									{:else}
 										<div
-											class="w-6 h-6 min-w-6 min-h-6 border rounded relative top-1"
+											class="w-6 h-6 min-w-6 min-h-6 border rounded-sm relative top-1"
 											style:background-color={$energySeriesColours[id]}
 											style:border-color={darken($energySeriesColours[id])}
 										></div>

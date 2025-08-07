@@ -9,7 +9,7 @@
 	<div class="bg-light-warm-grey py-16">
 		<div class="container max-w-none lg:container">
 			<div class="flex flex-col md:flex-row gap-8 md:gap-0">
-				<div class="flex items-center justify-center flex-shrink-0">
+				<div class="flex items-center justify-center shrink-0">
 					<img src="/img/logo.svg" alt="Open Electricity logo" class="block h-8 w-auto mr-8 mt-2" />
 					<img
 						src="/img/superpower-new.svg"
@@ -17,7 +17,7 @@
 						class="block h-12 w-auto"
 					/>
 				</div>
-				<div class="text-center md:flex-shrink md:px-12 md:text-left">
+				<div class="text-center md:shrink md:px-12 md:text-left text-base">
 					<strong>Stay Connected</strong> — Sign up to be notified of platform updates, events and the
 					latest analysis.
 				</div>
@@ -43,9 +43,9 @@
 					work. We acknowledge their Elders, past and present.
 				</p>
 				<p class="flex">
-					<img class="flag" src="/img/aboriginal-flag.svg" alt="Aboriginal flag" />
-					<img class="flag" src="/img/lgbtqi-flag.svg" alt="LGBTQI flag" />
-					<img class="flag" src="/img/tsi-flag.svg" alt="Torres Strait Islands flag" />
+					<img class="h-8 mr-4" src="/img/aboriginal-flag.svg" alt="Aboriginal flag" />
+					<img class="h-8 mr-4" src="/img/lgbtqi-flag.svg" alt="LGBTQI flag" />
+					<img class="h-8" src="/img/tsi-flag.svg" alt="Torres Strait Islands flag" />
 				</p>
 			</div>
 			<div class="mt-16 md:mt-0">
@@ -140,7 +140,7 @@
 
 	<div class="text-xs text-center text-mid-warm-grey">{version}</div>
 </footer>
-
+<!-- 
 <style lang="postcss">
 	.footer-info-grid:after {
 		display: block;
@@ -157,4 +157,4 @@
 		width: auto;
 		margin-right: 1rem;
 	}
-</style>
+</style> -->

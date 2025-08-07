@@ -29,7 +29,7 @@
 				</button>
 			{/if}
 
-			<div class="flex gap-2 items-baseline top-[1px] relative">
+			<div class="flex gap-2 items-baseline top-px relative">
 				<h6 class="m-0 leading-none">
 					{cxt.title}
 				</h6>
@@ -54,7 +54,7 @@
 		<div
 			in:fly={{ y: -20, duration: 240 }}
 			out:fly={{ y: -20, duration: 240 }}
-			class="bg-white/60 shadow-inner p-6 rounded-b-lg absolute z-10 backdrop-blur-lg inset-shadow flex gap-6 flex-col"
+			class="bg-white/60 shadow-inner p-6 rounded-b-lg absolute z-10 backdrop-blur-lg inset-shadow-sm flex gap-6 flex-col"
 		>
 			<ChartOptionsWithContext {cxtKey} />
 		</div>

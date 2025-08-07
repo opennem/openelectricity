@@ -84,7 +84,7 @@
 	let hoverData = $state(null);
 </script>
 
-<div class=" max-w-screen-lg px-6 mx-auto md:grid grid-cols-2 gap-6">
+<div class=" max-w-(--breakpoint-lg) px-6 mx-auto md:grid grid-cols-2 gap-6">
 	<div class="relative h-auto">
 		<div class="sticky top-0">
 			<h2 class="font-space uppercase text-sm text-mid-grey mb-12">
@@ -108,7 +108,7 @@
 	<div class="grid grid-cols-3 border-mid-warm-grey">
 		{#each names as key, i}
 			<SparkLineArea
-				class="p-8 border-mid-warm-grey border-b border-l last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
+				class="p-8 border-mid-warm-grey border-b border-l last:border-r nth-[3n]:border-r nth-[-n+3]:border-t"
 				id={`key-${i}`}
 				{overlay}
 				{overlayLine}

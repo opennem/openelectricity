@@ -25,7 +25,7 @@
 />
 
 <div class="relative">
-	<div class="bg-light-warm-grey absolute w-full h-[500px] md:h-[750px] z-1"></div>
+	<div class="bg-light-warm-grey absolute w-full h-[500px] md:h-[750px] z-0"></div>
 
 	<div class="container max-w-none lg:container py-12 relative z-10">
 		<div class="pb-10 md:py-14">
@@ -87,7 +87,7 @@
 </div>
 
 {#if hasCover}
-	<div class="max-w-none lg:container pb-12 md:py-4 relative">
+	<div class="max-w-none lg:container pb-12 md:py-4 relative z-10">
 		<figure>
 			<img class="mx-auto block" src={urlFor(data.cover).height(1390).url()} alt={data.cover.alt} />
 			{#if data.cover.alt}

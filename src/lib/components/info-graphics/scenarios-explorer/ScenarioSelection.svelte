@@ -226,7 +226,7 @@
 								<Checkbox
 									label={scenario}
 									checked={selectedScenarios.includes(id)}
-									class="w-full justify-between !items-start flex-row-reverse text-sm font-semibold text-dark-grey"
+									class="w-full justify-between items-start! flex-row-reverse text-sm font-semibold text-dark-grey"
 									on:change={(evt) => handleCheckBoxChange(id, evt.detail.checked)}
 								/>
 							{/if}

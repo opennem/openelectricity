@@ -177,11 +177,11 @@
 						<div class="flex items-start gap-3 ml-3">
 							{#if hiddenRowNames.includes(name)}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey relative top-1"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey relative top-1"
 								></div>
 							{:else}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded relative top-1"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm relative top-1"
 									style:background-color={$energySeriesColours[name]}
 									style:border-color={darken($energySeriesColours[name])}
 								></div>

@@ -180,14 +180,14 @@
 	<div class="container max-w-none lg:container">
 		<div class="block md:flex gap-8">
 			<div
-				class="records-sidebar-fill records-sidebar min-w-[27rem] w-full md:w-3/12 bg-white py-8 md:py-14 md:pr-8 relative border-solid md:border-r-[0.05rem] border-mid-warm-grey"
+				class="records-sidebar-fill records-sidebar min-w-108 w-full md:w-3/12 bg-white py-8 md:py-14 md:pr-8 relative border-solid md:border-r-[0.05rem] border-mid-warm-grey"
 			>
 				<div class="h-fit sticky top-0">
 					<div class="flex justify-between">
 						<h1 class="text-2xl leading-2xl md:text-3xl md:leading-3xl mb-0">Analysis</h1>
 						<!-- <Button
 						secondary={true}
-						class="text-black flex-shrink-0 w-16 h-16 flex justify-center align-middle md:hidden"
+						class="text-black shrink-0 w-16 h-16 flex justify-center align-middle md:hidden"
 						active={showMenu}
 						clickHandler={() => {
 							showMenu = !showMenu;
@@ -204,43 +204,3 @@
 		</div>
 	</div>
 </div>
-
-<!-- <div class="container max-w-none lg:container py-12">
-	<h1>Analysis</h1>
-	<div class="grid grid-cols-3 py-12">
-		{#each articles as { title, slug }}
-			<div>
-				<h3>{title}</h3>
-				<a href="/analysis/{slug.current}">Read more</a>
-			</div>
-		{/each}
-	</div>
-</div> -->
-
-<style lang="postcss">
-	.records-sidebar:before {
-		content: '';
-		display: block;
-		width: 100vh;
-		height: 100%;
-		position: absolute;
-		right: 100%;
-		top: 0;
-		background-color: white;
-	}
-	.records-sidebar-fill:after {
-		content: '';
-		display: block;
-		width: 100vh;
-		height: 100%;
-		position: absolute;
-		left: 100%;
-		top: 0;
-		background-color: white;
-	}
-	@media (min-width: theme(screens.md)) {
-		.records-sidebar-fill:after {
-			display: none;
-		}
-	}
-</style>

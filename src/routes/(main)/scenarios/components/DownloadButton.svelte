@@ -94,7 +94,7 @@
 					<a
 						href={fileUrl}
 						download={fileName}
-						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between text-black !no-underline"
+						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between text-black no-underline!"
 						onpointerenter={() => handleSelect(opt)}
 					>
 						<span class="capitalize">{opt.label}</span>

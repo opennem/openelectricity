@@ -133,7 +133,7 @@
 		<div class="grid grid-cols-3 border-mid-warm-grey">
 			{#each names as key, i}
 				<SparkLineArea
-					class="p-8 border-mid-warm-grey border-b border-l last:border-r [&:nth-child(3n)]:border-r [&:nth-child(-n+3)]:border-t"
+					class="p-8 border-mid-warm-grey border-b border-l last:border-r nth-[3n]:border-r nth-[-n+3]:border-t"
 					id={`key-${i}`}
 					{overlay}
 					{overlayLine}

@@ -48,7 +48,7 @@
 <div class="border-b border-warm-grey">
 	<div class="container">
 		<div class="grid grid-cols-3 w-full md:w-2/3 gap-3 my-3">
-			<div class="bg-light-warm-grey py-2 px-4 rounded">
+			<div class="bg-light-warm-grey py-2 px-4 rounded-sm">
 				<Selection
 					selectLabel="Model:"
 					widthClass="w-[240px]"
@@ -58,7 +58,7 @@
 				/>
 			</div>
 
-			<div class="bg-light-warm-grey py-2 px-4 rounded">
+			<div class="bg-light-warm-grey py-2 px-4 rounded-sm">
 				<Selection
 					selectLabel="Scenario:"
 					widthClass="w-[240px]"
@@ -68,7 +68,7 @@
 				/>
 			</div>
 
-			<div class="bg-light-warm-grey py-2 px-4 rounded">
+			<div class="bg-light-warm-grey py-2 px-4 rounded-sm">
 				<Selection
 					selectLabel="Pathway:"
 					widthClass="w-[200px]"
@@ -137,7 +137,7 @@
 	</div>
 </div>
 
-<!-- <div class="bg-light-warm-grey py-2 px-4 rounded">
+<!-- <div class="bg-light-warm-grey py-2 px-4 rounded-sm">
 	<Selection
 		selectLabel="By:"
 		widthClass="w-[150px]"
@@ -147,7 +147,7 @@
 	/>
 </div> -->
 
-<!-- <div class="bg-light-warm-grey py-2 px-4 rounded">
+<!-- <div class="bg-light-warm-grey py-2 px-4 rounded-sm">
 	<Selection
 		selectLabel="Chart:"
 		widthClass="w-[270px]"
@@ -158,7 +158,7 @@
 </div> -->
 
 <!-- {#if !isRegionDisplay}
-	<div class="bg-light-warm-grey py-2 px-4 rounded">
+	<div class="bg-light-warm-grey py-2 px-4 rounded-sm">
 		<Selection
 			selectLabel="Grouping:"
 			widthClass="w-[270px]"
@@ -170,7 +170,7 @@
 {/if}
 
 {#if isRegionDisplay}
-	<div class="bg-light-warm-grey py-2 px-4 rounded">
+	<div class="bg-light-warm-grey py-2 px-4 rounded-sm">
 		<Selection
 			selectLabel="Compare:"
 			widthClass="w-[270px]"

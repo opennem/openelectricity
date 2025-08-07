@@ -56,7 +56,7 @@
 	}
 </script>
 
-<form class="flex flex-shrink-0 items-center justify-end {className}" onsubmit={signup}>
+<form class="flex shrink-0 items-center justify-end {className}" onsubmit={signup}>
 	{#if pendingSubscription}
 		<div
 			class="rounded-full whitespace-nowrap flex items-center justify-center px-12 py-6 bg-mid-warm-grey text-dark-warm-grey font-semibold"
@@ -68,13 +68,13 @@
 			type="email"
 			name="email"
 			placeholder="Email Address"
-			class="w-full h-20 rounded-full pl-8 pr-28 inherit text-[1.4rem] focus:ring-red focus:border-red"
+			class="w-full h-20 rounded-full pl-8 pr-28 inherit text-sm focus:ring-red focus:border-red"
 			bind:this={emailField}
 			disabled={formSubmitting || formSubmitted}
 		/>
 		<button
 			type="submit"
-			class="h-20 rounded-full bg-white border border-black px-12 font-bold ml-[-5rem]"
+			class="h-20 rounded-full bg-white border border-black px-12 font-bold -ml-20 text-base"
 			disabled={formSubmitting || formSubmitted}
 		>
 			{#if formSubmitting}

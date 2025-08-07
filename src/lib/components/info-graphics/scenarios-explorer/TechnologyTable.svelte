@@ -117,7 +117,7 @@
 					<!-- <td>
 						<div
 							aria-label="drag-handle for {seriesLabels[name]}"
-							class="w-6 h-6 p-1 flex items-center justify-center group-hover:bg-warm-grey rounded"
+							class="w-6 h-6 p-1 flex items-center justify-center group-hover:bg-warm-grey rounded-sm"
 						>
 							<Bars2 />
 						</div>

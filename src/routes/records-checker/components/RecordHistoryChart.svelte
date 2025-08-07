@@ -76,7 +76,7 @@
 
 <div class="text-center">
 	<button
-		class="border rounded text-xs py-1 px-4"
+		class="border rounded-sm text-xs py-1 px-4"
 		class:invisible={!isBrushed}
 		onclick={() => (brushExtents = [null, null])}
 	>

@@ -264,11 +264,11 @@
 						<div class="flex items-center gap-3 ml-3">
 							{#if hiddenRowNames.includes(name)}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 								></div>
 							{:else}
 								<div
-									class="w-6 h-6 min-w-6 min-h-6 border rounded"
+									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
 									style:background-color={$energySeriesColours[name]}
 									style:border-color={darken($energySeriesColours[name])}
 								></div>
@@ -328,11 +328,11 @@
 							<div class="flex items-center gap-3 ml-3">
 								{#if hiddenRowNames.includes(name)}
 									<div
-										class="w-6 h-6 min-w-6 min-h-6 border rounded bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
+										class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey"
 									></div>
 								{:else}
 									<div
-										class="w-6 h-6 min-w-6 min-h-6 border rounded"
+										class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
 										style:background-color={$energySeriesColours[name]}
 										style:border-color={darken($energySeriesColours[name])}
 									></div>
@@ -401,17 +401,17 @@
 		</thead>
 		<tbody>
 			<tr class="text-sm">
-				<th class="px-2 !py-6 text-sm font-medium">
+				<th class="px-2 py-6! text-sm font-medium">
 					<div class="flex items-center gap-3 ml-3">
 						<div
-							class="w-6 h-6 min-w-6 min-h-6 border rounded"
+							class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
 							style="background-color: #444444; border-color: {darken('#444444')}"
 						></div>
 						<span>Emissions</span>
 					</div>
 				</th>
 
-				<th class="px-2 !py-6 text-sm font-medium">
+				<th class="px-2 py-6! text-sm font-medium">
 					<div class="font-mono flex flex-col items-end">
 						{$emissionsHoverData
 							? $emissionsConvertAndFormatValue($emissionsHoverData['au.emissions.total'])
@@ -420,7 +420,7 @@
 								: ''}
 					</div>
 				</th>
-				<th class="px-2 !py-6 text-sm font-medium">
+				<th class="px-2 py-6! text-sm font-medium">
 					<div class="font-mono flex flex-col items-end mr-3">
 						{$intensityHoverData
 							? $intensityConvertAndFormatvalue($intensityHoverData['au.emission_intensity'])

@@ -55,7 +55,7 @@
 			<Checkbox
 				label={scenario.label}
 				checked={isChecked}
-				class="w-full justify-between !items-start flex-row-reverse text-sm font-semibold text-dark-grey"
+				class="w-full justify-between items-start! flex-row-reverse text-sm font-semibold text-dark-grey"
 				on:change
 			/>
 		{/if}

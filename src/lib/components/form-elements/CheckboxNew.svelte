@@ -30,10 +30,10 @@
 		bind:checked
 		bind:indeterminate
 		onchange={bubble('change')}
-		class="hidden size-6 rounded border-gray-300 text-dark-grey focus:ring-dark-grey"
+		class="hidden size-6 rounded-sm border-gray-300 text-dark-grey focus:ring-dark-grey"
 	/>
 
-	<div class="border border-mid-warm-grey rounded size-7" class:bg-warm-grey={checked}>
+	<div class="border border-mid-warm-grey rounded-sm size-7" class:bg-warm-grey={checked}>
 		{#if checked}
 			<IconCheckMark class="size-6" />
 		{/if}
