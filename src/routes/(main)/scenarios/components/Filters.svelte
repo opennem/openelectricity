@@ -201,7 +201,7 @@
 			</div>
 		</header>
 
-		<section class="p-10 w-full flex gap-12">
+		<section class="p-10 w-full flex gap-12 relative z-50">
 			<FormMultiSelect
 				options={dataTypeDisplayOptions}
 				selected={$selectedCharts}
@@ -231,7 +231,7 @@
 		<ScenarioSelection mobileView={true} />
 
 		{#snippet buttons()}
-			<div class="flex gap-3">
+			<div class="flex gap-3 text-base">
 				<!-- <Button class="w-full">Cancel</Button> -->
 				<Button
 					class="bg-dark-grey! text-white hover:bg-black! w-full"

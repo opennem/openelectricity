@@ -52,7 +52,7 @@
 	let translateToMiddle = $derived(align === 'middle' ? 'left-1/2 transform -translate-x-1/2' : '');
 </script>
 
-<div class="relative {widthClass}">
+<div class="relative {widthClass} text-base">
 	<button
 		onclick={() => (showOptions = !showOptions)}
 		use:clickoutside

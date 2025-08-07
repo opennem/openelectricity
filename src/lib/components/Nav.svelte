@@ -18,11 +18,11 @@
 	});
 </script>
 
-<header class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid">
+<header class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid text-base">
 	<div class="max-w-none px-10 md:px-16 flex items-center justify-between h-full">
 		<div
 			class="absolute md:relative z-9999 flex items-center gap-6"
-			class:top-[18.5px]={mobileNavActive}
+			class:top-[26px]={mobileNavActive}
 		>
 			<a href="/" class="">
 				<h1 class="m-0 w-[200px]">

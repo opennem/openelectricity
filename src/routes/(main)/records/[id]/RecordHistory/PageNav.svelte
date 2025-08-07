@@ -379,7 +379,7 @@
 			</div>
 
 			{#snippet buttons()}
-				<div class="flex gap-3">
+				<div class="flex gap-3 text-base">
 					<Button
 						class="bg-dark-grey! text-white hover:bg-black! w-full"
 						on:click={() => (showMobileFilterOptions = false)}>Close</Button

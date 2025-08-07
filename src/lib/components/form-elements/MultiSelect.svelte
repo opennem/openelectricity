@@ -71,7 +71,11 @@
 
 <svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
 
-<div class="relative w-full" use:clickoutside onclickoutside={() => (showOptions = false)}>
+<div
+	class="relative w-full text-base"
+	use:clickoutside
+	onclickoutside={() => (showOptions = false)}
+>
 	<button
 		onclick={() => (showOptions = !showOptions)}
 		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap"

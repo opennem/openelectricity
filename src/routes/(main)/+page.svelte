@@ -140,7 +140,7 @@
 	</div>
 {/if}
 
-<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
+<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey text-base">
 	{#if outlookEnergyNem}
 		<InfoGraphicScenariosPreview />
 	{/if}
