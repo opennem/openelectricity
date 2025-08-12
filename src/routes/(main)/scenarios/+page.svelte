@@ -596,30 +596,32 @@
 	{/if}
 </div>
 
-{#if $isTechnologyViewSection}
-	<DetailedTechnology
-		{seriesLoadsIds}
-		on:mousemove={handleMousemove}
-		on:mouseout={handleMouseout}
-		on:pointerup={handlePointerup}
-	/>
-{/if}
+<div class="text-base">
+	{#if $isTechnologyViewSection}
+		<DetailedTechnology
+			{seriesLoadsIds}
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	{/if}
 
-{#if $isScenarioViewSection}
-	<DetailedScenario
-		on:mousemove={handleMousemove}
-		on:mouseout={handleMouseout}
-		on:pointerup={handlePointerup}
-	/>
-{/if}
+	{#if $isScenarioViewSection}
+		<DetailedScenario
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	{/if}
 
-{#if $isRegionViewSection}
-	<DetailedRegion
-		on:mousemove={handleMousemove}
-		on:mouseout={handleMouseout}
-		on:pointerup={handlePointerup}
-	/>
-{/if}
+	{#if $isRegionViewSection}
+		<DetailedRegion
+			on:mousemove={handleMousemove}
+			on:mouseout={handleMouseout}
+			on:pointerup={handlePointerup}
+		/>
+	{/if}
+</div>
 
 <ArticlesSection
 	analysisArticles={articles.filter(
