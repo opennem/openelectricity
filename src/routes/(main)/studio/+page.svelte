@@ -10,6 +10,11 @@
 			released: true
 		},
 		{
+			title: 'UI Components',
+			description: 'Modern UI components showcase using shadcn-svelte and Svelte 5 patterns.',
+			link: '/studio/ui-components'
+		},
+		{
 			title: 'Lens on Ember',
 			description: 'Visualises energy and emissions data from regions around the world.',
 			link: '/studio/lens-on-ember'
