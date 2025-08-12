@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.13.0
+
+### Minor Changes
+
+- 370f56d: tailwind v4 upgrade, shadcn-svelte setup
+
 ## 3.12.0
 
 ### Minor Changes
