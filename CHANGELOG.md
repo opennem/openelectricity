@@ -1,5 +1,15 @@
 # opennem-app
 
+## 3.14.0
+
+### Minor Changes
+
+- trend profile charts
+
+### Patch Changes
+
+- 4e4221e: adjust cell padding
+
 ## 3.13.0
 
 ### Minor Changes
