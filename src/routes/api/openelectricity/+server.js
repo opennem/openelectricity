@@ -30,10 +30,10 @@ export async function GET({ url, setHeaders }) {
 			searchParams.get('secondaryGrouping')
 		);
 	let secondaryGroupingArray = secondaryGrouping ? [secondaryGrouping] : undefined;
-	let fueltechGroup = /** @type {import('openelectricity').UnitFueltechGroupType | undefined} */ (
-		searchParams.get('fueltechGroup')
+	let fueltechGroup = /** @type {import('openelectricity').UnitFueltechGroupType[] | undefined} */ (
+		searchParams.get('fueltechGroup') ? searchParams.get('fueltechGroup')?.split(',') : []
 	);
-	let fueltechGroupArray = fueltechGroup ? [fueltechGroup] : undefined;
+	let fueltechGroupArray = fueltechGroup ? fueltechGroup : undefined;
 	let networkRegion = /** @type {string | undefined} */ (searchParams.get('networkRegion'));
 
 	if (!dataType || !networkId || !metric) {
@@ -61,6 +61,8 @@ export async function GET({ url, setHeaders }) {
 		fueltech_group: fueltechGroupArray,
 		network_region: networkRegion
 	};
+
+	console.log('clientOptions', clientOptions);
 
 	let res;
 

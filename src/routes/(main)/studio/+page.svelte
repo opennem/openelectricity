@@ -40,7 +40,15 @@
 		{
 			title: 'TrackerGrid',
 			description: 'A new data visualization tool for tracking and analyzing grid data.',
-			link: '/studio/tracker-grid'
+			link: '/studio/tracker-grid',
+			disabled: true
+		},
+		{
+			title: 'Generation Trends & Profiles',
+			description:
+				'Analyze generation patterns, trends, and profiles of different energy sources across time periods and regions.',
+			link: '/studio/generation-trends-profiles',
+			disabled: false
 		}
 	];
 </script>
