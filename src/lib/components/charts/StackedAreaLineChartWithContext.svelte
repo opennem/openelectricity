@@ -36,7 +36,11 @@
 	);
 	let chartData = $derived(cxt.chartOptions.isChartTypeArea ? stackedData : groupedData);
 	let flatData = $derived(
-		cxt.chartOptions.isChartTypeArea ? flatten(stackedData) : flatten(groupedData, 'values')
+		cxt.chartOptions.isChartTypeArea
+			? flatten(stackedData)
+			: groupedData.length > 0
+				? flatten(groupedData, 'values')
+				: []
 	);
 	let clipPathId = $derived(clip ? `${id}-clip-path` : '');
 	let clipPathAxisId = $derived(clip ? `${id}-clip-path-axis` : '');

@@ -32,4 +32,12 @@
 /** @typedef {import('$lib/types/record.types').Period} Period */
 /** @typedef {import('$lib/types/ember-bridge.types').EmberCountry} EmberCountry */
 
+/** @typedef {import('openelectricity').NetworkCode} NetworkCode */
+/** @typedef {import('openelectricity').DataMetric} DataMetric */
+/** @typedef {import('openelectricity').MarketMetric} MarketMetric */
+/** @typedef {import('openelectricity').DataInterval} DataInterval */
+/** @typedef {import('openelectricity').DataPrimaryGrouping} DataPrimaryGrouping */
+/** @typedef {import('openelectricity').DataSecondaryGrouping} DataSecondaryGrouping */
+/** @typedef {import('openelectricity').UnitFueltechGroupType} UnitFueltechGroupType */
+
 /** @typedef {'7d' | 'monthly' | '12-month-rolling' | 'yearly'} RangeType */

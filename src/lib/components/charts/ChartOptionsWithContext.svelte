@@ -18,6 +18,7 @@
 	);
 </script>
 
+{#if !cxt.hideDataOptions}
 <div class="grid grid-cols-5 gap-4 items-center">
 	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Data</span>
 	<div class="col-span-4">
@@ -33,7 +34,9 @@
 		</div>
 	</div>
 </div>
+{/if}
 
+{#if !cxt.hideChartTypeOptions}
 <div class="grid grid-cols-5 gap-4 items-center">
 	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Chart</span>
 	<div class="col-span-4">
@@ -47,6 +50,7 @@
 		/>
 	</div>
 </div>
+{/if}
 
 <div class="grid grid-cols-5 gap-4 items-center">
 	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Style</span>

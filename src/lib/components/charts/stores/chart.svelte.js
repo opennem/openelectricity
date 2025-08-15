@@ -13,6 +13,9 @@ import { transformToProportion } from '$lib/utils/data-transform/index.js';
  * @property {SiPrefix} [displayPrefix]
  * @property {SiPrefix[]} [allowedPrefixes]
  * @property {string} [baseUnit]
+ * @property {string} [chartType]
+ * @property {boolean} [hideDataOptions]
+ * @property {boolean} [hideChartTypeOptions]
  * @property {Object} [chartStyles]
  * @property {string} [chartStyles.chartHeightClasses]
  * @property {string} [chartStyles.xAxisFill]
@@ -22,6 +25,8 @@ import { transformToProportion } from '$lib/utils/data-transform/index.js';
  * @property {number} [chartStyles.chartPadding.right]
  * @property {number} [chartStyles.chartPadding.bottom]
  * @property {number} [chartStyles.chartPadding.left]
+ * @property {number} [chartStyles.xAxisYTick]
+ * @property {string} [chartStyles.xTextClasses]
  */
 
 export default class ChartStore {
@@ -32,6 +37,12 @@ export default class ChartStore {
 
 	/** @type {string} */
 	title = $state('');
+
+	/** @type {boolean} */
+	hideDataOptions = $state(false);
+
+	/** @type {boolean} */
+	hideChartTypeOptions = $state(false);
 
 	/** @type {string} */
 	timeZone = $state('+10:00');
@@ -252,23 +263,28 @@ export default class ChartStore {
 	/**
 	 * @param {chartCxtOptions} options
 	 */
-	constructor({ key, title, prefix, displayPrefix, allowedPrefixes, baseUnit, chartStyles }) {
+	constructor({ key, title, prefix, displayPrefix, allowedPrefixes, baseUnit, chartType, hideDataOptions, hideChartTypeOptions, chartStyles }) {
 		this.key = key;
 		this.chartOptions = new ChartOptions({
 			prefix,
 			displayPrefix,
 			allowedPrefixes,
-			baseUnit
+			baseUnit,
+			chartType: /** @type {import('./chart-options.svelte.js').ChartType} */ (chartType)
 		});
 		this.chartStyles = new ChartStyles();
 		this.chartTooltips = new ChartTooltips();
 		this.title = title ?? '';
+		this.hideDataOptions = hideDataOptions ?? false;
+		this.hideChartTypeOptions = hideChartTypeOptions ?? false;
 
 		if (chartStyles) {
-			this.chartStyles.chartHeightClasses = chartStyles.chartHeightClasses;
-			this.chartStyles.xAxisFill = chartStyles.xAxisFill;
-			this.chartStyles.showLastYTick = chartStyles.showLastYTick;
-			this.chartStyles.chartPadding = chartStyles.chartPadding;
+			if (chartStyles.chartHeightClasses) this.chartStyles.chartHeightClasses = chartStyles.chartHeightClasses;
+			if (chartStyles.xAxisFill) this.chartStyles.xAxisFill = chartStyles.xAxisFill;
+			if (chartStyles.showLastYTick !== undefined) this.chartStyles.showLastYTick = chartStyles.showLastYTick;
+			if (chartStyles.chartPadding) this.chartStyles.chartPadding = chartStyles.chartPadding;
+			if (chartStyles.xAxisYTick) this.chartStyles.xAxisYTick = chartStyles.xAxisYTick;
+			if (chartStyles.xTextClasses) this.chartStyles.xTextClasses = chartStyles.xTextClasses;
 		}
 	}
 

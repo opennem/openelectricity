@@ -117,18 +117,23 @@
 <div class="rounded-lg border border-warm-grey h-full">
 	<table bind:this={tableHeaderRef} class="bg-white text-xs w-full">
 		<thead>
-			<tr class=" bg-light-warm-grey backdrop-blur-xl header-row">
+			<tr class="bg-light-warm-grey backdrop-blur-xl header-row">
 				<th class="text-left">
-					<div class="pl-4 py-2">Date</div>
+					<div class="pl-4 py-2">
+						Date
+						{#if period === 'interval'}
+							<span> / Time </span>
+						{/if}
+					</div>
 				</th>
 
 				{#if period === 'interval'}
-					<th class="text-right">
-						<div class="pl-4 py-2">Time</div>
+					<th class="text-left">
+						<!-- <div class="pl-10 py-2">Time</div> -->
 					</th>
 				{/if}
 
-				<th class="text-right w-1/2">
+				<th class="text-right">
 					{#if cxt.chartOptions.allowPrefixSwitch}
 						<div class="px-4 py-2">
 							<button
@@ -179,7 +184,7 @@
 
 						{#if period === 'interval'}
 							<td
-								class="py-2 font-mono text-dark-grey text-right whitespace-nowrap"
+								class="py-2 pl-4 font-mono text-dark-grey text-right whitespace-nowrap"
 								class:text-red={record.time === cxt.focusTime}
 							>
 								<time datetime={record.interval}>
