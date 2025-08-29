@@ -1,5 +1,11 @@
 # opennem-app
 
+## 3.14.1
+
+### Patch Changes
+
+- fix issue where curtailment data is counted in fossil vs renewables vis
+
 ## 3.14.0
 
 ### Minor Changes
