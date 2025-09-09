@@ -49,7 +49,7 @@
 		"layercake": "^8.4.3",
 		"lz-string": "^1.5.0",
 		"md5": "^2.3.0",
-		"openelectricity": "^0.5.3",
+		"openelectricity": "^0.6.6",
 		"postcss": "^8.5.3",
 		"prettier": "^3.5.3",
 		"prettier-plugin-svelte": "^3.3.3",
