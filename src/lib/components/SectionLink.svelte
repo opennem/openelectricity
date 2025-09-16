@@ -4,16 +4,12 @@
 	 * @property {string} [href]
 	 * @property {string} [title]
 	 * @property {string} [classes]
+	 * @property {string} [target]
 	 * @property {import('svelte').Snippet} [children]
 	 */
 
 	/** @type {Props} */
-	let {
-		href = '',
-		title = '',
-		classes = '',
-		children
-	} = $props();
+	let { href = '', title = '', classes = '', target = '_self', children } = $props();
 	let hover = $state(false);
 
 	function toggleHover() {
@@ -24,6 +20,7 @@
 <a
 	class={`flex items-center gap-3 font-bold font-space transition-all text-dark-grey hover:text-red ${classes} hover:no-underline`}
 	{href}
+	{target}
 	onmouseenter={toggleHover}
 	onmouseleave={toggleHover}
 >
