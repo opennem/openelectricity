@@ -19,8 +19,8 @@
 	<div class="my-8 md:my-0">
 		<Switch
 			buttons={[
-				{ label: 'Carbon Intensity', value: 'annual' },
-				{ label: 'Live Flows', value: 'live', icon: 'live' }
+				{ label: 'Carbon Intensity', value: 'annual' }
+				// { label: 'Live Flows', value: 'live', icon: 'live' }
 			]}
 			selected={mapMode}
 			class="justify-center my-4"
