@@ -1,5 +1,12 @@
 # opennem-app
 
+## 3.14.2
+
+### Patch Changes
+
+- update dev links and hide Live flows
+- c744bc4: upgrade openelectricity package
+
 ## 3.14.1
 
 ### Patch Changes
