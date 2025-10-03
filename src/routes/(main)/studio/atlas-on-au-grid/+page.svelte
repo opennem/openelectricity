@@ -97,7 +97,7 @@
 	}
 </script>
 
-<section class="mb-4 sticky top-0 left-0 w-full z-10">
+<section class="mb-4">
 	<div class="md:container">
 		<Filters
 			initialStatuses={statuses}
