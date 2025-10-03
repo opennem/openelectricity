@@ -1,6 +1,6 @@
 <script>
 	import { formatRecordValue } from '../page-data-options/formatters';
-	import FuelTechIcon from './FuelTechIcon.svelte';
+	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import { xTickValueFormatters } from '../[id]/RecordHistory/helpers/config';
 	import { regions } from '../page-data-options/filters';

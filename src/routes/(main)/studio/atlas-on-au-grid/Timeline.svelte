@@ -1,0 +1,172 @@
+<script>
+	import { parseAbsolute } from '@internationalized/date';
+	import { formatDateBySpecificity } from '$lib/utils/date-format';
+	import { getNumberFormat, formatDateTime } from '$lib/utils/formatters';
+	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
+	import groupByMonthDay from './page-data-options/group-by-month-day';
+	import getDateField from './page-data-options/get-date-field';
+	import { regions } from './page-data-options/filters';
+
+	const numberFormatter = getNumberFormat(0);
+	let { facilities = [] } = $props();
+
+	let flattenedData = $derived.by(() => {
+		/** @type {*[]} */
+		let data = [];
+		facilities.forEach((facility) => {
+			const offset = facility.network_id === 'WEM' ? '+08:00' : '+10:00';
+			facility.units.forEach((/** @type {*} */ unit) => {
+				const dateField = getDateField(unit.status_id);
+				const dateValue = unit[dateField];
+
+				if (!dateValue) {
+					console.log(unit.code, 'unit has no', dateField);
+				} else {
+					const dateStr =
+						typeof dateValue === 'string'
+							? dateValue.includes('Z')
+								? dateValue.split('Z')[0]
+								: dateValue.split('+')[0]
+							: dateValue;
+
+					// inconsistent data format, some have Z, some have +
+					// assume return string is always in UTC
+					let parsedZonedDate = parseAbsolute(dateStr + 'Z', offset);
+					// console.log('parsedZonedDate', parsedZonedDate);
+					data.push({
+						...facility,
+						zonedDateTime: parsedZonedDate,
+						[dateField + '_formatted']: formatDateBySpecificity(
+							unit[dateField],
+							unit[dateField + '_specificity']
+						),
+						unit
+					});
+				}
+			});
+		});
+		return data;
+	});
+
+	// sort by zonedDateTime
+	let sortedFlattenedData = $derived(
+		flattenedData.sort(
+			(a, b) => b.zonedDateTime.toDate().getTime() - a.zonedDateTime.toDate().getTime()
+		)
+	);
+
+	let groupedData = $derived(groupByMonthDay(sortedFlattenedData));
+
+	$inspect('timeline facilities', facilities);
+	$inspect('timeline flattenedData', sortedFlattenedData);
+	$inspect('timeline groupedData', groupedData);
+
+	/**
+	 * Get the background color for a fueltech
+	 * @param {string} fueltech
+	 * @returns {string}
+	 */
+	function getFueltechColor(fueltech) {
+		return fuelTechColourMap[fueltech] || '#FFFFFF';
+	}
+
+	/**
+	 * Get the region label
+	 * @param {string} network_id
+	 * @param {string} network_region
+	 * @returns {string}
+	 */
+	function getRegionLabel(network_id, network_region) {
+		if (network_region) {
+			return regions.find((r) => r.value === network_region.toLowerCase())?.label || network_region;
+		}
+		return network_id?.toUpperCase();
+	}
+</script>
+
+<div class="md:container">
+	{#each [...groupedData] as [year, values]}
+		<header class="sticky top-0 bg-white/80 backdrop-blur-xs z-10 py-2 border-b border-warm-grey">
+			<h2 class="font-space text-xl font-light m-0 p-0">{year}</h2>
+		</header>
+		{#each [...values] as [d, facilities]}
+			{@const firstFacility = facilities[0]}
+			{@const specificity =
+				firstFacility.unit[getDateField(firstFacility.unit.status_id) + '_specificity']}
+
+			<div class="pb-4 mb-8 relative grid grid-cols-12 gap-2">
+				<header
+					class="sticky top-[50px] self-start bg-white/80 backdrop-blur-xs z-5 py-2 mb-2 col-span-2"
+				>
+					{#if year != d}
+						<h4
+							class="font-space m-0 p-0 text-dark-grey"
+							class:font-medium={specificity === 'year' || specificity === 'month'}
+							class:font-light={specificity !== 'year' && specificity !== 'month'}
+							class:text-base={specificity === 'year' || specificity === 'month'}
+							class:text-xs={specificity !== 'year' && specificity !== 'month'}
+						>
+							{#if specificity === 'year'}
+								{year}
+							{:else}
+								<!-- {specificity} -->
+								{formatDateTime({
+									date: firstFacility.zonedDateTime.toDate(),
+									month: 'short',
+									day: specificity === 'month' ? undefined : 'numeric',
+									timeZone: firstFacility.zonedDateTime.timeZone
+								})}
+							{/if}
+						</h4>
+					{/if}
+				</header>
+
+				<ol
+					class="flex flex-col gap-2 col-span-10 border-l border-warm-grey bg-light-warm-grey pr-6 divide-y divide-warm-grey"
+				>
+					{#each facilities as facility}
+						{@const bgColor = getFueltechColor(facility.unit.fueltech_id)}
+						{@const unitSpecificity =
+							facility.unit[getDateField(facility.unit.status_id) + '_specificity']}
+
+						<li class="grid grid-cols-12 items-center gap-2">
+							<div class="p-4 flex items-center gap-4 col-span-9">
+								<div class="flex flex-col gap-1 items-center">
+									<span
+										class="rounded-full p-2 block"
+										class:text-black={facility.unit.fueltech_id === 'solar_utility'}
+										class:text-white={facility.unit.fueltech_id !== 'solar_utility'}
+										style="background-color: {bgColor};"
+									>
+										<FuelTechIcon fuelTech={facility.unit.fueltech_id} sizeClass={8} />
+									</span>
+								</div>
+
+								<div class="text-base font-medium text-dark-grey flex items-baseline gap-6">
+									{facility.name || 'Unnamed Facility'}
+								</div>
+							</div>
+
+							<div class="col-span-1">
+								<span class="font-mono text-base text-dark-grey">
+									{numberFormatter.format(facility.unit.capacity_registered)}
+								</span>
+								<span class="text-xs font-mono text-mid-grey">MW</span>
+							</div>
+
+							<span class="text-xs text-mid-grey col-span-1">
+								<!-- {facility.network_id || 'Unknown Network'} -->
+								{getRegionLabel(facility.network_id, facility.network_region)}
+							</span>
+
+							<div class="text-xs text-mid-grey col-span-1">
+								{facility.unit.status_id}
+							</div>
+						</li>
+					{/each}
+				</ol>
+			</div>
+		{/each}
+	{/each}
+</div>

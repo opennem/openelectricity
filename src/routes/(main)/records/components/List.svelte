@@ -1,7 +1,7 @@
 <script>
 	import { regionsWithLabels } from '$lib/regions';
 	import { formatRecordValue } from '../page-data-options/formatters';
-	import FuelTechIcon from './FuelTechIcon.svelte';
+	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import { regions } from '../page-data-options/filters';
 	import dateTimeQuery from '../page-data-options/date-time-query';
@@ -237,7 +237,7 @@
 												class="place-self-start flex flex-col gap-1 items-center relative -top-2"
 											>
 												<span
-													class=" bg-{latest.fueltech_id || 'demand'} rounded-full p-2 block"
+													class="bg-{latest.fueltech_id || 'demand'} rounded-full p-2 block"
 													class:text-black={latest.fueltech_id === 'solar'}
 													class:text-white={latest.fueltech_id !== 'solar'}
 												>

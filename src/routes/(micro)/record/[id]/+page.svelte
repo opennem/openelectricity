@@ -1,7 +1,7 @@
 <script>
 	import { regionsWithLabels } from '$lib/regions';
 	import { getNumberFormat } from '$lib/utils/formatters';
-	import FuelTechIcon from '../../../(main)/records/components/FuelTechIcon.svelte';
+	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import recordDescription from '../../../(main)/records/page-data-options/record-description';
 	import { xTickValueFormatters } from '../../../(main)/records/[id]/RecordHistory/helpers/config';
 	import MiniTracker from './components/MiniTracker.svelte';

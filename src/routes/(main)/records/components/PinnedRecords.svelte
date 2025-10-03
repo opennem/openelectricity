@@ -4,7 +4,7 @@
 	import { formatRecordValue } from '../page-data-options/formatters';
 	import getRelativeTime from '../page-data-options/relative-time';
 	import recordDescription from '../page-data-options/record-description';
-	import FuelTechIcon from './FuelTechIcon.svelte';
+	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import dateTimeQuery from '../page-data-options/date-time-query';
 
 	let { selectedRegions = [], showRegionLabel = true } = $props();
