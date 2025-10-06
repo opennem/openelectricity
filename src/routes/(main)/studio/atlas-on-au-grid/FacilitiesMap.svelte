@@ -87,6 +87,7 @@
 		zoom={2}
 		maxZoom={18}
 		minZoom={3}
+		scrollZoom={false}
 	>
 		{#each facilities as facility}
 			{@const color = getFacilityColor(facility)}
