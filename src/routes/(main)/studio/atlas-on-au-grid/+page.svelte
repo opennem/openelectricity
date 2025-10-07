@@ -8,7 +8,7 @@
 	let { data } = $props();
 	let { view, statuses } = data;
 
-	let { facilities } = $derived(data);
+	let { facilities = [] } = $derived(data);
 
 	$inspect('view', view);
 	$inspect('statuses', statuses);
@@ -31,7 +31,7 @@
 			.filter((facility) => facility.units && facility.units.length > 0);
 	}
 
-	let filteredFacilities = $derived(filterBatteryUnits(facilities));
+	let filteredFacilities = $derived(facilities ? filterBatteryUnits(facilities) : []);
 	$inspect('filteredFacilities', filteredFacilities);
 
 	/**

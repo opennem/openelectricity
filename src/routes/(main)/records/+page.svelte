@@ -39,22 +39,23 @@
 	let recordsData = $state([]);
 	let totalRecords = $state(0);
 	let pageSize = 250;
-	let currentPage = $state(data.page || 1);
+	// let currentPage = $state(data.page || 1);
+	let currentPage = 1;
 	let currentStartRecordIndex = $state((currentPage - 1) * pageSize + 1);
 
-	$selectedRegions = data.regions && data.regions.length ? data.regions : [];
-	$selectedFuelTechs = data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : [];
-	$selectedPeriods = data.periods && data.periods.length ? data.periods : [];
-	$selectedMetrics = data.metrics && data.metrics.length ? data.metrics : [];
+	$selectedRegions = data && data.regions && data.regions.length ? data.regions : [];
+	$selectedFuelTechs = data && data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : [];
+	$selectedPeriods = data && data.periods && data.periods.length ? data.periods : [];
+	$selectedMetrics = data && data.metrics && data.metrics.length ? data.metrics : [];
 
 	/** @type {string[]} */
 	let checkedAggregates =
-		data.aggregates && data.aggregates.length
+		data && data.aggregates && data.aggregates.length
 			? data.aggregates
 			: aggregateOptions.map((i) => i.value);
 
-	let selectedSignificance = data.significance || 8;
-	let recordIdSearch = data.stringFilter || '';
+	let selectedSignificance = (data && data.significance) || 8;
+	let recordIdSearch = (data && data.stringFilter) || '';
 
 	// $: console.log('rolledUpRecords', rolledUpRecords);
 
