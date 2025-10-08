@@ -15,7 +15,7 @@ export async function load({ url }) {
 	 */
 
 	const fuelTechMap = {
-		battery: ['battery_charging', 'battery_discharging'],
+		battery: ['battery', 'battery_charging', 'battery_discharging'],
 		bioenergy: ['bioenergy_biogas', 'bioenergy_biomass'],
 		coal: ['coal_black', 'coal_brown'],
 		distillate: ['distillate'],
