@@ -1,5 +1,5 @@
 <script>
-	import { parseAbsolute } from '@internationalized/date';
+	import { parseAbsolute, today, getLocalTimeZone } from '@internationalized/date';
 	import { formatDateBySpecificity } from '$lib/utils/date-format';
 	import { getNumberFormat, formatDateTime } from '$lib/utils/formatters';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
@@ -7,13 +7,19 @@
 	import groupByMonthDay from './page-data-options/group-by-month-day';
 	import getDateField from './page-data-options/get-date-field';
 	import { regions } from './page-data-options/filters';
+	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 
 	const numberFormatter = getNumberFormat(0);
 	let { facilities = [] } = $props();
 
 	let flattenedData = $derived.by(() => {
 		/** @type {*[]} */
-		let data = [];
+		let data = [
+			// {
+			// 	zonedDateTime: today(getLocalTimeZone()),
+			// 	isToday: true
+			// }
+		];
 		facilities.forEach((facility) => {
 			const offset = facility.network_id === 'WEM' ? '+08:00' : '+10:00';
 			facility.units.forEach((/** @type {*} */ unit) => {
@@ -83,17 +89,28 @@
 		}
 		return network_id?.toUpperCase();
 	}
+
+	$effect(() => {
+		const el = document.querySelector(`#y2025`);
+		if (el) {
+			el.scrollIntoView({ behavior: 'instant', container: 'nearest' });
+		}
+	});
 </script>
 
-<div class="md:container">
+<div class="px-5">
 	{#each [...groupedData] as [year, values]}
-		<header class="sticky top-0 bg-white/80 backdrop-blur-xs z-10 py-2 border-b border-warm-grey">
+		<header
+			id={`y${year}`}
+			class="sticky top-0 bg-white/80 backdrop-blur-xs z-10 py-2 border-b border-mid-warm-grey"
+		>
 			<h2 class="font-space text-xl font-light m-0 p-0">{year}</h2>
 		</header>
 		{#each [...values] as [d, facilities]}
 			{@const firstFacility = facilities[0]}
-			{@const specificity =
-				firstFacility.unit[getDateField(firstFacility.unit.status_id) + '_specificity']}
+			{@const specificity = firstFacility.unit
+				? firstFacility.unit[getDateField(firstFacility.unit.status_id) + '_specificity']
+				: 'month'}
 
 			<div class="pb-4 mb-8 relative grid grid-cols-12 gap-2">
 				<header
@@ -124,57 +141,69 @@
 
 				<ol class="flex flex-col col-span-10 border-l border-warm-grey bg-light-warm-grey">
 					{#each facilities as facility}
-						{@const bgColor = getFueltechColor(facility.unit.fueltech_id)}
-						{@const unitSpecificity =
-							facility.unit[getDateField(facility.unit.status_id) + '_specificity']}
-						{@const path = `https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`}
+						{@const isToday = facility.isToday}
 
-						<li>
-							<a
-								class="grid grid-cols-12 items-center gap-2 pr-6 hover:no-underline hover:bg-warm-grey border-b border-warm-grey"
-								target="_blank"
-								href={path}
-							>
-								<div class="p-4 flex items-center gap-4 col-span-9">
-									<div class="flex flex-col gap-1 items-center">
-										<span
-											class="rounded-full p-2 block"
-											class:text-black={facility.unit.fueltech_id === 'solar_utility'}
-											class:text-white={facility.unit.fueltech_id !== 'solar_utility'}
-											style="background-color: {bgColor};"
-										>
-											<FuelTechIcon fuelTech={facility.unit.fueltech_id} sizeClass={8} />
-										</span>
-									</div>
-
-									<div class="text-base font-medium text-dark-grey flex items-baseline gap-3">
-										{facility.name || 'Unnamed Facility'}
-
-										{#if facility.units.length > 1}
-											<small class="text-mid-warm-grey text-xs font-light">
-												({facility.unit.code})
-											</small>
-										{/if}
-									</div>
+						{#if isToday}
+							<li>
+								<div class="text-base font-medium text-dark-grey flex items-baseline gap-3">
+									Today
 								</div>
+							</li>
+						{:else}
+							{@const bgColor = facility.unit
+								? getFueltechColor(facility.unit.fueltech_id)
+								: '#FFFFFF'}
+							{@const path = `https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`}
 
-								<div class="col-span-1">
-									<span class="font-mono text-base text-dark-grey">
-										{numberFormatter.format(facility.unit.capacity_registered)}
+							<li>
+								<a
+									class="grid grid-cols-12 items-center gap-2 pr-6 hover:no-underline hover:bg-warm-grey border-b border-warm-grey"
+									target="_blank"
+									href={path}
+								>
+									<div class="p-4 flex items-center gap-4 col-span-8">
+										<div class="flex flex-col gap-1 items-center">
+											<span
+												class="rounded-full p-2 block"
+												class:text-black={facility.unit.fueltech_id === 'solar_utility'}
+												class:text-white={facility.unit.fueltech_id !== 'solar_utility'}
+												style="background-color: {bgColor};"
+											>
+												<FuelTechIcon fuelTech={facility.unit.fueltech_id} sizeClass={8} />
+											</span>
+										</div>
+
+										<div class="text-base font-medium text-dark-grey flex items-baseline gap-3">
+											{facility.name || 'Unnamed Facility'}
+
+											{#if facility.units.length > 1}
+												<small class="text-mid-warm-grey text-xs font-light">
+													({facility.unit.code})
+												</small>
+											{/if}
+										</div>
+									</div>
+
+									<span class="text-xs text-mid-grey col-span-1">
+										<!-- {facility.network_id || 'Unknown Network'} -->
+										{getRegionLabel(facility.network_id, facility.network_region)}
 									</span>
-									<span class="text-xs font-mono text-mid-grey">MW</span>
-								</div>
 
-								<span class="text-xs text-mid-grey col-span-1">
-									<!-- {facility.network_id || 'Unknown Network'} -->
-									{getRegionLabel(facility.network_id, facility.network_region)}
-								</span>
+									<div class="col-span-3 grid grid-cols-7 items-center gap-2">
+										<div class="flex justify-end items-baseline gap-1 col-span-6">
+											<span class="font-mono text-base text-dark-grey">
+												{numberFormatter.format(facility.unit.capacity_registered)}
+											</span>
+											<span class="text-xs font-mono text-mid-grey">MW</span>
+										</div>
 
-								<div class="text-xs text-mid-grey col-span-1">
-									{facility.unit.status_id}
-								</div>
-							</a>
-						</li>
+										<div class="col-span-1 flex justify-end">
+											<FacilityStatusIcon status={facility.unit.status_id} />
+										</div>
+									</div>
+								</a>
+							</li>
+						{/if}
 					{/each}
 				</ol>
 			</div>

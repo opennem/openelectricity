@@ -72,19 +72,19 @@
 		}
 	}
 
-	// Australia center coordinates (adjusted to include Tasmania)
-	const center = { lng: 134, lat: -28 };
+	// Australia center coordinates (offset to left half of viewport)
+	const center = { lng: 110, lat: -28 };
 
 	/** @type {any | null} */
 	let selectedFacility = $state(null);
 </script>
 
-<div class="w-full h-[500px] overflow-hidden">
+<div class="w-full h-[calc(100vh-118px)] overflow-hidden">
 	<MapLibre
 		style="/map-styles/positron.json"
 		class="w-full h-full"
 		{center}
-		zoom={2}
+		zoom={3.5}
 		maxZoom={18}
 		minZoom={3}
 		scrollZoom={false}

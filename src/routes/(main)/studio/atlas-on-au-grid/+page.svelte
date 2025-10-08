@@ -6,13 +6,17 @@
 	import Filters from './Filters.svelte';
 
 	let { data } = $props();
-	let { view, statuses } = data;
 
-	let { facilities = [] } = $derived(data);
+	let facilities = $derived(data.facilities);
+	let view = $derived(data.view);
+	let statuses = $derived(data.statuses);
+	let regions = $derived(data.regions);
+	let fuelTechs = $derived(data.fuelTechs);
 
 	$inspect('view', view);
 	$inspect('statuses', statuses);
-	$inspect('facilities', facilities);
+	$inspect('regions', regions);
+	$inspect('fuelTechs', fuelTechs);
 
 	/**
 	 * Filter out battery_charging and battery_discharging units from facilities
@@ -61,16 +65,24 @@
 	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
 
 	let uniqueFuelTechs = $derived([
-		...new Set(facilities.map((facility) => facility.units.map((unit) => unit.fueltech_id)).flat())
+		...new Set(
+			facilities
+				? facilities.map((facility) => facility.units.map((unit) => unit.fueltech_id)).flat()
+				: []
+		)
 	]);
 	let uniqueStatuses = $derived([
-		...new Set(facilities.map((facility) => facility.units.map((unit) => unit.status_id)).flat())
+		...new Set(
+			facilities
+				? facilities.map((facility) => facility.units.map((unit) => unit.status_id)).flat()
+				: []
+		)
 	]);
 	let uniqueRegions = $derived([
-		...new Set(facilities.map((facility) => facility.network_region).flat())
+		...new Set(facilities ? facilities.map((facility) => facility.network_region).flat() : [])
 	]);
 	let uniqueNetworkIds = $derived([
-		...new Set(facilities.map((facility) => facility.network_id).flat())
+		...new Set(facilities ? facilities.map((facility) => facility.network_id).flat() : [])
 	]);
 
 	$inspect('uniqueFuelTechs', uniqueFuelTechs);
@@ -78,41 +90,72 @@
 	$inspect('uniqueRegions', uniqueRegions);
 	$inspect('uniqueNetworkIds', uniqueNetworkIds);
 
+	/**
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[]}} param0
+	 */
+	function handleViewChange({ statuses, regions, fuelTechs }) {
+		console.log('view', statuses, regions, fuelTechs);
+		goto(
+			`/studio/atlas-on-au-grid?statuses=${statuses.join(',')}&regions=${regions.join(',')}&fuel_techs=${fuelTechs.join(',')}`,
+			{
+				noScroll: true,
+				invalidateAll: true
+			}
+		);
+	}
+
+	/**
+	 * @param {string[]} values
+	 */
 	function handleRegionsChange(values) {
-		console.log('regions', values);
+		handleViewChange({ statuses, regions: values, fuelTechs });
 	}
 
+	/**
+	 * @param {string[]} values
+	 */
 	function handleFuelTechsChange(values) {
-		console.log('fuel techs', values);
+		handleViewChange({ statuses, regions, fuelTechs: values });
 	}
 
+	/**
+	 * @param {string[]} values
+	 */
 	function handleStatusesChange(values) {
-		console.log('statuses', values);
-		// update the url
-
-		goto(`/studio/atlas-on-au-grid?statuses=${values.join(',')}`, {
-			noScroll: true,
-			invalidateAll: true
-		});
+		handleViewChange({ statuses: values, regions, fuelTechs });
 	}
 </script>
 
-<section class="mb-4">
-	<div class="md:container">
+<section>
+	<!-- <div class="md:container">
 		<Filters
 			initialStatuses={statuses}
 			onstatuseschange={handleStatusesChange}
 			onregionschange={handleRegionsChange}
 			onfueltechschange={handleFuelTechsChange}
 		/>
-	</div>
+	</div> -->
 	<FacilitiesMap facilities={filteredWithLocation} />
 </section>
 
-<div class="relative z-20 bg-white">
-	<div class="max-w-[95vw] mx-auto px-4 py-8">
-		<Timeline facilities={filteredFacilities} />
+<div
+	class="z-10 bg-white absolute top-[138px] left-10 bottom-10 md:w-1/2 w-[calc(100vw-5rem)] overflow-hidden border border-warm-grey rounded-xl shadow-2xl"
+>
+	<div class="absolute top-0 z-50 bg-light-warm-grey w-full border-b border-warm-grey">
+		<Filters
+			initialStatuses={statuses}
+			initialFuelTechs={fuelTechs}
+			initialRegions={regions}
+			onstatuseschange={handleStatusesChange}
+			onregionschange={handleRegionsChange}
+			onfueltechschange={handleFuelTechsChange}
+		/>
+	</div>
 
+	<div class="overflow-y-auto absolute top-[54px] left-0 right-0 bottom-0">
+		<Timeline facilities={filteredWithLocation} />
+	</div>
+	<div class="overflow-y-auto">
 		<!-- <FacilityStatusTable
 			facilities={filteredCommittedFacilities}
 			statusLabel="Committed"

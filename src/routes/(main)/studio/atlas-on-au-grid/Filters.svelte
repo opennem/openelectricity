@@ -2,7 +2,14 @@
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
 	import { regions, fuelTechOptions } from './page-data-options/filters.js';
 
-	let { initialStatuses, onstatuseschange, onregionschange, onfueltechschange } = $props();
+	let {
+		initialStatuses,
+		initialFuelTechs,
+		initialRegions,
+		onstatuseschange,
+		onregionschange,
+		onfueltechschange
+	} = $props();
 
 	let statusOptions = [
 		{
@@ -19,8 +26,8 @@
 		}
 	];
 
-	let selectedFuelTechs = $state([]);
-	let selectedRegions = $state([]);
+	let selectedFuelTechs = $state(initialFuelTechs);
+	let selectedRegions = $state(initialRegions);
 	let selectedStatuses = $state(initialStatuses);
 
 	let regionOptions = $derived(
@@ -53,6 +60,17 @@
 			return status?.label || selectedStatuses[0];
 		} else {
 			return `${selectedStatuses.length} Statuses`;
+		}
+	});
+
+	let fuelTechLabel = $derived.by(() => {
+		if (selectedFuelTechs.length === 0) {
+			return 'Technology';
+		} else if (selectedFuelTechs.length === 1) {
+			let fuelTech = fuelTechOptions.find((ft) => ft.value === selectedFuelTechs[0]);
+			return fuelTech?.label || selectedFuelTechs[0];
+		} else {
+			return `${selectedFuelTechs.length} Technologies`;
 		}
 	});
 
@@ -105,8 +123,9 @@
 	}
 </script>
 
-<div class="flex bg-white opacity-90 pt-3 pb-3 relative z-10">
-	<div class="hidden md:inline-flex justify-start items-center">
+<div class="flex items-center pt-3 pb-3 pl-5 relative z-10 gap-4">
+	<span class="text-sm text-mid-grey font-medium font-space">Filter:</span>
+	<div class="flex justify-start items-center gap-2">
 		<FormMultiSelect
 			options={statusOptions}
 			selected={selectedStatuses}
@@ -128,7 +147,7 @@
 		<FormMultiSelect
 			options={fuelTechOptions}
 			selected={selectedFuelTechs}
-			label="Technology"
+			label={fuelTechLabel}
 			paddingX="pl-5 pr-4"
 			paddingY="py-3"
 			on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}

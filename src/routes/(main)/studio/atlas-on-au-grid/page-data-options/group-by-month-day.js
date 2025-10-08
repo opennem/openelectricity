@@ -13,6 +13,9 @@ function groupByMonthDay(data) {
 		(d) => d,
 		(d) => d.zonedDateTime?.year,
 		(d) => {
+			if (d.isToday) {
+				return 'Today';
+			}
 			const dateField = getDateField(d.unit.status_id);
 			return formatDateBySpecificity(d.unit[dateField], d.unit[dateField + '_specificity']);
 		}
