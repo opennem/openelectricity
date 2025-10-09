@@ -114,12 +114,12 @@
 		}
 	});
 
-	$effect(() => {
-		const el = document.querySelector('#dToday');
-		if (el) {
-			el.scrollIntoView({ behavior: 'smooth', container: 'nearest', block: 'center' });
-		}
-	});
+	// $effect(() => {
+	// 	const el = document.querySelector('#dToday');
+	// 	if (el) {
+	// 		el.scrollIntoView({ behavior: 'instant', container: 'nearest', block: 'center' });
+	// 	}
+	// });
 
 	export function jumpToToday() {
 		const el = document.querySelector('#dToday');
