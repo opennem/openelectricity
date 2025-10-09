@@ -1,4 +1,5 @@
 <script>
+	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	// import FacilityStatusTable from './FacilityStatusTable.svelte';
 	import FacilitiesMap from './FacilitiesMap.svelte';
@@ -124,6 +125,19 @@
 	function handleStatusesChange(values) {
 		handleViewChange({ statuses: values, regions, fuelTechs });
 	}
+
+	let showTodayButton = $state(false);
+	/** @type {*} */
+	let timelineRef = $state(null);
+
+	/**
+	 * @param {boolean} visible
+	 * @param {string} position
+	 */
+	function handleTodayButtonVisible(visible, position) {
+		showTodayButton = visible;
+		// console.log('handleTodayButtonVisible', visible, position);
+	}
 </script>
 
 <section>
@@ -152,8 +166,25 @@
 		/>
 	</div>
 
+	{#if showTodayButton}
+		<div
+			class="absolute top-36 z-20 w-full flex justify-center"
+			transition:fly={{ y: -10, duration: 300 }}
+		>
+			<button
+				class="bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300"
+				onclick={() => timelineRef?.jumpToToday()}
+			>
+				Jump to today
+			</button>
+		</div>
+	{/if}
 	<div class="overflow-y-auto absolute top-[54px] left-0 right-0 bottom-0">
-		<Timeline facilities={filteredWithLocation} />
+		<Timeline
+			bind:this={timelineRef}
+			facilities={filteredWithLocation}
+			ontodaybuttonvisible={handleTodayButtonVisible}
+		/>
 	</div>
 	<div class="overflow-y-auto">
 		<!-- <FacilityStatusTable

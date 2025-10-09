@@ -1,8 +1,6 @@
 <script>
 	// committed, operating, retired
 	let { status } = $props();
-
-	$inspect('status', status);
 </script>
 
 <div class="status-progress" title={status}>
