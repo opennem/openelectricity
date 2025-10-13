@@ -248,6 +248,9 @@
 													<span class="font-mono text-sm text-dark-grey">
 														{numberFormatter.format(facility.unit.capacity_registered)}
 													</span>
+													<!-- <span class="text-xxs font-mono text-mid-grey">
+														{facility.unit.max_generation}
+													</span> -->
 													<span class="text-xxs font-mono text-mid-grey">MW</span>
 												</div>
 												<GenCapViz unit={facility.unit} fill={bgColor} />
