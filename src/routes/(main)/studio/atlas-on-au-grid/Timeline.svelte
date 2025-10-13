@@ -1,5 +1,6 @@
 <script>
 	import { parseAbsolute, today, getLocalTimeZone } from '@internationalized/date';
+	import { browser } from '$app/environment';
 	import { formatDateBySpecificity } from '$lib/utils/date-format';
 	import { getNumberFormat, formatDateTime } from '$lib/utils/formatters';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
@@ -8,7 +9,7 @@
 	import getDateField from './page-data-options/get-date-field';
 	import { regions } from './page-data-options/filters';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
-	import { browser } from '$app/environment';
+	import GenCapViz from './GenCapViz.svelte';
 
 	const numberFormatter = getNumberFormat(0);
 	let { facilities = [], ontodaybuttonvisible } = $props();
@@ -196,7 +197,7 @@
 					{#if isToday}
 						<div class="">
 							<div
-								class=" bg-warm-grey w-full border-b border-chart-1 absolute top-[16px] z-0 left-0"
+								class="bg-warm-grey w-full border-b border-chart-1 absolute top-[16px] z-0 left-0"
 							></div>
 						</div>
 					{:else}
@@ -216,7 +217,7 @@
 										<div class="p-4 flex items-center gap-4 col-span-8">
 											<div class="flex flex-col gap-1 items-center">
 												<span
-													class="rounded-full p-2 block"
+													class="rounded-full p-2 block ml-2"
 													class:text-black={facility.unit.fueltech_id === 'solar_utility'}
 													class:text-white={facility.unit.fueltech_id !== 'solar_utility'}
 													style="background-color: {bgColor};"
@@ -242,11 +243,14 @@
 										</span>
 
 										<div class="col-span-3 grid grid-cols-7 items-center gap-2">
-											<div class="flex justify-end items-baseline gap-1 col-span-6">
-												<span class="font-mono text-base text-dark-grey">
-													{numberFormatter.format(facility.unit.capacity_registered)}
-												</span>
-												<span class="text-xs font-mono text-mid-grey">MW</span>
+											<div class="col-span-6 flex flex-col gap-0">
+												<div class="flex justify-end items-baseline gap-1">
+													<span class="font-mono text-sm text-dark-grey">
+														{numberFormatter.format(facility.unit.capacity_registered)}
+													</span>
+													<span class="text-xxs font-mono text-mid-grey">MW</span>
+												</div>
+												<GenCapViz unit={facility.unit} fill={bgColor} />
 											</div>
 
 											<div class="col-span-1 flex justify-end">
