@@ -102,6 +102,11 @@
 				errorMessage = res.errorMessage;
 				recordsData = res.recordsData;
 				totalRecords = res.totalRecords;
+
+				console.log('recordsData', recordsData);
+				// get unique metics in recordsData
+				const uniqueMetrics = [...new Set(recordsData.map((r) => r.metric))];
+				console.log('uniqueMetrics', uniqueMetrics);
 			});
 		}
 	});

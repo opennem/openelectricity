@@ -27,6 +27,8 @@
 			facility.units.forEach((/** @type {*} */ unit) => {
 				const dateField = getDateField(unit.status_id);
 				const dateValue = unit[dateField];
+				const isCommissioning =
+					unit.status_id === 'operating' && hasReachedMoreThanNinetyPercent(unit);
 
 				if (!dateValue) {
 					console.log(unit.code, 'unit has no', dateField);
@@ -49,7 +51,8 @@
 							unit[dateField],
 							unit[dateField + '_specificity']
 						),
-						unit
+						unit,
+						isCommissioning
 					});
 				}
 			});
@@ -128,6 +131,55 @@
 			el.scrollIntoView({ behavior: 'smooth', container: 'nearest', block: 'center' });
 		}
 	}
+
+	function getCSV(facilities) {
+		let csv = '';
+		facilities.forEach((facility) => {
+			facility.units.forEach((unit) => {
+				const cap = Number(unit.capacity_maximum || unit.capacity_registered);
+				const gen = Number(unit.max_generation);
+
+				if (gen) {
+					if (gen > cap) {
+						const overBy = gen - cap;
+						const percentage = (overBy / cap) * 100;
+						if (percentage > 25) {
+							csv += `${unit.code},${gen.toFixed(2)},${cap.toFixed(0)},${percentage.toFixed(0)}%\n`;
+						}
+					}
+				}
+			});
+		});
+		return csv;
+	}
+
+	function hasReachedMoreThanNinetyPercent(unit) {
+		const cap = Number(unit.capacity_maximum || unit.capacity_registered);
+		const gen = Number(unit.max_generation);
+
+		if (gen) {
+			const percentage = (gen / cap) * 100;
+			return percentage <= 90;
+		}
+		return false;
+	}
+
+	function getTotalCapacity(values) {
+		let total = 0;
+		values.forEach(([d, facilities]) => {
+			facilities.forEach((facility) => {
+				// ignore today row as it's not a facility
+				if (!facility.isToday) {
+					if (facility.unit) {
+						total += Number(facility.unit.capacity_maximum || facility.unit.capacity_registered);
+					} else {
+						console.log('facility has no unit', facility);
+					}
+				}
+			});
+		});
+		return total;
+	}
 </script>
 
 <div class="relative">
@@ -141,9 +193,15 @@
 		{#each [...groupedData] as [year, values], i}
 			<header
 				id={`y${year}`}
-				class="sticky top-0 bg-white/80 backdrop-blur-xs z-10 py-2 px-4 border-b border-mid-warm-grey"
+				class="sticky top-0 bg-white/80 backdrop-blur-xs z-10 py-2 px-4 border-b border-mid-warm-grey flex justify-between items-baseline"
 			>
 				<h2 class="font-space text-xl font-light m-0 p-0">{year}</h2>
+				<div class="font-mono mr-6 flex items-baseline gap-1">
+					<span class="text-xs text-mid-grey">
+						{numberFormatter.format(getTotalCapacity([...values]))}
+					</span>
+					<span class="text-xxs font-mono text-mid-grey">MW</span>
+				</div>
 			</header>
 
 			{#each [...values] as [d, facilities]}
@@ -245,19 +303,32 @@
 										<div class="col-span-3 grid grid-cols-7 items-center gap-2">
 											<div class="col-span-6 flex flex-col gap-0">
 												<div class="flex justify-end items-baseline gap-1">
-													<span class="font-mono text-sm text-dark-grey">
-														{numberFormatter.format(facility.unit.capacity_registered)}
+													<span
+														class="font-mono text-sm text-dark-grey"
+														title={facility.unit.capacity_maximum
+															? 'Maximum Capacity'
+															: 'Registered Capacity'}
+													>
+														{numberFormatter.format(
+															facility.unit.capacity_maximum || facility.unit.capacity_registered
+														)}
 													</span>
 													<!-- <span class="text-xxs font-mono text-mid-grey">
 														{facility.unit.max_generation}
 													</span> -->
 													<span class="text-xxs font-mono text-mid-grey">MW</span>
 												</div>
-												<GenCapViz unit={facility.unit} fill={bgColor} />
+
+												{#if facility.isCommissioning}
+													<GenCapViz unit={facility.unit} fill={bgColor} />
+												{/if}
 											</div>
 
 											<div class="col-span-1 flex justify-end">
-												<FacilityStatusIcon status={facility.unit.status_id} />
+												<FacilityStatusIcon
+													status={facility.unit.status_id}
+													isCommissioning={facility.isCommissioning}
+												/>
 											</div>
 										</div>
 									</a>

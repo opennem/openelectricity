@@ -123,18 +123,8 @@
 	}
 </script>
 
-<div class="flex items-center pt-3 pb-3 pl-5 relative z-10 gap-4">
-	<span class="text-sm text-mid-grey font-medium font-space">Filter:</span>
+<div class="flex items-center pt-3 pb-3 pl-3 relative z-10 gap-4">
 	<div class="flex justify-start items-center gap-2">
-		<FormMultiSelect
-			options={statusOptions}
-			selected={selectedStatuses}
-			label={statusLabel}
-			paddingX="pl-5 pr-4"
-			paddingY="py-3"
-			on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
-		/>
-
 		<FormMultiSelect
 			options={regionOptions}
 			selected={selectedRegions}
@@ -142,6 +132,15 @@
 			paddingX="pl-5 pr-4"
 			paddingY="py-3"
 			on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+		/>
+
+		<FormMultiSelect
+			options={statusOptions}
+			selected={selectedStatuses}
+			label={statusLabel}
+			paddingX="pl-5 pr-4"
+			paddingY="py-3"
+			on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
 		/>
 
 		<FormMultiSelect

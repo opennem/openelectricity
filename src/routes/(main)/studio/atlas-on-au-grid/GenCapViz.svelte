@@ -1,4 +1,8 @@
 <script>
+	import { Tooltip } from 'bits-ui';
+	import { getNumberFormat } from '$lib/utils/formatters';
+	const numberFormatter = getNumberFormat(0);
+
 	let { unit, fill = '#000000' } = $props();
 
 	// convert to number
@@ -16,10 +20,35 @@
 </script>
 
 {#if hasCapMax || hasGenMax}
-	<div class="h-[4px] w-full overflow-hidden relative" style="background-color: {fill}33">
+	<!-- <div
+		class="h-[4px] w-full overflow-hidden relative rounded-full"
+		style="background-color: {fill}33"
+	>
 		<div
 			class="h-full relative"
 			style="width: {widthPercent || 0}%; background-color: {fill}"
 		></div>
-	</div>
+	</div> -->
+	<Tooltip.Provider>
+		<Tooltip.Root delayDuration={50}>
+			<Tooltip.Trigger>
+				<div class="h-[4px] w-full relative rounded-full" style="background-color: {fill}33">
+					<div
+						class="h-full relative"
+						style="width: {widthPercent || 0}%; background-color: {fill}"
+					></div>
+				</div>
+			</Tooltip.Trigger>
+
+			<Tooltip.Content sideOffset={4} side="top" strategy="absolute">
+				<div
+					class="bg-white rounded-lg py-2 px-4 shadow text-dark-grey font-mono flex items-baseline gap-1"
+				>
+					{numberFormatter.format(genMax)}
+					<small>MW</small>
+					({numberFormatter.format(widthPercent)}%)
+				</div>
+			</Tooltip.Content>
+		</Tooltip.Root>
+	</Tooltip.Provider>
 {/if}
