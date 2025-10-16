@@ -67,9 +67,13 @@
 			isMetaPressed = false;
 		}, 5000);
 	}
+
+	function handleScroll() {
+		showOptions = false;
+	}
 </script>
 
-<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
+<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} onscroll={handleScroll} />
 
 <div
 	class="relative w-full text-base"
