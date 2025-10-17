@@ -42,7 +42,7 @@
 
 			<Tooltip.Content sideOffset={4} side="top" strategy="absolute">
 				<div
-					class="bg-white rounded-lg py-2 px-4 shadow text-dark-grey font-mono flex items-baseline gap-1"
+					class="bg-white rounded-lg py-2 px-4 shadow text-dark-grey font-mono text-xs flex items-baseline gap-1"
 				>
 					{numberFormatter.format(genMax)}
 					<small>MW</small>

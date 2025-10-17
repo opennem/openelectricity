@@ -3,9 +3,9 @@
 	import { regions, fuelTechOptions } from './page-data-options/filters.js';
 
 	let {
-		initialStatuses,
-		initialFuelTechs,
-		initialRegions,
+		selectedRegions = [],
+		selectedStatuses = [],
+		selectedFuelTechs = [],
 		onstatuseschange,
 		onregionschange,
 		onfueltechschange
@@ -25,10 +25,6 @@
 			value: 'retired'
 		}
 	];
-
-	let selectedFuelTechs = $state(initialFuelTechs);
-	let selectedRegions = $state(initialRegions);
-	let selectedStatuses = $state(initialStatuses);
 
 	let regionOptions = $derived(
 		regions.map((r) => ({
@@ -79,15 +75,16 @@
 	 * @param {boolean} isMetaPressed
 	 */
 	function handleRegionChange(value, isMetaPressed) {
+		let newSelectedRegions = [];
 		if (isMetaPressed) {
-			selectedRegions = [value];
+			newSelectedRegions = [value];
 		} else if (selectedRegions.includes(value)) {
-			selectedRegions = selectedRegions.filter((item) => item !== value);
+			newSelectedRegions = selectedRegions.filter((item) => item !== value);
 		} else {
-			selectedRegions = [...selectedRegions, value];
+			newSelectedRegions = [...selectedRegions, value];
 		}
 
-		onregionschange?.(selectedRegions);
+		onregionschange?.(newSelectedRegions);
 	}
 
 	/**
@@ -95,15 +92,16 @@
 	 * @param {boolean} isMetaPressed
 	 */
 	function handleFuelTechChange(value, isMetaPressed) {
+		let newSelectedFuelTechs = [];
 		if (isMetaPressed) {
-			selectedFuelTechs = [value];
+			newSelectedFuelTechs = [value];
 		} else if (selectedFuelTechs.includes(value)) {
-			selectedFuelTechs = selectedFuelTechs.filter((item) => item !== value);
+			newSelectedFuelTechs = selectedFuelTechs.filter((item) => item !== value);
 		} else {
-			selectedFuelTechs = [...selectedFuelTechs, value];
+			newSelectedFuelTechs = [...selectedFuelTechs, value];
 		}
 
-		onfueltechschange?.(selectedFuelTechs);
+		onfueltechschange?.(newSelectedFuelTechs);
 	}
 
 	/**
@@ -111,15 +109,16 @@
 	 * @param {boolean} isMetaPressed
 	 */
 	function handleStatusesChange(value, isMetaPressed) {
+		let newSelectedStatuses = [];
 		if (isMetaPressed) {
-			selectedStatuses = [value];
+			newSelectedStatuses = [value];
 		} else if (selectedStatuses.includes(value)) {
-			selectedStatuses = selectedStatuses.filter((item) => item !== value);
+			newSelectedStatuses = selectedStatuses.filter((item) => item !== value);
 		} else {
-			selectedStatuses = [...selectedStatuses, value];
+			newSelectedStatuses = [...selectedStatuses, value];
 		}
 
-		onstatuseschange?.(selectedStatuses);
+		onstatuseschange?.(newSelectedStatuses);
 	}
 </script>
 

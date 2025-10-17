@@ -96,17 +96,17 @@
 	if (browser) {
 		observe = new IntersectionObserver((entries) => {
 			entries.forEach((entry) => {
-				ontodaybuttonvisible(!entry.isIntersecting, 'bottom');
+				// ontodaybuttonvisible(!entry.isIntersecting, 'bottom');
 
 				// if (!entry.isIntersecting) {
 				// 	console.log('entry', entry, entry.isIntersecting, entry.boundingClientRect.bottom);
 				// }
 
-				// if (entry.boundingClientRect.top > 0) {
-				// 	console.log('BELOW'); // do things if below
-				// } else {
-				// 	console.log('ABOVE'); // do things if above
-				// }
+				if (entry.boundingClientRect.top > 0) {
+					ontodaybuttonvisible(!entry.isIntersecting, 'bottom');
+				} else {
+					ontodaybuttonvisible(!entry.isIntersecting, 'top');
+				}
 			});
 		});
 	}
@@ -193,9 +193,9 @@
 		{#each [...groupedData] as [year, values], i}
 			<header
 				id={`y${year}`}
-				class="sticky top-0 bg-white/80 backdrop-blur-xs z-10 py-2 px-4 border-b border-mid-warm-grey flex justify-between items-baseline"
+				class="sticky top-0 bg-white/80 backdrop-blur-xs z-10 py-2 px-4 border-b border-warm-grey flex justify-between items-baseline"
 			>
-				<h2 class="font-space text-xl font-light m-0 p-0">{year}</h2>
+				<h2 class="font-space text-base font-normal m-0 p-0">{year}</h2>
 				<div class="font-mono mr-6 flex items-baseline gap-1">
 					<span class="text-xs text-mid-grey">
 						{numberFormatter.format(getTotalCapacity([...values]))}
@@ -231,11 +231,11 @@
 							</h4>
 						{:else if year != d}
 							<h4
-								class="font-space m-0 p-0 text-dark-grey"
-								class:font-medium={specificity === 'year' || specificity === 'month'}
-								class:font-light={specificity !== 'year' && specificity !== 'month'}
-								class:text-base={specificity === 'year' || specificity === 'month'}
-								class:text-xs={specificity !== 'year' && specificity !== 'month'}
+								class="font-space m-0 p-0 text-base font-normal"
+								class:text-base={specificity === 'year'}
+								class:text-sm={specificity === 'month'}
+								class:text-xxs={specificity !== 'year' && specificity !== 'month'}
+								class:uppercase={specificity === 'year' || specificity === 'month'}
 							>
 								{#if specificity === 'year'}
 									{year}
@@ -255,7 +255,7 @@
 					{#if isToday}
 						<div class="">
 							<div
-								class="bg-warm-grey w-full border-b border-chart-1 absolute top-[16px] z-0 left-0"
+								class="bg-warm-grey w-full border-b border-chart-1 absolute top-[18px] z-0 left-0"
 							></div>
 						</div>
 					{:else}

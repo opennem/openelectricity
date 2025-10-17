@@ -5,6 +5,7 @@
 	import FacilitiesMap from './FacilitiesMap.svelte';
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
+	import FilterTags from './FilterTags.svelte';
 
 	let { data } = $props();
 
@@ -127,6 +128,7 @@
 	}
 
 	let showTodayButton = $state(false);
+	let todayButtonPosition = $state('bottom');
 	/** @type {*} */
 	let timelineRef = $state(null);
 
@@ -136,7 +138,7 @@
 	 */
 	function handleTodayButtonVisible(visible, position) {
 		showTodayButton = visible;
-		// console.log('handleTodayButtonVisible', visible, position);
+		todayButtonPosition = position;
 	}
 </script>
 
@@ -149,10 +151,67 @@
 			onfueltechschange={handleFuelTechsChange}
 		/>
 	</div> -->
-	<FacilitiesMap facilities={filteredWithLocation} />
+	<!-- <FacilitiesMap facilities={filteredWithLocation} /> -->
 </section>
 
-<div
+<div class=" border-y border-warm-grey">
+	<div class="md:container relative text-base" style="z-index: 9999;">
+		<Filters
+			selectedStatuses={statuses}
+			selectedFuelTechs={fuelTechs}
+			selectedRegions={regions}
+			onstatuseschange={handleStatusesChange}
+			onregionschange={handleRegionsChange}
+			onfueltechschange={handleFuelTechsChange}
+		/>
+	</div>
+</div>
+<div class="text-base">
+	<div class="md:container md:grid grid-cols-8 md:divide-x divide-warm-grey py-12 relative">
+		<div class="col-span-2 px-10 md:pl-7 md:pr-12">
+			<div class="sticky top-10 hidden md:block">
+				<FilterTags
+					selectedRegions={regions}
+					selectedStatuses={statuses}
+					selectedFuelTechs={fuelTechs}
+					onregionschange={handleRegionsChange}
+					onstatuseschange={handleStatusesChange}
+					onfueltechschange={handleFuelTechsChange}
+				/>
+			</div>
+		</div>
+
+		{#if showTodayButton}
+			<div
+				class="fixed z-20 w-full flex justify-center"
+				class:top-16={todayButtonPosition === 'top'}
+				class:bottom-12={todayButtonPosition === 'bottom'}
+				transition:fly={{ y: -10, duration: 300 }}
+			>
+				<button
+					class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300"
+					onclick={() => timelineRef?.jumpToToday()}
+				>
+					{#if todayButtonPosition === 'bottom'}
+						<span class="text-xxs">↓</span>
+					{:else}
+						<span class="text-xxs">↑</span>
+					{/if}
+					Today
+				</button>
+			</div>
+		{/if}
+		<div class="col-span-6 md:pl-12 px-6">
+			<Timeline
+				bind:this={timelineRef}
+				facilities={filteredWithLocation}
+				ontodaybuttonvisible={handleTodayButtonVisible}
+			/>
+		</div>
+	</div>
+</div>
+
+<!-- <div
 	class="z-10 bg-white absolute top-[138px] left-10 bottom-10 md:w-1/2 w-[calc(100vw-5rem)] overflow-hidden border border-warm-grey rounded-xl shadow-2xl"
 >
 	<div class="absolute top-0 z-50 bg-light-warm-grey w-full border-b border-warm-grey">
@@ -186,8 +245,9 @@
 			ontodaybuttonvisible={handleTodayButtonVisible}
 		/>
 	</div>
-	<div class="overflow-y-auto">
-		<!-- <FacilityStatusTable
+</div> -->
+
+<!-- <FacilityStatusTable
 			facilities={filteredCommittedFacilities}
 			statusLabel="Committed"
 			statusType="committed"
@@ -204,5 +264,3 @@
 			statusLabel="Retired"
 			statusType="retired"
 		/> -->
-	</div>
-</div>
