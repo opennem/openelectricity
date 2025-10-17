@@ -1,6 +1,8 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
+	import Meta from '$lib/components/Meta.svelte';
+
 	// import FacilityStatusTable from './FacilityStatusTable.svelte';
 	import FacilitiesMap from './FacilitiesMap.svelte';
 	import Timeline from './Timeline.svelte';
@@ -15,6 +17,13 @@
 	let regions = $derived(data.regions);
 	let fuelTechs = $derived(data.fuelTechs);
 
+	let showTodayButton = $state(false);
+	let todayButtonPosition = $state('bottom');
+	/** @type {*} */
+	let timelineRef = $state(null);
+
+	let searchTerm = $state('');
+
 	$inspect('view', view);
 	$inspect('statuses', statuses);
 	$inspect('regions', regions);
@@ -23,22 +32,24 @@
 	/**
 	 * Filter out battery_charging and battery_discharging units from facilities
 	 * @param {any[]} facilityList
+	 * @param {string} searchTerm
 	 * @returns {any[]}
 	 */
-	function filterBatteryUnits(facilityList) {
+	function filterBatteryUnits(facilityList, searchTerm) {
 		return facilityList
 			.map((facility) => ({
 				...facility,
 				units: facility.units?.filter(
 					(/** @type {any} */ unit) =>
-						unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
+						unit.fueltech_id !== 'battery_charging' &&
+						unit.fueltech_id !== 'battery_discharging' &&
+						(searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true)
 				)
 			}))
 			.filter((facility) => facility.units && facility.units.length > 0);
 	}
 
-	let filteredFacilities = $derived(facilities ? filterBatteryUnits(facilities) : []);
-	$inspect('filteredFacilities', filteredFacilities);
+	let filteredFacilities = $derived(facilities ? filterBatteryUnits(facilities, searchTerm) : []);
 
 	/**
 	 * Check if facility has valid location data
@@ -127,11 +138,6 @@
 		handleViewChange({ statuses: values, regions, fuelTechs });
 	}
 
-	let showTodayButton = $state(false);
-	let todayButtonPosition = $state('bottom');
-	/** @type {*} */
-	let timelineRef = $state(null);
-
 	/**
 	 * @param {boolean} visible
 	 * @param {string} position
@@ -140,7 +146,27 @@
 		showTodayButton = visible;
 		todayButtonPosition = position;
 	}
+
+	/**
+	 * @param {string} value
+	 */
+	function handleSearchChange(value) {
+		searchTerm = value;
+	}
 </script>
+
+<Meta
+	title="Facilities Timeline"
+	description="Power generation facilities from Australia on a timeline."
+/>
+
+<div class="bg-light-warm-grey">
+	<section class="md:container py-12">
+		<div class="flex items-center gap-2 justify-between md:justify-center pl-10 pr-5 md:px-0">
+			<h2 class="text-xl md:text-2xl mb-0">Facilities Timeline</h2>
+		</div>
+	</section>
+</div>
 
 <section>
 	<!-- <div class="md:container">
@@ -154,12 +180,14 @@
 	<!-- <FacilitiesMap facilities={filteredWithLocation} /> -->
 </section>
 
-<div class=" border-y border-warm-grey">
+<div class="border-y border-warm-grey">
 	<div class="md:container relative text-base" style="z-index: 9999;">
 		<Filters
+			{searchTerm}
 			selectedStatuses={statuses}
 			selectedFuelTechs={fuelTechs}
 			selectedRegions={regions}
+			onsearchchange={handleSearchChange}
 			onstatuseschange={handleStatusesChange}
 			onregionschange={handleRegionsChange}
 			onfueltechschange={handleFuelTechsChange}
@@ -181,7 +209,7 @@
 			</div>
 		</div>
 
-		{#if showTodayButton}
+		{#if showTodayButton && searchTerm.length === 0}
 			<div
 				class="fixed z-20 w-full flex justify-center"
 				class:top-16={todayButtonPosition === 'top'}
@@ -189,15 +217,15 @@
 				transition:fly={{ y: -10, duration: 300 }}
 			>
 				<button
-					class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300"
+					class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300 relative -left-12"
 					onclick={() => timelineRef?.jumpToToday()}
 				>
-					{#if todayButtonPosition === 'bottom'}
+					<!-- {#if todayButtonPosition === 'bottom'}
 						<span class="text-xxs">↓</span>
 					{:else}
 						<span class="text-xxs">↑</span>
-					{/if}
-					Today
+					{/if} -->
+					Jump to today
 				</button>
 			</div>
 		{/if}

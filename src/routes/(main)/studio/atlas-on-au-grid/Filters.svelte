@@ -6,9 +6,11 @@
 		selectedRegions = [],
 		selectedStatuses = [],
 		selectedFuelTechs = [],
+		searchTerm = '',
 		onstatuseschange,
 		onregionschange,
-		onfueltechschange
+		onfueltechschange,
+		onsearchchange
 	} = $props();
 
 	let statusOptions = [
@@ -122,7 +124,7 @@
 	}
 </script>
 
-<div class="flex items-center pt-3 pb-3 pl-3 relative z-10 gap-4">
+<div class="flex items-center justify-between pt-3 pb-3 pl-3 relative z-10 gap-4">
 	<div class="flex justify-start items-center gap-2">
 		<FormMultiSelect
 			options={regionOptions}
@@ -149,6 +151,16 @@
 			paddingX="pl-5 pr-4"
 			paddingY="py-3"
 			on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
+		/>
+	</div>
+
+	<div class="flex justify-end items-center gap-2 pr-8">
+		<input
+			type="search"
+			value={searchTerm}
+			oninput={(e) => onsearchchange?.(e.target.value)}
+			placeholder="Filter by name"
+			class="rounded-full border border-warm-grey bg-white px-5 py-3 text-xs transition-colors hover:border-dark-grey focus:border-dark-grey focus:outline-none"
 		/>
 	</div>
 </div>

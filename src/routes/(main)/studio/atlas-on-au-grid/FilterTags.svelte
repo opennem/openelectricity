@@ -29,7 +29,7 @@
 	};
 </script>
 
-{#if selectedRegions.length}
+{#if selectedRegions.length || selectedStatuses.length || selectedFuelTechs.length}
 	<h4 class="hidden md:block">Filters</h4>
 {/if}
 
@@ -63,7 +63,7 @@
 			<div
 				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
 			>
-				<span class="whitespace-nowrap">{status}</span>
+				<span class="whitespace-nowrap capitalize">{status}</span>
 				<button
 					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
 					onclick={() => onstatuseschange(selectedStatuses.filter((d) => d !== status))}
