@@ -1,5 +1,6 @@
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import isCommissioningCheck from './page-data-options/is-commissioning';
 
 let client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -31,7 +32,7 @@ export async function load({ url }) {
 	/* @type {import('openelectricity').UnitStatusType[]} */
 	const statuses = searchParams.get('statuses')
 		? /** @type {string} */ (searchParams.get('statuses')).split(',')
-		: [];
+		: ['operating', 'commissioning'];
 	const regions = searchParams.get('regions')
 		? /** @type {string} */ (searchParams.get('regions')).split(',')
 		: [];
@@ -43,6 +44,20 @@ export async function load({ url }) {
 
 	console.log('fuelTechIds', fuelTechIds);
 	console.log('regions', regions);
+	console.log('statuses', statuses);
+
+	let newStatuses = [];
+	// if statuses includes only commissioning, add operating to statuses and always remove commissioning.
+	if (statuses.includes('commissioning') && statuses.length === 1) {
+		newStatuses.push('operating');
+	} else if (statuses.includes('commissioning') && !statuses.includes('operating')) {
+		newStatuses = statuses.filter((status) => status !== 'commissioning');
+		newStatuses.push('operating');
+	} else {
+		newStatuses = statuses.filter((status) => status !== 'commissioning');
+	}
+
+	console.log('newStatuses', newStatuses);
 
 	let facilitiesResponse = null;
 	// let committedResponse = null;
@@ -52,7 +67,7 @@ export async function load({ url }) {
 	try {
 		const { response } = await client.getFacilities({
 			fueltech_id: fuelTechIds,
-			status_id: statuses
+			status_id: newStatuses
 		});
 		facilitiesResponse = response.data;
 	} catch (error) {
@@ -68,6 +83,34 @@ export async function load({ url }) {
 						regions.includes(facility.network_region.toLowerCase())
 					)
 				: [];
+
+	// mark facilities as commissioning if any unit is commissioning
+	facilities?.forEach((facility) => {
+		facility.units.forEach((unit) => {
+			if (isCommissioningCheck(unit)) {
+				unit.isCommissioning = true;
+				unit.status_id = 'commissioning';
+			}
+		});
+	});
+
+	let newFacilities = [];
+	facilities?.forEach((facility) => {
+		newFacilities.push({
+			...facility,
+			units: facility.units.filter((unit) => {
+				return statuses.includes(unit.status_id);
+			})
+		});
+	});
+
+	// newFacilities.forEach((facility) => {
+	// 	if (facility.units.length === 0) {
+	// 		console.log('facility has no units', facility.name);
+	// 	}
+	// });
+
+	// console.log('newFacilities', newFacilities);
 
 	// const facilities = facilitiesResponse;
 
@@ -99,7 +142,7 @@ export async function load({ url }) {
 	// }
 
 	return {
-		facilities,
+		facilities: newFacilities,
 		// committedFacilities: committedResponse || [],
 		// retiredFacilities: retiredResponse || [],
 		// operationalFacilities: operationalResponse || [],

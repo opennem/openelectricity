@@ -32,9 +32,9 @@
 	<Tooltip.Provider>
 		<Tooltip.Root delayDuration={50}>
 			<Tooltip.Trigger>
-				<div class="h-[4px] w-full relative rounded-full" style="background-color: {fill}33">
+				<div class="h-[4px] flex relative rounded-full" style="background-color: {fill}33">
 					<div
-						class="h-full relative"
+						class="h-full relative rounded-full"
 						style="width: {widthPercent || 0}%; background-color: {fill}"
 					></div>
 				</div>

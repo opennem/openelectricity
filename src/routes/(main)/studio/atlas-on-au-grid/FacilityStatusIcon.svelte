@@ -7,8 +7,10 @@
 <div class="status-progress">
 	{#if status === 'committed'}
 		<span class="committed"></span>
+	{:else if isCommissioning}
+		<span class="commissioning"></span>
 	{:else if status === 'operating'}
-		<span class="operating" class:commissioning={isCommissioning}></span>
+		<span class="operating"></span>
 	{:else if status === 'retired'}
 		<span class="retired"></span>
 	{/if}
@@ -46,27 +48,20 @@
 		display: flex;
 	}
 	.status-progress span {
-		width: 10px;
-		height: 10px;
+		width: 8px;
+		height: 8px;
 		border-radius: 50%;
 	}
 	.committed {
-		background-color: #eab308;
+		background-color: #e0dfdc;
 	}
 	.operating {
-		background-color: #16a34a;
+		background-color: #75e74d;
 	}
 	.commissioning {
-		opacity: 0.75;
-		background-image: repeating-linear-gradient(
-			125deg,
-			transparent,
-			transparent 2px,
-			#a4ccb3 2px,
-			#a4ccb3 3px
-		);
+		background-color: #ffb108;
 	}
 	.retired {
-		background-color: #9ca3af;
+		background-color: #6a6a6a;
 	}
 </style>

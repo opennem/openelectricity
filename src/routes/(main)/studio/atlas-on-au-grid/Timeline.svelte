@@ -27,8 +27,6 @@
 			facility.units.forEach((/** @type {*} */ unit) => {
 				const dateField = getDateField(unit.status_id);
 				const dateValue = unit[dateField];
-				const isCommissioning =
-					unit.status_id === 'operating' && hasReachedMoreThanNinetyPercent(unit);
 
 				if (!dateValue) {
 					console.log(unit.code, 'unit has no', dateField);
@@ -52,7 +50,7 @@
 							unit[dateField + '_specificity']
 						),
 						unit,
-						isCommissioning
+						isCommissioning: unit.isCommissioning
 					});
 				}
 			});
@@ -153,17 +151,6 @@
 		return csv;
 	}
 
-	function hasReachedMoreThanNinetyPercent(unit) {
-		const cap = Number(unit.capacity_maximum || unit.capacity_registered);
-		const gen = Number(unit.max_generation);
-
-		if (gen) {
-			const percentage = (gen / cap) * 100;
-			return percentage <= 90;
-		}
-		return false;
-	}
-
 	function getTotalCapacity(values) {
 		let total = 0;
 		values.forEach(([d, facilities]) => {
@@ -259,7 +246,9 @@
 							></div>
 						</div>
 					{:else}
-						<ol class="flex flex-col col-span-10 border-l border-warm-grey bg-light-warm-grey">
+						<ol
+							class="flex flex-col col-span-10 border border-warm-grey rounded-lg divide-y divide-warm-grey"
+						>
 							{#each facilities as facility}
 								{@const bgColor = facility.unit
 									? getFueltechColor(facility.unit.fueltech_id)
@@ -268,7 +257,8 @@
 
 								<li>
 									<a
-										class="grid grid-cols-12 items-center gap-2 pr-6 hover:no-underline hover:bg-warm-grey border-b border-warm-grey"
+										class="grid grid-cols-12 items-center gap-2 pr-6 hover:no-underline hover:bg-warm-grey"
+										class:bg-light-warm-grey={facility.unit.status_id === 'committed'}
 										target="_blank"
 										href={path}
 									>
@@ -293,6 +283,14 @@
 													</small>
 												{/if}
 											</div>
+
+											{#if facility.unit.status_id === 'retired'}
+												<div
+													class="flex items-center gap-2 bg-mid-grey rounded-full px-4 py-1 text-xxs text-white uppercase font-light"
+												>
+													Retired
+												</div>
+											{/if}
 										</div>
 
 										<span class="text-xs text-mid-grey col-span-1">

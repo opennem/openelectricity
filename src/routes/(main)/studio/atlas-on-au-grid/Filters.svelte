@@ -19,6 +19,10 @@
 			value: 'committed'
 		},
 		{
+			label: 'Commissioning',
+			value: 'commissioning'
+		},
+		{
 			label: 'Operating',
 			value: 'operating'
 		},
