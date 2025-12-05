@@ -183,11 +183,11 @@
 				class="sticky top-0 bg-white/80 backdrop-blur-xs z-10 py-2 px-4 border-b border-warm-grey flex justify-between items-baseline"
 			>
 				<h2 class="font-space text-base font-normal m-0 p-0">{year}</h2>
-				<div class="font-mono mr-6 flex items-baseline gap-1">
-					<span class="text-xs text-mid-grey">
+				<div class="mr-6 flex items-baseline gap-1">
+					<span class="text-xs font-mono text-mid-grey">
 						{numberFormatter.format(getTotalCapacity([...values]))}
 					</span>
-					<span class="text-xxs font-mono text-mid-grey">MW</span>
+					<span class="text-xxs text-mid-grey">MW</span>
 				</div>
 			</header>
 
@@ -300,7 +300,7 @@
 
 										<div class="col-span-3 grid grid-cols-7 items-center gap-2">
 											<div class="col-span-6 flex flex-col gap-0">
-												<div class="flex justify-end items-baseline gap-1">
+												<div class="flex justify-end items-baseline gap-2">
 													<span
 														class="font-mono text-sm text-dark-grey"
 														title={facility.unit.capacity_maximum
@@ -314,7 +314,21 @@
 													<!-- <span class="text-xxs font-mono text-mid-grey">
 														{facility.unit.max_generation}
 													</span> -->
-													<span class="text-xxs font-mono text-mid-grey">MW</span>
+
+													<span class="text-xs text-mid-grey">MW</span>
+
+													{#if facility.unit.capacity_storage}
+														<span
+															class="text-sm items-baseline text-dark-grey ml-1 flex gap-2"
+															title="Storage Capacity"
+														>
+															<span class="font-mono">/</span>
+															<span class="font-mono">
+																{numberFormatter.format(facility.unit.capacity_storage)}
+															</span>
+															<span class="text-xs text-mid-grey">MWh</span>
+														</span>
+													{/if}
 												</div>
 
 												{#if facility.isCommissioning}
