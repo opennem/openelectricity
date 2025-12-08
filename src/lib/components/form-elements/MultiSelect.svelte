@@ -10,13 +10,14 @@
 	 * @typedef {Object} Props
 	 * @property {string[]} selected
 	 * @property {string} [label]
-	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean}[] | undefined} [options]
+	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean, colour?: string}[] | undefined} [options]
 	 * @property {string} [paddingY]
 	 * @property {string} [paddingX]
 	 * @property {boolean} [staticDisplay]
 	 * @property {string} [selectedLabelClass]
 	 * @property {string} [position] - top, bottom
 	 * @property {string} [align] - left, right
+	 * @property {boolean} [withColours]
 	 */
 
 	/** @type {Props} */
@@ -29,7 +30,8 @@
 		staticDisplay = false,
 		selectedLabelClass = 'font-semibold mb-0 capitalize',
 		position = 'bottom',
-		align = 'left'
+		align = 'left',
+		withColours = false
 	} = $props();
 
 	const dispatch = createEventDispatcher();
@@ -149,7 +151,12 @@
 							class:text-black={selected.includes(opt.value)}
 							onclick={() => handleSelect(opt)}
 						>
-							<span class="capitalize">{opt.label}</span>
+							<div class="flex items-center gap-4">
+								{#if withColours}
+									<span class="size-4 rounded-full" style="background-color: {opt.colour}"></span>
+								{/if}
+								<span class="capitalize">{opt.label}</span>
+							</div>
 
 							<div
 								class="border rounded-sm size-7"

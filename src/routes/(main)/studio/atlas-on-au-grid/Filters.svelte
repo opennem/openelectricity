@@ -16,19 +16,23 @@
 	let statusOptions = [
 		{
 			label: 'Committed',
-			value: 'committed'
+			value: 'committed',
+			colour: '#e0dfdc'
 		},
 		{
 			label: 'Commissioning',
-			value: 'commissioning'
+			value: 'commissioning',
+			colour: '#ffb108'
 		},
 		{
 			label: 'Operating',
-			value: 'operating'
+			value: 'operating',
+			colour: '#75e74d'
 		},
 		{
 			label: 'Retired',
-			value: 'retired'
+			value: 'retired',
+			colour: '#6a6a6a'
 		}
 	];
 
@@ -143,6 +147,7 @@
 			options={statusOptions}
 			selected={selectedStatuses}
 			label={statusLabel}
+			withColours={true}
 			paddingX="pl-5 pr-4"
 			paddingY="py-3"
 			on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
