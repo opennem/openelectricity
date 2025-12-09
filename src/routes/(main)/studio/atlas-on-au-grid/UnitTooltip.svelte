@@ -18,61 +18,90 @@
 		{unit.status_id}
 	</div>
 
-	<div class="text-xs">
-		<span class="font-mono font-bold" title="Max generation">
-			{numberFormatter.format(unit.max_generation)}
-		</span>
-		/
-		<span
-			class="font-mono font-bold"
-			title={unit.capacity_maximum ? 'Maximum Capacity' : 'Registered Capacity'}
-		>
-			{numberFormatter.format(unit.capacity_maximum || unit.capacity_registered)}
-		</span>
-		<span class="text-xxs">MW</span>
+	{#if (isCommissioning || unit.status_id === 'operating' || unit.status_id === 'retired') && unit.max_generation}
+		<div class="text-xs">
+			<span class="font-mono font-bold" title="Max generation">
+				{numberFormatter.format(unit.max_generation)}
+			</span>
+			/
+			<span
+				class="font-mono font-bold"
+				title={unit.capacity_maximum ? 'Maximum Capacity' : 'Registered Capacity'}
+			>
+				{numberFormatter.format(unit.capacity_maximum || unit.capacity_registered)}
+			</span>
+			<span class="text-xxs">MW</span>
 
-		<span>({percentage.toFixed(0)}%)</span>
-	</div>
+			<span>({percentage.toFixed(0)}%)</span>
+		</div>
+	{/if}
 
-	<div class="text-xs">
-		Max generated on
-		<span>
-			{formatDateTime({
-				date: unit.max_generation_interval ? new Date(unit.max_generation_interval) : new Date(),
-				hour: 'numeric',
-				minute: '2-digit',
-				hour12: true
-			})
-				.split(' ')
-				.join('')},
+	{#if unit.max_generation_interval}
+		<div class="text-xs">
+			Max generated on
+			<span>
+				{formatDateTime({
+					date: unit.max_generation_interval ? new Date(unit.max_generation_interval) : new Date(),
+					hour: 'numeric',
+					minute: '2-digit',
+					hour12: true
+				})
+					.split(' ')
+					.join('')},
 
-			{formatDateTime({
-				date: unit.max_generation_interval ? new Date(unit.max_generation_interval) : new Date(),
-				month: 'short',
-				day: 'numeric',
-				year: 'numeric'
-			})}
-		</span>
-	</div>
+				{formatDateTime({
+					date: unit.max_generation_interval ? new Date(unit.max_generation_interval) : new Date(),
+					month: 'short',
+					day: 'numeric',
+					year: 'numeric'
+				})}
+			</span>
+		</div>
+	{/if}
 
-	<div class="text-xs">
-		First seen on
-		<span>
-			{formatDateTime({
-				date: unit.data_first_seen ? new Date(unit.data_first_seen) : new Date(),
-				hour: 'numeric',
-				minute: '2-digit',
-				hour12: true
-			})
-				.split(' ')
-				.join('')},
+	{#if (unit.status_id === 'operating' || isCommissioning) && unit.data_first_seen}
+		<div class="text-xs">
+			First seen on
+			<span>
+				{formatDateTime({
+					date: unit.data_first_seen ? new Date(unit.data_first_seen) : new Date(),
+					hour: 'numeric',
+					minute: '2-digit',
+					hour12: true
+				})
+					.split(' ')
+					.join('')},
 
-			{formatDateTime({
-				date: unit.data_first_seen ? new Date(unit.data_first_seen) : new Date(),
-				month: 'short',
-				day: 'numeric',
-				year: 'numeric'
-			})}
-		</span>
-	</div>
+				{formatDateTime({
+					date: unit.data_first_seen ? new Date(unit.data_first_seen) : new Date(),
+					month: 'short',
+					day: 'numeric',
+					year: 'numeric'
+				})}
+			</span>
+		</div>
+	{/if}
+
+	{#if unit.status_id === 'retired' && unit.data_last_seen}
+		<div class="text-xs">
+			Last seen on
+			<span>
+				{formatDateTime({
+					date: unit.data_last_seen ? new Date(unit.data_last_seen) : new Date(),
+					hour: 'numeric',
+					minute: '2-digit',
+					hour12: true
+				})
+					.split(' ')
+					.join('')},
+
+				{formatDateTime({
+					date: unit.data_last_seen ? new Date(unit.data_last_seen) : new Date(),
+					month: 'short',
+					day: 'numeric',
+					year: 'numeric'
+				})}
+			</span>
+		</div>
+	{/if}
 </div>
