@@ -10,6 +10,7 @@
 	import { regions } from './page-data-options/filters';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
+	import UnitTooltip from './UnitTooltip.svelte';
 
 	const numberFormatter = getNumberFormat(0);
 	let { facilities = [], ontodaybuttonvisible } = $props();
@@ -257,7 +258,7 @@
 
 								<li>
 									<a
-										class="grid grid-cols-12 items-center gap-2 pr-6 group hover:no-underline hover:bg-warm-grey"
+										class="grid grid-cols-12 items-center gap-2 pr-6 group relative hover:no-underline hover:bg-warm-grey"
 										class:bg-light-warm-grey={facility.unit.status_id === 'committed'}
 										target="_blank"
 										href={path}
@@ -278,6 +279,18 @@
 												class="text-base leading-base font-medium text-dark-grey flex items-bottom gap-3"
 											>
 												{facility.name || 'Unnamed Facility'}
+
+												{#if facility.unit.capacity_storage}
+													<span
+														class="text-xs items-baseline text-mid-grey"
+														title="Storage Capacity"
+													>
+														(<span class="font-mono">
+															{numberFormatter.format(facility.unit.capacity_storage)}
+														</span>
+														<span class="text-xxs">MWh</span>)
+													</span>
+												{/if}
 
 												{#if facility.units.length > 1}
 													<small class="text-mid-warm-grey text-xs font-light">
@@ -304,11 +317,11 @@
 											</span>
 										</div>
 
-										<div class="col-span-3 grid grid-cols-7 items-center gap-2">
+										<div class="col-span-3 grid grid-cols-7 items-center gap-2 group">
 											<div class="col-span-6 flex flex-col gap-0">
 												<div class="flex justify-end items-baseline gap-2">
 													<span
-														class="font-mono text-xs text-dark-grey"
+														class="font-mono text-sm text-dark-grey"
 														title={facility.unit.capacity_maximum
 															? 'Maximum Capacity'
 															: 'Registered Capacity'}
@@ -317,13 +330,10 @@
 															facility.unit.capacity_maximum || facility.unit.capacity_registered
 														)}
 													</span>
-													<!-- <span class="text-xxs font-mono text-mid-grey">
-														{facility.unit.max_generation}
-													</span> -->
 
-													<span class="text-xxs text-mid-grey">MW</span>
+													<span class="text-xs text-mid-grey">MW</span>
 
-													{#if facility.unit.capacity_storage}
+													<!-- {#if facility.unit.capacity_storage}
 														<span
 															class="text-xs items-baseline text-dark-grey ml-1 flex gap-2"
 															title="Storage Capacity"
@@ -334,7 +344,7 @@
 															</span>
 															<span class="text-xxs text-mid-grey">MWh</span>
 														</span>
-													{/if}
+													{/if} -->
 												</div>
 
 												{#if facility.isCommissioning}
@@ -345,6 +355,13 @@
 											<div class="col-span-1 flex justify-end">
 												<FacilityStatusIcon
 													status={facility.unit.status_id}
+													isCommissioning={facility.isCommissioning}
+												/>
+											</div>
+
+											<div class="group-hover:block hidden absolute z-50 top-14 right-0">
+												<UnitTooltip
+													unit={facility.unit}
 													isCommissioning={facility.isCommissioning}
 												/>
 											</div>

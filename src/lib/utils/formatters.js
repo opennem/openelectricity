@@ -96,6 +96,7 @@ export function getFormattedDate(date, weekday, day, month, year, timeZone = '+1
 /**
  * @typedef {Object} FormatDateTimeOptions
  * @property {Date} date
+ * @property {boolean} [hour12]
  * @property {"numeric" | "2-digit" | undefined} [hour]
  * @property {"numeric" | "2-digit" | undefined} [minute]
  * @property {"numeric" | "2-digit" | undefined} [second]
@@ -114,6 +115,7 @@ export function getFormattedDate(date, weekday, day, month, year, timeZone = '+1
  */
 export function formatDateTime({
 	date,
+	hour12,
 	hour,
 	minute,
 	second,
@@ -125,6 +127,7 @@ export function formatDateTime({
 	timeZone = '+10:00'
 }) {
 	return new Intl.DateTimeFormat('en-AU', {
+		hour12,
 		hour,
 		minute,
 		second,
