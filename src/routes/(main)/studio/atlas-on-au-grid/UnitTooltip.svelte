@@ -1,7 +1,10 @@
 <script>
 	import { getNumberFormat, formatDateTime } from '$lib/utils/formatters';
+	import { fuelTechName } from '$lib/fuel_techs';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
-	let { unit, isCommissioning = false } = $props();
+	import GenCapViz from './GenCapViz.svelte';
+
+	let { unit, isCommissioning = false, fill = '#000000' } = $props();
 
 	const numberFormatter = getNumberFormat(0);
 
@@ -13,26 +16,46 @@
 </script>
 
 <div class="bg-black rounded-lg px-4 py-2 shadow-sm text-white">
-	<div class="text-xs capitalize flex items-baseline gap-1">
-		<FacilityStatusIcon status={unit.status_id} {isCommissioning} />
-		{unit.status_id}
+	<div class="flex items-center justify-between text-xs gap-6">
+		<div>
+			<span class="font-bold">{fuelTechName(unit.fueltech_id)}</span>
+		</div>
+
+		<div class="capitalize flex items-baseline gap-1">
+			<FacilityStatusIcon status={unit.status_id} {isCommissioning} />
+			{unit.status_id}
+		</div>
 	</div>
 
-	{#if (isCommissioning || unit.status_id === 'operating' || unit.status_id === 'retired') && unit.max_generation}
-		<div class="text-xs">
-			<span class="font-mono font-bold" title="Max generation">
-				{numberFormatter.format(unit.max_generation)}
-			</span>
-			/
-			<span
-				class="font-mono font-bold"
-				title={unit.capacity_maximum ? 'Maximum Capacity' : 'Registered Capacity'}
-			>
-				{numberFormatter.format(unit.capacity_maximum || unit.capacity_registered)}
-			</span>
-			<span class="text-xxs">MW</span>
+	<!-- {#if (isCommissioning || unit.status_id === 'operating' || unit.status_id === 'retired') && unit.max_generation} -->
+	{#if unit.capacity_maximum || unit.capacity_registered}
+		<div class="text-xs my-2">
+			<div class="flex items-center justify-end">
+				<div>
+					{#if unit.max_generation}
+						<span class="font-mono font-bold" title="Max generation">
+							{numberFormatter.format(unit.max_generation)}
+						</span>
+						/
+					{/if}
 
-			<span>({percentage.toFixed(0)}%)</span>
+					<span
+						class="font-mono font-bold"
+						title={unit.capacity_maximum ? 'Maximum Capacity' : 'Registered Capacity'}
+					>
+						{numberFormatter.format(unit.capacity_maximum || unit.capacity_registered)}
+					</span>
+					<span class="text-xxs">MW</span>
+
+					{#if unit.max_generation}
+						<span>({percentage.toFixed(0)}%)</span>
+					{/if}
+				</div>
+			</div>
+
+			<div class="mt-2 mb-4">
+				<GenCapViz {unit} {fill} />
+			</div>
 		</div>
 	{/if}
 

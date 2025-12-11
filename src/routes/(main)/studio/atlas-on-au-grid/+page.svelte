@@ -217,7 +217,7 @@
 				transition:fly={{ y: -10, duration: 300 }}
 			>
 				<button
-					class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300 relative -left-12"
+					class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300"
 					onclick={() => timelineRef?.jumpToToday()}
 				>
 					<!-- {#if todayButtonPosition === 'bottom'}

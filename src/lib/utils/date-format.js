@@ -19,7 +19,7 @@ export function formatDateBySpecificity(dateValue, specificity, offset = '+10:00
 				: dateValue;
 
 		// inconsistent data format, some have Z, some have +
-		// assume return string is always in UTC
+		// assume return string is always in Z
 		let parsedZonedDate = parseAbsolute(dateStr + 'Z', offset);
 		// console.log('parsedDate', dateValue, dateStr, parsedZonedDate);
 		let formatter;

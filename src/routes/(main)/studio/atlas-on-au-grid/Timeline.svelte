@@ -68,6 +68,17 @@
 
 	let groupedData = $derived(groupByMonthDay(sortedFlattenedData));
 
+	// i want to see the grouped data (InternMap) and re-sort it again so it puts Year first, then Month, then Day
+
+	$effect(() => {
+		// console.log('groupedData', groupedData);
+		// for each entry in the grouped data, if the key is a year (i.e. 2025), add it to the beginning of the array
+		// if the key is a month (Feb 2025), add it to above of the other dates in Feb 2025, but below the year 2025
+		// loop through the grouped data
+	});
+
+	$inspect('sortedFlattenedData', sortedFlattenedData);
+
 	/**
 	 * Get the background color for a fueltech
 	 * @param {string} fueltech
@@ -117,12 +128,12 @@
 		}
 	});
 
-	// $effect(() => {
-	// 	const el = document.querySelector('#dToday');
-	// 	if (el) {
-	// 		el.scrollIntoView({ behavior: 'instant', container: 'nearest', block: 'center' });
-	// 	}
-	// });
+	$effect(() => {
+		const el = document.querySelector('#dToday');
+		if (el) {
+			el.scrollIntoView({ behavior: 'auto', container: 'nearest', block: 'center' });
+		}
+	});
 
 	export function jumpToToday() {
 		const el = document.querySelector('#dToday');
@@ -207,7 +218,7 @@
 					id={`d${d}`}
 				>
 					<header
-						class="sticky top-[50px] self-start z-5 py-2 mb-2 col-span-2"
+						class="sticky top-[50px] self-start z-5 py-2 mb-2 col-span-12"
 						class:bg-white={!isToday}
 						class:backdrop-blur-xs={!isToday}
 					>
@@ -248,7 +259,7 @@
 						</div>
 					{:else}
 						<ol
-							class="flex flex-col col-span-10 border border-warm-grey rounded-lg divide-y divide-warm-grey"
+							class="flex flex-col col-span-12 border border-warm-grey rounded-lg divide-y divide-warm-grey"
 						>
 							{#each facilities as facility}
 								{@const bgColor = facility.unit
@@ -256,15 +267,15 @@
 									: '#FFFFFF'}
 								{@const path = `https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`}
 
-								<li>
+								<li class="@container">
 									<a
 										class="grid grid-cols-12 items-center gap-2 pr-6 group relative hover:no-underline hover:bg-warm-grey"
 										class:bg-light-warm-grey={facility.unit.status_id === 'committed'}
 										target="_blank"
 										href={path}
 									>
-										<div class="p-4 flex items-center gap-4 col-span-7">
-											<div class="flex flex-col gap-1 items-center">
+										<div class="p-4 flex items-center gap-4 @container col-span-12 @md:col-span-7">
+											<div class="flex gap-1 items-center">
 												<span
 													class="rounded-full p-2 block ml-2"
 													class:text-black={facility.unit.fueltech_id === 'solar_utility'}
@@ -276,7 +287,7 @@
 											</div>
 
 											<div
-												class="text-base leading-base font-medium text-dark-grey flex items-bottom gap-3"
+												class="text-base leading-base font-medium text-dark-grey flex flex-col @sm:flex-row items-bottom gap-0 @sm:gap-3"
 											>
 												{facility.name || 'Unnamed Facility'}
 
@@ -308,62 +319,67 @@
 											{/if}
 										</div>
 
-										<div class="text-xs text-mid-grey col-span-2">
-											<!-- {facility.network_id || 'Unknown Network'} -->
-											<span
-												class="block w-18 border-r border-warm-grey pr-4 group-hover:border-light-warm-grey"
-											>
-												{getRegionLabel(facility.network_id, facility.network_region)}
-											</span>
-										</div>
+										<div class="col-span-12 @md:col-span-5 grid grid-cols-5">
+											<div class="text-xs text-mid-grey col-span-2">
+												<!-- {facility.network_id || 'Unknown Network'} -->
+												<span
+													class="block w-18 border-r border-warm-grey pr-4 group-hover:border-light-warm-grey"
+												>
+													{getRegionLabel(facility.network_id, facility.network_region)}
+												</span>
+											</div>
 
-										<div class="col-span-3 grid grid-cols-7 items-center gap-2 group">
-											<div class="col-span-6 flex flex-col gap-0">
-												<div class="flex justify-end items-baseline gap-2">
-													<span
-														class="font-mono text-sm text-dark-grey"
-														title={facility.unit.capacity_maximum
-															? 'Maximum Capacity'
-															: 'Registered Capacity'}
-													>
-														{numberFormatter.format(
-															facility.unit.capacity_maximum || facility.unit.capacity_registered
-														)}
-													</span>
-
-													<span class="text-xs text-mid-grey">MW</span>
-
-													<!-- {#if facility.unit.capacity_storage}
+											<div class="col-span-3 grid grid-cols-7 items-center gap-2 group">
+												<div class="col-span-6 flex flex-col gap-0">
+													<div class="flex justify-end items-baseline gap-2">
 														<span
-															class="text-xs items-baseline text-dark-grey ml-1 flex gap-2"
-															title="Storage Capacity"
+															class="font-mono text-sm text-dark-grey"
+															title={facility.unit.capacity_maximum
+																? 'Maximum Capacity'
+																: 'Registered Capacity'}
 														>
-															<span class="font-mono">/</span>
-															<span class="font-mono">
-																{numberFormatter.format(facility.unit.capacity_storage)}
-															</span>
-															<span class="text-xxs text-mid-grey">MWh</span>
+															{numberFormatter.format(
+																facility.unit.capacity_maximum || facility.unit.capacity_registered
+															)}
 														</span>
-													{/if} -->
+
+														<span class="text-xs text-mid-grey">MW</span>
+
+														<!-- {#if facility.unit.capacity_storage}
+															<span
+																class="text-xs items-baseline text-dark-grey ml-1 flex gap-2"
+																title="Storage Capacity"
+															>
+																<span class="font-mono">/</span>
+																<span class="font-mono">
+																	{numberFormatter.format(facility.unit.capacity_storage)}
+																</span>
+																<span class="text-xxs text-mid-grey">MWh</span>
+															</span>
+														{/if} -->
+													</div>
+
+													{#if facility.isCommissioning}
+														<div class="mt-2">
+															<GenCapViz unit={facility.unit} fill={bgColor} />
+														</div>
+													{/if}
 												</div>
 
-												{#if facility.isCommissioning}
-													<GenCapViz unit={facility.unit} fill={bgColor} />
-												{/if}
-											</div>
+												<div class="col-span-1 flex justify-end">
+													<FacilityStatusIcon
+														status={facility.unit.status_id}
+														isCommissioning={facility.isCommissioning}
+													/>
+												</div>
 
-											<div class="col-span-1 flex justify-end">
-												<FacilityStatusIcon
-													status={facility.unit.status_id}
-													isCommissioning={facility.isCommissioning}
-												/>
-											</div>
-
-											<div class="group-hover:block hidden absolute z-50 top-14 right-0">
-												<UnitTooltip
-													unit={facility.unit}
-													isCommissioning={facility.isCommissioning}
-												/>
+												<div class="group-hover:block hidden absolute z-30 top-0 right-0">
+													<UnitTooltip
+														unit={facility.unit}
+														fill={bgColor}
+														isCommissioning={facility.isCommissioning}
+													/>
+												</div>
 											</div>
 										</div>
 									</a>
