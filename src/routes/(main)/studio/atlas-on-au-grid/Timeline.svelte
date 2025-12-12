@@ -259,7 +259,7 @@
 						</div>
 					{:else}
 						<ol
-							class="flex flex-col col-span-12 border border-warm-grey rounded-lg divide-y divide-warm-grey"
+							class="flex flex-col col-span-12 border border-mid-warm-grey rounded-lg divide-y divide-mid-warm-grey"
 						>
 							{#each facilities as facility}
 								{@const bgColor = facility.unit
@@ -269,12 +269,14 @@
 
 								<li class="@container">
 									<a
-										class="grid grid-cols-12 items-center gap-2 pr-6 group relative hover:no-underline hover:bg-warm-grey"
+										class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey rounded-lg"
 										class:bg-light-warm-grey={facility.unit.status_id === 'committed'}
 										target="_blank"
 										href={path}
 									>
-										<div class="p-4 flex items-center gap-4 @container col-span-12 @md:col-span-7">
+										<div
+											class="p-4 pb-2 sm:pb-4 flex items-center gap-4 @container col-span-12 sm:col-span-7"
+										>
 											<div class="flex gap-1 items-center">
 												<span
 													class="rounded-full p-2 block ml-2"
@@ -319,18 +321,20 @@
 											{/if}
 										</div>
 
-										<div class="col-span-12 @md:col-span-5 grid grid-cols-5">
+										<div
+											class="col-span-12 sm:col-span-5 grid grid-cols-5 px-8 sm:px-0 py-2 sm:py-0 border-t border-warm-grey sm:border-t-0"
+										>
 											<div class="text-xs text-mid-grey col-span-2">
 												<!-- {facility.network_id || 'Unknown Network'} -->
 												<span
-													class="block w-18 border-r border-warm-grey pr-4 group-hover:border-light-warm-grey"
+													class="block w-18 border-r-0 border-warm-grey pr-4 group-hover:border-light-warm-grey sm:border-r"
 												>
 													{getRegionLabel(facility.network_id, facility.network_region)}
 												</span>
 											</div>
 
 											<div class="col-span-3 grid grid-cols-7 items-center gap-2 group">
-												<div class="col-span-6 flex flex-col gap-0">
+												<div class="col-span-6 flex flex-row-reverse gap-5 items-center">
 													<div class="flex justify-end items-baseline gap-2">
 														<span
 															class="font-mono text-sm text-dark-grey"
@@ -360,7 +364,7 @@
 													</div>
 
 													{#if facility.isCommissioning}
-														<div class="mt-2">
+														<div class="w-1/2 sm:w-1/2">
 															<GenCapViz unit={facility.unit} fill={bgColor} />
 														</div>
 													{/if}
