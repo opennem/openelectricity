@@ -122,6 +122,10 @@
 								{/if}
 							</div>
 
+							{#if withColours}
+								<span class="size-4 rounded-full" style="background-color: {opt.colour}"></span>
+							{/if}
+
 							<span class="capitalize">{opt.label}</span>
 						</button>
 					</li>
