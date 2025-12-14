@@ -182,7 +182,7 @@
 </section>
 
 <div class="border-y border-warm-grey">
-	<div class="md:container relative text-base" style="z-index: 9999;">
+	<div class="md:container relative text-base z-50">
 		<Filters
 			{searchTerm}
 			selectedStatuses={statuses}
