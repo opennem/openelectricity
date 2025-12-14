@@ -42,7 +42,20 @@
 					// inconsistent data format, some have Z, some have +
 					// assume return string is always in UTC
 					let parsedZonedDate = parseAbsolute(dateStr + 'Z', offset);
-					// console.log('parsedZonedDate', parsedZonedDate);
+
+					// this will order the data so year is first, then month, then day
+					if (unit[dateField + '_specificity'] === 'month') {
+						parsedZonedDate = parsedZonedDate.set({ day: 31 });
+					} else if (unit[dateField + '_specificity'] === 'year') {
+						parsedZonedDate = parsedZonedDate.set({
+							month: 12,
+							day: 31,
+							hour: 23,
+							minute: 59,
+							second: 59
+						});
+					}
+
 					data.push({
 						...facility,
 						zonedDateTime: parsedZonedDate,
@@ -67,17 +80,6 @@
 	);
 
 	let groupedData = $derived(groupByMonthDay(sortedFlattenedData));
-
-	// i want to see the grouped data (InternMap) and re-sort it again so it puts Year first, then Month, then Day
-
-	$effect(() => {
-		// console.log('groupedData', groupedData);
-		// for each entry in the grouped data, if the key is a year (i.e. 2025), add it to the beginning of the array
-		// if the key is a month (Feb 2025), add it to above of the other dates in Feb 2025, but below the year 2025
-		// loop through the grouped data
-	});
-
-	$inspect('sortedFlattenedData', sortedFlattenedData);
 
 	/**
 	 * Get the background color for a fueltech
