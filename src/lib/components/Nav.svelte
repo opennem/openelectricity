@@ -60,7 +60,7 @@
 				{#if show !== false}
 					{#if children && children.length > 0}
 						<div
-							class="relative group mb-8 md:mb-0 flex items-center"
+							class="relative group mb-8 md:mb-0 md:flex items-center"
 							onmouseenter={() => (activeDropdown = name)}
 							onmouseleave={() => (activeDropdown = null)}
 							role="group"
