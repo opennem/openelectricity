@@ -158,6 +158,7 @@
 <Meta
 	title="Facilities Timeline"
 	description="Power generation facilities from Australia on a timeline."
+	image="/img/facilities-preview.png"
 />
 
 <div class="bg-light-warm-grey">
