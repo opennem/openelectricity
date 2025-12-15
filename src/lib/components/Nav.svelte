@@ -10,6 +10,7 @@
 	 * @property {string} href
 	 * @property {NavItem[]} [children]
 	 * @property {boolean} [show]
+	 * @property {boolean} [beta]
 	 */
 
 	/** @type {NavItem[]} */
@@ -19,7 +20,7 @@
 			name: 'Facilities',
 			href: `${$dataTrackerLink}/facilities`,
 			children: [
-				{ name: 'Timeline', href: '/studio/atlas-on-au-grid' },
+				{ name: 'Timeline', href: '/studio/atlas-on-au-grid', beta: true },
 				{ name: 'Map', href: `${$dataTrackerLink}/facilities/` }
 			]
 		},
@@ -70,7 +71,7 @@
 								class:text-mid-grey={!page.url.pathname.includes(href)}
 								class:text-black={page.url.pathname.includes(href)}
 								class:font-semibold={page.url.pathname.includes(href)}
-								href={children ? null : href}
+								href={children ? '#' : href}
 							>
 								{name}
 								<svg
@@ -92,7 +93,7 @@
 
 							{#if activeDropdown === name}
 								<div
-									class="md:absolute md:-left-2 md:top-18 w-full md:w-40 z-50"
+									class="md:absolute md:-left-2 md:top-18 w-full md:w-52 z-50"
 									transition:fly={{ y: -10, duration: 200 }}
 								>
 									<div
@@ -101,12 +102,20 @@
 										{#each children as child}
 											<a
 												href={child.href}
-												class="block py-3 md:px-4 text-base md:text-sm hover:text-black hover:bg-mid-warm-grey/10 transition-colors"
+												class="group relative flex items-center justify-between py-3 md:px-5 text-base md:text-sm hover:text-black hover:bg-mid-warm-grey/10 transition-colors"
 												class:text-mid-grey={!page.url.pathname.includes(child.href)}
 												class:text-black={page.url.pathname.includes(child.href)}
 												class:font-semibold={page.url.pathname.includes(child.href)}
 											>
 												{child.name}
+
+												{#if child.beta}
+													<span
+														class="absolute right-4 text-[8px] lowercase font-space font-medium text-light-warm-grey bg-gas rounded-full px-2 py-1"
+													>
+														Beta
+													</span>
+												{/if}
 											</a>
 										{/each}
 									</div>

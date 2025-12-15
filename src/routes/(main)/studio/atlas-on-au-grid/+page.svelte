@@ -163,8 +163,13 @@
 
 <div class="bg-light-warm-grey">
 	<section class="md:container py-12">
-		<div class="flex items-center gap-2 justify-between md:justify-center pl-10 pr-5 md:px-0">
+		<div class="flex items-center gap-2 justify-start md:justify-center pl-10 pr-5 md:px-0">
 			<h2 class="text-xl md:text-2xl mb-0">Facilities Timeline</h2>
+			<span
+				class="text-[10px] lowercase font-space font-medium text-light-warm-grey bg-gas rounded-full px-2 py-1"
+			>
+				Beta
+			</span>
 		</div>
 	</section>
 </div>
