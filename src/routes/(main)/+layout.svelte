@@ -1,15 +1,15 @@
 <script>
-	import { shortcut } from '@svelte-put/shortcut';
+	// import { shortcut } from '@svelte-put/shortcut';
 	import { onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	// import '../../app.css';
 
 	import Nav from '$lib/components/Nav.svelte';
 	import Footer from '$lib/components/Footer.svelte';
-	import IconXMark from '$lib/icons/XMark.svelte';
-	import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
+	// import IconXMark from '$lib/icons/XMark.svelte';
+	// import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
-	import { bannerOpen } from '$lib/stores/app';
+	// import { bannerOpen } from '$lib/stores/app';
 	import { showThemeSwitcher } from '$lib/stores/theme';
 	/**
 	 * @typedef {Object} Props
@@ -20,9 +20,9 @@
 	let { children } = $props();
 
 	let currentRoute = $derived(page.url.pathname);
-	let isRecordsRoute = $derived(currentRoute.includes('/records'));
-	let feedbackButtonRef = $state();
-	let feedbackButtonPosition = $derived(feedbackButtonRef?.getBoundingClientRect());
+	// let isRecordsRoute = $derived(currentRoute.includes('/records'));
+	// let feedbackButtonRef = $state();
+	// let feedbackButtonPosition = $derived(feedbackButtonRef?.getBoundingClientRect());
 
 	onNavigate((navigation) => {
 		// If the browser doesn't support view transitions, return early
@@ -38,12 +38,12 @@
 		});
 	});
 
-	function handleCmdK() {
-		$showThemeSwitcher = !$showThemeSwitcher;
-	}
+	// function handleCmdK() {
+	// 	$showThemeSwitcher = !$showThemeSwitcher;
+	// }
 </script>
 
-<svelte:window
+<!-- <svelte:window
 	use:shortcut={{
 		trigger: [
 			{
@@ -57,11 +57,11 @@
 			}
 		]
 	}}
-/>
+/> -->
 
-{#if $showThemeSwitcher}
+<!-- {#if $showThemeSwitcher}
 	<ThemeSwitcher on:selected={() => ($showThemeSwitcher = false)} />
-{/if}
+{/if} -->
 
 <!-- <div
 	class="relative w-full bg-black text-white text-sm leading-sm px-10 md:px-8 py-6 font-light md:flex gap-3 justify-center"
@@ -91,7 +91,7 @@
 	</div>
 </div> -->
 
-<div
+<!-- <div
 	class="relative w-full bg-black text-white text-sm leading-sm px-10 md:px-8 py-6 font-light md:flex gap-3 justify-center"
 >
 	<div>
@@ -100,7 +100,7 @@
 			>Subscribe now</a
 		>.
 	</div>
-</div>
+</div> -->
 
 <!-- {#if feedbackButtonPosition}
 		<div

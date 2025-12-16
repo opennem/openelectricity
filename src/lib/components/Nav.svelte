@@ -98,12 +98,12 @@
 									transition:fly={{ y: -10, duration: 200 }}
 								>
 									<div
-										class="bg-white md:shadow-xs rounded-lg border border-warm-grey overflow-hidden flex flex-col divide-y divide-warm-grey"
+										class="bg-white md:shadow-xs mt-3 md:mt-0 rounded-lg border border-warm-grey overflow-hidden flex flex-col divide-y divide-warm-grey"
 									>
 										{#each children as child}
 											<a
 												href={child.href}
-												class="group relative flex items-center md:justify-between py-3 px-5 text-base md:text-sm hover:text-black hover:bg-mid-warm-grey/10 transition-colors"
+												class="group relative flex gap-4 items-center md:justify-between py-3 px-5 text-base md:text-sm hover:text-black hover:bg-mid-warm-grey/10 transition-colors"
 												class:text-mid-grey={!page.url.pathname.includes(child.href)}
 												class:text-black={page.url.pathname.includes(child.href)}
 												class:font-semibold={page.url.pathname.includes(child.href)}
@@ -112,7 +112,7 @@
 
 												{#if child.beta}
 													<span
-														class="absolute right-4 text-[8px] lowercase font-space font-medium text-light-warm-grey bg-gas rounded-full px-2 py-1"
+														class="md:absolute right-4 text-[8px] lowercase font-space font-medium text-light-warm-grey bg-gas rounded-full px-2 py-1"
 													>
 														Beta
 													</span>
