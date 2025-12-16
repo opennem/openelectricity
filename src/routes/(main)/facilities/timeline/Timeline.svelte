@@ -282,8 +282,12 @@
 											<div class="flex gap-1 items-center">
 												<span
 													class="rounded-full p-2 block ml-2"
-													class:text-black={facility.unit.fueltech_id === 'solar_utility'}
-													class:text-white={facility.unit.fueltech_id !== 'solar_utility'}
+													class:text-black={facility.unit.fueltech_id === 'solar_utility' ||
+														facility.unit.fueltech_id === 'gas_ocgt' ||
+														facility.unit.fueltech_id === 'gas_recip'}
+													class:text-white={facility.unit.fueltech_id !== 'solar_utility' &&
+														facility.unit.fueltech_id !== 'gas_ocgt' &&
+														facility.unit.fueltech_id !== 'gas_recip'}
 													style="background-color: {bgColor};"
 												>
 													<FuelTechIcon fuelTech={facility.unit.fueltech_id} sizeClass={8} />
