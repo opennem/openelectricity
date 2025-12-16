@@ -43,8 +43,9 @@
 <header class="h-28 border-mid-warm-grey border-b-[0.05rem] border-solid text-base">
 	<div class="max-w-none px-10 md:px-16 flex items-center justify-between h-full">
 		<div
-			class="absolute md:relative z-9999 flex items-center gap-6"
+			class="absolute md:relative flex items-center gap-6"
 			class:top-[26px]={mobileNavActive}
+			class:z-9999={mobileNavActive}
 		>
 			<a href="/" class="">
 				<h1 class="m-0 w-[200px]">
@@ -97,12 +98,12 @@
 									transition:fly={{ y: -10, duration: 200 }}
 								>
 									<div
-										class="bg-white md:shadow-xs rounded-lg md:border md:border-warm-grey overflow-hidden flex flex-col"
+										class="bg-white md:shadow-xs rounded-lg border border-warm-grey overflow-hidden flex flex-col divide-y divide-warm-grey"
 									>
 										{#each children as child}
 											<a
 												href={child.href}
-												class="group relative flex items-center justify-between py-3 md:px-5 text-base md:text-sm hover:text-black hover:bg-mid-warm-grey/10 transition-colors"
+												class="group relative flex items-center md:justify-between py-3 px-5 text-base md:text-sm hover:text-black hover:bg-mid-warm-grey/10 transition-colors"
 												class:text-mid-grey={!page.url.pathname.includes(child.href)}
 												class:text-black={page.url.pathname.includes(child.href)}
 												class:font-semibold={page.url.pathname.includes(child.href)}
@@ -139,8 +140,9 @@
 
 		<button
 			aria-label="Toggle mobile navigation"
-			class="md:hidden absolute right-10 z-9999"
+			class="md:hidden absolute right-10"
 			class:top-[24.5px]={mobileNavActive}
+			class:z-9999={mobileNavActive}
 			onclick={() => {
 				mobileNavActive = !mobileNavActive;
 			}}
