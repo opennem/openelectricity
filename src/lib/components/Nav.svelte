@@ -20,7 +20,7 @@
 			name: 'Facilities',
 			href: `${$dataTrackerLink}/facilities`,
 			children: [
-				{ name: 'Timeline', href: '/studio/atlas-on-au-grid', beta: true },
+				{ name: 'Timeline', href: '/facilities/timeline', beta: true },
 				{ name: 'Map', href: `${$dataTrackerLink}/facilities/` }
 			]
 		},

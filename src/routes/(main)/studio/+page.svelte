@@ -25,10 +25,10 @@
 			link: '/studio/lens-on-au-grid'
 		},
 		{
-			title: "Atlas on Australia's power generation facilities",
+			title: "Timeline of Australia's power generation facilities",
 			description: 'Exploring power generation facilities from Australia.',
-			link: '/studio/atlas-on-au-power-generation-facilities',
-			disabled: true
+			link: '/facilities/timeline',
+			disabled: false
 		},
 		{
 			title: "Lens on Australia's emissions projections 2024",
@@ -48,7 +48,7 @@
 			description:
 				'Analyze generation patterns, trends, and profiles of different energy sources across time periods and regions.',
 			link: '/studio/generation-trends-profiles',
-			disabled: false
+			disabled: true
 		}
 	];
 </script>

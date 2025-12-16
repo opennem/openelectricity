@@ -109,7 +109,7 @@
 	function handleViewChange({ statuses, regions, fuelTechs }) {
 		console.log('view', statuses, regions, fuelTechs);
 		goto(
-			`/studio/atlas-on-au-grid?statuses=${statuses.join(',')}&regions=${regions.join(',')}&fuel_techs=${fuelTechs.join(',')}`,
+			`/facilities/timeline?statuses=${statuses.join(',')}&regions=${regions.join(',')}&fuel_techs=${fuelTechs.join(',')}`,
 			{
 				noScroll: true,
 				invalidateAll: true
