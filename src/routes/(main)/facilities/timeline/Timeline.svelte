@@ -33,15 +33,16 @@
 					console.log(unit.code, 'unit has no', dateField);
 				} else {
 					// Why convert?
-					// The data is set in the CMS as UTC, when returned from the API, it is converted to +10:00.
-					// - but that's not the case for WEM, which is +08:00.
-					// - the date and time are also adjusted with +10:00
-					// - so we need to convert it back to UTC to get the correct date and time and add the offset back on based on nem or wem
-					const dateStr = dateValue.includes('Z')
-						? dateValue.split('Z')[0]
-						: dateValue.split('+')[0];
-
-					let parsedZonedDate = parseAbsolute(dateStr + 'Z', offset);
+					// The data is set in the CMS as UTC (should be a plain date string)
+					// when returned from the API, it is converted to +10:00 and sometimes returned
+					// as a Z date or a + date. (🤷🏻‍♂️)
+					// - the date and time are also adjusted with +10:00 or +08:00 (🤷🏻‍♂️)
+					// - e.g. commencement_date: "2025-12-15T14:00:00+10:00" this should be 2025-12-16T00:00:00+10:00 or better just 2025-12-16
+					// - so to fix, we need to convert it back to UTC to get the date
+					// - and then add the offset back on based on network_id (NEM or WEM) so we can sort the data correctly
+					let parsedZonedDate = dateValue.includes('Z')
+						? parseAbsolute(dateValue, offset)
+						: parseAbsolute(dateValue.split('+')[0] + 'Z', offset); // e.g. 2025-12-15T14:00:00 -> 2025-12-16T00:00:00+10:00 (if NEM time)
 
 					// this will order the data so year is first, then month, then day
 					if (unit[dateField + '_specificity'] === 'month') {
