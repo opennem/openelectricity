@@ -1,18 +1,40 @@
 <script>
+	import { parseAbsolute, parseDate } from '@internationalized/date';
 	import { getNumberFormat, formatDateTime } from '$lib/utils/formatters';
 	import { fuelTechName } from '$lib/fuel_techs';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 
-	let { unit, isCommissioning = false, fill = '#000000' } = $props();
+	let { network_id, unit, isCommissioning = false, fill = '#000000' } = $props();
 
 	const numberFormatter = getNumberFormat(0);
+	const offset = network_id === 'WEM' ? '+08:00' : '+10:00';
 
 	let capMax = $derived(Number(unit.capacity_maximum));
 	let capReg = $derived(Number(unit.capacity_registered));
 	let genMax = $derived(Number(unit.max_generation));
 
 	let percentage = $derived((genMax / (capMax || capReg)) * 100);
+
+	/**
+	 * Get the parsed date from the date value
+	 * @param {string} dateValue
+	 * @returns {Date}
+	 */
+	function getParsedDate(dateValue) {
+		if (!dateValue) {
+			console.log('dateValue is null, returning today');
+			return new Date();
+		}
+
+		// inconsistent date format:
+		// max_generation_interval: "2025-12-16T14:25:00"
+		// data_first_seen: "2025-12-16T14:15:00+10:00"
+		// data_last_seen: "2025-12-18T15:00:00+10:00"
+		// - so append the offset if it's not there
+		const dateStr = dateValue.includes('+') ? dateValue : dateValue + offset;
+		return new Date(dateStr);
+	}
 </script>
 
 <div class="bg-black rounded-lg px-4 py-2 shadow-sm text-white">
@@ -29,7 +51,7 @@
 
 	<!-- {#if (isCommissioning || unit.status_id === 'operating' || unit.status_id === 'retired') && unit.max_generation} -->
 	{#if unit.capacity_maximum || unit.capacity_registered}
-		<div class="text-xs my-2">
+		<div class="text-sm my-2">
 			<div class="flex items-center justify-end">
 				<div>
 					<span class="text-xxs">Capacity:</span>
@@ -55,18 +77,21 @@
 				</div>
 			</div>
 
-			<div class="mt-2 mb-4">
-				<GenCapViz {unit} {fill} />
-			</div>
+			{#if isCommissioning}
+				<div class="mt-2 mb-4">
+					<GenCapViz {unit} {fill} />
+				</div>
+			{/if}
 		</div>
 	{/if}
 
 	{#if unit.max_generation_interval && isCommissioning}
-		<div class="text-xs">
+		{@const maxGenDate = getParsedDate(unit.max_generation_interval)}
+		<div class="text-xxs">
 			Max generated on
 			<span>
 				{formatDateTime({
-					date: unit.max_generation_interval ? new Date(unit.max_generation_interval) : new Date(),
+					date: maxGenDate,
 					hour: 'numeric',
 					minute: '2-digit',
 					hour12: true
@@ -75,7 +100,7 @@
 					.join('')},
 
 				{formatDateTime({
-					date: unit.max_generation_interval ? new Date(unit.max_generation_interval) : new Date(),
+					date: maxGenDate,
 					month: 'short',
 					day: 'numeric',
 					year: 'numeric'
@@ -85,11 +110,12 @@
 	{/if}
 
 	{#if (unit.status_id === 'operating' || isCommissioning) && unit.data_first_seen}
-		<div class="text-xs">
+		{@const firstGenDate = getParsedDate(unit.data_first_seen)}
+		<div class="text-xxs">
 			First generated on
 			<span>
 				{formatDateTime({
-					date: unit.data_first_seen ? new Date(unit.data_first_seen) : new Date(),
+					date: firstGenDate,
 					hour: 'numeric',
 					minute: '2-digit',
 					hour12: true
@@ -98,7 +124,7 @@
 					.join('')},
 
 				{formatDateTime({
-					date: unit.data_first_seen ? new Date(unit.data_first_seen) : new Date(),
+					date: firstGenDate,
 					month: 'short',
 					day: 'numeric',
 					year: 'numeric'
@@ -108,11 +134,12 @@
 	{/if}
 
 	{#if unit.status_id === 'retired' && unit.data_last_seen}
+		{@const lastSeenDate = getParsedDate(unit.data_last_seen)}
 		<div class="text-xs">
 			Last seen on
 			<span>
 				{formatDateTime({
-					date: unit.data_last_seen ? new Date(unit.data_last_seen) : new Date(),
+					date: lastSeenDate,
 					hour: 'numeric',
 					minute: '2-digit',
 					hour12: true
@@ -121,7 +148,7 @@
 					.join('')},
 
 				{formatDateTime({
-					date: unit.data_last_seen ? new Date(unit.data_last_seen) : new Date(),
+					date: lastSeenDate,
 					month: 'short',
 					day: 'numeric',
 					year: 'numeric'

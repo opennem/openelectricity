@@ -32,15 +32,15 @@
 				if (!dateValue) {
 					console.log(unit.code, 'unit has no', dateField);
 				} else {
-					const dateStr =
-						typeof dateValue === 'string'
-							? dateValue.includes('Z')
-								? dateValue.split('Z')[0]
-								: dateValue.split('+')[0]
-							: dateValue;
+					// Why convert?
+					// The data is set in the CMS as UTC, when returned from the API, it is converted to +10:00.
+					// - but that's not the case for WEM, which is +08:00.
+					// - the date and time are also adjusted with +10:00
+					// - so we need to convert it back to UTC to get the correct date and time and add the offset back on based on nem or wem
+					const dateStr = dateValue.includes('Z')
+						? dateValue.split('Z')[0]
+						: dateValue.split('+')[0];
 
-					// inconsistent data format, some have Z, some have +
-					// assume return string is always in UTC
 					let parsedZonedDate = parseAbsolute(dateStr + 'Z', offset);
 
 					// this will order the data so year is first, then month, then day
@@ -75,7 +75,7 @@
 	// sort by zonedDateTime
 	let sortedFlattenedData = $derived(
 		flattenedData.sort(
-			(a, b) => b.zonedDateTime.toDate().getTime() - a.zonedDateTime.toDate().getTime()
+			(a, b) => b.zonedDateTime?.toDate().getTime() - a.zonedDateTime?.toDate().getTime()
 		)
 	);
 
@@ -385,6 +385,7 @@
 
 												<div class="group-hover:block hidden absolute z-30 top-0 right-0">
 													<UnitTooltip
+														network_id={facility.network_id}
 														unit={facility.unit}
 														fill={bgColor}
 														isCommissioning={facility.isCommissioning}
