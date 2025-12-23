@@ -32,7 +32,9 @@
 		<div class="text-xs my-2">
 			<div class="flex items-center justify-end">
 				<div>
-					{#if unit.max_generation}
+					<span class="text-xxs">Capacity:</span>
+
+					{#if unit.max_generation && isCommissioning}
 						<span class="font-mono font-bold" title="Max generation">
 							{numberFormatter.format(unit.max_generation)}
 						</span>
@@ -47,7 +49,7 @@
 					</span>
 					<span class="text-xxs">MW</span>
 
-					{#if unit.max_generation}
+					{#if unit.max_generation && isCommissioning}
 						<span>({percentage.toFixed(0)}%)</span>
 					{/if}
 				</div>
@@ -59,7 +61,7 @@
 		</div>
 	{/if}
 
-	{#if unit.max_generation_interval}
+	{#if unit.max_generation_interval && isCommissioning}
 		<div class="text-xs">
 			Max generated on
 			<span>
@@ -84,7 +86,7 @@
 
 	{#if (unit.status_id === 'operating' || isCommissioning) && unit.data_first_seen}
 		<div class="text-xs">
-			First seen on
+			First generated on
 			<span>
 				{formatDateTime({
 					date: unit.data_first_seen ? new Date(unit.data_first_seen) : new Date(),
