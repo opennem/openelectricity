@@ -87,8 +87,8 @@
 
 	{#if unit.max_generation_interval && isCommissioning}
 		{@const maxGenDate = getParsedDate(unit.max_generation_interval)}
-		<div class="text-xxs">
-			Max generated on
+		<div class="text-xxs text-right">
+			Max generated at
 			<span>
 				{formatDateTime({
 					date: maxGenDate,
@@ -97,8 +97,7 @@
 					hour12: true
 				})
 					.split(' ')
-					.join('')},
-
+					.join('')} on
 				{formatDateTime({
 					date: maxGenDate,
 					month: 'short',
@@ -111,8 +110,8 @@
 
 	{#if (unit.status_id === 'operating' || isCommissioning) && unit.data_first_seen}
 		{@const firstGenDate = getParsedDate(unit.data_first_seen)}
-		<div class="text-xxs">
-			First generated on
+		<div class="text-xxs text-right">
+			First generated at
 			<span>
 				{formatDateTime({
 					date: firstGenDate,
@@ -121,8 +120,7 @@
 					hour12: true
 				})
 					.split(' ')
-					.join('')},
-
+					.join('')} on
 				{formatDateTime({
 					date: firstGenDate,
 					month: 'short',
@@ -135,8 +133,8 @@
 
 	{#if unit.status_id === 'retired' && unit.data_last_seen}
 		{@const lastSeenDate = getParsedDate(unit.data_last_seen)}
-		<div class="text-xs">
-			Last seen on
+		<div class="text-xxs text-right">
+			Last generated at
 			<span>
 				{formatDateTime({
 					date: lastSeenDate,
@@ -145,8 +143,7 @@
 					hour12: true
 				})
 					.split(' ')
-					.join('')},
-
+					.join('')} on
 				{formatDateTime({
 					date: lastSeenDate,
 					month: 'short',
