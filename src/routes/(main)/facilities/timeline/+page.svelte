@@ -174,17 +174,9 @@
 	</section>
 </div>
 
-<section>
-	<!-- <div class="md:container">
-		<Filters
-			initialStatuses={statuses}
-			onstatuseschange={handleStatusesChange}
-			onregionschange={handleRegionsChange}
-			onfueltechschange={handleFuelTechsChange}
-		/>
-	</div> -->
-	<!-- <FacilitiesMap facilities={filteredWithLocation} /> -->
-</section>
+<!-- <section>
+	<FacilitiesMap facilities={filteredWithLocation} />
+</section> -->
 
 <div class="border-y border-warm-grey">
 	<div class="md:container relative text-base z-50">
@@ -226,11 +218,11 @@
 					class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300"
 					onclick={() => timelineRef?.jumpToToday()}
 				>
-					<!-- {#if todayButtonPosition === 'bottom'}
+					{#if todayButtonPosition === 'bottom'}
 						<span class="text-xxs">↓</span>
 					{:else}
 						<span class="text-xxs">↑</span>
-					{/if} -->
+					{/if}
 					Jump to today
 				</button>
 			</div>
