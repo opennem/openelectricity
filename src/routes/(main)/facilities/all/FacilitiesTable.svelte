@@ -2,6 +2,7 @@
 	import { formatDateBySpecificity } from '$lib/utils/date-format';
 	import ChevronDown from '$lib/icons/ChevronDown.svelte';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -69,6 +70,29 @@
 		return luminance < 0.5;
 	}
 
+	/**
+	 * Get a summary status for a facility based on its units
+	 * @param {any} facility
+	 * @returns {{ status: string | null, isCommissioning: boolean }}
+	 */
+	function getFacilityStatusSummary(facility) {
+		if (!facility.units || facility.units.length === 0) {
+			return { status: null, isCommissioning: false };
+		}
+
+		// Prefer commissioning units if present
+		const commissioningUnit = facility.units.find(
+			(/** @type {any} */ unit) => unit.isCommissioning
+		);
+		if (commissioningUnit) {
+			return { status: commissioningUnit.status_id, isCommissioning: true };
+		}
+
+		// Fallback to first unit status
+		const firstUnit = facility.units[0];
+		return { status: firstUnit.status_id || null, isCommissioning: false };
+	}
+
 	// Sort facilities by name
 	let sortedFacilities = $derived(
 		[...facilities].sort((a, b) => {
@@ -79,7 +103,7 @@
 	);
 </script>
 
-<div class="bg-white h-full">
+<div class="bg-white">
 	{#if facilities.length === 0}
 		<p class="text-gray-500 italic p-4">No facilities found</p>
 	{:else}
@@ -88,49 +112,56 @@
 				{@const facilityId = facility.code || facility.name}
 				{@const isExpanded = expandedFacilities[facilityId] || false}
 				{@const fuelTechTags = getFuelTechTags(facility)}
+				{@const facilityStatus = getFacilityStatusSummary(facility)}
 
 				<div class="border-b border-warm-grey overflow-hidden">
-					<div class="px-4 py-1">
-						<div class="flex items-center gap-6">
-							<!-- Expand Button -->
+					<div class="px-4 py-2">
+						<div class="flex items-center gap-4">
 							<button
 								onclick={() => toggleFacility(facilityId)}
-								class="flex-shrink-0 p-1.5 hover:bg-light-warm-grey rounded group block w-[24px]"
+								class="flex-shrink-0 p-1.5 hover:bg-light-warm-grey rounded-full group w-[24px] h-[24px] border border-warm-grey text-xxs flex items-center justify-center"
 								aria-label={isExpanded ? 'Hide units' : 'Show units'}
 							>
-								<span class="block group-hover:hidden">
-									{index + 1}
-								</span>
-								<div
-									class="transition-transform duration-200 hidden group-hover:block"
-									class:-rotate-90={!isExpanded}
-								>
-									<ChevronDown />
-								</div>
+								<span>{index + 1}</span>
 							</button>
 
-							<!-- Facility Name and Location -->
-							<div class="flex items-center gap-2 w-[30%] justify-between">
-								<span class="text-sm font-medium text-dark-grey truncate">
-									{facility.name || 'Unnamed Facility'}
-								</span>
-								<span class="text-xs text-mid-grey truncate">
-									{facility.network_id || 'Unknown Network'}
-									{#if facility.network_region}
-										• {facility.network_region}
+							<div class="flex-1 flex flex-col gap-0.5 min-w-0">
+								<div class="flex items-center gap-2">
+									<span class="text-sm font-medium text-dark-grey truncate">
+										{facility.name || 'Unnamed Facility'}
+									</span>
+
+									{#if facilityStatus.status}
+										<div class="flex items-center gap-1 text-xxs text-mid-grey capitalize">
+											<FacilityStatusIcon
+												status={facilityStatus.status}
+												isCommissioning={facilityStatus.isCommissioning}
+											/>
+											<span>
+												{facilityStatus.isCommissioning ? 'commissioning' : facilityStatus.status}
+											</span>
+										</div>
 									{/if}
-								</span>
+								</div>
+
+								<div class="flex items-center gap-2 text-xs text-mid-grey truncate">
+									<span>
+										{facility.network_id || 'Unknown Network'}
+										{#if facility.network_region}
+											• {facility.network_region}
+										{/if}
+									</span>
+								</div>
 							</div>
 
-							<!-- Fuel Tech Tags - scrollable horizontally if needed -->
 							{#if fuelTechTags.length > 0}
 								<div class="flex-1 min-w-0 overflow-x-auto">
-									<div class="flex gap-2 items-center">
+									<div class="flex gap-2 items-center justify-end">
 										{#each fuelTechTags as { fueltech }}
 											{@const bgColor = getFueltechColor(fueltech)}
 											{@const useLightText = isColorDark(bgColor)}
 											<span
-												class="inline-flex items-center gap-1 px-2.5 py-1 border border-warm-grey rounded-xl text-xs whitespace-nowrap flex-shrink-0"
+												class="inline-flex items-center gap-1 px-2 py-0.5 border border-warm-grey rounded-full text-xs whitespace-nowrap flex-shrink-0"
 												style="background-color: {bgColor};"
 												class:text-white={useLightText}
 												class:text-dark-grey={!useLightText}
@@ -140,8 +171,6 @@
 										{/each}
 									</div>
 								</div>
-							{:else}
-								<div class="flex-1"></div>
 							{/if}
 						</div>
 					</div>
@@ -224,10 +253,7 @@
 											{/each}
 										{:else}
 											<tr>
-												<td
-													colspan="10"
-													class="px-3 py-2 text-center text-gray-500 italic text-xs"
-												>
+												<td colspan="10" class="px-3 py-2 text-center text-gray-500 italic text-xs">
 													No units found
 												</td>
 											</tr>
@@ -242,4 +268,3 @@
 		</div>
 	{/if}
 </div>
-

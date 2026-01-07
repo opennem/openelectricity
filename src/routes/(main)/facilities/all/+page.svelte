@@ -1,5 +1,5 @@
 <script>
-	// import { fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
 
@@ -8,6 +8,7 @@
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
 	import FilterTags from './FilterTags.svelte';
+	import FacilitiesList from './FacilitiesList.svelte';
 
 	let { data } = $props();
 
@@ -193,17 +194,20 @@
 	</div>
 </div>
 
-<section class="flex h-[calc(100vh-118px)]">
-	<!-- Table panel on the left -->
-	<div class="w-full md:w-1/2 bg-white border-r border-warm-grey overflow-hidden flex flex-col">
-		<div class="overflow-y-auto flex-1">
-			<FacilitiesTable facilities={filteredFacilities} />
-		</div>
-	</div>
-
-	<!-- Map on the right -->
-	<div class="flex-1 relative">
+<section class="relative h-[calc(100vh-118px)]">
+	<!-- Map -->
+	<!-- <div class="absolute inset-0">
 		<FacilitiesMap facilities={filteredWithLocation} />
+	</div> -->
+
+	<!-- Floating table panel on the left -->
+	<div
+		class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden"
+	>
+		<div class="h-full overflow-y-auto">
+			<!-- <FacilitiesTable facilities={filteredFacilities} /> -->
+			<FacilitiesList facilities={filteredFacilities} />
+		</div>
 	</div>
 </section>
 
@@ -251,57 +255,3 @@
 		</div>
 	</div>
 </div> -->
-
-<!-- <div
-	class="z-10 bg-white absolute top-[138px] left-10 bottom-10 md:w-1/2 w-[calc(100vw-5rem)] overflow-hidden border border-warm-grey rounded-xl shadow-2xl"
->
-	<div class="absolute top-0 z-50 bg-light-warm-grey w-full border-b border-warm-grey">
-		<Filters
-			initialStatuses={statuses}
-			initialFuelTechs={fuelTechs}
-			initialRegions={regions}
-			onstatuseschange={handleStatusesChange}
-			onregionschange={handleRegionsChange}
-			onfueltechschange={handleFuelTechsChange}
-		/>
-	</div>
-
-	{#if showTodayButton}
-		<div
-			class="absolute top-36 z-20 w-full flex justify-center"
-			transition:fly={{ y: -10, duration: 300 }}
-		>
-			<button
-				class="bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300"
-				onclick={() => timelineRef?.jumpToToday()}
-			>
-				Jump to today
-			</button>
-		</div>
-	{/if}
-	<div class="overflow-y-auto absolute top-[54px] left-0 right-0 bottom-0">
-		<Timeline
-			bind:this={timelineRef}
-			facilities={filteredWithLocation}
-			ontodaybuttonvisible={handleTodayButtonVisible}
-		/>
-	</div>
-</div> -->
-
-<!-- <FacilityStatusTable
-			facilities={filteredCommittedFacilities}
-			statusLabel="Committed"
-			statusType="committed"
-		/>
-
-		<FacilityStatusTable
-			facilities={filteredOperationalFacilities}
-			statusLabel="Operating"
-			statusType="operating"
-		/>
-
-		<FacilityStatusTable
-			facilities={filteredRetiredFacilities}
-			statusLabel="Retired"
-			statusType="retired"
-		/> -->
