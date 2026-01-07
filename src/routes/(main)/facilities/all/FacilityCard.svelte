@@ -5,11 +5,22 @@
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import UnitTooltip from './UnitTooltip.svelte';
 	import { regions } from './page-data-options/filters';
-	import isCommissioningCheck from './page-data-options/is-commissioning';
 
 	const numberFormatter = getNumberFormat(0);
 
+	/** Fueltechs that need dark text for contrast */
+	const LIGHT_FUELTECHS = ['solar_utility', 'gas_ocgt', 'gas_recip'];
+
 	let { facility } = $props();
+
+	/**
+	 * Check if fueltech needs dark text (for light backgrounds)
+	 * @param {string} fueltech
+	 * @returns {boolean}
+	 */
+	function needsDarkText(fueltech) {
+		return LIGHT_FUELTECHS.includes(fueltech);
+	}
 
 	/**
 	 * Get the background color for a fueltech
@@ -34,32 +45,38 @@
 	}
 
 	/**
-	 * Calculate total capacity from all units
+	 * Sum a numeric field across units
+	 * @param {any[]} units
+	 * @param {string} field
 	 * @returns {number}
 	 */
-	function getTotalCapacity() {
-		if (!facility.units || facility.units.length === 0) return 0;
-		return facility.units.reduce((/** @type {number} */ total, /** @type {any} */ unit) => {
-			const capacity = unit.capacity_maximum || unit.capacity_registered || 0;
-			return total + (Number(capacity) || 0);
-		}, 0);
+	function sumField(units, field) {
+		return units.reduce((sum, unit) => sum + (Number(unit[field]) || 0), 0);
 	}
 
 	/**
-	 * Calculate total storage capacity from all units
-	 * @returns {number}
+	 * @typedef {Object} UnitSummary
+	 * @property {string} fueltech_id
+	 * @property {string} status_id
+	 * @property {number} capacity_maximum
+	 * @property {number} capacity_registered
+	 * @property {number} max_generation
 	 */
-	function getTotalStorageCapacity() {
-		if (!facility.units || facility.units.length === 0) return 0;
-		return facility.units.reduce((/** @type {number} */ total, /** @type {any} */ unit) => {
-			const capacity = unit.capacity_storage || 0;
-			return total + (Number(capacity) || 0);
-		}, 0);
-	}
+
+	/**
+	 * @typedef {Object} UnitGroup
+	 * @property {string} fueltech_id
+	 * @property {string} status_id
+	 * @property {any[]} units
+	 * @property {boolean} isCommissioning
+	 * @property {number} totalCapacity
+	 * @property {string} bgColor
+	 * @property {UnitSummary} unitSummary
+	 */
 
 	/**
 	 * Group units by fueltech_id and status_id
-	 * @returns {Array<{fueltech_id: string, status_id: string, units: any[], isCommissioning: boolean, totalCapacity: number}>}
+	 * @returns {UnitGroup[]}
 	 */
 	function groupUnits() {
 		if (!facility.units || facility.units.length === 0) return [];
@@ -67,110 +84,84 @@
 		/** @type {Map<string, {fueltech_id: string, status_id: string, units: any[]}>} */
 		const groups = new Map();
 
-		facility.units.forEach((/** @type {any} */ unit) => {
-			const isCommissioning = isCommissioningCheck(unit);
-			const statusId = isCommissioning ? 'commissioning' : unit.status_id;
-			const key = `${unit.fueltech_id}|||${statusId}`;
+		for (const unit of facility.units) {
+			const key = `${unit.fueltech_id}|||${unit.status_id}`;
 
 			if (!groups.has(key)) {
 				groups.set(key, {
 					fueltech_id: unit.fueltech_id,
-					status_id: statusId,
+					status_id: unit.status_id,
 					units: []
 				});
 			}
-			const group = groups.get(key);
-			if (group) {
-				group.units.push({ ...unit, isCommissioning });
-			}
-		});
+			groups.get(key)?.units.push({ ...unit, isCommissioning: unit.isCommissioning });
+		}
 
 		return Array.from(groups.values()).map((group) => {
-			const totalCapacity = group.units.reduce((sum, unit) => {
-				const cap = unit.capacity_maximum || unit.capacity_registered || 0;
-				return sum + (Number(cap) || 0);
-			}, 0);
-
-			// Get isCommissioning from any unit in the group (all should be the same)
-			const isCommissioning = group.units.some((unit) => unit.isCommissioning);
+			const capacity_maximum = sumField(group.units, 'capacity_maximum');
+			const capacity_registered = sumField(group.units, 'capacity_registered');
+			const max_generation = sumField(group.units, 'max_generation');
 
 			return {
 				fueltech_id: group.fueltech_id,
 				status_id: group.status_id,
 				units: group.units,
-				isCommissioning,
-				totalCapacity
+				isCommissioning: group.units.some((unit) => unit.isCommissioning),
+				totalCapacity: capacity_maximum || capacity_registered,
+				bgColor: getFueltechColor(group.fueltech_id),
+				unitSummary: {
+					fueltech_id: group.fueltech_id,
+					status_id: group.status_id,
+					capacity_maximum,
+					capacity_registered,
+					max_generation
+				}
 			};
 		});
 	}
 
 	let unitGroups = $derived(groupUnits());
-	let totalCapacity = $derived(getTotalCapacity());
-	let totalStorageCapacity = $derived(getTotalStorageCapacity());
+	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
 	let hasMultipleGroups = $derived(unitGroups.length > 1);
 	let primaryGroup = $derived(unitGroups[0]);
-	let primaryBgColor = $derived(
-		primaryGroup ? getFueltechColor(primaryGroup.fueltech_id) : '#FFFFFF'
-	);
 
 	const path = `https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`;
 </script>
 
-<li class="@container">
+{#snippet fuelTechBadge(/** @type {UnitGroup} */ group)}
+	<span
+		class="rounded-full p-2 block relative"
+		class:text-black={needsDarkText(group.fueltech_id)}
+		class:text-white={!needsDarkText(group.fueltech_id)}
+		style="background-color: {group.bgColor};"
+		title="{group.fueltech_id} ({group.status_id})"
+	>
+		<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={8} />
+		<div class="absolute top-0 left-0 z-10">
+			<FacilityStatusIcon status={group.status_id} isCommissioning={group.isCommissioning} />
+		</div>
+	</span>
+{/snippet}
+
+<li class="@container border-b border-warm-grey last:border-b-0">
 	<a
-		class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey rounded-lg"
-		class:bg-light-warm-grey={primaryGroup && primaryGroup.status_id === 'committed'}
+		class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey"
+		class:bg-light-warm-grey={primaryGroup?.status_id === 'committed'}
 		target="_blank"
 		href={path}
 	>
 		<div class="p-4 pb-2 sm:pb-4 flex items-center gap-4 @container col-span-12 sm:col-span-7">
 			<div class="flex gap-1 items-center">
 				{#if hasMultipleGroups}
-					<!-- Show multiple fuel tech icons stacked -->
-					<div class="flex -space-x-2">
+					<div class="flex -space-x-2 ml-2">
 						{#each unitGroups as group}
-							{@const bgColor = getFueltechColor(group.fueltech_id)}
-							<span
-								class="rounded-full p-2 block border-2 border-white relative"
-								class:text-black={group.fueltech_id === 'solar_utility' ||
-									group.fueltech_id === 'gas_ocgt' ||
-									group.fueltech_id === 'gas_recip'}
-								class:text-white={group.fueltech_id !== 'solar_utility' &&
-									group.fueltech_id !== 'gas_ocgt' &&
-									group.fueltech_id !== 'gas_recip'}
-								style="background-color: {bgColor};"
-								title="{group.fueltech_id} ({group.status_id})"
-							>
-								<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={8} />
-								<div class="absolute -top-1 -left-1 z-10">
-									<FacilityStatusIcon
-										status={group.status_id}
-										isCommissioning={group.isCommissioning}
-									/>
-								</div>
-							</span>
+							{@render fuelTechBadge(group)}
 						{/each}
 					</div>
 				{:else if primaryGroup}
-					<!-- Show single fuel tech icon -->
-					<span
-						class="rounded-full p-2 block ml-2 relative"
-						class:text-black={primaryGroup.fueltech_id === 'solar_utility' ||
-							primaryGroup.fueltech_id === 'gas_ocgt' ||
-							primaryGroup.fueltech_id === 'gas_recip'}
-						class:text-white={primaryGroup.fueltech_id !== 'solar_utility' &&
-							primaryGroup.fueltech_id !== 'gas_ocgt' &&
-							primaryGroup.fueltech_id !== 'gas_recip'}
-						style="background-color: {primaryBgColor};"
-					>
-						<FuelTechIcon fuelTech={primaryGroup.fueltech_id} sizeClass={8} />
-						<div class="absolute -top-1 -left-1 z-10">
-							<FacilityStatusIcon
-								status={primaryGroup.status_id}
-								isCommissioning={primaryGroup.isCommissioning}
-							/>
-						</div>
-					</span>
+					<div class="ml-2">
+						{@render fuelTechBadge(primaryGroup)}
+					</div>
 				{/if}
 			</div>
 
@@ -178,15 +169,6 @@
 				class="text-base leading-base font-medium text-dark-grey flex flex-col @sm:flex-row items-bottom gap-0 @sm:gap-3"
 			>
 				{facility.name || 'Unnamed Facility'}
-
-				<!-- {#if totalStorageCapacity > 0}
-					<span class="text-xs items-baseline text-mid-grey" title="Total Storage Capacity">
-						(<span class="font-mono">
-							{numberFormatter.format(totalStorageCapacity)}
-						</span>
-						<span class="text-xxs">MWh</span>)
-					</span>
-				{/if} -->
 			</div>
 		</div>
 
@@ -211,29 +193,16 @@
 
 				{#if primaryGroup}
 					<div class="group-hover:block hidden absolute z-30 top-0 right-0">
-						{#if hasMultipleGroups}
-							<!-- Show tooltips for each group, stacked vertically -->
-							<div class="flex flex-col gap-2">
-								{#each unitGroups as group}
-									{@const bgColor = getFueltechColor(group.fueltech_id)}
-									{@const firstUnit = group.units[0]}
-									<UnitTooltip
-										network_id={facility.network_id}
-										unit={firstUnit}
-										fill={bgColor}
-										isCommissioning={group.isCommissioning}
-									/>
-								{/each}
-							</div>
-						{:else}
-							<!-- Show single tooltip for primary group -->
-							<UnitTooltip
-								network_id={facility.network_id}
-								unit={primaryGroup.units[0]}
-								fill={primaryBgColor}
-								isCommissioning={primaryGroup.isCommissioning}
-							/>
-						{/if}
+						<div class="flex flex-col gap-2">
+							{#each unitGroups as group}
+								<UnitTooltip
+									network_id={facility.network_id}
+									unit={group.unitSummary}
+									fill={group.bgColor}
+									isCommissioning={group.isCommissioning}
+								/>
+							{/each}
+						</div>
 					</div>
 				{/if}
 			</div>

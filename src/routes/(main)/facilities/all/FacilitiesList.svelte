@@ -13,7 +13,7 @@
 {#if facilities.length === 0}
 	<p class="text-gray-500 italic p-4">No facilities found</p>
 {:else}
-	<ul class="space-y-1">
+	<ul>
 		{#each facilities as facility (facility.code || facility.name)}
 			<FacilityCard {facility} />
 		{/each}
