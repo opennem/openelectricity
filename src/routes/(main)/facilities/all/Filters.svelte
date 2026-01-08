@@ -5,18 +5,20 @@
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 
-	import { regions, fuelTechOptions, statusOptions } from '../_utils/filters.js';
+	import { regions, fuelTechOptions, statusOptions, sizeOptions } from '../_utils/filters.js';
 
 	/**
 	 * @type {{
 	 *   selectedRegions?: string[],
 	 *   selectedStatuses?: string[],
 	 *   selectedFuelTechs?: string[],
+	 *   selectedSizes?: string[],
 	 *   searchTerm?: string,
 	 *   selectedView?: 'list' | 'timeline',
 	 *   onstatuseschange?: (values: string[]) => void,
 	 *   onregionschange?: (values: string[]) => void,
 	 *   onfueltechschange?: (values: string[]) => void,
+	 *   onsizeschange?: (values: string[]) => void,
 	 *   onsearchchange?: (value: string) => void,
 	 *   onviewchange?: (view: 'list' | 'timeline') => void
 	 * }}
@@ -25,11 +27,13 @@
 		selectedRegions = [],
 		selectedStatuses = [],
 		selectedFuelTechs = [],
+		selectedSizes = [],
 		searchTerm = '',
 		selectedView = 'timeline',
 		onstatuseschange,
 		onregionschange,
 		onfueltechschange,
+		onsizeschange,
 		onsearchchange,
 		onviewchange
 	} = $props();
@@ -77,6 +81,17 @@
 			return fuelTech?.label || selectedFuelTechs[0];
 		} else {
 			return `${selectedFuelTechs.length} Technologies`;
+		}
+	});
+
+	let sizeLabel = $derived.by(() => {
+		if (selectedSizes.length === 0) {
+			return 'Size';
+		} else if (selectedSizes.length === 1) {
+			let size = sizeOptions.find((s) => s.value === selectedSizes[0]);
+			return size?.label || selectedSizes[0];
+		} else {
+			return `${selectedSizes.length} Sizes`;
 		}
 	});
 
@@ -130,6 +145,23 @@
 
 		onstatuseschange?.(newSelectedStatuses);
 	}
+
+	/**
+	 * @param {string} value
+	 * @param {boolean} isMetaPressed
+	 */
+	function handleSizeChange(value, isMetaPressed) {
+		let newSelectedSizes = [];
+		if (isMetaPressed) {
+			newSelectedSizes = [value];
+		} else if (selectedSizes.includes(value)) {
+			newSelectedSizes = selectedSizes.filter((item) => item !== value);
+		} else {
+			newSelectedSizes = [...selectedSizes, value];
+		}
+
+		onsizeschange?.(newSelectedSizes);
+	}
 </script>
 
 {#if showMobileFilterOptions}
@@ -165,6 +197,14 @@
 					paddingX=""
 					staticDisplay={true}
 					on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
+				/>
+				<FormMultiSelect
+					options={sizeOptions}
+					selected={selectedSizes}
+					label="Size"
+					paddingX=""
+					staticDisplay={true}
+					on:change={(evt) => handleSizeChange(evt.detail.value, evt.detail.isMetaPressed)}
 				/>
 			</div>
 
@@ -242,6 +282,15 @@
 			paddingX="pl-5 pr-4"
 			paddingY="py-3"
 			on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
+		/>
+
+		<FormMultiSelect
+			options={sizeOptions}
+			selected={selectedSizes}
+			label={sizeLabel}
+			paddingX="pl-5 pr-4"
+			paddingY="py-3"
+			on:change={(evt) => handleSizeChange(evt.detail.value, evt.detail.isMetaPressed)}
 		/>
 		</div>
 	</div>

@@ -3,7 +3,7 @@
 	import { goto } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
 	import formatValue from '../_utils/format-value';
-	import { statusColours } from '../_utils/filters.js';
+	import { statusColours, isInSizeRange } from '../_utils/filters.js';
 
 	import Map from './Map.svelte';
 	import Timeline from './Timeline.svelte';
@@ -17,6 +17,7 @@
 	let statuses = $derived(data.statuses);
 	let regions = $derived(data.regions);
 	let fuelTechs = $derived(data.fuelTechs);
+	let sizes = $derived(data.sizes);
 
 	let showTodayButton = $state(false);
 	let todayButtonPosition = $state('bottom');
@@ -35,9 +36,10 @@
 	 * Filter out battery_charging and battery_discharging units from facilities since they are merged into battery.
 	 * @param {any[]} facilityList
 	 * @param {string} searchTerm
+	 * @param {string[]} selectedSizes
 	 * @returns {any[]}
 	 */
-	function filterBatteryUnits(facilityList, searchTerm) {
+	function filterFacilities(facilityList, searchTerm, selectedSizes) {
 		return facilityList
 			.map((facility) => ({
 				...facility,
@@ -48,10 +50,19 @@
 						(searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true)
 				)
 			}))
-			.filter((facility) => facility.units && facility.units.length > 0);
+			.filter((facility) => facility.units && facility.units.length > 0)
+			.filter((facility) => {
+				// Calculate total capacity for the facility
+				const totalCapacity = facility.units.reduce(
+					(/** @type {number} */ sum, /** @type {any} */ unit) =>
+						sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0),
+					0
+				);
+				return isInSizeRange(totalCapacity, selectedSizes);
+			});
 	}
 
-	let filteredFacilities = $derived(facilities ? filterBatteryUnits(facilities, searchTerm) : []);
+	let filteredFacilities = $derived(facilities ? filterFacilities(facilities, searchTerm, sizes) : []);
 
 	/**
 	 * Check if facility has valid location data
@@ -153,11 +164,11 @@
 	});
 
 	/**
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], view: string}} param0
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string}} param0
 	 */
-	function handleFilterChange({ statuses, regions, fuelTechs, view }) {
+	function handleFilterChange({ statuses, regions, fuelTechs, sizes, view }) {
 		goto(
-			`/facilities/all?view=${view}&statuses=${statuses.join(',')}&regions=${regions.join(',')}&fuel_techs=${fuelTechs.join(',')}`,
+			`/facilities/all?view=${view}&statuses=${statuses.join(',')}&regions=${regions.join(',')}&fuel_techs=${fuelTechs.join(',')}&sizes=${sizes.join(',')}`,
 			{
 				noScroll: true,
 				invalidateAll: true
@@ -169,28 +180,35 @@
 	 * @param {string[]} values
 	 */
 	function handleRegionsChange(values) {
-		handleFilterChange({ statuses, regions: values, fuelTechs, view: selectedView });
+		handleFilterChange({ statuses, regions: values, fuelTechs, sizes, view: selectedView });
 	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function handleFuelTechsChange(values) {
-		handleFilterChange({ statuses, regions, fuelTechs: values, view: selectedView });
+		handleFilterChange({ statuses, regions, fuelTechs: values, sizes, view: selectedView });
 	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function handleStatusesChange(values) {
-		handleFilterChange({ statuses: values, regions, fuelTechs, view: selectedView });
+		handleFilterChange({ statuses: values, regions, fuelTechs, sizes, view: selectedView });
+	}
+
+	/**
+	 * @param {string[]} values
+	 */
+	function handleSizesChange(values) {
+		handleFilterChange({ statuses, regions, fuelTechs, sizes: values, view: selectedView });
 	}
 
 	/**
 	 * @param {'list' | 'timeline'} value
 	 */
 	function handleSelectedViewChange(value) {
-		handleFilterChange({ statuses, regions, fuelTechs, view: value });
+		handleFilterChange({ statuses, regions, fuelTechs, sizes, view: value });
 	}
 
 	/**
@@ -237,10 +255,12 @@
 			selectedStatuses={statuses}
 			selectedFuelTechs={fuelTechs}
 			selectedRegions={regions}
+			selectedSizes={sizes}
 			onsearchchange={handleSearchChange}
 			onstatuseschange={handleStatusesChange}
 			onregionschange={handleRegionsChange}
 			onfueltechschange={handleFuelTechsChange}
+			onsizeschange={handleSizesChange}
 			onviewchange={handleSelectedViewChange}
 		/>
 	</div>

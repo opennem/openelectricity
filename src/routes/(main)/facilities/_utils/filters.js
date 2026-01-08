@@ -1,5 +1,53 @@
 import optionsReducer from '$lib/utils/options-reducer';
 
+export const sizeOptions = [
+	{
+		label: '< 1MW',
+		value: 'xs',
+		min: 0,
+		max: 1
+	},
+	{
+		label: '1 – 5MW',
+		value: 'sm',
+		min: 1,
+		max: 5
+	},
+	{
+		label: '5 – 30MW',
+		value: 'md',
+		min: 5,
+		max: 30
+	},
+	{
+		label: '> 30MW',
+		value: 'lg',
+		min: 30,
+		max: Infinity
+	}
+];
+
+/**
+ * Get size ranges from selected size values
+ * @param {string[]} selectedSizes
+ * @returns {{min: number, max: number}[]}
+ */
+export function getSizeRanges(selectedSizes) {
+	return sizeOptions.filter((opt) => selectedSizes.includes(opt.value));
+}
+
+/**
+ * Check if a capacity falls within any of the selected size ranges
+ * @param {number} capacity
+ * @param {string[]} selectedSizes
+ * @returns {boolean}
+ */
+export function isInSizeRange(capacity, selectedSizes) {
+	if (selectedSizes.length === 0) return true;
+	const ranges = getSizeRanges(selectedSizes);
+	return ranges.some((range) => capacity >= range.min && capacity < range.max);
+}
+
 /** @type {Record<string, string>} */
 export const statusColours = {
 	committed: '#e0dfdc',

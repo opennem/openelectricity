@@ -37,6 +37,9 @@ export async function load({ url }) {
 	const fuelTechs = searchParams.get('fuel_techs')
 		? /** @type {string} */ (searchParams.get('fuel_techs')).split(',')
 		: [];
+	const sizes = searchParams.get('sizes')
+		? /** @type {string} */ (searchParams.get('sizes')).split(',').filter(Boolean)
+		: [];
 
 	const fuelTechIds = fuelTechs.map((fuelTech) => fuelTechMap[fuelTech]).flat();
 
@@ -105,6 +108,7 @@ export async function load({ url }) {
 		view,
 		statuses,
 		regions,
-		fuelTechs
+		fuelTechs,
+		sizes
 	};
 }
