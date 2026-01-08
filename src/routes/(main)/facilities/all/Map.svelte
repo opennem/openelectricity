@@ -1,8 +1,8 @@
 <script>
 	import { MapLibre, Marker, Popup, NavigationControl } from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import UnitGroup from './UnitGroup.svelte';
-	import { regions } from './page-data-options/filters';
+	import UnitGroup from '../_components/UnitGroup.svelte';
+	import { regions } from '../_utils/filters';
 
 	/**
 	 * @type {{

@@ -1,6 +1,6 @@
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-import isCommissioningCheck from './page-data-options/is-commissioning';
+import isCommissioningCheck from '../_utils/is-commissioning';
 
 let client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,

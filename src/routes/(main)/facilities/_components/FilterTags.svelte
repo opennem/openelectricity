@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import IconXMark from '$lib/icons/XMark.svelte';
-	import { fuelTechLabel } from './page-data-options/filters';
+	import { fuelTechLabel } from '../_utils/filters';
 
 	// const { selectedRegions, selectedFuelTechs, selectedMetrics, selectedPeriods } =
 	// 	getContext('records-filters');

@@ -5,7 +5,7 @@
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 
-	import { regions, fuelTechOptions } from './page-data-options/filters.js';
+	import { regions, fuelTechOptions } from '../_utils/filters.js';
 
 	/**
 	 * @type {{

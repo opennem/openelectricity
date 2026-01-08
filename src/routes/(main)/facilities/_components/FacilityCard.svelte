@@ -4,7 +4,7 @@
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import UnitGroup from './UnitGroup.svelte';
-	import { regions } from './page-data-options/filters';
+	import { regions } from '../_utils/filters';
 
 	const numberFormatter = getNumberFormat(0);
 

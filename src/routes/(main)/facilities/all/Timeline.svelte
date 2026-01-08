@@ -4,9 +4,9 @@
 	import { browser } from '$app/environment';
 	import { formatDateBySpecificity } from '$lib/utils/date-format';
 	import { getNumberFormat, formatDateTime } from '$lib/utils/formatters';
-	import groupByMonthDay from './page-data-options/group-by-month-day';
-	import getDateField from './page-data-options/get-date-field';
-	import FacilityUnitCard from './FacilityUnitCard.svelte';
+	import groupByMonthDay from '../_utils/group-by-month-day';
+	import getDateField from '../_utils/get-date-field';
+	import FacilityUnitCard from '../_components/FacilityUnitCard.svelte';
 
 	const numberFormatter = getNumberFormat(0);
 	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover } = $props();

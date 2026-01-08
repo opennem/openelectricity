@@ -1,5 +1,5 @@
 <script>
-	import FacilityCard from './FacilityCard.svelte';
+	import FacilityCard from '../_components/FacilityCard.svelte';
 
 	/**
 	 * @type {{
