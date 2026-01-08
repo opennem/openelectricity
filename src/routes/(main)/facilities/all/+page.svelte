@@ -13,12 +13,37 @@
 
 	let { data } = $props();
 
+	// Server data (updates when server responds)
 	let facilities = $derived(data.facilities);
-	let view = $derived(data.view);
-	let statuses = $derived(data.statuses);
-	let regions = $derived(data.regions);
-	let fuelTechs = $derived(data.fuelTechs);
-	let sizes = $derived(data.sizes);
+
+	// Optimistic local state for filters - updates immediately on user interaction
+	/** @type {string[]} */
+	let statuses = $state(data.statuses);
+	/** @type {string[]} */
+	let regions = $state(data.regions);
+	/** @type {string[]} */
+	let fuelTechs = $state(data.fuelTechs);
+	/** @type {string[]} */
+	let sizes = $state(data.sizes);
+	/** @type {'list' | 'timeline' | 'map'} */
+	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ (data.view));
+
+	// Sync local state when server data changes (e.g., browser back/forward, direct URL navigation)
+	$effect(() => {
+		statuses = data.statuses;
+	});
+	$effect(() => {
+		regions = data.regions;
+	});
+	$effect(() => {
+		fuelTechs = data.fuelTechs;
+	});
+	$effect(() => {
+		sizes = data.sizes;
+	});
+	$effect(() => {
+		selectedView = /** @type {'list' | 'timeline' | 'map'} */ (data.view);
+	});
 
 	let showTodayButton = $state(false);
 	let todayButtonPosition = $state('bottom');
@@ -30,8 +55,6 @@
 	let searchTerm = $state('');
 	/** @type {any | null} */
 	let hoveredFacility = $state(null);
-	/** @type {'list' | 'timeline' | 'map'} */
-	let selectedView = $derived(/** @type {'list' | 'timeline' | 'map'} */ (view));
 
 	/**
 	 * Filter out battery_charging and battery_discharging units from facilities since they are merged into battery.
@@ -167,11 +190,12 @@
 	});
 
 	/**
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string}} param0
+	 * Navigate to update URL and fetch new data in background
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string}} params
 	 */
-	function handleFilterChange({ statuses, regions, fuelTechs, sizes, view }) {
+	function navigateWithFilters({ statuses: s, regions: r, fuelTechs: ft, sizes: sz, view: v }) {
 		goto(
-			`/facilities/all?view=${view}&statuses=${statuses.join(',')}&regions=${regions.join(',')}&fuel_techs=${fuelTechs.join(',')}&sizes=${sizes.join(',')}`,
+			`/facilities/all?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}&sizes=${sz.join(',')}`,
 			{
 				noScroll: true,
 				invalidateAll: true
@@ -183,35 +207,46 @@
 	 * @param {string[]} values
 	 */
 	function handleRegionsChange(values) {
-		handleFilterChange({ statuses, regions: values, fuelTechs, sizes, view: selectedView });
+		// Optimistic update - immediately update local state
+		regions = values;
+		// Then navigate to fetch new data
+		navigateWithFilters({ statuses, regions: values, fuelTechs, sizes, view: selectedView });
 	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function handleFuelTechsChange(values) {
-		handleFilterChange({ statuses, regions, fuelTechs: values, sizes, view: selectedView });
+		// Optimistic update
+		fuelTechs = values;
+		navigateWithFilters({ statuses, regions, fuelTechs: values, sizes, view: selectedView });
 	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function handleStatusesChange(values) {
-		handleFilterChange({ statuses: values, regions, fuelTechs, sizes, view: selectedView });
+		// Optimistic update
+		statuses = values;
+		navigateWithFilters({ statuses: values, regions, fuelTechs, sizes, view: selectedView });
 	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function handleSizesChange(values) {
-		handleFilterChange({ statuses, regions, fuelTechs, sizes: values, view: selectedView });
+		// Optimistic update
+		sizes = values;
+		navigateWithFilters({ statuses, regions, fuelTechs, sizes: values, view: selectedView });
 	}
 
 	/**
 	 * @param {'list' | 'timeline' | 'map'} value
 	 */
 	function handleSelectedViewChange(value) {
-		handleFilterChange({ statuses, regions, fuelTechs, sizes, view: value });
+		// Optimistic update
+		selectedView = value;
+		navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: value });
 	}
 
 	/**
