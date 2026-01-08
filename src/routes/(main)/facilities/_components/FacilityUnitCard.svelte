@@ -1,13 +1,11 @@
 <script>
-	import { getNumberFormat } from '$lib/utils/formatters';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import UnitGroup from './UnitGroup.svelte';
 	import { regions } from '../_utils/filters';
-
-	const numberFormatter = getNumberFormat(0);
+	import formatValue from '../_utils/format-value';
 
 	let { facility, onmouseenter, onmouseleave } = $props();
 
@@ -33,8 +31,8 @@
 		return network_id?.toUpperCase();
 	}
 
-	const bgColor = facility.unit ? getFueltechColor(facility.unit.fueltech_id) : '#FFFFFF';
-	const path = `https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`;
+	let bgColor = $derived(facility.unit ? getFueltechColor(facility.unit.fueltech_id) : '#FFFFFF');
+	let path = $derived(`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`);
 </script>
 
 <li
@@ -72,7 +70,7 @@
 				{#if facility.unit.capacity_storage}
 					<span class="text-xs items-baseline text-mid-grey" title="Storage Capacity">
 						(<span class="font-mono">
-							{numberFormatter.format(facility.unit.capacity_storage)}
+							{formatValue(facility.unit.capacity_storage)}
 						</span>
 						<span class="text-xxs">MWh</span>)
 					</span>
@@ -113,7 +111,7 @@
 							class="font-mono text-sm text-dark-grey"
 							title={facility.unit.capacity_maximum ? 'Maximum Capacity' : 'Registered Capacity'}
 						>
-							{numberFormatter.format(
+							{formatValue(
 								facility.unit.capacity_maximum || facility.unit.capacity_registered
 							)}
 						</span>

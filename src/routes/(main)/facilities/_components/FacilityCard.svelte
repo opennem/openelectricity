@@ -1,12 +1,10 @@
 <script>
-	import { getNumberFormat } from '$lib/utils/formatters';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import UnitGroup from './UnitGroup.svelte';
 	import { regions } from '../_utils/filters';
-
-	const numberFormatter = getNumberFormat(0);
+	import formatValue from '../_utils/format-value';
 
 	/** Fueltechs that need dark text for contrast */
 	const LIGHT_FUELTECHS = ['solar_utility', 'gas_ocgt', 'gas_recip'];
@@ -132,7 +130,7 @@
 	let hasMultipleGroups = $derived(unitGroups.length > 1);
 	let primaryGroup = $derived(unitGroups[0]);
 
-	const path = `https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`;
+	let path = $derived(`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`);
 </script>
 
 {#snippet fuelTechBadge(/** @type {UnitGroup} */ group)}
@@ -197,7 +195,7 @@
 			<div class="col-span-3 flex justify-end items-center gap-2 group">
 				<div class="flex justify-end items-baseline gap-2">
 					<span class="font-mono text-sm text-dark-grey" title="Total Capacity">
-						{numberFormatter.format(totalCapacity)}
+						{formatValue(totalCapacity)}
 					</span>
 					<span class="text-xs text-mid-grey">MW</span>
 				</div>

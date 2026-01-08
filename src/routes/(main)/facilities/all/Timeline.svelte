@@ -3,12 +3,12 @@
 	import { tick } from 'svelte';
 	import { browser } from '$app/environment';
 	import { formatDateBySpecificity } from '$lib/utils/date-format';
-	import { getNumberFormat, formatDateTime } from '$lib/utils/formatters';
+	import { formatDateTime } from '$lib/utils/formatters';
+	import formatValue from '../_utils/format-value';
 	import groupByMonthDay from '../_utils/group-by-month-day';
 	import getDateField from '../_utils/get-date-field';
 	import FacilityUnitCard from '../_components/FacilityUnitCard.svelte';
 
-	const numberFormatter = getNumberFormat(0);
 	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover } = $props();
 
 	let flattenedData = $derived.by(() => {
@@ -166,7 +166,7 @@
 				<h2 class="font-space text-base font-normal m-0 p-0">{year}</h2>
 				<div class="mr-6 flex items-baseline gap-1">
 					<span class="text-xs font-mono text-mid-grey">
-						{numberFormatter.format(getTotalCapacity([...values]))}
+						{formatValue(getTotalCapacity([...values]))}
 					</span>
 					<span class="text-xxs text-mid-grey">MW</span>
 				</div>

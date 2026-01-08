@@ -1,9 +1,10 @@
 <script>
-	import { getNumberFormat, formatDateTime } from '$lib/utils/formatters';
+	import { formatDateTime } from '$lib/utils/formatters';
 	import { fuelTechName } from '$lib/fuel_techs';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
+	import formatValue from '../_utils/format-value';
 
 	/**
 	 * @type {{
@@ -33,8 +34,6 @@
 		data_last_seen,
 		network_id = 'NEM'
 	} = $props();
-
-	const numberFormatter = getNumberFormat(0);
 
 	/** Fueltechs that need dark text for contrast */
 	const LIGHT_FUELTECHS = ['solar_utility', 'gas_ocgt', 'gas_recip'];
@@ -97,12 +96,12 @@
 			<span class="text-xxs text-white/60">Capacity:</span>
 			{#if max_generation && isCommissioning}
 				<span class="font-mono font-bold ml-1">
-					{numberFormatter.format(max_generation)}
+					{formatValue(max_generation)}
 				</span>
 				<span class="text-white/60">/</span>
 			{/if}
 			<span class="font-mono font-bold ml-1">
-				{numberFormatter.format(capacity)}
+				{formatValue(capacity)}
 			</span>
 			<span class="text-xxs text-white/60">MW</span>
 			{#if max_generation && isCommissioning}
