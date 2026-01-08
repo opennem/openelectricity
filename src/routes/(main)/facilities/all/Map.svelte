@@ -1,10 +1,11 @@
 <script>
 	import {
 		MapLibre,
-		Marker,
 		Popup,
 		NavigationControl,
-		AttributionControl
+		AttributionControl,
+		GeoJSONSource,
+		CircleLayer
 	} from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import UnitGroup from '../_components/UnitGroup.svelte';
@@ -18,6 +19,23 @@
 	 */
 	let { facilities = [], hoveredFacility = null } = $props();
 
+	// Australia center coordinates (default fallback)
+	const center = { lng: 110, lat: -28 };
+
+	/** @type {any | null} */
+	let mapInstance = $state(null);
+	/** @type {string | null} */
+	let mapHoveredFacilityCode = $state(null);
+	let mapLoaded = $state(false);
+
+	// Create a lookup map for facilities by code (memoized)
+	let facilitiesMap = $derived(new Map(facilities.map((f) => [f.code, f])));
+
+	// Get map-hovered facility from code
+	let mapHoveredFacility = $derived(
+		mapHoveredFacilityCode ? facilitiesMap.get(mapHoveredFacilityCode) : null
+	);
+
 	/**
 	 * Get the primary fuel tech for a facility (most common fuel tech among units)
 	 * @param {any} facility
@@ -26,25 +44,23 @@
 	function getPrimaryFuelTech(facility) {
 		if (!facility.units || facility.units.length === 0) return 'unknown';
 
-		// Count occurrences of each fuel tech
 		/** @type {Record<string, number>} */
 		const fuelTechCounts = {};
-		facility.units.forEach((/** @type {any} */ unit) => {
+		for (const unit of facility.units) {
 			const fueltech = unit.fueltech_id;
 			if (fueltech) {
 				fuelTechCounts[fueltech] = (fuelTechCounts[fueltech] || 0) + 1;
 			}
-		});
+		}
 
-		// Find the most common fuel tech
 		let maxCount = 0;
 		let primaryFuelTech = 'unknown';
-		Object.entries(fuelTechCounts).forEach(([fueltech, count]) => {
+		for (const [fueltech, count] of Object.entries(fuelTechCounts)) {
 			if (count > maxCount) {
 				maxCount = count;
 				primaryFuelTech = fueltech;
 			}
-		});
+		}
 
 		return primaryFuelTech;
 	}
@@ -60,63 +76,6 @@
 	}
 
 	/**
-	 * Get status color for marker border
-	 * @param {any} facility
-	 * @returns {string}
-	 */
-	function getStatusBorderColor(facility) {
-		if (!facility.units || facility.units.length === 0) return '#999999';
-		const status = facility.units[0]?.status_id;
-
-		switch (status) {
-			case 'operating':
-				return '#52A972'; // green
-			case 'committed':
-				return '#577CFF'; // blue
-			case 'retired':
-				return '#6A6A6A'; // grey
-			default:
-				return '#999999';
-		}
-	}
-
-	/**
-	 * Group units by fueltech and status for popup display
-	 * @param {any} facility
-	 * @returns {Array<{fueltech_id: string, status_id: string, isCommissioning: boolean, capacity_maximum: number, capacity_registered: number, max_generation: number, bgColor: string}>}
-	 */
-	function groupFacilityUnits(facility) {
-		if (!facility.units || facility.units.length === 0) return [];
-
-		/** @type {Map<string, any>} */
-		const groups = new Map();
-
-		for (const unit of facility.units) {
-			const isCommissioning = unit.isCommissioning;
-			const key = `${unit.fueltech_id}|||${unit.status_id}`;
-
-			if (!groups.has(key)) {
-				groups.set(key, {
-					fueltech_id: unit.fueltech_id,
-					status_id: unit.status_id,
-					isCommissioning,
-					capacity_maximum: 0,
-					capacity_registered: 0,
-					max_generation: 0,
-					bgColor: fuelTechColourMap[unit.fueltech_id] || '#6A6A6A'
-				});
-			}
-
-			const group = groups.get(key);
-			group.capacity_maximum += Number(unit.capacity_maximum) || 0;
-			group.capacity_registered += Number(unit.capacity_registered) || 0;
-			group.max_generation += Number(unit.max_generation) || 0;
-		}
-
-		return Array.from(groups.values());
-	}
-
-	/**
 	 * Get the region label (state name)
 	 * @param {string} network_id
 	 * @param {string} network_region
@@ -129,19 +88,74 @@
 		return network_id?.toUpperCase() || '';
 	}
 
-	// Australia center coordinates (default fallback)
-	const center = { lng: 110, lat: -28 };
+	// Memoized unit grouping cache - computed once per facility set
+	let groupedUnitsCache = $derived.by(() => {
+		/** @type {Map<string, Array<{fueltech_id: string, status_id: string, isCommissioning: boolean, capacity_maximum: number, capacity_registered: number, max_generation: number, bgColor: string}>>} */
+		const cache = new Map();
 
-	/** @type {any | null} */
-	let mapInstance = $state(null);
-	/** @type {any | null} */
-	let mapHoveredFacility = $state(null);
+		for (const facility of facilities) {
+			if (!facility.units || facility.units.length === 0) {
+				cache.set(facility.code, []);
+				continue;
+			}
+
+			/** @type {Map<string, any>} */
+			const groups = new Map();
+
+			for (const unit of facility.units) {
+				const key = `${unit.fueltech_id}|||${unit.status_id}`;
+
+				if (!groups.has(key)) {
+					groups.set(key, {
+						fueltech_id: unit.fueltech_id,
+						status_id: unit.status_id,
+						isCommissioning: unit.isCommissioning,
+						capacity_maximum: 0,
+						capacity_registered: 0,
+						max_generation: 0,
+						bgColor: fuelTechColourMap[unit.fueltech_id] || '#6A6A6A'
+					});
+				}
+
+				const group = groups.get(key);
+				group.capacity_maximum += Number(unit.capacity_maximum) || 0;
+				group.capacity_registered += Number(unit.capacity_registered) || 0;
+				group.max_generation += Number(unit.max_generation) || 0;
+			}
+
+			cache.set(facility.code, Array.from(groups.values()));
+		}
+
+		return cache;
+	});
+
+	// Convert facilities to GeoJSON for clustering
+	let facilitiesGeoJSON = $derived.by(() => {
+		/** @type {GeoJSON.FeatureCollection} */
+		const geojson = {
+			type: 'FeatureCollection',
+			features: facilities.map((facility) => ({
+				type: 'Feature',
+				geometry: {
+					type: 'Point',
+					coordinates: [facility.location.lng, facility.location.lat]
+				},
+				properties: {
+					code: facility.code,
+					name: facility.name,
+					color: getFacilityColor(facility),
+					network_id: facility.network_id,
+					network_region: facility.network_region
+				}
+			}))
+		};
+		return geojson;
+	});
 
 	// Validate hoveredFacility - must exist in facilities list or have valid location
 	let validatedHoveredFacility = $derived.by(() => {
 		if (!hoveredFacility) return null;
 
-		// Check if it has a valid location
 		const hasValidLocation =
 			hoveredFacility.location &&
 			typeof hoveredFacility.location.lat === 'number' &&
@@ -151,17 +165,27 @@
 
 		if (!hasValidLocation) return null;
 
-		// Check if it exists in the facilities list
-		const existsInFacilities = facilities.some((f) => f.code === hoveredFacility.code);
-
-		return existsInFacilities ? hoveredFacility : null;
+		return facilitiesMap.has(hoveredFacility.code) ? hoveredFacility : null;
 	});
 
 	// Show popup for hovered facility (from list or map)
 	let popupFacility = $derived(validatedHoveredFacility || mapHoveredFacility);
 
+	// Lazy popup content - only computed when popup is shown
+	let popupContent = $derived.by(() => {
+		if (!popupFacility) return null;
+		return {
+			name: popupFacility.name,
+			region: getRegionLabel(popupFacility.network_id, popupFacility.network_region),
+			location: popupFacility.location,
+			groupedUnits: groupedUnitsCache.get(popupFacility.code) || []
+		};
+	});
+
 	// Combined hover state from list or map
-	let activeHoveredFacility = $derived(validatedHoveredFacility || mapHoveredFacility);
+	let activeHoveredFacilityCode = $derived(
+		validatedHoveredFacility?.code || mapHoveredFacilityCode
+	);
 
 	/**
 	 * Calculate bounds from facilities and fit map to them
@@ -176,26 +200,23 @@
 
 		if (validFacilities.length === 0) return;
 
-		// Calculate bounding box
 		let minLng = Infinity;
 		let maxLng = -Infinity;
 		let minLat = Infinity;
 		let maxLat = -Infinity;
 
-		validFacilities.forEach((facility) => {
+		for (const facility of validFacilities) {
 			const { lng, lat } = facility.location;
 			minLng = Math.min(minLng, lng);
 			maxLng = Math.max(maxLng, lng);
 			minLat = Math.min(minLat, lat);
 			maxLat = Math.max(maxLat, lat);
-		});
+		}
 
-		// Add padding
 		const padding = 0.1;
 		const lngPadding = (maxLng - minLng) * padding;
 		const latPadding = (maxLat - minLat) * padding;
 
-		// Fit bounds with asymmetric padding to account for the list panel on the left
 		try {
 			mapInstance.fitBounds(
 				[
@@ -218,35 +239,65 @@
 	}
 
 	/**
-	 * Handle map load event
+	 * Compact attribution control
 	 */
-	function handleMapLoad() {
-		if (facilities.length > 0) {
-			setTimeout(() => {
-				fitMapToFacilities(facilities);
-			}, 100);
+	function compactAttribution() {
+		const attrib = document.querySelector('.maplibregl-ctrl-attrib');
+		if (attrib) {
+			attrib.classList.add('maplibregl-compact');
+			attrib.classList.remove('maplibregl-compact-show');
+			attrib.removeAttribute('open');
 		}
-
-		// Force attribution to compact/collapsed mode
-		setTimeout(() => {
-			const attrib = document.querySelector('.maplibregl-ctrl-attrib');
-			if (attrib) {
-				attrib.classList.add('maplibregl-compact');
-				attrib.classList.remove('maplibregl-compact-show');
-				attrib.removeAttribute('open');
-			}
-		}, 100);
 	}
 
-	// Fit bounds when facilities change
-	$effect(() => {
-		if (mapInstance && facilities.length > 0) {
-			// Use a small timeout to ensure map is fully loaded
-			setTimeout(() => {
+	/**
+	 * Handle map load event - use idle event instead of setTimeout
+	 */
+	function handleMapLoad() {
+		mapLoaded = true;
+
+		if (facilities.length > 0) {
+			// Use idle event instead of setTimeout for reliable timing
+			mapInstance.once('idle', () => {
 				fitMapToFacilities(facilities);
-			}, 100);
+			});
+		}
+
+		// Use idle event for attribution compacting
+		mapInstance.once('idle', compactAttribution);
+	}
+
+	// Fit bounds when facilities change - use idle event
+	$effect(() => {
+		if (mapInstance && mapLoaded && facilities.length > 0) {
+			mapInstance.once('idle', () => {
+				fitMapToFacilities(facilities);
+			});
 		}
 	});
+
+	/**
+	 * Handle mouse enter on facility point
+	 * @param {any} e
+	 */
+	function handlePointMouseEnter(e) {
+		if (!mapInstance) return;
+		mapInstance.getCanvas().style.cursor = 'pointer';
+
+		const features = e.features;
+		if (features && features.length > 0) {
+			mapHoveredFacilityCode = features[0].properties.code;
+		}
+	}
+
+	/**
+	 * Handle mouse leave on facility point
+	 */
+	function handlePointMouseLeave() {
+		if (!mapInstance) return;
+		mapInstance.getCanvas().style.cursor = '';
+		mapHoveredFacilityCode = null;
+	}
 </script>
 
 <div class="w-full h-full overflow-hidden">
@@ -265,49 +316,57 @@
 	>
 		<NavigationControl position="top-right" showCompass={false} />
 		<AttributionControl position="bottom-right" compact={true} />
-		{#each facilities as facility}
-			{@const color = getFacilityColor(facility)}
-			{@const borderColor = getFacilityColor(facility)}
-			{@const isHovered = activeHoveredFacility?.code === facility.code}
-			<Marker lnglat={[facility.location.lng, facility.location.lat]}>
-				{#snippet content()}
-					<button
-						class="rounded-full cursor-pointer transition-all duration-200 border-0.5"
-						class:w-3={!isHovered}
-						class:h-3={!isHovered}
-						class:w-5={isHovered}
-						class:h-5={isHovered}
-						class:scale-150={isHovered}
-						class:z-50={isHovered}
-						class:ring-2={isHovered}
-						class:ring-white={isHovered}
-						class:shadow-lg={isHovered}
-						style="background-color: {color}{isHovered ? '' : 'cc'}; border-color: {borderColor};"
-						onmouseenter={() => (mapHoveredFacility = facility)}
-						onmouseleave={() => (mapHoveredFacility = null)}
-						aria-label="View {facility.name} details"
-					></button>
-				{/snippet}
-			</Marker>
-		{/each}
 
-		{#if popupFacility}
+		<!-- GeoJSON source without clustering - WebGL rendering for performance -->
+		<GeoJSONSource id="facilities" data={facilitiesGeoJSON}>
+			<!-- All facility points rendered on WebGL canvas -->
+			<CircleLayer
+				id="facility-points"
+				paint={{
+					'circle-color': ['get', 'color'],
+					'circle-radius': [
+						'case',
+						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+						10,
+						6
+					],
+					'circle-stroke-width': [
+						'case',
+						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+						2,
+						1
+					],
+					'circle-stroke-color': '#ffffff',
+					'circle-opacity': [
+						'case',
+						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+						1,
+						0.8
+					]
+				}}
+				onmouseenter={handlePointMouseEnter}
+				onmouseleave={handlePointMouseLeave}
+			/>
+		</GeoJSONSource>
+
+		<!-- Popup for hovered facility - uses lazy computed content -->
+		{#if popupContent}
 			<Popup
-				lnglat={[popupFacility.location.lng, popupFacility.location.lat]}
+				lnglat={[popupContent.location.lng, popupContent.location.lat]}
 				offset={[0, -15]}
 				closeOnClick={false}
 			>
 				<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[240px]">
-					<div class="font-semibold text-sm">{popupFacility.name}</div>
+					<div class="font-semibold text-sm">{popupContent.name}</div>
 					<div class="text-xs text-white/60 mb-3 border-b border-white/20 pb-3">
-						{getRegionLabel(popupFacility.network_id, popupFacility.network_region)}
+						{popupContent.region}
 					</div>
 
-					{#if popupFacility.units && popupFacility.units.length > 0}
+					{#if popupContent.groupedUnits.length > 0}
 						<div
 							class="flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
 						>
-							{#each groupFacilityUnits(popupFacility) as group}
+							{#each popupContent.groupedUnits as group}
 								<UnitGroup {...group} />
 							{/each}
 						</div>

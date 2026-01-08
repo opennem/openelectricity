@@ -45,6 +45,34 @@
 	/** @type {HTMLInputElement | null} */
 	let mobileSearchInput = $state(null);
 
+	// Local search state for immediate UI feedback
+	let localSearchTerm = $state(searchTerm);
+
+	// Debounce timer
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let debounceTimer = $state(null);
+
+	/**
+	 * Debounced search handler - updates UI immediately, debounces callback
+	 * @param {string} value
+	 */
+	function handleDebouncedSearch(value) {
+		localSearchTerm = value;
+
+		if (debounceTimer) {
+			clearTimeout(debounceTimer);
+		}
+
+		debounceTimer = setTimeout(() => {
+			onsearchchange?.(value);
+		}, 150);
+	}
+
+	// Sync local state when prop changes (e.g., from URL)
+	$effect(() => {
+		localSearchTerm = searchTerm;
+	});
+
 	let regionOptions = $derived(
 		regions.map((r) => ({
 			label: r.label,
@@ -316,8 +344,8 @@
 		<div class="hidden md:flex justify-end items-center gap-2">
 			<input
 				type="search"
-				value={searchTerm}
-				oninput={(e) => onsearchchange?.(/** @type {HTMLInputElement} */ (e.target).value)}
+				value={localSearchTerm}
+				oninput={(e) => handleDebouncedSearch(/** @type {HTMLInputElement} */ (e.target).value)}
 				placeholder="Filter by name"
 				class="rounded-full border border-warm-grey bg-white px-5 py-3 text-xs transition-colors hover:border-dark-grey focus:border-dark-grey focus:outline-none"
 			/>
@@ -330,8 +358,8 @@
 					<input
 						bind:this={mobileSearchInput}
 						type="search"
-						value={searchTerm}
-						oninput={(e) => onsearchchange?.(/** @type {HTMLInputElement} */ (e.target).value)}
+						value={localSearchTerm}
+						oninput={(e) => handleDebouncedSearch(/** @type {HTMLInputElement} */ (e.target).value)}
 						placeholder="Filter by name"
 						class="rounded-full border border-warm-grey bg-white px-4 py-3 text-xs transition-colors focus:border-dark-grey focus:outline-none w-full"
 					/>
