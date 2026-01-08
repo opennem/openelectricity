@@ -127,9 +127,9 @@
 	const center = { lng: 110, lat: -28 };
 
 	/** @type {any | null} */
-	let selectedFacility = $state(null);
-	/** @type {any | null} */
 	let mapInstance = $state(null);
+	/** @type {any | null} */
+	let mapHoveredFacility = $state(null);
 
 	// Validate hoveredFacility - must exist in facilities list or have valid location
 	let validatedHoveredFacility = $derived.by(() => {
@@ -151,8 +151,11 @@
 		return existsInFacilities ? hoveredFacility : null;
 	});
 
-	// Show popup for hovered or clicked facility
-	let popupFacility = $derived(validatedHoveredFacility || selectedFacility);
+	// Show popup for hovered facility (from list or map)
+	let popupFacility = $derived(validatedHoveredFacility || mapHoveredFacility);
+
+	// Combined hover state from list or map
+	let activeHoveredFacility = $derived(validatedHoveredFacility || mapHoveredFacility);
 
 	/**
 	 * Calculate bounds from facilities and fit map to them
@@ -247,7 +250,7 @@
 		{#each facilities as facility}
 			{@const color = getFacilityColor(facility)}
 			{@const borderColor = getFacilityColor(facility)}
-			{@const isHovered = validatedHoveredFacility?.code === facility.code}
+			{@const isHovered = activeHoveredFacility?.code === facility.code}
 			<Marker lnglat={[facility.location.lng, facility.location.lat]}>
 				{#snippet content()}
 					<button
@@ -262,7 +265,8 @@
 						class:ring-white={isHovered}
 						class:shadow-lg={isHovered}
 						style="background-color: {color}{isHovered ? '' : 'cc'}; border-color: {borderColor};"
-						onclick={() => (selectedFacility = facility)}
+						onmouseenter={() => (mapHoveredFacility = facility)}
+						onmouseleave={() => (mapHoveredFacility = null)}
 						aria-label="View {facility.name} details"
 					></button>
 				{/snippet}
@@ -273,8 +277,7 @@
 			<Popup
 				lnglat={[popupFacility.location.lng, popupFacility.location.lat]}
 				offset={[0, -15]}
-				closeOnClick={true}
-				onclose={() => (selectedFacility = null)}
+				closeOnClick={false}
 			>
 				<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[240px]">
 					<div class="font-semibold text-sm">{popupFacility.name}</div>
@@ -337,15 +340,6 @@
 	}
 
 	:global(.maplibregl-popup-close-button) {
-		color: white !important;
-		font-size: 18px !important;
-		padding: 4px 8px !important;
-		right: 4px !important;
-		top: 4px !important;
-	}
-
-	:global(.maplibregl-popup-close-button:hover) {
-		background: rgba(255, 255, 255, 0.1) !important;
-		border-radius: 4px;
+		display: none !important;
 	}
 </style>
