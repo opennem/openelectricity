@@ -3,7 +3,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
-	import UnitTooltip from './UnitTooltip.svelte';
+	import UnitGroup from './UnitGroup.svelte';
 	import { regions } from './page-data-options/filters';
 
 	const numberFormatter = getNumberFormat(0);
@@ -204,13 +204,17 @@
 
 				{#if primaryGroup}
 					<div class="group-hover:block hidden absolute z-30 top-0 right-0">
-						<div class="flex flex-col gap-2">
+						<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[220px] flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
 							{#each unitGroups as group}
-								<UnitTooltip
-									network_id={facility.network_id}
-									unit={group.unitSummary}
-									fill={group.bgColor}
+								<UnitGroup
+									fueltech_id={group.unitSummary.fueltech_id}
+									status_id={group.unitSummary.status_id}
 									isCommissioning={group.isCommissioning}
+									capacity_maximum={group.unitSummary.capacity_maximum}
+									capacity_registered={group.unitSummary.capacity_registered}
+									max_generation={group.unitSummary.max_generation}
+									network_id={facility.network_id}
+									bgColor={group.bgColor}
 								/>
 							{/each}
 						</div>

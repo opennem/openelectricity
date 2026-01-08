@@ -72,7 +72,7 @@
 	});
 </script>
 
-<div class="border-t border-white/20 pt-2">
+<div>
 	<div class="flex items-center justify-between text-xs gap-4">
 		<div class="flex items-center gap-2">
 			<span
@@ -119,72 +119,76 @@
 		</div>
 	{/if}
 
-	{#if max_generation_interval && isCommissioning}
-		{@const maxGenDate = getParsedDate(max_generation_interval)}
-		<div class="text-xxs text-right mt-2 text-white/60">
-			Max generated at
-			<span>
-				{formatDateTime({
-					date: maxGenDate,
-					hour: 'numeric',
-					minute: '2-digit',
-					hour12: true
-				})
-					.split(' ')
-					.join('')} on
-				{formatDateTime({
-					date: maxGenDate,
-					month: 'short',
-					day: 'numeric',
-					year: 'numeric'
-				})}
-			</span>
-		</div>
-	{/if}
+	{#if max_generation_interval || data_first_seen || data_last_seen}
+		<div class="mt-2">
+			{#if max_generation_interval && isCommissioning}
+				{@const maxGenDate = getParsedDate(max_generation_interval)}
+				<div class="text-xxs text-right text-white/60">
+					Max generated at
+					<span>
+						{formatDateTime({
+							date: maxGenDate,
+							hour: 'numeric',
+							minute: '2-digit',
+							hour12: true
+						})
+							.split(' ')
+							.join('')} on
+						{formatDateTime({
+							date: maxGenDate,
+							month: 'short',
+							day: 'numeric',
+							year: 'numeric'
+						})}
+					</span>
+				</div>
+			{/if}
 
-	{#if (status_id === 'operating' || isCommissioning) && data_first_seen}
-		{@const firstGenDate = getParsedDate(data_first_seen)}
-		<div class="text-xxs text-right mt-1 text-white/60">
-			First generated at
-			<span>
-				{formatDateTime({
-					date: firstGenDate,
-					hour: 'numeric',
-					minute: '2-digit',
-					hour12: true
-				})
-					.split(' ')
-					.join('')} on
-				{formatDateTime({
-					date: firstGenDate,
-					month: 'short',
-					day: 'numeric',
-					year: 'numeric'
-				})}
-			</span>
-		</div>
-	{/if}
+			{#if (status_id === 'operating' || isCommissioning) && data_first_seen}
+				{@const firstGenDate = getParsedDate(data_first_seen)}
+				<div class="text-xxs text-right text-white/60">
+					First generated at
+					<span>
+						{formatDateTime({
+							date: firstGenDate,
+							hour: 'numeric',
+							minute: '2-digit',
+							hour12: true
+						})
+							.split(' ')
+							.join('')} on
+						{formatDateTime({
+							date: firstGenDate,
+							month: 'short',
+							day: 'numeric',
+							year: 'numeric'
+						})}
+					</span>
+				</div>
+			{/if}
 
-	{#if status_id === 'retired' && data_last_seen}
-		{@const lastSeenDate = getParsedDate(data_last_seen)}
-		<div class="text-xxs text-right mt-1 text-white/60">
-			Last generated at
-			<span>
-				{formatDateTime({
-					date: lastSeenDate,
-					hour: 'numeric',
-					minute: '2-digit',
-					hour12: true
-				})
-					.split(' ')
-					.join('')} on
-				{formatDateTime({
-					date: lastSeenDate,
-					month: 'short',
-					day: 'numeric',
-					year: 'numeric'
-				})}
-			</span>
+			{#if status_id === 'retired' && data_last_seen}
+				{@const lastSeenDate = getParsedDate(data_last_seen)}
+				<div class="text-xxs text-right text-white/60">
+					Last generated at
+					<span>
+						{formatDateTime({
+							date: lastSeenDate,
+							hour: 'numeric',
+							minute: '2-digit',
+							hour12: true
+						})
+							.split(' ')
+							.join('')} on
+						{formatDateTime({
+							date: lastSeenDate,
+							month: 'short',
+							day: 'numeric',
+							year: 'numeric'
+						})}
+					</span>
+				</div>
+			{/if}
 		</div>
 	{/if}
 </div>

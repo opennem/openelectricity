@@ -4,7 +4,7 @@
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
-	import UnitTooltip from './UnitTooltip.svelte';
+	import UnitGroup from './UnitGroup.svelte';
 	import { regions } from './page-data-options/filters';
 
 	const numberFormatter = getNumberFormat(0);
@@ -136,12 +136,21 @@
 				</div>
 
 				<div class="group-hover:block hidden absolute z-30 top-0 right-0">
-					<UnitTooltip
-						network_id={facility.network_id}
-						unit={facility.unit}
-						fill={bgColor}
-						isCommissioning={facility.isCommissioning}
-					/>
+					<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[220px]">
+						<UnitGroup
+							fueltech_id={facility.unit.fueltech_id}
+							status_id={facility.unit.status_id}
+							isCommissioning={facility.isCommissioning}
+							capacity_maximum={facility.unit.capacity_maximum}
+							capacity_registered={facility.unit.capacity_registered}
+							max_generation={facility.unit.max_generation}
+							max_generation_interval={facility.unit.max_generation_interval}
+							data_first_seen={facility.unit.data_first_seen}
+							data_last_seen={facility.unit.data_last_seen}
+							network_id={facility.network_id}
+							{bgColor}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>

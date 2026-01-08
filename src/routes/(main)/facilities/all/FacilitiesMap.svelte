@@ -258,12 +258,14 @@
 			>
 				<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[240px]">
 					<div class="font-semibold text-sm">{popupFacility.name}</div>
-					<div class="text-xs text-white/60 mb-3">
+					<div class="text-xs text-white/60 mb-3 border-b border-white/20 pb-3">
 						{getRegionLabel(popupFacility.network_id, popupFacility.network_region)}
 					</div>
 
 					{#if popupFacility.units && popupFacility.units.length > 0}
-						<div class="space-y-3">
+						<div
+							class="flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
+						>
 							{#each groupFacilityUnits(popupFacility) as group}
 								<UnitGroup {...group} />
 							{/each}
