@@ -3,11 +3,9 @@
 	import { goto } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
 
-	import FacilitiesTable from './FacilitiesTable.svelte';
 	import FacilitiesMap from './FacilitiesMap.svelte';
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
-	import FilterTags from './FilterTags.svelte';
 	import FacilitiesList from './FacilitiesList.svelte';
 
 	let { data } = $props();
@@ -22,15 +20,14 @@
 	let todayButtonPosition = $state('bottom');
 	/** @type {*} */
 	let timelineRef = $state(null);
+	/** @type {HTMLElement | null} */
+	let timelineScrollContainer = $state(null);
 
 	let searchTerm = $state('');
 	/** @type {any | null} */
 	let hoveredFacility = $state(null);
-
-	$inspect('view', view);
-	$inspect('statuses', statuses);
-	$inspect('regions', regions);
-	$inspect('fuelTechs', fuelTechs);
+	/** @type {'list' | 'timeline'} */
+	let selectedView = $state('timeline');
 
 	/**
 	 * Filter out battery_charging and battery_discharging units from facilities since they are merged into battery.
@@ -185,6 +182,7 @@
 	<div class="md:container relative text-base z-50">
 		<Filters
 			{searchTerm}
+			{selectedView}
 			selectedStatuses={statuses}
 			selectedFuelTechs={fuelTechs}
 			selectedRegions={regions}
@@ -192,6 +190,7 @@
 			onstatuseschange={handleStatusesChange}
 			onregionschange={handleRegionsChange}
 			onfueltechschange={handleFuelTechsChange}
+			onviewchange={(/** @type {'list' | 'timeline'} */ v) => (selectedView = v)}
 		/>
 	</div>
 </div>
@@ -202,58 +201,51 @@
 		<FacilitiesMap facilities={filteredWithLocation} {hoveredFacility} />
 	</div>
 
-	<!-- Floating table panel on the left -->
-	<div
-		class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden"
-	>
-		<div class="h-full overflow-y-auto">
-			<!-- <FacilitiesTable facilities={filteredFacilities} /> -->
-			<FacilitiesList facilities={filteredFacilities} onhover={(f) => (hoveredFacility = f)} />
-		</div>
-	</div>
-</section>
-
-<!-- <div class="text-base">
-	<div class="md:container md:grid grid-cols-8 md:divide-x divide-warm-grey py-12 relative">
-		<div class="col-span-2 px-10 md:pl-7 md:pr-12">
-			<div class="sticky top-10 hidden md:block">
-				<FilterTags
-					selectedRegions={regions}
-					selectedStatuses={statuses}
-					selectedFuelTechs={fuelTechs}
-					onregionschange={handleRegionsChange}
-					onstatuseschange={handleStatusesChange}
-					onfueltechschange={handleFuelTechsChange}
-				/>
+	{#if selectedView === 'list'}
+		<!-- Floating list panel on the left -->
+		<div
+			class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden"
+		>
+			<div class="h-full overflow-y-auto">
+				<FacilitiesList facilities={filteredFacilities} onhover={(f) => (hoveredFacility = f)} />
 			</div>
 		</div>
-
-		{#if showTodayButton && searchTerm.length === 0}
-			<div
-				class="fixed z-20 w-full flex justify-center"
-				class:top-16={todayButtonPosition === 'top'}
-				class:bottom-12={todayButtonPosition === 'bottom'}
-				transition:fly={{ y: -10, duration: 300 }}
-			>
-				<button
-					class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300"
-					onclick={() => timelineRef?.jumpToToday()}
+	{:else}
+		<!-- Floating timeline panel on the left -->
+		<div
+			class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden"
+		>
+			{#if showTodayButton && searchTerm.length === 0}
+				<div
+					class="absolute z-20 w-full flex justify-center pointer-events-none"
+					class:top-4={todayButtonPosition === 'top'}
+					class:bottom-4={todayButtonPosition === 'bottom'}
+					transition:fly={{ y: -10, duration: 300 }}
 				>
-					{#if todayButtonPosition === 'bottom'}
-						<span class="text-xxs">↓</span>
-					{:else}
-						<span class="text-xxs">↑</span>
-					{/if}
-					Jump to today
-				</button>
+					<button
+						class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300 pointer-events-auto"
+						onclick={() => timelineRef?.jumpToToday()}
+					>
+						{#if todayButtonPosition === 'bottom'}
+							<span class="text-xxs">↓</span>
+						{:else}
+							<span class="text-xxs">↑</span>
+						{/if}
+						Jump to today
+					</button>
+				</div>
+			{/if}
+			<div class="h-full overflow-y-auto" bind:this={timelineScrollContainer}>
+				<div class="p-6">
+					<Timeline
+						bind:this={timelineRef}
+						facilities={filteredWithLocation}
+						ontodaybuttonvisible={handleTodayButtonVisible}
+						scrollContainer={timelineScrollContainer}
+						onhover={(f) => (hoveredFacility = f)}
+					/>
+				</div>
 			</div>
-		{/if}
-		<div class="col-span-6 md:pl-12 px-6">
-			<Timeline
-				bind:this={timelineRef}
-				facilities={filteredWithLocation}
-				ontodaybuttonvisible={handleTodayButtonVisible}
-			/>
 		</div>
-	</div>
-</div> -->
+	{/if}
+</section>

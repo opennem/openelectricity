@@ -7,15 +7,31 @@
 
 	import { regions, fuelTechOptions } from './page-data-options/filters.js';
 
+	/**
+	 * @type {{
+	 *   selectedRegions?: string[],
+	 *   selectedStatuses?: string[],
+	 *   selectedFuelTechs?: string[],
+	 *   searchTerm?: string,
+	 *   selectedView?: 'list' | 'timeline',
+	 *   onstatuseschange?: (values: string[]) => void,
+	 *   onregionschange?: (values: string[]) => void,
+	 *   onfueltechschange?: (values: string[]) => void,
+	 *   onsearchchange?: (value: string) => void,
+	 *   onviewchange?: (view: 'list' | 'timeline') => void
+	 * }}
+	 */
 	let {
 		selectedRegions = [],
 		selectedStatuses = [],
 		selectedFuelTechs = [],
 		searchTerm = '',
+		selectedView = 'list',
 		onstatuseschange,
 		onregionschange,
 		onfueltechschange,
-		onsearchchange
+		onsearchchange,
+		onviewchange
 	} = $props();
 
 	let statusOptions = [
@@ -197,7 +213,32 @@
 {/if}
 
 <div class="flex items-center justify-between pt-3 pb-3 px-8 md:pl-3 relative z-10 gap-4">
-	<div class="justify-start items-center gap-2 hidden md:flex">
+	<div class="flex items-center gap-4">
+		<!-- View Switcher -->
+		<div class="flex items-center rounded-full border border-warm-grey bg-white p-1">
+			<button
+				class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
+				class:bg-dark-grey={selectedView === 'list'}
+				class:text-white={selectedView === 'list'}
+				class:text-mid-grey={selectedView !== 'list'}
+				class:hover:text-dark-grey={selectedView !== 'list'}
+				onclick={() => onviewchange?.('list')}
+			>
+				List
+			</button>
+			<button
+				class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
+				class:bg-dark-grey={selectedView === 'timeline'}
+				class:text-white={selectedView === 'timeline'}
+				class:text-mid-grey={selectedView !== 'timeline'}
+				class:hover:text-dark-grey={selectedView !== 'timeline'}
+				onclick={() => onviewchange?.('timeline')}
+			>
+				Timeline
+			</button>
+		</div>
+
+		<div class="justify-start items-center gap-2 hidden md:flex">
 		<FormMultiSelect
 			options={regionOptions}
 			selected={selectedRegions}
@@ -225,13 +266,14 @@
 			paddingY="py-3"
 			on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
 		/>
+		</div>
 	</div>
 
 	<div class="flex justify-end items-center gap-2 pr-8">
 		<input
 			type="search"
 			value={searchTerm}
-			oninput={(e) => onsearchchange?.(e.target.value)}
+			oninput={(e) => onsearchchange?.(/** @type {HTMLInputElement} */ (e.target).value)}
 			placeholder="Filter by name"
 			class="rounded-full border border-warm-grey bg-white px-5 py-3 text-xs transition-colors hover:border-dark-grey focus:border-dark-grey focus:outline-none"
 		/>

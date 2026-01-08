@@ -9,7 +9,7 @@
 
 	const numberFormatter = getNumberFormat(0);
 
-	let { facility } = $props();
+	let { facility, onmouseenter, onmouseleave } = $props();
 
 	/**
 	 * Get the background color for a fueltech
@@ -37,7 +37,11 @@
 	const path = `https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`;
 </script>
 
-<li class="@container">
+<li
+	class="@container"
+	onmouseenter={() => onmouseenter?.(facility)}
+	onmouseleave={() => onmouseleave?.()}
+>
 	<a
 		class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey rounded-lg"
 		class:bg-light-warm-grey={facility.unit.status_id === 'committed'}

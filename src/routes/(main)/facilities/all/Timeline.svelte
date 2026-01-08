@@ -1,5 +1,6 @@
 <script>
 	import { parseAbsolute, today, getLocalTimeZone } from '@internationalized/date';
+	import { tick } from 'svelte';
 	import { browser } from '$app/environment';
 	import { formatDateBySpecificity } from '$lib/utils/date-format';
 	import { getNumberFormat, formatDateTime } from '$lib/utils/formatters';
@@ -8,7 +9,7 @@
 	import FacilityUnitCard from './FacilityUnitCard.svelte';
 
 	const numberFormatter = getNumberFormat(0);
-	let { facilities = [], ontodaybuttonvisible } = $props();
+	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover } = $props();
 
 	let flattenedData = $derived.by(() => {
 		/** @type {*[]} */
@@ -77,44 +78,57 @@
 
 	let groupedData = $derived(groupByMonthDay(sortedFlattenedData));
 
-	let observe = null;
-
-	if (browser) {
-		observe = new IntersectionObserver((entries) => {
-			entries.forEach((entry) => {
-				// ontodaybuttonvisible(!entry.isIntersecting, 'bottom');
-
-				// if (!entry.isIntersecting) {
-				// 	console.log('entry', entry, entry.isIntersecting, entry.boundingClientRect.bottom);
-				// }
-
-				if (entry.boundingClientRect.top > 0) {
-					ontodaybuttonvisible(!entry.isIntersecting, 'bottom');
-				} else {
-					ontodaybuttonvisible(!entry.isIntersecting, 'top');
-				}
-			});
-		});
-	}
-
 	$effect(() => {
-		const el = document.querySelector('#dToday');
-		if (el) {
-			observe?.observe(el);
-		}
+		// Depend on groupedData to re-run when data changes
+		if (!browser || !scrollContainer || !groupedData) return;
+
+		/** @type {IntersectionObserver | null} */
+		let observer = null;
+		let mounted = true;
+
+		// Wait for DOM to update before querying for the element
+		tick().then(() => {
+			if (!mounted) return;
+
+			const el = document.querySelector('#dToday');
+			if (!el) return;
+
+			observer = new IntersectionObserver(
+				(entries) => {
+					entries.forEach((entry) => {
+						if (entry.boundingClientRect.top > 0) {
+							ontodaybuttonvisible(!entry.isIntersecting, 'bottom');
+						} else {
+							ontodaybuttonvisible(!entry.isIntersecting, 'top');
+						}
+					});
+				},
+				{
+					root: scrollContainer,
+					threshold: 0
+				}
+			);
+
+			observer.observe(el);
+		});
+
+		return () => {
+			mounted = false;
+			observer?.disconnect();
+		};
 	});
 
 	$effect(() => {
 		const el = document.querySelector('#dToday');
 		if (el) {
-			el.scrollIntoView({ behavior: 'auto', container: 'nearest', block: 'center' });
+			el.scrollIntoView({ behavior: 'auto', block: 'center' });
 		}
 	});
 
 	export function jumpToToday() {
 		const el = document.querySelector('#dToday');
 		if (el) {
-			el.scrollIntoView({ behavior: 'smooth', container: 'nearest', block: 'center' });
+			el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 		}
 	}
 
@@ -217,7 +231,11 @@
 							class="flex flex-col col-span-12 border border-mid-warm-grey rounded-lg divide-y divide-mid-warm-grey"
 						>
 							{#each facilities as facility}
-								<FacilityUnitCard {facility} />
+								<FacilityUnitCard
+									{facility}
+									onmouseenter={(f) => onhover?.(f)}
+									onmouseleave={() => onhover?.(null)}
+								/>
 							{/each}
 						</ol>
 					{/if}
