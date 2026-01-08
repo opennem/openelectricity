@@ -131,8 +131,28 @@
 	/** @type {any | null} */
 	let mapInstance = $state(null);
 
+	// Validate hoveredFacility - must exist in facilities list or have valid location
+	let validatedHoveredFacility = $derived.by(() => {
+		if (!hoveredFacility) return null;
+
+		// Check if it has a valid location
+		const hasValidLocation =
+			hoveredFacility.location &&
+			typeof hoveredFacility.location.lat === 'number' &&
+			typeof hoveredFacility.location.lng === 'number' &&
+			!isNaN(hoveredFacility.location.lat) &&
+			!isNaN(hoveredFacility.location.lng);
+
+		if (!hasValidLocation) return null;
+
+		// Check if it exists in the facilities list
+		const existsInFacilities = facilities.some((f) => f.code === hoveredFacility.code);
+
+		return existsInFacilities ? hoveredFacility : null;
+	});
+
 	// Show popup for hovered or clicked facility
-	let popupFacility = $derived(hoveredFacility || selectedFacility);
+	let popupFacility = $derived(validatedHoveredFacility || selectedFacility);
 
 	/**
 	 * Calculate bounds from facilities and fit map to them
@@ -227,7 +247,7 @@
 		{#each facilities as facility}
 			{@const color = getFacilityColor(facility)}
 			{@const borderColor = getFacilityColor(facility)}
-			{@const isHovered = hoveredFacility?.code === facility.code}
+			{@const isHovered = validatedHoveredFacility?.code === facility.code}
 			<Marker lnglat={[facility.location.lng, facility.location.lat]}>
 				{#snippet content()}
 					<button
