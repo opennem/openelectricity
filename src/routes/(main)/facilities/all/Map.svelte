@@ -14,10 +14,11 @@
 	/**
 	 * @type {{
 	 *   facilities: any[],
-	 *   hoveredFacility?: any | null
+	 *   hoveredFacility?: any | null,
+	 *   onhover?: (facility: any | null) => void
 	 * }}
 	 */
-	let { facilities = [], hoveredFacility = null } = $props();
+	let { facilities = [], hoveredFacility = null, onhover } = $props();
 
 	// Australia center coordinates (default fallback)
 	const center = { lng: 110, lat: -28 };
@@ -286,7 +287,11 @@
 
 		const features = e.features;
 		if (features && features.length > 0) {
-			mapHoveredFacilityCode = features[0].properties.code;
+			const code = features[0].properties.code;
+			mapHoveredFacilityCode = code;
+			// Notify parent of hover
+			const facility = facilitiesMap.get(code);
+			onhover?.(facility || null);
 		}
 	}
 
@@ -297,6 +302,8 @@
 		if (!mapInstance) return;
 		mapInstance.getCanvas().style.cursor = '';
 		mapHoveredFacilityCode = null;
+		// Notify parent of hover end
+		onhover?.(null);
 	}
 </script>
 

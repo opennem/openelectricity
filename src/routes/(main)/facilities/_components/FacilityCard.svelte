@@ -12,11 +12,12 @@
 	/**
 	 * @type {{
 	 *   facility: any,
+	 *   isHighlighted?: boolean,
 	 *   onmouseenter?: (facility: any) => void,
 	 *   onmouseleave?: () => void
 	 * }}
 	 */
-	let { facility, onmouseenter, onmouseleave } = $props();
+	let { facility, isHighlighted = false, onmouseenter, onmouseleave } = $props();
 
 	/**
 	 * Check if fueltech needs dark text (for light backgrounds)
@@ -153,12 +154,14 @@
 
 <li
 	class="@container border-b border-warm-grey last:border-b-0"
+	data-facility-code={facility.code}
 	onmouseenter={() => onmouseenter?.(facility)}
 	onmouseleave={() => onmouseleave?.()}
 >
 	<a
 		class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey"
-		class:bg-light-warm-grey={hasCommittedUnit}
+		class:bg-light-warm-grey={hasCommittedUnit && !isHighlighted}
+		class:bg-warm-grey={isHighlighted}
 		target="_blank"
 		href={path}
 	>

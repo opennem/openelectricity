@@ -9,7 +9,33 @@
 	import getDateField from '../_utils/get-date-field';
 	import FacilityUnitCard from '../_components/FacilityUnitCard.svelte';
 
-	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover } = $props();
+	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover, hoveredFacility = null } = $props();
+
+	// Track if hover originated from this component (to avoid scroll fighting)
+	let isLocalHover = false;
+
+	// Scroll to highlighted facility when hoveredFacility changes (from map)
+	$effect(() => {
+		if (hoveredFacility && !isLocalHover && browser) {
+			tick().then(() => {
+				const el = document.querySelector(`[data-facility-code="${hoveredFacility.code}"]`);
+				el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			});
+		}
+	});
+
+	/**
+	 * @param {any} f
+	 */
+	function handleMouseEnter(f) {
+		isLocalHover = true;
+		onhover?.(f);
+	}
+
+	function handleMouseLeave() {
+		isLocalHover = false;
+		onhover?.(null);
+	}
 
 	let flattenedData = $derived.by(() => {
 		/** @type {*[]} */
@@ -237,8 +263,9 @@
 							{#each facilities as facility}
 								<FacilityUnitCard
 									{facility}
-									onmouseenter={(/** @type {any} */ f) => onhover?.(f)}
-									onmouseleave={() => onhover?.(null)}
+									isHighlighted={hoveredFacility?.code === facility.code}
+									onmouseenter={handleMouseEnter}
+									onmouseleave={handleMouseLeave}
 								/>
 							{/each}
 						</ol>

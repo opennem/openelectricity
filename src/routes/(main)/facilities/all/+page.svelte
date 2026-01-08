@@ -311,7 +311,11 @@
 		class:hidden={selectedView !== 'map'}
 		class:md:block={selectedView !== 'map'}
 	>
-		<Map facilities={filteredWithLocation} {hoveredFacility} />
+		<Map
+			facilities={filteredWithLocation}
+			{hoveredFacility}
+			onhover={(f) => (hoveredFacility = f)}
+		/>
 	</div>
 
 	{#snippet summaryBar()}
@@ -365,6 +369,7 @@
 			<div class="flex-1 overflow-y-auto min-h-0">
 				<List
 					facilities={filteredFacilities}
+					{hoveredFacility}
 					onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 				/>
 			</div>
@@ -400,6 +405,7 @@
 					<Timeline
 						bind:this={timelineRef}
 						facilities={filteredWithLocation}
+						{hoveredFacility}
 						ontodaybuttonvisible={handleTodayButtonVisible}
 						scrollContainer={timelineScrollContainer}
 						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
