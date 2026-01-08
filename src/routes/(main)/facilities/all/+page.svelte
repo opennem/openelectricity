@@ -3,10 +3,10 @@
 	import { goto } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
 
-	import FacilitiesMap from './FacilitiesMap.svelte';
+	import Map from './Map.svelte';
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
-	import FacilitiesList from './FacilitiesList.svelte';
+	import List from './List.svelte';
 
 	let { data } = $props();
 
@@ -198,7 +198,7 @@
 <section class="relative h-[calc(100vh-118px)]">
 	<!-- Map -->
 	<div class="absolute inset-0">
-		<FacilitiesMap facilities={filteredWithLocation} {hoveredFacility} />
+		<Map facilities={filteredWithLocation} {hoveredFacility} />
 	</div>
 
 	{#if selectedView === 'list'}
@@ -207,7 +207,7 @@
 			class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden"
 		>
 			<div class="h-full overflow-y-auto">
-				<FacilitiesList facilities={filteredFacilities} onhover={(f) => (hoveredFacility = f)} />
+				<List facilities={filteredFacilities} onhover={(f) => (hoveredFacility = f)} />
 			</div>
 		</div>
 	{:else}
