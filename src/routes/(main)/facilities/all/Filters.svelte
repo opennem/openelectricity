@@ -229,7 +229,7 @@
 	</Modal>
 {/if}
 
-<div class="flex items-center justify-between pt-3 pb-3 px-8 md:pl-3 relative z-10 gap-4">
+<div class="flex items-center justify-between pt-3 pb-3 px-8 relative z-10 gap-4">
 	<div class="flex items-center gap-4">
 		<!-- View Switcher -->
 		<div class="flex items-center rounded-full border border-warm-grey bg-white p-1">
@@ -256,46 +256,46 @@
 		</div>
 
 		<div class="justify-start items-center gap-2 hidden md:flex">
-		<FormMultiSelect
-			options={regionOptions}
-			selected={selectedRegions}
-			label={regionLabel}
-			paddingX="pl-5 pr-4"
-			paddingY="py-3"
-			on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
-		/>
+			<FormMultiSelect
+				options={regionOptions}
+				selected={selectedRegions}
+				label={regionLabel}
+				paddingX="pl-5 pr-4"
+				paddingY="py-3"
+				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+			/>
 
-		<FormMultiSelect
-			options={statusOptions}
-			selected={selectedStatuses}
-			label={statusLabel}
-			withColours={true}
-			paddingX="pl-5 pr-4"
-			paddingY="py-3"
-			on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
-		/>
+			<FormMultiSelect
+				options={statusOptions}
+				selected={selectedStatuses}
+				label={statusLabel}
+				withColours={true}
+				paddingX="pl-5 pr-4"
+				paddingY="py-3"
+				on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
+			/>
 
-		<FormMultiSelect
-			options={fuelTechOptions}
-			selected={selectedFuelTechs}
-			label={fuelTechLabel}
-			paddingX="pl-5 pr-4"
-			paddingY="py-3"
-			on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
-		/>
+			<FormMultiSelect
+				options={fuelTechOptions}
+				selected={selectedFuelTechs}
+				label={fuelTechLabel}
+				paddingX="pl-5 pr-4"
+				paddingY="py-3"
+				on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
+			/>
 
-		<FormMultiSelect
-			options={sizeOptions}
-			selected={selectedSizes}
-			label={sizeLabel}
-			paddingX="pl-5 pr-4"
-			paddingY="py-3"
-			on:change={(evt) => handleSizeChange(evt.detail.value, evt.detail.isMetaPressed)}
-		/>
+			<FormMultiSelect
+				options={sizeOptions}
+				selected={selectedSizes}
+				label={sizeLabel}
+				paddingX="pl-5 pr-4"
+				paddingY="py-3"
+				on:change={(evt) => handleSizeChange(evt.detail.value, evt.detail.isMetaPressed)}
+			/>
 		</div>
 	</div>
 
-	<div class="flex justify-end items-center gap-2 pr-8">
+	<div class="flex justify-end items-center gap-2">
 		<input
 			type="search"
 			value={searchTerm}
