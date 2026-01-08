@@ -26,7 +26,7 @@
 		selectedStatuses = [],
 		selectedFuelTechs = [],
 		searchTerm = '',
-		selectedView = 'list',
+		selectedView = 'timeline',
 		onstatuseschange,
 		onregionschange,
 		onfueltechschange,
@@ -195,16 +195,6 @@
 		<div class="flex items-center rounded-full border border-warm-grey bg-white p-1">
 			<button
 				class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
-				class:bg-dark-grey={selectedView === 'list'}
-				class:text-white={selectedView === 'list'}
-				class:text-mid-grey={selectedView !== 'list'}
-				class:hover:text-dark-grey={selectedView !== 'list'}
-				onclick={() => onviewchange?.('list')}
-			>
-				List
-			</button>
-			<button
-				class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
 				class:bg-dark-grey={selectedView === 'timeline'}
 				class:text-white={selectedView === 'timeline'}
 				class:text-mid-grey={selectedView !== 'timeline'}
@@ -212,6 +202,16 @@
 				onclick={() => onviewchange?.('timeline')}
 			>
 				Timeline
+			</button>
+			<button
+				class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
+				class:bg-dark-grey={selectedView === 'list'}
+				class:text-white={selectedView === 'list'}
+				class:text-mid-grey={selectedView !== 'list'}
+				class:hover:text-dark-grey={selectedView !== 'list'}
+				onclick={() => onviewchange?.('list')}
+			>
+				List
 			</button>
 		</div>
 

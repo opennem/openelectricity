@@ -29,7 +29,7 @@
 	/** @type {any | null} */
 	let hoveredFacility = $state(null);
 	/** @type {'list' | 'timeline'} */
-	let selectedView = $state('timeline');
+	let selectedView = $derived(view);
 
 	/**
 	 * Filter out battery_charging and battery_discharging units from facilities since they are merged into battery.
@@ -153,12 +153,11 @@
 	});
 
 	/**
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[]}} param0
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], view: string}} param0
 	 */
-	function handleViewChange({ statuses, regions, fuelTechs }) {
-		console.log('view', statuses, regions, fuelTechs);
+	function handleFilterChange({ statuses, regions, fuelTechs, view }) {
 		goto(
-			`/facilities/all?statuses=${statuses.join(',')}&regions=${regions.join(',')}&fuel_techs=${fuelTechs.join(',')}`,
+			`/facilities/all?view=${view}&statuses=${statuses.join(',')}&regions=${regions.join(',')}&fuel_techs=${fuelTechs.join(',')}`,
 			{
 				noScroll: true,
 				invalidateAll: true
@@ -170,21 +169,28 @@
 	 * @param {string[]} values
 	 */
 	function handleRegionsChange(values) {
-		handleViewChange({ statuses, regions: values, fuelTechs });
+		handleFilterChange({ statuses, regions: values, fuelTechs, view: selectedView });
 	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function handleFuelTechsChange(values) {
-		handleViewChange({ statuses, regions, fuelTechs: values });
+		handleFilterChange({ statuses, regions, fuelTechs: values, view: selectedView });
 	}
 
 	/**
 	 * @param {string[]} values
 	 */
 	function handleStatusesChange(values) {
-		handleViewChange({ statuses: values, regions, fuelTechs });
+		handleFilterChange({ statuses: values, regions, fuelTechs, view: selectedView });
+	}
+
+	/**
+	 * @param {'list' | 'timeline'} value
+	 */
+	function handleSelectedViewChange(value) {
+		handleFilterChange({ statuses, regions, fuelTechs, view: value });
 	}
 
 	/**
@@ -235,7 +241,7 @@
 			onstatuseschange={handleStatusesChange}
 			onregionschange={handleRegionsChange}
 			onfueltechschange={handleFuelTechsChange}
-			onviewchange={(/** @type {'list' | 'timeline'} */ v) => (selectedView = v)}
+			onviewchange={handleSelectedViewChange}
 		/>
 	</div>
 </div>
