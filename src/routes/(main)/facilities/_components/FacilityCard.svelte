@@ -129,6 +129,7 @@
 	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
 	let hasMultipleGroups = $derived(unitGroups.length > 1);
 	let primaryGroup = $derived(unitGroups[0]);
+	let hasCommittedUnit = $derived(unitGroups.some((g) => g.status_id === 'committed'));
 
 	let path = $derived(
 		`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`
@@ -157,7 +158,7 @@
 >
 	<a
 		class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey"
-		class:bg-light-warm-grey={primaryGroup?.status_id === 'committed'}
+		class:bg-light-warm-grey={hasCommittedUnit}
 		target="_blank"
 		href={path}
 	>
