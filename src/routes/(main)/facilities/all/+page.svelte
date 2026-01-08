@@ -279,7 +279,7 @@
 
 	{#snippet summaryBar()}
 		<div
-			class="z-20 bg-white border-t border-warm-grey px-4 py-3 flex items-center justify-between gap-4"
+			class="z-20 bg-white border-t border-warm-grey px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
 		>
 			<div class="flex items-center gap-4 text-xs font-space">
 				<div class="flex items-center gap-1.5">
@@ -371,9 +371,9 @@
 	{#if selectedView === 'list'}
 		<!-- List panel: full width on mobile, floating on desktop -->
 		<div
-			class="h-[calc(100vh-118px)] md:absolute md:top-6 md:left-6 md:bottom-6 md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col"
+			class="h-full md:absolute md:top-6 md:left-6 md:bottom-6 md:h-auto md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col min-h-0"
 		>
-			<div class="flex-1 overflow-y-auto">
+			<div class="flex-1 overflow-y-auto min-h-0">
 				<List facilities={filteredFacilities} onhover={(f) => (hoveredFacility = f)} />
 			</div>
 			{@render summaryBar()}
@@ -381,7 +381,7 @@
 	{:else if selectedView === 'timeline'}
 		<!-- Timeline panel: full width on mobile, floating on desktop -->
 		<div
-			class="h-[calc(100vh-118px)] md:absolute md:top-6 md:left-6 md:bottom-6 md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col"
+			class="h-full md:absolute md:top-6 md:left-6 md:bottom-6 md:h-auto md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col min-h-0"
 		>
 			{#if showTodayButton && searchTerm.length === 0}
 				<div
@@ -403,7 +403,7 @@
 					</button>
 				</div>
 			{/if}
-			<div class="flex-1 overflow-y-auto" bind:this={timelineScrollContainer}>
+			<div class="flex-1 overflow-y-auto min-h-0" bind:this={timelineScrollContainer}>
 				<div class="p-6">
 					<Timeline
 						bind:this={timelineRef}
@@ -417,5 +417,11 @@
 			{@render summaryBar()}
 		</div>
 	{/if}
-	<!-- Map view: no floating panel, just the map (mobile only option) -->
+
+	<!-- Map view summary bar: only visible on mobile -->
+	{#if selectedView === 'map'}
+		<div class="absolute bottom-0 left-0 right-0 md:hidden">
+			{@render summaryBar()}
+		</div>
+	{/if}
 </section>

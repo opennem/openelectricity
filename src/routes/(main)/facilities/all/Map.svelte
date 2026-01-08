@@ -1,5 +1,5 @@
 <script>
-	import { MapLibre, Marker, Popup, NavigationControl } from 'svelte-maplibre-gl';
+	import { MapLibre, Marker, Popup, NavigationControl, AttributionControl } from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import UnitGroup from '../_components/UnitGroup.svelte';
 	import { regions } from '../_utils/filters';
@@ -220,6 +220,16 @@
 				fitMapToFacilities(facilities);
 			}, 100);
 		}
+
+		// Force attribution to compact/collapsed mode
+		setTimeout(() => {
+			const attrib = document.querySelector('.maplibregl-ctrl-attrib');
+			if (attrib) {
+				attrib.classList.add('maplibregl-compact');
+				attrib.classList.remove('maplibregl-compact-show');
+				attrib.removeAttribute('open');
+			}
+		}, 100);
 	}
 
 	// Fit bounds when facilities change
@@ -243,10 +253,12 @@
 		minZoom={3}
 		scrollZoom={false}
 		touchZoomRotate={true}
+		attributionControl={false}
 		bind:map={mapInstance}
 		onload={handleMapLoad}
 	>
 		<NavigationControl position="top-right" showCompass={false} />
+		<AttributionControl position="bottom-right" compact={true} />
 		{#each facilities as facility}
 			{@const color = getFacilityColor(facility)}
 			{@const borderColor = getFacilityColor(facility)}
@@ -341,5 +353,28 @@
 
 	:global(.maplibregl-popup-close-button) {
 		display: none !important;
+	}
+
+	/* Attribution control: top-left on mobile, bottom-right on desktop */
+	@media (max-width: 767px) {
+		:global(.maplibregl-ctrl-bottom-right) {
+			top: 0 !important;
+			bottom: auto !important;
+			left: 0 !important;
+			right: auto !important;
+		}
+	}
+
+	/* Style the attribution button */
+	:global(.maplibregl-ctrl-attrib-button) {
+		background-color: rgba(255, 255, 255, 0.9) !important;
+		border-radius: 4px !important;
+	}
+
+	/* Style the attribution inner text when expanded */
+	:global(.maplibregl-ctrl-attrib[open] .maplibregl-ctrl-attrib-inner) {
+		background-color: rgba(255, 255, 255, 0.95);
+		padding: 4px 8px;
+		border-radius: 4px;
 	}
 </style>
