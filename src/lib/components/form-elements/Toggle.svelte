@@ -12,8 +12,12 @@
 
 	let background = $derived(checked ? 'bg-dark-grey' : 'bg-warm-grey');
 	let position = $derived(checked ? 'translate-x-3' : '-translate-x-3');
-	let crossfade = $derived(checked ? 'opacity-0 duration-100 ease-out' : 'opacity-100 duration-200 ease-in');
-	let checkfade = $derived(checked ? 'opacity-100 duration-200 ease-in' : 'opacity-0 duration-100 ease-out');
+	let crossfade = $derived(
+		checked ? 'opacity-0 duration-100 ease-out' : 'opacity-100 duration-200 ease-in'
+	);
+	let checkfade = $derived(
+		checked ? 'opacity-100 duration-200 ease-in' : 'opacity-0 duration-100 ease-out'
+	);
 </script>
 
 <label for="toggle" class="flex gap-6 justify-center items-center">

@@ -1,7 +1,6 @@
 <script>
 	import { preventDefault } from 'svelte/legacy';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('svelte/elements').FormEventHandler<HTMLInputElement> | null} [changeHandler]
@@ -11,13 +10,7 @@
 	 */
 
 	/** @type {Props & { [key: string]: any }} */
-	let {
-		changeHandler = null,
-		placeholder = '',
-		value = '',
-		type = 'text',
-		...rest
-	} = $props();
+	let { changeHandler = null, placeholder = '', value = '', type = 'text', ...rest } = $props();
 </script>
 
 <input

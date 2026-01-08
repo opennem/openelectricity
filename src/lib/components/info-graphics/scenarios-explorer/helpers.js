@@ -430,8 +430,8 @@ export function processScenarioData({
 						? selectedDataView === 'emissions'
 							? d[historySeriesName]
 							: historySeriesName === '_max'
-							? d['au.total_sources.grouped'] - d['au.total_loads.grouped']
-							: d[historySeriesName]
+								? d['au.total_sources.grouped'] - d['au.total_loads.grouped']
+								: d[historySeriesName]
 						: null;
 
 				// console.log('historical', d, d[historySeriesName], historical, d.date, d.time);
@@ -605,8 +605,8 @@ export function processRegionData({
 					selectedDataView === 'emissions'
 						? d[historySeriesName]
 						: historySeriesName === '_max'
-						? d['au.total_sources.grouped'] - d['au.total_loads.grouped'] // net (sources - loads)
-						: d[historySeriesName];
+							? d['au.total_sources.grouped'] - d['au.total_loads.grouped'] // net (sources - loads)
+							: d[historySeriesName];
 			});
 		});
 	}

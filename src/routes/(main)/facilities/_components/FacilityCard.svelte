@@ -130,7 +130,9 @@
 	let hasMultipleGroups = $derived(unitGroups.length > 1);
 	let primaryGroup = $derived(unitGroups[0]);
 
-	let path = $derived(`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`);
+	let path = $derived(
+		`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`
+	);
 </script>
 
 {#snippet fuelTechBadge(/** @type {UnitGroup} */ group)}
@@ -202,7 +204,9 @@
 
 				{#if primaryGroup}
 					<div class="group-hover:block hidden absolute z-30 top-0 right-0">
-						<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[220px] flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
+						<div
+							class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[220px] flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
+						>
 							{#each unitGroups as group}
 								<UnitGroup
 									fueltech_id={group.unitSummary.fueltech_id}

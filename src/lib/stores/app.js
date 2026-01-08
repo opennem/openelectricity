@@ -17,10 +17,10 @@ function fromLocalStorage(storageKey, fallbackValue) {
 			return typeof fallbackValue === 'object'
 				? JSON.parse(storedValue)
 				: storedValue === 'true'
-				? true
-				: storedValue === 'false'
-				? false
-				: storedValue;
+					? true
+					: storedValue === 'false'
+						? false
+						: storedValue;
 		}
 	}
 

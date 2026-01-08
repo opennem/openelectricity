@@ -5,10 +5,6 @@
 
 	const { xGet, height } = getContext('LayerCake');
 
-	
-
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData | undefined} [hoverData]
@@ -18,19 +14,13 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		hoverData = undefined,
-		isShapeStack = false,
-		position = 'top',
-		children
-	} = $props();
+	let { hoverData = undefined, isShapeStack = false, position = 'top', children } = $props();
 
 	let visible = $state(false);
 	let style = $state('');
 
 	/** @type {HTMLElement} */
 	let textContainer = $state();
-
 
 	/**
 	 * @param {TimeSeriesData} d

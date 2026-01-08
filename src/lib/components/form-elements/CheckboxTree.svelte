@@ -5,14 +5,6 @@
 
 	const dispatch = createEventDispatcher();
 
-	
-
-
-	
-
-	
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [name]
@@ -22,12 +14,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		name = 'checkbox-tree',
-		nodes = [],
-		checked = [],
-		indeterminate = []
-	} = $props();
+	let { name = 'checkbox-tree', nodes = [], checked = [], indeterminate = [] } = $props();
 
 	/**
 	 * Handle node change

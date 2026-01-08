@@ -1,7 +1,6 @@
 <script>
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {*} [analysisArticles]

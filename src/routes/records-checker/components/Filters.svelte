@@ -29,7 +29,9 @@
 	let filterMode = $state('checkboxes'); // text or checkboxes
 
 	/** @type {string[]} */
-	let checkedRegions = $state(initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']);
+	let checkedRegions = $state(
+		initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']
+	);
 
 	/** @type {string[]} */
 	let indeterminateRegions = $state(checkedRegions.length === 8 ? [] : ['_all']);

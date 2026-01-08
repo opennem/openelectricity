@@ -1,5 +1,11 @@
 <script>
-	import { MapLibre, Marker, Popup, NavigationControl, AttributionControl } from 'svelte-maplibre-gl';
+	import {
+		MapLibre,
+		Marker,
+		Popup,
+		NavigationControl,
+		AttributionControl
+	} from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import UnitGroup from '../_components/UnitGroup.svelte';
 	import { regions } from '../_utils/filters';

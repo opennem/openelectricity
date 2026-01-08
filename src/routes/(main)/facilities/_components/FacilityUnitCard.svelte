@@ -32,7 +32,9 @@
 	}
 
 	let bgColor = $derived(facility.unit ? getFueltechColor(facility.unit.fueltech_id) : '#FFFFFF');
-	let path = $derived(`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`);
+	let path = $derived(
+		`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`
+	);
 </script>
 
 <li
@@ -111,9 +113,7 @@
 							class="font-mono text-sm text-dark-grey"
 							title={facility.unit.capacity_maximum ? 'Maximum Capacity' : 'Registered Capacity'}
 						>
-							{formatValue(
-								facility.unit.capacity_maximum || facility.unit.capacity_registered
-							)}
+							{formatValue(facility.unit.capacity_maximum || facility.unit.capacity_registered)}
 						</span>
 
 						<span class="text-xs text-mid-grey">MW</span>

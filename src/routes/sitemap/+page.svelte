@@ -2,7 +2,6 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import { byProp } from '$lib/utils/sort.js';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('./$types').PageData} data

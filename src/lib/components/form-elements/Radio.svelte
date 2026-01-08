@@ -11,12 +11,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		name = '',
-		label = '',
-		value,
-		checked = $bindable()
-	} = $props();
+	let { name = '', label = '', value, checked = $bindable() } = $props();
 
 	let radioId = $derived(`radio-${name}-${value}`);
 </script>

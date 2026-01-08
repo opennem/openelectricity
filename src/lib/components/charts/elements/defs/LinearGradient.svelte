@@ -6,12 +6,15 @@
 	 */
 
 	/** @type {Props} */
-	let { id = 'linear-gradient', stops = [
-		{ offset: '0%', color: '#2D9B14' },
-		{ offset: '10%', color: '#ffe310' },
-		{ offset: '55%', color: '#803D11' },
-		{ offset: '100%', color: '#000000' }
-	] } = $props();
+	let {
+		id = 'linear-gradient',
+		stops = [
+			{ offset: '0%', color: '#2D9B14' },
+			{ offset: '10%', color: '#ffe310' },
+			{ offset: '55%', color: '#803D11' },
+			{ offset: '100%', color: '#000000' }
+		]
+	} = $props();
 </script>
 
 <linearGradient {id}>

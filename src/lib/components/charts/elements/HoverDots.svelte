@@ -3,9 +3,6 @@
 
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
 
-	
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]

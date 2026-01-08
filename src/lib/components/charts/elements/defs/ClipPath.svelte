@@ -3,8 +3,6 @@
 
 	const { width, height, padding } = getContext('LayerCake');
 
-	
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [id]
@@ -15,8 +13,12 @@
 	/** @type {Props} */
 	let { id = 'clipping-path', customPaddingLeft = null, customPaddingRight = null } = $props();
 
-	let left = $derived(customPaddingLeft || customPaddingLeft === 0 ? customPaddingLeft : $padding.left);
-	let right = $derived(customPaddingRight || customPaddingRight === 0 ? customPaddingRight : $padding.right);
+	let left = $derived(
+		customPaddingLeft || customPaddingLeft === 0 ? customPaddingLeft : $padding.left
+	);
+	let right = $derived(
+		customPaddingRight || customPaddingRight === 0 ? customPaddingRight : $padding.right
+	);
 </script>
 
 <clipPath {id} transform="translate({-left}, 0)">

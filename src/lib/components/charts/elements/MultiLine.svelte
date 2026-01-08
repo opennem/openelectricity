@@ -5,10 +5,6 @@
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
-	
-
-
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData | undefined} [hoverData]
@@ -55,15 +51,17 @@
 		return $yGet(find);
 	});
 
-	let updatedData = $derived(hoverData
-		? $data.map((d) => {
-				const time = hoverData.time;
-				return {
-					group: d.group,
-					values: d.values.filter((v) => v.time <= time)
-				};
-		  })
-		: $data);
+	let updatedData = $derived(
+		hoverData
+			? $data.map((d) => {
+					const time = hoverData.time;
+					return {
+						group: d.group,
+						values: d.values.filter((v) => v.time <= time)
+					};
+				})
+			: $data
+	);
 </script>
 
 <g

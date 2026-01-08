@@ -20,24 +20,28 @@
 	 */
 
 	/** @type {Props} */
-	let { 
-		chartContext, 
-		tableData, 
+	let {
+		chartContext,
+		tableData,
 		fuelData,
 		fuelTechName,
-		selectedFuelTechs, 
-		viewState, 
-		onViewStateChange, 
-		onmousemove, 
-		onmouseout, 
+		selectedFuelTechs,
+		viewState,
+		onViewStateChange,
+		onmousemove,
+		onmouseout,
 		onpointerup,
-		emptyStateMessage = "No data available",
-		tooltipSuffix = ""
+		emptyStateMessage = 'No data available',
+		tooltipSuffix = ''
 	} = $props();
 
 	// Determine if this is an individual fuel tech chart or combined/cumulative
 	let isIndividualChart = $derived(!!fuelData && !!fuelTechName);
-	let hasData = $derived(isIndividualChart ? (fuelData?.data?.length > 0 && fuelData?.years?.length > 0) : (selectedFuelTechs?.length > 0));
+	let hasData = $derived(
+		isIndividualChart
+			? fuelData?.data?.length > 0 && fuelData?.years?.length > 0
+			: selectedFuelTechs?.length > 0
+	);
 </script>
 
 <div class="bg-white border border-gray-200 rounded-lg p-6">
@@ -66,7 +70,9 @@
 					processedData={tableData}
 					{chartContext}
 					title={chartContext?.title || 'Data'}
-					subtitle={selectedFuelTechs ? `For selected fuel technologies: ${selectedFuelTechs.join(', ')}` : ''}
+					subtitle={selectedFuelTechs
+						? `For selected fuel technologies: ${selectedFuelTechs.join(', ')}`
+						: ''}
 				/>
 			{/if}
 		{:else if chartContext?.key}
@@ -76,8 +82,7 @@
 				{@const useData = cxt?.hoverData || cxt?.focusData}
 				{@const valueDate = useData ? useData.date || undefined : undefined}
 				{@const cxtValueKey = cxt?.chartTooltips?.valueKey || cxt?.hoverKey}
-				{@const valueKey =
-					useData && cxtValueKey ? useData[cxtValueKey] || undefined : undefined}
+				{@const valueKey = useData && cxtValueKey ? useData[cxtValueKey] || undefined : undefined}
 				{@const convertedValue =
 					valueKey || valueKey === 0 ? cxt?.convertAndFormatValue(valueKey) : ''}
 				{@const hoverKeyLabel = cxtValueKey ? cxt?.seriesLabels?.[cxtValueKey] : ''}
@@ -87,9 +92,7 @@
 					style="padding-right: var(--pad-right); z-index: 10; position: relative;"
 				>
 					{#if useData && (valueKey || valueKey === 0)}
-						<div
-							class="h-full items-center flex justify-end text-xs leading-xs whitespace-nowrap"
-						>
+						<div class="h-full items-center flex justify-end text-xs leading-xs whitespace-nowrap">
 							<div class="bg-light-warm-grey px-4 py-1 flex gap-4 items-center">
 								<span class="font-semibold">
 									{valueDate?.toLocaleDateString('en', { month: 'short' })}

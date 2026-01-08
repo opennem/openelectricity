@@ -1,5 +1,4 @@
 <script>
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('$lib/types/unit.types').Unit[]} [data]
@@ -24,10 +23,12 @@
 		 */
 		(d, prop) => d[prop];
 
-	let units = $derived(data.map((unit) => ({
-		...unit,
-		code: decodeURIComponent(unit.code)
-	})));
+	let units = $derived(
+		data.map((unit) => ({
+			...unit,
+			code: decodeURIComponent(unit.code)
+		}))
+	);
 </script>
 
 <table class="w-full my-4">

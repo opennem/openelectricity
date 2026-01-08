@@ -1,5 +1,4 @@
 <script>
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('svelte/elements').MouseEventHandler<HTMLButtonElement> | null} [clickHandler]
