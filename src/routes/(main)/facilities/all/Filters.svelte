@@ -4,6 +4,7 @@
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import { Search, X } from '@lucide/svelte';
 
 	import { regions, fuelTechOptions, statusOptions, sizeOptions } from '../_utils/filters.js';
 
@@ -14,13 +15,13 @@
 	 *   selectedFuelTechs?: string[],
 	 *   selectedSizes?: string[],
 	 *   searchTerm?: string,
-	 *   selectedView?: 'list' | 'timeline',
+	 *   selectedView?: 'list' | 'timeline' | 'map',
 	 *   onstatuseschange?: (values: string[]) => void,
 	 *   onregionschange?: (values: string[]) => void,
 	 *   onfueltechschange?: (values: string[]) => void,
 	 *   onsizeschange?: (values: string[]) => void,
 	 *   onsearchchange?: (value: string) => void,
-	 *   onviewchange?: (view: 'list' | 'timeline') => void
+	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void
 	 * }}
 	 */
 	let {
@@ -39,6 +40,10 @@
 	} = $props();
 
 	let showMobileFilterOptions = $state(false);
+	let showMobileSearch = $state(false);
+
+	/** @type {HTMLInputElement | null} */
+	let mobileSearchInput = $state(null);
 
 	let regionOptions = $derived(
 		regions.map((r) => ({
@@ -230,82 +235,122 @@
 {/if}
 
 <div class="flex items-center justify-between pt-3 pb-3 px-8 relative z-10 gap-4">
-	<div class="flex items-center gap-4">
-		<!-- View Switcher -->
-		<div class="flex items-center rounded-full border border-warm-grey bg-white p-1">
-			<button
-				class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
-				class:bg-dark-grey={selectedView === 'timeline'}
-				class:text-white={selectedView === 'timeline'}
-				class:text-mid-grey={selectedView !== 'timeline'}
-				class:hover:text-dark-grey={selectedView !== 'timeline'}
-				onclick={() => onviewchange?.('timeline')}
-			>
-				Timeline
-			</button>
-			<button
-				class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
-				class:bg-dark-grey={selectedView === 'list'}
-				class:text-white={selectedView === 'list'}
-				class:text-mid-grey={selectedView !== 'list'}
-				class:hover:text-dark-grey={selectedView !== 'list'}
-				onclick={() => onviewchange?.('list')}
-			>
-				List
-			</button>
+	<div class="flex items-center gap-2 justify-between w-full">
+		<div class="flex items-center gap-4">
+			<!-- View Switcher -->
+			<div class="flex items-center rounded-full border border-warm-grey bg-white p-1">
+				<button
+					class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
+					class:bg-dark-grey={selectedView === 'timeline'}
+					class:text-white={selectedView === 'timeline'}
+					class:text-mid-grey={selectedView !== 'timeline'}
+					class:hover:text-dark-grey={selectedView !== 'timeline'}
+					onclick={() => onviewchange?.('timeline')}
+				>
+					Timeline
+				</button>
+				<button
+					class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
+					class:bg-dark-grey={selectedView === 'list'}
+					class:text-white={selectedView === 'list'}
+					class:text-mid-grey={selectedView !== 'list'}
+					class:hover:text-dark-grey={selectedView !== 'list'}
+					onclick={() => onviewchange?.('list')}
+				>
+					List
+				</button>
+				<!-- Map option only visible on mobile -->
+				<button
+					class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer md:hidden"
+					class:bg-dark-grey={selectedView === 'map'}
+					class:text-white={selectedView === 'map'}
+					class:text-mid-grey={selectedView !== 'map'}
+					class:hover:text-dark-grey={selectedView !== 'map'}
+					onclick={() => onviewchange?.('map')}
+				>
+					Map
+				</button>
+			</div>
+
+			<div class="justify-start items-center gap-2 hidden md:flex">
+				<FormMultiSelect
+					options={regionOptions}
+					selected={selectedRegions}
+					label={regionLabel}
+					paddingX="pl-5 pr-4"
+					paddingY="py-3"
+					on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+				/>
+
+				<FormMultiSelect
+					options={statusOptions}
+					selected={selectedStatuses}
+					label={statusLabel}
+					withColours={true}
+					paddingX="pl-5 pr-4"
+					paddingY="py-3"
+					on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
+				/>
+
+				<FormMultiSelect
+					options={fuelTechOptions}
+					selected={selectedFuelTechs}
+					label={fuelTechLabel}
+					paddingX="pl-5 pr-4"
+					paddingY="py-3"
+					on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
+				/>
+
+				<FormMultiSelect
+					options={sizeOptions}
+					selected={selectedSizes}
+					label={sizeLabel}
+					paddingX="pl-5 pr-4"
+					paddingY="py-3"
+					on:change={(evt) => handleSizeChange(evt.detail.value, evt.detail.isMetaPressed)}
+				/>
+			</div>
 		</div>
 
-		<div class="justify-start items-center gap-2 hidden md:flex">
-			<FormMultiSelect
-				options={regionOptions}
-				selected={selectedRegions}
-				label={regionLabel}
-				paddingX="pl-5 pr-4"
-				paddingY="py-3"
-				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+		<!-- Desktop search input -->
+		<div class="hidden md:flex justify-end items-center gap-2">
+			<input
+				type="search"
+				value={searchTerm}
+				oninput={(e) => onsearchchange?.(/** @type {HTMLInputElement} */ (e.target).value)}
+				placeholder="Filter by name"
+				class="rounded-full border border-warm-grey bg-white px-5 py-3 text-xs transition-colors hover:border-dark-grey focus:border-dark-grey focus:outline-none"
 			/>
+		</div>
 
-			<FormMultiSelect
-				options={statusOptions}
-				selected={selectedStatuses}
-				label={statusLabel}
-				withColours={true}
-				paddingX="pl-5 pr-4"
-				paddingY="py-3"
-				on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
-			/>
-
-			<FormMultiSelect
-				options={fuelTechOptions}
-				selected={selectedFuelTechs}
-				label={fuelTechLabel}
-				paddingX="pl-5 pr-4"
-				paddingY="py-3"
-				on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
-			/>
-
-			<FormMultiSelect
-				options={sizeOptions}
-				selected={selectedSizes}
-				label={sizeLabel}
-				paddingX="pl-5 pr-4"
-				paddingY="py-3"
-				on:change={(evt) => handleSizeChange(evt.detail.value, evt.detail.isMetaPressed)}
-			/>
+		<!-- Mobile search button/input -->
+		<div class="md:hidden flex items-center justify-end gap-2">
+			{#if showMobileSearch}
+				<div class="flex items-center gap-2">
+					<input
+						bind:this={mobileSearchInput}
+						type="search"
+						value={searchTerm}
+						oninput={(e) => onsearchchange?.(/** @type {HTMLInputElement} */ (e.target).value)}
+						placeholder="Filter by name"
+						class="rounded-full border border-warm-grey bg-white px-4 py-3 text-xs transition-colors focus:border-dark-grey focus:outline-none w-full"
+					/>
+				</div>
+			{:else}
+				<button
+					class="p-4 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
+					onclick={() => {
+						showMobileSearch = true;
+						setTimeout(() => mobileSearchInput?.focus(), 50);
+					}}
+				>
+					<Search class="size-6 text-mid-grey" />
+				</button>
+			{/if}
 		</div>
 	</div>
 
-	<div class="flex justify-end items-center gap-2">
-		<input
-			type="search"
-			value={searchTerm}
-			oninput={(e) => onsearchchange?.(/** @type {HTMLInputElement} */ (e.target).value)}
-			placeholder="Filter by name"
-			class="rounded-full border border-warm-grey bg-white px-5 py-3 text-xs transition-colors hover:border-dark-grey focus:border-dark-grey focus:outline-none"
-		/>
-	</div>
-
-	<div class="md:hidden pl-8 ml-4 border-l border-warm-grey">
+	<div class="md:hidden pl-4 ml-2 border-l border-warm-grey">
 		<ButtonIcon on:click={() => (showMobileFilterOptions = true)}>
 			<IconAdjustmentsHorizontal class="size-10" />
 		</ButtonIcon>

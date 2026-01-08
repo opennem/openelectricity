@@ -30,7 +30,7 @@
 	let searchTerm = $state('');
 	/** @type {any | null} */
 	let hoveredFacility = $state(null);
-	/** @type {'list' | 'timeline'} */
+	/** @type {'list' | 'timeline' | 'map'} */
 	let selectedView = $derived(view);
 
 	/**
@@ -206,7 +206,7 @@
 	}
 
 	/**
-	 * @param {'list' | 'timeline'} value
+	 * @param {'list' | 'timeline' | 'map'} value
 	 */
 	function handleSelectedViewChange(value) {
 		handleFilterChange({ statuses, regions, fuelTechs, sizes, view: value });
@@ -268,8 +268,12 @@
 </div>
 
 <section class="relative h-[calc(100vh-118px)]">
-	<!-- Map -->
-	<div class="absolute inset-0">
+	<!-- Map: always visible on desktop, on mobile only when map view selected -->
+	<div
+		class="absolute inset-0"
+		class:hidden={selectedView !== 'map'}
+		class:md:block={selectedView !== 'map'}
+	>
 		<Map facilities={filteredWithLocation} {hoveredFacility} />
 	</div>
 
@@ -365,19 +369,19 @@
 	{/snippet}
 
 	{#if selectedView === 'list'}
-		<!-- Floating list panel on the left -->
+		<!-- List panel: full width on mobile, floating on desktop -->
 		<div
-			class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden flex flex-col"
+			class="h-[calc(100vh-118px)] md:absolute md:top-6 md:left-6 md:bottom-6 md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col"
 		>
 			<div class="flex-1 overflow-y-auto">
 				<List facilities={filteredFacilities} onhover={(f) => (hoveredFacility = f)} />
 			</div>
 			{@render summaryBar()}
 		</div>
-	{:else}
-		<!-- Floating timeline panel on the left -->
+	{:else if selectedView === 'timeline'}
+		<!-- Timeline panel: full width on mobile, floating on desktop -->
 		<div
-			class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden flex flex-col"
+			class="h-[calc(100vh-118px)] md:absolute md:top-6 md:left-6 md:bottom-6 md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col"
 		>
 			{#if showTodayButton && searchTerm.length === 0}
 				<div
@@ -413,4 +417,5 @@
 			{@render summaryBar()}
 		</div>
 	{/if}
+	<!-- Map view: no floating panel, just the map (mobile only option) -->
 </section>
