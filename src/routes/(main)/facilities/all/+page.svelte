@@ -107,6 +107,18 @@
 	$inspect('uniqueRegions', uniqueRegions);
 	$inspect('uniqueNetworkIds', uniqueNetworkIds);
 
+	// Test for max_generation fields
+	let allUnits = $derived(facilities?.flatMap((f) => f.units) ?? []);
+	$inspect('All units:', allUnits);
+	$inspect(
+		'Units with max_generation:',
+		allUnits.filter((u) => u.max_generation !== undefined)
+	);
+	$inspect(
+		'Units with max_generation_interval:',
+		allUnits.filter((u) => u.max_generation_interval !== undefined)
+	);
+
 	/**
 	 * @param {{statuses: string[], regions: string[], fuelTechs: string[]}} param0
 	 */
