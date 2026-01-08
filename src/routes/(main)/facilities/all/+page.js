@@ -13,6 +13,7 @@ export async function load({ url }) {
 	 * battery, battery_charging, battery_discharging, bioenergy_biogas, bioenergy_biomass, coal_black, coal_brown, distillate, gas_ccgt, gas_ocgt, gas_recip, gas_steam, gas_wcmg, hydro, pumps, solar_rooftop, solar_thermal, solar_utility, nuclear, other, solar, wind, wind_offshore, imports, exports, interconnector, aggregator_vpp, aggregator_dr
 	 */
 
+	/** @type {Record<string, string[]>} */
 	const fuelTechMap = {
 		battery: ['battery', 'battery_charging', 'battery_discharging'],
 		bioenergy: ['bioenergy_biogas', 'bioenergy_biomass'],
@@ -87,18 +88,19 @@ export async function load({ url }) {
 	facilities?.forEach((facility) => {
 		facility.units.forEach((unit) => {
 			if (isCommissioningCheck(unit)) {
-				unit.isCommissioning = true;
-				unit.status_id = 'commissioning';
+				/** @type {any} */ (unit).isCommissioning = true;
+				/** @type {any} */ (unit).status_id = 'commissioning';
 			}
 		});
 	});
 
+	/** @type {any[]} */
 	let newFacilities = [];
 	facilities?.forEach((facility) => {
 		newFacilities.push({
 			...facility,
 			units: facility.units.filter((unit) => {
-				return statuses.includes(unit.status_id);
+				return unit.status_id && statuses.includes(unit.status_id);
 			})
 		});
 	});

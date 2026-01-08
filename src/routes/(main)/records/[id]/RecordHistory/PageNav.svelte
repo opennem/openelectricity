@@ -207,12 +207,11 @@
 	);
 
 	/**
-	 * @param {CustomEvent} evt
+	 * @param {{label: string, value: string | number | null | undefined}} option
 	 */
-	function handleRegionChange(evt) {
-		// const findRegion = regions.find((r) => r.value === evt.detail.value);
+	function handleRegionChange(option) {
 		goToRecord({
-			region: evt.detail.value,
+			region: /** @type {string} */ (option.value),
 			fuelTech,
 			metric,
 			period,
@@ -221,12 +220,12 @@
 	}
 
 	/**
-	 * @param {CustomEvent} evt
+	 * @param {{label: string, value: string | number | null | undefined}} option
 	 */
-	function handleFuelTechChange(evt) {
+	function handleFuelTechChange(option) {
 		goToRecord({
 			region,
-			fuelTech: evt.detail.value,
+			fuelTech: /** @type {string} */ (option.value),
 			metric,
 			period,
 			aggregate
@@ -234,55 +233,55 @@
 	}
 
 	/**
-	 * @param {CustomEvent} evt
+	 * @param {{label: string, value: string | number | null | undefined}} option
 	 */
-	function handleMetricChange(evt) {
+	function handleMetricChange(option) {
 		let recordPeriod = period;
-		if (evt.detail.value === 'power' && recordPeriod !== 'interval') {
+		if (option.value === 'power' && recordPeriod !== 'interval') {
 			recordPeriod = 'interval';
 		}
-		if (evt.detail.value !== 'power' && recordPeriod === 'interval') {
+		if (option.value !== 'power' && recordPeriod === 'interval') {
 			recordPeriod = 'day';
 		}
 		goToRecord({
 			region,
 			fuelTech,
-			metric: evt.detail.value,
+			metric: /** @type {string} */ (option.value),
 			period: recordPeriod,
 			aggregate
 		});
 	}
 
 	/**
-	 * @param {CustomEvent} evt
+	 * @param {{label: string, value: string | number | null | undefined}} option
 	 */
-	function handlePeriodChange(evt) {
+	function handlePeriodChange(option) {
 		let recordMetric = metric;
-		if (evt.detail.value === 'interval' && recordMetric !== 'power') {
+		if (option.value === 'interval' && recordMetric !== 'power') {
 			recordMetric = 'power';
 		}
-		if (evt.detail.value !== 'interval' && recordMetric === 'power') {
+		if (option.value !== 'interval' && recordMetric === 'power') {
 			recordMetric = 'energy';
 		}
 		goToRecord({
 			region,
 			fuelTech,
 			metric: recordMetric,
-			period: evt.detail.value,
+			period: /** @type {string} */ (option.value),
 			aggregate
 		});
 	}
 
 	/**
-	 * @param {CustomEvent} evt
+	 * @param {{label: string, value: string | number | null | undefined}} option
 	 */
-	function handleAggregateChange(evt) {
+	function handleAggregateChange(option) {
 		goToRecord({
 			region,
 			fuelTech,
 			metric,
 			period,
-			aggregate: evt.detail.value
+			aggregate: /** @type {string} */ (option.value)
 		});
 	}
 
@@ -331,7 +330,7 @@
 						paddingX={px}
 						paddingY={py}
 						staticDisplay={true}
-						on:change={handleFuelTechChange}
+						onchange={handleFuelTechChange}
 					/>
 
 					<FormSelect
@@ -341,7 +340,7 @@
 						paddingX={px}
 						paddingY={py}
 						staticDisplay={true}
-						on:change={handleAggregateChange}
+						onchange={handleAggregateChange}
 					/>
 				</div>
 
@@ -353,7 +352,7 @@
 						paddingX={px}
 						paddingY={py}
 						staticDisplay={true}
-						on:change={handleRegionChange}
+						onchange={handleRegionChange}
 					/>
 
 					<FormSelect
@@ -363,7 +362,7 @@
 						paddingX={px}
 						paddingY={py}
 						staticDisplay={true}
-						on:change={handleMetricChange}
+						onchange={handleMetricChange}
 					/>
 
 					<FormSelect
@@ -373,7 +372,7 @@
 						paddingX={px}
 						paddingY={py}
 						staticDisplay={true}
-						on:change={handlePeriodChange}
+						onchange={handlePeriodChange}
 					/>
 				</div>
 			</div>
@@ -382,7 +381,7 @@
 				<div class="flex gap-3 text-base">
 					<Button
 						class="bg-dark-grey! text-white hover:bg-black! w-full"
-						on:click={() => (showMobileFilterOptions = false)}>Close</Button
+						onclick={() => (showMobileFilterOptions = false)}>Close</Button
 					>
 				</div>
 			{/snippet}
@@ -406,7 +405,7 @@
 					formLabel="Region"
 					paddingX={px}
 					paddingY={py}
-					on:change={handleRegionChange}
+					onchange={handleRegionChange}
 				/>
 			</div>
 
@@ -417,7 +416,7 @@
 					formLabel="Technology"
 					paddingX={px}
 					paddingY={py}
-					on:change={handleFuelTechChange}
+					onchange={handleFuelTechChange}
 				/>
 			</div>
 
@@ -428,7 +427,7 @@
 					formLabel="Metric"
 					paddingX={px}
 					paddingY={py}
-					on:change={handleMetricChange}
+					onchange={handleMetricChange}
 				/>
 			</div>
 
@@ -439,7 +438,7 @@
 					formLabel="Period"
 					paddingX={px}
 					paddingY={py}
-					on:change={handlePeriodChange}
+					onchange={handlePeriodChange}
 				/>
 			</div>
 
@@ -450,13 +449,13 @@
 					formLabel="Aggregate"
 					paddingX={px}
 					paddingY={py}
-					on:change={handleAggregateChange}
+					onchange={handleAggregateChange}
 				/>
 			</div>
 		</div>
 
 		<div class="sm:hidden pl-8 ml-4 border-l border-warm-grey">
-			<ButtonIcon on:click={() => (showMobileFilterOptions = true)}>
+			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 				<IconAdjustmentsHorizontal class="size-10" />
 			</ButtonIcon>
 		</div>

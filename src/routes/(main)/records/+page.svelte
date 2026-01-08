@@ -203,7 +203,7 @@
 				label={regionLabel}
 				paddingX="pl-5 pr-4"
 				paddingY="py-3"
-				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handleRegionChange(value, isMetaPressed)}
 			/>
 		</div>
 

@@ -1,5 +1,4 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 
@@ -18,6 +17,7 @@
 	 * @property {string} [position] - top, bottom
 	 * @property {string} [align] - left, right, middle
 	 * @property {string} [widthClass]
+	 * @property {(option: {label: string, value: string | number | null | undefined}) => void} [onchange]
 	 */
 
 	/** @type {Props} */
@@ -31,16 +31,18 @@
 		staticDisplay = false,
 		position = 'bottom',
 		align = 'left',
-		widthClass = 'w-full'
+		widthClass = 'w-full',
+		onchange
 	} = $props();
-
-	const dispatch = createEventDispatcher();
 
 	let showOptions = $state(false);
 	let selectedValue = $derived(selected && selected.value ? selected.value || selected : selected);
 
+	/**
+	 * @param {{label: string, value: string | number | null | undefined}} option
+	 */
 	function handleSelect(option) {
-		dispatch('change', option);
+		onchange?.(option);
 		showOptions = false;
 	}
 

@@ -132,10 +132,14 @@
 		}
 	}
 
+	/**
+	 * @param {[string, any[]][]} values
+	 * @returns {number}
+	 */
 	function getTotalCapacity(values) {
 		let total = 0;
 		values.forEach(([d, facilities]) => {
-			facilities.forEach((facility) => {
+			facilities.forEach((/** @type {any} */ facility) => {
 				// ignore today row as it's not a facility
 				if (!facility.isToday) {
 					if (facility.unit) {
@@ -233,7 +237,7 @@
 							{#each facilities as facility}
 								<FacilityUnitCard
 									{facility}
-									onmouseenter={(f) => onhover?.(f)}
+									onmouseenter={(/** @type {any} */ f) => onhover?.(f)}
 									onmouseleave={() => onhover?.(null)}
 								/>
 							{/each}

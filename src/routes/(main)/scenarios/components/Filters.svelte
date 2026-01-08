@@ -209,7 +209,7 @@
 				paddingX=""
 				staticDisplay={true}
 				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-				on:change={(evt) => handleDataTypeChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
 			/>
 
 			{#if $isTechnologyViewSection || $isScenarioViewSection}
@@ -220,7 +220,7 @@
 					paddingX=""
 					staticDisplay={true}
 					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					on:change={(evt) => ($selectedRegion = evt.detail.value)}
+					onchange={(option) => ($selectedRegion = option.value)}
 				/>
 			{/if}
 		</section>
@@ -235,7 +235,7 @@
 				<!-- <Button class="w-full">Cancel</Button> -->
 				<Button
 					class="bg-dark-grey! text-white hover:bg-black! w-full"
-					on:click={() => (showMobileFilterOptions = false)}>Close</Button
+					onclick={() => (showMobileFilterOptions = false)}>Close</Button
 				>
 			</div>
 		{/snippet}
@@ -252,7 +252,7 @@
 				selected={$selectedViewSection}
 				paddingX="px-4"
 				paddingY="py-3"
-				on:change={(evt) => handleDisplayViewChange($selectedViewSection, evt.detail.value)}
+				onchange={(option) => handleDisplayViewChange($selectedViewSection, option.value)}
 			/>
 		</div>
 
@@ -260,13 +260,13 @@
 			<Switch
 				buttons={viewSectionOptions}
 				selected={$selectedViewSection}
-				on:change={(evt) => handleDisplayViewChange($selectedViewSection, evt.detail.value)}
+				onchange={(option) => handleDisplayViewChange($selectedViewSection, option.value)}
 				class="justify-center my-4"
 			/>
 		</div>
 
 		<div class="md:hidden pl-8 ml-4 border-l border-warm-grey">
-			<ButtonIcon on:click={() => (showMobileFilterOptions = true)}>
+			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 				<IconAdjustmentsHorizontal class="size-10" />
 			</ButtonIcon>
 		</div>
@@ -281,7 +281,7 @@
 					label="Charts"
 					paddingX="px-7"
 					paddingY="py-3"
-					on:change={(evt) => handleDataTypeChange(evt.detail.value, evt.detail.isMetaPressed)}
+					onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
 				/>
 
 				{#if $isTechnologyViewSection || $isScenarioViewSection}
@@ -290,7 +290,7 @@
 						selected={$selectedRegion}
 						paddingX="px-7"
 						paddingY="py-3"
-						on:change={(evt) => ($selectedRegion = evt.detail.value)}
+						onchange={(option) => ($selectedRegion = option.value)}
 					/>
 				{/if}
 			</div>
@@ -298,7 +298,7 @@
 			<!-- <FormSelect
 				options={groupOptions}
 				selected={$selectedFuelTechGroup}
-				on:change={(evt) => ($selectedFuelTechGroup = evt.detail.value)}
+				onchange={(option) => ($selectedFuelTechGroup = option.value)}
 			/> -->
 
 			{#if $singleSelectionModel && $singleSelectionScenario}

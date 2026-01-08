@@ -192,7 +192,7 @@
 					label="Region"
 					paddingX=""
 					staticDisplay={true}
-					on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+					onchange={(value, isMetaPressed) => handleRegionChange(value, isMetaPressed)}
 				/>
 				<FormMultiSelect
 					options={statusOptions}
@@ -201,7 +201,7 @@
 					withColours={true}
 					paddingX=""
 					staticDisplay={true}
-					on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
+					onchange={(value, isMetaPressed) => handleStatusesChange(value, isMetaPressed)}
 				/>
 				<FormMultiSelect
 					options={sizeOptions}
@@ -209,7 +209,7 @@
 					label="Size"
 					paddingX=""
 					staticDisplay={true}
-					on:change={(evt) => handleSizeChange(evt.detail.value, evt.detail.isMetaPressed)}
+					onchange={(value, isMetaPressed) => handleSizeChange(value, isMetaPressed)}
 				/>
 			</div>
 
@@ -219,7 +219,7 @@
 				label="Technology"
 				paddingX=""
 				staticDisplay={true}
-				on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
 			/>
 		</section>
 
@@ -227,7 +227,7 @@
 			<div class="flex gap-3">
 				<Button
 					class="bg-dark-grey! text-white hover:bg-black! w-full"
-					on:click={() => (showMobileFilterOptions = false)}>Close</Button
+					onclick={() => (showMobileFilterOptions = false)}>Close</Button
 				>
 			</div>
 		{/snippet}
@@ -279,7 +279,7 @@
 					label={regionLabel}
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
-					on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+					onchange={(value, isMetaPressed) => handleRegionChange(value, isMetaPressed)}
 				/>
 
 				<FormMultiSelect
@@ -289,7 +289,7 @@
 					withColours={true}
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
-					on:change={(evt) => handleStatusesChange(evt.detail.value, evt.detail.isMetaPressed)}
+					onchange={(value, isMetaPressed) => handleStatusesChange(value, isMetaPressed)}
 				/>
 
 				<FormMultiSelect
@@ -298,7 +298,7 @@
 					label={fuelTechLabel}
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
-					on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
+					onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
 				/>
 
 				<FormMultiSelect
@@ -307,7 +307,7 @@
 					label={sizeLabel}
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
-					on:change={(evt) => handleSizeChange(evt.detail.value, evt.detail.isMetaPressed)}
+					onchange={(value, isMetaPressed) => handleSizeChange(value, isMetaPressed)}
 				/>
 			</div>
 		</div>
@@ -351,7 +351,7 @@
 	</div>
 
 	<div class="md:hidden pl-4 ml-2 border-l border-warm-grey">
-		<ButtonIcon on:click={() => (showMobileFilterOptions = true)}>
+		<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 			<IconAdjustmentsHorizontal class="size-10" />
 		</ButtonIcon>
 	</div>

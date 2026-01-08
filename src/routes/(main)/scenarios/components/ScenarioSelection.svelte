@@ -163,8 +163,8 @@
 								{isChecked}
 								highlightBg={$isSingleSelectionMode ? isFocussed : isChecked}
 								highlightBorder={isFocussed}
-								on:click={() => handleScenarioButtonClick(scenario.id)}
-								on:change={(evt) => handleCheckBoxChange(scenario.id, evt.detail.checked)}
+								onclick={() => handleScenarioButtonClick(scenario.id)}
+								onchange={(checked) => handleCheckBoxChange(scenario.id, checked)}
 							>
 								{#if mobileView && isFocussed}
 									<div>
@@ -177,9 +177,8 @@
 											selectedScenario={focusScenario}
 											selectedPathway={$singleSelectionData?.pathway}
 											{selectedPathways}
-											on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
-											on:change-multiple={(evt) =>
-												handlePathwaysChange(focusScenarioId, evt.detail.value)}
+											onchange={(value) => handlePathwayChange(focusScenarioId, value)}
+											onchangemultiple={(values) => handlePathwaysChange(focusScenarioId, values)}
 										/>
 									</div>
 								{/if}
@@ -199,8 +198,8 @@
 					selectedScenario={focusScenario}
 					selectedPathway={$singleSelectionData?.pathway}
 					{selectedPathways}
-					on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
-					on:change-multiple={(evt) => handlePathwaysChange(focusScenarioId, evt.detail.value)}
+					onchange={(value) => handlePathwayChange(focusScenarioId, value)}
+					onchangemultiple={(values) => handlePathwaysChange(focusScenarioId, values)}
 				/>
 			{/if}
 		</div>

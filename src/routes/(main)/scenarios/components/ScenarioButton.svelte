@@ -1,13 +1,7 @@
 <script>
-	import { createBubbler } from 'svelte/legacy';
-
-	const bubble = createBubbler();
 	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
 	import { modelLogoPath } from '../page-data-options/models';
-
-	
-	
 
 	/**
 	 * @typedef {Object} Props
@@ -17,6 +11,8 @@
 	 * @property {boolean} [highlightBg]
 	 * @property {boolean} [highlightBorder]
 	 * @property {boolean} [isChecked]
+	 * @property {() => void} [onclick]
+	 * @property {(checked: boolean) => void} [onchange]
 	 * @property {import('svelte').Snippet} [children]
 	 */
 
@@ -28,6 +24,8 @@
 		highlightBg = false,
 		highlightBorder = false,
 		isChecked = false,
+		onclick,
+		onchange,
 		children
 	} = $props();
 </script>
@@ -38,7 +36,7 @@
 		class:bg-light-warm-grey={highlightBg}
 		class:border-black={highlightBorder}
 		class:border-warm-grey={!highlightBorder}
-		onclick={bubble('click')}
+		{onclick}
 	>
 		{#if isRadioMode}
 			<div class="flex justify-between items-start text-sm font-medium text-dark-grey gap-3">
@@ -56,7 +54,7 @@
 				label={scenario.label}
 				checked={isChecked}
 				class="w-full justify-between items-start! flex-row-reverse text-sm font-semibold text-dark-grey"
-				on:change
+				{onchange}
 			/>
 		{/if}
 

@@ -50,7 +50,7 @@
 					label="Fuel Technology"
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
-					on:change={(evt) => onFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
+					onchange={(value, isMetaPressed) => onFuelTechChange(value, isMetaPressed)}
 				/>
 			</div>
 		</div>

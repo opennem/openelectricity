@@ -1,18 +1,9 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
 
 	import { scenarioLabels, scenarioDescriptions } from '../page-data-options/descriptions';
 
-	const dispatch = createEventDispatcher();
-
-	
-	
-	
-
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {boolean} [isRadioMode]
@@ -24,6 +15,8 @@
 	 * @property {string} [position]
 	 * @property {string} [align]
 	 * @property {*} [selectedPathways]
+	 * @property {(value: string) => void} [onchange]
+	 * @property {(values: string[]) => void} [onchangemultiple]
 	 */
 
 	/** @type {Props} */
@@ -36,29 +29,36 @@
 		showDescription = true,
 		position = 'bottom',
 		align = 'left',
-		selectedPathways = []
+		selectedPathways = [],
+		onchange,
+		onchangemultiple
 	} = $props();
 
-	/** @param {*} event */
-	function handlePathwayChange(event) {
-		dispatch('change', { value: event.detail.value });
+	/**
+	 * @param {{label: string, value: string | number | null | undefined}} option
+	 */
+	function handlePathwayChange(option) {
+		onchange?.(/** @type {string} */ (option.value));
 	}
 
-	/** @param {*} event */
-	function handlePathwaysChange(event) {
-		const value = event.detail.value;
-		const isMetaPressed = event.detail.isMetaPressed;
+	/**
+	 * @param {string} value
+	 * @param {boolean} isMetaPressed
+	 */
+	function handlePathwaysChange(value, isMetaPressed) {
 		let updated = [];
 
 		if (isMetaPressed) {
 			updated = [value];
 		} else if (selectedPathways.includes(value)) {
-			const filtered = selectedPathways.filter((pathway) => pathway !== value);
+			const filtered = selectedPathways.filter(
+				(/** @type {string} */ pathway) => pathway !== value
+			);
 			updated = filtered.length === 0 ? [value] : filtered;
 		} else {
 			updated = [...selectedPathways, value];
 		}
-		dispatch('change-multiple', { value: updated });
+		onchangemultiple?.(updated);
 	}
 
 	let options = $derived(pathways.map((pathway) => ({ value: pathway, label: pathway })));
@@ -85,7 +85,7 @@
 				{align}
 				{options}
 				selected={selectedPathway}
-				on:change={handlePathwayChange}
+				onchange={handlePathwayChange}
 			/>
 		</div>
 	{:else}
@@ -98,7 +98,7 @@
 				label="Pathways"
 				paddingY="py-3"
 				paddingX="px-4"
-				on:change={handlePathwaysChange}
+				onchange={handlePathwaysChange}
 			/>
 		</div>
 	{/if}

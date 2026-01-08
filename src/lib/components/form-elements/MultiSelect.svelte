@@ -1,5 +1,4 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 
@@ -18,6 +17,7 @@
 	 * @property {string} [position] - top, bottom
 	 * @property {string} [align] - left, right
 	 * @property {boolean} [withColours]
+	 * @property {(value: string, isMetaPressed: boolean) => void} [onchange]
 	 */
 
 	/** @type {Props} */
@@ -31,10 +31,9 @@
 		selectedLabelClass = 'font-semibold mb-0 capitalize',
 		position = 'bottom',
 		align = 'left',
-		withColours = false
+		withColours = false,
+		onchange
 	} = $props();
-
-	const dispatch = createEventDispatcher();
 
 	let showOptions = $state(false);
 	let isMetaPressed = false;
@@ -43,11 +42,7 @@
 	 * @param {*} option
 	 */
 	function handleSelect(option) {
-		dispatch('change', {
-			value: option.value,
-			isMetaPressed
-		});
-		// showOptions = false;
+		onchange?.(option.value, isMetaPressed);
 	}
 
 	function handleKeyup() {

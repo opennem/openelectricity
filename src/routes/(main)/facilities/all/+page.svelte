@@ -1,7 +1,6 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
-	import { Tooltip } from 'bits-ui';
 	import Meta from '$lib/components/Meta.svelte';
 	import formatValue from '../_utils/format-value';
 	import { statusColours, isInSizeRange } from '../_utils/filters.js';
@@ -10,6 +9,7 @@
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
 	import List from './List.svelte';
+	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 
 	let { data } = $props();
 
@@ -31,7 +31,7 @@
 	/** @type {any | null} */
 	let hoveredFacility = $state(null);
 	/** @type {'list' | 'timeline' | 'map'} */
-	let selectedView = $derived(view);
+	let selectedView = $derived(/** @type {'list' | 'timeline' | 'map'} */ (view));
 
 	/**
 	 * Filter out battery_charging and battery_discharging units from facilities since they are merged into battery.
@@ -63,7 +63,9 @@
 			});
 	}
 
-	let filteredFacilities = $derived(facilities ? filterFacilities(facilities, searchTerm, sizes) : []);
+	let filteredFacilities = $derived(
+		facilities ? filterFacilities(facilities, searchTerm, sizes) : []
+	);
 
 	/**
 	 * Check if facility has valid location data
@@ -292,74 +294,26 @@
 				</div>
 			</div>
 			<div class="flex items-center gap-5 text-xs">
-				{#if capacityByStatus.operating > 0}
-					<Tooltip.Provider>
-						<Tooltip.Root delayDuration={100}>
-							<Tooltip.Trigger>
-								<div class="flex items-center gap-1.5 cursor-default rounded-full px-2 py-1 -mx-2 -my-1 hover:bg-warm-grey transition-colors">
-									<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.operating};"></span>
-									<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.operating)}</span>
-								</div>
-							</Tooltip.Trigger>
-							<Tooltip.Content sideOffset={4} side="top">
-								<div class="bg-dark-grey rounded-lg py-1.5 px-3 shadow text-white text-xs font-space">
-									Operating
-								</div>
-							</Tooltip.Content>
-						</Tooltip.Root>
-					</Tooltip.Provider>
-				{/if}
-				{#if capacityByStatus.commissioning > 0}
-					<Tooltip.Provider>
-						<Tooltip.Root delayDuration={100}>
-							<Tooltip.Trigger>
-								<div class="flex items-center gap-1.5 cursor-default rounded-full px-2 py-1 -mx-2 -my-1 hover:bg-warm-grey transition-colors">
-									<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.commissioning};"></span>
-									<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.commissioning)}</span>
-								</div>
-							</Tooltip.Trigger>
-							<Tooltip.Content sideOffset={4} side="top">
-								<div class="bg-dark-grey rounded-lg py-1.5 px-3 shadow text-white text-xs font-space">
-									Commissioning
-								</div>
-							</Tooltip.Content>
-						</Tooltip.Root>
-					</Tooltip.Provider>
-				{/if}
-				{#if capacityByStatus.committed > 0}
-					<Tooltip.Provider>
-						<Tooltip.Root delayDuration={100}>
-							<Tooltip.Trigger>
-								<div class="flex items-center gap-1.5 cursor-default rounded-full px-2 py-1 -mx-2 -my-1 hover:bg-warm-grey transition-colors">
-									<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.committed};"></span>
-									<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.committed)}</span>
-								</div>
-							</Tooltip.Trigger>
-							<Tooltip.Content sideOffset={4} side="top">
-								<div class="bg-dark-grey rounded-lg py-1.5 px-3 shadow text-white text-xs font-space">
-									Committed
-								</div>
-							</Tooltip.Content>
-						</Tooltip.Root>
-					</Tooltip.Provider>
-				{/if}
-				{#if capacityByStatus.retired > 0}
-					<Tooltip.Provider>
-						<Tooltip.Root delayDuration={100}>
-							<Tooltip.Trigger>
-								<div class="flex items-center gap-1.5 cursor-default rounded-full px-2 py-1 -mx-2 -my-1 hover:bg-warm-grey transition-colors">
-									<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.retired};"></span>
-									<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.retired)}</span>
-								</div>
-							</Tooltip.Trigger>
-							<Tooltip.Content sideOffset={4} side="top">
-								<div class="bg-dark-grey rounded-lg py-1.5 px-3 shadow text-white text-xs font-space">
-									Retired
-								</div>
-							</Tooltip.Content>
-						</Tooltip.Root>
-					</Tooltip.Provider>
-				{/if}
+				<StatusCapacityBadge
+					capacity={capacityByStatus.operating}
+					colour={statusColours.operating}
+					label="Operating"
+				/>
+				<StatusCapacityBadge
+					capacity={capacityByStatus.commissioning}
+					colour={statusColours.commissioning}
+					label="Commissioning"
+				/>
+				<StatusCapacityBadge
+					capacity={capacityByStatus.committed}
+					colour={statusColours.committed}
+					label="Committed"
+				/>
+				<StatusCapacityBadge
+					capacity={capacityByStatus.retired}
+					colour={statusColours.retired}
+					label="Retired"
+				/>
 				<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
 					<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
 					<span class="text-mid-grey">MW</span>
@@ -374,7 +328,10 @@
 			class="h-full md:absolute md:top-6 md:left-6 md:bottom-6 md:h-auto md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col min-h-0"
 		>
 			<div class="flex-1 overflow-y-auto min-h-0">
-				<List facilities={filteredFacilities} onhover={(f) => (hoveredFacility = f)} />
+				<List
+					facilities={filteredFacilities}
+					onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
+				/>
 			</div>
 			{@render summaryBar()}
 		</div>
@@ -410,7 +367,7 @@
 						facilities={filteredWithLocation}
 						ontodaybuttonvisible={handleTodayButtonVisible}
 						scrollContainer={timelineScrollContainer}
-						onhover={(f) => (hoveredFacility = f)}
+						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 					/>
 				</div>
 			</div>
