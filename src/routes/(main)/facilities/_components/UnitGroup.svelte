@@ -75,12 +75,12 @@
 	<div class="flex items-center justify-between text-xs gap-4">
 		<div class="flex items-center gap-2">
 			<span
-				class="rounded-full p-1.5 block"
+				class="rounded-full p-1.5 block border border-white/40"
 				class:text-black={LIGHT_FUELTECHS.includes(fueltech_id)}
 				class:text-white={!LIGHT_FUELTECHS.includes(fueltech_id)}
 				style="background-color: {bgColor};"
 			>
-				<FuelTechIcon fuelTech={fueltech_id} sizeClass={5} />
+				<FuelTechIcon fuelTech={fueltech_id} sizeClass={5} border={true} />
 			</span>
 			<span class="font-medium">{fuelTechName(fueltech_id)}</span>
 		</div>
