@@ -24,6 +24,8 @@
 	let timelineRef = $state(null);
 
 	let searchTerm = $state('');
+	/** @type {any | null} */
+	let hoveredFacility = $state(null);
 
 	$inspect('view', view);
 	$inspect('statuses', statuses);
@@ -196,9 +198,9 @@
 
 <section class="relative h-[calc(100vh-118px)]">
 	<!-- Map -->
-	<!-- <div class="absolute inset-0">
-		<FacilitiesMap facilities={filteredWithLocation} />
-	</div> -->
+	<div class="absolute inset-0">
+		<FacilitiesMap facilities={filteredWithLocation} {hoveredFacility} />
+	</div>
 
 	<!-- Floating table panel on the left -->
 	<div
@@ -206,7 +208,7 @@
 	>
 		<div class="h-full overflow-y-auto">
 			<!-- <FacilitiesTable facilities={filteredFacilities} /> -->
-			<FacilitiesList facilities={filteredFacilities} />
+			<FacilitiesList facilities={filteredFacilities} onhover={(f) => (hoveredFacility = f)} />
 		</div>
 	</div>
 </section>

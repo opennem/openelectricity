@@ -2,12 +2,12 @@
 	import FacilityCard from './FacilityCard.svelte';
 
 	/**
-	 * @typedef {Object} Props
-	 * @property {any[]} facilities
+	 * @type {{
+	 *   facilities: any[],
+	 *   onhover?: (facility: any | null) => void
+	 * }}
 	 */
-
-	/** @type {Props} */
-	let { facilities = [] } = $props();
+	let { facilities = [], onhover } = $props();
 </script>
 
 {#if facilities.length === 0}
@@ -15,7 +15,11 @@
 {:else}
 	<ul>
 		{#each facilities as facility (facility.code || facility.name)}
-			<FacilityCard {facility} />
+			<FacilityCard
+				{facility}
+				onmouseenter={(f) => onhover?.(f)}
+				onmouseleave={() => onhover?.(null)}
+			/>
 		{/each}
 	</ul>
 {/if}
