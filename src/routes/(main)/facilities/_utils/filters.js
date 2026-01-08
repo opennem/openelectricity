@@ -2,25 +2,25 @@ import optionsReducer from '$lib/utils/options-reducer';
 
 export const sizeOptions = [
 	{
-		label: '< 1MW',
+		label: '< 1 MW',
 		value: 'xs',
 		min: 0,
 		max: 1
 	},
 	{
-		label: '1 – 5MW',
+		label: '1 – 5 MW',
 		value: 'sm',
 		min: 1,
 		max: 5
 	},
 	{
-		label: '5 – 30MW',
+		label: '5 – 30 MW',
 		value: 'md',
 		min: 5,
 		max: 30
 	},
 	{
-		label: '> 30MW',
+		label: '> 30 MW',
 		value: 'lg',
 		min: 30,
 		max: Infinity

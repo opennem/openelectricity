@@ -1,6 +1,7 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
+	import { Tooltip } from 'bits-ui';
 	import Meta from '$lib/components/Meta.svelte';
 	import formatValue from '../_utils/format-value';
 	import { statusColours, isInSizeRange } from '../_utils/filters.js';
@@ -286,38 +287,74 @@
 					<span class="text-mid-grey">units</span>
 				</div>
 			</div>
-			<div class="flex items-center gap-3 text-xs">
+			<div class="flex items-center gap-5 text-xs">
 				{#if capacityByStatus.operating > 0}
-					<div class="flex items-center gap-1.5" title="Operating">
-						<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.operating};"
-						></span>
-						<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.operating)}</span>
-					</div>
+					<Tooltip.Provider>
+						<Tooltip.Root delayDuration={100}>
+							<Tooltip.Trigger>
+								<div class="flex items-center gap-1.5 cursor-default rounded-full px-2 py-1 -mx-2 -my-1 hover:bg-warm-grey transition-colors">
+									<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.operating};"></span>
+									<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.operating)}</span>
+								</div>
+							</Tooltip.Trigger>
+							<Tooltip.Content sideOffset={4} side="top">
+								<div class="bg-dark-grey rounded-lg py-1.5 px-3 shadow text-white text-xs font-space">
+									Operating
+								</div>
+							</Tooltip.Content>
+						</Tooltip.Root>
+					</Tooltip.Provider>
 				{/if}
 				{#if capacityByStatus.commissioning > 0}
-					<div class="flex items-center gap-1.5" title="Commissioning">
-						<span
-							class="w-2 h-2 rounded-full"
-							style="background-color: {statusColours.commissioning};"
-						></span>
-						<span class="font-mono text-dark-grey"
-							>{formatValue(capacityByStatus.commissioning)}</span
-						>
-					</div>
+					<Tooltip.Provider>
+						<Tooltip.Root delayDuration={100}>
+							<Tooltip.Trigger>
+								<div class="flex items-center gap-1.5 cursor-default rounded-full px-2 py-1 -mx-2 -my-1 hover:bg-warm-grey transition-colors">
+									<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.commissioning};"></span>
+									<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.commissioning)}</span>
+								</div>
+							</Tooltip.Trigger>
+							<Tooltip.Content sideOffset={4} side="top">
+								<div class="bg-dark-grey rounded-lg py-1.5 px-3 shadow text-white text-xs font-space">
+									Commissioning
+								</div>
+							</Tooltip.Content>
+						</Tooltip.Root>
+					</Tooltip.Provider>
 				{/if}
 				{#if capacityByStatus.committed > 0}
-					<div class="flex items-center gap-1.5" title="Committed">
-						<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.committed};"
-						></span>
-						<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.committed)}</span>
-					</div>
+					<Tooltip.Provider>
+						<Tooltip.Root delayDuration={100}>
+							<Tooltip.Trigger>
+								<div class="flex items-center gap-1.5 cursor-default rounded-full px-2 py-1 -mx-2 -my-1 hover:bg-warm-grey transition-colors">
+									<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.committed};"></span>
+									<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.committed)}</span>
+								</div>
+							</Tooltip.Trigger>
+							<Tooltip.Content sideOffset={4} side="top">
+								<div class="bg-dark-grey rounded-lg py-1.5 px-3 shadow text-white text-xs font-space">
+									Committed
+								</div>
+							</Tooltip.Content>
+						</Tooltip.Root>
+					</Tooltip.Provider>
 				{/if}
 				{#if capacityByStatus.retired > 0}
-					<div class="flex items-center gap-1.5" title="Retired">
-						<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.retired};"
-						></span>
-						<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.retired)}</span>
-					</div>
+					<Tooltip.Provider>
+						<Tooltip.Root delayDuration={100}>
+							<Tooltip.Trigger>
+								<div class="flex items-center gap-1.5 cursor-default rounded-full px-2 py-1 -mx-2 -my-1 hover:bg-warm-grey transition-colors">
+									<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.retired};"></span>
+									<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.retired)}</span>
+								</div>
+							</Tooltip.Trigger>
+							<Tooltip.Content sideOffset={4} side="top">
+								<div class="bg-dark-grey rounded-lg py-1.5 px-3 shadow text-white text-xs font-space">
+									Retired
+								</div>
+							</Tooltip.Content>
+						</Tooltip.Root>
+					</Tooltip.Provider>
 				{/if}
 				<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
 					<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
