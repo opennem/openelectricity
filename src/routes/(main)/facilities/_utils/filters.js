@@ -1,5 +1,36 @@
 import optionsReducer from '$lib/utils/options-reducer';
 
+/** @type {Record<string, string>} */
+export const statusColours = {
+	committed: '#e0dfdc',
+	commissioning: '#ffb108',
+	operating: '#75e74d',
+	retired: '#6a6a6a'
+};
+
+export const statusOptions = [
+	{
+		label: 'Committed',
+		value: 'committed',
+		colour: statusColours.committed
+	},
+	{
+		label: 'Commissioning',
+		value: 'commissioning',
+		colour: statusColours.commissioning
+	},
+	{
+		label: 'Operating',
+		value: 'operating',
+		colour: statusColours.operating
+	},
+	{
+		label: 'Retired',
+		value: 'retired',
+		colour: statusColours.retired
+	}
+];
+
 export const regions = [
 	// { longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
 	// { value: undefined, label: '', divider: true },

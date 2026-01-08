@@ -5,7 +5,7 @@
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 
-	import { regions, fuelTechOptions } from '../_utils/filters.js';
+	import { regions, fuelTechOptions, statusOptions } from '../_utils/filters.js';
 
 	/**
 	 * @type {{
@@ -33,29 +33,6 @@
 		onsearchchange,
 		onviewchange
 	} = $props();
-
-	let statusOptions = [
-		{
-			label: 'Committed',
-			value: 'committed',
-			colour: '#e0dfdc'
-		},
-		{
-			label: 'Commissioning',
-			value: 'commissioning',
-			colour: '#ffb108'
-		},
-		{
-			label: 'Operating',
-			value: 'operating',
-			colour: '#75e74d'
-		},
-		{
-			label: 'Retired',
-			value: 'retired',
-			colour: '#6a6a6a'
-		}
-	];
 
 	let showMobileFilterOptions = $state(false);
 

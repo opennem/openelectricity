@@ -2,6 +2,8 @@
 	import { fly } from 'svelte/transition';
 	import { goto } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
+	import formatValue from '../_utils/format-value';
+	import { statusColours } from '../_utils/filters.js';
 
 	import Map from './Map.svelte';
 	import Timeline from './Timeline.svelte';
@@ -119,6 +121,37 @@
 		allUnits.filter((u) => u.max_generation_interval !== undefined)
 	);
 
+	// Calculate totals for filtered facilities
+	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
+	let totalCapacityMW = $derived(
+		filteredUnits.reduce(
+			(sum, u) => sum + (Number(u.capacity_maximum) || Number(u.capacity_registered) || 0),
+			0
+		)
+	);
+	let totalFacilitiesCount = $derived(filteredFacilities?.length ?? 0);
+	let totalUnitsCount = $derived(filteredUnits?.length ?? 0);
+
+	// Calculate capacity by status
+	/**
+	 * @param {string} status
+	 * @returns {number}
+	 */
+	function getCapacityByStatus(status) {
+		return filteredUnits
+			.filter((u) => u.status_id === status)
+			.reduce(
+				(sum, u) => sum + (Number(u.capacity_maximum) || Number(u.capacity_registered) || 0),
+				0
+			);
+	}
+	let capacityByStatus = $derived({
+		operating: getCapacityByStatus('operating'),
+		commissioning: getCapacityByStatus('commissioning'),
+		committed: getCapacityByStatus('committed'),
+		retired: getCapacityByStatus('retired')
+	});
+
 	/**
 	 * @param {{statuses: string[], regions: string[], fuelTechs: string[]}} param0
 	 */
@@ -213,25 +246,81 @@
 		<Map facilities={filteredWithLocation} {hoveredFacility} />
 	</div>
 
+	{#snippet summaryBar()}
+		<div
+			class="z-20 bg-white border-t border-warm-grey px-4 py-3 flex items-center justify-between gap-4"
+		>
+			<div class="flex items-center gap-4 text-xs font-space">
+				<div class="flex items-center gap-1.5">
+					<span class="text-mid-grey">{totalFacilitiesCount.toLocaleString()}</span>
+					<span class="text-mid-grey">facilities</span>
+				</div>
+				<div class="flex items-center gap-1.5">
+					<span class="text-mid-grey">{totalUnitsCount.toLocaleString()}</span>
+					<span class="text-mid-grey">units</span>
+				</div>
+			</div>
+			<div class="flex items-center gap-3 text-xs">
+				{#if capacityByStatus.operating > 0}
+					<div class="flex items-center gap-1.5" title="Operating">
+						<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.operating};"
+						></span>
+						<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.operating)}</span>
+					</div>
+				{/if}
+				{#if capacityByStatus.commissioning > 0}
+					<div class="flex items-center gap-1.5" title="Commissioning">
+						<span
+							class="w-2 h-2 rounded-full"
+							style="background-color: {statusColours.commissioning};"
+						></span>
+						<span class="font-mono text-dark-grey"
+							>{formatValue(capacityByStatus.commissioning)}</span
+						>
+					</div>
+				{/if}
+				{#if capacityByStatus.committed > 0}
+					<div class="flex items-center gap-1.5" title="Committed">
+						<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.committed};"
+						></span>
+						<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.committed)}</span>
+					</div>
+				{/if}
+				{#if capacityByStatus.retired > 0}
+					<div class="flex items-center gap-1.5" title="Retired">
+						<span class="w-2 h-2 rounded-full" style="background-color: {statusColours.retired};"
+						></span>
+						<span class="font-mono text-dark-grey">{formatValue(capacityByStatus.retired)}</span>
+					</div>
+				{/if}
+				<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
+					<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
+					<span class="text-mid-grey">MW</span>
+				</div>
+			</div>
+		</div>
+	{/snippet}
+
 	{#if selectedView === 'list'}
 		<!-- Floating list panel on the left -->
 		<div
-			class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden"
+			class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden flex flex-col"
 		>
-			<div class="h-full overflow-y-auto">
+			<div class="flex-1 overflow-y-auto">
 				<List facilities={filteredFacilities} onhover={(f) => (hoveredFacility = f)} />
 			</div>
+			{@render summaryBar()}
 		</div>
 	{:else}
 		<!-- Floating timeline panel on the left -->
 		<div
-			class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden"
+			class="absolute top-6 left-6 right-6 bottom-6 md:right-auto md:w-[calc(50%-3rem)] bg-white rounded-xl shadow-lg z-10 overflow-hidden flex flex-col"
 		>
 			{#if showTodayButton && searchTerm.length === 0}
 				<div
 					class="absolute z-20 w-full flex justify-center pointer-events-none"
 					class:top-4={todayButtonPosition === 'top'}
-					class:bottom-4={todayButtonPosition === 'bottom'}
+					class:bottom-16={todayButtonPosition === 'bottom'}
 					transition:fly={{ y: -10, duration: 300 }}
 				>
 					<button
@@ -247,7 +336,7 @@
 					</button>
 				</div>
 			{/if}
-			<div class="h-full overflow-y-auto" bind:this={timelineScrollContainer}>
+			<div class="flex-1 overflow-y-auto" bind:this={timelineScrollContainer}>
 				<div class="p-6">
 					<Timeline
 						bind:this={timelineRef}
@@ -258,6 +347,7 @@
 					/>
 				</div>
 			</div>
+			{@render summaryBar()}
 		</div>
 	{/if}
 </section>
