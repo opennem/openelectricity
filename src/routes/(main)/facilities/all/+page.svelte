@@ -230,7 +230,7 @@
 </div> -->
 
 <div class="border-y border-warm-grey">
-	<div class="md:container relative text-base z-50">
+	<div class="relative text-base z-50">
 		<Filters
 			{searchTerm}
 			{selectedView}
