@@ -9,16 +9,13 @@
 	import getDateField from '../_utils/get-date-field';
 	import FacilityUnitCard from '../_components/FacilityUnitCard.svelte';
 
-	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover, hoveredFacility = null } = $props();
+	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover, hoveredFacility = null, clickedFacility = null } = $props();
 
-	// Track if hover originated from this component (to avoid scroll fighting)
-	let isLocalHover = false;
-
-	// Scroll to highlighted facility when hoveredFacility changes (from map)
+	// Scroll to facility when clickedFacility changes (from map click)
 	$effect(() => {
-		if (hoveredFacility && !isLocalHover && browser) {
+		if (clickedFacility && browser) {
 			tick().then(() => {
-				const el = document.querySelector(`[data-facility-code="${hoveredFacility.code}"]`);
+				const el = document.querySelector(`[data-facility-code="${clickedFacility.code}"]`);
 				el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 			});
 		}
@@ -28,12 +25,10 @@
 	 * @param {any} f
 	 */
 	function handleMouseEnter(f) {
-		isLocalHover = true;
 		onhover?.(f);
 	}
 
 	function handleMouseLeave() {
-		isLocalHover = false;
 		onhover?.(null);
 	}
 

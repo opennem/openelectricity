@@ -55,6 +55,8 @@
 	let searchTerm = $state('');
 	/** @type {any | null} */
 	let hoveredFacility = $state(null);
+	/** @type {any | null} */
+	let clickedFacility = $state(null);
 
 	/**
 	 * Filter out battery_charging and battery_discharging units from facilities since they are merged into battery.
@@ -315,6 +317,7 @@
 			facilities={filteredWithLocation}
 			{hoveredFacility}
 			onhover={(f) => (hoveredFacility = f)}
+			onclick={(f) => (clickedFacility = f)}
 		/>
 	</div>
 
@@ -370,6 +373,7 @@
 				<List
 					facilities={filteredFacilities}
 					{hoveredFacility}
+					{clickedFacility}
 					onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 				/>
 			</div>
@@ -406,6 +410,7 @@
 						bind:this={timelineRef}
 						facilities={filteredWithLocation}
 						{hoveredFacility}
+						{clickedFacility}
 						ontodaybuttonvisible={handleTodayButtonVisible}
 						scrollContainer={timelineScrollContainer}
 						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}

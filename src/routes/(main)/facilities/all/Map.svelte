@@ -15,10 +15,11 @@
 	 * @type {{
 	 *   facilities: any[],
 	 *   hoveredFacility?: any | null,
-	 *   onhover?: (facility: any | null) => void
+	 *   onhover?: (facility: any | null) => void,
+	 *   onclick?: (facility: any | null) => void
 	 * }}
 	 */
-	let { facilities = [], hoveredFacility = null, onhover } = $props();
+	let { facilities = [], hoveredFacility = null, onhover, onclick } = $props();
 
 	// Australia center coordinates (default fallback)
 	const center = { lng: 110, lat: -28 };
@@ -305,6 +306,19 @@
 		// Notify parent of hover end
 		onhover?.(null);
 	}
+
+	/**
+	 * Handle click on facility point
+	 * @param {any} e
+	 */
+	function handlePointClick(e) {
+		const features = e.features;
+		if (features && features.length > 0) {
+			const code = features[0].properties.code;
+			const facility = facilitiesMap.get(code);
+			onclick?.(facility || null);
+		}
+	}
 </script>
 
 <div class="w-full h-full overflow-hidden">
@@ -353,6 +367,7 @@
 				}}
 				onmouseenter={handlePointMouseEnter}
 				onmouseleave={handlePointMouseLeave}
+				onclick={handlePointClick}
 			/>
 		</GeoJSONSource>
 
