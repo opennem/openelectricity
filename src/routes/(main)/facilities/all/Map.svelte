@@ -29,6 +29,7 @@
 	/** @type {string | null} */
 	let mapHoveredFacilityCode = $state(null);
 	let mapLoaded = $state(false);
+	let isDragging = $state(false);
 
 	// Create a lookup map for facilities by code (memoized)
 	let facilitiesMap = $derived(new Map(facilities.map((f) => [f.code, f])));
@@ -267,6 +268,14 @@
 
 		// Use idle event for attribution compacting
 		mapInstance.once('idle', compactAttribution);
+
+		// Track dragging state to prevent popup dismissal during pan
+		mapInstance.on('dragstart', () => {
+			isDragging = true;
+		});
+		mapInstance.on('dragend', () => {
+			isDragging = false;
+		});
 	}
 
 	// Fit bounds when facilities change - use idle event
@@ -328,6 +337,9 @@
 	 * @param {any} e
 	 */
 	function handleMapClick(e) {
+		// Ignore clicks that happen right after dragging
+		if (isDragging) return;
+
 		// Check if click was on a facility point
 		const features = mapInstance?.queryRenderedFeatures(e.point, { layers: ['facility-points'] });
 		if (!features || features.length === 0) {
@@ -395,6 +407,7 @@
 				lnglat={[popupContent.location.lng, popupContent.location.lat]}
 				offset={[0, -15]}
 				closeOnClick={false}
+				anchor="bottom"
 			>
 				<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[240px]">
 					<div class="font-semibold text-sm">{popupContent.name}</div>
