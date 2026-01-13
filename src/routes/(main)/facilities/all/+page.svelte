@@ -306,7 +306,7 @@
 	</div>
 </div>
 
-<section class="relative h-[calc(100vh-118px)]">
+<section class="relative h-[calc(100dvh-118px)]">
 	<!-- Map: always visible on desktop, on mobile only when map view selected -->
 	<div
 		class="absolute inset-0"
