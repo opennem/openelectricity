@@ -316,7 +316,24 @@
 		if (features && features.length > 0) {
 			const code = features[0].properties.code;
 			const facility = facilitiesMap.get(code);
+			// Set hover state to show popup (important for mobile touch)
+			mapHoveredFacilityCode = code;
+			onhover?.(facility || null);
 			onclick?.(facility || null);
+		}
+	}
+
+	/**
+	 * Handle click on map (to dismiss popup on mobile)
+	 * @param {any} e
+	 */
+	function handleMapClick(e) {
+		// Check if click was on a facility point
+		const features = mapInstance?.queryRenderedFeatures(e.point, { layers: ['facility-points'] });
+		if (!features || features.length === 0) {
+			// Clicked on empty space - clear selection
+			mapHoveredFacilityCode = null;
+			onhover?.(null);
 		}
 	}
 </script>
@@ -334,6 +351,7 @@
 		attributionControl={false}
 		bind:map={mapInstance}
 		onload={handleMapLoad}
+		onclick={handleMapClick}
 	>
 		<NavigationControl position="top-right" showCompass={false} />
 		<AttributionControl position="bottom-right" compact={true} />
