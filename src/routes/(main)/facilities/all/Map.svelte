@@ -79,6 +79,18 @@
 	}
 
 	/**
+	 * Get total capacity for a facility (sum of all units)
+	 * @param {any} facility
+	 * @returns {number}
+	 */
+	function getTotalCapacity(facility) {
+		if (!facility.units || facility.units.length === 0) return 0;
+		return facility.units.reduce((/** @type {number} */ sum, /** @type {any} */ unit) => {
+			return sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0);
+		}, 0);
+	}
+
+	/**
 	 * Get the region label (state name)
 	 * @param {string} network_id
 	 * @param {string} network_region
@@ -148,7 +160,8 @@
 					name: facility.name,
 					color: getFacilityColor(facility),
 					network_id: facility.network_id,
-					network_region: facility.network_region
+					network_region: facility.network_region,
+					capacity: getTotalCapacity(facility)
 				}
 			}))
 		};
@@ -375,11 +388,41 @@
 				id="facility-points"
 				paint={{
 					'circle-color': ['get', 'color'],
+					// Circle radius proportional to sqrt(capacity) so area is proportional to capacity
+					// Scale: sqrt(MW) -> radius in pixels
+					//   sqrt(0)    = 0  -> 4px   (0 MW)
+					//   sqrt(100)  = 10 -> 8px   (100 MW)
+					//   sqrt(400)  = 20 -> 12px  (400 MW)
+					//   sqrt(900)  = 30 -> 16px  (900 MW)
+					//   sqrt(2025) = 45 -> 22px  (2000 MW)
+					//   sqrt(3600) = 60 -> 28px  (3600 MW)
 					'circle-radius': [
 						'case',
 						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-						10,
-						6
+						// Hovered: +2px larger than default
+						[
+							'interpolate',
+							['linear'],
+							['sqrt', ['get', 'capacity']],
+							0, 6,
+							10, 10,
+							20, 14,
+							30, 18,
+							45, 24,
+							60, 30
+						],
+						// Default size
+						[
+							'interpolate',
+							['linear'],
+							['sqrt', ['get', 'capacity']],
+							0, 4,
+							10, 8,
+							20, 12,
+							30, 16,
+							45, 22,
+							60, 28
+						]
 					],
 					'circle-stroke-width': [
 						'case',
@@ -390,9 +433,20 @@
 					'circle-stroke-color': '#ffffff',
 					'circle-opacity': [
 						'case',
+						// Hovered circle is fully opaque
 						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
 						1,
-						0.8
+						// Non-hovered circles dim to 0.3 when something is hovered, otherwise 0.8
+						activeHoveredFacilityCode ? 0.3 : 0.8
+					]
+				}}
+				layout={{
+					// Bring hovered circle to front (higher value = rendered on top)
+					'circle-sort-key': [
+						'case',
+						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+						1,
+						0
 					]
 				}}
 				onmouseenter={handlePointMouseEnter}
@@ -419,7 +473,7 @@
 						<div
 							class="flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
 						>
-							{#each popupContent.groupedUnits as group}
+							{#each popupContent.groupedUnits as group (group.fueltech_id + '|||' + group.status_id)}
 								<UnitGroup {...group} />
 							{/each}
 						</div>
@@ -466,7 +520,7 @@
 	}
 
 	:global(.maplibregl-popup-tip) {
-		display: none !important;
+		border-top-color: black !important;
 	}
 
 	:global(.maplibregl-popup-close-button) {
