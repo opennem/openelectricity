@@ -273,6 +273,7 @@
 					paddingX=""
 					staticDisplay={true}
 					onchange={(value, isMetaPressed) => handleRegionChange(value, isMetaPressed)}
+					onclear={() => onregionschange?.([])}
 				/>
 				<FormMultiSelect
 					options={statusOptions}
@@ -282,6 +283,7 @@
 					paddingX=""
 					staticDisplay={true}
 					onchange={(value, isMetaPressed) => handleStatusesChange(value, isMetaPressed)}
+					onclear={() => onstatuseschange?.([])}
 				/>
 				<FormMultiSelect
 					options={sizeOptions}
@@ -290,6 +292,7 @@
 					paddingX=""
 					staticDisplay={true}
 					onchange={(value, isMetaPressed) => handleSizeChange(value, isMetaPressed)}
+					onclear={() => onsizeschange?.([])}
 				/>
 			</div>
 
@@ -300,6 +303,7 @@
 				paddingX=""
 				staticDisplay={true}
 				onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
+				onclear={() => onfueltechschange?.([])}
 			/>
 		</section>
 
@@ -356,6 +360,7 @@
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
 					onchange={(value, isMetaPressed) => handleRegionChange(value, isMetaPressed)}
+					onclear={() => onregionschange?.([])}
 				/>
 
 				<FormMultiSelect
@@ -366,6 +371,7 @@
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
 					onchange={(value, isMetaPressed) => handleStatusesChange(value, isMetaPressed)}
+					onclear={() => onstatuseschange?.([])}
 				/>
 
 				<FormMultiSelect
@@ -375,6 +381,7 @@
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
 					onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
+					onclear={() => onfueltechschange?.([])}
 				/>
 
 				<FormMultiSelect
@@ -384,6 +391,7 @@
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
 					onchange={(value, isMetaPressed) => handleSizeChange(value, isMetaPressed)}
+					onclear={() => onsizeschange?.([])}
 				/>
 			</div>
 		</div>

@@ -4,6 +4,7 @@
 
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
+	import { X } from '@lucide/svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -18,6 +19,7 @@
 	 * @property {string} [align] - left, right
 	 * @property {boolean} [withColours]
 	 * @property {(value: string, isMetaPressed: boolean) => void} [onchange]
+	 * @property {() => void} [onclear]
 	 */
 
 	/** @type {Props} */
@@ -32,8 +34,20 @@
 		position = 'bottom',
 		align = 'left',
 		withColours = false,
-		onchange
+		onchange,
+		onclear
 	} = $props();
+
+	let hasSelection = $derived(selected.length > 0);
+
+	/**
+	 * Handle clear button click
+	 * @param {MouseEvent} e
+	 */
+	function handleClear(e) {
+		e.stopPropagation();
+		onclear?.();
+	}
 
 	let showOptions = $state(false);
 	let isMetaPressed = false;
@@ -98,7 +112,18 @@
 		</span>
 
 		{#if !staticDisplay}
-			<IconChevronUpDown class="w-7 h-7" />
+			<div class="flex items-center gap-1">
+				{#if hasSelection && onclear}
+					<button
+						onclick={handleClear}
+						class="p-1 rounded-full hover:bg-mid-warm-grey transition-colors"
+						title="Clear selection"
+					>
+						<X class="size-4 text-mid-grey" />
+					</button>
+				{/if}
+				<IconChevronUpDown class="w-7 h-7" />
+			</div>
 		{/if}
 	</button>
 
@@ -137,6 +162,16 @@
 					</li>
 				{/if}
 			{/each}
+			{#if hasSelection && onclear}
+				<li class="whitespace-nowrap pt-2">
+					<button
+						class="text-mid-grey hover:text-dark-grey text-sm"
+						onclick={handleClear}
+					>
+						Clear all
+					</button>
+				</li>
+			{/if}
 		</ul>
 	{:else if showOptions}
 		<ul
@@ -182,6 +217,16 @@
 					</li>
 				{/if}
 			{/each}
+			{#if hasSelection && onclear}
+				<li class="whitespace-nowrap border-t border-warm-grey mt-1 pt-1">
+					<button
+						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 text-mid-grey hover:text-dark-grey text-left"
+						onclick={handleClear}
+					>
+						Clear all
+					</button>
+				</li>
+			{/if}
 		</ul>
 	{/if}
 </div>
