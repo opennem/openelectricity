@@ -38,6 +38,17 @@
 	let showOptions = $state(false);
 	let isMetaPressed = false;
 
+	// Show the selected option's label when only 1 is selected
+	let displayLabel = $derived.by(() => {
+		if (selected.length === 1 && options) {
+			const selectedOption = options.find((opt) => opt.value === selected[0]);
+			if (selectedOption) {
+				return selectedOption.label;
+			}
+		}
+		return label;
+	});
+
 	/**
 	 * @param {*} option
 	 */
@@ -83,7 +94,7 @@
 		class:hover:bg-warm-grey={!showOptions}
 	>
 		<span class={selectedLabelClass}>
-			{label}
+			{displayLabel}
 		</span>
 
 		{#if !staticDisplay}
