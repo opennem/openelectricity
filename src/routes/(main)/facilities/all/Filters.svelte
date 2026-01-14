@@ -4,7 +4,8 @@
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import { Search, X } from '@lucide/svelte';
+	import { Search, X, CalendarClock, List, Map } from '@lucide/svelte';
+	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 
 	import { regions, fuelTechOptions, statusOptions, sizeOptions } from '../_utils/filters.js';
 
@@ -195,6 +196,26 @@
 
 		onsizeschange?.(newSelectedSizes);
 	}
+
+	// View switcher buttons for desktop (Timeline, List)
+	const viewButtonsDesktop = [
+		{ label: 'Timeline', value: 'timeline', icon: CalendarClock, size: 'size-6' },
+		{ label: 'List', value: 'list', icon: List, size: 'size-6' }
+	];
+
+	// View switcher buttons for mobile (Timeline, List, Map)
+	const viewButtonsMobile = [
+		{ label: 'Timeline', value: 'timeline', icon: CalendarClock, size: 'size-6' },
+		{ label: 'List', value: 'list', icon: List, size: 'size-6' },
+		{ label: 'Map', value: 'map', icon: Map, size: 'size-6' }
+	];
+
+	/**
+	 * @param {{ value: string }} option
+	 */
+	function handleViewChange(option) {
+		onviewchange?.(/** @type {'list' | 'timeline' | 'map'} */ (option.value));
+	}
 </script>
 
 {#if showMobileFilterOptions}
@@ -265,39 +286,21 @@
 <div class="flex items-center justify-between pt-3 pb-3 px-8 relative z-10 gap-4">
 	<div class="flex items-center gap-2 justify-between w-full">
 		<div class="flex items-center gap-4">
-			<!-- View Switcher -->
-			<div class="flex items-center rounded-full border border-warm-grey bg-white p-1">
-				<button
-					class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
-					class:bg-dark-grey={selectedView === 'timeline'}
-					class:text-white={selectedView === 'timeline'}
-					class:text-mid-grey={selectedView !== 'timeline'}
-					class:hover:text-dark-grey={selectedView !== 'timeline'}
-					onclick={() => onviewchange?.('timeline')}
-				>
-					Timeline
-				</button>
-				<button
-					class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer"
-					class:bg-dark-grey={selectedView === 'list'}
-					class:text-white={selectedView === 'list'}
-					class:text-mid-grey={selectedView !== 'list'}
-					class:hover:text-dark-grey={selectedView !== 'list'}
-					onclick={() => onviewchange?.('list')}
-				>
-					List
-				</button>
-				<!-- Map option only visible on mobile -->
-				<button
-					class="px-4 py-2 text-xs rounded-full transition-colors cursor-pointer md:hidden"
-					class:bg-dark-grey={selectedView === 'map'}
-					class:text-white={selectedView === 'map'}
-					class:text-mid-grey={selectedView !== 'map'}
-					class:hover:text-dark-grey={selectedView !== 'map'}
-					onclick={() => onviewchange?.('map')}
-				>
-					Map
-				</button>
+			<!-- View Switcher - Desktop -->
+			<div class="hidden md:block">
+				<SwitchWithIcons
+					buttons={viewButtonsDesktop}
+					selected={selectedView}
+					onchange={handleViewChange}
+				/>
+			</div>
+			<!-- View Switcher - Mobile (includes Map) -->
+			<div class="md:hidden">
+				<SwitchWithIcons
+					buttons={viewButtonsMobile}
+					selected={selectedView}
+					onchange={handleViewChange}
+				/>
 			</div>
 
 			<div class="justify-start items-center gap-2 hidden md:flex">
