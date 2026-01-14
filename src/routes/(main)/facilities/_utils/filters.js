@@ -138,63 +138,90 @@ export const regionOptions = [
 	}
 ];
 
+/** @type {{value: string, label: string, colour: string, children?: {value: string, label: string, colour: string}[]}[]} */
 export const fuelTechOptions = [
-	// {
-	// 	value: null,
-	// 	label: 'All'
-	// },
-	// {
-	// 	value: 'demand',
-	// 	label: 'Demand'
-	// },
-	// {
-	// 	value: 'renewables',
-	// 	label: 'Renewables'
-	// },
-	// {
-	// 	value: 'fossils',
-	// 	label: 'Fossils'
-	// },
-	// {
-	// 	value: undefined,
-	// 	label: '',
-	// 	divider: true
-	// },
 	{
 		value: 'solar',
-		label: 'Solar'
+		label: 'Solar',
+		colour: '#FED500'
 	},
 	{
 		value: 'wind',
-		label: 'Wind'
+		label: 'Wind',
+		colour: '#2C7629'
 	},
 	{
 		value: 'hydro',
-		label: 'Hydro'
-	},
-	{
-		value: 'pumps',
-		label: 'Pumps'
+		label: 'Hydro',
+		colour: '#5EA0C0'
 	},
 	{
 		value: 'battery',
-		label: 'Battery'
-	},
-	{
-		value: 'coal',
-		label: 'Coal'
+		label: 'Battery',
+		colour: '#3245c9'
 	},
 	{
 		value: 'gas',
-		label: 'Gas'
-	},
-	{
-		value: 'bioenergy',
-		label: 'Bioenergy'
+		label: 'Gas',
+		colour: '#E87809',
+		children: [
+			{ value: 'gas_recip', label: 'Gas (Reciprocating)', colour: '#F9DCBC' },
+			{ value: 'gas_ocgt', label: 'Gas (OCGT)', colour: '#FFCD96' },
+			{ value: 'gas_ccgt', label: 'Gas (CCGT)', colour: '#FDB462' },
+			{ value: 'gas_steam', label: 'Gas (Steam)', colour: '#F48E1B' },
+			{ value: 'gas_wcmg', label: 'Gas (Waste Coal Mine)', colour: '#B46813' }
+		]
 	},
 	{
 		value: 'distillate',
-		label: 'Distillate'
+		label: 'Distillate',
+		colour: '#E15C34'
+	},
+	{
+		value: 'bioenergy',
+		label: 'Bioenergy',
+		colour: '#1D7A7A',
+		children: [
+			{ value: 'bioenergy_biomass', label: 'Bioenergy (Biomass)', colour: '#1D7A7A' },
+			{ value: 'bioenergy_biogas', label: 'Bioenergy (Biogas)', colour: '#4CB9B9' }
+		]
+	},
+	{
+		value: 'coal',
+		label: 'Coal',
+		colour: '#25170C',
+		children: [
+			{ value: 'coal_black', label: 'Coal (Black)', colour: '#121212' },
+			{ value: 'coal_brown', label: 'Coal (Brown)', colour: '#744A26' }
+		]
 	}
 ];
-export const fuelTechLabel = optionsReducer(fuelTechOptions);
+
+/**
+ * Flatten the hierarchical fuel tech options to a simple list for label lookup
+ * @returns {{value: string, label: string}[]}
+ */
+export function getFlatFuelTechOptions() {
+	/** @type {{value: string, label: string}[]} */
+	const flat = [];
+	for (const opt of fuelTechOptions) {
+		flat.push({ value: opt.value, label: opt.label });
+		if (opt.children) {
+			for (const child of opt.children) {
+				flat.push({ value: child.value, label: child.label });
+			}
+		}
+	}
+	return flat;
+}
+
+/**
+ * Get the values of parent fuel techs that have children (e.g., 'gas', 'coal', 'bioenergy')
+ * These should not be counted when displaying the selection count
+ * @returns {string[]}
+ */
+export function getParentFuelTechValues() {
+	return fuelTechOptions.filter((opt) => opt.children && opt.children.length > 0).map((opt) => opt.value);
+}
+
+export const fuelTechLabel = optionsReducer(getFlatFuelTechOptions());

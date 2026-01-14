@@ -42,7 +42,19 @@ export async function load({ url }) {
 		? /** @type {string} */ (searchParams.get('sizes')).split(',').filter(Boolean)
 		: [];
 
-	const fuelTechIds = fuelTechs.map((fuelTech) => fuelTechMap[fuelTech]).flat();
+	// Map fuel tech selections to API fuel tech IDs
+	// If a category (like "gas") is selected, expand to all sub-technologies
+	// If a specific fuel tech ID (like "gas_ccgt") is selected, use it directly
+	const fuelTechIds = fuelTechs
+		.map((fuelTech) => {
+			if (fuelTechMap[fuelTech]) {
+				// It's a category, expand to all sub-technologies
+				return fuelTechMap[fuelTech];
+			}
+			// It's a specific fuel tech ID, use directly
+			return [fuelTech];
+		})
+		.flat();
 
 	// console.log('fuelTechIds', fuelTechIds);
 	// console.log('regions', regions);

@@ -1,5 +1,6 @@
 <script>
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
+	import HierarchicalMultiSelect from '../_components/HierarchicalMultiSelect.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
@@ -7,7 +8,14 @@
 	import { Search, X, CalendarClock, List, Map } from '@lucide/svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 
-	import { regions, fuelTechOptions, statusOptions, sizeOptions } from '../_utils/filters.js';
+	import {
+		regions,
+		fuelTechOptions,
+		getFlatFuelTechOptions,
+		getParentFuelTechValues,
+		statusOptions,
+		sizeOptions
+	} from '../_utils/filters.js';
 
 	/**
 	 * @type {{
@@ -136,14 +144,19 @@
 		}
 	});
 
+	let flatFuelTechOptions = getFlatFuelTechOptions();
+	let parentFuelTechValues = getParentFuelTechValues();
 	let fuelTechLabel = $derived.by(() => {
-		if (selectedFuelTechs.length === 0) {
+		// Filter out parent categories from count (only count actual sub-technologies)
+		const countableTechs = selectedFuelTechs.filter((ft) => !parentFuelTechValues.includes(ft));
+
+		if (countableTechs.length === 0) {
 			return 'Technology';
-		} else if (selectedFuelTechs.length === 1) {
-			let fuelTech = fuelTechOptions.find((ft) => ft.value === selectedFuelTechs[0]);
-			return fuelTech?.label || selectedFuelTechs[0];
+		} else if (countableTechs.length === 1) {
+			let fuelTech = flatFuelTechOptions.find((ft) => ft.value === countableTechs[0]);
+			return fuelTech?.label || countableTechs[0];
 		} else {
-			return `${selectedFuelTechs.length} Technologies`;
+			return `${countableTechs.length} Technologies`;
 		}
 	});
 
@@ -176,17 +189,34 @@
 	}
 
 	/**
-	 * @param {string} value
+	 * @param {string | string[]} value
 	 * @param {boolean} isMetaPressed
 	 */
 	function handleFuelTechChange(value, isMetaPressed) {
 		let newSelectedFuelTechs = [];
-		if (isMetaPressed) {
-			newSelectedFuelTechs = [value];
-		} else if (selectedFuelTechs.includes(value)) {
-			newSelectedFuelTechs = selectedFuelTechs.filter((item) => item !== value);
+
+		// Handle array of values (when parent with children is clicked)
+		if (Array.isArray(value)) {
+			const allSelected = value.every((v) => selectedFuelTechs.includes(v));
+			if (isMetaPressed) {
+				// Meta key: select only these values
+				newSelectedFuelTechs = [...value];
+			} else if (allSelected) {
+				// All children selected: deselect all
+				newSelectedFuelTechs = selectedFuelTechs.filter((item) => !value.includes(item));
+			} else {
+				// Not all selected: select all (add missing ones)
+				newSelectedFuelTechs = [...new Set([...selectedFuelTechs, ...value])];
+			}
 		} else {
-			newSelectedFuelTechs = [...selectedFuelTechs, value];
+			// Handle single value
+			if (isMetaPressed) {
+				newSelectedFuelTechs = [value];
+			} else if (selectedFuelTechs.includes(value)) {
+				newSelectedFuelTechs = selectedFuelTechs.filter((item) => item !== value);
+			} else {
+				newSelectedFuelTechs = [...selectedFuelTechs, value];
+			}
 		}
 
 		onfueltechschange?.(newSelectedFuelTechs);
@@ -296,7 +326,7 @@
 				/>
 			</div>
 
-			<FormMultiSelect
+			<HierarchicalMultiSelect
 				options={fuelTechOptions}
 				selected={selectedFuelTechs}
 				label="Technology"
@@ -374,7 +404,7 @@
 					onclear={() => onstatuseschange?.([])}
 				/>
 
-				<FormMultiSelect
+				<HierarchicalMultiSelect
 					options={fuelTechOptions}
 					selected={selectedFuelTechs}
 					label={fuelTechLabel}
