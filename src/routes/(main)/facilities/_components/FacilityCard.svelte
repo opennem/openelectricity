@@ -143,9 +143,15 @@
 	);
 </script>
 
-{#snippet fuelTechBadge(/** @type {UnitGroup} */ group, /** @type {number} */ index, /** @type {boolean} */ hasMargin = false)}
+{#snippet fuelTechBadge(
+	/** @type {UnitGroup} */ group,
+	/** @type {number} */ index,
+	/** @type {boolean} */ hasMargin = false
+)}
 	<span
-		class="rounded-full p-2 block relative border-2 border-white shadow-sm transition-[margin] duration-200 ease-out {hasMargin ? '-ml-5 group-hover/badges:ml-1' : ''}"
+		class="rounded-full p-2 block relative border-2 border-white shadow-sm transition-[margin] duration-200 ease-out {hasMargin
+			? '-ml-5 group-hover/badges:ml-1'
+			: ''}"
 		class:text-black={needsDarkText(group.fueltech_id)}
 		class:text-white={!needsDarkText(group.fueltech_id)}
 		style="background-color: {group.bgColor}; z-index: {index + 1};"
@@ -153,7 +159,11 @@
 	>
 		<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={6} />
 		<div class="absolute top-[0.1rem] left-[0.1rem] z-10">
-			<FacilityStatusIcon status={group.status_id} isCommissioning={group.isCommissioning} size="small" />
+			<FacilityStatusIcon
+				status={group.status_id}
+				isCommissioning={group.isCommissioning}
+				size="small"
+			/>
 		</div>
 	</span>
 {/snippet}
@@ -178,7 +188,11 @@
 	>
 		<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={6} />
 		<div class="absolute top-[0.1rem] left-[0.1rem] z-10">
-			<FacilityStatusIcon status={group.status_id} isCommissioning={group.isCommissioning} size="small" />
+			<FacilityStatusIcon
+				status={group.status_id}
+				isCommissioning={group.isCommissioning}
+				size="small"
+			/>
 		</div>
 	</span>
 {/snippet}
@@ -197,15 +211,23 @@
 		href={path}
 	>
 		<div class="pl-6 pr-4 py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5">
-			<div
-				class="text-base leading-base font-medium text-dark-grey"
-			>
+			<div class="text-base leading-base font-medium text-dark-grey">
 				{facility.name || 'Unnamed Facility'}
 			</div>
 		</div>
 
-		<div class="px-4 pb-4 sm:p-4 flex items-center col-span-12 sm:col-span-2">
-			<div class="flex-shrink-0">
+		<div
+			class="col-span-12 sm:col-span-7 flex items-center gap-4 px-4 sm:px-0 py-2 sm:py-0 border-t border-warm-grey sm:border-t-0"
+		>
+			<div class="text-xs text-mid-grey text-right">
+				<span
+					class="block w-18 border-r-0 border-warm-grey pr-6 group-hover:border-light-warm-grey sm:border-r"
+				>
+					{getRegionLabel(facility.network_id, facility.network_region)}
+				</span>
+			</div>
+
+			<div class="flex-shrink-0 ml-3">
 				{#if hasMultipleGroups}
 					<div class="flex group/badges">
 						{#each visibleGroups as group, i}
@@ -224,20 +246,8 @@
 					</div>
 				{/if}
 			</div>
-		</div>
 
-		<div
-			class="col-span-12 sm:col-span-5 grid grid-cols-5 px-8 sm:px-0 py-2 sm:py-0 border-t border-warm-grey sm:border-t-0"
-		>
-			<div class="text-xs text-mid-grey col-span-2">
-				<span
-					class="block w-18 border-r-0 border-warm-grey pr-4 group-hover:border-light-warm-grey sm:border-r"
-				>
-					{getRegionLabel(facility.network_id, facility.network_region)}
-				</span>
-			</div>
-
-			<div class="col-span-3 flex justify-end items-center gap-2 group">
+			<div class="flex-1 flex justify-end items-center gap-2 group">
 				<div class="flex justify-end items-baseline gap-2">
 					<span class="font-mono text-sm text-dark-grey" title="Total Capacity">
 						{formatValue(totalCapacity)}
