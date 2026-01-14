@@ -295,7 +295,7 @@
 	</div>
 	<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
 	<div slot="sub-heading">
-		<p class="text-sm text-center w-full md:w-[600px] mx-auto">
+		<p class="text-sm text-center w-full md:w-[610px] mx-auto">
 			Explore Australia's power generation facilities across the NEM and WEM. View upcoming projects
 			on the timeline, browse the full list of facilities, or discover their locations on the map.
 		</p>

@@ -133,7 +133,7 @@
 	let hasCommittedUnit = $derived(unitGroups.some((g) => g.status_id === 'committed'));
 
 	// For display: show max 2 icons, then +N for overflow
-	const MAX_VISIBLE_ICONS = 2;
+	const MAX_VISIBLE_ICONS = 3;
 	let visibleGroups = $derived(unitGroups.slice(0, MAX_VISIBLE_ICONS));
 	let overflowCount = $derived(Math.max(0, unitGroups.length - MAX_VISIBLE_ICONS));
 	let hasOverflow = $derived(overflowCount > 0);
