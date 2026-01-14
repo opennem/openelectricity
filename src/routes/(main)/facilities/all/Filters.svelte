@@ -45,6 +45,35 @@
 
 	/** @type {HTMLInputElement | null} */
 	let mobileSearchInput = $state(null);
+	/** @type {HTMLInputElement | null} */
+	let desktopSearchInput = $state(null);
+
+	/**
+	 * Handle keyboard shortcut '/' to focus search input
+	 * @param {KeyboardEvent} e
+	 */
+	function handleKeydown(e) {
+		// Ignore if user is typing in an input, textarea, or contenteditable
+		const target = /** @type {HTMLElement} */ (e.target);
+		if (
+			target.tagName === 'INPUT' ||
+			target.tagName === 'TEXTAREA' ||
+			target.isContentEditable
+		) {
+			return;
+		}
+
+		if (e.key === '/') {
+			e.preventDefault();
+			// Check if we're on mobile (md breakpoint is 768px)
+			if (window.innerWidth < 768) {
+				showMobileSearch = true;
+				setTimeout(() => mobileSearchInput?.focus(), 50);
+			} else {
+				desktopSearchInput?.focus();
+			}
+		}
+	}
 
 	// Local search state for immediate UI feedback
 	let localSearchTerm = $state(searchTerm);
@@ -218,6 +247,8 @@
 	}
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 {#if showMobileFilterOptions}
 	<Modal
 		maxWidthClass=""
@@ -308,6 +339,7 @@
 			<!-- Desktop search input -->
 			<div class="hidden md:flex items-center ml-6 pl-6 border-l border-warm-grey">
 				<input
+					bind:this={desktopSearchInput}
 					type="search"
 					value={localSearchTerm}
 					oninput={(e) => handleDebouncedSearch(/** @type {HTMLInputElement} */ (e.target).value)}
