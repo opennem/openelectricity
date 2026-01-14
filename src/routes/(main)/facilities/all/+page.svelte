@@ -10,6 +10,7 @@
 	import Filters from './Filters.svelte';
 	import List from './List.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
+	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 
 	let { data } = $props();
 
@@ -277,7 +278,7 @@
 <!-- <div class="bg-light-warm-grey">
 	<section class="md:container py-12">
 		<div class="flex items-center gap-2 justify-start md:justify-center pl-10 pr-5 md:px-0">
-			<h2 class="text-xl md:text-2xl mb-0">Facilities Timeline</h2>
+			<h2 class="text-xl md:text-2xl mb-0">Facilities</h2>
 			<span
 				class="text-[10px] lowercase font-space font-medium text-light-warm-grey bg-gas rounded-full px-2 py-1"
 			>
@@ -286,6 +287,20 @@
 		</div>
 	</section>
 </div> -->
+
+<PageHeaderSimple>
+	<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
+	<div slot="main-heading">
+		<h1 class="tracking-widest text-center">Facilities</h1>
+	</div>
+	<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
+	<div slot="sub-heading">
+		<p class="text-sm text-center w-full md:w-[600px] mx-auto">
+			Explore Australia's power generation facilities across the NEM and WEM. View upcoming projects
+			on the timeline, browse the full list of facilities, or discover their locations on the map.
+		</p>
+	</div>
+</PageHeaderSimple>
 
 <div class="border-y border-warm-grey">
 	<div class="relative text-base z-50">

@@ -295,15 +295,28 @@
 				/>
 			</div>
 			<!-- View Switcher - Mobile (includes Map) -->
-			<div class="md:hidden">
-				<SwitchWithIcons
-					buttons={viewButtonsMobile}
-					selected={selectedView}
-					onchange={handleViewChange}
+			{#if !showMobileSearch}
+				<div class="md:hidden">
+					<SwitchWithIcons
+						buttons={viewButtonsMobile}
+						selected={selectedView}
+						onchange={handleViewChange}
+					/>
+				</div>
+			{/if}
+
+			<!-- Desktop search input -->
+			<div class="hidden md:flex items-center ml-6 pl-6 border-l border-warm-grey">
+				<input
+					type="search"
+					value={localSearchTerm}
+					oninput={(e) => handleDebouncedSearch(/** @type {HTMLInputElement} */ (e.target).value)}
+					placeholder="Filter by name"
+					class="rounded-full border border-warm-grey bg-white px-5 py-4 text-sm transition-colors hover:border-dark-grey focus:border-dark-grey focus:outline-none w-[200px]"
 				/>
 			</div>
 
-			<div class="justify-start items-center gap-2 hidden md:flex">
+			<div class="justify-start items-center gap-2 hidden md:flex ml-6 pl-6 border-l border-warm-grey">
 				<FormMultiSelect
 					options={regionOptions}
 					selected={selectedRegions}
@@ -343,29 +356,28 @@
 			</div>
 		</div>
 
-		<!-- Desktop search input -->
-		<div class="hidden md:flex justify-end items-center gap-2">
-			<input
-				type="search"
-				value={localSearchTerm}
-				oninput={(e) => handleDebouncedSearch(/** @type {HTMLInputElement} */ (e.target).value)}
-				placeholder="Filter by name"
-				class="rounded-full border border-warm-grey bg-white px-5 py-3 text-xs transition-colors hover:border-dark-grey focus:border-dark-grey focus:outline-none"
-			/>
-		</div>
-
 		<!-- Mobile search button/input -->
-		<div class="md:hidden flex items-center justify-end gap-2">
+		<div class="md:hidden flex items-center justify-end gap-2 flex-1 my-2">
 			{#if showMobileSearch}
-				<div class="flex items-center gap-2">
+				<div class="flex items-center gap-2 w-full">
 					<input
 						bind:this={mobileSearchInput}
 						type="search"
 						value={localSearchTerm}
 						oninput={(e) => handleDebouncedSearch(/** @type {HTMLInputElement} */ (e.target).value)}
 						placeholder="Filter by name"
-						class="rounded-full border border-warm-grey bg-white px-4 py-3 text-xs transition-colors focus:border-dark-grey focus:outline-none w-full"
+						class="rounded-full border border-warm-grey bg-white px-5 py-4 text-sm transition-colors focus:border-dark-grey focus:outline-none flex-1"
 					/>
+					<button
+						class="p-3 rounded-full hover:bg-warm-grey transition-colors cursor-pointer"
+						onclick={() => {
+							showMobileSearch = false;
+							localSearchTerm = '';
+							onsearchchange?.('');
+						}}
+					>
+						<X class="size-5 text-mid-grey" />
+					</button>
 				</div>
 			{:else}
 				<button
