@@ -394,7 +394,7 @@
 		/>
 
 		<!-- Map controls - positioned to the left of zoom controls -->
-		<div class="absolute top-3 right-20 z-20 hidden md:flex items-center gap-2">
+		<div class="absolute top-3 left-3 md:left-auto md:right-20 z-20 items-center gap-2 {selectedView === 'map' ? 'flex' : 'hidden md:flex'}">
 			<button
 				onclick={() => {
 					mapRef?.closePopups();
