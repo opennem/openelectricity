@@ -1,6 +1,8 @@
+import { browser } from '$app/environment';
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import isCommissioningCheck from '../_utils/is-commissioning';
+import { getCachedFacilities, setCachedFacilities } from './_stores/facilities-cache.js';
 
 let client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -43,6 +45,25 @@ export async function load({ url }) {
 		: [];
 	const selectedFacility = searchParams.get('facility') || null;
 
+	const filterParams = { statuses, regions, fuelTechs };
+
+	// Check client-side cache first (browser only)
+	if (browser) {
+		const cached = getCachedFacilities(filterParams);
+		if (cached) {
+			return {
+				facilities: cached,
+				view,
+				statuses,
+				regions,
+				fuelTechs,
+				sizes,
+				selectedFacility,
+				fromCache: true
+			};
+		}
+	}
+
 	// Map fuel tech selections to API fuel tech IDs
 	// If a category (like "gas") is selected, expand to all sub-technologies
 	// If a specific fuel tech ID (like "gas_ccgt") is selected, use it directly
@@ -56,10 +77,6 @@ export async function load({ url }) {
 			return [fuelTech];
 		})
 		.flat();
-
-	// console.log('fuelTechIds', fuelTechIds);
-	// console.log('regions', regions);
-	// console.log('statuses', statuses);
 
 	/**
 	 * Commissioning status is not included in the API, so we need to add it manually.
@@ -118,6 +135,11 @@ export async function load({ url }) {
 		});
 	});
 
+	// Store in cache (browser only)
+	if (browser) {
+		setCachedFacilities(filterParams, newFacilities);
+	}
+
 	return {
 		facilities: newFacilities,
 		view,
@@ -125,6 +147,7 @@ export async function load({ url }) {
 		regions,
 		fuelTechs,
 		sizes,
-		selectedFacility
+		selectedFacility,
+		fromCache: false
 	};
 }

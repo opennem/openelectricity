@@ -203,17 +203,37 @@
 	});
 
 	/**
-	 * Navigate to update URL and fetch new data in background
+	 * Build URL from params
 	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null}} params
+	 * @returns {string}
 	 */
-	function navigateWithFilters({ statuses: s, regions: r, fuelTechs: ft, sizes: sz, view: v, facility: f = null }) {
+	function buildUrl({ statuses: s, regions: r, fuelTechs: ft, sizes: sz, view: v, facility: f = null }) {
 		let url = `/facilities/all?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}&sizes=${sz.join(',')}`;
 		if (f) {
 			url += `&facility=${f}`;
 		}
-		goto(url, {
+		return url;
+	}
+
+	/**
+	 * Navigate and refetch data (for filter changes that affect API query)
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null}} params
+	 */
+	function navigateWithRefetch(params) {
+		goto(buildUrl(params), {
 			noScroll: true,
 			invalidateAll: true
+		});
+	}
+
+	/**
+	 * Navigate without refetch (for view/facility/size changes that use cached data)
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null}} params
+	 */
+	function navigateWithoutRefetch(params) {
+		goto(buildUrl(params), {
+			noScroll: true,
+			invalidateAll: false
 		});
 	}
 
@@ -223,8 +243,8 @@
 	function handleRegionsChange(values) {
 		// Optimistic update - immediately update local state
 		regions = values;
-		// Then navigate to fetch new data
-		navigateWithFilters({ statuses, regions: values, fuelTechs, sizes, view: selectedView });
+		// Then navigate to fetch new data (filter change requires refetch)
+		navigateWithRefetch({ statuses, regions: values, fuelTechs, sizes, view: selectedView });
 	}
 
 	/**
@@ -233,7 +253,8 @@
 	function handleFuelTechsChange(values) {
 		// Optimistic update
 		fuelTechs = values;
-		navigateWithFilters({ statuses, regions, fuelTechs: values, sizes, view: selectedView });
+		// Filter change requires refetch
+		navigateWithRefetch({ statuses, regions, fuelTechs: values, sizes, view: selectedView });
 	}
 
 	/**
@@ -242,7 +263,8 @@
 	function handleStatusesChange(values) {
 		// Optimistic update
 		statuses = values;
-		navigateWithFilters({ statuses: values, regions, fuelTechs, sizes, view: selectedView });
+		// Filter change requires refetch
+		navigateWithRefetch({ statuses: values, regions, fuelTechs, sizes, view: selectedView });
 	}
 
 	/**
@@ -251,7 +273,8 @@
 	function handleSizesChange(values) {
 		// Optimistic update
 		sizes = values;
-		navigateWithFilters({ statuses, regions, fuelTechs, sizes: values, view: selectedView });
+		// Size is client-side filtered, no refetch needed
+		navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes: values, view: selectedView });
 	}
 
 	/**
@@ -260,7 +283,8 @@
 	function handleSelectedViewChange(value) {
 		// Optimistic update
 		selectedView = value;
-		navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: value, facility: selectedFacilityCode });
+		// View change uses cached data, no refetch needed
+		navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: value, facility: selectedFacilityCode });
 	}
 
 	/**
@@ -288,11 +312,13 @@
 			if (selectedFacilityCode === facility.code) {
 				// Toggle off - clear selection
 				selectedFacilityCode = null;
-				navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
+				// Facility selection uses cached data, no refetch needed
+				navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
 			} else {
 				// Select new facility
 				selectedFacilityCode = facility.code;
-				navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: facility.code });
+				// Facility selection uses cached data, no refetch needed
+				navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: facility.code });
 			}
 		}
 	}
@@ -374,7 +400,7 @@
 				onclick={() => {
 					if (selectedFacilityCode) {
 						selectedFacilityCode = null;
-						navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
+						navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
 					}
 				}}
 				class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
