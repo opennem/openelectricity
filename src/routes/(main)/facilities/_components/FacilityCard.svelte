@@ -124,10 +124,14 @@
 	let primaryGroup = $derived(unitGroups[0]);
 	let hasCommittedUnit = $derived(unitGroups.some((g) => g.status_id === 'committed'));
 
-	// For display: show max 2 icons, then +N for overflow
+	// For display: show max 3 icons, then +N for overflow (but only if N >= 2)
 	const MAX_VISIBLE_ICONS = 3;
-	let visibleGroups = $derived(unitGroups.slice(0, MAX_VISIBLE_ICONS));
-	let overflowCount = $derived(Math.max(0, unitGroups.length - MAX_VISIBLE_ICONS));
+	// Don't show "+1", just show the 4th icon instead
+	let effectiveMaxVisible = $derived(
+		unitGroups.length === MAX_VISIBLE_ICONS + 1 ? unitGroups.length : MAX_VISIBLE_ICONS
+	);
+	let visibleGroups = $derived(unitGroups.slice(0, effectiveMaxVisible));
+	let overflowCount = $derived(Math.max(0, unitGroups.length - effectiveMaxVisible));
 	let hasOverflow = $derived(overflowCount > 0);
 
 	let path = $derived(
@@ -276,8 +280,8 @@
 						{#if hasOverflow}
 							{@render compactOverflowBadge(overflowCount, visibleGroups.length)}
 						{/if}
-						{#each unitGroups.slice(MAX_VISIBLE_ICONS) as group, i}
-							{@render compactHiddenFuelTechBadge(group, MAX_VISIBLE_ICONS + i)}
+						{#each unitGroups.slice(effectiveMaxVisible) as group, i}
+							{@render compactHiddenFuelTechBadge(group, effectiveMaxVisible + i)}
 						{/each}
 					</div>
 				{:else if primaryGroup}
@@ -347,8 +351,8 @@
 						{#if hasOverflow}
 							{@render overflowBadge(overflowCount, visibleGroups.length)}
 						{/if}
-						{#each unitGroups.slice(MAX_VISIBLE_ICONS) as group, i}
-							{@render hiddenFuelTechBadge(group, MAX_VISIBLE_ICONS + i)}
+						{#each unitGroups.slice(effectiveMaxVisible) as group, i}
+							{@render hiddenFuelTechBadge(group, effectiveMaxVisible + i)}
 						{/each}
 					</div>
 				{:else if primaryGroup}
