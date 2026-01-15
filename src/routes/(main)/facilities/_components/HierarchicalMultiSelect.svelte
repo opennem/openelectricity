@@ -249,7 +249,7 @@
 					</div>
 
 					{#if hasChildren && expandedState[opt.value]}
-						<ul class="ml-6 border-l-2 border-warm-grey">
+						<ul class="ml-[3.25rem] border-l-2 border-warm-grey">
 							{#each opt.children as child (child.value)}
 								<li class="whitespace-nowrap">
 									<button
@@ -270,9 +270,7 @@
 										</div>
 
 										{#if child.colour}
-											<span
-												class="size-4 rounded-sm"
-												style="background-color: {child.colour}"
+											<span class="size-4 rounded-sm" style="background-color: {child.colour}"
 											></span>
 										{/if}
 
@@ -303,7 +301,7 @@
 				{@const allSelected = hasChildren ? areAllChildrenSelected(opt) : isSelected(opt.value)}
 				{@const someSelected = hasChildren ? areSomeChildrenSelected(opt) : false}
 				<li class="whitespace-nowrap">
-					<div class="flex items-center gap-2">
+					<div class="flex items-center gap-1">
 						{#if hasChildren}
 							<button
 								onclick={(e) => toggleExpanded(e, opt.value)}
@@ -319,7 +317,7 @@
 						{/if}
 
 						<button
-							class="flex-1 hover:bg-warm-grey rounded-md px-2 py-2 flex gap-4 items-center"
+							class="flex-1 hover:bg-warm-grey rounded-md px-2 pl-4 py-2 flex gap-4 items-center"
 							class:text-mid-grey={!allSelected && !someSelected}
 							class:text-black={allSelected || someSelected}
 							onclick={() => handleSelect(opt.value, hasChildren ? opt : undefined)}
@@ -346,7 +344,7 @@
 					</div>
 
 					{#if hasChildren && expandedState[opt.value]}
-						<ul class="ml-6 border-l-2 border-warm-grey">
+						<ul class="ml-[3.25rem] border-l-1 border-warm-grey">
 							{#each opt.children as child (child.value)}
 								<li class="whitespace-nowrap">
 									<button
@@ -367,9 +365,7 @@
 										</div>
 
 										{#if child.colour}
-											<span
-												class="size-4 rounded-sm"
-												style="background-color: {child.colour}"
+											<span class="size-4 rounded-sm" style="background-color: {child.colour}"
 											></span>
 										{/if}
 
