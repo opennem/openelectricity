@@ -457,6 +457,8 @@
 			mapHoveredFacilityCode = code;
 			onhover?.(facility || null);
 			onclick?.(facility || null);
+			// Select the facility to highlight in list/timeline
+			onselect?.(facility || null);
 		}
 	}
 
