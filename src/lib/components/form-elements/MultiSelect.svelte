@@ -102,9 +102,12 @@
 	use:clickoutside
 	onclickoutside={() => (showOptions = false)}
 >
-	<button
+	<div
+		role="button"
+		tabindex="0"
 		onclick={() => (showOptions = !showOptions)}
-		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap"
+		onkeydown={(e) => e.key === 'Enter' && (showOptions = !showOptions)}
+		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
 		class:hover:bg-warm-grey={!showOptions}
 	>
 		<span class={selectedLabelClass}>
@@ -125,7 +128,7 @@
 				<IconChevronUpDown class="w-7 h-7" />
 			</div>
 		{/if}
-	</button>
+	</div>
 
 	{#if staticDisplay}
 		<ul class="flex flex-col mt-1">
