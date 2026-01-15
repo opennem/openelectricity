@@ -55,7 +55,7 @@
 	let clickedFacility = $state(null);
 
 	// Map clustering toggle and ref
-	let mapClustering = $state(false);
+	let mapClustering = $state(true);
 	/** @type {*} */
 	let mapRef = $state(null);
 
