@@ -1,6 +1,6 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
 	import formatValue from '../_utils/format-value';
 	import { statusColours, isInSizeRange } from '../_utils/filters.js';
@@ -227,14 +227,12 @@
 	}
 
 	/**
-	 * Navigate without refetch (for view/facility/size changes that use cached data)
+	 * Update URL without refetch (for view/facility/size changes that use cached data)
+	 * Uses replaceState to avoid triggering the load function
 	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null}} params
 	 */
 	function navigateWithoutRefetch(params) {
-		goto(buildUrl(params), {
-			noScroll: true,
-			invalidateAll: false
-		});
+		replaceState(buildUrl(params), {});
 	}
 
 	/**
@@ -310,8 +308,9 @@
 	function handleFacilitySelect(facility) {
 		if (facility) {
 			if (selectedFacilityCode === facility.code) {
-				// Toggle off - clear selection
+				// Toggle off - clear selection and close popups
 				selectedFacilityCode = null;
+				mapRef?.closePopups();
 				// Facility selection uses cached data, no refetch needed
 				navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
 			} else {
@@ -398,6 +397,7 @@
 		<div class="absolute top-3 right-20 z-20 hidden md:flex items-center gap-2">
 			<button
 				onclick={() => {
+					mapRef?.closePopups();
 					if (selectedFacilityCode) {
 						selectedFacilityCode = null;
 						navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });

@@ -283,13 +283,20 @@
 	}
 
 	/**
+	 * Close all popups - exported for external use
+	 */
+	export function closePopups() {
+		mapHoveredFacilityCode = null;
+		clusterFacilities = [];
+		clusterLocation = null;
+		onhover?.(null);
+	}
+
+	/**
 	 * Reset view to show all facilities - exported for external use
 	 */
 	export function resetView() {
-		// Clear any hovered facility popup
-		mapHoveredFacilityCode = null;
-		onhover?.(null);
-
+		closePopups();
 		fitMapToFacilities(facilities);
 	}
 
@@ -601,8 +608,6 @@
 					paint={{
 						'circle-color': '#4a4a4a',
 						'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 50, 35, 100, 45],
-						'circle-stroke-width': 2,
-						'circle-stroke-color': '#ffffff',
 						'circle-opacity': 0.9
 					}}
 					onclick={handleClusterClick}
