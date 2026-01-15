@@ -337,7 +337,8 @@
 	function handleMapLoad() {
 		mapLoaded = true;
 
-		if (facilities.length > 0) {
+		// Only fit to all facilities if no specific facility is selected
+		if (facilities.length > 0 && !selectedFacilityCode) {
 			// Use idle event instead of setTimeout for reliable timing
 			mapInstance.once('idle', () => {
 				fitMapToFacilities(facilities);
