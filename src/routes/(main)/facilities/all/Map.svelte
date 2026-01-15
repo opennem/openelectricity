@@ -39,9 +39,9 @@
 	const center = { lng: 110, lat: -28 };
 
 	// Animation durations (in milliseconds)
-	const ZOOM_DURATION = 750; // flyTo when selecting a facility
+	const ZOOM_DURATION = 400; // flyTo when selecting a facility
 	const PAN_DURATION = 200; // easeTo for cluster popup adjustment
-	const RESET_DURATION = 750; // fitBounds when resetting view
+	const RESET_DURATION = 500; // fitBounds when resetting view
 
 	/** @type {any | null} */
 	let mapInstance = $state(null);
@@ -410,16 +410,14 @@
 		if (mapInstance && mapLoaded && selectedFacilityCode && facilities.length > 0) {
 			const facility = facilitiesMap.get(selectedFacilityCode);
 			if (facility && facility.location) {
-				mapInstance.once('idle', () => {
-					mapInstance.flyTo({
-						center: [facility.location.lng, facility.location.lat],
-						zoom: 12,
-						duration: ZOOM_DURATION,
-						offset: getFlyToOffset()
-					});
-					mapHoveredFacilityCode = facility.code;
-					onhover?.(facility);
+				mapInstance.flyTo({
+					center: [facility.location.lng, facility.location.lat],
+					zoom: 12,
+					duration: ZOOM_DURATION,
+					offset: getFlyToOffset()
 				});
+				mapHoveredFacilityCode = facility.code;
+				onhover?.(facility);
 			}
 		}
 	});
