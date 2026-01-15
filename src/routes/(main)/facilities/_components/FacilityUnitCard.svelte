@@ -6,6 +6,7 @@
 	import UnitGroup from './UnitGroup.svelte';
 	import { regions } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
+	import { ExternalLink } from '@lucide/svelte';
 
 	let { facility, isHighlighted = false, isSelected = false, onclick, onmouseenter, onmouseleave } = $props();
 
@@ -69,6 +70,17 @@
 				class="text-base leading-base font-medium text-dark-grey flex flex-col @sm:flex-row items-bottom gap-0 @sm:gap-3"
 			>
 				{facility.name || 'Unnamed Facility'}
+
+				<a
+					href={path}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="text-mid-grey hover:text-dark-grey transition-colors self-center opacity-0 group-hover:opacity-100 {isSelected ? 'opacity-100' : ''}"
+					aria-label="View facility details (opens in new tab)"
+					onclick={(e) => e.stopPropagation()}
+				>
+					<ExternalLink size={16} />
+				</a>
 
 				{#if facility.unit.capacity_storage}
 					<span class="text-xs items-baseline text-mid-grey" title="Storage Capacity">
