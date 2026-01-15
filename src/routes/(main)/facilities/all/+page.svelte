@@ -397,14 +397,14 @@
 		<div class="absolute top-3 left-3 md:left-auto md:right-20 z-20 items-center gap-2 {selectedView === 'map' ? 'flex' : 'hidden md:flex'}">
 			<button
 				onclick={() => {
-					mapRef?.closePopups();
+					mapRef?.resetView();
 					if (selectedFacilityCode) {
 						selectedFacilityCode = null;
 						navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
 					}
 				}}
 				class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
-				title="Clear selected facility"
+				title="Reset map to show all facilities"
 			>
 				Reset Map
 			</button>

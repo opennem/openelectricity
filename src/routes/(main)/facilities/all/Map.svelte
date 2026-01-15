@@ -49,6 +49,7 @@
 	let mapHoveredFacilityCode = $state(null);
 	let mapLoaded = $state(false);
 	let isDragging = $state(false);
+	let isZooming = $state(false);
 
 	// Cluster panel state
 	/** @type {any[]} */
@@ -353,6 +354,14 @@
 		mapInstance.on('dragend', () => {
 			isDragging = false;
 		});
+
+		// Track zooming state to hide cluster numbers during zoom
+		mapInstance.on('zoomstart', () => {
+			isZooming = true;
+		});
+		mapInstance.on('zoomend', () => {
+			isZooming = false;
+		});
 	}
 
 	// Fit bounds when facilities change - use idle event
@@ -587,6 +596,7 @@
 		scrollZoom={false}
 		touchZoomRotate={true}
 		attributionControl={false}
+		fadeDuration={0}
 		bind:map={mapInstance}
 		onload={handleMapLoad}
 		onclick={handleMapClick}
@@ -627,8 +637,9 @@
 					filter={['has', 'point_count']}
 					layout={{
 						'text-field': '{point_count_abbreviated}',
-						'text-font': ['Open Sans Bold'],
-						'text-size': 14
+						'text-font': ['DM_Mono'],
+						'text-size': 14,
+						'visibility': isZooming ? 'none' : 'visible'
 					}}
 					paint={{
 						'text-color': '#ffffff'
@@ -880,6 +891,11 @@
 		padding: 0 !important;
 		box-shadow: none !important;
 		border-radius: 0 !important;
+		font-family: inherit !important;
+	}
+
+	:global(.maplibregl-popup-content .font-mono) {
+		font-family: 'DM Mono', monospace !important;
 	}
 
 	:global(.maplibregl-popup-tip) {
