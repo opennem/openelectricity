@@ -372,16 +372,15 @@
 		<div class="absolute top-3 right-20 z-20 hidden md:flex items-center gap-2">
 			<button
 				onclick={() => {
-					mapRef?.resetView();
 					if (selectedFacilityCode) {
 						selectedFacilityCode = null;
 						navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
 					}
 				}}
 				class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
-				title="Reset view to show all facilities"
+				title="Clear selected facility"
 			>
-				Reset View
+				Reset Map
 			</button>
 			<button
 				onclick={() => (mapClustering = !mapClustering)}
@@ -453,9 +452,6 @@
 					{selectedFacilityCode}
 					onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 					onclick={(/** @type {any} */ f) => {
-						if (selectedFacilityCode !== f.code) {
-							mapRef?.zoomToFacility(f);
-						}
 						handleFacilitySelect(f);
 					}}
 				/>
@@ -499,9 +495,6 @@
 						scrollContainer={timelineScrollContainer}
 						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 						onclick={(/** @type {any} */ f) => {
-							if (selectedFacilityCode !== f.code) {
-								mapRef?.zoomToFacility(f);
-							}
 							handleFacilitySelect(f);
 						}}
 					/>
