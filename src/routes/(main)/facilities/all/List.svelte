@@ -7,10 +7,12 @@
 	 *   facilities: any[],
 	 *   hoveredFacility?: any | null,
 	 *   clickedFacility?: any | null,
-	 *   onhover?: (facility: any | null) => void
+	 *   selectedFacilityCode?: string | null,
+	 *   onhover?: (facility: any | null) => void,
+	 *   onclick?: (facility: any) => void
 	 * }}
 	 */
-	let { facilities = [], hoveredFacility = null, clickedFacility = null, onhover } = $props();
+	let { facilities = [], hoveredFacility = null, clickedFacility = null, selectedFacilityCode = null, onhover, onclick } = $props();
 
 	// Scroll to facility when clickedFacility changes (from map click)
 	$effect(() => {
@@ -18,6 +20,16 @@
 			tick().then(() => {
 				const el = document.querySelector(`[data-facility-code="${clickedFacility.code}"]`);
 				el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			});
+		}
+	});
+
+	// Scroll to selected facility on initial load (from URL)
+	$effect(() => {
+		if (selectedFacilityCode && facilities.length > 0) {
+			tick().then(() => {
+				const el = document.querySelector(`[data-facility-code="${selectedFacilityCode}"]`);
+				el?.scrollIntoView({ behavior: 'auto', block: 'center' });
 			});
 		}
 	});
@@ -42,6 +54,8 @@
 			<FacilityCard
 				{facility}
 				isHighlighted={hoveredFacility?.code === facility.code}
+				isSelected={selectedFacilityCode === facility.code}
+				onclick={(f) => onclick?.(f)}
 				onmouseenter={handleMouseEnter}
 				onmouseleave={handleMouseLeave}
 			/>

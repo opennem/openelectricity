@@ -13,6 +13,7 @@
 	 * @type {{
 	 *   facility: any,
 	 *   isHighlighted?: boolean,
+	 *   isSelected?: boolean,
 	 *   compact?: boolean,
 	 *   darkMode?: boolean,
 	 *   onclick?: (facility: any) => void,
@@ -20,7 +21,7 @@
 	 *   onmouseleave?: () => void
 	 * }}
 	 */
-	let { facility, isHighlighted = false, compact = false, darkMode = false, onclick, onmouseenter, onmouseleave } = $props();
+	let { facility, isHighlighted = false, isSelected = false, compact = false, darkMode = false, onclick, onmouseenter, onmouseleave } = $props();
 
 	/**
 	 * Check if fueltech needs dark text (for light backgrounds)
@@ -315,12 +316,11 @@
 		onmouseenter={() => onmouseenter?.(facility)}
 		onmouseleave={() => onmouseleave?.()}
 	>
-		<a
-			class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey"
-			class:bg-light-warm-grey={hasCommittedUnit && !isHighlighted}
-			class:bg-warm-grey={isHighlighted}
-			target="_blank"
-			href={path}
+		<button
+			class="w-full text-left grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:bg-warm-grey rounded-lg cursor-pointer {isSelected ? 'ring-2 ring-dark-grey ring-inset' : ''}"
+			class:bg-light-warm-grey={hasCommittedUnit && !isHighlighted && !isSelected}
+			class:bg-warm-grey={isHighlighted || isSelected}
+			onclick={() => onclick?.(facility)}
 		>
 		<div class="pl-6 pr-4 py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5">
 			<div class="text-base leading-base font-medium text-dark-grey">
@@ -389,6 +389,6 @@
 				{/if}
 			</div>
 		</div>
-	</a>
+	</button>
 	</li>
 {/if}

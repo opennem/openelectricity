@@ -294,6 +294,24 @@
 	}
 
 	/**
+	 * Zoom to a specific facility and show popup - exported for external use
+	 * @param {any} facility
+	 */
+	export function zoomToFacility(facility) {
+		if (!mapInstance || !facility?.location) return;
+
+		mapInstance.flyTo({
+			center: [facility.location.lng, facility.location.lat],
+			zoom: 12,
+			duration: ZOOM_DURATION,
+			offset: getFlyToOffset()
+		});
+
+		mapHoveredFacilityCode = facility.code;
+		onhover?.(facility);
+	}
+
+	/**
 	 * Compact attribution control
 	 */
 	function compactAttribution() {

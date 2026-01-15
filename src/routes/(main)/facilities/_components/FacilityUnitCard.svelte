@@ -7,7 +7,7 @@
 	import { regions } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 
-	let { facility, isHighlighted = false, onmouseenter, onmouseleave } = $props();
+	let { facility, isHighlighted = false, isSelected = false, onclick, onmouseenter, onmouseleave } = $props();
 
 	/**
 	 * Get the background color for a fueltech
@@ -43,12 +43,11 @@
 	onmouseenter={() => onmouseenter?.(facility)}
 	onmouseleave={() => onmouseleave?.()}
 >
-	<a
-		class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey rounded-lg"
-		class:bg-light-warm-grey={facility.unit.status_id === 'committed' && !isHighlighted}
-		class:bg-warm-grey={isHighlighted}
-		target="_blank"
-		href={path}
+	<button
+		class="w-full text-left grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:bg-warm-grey rounded-lg cursor-pointer {isSelected ? 'ring-2 ring-dark-grey ring-inset' : ''}"
+		class:bg-light-warm-grey={facility.unit.status_id === 'committed' && !isHighlighted && !isSelected}
+		class:bg-warm-grey={isHighlighted || isSelected}
+		onclick={() => onclick?.(facility)}
 	>
 		<div class="p-4 pb-2 sm:pb-4 flex items-center gap-4 @container col-span-12 sm:col-span-7">
 			<div class="flex gap-1 items-center">
@@ -154,5 +153,5 @@
 				</div>
 			</div>
 		</div>
-	</a>
+	</button>
 </li>

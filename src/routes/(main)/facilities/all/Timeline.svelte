@@ -9,7 +9,7 @@
 	import getDateField from '../_utils/get-date-field';
 	import FacilityUnitCard from '../_components/FacilityUnitCard.svelte';
 
-	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover, hoveredFacility = null, clickedFacility = null } = $props();
+	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover, onclick, hoveredFacility = null, clickedFacility = null, selectedFacilityCode = null } = $props();
 
 	// Scroll to facility when clickedFacility changes (from map click)
 	$effect(() => {
@@ -17,6 +17,16 @@
 			tick().then(() => {
 				const el = document.querySelector(`[data-facility-code="${clickedFacility.code}"]`);
 				el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			});
+		}
+	});
+
+	// Scroll to selected facility on initial load (from URL)
+	$effect(() => {
+		if (selectedFacilityCode && browser && facilities.length > 0) {
+			tick().then(() => {
+				const el = document.querySelector(`[data-facility-code="${selectedFacilityCode}"]`);
+				el?.scrollIntoView({ behavior: 'auto', block: 'center' });
 			});
 		}
 	});
@@ -259,6 +269,8 @@
 								<FacilityUnitCard
 									{facility}
 									isHighlighted={hoveredFacility?.code === facility.code}
+									isSelected={selectedFacilityCode === facility.code}
+									onclick={(/** @type {any} */ f) => onclick?.(f)}
 									onmouseenter={handleMouseEnter}
 									onmouseleave={handleMouseLeave}
 								/>

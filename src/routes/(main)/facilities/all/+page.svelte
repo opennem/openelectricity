@@ -260,7 +260,7 @@
 	function handleSelectedViewChange(value) {
 		// Optimistic update
 		selectedView = value;
-		navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: value });
+		navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: value, facility: selectedFacilityCode });
 	}
 
 	/**
@@ -280,13 +280,20 @@
 	}
 
 	/**
-	 * Handle facility selection from map cluster panel - updates URL
+	 * Handle facility selection - toggles selection if already selected
 	 * @param {any} facility
 	 */
 	function handleFacilitySelect(facility) {
 		if (facility) {
-			selectedFacilityCode = facility.code;
-			navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: facility.code });
+			if (selectedFacilityCode === facility.code) {
+				// Toggle off - clear selection
+				selectedFacilityCode = null;
+				navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
+			} else {
+				// Select new facility
+				selectedFacilityCode = facility.code;
+				navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: facility.code });
+			}
 		}
 	}
 </script>
@@ -443,7 +450,14 @@
 					facilities={filteredFacilities}
 					{hoveredFacility}
 					{clickedFacility}
+					{selectedFacilityCode}
 					onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
+					onclick={(/** @type {any} */ f) => {
+						if (selectedFacilityCode !== f.code) {
+							mapRef?.zoomToFacility(f);
+						}
+						handleFacilitySelect(f);
+					}}
 				/>
 			</div>
 			{@render summaryBar()}
@@ -480,9 +494,16 @@
 						facilities={filteredWithLocation}
 						{hoveredFacility}
 						{clickedFacility}
+						{selectedFacilityCode}
 						ontodaybuttonvisible={handleTodayButtonVisible}
 						scrollContainer={timelineScrollContainer}
 						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
+						onclick={(/** @type {any} */ f) => {
+							if (selectedFacilityCode !== f.code) {
+								mapRef?.zoomToFacility(f);
+							}
+							handleFacilitySelect(f);
+						}}
 					/>
 				</div>
 			</div>
