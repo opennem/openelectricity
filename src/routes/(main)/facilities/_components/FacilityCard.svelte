@@ -13,11 +13,14 @@
 	 * @type {{
 	 *   facility: any,
 	 *   isHighlighted?: boolean,
+	 *   compact?: boolean,
+	 *   darkMode?: boolean,
+	 *   onclick?: (facility: any) => void,
 	 *   onmouseenter?: (facility: any) => void,
 	 *   onmouseleave?: () => void
 	 * }}
 	 */
-	let { facility, isHighlighted = false, onmouseenter, onmouseleave } = $props();
+	let { facility, isHighlighted = false, compact = false, darkMode = false, onclick, onmouseenter, onmouseleave } = $props();
 
 	/**
 	 * Check if fueltech needs dark text (for light backgrounds)
@@ -197,19 +200,128 @@
 	</span>
 {/snippet}
 
-<li
-	class="@container border-b border-warm-grey last:border-b-0"
-	data-facility-code={facility.code}
-	onmouseenter={() => onmouseenter?.(facility)}
-	onmouseleave={() => onmouseleave?.()}
->
-	<a
-		class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey"
-		class:bg-light-warm-grey={hasCommittedUnit && !isHighlighted}
-		class:bg-warm-grey={isHighlighted}
-		target="_blank"
-		href={path}
+{#snippet compactFuelTechBadge(
+	/** @type {UnitGroup} */ group,
+	/** @type {number} */ index,
+	/** @type {boolean} */ hasMargin = false
+)}
+	<span
+		class="rounded-full p-1.5 block relative shadow-sm transition-[margin] duration-200 ease-out {darkMode ? 'border border-white/30' : 'border-2 border-white'} {hasMargin
+			? '-ml-3 group-hover/badges:ml-0.5'
+			: ''}"
+		class:text-black={needsDarkText(group.fueltech_id)}
+		class:text-white={!needsDarkText(group.fueltech_id)}
+		style="background-color: {group.bgColor}; z-index: {index + 1};"
+		title="{group.fueltech_id} ({group.status_id})"
 	>
+		<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={4} />
+		<div class="absolute -top-[0.1rem] -left-[0.1rem] z-10">
+			<FacilityStatusIcon
+				status={group.status_id}
+				isCommissioning={group.isCommissioning}
+				size="small"
+			/>
+		</div>
+	</span>
+{/snippet}
+
+{#snippet compactOverflowBadge(/** @type {number} */ count, /** @type {number} */ index)}
+	<span
+		class="rounded-full p-1.5 flex items-center justify-center relative shadow-sm text-[10px] font-medium transition-all duration-200 ease-out -ml-3 group-hover/badges:opacity-0 group-hover/badges:scale-0 group-hover/badges:w-0 group-hover/badges:p-0 group-hover/badges:ml-0 {darkMode ? 'border border-white/30 bg-white/20 text-white' : 'border-2 border-white bg-light-warm-grey text-mid-grey'}"
+		style="z-index: {index + 1};"
+		title="{count} more fuel types"
+	>
+		<span class="w-4 h-4 flex items-center justify-center">+{count}</span>
+	</span>
+{/snippet}
+
+{#snippet compactHiddenFuelTechBadge(/** @type {UnitGroup} */ group, /** @type {number} */ index)}
+	<span
+		class="rounded-full block relative shadow-sm transition-all duration-200 ease-out p-0 w-0 opacity-0 scale-0 group-hover/badges:p-1.5 group-hover/badges:w-auto group-hover/badges:ml-0.5 group-hover/badges:opacity-100 group-hover/badges:scale-100 {darkMode ? 'border border-white/30' : 'border-2 border-white'}"
+		class:text-black={needsDarkText(group.fueltech_id)}
+		class:text-white={!needsDarkText(group.fueltech_id)}
+		style="background-color: {group.bgColor}; z-index: {index + 1};"
+		title="{group.fueltech_id} ({group.status_id})"
+	>
+		<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={4} />
+		<div class="absolute -top-[0.1rem] -left-[0.1rem] z-10">
+			<FacilityStatusIcon
+				status={group.status_id}
+				isCommissioning={group.isCommissioning}
+				size="small"
+			/>
+		</div>
+	</span>
+{/snippet}
+
+{#if compact}
+	<!-- Compact mode for cluster popup -->
+	<button
+		class="w-full px-4 py-3 text-left transition-colors border-b last:border-b-0 {darkMode ? 'hover:bg-white/10 border-white/20' : 'hover:bg-light-warm-grey border-warm-grey'}"
+		onclick={() => onclick?.(facility)}
+		onmouseenter={() => onmouseenter?.(facility)}
+		onmouseleave={() => onmouseleave?.()}
+	>
+		<!-- Row 1: Facility name -->
+		<div class="font-medium text-sm truncate {darkMode ? 'text-white' : 'text-dark-grey'}">
+			{facility.name || 'Unnamed Facility'}
+		</div>
+
+		<!-- Row 2: Region | Fuel tech badges | Capacity -->
+		<div class="flex items-center gap-2 mt-1">
+			<!-- Region -->
+			<span class="text-xs {darkMode ? 'text-white/60' : 'text-mid-grey'}">
+				{getRegionLabel(facility.network_id, facility.network_region)}
+			</span>
+
+			<!-- Separator -->
+			<span class="text-xs {darkMode ? 'text-white/30' : 'text-warm-grey'}">|</span>
+
+			<!-- Fuel tech badges with fan out -->
+			<div class="flex-shrink-0">
+				{#if hasMultipleGroups}
+					<div class="flex group/badges">
+						{#each visibleGroups as group, i}
+							{@render compactFuelTechBadge(group, i, i > 0)}
+						{/each}
+						{#if hasOverflow}
+							{@render compactOverflowBadge(overflowCount, visibleGroups.length)}
+						{/if}
+						{#each unitGroups.slice(MAX_VISIBLE_ICONS) as group, i}
+							{@render compactHiddenFuelTechBadge(group, MAX_VISIBLE_ICONS + i)}
+						{/each}
+					</div>
+				{:else if primaryGroup}
+					<div>
+						{@render compactFuelTechBadge(primaryGroup, 0, false)}
+					</div>
+				{/if}
+			</div>
+
+			<!-- Capacity (aligned right) -->
+			<div class="flex-1 flex justify-end items-baseline gap-1">
+				<span class="font-mono text-sm {darkMode ? 'text-white' : 'text-dark-grey'}">
+					{formatValue(totalCapacity)}
+				</span>
+				<span class="text-xs {darkMode ? 'text-white/60' : 'text-mid-grey'}">MW</span>
+			</div>
+		</div>
+	</button>
+{:else}
+	<!-- Standard mode -->
+	<li
+		class="@container border-b border-warm-grey last:border-b-0"
+		data-facility-code={facility.code}
+		onmouseenter={() => onmouseenter?.(facility)}
+		onmouseleave={() => onmouseleave?.()}
+	>
+		<a
+			class="grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:no-underline hover:bg-warm-grey"
+			class:bg-light-warm-grey={hasCommittedUnit && !isHighlighted}
+			class:bg-warm-grey={isHighlighted}
+			target="_blank"
+			href={path}
+		>
 		<div class="pl-6 pr-4 py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5">
 			<div class="text-base leading-base font-medium text-dark-grey">
 				{facility.name || 'Unnamed Facility'}
@@ -278,4 +390,5 @@
 			</div>
 		</div>
 	</a>
-</li>
+	</li>
+{/if}

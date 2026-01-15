@@ -28,6 +28,8 @@
 	let sizes = $state(data.sizes);
 	/** @type {'list' | 'timeline' | 'map'} */
 	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ (data.view));
+	/** @type {string | null} */
+	let selectedFacilityCode = $state(data.selectedFacility);
 
 	// Sync local state when server data changes (e.g., browser back/forward, direct URL navigation)
 	$effect(() => {
@@ -45,6 +47,9 @@
 	$effect(() => {
 		selectedView = /** @type {'list' | 'timeline' | 'map'} */ (data.view);
 	});
+	$effect(() => {
+		selectedFacilityCode = data.selectedFacility;
+	});
 
 	let showTodayButton = $state(false);
 	let todayButtonPosition = $state('bottom');
@@ -58,6 +63,11 @@
 	let hoveredFacility = $state(null);
 	/** @type {any | null} */
 	let clickedFacility = $state(null);
+
+	// Map clustering toggle and ref
+	let mapClustering = $state(false);
+	/** @type {*} */
+	let mapRef = $state(null);
 
 	/**
 	 * Filter out battery_charging and battery_discharging units from facilities since they are merged into battery.
@@ -194,16 +204,17 @@
 
 	/**
 	 * Navigate to update URL and fetch new data in background
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string}} params
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null}} params
 	 */
-	function navigateWithFilters({ statuses: s, regions: r, fuelTechs: ft, sizes: sz, view: v }) {
-		goto(
-			`/facilities/all?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}&sizes=${sz.join(',')}`,
-			{
-				noScroll: true,
-				invalidateAll: true
-			}
-		);
+	function navigateWithFilters({ statuses: s, regions: r, fuelTechs: ft, sizes: sz, view: v, facility: f = null }) {
+		let url = `/facilities/all?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}&sizes=${sz.join(',')}`;
+		if (f) {
+			url += `&facility=${f}`;
+		}
+		goto(url, {
+			noScroll: true,
+			invalidateAll: true
+		});
 	}
 
 	/**
@@ -267,6 +278,17 @@
 	function handleSearchChange(value) {
 		searchTerm = value;
 	}
+
+	/**
+	 * Handle facility selection from map cluster panel - updates URL
+	 * @param {any} facility
+	 */
+	function handleFacilitySelect(facility) {
+		if (facility) {
+			selectedFacilityCode = facility.code;
+			navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: facility.code });
+		}
+	}
 </script>
 
 <Meta
@@ -329,11 +351,43 @@
 		class:md:block={selectedView !== 'map'}
 	>
 		<Map
+			bind:this={mapRef}
 			facilities={filteredWithLocation}
 			{hoveredFacility}
+			{selectedFacilityCode}
+			clustering={mapClustering}
 			onhover={(f) => (hoveredFacility = f)}
 			onclick={(f) => (clickedFacility = f)}
+			onselect={handleFacilitySelect}
 		/>
+
+		<!-- Map controls - positioned to the left of zoom controls -->
+		<div class="absolute top-3 right-20 z-20 hidden md:flex items-center gap-2">
+			<button
+				onclick={() => {
+					mapRef?.resetView();
+					if (selectedFacilityCode) {
+						selectedFacilityCode = null;
+						navigateWithFilters({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
+					}
+				}}
+				class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
+				title="Reset view to show all facilities"
+			>
+				Reset View
+			</button>
+			<button
+				onclick={() => (mapClustering = !mapClustering)}
+				class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
+			>
+				<span
+					class="w-3 h-3 rounded-full transition-colors"
+					class:bg-dark-grey={mapClustering}
+					class:bg-mid-warm-grey={!mapClustering}
+				></span>
+				{mapClustering ? 'Clustering On' : 'Clustering Off'}
+			</button>
+		</div>
 	</div>
 
 	{#snippet summaryBar()}

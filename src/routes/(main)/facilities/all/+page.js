@@ -41,6 +41,7 @@ export async function load({ url }) {
 	const sizes = searchParams.get('sizes')
 		? /** @type {string} */ (searchParams.get('sizes')).split(',').filter(Boolean)
 		: [];
+	const selectedFacility = searchParams.get('facility') || null;
 
 	// Map fuel tech selections to API fuel tech IDs
 	// If a category (like "gas") is selected, expand to all sub-technologies
@@ -123,6 +124,7 @@ export async function load({ url }) {
 		statuses,
 		regions,
 		fuelTechs,
-		sizes
+		sizes,
+		selectedFacility
 	};
 }

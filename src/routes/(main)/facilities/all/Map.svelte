@@ -5,24 +5,43 @@
 		NavigationControl,
 		AttributionControl,
 		GeoJSONSource,
-		CircleLayer
+		CircleLayer,
+		SymbolLayer
 	} from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import UnitGroup from '../_components/UnitGroup.svelte';
+	import FacilityCard from '../_components/FacilityCard.svelte';
 	import { regions } from '../_utils/filters';
+	import { X } from '@lucide/svelte';
 
 	/**
 	 * @type {{
 	 *   facilities: any[],
 	 *   hoveredFacility?: any | null,
+	 *   selectedFacilityCode?: string | null,
+	 *   clustering?: boolean,
 	 *   onhover?: (facility: any | null) => void,
-	 *   onclick?: (facility: any | null) => void
+	 *   onclick?: (facility: any | null) => void,
+	 *   onselect?: (facility: any | null) => void
 	 * }}
 	 */
-	let { facilities = [], hoveredFacility = null, onhover, onclick } = $props();
+	let {
+		facilities = [],
+		hoveredFacility = null,
+		selectedFacilityCode = null,
+		clustering = false,
+		onhover,
+		onclick,
+		onselect
+	} = $props();
 
 	// Australia center coordinates (default fallback)
 	const center = { lng: 110, lat: -28 };
+
+	// Animation durations (in milliseconds)
+	const ZOOM_DURATION = 750; // flyTo when selecting a facility
+	const PAN_DURATION = 200; // easeTo for cluster popup adjustment
+	const RESET_DURATION = 750; // fitBounds when resetting view
 
 	/** @type {any | null} */
 	let mapInstance = $state(null);
@@ -30,6 +49,14 @@
 	let mapHoveredFacilityCode = $state(null);
 	let mapLoaded = $state(false);
 	let isDragging = $state(false);
+
+	// Cluster panel state
+	/** @type {any[]} */
+	let clusterFacilities = $state([]);
+	/** @type {{lng: number, lat: number} | null} */
+	let clusterLocation = $state(null);
+	let showClusterPanel = $derived(clusterFacilities.length > 0);
+	let clusterClickInProgress = $state(false);
 
 	// Create a lookup map for facilities by code (memoized)
 	let facilitiesMap = $derived(new Map(facilities.map((f) => [f.code, f])));
@@ -246,12 +273,24 @@
 						left: window.innerWidth > 768 ? window.innerWidth * 0.5 : 50,
 						right: 50
 					},
-					maxZoom: 10
+					maxZoom: 10,
+					duration: RESET_DURATION
 				}
 			);
 		} catch (error) {
 			console.error('Error fitting bounds:', error);
 		}
+	}
+
+	/**
+	 * Reset view to show all facilities - exported for external use
+	 */
+	export function resetView() {
+		// Clear any hovered facility popup
+		mapHoveredFacilityCode = null;
+		onhover?.(null);
+
+		fitMapToFacilities(facilities);
 	}
 
 	/**
@@ -293,10 +332,61 @@
 
 	// Fit bounds when facilities change - use idle event
 	$effect(() => {
-		if (mapInstance && mapLoaded && facilities.length > 0) {
+		if (mapInstance && mapLoaded && facilities.length > 0 && !selectedFacilityCode) {
 			mapInstance.once('idle', () => {
 				fitMapToFacilities(facilities);
 			});
+		}
+	});
+
+	/**
+	 * Get offset for flyTo to account for left panel on desktop
+	 * Returns [x, y] pixel offset - positive x shifts view right (so facility appears right of center)
+	 * @returns {[number, number]}
+	 */
+	function getFlyToOffset() {
+		// On desktop (>768px), the left panel takes ~50% of viewport, so offset by ~25% to center in remaining space
+		if (typeof window !== 'undefined' && window.innerWidth > 768) {
+			return [window.innerWidth * 0.25, 0];
+		}
+		return [0, 0];
+	}
+
+	/**
+	 * Get offset for cluster popup to ensure it's visible
+	 * Returns [x, y] pixel offset - positive x shifts right, negative y shifts up
+	 * @returns {[number, number]}
+	 */
+	function getClusterPopupOffset() {
+		if (typeof window === 'undefined') return [0, 0];
+
+		// Popup is max 300px tall, anchored at bottom, so we need to shift view up
+		// Also account for left panel on desktop
+		const yOffset = -120; // Shift view up to show popup above the point
+
+		if (window.innerWidth > 768) {
+			// Desktop: also shift right for left panel
+			return [window.innerWidth * 0.2, yOffset];
+		}
+		return [0, yOffset];
+	}
+
+	// Handle selectedFacilityCode from URL - zoom to facility and show popup
+	$effect(() => {
+		if (mapInstance && mapLoaded && selectedFacilityCode && facilities.length > 0) {
+			const facility = facilitiesMap.get(selectedFacilityCode);
+			if (facility && facility.location) {
+				mapInstance.once('idle', () => {
+					mapInstance.flyTo({
+						center: [facility.location.lng, facility.location.lat],
+						zoom: 12,
+						duration: ZOOM_DURATION,
+						offset: getFlyToOffset()
+					});
+					mapHoveredFacilityCode = facility.code;
+					onhover?.(facility);
+				});
+			}
 		}
 	});
 
@@ -350,16 +440,112 @@
 	 * @param {any} e
 	 */
 	function handleMapClick(e) {
-		// Ignore clicks that happen right after dragging
-		if (isDragging) return;
+		// Ignore clicks that happen right after dragging or during cluster processing
+		if (isDragging || clusterClickInProgress) return;
 
-		// Check if click was on a facility point
-		const features = mapInstance?.queryRenderedFeatures(e.point, { layers: ['facility-points'] });
+		// Check if click was on a facility point or cluster
+		const layersToCheck = clustering
+			? ['facility-points-unclustered', 'cluster-circles']
+			: ['facility-points'];
+		const features = mapInstance?.queryRenderedFeatures(e.point, { layers: layersToCheck });
 		if (!features || features.length === 0) {
-			// Clicked on empty space - clear selection
+			// Clicked on empty space - clear selection and close panel
 			mapHoveredFacilityCode = null;
 			onhover?.(null);
+			clusterFacilities = [];
+			clusterLocation = null;
 		}
+	}
+
+	/**
+	 * Handle click on cluster circle - fetches all facilities in the cluster
+	 * @param {any} e
+	 */
+	async function handleClusterClick(e) {
+		if (!mapInstance) return;
+
+		clusterClickInProgress = true;
+
+		const features = e.features;
+		if (!features || features.length === 0) {
+			clusterClickInProgress = false;
+			return;
+		}
+
+		const clusterId = features[0].properties.cluster_id;
+		const pointCount = features[0].properties.point_count;
+		const coordinates = features[0].geometry.coordinates;
+
+		const source = mapInstance.getSource('facilities-clustered');
+		if (!source) {
+			clusterClickInProgress = false;
+			return;
+		}
+
+		try {
+			// Use promise-based API to get cluster leaves
+			const leaves = await source.getClusterLeaves(clusterId, pointCount, 0);
+
+			clusterClickInProgress = false;
+
+			if (!leaves || leaves.length === 0) return;
+
+			// Map GeoJSON features back to facility objects
+			const facilityCodes = /** @type {any[]} */ (leaves).map((f) => f.properties.code);
+			const clusterFacilityList = facilityCodes
+				.map((code) => facilitiesMap.get(code))
+				.filter(Boolean);
+
+			clusterFacilities = clusterFacilityList;
+			clusterLocation = { lng: coordinates[0], lat: coordinates[1] };
+
+			// Pan map to ensure popup is visible (account for popup height above point and left panel)
+			// Offset: positive x shifts view right, negative y shifts view up
+			const popupOffset = getClusterPopupOffset();
+			mapInstance.easeTo({
+				center: coordinates,
+				offset: popupOffset,
+				duration: PAN_DURATION
+			});
+		} catch (error) {
+			console.error('Error getting cluster leaves:', error);
+			clusterClickInProgress = false;
+		}
+	}
+
+	/**
+	 * Close cluster panel
+	 */
+	function closeClusterPanel() {
+		clusterFacilities = [];
+		clusterLocation = null;
+	}
+
+	/**
+	 * Handle facility click from cluster panel - zoom to facility and show popup
+	 * @param {any} facility
+	 */
+	function handleClusterFacilityClick(facility) {
+		if (!mapInstance || !facility.location) return;
+
+		// Close cluster panel first
+		clusterFacilities = [];
+		clusterLocation = null;
+
+		// Zoom to the facility location with offset for panel
+		mapInstance.flyTo({
+			center: [facility.location.lng, facility.location.lat],
+			zoom: 12,
+			duration: ZOOM_DURATION,
+			offset: getFlyToOffset()
+		});
+
+		// Show the facility popup after zoom
+		mapHoveredFacilityCode = facility.code;
+		onhover?.(facility);
+
+		// Notify parent to update URL with selected facility
+		onselect?.(facility);
 	}
 </script>
 
@@ -381,79 +567,194 @@
 		<NavigationControl position="top-right" showCompass={false} />
 		<AttributionControl position="bottom-right" compact={true} />
 
-		<!-- GeoJSON source without clustering - WebGL rendering for performance -->
-		<GeoJSONSource id="facilities" data={facilitiesGeoJSON}>
-			<!-- All facility points rendered on WebGL canvas -->
-			<CircleLayer
-				id="facility-points"
-				paint={{
-					'circle-color': ['get', 'color'],
-					// Circle radius proportional to sqrt(capacity) so area is proportional to capacity
-					// Scale: sqrt(MW) -> radius in pixels
-					//   sqrt(0)    = 0  -> 4px   (0 MW)
-					//   sqrt(100)  = 10 -> 8px   (100 MW)
-					//   sqrt(400)  = 20 -> 12px  (400 MW)
-					//   sqrt(900)  = 30 -> 16px  (900 MW)
-					//   sqrt(2025) = 45 -> 22px  (2000 MW)
-					//   sqrt(3600) = 60 -> 28px  (3600 MW)
-					'circle-radius': [
-						'case',
-						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-						// Hovered: +2px larger than default
-						[
-							'interpolate',
-							['linear'],
-							['sqrt', ['get', 'capacity']],
-							0, 6,
-							10, 10,
-							20, 14,
-							30, 18,
-							45, 24,
-							60, 30
+		{#if clustering}
+			<!-- Clustered GeoJSON source -->
+			<GeoJSONSource
+				id="facilities-clustered"
+				data={facilitiesGeoJSON}
+				cluster={true}
+				clusterMaxZoom={14}
+				clusterRadius={50}
+			>
+				<!-- Cluster circles -->
+				<CircleLayer
+					id="cluster-circles"
+					filter={['has', 'point_count']}
+					paint={{
+						'circle-color': '#4a4a4a',
+						'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 50, 35, 100, 45],
+						'circle-stroke-width': 2,
+						'circle-stroke-color': '#ffffff',
+						'circle-opacity': 0.9
+					}}
+					onclick={handleClusterClick}
+					onmouseenter={(e) => {
+						if (mapInstance) mapInstance.getCanvas().style.cursor = 'pointer';
+					}}
+					onmouseleave={() => {
+						if (mapInstance) mapInstance.getCanvas().style.cursor = '';
+					}}
+				/>
+
+				<!-- Cluster count labels -->
+				<SymbolLayer
+					id="cluster-count"
+					filter={['has', 'point_count']}
+					layout={{
+						'text-field': '{point_count_abbreviated}',
+						'text-font': ['Open Sans Bold'],
+						'text-size': 14
+					}}
+					paint={{
+						'text-color': '#ffffff'
+					}}
+				/>
+
+				<!-- Unclustered points (individual facilities) -->
+				<CircleLayer
+					id="facility-points-unclustered"
+					filter={['!', ['has', 'point_count']]}
+					paint={{
+						'circle-color': ['get', 'color'],
+						'circle-radius': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							[
+								'interpolate',
+								['linear'],
+								['sqrt', ['get', 'capacity']],
+								0,
+								6,
+								10,
+								10,
+								20,
+								14,
+								30,
+								18,
+								45,
+								24,
+								60,
+								30
+							],
+							[
+								'interpolate',
+								['linear'],
+								['sqrt', ['get', 'capacity']],
+								0,
+								4,
+								10,
+								8,
+								20,
+								12,
+								30,
+								16,
+								45,
+								22,
+								60,
+								28
+							]
 						],
-						// Default size
-						[
-							'interpolate',
-							['linear'],
-							['sqrt', ['get', 'capacity']],
-							0, 4,
-							10, 8,
-							20, 12,
-							30, 16,
-							45, 22,
-							60, 28
+						'circle-stroke-width': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							2,
+							1
+						],
+						'circle-stroke-color': '#ffffff',
+						'circle-opacity': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							1,
+							activeHoveredFacilityCode ? 0.3 : 0.8
 						]
-					],
-					'circle-stroke-width': [
-						'case',
-						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-						2,
-						1
-					],
-					'circle-stroke-color': '#ffffff',
-					'circle-opacity': [
-						'case',
-						// Hovered circle is fully opaque
-						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-						1,
-						// Non-hovered circles dim to 0.3 when something is hovered, otherwise 0.8
-						activeHoveredFacilityCode ? 0.3 : 0.8
-					]
-				}}
-				layout={{
-					// Bring hovered circle to front (higher value = rendered on top)
-					'circle-sort-key': [
-						'case',
-						['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-						1,
-						0
-					]
-				}}
-				onmouseenter={handlePointMouseEnter}
-				onmouseleave={handlePointMouseLeave}
-				onclick={handlePointClick}
-			/>
-		</GeoJSONSource>
+					}}
+					layout={{
+						'circle-sort-key': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							1,
+							0
+						]
+					}}
+					onmouseenter={handlePointMouseEnter}
+					onmouseleave={handlePointMouseLeave}
+					onclick={handlePointClick}
+				/>
+			</GeoJSONSource>
+		{:else}
+			<!-- Non-clustered GeoJSON source - WebGL rendering for performance -->
+			<GeoJSONSource id="facilities" data={facilitiesGeoJSON}>
+				<!-- All facility points rendered on WebGL canvas -->
+				<CircleLayer
+					id="facility-points"
+					paint={{
+						'circle-color': ['get', 'color'],
+						'circle-radius': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							[
+								'interpolate',
+								['linear'],
+								['sqrt', ['get', 'capacity']],
+								0,
+								6,
+								10,
+								10,
+								20,
+								14,
+								30,
+								18,
+								45,
+								24,
+								60,
+								30
+							],
+							[
+								'interpolate',
+								['linear'],
+								['sqrt', ['get', 'capacity']],
+								0,
+								4,
+								10,
+								8,
+								20,
+								12,
+								30,
+								16,
+								45,
+								22,
+								60,
+								28
+							]
+						],
+						'circle-stroke-width': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							2,
+							1
+						],
+						'circle-stroke-color': '#ffffff',
+						'circle-opacity': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							1,
+							activeHoveredFacilityCode ? 0.3 : 0.8
+						]
+					}}
+					layout={{
+						'circle-sort-key': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							1,
+							0
+						]
+					}}
+					onmouseenter={handlePointMouseEnter}
+					onmouseleave={handlePointMouseLeave}
+					onclick={handlePointClick}
+				/>
+			</GeoJSONSource>
+		{/if}
 
 		<!-- Popup for hovered facility - uses lazy computed content -->
 		{#if popupContent}
@@ -478,6 +779,43 @@
 							{/each}
 						</div>
 					{/if}
+				</div>
+			</Popup>
+		{/if}
+
+		<!-- Cluster popup panel - shows list of facilities in cluster -->
+		{#if showClusterPanel && clusterLocation}
+			<Popup
+				lnglat={[clusterLocation.lng, clusterLocation.lat]}
+				offset={[0, -20]}
+				closeOnClick={false}
+				anchor="bottom"
+			>
+				<div
+					class="bg-black rounded-lg shadow-lg text-white min-w-[280px] max-w-[320px] max-h-[300px] flex flex-col"
+				>
+					<div class="flex items-center justify-between px-4 py-3 border-b border-white/20">
+						<div>
+							<div class="font-semibold text-sm">{clusterFacilities?.length} Facilities</div>
+							<div class="text-xs text-white/60">Click to view details</div>
+						</div>
+						<button
+							onclick={closeClusterPanel}
+							class="p-1 rounded-full hover:bg-white/10 transition-colors"
+						>
+							<X class="size-5 text-white/60" />
+						</button>
+					</div>
+					<div class="overflow-y-auto flex-1">
+						{#each clusterFacilities || [] as facility (facility.code)}
+							<FacilityCard
+								{facility}
+								compact={true}
+								darkMode={true}
+								onclick={handleClusterFacilityClick}
+							/>
+						{/each}
+					</div>
 				</div>
 			</Popup>
 		{/if}
