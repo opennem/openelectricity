@@ -1,6 +1,6 @@
 <script>
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
-	import HierarchicalMultiSelect from '../_components/HierarchicalMultiSelect.svelte';
+	import HierarchicalMultiSelect from './_components/HierarchicalMultiSelect.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
@@ -15,7 +15,7 @@
 		getParentFuelTechValues,
 		statusOptions,
 		sizeOptions
-	} from '../_utils/filters.js';
+	} from './_utils/filters.js';
 
 	/**
 	 * @type {{

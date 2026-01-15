@@ -27,7 +27,7 @@
 		{
 			title: "Timeline of Australia's power generation facilities",
 			description: 'Exploring power generation facilities from Australia.',
-			link: '/facilities/timeline',
+			link: '/facilities?view=timeline',
 			disabled: false
 		},
 		{

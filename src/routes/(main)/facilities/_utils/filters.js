@@ -225,3 +225,16 @@ export function getParentFuelTechValues() {
 }
 
 export const fuelTechLabel = optionsReducer(getFlatFuelTechOptions());
+
+/**
+ * Get the display label for a region
+ * @param {string} network_id
+ * @param {string} network_region
+ * @returns {string}
+ */
+export function getRegionLabel(network_id, network_region) {
+	if (network_region) {
+		return regions.find((r) => r.value === network_region.toLowerCase())?.label || network_region;
+	}
+	return network_id?.toUpperCase() || '';
+}

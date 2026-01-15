@@ -9,9 +9,9 @@
 		SymbolLayer
 	} from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import UnitGroup from '../_components/UnitGroup.svelte';
-	import FacilityCard from '../_components/FacilityCard.svelte';
-	import { regions } from '../_utils/filters';
+	import UnitGroup from './_components/UnitGroup.svelte';
+	import FacilityCard from './_components/FacilityCard.svelte';
+	import { getRegionLabel } from './_utils/filters';
 	import { X } from '@lucide/svelte';
 
 	/**
@@ -116,19 +116,6 @@
 		return facility.units.reduce((/** @type {number} */ sum, /** @type {any} */ unit) => {
 			return sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0);
 		}, 0);
-	}
-
-	/**
-	 * Get the region label (state name)
-	 * @param {string} network_id
-	 * @param {string} network_region
-	 * @returns {string}
-	 */
-	function getRegionLabel(network_id, network_region) {
-		if (network_region) {
-			return regions.find((r) => r.value === network_region.toLowerCase())?.label || network_region;
-		}
-		return network_id?.toUpperCase() || '';
 	}
 
 	// Memoized unit grouping cache - computed once per facility set
@@ -622,7 +609,7 @@
 						'circle-opacity': 0.9
 					}}
 					onclick={handleClusterClick}
-					onmouseenter={(e) => {
+					onmouseenter={() => {
 						if (mapInstance) mapInstance.getCanvas().style.cursor = 'pointer';
 					}}
 					onmouseleave={() => {

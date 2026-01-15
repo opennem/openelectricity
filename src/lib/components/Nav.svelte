@@ -20,7 +20,7 @@
 			name: 'Facilities',
 			href: `${$dataTrackerLink}/facilities`,
 			children: [
-				{ name: 'Timeline', href: '/facilities/timeline', beta: true },
+				{ name: 'Timeline', href: '/facilities?view=timeline', beta: true },
 				{ name: 'Map', href: `${$dataTrackerLink}/facilities/` }
 			]
 		},

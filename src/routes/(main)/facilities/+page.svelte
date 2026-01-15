@@ -2,8 +2,8 @@
 	import { fly } from 'svelte/transition';
 	import { goto, replaceState } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
-	import formatValue from '../_utils/format-value';
-	import { statusColours, isInSizeRange } from '../_utils/filters.js';
+	import formatValue from './_utils/format-value';
+	import { statusColours, isInSizeRange } from './_utils/filters.js';
 
 	import Map from './Map.svelte';
 	import Timeline from './Timeline.svelte';
@@ -34,20 +34,10 @@
 	// Sync local state when server data changes (e.g., browser back/forward, direct URL navigation)
 	$effect(() => {
 		statuses = data.statuses;
-	});
-	$effect(() => {
 		regions = data.regions;
-	});
-	$effect(() => {
 		fuelTechs = data.fuelTechs;
-	});
-	$effect(() => {
 		sizes = data.sizes;
-	});
-	$effect(() => {
 		selectedView = /** @type {'list' | 'timeline' | 'map'} */ (data.view);
-	});
-	$effect(() => {
 		selectedFacilityCode = data.selectedFacility;
 	});
 
@@ -129,48 +119,6 @@
 
 	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
 
-	let uniqueFuelTechs = $derived([
-		...new Set(
-			facilities
-				? facilities
-						.map((facility) => facility.units.map((/** @type {any} */ unit) => unit.fueltech_id))
-						.flat()
-				: []
-		)
-	]);
-	let uniqueStatuses = $derived([
-		...new Set(
-			facilities
-				? facilities
-						.map((facility) => facility.units.map((/** @type {any} */ unit) => unit.status_id))
-						.flat()
-				: []
-		)
-	]);
-	let uniqueRegions = $derived([
-		...new Set(facilities ? facilities.map((facility) => facility.network_region).flat() : [])
-	]);
-	let uniqueNetworkIds = $derived([
-		...new Set(facilities ? facilities.map((facility) => facility.network_id).flat() : [])
-	]);
-
-	$inspect('uniqueFuelTechs', uniqueFuelTechs);
-	$inspect('uniqueStatuses', uniqueStatuses);
-	$inspect('uniqueRegions', uniqueRegions);
-	$inspect('uniqueNetworkIds', uniqueNetworkIds);
-
-	// Test for max_generation fields
-	let allUnits = $derived(facilities?.flatMap((f) => f.units) ?? []);
-	$inspect('All units:', allUnits);
-	$inspect(
-		'Units with max_generation:',
-		allUnits.filter((u) => u.max_generation !== undefined)
-	);
-	$inspect(
-		'Units with max_generation_interval:',
-		allUnits.filter((u) => u.max_generation_interval !== undefined)
-	);
-
 	// Calculate totals for filtered facilities
 	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
 	let totalCapacityMW = $derived(
@@ -208,7 +156,7 @@
 	 * @returns {string}
 	 */
 	function buildUrl({ statuses: s, regions: r, fuelTechs: ft, sizes: sz, view: v, facility: f = null }) {
-		let url = `/facilities/all?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}&sizes=${sz.join(',')}`;
+		let url = `/facilities?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}&sizes=${sz.join(',')}`;
 		if (f) {
 			url += `&facility=${f}`;
 		}

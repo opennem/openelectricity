@@ -1,6 +1,6 @@
 <script>
 	import { Tooltip } from 'bits-ui';
-	import formatValue from '../_utils/format-value';
+	import formatValue from './_utils/format-value';
 
 	/**
 	 * @typedef {Object} Props

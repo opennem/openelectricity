@@ -13,7 +13,7 @@ describe('buildUrl', () => {
 		};
 		const url = buildUrl(params);
 		expect(url).toBe(
-			'/facilities/all?view=timeline&statuses=operating&regions=nsw&fuel_techs=solar_utility&sizes=large&facility=ABC123'
+			'/facilities?view=timeline&statuses=operating&regions=nsw&fuel_techs=solar_utility&sizes=large&facility=ABC123'
 		);
 	});
 
@@ -28,7 +28,7 @@ describe('buildUrl', () => {
 		};
 		const url = buildUrl(params);
 		expect(url).not.toContain('facility=');
-		expect(url).toBe('/facilities/all?view=list&statuses=operating&regions=&fuel_techs=&sizes=');
+		expect(url).toBe('/facilities?view=list&statuses=operating&regions=&fuel_techs=&sizes=');
 	});
 
 	it('should handle multiple values in arrays', () => {
@@ -57,7 +57,7 @@ describe('buildUrl', () => {
 			facility: null
 		};
 		const url = buildUrl(params);
-		expect(url).toBe('/facilities/all?view=timeline&statuses=&regions=&fuel_techs=&sizes=');
+		expect(url).toBe('/facilities?view=timeline&statuses=&regions=&fuel_techs=&sizes=');
 	});
 
 	it('should handle undefined facility', () => {

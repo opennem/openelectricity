@@ -4,7 +4,7 @@
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import UnitGroup from './UnitGroup.svelte';
-	import { regions } from '../_utils/filters';
+	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import { ExternalLink } from '@lucide/svelte';
 
@@ -17,19 +17,6 @@
 	 */
 	function getFueltechColor(fueltech) {
 		return fuelTechColourMap[fueltech] || '#FFFFFF';
-	}
-
-	/**
-	 * Get the region label
-	 * @param {string} network_id
-	 * @param {string} network_region
-	 * @returns {string}
-	 */
-	function getRegionLabel(network_id, network_region) {
-		if (network_region) {
-			return regions.find((r) => r.value === network_region.toLowerCase())?.label || network_region;
-		}
-		return network_id?.toUpperCase();
 	}
 
 	let bgColor = $derived(facility.unit ? getFueltechColor(facility.unit.fueltech_id) : '#FFFFFF');

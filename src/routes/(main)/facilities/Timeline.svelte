@@ -4,34 +4,19 @@
 	import { browser } from '$app/environment';
 	import { formatDateBySpecificity } from '$lib/utils/date-format';
 	import { formatDateTime } from '$lib/utils/formatters';
-	import formatValue from '../_utils/format-value';
-	import groupByMonthDay from '../_utils/group-by-month-day';
-	import getDateField from '../_utils/get-date-field';
-	import FacilityUnitCard from '../_components/FacilityUnitCard.svelte';
+	import formatValue from './_utils/format-value';
+	import groupByMonthDay from './_utils/group-by-month-day';
+	import getDateField from './_utils/get-date-field';
+	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
+	import FacilityUnitCard from './_components/FacilityUnitCard.svelte';
 
 	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover, onclick, hoveredFacility = null, clickedFacility = null, selectedFacilityCode = null } = $props();
-
-	/**
-	 * Check if element is visible in its scroll container
-	 * @param {Element} el
-	 * @returns {boolean}
-	 */
-	function isElementInView(el) {
-		const rect = el.getBoundingClientRect();
-		const container = el.closest('.overflow-y-auto');
-		if (!container) return true;
-		const containerRect = container.getBoundingClientRect();
-		return rect.top >= containerRect.top && rect.bottom <= containerRect.bottom;
-	}
 
 	// Scroll to facility when clickedFacility changes (from map click)
 	$effect(() => {
 		if (clickedFacility && browser) {
 			tick().then(() => {
-				const el = document.querySelector(`[data-facility-code="${clickedFacility.code}"]`);
-				if (el && !isElementInView(el)) {
-					el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-				}
+				scrollToFacilityIfNeeded(clickedFacility.code, 'smooth', 'nearest');
 			});
 		}
 	});
@@ -40,10 +25,7 @@
 	$effect(() => {
 		if (selectedFacilityCode && browser && facilities.length > 0) {
 			tick().then(() => {
-				const el = document.querySelector(`[data-facility-code="${selectedFacilityCode}"]`);
-				if (el && !isElementInView(el)) {
-					el.scrollIntoView({ behavior: 'auto', block: 'center' });
-				}
+				scrollToFacilityIfNeeded(selectedFacilityCode, 'auto', 'center');
 			});
 		}
 	});

@@ -11,7 +11,7 @@
  * @returns {string}
  */
 export function buildUrl(params) {
-	let url = `/facilities/all?view=${params.view}&statuses=${params.statuses.join(',')}&regions=${params.regions.join(',')}&fuel_techs=${params.fuelTechs.join(',')}&sizes=${params.sizes.join(',')}`;
+	let url = `/facilities?view=${params.view}&statuses=${params.statuses.join(',')}&regions=${params.regions.join(',')}&fuel_techs=${params.fuelTechs.join(',')}&sizes=${params.sizes.join(',')}`;
 	if (params.facility) {
 		url += `&facility=${params.facility}`;
 	}

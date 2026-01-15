@@ -1,7 +1,7 @@
 import { browser } from '$app/environment';
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-import isCommissioningCheck from '../_utils/is-commissioning';
+import isCommissioningCheck from './_utils/is-commissioning';
 import { getCachedFacilities, setCachedFacilities } from './_stores/facilities-cache.js';
 
 let client = new OpenElectricityClient({
