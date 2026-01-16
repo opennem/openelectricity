@@ -362,16 +362,21 @@
 	});
 
 	/**
-	 * Get offset for flyTo to account for left panel on desktop
-	 * Returns [x, y] pixel offset - positive x shifts view right (so facility appears right of center)
+	 * Get offset for flyTo to account for panels
+	 * Returns [x, y] pixel offset - positive x shifts view right, negative y shifts view up
 	 * @returns {[number, number]}
 	 */
 	function getFlyToOffset() {
-		// On desktop (>768px), the left panel takes ~50% of viewport, so offset by ~25% to center in remaining space
-		if (typeof window !== 'undefined' && window.innerWidth > 768) {
-			return [window.innerWidth * 0.25, 0];
+		if (typeof window === 'undefined') return [0, 0];
+
+		// On desktop (>768px):
+		// - Left panel takes ~50% of viewport width, so offset x by ~25%
+		// - Bottom detail panel takes 50% of viewport height, so offset y up by ~31% to center in visible area
+		if (window.innerWidth > 768) {
+			return [window.innerWidth * 0.25, -window.innerHeight * 0.31];
 		}
-		return [0, 0];
+		// On mobile, just account for bottom panel
+		return [0, -window.innerHeight * 0.31];
 	}
 
 	/**

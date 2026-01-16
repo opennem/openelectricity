@@ -11,6 +11,8 @@
 	import List from './List.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
+	import { Sheet } from '$lib/components/ui/sheet';
+	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 
 	let { data } = $props();
 
@@ -118,6 +120,13 @@
 	}
 
 	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
+
+	// Get the selected facility object
+	let selectedFacility = $derived(
+		selectedFacilityCode
+			? filteredFacilities.find((f) => f.code === selectedFacilityCode) ?? null
+			: null
+	);
 
 	// Calculate totals for filtered facilities
 	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
@@ -485,3 +494,20 @@
 		</div>
 	{/if}
 </section>
+
+<!-- Facility detail panel -->
+<Sheet
+	open={selectedFacility !== null}
+	title={selectedFacility?.name ?? ''}
+	side="bottom"
+	size="50%"
+	width="50vw"
+	align="end"
+	onclose={() => {
+		selectedFacilityCode = null;
+		mapRef?.closePopups();
+		navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
+	}}
+>
+	<FacilityDetailPanel facility={selectedFacility} />
+</Sheet>
