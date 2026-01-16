@@ -5,7 +5,7 @@ import {
 	getCachedFacilities,
 	setCachedFacilities,
 	clearCache
-} from '../facilities-cache.js';
+} from '../facilities-server-cache.js';
 
 describe('Facilities cache', () => {
 	beforeEach(() => {

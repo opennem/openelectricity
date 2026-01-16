@@ -1,10 +1,38 @@
-import { browser } from '$app/environment';
+/**
+ * Facilities Page Server Load Function
+ * =====================================
+ *
+ * This is a server-only load function (+page.server.js) that fetches facilities
+ * data from the OpenElectricity API. Using server-side loading avoids the SvelteKit
+ * warning about using `window.fetch` instead of the load function's `fetch`.
+ *
+ * Data Flow:
+ * ----------
+ * 1. Parse filter parameters from URL search params
+ * 2. Check server-side cache for matching data (5-minute TTL)
+ * 3. If cache miss, fetch from OpenElectricity API
+ * 4. Process facilities (mark commissioning units, filter by status)
+ * 5. Store processed data in cache
+ * 6. Return facilities data to page component
+ *
+ * Filter Parameters (URL search params):
+ * --------------------------------------
+ * - view: 'timeline' | 'list' | 'map' (default: 'timeline')
+ * - statuses: comma-separated status IDs (default: 'operating,commissioning')
+ * - regions: comma-separated region codes (e.g., 'nsw,vic')
+ * - fuel_techs: comma-separated fuel tech IDs or categories
+ * - sizes: comma-separated size filters
+ * - facility: selected facility code for detail view
+ *
+ * @see ./_stores/facilities-server-cache.js for caching implementation
+ */
+
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import isCommissioningCheck from './_utils/is-commissioning';
-import { getCachedFacilities, setCachedFacilities } from './_stores/facilities-cache.js';
+import { getCachedFacilities, setCachedFacilities } from './_stores/facilities-server-cache.js';
 
-let client = new OpenElectricityClient({
+const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
 	baseUrl: PUBLIC_OE_API_URL
 });
@@ -47,21 +75,19 @@ export async function load({ url }) {
 
 	const filterParams = { statuses, regions, fuelTechs };
 
-	// Check client-side cache first (browser only)
-	if (browser) {
-		const cached = getCachedFacilities(filterParams);
-		if (cached) {
-			return {
-				facilities: cached,
-				view,
-				statuses,
-				regions,
-				fuelTechs,
-				sizes,
-				selectedFacility,
-				fromCache: true
-			};
-		}
+	// Check server-side cache first
+	const cached = getCachedFacilities(filterParams);
+	if (cached) {
+		return {
+			facilities: cached,
+			view,
+			statuses,
+			regions,
+			fuelTechs,
+			sizes,
+			selectedFacility,
+			fromCache: true
+		};
 	}
 
 	// Map fuel tech selections to API fuel tech IDs
@@ -135,10 +161,8 @@ export async function load({ url }) {
 		});
 	});
 
-	// Store in cache (browser only)
-	if (browser) {
-		setCachedFacilities(filterParams, newFacilities);
-	}
+	// Store in server cache
+	setCachedFacilities(filterParams, newFacilities);
 
 	return {
 		facilities: newFacilities,
