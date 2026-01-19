@@ -35,7 +35,14 @@ test.describe('Lens on AU Grid', () => {
 		expect(chartCount).toBe(7);
 
 		// Check for specific region labels
-		const regions = ['New South Wales', 'Queensland', 'South Australia', 'Tasmania', 'Victoria', 'Western Australia'];
+		const regions = [
+			'New South Wales',
+			'Queensland',
+			'South Australia',
+			'Tasmania',
+			'Victoria',
+			'Western Australia'
+		];
 		for (const region of regions) {
 			await expect(page.getByText(region, { exact: false })).toBeVisible();
 		}
@@ -234,7 +241,10 @@ test.describe('DateBrush Interactions', () => {
 			if (brushBox) {
 				await page.mouse.move(brushBox.x + brushBox.width / 2, brushBox.y + brushBox.height / 2);
 				await page.mouse.down();
-				await page.mouse.move(brushBox.x + brushBox.width / 2 + 50, brushBox.y + brushBox.height / 2);
+				await page.mouse.move(
+					brushBox.x + brushBox.width / 2 + 50,
+					brushBox.y + brushBox.height / 2
+				);
 				await page.mouse.up();
 				await page.waitForTimeout(300);
 
@@ -261,7 +271,10 @@ test.describe('DateBrush Interactions', () => {
 			if (await rightHandle.isVisible()) {
 				const handleBox = await rightHandle.boundingBox();
 				if (handleBox) {
-					await page.mouse.move(handleBox.x + handleBox.width / 2, handleBox.y + handleBox.height / 2);
+					await page.mouse.move(
+						handleBox.x + handleBox.width / 2,
+						handleBox.y + handleBox.height / 2
+					);
 					await page.mouse.down();
 					await page.mouse.move(handleBox.x + 50, handleBox.y + handleBox.height / 2);
 					await page.mouse.up();
