@@ -466,7 +466,7 @@
 		</div>
 	</div>
 
-	<div class="md:hidden pl-4 ml-2 border-l border-warm-grey">
+	<div class="md:hidden pl-4 ml-0 border-l border-warm-grey">
 		<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 			<IconAdjustmentsHorizontal class="size-10" />
 		</ButtonIcon>
