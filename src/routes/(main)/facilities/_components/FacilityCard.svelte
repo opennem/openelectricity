@@ -1,14 +1,11 @@
 <script>
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
-	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
-	import UnitGroup from './UnitGroup.svelte';
+	import FuelTechBadge from './FuelTechBadge.svelte';
+	import OverflowBadge from './OverflowBadge.svelte';
+	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
+	import { getFueltechColor } from '../_utils/fueltech-display';
 	import { ExternalLink } from '@lucide/svelte';
-
-	/** Fueltechs that need dark text for contrast */
-	const LIGHT_FUELTECHS = ['solar_utility', 'gas_ocgt', 'gas_recip'];
 
 	/**
 	 * @type {{
@@ -34,24 +31,6 @@
 	} = $props();
 
 	/**
-	 * Check if fueltech needs dark text (for light backgrounds)
-	 * @param {string} fueltech
-	 * @returns {boolean}
-	 */
-	function needsDarkText(fueltech) {
-		return LIGHT_FUELTECHS.includes(fueltech);
-	}
-
-	/**
-	 * Get the background color for a fueltech
-	 * @param {string} fueltech
-	 * @returns {string}
-	 */
-	function getFueltechColor(fueltech) {
-		return fuelTechColourMap[fueltech] || '#FFFFFF';
-	}
-
-	/**
 	 * Sum a numeric field across units
 	 * @param {any[]} units
 	 * @param {string} field
@@ -71,7 +50,7 @@
 	 */
 
 	/**
-	 * @typedef {Object} UnitGroup
+	 * @typedef {Object} UnitGroupType
 	 * @property {string} fueltech_id
 	 * @property {string} status_id
 	 * @property {any[]} units
@@ -83,7 +62,7 @@
 
 	/**
 	 * Group units by fueltech_id and status_id
-	 * @returns {UnitGroup[]}
+	 * @returns {UnitGroupType[]}
 	 */
 	function groupUnits() {
 		if (!facility.units || facility.units.length === 0) return [];
@@ -142,122 +121,69 @@
 	let visibleGroups = $derived(unitGroups.slice(0, effectiveMaxVisible));
 	let overflowCount = $derived(Math.max(0, unitGroups.length - effectiveMaxVisible));
 	let hasOverflow = $derived(overflowCount > 0);
+	let hiddenGroups = $derived(unitGroups.slice(effectiveMaxVisible));
+
+	// Data for UnitGroupPopup
+	let popupUnits = $derived(
+		unitGroups.map((g) => ({
+			fueltech_id: g.unitSummary.fueltech_id,
+			status_id: g.unitSummary.status_id,
+			isCommissioning: g.isCommissioning,
+			capacity_maximum: g.unitSummary.capacity_maximum,
+			capacity_registered: g.unitSummary.capacity_registered,
+			max_generation: g.unitSummary.max_generation,
+			bgColor: g.bgColor
+		}))
+	);
 
 	let path = $derived(
 		`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`
 	);
+
+	/** @type {'sm' | 'md'} */
+	let badgeSize = $derived(compact ? 'sm' : 'md');
 </script>
 
-{#snippet fuelTechBadge(
-	/** @type {UnitGroup} */ group,
-	/** @type {number} */ index,
-	/** @type {boolean} */ hasMargin = false
-)}
-	<span
-		class="rounded-full p-2 block relative border-2 border-white shadow-sm transition-[margin] duration-200 ease-out {hasMargin
-			? '-ml-5 group-hover/badges:ml-1'
-			: ''}"
-		class:text-black={needsDarkText(group.fueltech_id)}
-		class:text-white={!needsDarkText(group.fueltech_id)}
-		style="background-color: {group.bgColor}; z-index: {index + 1};"
-		title="{group.fueltech_id} ({group.status_id})"
-	>
-		<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={6} />
-		<div class="absolute top-[0.1rem] left-[0.1rem] z-10">
-			<FacilityStatusIcon
-				status={group.status_id}
-				isCommissioning={group.isCommissioning}
-				size="small"
+{#snippet badgeGroup()}
+	{#if hasMultipleGroups}
+		<span class="flex group/badges">
+			{#each visibleGroups as group, i}
+				<FuelTechBadge
+					fueltech_id={group.fueltech_id}
+					status_id={group.status_id}
+					isCommissioning={group.isCommissioning}
+					size={badgeSize}
+					{darkMode}
+					overlap={i > 0}
+					zIndex={i + 1}
+				/>
+			{/each}
+			{#if hasOverflow}
+				<OverflowBadge count={overflowCount} size={badgeSize} {darkMode} zIndex={visibleGroups.length + 1} />
+			{/if}
+			{#each hiddenGroups as group, i}
+				<FuelTechBadge
+					fueltech_id={group.fueltech_id}
+					status_id={group.status_id}
+					isCommissioning={group.isCommissioning}
+					size={badgeSize}
+					{darkMode}
+					hidden={true}
+					zIndex={effectiveMaxVisible + i + 1}
+				/>
+			{/each}
+		</span>
+	{:else if primaryGroup}
+		<span>
+			<FuelTechBadge
+				fueltech_id={primaryGroup.fueltech_id}
+				status_id={primaryGroup.status_id}
+				isCommissioning={primaryGroup.isCommissioning}
+				size={badgeSize}
+				{darkMode}
 			/>
-		</div>
-	</span>
-{/snippet}
-
-{#snippet overflowBadge(/** @type {number} */ count, /** @type {number} */ index)}
-	<span
-		class="rounded-full p-2 flex items-center justify-center relative border-2 border-white shadow-sm text-mid-grey text-xs font-medium bg-light-warm-grey transition-all duration-200 ease-out -ml-5 group-hover/badges:opacity-0 group-hover/badges:scale-0 group-hover/badges:w-0 group-hover/badges:p-0 group-hover/badges:border-0 group-hover/badges:ml-0"
-		style="z-index: {index + 1};"
-		title="{count} more fuel types"
-	>
-		<span class="w-6 h-6 flex items-center justify-center">+{count}</span>
-	</span>
-{/snippet}
-
-{#snippet hiddenFuelTechBadge(/** @type {UnitGroup} */ group, /** @type {number} */ index)}
-	<span
-		class="rounded-full block relative border-2 border-white shadow-sm transition-all duration-200 ease-out p-0 w-0 opacity-0 scale-0 group-hover/badges:p-2 group-hover/badges:w-auto group-hover/badges:ml-1 group-hover/badges:opacity-100 group-hover/badges:scale-100"
-		class:text-black={needsDarkText(group.fueltech_id)}
-		class:text-white={!needsDarkText(group.fueltech_id)}
-		style="background-color: {group.bgColor}; z-index: {index + 1};"
-		title="{group.fueltech_id} ({group.status_id})"
-	>
-		<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={6} />
-		<div class="absolute top-[0.1rem] left-[0.1rem] z-10">
-			<FacilityStatusIcon
-				status={group.status_id}
-				isCommissioning={group.isCommissioning}
-				size="small"
-			/>
-		</div>
-	</span>
-{/snippet}
-
-{#snippet compactFuelTechBadge(
-	/** @type {UnitGroup} */ group,
-	/** @type {number} */ index,
-	/** @type {boolean} */ hasMargin = false
-)}
-	<span
-		class="rounded-full p-1.5 block relative shadow-sm transition-[margin] duration-200 ease-out {darkMode
-			? 'border border-white/30'
-			: 'border-2 border-white'} {hasMargin ? '-ml-3 group-hover/badges:ml-0.5' : ''}"
-		class:text-black={needsDarkText(group.fueltech_id)}
-		class:text-white={!needsDarkText(group.fueltech_id)}
-		style="background-color: {group.bgColor}; z-index: {index + 1};"
-		title="{group.fueltech_id} ({group.status_id})"
-	>
-		<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={4} />
-		<div class="absolute -top-[0.1rem] -left-[0.1rem] z-10">
-			<FacilityStatusIcon
-				status={group.status_id}
-				isCommissioning={group.isCommissioning}
-				size="small"
-			/>
-		</div>
-	</span>
-{/snippet}
-
-{#snippet compactOverflowBadge(/** @type {number} */ count, /** @type {number} */ index)}
-	<span
-		class="rounded-full p-1.5 flex items-center justify-center relative shadow-sm text-[10px] font-medium transition-all duration-200 ease-out -ml-3 group-hover/badges:opacity-0 group-hover/badges:scale-0 group-hover/badges:w-0 group-hover/badges:p-0 group-hover/badges:ml-0 {darkMode
-			? 'border border-white/30 bg-white/20 text-white'
-			: 'border-2 border-white bg-light-warm-grey text-mid-grey'}"
-		style="z-index: {index + 1};"
-		title="{count} more fuel types"
-	>
-		<span class="w-4 h-4 flex items-center justify-center">+{count}</span>
-	</span>
-{/snippet}
-
-{#snippet compactHiddenFuelTechBadge(/** @type {UnitGroup} */ group, /** @type {number} */ index)}
-	<span
-		class="rounded-full block relative shadow-sm transition-all duration-200 ease-out p-0 w-0 opacity-0 scale-0 group-hover/badges:p-1.5 group-hover/badges:w-auto group-hover/badges:ml-0.5 group-hover/badges:opacity-100 group-hover/badges:scale-100 {darkMode
-			? 'border border-white/30'
-			: 'border-2 border-white'}"
-		class:text-black={needsDarkText(group.fueltech_id)}
-		class:text-white={!needsDarkText(group.fueltech_id)}
-		style="background-color: {group.bgColor}; z-index: {index + 1};"
-		title="{group.fueltech_id} ({group.status_id})"
-	>
-		<FuelTechIcon fuelTech={group.fueltech_id} sizeClass={4} />
-		<div class="absolute -top-[0.1rem] -left-[0.1rem] z-10">
-			<FacilityStatusIcon
-				status={group.status_id}
-				isCommissioning={group.isCommissioning}
-				size="small"
-			/>
-		</div>
-	</span>
+		</span>
+	{/if}
 {/snippet}
 
 {#if compact}
@@ -287,23 +213,7 @@
 
 			<!-- Fuel tech badges with fan out -->
 			<div class="flex-shrink-0">
-				{#if hasMultipleGroups}
-					<div class="flex group/badges">
-						{#each visibleGroups as group, i}
-							{@render compactFuelTechBadge(group, i, i > 0)}
-						{/each}
-						{#if hasOverflow}
-							{@render compactOverflowBadge(overflowCount, visibleGroups.length)}
-						{/if}
-						{#each unitGroups.slice(effectiveMaxVisible) as group, i}
-							{@render compactHiddenFuelTechBadge(group, effectiveMaxVisible + i)}
-						{/each}
-					</div>
-				{:else if primaryGroup}
-					<div>
-						{@render compactFuelTechBadge(primaryGroup, 0, false)}
-					</div>
-				{/if}
+				{@render badgeGroup()}
 			</div>
 
 			<!-- Capacity (aligned right) -->
@@ -369,23 +279,7 @@
 
 				<div class="col-start-1 row-start-1 sm:col-auto sm:row-auto sm:ml-3">
 					<span class="inline-flex flex-shrink-0">
-						{#if hasMultipleGroups}
-							<span class="flex group/badges">
-								{#each visibleGroups as group, i}
-									{@render fuelTechBadge(group, i, i > 0)}
-								{/each}
-								{#if hasOverflow}
-									{@render overflowBadge(overflowCount, visibleGroups.length)}
-								{/if}
-								{#each unitGroups.slice(effectiveMaxVisible) as group, i}
-									{@render hiddenFuelTechBadge(group, effectiveMaxVisible + i)}
-								{/each}
-							</span>
-						{:else if primaryGroup}
-							<span>
-								{@render fuelTechBadge(primaryGroup, 0, false)}
-							</span>
-						{/if}
+						{@render badgeGroup()}
 					</span>
 				</div>
 
@@ -398,24 +292,7 @@
 					</div>
 
 					{#if primaryGroup}
-						<div class="group-hover:block hidden absolute z-30 top-0 right-0">
-							<div
-								class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[220px] flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
-							>
-								{#each unitGroups as group}
-									<UnitGroup
-										fueltech_id={group.unitSummary.fueltech_id}
-										status_id={group.unitSummary.status_id}
-										isCommissioning={group.isCommissioning}
-										capacity_maximum={group.unitSummary.capacity_maximum}
-										capacity_registered={group.unitSummary.capacity_registered}
-										max_generation={group.unitSummary.max_generation}
-										network_id={facility.network_id}
-										bgColor={group.bgColor}
-									/>
-								{/each}
-							</div>
-						</div>
+						<UnitGroupPopup units={popupUnits} network_id={facility.network_id} />
 					{/if}
 				</div>
 			</div>

@@ -5,6 +5,7 @@
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import formatValue from '../_utils/format-value';
+	import { needsDarkText } from '../_utils/fueltech-display';
 
 	/**
 	 * @type {{
@@ -35,8 +36,7 @@
 		network_id = 'NEM'
 	} = $props();
 
-	/** Fueltechs that need dark text for contrast */
-	const LIGHT_FUELTECHS = ['solar_utility', 'gas_ocgt', 'gas_recip'];
+	let isDarkText = $derived(needsDarkText(fueltech_id));
 
 	let capacity = $derived(capacity_maximum || capacity_registered);
 	let offset = $derived(network_id === 'WEM' ? '+08:00' : '+10:00');
@@ -76,8 +76,8 @@
 		<div class="flex items-center gap-2">
 			<span
 				class="rounded-full p-1.5 block border border-white/40"
-				class:text-black={LIGHT_FUELTECHS.includes(fueltech_id)}
-				class:text-white={!LIGHT_FUELTECHS.includes(fueltech_id)}
+				class:text-black={isDarkText}
+				class:text-white={!isDarkText}
 				style="background-color: {bgColor};"
 			>
 				<FuelTechIcon fuelTech={fueltech_id} sizeClass={5} border={true} />

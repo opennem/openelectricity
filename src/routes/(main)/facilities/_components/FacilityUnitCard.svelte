@@ -1,13 +1,23 @@
 <script>
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
-	import UnitGroup from './UnitGroup.svelte';
+	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
+	import { getFueltechColor, needsDarkText } from '../_utils/fueltech-display';
 	import { ExternalLink } from '@lucide/svelte';
 
+	/**
+	 * @type {{
+	 *   facility: any,
+	 *   isHighlighted?: boolean,
+	 *   isSelected?: boolean,
+	 *   onclick?: (facility: any) => void,
+	 *   onmouseenter?: (facility: any) => void,
+	 *   onmouseleave?: () => void
+	 * }}
+	 */
 	let {
 		facility,
 		isHighlighted = false,
@@ -17,18 +27,31 @@
 		onmouseleave
 	} = $props();
 
-	/**
-	 * Get the background color for a fueltech
-	 * @param {string} fueltech
-	 * @returns {string}
-	 */
-	function getFueltechColor(fueltech) {
-		return fuelTechColourMap[fueltech] || '#FFFFFF';
-	}
-
 	let bgColor = $derived(facility.unit ? getFueltechColor(facility.unit.fueltech_id) : '#FFFFFF');
+	let isDarkText = $derived(facility.unit ? needsDarkText(facility.unit.fueltech_id) : false);
+
 	let path = $derived(
 		`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`
+	);
+
+	// Data for UnitGroupPopup
+	let popupUnits = $derived(
+		facility.unit
+			? [
+					{
+						fueltech_id: facility.unit.fueltech_id,
+						status_id: facility.unit.status_id,
+						isCommissioning: facility.isCommissioning,
+						capacity_maximum: facility.unit.capacity_maximum,
+						capacity_registered: facility.unit.capacity_registered,
+						max_generation: facility.unit.max_generation,
+						max_generation_interval: facility.unit.max_generation_interval,
+						data_first_seen: facility.unit.data_first_seen,
+						data_last_seen: facility.unit.data_last_seen,
+						bgColor
+					}
+				]
+			: []
 	);
 </script>
 
@@ -52,12 +75,8 @@
 			<div class="flex gap-1 items-center">
 				<span
 					class="rounded-full p-2 block ml-2"
-					class:text-black={facility.unit.fueltech_id === 'solar_utility' ||
-						facility.unit.fueltech_id === 'gas_ocgt' ||
-						facility.unit.fueltech_id === 'gas_recip'}
-					class:text-white={facility.unit.fueltech_id !== 'solar_utility' &&
-						facility.unit.fueltech_id !== 'gas_ocgt' &&
-						facility.unit.fueltech_id !== 'gas_recip'}
+					class:text-black={isDarkText}
+					class:text-white={!isDarkText}
 					style="background-color: {bgColor};"
 				>
 					<FuelTechIcon fuelTech={facility.unit.fueltech_id} sizeClass={8} />
@@ -113,7 +132,6 @@
 			class:border-warm-grey={!isHighlighted && !isSelected}
 		>
 			<div class="text-xs text-mid-grey col-span-2">
-				<!-- {facility.network_id || 'Unknown Network'} -->
 				<span
 					class="block w-18 border-r-0 pr-4 group-hover:border-light-warm-grey sm:border-r"
 					class:border-mid-warm-grey={isHighlighted || isSelected}
@@ -150,23 +168,7 @@
 					/>
 				</div>
 
-				<div class="group-hover:block hidden absolute z-30 top-0 right-0">
-					<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[220px]">
-						<UnitGroup
-							fueltech_id={facility.unit.fueltech_id}
-							status_id={facility.unit.status_id}
-							isCommissioning={facility.isCommissioning}
-							capacity_maximum={facility.unit.capacity_maximum}
-							capacity_registered={facility.unit.capacity_registered}
-							max_generation={facility.unit.max_generation}
-							max_generation_interval={facility.unit.max_generation_interval}
-							data_first_seen={facility.unit.data_first_seen}
-							data_last_seen={facility.unit.data_last_seen}
-							network_id={facility.network_id}
-							{bgColor}
-						/>
-					</div>
-				</div>
+				<UnitGroupPopup units={popupUnits} network_id={facility.network_id} />
 			</div>
 		</div>
 	</button>
