@@ -8,7 +8,14 @@
 	import formatValue from '../_utils/format-value';
 	import { ExternalLink } from '@lucide/svelte';
 
-	let { facility, isHighlighted = false, isSelected = false, onclick, onmouseenter, onmouseleave } = $props();
+	let {
+		facility,
+		isHighlighted = false,
+		isSelected = false,
+		onclick,
+		onmouseenter,
+		onmouseleave
+	} = $props();
 
 	/**
 	 * Get the background color for a fueltech
@@ -32,8 +39,12 @@
 	onmouseleave={() => onmouseleave?.()}
 >
 	<button
-		class="w-full text-left grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:bg-warm-grey rounded-lg cursor-pointer {isSelected ? 'ring-2 ring-dark-grey ring-inset' : ''}"
-		class:bg-light-warm-grey={facility.unit.status_id === 'committed' && !isHighlighted && !isSelected}
+		class="w-full text-left grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:bg-warm-grey rounded-lg cursor-pointer {isSelected
+			? 'ring-1 ring-mid-warm-grey ring-inset'
+			: ''}"
+		class:bg-light-warm-grey={facility.unit.status_id === 'committed' &&
+			!isHighlighted &&
+			!isSelected}
 		class:bg-warm-grey={isHighlighted || isSelected}
 		onclick={() => onclick?.(facility)}
 	>
@@ -62,7 +73,9 @@
 					href={path}
 					target="_blank"
 					rel="noopener noreferrer"
-					class="text-mid-grey hover:text-dark-grey transition-colors self-center opacity-0 group-hover:opacity-100 {isSelected ? 'opacity-100' : ''}"
+					class="text-mid-grey hover:text-dark-grey transition-colors self-center opacity-0 group-hover:opacity-100 {isSelected
+						? 'opacity-100'
+						: ''}"
 					aria-label="View facility details (opens in new tab)"
 					onclick={(e) => e.stopPropagation()}
 				>
@@ -95,12 +108,16 @@
 		</div>
 
 		<div
-			class="col-span-12 sm:col-span-5 grid grid-cols-5 px-8 sm:px-0 py-2 sm:py-0 border-t border-warm-grey sm:border-t-0"
+			class="col-span-12 sm:col-span-5 grid grid-cols-5 px-8 sm:px-0 py-2 sm:py-0 border-t sm:border-t-0"
+			class:border-mid-warm-grey={isHighlighted || isSelected}
+			class:border-warm-grey={!isHighlighted && !isSelected}
 		>
 			<div class="text-xs text-mid-grey col-span-2">
 				<!-- {facility.network_id || 'Unknown Network'} -->
 				<span
-					class="block w-18 border-r-0 border-warm-grey pr-4 group-hover:border-light-warm-grey sm:border-r"
+					class="block w-18 border-r-0 pr-4 group-hover:border-light-warm-grey sm:border-r"
+					class:border-mid-warm-grey={isHighlighted || isSelected}
+					class:border-warm-grey={!isHighlighted && !isSelected}
 				>
 					{getRegionLabel(facility.network_id, facility.network_region)}
 				</span>

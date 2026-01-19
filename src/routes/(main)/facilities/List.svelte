@@ -13,7 +13,14 @@
 	 *   onclick?: (facility: any) => void
 	 * }}
 	 */
-	let { facilities = [], hoveredFacility = null, clickedFacility = null, selectedFacilityCode = null, onhover, onclick } = $props();
+	let {
+		facilities = [],
+		hoveredFacility = null,
+		clickedFacility = null,
+		selectedFacilityCode = null,
+		onhover,
+		onclick
+	} = $props();
 
 	// Scroll to facility when clickedFacility changes (from map click)
 	$effect(() => {
@@ -48,7 +55,7 @@
 {#if facilities.length === 0}
 	<p class="text-gray-500 italic p-4">No facilities found</p>
 {:else}
-	<ul>
+	<ul class="px-8 py-4 sm:px-0 sm:py-0 flex flex-col gap-6 sm:block">
 		{#each facilities as facility (facility.code || facility.name)}
 			<FacilityCard
 				{facility}
