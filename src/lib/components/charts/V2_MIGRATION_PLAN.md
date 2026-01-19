@@ -13,7 +13,7 @@ This document tracks the migration from old chart components to the new v2 chart
 | [ ] | **lens-on-ember** | `DateBrush`, `LensChart`, `WithContext` | `lens-on-ember/+page.svelte` |
 | [x] | **lens-on-au-grid** | `StratumChart`, `v2/DateBrush` | `lens-on-au-grid/+page.svelte` |
 | [ ] | **GenerationChart** | `LensChart` | `GenerationChart.svelte` |
-| [ ] | **Widget** | `LensChart` | `widget/+page.svelte` |
+| [x] | **Widget** | `LensChart` | `widget/+page.svelte` |
 | [ ] | **MiniTracker** | `LensChart` | 2 MiniTracker components |
 | [ ] | **Info-graphics** | Old `elements/` | 6+ infographic components |
 
@@ -91,7 +91,7 @@ This document tracks the migration from old chart components to the new v2 chart
 
 **LensChart.svelte:**
 - `src/routes/(main)/studio/generation-trends-profiles/components/GenerationChart.svelte`
-- `src/routes/(micro)/widget/+page.svelte`
+- ~~`src/routes/(micro)/widget/+page.svelte`~~ → migrated to v2
 - `src/routes/(micro)/record/[id]/components/MiniTracker.svelte`
 - `src/routes/(main)/records/[id]/RecordHistory/index.svelte`
 - `src/routes/(main)/records/[id]/MiniTracker/index.svelte`
@@ -110,9 +110,9 @@ This document tracks the migration from old chart components to the new v2 chart
 **Old stores/:**
 - `src/routes/(main)/studio/generation-trends-profiles/helpers/init.js`
 - `src/routes/(main)/scenarios/+page.svelte`
-- `src/routes/(micro)/widget/TopTips.svelte`
-- `src/routes/(micro)/widget/BottomTips.svelte`
-- `src/routes/(micro)/widget/helpers/init.js`
+- ~~`src/routes/(micro)/widget/TopTips.svelte`~~ → migrated to v2
+- ~~`src/routes/(micro)/widget/BottomTips.svelte`~~ → migrated to v2
+- ~~`src/routes/(micro)/widget/helpers/init.js`~~ → migrated to v2
 - `src/routes/(micro)/record/[id]/components/MiniTracker.svelte`
 - `src/routes/(main)/records/[id]/RecordHistory/helpers/init.js`
 - `src/routes/(main)/records/[id]/MiniTracker/helpers/init.js`

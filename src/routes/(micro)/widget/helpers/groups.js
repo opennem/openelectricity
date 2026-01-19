@@ -1,20 +1,16 @@
 import detailedGroup from '$lib/fuel-tech-groups/detailed';
 import simpleGroup from '$lib/fuel-tech-groups/simple';
 import renewablesFossilsGroup from '$lib/fuel-tech-groups/renewables-fossils';
-export const groups = [detailedGroup, simpleGroup, renewablesFossilsGroup];
 
-export const groupOptions = groups.map((group) => ({
-	label: group.label,
-	value: group.value
-}));
+const groups = [detailedGroup, simpleGroup, renewablesFossilsGroup];
 
-/** create direct maps to fueltech and order */
-/** @type {*} */
-export let fuelTechMap = {};
-/** @type {*} */
-export let orderMap = {};
-/** @type {*} */
-export let labelReducer = {};
+/** @type {Record<string, Record<string, string[]>>} */
+export const fuelTechMap = {};
+/** @type {Record<string, string[]>} */
+export const orderMap = {};
+/** @type {Record<string, Function>} */
+export const labelReducer = {};
+
 groups.forEach((group) => {
 	fuelTechMap[group.value] = group.fuelTechs;
 	orderMap[group.value] = group.order;
