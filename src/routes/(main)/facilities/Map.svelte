@@ -371,12 +371,13 @@
 
 		// On desktop (>768px):
 		// - Left panel takes ~50% of viewport width, so offset x by ~25%
+		// TODO: Re-enable y offset when bottom detail panel is ready
 		// - Bottom detail panel takes 50% of viewport height, so offset y up by ~31% to center in visible area
 		if (window.innerWidth > 768) {
-			return [window.innerWidth * 0.25, -window.innerHeight * 0.31];
+			return [window.innerWidth * 0.25, 0];
 		}
-		// On mobile, just account for bottom panel
-		return [0, -window.innerHeight * 0.31];
+		// On mobile, no offset needed (bottom panel disabled)
+		return [0, 0];
 	}
 
 	/**

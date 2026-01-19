@@ -11,8 +11,9 @@
 	import List from './List.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
-	import { Sheet } from '$lib/components/ui/sheet';
-	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
+	// TODO: Re-enable when facility detail panel is ready
+	// import { Sheet } from '$lib/components/ui/sheet';
+	// import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 
 	let { data } = $props();
 
@@ -122,11 +123,12 @@
 	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
 
 	// Get the selected facility object
-	let selectedFacility = $derived(
-		selectedFacilityCode
-			? filteredFacilities.find((f) => f.code === selectedFacilityCode) ?? null
-			: null
-	);
+	// TODO: Re-enable when facility detail panel is ready
+	// let selectedFacility = $derived(
+	// 	selectedFacilityCode
+	// 		? filteredFacilities.find((f) => f.code === selectedFacilityCode) ?? null
+	// 		: null
+	// );
 
 	// Calculate totals for filtered facilities
 	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
@@ -495,7 +497,8 @@
 	{/if}
 </section>
 
-<!-- Facility detail panel -->
+<!-- Facility detail panel (temporarily disabled) -->
+<!-- TODO: Re-enable when facility detail panel is ready
 <Sheet
 	open={selectedFacility !== null}
 	title={selectedFacility?.name ?? ''}
@@ -511,3 +514,4 @@
 >
 	<FacilityDetailPanel facility={selectedFacility} />
 </Sheet>
+-->
