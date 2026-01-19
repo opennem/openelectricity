@@ -63,11 +63,7 @@
 	function handleKeydown(e) {
 		// Ignore if user is typing in an input, textarea, or contenteditable
 		const target = /** @type {HTMLElement} */ (e.target);
-		if (
-			target.tagName === 'INPUT' ||
-			target.tagName === 'TEXTAREA' ||
-			target.isContentEditable
-		) {
+		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
 			return;
 		}
 
@@ -294,8 +290,8 @@
 			</div>
 		</header>
 
-		<section class="p-10 pb-0 w-full flex gap-10">
-			<div class="flex flex-col gap-5">
+		<section class="p-10 pb-0 w-full flex flex-col gap-5">
+			<div class="grid grid-cols-2 gap-10">
 				<FormMultiSelect
 					options={regionOptions}
 					selected={selectedRegions}
@@ -315,6 +311,21 @@
 					onchange={(value, isMetaPressed) => handleStatusesChange(value, isMetaPressed)}
 					onclear={() => onstatuseschange?.([])}
 				/>
+			</div>
+
+			<div class="grid grid-cols-3 gap-10">
+				<div class="col-span-2">
+					<HierarchicalMultiSelect
+						options={fuelTechOptions}
+						selected={selectedFuelTechs}
+						label="Technology"
+						paddingX=""
+						staticDisplay={true}
+						onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
+						onclear={() => onfueltechschange?.([])}
+					/>
+				</div>
+
 				<FormMultiSelect
 					options={sizeOptions}
 					selected={selectedSizes}
@@ -325,16 +336,6 @@
 					onclear={() => onsizeschange?.([])}
 				/>
 			</div>
-
-			<HierarchicalMultiSelect
-				options={fuelTechOptions}
-				selected={selectedFuelTechs}
-				label="Technology"
-				paddingX=""
-				staticDisplay={true}
-				onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
-				onclear={() => onfueltechschange?.([])}
-			/>
 		</section>
 
 		{#snippet buttons()}
@@ -382,7 +383,9 @@
 				/>
 			</div>
 
-			<div class="justify-start items-center gap-2 hidden md:flex ml-6 pl-6 border-l border-warm-grey">
+			<div
+				class="justify-start items-center gap-2 hidden md:flex ml-6 pl-6 border-l border-warm-grey"
+			>
 				<FormMultiSelect
 					options={regionOptions}
 					selected={selectedRegions}

@@ -102,19 +102,35 @@
 	use:clickoutside
 	onclickoutside={() => (showOptions = false)}
 >
-	<div
-		role="button"
-		tabindex="0"
-		onclick={() => (showOptions = !showOptions)}
-		onkeydown={(e) => e.key === 'Enter' && (showOptions = !showOptions)}
-		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
-		class:hover:bg-warm-grey={!showOptions}
-	>
-		<span class={selectedLabelClass}>
-			{displayLabel}
-		</span>
+	{#if staticDisplay}
+		<div class="flex items-center justify-between {paddingX} {paddingY} mb-2 text-sm">
+			<span class={selectedLabelClass}>
+				{label}
+			</span>
 
-		{#if !staticDisplay}
+			{#if hasSelection && onclear}
+				<button
+					onclick={handleClear}
+					class="text-mid-grey hover:text-dark-grey text-sm"
+					title="Clear selection"
+				>
+					Clear all
+				</button>
+			{/if}
+		</div>
+	{:else}
+		<div
+			role="button"
+			tabindex="0"
+			onclick={() => (showOptions = !showOptions)}
+			onkeydown={(e) => e.key === 'Enter' && (showOptions = !showOptions)}
+			class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
+			class:hover:bg-warm-grey={!showOptions}
+		>
+			<span class={`${selectedLabelClass} text-sm md:text-base`}>
+				{displayLabel}
+			</span>
+
 			<div class="flex items-center gap-1">
 				{#if hasSelection && onclear}
 					<button
@@ -127,11 +143,11 @@
 				{/if}
 				<IconChevronUpDown class="w-7 h-7" />
 			</div>
-		{/if}
-	</div>
+		</div>
+	{/if}
 
 	{#if staticDisplay}
-		<ul class="flex flex-col mt-1">
+		<ul class="flex flex-col mt-1 text-sm">
 			{#each options as opt}
 				{#if opt.divider}
 					<li class="whitespace-nowrap">
@@ -165,16 +181,6 @@
 					</li>
 				{/if}
 			{/each}
-			{#if hasSelection && onclear}
-				<li class="whitespace-nowrap pt-2">
-					<button
-						class="text-mid-grey hover:text-dark-grey text-sm"
-						onclick={handleClear}
-					>
-						Clear all
-					</button>
-				</li>
-			{/if}
 		</ul>
 	{:else if showOptions}
 		<ul

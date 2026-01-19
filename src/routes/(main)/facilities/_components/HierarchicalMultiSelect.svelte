@@ -52,6 +52,19 @@
 	/** @type {Record<string, boolean>} */
 	let expandedState = $state({});
 
+	// Expand all parent options by default in mobile/static view
+	$effect(() => {
+		if (staticDisplay && options.length > 0) {
+			const expanded = /** @type {Record<string, boolean>} */ ({});
+			for (const opt of options) {
+				if (opt.children && opt.children.length > 0) {
+					expanded[opt.value] = true;
+				}
+			}
+			expandedState = expanded;
+		}
+	});
+
 	let hasSelection = $derived(selected.length > 0);
 
 	// Show the selected option's label when only 1 is selected
@@ -200,7 +213,22 @@
 	{/if}
 
 	{#if staticDisplay}
-		<ul class="flex flex-col mt-1">
+		<div class="flex items-center justify-between {paddingX} {paddingY} mb-2 text-sm">
+			<span class="font-semibold capitalize">
+				{label}
+			</span>
+
+			{#if hasSelection && onclear}
+				<button
+					onclick={handleClear}
+					class="text-mid-grey hover:text-dark-grey text-sm"
+					title="Clear selection"
+				>
+					Clear all
+				</button>
+			{/if}
+		</div>
+		<ul class="flex flex-col text-sm">
 			{#each options as opt (opt.value)}
 				{@const hasChildren = opt.children && opt.children.length > 0}
 				{@const allSelected = hasChildren ? areAllChildrenSelected(opt) : isSelected(opt.value)}
@@ -249,11 +277,11 @@
 					</div>
 
 					{#if hasChildren && expandedState[opt.value]}
-						<ul class="ml-[3.25rem] border-l-2 border-warm-grey">
+						<ul class="ml-[0.6rem] border-l-2 border-warm-grey">
 							{#each opt.children as child (child.value)}
 								<li class="whitespace-nowrap">
 									<button
-										class="w-full pl-4 py-1 flex gap-4 items-center"
+										class="w-full pl-5 py-1 flex gap-4 items-center"
 										class:text-mid-grey={!isSelected(child.value)}
 										class:text-black={isSelected(child.value)}
 										onclick={() => handleSelect(child.value)}
@@ -274,7 +302,7 @@
 											></span>
 										{/if}
 
-										<span class="capitalize">{child.label}</span>
+										<span class="capitalize text-xs">{child.label}</span>
 									</button>
 								</li>
 							{/each}
@@ -282,13 +310,6 @@
 					{/if}
 				</li>
 			{/each}
-			{#if hasSelection && onclear}
-				<li class="whitespace-nowrap pt-2">
-					<button class="text-mid-grey hover:text-dark-grey text-sm" onclick={handleClear}>
-						Clear all
-					</button>
-				</li>
-			{/if}
 		</ul>
 	{:else if showOptions}
 		<ul
