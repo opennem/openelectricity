@@ -54,7 +54,13 @@
 
 <g class="line-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
 	<!-- Line path -->
-	<path class="line-path" d={lineGen($data)} {stroke} stroke-width={strokeWidth} stroke-dasharray={strokeArray} />
+	<path
+		class="line-path"
+		d={lineGen($data)}
+		{stroke}
+		stroke-width={strokeWidth}
+		stroke-dasharray={strokeArray}
+	/>
 
 	<!-- Optional dots -->
 	{#if showDots}

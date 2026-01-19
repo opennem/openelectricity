@@ -242,9 +242,7 @@ export default class TimeSeriesV2 {
 		const startTime = startDate.getTime();
 		const endTime = endDate.getTime();
 
-		this.data = this.data.filter(
-			(d) => d.time >= startTime && d.time <= endTime
-		);
+		this.data = this.data.filter((d) => d.time >= startTime && d.time <= endTime);
 
 		return this;
 	}

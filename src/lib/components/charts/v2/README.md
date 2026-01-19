@@ -15,28 +15,28 @@ The v2 chart system consists of:
 
 ```javascript
 import {
-  ChartStore,
-  StratumChart,
-  processForChart,
-  DateBrush,
-  INTERVAL_OPTIONS
+	ChartStore,
+	StratumChart,
+	processForChart,
+	DateBrush,
+	INTERVAL_OPTIONS
 } from '$lib/components/charts/v2';
 
 // Process raw data
 const chartData = processForChart(rawData, 'W', {
-  groupMap: myGroupMap,
-  groupOrder: myOrder,
-  loadsToInvert: ['battery_charging'],
-  labelReducer: myLabelReducer,
-  colourReducer: myColourReducer
+	groupMap: myGroupMap,
+	groupOrder: myOrder,
+	loadsToInvert: ['battery_charging'],
+	labelReducer: myLabelReducer,
+	colourReducer: myColourReducer
 });
 
 // Create chart store
 const chart = new ChartStore({
-  key: Symbol('my-chart'),
-  title: 'Power Generation',
-  baseUnit: 'W',
-  timeZone: 'Australia/Sydney'
+	key: Symbol('my-chart'),
+	title: 'Power Generation',
+	baseUnit: 'W',
+	timeZone: 'Australia/Sydney'
 });
 
 // Set data
@@ -107,9 +107,9 @@ Create a reusable processor with preset options:
 import { createProcessor } from '$lib/components/charts/v2';
 
 const processAuGrid = createProcessor({
-  groupMap: auGridGroups,
-  groupOrder: auGridOrder,
-  loadsToInvert: loadFuelTechs
+	groupMap: auGridGroups,
+	groupOrder: auGridOrder,
+	loadsToInvert: loadFuelTechs
 });
 
 // Use with just data and unit
@@ -140,9 +140,9 @@ The StatisticV2 class processes raw statistics data, handling grouping, ordering
 import StatisticV2 from '$lib/utils/Statistic/v2.js';
 
 const stats = new StatisticV2(data, {
-  statsType: 'history',  // or 'forecast'
-  unit: 'MW',
-  immutable: false       // If true, operations return new instances
+	statsType: 'history', // or 'forecast'
+	unit: 'MW',
+	immutable: false // If true, operations return new instances
 });
 ```
 
@@ -162,9 +162,9 @@ Group multiple series into single aggregated series:
 
 ```javascript
 stats.group({
-  solar: ['solar_utility', 'solar_rooftop'],
-  wind: ['wind', 'wind_offshore'],
-  fossil: ['coal_black', 'coal_brown', 'gas_ccgt', 'gas_ocgt']
+	solar: ['solar_utility', 'solar_rooftop'],
+	wind: ['wind', 'wind_offshore'],
+	fossil: ['coal_black', 'coal_brown', 'gas_ccgt', 'gas_ocgt']
 });
 ```
 
@@ -181,7 +181,7 @@ stats.reorder(['coal', 'gas', 'hydro', 'wind', 'solar']);
 Filter data items:
 
 ```javascript
-stats.filter(d => d.fuel_tech !== 'imports');
+stats.filter((d) => d.fuel_tech !== 'imports');
 ```
 
 #### getData()
@@ -198,10 +198,10 @@ All methods return `this` for chaining:
 
 ```javascript
 const result = new StatisticV2(data, { unit: 'MW' })
-  .invertValues(['battery_charging'])
-  .group(myGroupMap)
-  .reorder(myOrder)
-  .getData();
+	.invertValues(['battery_charging'])
+	.group(myGroupMap)
+	.reorder(myOrder)
+	.getData();
 ```
 
 ---
@@ -218,9 +218,9 @@ The TimeSeriesV2 class transforms statistics data into time-indexed series suita
 import TimeSeriesV2 from '$lib/utils/TimeSeries/v2.js';
 
 const ts = new TimeSeriesV2(statsData, {
-  statsType: 'history',
-  labelReducer: myLabelReducer,
-  colourReducer: myColourReducer
+	statsType: 'history',
+	labelReducer: myLabelReducer,
+	colourReducer: myColourReducer
 });
 ```
 
@@ -241,7 +241,7 @@ Aggregate data to a larger interval:
 
 ```javascript
 // Aggregate 5-minute data to 30-minute
-ts.aggregate('30m', 'mean');  // or 'sum'
+ts.aggregate('30m', 'mean'); // or 'sum'
 ```
 
 #### filterByDateRange(startDate, endDate)
@@ -266,8 +266,8 @@ ts.updateMinMax();
 Convert values to percentages:
 
 ```javascript
-ts.toPercentage();  // Uses sum of all series as 100%
-ts.toPercentage('total');  // Uses specific key as 100%
+ts.toPercentage(); // Uses sum of all series as 100%
+ts.toPercentage('total'); // Uses specific key as 100%
 ```
 
 #### toChartFormat()
@@ -287,19 +287,17 @@ import TimeSeriesV2 from '$lib/utils/TimeSeries/v2.js';
 
 // Process statistics
 const stats = new StatisticV2(rawData, { unit: 'MW' })
-  .invertValues(['battery_charging'])
-  .group(fuelTechGroups)
-  .reorder(displayOrder);
+	.invertValues(['battery_charging'])
+	.group(fuelTechGroups)
+	.reorder(displayOrder);
 
 // Convert to time series
 const ts = new TimeSeriesV2(stats.getData(), {
-  labelReducer: myLabelReducer,
-  colourReducer: myColourReducer
+	labelReducer: myLabelReducer,
+	colourReducer: myColourReducer
 });
 
-ts.transform()
-  .aggregate('30m')
-  .updateMinMax();
+ts.transform().aggregate('30m').updateMinMax();
 
 const chartData = ts.toChartFormat();
 ```
@@ -336,7 +334,7 @@ The main chart component for stacked area/bar charts:
 
 ```svelte
 <script>
-  import { StratumChart } from '$lib/components/charts/v2';
+	import { StratumChart } from '$lib/components/charts/v2';
 </script>
 
 <StratumChart {chart} height={400} />
@@ -344,46 +342,56 @@ The main chart component for stacked area/bar charts:
 
 #### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `chart` | `ChartStore` | required | The chart store instance |
-| `showHeader` | `boolean` | `true` | Whether to show the header |
-| `showTooltip` | `boolean` | `true` | Whether to show the tooltip |
-| `showOptions` | `boolean` | `true` | Whether to show options button |
-| `defaultTooltipText` | `string` | `''` | Default text when nothing is hovered |
-| `class` | `string` | `''` | Additional CSS classes |
-| `chartPadding` | `string` | `'px-0'` | CSS classes for chart padding |
-| `height` | `number` | - | Chart height in pixels |
-| `onhover` | `(time, key?) => void` | - | Callback when hovering |
-| `onhoverend` | `() => void` | - | Callback when hover ends |
-| `onfocus` | `(time) => void` | - | Callback when focusing (clicking) |
+| Prop                 | Type                   | Default  | Description                          |
+| -------------------- | ---------------------- | -------- | ------------------------------------ |
+| `chart`              | `ChartStore`           | required | The chart store instance             |
+| `showHeader`         | `boolean`              | `true`   | Whether to show the header           |
+| `showTooltip`        | `boolean`              | `true`   | Whether to show the tooltip          |
+| `showOptions`        | `boolean`              | `true`   | Whether to show options button       |
+| `defaultTooltipText` | `string`               | `''`     | Default text when nothing is hovered |
+| `class`              | `string`               | `''`     | Additional CSS classes               |
+| `chartPadding`       | `string`               | `'px-0'` | CSS classes for chart padding        |
+| `height`             | `number`               | -        | Chart height in pixels               |
+| `onhover`            | `(time, key?) => void` | -        | Callback when hovering               |
+| `onhoverend`         | `() => void`           | -        | Callback when hover ends             |
+| `onfocus`            | `(time) => void`       | -        | Callback when focusing (clicking)    |
 
 #### Synced Charts Example
 
 ```svelte
 <script>
-  import { StratumChart, ChartStore, createSyncedCharts } from '$lib/components/charts/v2';
+	import { StratumChart, ChartStore, createSyncedCharts } from '$lib/components/charts/v2';
 
-  const chart1 = new ChartStore({ key: Symbol('chart1'), title: 'Region 1' });
-  const chart2 = new ChartStore({ key: Symbol('chart2'), title: 'Region 2' });
+	const chart1 = new ChartStore({ key: Symbol('chart1'), title: 'Region 1' });
+	const chart2 = new ChartStore({ key: Symbol('chart2'), title: 'Region 2' });
 
-  const sync = createSyncedCharts([chart1, chart2]);
+	const sync = createSyncedCharts([chart1, chart2]);
 
-  function handleHover(time, key) {
-    sync.setHover(time, key);
-  }
+	function handleHover(time, key) {
+		sync.setHover(time, key);
+	}
 
-  function handleHoverEnd() {
-    sync.clearHover();
-  }
+	function handleHoverEnd() {
+		sync.clearHover();
+	}
 
-  function handleFocus(time) {
-    sync.toggleFocus(time);
-  }
+	function handleFocus(time) {
+		sync.toggleFocus(time);
+	}
 </script>
 
-<StratumChart chart={chart1} onhover={handleHover} onhoverend={handleHoverEnd} onfocus={handleFocus} />
-<StratumChart chart={chart2} onhover={handleHover} onhoverend={handleHoverEnd} onfocus={handleFocus} />
+<StratumChart
+	chart={chart1}
+	onhover={handleHover}
+	onhoverend={handleHoverEnd}
+	onfocus={handleFocus}
+/>
+<StratumChart
+	chart={chart2}
+	onhover={handleHover}
+	onhoverend={handleHoverEnd}
+	onfocus={handleFocus}
+/>
 ```
 
 ### DateBrush
@@ -392,21 +400,16 @@ A brush component for date range selection:
 
 ```svelte
 <script>
-  import { DateBrush } from '$lib/components/charts/v2';
+	import { DateBrush } from '$lib/components/charts/v2';
 
-  let brushedRange = $state(undefined);
+	let brushedRange = $state(undefined);
 
-  function handleBrush(range) {
-    brushedRange = range;
-  }
+	function handleBrush(range) {
+		brushedRange = range;
+	}
 </script>
 
-<DateBrush
-  {chart}
-  {brushedRange}
-  onbrush={handleBrush}
-  height={80}
-/>
+<DateBrush {chart} {brushedRange} onbrush={handleBrush} height={80} />
 ```
 
 ### IntervalSelector
@@ -415,15 +418,15 @@ Toggle between time intervals:
 
 ```svelte
 <script>
-  import { IntervalSelector, INTERVAL_OPTIONS } from '$lib/components/charts/v2';
+	import { IntervalSelector, INTERVAL_OPTIONS } from '$lib/components/charts/v2';
 
-  let selectedInterval = $state('5m');
+	let selectedInterval = $state('5m');
 </script>
 
 <IntervalSelector
-  options={INTERVAL_OPTIONS}
-  selected={selectedInterval}
-  onchange={(interval) => selectedInterval = interval}
+	options={INTERVAL_OPTIONS}
+	selected={selectedInterval}
+	onchange={(interval) => (selectedInterval = interval)}
 />
 ```
 
@@ -471,16 +474,16 @@ const sync = createSyncedCharts([chart1, chart2]);
 
 #### SyncedChartsController Methods
 
-| Method | Description |
-|--------|-------------|
-| `setHover(time, key?)` | Set hover state on all charts |
-| `clearHover()` | Clear hover state on all charts |
-| `toggleFocus(time)` | Toggle focus on all charts |
-| `clearFocus()` | Clear focus on all charts |
-| `resetAll()` | Reset all interaction states |
-| `addChart(chart)` | Add a chart to the sync group |
-| `removeChart(chart)` | Remove a chart from the sync group |
-| `destroy()` | Remove all charts and clean up |
+| Method                 | Description                        |
+| ---------------------- | ---------------------------------- |
+| `setHover(time, key?)` | Set hover state on all charts      |
+| `clearHover()`         | Clear hover state on all charts    |
+| `toggleFocus(time)`    | Toggle focus on all charts         |
+| `clearFocus()`         | Clear focus on all charts          |
+| `resetAll()`           | Reset all interaction states       |
+| `addChart(chart)`      | Add a chart to the sync group      |
+| `removeChart(chart)`   | Remove a chart from the sync group |
+| `destroy()`            | Remove all charts and clean up     |
 
 ### Multi-Region Dashboard Example
 
@@ -488,56 +491,56 @@ A complete example showing multiple region charts with synced interactions:
 
 ```svelte
 <script>
-  import {
-    ChartStore,
-    StratumChart,
-    DateBrush,
-    IntervalSelector,
-    INTERVAL_OPTIONS,
-    createSyncedCharts,
-    processForChart
-  } from '$lib/components/charts/v2';
+	import {
+		ChartStore,
+		StratumChart,
+		DateBrush,
+		IntervalSelector,
+		INTERVAL_OPTIONS,
+		createSyncedCharts,
+		processForChart
+	} from '$lib/components/charts/v2';
 
-  let { data } = $props(); // { regions: [...] }
+	let { data } = $props(); // { regions: [...] }
 
-  let selectedInterval = $state('5m');
-  let brushedRange = $state(undefined);
+	let selectedInterval = $state('5m');
+	let brushedRange = $state(undefined);
 
-  // Create chart stores for each region
-  let regionCharts = $derived(
-    data.regions.map((r) => ({
-      regionData: r,
-      chart: new ChartStore({ key: Symbol(r.region), title: r.label })
-    }))
-  );
+	// Create chart stores for each region
+	let regionCharts = $derived(
+		data.regions.map((r) => ({
+			regionData: r,
+			chart: new ChartStore({ key: Symbol(r.region), title: r.label })
+		}))
+	);
 
-  // Create sync controller
-  let sync = $derived(createSyncedCharts(regionCharts.map((r) => r.chart)));
+	// Create sync controller
+	let sync = $derived(createSyncedCharts(regionCharts.map((r) => r.chart)));
 
-  // Sync handlers
-  function handleHover(time, key) {
-    sync.setHover(time, key);
-  }
+	// Sync handlers
+	function handleHover(time, key) {
+		sync.setHover(time, key);
+	}
 
-  function handleHoverEnd() {
-    sync.clearHover();
-  }
+	function handleHoverEnd() {
+		sync.clearHover();
+	}
 
-  function handleFocus(time) {
-    sync.toggleFocus(time);
-  }
+	function handleFocus(time) {
+		sync.toggleFocus(time);
+	}
 </script>
 
 <IntervalSelector
-  options={INTERVAL_OPTIONS}
-  selected={selectedInterval}
-  onchange={(i) => selectedInterval = i}
+	options={INTERVAL_OPTIONS}
+	selected={selectedInterval}
+	onchange={(i) => (selectedInterval = i)}
 />
 
-<DateBrush chart={regionCharts[0]?.chart} {brushedRange} onbrush={(r) => brushedRange = r} />
+<DateBrush chart={regionCharts[0]?.chart} {brushedRange} onbrush={(r) => (brushedRange = r)} />
 
 {#each regionCharts as { chart }}
-  <StratumChart {chart} onhover={handleHover} onhoverend={handleHoverEnd} onfocus={handleFocus} />
+	<StratumChart {chart} onhover={handleHover} onhoverend={handleHoverEnd} onfocus={handleFocus} />
 {/each}
 ```
 
@@ -547,38 +550,40 @@ A complete example showing multiple region charts with synced interactions:
 
 ### Key Differences
 
-| Feature | v1 | v2 |
-|---------|----|----|
-| Data processing | `process()` function | `processForChart()` with options |
-| Statistics | `Statistic` class | `StatisticV2` with cleaner API |
-| Time series | `TimeSeries` class | `TimeSeriesV2` with better methods |
-| State management | Various patterns | Unified `ChartStore` |
+| Feature          | v1                   | v2                                 |
+| ---------------- | -------------------- | ---------------------------------- |
+| Data processing  | `process()` function | `processForChart()` with options   |
+| Statistics       | `Statistic` class    | `StatisticV2` with cleaner API     |
+| Time series      | `TimeSeries` class   | `TimeSeriesV2` with better methods |
+| State management | Various patterns     | Unified `ChartStore`               |
 
 ### Migration Example
 
 **Before (v1):**
+
 ```javascript
 import process from './helpers/process';
 
 const result = process({
-  history: data,
-  fuelTechMap: myMap,
-  fuelTechOrder: myOrder,
-  colourReducer: myColours,
-  labelReducer: myLabels,
-  unit: 'W'
+	history: data,
+	fuelTechMap: myMap,
+	fuelTechOrder: myOrder,
+	colourReducer: myColours,
+	labelReducer: myLabels,
+	unit: 'W'
 });
 ```
 
 **After (v2):**
+
 ```javascript
 import { processForChart } from '$lib/components/charts/v2';
 
 const result = processForChart(data, 'W', {
-  groupMap: myMap,
-  groupOrder: myOrder,
-  colourReducer: myColours,
-  labelReducer: myLabels
+	groupMap: myMap,
+	groupOrder: myOrder,
+	colourReducer: myColours,
+	labelReducer: myLabels
 });
 ```
 

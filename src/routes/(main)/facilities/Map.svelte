@@ -631,7 +631,7 @@
 						'text-field': '{point_count_abbreviated}',
 						'text-font': ['DM_Mono'],
 						'text-size': 14,
-						'visibility': isZooming ? 'none' : 'visible'
+						visibility: isZooming ? 'none' : 'visible'
 					}}
 					paint={{
 						'text-color': '#ffffff'

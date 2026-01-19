@@ -10,15 +10,7 @@
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
 
 	// v2 Element components
-	import {
-		StackedArea,
-		HoverLayer,
-		AxisX,
-		AxisY,
-		ClipPath,
-		LineX,
-		Dot
-	} from './elements';
+	import { StackedArea, HoverLayer, AxisX, AxisY, ClipPath, LineX, Dot } from './elements';
 
 	/**
 	 * @typedef {Object} Props
@@ -37,9 +29,7 @@
 
 	// Process data based on chart type
 	let stackedData = $derived(
-		chart.seriesScaledData.length > 0
-			? stack(chart.seriesScaledData, chart.visibleSeriesNames)
-			: []
+		chart.seriesScaledData.length > 0 ? stack(chart.seriesScaledData, chart.visibleSeriesNames) : []
 	);
 
 	let groupedData = $derived(
@@ -48,9 +38,7 @@
 			: []
 	);
 
-	let chartData = $derived(
-		chart.chartOptions.isChartTypeArea ? stackedData : groupedData
-	);
+	let chartData = $derived(chart.chartOptions.isChartTypeArea ? stackedData : groupedData);
 
 	let flatData = $derived(
 		chart.chartOptions.isChartTypeArea
@@ -90,12 +78,7 @@
 			</defs>
 
 			<!-- Hover layer for mouse interactions in empty space -->
-			<HoverLayer
-				dataset={chart.seriesScaledData}
-				{onmousemove}
-				{onmouseout}
-				{onpointerup}
-			/>
+			<HoverLayer dataset={chart.seriesScaledData} {onmousemove} {onmouseout} {onpointerup} />
 
 			<!-- Chart content (on top to capture hover with series info) -->
 			<g clip-path={clipPath}>
@@ -105,9 +88,9 @@
 					curveType={chart.chartOptions.curveFunction}
 					seriesColours={chart.seriesColours}
 					highlightId={chart.hoverKey}
-					onmousemove={onmousemove}
-					onmouseout={onmouseout}
-					onpointerup={onpointerup}
+					{onmousemove}
+					{onmouseout}
+					{onpointerup}
 				/>
 			</g>
 		</Svg>

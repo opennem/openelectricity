@@ -166,7 +166,14 @@
 	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null}} params
 	 * @returns {string}
 	 */
-	function buildUrl({ statuses: s, regions: r, fuelTechs: ft, sizes: sz, view: v, facility: f = null }) {
+	function buildUrl({
+		statuses: s,
+		regions: r,
+		fuelTechs: ft,
+		sizes: sz,
+		view: v,
+		facility: f = null
+	}) {
 		let url = `/facilities?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}&sizes=${sz.join(',')}`;
 		if (f) {
 			url += `&facility=${f}`;
@@ -241,7 +248,14 @@
 		// Optimistic update
 		selectedView = value;
 		// View change uses cached data, no refetch needed
-		navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: value, facility: selectedFacilityCode });
+		navigateWithoutRefetch({
+			statuses,
+			regions,
+			fuelTechs,
+			sizes,
+			view: value,
+			facility: selectedFacilityCode
+		});
 	}
 
 	/**
@@ -271,12 +285,26 @@
 				selectedFacilityCode = null;
 				mapRef?.closePopups();
 				// Facility selection uses cached data, no refetch needed
-				navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
+				navigateWithoutRefetch({
+					statuses,
+					regions,
+					fuelTechs,
+					sizes,
+					view: selectedView,
+					facility: null
+				});
 			} else {
 				// Select new facility
 				selectedFacilityCode = facility.code;
 				// Facility selection uses cached data, no refetch needed
-				navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: facility.code });
+				navigateWithoutRefetch({
+					statuses,
+					regions,
+					fuelTechs,
+					sizes,
+					view: selectedView,
+					facility: facility.code
+				});
 			}
 		}
 	}
@@ -353,13 +381,25 @@
 		/>
 
 		<!-- Map controls - positioned to the left of zoom controls -->
-		<div class="absolute top-3 left-3 md:left-auto md:right-20 z-20 items-center gap-2 {selectedView === 'map' ? 'flex' : 'hidden md:flex'}">
+		<div
+			class="absolute top-3 left-3 md:left-auto md:right-20 z-20 items-center gap-2 {selectedView ===
+			'map'
+				? 'flex'
+				: 'hidden md:flex'}"
+		>
 			<button
 				onclick={() => {
 					mapRef?.resetView();
 					if (selectedFacilityCode) {
 						selectedFacilityCode = null;
-						navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
+						navigateWithoutRefetch({
+							statuses,
+							regions,
+							fuelTechs,
+							sizes,
+							view: selectedView,
+							facility: null
+						});
 					}
 				}}
 				class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"

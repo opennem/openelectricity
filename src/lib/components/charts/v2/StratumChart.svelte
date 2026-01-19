@@ -92,7 +92,7 @@
 		{#if header}
 			{@render header()}
 		{:else}
-			<ChartHeader {chart} showOptions={showOptions} />
+			<ChartHeader {chart} {showOptions} />
 		{/if}
 	{/if}
 

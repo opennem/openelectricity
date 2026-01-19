@@ -71,13 +71,4 @@ export {
 } from './dataProcessing.js';
 
 // Chart elements (v2)
-export {
-	StackedArea,
-	Line,
-	HoverLayer,
-	AxisX,
-	AxisY,
-	LineX,
-	Dot,
-	ClipPath
-} from './elements';
+export { StackedArea, Line, HoverLayer, AxisX, AxisY, LineX, Dot, ClipPath } from './elements';

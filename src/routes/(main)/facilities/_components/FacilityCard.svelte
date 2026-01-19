@@ -159,7 +159,12 @@
 				/>
 			{/each}
 			{#if hasOverflow}
-				<OverflowBadge count={overflowCount} size={badgeSize} {darkMode} zIndex={visibleGroups.length + 1} />
+				<OverflowBadge
+					count={overflowCount}
+					size={badgeSize}
+					{darkMode}
+					zIndex={visibleGroups.length + 1}
+				/>
 			{/if}
 			{#each hiddenGroups as group, i}
 				<FuelTechBadge

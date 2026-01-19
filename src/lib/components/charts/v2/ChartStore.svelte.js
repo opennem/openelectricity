@@ -75,9 +75,7 @@ export default class ChartStore {
 	/** @type {Record<string, string>} */
 	seriesColours = $state({});
 
-	visibleSeriesColours = $derived(
-		this.visibleSeriesNames.map((name) => this.seriesColours[name])
-	);
+	visibleSeriesColours = $derived(this.visibleSeriesNames.map((name) => this.seriesColours[name]));
 
 	/** @type {Record<string, string>} */
 	seriesLabels = $state({});
@@ -154,16 +152,12 @@ export default class ChartStore {
 	/** @type {(value: any, timeZone?: string) => string} */
 	formatTickX = $state((/** @type {any} */ d) => (d?.getTime?.() === 0 ? '' : d));
 
-	formatTickXWithTimeZone = $derived(
-		(/** @type {any} */ d) => this.formatTickX(d, this.timeZone)
-	);
+	formatTickXWithTimeZone = $derived((/** @type {any} */ d) => this.formatTickX(d, this.timeZone));
 
 	/** @type {(value: any, timeZone?: string) => string} */
 	formatX = $state((/** @type {any} */ d) => d);
 
-	formatXWithTimeZone = $derived(
-		(/** @type {any} */ d) => this.formatX(d, this.timeZone)
-	);
+	formatXWithTimeZone = $derived((/** @type {any} */ d) => this.formatX(d, this.timeZone));
 
 	/** @type {boolean} */
 	useFormatY = $state(false);

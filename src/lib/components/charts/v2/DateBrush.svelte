@@ -285,7 +285,10 @@
 	});
 </script>
 
-<div class="relative w-full bg-light-warm-grey rounded-lg overflow-hidden {className}" style="height: {height}px;">
+<div
+	class="relative w-full bg-light-warm-grey rounded-lg overflow-hidden {className}"
+	style="height: {height}px;"
+>
 	<!-- Brush interaction layer (on top) -->
 	<div
 		bind:this={brushEl}
@@ -348,13 +351,7 @@
 					<Line stroke="#999" strokeWidth="1" />
 				{/if}
 
-				<AxisX
-					ticks={5}
-					tickMarks={false}
-					gridlines={true}
-					yTick={12}
-					formatTick={formatTick}
-				/>
+				<AxisX ticks={5} tickMarks={false} gridlines={true} yTick={12} {formatTick} />
 			</Svg>
 		</LayerCake>
 	</div>

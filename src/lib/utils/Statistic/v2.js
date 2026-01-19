@@ -63,9 +63,7 @@ export default class StatisticV2 {
 	_detectMinInterval() {
 		if (!this.data.length) return null;
 
-		const intervals = this.data
-			.map((d) => d[this.statsType]?.interval)
-			.filter(Boolean);
+		const intervals = this.data.map((d) => d[this.statsType]?.interval).filter(Boolean);
 
 		if (!intervals.length) return null;
 
@@ -114,9 +112,7 @@ export default class StatisticV2 {
 			if (idsToInvert.includes(id)) {
 				const statsData = item[instance.statsType];
 				if (statsData?.data) {
-					statsData.data = statsData.data.map((v) =>
-						v !== null && v !== undefined ? -v : v
-					);
+					statsData.data = statsData.data.map((v) => (v !== null && v !== undefined ? -v : v));
 				}
 			}
 		});
@@ -204,9 +200,7 @@ export default class StatisticV2 {
 		const instance = this._getInstance();
 
 		const ordered = [];
-		const dataMap = new Map(
-			instance.data.map((d) => [d.fuel_tech || d.id, d])
-		);
+		const dataMap = new Map(instance.data.map((d) => [d.fuel_tech || d.id, d]));
 
 		for (const id of order) {
 			const item = dataMap.get(id);

@@ -221,7 +221,9 @@ export function getFlatFuelTechOptions() {
  * @returns {string[]}
  */
 export function getParentFuelTechValues() {
-	return fuelTechOptions.filter((opt) => opt.children && opt.children.length > 0).map((opt) => opt.value);
+	return fuelTechOptions
+		.filter((opt) => opt.children && opt.children.length > 0)
+		.map((opt) => opt.value);
 }
 
 export const fuelTechLabel = optionsReducer(getFlatFuelTechOptions());

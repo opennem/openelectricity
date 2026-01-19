@@ -42,42 +42,56 @@
 	// Compute horizontal alignment for top/bottom
 	let horizontalAlign = $derived.by(() => {
 		switch (align) {
-			case 'start': return 'left-0';
-			case 'center': return 'left-1/2 -translate-x-1/2';
+			case 'start':
+				return 'left-0';
+			case 'center':
+				return 'left-1/2 -translate-x-1/2';
 			case 'end':
-			default: return 'right-0';
+			default:
+				return 'right-0';
 		}
 	});
 
 	// Compute vertical alignment for left/right
 	let verticalAlign = $derived.by(() => {
 		switch (align) {
-			case 'start': return 'top-0';
-			case 'center': return 'top-1/2 -translate-y-1/2';
+			case 'start':
+				return 'top-0';
+			case 'center':
+				return 'top-1/2 -translate-y-1/2';
 			case 'end':
-			default: return 'bottom-0';
+			default:
+				return 'bottom-0';
 		}
 	});
 
 	// Compute position classes based on side
 	let positionClasses = $derived.by(() => {
 		switch (side) {
-			case 'top': return `top-0 ${horizontalAlign}`;
-			case 'bottom': return `bottom-0 ${horizontalAlign}`;
-			case 'left': return `left-0 ${verticalAlign}`;
+			case 'top':
+				return `top-0 ${horizontalAlign}`;
+			case 'bottom':
+				return `bottom-0 ${horizontalAlign}`;
+			case 'left':
+				return `left-0 ${verticalAlign}`;
 			case 'right':
-			default: return `right-0 ${verticalAlign}`;
+			default:
+				return `right-0 ${verticalAlign}`;
 		}
 	});
 
 	// Compute border classes based on side
 	let borderClasses = $derived.by(() => {
 		switch (side) {
-			case 'top': return 'border-b';
-			case 'bottom': return 'border-t';
-			case 'left': return 'border-r';
+			case 'top':
+				return 'border-b';
+			case 'bottom':
+				return 'border-t';
+			case 'left':
+				return 'border-r';
 			case 'right':
-			default: return 'border-l';
+			default:
+				return 'border-l';
 		}
 	});
 
@@ -107,11 +121,15 @@
 	// Compute slide transform for closed state
 	let slideTransform = $derived.by(() => {
 		switch (side) {
-			case 'top': return 'translateY(-100%)';
-			case 'bottom': return 'translateY(100%)';
-			case 'left': return 'translateX(-100%)';
+			case 'top':
+				return 'translateY(-100%)';
+			case 'bottom':
+				return 'translateY(100%)';
+			case 'left':
+				return 'translateX(-100%)';
 			case 'right':
-			default: return 'translateX(100%)';
+			default:
+				return 'translateX(100%)';
 		}
 	});
 

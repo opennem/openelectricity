@@ -10,7 +10,16 @@
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
 	import FacilityUnitCard from './_components/FacilityUnitCard.svelte';
 
-	let { facilities = [], ontodaybuttonvisible, scrollContainer = null, onhover, onclick, hoveredFacility = null, clickedFacility = null, selectedFacilityCode = null } = $props();
+	let {
+		facilities = [],
+		ontodaybuttonvisible,
+		scrollContainer = null,
+		onhover,
+		onclick,
+		hoveredFacility = null,
+		clickedFacility = null,
+		selectedFacilityCode = null
+	} = $props();
 
 	// Scroll to facility when clickedFacility changes (from map click)
 	$effect(() => {

@@ -23,17 +23,12 @@
 	let valueKey = $derived(chart.chartTooltips.valueKey || chart.hoverKey);
 
 	// Get the value for the active key
-	let value = $derived(
-		activeData && valueKey !== undefined ? activeData[valueKey] : undefined
-	);
+	let value = $derived(activeData && valueKey !== undefined ? activeData[valueKey] : undefined);
 
 	// Get total (sum of all visible series values)
 	let total = $derived.by(() => {
 		if (!activeData) return 0;
-		return chart.visibleSeriesNames.reduce(
-			(sum, name) => sum + (Number(activeData[name]) || 0),
-			0
-		);
+		return chart.visibleSeriesNames.reduce((sum, name) => sum + (Number(activeData[name]) || 0), 0);
 	});
 
 	// Format values
@@ -76,10 +71,7 @@
 					<!-- Selected series value -->
 					{#if value !== undefined && valueKey}
 						<div class="flex items-center gap-2">
-							<span
-								class="w-2.5 h-2.5 rounded-sm"
-								style="background-color: {activeColour}"
-							></span>
+							<span class="w-2.5 h-2.5 rounded-sm" style="background-color: {activeColour}"></span>
 							<span class="text-mid-grey">{activeLabel}</span>
 							<strong class="font-semibold">
 								{formattedValue}

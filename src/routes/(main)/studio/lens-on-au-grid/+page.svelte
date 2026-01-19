@@ -308,9 +308,7 @@
 <div class="p-4">
 	<header class="mb-6">
 		<h1 class="text-2xl font-bold">Lens on AU Grid</h1>
-		<p class="text-sm text-mid-warm-grey">
-			All regions overview
-		</p>
+		<p class="text-sm text-mid-warm-grey">All regions overview</p>
 	</header>
 
 	<!-- Controls -->
@@ -322,10 +320,7 @@
 		/>
 
 		{#if brushedRange}
-			<button
-				class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer"
-				onclick={clearBrush}
-			>
+			<button class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer" onclick={clearBrush}>
 				Clear zoom
 			</button>
 		{/if}
@@ -353,13 +348,7 @@
 					fill="none"
 					viewBox="0 0 24 24"
 				>
-					<circle
-						class="opacity-25"
-						cx="12"
-						cy="12"
-						r="10"
-						stroke="currentColor"
-						stroke-width="4"
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 					></circle>
 					<path
 						class="opacity-75"
