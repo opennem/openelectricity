@@ -1,5 +1,5 @@
 import { isBefore, addDays } from 'date-fns';
-import { zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
+import { fromZonedTime, formatInTimeZone } from 'date-fns-tz';
 /**
  *
  * @param {Date | number | undefined} start
@@ -16,13 +16,13 @@ export default function (start, end) {
 
 	while (isBefore(dStart, dEnd)) {
 		const formattedStart = formatInTimeZone(dStart, '+10:00', 'yyyy-MM-dd');
-		const startTime = zonedTimeToUtc(formattedStart, '+10:00');
+		const startTime = fromZonedTime(formattedStart, '+10:00');
 		ticks.push(startTime);
 		dStart = addDays(dStart, 1);
 	}
 
 	const formattedStart = formatInTimeZone(dStart, '+10:00', 'yyyy-MM-dd');
-	const startTime = zonedTimeToUtc(formattedStart, '+10:00');
+	const startTime = fromZonedTime(formattedStart, '+10:00');
 	ticks.push(startTime);
 
 	return ticks;

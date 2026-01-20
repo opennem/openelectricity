@@ -1,5 +1,5 @@
 import { addHours, subDays, isBefore, addDays } from 'date-fns';
-import { zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
+import { fromZonedTime, formatInTimeZone } from 'date-fns-tz';
 /**
  *
  * @param {Date} start
@@ -14,7 +14,7 @@ export default function (start, end, offset = '+10:00') {
 
 	while (isBefore(dStart, end)) {
 		const formattedStart = formatInTimeZone(dStart, offset, 'yyyy-MM-dd 22:00:00');
-		const startTime = zonedTimeToUtc(formattedStart, offset);
+		const startTime = fromZonedTime(formattedStart, offset);
 		const endTime = addHours(startTime, 9);
 		nighttimes.push([startTime, endTime]);
 		dStart = addDays(dStart, 1);

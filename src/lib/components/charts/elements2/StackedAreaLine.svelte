@@ -1,7 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import { area, line, curveLinear } from 'd3-shape';
-	import closestTo from 'date-fns/closestTo';
+	import { closestTo } from 'date-fns';
 	const { data, xGet, xScale, yScale, yGet, z } = getContext('LayerCake');
 	// import Area from '../elements/Area.svelte';
 

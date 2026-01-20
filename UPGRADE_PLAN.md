@@ -11,7 +11,7 @@ This document outlines the plan for upgrading packages with major version change
 |-------|-------------|--------|
 | 1 | Low-Risk Updates | ✅ Completed |
 | 2 | Sanity CMS Updates | ✅ Completed |
-| 3 | Date Library Migration | ⏳ Pending |
+| 3 | Date Library Migration | ✅ Completed |
 | 4 | Styling Updates | ✅ Completed |
 | 5 | Chart Library (LayerCake) | ✅ Completed |
 | 6 | Chroma.js | ✅ Completed |
@@ -70,7 +70,7 @@ bun add @sanity/client@latest @sanity/image-url@latest
 
 ---
 
-## ⏳ Phase 3: Date Library Migration (PENDING)
+## ✅ Phase 3: Date Library Migration (COMPLETED)
 
 ### 3.1 date-fns v4 + date-fns-tz v3
 
@@ -78,17 +78,77 @@ bun add @sanity/client@latest @sanity/image-url@latest
 bun add date-fns@latest date-fns-tz@latest
 ```
 
-- Current: date-fns 2.30.0
-- Target: date-fns 4.x
-- Risk: Medium-High
-- Breaking changes in v4:
-  - Functions are now subpath exports (`date-fns/format` instead of `import { format } from 'date-fns'`)
-  - Some function signatures changed
-- Files to check:
-  - `src/lib/utils/` - date utilities
-  - Components using date formatting
-- Testing: Check all date displays, especially timezone handling
-- Docs: https://date-fns.org/v4.1.0/docs/Getting-Started
+- Upgraded: date-fns 2.30.0 → 4.1.0, date-fns-tz 2.0.1 → 3.2.0
+- Risk: Medium
+- Result: ✅ Build passed, all 30 tests passed
+- Docs:
+  - https://date-fns.org/v4.1.0/docs/Getting-Started
+  - https://github.com/marnusw/date-fns-tz
+
+### Breaking Changes Analysis
+
+#### date-fns v3/v4 Changes
+
+| Change | Impact on Codebase |
+|--------|-------------------|
+| Named exports required | ✅ Already using named exports in most files |
+| Default exports removed | ⚠️ **2 files** use `import closestTo from 'date-fns/closestTo'` |
+| `Math.trunc` default rounding | ✅ Likely no impact |
+| Interval functions don't throw | ✅ Likely no impact |
+| String arguments now accepted | ✅ No impact (additive) |
+| First-class timezone support via `TZDate` | ✅ Optional feature |
+
+#### date-fns-tz v3 Changes
+
+| Change | Impact on Codebase |
+|--------|-------------------|
+| `zonedTimeToUtc` → `fromZonedTime` | ⚠️ **2 files** need renaming |
+| `utcToZonedTime` → `toZonedTime` | ✅ Not used |
+| Named exports only | ✅ Already using named exports |
+| Requires date-fns v3+ | ✅ Will be satisfied |
+
+### Required Code Changes
+
+**1. Fix default imports (2 files):**
+
+```diff
+- import closestTo from 'date-fns/closestTo';
++ import { closestTo } from 'date-fns';
+```
+
+Files:
+- `src/lib/components/charts/elements2/StackedAreaLine.svelte`
+- `src/lib/components/charts/elements2/HoverLayer.svelte`
+
+**2. Rename `zonedTimeToUtc` → `fromZonedTime` (2 files):**
+
+```diff
+- import { zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
++ import { fromZonedTime, formatInTimeZone } from 'date-fns-tz';
+```
+
+Files:
+- `src/lib/utils/nighttimes.js` (1 import, 1 usage)
+- `src/lib/utils/day-ticks.js` (1 import, 2 usages)
+
+### Files Using date-fns (57 imports across ~45 files)
+
+All other imports use named exports and standard functions that are unchanged:
+- `format`, `parse`, `parseISO`
+- `addDays`, `addMonths`, `addYears`, `subDays`, `subMonths`, `subYears`
+- `startOfYear`, `startOfMonth`, `startOfQuarter`
+- `differenceInMonths`, `differenceInCalendarMonths`
+- `isBefore`, `isAfter`, `isValid`, `isToday`
+- `eachYearOfInterval`
+- `formatInTimeZone` (date-fns-tz)
+
+### Migration Steps
+
+1. Update the 4 files with breaking changes (listed above)
+2. Run `bun add date-fns@latest date-fns-tz@latest`
+3. Run `bun run build` to check for compilation errors
+4. Run `bun run test`
+5. Manually test date displays and timezone handling
 
 ---
 
@@ -242,12 +302,22 @@ bun add vite@latest @sveltejs/vite-plugin-svelte@latest vitest@latest
 
 ## Remaining Work
 
-### Next Steps
+All phases completed! 🎉
 
-1. **Phase 3: date-fns v4** - Update date handling utilities
-   - Audit all imports from `date-fns` and `date-fns-tz`
-   - Update to subpath exports if needed
-   - Test timezone handling thoroughly
+### Summary of Upgrades
+
+| Package | From | To |
+|---------|------|-----|
+| @sanity/client | - | 7.14.0 |
+| @sanity/image-url | - | 2.0.3 |
+| tailwind-variants | - | 3.2.2 |
+| chroma-js | - | 3.2.0 |
+| vite | 5.4.17 | 7.3.1 |
+| @sveltejs/vite-plugin-svelte | 4.0.4 | 6.2.4 |
+| vitest | 2.1.9 | 4.0.17 |
+| layercake | 8.4.3 | 10.0.2 |
+| date-fns | 2.30.0 | 4.1.0 |
+| date-fns-tz | 2.0.1 | 3.2.0 |
 
 ---
 

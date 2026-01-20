@@ -3,7 +3,7 @@
 
 	const bubble = createBubbler();
 	import { getContext } from 'svelte';
-	import closestTo from 'date-fns/closestTo';
+	import { closestTo } from 'date-fns';
 
 	const { xScale, width, height } = getContext('LayerCake');
 
