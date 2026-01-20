@@ -12,7 +12,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Linting**: `npm run lint` - Prettier format check + ESLint
 - **Formatting**: `npm run format` - Auto-format with Prettier
 - **Testing**: `npm run test` - Run Vitest test suite
-- **Version Management**: `npm run release` - Create releases with Changesets
+- **Version Management**: `npm run version:patch|minor|major` - Bump version using npm version
 
 ## Technology Stack
 
