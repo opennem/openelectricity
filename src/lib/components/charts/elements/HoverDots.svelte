@@ -10,7 +10,7 @@
 	 */
 
 	/** @type {Props} */
-	let { dataset = [], hoverData = undefined } = $props();
+	let { _dataset = [], hoverData = undefined } = $props();
 
 	let cx = $derived(hoverData ? $xGet({ data: { ...hoverData } }) : 0);
 	let cy = $derived((d) => {

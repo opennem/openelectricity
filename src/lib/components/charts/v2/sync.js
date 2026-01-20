@@ -5,6 +5,8 @@
  * Enables coordinated hover, focus, and other interactions.
  */
 
+// ChartStore imported for JSDoc type annotations
+// eslint-disable-next-line no-unused-vars
 import ChartStore from './ChartStore.svelte.js';
 
 /**

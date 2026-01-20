@@ -144,7 +144,7 @@ export default function () {
 	const formatTickX = writable((/** @type {*} */ d) => d);
 
 	/** @type {import('svelte/store').Writable<Function>} */
-	const formatX = writable((/** @type {*} */ d) => d);
+	const _formatX = writable((/** @type {*} */ d) => d);
 
 	/** @type {import('svelte/store').Writable<Function>} */
 	const formatTickY = writable((/** @type {number} */ d) => numberFormat.format(d));

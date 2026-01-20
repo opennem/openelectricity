@@ -1,6 +1,4 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { LayerCake, Svg } from 'layercake';
 	import { scaleUtc } from 'd3-scale';
 
@@ -41,14 +39,14 @@
 		overlay = null,
 		overlayStroke = 'rgba(236, 233, 230, 0.4)',
 		overlayLine = false,
-		highlightId = null,
+		_highlightId = null,
 		customFormatTickX = null,
 		showDots = false,
 		useDataset = []
 	} = $props();
 
 	const {
-		title,
+		title: _title,
 		seriesNames: yKeys,
 		seriesData,
 		xTicks,

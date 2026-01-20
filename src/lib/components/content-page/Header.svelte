@@ -10,9 +10,9 @@
 
 	/** @type {Props} */
 	let {
-		title = '',
-		returnLinkURL = '',
-		returnLinkTitle = '',
+		_title = '',
+		_returnLinkURL = '',
+		_returnLinkTitle = '',
 		author = null,
 		teaser = ''
 	} = $props();

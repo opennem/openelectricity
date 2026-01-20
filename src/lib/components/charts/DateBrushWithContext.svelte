@@ -26,7 +26,7 @@
 	let {
 		cxtKey,
 		brushedRange,
-		brushedLineStroke = '#C74523',
+		_brushedLineStroke = '#C74523',
 		showLineData = true,
 		onbrush
 	} = $props();

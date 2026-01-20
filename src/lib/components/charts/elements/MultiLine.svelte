@@ -38,19 +38,6 @@
 		);
 	});
 
-	let cx = $derived((values) => {
-		if (!hoverData) return 0;
-		const time = hoverData.time;
-		const find = values.find((item) => item.time === time);
-		return $xGet(find);
-	});
-	let cy = $derived((values) => {
-		if (!hoverData) return 0;
-		const time = hoverData.time;
-		const find = values.find((item) => item.time === time);
-		return $yGet(find);
-	});
-
 	let updatedData = $derived(
 		hoverData
 			? $data.map((d) => {

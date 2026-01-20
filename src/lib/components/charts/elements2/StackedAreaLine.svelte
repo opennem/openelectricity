@@ -29,7 +29,7 @@
 	/** @type {Props} */
 	let {
 		dataset = [],
-		fill = null,
+		_fill = null,
 		clipPathId = '',
 		highlightId = '',
 		display = 'area',
@@ -37,7 +37,7 @@
 		seriesColours = {},
 		strokeWidth = '1.5',
 		showLineDots = false,
-		showLineArea = false,
+		_showLineArea = false,
 		dotStroke = 'black',
 		dotFill = 'white',
 		dotRadius = 3,

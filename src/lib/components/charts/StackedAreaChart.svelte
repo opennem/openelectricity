@@ -1,16 +1,12 @@
 <script>
-	import { LayerCake, Svg, Html, flatten, stack, groupLonger } from 'layercake';
-	import { tweened } from 'svelte/motion';
-	import * as eases from 'svelte/easing';
+	import { LayerCake, Svg, flatten, stack, groupLonger } from 'layercake';
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
 	import getSeqId from '$lib/utils/html-id-gen';
 	import AreaStacked from './elements/AreaStacked.svelte';
 	import AxisX from './elements/AxisX.svelte';
 	import AxisY from './elements/AxisY.svelte';
 	import HoverLayer from './elements/HoverLayer.svelte';
-	import HoverLine from './elements/HoverLine.html.svelte';
 	import ClipPath from './elements/defs/ClipPath.svelte';
-	import HoverText from './elements/HoverText.html.svelte';
 	import Overlay from './elements/Overlay.svelte';
 	import HatchPattern from './elements/defs/HatchPattern.svelte';
 	import LineX from './elements/annotations/LineX.svelte';
@@ -86,13 +82,6 @@ If object with xStartValue and xEndValue, overlay will be a range
 
 	const id = getSeqId();
 	const defaultChartHeightClasses = 'h-[150px] md:h-[200px]';
-
-	/** TODO: work out transition */
-	const tweenOptions = {
-		duration: 750,
-		easing: eases.cubicInOut
-	};
-	const yTweened = tweened(/** @type {number|null} */ (null), tweenOptions);
 
 	let isLine = $derived(chartType === 'line');
 	let isArea = $derived(chartType === 'area');

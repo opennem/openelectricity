@@ -1,6 +1,6 @@
 <script>
 	import { getContext } from 'svelte';
-	const { padding, xGet, yGet, zGet, yScale, y } = getContext('LayerCake');
+	const { padding, xGet, yGet, zGet, yScale } = getContext('LayerCake');
 
 	/**
 	 * @typedef {Object} Props

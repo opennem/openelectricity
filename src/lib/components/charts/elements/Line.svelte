@@ -49,10 +49,6 @@
 			.curve(curveType)
 			.defined((d) => $yGet(d) !== null && $yGet(d) !== undefined && !isNaN($yGet(d)))
 	);
-
-	let path = $derived(
-		'M' + $data.map((/** @type {number|string} */ d) => `${$xGet(d)},${$yGet(d)}`).join('L')
-	);
 </script>
 
 <g class="line-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>

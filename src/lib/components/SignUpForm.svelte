@@ -22,7 +22,7 @@
 			body: JSON.stringify({ email: emailField?.value })
 		});
 
-		const { status, email } = await response.json();
+		const { status } = await response.json();
 		subscriptionStatus = status;
 
 		formSubmitting = false;

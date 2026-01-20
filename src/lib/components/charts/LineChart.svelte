@@ -1,5 +1,5 @@
 <script>
-	import { LayerCake, Svg, Html } from 'layercake';
+	import { LayerCake, Svg } from 'layercake';
 	import { scaleUtc } from 'd3-scale';
 
 	import getSeqId from '$lib/utils/html-id-gen';
@@ -9,7 +9,6 @@
 	import AxisY from './elements/AxisY.svelte';
 	import HoverLayer from './elements/HoverLayer.svelte';
 	import ClipPath from './elements/defs/ClipPath.svelte';
-	import HoverText from './elements/HoverText.html.svelte';
 	import Overlay from './elements/Overlay.svelte';
 	import HatchPattern from './elements/defs/HatchPattern.svelte';
 	import LineX from './elements/annotations/LineX.svelte';
@@ -64,7 +63,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 		formatTickX = (/** @type {*} */ d) => d,
 		formatTickY = (/** @type {number} */ d) => d,
 		chartHeightClasses = '',
-		highlightId = null,
+		_highlightId = null,
 		showArea = true
 	} = $props();
 
@@ -73,12 +72,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 
 	let heightClasses = $derived(chartHeightClasses || defaultChartHeightClasses);
 
-	// $: console.log('groupedData', groupedData);
-
-	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 	let clipPathId = $derived(clip ? `${id}-clip-path` : '');
-	let maxValue = $derived(Math.round(Math.max(...dataset.map((d) => d[yKey] || 0))));
-	let maxY = $derived(maxValue > 0 ? maxValue + (maxValue * 10) / 100 : 10);
 </script>
 
 <div class="chart-container mb-4 {heightClasses}">

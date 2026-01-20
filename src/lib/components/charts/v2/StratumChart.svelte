@@ -38,7 +38,7 @@
 		defaultTooltipText = '',
 		class: className = '',
 		chartPadding = 'px-0',
-		height,
+		_height,
 		onhover,
 		onhoverend,
 		onfocus,

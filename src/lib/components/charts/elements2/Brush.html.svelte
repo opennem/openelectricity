@@ -21,8 +21,6 @@
 	let brush = $state();
 	/** @type {*} */
 	let brushInner = $state();
-	/** @type {*} */
-	let tooltip = $state();
 
 	let left = $derived(min ? 100 * min : 0);
 	let right = $derived(max ? 100 * (1 - max) : 1);
@@ -136,49 +134,6 @@
 			dispatchBrushed();
 		}
 	});
-
-	// get tooltip position based on mouse position and whether it's on the left or right side of the brush and top or bottom
-	function getTooltipPosition(mouse) {
-		if (!brush || !tooltip) return;
-		const rect = brush.getBoundingClientRect();
-		const tooltipWidth = tooltip.clientWidth;
-		const tooltipHeight = tooltip.clientHeight;
-		const isOnLeft = mouse.x < rect.left + rect.width / 2;
-		const isOnRight = mouse.x > rect.left + rect.width / 2;
-
-		if (isOnLeft) {
-			return {
-				left: mouse.x + 10,
-				top: mouse.y - tooltipHeight / 2
-			};
-		}
-
-		if (isOnRight) {
-			return {
-				left: mouse.x - tooltipWidth - 10,
-				top: mouse.y - tooltipHeight / 2
-			};
-		}
-
-		return {
-			left: mouse.x - tooltipWidth / 2,
-			top: mouse.y - tooltipHeight / 2
-		};
-	}
-
-	function getTooltipStyles(pos) {
-		if (!pos) return;
-		return `left: ${pos.left}px; top: ${pos.top}px`;
-	}
-	let pos = $derived(getTooltipPosition(mouse));
-	let styles = $derived(getTooltipStyles(pos));
-
-	let tooltipText = $state('');
-	$effect(() => {
-		if (min == null && max == null) {
-			tooltipText = '';
-		}
-	});
 </script>
 
 <div class="relative w-full h-full">
@@ -190,7 +145,6 @@
 		onmousedown={reset}
 		ontouchstart={reset}
 		onpointermove={(event) => {
-			tooltipText = min !== null && max !== null ? 'Reset' : '';
 			mouse.x = event.clientX;
 			mouse.y = event.clientY;
 		}}
@@ -209,7 +163,6 @@
 			onmousedown={move}
 			ontouchstart={move}
 			onpointermove={(event) => {
-				tooltipText = '';
 				mouse.x = event.clientX;
 				mouse.y = event.clientY;
 			}}

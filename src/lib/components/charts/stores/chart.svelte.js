@@ -252,6 +252,8 @@ export default class ChartStore {
 			});
 			csv += row.join(',') + '\n';
 		});
+
+		return csv;
 	});
 
 	/** @type {Date[][]} */

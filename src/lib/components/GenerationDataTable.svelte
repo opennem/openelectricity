@@ -12,7 +12,7 @@
 	 */
 
 	/** @type {Props} */
-	let { fuelData, fuelTechName, processedData, title, subtitle, chartContext } = $props();
+	let { fuelData, _fuelTechName, processedData, title, subtitle, chartContext } = $props();
 
 	// Month names for table headers
 	const monthNames = [

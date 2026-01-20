@@ -1,6 +1,5 @@
 <script>
 	import { version } from '$app/environment';
-	import { fade } from 'svelte/transition';
 	import SectionLink from './SectionLink.svelte';
 	import SignUpForm from './SignUpForm.svelte';
 </script>

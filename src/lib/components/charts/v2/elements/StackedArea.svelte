@@ -123,9 +123,9 @@
 	/**
 	 * Handle pointer up with series key
 	 * @param {MouseEvent|TouchEvent} evt
-	 * @param {string} key
+	 * @param {string} _key
 	 */
-	function handlePointerUp(evt, key) {
+	function handlePointerUp(evt, _key) {
 		const item = findClosestDataPoint(evt);
 		if (item) {
 			onpointerup?.(item);

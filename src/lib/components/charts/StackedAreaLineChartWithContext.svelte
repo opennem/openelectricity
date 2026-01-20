@@ -7,7 +7,6 @@
 	import AxisY from './elements/AxisY.svelte';
 	import AxisX from './elements/AxisX.svelte';
 	import ClipPath from './elements/defs/ClipPath.svelte';
-	import HatchPattern from './elements/defs/HatchPattern.svelte';
 	import LineX from './elements/annotations/LineX.svelte';
 	import Dot from './elements/annotations/Dot.svelte';
 	import Shading from './elements/Element.svelte';
