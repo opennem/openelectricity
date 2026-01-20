@@ -1,26 +1,22 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
-
-	const dispatch = createEventDispatcher();
-
-	
-	
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {{ label?: string, value: string | number, icon?: *, size?: string }[]} [buttons]
 	 * @property {string | number } [selected]
-	 * @property {(value: string) => void} [onChange]
+	 * @property {(option: {value: string}) => void} [onchange]
 	 */
 
 	/** @type {Props & { [key: string]: any }} */
-	let { buttons = [], selected = '', onChange = () => {}, ...rest } = $props();
+	let { buttons = [], selected = '', onchange, ...rest } = $props();
 
 	let isSelected = $derived((value) => selected === value);
 
+	/**
+	 * @param {MouseEvent} e
+	 */
 	function handleClick(e) {
-		onChange(e.currentTarget.value);
-		dispatch('change', { value: e.currentTarget.value });
+		const value = /** @type {HTMLButtonElement} */ (e.currentTarget).value;
+		onchange?.({ value });
 	}
 </script>
 

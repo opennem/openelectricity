@@ -2,7 +2,6 @@
 	import { createBubbler, preventDefault } from 'svelte/legacy';
 
 	const bubble = createBubbler();
-	
 
 	/**
 	 * @typedef {Object} Props

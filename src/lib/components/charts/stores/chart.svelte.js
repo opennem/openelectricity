@@ -263,7 +263,18 @@ export default class ChartStore {
 	/**
 	 * @param {chartCxtOptions} options
 	 */
-	constructor({ key, title, prefix, displayPrefix, allowedPrefixes, baseUnit, chartType, hideDataOptions, hideChartTypeOptions, chartStyles }) {
+	constructor({
+		key,
+		title,
+		prefix,
+		displayPrefix,
+		allowedPrefixes,
+		baseUnit,
+		chartType,
+		hideDataOptions,
+		hideChartTypeOptions,
+		chartStyles
+	}) {
 		this.key = key;
 		this.chartOptions = new ChartOptions({
 			prefix,
@@ -279,9 +290,11 @@ export default class ChartStore {
 		this.hideChartTypeOptions = hideChartTypeOptions ?? false;
 
 		if (chartStyles) {
-			if (chartStyles.chartHeightClasses) this.chartStyles.chartHeightClasses = chartStyles.chartHeightClasses;
+			if (chartStyles.chartHeightClasses)
+				this.chartStyles.chartHeightClasses = chartStyles.chartHeightClasses;
 			if (chartStyles.xAxisFill) this.chartStyles.xAxisFill = chartStyles.xAxisFill;
-			if (chartStyles.showLastYTick !== undefined) this.chartStyles.showLastYTick = chartStyles.showLastYTick;
+			if (chartStyles.showLastYTick !== undefined)
+				this.chartStyles.showLastYTick = chartStyles.showLastYTick;
 			if (chartStyles.chartPadding) this.chartStyles.chartPadding = chartStyles.chartPadding;
 			if (chartStyles.xAxisYTick) this.chartStyles.xAxisYTick = chartStyles.xAxisYTick;
 			if (chartStyles.xTextClasses) this.chartStyles.xTextClasses = chartStyles.xTextClasses;

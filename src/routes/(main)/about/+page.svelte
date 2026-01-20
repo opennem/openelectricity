@@ -143,8 +143,8 @@
 						The original OpenNEM project was supported by <a
 							class="text-dark-grey underline"
 							href="https://energyconsumersaustralia.com.au/">Energy Consumers Australia</a
-						> as part of its grants process for consumer advocacy projects and research projects for
-						the benefit of consumers of electricity and natural gas. The project was developed and administered
+						> as part of its grants process for consumer advocacy projects and research projects for the
+						benefit of consumers of electricity and natural gas. The project was developed and administered
 						at the University of Melbourne’s Climate and Energy College.
 					</p>
 				</dd>

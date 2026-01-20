@@ -1,40 +1,25 @@
 <script>
-	import { preventDefault } from 'svelte/legacy';
-
-	import { createEventDispatcher } from 'svelte';
-
-	const dispatch = createEventDispatcher();
-
-	
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('svelte/elements').FormEventHandler<HTMLInputElement> | null} [changeHandler]
+	 * @property {(checked: boolean) => void} [onchange]
 	 * @property {string} [name]
 	 * @property {string} [label]
 	 * @property {boolean} [checked]
 	 */
 
 	/** @type {Props & { [key: string]: any }} */
-	let {
-		changeHandler = null,
-		name = '',
-		label = '',
-		checked = false,
-		...rest
-	} = $props();
+	let { onchange, name = '', label = '', checked = false, ...rest } = $props();
 
-	/** @param {*} event  */
+	/** @param {Event} event  */
 	function handleChange(event) {
-		dispatch('change', { checked: event.target.checked });
-
-		if (changeHandler) {
-			changeHandler(event);
-		}
+		const target = /** @type {HTMLInputElement} */ (event.target);
+		onchange?.(target.checked);
+		event.preventDefault();
 	}
 </script>
 
 <label class={`label items-center ${rest.class}`}>
-	<input type="checkbox" onchange={preventDefault(handleChange)} {name} {checked} />
+	<input type="checkbox" onchange={handleChange} {name} {checked} />
 	<span>{label}</span>
 </label>
 

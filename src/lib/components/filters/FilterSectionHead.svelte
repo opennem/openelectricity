@@ -3,9 +3,6 @@
 
 	import Icon from '../Icon.svelte';
 
-	
-	
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('svelte/elements').MouseEventHandler<HTMLButtonElement> | null} [toggleHandler]

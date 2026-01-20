@@ -2,7 +2,7 @@
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { goto } from '$app/navigation';
 	import { colourReducer } from '$lib/stores/theme';
-	import LensChart from '$lib/components/charts/LensChart.svelte';
+	import { StratumChart } from '$lib/components/charts/v2';
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 
@@ -11,15 +11,16 @@
 	import { fuelTechMap, orderMap, labelReducer } from './helpers/groups';
 	import TopTips from './TopTips.svelte';
 	import BottomTips from './BottomTips.svelte';
+
 	const { data } = $props();
 	let { dataset, region, range, interval } = $derived(data);
-	let { filtersCxt, chartCxt } = init(data);
+	let { filtersCxt, chartStore } = init(data);
+
 	let powerData = $derived(
 		dataset && dataset.data
 			? dataset.data.filter((/** @type {StatsData} */ d) => d.type === 'power')
 			: []
 	);
-	// let demandData = $derived(powerData.filter((/** @type {StatsData} */ d) => d.code === 'demand'));
 
 	$effect(() => {
 		filtersCxt.selectedRegion = region;
@@ -31,7 +32,7 @@
 		powerData.length > 0
 			? process({
 					history: powerData,
-					unit: chartCxt.chartOptions.baseUnit,
+					unit: chartStore.chartOptions.baseUnit,
 					colourReducer: $colourReducer,
 					fuelTechMap: fuelTechMap[filtersCxt.selectedFuelTechGroup],
 					fuelTechOrder: orderMap[filtersCxt.selectedFuelTechGroup],
@@ -43,68 +44,49 @@
 
 	$effect(() => {
 		if (processedPowerEnergyData) {
-			updateCxt(processedPowerEnergyData.timeseries);
+			updateChart(processedPowerEnergyData.timeseries);
 		}
 	});
 
 	/**
-	 * @param {string | undefined} hoverKey
-	 * @param {TimeSeriesData | undefined} hoverData
+	 * Handle hover event from StratumChart
+	 * @param {number} time
+	 * @param {string} [key]
 	 */
-	function updateChartHover(hoverKey, hoverData) {
-		chartCxt.hoverTime = hoverData ? hoverData.time : undefined;
-		chartCxt.hoverKey = hoverKey;
+	function handleHover(time, key) {
+		chartStore.setHover(time, key);
+	}
+
+	/** Handle hover end */
+	function handleHoverEnd() {
+		chartStore.clearHover();
 	}
 
 	/**
+	 * Handle focus (click) event
 	 * @param {number} time
 	 */
-	function updateChartFocus(time) {
-		const isSame = chartCxt.focusTime === time;
-		chartCxt.focusTime = isSame ? undefined : time;
+	function handleFocus(time) {
+		chartStore.toggleFocus(time);
 	}
 
 	/**
-	 * @param {{ data: TimeSeriesData, key?: string } | TimeSeriesData} evt
-	 */
-	function onmousemove(evt) {
-		if (!evt) return;
-		let key = /** @type {string | undefined} */ (evt.key);
-		let data = key
-			? /** @type {TimeSeriesData | undefined} */ (evt.data)
-			: /** @type {TimeSeriesData | undefined} */ (evt);
-		updateChartHover(key, data);
-	}
-
-	function onmouseout() {
-		updateChartHover(undefined, undefined);
-	}
-
-	/**
-	 * @param {TimeSeriesData} evt
-	 */
-	function onpointerup(evt) {
-		updateChartFocus(evt.time);
-	}
-
-	/**
+	 * Update chart store with processed data
 	 * @param {TimeSeriesInstance} ts
 	 */
-	function updateCxt(ts) {
-		let cxt = chartCxt;
-
+	function updateChart(ts) {
 		let isNem = region === 'NEM';
 
-		// only show data for the last three days
-		cxt.seriesData = ts.data.filter((d) => d.time > Date.now() - 3 * 24 * 60 * 60 * 1000);
-		cxt.seriesNames = ts.seriesNames;
-		cxt.seriesColours = ts.seriesColours;
-		cxt.seriesLabels = ts.seriesLabels;
+		// Only show data for the last three days
+		chartStore.seriesData = ts.data.filter((d) => d.time > Date.now() - 3 * 24 * 60 * 60 * 1000);
+		chartStore.seriesNames = ts.seriesNames;
+		chartStore.seriesColours = ts.seriesColours;
+		chartStore.seriesLabels = ts.seriesLabels;
 
-		cxt.timeZone = isNem ? '+10:00' : '+08:00';
-		cxt.xTicks = 3;
-		cxt.formatX = filtersCxt.valueFormatters.format;
-		cxt.formatTickX = filtersCxt.valueFormatters.formatTick;
+		chartStore.timeZone = isNem ? 'Australia/Sydney' : 'Australia/Perth';
+		chartStore.xTicks = 3;
+		chartStore.formatX = filtersCxt.valueFormatters.format;
+		chartStore.formatTickX = filtersCxt.valueFormatters.formatTick;
 	}
 
 	/**
@@ -122,28 +104,29 @@
 </script>
 
 {#snippet customHeader()}
-	<TopTips cxtKey={chartCxt.key} />
+	<TopTips chart={chartStore} />
 {/snippet}
 
-{#snippet customTooltips()}
+{#snippet customFooter()}
 	<div class="absolute z-10 w-full -bottom-4">
-		<BottomTips cxtKey={chartCxt.key} />
+		<BottomTips chart={chartStore} />
 	</div>
 {/snippet}
 
 <div class="h-[265px] bg-light-warm-grey rounded-lg shadow-xs relative overflow-hidden">
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div class="h-[230px] relative z-0">
-		<LensChart
-			cxtKey={chartCxt.key}
-			displayOptions={true}
-			showHeader={false}
+		<StratumChart
+			chart={chartStore}
+			showHeader={true}
 			showTooltip={false}
-			chartPaddingClasses="p-0"
-			{onmousemove}
-			{onmouseout}
-			{customHeader}
-			{customTooltips}
+			showOptions={false}
+			chartPadding="p-0"
+			header={customHeader}
+			footer={customFooter}
+			onhover={handleHover}
+			onhoverend={handleHoverEnd}
+			onfocus={handleFocus}
 		/>
 	</div>
 	<div

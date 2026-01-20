@@ -80,37 +80,40 @@
 		}
 	};
 
-	let xTicks =
-		$derived($selectedModel === 'aemo2024'
+	let xTicks = $derived(
+		$selectedModel === 'aemo2024'
 			? [
 					startOfYear(new Date('2010-01-01')),
 					startOfYear(new Date('2024-01-01')),
 					startOfYear(new Date('2040-01-01')),
 					startOfYear(new Date('2052-01-01'))
-			  ]
+				]
 			: [
 					startOfYear(new Date('2010-01-01')),
 					startOfYear(new Date('2023-01-01')),
 					startOfYear(new Date('2040-01-01')),
 					startOfYear(new Date('2051-01-01'))
-			  ]);
+				]
+	);
 
 	let display = $derived($isTechnologyDisplay ? 'area' : 'line');
 	let showContribution = $derived($isTechnologyDisplay);
-	let overlay = $derived($isScenarioDisplay
-		? {
-				xStartValue: startOfYear(new Date('2024-01-01')),
-				xEndValue: startOfYear(new Date('2052-01-01'))
-		  }
-		: $selectedModel === 'aemo2024'
-		? {
-				xStartValue: startOfYear(new Date('2024-01-01')),
-				xEndValue: startOfYear(new Date('2052-01-01'))
-		  }
-		: {
-				xStartValue: startOfYear(new Date('2023-01-01')),
-				xEndValue: startOfYear(new Date('2051-01-01'))
-		  });
+	let overlay = $derived(
+		$isScenarioDisplay
+			? {
+					xStartValue: startOfYear(new Date('2024-01-01')),
+					xEndValue: startOfYear(new Date('2052-01-01'))
+				}
+			: $selectedModel === 'aemo2024'
+				? {
+						xStartValue: startOfYear(new Date('2024-01-01')),
+						xEndValue: startOfYear(new Date('2052-01-01'))
+					}
+				: {
+						xStartValue: startOfYear(new Date('2023-01-01')),
+						xEndValue: startOfYear(new Date('2051-01-01'))
+					}
+	);
 	// $: blankOverlay =
 	// 	$selectedModel === 'aemo2024'
 	// 		? {
@@ -119,12 +122,15 @@
 	// 		  }
 	// 		: false;
 	let blankOverlay = $derived(false);
-	let overlayLine =
-		$derived($selectedModel === 'aemo2024' || $isScenarioDisplay
+	let overlayLine = $derived(
+		$selectedModel === 'aemo2024' || $isScenarioDisplay
 			? { date: startOfYear(new Date('2024-01-01')) }
-			: { date: startOfYear(new Date('2023-01-01')) });
+			: { date: startOfYear(new Date('2023-01-01')) }
+	);
 
-	let overlayStroke = $derived($isTechnologyDisplay ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)');
+	let overlayStroke = $derived(
+		$isTechnologyDisplay ? 'rgba(236, 233, 230, 0.4)' : 'rgba(236, 233, 230, 1)'
+	);
 
 	run(() => {
 		if ($isTechnologyDisplay) {
@@ -240,12 +246,13 @@
 	});
 
 	let isPercentageView = $derived(!$isNetTotalGroup && $usePercentage);
-	let defaultText =
-		$derived(dataViewLongLabel[$selectedDataView] +
-		` (${
-			!$isTechnologyDisplay && isPercentageView ? '% of demand' : dataViewUnits[$selectedDataView]
-		}) ` +
-		dataViewIntervalLabel[$selectedDataView]);
+	let defaultText = $derived(
+		dataViewLongLabel[$selectedDataView] +
+			` (${
+				!$isTechnologyDisplay && isPercentageView ? '% of demand' : dataViewUnits[$selectedDataView]
+			}) ` +
+			dataViewIntervalLabel[$selectedDataView]
+	);
 
 	function handleSort(e) {
 		seriesItems = e.detail;

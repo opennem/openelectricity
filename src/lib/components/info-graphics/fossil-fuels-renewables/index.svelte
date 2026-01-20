@@ -8,7 +8,6 @@
 
 	import Chart from './Chart.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {StatsData[]} data
@@ -19,20 +18,16 @@
 	/** @type {Props} */
 	let { data, title = '', description = '' } = $props();
 
-	let statsDatasets = $derived(new Statistic(data, 'history')
-		.group(domainGroups)
-		.addTotalMinusLoads(loadFts, totalId));
+	let statsDatasets = $derived(
+		new Statistic(data, 'history').group(domainGroups).addTotalMinusLoads(loadFts, totalId)
+	);
 
-	let timeSeriesDatasets = $derived(new TimeSeries(
-		statsDatasets.data,
-		parseInterval('1M'),
-		'history',
-		labelReducer,
-		$colourReducer
-	)
-		.transform()
-		.calculate12MthRollingSum()
-		.convertToPercentage(totalId));
+	let timeSeriesDatasets = $derived(
+		new TimeSeries(statsDatasets.data, parseInterval('1M'), 'history', labelReducer, $colourReducer)
+			.transform()
+			.calculate12MthRollingSum()
+			.convertToPercentage(totalId)
+	);
 
 	let dataset = $derived(timeSeriesDatasets.data);
 	let seriesNames = $derived(timeSeriesDatasets.seriesNames.filter((name) => name !== totalId));

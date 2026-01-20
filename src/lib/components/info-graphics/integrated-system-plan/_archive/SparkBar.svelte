@@ -10,12 +10,6 @@
 
 	import KeyHeader from '../KeyHeader.svelte';
 
-	
-
-
-	
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]

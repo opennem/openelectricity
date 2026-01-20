@@ -5,7 +5,7 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import { regionsWithLabels } from '$lib/regions';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import FuelTechIcon from '../components/FuelTechIcon.svelte';
+	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import PageNav from './RecordHistory/PageNav.svelte';
 	import RecordHistory from './RecordHistory/index.svelte';

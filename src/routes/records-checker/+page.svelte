@@ -22,21 +22,22 @@
 	let errorMessage = '';
 
 	/** @type {string[]} */
-	let checkedRegions =
-		$state(data.regions && data.regions.length
+	let checkedRegions = $state(
+		data.regions && data.regions.length
 			? data.regions
-			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']);
+			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']
+	);
 
 	/** @type {string[]} */
 	let checkedFuelTechs =
 		data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : fuelTechOptions.map((i) => i.value);
 
 	/** @type {string[]} */
-	let checkedPeriods =
-		$state(data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value));
+	let checkedPeriods = $state(
+		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value)
+	);
 
 	let recordIdSearch = data.stringFilter || '';
-
 
 	function getFilterParams({ regions, periods, fuelTechs, stringFilter }) {
 		const validRegions = regions.filter((r) => r !== '_all');
@@ -136,8 +137,9 @@
 	});
 	let totalPages = $derived(Math.ceil(totalRecords / 100));
 	let currentLastRecordIndex = $derived(currentStartRecordIndex + 99);
-	let lastRecordIndex =
-		$derived(currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex);
+	let lastRecordIndex = $derived(
+		currentLastRecordIndex > totalRecords ? totalRecords : currentLastRecordIndex
+	);
 </script>
 
 <Meta title="Records" image="/img/preview.jpg" />

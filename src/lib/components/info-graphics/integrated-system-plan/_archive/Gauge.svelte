@@ -5,14 +5,6 @@
 
 	import Arc from '$lib/components/charts/elements/Arc.svelte';
 
-	
-
-	
-
-	
-
-	
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('$lib/types/chart.types').TimeSeriesData[]} [dataset]
@@ -23,13 +15,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		dataset = [],
-		xDomain = [],
-		markerLines = [],
-		xKey = '',
-		fill = 'lightgrey'
-	} = $props();
+	let { dataset = [], xDomain = [], markerLines = [], xKey = '', fill = 'lightgrey' } = $props();
 
 	let xMin = $derived(xDomain ? xDomain[0] : 0);
 	let xMax = $derived(xDomain ? xDomain[1] : 0);

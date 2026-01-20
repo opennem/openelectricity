@@ -10,7 +10,6 @@
 	const { selectedModel, selectedScenario, selectedPathway, selectedMultipleScenarios } =
 		getContext('scenario-filters');
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {'single' | 'multiple'} [selectionMode]
@@ -25,10 +24,12 @@
 	/** @type {string[]} */
 	let selectedScenarios = $state([]);
 	/** @type {*[]} */
-	let selectedScenariosPathways = $state(allScenarios.map((scenario) => ({
-		id: scenario.id,
-		pathway: scenario.defaultPathway
-	})));
+	let selectedScenariosPathways = $state(
+		allScenarios.map((scenario) => ({
+			id: scenario.id,
+			pathway: scenario.defaultPathway
+		}))
+	);
 
 	const modelFilterOptions = [
 		{
@@ -40,10 +41,11 @@
 	let filterModel = $state('all');
 
 	let isSingleSelectionMode = $derived(selectionMode === 'single');
-	let filteredScenarios =
-		$derived(filterModel === 'all'
+	let filteredScenarios = $derived(
+		filterModel === 'all'
 			? allScenarios
-			: allScenarios.filter((scenario) => scenario.model === filterModel));
+			: allScenarios.filter((scenario) => scenario.model === filterModel)
+	);
 
 	onMount(() => {
 		console.log('selectedModel, selectedScenario, selectedPathway, selectedMultipleScenarios', {

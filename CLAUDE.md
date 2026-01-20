@@ -17,12 +17,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Technology Stack
 
 ### Core Framework
+
 - **SvelteKit 2.20.4** with **Svelte 5.25.7** (modern runes system)
 - **Vite 5.4.17** for build tooling and dev server
 - **Node.js >=22.12.0** requirement
 - **Cloudflare adapter** for edge deployment
 
 ### Styling & UI
+
 - **Tailwind CSS 4.1.11** with extensive custom configuration
 - **shadcn-svelte** components via `bits-ui` and `class-variance-authority`
 - **Tailwind Animate CSS** for animations
@@ -30,12 +32,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **PostCSS** processing
 
 ### Data Visualization
+
 - **LayerCake 8.4.3** for composable SVG chart components
 - **D3.js ecosystem** (d3-array, d3-interpolate, d3-format, d3-scale, d3-shape)
 - **Chroma.js** for advanced color manipulation and fuel tech theming
 - Custom chart element library in `src/lib/components/charts/elements/`
 
 ### Development Tools
+
 - **TypeScript 5.8.3** with JSDoc annotations for gradual typing
 - **ESLint 9** with Prettier integration and Svelte plugin
 - **Vitest 2.1.9** for unit testing
@@ -44,6 +48,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Architecture Overview
 
 ### Route Structure
+
 ```
 src/routes/
 ├── (main)/                 # Main application with shared layout
@@ -68,6 +73,7 @@ src/routes/
 ### Component Architecture
 
 **Core Components** (`src/lib/components/`)
+
 - `charts/` - LayerCake-based visualization components with context stores
 - `info-graphics/` - Complex interactive visualizations for homepage
 - `form-elements/` - Reusable form controls with consistent styling
@@ -76,6 +82,7 @@ src/routes/
 - `ui/` - shadcn-svelte component implementations
 
 **Chart System Architecture**
+
 - **LayerCake wrapper components** provide chart context and responsive containers
 - **Element components** (`charts/elements/`) render SVG primitives (lines, areas, axes)
 - **Context stores** (`charts/stores/`) manage chart state, tooltips, and interactions
@@ -114,18 +121,21 @@ let { title, data, onSelect } = $props();
 ### Data Layer Architecture
 
 **External Data Sources:**
+
 - **OpenNEM API** - Real-time Australian electricity market data
 - **Sanity CMS** - Article content and editorial management
 - **AEMO ISP Models** - Future energy scenario projections
 - **Static JSON Models** - Precomputed scenario data in `src/lib/models/`
 
 **Data Processing Pipeline:**
+
 - `src/lib/utils/TimeSeries/` - Time series data manipulation and aggregation
 - `src/lib/utils/Statistic/` - Statistical calculations and data analysis
 - `src/lib/utils/data-transform/` - Proportion calculations and change analysis
 - `src/lib/fuel-tech-groups/` - Energy source categorization and grouping
 
 **State Management:**
+
 - **Svelte 5 runes** for component-local reactive state
 - **Svelte stores** (`src/lib/stores/`) for global app state and theming
 - **Context-based state** for chart interactions and complex UI components
@@ -135,11 +145,13 @@ let { title, data, onSelect } = $props();
 The application has a sophisticated fuel technology classification system:
 
 **Color Theming:**
+
 - Custom color palettes for different energy sources (renewables, fossil fuels, storage)
 - Dynamic theming via `src/lib/theme/` with support for multiple color schemes
 - Chroma.js integration for color manipulation and accessibility
 
 **Grouping System:**
+
 - `src/lib/fuel-tech-groups/` contains various grouping strategies
 - Support for detailed breakdowns vs simplified views
 - Regional variations and lens-specific groupings
@@ -147,12 +159,14 @@ The application has a sophisticated fuel technology classification system:
 ### API Architecture
 
 **Server-Side API Routes** (`src/routes/api/`)
+
 - RESTful endpoints for data fetching with query parameter support
 - Data transformation and aggregation on the server
 - Performance optimization with request timing
 - Error handling with proper HTTP status codes
 
 **Client-Side Data Fetching:**
+
 - `src/lib/opennem/` - OpenNEM API integration utilities
 - Async data loading with loading states
 - Client-side caching and data transformation
@@ -167,11 +181,13 @@ The application has a sophisticated fuel technology classification system:
 ### Deployment & Build
 
 **Cloudflare Configuration:**
+
 - Adapter optimized for Cloudflare Pages/Workers
 - Route exclusions for static content (`/analysis/*`, `/content/*`)
 - Prerender configuration with HTTP error handling
 
 **Build Optimization:**
+
 - Vite-based bundling with SvelteKit optimizations
 - Code splitting and lazy loading
 - Asset optimization and compression
@@ -179,17 +195,20 @@ The application has a sophisticated fuel technology classification system:
 ### Development Patterns
 
 **JSDoc Integration:**
+
 - TypeScript-style annotations using JSDoc comments
 - Type definitions in `src/lib/types/` with `.ts` extension
 - Gradual typing adoption without full TypeScript compilation
 
 **Performance Considerations:**
+
 - Server-side data processing to reduce client load
 - Efficient LayerCake chart rendering
 - Optimized data structures for large time series datasets
 - Lazy loading of complex visualizations
 
 **Code Organization:**
+
 - Feature-based component organization
 - Shared utilities in `src/lib/utils/`
 - Consistent naming conventions

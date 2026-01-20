@@ -17,15 +17,6 @@
 
 	import { formatFyTickX, formatTickY, displayXTicks, formatValue } from './helpers';
 
-	
-
-
-	
-	
-
-	
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]
@@ -65,7 +56,9 @@ If object with xStartValue and xEndValue, overlay will be a range
 	} = $props();
 	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 	let hoverValue = $derived(hoverData ? hoverData[key] || 0 : 0);
-	let hoverPercentage = $derived(hoverData && hoverData._max ? (hoverValue / hoverData._max) * 100 : 0);
+	let hoverPercentage = $derived(
+		hoverData && hoverData._max ? (hoverValue / hoverData._max) * 100 : 0
+	);
 	let maxValue = $derived(Math.round(Math.max(...dataset.map((d) => d[key] || 0))));
 	let maxY = $derived(maxValue > 0 ? maxValue : 10);
 </script>

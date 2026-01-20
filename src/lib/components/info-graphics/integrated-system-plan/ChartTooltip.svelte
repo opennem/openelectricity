@@ -10,18 +10,13 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		hoverData,
-		hoverKey,
-		seriesColours,
-		seriesLabels,
-		defaultText = ''
-	} = $props();
+	let { hoverData, hoverKey, seriesColours, seriesLabels, defaultText = '' } = $props();
 
 	let hoverMax = $derived(hoverData ? hoverData._max || 0 : 0);
 	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
-	let hoverKeyValue =
-		$derived(hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null);
+	let hoverKeyValue = $derived(
+		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null
+	);
 	let hoverKeyColour = $derived(hoverKey ? seriesColours[hoverKey] : '');
 	let hoverKeyLabel = $derived(hoverKey ? seriesLabels[hoverKey] : '');
 	let percent = $derived(hoverKeyValue ? (hoverKeyValue / hoverMax) * 100 : 0);

@@ -5,7 +5,6 @@
 	import ScenarioDescription from './ScenarioDescription.svelte';
 	import MiniCharts from './MiniCharts.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} [seriesLoadsIds]

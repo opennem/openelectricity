@@ -3,9 +3,6 @@
 
 	const { width } = getContext('LayerCake');
 
-	
-	
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {*[]} [ranges]

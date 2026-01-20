@@ -57,7 +57,9 @@
 		multipleScenarios: $selectedMultipleScenarios
 	});
 	let compressedQuery = $derived(lzString.compressToEncodedURIComponent(JSON.stringify(queryObj)));
-	let decompressedQuery = $derived(JSON.parse(lzString.decompressFromEncodedURIComponent(compressedQuery)));
+	let decompressedQuery = $derived(
+		JSON.parse(lzString.decompressFromEncodedURIComponent(compressedQuery))
+	);
 	run(() => {
 		if (browser) {
 			let query = new URLSearchParams($page.url.searchParams.toString());

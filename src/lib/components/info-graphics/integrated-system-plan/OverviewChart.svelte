@@ -22,31 +22,6 @@
 
 	import ChartAnnotations from './ChartAnnotations.svelte';
 
-	
-
-
-
-
-	
-
-	
-
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-
-	
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]

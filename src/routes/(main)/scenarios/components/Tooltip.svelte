@@ -1,7 +1,6 @@
 <script>
 	import { formatFyTickX } from '$lib/utils/formatters';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} hoverData
@@ -30,11 +29,13 @@
 
 	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 
-	let hoverKeyValue =
-		$derived(hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null);
+	let hoverKeyValue = $derived(
+		hoverData && hoverKey ? /** @type {number} */ (hoverData[hoverKey]) || null : null
+	);
 
-	let convertedValue =
-		$derived(hoverKeyValue || hoverKeyValue === 0 ? convertAndFormatValue(hoverKeyValue) : NaN);
+	let convertedValue = $derived(
+		hoverKeyValue || hoverKeyValue === 0 ? convertAndFormatValue(hoverKeyValue) : NaN
+	);
 
 	let hoverKeyColour = $derived(hoverKey ? seriesColours[hoverKey] : '');
 

@@ -19,38 +19,6 @@
 	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
 	import LineX from '$lib/components/charts/elements/annotations/LineX.svelte';
 
-	
-
-
-
-
-	
-
-	
-
-
-	
-
-	
-
-	
-
-	
-
-	
-
-
-	
-
-	
-
-
-	
-
-	
-
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]
@@ -119,7 +87,9 @@ If object with xStartValue and xEndValue, overlay will be a range
 	let stackedData = $derived(stack(dataset, seriesNames));
 	let groupedData = $derived(dataset ? groupLonger(dataset, seriesNames) : []);
 	let chartData = $derived(display === 'area' ? stackedData : groupedData);
-	let flatData = $derived(display === 'area' ? flatten(stackedData) : flatten(groupedData, 'values'));
+	let flatData = $derived(
+		display === 'area' ? flatten(stackedData) : flatten(groupedData, 'values')
+	);
 	let y = $derived(display === 'area' ? yKey : 'value');
 	let z = $derived(display === 'area' ? zKey : 'group');
 

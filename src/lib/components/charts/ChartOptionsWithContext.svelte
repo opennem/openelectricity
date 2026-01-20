@@ -19,37 +19,37 @@
 </script>
 
 {#if !cxt.hideDataOptions}
-<div class="grid grid-cols-5 gap-4 items-center">
-	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Data</span>
-	<div class="col-span-4">
-		<div class="flex gap-2">
-			<Switch
-				buttons={cxt.chartOptions.dataTransformOptions}
-				selected={cxt.chartOptions.selectedDataTransformType}
-				xPad={4}
-				yPad={2}
-				textSize="xs"
-				on:change={(evt) => (cxt.chartOptions.selectedDataTransformType = evt.detail.value)}
-			/>
+	<div class="grid grid-cols-5 gap-4 items-center">
+		<span class="font-space font-semibold uppercase text-xs text-mid-grey">Data</span>
+		<div class="col-span-4">
+			<div class="flex gap-2">
+				<Switch
+					buttons={cxt.chartOptions.dataTransformOptions}
+					selected={cxt.chartOptions.selectedDataTransformType}
+					xPad={4}
+					yPad={2}
+					textSize="xs"
+					on:change={(evt) => (cxt.chartOptions.selectedDataTransformType = evt.detail.value)}
+				/>
+			</div>
 		</div>
 	</div>
-</div>
 {/if}
 
 {#if !cxt.hideChartTypeOptions}
-<div class="grid grid-cols-5 gap-4 items-center">
-	<span class="font-space font-semibold uppercase text-xs text-mid-grey">Chart</span>
-	<div class="col-span-4">
-		<Switch
-			buttons={cxt.chartOptions.chartTypeOptions}
-			selected={cxt.chartOptions.selectedChartType}
-			xPad={4}
-			yPad={2}
-			textSize="xs"
-			on:change={(evt) => (cxt.chartOptions.selectedChartType = evt.detail.value)}
-		/>
+	<div class="grid grid-cols-5 gap-4 items-center">
+		<span class="font-space font-semibold uppercase text-xs text-mid-grey">Chart</span>
+		<div class="col-span-4">
+			<Switch
+				buttons={cxt.chartOptions.chartTypeOptions}
+				selected={cxt.chartOptions.selectedChartType}
+				xPad={4}
+				yPad={2}
+				textSize="xs"
+				on:change={(evt) => (cxt.chartOptions.selectedChartType = evt.detail.value)}
+			/>
+		</div>
 	</div>
-</div>
 {/if}
 
 <div class="grid grid-cols-5 gap-4 items-center">

@@ -14,9 +14,7 @@
 		<h1 class="tracking-widest text-center">TrackerGrid</h1>
 	</div>
 	<div slot="sub-heading">
-		<p class="text-sm text-center w-full md:w-[800px] mx-auto">
-			TrackerGrid visualization tool.
-		</p>
+		<p class="text-sm text-center w-full md:w-[800px] mx-auto">TrackerGrid visualization tool.</p>
 	</div>
 </PageHeaderSimple>
 

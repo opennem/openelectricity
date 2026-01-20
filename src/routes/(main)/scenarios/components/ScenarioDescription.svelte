@@ -44,7 +44,7 @@
 					</ul>
 
 					{#if !readMore}
-						<Button class="w-full md:hidden" on:click={() => (readMore = true)}>Read more</Button>
+						<Button class="w-full md:hidden" onclick={() => (readMore = true)}>Read more</Button>
 					{/if}
 
 					<div class="hidden md:block" class:!block={readMore}>

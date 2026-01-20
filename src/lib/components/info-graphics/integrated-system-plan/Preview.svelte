@@ -29,7 +29,6 @@
 	import Statistic from '$lib/utils/Statistic';
 	import TimeSeries from '$lib/utils/TimeSeries';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {{ ispData: *, outlookEnergyNem: Stats, historyEnergyNemData: StatsData[]  }} data
@@ -66,25 +65,27 @@
 	let outlookData = $derived(selectedModelData.outlookEnergyNem.data);
 	let filteredWithScenario = $derived(outlookData.filter((d) => d.scenario === selectedScenario));
 
-	let filteredWithPathwayScenario = $derived(filteredWithScenario.filter(
-		(d) => d.pathway === selectedModelPathway
-	));
+	let filteredWithPathwayScenario = $derived(
+		filteredWithScenario.filter((d) => d.pathway === selectedModelPathway)
+	);
 
 	let yDomain = $derived(selectedModelYDomain[selectedScenario]);
 
-	let projectionStatsDatasets = $derived(new Statistic(filteredWithPathwayScenario, 'projection')
-		.group(group)
-		.reorder(order));
+	let projectionStatsDatasets = $derived(
+		new Statistic(filteredWithPathwayScenario, 'projection').group(group).reorder(order)
+	);
 
-	let projectionTimeSeriesDatasets = $derived(new TimeSeries(
-		projectionStatsDatasets.data,
-		parseInterval('1Y'),
-		'projection',
-		fuelTechNameReducer,
-		$colourReducer
-	)
-		.transform()
-		.updateMinMax());
+	let projectionTimeSeriesDatasets = $derived(
+		new TimeSeries(
+			projectionStatsDatasets.data,
+			parseInterval('1Y'),
+			'projection',
+			fuelTechNameReducer,
+			$colourReducer
+		)
+			.transform()
+			.updateMinMax()
+	);
 
 	let projectionSeriesNames = $derived(projectionTimeSeriesDatasets.seriesNames);
 
@@ -97,35 +98,43 @@
 	let projectionFuelTechIds = $derived(projectionStatsDatasets.data.reduce(fuelTechReducer, {}));
 
 	// Convert historical data to TWh to match ISP
-	let historicalData = $derived(deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
-		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
-		d.history = { ...d.history, data: historyData };
-		d.units = 'TWh';
-		return d;
-	}));
+	let historicalData = $derived(
+		deepCopy(data.historyEnergyNemData).map((/** @type {StatsData} */ d) => {
+			const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
+			d.history = { ...d.history, data: historyData };
+			d.units = 'TWh';
+			return d;
+		})
+	);
 
-	let historicalStatsDatasets = $derived(new Statistic(historicalData, 'history').group(group).reorder(order));
+	let historicalStatsDatasets = $derived(
+		new Statistic(historicalData, 'history').group(group).reorder(order)
+	);
 
-	let historicalTimeSeriesDatasets = $derived(new TimeSeries(
-		historicalStatsDatasets.data,
-		parseInterval('1M'),
-		'history',
-		fuelTechNameReducer,
-		$colourReducer
-	)
-		.transform()
-		.rollup(parseInterval('FY'))
-		.updateMinMax());
+	let historicalTimeSeriesDatasets = $derived(
+		new TimeSeries(
+			historicalStatsDatasets.data,
+			parseInterval('1M'),
+			'history',
+			fuelTechNameReducer,
+			$colourReducer
+		)
+			.transform()
+			.rollup(parseInterval('FY'))
+			.updateMinMax()
+	);
 
 	// update historical date to match ISP
-	let updatedHistoricalTimeSeriesDatasets = $derived(historicalTimeSeriesDatasets.data.map((d) => {
-		const date = startOfYear(d.date, 1);
-		return { ...d, date, time: date.getTime() };
-	}));
+	let updatedHistoricalTimeSeriesDatasets = $derived(
+		historicalTimeSeriesDatasets.data.map((d) => {
+			const date = startOfYear(d.date, 1);
+			return { ...d, date, time: date.getTime() };
+		})
+	);
 
-	let filteredHistoricalTimeSeriesDatasets = $derived(updatedHistoricalTimeSeriesDatasets.filter(
-		(d) => d.date.getFullYear() > 2009
-	));
+	let filteredHistoricalTimeSeriesDatasets = $derived(
+		updatedHistoricalTimeSeriesDatasets.filter((d) => d.date.getFullYear() > 2009)
+	);
 
 	let sparkLineXTicks = $derived(modelSparklineXTicks[selectedModel.value]);
 

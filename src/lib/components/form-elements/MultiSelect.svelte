@@ -1,22 +1,25 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
+	import { X } from '@lucide/svelte';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} selected
 	 * @property {string} [label]
-	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean}[] | undefined} [options]
+	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean, colour?: string}[] | undefined} [options]
 	 * @property {string} [paddingY]
 	 * @property {string} [paddingX]
 	 * @property {boolean} [staticDisplay]
 	 * @property {string} [selectedLabelClass]
 	 * @property {string} [position] - top, bottom
 	 * @property {string} [align] - left, right
+	 * @property {boolean} [withColours]
+	 * @property {(value: string, isMetaPressed: boolean) => void} [onchange]
+	 * @property {() => void} [onclear]
 	 */
 
 	/** @type {Props} */
@@ -29,23 +32,42 @@
 		staticDisplay = false,
 		selectedLabelClass = 'font-semibold mb-0 capitalize',
 		position = 'bottom',
-		align = 'left'
+		align = 'left',
+		withColours = false,
+		onchange,
+		onclear
 	} = $props();
 
-	const dispatch = createEventDispatcher();
+	let hasSelection = $derived(selected.length > 0);
+
+	/**
+	 * Handle clear button click
+	 * @param {MouseEvent} e
+	 */
+	function handleClear(e) {
+		e.stopPropagation();
+		onclear?.();
+	}
 
 	let showOptions = $state(false);
 	let isMetaPressed = false;
+
+	// Show the selected option's label when only 1 is selected
+	let displayLabel = $derived.by(() => {
+		if (selected.length === 1 && options) {
+			const selectedOption = options.find((opt) => opt.value === selected[0]);
+			if (selectedOption) {
+				return selectedOption.label;
+			}
+		}
+		return label;
+	});
 
 	/**
 	 * @param {*} option
 	 */
 	function handleSelect(option) {
-		dispatch('change', {
-			value: option.value,
-			isMetaPressed
-		});
-		// showOptions = false;
+		onchange?.(option.value, isMetaPressed);
 	}
 
 	function handleKeyup() {
@@ -67,31 +89,65 @@
 			isMetaPressed = false;
 		}, 5000);
 	}
+
+	function handleScroll() {
+		showOptions = false;
+	}
 </script>
 
-<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
+<svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} onscroll={handleScroll} />
 
 <div
 	class="relative w-full text-base"
 	use:clickoutside
 	onclickoutside={() => (showOptions = false)}
 >
-	<button
-		onclick={() => (showOptions = !showOptions)}
-		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap"
-		class:hover:bg-warm-grey={!showOptions}
-	>
-		<span class={selectedLabelClass}>
-			{label}
-		</span>
+	{#if staticDisplay}
+		<div class="flex items-center justify-between {paddingX} {paddingY} mb-2 text-sm">
+			<span class={selectedLabelClass}>
+				{label}
+			</span>
 
-		{#if !staticDisplay}
-			<IconChevronUpDown class="w-7 h-7" />
-		{/if}
-	</button>
+			{#if hasSelection && onclear}
+				<button
+					onclick={handleClear}
+					class="text-mid-grey hover:text-dark-grey text-sm"
+					title="Clear selection"
+				>
+					Clear all
+				</button>
+			{/if}
+		</div>
+	{:else}
+		<div
+			role="button"
+			tabindex="0"
+			onclick={() => (showOptions = !showOptions)}
+			onkeydown={(e) => e.key === 'Enter' && (showOptions = !showOptions)}
+			class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
+			class:hover:bg-warm-grey={!showOptions}
+		>
+			<span class={`${selectedLabelClass} text-sm md:text-base`}>
+				{displayLabel}
+			</span>
+
+			<div class="flex items-center gap-1">
+				{#if hasSelection && onclear}
+					<button
+						onclick={handleClear}
+						class="p-1 rounded-full hover:bg-mid-warm-grey transition-colors"
+						title="Clear selection"
+					>
+						<X class="size-4 text-mid-grey" />
+					</button>
+				{/if}
+				<IconChevronUpDown class="w-7 h-7" />
+			</div>
+		</div>
+	{/if}
 
 	{#if staticDisplay}
-		<ul class="flex flex-col mt-1">
+		<ul class="flex flex-col mt-1 text-sm">
 			{#each options as opt}
 				{#if opt.divider}
 					<li class="whitespace-nowrap">
@@ -115,6 +171,10 @@
 									<IconCheckMark class="size-6" />
 								{/if}
 							</div>
+
+							{#if withColours}
+								<span class="size-4 rounded-full" style="background-color: {opt.colour}"></span>
+							{/if}
 
 							<span class="capitalize">{opt.label}</span>
 						</button>
@@ -145,7 +205,12 @@
 							class:text-black={selected.includes(opt.value)}
 							onclick={() => handleSelect(opt)}
 						>
-							<span class="capitalize">{opt.label}</span>
+							<div class="flex items-center gap-4">
+								{#if withColours}
+									<span class="size-4 rounded-full" style="background-color: {opt.colour}"></span>
+								{/if}
+								<span class="capitalize">{opt.label}</span>
+							</div>
 
 							<div
 								class="border rounded-sm size-7"
@@ -161,6 +226,16 @@
 					</li>
 				{/if}
 			{/each}
+			{#if hasSelection && onclear}
+				<li class="whitespace-nowrap border-t border-warm-grey mt-1 pt-1">
+					<button
+						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 text-mid-grey hover:text-dark-grey text-left"
+						onclick={handleClear}
+					>
+						Clear all
+					</button>
+				</li>
+			{/if}
 		</ul>
 	{/if}
 </div>

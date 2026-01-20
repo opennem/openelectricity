@@ -15,7 +15,7 @@ export function transformGenerationTrendsProfiles(apiData) {
 	// Process each fuel technology
 	order.forEach((fuelTechKey) => {
 		const fuelTechData = data[fuelTechKey];
-		
+
 		if (!fuelTechData?.results?.[0]?.data?.length) {
 			result[fuelTechKey] = { data: [], years: [], months: [] };
 			return;
@@ -26,7 +26,7 @@ export function transformGenerationTrendsProfiles(apiData) {
 			const dateStr = entry[0].split('T')[0];
 			const date = new Date(dateStr);
 			const value = entry[1] || 0;
-			
+
 			return {
 				date,
 				year: date.getFullYear(),
@@ -37,7 +37,7 @@ export function transformGenerationTrendsProfiles(apiData) {
 		});
 
 		// Group by year and month
-		const years = [...new Set(dataPoints.map(d => d.year))].sort();
+		const years = [...new Set(dataPoints.map((d) => d.year))].sort();
 		const months = Array.from({ length: 12 }, (_, i) => ({
 			index: i,
 			name: new Date(2000, i, 1).toLocaleString('en', { month: 'short' })
@@ -46,7 +46,7 @@ export function transformGenerationTrendsProfiles(apiData) {
 		// Create data structure for multi-line chart: array of objects with month and year values
 		const chartData = months.map((month) => {
 			/** @type {any} */
-			const monthData = { 
+			const monthData = {
 				time: month.index, // Use month index as time for chart
 				date: new Date(2000, month.index, 1), // Create date for month
 				month: month.index + 1, // 1-based for display
@@ -56,8 +56,8 @@ export function transformGenerationTrendsProfiles(apiData) {
 
 			years.forEach((year) => {
 				// Find data point for this year/month combination
-				const dataPoint = dataPoints.find((/** @type {any} */ d) => 
-					d.year === year && d.month === month.index
+				const dataPoint = dataPoints.find(
+					(/** @type {any} */ d) => d.year === year && d.month === month.index
 				);
 				monthData[`year_${year}`] = dataPoint ? dataPoint.value : null;
 			});
@@ -70,9 +70,7 @@ export function transformGenerationTrendsProfiles(apiData) {
 		const expandedData = [];
 		years.forEach((year) => {
 			months.forEach((month) => {
-				const dataPoint = dataPoints.find(d => 
-					d.year === year && d.month === month.index
-				);
+				const dataPoint = dataPoints.find((d) => d.year === year && d.month === month.index);
 				if (dataPoint) {
 					expandedData.push({
 						time: month.index,
@@ -96,14 +94,14 @@ export function transformGenerationTrendsProfiles(apiData) {
 		result[fuelTechKey] = {
 			data: chartData,
 			expandedData: expandedData,
-			years: years.map((y, i) => ({ 
-				key: `year_${y}`, 
-				label: y.toString(), 
-				year: y, 
+			years: years.map((y, i) => ({
+				key: `year_${y}`,
+				label: y.toString(),
+				year: y,
 				color: yearColors[i],
 				isCurrent: y === currentYear
 			})),
-			yearKeys: years.map(y => `year_${y}`),
+			yearKeys: years.map((y) => `year_${y}`),
 			yearColors: yearColors,
 			months,
 			totalDataPoints: dataPoints.length

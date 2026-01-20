@@ -6,7 +6,6 @@
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
 	const dispatch = createEventDispatcher();
 
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [strokeWidth]

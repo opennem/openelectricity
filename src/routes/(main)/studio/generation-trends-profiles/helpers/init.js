@@ -18,7 +18,7 @@ export default function (data) {
 			key: contextKey,
 			title: `${fuelTech.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())} Generation Profile`
 		};
-		
+
 		setContext(contextKey, new ChartStore(options));
 		chartCxts[fuelTech] = getContext(contextKey);
 	});
@@ -29,7 +29,7 @@ export default function (data) {
 		...chartCxtsOptions['combined-generation-trends'],
 		key: combinedContextKey
 	};
-	
+
 	setContext(combinedContextKey, new ChartStore(combinedOptions));
 	chartCxts['combined'] = getContext(combinedContextKey);
 
@@ -39,7 +39,7 @@ export default function (data) {
 		...chartCxtsOptions['cumulative-generation-trends'],
 		key: cumulativeContextKey
 	};
-	
+
 	setContext(cumulativeContextKey, new ChartStore(cumulativeOptions));
 	chartCxts['cumulative'] = getContext(cumulativeContextKey);
 

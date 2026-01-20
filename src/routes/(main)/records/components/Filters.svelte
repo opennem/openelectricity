@@ -124,7 +124,7 @@
 				label="Region"
 				paddingX=""
 				staticDisplay={true}
-				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handleRegionChange(value, isMetaPressed)}
 			/>
 			<FormMultiSelect
 				options={fuelTechOptions}
@@ -132,7 +132,7 @@
 				label="Technology"
 				paddingX=""
 				staticDisplay={true}
-				on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
 			/>
 		</section>
 
@@ -143,7 +143,7 @@
 				label="Metric"
 				paddingX=""
 				staticDisplay={true}
-				on:change={(evt) => handleMetricChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handleMetricChange(value, isMetaPressed)}
 			/>
 
 			<FormMultiSelect
@@ -152,7 +152,7 @@
 				label="Period"
 				paddingX=""
 				staticDisplay={true}
-				on:change={(evt) => handlePeriodChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handlePeriodChange(value, isMetaPressed)}
 			/>
 		</section>
 
@@ -160,7 +160,7 @@
 			<div class="flex gap-3">
 				<Button
 					class="bg-dark-grey! text-white hover:bg-black! w-full"
-					on:click={() => (showMobileFilterOptions = false)}>Close</Button
+					onclick={() => (showMobileFilterOptions = false)}>Close</Button
 				>
 			</div>
 		{/snippet}
@@ -176,7 +176,7 @@
 				label={regionLabel}
 				paddingX="pl-5 pr-4"
 				paddingY="py-3"
-				on:change={(evt) => handleRegionChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handleRegionChange(value, isMetaPressed)}
 			/>
 
 			<FormMultiSelect
@@ -185,7 +185,7 @@
 				label="Technology"
 				paddingX="pl-5 pr-4"
 				paddingY="py-3"
-				on:change={(evt) => handleFuelTechChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handleFuelTechChange(value, isMetaPressed)}
 			/>
 
 			<FormMultiSelect
@@ -194,7 +194,7 @@
 				label="Metric"
 				paddingX="px-4"
 				paddingY="py-3"
-				on:change={(evt) => handleMetricChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handleMetricChange(value, isMetaPressed)}
 			/>
 
 			<FormMultiSelect
@@ -203,7 +203,7 @@
 				label="Period"
 				paddingX="px-4"
 				paddingY="py-3"
-				on:change={(evt) => handlePeriodChange(evt.detail.value, evt.detail.isMetaPressed)}
+				onchange={(value, isMetaPressed) => handlePeriodChange(value, isMetaPressed)}
 			/>
 		</div>
 
@@ -211,7 +211,7 @@
 			<Switch
 				buttons={viewSectionOptions}
 				selected={$selectedView}
-				on:change={(evt) => ($selectedView = evt.detail.value)}
+				onchange={(option) => ($selectedView = option.value)}
 				class="justify-center"
 			/>
 
@@ -221,7 +221,7 @@
 		</div>
 
 		<div class="md:hidden pl-8 ml-4 border-l border-warm-grey">
-			<ButtonIcon on:click={() => (showMobileFilterOptions = true)}>
+			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 				<IconAdjustmentsHorizontal class="size-10" />
 			</ButtonIcon>
 		</div>

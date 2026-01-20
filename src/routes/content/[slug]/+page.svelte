@@ -2,7 +2,6 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import RichText from '$lib/components/text-components/RichText.svelte';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('./$types').PageData} data

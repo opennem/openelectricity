@@ -1,13 +1,6 @@
 <script>
 	import Gauge from './Gauge.svelte';
 
-	
-
-	
-
-	
-
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('$lib/types/chart.types').TimeSeriesData[]} [dataset]
@@ -17,12 +10,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		dataset = [],
-		keys = [],
-		labelDict = {},
-		colourDict = {}
-	} = $props();
+	let { dataset = [], keys = [], labelDict = {}, colourDict = {} } = $props();
 
 	const gaugeYears = [2024, 2030, 2050];
 

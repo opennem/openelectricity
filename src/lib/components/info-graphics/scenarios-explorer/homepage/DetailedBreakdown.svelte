@@ -37,67 +37,75 @@
 		console.log('cachedDisplayData', $cachedDisplayData[$selectedDisplayView]);
 	});
 
-	let displayUnit = $derived($isTechnologyDisplay
-		? dataViewUnits[$selectedDataView]
-		: $showPercentage
-		? '% of demand'
-		: dataViewUnits[$selectedDataView]);
+	let displayUnit = $derived(
+		$isTechnologyDisplay
+			? dataViewUnits[$selectedDataView]
+			: $showPercentage
+				? '% of demand'
+				: dataViewUnits[$selectedDataView]
+	);
 	let displayData = $derived($cachedDisplayData[$selectedDisplayView]);
 	let loadIds = $derived(displayData ? displayData.loadIds || [] : []);
-	let displayDataNames = $derived(displayData
-		? displayData.names.filter((d) => d !== 'historical') || []
-		: []);
+	let displayDataNames = $derived(
+		displayData ? displayData.names.filter((d) => d !== 'historical') || [] : []
+	);
 	let displayDatasets = $derived(displayData ? displayData.data || [] : []);
 
-	let overlay = $derived($isScenarioDisplay
-		? {
-				xStartValue: startOfYear(new Date('2024-01-01')),
-				xEndValue: startOfYear(new Date('2052-01-01'))
-		  }
-		: $selectedModel === 'aemo2024'
-		? {
-				xStartValue: startOfYear(new Date('2024-01-01')),
-				xEndValue: startOfYear(new Date('2052-01-01'))
-		  }
-		: {
-				xStartValue: startOfYear(new Date('2023-01-01')),
-				xEndValue: startOfYear(new Date('2051-01-01'))
-		  });
-	let overlayLine =
-		$derived($selectedModel === 'aemo2024' && !$isScenarioDisplay
+	let overlay = $derived(
+		$isScenarioDisplay
+			? {
+					xStartValue: startOfYear(new Date('2024-01-01')),
+					xEndValue: startOfYear(new Date('2052-01-01'))
+				}
+			: $selectedModel === 'aemo2024'
+				? {
+						xStartValue: startOfYear(new Date('2024-01-01')),
+						xEndValue: startOfYear(new Date('2052-01-01'))
+					}
+				: {
+						xStartValue: startOfYear(new Date('2023-01-01')),
+						xEndValue: startOfYear(new Date('2051-01-01'))
+					}
+	);
+	let overlayLine = $derived(
+		$selectedModel === 'aemo2024' && !$isScenarioDisplay
 			? { date: startOfYear(new Date('2024-01-01')) }
-			: { date: startOfYear(new Date('2023-01-01')) });
+			: { date: startOfYear(new Date('2023-01-01')) }
+	);
 
 	let names = $derived($isTechnologyDisplay ? [...displayDataNames].reverse() : displayDataNames);
-	let dataset = $derived(displayDatasets.map((d) => {
-		const obj = {
-			...d
-		};
+	let dataset = $derived(
+		displayDatasets.map((d) => {
+			const obj = {
+				...d
+			};
 
-		// Invert load values back to positive
-		loadIds.forEach((id) => {
-			obj[id] = -d[id];
-		});
+			// Invert load values back to positive
+			loadIds.forEach((id) => {
+				obj[id] = -d[id];
+			});
 
-		// Fill in any missing data so area chart renders properly
-		displayDataNames.forEach((name) => {
-			if (!obj[name]) {
-				if ($isScenarioDisplay && name !== 'historical') {
-					// if it is a scenario display, fill in the historical data
-					obj[name] = obj.historical || 0;
-				} else {
-					obj[name] = 0;
+			// Fill in any missing data so area chart renders properly
+			displayDataNames.forEach((name) => {
+				if (!obj[name]) {
+					if ($isScenarioDisplay && name !== 'historical') {
+						// if it is a scenario display, fill in the historical data
+						obj[name] = obj.historical || 0;
+					} else {
+						obj[name] = 0;
+					}
 				}
-			}
-		});
+			});
 
-		return obj;
-	}));
+			return obj;
+		})
+	);
 
-	let xTicks =
-		$derived($selectedModel === 'aemo2024' || $isScenarioDisplay
+	let xTicks = $derived(
+		$selectedModel === 'aemo2024' || $isScenarioDisplay
 			? [2010, 2024, 2040, 2052].map((year) => startOfYear(new Date(`${year}-01-01`)))
-			: [2010, 2023, 2040, 2051].map((year) => startOfYear(new Date(`${year}-01-01`))));
+			: [2010, 2023, 2040, 2051].map((year) => startOfYear(new Date(`${year}-01-01`)))
+	);
 
 	/**
 	 * @typedef {Object} Props

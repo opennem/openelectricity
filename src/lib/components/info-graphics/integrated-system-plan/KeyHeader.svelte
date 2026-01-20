@@ -2,7 +2,6 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import { formatValue } from './helpers';
 
-	
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [key]

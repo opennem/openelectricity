@@ -11,16 +11,17 @@ export function processGenerationTrendsData(data, fuelTech, unit = 'M') {
 	// Transform the data using existing utility
 	const profilesData = transformGenerationTrendsProfiles(data);
 	const fuelData = profilesData[fuelTech];
-	
+
 	if (!fuelData || !fuelData.data || fuelData.data.length === 0) {
 		return null;
 	}
 
 	// Convert to LayerCake-compatible format for LineChartWithContext
 	// Each year becomes a separate data series
-	const seriesData = fuelData.data.map(monthData => {
+	const seriesData = fuelData.data.map((monthData) => {
 		// Use month index (0-11) as the x-axis value for proper month display
-		const monthIndex = monthData.monthIndex !== undefined ? monthData.monthIndex : monthData.month - 1;
+		const monthIndex =
+			monthData.monthIndex !== undefined ? monthData.monthIndex : monthData.month - 1;
 		const date = new Date(2000, monthIndex, 1);
 		const point = {
 			time: date.getTime(), // Use timestamp for proper hover detection
@@ -29,12 +30,14 @@ export function processGenerationTrendsData(data, fuelTech, unit = 'M') {
 			month: monthIndex + 1, // 1-based month for display
 			monthName: monthData.monthName || date.toLocaleDateString('en', { month: 'short' })
 		};
-		
+
 		// Add each year's data as a separate property
-		fuelData.years.forEach(/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
-			/** @type {any} */ (point)[yearInfo.key] = monthData[yearInfo.key] ?? null;
-		});
-		
+		fuelData.years.forEach(
+			/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
+				/** @type {any} */ (point)[yearInfo.key] = monthData[yearInfo.key] ?? null;
+			}
+		);
+
 		return point;
 	});
 
@@ -42,11 +45,13 @@ export function processGenerationTrendsData(data, fuelTech, unit = 'M') {
 	const seriesNames = fuelData.yearKeys || [];
 	const seriesColours = {};
 	const seriesLabels = {};
-	
-	fuelData.years.forEach(/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
-		/** @type {any} */ (seriesColours)[yearInfo.key] = yearInfo.color;
-		/** @type {any} */ (seriesLabels)[yearInfo.key] = yearInfo.label;
-	});
+
+	fuelData.years.forEach(
+		/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
+			/** @type {any} */ (seriesColours)[yearInfo.key] = yearInfo.color;
+			/** @type {any} */ (seriesLabels)[yearInfo.key] = yearInfo.label;
+		}
+	);
 
 	return {
 		seriesData,
@@ -65,7 +70,7 @@ export function processGenerationTrendsData(data, fuelTech, unit = 'M') {
 export function processCombinedGenerationTrendsData(data, enabledFuelTechs) {
 	// Transform the data using existing utility
 	const profilesData = transformGenerationTrendsProfiles(data);
-	
+
 	if (!profilesData || Object.keys(profilesData).length === 0) {
 		return null;
 	}
@@ -73,15 +78,16 @@ export function processCombinedGenerationTrendsData(data, enabledFuelTechs) {
 	// Get all available years from the first fuel tech
 	const firstFuelTech = Object.keys(profilesData)[0];
 	const firstFuelData = profilesData[firstFuelTech];
-	
+
 	if (!firstFuelData || !firstFuelData.data || firstFuelData.data.length === 0) {
 		return null;
 	}
 
 	// Convert to LayerCake-compatible format for LineChartWithContext
 	// Sum values across enabled fuel technologies for each month/year combination
-	const seriesData = firstFuelData.data.map(monthData => {
-		const monthIndex = monthData.monthIndex !== undefined ? monthData.monthIndex : monthData.month - 1;
+	const seriesData = firstFuelData.data.map((monthData) => {
+		const monthIndex =
+			monthData.monthIndex !== undefined ? monthData.monthIndex : monthData.month - 1;
 		const date = new Date(2000, monthIndex, 1);
 		const point = {
 			time: date.getTime(), // Use timestamp for proper hover detection
@@ -90,27 +96,29 @@ export function processCombinedGenerationTrendsData(data, enabledFuelTechs) {
 			month: monthIndex + 1, // 1-based month for display
 			monthName: monthData.monthName || date.toLocaleDateString('en', { month: 'short' })
 		};
-		
+
 		// Add each year's combined data as a separate property
-		firstFuelData.years.forEach(/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
-			let totalValue = 0;
-			
-			// Sum values from all enabled fuel technologies for this month/year
-			enabledFuelTechs.forEach(fuelTech => {
-				const fuelData = profilesData[fuelTech];
-				if (fuelData && fuelData.data) {
-					const monthData = fuelData.data.find(m => 
-						(m.monthIndex !== undefined ? m.monthIndex : m.month - 1) === monthIndex
-					);
-					if (monthData && monthData[yearInfo.key] != null) {
-						totalValue += monthData[yearInfo.key];
+		firstFuelData.years.forEach(
+			/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
+				let totalValue = 0;
+
+				// Sum values from all enabled fuel technologies for this month/year
+				enabledFuelTechs.forEach((fuelTech) => {
+					const fuelData = profilesData[fuelTech];
+					if (fuelData && fuelData.data) {
+						const monthData = fuelData.data.find(
+							(m) => (m.monthIndex !== undefined ? m.monthIndex : m.month - 1) === monthIndex
+						);
+						if (monthData && monthData[yearInfo.key] != null) {
+							totalValue += monthData[yearInfo.key];
+						}
 					}
-				}
-			});
-			
-			/** @type {any} */ (point)[yearInfo.key] = totalValue > 0 ? totalValue : null;
-		});
-		
+				});
+
+				/** @type {any} */ (point)[yearInfo.key] = totalValue > 0 ? totalValue : null;
+			}
+		);
+
 		return point;
 	});
 
@@ -118,11 +126,13 @@ export function processCombinedGenerationTrendsData(data, enabledFuelTechs) {
 	const seriesNames = firstFuelData.yearKeys || [];
 	const seriesColours = {};
 	const seriesLabels = {};
-	
-	firstFuelData.years.forEach(/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
-		/** @type {any} */ (seriesColours)[yearInfo.key] = yearInfo.color;
-		/** @type {any} */ (seriesLabels)[yearInfo.key] = yearInfo.label;
-	});
+
+	firstFuelData.years.forEach(
+		/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
+			/** @type {any} */ (seriesColours)[yearInfo.key] = yearInfo.color;
+			/** @type {any} */ (seriesLabels)[yearInfo.key] = yearInfo.label;
+		}
+	);
 
 	return {
 		seriesData,
@@ -141,7 +151,7 @@ export function processCombinedGenerationTrendsData(data, enabledFuelTechs) {
 export function processCumulativeGenerationTrendsData(data, enabledFuelTechs) {
 	// Transform the data using existing utility
 	const profilesData = transformGenerationTrendsProfiles(data);
-	
+
 	if (!profilesData || Object.keys(profilesData).length === 0) {
 		return null;
 	}
@@ -149,7 +159,7 @@ export function processCumulativeGenerationTrendsData(data, enabledFuelTechs) {
 	// Get all available years from the first fuel tech
 	const firstFuelTech = Object.keys(profilesData)[0];
 	const firstFuelData = profilesData[firstFuelTech];
-	
+
 	if (!firstFuelData || !firstFuelData.data || firstFuelData.data.length === 0) {
 		return null;
 	}
@@ -171,40 +181,42 @@ export function processCumulativeGenerationTrendsData(data, enabledFuelTechs) {
 			month: monthIndex + 1, // 1-based month for display
 			monthName: monthData.monthName || date.toLocaleDateString('en', { month: 'short' })
 		};
-		
+
 		// Add each year's cumulative data as a separate property
-		firstFuelData.years.forEach(/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
-			const year = parseInt(yearInfo.label) || parseInt(yearInfo.key);
-			
-			// Check if this is a future month (for current year, use last completed month)
-			const isFutureMonth = year === currentYear && monthIndex > (lastMonth < 0 ? 11 : lastMonth);
-			
-			if (isFutureMonth) {
-				// Set future months to null
-				/** @type {any} */ (point)[yearInfo.key] = null;
-			} else {
-				let cumulativeValue = 0;
-				let hasAnyData = false;
-				
-				// Sum values from January up to current month for each enabled fuel tech
-				for (let i = 0; i <= monthIndex; i++) {
-					enabledFuelTechs.forEach(fuelTech => {
-						const fuelData = profilesData[fuelTech];
-						if (fuelData && fuelData.data && fuelData.data[i]) {
-							const monthDataForFuel = fuelData.data[i];
-							if (monthDataForFuel && monthDataForFuel[yearInfo.key] != null) {
-								cumulativeValue += monthDataForFuel[yearInfo.key];
-								hasAnyData = true;
+		firstFuelData.years.forEach(
+			/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
+				const year = parseInt(yearInfo.label) || parseInt(yearInfo.key);
+
+				// Check if this is a future month (for current year, use last completed month)
+				const isFutureMonth = year === currentYear && monthIndex > (lastMonth < 0 ? 11 : lastMonth);
+
+				if (isFutureMonth) {
+					// Set future months to null
+					/** @type {any} */ (point)[yearInfo.key] = null;
+				} else {
+					let cumulativeValue = 0;
+					let hasAnyData = false;
+
+					// Sum values from January up to current month for each enabled fuel tech
+					for (let i = 0; i <= monthIndex; i++) {
+						enabledFuelTechs.forEach((fuelTech) => {
+							const fuelData = profilesData[fuelTech];
+							if (fuelData && fuelData.data && fuelData.data[i]) {
+								const monthDataForFuel = fuelData.data[i];
+								if (monthDataForFuel && monthDataForFuel[yearInfo.key] != null) {
+									cumulativeValue += monthDataForFuel[yearInfo.key];
+									hasAnyData = true;
+								}
 							}
-						}
-					});
+						});
+					}
+
+					// Only set the value if we found actual data, otherwise keep it null
+					/** @type {any} */ (point)[yearInfo.key] = hasAnyData ? cumulativeValue : null;
 				}
-				
-				// Only set the value if we found actual data, otherwise keep it null
-				/** @type {any} */ (point)[yearInfo.key] = hasAnyData ? cumulativeValue : null;
 			}
-		});
-		
+		);
+
 		return point;
 	});
 
@@ -212,11 +224,13 @@ export function processCumulativeGenerationTrendsData(data, enabledFuelTechs) {
 	const seriesNames = firstFuelData.yearKeys || [];
 	const seriesColours = {};
 	const seriesLabels = {};
-	
-	firstFuelData.years.forEach(/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
-		/** @type {any} */ (seriesColours)[yearInfo.key] = yearInfo.color;
-		/** @type {any} */ (seriesLabels)[yearInfo.key] = yearInfo.label;
-	});
+
+	firstFuelData.years.forEach(
+		/** @type {{ key: string, label: string, color: string }} */ (yearInfo) => {
+			/** @type {any} */ (seriesColours)[yearInfo.key] = yearInfo.color;
+			/** @type {any} */ (seriesLabels)[yearInfo.key] = yearInfo.label;
+		}
+	);
 
 	return {
 		seriesData,

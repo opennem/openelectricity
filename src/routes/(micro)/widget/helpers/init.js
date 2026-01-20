@@ -1,7 +1,5 @@
-import { setContext, getContext } from 'svelte';
+import { ChartStore } from '$lib/components/charts/v2';
 import { FiltersState, setFiltersContext, getFiltersContext } from '../stores/filters.svelte';
-import ChartStore from '$lib/components/charts/stores/chart.svelte.js';
-import { chartCxtsOptions } from './config';
 
 /**
  * @param {{
@@ -21,27 +19,27 @@ export default function (data) {
 		})
 	);
 
-	// Setup Chart context
-	Object.entries(chartCxtsOptions).forEach(([_, options]) => {
-		setContext(options.key, new ChartStore(options));
+	// Create chart store directly (v2 pattern - no context needed)
+	const chartStore = new ChartStore({
+		key: Symbol('power-energy-chart'),
+		title: 'Generation',
+		prefix: 'M',
+		displayPrefix: 'M',
+		allowedPrefixes: ['M', 'G'],
+		baseUnit: 'W',
+		timeZone: 'Australia/Sydney'
 	});
 
-	// // Setup Date Brush context
-	// setContext(dateBrushCxtOptions.key, new ChartStore(dateBrushCxtOptions));
+	// Apply custom styles
+	chartStore.chartStyles.chartHeightClasses = 'h-[230px]';
+	chartStore.chartStyles.chartPadding = { top: 0, right: 0, bottom: 40, left: 0 };
+	chartStore.chartStyles.xAxisFill = 'rgb(250, 249, 246)';
+	chartStore.chartStyles.showLastYTick = false;
 
 	let filtersCxt = getFiltersContext();
 
-	let chartCxts = Object.entries(chartCxtsOptions).reduce((acc, [name, { key }]) => {
-		acc[name] = getContext(key);
-		return acc;
-	}, /** @type {Record<string, ChartStore>} */ ({}));
-
-	// let dateBrushCxt = getContext(dateBrushCxtOptions.key);
-
 	return {
-		chartCxts,
-		// dateBrushCxt,
-		chartCxt: chartCxts['power-energy-chart'],
+		chartStore,
 		filtersCxt
 	};
 }

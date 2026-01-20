@@ -1,0 +1,130 @@
+<script>
+	/**
+	 * Stratum Chart Component
+	 *
+	 * Main wrapper component that combines header, tooltip, and chart.
+	 * Provides a complete, self-contained chart experience.
+	 *
+	 * Named "Stratum" to reflect the layered/stacked nature of the visualization.
+	 */
+	import ChartHeader from './ChartHeader.svelte';
+	import ChartTooltip from './ChartTooltip.svelte';
+	import StackedAreaChart from './StackedAreaChart.svelte';
+
+	/**
+	 * @typedef {Object} Props
+	 * @property {import('./ChartStore.svelte.js').default} chart - The chart store instance
+	 * @property {boolean} [showHeader] - Whether to show the header
+	 * @property {boolean} [showTooltip] - Whether to show the tooltip
+	 * @property {boolean} [showOptions] - Whether to show options button in header
+	 * @property {string} [defaultTooltipText] - Default text when nothing is hovered
+	 * @property {string} [class] - Additional CSS classes for the container
+	 * @property {string} [chartPadding] - CSS classes for chart padding
+	 * @property {number} [height] - Chart height in pixels
+	 * @property {(time: number, key?: string) => void} [onhover] - Callback when hovering
+	 * @property {() => void} [onhoverend] - Callback when hover ends
+	 * @property {(time: number) => void} [onfocus] - Callback when focusing (clicking)
+	 * @property {import('svelte').Snippet} [header] - Custom header content
+	 * @property {import('svelte').Snippet} [tooltip] - Custom tooltip content
+	 * @property {import('svelte').Snippet} [footer] - Custom footer content
+	 */
+
+	/** @type {Props} */
+	let {
+		chart,
+		showHeader = true,
+		showTooltip = true,
+		showOptions = true,
+		defaultTooltipText = '',
+		class: className = '',
+		chartPadding = 'px-0',
+		height,
+		onhover,
+		onhoverend,
+		onfocus,
+		header,
+		tooltip,
+		footer
+	} = $props();
+
+	// Check if chart has data
+	let hasData = $derived(chart?.seriesData?.length > 0);
+
+	/**
+	 * Handle mouse move events from the chart
+	 * @param {{ data: TimeSeriesData, key?: string }} event
+	 */
+	function handleMouseMove(event) {
+		if (event?.data) {
+			chart.setHover(event.data.time, event.key);
+			onhover?.(event.data.time, event.key);
+		}
+	}
+
+	/**
+	 * Handle mouse out events
+	 */
+	function handleMouseOut() {
+		chart.clearHover();
+		onhoverend?.();
+	}
+
+	/**
+	 * Handle click/pointer up events
+	 * @param {TimeSeriesData} data
+	 */
+	function handlePointerUp(data) {
+		if (data?.time) {
+			if (onfocus) {
+				// Let parent handle sync across all charts
+				onfocus(data.time);
+			} else {
+				// No sync, handle locally
+				chart.toggleFocus(data.time);
+			}
+		}
+	}
+</script>
+
+<div class="stratum-chart {className}">
+	<!-- Header -->
+	{#if showHeader}
+		{#if header}
+			{@render header()}
+		{:else}
+			<ChartHeader {chart} {showOptions} />
+		{/if}
+	{/if}
+
+	<!-- Tooltip -->
+	{#if showTooltip}
+		<div class="relative z-10" style="padding-right: var(--pad-right, 0);">
+			{#if tooltip}
+				{@render tooltip()}
+			{:else}
+				<ChartTooltip {chart} defaultText={defaultTooltipText} />
+			{/if}
+		</div>
+	{/if}
+
+	<!-- Chart -->
+	<div class={chartPadding}>
+		{#if hasData}
+			<StackedAreaChart
+				{chart}
+				onmousemove={handleMouseMove}
+				onmouseout={handleMouseOut}
+				onpointerup={handlePointerUp}
+			/>
+		{:else}
+			<div class="flex items-center justify-center h-64 text-gray-400">
+				<span>No data available</span>
+			</div>
+		{/if}
+	</div>
+
+	<!-- Footer (optional) -->
+	{#if footer}
+		{@render footer()}
+	{/if}
+</div>

@@ -13,16 +13,8 @@
 		"jsxImportSource": "svelte",
 		"types": ["node", "svelte"]
 	},
-	"include": [
-		"./src/**/*.js",
-		"./src/**/*.svelte",
-		"./src/**/*.ts",
-		"./src/**/*.d.ts"
-	],
-	"exclude": [
-		"node_modules",
-		".svelte-kit"
-	]
+	"include": ["./src/**/*.js", "./src/**/*.svelte", "./src/**/*.ts", "./src/**/*.d.ts"],
+	"exclude": ["node_modules", ".svelte-kit"]
 	// Path aliases are handled by https://kit.svelte.dev/docs/configuration#alias and https://kit.svelte.dev/docs/configuration#files
 	//
 	// If you want to overwrite includes/excludes, make sure to copy over the relevant includes/excludes

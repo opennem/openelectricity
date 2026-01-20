@@ -2,12 +2,6 @@
 	import { getContext } from 'svelte';
 	import { format } from 'd3-format';
 
-	
-
-	
-
-
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData} annotation
@@ -49,14 +43,17 @@
 		return formatY(value);
 	});
 
-	let classes = $derived(showBesideLatestPoint
-		? ''
-		: 'flex items-center justify-center gap-28 absolute bottom-[-100px] w-full px-12');
+	let classes = $derived(
+		showBesideLatestPoint
+			? ''
+			: 'flex items-center justify-center gap-28 absolute bottom-[-100px] w-full px-12'
+	);
 
 	let getStyles = $derived((/** @type {TimeSeriesData[]} */ values) =>
 		showBesideLatestPoint
 			? `top: ${top(values) - 9}px; left: ${left(values) + 10}px;`
-			: `bottom: -100px; left: 0`);
+			: `bottom: -100px; left: 0`
+	);
 </script>
 
 <div class={classes}>

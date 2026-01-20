@@ -1,23 +1,20 @@
 <script>
-	import getContext from '$lib/utils/get-context.js';
+	/** @type {{ chart: import('$lib/components/charts/v2/ChartStore.svelte.js').default, wrapperStyles?: string }} */
+	let { chart, wrapperStyles = '' } = $props();
 
-	/** @type {{ cxtKey: symbol, defaultText?: string, wrapperStyles?: string }} */
-	let { cxtKey, defaultText = '', wrapperStyles = '' } = $props();
-
-	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
-	let cxt = getContext(cxtKey);
-
-	let useData = $derived(cxt.hoverData || cxt.focusData);
+	let useData = $derived(chart.hoverData || chart.focusData);
 	let max = $derived(useData ? useData._max || 0 : 0);
-	let convertedMax = $derived(max || max === 0 ? cxt.convertAndFormatValue(max) : '');
-	let cxtValueKey = $derived(cxt.chartTooltips.valueKey || cxt.hoverKey);
-	let cxtValueColour = $derived(cxt.chartTooltips.valueColour || cxt.seriesColours[cxtValueKey]);
+	let convertedMax = $derived(max || max === 0 ? chart.convertAndFormatValue(max) : '');
+	let cxtValueKey = $derived(chart.chartTooltips.valueKey || chart.hoverKey);
+	let cxtValueColour = $derived(
+		chart.chartTooltips.valueColour || (cxtValueKey ? chart.seriesColours[cxtValueKey] : undefined)
+	);
 	let valueKey = $derived(useData && cxtValueKey ? useData[cxtValueKey] || undefined : undefined);
 	let convertedValue = $derived(
-		valueKey || valueKey === 0 ? cxt.convertAndFormatValue(valueKey) : ''
+		typeof valueKey === 'number' ? chart.convertAndFormatValue(valueKey) : ''
 	);
 	let hoverKeyColour = $derived(cxtValueKey ? cxtValueColour : '');
-	let hoverKeyLabel = $derived(cxtValueKey ? cxt.seriesLabels[cxtValueKey] : '');
+	let hoverKeyLabel = $derived(cxtValueKey ? chart.seriesLabels[cxtValueKey] : '');
 
 	let renewables = [
 		'wind.power.grouped',
@@ -28,7 +25,7 @@
 		'bioenergy_biogas.power.grouped'
 	];
 
-	let seriesData = $derived(cxt.seriesData);
+	let seriesData = $derived(chart.seriesData);
 	let seriesDataWithRenewables = $derived(
 		seriesData.map((d) => {
 			let renewablesTotal = 0;
@@ -54,12 +51,12 @@
 	);
 
 	let convertedAverageValue = $derived(
-		averageValue || averageValue === 0 ? cxt.convertAndFormatValue(averageValue) : ''
+		averageValue || averageValue === 0 ? chart.convertAndFormatValue(averageValue) : ''
 	);
 
 	let convertedAverageRenewablesValue = $derived(
 		averageRenewablesValue || averageRenewablesValue === 0
-			? cxt.convertAndFormatValue(averageRenewablesValue)
+			? chart.convertAndFormatValue(averageRenewablesValue)
 			: ''
 	);
 </script>
@@ -71,7 +68,7 @@
 >
 	{#if useData}
 		<div class="h-full items-center flex justify-between leading-xs whitespace-nowrap">
-			{#if valueKey || cxt.chartTooltips.showTotal}
+			{#if valueKey || chart.chartTooltips.showTotal}
 				<div class="flex items-center gap-2">
 					{#if valueKey}
 						<div class="flex items-center gap-2">
@@ -79,14 +76,14 @@
 							{hoverKeyLabel}
 						</div>
 
-						<strong class="font-semibold">{convertedValue} {cxt.chartOptions.displayUnit}</strong>
+						<strong class="font-semibold">{convertedValue} {chart.chartOptions.displayUnit}</strong>
 					{/if}
 				</div>
 
-				{#if cxt.chartTooltips.showTotal}
+				{#if chart.chartTooltips.showTotal}
 					<span class="flex items-center gap-2">
 						Total
-						<strong class="font-semibold">{convertedMax} {cxt.chartOptions.displayUnit}</strong>
+						<strong class="font-semibold">{convertedMax} {chart.chartOptions.displayUnit}</strong>
 					</span>
 				{/if}
 			{/if}
