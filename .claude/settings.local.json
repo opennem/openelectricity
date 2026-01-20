@@ -1,11 +1,11 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(ls:*)",
-      "Bash(bun run lint:*)",
-      "Bash(bunx eslint:*)",
-      "Bash(bun run build)",
-      "Bash(bun run test:*)"
-    ]
-  }
+	"permissions": {
+		"allow": [
+			"Bash(ls:*)",
+			"Bash(bun run lint:*)",
+			"Bash(bunx eslint:*)",
+			"Bash(bun run build)",
+			"Bash(bun run test:*)"
+		]
+	}
 }
