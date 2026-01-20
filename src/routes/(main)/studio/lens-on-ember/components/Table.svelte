@@ -137,7 +137,7 @@
 		</thead>
 
 		<tbody>
-			{#each uniqueSeriesWithoutType as name}
+			{#each uniqueSeriesWithoutType as name (name)}
 				{@const isImports = name.includes('import')}
 				{@const energyName = `${name}.energy.grouped`}
 				{@const emissionsName = `${name}.emissions.grouped`}

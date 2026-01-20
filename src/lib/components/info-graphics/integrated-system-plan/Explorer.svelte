@@ -437,7 +437,7 @@
 					</div>
 					<div class="w-full">
 						<ExplorerChart
-							title={`Energy Generation (TWh) by Financial Year`}
+							title="Energy Generation (TWh) by Financial Year"
 							dataset={projectionTimeSeriesCharts.data}
 							{xKey}
 							xTicks={selectedModelXTicks}
@@ -480,7 +480,7 @@
 				</thead> -->
 
 				<tbody>
-					{#each [...projectionTimeSeriesCharts.seriesNames].reverse() as key}
+					{#each [...projectionTimeSeriesCharts.seriesNames].reverse() as key (key)}
 						<tr>
 							<td class="text-left">{projectionTimeSeriesCharts.seriesLabels[key]}</td>
 							<td class="text-right">
@@ -506,7 +506,7 @@
 		class:md:grid-cols-2={projectionSeriesNames.length === 2}
 		class:md:grid-cols-4={projectionSeriesNames.length !== 2 && projectionSeriesNames.length !== 6}
 	>
-		{#each [...projectionSeriesNames].reverse() as key}
+		{#each [...projectionSeriesNames].reverse() as key (key)}
 			<SparkLineArea
 				class="p-8 border border-mid-warm-grey"
 				dataset={projectionTimeSeriesDatasets.data}

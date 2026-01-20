@@ -102,7 +102,7 @@
 </script>
 
 <div class="grid {gridColClass} gap-3">
-	{#each keys as key}
+	{#each keys as key (key)}
 		{@const title = scenarioLabelMap[key] || seriesLabels[key]}
 		{@const updatedHoverData = getUpdatedData(hoverData, key)}
 		{@const updatedFocusData = getUpdatedData(focusData, key)}

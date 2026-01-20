@@ -61,7 +61,7 @@
 		dispatch('mouseout');
 	}}
 >
-	{#each updatedData as group}
+	{#each updatedData as group (group.group)}
 		{#if show}
 			<path
 				transition:draw={drawDurationObject}

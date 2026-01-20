@@ -120,12 +120,12 @@
 
 				<!-- <h5>Five Key Points</h5> -->
 				<ul class="list-disc list-inside pl-5 my-12">
-					{#each scenarioKeyPoints[$selectedModel][$selectedScenario] as key}
+					{#each scenarioKeyPoints[$selectedModel][$selectedScenario] as key (key)}
 						<li class="font-bold">{key}</li>
 					{/each}
 				</ul>
 
-				{#each scenarioParagraphs[$selectedModel][$selectedScenario] as paragraph, i}
+				{#each scenarioParagraphs[$selectedModel][$selectedScenario] as paragraph, i (i)}
 					<p class="my-12">
 						{#if scenarioParagraphs[$selectedModel][$selectedScenario].length - 1 === i}
 							<strong>Net zero summary: </strong>
@@ -139,7 +139,7 @@
 
 	<div>
 		<div class="grid grid-cols-3 border-mid-warm-grey">
-			{#each names as key, i}
+			{#each names as key, i (key)}
 				<SparkLineArea
 					class="p-8 border-mid-warm-grey border-b border-l last:border-r nth-[3n]:border-r nth-[-n+3]:border-t"
 					id={`key-${i}`}

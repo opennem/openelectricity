@@ -38,7 +38,7 @@
 <div
 	class={`flex md:inline-flex text-${textSize} w-auto mx-10 md:mx-0 rounded-${roundedSize} bg-light-warm-grey border border-solid border-mid-warm-grey ${rest.class}`}
 >
-	{#each buttons as { label, value, icon }}
+	{#each buttons as { label, value, icon } (value)}
 		<button
 			onclick={handleClick}
 			{value}

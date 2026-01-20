@@ -22,7 +22,7 @@
 		<div>fetching...</div>
 	{:then}
 		<select bind:value={selected} class="text-sm">
-			{#each facilities as { name, code }}
+			{#each facilities as { name, code } (code)}
 				<option value={code}>{name}</option>
 			{/each}
 		</select>

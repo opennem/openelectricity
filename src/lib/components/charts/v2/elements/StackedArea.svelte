@@ -147,7 +147,7 @@
 
 			<!-- Optional dots for line chart -->
 			{#if showLineDots && d.values?.length > 1}
-				{#each d.values as point}
+				{#each d.values as point (point.time)}
 					<circle
 						class="line-dot"
 						role="presentation"

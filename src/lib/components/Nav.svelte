@@ -51,7 +51,7 @@
 			class="block fixed top-0 left-0 h-full w-full z-999 bg-white pt-36 px-10 md:w-auto md:static md:px-0 md:py-2 md:flex md:justify-between md:gap-16 lg:gap-20"
 			class:hidden={!mobileNavActive}
 		>
-			{#each navItems as { name, href, children, show }}
+			{#each navItems as { name, href, children, show } (name)}
 				{#if show !== false}
 					{#if children && children.length > 0}
 						<div
@@ -93,7 +93,7 @@
 									<div
 										class="bg-white md:shadow-xs mt-3 md:mt-0 rounded-lg border border-warm-grey overflow-hidden flex flex-col divide-y divide-warm-grey"
 									>
-										{#each children as child}
+										{#each children as child (child.href)}
 											<a
 												href={child.href}
 												class="group relative flex gap-4 items-center md:justify-between py-3 px-5 text-base md:text-sm hover:text-black hover:bg-mid-warm-grey/10 transition-colors"

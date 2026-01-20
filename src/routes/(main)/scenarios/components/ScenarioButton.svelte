@@ -45,7 +45,7 @@
 					radioOnly={true}
 					name="peak_low"
 					label={scenario.label}
-					value={'12'}
+					value="12"
 					checked={highlightBorder}
 				/>
 			</div>

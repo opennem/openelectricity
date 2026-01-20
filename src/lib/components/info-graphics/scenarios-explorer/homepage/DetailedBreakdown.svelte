@@ -138,7 +138,7 @@
 	class:md:grid-cols-6={names.length === 6}
 	class:md:grid-cols-2={names.length === 2}
 >
-	{#each names as key, i}
+	{#each names as key, i (key)}
 		<SparkLineArea
 			class="p-8 even:border-l border-t nth-[-n+2]:border-t-0 md:border-0 border-mid-warm-grey"
 			id={`key-${i}`}

@@ -318,7 +318,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each recordsData as record, i}
+				{#each recordsData as record, i (record.record_id)}
 					<tr class="border-b border-mid-warm-grey hover:bg-warm-grey">
 						<td>{currentStartRecordIndex + i}</td>
 						<td>{record.record_id}</td>

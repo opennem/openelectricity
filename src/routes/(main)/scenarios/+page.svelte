@@ -544,7 +544,7 @@
 	class:relative={!$showScenarioOptions}
 >
 	<section class="w-full flex flex-col gap-12 md:w-[60%]">
-		{#each dataVizStoreNames as { name, chart }}
+		{#each dataVizStoreNames as { name, chart } (name)}
 			{#if $selectedCharts.includes(chart)}
 				<ScenarioChart
 					store={dataVizStores[name]}
@@ -565,7 +565,7 @@
 				<LogoMark />
 			</div>
 		{:else}
-			{#each dataVizStoreNames as { name, chart }}
+			{#each dataVizStoreNames as { name, chart } (name)}
 				{#if $selectedCharts.includes(chart)}
 					<ScenarioChart
 						store={dataVizStores[name]}

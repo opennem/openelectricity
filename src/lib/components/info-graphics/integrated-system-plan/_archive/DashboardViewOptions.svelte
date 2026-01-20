@@ -27,7 +27,7 @@
 </script>
 
 <div class="flex">
-	{#each options as { name, icon }, i}
+	{#each options as { name, icon }, i (name)}
 		<button
 			class="w-full relative p-4 bg-light-warm-grey border rounded-tl-md rounded-bl-md hover:bg-white"
 			class:rounded-tl-md={i === 0}

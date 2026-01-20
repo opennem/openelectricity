@@ -306,7 +306,7 @@
 			{seriesNames}
 			{seriesColours}
 			formatTickX={formatFyTickX}
-			display={'area'}
+			display="area"
 			{overlay}
 			{overlayLine}
 			{hoverData}

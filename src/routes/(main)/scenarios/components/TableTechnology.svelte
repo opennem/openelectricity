@@ -254,7 +254,7 @@
 		</thead>
 
 		<tbody>
-			{#each sourceNames as name}
+			{#each sourceNames as name (name)}
 				<tr
 					onclick={() => handleRowClick(name)}
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"
@@ -318,7 +318,7 @@
 			</thead>
 
 			<tbody>
-				{#each loadNames as name, i}
+				{#each loadNames as name, i (name)}
 					<tr
 						onclick={() => handleRowClick(name)}
 						class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-2"

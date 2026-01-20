@@ -85,7 +85,7 @@
 </script>
 
 <div class="md:w-[600px] mx-auto">
-	{#each [...rolledUpRecords] as [month, days]}
+	{#each [...rolledUpRecords] as [month, days] (month)}
 		{@const monthRecords = getNonIntervalDayRecords(days)}
 		{@const yearRecords = getYearRecords(days)}
 		<div class="mt-10 first:mt-0">
@@ -97,10 +97,10 @@
 				</p>
 			{/if}
 
-			{#each yearRecords as [day, records]}
+			{#each yearRecords as [day, records] (day)}
 				<div>
 					<ul>
-						{#each records as record}
+						{#each records as record (record.record_id)}
 							{@const path = `/records/${encodeURIComponent(record.record_id)}?${dateTimeQuery(record.interval)}&focus=${record.time}`}
 							<li>
 								<a
@@ -158,10 +158,10 @@
 				</p>
 			{/if}
 
-			{#each monthRecords as [day, records]}
+			{#each monthRecords as [day, records] (day)}
 				<div>
 					<ul>
-						{#each records as record}
+						{#each records as record (record.record_id)}
 							{@const path = `/records/${encodeURIComponent(record.record_id)}?${dateTimeQuery(record.interval)}&focus=${record.time}`}
 							<li>
 								<a
@@ -211,7 +211,7 @@
 				</div>
 			{/each}
 
-			{#each [...days] as [day, { date, records, nonIntervalDayRecords }]}
+			{#each [...days] as [day, { date, records, nonIntervalDayRecords }] (day)}
 				{@const nonIntervalDayLength = nonIntervalDayRecords.length}
 
 				{#if nonIntervalDayLength === 0}
@@ -223,7 +223,7 @@
 						</p>
 
 						<ul>
-							{#each [...records] as [key, value]}
+							{#each [...records] as [key, value] (key)}
 								{@const latest = value[0]}
 								{@const lastest3Records = value.slice(0, 3)}
 								{@const path = `/records/${encodeURIComponent(latest.record_id)}?${dateTimeQuery(latest.interval)}&focus=${latest.time}`}
@@ -251,7 +251,7 @@
 										</div>
 
 										<ol class="md:col-span-4 p-8 md:rounded-r-lg">
-											{#each lastest3Records as record, i}
+											{#each lastest3Records as record, i (i)}
 												{@const formattedDate = new Intl.DateTimeFormat('en-AU', {
 													hour: 'numeric',
 													minute: 'numeric',

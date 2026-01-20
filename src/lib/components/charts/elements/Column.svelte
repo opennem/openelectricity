@@ -29,7 +29,7 @@
 </script>
 
 <g class="column-group">
-	{#each $data as d, i}
+	{#each $data as d, i (i)}
 		{@const colHeight = columnHeight(d)}
 		{@const xGot = $xGet(d)}
 		{@const xPos = Array.isArray(xGot) ? xGot[0] : xGot}

@@ -81,7 +81,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 	<div style="height: 150px;">
 		<LayerCake
 			padding={{ top: 0, right: 0, bottom: 20, left: 0 }}
-			x={'date'}
+			x="date"
 			y={key}
 			xScale={scaleUtc()}
 			yDomain={[0, maxY]}

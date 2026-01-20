@@ -16,7 +16,7 @@
 			<h3>Related analysis</h3>
 		</header>
 		<div class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8">
-			{#each analysisArticles as article}
+			{#each analysisArticles as article (article._id)}
 				<div class="snap-start shrink-0 w-[290px]">
 					<ArticleCard {article} />
 				</div>

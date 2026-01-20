@@ -17,7 +17,7 @@
 	let rectWidth = $derived($width / ranges.length);
 </script>
 
-{#each ranges as _range, i}
+{#each ranges as _range, i (i)}
 	<g>
 		<rect x={i * rectWidth} y="0" width={rectWidth} height={rectHeight} fill={colours[i]} />
 		<text class="text-xxs fill-mid-grey font-light" x={i * rectWidth} y={rectHeight * 2 + 6}>

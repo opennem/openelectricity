@@ -171,7 +171,7 @@
 			<table class="text-left w-full">
 				<thead>
 					<tr class="border-b border-mid-warm-grey text-mid-grey align-bottom text-xs">
-						{#each columns[mapMode] as column, i}
+						{#each columns[mapMode] as column, i (i)}
 							{#if !(mapMode === 'annual' && i === 2)}
 								<td
 									class="pb-3"
@@ -250,7 +250,7 @@
 				<div class="md:hidden">
 					<h5 class="text-left mt-8">Cross Border Export</h5>
 					<div class="grid grid-cols-2 gap-4">
-						{#each Object.entries(flows.regionFlows) as [regionFlow, value]}
+						{#each Object.entries(flows.regionFlows) as [regionFlow, value] (regionFlow)}
 							<CrossBorderExport regions={regionFlow} {value} />
 						{/each}
 					</div>

@@ -46,8 +46,8 @@
 <div class="h-[200px] m-10 p-4">
 	<LayerCake
 		padding={{ top: 0, right: 10, bottom: 0, left: 10 }}
-		x={'date'}
-		y={'value'}
+		x="date"
+		y="value"
 		data={brushedData}
 	>
 		<Svg>
@@ -64,7 +64,7 @@
 </div>
 
 <div class="h-[80px] m-10 mb-2 p-4 pb-2 bg-warm-grey">
-	<LayerCake padding={{ top: 0, right: 10, bottom: 0, left: 10 }} x={'date'} y={'value'} {data}>
+	<LayerCake padding={{ top: 0, right: 10, bottom: 0, left: 10 }} x="date" y="value" {data}>
 		<Svg>
 			<Line curveType={curveStepAfter} stroke="#353535" strokeWidth="1.5px" />
 		</Svg>

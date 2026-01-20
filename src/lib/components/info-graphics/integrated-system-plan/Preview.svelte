@@ -256,7 +256,7 @@
 					class:grid-cols-3={scenarios[selectedModel.value].length === 3}
 					class:grid-cols-2={scenarios[selectedModel.value].length !== 3}
 				>
-					{#each scenarios[selectedModel.value] as scenario}
+					{#each scenarios[selectedModel.value] as scenario (scenario)}
 						<button
 							class="w-full rounded-lg border hover:bg-light-warm-grey px-6 py-4 capitalize text-left leading-sm"
 							class:border-mid-warm-grey={selectedScenario !== scenario}
@@ -330,7 +330,7 @@
 					</div>
 					<div class="w-full">
 						<OverviewChart
-							title={`Energy Generation (TWh) by Financial Year`}
+							title="Energy Generation (TWh) by Financial Year"
 							scenarioTitle={selectedModelScenarioLabels[selectedScenario]}
 							description={selectedModelScenarioDescriptions[selectedScenario]}
 							dataset={projectionTimeSeriesDatasets.data}
@@ -381,7 +381,7 @@
 		class:md:grid-cols-6={projectionSeriesNames.length === 6}
 		class:md:grid-cols-2={projectionSeriesNames.length === 2}
 	>
-		{#each [...projectionSeriesNames].reverse() as key}
+		{#each [...projectionSeriesNames].reverse() as key (key)}
 			<SparkLineArea
 				class="p-8 even:border-l border-t nth-[-n+2]:border-t-0 md:border-0 border-mid-warm-grey"
 				dataset={projectionTimeSeriesDatasets.data}

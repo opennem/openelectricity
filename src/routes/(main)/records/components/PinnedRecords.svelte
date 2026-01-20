@@ -217,7 +217,7 @@
 <div
 	class="text-base overflow-auto flex items-stretch snap-x snap-mandatory md:grid grid-cols-5 md:gap-4"
 >
-	{#each pinned as { fuelTech }}
+	{#each pinned as { fuelTech } (fuelTech)}
 		{@const recordData = recordMap[fuelTech]}
 		<div
 			class="snap-start px-2 pr-2 first:pl-10 last:pr-10 md:p-0 md:first:pl-5 md:last:pr-0 shrink-0 w-[190px] md:w-auto"

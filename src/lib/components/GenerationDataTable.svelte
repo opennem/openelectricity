@@ -145,7 +145,7 @@
 				>
 					Month
 				</th>
-				{#each sortedYears as yearObj}
+				{#each sortedYears as yearObj (yearObj.key)}
 					<th
 						scope="col"
 						class="px-4 py-3 text-center text-xs font-medium uppercase tracking-wider"
@@ -162,14 +162,14 @@
 			</tr>
 		</thead>
 		<tbody class="bg-white divide-y divide-gray-200">
-			{#each tableData as row}
+			{#each tableData as row (row.monthIndex)}
 				<tr class="hover:bg-gray-50">
 					<td
 						class="px-4 py-3 text-sm font-medium text-gray-900 sticky left-0 bg-white hover:bg-gray-50 border-r border-gray-200"
 					>
 						{row.month}
 					</td>
-					{#each sortedYears as yearObj}
+					{#each sortedYears as yearObj (yearObj.key)}
 						<td
 							class="px-4 py-3 text-sm text-center"
 							class:text-gray-900={isCurrentYear(yearObj.year)}

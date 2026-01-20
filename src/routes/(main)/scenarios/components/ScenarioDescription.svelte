@@ -38,7 +38,7 @@
 				{#if isAemo2024}
 					<p>{scenarioSummary[selectedModel][selectedScenario]}</p>
 					<ul class="list-disc list-outside pl-12 my-12">
-						{#each scenarioKeyPoints[selectedModel][selectedScenario] as key}
+						{#each scenarioKeyPoints[selectedModel][selectedScenario] as key (key)}
 							<li class="font-bold">{key}</li>
 						{/each}
 					</ul>
@@ -48,7 +48,7 @@
 					{/if}
 
 					<div class="hidden md:block" class:!block={readMore}>
-						{#each scenarioParagraphs[selectedModel][selectedScenario] as paragraph, i}
+						{#each scenarioParagraphs[selectedModel][selectedScenario] as paragraph, i (i)}
 							<p class="my-12">
 								{#if scenarioParagraphs[selectedModel][selectedScenario].length - 1 === i}
 									<strong>Net zero summary: </strong>

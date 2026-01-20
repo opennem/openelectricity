@@ -64,7 +64,7 @@
 
 	<!-- Optional dots -->
 	{#if showDots}
-		{#each $data as d}
+		{#each $data as d (d.time)}
 			{@const cx = $xGet(d)}
 			{@const cy = $yGet(d)}
 

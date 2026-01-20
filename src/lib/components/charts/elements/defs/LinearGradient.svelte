@@ -18,7 +18,7 @@
 </script>
 
 <linearGradient {id}>
-	{#each stops as { offset, color }}
+	{#each stops as { offset, color } (offset)}
 		<stop {offset} stop-color={color} />
 	{/each}
 </linearGradient>

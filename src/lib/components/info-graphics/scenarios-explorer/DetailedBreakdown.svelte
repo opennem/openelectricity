@@ -112,7 +112,7 @@
 	</div>
 
 	<div class="grid grid-cols-3 border-mid-warm-grey">
-		{#each names as key, i}
+		{#each names as key, i (key)}
 			<SparkLineArea
 				class="p-8 border-mid-warm-grey border-b border-l last:border-r nth-[3n]:border-r nth-[-n+3]:border-t"
 				id={`key-${i}`}
@@ -125,7 +125,7 @@
 				colour={displayData.colours[key]}
 				{hoverData}
 				isTechnologyDisplay={true}
-				displayUnit={'TWh'}
+				displayUnit="TWh"
 				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
 				on:mouseout={() => (hoverData = undefined)}
 			/>

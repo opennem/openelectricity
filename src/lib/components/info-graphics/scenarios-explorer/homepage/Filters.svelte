@@ -71,7 +71,7 @@
 		class:grid-cols-3={$scenarioOptions.length === 3}
 		class:grid-cols-2={$scenarioOptions.length !== 3}
 	>
-		{#each $scenarioOptions as { label, value }}
+		{#each $scenarioOptions as { label, value } (value)}
 			<button
 				class="w-full rounded-lg border hover:bg-light-warm-grey px-6 py-4 capitalize text-left leading-sm"
 				class:border-mid-warm-grey={$selectedScenario !== value}

@@ -46,7 +46,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-4 place-items-start">
 				<div class="flex items-center gap-6 order-2 md:order-1">
 					<div class="flex items-center">
-						{#each data.author as author, i}
+						{#each data.author as author, i (i)}
 							<span class={`w-20 h-20 block grayscale relative ${i > 0 ? '-left-3' : 'left-0'}`}>
 								{#if author.image}
 									<img
@@ -66,7 +66,7 @@
 					</div>
 					<div class="text-sm mt-1">
 						<div class="author flex flex-wrap justify-start gap-1 text-dark-grey">
-							{#each data.author as author, i}
+							{#each data.author as author, i (i)}
 								{#if i > 0}
 									<span>+</span>
 								{/if}
@@ -118,7 +118,7 @@
 <div class="container max-w-none lg:container pt-12 pb-36">
 	<div class="flex items-start gap-6 max-w-5xl mx-auto border-y border-mid-warm-grey py-12">
 		<div class="flex items-center">
-			{#each data.author as author, i}
+			{#each data.author as author, i (i)}
 				<span class={`w-20 h-20 block grayscale relative ${i > 0 ? '-left-3' : 'left-0'}`}>
 					<img
 						class="rounded-full border border-white"
@@ -130,7 +130,7 @@
 		</div>
 		<div class="text-sm mt-2">
 			<div class="author flex flex-wrap justify-start gap-1 text-dark-grey">
-				{#each data.author as author, i}
+				{#each data.author as author, i (i)}
 					{#if i > 0}
 						<span>+</span>
 					{/if}
@@ -139,13 +139,13 @@
 			</div>
 
 			<div class="author flex flex-wrap justify-start gap-1 text-mid-grey font-light">
-				{#each data.author as author}
+				{#each data.author as author (author.name)}
 					<span>{author.position}</span>
 				{/each}
 			</div>
 
 			<div class="author-bio text-mid-grey mt-4">
-				{#each data.author as author}
+				{#each data.author as author (author.name)}
 					<span>{author.bio}</span>
 				{/each}
 			</div>

@@ -148,7 +148,7 @@
 
 	{#if staticDisplay}
 		<ul class="flex flex-col mt-1 text-sm">
-			{#each options as opt}
+			{#each options as opt (opt.value)}
 				{#if opt.divider}
 					<li class="whitespace-nowrap">
 						<div class="w-full h-px bg-warm-grey"></div>
@@ -192,7 +192,7 @@
 			in:fly={{ y: -5, duration: 150 }}
 			out:fly={{ y: -5, duration: 150 }}
 		>
-			{#each options as opt}
+			{#each options as opt (opt.value)}
 				{#if opt.divider}
 					<li class="whitespace-nowrap">
 						<div class="w-full h-px bg-warm-grey"></div>

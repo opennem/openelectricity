@@ -41,7 +41,7 @@
 		<dl
 			class="flex flex-col mt-12 border-y border-dotted border-mid-warm-grey divide-y divide-dotted divide-mid-warm-grey gap-0"
 		>
-			{#each team as member}
+			{#each team as member, i (i)}
 				<div class="py-12">
 					<dt class="flex justify-between items-center">
 						<div class="flex flex-col gap-2">
@@ -50,14 +50,14 @@
 						</div>
 
 						<div class="text-dark-grey flex items-center gap-6">
-							{#each member.social as { type, href }}
+							{#each member.social as { type, href }, i (i)}
 								<Social {href} socialType={type} />
 							{/each}
 						</div>
 					</dt>
 					{#if member.bio.length > 0}
 						<dd class="pt-6 text-base">
-							{#each member.bio as paragraph}
+							{#each member.bio as paragraph, i (i)}
 								<p>{paragraph}</p>
 							{/each}
 						</dd>

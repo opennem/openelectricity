@@ -136,7 +136,7 @@
 			d={lineGen(d.values)}
 			fill="transparent"
 			stroke={$zGet(d)}
-			stroke-width={'1.5'}
+			stroke-width="1.5"
 			opacity={lineOpacity(d)}
 		/>
 	{/each}
@@ -150,8 +150,8 @@
 				class="path-area focus:outline-0"
 				d={areaGen(d)}
 				fill={getZFill(d)}
-				stroke={'none'}
-				stroke-width={'0'}
+				stroke="none"
+				stroke-width="0"
 				opacity={areaOpacity(d)}
 				onmousemove={(e) => pointermove(e, d.key || d.group)}
 				onmouseout={mouseout}

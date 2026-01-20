@@ -39,7 +39,15 @@ export default [
 		rules: {
 			'svelte/no-at-html-tags': 'off',
 			// Disable strict Svelte 5 compile warnings that flag many pre-existing patterns
-			'svelte/valid-compile': ['error', { ignoreWarnings: true }]
+			'svelte/valid-compile': ['error', { ignoreWarnings: true }],
+			// Disable navigation resolve rule - this app doesn't use a base path configuration
+			// so resolving navigation paths adds complexity without benefit
+			'svelte/no-navigation-without-resolve': 'off',
+			// Disable prefer-svelte-reactivity rule - using SvelteMap/SvelteURL/SvelteURLSearchParams
+			// requires significant refactoring and these built-ins work fine in current patterns
+			'svelte/prefer-svelte-reactivity': 'off',
+			// Disable prefer-writable-derived - existing $state + $effect patterns work fine
+			'svelte/prefer-writable-derived': 'off'
 		}
 	},
 	{

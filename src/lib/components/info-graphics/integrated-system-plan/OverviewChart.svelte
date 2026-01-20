@@ -124,7 +124,7 @@
 				<Overlay fill="url(#{`${id}-hatch-pattern`})" />
 			{/if}
 
-			{#each xAnnotationLines as line}
+			{#each xAnnotationLines as line (line.date)}
 				<AnnotateLineX xValue={line} />
 			{/each}
 

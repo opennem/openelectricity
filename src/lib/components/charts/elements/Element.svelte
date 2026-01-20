@@ -28,7 +28,7 @@
 </script>
 
 <g>
-	{#each dataset as d}
+	{#each dataset as d, i (i)}
 		<rect
 			class="group-rect"
 			x={$xGet({ date: d })[0]}

@@ -226,7 +226,7 @@
 	class={`overflow-visible w-full h-auto block ${rest.class}`}
 >
 	<!-- State geometry -->
-	{#each regions as { id, component, interaction }}
+	{#each regions as { id, component, interaction } (id)}
 		{@const SvelteComponent = component}
 		<g
 			role="group"

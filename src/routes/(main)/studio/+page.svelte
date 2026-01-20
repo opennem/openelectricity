@@ -76,7 +76,7 @@
 
 <section class="md:container py-12">
 	<div class="grid grid-cols-1 md:grid-cols-3 gap-8 px-6">
-		{#each projects as project}
+		{#each projects as project (project.title)}
 			<div
 				class="bg-dark-grey p-8 rounded-xl grid grid-cols-1 gap-8 content-between text-light-warm-grey relative"
 			>

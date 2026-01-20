@@ -29,7 +29,7 @@
 	>
 		{#if regionsOnly}
 			<optgroup label="Regions">
-				{#each regionsOnly as region}
+				{#each regionsOnly as region (region.iso)}
 					<option value={region.iso}>{region.name}</option>
 				{/each}
 			</optgroup>
@@ -37,7 +37,7 @@
 
 		{#if countriesOnly}
 			<optgroup label="Countries">
-				{#each countriesOnly as country}
+				{#each countriesOnly as country (country.iso)}
 					<option value={country.iso}>{country.name}</option>
 				{/each}
 			</optgroup>

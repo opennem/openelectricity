@@ -102,9 +102,9 @@
 <div class="chart-container h-[350px] md:h-[650px]">
 	<LayerCake
 		padding={{ top: 20, right: chartRight, bottom: chartBottom, left: chartLeft }}
-		x={'date'}
-		y={'value'}
-		z={'group'}
+		x="date"
+		y="value"
+		z="group"
 		{xDomain}
 		yDomain={[0, null]}
 		zDomain={seriesNames}

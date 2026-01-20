@@ -228,14 +228,14 @@
 		</tbody>
 
 		<tbody class="border-b border-warm-grey">
-			{#each $orderedModelScenarioPathways as { model, scenarios }}
+			{#each $orderedModelScenarioPathways as { model, scenarios } (model)}
 				<tr>
 					<th colspan="5" class="pb-0 align-top text-left px-2 pt-1 font-medium">
 						<h6 class="ml-3 mb-0 pb-2 border-b border-warm-grey mr-3">{modelLabelMap[model]}</h6>
 					</th>
 				</tr>
 
-				{#each scenarios as { scenario, pathways }}
+				{#each scenarios as { scenario, pathways } (scenario)}
 					{@const scenarioId = `${model}-${scenario}`}
 
 					<tr>
@@ -245,7 +245,7 @@
 							</span>
 						</td>
 					</tr>
-					{#each pathways as pathway}
+					{#each pathways as pathway (pathway)}
 						{@const id = `${model}-${scenario}-${pathway}`}
 						<tr
 							class="hover:bg-light-warm-grey group cursor-pointer text-sm relative top-1"

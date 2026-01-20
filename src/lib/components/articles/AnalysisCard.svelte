@@ -54,7 +54,7 @@
 	<div class="grid grid-cols-1 gap-4">
 		<div class={authorStyles}>
 			<div class="flex items-center">
-				{#each article.author as author, i}
+				{#each article.author as author, i (i)}
 					<span class={`w-16 h-16 block grayscale relative ${i > 0 ? '-left-2' : 'left-0'}`}>
 						{#if author.image}
 							<img
@@ -70,7 +70,7 @@
 			</div>
 
 			<div class="author flex flex-wrap justify-end gap-1 text-xs text-mid-grey">
-				{#each article.author as author, i}
+				{#each article.author as author, i (i)}
 					{#if i > 0}
 						<span>+</span>
 					{/if}

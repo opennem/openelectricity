@@ -142,7 +142,7 @@
 	<div class="container max-w-none lg:container md:mt-12">
 		<footer class="block md:flex justify-between items-center">
 			<dl class="flex flex-wrap gap-1">
-				{#each displayLegend as { colour, label }}
+				{#each displayLegend as { colour, label } (label)}
 					<dt class="flex items-center gap-2 text-xs text-mid-grey mr-3">
 						<span class="w-4 h-4 block" style="background-color: {colour}"></span>
 						<span>{label}</span>

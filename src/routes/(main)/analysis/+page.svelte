@@ -197,7 +197,7 @@
 				</div>
 			</div>
 			<div class="grid grid-cols-1 md:grid-cols-3 py-12 gap-8">
-				{#each filteredArticles as article}
+				{#each filteredArticles as article (article._id)}
 					<ArticleCard class="min-h-[350px]" {article} />
 				{/each}
 			</div>

@@ -89,7 +89,7 @@
 			>
 				Download as CSV
 			</li>
-			{#each options as opt}
+			{#each options as opt (opt.value)}
 				<li class="whitespace-nowrap">
 					<a
 						href={fileUrl}

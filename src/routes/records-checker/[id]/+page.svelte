@@ -169,7 +169,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each timeSeriesData as record, i}
+				{#each timeSeriesData as record, i (record.instance_id)}
 					<tr
 						class:bg-error-red={hasIssue(record.instance_id)}
 						class:text-white={hasIssue(record.instance_id)}

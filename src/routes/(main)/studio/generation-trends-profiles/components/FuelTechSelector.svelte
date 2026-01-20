@@ -22,7 +22,7 @@
 				<div>
 					<h6 class="text-xs text-gray-600 mb-2">Selected</h6>
 					<div class="flex flex-wrap gap-2">
-						{#each selectedFuelTechs as fuelTech}
+						{#each selectedFuelTechs as fuelTech (fuelTech)}
 							<div
 								class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
 							>

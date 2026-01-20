@@ -35,7 +35,7 @@
 	</thead>
 
 	<tbody>
-		{#each dataset as record}
+		{#each dataset as record, i (i)}
 			{@const formattedDate = xTickValueFormatters[record.period].format(
 				record.time,
 				record.timeZone

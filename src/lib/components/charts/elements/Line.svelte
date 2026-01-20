@@ -65,7 +65,7 @@
 	{/if}
 
 	{#if showLineDots}
-		{#each $data as d}
+		{#each $data as d, i (i)}
 			<circle
 				cx={$xGet(d)}
 				cy={$yGet(d)}

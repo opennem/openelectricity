@@ -34,16 +34,16 @@
 <table class="w-full my-4">
 	<thead>
 		<tr class="border-b text-left">
-			{#each columns as { header }}
+			{#each columns as { header } (header)}
 				<th class="font-semibold">{header}</th>
 			{/each}
 		</tr>
 	</thead>
 
 	<tbody>
-		{#each units as unit}
+		{#each units as unit (unit.code)}
 			<tr class="border-b">
-				{#each columns as { prop }}
+				{#each columns as { prop } (prop)}
 					<td>{propValue(unit, prop)}</td>
 				{/each}
 			</tr>

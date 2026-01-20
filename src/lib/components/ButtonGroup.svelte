@@ -20,7 +20,7 @@
 </script>
 
 <div class="flex text-xs">
-	{#each buttons as { label, value }}
+	{#each buttons as { label, value } (value)}
 		<button
 			onclick={handleClick}
 			{value}

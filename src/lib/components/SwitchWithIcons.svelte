@@ -25,7 +25,7 @@
 <div
 	class={`flex text-sm md:inline-flex rounded-xl bg-light-warm-grey border border-solid border-mid-warm-grey ${rest.class}`}
 >
-	{#each buttons as { label, value, icon, size }}
+	{#each buttons as { label, value, icon, size } (value)}
 		<button
 			onclick={handleClick}
 			{value}

@@ -152,7 +152,7 @@
 			<tr>
 				<td colspan="5" class="h-4"></td>
 			</tr>
-			{#each $energySeriesNames as name, i}
+			{#each $energySeriesNames as name, i (name)}
 				<tr
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm"
 					onclick={() => handleRowClick(name)}

@@ -57,7 +57,7 @@
 </script>
 
 <div class={classes}>
-	{#each $data as group}
+	{#each $data as group, i (i)}
 		<div class:absolute={showBesideLatestPoint} style={getStyles(group.values)}>
 			<div class="flex items-center gap-4">
 				<span

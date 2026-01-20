@@ -271,7 +271,7 @@
 			class:blur-sm={fetching}
 		>
 			<div class="flex flex-col gap-1">
-				{#each Object.values(chartCxts) as cxt}
+				{#each Object.values(chartCxts) as cxt (cxt.key)}
 					<LensChart
 						cxtKey={cxt.key}
 						displayOptions={true}

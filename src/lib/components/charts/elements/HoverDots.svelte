@@ -32,7 +32,7 @@
 </script>
 
 {#if hoverData}
-	{#each $data as d}
+	{#each $data as d (d.key || d.group)}
 		<circle {cx} cy={cy(d)} r={r(d)} stroke="white" fill={$zGet(d)} />
 	{/each}
 {/if}

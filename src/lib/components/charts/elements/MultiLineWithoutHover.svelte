@@ -41,7 +41,7 @@
 		dispatch('mouseout');
 	}}
 >
-	{#each $data as group}
+	{#each $data as group (group.group)}
 		<path
 			class="path-line"
 			d={path(group.values)}

@@ -11,7 +11,7 @@ These can be done independently with minimal testing.
 ### 1.1 Icon Library
 
 ```bash
-npm install @lucide/svelte@latest
+bun add @lucide/svelte@latest
 ```
 
 - Risk: Low (icon additions, possible renames)
@@ -20,16 +20,16 @@ npm install @lucide/svelte@latest
 ### 1.2 ESLint Ecosystem
 
 ```bash
-npm install eslint-plugin-svelte@latest eslint-config-prettier@latest
+bun add eslint-plugin-svelte@latest eslint-config-prettier@latest
 ```
 
 - Risk: Low (linting rule changes)
-- Testing: Run `npm run lint` and fix any new violations
+- Testing: Run `bun run lint` and fix any new violations
 
 ### 1.3 Minor Utilities
 
 ```bash
-npm install @svelte-put/shortcut@latest sveltekit-embed@latest
+bun add @svelte-put/shortcut@latest sveltekit-embed@latest
 ```
 
 - Risk: Low
@@ -42,7 +42,7 @@ npm install @svelte-put/shortcut@latest sveltekit-embed@latest
 ### 2.1 Sanity Client & Image URL
 
 ```bash
-npm install @sanity/client@latest @sanity/image-url@latest
+bun add @sanity/client@latest @sanity/image-url@latest
 ```
 
 - Risk: Medium
@@ -59,7 +59,7 @@ npm install @sanity/client@latest @sanity/image-url@latest
 ### 3.1 date-fns v4 + date-fns-tz v3
 
 ```bash
-npm install date-fns@latest date-fns-tz@latest
+bun add date-fns@latest date-fns-tz@latest
 ```
 
 - Risk: Medium-High
@@ -79,7 +79,7 @@ npm install date-fns@latest date-fns-tz@latest
 ### 4.1 tailwind-variants v3
 
 ```bash
-npm install tailwind-variants@latest
+bun add tailwind-variants@latest
 ```
 
 - Risk: Medium
@@ -93,7 +93,7 @@ npm install tailwind-variants@latest
 ### 5.1 LayerCake v10
 
 ```bash
-npm install layercake@latest
+bun add layercake@latest
 ```
 
 - Risk: Medium-High
@@ -111,7 +111,7 @@ npm install layercake@latest
 ### 6.1 chroma-js v3
 
 ```bash
-npm install chroma-js@latest @types/chroma-js@latest
+bun add chroma-js@latest @types/chroma-js@latest
 ```
 
 - Risk: Medium
@@ -130,16 +130,16 @@ This is the largest upgrade and should be done as a single unit.
 ### 7.1 Vite 7 + SvelteKit Plugin + Vitest
 
 ```bash
-npm install vite@latest @sveltejs/vite-plugin-svelte@latest vitest@latest
+bun add vite@latest @sveltejs/vite-plugin-svelte@latest vitest@latest
 ```
 
 - Risk: High
 - Requires all three to be updated together
 - May need `vite.config.js` changes
 - Testing:
-  - `npm run dev` - development server
-  - `npm run build` - production build
-  - `npm run test` - test suite
+  - `bun run dev` - development server
+  - `bun run build` - production build
+  - `bun run test` - test suite
 - Docs:
   - https://vite.dev/guide/migration
   - https://github.com/sveltejs/vite-plugin-svelte/releases
@@ -161,9 +161,9 @@ npm install vite@latest @sveltejs/vite-plugin-svelte@latest vitest@latest
 
 ## Pre-Upgrade Checklist
 
-- [ ] Ensure all tests pass: `npm run test`
-- [ ] Ensure build works: `npm run build`
-- [ ] Ensure lint passes: `npm run lint`
+- [x] Ensure all tests pass: `bun run test`
+- [x] Ensure build works: `bun run build`
+- [x] Ensure lint passes: `bun run lint`
 - [ ] Create a git branch for the upgrade work
 - [ ] Review changelogs for each package
 

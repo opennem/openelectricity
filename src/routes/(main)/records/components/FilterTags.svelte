@@ -29,7 +29,7 @@
 		<h6 class="md:mt-10">Region</h6>
 	{/if}
 	<div class="flex flex-col md:flex-row gap-2 flex-wrap">
-		{#each $selectedRegions as region}
+		{#each $selectedRegions as region (region)}
 			<div
 				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
 			>
@@ -50,7 +50,7 @@
 		<h6 class="md:mt-10">Technology</h6>
 	{/if}
 	<div class="flex flex-col md:flex-row gap-2 flex-wrap">
-		{#each $selectedFuelTechs as fuelTech}
+		{#each $selectedFuelTechs as fuelTech (fuelTech)}
 			<div
 				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
 			>
@@ -71,7 +71,7 @@
 		<h6 class="md:mt-10">Metric</h6>
 	{/if}
 	<div class="flex flex-col md:flex-row gap-2 flex-wrap">
-		{#each $selectedMetrics as metric}
+		{#each $selectedMetrics as metric (metric)}
 			<div
 				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
 			>
@@ -92,7 +92,7 @@
 		<h6 class="md:mt-10">Period</h6>
 	{/if}
 	<div class="flex flex-col md:flex-row gap-2 flex-wrap">
-		{#each $selectedPeriods as period}
+		{#each $selectedPeriods as period (period)}
 			<div
 				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
 			>

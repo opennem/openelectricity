@@ -38,7 +38,7 @@
 </script>
 
 <div class="flex flex-wrap justify-center gap-6">
-	{#each keys as key}
+	{#each keys as key (key)}
 		<div
 			class="p-8 bg-light-warm-grey rounded-lg"
 			style="width: calc(100% / {keys.length} - 1.5rem);"
@@ -56,7 +56,7 @@
 			</div>
 
 			<div>
-				{#each gaugeYears as year}
+				{#each gaugeYears as year (year)}
 					<div class="flex justify-between">
 						<span>{year}</span>
 						<span>{dataset.filter((d) => d.date.getFullYear() === year)[0][key].toFixed(2)}</span>

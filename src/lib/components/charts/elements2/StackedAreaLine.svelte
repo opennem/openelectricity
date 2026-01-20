@@ -124,7 +124,7 @@
 {#if display === 'line'}
 	{#each $data as d, i (i)}
 		{#if showLineDots && d.values.length > 1}
-			{#each d.values as point}
+			{#each d.values as point (point.time)}
 				<circle
 					class="focus:outline-0"
 					role="presentation"
@@ -168,8 +168,8 @@
 				class="path-area focus:outline-0"
 				d={areaGen(d)}
 				fill={seriesColours[$z(d)]}
-				stroke={'none'}
-				stroke-width={'0'}
+				stroke="none"
+				stroke-width="0"
 				opacity={areaOpacity(d)}
 				onmousemove={(e) => pointermove(e, d.key || d.group)}
 				onmouseout={mouseout}

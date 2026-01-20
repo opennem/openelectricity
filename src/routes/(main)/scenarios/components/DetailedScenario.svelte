@@ -183,7 +183,7 @@
 			/>
 		</div>
 
-		{#each $orderedModelScenarioPathways as { model, scenarios }}
+		{#each $orderedModelScenarioPathways as { model, scenarios } (model)}
 			{@const names = getNames(model, scenarios)}
 			{@const labels = getLabels(model, scenarios)}
 			<section class="mb-12">

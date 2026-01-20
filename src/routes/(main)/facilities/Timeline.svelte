@@ -201,7 +201,7 @@
 		Go to Today
 	</button> -->
 	<div>
-		{#each [...groupedData] as [year, values], i}
+		{#each [...groupedData] as [year, values], i (year)}
 			<header
 				id={`y${year}`}
 				class="sticky top-0 bg-white/80 backdrop-blur-xs z-10 py-2 px-4 border-b border-warm-grey flex justify-between items-baseline"
@@ -215,7 +215,7 @@
 				</div>
 			</header>
 
-			{#each [...values] as [d, facilities]}
+			{#each [...values] as [d, facilities] (d)}
 				{@const isToday = d === 'Today'}
 				{@const firstFacility = facilities[0]}
 				{@const specificity = firstFacility.unit
@@ -273,7 +273,7 @@
 						<ol
 							class="flex flex-col col-span-12 border border-mid-warm-grey rounded-lg divide-y divide-mid-warm-grey"
 						>
-							{#each facilities as facility}
+							{#each facilities as facility, i (i)}
 								<FacilityUnitCard
 									{facility}
 									isHighlighted={hoveredFacility?.code === facility.code}

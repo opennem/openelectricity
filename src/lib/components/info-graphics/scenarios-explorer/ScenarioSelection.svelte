@@ -200,7 +200,7 @@
 			</header>
 
 			<ul class="grid grid-cols-4 gap-3">
-				{#each filteredScenarios as { id, organisation, year, scenario, draft, pathways, defaultPathway }}
+				{#each filteredScenarios as { id, organisation, year, scenario, draft, pathways, defaultPathway } (id)}
 					<li>
 						<button
 							class="min-h-36 text-left w-full border rounded-lg p-4 grid grid-cols-1 gap-6 place-content-between hover:border-black"
@@ -220,7 +220,7 @@
 										radioOnly={true}
 										name="peak_low"
 										label={scenario}
-										value={'12'}
+										value="12"
 										checked={focusScenarioId === id}
 									/>
 								</div>
