@@ -32,7 +32,7 @@
 			? 'flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0'
 			: ''}"
 	>
-		{#each units as unit, i (i)}
+		{#each units as unit (`${unit.fueltech_id}-${unit.status_id}`)}
 			<UnitGroup
 				fueltech_id={unit.fueltech_id}
 				status_id={unit.status_id}

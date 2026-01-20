@@ -147,7 +147,7 @@
 {#snippet badgeGroup()}
 	{#if hasMultipleGroups}
 		<span class="flex group/badges">
-			{#each visibleGroups as group, i (group.fueltech_id)}
+			{#each visibleGroups as group, i (`${group.fueltech_id}-${group.status_id}`)}
 				<FuelTechBadge
 					fueltech_id={group.fueltech_id}
 					status_id={group.status_id}
@@ -166,7 +166,7 @@
 					zIndex={visibleGroups.length + 1}
 				/>
 			{/if}
-			{#each hiddenGroups as group, i (group.fueltech_id)}
+			{#each hiddenGroups as group, i (`${group.fueltech_id}-${group.status_id}`)}
 				<FuelTechBadge
 					fueltech_id={group.fueltech_id}
 					status_id={group.status_id}

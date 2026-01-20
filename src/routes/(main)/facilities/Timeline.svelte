@@ -273,7 +273,7 @@
 						<ol
 							class="flex flex-col col-span-12 border border-mid-warm-grey rounded-lg divide-y divide-mid-warm-grey"
 						>
-							{#each facilities as facility, i (i)}
+							{#each facilities as facility, i (`${facility.code}-${i}`)}
 								<FacilityUnitCard
 									{facility}
 									isHighlighted={hoveredFacility?.code === facility.code}
