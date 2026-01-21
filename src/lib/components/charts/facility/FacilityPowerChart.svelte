@@ -39,6 +39,7 @@
 	 * @property {string} timeZone - Timezone offset string (+10:00 or +08:00)
 	 * @property {string} [defaultInterval] - Default interval (5m or 30m)
 	 * @property {string} [chartHeight] - Chart height class
+	 * @property {boolean} [showZoomBrush] - Show/hide the zoom brush (default: true)
 	 */
 
 	/** @type {Props} */
@@ -47,7 +48,8 @@
 		powerData,
 		timeZone,
 		defaultInterval = '30m',
-		chartHeight = 'h-[400px]'
+		chartHeight = 'h-[400px]',
+		showZoomBrush = true
 	} = $props();
 
 	// ============================================
@@ -359,7 +361,7 @@
 		onchange={handleIntervalChange}
 	/>
 
-	{#if brushedRange}
+	{#if showZoomBrush && brushedRange}
 		<button class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer" onclick={clearBrush}>
 			Clear zoom
 		</button>
@@ -367,7 +369,7 @@
 </div>
 
 <!-- Date Brush -->
-{#if isDataReady && brushChart}
+{#if showZoomBrush && isDataReady && brushChart}
 	<div class="mb-6">
 		<DateBrush chart={brushChart} {brushedRange} onbrush={handleBrush} formatTick={formatBrushTick}
 		/>
