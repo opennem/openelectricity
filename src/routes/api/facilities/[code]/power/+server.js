@@ -13,23 +13,38 @@ export async function GET({ params, url, setHeaders }) {
 		url.searchParams.get('network_id') || 'NEM'
 	);
 
+	// Optional date range query params (format: YYYY-MM-DD or YYYY-MM-DDTHH:mm:ss)
+	const dateStartParam = url.searchParams.get('date_start');
+	const dateEndParam = url.searchParams.get('date_end');
+	const daysParam = url.searchParams.get('days');
+
 	if (!code) {
 		return error(400, 'Missing facility code');
 	}
 
 	try {
-		// Calculate date range for last 7 days (timezone naive format)
-		const now = new Date();
-		const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-
 		// Format as timezone naive (YYYY-MM-DDTHH:mm:ss)
 		const formatDate = (/** @type {Date} */ d) => d.toISOString().slice(0, 19);
 
-		const { response } = await client.getFacilityData(networkId, code, ['power'], {
+		// Calculate date range - default to last 3 days
+		const now = new Date();
+		const days = daysParam ? parseInt(daysParam, 10) : 3;
+		const defaultStart = new Date(now.getTime() - days * 24 * 60 * 60 * 1000);
+
+		const dateStart = dateStartParam || formatDate(defaultStart);
+		const dateEnd = dateEndParam || undefined; // Let API default to current time
+
+		/** @type {import('openelectricity').GetFacilityDataOptions} */
+		const options = {
 			interval: '5m',
-			dateStart: formatDate(sevenDaysAgo),
-			dateEnd: formatDate(now)
-		});
+			dateStart
+		};
+
+		if (dateEnd) {
+			options.dateEnd = dateEnd;
+		}
+
+		const { response } = await client.getFacilityData(networkId, code, ['power'], options);
 
 		// Set cache headers (5 minutes)
 		setHeaders({

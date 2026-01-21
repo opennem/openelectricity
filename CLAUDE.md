@@ -4,15 +4,27 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-- **Development**: `npm run dev` - Start Vite development server
-- **Build**: `npm run build` - Production build with Vite
-- **Preview**: `npm run preview` - Preview built application
-- **Type Checking**: `npm run check` - SvelteKit sync + svelte-check with jsconfig.json
-- **Type Checking (Watch)**: `npm run check:watch` - Continuous type checking
-- **Linting**: `npm run lint` - Prettier format check + ESLint
-- **Formatting**: `npm run format` - Auto-format with Prettier
-- **Testing**: `npm run test` - Run Vitest test suite
-- **Version Management**: `npm run version:patch|minor|major` - Bump version using npm version
+**Local Development** uses [Bun](https://bun.sh/) for faster package management and script execution. **Cloudflare deployment** uses npm (configured in CI/CD).
+
+| Command | Local (Bun) | CI/Cloudflare (npm) |
+|---------|-------------|---------------------|
+| Install | `bun install` | `npm install` |
+| Dev server | `bun run dev` | `npm run dev` |
+| Build | `bun run build` | `npm run build` |
+| Type check | `bun run check` | `npm run check` |
+| Lint | `bun run lint` | `npm run lint` |
+| Format | `bun run format` | `npm run format` |
+| Test | `bun run test` | `npm run test` |
+
+- **Development**: `bun run dev` - Start Vite development server
+- **Build**: `bun run build` - Production build with Vite
+- **Preview**: `bun run preview` - Preview built application
+- **Type Checking**: `bun run check` - SvelteKit sync + svelte-check with jsconfig.json
+- **Type Checking (Watch)**: `bun run check:watch` - Continuous type checking
+- **Linting**: `bun run lint` - Prettier format check + ESLint
+- **Formatting**: `bun run format` - Auto-format with Prettier
+- **Testing**: `bun run test` - Run Vitest test suite
+- **Version Management**: `npm run version:patch|minor|major` - Bump version using npm version (npm required)
 
 ## Technology Stack
 

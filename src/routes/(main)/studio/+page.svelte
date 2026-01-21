@@ -31,6 +31,12 @@
 			disabled: false
 		},
 		{
+			title: 'Facility Explorer',
+			description:
+				'Explore 7-day power generation data for Australian electricity facilities with unit-level breakdown.',
+			link: '/studio/facility-explorer'
+		},
+		{
 			title: "Lens on Australia's emissions projections 2024",
 			description:
 				"Visualises the latest estimates of Australia's greenhouse gas emissions to 2040.",
