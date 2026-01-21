@@ -58,11 +58,44 @@
 
 	let showMobileFilterOptions = $state(false);
 	let showMobileSearch = $state(false);
+	let isBrowserFullscreen = $state(false);
 
 	/** @type {SearchInput | null} */
 	let mobileSearchRef = $state(null);
 	/** @type {SearchInput | null} */
 	let desktopSearchRef = $state(null);
+
+	// ============================================
+	// Browser Fullscreen API
+	// ============================================
+
+	/**
+	 * Toggle browser fullscreen mode
+	 * Also enables app fullscreen (hides nav/footer) when entering
+	 */
+	function toggleBrowserFullscreen() {
+		if (document.fullscreenElement) {
+			document.exitFullscreen();
+		} else {
+			// Enter browser fullscreen and also enable app fullscreen mode
+			document.documentElement.requestFullscreen();
+			if (!isFullscreen) {
+				onfullscreenchange?.();
+			}
+		}
+	}
+
+	/**
+	 * Handle fullscreen change events
+	 * Exit app fullscreen when exiting browser fullscreen
+	 */
+	function handleFullscreenChange() {
+		isBrowserFullscreen = !!document.fullscreenElement;
+		// When exiting browser fullscreen, also exit app fullscreen
+		if (!isBrowserFullscreen && isFullscreen) {
+			onfullscreenchange?.();
+		}
+	}
 
 	// ============================================
 	// Derived Options
@@ -145,7 +178,7 @@
 	// ============================================
 
 	/**
-	 * Handle keyboard shortcuts: '/' to focus search, 'f' to toggle fullscreen
+	 * Handle keyboard shortcuts: '/' to focus search, 'f' to toggle fullscreen, Shift+F for browser fullscreen
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
@@ -164,6 +197,14 @@
 			}
 		}
 
+		// Shift+F for browser fullscreen
+		if ((e.key === 'f' || e.key === 'F') && e.shiftKey) {
+			e.preventDefault();
+			toggleBrowserFullscreen();
+			return;
+		}
+
+		// F for app fullscreen (maximized mode)
 		if (e.key === 'f' || e.key === 'F') {
 			e.preventDefault();
 			onfullscreenchange?.();
@@ -251,6 +292,7 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
+<svelte:document onfullscreenchange={handleFullscreenChange} />
 
 <!-- Mobile Filter Modal -->
 <MobileFilterModal
@@ -387,7 +429,9 @@
 		<button
 			onclick={() => onfullscreenchange?.()}
 			class="p-3 md:p-2 rounded-full md:rounded-lg border border-warm-grey md:border-0 bg-white hover:border-dark-grey md:hover:bg-light-warm-grey transition-colors cursor-pointer"
-			title={isFullscreen ? 'Exit full screen (F or Esc)' : 'Enter full screen (F)'}
+			title={isFullscreen
+				? 'Exit full screen (F or Esc). Shift+F for browser fullscreen'
+				: 'Enter full screen (F). Shift+F for browser fullscreen'}
 		>
 			{#if isFullscreen}
 				<Minimize2 class="size-7 md:size-6 text-mid-grey" />
