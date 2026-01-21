@@ -76,6 +76,12 @@
 	/** @type {any | null} */
 	let clickedFacility = $state(null);
 
+	// List sorting state (persists across view changes)
+	/** @type {'name' | 'region' | 'capacity'} */
+	let listSortBy = $state('name');
+	/** @type {'asc' | 'desc'} */
+	let listSortOrder = $state('asc');
+
 	// Map clustering toggle and ref
 	let mapClustering = $state(true);
 	/** @type {*} */
@@ -533,9 +539,15 @@
 						{hoveredFacility}
 						{clickedFacility}
 						{selectedFacilityCode}
+						sortBy={listSortBy}
+						sortOrder={listSortOrder}
 						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 						onclick={(/** @type {any} */ f) => {
 							handleFacilitySelect(f);
+						}}
+						onsortchange={(by, order) => {
+							listSortBy = by;
+							listSortOrder = order;
 						}}
 					/>
 				</div>

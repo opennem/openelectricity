@@ -11,8 +11,11 @@
 	 *   hoveredFacility?: any | null,
 	 *   clickedFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
+	 *   sortBy?: 'name' | 'region' | 'capacity',
+	 *   sortOrder?: 'asc' | 'desc',
 	 *   onhover?: (facility: any | null) => void,
-	 *   onclick?: (facility: any) => void
+	 *   onclick?: (facility: any) => void,
+	 *   onsortchange?: (sortBy: 'name' | 'region' | 'capacity', sortOrder: 'asc' | 'desc') => void
 	 * }}
 	 */
 	let {
@@ -20,15 +23,12 @@
 		hoveredFacility = null,
 		clickedFacility = null,
 		selectedFacilityCode = null,
+		sortBy = 'name',
+		sortOrder = 'asc',
 		onhover,
-		onclick
+		onclick,
+		onsortchange
 	} = $props();
-
-	// Sorting state
-	/** @type {'name' | 'region' | 'capacity'} */
-	let sortBy = $state('name');
-	/** @type {'asc' | 'desc'} */
-	let sortOrder = $state('asc');
 
 	/**
 	 * Get total capacity for a facility
@@ -77,12 +77,18 @@
 	 * @param {'name' | 'region' | 'capacity'} column
 	 */
 	function handleSort(column) {
+		/** @type {'asc' | 'desc'} */
+		let newOrder;
+		/** @type {'name' | 'region' | 'capacity'} */
+		let newSortBy = column;
+
 		if (sortBy === column) {
-			sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+			newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
 		} else {
-			sortBy = column;
-			sortOrder = column === 'capacity' ? 'desc' : 'asc';
+			newOrder = column === 'capacity' ? 'desc' : 'asc';
 		}
+
+		onsortchange?.(newSortBy, newOrder);
 	}
 
 	// Scroll to facility when clickedFacility changes (from map click)
