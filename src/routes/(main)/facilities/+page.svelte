@@ -591,7 +591,7 @@
 	open={selectedFacilityCode !== null}
 	title={selectedFacility?.name ?? ''}
 	side="bottom"
-	size="50%"
+	size="66.67%"
 	width="50vw"
 	align="end"
 	onclose={() => {
