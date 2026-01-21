@@ -6,6 +6,7 @@
  */
 
 export { default as FacilityPowerChart } from './FacilityPowerChart.svelte';
+export { default as FacilityUnitsTable } from './FacilityUnitsTable.svelte';
 export {
 	generateUnitShades,
 	buildUnitColourMap,

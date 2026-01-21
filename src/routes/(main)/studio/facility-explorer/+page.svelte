@@ -8,8 +8,12 @@
 
 	import { goto } from '$app/navigation';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import { fuelTechNameMap, isLoad } from '$lib/fuel_techs';
-	import { FacilityPowerChart, buildUnitColourMap } from '$lib/components/charts/facility';
+	import { isLoad, fuelTechNameMap } from '$lib/fuel_techs';
+	import {
+		FacilityPowerChart,
+		FacilityUnitsTable,
+		buildUnitColourMap
+	} from '$lib/components/charts/facility';
 
 	/**
 	 * Get color for a fuel tech code
@@ -271,42 +275,7 @@
 		{#if selectedFacility.units?.length}
 			<div class="mt-6">
 				<h3 class="text-lg font-semibold mb-3">Units</h3>
-				<div class="overflow-x-auto">
-					<table class="w-full text-sm">
-						<thead>
-							<tr class="border-b border-warm-grey">
-								<th class="text-left py-2 px-3">Code</th>
-								<th class="text-left py-2 px-3">Fuel Tech</th>
-								<th class="text-left py-2 px-3">Type</th>
-								<th class="text-right py-2 px-3">Capacity (MW)</th>
-								<th class="text-left py-2 px-3">Status</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each selectedFacility.units as unit (unit.code)}
-								<tr class="border-b border-light-warm-grey hover:bg-light-warm-grey">
-									<td class="py-2 px-3 font-mono">{unit.code}</td>
-									<td class="py-2 px-3">
-										<span class="flex items-center gap-2">
-											<span
-												class="w-3 h-3 rounded-full"
-												style="background-color: {unitColours[unit.code]}"
-											></span>
-											{fuelTechNameMap[unit.fueltech_id] || unit.fueltech_id}
-										</span>
-									</td>
-									<td class="py-2 px-3">
-										{unit.dispatch_type === 'LOAD' ? 'Load' : 'Generator'}
-									</td>
-									<td class="py-2 px-3 text-right font-mono">
-										{unit.capacity_registered?.toLocaleString() || '-'}
-									</td>
-									<td class="py-2 px-3 capitalize">{unit.status_id}</td>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+				<FacilityUnitsTable units={selectedFacility.units} {unitColours} />
 			</div>
 		{/if}
 	{:else}

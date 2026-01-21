@@ -2,6 +2,11 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechName } from '$lib/fuel_techs';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
+	import {
+		FacilityPowerChart,
+		FacilityUnitsTable,
+		getNetworkTimezone
+	} from '$lib/components/charts/facility';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import { getRegionLabel, statusColours } from '../_utils/filters';
@@ -13,10 +18,13 @@
 
 	/**
 	 * @type {{
-	 *   facility: any | null
+	 *   facility: any | null,
+	 *   powerData: any | null
 	 * }}
 	 */
-	let { facility } = $props();
+	let { facility, powerData = null } = $props();
+
+	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
 
 	/**
 	 * Check if fueltech needs dark text (for light backgrounds)
@@ -141,6 +149,14 @@
 			</div>
 		</div>
 
+		<!-- Power Chart -->
+		{#if powerData}
+			<div class="mb-6">
+				<h3 class="text-sm font-medium text-dark-grey mb-3">Power Generation (Last 3 Days)</h3>
+				<FacilityPowerChart {facility} {powerData} {timeZone} chartHeight="h-[250px]" />
+			</div>
+		{/if}
+
 		<!-- Units grouped by fuel tech and status -->
 		<div class="space-y-4">
 			<h3 class="text-sm font-medium text-dark-grey">Units</h3>
@@ -215,6 +231,14 @@
 				</div>
 			{/each}
 		</div>
+
+		<!-- Units Table (with chart-matching colors) -->
+		{#if facility.units?.length}
+			<div class="mt-6">
+				<h3 class="text-sm font-medium text-dark-grey mb-3">All Units</h3>
+				<FacilityUnitsTable units={facility.units} compact />
+			</div>
+		{/if}
 
 		<!-- External link -->
 		<div class="mt-6 pt-6 border-t border-warm-grey">

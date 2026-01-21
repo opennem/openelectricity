@@ -384,6 +384,16 @@
 			onfocus={handleFocus}
 		/>
 	</div>
+{:else if powerData !== null && !isDataReady}
+	<!-- No data found -->
+	<div
+		class="border border-light-warm-grey rounded-lg bg-light-warm-grey/30 flex items-center justify-center {chartHeight}"
+	>
+		<div class="text-center text-mid-grey">
+			<p class="text-sm">No power data found</p>
+			<p class="text-xs mt-1">Data may not be available for this facility</p>
+		</div>
+	</div>
 {:else if powerData === null}
 	<div class="flex items-center justify-center py-12">
 		<div class="flex items-center gap-3 text-mid-warm-grey">

@@ -78,6 +78,36 @@ export async function load({ url }) {
 	// Check server-side cache first
 	const cached = getCachedFacilities(filterParams);
 	if (cached) {
+		// If a facility is selected, fetch its power data even with cached facilities
+		let powerData = null;
+		let selectedFacilityData = null;
+
+		if (selectedFacility) {
+			selectedFacilityData = cached.find((f) => f.code === selectedFacility) ?? null;
+
+			if (selectedFacilityData) {
+				try {
+					const networkId = /** @type {import('openelectricity').NetworkCode} */ (
+						selectedFacilityData.network_id
+					);
+					const { response } = await client.getFacilityData(
+						networkId,
+						selectedFacility,
+						['power'],
+						{
+							interval: '5m',
+							dateStart: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19)
+						}
+					);
+					powerData = response;
+				} catch (err) {
+					console.error('Error fetching facility power data:', err);
+					// Set empty object to indicate "no data" vs null for "loading"
+					powerData = { data: [] };
+				}
+			}
+		}
+
 		return {
 			facilities: cached,
 			view,
@@ -86,6 +116,8 @@ export async function load({ url }) {
 			fuelTechs,
 			sizes,
 			selectedFacility,
+			selectedFacilityData,
+			powerData,
 			fromCache: true
 		};
 	}
@@ -164,6 +196,36 @@ export async function load({ url }) {
 	// Store in server cache
 	setCachedFacilities(filterParams, newFacilities);
 
+	// If a facility is selected, fetch its power data
+	let powerData = null;
+	let selectedFacilityData = null;
+
+	if (selectedFacility) {
+		selectedFacilityData = newFacilities.find((f) => f.code === selectedFacility) ?? null;
+
+		if (selectedFacilityData) {
+			try {
+				const networkId = /** @type {import('openelectricity').NetworkCode} */ (
+					selectedFacilityData.network_id
+				);
+				const { response } = await client.getFacilityData(
+					networkId,
+					selectedFacility,
+					['power'],
+					{
+						interval: '5m',
+						dateStart: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19)
+					}
+				);
+				powerData = response;
+			} catch (err) {
+				console.error('Error fetching facility power data:', err);
+				// Set empty object to indicate "no data" vs null for "loading"
+				powerData = { data: [] };
+			}
+		}
+	}
+
 	return {
 		facilities: newFacilities,
 		view,
@@ -172,6 +234,8 @@ export async function load({ url }) {
 		fuelTechs,
 		sizes,
 		selectedFacility,
+		selectedFacilityData,
+		powerData,
 		fromCache: false
 	};
 }

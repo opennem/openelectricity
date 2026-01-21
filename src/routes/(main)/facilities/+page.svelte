@@ -11,9 +11,8 @@
 	import List from './List.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
-	// TODO: Re-enable when facility detail panel is ready
-	// import { Sheet } from '$lib/components/ui/sheet';
-	// import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
+	import { Sheet } from '$lib/components/ui/sheet';
+	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 
 	let { data } = $props();
 
@@ -122,13 +121,9 @@
 
 	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
 
-	// Get the selected facility object
-	// TODO: Re-enable when facility detail panel is ready
-	// let selectedFacility = $derived(
-	// 	selectedFacilityCode
-	// 		? filteredFacilities.find((f) => f.code === selectedFacilityCode) ?? null
-	// 		: null
-	// );
+	// Get the selected facility object and power data from server
+	let selectedFacility = $derived(data.selectedFacilityData ?? null);
+	let powerData = $derived(data.powerData ?? null);
 
 	// Calculate totals for filtered facilities
 	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
@@ -284,7 +279,7 @@
 				// Toggle off - clear selection and close popups
 				selectedFacilityCode = null;
 				mapRef?.closePopups();
-				// Facility selection uses cached data, no refetch needed
+				// Clear selection - no refetch needed
 				navigateWithoutRefetch({
 					statuses,
 					regions,
@@ -294,10 +289,9 @@
 					facility: null
 				});
 			} else {
-				// Select new facility
+				// Select new facility - refetch to get power data
 				selectedFacilityCode = facility.code;
-				// Facility selection uses cached data, no refetch needed
-				navigateWithoutRefetch({
+				navigateWithRefetch({
 					statuses,
 					regions,
 					fuelTechs,
@@ -537,8 +531,7 @@
 	{/if}
 </section>
 
-<!-- Facility detail panel (temporarily disabled) -->
-<!-- TODO: Re-enable when facility detail panel is ready
+<!-- Facility detail panel -->
 <Sheet
 	open={selectedFacility !== null}
 	title={selectedFacility?.name ?? ''}
@@ -552,6 +545,5 @@
 		navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes, view: selectedView, facility: null });
 	}}
 >
-	<FacilityDetailPanel facility={selectedFacility} />
+	<FacilityDetailPanel facility={selectedFacility} {powerData} />
 </Sheet>
--->
