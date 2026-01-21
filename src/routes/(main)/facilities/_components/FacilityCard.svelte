@@ -4,7 +4,7 @@
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
-	import { getFueltechColor } from '../_utils/fueltech-display';
+	import { groupUnits, getExploreUrl } from '../_utils/units';
 	import { ExternalLink } from '@lucide/svelte';
 
 	/**
@@ -30,83 +30,7 @@
 		onmouseleave
 	} = $props();
 
-	/**
-	 * Sum a numeric field across units
-	 * @param {any[]} units
-	 * @param {string} field
-	 * @returns {number}
-	 */
-	function sumField(units, field) {
-		return units.reduce((sum, unit) => sum + (Number(unit[field]) || 0), 0);
-	}
-
-	/**
-	 * @typedef {Object} UnitSummary
-	 * @property {string} fueltech_id
-	 * @property {string} status_id
-	 * @property {number} capacity_maximum
-	 * @property {number} capacity_registered
-	 * @property {number} max_generation
-	 */
-
-	/**
-	 * @typedef {Object} UnitGroupType
-	 * @property {string} fueltech_id
-	 * @property {string} status_id
-	 * @property {any[]} units
-	 * @property {boolean} isCommissioning
-	 * @property {number} totalCapacity
-	 * @property {string} bgColor
-	 * @property {UnitSummary} unitSummary
-	 */
-
-	/**
-	 * Group units by fueltech_id and status_id
-	 * @returns {UnitGroupType[]}
-	 */
-	function groupUnits() {
-		if (!facility.units || facility.units.length === 0) return [];
-
-		/** @type {Map<string, {fueltech_id: string, status_id: string, units: any[]}>} */
-		const groups = new Map();
-
-		for (const unit of facility.units) {
-			const key = `${unit.fueltech_id}|||${unit.status_id}`;
-
-			if (!groups.has(key)) {
-				groups.set(key, {
-					fueltech_id: unit.fueltech_id,
-					status_id: unit.status_id,
-					units: []
-				});
-			}
-			groups.get(key)?.units.push({ ...unit, isCommissioning: unit.isCommissioning });
-		}
-
-		return Array.from(groups.values()).map((group) => {
-			const capacity_maximum = sumField(group.units, 'capacity_maximum');
-			const capacity_registered = sumField(group.units, 'capacity_registered');
-			const max_generation = sumField(group.units, 'max_generation');
-
-			return {
-				fueltech_id: group.fueltech_id,
-				status_id: group.status_id,
-				units: group.units,
-				isCommissioning: group.units.some((unit) => unit.isCommissioning),
-				totalCapacity: capacity_maximum || capacity_registered,
-				bgColor: getFueltechColor(group.fueltech_id),
-				unitSummary: {
-					fueltech_id: group.fueltech_id,
-					status_id: group.status_id,
-					capacity_maximum,
-					capacity_registered,
-					max_generation
-				}
-			};
-		});
-	}
-
-	let unitGroups = $derived(groupUnits());
+	let unitGroups = $derived(groupUnits(facility));
 	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
 	let hasMultipleGroups = $derived(unitGroups.length > 1);
 	let primaryGroup = $derived(unitGroups[0]);
@@ -126,19 +50,17 @@
 	// Data for UnitGroupPopup
 	let popupUnits = $derived(
 		unitGroups.map((g) => ({
-			fueltech_id: g.unitSummary.fueltech_id,
-			status_id: g.unitSummary.status_id,
+			fueltech_id: g.fueltech_id,
+			status_id: g.status_id,
 			isCommissioning: g.isCommissioning,
-			capacity_maximum: g.unitSummary.capacity_maximum,
-			capacity_registered: g.unitSummary.capacity_registered,
-			max_generation: g.unitSummary.max_generation,
+			capacity_maximum: g.capacity_maximum,
+			capacity_registered: g.capacity_registered,
+			max_generation: g.max_generation,
 			bgColor: g.bgColor
 		}))
 	);
 
-	let path = $derived(
-		`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`
-	);
+	let path = $derived(getExploreUrl(facility));
 
 	/** @type {'sm' | 'md'} */
 	let badgeSize = $derived(compact ? 'sm' : 'md');

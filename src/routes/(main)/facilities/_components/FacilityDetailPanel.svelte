@@ -1,5 +1,4 @@
 <script>
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechName } from '$lib/fuel_techs';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import {
@@ -9,12 +8,11 @@
 	} from '$lib/components/charts/facility';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
-	import { getRegionLabel, statusColours } from '../_utils/filters';
+	import { getRegionLabel, getStatusLabel, statusColours } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
+	import { needsDarkText } from '../_utils/fueltech-display';
+	import { groupUnits, getExploreUrl } from '../_utils/units';
 	import { ExternalLink, MapPin } from '@lucide/svelte';
-
-	/** Fueltechs that need dark text for contrast */
-	const LIGHT_FUELTECHS = ['solar_utility', 'gas_ocgt', 'gas_recip'];
 
 	/**
 	 * @type {{
@@ -26,104 +24,9 @@
 
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
 
-	/**
-	 * Check if fueltech needs dark text (for light backgrounds)
-	 * @param {string} fueltech
-	 * @returns {boolean}
-	 */
-	function needsDarkText(fueltech) {
-		return LIGHT_FUELTECHS.includes(fueltech);
-	}
-
-	/**
-	 * Get the background color for a fueltech
-	 * @param {string} fueltech
-	 * @returns {string}
-	 */
-	function getFueltechColor(fueltech) {
-		return fuelTechColourMap[fueltech] || '#FFFFFF';
-	}
-
-	/**
-	 * Sum a numeric field across units
-	 * @param {any[]} units
-	 * @param {string} field
-	 * @returns {number}
-	 */
-	function sumField(units, field) {
-		return units.reduce((sum, unit) => sum + (Number(unit[field]) || 0), 0);
-	}
-
-	/**
-	 * Group units by fueltech_id and status_id
-	 * @param {any} fac
-	 * @returns {any[]}
-	 */
-	function groupUnits(fac) {
-		if (!fac?.units || fac.units.length === 0) return [];
-
-		/** @type {Map<string, {fueltech_id: string, status_id: string, units: any[]}>} */
-		const groups = new Map();
-
-		for (const unit of fac.units) {
-			// Skip battery_charging and battery_discharging
-			if (unit.fueltech_id === 'battery_charging' || unit.fueltech_id === 'battery_discharging') {
-				continue;
-			}
-
-			const key = `${unit.fueltech_id}|||${unit.status_id}`;
-
-			if (!groups.has(key)) {
-				groups.set(key, {
-					fueltech_id: unit.fueltech_id,
-					status_id: unit.status_id,
-					units: []
-				});
-			}
-			groups.get(key)?.units.push({ ...unit, isCommissioning: unit.isCommissioning });
-		}
-
-		return Array.from(groups.values()).map((group) => {
-			const capacity_maximum = sumField(group.units, 'capacity_maximum');
-			const capacity_registered = sumField(group.units, 'capacity_registered');
-			const max_generation = sumField(group.units, 'max_generation');
-
-			return {
-				fueltech_id: group.fueltech_id,
-				status_id: group.status_id,
-				units: group.units,
-				isCommissioning: group.units.some((unit) => unit.isCommissioning),
-				totalCapacity: capacity_maximum || capacity_registered,
-				bgColor: getFueltechColor(group.fueltech_id),
-				capacity_maximum,
-				capacity_registered,
-				max_generation
-			};
-		});
-	}
-
-	let unitGroups = $derived(groupUnits(facility));
+	let unitGroups = $derived(groupUnits(facility, { skipBattery: true }));
 	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
-	let explorePath = $derived(
-		facility
-			? `https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`
-			: ''
-	);
-
-	/**
-	 * Get status label
-	 * @param {string} status
-	 * @returns {string}
-	 */
-	function getStatusLabel(status) {
-		const labels = {
-			operating: 'Operating',
-			commissioning: 'Commissioning',
-			committed: 'Committed',
-			retired: 'Retired'
-		};
-		return labels[status] || status;
-	}
+	let explorePath = $derived(getExploreUrl(facility));
 </script>
 
 {#if facility}

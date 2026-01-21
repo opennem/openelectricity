@@ -240,3 +240,12 @@ export function getRegionLabel(network_id, network_region) {
 	}
 	return network_id?.toUpperCase() || '';
 }
+
+/**
+ * Get the display label for a status
+ * @param {string} status
+ * @returns {string}
+ */
+export function getStatusLabel(status) {
+	return statusOptions.find((s) => s.value === status)?.label || status;
+}
