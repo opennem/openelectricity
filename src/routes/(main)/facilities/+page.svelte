@@ -597,7 +597,7 @@
 		<!-- Facility detail panel -->
 		{#if selectedFacilityCode}
 			<div
-				class="absolute bottom-0 right-0 w-full md:bottom-6 md:right-6 md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-20 flex flex-col overflow-hidden {isFullscreen
+				class="absolute bottom-0 right-0 w-full md:bottom-6 md:right-6 md:w-[calc(50%-2rem)] bg-white md:rounded-xl md:shadow-lg z-20 flex flex-col overflow-hidden {isFullscreen
 					? 'h-2/3 md:h-[calc(66.67%-1.5rem)]'
 					: 'h-1/2 md:h-[calc(50%-1.5rem)]'}"
 				transition:fly={{ x: 400, duration: 250, easing: quintOut }}
