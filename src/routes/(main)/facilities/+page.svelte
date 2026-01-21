@@ -417,6 +417,7 @@
 			{hoveredFacility}
 			{selectedFacilityCode}
 			clustering={mapClustering}
+			scrollZoom={isFullscreen}
 			onhover={(f) => (hoveredFacility = f)}
 			onclick={(f) => (clickedFacility = f)}
 			onselect={handleFacilitySelect}

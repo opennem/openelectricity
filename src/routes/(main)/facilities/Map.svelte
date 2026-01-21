@@ -20,6 +20,7 @@
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
 	 *   clustering?: boolean,
+	 *   scrollZoom?: boolean,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
 	 *   onselect?: (facility: any | null) => void
@@ -30,6 +31,7 @@
 		hoveredFacility = null,
 		selectedFacilityCode = null,
 		clustering = false,
+		scrollZoom = false,
 		onhover,
 		onclick,
 		onselect
@@ -585,7 +587,7 @@
 		zoom={3.5}
 		maxZoom={18}
 		minZoom={3}
-		scrollZoom={false}
+		{scrollZoom}
 		touchZoomRotate={true}
 		attributionControl={false}
 		fadeDuration={0}
