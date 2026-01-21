@@ -5,7 +5,7 @@
 	import SearchInput from './_components/SearchInput.svelte';
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import { Search, X, CalendarClock, List, Map } from '@lucide/svelte';
+	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2 } from '@lucide/svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 
 	import {
@@ -25,12 +25,14 @@
 	 *   selectedSizes?: string[],
 	 *   searchTerm?: string,
 	 *   selectedView?: 'list' | 'timeline' | 'map',
+	 *   isFullscreen?: boolean,
 	 *   onstatuseschange?: (values: string[]) => void,
 	 *   onregionschange?: (values: string[]) => void,
 	 *   onfueltechschange?: (values: string[]) => void,
 	 *   onsizeschange?: (values: string[]) => void,
 	 *   onsearchchange?: (value: string) => void,
-	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void
+	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void,
+	 *   onfullscreenchange?: () => void
 	 * }}
 	 */
 	let {
@@ -40,12 +42,14 @@
 		selectedSizes = [],
 		searchTerm = '',
 		selectedView = 'timeline',
+		isFullscreen = false,
 		onstatuseschange,
 		onregionschange,
 		onfueltechschange,
 		onsizeschange,
 		onsearchchange,
-		onviewchange
+		onviewchange,
+		onfullscreenchange
 	} = $props();
 
 	// ============================================
@@ -343,6 +347,21 @@
 					onclear={() => onsizeschange?.([])}
 				/>
 			</div>
+
+			<!-- Fullscreen Toggle - Desktop -->
+			<div class="hidden md:flex items-center pl-4 ml-4 border-l border-warm-grey">
+				<button
+					onclick={() => onfullscreenchange?.()}
+					class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
+					title={isFullscreen ? 'Exit full screen (Esc)' : 'Enter full screen'}
+				>
+					{#if isFullscreen}
+						<Minimize2 class="size-5 text-mid-grey" />
+					{:else}
+						<Maximize2 class="size-5 text-mid-grey" />
+					{/if}
+				</button>
+			</div>
 		</div>
 
 		<!-- Mobile Search -->
@@ -373,8 +392,23 @@
 		</div>
 	</div>
 
+	<!-- Mobile Fullscreen Toggle -->
+	<div class="md:hidden pl-2">
+		<button
+			onclick={() => onfullscreenchange?.()}
+			class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
+			title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+		>
+			{#if isFullscreen}
+				<Minimize2 class="size-6 text-mid-grey" />
+			{:else}
+				<Maximize2 class="size-6 text-mid-grey" />
+			{/if}
+		</button>
+	</div>
+
 	<!-- Mobile Filter Button -->
-	<div class="md:hidden pl-4 ml-0 border-l border-warm-grey">
+	<div class="md:hidden pl-2 ml-0 border-l border-warm-grey">
 		<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 			<IconAdjustmentsHorizontal class="size-10" />
 		</ButtonIcon>

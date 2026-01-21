@@ -1,6 +1,8 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { goto, replaceState } from '$app/navigation';
+	import { getContext, onDestroy } from 'svelte';
+	import { page } from '$app/state';
 	import Meta from '$lib/components/Meta.svelte';
 	import formatValue from './_utils/format-value';
 	import { statusColours, isInSizeRange } from './_utils/filters.js';
@@ -15,6 +17,23 @@
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 
 	let { data } = $props();
+
+	// Fullscreen mode - get context from layout
+	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */
+	const layoutContext = getContext('layout-fullscreen');
+
+	// Parse fullscreen from URL
+	let isFullscreen = $derived(page.url.searchParams.get('fullscreen') === 'true');
+
+	// Sync fullscreen state with layout
+	$effect(() => {
+		layoutContext?.setFullscreen(isFullscreen);
+	});
+
+	// Reset fullscreen on unmount
+	onDestroy(() => {
+		layoutContext?.setFullscreen(false);
+	});
 
 	// Server data (updates when server responds)
 	let facilities = $derived(data.facilities);
@@ -158,7 +177,7 @@
 
 	/**
 	 * Build URL from params
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null}} params
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null, fullscreen?: boolean}} params
 	 * @returns {string}
 	 */
 	function buildUrl({
@@ -167,21 +186,25 @@
 		fuelTechs: ft,
 		sizes: sz,
 		view: v,
-		facility: f = null
+		facility: f = null,
+		fullscreen: fs = false
 	}) {
 		let url = `/facilities?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}&sizes=${sz.join(',')}`;
 		if (f) {
 			url += `&facility=${f}`;
+		}
+		if (fs) {
+			url += '&fullscreen=true';
 		}
 		return url;
 	}
 
 	/**
 	 * Navigate and refetch data (for filter changes that affect API query)
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null}} params
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null, fullscreen?: boolean}} params
 	 */
 	function navigateWithRefetch(params) {
-		goto(buildUrl(params), {
+		goto(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {
 			noScroll: true,
 			invalidateAll: true
 		});
@@ -190,10 +213,41 @@
 	/**
 	 * Update URL without refetch (for view/facility/size changes that use cached data)
 	 * Uses replaceState to avoid triggering the load function
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null}} params
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null, fullscreen?: boolean}} params
 	 */
 	function navigateWithoutRefetch(params) {
-		replaceState(buildUrl(params), {});
+		replaceState(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {});
+	}
+
+	/**
+	 * Toggle fullscreen mode
+	 */
+	function toggleFullscreen() {
+		const newFullscreen = !isFullscreen;
+		goto(
+			buildUrl({
+				statuses,
+				regions,
+				fuelTechs,
+				sizes,
+				view: selectedView,
+				facility: selectedFacilityCode,
+				fullscreen: newFullscreen
+			}),
+			{ noScroll: true }
+		);
+	}
+
+	/**
+	 * Handle keyboard shortcuts
+	 * @param {KeyboardEvent} e
+	 */
+	function handleKeydown(e) {
+		// Escape exits fullscreen
+		if (e.key === 'Escape' && isFullscreen) {
+			e.preventDefault();
+			toggleFullscreen();
+		}
 	}
 
 	/**
@@ -304,59 +358,53 @@
 	}
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <Meta
 	title="Facilities"
 	description="Power generation facilities in Australia."
 	image="/img/facilities-preview.jpg"
 />
 
-<!-- <div class="bg-light-warm-grey">
-	<section class="md:container py-12">
-		<div class="flex items-center gap-2 justify-start md:justify-center pl-10 pr-5 md:px-0">
-			<h2 class="text-xl md:text-2xl mb-0">Facilities</h2>
-			<span
-				class="text-[10px] lowercase font-space font-medium text-light-warm-grey bg-gas rounded-full px-2 py-1"
-			>
-				Beta
-			</span>
+{#if !isFullscreen}
+	<PageHeaderSimple>
+		<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
+		<div slot="main-heading">
+			<h1 class="tracking-widest text-center">Facilities</h1>
 		</div>
-	</section>
-</div> -->
+		<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
+		<div slot="sub-heading">
+			<p class="text-sm text-center w-full md:w-[610px] mx-auto">
+				Explore Australia's power generation facilities across the NEM and WEM. View upcoming projects
+				on the timeline, browse the full list of facilities, or discover their locations on the map.
+			</p>
+		</div>
+	</PageHeaderSimple>
+{/if}
 
-<PageHeaderSimple>
-	<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
-	<div slot="main-heading">
-		<h1 class="tracking-widest text-center">Facilities</h1>
+<div class="{isFullscreen ? 'h-dvh flex flex-col' : ''}">
+	<div class="border-y border-warm-grey flex-shrink-0">
+		<div class="relative text-base z-50">
+			<Filters
+				{searchTerm}
+				{selectedView}
+				{isFullscreen}
+				selectedStatuses={statuses}
+				selectedFuelTechs={fuelTechs}
+				selectedRegions={regions}
+				selectedSizes={sizes}
+				onsearchchange={handleSearchChange}
+				onstatuseschange={handleStatusesChange}
+				onregionschange={handleRegionsChange}
+				onfueltechschange={handleFuelTechsChange}
+				onsizeschange={handleSizesChange}
+				onviewchange={handleSelectedViewChange}
+				onfullscreenchange={toggleFullscreen}
+			/>
+		</div>
 	</div>
-	<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
-	<div slot="sub-heading">
-		<p class="text-sm text-center w-full md:w-[610px] mx-auto">
-			Explore Australia's power generation facilities across the NEM and WEM. View upcoming projects
-			on the timeline, browse the full list of facilities, or discover their locations on the map.
-		</p>
-	</div>
-</PageHeaderSimple>
 
-<div class="border-y border-warm-grey">
-	<div class="relative text-base z-50">
-		<Filters
-			{searchTerm}
-			{selectedView}
-			selectedStatuses={statuses}
-			selectedFuelTechs={fuelTechs}
-			selectedRegions={regions}
-			selectedSizes={sizes}
-			onsearchchange={handleSearchChange}
-			onstatuseschange={handleStatusesChange}
-			onregionschange={handleRegionsChange}
-			onfueltechschange={handleFuelTechsChange}
-			onsizeschange={handleSizesChange}
-			onviewchange={handleSelectedViewChange}
-		/>
-	</div>
-</div>
-
-<section class="relative h-[calc(100dvh-118px)]">
+	<section class="relative {isFullscreen ? 'flex-1 min-h-0' : 'h-[calc(100dvh-118px)]'}">
 	<!-- Map: always visible on desktop, on mobile only when map view selected -->
 	<div
 		class="absolute inset-0"
@@ -530,10 +578,11 @@
 		</div>
 	{/if}
 </section>
+</div>
 
 <!-- Facility detail panel -->
 <Sheet
-	open={selectedFacility !== null}
+	open={selectedFacilityCode !== null}
 	title={selectedFacility?.name ?? ''}
 	side="bottom"
 	size="50%"

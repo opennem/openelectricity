@@ -2,6 +2,7 @@
 	// import { shortcut } from '@svelte-put/shortcut';
 	import { onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
+	import { setContext } from 'svelte';
 	// import '../../app.css';
 
 	import Nav from '$lib/components/Nav.svelte';
@@ -18,6 +19,17 @@
 
 	/** @type {Props} */
 	let { children } = $props();
+
+	// Fullscreen mode state - can be controlled by child pages via context
+	let isFullscreen = $state(false);
+
+	// Provide setter function to children via context
+	setContext('layout-fullscreen', {
+		/** @param {boolean} value */
+		setFullscreen: (value) => {
+			isFullscreen = value;
+		}
+	});
 
 	let currentRoute = $derived(page.url.pathname);
 	// let isRecordsRoute = $derived(currentRoute.includes('/records'));
@@ -122,10 +134,14 @@
 		</div>
 	{/if} -->
 
-<Nav />
+{#if !isFullscreen}
+	<Nav />
+{/if}
 
 <main class="grow">
 	{@render children?.()}
 </main>
 
-<Footer />
+{#if !isFullscreen}
+	<Footer />
+{/if}

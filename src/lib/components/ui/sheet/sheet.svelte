@@ -171,7 +171,7 @@
 		<h2 class="text-lg font-medium text-dark-grey m-0">{title}</h2>
 		<button
 			onclick={() => onclose?.()}
-			class="p-2 rounded-lg hover:bg-warm-grey transition-colors text-mid-grey hover:text-dark-grey"
+			class="p-2 rounded-lg hover:bg-warm-grey transition-colors text-mid-grey hover:text-dark-grey cursor-pointer"
 			aria-label="Close panel"
 		>
 			<X size={20} />
