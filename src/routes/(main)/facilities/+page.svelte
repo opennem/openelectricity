@@ -141,8 +141,13 @@
 	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
 
 	// Get the selected facility object and power data from server
-	let selectedFacility = $derived(data.selectedFacilityData ?? null);
-	let powerData = $derived(data.powerData ?? null);
+	// Only show data if it matches the currently selected facility code (prevents stale data flash)
+	let selectedFacility = $derived(
+		data.selectedFacilityData?.code === selectedFacilityCode ? data.selectedFacilityData : null
+	);
+	let powerData = $derived(
+		data.selectedFacilityData?.code === selectedFacilityCode ? data.powerData ?? null : null
+	);
 
 	// Calculate totals for filtered facilities
 	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
