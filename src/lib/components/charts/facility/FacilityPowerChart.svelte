@@ -37,6 +37,7 @@
 	 * @property {any} facility - Facility object with units array
 	 * @property {any} powerData - Power data from API
 	 * @property {string} timeZone - Timezone offset string (+10:00 or +08:00)
+	 * @property {string} [title] - Chart title
 	 * @property {string} [defaultInterval] - Default interval (5m or 30m)
 	 * @property {string} [chartHeight] - Chart height class
 	 * @property {boolean} [showZoomBrush] - Show/hide the zoom brush (default: true)
@@ -47,6 +48,7 @@
 		facility,
 		powerData,
 		timeZone,
+		title = '',
 		defaultInterval = '30m',
 		chartHeight = 'h-[400px]',
 		showZoomBrush = true
@@ -173,6 +175,7 @@
 			timeZone: timeZone
 		});
 		chart.chartStyles.chartHeightClasses = chartHeight;
+		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 
 		// Set data immediately
 		let seriesData = processed.data;
@@ -353,25 +356,35 @@
 	}
 </script>
 
-<!-- Chart Controls -->
-<div class="flex flex-wrap items-center justify-between gap-4 mb-4">
-	<IntervalSelector
-		options={INTERVAL_OPTIONS.filter((o) => ['5m', '30m'].includes(o.value))}
-		selected={selectedInterval}
-		onchange={handleIntervalChange}
-	/>
-
-	{#if showZoomBrush && brushedRange}
-		<button class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer" onclick={clearBrush}>
-			Clear zoom
-		</button>
+<!-- Chart Header -->
+<div class="flex flex-wrap items-center justify-between gap-1 mb-0">
+	{#if title}
+		<h3 class="text-sm font-medium text-dark-grey">{title}</h3>
 	{/if}
+
+	<div class="flex items-center gap-4">
+		{#if showZoomBrush && brushedRange}
+			<button class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer" onclick={clearBrush}>
+				Clear zoom
+			</button>
+		{/if}
+
+		<IntervalSelector
+			options={INTERVAL_OPTIONS.filter((o) => ['5m', '30m'].includes(o.value))}
+			selected={selectedInterval}
+			onchange={handleIntervalChange}
+		/>
+	</div>
 </div>
 
 <!-- Date Brush -->
 {#if showZoomBrush && isDataReady && brushChart}
 	<div class="mb-6">
-		<DateBrush chart={brushChart} {brushedRange} onbrush={handleBrush} formatTick={formatBrushTick}
+		<DateBrush
+			chart={brushChart}
+			{brushedRange}
+			onbrush={handleBrush}
+			formatTick={formatBrushTick}
 		/>
 	</div>
 {/if}

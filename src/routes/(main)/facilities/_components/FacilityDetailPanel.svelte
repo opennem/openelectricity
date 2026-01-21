@@ -4,10 +4,8 @@
 		FacilityUnitsTable,
 		getNetworkTimezone
 	} from '$lib/components/charts/facility';
-	import { getRegionLabel } from '../_utils/filters';
-	import formatValue from '../_utils/format-value';
-	import { groupUnits, getExploreUrl } from '../_utils/units';
-	import { ExternalLink, MapPin } from '@lucide/svelte';
+	import { getExploreUrl } from '../_utils/units';
+	import { ExternalLink } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -18,61 +16,44 @@
 	let { facility, powerData = null } = $props();
 
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
-
-	let unitGroups = $derived(groupUnits(facility, { skipBattery: true }));
-	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
 	let explorePath = $derived(getExploreUrl(facility));
 </script>
 
 {#if facility}
-	<div class="p-6">
-		<!-- Header: Location and Capacity -->
-		<div class="flex items-center justify-between mb-6">
-			<div class="flex items-center gap-2 text-sm text-mid-grey">
-				<MapPin size={16} />
-				<span>{getRegionLabel(facility.network_id, facility.network_region)}</span>
-				<span class="text-warm-grey">•</span>
-				<span class="uppercase text-xs">{facility.network_id}</span>
-			</div>
-			<div class="flex items-baseline gap-1">
-				<span class="font-mono text-xl font-medium text-dark-grey">
-					{formatValue(totalCapacity)}
-				</span>
-				<span class="text-xs text-mid-grey">MW</span>
-			</div>
+	<div class="h-full flex flex-col">
+		<!-- Scrollable Content -->
+		<div class="flex-1 overflow-y-auto px-6">
+			<!-- Power Chart -->
+			{#if powerData}
+				<div class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0">
+					<FacilityPowerChart
+						{facility}
+						{powerData}
+						{timeZone}
+						title="Power Generation (Last 3 Days)"
+						chartHeight="h-[220px]"
+						showZoomBrush={false}
+					/>
+				</div>
+			{/if}
+
+			<!-- Units Table -->
+			{#if facility.units?.length}
+				<div class="border border-warm-grey rounded-lg mx-3">
+					<FacilityUnitsTable units={facility.units} compact />
+				</div>
+			{/if}
 		</div>
 
-		<!-- Power Chart -->
-		{#if powerData}
-			<div class="mb-6">
-				<h3 class="text-sm font-medium text-dark-grey mb-3">Power Generation (Last 3 Days)</h3>
-				<FacilityPowerChart
-					{facility}
-					{powerData}
-					{timeZone}
-					chartHeight="h-[250px]"
-					showZoomBrush={false}
-				/>
-			</div>
-		{/if}
-
-		<!-- Units Table -->
-		{#if facility.units?.length}
-			<div class="mt-6">
-				<h3 class="text-sm font-medium text-dark-grey mb-3">All Units</h3>
-				<FacilityUnitsTable units={facility.units} compact />
-			</div>
-		{/if}
-
-		<!-- External link -->
-		<div class="mt-6 pt-6 border-t border-warm-grey">
+		<!-- Fixed Footer -->
+		<div class="shrink-0 p-4 border-t border-warm-grey bg-white">
 			<a
 				href={explorePath}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="flex items-center justify-center gap-2 w-full py-3 px-4 rounded-lg bg-dark-grey text-white hover:bg-black transition-colors text-sm font-medium"
+				class="inline-flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-white bg-dark-grey hover:bg-black rounded-lg transition-colors"
 			>
-				<ExternalLink size={16} />
+				<ExternalLink size={14} />
 				View Facility
 			</a>
 		</div>
