@@ -145,7 +145,7 @@
 	// ============================================
 
 	/**
-	 * Handle keyboard shortcut '/' to focus search input
+	 * Handle keyboard shortcuts: '/' to focus search, 'f' to toggle fullscreen
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
@@ -162,6 +162,11 @@
 			} else {
 				desktopSearchRef?.focus();
 			}
+		}
+
+		if (e.key === 'f' || e.key === 'F') {
+			e.preventDefault();
+			onfullscreenchange?.();
 		}
 	}
 
@@ -347,21 +352,6 @@
 					onclear={() => onsizeschange?.([])}
 				/>
 			</div>
-
-			<!-- Fullscreen Toggle - Desktop -->
-			<div class="hidden md:flex items-center pl-4 ml-4 border-l border-warm-grey">
-				<button
-					onclick={() => onfullscreenchange?.()}
-					class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
-					title={isFullscreen ? 'Exit full screen (Esc)' : 'Enter full screen'}
-				>
-					{#if isFullscreen}
-						<Minimize2 class="size-5 text-mid-grey" />
-					{:else}
-						<Maximize2 class="size-5 text-mid-grey" />
-					{/if}
-				</button>
-			</div>
 		</div>
 
 		<!-- Mobile Search -->
@@ -392,17 +382,17 @@
 		</div>
 	</div>
 
-	<!-- Mobile Fullscreen Toggle -->
-	<div class="md:hidden pl-2">
+	<!-- Fullscreen Toggle -->
+	<div class="pl-2 md:pl-4 md:ml-4 md:border-l md:border-warm-grey">
 		<button
 			onclick={() => onfullscreenchange?.()}
-			class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
-			title={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+			class="p-3 md:p-2 rounded-full md:rounded-lg border border-warm-grey md:border-0 bg-white hover:border-dark-grey md:hover:bg-light-warm-grey transition-colors cursor-pointer"
+			title={isFullscreen ? 'Exit full screen (F or Esc)' : 'Enter full screen (F)'}
 		>
 			{#if isFullscreen}
-				<Minimize2 class="size-6 text-mid-grey" />
+				<Minimize2 class="size-7 md:size-6 text-mid-grey" />
 			{:else}
-				<Maximize2 class="size-6 text-mid-grey" />
+				<Maximize2 class="size-7 md:size-6 text-mid-grey" />
 			{/if}
 		</button>
 	</div>

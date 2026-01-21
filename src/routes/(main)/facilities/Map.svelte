@@ -21,6 +21,8 @@
 	 *   selectedFacilityCode?: string | null,
 	 *   clustering?: boolean,
 	 *   scrollZoom?: boolean,
+	 *   flyToOffsetX?: number,
+	 *   flyToOffsetY?: number,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
 	 *   onselect?: (facility: any | null) => void
@@ -32,6 +34,8 @@
 		selectedFacilityCode = null,
 		clustering = false,
 		scrollZoom = false,
+		flyToOffsetX = 0.25,
+		flyToOffsetY = -0.3,
 		onhover,
 		onclick,
 		onselect
@@ -372,7 +376,7 @@
 		if (typeof window === 'undefined') return [0, 0];
 
 		if (window.innerWidth > 768) {
-			return [window.innerWidth * 0.25, window.innerHeight * -0.3];
+			return [window.innerWidth * flyToOffsetX, window.innerHeight * flyToOffsetY];
 		}
 		// On mobile, no offset needed
 		return [0, 0];
