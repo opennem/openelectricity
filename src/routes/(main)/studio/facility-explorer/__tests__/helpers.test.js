@@ -5,7 +5,7 @@ import {
 	getNetworkTimezone,
 	isWemNetwork,
 	transformFacilityPowerData
-} from '../helpers';
+} from '$lib/components/charts/facility';
 
 describe('generateUnitShades', () => {
 	it('should return single color for single unit', () => {
