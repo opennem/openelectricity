@@ -72,6 +72,55 @@
 	 */
 	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
 
+	/**
+	 * Get start of day in the facility's timezone
+	 * @param {Date} date
+	 * @returns {Date}
+	 */
+	function getStartOfDay(date) {
+		// Format the date in the facility timezone to get local date parts
+		const formatter = new Intl.DateTimeFormat('en-AU', {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			timeZone: ianaTimeZone
+		});
+		const parts = formatter.formatToParts(date);
+		const year = parseInt(parts.find((p) => p.type === 'year')?.value || '0');
+		const month = parseInt(parts.find((p) => p.type === 'month')?.value || '0') - 1;
+		const day = parseInt(parts.find((p) => p.type === 'day')?.value || '0');
+
+		// Create a date at midnight in UTC, then adjust for timezone offset
+		const offsetHours = timeZone === '+08:00' ? 8 : 10;
+		return new Date(Date.UTC(year, month, day, -offsetHours, 0, 0, 0));
+	}
+
+	/**
+	 * Compute day-start dates from series data for gridlines
+	 * @param {any[]} data - Series data with date property
+	 * @returns {Date[]}
+	 */
+	function getDayStartDates(data) {
+		if (!data?.length) return [];
+
+		const dayStarts = new Set();
+		/** @type {Date[]} */
+		const result = [];
+
+		for (const d of data) {
+			const date = d.date || new Date(d.time);
+			const dayStart = getStartOfDay(date);
+			const key = dayStart.getTime();
+
+			if (!dayStarts.has(key)) {
+				dayStarts.add(key);
+				result.push(dayStart);
+			}
+		}
+
+		return result.sort((a, b) => a.getTime() - b.getTime());
+	}
+
 	// ============================================
 	// Derived: Unit Analysis
 	// ============================================
@@ -196,6 +245,11 @@
 		chart.seriesLabels = processed.seriesLabels;
 		chart.formatTickX = formatXAxis;
 
+		// Set both tick labels and gridlines to day starts
+		const dayStarts = getDayStartDates(seriesData);
+		chart.xTicks = dayStarts;
+		chart.xGridlineTicks = dayStarts;
+
 		return chart;
 	});
 
@@ -259,27 +313,18 @@
 	// ============================================
 
 	/**
-	 * Format date for X axis ticks
+	 * Format date for X axis ticks (day starts only)
 	 * @param {Date | any} d
 	 * @returns {string}
 	 */
 	function formatXAxis(d) {
 		if (!(d instanceof Date)) return String(d);
 
-		const dateStr = new Intl.DateTimeFormat('en-AU', {
+		return new Intl.DateTimeFormat('en-AU', {
 			day: 'numeric',
 			month: 'short',
 			timeZone: ianaTimeZone
 		}).format(d);
-
-		const timeStr = new Intl.DateTimeFormat('en-AU', {
-			hour: '2-digit',
-			minute: '2-digit',
-			hour12: false,
-			timeZone: ianaTimeZone
-		}).format(d);
-
-		return `${dateStr}, ${timeStr}`;
 	}
 
 	/**

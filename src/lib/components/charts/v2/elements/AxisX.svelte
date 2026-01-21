@@ -19,7 +19,8 @@
 	 * @property {string} [strokeArray] - Gridline dash pattern
 	 * @property {string} [clipPathId] - Optional clip path ID
 	 * @property {(d: any) => any} [formatTick] - Tick formatter function
-	 * @property {number | Array | Function} [ticks] - Number of ticks, tick values, or function
+	 * @property {number | any[] | Function} [ticks] - Number of ticks, tick values, or function
+	 * @property {any[]} [gridlineTicks] - Specific ticks for gridlines (if different from label ticks)
 	 * @property {number} [xTick] - X offset for tick labels
 	 * @property {number} [yTick] - Y offset for tick labels
 	 * @property {string} [fill] - Background fill colour
@@ -40,6 +41,7 @@
 		clipPathId = '',
 		formatTick = (d) => String(d),
 		ticks = undefined,
+		gridlineTicks = undefined,
 		xTick = 0,
 		yTick = 16,
 		fill = 'white',
@@ -54,13 +56,16 @@
 	// Check if scale has bandwidth (band scale)
 	let isBandwidth = $derived(typeof $xScale.bandwidth === 'function');
 
-	// Generate tick values
+	// Generate tick values for labels
 	let tickVals = $derived.by(() => {
 		if (Array.isArray(ticks)) return ticks;
 		if (isBandwidth) return $xScale.domain();
 		if (typeof ticks === 'function') return ticks($xScale.ticks());
 		return $xScale.ticks(ticks);
 	});
+
+	// Generate tick values for gridlines (use gridlineTicks if provided, otherwise use tickVals)
+	let gridlineTickVals = $derived(gridlineTicks ?? tickVals);
 
 	/**
 	 * Get text anchor based on position and snapTicks setting
@@ -84,24 +89,29 @@
 	<!-- Background rect for axis area -->
 	<rect class="axis-background" x="0" y={$height + 1} width={$width} height={20} {fill} />
 
+	<!-- Gridlines (rendered separately if gridlineTicks is provided) -->
+	{#if gridlines}
+		{#each gridlineTickVals as tick (tick)}
+			{@const xPos = $xScale(tick)}
+			{@const yPos = Math.max(...$yRange)}
+			<line
+				class="gridline"
+				{stroke}
+				stroke-dasharray={strokeArray}
+				y1={yPos - $height}
+				y2={yPos}
+				x1={xPos}
+				x2={xPos}
+			/>
+		{/each}
+	{/if}
+
+	<!-- Tick labels and marks -->
 	{#each tickVals as tick, i (tick)}
 		{@const xPos = $xScale(tick)}
 		{@const yPos = Math.max(...$yRange)}
 
 		<g class="tick tick-{i}" transform="translate({xPos}, {yPos})">
-			<!-- Gridline -->
-			{#if gridlines}
-				<line
-					class="gridline"
-					{stroke}
-					stroke-dasharray={strokeArray}
-					y1={$height * -1}
-					y2="0"
-					x1="0"
-					x2="0"
-				/>
-			{/if}
-
 			<!-- Tick mark -->
 			{#if tickMarks}
 				<line

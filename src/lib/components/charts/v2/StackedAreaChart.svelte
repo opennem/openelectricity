@@ -160,6 +160,7 @@
 
 				<AxisX
 					ticks={chart.xTicks}
+					gridlineTicks={chart.xGridlineTicks}
 					formatTick={chart.formatTickXWithTimeZone}
 					gridlines={styles.xGridlines}
 					tickMarks={true}
