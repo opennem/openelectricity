@@ -252,24 +252,6 @@
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.useDivergingStack = useDivergingStack;
 
-		// Set capacity reference lines (values in MW to match chart scale)
-		const refLines = [];
-		if (capacitySums.positive > 0) {
-			refLines.push({
-				value: capacitySums.positive,
-				label: 'Generation Capacity',
-				colour: 'var(--chart-1)'
-			});
-		}
-		if (capacitySums.negative > 0) {
-			refLines.push({
-				value: -capacitySums.negative, // Negative for loads
-				label: 'Load Capacity',
-				colour: 'var(--chart-1)'
-			});
-		}
-		chart.yReferenceLines = refLines;
-
 		// Set data immediately
 		let seriesData = processed.data;
 		if (selectedInterval === '30m') {
@@ -294,15 +276,72 @@
 		chart.xTicks = dayStarts;
 		chart.xGridlineTicks = dayStarts;
 
+		return chart;
+	});
+
+	// Update reference lines and yDomain reactively based on chart options
+	$effect(() => {
+		if (!chartStore) return;
+
+		const isProportion = chartStore.chartOptions.isDataTransformTypeProportion;
+		const isChangeSince = chartStore.chartOptions.isDataTransformTypeChangeSince;
+		const isLine = chartStore.chartOptions.isChartTypeLine;
+
+		// Don't show capacity lines for proportion view
+		if (isProportion) {
+			chartStore.yReferenceLines = [];
+			chartStore.setYDomain(undefined);
+			return;
+		}
+
+		// For line view or change since, show single line with max capacity
+		if (isLine || isChangeSince) {
+			const maxCapacity = Math.max(capacitySums.positive, capacitySums.negative);
+			if (maxCapacity > 0) {
+				chartStore.yReferenceLines = [
+					{
+						value: maxCapacity,
+						label: 'Capacity',
+						colour: 'var(--chart-1)'
+					}
+				];
+				// Set yDomain with padding for the single capacity line
+				const padding = 0.15;
+				chartStore.setYDomain([0, maxCapacity * (1 + padding)]);
+			} else {
+				chartStore.yReferenceLines = [];
+				chartStore.setYDomain(undefined);
+			}
+			return;
+		}
+
+		// For absolute + area view, show both positive and negative capacity lines
+		const refLines = [];
+		if (capacitySums.positive > 0) {
+			refLines.push({
+				value: capacitySums.positive,
+				label: 'Generation Capacity',
+				colour: 'var(--chart-1)'
+			});
+		}
+		if (capacitySums.negative > 0) {
+			refLines.push({
+				value: -capacitySums.negative,
+				label: 'Load Capacity',
+				colour: 'var(--chart-1)'
+			});
+		}
+		chartStore.yReferenceLines = refLines;
+
 		// Set custom Y domain to ensure capacity lines are visible with padding
-		const padding = 0.15; // 15% padding above/below capacity
+		const padding = 0.15;
 		const yMax = capacitySums.positive > 0 ? capacitySums.positive * (1 + padding) : undefined;
 		const yMin = capacitySums.negative > 0 ? -capacitySums.negative * (1 + padding) : undefined;
 		if (yMax !== undefined || yMin !== undefined) {
-			chart.setYDomain([yMin ?? 0, yMax ?? 0]);
+			chartStore.setYDomain([yMin ?? 0, yMax ?? 0]);
+		} else {
+			chartStore.setYDomain(undefined);
 		}
-
-		return chart;
 	});
 
 	let brushChart = $derived.by(() => {

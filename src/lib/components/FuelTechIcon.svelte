@@ -1,5 +1,24 @@
+<script module>
+	/** @type {Map<string, any>} */
+	const iconCache = new Map();
+
+	/**
+	 * Get cached icon or load it
+	 * @param {string} iconName
+	 */
+	async function getIcon(iconName) {
+		if (iconCache.has(iconName)) {
+			return iconCache.get(iconName);
+		}
+		const module = await import(`$lib/icons/fuel-techs/${iconName}Sm.svelte`);
+		iconCache.set(iconName, module.default);
+		return module.default;
+	}
+</script>
+
 <script>
 	import GlobeAlt from '$lib/icons/GlobeAlt.svelte';
+
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} fuelTech
@@ -20,14 +39,14 @@
 	}
 
 	let fuelTechIconName = $derived(fuelTechName(fuelTech));
+	let iconPromise = $derived(getIcon(fuelTechIconName));
 </script>
 
-{#await import(`$lib/icons/fuel-techs/${fuelTechIconName}Sm.svelte`)}
+{#await iconPromise}
 	<div class="size-{sizeClass}">
 		<GlobeAlt class="size-{sizeClass}" />
 	</div>
-{:then module}
-	{@const SvelteComponent = module.default}
+{:then SvelteComponent}
 	<div class="size-{sizeClass}">
 		<SvelteComponent class="size-{sizeClass}" />
 	</div>

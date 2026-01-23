@@ -29,7 +29,7 @@
 		<button
 			onclick={handleClick}
 			{value}
-			class="flex w-full gap-3 md:w-auto items-center justify-center hover:text-black px-4 py-4 md:px-8 md:py-4 border rounded-xl whitespace-nowrap"
+			class="flex w-full gap-3 md:w-auto items-center justify-center hover:text-black px-4 py-4 md:px-8 md:py-4 border rounded-xl whitespace-nowrap cursor-pointer"
 			class:bg-white={isSelected(value)}
 			class:text-black={isSelected(value)}
 			class:border-black={isSelected(value)}
