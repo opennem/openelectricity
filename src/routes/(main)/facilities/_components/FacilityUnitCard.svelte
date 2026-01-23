@@ -6,8 +6,7 @@
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import { getFueltechColor, needsDarkText } from '../_utils/fueltech-display';
-	import { ExternalLink } from '@lucide/svelte';
-
+	
 	/**
 	 * @type {{
 	 *   facility: any,
@@ -29,10 +28,6 @@
 
 	let bgColor = $derived(facility.unit ? getFueltechColor(facility.unit.fueltech_id) : '#FFFFFF');
 	let isDarkText = $derived(facility.unit ? needsDarkText(facility.unit.fueltech_id) : false);
-
-	let path = $derived(
-		`https://explore.openelectricity.org.au/facility/au/${facility.network_id}/${facility.code}/`
-	);
 
 	// Data for UnitGroupPopup
 	let popupUnits = $derived(
@@ -87,19 +82,6 @@
 				class="text-base leading-base font-medium text-dark-grey flex flex-col @sm:flex-row items-bottom gap-0 @sm:gap-3"
 			>
 				{facility.name || 'Unnamed Facility'}
-
-				<a
-					href={path}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="text-mid-grey hover:text-dark-grey transition-colors self-center opacity-0 group-hover:opacity-100 {isSelected
-						? 'opacity-100'
-						: ''}"
-					aria-label="View facility details (opens in new tab)"
-					onclick={(e) => e.stopPropagation()}
-				>
-					<ExternalLink size={16} />
-				</a>
 
 				{#if facility.unit.capacity_storage}
 					<span class="text-xs items-baseline text-mid-grey" title="Storage Capacity">

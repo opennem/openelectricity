@@ -4,9 +4,8 @@
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
-	import { groupUnits, getExploreUrl } from '../_utils/units';
-	import { ExternalLink } from '@lucide/svelte';
-
+	import { groupUnits } from '../_utils/units';
+	
 	/**
 	 * @type {{
 	 *   facility: any,
@@ -59,8 +58,6 @@
 			bgColor: g.bgColor
 		}))
 	);
-
-	let path = $derived(getExploreUrl(facility));
 
 	/** @type {'sm' | 'md'} */
 	let badgeSize = $derived(compact ? 'sm' : 'md');
@@ -169,21 +166,8 @@
 			onclick={() => onclick?.(facility)}
 		>
 			<div class="pl-6 pr-4 py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5">
-				<div class="text-base leading-base font-medium text-dark-grey flex items-center gap-2">
+				<div class="text-base leading-base font-medium text-dark-grey">
 					{facility.name || 'Unnamed Facility'}
-					<a
-						href={path}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="text-mid-grey hover:text-dark-grey transition-colors self-center opacity-0 group-hover:opacity-100 {isSelected
-							? 'opacity-100'
-							: ''}"
-						title="View facility details"
-						aria-label="View facility details (opens in new tab)"
-						onclick={(e) => e.stopPropagation()}
-					>
-						<ExternalLink size={16} />
-					</a>
 				</div>
 			</div>
 
