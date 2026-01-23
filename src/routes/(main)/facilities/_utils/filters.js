@@ -1,4 +1,7 @@
 import optionsReducer from '$lib/utils/options-reducer';
+import { statusColours } from '$lib/theme/openelectricity';
+
+export { statusColours };
 
 export const sizeOptions = [
 	{
@@ -47,14 +50,6 @@ export function isInSizeRange(capacity, selectedSizes) {
 	const ranges = getSizeRanges(selectedSizes);
 	return ranges.some((range) => capacity >= range.min && capacity < range.max);
 }
-
-/** @type {Record<string, string>} */
-export const statusColours = {
-	committed: '#e0dfdc',
-	commissioning: '#ffb108',
-	operating: '#75e74d',
-	retired: '#6a6a6a'
-};
 
 export const statusOptions = [
 	{

@@ -70,4 +70,12 @@ const carbonIntensityColourMap = {
 	800: '#3F2E16'
 };
 
-export { fuelTechColourMap, carbonIntensityColourMap };
+/** @type {Record<string, string>} */
+const statusColours = {
+	committed: '#e0dfdc',
+	commissioning: '#ffb108',
+	operating: '#75e74d',
+	retired: '#6a6a6a'
+};
+
+export { fuelTechColourMap, carbonIntensityColourMap, statusColours };
