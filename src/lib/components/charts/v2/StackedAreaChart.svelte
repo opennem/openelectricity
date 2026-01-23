@@ -6,7 +6,8 @@
 	 * Supports both stacked area and line chart modes.
 	 */
 	import { LayerCake, Svg, flatten } from 'layercake';
-	import { stack, groupLonger } from 'layercake';
+	import { stack as lcStack, groupLonger } from 'layercake';
+	import { stack as d3Stack, stackOffsetDiverging } from 'd3-shape';
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
 
 	// v2 Element components
@@ -28,9 +29,19 @@
 	let id = $derived(styles.htmlId);
 
 	// Process data based on chart type
-	let stackedData = $derived(
-		chart.seriesScaledData.length > 0 ? stack(chart.seriesScaledData, chart.visibleSeriesNames) : []
-	);
+	let stackedData = $derived.by(() => {
+		if (chart.seriesScaledData.length === 0) return [];
+
+		if (chart.useDivergingStack) {
+			// Use d3 stack with diverging offset for independent positive/negative stacking
+			const stackGen = d3Stack()
+				.keys(chart.visibleSeriesNames)
+				.offset(stackOffsetDiverging);
+			return stackGen(chart.seriesScaledData);
+		}
+
+		return lcStack(chart.seriesScaledData, chart.visibleSeriesNames);
+	});
 
 	let groupedData = $derived(
 		chart.seriesScaledData.length > 0

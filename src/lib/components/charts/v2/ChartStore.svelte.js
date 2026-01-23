@@ -299,6 +299,10 @@ export default class ChartStore {
 	/** @type {string} */
 	shadingFill = $state('#33333311');
 
+	// Stacking options
+	/** @type {boolean} */
+	useDivergingStack = $state(false);
+
 	/**
 	 * @param {ChartConfig} config
 	 */

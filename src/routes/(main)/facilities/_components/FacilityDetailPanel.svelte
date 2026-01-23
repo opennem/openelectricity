@@ -17,6 +17,30 @@
 
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
 	let explorePath = $derived(getExploreUrl(facility));
+	let filteredUnits = $derived(
+		facility?.units?.filter((/** @type {any} */ unit) => unit.fueltech_id !== 'battery') ?? []
+	);
+	let filteredUnitCodes = $derived(new Set(filteredUnits.map((/** @type {any} */ u) => u.code)));
+
+	let filteredFacility = $derived(
+		facility
+			? {
+					...facility,
+					units: filteredUnits
+				}
+			: null
+	);
+
+	let filteredPowerData = $derived(
+		powerData && powerData.data.length
+			? {
+					...powerData,
+					results: powerData.data[0].results?.filter((/** @type {any} */ r) =>
+						filteredUnitCodes.has(r.columns?.unit_code)
+					)
+				}
+			: null
+	);
 </script>
 
 {#if facility}
@@ -24,23 +48,24 @@
 		<!-- Scrollable Content -->
 		<div class="flex-1 overflow-y-auto px-6">
 			<!-- Power Chart -->
-			{#if powerData}
+			{#if filteredPowerData}
 				<div class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0">
 					<FacilityPowerChart
-						{facility}
-						{powerData}
+						facility={filteredFacility}
+						powerData={filteredPowerData}
 						{timeZone}
 						title="Power Generation (Last 3 Days)"
 						chartHeight="h-[220px]"
 						showZoomBrush={false}
+						useDivergingStack={true}
 					/>
 				</div>
 			{/if}
 
 			<!-- Units Table -->
-			{#if facility.units?.length}
+			{#if filteredUnits.length}
 				<div class="border border-warm-grey rounded-lg mx-3">
-					<FacilityUnitsTable units={facility.units} compact />
+					<FacilityUnitsTable units={filteredUnits} compact />
 				</div>
 			{/if}
 		</div>

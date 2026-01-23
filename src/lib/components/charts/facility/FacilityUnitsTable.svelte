@@ -60,7 +60,8 @@
 									class="w-3 h-3 rounded-full flex-shrink-0"
 									class:w-2={compact}
 									class:h-2={compact}
-									style="background-color: {colours[unit.code] || getFuelTechColor(unit.fueltech_id)}"
+									style="background-color: {colours[unit.code] ||
+										getFuelTechColor(unit.fueltech_id)}"
 								></span>
 								<span class:text-xs={compact}>
 									{fuelTechNameMap[unit.fueltech_id] || unit.fueltech_id}

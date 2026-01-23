@@ -41,6 +41,7 @@
 	 * @property {string} [defaultInterval] - Default interval (5m or 30m)
 	 * @property {string} [chartHeight] - Chart height class
 	 * @property {boolean} [showZoomBrush] - Show/hide the zoom brush (default: true)
+	 * @property {boolean} [useDivergingStack] - Stack positive/negative values independently (default: false)
 	 */
 
 	/** @type {Props} */
@@ -51,7 +52,8 @@
 		title = '',
 		defaultInterval = '30m',
 		chartHeight = 'h-[400px]',
-		showZoomBrush = true
+		showZoomBrush = true,
+		useDivergingStack = false
 	} = $props();
 
 	// ============================================
@@ -225,6 +227,7 @@
 		});
 		chart.chartStyles.chartHeightClasses = chartHeight;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
+		chart.useDivergingStack = useDivergingStack;
 
 		// Set data immediately
 		let seriesData = processed.data;
@@ -292,6 +295,7 @@
 			baseUnit: 'W',
 			timeZone: timeZone
 		});
+		chart.useDivergingStack = useDivergingStack;
 
 		let seriesData = processed.data;
 		if (selectedInterval === '30m') {
