@@ -11,7 +11,7 @@
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
 
 	// v2 Element components
-	import { StackedArea, HoverLayer, AxisX, AxisY, ClipPath, LineX, Dot } from './elements';
+	import { StackedArea, HoverLayer, AxisX, AxisY, ClipPath, LineX, LineY, Dot } from './elements';
 
 	/**
 	 * @typedef {Object} Props
@@ -104,6 +104,15 @@
 					{onpointerup}
 				/>
 			</g>
+
+			<!-- Reference lines (capacity annotations) -->
+			{#each chart.yReferenceLines as refLine (refLine.value)}
+				<LineY
+					yValue={refLine.value}
+					label={refLine.label}
+					strokeColour={refLine.colour || '#666'}
+				/>
+			{/each}
 		</Svg>
 
 		<!-- Hover/Focus indicators -->

@@ -64,52 +64,47 @@
 			</div>
 		</header>
 
-		<section class="p-10 pb-0 w-full flex flex-col gap-5">
-			<div class="grid grid-cols-2 gap-10">
-				<FormMultiSelect
-					options={regionOptions}
-					selected={selectedRegions}
-					label="Region"
-					paddingX=""
-					staticDisplay={true}
-					onchange={(value, isMetaPressed) => onregionschange([value], isMetaPressed)}
-					onclear={onclearregions}
-				/>
-				<FormMultiSelect
-					options={statusOptions}
-					selected={selectedStatuses}
-					label="Status"
-					withColours={true}
-					paddingX=""
-					staticDisplay={true}
-					onchange={(value, isMetaPressed) => onstatuseschange([value], isMetaPressed)}
-					onclear={onclearstatuses}
-				/>
-			</div>
+		<section class="p-10 pb-0 w-full flex flex-col gap-6">
+			<FormMultiSelect
+				options={regionOptions}
+				selected={selectedRegions}
+				label="Region"
+				paddingX=""
+				staticDisplay={true}
+				onchange={(value, isMetaPressed) => onregionschange([value], isMetaPressed)}
+				onclear={onclearregions}
+			/>
 
-			<div class="grid grid-cols-3 gap-10">
-				<div class="col-span-2">
-					<HierarchicalMultiSelect
-						options={fuelTechOptions}
-						selected={selectedFuelTechs}
-						label="Technology"
-						paddingX=""
-						staticDisplay={true}
-						onchange={(value, isMetaPressed) => onfueltechschange(value, isMetaPressed)}
-						onclear={onclearfueltechs}
-					/>
-				</div>
+			<FormMultiSelect
+				options={statusOptions}
+				selected={selectedStatuses}
+				label="Status"
+				withColours={true}
+				paddingX=""
+				staticDisplay={true}
+				onchange={(value, isMetaPressed) => onstatuseschange([value], isMetaPressed)}
+				onclear={onclearstatuses}
+			/>
 
-				<FormMultiSelect
-					options={sizeOptions}
-					selected={selectedSizes}
-					label="Size"
-					paddingX=""
-					staticDisplay={true}
-					onchange={(value, isMetaPressed) => onsizeschange([value], isMetaPressed)}
-					onclear={onclearsizes}
-				/>
-			</div>
+			<HierarchicalMultiSelect
+				options={fuelTechOptions}
+				selected={selectedFuelTechs}
+				label="Technology"
+				paddingX=""
+				staticDisplay={true}
+				onchange={(value, isMetaPressed) => onfueltechschange(value, isMetaPressed)}
+				onclear={onclearfueltechs}
+			/>
+
+			<FormMultiSelect
+				options={sizeOptions}
+				selected={selectedSizes}
+				label="Size"
+				paddingX=""
+				staticDisplay={true}
+				onchange={(value, isMetaPressed) => onsizeschange([value], isMetaPressed)}
+				onclear={onclearsizes}
+			/>
 		</section>
 
 		{#snippet buttons()}

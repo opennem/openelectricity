@@ -16,6 +16,7 @@ export { default as AxisY } from './AxisY.svelte';
 
 // Annotations/Indicators
 export { default as LineX } from './LineX.svelte';
+export { default as LineY } from './LineY.svelte';
 export { default as Dot } from './Dot.svelte';
 
 // Definitions

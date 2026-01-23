@@ -7,6 +7,7 @@
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2 } from '@lucide/svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
 	import {
 		regions,
@@ -173,6 +174,14 @@
 		{ label: 'Map', value: 'map', icon: Map, size: 'size-6' }
 	];
 
+	const viewOptions = [
+		{ label: 'Timeline', value: 'timeline' },
+		{ label: 'List', value: 'list' },
+		{ label: 'Map', value: 'map' }
+	];
+
+	let selectedViewOption = $derived(viewOptions.find((v) => v.value === selectedView));
+
 	// ============================================
 	// Event Handlers
 	// ============================================
@@ -280,6 +289,15 @@
 		onviewchange?.(/** @type {'list' | 'timeline' | 'map'} */ (option.value));
 	}
 
+	/**
+	 * @param {{ value: string | number | null | undefined }} option
+	 */
+	function handleViewSelectChange(option) {
+		if (option.value) {
+			onviewchange?.(/** @type {'list' | 'timeline' | 'map'} */ (option.value));
+		}
+	}
+
 	function closeMobileSearch() {
 		showMobileSearch = false;
 		onsearchchange?.('');
@@ -328,13 +346,16 @@
 				/>
 			</div>
 
-			<!-- View Switcher - Mobile (includes Map) -->
+			<!-- View Switcher - Mobile (dropdown) -->
 			{#if !showMobileSearch}
 				<div class="md:hidden">
-					<SwitchWithIcons
-						buttons={viewButtonsMobile}
-						selected={selectedView}
-						onchange={handleViewChange}
+					<FormSelect
+						options={viewOptions}
+						selected={selectedViewOption}
+						onchange={handleViewSelectChange}
+						paddingX="px-4"
+						paddingY="py-3"
+						widthClass="w-auto"
 					/>
 				</div>
 			{/if}

@@ -303,6 +303,12 @@ export default class ChartStore {
 	/** @type {boolean} */
 	useDivergingStack = $state(false);
 
+	// Reference lines (horizontal annotations)
+	/**
+	 * @type {Array<{value: number, label?: string, colour?: string}>}
+	 */
+	yReferenceLines = $state([]);
+
 	/**
 	 * @param {ChartConfig} config
 	 */

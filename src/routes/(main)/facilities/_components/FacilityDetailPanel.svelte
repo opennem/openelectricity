@@ -64,10 +64,15 @@
 
 			<!-- Units Table -->
 			{#if filteredUnits.length}
-				<div class="border border-warm-grey rounded-lg mx-3">
+				<div class="border border-warm-grey rounded-lg mx-2">
 					<FacilityUnitsTable units={filteredUnits} compact />
 				</div>
 			{/if}
+
+			<!-- Capacity Info -->
+			<p class="text-xxs text-mid-grey mt-3 mx-2">
+				Capacity shown is maximum capacity where available, otherwise registered capacity.
+			</p>
 		</div>
 
 		<!-- Fixed Footer -->

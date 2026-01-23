@@ -175,6 +175,29 @@
 		return unitPairs.map((p) => p.id);
 	});
 
+	/**
+	 * Calculate capacity sums for generators (positive) and loads (negative)
+	 * Uses capacity_maximum if available, otherwise capacity_registered
+	 */
+	let capacitySums = $derived.by(() => {
+		if (!facility?.units) return { positive: 0, negative: 0 };
+
+		let positive = 0;
+		let negative = 0;
+
+		for (const unit of facility.units) {
+			const capacity = Number(unit.capacity_maximum || unit.capacity_registered) || 0;
+			if (loadFuelTechs.includes(unit.fueltech_id)) {
+				negative += capacity;
+			} else {
+				positive += capacity;
+			}
+		}
+
+		// Convert from MW to the chart's unit (MW = M prefix)
+		return { positive, negative };
+	});
+
 	// ============================================
 	// Chart Store - created with data in single derived
 	// ============================================
@@ -229,6 +252,24 @@
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.useDivergingStack = useDivergingStack;
 
+		// Set capacity reference lines (values in MW to match chart scale)
+		const refLines = [];
+		if (capacitySums.positive > 0) {
+			refLines.push({
+				value: capacitySums.positive,
+				label: 'Generation Capacity',
+				colour: 'var(--chart-1)'
+			});
+		}
+		if (capacitySums.negative > 0) {
+			refLines.push({
+				value: -capacitySums.negative, // Negative for loads
+				label: 'Load Capacity',
+				colour: 'var(--chart-1)'
+			});
+		}
+		chart.yReferenceLines = refLines;
+
 		// Set data immediately
 		let seriesData = processed.data;
 		if (selectedInterval === '30m') {
@@ -252,6 +293,14 @@
 		const dayStarts = getDayStartDates(seriesData);
 		chart.xTicks = dayStarts;
 		chart.xGridlineTicks = dayStarts;
+
+		// Set custom Y domain to ensure capacity lines are visible with padding
+		const padding = 0.15; // 15% padding above/below capacity
+		const yMax = capacitySums.positive > 0 ? capacitySums.positive * (1 + padding) : undefined;
+		const yMin = capacitySums.negative > 0 ? -capacitySums.negative * (1 + padding) : undefined;
+		if (yMax !== undefined || yMin !== undefined) {
+			chart.setYDomain([yMin ?? 0, yMax ?? 0]);
+		}
 
 		return chart;
 	});

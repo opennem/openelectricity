@@ -52,19 +52,6 @@
 	/** @type {Record<string, boolean>} */
 	let expandedState = $state({});
 
-	// Expand all parent options by default in mobile/static view
-	$effect(() => {
-		if (staticDisplay && options.length > 0) {
-			const expanded = /** @type {Record<string, boolean>} */ ({});
-			for (const opt of options) {
-				if (opt.children && opt.children.length > 0) {
-					expanded[opt.value] = true;
-				}
-			}
-			expandedState = expanded;
-		}
-	});
-
 	let hasSelection = $derived(selected.length > 0);
 
 	// Show the selected option's label when only 1 is selected
