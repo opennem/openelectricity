@@ -60,6 +60,12 @@
 						useDivergingStack={true}
 					/>
 				</div>
+			{:else}
+				<div
+					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 h-[220px] flex items-center justify-center"
+				>
+					<p class="text-sm text-mid-grey">No power data available</p>
+				</div>
 			{/if}
 
 			<!-- Units Table -->
