@@ -20,6 +20,7 @@
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
 	 *   clustering?: boolean,
+	 *   satelliteView?: boolean,
 	 *   scrollZoom?: boolean,
 	 *   flyToOffsetX?: number,
 	 *   flyToOffsetY?: number,
@@ -33,6 +34,7 @@
 		hoveredFacility = null,
 		selectedFacilityCode = null,
 		clustering = false,
+		satelliteView = false,
 		scrollZoom = false,
 		flyToOffsetX = 0.25,
 		flyToOffsetY = -0.3,
@@ -56,6 +58,11 @@
 	let mapLoaded = $state(false);
 	let isDragging = $state(false);
 	let isZooming = $state(false);
+
+	// Map style (positron or satellite)
+	let mapStyle = $derived(
+		satelliteView ? '/map-styles/satellite.json' : '/map-styles/positron.json'
+	);
 
 	// Cluster panel state
 	/** @type {any[]} */
@@ -581,7 +588,7 @@
 
 <div class="w-full h-full overflow-hidden">
 	<MapLibre
-		style="/map-styles/positron.json"
+		style={mapStyle}
 		class="w-full h-full"
 		{center}
 		zoom={3.5}

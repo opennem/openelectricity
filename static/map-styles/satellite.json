@@ -1,0 +1,365 @@
+{
+	"version": 8,
+	"name": "Satellite",
+	"metadata": {},
+	"sources": {
+		"esri-satellite": {
+			"type": "raster",
+			"tiles": [
+				"https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+			],
+			"tileSize": 256,
+			"attribution": "Esri, Maxar, Earthstar Geographics"
+		},
+		"carto": {
+			"type": "vector",
+			"url": "https://tiles.basemaps.cartocdn.com/vector/carto.streets/v1/tiles.json"
+		}
+	},
+	"sprite": "https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/sprite",
+	"glyphs": "/fonts/{fontstack}/{range}.pbf",
+	"layers": [
+		{
+			"id": "satellite",
+			"type": "raster",
+			"source": "esri-satellite",
+			"minzoom": 0,
+			"maxzoom": 22,
+			"paint": {
+				"raster-opacity": 1
+			}
+		},
+		{
+			"id": "boundary_state",
+			"type": "line",
+			"source": "carto",
+			"source-layer": "boundary",
+			"minzoom": 4,
+			"filter": ["all", ["==", "admin_level", 4], ["==", "maritime", 0]],
+			"paint": {
+				"line-color": "rgba(255, 255, 255, 0.5)",
+				"line-width": {
+					"stops": [
+						[4, 0.5],
+						[7, 1],
+						[8, 1],
+						[9, 1.2]
+					]
+				},
+				"line-dasharray": [2, 2]
+			}
+		},
+		{
+			"id": "boundary_country_inner",
+			"type": "line",
+			"source": "carto",
+			"source-layer": "boundary",
+			"minzoom": 0,
+			"filter": ["all", ["==", "admin_level", 2], ["==", "maritime", 0]],
+			"layout": {
+				"line-cap": "round",
+				"line-join": "round"
+			},
+			"paint": {
+				"line-color": "rgba(255, 255, 255, 0.7)",
+				"line-opacity": 1,
+				"line-width": {
+					"stops": [
+						[3, 1],
+						[6, 1.5]
+					]
+				},
+				"line-offset": 0
+			}
+		},
+		{
+			"id": "place_state",
+			"type": "symbol",
+			"source": "carto",
+			"source-layer": "place",
+			"minzoom": 5,
+			"maxzoom": 10,
+			"filter": ["all", ["==", "class", "state"], ["<=", "rank", 4]],
+			"layout": {
+				"text-field": "{name_en}",
+				"text-font": ["Space_Grotesk"],
+				"text-size": {
+					"stops": [
+						[5, 12],
+						[7, 14]
+					]
+				},
+				"text-transform": "uppercase",
+				"text-max-width": 9
+			},
+			"paint": {
+				"text-color": "rgba(255, 255, 255, 0.9)",
+				"text-halo-color": "rgba(0, 0, 0, 0.7)",
+				"text-halo-width": 1
+			}
+		},
+		{
+			"id": "place_city_dot_z7",
+			"type": "symbol",
+			"source": "carto",
+			"source-layer": "place",
+			"minzoom": 7,
+			"maxzoom": 8,
+			"filter": ["all", ["!has", "capital"], ["!in", "class", "country", "state"]],
+			"layout": {
+				"text-field": "{name_en}",
+				"text-font": ["Space_Grotesk"],
+				"text-size": 12,
+				"icon-image": "circle-11",
+				"icon-offset": [16, 5],
+				"text-anchor": "right",
+				"icon-size": 0.4,
+				"text-max-width": 8,
+				"text-keep-upright": true,
+				"text-offset": [0.2, 0.2]
+			},
+			"paint": {
+				"text-color": "rgba(255, 255, 255, 0.9)",
+				"icon-color": "rgba(255, 255, 255, 0.9)",
+				"text-halo-color": "rgba(0, 0, 0, 0.7)",
+				"text-halo-width": 1
+			}
+		},
+		{
+			"id": "place_city_r6",
+			"type": "symbol",
+			"source": "carto",
+			"source-layer": "place",
+			"minzoom": 8,
+			"maxzoom": 15,
+			"filter": ["all", ["==", "class", "city"], [">=", "rank", 6]],
+			"layout": {
+				"text-field": {
+					"stops": [
+						[8, "{name_en}"],
+						[13, "{name}"]
+					]
+				},
+				"text-font": ["Space_Grotesk"],
+				"text-size": {
+					"stops": [
+						[8, 12],
+						[9, 13],
+						[10, 14],
+						[13, 17],
+						[14, 20]
+					]
+				},
+				"text-anchor": "center",
+				"text-max-width": 10,
+				"text-keep-upright": true,
+				"text-offset": [0.2, 0.2],
+				"text-transform": "uppercase"
+			},
+			"paint": {
+				"text-color": "rgba(255, 255, 255, 0.9)",
+				"text-halo-color": "rgba(0, 0, 0, 0.7)",
+				"text-halo-width": 1
+			}
+		},
+		{
+			"id": "place_city_r5",
+			"type": "symbol",
+			"source": "carto",
+			"source-layer": "place",
+			"minzoom": 8,
+			"maxzoom": 15,
+			"filter": ["all", ["==", "class", "city"], [">=", "rank", 0], ["<=", "rank", 5]],
+			"layout": {
+				"text-field": {
+					"stops": [
+						[8, "{name_en}"],
+						[13, "{name}"]
+					]
+				},
+				"text-font": ["Space_Grotesk"],
+				"text-size": {
+					"stops": [
+						[8, 14],
+						[10, 16],
+						[13, 19],
+						[14, 22]
+					]
+				},
+				"text-anchor": "center",
+				"text-max-width": 10,
+				"text-keep-upright": true,
+				"text-offset": [0.2, 0.2],
+				"text-transform": "uppercase"
+			},
+			"paint": {
+				"text-color": "rgba(255, 255, 255, 0.9)",
+				"text-halo-color": "rgba(0, 0, 0, 0.7)",
+				"text-halo-width": 1
+			}
+		},
+		{
+			"id": "place_town",
+			"type": "symbol",
+			"source": "carto",
+			"source-layer": "place",
+			"minzoom": 8,
+			"maxzoom": 14,
+			"filter": ["all", ["==", "class", "town"]],
+			"layout": {
+				"text-field": {
+					"stops": [
+						[8, "{name_en}"],
+						[13, "{name}"]
+					]
+				},
+				"text-font": ["Space_Grotesk"],
+				"text-size": {
+					"stops": [
+						[8, 10],
+						[9, 10],
+						[10, 11],
+						[13, 14],
+						[14, 15]
+					]
+				},
+				"text-anchor": "center",
+				"text-max-width": 10,
+				"text-keep-upright": true,
+				"text-offset": [0.2, 0.2]
+			},
+			"paint": {
+				"text-color": "rgba(255, 255, 255, 0.9)",
+				"text-halo-color": "rgba(0, 0, 0, 0.7)",
+				"text-halo-width": 1
+			}
+		},
+		{
+			"id": "place_suburbs",
+			"type": "symbol",
+			"source": "carto",
+			"source-layer": "place",
+			"minzoom": 12,
+			"maxzoom": 16,
+			"filter": ["all", ["==", "class", "suburb"]],
+			"layout": {
+				"text-field": {
+					"stops": [
+						[8, "{name_en}"],
+						[13, "{name}"]
+					]
+				},
+				"text-font": ["Space_Grotesk"],
+				"text-size": {
+					"stops": [
+						[12, 9],
+						[13, 10],
+						[14, 11],
+						[15, 12],
+						[16, 13]
+					]
+				},
+				"text-anchor": "center",
+				"text-max-width": 10,
+				"text-keep-upright": true,
+				"text-offset": [0.2, 0.2],
+				"text-transform": "uppercase"
+			},
+			"paint": {
+				"text-color": "rgba(255, 255, 255, 0.85)",
+				"text-halo-color": "rgba(0, 0, 0, 0.6)",
+				"text-halo-width": 1
+			}
+		},
+		{
+			"id": "road_pri_fill_noramp",
+			"type": "line",
+			"source": "carto",
+			"source-layer": "transportation",
+			"minzoom": 12,
+			"maxzoom": 24,
+			"filter": ["all", ["==", "class", "primary"], ["!=", "ramp", 1], ["!has", "brunnel"]],
+			"layout": {
+				"line-cap": "round",
+				"line-join": "round"
+			},
+			"paint": {
+				"line-width": {
+					"stops": [
+						[12, 0.5],
+						[13, 1],
+						[14, 2],
+						[15, 3],
+						[16, 4],
+						[17, 6],
+						[18, 8]
+					]
+				},
+				"line-opacity": 0.6,
+				"line-color": "rgba(255, 255, 255, 0.7)"
+			}
+		},
+		{
+			"id": "road_mot_fill_noramp",
+			"type": "line",
+			"source": "carto",
+			"source-layer": "transportation",
+			"minzoom": 10,
+			"maxzoom": 24,
+			"filter": ["all", ["==", "class", "motorway"], ["!=", "ramp", 1], ["!has", "brunnel"]],
+			"layout": {
+				"line-cap": "round",
+				"line-join": "round"
+			},
+			"paint": {
+				"line-width": {
+					"stops": [
+						[10, 0.5],
+						[12, 1],
+						[13, 1.5],
+						[14, 2.5],
+						[15, 3.5],
+						[16, 5],
+						[17, 6],
+						[18, 10]
+					]
+				},
+				"line-opacity": 0.6,
+				"line-color": "rgba(255, 255, 255, 0.7)"
+			}
+		},
+		{
+			"id": "roadname_major",
+			"type": "symbol",
+			"source": "carto",
+			"source-layer": "transportation_name",
+			"minzoom": 14,
+			"filter": ["all", ["in", "class", "trunk", "motorway"]],
+			"layout": {
+				"symbol-placement": "line",
+				"text-font": ["Space_Grotesk"],
+				"text-size": {
+					"stops": [
+						[14, 10],
+						[15, 10],
+						[16, 11],
+						[18, 12]
+					]
+				},
+				"text-field": "{name}",
+				"symbol-avoid-edges": false,
+				"symbol-spacing": 250,
+				"text-pitch-alignment": "auto",
+				"text-rotation-alignment": "auto",
+				"text-justify": "center"
+			},
+			"paint": {
+				"text-color": "rgba(255, 255, 255, 0.9)",
+				"text-halo-color": "rgba(0, 0, 0, 0.7)",
+				"text-halo-width": 1
+			}
+		}
+	],
+	"id": "satellite",
+	"owner": "OpenElectricity"
+}

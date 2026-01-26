@@ -4,7 +4,7 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { getContext, onDestroy } from 'svelte';
 	import { page } from '$app/state';
-	import { X } from '@lucide/svelte';
+	import { X, Satellite, Map as MapIcon } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import formatValue from './_utils/format-value';
 	import { statusColours, isInSizeRange } from './_utils/filters.js';
@@ -82,8 +82,9 @@
 	/** @type {'asc' | 'desc'} */
 	let listSortOrder = $state('asc');
 
-	// Map clustering toggle and ref
+	// Map clustering and satellite view toggles
 	let mapClustering = $state(true);
+	let mapSatelliteView = $state(false);
 	/** @type {*} */
 	let mapRef = $state(null);
 
@@ -436,6 +437,7 @@
 				{hoveredFacility}
 				{selectedFacilityCode}
 				clustering={mapClustering}
+				satelliteView={mapSatelliteView}
 				scrollZoom={isFullscreen}
 				flyToOffsetX={0.25}
 				flyToOffsetY={isFullscreen ? -0.25 : -0.15}
@@ -481,6 +483,19 @@
 						class:bg-mid-warm-grey={!mapClustering}
 					></span>
 					{mapClustering ? 'Clustering On' : 'Clustering Off'}
+				</button>
+				<button
+					onclick={() => (mapSatelliteView = !mapSatelliteView)}
+					class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
+					title={mapSatelliteView ? 'Switch to map view' : 'Switch to satellite view'}
+				>
+					{#if mapSatelliteView}
+						<MapIcon class="size-5" />
+						<span>Map</span>
+					{:else}
+						<Satellite class="size-5" />
+						<span>Satellite</span>
+					{/if}
 				</button>
 			</div>
 		</div>
