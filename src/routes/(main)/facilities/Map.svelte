@@ -619,9 +619,9 @@
 					id="cluster-circles"
 					filter={['has', 'point_count']}
 					paint={{
-						'circle-color': '#4a4a4a',
+						'circle-color': satelliteView ? '#ffffff' : '#4a4a4a',
 						'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 50, 35, 100, 45],
-						'circle-opacity': 0.9
+						'circle-opacity': satelliteView ? 0.95 : 0.9
 					}}
 					onclick={handleClusterClick}
 					onmouseenter={() => {
@@ -643,7 +643,7 @@
 						visibility: isZooming ? 'none' : 'visible'
 					}}
 					paint={{
-						'text-color': '#ffffff'
+						'text-color': satelliteView ? '#1a1a1a' : '#ffffff'
 					}}
 				/>
 
