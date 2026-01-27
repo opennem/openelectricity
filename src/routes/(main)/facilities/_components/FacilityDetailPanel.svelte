@@ -17,10 +17,19 @@
 
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
 	let explorePath = $derived(getExploreUrl(facility));
+
+	// Filter out battery units for the primary chart
 	let filteredUnits = $derived(
 		facility?.units?.filter((/** @type {any} */ unit) => unit.fueltech_id !== 'battery') ?? []
 	);
 	let filteredUnitCodes = $derived(new Set(filteredUnits.map((/** @type {any} */ u) => u.code)));
+
+	// Get battery units for the secondary chart
+	let batteryUnits = $derived(
+		facility?.units?.filter((/** @type {any} */ unit) => unit.fueltech_id === 'battery') ?? []
+	);
+	let batteryUnitCodes = $derived(new Set(batteryUnits.map((/** @type {any} */ u) => u.code)));
+	let hasBattery = $derived(batteryUnits.length > 0);
 
 	let filteredFacility = $derived(
 		facility
@@ -31,12 +40,32 @@
 			: null
 	);
 
+	let batteryFacility = $derived(
+		facility && hasBattery
+			? {
+					...facility,
+					units: batteryUnits
+				}
+			: null
+	);
+
 	let filteredPowerData = $derived(
 		powerData && powerData.data.length
 			? {
 					...powerData,
 					results: powerData.data[0].results?.filter((/** @type {any} */ r) =>
 						filteredUnitCodes.has(r.columns?.unit_code)
+					)
+				}
+			: null
+	);
+
+	let batteryPowerData = $derived(
+		powerData && powerData.data.length && hasBattery
+			? {
+					...powerData,
+					results: powerData.data[0].results?.filter((/** @type {any} */ r) =>
+						batteryUnitCodes.has(r.columns?.unit_code)
 					)
 				}
 			: null
@@ -72,6 +101,34 @@
 			{#if filteredUnits.length}
 				<div class="border border-warm-grey rounded-lg mx-2">
 					<FacilityUnitsTable units={filteredUnits} compact />
+				</div>
+			{/if}
+
+			<!-- Battery Section (Testing) -->
+			{#if hasBattery && batteryPowerData}
+				<div class="mt-4 mx-2 p-3 border-2 border-dashed border-amber-400 bg-amber-50 rounded-lg">
+					<div class="flex items-center gap-2 mb-2">
+						<span class="text-xs font-bold text-amber-700 uppercase tracking-wide">Battery Storage</span>
+						<span class="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-medium">Testing</span>
+					</div>
+
+					<!-- Battery Chart -->
+					<div class="bg-white rounded-lg p-3 mb-3">
+						<FacilityPowerChart
+							facility={batteryFacility}
+							powerData={batteryPowerData}
+							{timeZone}
+							title=""
+							chartHeight="h-[150px]"
+							showZoomBrush={false}
+							useDivergingStack={true}
+						/>
+					</div>
+
+					<!-- Battery Units Table -->
+					<div class="border border-amber-300 rounded-lg bg-white">
+						<FacilityUnitsTable units={batteryUnits} compact />
+					</div>
 				</div>
 			{/if}
 
