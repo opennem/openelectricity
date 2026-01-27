@@ -680,7 +680,7 @@
 				id="facilities-clustered"
 				data={facilitiesGeoJSON}
 				cluster={true}
-				clusterMaxZoom={14}
+				clusterMaxZoom={5}
 				clusterRadius={50}
 			>
 				<!-- Cluster circles -->
