@@ -4,7 +4,8 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { getContext, onDestroy } from 'svelte';
 	import { page } from '$app/state';
-	import { X, Satellite, Map as MapIcon } from '@lucide/svelte';
+	import { X } from '@lucide/svelte';
+	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import formatValue from './_utils/format-value';
 	import { statusColours, isInSizeRange } from './_utils/filters.js';
@@ -82,9 +83,10 @@
 	/** @type {'asc' | 'desc'} */
 	let listSortOrder = $state('asc');
 
-	// Map clustering and satellite view toggles
+	// Map clustering, satellite view, and transmission lines toggles
 	let mapClustering = $state(true);
 	let mapSatelliteView = $state(false);
+	let mapShowTransmissionLines = $state(true);
 	/** @type {*} */
 	let mapRef = $state(null);
 
@@ -438,6 +440,7 @@
 				{selectedFacilityCode}
 				clustering={mapClustering}
 				satelliteView={mapSatelliteView}
+				showTransmissionLines={mapShowTransmissionLines}
 				scrollZoom={isFullscreen}
 				flyToOffsetX={0.25}
 				flyToOffsetY={isFullscreen ? -0.25 : -0.15}
@@ -473,31 +476,50 @@
 				>
 					Reset Map
 				</button>
-				<button
-					onclick={() => (mapClustering = !mapClustering)}
-					class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
-				>
-					<span
-						class="w-3 h-3 rounded-full transition-colors"
-						class:bg-dark-grey={mapClustering}
-						class:bg-mid-warm-grey={!mapClustering}
-					></span>
-					{mapClustering ? 'Clustering On' : 'Clustering Off'}
-				</button>
-				<button
-					onclick={() => (mapSatelliteView = !mapSatelliteView)}
-					class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
-					title={mapSatelliteView ? 'Switch to map view' : 'Switch to satellite view'}
-				>
-					{#if mapSatelliteView}
-						<MapIcon class="size-5" />
-						<span>Map</span>
-					{:else}
-						<Satellite class="size-5" />
-						<span>Satellite</span>
-					{/if}
-				</button>
+				<MapOptionsDropdown
+					satelliteView={mapSatelliteView}
+					showTransmissionLines={mapShowTransmissionLines}
+					clustering={mapClustering}
+					onsatellitechange={(v) => (mapSatelliteView = v)}
+					ontransmissionlineschange={(v) => (mapShowTransmissionLines = v)}
+					onclusteringchange={(v) => (mapClustering = v)}
+				/>
 			</div>
+
+			<!-- Transmission lines legend -->
+			{#if mapShowTransmissionLines}
+				<div
+					class="absolute bottom-4 left-4 md:left-auto md:right-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs {selectedView === 'map' ? 'block' : 'hidden md:block'}"
+				>
+					<div class="text-[10px] text-mid-grey font-medium uppercase tracking-wide mb-1.5">Transmission Lines</div>
+					<div class="space-y-1">
+						<div class="flex items-center gap-2">
+							<span class="w-5 h-1 rounded-full" style="background-color: {mapSatelliteView ? '#ff6b6b' : '#c0392b'};"></span>
+							<span class="text-mid-grey">400-500 kV</span>
+						</div>
+						<div class="flex items-center gap-2">
+							<span class="w-5 h-1 rounded-full" style="background-color: {mapSatelliteView ? '#ffd93d' : '#c49b00'};"></span>
+							<span class="text-mid-grey">220-330 kV</span>
+						</div>
+						<div class="flex items-center gap-2">
+							<span class="w-5 h-1 rounded-full" style="background-color: {mapSatelliteView ? '#6bcb77' : '#27ae60'};"></span>
+							<span class="text-mid-grey">110-132 kV</span>
+						</div>
+						<div class="flex items-center gap-2">
+							<span class="w-5 h-1 rounded-full" style="background-color: {mapSatelliteView ? '#74b9ff' : '#2980b9'};"></span>
+							<span class="text-mid-grey">&lt;110 kV</span>
+						</div>
+					</div>
+					<a
+						href="https://digital.atlas.gov.au/datasets/digitalatlas::electricity-transmission-lines/about"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="block text-[10px] text-mid-grey/70 hover:text-mid-grey mt-2 pt-2 border-t border-warm-grey"
+					>
+						Source: Digital Atlas of Australia
+					</a>
+				</div>
+			{/if}
 		</div>
 
 		{#snippet summaryBar()}

@@ -6,7 +6,8 @@
 		AttributionControl,
 		GeoJSONSource,
 		CircleLayer,
-		SymbolLayer
+		SymbolLayer,
+		LineLayer
 	} from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import UnitGroup from './_components/UnitGroup.svelte';
@@ -21,6 +22,7 @@
 	 *   selectedFacilityCode?: string | null,
 	 *   clustering?: boolean,
 	 *   satelliteView?: boolean,
+	 *   showTransmissionLines?: boolean,
 	 *   scrollZoom?: boolean,
 	 *   flyToOffsetX?: number,
 	 *   flyToOffsetY?: number,
@@ -35,6 +37,7 @@
 		selectedFacilityCode = null,
 		clustering = false,
 		satelliteView = false,
+		showTransmissionLines = true,
 		scrollZoom = false,
 		flyToOffsetX = 0.25,
 		flyToOffsetY = -0.3,
@@ -604,6 +607,72 @@
 	>
 		<NavigationControl position="top-right" showCompass={false} />
 		<AttributionControl position="bottom-right" compact={true} />
+
+		<!-- Transmission lines layer -->
+		{#if showTransmissionLines}
+			<GeoJSONSource id="transmission-lines" data="/data/Electricity_Transmission_Lines.geojson">
+				<LineLayer
+					id="transmission-lines-layer"
+					filter={['==', ['get', 'operationalstatus'], 'Operational']}
+					paint={{
+						'line-color': [
+							'case',
+							['>=', ['get', 'capacitykv'], 400],
+							satelliteView ? '#ff6b6b' : '#c0392b',
+							['>=', ['get', 'capacitykv'], 220],
+							satelliteView ? '#ffd93d' : '#c49b00',
+							['>=', ['get', 'capacitykv'], 110],
+							satelliteView ? '#6bcb77' : '#27ae60',
+							satelliteView ? '#74b9ff' : '#2980b9'
+						],
+						'line-width': [
+							'interpolate',
+							['linear'],
+							['zoom'],
+							3,
+							[
+								'case',
+								['>=', ['get', 'capacitykv'], 400], 1.5,
+								['>=', ['get', 'capacitykv'], 220], 1,
+								['>=', ['get', 'capacitykv'], 110], 0.7,
+								0.5
+							],
+							8,
+							[
+								'case',
+								['>=', ['get', 'capacitykv'], 400], 4,
+								['>=', ['get', 'capacitykv'], 220], 3,
+								['>=', ['get', 'capacitykv'], 110], 2,
+								1.5
+							],
+							14,
+							[
+								'case',
+								['>=', ['get', 'capacitykv'], 400], 6,
+								['>=', ['get', 'capacitykv'], 220], 5,
+								['>=', ['get', 'capacitykv'], 110], 4,
+								3
+							]
+						],
+						'line-opacity': [
+							'interpolate',
+							['linear'],
+							['zoom'],
+							3,
+							0.5,
+							8,
+							0.7,
+							12,
+							0.85
+						]
+					}}
+					layout={{
+						'line-cap': 'round',
+						'line-join': 'round'
+					}}
+				/>
+			</GeoJSONSource>
+		{/if}
 
 		{#if clustering}
 			<!-- Clustered GeoJSON source -->
