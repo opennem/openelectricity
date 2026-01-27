@@ -106,10 +106,10 @@
 
 			<!-- Battery Section (Testing) -->
 			{#if hasBattery && batteryPowerData}
-				<div class="mt-4 mx-2 p-3 border-2 border-dashed border-amber-400 bg-amber-50 rounded-lg">
+				<div class="mt-4 mx-2 p-3 border-2 border-dashed rounded-lg" style="border-color: #f97316; background-color: #fff7ed;">
 					<div class="flex items-center gap-2 mb-2">
-						<span class="text-xs font-bold text-amber-700 uppercase tracking-wide">Battery Storage</span>
-						<span class="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded font-medium">Testing</span>
+						<span class="text-xs font-bold uppercase tracking-wide" style="color: #c2410c;">Battery Storage</span>
+						<span class="text-[10px] px-1.5 py-0.5 rounded font-medium" style="background-color: #fed7aa; color: #9a3412;">Testing</span>
 					</div>
 
 					<!-- Battery Chart -->
@@ -126,7 +126,7 @@
 					</div>
 
 					<!-- Battery Units Table -->
-					<div class="border border-amber-300 rounded-lg bg-white">
+					<div class="border rounded-lg bg-white" style="border-color: #fdba74;">
 						<FacilityUnitsTable units={batteryUnits} compact />
 					</div>
 				</div>
