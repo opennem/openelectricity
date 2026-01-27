@@ -83,16 +83,55 @@
 	/** @type {'asc' | 'desc'} */
 	let listSortOrder = $state('asc');
 
-	// Map clustering, satellite view, and transmission lines toggles
-	let mapClustering = $state(true);
-	let mapSatelliteView = $state(false);
-	let mapShowTransmissionLines = $state(true);
-	let mapShowGolfCourses = $state(false);
+	// Map options - read initial values from URL params
+	// satellite: default false, transmission: default true, clustering: default true, golf: default false
+	let mapSatelliteView = $state(page.url.searchParams.get('satellite') === 'true');
+	let mapShowTransmissionLines = $state(page.url.searchParams.get('transmission') !== 'false');
+	let mapClustering = $state(page.url.searchParams.get('clustering') !== 'false');
+	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
 
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
 	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
 	let golfUnlocked = $state(false);
 	let showGolf = $derived(showGolfOption || golfUnlocked);
+
+	/**
+	 * Update map options in URL without refetch
+	 */
+	function updateMapOptionsUrl() {
+		const params = new URLSearchParams(page.url.searchParams);
+
+		// satellite: only include if true (default is false)
+		if (mapSatelliteView) {
+			params.set('satellite', 'true');
+		} else {
+			params.delete('satellite');
+		}
+
+		// transmission: only include if false (default is true)
+		if (!mapShowTransmissionLines) {
+			params.set('transmission', 'false');
+		} else {
+			params.delete('transmission');
+		}
+
+		// clustering: only include if false (default is true)
+		if (!mapClustering) {
+			params.set('clustering', 'false');
+		} else {
+			params.delete('clustering');
+		}
+
+		// golf: only include if true (default is false)
+		if (mapShowGolfCourses) {
+			params.set('golf', 'true');
+		} else {
+			params.delete('golf');
+		}
+
+		const newUrl = `${page.url.pathname}?${params.toString()}`;
+		replaceState(newUrl, {});
+	}
 	/** @type {*} */
 	let mapRef = $state(null);
 
@@ -496,10 +535,22 @@
 					showGolfCourses={mapShowGolfCourses}
 					showGolfOption={showGolf}
 					clustering={mapClustering}
-					onsatellitechange={(v) => (mapSatelliteView = v)}
-					ontransmissionlineschange={(v) => (mapShowTransmissionLines = v)}
-					ongolfcourseschange={(v) => (mapShowGolfCourses = v)}
-					onclusteringchange={(v) => (mapClustering = v)}
+					onsatellitechange={(v) => {
+						mapSatelliteView = v;
+						updateMapOptionsUrl();
+					}}
+					ontransmissionlineschange={(v) => {
+						mapShowTransmissionLines = v;
+						updateMapOptionsUrl();
+					}}
+					ongolfcourseschange={(v) => {
+						mapShowGolfCourses = v;
+						updateMapOptionsUrl();
+					}}
+					onclusteringchange={(v) => {
+						mapClustering = v;
+						updateMapOptionsUrl();
+					}}
 				/>
 			</div>
 
