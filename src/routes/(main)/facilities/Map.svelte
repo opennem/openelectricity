@@ -25,6 +25,7 @@
 	 *   satelliteView?: boolean,
 	 *   showTransmissionLines?: boolean,
 	 *   showGolfCourses?: boolean,
+	 *   selectedRegions?: string[],
 	 *   scrollZoom?: boolean,
 	 *   flyToOffsetX?: number,
 	 *   flyToOffsetY?: number,
@@ -41,6 +42,7 @@
 		satelliteView = false,
 		showTransmissionLines = true,
 		showGolfCourses = false,
+		selectedRegions = [],
 		scrollZoom = false,
 		flyToOffsetX = 0.25,
 		flyToOffsetY = -0.3,
@@ -48,6 +50,84 @@
 		onclick,
 		onselect
 	} = $props();
+
+	// Bounding boxes for Australian regions (approximate)
+	/** @type {Record<string, {minLng: number, maxLng: number, minLat: number, maxLat: number}>} */
+	const regionBounds = {
+		nsw: { minLng: 140.5, maxLng: 154, minLat: -37.5, maxLat: -28 },
+		vic: { minLng: 140.5, maxLng: 150, minLat: -39.5, maxLat: -33.5 },
+		qld: { minLng: 138, maxLng: 154, minLat: -29.5, maxLat: -10 },
+		sa: { minLng: 129, maxLng: 141, minLat: -38.5, maxLat: -26 },
+		tas: { minLng: 143.5, maxLng: 149, minLat: -44, maxLat: -39 },
+		wa: { minLng: 112, maxLng: 129, minLat: -35.5, maxLat: -13 }
+	};
+
+	/**
+	 * Check if a point is within any of the selected regions
+	 * @param {number} lng
+	 * @param {number} lat
+	 * @param {string[]} regions
+	 * @returns {boolean}
+	 */
+	function isInSelectedRegions(lng, lat, regions) {
+		if (regions.length === 0) return true; // No filter = show all
+
+		return regions.some((region) => {
+			const bounds = regionBounds[region.toLowerCase()];
+			if (!bounds) return false;
+			return lng >= bounds.minLng && lng <= bounds.maxLng &&
+			       lat >= bounds.minLat && lat <= bounds.maxLat;
+		});
+	}
+
+	// Golf courses data - loaded on mount
+	/** @type {GeoJSON.FeatureCollection | null} */
+	let golfCoursesPointsData = $state(null);
+	/** @type {GeoJSON.FeatureCollection | null} */
+	let golfCoursesPolygonData = $state(null);
+
+	// Load golf courses data on mount
+	$effect(() => {
+		if (showGolfCourses && !golfCoursesPointsData) {
+			fetch('/data/golf-courses-points.geojson')
+				.then(res => res.json())
+				.then(data => { golfCoursesPointsData = data; });
+		}
+		if (showGolfCourses && !golfCoursesPolygonData) {
+			fetch('/data/golf-courses.geojson')
+				.then(res => res.json())
+				.then(data => { golfCoursesPolygonData = data; });
+		}
+	});
+
+	// Filtered golf courses data based on selected regions
+	let filteredGolfCoursesPoints = $derived.by(() => {
+		if (!golfCoursesPointsData) return null;
+		if (selectedRegions.length === 0) return golfCoursesPointsData;
+
+		return {
+			...golfCoursesPointsData,
+			features: golfCoursesPointsData.features.filter((f) => {
+				const lng = /** @type {number} */ (f.properties?.lng);
+				const lat = /** @type {number} */ (f.properties?.lat);
+				return isInSelectedRegions(lng, lat, selectedRegions);
+			})
+		};
+	});
+
+	let filteredGolfCoursesPolygons = $derived.by(() => {
+		if (!golfCoursesPolygonData) return null;
+		if (selectedRegions.length === 0) return golfCoursesPolygonData;
+
+		return {
+			...golfCoursesPolygonData,
+			features: golfCoursesPolygonData.features.filter((f) => {
+				const lng = /** @type {number} */ (f.properties?.lng);
+				const lat = /** @type {number} */ (f.properties?.lat);
+				return isInSelectedRegions(lng, lat, selectedRegions);
+			})
+		};
+	});
 
 	// Australia center coordinates (default fallback)
 	const center = { lng: 110, lat: -28 };
@@ -612,60 +692,64 @@
 		<AttributionControl position="bottom-right" compact={true} />
 
 		<!-- Golf courses clustered layer (uses centroid points for clustering) -->
-		<GeoJSONSource
-			id="golf-courses-clustered"
-			data="/data/golf-courses-points.geojson"
-			cluster={true}
-			clusterMaxZoom={12}
-			clusterRadius={60}
-		>
-			<!-- Golf course cluster circles -->
-			<CircleLayer
-				id="golf-cluster-circles"
-				filter={['has', 'point_count']}
-				paint={{
-					'circle-color': satelliteView ? '#86efac' : '#4ade80',
-					'circle-radius': ['step', ['get', 'point_count'], 15, 10, 20, 50, 28, 100, 36],
-					'circle-opacity': 0.9,
-					'circle-stroke-width': 2,
-					'circle-stroke-color': satelliteView ? '#bbf7d0' : '#22c55e'
-				}}
-				layout={{
-					'visibility': showGolfCourses ? 'visible' : 'none'
-				}}
-			/>
+		{#if filteredGolfCoursesPoints}
+			<GeoJSONSource
+				id="golf-courses-clustered"
+				data={filteredGolfCoursesPoints}
+				cluster={true}
+				clusterMaxZoom={12}
+				clusterRadius={60}
+			>
+				<!-- Golf course cluster circles -->
+				<CircleLayer
+					id="golf-cluster-circles"
+					filter={['has', 'point_count']}
+					paint={{
+						'circle-color': satelliteView ? '#86efac' : '#4ade80',
+						'circle-radius': ['step', ['get', 'point_count'], 15, 10, 20, 50, 28, 100, 36],
+						'circle-opacity': 0.9,
+						'circle-stroke-width': 2,
+						'circle-stroke-color': satelliteView ? '#bbf7d0' : '#22c55e'
+					}}
+					layout={{
+						'visibility': showGolfCourses ? 'visible' : 'none'
+					}}
+				/>
 
-			<!-- Golf course cluster count labels -->
-			<SymbolLayer
-				id="golf-cluster-count"
-				filter={['has', 'point_count']}
-				layout={{
-					'text-field': '{point_count_abbreviated}',
-					'text-font': ['DM_Mono'],
-					'text-size': 12,
-					'visibility': showGolfCourses ? 'visible' : 'none'
-				}}
-				paint={{
-					'text-color': satelliteView ? '#166534' : '#ffffff'
-				}}
-			/>
-		</GeoJSONSource>
+				<!-- Golf course cluster count labels -->
+				<SymbolLayer
+					id="golf-cluster-count"
+					filter={['has', 'point_count']}
+					layout={{
+						'text-field': '{point_count_abbreviated}',
+						'text-font': ['DM_Mono'],
+						'text-size': 12,
+						'visibility': showGolfCourses ? 'visible' : 'none'
+					}}
+					paint={{
+						'text-color': satelliteView ? '#166534' : '#ffffff'
+					}}
+				/>
+			</GeoJSONSource>
+		{/if}
 
 		<!-- Golf courses polygon layer (shows when zoomed in past cluster threshold) -->
-		<GeoJSONSource id="golf-courses" data="/data/golf-courses.geojson">
-			<FillLayer
-				id="golf-courses-layer"
-				minzoom={10}
-				paint={{
-					'fill-color': satelliteView ? '#4ade80' : '#16a34a',
-					'fill-opacity': satelliteView ? 0.5 : 0.4,
-					'fill-outline-color': satelliteView ? '#86efac' : '#15803d'
-				}}
-				layout={{
-					'visibility': showGolfCourses ? 'visible' : 'none'
-				}}
-			/>
-		</GeoJSONSource>
+		{#if filteredGolfCoursesPolygons}
+			<GeoJSONSource id="golf-courses" data={filteredGolfCoursesPolygons}>
+				<FillLayer
+					id="golf-courses-layer"
+					minzoom={10}
+					paint={{
+						'fill-color': satelliteView ? '#4ade80' : '#16a34a',
+						'fill-opacity': satelliteView ? 0.5 : 0.4,
+						'fill-outline-color': satelliteView ? '#86efac' : '#15803d'
+					}}
+					layout={{
+						'visibility': showGolfCourses ? 'visible' : 'none'
+					}}
+				/>
+			</GeoJSONSource>
+		{/if}
 
 		<!-- Transmission lines layer (always rendered, visibility controlled via layout) -->
 		<GeoJSONSource id="transmission-lines" data="/data/Electricity_Transmission_Lines.geojson">
