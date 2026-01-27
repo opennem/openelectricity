@@ -256,6 +256,19 @@
 		if (fs) {
 			url += '&fullscreen=true';
 		}
+		// Preserve map layer options
+		if (mapSatelliteView) {
+			url += '&satellite=true';
+		}
+		if (!mapShowTransmissionLines) {
+			url += '&transmission=false';
+		}
+		if (!mapClustering) {
+			url += '&clustering=false';
+		}
+		if (mapShowGolfCourses) {
+			url += '&golf=true';
+		}
 		return url;
 	}
 
