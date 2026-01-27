@@ -8,6 +8,7 @@
 	 *   satelliteView: boolean,
 	 *   showTransmissionLines: boolean,
 	 *   showGolfCourses: boolean,
+	 *   showGolfOption: boolean,
 	 *   clustering: boolean,
 	 *   onsatellitechange?: (value: boolean) => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
@@ -19,6 +20,7 @@
 		satelliteView = false,
 		showTransmissionLines = true,
 		showGolfCourses = false,
+		showGolfOption = false,
 		clustering = true,
 		onsatellitechange,
 		ontransmissionlineschange,
@@ -112,26 +114,28 @@
 				<span class="flex-1">Clustering</span>
 			</button>
 
-			<div class="border-t border-warm-grey my-1"></div>
+			{#if showGolfOption}
+				<div class="border-t border-warm-grey my-1"></div>
 
-			<!-- Golf courses toggle -->
-			<button
-				onclick={() => {
-					ongolfcourseschange?.(!showGolfCourses);
-				}}
-				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
-			>
-				<span
-					class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
-					class:border-mid-warm-grey={!showGolfCourses}
-					style={showGolfCourses ? `background-color: ${satelliteView ? '#4ade80' : '#16a34a'}; border-color: ${satelliteView ? '#4ade80' : '#16a34a'};` : ''}
+				<!-- Golf courses toggle -->
+				<button
+					onclick={() => {
+						ongolfcourseschange?.(!showGolfCourses);
+					}}
+					class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
 				>
-					{#if showGolfCourses}
-						<Flag class="w-3 h-3 text-white" />
-					{/if}
-				</span>
-				<span class="flex-1">Golf courses</span>
-			</button>
+					<span
+						class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+						class:border-mid-warm-grey={!showGolfCourses}
+						style={showGolfCourses ? `background-color: ${satelliteView ? '#4ade80' : '#16a34a'}; border-color: ${satelliteView ? '#4ade80' : '#16a34a'};` : ''}
+					>
+						{#if showGolfCourses}
+							<Flag class="w-3 h-3 text-white" />
+						{/if}
+					</span>
+					<span class="flex-1">Golf courses</span>
+				</button>
+			{/if}
 		</div>
 	{/if}
 </div>

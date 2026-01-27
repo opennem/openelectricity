@@ -88,6 +88,11 @@
 	let mapSatelliteView = $state(false);
 	let mapShowTransmissionLines = $state(true);
 	let mapShowGolfCourses = $state(false);
+
+	// Golf courses easter egg - show option with 'G' key or ?golf=true
+	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
+	let golfUnlocked = $state(false);
+	let showGolf = $derived(showGolfOption || golfUnlocked);
 	/** @type {*} */
 	let mapRef = $state(null);
 
@@ -263,6 +268,13 @@
 		if (e.key === 'Escape' && isFullscreen) {
 			e.preventDefault();
 			toggleFullscreen();
+		}
+
+		// 'G' key unlocks golf courses option (easter egg)
+		if (e.key === 'g' || e.key === 'G') {
+			// Don't trigger if typing in an input
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+			golfUnlocked = true;
 		}
 	}
 
@@ -482,6 +494,7 @@
 					satelliteView={mapSatelliteView}
 					showTransmissionLines={mapShowTransmissionLines}
 					showGolfCourses={mapShowGolfCourses}
+					showGolfOption={showGolf}
 					clustering={mapClustering}
 					onsatellitechange={(v) => (mapSatelliteView = v)}
 					ontransmissionlineschange={(v) => (mapShowTransmissionLines = v)}
