@@ -1,7 +1,7 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { Layers, Map as MapIcon, Satellite, ChevronDown, Flag } from '@lucide/svelte';
+	import { Layers, Map as MapIcon, Satellite, ChevronDown, Flag, Sparkles } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -9,6 +9,7 @@
 	 *   showTransmissionLines: boolean,
 	 *   showGolfCourses: boolean,
 	 *   showGolfOption: boolean,
+	 *   showMagicIndicator: boolean,
 	 *   clustering: boolean,
 	 *   onsatellitechange?: (value: boolean) => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
@@ -21,6 +22,7 @@
 		showTransmissionLines = true,
 		showGolfCourses = false,
 		showGolfOption = false,
+		showMagicIndicator = false,
 		clustering = true,
 		onsatellitechange,
 		ontransmissionlineschange,
@@ -41,7 +43,11 @@
 		class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
 		title="Map display options"
 	>
-		<Layers class="size-4" />
+		{#if showMagicIndicator}
+			<Sparkles class="size-5" style="color: #facc15;" />
+		{:else}
+			<Layers class="size-4" />
+		{/if}
 		<span>Layers</span>
 		<ChevronDown class="size-3 transition-transform {isOpen ? 'rotate-180' : ''}" />
 	</button>

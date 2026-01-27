@@ -309,11 +309,13 @@
 			toggleFullscreen();
 		}
 
-		// 'G' key unlocks golf courses option (easter egg)
+		// 'G' key toggles golf courses (easter egg)
 		if (e.key === 'g' || e.key === 'G') {
 			// Don't trigger if typing in an input
 			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 			golfUnlocked = true;
+			mapShowGolfCourses = !mapShowGolfCourses;
+			updateMapOptionsUrl();
 		}
 	}
 
@@ -534,6 +536,7 @@
 					showTransmissionLines={mapShowTransmissionLines}
 					showGolfCourses={mapShowGolfCourses}
 					showGolfOption={showGolf}
+					showMagicIndicator={showGolf}
 					clustering={mapClustering}
 					onsatellitechange={(v) => {
 						mapSatelliteView = v;
