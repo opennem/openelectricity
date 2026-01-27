@@ -7,7 +7,8 @@
 		GeoJSONSource,
 		CircleLayer,
 		SymbolLayer,
-		LineLayer
+		LineLayer,
+		FillLayer
 	} from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import UnitGroup from './_components/UnitGroup.svelte';
@@ -23,6 +24,7 @@
 	 *   clustering?: boolean,
 	 *   satelliteView?: boolean,
 	 *   showTransmissionLines?: boolean,
+	 *   showGolfCourses?: boolean,
 	 *   scrollZoom?: boolean,
 	 *   flyToOffsetX?: number,
 	 *   flyToOffsetY?: number,
@@ -38,6 +40,7 @@
 		clustering = false,
 		satelliteView = false,
 		showTransmissionLines = true,
+		showGolfCourses = false,
 		scrollZoom = false,
 		flyToOffsetX = 0.25,
 		flyToOffsetY = -0.3,
@@ -607,6 +610,62 @@
 	>
 		<NavigationControl position="top-right" showCompass={false} />
 		<AttributionControl position="bottom-right" compact={true} />
+
+		<!-- Golf courses clustered layer (uses centroid points for clustering) -->
+		<GeoJSONSource
+			id="golf-courses-clustered"
+			data="/data/golf-courses-points.geojson"
+			cluster={true}
+			clusterMaxZoom={12}
+			clusterRadius={60}
+		>
+			<!-- Golf course cluster circles -->
+			<CircleLayer
+				id="golf-cluster-circles"
+				filter={['has', 'point_count']}
+				paint={{
+					'circle-color': satelliteView ? '#86efac' : '#4ade80',
+					'circle-radius': ['step', ['get', 'point_count'], 15, 10, 20, 50, 28, 100, 36],
+					'circle-opacity': 0.9,
+					'circle-stroke-width': 2,
+					'circle-stroke-color': satelliteView ? '#bbf7d0' : '#22c55e'
+				}}
+				layout={{
+					'visibility': showGolfCourses ? 'visible' : 'none'
+				}}
+			/>
+
+			<!-- Golf course cluster count labels -->
+			<SymbolLayer
+				id="golf-cluster-count"
+				filter={['has', 'point_count']}
+				layout={{
+					'text-field': '{point_count_abbreviated}',
+					'text-font': ['DM_Mono'],
+					'text-size': 12,
+					'visibility': showGolfCourses ? 'visible' : 'none'
+				}}
+				paint={{
+					'text-color': '#ffffff'
+				}}
+			/>
+		</GeoJSONSource>
+
+		<!-- Golf courses polygon layer (shows when zoomed in past cluster threshold) -->
+		<GeoJSONSource id="golf-courses" data="/data/golf-courses.geojson">
+			<FillLayer
+				id="golf-courses-layer"
+				minzoom={10}
+				paint={{
+					'fill-color': satelliteView ? '#4ade80' : '#16a34a',
+					'fill-opacity': satelliteView ? 0.5 : 0.4,
+					'fill-outline-color': satelliteView ? '#86efac' : '#15803d'
+				}}
+				layout={{
+					'visibility': showGolfCourses ? 'visible' : 'none'
+				}}
+			/>
+		</GeoJSONSource>
 
 		<!-- Transmission lines layer (always rendered, visibility controlled via layout) -->
 		<GeoJSONSource id="transmission-lines" data="/data/Electricity_Transmission_Lines.geojson">

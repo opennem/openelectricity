@@ -87,6 +87,7 @@
 	let mapClustering = $state(true);
 	let mapSatelliteView = $state(false);
 	let mapShowTransmissionLines = $state(true);
+	let mapShowGolfCourses = $state(false);
 	/** @type {*} */
 	let mapRef = $state(null);
 
@@ -441,6 +442,7 @@
 				clustering={mapClustering}
 				satelliteView={mapSatelliteView}
 				showTransmissionLines={mapShowTransmissionLines}
+				showGolfCourses={mapShowGolfCourses}
 				scrollZoom={isFullscreen}
 				flyToOffsetX={0.25}
 				flyToOffsetY={isFullscreen ? -0.25 : -0.15}
@@ -479,9 +481,11 @@
 				<MapOptionsDropdown
 					satelliteView={mapSatelliteView}
 					showTransmissionLines={mapShowTransmissionLines}
+					showGolfCourses={mapShowGolfCourses}
 					clustering={mapClustering}
 					onsatellitechange={(v) => (mapSatelliteView = v)}
 					ontransmissionlineschange={(v) => (mapShowTransmissionLines = v)}
+					ongolfcourseschange={(v) => (mapShowGolfCourses = v)}
 					onclusteringchange={(v) => (mapClustering = v)}
 				/>
 			</div>
