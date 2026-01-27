@@ -53,9 +53,9 @@
 				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
 			>
 				{#if satelliteView}
-					<Satellite class="size-4 text-mid-grey" />
+					<Satellite class="size-5 text-mid-grey" />
 				{:else}
-					<MapIcon class="size-4 text-mid-grey" />
+					<MapIcon class="size-5 text-mid-grey" />
 				{/if}
 				<span class="flex-1">Base map</span>
 				<span class="text-mid-grey">{satelliteView ? 'Satellite' : 'Map'}</span>
@@ -71,13 +71,13 @@
 				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
 			>
 				<span
-					class="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors"
+					class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
 					class:bg-dark-grey={showTransmissionLines}
 					class:border-dark-grey={showTransmissionLines}
 					class:border-mid-warm-grey={!showTransmissionLines}
 				>
 					{#if showTransmissionLines}
-						<svg class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+						<svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
 						</svg>
 					{/if}
@@ -94,13 +94,13 @@
 				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
 			>
 				<span
-					class="w-4 h-4 rounded border-2 flex items-center justify-center transition-colors"
+					class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
 					class:bg-dark-grey={clustering}
 					class:border-dark-grey={clustering}
 					class:border-mid-warm-grey={!clustering}
 				>
 					{#if clustering}
-						<svg class="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+						<svg class="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
 							<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
 						</svg>
 					{/if}

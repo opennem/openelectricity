@@ -608,71 +608,70 @@
 		<NavigationControl position="top-right" showCompass={false} />
 		<AttributionControl position="bottom-right" compact={true} />
 
-		<!-- Transmission lines layer -->
-		{#if showTransmissionLines}
-			<GeoJSONSource id="transmission-lines" data="/data/Electricity_Transmission_Lines.geojson">
-				<LineLayer
-					id="transmission-lines-layer"
-					filter={['==', ['get', 'operationalstatus'], 'Operational']}
-					paint={{
-						'line-color': [
+		<!-- Transmission lines layer (always rendered, visibility controlled via layout) -->
+		<GeoJSONSource id="transmission-lines" data="/data/Electricity_Transmission_Lines.geojson">
+			<LineLayer
+				id="transmission-lines-layer"
+				filter={['==', ['get', 'operationalstatus'], 'Operational']}
+				paint={{
+					'line-color': [
+						'case',
+						['>=', ['get', 'capacitykv'], 400],
+						satelliteView ? '#ff6b6b' : '#c0392b',
+						['>=', ['get', 'capacitykv'], 220],
+						satelliteView ? '#ffd93d' : '#c49b00',
+						['>=', ['get', 'capacitykv'], 110],
+						satelliteView ? '#6bcb77' : '#27ae60',
+						satelliteView ? '#74b9ff' : '#2980b9'
+					],
+					'line-width': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						3,
+						[
 							'case',
-							['>=', ['get', 'capacitykv'], 400],
-							satelliteView ? '#ff6b6b' : '#c0392b',
-							['>=', ['get', 'capacitykv'], 220],
-							satelliteView ? '#ffd93d' : '#c49b00',
-							['>=', ['get', 'capacitykv'], 110],
-							satelliteView ? '#6bcb77' : '#27ae60',
-							satelliteView ? '#74b9ff' : '#2980b9'
+							['>=', ['get', 'capacitykv'], 400], 1.5,
+							['>=', ['get', 'capacitykv'], 220], 1,
+							['>=', ['get', 'capacitykv'], 110], 0.7,
+							0.5
 						],
-						'line-width': [
-							'interpolate',
-							['linear'],
-							['zoom'],
-							3,
-							[
-								'case',
-								['>=', ['get', 'capacitykv'], 400], 1.5,
-								['>=', ['get', 'capacitykv'], 220], 1,
-								['>=', ['get', 'capacitykv'], 110], 0.7,
-								0.5
-							],
-							8,
-							[
-								'case',
-								['>=', ['get', 'capacitykv'], 400], 4,
-								['>=', ['get', 'capacitykv'], 220], 3,
-								['>=', ['get', 'capacitykv'], 110], 2,
-								1.5
-							],
-							14,
-							[
-								'case',
-								['>=', ['get', 'capacitykv'], 400], 6,
-								['>=', ['get', 'capacitykv'], 220], 5,
-								['>=', ['get', 'capacitykv'], 110], 4,
-								3
-							]
+						8,
+						[
+							'case',
+							['>=', ['get', 'capacitykv'], 400], 4,
+							['>=', ['get', 'capacitykv'], 220], 3,
+							['>=', ['get', 'capacitykv'], 110], 2,
+							1.5
 						],
-						'line-opacity': [
-							'interpolate',
-							['linear'],
-							['zoom'],
-							3,
-							0.5,
-							8,
-							0.7,
-							12,
-							0.85
+						14,
+						[
+							'case',
+							['>=', ['get', 'capacitykv'], 400], 6,
+							['>=', ['get', 'capacitykv'], 220], 5,
+							['>=', ['get', 'capacitykv'], 110], 4,
+							3
 						]
-					}}
-					layout={{
-						'line-cap': 'round',
-						'line-join': 'round'
-					}}
-				/>
-			</GeoJSONSource>
-		{/if}
+					],
+					'line-opacity': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						3,
+						0.5,
+						8,
+						0.7,
+						12,
+						0.85
+					]
+				}}
+				layout={{
+					'line-cap': 'round',
+					'line-join': 'round',
+					'visibility': showTransmissionLines ? 'visible' : 'none'
+				}}
+			/>
+		</GeoJSONSource>
 
 		{#if clustering}
 			<!-- Clustered GeoJSON source -->
