@@ -494,7 +494,6 @@
 				satelliteView={mapSatelliteView}
 				showTransmissionLines={mapShowTransmissionLines}
 				showGolfCourses={mapShowGolfCourses}
-				selectedRegions={regions}
 				scrollZoom={isFullscreen}
 				flyToOffsetX={0.25}
 				flyToOffsetY={isFullscreen ? -0.25 : -0.15}
