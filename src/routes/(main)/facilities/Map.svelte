@@ -668,7 +668,7 @@
 		</GeoJSONSource>
 
 		<!-- Transmission lines layer (always rendered, visibility controlled via layout) -->
-		<GeoJSONSource id="transmission-lines" data="/data/Electricity_Transmission_Lines.geojson">
+		<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
 			<LineLayer
 				id="transmission-lines-layer"
 				filter={['==', ['get', 'operationalstatus'], 'Operational']}
