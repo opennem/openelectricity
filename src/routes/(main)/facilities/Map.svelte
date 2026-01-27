@@ -646,7 +646,7 @@
 					'visibility': showGolfCourses ? 'visible' : 'none'
 				}}
 				paint={{
-					'text-color': satelliteView ? '#166534' : '#ffffff'
+					'text-color': satelliteView ? '#052e16' : '#14532d'
 				}}
 			/>
 		</GeoJSONSource>

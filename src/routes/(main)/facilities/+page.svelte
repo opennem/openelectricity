@@ -4,7 +4,7 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { getContext, onDestroy } from 'svelte';
 	import { page } from '$app/state';
-	import { X } from '@lucide/svelte';
+	import { X, Flag } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import formatValue from './_utils/format-value';
@@ -606,6 +606,13 @@
 						<span class="text-mid-grey">{totalUnitsCount.toLocaleString()}</span>
 						<span class="text-mid-grey">units</span>
 					</div>
+					{#if mapShowGolfCourses}
+						<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
+							<Flag class="size-5" style="color: #16a34a;" />
+							<span class="text-green-600 font-medium">1,573</span>
+							<span class="text-mid-grey">golf courses</span>
+						</div>
+					{/if}
 				</div>
 				<div class="flex items-center gap-5 text-xs">
 					<StatusCapacityBadge
