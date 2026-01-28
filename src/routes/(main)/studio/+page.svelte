@@ -37,11 +37,10 @@
 			link: '/studio/facility-explorer'
 		},
 		{
-			title: "Lens on Australia's emissions projections 2024",
+			title: 'Lens on Emissions',
 			description:
 				"Visualises the latest estimates of Australia's greenhouse gas emissions to 2040.",
-			link: '/studio/lens-on-au-emissions-projections',
-			disabled: true
+			link: '/studio/lens-on-emissions'
 		},
 		{
 			title: 'TrackerGrid',

@@ -43,9 +43,22 @@
 	// Get label for the active key
 	let activeLabel = $derived(valueKey ? chart.seriesLabels[valueKey] : undefined);
 
-	// Format date
+	// Format date/category label
 	let formattedDate = $derived.by(() => {
-		if (!activeData?.date) return '';
+		if (!activeData) return '';
+
+		// For category charts, use the xKey value with formatX (or formatTickX as fallback)
+		if (chart.isCategoryChart) {
+			const categoryValue = activeData[chart.xKey];
+			if (categoryValue !== undefined) {
+				// Use formatX for tooltip display (can be different from axis tick labels)
+				return chart.formatX(categoryValue);
+			}
+			return '';
+		}
+
+		// For time-based charts, format the date
+		if (!activeData.date) return '';
 		const date = activeData.date;
 		return new Intl.DateTimeFormat('en-AU', {
 			timeZone: chart.timeZone,

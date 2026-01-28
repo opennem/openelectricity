@@ -191,7 +191,7 @@
 				d={areaGen(d)}
 				fill={seriesColours[$z(d)]}
 				stroke="none"
-				opacity={getOpacity(d, 1, 0.5)}
+				opacity={getOpacity(d, 1, 0.4)}
 				onmousemove={(e) => handlePointerMove(e, seriesKey)}
 				onmouseout={handleMouseOut}
 				ontouchmove={(e) => handlePointerMove(e, seriesKey)}
