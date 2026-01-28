@@ -6,6 +6,9 @@
 	 * historical data (FY 1990-2004) and future projections (FY 2026-2040).
 	 */
 
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
+	import { untrack } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import {
 		aggregateToYearly,
@@ -18,7 +21,7 @@
 		SECTOR_LABELS,
 		TIME_RANGES
 	} from './helpers/config.js';
-	import { formatFYRange } from './helpers/financial-year.js';
+	import { formatFYRange, getFinancialYear } from './helpers/financial-year.js';
 	import TimeRangeControls from './components/TimeRangeControls.svelte';
 	import EmissionsLegend from './components/EmissionsLegend.svelte';
 	import { NET_TOTAL_COLOR } from './helpers/config.js';
@@ -31,17 +34,108 @@
 	let { data } = $props();
 
 	// ============================================
-	// State
+	// URL Query Parameter Helpers
 	// ============================================
 
+	/**
+	 * Parse initial state from URL query parameters
+	 */
+	function getInitialInterval() {
+		const param = $page.url.searchParams.get('interval');
+		return param === 'quarter' ? 'quarter' : 'year';
+	}
+
+	function getInitialHistory() {
+		return $page.url.searchParams.get('history') === 'true';
+	}
+
+	function getInitialProjections() {
+		return $page.url.searchParams.get('projections') === 'true';
+	}
+
+	function getInitialRollingSum() {
+		const param = $page.url.searchParams.get('rolling');
+		// Default to true in quarter mode (unless explicitly set to false)
+		if (param === null) return true;
+		return param === 'true';
+	}
+
+	/**
+	 * Update URL with current state (without navigation)
+	 * Uses untrack to avoid reactive dependency on $page
+	 */
+	function updateURL() {
+		untrack(() => {
+			const url = new URL($page.url);
+
+			// Set interval (only if not default)
+			if (intervalType === 'quarter') {
+				url.searchParams.set('interval', 'quarter');
+			} else {
+				url.searchParams.delete('interval');
+			}
+
+			// Set history (only if true)
+			if (showHistory) {
+				url.searchParams.set('history', 'true');
+			} else {
+				url.searchParams.delete('history');
+			}
+
+			// Set projections (only if true)
+			if (showProjections) {
+				url.searchParams.set('projections', 'true');
+			} else {
+				url.searchParams.delete('projections');
+			}
+
+			// Set rolling sum (in quarter mode: omit if true/default, set false if off)
+			if (intervalType === 'quarter') {
+				if (useRollingSum) {
+					url.searchParams.delete('rolling'); // true is default, omit from URL
+				} else {
+					url.searchParams.set('rolling', 'false');
+				}
+			} else {
+				url.searchParams.delete('rolling');
+			}
+
+			goto(url.toString(), { replaceState: true, keepFocus: true, noScroll: true });
+		});
+	}
+
+	// ============================================
+	// State (initialized from URL query parameters)
+	// ============================================
+
+	// Get initial values from URL
+	const initialInterval = getInitialInterval();
+
 	/** @type {'quarter' | 'year'} */
-	let intervalType = $state(/** @type {'quarter' | 'year'} */ ('year'));
+	let intervalType = $state(initialInterval);
+
+	// History and projections are only valid in year mode
+	/** @type {boolean} */
+	let showHistory = $state(initialInterval === 'year' && getInitialHistory());
 
 	/** @type {boolean} */
-	let showHistory = $state(false);
+	let showProjections = $state(initialInterval === 'year' && getInitialProjections());
 
+	// Rolling sum is only valid in quarter mode
 	/** @type {boolean} */
-	let showProjections = $state(false);
+	let useRollingSum = $state(initialInterval === 'quarter' && getInitialRollingSum());
+
+	// Sync URL when state changes (using untrack to avoid circular updates)
+	$effect(() => {
+		// Track all state variables
+		const _interval = intervalType;
+		const _history = showHistory;
+		const _projections = showProjections;
+		const _rolling = useRollingSum;
+
+		// Update URL with current state
+		updateURL();
+	});
 
 	// ============================================
 	// Chart Store Instance
@@ -62,6 +156,13 @@
 	// Set the curve type to stepAfter
 	chart.chartOptions.selectedCurveType = 'stepAfter';
 
+	// Use divergent stacking for positive/negative values
+	chart.useDivergingStack = true;
+
+	// Enable category chart mode for FY-based axis
+	chart.isCategoryChart = true;
+	chart.xKey = 'fy';
+
 	// Set chart height
 	chart.chartStyles.chartHeightClasses = 'h-[400px]';
 
@@ -70,22 +171,85 @@
 	// ============================================
 
 	/**
+	 * Format a date as quarter label (e.g., "Q1 06", "Q2 06")
+	 * Calendar year quarters: Mar=Q1, Jun=Q2, Sep=Q3, Dec=Q4
+	 * @param {Date} date
+	 * @returns {string}
+	 */
+	function formatQuarterLabel(date) {
+		const month = date.getMonth(); // 0-indexed
+		// Map month to calendar quarter number
+		// Mar (2) = Q1, Jun (5) = Q2, Sep (8) = Q3, Dec (11) = Q4
+		const quarterMap = { 2: 1, 5: 2, 8: 3, 11: 4 };
+		const quarter = quarterMap[month] ?? 1;
+		const year = String(date.getFullYear()).slice(-2);
+		return `Q${quarter} ${year}`;
+	}
+
+	/**
+	 * Calculate rolling 4-quarter (yearly) sum for each data point
+	 * @param {EmissionsDataPoint[]} quarterlyData - Sorted quarterly data
+	 * @returns {EmissionsDataPoint[]}
+	 */
+	function calculateRollingYearlySum(quarterlyData) {
+		if (quarterlyData.length < 4) return quarterlyData;
+
+		return quarterlyData.map((current, index) => {
+			if (index < 3) {
+				// Not enough previous quarters for a full year
+				return current;
+			}
+
+			// Sum current + previous 3 quarters for each sector
+			const rollingPoint = { ...current };
+
+			for (const sector of SECTOR_ORDER) {
+				let sum = 0;
+				for (let i = 0; i < 4; i++) {
+					sum += Number(quarterlyData[index - i][sector]) || 0;
+				}
+				// @ts-ignore - dynamic sector assignment
+				rollingPoint[sector] = sum;
+			}
+
+			// Recalculate net total
+			rollingPoint.net_total = SECTOR_ORDER.reduce(
+				(sum, sector) => sum + (Number(rollingPoint[sector]) || 0),
+				0
+			);
+
+			return rollingPoint;
+		});
+	}
+
+	/**
 	 * Process quarterly data based on interval type
 	 */
 	let processedQuarterlyData = $derived.by(() => {
 		const quarterly = data.quarterlyData;
 
 		if (intervalType === 'quarter') {
-			// Return quarterly data filtered to current period
-			return filterByFYRange(
+			// Filter to current period
+			const filtered = filterByFYRange(
 				quarterly,
 				TIME_RANGES.CURRENT_START_FY,
 				TIME_RANGES.CURRENT_END_FY
 			);
+
+			// Apply rolling sum if enabled
+			const processed = useRollingSum ? calculateRollingYearlySum(filtered) : filtered;
+
+			// Add quarter label for category axis
+			// Skip first 3 quarters if rolling sum (incomplete data)
+			const startIndex = useRollingSum ? 3 : 0;
+			return processed.slice(startIndex).map((d) => ({
+				...d,
+				quarter: formatQuarterLabel(d.date)
+			}));
 		}
 
-		// Aggregate to yearly
-		const yearly = aggregateToYearly(quarterly);
+		// Aggregate to yearly (exclude incomplete years)
+		const yearly = aggregateToYearly(quarterly, { completeYearsOnly: true });
 		return filterByFYRange(
 			yearly,
 			TIME_RANGES.CURRENT_START_FY,
@@ -119,8 +283,13 @@
 
 	/**
 	 * Merge all data sources
+	 * In quarter mode, skip merging since it deduplicates by FY (losing 3 of 4 quarters)
 	 */
 	let chartData = $derived.by(() => {
+		if (intervalType === 'quarter') {
+			// In quarter mode, just return the quarterly data directly
+			return processedQuarterlyData;
+		}
 		return mergeData(historicalData, processedQuarterlyData, projectionData);
 	});
 
@@ -129,7 +298,8 @@
 	 */
 	let dateRangeTitle = $derived.by(() => {
 		let startFY = TIME_RANGES.CURRENT_START_FY;
-		let endFY = TIME_RANGES.CURRENT_END_FY;
+		// Use 2025 as end year (last complete year) unless projections enabled
+		let endFY = 2025;
 
 		if (showHistory && intervalType === 'year') {
 			startFY = TIME_RANGES.HISTORY_START_FY;
@@ -139,13 +309,20 @@
 			endFY = TIME_RANGES.PROJECTION_END_FY;
 		}
 
-		return formatFYRange(startFY, endFY);
+		// Year view: "FY 2005 – 2025", Quarter view: "2005 – 2025"
+		const range =
+			intervalType === 'year'
+				? `FY ${startFY} \u2014 ${endFY}`
+				: `${startFY} \u2014 ${endFY}`;
+
+		// Add rolling year indicator for quarter view
+		if (useRollingSum && intervalType === 'quarter') {
+			return `${range} · Rolling Year`;
+		}
+
+		return range;
 	});
 
-	/**
-	 * History toggle should be disabled in quarter mode
-	 */
-	let isHistoryDisabled = $derived(intervalType === 'quarter');
 
 	// ============================================
 	// Effects - Update Chart
@@ -159,7 +336,19 @@
 		chart.seriesNames = SECTOR_ORDER;
 		chart.seriesColours = SECTOR_COLORS;
 		chart.seriesLabels = SECTOR_LABELS;
-		chart.formatTickX = formatXAxis;
+
+		// Set xKey and formatter based on interval type
+		if (intervalType === 'quarter') {
+			chart.xKey = 'quarter';
+			// Axis labels: just "Q1 25"
+			chart.formatTickX = (d) => String(d);
+			// Tooltip: "Year to Q1 25" when rolling, otherwise just "Q1 25"
+			chart.formatX = useRollingSum ? (d) => `Year to ${d}` : (d) => String(d);
+		} else {
+			chart.xKey = 'fy';
+			chart.formatTickX = formatXAxis;
+			chart.formatX = formatXAxis;
+		}
 	});
 
 	// ============================================
@@ -167,14 +356,12 @@
 	// ============================================
 
 	/**
-	 * Format date for X axis ticks
-	 * @param {Date | any} d
+	 * Format FY for X axis ticks
+	 * @param {number | any} d - Financial year number
 	 * @returns {string}
 	 */
 	function formatXAxis(d) {
-		if (!(d instanceof Date)) return String(d);
-		const year = d.getFullYear();
-		return `FY ${year}`;
+		return `FY ${d}`;
 	}
 
 	// ============================================
@@ -187,9 +374,16 @@
 	 */
 	function handleIntervalChange(type) {
 		intervalType = type;
-		// Reset showHistory when switching to quarter mode (history only available in year mode)
+		// Reset options based on mode
 		if (type === 'quarter') {
+			// History and projections only available in year mode
 			showHistory = false;
+			showProjections = false;
+			// Default rolling sum ON in quarter mode
+			useRollingSum = true;
+		} else {
+			// Rolling sum only available in quarter mode
+			useRollingSum = false;
 		}
 	}
 
@@ -197,7 +391,22 @@
 	let isDataReady = $derived(chartData.length > 0);
 
 	/**
-	 * Get the data for the legend (hovered data or latest data point)
+	 * Calculate summed emissions for all sectors across all data points
+	 * @type {Record<string, number>}
+	 */
+	let summedData = $derived.by(() => {
+		if (chartData.length === 0) return {};
+
+		/** @type {Record<string, number>} */
+		const sums = {};
+		for (const sector of SECTOR_ORDER) {
+			sums[sector] = chartData.reduce((sum, d) => sum + (Number(d[sector]) || 0), 0);
+		}
+		return sums;
+	});
+
+	/**
+	 * Get the data for the legend (hovered data or summed totals)
 	 * @type {Record<string, number> | null}
 	 */
 	let legendData = $derived.by(() => {
@@ -205,9 +414,9 @@
 		const displayData = chart.hoverData || chart.focusData;
 		if (displayData) return /** @type {Record<string, number>} */ (displayData);
 
-		// Fall back to the latest data point
-		if (chartData.length > 0) {
-			return /** @type {Record<string, number>} */ (chartData[chartData.length - 1]);
+		// Fall back to summed data across all years
+		if (Object.keys(summedData).length > 0) {
+			return summedData;
 		}
 		return null;
 	});
@@ -218,22 +427,19 @@
 </svelte:head>
 
 <div class="p-4">
-	<header class="mb-6">
-		<h1 class="text-2xl font-bold">Lens on Emissions</h1>
-		<p class="text-sm text-mid-warm-grey">{dateRangeTitle}</p>
-	</header>
-
-	<!-- Controls -->
-	<div class="mb-6">
+	<!-- Header Filter Bar -->
+	<div class="mb-6 flex flex-wrap items-center justify-between gap-4 px-4 py-3 bg-light-warm-grey rounded-lg">
 		<TimeRangeControls
 			{intervalType}
 			{showHistory}
 			{showProjections}
-			{isHistoryDisabled}
+			{useRollingSum}
 			onIntervalChange={handleIntervalChange}
 			onHistoryChange={(show) => (showHistory = show)}
 			onProjectionsChange={(show) => (showProjections = show)}
+			onRollingSumChange={(show) => (useRollingSum = show)}
 		/>
+		<span class="text-lg font-semibold text-dark-grey">{dateRangeTitle}</span>
 	</div>
 
 	{#if !isDataReady}

@@ -24,6 +24,9 @@
 		netTotalColor = '#C74523'
 	} = $props();
 
+	// Reverse sector order for display (net total stays at bottom)
+	let displaySectors = $derived([...sectors].reverse());
+
 	/**
 	 * Calculate total of all positive values for percentage calculation
 	 */
@@ -86,9 +89,9 @@
 		>
 	</div>
 
-	<!-- Sector List -->
+	<!-- Sector List (reversed order) -->
 	<div class="divide-y divide-light-warm-grey">
-		{#each sectors as sector (sector)}
+		{#each displaySectors as sector (sector)}
 			{@const value = data?.[sector] ?? 0}
 			{@const percentage = calculatePercentage(value)}
 			{@const isNegative = value < 0}

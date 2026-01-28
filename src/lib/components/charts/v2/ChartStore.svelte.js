@@ -244,33 +244,59 @@ export default class ChartStore {
 	/** @type {number | undefined} */
 	hoverTime = $state();
 
-	hoverData = $derived(
-		this.hoverTime ? this.seriesData.find((d) => d.time === this.hoverTime) : undefined
-	);
+	hoverData = $derived.by(() => {
+		if (this.isCategoryChart && this.hoverCategory !== undefined) {
+			return this.seriesData.find((d) => d[this.xKey] === this.hoverCategory);
+		}
+		return this.hoverTime ? this.seriesData.find((d) => d.time === this.hoverTime) : undefined;
+	});
 
-	hoverScaledData = $derived(
-		this.hoverTime ? this.seriesScaledData.find((d) => d.time === this.hoverTime) : undefined
-	);
+	hoverScaledData = $derived.by(() => {
+		if (this.isCategoryChart && this.hoverCategory !== undefined) {
+			return this.seriesScaledData.find((d) => d[this.xKey] === this.hoverCategory);
+		}
+		return this.hoverTime
+			? this.seriesScaledData.find((d) => d.time === this.hoverTime)
+			: undefined;
+	});
 
-	hoverProportionData = $derived(
-		this.hoverTime ? this.seriesProportionData.find((d) => d.time === this.hoverTime) : undefined
-	);
+	hoverProportionData = $derived.by(() => {
+		if (this.isCategoryChart && this.hoverCategory !== undefined) {
+			return this.seriesProportionData.find((d) => d[this.xKey] === this.hoverCategory);
+		}
+		return this.hoverTime
+			? this.seriesProportionData.find((d) => d.time === this.hoverTime)
+			: undefined;
+	});
 
 	// Focus state (click/lock)
 	/** @type {number | undefined} */
 	focusTime = $state();
 
-	focusData = $derived(
-		this.focusTime ? this.seriesData.find((d) => d.time === this.focusTime) : undefined
-	);
+	focusData = $derived.by(() => {
+		if (this.isCategoryChart && this.focusCategory !== undefined) {
+			return this.seriesData.find((d) => d[this.xKey] === this.focusCategory);
+		}
+		return this.focusTime ? this.seriesData.find((d) => d.time === this.focusTime) : undefined;
+	});
 
-	focusScaledData = $derived(
-		this.focusTime ? this.seriesScaledData.find((d) => d.time === this.focusTime) : undefined
-	);
+	focusScaledData = $derived.by(() => {
+		if (this.isCategoryChart && this.focusCategory !== undefined) {
+			return this.seriesScaledData.find((d) => d[this.xKey] === this.focusCategory);
+		}
+		return this.focusTime
+			? this.seriesScaledData.find((d) => d.time === this.focusTime)
+			: undefined;
+	});
 
-	focusProportionData = $derived(
-		this.focusTime ? this.seriesProportionData.find((d) => d.time === this.focusTime) : undefined
-	);
+	focusProportionData = $derived.by(() => {
+		if (this.isCategoryChart && this.focusCategory !== undefined) {
+			return this.seriesProportionData.find((d) => d[this.xKey] === this.focusCategory);
+		}
+		return this.focusTime
+			? this.seriesProportionData.find((d) => d.time === this.focusTime)
+			: undefined;
+	});
 
 	// CSV export
 	seriesCsvData = $derived.by(() => {
@@ -302,6 +328,16 @@ export default class ChartStore {
 	// Stacking options
 	/** @type {boolean} */
 	useDivergingStack = $state(false);
+
+	// Category chart mode
+	/** @type {boolean} */
+	isCategoryChart = $state(false);
+
+	/** @type {string | number | undefined} */
+	hoverCategory = $state();
+
+	/** @type {string | number | undefined} */
+	focusCategory = $state();
 
 	// Reference lines (horizontal annotations)
 	/**
@@ -403,10 +439,21 @@ export default class ChartStore {
 	}
 
 	/**
+	 * Set hover state for category chart
+	 * @param {string | number | undefined} category
+	 * @param {string} [key]
+	 */
+	setHoverCategory(category, key) {
+		this.hoverCategory = category;
+		this.hoverKey = key;
+	}
+
+	/**
 	 * Clear hover state
 	 */
 	clearHover() {
 		this.hoverTime = undefined;
+		this.hoverCategory = undefined;
 		this.hoverKey = undefined;
 	}
 
@@ -419,10 +466,19 @@ export default class ChartStore {
 	}
 
 	/**
+	 * Toggle focus on a category
+	 * @param {string | number} category
+	 */
+	toggleFocusCategory(category) {
+		this.focusCategory = this.focusCategory === category ? undefined : category;
+	}
+
+	/**
 	 * Clear focus state
 	 */
 	clearFocus() {
 		this.focusTime = undefined;
+		this.focusCategory = undefined;
 	}
 
 	/**

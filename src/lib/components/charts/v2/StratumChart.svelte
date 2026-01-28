@@ -10,6 +10,7 @@
 	import ChartHeader from './ChartHeader.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import StackedAreaChart from './StackedAreaChart.svelte';
+	import StackedCategoryChart from './StackedCategoryChart.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -52,12 +53,18 @@
 
 	/**
 	 * Handle mouse move events from the chart
-	 * @param {{ data: TimeSeriesData, key?: string }} event
+	 * @param {{ data: any, key?: string }} event
 	 */
 	function handleMouseMove(event) {
 		if (event?.data) {
-			chart.setHover(event.data.time, event.key);
-			onhover?.(event.data.time, event.key);
+			if (chart.isCategoryChart) {
+				const category = event.data[chart.xKey];
+				chart.setHoverCategory(category, event.key);
+				onhover?.(category, event.key);
+			} else {
+				chart.setHover(event.data.time, event.key);
+				onhover?.(event.data.time, event.key);
+			}
 		}
 	}
 
@@ -71,10 +78,19 @@
 
 	/**
 	 * Handle click/pointer up events
-	 * @param {TimeSeriesData} data
+	 * @param {any} data
 	 */
 	function handlePointerUp(data) {
-		if (data?.time) {
+		if (chart.isCategoryChart) {
+			const category = data?.[chart.xKey];
+			if (category !== undefined) {
+				if (onfocus) {
+					onfocus(category);
+				} else {
+					chart.toggleFocusCategory(category);
+				}
+			}
+		} else if (data?.time) {
 			if (onfocus) {
 				// Let parent handle sync across all charts
 				onfocus(data.time);
@@ -110,12 +126,21 @@
 	<!-- Chart -->
 	<div class={chartPadding}>
 		{#if hasData}
-			<StackedAreaChart
-				{chart}
-				onmousemove={handleMouseMove}
-				onmouseout={handleMouseOut}
-				onpointerup={handlePointerUp}
-			/>
+			{#if chart.isCategoryChart}
+				<StackedCategoryChart
+					{chart}
+					onmousemove={handleMouseMove}
+					onmouseout={handleMouseOut}
+					onpointerup={handlePointerUp}
+				/>
+			{:else}
+				<StackedAreaChart
+					{chart}
+					onmousemove={handleMouseMove}
+					onmouseout={handleMouseOut}
+					onpointerup={handlePointerUp}
+				/>
+			{/if}
 		{:else}
 			<div class="flex items-center justify-center h-64 text-gray-400">
 				<span>No data available</span>

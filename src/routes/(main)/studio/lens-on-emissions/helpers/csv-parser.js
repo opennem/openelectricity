@@ -171,9 +171,13 @@ export function parseProjectionsCSV(text) {
 /**
  * Aggregate quarterly data to yearly (by financial year)
  * @param {EmissionsDataPoint[]} quarterlyData
+ * @param {Object} [options]
+ * @param {boolean} [options.completeYearsOnly=false] - Only include years with all 4 quarters
  * @returns {EmissionsDataPoint[]}
  */
-export function aggregateToYearly(quarterlyData) {
+export function aggregateToYearly(quarterlyData, options = {}) {
+	const { completeYearsOnly = false } = options;
+
 	// Group by financial year
 	/** @type {Map<number, EmissionsDataPoint[]>} */
 	const fyGroups = new Map();
@@ -188,6 +192,9 @@ export function aggregateToYearly(quarterlyData) {
 	const data = [];
 	for (const [fy, points] of fyGroups) {
 		if (points.length === 0) continue;
+
+		// Skip incomplete years if option is set
+		if (completeYearsOnly && points.length < 4) continue;
 
 		// Sum all sectors (these are already quarterly totals, so sum them for annual)
 		/** @type {Record<string, number>} */

@@ -86,11 +86,11 @@ export const SECTOR_COLORS = {
 	agriculture: '#78350F', // Dark brown
 	electricity: '#3B82F6', // Blue
 	fugitives: '#F97316', // Orange
-	industrial_processes: '#FDBA74', // Light peach/salmon
+	industrial_processes: '#F7C4A3', // Light peach
 	stationary_energy: '#FBBF24', // Yellow/amber
 	transport: '#9CA3AF', // Gray
 	waste: '#1E3A8A', // Dark navy blue
-	lulucf: '#E5E7EB' // Light gray
+	lulucf: '#4A772F' // Green
 };
 
 /**
@@ -106,7 +106,7 @@ export const TIME_RANGES = {
 	HISTORY_START_FY: 1990,
 	HISTORY_END_FY: 2004,
 	CURRENT_START_FY: 2005,
-	CURRENT_END_FY: 2025,
+	CURRENT_END_FY: 2026, // Includes up to Sep-25 (Q3 FY2026) for quarter view
 	PROJECTION_START_FY: 2026,
 	PROJECTION_END_FY: 2040
 };
