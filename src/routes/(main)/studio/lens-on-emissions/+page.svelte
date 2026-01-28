@@ -468,7 +468,12 @@
 		<div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
 			<!-- Chart -->
 			<div class="border border-light-warm-grey rounded-lg p-4">
-				<StratumChart {chart} />
+				<StratumChart
+					{chart}
+					netTotalKey="net_total"
+					netTotalColor={NET_TOTAL_COLOR}
+					overlayStart={showProjections ? TIME_RANGES.PROJECTION_START_FY : null}
+				/>
 			</div>
 
 			<!-- Legend -->

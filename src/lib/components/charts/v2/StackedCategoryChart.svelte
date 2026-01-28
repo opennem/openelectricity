@@ -8,23 +8,30 @@
 	 */
 	import { LayerCake, Svg, flatten } from 'layercake';
 	import { stack as lcStack, groupLonger } from 'layercake';
-	import { stack as d3Stack, stackOffsetDiverging } from 'd3-shape';
+	import { stack as d3Stack, stackOffsetDiverging, line } from 'd3-shape';
 	import { scaleOrdinal, scaleBand } from 'd3-scale';
 
 	// v2 Element components
-	import { StackedArea, AxisY, ClipPath, LineY, CategoryAxisX } from './elements';
+	import { StackedArea, AxisY, ClipPath, LineY, CategoryAxisX, CategoryLine, CategoryOverlay } from './elements';
 	import CategoryHoverLayer from './elements/CategoryHoverLayer.svelte';
+	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('./ChartStore.svelte.js').default} chart - The chart store instance
+	 * @property {string} [netTotalKey] - Key for net total values in data
+	 * @property {string} [netTotalColor] - Color for the net total line
+	 * @property {*} [overlayStart] - Start category for hatched overlay (e.g., projection start)
 	 * @property {(evt: { data: any, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
 	 * @property {(evt: any) => void} [onpointerup]
 	 */
 
 	/** @type {Props} */
-	let { chart, onmousemove, onmouseout, onpointerup } = $props();
+	let { chart, netTotalKey, netTotalColor = '#C74523', overlayStart, onmousemove, onmouseout, onpointerup } = $props();
+
+	// Overlay configuration
+	let showOverlay = $derived(overlayStart !== undefined && overlayStart !== null);
 
 	// Get chart styles
 	let styles = $derived(chart.chartStyles);
@@ -101,6 +108,12 @@
 	let clipPathAxisId = $derived(`${id}-clip-path-axis`);
 	let clipPath = $derived(`url(#${clipPathId})`);
 	let clipPathAxis = $derived(`url(#${clipPathAxisId})`);
+
+	// Net total line data (if netTotalKey is provided)
+	let showNetTotalLine = $derived(!!netTotalKey);
+	let netTotalData = $derived(
+		netTotalKey ? mappedData.map((d) => ({ ...d, _netTotal: d[netTotalKey] ?? 0 })) : []
+	);
 </script>
 
 <div class="w-full {styles.chartHeightClasses}">
@@ -123,6 +136,9 @@
 			<defs>
 				<ClipPath id={clipPathId} />
 				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
+				{#if showOverlay}
+					<HatchPattern id="{id}-hatch-pattern" />
+				{/if}
 			</defs>
 
 			<!-- Chart content -->
@@ -134,6 +150,14 @@
 					seriesColours={chart.seriesColours}
 					highlightId={chart.hoverKey}
 				/>
+
+				{#if showNetTotalLine}
+					<CategoryLine data={netTotalData} valueKey="_netTotal" stroke={netTotalColor} />
+				{/if}
+
+				{#if showOverlay}
+					<CategoryOverlay xStartValue={overlayStart} fill="url(#{id}-hatch-pattern)" />
+				{/if}
 			</g>
 
 			<!-- Reference lines (capacity annotations) -->

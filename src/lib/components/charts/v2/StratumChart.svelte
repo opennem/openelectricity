@@ -22,6 +22,9 @@
 	 * @property {string} [class] - Additional CSS classes for the container
 	 * @property {string} [chartPadding] - CSS classes for chart padding
 	 * @property {number} [height] - Chart height in pixels
+	 * @property {string} [netTotalKey] - Key for net total values (category chart only)
+	 * @property {string} [netTotalColor] - Color for net total line
+	 * @property {*} [overlayStart] - Start category for hatched overlay (e.g., projection start)
 	 * @property {(time: number, key?: string) => void} [onhover] - Callback when hovering
 	 * @property {() => void} [onhoverend] - Callback when hover ends
 	 * @property {(time: number) => void} [onfocus] - Callback when focusing (clicking)
@@ -40,6 +43,9 @@
 		class: className = '',
 		chartPadding = 'px-0',
 		_height,
+		netTotalKey,
+		netTotalColor,
+		overlayStart,
 		onhover,
 		onhoverend,
 		onfocus,
@@ -129,6 +135,9 @@
 			{#if chart.isCategoryChart}
 				<StackedCategoryChart
 					{chart}
+					{netTotalKey}
+					{netTotalColor}
+					{overlayStart}
 					onmousemove={handleMouseMove}
 					onmouseout={handleMouseOut}
 					onpointerup={handlePointerUp}
