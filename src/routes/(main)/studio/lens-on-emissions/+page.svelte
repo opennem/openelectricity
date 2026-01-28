@@ -24,6 +24,10 @@
 	import { formatFYRange, getFinancialYear } from './helpers/financial-year.js';
 	import TimeRangeControls from './components/TimeRangeControls.svelte';
 	import EmissionsLegend from './components/EmissionsLegend.svelte';
+	import SectorSparklines from './components/SectorSparklines.svelte';
+	import EmissionsDataTable from './components/EmissionsDataTable.svelte';
+	import SectorComparisonBars from './components/SectorComparisonBars.svelte';
+	import CategoryBrush from './components/CategoryBrush.svelte';
 	import { NET_TOTAL_COLOR } from './helpers/config.js';
 
 	/**
@@ -125,6 +129,14 @@
 	/** @type {boolean} */
 	let useRollingSum = $state(initialInterval === 'quarter' && getInitialRollingSum());
 
+	// Brush zoom state (index range)
+	/** @type {[number, number] | undefined} */
+	let brushedRange = $state(undefined);
+
+	// Toggle between chart and table view
+	/** @type {'chart' | 'table'} */
+	let viewMode = $state('chart');
+
 	// Sync URL when state changes (using untrack to avoid circular updates)
 	$effect(() => {
 		// Track all state variables
@@ -180,6 +192,7 @@
 		const month = date.getMonth(); // 0-indexed
 		// Map month to calendar quarter number
 		// Mar (2) = Q1, Jun (5) = Q2, Sep (8) = Q3, Dec (11) = Q4
+		/** @type {Record<number, number>} */
 		const quarterMap = { 2: 1, 5: 2, 8: 3, 11: 4 };
 		const quarter = quarterMap[month] ?? 1;
 		const year = String(date.getFullYear()).slice(-2);
@@ -282,15 +295,26 @@
 	});
 
 	/**
-	 * Merge all data sources
+	 * Merge all data sources (full unfiltered data for brush)
 	 * In quarter mode, skip merging since it deduplicates by FY (losing 3 of 4 quarters)
 	 */
-	let chartData = $derived.by(() => {
+	let fullChartData = $derived.by(() => {
 		if (intervalType === 'quarter') {
 			// In quarter mode, just return the quarterly data directly
 			return processedQuarterlyData;
 		}
 		return mergeData(historicalData, processedQuarterlyData, projectionData);
+	});
+
+	/**
+	 * Apply brush filter to get zoomed chart data
+	 */
+	let chartData = $derived.by(() => {
+		if (!brushedRange || brushedRange[0] === brushedRange[1]) {
+			return fullChartData;
+		}
+		const [startIdx, endIdx] = brushedRange;
+		return fullChartData.slice(startIdx, endIdx + 1);
 	});
 
 	/**
@@ -374,6 +398,8 @@
 	 */
 	function handleIntervalChange(type) {
 		intervalType = type;
+		// Reset brush when changing intervals
+		brushedRange = undefined;
 		// Reset options based on mode
 		if (type === 'quarter') {
 			// History and projections only available in year mode
@@ -386,6 +412,27 @@
 			useRollingSum = false;
 		}
 	}
+
+	/**
+	 * Handle brush change
+	 * @param {[number, number] | undefined} range
+	 */
+	function handleBrushChange(range) {
+		brushedRange = range;
+	}
+
+	// Reset brush when data source changes (history/projections toggled)
+	$effect(() => {
+		// Track these values to reset brush when they change
+		const _history = showHistory;
+		const _projections = showProjections;
+		const _rolling = useRollingSum;
+
+		// Reset brush (use untrack to avoid circular dependency)
+		untrack(() => {
+			brushedRange = undefined;
+		});
+	});
 
 	// Check if data is ready
 	let isDataReady = $derived(chartData.length > 0);
@@ -400,7 +447,7 @@
 		/** @type {Record<string, number>} */
 		const sums = {};
 		for (const sector of SECTOR_ORDER) {
-			sums[sector] = chartData.reduce((sum, d) => sum + (Number(d[sector]) || 0), 0);
+			sums[sector] = chartData.reduce((sum, d) => sum + (Number(/** @type {any} */ (d)[sector]) || 0), 0);
 		}
 		return sums;
 	});
@@ -420,7 +467,8 @@
 		}
 		return null;
 	});
-</script>
+
+	</script>
 
 <svelte:head>
 	<title>Lens on Emissions</title>
@@ -428,7 +476,7 @@
 
 <div class="p-4">
 	<!-- Header Filter Bar -->
-	<div class="mb-6 flex flex-wrap items-center justify-between gap-4 px-4 py-3 bg-light-warm-grey rounded-lg">
+	<div class="mb-4 flex flex-wrap items-center justify-between gap-4 px-4 py-3 bg-light-warm-grey rounded-lg">
 		<TimeRangeControls
 			{intervalType}
 			{showHistory}
@@ -441,6 +489,19 @@
 		/>
 		<span class="text-lg font-semibold text-dark-grey">{dateRangeTitle}</span>
 	</div>
+
+	<!-- Zoom Brush -->
+	{#if fullChartData.length > 0}
+		<div class="mb-6">
+			<CategoryBrush
+				data={fullChartData}
+				xKey={intervalType === 'quarter' ? 'quarter' : 'fy'}
+				formatLabel={intervalType === 'quarter' ? (d) => String(d) : (d) => `FY ${d}`}
+				{brushedRange}
+				onbrush={handleBrushChange}
+			/>
+		</div>
+	{/if}
 
 	{#if !isDataReady}
 		<!-- Loading state -->
@@ -464,10 +525,33 @@
 			</div>
 		</div>
 	{:else}
-		<!-- Emissions Chart and Legend -->
-		<div class="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-6">
-			<!-- Chart -->
-			<div class="border border-light-warm-grey rounded-lg p-4">
+		<!-- Chart/Table Toggle -->
+		<div class="flex items-center justify-end mb-4">
+			<div class="flex rounded-full bg-light-warm-grey p-0.5">
+				<button
+					type="button"
+					class="px-4 py-1.5 text-sm font-medium rounded-full transition-colors cursor-pointer {viewMode === 'chart'
+						? 'bg-dark-grey text-white'
+						: 'text-dark-grey hover:bg-warm-grey'}"
+					onclick={() => (viewMode = 'chart')}
+				>
+					Chart
+				</button>
+				<button
+					type="button"
+					class="px-4 py-1.5 text-sm font-medium rounded-full transition-colors cursor-pointer {viewMode === 'table'
+						? 'bg-dark-grey text-white'
+						: 'text-dark-grey hover:bg-warm-grey'}"
+					onclick={() => (viewMode = 'table')}
+				>
+					Table
+				</button>
+			</div>
+		</div>
+
+		<!-- Chart or Table View -->
+		{#if viewMode === 'chart'}
+			<div class="border border-light-warm-grey rounded-lg p-4 mb-6">
 				<StratumChart
 					{chart}
 					netTotalKey="net_total"
@@ -475,8 +559,21 @@
 					overlayStart={showProjections ? TIME_RANGES.PROJECTION_START_FY : null}
 				/>
 			</div>
+		{:else}
+			<div class="mb-6">
+				<EmissionsDataTable
+					{chartData}
+					sectors={SECTOR_ORDER}
+					sectorColors={SECTOR_COLORS}
+					sectorLabels={SECTOR_LABELS}
+					{intervalType}
+					initiallyOpen={true}
+				/>
+			</div>
+		{/if}
 
-			<!-- Legend -->
+		<!-- Legend and Sector Comparison (side by side) -->
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
 			<div class="border border-light-warm-grey rounded-lg">
 				<EmissionsLegend
 					sectors={SECTOR_ORDER}
@@ -486,6 +583,23 @@
 					netTotalColor={NET_TOTAL_COLOR}
 				/>
 			</div>
+
+			<div class="border border-light-warm-grey rounded-lg">
+				<SectorComparisonBars
+					data={legendData}
+					sectors={SECTOR_ORDER}
+					sectorColors={SECTOR_COLORS}
+					sectorLabels={SECTOR_LABELS}
+				/>
+			</div>
 		</div>
+
+		<!-- Sector Sparklines -->
+		<SectorSparklines
+			{chartData}
+			sectors={SECTOR_ORDER}
+			sectorColors={SECTOR_COLORS}
+			sectorLabels={SECTOR_LABELS}
+		/>
 	{/if}
 </div>

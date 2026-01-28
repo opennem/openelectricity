@@ -7,11 +7,12 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [fill]
+	 * @property {number} [fillOpacity]
 	 * @property {string} [clipPathId]
 	 */
 
 	/** @type {Props} */
-	let { fill = 'transparent', clipPathId = '' } = $props();
+	let { fill = 'transparent', fillOpacity = 1, clipPathId = '' } = $props();
 
 	let areaPath = $derived(
 		area()
@@ -23,5 +24,5 @@
 </script>
 
 <g class="area-group" role="group" clip-path={clipPathId ? `url(#${clipPathId})` : ''}>
-	<path class="path-area" d={areaPath($data)} {fill} />
+	<path class="path-area" d={areaPath($data)} {fill} fill-opacity={fillOpacity} />
 </g>
