@@ -162,3 +162,10 @@
 		{@render footer()}
 	{/if}
 </div>
+
+<style>
+	/* Remove focus outlines from all SVG elements within charts */
+	.stratum-chart :global(svg *:focus) {
+		outline: none;
+	}
+</style>

@@ -203,12 +203,13 @@
 {/if}
 
 <style>
-	.line-path {
+	.path-line {
 		pointer-events: none;
 	}
 
-	.line-dot:focus,
-	.area-path:focus {
+	.path-line:focus,
+	.path-area:focus,
+	.line-dot:focus {
 		outline: none;
 	}
 </style>

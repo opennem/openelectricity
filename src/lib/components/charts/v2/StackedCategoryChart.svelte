@@ -211,3 +211,9 @@
 		</Svg>
 	</LayerCake>
 </div>
+
+<style>
+	:global(.stratum-chart svg *:focus) {
+		outline: none;
+	}
+</style>
