@@ -337,6 +337,17 @@
 <div class="flex items-center justify-between pt-3 pb-3 px-8 relative z-10 gap-4">
 	<div class="flex items-center gap-2 justify-between w-full">
 		<div class="flex items-center gap-4">
+			<!-- Logo Mark - Fullscreen only (click to exit fullscreen) -->
+			{#if isFullscreen}
+				<button
+					onclick={() => onfullscreenchange?.()}
+					class="flex items-center cursor-pointer"
+					title="Exit full screen"
+				>
+					<img src="/logo-mark.png" alt="Open Electricity" class="h-10 w-auto" />
+				</button>
+			{/if}
+
 			<!-- View Switcher - Desktop -->
 			<div class="hidden md:block">
 				<SwitchWithIcons
