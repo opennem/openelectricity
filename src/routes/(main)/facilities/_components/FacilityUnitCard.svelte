@@ -32,10 +32,10 @@
 
 	// Determine border radius based on position when selected
 	let selectedRadiusClass = $derived.by(() => {
-		if (!isSelected) return 'rounded-xl';
-		if (isFirst && isLast) return 'rounded-xl';
-		if (isFirst) return 'rounded-t-xl';
-		if (isLast) return 'rounded-b-xl';
+		if (!isSelected) return 'rounded-lg';
+		if (isFirst && isLast) return 'rounded-lg';
+		if (isFirst) return 'rounded-t-lg';
+		if (isLast) return 'rounded-b-lg';
 		return '';
 	});
 
