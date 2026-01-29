@@ -278,6 +278,8 @@
 									{facility}
 									isHighlighted={hoveredFacility?.code === facility.code}
 									isSelected={selectedFacilityCode === facility.code}
+									isFirst={i === 0}
+									isLast={i === facilities.length - 1}
 									onclick={(/** @type {any} */ f) => onclick?.(f)}
 									onmouseenter={handleMouseEnter}
 									onmouseleave={handleMouseLeave}

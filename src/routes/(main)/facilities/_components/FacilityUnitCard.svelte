@@ -12,6 +12,8 @@
 	 *   facility: any,
 	 *   isHighlighted?: boolean,
 	 *   isSelected?: boolean,
+	 *   isFirst?: boolean,
+	 *   isLast?: boolean,
 	 *   onclick?: (facility: any) => void,
 	 *   onmouseenter?: (facility: any) => void,
 	 *   onmouseleave?: () => void
@@ -21,10 +23,21 @@
 		facility,
 		isHighlighted = false,
 		isSelected = false,
+		isFirst = false,
+		isLast = false,
 		onclick,
 		onmouseenter,
 		onmouseleave
 	} = $props();
+
+	// Determine border radius based on position when selected
+	let selectedRadiusClass = $derived.by(() => {
+		if (!isSelected) return 'rounded-xl';
+		if (isFirst && isLast) return 'rounded-xl';
+		if (isFirst) return 'rounded-t-xl';
+		if (isLast) return 'rounded-b-xl';
+		return '';
+	});
 
 	let bgColor = $derived(facility.unit ? getFueltechColor(facility.unit.fueltech_id) : '#FFFFFF');
 	let isDarkText = $derived(facility.unit ? needsDarkText(facility.unit.fueltech_id) : false);
@@ -57,8 +70,8 @@
 	onmouseleave={() => onmouseleave?.()}
 >
 	<button
-		class="w-full text-left grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:bg-warm-grey rounded-lg cursor-pointer {isSelected
-			? 'ring-1 ring-mid-warm-grey ring-inset'
+		class="w-full text-left grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:bg-warm-grey cursor-pointer {selectedRadiusClass} {isSelected
+			? 'ring-1 ring-mid-grey ring-inset'
 			: ''}"
 		class:bg-light-warm-grey={facility.unit.status_id === 'committed' &&
 			!isHighlighted &&

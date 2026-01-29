@@ -158,9 +158,9 @@
 		onmouseleave={() => onmouseleave?.()}
 	>
 		<button
-			class="w-full text-left grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:bg-warm-grey rounded-lg sm:rounded-sm cursor-pointer {isSelected
-				? 'ring-1 ring-mid-warm-grey ring-inset'
-				: ''}"
+			class="w-full text-left grid grid-cols-12 items-center gap-2 sm:pr-6 group relative hover:bg-warm-grey cursor-pointer {isSelected
+				? 'ring-1 ring-mid-grey ring-inset'
+				: 'rounded-lg sm:rounded-sm'}"
 			class:bg-light-warm-grey={hasCommittedUnit && !isHighlighted && !isSelected}
 			class:bg-warm-grey={isHighlighted || isSelected}
 			onclick={() => onclick?.(facility)}
