@@ -539,7 +539,7 @@
 							});
 						}
 					}}
-					class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-mid-warm-grey"
+					class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
 					title="Reset map to show all facilities"
 				>
 					Reset Map
