@@ -152,7 +152,7 @@
 				/>
 
 				{#if showNetTotalLine}
-					<CategoryLine data={netTotalData} valueKey="_netTotal" stroke={netTotalColor} />
+					<CategoryLine data={netTotalData} valueKey="_netTotal" stroke={netTotalColor} curveType={chart.chartOptions.curveFunction} />
 				{/if}
 
 				{#if showOverlay}
