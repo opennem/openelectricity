@@ -84,10 +84,10 @@
 	let listSortOrder = $state('asc');
 
 	// Map options - read initial values from URL params
-	// satellite: default false, transmission: default true, clustering: default true, golf: default false
+	// satellite: default false, transmission: default true, clustering: default false, golf: default false
 	let mapSatelliteView = $state(page.url.searchParams.get('satellite') === 'true');
 	let mapShowTransmissionLines = $state(page.url.searchParams.get('transmission') !== 'false');
-	let mapClustering = $state(page.url.searchParams.get('clustering') !== 'false');
+	let mapClustering = $state(page.url.searchParams.get('clustering') === 'true');
 	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
 
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
@@ -115,9 +115,9 @@
 			params.delete('transmission');
 		}
 
-		// clustering: only include if false (default is true)
-		if (!mapClustering) {
-			params.set('clustering', 'false');
+		// clustering: only include if true (default is false)
+		if (mapClustering) {
+			params.set('clustering', 'true');
 		} else {
 			params.delete('clustering');
 		}
@@ -263,8 +263,8 @@
 		if (!mapShowTransmissionLines) {
 			url += '&transmission=false';
 		}
-		if (!mapClustering) {
-			url += '&clustering=false';
+		if (mapClustering) {
+			url += '&clustering=true';
 		}
 		if (mapShowGolfCourses) {
 			url += '&golf=true';
