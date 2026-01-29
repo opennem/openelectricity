@@ -5,6 +5,13 @@
 	 * Displays the legend for the emissions chart showing each sector
 	 * with its color swatch, current value, and contribution percentage.
 	 */
+	import {
+		formatEmissionsValue,
+		formatPercentage,
+		calculatePercentage,
+		calculateTotalAbsolute,
+		calculateNetTotal
+	} from '../helpers/formatters.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -31,57 +38,9 @@
 	// Reverse sector order for display (net total stays at bottom)
 	let displaySectors = $derived([...sectors].reverse());
 
-	/**
-	 * Calculate total of all positive values for percentage calculation
-	 */
-	let totalAbsolute = $derived.by(() => {
-		if (!data) return 0;
-		return sectors.reduce((sum, sector) => {
-			const value = data[sector] ?? 0;
-			return sum + Math.abs(value);
-		}, 0);
-	});
-
-	/**
-	 * Calculate net total (sum of all values, including negative)
-	 */
-	let netTotal = $derived.by(() => {
-		if (!data) return 0;
-		return sectors.reduce((sum, sector) => {
-			return sum + (data[sector] ?? 0);
-		}, 0);
-	});
-
-	/**
-	 * Format a number with commas and one decimal place
-	 * @param {number} value
-	 * @returns {string}
-	 */
-	function formatValue(value) {
-		return value.toLocaleString('en-AU', {
-			minimumFractionDigits: 1,
-			maximumFractionDigits: 1
-		});
-	}
-
-	/**
-	 * Calculate percentage contribution
-	 * @param {number} value
-	 * @returns {number}
-	 */
-	function calculatePercentage(value) {
-		if (totalAbsolute === 0) return 0;
-		return (Math.abs(value) / totalAbsolute) * 100;
-	}
-
-	/**
-	 * Format percentage with one decimal place
-	 * @param {number} percentage
-	 * @returns {string}
-	 */
-	function formatPercentage(percentage) {
-		return percentage.toFixed(1) + '%';
-	}
+	// Calculate totals using shared helpers
+	let totalAbsolute = $derived(calculateTotalAbsolute(data, sectors));
+	let netTotal = $derived(calculateNetTotal(data, sectors));
 </script>
 
 <div class="w-full">
@@ -97,7 +56,7 @@
 	<div class="divide-y divide-light-warm-grey">
 		{#each displaySectors as sector (sector)}
 			{@const value = data?.[sector] ?? 0}
-			{@const percentage = calculatePercentage(value)}
+			{@const percentage = calculatePercentage(value, totalAbsolute)}
 			{@const isNegative = value < 0}
 			{@const isHidden = hiddenSectors.has(sector)}
 
@@ -117,8 +76,8 @@
 
 				<!-- Right: Value and percentage -->
 				<div class="flex items-center gap-3">
-					<span class="text-sm font-medium text-dark-grey tabular-nums">
-						{isNegative ? '-' : ''}{formatValue(Math.abs(value))}
+					<span class="text-sm font-medium text-dark-grey font-mono tabular-nums">
+						{isNegative ? '-' : ''}{formatEmissionsValue(value)}
 					</span>
 					<div class="flex items-center gap-1.5 min-w-[60px] justify-end">
 						<div class="w-12 h-1.5 bg-light-warm-grey rounded-full overflow-hidden">
@@ -129,7 +88,7 @@
 								]}"
 							></div>
 						</div>
-						<span class="text-xs text-mid-warm-grey tabular-nums w-10 text-right">
+						<span class="text-xs text-mid-warm-grey font-mono tabular-nums w-10 text-right">
 							{formatPercentage(percentage)}
 						</span>
 					</div>
@@ -150,8 +109,8 @@
 
 		<!-- Right: Value -->
 		<div class="flex items-center">
-			<span class="text-sm font-semibold text-dark-grey tabular-nums">
-				{netTotal < 0 ? '-' : ''}{formatValue(Math.abs(netTotal))}
+			<span class="text-sm font-semibold text-dark-grey font-mono tabular-nums">
+				{netTotal < 0 ? '-' : ''}{formatEmissionsValue(netTotal)}
 			</span>
 		</div>
 	</div>

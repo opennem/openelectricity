@@ -9,6 +9,7 @@
 	import { scaleLinear } from 'd3-scale';
 	import Line from '$lib/components/charts/elements/Line.svelte';
 	import Area from '$lib/components/charts/elements/Area.svelte';
+	import { formatEmissionsValue } from '../helpers/formatters.js';
 
 	/**
 	 * @typedef {import('../helpers/csv-parser.js').EmissionsDataPoint} EmissionsDataPoint
@@ -28,18 +29,6 @@
 
 	// Filter out hidden sectors
 	let visibleSectors = $derived(sectors.filter((s) => !hiddenSectors.has(s)));
-
-	/**
-	 * Format a number with commas and one decimal place
-	 * @param {number} value
-	 * @returns {string}
-	 */
-	function formatValue(value) {
-		return Math.abs(value).toLocaleString('en-AU', {
-			minimumFractionDigits: 1,
-			maximumFractionDigits: 1
-		});
-	}
 
 	/**
 	 * Get the latest value for a sector
@@ -94,8 +83,8 @@
 			</div>
 
 			<!-- Current value -->
-			<p class="text-lg font-bold text-dark-grey tabular-nums mb-2">
-				{isNegative ? '-' : ''}{formatValue(latestValue)}
+			<p class="text-lg font-bold text-dark-grey font-mono tabular-nums mb-2">
+				{isNegative ? '-' : ''}{formatEmissionsValue(latestValue)}
 				<span class="text-xs font-normal text-mid-warm-grey">MtCO₂e</span>
 			</p>
 

@@ -6,6 +6,7 @@
 	 * Shows data in reverse chronological order (newest first).
 	 */
 	import Icon from '$lib/components/Icon.svelte';
+	import { formatEmissionsValue } from '../helpers/formatters.js';
 
 	/**
 	 * @typedef {import('../helpers/csv-parser.js').EmissionsDataPoint} EmissionsDataPoint
@@ -40,18 +41,6 @@
 
 	function toggleTable() {
 		isOpen = !isOpen;
-	}
-
-	/**
-	 * Format a number with commas and one decimal place
-	 * @param {number} value
-	 * @returns {string}
-	 */
-	function formatValue(value) {
-		return Math.abs(value).toLocaleString('en-AU', {
-			minimumFractionDigits: 1,
-			maximumFractionDigits: 1
-		});
 	}
 
 	/**
@@ -118,12 +107,12 @@
 							{#each visibleSectors as sector}
 								{@const value = Number(row[sector]) || 0}
 								{@const isNegative = value < 0}
-								<td class="px-3 py-2 text-right text-sm tabular-nums text-mid-grey whitespace-nowrap">
-									{isNegative ? '-' : ''}{formatValue(value)}
+								<td class="px-3 py-2 text-right text-sm font-mono tabular-nums text-mid-grey whitespace-nowrap">
+									{isNegative ? '-' : ''}{formatEmissionsValue(value, 1)}
 								</td>
 							{/each}
-							<td class="px-3 py-2 text-right text-sm font-semibold tabular-nums text-dark-grey whitespace-nowrap">
-								{row.net_total < 0 ? '-' : ''}{formatValue(row.net_total)}
+							<td class="px-3 py-2 text-right text-sm font-semibold font-mono tabular-nums text-dark-grey whitespace-nowrap">
+								{row.net_total < 0 ? '-' : ''}{formatEmissionsValue(row.net_total, 1)}
 							</td>
 						</tr>
 					{/each}

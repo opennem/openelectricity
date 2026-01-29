@@ -5,6 +5,11 @@
 	 * Displays horizontal bars comparing sector contributions.
 	 * Sectors are sorted by absolute value (largest first).
 	 */
+	import {
+		formatEmissionsValue,
+		calculateTotalAbsolute,
+		calculatePercentage
+	} from '../helpers/formatters.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -22,32 +27,18 @@
 	let visibleSectors = $derived(sectors.filter((s) => !hiddenSectors.has(s)));
 
 	/**
-	 * Format a number with commas and one decimal place
-	 * @param {number} value
-	 * @returns {string}
-	 */
-	function formatValue(value) {
-		return Math.abs(value).toLocaleString('en-AU', {
-			minimumFractionDigits: 1,
-			maximumFractionDigits: 1
-		});
-	}
-
-	/**
 	 * Sort sectors by absolute value (largest first) and compute percentages
 	 */
 	let sortedSectors = $derived.by(() => {
 		if (!data) return [];
 
 		// Calculate total absolute value (only visible sectors)
-		const totalAbsolute = visibleSectors.reduce((sum, sector) => {
-			return sum + Math.abs(data[sector] ?? 0);
-		}, 0);
+		const totalAbsolute = calculateTotalAbsolute(data, visibleSectors);
 
 		// Map sectors with values and percentages
 		const mapped = visibleSectors.map((sector) => {
 			const value = data[sector] ?? 0;
-			const percentage = totalAbsolute > 0 ? (Math.abs(value) / totalAbsolute) * 100 : 0;
+			const percentage = calculatePercentage(value, totalAbsolute);
 			return { sector, value, percentage };
 		});
 
@@ -91,8 +82,8 @@
 					</div>
 
 					<!-- Value -->
-					<span class="w-14 text-right text-xs tabular-nums text-mid-grey flex-shrink-0">
-						{isNegative ? '-' : ''}{formatValue(value)}
+					<span class="w-14 text-right text-xs font-mono tabular-nums text-mid-grey flex-shrink-0">
+						{isNegative ? '-' : ''}{formatEmissionsValue(value)}
 					</span>
 				</div>
 			{/each}
