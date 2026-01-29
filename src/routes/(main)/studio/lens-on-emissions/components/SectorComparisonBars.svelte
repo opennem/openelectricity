@@ -12,10 +12,14 @@
 	 * @property {string[]} sectors - Array of sector keys
 	 * @property {Record<string, string>} sectorColors - Map of sector key to color
 	 * @property {Record<string, string>} sectorLabels - Map of sector key to display label
+	 * @property {Set<string>} [hiddenSectors] - Set of hidden sector keys
 	 */
 
 	/** @type {Props} */
-	let { data, sectors, sectorColors, sectorLabels } = $props();
+	let { data, sectors, sectorColors, sectorLabels, hiddenSectors = new Set() } = $props();
+
+	// Filter out hidden sectors
+	let visibleSectors = $derived(sectors.filter((s) => !hiddenSectors.has(s)));
 
 	/**
 	 * Format a number with commas and one decimal place
@@ -35,13 +39,13 @@
 	let sortedSectors = $derived.by(() => {
 		if (!data) return [];
 
-		// Calculate total absolute value
-		const totalAbsolute = sectors.reduce((sum, sector) => {
+		// Calculate total absolute value (only visible sectors)
+		const totalAbsolute = visibleSectors.reduce((sum, sector) => {
 			return sum + Math.abs(data[sector] ?? 0);
 		}, 0);
 
 		// Map sectors with values and percentages
-		const mapped = sectors.map((sector) => {
+		const mapped = visibleSectors.map((sector) => {
 			const value = data[sector] ?? 0;
 			const percentage = totalAbsolute > 0 ? (Math.abs(value) / totalAbsolute) * 100 : 0;
 			return { sector, value, percentage };

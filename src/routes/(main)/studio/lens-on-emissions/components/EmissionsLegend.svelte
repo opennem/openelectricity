@@ -13,6 +13,8 @@
 	 * @property {Record<string, string>} sectorLabels - Map of sector key to display label
 	 * @property {Record<string, number> | null} data - Current data point with sector values
 	 * @property {string} [netTotalColor] - Color for the net total indicator
+	 * @property {Set<string>} [hiddenSectors] - Set of hidden sector keys
+	 * @property {(sector: string) => void} [ontoggle] - Callback when sector is toggled
 	 */
 
 	/** @type {Props} */
@@ -21,7 +23,9 @@
 		sectorColors,
 		sectorLabels,
 		data,
-		netTotalColor = '#C74523'
+		netTotalColor = '#C74523',
+		hiddenSectors = new Set(),
+		ontoggle
 	} = $props();
 
 	// Reverse sector order for display (net total stays at bottom)
@@ -95,15 +99,20 @@
 			{@const value = data?.[sector] ?? 0}
 			{@const percentage = calculatePercentage(value)}
 			{@const isNegative = value < 0}
+			{@const isHidden = hiddenSectors.has(sector)}
 
-			<div class="flex items-center justify-between px-3 py-2.5 hover:bg-light-warm-grey/50">
+			<button
+				type="button"
+				class="w-full flex items-center justify-between px-3 py-2.5 hover:bg-light-warm-grey/50 cursor-pointer transition-opacity {isHidden ? 'opacity-40' : ''}"
+				onclick={() => ontoggle?.(sector)}
+			>
 				<!-- Left: Color swatch and label -->
 				<div class="flex items-center gap-2.5">
 					<span
-						class="w-3 h-3 rounded-full flex-shrink-0"
+						class="w-3 h-3 rounded-full flex-shrink-0 transition-opacity"
 						style="background-color: {sectorColors[sector]}"
 					></span>
-					<span class="text-sm text-dark-grey">{sectorLabels[sector]}</span>
+					<span class="text-sm text-dark-grey {isHidden ? 'line-through' : ''}">{sectorLabels[sector]}</span>
 				</div>
 
 				<!-- Right: Value and percentage -->
@@ -125,7 +134,7 @@
 						</span>
 					</div>
 				</div>
-			</div>
+			</button>
 		{/each}
 	</div>
 

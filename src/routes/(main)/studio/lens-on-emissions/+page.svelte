@@ -137,6 +137,27 @@
 	/** @type {'chart' | 'table'} */
 	let viewMode = $state('chart');
 
+	// Hidden sectors (toggled via legend)
+	/** @type {Set<string>} */
+	let hiddenSectors = $state(new Set());
+
+	/**
+	 * Toggle a sector's visibility
+	 * @param {string} sector
+	 */
+	function toggleSector(sector) {
+		const newHidden = new Set(hiddenSectors);
+		if (newHidden.has(sector)) {
+			newHidden.delete(sector);
+		} else {
+			newHidden.add(sector);
+		}
+		hiddenSectors = newHidden;
+	}
+
+	// Visible sectors (sectors not hidden)
+	let visibleSectors = $derived(SECTOR_ORDER.filter((s) => !hiddenSectors.has(s)));
+
 	// Sync URL when state changes (using untrack to avoid circular updates)
 	$effect(() => {
 		// Track all state variables
@@ -357,7 +378,7 @@
 
 		// Update chart store with data
 		chart.seriesData = chartData;
-		chart.seriesNames = SECTOR_ORDER;
+		chart.seriesNames = visibleSectors;
 		chart.seriesColours = SECTOR_COLORS;
 		chart.seriesLabels = SECTOR_LABELS;
 
@@ -568,6 +589,7 @@
 					sectorLabels={SECTOR_LABELS}
 					{intervalType}
 					initiallyOpen={true}
+					{hiddenSectors}
 				/>
 			</div>
 		{/if}
@@ -581,6 +603,8 @@
 					sectorLabels={SECTOR_LABELS}
 					data={legendData}
 					netTotalColor={NET_TOTAL_COLOR}
+					{hiddenSectors}
+					ontoggle={toggleSector}
 				/>
 			</div>
 
@@ -590,6 +614,7 @@
 					sectors={SECTOR_ORDER}
 					sectorColors={SECTOR_COLORS}
 					sectorLabels={SECTOR_LABELS}
+					{hiddenSectors}
 				/>
 			</div>
 		</div>
@@ -600,6 +625,7 @@
 			sectors={SECTOR_ORDER}
 			sectorColors={SECTOR_COLORS}
 			sectorLabels={SECTOR_LABELS}
+			{hiddenSectors}
 		/>
 	{/if}
 </div>

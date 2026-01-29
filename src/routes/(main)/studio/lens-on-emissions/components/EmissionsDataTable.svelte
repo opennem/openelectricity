@@ -19,6 +19,7 @@
 	 * @property {Record<string, string>} sectorLabels - Map of sector key to display label
 	 * @property {boolean} [initiallyOpen] - Whether table starts expanded
 	 * @property {'year' | 'quarter'} [intervalType] - Current interval type
+	 * @property {Set<string>} [hiddenSectors] - Set of hidden sector keys
 	 */
 
 	/** @type {Props} */
@@ -28,8 +29,12 @@
 		sectorColors,
 		sectorLabels,
 		initiallyOpen = false,
-		intervalType = 'year'
+		intervalType = 'year',
+		hiddenSectors = new Set()
 	} = $props();
+
+	// Filter out hidden sectors
+	let visibleSectors = $derived(sectors.filter((s) => !hiddenSectors.has(s)));
 
 	let isOpen = $state(initiallyOpen);
 
@@ -88,7 +93,7 @@
 						<th class="px-3 py-3 text-left text-xs font-medium text-mid-warm-grey whitespace-nowrap">
 							{intervalType === 'quarter' ? 'Quarter' : 'FY'}
 						</th>
-						{#each sectors as sector}
+						{#each visibleSectors as sector}
 							<th class="px-3 py-3 text-right text-xs font-medium text-mid-warm-grey whitespace-nowrap">
 								<div class="flex items-center justify-end gap-1.5">
 									<span
@@ -110,7 +115,7 @@
 							<td class="px-3 py-2 text-sm font-medium text-dark-grey whitespace-nowrap">
 								{getRowLabel(row)}
 							</td>
-							{#each sectors as sector}
+							{#each visibleSectors as sector}
 								{@const value = Number(row[sector]) || 0}
 								{@const isNegative = value < 0}
 								<td class="px-3 py-2 text-right text-sm tabular-nums text-mid-grey whitespace-nowrap">

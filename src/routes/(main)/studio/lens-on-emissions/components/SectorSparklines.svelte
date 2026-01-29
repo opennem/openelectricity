@@ -20,10 +20,14 @@
 	 * @property {string[]} sectors - Array of sector keys in order
 	 * @property {Record<string, string>} sectorColors - Map of sector key to color
 	 * @property {Record<string, string>} sectorLabels - Map of sector key to display label
+	 * @property {Set<string>} [hiddenSectors] - Set of hidden sector keys
 	 */
 
 	/** @type {Props} */
-	let { chartData, sectors, sectorColors, sectorLabels } = $props();
+	let { chartData, sectors, sectorColors, sectorLabels, hiddenSectors = new Set() } = $props();
+
+	// Filter out hidden sectors
+	let visibleSectors = $derived(sectors.filter((s) => !hiddenSectors.has(s)));
 
 	/**
 	 * Format a number with commas and one decimal place
@@ -75,7 +79,7 @@
 </script>
 
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-	{#each sectors as sector (sector)}
+	{#each visibleSectors as sector (sector)}
 		{@const latestValue = getLatestValue(sector)}
 		{@const sectorData = getSectorData(sector)}
 		{@const yDomain = getYDomain(sector)}
