@@ -176,6 +176,7 @@
 				seriesNames={chart.visibleSeriesNames}
 				useDivergingStack={chart.useDivergingStack}
 				highlightCategory={chart.hoverCategory}
+				focusCategory={chart.focusCategory}
 				{onmousemove}
 				{onmouseout}
 				{onpointerup}

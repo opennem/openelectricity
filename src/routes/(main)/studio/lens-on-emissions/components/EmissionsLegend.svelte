@@ -13,6 +13,8 @@
 		calculateNetTotal
 	} from '../helpers/formatters.js';
 
+	import { X } from '@lucide/svelte';
+
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} sectors - Array of sector keys in order
@@ -22,6 +24,9 @@
 	 * @property {string} [netTotalColor] - Color for the net total indicator
 	 * @property {Set<string>} [hiddenSectors] - Set of hidden sector keys
 	 * @property {(sector: string) => void} [ontoggle] - Callback when sector is toggled
+	 * @property {string} [label] - Label showing the current period (e.g., "FY 2024" or "Total")
+	 * @property {boolean} [isFocused] - Whether the legend is showing focused data
+	 * @property {() => void} [onclearfocus] - Callback to clear focus
 	 */
 
 	/** @type {Props} */
@@ -32,7 +37,10 @@
 		data,
 		netTotalColor = '#C74523',
 		hiddenSectors = new Set(),
-		ontoggle
+		ontoggle,
+		label = 'Total',
+		isFocused = false,
+		onclearfocus
 	} = $props();
 
 	// Reverse sector order for display (net total stays at bottom)
@@ -46,7 +54,24 @@
 <div class="w-full">
 	<!-- Header -->
 	<div class="flex items-center justify-between px-3 py-2 border-b border-light-warm-grey">
-		<span class="text-xs font-medium text-mid-warm-grey uppercase tracking-wide">Sector</span>
+		<div class="flex items-center gap-2">
+			<span class="text-xs font-medium text-mid-warm-grey uppercase tracking-wide">Sector</span>
+			{#if isFocused}
+				<span class="text-xs font-semibold text-dark-grey bg-warm-grey px-2 py-0.5 rounded-full flex items-center gap-1">
+					{label}
+					<button
+						type="button"
+						onclick={() => onclearfocus?.()}
+						class="hover:text-mid-grey transition-colors cursor-pointer"
+						title="Clear focus"
+					>
+						<X size={12} />
+					</button>
+				</span>
+			{:else if label !== 'Total'}
+				<span class="text-xs text-mid-grey">{label}</span>
+			{/if}
+		</div>
 		<span class="text-xs font-medium text-mid-warm-grey uppercase tracking-wide"
 			>Emissions / Contribution</span
 		>

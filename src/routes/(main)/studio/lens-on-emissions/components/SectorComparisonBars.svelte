@@ -18,10 +18,11 @@
 	 * @property {Record<string, string>} sectorColors - Map of sector key to color
 	 * @property {Record<string, string>} sectorLabels - Map of sector key to display label
 	 * @property {Set<string>} [hiddenSectors] - Set of hidden sector keys
+	 * @property {string} [label] - Label showing the current period
 	 */
 
 	/** @type {Props} */
-	let { data, sectors, sectorColors, sectorLabels, hiddenSectors = new Set() } = $props();
+	let { data, sectors, sectorColors, sectorLabels, hiddenSectors = new Set(), label = 'Total' } = $props();
 
 	// Filter out hidden sectors
 	let visibleSectors = $derived(sectors.filter((s) => !hiddenSectors.has(s)));
@@ -54,9 +55,14 @@
 
 {#if data && sortedSectors.length > 0}
 	<div class="p-3">
-		<h4 class="text-xs font-medium text-mid-warm-grey uppercase tracking-wide mb-3">
-			Sector Comparison
-		</h4>
+		<div class="flex items-center gap-2 mb-3">
+			<h4 class="text-xs font-medium text-mid-warm-grey uppercase tracking-wide">
+				Sector Comparison
+			</h4>
+			{#if label !== 'Total'}
+				<span class="text-xs text-mid-grey">{label}</span>
+			{/if}
+		</div>
 
 		<div class="space-y-2">
 			{#each sortedSectors as { sector, value, percentage } (sector)}

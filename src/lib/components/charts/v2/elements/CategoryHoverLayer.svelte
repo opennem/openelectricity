@@ -21,6 +21,8 @@
 	 * @property {(data: any) => void} [onpointerup] - Pointer up (click) callback
 	 * @property {string} [highlightFill] - Fill color for highlight rectangle
 	 * @property {string | number | undefined} [highlightCategory] - Currently highlighted category
+	 * @property {string | number | undefined} [focusCategory] - Currently focused category (shows border)
+	 * @property {string} [focusStroke] - Stroke color for focus border
 	 */
 
 	/** @type {Props} */
@@ -33,7 +35,9 @@
 		onmouseout,
 		onpointerup,
 		highlightFill = 'rgba(0, 0, 0, 0.1)',
-		highlightCategory
+		highlightCategory,
+		focusCategory,
+		focusStroke = '#374151'
 	} = $props();
 
 
@@ -216,6 +220,20 @@
 	// Get y range for full height highlight
 	let highlightY = $derived(Math.min(yScaleRange[0], yScaleRange[1]));
 	let highlightHeight = $derived(Math.abs(yScaleRange[1] - yScaleRange[0]));
+
+	// Calculate focus rectangle position
+	let focusX = $derived.by(() => {
+		const scale = customData?.bandScale;
+		if (focusCategory === undefined || !scale?.bandwidth) return 0;
+		const bandX = scale(focusCategory) ?? 0;
+		return (bandX / 100) * chartWidth;
+	});
+
+	let focusWidth = $derived.by(() => {
+		const scale = customData?.bandScale;
+		if (!scale?.bandwidth) return 0;
+		return (scale.bandwidth() / 100) * chartWidth;
+	});
 </script>
 
 <!-- Transparent interaction layer - covers full chart area -->
@@ -243,6 +261,21 @@
 		width={highlightWidth}
 		height={highlightHeight}
 		fill={highlightFill}
+		pointer-events="none"
+	/>
+{/if}
+
+<!-- Focus border for focused category -->
+{#if focusCategory !== undefined && focusWidth > 0}
+	<rect
+		class="focus-rect"
+		x={focusX}
+		y={highlightY}
+		width={focusWidth}
+		height={highlightHeight}
+		fill="none"
+		stroke={focusStroke}
+		stroke-width="2"
 		pointer-events="none"
 	/>
 {/if}

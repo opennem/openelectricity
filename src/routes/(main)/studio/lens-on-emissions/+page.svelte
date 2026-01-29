@@ -421,6 +421,8 @@
 		intervalType = type;
 		// Reset brush when changing intervals
 		brushedRange = undefined;
+		// Clear focus when changing intervals
+		chart.clearFocus();
 		// Reset options based on mode
 		if (type === 'quarter') {
 			// History and projections only available in year mode
@@ -474,13 +476,16 @@
 	});
 
 	/**
-	 * Get the data for the legend (hovered data or summed totals)
+	 * Get the data for the legend (focused > hovered > summed totals)
+	 * Focus takes precedence to maintain persistence when clicking
 	 * @type {Record<string, number> | null}
 	 */
 	let legendData = $derived.by(() => {
-		// Use hovered/focused data if available
-		const displayData = chart.hoverData || chart.focusData;
-		if (displayData) return /** @type {Record<string, number>} */ (displayData);
+		// Focus takes precedence (persists after click)
+		if (chart.focusData) return /** @type {Record<string, number>} */ (chart.focusData);
+
+		// Then hover
+		if (chart.hoverData) return /** @type {Record<string, number>} */ (chart.hoverData);
 
 		// Fall back to summed data across all years
 		if (Object.keys(summedData).length > 0) {
@@ -488,6 +493,31 @@
 		}
 		return null;
 	});
+
+	/**
+	 * Get the label for the currently focused/hovered/total period
+	 */
+	let legendLabel = $derived.by(() => {
+		if (chart.focusCategory !== undefined) {
+			return intervalType === 'quarter' ? String(chart.focusCategory) : `FY ${chart.focusCategory}`;
+		}
+		if (chart.hoverCategory !== undefined) {
+			return intervalType === 'quarter' ? String(chart.hoverCategory) : `FY ${chart.hoverCategory}`;
+		}
+		return 'Total';
+	});
+
+	/**
+	 * Whether the legend is showing focused data
+	 */
+	let isFocused = $derived(chart.focusCategory !== undefined);
+
+	/**
+	 * Clear the focus
+	 */
+	function clearFocus() {
+		chart.clearFocus();
+	}
 
 	</script>
 
@@ -605,6 +635,9 @@
 					netTotalColor={NET_TOTAL_COLOR}
 					{hiddenSectors}
 					ontoggle={toggleSector}
+					label={legendLabel}
+					{isFocused}
+					onclearfocus={clearFocus}
 				/>
 			</div>
 
@@ -615,6 +648,7 @@
 					sectorColors={SECTOR_COLORS}
 					sectorLabels={SECTOR_LABELS}
 					{hiddenSectors}
+					label={legendLabel}
 				/>
 			</div>
 		</div>
