@@ -13,3 +13,6 @@ vite.config.ts.timestamp-*
 test-results/
 playwright-report/
 package-lock.json
+
+# Personal notes
+TODO.md
