@@ -104,8 +104,8 @@
 				</div>
 			{/if}
 
-			<!-- Battery Section (Testing) -->
-			{#if hasBattery && batteryPowerData}
+			<!-- Battery Section (Testing) - Hidden for now -->
+			{#if false && hasBattery && batteryPowerData}
 				<div class="mt-4 mx-2 p-3 border-2 border-dashed rounded-lg" style="border-color: #f97316; background-color: #fff7ed;">
 					<div class="flex items-center gap-2 mb-2">
 						<span class="text-xs font-bold uppercase tracking-wide" style="color: #c2410c;">Battery Storage</span>
