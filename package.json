@@ -1,6 +1,6 @@
 {
 	"name": "open-electriciy-web",
-	"version": "3.19.3",
+	"version": "3.19.4",
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
