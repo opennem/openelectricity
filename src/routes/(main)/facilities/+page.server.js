@@ -99,8 +99,8 @@ export async function load({ url }) {
 			status_id: apiStatuses
 		});
 		facilitiesResponse = response.data;
-	} catch (error) {
-		console.error(error);
+	} catch {
+		// API error - facilitiesResponse remains null
 	}
 
 	// Filter by regions

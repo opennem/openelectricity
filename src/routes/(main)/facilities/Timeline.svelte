@@ -64,9 +64,7 @@
 				const dateField = getDateField(unit.status_id);
 				const dateValue = unit[dateField];
 
-				if (!dateValue) {
-					console.log(unit.code, 'unit has no', dateField);
-				} else {
+				if (dateValue) {
 					// Why convert?
 					// The data is set in the CMS as UTC (should be a plain date string or?)
 					// when returned from the API, it is converted to +10:00 and sometimes returned
@@ -180,12 +178,8 @@
 		values.forEach(([d, facilities]) => {
 			facilities.forEach((/** @type {any} */ facility) => {
 				// ignore today row as it's not a facility
-				if (!facility.isToday) {
-					if (facility.unit) {
-						total += Number(facility.unit.capacity_maximum || facility.unit.capacity_registered);
-					} else {
-						console.log('facility has no unit', facility);
-					}
+				if (!facility.isToday && facility.unit) {
+					total += Number(facility.unit.capacity_maximum || facility.unit.capacity_registered);
 				}
 			});
 		});

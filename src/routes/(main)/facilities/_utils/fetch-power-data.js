@@ -25,9 +25,8 @@ export async function fetchFacilityPowerData(client, facilities, selectedFacilit
 			interval: '5m'
 		});
 		return { powerData: response, selectedFacilityData };
-	} catch (err) {
-		console.error('Error fetching facility power data:', err);
-		// Set empty object to indicate "no data" vs null for "loading"
+	} catch {
+		// Return empty data to indicate "no data" vs null for "loading"
 		return { powerData: { data: [] }, selectedFacilityData };
 	}
 }

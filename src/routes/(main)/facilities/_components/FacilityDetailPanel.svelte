@@ -27,15 +27,11 @@
 	 * @param {string} [label] - Optional label for logging
 	 * @returns {any[]}
 	 */
-	function filterLastNPoints(data, label = '') {
-		const before = data?.length ?? 0;
+	function filterLastNPoints(data) {
 		if (!data || data.length <= LAST_3_DAYS_POINTS) {
-			console.log(`[${label}] Points: ${before} (no filter needed)`);
 			return data;
 		}
-		const filtered = data.slice(-LAST_3_DAYS_POINTS);
-		console.log(`[${label}] Points: ${before} → ${filtered.length}`);
-		return filtered;
+		return data.slice(-LAST_3_DAYS_POINTS);
 	}
 
 	// Filter out battery units for the primary chart
@@ -83,7 +79,7 @@
 								?.filter((/** @type {any} */ r) => filteredUnitCodes.has(r.columns?.unit_code))
 								.map((/** @type {any} */ r) => ({
 									...r,
-									data: filterLastNPoints(r.data, r.columns?.unit_code)
+									data: filterLastNPoints(r.data)
 								}))
 						}
 					]
@@ -102,7 +98,7 @@
 								?.filter((/** @type {any} */ r) => batteryUnitCodes.has(r.columns?.unit_code))
 								.map((/** @type {any} */ r) => ({
 									...r,
-									data: filterLastNPoints(r.data, `battery:${r.columns?.unit_code}`)
+									data: filterLastNPoints(r.data)
 								}))
 						}
 					]

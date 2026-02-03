@@ -284,8 +284,8 @@
 					duration: RESET_DURATION
 				}
 			);
-		} catch (error) {
-			console.error('Error fitting bounds:', error);
+		} catch {
+			// Silently handle bounds fitting errors
 		}
 	}
 
@@ -550,8 +550,7 @@
 				offset: popupOffset,
 				duration: PAN_DURATION
 			});
-		} catch (error) {
-			console.error('Error getting cluster leaves:', error);
+		} catch {
 			clusterClickInProgress = false;
 		}
 	}
