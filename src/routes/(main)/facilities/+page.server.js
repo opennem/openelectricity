@@ -90,17 +90,12 @@ export async function load({ url }) {
 					const networkId = /** @type {import('openelectricity').NetworkCode} */ (
 						selectedFacilityData.network_id
 					);
-					const now = new Date();
 					const { response } = await client.getFacilityData(
 						networkId,
 						selectedFacility,
 						['power'],
 						{
-							interval: '5m',
-							dateStart: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
-								.toISOString()
-								.slice(0, 19),
-							dateEnd: now.toISOString().slice(0, 19)
+							interval: '5m'
 						}
 					);
 					powerData = response;
@@ -212,11 +207,8 @@ export async function load({ url }) {
 				const networkId = /** @type {import('openelectricity').NetworkCode} */ (
 					selectedFacilityData.network_id
 				);
-				const now = new Date();
 				const { response } = await client.getFacilityData(networkId, selectedFacility, ['power'], {
-					interval: '5m',
-					dateStart: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19),
-					dateEnd: now.toISOString().slice(0, 19)
+					interval: '5m'
 				});
 				powerData = response;
 			} catch (err) {

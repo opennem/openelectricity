@@ -189,6 +189,13 @@
 	);
 
 	/**
+	 * Check if facility has any battery units (for Y-axis handling)
+	 */
+	let hasBatteryUnits = $derived(
+		facility?.units?.some((/** @type {any} */ u) => BATTERY_FUEL_TECHS.includes(u.fueltech_id))
+	);
+
+	/**
 	 * Calculate capacity sums for generators (positive) and loads (negative)
 	 * Uses capacity_maximum if available, otherwise capacity_registered
 	 */
@@ -277,7 +284,7 @@
 		chart.chartStyles.chartHeightClasses = chartHeight;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.useDivergingStack = useDivergingStack;
-		chart.lighterNegative = isBatteryFacility;
+		chart.lighterNegative = hasBatteryUnits;
 
 		// Set data immediately
 		let seriesData = processed.data;
@@ -365,7 +372,9 @@
 		const yMax = capacitySums.positive > 0 ? capacitySums.positive * (1 + padding) : undefined;
 		const yMin = capacitySums.negative > 0 ? -capacitySums.negative * (1 + padding) : undefined;
 		if (yMax !== undefined || yMin !== undefined) {
-			chartStore.setYDomain([yMin ?? 0, yMax ?? 0]);
+			// For battery facilities, allow negative values even if no explicit load capacity
+			const minValue = hasBatteryUnits ? (yMin ?? -(yMax ?? 0)) : (yMin ?? 0);
+			chartStore.setYDomain([minValue, yMax ?? 0]);
 		} else {
 			chartStore.setYDomain(undefined);
 		}

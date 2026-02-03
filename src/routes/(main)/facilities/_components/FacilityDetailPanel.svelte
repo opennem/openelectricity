@@ -18,6 +18,26 @@
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
 	let explorePath = $derived(getExploreUrl(facility));
 
+	// 3 days at 5-minute intervals = 3 * 24 * 12 = 864 data points
+	const LAST_3_DAYS_POINTS = 3 * 24 * 12;
+
+	/**
+	 * Filter data array to last N points
+	 * @param {any[]} data - Array of [timestamp, value] pairs
+	 * @param {string} [label] - Optional label for logging
+	 * @returns {any[]}
+	 */
+	function filterLastNPoints(data, label = '') {
+		const before = data?.length ?? 0;
+		if (!data || data.length <= LAST_3_DAYS_POINTS) {
+			console.log(`[${label}] Points: ${before} (no filter needed)`);
+			return data;
+		}
+		const filtered = data.slice(-LAST_3_DAYS_POINTS);
+		console.log(`[${label}] Points: ${before} → ${filtered.length}`);
+		return filtered;
+	}
+
 	// Filter out battery units for the primary chart
 	let filteredUnits = $derived(
 		facility?.units?.filter(
@@ -56,9 +76,17 @@
 		powerData && powerData.data.length
 			? {
 					...powerData,
-					results: powerData.data[0].results?.filter((/** @type {any} */ r) =>
-						filteredUnitCodes.has(r.columns?.unit_code)
-					)
+					data: [
+						{
+							...powerData.data[0],
+							results: powerData.data[0].results
+								?.filter((/** @type {any} */ r) => filteredUnitCodes.has(r.columns?.unit_code))
+								.map((/** @type {any} */ r) => ({
+									...r,
+									data: filterLastNPoints(r.data, r.columns?.unit_code)
+								}))
+						}
+					]
 				}
 			: null
 	);
@@ -67,9 +95,17 @@
 		powerData && powerData.data.length && hasBattery
 			? {
 					...powerData,
-					results: powerData.data[0].results?.filter((/** @type {any} */ r) =>
-						batteryUnitCodes.has(r.columns?.unit_code)
-					)
+					data: [
+						{
+							...powerData.data[0],
+							results: powerData.data[0].results
+								?.filter((/** @type {any} */ r) => batteryUnitCodes.has(r.columns?.unit_code))
+								.map((/** @type {any} */ r) => ({
+									...r,
+									data: filterLastNPoints(r.data, `battery:${r.columns?.unit_code}`)
+								}))
+						}
+					]
 				}
 			: null
 	);
