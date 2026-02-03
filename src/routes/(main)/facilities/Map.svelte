@@ -630,7 +630,7 @@
 					'circle-stroke-color': satelliteView ? '#bbf7d0' : '#22c55e'
 				}}
 				layout={{
-					'visibility': showGolfCourses ? 'visible' : 'none'
+					visibility: showGolfCourses ? 'visible' : 'none'
 				}}
 			/>
 
@@ -642,7 +642,7 @@
 					'text-field': '{point_count_abbreviated}',
 					'text-font': ['DM_Mono'],
 					'text-size': 12,
-					'visibility': showGolfCourses ? 'visible' : 'none'
+					visibility: showGolfCourses ? 'visible' : 'none'
 				}}
 				paint={{
 					'text-color': satelliteView ? '#052e16' : '#14532d'
@@ -661,7 +661,7 @@
 					'fill-outline-color': satelliteView ? '#86efac' : '#15803d'
 				}}
 				layout={{
-					'visibility': showGolfCourses ? 'visible' : 'none'
+					visibility: showGolfCourses ? 'visible' : 'none'
 				}}
 			/>
 		</GeoJSONSource>
@@ -689,44 +689,43 @@
 						3,
 						[
 							'case',
-							['>=', ['get', 'capacitykv'], 400], 1.5,
-							['>=', ['get', 'capacitykv'], 220], 1,
-							['>=', ['get', 'capacitykv'], 110], 0.7,
+							['>=', ['get', 'capacitykv'], 400],
+							1.5,
+							['>=', ['get', 'capacitykv'], 220],
+							1,
+							['>=', ['get', 'capacitykv'], 110],
+							0.7,
 							0.5
 						],
 						8,
 						[
 							'case',
-							['>=', ['get', 'capacitykv'], 400], 4,
-							['>=', ['get', 'capacitykv'], 220], 3,
-							['>=', ['get', 'capacitykv'], 110], 2,
+							['>=', ['get', 'capacitykv'], 400],
+							4,
+							['>=', ['get', 'capacitykv'], 220],
+							3,
+							['>=', ['get', 'capacitykv'], 110],
+							2,
 							1.5
 						],
 						14,
 						[
 							'case',
-							['>=', ['get', 'capacitykv'], 400], 6,
-							['>=', ['get', 'capacitykv'], 220], 5,
-							['>=', ['get', 'capacitykv'], 110], 4,
+							['>=', ['get', 'capacitykv'], 400],
+							6,
+							['>=', ['get', 'capacitykv'], 220],
+							5,
+							['>=', ['get', 'capacitykv'], 110],
+							4,
 							3
 						]
 					],
-					'line-opacity': [
-						'interpolate',
-						['linear'],
-						['zoom'],
-						3,
-						0.5,
-						8,
-						0.7,
-						12,
-						0.85
-					]
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.5, 8, 0.7, 12, 0.85]
 				}}
 				layout={{
 					'line-cap': 'round',
 					'line-join': 'round',
-					'visibility': showTransmissionLines ? 'visible' : 'none'
+					visibility: showTransmissionLines ? 'visible' : 'none'
 				}}
 			/>
 		</GeoJSONSource>

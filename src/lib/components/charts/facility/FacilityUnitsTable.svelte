@@ -94,11 +94,7 @@
 						>
 							{unit.code}
 						</span>
-						<span
-							class="text-mid-grey truncate"
-							class:text-xs={compact}
-							class:text-sm={!compact}
-						>
+						<span class="text-mid-grey truncate" class:text-xs={compact} class:text-sm={!compact}>
 							{fuelTechNameMap[unit.fueltech_id] || unit.fueltech_id}
 						</span>
 					</div>
@@ -114,11 +110,7 @@
 						class:h-3={!compact}
 						style="background-color: {statusColours[unit.status_id] || statusColours.operating};"
 					></span>
-					<span
-						class="capitalize text-mid-grey"
-						class:text-xs={compact}
-						class:text-sm={!compact}
-					>
+					<span class="capitalize text-mid-grey" class:text-xs={compact} class:text-sm={!compact}>
 						{unit.status_id}
 					</span>
 				</div>

@@ -121,9 +121,7 @@ function groupData(data, groupMap) {
  * @param {string[]} order
  */
 function reorderData(data, order) {
-	return order
-		.map((id) => data.find((d) => d.fuel_tech === id))
-		.filter((d) => d !== undefined);
+	return order.map((id) => data.find((d) => d.fuel_tech === id)).filter((d) => d !== undefined);
 }
 
 /**
@@ -358,7 +356,10 @@ export async function GET({ fetch, url }) {
 
 	if (!timeSeriesData.length) {
 		// Log first item to debug
-		console.error('No time series data. First ordered item:', JSON.stringify(orderedData[0], null, 2));
+		console.error(
+			'No time series data. First ordered item:',
+			JSON.stringify(orderedData[0], null, 2)
+		);
 		error(500, 'No time series data generated');
 	}
 

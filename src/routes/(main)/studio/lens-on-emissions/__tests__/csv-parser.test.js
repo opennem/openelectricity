@@ -26,8 +26,7 @@ Dec-04,46.28,19.27,21.19,10.54,7.51,21.85,3.96,19.39`;
 		expect(data[0].lulucf).toBeCloseTo(19.39, 2);
 
 		// Net total should be sum of all sectors
-		const expectedNetTotal =
-			51.24 + 22.17 + 20.32 + 10.93 + 7.48 + 21.85 + 3.96 + 19.39;
+		const expectedNetTotal = 51.24 + 22.17 + 20.32 + 10.93 + 7.48 + 21.85 + 3.96 + 19.39;
 		expect(data[0].net_total).toBeCloseTo(expectedNetTotal, 1);
 	});
 

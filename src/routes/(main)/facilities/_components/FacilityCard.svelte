@@ -5,7 +5,7 @@
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import { groupUnits } from '../_utils/units';
-	
+
 	/**
 	 * @type {{
 	 *   facility: any,

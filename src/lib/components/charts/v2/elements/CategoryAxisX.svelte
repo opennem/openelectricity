@@ -122,14 +122,7 @@
 		{/if}
 
 		{#if tickMarks}
-			<line
-				class="tick-mark"
-				{stroke}
-				y1={yPos}
-				y2={yPos + 6}
-				x1={xPos}
-				x2={xPos}
-			/>
+			<line class="tick-mark" {stroke} y1={yPos} y2={yPos + 6} x1={xPos} x2={xPos} />
 		{/if}
 	{/each}
 
@@ -141,14 +134,7 @@
 		{@const yPos = Math.max(...$yRange)}
 
 		{#if tickLabel && shouldShowLabel(i)}
-			<text
-				x={xPos + xTick}
-				y={yPos + yTick}
-				dx="0"
-				dy="2"
-				text-anchor="middle"
-				class={textClass}
-			>
+			<text x={xPos + xTick} y={yPos + yTick} dx="0" dy="2" text-anchor="middle" class={textClass}>
 				{formatTick(category)}
 			</text>
 		{/if}

@@ -22,7 +22,14 @@
 	 */
 
 	/** @type {Props} */
-	let { data, sectors, sectorColors, sectorLabels, hiddenSectors = new Set(), label = 'Total' } = $props();
+	let {
+		data,
+		sectors,
+		sectorColors,
+		sectorLabels,
+		hiddenSectors = new Set(),
+		label = 'Total'
+	} = $props();
 
 	// Filter out hidden sectors
 	let visibleSectors = $derived(sectors.filter((s) => !hiddenSectors.has(s)));

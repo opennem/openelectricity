@@ -315,10 +315,7 @@
 		</div>
 	{/if}
 
-	<div
-		class="relative bg-light-warm-grey rounded-lg overflow-hidden"
-		style="height: {height}px;"
-	>
+	<div class="relative bg-light-warm-grey rounded-lg overflow-hidden" style="height: {height}px;">
 		<!-- Brush interaction layer (on top) -->
 		<div
 			bind:this={brushEl}

@@ -10,17 +10,8 @@
 	import { goto } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import {
-		aggregateToYearly,
-		filterByFYRange,
-		mergeData
-	} from './helpers/csv-parser.js';
-	import {
-		SECTOR_ORDER,
-		SECTOR_COLORS,
-		SECTOR_LABELS,
-		TIME_RANGES
-	} from './helpers/config.js';
+	import { aggregateToYearly, filterByFYRange, mergeData } from './helpers/csv-parser.js';
+	import { SECTOR_ORDER, SECTOR_COLORS, SECTOR_LABELS, TIME_RANGES } from './helpers/config.js';
 	import { formatFYRange, getFinancialYear } from './helpers/financial-year.js';
 	import TimeRangeControls from './components/TimeRangeControls.svelte';
 	import EmissionsLegend from './components/EmissionsLegend.svelte';
@@ -284,11 +275,7 @@
 
 		// Aggregate to yearly (exclude incomplete years)
 		const yearly = aggregateToYearly(quarterly, { completeYearsOnly: true });
-		return filterByFYRange(
-			yearly,
-			TIME_RANGES.CURRENT_START_FY,
-			TIME_RANGES.CURRENT_END_FY
-		);
+		return filterByFYRange(yearly, TIME_RANGES.CURRENT_START_FY, TIME_RANGES.CURRENT_END_FY);
 	});
 
 	/**
@@ -356,9 +343,7 @@
 
 		// Year view: "FY 2005 – 2025", Quarter view: "2005 – 2025"
 		const range =
-			intervalType === 'year'
-				? `FY ${startFY} \u2014 ${endFY}`
-				: `${startFY} \u2014 ${endFY}`;
+			intervalType === 'year' ? `FY ${startFY} \u2014 ${endFY}` : `${startFY} \u2014 ${endFY}`;
 
 		// Add rolling year indicator for quarter view
 		if (useRollingSum && intervalType === 'quarter') {
@@ -367,7 +352,6 @@
 
 		return range;
 	});
-
 
 	// ============================================
 	// Effects - Update Chart
@@ -470,7 +454,10 @@
 		/** @type {Record<string, number>} */
 		const sums = {};
 		for (const sector of SECTOR_ORDER) {
-			sums[sector] = chartData.reduce((sum, d) => sum + (Number(/** @type {any} */ (d)[sector]) || 0), 0);
+			sums[sector] = chartData.reduce(
+				(sum, d) => sum + (Number(/** @type {any} */ (d)[sector]) || 0),
+				0
+			);
 		}
 		return sums;
 	});
@@ -518,8 +505,7 @@
 	function clearFocus() {
 		chart.clearFocus();
 	}
-
-	</script>
+</script>
 
 <svelte:head>
 	<title>Lens on Emissions</title>
@@ -527,7 +513,9 @@
 
 <div class="p-4">
 	<!-- Header Filter Bar -->
-	<div class="mb-4 flex flex-wrap items-center justify-between gap-4 px-4 py-3 bg-light-warm-grey rounded-lg">
+	<div
+		class="mb-4 flex flex-wrap items-center justify-between gap-4 px-4 py-3 bg-light-warm-grey rounded-lg"
+	>
 		<TimeRangeControls
 			{intervalType}
 			{showHistory}
@@ -581,7 +569,8 @@
 			<div class="flex rounded-full bg-light-warm-grey p-0.5">
 				<button
 					type="button"
-					class="px-4 py-1.5 text-sm font-medium rounded-full transition-colors cursor-pointer {viewMode === 'chart'
+					class="px-4 py-1.5 text-sm font-medium rounded-full transition-colors cursor-pointer {viewMode ===
+					'chart'
 						? 'bg-dark-grey text-white'
 						: 'text-dark-grey hover:bg-warm-grey'}"
 					onclick={() => (viewMode = 'chart')}
@@ -590,7 +579,8 @@
 				</button>
 				<button
 					type="button"
-					class="px-4 py-1.5 text-sm font-medium rounded-full transition-colors cursor-pointer {viewMode === 'table'
+					class="px-4 py-1.5 text-sm font-medium rounded-full transition-colors cursor-pointer {viewMode ===
+					'table'
 						? 'bg-dark-grey text-white'
 						: 'text-dark-grey hover:bg-warm-grey'}"
 					onclick={() => (viewMode = 'table')}

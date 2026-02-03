@@ -79,11 +79,15 @@
 			<table class="w-full text-sm">
 				<thead class="sticky top-0 bg-white border-b border-warm-grey z-10">
 					<tr>
-						<th class="px-3 py-3 text-left text-xs font-medium text-mid-warm-grey whitespace-nowrap">
+						<th
+							class="px-3 py-3 text-left text-xs font-medium text-mid-warm-grey whitespace-nowrap"
+						>
 							{intervalType === 'quarter' ? 'Quarter' : 'FY'}
 						</th>
 						{#each visibleSectors as sector}
-							<th class="px-3 py-3 text-right text-xs font-medium text-mid-warm-grey whitespace-nowrap">
+							<th
+								class="px-3 py-3 text-right text-xs font-medium text-mid-warm-grey whitespace-nowrap"
+							>
 								<div class="flex items-center justify-end gap-1.5">
 									<span
 										class="w-2 h-2 rounded-full flex-shrink-0"
@@ -107,11 +111,15 @@
 							{#each visibleSectors as sector}
 								{@const value = Number(row[sector]) || 0}
 								{@const isNegative = value < 0}
-								<td class="px-3 py-2 text-right text-sm font-mono tabular-nums text-mid-grey whitespace-nowrap">
+								<td
+									class="px-3 py-2 text-right text-sm font-mono tabular-nums text-mid-grey whitespace-nowrap"
+								>
 									{isNegative ? '-' : ''}{formatEmissionsValue(value, 1)}
 								</td>
 							{/each}
-							<td class="px-3 py-2 text-right text-sm font-semibold font-mono tabular-nums text-dark-grey whitespace-nowrap">
+							<td
+								class="px-3 py-2 text-right text-sm font-semibold font-mono tabular-nums text-dark-grey whitespace-nowrap"
+							>
 								{row.net_total < 0 ? '-' : ''}{formatEmissionsValue(row.net_total, 1)}
 							</td>
 						</tr>

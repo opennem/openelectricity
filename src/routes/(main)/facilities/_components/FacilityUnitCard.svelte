@@ -6,7 +6,7 @@
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import { getFueltechColor, needsDarkText } from '../_utils/fueltech-display';
-	
+
 	/**
 	 * @type {{
 	 *   facility: any,

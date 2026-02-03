@@ -11,7 +11,17 @@
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
 
 	// v2 Element components
-	import { StackedArea, HoverLayer, AxisX, AxisY, ClipPath, LineX, LineY, Dot, Shading } from './elements';
+	import {
+		StackedArea,
+		HoverLayer,
+		AxisX,
+		AxisY,
+		ClipPath,
+		LineX,
+		LineY,
+		Dot,
+		Shading
+	} from './elements';
 
 	/**
 	 * @typedef {Object} Props
@@ -34,9 +44,7 @@
 
 		if (chart.useDivergingStack) {
 			// Use d3 stack with diverging offset for independent positive/negative stacking
-			const stackGen = d3Stack()
-				.keys(chart.visibleSeriesNames)
-				.offset(stackOffsetDiverging);
+			const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
 			return stackGen(chart.seriesScaledData);
 		}
 
@@ -93,11 +101,7 @@
 
 			<!-- Shading overlay (behind chart content) -->
 			{#if chart.shadingData?.length > 0}
-				<Shading
-					dataset={chart.shadingData}
-					fill={chart.shadingFill}
-					clipPathId={clipPathId}
-				/>
+				<Shading dataset={chart.shadingData} fill={chart.shadingFill} {clipPathId} />
 			{/if}
 
 			<!-- Chart content (on top to capture hover with series info) -->

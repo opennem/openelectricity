@@ -40,7 +40,6 @@
 		focusStroke = '#374151'
 	} = $props();
 
-
 	// Store width for use in functions
 	let chartWidth = $derived($width || 1);
 	let customData = $derived($custom);

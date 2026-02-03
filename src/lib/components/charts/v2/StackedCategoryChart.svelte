@@ -12,7 +12,15 @@
 	import { scaleOrdinal, scaleBand } from 'd3-scale';
 
 	// v2 Element components
-	import { StackedArea, AxisY, ClipPath, LineY, CategoryAxisX, CategoryLine, CategoryOverlay } from './elements';
+	import {
+		StackedArea,
+		AxisY,
+		ClipPath,
+		LineY,
+		CategoryAxisX,
+		CategoryLine,
+		CategoryOverlay
+	} from './elements';
 	import CategoryHoverLayer from './elements/CategoryHoverLayer.svelte';
 	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
 
@@ -28,7 +36,15 @@
 	 */
 
 	/** @type {Props} */
-	let { chart, netTotalKey, netTotalColor = '#C74523', overlayStart, onmousemove, onmouseout, onpointerup } = $props();
+	let {
+		chart,
+		netTotalKey,
+		netTotalColor = '#C74523',
+		overlayStart,
+		onmousemove,
+		onmouseout,
+		onpointerup
+	} = $props();
 
 	// Overlay configuration
 	let showOverlay = $derived(overlayStart !== undefined && overlayStart !== null);
@@ -77,9 +93,7 @@
 
 		if (chart.useDivergingStack) {
 			// Use d3 stack with diverging offset for independent positive/negative stacking
-			const stackGen = d3Stack()
-				.keys(chart.visibleSeriesNames)
-				.offset(stackOffsetDiverging);
+			const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
 			return stackGen(mappedData);
 		}
 
@@ -152,7 +166,12 @@
 				/>
 
 				{#if showNetTotalLine}
-					<CategoryLine data={netTotalData} valueKey="_netTotal" stroke={netTotalColor} curveType={chart.chartOptions.curveFunction} />
+					<CategoryLine
+						data={netTotalData}
+						valueKey="_netTotal"
+						stroke={netTotalColor}
+						curveType={chart.chartOptions.curveFunction}
+					/>
 				{/if}
 
 				{#if showOverlay}

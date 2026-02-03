@@ -168,7 +168,11 @@ test.describe('Facility Explorer - Studio Index', () => {
 
 		// Click on the project link
 		const link = page.getByRole('link', { name: /View Project/i }).filter({
-			has: page.locator(':scope').filter({ hasText: 'Facility Explorer' }).locator('..').locator('..')
+			has: page
+				.locator(':scope')
+				.filter({ hasText: 'Facility Explorer' })
+				.locator('..')
+				.locator('..')
 		});
 
 		// Find the Facility Explorer card and click its link

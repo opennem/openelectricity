@@ -14,7 +14,9 @@
 {:else if variant === 'card'}
 	<div class="bg-warm-grey animate-pulse h-48 rounded-xl w-full {className}"></div>
 {:else if variant === 'chart'}
-	<div class="bg-warm-grey animate-pulse h-[300px] md:h-[500px] rounded-xl w-full {className}"></div>
+	<div
+		class="bg-warm-grey animate-pulse h-[300px] md:h-[500px] rounded-xl w-full {className}"
+	></div>
 {:else if variant === 'circle'}
 	<div class="bg-warm-grey animate-pulse h-12 w-12 rounded-full {className}"></div>
 {:else}

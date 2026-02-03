@@ -201,7 +201,7 @@ export function aggregateToYearly(quarterlyData, options = {}) {
 		const sectors = {};
 
 		for (const key of SECTOR_ORDER) {
-			sectors[key] = points.reduce((sum, p) => sum + (/** @type {number} */ (p[key]) || 0), 0);
+			sectors[key] = points.reduce((sum, p) => sum + /** @type {number} */ ((p[key]) || 0), 0);
 		}
 
 		// Use the start of the FY as the date point

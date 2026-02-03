@@ -64,7 +64,5 @@ export function filterFacilitiesByRegions(facilities, regions) {
 	if (!facilities) return [];
 	if (regions.length === 0) return facilities;
 
-	return facilities.filter((facility) =>
-		regions.includes(facility.network_region.toLowerCase())
-	);
+	return facilities.filter((facility) => regions.includes(facility.network_region.toLowerCase()));
 }

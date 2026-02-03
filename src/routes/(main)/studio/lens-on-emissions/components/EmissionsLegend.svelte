@@ -57,7 +57,9 @@
 		<div class="flex items-center gap-2">
 			<span class="text-xs font-medium text-mid-warm-grey uppercase tracking-wide">Sector</span>
 			{#if isFocused}
-				<span class="text-xs font-semibold text-dark-grey bg-warm-grey px-2 py-0.5 rounded-full flex items-center gap-1">
+				<span
+					class="text-xs font-semibold text-dark-grey bg-warm-grey px-2 py-0.5 rounded-full flex items-center gap-1"
+				>
 					{label}
 					<button
 						type="button"
@@ -87,7 +89,9 @@
 
 			<button
 				type="button"
-				class="w-full flex items-center justify-between px-3 py-2.5 hover:bg-light-warm-grey/50 cursor-pointer transition-opacity {isHidden ? 'opacity-40' : ''}"
+				class="w-full flex items-center justify-between px-3 py-2.5 hover:bg-light-warm-grey/50 cursor-pointer transition-opacity {isHidden
+					? 'opacity-40'
+					: ''}"
 				onclick={() => ontoggle?.(sector)}
 			>
 				<!-- Left: Color swatch and label -->
@@ -96,7 +100,9 @@
 						class="w-3 h-3 rounded-full flex-shrink-0 transition-opacity"
 						style="background-color: {sectorColors[sector]}"
 					></span>
-					<span class="text-sm text-dark-grey {isHidden ? 'line-through' : ''}">{sectorLabels[sector]}</span>
+					<span class="text-sm text-dark-grey {isHidden ? 'line-through' : ''}"
+						>{sectorLabels[sector]}</span
+					>
 				</div>
 
 				<!-- Right: Value and percentage -->
