@@ -40,12 +40,12 @@ const client = new OpenElectricityClient({
 export async function load({ url }) {
 	/**
 	 * Available options:
-	 * battery, battery_charging, battery_discharging, bioenergy_biogas, bioenergy_biomass, coal_black, coal_brown, distillate, gas_ccgt, gas_ocgt, gas_recip, gas_steam, gas_wcmg, hydro, pumps, solar_rooftop, solar_thermal, solar_utility, nuclear, other, solar, wind, wind_offshore, imports, exports, interconnector, aggregator_vpp, aggregator_dr
+	 * battery, bioenergy_biogas, bioenergy_biomass, coal_black, coal_brown, distillate, gas_ccgt, gas_ocgt, gas_recip, gas_steam, gas_wcmg, hydro, pumps, solar_rooftop, solar_thermal, solar_utility, nuclear, other, solar, wind, wind_offshore, imports, exports, interconnector, aggregator_vpp, aggregator_dr
 	 */
 
 	/** @type {Record<string, string[]>} */
 	const fuelTechMap = {
-		battery: ['battery', 'battery_charging', 'battery_discharging'],
+		battery: ['battery'],
 		bioenergy: ['bioenergy_biogas', 'bioenergy_biomass'],
 		coal: ['coal_black', 'coal_brown'],
 		distillate: ['distillate'],
@@ -97,7 +97,9 @@ export async function load({ url }) {
 						['power'],
 						{
 							interval: '5m',
-							dateStart: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19),
+							dateStart: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000)
+								.toISOString()
+								.slice(0, 19),
 							dateEnd: now.toISOString().slice(0, 19)
 						}
 					);
@@ -211,16 +213,11 @@ export async function load({ url }) {
 					selectedFacilityData.network_id
 				);
 				const now = new Date();
-				const { response } = await client.getFacilityData(
-					networkId,
-					selectedFacility,
-					['power'],
-					{
-						interval: '5m',
-						dateStart: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19),
-						dateEnd: now.toISOString().slice(0, 19)
-					}
-				);
+				const { response } = await client.getFacilityData(networkId, selectedFacility, ['power'], {
+					interval: '5m',
+					dateStart: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString().slice(0, 19),
+					dateEnd: now.toISOString().slice(0, 19)
+				});
 				powerData = response;
 			} catch (err) {
 				console.error('Error fetching facility power data:', err);

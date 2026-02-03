@@ -20,7 +20,10 @@
 
 	// Filter out battery units for the primary chart
 	let filteredUnits = $derived(
-		facility?.units?.filter((/** @type {any} */ unit) => unit.fueltech_id !== 'battery') ?? []
+		facility?.units?.filter(
+			(/** @type {any} */ unit) =>
+				unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
+		) ?? []
 	);
 	let filteredUnitCodes = $derived(new Set(filteredUnits.map((/** @type {any} */ u) => u.code)));
 
@@ -70,6 +73,23 @@
 				}
 			: null
 	);
+
+	// Debug: Process battery data for table display
+	let batteryDataGrid = $derived.by(() => {
+		if (!batteryPowerData) return { seriesKeys: [], timestamps: [], seriesMap: {} };
+
+		const results = batteryPowerData.data?.[0]?.results || batteryPowerData.results || [];
+		/** @type {Record<string, any[]>} */
+		const seriesMap = {};
+		for (const r of results) {
+			const key = `${r.columns?.unit_code || 'unknown'} (${r.columns?.fueltech_id || 'unknown'})`;
+			seriesMap[key] = r.data || [];
+		}
+		const seriesKeys = Object.keys(seriesMap);
+		const timestamps = results[0]?.data?.map((/** @type {[string, number]} */ d) => d[0]) || [];
+
+		return { seriesKeys, timestamps, seriesMap };
+	});
 </script>
 
 {#if facility}
@@ -106,10 +126,18 @@
 
 			<!-- Battery Section (Testing) - Hidden for now -->
 			{#if false && hasBattery && batteryPowerData}
-				<div class="mt-4 mx-2 p-3 border-2 border-dashed rounded-lg" style="border-color: #f97316; background-color: #fff7ed;">
+				<div
+					class="mt-4 mx-2 p-3 border-2 border-dashed rounded-lg"
+					style="border-color: #f97316; background-color: #fff7ed;"
+				>
 					<div class="flex items-center gap-2 mb-2">
-						<span class="text-xs font-bold uppercase tracking-wide" style="color: #c2410c;">Battery Storage</span>
-						<span class="text-[10px] px-1.5 py-0.5 rounded font-medium" style="background-color: #fed7aa; color: #9a3412;">Testing</span>
+						<span class="text-xs font-bold uppercase tracking-wide" style="color: #c2410c;"
+							>Battery Storage</span
+						>
+						<span
+							class="text-[10px] px-1.5 py-0.5 rounded font-medium"
+							style="background-color: #fed7aa; color: #9a3412;">Testing</span
+						>
 					</div>
 
 					<!-- Battery Chart -->
@@ -121,13 +149,48 @@
 							title=""
 							chartHeight="h-[150px]"
 							showZoomBrush={false}
-							useDivergingStack={true}
+							useDivergingStack={false}
 						/>
 					</div>
 
 					<!-- Battery Units Table -->
 					<div class="border rounded-lg bg-white" style="border-color: #fdba74;">
 						<FacilityUnitsTable units={batteryUnits} compact />
+					</div>
+
+					<!-- Debug: Battery Power Data Grid -->
+					<div class="mt-3 bg-white rounded-lg p-3 overflow-x-auto max-h-[300px] overflow-y-auto">
+						<p class="text-xs font-bold mb-2" style="color: #c2410c;">Chart Data Points</p>
+						<table class="text-xs w-full border-collapse">
+							<thead class="sticky top-0 bg-white">
+								<tr class="border-b" style="border-color: #fdba74;">
+									<th class="text-left p-1">Time</th>
+									{#each batteryDataGrid.seriesKeys as key, i (i)}
+										<th class="text-right p-1">{key}</th>
+									{/each}
+								</tr>
+							</thead>
+							<tbody>
+								{#each batteryDataGrid.timestamps as ts, i (i)}
+									<tr class="border-b" style="border-color: #fed7aa;">
+										<td class="p-1 font-mono whitespace-nowrap"
+											>{new Date(ts).toLocaleString('en-AU', {
+												timeZone: 'Australia/Brisbane',
+												month: 'short',
+												day: 'numeric',
+												hour: '2-digit',
+												minute: '2-digit'
+											})}</td
+										>
+										{#each batteryDataGrid.seriesKeys as key, i (i)}
+											<td class="p-1 text-right font-mono"
+												>{batteryDataGrid.seriesMap[key][i]?.[1]?.toFixed(1) ?? '-'}</td
+											>
+										{/each}
+									</tr>
+								{/each}
+							</tbody>
+						</table>
 					</div>
 				</div>
 			{/if}

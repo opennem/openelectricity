@@ -573,24 +573,41 @@
 			<!-- Transmission lines legend -->
 			{#if mapShowTransmissionLines}
 				<div
-					class="absolute bottom-4 left-4 md:left-auto md:right-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs {selectedView === 'map' ? 'block' : 'hidden md:block'}"
+					class="absolute bottom-4 left-4 md:left-auto md:right-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs {selectedView ===
+					'map'
+						? 'block'
+						: 'hidden md:block'}"
 				>
-					<div class="text-[10px] text-mid-grey font-medium uppercase tracking-wide mb-1.5">Transmission Lines</div>
+					<div class="text-[10px] text-mid-grey font-medium uppercase tracking-wide mb-1.5">
+						Transmission Lines
+					</div>
 					<div class="space-y-1">
 						<div class="flex items-center gap-2">
-							<span class="w-5 h-1 rounded-full" style="background-color: {mapSatelliteView ? '#ff6b6b' : '#c0392b'};"></span>
+							<span
+								class="w-5 h-1 rounded-full"
+								style="background-color: {mapSatelliteView ? '#ff6b6b' : '#c0392b'};"
+							></span>
 							<span class="text-mid-grey">400-500 kV</span>
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="w-5 h-1 rounded-full" style="background-color: {mapSatelliteView ? '#ffd93d' : '#c49b00'};"></span>
+							<span
+								class="w-5 h-1 rounded-full"
+								style="background-color: {mapSatelliteView ? '#ffd93d' : '#c49b00'};"
+							></span>
 							<span class="text-mid-grey">220-330 kV</span>
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="w-5 h-1 rounded-full" style="background-color: {mapSatelliteView ? '#6bcb77' : '#27ae60'};"></span>
+							<span
+								class="w-5 h-1 rounded-full"
+								style="background-color: {mapSatelliteView ? '#6bcb77' : '#27ae60'};"
+							></span>
 							<span class="text-mid-grey">110-132 kV</span>
 						</div>
 						<div class="flex items-center gap-2">
-							<span class="w-5 h-1 rounded-full" style="background-color: {mapSatelliteView ? '#74b9ff' : '#2980b9'};"></span>
+							<span
+								class="w-5 h-1 rounded-full"
+								style="background-color: {mapSatelliteView ? '#74b9ff' : '#2980b9'};"
+							></span>
 							<span class="text-mid-grey">&lt;110 kV</span>
 						</div>
 					</div>
