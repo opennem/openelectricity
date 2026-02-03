@@ -59,6 +59,26 @@ async function processPrices(res) {
 	};
 }
 
+/**
+ * Safely fetch JSON with error handling
+ * @param {typeof fetch} fetchFn
+ * @param {string} url
+ * @param {*} fallback
+ */
+async function safeFetchJson(fetchFn, url, fallback = null) {
+	try {
+		const res = await fetchFn(url);
+		if (!res.ok) {
+			console.error(`API error for ${url}: ${res.status}`);
+			return fallback;
+		}
+		return await res.json();
+	} catch (e) {
+		console.error(`Fetch error for ${url}:`, e);
+		return fallback;
+	}
+}
+
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ fetch }) {
 	// Fetch all data sources in parallel for better performance
@@ -72,7 +92,7 @@ export async function load({ fetch }) {
 		regionEnergy,
 		regionEmissions,
 		tracker7dProcessed,
-		historyEnergyNemData
+		energyData
 	] = await Promise.all([
 		client.fetch(
 			`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, records_title, analysis_title, goals_title, goals}`
@@ -80,15 +100,18 @@ export async function load({ fetch }) {
 		client.fetch(
 			`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
 		),
-		fetch('/api/flows').then(processFlows),
-		fetch('/api/prices').then(processPrices),
-		fetchPinnedRecords(fetch, PUBLIC_RECORDS_API, PUBLIC_API_KEY),
-		fetch('/api/region-power').then((r) => r.json()),
-		fetch('/api/region-energy').then((r) => r.json()),
-		fetch('/api/region-emissions').then((r) => r.json()),
-		fetch('/api/tracker/7d-processed?regionPath=au/NEM&interval=30m').then((r) => r.json()),
-		fetch('/api/energy').then((r) => r.json()).then((data) => energyParser(data.data))
+		fetch('/api/flows').then(processFlows).catch(() => ({ dispatchDateTimeString: '', regionFlows: {}, originalJsons: null })),
+		fetch('/api/prices').then(processPrices).catch(() => ({ regionPrices: {}, originalJsons: null })),
+		fetchPinnedRecords(fetch, PUBLIC_RECORDS_API, PUBLIC_API_KEY).catch(() => []),
+		safeFetchJson(fetch, '/api/region-power', null),
+		safeFetchJson(fetch, '/api/region-energy', null),
+		safeFetchJson(fetch, '/api/region-emissions', null),
+		safeFetchJson(fetch, '/api/tracker/7d-processed?regionPath=au/NEM&interval=30m', null),
+		safeFetchJson(fetch, '/api/energy', null)
 	]);
+
+	// Parse energy data safely
+	const historyEnergyNemData = energyData?.data ? energyParser(energyData.data) : [];
 
 	return {
 		homepageData,
