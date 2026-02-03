@@ -82,15 +82,14 @@ async function safeFetchJson(fetchFn, url, fallback = null) {
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ fetch }) {
 	// Fetch all data sources in parallel for better performance
+	// Note: region-power, region-energy, region-emissions are fetched client-side
+	// because they make multiple external API calls that can timeout on Cloudflare
 	const [
 		homepageData,
 		articles,
 		flows,
 		prices,
 		pinnedRecords,
-		regionPower,
-		regionEnergy,
-		regionEmissions,
 		tracker7dProcessed,
 		energyData
 	] = await Promise.all([
@@ -103,9 +102,6 @@ export async function load({ fetch }) {
 		fetch('/api/flows').then(processFlows).catch(() => ({ dispatchDateTimeString: '', regionFlows: {}, originalJsons: null })),
 		fetch('/api/prices').then(processPrices).catch(() => ({ regionPrices: {}, originalJsons: null })),
 		fetchPinnedRecords(fetch, PUBLIC_RECORDS_API, PUBLIC_API_KEY).catch(() => []),
-		safeFetchJson(fetch, '/api/region-power', null),
-		safeFetchJson(fetch, '/api/region-energy', null),
-		safeFetchJson(fetch, '/api/region-emissions', null),
 		safeFetchJson(fetch, '/api/tracker/7d-processed?regionPath=au/NEM&interval=30m', null),
 		safeFetchJson(fetch, '/api/energy', null)
 	]);
@@ -119,9 +115,6 @@ export async function load({ fetch }) {
 		flows,
 		prices,
 		pinnedRecords,
-		regionPower,
-		regionEnergy,
-		regionEmissions,
 		tracker7dProcessed,
 		historyEnergyNemData
 	};

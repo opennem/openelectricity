@@ -23,17 +23,22 @@
 	/** @type {Props} */
 	let { data } = $props();
 
-	// All data now comes from server load - no client-side fetches needed
+	// Server-side data
 	let homepageData = $derived(data.homepageData);
 	let historyEnergyNemData = $derived(data.historyEnergyNemData);
 	let articles = $derived(data.articles);
 	let flows = $derived(data.flows);
 	let prices = $derived(data.prices);
 	let pinnedRecords = $derived(data.pinnedRecords);
-	let regionPower = $derived(data.regionPower);
-	let regionEnergy = $derived(data.regionEnergy);
-	let regionEmissions = $derived(data.regionEmissions);
 	let tracker7dProcessed = $derived(data.tracker7dProcessed);
+
+	// Client-side fetched data (these APIs make multiple external calls that can timeout on Cloudflare SSR)
+	/** @type {any} */
+	let regionPower = $state(null);
+	/** @type {any} */
+	let regionEnergy = $state(null);
+	/** @type {any} */
+	let regionEmissions = $state(null);
 
 	// Derived loading states
 	let hasRegionData = $derived(regionPower && regionEnergy && regionEmissions);
@@ -104,6 +109,19 @@
 			markHeroAnimationSeen();
 			trackerChartReady = true;
 		}, trackerDelay);
+
+		// Fetch region data client-side (these APIs make multiple external calls that timeout on Cloudflare SSR)
+		Promise.all([
+			fetch('/api/region-power').then((r) => r.ok ? r.json() : null),
+			fetch('/api/region-energy').then((r) => r.ok ? r.json() : null),
+			fetch('/api/region-emissions').then((r) => r.ok ? r.json() : null)
+		]).then(([power, energy, emissions]) => {
+			regionPower = power;
+			regionEnergy = energy;
+			regionEmissions = emissions;
+		}).catch((e) => {
+			console.error('Failed to fetch region data:', e);
+		});
 
 		const observer = new IntersectionObserver(
 			(entries) => {
