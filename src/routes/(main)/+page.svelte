@@ -7,7 +7,7 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
-	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
+	import InfoGraphicNem7DayGenerationV2 from '$lib/components/info-graphics/nem-7-day-generation-v2/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
 	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
@@ -33,6 +33,7 @@
 	let regionEnergy = $derived(data.regionEnergy);
 	let regionEmissions = $derived(data.regionEmissions);
 	let tracker7d = $derived(data.tracker7d);
+	let tracker7dProcessed = $derived(data.tracker7dProcessed);
 
 	// Derived loading states
 	let hasRegionData = $derived(regionPower && regionEnergy && regionEmissions);
@@ -129,10 +130,10 @@
 	</div>
 </div>
 
-<!-- NEM 7-Day Generation -->
+<!-- NEM 7-Day Generation (v2 with server-side processing) -->
 <div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
-	{#if tracker7d?.data && trackerChartReady}
-		<InfoGraphicNem7DayGeneration initialData={tracker7d.data} />
+	{#if tracker7dProcessed?.data && trackerChartReady}
+		<InfoGraphicNem7DayGenerationV2 initialData={tracker7dProcessed} />
 	{:else}
 		<!-- 7-day chart placeholder -->
 		<div class="container max-w-none lg:container">

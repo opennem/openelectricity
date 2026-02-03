@@ -11,7 +11,7 @@
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
 
 	// v2 Element components
-	import { StackedArea, HoverLayer, AxisX, AxisY, ClipPath, LineX, LineY, Dot } from './elements';
+	import { StackedArea, HoverLayer, AxisX, AxisY, ClipPath, LineX, LineY, Dot, Shading } from './elements';
 
 	/**
 	 * @typedef {Object} Props
@@ -90,6 +90,15 @@
 
 			<!-- Hover layer for mouse interactions in empty space -->
 			<HoverLayer dataset={chart.seriesScaledData} {onmousemove} {onmouseout} {onpointerup} />
+
+			<!-- Shading overlay (behind chart content) -->
+			{#if chart.shadingData?.length > 0}
+				<Shading
+					dataset={chart.shadingData}
+					fill={chart.shadingFill}
+					clipPathId={clipPathId}
+				/>
+			{/if}
 
 			<!-- Chart content (on top to capture hover with series info) -->
 			<g clip-path={clipPath}>
