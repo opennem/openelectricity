@@ -6,15 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Local Development** uses [Bun](https://bun.sh/) for faster package management and script execution. **Cloudflare deployment** uses npm (configured in CI/CD).
 
-| Command | Local (Bun) | CI/Cloudflare (npm) |
-|---------|-------------|---------------------|
-| Install | `bun install` | `npm install` |
-| Dev server | `bun run dev` | `npm run dev` |
-| Build | `bun run build` | `npm run build` |
-| Type check | `bun run check` | `npm run check` |
-| Lint | `bun run lint` | `npm run lint` |
-| Format | `bun run format` | `npm run format` |
-| Test | `bun run test` | `npm run test` |
+| Command    | Local (Bun)      | CI/Cloudflare (npm) |
+| ---------- | ---------------- | ------------------- |
+| Install    | `bun install`    | `npm install`       |
+| Dev server | `bun run dev`    | `npm run dev`       |
+| Build      | `bun run build`  | `npm run build`     |
+| Type check | `bun run check`  | `npm run check`     |
+| Lint       | `bun run lint`   | `npm run lint`      |
+| Format     | `bun run format` | `npm run format`    |
+| Test       | `bun run test`   | `npm run test`      |
 
 - **Development**: `bun run dev` - Start Vite development server
 - **Build**: `bun run build` - Production build with Vite
