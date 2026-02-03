@@ -107,7 +107,7 @@
 					display={chart.chartOptions.selectedChartType}
 					curveType={chart.chartOptions.curveFunction}
 					seriesColours={chart.seriesColours}
-					highlightId={chart.hoverKey}
+					highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
 					lighterNegative={chart.lighterNegative}
 					{onmousemove}
 					{onmouseout}

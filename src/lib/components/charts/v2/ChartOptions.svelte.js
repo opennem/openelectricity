@@ -85,6 +85,10 @@ export default class ChartOptions {
 	isChartTypeArea = $derived(this.selectedChartType === 'area');
 	isChartTypeLine = $derived(this.selectedChartType === 'line');
 
+	// Hover highlight option - when false, hovering over a series won't dim other series
+	/** @type {boolean} */
+	allowHoverHighlight = $state(true);
+
 	// Unit configuration
 	/** @type {SiPrefix[]} */
 	allowedPrefixes = $state([]);
