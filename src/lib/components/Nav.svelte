@@ -16,7 +16,7 @@
 	/** @type {NavItem[]} */
 	let navItems = [
 		{ name: 'Tracker', href: $dataTrackerLink },
-		{ name: 'Facilities', href: `${$dataTrackerLink}/facilities` },
+		{ name: 'Facilities', href: '/facilities' },
 		{ name: 'Scenarios', href: '/scenarios' },
 		{ name: 'Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },
