@@ -3,6 +3,9 @@ import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
 import { fetchPinnedRecords } from '$lib/records/pinned-records.js';
 import energyParser from '$lib/opennem/parser.js';
 
+// Disable prerendering - homepage has dynamic real-time data
+export const prerender = false;
+
 /**
  * Process flows API response
  * @param {Response} res
