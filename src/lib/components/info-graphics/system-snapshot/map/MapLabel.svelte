@@ -10,8 +10,8 @@
 	export let bg = false;
 	export let textAnchor = 'middle';
 
-	const HGAP = 16;
-	const VGAP = 8;
+	const HGAP = 12;
+	const VGAP = 6;
 
 	/** @type {SVGTextElement} */
 	let textElement;
@@ -27,7 +27,7 @@
 <g transform={`translate(${x}, ${y})`} class="pointer-events-none">
 	{#if bg && textBounds}
 		<rect
-			rx="4"
+			rx="3"
 			fill="white"
 			width={textBounds.width + HGAP}
 			height={textBounds.height + VGAP}
@@ -40,7 +40,7 @@
 		font-family="DM Sans"
 		font-weight="600"
 		fill={colour}
-		class="text-xl md:text-base"
+		class="text-sm md:text-xs"
 		class:bg
 		bind:this={textElement}
 		x={bg ? HGAP / 2 : 0}

@@ -219,7 +219,7 @@
 <svg
 	width="615"
 	height="578"
-	viewBox="0 0 615 578"
+	viewBox="0 0 443 416"
 	fill="none"
 	xmlns="http://www.w3.org/2000/svg"
 	xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -256,32 +256,32 @@
 	</g> -->
 
 	<!-- Vic Arrow -->
-	<circle cx="485.459" cy="457.353" r="3.44336" fill="white" stroke="black" stroke-width="1.5" />
-	<path d="M488.109 458.657L554.594 492.728" stroke="black" stroke-dasharray="3 2" />
+	<circle cx="350" cy="329" r="2.5" fill="white" stroke="black" stroke-width="1.5" />
+	<path d="M352 330L400 355" stroke="black" stroke-dasharray="3 2" />
 
 	{#if flows && prices && intensity}
 		<!-- PRICE/EMISSIONS LABELS -->
 		<MapLabel
 			text={tasText}
 			colour="#000000"
-			x={515}
-			y={552}
+			x={371}
+			y={397}
 			bg={true}
 			textAnchor="left"
 		/><!-- Tas -->
-		<MapLabel text="" colour="#6A6A6A" x={310} y={170} /><!-- NT -->
-		<MapLabel text={saText} colour={getStateTextColour('SA')} x={330} y={330} /><!-- SA -->
+		<MapLabel text="" colour="#6A6A6A" x={223} y={122} /><!-- NT -->
+		<MapLabel text={saText} colour={getStateTextColour('SA')} x={238} y={238} /><!-- SA -->
 		<MapLabel
 			text={vicText}
 			colour="#000000"
-			x={560}
-			y={498}
+			x={403}
+			y={359}
 			bg={true}
 			textAnchor="left"
 		/><!-- VIC -->
-		<MapLabel text={waText} colour={getStateTextColour('WA')} x={130} y={263} /><!-- WA -->
-		<MapLabel text={qldText} colour={getStateTextColour('QLD')} x={480} y={229} /><!-- QLD -->
-		<MapLabel text={nswText} colour={getStateTextColour('NSW')} x={500} y={383} /><!-- NSW -->
+		<MapLabel text={waText} colour={getStateTextColour('WA')} x={94} y={189} /><!-- WA -->
+		<MapLabel text={qldText} colour={getStateTextColour('QLD')} x={346} y={165} /><!-- QLD -->
+		<MapLabel text={nswText} colour={getStateTextColour('NSW')} x={360} y={276} /><!-- NSW -->
 
 		{#if modeLive && flows}
 			<!-- FLOWS -->
@@ -294,8 +294,8 @@
 				<Flow
 					direction={flows['NSW1->QLD1'] > 0 ? 'up' : 'down'}
 					flow={isNumber(flows['NSW1->QLD1']) ? absRound(flows['NSW1->QLD1']) : '—'}
-					x={500}
-					y={315}
+					x={360}
+					y={227}
 				/><!-- QLD <-> NSW -->
 			</g>
 
@@ -308,8 +308,8 @@
 				<Flow
 					direction={flows['NSW1->VIC1'] > 0 ? 'down' : 'up'}
 					flow={isNumber(flows['NSW1->VIC1']) ? absRound(flows['NSW1->VIC1']) : '—'}
-					x={480}
-					y={430}
+					x={346}
+					y={310}
 				/><!-- VIC <-> NSW -->
 			</g>
 
@@ -322,8 +322,8 @@
 				<Flow
 					direction={flows['TAS1->VIC1'] > 0 ? 'up' : 'down'}
 					flow={isNumber(flows['TAS1->VIC1']) ? absRound(flows['TAS1->VIC1']) : '—'}
-					x={490}
-					y={495}
+					x={353}
+					y={356}
 				/><!-- VIC <-> TAS -->
 			</g>
 
@@ -336,8 +336,8 @@
 				<Flow
 					direction={flows['SA1->VIC1'] > 0 ? 'right' : 'left'}
 					flow={isNumber(flows['SA1->VIC1']) ? absRound(flows['SA1->VIC1']) : '—'}
-					x={418}
-					y={440}
+					x={301}
+					y={317}
 				/><!-- VIC <-> SA -->
 			</g>
 		{/if}
