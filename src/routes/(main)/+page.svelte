@@ -42,6 +42,39 @@
 	let heroChartReady = $state(false);
 	let trackerChartReady = $state(false);
 
+	// Skip hero animation if user has visited before (localStorage with 1 month expiry)
+	const HERO_ANIMATION_KEY = 'oe_hero_animation_seen';
+	const ONE_MONTH_MS = 30 * 24 * 60 * 60 * 1000;
+	let skipHeroAnimation = $state(false);
+
+	function checkHeroAnimationSeen() {
+		if (!browser) return false;
+		try {
+			const stored = localStorage.getItem(HERO_ANIMATION_KEY);
+			if (stored) {
+				const expiry = parseInt(stored, 10);
+				if (Date.now() < expiry) {
+					return true;
+				}
+				// Expired, remove it
+				localStorage.removeItem(HERO_ANIMATION_KEY);
+			}
+		} catch {
+			// localStorage not available
+		}
+		return false;
+	}
+
+	function markHeroAnimationSeen() {
+		if (!browser) return;
+		try {
+			const expiry = Date.now() + ONE_MONTH_MS;
+			localStorage.setItem(HERO_ANIMATION_KEY, expiry.toString());
+		} catch {
+			// localStorage not available
+		}
+	}
+
 	// const milestones = articles.filter((article) => article.article_type === 'milestone');
 	let analysisArticles = $derived(
 		articles?.filter((article) => article.article_type === 'analysis').slice(0, 6) ?? []
@@ -57,13 +90,19 @@
 	onMount(() => {
 		if (!browser) return;
 
+		// Check if hero animation was already seen
+		skipHeroAnimation = checkHeroAnimationSeen();
+
 		// Load hero chart immediately
 		heroChartReady = true;
 
-		// Load tracker chart after hero chart line animation completes
+		// Mark animation as seen and load tracker chart
+		// If skipping animation, load tracker immediately; otherwise wait for animation
+		const trackerDelay = skipHeroAnimation ? 100 : 4000;
 		setTimeout(() => {
+			markHeroAnimationSeen();
 			trackerChartReady = true;
-		}, 4000);
+		}, trackerDelay);
 
 		const observer = new IntersectionObserver(
 			(entries) => {
@@ -116,6 +155,7 @@
 				data={historyEnergyNemData}
 				title={banner_title}
 				description={banner_statement}
+				skipAnimation={skipHeroAnimation}
 			/>
 		{:else}
 			<!-- Hero placeholder -->

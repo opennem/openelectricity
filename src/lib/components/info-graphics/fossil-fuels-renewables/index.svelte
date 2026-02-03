@@ -13,10 +13,11 @@
 	 * @property {StatsData[]} data
 	 * @property {string} [title]
 	 * @property {string} [description]
+	 * @property {boolean} [skipAnimation]
 	 */
 
 	/** @type {Props} */
-	let { data, title = '', description = '' } = $props();
+	let { data, title = '', description = '', skipAnimation = false } = $props();
 
 	let statsDatasets = $derived(
 		new Statistic(data, 'history').group(domainGroups).addTotalMinusLoads(loadFts, totalId)
@@ -42,5 +43,6 @@
 	{seriesNames}
 	{seriesColours}
 	{seriesLabels}
+	{skipAnimation}
 	historicalDataset={statsDatasets.data}
 />

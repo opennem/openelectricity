@@ -31,6 +31,7 @@
 	 * @property {string[]} [seriesNames]
 	 * @property {Object.<string, string>} [seriesLabels]
 	 * @property {Object.<string, string>} [seriesColours]
+	 * @property {boolean} [skipAnimation]
 	 */
 
 	/** @type {Props} */
@@ -41,7 +42,8 @@
 		dataset = [],
 		seriesNames = [],
 		seriesLabels = {},
-		seriesColours = {}
+		seriesColours = {},
+		skipAnimation = false
 	} = $props();
 
 	/** @type {TimeSeriesData | undefined} */
@@ -71,6 +73,13 @@
 
 	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 
+	// Animation config based on skipAnimation prop
+	let shouldAnimate = $derived(!skipAnimation && !isSafariBrowser);
+	let drawDuration = $derived(
+		shouldAnimate ? { duration: 4000, delay: 1000, easing: quintOut } : { duration: 1, delay: 0 }
+	);
+	let fadeTransition = $derived(shouldAnimate ? { delay: 3500, duration: 300 } : { duration: 300 });
+
 	onMount(() => {
 		isSafariBrowser = isSafari();
 
@@ -81,7 +90,7 @@
 			() => {
 				interact = true;
 			},
-			isSafariBrowser ? 100 : 6000
+			skipAnimation || isSafariBrowser ? 100 : 6000
 		);
 	});
 </script>
@@ -132,19 +141,9 @@
 			/>
 			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
 
-			<MultiLine
-				opacity={0.1}
-				drawDurationObject={isSafariBrowser
-					? { duration: 1, delay: 0 }
-					: { duration: 4000, delay: 1000, easing: quintOut }}
-			/>
+			<MultiLine opacity={0.1} drawDurationObject={drawDuration} />
 
-			<MultiLine
-				{hoverData}
-				drawDurationObject={isSafariBrowser
-					? { duration: 1, delay: 0 }
-					: { duration: 4000, delay: 1000, easing: quintOut }}
-			/>
+			<MultiLine {hoverData} drawDurationObject={drawDuration} />
 			<HoverLayer
 				{dataset}
 				on:mousemove={(e) =>
@@ -162,7 +161,7 @@
 			<HoverLine {hoverData} />
 
 			{#if show}
-				<div transition:fade={isSafariBrowser ? { duration: 300 } : { delay: 3500, duration: 300 }}>
+				<div transition:fade={fadeTransition}>
 					<Annotations
 						rounded={hoverData !== undefined}
 						annotation={hoverData || latestDatapoint}
