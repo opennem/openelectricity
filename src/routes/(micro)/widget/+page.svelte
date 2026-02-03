@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { goto } from '$app/navigation';
 	import { colourReducer } from '$lib/stores/theme';
@@ -14,7 +15,8 @@
 
 	const { data } = $props();
 	let { dataset, region, range, interval } = $derived(data);
-	let { filtersCxt, chartStore } = init(data);
+	// Initialize contexts once with initial server data (intentionally non-reactive)
+	let { filtersCxt, chartStore } = untrack(() => init(data));
 
 	let powerData = $derived(
 		dataset && dataset.data

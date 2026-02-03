@@ -14,8 +14,13 @@
 	let valueUnit = $state('');
 	let period = $state('');
 
-	let currentPage = $state(data.page || 1);
-	let currentStartRecordIndex = $state((currentPage - 1) * 100 + 1);
+	let currentPage = $state(1);
+	let currentStartRecordIndex = $derived((currentPage - 1) * 100 + 1);
+
+	// Sync page from URL params
+	$effect(() => {
+		currentPage = data.page || 1;
+	});
 
 	let issueInstanceIds = $state([]);
 

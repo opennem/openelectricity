@@ -61,7 +61,7 @@
 	} = $props();
 
 	/** @type {ButtonType} */
-	let buttonType = /** @type {ButtonType} */ (type);
+	let buttonType = $derived(/** @type {ButtonType} */ (type));
 </script>
 
 {#if href}

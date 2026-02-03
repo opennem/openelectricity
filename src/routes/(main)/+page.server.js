@@ -1,6 +1,7 @@
 import { client } from '$lib/sanity';
 import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
 import { fetchPinnedRecords } from '$lib/records/pinned-records.js';
+import energyParser from '$lib/opennem/parser.js';
 
 /**
  * Process flows API response
@@ -67,7 +68,8 @@ export async function load({ fetch }) {
 		regionPower,
 		regionEnergy,
 		regionEmissions,
-		tracker7dProcessed
+		tracker7dProcessed,
+		historyEnergyNemData
 	] = await Promise.all([
 		client.fetch(
 			`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, records_title, analysis_title, goals_title, goals}`
@@ -81,7 +83,8 @@ export async function load({ fetch }) {
 		fetch('/api/region-power').then((r) => r.json()),
 		fetch('/api/region-energy').then((r) => r.json()),
 		fetch('/api/region-emissions').then((r) => r.json()),
-		fetch('/api/tracker/7d-processed?regionPath=au/NEM&interval=30m').then((r) => r.json())
+		fetch('/api/tracker/7d-processed?regionPath=au/NEM&interval=30m').then((r) => r.json()),
+		fetch('/api/energy').then((r) => r.json()).then((data) => energyParser(data.data))
 	]);
 
 	return {
@@ -93,6 +96,7 @@ export async function load({ fetch }) {
 		regionPower,
 		regionEnergy,
 		regionEmissions,
-		tracker7dProcessed
+		tracker7dProcessed,
+		historyEnergyNemData
 	};
 }

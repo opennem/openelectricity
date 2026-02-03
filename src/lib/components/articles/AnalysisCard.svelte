@@ -12,7 +12,7 @@
 
 	// $: console.log('isSpecialCard', isSpecialCard, article.title);
 
-	const publishedDate = parse(article.publish_date, 'yyyy-MM-dd', new Date());
+	let publishedDate = $derived(parse(article.publish_date, 'yyyy-MM-dd', new Date()));
 	// $: console.log('article', article);
 
 	let hasCover = $derived(article.cover);

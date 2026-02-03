@@ -26,7 +26,14 @@
 	let records = $state([]);
 
 	/** @type {{ [key: string]: * }} */
-	let recordMap = $state(initialData || createEmptyRecordMap());
+	let recordMap = $state(createEmptyRecordMap());
+
+	// Sync recordMap when initialData is provided
+	$effect(() => {
+		if (initialData) {
+			recordMap = initialData;
+		}
+	});
 
 	let loading = $state(false);
 

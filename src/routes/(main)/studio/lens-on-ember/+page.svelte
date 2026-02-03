@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { colourReducer } from '$lib/stores/theme';
 	import Meta from '$lib/components/Meta.svelte';
@@ -14,7 +15,8 @@
 	import Loading from './components/Loading.svelte';
 
 	let { data } = $props();
-	let { chartCxts, dateBrushCxt, filtersCxt } = init(data);
+	// Initialize contexts once with initial server data (intentionally non-reactive)
+	let { chartCxts, dateBrushCxt, filtersCxt } = untrack(() => init(data));
 
 	let fetching = $state(false);
 	let error = $state(false);

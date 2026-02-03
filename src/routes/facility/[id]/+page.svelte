@@ -15,9 +15,8 @@
 	/** @type {Props} */
 	let { data } = $props();
 
-	let selected = data.facility.code || '';
-
 	let facility = $derived(data.facility);
+	let selected = $derived(facility?.code || '');
 	// TODO: should have an alternate image for the og:image
 	let mainPhoto = $derived(facility.photos && facility.photos[0]);
 	let units = $derived(facility.units.sort(byProp('code')));

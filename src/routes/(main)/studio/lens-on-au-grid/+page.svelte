@@ -6,6 +6,7 @@
 	 * with synchronized hover/focus interactions and a shared date brush.
 	 */
 
+	import { untrack } from 'svelte';
 	import {
 		ChartStore,
 		StratumChart,
@@ -80,13 +81,15 @@
 		return chart;
 	}
 
-	// Create chart stores once on component initialization
+	// Create chart stores once on component initialization (intentionally non-reactive)
 	/** @type {Map<string, InstanceType<typeof ChartStore>>} */
 	const chartStores = new Map();
 
-	for (const regionData of data.regions) {
-		chartStores.set(regionData.region, createRegionChart(regionData.region, regionData.label));
-	}
+	untrack(() => {
+		for (const regionData of data.regions) {
+			chartStores.set(regionData.region, createRegionChart(regionData.region, regionData.label));
+		}
+	});
 
 	// Brush chart for the DateBrush component
 	const brushChart = new ChartStore({

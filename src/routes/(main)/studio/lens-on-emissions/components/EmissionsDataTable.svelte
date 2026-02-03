@@ -37,7 +37,12 @@
 	// Filter out hidden sectors
 	let visibleSectors = $derived(sectors.filter((s) => !hiddenSectors.has(s)));
 
-	let isOpen = $state(initiallyOpen);
+	let isOpen = $state(false);
+
+	// Sync isOpen when initiallyOpen prop changes
+	$effect(() => {
+		isOpen = initiallyOpen;
+	});
 
 	function toggleTable() {
 		isOpen = !isOpen;

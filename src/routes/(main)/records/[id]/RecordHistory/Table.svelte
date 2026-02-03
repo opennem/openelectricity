@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import getContext from '$lib/utils/get-context.js';
 	import formatDateBasedOnInterval from '$lib/utils/formatters-data-interval';
 	import { getFormattedDate, getFormattedTime } from '$lib/utils/formatters.js';
@@ -15,7 +16,8 @@
 
 	/** @type {Props} */
 	let { cxtKey, brushedRange, period, onmousemove, onmouseout, onpointerup } = $props();
-	let cxt = getContext(cxtKey);
+	// Get context once during initialization (cxtKey is stable)
+	let cxt = untrack(() => getContext(cxtKey));
 
 	// remove last data and reverse array - last data is a duplicate to pad out the chart
 	let seriesData = $derived([...cxt.seriesData].reverse().slice(1));

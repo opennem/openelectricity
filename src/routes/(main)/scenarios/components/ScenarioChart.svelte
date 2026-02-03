@@ -1,5 +1,5 @@
 <script>
-	import { getContext } from 'svelte';
+	import { untrack, getContext } from 'svelte';
 	import StackedAreaChart from '$lib/components/charts/StackedAreaChart.svelte';
 	import LineChart from '$lib/components/charts/LineChart.svelte';
 
@@ -15,6 +15,7 @@
 	/** @type {Props} */
 	let { store, hiddenRowNames = [], seriesLoadsIds = [] } = $props();
 
+	// Destructure store properties (store reference is stable, internal state is reactive)
 	const {
 		title,
 		allowPrefixSwitch,
@@ -39,7 +40,7 @@
 		hoverData,
 		focusData,
 		getNextPrefix
-	} = store;
+	} = untrack(() => store);
 
 	const {
 		singleSelectionModelScenarioLabel,

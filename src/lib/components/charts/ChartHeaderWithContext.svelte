@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import getContext from '$lib/utils/get-context.js';
@@ -8,8 +9,9 @@
 	/** @type {{ cxtKey: symbol, displayOptions?: boolean }} */
 	let { displayOptions = true, cxtKey } = $props();
 
+	// Get context once during initialization (cxtKey is stable)
 	/** @type {import('$lib/components/charts/stores/chart.svelte.js').default} */
-	let cxt = getContext(cxtKey);
+	let cxt = untrack(() => getContext(cxtKey));
 
 	let showOptions = $state(false);
 </script>

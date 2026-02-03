@@ -16,28 +16,32 @@
 	let { data } = $props();
 	let recordsData = [];
 	let totalRecords = $state(0);
-	let currentPage = $state(data.page || 1);
-	let currentStartRecordIndex = $state((currentPage - 1) * 100 + 1);
+	let currentPage = $state(1);
+	let currentStartRecordIndex = $derived((currentPage - 1) * 100 + 1);
 
-	let errorMessage = '';
+	let errorMessage = $state('');
 
-	/** @type {string[]} */
-	let checkedRegions = $state(
-		data.regions && data.regions.length
-			? data.regions
-			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']
-	);
+	// Default values for filters
+	const defaultRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+	const defaultFuelTechs = fuelTechOptions.map((i) => i.value);
+	const defaultPeriods = periodOptions.map((i) => i.value);
 
 	/** @type {string[]} */
-	let checkedFuelTechs =
-		data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : fuelTechOptions.map((i) => i.value);
-
+	let checkedRegions = $state(defaultRegions);
 	/** @type {string[]} */
-	let checkedPeriods = $state(
-		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value)
-	);
+	let checkedFuelTechs = $state(defaultFuelTechs);
+	/** @type {string[]} */
+	let checkedPeriods = $state(defaultPeriods);
+	let recordIdSearch = $state('');
 
-	let recordIdSearch = data.stringFilter || '';
+	// Sync state from URL params via $effect
+	$effect(() => {
+		currentPage = data.page || 1;
+		checkedRegions = data.regions?.length ? data.regions : defaultRegions;
+		checkedFuelTechs = data.fuelTechs?.length ? data.fuelTechs : defaultFuelTechs;
+		checkedPeriods = data.periods?.length ? data.periods : defaultPeriods;
+		recordIdSearch = data.stringFilter || '';
+	});
 
 	function getFilterParams({ regions, periods, fuelTechs, stringFilter }) {
 		const validRegions = regions.filter((r) => r !== '_all');

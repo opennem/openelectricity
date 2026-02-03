@@ -21,9 +21,8 @@
 	let defaultXDomain = $state();
 	let { chartCxt, dateBrushCxt } = init();
 
-	recordState.recordIds = recordIds;
-
 	$effect(() => {
+		recordState.recordIds = recordIds;
 		recordState.id = data.record_id;
 		recordState.error = false;
 		recordState.selectedTime = undefined;

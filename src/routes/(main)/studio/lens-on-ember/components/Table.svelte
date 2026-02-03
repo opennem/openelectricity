@@ -6,8 +6,8 @@
 
 	let { chartCxts } = $props();
 
-	let energyCxt = chartCxts['energy-chart'];
-	let emissionsCxt = chartCxts['emissions-chart'];
+	let energyCxt = $derived(chartCxts['energy-chart']);
+	let emissionsCxt = $derived(chartCxts['emissions-chart']);
 	let filtersCxt = getFiltersContext();
 
 	let combinedSeriesNames = $derived([

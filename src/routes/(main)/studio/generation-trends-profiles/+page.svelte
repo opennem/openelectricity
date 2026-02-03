@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FuelTechSelector from './components/FuelTechSelector.svelte';
@@ -32,8 +33,8 @@
 	// Check if data is loaded
 	let isLoading = $derived(!data || !data.order || Object.keys(data?.data || {}).length === 0);
 
-	// Initialize chart contexts
-	let { chartCxts } = init(data);
+	// Initialize chart contexts once with initial server data (intentionally non-reactive)
+	let { chartCxts } = untrack(() => init(data));
 
 	// Transform the API data for profiles view (month x-axis, year lines)
 	let profilesData = $derived(transformGenerationTrendsProfiles(data));

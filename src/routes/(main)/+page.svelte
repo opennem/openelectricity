@@ -128,11 +128,11 @@
 		return () => observer.disconnect();
 	});
 
-	if (!homepageData || homepageData.length === 0) {
-		throw new Error('No homepage data found');
-	}
-
-	const { banner_title, banner_statement, map_title, analysis_title } = homepageData[0];
+	// Derived CMS content - uses $derived to stay reactive
+	let banner_title = $derived(homepageData?.[0]?.banner_title ?? '');
+	let banner_statement = $derived(homepageData?.[0]?.banner_statement ?? '');
+	let map_title = $derived(homepageData?.[0]?.map_title ?? '');
+	let analysis_title = $derived(homepageData?.[0]?.analysis_title ?? '');
 
 	let selectedRecordRegion = $state('');
 	let selectedRegions = $derived(selectedRecordRegion ? [selectedRecordRegion] : []);
@@ -261,7 +261,7 @@
 	class="bg-white py-16 md:py-32 border-t border-b border-warm-grey text-base"
 >
 	{#if showScenarios && ScenariosPreviewComponent}
-		<svelte:component this={ScenariosPreviewComponent} />
+		<ScenariosPreviewComponent />
 	{:else}
 		<!-- Scenarios skeleton -->
 		<div class="container max-w-none lg:container">

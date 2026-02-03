@@ -27,7 +27,7 @@
 		siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle
 	);
 	let pageTitle = $derived(useSuffix ? titleWithSuffix : title);
-	const fullURI = `${domain}${path}`;
+	let fullURI = $derived(`${domain}${path}`);
 </script>
 
 <svelte:head>

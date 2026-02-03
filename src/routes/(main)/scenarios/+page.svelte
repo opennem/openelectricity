@@ -34,7 +34,8 @@
 	import processRegion from './page-data-options/process-region';
 
 	let { data } = $props();
-	const { articles, filters } = data;
+	let articles = $derived(data.articles);
+	let filters = $derived(data.filters);
 
 	setContext('scenario-filters', filtersStore());
 	setContext('by-scenario', byScenarioStore());

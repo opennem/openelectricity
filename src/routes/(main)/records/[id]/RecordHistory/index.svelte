@@ -10,7 +10,12 @@
 	import Table from './Table.svelte';
 	let { chartCxt, dateBrushCxt, period, defaultXDomain, onfocus } = $props();
 	/** @type {Date[] | undefined} */
-	let brushedRange = $state(defaultXDomain);
+	let brushedRange = $state(undefined);
+
+	// Sync brushedRange when defaultXDomain changes
+	$effect(() => {
+		brushedRange = defaultXDomain;
+	});
 
 	/**
 	 * @param {string | undefined} hoverKey

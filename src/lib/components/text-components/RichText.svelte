@@ -48,36 +48,55 @@
 
 	/** @type {Props} */
 	let { content = null } = $props();
-	let values = $state<ContentBlock[]>([]);
-	let current = $state<Block[]>([]);
 
-	content.forEach((block: Block) => {
-		if (block._type === 'image' && block.style === 'wide') {
-			current = [];
-		} else {
-			current.push(block);
-		}
-	});
+	// Process content blocks into narrow/wide sections reactively
+	let values = $derived.by(() => {
+		if (!content) return [];
 
-	content.forEach((block: Block) => {
-		if (block._type === 'image' && block.style === 'wide') {
-			if (current.length !== 0) {
-				values.push({
-					type: 'narrow',
-					blocks: [...current]
-				});
+		const result: ContentBlock[] = [];
+		let current: Block[] = [];
+
+		// First pass: build current array
+		content.forEach((block: Block) => {
+			if (block._type === 'image' && block.style === 'wide') {
+				current = [];
+			} else {
+				current.push(block);
 			}
+		});
 
-			values.push({
-				type: 'wide',
-				blocks: [block]
+		// Reset current for second pass
+		current = [];
+
+		// Second pass: build values array
+		content.forEach((block: Block) => {
+			if (block._type === 'image' && block.style === 'wide') {
+				if (current.length !== 0) {
+					result.push({
+						type: 'narrow',
+						blocks: [...current]
+					});
+					current = [];
+				}
+
+				result.push({
+					type: 'wide',
+					blocks: [block]
+				});
+			} else {
+				current.push(block);
+			}
+		});
+
+		// Add remaining narrow blocks
+		if (current.length > 0) {
+			result.push({
+				type: 'narrow',
+				blocks: [...current]
 			});
 		}
-	});
 
-	values.push({
-		type: 'narrow',
-		blocks: [...current]
+		return result;
 	});
 
 	const components = { types: { image: Image } };

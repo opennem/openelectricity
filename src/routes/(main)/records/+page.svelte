@@ -43,19 +43,21 @@
 	let currentPage = 1;
 	let currentStartRecordIndex = $state((currentPage - 1) * pageSize + 1);
 
-	$selectedRegions = data && data.regions && data.regions.length ? data.regions : [];
-	$selectedFuelTechs = data && data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : [];
-	$selectedPeriods = data && data.periods && data.periods.length ? data.periods : [];
-	$selectedMetrics = data && data.metrics && data.metrics.length ? data.metrics : [];
+	// Initialize filter stores from URL params (via $effect to stay reactive)
+	$effect(() => {
+		$selectedRegions = data?.regions?.length ? data.regions : [];
+		$selectedFuelTechs = data?.fuelTechs?.length ? data.fuelTechs : [];
+		$selectedPeriods = data?.periods?.length ? data.periods : [];
+		$selectedMetrics = data?.metrics?.length ? data.metrics : [];
+	});
 
 	/** @type {string[]} */
-	let checkedAggregates =
-		data && data.aggregates && data.aggregates.length
-			? data.aggregates
-			: aggregateOptions.map((i) => i.value);
+	let checkedAggregates = $derived(
+		data?.aggregates?.length ? data.aggregates : aggregateOptions.map((i) => i.value)
+	);
 
-	let selectedSignificance = (data && data.significance) || 8;
-	let recordIdSearch = (data && data.stringFilter) || '';
+	let selectedSignificance = $derived(data?.significance || 8);
+	let recordIdSearch = $derived(data?.stringFilter || '');
 
 	// $: console.log('rolledUpRecords', rolledUpRecords);
 

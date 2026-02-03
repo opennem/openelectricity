@@ -1,5 +1,6 @@
 <script>
 	import { run } from 'svelte/legacy';
+	import { untrack } from 'svelte';
 
 	import { createEventDispatcher } from 'svelte';
 	import chroma from 'chroma-js';
@@ -47,7 +48,8 @@
 		left: x,
 		right: x
 	}));
-	const virtualElement = writable({ getBoundingClientRect });
+	// Initialize with placeholder - the $effect below updates it reactively
+	const virtualElement = writable(untrack(() => ({ getBoundingClientRect })));
 	run(() => {
 		$virtualElement = { getBoundingClientRect };
 	});

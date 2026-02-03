@@ -5,7 +5,7 @@
 	import Social from './Social.svelte';
 	let { data } = $props();
 
-	const team = data.team;
+	let team = $derived(data.team ?? []);
 </script>
 
 <Meta title="About" image="/img/preview.jpg" />

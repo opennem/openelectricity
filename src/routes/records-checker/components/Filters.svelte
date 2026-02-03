@@ -28,29 +28,39 @@
 
 	let filterMode = $state('checkboxes'); // text or checkboxes
 
-	/** @type {string[]} */
-	let checkedRegions = $state(
-		initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1']
-	);
+	// Default values
+	const defaultRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
+	const defaultPeriods = periodOptions.map((i) => i.value);
+	const defaultFuelTechs = fuelTechOptions.map((i) => i.value);
+	const defaultAggregates = aggregateOptions.map((i) => i.value);
+	const defaultMetrics = metricOptions.map((i) => i.value);
 
 	/** @type {string[]} */
-	let indeterminateRegions = $state(checkedRegions.length === 8 ? [] : ['_all']);
-
+	let checkedRegions = $state(defaultRegions);
 	/** @type {string[]} */
-	let checkedPeriods = $state(initCheckedPeriods || periodOptions.map((i) => i.value));
-
+	let indeterminateRegions = $state([]);
 	/** @type {string[]} */
-	let checkedFuelTechs = $state(initCheckedFuelTechs || fuelTechOptions.map((i) => i.value));
-
+	let checkedPeriods = $state(defaultPeriods);
 	/** @type {string[]} */
-	let checkedAggregates = $state(initCheckedAggregates || aggregateOptions.map((i) => i.value));
-
+	let checkedFuelTechs = $state(defaultFuelTechs);
 	/** @type {string[]} */
-	let checkedMetrics = $state(initCheckedMetrics || metricOptions.map((i) => i.value));
+	let checkedAggregates = $state(defaultAggregates);
+	/** @type {string[]} */
+	let checkedMetrics = $state(defaultMetrics);
+	let selectedSignificance = $state(0);
+	let recordIdSearch = $state('');
 
-	let selectedSignificance = $state(initSelectedSignificance || 0);
-
-	let recordIdSearch = $state(initRecordIdSearch || '');
+	// Sync state from props via $effect
+	$effect(() => {
+		checkedRegions = initCheckedRegions || defaultRegions;
+		indeterminateRegions = checkedRegions.length === 8 ? [] : ['_all'];
+		checkedPeriods = initCheckedPeriods || defaultPeriods;
+		checkedFuelTechs = initCheckedFuelTechs || defaultFuelTechs;
+		checkedAggregates = initCheckedAggregates || defaultAggregates;
+		checkedMetrics = initCheckedMetrics || defaultMetrics;
+		selectedSignificance = initSelectedSignificance || 0;
+		recordIdSearch = initRecordIdSearch || '';
+	});
 
 	let isMetaPressed = false;
 

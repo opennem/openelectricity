@@ -38,10 +38,6 @@
 
 	let searchQuery = $state('');
 
-	// Date range state - initialize from URL params or default to last 3 days
-	let dateStartInput = $state(data.dateStart || getDefaultDateStart());
-	let dateEndInput = $state(data.dateEnd || getDefaultDateEnd());
-
 	/**
 	 * Get default start date (3 days ago)
 	 * @returns {string}
@@ -59,6 +55,15 @@
 	function getDefaultDateEnd() {
 		return new Date().toISOString().slice(0, 10);
 	}
+
+	// Date range state - synced via $effect to stay reactive with URL params
+	let dateStartInput = $state(getDefaultDateStart());
+	let dateEndInput = $state(getDefaultDateEnd());
+
+	$effect(() => {
+		dateStartInput = data.dateStart || getDefaultDateStart();
+		dateEndInput = data.dateEnd || getDefaultDateEnd();
+	});
 
 	// ============================================
 	// Derived: Facility Selection

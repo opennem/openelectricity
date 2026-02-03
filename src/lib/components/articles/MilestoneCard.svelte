@@ -11,7 +11,7 @@
 	/** @type {Props & { [key: string]: any }} */
 	let { article, preview = false, ...rest } = $props();
 
-	const publishedDate = parse(article.publish_date, 'yyyy-MM-dd', new Date());
+	let publishedDate = $derived(parse(article.publish_date, 'yyyy-MM-dd', new Date()));
 </script>
 
 <a

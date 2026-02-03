@@ -16,42 +16,41 @@
 	let pageSize = 1000;
 	let recordsData = $state([]);
 	let totalRecords = $state(0);
-	let currentPage = $state(data.page || 1);
-	let currentStartRecordIndex = $state((currentPage - 1) * pageSize + 1);
+	let currentPage = $state(1);
+	let currentStartRecordIndex = $derived((currentPage - 1) * pageSize + 1);
 
 	let errorMessage = $state('');
 
-	/** @type {string[]} */
-	let checkedRegions = $state(
-		data.regions && data.regions.length
-			? data.regions
-			: ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem']
-	);
+	// Default values for filters
+	const defaultRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem'];
+	const defaultFuelTechs = fuelTechOptions.map((i) => i.value);
+	const defaultPeriods = periodOptions.map((i) => i.value);
+	const defaultAggregates = aggregateOptions.map((i) => i.value);
+	const defaultMetrics = metricOptions.map((i) => i.value);
 
 	/** @type {string[]} */
-	let checkedFuelTechs = $state(
-		data.fuelTechs && data.fuelTechs.length ? data.fuelTechs : fuelTechOptions.map((i) => i.value)
-	);
-
+	let checkedRegions = $state(defaultRegions);
 	/** @type {string[]} */
-	let checkedPeriods = $state(
-		data.periods && data.periods.length ? data.periods : periodOptions.map((i) => i.value)
-	);
-
+	let checkedFuelTechs = $state(defaultFuelTechs);
 	/** @type {string[]} */
-	let checkedAggregates = $state(
-		data.aggregates && data.aggregates.length
-			? data.aggregates
-			: aggregateOptions.map((i) => i.value)
-	);
+	let checkedPeriods = $state(defaultPeriods);
+	/** @type {string[]} */
+	let checkedAggregates = $state(defaultAggregates);
+	let checkedMetrics = $state(defaultMetrics);
+	let selectedSignificance = $state(0);
+	let recordIdSearch = $state('');
 
-	let checkedMetrics = $state(
-		data.metrics && data.metrics.length ? data.metrics : metricOptions.map((i) => i.value)
-	);
-
-	let selectedSignificance = $state(data.significance || 0);
-
-	let recordIdSearch = $state(data.stringFilter || '');
+	// Sync state from URL params via $effect
+	$effect(() => {
+		currentPage = data.page || 1;
+		checkedRegions = data.regions?.length ? data.regions : defaultRegions;
+		checkedFuelTechs = data.fuelTechs?.length ? data.fuelTechs : defaultFuelTechs;
+		checkedPeriods = data.periods?.length ? data.periods : defaultPeriods;
+		checkedAggregates = data.aggregates?.length ? data.aggregates : defaultAggregates;
+		checkedMetrics = data.metrics?.length ? data.metrics : defaultMetrics;
+		selectedSignificance = data.significance || 0;
+		recordIdSearch = data.stringFilter || '';
+	});
 
 	function getFilterParams({
 		regions,

@@ -41,18 +41,19 @@
 	let facilities = $derived(data.facilities);
 
 	// Optimistic local state for filters - updates immediately on user interaction
+	// Initialize empty and sync via $effect to avoid capturing stale initial values
 	/** @type {string[]} */
-	let statuses = $state(data.statuses);
+	let statuses = $state([]);
 	/** @type {string[]} */
-	let regions = $state(data.regions);
+	let regions = $state([]);
 	/** @type {string[]} */
-	let fuelTechs = $state(data.fuelTechs);
+	let fuelTechs = $state([]);
 	/** @type {string[]} */
-	let sizes = $state(data.sizes);
+	let sizes = $state([]);
 	/** @type {'list' | 'timeline' | 'map'} */
-	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ (data.view));
+	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ ('list'));
 	/** @type {string | null} */
-	let selectedFacilityCode = $state(data.selectedFacility);
+	let selectedFacilityCode = $state(null);
 
 	// Sync local state when server data changes (e.g., browser back/forward, direct URL navigation)
 	$effect(() => {

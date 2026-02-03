@@ -19,7 +19,7 @@
 	} = $props();
 
 	// Local state for immediate UI feedback
-	let localValue = $state(value);
+	let localValue = $state('');
 
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let debounceTimer = $state(null);
@@ -27,7 +27,7 @@
 	/** @type {HTMLInputElement | null} */
 	let inputElement = $state(null);
 
-	// Sync local state when prop changes (e.g., from URL)
+	// Sync local state when prop changes (e.g., from URL or initial value)
 	$effect(() => {
 		localValue = value;
 	});

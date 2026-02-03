@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { addDays, addMonths, addYears, subDays, subMonths, subYears } from 'date-fns';
 	import { browser } from '$app/environment';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
@@ -10,7 +11,8 @@
 	import xTickValueFormatters from './helpers/xtick-value-formatters';
 
 	let { record, timeZone, displayPrefix, chartHeight } = $props();
-	let { chartCxt } = init(chartHeight);
+	// Initialize chart context once (chartHeight changes are handled via $effect below)
+	let { chartCxt } = untrack(() => init(chartHeight));
 	let errorMessage = $state('');
 	let isLoading = $state(false);
 
