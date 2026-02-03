@@ -1,4 +1,4 @@
-export async function load({ url }) {
+export async function load({ url, data }) {
 	const { searchParams } = url;
 	const page = searchParams.get('page');
 	const regions = searchParams.get('regions');
@@ -9,6 +9,7 @@ export async function load({ url }) {
 	// const significance = searchParams.get('significance');
 
 	return {
+		...data, // Include server data (pinnedRecords)
 		// page: page ? parseInt(page) : 1,
 		regions: regions ? regions.split(',') : [],
 		periods: periods ? periods.split(',') : [],

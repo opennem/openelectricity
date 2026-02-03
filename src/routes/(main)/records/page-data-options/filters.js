@@ -2,13 +2,13 @@ import optionsReducer from '$lib/utils/options-reducer';
 
 export const regions = [
 	{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
-	{ value: undefined, label: '', divider: true },
+	{ value: '_divider_1', label: '', divider: true },
 	{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW', longLabel: 'New South Wales' },
 	{ longValue: 'au.nem.qld1', value: 'qld1', label: 'QLD', longLabel: 'Queensland' },
 	{ longValue: 'au.nem.sa1', value: 'sa1', label: 'SA', longLabel: 'South Australia' },
 	{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS', longLabel: 'Tasmania' },
 	{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC', longLabel: 'Victoria' },
-	{ value: undefined, label: '', divider: true },
+	{ value: '_divider_2', label: '', divider: true },
 	{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
 ];
 
@@ -124,7 +124,7 @@ export const fuelTechOptions = [
 		label: 'Fossils'
 	},
 	{
-		value: undefined,
+		value: '_divider_ft',
 		label: '',
 		divider: true
 	},

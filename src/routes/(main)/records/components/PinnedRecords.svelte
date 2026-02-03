@@ -6,85 +6,27 @@
 	import recordDescription from '../page-data-options/record-description';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import dateTimeQuery from '../page-data-options/date-time-query';
-
-	let { selectedRegions = [], showRegionLabel = true } = $props();
-
-	const regions = [
-		{ longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
-		{ longValue: 'au.nem.nsw1', value: 'nsw1', label: 'NSW', longLabel: 'New South Wales' },
-		{ longValue: 'au.nem.qld1', value: 'qld1', label: 'QLD', longLabel: 'Queensland' },
-		{ longValue: 'au.nem.sa1', value: 'sa1', label: 'SA', longLabel: 'South Australia' },
-		{ longValue: 'au.nem.tas1', value: 'tas1', label: 'TAS', longLabel: 'Tasmania' },
-		{ longValue: 'au.nem.vic1', value: 'vic1', label: 'VIC', longLabel: 'Victoria' },
-		{ longValue: 'au.wem', value: 'wem', label: 'WA', longLabel: 'Western Australia' }
-	];
+	import {
+		PINNED_CONFIG as pinned,
+		PINNED_REGIONS as regions,
+		createEmptyRecordMap
+	} from '$lib/records/pinned-records.js';
 
 	/**
-	 * @type {{ fuelTech: FuelTechCode, label: string, ids: string[] }[]}
+	 * @typedef {Object} Props
+	 * @property {string[]} [selectedRegions] - Selected region codes
+	 * @property {boolean} [showRegionLabel] - Show region label on cards
+	 * @property {Record<string, any> | null} [initialData] - Server-prefetched pinned records
 	 */
-	const pinned = [
-		{
-			fuelTech: 'solar',
-			label: 'Solar',
-			ids: [
-				'power.interval.high',
-				'energy.day.high',
-				'energy.month.high',
-				'energy.quarter.high',
-				'energy.year.high'
-			]
-		},
-		{
-			fuelTech: 'wind',
-			label: 'Wind',
-			ids: [
-				'power.interval.high',
-				'energy.day.high',
-				'energy.month.high',
-				'energy.quarter.high',
-				'energy.year.high'
-			]
-		},
-		{
-			fuelTech: 'battery_discharging',
-			label: 'Battery',
-			ids: [
-				'power.interval.high',
-				'energy.day.high',
-				'energy.month.high',
-				'energy.quarter.high',
-				'energy.year.high'
-			]
-		},
-		{
-			fuelTech: 'renewables',
-			label: 'Renewables',
-			ids: [
-				'power.interval.high',
-				'energy.day.high',
-				'energy.month.high',
-				'energy.quarter.high',
-				'energy.year.high'
-			]
-		},
-		{
-			fuelTech: 'coal',
-			label: 'Coal',
-			ids: ['power.interval.low']
-		}
-	];
+
+	/** @type {Props} */
+	let { selectedRegions = [], showRegionLabel = true, initialData = null } = $props();
 
 	/** @type {{ id: string, data: Promise<any> }[]} */
 	let records = $state([]);
 
 	/** @type {{ [key: string]: * }} */
-	let recordMap = $state({
-		solar: null,
-		wind: null,
-		battery_discharging: null,
-		renewables: null,
-		coal: null
-	});
+	let recordMap = $state(initialData || createEmptyRecordMap());
 
 	let loading = $state(false);
 
@@ -118,23 +60,30 @@
 		if (selectedRegions.length === 0) {
 			return regions;
 		}
-		return selectedRegions.map((region) => {
-			let regionData = regions.find((r) => r.value === region);
-			return regionData;
-		});
+		return selectedRegions
+			.map((region) => {
+				let regionData = regions.find((r) => r.value === region);
+				return regionData;
+			})
+			.filter((r) => r !== undefined);
 	});
 
 	$effect(() => {
 		if (browser) {
+			// If no regions selected, use server-prefetched data (don't fetch)
+			if (selectedRegions.length === 0) {
+				if (initialData) {
+					recordMap = initialData;
+					records = [];
+				}
+				return;
+			}
+
+			// Fetch for specific selected regions
 			/** @type {{ id: string, data: Promise<any> }[]} */
 			let newRecords = [];
-			recordMap = {
-				solar: null,
-				wind: null,
-				battery_discharging: null,
-				renewables: null,
-				coal: null
-			};
+			recordMap = createEmptyRecordMap();
+			loading = true;
 			regionOptions.forEach(({ longValue }) => {
 				pinned.forEach(({ fuelTech, ids }) => {
 					ids.forEach((id) => {
@@ -151,51 +100,54 @@
 	let recordMapCache = $derived(recordMap);
 
 	$effect(() => {
-		if (regionOptions.length) {
-			const promises = records.map((record) => record.data);
-
-			loading = true;
-			Promise.all(promises).then((responses) => {
-				responses.forEach((data) => {
-					if (data.length) {
-						// console.log('data', data[0]);
-						const value = data[0].value;
-						const unit = data[0].value_unit;
-						const interval = data[0].interval;
-						const period = data[0].period;
-						const fuelTech = data[0].fueltech_id;
-						const recordId = data[0].record_id;
-						const aggregate = data[0].aggregate;
-						const description = data[0].description;
-						const metric = data[0].metric;
-						const networkRegion = data[0].network_region;
-						const networkId = data[0].network_id;
-
-						const date = parseISO(interval);
-						const time = date.getTime();
-
-						if (recordMapCache[fuelTech] === null || time > recordMapCache[fuelTech].time) {
-							recordMap[fuelTech] = {
-								recordId,
-								aggregate,
-								value,
-								unit,
-								interval,
-								period,
-								description,
-								metric,
-								date,
-								time,
-								networkRegion,
-								networkId
-							};
-						}
-					}
-				});
-
-				loading = false;
-			});
+		// Skip if no records to fetch (using server-prefetched data)
+		if (!records.length || !regionOptions.length) {
+			return;
 		}
+
+		const promises = records.map((record) => record.data);
+
+		loading = true;
+		Promise.all(promises).then((responses) => {
+			responses.forEach((data) => {
+				if (data.length) {
+					// console.log('data', data[0]);
+					const value = data[0].value;
+					const unit = data[0].value_unit;
+					const interval = data[0].interval;
+					const period = data[0].period;
+					const fuelTech = data[0].fueltech_id;
+					const recordId = data[0].record_id;
+					const aggregate = data[0].aggregate;
+					const description = data[0].description;
+					const metric = data[0].metric;
+					const networkRegion = data[0].network_region;
+					const networkId = data[0].network_id;
+
+					const date = parseISO(interval);
+					const time = date.getTime();
+
+					if (recordMapCache[fuelTech] === null || time > recordMapCache[fuelTech].time) {
+						recordMap[fuelTech] = {
+							recordId,
+							aggregate,
+							value,
+							unit,
+							interval,
+							period,
+							description,
+							metric,
+							date,
+							time,
+							networkRegion,
+							networkId
+						};
+					}
+				}
+			});
+
+			loading = false;
+		});
 	});
 
 	/**

@@ -30,6 +30,7 @@
 	let articles = $derived(data.articles);
 	let flows = $derived(data.flows);
 	let prices = $derived(data.prices);
+	let pinnedRecords = $derived(data.pinnedRecords);
 
 	onMount(async () => {
 		regionPower = await fetch('/api/region-power').then(async (res) => {
@@ -106,11 +107,15 @@
 				options={[{ label: 'All regions', value: '' }, ...regionOptions]}
 				selected={selectedRecordRegion}
 				formLabel="All regions"
-				on:change={(evt) => (selectedRecordRegion = evt.detail.value)}
+				onchange={(opt) => (selectedRecordRegion = opt.value)}
 			/>
 		</div>
 
-		<PinnedRecords {selectedRegions} showRegionLabel={selectedRecordRegion === ''} />
+		<PinnedRecords
+			{selectedRegions}
+			showRegionLabel={selectedRecordRegion === ''}
+			initialData={pinnedRecords}
+		/>
 
 		<div class="flex justify-end mt-5 md:mt-16 px-10 md:px-0">
 			<a

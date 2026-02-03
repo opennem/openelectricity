@@ -1,4 +1,6 @@
 import { client } from '$lib/sanity';
+import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
+import { fetchPinnedRecords } from '$lib/records/pinned-records.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ fetch }) {
@@ -56,10 +58,14 @@ export async function load({ fetch }) {
 		};
 	});
 
+	// Fetch pinned records for Notable Records section
+	const pinnedRecords = await fetchPinnedRecords(fetch, PUBLIC_RECORDS_API, PUBLIC_API_KEY);
+
 	return {
 		homepageData,
 		articles: articles.filter((d) => d.article_type !== null),
 		flows,
-		prices
+		prices,
+		pinnedRecords
 	};
 }
