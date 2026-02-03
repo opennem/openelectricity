@@ -1,7 +1,7 @@
 <script>
-	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
+	import InfoGraphicNem7DayGenerationV2 from '$lib/components/info-graphics/nem-7-day-generation-v2/index.svelte';
 
 	let { data } = $props();
 </script>
 
-<InfoGraphicNem7DayGeneration data={data.data} />
+<InfoGraphicNem7DayGenerationV2 initialData={data.tracker7dProcessed} />

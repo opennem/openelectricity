@@ -32,7 +32,6 @@
 	let regionPower = $derived(data.regionPower);
 	let regionEnergy = $derived(data.regionEnergy);
 	let regionEmissions = $derived(data.regionEmissions);
-	let tracker7d = $derived(data.tracker7d);
 	let tracker7dProcessed = $derived(data.tracker7dProcessed);
 
 	// Derived loading states

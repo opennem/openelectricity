@@ -67,7 +67,6 @@ export async function load({ fetch }) {
 		regionPower,
 		regionEnergy,
 		regionEmissions,
-		tracker7d,
 		tracker7dProcessed
 	] = await Promise.all([
 		client.fetch(
@@ -82,8 +81,6 @@ export async function load({ fetch }) {
 		fetch('/api/region-power').then((r) => r.json()),
 		fetch('/api/region-energy').then((r) => r.json()),
 		fetch('/api/region-emissions').then((r) => r.json()),
-		fetch('/api/tracker/7d?regionPath=au/NEM').then((r) => r.json()),
-		// Fetch pre-processed data for v2 chart
 		fetch('/api/tracker/7d-processed?regionPath=au/NEM&interval=30m').then((r) => r.json())
 	]);
 
@@ -96,7 +93,6 @@ export async function load({ fetch }) {
 		regionPower,
 		regionEnergy,
 		regionEmissions,
-		tracker7d,
 		tracker7dProcessed
 	};
 }

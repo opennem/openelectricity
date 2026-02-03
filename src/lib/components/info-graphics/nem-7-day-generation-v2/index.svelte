@@ -12,7 +12,7 @@
 	import { fuelTechName } from '$lib/fuel_techs.js';
 	import { dataTrackerLink } from '$lib/stores/app';
 	import nighttimes from '$lib/utils/nighttimes';
-	import legend from '../nem-7-day-generation/helpers/legend';
+	import legend from './helpers/legend';
 
 	/**
 	 * @typedef {Object} ProcessedData

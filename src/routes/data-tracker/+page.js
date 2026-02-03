@@ -1,11 +1,8 @@
 /** @type {import('./$types').PageLoad} */
 export async function load({ fetch }) {
-	const dataTrackerData = await fetch('/api/power').then(async (res) => {
-		const jsonData = await res.json();
-		return jsonData;
-	});
+	const tracker7dProcessed = await fetch('/api/tracker/7d-processed?regionPath=au/NEM&interval=30m').then((r) => r.json());
 
 	return {
-		data: dataTrackerData
+		tracker7dProcessed
 	};
 }
