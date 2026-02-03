@@ -2,6 +2,7 @@
 	import { onMount, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { browser } from '$app/environment';
+	import { isSafari } from '$lib/utils/browser-detect';
 
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -90,8 +91,8 @@
 	onMount(() => {
 		if (!browser) return;
 
-		// Check if hero animation was already seen
-		skipHeroAnimation = checkHeroAnimationSeen();
+		// Always skip animation on Safari, or if user has seen it before
+		skipHeroAnimation = isSafari() || checkHeroAnimationSeen();
 
 		// Load hero chart immediately
 		heroChartReady = true;
