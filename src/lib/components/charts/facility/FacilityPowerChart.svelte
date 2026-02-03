@@ -19,6 +19,8 @@
 	import { loadFuelTechs, fuelTechNameMap } from '$lib/fuel_techs';
 	import detailedGroup from '$lib/fuel-tech-groups/detailed';
 	import { buildUnitColourMap, transformFacilityPowerData } from './helpers.js';
+	import chroma from 'chroma-js';
+	import { untrack } from 'svelte';
 
 	/** Fuel tech display order from detailed group */
 	const fuelTechOrder = detailedGroup.order;
@@ -60,7 +62,8 @@
 	// State
 	// ============================================
 
-	let selectedInterval = $state(defaultInterval);
+	// Initialize with prop value (intentionally captures initial value only)
+	let selectedInterval = $state(untrack(() => defaultInterval));
 	/** @type {[Date, Date] | undefined} */
 	let brushedRange = $state(undefined);
 
@@ -175,6 +178,16 @@
 		return unitPairs.map((p) => p.id);
 	});
 
+	const BATTERY_FUEL_TECHS = ['battery'];
+
+	/**
+	 * Check if all units are battery-related (for lighter negative coloring)
+	 */
+	let isBatteryFacility = $derived(
+		facility?.units?.length > 0 &&
+			facility.units.every((/** @type {any} */ u) => BATTERY_FUEL_TECHS.includes(u.fueltech_id))
+	);
+
 	/**
 	 * Calculate capacity sums for generators (positive) and loads (negative)
 	 * Uses capacity_maximum if available, otherwise capacity_registered
@@ -185,9 +198,19 @@
 		let positive = 0;
 		let negative = 0;
 
+		// Check if all units are battery-related
+		const allBattery = facility.units.every((/** @type {any} */ u) =>
+			BATTERY_FUEL_TECHS.includes(u.fueltech_id)
+		);
+
 		for (const unit of facility.units) {
 			const capacity = Number(unit.capacity_maximum || unit.capacity_registered) || 0;
 			if (loadFuelTechs.includes(unit.fueltech_id)) {
+				negative += capacity;
+			} else if (allBattery && unit.fueltech_id === 'battery') {
+				// For battery-only facilities, battery can both charge and discharge
+				// Use same capacity for both positive and negative
+				positive += capacity;
 				negative += capacity;
 			} else {
 				positive += capacity;
@@ -234,7 +257,10 @@
 			colourReducer: (/** @type {Object} */ acc, /** @type {any} */ d) => {
 				const unitCode = d.unit?.code || d.id;
 				const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
-				acc[d.id] = colourMap[unitCode] || getFuelTechColor(fuelTech);
+				const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
+				// Use lighter shade for loads (negative values)
+				const isLoad = loadFuelTechs.includes(fuelTech);
+				acc[d.id] = isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
 				return acc;
 			}
 		});
@@ -251,6 +277,7 @@
 		chart.chartStyles.chartHeightClasses = chartHeight;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.useDivergingStack = useDivergingStack;
+		chart.lighterNegative = isBatteryFacility;
 
 		// Set data immediately
 		let seriesData = processed.data;
@@ -370,7 +397,10 @@
 			colourReducer: (/** @type {Object} */ acc, /** @type {any} */ d) => {
 				const unitCode = d.unit?.code || d.id;
 				const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
-				acc[d.id] = colourMap[unitCode] || getFuelTechColor(fuelTech);
+				const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
+				// Use lighter shade for loads (negative values)
+				const isLoad = loadFuelTechs.includes(fuelTech);
+				acc[d.id] = isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
 				return acc;
 			}
 		});

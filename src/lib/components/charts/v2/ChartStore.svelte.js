@@ -329,6 +329,9 @@ export default class ChartStore {
 	/** @type {boolean} */
 	useDivergingStack = $state(false);
 
+	/** Whether to use lighter color for negative values */
+	lighterNegative = $state(false);
+
 	// Category chart mode
 	/** @type {boolean} */
 	isCategoryChart = $state(false);

@@ -99,6 +99,7 @@
 					curveType={chart.chartOptions.curveFunction}
 					seriesColours={chart.seriesColours}
 					highlightId={chart.hoverKey}
+					lighterNegative={chart.lighterNegative}
 					{onmousemove}
 					{onmouseout}
 					{onpointerup}

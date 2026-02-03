@@ -4,12 +4,14 @@
 	 *
 	 * Renders stacked area or line charts with optional highlighting.
 	 * Supports mouse interactions for identifying hovered series.
+	 * Supports different colors for positive/negative regions via clip paths.
 	 */
 	import { getContext } from 'svelte';
 	import { area, line, curveLinear } from 'd3-shape';
 	import { closestTo } from 'date-fns';
+	import chroma from 'chroma-js';
 
-	const { data, xGet, xScale, yScale, yGet, z } = getContext('LayerCake');
+	const { data, xGet, xScale, yScale, yGet, z, width, height } = getContext('LayerCake');
 
 	/**
 	 * @typedef {'area' | 'line'} DisplayType
@@ -28,6 +30,7 @@
 	 * @property {string} [dotFill] - Dot fill colour
 	 * @property {string} [dotStroke] - Dot stroke colour
 	 * @property {string} [dotStrokeWidth] - Dot stroke width
+	 * @property {boolean} [lighterNegative] - Use lighter color for negative values
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
 	 * @property {(data: TimeSeriesData) => void} [onpointerup]
@@ -46,10 +49,26 @@
 		dotFill = 'white',
 		dotStroke = 'black',
 		dotStrokeWidth = '1px',
+		lighterNegative = false,
 		onmousemove,
 		onmouseout,
 		onpointerup
 	} = $props();
+
+	// Unique ID for clip paths
+	let clipId = $derived(`area-clip-${Math.random().toString(36).slice(2, 9)}`);
+
+	// Y position of zero line
+	let zeroY = $derived($yScale(0));
+
+	/**
+	 * Get lighter color for negative regions
+	 * @param {string} color
+	 * @returns {string}
+	 */
+	function getLighterColor(color) {
+		return chroma(color).brighten(1).hex();
+	}
 
 	// Extract unique dates for event lookups
 	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
@@ -181,23 +200,71 @@
 {/if}
 
 {#if display === 'area'}
+	<!-- Clip path definitions for positive/negative regions -->
+	{#if lighterNegative}
+		<defs>
+			<!-- Clip path for positive region (y >= 0, which is y <= zeroY in SVG coords) -->
+			<clipPath id="{clipId}-positive">
+				<rect x="0" y="0" width={$width} height={zeroY} />
+			</clipPath>
+			<!-- Clip path for negative region (y < 0, which is y > zeroY in SVG coords) -->
+			<clipPath id="{clipId}-negative">
+				<rect x="0" y={zeroY} width={$width} height={$height - zeroY} />
+			</clipPath>
+		</defs>
+	{/if}
+
 	<g class="area-group" role="group">
 		{#each $data as d, i (i)}
 			{@const seriesKey = d.key || d.group}
+			{@const baseColor = seriesColours[$z(d)]}
 
-			<path
-				class="path-area"
-				role="presentation"
-				d={areaGen(d)}
-				fill={seriesColours[$z(d)]}
-				stroke="none"
-				opacity={getOpacity(d, 1, 0.4)}
-				onmousemove={(e) => handlePointerMove(e, seriesKey)}
-				onmouseout={handleMouseOut}
-				ontouchmove={(e) => handlePointerMove(e, seriesKey)}
-				onblur={handleMouseOut}
-				onpointerup={(e) => handlePointerUp(e, seriesKey)}
-			/>
+			{#if lighterNegative}
+				<!-- Positive region (normal color) -->
+				<path
+					class="path-area"
+					role="presentation"
+					d={areaGen(d)}
+					fill={baseColor}
+					stroke="none"
+					opacity={getOpacity(d, 1, 0.4)}
+					clip-path="url(#{clipId}-positive)"
+					onmousemove={(e) => handlePointerMove(e, seriesKey)}
+					onmouseout={handleMouseOut}
+					ontouchmove={(e) => handlePointerMove(e, seriesKey)}
+					onblur={handleMouseOut}
+					onpointerup={(e) => handlePointerUp(e, seriesKey)}
+				/>
+				<!-- Negative region (lighter color) -->
+				<path
+					class="path-area"
+					role="presentation"
+					d={areaGen(d)}
+					fill={getLighterColor(baseColor)}
+					stroke="none"
+					opacity={getOpacity(d, 1, 0.4)}
+					clip-path="url(#{clipId}-negative)"
+					onmousemove={(e) => handlePointerMove(e, seriesKey)}
+					onmouseout={handleMouseOut}
+					ontouchmove={(e) => handlePointerMove(e, seriesKey)}
+					onblur={handleMouseOut}
+					onpointerup={(e) => handlePointerUp(e, seriesKey)}
+				/>
+			{:else}
+				<path
+					class="path-area"
+					role="presentation"
+					d={areaGen(d)}
+					fill={baseColor}
+					stroke="none"
+					opacity={getOpacity(d, 1, 0.4)}
+					onmousemove={(e) => handlePointerMove(e, seriesKey)}
+					onmouseout={handleMouseOut}
+					ontouchmove={(e) => handlePointerMove(e, seriesKey)}
+					onblur={handleMouseOut}
+					onpointerup={(e) => handlePointerUp(e, seriesKey)}
+				/>
+			{/if}
 		{/each}
 	</g>
 {/if}
