@@ -1,12 +1,12 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
-
-	import ispData from '$lib/isp';
+	import { browser } from '$app/environment';
 
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import Meta from '$lib/components/Meta.svelte';
-	import InfoGraphicScenariosPreview from '$lib/components/info-graphics/scenarios-explorer/homepage/Preview.svelte';
+	import Skeleton from '$lib/components/Skeleton.svelte';
+	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import InfoGraphicNem7DayGeneration from '$lib/components/info-graphics/nem-7-day-generation/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
 	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
@@ -22,45 +22,71 @@
 	/** @type {Props} */
 	let { data } = $props();
 
-	let regionPower = $state();
-	let regionEnergy = $state();
-	let regionEmissions = $state();
+	// All data now comes from server load - no client-side fetches needed
 	let homepageData = $derived(data.homepageData);
 	let historyEnergyNemData = $derived(data.historyEnergyNemData);
 	let articles = $derived(data.articles);
 	let flows = $derived(data.flows);
 	let prices = $derived(data.prices);
 	let pinnedRecords = $derived(data.pinnedRecords);
+	let regionPower = $derived(data.regionPower);
+	let regionEnergy = $derived(data.regionEnergy);
+	let regionEmissions = $derived(data.regionEmissions);
+	let tracker7d = $derived(data.tracker7d);
 
-	onMount(async () => {
-		regionPower = await fetch('/api/region-power').then(async (res) => {
-			const jsonData = await res.json();
-			return jsonData;
-		});
+	// Derived loading states
+	let hasRegionData = $derived(regionPower && regionEnergy && regionEmissions);
+	let hasArticles = $derived(articles && articles.length > 0);
 
-		regionEnergy = await fetch('/api/region-energy').then(async (res) => {
-			const jsonData = await res.json();
-			return jsonData;
-		});
-
-		regionEmissions = await fetch('/api/region-emissions').then(async (res) => {
-			const jsonData = await res.json();
-			return jsonData;
-		});
-	});
+	// Staggered chart rendering - load charts one at a time to avoid blocking
+	let heroChartReady = $state(false);
+	let trackerChartReady = $state(false);
 
 	// const milestones = articles.filter((article) => article.article_type === 'milestone');
-	const analysisArticles = articles
-		.filter((article) => article.article_type === 'analysis')
-		.slice(0, 6);
+	let analysisArticles = $derived(
+		articles?.filter((article) => article.article_type === 'analysis').slice(0, 6) ?? []
+	);
 
-	// const { outlookEnergyNem, pathways, scenarios, fuelTechs } = ispData();
+	// Lazy load ScenariosPreview when it comes into view
+	/** @type {HTMLElement} */
+	let scenariosSection;
+	let showScenarios = $state(false);
+	/** @type {any} */
+	let ScenariosPreviewComponent = $state(null);
 
-	let outlookEnergyNem = $state(null);
+	onMount(() => {
+		if (!browser) return;
 
-	setTimeout(() => {
-		outlookEnergyNem = ispData.aemo2024.outlookEnergyNem;
-	}, 250);
+		// Load hero chart immediately
+		heroChartReady = true;
+
+		// Load tracker chart after hero chart line animation completes
+		setTimeout(() => {
+			trackerChartReady = true;
+		}, 4000);
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting) {
+					// Dynamically import the heavy component when visible
+					import('$lib/components/info-graphics/scenarios-explorer/homepage/Preview.svelte').then(
+						(module) => {
+							ScenariosPreviewComponent = module.default;
+							showScenarios = true;
+						}
+					);
+					observer.disconnect();
+				}
+			},
+			{ rootMargin: '200px' } // Start loading 200px before it comes into view
+		);
+
+		if (scenariosSection) {
+			observer.observe(scenariosSection);
+		}
+
+		return () => observer.disconnect();
+	});
 
 	if (!homepageData || homepageData.length === 0) {
 		throw new Error('No homepage data found');
@@ -82,20 +108,45 @@
 
 <Meta image="/img/preview.jpg" />
 
+<!-- Hero Section: Fossil Fuels vs Renewables -->
 <div class="bg-light-warm-grey py-12" in:fade={{ duration: 400 }}>
 	<div class="container max-w-none lg:container relative">
-		<InfoGraphicFossilFuelsRenewables
-			data={historyEnergyNemData}
-			title={banner_title}
-			description={banner_statement}
-		/>
+		{#if historyEnergyNemData && heroChartReady}
+			<InfoGraphicFossilFuelsRenewables
+				data={historyEnergyNemData}
+				title={banner_title}
+				description={banner_statement}
+			/>
+		{:else}
+			<!-- Hero placeholder -->
+			<div class="relative">
+				<Skeleton variant="chart" />
+				<div class="absolute inset-0 flex items-center justify-center">
+					<LogoMarkLoader />
+				</div>
+			</div>
+		{/if}
 	</div>
 </div>
 
+<!-- NEM 7-Day Generation -->
 <div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
-	<InfoGraphicNem7DayGeneration />
+	{#if tracker7d?.data && trackerChartReady}
+		<InfoGraphicNem7DayGeneration initialData={tracker7d.data} />
+	{:else}
+		<!-- 7-day chart placeholder -->
+		<div class="container max-w-none lg:container">
+			<div class="relative">
+				<Skeleton variant="chart" />
+				<div class="absolute inset-0 flex items-center justify-center">
+					<LogoMarkLoader />
+				</div>
+			</div>
+		</div>
+	{/if}
 </div>
 
+<!-- Notable Records -->
 <div class="bg-light-warm-grey py-16 md:py-32 border-b border-warm-grey">
 	<div class="max-w-none md:container">
 		<h3 class="md:text-center px-10 md:px-0">Notable records</h3>
@@ -128,10 +179,11 @@
 	</div>
 </div>
 
-{#if regionPower && regionEnergy && regionEmissions}
-	<div class="md:bg-light-warm-grey">
-		<div class="container max-w-none lg:container">
-			<div class="flex flex-col md:flex-row justify-between py-16 md:py-32">
+<!-- System Snapshot Map -->
+<div class="md:bg-light-warm-grey">
+	<div class="container max-w-none lg:container">
+		<div class="flex flex-col md:flex-row justify-between py-16 md:py-32">
+			{#if hasRegionData}
 				<InfoGraphicSystemSnapshot
 					title={map_title}
 					{flows}
@@ -140,30 +192,75 @@
 					{regionEnergy}
 					{regionEmissions}
 				/>
-			</div>
+			{:else}
+				<!-- Map skeleton -->
+				<div class="w-full md:w-1/2 space-y-4">
+					<Skeleton variant="card" class="h-[400px]" />
+				</div>
+				<div class="w-full md:w-1/2 md:pl-8 space-y-4 mt-8 md:mt-0">
+					<Skeleton variant="text" class="w-48" />
+					<div class="space-y-3">
+						{#each Array(5) as _}
+							<div class="flex justify-between items-center gap-4">
+								<Skeleton variant="text" class="w-16" />
+								<Skeleton variant="text" class="w-24" />
+								<Skeleton variant="text" class="w-20" />
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/if}
 		</div>
 	</div>
-{/if}
+</div>
 
-<div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey text-base">
-	{#if outlookEnergyNem}
-		<InfoGraphicScenariosPreview />
+<!-- Lazy-loaded Scenarios Preview section -->
+<div
+	bind:this={scenariosSection}
+	class="bg-white py-16 md:py-32 border-t border-b border-warm-grey text-base"
+>
+	{#if showScenarios && ScenariosPreviewComponent}
+		<svelte:component this={ScenariosPreviewComponent} />
+	{:else}
+		<!-- Scenarios skeleton -->
+		<div class="container max-w-none lg:container">
+			<div class="text-center mb-8">
+				<Skeleton variant="text" class="w-64 mx-auto mb-4" />
+				<Skeleton variant="text" class="w-96 mx-auto" />
+			</div>
+			<Skeleton variant="chart" class="h-[350px] rounded-xl" />
+		</div>
 	{/if}
 </div>
 
+<!-- Analysis Articles -->
 <div class="bg-white py-16 md:py-32">
 	<div class="container max-w-none lg:container">
 		<header class="flex justify-between items-center mb-8">
 			<h3>{analysis_title}</h3>
-			<!-- <SectionLink href="/analysis" title="View all analyses" /> -->
 		</header>
-		<div class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8">
-			{#each analysisArticles as article (article._id)}
-				<div class="snap-start shrink-0 w-[290px]">
-					<ArticleCard {article} />
-				</div>
-			{/each}
-		</div>
+
+		{#if hasArticles && analysisArticles.length > 0}
+			<div class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8">
+				{#each analysisArticles as article (article._id)}
+					<div class="snap-start shrink-0 w-[290px]">
+						<ArticleCard {article} />
+					</div>
+				{/each}
+			</div>
+		{:else}
+			<!-- Articles skeleton -->
+			<div class="overflow-auto flex items-stretch snap-x snap-mandatory gap-8">
+				{#each Array(4) as _, i (i)}
+					<div class="snap-start shrink-0 w-[290px] space-y-4">
+						<Skeleton variant="card" class="h-40 rounded-lg" />
+						<Skeleton variant="text" class="w-full" />
+						<Skeleton variant="text" class="w-3/4" />
+						<Skeleton variant="text" class="w-1/2" />
+					</div>
+				{/each}
+			</div>
+		{/if}
 
 		<div class="flex justify-end mt-5 md:mt-16 lg:mr-8">
 			<a

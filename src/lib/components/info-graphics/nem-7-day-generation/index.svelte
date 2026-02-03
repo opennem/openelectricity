@@ -1,5 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { fuelTechColour, colourReducer } from '$lib/stores/theme';
 	import { fuelTechName } from '$lib/fuel_techs.js';
@@ -13,8 +12,16 @@
 	import { fuelTechMap, orderMap, labelReducer } from './helpers/groups';
 	import legend from './helpers/legend';
 
+	/**
+	 * @typedef {Object} Props
+	 * @property {any[]} [initialData] - Server-prefetched tracker data
+	 */
+
+	/** @type {Props} */
+	let { initialData = undefined } = $props();
+
 	let { chartCxt } = init();
-	let dataset = $state();
+	let dataset = $state(initialData);
 	let powerData = $derived(
 		dataset ? dataset.filter((/** @type {StatsData} */ d) => d.type === 'power') : []
 	);
@@ -38,16 +45,6 @@
 			colour: $fuelTechColour(d)
 		}))
 	);
-
-	onMount(async () => {
-		try {
-			let res = await fetch(`/api/tracker/7d?regionPath=au/NEM`);
-			let json = await res.json();
-			dataset = json.data;
-		} catch (error) {
-			console.error('7 day nem fetch error', error);
-		}
-	});
 
 	$effect(() => {
 		if (processedPowerData) {

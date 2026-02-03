@@ -51,15 +51,4 @@
 		<meta property="twitter:card" content="summary_large_image" />
 		<meta property="twitter:image" content={image} />
 	{/if}
-
-	<script async src="https://www.googletagmanager.com/gtag/js?id=G-461CNN34M4"></script>
-	<script>
-		window.dataLayer = window.dataLayer || [];
-		function gtag() {
-			dataLayer.push(arguments);
-		}
-		gtag('js', new Date());
-
-		gtag('config', 'G-461CNN34M4');
-	</script>
 </svelte:head>
