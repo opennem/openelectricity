@@ -10,7 +10,6 @@
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import InfoGraphicNem7DayGenerationV2 from '$lib/components/info-graphics/nem-7-day-generation-v2/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
-	import InfoGraphicSystemSnapshot from '$lib/components/info-graphics/system-snapshot/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 	import PinnedRecords from './records/components/PinnedRecords.svelte';
 	import { regions } from './records/page-data-options/filters.js';
@@ -91,6 +90,12 @@
 	/** @type {any} */
 	let pinnedRecords = $state(null);
 
+	// Lazy load System Snapshot when section comes into view
+	/** @type {HTMLElement} */
+	let snapshotSection;
+	/** @type {any} */
+	let SystemSnapshotComponent = $state(null);
+
 	// Lazy load ScenariosPreview when it comes into view
 	/** @type {HTMLElement} */
 	let scenariosSection;
@@ -115,18 +120,32 @@
 			trackerChartReady = true;
 		}, trackerDelay);
 
-		// Fetch region data client-side (these APIs make multiple external calls that timeout on Cloudflare SSR)
-		Promise.all([
-			fetch('/api/region-power').then((r) => r.ok ? r.json() : null),
-			fetch('/api/region-energy').then((r) => r.ok ? r.json() : null),
-			fetch('/api/region-emissions').then((r) => r.ok ? r.json() : null)
-		]).then(([power, energy, emissions]) => {
-			regionPower = power;
-			regionEnergy = energy;
-			regionEmissions = emissions;
-		}).catch((e) => {
-			console.error('Failed to fetch region data:', e);
-		});
+		// Lazy load System Snapshot when section comes into view
+		const snapshotObserver = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting) {
+					Promise.all([
+						fetch('/api/system-snapshot').then((r) => r.ok ? r.json() : null),
+						import('$lib/components/info-graphics/system-snapshot/index.svelte')
+					]).then(([snapshot, module]) => {
+						if (snapshot) {
+							regionPower = snapshot.power;
+							regionEnergy = snapshot.energy;
+							regionEmissions = snapshot.emissions;
+						}
+						SystemSnapshotComponent = module.default;
+					}).catch((e) => {
+						console.error('Failed to fetch system snapshot:', e);
+					});
+					snapshotObserver.disconnect();
+				}
+			},
+			{ rootMargin: '200px' }
+		);
+
+		if (snapshotSection) {
+			snapshotObserver.observe(snapshotSection);
+		}
 
 		// Lazy load pinned records when section comes into view
 		const recordsObserver = new IntersectionObserver(
@@ -171,6 +190,7 @@
 		}
 
 		return () => {
+			snapshotObserver.disconnect();
 			recordsObserver.disconnect();
 			scenariosObserver.disconnect();
 		};
@@ -269,11 +289,11 @@
 </div>
 
 <!-- System Snapshot Map -->
-<div class="md:bg-light-warm-grey">
+<div bind:this={snapshotSection} class="md:bg-light-warm-grey">
 	<div class="container max-w-none lg:container">
 		<div class="flex flex-col md:flex-row justify-between py-16 md:py-32">
-			{#if hasRegionData}
-				<InfoGraphicSystemSnapshot
+			{#if hasRegionData && SystemSnapshotComponent}
+				<SystemSnapshotComponent
 					title={map_title}
 					{flows}
 					{prices}
