@@ -125,14 +125,14 @@
 			(entries) => {
 				if (entries[0].isIntersecting) {
 					Promise.all([
-						fetch('/api/system-snapshot').then((r) => r.ok ? r.json() : null),
+						fetch('/api/region-power').then((r) => r.ok ? r.json() : null),
+						fetch('/api/region-energy').then((r) => r.ok ? r.json() : null),
+						fetch('/api/region-emissions').then((r) => r.ok ? r.json() : null),
 						import('$lib/components/info-graphics/system-snapshot/index.svelte')
-					]).then(([snapshot, module]) => {
-						if (snapshot) {
-							regionPower = snapshot.power;
-							regionEnergy = snapshot.energy;
-							regionEmissions = snapshot.emissions;
-						}
+					]).then(([power, energy, emissions, module]) => {
+						regionPower = power;
+						regionEnergy = energy;
+						regionEmissions = emissions;
 						SystemSnapshotComponent = module.default;
 					}).catch((e) => {
 						console.error('Failed to fetch system snapshot:', e);
