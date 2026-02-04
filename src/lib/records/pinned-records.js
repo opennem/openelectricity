@@ -84,17 +84,22 @@ export function createEmptyRecordMap() {
 }
 
 /**
- * Fetch pinned records for all regions (server-side)
+ * Fetch pinned records, optionally filtered by region values
  * @param {typeof fetch} fetchFn - The fetch function
  * @param {string} recordsApiUrl - The records API base URL
  * @param {string} apiKey - The API key for authorization
+ * @param {string[]} [regionValues] - Optional region value codes to filter by (e.g. ['nsw1', 'vic1']). Fetches all regions if omitted.
  * @returns {Promise<Record<string, any>>}
  */
-export async function fetchPinnedRecords(fetchFn, recordsApiUrl, apiKey) {
+export async function fetchPinnedRecords(fetchFn, recordsApiUrl, apiKey, regionValues) {
 	/** @type {{ recordId: string, fuelTech: string }[]} */
 	const recordsToFetch = [];
 
-	for (const region of PINNED_REGIONS) {
+	const regionsToFetch = regionValues?.length
+		? PINNED_REGIONS.filter((r) => regionValues.includes(r.value))
+		: PINNED_REGIONS;
+
+	for (const region of regionsToFetch) {
 		for (const { fuelTech, ids } of PINNED_CONFIG) {
 			for (const id of ids) {
 				const recordId = `${region.longValue}.${fuelTech}.${id}`;

@@ -1,6 +1,4 @@
 import { client } from '$lib/sanity';
-import { PUBLIC_RECORDS_API, PUBLIC_API_KEY } from '$env/static/public';
-import { fetchPinnedRecords } from '$lib/records/pinned-records.js';
 import energyParser from '$lib/opennem/parser.js';
 
 // Disable prerendering - homepage has dynamic real-time data
@@ -89,7 +87,6 @@ export async function load({ fetch }) {
 		articles,
 		flows,
 		prices,
-		pinnedRecords,
 		tracker7dProcessed,
 		energyData
 	] = await Promise.all([
@@ -101,7 +98,6 @@ export async function load({ fetch }) {
 		),
 		fetch('/api/flows').then(processFlows).catch(() => ({ dispatchDateTimeString: '', regionFlows: {}, originalJsons: null })),
 		fetch('/api/prices').then(processPrices).catch(() => ({ regionPrices: {}, originalJsons: null })),
-		fetchPinnedRecords(fetch, PUBLIC_RECORDS_API, PUBLIC_API_KEY).catch(() => []),
 		safeFetchJson(fetch, '/api/tracker/7d-processed?regionPath=au/NEM&interval=30m', null),
 		safeFetchJson(fetch, '/api/energy', null)
 	]);
@@ -114,7 +110,6 @@ export async function load({ fetch }) {
 		articles: /** @type {Article[]} */ (articles).filter((d) => d.article_type !== null),
 		flows,
 		prices,
-		pinnedRecords,
 		tracker7dProcessed,
 		historyEnergyNemData
 	};

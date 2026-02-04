@@ -22,11 +22,12 @@
 	/** @type {Props} */
 	let { selectedRegions = [], showRegionLabel = true, initialData = null } = $props();
 
-	/** @type {{ id: string, data: Promise<any> }[]} */
-	let records = $state([]);
-
 	/** @type {{ [key: string]: * }} */
 	let recordMap = $state(createEmptyRecordMap());
+
+	let loading = $state(false);
+	let waitingForInitialData = $derived(initialData === null && selectedRegions.length === 0);
+	let showSkeleton = $derived(loading || waitingForInitialData);
 
 	// Sync recordMap when initialData is provided
 	$effect(() => {
@@ -35,8 +36,6 @@
 		}
 	});
 
-	let loading = $state(false);
-
 	/**
 	 * Format a date
 	 * @param {string} interval
@@ -44,117 +43,36 @@
 	 */
 	function formatDate(interval, period) {
 		const date = parseISO(interval);
-		// return format(date, formatStrings[period] || 'd MMM yyyy, h:mma');
 		return getRelativeTime(date);
 	}
-	/**
-	 * Fetch a single record
-	 * @param {string} recordId
-	 */
-	async function fetchRecord(recordId) {
-		const id = encodeURIComponent(recordId);
-		const res = await fetch(`/api/records/${id}?pageSize=1`);
-		const jsonData = await res.json();
 
-		if (jsonData.error) {
-			return [];
-		}
-		const data = jsonData.data;
-		return data;
-	}
+	$effect(() => {
+		if (!browser) return;
 
-	let regionOptions = $derived.by(() => {
+		// If no regions selected, use prefetched initialData
 		if (selectedRegions.length === 0) {
-			return regions;
-		}
-		return selectedRegions
-			.map((region) => {
-				let regionData = regions.find((r) => r.value === region);
-				return regionData;
-			})
-			.filter((r) => r !== undefined);
-	});
-
-	$effect(() => {
-		if (browser) {
-			// If no regions selected, use server-prefetched data (don't fetch)
-			if (selectedRegions.length === 0) {
-				if (initialData) {
-					recordMap = initialData;
-					records = [];
-				}
-				return;
+			if (initialData) {
+				recordMap = initialData;
 			}
-
-			// Fetch for specific selected regions
-			/** @type {{ id: string, data: Promise<any> }[]} */
-			let newRecords = [];
-			recordMap = createEmptyRecordMap();
-			loading = true;
-			regionOptions.forEach(({ longValue }) => {
-				pinned.forEach(({ fuelTech, ids }) => {
-					ids.forEach((id) => {
-						const recordId = `${longValue}.${fuelTech}.${id}`;
-						newRecords.push({ id: recordId, data: fetchRecord(recordId) });
-					});
-				});
-			});
-
-			records = newRecords;
-		}
-	});
-
-	let recordMapCache = $derived(recordMap);
-
-	$effect(() => {
-		// Skip if no records to fetch (using server-prefetched data)
-		if (!records.length || !regionOptions.length) {
 			return;
 		}
 
-		const promises = records.map((record) => record.data);
-
+		// Fetch for specific selected regions via API
+		recordMap = createEmptyRecordMap();
 		loading = true;
-		Promise.all(promises).then((responses) => {
-			responses.forEach((data) => {
-				if (data.length) {
-					// console.log('data', data[0]);
-					const value = data[0].value;
-					const unit = data[0].value_unit;
-					const interval = data[0].interval;
-					const period = data[0].period;
-					const fuelTech = data[0].fueltech_id;
-					const recordId = data[0].record_id;
-					const aggregate = data[0].aggregate;
-					const description = data[0].description;
-					const metric = data[0].metric;
-					const networkRegion = data[0].network_region;
-					const networkId = data[0].network_id;
 
-					const date = parseISO(interval);
-					const time = date.getTime();
-
-					if (recordMapCache[fuelTech] === null || time > recordMapCache[fuelTech].time) {
-						recordMap[fuelTech] = {
-							recordId,
-							aggregate,
-							value,
-							unit,
-							interval,
-							period,
-							description,
-							metric,
-							date,
-							time,
-							networkRegion,
-							networkId
-						};
-					}
+		const params = new URLSearchParams({ regions: selectedRegions.join(',') });
+		fetch(`/api/notable-records?${params}`)
+			.then((r) => (r.ok ? r.json() : null))
+			.then((data) => {
+				if (data && !data.error) {
+					recordMap = data;
 				}
+				loading = false;
+			})
+			.catch(() => {
+				loading = false;
 			});
-
-			loading = false;
-		});
 	});
 
 	/**
@@ -181,7 +99,7 @@
 		<div
 			class="snap-start px-2 pr-2 first:pl-10 last:pr-10 md:p-0 md:first:pl-5 md:last:pr-0 shrink-0 w-[190px] md:w-auto"
 		>
-			{#if !loading}
+			{#if !showSkeleton}
 				{#if recordData}
 					{@const path = `/records/${encodeURIComponent(recordData.recordId)}?${dateTimeQuery(recordData.interval)}&focus=${recordData.time}`}
 					<a

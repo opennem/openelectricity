@@ -29,7 +29,6 @@
 	let articles = $derived(data.articles);
 	let flows = $derived(data.flows);
 	let prices = $derived(data.prices);
-	let pinnedRecords = $derived(data.pinnedRecords);
 	let tracker7dProcessed = $derived(data.tracker7dProcessed);
 
 	// Client-side fetched data (these APIs make multiple external calls that can timeout on Cloudflare SSR)
@@ -86,6 +85,12 @@
 		articles?.filter((article) => article.article_type === 'analysis').slice(0, 6) ?? []
 	);
 
+	// Lazy load Notable Records when section comes into view
+	/** @type {HTMLElement} */
+	let recordsSection;
+	/** @type {any} */
+	let pinnedRecords = $state(null);
+
 	// Lazy load ScenariosPreview when it comes into view
 	/** @type {HTMLElement} */
 	let scenariosSection;
@@ -123,27 +128,52 @@
 			console.error('Failed to fetch region data:', e);
 		});
 
-		const observer = new IntersectionObserver(
+		// Lazy load pinned records when section comes into view
+		const recordsObserver = new IntersectionObserver(
 			(entries) => {
 				if (entries[0].isIntersecting) {
-					// Dynamically import the heavy component when visible
+					fetch('/api/notable-records')
+						.then((r) => r.ok ? r.json() : null)
+						.then((data) => {
+							pinnedRecords = data;
+						})
+						.catch(() => {
+							pinnedRecords = null;
+						});
+					recordsObserver.disconnect();
+				}
+			},
+			{ rootMargin: '200px' }
+		);
+
+		if (recordsSection) {
+			recordsObserver.observe(recordsSection);
+		}
+
+		// Lazy load ScenariosPreview when section comes into view
+		const scenariosObserver = new IntersectionObserver(
+			(entries) => {
+				if (entries[0].isIntersecting) {
 					import('$lib/components/info-graphics/scenarios-explorer/homepage/Preview.svelte').then(
 						(module) => {
 							ScenariosPreviewComponent = module.default;
 							showScenarios = true;
 						}
 					);
-					observer.disconnect();
+					scenariosObserver.disconnect();
 				}
 			},
-			{ rootMargin: '200px' } // Start loading 200px before it comes into view
+			{ rootMargin: '200px' }
 		);
 
 		if (scenariosSection) {
-			observer.observe(scenariosSection);
+			scenariosObserver.observe(scenariosSection);
 		}
 
-		return () => observer.disconnect();
+		return () => {
+			recordsObserver.disconnect();
+			scenariosObserver.disconnect();
+		};
 	});
 
 	// Derived CMS content - uses $derived to stay reactive
@@ -206,7 +236,7 @@
 </div>
 
 <!-- Notable Records -->
-<div class="bg-light-warm-grey py-16 md:py-32 border-b border-warm-grey">
+<div bind:this={recordsSection} class="bg-light-warm-grey py-16 md:py-32 border-b border-warm-grey">
 	<div class="max-w-none md:container">
 		<h3 class="md:text-center px-10 md:px-0">Notable records</h3>
 
