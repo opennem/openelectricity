@@ -147,13 +147,16 @@ export async function load({ params, url, fetch }) {
 			}
 		}
 
+		// Map renewable_proportion to renewables for icon/color display
+		let displayFuelTechId = metric === 'renewable_proportion' ? 'renewables' : fuelTechId;
+
 		return {
 			focusTime,
 			record: jsonData.data[0],
 			timeSeries,
 			timeZone,
 			period,
-			fuelTechId,
+			fuelTechId: displayFuelTechId,
 			metric,
 			focusRecord
 		};

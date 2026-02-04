@@ -201,6 +201,12 @@ export const milestoneTypeOptions = [
 		label: 'Emissions',
 		displayPrefix: '',
 		allowedPrefixes: ['', 'k']
+	},
+	{
+		value: 'renewable_proportion',
+		label: 'Renewable Proportion',
+		displayPrefix: '',
+		allowedPrefixes: ['']
 	}
 	// {
 	// 	value: 'proportion',

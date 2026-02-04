@@ -137,35 +137,26 @@ async function fetchRecords(
 		jsonData2 = await res2.json();
 	}
 
+	/** @param {*} d */
+	function mapRecord(d) {
+		const isWem = d.network_id === 'WEM';
+		const timeZone = isWem ? '+08:00' : '+10:00';
+		const parsedInterval = parseISO(d.interval);
+		return {
+			...d,
+			fueltech_id: d.metric === 'renewable_proportion' ? 'renewables' : d.fueltech_id,
+			date: parsedInterval,
+			time: parsedInterval.getTime(),
+			timeZone
+		};
+	}
+
 	if (jsonData.success) {
 		errorMessage = '';
-		recordsData = jsonData.data.map((d) => {
-			const isWem = d.network_id === 'WEM';
-			const timeZone = isWem ? '+08:00' : '+10:00';
-			const parsedInterval = parseISO(d.interval);
-			return {
-				...d,
-				date: parsedInterval,
-				time: parsedInterval.getTime(),
-				timeZone
-			};
-		});
+		recordsData = jsonData.data.map(mapRecord);
 
 		if (jsonData2) {
-			recordsData = [
-				...recordsData,
-				...jsonData2.data.map((d) => {
-					const isWem = d.network_id === 'WEM';
-					const timeZone = isWem ? '+08:00' : '+10:00';
-					const parsedInterval = parseISO(d.interval);
-					return {
-						...d,
-						date: parsedInterval,
-						time: parsedInterval.getTime(),
-						timeZone
-					};
-				})
-			];
+			recordsData = [...recordsData, ...jsonData2.data.map(mapRecord)];
 
 			// sort recordsData by date descending
 			recordsData.sort((a, b) => b.date.getTime() - a.date.getTime());

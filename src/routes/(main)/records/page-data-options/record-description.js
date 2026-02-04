@@ -54,9 +54,18 @@ export const metricPeriodMap = {
 	'proportion.year': ['proportion'],
 	'proportion.financial_year': ['proportion'],
 
+	'renewable_proportion.interval': ['renewable proportion'],
+	'renewable_proportion.day': ['renewable proportion'],
+	'renewable_proportion.7d': ['renewable proportion'],
+	'renewable_proportion.month': ['renewable proportion'],
+	'renewable_proportion.quarter': ['renewable proportion'],
+	'renewable_proportion.year': ['renewable proportion'],
+	'renewable_proportion.financial_year': ['renewable proportion'],
+
 	price: ['price'],
 	market_value: ['market value'],
-	emissions: ['emissions']
+	emissions: ['emissions'],
+	renewable_proportion: ['renewable proportion']
 };
 
 /**
@@ -70,7 +79,7 @@ export const metricPeriodMap = {
  */
 export default function generateDescription(period, aggregate, metric, fuelTech) {
 	if (!period || !aggregate || !metric) {
-		console.log('One or more required parameters are not defined');
+		console.log('Missing record description params:', { period, aggregate, metric, fuelTech });
 		return '';
 	}
 
@@ -81,11 +90,16 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 	const isPrice = metric === 'price';
 	const isMarketValue = metric === 'market_value';
 	const isEmissions = metric === 'emissions';
-	const periodAggregate = periodAggregateMap[`${period}.${aggregate}`] || '';
-	const metricPeriod = metricPeriodMap[`${metric}.${period}`] || metricPeriodMap[metric] || '';
+	const isRenewableProportion = metric === 'renewable_proportion';
+	const periodAggregate = periodAggregateMap[`${period}.${aggregate}`];
+	const metricPeriod = metricPeriodMap[`${metric}.${period}`] || metricPeriodMap[metric];
 
 	if (!periodAggregate || !metricPeriod) {
-		return '';
+		console.log('Unhandled record description combination:', { period, aggregate, metric, fuelTech });
+		// Fallback: construct a basic description from the raw values
+		const aggLabel = aggregate === 'high' ? 'Highest' : aggregate === 'low' ? 'Lowest' : aggregate;
+		const label = ftLabel || fuelTech || '';
+		return `${aggLabel} ${label} ${metric || ''}`.trim();
 	}
 
 	if (period === 'interval') {
@@ -101,7 +115,7 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 			return `${periodAggregate[0]} pumped-storage`;
 		}
 
-		if (isPrice || isMarketValue || isEmissions) {
+		if (isPrice || isMarketValue || isEmissions || isRenewableProportion) {
 			return `${periodAggregate[0]} ${metricPeriod[0]}`;
 		}
 
@@ -118,6 +132,10 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 		}
 
 		return `${periodAggregate[0]} ${ftLabel} ${periodAggregate[1]}`;
+	}
+
+	if (isPrice || isMarketValue || isEmissions || isRenewableProportion) {
+		return `${periodAggregate[0]} ${metricPeriod[0]} ${periodAggregate[1]}`;
 	}
 
 	if (metric === 'power') {
