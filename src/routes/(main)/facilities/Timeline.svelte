@@ -14,6 +14,8 @@
 		facilities = [],
 		ontodaybuttonvisible,
 		scrollContainer = null,
+		scrollToToday = true,
+		onscrolledtotoday,
 		onhover,
 		onclick,
 		hoveredFacility = null,
@@ -156,9 +158,11 @@
 	});
 
 	$effect(() => {
+		if (!scrollToToday) return;
 		const el = document.querySelector('#dToday');
 		if (el) {
 			el.scrollIntoView({ behavior: 'auto', block: 'center' });
+			onscrolledtotoday?.();
 		}
 	});
 

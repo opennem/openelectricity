@@ -71,6 +71,7 @@
 	let timelineRef = $state(null);
 	/** @type {HTMLElement | null} */
 	let timelineScrollContainer = $state(null);
+	let hasInitiallyScrolledToToday = $state(false);
 
 	let searchTerm = $state('');
 	/** @type {any | null} */
@@ -494,7 +495,7 @@
 		</div>
 	</div>
 
-	<section class="relative {isFullscreen ? 'flex-1 min-h-0' : 'h-[calc(100dvh-118px)]'}">
+	<section class="relative {isFullscreen ? 'flex-1 min-h-0' : 'h-[calc(100dvh-400px)]'}">
 		<!-- Map: always visible on desktop, on mobile only when map view selected -->
 		<div
 			class="absolute inset-0"
@@ -511,7 +512,7 @@
 				showTransmissionLines={mapShowTransmissionLines}
 				showGolfCourses={mapShowGolfCourses}
 				scrollZoom={isFullscreen}
-				flyToOffsetX={0.25}
+				flyToOffsetX={0.2}
 				flyToOffsetY={isFullscreen ? -0.25 : -0.15}
 				onhover={(f) => (hoveredFacility = f)}
 				onclick={(f) => (clickedFacility = f)}
@@ -677,7 +678,7 @@
 		{#if selectedView === 'list'}
 			<!-- List panel: full width on mobile, floating on desktop -->
 			<div
-				class="h-full md:absolute md:top-6 md:left-6 md:bottom-6 md:h-auto md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col min-h-0"
+				class="h-full md:absolute md:top-6 md:left-6 md:bottom-6 md:h-auto md:w-[calc(40%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col min-h-0"
 			>
 				<div class="flex-1 overflow-y-auto min-h-0">
 					<List
@@ -702,7 +703,7 @@
 		{:else if selectedView === 'timeline'}
 			<!-- Timeline panel: full width on mobile, floating on desktop -->
 			<div
-				class="h-full md:absolute md:top-6 md:left-6 md:bottom-6 md:h-auto md:w-[calc(50%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col min-h-0"
+				class="h-full md:absolute md:top-6 md:left-6 md:bottom-6 md:h-auto md:w-[calc(40%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col min-h-0"
 			>
 				{#if showTodayButton && searchTerm.length === 0}
 					<div
@@ -734,6 +735,8 @@
 							{selectedFacilityCode}
 							ontodaybuttonvisible={handleTodayButtonVisible}
 							scrollContainer={timelineScrollContainer}
+							scrollToToday={!hasInitiallyScrolledToToday}
+							onscrolledtotoday={() => (hasInitiallyScrolledToToday = true)}
 							onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 							onclick={(/** @type {any} */ f) => {
 								handleFacilitySelect(f);
@@ -755,7 +758,7 @@
 		<!-- Facility detail panel -->
 		{#if selectedFacilityCode}
 			<div
-				class="absolute bottom-0 right-0 w-full md:bottom-6 md:right-6 md:w-[calc(50%-2rem)] bg-white md:rounded-xl md:shadow-lg z-20 flex flex-col overflow-hidden h-full {isFullscreen
+				class="absolute bottom-0 right-0 w-full md:bottom-6 md:right-6 md:w-[calc(60%-2rem)] bg-white md:rounded-xl md:shadow-lg z-20 flex flex-col overflow-hidden h-full {isFullscreen
 					? 'md:h-[calc(66.67%-1.5rem)]'
 					: 'md:h-[calc(50%-1.5rem)]'}"
 				transition:fly={{ x: 400, duration: 250, easing: quintOut }}

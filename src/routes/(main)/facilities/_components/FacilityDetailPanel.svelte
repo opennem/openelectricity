@@ -136,14 +136,14 @@
 						powerData={filteredPowerData}
 						{timeZone}
 						title="Power Generation (Last 3 Days)"
-						chartHeight="h-[220px]"
+						chartHeight="h-[350px]"
 						showZoomBrush={false}
 						useDivergingStack={true}
 					/>
 				</div>
 			{:else}
 				<div
-					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 h-[220px] flex items-center justify-center"
+					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 h-[350px] flex items-center justify-center"
 				>
 					<p class="text-sm text-mid-grey">No power data available</p>
 				</div>
