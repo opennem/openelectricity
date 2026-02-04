@@ -168,12 +168,6 @@
 		{ label: 'List', value: 'list', icon: List, size: 'size-6' }
 	];
 
-	const viewButtonsMobile = [
-		{ label: 'Timeline', value: 'timeline', icon: CalendarClock, size: 'size-6' },
-		{ label: 'List', value: 'list', icon: List, size: 'size-6' },
-		{ label: 'Map', value: 'map', icon: Map, size: 'size-6' }
-	];
-
 	const viewOptions = [
 		{ label: 'Timeline', value: 'timeline' },
 		{ label: 'List', value: 'list' },

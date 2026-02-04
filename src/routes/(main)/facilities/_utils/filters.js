@@ -136,7 +136,7 @@ export const regionOptions = [
 /** @type {{value: string, label: string, colour: string, children?: {value: string, label: string, colour: string}[]}[]} */
 export const fuelTechOptions = [
 	{
-		value: 'solar',
+		value: 'solar_utility',
 		label: 'Solar',
 		colour: '#FED500'
 	},
