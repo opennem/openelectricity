@@ -17,7 +17,7 @@
 		const records = [];
 		const daysArr = [...days];
 		daysArr.forEach(([day, { nonIntervalDayRecords }]) => {
-			let nonYearRecords = nonIntervalDayRecords.filter((r) => r.period !== 'year');
+			let nonYearRecords = nonIntervalDayRecords.filter((/** @type {any} */ r) => r.period !== 'year');
 			if (nonYearRecords.length) {
 				records.push([day, nonYearRecords]);
 			}
@@ -33,7 +33,7 @@
 		const records = [];
 		const daysArr = [...days];
 		daysArr.forEach(([day, { nonIntervalDayRecords }]) => {
-			let yearsRecords = nonIntervalDayRecords.filter((r) => r.period === 'year');
+			let yearsRecords = nonIntervalDayRecords.filter((/** @type {any} */ r) => r.period === 'year');
 			if (yearsRecords.length) {
 				// year is last 4 chars of the day
 				let year = day.slice(-4);

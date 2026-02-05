@@ -118,7 +118,7 @@ async function fetchRecords(
 		if (regions.includes('nem') || regions.includes('wem')) {
 			// WORKAROUND: if the regions contain both network and regions,
 			// then need to make another call to fetch network data as the api query can't return both network and region data
-			let networks = regions.filter((r) => r === 'nem' || r === 'wem');
+			let networks = regions.filter((/** @type {string} */ r) => r === 'nem' || r === 'wem');
 			let networkParams = `&regions=${networks.join(',')}`;
 			res2 = await fetch(
 				`/api/records?page=${page}&pageSize=${pageSize}${networkParams}${periodsParam}${recordIdSearchParam}${fuelTechParams}${aggregatesParam}${milestoneTypesParam}${significanceParam}`

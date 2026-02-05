@@ -1,6 +1,11 @@
 import { interpolate } from 'd3-interpolate';
 
 // function to interpolate data from 30 to 5 minute interval
+/**
+ * @param {any} dataArray
+ * @param {any} original
+ * @param {any} target
+ */
 export default function (dataArray, original, target) {
 	const ratio = original / target;
 	const interpolatedData = [];

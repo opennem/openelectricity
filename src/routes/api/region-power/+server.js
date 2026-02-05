@@ -12,8 +12,8 @@ export async function GET({ fetch, setHeaders }) {
 	const tas = await fetch(`${PUBLIC_JSON_API}/au/NEM/TAS1/power/7d.json`);
 	const vic = await fetch(`${PUBLIC_JSON_API}/au/NEM/VIC1/power/7d.json`);
 
-	const powerFilter = (d) => d.fuel_tech && d.type === 'power';
-	const latestData = (d) => {
+	const powerFilter = (/** @type {any} */ d) => d.fuel_tech && d.type === 'power';
+	const latestData = (/** @type {any} */ d) => {
 		return {
 			region: d.region,
 			id: d.id,

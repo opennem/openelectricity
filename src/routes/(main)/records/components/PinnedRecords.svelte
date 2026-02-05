@@ -137,7 +137,7 @@
 							class="flex flex-col items-start lg:flex-row lg:items-center lg:justify-between border-t border-mid-warm-grey pt-6"
 						>
 							<div class="font-mono">
-								{formatRecordValue(recordData.value, fuelTech)}
+								{formatRecordValue(recordData.value, /** @type {FuelTechCode} */ (fuelTech))}
 								<small class="text-mid-grey">{recordData.unit}</small>
 							</div>
 

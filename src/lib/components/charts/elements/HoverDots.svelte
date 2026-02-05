@@ -10,21 +10,21 @@
 	 */
 
 	/** @type {Props} */
-	let { _dataset = [], hoverData = undefined } = $props();
+	let { hoverData = undefined } = $props();
 
 	let cx = $derived(hoverData ? $xGet({ data: { ...hoverData } }) : 0);
-	let cy = $derived((d) => {
+	let cy = $derived((/** @type {any} */ d) => {
 		if (!hoverData) return 0;
 
-		const find = d.find((item) => item.data.time === hoverData.time);
+		const find = d.find((/** @type {any} */ item) => item.data.time === hoverData.time);
 
 		return find ? $yGet(find)[1] : 0;
 	});
 
-	let r = $derived((d) => {
+	let r = $derived((/** @type {any} */ d) => {
 		if (!hoverData) return 0;
 
-		const find = d.find((item) => item.data.time === hoverData.time);
+		const find = d.find((/** @type {any} */ item) => item.data.time === hoverData.time);
 		const hasData = Boolean(find && find.data[d.key]);
 
 		return hasData ? 6 : 0;

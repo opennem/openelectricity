@@ -19,7 +19,7 @@
 	let visible = $state(false);
 	let style = $state('');
 
-	/** @type {HTMLElement} */
+	/** @type {HTMLElement | undefined} */
 	let textContainer = $state();
 
 	/**
@@ -29,8 +29,8 @@
 		const data = { date: d.date };
 		const x = isShapeStack ? $xGet({ data }) : $xGet(data);
 
-		const textOffsetWidth = textContainer?.clientWidth;
-		const textOffsetHeight = textContainer?.clientHeight;
+		const textOffsetWidth = textContainer?.clientWidth ?? 0;
+		const textOffsetHeight = textContainer?.clientHeight ?? 0;
 		const left = x - textOffsetWidth / 2;
 
 		if (position === 'top') {

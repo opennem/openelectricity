@@ -14,7 +14,7 @@ export const formatFyTickX = (/** @type {Date | number} */ d) => {
 };
 
 export const formatValue = (/** @type {number | null | undefined} */ d) => {
-	if (d === null || isNaN(d)) return '—';
+	if (d === null || d === undefined || isNaN(d)) return '—';
 
 	const maximumFractionDigits = Math.abs(d) < 11 ? 2 : 0;
 	const formatted = getNumberFormat(maximumFractionDigits).format(d);

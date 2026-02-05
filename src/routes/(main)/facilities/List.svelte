@@ -121,7 +121,7 @@
 	}
 </script>
 
-{#snippet sortIcon(column)}
+{#snippet sortIcon(/** @type {string} */ column)}
 	<span class="w-4 inline-flex justify-center">
 		{#if sortBy === column}
 			{#if sortOrder === 'asc'}

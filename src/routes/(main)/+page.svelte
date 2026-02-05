@@ -208,7 +208,7 @@
 		regions
 			.filter((r) => r.value && r.longLabel)
 			.map((r) => ({
-				label: r.longLabel,
+				label: /** @type {string} */ (r.longLabel),
 				value: r.value
 			}))
 	);
@@ -267,7 +267,7 @@
 				options={[{ label: 'All regions', value: '' }, ...regionOptions]}
 				selected={selectedRecordRegion}
 				formLabel="All regions"
-				onchange={(opt) => (selectedRecordRegion = opt.value)}
+				onchange={(opt) => (selectedRecordRegion = /** @type {string} */ (opt.value))}
 			/>
 		</div>
 

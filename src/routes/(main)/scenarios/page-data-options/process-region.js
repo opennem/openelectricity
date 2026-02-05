@@ -147,7 +147,7 @@ function generation({ regionsData, includeBatteryAndLoads }) {
 		if (includeBatteryAndLoads) {
 			const dataLoads = projection.stats.data[0].projection.data;
 			const dataSources = projection.stats.data[1].projection.data;
-			const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+			const netGenerationData = dataSources.map((/** @type {any} */ d, /** @type {any} */ i) => d + dataLoads[i]); // loads are already negative
 
 			netGenerationStats.projection.data = netGenerationData;
 		}
@@ -196,7 +196,7 @@ function generation({ regionsData, includeBatteryAndLoads }) {
 		if (includeBatteryAndLoads) {
 			const dataLoads = history.stats.data[0].history.data;
 			const dataSources = history.stats.data[1].history.data;
-			const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+			const netGenerationData = dataSources.map((/** @type {any} */ d, /** @type {any} */ i) => d + dataLoads[i]); // loads are already negative
 
 			netGenerationStats.history.data = netGenerationData;
 		}
@@ -336,11 +336,11 @@ function capacity({ regionsData, includeBatteryAndLoads }) {
 		netGenerationStats.colour = history.colour;
 
 		if (includeBatteryAndLoads) {
-			const totalSources = history.stats.data.find((d) => d.fuel_tech === 'total_sources');
-			const totalLoads = history.stats.data.find((d) => d.fuel_tech === 'total_loads');
+			const totalSources = history.stats.data.find((/** @type {any} */ d) => d.fuel_tech === 'total_sources');
+			const totalLoads = history.stats.data.find((/** @type {any} */ d) => d.fuel_tech === 'total_loads');
 			const dataLoads = totalLoads ? totalLoads.history.data : [];
 			const dataSources = totalSources.history.data;
-			const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+			const netGenerationData = dataSources.map((/** @type {any} */ d, /** @type {any} */ i) => d + dataLoads[i]); // loads are already negative
 
 			netGenerationStats.history.data = netGenerationData;
 		}
@@ -500,15 +500,16 @@ function intensity({ processedEmissions, processedEnergy }) {
 	const processedIntensity = deepCopy(processedEmissions);
 	const seriesNames = processedIntensity.seriesNames;
 
-	processedIntensity.seriesData = processedEmissions.seriesData.map((d, i) => {
+	processedIntensity.seriesData = processedEmissions.seriesData.map((/** @type {any} */ d, /** @type {any} */ i) => {
+		/** @type {any} */
 		const obj = {
 			date: d.date,
 			time: d.time
 		};
 
-		seriesNames.forEach((name) => {
-			if (d[name] && processedEnergy.seriesData[i][name]) {
-				obj[name] = d[name] / processedEnergy.seriesData[i][name];
+		seriesNames.forEach((/** @type {any} */ name) => {
+			if (d[name] && /** @type {any} */ (processedEnergy.seriesData[i])[name]) {
+				obj[name] = d[name] / /** @type {any} */ (processedEnergy.seriesData[i])[name];
 			}
 		});
 

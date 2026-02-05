@@ -38,16 +38,16 @@ export function parseIntervalMs(interval) {
 
 /**
  * Aggregate data points to a larger interval
- * @template T
- * @param {T[]} data - Array of data points with 'time' property
+ * @param {any[]} data - Array of data points with 'time' property
  * @param {string} targetInterval - Target interval (e.g., '30m')
  * @param {string[]} valueKeys - Keys to aggregate (sum)
- * @returns {T[]} Aggregated data
+ * @returns {any[]} Aggregated data
  */
 export function aggregateToInterval(data, targetInterval, valueKeys) {
 	if (!data || data.length === 0) return [];
 
 	const intervalMs = parseIntervalMs(targetInterval);
+	/** @type {Map<number, any>} */
 	const buckets = new Map();
 
 	for (const item of data) {
@@ -82,13 +82,13 @@ export function aggregateToInterval(data, targetInterval, valueKeys) {
 
 /**
  * Calculate average values for aggregated data
- * @template T
- * @param {T[]} data - Aggregated data with _count property
+ * @param {any[]} data - Aggregated data with _count property
  * @param {string[]} valueKeys - Keys to average
- * @returns {T[]} Data with averaged values
+ * @returns {any[]} Data with averaged values
  */
 export function averageAggregatedData(data, valueKeys) {
-	return data.map((item) => {
+	return data.map((/** @type {any} */ item) => {
+		/** @type {any} */
 		const result = { ...item };
 		const count = item._count || 1;
 
@@ -104,11 +104,10 @@ export function averageAggregatedData(data, valueKeys) {
 
 /**
  * Aggregate and average data to a target interval
- * @template T
- * @param {T[]} data - Source data
+ * @param {any[]} data - Source data
  * @param {string} targetInterval - Target interval
  * @param {string[]} valueKeys - Keys to aggregate
- * @returns {T[]} Aggregated and averaged data
+ * @returns {any[]} Aggregated and averaged data
  */
 export function aggregateData(data, targetInterval, valueKeys) {
 	const aggregated = aggregateToInterval(data, targetInterval, valueKeys);

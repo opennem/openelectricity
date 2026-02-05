@@ -1,11 +1,12 @@
 import outlookEnergyNem2022 from './aemo-isp-2022/au/NEM/energy/outlook.json';
 import outlookEnergyNem from './aemo-draft-isp-2024/au/NEM/energy/outlook.json';
 
+/** @param {any} projectionData */
 function parse(projectionData) {
 	const data = projectionData.data;
-	const updatedDataToTera = data.map((d) => {
+	const updatedDataToTera = data.map((/** @type {any} */ d) => {
 		const projection = { ...d.projection };
-		projection.data = projection.data.map((d) => d / 1000);
+		projection.data = projection.data.map((/** @type {number} */ d) => d / 1000);
 
 		return {
 			...d,
@@ -13,9 +14,9 @@ function parse(projectionData) {
 		};
 	});
 
-	const pathways = [...new Set(data.map((d) => d.pathway))];
-	const scenarios = [...new Set(data.map((d) => d.scenario))].sort().reverse();
-	const fuelTechs = [...new Set(data.map((d) => d.fuel_tech))].sort();
+	const pathways = [...new Set(data.map((/** @type {any} */ d) => d.pathway))];
+	const scenarios = [...new Set(data.map((/** @type {any} */ d) => d.scenario))].sort().reverse();
+	const fuelTechs = [...new Set(data.map((/** @type {any} */ d) => d.fuel_tech))].sort();
 
 	return {
 		outlookEnergyNem: {

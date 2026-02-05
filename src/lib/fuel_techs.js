@@ -9,7 +9,7 @@ export const loadFuelTechs = [
 	'pumps',
 	'total_loads'
 ];
-export const isLoad = (ftCode) => loadFuelTechs.includes(ftCode);
+export const isLoad = (/** @type {string} */ ftCode) => loadFuelTechs.includes(ftCode);
 
 /** @type {Object.<FuelTechCode, string>}} */
 export const fuelTechNameMap = {

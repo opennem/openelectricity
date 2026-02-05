@@ -23,7 +23,7 @@
 		const startDate = new Date(data.queryParams.dateStart);
 		const endDate = new Date(data.queryParams.dateEnd);
 
-		const formatOptions = { year: 'numeric', month: 'short' };
+		const formatOptions = /** @type {Intl.DateTimeFormatOptions} */ ({ year: 'numeric', month: 'short' });
 		const startFormatted = startDate.toLocaleDateString('en', formatOptions);
 		const endFormatted = endDate.toLocaleDateString('en', formatOptions);
 
@@ -42,9 +42,10 @@
 	// Get fuel tech names and labels
 	let fuelTechNames = $derived(data?.order || []);
 	let fuelTechLabels = $derived.by(() => {
+		/** @type {Record<string, string>} */
 		const labels = {};
-		fuelTechNames.forEach((tech) => {
-			labels[tech] = tech.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+		fuelTechNames.forEach((/** @type {string} */ tech) => {
+			labels[tech] = tech.replace('_', ' ').replace(/\b\w/g, (/** @type {string} */ l) => l.toUpperCase());
 		});
 		return labels;
 	});
@@ -57,6 +58,7 @@
 	let cumulativeViewState = $state('chart');
 
 	// Fuel tech selection state - using array for FormMultiSelect compatibility
+	/** @type {string[]} */
 	let selectedFuelTechs = $state([]);
 
 	// Initialize selected fuel techs when fuel tech names are available
@@ -68,7 +70,7 @@
 
 	// Create fuel tech options for FormMultiSelect
 	let fuelTechOptions = $derived.by(() => {
-		return fuelTechNames.map((fuelTech) => ({
+		return fuelTechNames.map((/** @type {string} */ fuelTech) => ({
 			value: fuelTech,
 			label: fuelTechLabels[fuelTech]
 		}));
@@ -90,13 +92,20 @@
 	});
 
 	// Helper function to get view state with default
+	/**
+	 * @param {string} fuelTech
+	 */
 	function getViewState(fuelTech) {
-		return viewStates[fuelTech] || 'chart';
+		return /** @type {any} */ (viewStates)[fuelTech] || 'chart';
 	}
 
 	// Helper function to set view state
+	/**
+	 * @param {string} fuelTech
+	 * @param {string} view
+	 */
 	function setViewState(fuelTech, view) {
-		viewStates[fuelTech] = view;
+		/** @type {any} */ (viewStates)[fuelTech] = view;
 	}
 
 	// Handle fuel tech selection change (following Records page pattern)
@@ -108,7 +117,7 @@
 		if (isMetaPressed) {
 			selectedFuelTechs = [value];
 		} else if (selectedFuelTechs.includes(value)) {
-			selectedFuelTechs = selectedFuelTechs.filter((item) => item !== value);
+			selectedFuelTechs = selectedFuelTechs.filter((/** @type {string} */ item) => item !== value);
 		} else {
 			selectedFuelTechs = [...selectedFuelTechs, value];
 		}
@@ -117,9 +126,9 @@
 	// Process and update chart contexts with data
 	$effect(() => {
 		if (Object.keys(profilesData).length > 0) {
-			fuelTechNames.forEach((fuelTech) => {
+			fuelTechNames.forEach((/** @type {string} */ fuelTech) => {
 				const processedData = processGenerationTrendsData(data, fuelTech);
-				const cxt = chartCxts[fuelTech];
+				const cxt = /** @type {any} */ (chartCxts)[fuelTech];
 
 				if (processedData && cxt) {
 					cxt.seriesData = processedData.seriesData;
@@ -167,8 +176,8 @@
 			});
 		} else {
 			// Initialize all contexts with empty data to prevent errors
-			fuelTechNames.forEach((fuelTech) => {
-				const cxt = chartCxts[fuelTech];
+			fuelTechNames.forEach((/** @type {string} */ fuelTech) => {
+				const cxt = /** @type {any} */ (chartCxts)[fuelTech];
 				if (cxt) {
 					cxt.seriesData = [];
 					cxt.seriesNames = [];
@@ -178,7 +187,7 @@
 			});
 
 			// Initialize combined chart with empty data
-			const combinedCxt = chartCxts['combined'];
+			const combinedCxt = /** @type {any} */ (chartCxts)['combined'];
 			if (combinedCxt) {
 				combinedCxt.seriesData = [];
 				combinedCxt.seriesNames = [];
@@ -186,7 +195,7 @@
 				combinedCxt.seriesLabels = {};
 			}
 			// Initialize cumulative chart with empty data
-			const cumulativeCxt = chartCxts['cumulative'];
+			const cumulativeCxt = /** @type {any} */ (chartCxts)['cumulative'];
 			if (cumulativeCxt) {
 				cumulativeCxt.seriesData = [];
 				cumulativeCxt.seriesNames = [];
@@ -200,7 +209,7 @@
 	$effect(() => {
 		if (Object.keys(profilesData).length > 0 && selectedFuelTechs.length > 0) {
 			const combinedProcessedData = processCombinedGenerationTrendsData(data, selectedFuelTechs);
-			const combinedCxt = chartCxts['combined'];
+			const combinedCxt = /** @type {any} */ (chartCxts)['combined'];
 
 			if (combinedProcessedData && combinedCxt) {
 				combinedCxt.seriesData = combinedProcessedData.seriesData;
@@ -231,11 +240,12 @@
 				combinedCxt.xDomain = [new Date(2000, 0, 1), new Date(2000, 11, 1)];
 
 				// Calculate custom y-domain from dataset minimum with padding
+				/** @type {number[]} */
 				const allValues = [];
 				combinedProcessedData.seriesData.forEach(
-					/** @type {any} */ (dataPoint) => {
+					(/** @type {any} */ dataPoint) => {
 						combinedProcessedData.seriesNames.forEach(
-							/** @type {string} */ (seriesName) => {
+							(/** @type {string} */ seriesName) => {
 								const value = dataPoint[seriesName];
 								if (value != null && !isNaN(value)) {
 									allValues.push(value);
@@ -266,7 +276,7 @@
 				data,
 				selectedFuelTechs
 			);
-			const cumulativeCxt = chartCxts['cumulative'];
+			const cumulativeCxt = /** @type {any} */ (chartCxts)['cumulative'];
 
 			if (cumulativeProcessedData && cumulativeCxt) {
 				cumulativeCxt.seriesData = cumulativeProcessedData.seriesData;
@@ -306,7 +316,7 @@
 	 */
 	function updateChartHover(hoverKey, hoverData) {
 		// loop through all charts and update the hover time and key
-		Object.values(chartCxts).forEach((cxt) => {
+		Object.values(chartCxts).forEach((/** @type {any} */ cxt) => {
 			cxt.hoverTime = hoverData ? hoverData.time : undefined;
 			cxt.hoverKey = hoverKey;
 		});
@@ -317,7 +327,7 @@
 	 * @param {number} time
 	 */
 	function updateChartFocus(time) {
-		Object.values(chartCxts).forEach((cxt) => {
+		Object.values(chartCxts).forEach((/** @type {any} */ cxt) => {
 			const isSame = cxt.focusTime === time;
 			cxt.focusTime = isSame ? undefined : time;
 		});
@@ -382,11 +392,11 @@
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 			<!-- Combined Chart -->
 			<GenerationChart
-				chartContext={chartCxts['combined']}
+				chartContext={/** @type {any} */ (chartCxts)['combined']}
 				tableData={combinedTableData}
 				{selectedFuelTechs}
 				viewState={combinedViewState}
-				onViewStateChange={(value) => (combinedViewState = value)}
+				onViewStateChange={(/** @type {string} */ value) => (combinedViewState = value)}
 				{onmousemove}
 				{onmouseout}
 				{onpointerup}
@@ -395,11 +405,11 @@
 
 			<!-- Cumulative Chart -->
 			<GenerationChart
-				chartContext={chartCxts['cumulative']}
+				chartContext={/** @type {any} */ (chartCxts)['cumulative']}
 				tableData={cumulativeTableData}
 				{selectedFuelTechs}
 				viewState={cumulativeViewState}
-				onViewStateChange={(value) => (cumulativeViewState = value)}
+				onViewStateChange={(/** @type {string} */ value) => (cumulativeViewState = value)}
 				{onmousemove}
 				{onmouseout}
 				{onpointerup}
@@ -411,13 +421,13 @@
 		<!-- Individual Fuel Technology Charts -->
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 mt-8 border-t border-warm-grey pt-8">
 			{#each fuelTechNames as fuelTech (fuelTech)}
-				{@const fuelData = profilesData[fuelTech]}
+				{@const fuelData = /** @type {any} */ (profilesData)[fuelTech]}
 				<GenerationChart
-					chartContext={chartCxts[fuelTech]}
+					chartContext={/** @type {any} */ (chartCxts)[fuelTech]}
 					{fuelData}
-					fuelTechName={fuelTech}
+					fuelTechName={/** @type {string} */ (fuelTech)}
 					viewState={getViewState(fuelTech)}
-					onViewStateChange={(value) => setViewState(fuelTech, value)}
+					onViewStateChange={(/** @type {string} */ value) => setViewState(fuelTech, value)}
 					{onmousemove}
 					{onmouseout}
 					{onpointerup}

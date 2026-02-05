@@ -1,7 +1,4 @@
 <script>
-	import { createBubbler } from 'svelte/legacy';
-
-	const bubble = createBubbler();
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 
 	/**
@@ -10,6 +7,7 @@
 	 * @property {string} [label]
 	 * @property {boolean} [checked]
 	 * @property {boolean} [indeterminate]
+	 * @property {() => void} [onchange]
 	 */
 
 	/** @type {Props} */
@@ -17,8 +15,13 @@
 		name = '',
 		label = '',
 		checked = $bindable(false),
-		indeterminate = $bindable(false)
+		indeterminate = $bindable(false),
+		onchange
 	} = $props();
+
+	function handleChange() {
+		onchange?.();
+	}
 </script>
 
 <label for={name} class="relative flex items-center select-none">
@@ -29,7 +32,7 @@
 		type="checkbox"
 		bind:checked
 		bind:indeterminate
-		onchange={bubble('change')}
+		onchange={handleChange}
 		class="hidden size-6 rounded-sm border-gray-300 text-dark-grey focus:ring-dark-grey"
 	/>
 

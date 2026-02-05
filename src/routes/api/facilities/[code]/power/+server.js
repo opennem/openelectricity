@@ -34,7 +34,7 @@ export async function GET({ params, url, setHeaders }) {
 		const dateStart = dateStartParam || formatDate(defaultStart);
 		const dateEnd = dateEndParam || undefined; // Let API default to current time
 
-		/** @type {import('openelectricity').GetFacilityDataOptions} */
+		/** @type {import('openelectricity').IFacilityTimeSeriesParams} */
 		const options = {
 			interval: '5m',
 			dateStart

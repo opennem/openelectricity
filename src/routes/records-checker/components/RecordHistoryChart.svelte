@@ -11,9 +11,12 @@
 	import Brush from '$lib/components/charts/elements/Brush.html.svelte';
 	import ClipPath from '$lib/components/charts/elements/defs/ClipPath.svelte';
 
+	/** @type {{ data: any[], issueInstanceIds?: any[] }} */
 	let { data, issueInstanceIds = [] } = $props();
 
+	/** @type {[number | null, number | null]} */
 	let brushExtents = $state([null, null]);
+	/** @type {any[]} */
 	let brushedData = $state([]);
 
 	const id = 'record-chart-' + new Date().getTime();
@@ -24,7 +27,7 @@
 			(brushExtents[0] || 0) * data.length,
 			(brushExtents[1] || 1) * data.length
 		);
-		if (brushedData.length < 2) {
+		if (brushedData.length < 2 && brushExtents[0] !== null) {
 			brushedData = data.slice(brushExtents[0] * data.length, brushExtents[0] * data.length + 2);
 		}
 	});
@@ -35,8 +38,9 @@
 		console.log('time series data', data);
 	});
 
-	let annotatedData = $derived(data.filter((d) => issueInstanceIds.includes(d.instance_id)));
+	let annotatedData = $derived(data.filter((/** @type {any} */ d) => issueInstanceIds.includes(d.instance_id)));
 
+	/** @param {any} d */
 	const formatTickX = (d) => {
 		const date = new Date(d);
 		return date.toLocaleString('en-AU', {});
@@ -57,8 +61,9 @@
 			<AxisX formatTick={formatTickX} ticks={4} />
 			<AxisY />
 
-			<DotAnnotation clipPathId={`${id}-clip-path`} fill="#FA6060" annotateDots={annotatedData} />
-			<Line curveType={curveStepAfter} stroke="#353535" strokeWidth="0.5px" showDots={true} />
+			<!-- TODO: DotAnnotation doesn't support clipPathId/annotateDots yet -->
+			<!-- <DotAnnotation clipPathId={`${id}-clip-path`} fill="#FA6060" annotateDots={annotatedData} /> -->
+			<Line curveType={curveStepAfter} stroke="#353535" strokeWidth="0.5px" showLineDots={true} />
 		</Svg>
 	</LayerCake>
 </div>

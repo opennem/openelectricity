@@ -14,6 +14,7 @@
 
 	let { data } = $props();
 	let pageSize = 1000;
+	/** @type {any[]} */
 	let recordsData = $state([]);
 	let totalRecords = $state(0);
 	let currentPage = $state(1);
@@ -52,6 +53,17 @@
 		recordIdSearch = data.stringFilter || '';
 	});
 
+	/**
+	 * @param {{
+	 * 	regions: string[],
+	 * 	periods: string[],
+	 * 	fuelTechs: string[],
+	 * 	stringFilter: string,
+	 * 	aggregates: string[],
+	 * 	metrics: string[],
+	 * 	significance: number
+	 * }} params
+	 */
 	function getFilterParams({
 		regions,
 		periods,
@@ -61,7 +73,7 @@
 		metrics,
 		significance
 	}) {
-		const validRegions = regions.filter((r) => r !== '_all');
+		const validRegions = regions.filter((/** @type {string} */ r) => r !== '_all');
 
 		// 8 as in ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem']
 		const regionsParam =
@@ -201,6 +213,7 @@
 	}
 
 	// remove seconds and time difference from timestamp
+	/** @param {string} timestamp */
 	function removeSeconds(timestamp) {
 		return timestamp.slice(0, -9);
 	}

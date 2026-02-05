@@ -13,6 +13,7 @@
 	} from '../page-data-options/filters.js';
 
 	let { data } = $props();
+	/** @type {any[]} */
 	let recordsData = $state([]);
 	let totalRecords = $state(0);
 	let currentPage = $state(1);
@@ -212,6 +213,7 @@
 	}
 
 	// remove seconds and time difference from timestamp
+	/** @param {string} timestamp */
 	function removeSeconds(timestamp) {
 		return timestamp.slice(0, -9);
 	}

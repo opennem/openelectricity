@@ -3,6 +3,7 @@
 
 	let { store } = $props();
 
+	// svelte-ignore state_referenced_locally
 	const {
 		allowPrefixSwitch,
 		allowedPrefixes,
@@ -37,7 +38,7 @@
 				xPad={4}
 				yPad={2}
 				textSize="xs"
-				on:change={(evt) => ($dataTransformType = evt.detail.value)}
+				onchange={(detail) => ($dataTransformType = detail.value)}
 			/>
 		</div>
 	</div>
@@ -52,7 +53,7 @@
 			xPad={4}
 			yPad={2}
 			textSize="xs"
-			on:change={(evt) => ($chartType = evt.detail.value)}
+			onchange={(detail) => ($chartType = detail.value)}
 		/>
 	</div>
 </div>
@@ -66,7 +67,7 @@
 			xPad={4}
 			yPad={2}
 			textSize="xs"
-			on:change={(evt) => ($curveType = evt.detail.value)}
+			onchange={(detail) => ($curveType = detail.value)}
 		/>
 	</div>
 </div>
@@ -81,7 +82,7 @@
 				xPad={4}
 				yPad={2}
 				textSize="xs"
-				on:change={(evt) => ($displayPrefix = evt.detail.value)}
+				onchange={(detail) => ($displayPrefix = detail.value)}
 			/>
 		</div>
 	</div>

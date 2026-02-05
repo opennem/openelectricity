@@ -52,18 +52,18 @@
 		technologyArgs = pURL.searchParams
 			.get('technologies')
 			?.split('+')
-			.reduce((acc, current) => {
+			.reduce((/** @type {Record<string, boolean>} */ acc, /** @type {string} */ current) => {
 				acc[current] = true;
 				return acc;
-			}, {});
+			}, /** @type {Record<string, boolean>} */ ({}));
 
 		regionArgs = pURL.searchParams
 			.get('region')
 			?.split('+')
-			.reduce((acc, current) => {
+			.reduce((/** @type {Record<string, boolean>} */ acc, /** @type {string} */ current) => {
 				acc[current] = true;
 				return acc;
-			}, {});
+			}, /** @type {Record<string, boolean>} */ ({}));
 
 		searchString = pURL.searchParams.get('search') || '';
 

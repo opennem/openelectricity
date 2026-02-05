@@ -95,7 +95,7 @@
 	<TableHeader
 		includeBatteryAndLoads={$includeBatteryAndLoads}
 		hoverTime={$energyHoverTime || $energyFocusTime}
-		on:change={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
 	/>
 
 	<table class="w-full border border-warm-grey">

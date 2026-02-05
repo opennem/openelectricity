@@ -2,9 +2,13 @@ import { derived, writable } from 'svelte/store';
 
 export default function () {
 	const selectedView = writable('list');
+	/** @type {import('svelte/store').Writable<string[]>} */
 	const selectedRegions = writable([]);
+	/** @type {import('svelte/store').Writable<string[]>} */
 	const selectedFuelTechs = writable([]);
+	/** @type {import('svelte/store').Writable<string[]>} */
 	const selectedMetrics = writable([]);
+	/** @type {import('svelte/store').Writable<string[]>} */
 	const selectedPeriods = writable([]);
 
 	const selectedRegion = derived(selectedRegions, ($selectedRegions) => {

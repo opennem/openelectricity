@@ -149,7 +149,7 @@
 		if (isMetaPressed) {
 			$selectedRegions = [value];
 		} else if ($selectedRegions.includes(value)) {
-			$selectedRegions = $selectedRegions.filter((item) => item !== value);
+			$selectedRegions = $selectedRegions.filter((/** @type {string} */ item) => item !== value);
 		} else {
 			$selectedRegions = [...$selectedRegions, value];
 		}

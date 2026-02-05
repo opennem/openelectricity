@@ -15,11 +15,11 @@
 	/** @type {Props} */
 	let { strokeWidth = '4px', opacity = 1 } = $props();
 
-	let path = $derived((values) => {
+	let path = $derived((/** @type {any[]} */ values) => {
 		return values.length
 			? 'M' +
 					values
-						.map((d) => {
+						.map((/** @type {any} */ d) => {
 							return $xGet(d) + ',' + $yGet(d);
 						})
 						.join('L')

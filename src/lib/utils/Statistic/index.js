@@ -78,7 +78,7 @@ Statistic.prototype.interpolateSolarRooftopData = function () {
 		return result;
 	}
 
-	const solarRooftopData = this.data.find((d) => d.fuel_tech === 'solar_rooftop');
+	const solarRooftopData = this.data.find((/** @type {any} */ d) => d.fuel_tech === 'solar_rooftop');
 	if (solarRooftopData) {
 		solarRooftopData.history.data = interpolateNulls(solarRooftopData.history.data);
 	}

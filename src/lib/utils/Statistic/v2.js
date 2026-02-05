@@ -68,8 +68,9 @@ export default class StatisticV2 {
 		if (!intervals.length) return null;
 
 		// Return the most common interval
+		/** @type {any} */
 		const counts = {};
-		intervals.forEach((i) => {
+		intervals.forEach((/** @type {any} */ i) => {
 			counts[i] = (counts[i] || 0) + 1;
 		});
 
@@ -112,7 +113,7 @@ export default class StatisticV2 {
 			if (idsToInvert.includes(id)) {
 				const statsData = item[instance.statsType];
 				if (statsData?.data) {
-					statsData.data = statsData.data.map((v) => (v !== null && v !== undefined ? -v : v));
+					statsData.data = statsData.data.map((/** @type {any} */ v) => (v !== null && v !== undefined ? -v : v));
 				}
 			}
 		});
@@ -157,7 +158,7 @@ export default class StatisticV2 {
 			// Sum all sources
 			sources.forEach((source) => {
 				const data = source[instance.statsType]?.data || [];
-				data.forEach((val, i) => {
+				data.forEach((/** @type {any} */ val, /** @type {any} */ i) => {
 					if (val !== null && val !== undefined) {
 						groupedData[i] = (groupedData[i] || 0) + val;
 					}

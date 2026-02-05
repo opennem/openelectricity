@@ -238,14 +238,14 @@ function aggregateToInterval(data, seriesNames, targetInterval) {
 				point[name] = null;
 			} else {
 				// Use mean for aggregation
-				point[name] = values.reduce((a, b) => a + b, 0) / values.length;
+				point[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) / values.length;
 			}
 		});
 
 		result.push(point);
 	}
 
-	return result.sort((a, b) => a.time - b.time);
+	return result.sort((/** @type {any} */ a, /** @type {any} */ b) => a.time - b.time);
 }
 
 /**

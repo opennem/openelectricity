@@ -26,7 +26,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('./ChartStore.svelte.js').default} chart - The chart store instance
-	 * @property {(evt: { data: TimeSeriesData, key: string }) => void} [onmousemove]
+	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
 	 * @property {(evt: TimeSeriesData) => void} [onpointerup]
 	 */

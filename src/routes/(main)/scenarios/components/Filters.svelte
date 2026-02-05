@@ -17,7 +17,10 @@
 
 	import { formatFyTickX } from '$lib/utils/formatters';
 
-	import { viewSectionOptions } from '../page-data-options/view-sections';
+	import { viewSectionOptions as _viewSectionOptions } from '../page-data-options/view-sections';
+
+	/** @type {any[]} */
+	const viewSectionOptions = _viewSectionOptions;
 	import { dataTypeDisplayOptions } from '../page-data-options/data-types';
 	import { scenarioLabels } from '../page-data-options/descriptions';
 	import { modelOptions, modelScenarioPathwayOptions } from '../page-data-options/models';
@@ -179,7 +182,7 @@
 		if (isMetaPressed) {
 			$selectedCharts = [dataType];
 		} else if ($selectedCharts.includes(dataType)) {
-			$selectedCharts = $selectedCharts.filter((d) => d !== dataType);
+			$selectedCharts = $selectedCharts.filter((/** @type {string} */ d) => d !== dataType);
 		} else {
 			$selectedCharts = [...$selectedCharts, dataType];
 		}
@@ -252,15 +255,15 @@
 				selected={$selectedViewSection}
 				paddingX="px-4"
 				paddingY="py-3"
-				onchange={(option) => handleDisplayViewChange($selectedViewSection, option.value)}
+				onchange={(option) => handleDisplayViewChange($selectedViewSection, /** @type {ScenarioViewSection} */ (option.value))}
 			/>
 		</div>
 
 		<div class="hidden sm:block">
 			<Switch
-				buttons={viewSectionOptions}
+				buttons={/** @type {any} */ (viewSectionOptions)}
 				selected={$selectedViewSection}
-				onchange={(option) => handleDisplayViewChange($selectedViewSection, option.value)}
+				onchange={(option) => handleDisplayViewChange($selectedViewSection, /** @type {ScenarioViewSection} */ (option.value))}
 				class="justify-center my-4"
 			/>
 		</div>

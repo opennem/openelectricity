@@ -21,7 +21,7 @@
 	function getMarkerLines(key) {
 		return gaugeYears.map((year) => {
 			const filtered = dataset.filter((d) => d.date.getFullYear() === year);
-			return filtered.length ? filtered[0][key] : 0;
+			return filtered.length ? /** @type {number} */ (filtered[0][key]) : 0;
 		});
 	}
 
@@ -59,7 +59,7 @@
 				{#each gaugeYears as year (year)}
 					<div class="flex justify-between">
 						<span>{year}</span>
-						<span>{dataset.filter((d) => d.date.getFullYear() === year)[0][key].toFixed(2)}</span>
+						<span>{/** @type {number} */ (dataset.filter((d) => d.date.getFullYear() === year)[0][key]).toFixed(2)}</span>
 					</div>
 				{/each}
 			</div>

@@ -304,7 +304,7 @@ export default function () {
 				const date = day + ' ' + time;
 				const row = [date];
 				$seriesNames.forEach((key) => {
-					row.push($convertValue(d[key]));
+					row.push($convertValue(/** @type {number} */ (d[key])));
 				});
 				csv += row.join(',') + '\n';
 			});

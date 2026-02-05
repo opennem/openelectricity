@@ -30,7 +30,7 @@ export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 export const formatFyTickX = (/** @type {Date | number} */ d) => {
 	return format(d, 'yyyy');
 };
-export const displayXTicks = (d) => d.map((t) => startOfYear(t));
+export const displayXTicks = (/** @type {Date[]} */ d) => d.map((/** @type {Date} */ t) => startOfYear(t));
 export const formatValue = (/** @type {number} */ d) => {
 	if (isNaN(d)) return '—';
 
@@ -76,7 +76,7 @@ export const totalEmissionsGroupOptions = [totalEmissionsGroup];
  * @returns
  */
 export function createNewStats(data, selectedGroup, type = 'projection') {
-	const group = allGroupOptions.find((d) => d.value === selectedGroup);
+	const group = allGroupOptions.find((/** @type {any} */ d) => d.value === selectedGroup);
 
 	if (!group) console.error('Group not found');
 
@@ -118,9 +118,10 @@ export function createNewTimeSeries(
 }
 
 // Convert historical data to Terra to match ISP
+/** @param {any[]} data */
 export function covertHistoryDataToTWh(data) {
 	return data.map((/** @type {StatsData} */ d) => {
-		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
+		const historyData = d.history.data.map((/** @type {any} */ v) => (v ? v / 1000 : null));
 		d.history = { ...d.history, data: historyData };
 		d.units = 'TWh';
 		return d;
@@ -128,6 +129,7 @@ export function covertHistoryDataToTWh(data) {
 }
 
 // Merge historical emissions data into total
+/** @param {any[]} historyData */
 export function mergeHistoricalEmissionsData(historyData) {
 	const firstData = historyData[0];
 	const combinedHistoryData = {
@@ -142,8 +144,8 @@ export function mergeHistoricalEmissionsData(historyData) {
 		}
 	};
 
-	historyData.forEach((d) => {
-		d.history.data.forEach((v, j) => {
+	historyData.forEach((/** @type {any} */ d) => {
+		d.history.data.forEach((/** @type {any} */ v, /** @type {number} */ j) => {
 			const newValue = v;
 			combinedHistoryData.history.data[j] += newValue || 0;
 		});
@@ -152,39 +154,47 @@ export function mergeHistoricalEmissionsData(historyData) {
 }
 
 // Mutate history data dates to start of FY year
+/** @param {any[]} data */
 export function mutateHistoryDataDates(data) {
-	return data.map((d) => {
+	return data.map((/** @type {any} */ d) => {
 		const date = startOfYear(d.date);
 		return { ...d, date, time: date.getTime() };
 	});
 }
 
 // Mutate projection data dates to start of FY year
+/** @param {any[]} data */
 export function mutateProjectionDataDates(data) {
-	return data.map((d) => {
+	return data.map((/** @type {any} */ d) => {
 		const date = startOfYear(addYears(d.date, 1));
 		return { ...d, date, time: date.getTime() };
 	});
 }
 
+/**
+ * @param {any} statsData
+ * @param {any} otherStats
+ * @param {StatsType} type
+ */
 export function calculatePercentageStats(statsData, otherStats, type) {
 	const sourceLoadStats = createNewStats(statsData.data, 'totals', type);
 
+	/** @type {number[]} */
 	let netData = [];
 
-	sourceLoadStats.data.forEach((d, i) => {
+	sourceLoadStats.data.forEach((/** @type {any} */ d, /** @type {number} */ i) => {
 		if (i === 0) {
-			netData = d[type].data.map((v) => v);
+			netData = d[type].data.map((/** @type {any} */ v) => v);
 		} else {
-			d[type].data.forEach((v, j) => {
+			d[type].data.forEach((/** @type {any} */ v, /** @type {number} */ j) => {
 				netData[j] += v;
 			});
 		}
 	});
 
-	otherStats.data.forEach((s) => {
+	otherStats.data.forEach((/** @type {any} */ s) => {
 		s.units = '%';
-		s[type].data.forEach((d, i) => {
+		s[type].data.forEach((/** @type {any} */ d, /** @type {number} */ i) => {
 			s[type].data[i] = (d / netData[i]) * 100;
 		});
 	});
@@ -192,16 +202,24 @@ export function calculatePercentageStats(statsData, otherStats, type) {
 	return otherStats;
 }
 
+/**
+ * @param {any[]} dataset
+ * @param {any} otherTimeSeries
+ * @param {any} colourReducer
+ * @param {StatsType} type
+ */
 export function calculatePercentageTimeSeries(dataset, otherTimeSeries, colourReducer, type) {
 	const sourceLoadStats = createNewStats(dataset, 'totals', type);
-	const totalsLoadIds = dataset.filter((d) => d.isLoad).map((d) => d.id);
+	const totalsLoadIds = dataset.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
 
+	/** @type {Record<string, any>} */
 	let netStatsData = {};
+	/** @type {number[]} */
 	let netData = [];
 
-	sourceLoadStats.data.forEach((d, i) => {
+	sourceLoadStats.data.forEach((/** @type {any} */ d, /** @type {number} */ i) => {
 		if (i === 0) {
-			netData = d[type].data.map((v) => v);
+			netData = d[type].data.map((/** @type {any} */ v) => v);
 			netStatsData = {
 				...d,
 				[type]: {
@@ -214,7 +232,7 @@ export function calculatePercentageTimeSeries(dataset, otherTimeSeries, colourRe
 				isLoad: false
 			};
 		} else {
-			d[type].data.forEach((v, j) => {
+			d[type].data.forEach((/** @type {any} */ v, /** @type {number} */ j) => {
 				netData[j] += v;
 			});
 		}
@@ -232,8 +250,8 @@ export function calculatePercentageTimeSeries(dataset, otherTimeSeries, colourRe
 	);
 
 	const otherSeriesName = otherTimeSeries.seriesNames[0];
-	otherTimeSeries.data.forEach((s, i) => {
-		s[otherSeriesName] = (s[otherSeriesName] / netTimeSeries.data[i]['au.net_total']) * 100;
+	otherTimeSeries.data.forEach((/** @type {any} */ s, /** @type {number} */ i) => {
+		s[otherSeriesName] = (s[otherSeriesName] / /** @type {number} */ (/** @type {any} */ (netTimeSeries).data[i]['au.net_total'])) * 100;
 	});
 
 	return otherTimeSeries;
@@ -242,9 +260,10 @@ export function calculatePercentageTimeSeries(dataset, otherTimeSeries, colourRe
 // return empty values for these dates
 // - only for Capacity view because we don't have historical capacity data
 // - to pad out the xAxis
+/** @param {any[]} data */
 const getEmpty = (data) =>
-	deepCopy(data).map((d) => {
-		Object.keys(d).forEach((key) => {
+	deepCopy(data).map((/** @type {any} */ d) => {
+		Object.keys(d).forEach((/** @type {string} */ key) => {
 			if (key !== 'date' && key !== 'time') {
 				d[key] = 0;
 			}
@@ -252,10 +271,15 @@ const getEmpty = (data) =>
 		return { ...d, date: new Date(d.time) };
 	});
 
+/**
+ * @param {any} historyTimeSeries
+ * @param {any} projectionTimeSeries
+ * @param {string} selectedModel
+ */
 function updateTimeSeriesData(historyTimeSeries, projectionTimeSeries, selectedModel) {
 	// Mutate historical dates (update june to jan) to match ISP and filter from 2010 and before 2025
 	const updatedHistoricalTimeSeriesData = mutateHistoryDataDates(historyTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(/** @type {any} */ d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
 	);
 
 	// Mutate proejction dates (update july to jan next year)
@@ -321,7 +345,7 @@ export function processTechnologyData({
 		/** @type {*} */
 		let labels = {};
 
-		names.forEach((name) => {
+		names.forEach((/** @type {string} */ name) => {
 			colours[name] =
 				historicalTimeSeries.seriesColours[name] || projectionTimeSeries.seriesColours[name];
 
@@ -329,18 +353,18 @@ export function processTechnologyData({
 				historicalTimeSeries.seriesLabels[name] || projectionTimeSeries.seriesLabels[name];
 		});
 
-		const maxY = [...data.map((d) => d._max)];
+		const maxY = [...data.map((/** @type {any} */ d) => d._max)];
 		// @ts-ignore
 		const datasetMax = maxY ? Math.max(...maxY) : 0;
 
-		const minY = [...data.map((d) => d._min)];
+		const minY = [...data.map((/** @type {any} */ d) => d._min)];
 		// @ts-ignore
 		const datasetMin = minY ? Math.min(...minY) : 0;
 
 		return {
 			data,
 			names,
-			nameOptions: [...names].reverse().map((name) => {
+			nameOptions: [...names].reverse().map((/** @type {string} */ name) => {
 				return { id: name, name: name };
 			}),
 			colours,
@@ -370,6 +394,7 @@ export function processScenarioData({
 	selectedDataView,
 	historySeriesName
 }) {
+	/** @type {any[]} */
 	let updatedData = [];
 
 	console.log('historySeriesName', historySeriesName);
@@ -378,11 +403,11 @@ export function processScenarioData({
 	if (scenarioProjectionTimeSeries.length > 0) {
 		// Mutate historical dates (update june to jan) to match ISP and filter from 2010 and before 2025
 		const updatedHistoricalTimeSeriesData = mutateHistoryDataDates(
-			scenarioHistoricalTimeSeries.data
-		).filter((d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009);
+			/** @type {any} */ (scenarioHistoricalTimeSeries.data)
+		).filter((/** @type {any} */ d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009);
 
 		// Mutate projection dates (update july to jan next year)
-		const updatedProjectionTimeSeriesDataArray = scenarioProjectionTimeSeries.map((d) => {
+		const updatedProjectionTimeSeriesDataArray = scenarioProjectionTimeSeries.map((/** @type {any} */ d) => {
 			const updatedSeries = {
 				...d.series,
 				data: mutateProjectionDataDates(d.series.data) // only mutate dates that are not start of year
@@ -424,7 +449,7 @@ export function processScenarioData({
 			// console.log('first last', firstProjectionItem, lastHistory, historyData);
 
 			// add all date/time and historical net values to updatedData
-			updatedData = [...historyData, ...firstProjectionSeriesData].map((d, i) => {
+			updatedData = [...historyData, ...firstProjectionSeriesData].map((/** @type {any} */ d, /** @type {number} */ i) => {
 				const historical =
 					i < historyData.length
 						? selectedDataView === 'emissions'
@@ -455,16 +480,16 @@ export function processScenarioData({
 
 			// add all scenario projection data to updatedData
 			// - add based on the date time because different models will have different projection start/end dates
-			updatedProjectionTimeSeriesDataArray.forEach((series) => {
-				series.series.data.forEach((d, i) => {
-					const find = updatedData.find((u) => u.time === d.time);
+			updatedProjectionTimeSeriesDataArray.forEach((/** @type {any} */ series) => {
+				series.series.data.forEach((/** @type {any} */ d, /** @type {number} */ i) => {
+					const find = updatedData.find((/** @type {any} */ u) => u.time === d.time);
 					find[series.id] = d._max; // demand (sources - loads)
 				});
 			});
 
 			// add empty values for scenario projection data before first projection date
-			updatedData.forEach((d) => {
-				updatedProjectionTimeSeriesDataArray.forEach((series) => {
+			updatedData.forEach((/** @type {any} */ d) => {
+				updatedProjectionTimeSeriesDataArray.forEach((/** @type {any} */ series) => {
 					if (!d[series.id]) {
 						d[series.id] = null;
 					}
@@ -481,32 +506,34 @@ export function processScenarioData({
 		}
 	}
 
-	const names = [...scenarioProjectionTimeSeries.map((d) => d.id), 'historical'];
-	const options = names.map((name) => {
+	const names = [...scenarioProjectionTimeSeries.map((/** @type {any} */ d) => d.id), 'historical'];
+	const options = names.map((/** @type {string} */ name) => {
 		return { id: name, name: name, colour: name === 'historical' ? 'red' : 'black' };
 	});
 
+	/** @type {Record<string, any>} */
 	const colours = scenarioProjectionData.reduce(
-		(acc, curr) => ((acc[curr.id] = curr.colour), acc),
+		(/** @type {any} */ acc, /** @type {any} */ curr) => ((acc[curr.id] = curr.colour), acc),
 		{}
 	);
 	colours['historical'] = 'black';
+	/** @type {Record<string, any>} */
 	const labels = scenarioProjectionTimeSeries.reduce(
-		(acc, curr) => ((acc[curr.id] = scenarioLabels[curr.model][curr.scenario]), acc),
+		(/** @type {any} */ acc, /** @type {any} */ curr) => ((acc[curr.id] = scenarioLabels[curr.model][curr.scenario]), acc),
 		{}
 	);
 	// add History
 	labels['historical'] = 'Historical';
 
 	return {
-		data: updatedData.map((d) => {
+		data: updatedData.map((/** @type {any} */ d) => {
 			/** @type {TimeSeriesData} */
 			const newObj = { ...d };
 			// get min and max values for each time series
 			newObj._max = 0;
 			newObj._min = 0;
 
-			scenarioProjectionTimeSeries.forEach((l) => {
+			scenarioProjectionTimeSeries.forEach((/** @type {any} */ l) => {
 				// @ts-ignore
 				if (d[l.id] > newObj._max) {
 					newObj._max = d[l.id];
@@ -516,7 +543,7 @@ export function processScenarioData({
 			return newObj;
 		}),
 		names,
-		nameOptions: names.map((name) => {
+		nameOptions: names.map((/** @type {string} */ name) => {
 			return { id: name, name: name };
 		}),
 		colours: colours,
@@ -541,20 +568,22 @@ export function processRegionData({
 	historySeriesName,
 	selectedModel
 }) {
+	/** @type {any[]} */
 	let updatedData = [];
+	/** @type {any[]} */
 	let combinedRegionData = [];
 
 	console.log('processRegionData regionHistoricalTimeSeries', regionHistoricalTimeSeries);
 
 	if (regionProjectionTimeSeries.length > 0 && regionHistoricalTimeSeries.length > 0) {
-		regionHistoricalTimeSeries.forEach((series) => {
+		regionHistoricalTimeSeries.forEach((/** @type {any} */ series) => {
 			series.series.data = mutateHistoryDataDates(series.series.data).filter(
-				(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+				(/** @type {any} */ d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
 			);
 		});
 
 		// Mutate projection dates (update july to jan next year)
-		regionProjectionTimeSeries.forEach((series) => {
+		regionProjectionTimeSeries.forEach((/** @type {any} */ series) => {
 			series.series.data = mutateProjectionDataDates(series.series.data);
 		});
 
@@ -566,9 +595,9 @@ export function processRegionData({
 		const firstProjectionSeriesData = regionProjectionTimeSeries[0].series.data;
 		const firstProjectionItem = firstProjectionSeriesData[0];
 
-		regionsOnly.forEach((region) => {
-			const historicalData = regionHistoricalTimeSeries.find((d) => d.region === region);
-			const projectionData = regionProjectionTimeSeries.find((d) => d.region === region);
+		regionsOnly.forEach((/** @type {string} */ region) => {
+			const historicalData = regionHistoricalTimeSeries.find((/** @type {any} */ d) => d.region === region);
+			const projectionData = regionProjectionTimeSeries.find((/** @type {any} */ d) => d.region === region);
 
 			if (historicalData && projectionData) {
 				// if last history time is the same as first projection time, remove the last history data
@@ -592,15 +621,15 @@ export function processRegionData({
 
 		console.log('combinedRegionData', combinedRegionData);
 
-		updatedData = combinedRegionData[0].data.map((d) => {
+		updatedData = combinedRegionData[0].data.map((/** @type {any} */ d) => {
 			return {
 				date: d.date,
 				time: d.time
 			};
 		});
 
-		combinedRegionData.forEach((series) => {
-			series.data.forEach((d, i) => {
+		combinedRegionData.forEach((/** @type {any} */ series) => {
+			series.data.forEach((/** @type {any} */ d, /** @type {number} */ i) => {
 				updatedData[i][series.region] =
 					selectedDataView === 'emissions'
 						? d[historySeriesName]
@@ -612,14 +641,14 @@ export function processRegionData({
 	}
 
 	return {
-		data: updatedData.map((d) => {
+		data: updatedData.map((/** @type {any} */ d) => {
 			/** @type {TimeSeriesData} */
 			const newObj = { ...d };
 			// get min and max values for each time series
 			newObj._max = 0;
 			newObj._min = 0;
 
-			regionsOnly.forEach((l) => {
+			regionsOnly.forEach((/** @type {string} */ l) => {
 				// @ts-ignore
 				if (d[l] > newObj._max) {
 					newObj._max = d[l];
@@ -629,7 +658,7 @@ export function processRegionData({
 			return newObj;
 		}),
 		names: regionsOnly,
-		nameOptions: [...regionsOnly].map((name) => {
+		nameOptions: [...regionsOnly].map((/** @type {string} */ name) => {
 			return { id: name, name: name };
 		}),
 		colours: regionsOnlyWithColours,

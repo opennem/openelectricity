@@ -37,12 +37,12 @@
 		if (!data.length || !$yScale) return '';
 
 		const lineGen = line()
-			.x((d) => (d._bandX / 100) * chartWidth)
-			.y((d) => $yScale(d[valueKey]))
+			.x((/** @type {any} */ d) => (d._bandX / 100) * chartWidth)
+			.y((/** @type {any} */ d) => $yScale(d[valueKey]))
 			.curve(curveType)
-			.defined((d) => d[valueKey] !== null && d[valueKey] !== undefined && !isNaN(d[valueKey]));
+			.defined((/** @type {any} */ d) => d[valueKey] !== null && d[valueKey] !== undefined && !isNaN(d[valueKey]));
 
-		return lineGen(data) || '';
+		return lineGen(/** @type {any} */ (data)) || '';
 	});
 </script>
 

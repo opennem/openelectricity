@@ -157,20 +157,20 @@ export const modelOptions = [
 
 let colourIndex = 0;
 const maxColours = secondaryColourPalette.length;
-modelOptions.forEach((model) => {
-	model.scenarios.forEach((scenario) => {
+modelOptions.forEach((/** @type {any} */ model) => {
+	model.scenarios.forEach((/** @type {any} */ scenario) => {
 		scenario.colour = secondaryColourPalette[colourIndex % maxColours];
 		colourIndex++;
 	});
 });
 
-/** @type {*} */
-export const scenarioOptions = modelOptions.reduce((acc, curr) => [...acc, ...curr.scenarios], []);
+/** @type {any[]} */
+export const scenarioOptions = modelOptions.reduce((/** @type {any[]} */ acc, /** @type {any} */ curr) => [...acc, ...curr.scenarios], /** @type {any[]} */ ([]));
 
 // create a list of unique ids for every mutation of model, scenario and pathway
-export const modelScenarioPathwayOptions = modelOptions.reduce((acc, model) => {
-	model.scenarios.forEach((scenario) => {
-		model.pathways.forEach((pathway) => {
+export const modelScenarioPathwayOptions = modelOptions.reduce((/** @type {any[]} */ acc, /** @type {any} */ model) => {
+	model.scenarios.forEach((/** @type {any} */ scenario) => {
+		model.pathways.forEach((/** @type {string} */ pathway) => {
 			acc.push({
 				id: `${model.value}-${scenario.value}-${pathway}`,
 				model: model.value,
@@ -180,20 +180,25 @@ export const modelScenarioPathwayOptions = modelOptions.reduce((acc, model) => {
 		});
 	});
 	return acc;
-}, []);
+}, /** @type {any[]} */ ([]));
 
-export const modelLabelMap = modelOptions.reduce((acc, curr) => {
+/** @type {Record<string, string>} */
+export const modelLabelMap = modelOptions.reduce((/** @type {Record<string, string>} */ acc, /** @type {any} */ curr) => {
 	acc[curr.value] = curr.label;
 	return acc;
-}, {});
-export const scenarioColourMap = scenarioOptions.reduce((acc, curr) => {
+}, /** @type {Record<string, string>} */ ({}));
+
+/** @type {Record<string, string>} */
+export const scenarioColourMap = scenarioOptions.reduce((/** @type {Record<string, string>} */ acc, /** @type {any} */ curr) => {
 	acc[curr.id] = curr.colour;
 	return acc;
-}, {});
-export const scenarioLabelMap = scenarioOptions.reduce((acc, curr) => {
+}, /** @type {Record<string, string>} */ ({}));
+
+/** @type {Record<string, string>} */
+export const scenarioLabelMap = scenarioOptions.reduce((/** @type {Record<string, string>} */ acc, /** @type {any} */ curr) => {
 	acc[curr.id] = curr.label;
 	return acc;
-}, {});
+}, /** @type {Record<string, string>} */ ({}));
 
 // add secondary colours to scenarios
 // let colourIndex = 0;

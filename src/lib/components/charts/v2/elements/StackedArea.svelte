@@ -90,7 +90,7 @@
 			(d) => $yGet(d)
 		)
 			.curve(curveType)
-			.defined((d) => d.value !== null && !isNaN(d.value))
+			.defined((/** @type {any} */ d) => d.value !== null && !isNaN(d.value))
 	);
 
 	/**

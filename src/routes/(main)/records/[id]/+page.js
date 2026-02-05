@@ -19,7 +19,7 @@ export async function load({ data, params, fetch }) {
 			const formatX = xTickValueFormatters[period].format;
 			let formattedDateTime = data.focusTime
 				? formatX(new Date(data.focusTime), timeZone)
-				: formatX(new Date(firstRecord.interval), timeZone);
+				: formatX(new Date(/** @type {string} */ (firstRecord.interval)), timeZone);
 			returnedData = {
 				...firstRecord,
 				formattedDateTime

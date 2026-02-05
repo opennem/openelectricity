@@ -60,23 +60,28 @@
 		]
 	};
 
+	/** @type {Record<string, number>} */
 	let intensity = $state({});
 	const intensityScale = scaleLinear().domain([0, 900]).range([0, 100]);
 
+	/**
+	 * @param {Record<string, number>} emissionsTotal
+	 * @param {Record<string, number>} generationTotal
+	 */
 	function updateIntensity(emissionsTotal, generationTotal) {
-		rows.annual.forEach((row) => {
-			intensity[row.id] = emissionsTotal[row.id] / generationTotal[row.id];
+		rows.annual.forEach((/** @type {any} */ row) => {
+			/** @type {any} */ (intensity)[row.id] = /** @type {any} */ (emissionsTotal)[row.id] / /** @type {any} */ (generationTotal)[row.id];
 		});
 	}
 
 	// Track map mode and data
-	let mapMode = $state('annual'); // annual
+	let mapMode = $state(/** @type {'live' | 'annual'} */ ('annual'));
 
 	/**
 	 * @param {string} value
 	 */
 	function onMapModeChange(value) {
-		mapMode = value;
+		mapMode = /** @type {'live' | 'annual'} */ (value);
 	}
 
 	const auDollar = new Intl.NumberFormat('en-AU', {
@@ -89,8 +94,11 @@
 		maximumFractionDigits: 0
 	});
 
+	/**
+	 * @param {string} state
+	 */
 	function getRenewablePercent(state) {
-		return Math.round((renewablesTotal[state] / generationTotal[state]) * 100);
+		return Math.round((/** @type {any} */ (renewablesTotal)[state] / /** @type {any} */ (generationTotal)[state]) * 100);
 	}
 
 	let hoverRegion = $state();
@@ -99,22 +107,22 @@
 	// 	return Math.round(emissionsTotal[state] / generationTotal[state]);
 	// }
 	// $: mapData = data[mapMode];
-	let liveMode = $derived(mapMode === 'live');
+	let liveMode = $derived(/** @type {string} */ (mapMode) === 'live');
 	let generationTotal = $derived(
 		regionGenerationTotal(
-			liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
+			liveMode ? rows.live.map((/** @type {any} */ d) => d.id) : rows.annual.map((/** @type {any} */ d) => d.id),
 			liveMode ? regionPower : regionEnergy
 		)
 	);
 	let renewablesTotal = $derived(
 		regionRenewablesTotal(
-			liveMode ? rows.live.map((d) => d.id) : rows.annual.map((d) => d.id),
+			liveMode ? rows.live.map((/** @type {any} */ d) => d.id) : rows.annual.map((/** @type {any} */ d) => d.id),
 			liveMode ? regionPower : regionEnergy
 		)
 	);
 	let emissionsTotal = $derived(
 		regionEmissionsTotal(
-			!liveMode ? rows.annual.map((d) => d.id) : [],
+			!liveMode ? rows.annual.map((/** @type {any} */ d) => d.id) : [],
 			!liveMode ? regionEmissions : []
 		)
 	);
@@ -123,14 +131,14 @@
 	});
 	let dispatchTime = $derived(Date.parse(flows.dispatchDateTimeString));
 	let dispatch = $derived(
-		mapMode === 'live'
+		/** @type {string} */ (mapMode) === 'live'
 			? dispatchTime
 				? `${isToday(dispatchTime) ? 'Today ' : ''}${format(dispatchTime, 'HH:mmaaa xxx')}`
 				: ''
 			: 'Avg. past 12 months'
 	);
-	let mapModeRows = $derived(rows[mapMode]);
-	let getPrice = $derived((state) => {
+	let mapModeRows = $derived(/** @type {any} */ (rows)[mapMode]);
+	let getPrice = $derived((/** @type {string} */ state) => {
 		return prices.regionPrices[`${state}1`]
 			? auDollar.format(prices.regionPrices[`${state}1`])
 			: '—';
@@ -171,7 +179,7 @@
 			<table class="text-left w-full">
 				<thead>
 					<tr class="border-b border-mid-warm-grey text-mid-grey align-bottom text-xs">
-						{#each columns[mapMode] as column, i (i)}
+						{#each /** @type {any} */ (columns)[mapMode] as column, i (i)}
 							{#if !(mapMode === 'annual' && i === 2)}
 								<td
 									class="pb-3"
@@ -223,7 +231,7 @@
 								<td class="py-3 pl-3 md:pl-6">
 									<div
 										class="h-4 border border-black"
-										style:background-color={$carbonIntensityColour(intensity[row.id])}
+										style:background-color={/** @type {any} */ ($carbonIntensityColour)(intensity[row.id])}
 										style:width={`${intensityScale(intensity[row.id])}px`}
 									></div>
 								</td>

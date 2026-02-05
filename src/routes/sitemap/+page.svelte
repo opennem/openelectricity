@@ -10,6 +10,7 @@
 	/** @type {Props} */
 	let { data } = $props();
 
+	/** @type {any[]} */
 	let sortedFacilities = $derived(data.facilities.sort(byProp('name')));
 </script>
 

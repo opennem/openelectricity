@@ -44,29 +44,30 @@
 	});
 
 	let selectedModel = $state(modelSelections[0]);
-	let selectedScenario = $state(scenarios[selectedModel.value][0]);
+	let selectedScenario = $state(/** @type {any} */ (scenarios)[selectedModel.value][0]);
 
 	let selectedFtGroup = $state(ftGroupSelections[0]);
 
-	let group = $derived(groupMap[selectedFtGroup.value]);
-	let order = $derived(orderMap[selectedFtGroup.value]);
+	let group = $derived(/** @type {any} */ (groupMap)[selectedFtGroup.value]);
+	let order = $derived(/** @type {any} */ (orderMap)[selectedFtGroup.value]);
 
 	// $: aemo2022 = data.ispData.aemo2022;
 	// $: aemo2024 = data.ispData.aemo2024;
 	// $: console.log(aemo2022, aemo2024);
 
-	let selectedModelScenarioDescriptions = $derived(scenarioDescriptions[selectedModel.value]);
-	let selectedModelScenarioLabels = $derived(scenarioLabels[selectedModel.value]);
-	let selectedModelPathway = $derived(selectedPathway[selectedModel.value]);
-	let selectedModelYDomain = $derived(scenarioYDomain[selectedModel.value]);
-	let selectedModelXTicks = $derived(modelXTicks[selectedModel.value]);
+	let selectedModelScenarios = $derived(/** @type {any} */ (scenarios)[selectedModel.value]);
+	let selectedModelScenarioDescriptions = $derived(/** @type {any} */ (scenarioDescriptions)[selectedModel.value]);
+	let selectedModelScenarioLabels = $derived(/** @type {any} */ (scenarioLabels)[selectedModel.value]);
+	let selectedModelPathway = $derived(/** @type {any} */ (selectedPathway)[selectedModel.value]);
+	let selectedModelYDomain = $derived(/** @type {any} */ (scenarioYDomain)[selectedModel.value]);
+	let selectedModelXTicks = $derived(/** @type {any} */ (modelXTicks)[selectedModel.value]);
 	let selectedModelData = $derived(data.ispData[selectedModel.value]);
 
 	let outlookData = $derived(selectedModelData.outlookEnergyNem.data);
-	let filteredWithScenario = $derived(outlookData.filter((d) => d.scenario === selectedScenario));
+	let filteredWithScenario = $derived(outlookData.filter((/** @type {any} */ d) => d.scenario === selectedScenario));
 
 	let filteredWithPathwayScenario = $derived(
-		filteredWithScenario.filter((d) => d.pathway === selectedModelPathway)
+		filteredWithScenario.filter((/** @type {any} */ d) => d.pathway === selectedModelPathway)
 	);
 
 	let yDomain = $derived(selectedModelYDomain[selectedScenario]);
@@ -126,17 +127,18 @@
 
 	// update historical date to match ISP
 	let updatedHistoricalTimeSeriesDatasets = $derived(
-		historicalTimeSeriesDatasets.data.map((d) => {
+		historicalTimeSeriesDatasets.data.map((/** @type {any} */ d) => {
+			// @ts-ignore - date-fns API usage
 			const date = startOfYear(d.date, 1);
 			return { ...d, date, time: date.getTime() };
 		})
 	);
 
 	let filteredHistoricalTimeSeriesDatasets = $derived(
-		updatedHistoricalTimeSeriesDatasets.filter((d) => d.date.getFullYear() > 2009)
+		updatedHistoricalTimeSeriesDatasets.filter((/** @type {any} */ d) => d.date.getFullYear() > 2009)
 	);
 
-	let sparkLineXTicks = $derived(modelSparklineXTicks[selectedModel.value]);
+	let sparkLineXTicks = $derived(/** @type {any} */ (modelSparklineXTicks)[selectedModel.value]);
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = $state(undefined);
@@ -151,15 +153,16 @@
 			[
 				'date',
 				...projectionTimeSeriesDatasets.seriesNames.map(
-					(d) => projectionTimeSeriesDatasets.seriesLabels[d]
+					(/** @type {any} */ d) => projectionTimeSeriesDatasets.seriesLabels[d]
 				)
 			].join(',') + '\n';
 
-		projectionTimeSeriesDatasets.data.forEach((d) => {
+		projectionTimeSeriesDatasets.data.forEach((/** @type {any} */ d) => {
 			const date = format(d.date, 'yyyy');
+			/** @type {string[]} */
 			const row = [date];
-			projectionTimeSeriesDatasets.seriesNames.forEach((key) => {
-				row.push(auNumber.format(d[key]));
+			projectionTimeSeriesDatasets.seriesNames.forEach((/** @type {any} */ key) => {
+				row.push(auNumber.format(/** @type {number} */ (d[key])));
 			});
 			generatedCsv += row.join(',') + '\n';
 		});
@@ -168,35 +171,37 @@
 	let file = $derived(new Blob([generatedCsv], { type: 'text/plain' }));
 	let fileUrl = $derived(URL.createObjectURL(file));
 
-	function handleModelChange(evt) {
-		if (selectedModel.value === evt.detail.value) return;
-		selectedModel = evt.detail;
-		selectedScenario = scenarios[selectedModel.value][0];
+	/** @param {any} option */
+	function handleModelChange(option) {
+		if (selectedModel.value === option.value) return;
+		selectedModel = option;
+		selectedScenario = /** @type {any} */ (scenarios)[selectedModel.value][0];
 	}
 
-	function handleGroupChange(evt) {
-		if (selectedFtGroup.value === evt.detail.value) return;
-		selectedFtGroup = evt.detail;
+	/** @param {any} option */
+	function handleGroupChange(option) {
+		if (selectedFtGroup.value === option.value) return;
+		selectedFtGroup = option;
 	}
 
 	/** @type {string | undefined} */
 	let hoverKey = $state();
 
 	const handleMousemove = (/** @type {*} */ e) => {
-		if (e.detail.key) {
-			hoverKey = e.detail.key;
-			hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+		if (e?.key) {
+			hoverKey = e.key;
+			hoverData = /** @type {TimeSeriesData} */ (e.data);
 		} else {
 			hoverKey = undefined;
-			hoverData = /** @type {TimeSeriesData} */ (e.detail);
+			hoverData = /** @type {TimeSeriesData} */ (e);
 		}
 	};
 
 	const handleHistoricalMousemove = (/** @type {*} */ e) => {
-		if (e.detail.key) {
-			historicalHoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+		if (e?.key) {
+			historicalHoverData = /** @type {TimeSeriesData} */ (e.data);
 		} else {
-			historicalHoverData = /** @type {TimeSeriesData} */ (e.detail);
+			historicalHoverData = /** @type {TimeSeriesData} */ (e);
 		}
 	};
 </script>
@@ -247,16 +252,16 @@
 					<FormSelect
 						options={modelSelections}
 						selected={selectedModel}
-						on:change={handleModelChange}
+						onchange={handleModelChange}
 					/>
 				</div>
 
 				<div
 					class="grid gap-3"
-					class:grid-cols-3={scenarios[selectedModel.value].length === 3}
-					class:grid-cols-2={scenarios[selectedModel.value].length !== 3}
+					class:grid-cols-3={selectedModelScenarios.length === 3}
+					class:grid-cols-2={selectedModelScenarios.length !== 3}
 				>
-					{#each scenarios[selectedModel.value] as scenario (scenario)}
+					{#each selectedModelScenarios as scenario (scenario)}
 						<button
 							class="w-full rounded-lg border hover:bg-light-warm-grey px-6 py-4 capitalize text-left leading-sm"
 							class:border-mid-warm-grey={selectedScenario !== scenario}
@@ -298,8 +303,8 @@
 					formatTickX={formatFyTickX}
 					hoverData={historicalHoverData}
 					id="historical-chart"
-					on:mousemove={handleHistoricalMousemove}
-					on:mouseout={() => (historicalHoverData = undefined)}
+					onmousemove={handleHistoricalMousemove}
+					onmouseout={() => (historicalHoverData = undefined)}
 				/>
 			</div>
 		</div>
@@ -324,8 +329,8 @@
 							hoverData={historicalHoverData}
 							id="historical-chart"
 							clip={false}
-							on:mousemove={handleHistoricalMousemove}
-							on:mouseout={() => (historicalHoverData = undefined)}
+							onmousemove={handleHistoricalMousemove}
+							onmouseout={() => (historicalHoverData = undefined)}
 						/>
 					</div>
 					<div class="w-full">
@@ -348,8 +353,8 @@
 							bgClass="bg-light-warm-grey"
 							id="projection-chart"
 							formatTickX={formatFyTickX}
-							on:mousemove={handleMousemove}
-							on:mouseout={() => {
+							onmousemove={handleMousemove}
+							onmouseout={() => {
 								hoverKey = undefined;
 								hoverData = undefined;
 							}}
@@ -369,7 +374,7 @@
 			<FormSelect
 				options={ftGroupSelections}
 				selected={selectedFtGroup}
-				on:change={handleGroupChange}
+				onchange={handleGroupChange}
 			/>
 		</div>
 	</div>
@@ -394,8 +399,8 @@
 				showIcon={true}
 				isTechnologyDisplay={true}
 				displayUnit="TWh"
-				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-				on:mouseout={() => (hoverData = undefined)}
+				onmousemove={(d) => (hoverData = /** @type {TimeSeriesData} */ (d))}
+				onmouseout={() => (hoverData = undefined)}
 			/>
 		{/each}
 	</div>

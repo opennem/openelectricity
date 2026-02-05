@@ -52,6 +52,7 @@ export const carbonIntensityStops = derived(
 	carbonIntensityColourMap,
 	($carbonIntensityColourMap) => {
 		const keys = Object.keys($carbonIntensityColourMap).map(Number);
+		/** @type {{ offset: string, color: string }[]} */
 		const stops = [];
 		const max = keys[keys.length - 1];
 		Object.keys($carbonIntensityColourMap)
@@ -59,7 +60,7 @@ export const carbonIntensityStops = derived(
 			.forEach((ci) => {
 				stops.push({
 					offset: `${(ci / max) * 100}%`,
-					color: $carbonIntensityColourMap[ci]
+					color: /** @type {Record<number, string>} */ ($carbonIntensityColourMap)[ci]
 				});
 			});
 

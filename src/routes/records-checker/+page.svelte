@@ -43,8 +43,16 @@
 		recordIdSearch = data.stringFilter || '';
 	});
 
+	/**
+	 * @param {{
+	 * 	regions: string[],
+	 * 	periods: string[],
+	 * 	fuelTechs: string[],
+	 * 	stringFilter: string
+	 * }} params
+	 */
 	function getFilterParams({ regions, periods, fuelTechs, stringFilter }) {
-		const validRegions = regions.filter((r) => r !== '_all');
+		const validRegions = regions.filter((/** @type {string} */ r) => r !== '_all');
 		const regionsParam =
 			regions.length === 0 || regions.length === 7 ? '' : '&regions=' + validRegions.join(',');
 		const periodsParam =

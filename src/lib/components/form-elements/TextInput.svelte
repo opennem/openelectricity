@@ -3,7 +3,7 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('svelte/elements').FormEventHandler<HTMLInputElement> | null} [changeHandler]
+	 * @property {((event: Event, ...args: unknown[]) => void) | null} [changeHandler]
 	 * @property {string} [placeholder]
 	 * @property {string} [value]
 	 * @property {string} [type]
@@ -18,5 +18,5 @@
 	class={`rounded-md border-solid placeholder:font-light border-[0.05rem] border-mid-warm-grey p-4 font-sans text-sm placeholder:text-mid-warm-grey focus:ring-0 focus:border-dark-grey ${rest.class}`}
 	{placeholder}
 	{value}
-	oninput={preventDefault(changeHandler)}
+	oninput={preventDefault(/** @type {(event: Event, ...args: unknown[]) => void} */ (changeHandler))}
 />

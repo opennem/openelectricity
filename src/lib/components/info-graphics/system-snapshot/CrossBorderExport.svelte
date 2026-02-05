@@ -10,7 +10,7 @@
 	/** @type {Props} */
 	let { regions = '', value = 0 } = $props();
 
-	const absRound = (val) => auNumber.format(Math.abs(Math.round(val)));
+	const absRound = (/** @type {number} */ val) => auNumber.format(Math.abs(Math.round(val)));
 	const auNumber = new Intl.NumberFormat('en-AU', {
 		maximumFractionDigits: 0
 	});

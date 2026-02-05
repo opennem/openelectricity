@@ -187,7 +187,7 @@
 	<TableHeader
 		includeBatteryAndLoads={$includeBatteryAndLoads}
 		hoverTime={$energyHoverTime || $energyFocusTime}
-		on:change={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
 	/>
 
 	<table class="w-full table-fixed border border-warm-grey mb-8">
@@ -205,7 +205,7 @@
 								selectedLabelClass="font-medium text-sm"
 								options={groupOptions}
 								selected={$selectedFuelTechGroup}
-								on:change={(evt) => ($selectedFuelTechGroup = evt.detail.value)}
+								onchange={(option) => ($selectedFuelTechGroup = option.value)}
 							/>
 						</div>
 					</div>

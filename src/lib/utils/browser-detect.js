@@ -21,17 +21,18 @@ function whichBrowser() {
 	}
 }
 
+/** @param {string} keyword */
 function agentHas(keyword) {
 	return navigator.userAgent.toLowerCase().search(keyword.toLowerCase()) > -1;
 }
 
 function isIE() {
-	return !!document.documentMode;
+	return !!(/** @type {any} */ (document).documentMode);
 }
 
 function isSafari() {
 	return (
-		(!!window.ApplePaySetupFeature || !!window.safari) &&
+		(!!(/** @type {any} */ (window).ApplePaySetupFeature) || !!(/** @type {any} */ (window).safari)) &&
 		agentHas('Safari') &&
 		!agentHas('Chrome') &&
 		!agentHas('CriOS')
@@ -39,7 +40,7 @@ function isSafari() {
 }
 
 function isChrome() {
-	return agentHas('CriOS') || agentHas('Chrome') || !!window.chrome;
+	return agentHas('CriOS') || agentHas('Chrome') || !!(/** @type {any} */ (window).chrome);
 }
 
 function isFirefox() {

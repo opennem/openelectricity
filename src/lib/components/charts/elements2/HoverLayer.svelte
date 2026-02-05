@@ -28,10 +28,10 @@
 	 */
 	function findItem(evt) {
 		let offsetX = 0;
-		if (evt.offsetX) {
+		if ('offsetX' in evt && typeof evt.offsetX === 'number') {
 			offsetX = evt.offsetX;
-		} else if (evt.touches) {
-			const rect = evt.target.getBoundingClientRect();
+		} else if ('touches' in evt && evt.touches) {
+			const rect = /** @type {Element} */ (evt.target).getBoundingClientRect();
 			offsetX = evt.touches[0].clientX - rect.left;
 		}
 
@@ -46,7 +46,9 @@
 	 */
 	function pointermove(evt) {
 		const item = findItem(evt);
-		onmousemove?.(item);
+		if (item) {
+			onmousemove?.({ data: item, key: '' });
+		}
 	}
 
 	/**
@@ -54,7 +56,9 @@
 	 */
 	function pointerup(evt) {
 		const item = findItem(evt);
-		onpointerup?.(item);
+		if (item) {
+			onpointerup?.(item);
+		}
 	}
 
 	function mouseout() {

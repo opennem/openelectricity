@@ -1,18 +1,18 @@
 import { addMonths, subMonths, isAfter } from 'date-fns';
 import PerfTime from './perf-time.js';
 
-const perfTime = new PerfTime();
+const perfTime = new PerfTime('rolling-sum-12-mth');
 
 /**
  *
  * @param {TimeSeriesData[]} data
- * @param {*} keys
+ * @param {string[]} keys
  * @returns {TimeSeriesData[]}
  */
 export default function (data, keys) {
 	perfTime.time();
 
-	const cloneData = data.map((d) => {
+	const cloneData = data.map((/** @type {any} */ d) => {
 		return {
 			...d,
 			date: new Date(d.date)
@@ -23,7 +23,7 @@ export default function (data, keys) {
 		const d = cloneData[x];
 		const last = subMonths(cloneData[x].date, 12);
 
-		keys.forEach((k) => {
+		keys.forEach((/** @type {string} */ k) => {
 			const id = k;
 			let sum = d[id] || 0;
 			let index = x - 1;
@@ -52,7 +52,7 @@ export default function (data, keys) {
 	// filter out incomplete rolling sums
 	const firstDate = cloneData[0].date;
 	const firstAvailable = addMonths(firstDate, 12);
-	const updated = cloneData.filter((d) => isAfter(d.date, firstAvailable));
+	const updated = cloneData.filter((/** @type {any} */ d) => isAfter(d.date, firstAvailable));
 
 	perfTime.timeEnd('--- data.12month-rolling-sum');
 

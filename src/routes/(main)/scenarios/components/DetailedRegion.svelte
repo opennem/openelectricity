@@ -5,6 +5,16 @@
 	import ScenarioDescription from './ScenarioDescription.svelte';
 	import MiniCharts from './MiniCharts.svelte';
 
+	/**
+	 * @typedef {Object} Props
+	 * @property {(data: any) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(data: any) => void} [onpointerup]
+	 */
+
+	/** @type {Props} */
+	let { onmousemove, onmouseout, onpointerup } = $props();
+
 	/** @type {Object.<string, *>} */
 	const dataVizStores = {
 		energyDataVizStore: getContext('energy-data-viz'),
@@ -66,7 +76,7 @@
 			<Switch
 				buttons={stores}
 				selected={selectedStoreName}
-				on:change={(evt) => (selectedStoreName = evt.detail.value)}
+				onchange={(detail) => (selectedStoreName = detail.value)}
 				class="justify-center"
 			/>
 		</div>
@@ -88,9 +98,9 @@
 					seriesData={$seriesData}
 					displayUnit={$displayUnit}
 					gridColClass="grid-cols-1"
-					on:mousemove
-					on:mouseout
-					on:pointerup
+					{onmousemove}
+					{onmouseout}
+					{onpointerup}
 				/>
 				<MiniCharts
 					seriesNames={[...$seriesNames].reverse()}
@@ -108,9 +118,9 @@
 					displayUnit={$intensityDisplayUnit}
 					showArea={false}
 					gridColClass="grid-cols-1"
-					on:mousemove
-					on:mouseout
-					on:pointerup
+					{onmousemove}
+					{onmouseout}
+					{onpointerup}
 				/>
 			</div>
 		{:else}
@@ -128,9 +138,9 @@
 				focusData={$focusData}
 				seriesData={$seriesData}
 				displayUnit={$displayUnit}
-				on:mousemove
-				on:mouseout
-				on:pointerup
+				{onmousemove}
+				{onmouseout}
+				{onpointerup}
 			/>
 		{/if}
 	</section>

@@ -9,14 +9,15 @@ import { chartCxtsOptions } from './config';
 export default function (data) {
 	// Setup Chart contexts - one for each fuel tech that will have charts
 	const fuelTechNames = data?.order || [];
+	/** @type {Record<string, any>} */
 	const chartCxts = {};
 
-	fuelTechNames.forEach((fuelTech) => {
+	fuelTechNames.forEach((/** @type {any} */ fuelTech) => {
 		const contextKey = Symbol(`generation-trends-${fuelTech}`);
 		const options = {
 			...chartCxtsOptions['generation-trends-chart'],
 			key: contextKey,
-			title: `${fuelTech.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase())} Generation Profile`
+			title: `${fuelTech.replace('_', ' ').replace(/\b\w/g, (/** @type {any} */ l) => l.toUpperCase())} Generation Profile`
 		};
 
 		setContext(contextKey, new ChartStore(options));

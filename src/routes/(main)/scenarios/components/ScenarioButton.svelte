@@ -1,7 +1,10 @@
 <script>
 	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
-	import { modelLogoPath } from '../page-data-options/models';
+	import { modelLogoPath as _modelLogoPath } from '../page-data-options/models';
+
+	/** @type {Record<string, string>} */
+	const modelLogoPath = _modelLogoPath;
 
 	/**
 	 * @typedef {Object} Props
@@ -62,7 +65,7 @@
 
 		<div class="flex items-center text-mid-grey justify-between text-xs">
 			<span class="w-20 grayscale">
-				<img src={modelLogoPath[model.organisation]} alt="{model.organisation} logo" />
+				<img src={/** @type {any} */ (modelLogoPath)[model.organisation]} alt="{model.organisation} logo" />
 			</span>
 			<div>
 				{model.year}

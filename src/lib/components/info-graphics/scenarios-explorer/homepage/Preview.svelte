@@ -60,11 +60,15 @@
 
 	const { cachedDisplayData } = getContext('scenario-cache');
 
+	/** @type {string[]} */
 	let seriesNames = $state([]);
+	/** @type {any[]} */
 	let seriesItems = $state([]);
 	let seriesColours = $state();
 	let seriesLabels = $state();
+	/** @type {any[]} */
 	let seriesData = $state([]);
+	/** @type {string[]} */
 	let seriesLoadsIds = $state([]);
 	/** @type {Array.<number | null>} */
 	let yDomain = $state([0, null]);
@@ -74,12 +78,12 @@
 	let hoverKey = $state();
 
 	const handleMousemove = (/** @type {*} */ e) => {
-		if (e.detail?.key) {
-			hoverKey = e.detail.key;
-			hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+		if (e?.key) {
+			hoverKey = e.key;
+			hoverData = /** @type {TimeSeriesData} */ (e.data);
 		} else {
 			hoverKey = undefined;
-			hoverData = /** @type {TimeSeriesData} */ (e.detail);
+			hoverData = /** @type {TimeSeriesData} */ (e);
 		}
 	};
 
@@ -92,18 +96,18 @@
 			getHistory(region),
 			getScenarioJson(model, scenario)
 		]);
-		const scenarios = allScenarios.filter((d) => d.model === model);
+		const scenarios = allScenarios.filter((/** @type {any} */ d) => d.model === model);
 
-		updateScenarios(scenarios.map((d) => d.scenarioId));
+		updateScenarios(scenarios.map((/** @type {any} */ d) => d.scenarioId));
 
 		const filteredScenarioData = scenarioData.data.filter(
-			(d) =>
+			(/** @type {any} */ d) =>
 				d.pathway === pathway &&
 				d.region.toLowerCase() === region.toLowerCase() &&
 				d.type === dataView
 		);
 
-		$projectionData = filteredScenarioData.map((d) => {
+		$projectionData = filteredScenarioData.map((/** @type {any} */ d) => {
 			return {
 				...d,
 				model: model
@@ -162,7 +166,7 @@
 		}
 	});
 
-	function update(processed) {
+	function update(/** @type {any} */ processed) {
 		seriesData = processed.data;
 		seriesNames = processed.names;
 		seriesColours = processed.colours;
@@ -175,7 +179,7 @@
 		];
 		yDomain = minMaxY;
 
-		const loadIds = $projectionStats.data.filter((d) => d.isLoad).map((d) => d.id);
+		const loadIds = $projectionStats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
 		seriesLoadsIds = loadIds;
 
 		$cachedDisplayData[$selectedDisplayView] = {
@@ -221,13 +225,13 @@
 			: { date: startOfYear(new Date('2023-01-01')) }
 	);
 	let defaultText = $derived(
-		dataViewLongLabel[$selectedDataView] +
-			` (${dataViewUnits[$selectedDataView]}) ` +
-			dataViewIntervalLabel[$selectedDataView]
+		/** @type {any} */ (dataViewLongLabel)[$selectedDataView] +
+			` (${/** @type {any} */ (dataViewUnits)[$selectedDataView]}) ` +
+			/** @type {any} */ (dataViewIntervalLabel)[$selectedDataView]
 	);
 	$effect(() => {
 		generatedCsv = '';
-		let newGeneratedCsv = ['date', ...seriesNames.map((d) => seriesLabels[d])].join(',') + '\n';
+		let newGeneratedCsv = ['date', ...seriesNames.map((/** @type {any} */ d) => /** @type {any} */ (seriesLabels)[d])].join(',') + '\n';
 
 		seriesData.forEach((d) => {
 			const date = format(d.date, 'yyyy');
@@ -311,8 +315,8 @@
 			{overlayLine}
 			{hoverData}
 			yLabelStartPos={startOfYear(new Date('2024-01-01'))}
-			on:mousemove={handleMousemove}
-			on:mouseout={() => {
+			onmousemove={handleMousemove}
+			onmouseout={() => {
 				hoverKey = undefined;
 				hoverData = undefined;
 			}}
@@ -323,8 +327,8 @@
 <div class="max-w-none lg:container">
 	<DetailedBreakdown
 		{hoverData}
-		on:mousemove={handleMousemove}
-		on:mouseout={() => {
+		onmousemove={handleMousemove}
+		onmouseout={() => {
 			hoverKey = undefined;
 			hoverData = undefined;
 		}}

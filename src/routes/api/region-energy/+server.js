@@ -12,15 +12,15 @@ export async function GET({ fetch, setHeaders }) {
 	const vic = await fetch(`${PUBLIC_JSON_API}/au/NEM/VIC1/energy/all.json`);
 	const wa = await fetch(`${PUBLIC_JSON_API}/au/WEM/energy/all.json`);
 
-	const energyFilter = (d) => d.fuel_tech && d.type === 'energy';
-	const latest12MonthsSumData = (d) => {
+	const energyFilter = (/** @type {any} */ d) => d.fuel_tech && d.type === 'energy';
+	const latest12MonthsSumData = (/** @type {any} */ d) => {
 		return {
 			region: d.region,
 			id: d.id,
 			fuel_tech: d.fuel_tech,
 			data_type: d.data_type,
 			units: d.units,
-			data: d.history.data.slice(-12).reduce((acc, cur) => acc + cur, 0)
+			data: d.history.data.slice(-12).reduce((/** @type {number} */ acc, /** @type {number} */ cur) => acc + cur, 0)
 		};
 	};
 

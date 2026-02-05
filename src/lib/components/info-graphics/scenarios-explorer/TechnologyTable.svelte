@@ -37,16 +37,16 @@
 	const { selectedGroup } = getContext('scenario-data');
 
 	// $: console.log('seriesItems', seriesItems, seriesLoadsIds);
-	let sourceItems = $derived(seriesItems.filter((d) => !seriesLoadsIds.includes(d.id)));
-	let loadItems = $derived(seriesItems.filter((d) => seriesLoadsIds.includes(d.id)));
+	let sourceItems = $derived(seriesItems.filter((/** @type {any} */ d) => !seriesLoadsIds.includes(d.id)));
+	let loadItems = $derived(seriesItems.filter((/** @type {any} */ d) => seriesLoadsIds.includes(d.id)));
 	let sourcesTotal = $derived(
-		hoverData ? sourceItems.reduce((acc, { id }) => acc + hoverData[id], 0) : 0
+		hoverData ? sourceItems.reduce((/** @type {number} */ acc, /** @type {{ id: string }} */ { id }) => acc + hoverData[id], 0) : 0
 	);
 	let loadsTotal = $derived(
-		hoverData ? loadItems.reduce((acc, { id }) => acc + hoverData[id], 0) : 0
+		hoverData ? loadItems.reduce((/** @type {number} */ acc, /** @type {{ id: string }} */ { id }) => acc + hoverData[id], 0) : 0
 	);
 
-	function handleSort(e) {
+	function handleSort(/** @type {any} */ e) {
 		// dispatchEvent('sort', e.detail.items);
 	}
 	/**
@@ -72,7 +72,7 @@
 							paddingX="px-3"
 							options={dataTechnologyGroupOptions}
 							selected={$selectedGroup}
-							on:change={(evt) => ($selectedGroup = evt.detail.value)}
+							onchange={(option) => ($selectedGroup = option.value)}
 						/>
 					</div>
 				</th>

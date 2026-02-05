@@ -6,7 +6,8 @@
 
 	let { store, displayOptions = true } = $props();
 
-	let {
+	// svelte-ignore state_referenced_locally
+	const {
 		title,
 		allowPrefixSwitch,
 		displayPrefix,

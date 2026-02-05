@@ -34,7 +34,7 @@
 
 	onMount(() => {
 		// update checkboxes and relevant pathways
-		selectedScenarios = [...new Set($multiSelectionData.map((s) => `${s.model}-${s.scenario}`))];
+		selectedScenarios = [...new Set($multiSelectionData.map((/** @type {any} */ s) => `${s.model}-${s.scenario}`))];
 
 		// update focus/radio selection
 		focusScenarioId = $singleSelectionData.id;
@@ -49,10 +49,10 @@
 	let focusPathways = $derived(focusScenarioModel ? focusScenarioModel.pathways : []);
 
 	let selectedPathways = $derived(
-		focusScenarioId
+		focusScenarioId && focusScenario
 			? $multiSelectionData
-					.filter((d) => d.model === focusScenario.model && d.scenario === focusScenario.value)
-					.map((d) => d.pathway)
+					.filter((/** @type {any} */ d) => d.model === focusScenario.model && d.scenario === focusScenario.value)
+					.map((/** @type {any} */ d) => d.pathway)
 			: []
 	);
 
@@ -98,7 +98,7 @@
 		} else {
 			selectedScenarios = selectedScenarios.filter((scenario) => scenario !== selected);
 			// update multiSelectionData
-			$multiSelectionData = $multiSelectionData.filter((s) =>
+			$multiSelectionData = $multiSelectionData.filter((/** @type {any} */ s) =>
 				selectedScenarios.includes(`${s.model}-${s.scenario}`)
 			);
 		}
@@ -131,12 +131,12 @@
 	 */
 	function handlePathwaysChange(id, pathways) {
 		// make sure it has at least one entry in multiSelectionData (aka checked) before adding
-		if (!$multiSelectionData.find((s) => `${s.model}-${s.scenario}` === id)) return;
+		if (!$multiSelectionData.find((/** @type {any} */ s) => `${s.model}-${s.scenario}` === id)) return;
 
-		const scenarioPathways = pathways.map((pathway) =>
-			modelScenarioPathwayOptions.find((d) => d.id === `${id}-${pathway}`)
+		const scenarioPathways = pathways.map((/** @type {string} */ pathway) =>
+			modelScenarioPathwayOptions.find((/** @type {any} */ d) => d.id === `${id}-${pathway}`)
 		);
-		const filtered = $multiSelectionData.filter((s) => `${s.model}-${s.scenario}` !== id);
+		const filtered = $multiSelectionData.filter((/** @type {any} */ s) => `${s.model}-${s.scenario}` !== id);
 
 		$multiSelectionData = [...filtered, ...scenarioPathways];
 	}
@@ -164,7 +164,7 @@
 								highlightBg={$isSingleSelectionMode ? isFocussed : isChecked}
 								highlightBorder={isFocussed}
 								onclick={() => handleScenarioButtonClick(scenario.id)}
-								onchange={(checked) => handleCheckBoxChange(scenario.id, checked)}
+								onchange={(/** @type {any} */ checked) => handleCheckBoxChange(scenario.id, checked)}
 							>
 								{#if mobileView && isFocussed}
 									<div>
@@ -177,8 +177,8 @@
 											selectedScenario={focusScenario}
 											selectedPathway={$singleSelectionData?.pathway}
 											{selectedPathways}
-											onchange={(value) => handlePathwayChange(focusScenarioId, value)}
-											onchangemultiple={(values) => handlePathwaysChange(focusScenarioId, values)}
+											onchange={(/** @type {any} */ value) => handlePathwayChange(focusScenarioId, value)}
+											onchangemultiple={(/** @type {any} */ values) => handlePathwaysChange(focusScenarioId, values)}
 										/>
 									</div>
 								{/if}
@@ -198,8 +198,8 @@
 					selectedScenario={focusScenario}
 					selectedPathway={$singleSelectionData?.pathway}
 					{selectedPathways}
-					onchange={(value) => handlePathwayChange(focusScenarioId, value)}
-					onchangemultiple={(values) => handlePathwaysChange(focusScenarioId, values)}
+					onchange={(/** @type {any} */ value) => handlePathwayChange(focusScenarioId, value)}
+					onchangemultiple={(/** @type {any} */ values) => handlePathwaysChange(focusScenarioId, values)}
 				/>
 			{/if}
 		</div>

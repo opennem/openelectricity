@@ -54,7 +54,7 @@
 					widthClass="w-[240px]"
 					options={modelOptions}
 					selected={$selectedModel}
-					on:change={(evt) => ($selectedModel = evt.detail.value)}
+					onchange={(option) => ($selectedModel = option.value)}
 				/>
 			</div>
 
@@ -64,7 +64,7 @@
 					widthClass="w-[240px]"
 					options={$scenarioOptions}
 					selected={$selectedScenario}
-					on:change={(evt) => ($selectedScenario = evt.detail.value)}
+					onchange={(option) => ($selectedScenario = option.value)}
 				/>
 			</div>
 
@@ -74,7 +74,7 @@
 					widthClass="w-[200px]"
 					options={$pathwayOptions}
 					selected={$selectedPathway}
-					on:change={(evt) => ($selectedPathway = evt.detail.value)}
+					onchange={(option) => ($selectedPathway = option.value)}
 				/>
 			</div>
 		</div>
@@ -106,7 +106,7 @@
 					widthClass="w-[230px]"
 					options={regionOptions}
 					selected={$selectedRegion}
-					on:change={(evt) => ($selectedRegion = evt.detail.value)}
+					onchange={(option) => ($selectedRegion = option.value)}
 				/>
 			</div>
 		{/if}
@@ -118,7 +118,7 @@
 					widthClass="w-[270px]"
 					options={dataTechnologyGroupOptions}
 					selected={$selectedGroup}
-					on:change={(evt) => ($selectedGroup = evt.detail.value)}
+					onchange={(option) => ($selectedGroup = option.value)}
 				/>
 			</div>
 		{/if}
@@ -130,7 +130,7 @@
 					widthClass="w-[270px]"
 					options={dataRegionCompareOptions}
 					selected={$selectedGroup}
-					on:change={(evt) => ($selectedGroup = evt.detail.value)}
+					onchange={(option) => ($selectedGroup = option.value)}
 				/>
 			</div>
 		{/if}

@@ -1,20 +1,20 @@
 <script>
-	import { createBubbler } from 'svelte/legacy';
-
-	const bubble = createBubbler();
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext } from 'svelte';
 	import { closestTo } from 'date-fns';
 
 	const { xScale, width, height } = getContext('LayerCake');
-	const dispatch = createEventDispatcher();
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]
+	 * @property {(data: TimeSeriesData | undefined) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(data: TimeSeriesData | undefined) => void} [onpointerup]
+	 * @property {(e: MouseEvent) => void} [onmousedown]
 	 */
 
 	/** @type {Props} */
-	let { dataset = [] } = $props();
+	let { dataset = [], onmousemove, onmouseout, onpointerup, onmousedown } = $props();
 
 	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
 	let rectHeight = $derived($height ? Math.abs($height) : 0);
@@ -26,10 +26,10 @@
 	 */
 	function findItem(evt) {
 		let offsetX = 0;
-		if (evt.offsetX) {
+		if ('offsetX' in evt && typeof evt.offsetX === 'number') {
 			offsetX = evt.offsetX;
-		} else if (evt.touches) {
-			const rect = evt.target.getBoundingClientRect();
+		} else if ('touches' in evt && evt.touches) {
+			const rect = /** @type {Element} */ (evt.target).getBoundingClientRect();
 			offsetX = evt.touches[0].clientX - rect.left;
 		}
 
@@ -44,7 +44,7 @@
 	 */
 	function pointermove(evt) {
 		const item = findItem(evt);
-		dispatch('mousemove', item);
+		onmousemove?.(item);
 	}
 
 	/**
@@ -52,11 +52,11 @@
 	 */
 	function pointerup(evt) {
 		const item = findItem(evt);
-		dispatch('pointerup', item);
+		onpointerup?.(item);
 	}
 
 	function mouseout() {
-		dispatch('mouseout');
+		onmouseout?.();
 	}
 </script>
 
@@ -67,7 +67,7 @@
 	role="presentation"
 	onmousemove={pointermove}
 	onmouseout={mouseout}
-	onmousedown={bubble('mousedown')}
+	{onmousedown}
 	ontouchmove={pointermove}
 	onpointerup={pointerup}
 	onblur={mouseout}

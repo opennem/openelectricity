@@ -31,6 +31,7 @@
 	 * @property {import('svelte').Snippet} [header] - Custom header content
 	 * @property {import('svelte').Snippet} [tooltip] - Custom tooltip content
 	 * @property {import('svelte').Snippet} [footer] - Custom footer content
+	 * @property {number} [_height] - Chart height in pixels (unused, reserved)
 	 */
 
 	/** @type {Props} */

@@ -30,10 +30,10 @@
 
 	// Default values
 	const defaultRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
-	const defaultPeriods = periodOptions.map((i) => i.value);
-	const defaultFuelTechs = fuelTechOptions.map((i) => i.value);
-	const defaultAggregates = aggregateOptions.map((i) => i.value);
-	const defaultMetrics = metricOptions.map((i) => i.value);
+	const defaultPeriods = periodOptions.map((/** @type {any} */ i) => i.value);
+	const defaultFuelTechs = fuelTechOptions.map((/** @type {any} */ i) => i.value);
+	const defaultAggregates = aggregateOptions.map((/** @type {any} */ i) => i.value);
+	const defaultMetrics = metricOptions.map((/** @type {any} */ i) => i.value);
 
 	/** @type {string[]} */
 	let checkedRegions = $state(defaultRegions);
@@ -67,10 +67,10 @@
 	run(() => {
 		if (filterMode === 'text') {
 			checkedRegions = initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
-			checkedPeriods = initCheckedPeriods || periodOptions.map((i) => i.value);
-			checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((i) => i.value);
-			checkedAggregates = initCheckedAggregates || aggregateOptions.map((i) => i.value);
-			checkedMetrics = initCheckedMetrics || metricOptions.map((i) => i.value);
+			checkedPeriods = initCheckedPeriods || periodOptions.map((/** @type {any} */ i) => i.value);
+			checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((/** @type {any} */ i) => i.value);
+			checkedAggregates = initCheckedAggregates || aggregateOptions.map((/** @type {any} */ i) => i.value);
+			checkedMetrics = initCheckedMetrics || metricOptions.map((/** @type {any} */ i) => i.value);
 			selectedSignificance = initSelectedSignificance || 0;
 			indeterminateRegions = [];
 		} else {
@@ -111,12 +111,13 @@
 		}
 	}
 
+	/** @param {string} period */
 	function handlePeriodChange(period) {
 		if (isMetaPressed) {
 			checkedPeriods = [period];
 		} else if (checkedPeriods.includes(period)) {
 			if (checkedPeriods.length === 1) {
-				checkedPeriods = periodOptions.map((i) => i.value);
+				checkedPeriods = periodOptions.map((/** @type {any} */ i) => i.value);
 			} else {
 				checkedPeriods = checkedPeriods.filter((i) => i !== period);
 			}
@@ -125,12 +126,13 @@
 		}
 	}
 
+	/** @param {string} fuelTech */
 	function handleFuelTechChange(fuelTech) {
 		if (isMetaPressed) {
 			checkedFuelTechs = [fuelTech];
 		} else if (checkedFuelTechs.includes(fuelTech)) {
 			if (checkedFuelTechs.length === 1) {
-				checkedFuelTechs = fuelTechOptions.map((i) => i.value);
+				checkedFuelTechs = fuelTechOptions.map((/** @type {any} */ i) => i.value);
 			} else {
 				checkedFuelTechs = checkedFuelTechs.filter((i) => i !== fuelTech);
 			}
@@ -139,12 +141,13 @@
 		}
 	}
 
+	/** @param {string} value */
 	function handleAggregateChange(value) {
 		if (isMetaPressed) {
 			checkedAggregates = [value];
 		} else if (checkedAggregates.includes(value)) {
 			if (checkedAggregates.length === 1) {
-				checkedAggregates = aggregateOptions.map((i) => i.value);
+				checkedAggregates = aggregateOptions.map((/** @type {any} */ i) => i.value);
 			} else {
 				checkedAggregates = checkedAggregates.filter((i) => i !== value);
 			}
@@ -153,12 +156,13 @@
 		}
 	}
 
+	/** @param {string} value */
 	function handleMetricChange(value) {
 		if (isMetaPressed) {
 			checkedMetrics = [value];
 		} else if (checkedMetrics.includes(value)) {
 			if (checkedMetrics.length === 1) {
-				checkedMetrics = metricOptions.map((i) => i.value);
+				checkedMetrics = metricOptions.map((/** @type {any} */ i) => i.value);
 			} else {
 				checkedMetrics = checkedMetrics.filter((i) => i !== value);
 			}
@@ -169,11 +173,11 @@
 
 	/**
 	 * Handle filter mode change
-	 * @param {CustomEvent} evt
+	 * @param {{ value: string }} detail
 	 */
-	function handleFilterModeChange(evt) {
+	function handleFilterModeChange(detail) {
 		handleResetClick();
-		filterMode = evt.detail.value;
+		filterMode = detail.value;
 	}
 
 	function handleApplyClick() {
@@ -183,10 +187,10 @@
 
 	function handleResetClick() {
 		checkedRegions = ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
-		checkedPeriods = periodOptions.map((i) => i.value);
-		checkedFuelTechs = fuelTechOptions.map((i) => i.value);
-		checkedAggregates = aggregateOptions.map((i) => i.value);
-		checkedMetrics = metricOptions.map((i) => i.value);
+		checkedPeriods = periodOptions.map((/** @type {any} */ i) => i.value);
+		checkedFuelTechs = fuelTechOptions.map((/** @type {any} */ i) => i.value);
+		checkedAggregates = aggregateOptions.map((/** @type {any} */ i) => i.value);
+		checkedMetrics = metricOptions.map((/** @type {any} */ i) => i.value);
 		indeterminateRegions = [];
 		recordIdSearch = '';
 		selectedSignificance = 0;
@@ -232,7 +236,7 @@
 		]}
 		selected={filterMode}
 		class="text-xs"
-		on:change={handleFilterModeChange}
+		onchange={handleFilterModeChange}
 	/>
 </div>
 {#if filterMode === 'text'}
@@ -258,7 +262,7 @@
 				nodes={regionOptions}
 				checked={checkedRegions}
 				indeterminate={indeterminateRegions}
-				on:change={(evt) => handleRegionChange(evt.detail.node)}
+				onchange={(evt) => handleRegionChange(evt.node)}
 			/>
 		</div>
 
@@ -268,7 +272,7 @@
 				name="fuel-techs"
 				nodes={fuelTechOptions}
 				checked={checkedFuelTechs}
-				on:change={(evt) => handleFuelTechChange(evt.detail.node)}
+				onchange={(evt) => handleFuelTechChange(evt.node)}
 			/>
 		</div>
 
@@ -278,7 +282,7 @@
 				name="milestone-types"
 				nodes={metricOptions}
 				checked={checkedMetrics}
-				on:change={(evt) => handleMetricChange(evt.detail.node)}
+				onchange={(evt) => handleMetricChange(evt.node)}
 			/>
 		</div>
 
@@ -288,7 +292,7 @@
 				name="periods"
 				nodes={periodOptions}
 				checked={checkedPeriods}
-				on:change={(evt) => handlePeriodChange(evt.detail.node)}
+				onchange={(evt) => handlePeriodChange(evt.node)}
 			/>
 		</div>
 
@@ -298,7 +302,7 @@
 				name="aggregates"
 				nodes={aggregateOptions}
 				checked={checkedAggregates}
-				on:change={(evt) => handleAggregateChange(evt.detail.node)}
+				onchange={(evt) => handleAggregateChange(evt.node)}
 			/>
 		</div>
 
@@ -309,7 +313,7 @@
 				label="9+"
 				value={9}
 				checked={selectedSignificance}
-				on:change={() => (selectedSignificance = 9)}
+				onchange={() => (selectedSignificance = 9)}
 			/>
 
 			<Radio
@@ -317,7 +321,7 @@
 				label="6+"
 				value={6}
 				checked={selectedSignificance}
-				on:change={() => (selectedSignificance = 6)}
+				onchange={() => (selectedSignificance = 6)}
 			/>
 
 			<Radio
@@ -325,7 +329,7 @@
 				label="3+"
 				value={3}
 				checked={selectedSignificance}
-				on:change={() => (selectedSignificance = 3)}
+				onchange={() => (selectedSignificance = 3)}
 			/>
 
 			<Radio
@@ -333,7 +337,7 @@
 				label="1+"
 				value={1}
 				checked={selectedSignificance}
-				on:change={() => (selectedSignificance = 1)}
+				onchange={() => (selectedSignificance = 1)}
 			/>
 
 			<Radio
@@ -341,7 +345,7 @@
 				label="All"
 				value={0}
 				checked={selectedSignificance}
-				on:change={() => (selectedSignificance = 0)}
+				onchange={() => (selectedSignificance = 0)}
 			/>
 		</div>
 	</div>

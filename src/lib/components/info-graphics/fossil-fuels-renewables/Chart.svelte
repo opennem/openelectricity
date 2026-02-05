@@ -71,7 +71,7 @@
 			: 'absolute -top-8 text-xs text-mid-grey right-0'
 	);
 
-	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
+	let hoverTime = $derived(hoverData ? /** @type {any} */ (hoverData).time || 0 : 0);
 
 	// Animation config based on skipAnimation prop
 	let shouldAnimate = $derived(!skipAnimation && !isSafariBrowser);
@@ -146,9 +146,9 @@
 			<MultiLine {hoverData} drawDurationObject={drawDuration} />
 			<HoverLayer
 				{dataset}
-				on:mousemove={(e) =>
-					(hoverData = interact ? /** @type {TimeSeriesData} */ (e.detail) : undefined)}
-				on:mouseout={() => (hoverData = undefined)}
+				onmousemove={(d) =>
+					(hoverData = interact ? /** @type {TimeSeriesData} */ (d) : undefined)}
+				onmouseout={() => (hoverData = undefined)}
 			/>
 		</Svg>
 

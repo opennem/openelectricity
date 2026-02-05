@@ -21,7 +21,7 @@
 	 * @property {boolean} [clip]
 	 * @property {string} [xKey]
 	 * @property {string} [yKey]
-	 * @property {Array.<number | null> | undefined} [yDomain]
+	 * @property {any} [yDomain]
 	 * @property {string} [zKey]
 	 * @property {*} [xTicks]
 	 * @property {boolean} [snapXTicks]
@@ -37,8 +37,12 @@ If object with xStartValue and xEndValue, overlay will be a range
 	 * @property {Function} [formatTickX]
 	 * @property {any} [formatTickY]
 	 * @property {string} [chartHeightClasses]
-	 * @property {string | null} [highlightId]
+	 * @property {string | null} [_highlightId]
 	 * @property {boolean} [showArea]
+	 * @property {(data: TimeSeriesData | undefined) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(data: TimeSeriesData | undefined) => void} [onpointerup]
+	 * @property {(e: MouseEvent) => void} [onmousedown]
 	 */
 
 	/** @type {Props} */
@@ -64,7 +68,11 @@ If object with xStartValue and xEndValue, overlay will be a range
 		formatTickY = (/** @type {number} */ d) => d,
 		chartHeightClasses = '',
 		_highlightId = null,
-		showArea = true
+		showArea = true,
+		onmousemove,
+		onmouseout,
+		onpointerup,
+		onmousedown
 	} = $props();
 
 	const id = getSeqId();
@@ -116,7 +124,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 					<Area {clipPathId} fill={zKey} />
 				{/if}
 			</g>
-			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup on:mousedown />
+			<HoverLayer {dataset} {onmousemove} {onmouseout} {onpointerup} {onmousedown} />
 		</Svg>
 
 		<Svg pointerEvents={false}>

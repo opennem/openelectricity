@@ -36,7 +36,7 @@ export async function GET({ fetch, url, setHeaders }) {
 	const res = await fetchAll(dataPaths);
 	console.log('api/energy/all-regions', dataPaths, res);
 
-	if (res.error) {
+	if (/** @type {any} */ (res).error) {
 		error(500, 'Error fetching data');
 	}
 

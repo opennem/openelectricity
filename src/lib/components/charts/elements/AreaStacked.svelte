@@ -1,11 +1,10 @@
 <script>
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext } from 'svelte';
 
 	import { area, line, curveLinear } from 'd3-shape';
 	import { closestTo } from 'date-fns';
 
 	const { data, xGet, xScale, yScale, zGet, yGet } = getContext('LayerCake');
-	const dispatch = createEventDispatcher();
 
 	/**
 	 * @typedef {Object} Props
@@ -15,6 +14,9 @@
 	 * @property {string} [highlightId]
 	 * @property {string} [display]
 	 * @property {*} [curveType]
+	 * @property {(evt: { data: any, key: string }) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(evt: any) => void} [onpointerup]
 	 */
 
 	/** @type {Props} */
@@ -24,7 +26,10 @@
 		clipPathId = '',
 		highlightId = '',
 		display = 'area',
-		curveType = curveLinear
+		curveType = curveLinear,
+		onmousemove,
+		onmouseout,
+		onpointerup
 	} = $props();
 
 	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
@@ -35,7 +40,7 @@
 			.y0((d) => $yScale(d[0]))
 			.y1((d) => $yScale(d[1]))
 			.curve(curveType)
-			.defined((d) => !isNaN(d[0]) && !isNaN(d[1]))
+			.defined((d) => !isNaN(/** @type {any} */ (d)[0]) && !isNaN(/** @type {any} */ (d)[1]))
 	);
 
 	let lineGen = $derived(
@@ -44,14 +49,14 @@
 			(d) => $yGet(d)
 		)
 			.curve(curveType)
-			.defined((d) => d.value !== null && !isNaN(d.value))
+			.defined((d) => /** @type {any} */ (d).value !== null && !isNaN(/** @type {any} */ (d).value))
 	);
 
-	let lineOpacity = $derived((d) => {
+	let lineOpacity = $derived((/** @type {any} */ d) => {
 		if (highlightId === null || highlightId === '') return 1;
 		return highlightId === d.key || highlightId === d.group ? 1 : 0.3;
 	});
-	let areaOpacity = $derived((d) => {
+	let areaOpacity = $derived((/** @type {any} */ d) => {
 		if (highlightId === null || highlightId === '') return 1;
 		return highlightId === d.key || highlightId === d.group ? 1 : 0.5;
 	});
@@ -72,10 +77,10 @@
 	 */
 	function findItem(evt, key) {
 		let offsetX;
-		if (evt.offsetX) {
+		if ('offsetX' in evt && typeof evt.offsetX === 'number') {
 			offsetX = evt.offsetX;
-		} else if (evt.touches) {
-			const rect = evt.target.getBoundingClientRect();
+		} else if ('touches' in evt && evt.touches) {
+			const rect = /** @type {Element} */ (evt.target).getBoundingClientRect();
 			offsetX = evt.touches[0].clientX - rect.left;
 		}
 
@@ -92,7 +97,7 @@
 	 */
 	function pointermove(evt, key) {
 		const item = findItem(evt, key);
-		dispatch('mousemove', item);
+		onmousemove?.(item);
 	}
 
 	/**
@@ -101,11 +106,11 @@
 	 */
 	function pointerup(evt, key) {
 		const item = findItem(evt, key);
-		dispatch('pointerup', item.data);
+		onpointerup?.(item.data);
 	}
 
 	function mouseout() {
-		dispatch('mouseout');
+		onmouseout?.();
 	}
 </script>
 

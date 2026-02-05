@@ -9,6 +9,7 @@
 
 	let { data } = $props();
 
+	/** @type {any[]} */
 	let historyData = $state([]);
 	let totalHistory = $state(0);
 	let valueUnit = $state('');
@@ -22,6 +23,7 @@
 		currentPage = data.page || 1;
 	});
 
+	/** @type {any[]} */
 	let issueInstanceIds = $state([]);
 
 	/**
@@ -59,6 +61,7 @@
 	}
 
 	// remove seconds and time difference from timestamp
+	/** @param {string} timestamp */
 	function removeSeconds(timestamp) {
 		return timestamp.slice(0, -9);
 	}
@@ -110,7 +113,7 @@
 	run(() => {
 		fetchRecord(id, currentPage);
 	});
-	let hasIssue = $derived((id) => {
+	let hasIssue = $derived((/** @type {any} */ id) => {
 		return issueInstanceIds.includes(id);
 	});
 </script>

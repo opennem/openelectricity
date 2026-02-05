@@ -43,7 +43,7 @@ async function getAllRegionModels(model, type) {
 	const models = await fetch('/api/models/all-regions?' + queryStrings);
 	const modelsJson = await models.json();
 
-	const parsed = modelsJson.map((d) => parser(d));
+	const parsed = modelsJson.map((/** @type {any} */ d) => parser(d));
 	return flatten(parsed);
 }
 

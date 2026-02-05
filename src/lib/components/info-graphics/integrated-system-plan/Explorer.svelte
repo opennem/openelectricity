@@ -21,6 +21,7 @@
 	import Icon from '$lib/components/Icon.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
+	// @ts-ignore - module may not exist in all builds
 	import ExplorerChart from './Explorer/Chart.svelte';
 	import SparkLineArea from './SparkLineArea.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
@@ -44,37 +45,37 @@
 	});
 
 	let selectedModel = $state(modelSelections[0]);
-	let selectedScenario = $state(scenarios[selectedModel.value][0]);
+	let selectedScenario = $state(/** @type {any} */ (scenarios)[selectedModel.value][0]);
 	let selectedPathway = $state('');
 
 	let selectedFtGroup = $state(ftGroupSelections[0]);
 
 	let ispData = $derived(data.ispData);
 
-	let group = $derived(groupMap[selectedFtGroup.value]);
-	let order = $derived(orderMap[selectedFtGroup.value]);
+	let group = $derived(/** @type {any} */ (groupMap)[selectedFtGroup.value]);
+	let order = $derived(/** @type {any} */ (orderMap)[selectedFtGroup.value]);
 
 	// $: aemo2022 = data.ispData.aemo2022;
 	// $: aemo2024 = data.ispData.aemo2024;
 	// $: console.log(aemo2022, aemo2024);
 
-	let selectedModelScenarioDescriptions = $derived(scenarioDescriptions[selectedModel.value]);
-	let selectedModelScenarioLabels = $derived(scenarioLabels[selectedModel.value]);
+	let selectedModelScenarioDescriptions = $derived(/** @type {any} */ (scenarioDescriptions)[selectedModel.value]);
+	let selectedModelScenarioLabels = $derived(/** @type {any} */ (scenarioLabels)[selectedModel.value]);
 	// $: selectedModelPathway = selectedPathway[selectedModel.value];
-	let selectedModelYDomain = $derived(scenarioYDomain[selectedModel.value]);
-	let selectedModelXTicks = $derived(modelXTicks[selectedModel.value]);
+	let selectedModelYDomain = $derived(/** @type {any} */ (scenarioYDomain)[selectedModel.value]);
+	let selectedModelXTicks = $derived(/** @type {any} */ (modelXTicks)[selectedModel.value]);
 	let selectedModelData = $derived(ispData[selectedModel.value]);
 	let selectedModelPathways = $derived(
-		selectedModelData.pathways.map((p) => ({
+		selectedModelData.pathways.map((/** @type {any} */ p) => ({
 			value: p,
 			label: p.split('_').join(' ')
 		}))
 	);
 	run(() => {
-		selectedPathway = defaultPathway[selectedModel.value];
+		selectedPathway = /** @type {any} */ (defaultPathway)[selectedModel.value];
 	});
 	let selectedModelScenarios = $derived(
-		scenarios[selectedModel.value].map((s) => ({
+		/** @type {any} */ (scenarios)[selectedModel.value].map((/** @type {any} */ s) => ({
 			value: s,
 			label: s.split('_').join(' ')
 		}))
@@ -82,10 +83,10 @@
 
 	let outlookData = $derived(selectedModelData.outlookEnergyNem.data);
 
-	let filteredWithScenario = $derived(outlookData.filter((d) => d.scenario === selectedScenario));
+	let filteredWithScenario = $derived(outlookData.filter((/** @type {any} */ d) => d.scenario === selectedScenario));
 
 	let filteredWithPathwayScenario = $derived(
-		filteredWithScenario.filter((d) => d.pathway === selectedPathway)
+		filteredWithScenario.filter((/** @type {any} */ d) => d.pathway === selectedPathway)
 	);
 
 	run(() => {
@@ -128,9 +129,9 @@
 	);
 
 	let loadData = $derived(
-		projectionStatsCharts ? projectionStatsCharts.data.filter((d) => d.isLoad) : []
+		projectionStatsCharts ? projectionStatsCharts.data.filter((/** @type {any} */ d) => d.isLoad) : []
 	);
-	let loadSeries = $derived(loadData.map((d) => d.id));
+	let loadSeries = $derived(loadData.map((/** @type {any} */ d) => d.id));
 	run(() => {
 		console.log('loadloadDataSeries', loadData);
 	});
@@ -159,12 +160,12 @@
 	});
 
 	let maxY = $derived(
-		projectionTimeSeriesCharts ? [...projectionTimeSeriesCharts.data.map((d) => d._max)] : []
+		projectionTimeSeriesCharts ? [...projectionTimeSeriesCharts.data.map((/** @type {any} */ d) => d._max)] : []
 	);
 	// @ts-ignore
 	let datasetMax = $derived(maxY ? Math.max(...maxY) : 0);
 	let minY = $derived(
-		projectionTimeSeriesCharts ? [...projectionTimeSeriesCharts.data.map((d) => d._min)] : []
+		projectionTimeSeriesCharts ? [...projectionTimeSeriesCharts.data.map((/** @type {any} */ d) => d._min)] : []
 	);
 	// @ts-ignore
 	let datasetMin = $derived(minY ? Math.min(...minY) : 0);
@@ -217,7 +218,8 @@
 
 	// update historical date to match ISP
 	let updatedHistoricalTimeSeriesDatasets = $derived(
-		historicalTimeSeriesDatasets.data.map((d) => {
+		historicalTimeSeriesDatasets.data.map((/** @type {any} */ d) => {
+			// @ts-ignore - date-fns API usage
 			const date = startOfYear(d.date, 1);
 			return { ...d, date, time: date.getTime() };
 		})
@@ -229,7 +231,7 @@
 		)
 	);
 
-	let sparkLineXTicks = $derived(modelSparklineXTicks[selectedModel.value]);
+	let sparkLineXTicks = $derived(/** @type {any} */ (modelSparklineXTicks)[selectedModel.value]);
 
 	/** @type {TimeSeriesData | undefined} */
 	let hoverData = $state(undefined);
@@ -240,19 +242,21 @@
 	let generatedCsv = $state('');
 	run(() => {
 		generatedCsv = '';
+		if (!projectionTimeSeriesDatasets) return;
 		generatedCsv +=
 			[
 				'date',
 				...projectionTimeSeriesDatasets.seriesNames.map(
-					(d) => projectionTimeSeriesDatasets.seriesLabels[d]
+					(/** @type {any} */ d) => projectionTimeSeriesDatasets.seriesLabels[d]
 				)
 			].join(',') + '\n';
 
-		projectionTimeSeriesDatasets.data.forEach((d) => {
+		projectionTimeSeriesDatasets.data.forEach((/** @type {any} */ d) => {
 			const date = format(d.date, 'yyyy');
+			/** @type {string[]} */
 			const row = [date];
-			projectionTimeSeriesDatasets.seriesNames.forEach((key) => {
-				row.push(auNumber.format(d[key]));
+			projectionTimeSeriesDatasets.seriesNames.forEach((/** @type {any} */ key) => {
+				row.push(auNumber.format(/** @type {number} */ (d[key])));
 			});
 			generatedCsv += row.join(',') + '\n';
 		});
@@ -261,45 +265,49 @@
 	let file = $derived(new Blob([generatedCsv], { type: 'text/plain' }));
 	let fileUrl = $derived(URL.createObjectURL(file));
 
-	function handleModelChange(evt) {
-		if (selectedModel.value === evt.detail.value) return;
-		selectedModel = evt.detail;
-		selectedScenario = scenarios[selectedModel.value][0];
+	/** @param {any} option */
+	function handleModelChange(option) {
+		if (selectedModel.value === option.value) return;
+		selectedModel = option;
+		selectedScenario = /** @type {any} */ (scenarios)[selectedModel.value][0];
 	}
 
-	function handleGroupChange(evt) {
-		if (selectedFtGroup.value === evt.detail.value) return;
-		selectedFtGroup = evt.detail;
+	/** @param {any} option */
+	function handleGroupChange(option) {
+		if (selectedFtGroup.value === option.value) return;
+		selectedFtGroup = option;
 	}
 
-	function handleScenarioChange(evt) {
-		if (selectedScenario === evt.detail.value) return;
-		selectedScenario = evt.detail.value;
+	/** @param {any} option */
+	function handleScenarioChange(option) {
+		if (selectedScenario === option.value) return;
+		selectedScenario = option.value;
 	}
 
-	function handlePathwayChange(evt) {
-		if (selectedPathway === evt.detail.value) return;
-		selectedPathway = evt.detail.value;
+	/** @param {any} option */
+	function handlePathwayChange(option) {
+		if (selectedPathway === option.value) return;
+		selectedPathway = option.value;
 	}
 
 	/** @type {string | undefined} */
 	let hoverKey = $state();
 
 	const handleMousemove = (/** @type {*} */ e) => {
-		if (e.detail.key) {
-			hoverKey = e.detail.key;
-			hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+		if (e?.key) {
+			hoverKey = e.key;
+			hoverData = /** @type {TimeSeriesData} */ (e.data);
 		} else {
 			hoverKey = undefined;
-			hoverData = /** @type {TimeSeriesData} */ (e.detail);
+			hoverData = /** @type {TimeSeriesData} */ (e);
 		}
 	};
 
 	const handleHistoricalMousemove = (/** @type {*} */ e) => {
-		if (e.detail.key) {
-			historicalHoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+		if (e?.key) {
+			historicalHoverData = /** @type {TimeSeriesData} */ (e.data);
 		} else {
-			historicalHoverData = /** @type {TimeSeriesData} */ (e.detail);
+			historicalHoverData = /** @type {TimeSeriesData} */ (e);
 		}
 	};
 </script>
@@ -316,7 +324,7 @@
 			<FormSelect
 				options={modelSelections}
 				selected={selectedModel}
-				on:change={handleModelChange}
+				onchange={handleModelChange}
 			/>
 		</div>
 	</div>
@@ -328,7 +336,7 @@
 			<FormSelect
 				options={selectedModelScenarios}
 				selected={selectedScenario}
-				on:change={handleScenarioChange}
+				onchange={handleScenarioChange}
 			/>
 		</div>
 	</div>
@@ -340,7 +348,7 @@
 			<FormSelect
 				options={selectedModelPathways}
 				selected={selectedPathway}
-				on:change={handlePathwayChange}
+				onchange={handlePathwayChange}
 			/>
 		</div>
 	</div>
@@ -352,7 +360,7 @@
 			<FormSelect
 				options={ftGroupSelections}
 				selected={selectedFtGroup}
-				on:change={handleGroupChange}
+				onchange={handleGroupChange}
 			/>
 		</div>
 	</div>
@@ -405,8 +413,8 @@
 					formatTickX={formatFyTickX}
 					hoverData={historicalHoverData}
 					id="historical-chart"
-					on:mousemove={handleHistoricalMousemove}
-					on:mouseout={() => (historicalHoverData = undefined)}
+					onmousemove={handleHistoricalMousemove}
+					onmouseout={() => (historicalHoverData = undefined)}
 				/>
 			</div>
 		</div>
@@ -414,7 +422,7 @@
 		<div class="col-span-12 md:col-span-7">
 			{#if filteredWithPathwayScenario.length === 0}
 				<p class="mt-6">No data for this scenario and pathway</p>
-			{:else}
+			{:else if projectionTimeSeriesCharts}
 				<div class="relative">
 					<div class="block md:hidden w-[300px] absolute -left-[305px]">
 						<ExplorerChart
@@ -431,8 +439,8 @@
 							hoverData={historicalHoverData}
 							id="historical-chart"
 							clip={false}
-							on:mousemove={handleHistoricalMousemove}
-							on:mouseout={() => (historicalHoverData = undefined)}
+							onmousemove={handleHistoricalMousemove}
+							onmouseout={() => (historicalHoverData = undefined)}
 						/>
 					</div>
 					<div class="w-full">
@@ -452,8 +460,8 @@
 							bgClass="bg-light-warm-grey"
 							id="projection-chart"
 							formatTickX={formatFyTickX}
-							on:mousemove={handleMousemove}
-							on:mouseout={() => {
+							onmousemove={handleMousemove}
+							onmouseout={() => {
 								hoverKey = undefined;
 								hoverData = undefined;
 							}}
@@ -479,21 +487,23 @@
 					</tr>
 				</thead> -->
 
+				{#if projectionTimeSeriesCharts}
 				<tbody>
 					{#each [...projectionTimeSeriesCharts.seriesNames].reverse() as key (key)}
 						<tr>
 							<td class="text-left">{projectionTimeSeriesCharts.seriesLabels[key]}</td>
 							<td class="text-right">
-								{hoverData && hoverData[key] !== 0 ? formatValue(hoverData[key]) : '—'}
+								{hoverData && hoverData[key] !== 0 ? formatValue(/** @type {number} */ (hoverData[key])) : '—'}
 							</td>
 							<td class="text-right">
 								{hoverData && hoverData[key] !== 0 && hoverData._max
-									? formatValue((hoverData[key] / hoverData._max) * 100) + '%'
+									? formatValue((/** @type {number} */ (hoverData[key]) / hoverData._max) * 100) + '%'
 									: '—'}
 							</td>
 						</tr>
 					{/each}
 				</tbody>
+				{/if}
 			</table>
 		</div>
 	</div>
@@ -506,20 +516,22 @@
 		class:md:grid-cols-2={projectionSeriesNames.length === 2}
 		class:md:grid-cols-4={projectionSeriesNames.length !== 2 && projectionSeriesNames.length !== 6}
 	>
-		{#each [...projectionSeriesNames].reverse() as key (key)}
-			<SparkLineArea
-				class="p-8 border border-mid-warm-grey"
-				dataset={projectionTimeSeriesDatasets.data}
-				{key}
-				fuelTechId={projectionFuelTechIds[key]}
-				xTicks={sparkLineXTicks}
-				title={projectionSeriesLabels[key]}
-				colour={projectionSeriesColours[key]}
-				{hoverData}
-				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-				on:mouseout={() => (hoverData = undefined)}
-			/>
-		{/each}
+		{#if projectionTimeSeriesDatasets}
+			{#each [...projectionSeriesNames].reverse() as key (key)}
+				<SparkLineArea
+					class="p-8 border border-mid-warm-grey"
+					dataset={projectionTimeSeriesDatasets.data}
+					{key}
+					fuelTechId={projectionFuelTechIds[key]}
+					xTicks={sparkLineXTicks}
+					title={projectionSeriesLabels[key]}
+					colour={projectionSeriesColours[key]}
+					{hoverData}
+					onmousemove={(d) => (hoverData = /** @type {TimeSeriesData} */ (d))}
+					onmouseout={() => (hoverData = undefined)}
+				/>
+			{/each}
+		{/if}
 	</div>
 
 	<p class="text-xs text-mid-grey px-3 pt-12">

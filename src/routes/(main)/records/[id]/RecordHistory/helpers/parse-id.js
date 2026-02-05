@@ -38,9 +38,9 @@ export default function parseId(id) {
 
 	return {
 		network_region,
-		network_id,
+		network_id: /** @type {import('openelectricity').NetworkCode} */ (network_id),
 		fueltech_id,
-		metric,
+		metric: /** @type {import('openelectricity').DataMetric} */ (metric),
 		period,
 		aggregate,
 		record_id: id

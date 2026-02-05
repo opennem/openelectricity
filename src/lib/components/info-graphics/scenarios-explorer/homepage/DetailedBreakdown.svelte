@@ -1,7 +1,7 @@
 <script>
 	import { run } from 'svelte/legacy';
 
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext } from 'svelte';
 	import { startOfYear } from 'date-fns';
 
 	import { fuelTechNameReducer, fuelTechReducer } from '$lib/fuel_techs.js';
@@ -31,7 +31,6 @@
 
 	const { cachedDisplayData } = getContext('scenario-cache');
 
-	const dispatchEvent = createEventDispatcher();
 
 	run(() => {
 		console.log('cachedDisplayData', $cachedDisplayData[$selectedDisplayView]);
@@ -39,15 +38,15 @@
 
 	let displayUnit = $derived(
 		$isTechnologyDisplay
-			? dataViewUnits[$selectedDataView]
+			? /** @type {Record<string, string>} */ (dataViewUnits)[$selectedDataView]
 			: $showPercentage
 				? '% of demand'
-				: dataViewUnits[$selectedDataView]
+				: /** @type {Record<string, string>} */ (dataViewUnits)[$selectedDataView]
 	);
 	let displayData = $derived($cachedDisplayData[$selectedDisplayView]);
 	let loadIds = $derived(displayData ? displayData.loadIds || [] : []);
 	let displayDataNames = $derived(
-		displayData ? displayData.names.filter((d) => d !== 'historical') || [] : []
+		displayData ? displayData.names.filter((/** @type {any} */ d) => d !== 'historical') || [] : []
 	);
 	let displayDatasets = $derived(displayData ? displayData.data || [] : []);
 
@@ -75,18 +74,18 @@
 
 	let names = $derived($isTechnologyDisplay ? [...displayDataNames].reverse() : displayDataNames);
 	let dataset = $derived(
-		displayDatasets.map((d) => {
+		displayDatasets.map((/** @type {any} */ d) => {
 			const obj = {
 				...d
 			};
 
 			// Invert load values back to positive
-			loadIds.forEach((id) => {
+			loadIds.forEach((/** @type {string} */ id) => {
 				obj[id] = -d[id];
 			});
 
 			// Fill in any missing data so area chart renders properly
-			displayDataNames.forEach((name) => {
+			displayDataNames.forEach((/** @type {string} */ name) => {
 				if (!obj[name]) {
 					if ($isScenarioDisplay && name !== 'historical') {
 						// if it is a scenario display, fill in the historical data
@@ -110,15 +109,21 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} [hoverData]
+	 * @property {(evt: { key: string, data: any }) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
 	 */
 
 	/** @type {Props} */
-	let { hoverData = null } = $props();
+	let { hoverData = null, onmousemove, onmouseout } = $props();
 
 	let projectionFuelTechIds = $derived($projectionStats.data.reduce(fuelTechReducer, {}));
 
+	/**
+	 * @param {string} key
+	 * @param {any} data
+	 */
 	function handleMousemove(key, data) {
-		dispatchEvent('mousemove', { key, data: data });
+		onmousemove?.({ key, data });
 	}
 </script>
 
@@ -128,7 +133,7 @@
 		<FormSelect
 			options={homepageDataTechnologyGroupOptions}
 			selected={$selectedGroup}
-			on:change={(evt) => ($selectedGroup = evt.detail.value)}
+			onchange={(option) => ($selectedGroup = option.value)}
 		/>
 	</div>
 </div>
@@ -154,8 +159,8 @@
 			fuelTechId={projectionFuelTechIds[key]}
 			showIcon={true}
 			isTechnologyDisplay={$isTechnologyDisplay}
-			on:mousemove={(e) => handleMousemove(key, e.detail)}
-			on:mouseout
+			onmousemove={(data) => handleMousemove(key, data)}
+			{onmouseout}
 		/>
 	{/each}
 </div>

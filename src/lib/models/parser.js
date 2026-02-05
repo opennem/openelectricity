@@ -1,11 +1,12 @@
+/** @param {any} outlook */
 export default function (outlook) {
 	// console.log('outlook', outlook);
 
 	// update to TWh before returning
-	const updatedDataToTera = (data) =>
-		data.map((d) => {
+	const updatedDataToTera = (/** @type {any[]} */ data) =>
+		data.map((/** @type {any} */ d) => {
 			const projection = { ...d.projection };
-			projection.data = projection.data.map((d) => d / 1000);
+			projection.data = projection.data.map((/** @type {number} */ d) => d / 1000);
 
 			return {
 				...d,
@@ -14,9 +15,11 @@ export default function (outlook) {
 		});
 
 	// grab unique pathways, scenarios, and fuel techs
-	const pathways = (data) => [...new Set(data.map((d) => d.pathway))];
-	const scenarios = (data) => [...new Set(data.map((d) => d.scenario))].sort().reverse();
-	const fuelTechs = (data) => [...new Set(data.map((d) => d.fuel_tech))].sort();
+	const pathways = (/** @type {any[]} */ data) => [...new Set(data.map((/** @type {any} */ d) => d.pathway))];
+	const scenarios = (/** @type {any[]} */ data) =>
+		[...new Set(data.map((/** @type {any} */ d) => d.scenario))].sort().reverse();
+	const fuelTechs = (/** @type {any[]} */ data) =>
+		[...new Set(data.map((/** @type {any} */ d) => d.fuel_tech))].sort();
 
 	const outlookData = outlook?.data || [];
 

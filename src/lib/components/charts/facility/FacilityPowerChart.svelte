@@ -166,7 +166,7 @@
 		}));
 
 		// Sort by fuel tech order position
-		unitPairs.sort((a, b) => {
+		unitPairs.sort((/** @type {any} */ a, /** @type {any} */ b) => {
 			const aIndex = fuelTechOrder.indexOf(a.fueltech);
 			const bIndex = fuelTechOrder.indexOf(b.fueltech);
 			// If not in order array, put at end
@@ -175,7 +175,7 @@
 			return aPos - bPos;
 		});
 
-		return unitPairs.map((p) => p.id);
+		return unitPairs.map((/** @type {any} */ p) => p.id);
 	});
 
 	const BATTERY_FUEL_TECHS = ['battery'];
@@ -255,13 +255,13 @@
 		const processed = processForChart(transformed, 'W', {
 			groupOrder: unitOrder,
 			loadsToInvert: loadIds,
-			labelReducer: (/** @type {Object} */ acc, /** @type {any} */ d) => {
+			labelReducer: (/** @type {any} */ acc, /** @type {any} */ d) => {
 				const unitCode = d.unit?.code || d.id;
 				const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
 				acc[d.id] = `${unitCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
 				return acc;
 			},
-			colourReducer: (/** @type {Object} */ acc, /** @type {any} */ d) => {
+			colourReducer: (/** @type {any} */ acc, /** @type {any} */ d) => {
 				const unitCode = d.unit?.code || d.id;
 				const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
 				const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
@@ -399,11 +399,11 @@
 		const processed = processForChart(transformed, 'W', {
 			groupOrder: unitOrder,
 			loadsToInvert: loadIds,
-			labelReducer: (/** @type {Object} */ acc, /** @type {any} */ d) => {
+			labelReducer: (/** @type {any} */ acc, /** @type {any} */ d) => {
 				acc[d.id] = d.unit?.code || d.id;
 				return acc;
 			},
-			colourReducer: (/** @type {Object} */ acc, /** @type {any} */ d) => {
+			colourReducer: (/** @type {any} */ acc, /** @type {any} */ d) => {
 				const unitCode = d.unit?.code || d.id;
 				const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
 				const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);

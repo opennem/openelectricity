@@ -17,7 +17,7 @@
 	 * @typedef {Object} Props
 	 * @property {symbol} cxtKey
 	 * @property {Date[] | undefined} brushedRange
-	 * @property {string} [brushedLineStroke]
+	 * @property {string} [_brushedLineStroke]
 	 * @property {boolean} [showLineData]
 	 * @property {Function} [onbrush]
 	 * @property {Function} [onclear]

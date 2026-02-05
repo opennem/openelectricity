@@ -1,6 +1,6 @@
 /**
  * @param {string} prop
- * @returns {Function} sort function
+ * @returns {(a: any, b: any) => number} sort function
  */
 export function byProp(prop) {
 	return (

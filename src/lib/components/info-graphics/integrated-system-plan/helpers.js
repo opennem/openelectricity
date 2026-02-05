@@ -22,9 +22,10 @@ export const formatValue = (/** @type {number} */ d) => {
 	return formatted;
 };
 
-export const displayXTicks = (d) => d.map((t) => startOfYear(t));
+export const displayXTicks = (/** @type {any[]} */ d) => d.map((/** @type {any} */ t) => startOfYear(t));
 
 // Convert historical data to Terra to match ISP
+/** @param {any[]} data */
 export function covertHistoryDataToTWh(data) {
 	return data.map((/** @type {StatsData} */ d) => {
 		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));
@@ -34,8 +35,9 @@ export function covertHistoryDataToTWh(data) {
 	});
 }
 
+/** @param {any[]} data */
 export function mutateHistoryDataDates(data) {
-	return data.map((d) => {
+	return data.map((/** @type {any} */ d) => {
 		const date = startOfYear(d.date);
 		return { ...d, date, time: date.getTime() };
 	});

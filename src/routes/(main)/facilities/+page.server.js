@@ -24,7 +24,7 @@
  * - sizes: comma-separated size filters
  * - facility: selected facility code for detail view
  *
- * @see ./_stores/facilities-server-cache.js for caching implementation
+ * See _stores/facilities-server-cache.js for caching implementation
  */
 
 import { OpenElectricityClient } from 'openelectricity';

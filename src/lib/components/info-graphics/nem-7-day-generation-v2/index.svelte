@@ -71,7 +71,7 @@
 			chart.seriesLabels = initialData.seriesLabels;
 
 			// Set Y domain from pre-calculated min/max
-			chart.customYDomain = [initialData.minY, initialData.maxY];
+			chart.setYDomain([initialData.minY, initialData.maxY]);
 
 			// Calculate nighttime shading
 			if (dataWithDates.length > 0) {

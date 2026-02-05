@@ -90,6 +90,15 @@
 		}, 5000);
 	}
 
+	/**
+	 * Check if an option value is in the selected array
+	 * @param {string | number | null | undefined} value
+	 * @returns {boolean}
+	 */
+	function isSelected(value) {
+		return selected.includes(/** @type {string} */ (value));
+	}
+
 	function handleScroll() {
 		showOptions = false;
 	}
@@ -157,17 +166,17 @@
 					<li class="whitespace-nowrap border-b border-warm-grey">
 						<button
 							class="w-full px-0 py-1 flex gap-4 items-center"
-							class:text-mid-grey={!selected.includes(opt.value)}
-							class:text-black={selected.includes(opt.value)}
+							class:text-mid-grey={!isSelected(opt.value)}
+							class:text-black={isSelected(opt.value)}
 							onclick={() => handleSelect(opt)}
 						>
 							<div
 								class="border rounded-sm size-7"
-								class:border-mid-warm-grey={!selected.includes(opt.value)}
-								class:border-dark-grey={selected.includes(opt.value)}
-								class:bg-warm-grey={selected.includes(opt.value)}
+								class:border-mid-warm-grey={!isSelected(opt.value)}
+								class:border-dark-grey={isSelected(opt.value)}
+								class:bg-warm-grey={isSelected(opt.value)}
 							>
-								{#if selected.includes(opt.value)}
+								{#if isSelected(opt.value)}
 									<IconCheckMark class="size-6" />
 								{/if}
 							</div>
@@ -201,8 +210,8 @@
 					<li class="whitespace-nowrap">
 						<button
 							class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
-							class:text-mid-grey={!selected.includes(opt.value)}
-							class:text-black={selected.includes(opt.value)}
+							class:text-mid-grey={!isSelected(opt.value)}
+							class:text-black={isSelected(opt.value)}
 							onclick={() => handleSelect(opt)}
 						>
 							<div class="flex items-center gap-4">
@@ -214,11 +223,11 @@
 
 							<div
 								class="border rounded-sm size-7"
-								class:border-mid-warm-grey={!selected.includes(opt.value)}
-								class:border-dark-grey={selected.includes(opt.value)}
-								class:bg-warm-grey={selected.includes(opt.value)}
+								class:border-mid-warm-grey={!isSelected(opt.value)}
+								class:border-dark-grey={isSelected(opt.value)}
+								class:bg-warm-grey={isSelected(opt.value)}
 							>
-								{#if selected.includes(opt.value)}
+								{#if isSelected(opt.value)}
 									<IconCheckMark class="size-6" />
 								{/if}
 							</div>

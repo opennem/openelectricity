@@ -10,9 +10,9 @@ import getDateField from './get-date-field';
 function groupByMonthDay(data) {
 	return rollup(
 		data,
-		(d) => d,
-		(d) => d.zonedDateTime?.year,
-		(d) => {
+		(/** @type {any} */ d) => d,
+		(/** @type {any} */ d) => d.zonedDateTime?.year,
+		(/** @type {any} */ d) => {
 			if (d.isToday) {
 				return 'Today';
 			}

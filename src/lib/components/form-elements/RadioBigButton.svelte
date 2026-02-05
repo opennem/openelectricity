@@ -5,7 +5,7 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('svelte/elements').FormEventHandler<HTMLInputElement> | null} [changeHandler]
+	 * @property {((event: Event, ...args: unknown[]) => void) | null} [changeHandler]
 	 * @property {string} [name]
 	 * @property {string} [label]
 	 * @property {string} [value]
@@ -47,7 +47,7 @@
 			{value}
 			{name}
 			{checked}
-			onchange={preventDefault(changeHandler)}
+			onchange={preventDefault(/** @type {(event: Event, ...args: unknown[]) => void} */ (changeHandler))}
 		/>
 		<span
 			class="rounded-md border-solid border-[0.05rem] border-mid-warm-grey p-4 font-sans text-sm"

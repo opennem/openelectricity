@@ -34,6 +34,8 @@ If object with xStartValue and xEndValue, overlay will be a range
 	 * @property {*} [overlayLine]
 	 * @property {Date[] | undefined} [xTicks]
 	 * @property {TimeSeriesData | undefined} [hoverData]
+	 * @property {(data: TimeSeriesData | undefined) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
 	 */
 
 	/** @type {Props & { [key: string]: any }} */
@@ -52,21 +54,23 @@ If object with xStartValue and xEndValue, overlay will be a range
 		overlayLine = false,
 		xTicks = undefined,
 		hoverData = undefined,
+		onmousemove,
+		onmouseout,
 		...rest
 	} = $props();
 	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 	let hoverValue = $derived(hoverData ? hoverData[key] || 0 : 0);
 	let hoverPercentage = $derived(
-		hoverData && hoverData._max ? (hoverValue / hoverData._max) * 100 : 0
+		hoverData && hoverData._max ? (/** @type {number} */ (hoverValue) / hoverData._max) * 100 : 0
 	);
-	let maxValue = $derived(Math.round(Math.max(...dataset.map((d) => d[key] || 0))));
+	let maxValue = $derived(Math.round(Math.max(...dataset.map((d) => /** @type {number} */ (d[key]) || 0))));
 	let maxY = $derived(maxValue > 0 ? maxValue : 10);
 </script>
 
 <div {...rest}>
 	<KeyHeader {key} {title} {fuelTechId} data={hoverData} {showIcon}>
 		{#if hoverData}
-			{formatValue(hoverValue)}
+			{formatValue(/** @type {number} */ (hoverValue))}
 
 			{#if isTechnologyDisplay}
 				<small class="text-sm text-dark-grey font-light">
@@ -101,7 +105,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 				<AxisY formatTick={formatTickY} tickMarks={true} ticks={[0, maxY]} />
 				<Line stroke="#353535" {hoverData} strokeWidth="2px" />
 				<Area fill={colour} />
-				<HoverLayer {dataset} on:mousemove on:mouseout />
+				<HoverLayer {dataset} {onmousemove} {onmouseout} />
 			</Svg>
 
 			<Svg pointerEvents={false}>

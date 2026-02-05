@@ -187,8 +187,10 @@ export function aggregateToInterval(data, targetInterval, seriesNames, method = 
 		});
 	}
 
+	/** @type {any[]} */
 	const result = [];
 	for (const bucket of buckets.values()) {
+		/** @type {any} */
 		const point = {
 			date: bucket.date,
 			time: bucket.time
@@ -199,9 +201,9 @@ export function aggregateToInterval(data, targetInterval, seriesNames, method = 
 			if (values.length === 0) {
 				point[name] = null;
 			} else if (method === 'sum') {
-				point[name] = values.reduce((a, b) => a + b, 0);
+				point[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
 			} else {
-				point[name] = values.reduce((a, b) => a + b, 0) / values.length;
+				point[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) / values.length;
 			}
 		});
 

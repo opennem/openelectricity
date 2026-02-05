@@ -151,7 +151,7 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 			if (includeBatteryAndLoads) {
 				const dataLoads = projection.stats.data[0].projection.data;
 				const dataSources = projection.stats.data[1].projection.data;
-				const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+				const netGenerationData = dataSources.map((/** @type {any} */ d, /** @type {any} */ i) => d + dataLoads[i]); // loads are already negative
 				netGenerationStats.projection.data = netGenerationData;
 			}
 
@@ -204,9 +204,9 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 	mergedTimeSeriesData.sort((a, b) => a.time - b.time);
 
 	// combine all the time series
-	/** @type {*} */
+/** @type {*} */
 	const projectionTimeSeries = starts.reduce(
-		(acc, start) => {
+		(/** @type {any} */ acc, start) => {
 			return {
 				data: [],
 				seriesNames: [...acc.seriesNames, ...start.timeSeries.seriesNames],
@@ -240,7 +240,7 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 	if (includeBatteryAndLoads) {
 		const dataLoads = historicalStats.data[0].history.data;
 		const dataSources = historicalStats.data[1].history.data;
-		const netGenerationData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+		const netGenerationData = dataSources.map((/** @type {any} */ d, /** @type {any} */ i) => d + dataLoads[i]); // loads are already negative
 
 		netGenerationStats.history.data = netGenerationData;
 	}
@@ -356,11 +356,11 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 	netCapacityStats.colour = '#000';
 
 	if (includeBatteryAndLoads) {
-		const totalSources = historicalStats.data.find((d) => d.fuel_tech === 'total_sources');
-		const totalLoads = historicalStats.data.find((d) => d.fuel_tech === 'total_loads');
+		const totalSources = historicalStats.data.find((/** @type {any} */ d) => d.fuel_tech === 'total_sources');
+		const totalLoads = historicalStats.data.find((/** @type {any} */ d) => d.fuel_tech === 'total_loads');
 		const dataLoads = totalLoads ? totalLoads.history.data : [];
 		const dataSources = totalSources.history.data;
-		const netCapacityData = dataSources.map((d, i) => d + dataLoads[i]); // loads are already negative
+		const netCapacityData = dataSources.map((/** @type {any} */ d, /** @type {any} */ i) => d + dataLoads[i]); // loads are already negative
 
 		netCapacityStats.history.data = netCapacityData;
 	}
@@ -497,14 +497,19 @@ function intensity({ processedEmissions, processedEnergy }) {
 	const seriesNames = processedIntensity.seriesNames;
 
 	processedIntensity.seriesData = processedEmissions.seriesData.map((d, i) => {
+		/** @type {Record<string, any>} */
 		const obj = {
 			date: d.date,
 			time: d.time
 		};
 
-		seriesNames.forEach((name) => {
-			if (d[name] && processedEnergy.seriesData[i][name]) {
-				obj[name] = d[name] / processedEnergy.seriesData[i][name];
+		seriesNames.forEach((/** @type {string} */ name) => {
+			/** @type {Record<string, any>} */
+			const dRecord = d;
+			/** @type {Record<string, any>} */
+			const energyRecord = processedEnergy.seriesData[i];
+			if (dRecord[name] && energyRecord[name]) {
+				obj[name] = dRecord[name] / energyRecord[name];
 			}
 		});
 
@@ -521,10 +526,14 @@ function intensity({ processedEmissions, processedEnergy }) {
 	return processedIntensity;
 }
 
+/**
+ * @param {string[]} seriesNames
+ * @returns {Record<string, string>}
+ */
 function getScenarioColours(seriesNames) {
-	const scenarioPathways = seriesNames.filter((name) => name !== 'historical');
+	const scenarioPathways = seriesNames.filter((/** @type {string} */ name) => name !== 'historical');
 
-	const scenarioPathwayDetails = scenarioPathways.map((name) => {
+	const scenarioPathwayDetails = scenarioPathways.map((/** @type {string} */ name) => {
 		const [model, scenario, pathway] = name.split('-');
 		return {
 			model,
@@ -533,8 +542,9 @@ function getScenarioColours(seriesNames) {
 		};
 	});
 
+	/** @type {Record<string, string[]>} */
 	const scenarioColourCounter = scenarioPathwayDetails.reduce(
-		(acc, { model, scenario, pathway }) => {
+		(/** @type {Record<string, string[]>} */ acc, { model, scenario, pathway }) => {
 			const key = `${model}-${scenario}`;
 			if (acc[key]) {
 				acc[key].push(`${model}-${scenario}-${pathway}`);
@@ -543,9 +553,10 @@ function getScenarioColours(seriesNames) {
 			}
 			return acc;
 		},
-		{}
+		/** @type {Record<string, string[]>} */ ({})
 	);
 
+	/** @type {Record<string, string>} */
 	let newColours = {
 		historical: '#000'
 	};
@@ -553,10 +564,11 @@ function getScenarioColours(seriesNames) {
 		const colour = scenarioColourMap[key] || '#000';
 		let names = scenarioColourCounter[key];
 
-		names.forEach((name, i) => {
-			newColours[name] = color(colour)
-				.brighter(i * 0.3)
-				.formatHex();
+		names.forEach((/** @type {string} */ name, /** @type {number} */ i) => {
+			const c = /** @type {any} */ (color(colour));
+			if (c) {
+				newColours[name] = c.brighter(i * 0.3).formatHex();
+			}
 		});
 	});
 

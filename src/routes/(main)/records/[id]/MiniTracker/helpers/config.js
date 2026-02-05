@@ -8,7 +8,7 @@ export let apiIntervalMap = Object.freeze({
 	year: '1y'
 });
 
-/** @type {Record<import ('openelectricity').DataMetric, {prefix: string, displayPrefix: string, allowedPrefixes: string[], baseUnit: string}>} */
+/** @type {Record<string, {prefix: string, displayPrefix: string, allowedPrefixes: string[], baseUnit: string}>} */
 export let chartOptions = Object.freeze({
 	power: {
 		prefix: 'M',

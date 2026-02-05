@@ -8,10 +8,13 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} [seriesLoadsIds]
+	 * @property {(data: any) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(data: any) => void} [onpointerup]
 	 */
 
 	/** @type {Props} */
-	let { seriesLoadsIds = [] } = $props();
+	let { seriesLoadsIds = [], onmousemove, onmouseout, onpointerup } = $props();
 
 	/** @type {Object.<string, *>} */
 	const dataVizStores = {
@@ -75,7 +78,7 @@
 			<Switch
 				buttons={stores}
 				selected={selectedStoreName}
-				on:change={(evt) => (selectedStoreName = evt.detail.value)}
+				onchange={(detail) => (selectedStoreName = detail.value)}
 				class="justify-center"
 			/>
 		</div>
@@ -98,9 +101,9 @@
 					displayUnit={$displayUnit}
 					{seriesLoadsIds}
 					gridColClass="grid-cols-1"
-					on:mousemove
-					on:mouseout
-					on:pointerup
+					{onmousemove}
+					{onmouseout}
+					{onpointerup}
 				/>
 				<MiniCharts
 					seriesNames={$intensitySeriesNames}
@@ -119,9 +122,9 @@
 					showArea={false}
 					{seriesLoadsIds}
 					gridColClass="grid-cols-1"
-					on:mousemove
-					on:mouseout
-					on:pointerup
+					{onmousemove}
+					{onmouseout}
+					{onpointerup}
 				/>
 			</div>
 		{:else}
@@ -140,9 +143,9 @@
 				seriesData={$seriesData}
 				displayUnit={$displayUnit}
 				{seriesLoadsIds}
-				on:mousemove
-				on:mouseout
-				on:pointerup
+				{onmousemove}
+				{onmouseout}
+				{onpointerup}
 			/>
 		{/if}
 	</section>

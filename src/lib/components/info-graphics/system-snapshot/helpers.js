@@ -35,43 +35,61 @@ export const renewablesFts = [
 	'bioenergy_biomass'
 ];
 
+/**
+ * @param {string[]} regions
+ * @param {Record<string, any[]>} regionData
+ * @returns {Record<string, number>}
+ */
 export function regionGenerationTotal(regions, regionData) {
+	/** @type {Record<string, number>} */
 	const regionGeneration = {};
 
-	regions.forEach((r) => {
-		const region = regionData[r];
+	regions.forEach((/** @type {string} */ r) => {
+		const region = /** @type {any} */ (regionData)[r];
 		const total = region.reduce(
-			(acc, cur) => (loadFts.includes(cur.fuel_tech) ? acc - cur.data : acc + cur.data),
+			(/** @type {number} */ acc, /** @type {any} */ cur) => (loadFts.includes(cur.fuel_tech) ? acc - cur.data : acc + cur.data),
 			0
 		);
-		regionGeneration[r] = total;
+		/** @type {any} */ (regionGeneration)[r] = total;
 	});
 
 	return regionGeneration;
 }
 
+/**
+ * @param {string[]} regions
+ * @param {Record<string, any[]>} regionData
+ * @returns {Record<string, number>}
+ */
 export function regionRenewablesTotal(regions, regionData) {
+	/** @type {Record<string, number>} */
 	const regionRenewables = {};
 
-	regions.forEach((r) => {
-		const region = regionData[r];
+	regions.forEach((/** @type {string} */ r) => {
+		const region = /** @type {any} */ (regionData)[r];
 		const total = region.reduce(
-			(acc, cur) => (renewablesFts.includes(cur.fuel_tech) ? acc + cur.data : acc),
+			(/** @type {number} */ acc, /** @type {any} */ cur) => (renewablesFts.includes(cur.fuel_tech) ? acc + cur.data : acc),
 			0
 		);
-		regionRenewables[r] = total;
+		/** @type {any} */ (regionRenewables)[r] = total;
 	});
 
 	return regionRenewables;
 }
 
+/**
+ * @param {string[]} regions
+ * @param {Record<string, any[]>} regionData
+ * @returns {Record<string, number>}
+ */
 export function regionEmissionsTotal(regions, regionData) {
+	/** @type {Record<string, number>} */
 	const regionEmissions = {};
 
-	regions.forEach((r) => {
-		const region = regionData[r];
+	regions.forEach((/** @type {string} */ r) => {
+		const region = /** @type {any} */ (regionData)[r];
 		const total = region.reduce(
-			(acc, cur) =>
+			(/** @type {number} */ acc, /** @type {any} */ cur) =>
 				loadFts.includes(cur.fuel_tech)
 					? cur.fuel_tech === 'exports'
 						? acc - cur.data
@@ -79,7 +97,7 @@ export function regionEmissionsTotal(regions, regionData) {
 					: acc + cur.data,
 			0
 		);
-		regionEmissions[r] = total;
+		/** @type {any} */ (regionEmissions)[r] = total;
 	});
 
 	return regionEmissions;

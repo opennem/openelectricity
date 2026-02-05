@@ -41,7 +41,7 @@ export async function GET({ setHeaders, url, fetch }) {
 	);
 
 	const res = await fetchAll(dataPaths);
-	if (res.error) {
+	if (/** @type {any} */ (res).error) {
 		error(500, 'Error fetching data');
 	}
 

@@ -18,11 +18,16 @@
 	} from './helpers';
 	import {
 		dataViewDescription,
-		dataViewlabel,
-		dataViewUnits,
+		dataViewlabel as dataViewlabelOrig,
+		dataViewUnits as dataViewUnitsOrig,
 		dataViewLongLabel,
 		dataViewIntervalLabel
 	} from './options';
+
+	/** @type {Record<string, any>} */
+	const dataViewlabel = dataViewlabelOrig;
+	/** @type {Record<string, any>} */
+	const dataViewUnits = dataViewUnitsOrig;
 
 	const {
 		selectedDisplayView,
@@ -52,11 +57,15 @@
 
 	let showTable = true;
 
+	/** @type {string[]} */
 	let seriesNames = $state([]);
+	/** @type {any[]} */
 	let seriesItems = $state([]);
 	let seriesColours = $state();
 	let seriesLabels = $state();
+	/** @type {any[]} */
 	let seriesData = $state([]);
+	/** @type {string[]} */
 	let seriesLoadsIds = $state([]);
 	/** @type {Array.<number | null>} */
 	let yDomain = $state([0, null]);
@@ -67,16 +76,16 @@
 	/** @type {string | undefined} */
 	let hoverKey = $state();
 
-	/** @type {string | null} */
-	let highlightId = $state(null);
+	/** @type {string | undefined} */
+	let highlightId = $state(undefined);
 
 	const handleMousemove = (/** @type {*} */ e) => {
-		if (e.detail?.key) {
-			hoverKey = e.detail.key;
-			hoverData = /** @type {TimeSeriesData} */ (e.detail.data);
+		if (e?.key) {
+			hoverKey = e.key;
+			hoverData = /** @type {TimeSeriesData} */ (e.data);
 		} else {
 			hoverKey = undefined;
-			hoverData = /** @type {TimeSeriesData} */ (e.detail);
+			hoverData = /** @type {TimeSeriesData} */ (e);
 		}
 	};
 
@@ -151,7 +160,7 @@
 				seriesItems = processed.nameOptions;
 				yDomain = [processed.minY, processed.maxY];
 
-				seriesLoadsIds = $projectionStats.data.filter((d) => d.isLoad).map((d) => d.id);
+				seriesLoadsIds = $projectionStats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
 
 				$cachedDisplayData[$selectedDisplayView] = {
 					data: seriesData,
@@ -233,13 +242,14 @@
 	});
 
 	// TODO: reorder
-	let sortedItems = $derived(seriesItems.map((d) => d.id).reverse());
+	let sortedItems = $derived(seriesItems.map((/** @type {any} */ d) => d.id).reverse());
 	run(() => {
-		if ($cachedDisplayData[$selectedDisplayView]) {
+		if (/** @type {any} */ ($cachedDisplayData)[$selectedDisplayView]) {
+			/** @type {Record<string, any>} */
 			let colours = {};
 			console.log('seriesColours', seriesColours);
-			sortedItems.forEach((name) => {
-				colours[name] = $cachedDisplayData[$selectedDisplayView].colours[name];
+			sortedItems.forEach((/** @type {any} */ name) => {
+				colours[name] = /** @type {any} */ ($cachedDisplayData)[$selectedDisplayView].colours[name];
 			});
 			seriesColours = colours;
 		}
@@ -247,14 +257,14 @@
 
 	let isPercentageView = $derived(!$isNetTotalGroup && $usePercentage);
 	let defaultText = $derived(
-		dataViewLongLabel[$selectedDataView] +
+		/** @type {any} */ (dataViewLongLabel)[$selectedDataView] +
 			` (${
-				!$isTechnologyDisplay && isPercentageView ? '% of demand' : dataViewUnits[$selectedDataView]
+				!$isTechnologyDisplay && isPercentageView ? '% of demand' : /** @type {any} */ (dataViewUnits)[$selectedDataView]
 			}) ` +
-			dataViewIntervalLabel[$selectedDataView]
+			/** @type {any} */ (dataViewIntervalLabel)[$selectedDataView]
 	);
 
-	function handleSort(e) {
+	function handleSort(/** @type {any} */ e) {
 		seriesItems = e.detail;
 	}
 </script>
@@ -297,8 +307,8 @@
 				{hoverData}
 				{highlightId}
 				{overlayStroke}
-				on:mousemove={handleMousemove}
-				on:mouseout={() => {
+				onmousemove={handleMousemove}
+				onmouseout={() => {
 					hoverKey = undefined;
 					hoverData = undefined;
 				}}

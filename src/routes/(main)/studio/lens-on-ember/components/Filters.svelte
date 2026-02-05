@@ -54,7 +54,7 @@
 					selectedLabelClass="text-sm font-semibold whitespace-nowrap"
 					options={cxt.ranges}
 					selected={cxt.selectedRange}
-					on:change={(evt) => (cxt.selectedRange = evt.detail.value)}
+					onchange={(/** @type {any} */ option) => (cxt.selectedRange = option.value)}
 				/>
 			</div>
 			<div class="hidden md:block">
@@ -64,7 +64,7 @@
 					xPad={4}
 					yPad={2}
 					textSize="sm"
-					on:change={(evt) => (cxt.selectedRange = evt.detail.value)}
+					onchange={(/** @type {any} */ detail) => (cxt.selectedRange = detail.value)}
 				/>
 			</div>
 		</div>
@@ -80,7 +80,7 @@
 						selectedLabelClass="text-sm font-semibold whitespace-nowrap"
 						options={cxt.selectedRangeIntervals}
 						selected={cxt.selectedInterval}
-						on:change={(evt) => (cxt.selectedInterval = evt.detail.value)}
+						onchange={(/** @type {any} */ option) => (cxt.selectedInterval = option.value)}
 					/>
 				</div>
 				<div class="hidden md:block">
@@ -90,7 +90,7 @@
 						xPad={4}
 						yPad={2}
 						textSize="sm"
-						on:change={(evt) => (cxt.selectedInterval = evt.detail.value)}
+						onchange={(/** @type {any} */ detail) => (cxt.selectedInterval = detail.value)}
 					/>
 				</div>
 			</div>

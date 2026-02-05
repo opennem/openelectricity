@@ -62,7 +62,7 @@
 			paddingX="px-4"
 			options={modelOptions}
 			selected={$selectedModel}
-			on:change={(evt) => ($selectedModel = evt.detail.value)}
+			onchange={(option) => ($selectedModel = option.value)}
 		/>
 	</div>
 

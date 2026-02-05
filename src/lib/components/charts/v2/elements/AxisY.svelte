@@ -16,7 +16,7 @@
 	 * @property {string} [textFill] - Text fill colour
 	 * @property {string} [clipPathId] - Optional clip path ID
 	 * @property {(d: any) => any} [formatTick] - Tick formatter function
-	 * @property {number | Array | Function} [ticks] - Number of ticks, tick values, or function
+	 * @property {number | Array<any> | Function} [ticks] - Number of ticks, tick values, or function
 	 * @property {number} [xTick] - X offset for tick labels
 	 * @property {number} [yTick] - Y offset for tick labels
 	 * @property {number} [dxTick] - dx offset for tick labels

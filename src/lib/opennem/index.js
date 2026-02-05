@@ -27,7 +27,7 @@ async function getAllRegionHistory(dataType = 'energy') {
 	const history = await fetch('/api/energy/all-regions');
 	const historyJson = await history.json();
 
-	const parsed = historyJson.map((d) => parser(d.data, dataType));
+	const parsed = historyJson.map((/** @type {any} */ d) => parser(d.data, dataType));
 	return flatten(parsed);
 }
 

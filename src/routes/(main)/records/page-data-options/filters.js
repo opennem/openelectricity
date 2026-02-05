@@ -241,7 +241,7 @@ export function getFilterParams({
 	metrics,
 	significance
 }) {
-	const validRegions = regions.filter((r) => r !== '_all');
+	const validRegions = regions.filter((/** @type {string} */ r) => r !== '_all');
 
 	// 8 as in ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1', 'wem']
 	const regionsParam =

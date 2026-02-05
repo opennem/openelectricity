@@ -66,7 +66,7 @@
 	// check the recordIds and return as options (i.e. { label: 'NSW', value: 'au.nem.nsw1' 	})
 	let availableRegions = $derived(
 		recordIds
-			?.filter((r) =>
+			?.filter((/** @type {MilestoneRecord} */ r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
 						r.metric === metric &&
@@ -74,7 +74,7 @@
 						r.aggregate === aggregate
 					: r.metric === metric && r.period === period && r.aggregate === aggregate
 			)
-			.map((r) => {
+			.map((/** @type {MilestoneRecord} */ r) => {
 				let checkRegionId = getRegionLongValue(r);
 				return {
 					label: regions.find((r) => r.longValue === checkRegionId)?.label || '',
@@ -88,7 +88,7 @@
 			label: r.label,
 			value: r.longValue,
 			divider: r.divider,
-			labelClassName: availableRegions?.find((m) => m.value === r.longValue)
+			labelClassName: availableRegions?.find((/** @type {{ value: string }} */ m) => m.value === r.longValue)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
@@ -97,13 +97,13 @@
 	let availableFuelTechs = $derived(
 		recordIds
 			?.filter(
-				(r) =>
+				(/** @type {MilestoneRecord} */ r) =>
 					getRegionLongValue(r) === region &&
 					r.metric === metric &&
 					r.period === period &&
 					r.aggregate === aggregate
 			)
-			.map((r) => ({
+			.map((/** @type {MilestoneRecord} */ r) => ({
 				label: fuelTechOptions.find((ft) => ft.value === r.fueltech_id)?.label || r.fueltech_id,
 				value: r.fueltech_id
 			}))
@@ -113,7 +113,7 @@
 	let availableFuelTechsOptions = $derived(
 		fuelTechOptions.map((r) => ({
 			...r,
-			labelClassName: availableFuelTechs?.find((m) => m.value === r.value)
+			labelClassName: availableFuelTechs?.find((/** @type {{ value: string | undefined }} */ m) => m.value === r.value)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
@@ -121,7 +121,7 @@
 
 	let availableMetrics = $derived(
 		recordIds
-			?.filter((r) =>
+			?.filter((/** @type {MilestoneRecord} */ r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
 						getRegionLongValue(r) === region &&
@@ -132,7 +132,7 @@
 						r.period === period &&
 						r.aggregate === aggregate
 			)
-			.map((r) => ({
+			.map((/** @type {MilestoneRecord} */ r) => ({
 				label: milestoneTypeOptions.find((mt) => mt.value === r.metric)?.label || r.metric,
 				value: r.metric
 			}))
@@ -142,7 +142,7 @@
 	let availableMetricsOptions = $derived(
 		milestoneTypeOptions.map((r) => ({
 			...r,
-			labelClassName: availableMetrics?.find((m) => m.value === r.value)
+			labelClassName: availableMetrics?.find((/** @type {{ value: string }} */ m) => m.value === r.value)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
@@ -150,7 +150,7 @@
 
 	let availablePeriods = $derived(
 		recordIds
-			?.filter((r) =>
+			?.filter((/** @type {MilestoneRecord} */ r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
 						getRegionLongValue(r) === region &&
@@ -161,7 +161,7 @@
 						r.metric === metric &&
 						r.aggregate === aggregate
 			)
-			.map((r) => ({
+			.map((/** @type {MilestoneRecord} */ r) => ({
 				label: periodOptions.find((p) => p.value === r.period)?.label || r.period,
 				value: r.period
 			}))
@@ -171,7 +171,7 @@
 	let availablePeriodsOptions = $derived(
 		periodOptions.map((r) => ({
 			...r,
-			labelClassName: availablePeriods?.find((m) => m.value === r.value)
+			labelClassName: availablePeriods?.find((/** @type {{ value: string }} */ m) => m.value === r.value)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
@@ -179,7 +179,7 @@
 
 	let availableAggregates = $derived(
 		recordIds
-			?.filter((r) =>
+			?.filter((/** @type {MilestoneRecord} */ r) =>
 				fuelTech
 					? r.fueltech_id === fuelTech &&
 						getRegionLongValue(r) === region &&
@@ -190,7 +190,7 @@
 						r.metric === metric &&
 						r.period === period
 			)
-			.map((r) => ({
+			.map((/** @type {MilestoneRecord} */ r) => ({
 				label: aggregateOptions.find((a) => a.value === r.aggregate)?.label || r.aggregate,
 				value: r.aggregate
 			}))
@@ -200,7 +200,7 @@
 	let availableAggregatesOptions = $derived(
 		aggregateOptions.map((r) => ({
 			...r,
-			labelClassName: availableAggregates?.find((m) => m.value === r.value)
+			labelClassName: availableAggregates?.find((/** @type {{ value: string }} */ m) => m.value === r.value)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))

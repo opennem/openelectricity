@@ -7,12 +7,12 @@
 	<ButtonGroup
 		buttons={$rangeList}
 		selected={$selectedRange}
-		on:click={(/** @type {*} */ evt) => ($selectedRange = evt.target.value)}
+		onclick={(evt) => ($selectedRange = evt.currentTarget.value)}
 	/>
 
 	<ButtonGroup
 		buttons={$intervalList}
 		selected={$selectedInterval}
-		on:click={(/** @type {*} */ evt) => ($selectedInterval = evt.target.value)}
+		onclick={(evt) => ($selectedInterval = evt.currentTarget.value)}
 	/>
 </div>

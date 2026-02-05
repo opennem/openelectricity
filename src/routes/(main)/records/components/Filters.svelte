@@ -31,7 +31,7 @@
 		if (isMetaPressed) {
 			$selectedFuelTechs = [value];
 		} else if ($selectedFuelTechs.includes(value)) {
-			$selectedFuelTechs = $selectedFuelTechs.filter((item) => item !== value);
+			$selectedFuelTechs = $selectedFuelTechs.filter((/** @type {string} */ item) => item !== value);
 		} else {
 			$selectedFuelTechs = [...$selectedFuelTechs, value];
 		}
@@ -45,7 +45,7 @@
 		if (isMetaPressed) {
 			$selectedMetrics = [value];
 		} else if ($selectedMetrics.includes(value)) {
-			$selectedMetrics = $selectedMetrics.filter((item) => item !== value);
+			$selectedMetrics = $selectedMetrics.filter((/** @type {string} */ item) => item !== value);
 		} else {
 			$selectedMetrics = [...$selectedMetrics, value];
 		}
@@ -59,7 +59,7 @@
 		if (isMetaPressed) {
 			$selectedPeriods = [value];
 		} else if ($selectedPeriods.includes(value)) {
-			$selectedPeriods = $selectedPeriods.filter((item) => item !== value);
+			$selectedPeriods = $selectedPeriods.filter((/** @type {string} */ item) => item !== value);
 		} else {
 			$selectedPeriods = [...$selectedPeriods, value];
 		}
@@ -73,7 +73,7 @@
 		if (isMetaPressed) {
 			$selectedRegions = [value];
 		} else if ($selectedRegions.includes(value)) {
-			$selectedRegions = $selectedRegions.filter((item) => item !== value);
+			$selectedRegions = $selectedRegions.filter((/** @type {string} */ item) => item !== value);
 		} else {
 			$selectedRegions = [...$selectedRegions, value];
 		}

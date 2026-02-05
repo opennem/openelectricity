@@ -16,6 +16,16 @@
 		capacityDataVizStore: getContext('capacity-data-viz'),
 		intensityDataVizStore: getContext('intensity-data-viz')
 	};
+	/**
+	 * @typedef {Object} Props
+	 * @property {(data: any) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(data: any) => void} [onpointerup]
+	 */
+
+	/** @type {Props} */
+	let { onmousemove, onmouseout, onpointerup } = $props();
+
 	const { multiSelectionData } = getContext('scenario-filters');
 	const { orderedModelScenarioPathways, isScenarioViewSection } = getContext('by-scenario');
 
@@ -39,7 +49,7 @@
 	});
 
 	let selectedScenario = $derived(
-		$multiSelectionData.find((d) => `${d.model}-${d.scenario}` === selectedScenarioId)
+		$multiSelectionData.find((/** @type {any} */ d) => `${d.model}-${d.scenario}` === selectedScenarioId)
 	);
 
 	let isEmissionsView = $derived(selectedStoreName === 'emissionsDataVizStore');
@@ -70,7 +80,7 @@
 	let intensityDisplayUnit = $derived(intensityStore.displayUnit);
 
 	let seriesPathways = $derived(
-		$multiSelectionData.reduce((acc, d) => {
+		$multiSelectionData.reduce((/** @type {any} */ acc, /** @type {any} */ d) => {
 			acc[d.id] = d.pathway;
 			return acc;
 		}, {})
@@ -124,13 +134,13 @@
 	// $: console.log('hoverData', hoverData);
 
 	/**
-	 * @param {CustomEvent} evt
+	 * @param {{ key: string }} detail
 	 */
-	function handleScenarioSelect(evt) {
+	function handleScenarioSelect(detail) {
 		// key includes pathway, remove before assigning
-		const keyArr = evt.detail.key.split('-');
+		const keyArr = detail.key.split('-');
 		selectedScenarioId = keyArr[0] + '-' + keyArr[1];
-		selectedScenarioPathwayId = evt.detail.key;
+		selectedScenarioPathwayId = detail.key;
 	}
 
 	/**
@@ -140,8 +150,8 @@
 	function getNames(model, scenarios) {
 		/** @type {string[]} */
 		const names = [];
-		scenarios.forEach((d) => {
-			d.pathways.forEach((e) => {
+		scenarios.forEach((/** @type {any} */ d) => {
+			d.pathways.forEach((/** @type {any} */ e) => {
 				names.push(`${model}-${d.scenario}-${e}`);
 			});
 		});
@@ -156,8 +166,8 @@
 		/** @type {Object.<string, string>} */
 		const labels = {};
 
-		scenarios.forEach((d) => {
-			d.pathways.forEach((e) => {
+		scenarios.forEach((/** @type {any} */ d) => {
+			d.pathways.forEach((/** @type {any} */ e) => {
 				labels[`${model}-${d.scenario}-${e}`] = scenarioLabelMap[`${model}-${d.scenario}`];
 			});
 		});
@@ -178,7 +188,7 @@
 			<Switch
 				buttons={stores}
 				selected={selectedStoreName}
-				on:change={(evt) => (selectedStoreName = evt.detail.value)}
+				onchange={(detail) => (selectedStoreName = detail.value)}
 				class="justify-center"
 			/>
 		</div>
@@ -208,10 +218,10 @@
 							seriesData={mergedSeriesData}
 							displayUnit={$displayUnit}
 							gridColClass="grid-cols-1"
-							on:mousemove
-							on:mouseout
-							on:pointerup
-							on:scenario-click={handleScenarioSelect}
+							{onmousemove}
+							{onmouseout}
+							{onpointerup}
+							onscenarioclick={handleScenarioSelect}
 						/>
 						<MiniCharts
 							isButton={true}
@@ -232,10 +242,10 @@
 							displayUnit={$intensityDisplayUnit}
 							showArea={false}
 							gridColClass="grid-cols-1"
-							on:mousemove
-							on:mouseout
-							on:pointerup
-							on:scenario-click={handleScenarioSelect}
+							{onmousemove}
+							{onmouseout}
+							{onpointerup}
+							onscenarioclick={handleScenarioSelect}
 						/>
 					</div>
 				{:else}
@@ -256,10 +266,10 @@
 						{focusData}
 						seriesData={mergedSeriesData}
 						displayUnit={$displayUnit}
-						on:mousemove
-						on:mouseout
-						on:pointerup
-						on:scenario-click={handleScenarioSelect}
+						{onmousemove}
+						{onmouseout}
+						{onpointerup}
+						onscenarioclick={handleScenarioSelect}
 					/>
 				{/if}
 			</section>

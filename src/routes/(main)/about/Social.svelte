@@ -18,7 +18,7 @@
 		web: GlobeAlt
 	};
 
-	const SvelteComponent = $derived(iconComp[socialType]);
+	const SvelteComponent = $derived(/** @type {Record<string, any>} */ (iconComp)[socialType]);
 </script>
 
 <a {href} target="_blank" class="text-dark-grey">

@@ -62,11 +62,23 @@ const labels = {
 /** @type {FuelTechCode[]} */
 export const order = ['total_loads', 'total_sources'];
 
+// REDUCERS
+/**
+ * @param {Object.<string, string>} acc
+ * @param {StatsData} d
+ * @returns {Object.<string, string>}
+ */
+const fuelTechNameReducer = (acc, d) => {
+	acc[d.id] = d.fuel_tech ? labels[d.fuel_tech] : '';
+	return acc;
+};
+
 /** @type {FuelTechGroup} */
 export default Object.freeze({
 	label: 'Sources & Loads',
 	value: 'sources_loads',
 	fuelTechs: fuelTechMap,
 	order: order,
-	labels: labels
+	labels: labels,
+	fuelTechNameReducer
 });

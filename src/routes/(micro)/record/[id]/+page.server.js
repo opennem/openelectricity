@@ -126,14 +126,14 @@ export async function load({ params, url, fetch }) {
 
 				if (fuelTechId && result) {
 					if (fuelTechId === 'fossils') {
-						result = results.find((d) => !d.columns.renewable);
+						result = results.find((/** @type {any} */ d) => !d.columns.renewable);
 					} else if (fuelTechId === 'renewables') {
-						result = results.find((d) => d.columns.renewable);
+						result = results.find((/** @type {any} */ d) => d.columns.renewable);
 					}
 				}
 
 				// convert result to a time series
-				timeSeries = result.data.map((d) => {
+				timeSeries = result.data.map((/** @type {any} */ d) => {
 					let date = new Date(d[0]);
 					return {
 						dateStr: d[0],
@@ -143,7 +143,7 @@ export async function load({ params, url, fetch }) {
 					};
 				});
 
-				focusRecord = timeSeries.find((d) => d.time === focusTime);
+				focusRecord = timeSeries.find((/** @type {any} */ d) => d.time === focusTime);
 			}
 		}
 

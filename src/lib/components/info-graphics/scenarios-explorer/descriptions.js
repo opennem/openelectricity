@@ -1,3 +1,4 @@
+/** @type {Record<string, Record<string, string>>} */
 export const scenarioLabels = {
 	aemo2024: {
 		step_change: 'AEMO Step Change 2024',

@@ -45,6 +45,7 @@
 	const id = getSeqId();
 	const clipPathId = `${id}-clip-path`;
 
+	// svelte-ignore state_referenced_locally
 	const {
 		seriesNames: yKeys,
 		seriesData,

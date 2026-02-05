@@ -20,7 +20,7 @@
 	let displayData = $derived($cachedDisplayData[$selectedDisplayView]);
 	let loadIds = $derived(displayData ? displayData.loadIds || [] : []);
 	let displayDataNames = $derived(
-		displayData ? displayData.names.filter((d) => d !== 'historical') || [] : []
+		displayData ? displayData.names.filter((/** @type {any} */ d) => d !== 'historical') || [] : []
 	);
 	let displayDatasets = $derived(displayData ? displayData.data || [] : []);
 
@@ -51,18 +51,18 @@
 
 	let names = $derived(isTechnologyDisplay ? [...displayDataNames].reverse() : displayDataNames);
 	let dataset = $derived(
-		displayDatasets.map((d) => {
+		displayDatasets.map((/** @type {any} */ d) => {
 			const obj = {
 				...d
 			};
 
 			// Invert load values back to positive
-			loadIds.forEach((id) => {
+			loadIds.forEach((/** @type {string} */ id) => {
 				obj[id] = -d[id];
 			});
 
 			// Fill in any missing data so area chart renders properly
-			displayDataNames.forEach((name) => {
+			displayDataNames.forEach((/** @type {string} */ name) => {
 				if (!obj[name]) {
 					if (isScenarioDisplay && name !== 'historical') {
 						// if it is a scenario display, fill in the historical data
@@ -87,7 +87,8 @@
 			: [2010, 2023, 2040, 2051].map((year) => startOfYear(new Date(`${year}-01-01`)))
 	);
 
-	let hoverData = $state(null);
+	/** @type {TimeSeriesData | undefined} */
+	let hoverData = $state(undefined);
 </script>
 
 <div class=" max-w-(--breakpoint-lg) px-6 mx-auto md:grid grid-cols-2 gap-6">
@@ -98,8 +99,8 @@
 			</h2>
 
 			{#if $selectedModel && $selectedScenario}
-				<h3>{scenarioLabels[$selectedModel][$selectedScenario]}</h3>
-				<p>{scenarioDescriptions[$selectedModel][$selectedScenario]}</p>
+				<h3>{scenarioLabels[/** @type {string} */ ($selectedModel)][$selectedScenario]}</h3>
+				<p>{/** @type {Record<string, Record<string, string>>} */ (scenarioDescriptions)[/** @type {string} */ ($selectedModel)][$selectedScenario]}</p>
 
 				<!-- <h5>Five Key Points</h5>
 				<ul class="list-disc list-inside">
@@ -126,8 +127,8 @@
 				{hoverData}
 				isTechnologyDisplay={true}
 				displayUnit="TWh"
-				on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-				on:mouseout={() => (hoverData = undefined)}
+				onmousemove={(d) => (hoverData = d)}
+				onmouseout={() => (hoverData = undefined)}
 			/>
 		{/each}
 	</div>

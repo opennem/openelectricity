@@ -9,11 +9,14 @@
 	import clamp from '$lib/utils/clamp';
 	const { xScale } = getContext('LayerCake');
 
-	/** @type {number | null} min - The brush's min value. Useful to bind to. */
-	let min = $state();
+	/**
+	 * @typedef {Object} Props
+	 * @property {number | null} [min] - The brush's min value. Useful to bind to.
+	 * @property {number | null} [max] - The brush's max value. Useful to bind to.
+	 */
 
-	/** @type {number | null} max - The brush's max value. Useful to bind to. */
-	let max = $state();
+	/** @type {Props} */
+	let { min = $bindable(null), max = $bindable(null) } = $props();
 
 	/** @type {*} */
 	let brush = $state();
@@ -29,13 +32,13 @@
 
 	const dispatch = createEventDispatcher();
 
-	const p = (x) => {
+	const p = (/** @type {number} */ x) => {
 		const { left, right } = brush.getBoundingClientRect();
 		return clamp((x - left) / (right - left), 0, 1);
 	};
 
-	const handler = (fn) => {
-		return (e) => {
+	const handler = (/** @type {Function} */ fn) => {
+		return (/** @type {any} */ e) => {
 			if (e.type === 'touchstart') {
 				if (e.touches.length !== 1) return;
 				e = e.touches[0];
@@ -44,7 +47,7 @@
 			const id = e.identifier;
 			const start = { min, max, p: p(e.clientX) };
 
-			const handle_move = (e) => {
+			const handle_move = (/** @type {any} */ e) => {
 				if (e.type === 'touchmove') {
 					if (e.changedTouches.length !== 1) return;
 					e = e.changedTouches[0];
@@ -54,7 +57,7 @@
 				fn(start, p(e.clientX));
 			};
 
-			const handle_end = (e) => {
+			const handle_end = (/** @type {any} */ e) => {
 				if (e.type === 'touchend') {
 					if (e.changedTouches.length !== 1) return;
 					if (e.changedTouches[0].identifier !== id) return;
@@ -77,31 +80,31 @@
 		};
 	};
 
-	const reset = handler((start, p) => {
+	const reset = handler((/** @type {any} */ start, /** @type {number} */ p) => {
 		min = clamp(Math.min(start.p, p), 0, 1);
 		max = clamp(Math.max(start.p, p), 0, 1);
 	});
 
-	const move = handler((start, p) => {
+	const move = handler((/** @type {any} */ start, /** @type {number} */ p) => {
 		const d = clamp(p - start.p, -start.min, 1 - start.max);
 		min = start.min + d;
 		max = start.max + d;
 	});
 
-	const adjust_min = handler((start, p) => {
+	const adjust_min = handler((/** @type {any} */ start, /** @type {number} */ p) => {
 		min = p > start.max ? start.max : p;
 		max = p > start.max ? p : start.max;
 	});
 
-	const adjust_max = handler((start, p) => {
+	const adjust_max = handler((/** @type {any} */ start, /** @type {number} */ p) => {
 		min = p < start.min ? p : start.min;
 		max = p < start.min ? start.min : p;
 	});
 
 	function dispatchBrushed() {
 		const range = $xScale.range();
-		const start = min * range[1];
-		const end = max * range[1];
+		const start = /** @type {number} */ (min) * range[1];
+		const end = /** @type {number} */ (max) * range[1];
 		const invertStart = $xScale.invert(start);
 		const invertEnd = $xScale.invert(end);
 

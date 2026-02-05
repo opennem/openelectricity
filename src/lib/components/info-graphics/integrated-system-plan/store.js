@@ -117,17 +117,19 @@ export function modelStore() {
 	});
 
 	const selectedDataDescription = derived(selectedDataView, ($selectedDataView) => {
-		const find = dataViewOptions.find((d) => d.value === $selectedDataView);
+		const find = dataViewOptions.find((/** @type {any} */ d) => d.value === $selectedDataView);
 		return find ? find.description : '';
 	});
 
 	const selectedDataLabel = derived(selectedDataView, ($selectedDataView) => {
-		const find = dataViewOptions.find((d) => d.value === $selectedDataView);
+		const find = dataViewOptions.find((/** @type {any} */ d) => d.value === $selectedDataView);
 		return find ? find.label : '';
 	});
 
-	const scenarioOptions = writable();
-	const pathwayOptions = writable();
+	/** @type {import('svelte/store').Writable<any[]>} */
+	const scenarioOptions = writable(/** @type {any[]} */ ([]));
+	/** @type {import('svelte/store').Writable<any[]>} */
+	const pathwayOptions = writable(/** @type {any[]} */ ([]));
 
 	return {
 		modelOptions: modelOptions,
@@ -154,29 +156,32 @@ export function modelStore() {
 }
 
 export function projectionStore() {
-	const historicalData = writable([]);
-	const projectionData = writable([]);
+	/** @type {import('svelte/store').Writable<any[]>} */
+	const historicalData = writable(/** @type {any[]} */ ([]));
+	/** @type {import('svelte/store').Writable<any[]>} */
+	const projectionData = writable(/** @type {any[]} */ ([]));
 
 	const selectedScenario = writable('');
 	const selectedPathway = writable('');
 	const selectedFuelTechGrouping = writable(explorerGroups[0].value);
 
-	const seriesItems = writable([]);
+	/** @type {import('svelte/store').Writable<any[]>} */
+	const seriesItems = writable(/** @type {any[]} */ ([]));
 
 	const filteredModelData = derived(
 		[projectionData, selectedScenario, selectedPathway],
 		([$projectionData, $selectedScenario, $selectedPathway]) => {
 			return $projectionData.filter(
-				(d) => d.scenario === $selectedScenario && d.pathway === $selectedPathway
+				(/** @type {any} */ d) => d.scenario === $selectedScenario && d.pathway === $selectedPathway
 			);
 		}
 	);
 
 	const group = derived(selectedFuelTechGrouping, ($selectedFuelTechGrouping) => {
-		return groupMap[$selectedFuelTechGrouping];
+		return /** @type {any} */ (groupMap)[$selectedFuelTechGrouping];
 	});
 	const order = derived(selectedFuelTechGrouping, ($selectedFuelTechGrouping) => {
-		return orderMap[$selectedFuelTechGrouping];
+		return /** @type {any} */ (orderMap)[$selectedFuelTechGrouping];
 	});
 
 	const statsData = derived(
@@ -190,8 +195,8 @@ export function projectionStore() {
 	);
 
 	const projectionLoadSeries = derived(statsData, ($statsData) => {
-		const filtered = $statsData.data.filter((d) => d.isLoad);
-		return filtered.map((d) => d.id);
+		const filtered = $statsData.data.filter((/** @type {any} */ d) => d.isLoad);
+		return filtered.map((/** @type {any} */ d) => d.id);
 	});
 
 	const timeSeriesData = derived(
@@ -225,8 +230,8 @@ export function projectionStore() {
 	);
 
 	const historicalLoadSeries = derived(historicalStatsData, ($historicalStatsData) => {
-		const filtered = $historicalStatsData.data.filter((d) => d.isLoad);
-		return filtered.map((d) => d.id);
+		const filtered = $historicalStatsData.data.filter((/** @type {any} */ d) => d.isLoad);
+		return filtered.map((/** @type {any} */ d) => d.id);
 	});
 
 	const historicalTimeSeriesData = derived(

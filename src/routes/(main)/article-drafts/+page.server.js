@@ -21,7 +21,7 @@ export async function load() {
 
 	if (data) {
 		return {
-			articles: data.filter((d) => d.article_type !== null),
+			articles: data.filter((/** @type {any} */ d) => d.article_type !== null),
 			drafts: data
 		};
 	}

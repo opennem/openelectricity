@@ -9,7 +9,7 @@
 	/** @type {Props & { [key: string]: any }} */
 	let { buttons = [], selected = '', onchange, ...rest } = $props();
 
-	let isSelected = $derived((value) => selected === value);
+	let isSelected = $derived((/** @type {string | number} */ value) => selected === value);
 
 	/**
 	 * @param {MouseEvent} e

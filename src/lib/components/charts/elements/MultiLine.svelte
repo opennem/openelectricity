@@ -27,11 +27,11 @@
 		show = true;
 	}, 100);
 
-	let path = $derived((values) => {
+	let path = $derived((/** @type {any[]} */ values) => {
 		return (
 			'M' +
 			values
-				.map((d) => {
+				.map((/** @type {any} */ d) => {
 					return $xGet(d) + ',' + $yGet(d);
 				})
 				.join('L')
@@ -40,11 +40,11 @@
 
 	let updatedData = $derived(
 		hoverData
-			? $data.map((d) => {
+			? $data.map((/** @type {any} */ d) => {
 					const time = hoverData.time;
 					return {
 						group: d.group,
-						values: d.values.filter((v) => v.time <= time)
+						values: d.values.filter((/** @type {any} */ v) => v.time <= time)
 					};
 				})
 			: $data

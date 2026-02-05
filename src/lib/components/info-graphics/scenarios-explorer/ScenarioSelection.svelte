@@ -65,9 +65,9 @@
 			focusScenario = { ...findScenario };
 		}
 
-		selectedScenarios = $selectedMultipleScenarios.map((s) => s.model + '-' + s.scenario);
+		selectedScenarios = $selectedMultipleScenarios.map((/** @type {any} */ s) => s.model + '-' + s.scenario);
 
-		selectedScenariosPathways = $selectedMultipleScenarios.map((s) => ({
+		selectedScenariosPathways = $selectedMultipleScenarios.map((/** @type {any} */ s) => ({
 			id: s.model + '-' + s.scenario,
 			pathway: s.pathway
 		}));
@@ -158,7 +158,7 @@
 		// const scenarioPathway = selectedScenariosPathways.find((scenario) => scenario.id === id);
 
 		if (focusScenario && focusPathway) {
-			const isPathwayInScenario = focusScenario.pathways.find((p) => p === focusPathway);
+			const isPathwayInScenario = focusScenario.pathways.find((/** @type {any} */ p) => p === focusPathway);
 
 			if (!isPathwayInScenario) {
 				focusPathway = focusScenario.defaultPathway;
@@ -194,7 +194,7 @@
 						paddingX="px-4"
 						options={modelFilterOptions}
 						selected={filterModel}
-						on:change={(evt) => (filterModel = evt.detail.value)}
+						onchange={(option) => (filterModel = /** @type {string} */ (option.value))}
 					/>
 				</div>
 			</header>
@@ -229,7 +229,7 @@
 									label={scenario}
 									checked={selectedScenarios.includes(id)}
 									class="w-full justify-between items-start! flex-row-reverse text-sm font-semibold text-dark-grey"
-									on:change={(evt) => handleCheckBoxChange(id, evt.detail.checked)}
+									onchange={(checked) => handleCheckBoxChange(id, checked)}
 								/>
 							{/if}
 
@@ -260,19 +260,19 @@
 		<div class="p-12 pr-0">
 			{#if focusScenario}
 				<h6 class="text-mid-grey">
-					{scenarioLabels[focusScenario.model][focusScenario.scenarioId]}
+					{scenarioLabels[/** @type {string} */ (focusScenario.model)][focusScenario.scenarioId]}
 				</h6>
 				<p class="text-sm my-6">
-					{scenarioDescriptions[focusScenario.model][focusScenario.scenarioId]}
+					{/** @type {Record<string, Record<string, string>>} */(scenarioDescriptions)[focusScenario.model][focusScenario.scenarioId]}
 				</p>
 
 				<div class="border border-mid-grey text-sm inline-block rounded-md">
 					<FormSelect
 						paddingY="py-3"
 						paddingX="px-4"
-						options={focusScenarioPathways.map((pathway) => ({ value: pathway, label: pathway }))}
+						options={focusScenarioPathways.map((/** @type {string} */ pathway) => ({ value: pathway, label: pathway }))}
 						selected={isSingleSelectionMode ? focusPathway : getPathway()}
-						on:change={(evt) => handlePathwayChange(focusScenarioId, evt.detail.value)}
+						onchange={(option) => handlePathwayChange(/** @type {string} */ (focusScenarioId), /** @type {string} */ (option.value))}
 					/>
 				</div>
 			{/if}

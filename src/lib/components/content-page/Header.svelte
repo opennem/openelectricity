@@ -1,9 +1,9 @@
 <script>
 	/**
 	 * @typedef {Object} Props
-	 * @property {string} [title]
-	 * @property {string} [returnLinkURL]
-	 * @property {string} [returnLinkTitle]
+	 * @property {string} [_title]
+	 * @property {string} [_returnLinkURL]
+	 * @property {string} [_returnLinkTitle]
 	 * @property {any} [author]
 	 * @property {string} [teaser]
 	 */

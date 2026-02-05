@@ -15,6 +15,7 @@
 	import process from './RecordHistory/helpers/process';
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
 	import dateTimeQuery from '../page-data-options/date-time-query';
+	/** @type {{ data: any }} */
 	let { data } = $props();
 	let { period, recordIds, focusTime } = $derived(data);
 	let loading = $state(false);
@@ -34,14 +35,14 @@
 			recordState.showTracker = false;
 
 			fetchRecord(recordState.id)
-				.then((data) => {
+				.then((/** @type {any} */ data) => {
 					if (data) {
 						updateCxt(process({ data, period }));
 					} else {
 						recordState.error = true;
 					}
 				})
-				.catch((error) => {
+				.catch((/** @type {any} */ error) => {
 					console.error('error fetching record', error);
 				});
 		}
@@ -49,13 +50,15 @@
 
 	$effect(() => {
 		if (period) {
-			chartCxt.xTicks = xTickValueFormatters[period].ticks;
-			chartCxt.formatTickX = xTickValueFormatters[period].formatTick;
-			chartCxt.formatX = xTickValueFormatters[period].format;
+			/** @type {Record<string, any>} */
+			const formatters = xTickValueFormatters;
+			chartCxt.xTicks = formatters[period].ticks;
+			chartCxt.formatTickX = formatters[period].formatTick;
+			chartCxt.formatX = formatters[period].format;
 
-			dateBrushCxt.xTicks = xTickValueFormatters[period].ticks;
-			dateBrushCxt.formatTickX = xTickValueFormatters[period].formatTick;
-			dateBrushCxt.formatX = xTickValueFormatters[period].format;
+			dateBrushCxt.xTicks = formatters[period].ticks;
+			dateBrushCxt.formatTickX = formatters[period].formatTick;
+			dateBrushCxt.formatX = formatters[period].format;
 		}
 	});
 
@@ -87,8 +90,8 @@
 		defaultXDomain = xDomain;
 
 		chartCxt.chartTooltips.valueColour =
-			fuelTechColourMap[
-				(record.metric === 'renewable_proportion' ? 'renewables' : record.fueltech_id) || 'demand'
+			/** @type {Record<string, any>} */ (fuelTechColourMap)[
+				(/** @type {string} */ (record.metric) === 'renewable_proportion' ? 'renewables' : record.fueltech_id) || 'demand'
 			];
 		chartCxt.chartOptions.setLineChart();
 
@@ -153,11 +156,13 @@
 			data.fueltech_id || ''
 		);
 		let networkId = data.network_id?.toLowerCase();
+		/** @type {Record<string, any>} */
+		const regions = regionsWithLabels;
 
 		if (data.network_region) {
-			desc += ` in ${regionsWithLabels[data.network_region.toLowerCase()]}`;
-		} else if (networkId && regionsWithLabels[networkId]) {
-			desc += ` in ${regionsWithLabels[networkId]}`;
+			desc += ` in ${regions[data.network_region.toLowerCase()]}`;
+		} else if (networkId && regions[networkId]) {
+			desc += ` in ${regions[networkId]}`;
 		} else {
 			desc += ` in the ${networkId?.toUpperCase()}`;
 		}

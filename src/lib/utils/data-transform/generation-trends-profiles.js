@@ -10,14 +10,15 @@ export function transformGenerationTrendsProfiles(apiData) {
 	}
 
 	const { order, data } = apiData;
+	/** @type {Record<string, any>} */
 	const result = {};
 
 	// Process each fuel technology
-	order.forEach((fuelTechKey) => {
+	order.forEach((/** @type {string} */ fuelTechKey) => {
 		const fuelTechData = data[fuelTechKey];
 
 		if (!fuelTechData?.results?.[0]?.data?.length) {
-			result[fuelTechKey] = { data: [], years: [], months: [] };
+			/** @type {any} */ (result)[fuelTechKey] = { data: [], years: [], months: [] };
 			return;
 		}
 
@@ -37,7 +38,7 @@ export function transformGenerationTrendsProfiles(apiData) {
 		});
 
 		// Group by year and month
-		const years = [...new Set(dataPoints.map((d) => d.year))].sort();
+		const years = [...new Set(dataPoints.map((/** @type {any} */ d) => d.year))].sort();
 		const months = Array.from({ length: 12 }, (_, i) => ({
 			index: i,
 			name: new Date(2000, i, 1).toLocaleString('en', { month: 'short' })
@@ -70,7 +71,7 @@ export function transformGenerationTrendsProfiles(apiData) {
 		const expandedData = [];
 		years.forEach((year) => {
 			months.forEach((month) => {
-				const dataPoint = dataPoints.find((d) => d.year === year && d.month === month.index);
+				const dataPoint = dataPoints.find((/** @type {any} */ d) => d.year === year && d.month === month.index);
 				if (dataPoint) {
 					expandedData.push({
 						time: month.index,

@@ -11,7 +11,7 @@ export default function (data, statsType, loads, id = 'au.total-minus-loads.hist
 	/**
 	 * Default values
 	 * TODO: update the defaults match the data
-	 * @type {StatsData}
+	 * @type {any}
 	 */
 	const totalStats = {
 		data_type: 'energy',

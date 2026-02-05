@@ -5,13 +5,13 @@
  */
 export default function (scenarioData) {
 	// update to TWh before returning
-	const updatedDataToTera = (data) =>
-		data.map((d) => {
+	const updatedDataToTera = (/** @type {any[]} */ data) =>
+		data.map((/** @type {any} */ d) => {
 			const isTypeEmissions = d.type === 'emissions';
 			const projection = { ...d.projection };
 			projection.data = isTypeEmissions
-				? projection.data.map((d) => d)
-				: projection.data.map((d) => d / 1000);
+				? projection.data.map((/** @type {number} */ d) => d)
+				: projection.data.map((/** @type {number} */ d) => d / 1000);
 
 			return {
 				...d,
@@ -20,8 +20,9 @@ export default function (scenarioData) {
 		});
 
 	// grab unique pathways and fuel techs
-	const pathways = (data) => [...new Set(data.map((d) => d.pathway))];
-	const fuelTechs = (data) => [...new Set(data.map((d) => d.fuel_tech))].sort();
+	const pathways = (/** @type {any[]} */ data) => [...new Set(data.map((/** @type {any} */ d) => d.pathway))];
+	const fuelTechs = (/** @type {any[]} */ data) =>
+		[...new Set(data.map((/** @type {any} */ d) => d.fuel_tech))].sort();
 
 	const dataset = scenarioData?.data || [];
 

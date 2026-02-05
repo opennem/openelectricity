@@ -11,6 +11,6 @@ export const client = createClient({
 
 const builder = imageUrlBuilder(client);
 
-export const urlFor = (source) => {
+export const urlFor = (/** @type {any} */ source) => {
 	return builder.image(source);
 };

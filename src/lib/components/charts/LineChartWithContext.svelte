@@ -23,11 +23,15 @@
 	 * @property {*} [overlay] - If true, overlay will take up the full width of the chart
 	 * @property {string} [overlayStroke]
 	 * @property {*} [overlayLine]
-	 * @property {string | null} [highlightId]
+	 * @property {string | null} [_highlightId]
 	 * @property {*} [customFormatTickX]
 	 * @property {string} [heightClasses]
 	 * @property {boolean} [showDots]
 	 * @property {any[]} [useDataset]
+	 * @property {(data: any) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(data: any) => void} [onpointerup]
+	 * @property {(e: MouseEvent) => void} [onmousedown]
 	 */
 
 	/** @type {Props} */
@@ -42,9 +46,14 @@
 		_highlightId = null,
 		customFormatTickX = null,
 		showDots = false,
-		useDataset = []
+		useDataset = [],
+		onmousemove,
+		onmouseout,
+		onpointerup,
+		onmousedown
 	} = $props();
 
+	// svelte-ignore state_referenced_locally
 	const {
 		title: _title,
 		seriesNames: yKeys,
@@ -121,7 +130,7 @@
 					hoverData={$hoverData}
 					strokeWidth={$strokeWidth}
 					curveType={$curveType}
-					{showDots}
+					showLineDots={showDots}
 					dotStroke={$dotStroke}
 					dotFill={$dotFill}
 				/>
@@ -129,7 +138,7 @@
 					<Area fill={zKey} />
 				{/if}
 			</g>
-			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup on:mousedown />
+			<HoverLayer {dataset} {onmousemove} {onmouseout} onpointerup={onpointerup} onmousedown={onmousedown} />
 		</Svg>
 
 		<Svg pointerEvents={false}>

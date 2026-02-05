@@ -5,16 +5,16 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {Object} chartContext - Chart context for the chart
-	 * @property {Object} [tableData] - Processed data for table display (for combined/cumulative)
-	 * @property {Object} [fuelData] - Original fuel data (for individual charts)
+	 * @property {any} chartContext - Chart context for the chart
+	 * @property {any} [tableData] - Processed data for table display (for combined/cumulative)
+	 * @property {any} [fuelData] - Original fuel data (for individual charts)
 	 * @property {string} [fuelTechName] - Fuel tech name (for individual charts)
-	 * @property {string[]} [selectedFuelTechs] - Currently selected fuel technologies (for combined/cumulative)
+	 * @property {any[]} [selectedFuelTechs] - Currently selected fuel technologies (for combined/cumulative)
 	 * @property {string} viewState - Current view state ('chart' or 'table')
-	 * @property {Function} onViewStateChange - Callback for view state changes
-	 * @property {Function} onmousemove - Mouse move handler for chart interactions
-	 * @property {Function} onmouseout - Mouse out handler for chart interactions
-	 * @property {Function} onpointerup - Pointer up handler for chart interactions
+	 * @property {(value: string) => void} onViewStateChange - Callback for view state changes
+	 * @property {(evt: any) => void} onmousemove - Mouse move handler for chart interactions
+	 * @property {() => void} onmouseout - Mouse out handler for chart interactions
+	 * @property {(evt: any) => void} onpointerup - Pointer up handler for chart interactions
 	 * @property {string} [emptyStateMessage] - Message to show when no data available
 	 * @property {string} [tooltipSuffix] - Additional text for tooltip (e.g., "(cumulative)")
 	 */
@@ -40,7 +40,7 @@
 	let hasData = $derived(
 		isIndividualChart
 			? fuelData?.data?.length > 0 && fuelData?.years?.length > 0
-			: selectedFuelTechs?.length > 0
+			: (selectedFuelTechs?.length || 0) > 0
 	);
 </script>
 
@@ -54,7 +54,7 @@
 					{ label: 'Table', value: 'table' }
 				]}
 				selected={viewState}
-				onclick={(e) => onViewStateChange(e.target.value)}
+				onclick={(/** @type {any} */ e) => onViewStateChange(e.target.value)}
 			/>
 		</div>
 	</div>
@@ -64,7 +64,7 @@
 		{#if viewState === 'table'}
 			<!-- Table View -->
 			{#if isIndividualChart}
-				<GenerationDataTable {fuelData} {fuelTechName} />
+				<GenerationDataTable {fuelData} _fuelTechName={fuelTechName} />
 			{:else}
 				<GenerationDataTable
 					processedData={tableData}

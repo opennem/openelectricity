@@ -171,13 +171,13 @@
 	}
 
 	/**
-	 * @param {CustomEvent<{ data: TimeSeriesData, key: string }> | CustomEvent<TimeSeriesData>} evt
+	 * @param {any} evt
 	 */
 	function handleMousemove(evt) {
-		if (evt.detail?.key) {
-			updateStoreHover(evt.detail.key, evt.detail.data);
+		if (evt?.key) {
+			updateStoreHover(evt.key, evt.data);
 		} else {
-			updateStoreHover(undefined, evt.detail);
+			updateStoreHover(undefined, evt);
 		}
 	}
 	function handleMouseout() {
@@ -185,10 +185,10 @@
 	}
 
 	/**
-	 * @param {CustomEvent<TimeSeriesData>} evt
+	 * @param {any} evt
 	 */
 	function handlePointerup(evt) {
-		const focusTime = evt.detail?.time;
+		const focusTime = evt?.time;
 		const isSame = focusTime ? $energyFocusTime === focusTime : false;
 		const time = isSame ? undefined : focusTime;
 
@@ -310,7 +310,7 @@
 			const { processedEnergy, processedCapacity, processedEmissions, processedIntensity } =
 				processTechnologyData(cachedTechnologyData);
 
-			seriesLoadsIds = processedEnergy.seriesLoadsIds;
+			seriesLoadsIds = /** @type {FuelTechCode[] | undefined} */ (processedEnergy.seriesLoadsIds);
 
 			updateAllStores({
 				processedEnergy,
@@ -551,9 +551,9 @@
 					store={dataVizStores[name]}
 					{hiddenRowNames}
 					{seriesLoadsIds}
-					on:mousemove={handleMousemove}
-					on:mouseout={handleMouseout}
-					on:pointerup={handlePointerup}
+					onmousemove={handleMousemove}
+					onmouseout={handleMouseout}
+					onpointerup={handlePointerup}
 				/>
 			{/if}
 		{/each}
@@ -601,25 +601,25 @@
 	{#if $isTechnologyViewSection}
 		<DetailedTechnology
 			{seriesLoadsIds}
-			on:mousemove={handleMousemove}
-			on:mouseout={handleMouseout}
-			on:pointerup={handlePointerup}
+			onmousemove={handleMousemove}
+			onmouseout={handleMouseout}
+			onpointerup={handlePointerup}
 		/>
 	{/if}
 
 	{#if $isScenarioViewSection}
 		<DetailedScenario
-			on:mousemove={handleMousemove}
-			on:mouseout={handleMouseout}
-			on:pointerup={handlePointerup}
+			onmousemove={handleMousemove}
+			onmouseout={handleMouseout}
+			onpointerup={handlePointerup}
 		/>
 	{/if}
 
 	{#if $isRegionViewSection}
 		<DetailedRegion
-			on:mousemove={handleMousemove}
-			on:mouseout={handleMouseout}
-			on:pointerup={handlePointerup}
+			onmousemove={handleMousemove}
+			onmouseout={handleMouseout}
+			onpointerup={handlePointerup}
 		/>
 	{/if}
 </div>

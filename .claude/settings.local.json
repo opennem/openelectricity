@@ -1,12 +1,16 @@
 {
-	"permissions": {
-		"allow": [
-			"Bash(ls:*)",
-			"Bash(bun run lint:*)",
-			"Bash(bunx eslint:*)",
-			"Bash(bun run build)",
-			"Bash(bun run test:*)",
-			"WebSearch"
-		]
-	}
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(bun run lint:*)",
+      "Bash(bunx eslint:*)",
+      "Bash(bun run build)",
+      "Bash(bun run test:*)",
+      "WebSearch",
+      "Bash(bun run check:*)",
+      "Bash(git status:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
 }

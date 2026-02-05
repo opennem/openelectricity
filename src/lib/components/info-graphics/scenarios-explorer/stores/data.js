@@ -8,7 +8,7 @@ import {
 	calculatePercentageTimeSeries
 } from '../helpers';
 
-export default function (filters) {
+export default function (/** @type {any} */ filters = undefined) {
 	const selectedGroup = writable(filters?.group || groups[0].value);
 	const usePercentage = writable(true);
 
@@ -23,8 +23,8 @@ export default function (filters) {
 			createNewStats($projectionData, $selectedGroup, 'projection')
 	);
 	const projectionLoadSeries = derived(projectionStats, ($projectionStats) => {
-		const filtered = $projectionStats.data.filter((d) => d.isLoad);
-		return filtered.map((d) => d.id);
+		const filtered = $projectionStats.data.filter((/** @type {any} */ d) => d.isLoad);
+		return filtered.map((/** @type {any} */ d) => d.id);
 	});
 	const projectionTimeSeries = derived(
 		[projectionStats, colourReducer, projectionLoadSeries],
@@ -47,8 +47,8 @@ export default function (filters) {
 		}
 	);
 	const historicalLoadSeries = derived(historicalStats, ($historicalStats) => {
-		const filtered = $historicalStats.data.filter((d) => d.isLoad);
-		return filtered.map((d) => d.id);
+		const filtered = $historicalStats.data.filter((/** @type {any} */ d) => d.isLoad);
+		return filtered.map((/** @type {any} */ d) => d.id);
 	});
 	const historicalTimeSeries = derived(
 		[historicalStats, colourReducer, historicalLoadSeries],
@@ -94,8 +94,8 @@ export default function (filters) {
 	const scenarioProjectionTimeSeries = derived(
 		[scenarioProjectionStats, colourReducer],
 		([$scenarioProjectionStats, $colourReducer]) => {
-			return $scenarioProjectionStats.map((d) => {
-				const loads = d.stats.data.filter((d) => d.isLoad).map((d) => d.id);
+			return $scenarioProjectionStats.map((/** @type {any} */ d) => {
+				const loads = d.stats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
 				return {
 					id: d.id,
 					model: d.model,
@@ -126,7 +126,7 @@ export default function (filters) {
 			$isNetTotalGroup,
 			$usePercentage
 		]) => {
-			const loadIds = $scenarioHistoricalStats.data.filter((d) => d.isLoad).map((d) => d.id);
+			const loadIds = $scenarioHistoricalStats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
 			let otherTimeSeries = createNewTimeSeries(
 				$scenarioHistoricalStats.data,
 				$colourReducer,
@@ -155,8 +155,8 @@ export default function (filters) {
 	const regionProjectionData = writable([]);
 	const regionProjectionModel = derived(regionProjectionData, ($regionProjectionData) => {
 		console.log('$regionProjectionData[0].data', $regionProjectionData);
-		return $regionProjectionData.length && $regionProjectionData[0].data.length
-			? $regionProjectionData[0].data[0].model
+		return $regionProjectionData.length && /** @type {any} */ ($regionProjectionData[0].data).length
+			? /** @type {any} */ ($regionProjectionData[0].data)[0].model
 			: '';
 	});
 	const regionProjectionStats = derived(
@@ -168,7 +168,7 @@ export default function (filters) {
 			$isNetTotalGroup,
 			$usePercentage
 		]) => {
-			return $regionProjectionData.map((d) => {
+			return $regionProjectionData.map((/** @type {any} */ d) => {
 				console.log('regionProjectionModel', $regionProjectionModel, d);
 
 				let otherStats = createNewStats(d.data, $selectedGroup, 'projection');
@@ -188,8 +188,8 @@ export default function (filters) {
 	const regionProjectionTimeSeries = derived(
 		[regionProjectionStats, colourReducer],
 		([$regionProjectionStats, $colourReducer]) => {
-			return $regionProjectionStats.map((d) => {
-				const loads = d.stats.data.filter((d) => d.isLoad).map((d) => d.id);
+			return $regionProjectionStats.map((/** @type {any} */ d) => {
+				const loads = d.stats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
 				console.log('derived', d, loads);
 				return {
 					region: d.region,
@@ -221,8 +221,8 @@ export default function (filters) {
 			$isNetTotalGroup,
 			$usePercentage
 		]) => {
-			return $regionHistoricalStats.map((d) => {
-				const loadIds = d.stats.data.filter((s) => s.isLoad).map((s) => s.id);
+			return $regionHistoricalStats.map((/** @type {any} */ d) => {
+				const loadIds = d.stats.data.filter((/** @type {any} */ s) => s.isLoad).map((/** @type {any} */ s) => s.id);
 
 				let otherTimeSeries = createNewTimeSeries(
 					d.stats.data,

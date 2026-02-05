@@ -21,15 +21,19 @@ export function mergeHistoricalEmissionsData(historyData, includeBatteryAndLoads
 
 	historyData.forEach((d) => {
 		const isExports = d.fuel_tech === 'exports';
-		d.history.data.forEach((v, j) => {
-			const newValue = includeBatteryAndLoads ? (isExports ? -v : v) : isExports ? 0 : v;
+		d.history.data.forEach((/** @type {number | null} */ v, /** @type {number} */ j) => {
+			const newValue = includeBatteryAndLoads ? (isExports ? -(v || 0) : (v || 0)) : isExports ? 0 : (v || 0);
 			combinedHistoryData.history.data[j] += newValue || 0;
 		});
 	});
-	return [combinedHistoryData];
+	return [/** @type {any} */ (combinedHistoryData)];
 }
 
 // Convert historical data to Terra to match ISP
+/**
+ * @param {StatsData[]} data
+ * @returns {StatsData[]}
+ */
 export function covertHistoryDataToTWh(data) {
 	return data.map((/** @type {StatsData} */ d) => {
 		const historyData = d.history.data.map((v) => (v ? v / 1000 : null));

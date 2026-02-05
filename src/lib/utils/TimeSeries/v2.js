@@ -44,11 +44,11 @@ export default class TimeSeriesV2 {
 		/** @type {string[]} */
 		this.seriesNames = statsData.map((d) => d.fuel_tech || d.id);
 
-		/** @type {Object.<string, string>} */
-		this.seriesLabels = this._buildLabels(labelReducer);
+		/** @type {{ [x: string]: string }} */
+		this.seriesLabels = /** @type {any} */ (this._buildLabels(labelReducer));
 
-		/** @type {Object.<string, string>} */
-		this.seriesColours = this._buildColours(colourReducer);
+		/** @type {{ [x: string]: string }} */
+		this.seriesColours = /** @type {any} */ (this._buildColours(colourReducer));
 
 		/** @type {number} */
 		this.minY = 0;
@@ -60,16 +60,18 @@ export default class TimeSeriesV2 {
 	/**
 	 * Build labels map
 	 * @private
+	 * @param {((acc: Object, item: any) => Object) | undefined} reducer
 	 */
 	_buildLabels(reducer) {
 		if (reducer) {
 			return this.statsData.reduce(reducer, {});
 		}
 
+		/** @type {Object.<string, string>} */
 		const labels = {};
-		this.statsData.forEach((d) => {
+		this.statsData.forEach((/** @type {any} */ d) => {
 			const id = d.fuel_tech || d.id;
-			labels[id] = d.label || d.name || id;
+			/** @type {any} */ (labels)[id] = d.label || d.name || id;
 		});
 		return labels;
 	}
@@ -77,16 +79,18 @@ export default class TimeSeriesV2 {
 	/**
 	 * Build colours map
 	 * @private
+	 * @param {((acc: Object, item: any) => Object) | undefined} reducer
 	 */
 	_buildColours(reducer) {
 		if (reducer) {
 			return this.statsData.reduce(reducer, {});
 		}
 
+		/** @type {Object.<string, string>} */
 		const colours = {};
-		this.statsData.forEach((d) => {
+		this.statsData.forEach((/** @type {any} */ d) => {
 			const id = d.fuel_tech || d.id;
-			colours[id] = d.colour || '#999';
+			/** @type {any} */ (colours)[id] = d.colour || '#999';
 		});
 		return colours;
 	}
@@ -125,10 +129,10 @@ export default class TimeSeriesV2 {
 			};
 
 			// Add values from each series
-			this.statsData.forEach((series) => {
+			this.statsData.forEach((/** @type {any} */ series) => {
 				const id = series.fuel_tech || series.id;
 				const value = series[this.statsType]?.data?.[i];
-				point[id] = value ?? null;
+				/** @type {any} */ (point)[id] = value ?? null;
 			});
 
 			dataPoints.push(point);
@@ -141,6 +145,7 @@ export default class TimeSeriesV2 {
 	/**
 	 * Parse interval string to milliseconds
 	 * @private
+	 * @param {string} interval
 	 */
 	_parseInterval(interval) {
 		const match = interval.match(/^(\d+)([mhd])$/);
@@ -193,8 +198,8 @@ export default class TimeSeriesV2 {
 			bucket._count++;
 
 			// Collect values for each series
-			this.seriesNames.forEach((name) => {
-				const value = point[name];
+			this.seriesNames.forEach((/** @type {string} */ name) => {
+				const value = /** @type {any} */ (point)[name];
 				if (value !== null && value !== undefined) {
 					bucket._values[name].push(value);
 				}
@@ -209,15 +214,15 @@ export default class TimeSeriesV2 {
 				time: bucket.time
 			};
 
-			this.seriesNames.forEach((name) => {
+			this.seriesNames.forEach((/** @type {string} */ name) => {
 				const values = bucket._values[name];
 				if (values.length === 0) {
-					point[name] = null;
+					/** @type {any} */ (point)[name] = null;
 				} else if (method === 'sum') {
-					point[name] = values.reduce((a, b) => a + b, 0);
+					/** @type {any} */ (point)[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
 				} else {
 					// mean
-					point[name] = values.reduce((a, b) => a + b, 0) / values.length;
+					/** @type {any} */ (point)[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) / values.length;
 				}
 			});
 
@@ -256,12 +261,12 @@ export default class TimeSeriesV2 {
 	updateMinMax(negativeIds = []) {
 		const negativeSet = new Set(negativeIds);
 
-		this.data = this.data.map((point) => {
+		this.data = this.data.map((/** @type {any} */ point) => {
 			let positiveSum = 0;
 			let negativeSum = 0;
 
-			this.seriesNames.forEach((name) => {
-				const value = point[name];
+			this.seriesNames.forEach((/** @type {string} */ name) => {
+				const value = /** @type {any} */ (point)[name];
 				if (value === null || value === undefined) return;
 
 				if (negativeSet.has(name) || value < 0) {
@@ -292,26 +297,27 @@ export default class TimeSeriesV2 {
 	 * @returns {TimeSeriesV2}
 	 */
 	toPercentage(totalKey) {
-		this.data = this.data.map((point) => {
+		this.data = this.data.map((/** @type {any} */ point) => {
 			let total;
 
-			if (totalKey && point[totalKey] !== undefined) {
-				total = Math.abs(point[totalKey]);
+			if (totalKey && /** @type {any} */ (point)[totalKey] !== undefined) {
+				total = Math.abs(/** @type {any} */ (point)[totalKey]);
 			} else {
 				// Calculate total from all series
-				total = this.seriesNames.reduce((sum, name) => {
-					const val = point[name];
+				total = this.seriesNames.reduce((/** @type {number} */ sum, /** @type {string} */ name) => {
+					const val = /** @type {any} */ (point)[name];
 					return sum + (val !== null && val !== undefined ? Math.abs(val) : 0);
 				}, 0);
 			}
 
+			/** @type {any} */
 			const newPoint = {
 				date: point.date,
 				time: point.time
 			};
 
-			this.seriesNames.forEach((name) => {
-				const value = point[name];
+			this.seriesNames.forEach((/** @type {string} */ name) => {
+				const value = /** @type {any} */ (point)[name];
 				if (value === null || value === undefined || total === 0) {
 					newPoint[name] = 0;
 				} else {

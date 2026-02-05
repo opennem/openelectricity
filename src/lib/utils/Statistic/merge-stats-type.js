@@ -7,7 +7,7 @@ import deepCopy from '$lib/utils/deep-copy';
  * @param {StatsType} statsType
  */
 export default function (originalData, statsType = 'history') {
-	const statsObj = (d) => d[statsType] || d.history;
+	const statsObj = (/** @type {any} */ d) => d[statsType] || d.history;
 
 	/** @type {StatsData[]} */
 	const data = deepCopy(originalData);

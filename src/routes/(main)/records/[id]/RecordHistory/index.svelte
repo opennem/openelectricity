@@ -116,7 +116,7 @@
 			xPad={4}
 			yPad={3}
 			textSize="sm"
-			on:change={(evt) => (selectedDisplayView = evt.detail.value)}
+			onchange={(detail) => (selectedDisplayView = /** @type {'table' | 'chart'} */ (detail.value))}
 		/>
 	</div>
 

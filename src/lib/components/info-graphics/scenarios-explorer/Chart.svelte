@@ -27,7 +27,7 @@
 	 * @property {boolean} [clip]
 	 * @property {string} [xKey]
 	 * @property {number[]} [yKey]
-	 * @property {Array.<number | null> | undefined} [yDomain]
+	 * @property {*} [yDomain]
 	 * @property {string} [zKey]
 	 * @property {string[]} [seriesNames]
 	 * @property {Object.<string, string>} [seriesColours]
@@ -42,7 +42,9 @@ If object with xStartValue and xEndValue, overlay will be a range
 	 * @property {TimeSeriesData | undefined} [hoverData]
 	 * @property {Function} [formatTickX]
 	 * @property {string} [chartHeightClasses]
-	 * @property {string | null} [highlightId]
+	 * @property {string} [highlightId]
+	 * @property {(data: any) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
 	 */
 
 	/** @type {Props} */
@@ -67,7 +69,9 @@ If object with xStartValue and xEndValue, overlay will be a range
 		hoverData = undefined,
 		formatTickX = (/** @type {*} */ d) => d,
 		chartHeightClasses = 'h-[400px] md:h-[580px]',
-		highlightId = null
+		highlightId = undefined,
+		onmousemove,
+		onmouseout
 	} = $props();
 
 	/** TODO: work out transition */
@@ -107,7 +111,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 		}}
 		{y}
 		{z}
-		{yDomain}
+		yDomain={/** @type {any} */ (yDomain)}
 		xScale={scaleUtc()}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}
@@ -124,7 +128,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 				<Overlay fill="#FAF9F6" {...overlay} />
 			{/if}
 
-			<HoverLayer {dataset} on:mousemove on:mouseout />
+			<HoverLayer {dataset} {onmousemove} {onmouseout} />
 
 			<!-- {#if display === 'area'}
 				<AreaStacked
@@ -142,8 +146,8 @@ If object with xStartValue and xEndValue, overlay will be a range
 				{dataset}
 				{display}
 				{highlightId}
-				on:mousemove
-				on:mouseout
+				{onmousemove}
+				{onmouseout}
 			/>
 		</Svg>
 

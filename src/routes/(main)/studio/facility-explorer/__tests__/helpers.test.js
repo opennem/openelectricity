@@ -131,8 +131,7 @@ describe('buildUnitColourMap', () => {
 	});
 
 	it('should handle units with missing fueltech_id', () => {
-		// @ts-expect-error - Testing edge case with missing fueltech_id
-		const units = [{ code: 'UNIT1' }];
+		const units = /** @type {any[]} */ ([{ code: 'UNIT1' }]);
 
 		const result = buildUnitColourMap(units, mockGetBaseColor);
 

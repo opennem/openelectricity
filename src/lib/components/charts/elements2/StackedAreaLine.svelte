@@ -9,6 +9,7 @@
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset]
 	 * @property {string|null} [fill]
+	 * @property {string|null} [_fill]
 	 * @property {string} [clipPathId]
 	 * @property {string} [highlightId]
 	 * @property {string} [display]
@@ -17,6 +18,7 @@
 	 * @property {string} [strokeWidth]
 	 * @property {boolean} [showLineDots]
 	 * @property {boolean} [showLineArea]
+	 * @property {boolean} [_showLineArea]
 	 * @property {string} [dotStroke]
 	 * @property {string} [dotFill]
 	 * @property {number} [dotRadius]
@@ -51,27 +53,27 @@
 
 	let areaGen = $derived(
 		area()
-			.x((d) => $xGet(d))
-			.y0((d) => $yScale(d[0]))
-			.y1((d) => $yScale(d[1]))
+			.x((/** @type {any} */ d) => $xGet(d))
+			.y0((/** @type {any} */ d) => $yScale(d[0]))
+			.y1((/** @type {any} */ d) => $yScale(d[1]))
 			.curve(curveType)
-			.defined((d) => !isNaN(d[0]) && !isNaN(d[1]))
+			.defined((/** @type {any} */ d) => !isNaN(d[0]) && !isNaN(d[1]))
 	);
 
 	let lineGen = $derived(
 		line(
-			(d) => $xGet(d),
-			(d) => $yGet(d)
+			(/** @type {any} */ d) => $xGet(d),
+			(/** @type {any} */ d) => $yGet(d)
 		)
 			.curve(curveType)
-			.defined((d) => d.value !== null && !isNaN(d.value))
+			.defined((/** @type {any} */ d) => d.value !== null && !isNaN(d.value))
 	);
 
-	let lineOpacity = $derived((d) => {
+	let lineOpacity = $derived((/** @type {any} */ d) => {
 		if (highlightId === null || highlightId === '') return 1;
 		return highlightId === d.key || highlightId === d.group ? 1 : 0.3;
 	});
-	let areaOpacity = $derived((d) => {
+	let areaOpacity = $derived((/** @type {any} */ d) => {
 		if (highlightId === null || highlightId === '') return 1;
 		return highlightId === d.key || highlightId === d.group ? 1 : 0.5;
 	});
@@ -84,10 +86,10 @@
 	 */
 	function findItem(evt, key) {
 		let offsetX;
-		if (evt.offsetX) {
+		if ('offsetX' in evt && typeof evt.offsetX === 'number') {
 			offsetX = evt.offsetX;
-		} else if (evt.touches) {
-			const rect = evt.target.getBoundingClientRect();
+		} else if ('touches' in evt && evt.touches) {
+			const rect = /** @type {Element} */ (evt.target).getBoundingClientRect();
 			offsetX = evt.touches[0].clientX - rect.left;
 		}
 
@@ -104,7 +106,9 @@
 	 */
 	function pointermove(evt, key) {
 		const item = findItem(evt, key);
-		onmousemove?.(item);
+		if (item.data) {
+			onmousemove?.({ data: item.data, key: item.key });
+		}
 	}
 
 	/**
@@ -113,7 +117,9 @@
 	 */
 	function pointerup(evt, key) {
 		const item = findItem(evt, key);
-		onpointerup?.(item.data);
+		if (item.data) {
+			onpointerup?.(item.data);
+		}
 	}
 
 	function mouseout() {

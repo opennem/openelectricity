@@ -43,6 +43,8 @@
 	 * @property {string} [bgClass]
 	 * @property {TimeSeriesData | undefined} [hoverData]
 	 * @property {Function} [formatTickX]
+	 * @property {(data: any) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
 	 */
 
 	/** @type {Props} */
@@ -65,7 +67,9 @@
 		overlay = false,
 		bgClass = '',
 		hoverData = undefined,
-		formatTickX = (/** @type {*} */ d) => d
+		formatTickX = (/** @type {*} */ d) => d,
+		onmousemove,
+		onmouseout
 	} = $props();
 
 	/** TODO: work out transition */
@@ -111,8 +115,8 @@
 				<ClipPath id={`${id}-clip-path`} />
 			</defs>
 
-			<HoverLayer {dataset} on:mousemove on:mouseout />
-			<AreaStacked clipPathId={clip ? `${id}-clip-path` : ''} {dataset} on:mousemove on:mouseout />
+			<HoverLayer {dataset} {onmousemove} {onmouseout} />
+			<AreaStacked clipPathId={clip ? `${id}-clip-path` : ''} {dataset} {onmousemove} {onmouseout} />
 		</Svg>
 
 		<Svg pointerEvents={false}>

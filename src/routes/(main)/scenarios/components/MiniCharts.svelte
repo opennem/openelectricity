@@ -1,5 +1,4 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import LineChart from '$lib/components/charts/LineChart.svelte';
 	// import Icon from '$lib/components/Icon.svelte';
 
@@ -27,6 +26,10 @@
 	 * @property {boolean} [showArea]
 	 * @property {string} [gridColClass]
 	 * @property {string} [sectionBorderClass]
+	 * @property {(data: any) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(data: any) => void} [onpointerup]
+	 * @property {(detail: { key: string }) => void} [onscenarioclick]
 	 */
 
 	/** @type {Props} */
@@ -50,10 +53,12 @@
 		seriesLoadsIds = [],
 		showArea = true,
 		gridColClass = 'grid-cols-2 md:grid-cols-3',
-		sectionBorderClass = ''
+		sectionBorderClass = '',
+		onmousemove,
+		onmouseout,
+		onpointerup,
+		onscenarioclick
 	} = $props();
-
-	const dispatch = createEventDispatcher();
 
 	/**
 	 * @param {string} key
@@ -80,7 +85,7 @@
 	 */
 	function handleScenarioClick(key) {
 		if (isButton) {
-			dispatch('scenario-click', { key });
+			onscenarioclick?.({ key });
 		}
 	}
 	let tag = $derived(isButton ? 'button' : 'header');
@@ -173,10 +178,10 @@
 				focusData={updatedFocusData}
 				{showArea}
 				chartHeightClasses="h-[150px]"
-				on:mousemove
-				on:mouseout
-				on:pointerup
-				on:mousedown={() => handleScenarioClick(key)}
+				{onmousemove}
+				{onmouseout}
+				onpointerup={onpointerup}
+				onmousedown={() => handleScenarioClick(key)}
 			/>
 		</section>
 	{/each}

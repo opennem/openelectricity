@@ -8,7 +8,7 @@ import {
 	xTicks
 } from '../options';
 
-export default function (filters) {
+export default function (/** @type {any} */ filters = undefined) {
 	// const selectedModel = writable(modelOptions[0].value);
 	const selectedModel = writable(filters?.model || modelOptions[0].value);
 	const selectedDataView = writable(filters?.dataView || dataViewOptions[0].value);

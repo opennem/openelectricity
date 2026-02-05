@@ -10,7 +10,7 @@
 	let selectedTheme = $state($theme);
 
 	onMount(() => {
-		document.querySelector('select').focus();
+		document.querySelector('select')?.focus();
 	});
 
 	function handleReturn() {
@@ -31,7 +31,7 @@
 				multiple
 				tabindex="0"
 				class="text-lg flex flex-col gap-2 border-dark-grey outline-hidden bg-light-warm-grey p-2 rounded-lg w-full"
-				onchange={(e) => (selectedTheme = e.target.value)}
+				onchange={(/** @type {any} */ e) => (selectedTheme = e.target.value)}
 				use:shortcut={{
 					trigger: {
 						key: 'Enter',

@@ -5,13 +5,22 @@
 	import { startOfYear } from 'date-fns';
 	import SparkLineArea from '$lib/components/info-graphics/integrated-system-plan/SparkLineArea.svelte';
 	import {
-		scenarioLabels,
-		scenarioParagraphs,
-		scenarioSummary,
-		scenarioKeyPoints
+		scenarioLabels as scenarioLabelsOrig,
+		scenarioParagraphs as scenarioParagraphsOrig,
+		scenarioSummary as scenarioSummaryOrig,
+		scenarioKeyPoints as scenarioKeyPointsOrig
 	} from './descriptions';
 
 	import { dataViewUnits } from './options';
+
+	/** @type {Record<string, any>} */
+	const scenarioLabels = scenarioLabelsOrig;
+	/** @type {Record<string, any>} */
+	const scenarioParagraphs = scenarioParagraphsOrig;
+	/** @type {Record<string, any>} */
+	const scenarioSummary = scenarioSummaryOrig;
+	/** @type {Record<string, any>} */
+	const scenarioKeyPoints = scenarioKeyPointsOrig;
 
 	const {
 		selectedModel,
@@ -27,20 +36,20 @@
 	const { cachedDisplayData } = getContext('scenario-cache');
 
 	run(() => {
-		console.log('cachedDisplayData', $cachedDisplayData[$selectedDisplayView]);
+		console.log('cachedDisplayData', /** @type {any} */ ($cachedDisplayData)[$selectedDisplayView]);
 	});
 
 	let displayUnit = $derived(
 		$isTechnologyDisplay
-			? dataViewUnits[$selectedDataView]
+			? /** @type {any} */ (dataViewUnits)[$selectedDataView]
 			: $showPercentage
 				? '% of demand'
-				: dataViewUnits[$selectedDataView]
+				: /** @type {any} */ (dataViewUnits)[$selectedDataView]
 	);
-	let displayData = $derived($cachedDisplayData[$selectedDisplayView]);
+	let displayData = $derived(/** @type {any} */ ($cachedDisplayData)[$selectedDisplayView]);
 	let loadIds = $derived(displayData ? displayData.loadIds || [] : []);
 	let displayDataNames = $derived(
-		displayData ? displayData.names.filter((d) => d !== 'historical') || [] : []
+		displayData ? displayData.names.filter((/** @type {any} */ d) => d !== 'historical') || [] : []
 	);
 	let displayDatasets = $derived(displayData ? displayData.data || [] : []);
 
@@ -68,18 +77,18 @@
 
 	let names = $derived($isTechnologyDisplay ? [...displayDataNames].reverse() : displayDataNames);
 	let dataset = $derived(
-		displayDatasets.map((d) => {
+		displayDatasets.map((/** @type {any} */ d) => {
 			const obj = {
 				...d
 			};
 
 			// Invert load values back to positive
-			loadIds.forEach((id) => {
+			loadIds.forEach((/** @type {any} */ id) => {
 				obj[id] = -d[id];
 			});
 
 			// Fill in any missing data so area chart renders properly
-			displayDataNames.forEach((name) => {
+			displayDataNames.forEach((/** @type {any} */ name) => {
 				if (!obj[name]) {
 					if ($isScenarioDisplay && name !== 'historical') {
 						// if it is a scenario display, fill in the historical data
@@ -104,7 +113,8 @@
 			: [2010, 2023, 2040, 2051].map((year) => startOfYear(new Date(`${year}-01-01`)))
 	);
 
-	let hoverData = $state(null);
+	/** @type {TimeSeriesData | undefined} */
+	let hoverData = $state(undefined);
 </script>
 
 <div class="container max-w-none lg:container px-6 mx-auto md:grid grid-cols-2">
@@ -153,8 +163,8 @@
 					{hoverData}
 					{displayUnit}
 					isTechnologyDisplay={$isTechnologyDisplay}
-					on:mousemove={(e) => (hoverData = /** @type {TimeSeriesData} */ (e.detail))}
-					on:mouseout={() => (hoverData = undefined)}
+					onmousemove={(d) => (hoverData = /** @type {TimeSeriesData} */ (d))}
+					onmouseout={() => (hoverData = undefined)}
 				/>
 			{/each}
 		</div>

@@ -3,12 +3,12 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {Object} [fuelData] - Original fuel tech data with years, data, etc.
-	 * @property {string} [fuelTechName] - Name of the fuel technology
-	 * @property {Object} [processedData] - Processed chart data (seriesData, seriesNames, etc.)
+	 * @property {any} [fuelData] - Original fuel tech data with years, data, etc.
+	 * @property {string} [_fuelTechName] - Name of the fuel technology
+	 * @property {any} [processedData] - Processed chart data (seriesData, seriesNames, etc.)
 	 * @property {string} [title] - Custom title for the table
 	 * @property {string} [subtitle] - Custom subtitle for the table
-	 * @property {Object} [chartContext] - Chart context for value formatting
+	 * @property {any} [chartContext] - Chart context for value formatting
 	 */
 
 	/** @type {Props} */
@@ -53,7 +53,7 @@
 
 		// Handle original fuelData format (from individual charts)
 		if (fuelData?.data?.length && fuelData?.years?.length) {
-			return fuelData.data.map((monthData, monthIndex) => {
+			return fuelData.data.map((/** @type {any} */ monthData, /** @type {number} */ monthIndex) => {
 				/** @type {any} */
 				const row = {
 					month: monthNames[monthIndex] || `Month ${monthIndex + 1}`,
@@ -81,7 +81,7 @@
 					label: processedData.seriesLabels[key] || key,
 					year: parseInt(processedData.seriesLabels[key]) || key
 				}))
-				.sort((a, b) => (a.year || 0) - (b.year || 0));
+				.sort((/** @type {any} */ a, /** @type {any} */ b) => (a.year || 0) - (b.year || 0));
 		}
 
 		// Handle original fuelData format
@@ -92,13 +92,16 @@
 					label: y.year,
 					year: y.year
 				}))
-				.sort((a, b) => a.year - b.year);
+				.sort((/** @type {any} */ a, /** @type {any} */ b) => a.year - b.year);
 		}
 
 		return [];
 	});
 
 	// Format numbers for display - use chart context formatting if available
+	/**
+	 * @param {any} value
+	 */
 	function formatTableValue(value) {
 		if (value === null || value === undefined) return '—';
 		if (typeof value === 'number') {

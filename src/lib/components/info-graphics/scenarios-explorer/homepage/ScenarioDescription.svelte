@@ -10,6 +10,6 @@
 		{scenarioLabels[$selectedModel][$selectedScenario]}
 	</h6>
 	<p class="text-dark-grey text-base leading-base font-semibold md:text-xl md:leading-xl">
-		{scenarioDescriptions[$selectedModel][$selectedScenario]}
+		{/** @type {any} */ (scenarioDescriptions)[$selectedModel][$selectedScenario]}
 	</p>
 </div>

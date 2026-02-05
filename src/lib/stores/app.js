@@ -9,6 +9,10 @@ export const parsedFeatureFlags = PUBLIC_FEATURE_FLAGS ? JSON.parse(PUBLIC_FEATU
 export const featureFlags = readable(parsedFeatureFlags);
 
 // Get value from localStorage if in browser and the value is stored, otherwise fallback
+/**
+ * @param {string} storageKey
+ * @param {any} fallbackValue
+ */
 function fromLocalStorage(storageKey, fallbackValue) {
 	if (browser) {
 		const storedValue = window.localStorage.getItem(storageKey);
@@ -26,9 +30,13 @@ function fromLocalStorage(storageKey, fallbackValue) {
 
 	return fallbackValue;
 }
+/**
+ * @param {import('svelte/store').Writable<any>} store
+ * @param {string} storageKey
+ */
 function toLocalStorage(store, storageKey) {
 	if (browser) {
-		store.subscribe((value) => {
+		store.subscribe((/** @type {any} */ value) => {
 			let storageValue = typeof value === 'object' ? JSON.stringify(value) : value;
 
 			window.localStorage.setItem(storageKey, storageValue);

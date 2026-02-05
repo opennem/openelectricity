@@ -41,25 +41,30 @@ export const dataViewOptions = [
 		description: 'Capacity (GW) by Financial Year'
 	}
 ];
+/** @type {Record<string, string>} */
 export const dataViewDescription = dataViewOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.description), acc),
-	{}
+	(/** @type {Record<string, string>} */ acc, curr) => ((acc[curr.value] = curr.description), acc),
+	/** @type {Record<string, string>} */ ({})
 );
+/** @type {Record<string, string>} */
 export const dataViewlabel = dataViewOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.label), acc),
-	{}
+	(/** @type {Record<string, string>} */ acc, curr) => ((acc[curr.value] = curr.label), acc),
+	/** @type {Record<string, string>} */ ({})
 );
+/** @type {Record<string, string>} */
 export const dataViewUnits = dataViewOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.units), acc),
-	{}
+	(/** @type {Record<string, string>} */ acc, curr) => ((acc[curr.value] = curr.units), acc),
+	/** @type {Record<string, string>} */ ({})
 );
+/** @type {Record<string, string>} */
 export const dataViewLongLabel = dataViewOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.longLabel), acc),
-	{}
+	(/** @type {Record<string, string>} */ acc, curr) => ((acc[curr.value] = curr.longLabel), acc),
+	/** @type {Record<string, string>} */ ({})
 );
+/** @type {Record<string, string>} */
 export const dataViewIntervalLabel = dataViewOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.intervalLabel), acc),
-	{}
+	(/** @type {Record<string, string>} */ acc, curr) => ((acc[curr.value] = curr.intervalLabel), acc),
+	/** @type {Record<string, string>} */ ({})
 );
 
 /** @type {Object.<string, Date[]>} */
@@ -116,14 +121,16 @@ export const regionOptions = [
 		colour: '#4F5FD7' // 153BA5
 	}
 ];
-export const regionsOnly = regionOptions.map((d) => d.value).slice(1);
+export const regionsOnly = regionOptions.map((/** @type {any} */ d) => d.value).slice(1);
+/** @type {Record<string, string>} */
 export const regionsOnlyWithColours = regionOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.colour), acc),
-	{}
+	(/** @type {Record<string, string>} */ acc, curr) => ((acc[curr.value] = curr.colour), acc),
+	/** @type {Record<string, string>} */ ({})
 );
+/** @type {Record<string, string>} */
 export const regionsOnlyWithLabels = regionOptions.reduce(
-	(acc, curr) => ((acc[curr.value] = curr.label), acc),
-	{}
+	(/** @type {Record<string, string>} */ acc, curr) => ((acc[curr.value] = curr.label), acc),
+	/** @type {Record<string, string>} */ ({})
 );
 
 export const displayViewOptions = [

@@ -31,7 +31,7 @@
 					xPad={4}
 					yPad={2}
 					textSize="xs"
-					on:change={(evt) => (cxt.chartOptions.selectedDataTransformType = evt.detail.value)}
+					onchange={(detail) => (cxt.chartOptions.selectedDataTransformType = detail.value)}
 				/>
 			</div>
 		</div>
@@ -48,7 +48,7 @@
 				xPad={4}
 				yPad={2}
 				textSize="xs"
-				on:change={(evt) => (cxt.chartOptions.selectedChartType = evt.detail.value)}
+				onchange={(detail) => (cxt.chartOptions.selectedChartType = detail.value)}
 			/>
 		</div>
 	</div>
@@ -63,7 +63,7 @@
 			xPad={4}
 			yPad={2}
 			textSize="xs"
-			on:change={(evt) => (cxt.chartOptions.selectedCurveType = evt.detail.value)}
+			onchange={(detail) => (cxt.chartOptions.selectedCurveType = detail.value)}
 		/>
 	</div>
 </div>
@@ -78,7 +78,7 @@
 				xPad={4}
 				yPad={2}
 				textSize="xs"
-				on:change={(evt) => (cxt.chartOptions.displayPrefix = evt.detail.value)}
+				onchange={(detail) => (cxt.chartOptions.displayPrefix = detail.value)}
 			/>
 		</div>
 	</div>

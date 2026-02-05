@@ -58,7 +58,7 @@
 							paddingX="px-3"
 							options={dataRegionCompareOptions}
 							selected={$selectedGroup}
-							on:change={(evt) => ($selectedGroup = evt.detail.value)}
+							onchange={(option) => ($selectedGroup = option.value)}
 						/>
 					</div>
 				</th>

@@ -80,9 +80,9 @@
 				class:text-white={!isDarkText}
 				style="background-color: {bgColor};"
 			>
-				<FuelTechIcon fuelTech={fueltech_id} sizeClass={5} border={true} />
+				<FuelTechIcon fuelTech={fueltech_id} sizeClass={5} />
 			</span>
-			<span class="font-medium">{fuelTechName(fueltech_id)}</span>
+			<span class="font-medium">{fuelTechName(/** @type {FuelTechCode} */ (fueltech_id))}</span>
 		</div>
 
 		<div class="capitalize flex items-center gap-1 text-white/70">

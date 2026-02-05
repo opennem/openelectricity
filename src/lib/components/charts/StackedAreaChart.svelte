@@ -20,7 +20,7 @@
 	 * @property {boolean} [clip]
 	 * @property {string} [xKey]
 	 * @property {number[] | number} [yKey]
-	 * @property {Array.<number | null> | undefined} [yDomain]
+	 * @property {any} [yDomain]
 	 * @property {*} [xDomain]
 	 * @property {string} [zKey]
 	 * @property {string[]} [seriesNames]
@@ -45,6 +45,9 @@ If object with xStartValue and xEndValue, overlay will be a range
 	 * @property {any} [curveFunction]
 	 * @property {string | undefined} [highlightId]
 	 * @property {*} [customFormatTickX]
+	 * @property {(data: any) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(data: any) => void} [onpointerup]
 	 */
 
 	/** @type {Props} */
@@ -77,7 +80,10 @@ If object with xStartValue and xEndValue, overlay will be a range
 		chartHeightClasses = '',
 		curveFunction = null,
 		highlightId = '',
-		customFormatTickX = null
+		customFormatTickX = null,
+		onmousemove,
+		onmouseout,
+		onpointerup
 	} = $props();
 
 	const id = getSeqId();
@@ -124,7 +130,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 				<Overlay fill="#FAF9F6" {...overlay} />
 			{/if}
 
-			<HoverLayer {dataset} on:mousemove on:mouseout on:pointerup />
+			<HoverLayer {dataset} {onmousemove} {onmouseout} onpointerup={onpointerup} />
 
 			<!-- {#if display === 'area'}
 				<AreaStacked
@@ -143,9 +149,9 @@ If object with xStartValue and xEndValue, overlay will be a range
 					display={chartType}
 					{highlightId}
 					curveType={$curveFunction}
-					on:mousemove
-					on:mouseout
-					on:pointerup
+					{onmousemove}
+					{onmouseout}
+					{onpointerup}
 				/>
 			</g>
 		</Svg>

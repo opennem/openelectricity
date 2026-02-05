@@ -9,7 +9,7 @@ import interpolate from './interpolate-array';
  * @param {StatsType} statsType
  */
 export default function (datasets, minIntervalObj, statsType = 'history') {
-	const statsObj = (d) => d[statsType] || d.history;
+	const statsObj = (/** @type {any} */ d) => d[statsType] || d.history;
 
 	const toBeInterpolated = datasets.filter(
 		(d) => statsObj(d).interval !== minIntervalObj?.intervalString

@@ -382,12 +382,12 @@ function intensity({ processedEmissions, processedEnergy }) {
 			'au.net_generation.total': d._max
 		};
 	});
-	const intensityData = emissionsTotalData.map((d, i) => {
+	const intensityData = emissionsTotalData.map((/** @type {any} */ d, /** @type {number} */ i) => {
 		return {
 			time: d.time,
 			date: d.date,
 			'au.emission_intensity':
-				d['au.emissions.total'] / generationsNetTotalData[i]['au.net_generation.total']
+				Number(d['au.emissions.total'] || 0) / Number(generationsNetTotalData[i]?.['au.net_generation.total'] || 1)
 		};
 	});
 

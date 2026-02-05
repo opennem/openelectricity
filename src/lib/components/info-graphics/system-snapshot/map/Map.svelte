@@ -35,7 +35,7 @@
 
 	let x = $state(0);
 	let y = $state(0);
-	const mousemove = (ev) => {
+	const mousemove = (/** @type {MouseEvent} */ ev) => {
 		x = ev.clientX;
 		y = ev.clientY - 8;
 	};
@@ -53,7 +53,7 @@
 	run(() => {
 		$virtualElement = { getBoundingClientRect };
 	});
-	popperRef(virtualElement);
+	popperRef(/** @type {any} */ (virtualElement));
 
 	let showTooltip = $state(false);
 
@@ -76,7 +76,7 @@
 		...rest
 	} = $props();
 
-	const absRound = (val) => auNumber.format(Math.abs(Math.round(val)));
+	const absRound = (/** @type {number} */ val) => auNumber.format(Math.abs(Math.round(val)));
 	const auDollar = new Intl.NumberFormat('en-AU', {
 		style: 'currency',
 		currency: 'AUD'
@@ -158,10 +158,9 @@
 
 	/**
 	 * Get the fill colour for the state based on the map mode and data
-	 * @param {string} state
-	 * @returns {string}
 	 */
-	let getStateFillColour = $derived((state) => {
+	/** @type {(state: string) => string} */
+	let getStateFillColour = $derived((/** @type {string} */ state) => {
 		// if (!data) return '#FFFFFF';
 
 		// const scale = modeLive ? priceColourScale : intensityColourScale;
@@ -172,21 +171,21 @@
 
 		// const iColour = state === 'TAS' ? 0 : intensity[state];
 
-		return modeLive
-			? priceColour(prices[`${state}1`]) || '#FFFFFF'
-			: $carbonIntensityColour(intensity[state]);
+		if (modeLive) {
+			return String(priceColour(prices[`${state}1`]) || '#FFFFFF');
+		}
+		return String(/** @type {any} */ ($carbonIntensityColour)(intensity[state]) || '#FFFFFF');
 	});
 
 	/**
 	 * Get the text colour for a state, making sure it has contrast to the fill colour
-	 * @param {string} state
 	 */
-	let getStateTextColour = $derived((state) => {
+	let getStateTextColour = $derived((/** @type {string} */ state) => {
 		const fill = getStateFillColour(state) || '#FFFFFF';
 		return chroma.contrast(fill.toString(), '#FFFFFF') > 4.5 ? '#FFFFFF' : '#000000';
 	});
 
-	function regionEnter(region) {
+	function regionEnter(/** @type {string} */ region) {
 		dispatch('hover', { region });
 	}
 	function regionLeave() {
@@ -196,7 +195,7 @@
 	let flowRegions = $state('');
 	let flowValue = $state(0);
 
-	function flowEnter(flow, value) {
+	function flowEnter(/** @type {string} */ flow, /** @type {number} */ value) {
 		flowRegions = flow;
 		flowValue = value;
 		showTooltip = true;
@@ -208,7 +207,7 @@
 	}
 
 	// function to check if the value is a number
-	const isNumber = (val) => !isNaN(val);
+	const isNumber = (/** @type {number} */ val) => !isNaN(val);
 </script>
 
 <svelte:window onmousemove={mousemove} />

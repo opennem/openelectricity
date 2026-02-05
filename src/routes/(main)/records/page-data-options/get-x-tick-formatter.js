@@ -21,7 +21,7 @@ function popEveryXItem(array, x = 3) {
 	return result;
 }
 
-export function getMonthlyXTicks(dataset) {
+export function getMonthlyXTicks(/** @type {any} */ dataset) {
 	const start = dataset[0].date;
 	const end = dataset[dataset.length - 1].date;
 
@@ -31,7 +31,7 @@ export function getMonthlyXTicks(dataset) {
 	return undefined;
 }
 
-export function getYearlyXTicks(dataset) {
+export function getYearlyXTicks(/** @type {any} */ dataset) {
 	const start = dataset[0].date;
 	const end = dataset[dataset.length - 1].date;
 
@@ -40,7 +40,7 @@ export function getYearlyXTicks(dataset) {
 	return years;
 }
 
-export function getTickXFormatter(range) {
+export function getTickXFormatter(/** @type {any} */ range) {
 	if (!range || range.length === 0) {
 		console.log('no range');
 		return (/** @type {*} */ d) => getFormattedMonth(d, undefined);

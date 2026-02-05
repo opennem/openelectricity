@@ -10,10 +10,13 @@
 	 * @property {any} store
 	 * @property {string[]} [hiddenRowNames]
 	 * @property {FuelTechCode[]} [seriesLoadsIds]
+	 * @property {(data: any) => void} [onmousemove]
+	 * @property {() => void} [onmouseout]
+	 * @property {(data: any) => void} [onpointerup]
 	 */
 
 	/** @type {Props} */
-	let { store, hiddenRowNames = [], seriesLoadsIds = [] } = $props();
+	let { store, hiddenRowNames = [], seriesLoadsIds = [], onmousemove, onmouseout, onpointerup } = $props();
 
 	// Destructure store properties (store reference is stable, internal state is reactive)
 	const {
@@ -53,17 +56,17 @@
 	let names = $derived(
 		$seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d))
 	);
-	let loadIds = $derived(names.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d)));
+	let loadIds = $derived(names.filter((/** @type {string} */ d) => seriesLoadsIds.includes(/** @type {FuelTechCode} */ (d))));
 	let colours = $derived(names.map((/** @type {string} */ d) => $seriesColours[d]));
 
 	let updatedSeriesData = $derived(
-		$seriesData.map((d) => {
+		$seriesData.map((/** @type {any} */ d) => {
 			/** @type {TimeSeriesData} */
 			const newObj = { ...d };
 			// get min and max values for each time series
 			newObj._max = 0;
 			newObj._min = 0;
-			names.forEach((l) => {
+			names.forEach((/** @type {string} */ l) => {
 				const value = d[l] || 0;
 				if ($isChartTypeArea) {
 					if (newObj._max || newObj._max === 0) newObj._max += +value;
@@ -71,7 +74,7 @@
 					if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
 				}
 			});
-			loadIds.forEach((l) => {
+			loadIds.forEach((/** @type {string} */ l) => {
 				const value = d[l] || 0;
 				if ($isChartTypeArea) {
 					if (newObj._min || newObj._min === 0) newObj._min += +value;
@@ -86,12 +89,12 @@
 
 	let updatedYDomain = $derived(
 		(() => {
-			const addTenPercent = (val) => val + val * 0.1;
-			const maxY = updatedSeriesData.map((d) => d._max);
+			const addTenPercent = (/** @type {number} */ val) => val + val * 0.1;
+			const maxY = updatedSeriesData.map((/** @type {any} */ d) => d._max);
 			// @ts-ignore
 			const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
 
-			const minY = updatedSeriesData.map((d) => d._min);
+			const minY = updatedSeriesData.map((/** @type {any} */ d) => d._min);
 			// @ts-ignore
 			const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
 
@@ -100,7 +103,7 @@
 	);
 
 	let updatedHoverData = $derived(
-		$hoverTime ? updatedSeriesData.find((d) => d.time === $hoverTime) : null
+		$hoverTime ? updatedSeriesData.find((/** @type {any} */ d) => d.time === $hoverTime) : null
 	);
 
 	function moveToNextDisplayPrefix() {
@@ -172,9 +175,9 @@
 				hoverData={$hoverData}
 				focusData={$focusData}
 				chartHeightClasses={$chartHeightClasses}
-				on:mousemove
-				on:mouseout
-				on:pointerup
+				{onmousemove}
+				{onmouseout}
+				{onpointerup}
 			/>
 		{:else}
 			<LineChart
@@ -193,9 +196,9 @@
 				focusData={$focusData}
 				showArea={false}
 				chartHeightClasses={$chartHeightClasses}
-				on:mousemove
-				on:mouseout
-				on:pointerup
+				{onmousemove}
+				{onmouseout}
+				onpointerup={onpointerup}
 			/>
 		{/if}
 	{/if}

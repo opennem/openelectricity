@@ -1,27 +1,29 @@
 <script>
 	import CheckboxTree from './CheckboxTree.svelte';
-	import { createEventDispatcher } from 'svelte';
 	import FormCheckbox from '$lib/components/form-elements/Checkbox2.svelte';
 
-	const dispatch = createEventDispatcher();
+	/**
+	 * @typedef {{ value: string, label: string, children?: TreeNode[] }} TreeNode
+	 */
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {string} [name]
-	 * @property {Node[]} [nodes]
+	 * @property {TreeNode[]} [nodes]
 	 * @property {string[]} [checked]
 	 * @property {string[]} [indeterminate]
+	 * @property {(detail: { node: string }) => void} [onchange]
 	 */
 
 	/** @type {Props} */
-	let { name = 'checkbox-tree', nodes = [], checked = [], indeterminate = [] } = $props();
+	let { name = 'checkbox-tree', nodes = [], checked = [], indeterminate = [], onchange } = $props();
 
 	/**
 	 * Handle node change
 	 * @param {string} node
 	 */
 	function handleNodeChange(node) {
-		dispatch('change', { node });
+		onchange?.({ node });
 	}
 </script>
 
@@ -34,10 +36,10 @@
 					label={node.label}
 					checked={checked.includes(node.value)}
 					indeterminate={indeterminate.includes(node.value)}
-					on:change={() => handleNodeChange(node.value)}
+					onchange={() => handleNodeChange(node.value)}
 				/>
 				{#if node.children}
-					<CheckboxTree nodes={node.children} {checked} {indeterminate} on:change />
+					<CheckboxTree nodes={node.children} {checked} {indeterminate} {onchange} />
 				{/if}
 			</li>
 		{/each}

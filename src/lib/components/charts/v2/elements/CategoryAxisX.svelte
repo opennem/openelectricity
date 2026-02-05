@@ -66,6 +66,9 @@
 	}
 
 	// Convert band scale position (0-100) to pixel position
+	/**
+	 * @param {number} bandPosition
+	 */
 	function toPixels(bandPosition) {
 		return (bandPosition / 100) * chartWidth;
 	}

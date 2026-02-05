@@ -85,7 +85,7 @@
 		}
 	});
 
-	function handleDisplayViewChange(prevView, view) {
+	function handleDisplayViewChange(/** @type {any} */ prevView, /** @type {any} */ view) {
 		$selectedDisplayView = view;
 
 		const keepSelectedGroup =
@@ -108,7 +108,7 @@
 		<Switch
 			buttons={displayViewOptions}
 			selected={$selectedDisplayView}
-			on:change={(evt) => handleDisplayViewChange($selectedDisplayView, evt.detail.value)}
+			onchange={(detail) => handleDisplayViewChange($selectedDisplayView, detail.value)}
 			class="justify-center my-4"
 		/>
 		<div class="py-2 flex items-center gap-6 pl-10 relative z-40">
@@ -116,7 +116,7 @@
 				<FormSelect
 					options={dataViewOptions}
 					selected={$selectedDataView}
-					on:change={(evt) => ($selectedDataView = evt.detail.value)}
+					onchange={(option) => ($selectedDataView = option.value)}
 				/>
 			</div>
 
@@ -125,7 +125,7 @@
 					<FormSelect
 						options={regionOptions}
 						selected={$selectedRegion}
-						on:change={(evt) => ($selectedRegion = evt.detail.value)}
+						onchange={(option) => ($selectedRegion = option.value)}
 					/>
 				</div>
 			{/if}

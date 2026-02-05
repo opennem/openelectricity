@@ -1,14 +1,12 @@
 <script>
-	import { createEventDispatcher } from 'svelte';
 	import Icon from './Icon.svelte';
-
-	const dispatch = createEventDispatcher();
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {{ label: string, value: string | number, icon?: string }[]} [buttons]
 	 * @property {string | number } [selected]
 	 * @property {(value: string) => void} [onChange]
+	 * @property {(detail: { value: string }) => void} [onchange]
 	 * @property {number} [xPad]
 	 * @property {number} [yPad]
 	 * @property {string} [textSize]
@@ -20,6 +18,7 @@
 		buttons = [],
 		selected = '',
 		onChange = () => {},
+		onchange,
 		xPad = 8,
 		yPad = 4,
 		textSize = 'sm',
@@ -27,11 +26,13 @@
 		...rest
 	} = $props();
 
-	let isSelected = $derived((value) => selected === value);
+	let isSelected = $derived((/** @type {string | number} */ value) => selected === value);
 
+	/** @param {MouseEvent & { currentTarget: HTMLButtonElement }} e */
 	function handleClick(e) {
-		onChange(e.currentTarget.value);
-		dispatch('change', { value: e.currentTarget.value });
+		const value = e.currentTarget.value;
+		onChange(value);
+		onchange?.({ value });
 	}
 </script>
 
