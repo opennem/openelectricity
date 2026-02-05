@@ -103,11 +103,11 @@ export function isWemNetwork(networkId) {
 export function generateUnitShades(baseColor, count) {
 	if (count === 1) return [baseColor];
 
-	// Create scale from darker to lighter variants
-	const darkened = chroma(baseColor).darken(0.3).hex();
-	const brightened = chroma(baseColor).brighten(0.8).hex();
+	// Wide range from dark to light for clear distinction between stacked units
+	const darkened = chroma(baseColor).darken(1.2).hex();
+	const brightened = chroma(baseColor).brighten(1.5).hex();
 
-	return chroma.scale([darkened, baseColor, brightened]).mode('lab').colors(count);
+	return chroma.scale([darkened, brightened]).mode('lab').colors(count);
 }
 
 /**
