@@ -18,6 +18,7 @@
 	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
 	import { MapPin } from '@lucide/svelte';
+	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 
 	/**
 	 * Get color for a fuel tech code
@@ -60,14 +61,8 @@
 		return new Date().toISOString().slice(0, 10);
 	}
 
-	// Date range state - synced via $effect to stay reactive with URL params
-	let dateStartInput = $state(getDefaultDateStart());
-	let dateEndInput = $state(getDefaultDateEnd());
-
-	$effect(() => {
-		dateStartInput = data.dateStart || getDefaultDateStart();
-		dateEndInput = data.dateEnd || getDefaultDateEnd();
-	});
+	let dateStart = $derived(data.dateStart || getDefaultDateStart());
+	let dateEnd = $derived(data.dateEnd || getDefaultDateEnd());
 
 	// ============================================
 	// Derived: Facility Selection
@@ -114,12 +109,12 @@
 	function buildUrl(overrides = {}) {
 		const params = new URLSearchParams();
 		const facility = overrides.facility ?? data.selectedCode;
-		const dateStart = overrides.date_start ?? dateStartInput;
-		const dateEnd = overrides.date_end ?? dateEndInput;
+		const ds = overrides.date_start ?? dateStart;
+		const de = overrides.date_end ?? dateEnd;
 
 		if (facility) params.set('facility', facility);
-		if (dateStart) params.set('date_start', dateStart);
-		if (dateEnd) params.set('date_end', dateEnd);
+		if (ds) params.set('date_start', ds);
+		if (de) params.set('date_end', de);
 
 		return `?${params.toString()}`;
 	}
@@ -133,11 +128,12 @@
 	}
 
 	/**
-	 * Handle date range change
+	 * Handle date range change from DateRangePicker
+	 * @param {{ start: string, end: string }} range
 	 */
-	function handleDateRangeChange() {
+	function handleDateRangeChange(range) {
 		if (data.selectedCode) {
-			goto(buildUrl({}));
+			goto(buildUrl({ date_start: range.start, date_end: range.end }));
 		}
 	}
 
@@ -256,21 +252,10 @@
 		</div>
 
 		<!-- Date Range Picker -->
-		<div class="flex items-center gap-2 mb-4">
-			<label for="date-start" class="text-sm text-mid-grey">From:</label>
-			<input
-				id="date-start"
-				type="date"
-				class="px-2 py-1 text-sm border border-warm-grey rounded focus:border-dark-grey focus:outline-none"
-				bind:value={dateStartInput}
-				onchange={handleDateRangeChange}
-			/>
-			<label for="date-end" class="text-sm text-mid-grey">To:</label>
-			<input
-				id="date-end"
-				type="date"
-				class="px-2 py-1 text-sm border border-warm-grey rounded focus:border-dark-grey focus:outline-none"
-				bind:value={dateEndInput}
+		<div class="mb-4">
+			<DateRangePicker
+				startDate={dateStart}
+				endDate={dateEnd}
 				onchange={handleDateRangeChange}
 			/>
 		</div>
