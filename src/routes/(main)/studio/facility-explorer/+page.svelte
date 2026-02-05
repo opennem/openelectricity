@@ -14,10 +14,10 @@
 		buildUnitColourMap
 	} from '$lib/components/charts/facility';
 	import { getRegionLabel } from '../../facilities/_utils/filters';
-	import { groupUnits } from '../../facilities/_utils/units';
+	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
 	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
-	import { MapPin, AlertCircle, SearchX, ChevronDown } from '@lucide/svelte';
+	import { MapPin, AlertCircle, SearchX, ChevronDown, ExternalLink } from '@lucide/svelte';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import { Accordion } from 'bits-ui';
 
@@ -144,6 +144,28 @@
 
 	let totalCapacity = $derived(unitGroups.reduce((/** @type {number} */ sum, /** @type {any} */ g) => sum + g.totalCapacity, 0));
 	let unitCount = $derived(selectedFacility?.units?.length ?? 0);
+	let explorePath = $derived(getExploreUrl(selectedFacility));
+
+	/**
+	 * Capacity-weighted average emissions intensity in kgCO₂/MWh
+	 * Only includes generator units with emissions data
+	 */
+	let weightedEmissionsIntensity = $derived.by(() => {
+		if (!selectedFacility?.units) return null;
+		let totalWeighted = 0;
+		let totalCap = 0;
+		for (const unit of selectedFacility.units) {
+			const ef = Number(unit.emissions_factor_co2);
+			const cap = Number(unit.capacity_maximum || unit.capacity_registered);
+			if (ef && cap && !isNaN(ef) && !isNaN(cap) && unit.dispatch_type !== 'LOAD') {
+				totalWeighted += ef * cap;
+				totalCap += cap;
+			}
+		}
+		if (totalCap === 0) return null;
+		const result = (totalWeighted / totalCap) * 1000;
+		return isNaN(result) ? null : result;
+	});
 
 	/** @type {string[]} */
 	let accordionValue = $state(['data']);
@@ -240,6 +262,12 @@
 							<span class="text-xs text-mid-grey">
 								{unitCount} unit{unitCount !== 1 ? 's' : ''}
 							</span>
+							{#if weightedEmissionsIntensity}
+								<div class="flex items-baseline gap-1">
+									<span class="font-mono text-dark-grey">{formatValue(Math.round(weightedEmissionsIntensity))}</span>
+									<span class="text-xs text-mid-grey">kgCO₂/MWh</span>
+								</div>
+							{/if}
 						</div>
 
 						<!-- Fuel tech badges -->
@@ -277,11 +305,26 @@
 						<!-- Units Table -->
 						{#if selectedFacility.units?.length}
 							<div class="border border-warm-grey rounded-lg mt-2">
-								<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact />
+								<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
 							</div>
 							<p class="text-xxs text-mid-grey mt-2">
 								Capacity shown is maximum capacity where available, otherwise registered capacity.
 							</p>
+						{/if}
+
+						<!-- Explore Link -->
+						{#if explorePath}
+							<div class="mt-3">
+								<a
+									href={explorePath}
+									target="_blank"
+									rel="noopener noreferrer"
+									class="inline-flex items-center gap-1.5 text-xs text-mid-grey hover:text-dark-grey transition-colors"
+								>
+									<ExternalLink size={12} />
+									View on OpenElectricity
+								</a>
+							</div>
 						{/if}
 					</div>
 				</Accordion.Content>
