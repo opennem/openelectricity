@@ -17,8 +17,9 @@
 	import { groupUnits } from '../../facilities/_utils/units';
 	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
-	import { MapPin, AlertCircle, SearchX } from '@lucide/svelte';
+	import { MapPin, AlertCircle, SearchX, ChevronDown } from '@lucide/svelte';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
+	import { Accordion } from 'bits-ui';
 
 	/**
 	 * Get color for a fuel tech code
@@ -143,6 +144,9 @@
 
 	let totalCapacity = $derived(unitGroups.reduce((/** @type {number} */ sum, /** @type {any} */ g) => sum + g.totalCapacity, 0));
 	let unitCount = $derived(selectedFacility?.units?.length ?? 0);
+
+	/** @type {string[]} */
+	let accordionValue = $state(['data']);
 </script>
 
 <svelte:head>
@@ -194,104 +198,137 @@
 			<p class="text-xs">Could not load the facilities list. Please try again later.</p>
 		</div>
 	{:else if selectedFacility}
-		<!-- Facility Info -->
-		<div class="mb-6 space-y-3">
-			<h2 class="text-lg font-semibold">{selectedFacility.name}</h2>
+		<h2 class="text-lg font-semibold mb-4">{selectedFacility.name}</h2>
 
-			<!-- Region, Network, Code -->
-			<div class="flex items-center gap-2 flex-wrap">
-				<span
-					class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-dark-grey"
-				>
-					{regionLabel}
-				</span>
-				<span
-					class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-mid-grey"
-				>
-					{selectedFacility.network_id}
-				</span>
-				<span class="text-xs text-mid-grey font-mono">{selectedFacility.code}</span>
-			</div>
+		<Accordion.Root type="multiple" bind:value={accordionValue} class="space-y-3">
+			<!-- Info Section (collapsed by default) -->
+			<Accordion.Item value="info" class="border border-warm-grey rounded-lg overflow-hidden">
+				<Accordion.Header>
+					<Accordion.Trigger
+						class="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-dark-grey hover:bg-light-warm-grey/50 transition-colors group"
+					>
+						<span>Info</span>
+						<ChevronDown
+							size={16}
+							class="text-mid-grey transition-transform duration-200 group-data-[state=open]:rotate-180"
+						/>
+					</Accordion.Trigger>
+				</Accordion.Header>
+				<Accordion.Content class="px-4 pb-4">
+					<div class="space-y-3">
+						<!-- Region, Network, Code -->
+						<div class="flex items-center gap-2 flex-wrap">
+							<span
+								class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-dark-grey"
+							>
+								{regionLabel}
+							</span>
+							<span
+								class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-mid-grey"
+							>
+								{selectedFacility.network_id}
+							</span>
+							<span class="text-xs text-mid-grey font-mono">{selectedFacility.code}</span>
+						</div>
 
-			<!-- Capacity & Units summary -->
-			<div class="flex items-center gap-4">
-				<div class="flex items-baseline gap-1">
-					<span class="font-mono text-lg text-dark-grey">{formatValue(totalCapacity)}</span>
-					<span class="text-xs text-mid-grey">MW</span>
-				</div>
-				<span class="text-xs text-mid-grey">
-					{unitCount} unit{unitCount !== 1 ? 's' : ''}
-				</span>
-			</div>
-
-			<!-- Fuel tech badges -->
-			{#if unitGroups.length}
-				<div class="flex items-center gap-1.5 flex-wrap">
-					{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
-						<div class="flex items-center gap-1">
-							<FuelTechBadge
-								fueltech_id={group.fueltech_id}
-								status_id={group.status_id}
-								isCommissioning={group.isCommissioning}
-								size="sm"
-							/>
+						<!-- Capacity & Units summary -->
+						<div class="flex items-center gap-4">
+							<div class="flex items-baseline gap-1">
+								<span class="font-mono text-lg text-dark-grey">{formatValue(totalCapacity)}</span>
+								<span class="text-xs text-mid-grey">MW</span>
+							</div>
 							<span class="text-xs text-mid-grey">
-								{formatValue(group.totalCapacity)} MW
+								{unitCount} unit{unitCount !== 1 ? 's' : ''}
 							</span>
 						</div>
-					{/each}
-				</div>
-			{/if}
 
-			<!-- Location -->
-			{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
-				<div class="flex items-center gap-1 text-xs text-mid-grey">
-					<MapPin size={12} />
-					<span>{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}</span>
-				</div>
-			{/if}
+						<!-- Fuel tech badges -->
+						{#if unitGroups.length}
+							<div class="flex items-center gap-1.5 flex-wrap">
+								{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
+									<div class="flex items-center gap-1">
+										<FuelTechBadge
+											fueltech_id={group.fueltech_id}
+											status_id={group.status_id}
+											isCommissioning={group.isCommissioning}
+											size="sm"
+										/>
+										<span class="text-xs text-mid-grey">
+											{formatValue(group.totalCapacity)} MW
+										</span>
+									</div>
+								{/each}
+							</div>
+						{/if}
 
-			<!-- Description -->
-			{#if selectedFacility.description}
-				<p class="text-sm text-mid-grey">{selectedFacility.description}</p>
-			{/if}
-		</div>
+						<!-- Location -->
+						{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
+							<div class="flex items-center gap-1 text-xs text-mid-grey">
+								<MapPin size={12} />
+								<span>{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}</span>
+							</div>
+						{/if}
 
-		<!-- Date Range Picker -->
-		<div class="mb-4">
-			<DateRangePicker
-				startDate={dateStart}
-				endDate={dateEnd}
-				onchange={handleDateRangeChange}
-			/>
-		</div>
+						<!-- Description -->
+						{#if selectedFacility.description}
+							<p class="text-sm text-mid-grey">{selectedFacility.description}</p>
+						{/if}
 
-		<!-- Power Chart -->
-		{#if data.powerData}
-			<div class="bg-light-warm-grey/30 rounded-xl p-4 mb-4">
-				<FacilityPowerChart facility={selectedFacility} powerData={data.powerData} {timeZone} />
-			</div>
-		{:else}
-			<div class="bg-light-warm-grey/30 rounded-xl p-4 mb-4 h-[350px] flex flex-col items-center justify-center">
-				{#if data.error}
-					<AlertCircle size={24} class="mb-2 text-warm-grey" />
-					<p class="text-sm text-mid-grey">Failed to load power data</p>
-					<p class="text-xs text-warm-grey mt-1">{data.error}</p>
-				{:else}
-					<p class="text-sm text-mid-grey">No power data available for this facility</p>
-				{/if}
-			</div>
-		{/if}
+						<!-- Units Table -->
+						{#if selectedFacility.units?.length}
+							<div class="border border-warm-grey rounded-lg mt-2">
+								<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact />
+							</div>
+							<p class="text-xxs text-mid-grey mt-2">
+								Capacity shown is maximum capacity where available, otherwise registered capacity.
+							</p>
+						{/if}
+					</div>
+				</Accordion.Content>
+			</Accordion.Item>
 
-		<!-- Units Table -->
-		{#if selectedFacility.units?.length}
-			<div class="border border-warm-grey rounded-lg">
-				<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact />
-			</div>
-			<p class="text-xxs text-mid-grey mt-3">
-				Capacity shown is maximum capacity where available, otherwise registered capacity.
-			</p>
-		{/if}
+			<!-- Data Section (expanded by default) -->
+			<Accordion.Item value="data" class="border border-warm-grey rounded-lg overflow-hidden">
+				<Accordion.Header>
+					<Accordion.Trigger
+						class="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-dark-grey hover:bg-light-warm-grey/50 transition-colors group"
+					>
+						<span>Data</span>
+						<ChevronDown
+							size={16}
+							class="text-mid-grey transition-transform duration-200 group-data-[state=open]:rotate-180"
+						/>
+					</Accordion.Trigger>
+				</Accordion.Header>
+				<Accordion.Content class="px-4 pb-4">
+					<!-- Date Range Picker -->
+					<div class="mb-4">
+						<DateRangePicker
+							startDate={dateStart}
+							endDate={dateEnd}
+							onchange={handleDateRangeChange}
+						/>
+					</div>
+
+					<!-- Power Chart -->
+					{#if data.powerData}
+						<div class="bg-light-warm-grey/30 rounded-xl p-4">
+							<FacilityPowerChart facility={selectedFacility} powerData={data.powerData} {timeZone} />
+						</div>
+					{:else}
+						<div class="bg-light-warm-grey/30 rounded-xl p-4 h-[350px] flex flex-col items-center justify-center">
+							{#if data.error}
+								<AlertCircle size={24} class="mb-2 text-warm-grey" />
+								<p class="text-sm text-mid-grey">Failed to load power data</p>
+								<p class="text-xs text-warm-grey mt-1">{data.error}</p>
+							{:else}
+								<p class="text-sm text-mid-grey">No power data available for this facility</p>
+							{/if}
+						</div>
+					{/if}
+				</Accordion.Content>
+			</Accordion.Item>
+		</Accordion.Root>
 	{:else}
 		<!-- Empty State -->
 		<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
