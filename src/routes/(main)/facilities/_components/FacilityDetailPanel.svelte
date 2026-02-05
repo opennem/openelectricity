@@ -104,8 +104,8 @@
 	<div class="h-full flex flex-col">
 		<!-- Scrollable Content -->
 		<div class="flex-1 overflow-y-auto px-6">
-			<!-- Facility Info -->
-			<div class="py-4 space-y-3">
+			<!-- Facility Info (hidden - to be formatted later) -->
+			<div class="py-4 space-y-3 hidden">
 				<!-- Region, Network, Code -->
 				<div class="flex items-center gap-2 flex-wrap">
 					<span
