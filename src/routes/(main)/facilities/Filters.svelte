@@ -11,9 +11,12 @@
 
 	import {
 		regions,
+		regionOptions,
 		fuelTechOptions,
 		getFlatFuelTechOptions,
+		getFlatRegionOptions,
 		getParentFuelTechValues,
+		getParentRegionValues,
 		statusOptions,
 		sizeOptions
 	} from './_utils/filters.js';
@@ -99,31 +102,22 @@
 	}
 
 	// ============================================
-	// Derived Options
-	// ============================================
-
-	let regionOptions = $derived(
-		regions.map((r) => ({
-			label: r.label,
-			value: r.value ?? '',
-			divider: r.divider,
-			labelClassName: regions?.find((m) => m.value === r.longValue)
-				? ''
-				: 'italic text-mid-warm-grey'
-		}))
-	);
-
-	// ============================================
 	// Derived Labels
 	// ============================================
 
+	let flatRegionOptions = getFlatRegionOptions();
+	let parentRegionValues = getParentRegionValues();
+
 	let regionLabel = $derived.by(() => {
-		if (selectedRegions.length === 0) return 'Region';
-		if (selectedRegions.length === 1) {
-			const region = regions.find((r) => r.value === selectedRegions[0]);
-			return region?.longLabel || selectedRegions[0];
+		// Filter out parent categories (only count actual regions)
+		const countableRegions = selectedRegions.filter((r) => !parentRegionValues.includes(r));
+
+		if (countableRegions.length === 0) return 'Region';
+		if (countableRegions.length === 1) {
+			const region = flatRegionOptions.find((r) => r.value === countableRegions[0]);
+			return region?.label || countableRegions[0];
 		}
-		return `${selectedRegions.length} Regions`;
+		return `${countableRegions.length} Regions`;
 	});
 
 	let statusLabel = $derived.by(() => {
@@ -230,11 +224,26 @@
 	}
 
 	/**
-	 * @param {string} value
+	 * @param {string | string[]} value
 	 * @param {boolean} isMetaPressed
 	 */
 	function handleRegionChange(value, isMetaPressed) {
-		onregionschange?.(toggleSelection(selectedRegions, value, isMetaPressed));
+		let newSelection = [];
+
+		if (Array.isArray(value)) {
+			const allSelected = value.every((v) => selectedRegions.includes(v));
+			if (isMetaPressed) {
+				newSelection = [...value];
+			} else if (allSelected) {
+				newSelection = selectedRegions.filter((item) => !value.includes(item));
+			} else {
+				newSelection = [...new Set([...selectedRegions, ...value])];
+			}
+		} else {
+			newSelection = toggleSelection(selectedRegions, value, isMetaPressed);
+		}
+
+		onregionschange?.(newSelection);
 	}
 
 	/**
@@ -318,7 +327,7 @@
 	{selectedFuelTechs}
 	{selectedSizes}
 	onclose={() => (showMobileFilterOptions = false)}
-	onregionschange={(values, isMetaPressed) => handleRegionChange(values[0], isMetaPressed)}
+	onregionschange={handleRegionChange}
 	onstatuseschange={(values, isMetaPressed) => handleStatusChange(values[0], isMetaPressed)}
 	onfueltechschange={handleFuelTechChange}
 	onsizeschange={(values, isMetaPressed) => handleSizeChange(values[0], isMetaPressed)}
@@ -379,12 +388,13 @@
 			<div
 				class="justify-start items-center gap-2 hidden md:flex ml-6 pl-6 border-l border-warm-grey"
 			>
-				<FormMultiSelect
+				<HierarchicalMultiSelect
 					options={regionOptions}
 					selected={selectedRegions}
 					label={regionLabel}
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
+					defaultExpanded={['nem']}
 					onchange={handleRegionChange}
 					onclear={() => onregionschange?.([])}
 				/>

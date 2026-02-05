@@ -1,5 +1,6 @@
 <script>
 	import { fly } from 'svelte/transition';
+	import { untrack } from 'svelte';
 	import { clickoutside } from '@svelte-put/clickoutside';
 
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
@@ -30,6 +31,7 @@
 	 * @property {boolean} [staticDisplay]
 	 * @property {string} [paddingX]
 	 * @property {string} [paddingY]
+	 * @property {string[]} [defaultExpanded]
 	 * @property {(value: string | string[], isMetaPressed: boolean) => void} [onchange]
 	 * @property {() => void} [onclear]
 	 */
@@ -42,6 +44,7 @@
 		staticDisplay = false,
 		paddingX = 'px-2',
 		paddingY = 'py-1',
+		defaultExpanded = [],
 		onchange,
 		onclear
 	} = $props();
@@ -50,28 +53,61 @@
 	let isMetaPressed = $state(false);
 
 	/** @type {Record<string, boolean>} */
-	let expandedState = $state({});
+	let expandedState = $state(
+		untrack(() =>
+			defaultExpanded.reduce(
+				(acc, value) => {
+					acc[value] = true;
+					return acc;
+				},
+				/** @type {Record<string, boolean>} */ ({})
+			)
+		)
+	);
 
 	let hasSelection = $derived(selected.length > 0);
 
-	// Show the selected option's label when only 1 is selected
+	// Show the selected option's label when only 1 is selected,
+	// or parent label when all children of a parent are selected
 	let displayLabel = $derived.by(() => {
-		if (selected.length === 1 && options) {
-			// Check parent options
-			const selectedParent = options.find((opt) => opt.value === selected[0]);
+		if (selected.length === 0 || !options) return label;
+
+		// Get parent values to filter them out
+		const parentValues = options.filter((o) => o.children?.length).map((o) => o.value);
+		// Get only leaf selections (non-parent values)
+		const leafSelections = selected.filter((s) => !parentValues.includes(s));
+
+		// Check if all children of a parent are selected (and only those)
+		for (const opt of options) {
+			if (opt.children && opt.children.length > 0) {
+				const childValues = opt.children.map((c) => c.value);
+				const allChildrenSelected = childValues.every((v) => leafSelections.includes(v));
+				const onlyTheseSelected = leafSelections.every((v) => childValues.includes(v));
+				if (allChildrenSelected && onlyTheseSelected) {
+					return opt.label;
+				}
+			}
+		}
+
+		if (leafSelections.length === 1) {
+			// Check parent options (without children)
+			const selectedParent = options.find(
+				(opt) => opt.value === leafSelections[0] && !opt.children?.length
+			);
 			if (selectedParent) {
 				return selectedParent.label;
 			}
 			// Check children
 			for (const opt of options) {
 				if (opt.children) {
-					const selectedChild = opt.children.find((child) => child.value === selected[0]);
+					const selectedChild = opt.children.find((child) => child.value === leafSelections[0]);
 					if (selectedChild) {
 						return selectedChild.label;
 					}
 				}
 			}
 		}
+
 		return label;
 	});
 

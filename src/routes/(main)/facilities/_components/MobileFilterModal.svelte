@@ -8,7 +8,7 @@
 	/**
 	 * @type {{
 	 *   open: boolean,
-	 *   regionOptions: Array<{label: string, value: string, divider?: boolean, labelClassName?: string}>,
+	 *   regionOptions: Array<{label: string, value: string, children?: Array<{label: string, value: string}>}>,
 	 *   statusOptions: Array<{label: string, value: string, colour?: string}>,
 	 *   fuelTechOptions: Array<{label: string, value: string, colour?: string, children?: Array<{label: string, value: string, colour?: string}>}>,
 	 *   sizeOptions: Array<{label: string, value: string}>,
@@ -17,7 +17,7 @@
 	 *   selectedFuelTechs: string[],
 	 *   selectedSizes: string[],
 	 *   onclose: () => void,
-	 *   onregionschange: (values: string[], isMetaPressed: boolean) => void,
+	 *   onregionschange: (values: string[] | string, isMetaPressed: boolean) => void,
 	 *   onstatuseschange: (values: string[], isMetaPressed: boolean) => void,
 	 *   onfueltechschange: (values: string[] | string, isMetaPressed: boolean) => void,
 	 *   onsizeschange: (values: string[], isMetaPressed: boolean) => void,
@@ -65,13 +65,14 @@
 		</header>
 
 		<section class="p-10 pb-0 w-full flex flex-col gap-6">
-			<FormMultiSelect
+			<HierarchicalMultiSelect
 				options={regionOptions}
 				selected={selectedRegions}
 				label="Region"
 				paddingX=""
 				staticDisplay={true}
-				onchange={(value, isMetaPressed) => onregionschange([value], isMetaPressed)}
+				defaultExpanded={['nem']}
+				onchange={(value, isMetaPressed) => onregionschange(value, isMetaPressed)}
 				onclear={onclearregions}
 			/>
 

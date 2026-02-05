@@ -90,46 +90,34 @@ export const networkRegionsOnly = ['nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 
 export const regionOptions = [
 	{
-		value: '_all',
-		label: 'All Regions',
+		value: 'nem',
+		label: 'NEM',
 		children: [
 			{
-				value: 'nem',
-				label: 'National Electricity Market (NEM)',
-				children: [
-					{
-						value: 'nsw1',
-						label: 'New South Wales'
-					},
-					{
-						value: 'qld1',
-						label: 'Queensland'
-					},
-					{
-						value: 'sa1',
-						label: 'South Australia'
-					},
-					{
-						value: 'tas1',
-						label: 'Tasmania'
-					},
-					{
-						value: 'vic1',
-						label: 'Victoria'
-					}
-				]
+				value: 'nsw1',
+				label: 'New South Wales'
+			},
+			{
+				value: 'qld1',
+				label: 'Queensland'
+			},
+			{
+				value: 'sa1',
+				label: 'South Australia'
+			},
+			{
+				value: 'tas1',
+				label: 'Tasmania'
+			},
+			{
+				value: 'vic1',
+				label: 'Victoria'
 			}
-			// {
-			// 	value: 'WEMDE',
-			// 	label: 'WEM Dispatch Engine',
-			// 	children: [
-			// 		{
-			// 			value: 'WEM',
-			// 			label: 'Western Australia (SWIS)'
-			// 		}
-			// 	]
-			// }
 		]
+	},
+	{
+		value: 'wem',
+		label: 'Western Australia'
 	}
 ];
 
@@ -191,6 +179,35 @@ export const fuelTechOptions = [
 		]
 	}
 ];
+
+/**
+ * Get the values of parent regions that have children (e.g., 'nem')
+ * These should not be counted when displaying the selection count
+ * @returns {string[]}
+ */
+export function getParentRegionValues() {
+	return regionOptions
+		.filter((opt) => opt.children && opt.children.length > 0)
+		.map((opt) => opt.value);
+}
+
+/**
+ * Flatten the hierarchical region options to a simple list for label lookup
+ * @returns {{value: string, label: string}[]}
+ */
+export function getFlatRegionOptions() {
+	/** @type {{value: string, label: string}[]} */
+	const flat = [];
+	for (const opt of regionOptions) {
+		flat.push({ value: opt.value, label: opt.label });
+		if (opt.children) {
+			for (const child of opt.children) {
+				flat.push({ value: child.value, label: child.label });
+			}
+		}
+	}
+	return flat;
+}
 
 /**
  * Flatten the hierarchical fuel tech options to a simple list for label lookup
