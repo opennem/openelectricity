@@ -17,7 +17,7 @@
 	import { groupUnits } from '../../facilities/_utils/units';
 	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
-	import { MapPin } from '@lucide/svelte';
+	import { MapPin, AlertCircle, SearchX } from '@lucide/svelte';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 
 	/**
@@ -181,13 +181,19 @@
 		</datalist>
 	</div>
 
-	{#if data.error}
-		<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-			<p class="text-red-700">{data.error}</p>
+	{#if data.error && !selectedFacility}
+		<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
+			<AlertCircle size={32} class="mb-3 text-warm-grey" />
+			<p class="text-sm font-medium text-dark-grey mb-1">Unable to load facility</p>
+			<p class="text-xs">{data.error}</p>
 		</div>
-	{/if}
-
-	{#if selectedFacility}
+	{:else if !data.facilities.length}
+		<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
+			<AlertCircle size={32} class="mb-3 text-warm-grey" />
+			<p class="text-sm font-medium text-dark-grey mb-1">No facilities available</p>
+			<p class="text-xs">Could not load the facilities list. Please try again later.</p>
+		</div>
+	{:else if selectedFacility}
 		<!-- Facility Info -->
 		<div class="mb-6 space-y-3">
 			<h2 class="text-lg font-semibold">{selectedFacility.name}</h2>
@@ -261,9 +267,21 @@
 		</div>
 
 		<!-- Power Chart -->
-		<div class="bg-light-warm-grey/30 rounded-xl p-4 mb-4">
-			<FacilityPowerChart facility={selectedFacility} powerData={data.powerData} {timeZone} />
-		</div>
+		{#if data.powerData}
+			<div class="bg-light-warm-grey/30 rounded-xl p-4 mb-4">
+				<FacilityPowerChart facility={selectedFacility} powerData={data.powerData} {timeZone} />
+			</div>
+		{:else}
+			<div class="bg-light-warm-grey/30 rounded-xl p-4 mb-4 h-[350px] flex flex-col items-center justify-center">
+				{#if data.error}
+					<AlertCircle size={24} class="mb-2 text-warm-grey" />
+					<p class="text-sm text-mid-grey">Failed to load power data</p>
+					<p class="text-xs text-warm-grey mt-1">{data.error}</p>
+				{:else}
+					<p class="text-sm text-mid-grey">No power data available for this facility</p>
+				{/if}
+			</div>
+		{/if}
 
 		<!-- Units Table -->
 		{#if selectedFacility.units?.length}
@@ -276,8 +294,9 @@
 		{/if}
 	{:else}
 		<!-- Empty State -->
-		<div class="text-center py-12 text-mid-grey">
-			<p>Select a facility to view its power generation data.</p>
+		<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
+			<SearchX size={32} class="mb-3 text-warm-grey" />
+			<p class="text-sm">Select a facility to view its power generation data.</p>
 		</div>
 	{/if}
 </div>
