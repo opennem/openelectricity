@@ -17,6 +17,10 @@
 	import { X } from '@lucide/svelte';
 
 	/**
+	 * @typedef {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} TransmissionLineVisibility
+	 */
+
+	/**
 	 * @type {{
 	 *   facilities: any[],
 	 *   hoveredFacility?: any | null,
@@ -24,6 +28,7 @@
 	 *   clustering?: boolean,
 	 *   satelliteView?: boolean,
 	 *   showTransmissionLines?: boolean,
+	 *   transmissionLineVisibility?: TransmissionLineVisibility,
 	 *   showGolfCourses?: boolean,
 	 *   scrollZoom?: boolean,
 	 *   flyToOffsetX?: number,
@@ -40,6 +45,7 @@
 		clustering = false,
 		satelliteView = false,
 		showTransmissionLines = true,
+		transmissionLineVisibility = { high: true, medium: true, low: true, lowest: true },
 		showGolfCourses = false,
 		scrollZoom = false,
 		flyToOffsetX = 0.25,
@@ -48,6 +54,44 @@
 		onclick,
 		onselect
 	} = $props();
+
+	// Build filter for transmission lines based on visibility settings
+	let transmissionFilter = $derived.by(() => {
+		/** @type {any[]} */
+		const voltageConditions = [];
+
+		if (transmissionLineVisibility.high) {
+			voltageConditions.push(['>=', ['get', 'capacitykv'], 400]);
+		}
+		if (transmissionLineVisibility.medium) {
+			voltageConditions.push([
+				'all',
+				['>=', ['get', 'capacitykv'], 220],
+				['<', ['get', 'capacitykv'], 400]
+			]);
+		}
+		if (transmissionLineVisibility.low) {
+			voltageConditions.push([
+				'all',
+				['>=', ['get', 'capacitykv'], 110],
+				['<', ['get', 'capacitykv'], 220]
+			]);
+		}
+		if (transmissionLineVisibility.lowest) {
+			voltageConditions.push(['<', ['get', 'capacitykv'], 110]);
+		}
+
+		if (voltageConditions.length === 0) {
+			// Never match any features
+			return /** @type {any} */ (['==', ['get', 'operationalstatus'], '__never_match__']);
+		}
+
+		return /** @type {any} */ ([
+			'all',
+			['==', ['get', 'operationalstatus'], 'Operational'],
+			['any', ...voltageConditions]
+		]);
+	});
 
 	// Australia center coordinates (default fallback)
 	const center = { lng: 110, lat: -28 };
@@ -670,7 +714,7 @@
 		<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
 			<LineLayer
 				id="transmission-lines-layer"
-				filter={['==', ['get', 'operationalstatus'], 'Operational']}
+				filter={transmissionFilter}
 				paint={{
 					'line-color': [
 						'case',

@@ -6,6 +6,7 @@
 	import { page } from '$app/state';
 	import { X, Flag } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
+	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import formatValue from './_utils/format-value';
 	import { statusColours, isInSizeRange } from './_utils/filters.js';
@@ -91,6 +92,9 @@
 	let mapShowTransmissionLines = $state(page.url.searchParams.get('transmission') !== 'false');
 	let mapClustering = $state(page.url.searchParams.get('clustering') === 'true');
 	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
+
+	/** @type {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} */
+	let transmissionLineVisibility = $state({ high: true, medium: true, low: true, lowest: true });
 
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
 	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
@@ -506,6 +510,7 @@
 				clustering={mapClustering}
 				satelliteView={mapSatelliteView}
 				showTransmissionLines={mapShowTransmissionLines}
+				{transmissionLineVisibility}
 				showGolfCourses={mapShowGolfCourses}
 				scrollZoom={isFullscreen}
 				flyToOffsetX={0.2}
@@ -568,56 +573,13 @@
 				/>
 			</div>
 
-			<!-- Transmission lines legend -->
 			{#if mapShowTransmissionLines}
-				<div
-					class="absolute bottom-4 left-4 md:left-auto md:right-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs {selectedView ===
-					'map'
-						? 'block'
-						: 'hidden md:block'}"
-				>
-					<div class="text-[10px] text-mid-grey font-medium uppercase tracking-wide mb-1.5">
-						Transmission Lines
-					</div>
-					<div class="space-y-1">
-						<div class="flex items-center gap-2">
-							<span
-								class="w-5 h-1 rounded-full"
-								style="background-color: {mapSatelliteView ? '#ff6b6b' : '#c0392b'};"
-							></span>
-							<span class="text-mid-grey">400-500 kV</span>
-						</div>
-						<div class="flex items-center gap-2">
-							<span
-								class="w-5 h-1 rounded-full"
-								style="background-color: {mapSatelliteView ? '#ffd93d' : '#c49b00'};"
-							></span>
-							<span class="text-mid-grey">220-330 kV</span>
-						</div>
-						<div class="flex items-center gap-2">
-							<span
-								class="w-5 h-1 rounded-full"
-								style="background-color: {mapSatelliteView ? '#6bcb77' : '#27ae60'};"
-							></span>
-							<span class="text-mid-grey">110-132 kV</span>
-						</div>
-						<div class="flex items-center gap-2">
-							<span
-								class="w-5 h-1 rounded-full"
-								style="background-color: {mapSatelliteView ? '#74b9ff' : '#2980b9'};"
-							></span>
-							<span class="text-mid-grey">&lt;110 kV</span>
-						</div>
-					</div>
-					<a
-						href="https://digital.atlas.gov.au/datasets/digitalatlas::electricity-transmission-lines/about"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="block text-[10px] text-mid-grey/70 hover:text-mid-grey mt-2 pt-2 border-t border-warm-grey"
-					>
-						Source: Digital Atlas of Australia
-					</a>
-				</div>
+				<TransmissionLinesLegend
+					satelliteView={mapSatelliteView}
+					{selectedView}
+					visibility={transmissionLineVisibility}
+					onvisibilitychange={(v) => (transmissionLineVisibility = v)}
+				/>
 			{/if}
 		</div>
 
