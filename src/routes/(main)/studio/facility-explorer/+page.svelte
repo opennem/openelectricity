@@ -8,12 +8,16 @@
 
 	import { goto } from '$app/navigation';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import { isLoad, fuelTechNameMap } from '$lib/fuel_techs';
 	import {
 		FacilityPowerChart,
 		FacilityUnitsTable,
 		buildUnitColourMap
 	} from '$lib/components/charts/facility';
+	import { getRegionLabel } from '../../facilities/_utils/filters';
+	import { groupUnits } from '../../facilities/_utils/units';
+	import formatValue from '../../facilities/_utils/format-value';
+	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
+	import { MapPin } from '@lucide/svelte';
 
 	/**
 	 * Get color for a fuel tech code
@@ -92,24 +96,11 @@
 		return buildUnitColourMap(selectedFacility.units, getFuelTechColor);
 	});
 
-	/**
-	 * Identify which units are loads
-	 */
-	let loadUnits = $derived.by(() => {
-		if (!selectedFacility?.units) return [];
-
-		return selectedFacility.units
-			.filter(
-				(/** @type {any} */ unit) => isLoad(unit.fueltech_id) || unit.dispatch_type === 'LOAD'
-			)
-			.map((/** @type {any} */ unit) => ({
-				code: unit.code,
-				fueltech_id: unit.fueltech_id,
-				name: fuelTechNameMap[unit.fueltech_id] || unit.fueltech_id
-			}));
-	});
-
-	let hasLoads = $derived(loadUnits.length > 0);
+	// Facility info derived values (matching FacilityDetailPanel)
+	let regionLabel = $derived(
+		selectedFacility ? getRegionLabel(selectedFacility.network_id, selectedFacility.network_region) : ''
+	);
+	let unitGroups = $derived(selectedFacility ? groupUnits(selectedFacility) : []);
 
 	// ============================================
 	// Event Handlers
@@ -154,14 +145,8 @@
 	// Computed UI Values
 	// ============================================
 
-	let totalCapacity = $derived(
-		selectedFacility?.units?.reduce(
-			(/** @type {number} */ sum, /** @type {any} */ u) => sum + (u.capacity_registered || 0),
-			0
-		) || 0
-	);
-
-	let unitCount = $derived(selectedFacility?.units?.length || 0);
+	let totalCapacity = $derived(unitGroups.reduce((/** @type {number} */ sum, /** @type {any} */ g) => sum + g.totalCapacity, 0));
+	let unitCount = $derived(selectedFacility?.units?.length ?? 0);
 </script>
 
 <svelte:head>
@@ -207,49 +192,66 @@
 	{/if}
 
 	{#if selectedFacility}
-		<!-- Facility Info Panel -->
-		<div class="bg-light-warm-grey rounded-lg p-4 mb-6">
-			<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-				<div>
-					<h2 class="text-lg font-semibold">{selectedFacility.name}</h2>
-					<p class="text-sm text-mid-grey">Code: {selectedFacility.code}</p>
-				</div>
-				<div>
-					<p class="text-sm text-mid-grey">Region</p>
-					<p class="font-medium">
-						{selectedFacility.network_region} ({selectedFacility.network_id})
-					</p>
-				</div>
-				<div>
-					<p class="text-sm text-mid-grey">Total Capacity</p>
-					<p class="font-medium font-mono">{totalCapacity.toLocaleString()} MW</p>
-				</div>
-				<div>
-					<p class="text-sm text-mid-grey">Units</p>
-					<p class="font-medium">{unitCount}</p>
-				</div>
+		<!-- Facility Info -->
+		<div class="mb-6 space-y-3">
+			<h2 class="text-lg font-semibold">{selectedFacility.name}</h2>
+
+			<!-- Region, Network, Code -->
+			<div class="flex items-center gap-2 flex-wrap">
+				<span
+					class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-dark-grey"
+				>
+					{regionLabel}
+				</span>
+				<span
+					class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-mid-grey"
+				>
+					{selectedFacility.network_id}
+				</span>
+				<span class="text-xs text-mid-grey font-mono">{selectedFacility.code}</span>
 			</div>
 
-			{#if hasLoads}
-				<div class="mt-4 pt-4 border-t border-warm-grey">
-					<p class="text-sm text-mid-grey mb-2">Load Units (shown as negative):</p>
-					<div class="flex flex-wrap gap-2">
-						{#each loadUnits as unit (unit.code)}
-							<span
-								class="inline-flex items-center gap-1 px-2 py-1 rounded text-xs"
-								style="background-color: {unitColours[unit.code]}20; color: {unitColours[
-									unit.code
-								]}"
-							>
-								<span
-									class="w-2 h-2 rounded-full"
-									style="background-color: {unitColours[unit.code]}"
-								></span>
-								{unit.code} - {unit.name}
-							</span>
-						{/each}
-					</div>
+			<!-- Capacity & Units summary -->
+			<div class="flex items-center gap-4">
+				<div class="flex items-baseline gap-1">
+					<span class="font-mono text-lg text-dark-grey">{formatValue(totalCapacity)}</span>
+					<span class="text-xs text-mid-grey">MW</span>
 				</div>
+				<span class="text-xs text-mid-grey">
+					{unitCount} unit{unitCount !== 1 ? 's' : ''}
+				</span>
+			</div>
+
+			<!-- Fuel tech badges -->
+			{#if unitGroups.length}
+				<div class="flex items-center gap-1.5 flex-wrap">
+					{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
+						<div class="flex items-center gap-1">
+							<FuelTechBadge
+								fueltech_id={group.fueltech_id}
+								status_id={group.status_id}
+								isCommissioning={group.isCommissioning}
+								size="sm"
+							/>
+							<span class="text-xs text-mid-grey">
+								{formatValue(group.totalCapacity)} MW
+							</span>
+						</div>
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Location -->
+			{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
+				<div class="flex items-center gap-1 text-xs text-mid-grey">
+					<MapPin size={12} />
+					<span>{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}</span>
+				</div>
+			{/if}
+
+			<!-- Description -->
+			{#if selectedFacility.description}
+				<p class="text-sm text-mid-grey">{selectedFacility.description}</p>
 			{/if}
 		</div>
 
@@ -273,15 +275,19 @@
 			/>
 		</div>
 
-		<!-- Power Chart Component -->
-		<FacilityPowerChart facility={selectedFacility} powerData={data.powerData} {timeZone} />
+		<!-- Power Chart -->
+		<div class="bg-light-warm-grey/30 rounded-xl p-4 mb-4">
+			<FacilityPowerChart facility={selectedFacility} powerData={data.powerData} {timeZone} />
+		</div>
 
 		<!-- Units Table -->
 		{#if selectedFacility.units?.length}
-			<div class="mt-6">
-				<h3 class="text-lg font-semibold mb-3">Units</h3>
-				<FacilityUnitsTable units={selectedFacility.units} {unitColours} />
+			<div class="border border-warm-grey rounded-lg">
+				<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact />
 			</div>
+			<p class="text-xxs text-mid-grey mt-3">
+				Capacity shown is maximum capacity where available, otherwise registered capacity.
+			</p>
 		{/if}
 	{:else}
 		<!-- Empty State -->
