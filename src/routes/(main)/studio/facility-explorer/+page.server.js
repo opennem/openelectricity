@@ -50,7 +50,7 @@ const client = new OpenElectricityClient({
  */
 export async function load({ url, fetch }) {
 	const { searchParams } = url;
-	const selectedCode = searchParams.get('facility');
+	const selectedCode = searchParams.get('facility') || 'BAYSW';
 	const dateStart = searchParams.get('date_start');
 	const dateEnd = searchParams.get('date_end');
 	const days = searchParams.get('days');
