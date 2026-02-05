@@ -4,19 +4,48 @@
 		FacilityUnitsTable,
 		getNetworkTimezone
 	} from '$lib/components/charts/facility';
-	import { getExploreUrl } from '../_utils/units';
-	import { ExternalLink } from '@lucide/svelte';
+	import { getExploreUrl, groupUnits } from '../_utils/units';
+	import { getRegionLabel } from '../_utils/filters';
+	import formatValue from '../_utils/format-value';
+	import { ExternalLink, MapPin } from '@lucide/svelte';
+	import FuelTechBadge from './FuelTechBadge.svelte';
 
 	/**
 	 * @type {{
-	 *   facility: any | null,
+	 *   facilityCode: string | null,
 	 *   powerData: any | null
 	 * }}
 	 */
-	let { facility, powerData = null } = $props();
+	let { facilityCode = null, powerData = null } = $props();
+
+	/** @type {any | null} */
+	let facility = $state(null);
+
+	$effect(() => {
+		if (facilityCode) {
+			fetch(`/api/facilities/${encodeURIComponent(facilityCode)}`)
+				.then((res) => (res.ok ? res.json() : null))
+				.then((data) => {
+					facility = data;
+				})
+				.catch(() => {
+					facility = null;
+				});
+		} else {
+			facility = null;
+		}
+	});
 
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
 	let explorePath = $derived(getExploreUrl(facility));
+
+	// Facility info
+	let regionLabel = $derived(
+		facility ? getRegionLabel(facility.network_id, facility.network_region) : ''
+	);
+	let unitGroups = $derived(facility ? groupUnits(facility) : []);
+	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
+	let unitCount = $derived(facility?.units?.length ?? 0);
 
 	// 3 days at 5-minute intervals = 3 * 24 * 12 = 864 data points
 	const LAST_3_DAYS_POINTS = 3 * 24 * 12;
@@ -24,7 +53,6 @@
 	/**
 	 * Filter data array to last N points
 	 * @param {any[]} data - Array of [timestamp, value] pairs
-	 * @param {string} [label] - Optional label for logging
 	 * @returns {any[]}
 	 */
 	function filterLastNPoints(data) {
@@ -43,27 +71,11 @@
 	);
 	let filteredUnitCodes = $derived(new Set(filteredUnits.map((/** @type {any} */ u) => u.code)));
 
-	// Get battery units for the secondary chart
-	let batteryUnits = $derived(
-		facility?.units?.filter((/** @type {any} */ unit) => unit.fueltech_id === 'battery') ?? []
-	);
-	let batteryUnitCodes = $derived(new Set(batteryUnits.map((/** @type {any} */ u) => u.code)));
-	let hasBattery = $derived(batteryUnits.length > 0);
-
 	let filteredFacility = $derived(
 		facility
 			? {
 					...facility,
 					units: filteredUnits
-				}
-			: null
-	);
-
-	let batteryFacility = $derived(
-		facility && hasBattery
-			? {
-					...facility,
-					units: batteryUnits
 				}
 			: null
 	);
@@ -86,48 +98,73 @@
 				}
 			: null
 	);
-
-	let batteryPowerData = $derived(
-		powerData && powerData.data.length && hasBattery
-			? {
-					...powerData,
-					data: [
-						{
-							...powerData.data[0],
-							results: powerData.data[0].results
-								?.filter((/** @type {any} */ r) => batteryUnitCodes.has(r.columns?.unit_code))
-								.map((/** @type {any} */ r) => ({
-									...r,
-									data: filterLastNPoints(r.data)
-								}))
-						}
-					]
-				}
-			: null
-	);
-
-	// Debug: Process battery data for table display
-	let batteryDataGrid = $derived.by(() => {
-		if (!batteryPowerData) return { seriesKeys: [], timestamps: [], seriesMap: {} };
-
-		const results = batteryPowerData.data?.[0]?.results || batteryPowerData.results || [];
-		/** @type {Record<string, any[]>} */
-		const seriesMap = {};
-		for (const r of results) {
-			const key = `${r.columns?.unit_code || 'unknown'} (${r.columns?.fueltech_id || 'unknown'})`;
-			seriesMap[key] = r.data || [];
-		}
-		const seriesKeys = Object.keys(seriesMap);
-		const timestamps = results[0]?.data?.map((/** @type {[string, number]} */ d) => d[0]) || [];
-
-		return { seriesKeys, timestamps, seriesMap };
-	});
 </script>
 
 {#if facility}
 	<div class="h-full flex flex-col">
 		<!-- Scrollable Content -->
 		<div class="flex-1 overflow-y-auto px-6">
+			<!-- Facility Info -->
+			<div class="py-4 space-y-3">
+				<!-- Region, Network, Code -->
+				<div class="flex items-center gap-2 flex-wrap">
+					<span
+						class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-dark-grey"
+					>
+						{regionLabel}
+					</span>
+					<span
+						class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-mid-grey"
+					>
+						{facility.network_id}
+					</span>
+					<span class="text-xs text-mid-grey font-mono">{facility.code}</span>
+				</div>
+
+				<!-- Capacity & Units summary -->
+				<div class="flex items-center gap-4">
+					<div class="flex items-baseline gap-1">
+						<span class="font-mono text-lg text-dark-grey">{formatValue(totalCapacity)}</span>
+						<span class="text-xs text-mid-grey">MW</span>
+					</div>
+					<span class="text-xs text-mid-grey">
+						{unitCount} unit{unitCount !== 1 ? 's' : ''}
+					</span>
+				</div>
+
+				<!-- Fuel tech badges -->
+				{#if unitGroups.length}
+					<div class="flex items-center gap-1.5 flex-wrap">
+						{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
+							<div class="flex items-center gap-1">
+								<FuelTechBadge
+									fueltech_id={group.fueltech_id}
+									status_id={group.status_id}
+									isCommissioning={group.isCommissioning}
+									size="sm"
+								/>
+								<span class="text-xs text-mid-grey">
+									{formatValue(group.totalCapacity)} MW
+								</span>
+							</div>
+						{/each}
+					</div>
+				{/if}
+
+				<!-- Location -->
+				{#if facility.location?.lat && facility.location?.lng}
+					<div class="flex items-center gap-1 text-xs text-mid-grey">
+						<MapPin size={12} />
+						<span>{facility.location.lat.toFixed(4)}, {facility.location.lng.toFixed(4)}</span>
+					</div>
+				{/if}
+
+				<!-- Description -->
+				{#if facility.description}
+					<p class="text-sm text-mid-grey">{facility.description}</p>
+				{/if}
+			</div>
+
 			<!-- Power Chart -->
 			{#if filteredPowerData}
 				<div class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0">
@@ -153,77 +190,6 @@
 			{#if filteredUnits.length}
 				<div class="border border-warm-grey rounded-lg mx-2">
 					<FacilityUnitsTable units={filteredUnits} compact />
-				</div>
-			{/if}
-
-			<!-- Battery Section (Testing) - Hidden for now -->
-			{#if false && hasBattery && batteryPowerData}
-				<div
-					class="mt-4 mx-2 p-3 border-2 border-dashed rounded-lg"
-					style="border-color: #f97316; background-color: #fff7ed;"
-				>
-					<div class="flex items-center gap-2 mb-2">
-						<span class="text-xs font-bold uppercase tracking-wide" style="color: #c2410c;"
-							>Battery Storage</span
-						>
-						<span
-							class="text-[10px] px-1.5 py-0.5 rounded font-medium"
-							style="background-color: #fed7aa; color: #9a3412;">Testing</span
-						>
-					</div>
-
-					<!-- Battery Chart -->
-					<div class="bg-white rounded-lg p-3 mb-3">
-						<FacilityPowerChart
-							facility={batteryFacility}
-							powerData={batteryPowerData}
-							{timeZone}
-							title=""
-							chartHeight="h-[150px]"
-							showZoomBrush={false}
-							useDivergingStack={false}
-						/>
-					</div>
-
-					<!-- Battery Units Table -->
-					<div class="border rounded-lg bg-white" style="border-color: #fdba74;">
-						<FacilityUnitsTable units={batteryUnits} compact />
-					</div>
-
-					<!-- Debug: Battery Power Data Grid -->
-					<div class="mt-3 bg-white rounded-lg p-3 overflow-x-auto max-h-[300px] overflow-y-auto">
-						<p class="text-xs font-bold mb-2" style="color: #c2410c;">Chart Data Points</p>
-						<table class="text-xs w-full border-collapse">
-							<thead class="sticky top-0 bg-white">
-								<tr class="border-b" style="border-color: #fdba74;">
-									<th class="text-left p-1">Time</th>
-									{#each batteryDataGrid.seriesKeys as key, i (i)}
-										<th class="text-right p-1">{key}</th>
-									{/each}
-								</tr>
-							</thead>
-							<tbody>
-								{#each batteryDataGrid.timestamps as ts, i (i)}
-									<tr class="border-b" style="border-color: #fed7aa;">
-										<td class="p-1 font-mono whitespace-nowrap"
-											>{new Date(ts).toLocaleString('en-AU', {
-												timeZone: 'Australia/Brisbane',
-												month: 'short',
-												day: 'numeric',
-												hour: '2-digit',
-												minute: '2-digit'
-											})}</td
-										>
-										{#each batteryDataGrid.seriesKeys as key, i (i)}
-											<td class="p-1 text-right font-mono"
-												>{batteryDataGrid.seriesMap[key][i]?.[1]?.toFixed(1) ?? '-'}</td
-											>
-										{/each}
-									</tr>
-								{/each}
-							</tbody>
-						</table>
-					</div>
 				</div>
 			{/if}
 

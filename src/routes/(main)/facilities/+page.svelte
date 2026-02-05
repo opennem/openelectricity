@@ -197,13 +197,9 @@
 
 	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
 
-	// Get the selected facility object and power data from server
-	// Only show data if it matches the currently selected facility code (prevents stale data flash)
-	let selectedFacility = $derived(
-		data.selectedFacilityData?.code === selectedFacilityCode ? data.selectedFacilityData : null
-	);
+	// Get power data from server (only if a facility is selected)
 	let powerData = $derived(
-		data.selectedFacilityData?.code === selectedFacilityCode ? (data.powerData ?? null) : null
+		data.selectedFacility === selectedFacilityCode ? (data.powerData ?? null) : null
 	);
 
 	// Calculate totals for filtered facilities
@@ -768,7 +764,7 @@
 					class="flex items-center justify-between px-6 py-4 border-b border-warm-grey shrink-0"
 				>
 					<h2 class="text-lg font-medium text-dark-grey m-0 truncate pr-4">
-						{selectedFacility?.name ?? ''}
+						{facilities?.find((f) => f.code === selectedFacilityCode)?.name ?? ''}
 					</h2>
 					<button
 						onclick={closeFacilityDetail}
@@ -781,7 +777,7 @@
 
 				<!-- Content -->
 				<div class="flex-1 overflow-y-auto min-h-0">
-					<FacilityDetailPanel facility={selectedFacility} {powerData} />
+					<FacilityDetailPanel facilityCode={selectedFacilityCode} {powerData} />
 				</div>
 			</div>
 		{/if}

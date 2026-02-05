@@ -65,11 +65,7 @@ export async function load({ url }) {
 	// Check server-side cache first
 	const cached = getCachedFacilities(filterParams);
 	if (cached) {
-		const { powerData, selectedFacilityData } = await fetchFacilityPowerData(
-			client,
-			cached,
-			selectedFacility
-		);
+		const { powerData } = await fetchFacilityPowerData(client, cached, selectedFacility);
 
 		return {
 			facilities: cached,
@@ -79,7 +75,6 @@ export async function load({ url }) {
 			fuelTechs,
 			sizes,
 			selectedFacility,
-			selectedFacilityData,
 			powerData,
 			fromCache: true
 		};
@@ -113,7 +108,7 @@ export async function load({ url }) {
 	setCachedFacilities(filterParams, processedFacilities);
 
 	// Fetch power data for selected facility
-	const { powerData, selectedFacilityData } = await fetchFacilityPowerData(
+	const { powerData } = await fetchFacilityPowerData(
 		client,
 		processedFacilities,
 		selectedFacility
@@ -127,7 +122,6 @@ export async function load({ url }) {
 		fuelTechs,
 		sizes,
 		selectedFacility,
-		selectedFacilityData,
 		powerData,
 		fromCache: false
 	};
