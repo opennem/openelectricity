@@ -54,7 +54,7 @@
 	/** @type {[number, number]} */
 	let capacityRange = $state(/** @type {[number, number]} */ ([0, 10000]));
 	/** @type {'list' | 'timeline' | 'map'} */
-	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ ('list'));
+	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ (data.view));
 	/** @type {string | null} */
 	let selectedFacilityCode = $state(null);
 
