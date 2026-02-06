@@ -495,149 +495,68 @@
 		</div>
 	</div>
 
-	<section class="relative {isFullscreen ? 'flex-1 min-h-0' : 'h-[calc(100dvh-400px)]'}">
-		<!-- Map: always visible on desktop, on mobile only when map view selected -->
+	{#snippet summaryBar()}
 		<div
-			class="absolute inset-0"
-			class:hidden={selectedView !== 'map'}
-			class:md:block={selectedView !== 'map'}
+			class="z-20 bg-white border-t border-warm-grey px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
 		>
-			<Map
-				bind:this={mapRef}
-				facilities={filteredWithLocation}
-				{hoveredFacility}
-				{selectedFacilityCode}
-				clustering={mapClustering}
-				satelliteView={mapSatelliteView}
-				showTransmissionLines={mapShowTransmissionLines}
-				{transmissionLineVisibility}
-				showGolfCourses={mapShowGolfCourses}
-				scrollZoom={isFullscreen}
-				flyToOffsetX={0.2}
-				flyToOffsetY={isFullscreen ? -0.25 : -0.15}
-				onhover={(f) => (hoveredFacility = f)}
-				onclick={(f) => (clickedFacility = f)}
-				onselect={handleFacilitySelect}
-			/>
-
-			<!-- Map controls - positioned to the left of zoom controls -->
-			<div
-				class="absolute top-3 left-3 md:left-auto md:right-20 z-20 items-center gap-2 {selectedView ===
-				'map'
-					? 'flex'
-					: 'hidden md:flex'}"
-			>
-				<button
-					onclick={() => {
-						mapRef?.resetView();
-						if (selectedFacilityCode) {
-							selectedFacilityCode = null;
-							navigateWithoutRefetch({
-								statuses,
-								regions,
-								fuelTechs,
-								sizes,
-								view: selectedView,
-								facility: null
-							});
-						}
-					}}
-					class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
-					title="Reset map to show all facilities"
-				>
-					Reset Map
-				</button>
-				<MapOptionsDropdown
-					satelliteView={mapSatelliteView}
-					showTransmissionLines={mapShowTransmissionLines}
-					showGolfCourses={mapShowGolfCourses}
-					showGolfOption={showGolf}
-					showMagicIndicator={showGolf}
-					clustering={mapClustering}
-					onsatellitechange={(v) => {
-						mapSatelliteView = v;
-						updateMapOptionsUrl();
-					}}
-					ontransmissionlineschange={(v) => {
-						mapShowTransmissionLines = v;
-						updateMapOptionsUrl();
-					}}
-					ongolfcourseschange={(v) => {
-						mapShowGolfCourses = v;
-						updateMapOptionsUrl();
-					}}
-					onclusteringchange={(v) => {
-						mapClustering = v;
-						updateMapOptionsUrl();
-					}}
-				/>
-			</div>
-
-			{#if mapShowTransmissionLines}
-				<TransmissionLinesLegend
-					satelliteView={mapSatelliteView}
-					{selectedView}
-					visibility={transmissionLineVisibility}
-					onvisibilitychange={(v) => (transmissionLineVisibility = v)}
-				/>
-			{/if}
-		</div>
-
-		{#snippet summaryBar()}
-			<div
-				class="z-20 bg-white border-t border-warm-grey px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
-			>
-				<div class="flex items-center gap-4 text-xs font-space">
-					<div class="flex items-center gap-1.5">
-						<span class="text-mid-grey">{totalFacilitiesCount.toLocaleString()}</span>
-						<span class="text-mid-grey">facilities</span>
-					</div>
-					<div class="flex items-center gap-1.5">
-						<span class="text-mid-grey">{totalUnitsCount.toLocaleString()}</span>
-						<span class="text-mid-grey">units</span>
-					</div>
-					{#if mapShowGolfCourses}
-						<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
-							<Flag class="size-5" style="color: #16a34a;" />
-							<span class="text-green-600 font-medium">1,573</span>
-							<span class="text-mid-grey">golf courses</span>
-						</div>
-					{/if}
+			<div class="flex items-center gap-4 text-xs font-space">
+				<div class="flex items-center gap-1.5">
+					<span class="text-mid-grey">{totalFacilitiesCount.toLocaleString()}</span>
+					<span class="text-mid-grey">facilities</span>
 				</div>
-				<div class="flex items-center gap-5 text-xs">
-					<StatusCapacityBadge
-						capacity={capacityByStatus.operating}
-						colour={statusColours.operating}
-						label="Operating"
-					/>
-					<StatusCapacityBadge
-						capacity={capacityByStatus.commissioning}
-						colour={statusColours.commissioning}
-						label="Commissioning"
-					/>
-					<StatusCapacityBadge
-						capacity={capacityByStatus.committed}
-						colour={statusColours.committed}
-						label="Committed"
-					/>
-					<StatusCapacityBadge
-						capacity={capacityByStatus.retired}
-						colour={statusColours.retired}
-						label="Retired"
-					/>
+				<div class="flex items-center gap-1.5">
+					<span class="text-mid-grey">{totalUnitsCount.toLocaleString()}</span>
+					<span class="text-mid-grey">units</span>
+				</div>
+				{#if mapShowGolfCourses}
 					<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
-						<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
-						<span class="text-mid-grey">MW</span>
+						<Flag class="size-5" style="color: #16a34a;" />
+						<span class="text-green-600 font-medium">1,573</span>
+						<span class="text-mid-grey">golf courses</span>
 					</div>
+				{/if}
+			</div>
+			<div class="flex items-center gap-5 text-xs">
+				<StatusCapacityBadge
+					capacity={capacityByStatus.operating}
+					colour={statusColours.operating}
+					label="Operating"
+				/>
+				<StatusCapacityBadge
+					capacity={capacityByStatus.commissioning}
+					colour={statusColours.commissioning}
+					label="Commissioning"
+				/>
+				<StatusCapacityBadge
+					capacity={capacityByStatus.committed}
+					colour={statusColours.committed}
+					label="Committed"
+				/>
+				<StatusCapacityBadge
+					capacity={capacityByStatus.retired}
+					colour={statusColours.retired}
+					label="Retired"
+				/>
+				<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
+					<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
+					<span class="text-mid-grey">MW</span>
 				</div>
 			</div>
-		{/snippet}
+		</div>
+	{/snippet}
 
-		{#if selectedView === 'list'}
-			<!-- List panel: full width on mobile, floating on desktop -->
-			<div
-				class="h-full md:absolute md:top-6 md:left-6 md:bottom-6 md:h-auto md:w-[calc(40%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col min-h-0"
-			>
+	<section
+		class="grid grid-cols-1 md:grid-cols-3 {isFullscreen
+			? 'flex-1 min-h-0'
+			: 'h-[calc(100dvh-500px)]'}"
+	>
+		<!-- Left panel: List or Timeline (1/3 width on desktop) -->
+		<div
+			class="col-span-1 bg-white flex flex-col min-h-0 z-10"
+			class:hidden={selectedView === 'map'}
+			class:md:flex={selectedView === 'map'}
+		>
+			{#if selectedView === 'list' || selectedView === 'map'}
 				<div class="flex-1 overflow-y-auto min-h-0">
 					<List
 						facilities={filteredFacilities}
@@ -656,13 +575,7 @@
 						}}
 					/>
 				</div>
-				{@render summaryBar()}
-			</div>
-		{:else if selectedView === 'timeline'}
-			<!-- Timeline panel: full width on mobile, floating on desktop -->
-			<div
-				class="h-full md:absolute md:top-6 md:left-6 md:bottom-6 md:h-auto md:w-[calc(40%-3rem)] bg-white md:rounded-xl md:shadow-lg z-10 overflow-hidden flex flex-col min-h-0"
-			>
+			{:else if selectedView === 'timeline'}
 				{#if showTodayButton && searchTerm.length === 0}
 					<div
 						class="absolute z-20 w-full flex justify-center pointer-events-none"
@@ -702,25 +615,100 @@
 						/>
 					</div>
 				</div>
-				{@render summaryBar()}
-			</div>
-		{/if}
+			{/if}
+			{@render summaryBar()}
+		</div>
 
-		<!-- Map view summary bar: only visible on mobile -->
-		{#if selectedView === 'map'}
-			<div class="absolute bottom-0 left-0 right-0 md:hidden">
-				{@render summaryBar()}
-			</div>
-		{/if}
+		<!-- Right panel: Map (2/3 width on desktop) -->
+		<div
+			class="col-span-1 md:col-span-2 md:p-6"
+			class:hidden={selectedView !== 'map'}
+			class:md:block={selectedView !== 'map'}
+		>
+			<!-- Map container -->
+			<div class="relative h-full md:rounded-lg md:border md:border-warm-grey overflow-hidden">
+				<Map
+					bind:this={mapRef}
+					facilities={filteredWithLocation}
+					{hoveredFacility}
+					{selectedFacilityCode}
+					clustering={mapClustering}
+					satelliteView={mapSatelliteView}
+					showTransmissionLines={mapShowTransmissionLines}
+					{transmissionLineVisibility}
+					showGolfCourses={mapShowGolfCourses}
+					scrollZoom={isFullscreen}
+					flyToOffsetX={0}
+					flyToOffsetY={selectedFacilityCode ? (isFullscreen ? -0.25 : -0.15) : 0}
+					onhover={(f) => (hoveredFacility = f)}
+					onclick={(f) => (clickedFacility = f)}
+					onselect={handleFacilitySelect}
+				/>
 
-		<!-- Facility detail panel -->
-		{#if selectedFacilityCode}
-			<div
-				class="absolute bottom-0 right-0 w-full md:bottom-6 md:right-6 md:w-[calc(60%-2rem)] bg-white md:rounded-xl md:shadow-lg z-20 flex flex-col overflow-hidden h-full {isFullscreen
-					? 'md:h-[calc(66.67%-1.5rem)]'
-					: 'md:h-[calc(50%-1.5rem)]'}"
-				transition:fly={{ x: 400, duration: 250, easing: quintOut }}
-			>
+				<!-- Map controls -->
+				<div class="absolute top-3 right-20 z-20 flex items-center gap-2">
+					<button
+						onclick={() => {
+							mapRef?.resetView();
+							if (selectedFacilityCode) {
+								selectedFacilityCode = null;
+								navigateWithoutRefetch({
+									statuses,
+									regions,
+									fuelTechs,
+									sizes,
+									view: selectedView,
+									facility: null
+								});
+							}
+						}}
+						class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
+						title="Reset map to show all facilities"
+					>
+						Reset Map
+					</button>
+					<MapOptionsDropdown
+						satelliteView={mapSatelliteView}
+						showTransmissionLines={mapShowTransmissionLines}
+						showGolfCourses={mapShowGolfCourses}
+						showGolfOption={showGolf}
+						showMagicIndicator={showGolf}
+						clustering={mapClustering}
+						onsatellitechange={(v) => {
+							mapSatelliteView = v;
+							updateMapOptionsUrl();
+						}}
+						ontransmissionlineschange={(v) => {
+							mapShowTransmissionLines = v;
+							updateMapOptionsUrl();
+						}}
+						ongolfcourseschange={(v) => {
+							mapShowGolfCourses = v;
+							updateMapOptionsUrl();
+						}}
+						onclusteringchange={(v) => {
+							mapClustering = v;
+							updateMapOptionsUrl();
+						}}
+					/>
+				</div>
+
+				{#if mapShowTransmissionLines}
+					<TransmissionLinesLegend
+						satelliteView={mapSatelliteView}
+						visibility={transmissionLineVisibility}
+						onvisibilitychange={(v) => (transmissionLineVisibility = v)}
+					/>
+				{/if}
+
+				<!-- Facility detail panel -->
+				{#if selectedFacilityCode}
+					<div
+						class="absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex flex-col overflow-hidden {isFullscreen
+							? 'md:h-[66.67%]'
+							: 'md:h-[50%]'}"
+						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
+					>
 				<!-- Header -->
 				<header
 					class="flex items-center justify-between px-6 py-4 border-b border-warm-grey shrink-0"
@@ -741,7 +729,9 @@
 				<div class="flex-1 overflow-y-auto min-h-0">
 					<FacilityDetailPanel facilityCode={selectedFacilityCode} {powerData} />
 				</div>
+				</div>
+			{/if}
 			</div>
-		{/if}
+		</div>
 	</section>
 </div>

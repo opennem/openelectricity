@@ -8,14 +8,12 @@
 	/**
 	 * @type {{
 	 *   satelliteView?: boolean,
-	 *   selectedView?: 'list' | 'timeline' | 'map',
 	 *   visibility?: Visibility,
 	 *   onvisibilitychange?: (visibility: Visibility) => void
 	 * }}
 	 */
 	let {
 		satelliteView = false,
-		selectedView = 'map',
 		visibility = { high: true, medium: true, low: true, lowest: true },
 		onvisibilitychange
 	} = $props();
@@ -36,10 +34,7 @@
 </script>
 
 <div
-	class="absolute bottom-4 left-4 md:left-auto md:right-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs {selectedView ===
-	'map'
-		? 'block'
-		: 'hidden md:block'}"
+	class="absolute bottom-4 right-4 z-10 bg-white/95 backdrop-blur-sm rounded-lg shadow-md px-3 py-2 text-xs"
 >
 	<div class="flex items-center gap-3">
 		<button

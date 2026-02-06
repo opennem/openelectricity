@@ -48,8 +48,8 @@
 		transmissionLineVisibility = { high: true, medium: true, low: true, lowest: true },
 		showGolfCourses = false,
 		scrollZoom = false,
-		flyToOffsetX = 0.25,
-		flyToOffsetY = -0.3,
+		flyToOffsetX = 0,
+		flyToOffsetY = 0,
 		onhover,
 		onclick,
 		onselect
@@ -94,7 +94,7 @@
 	});
 
 	// Australia center coordinates (default fallback)
-	const center = { lng: 110, lat: -28 };
+	const center = { lng: 134, lat: -25 };
 
 	// Animation durations (in milliseconds)
 	const ZOOM_DURATION = 400; // flyTo when selecting a facility
@@ -318,12 +318,7 @@
 					[maxLng + lngPadding, maxLat + latPadding]
 				],
 				{
-					padding: {
-						top: 50,
-						bottom: 50,
-						left: window.innerWidth > 768 ? window.innerWidth * 0.5 : 50,
-						right: 50
-					},
+					padding: 50,
 					maxZoom: 10,
 					duration: RESET_DURATION
 				}
@@ -387,6 +382,13 @@
 	function handleMapLoad() {
 		mapLoaded = true;
 
+		// Force resize on mobile to ensure correct dimensions on initial load
+		if (typeof window !== 'undefined' && window.innerWidth < 768) {
+			setTimeout(() => {
+				mapInstance?.resize();
+			}, 0);
+		}
+
 		// Only fit to all facilities if no specific facility is selected
 		if (facilities.length > 0 && !selectedFacilityCode) {
 			// Use idle event instead of setTimeout for reliable timing
@@ -448,13 +450,7 @@
 		if (typeof window === 'undefined') return [0, 0];
 
 		// Popup is max 300px tall, anchored at bottom, so we need to shift view up
-		// Also account for left panel on desktop
 		const yOffset = -120; // Shift view up to show popup above the point
-
-		if (window.innerWidth > 768) {
-			// Desktop: also shift right for left panel
-			return [window.innerWidth * 0.2, yOffset];
-		}
 		return [0, yOffset];
 	}
 
