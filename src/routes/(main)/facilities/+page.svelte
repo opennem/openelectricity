@@ -150,6 +150,15 @@
 	let mapRef = $state(null);
 
 	/**
+	 * Get unit capacity
+	 * @param {any} unit
+	 * @returns {number}
+	 */
+	function getUnitCapacity(unit) {
+		return Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0;
+	}
+
+	/**
 	 * Calculate facility capacity
 	 * @param {any} facility
 	 * @returns {number}
@@ -160,18 +169,39 @@
 				(/** @type {any} */ unit) =>
 					unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
 			)
-			.reduce(
-				(/** @type {number} */ sum, /** @type {any} */ unit) =>
-					sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0),
-				0
-			);
+			.reduce((/** @type {number} */ sum, /** @type {any} */ unit) => sum + getUnitCapacity(unit), 0);
 	}
 
-	// Calculate capacity bounds from all facilities (before filtering)
+	/**
+	 * Get all unit capacities from facilities (excluding battery charging/discharging)
+	 * @param {any[]} facilityList
+	 * @returns {number[]}
+	 */
+	function getAllUnitCapacities(facilityList) {
+		return facilityList.flatMap((facility) =>
+			(facility.units ?? [])
+				.filter(
+					(/** @type {any} */ unit) =>
+						unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
+				)
+				.map((/** @type {any} */ unit) => getUnitCapacity(unit))
+				.filter((/** @type {number} */ c) => c > 0)
+		);
+	}
+
+	// Calculate capacity bounds based on view (unit capacity for Timeline, facility capacity for List/Map)
 	let capacityBounds = $derived.by(() => {
 		if (!facilities || facilities.length === 0) return { min: 0, max: 10000 };
 
-		const capacities = facilities.map(getFacilityCapacity).filter((c) => c > 0);
+		let capacities;
+		if (selectedView === 'timeline') {
+			// Timeline: use individual unit capacities
+			capacities = getAllUnitCapacities(facilities);
+		} else {
+			// List/Map: use total facility capacities
+			capacities = facilities.map(getFacilityCapacity).filter((c) => c > 0);
+		}
+
 		if (capacities.length === 0) return { min: 0, max: 10000 };
 
 		const min = Math.floor(Math.min(...capacities));
@@ -180,37 +210,54 @@
 	});
 
 	/**
-	 * Filter out battery_charging and battery_discharging units from facilities since they are merged into battery.
+	 * Filter facilities - in Timeline view, filter by unit capacity; in List/Map view, filter by facility capacity
 	 * @param {any[]} facilityList
 	 * @param {string} searchTerm
 	 * @param {[number, number]} capacityRangeFilter
+	 * @param {'list' | 'timeline' | 'map'} view
 	 * @returns {any[]}
 	 */
-	function filterFacilities(facilityList, searchTerm, capacityRangeFilter) {
-		return facilityList
-			.map((facility) => ({
-				...facility,
-				units: facility.units?.filter(
-					(/** @type {any} */ unit) =>
-						unit.fueltech_id !== 'battery_charging' &&
-						unit.fueltech_id !== 'battery_discharging' &&
-						(searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true)
-				)
-			}))
-			.filter((facility) => facility.units && facility.units.length > 0)
-			.filter((facility) => {
-				// Calculate total capacity for the facility
-				const totalCapacity = facility.units.reduce(
-					(/** @type {number} */ sum, /** @type {any} */ unit) =>
-						sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0),
-					0
-				);
-				return totalCapacity >= capacityRangeFilter[0] && totalCapacity <= capacityRangeFilter[1];
-			});
+	function filterFacilities(facilityList, searchTerm, capacityRangeFilter, view) {
+		if (view === 'timeline') {
+			// Timeline: filter units by individual capacity, keep facilities with matching units
+			return facilityList
+				.map((facility) => ({
+					...facility,
+					units: facility.units?.filter(
+						(/** @type {any} */ unit) =>
+							unit.fueltech_id !== 'battery_charging' &&
+							unit.fueltech_id !== 'battery_discharging' &&
+							(searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true) &&
+							getUnitCapacity(unit) >= capacityRangeFilter[0] &&
+							getUnitCapacity(unit) <= capacityRangeFilter[1]
+					)
+				}))
+				.filter((facility) => facility.units && facility.units.length > 0);
+		} else {
+			// List/Map: filter by total facility capacity
+			return facilityList
+				.map((facility) => ({
+					...facility,
+					units: facility.units?.filter(
+						(/** @type {any} */ unit) =>
+							unit.fueltech_id !== 'battery_charging' &&
+							unit.fueltech_id !== 'battery_discharging' &&
+							(searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true)
+					)
+				}))
+				.filter((facility) => facility.units && facility.units.length > 0)
+				.filter((facility) => {
+					const totalCapacity = facility.units.reduce(
+						(/** @type {number} */ sum, /** @type {any} */ unit) => sum + getUnitCapacity(unit),
+						0
+					);
+					return totalCapacity >= capacityRangeFilter[0] && totalCapacity <= capacityRangeFilter[1];
+				});
+		}
 	}
 
 	let filteredFacilities = $derived(
-		facilities ? filterFacilities(facilities, searchTerm, capacityRange) : []
+		facilities ? filterFacilities(facilities, searchTerm, capacityRange, selectedView) : []
 	);
 
 	/**
