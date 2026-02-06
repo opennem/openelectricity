@@ -2,7 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { goto, replaceState } from '$app/navigation';
-	import { getContext, onDestroy } from 'svelte';
+	import { getContext, onDestroy, untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { X, Flag } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
@@ -59,16 +59,27 @@
 	let selectedFacilityCode = $state(null);
 
 	// Sync local state when server data changes (e.g., browser back/forward, direct URL navigation)
+	// Note: Only depends on `data` to avoid circular deps with capacityBounds (which depends on selectedView)
 	$effect(() => {
 		statuses = data.statuses;
 		regions = data.regions;
 		fuelTechs = data.fuelTechs;
-		// Parse capacity range from URL or use full bounds
-		const minCapacity = data.capacityMin ?? capacityBounds.min;
-		const maxCapacity = data.capacityMax ?? capacityBounds.max;
-		capacityRange = [minCapacity, maxCapacity];
 		selectedView = /** @type {'list' | 'timeline' | 'map'} */ (data.view);
 		selectedFacilityCode = data.selectedFacility;
+	});
+
+	// Separate effect to initialize capacity range when data changes
+	// Uses untrack to read capacityBounds without subscribing (prevents circular dep)
+	$effect(() => {
+		// Subscribe to data changes only
+		const minFromUrl = data.capacityMin;
+		const maxFromUrl = data.capacityMax;
+
+		// Read capacityBounds without creating a dependency
+		const bounds = untrack(() => capacityBounds);
+		const minCapacity = minFromUrl ?? bounds.min;
+		const maxCapacity = maxFromUrl ?? bounds.max;
+		capacityRange = [minCapacity, maxCapacity];
 	});
 
 	let showTodayButton = $state(false);
@@ -469,7 +480,9 @@
 	function handleSelectedViewChange(value) {
 		// Optimistic update
 		selectedView = value;
+
 		// View change uses cached data, no refetch needed
+		// Keep the current capacity range filter when switching views
 		navigateWithoutRefetch({
 			statuses,
 			regions,
