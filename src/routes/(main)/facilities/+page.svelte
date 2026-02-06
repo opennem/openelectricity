@@ -562,11 +562,11 @@
 	<PageHeaderSimple>
 		<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
 		<div slot="main-heading">
-			<h1 class="tracking-widest text-center">Facilities</h1>
+			<h1 class="md:tracking-widest text-center text-xl md:text-6xl mb-0 md:mb-[0.5em]">Facilities</h1>
 		</div>
 		<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
-		<div slot="sub-heading">
-			<p class="text-sm text-center w-full md:w-[610px] mx-auto">
+		<div slot="sub-heading" class="mt-1 md:mt-4">
+			<p class="text-xs md:text-sm text-center w-full md:w-[610px] mx-auto">
 				Explore Australia's power generation facilities across the NEM and WEM. View upcoming
 				projects on the timeline, browse the full list of facilities, or discover their locations on
 				the map.
@@ -652,7 +652,7 @@
 	<section
 		class="grid grid-cols-1 md:grid-cols-12 {isFullscreen
 			? 'flex-1 min-h-0'
-			: 'h-[calc(100dvh-500px)]'}"
+			: 'h-[calc(100dvh-280px)] md:h-[calc(100dvh-500px)]'}"
 	>
 		<!-- Left panel: List or Timeline (5/12 width on desktop) -->
 		<div
@@ -684,7 +684,7 @@
 					<div
 						class="absolute z-20 w-full flex justify-center pointer-events-none"
 						class:top-4={todayButtonPosition === 'top'}
-						class:bottom-16={todayButtonPosition === 'bottom'}
+						class:bottom-28={todayButtonPosition === 'bottom'}
 						transition:fly={{ y: -10, duration: 300 }}
 					>
 						<button

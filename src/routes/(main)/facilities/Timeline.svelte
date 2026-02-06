@@ -119,7 +119,11 @@
 
 	$effect(() => {
 		// Depend on groupedData to re-run when data changes
-		if (!browser || !scrollContainer || !groupedData) return;
+		if (!browser || !groupedData) return;
+
+		// Capture scrollContainer value for this effect run
+		const container = scrollContainer;
+		if (!container) return;
 
 		/** @type {IntersectionObserver | null} */
 		let observer = null;
@@ -135,7 +139,12 @@
 			observer = new IntersectionObserver(
 				(entries) => {
 					entries.forEach((entry) => {
-						if (entry.boundingClientRect.top > 0) {
+						// Get container's bounding rect to calculate relative position
+						const containerRect = container.getBoundingClientRect();
+						const elRect = entry.boundingClientRect;
+						const relativeTop = elRect.top - containerRect.top;
+
+						if (relativeTop > 0) {
 							ontodaybuttonvisible(!entry.isIntersecting, 'bottom');
 						} else {
 							ontodaybuttonvisible(!entry.isIntersecting, 'top');
@@ -143,7 +152,7 @@
 					});
 				},
 				{
-					root: scrollContainer,
+					root: container,
 					threshold: 0
 				}
 			);
@@ -223,12 +232,13 @@
 				<div
 					class="relative grid grid-cols-12 px-4"
 					class:mx-0={isToday}
-					class:my-4={!isToday}
+					class:my-2={!isToday}
+					class:md:my-4={!isToday}
 					class:py-2={!isToday}
 					id={`d${d}`}
 				>
 					<header
-						class="sticky top-[50px] self-start z-5 py-2 mb-2 col-span-12"
+						class="sticky md:top-[50px] top-[43px] self-start z-5 py-2 mb-2 col-span-12"
 						class:bg-white={!isToday}
 						class:backdrop-blur-xs={!isToday}
 					>
