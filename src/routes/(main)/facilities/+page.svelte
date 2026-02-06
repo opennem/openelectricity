@@ -650,7 +650,7 @@
 	{/snippet}
 
 	<section
-		class="grid grid-cols-1 md:grid-cols-12 {isFullscreen
+		class="relative grid grid-cols-1 md:grid-cols-12 {isFullscreen
 			? 'flex-1 min-h-0'
 			: 'h-[calc(100dvh-280px)] md:h-[calc(100dvh-500px)]'}"
 	>
@@ -811,10 +811,10 @@
 					/>
 				{/if}
 
-				<!-- Facility detail panel -->
+				<!-- Facility detail panel (desktop only) -->
 				{#if selectedFacilityCode}
 					<div
-						class="absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex flex-col overflow-hidden md:h-[50%]"
+						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex-col overflow-hidden md:h-[50%]"
 						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
 					>
 				<!-- Header -->
@@ -841,5 +841,34 @@
 			{/if}
 			</div>
 		</div>
+
+		<!-- Facility detail panel (mobile only - covers full section height) -->
+		{#if selectedFacilityCode}
+			<div
+				class="md:hidden absolute inset-0 w-full bg-white z-30 flex flex-col overflow-hidden"
+				transition:fly={{ y: 200, duration: 250, easing: quintOut }}
+			>
+				<!-- Header -->
+				<header
+					class="flex items-center justify-between px-6 py-4 border-b border-warm-grey shrink-0"
+				>
+					<h2 class="text-lg font-medium text-dark-grey m-0 truncate pr-4">
+						{facilities?.find((f) => f.code === selectedFacilityCode)?.name ?? ''}
+					</h2>
+					<button
+						onclick={closeFacilityDetail}
+						class="p-2 rounded-lg hover:bg-warm-grey transition-colors text-mid-grey hover:text-dark-grey cursor-pointer"
+						aria-label="Close panel"
+					>
+						<X size={20} />
+					</button>
+				</header>
+
+				<!-- Content -->
+				<div class="flex-1 overflow-y-auto min-h-0">
+					<FacilityDetailPanel facilityCode={selectedFacilityCode} {powerData} />
+				</div>
+			</div>
+		{/if}
 	</section>
 </div>
