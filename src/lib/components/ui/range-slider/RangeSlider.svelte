@@ -1,0 +1,104 @@
+<script>
+	import { Slider } from 'bits-ui';
+
+	/**
+	 * @type {{
+	 *   min?: number,
+	 *   max?: number,
+	 *   value?: [number, number],
+	 *   step?: number,
+	 *   onchange?: (value: [number, number]) => void,
+	 *   formatValue?: (value: number) => string
+	 * }}
+	 */
+	let {
+		min = 0,
+		max = 100,
+		value = [0, 100],
+		step = 1,
+		onchange,
+		formatValue = (v) => String(v)
+	} = $props();
+
+	// Local state for immediate UI feedback
+	let localValue = $state(/** @type {number[]} */ ([...value]));
+
+	// Sync local state when props change
+	$effect(() => {
+		localValue = [...value];
+	});
+
+	/**
+	 * Handle value change during drag
+	 * @param {number[]} newValue
+	 */
+	function handleValueChange(newValue) {
+		localValue = newValue;
+	}
+
+	/**
+	 * Handle value commit (on drag end)
+	 * @param {number[]} newValue
+	 */
+	function handleValueCommit(newValue) {
+		onchange?.(/** @type {[number, number]} */ (newValue));
+	}
+
+	/**
+	 * Parse formatted value into number and unit parts
+	 * @param {string} formatted
+	 * @returns {{ number: string, unit: string }}
+	 */
+	function parseFormattedValue(formatted) {
+		const match = formatted.match(/^([\d.,]+)\s*(.*)$/);
+		if (match) {
+			return { number: match[1], unit: match[2] };
+		}
+		return { number: formatted, unit: '' };
+	}
+
+	let displayMin = $derived(parseFormattedValue(formatValue(localValue[0] ?? min)));
+	let displayMax = $derived(parseFormattedValue(formatValue(localValue[1] ?? max)));
+</script>
+
+<div class="flex flex-col gap-2 w-full">
+	<!-- Value display -->
+	<div class="flex items-center justify-between">
+		<span class="flex items-baseline gap-1">
+			<span class="font-mono text-sm text-dark-grey">{displayMin.number}</span>
+			<span class="text-xs text-mid-grey">{displayMin.unit}</span>
+		</span>
+		<span class="flex items-baseline gap-1">
+			<span class="font-mono text-sm text-dark-grey">{displayMax.number}</span>
+			<span class="text-xs text-mid-grey">{displayMax.unit}</span>
+		</span>
+	</div>
+
+	<!-- Slider -->
+	<Slider.Root
+		type="multiple"
+		{min}
+		{max}
+		{step}
+		value={localValue}
+		onValueChange={handleValueChange}
+		onValueCommit={handleValueCommit}
+		class="relative flex w-full touch-none select-none items-center"
+	>
+		{#snippet children({ thumbItems })}
+			<!-- Track -->
+			<span class="relative h-1.5 w-full grow overflow-hidden rounded-full bg-warm-grey">
+				<!-- Range (filled area between thumbs) -->
+				<Slider.Range class="absolute h-full bg-dark-grey" />
+			</span>
+
+			<!-- Thumbs -->
+			{#each thumbItems as { index } (index)}
+				<Slider.Thumb
+					{index}
+					class="block size-4 rounded-full border-2 border-dark-grey bg-white shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dark-grey focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-grab active:cursor-grabbing"
+				/>
+			{/each}
+		{/snippet}
+	</Slider.Root>
+</div>

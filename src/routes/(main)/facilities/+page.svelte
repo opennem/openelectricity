@@ -11,7 +11,7 @@
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import formatValue from './_utils/format-value';
-	import { statusColours, isInSizeRange } from './_utils/filters.js';
+	import { statusColours } from './_utils/filters.js';
 
 	import Map from './Map.svelte';
 	import Timeline from './Timeline.svelte';
@@ -51,8 +51,8 @@
 	let regions = $state([]);
 	/** @type {string[]} */
 	let fuelTechs = $state([]);
-	/** @type {string[]} */
-	let sizes = $state([]);
+	/** @type {[number, number]} */
+	let capacityRange = $state(/** @type {[number, number]} */ ([0, 10000]));
 	/** @type {'list' | 'timeline' | 'map'} */
 	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ ('list'));
 	/** @type {string | null} */
@@ -63,7 +63,10 @@
 		statuses = data.statuses;
 		regions = data.regions;
 		fuelTechs = data.fuelTechs;
-		sizes = data.sizes;
+		// Parse capacity range from URL or use full bounds
+		const minCapacity = data.capacityMin ?? capacityBounds.min;
+		const maxCapacity = data.capacityMax ?? capacityBounds.max;
+		capacityRange = [minCapacity, maxCapacity];
 		selectedView = /** @type {'list' | 'timeline' | 'map'} */ (data.view);
 		selectedFacilityCode = data.selectedFacility;
 	});
@@ -147,13 +150,43 @@
 	let mapRef = $state(null);
 
 	/**
+	 * Calculate facility capacity
+	 * @param {any} facility
+	 * @returns {number}
+	 */
+	function getFacilityCapacity(facility) {
+		return (facility.units ?? [])
+			.filter(
+				(/** @type {any} */ unit) =>
+					unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
+			)
+			.reduce(
+				(/** @type {number} */ sum, /** @type {any} */ unit) =>
+					sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0),
+				0
+			);
+	}
+
+	// Calculate capacity bounds from all facilities (before filtering)
+	let capacityBounds = $derived.by(() => {
+		if (!facilities || facilities.length === 0) return { min: 0, max: 10000 };
+
+		const capacities = facilities.map(getFacilityCapacity).filter((c) => c > 0);
+		if (capacities.length === 0) return { min: 0, max: 10000 };
+
+		const min = Math.floor(Math.min(...capacities));
+		const max = Math.ceil(Math.max(...capacities));
+		return { min, max };
+	});
+
+	/**
 	 * Filter out battery_charging and battery_discharging units from facilities since they are merged into battery.
 	 * @param {any[]} facilityList
 	 * @param {string} searchTerm
-	 * @param {string[]} selectedSizes
+	 * @param {[number, number]} capacityRangeFilter
 	 * @returns {any[]}
 	 */
-	function filterFacilities(facilityList, searchTerm, selectedSizes) {
+	function filterFacilities(facilityList, searchTerm, capacityRangeFilter) {
 		return facilityList
 			.map((facility) => ({
 				...facility,
@@ -172,12 +205,12 @@
 						sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0),
 					0
 				);
-				return isInSizeRange(totalCapacity, selectedSizes);
+				return totalCapacity >= capacityRangeFilter[0] && totalCapacity <= capacityRangeFilter[1];
 			});
 	}
 
 	let filteredFacilities = $derived(
-		facilities ? filterFacilities(facilities, searchTerm, sizes) : []
+		facilities ? filterFacilities(facilities, searchTerm, capacityRange) : []
 	);
 
 	/**
@@ -244,19 +277,23 @@
 
 	/**
 	 * Build URL from params
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null, fullscreen?: boolean}} params
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], capacityRange: [number, number], view: string, facility?: string | null, fullscreen?: boolean}} params
 	 * @returns {string}
 	 */
 	function buildUrl({
 		statuses: s,
 		regions: r,
 		fuelTechs: ft,
-		sizes: sz,
+		capacityRange: cr,
 		view: v,
 		facility: f = null,
 		fullscreen: fs = false
 	}) {
-		let url = `/facilities?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}&sizes=${sz.join(',')}`;
+		let url = `/facilities?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}`;
+		// Only include capacity range if it's been filtered from defaults
+		if (cr[0] > 0 || cr[1] < capacityBounds.max) {
+			url += `&capacity_min=${cr[0]}&capacity_max=${cr[1]}`;
+		}
 		if (f) {
 			url += `&facility=${f}`;
 		}
@@ -281,7 +318,7 @@
 
 	/**
 	 * Navigate and refetch data (for filter changes that affect API query)
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null, fullscreen?: boolean}} params
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], capacityRange: [number, number], view: string, facility?: string | null, fullscreen?: boolean}} params
 	 */
 	function navigateWithRefetch(params) {
 		goto(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {
@@ -291,9 +328,9 @@
 	}
 
 	/**
-	 * Update URL without refetch (for view/facility/size changes that use cached data)
+	 * Update URL without refetch (for view/facility/capacity changes that use cached data)
 	 * Uses replaceState to avoid triggering the load function
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], sizes: string[], view: string, facility?: string | null, fullscreen?: boolean}} params
+	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], capacityRange: [number, number], view: string, facility?: string | null, fullscreen?: boolean}} params
 	 */
 	function navigateWithoutRefetch(params) {
 		replaceState(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {});
@@ -309,7 +346,7 @@
 				statuses,
 				regions,
 				fuelTechs,
-				sizes,
+				capacityRange,
 				view: selectedView,
 				facility: selectedFacilityCode,
 				fullscreen: newFullscreen
@@ -346,7 +383,7 @@
 		// Optimistic update - immediately update local state
 		regions = values;
 		// Then navigate to fetch new data (filter change requires refetch)
-		navigateWithRefetch({ statuses, regions: values, fuelTechs, sizes, view: selectedView });
+		navigateWithRefetch({ statuses, regions: values, fuelTechs, capacityRange, view: selectedView });
 	}
 
 	/**
@@ -356,7 +393,7 @@
 		// Optimistic update
 		fuelTechs = values;
 		// Filter change requires refetch
-		navigateWithRefetch({ statuses, regions, fuelTechs: values, sizes, view: selectedView });
+		navigateWithRefetch({ statuses, regions, fuelTechs: values, capacityRange, view: selectedView });
 	}
 
 	/**
@@ -366,17 +403,17 @@
 		// Optimistic update
 		statuses = values;
 		// Filter change requires refetch
-		navigateWithRefetch({ statuses: values, regions, fuelTechs, sizes, view: selectedView });
+		navigateWithRefetch({ statuses: values, regions, fuelTechs, capacityRange, view: selectedView });
 	}
 
 	/**
-	 * @param {string[]} values
+	 * @param {[number, number]} range
 	 */
-	function handleSizesChange(values) {
+	function handleCapacityRangeChange(range) {
 		// Optimistic update
-		sizes = values;
-		// Size is client-side filtered, no refetch needed
-		navigateWithoutRefetch({ statuses, regions, fuelTechs, sizes: values, view: selectedView });
+		capacityRange = range;
+		// Capacity is client-side filtered, no refetch needed
+		navigateWithoutRefetch({ statuses, regions, fuelTechs, capacityRange: range, view: selectedView });
 	}
 
 	/**
@@ -390,7 +427,7 @@
 			statuses,
 			regions,
 			fuelTechs,
-			sizes,
+			capacityRange,
 			view: value,
 			facility: selectedFacilityCode
 		});
@@ -428,7 +465,7 @@
 					statuses,
 					regions,
 					fuelTechs,
-					sizes,
+					capacityRange,
 					view: selectedView,
 					facility: facility.code
 				});
@@ -446,7 +483,7 @@
 			statuses,
 			regions,
 			fuelTechs,
-			sizes,
+			capacityRange,
 			view: selectedView,
 			facility: null
 		});
@@ -488,12 +525,14 @@
 				selectedStatuses={statuses}
 				selectedFuelTechs={fuelTechs}
 				selectedRegions={regions}
-				selectedSizes={sizes}
+				{capacityRange}
+				capacityMin={capacityBounds.min}
+				capacityMax={capacityBounds.max}
 				onsearchchange={handleSearchChange}
 				onstatuseschange={handleStatusesChange}
 				onregionschange={handleRegionsChange}
 				onfueltechschange={handleFuelTechsChange}
-				onsizeschange={handleSizesChange}
+				oncapacityrangechange={handleCapacityRangeChange}
 				onviewchange={handleSelectedViewChange}
 				onfullscreenchange={toggleFullscreen}
 			/>
@@ -633,7 +672,7 @@
 			<!-- Map container -->
 			<div class="relative h-full md:rounded-lg md:border md:border-warm-grey overflow-hidden">
 				{#if !mapLoaded}
-					<div class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center">
+					<div class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center md:rounded-lg">
 						<LogoMarkLoader />
 					</div>
 				{/if}
@@ -667,7 +706,7 @@
 									statuses,
 									regions,
 									fuelTechs,
-									sizes,
+									capacityRange,
 									view: selectedView,
 									facility: null
 								});

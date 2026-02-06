@@ -21,7 +21,8 @@
  * - statuses: comma-separated status IDs (default: 'operating,commissioning')
  * - regions: comma-separated region codes (e.g., 'nsw,vic')
  * - fuel_techs: comma-separated fuel tech IDs or categories
- * - sizes: comma-separated size filters
+ * - capacity_min: minimum capacity in MW (client-side filter)
+ * - capacity_max: maximum capacity in MW (client-side filter)
  * - facility: selected facility code for detail view
  *
  * See _stores/facilities-server-cache.js for caching implementation
@@ -55,9 +56,11 @@ export async function load({ url }) {
 	const fuelTechs = searchParams.get('fuel_techs')
 		? /** @type {string} */ (searchParams.get('fuel_techs')).split(',')
 		: [];
-	const sizes = searchParams.get('sizes')
-		? /** @type {string} */ (searchParams.get('sizes')).split(',').filter(Boolean)
-		: [];
+	// Capacity range - parsed on client, just pass through
+	const capacityMinParam = searchParams.get('capacity_min');
+	const capacityMaxParam = searchParams.get('capacity_max');
+	const capacityMin = capacityMinParam ? parseInt(capacityMinParam, 10) : null;
+	const capacityMax = capacityMaxParam ? parseInt(capacityMaxParam, 10) : null;
 	const selectedFacility = searchParams.get('facility') || null;
 
 	const filterParams = { statuses, regions, fuelTechs };
@@ -73,7 +76,8 @@ export async function load({ url }) {
 			statuses,
 			regions,
 			fuelTechs,
-			sizes,
+			capacityMin,
+			capacityMax,
 			selectedFacility,
 			powerData,
 			fromCache: true
@@ -120,7 +124,8 @@ export async function load({ url }) {
 		statuses,
 		regions,
 		fuelTechs,
-		sizes,
+		capacityMin,
+		capacityMax,
 		selectedFacility,
 		powerData,
 		fromCache: false

@@ -8,6 +8,8 @@
 	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2 } from '@lucide/svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
+	import RangeDropdown from '$lib/components/ui/range-slider/RangeDropdown.svelte';
+	import RangeSlider from '$lib/components/ui/range-slider/RangeSlider.svelte';
 
 	import {
 		regions,
@@ -17,8 +19,7 @@
 		getFlatRegionOptions,
 		getParentFuelTechValues,
 		getParentRegionValues,
-		statusOptions,
-		sizeOptions
+		statusOptions
 	} from './_utils/filters.js';
 
 	/**
@@ -26,14 +27,16 @@
 	 *   selectedRegions?: string[],
 	 *   selectedStatuses?: string[],
 	 *   selectedFuelTechs?: string[],
-	 *   selectedSizes?: string[],
+	 *   capacityRange?: [number, number],
+	 *   capacityMin?: number,
+	 *   capacityMax?: number,
 	 *   searchTerm?: string,
 	 *   selectedView?: 'list' | 'timeline' | 'map',
 	 *   isFullscreen?: boolean,
 	 *   onstatuseschange?: (values: string[]) => void,
 	 *   onregionschange?: (values: string[]) => void,
 	 *   onfueltechschange?: (values: string[]) => void,
-	 *   onsizeschange?: (values: string[]) => void,
+	 *   oncapacityrangechange?: (range: [number, number]) => void,
 	 *   onsearchchange?: (value: string) => void,
 	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void,
 	 *   onfullscreenchange?: () => void
@@ -43,14 +46,16 @@
 		selectedRegions = [],
 		selectedStatuses = [],
 		selectedFuelTechs = [],
-		selectedSizes = [],
+		capacityRange = [0, 10000],
+		capacityMin = 0,
+		capacityMax = 10000,
 		searchTerm = '',
 		selectedView = 'timeline',
 		isFullscreen = false,
 		onstatuseschange,
 		onregionschange,
 		onfueltechschange,
-		onsizeschange,
+		oncapacityrangechange,
 		onsearchchange,
 		onviewchange,
 		onfullscreenchange
@@ -144,14 +149,20 @@
 		return `${countableTechs.length} Technologies`;
 	});
 
-	let sizeLabel = $derived.by(() => {
-		if (selectedSizes.length === 0) return 'Size';
-		if (selectedSizes.length === 1) {
-			const size = sizeOptions.find((s) => s.value === selectedSizes[0]);
-			return size?.label || selectedSizes[0];
+	/**
+	 * Format capacity value for display
+	 * @param {number} val
+	 * @returns {string}
+	 */
+	function formatCapacity(val) {
+		if (val >= 1000) {
+			const gw = val / 1000;
+			// Remove unnecessary decimal (3.0 -> 3, but keep 3.5)
+			const formatted = gw % 1 === 0 ? gw.toFixed(0) : gw.toFixed(1);
+			return `${formatted} GW`;
 		}
-		return `${selectedSizes.length} Sizes`;
-	});
+		return `${Math.round(val)} MW`;
+	}
 
 	// ============================================
 	// View Switcher Config
@@ -254,14 +265,7 @@
 		onstatuseschange?.(toggleSelection(selectedStatuses, value, isMetaPressed));
 	}
 
-	/**
-	 * @param {string} value
-	 * @param {boolean} isMetaPressed
-	 */
-	function handleSizeChange(value, isMetaPressed) {
-		onsizeschange?.(toggleSelection(selectedSizes, value, isMetaPressed));
-	}
-
+	
 	/**
 	 * @param {string | string[]} value
 	 * @param {boolean} isMetaPressed
@@ -321,20 +325,22 @@
 	{regionOptions}
 	{statusOptions}
 	{fuelTechOptions}
-	{sizeOptions}
 	{selectedRegions}
 	{selectedStatuses}
 	{selectedFuelTechs}
-	{selectedSizes}
+	{capacityRange}
+	{capacityMin}
+	{capacityMax}
+	{formatCapacity}
 	onclose={() => (showMobileFilterOptions = false)}
 	onregionschange={handleRegionChange}
 	onstatuseschange={(values, isMetaPressed) => handleStatusChange(values[0], isMetaPressed)}
 	onfueltechschange={handleFuelTechChange}
-	onsizeschange={(values, isMetaPressed) => handleSizeChange(values[0], isMetaPressed)}
+	oncapacityrangechange={(range) => oncapacityrangechange?.(range)}
 	onclearregions={() => onregionschange?.([])}
 	onclearstatuses={() => onstatuseschange?.([])}
 	onclearfueltechs={() => onfueltechschange?.([])}
-	onclearsizes={() => onsizeschange?.([])}
+	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 />
 
 <div class="flex items-center justify-between pt-3 pb-3 px-8 relative z-10 gap-4">
@@ -420,14 +426,17 @@
 					onclear={() => onfueltechschange?.([])}
 				/>
 
-				<FormMultiSelect
-					options={sizeOptions}
-					selected={selectedSizes}
-					label={sizeLabel}
+				<RangeDropdown
+					min={capacityMin}
+					max={capacityMax}
+					value={capacityRange}
+					step={10}
+					label="Sizes"
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
-					onchange={handleSizeChange}
-					onclear={() => onsizeschange?.([])}
+					onchange={(range) => oncapacityrangechange?.(range)}
+					onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
+					formatValue={formatCapacity}
 				/>
 			</div>
 		</div>
