@@ -497,7 +497,7 @@
 
 	{#snippet summaryBar()}
 		<div
-			class="z-20 bg-white border-t border-warm-grey px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
+			class="z-20 bg-white border-t border-mid-warm-grey px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
 		>
 			<div class="flex items-center gap-4 text-xs font-space">
 				<div class="flex items-center gap-1.5">
@@ -546,18 +546,18 @@
 	{/snippet}
 
 	<section
-		class="grid grid-cols-1 md:grid-cols-3 {isFullscreen
+		class="grid grid-cols-1 md:grid-cols-12 {isFullscreen
 			? 'flex-1 min-h-0'
 			: 'h-[calc(100dvh-500px)]'}"
 	>
-		<!-- Left panel: List or Timeline (1/3 width on desktop) -->
+		<!-- Left panel: List or Timeline (5/12 width on desktop) -->
 		<div
-			class="col-span-1 bg-white flex flex-col min-h-0 z-10"
+			class="col-span-1 md:col-span-5 bg-white flex flex-col min-h-0 z-10"
 			class:hidden={selectedView === 'map'}
 			class:md:flex={selectedView === 'map'}
 		>
 			{#if selectedView === 'list' || selectedView === 'map'}
-				<div class="flex-1 overflow-y-auto min-h-0">
+				<div class="flex-1 overflow-y-auto min-h-0 pt-4">
 					<List
 						facilities={filteredFacilities}
 						{hoveredFacility}
@@ -619,9 +619,9 @@
 			{@render summaryBar()}
 		</div>
 
-		<!-- Right panel: Map (2/3 width on desktop) -->
+		<!-- Right panel: Map (7/12 width on desktop) -->
 		<div
-			class="col-span-1 md:col-span-2 md:p-6"
+			class="col-span-1 md:col-span-7 md:p-6"
 			class:hidden={selectedView !== 'map'}
 			class:md:block={selectedView !== 'map'}
 		>
@@ -704,9 +704,7 @@
 				<!-- Facility detail panel -->
 				{#if selectedFacilityCode}
 					<div
-						class="absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex flex-col overflow-hidden {isFullscreen
-							? 'md:h-[66.67%]'
-							: 'md:h-[50%]'}"
+						class="absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex flex-col overflow-hidden md:h-[50%]"
 						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
 					>
 				<!-- Header -->

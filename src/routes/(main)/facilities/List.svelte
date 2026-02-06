@@ -137,7 +137,7 @@
 	<p class="text-gray-500 italic p-4">No facilities found</p>
 {:else}
 	<!-- Sort Header (desktop only) - sticky -->
-	<div class="hidden sm:block sticky top-0 z-10 bg-white border-b border-warm-grey">
+	<div class="hidden sm:block sticky top-0 z-10 bg-white border-b border-mid-warm-grey">
 		<div class="grid grid-cols-12 items-center gap-2 pr-6">
 			<button
 				class="col-span-5 flex items-center gap-1 pl-6 pr-4 py-3 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer text-left"
