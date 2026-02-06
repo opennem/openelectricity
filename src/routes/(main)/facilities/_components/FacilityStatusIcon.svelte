@@ -11,11 +11,7 @@
 
 <div class="flex">
 	<span
-		class="rounded-full"
-		class:w-3={size === 'default'}
-		class:h-3={size === 'default'}
-		class:w-2={size === 'small'}
-		class:h-2={size === 'small'}
+		class="rounded-full w-4 h-4 border border-white"
 		style="background-color: {colour};"
 	></span>
 </div>

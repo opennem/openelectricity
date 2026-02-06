@@ -1,6 +1,5 @@
 <script>
 	import FuelTechBadge from './FuelTechBadge.svelte';
-	import OverflowBadge from './OverflowBadge.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
@@ -35,17 +34,6 @@
 	let primaryGroup = $derived(unitGroups[0]);
 	let hasCommittedUnit = $derived(unitGroups.some((g) => g.status_id === 'committed'));
 
-	// For display: show max 3 icons, then +N for overflow (but only if N >= 2)
-	const MAX_VISIBLE_ICONS = 3;
-	// Don't show "+1", just show the 4th icon instead
-	let effectiveMaxVisible = $derived(
-		unitGroups.length === MAX_VISIBLE_ICONS + 1 ? unitGroups.length : MAX_VISIBLE_ICONS
-	);
-	let visibleGroups = $derived(unitGroups.slice(0, effectiveMaxVisible));
-	let overflowCount = $derived(Math.max(0, unitGroups.length - effectiveMaxVisible));
-	let hasOverflow = $derived(overflowCount > 0);
-	let hiddenGroups = $derived(unitGroups.slice(effectiveMaxVisible));
-
 	// Data for UnitGroupPopup
 	let popupUnits = $derived(
 		unitGroups.map((g) => ({
@@ -65,8 +53,8 @@
 
 {#snippet badgeGroup()}
 	{#if hasMultipleGroups}
-		<span class="flex group/badges">
-			{#each visibleGroups as group, i (`${group.fueltech_id}-${group.status_id}`)}
+		<span class="flex">
+			{#each unitGroups as group, i (`${group.fueltech_id}-${group.status_id}`)}
 				<FuelTechBadge
 					fueltech_id={group.fueltech_id}
 					status_id={group.status_id}
@@ -75,25 +63,6 @@
 					{darkMode}
 					overlap={i > 0}
 					zIndex={i + 1}
-				/>
-			{/each}
-			{#if hasOverflow}
-				<OverflowBadge
-					count={overflowCount}
-					size={badgeSize}
-					{darkMode}
-					zIndex={visibleGroups.length + 1}
-				/>
-			{/if}
-			{#each hiddenGroups as group, i (`${group.fueltech_id}-${group.status_id}`)}
-				<FuelTechBadge
-					fueltech_id={group.fueltech_id}
-					status_id={group.status_id}
-					isCommissioning={group.isCommissioning}
-					size={badgeSize}
-					{darkMode}
-					hidden={true}
-					zIndex={effectiveMaxVisible + i + 1}
 				/>
 			{/each}
 		</span>
@@ -188,7 +157,7 @@
 					</span>
 				</div>
 
-				<div class="col-start-1 row-start-1 sm:col-auto sm:row-auto sm:ml-3">
+				<div class="col-start-1 row-start-1 sm:col-auto sm:row-auto sm:ml-3 flex items-center">
 					<span class="inline-flex flex-shrink-0">
 						{@render badgeGroup()}
 					</span>

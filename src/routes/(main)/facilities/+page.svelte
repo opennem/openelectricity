@@ -557,7 +557,7 @@
 			class:md:flex={selectedView === 'map'}
 		>
 			{#if selectedView === 'list' || selectedView === 'map'}
-				<div class="flex-1 overflow-y-auto min-h-0 pt-4">
+				<div class="flex-1 overflow-y-auto min-h-0 mt-4">
 					<List
 						facilities={filteredFacilities}
 						{hoveredFacility}
