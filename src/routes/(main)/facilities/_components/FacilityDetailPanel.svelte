@@ -200,12 +200,12 @@
 		</div>
 
 		<!-- Fixed Footer -->
-		<div class="shrink-0 p-4 border-t border-warm-grey bg-white">
+		<div class="shrink-0 p-4 border-t border-warm-grey bg-white flex justify-end">
 			<a
 				href={explorePath}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="inline-flex items-center justify-center gap-2 w-full px-4 py-3 text-sm font-medium text-white bg-dark-grey hover:bg-black rounded-lg transition-colors"
+				class="inline-flex items-center justify-center gap-2 w-auto px-12 py-3 text-sm font-medium text-white bg-dark-grey hover:bg-black rounded-lg transition-colors"
 			>
 				<ExternalLink size={14} />
 				View Facility
