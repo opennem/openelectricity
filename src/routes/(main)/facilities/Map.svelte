@@ -35,7 +35,8 @@
 	 *   flyToOffsetY?: number,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
-	 *   onselect?: (facility: any | null) => void
+	 *   onselect?: (facility: any | null) => void,
+	 *   onload?: () => void
 	 * }}
 	 */
 	let {
@@ -52,7 +53,8 @@
 		flyToOffsetY = 0,
 		onhover,
 		onclick,
-		onselect
+		onselect,
+		onload
 	} = $props();
 
 	// Build filter for transmission lines based on visibility settings
@@ -381,6 +383,7 @@
 	 */
 	function handleMapLoad() {
 		mapLoaded = true;
+		onload?.();
 
 		// Force resize on mobile to ensure correct dimensions on initial load
 		if (typeof window !== 'undefined' && window.innerWidth < 768) {

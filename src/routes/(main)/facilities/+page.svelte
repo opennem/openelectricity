@@ -8,6 +8,8 @@
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
 	import Meta from '$lib/components/Meta.svelte';
+	import Skeleton from '$lib/components/Skeleton.svelte';
+	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import formatValue from './_utils/format-value';
 	import { statusColours, isInSizeRange } from './_utils/filters.js';
 
@@ -95,6 +97,9 @@
 
 	/** @type {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} */
 	let transmissionLineVisibility = $state({ high: true, medium: true, low: true, lowest: true });
+
+	// Map loading state
+	let mapLoaded = $state(false);
 
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
 	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
@@ -552,7 +557,7 @@
 	>
 		<!-- Left panel: List or Timeline (5/12 width on desktop) -->
 		<div
-			class="col-span-1 md:col-span-5 bg-white flex flex-col min-h-0 z-10"
+			class="relative col-span-1 md:col-span-5 bg-white flex flex-col min-h-0 z-10"
 			class:hidden={selectedView === 'map'}
 			class:md:flex={selectedView === 'map'}
 		>
@@ -627,6 +632,11 @@
 		>
 			<!-- Map container -->
 			<div class="relative h-full md:rounded-lg md:border md:border-warm-grey overflow-hidden">
+				{#if !mapLoaded}
+					<div class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center">
+						<LogoMarkLoader />
+					</div>
+				{/if}
 				<Map
 					bind:this={mapRef}
 					facilities={filteredWithLocation}
@@ -643,6 +653,7 @@
 					onhover={(f) => (hoveredFacility = f)}
 					onclick={(f) => (clickedFacility = f)}
 					onselect={handleFacilitySelect}
+					onload={() => setTimeout(() => (mapLoaded = true), 250)}
 				/>
 
 				<!-- Map controls -->
