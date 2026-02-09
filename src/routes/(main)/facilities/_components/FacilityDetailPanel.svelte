@@ -12,29 +12,11 @@
 
 	/**
 	 * @type {{
-	 *   facilityCode: string | null,
+	 *   facility: any | null,
 	 *   powerData: any | null
 	 * }}
 	 */
-	let { facilityCode = null, powerData = null } = $props();
-
-	/** @type {any | null} */
-	let facility = $state(null);
-
-	$effect(() => {
-		if (facilityCode) {
-			fetch(`/api/facilities/${encodeURIComponent(facilityCode)}`)
-				.then((res) => (res.ok ? res.json() : null))
-				.then((data) => {
-					facility = data;
-				})
-				.catch(() => {
-					facility = null;
-				});
-		} else {
-			facility = null;
-		}
-	});
+	let { facility = null, powerData = null } = $props();
 
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
 	let explorePath = $derived(getExploreUrl(facility));

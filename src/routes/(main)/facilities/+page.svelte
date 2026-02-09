@@ -55,8 +55,8 @@
 	let capacityRange = $state(/** @type {[number, number]} */ ([0, 10000]));
 	/** @type {'list' | 'timeline' | 'map'} */
 	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ (data.view));
-	/** @type {string | null} */
-	let selectedFacilityCode = $state(null);
+	/** @type {any | null} */
+	let selectedFacility = $state(null);
 
 	// Sync local state when server data changes (e.g., browser back/forward, direct URL navigation)
 	// Note: Only depends on `data` to avoid circular deps with capacityBounds (which depends on selectedView)
@@ -65,7 +65,9 @@
 		regions = data.regions;
 		fuelTechs = data.fuelTechs;
 		selectedView = /** @type {'list' | 'timeline' | 'map'} */ (data.view);
-		selectedFacilityCode = data.selectedFacility;
+		selectedFacility = data.selectedFacility
+			? facilities?.find((f) => f.code === data.selectedFacility) ?? null
+			: null;
 	});
 
 	// Separate effect to initialize capacity range when data changes
@@ -302,7 +304,7 @@
 
 	// Get power data from server (only if a facility is selected)
 	let powerData = $derived(
-		data.selectedFacility === selectedFacilityCode ? (data.powerData ?? null) : null
+		data.selectedFacility === selectedFacility?.code ? (data.powerData ?? null) : null
 	);
 
 	// Calculate totals for filtered facilities
@@ -409,7 +411,7 @@
 				fuelTechs,
 				capacityRange,
 				view: selectedView,
-				facility: selectedFacilityCode,
+				facility: selectedFacility?.code ?? null,
 				fullscreen: newFullscreen
 			}),
 			{ noScroll: true }
@@ -492,7 +494,7 @@
 			fuelTechs,
 			capacityRange,
 			view: value,
-			facility: selectedFacilityCode
+			facility: selectedFacility?.code ?? null
 		});
 	}
 
@@ -518,12 +520,12 @@
 	 */
 	function handleFacilitySelect(facility) {
 		if (facility) {
-			if (selectedFacilityCode === facility.code) {
+			if (selectedFacility?.code === facility.code) {
 				// Toggle off - clear selection and close popups
 				closeFacilityDetail();
 			} else {
-				// Select new facility - refetch to get power data
-				selectedFacilityCode = facility.code;
+				// Select new facility - store object and refetch to get power data
+				selectedFacility = facility;
 				navigateWithRefetch({
 					statuses,
 					regions,
@@ -540,7 +542,7 @@
 	 * Close facility detail panel
 	 */
 	function closeFacilityDetail() {
-		selectedFacilityCode = null;
+		selectedFacility = null;
 		mapRef?.closePopups();
 		navigateWithoutRefetch({
 			statuses,
@@ -670,7 +672,7 @@
 						facilities={filteredFacilities}
 						{hoveredFacility}
 						{clickedFacility}
-						{selectedFacilityCode}
+						selectedFacilityCode={selectedFacility?.code ?? null}
 						sortBy={listSortBy}
 						sortOrder={listSortOrder}
 						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
@@ -711,7 +713,7 @@
 							facilities={filteredWithLocation}
 							{hoveredFacility}
 							{clickedFacility}
-							{selectedFacilityCode}
+							selectedFacilityCode={selectedFacility?.code ?? null}
 							ontodaybuttonvisible={handleTodayButtonVisible}
 							scrollContainer={timelineScrollContainer}
 							scrollToToday={!hasInitiallyScrolledToToday}
@@ -744,7 +746,7 @@
 					bind:this={mapRef}
 					facilities={filteredWithLocation}
 					{hoveredFacility}
-					{selectedFacilityCode}
+					selectedFacilityCode={selectedFacility?.code ?? null}
 					clustering={mapClustering}
 					satelliteView={mapSatelliteView}
 					showTransmissionLines={mapShowTransmissionLines}
@@ -752,7 +754,7 @@
 					showGolfCourses={mapShowGolfCourses}
 					scrollZoom={isFullscreen}
 					flyToOffsetX={0}
-					flyToOffsetY={selectedFacilityCode ? (isFullscreen ? -0.25 : -0.15) : 0}
+					flyToOffsetY={selectedFacility ? (isFullscreen ? -0.25 : -0.15) : 0}
 					onhover={(f) => (hoveredFacility = f)}
 					onclick={(f) => (clickedFacility = f)}
 					onselect={handleFacilitySelect}
@@ -764,16 +766,8 @@
 					<button
 						onclick={() => {
 							mapRef?.resetView();
-							if (selectedFacilityCode) {
-								selectedFacilityCode = null;
-								navigateWithoutRefetch({
-									statuses,
-									regions,
-									fuelTechs,
-									capacityRange,
-									view: selectedView,
-									facility: null
-								});
+							if (selectedFacility) {
+								closeFacilityDetail();
 							}
 						}}
 						class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
@@ -816,7 +810,7 @@
 				{/if}
 
 				<!-- Facility detail panel (desktop only) -->
-				{#if selectedFacilityCode}
+				{#if selectedFacility}
 					<div
 						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex-col overflow-hidden {containerHeight < 650 ? 'md:h-full' : 'md:h-[50%]'}"
 						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
@@ -826,7 +820,7 @@
 					class="flex items-center justify-between px-6 py-4 border-b border-warm-grey shrink-0"
 				>
 					<h2 class="text-lg font-medium text-dark-grey m-0 truncate pr-4">
-						{facilities?.find((f) => f.code === selectedFacilityCode)?.name ?? ''}
+						{selectedFacility?.name ?? ''}
 					</h2>
 					<button
 						onclick={closeFacilityDetail}
@@ -839,7 +833,7 @@
 
 				<!-- Content -->
 				<div class="flex-1 overflow-y-auto min-h-0">
-					<FacilityDetailPanel facilityCode={selectedFacilityCode} {powerData} />
+					<FacilityDetailPanel facility={selectedFacility} {powerData} />
 				</div>
 				</div>
 			{/if}
@@ -847,7 +841,7 @@
 		</div>
 
 		<!-- Facility detail panel (mobile only - covers full section height) -->
-		{#if selectedFacilityCode}
+		{#if selectedFacility}
 			<div
 				class="md:hidden absolute inset-0 w-full bg-white z-30 flex flex-col overflow-hidden"
 				transition:fly={{ y: 200, duration: 250, easing: quintOut }}
@@ -857,7 +851,7 @@
 					class="flex items-center justify-between px-6 py-4 border-b border-warm-grey shrink-0"
 				>
 					<h2 class="text-lg font-medium text-dark-grey m-0 truncate pr-4">
-						{facilities?.find((f) => f.code === selectedFacilityCode)?.name ?? ''}
+						{selectedFacility?.name ?? ''}
 					</h2>
 					<button
 						onclick={closeFacilityDetail}
@@ -870,7 +864,7 @@
 
 				<!-- Content -->
 				<div class="flex-1 overflow-y-auto min-h-0">
-					<FacilityDetailPanel facilityCode={selectedFacilityCode} {powerData} />
+					<FacilityDetailPanel facility={selectedFacility} {powerData} />
 				</div>
 			</div>
 		{/if}
