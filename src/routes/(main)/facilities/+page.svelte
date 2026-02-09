@@ -115,6 +115,9 @@
 	// Map loading state
 	let mapLoaded = $state(false);
 
+	// Container height for responsive detail panel
+	let containerHeight = $state(0);
+
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
 	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
 	let golfUnlocked = $state(false);
@@ -650,6 +653,7 @@
 	{/snippet}
 
 	<section
+		bind:clientHeight={containerHeight}
 		class="relative grid grid-cols-1 md:grid-cols-12 {isFullscreen
 			? 'flex-1 min-h-0'
 			: 'h-[calc(100dvh-280px)] md:h-[calc(100dvh-500px)]'}"
@@ -814,7 +818,7 @@
 				<!-- Facility detail panel (desktop only) -->
 				{#if selectedFacilityCode}
 					<div
-						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex-col overflow-hidden md:h-[50%]"
+						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex-col overflow-hidden {containerHeight < 650 ? 'md:h-full' : 'md:h-[50%]'}"
 						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
 					>
 				<!-- Header -->
