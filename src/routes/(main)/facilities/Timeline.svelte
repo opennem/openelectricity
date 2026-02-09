@@ -2,7 +2,7 @@
 	import { parseAbsolute, today, getLocalTimeZone } from '@internationalized/date';
 	import { tick } from 'svelte';
 	import { browser } from '$app/environment';
-	import { formatDateBySpecificity } from '$lib/utils/date-format';
+	import { formatDateBySpecificity, stripDateTimezone } from '$lib/utils/date-format';
 	import { formatDateTime } from '$lib/utils/formatters';
 	import formatValue from './_utils/format-value';
 	import groupByMonthDay from './_utils/group-by-month-day';
@@ -75,9 +75,7 @@
 					// - e.g. commencement_date: "2025-12-15T14:00:00+10:00" this should be 2025-12-16T00:00:00+10:00 or better just 2025-12-16
 					// - so to fix, we need to convert it back to UTC to get the date
 					// - and then add the offset back on based on network_id (NEM or WEM) so we can sort the data correctly
-					let parsedZonedDate = dateValue.includes('Z')
-						? parseAbsolute(dateValue, offset)
-						: parseAbsolute(dateValue.split('+')[0] + 'Z', offset); // e.g. 2025-12-15T14:00:00 -> 2025-12-16T00:00:00+10:00 (if NEM time)
+					let parsedZonedDate = parseAbsolute(stripDateTimezone(dateValue) + 'Z', offset);
 
 					// this will order the data so year is first, then month, then day
 					if (unit[dateField + '_specificity'] === 'month') {

@@ -1,5 +1,6 @@
 <script>
 	import { formatDateTime } from '$lib/utils/formatters';
+	import { stripDateTimezone } from '$lib/utils/date-format';
 	import { fuelTechName } from '$lib/fuel_techs';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
@@ -59,8 +60,7 @@
 	 */
 	function getParsedDate(dateValue) {
 		if (!dateValue) return new Date();
-		const dateStr = dateValue.includes('+') ? dateValue : dateValue + offset;
-		return new Date(dateStr);
+		return new Date(stripDateTimezone(dateValue) + offset);
 	}
 
 	// Create unit object for GenCapViz

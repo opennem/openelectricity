@@ -2,6 +2,17 @@ import { format } from 'date-fns';
 import { parseDateTime, parseAbsolute, DateFormatter } from '@internationalized/date';
 
 /**
+ * Strip inconsistent timezone info from API date strings.
+ * The API returns dates with either Z or +HH:MM — this normalises
+ * them to a bare datetime string so callers can re-apply the correct offset.
+ * @param {string} dateValue
+ * @returns {string}
+ */
+export function stripDateTimezone(dateValue) {
+	return dateValue.includes('Z') ? dateValue.split('Z')[0] : dateValue.split('+')[0];
+}
+
+/**
  * Format a date based on specificity
  * @param {string | null | undefined} dateValue - The date value to format
  * @param {string | null | undefined} specificity - How specific the date is (e.g., 'day', 'month', 'year')
@@ -11,12 +22,7 @@ export function formatDateBySpecificity(dateValue, specificity, offset = '+10:00
 	if (!dateValue) return '-';
 
 	try {
-		const dateStr =
-			typeof dateValue === 'string'
-				? dateValue.includes('Z')
-					? dateValue.split('Z')[0]
-					: dateValue.split('+')[0]
-				: dateValue;
+		const dateStr = typeof dateValue === 'string' ? stripDateTimezone(dateValue) : dateValue;
 
 		// inconsistent data format, some have Z, some have +
 		// assume return string is always in Z

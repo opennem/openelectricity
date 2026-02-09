@@ -126,6 +126,10 @@ export function formatDateTime({
 	year,
 	timeZone = '+10:00'
 }) {
+	if (!date || (date instanceof Date && isNaN(date.getTime())) || isNaN(new Date(date).getTime())) {
+		return '';
+	}
+
 	return new Intl.DateTimeFormat('en-AU', {
 		hour12,
 		hour,
