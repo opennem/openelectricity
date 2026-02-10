@@ -20,6 +20,7 @@
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
+	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 
 	let { data } = $props();
 
@@ -119,69 +120,6 @@
 
 	// Container height for responsive detail panel
 	let containerHeight = $state(0);
-
-	// Resizable detail panel
-	let panelHeightPercent = $state(50);
-	let isResizing = $state(false);
-	let isSnappedFull = $state(false);
-
-	/** Compute default panel height based on container size and fullscreen mode */
-	function getDefaultPanelHeight() {
-		if (containerHeight < 650) return 100;
-		if (isFullscreen) return 66;
-		return 50;
-	}
-
-	/** Reset panel height to default when facility or mode changes */
-	$effect(() => {
-		// Track dependencies
-		selectedFacility;
-		isFullscreen;
-		containerHeight;
-
-		untrack(() => {
-			panelHeightPercent = getDefaultPanelHeight();
-			isSnappedFull = panelHeightPercent === 100;
-		});
-	});
-
-	/** Start panel resize drag */
-	function onResizePointerDown(/** @type {PointerEvent} */ e) {
-		if (!containerHeight) return;
-
-		const startY = e.clientY;
-		const startHeight = panelHeightPercent;
-		isResizing = true;
-
-		/** @type {HTMLElement} */
-		const target = /** @type {HTMLElement} */ (e.currentTarget);
-		target.setPointerCapture(e.pointerId);
-
-		function onPointerMove(/** @type {PointerEvent} */ ev) {
-			const deltaY = startY - ev.clientY;
-			const deltaPct = (deltaY / containerHeight) * 100;
-			const minPct = (250 / containerHeight) * 100;
-			let newPct = Math.min(100, Math.max(minPct, startHeight + deltaPct));
-
-			if (newPct >= 85) {
-				newPct = 100;
-				isSnappedFull = true;
-			} else {
-				isSnappedFull = false;
-			}
-
-			panelHeightPercent = newPct;
-		}
-
-		function onPointerUp() {
-			isResizing = false;
-			target.removeEventListener('pointermove', onPointerMove);
-			target.removeEventListener('pointerup', onPointerUp);
-		}
-
-		target.addEventListener('pointermove', onPointerMove);
-		target.addEventListener('pointerup', onPointerUp);
-	}
 
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
 	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
@@ -873,46 +811,18 @@
 				{/if}
 
 				<!-- Facility detail panel (desktop only) -->
-				{#if selectedFacility}
-					<div
-						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex-col overflow-hidden"
-						style="height: {panelHeightPercent}%{isResizing ? '' : '; transition: height 0.15s ease-out'}"
-						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
-					>
-				<!-- Drag handle -->
-				<div
-					class="shrink-0 flex items-center justify-center cursor-ns-resize select-none touch-none py-1.5 group"
-					onpointerdown={onResizePointerDown}
-					role="separator"
-					aria-orientation="horizontal"
-					aria-label="Resize panel"
-					tabindex="-1"
+				<ResizablePanel
+					open={!!selectedFacility}
+					onclose={closeFacilityDetail}
+					title={selectedFacility?.name ?? ''}
+					direction="top"
+					defaultSize={containerHeight < 650 ? 100 : isFullscreen ? 66 : 50}
+					minSize={250}
+					containerSize={containerHeight}
+					class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20"
 				>
-					<div class="w-8 h-1 rounded-full bg-mid-warm-grey group-hover:bg-mid-grey transition-colors"></div>
-				</div>
-
-				<!-- Header -->
-				<header
-					class="flex items-center justify-between px-6 pb-4 border-b border-warm-grey shrink-0"
-				>
-					<h2 class="text-lg font-medium text-dark-grey m-0 truncate pr-4">
-						{selectedFacility?.name ?? ''}
-					</h2>
-					<button
-						onclick={closeFacilityDetail}
-						class="p-2 rounded-lg hover:bg-warm-grey transition-colors text-mid-grey hover:text-dark-grey cursor-pointer"
-						aria-label="Close panel"
-					>
-						<X size={20} />
-					</button>
-				</header>
-
-				<!-- Content -->
-				<div class="flex-1 overflow-y-auto min-h-0">
 					<FacilityDetailPanel facility={selectedFacility} {powerData} />
-				</div>
-				</div>
-			{/if}
+				</ResizablePanel>
 			</div>
 		</div>
 
