@@ -160,12 +160,16 @@
 						useDivergingStack={true}
 					/>
 				</div>
-			{:else}
+			{:else if powerData}
 				<div
 					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 h-[350px] flex items-center justify-center"
 				>
 					<p class="text-sm text-mid-grey">No power data available</p>
 				</div>
+			{:else}
+				<div
+					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 h-[350px] animate-pulse"
+				></div>
 			{/if}
 
 			<!-- Units Table -->

@@ -812,7 +812,7 @@
 				<!-- Facility detail panel (desktop only) -->
 				{#if selectedFacility}
 					<div
-						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex-col overflow-hidden {containerHeight < 650 ? 'md:h-full' : 'md:h-[50%]'}"
+						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 flex-col overflow-hidden {containerHeight < 650 ? 'md:h-full' : isFullscreen ? 'md:h-[66%]' : 'md:h-[50%]'}"
 						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
 					>
 				<!-- Header -->
