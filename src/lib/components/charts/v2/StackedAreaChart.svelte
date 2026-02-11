@@ -93,7 +93,7 @@
 	let clipPathAxis = $derived(`url(#${clipPathAxisId})`);
 </script>
 
-<div class="w-full {styles.chartHeightClasses}" style:touch-action={enablePan ? 'none' : undefined}>
+<div class="w-full {styles.chartHeightPx ? '' : styles.chartHeightClasses}" style:height={styles.chartHeightPx ? `${styles.chartHeightPx}px` : undefined} style:touch-action={enablePan ? 'none' : undefined}>
 	<LayerCake
 		padding={styles.chartPadding}
 		x={chart.x}

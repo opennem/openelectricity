@@ -38,6 +38,7 @@
 	 * @property {string} timeZone - Timezone offset string (+10:00 or +08:00)
 	 * @property {string} [title] - Chart title
 	 * @property {string} [chartHeight] - Chart height class
+	 * @property {number} [chartHeightPx] - Chart height in pixels (overrides chartHeight when set)
 	 * @property {boolean} [useDivergingStack] - Stack positive/negative values independently (default: false)
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
@@ -50,6 +51,7 @@
 		timeZone,
 		title = '',
 		chartHeight = 'h-[400px]',
+		chartHeightPx = 0,
 		useDivergingStack = false,
 		onviewportchange,
 		onvisibledata
@@ -303,6 +305,7 @@
 			timeZone: timeZone
 		});
 		chart.chartStyles.chartHeightClasses = chartHeight;
+		if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.useDivergingStack = useDivergingStack;
 		chart.lighterNegative = hasBatteryUnits;
@@ -325,6 +328,13 @@
 		chart.xGridlineTicks = dayStarts;
 
 		chartStore = chart;
+	});
+
+	// Update chart height when panel resizes
+	$effect(() => {
+		if (chartStore && chartHeightPx) {
+			chartStore.chartStyles.chartHeightPx = chartHeightPx;
+		}
 	});
 
 	// Update chart data/domain when viewport or interval changes (without recreating the store)
@@ -724,7 +734,8 @@
 {:else if powerData !== null && !isDataReady}
 	<!-- No data found -->
 	<div
-		class="border border-light-warm-grey rounded-lg bg-light-warm-grey/30 flex items-center justify-center {chartHeight}"
+		class="border border-light-warm-grey rounded-lg bg-light-warm-grey/30 flex items-center justify-center {chartHeightPx ? '' : chartHeight}"
+		style:height={chartHeightPx ? `${chartHeightPx}px` : undefined}
 	>
 		<div class="text-center text-mid-grey">
 			<p class="text-sm">No power data found</p>

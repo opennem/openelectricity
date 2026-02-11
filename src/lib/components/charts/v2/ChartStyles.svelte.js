@@ -35,8 +35,12 @@ export default class ChartStyles {
 	htmlId = getSeqId();
 
 	// Chart dimensions
+	// TODO: deprecate chartHeightClasses in favour of chartHeightPx
 	/** @type {string} */
 	chartHeightClasses = $state('h-[400px] md:h-[450px]');
+
+	/** @type {number} when set, overrides chartHeightClasses with an inline style (px) */
+	chartHeightPx = $state(0);
 
 	/** @type {ChartPadding} */
 	chartPadding = $state({ top: 0, right: 0, bottom: 40, left: 0 });

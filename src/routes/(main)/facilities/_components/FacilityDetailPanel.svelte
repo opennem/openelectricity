@@ -18,6 +18,9 @@
 	 */
 	let { facility = null, powerData = null } = $props();
 
+	let panelHeight = $state(0);
+	let chartPixelHeight = $derived(Math.min(480, Math.max(150, panelHeight - 200)));
+
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
 	let explorePath = $derived(getExploreUrl(facility));
 
@@ -83,7 +86,7 @@
 </script>
 
 {#if facility}
-	<div class="h-full flex flex-col">
+	<div class="h-full flex flex-col" bind:clientHeight={panelHeight}>
 		<!-- Scrollable Content -->
 		<div class="flex-1 overflow-y-auto px-6">
 			<!-- Facility Info (hidden - to be formatted later) -->
@@ -155,20 +158,22 @@
 						powerData={filteredPowerData}
 						{timeZone}
 						title="Power Generation (Last 3 Days)"
-						chartHeight="h-[350px]"
+						chartHeightPx={chartPixelHeight}
 						useDivergingStack={true}
 					/>
 				</div>
 
 			{:else if powerData}
 				<div
-					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 h-[350px] flex items-center justify-center"
+					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 flex items-center justify-center"
+					style="height: {chartPixelHeight}px"
 				>
 					<p class="text-sm text-mid-grey">No power data available</p>
 				</div>
 			{:else}
 				<div
-					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 h-[350px] animate-pulse"
+					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 animate-pulse"
+					style="height: {chartPixelHeight}px"
 				></div>
 			{/if}
 
