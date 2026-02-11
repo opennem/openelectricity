@@ -487,8 +487,11 @@
 		// Optimistic update
 		selectedView = value;
 
+		// Reset capacity range to match new view's bounds
+		// (timeline uses unit capacities, list/map uses facility capacities)
+		capacityRange = [capacityBounds.min, capacityBounds.max];
+
 		// View change uses cached data, no refetch needed
-		// Keep the current capacity range filter when switching views
 		navigateWithoutRefetch({
 			statuses,
 			regions,
