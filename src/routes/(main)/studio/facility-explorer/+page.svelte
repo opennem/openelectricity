@@ -9,7 +9,7 @@
 	import { goto } from '$app/navigation';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import {
-		FacilityPowerChart,
+		FacilityChart,
 		FacilityDataTable,
 		FacilityUnitsTable,
 		buildUnitColourMap
@@ -129,7 +129,7 @@
 		goto(buildUrl({ facility: code }));
 	}
 
-	/** @type {import('$lib/components/charts/facility/FacilityPowerChart.svelte').default | undefined} */
+	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let chartComponent = $state(undefined);
 
 	/**
@@ -381,7 +381,7 @@
 					<!-- Power Chart -->
 					{#if data.powerData}
 						<div class="bg-light-warm-grey/30 rounded-xl p-4">
-							<FacilityPowerChart
+							<FacilityChart
 							bind:this={chartComponent}
 							facility={selectedFacility}
 							powerData={data.powerData}

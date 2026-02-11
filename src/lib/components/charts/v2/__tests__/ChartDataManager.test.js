@@ -22,6 +22,11 @@ function buildPowerResponse({ networkId, unitCodes, startISO, pointCount, valueF
 	const intervalMs = 5 * 60 * 1000;
 	const defaultValueFn = valueFn || ((_code, i) => 100 + i);
 
+	// The real API returns timestamps in the network's local time.
+	// Convert UTC ms → local time string with network offset appended.
+	const offsetStr = networkId === 'WEM' ? '+08:00' : '+10:00';
+	const offsetMs = networkId === 'WEM' ? 8 * 3600_000 : 10 * 3600_000;
+
 	return {
 		data: [
 			{
@@ -32,8 +37,10 @@ function buildPowerResponse({ networkId, unitCodes, startISO, pointCount, valueF
 					name: `power_${code}`,
 					columns: { unit_code: code },
 					data: Array.from({ length: pointCount }, (_, i) => {
-						const ts = new Date(startMs + i * intervalMs).toISOString();
-						return [ts, defaultValueFn(code, i)];
+						const utcMs = startMs + i * intervalMs;
+						// Format as local time with offset, e.g. "2026-02-08T04:50:00+10:00"
+						const localISO = new Date(utcMs + offsetMs).toISOString().slice(0, 19) + offsetStr;
+						return [localISO, defaultValueFn(code, i)];
 					})
 				}))
 			}
@@ -55,6 +62,8 @@ function createManager(overrides = {}) {
 		unitFuelTechMap: { UNIT1: 'solar_utility', UNIT2: 'wind' },
 		unitOrder: ['power_UNIT1', 'power_UNIT2'],
 		loadsToInvert: [],
+		getLabel: (unitCode, fuelTech) => `${unitCode} (${fuelTech})`,
+		getColour: (unitCode, _fuelTech) => unitCode === 'UNIT1' ? '#ff0000' : '#0000ff',
 		...overrides
 	});
 }
@@ -476,7 +485,7 @@ describe('ChartDataManager', () => {
 		const MAX_VIEWPORT_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 
 		/**
-		 * Pure implementation of the zoom logic from FacilityPowerChart.
+		 * Pure implementation of the zoom logic from FacilityChart.
 		 * This mirrors handleZoom exactly so we can test the math.
 		 * @param {number} viewStart
 		 * @param {number} viewEnd

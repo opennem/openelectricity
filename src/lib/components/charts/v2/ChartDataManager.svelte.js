@@ -6,8 +6,7 @@
  * timestamp, avoiding the index-alignment bug in TimeSeriesV2.transform().
  */
 
-import { transformFacilityPowerData } from '$lib/components/charts/facility/helpers.js';
-import { processForChart } from './dataProcessing.js';
+import { processFacilityPower } from '$lib/components/charts/facility/process-facility-power.js';
 
 /**
  * @typedef {Object} LoadingRange
@@ -24,8 +23,8 @@ import { processForChart } from './dataProcessing.js';
  * @property {Record<string, string>} unitFuelTechMap - Map unit code → fuel tech
  * @property {string[]} [unitOrder] - Unit ordering for chart processing
  * @property {string[]} [loadsToInvert] - Series IDs to invert
- * @property {(acc: any, d: any) => any} [labelReducer] - Label reducer for processForChart
- * @property {(acc: any, d: any) => any} [colourReducer] - Colour reducer for processForChart
+ * @property {(unitCode: string, fuelTech: string) => string} getLabel - Returns display label for a unit
+ * @property {(unitCode: string, fuelTech: string) => string} getColour - Returns hex colour for a unit
  */
 
 export default class ChartDataManager {
@@ -37,8 +36,8 @@ export default class ChartDataManager {
 	/** @type {Record<string, string>} */ unitFuelTechMap;
 	/** @type {string[]} */ unitOrder;
 	/** @type {string[]} */ loadsToInvert;
-	/** @type {((acc: any, d: any) => any) | undefined} */ labelReducer;
-	/** @type {((acc: any, d: any) => any) | undefined} */ colourReducer;
+	/** @type {(unitCode: string, fuelTech: string) => string} */ getLabel;
+	/** @type {(unitCode: string, fuelTech: string) => string} */ getColour;
 
 	/**
 	 * Processed chart data cache — sorted array of chart-ready rows,
@@ -81,8 +80,8 @@ export default class ChartDataManager {
 		this.unitFuelTechMap = config.unitFuelTechMap;
 		this.unitOrder = config.unitOrder || [];
 		this.loadsToInvert = config.loadsToInvert || [];
-		this.labelReducer = config.labelReducer;
-		this.colourReducer = config.colourReducer;
+		this.getLabel = config.getLabel;
+		this.getColour = config.getColour;
 	}
 
 	get isLoading() {
@@ -121,26 +120,17 @@ export default class ChartDataManager {
 	 * @returns {{ data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null}
 	 */
 	#processResponse(powerResponse) {
-		const transformed = transformFacilityPowerData(
-			powerResponse,
-			this.unitFuelTechMap,
-			this.metric
-		);
-		if (!transformed.length) return null;
+		const networkTimezone = this.networkId === 'WEM' ? '+08:00' : '+10:00';
 
-		const processed = processForChart(transformed, 'W', {
-			groupOrder: this.unitOrder,
+		return processFacilityPower(powerResponse, {
+			unitFuelTechMap: this.unitFuelTechMap,
+			unitOrder: this.unitOrder,
 			loadsToInvert: this.loadsToInvert,
-			labelReducer: this.labelReducer,
-			colourReducer: this.colourReducer
+			getLabel: this.getLabel,
+			getColour: this.getColour,
+			metricFilter: this.metric,
+			networkTimezone
 		});
-
-		return {
-			data: processed.data,
-			seriesNames: processed.seriesNames,
-			seriesColours: processed.seriesColours,
-			seriesLabels: processed.seriesLabels
-		};
 	}
 
 	/**

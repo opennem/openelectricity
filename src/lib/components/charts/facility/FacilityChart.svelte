@@ -1,6 +1,6 @@
 <script>
 	/**
-	 * FacilityPowerChart - Reusable facility power visualization component
+	 * FacilityChart - Reusable facility power visualization component
 	 *
 	 * Displays power generation data for a facility with unit-level breakdown,
 	 * horizontal panning, client-side data caching, and fuel tech color coding.
@@ -8,15 +8,14 @@
 
 	import {
 		ChartStore,
-		StratumChart,
-		processForChart
+		StratumChart
 	} from '$lib/components/charts/v2';
 	import { aggregateToInterval } from '$lib/components/charts/v2/dataProcessing.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { loadFuelTechs, fuelTechNameMap } from '$lib/fuel_techs';
 	import detailedGroup from '$lib/fuel-tech-groups/detailed';
-	import { buildUnitColourMap, transformFacilityPowerData } from './helpers.js';
+	import { buildUnitColourMap } from './helpers.js';
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 
@@ -224,31 +223,24 @@
 	// ============================================
 
 	/**
-	 * Label reducer for processForChart
-	 * @param {any} acc
-	 * @param {any} d
-	 * @returns {any}
+	 * Get display label for a unit
+	 * @param {string} unitCode
+	 * @param {string} fuelTech
+	 * @returns {string}
 	 */
-	function labelReducer(acc, d) {
-		const unitCode = d.unit?.code || d.id;
-		const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
-		acc[d.id] = `${unitCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
-		return acc;
+	function getLabel(unitCode, fuelTech) {
+		return `${unitCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
 	}
 
 	/**
-	 * Colour reducer for processForChart — needs dynamic unitColours
-	 * We create a function that closes over the current unitColours
+	 * Get colour for a unit — needs dynamic unitColours
 	 */
-	let colourReducer = $derived.by(() => {
+	let getColour = $derived.by(() => {
 		const colourMap = unitColours;
-		return (/** @type {any} */ acc, /** @type {any} */ d) => {
-			const unitCode = d.unit?.code || d.id;
-			const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
+		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
 			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
 			const isLoad = loadFuelTechs.includes(fuelTech);
-			acc[d.id] = isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-			return acc;
+			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
 		};
 	});
 
@@ -270,8 +262,8 @@
 			unitFuelTechMap,
 			unitOrder,
 			loadsToInvert: loadIds,
-			labelReducer,
-			colourReducer
+			getLabel,
+			getColour
 		});
 
 		// Seed with server data

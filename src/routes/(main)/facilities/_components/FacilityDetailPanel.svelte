@@ -1,6 +1,6 @@
 <script>
 	import {
-		FacilityPowerChart,
+		FacilityChart,
 		FacilityUnitsTable,
 		getNetworkTimezone
 	} from '$lib/components/charts/facility';
@@ -150,7 +150,7 @@
 			<!-- Power Chart -->
 			{#if filteredPowerData}
 				<div class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0">
-					<FacilityPowerChart
+					<FacilityChart
 						facility={filteredFacility}
 						powerData={filteredPowerData}
 						{timeZone}

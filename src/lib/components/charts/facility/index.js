@@ -5,7 +5,7 @@
  * with unit-level breakdown by fuel technology.
  */
 
-export { default as FacilityPowerChart } from './FacilityPowerChart.svelte';
+export { default as FacilityChart } from './FacilityChart.svelte';
 export { default as FacilityDataTable } from './FacilityDataTable.svelte';
 export { default as FacilityUnitsTable } from './FacilityUnitsTable.svelte';
 export {
@@ -15,3 +15,4 @@ export {
 	isWemNetwork,
 	transformFacilityPowerData
 } from './helpers.js';
+export { processFacilityPower } from './process-facility-power.js';

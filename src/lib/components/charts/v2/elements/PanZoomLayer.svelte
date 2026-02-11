@@ -292,7 +292,7 @@
 		}
 	}
 
-	// Note: Wheel zoom is handled at the FacilityPowerChart container div level
+	// Note: Wheel zoom is handled at the FacilityChart container div level
 	// to avoid SVG event propagation issues with stacked LayerCake SVG layers.
 </script>
 
