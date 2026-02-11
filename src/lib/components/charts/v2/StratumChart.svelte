@@ -31,6 +31,7 @@
 	 * @property {(() => void)} [onpanstart] - Called when pan starts
 	 * @property {((deltaMs: number) => void)} [onpan] - Called during pan with time delta
 	 * @property {(() => void)} [onpanend] - Called when pan ends
+	 * @property {((factor: number, centerMs: number) => void)} [onzoom] - Called during zoom
 	 * @property {boolean} [enablePan] - Whether panning is enabled
 	 * @property {Array<{start: number, end: number}>} [loadingRanges] - Ranges being fetched
 	 * @property {import('svelte').Snippet} [header] - Custom header content
@@ -58,6 +59,7 @@
 		onpanstart,
 		onpan,
 		onpanend,
+		onzoom,
 		enablePan = false,
 		loadingRanges = [],
 		header,

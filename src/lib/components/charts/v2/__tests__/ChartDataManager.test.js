@@ -466,4 +466,146 @@ describe('ChartDataManager', () => {
 			expect(manager.isLoading).toBe(false);
 		});
 	});
+
+	// ------------------------------------------
+	// Zoom viewport math
+	// ------------------------------------------
+
+	describe('zoom viewport', () => {
+		const MIN_VIEWPORT_MS = 1 * 60 * 60 * 1000; // 1 hour
+		const MAX_VIEWPORT_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
+
+		/**
+		 * Pure implementation of the zoom logic from FacilityPowerChart.
+		 * This mirrors handleZoom exactly so we can test the math.
+		 * @param {number} viewStart
+		 * @param {number} viewEnd
+		 * @param {number} factor - >1 = zoom in, <1 = zoom out
+		 * @param {number} centerMs - anchor point in time-domain
+		 * @param {number} [now] - current time for future clamping
+		 * @returns {{ viewStart: number, viewEnd: number }}
+		 */
+		function computeZoom(viewStart, viewEnd, factor, centerMs, now = Date.now()) {
+			const duration = viewEnd - viewStart;
+			const newDuration = Math.min(
+				Math.max(duration / factor, MIN_VIEWPORT_MS),
+				MAX_VIEWPORT_MS
+			);
+
+			const ratio = (centerMs - viewStart) / duration;
+			let newStart = centerMs - ratio * newDuration;
+			let newEnd = newStart + newDuration;
+
+			if (newEnd > now) {
+				newEnd = now;
+				newStart = now - newDuration;
+			}
+
+			return { viewStart: newStart, viewEnd: newEnd };
+		}
+
+		it('should shrink viewport when zooming in (factor > 1)', () => {
+			const fourHours = 4 * 60 * 60 * 1000;
+			const start = 0;
+			const end = fourHours;
+			const center = fourHours / 2;
+
+			const result = computeZoom(start, end, 2, center, Infinity);
+
+			const newDuration = result.viewEnd - result.viewStart;
+			expect(newDuration).toBe(fourHours / 2); // 2 hours
+		});
+
+		it('should expand viewport when zooming out (factor < 1)', () => {
+			const fourHours = 4 * 60 * 60 * 1000;
+			const start = 0;
+			const end = fourHours;
+			const center = fourHours / 2;
+
+			const result = computeZoom(start, end, 0.5, center, Infinity);
+
+			const newDuration = result.viewEnd - result.viewStart;
+			expect(newDuration).toBe(fourHours * 2); // 8 hours
+		});
+
+		it('should keep anchor point at the same screen proportion', () => {
+			const start = 0;
+			const end = 10000;
+			const center = 7500; // 75% across
+
+			const result = computeZoom(start, end, 2, center, Infinity);
+
+			const newDuration = result.viewEnd - result.viewStart;
+			const ratio = (center - result.viewStart) / newDuration;
+
+			// The ratio should stay at 0.75
+			expect(ratio).toBeCloseTo(0.75, 10);
+		});
+
+		it('should not zoom below MIN_VIEWPORT_MS (1 hour)', () => {
+			const oneHour = 60 * 60 * 1000;
+			const start = 0;
+			const end = oneHour; // already at 1 hour
+
+			// Try to zoom in further
+			const result = computeZoom(start, end, 10, oneHour / 2, Infinity);
+
+			const newDuration = result.viewEnd - result.viewStart;
+			expect(newDuration).toBe(MIN_VIEWPORT_MS);
+		});
+
+		it('should not zoom above MAX_VIEWPORT_MS (14 days)', () => {
+			const fourteenDays = 14 * 24 * 60 * 60 * 1000;
+			const start = 0;
+			const end = fourteenDays; // already at max
+
+			// Try to zoom out further
+			const result = computeZoom(start, end, 0.1, fourteenDays / 2, Infinity);
+
+			const newDuration = result.viewEnd - result.viewStart;
+			expect(newDuration).toBe(MAX_VIEWPORT_MS);
+		});
+
+		it('should clamp viewport end to now (no future viewing)', () => {
+			const fourHours = 4 * 60 * 60 * 1000;
+			const now = fourHours;
+			const start = 0;
+			const end = fourHours; // right at present
+
+			// Zoom out — would normally expand past now
+			const center = fourHours / 2;
+			const result = computeZoom(start, end, 0.5, center, now);
+
+			expect(result.viewEnd).toBe(now);
+			expect(result.viewStart).toBe(now - fourHours * 2); // duration doubled
+		});
+
+		it('should handle zoom in then pan correctly', () => {
+			// Start with 10-hour viewport
+			const tenHours = 10 * 60 * 60 * 1000;
+			let start = 0;
+			let end = tenHours;
+
+			// Zoom in 2x at center
+			const zoom1 = computeZoom(start, end, 2, tenHours / 2, Infinity);
+			start = zoom1.viewStart;
+			end = zoom1.viewEnd;
+
+			// Duration should be 5 hours
+			expect(end - start).toBe(tenHours / 2);
+
+			// Simulate a pan (shift 1 hour left)
+			const oneHour = 60 * 60 * 1000;
+			start -= oneHour;
+			end -= oneHour;
+
+			// Zoom in again at center of new viewport
+			const center2 = start + (end - start) / 2;
+			const zoom2 = computeZoom(start, end, 2, center2, Infinity);
+
+			// Should now be ~2.5 hours
+			const finalDuration = zoom2.viewEnd - zoom2.viewStart;
+			expect(finalDuration).toBe(tenHours / 4);
+		});
+	});
 });

@@ -205,6 +205,11 @@
 	/** @type {'5m' | '30m'} */
 	let selectedInterval = $state('30m');
 
+	/** Minimum viewport duration: 1 hour */
+	const MIN_VIEWPORT_MS = 1 * 60 * 60 * 1000;
+	/** Maximum viewport duration: 14 days */
+	const MAX_VIEWPORT_MS = 14 * 24 * 60 * 60 * 1000;
+
 	/** Track the last pan direction for prefetching */
 	/** @type {number} */
 	let lastPanDelta = $state(0);
@@ -493,6 +498,98 @@
 	}
 
 	// ============================================
+	// Zoom Handler
+	// ============================================
+
+	/**
+	 * Handle zoom — scale viewport around the cursor/pinch center point.
+	 * @param {number} factor - Zoom factor (>1 = zoom in, <1 = zoom out)
+	 * @param {number} centerMs - Time position to anchor the zoom to
+	 */
+	function handleZoom(factor, centerMs) {
+		const duration = viewEnd - viewStart;
+		const newDuration = Math.min(Math.max(duration / factor, MIN_VIEWPORT_MS), MAX_VIEWPORT_MS);
+
+		// Anchor zoom to cursor position — keep centerMs at the same screen proportion
+		const ratio = (centerMs - viewStart) / duration;
+		let newStart = centerMs - ratio * newDuration;
+		let newEnd = newStart + newDuration;
+
+		// Clamp to present
+		const now = Date.now();
+		if (newEnd > now) {
+			newEnd = now;
+			newStart = now - newDuration;
+		}
+
+		viewStart = newStart;
+		viewEnd = newEnd;
+
+		// Request data for any uncached range
+		dataManager?.requestRange(viewStart, viewEnd);
+
+		// Notify parent of viewport change
+		onviewportchange?.({ start: viewStart, end: viewEnd });
+	}
+
+	// ============================================
+	// Wheel Zoom (on container div, outside SVG)
+	// ============================================
+
+	/** @type {HTMLDivElement | undefined} */
+	let chartContainerEl = $state(undefined);
+
+	/**
+	 * Wheel zoom handler — attached imperatively with { passive: false }
+	 * on the chart container div so preventDefault() works.
+	 * Only activates when Cmd (Mac) or Ctrl (Win/Linux) is held.
+	 * @param {WheelEvent} event
+	 */
+	function handleWheel(event) {
+		if (!event.metaKey && !event.ctrlKey) return;
+
+		event.preventDefault();
+
+		const factor = Math.pow(1.002, -event.deltaY);
+
+		// Approximate cursor position in time-domain using the div's width
+		const rect = /** @type {HTMLElement} */ (event.currentTarget).getBoundingClientRect();
+		const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+		const centerMs = viewStart + ratio * (viewEnd - viewStart);
+
+		handleZoom(factor, centerMs);
+	}
+
+	// Attach wheel listener imperatively with { passive: false }
+	$effect(() => {
+		const el = chartContainerEl;
+		if (!el) return;
+
+		el.addEventListener('wheel', handleWheel, { passive: false });
+		return () => el.removeEventListener('wheel', handleWheel);
+	});
+
+	// ============================================
+	// Button Zoom
+	// ============================================
+
+	/** Zoom factor per button click */
+	const BUTTON_ZOOM_FACTOR = 1.5;
+
+	function zoomIn() {
+		const center = (viewStart + viewEnd) / 2;
+		handleZoom(BUTTON_ZOOM_FACTOR, center);
+	}
+
+	function zoomOut() {
+		const center = (viewStart + viewEnd) / 2;
+		handleZoom(1 / BUTTON_ZOOM_FACTOR, center);
+	}
+
+	let isAtMinZoom = $derived(viewEnd - viewStart <= MIN_VIEWPORT_MS);
+	let isAtMaxZoom = $derived(viewEnd - viewStart >= MAX_VIEWPORT_MS);
+
+	// ============================================
 	// Hover/Focus Handlers
 	// ============================================
 
@@ -548,23 +645,44 @@
 		<h3 class="text-sm font-medium text-dark-grey">{title}</h3>
 	{/if}
 
-	<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
-		{#each ['5m', '30m'] as interval}
+	<div class="flex items-center gap-2">
+		<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
+			{#each ['5m', '30m'] as interval}
+				<button
+					class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedInterval === interval
+						? 'bg-white text-dark-grey shadow-sm'
+						: 'text-mid-grey hover:text-dark-grey'}"
+					onclick={() => (selectedInterval = /** @type {'5m' | '30m'} */ (interval))}
+				>
+					{interval === '5m' ? '5 min' : '30 min'}
+				</button>
+			{/each}
+		</div>
+
+		<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
 			<button
-				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedInterval === interval
-					? 'bg-white text-dark-grey shadow-sm'
-					: 'text-mid-grey hover:text-dark-grey'}"
-				onclick={() => (selectedInterval = /** @type {'5m' | '30m'} */ (interval))}
+				class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMaxZoom ? 'text-mid-warm-grey cursor-not-allowed' : 'text-mid-grey hover:text-dark-grey hover:bg-white'}"
+				onclick={zoomOut}
+				disabled={isAtMaxZoom}
+				title="Zoom out"
 			>
-				{interval === '5m' ? '5 min' : '30 min'}
+				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
 			</button>
-		{/each}
+			<button
+				class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMinZoom ? 'text-mid-warm-grey cursor-not-allowed' : 'text-mid-grey hover:text-dark-grey hover:bg-white'}"
+				onclick={zoomIn}
+				disabled={isAtMinZoom}
+				title="Zoom in"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+			</button>
+		</div>
 	</div>
 </div>
 
 <!-- Main Chart -->
 {#if isDataReady && chartStore}
-	<div class="border border-light-warm-grey rounded-lg p-4">
+	<div bind:this={chartContainerEl} class="border border-light-warm-grey rounded-lg p-4">
 		<StratumChart
 			chart={chartStore}
 			onhover={handleHover}
@@ -573,6 +691,7 @@
 			onpanstart={handlePanStart}
 			onpan={handlePan}
 			onpanend={handlePanEnd}
+			onzoom={handleZoom}
 			enablePan={true}
 			loadingRanges={dataManager?.loadingRanges ?? []}
 		/>
