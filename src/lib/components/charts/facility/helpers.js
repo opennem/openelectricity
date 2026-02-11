@@ -20,18 +20,19 @@ import chroma from 'chroma-js';
  *
  * @param {any} powerResponse - Raw API response
  * @param {Record<string, string>} unitFuelTechMap - Map of unit code to fuel tech
+ * @param {string} [metricFilter] - Metric to filter for (default: 'power')
  * @returns {any[]}
  */
-export function transformFacilityPowerData(powerResponse, unitFuelTechMap) {
+export function transformFacilityPowerData(powerResponse, unitFuelTechMap, metricFilter = 'power') {
 	if (!powerResponse?.data) return [];
 
 	const result = [];
 
 	for (const metric of powerResponse.data) {
-		if (metric.metric !== 'power') continue;
+		if (metric.metric !== metricFilter) continue;
 
 		for (const series of metric.results || []) {
-			const unitCode = series.columns?.unit_code || series.name?.replace('power_', '');
+			const unitCode = series.columns?.unit_code || series.name?.replace(`${metricFilter}_`, '');
 			const fuelTech = unitFuelTechMap[unitCode] || 'unknown';
 
 			// Extract values and timestamps
@@ -43,8 +44,8 @@ export function transformFacilityPowerData(powerResponse, unitFuelTechMap) {
 			const lastTime = dataPoints[dataPoints.length - 1]?.[0];
 
 			result.push({
-				id: series.name || `power_${unitCode}`,
-				type: 'power',
+				id: series.name || `${metricFilter}_${unitCode}`,
+				type: metricFilter,
 				// Use fueltech_id instead of fuel_tech to avoid TimeSeries using it as series key
 				// TimeSeries.seriesNames uses d.fuel_tech || d.id, we want it to use d.id
 				fueltech_id: fuelTech,

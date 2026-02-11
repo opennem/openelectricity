@@ -28,6 +28,11 @@
 	 * @property {(time: number, key?: string) => void} [onhover] - Callback when hovering
 	 * @property {() => void} [onhoverend] - Callback when hover ends
 	 * @property {(time: number) => void} [onfocus] - Callback when focusing (clicking)
+	 * @property {(() => void)} [onpanstart] - Called when pan starts
+	 * @property {((deltaMs: number) => void)} [onpan] - Called during pan with time delta
+	 * @property {(() => void)} [onpanend] - Called when pan ends
+	 * @property {boolean} [enablePan] - Whether panning is enabled
+	 * @property {Array<{start: number, end: number}>} [loadingRanges] - Ranges being fetched
 	 * @property {import('svelte').Snippet} [header] - Custom header content
 	 * @property {import('svelte').Snippet} [tooltip] - Custom tooltip content
 	 * @property {import('svelte').Snippet} [footer] - Custom footer content
@@ -50,6 +55,11 @@
 		onhover,
 		onhoverend,
 		onfocus,
+		onpanstart,
+		onpan,
+		onpanend,
+		enablePan = false,
+		loadingRanges = [],
 		header,
 		tooltip,
 		footer
@@ -149,6 +159,11 @@
 					onmousemove={handleMouseMove}
 					onmouseout={handleMouseOut}
 					onpointerup={handlePointerUp}
+					{onpanstart}
+					{onpan}
+					{onpanend}
+					{enablePan}
+					{loadingRanges}
 				/>
 			{/if}
 		{:else}

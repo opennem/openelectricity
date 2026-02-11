@@ -18,6 +18,19 @@ export async function GET({ params, url, setHeaders }) {
 	const dateEndParam = url.searchParams.get('date_end');
 	const daysParam = url.searchParams.get('days');
 
+	// Interval and metric params (defaults: 5m, power)
+	const VALID_INTERVALS = ['5m', '30m', '1h', '1d', '7d', '1M', '3M', '1y'];
+	const VALID_METRICS = ['power', 'energy'];
+	const intervalParam = url.searchParams.get('interval') || '5m';
+	const metricParam = url.searchParams.get('metric') || 'power';
+
+	if (!VALID_INTERVALS.includes(intervalParam)) {
+		return Response.json({ error: `Invalid interval: ${intervalParam}` }, { status: 400 });
+	}
+	if (!VALID_METRICS.includes(metricParam)) {
+		return Response.json({ error: `Invalid metric: ${metricParam}` }, { status: 400 });
+	}
+
 	if (!code) {
 		return error(400, 'Missing facility code');
 	}
@@ -36,7 +49,7 @@ export async function GET({ params, url, setHeaders }) {
 
 		/** @type {import('openelectricity').IFacilityTimeSeriesParams} */
 		const options = {
-			interval: '5m',
+			interval: /** @type {any} */ (intervalParam),
 			dateStart
 		};
 
@@ -44,7 +57,7 @@ export async function GET({ params, url, setHeaders }) {
 			options.dateEnd = dateEnd;
 		}
 
-		const { response } = await client.getFacilityData(networkId, code, ['power'], options);
+		const { response } = await client.getFacilityData(networkId, code, [/** @type {any} */ (metricParam)], options);
 
 		// Set cache headers (5 minutes)
 		setHeaders({

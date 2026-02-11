@@ -62,8 +62,8 @@
 		return new Date().toISOString().slice(0, 10);
 	}
 
-	let dateStart = $derived(data.dateStart || getDefaultDateStart());
-	let dateEnd = $derived(data.dateEnd || getDefaultDateEnd());
+	let dateStart = $state(data.dateStart || getDefaultDateStart());
+	let dateEnd = $state(data.dateEnd || getDefaultDateEnd());
 
 	// ============================================
 	// Derived: Facility Selection
@@ -128,14 +128,28 @@
 		goto(buildUrl({ facility: code }));
 	}
 
+	/** @type {import('$lib/components/charts/facility/FacilityPowerChart.svelte').default | undefined} */
+	let chartComponent = $state(undefined);
+
 	/**
-	 * Handle date range change from DateRangePicker
+	 * Handle date range change from DateRangePicker — update viewport client-side
 	 * @param {{ start: string, end: string }} range
 	 */
 	function handleDateRangeChange(range) {
-		if (data.selectedCode) {
-			goto(buildUrl({ date_start: range.start, date_end: range.end }));
+		if (data.selectedCode && chartComponent) {
+			const startMs = new Date(range.start).getTime();
+			const endMs = new Date(range.end + 'T23:59:59').getTime();
+			chartComponent.setViewport(startMs, endMs);
 		}
+	}
+
+	/**
+	 * Handle viewport change from chart pan — sync DateRangePicker display
+	 * @param {{ start: number, end: number }} range
+	 */
+	function handleViewportChange(range) {
+		dateStart = new Date(range.start).toISOString().slice(0, 10);
+		dateEnd = new Date(range.end).toISOString().slice(0, 10);
 	}
 
 	// ============================================
@@ -356,7 +370,13 @@
 					<!-- Power Chart -->
 					{#if data.powerData}
 						<div class="bg-light-warm-grey/30 rounded-xl p-4">
-							<FacilityPowerChart facility={selectedFacility} powerData={data.powerData} {timeZone} />
+							<FacilityPowerChart
+							bind:this={chartComponent}
+							facility={selectedFacility}
+							powerData={data.powerData}
+							{timeZone}
+							onviewportchange={handleViewportChange}
+						/>
 						</div>
 					{:else}
 						<div class="bg-light-warm-grey/30 rounded-xl p-4 h-[350px] flex flex-col items-center justify-center">

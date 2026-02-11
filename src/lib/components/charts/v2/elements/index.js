@@ -25,6 +25,8 @@ export { default as Dot } from './Dot.svelte';
 // Overlays
 export { default as CategoryOverlay } from './CategoryOverlay.svelte';
 export { default as Shading } from './Shading.svelte';
+export { default as PanZoomLayer } from './PanZoomLayer.svelte';
+export { default as LoadingOverlay } from './LoadingOverlay.svelte';
 
 // Definitions
 export { default as ClipPath } from './ClipPath.svelte';

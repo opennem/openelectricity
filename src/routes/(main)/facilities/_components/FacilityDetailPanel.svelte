@@ -156,7 +156,6 @@
 						{timeZone}
 						title="Power Generation (Last 3 Days)"
 						chartHeight="h-[350px]"
-						showZoomBrush={false}
 						useDivergingStack={true}
 					/>
 				</div>

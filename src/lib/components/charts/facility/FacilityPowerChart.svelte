@@ -3,18 +3,15 @@
 	 * FacilityPowerChart - Reusable facility power visualization component
 	 *
 	 * Displays power generation data for a facility with unit-level breakdown,
-	 * interval selection, date brushing, and fuel tech color coding.
+	 * horizontal panning, client-side data caching, and fuel tech color coding.
 	 */
 
 	import {
 		ChartStore,
 		StratumChart,
-		DateBrush,
-		IntervalSelector,
-		INTERVAL_OPTIONS,
-		processForChart,
-		aggregateData
+		processForChart
 	} from '$lib/components/charts/v2';
+	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { loadFuelTechs, fuelTechNameMap } from '$lib/fuel_techs';
 	import detailedGroup from '$lib/fuel-tech-groups/detailed';
@@ -40,10 +37,9 @@
 	 * @property {any} powerData - Power data from API
 	 * @property {string} timeZone - Timezone offset string (+10:00 or +08:00)
 	 * @property {string} [title] - Chart title
-	 * @property {string} [defaultInterval] - Default interval (5m or 30m)
 	 * @property {string} [chartHeight] - Chart height class
-	 * @property {boolean} [showZoomBrush] - Show/hide the zoom brush (default: true)
 	 * @property {boolean} [useDivergingStack] - Stack positive/negative values independently (default: false)
+	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
 	 */
 
 	/** @type {Props} */
@@ -52,20 +48,10 @@
 		powerData,
 		timeZone,
 		title = '',
-		defaultInterval = '30m',
 		chartHeight = 'h-[400px]',
-		showZoomBrush = true,
-		useDivergingStack = false
+		useDivergingStack = false,
+		onviewportchange
 	} = $props();
-
-	// ============================================
-	// State
-	// ============================================
-
-	// Initialize with prop value (intentionally captures initial value only)
-	let selectedInterval = $state(untrack(() => defaultInterval));
-	/** @type {[Date, Date] | undefined} */
-	let brushedRange = $state(undefined);
 
 	// ============================================
 	// Derived: Timezone
@@ -83,7 +69,6 @@
 	 * @returns {Date}
 	 */
 	function getStartOfDay(date) {
-		// Format the date in the facility timezone to get local date parts
 		const formatter = new Intl.DateTimeFormat('en-AU', {
 			year: 'numeric',
 			month: '2-digit',
@@ -95,7 +80,6 @@
 		const month = parseInt(parts.find((p) => p.type === 'month')?.value || '0') - 1;
 		const day = parseInt(parts.find((p) => p.type === 'day')?.value || '0');
 
-		// Create a date at midnight in UTC, then adjust for timezone offset
 		const offsetHours = timeZone === '+08:00' ? 8 : 10;
 		return new Date(Date.UTC(year, month, day, -offsetHours, 0, 0, 0));
 	}
@@ -130,17 +114,11 @@
 	// Derived: Unit Analysis
 	// ============================================
 
-	/**
-	 * Build colour map for units with shading for same fuel tech
-	 */
 	let unitColours = $derived.by(() => {
 		if (!facility?.units) return {};
 		return buildUnitColourMap(facility.units, getFuelTechColor);
 	});
 
-	/**
-	 * Build a map from unit code to fuel tech
-	 */
 	let unitFuelTechMap = $derived.by(() => {
 		if (!facility?.units) return {};
 
@@ -152,24 +130,17 @@
 		return map;
 	});
 
-	/**
-	 * Compute unit order based on fuel tech order
-	 * Returns unit IDs (power_XXXX) sorted by their fuel tech's position in fuelTechOrder
-	 */
 	let unitOrder = $derived.by(() => {
 		if (!facility?.units) return [];
 
-		// Create array of [unitId, fueltech] pairs
 		const unitPairs = facility.units.map((/** @type {any} */ unit) => ({
 			id: `power_${unit.code}`,
 			fueltech: unit.fueltech_id
 		}));
 
-		// Sort by fuel tech order position
 		unitPairs.sort((/** @type {any} */ a, /** @type {any} */ b) => {
 			const aIndex = fuelTechOrder.indexOf(a.fueltech);
 			const bIndex = fuelTechOrder.indexOf(b.fueltech);
-			// If not in order array, put at end
 			const aPos = aIndex === -1 ? 999 : aIndex;
 			const bPos = bIndex === -1 ? 999 : bIndex;
 			return aPos - bPos;
@@ -178,34 +149,30 @@
 		return unitPairs.map((/** @type {any} */ p) => p.id);
 	});
 
+	/** @type {string[]} */
+	let loadIds = $derived.by(() => {
+		if (!facility?.units) return [];
+		const ids = [];
+		for (const unit of facility.units) {
+			if (loadFuelTechs.includes(unit.fueltech_id)) {
+				ids.push(`power_${unit.code}`);
+			}
+		}
+		return ids;
+	});
+
 	const BATTERY_FUEL_TECHS = ['battery'];
 
-	/**
-	 * Check if all units are battery-related (for lighter negative coloring)
-	 */
-	let isBatteryFacility = $derived(
-		facility?.units?.length > 0 &&
-			facility.units.every((/** @type {any} */ u) => BATTERY_FUEL_TECHS.includes(u.fueltech_id))
-	);
-
-	/**
-	 * Check if facility has any battery units (for Y-axis handling)
-	 */
 	let hasBatteryUnits = $derived(
 		facility?.units?.some((/** @type {any} */ u) => BATTERY_FUEL_TECHS.includes(u.fueltech_id))
 	);
 
-	/**
-	 * Calculate capacity sums for generators (positive) and loads (negative)
-	 * Uses capacity_maximum if available, otherwise capacity_registered
-	 */
 	let capacitySums = $derived.by(() => {
 		if (!facility?.units) return { positive: 0, negative: 0 };
 
 		let positive = 0;
 		let negative = 0;
 
-		// Check if all units are battery-related
 		const allBattery = facility.units.every((/** @type {any} */ u) =>
 			BATTERY_FUEL_TECHS.includes(u.fueltech_id)
 		);
@@ -215,8 +182,6 @@
 			if (loadFuelTechs.includes(unit.fueltech_id)) {
 				negative += capacity;
 			} else if (allBattery && unit.fueltech_id === 'battery') {
-				// For battery-only facilities, battery can both charge and discharge
-				// Use same capacity for both positive and negative
 				positive += capacity;
 				negative += capacity;
 			} else {
@@ -224,58 +189,111 @@
 			}
 		}
 
-		// Convert from MW to the chart's unit (MW = M prefix)
 		return { positive, negative };
 	});
 
 	// ============================================
-	// Chart Store - created with data in single derived
+	// Viewport State
 	// ============================================
 
-	let chartStore = $derived.by(() => {
-		if (!facility || !powerData) return null;
+	/** @type {number} */
+	let viewStart = $state(0);
+	/** @type {number} */
+	let viewEnd = $state(0);
 
-		// Transform power data
-		const transformed = transformFacilityPowerData(powerData, unitFuelTechMap);
-		if (!transformed.length) return null;
+	/** Track the last pan direction for prefetching */
+	/** @type {number} */
+	let lastPanDelta = $state(0);
 
-		// Get colour map
+	/** Whether we're currently in a pan gesture */
+	let isPanning = $state(false);
+
+	// ============================================
+	// Data Manager
+	// ============================================
+
+	/**
+	 * Label reducer for processForChart
+	 * @param {any} acc
+	 * @param {any} d
+	 * @returns {any}
+	 */
+	function labelReducer(acc, d) {
+		const unitCode = d.unit?.code || d.id;
+		const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
+		acc[d.id] = `${unitCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
+		return acc;
+	}
+
+	/**
+	 * Colour reducer for processForChart — needs dynamic unitColours
+	 * We create a function that closes over the current unitColours
+	 */
+	let colourReducer = $derived.by(() => {
 		const colourMap = unitColours;
+		return (/** @type {any} */ acc, /** @type {any} */ d) => {
+			const unitCode = d.unit?.code || d.id;
+			const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
+			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
+			const isLoad = loadFuelTechs.includes(fuelTech);
+			acc[d.id] = isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
+			return acc;
+		};
+	});
 
-		// Find load series
-		/** @type {string[]} */
-		const loadIds = [];
-		for (const series of transformed) {
-			if (loadFuelTechs.includes(series.fueltech_id || '')) {
-				loadIds.push(series.id);
-			}
+	/** @type {ChartDataManager | null} */
+	let dataManager = $state(null);
+
+	// Initialize/reinitialize data manager when facility changes
+	$effect(() => {
+		if (!facility || !powerData) {
+			dataManager = null;
+			return;
 		}
 
-		// Process data with fuel tech ordering
-		const processed = processForChart(transformed, 'W', {
-			groupOrder: unitOrder,
+		const manager = new ChartDataManager({
+			facilityCode: facility.code,
+			networkId: facility.network_id,
+			interval: '5m',
+			metric: 'power',
+			unitFuelTechMap,
+			unitOrder,
 			loadsToInvert: loadIds,
-			labelReducer: (/** @type {any} */ acc, /** @type {any} */ d) => {
-				const unitCode = d.unit?.code || d.id;
-				const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
-				acc[d.id] = `${unitCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
-				return acc;
-			},
-			colourReducer: (/** @type {any} */ acc, /** @type {any} */ d) => {
-				const unitCode = d.unit?.code || d.id;
-				const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
-				const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-				// Use lighter shade for loads (negative values)
-				const isLoad = loadFuelTechs.includes(fuelTech);
-				acc[d.id] = isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-				return acc;
-			}
+			labelReducer,
+			colourReducer
 		});
 
-		// Create chart with data already set
+		// Seed with server data
+		manager.seedCache(powerData);
+
+		// Initialize viewport to the data range
+		if (manager.cacheStart !== null && manager.cacheEnd !== null) {
+			viewStart = manager.cacheStart;
+			viewEnd = manager.cacheEnd;
+		}
+
+		dataManager = manager;
+	});
+
+	// ============================================
+	// Chart Store — created once, updated reactively
+	// ============================================
+
+	/** @type {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} */
+	let chartStore = $state(null);
+
+	// Create chart store once when facility/data changes (not on viewport changes)
+	$effect(() => {
+		if (!dataManager || !dataManager.processedCache) {
+			chartStore = null;
+			return;
+		}
+
+		const processed = dataManager.processedCache;
+
 		const chart = new ChartStore({
 			key: Symbol('facility-chart'),
-			title: facility.name || 'Facility Power',
+			title: facility?.name || 'Facility Power',
 			prefix: 'M',
 			displayPrefix: 'M',
 			baseUnit: 'W',
@@ -286,34 +304,44 @@
 		chart.useDivergingStack = useDivergingStack;
 		chart.lighterNegative = hasBatteryUnits;
 
-		// Set data immediately
-		let seriesData = processed.data;
-		if (selectedInterval === '30m') {
-			seriesData = aggregateData(seriesData, '30m', processed.seriesNames);
-		}
-		if (brushedRange) {
-			const [start, end] = brushedRange;
-			seriesData = seriesData.filter((/** @type {any} */ d) => {
-				const time = d.date?.getTime?.() ?? d.time;
-				return time >= start.getTime() && time <= end.getTime();
-			});
-		}
-
-		chart.seriesData = seriesData;
 		chart.seriesNames = processed.seriesNames;
 		chart.seriesColours = processed.seriesColours;
 		chart.seriesLabels = processed.seriesLabels;
 		chart.formatTickX = formatXAxis;
 
-		// Set both tick labels and gridlines to day starts
-		const dayStarts = getDayStartDates(seriesData);
+		// Set initial data from viewport — use untrack so this effect doesn't
+		// re-run on every pan frame (Effect 2 handles viewport updates)
+		const start = untrack(() => viewStart);
+		const end = untrack(() => viewEnd);
+		const visibleData = dataManager.getDataForRange(start, end);
+		chart.seriesData = visibleData;
+		chart.xDomain = /** @type {[number, number]} */ ([start, end]);
+
+		const dayStarts = getDayStartDates(visibleData);
 		chart.xTicks = dayStarts;
 		chart.xGridlineTicks = dayStarts;
 
-		return chart;
+		chartStore = chart;
 	});
 
-	// Update reference lines and yDomain reactively based on chart options
+	// Update chart data/domain when viewport changes (without recreating the store)
+	$effect(() => {
+		if (!chartStore || !dataManager?.processedCache) return;
+
+		// Read viewport to track as dependency
+		const start = viewStart;
+		const end = viewEnd;
+
+		const visibleData = dataManager.getDataForRange(start, end);
+		chartStore.seriesData = visibleData;
+		chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
+
+		const dayStarts = getDayStartDates(visibleData);
+		chartStore.xTicks = dayStarts;
+		chartStore.xGridlineTicks = dayStarts;
+	});
+
+	// Update reference lines and yDomain reactively
 	$effect(() => {
 		if (!chartStore) return;
 
@@ -321,14 +349,12 @@
 		const isChangeSince = chartStore.chartOptions.isDataTransformTypeChangeSince;
 		const isLine = chartStore.chartOptions.isChartTypeLine;
 
-		// Don't show capacity lines for proportion view
 		if (isProportion) {
 			chartStore.yReferenceLines = [];
 			chartStore.setYDomain(undefined);
 			return;
 		}
 
-		// For line view or change since, show single line with max capacity
 		if (isLine || isChangeSince) {
 			const maxCapacity = Math.max(capacitySums.positive, capacitySums.negative);
 			if (maxCapacity > 0) {
@@ -339,7 +365,6 @@
 						colour: 'var(--chart-1)'
 					}
 				];
-				// Set yDomain with padding for the single capacity line
 				const padding = 0.15;
 				chartStore.setYDomain([0, maxCapacity * (1 + padding)]);
 			} else {
@@ -349,7 +374,6 @@
 			return;
 		}
 
-		// For absolute + area view, show both positive and negative capacity lines
 		const refLines = [];
 		if (capacitySums.positive > 0) {
 			refLines.push({
@@ -367,74 +391,15 @@
 		}
 		chartStore.yReferenceLines = refLines;
 
-		// Set custom Y domain to ensure capacity lines are visible with padding
 		const padding = 0.15;
 		const yMax = capacitySums.positive > 0 ? capacitySums.positive * (1 + padding) : undefined;
 		const yMin = capacitySums.negative > 0 ? -capacitySums.negative * (1 + padding) : undefined;
 		if (yMax !== undefined || yMin !== undefined) {
-			// For battery facilities, allow negative values even if no explicit load capacity
 			const minValue = hasBatteryUnits ? (yMin ?? -(yMax ?? 0)) : (yMin ?? 0);
 			chartStore.setYDomain([minValue, yMax ?? 0]);
 		} else {
 			chartStore.setYDomain(undefined);
 		}
-	});
-
-	let brushChart = $derived.by(() => {
-		if (!facility || !powerData) return null;
-
-		// Transform power data
-		const transformed = transformFacilityPowerData(powerData, unitFuelTechMap);
-		if (!transformed.length) return null;
-
-		const colourMap = unitColours;
-		/** @type {string[]} */
-		const loadIds = [];
-		for (const series of transformed) {
-			if (loadFuelTechs.includes(series.fueltech_id || '')) {
-				loadIds.push(series.id);
-			}
-		}
-
-		const processed = processForChart(transformed, 'W', {
-			groupOrder: unitOrder,
-			loadsToInvert: loadIds,
-			labelReducer: (/** @type {any} */ acc, /** @type {any} */ d) => {
-				acc[d.id] = d.unit?.code || d.id;
-				return acc;
-			},
-			colourReducer: (/** @type {any} */ acc, /** @type {any} */ d) => {
-				const unitCode = d.unit?.code || d.id;
-				const fuelTech = d.unit?.fueltech_id || d.fueltech_id || 'unknown';
-				const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-				// Use lighter shade for loads (negative values)
-				const isLoad = loadFuelTechs.includes(fuelTech);
-				acc[d.id] = isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-				return acc;
-			}
-		});
-
-		const chart = new ChartStore({
-			key: Symbol('brush-chart'),
-			title: 'Brush',
-			prefix: 'M',
-			displayPrefix: 'M',
-			baseUnit: 'W',
-			timeZone: timeZone
-		});
-		chart.useDivergingStack = useDivergingStack;
-
-		let seriesData = processed.data;
-		if (selectedInterval === '30m') {
-			seriesData = aggregateData(seriesData, '30m', processed.seriesNames);
-		}
-
-		chart.seriesData = seriesData;
-		chart.seriesNames = processed.seriesNames;
-		chart.seriesColours = processed.seriesColours;
-		chart.seriesLabels = processed.seriesLabels;
-
-		return chart;
 	});
 
 	let isDataReady = $derived(chartStore !== null);
@@ -458,70 +423,99 @@
 		}).format(d);
 	}
 
+	// ============================================
+	// Pan Handlers
+	// ============================================
+
+	function handlePanStart() {
+		isPanning = true;
+		// Clear hover during pan
+		chartStore?.clearHover();
+	}
+
 	/**
-	 * Format date for brush ticks
-	 * @param {Date | any} d
-	 * @returns {string}
+	 * Handle pan movement — shift viewport by time delta
+	 * @param {number} deltaMs
 	 */
-	function formatBrushTick(d) {
-		if (!(d instanceof Date)) return String(d);
-		return new Intl.DateTimeFormat('en-AU', {
-			day: 'numeric',
-			month: 'short',
-			timeZone: ianaTimeZone
-		}).format(d);
+	function handlePan(deltaMs) {
+		// deltaMs is positive when dragging right (moving backward in time)
+		// We invert: dragging right should show earlier data
+		let newStart = viewStart - deltaMs;
+		let newEnd = viewEnd - deltaMs;
+
+		// Clamp: don't allow panning past current time
+		const now = Date.now();
+		if (newEnd > now) {
+			newEnd = now;
+			newStart = now - (viewEnd - viewStart);
+		}
+
+		viewStart = newStart;
+		viewEnd = newEnd;
+		lastPanDelta = deltaMs;
+
+		// Request data for any uncached range
+		dataManager?.requestRange(viewStart, viewEnd);
+	}
+
+	function handlePanEnd() {
+		isPanning = false;
+
+		// Prefetch 1x viewport ahead in the pan direction
+		const viewportWidth = viewEnd - viewStart;
+		const now = Date.now();
+		if (lastPanDelta < 0 && viewEnd < now) {
+			// Was panning left (toward future) — prefetch ahead, clamped to now
+			dataManager?.requestRange(viewEnd, Math.min(viewEnd + viewportWidth, now));
+		} else if (lastPanDelta > 0) {
+			// Was panning right (toward past) — prefetch behind
+			dataManager?.requestRange(viewStart - viewportWidth, viewStart);
+		}
+
+		// Notify parent of viewport change
+		onviewportchange?.({ start: viewStart, end: viewEnd });
 	}
 
 	// ============================================
-	// Event Handlers
+	// Hover/Focus Handlers
 	// ============================================
 
 	/**
-	 * Handle interval change
-	 * @param {string} interval
-	 */
-	function handleIntervalChange(interval) {
-		selectedInterval = interval;
-	}
-
-	/**
-	 * Handle brush selection change
-	 * @param {[Date, Date] | undefined} range
-	 */
-	function handleBrush(range) {
-		brushedRange = range;
-	}
-
-	/** Clear brush selection */
-	function clearBrush() {
-		brushedRange = undefined;
-	}
-
-	/**
-	 * Handle hover and update chart
 	 * @param {number} time
 	 * @param {string} [key]
 	 */
 	function handleHover(time, key) {
+		if (isPanning) return;
 		chartStore?.setHover(time, key);
 	}
 
-	/** Handle hover end */
 	function handleHoverEnd() {
 		chartStore?.clearHover();
 	}
 
 	/**
-	 * Handle focus (click)
 	 * @param {number} time
 	 */
 	function handleFocus(time) {
+		if (isPanning) return;
 		chartStore?.toggleFocus(time);
 	}
 
 	// ============================================
-	// Exposed values for parent components
+	// Public Methods
 	// ============================================
+
+	/**
+	 * Set viewport to a specific time range (e.g. from DateRangePicker)
+	 * @param {number} startMs
+	 * @param {number} endMs
+	 */
+	export function setViewport(startMs, endMs) {
+		const now = Date.now();
+		viewStart = startMs;
+		viewEnd = Math.min(endMs, now);
+		dataManager?.requestRange(viewStart, viewEnd);
+	}
 
 	/**
 	 * Get unit colours map for use in parent component (e.g., units table)
@@ -537,33 +531,7 @@
 	{#if title}
 		<h3 class="text-sm font-medium text-dark-grey">{title}</h3>
 	{/if}
-
-	<div class="flex items-center gap-4">
-		{#if showZoomBrush && brushedRange}
-			<button class="text-sm text-blue-600 hover:text-blue-800 cursor-pointer" onclick={clearBrush}>
-				Clear zoom
-			</button>
-		{/if}
-
-		<IntervalSelector
-			options={INTERVAL_OPTIONS.filter((o) => ['5m', '30m'].includes(o.value))}
-			selected={selectedInterval}
-			onchange={handleIntervalChange}
-		/>
-	</div>
 </div>
-
-<!-- Date Brush -->
-{#if showZoomBrush && isDataReady && brushChart}
-	<div class="mb-6">
-		<DateBrush
-			chart={brushChart}
-			{brushedRange}
-			onbrush={handleBrush}
-			formatTick={formatBrushTick}
-		/>
-	</div>
-{/if}
 
 <!-- Main Chart -->
 {#if isDataReady && chartStore}
@@ -573,6 +541,11 @@
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
+			onpanstart={handlePanStart}
+			onpan={handlePan}
+			onpanend={handlePanEnd}
+			enablePan={true}
+			loadingRanges={dataManager?.loadingRanges ?? []}
 		/>
 	</div>
 {:else if powerData !== null && !isDataReady}

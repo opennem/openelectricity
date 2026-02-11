@@ -14,6 +14,8 @@
 	import {
 		StackedArea,
 		HoverLayer,
+		PanZoomLayer,
+		LoadingOverlay,
 		AxisX,
 		AxisY,
 		ClipPath,
@@ -29,10 +31,25 @@
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
 	 * @property {(evt: TimeSeriesData) => void} [onpointerup]
+	 * @property {(() => void)} [onpanstart] - Called when pan starts
+	 * @property {((deltaMs: number) => void)} [onpan] - Called during pan with time delta
+	 * @property {(() => void)} [onpanend] - Called when pan ends
+	 * @property {boolean} [enablePan] - Whether panning is enabled
+	 * @property {Array<{start: number, end: number}>} [loadingRanges] - Ranges currently being fetched
 	 */
 
 	/** @type {Props} */
-	let { chart, onmousemove, onmouseout, onpointerup } = $props();
+	let {
+		chart,
+		onmousemove,
+		onmouseout,
+		onpointerup,
+		onpanstart,
+		onpan,
+		onpanend,
+		enablePan = false,
+		loadingRanges = []
+	} = $props();
 
 	// Get chart styles
 	let styles = $derived(chart.chartStyles);
@@ -74,7 +91,7 @@
 	let clipPathAxis = $derived(`url(#${clipPathAxisId})`);
 </script>
 
-<div class="w-full {styles.chartHeightClasses}">
+<div class="w-full {styles.chartHeightClasses}" style:touch-action={enablePan ? 'none' : undefined}>
 	<LayerCake
 		padding={styles.chartPadding}
 		x={chart.x}
@@ -98,6 +115,17 @@
 
 			<!-- Hover layer for mouse interactions in empty space -->
 			<HoverLayer dataset={chart.seriesScaledData} {onmousemove} {onmouseout} {onpointerup} />
+
+			<!-- Pan layer on top — captures pointerdown for drag, passes clicks through -->
+			{#if enablePan}
+				<PanZoomLayer
+					dataset={chart.seriesScaledData}
+					{onpanstart}
+					{onpan}
+					{onpanend}
+					enabled={enablePan}
+				/>
+			{/if}
 
 			<!-- Shading overlay (behind chart content) -->
 			{#if chart.shadingData?.length > 0}
@@ -128,6 +156,13 @@
 				/>
 			{/each}
 		</Svg>
+
+		<!-- Loading overlay -->
+		{#if loadingRanges.length > 0}
+			<Svg pointerEvents={false}>
+				<LoadingOverlay {loadingRanges} />
+			</Svg>
+		{/if}
 
 		<!-- Hover/Focus indicators -->
 		<Svg pointerEvents={false}>

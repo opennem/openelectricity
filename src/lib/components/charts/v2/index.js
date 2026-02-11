@@ -49,6 +49,12 @@ export {
 export { default as DateBrush } from './DateBrush.svelte';
 export { default as IntervalSelector } from './IntervalSelector.svelte';
 
+// Data management
+export { default as ChartDataManager } from './ChartDataManager.svelte.js';
+
+// Interval configuration
+export { INTERVAL_CONFIG, getIntervalForDuration } from './intervalConfig.js';
+
 // Interval utilities
 export {
 	INTERVAL_OPTIONS,
@@ -71,4 +77,15 @@ export {
 } from './dataProcessing.js';
 
 // Chart elements (v2)
-export { StackedArea, Line, HoverLayer, AxisX, AxisY, LineX, Dot, ClipPath } from './elements';
+export {
+	StackedArea,
+	Line,
+	HoverLayer,
+	PanZoomLayer,
+	LoadingOverlay,
+	AxisX,
+	AxisY,
+	LineX,
+	Dot,
+	ClipPath
+} from './elements';
