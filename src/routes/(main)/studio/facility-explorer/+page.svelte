@@ -133,24 +133,30 @@
 	let chartComponent = $state(undefined);
 
 	/**
-	 * Handle date range change from DateRangePicker — update viewport client-side
+	 * Handle date range change from DateRangePicker — update viewport client-side.
+	 * The picker emits bare date strings like "2025-01-01". We interpret them as
+	 * midnight in the network's timezone so ChartDataManager (which adds the network
+	 * offset when building API params) produces correct API dates.
 	 * @param {{ start: string, end: string }} range
 	 */
 	function handleDateRangeChange(range) {
 		if (data.selectedCode && chartComponent) {
-			const startMs = new Date(range.start).getTime();
-			const endMs = new Date(range.end + 'T23:59:59').getTime();
+			const tz = timeZone || '+10:00';
+			const startMs = new Date(range.start + 'T00:00:00' + tz).getTime();
+			const endMs = new Date(range.end + 'T23:59:59' + tz).getTime();
 			chartComponent.setViewport(startMs, endMs);
 		}
 	}
 
 	/**
-	 * Handle viewport change from chart pan — sync DateRangePicker display
+	 * Handle viewport change from chart pan — sync DateRangePicker display.
+	 * Convert UTC ms to a date string in the network's timezone.
 	 * @param {{ start: number, end: number }} range
 	 */
 	function handleViewportChange(range) {
-		dateStart = new Date(range.start).toISOString().slice(0, 10);
-		dateEnd = new Date(range.end).toISOString().slice(0, 10);
+		const offsetMs = timeZone === '+08:00' ? 8 * 3600_000 : 10 * 3600_000;
+		dateStart = new Date(range.start + offsetMs).toISOString().slice(0, 10);
+		dateEnd = new Date(range.end + offsetMs).toISOString().slice(0, 10);
 	}
 
 	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
