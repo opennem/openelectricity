@@ -10,6 +10,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import {
 		FacilityPowerChart,
+		FacilityDataTable,
 		FacilityUnitsTable,
 		buildUnitColourMap
 	} from '$lib/components/charts/facility';
@@ -150,6 +151,16 @@
 	function handleViewportChange(range) {
 		dateStart = new Date(range.start).toISOString().slice(0, 10);
 		dateEnd = new Date(range.end).toISOString().slice(0, 10);
+	}
+
+	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
+	let tableData = $state(null);
+
+	/**
+	 * @param {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> }} d
+	 */
+	function handleVisibleData(d) {
+		tableData = d;
 	}
 
 	// ============================================
@@ -376,9 +387,21 @@
 							powerData={data.powerData}
 							{timeZone}
 							onviewportchange={handleViewportChange}
+							onvisibledata={handleVisibleData}
 						/>
 						</div>
-					{:else}
+
+					{#if tableData}
+						<div class="mt-2 border border-light-warm-grey rounded-lg overflow-y-auto max-h-[300px]">
+							<FacilityDataTable
+								data={tableData.data}
+								seriesNames={tableData.seriesNames}
+								seriesLabels={tableData.seriesLabels}
+								{timeZone}
+							/>
+						</div>
+					{/if}
+				{:else}
 						<div class="bg-light-warm-grey/30 rounded-xl p-4 h-[350px] flex flex-col items-center justify-center">
 							{#if data.error}
 								<AlertCircle size={24} class="mb-2 text-warm-grey" />

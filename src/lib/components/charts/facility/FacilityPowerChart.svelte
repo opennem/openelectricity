@@ -41,6 +41,7 @@
 	 * @property {string} [chartHeight] - Chart height class
 	 * @property {boolean} [useDivergingStack] - Stack positive/negative values independently (default: false)
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
+	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
 	 */
 
 	/** @type {Props} */
@@ -51,7 +52,8 @@
 		title = '',
 		chartHeight = 'h-[400px]',
 		useDivergingStack = false,
-		onviewportchange
+		onviewportchange,
+		onvisibledata
 	} = $props();
 
 	// ============================================
@@ -423,6 +425,36 @@
 		}
 	});
 
+	/** Debounced callback for visible data — only fires after pan/zoom settles */
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let tableDebounceTimer = null;
+
+	$effect(() => {
+		// Track reactive dependencies
+		const start = viewStart;
+		const end = viewEnd;
+		const interval = selectedInterval;
+		const manager = dataManager;
+		const _cache = manager?.processedCache; // track cache changes
+		const callback = onvisibledata;
+
+		if (tableDebounceTimer) clearTimeout(tableDebounceTimer);
+		if (!callback || !manager?.processedCache || !manager.seriesMeta) return;
+
+		const meta = manager.seriesMeta;
+		tableDebounceTimer = setTimeout(() => {
+			let rows = manager.getDataForRange(start, end);
+			if (interval === '30m' && rows.length > 0) {
+				rows = aggregateToInterval(rows, '30m', meta.seriesNames, 'mean');
+			}
+			callback({
+				data: rows,
+				seriesNames: meta.seriesNames,
+				seriesLabels: meta.seriesLabels
+			});
+		}, 300);
+	});
+
 	let isDataReady = $derived(chartStore !== null);
 
 	// ============================================
@@ -696,6 +728,7 @@
 			loadingRanges={dataManager?.loadingRanges ?? []}
 		/>
 	</div>
+
 {:else if powerData !== null && !isDataReady}
 	<!-- No data found -->
 	<div

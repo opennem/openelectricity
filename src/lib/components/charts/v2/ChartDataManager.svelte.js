@@ -163,6 +163,12 @@ export default class ChartDataManager {
 		};
 
 		this.#updateCacheRange();
+		console.log('ChartDataManager seedCache:', {
+			facilityCode: this.facilityCode,
+			rows: this.#dataCache.length,
+			cacheStart: this.#cacheStart ? new Date(this.#cacheStart).toISOString() : null,
+			cacheEnd: this.#cacheEnd ? new Date(this.#cacheEnd).toISOString() : null
+		});
 	}
 
 	/**
@@ -305,6 +311,7 @@ export default class ChartDataManager {
 		}
 
 		const json = await res.json();
+		console.log('ChartDataManager fetch:', { facilityCode: this.facilityCode, dateStart, dateEnd, response: json.response });
 		return json.response;
 	}
 
@@ -328,6 +335,7 @@ export default class ChartDataManager {
 		}
 
 		// Sort by time
+		const prevCount = this.#dataCache.length;
 		this.#dataCache = [...rowMap.values()].sort((a, b) => a.time - b.time);
 
 		// Update series meta if not set (shouldn't change between fetches)
@@ -340,6 +348,14 @@ export default class ChartDataManager {
 		}
 
 		this.#updateCacheRange();
+		console.log('ChartDataManager merge:', {
+			facilityCode: this.facilityCode,
+			newRows: result.data.length,
+			prevTotal: prevCount,
+			total: this.#dataCache.length,
+			cacheStart: this.#cacheStart ? new Date(this.#cacheStart).toISOString() : null,
+			cacheEnd: this.#cacheEnd ? new Date(this.#cacheEnd).toISOString() : null
+		});
 	}
 
 	/**

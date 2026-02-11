@@ -159,6 +159,7 @@
 						useDivergingStack={true}
 					/>
 				</div>
+
 			{:else if powerData}
 				<div
 					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 h-[350px] flex items-center justify-center"
