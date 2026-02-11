@@ -20,6 +20,7 @@
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
 	import { MapPin, AlertCircle, SearchX, ChevronDown, ExternalLink } from '@lucide/svelte';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
+	import RangeSelector from '$lib/components/form-elements/RangeSelector.svelte';
 	import { Accordion } from 'bits-ui';
 
 	/**
@@ -140,6 +141,7 @@
 	 * @param {{ start: string, end: string }} range
 	 */
 	function handleDateRangeChange(range) {
+		selectedRange = null;
 		if (data.selectedCode && chartComponent) {
 			const tz = timeZone || '+10:00';
 			const startMs = new Date(range.start + 'T00:00:00' + tz).getTime();
@@ -154,6 +156,7 @@
 	 * @param {{ start: number, end: number }} range
 	 */
 	function handleViewportChange(range) {
+		selectedRange = null;
 		const offsetMs = timeZone === '+08:00' ? 8 * 3600_000 : 10 * 3600_000;
 		dateStart = new Date(range.start + offsetMs).toISOString().slice(0, 10);
 		dateEnd = new Date(range.end + offsetMs).toISOString().slice(0, 10);
@@ -197,6 +200,27 @@
 		const result = (totalWeighted / totalCap) * 1000;
 		return isNaN(result) ? null : result;
 	});
+
+	/** @type {number | null} */
+	let selectedRange = $state(3);
+
+	/**
+	 * Handle quick range selection (3d/7d)
+	 * @param {number} days
+	 */
+	function handleRangeSelect(days) {
+		const tz = timeZone || '+10:00';
+		const now = new Date();
+		const start = new Date();
+		start.setDate(now.getDate() - days);
+		dateStart = start.toISOString().slice(0, 10);
+		dateEnd = now.toISOString().slice(0, 10);
+		if (chartComponent) {
+			const startMs = new Date(dateStart + 'T00:00:00' + tz).getTime();
+			const endMs = new Date(dateEnd + 'T23:59:59' + tz).getTime();
+			chartComponent.setViewport(startMs, endMs);
+		}
+	}
 
 	/** @type {string[]} */
 	let accordionValue = $state(['data']);
@@ -376,7 +400,15 @@
 				</Accordion.Header>
 				<Accordion.Content class="px-4 pb-4">
 					<!-- Date Range Picker -->
-					<div class="mb-4">
+					<div class="flex items-center gap-2 mb-4">
+						<RangeSelector
+							options={[
+								{ label: '3d', value: 3 },
+								{ label: '7d', value: 7 }
+							]}
+							bind:selected={selectedRange}
+							onchange={handleRangeSelect}
+						/>
 						<DateRangePicker
 							startDate={dateStart}
 							endDate={dateEnd}
