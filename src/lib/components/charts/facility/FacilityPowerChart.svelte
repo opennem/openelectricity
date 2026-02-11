@@ -11,6 +11,7 @@
 		StratumChart,
 		processForChart
 	} from '$lib/components/charts/v2';
+	import { aggregateToInterval } from '$lib/components/charts/v2/dataProcessing.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { loadFuelTechs, fuelTechNameMap } from '$lib/fuel_techs';
@@ -201,6 +202,9 @@
 	/** @type {number} */
 	let viewEnd = $state(0);
 
+	/** @type {'5m' | '30m'} */
+	let selectedInterval = $state('30m');
+
 	/** Track the last pan direction for prefetching */
 	/** @type {number} */
 	let lastPanDelta = $state(0);
@@ -324,15 +328,27 @@
 		chartStore = chart;
 	});
 
-	// Update chart data/domain when viewport changes (without recreating the store)
+	// Update chart data/domain when viewport or interval changes (without recreating the store)
 	$effect(() => {
 		if (!chartStore || !dataManager?.processedCache) return;
 
-		// Read viewport to track as dependency
+		// Read viewport + interval to track as dependencies
 		const start = viewStart;
 		const end = viewEnd;
+		const interval = selectedInterval;
 
-		const visibleData = dataManager.getDataForRange(start, end);
+		let visibleData = dataManager.getDataForRange(start, end);
+
+		// Client-side aggregation to 30m
+		if (interval === '30m' && visibleData.length > 0 && dataManager.seriesMeta) {
+			visibleData = aggregateToInterval(
+				visibleData,
+				'30m',
+				dataManager.seriesMeta.seriesNames,
+				'mean'
+			);
+		}
+
 		chartStore.seriesData = visibleData;
 		chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
 
@@ -527,10 +543,23 @@
 </script>
 
 <!-- Chart Header -->
-<div class="flex flex-wrap items-center justify-between gap-1 mb-0">
+<div class="flex flex-wrap items-center justify-between gap-1 mb-1">
 	{#if title}
 		<h3 class="text-sm font-medium text-dark-grey">{title}</h3>
 	{/if}
+
+	<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
+		{#each ['5m', '30m'] as interval}
+			<button
+				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedInterval === interval
+					? 'bg-white text-dark-grey shadow-sm'
+					: 'text-mid-grey hover:text-dark-grey'}"
+				onclick={() => (selectedInterval = /** @type {'5m' | '30m'} */ (interval))}
+			>
+				{interval === '5m' ? '5 min' : '30 min'}
+			</button>
+		{/each}
+	</div>
 </div>
 
 <!-- Main Chart -->

@@ -91,10 +91,11 @@ describe('ChartDataManager', () => {
 
 			expect(manager.cacheStart).not.toBeNull();
 			expect(manager.cacheEnd).not.toBeNull();
-			expect(manager.processedCache).not.toBeNull();
-			expect(manager.processedCache.data.length).toBeGreaterThan(0);
-			expect(manager.processedCache.seriesNames).toContain('power_UNIT1');
-			expect(manager.processedCache.seriesNames).toContain('power_UNIT2');
+			const cache = manager.processedCache;
+			expect(cache).not.toBeNull();
+			expect(cache?.data.length).toBeGreaterThan(0);
+			expect(cache?.seriesNames).toContain('power_UNIT1');
+			expect(cache?.seriesNames).toContain('power_UNIT2');
 		});
 
 		it('should set cacheStart/cacheEnd to first/last data point timestamps', () => {
@@ -334,7 +335,7 @@ describe('ChartDataManager', () => {
 			});
 			manager.seedCache(response1);
 
-			const originalLength = manager.processedCache.data.length;
+			const originalLength = /** @type {NonNullable<typeof manager.processedCache>} */ (manager.processedCache).data.length;
 
 			// Build overlapping data: starts 5 points earlier, overlaps 10 points
 			const overlapStartISO = new Date(startMs - 5 * intervalMs).toISOString();
@@ -362,7 +363,7 @@ describe('ChartDataManager', () => {
 			// Wait for the async fetch to complete
 			await vi.advanceTimersByTimeAsync(100);
 
-			const allData = manager.processedCache.data;
+			const allData = /** @type {NonNullable<typeof manager.processedCache>} */ (manager.processedCache).data;
 
 			// Check no duplicate timestamps
 			const timestamps = allData.map((/** @type {any} */ row) => row.time);
