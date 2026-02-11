@@ -31,6 +31,7 @@
 	 *   transmissionLineVisibility?: TransmissionLineVisibility,
 	 *   showGolfCourses?: boolean,
 	 *   scrollZoom?: boolean,
+	 *   cooperativeGestures?: boolean,
 	 *   flyToOffsetX?: number,
 	 *   flyToOffsetY?: number,
 	 *   onhover?: (facility: any | null) => void,
@@ -49,6 +50,7 @@
 		transmissionLineVisibility = { high: true, medium: true, low: true, lowest: true },
 		showGolfCourses = false,
 		scrollZoom = false,
+		cooperativeGestures = false,
 		flyToOffsetX = 0,
 		flyToOffsetY = 0,
 		onhover,
@@ -643,6 +645,7 @@
 		maxZoom={18}
 		minZoom={3}
 		{scrollZoom}
+		{cooperativeGestures}
 		touchZoomRotate={true}
 		attributionControl={false}
 		fadeDuration={0}

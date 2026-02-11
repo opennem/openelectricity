@@ -756,7 +756,8 @@
 					showTransmissionLines={mapShowTransmissionLines}
 					{transmissionLineVisibility}
 					showGolfCourses={mapShowGolfCourses}
-					scrollZoom={isFullscreen}
+					scrollZoom={true}
+					cooperativeGestures={!isFullscreen}
 					flyToOffsetX={0}
 					flyToOffsetY={selectedFacility ? (isFullscreen ? -0.25 : -0.15) : 0}
 					onhover={(f) => (hoveredFacility = f)}
