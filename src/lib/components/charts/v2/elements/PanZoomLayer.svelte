@@ -21,10 +21,11 @@
 	 * @property {(() => void) | undefined} [onpanend] - Called when pan ends (resume tooltip, trigger prefetch)
 	 * @property {((factor: number, centerMs: number) => void) | undefined} [onzoom] - Called during zoom with scale factor and center time
 	 * @property {boolean} [enabled] - Whether pan interaction is enabled
+	 * @property {number} [extraHeight] - Extra height below chart area (e.g. to cover X axis)
 	 */
 
 	/** @type {Props} */
-	let { dataset = [], onpanstart, onpan, onpanend, onzoom, enabled = true } = $props();
+	let { dataset = [], onpanstart, onpan, onpanend, onzoom, enabled = true, extraHeight = 0 } = $props();
 
 	/** @type {boolean} */
 	let isPanning = $state(false);
@@ -301,7 +302,7 @@
 	class="pan-zoom-layer"
 	class:panning={isPanning}
 	width={rectWidth}
-	height={rectHeight}
+	height={rectHeight + extraHeight}
 	fill="transparent"
 	role="presentation"
 	style:pointer-events={enabled ? 'all' : 'none'}

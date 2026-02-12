@@ -126,6 +126,7 @@
 					{onpan}
 					{onpanend}
 					enabled={enablePan}
+					extraHeight={30}
 				/>
 			{/if}
 
