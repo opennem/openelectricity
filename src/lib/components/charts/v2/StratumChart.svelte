@@ -34,6 +34,7 @@
 	 * @property {((factor: number, centerMs: number) => void)} [onzoom] - Called during zoom
 	 * @property {boolean} [enablePan] - Whether panning is enabled
 	 * @property {Array<{start: number, end: number}>} [loadingRanges] - Ranges being fetched
+	 * @property {[number, number] | null} [viewDomain] - Time domain for category chart pan/zoom
 	 * @property {import('svelte').Snippet} [header] - Custom header content
 	 * @property {import('svelte').Snippet} [tooltip] - Custom tooltip content
 	 * @property {import('svelte').Snippet} [footer] - Custom footer content
@@ -62,6 +63,7 @@
 		onzoom,
 		enablePan = false,
 		loadingRanges = [],
+		viewDomain = null,
 		header,
 		tooltip,
 		footer
@@ -154,6 +156,12 @@
 					onmousemove={handleMouseMove}
 					onmouseout={handleMouseOut}
 					onpointerup={handlePointerUp}
+					{onpanstart}
+					{onpan}
+					{onpanend}
+					{onzoom}
+					{enablePan}
+					{viewDomain}
 				/>
 			{:else}
 				<StackedAreaChart

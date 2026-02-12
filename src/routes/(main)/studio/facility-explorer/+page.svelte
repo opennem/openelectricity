@@ -142,6 +142,8 @@
 	 */
 	function handleDateRangeChange(range) {
 		selectedRange = null;
+		activeInterval = '5m';
+		activeMetric = 'power';
 		if (data.selectedCode && chartComponent) {
 			const tz = timeZone || '+10:00';
 			const startMs = new Date(range.start + 'T00:00:00' + tz).getTime();
@@ -204,11 +206,26 @@
 	/** @type {number | null} */
 	let selectedRange = $state(3);
 
+	/** Active interval/metric — only updated on explicit range button or date picker actions, NOT on zoom/pan */
+	/** @type {string} */
+	let activeInterval = $state('5m');
+	/** @type {string} */
+	let activeMetric = $state('power');
+
 	/**
-	 * Handle quick range selection (3d/7d)
+	 * Handle quick range selection (3d/7d/14d/30d/1y)
 	 * @param {number} days
 	 */
 	function handleRangeSelect(days) {
+		// Update interval/metric based on range
+		if (days <= 14) {
+			activeInterval = '5m';
+			activeMetric = 'power';
+		} else {
+			activeInterval = '1d';
+			activeMetric = 'energy';
+		}
+
 		const tz = timeZone || '+10:00';
 		const now = new Date();
 		const start = new Date();
@@ -405,7 +422,9 @@
 							options={[
 								{ label: '3d', value: 3 },
 								{ label: '7d', value: 7 },
-								{ label: '14d', value: 14 }
+								{ label: '14d', value: 14 },
+								{ label: '30d', value: 30 },
+								{ label: '1y', value: 365 }
 							]}
 							bind:selected={selectedRange}
 							onchange={handleRangeSelect}
@@ -425,6 +444,8 @@
 							facility={selectedFacility}
 							powerData={data.powerData}
 							{timeZone}
+							interval={activeInterval}
+							metric={activeMetric}
 							onviewportchange={handleViewportChange}
 							onvisibledata={handleVisibleData}
 						/>

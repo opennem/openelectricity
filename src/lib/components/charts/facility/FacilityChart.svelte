@@ -36,6 +36,8 @@
 	 * @property {any} facility - Facility object with units array
 	 * @property {any} powerData - Power data from API
 	 * @property {string} timeZone - Timezone offset string (+10:00 or +08:00)
+	 * @property {string} [interval] - API interval (5m, 1d, 1M)
+	 * @property {string} [metric] - API metric (power, energy)
 	 * @property {string} [title] - Chart title
 	 * @property {string} [chartHeight] - Chart height class
 	 * @property {number} [chartHeightPx] - Chart height in pixels (overrides chartHeight when set)
@@ -49,6 +51,8 @@
 		facility,
 		powerData,
 		timeZone,
+		interval = '5m',
+		metric = 'power',
 		title = '',
 		chartHeight = 'h-[400px]',
 		chartHeightPx = 0,
@@ -208,10 +212,13 @@
 	/** @type {'5m' | '30m'} */
 	let selectedInterval = $state('30m');
 
-	/** Minimum viewport duration: 1 hour */
-	const MIN_VIEWPORT_MS = 1 * 60 * 60 * 1000;
-	/** Maximum viewport duration: 14 days */
-	const MAX_VIEWPORT_MS = 14 * 24 * 60 * 60 * 1000;
+	/** Whether we're showing energy data (1d interval) vs power (5m) */
+	let isEnergyMetric = $derived(metric === 'energy');
+
+	/** Minimum viewport duration: 1 hour for power, 7 days for energy */
+	let MIN_VIEWPORT_MS = $derived(isEnergyMetric ? 7 * 24 * 60 * 60 * 1000 : 1 * 60 * 60 * 1000);
+	/** Maximum viewport duration: 14 days for power, 730 days for energy */
+	let MAX_VIEWPORT_MS = $derived(isEnergyMetric ? 730 * 24 * 60 * 60 * 1000 : 14 * 24 * 60 * 60 * 1000);
 
 	/** Track the last pan direction for prefetching */
 	/** @type {number} */
@@ -249,18 +256,34 @@
 	/** @type {ChartDataManager | null} */
 	let dataManager = $state(null);
 
-	// Initialize/reinitialize data manager when facility changes
+	// Initialize/reinitialize data manager when facility or interval/metric changes
 	$effect(() => {
 		if (!facility || !powerData) {
 			dataManager = null;
 			return;
 		}
 
+		// Track interval and metric as dependencies
+		const currentInterval = interval;
+		const currentMetric = metric;
+		const currentCode = facility.code;
+
+		// Skip recreation if existing manager already matches
+		const existing = untrack(() => dataManager);
+		if (
+			existing &&
+			existing.facilityCode === currentCode &&
+			existing.interval === currentInterval &&
+			existing.metric === currentMetric
+		) {
+			return;
+		}
+
 		const manager = new ChartDataManager({
-			facilityCode: facility.code,
+			facilityCode: currentCode,
 			networkId: facility.network_id,
-			interval: '5m',
-			metric: 'power',
+			interval: currentInterval,
+			metric: currentMetric,
 			unitFuelTechMap,
 			unitOrder,
 			loadsToInvert: loadIds,
@@ -268,13 +291,24 @@
 			getColour
 		});
 
-		// Seed with server data
-		manager.seedCache(powerData);
+		// Only seed with server power data if the metric matches
+		if (currentMetric === 'power') {
+			manager.seedCache(powerData);
+		}
 
-		// Initialize viewport to the data range
-		if (manager.cacheStart !== null && manager.cacheEnd !== null) {
-			viewStart = manager.cacheStart;
-			viewEnd = manager.cacheEnd;
+		// Use untrack so viewStart/viewEnd don't become dependencies of this effect.
+		const start = untrack(() => viewStart);
+		const end = untrack(() => viewEnd);
+
+		if (!start && !end) {
+			// First load — set viewport from seeded cache
+			if (manager.cacheStart !== null && manager.cacheEnd !== null) {
+				viewStart = manager.cacheStart;
+				viewEnd = manager.cacheEnd;
+			}
+		} else {
+			// Switching interval/metric — keep current viewport, fetch any gaps
+			manager.requestRange(start, end);
 		}
 
 		dataManager = manager;
@@ -296,14 +330,17 @@
 
 		const processed = dataManager.processedCache;
 
+		const isEnergy = isEnergyMetric;
+
 		const chart = new ChartStore({
 			key: Symbol('facility-chart'),
 			title: facility?.name || 'Facility Power',
 			prefix: 'M',
 			displayPrefix: 'M',
-			baseUnit: 'W',
+			baseUnit: isEnergy ? 'Wh' : 'W',
 			timeZone: timeZone
 		});
+		chart.chartOptions.selectedCurveType = /** @type {any} */ (isEnergy ? 'step' : 'straight');
 		chart.chartStyles.chartHeightClasses = chartHeight;
 		if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
@@ -313,19 +350,29 @@
 		chart.seriesNames = processed.seriesNames;
 		chart.seriesColours = processed.seriesColours;
 		chart.seriesLabels = processed.seriesLabels;
-		chart.formatTickX = formatXAxis;
 
 		// Set initial data from viewport — use untrack so this effect doesn't
 		// re-run on every pan frame (Effect 2 handles viewport updates)
 		const start = untrack(() => viewStart);
 		const end = untrack(() => viewEnd);
-		const visibleData = dataManager.getDataForRange(start, end);
-		chart.seriesData = visibleData;
-		chart.xDomain = /** @type {[number, number]} */ ([start, end]);
+		let visibleData = dataManager.getDataForRange(start, end);
 
-		const dayStarts = getDayStartDates(visibleData);
-		chart.xTicks = dayStarts;
-		chart.xGridlineTicks = dayStarts;
+		if (isEnergy) {
+			// Category chart mode — discrete date axis with step bars
+			chart.isCategoryChart = true;
+			chart.xKey = 'time';
+			chart.formatTickX = formatXAxis;
+			chart.seriesData = visibleData;
+		} else {
+			// Time-series mode — continuous x axis with pan/zoom
+			chart.formatTickX = formatXAxis;
+			chart.seriesData = visibleData;
+			chart.xDomain = /** @type {[number, number]} */ ([start, end]);
+
+			const dayStarts = getDayStartDates(visibleData);
+			chart.xTicks = dayStarts;
+			chart.xGridlineTicks = dayStarts;
+		}
 
 		chartStore = chart;
 	});
@@ -344,31 +391,45 @@
 		// Read viewport + interval to track as dependencies
 		const start = viewStart;
 		const end = viewEnd;
-		const interval = selectedInterval;
+		const displayInterval = selectedInterval;
+		const isEnergy = isEnergyMetric;
 
 		let visibleData = dataManager.getDataForRange(start, end);
 
-		// Client-side aggregation to 30m
-		if (interval === '30m' && visibleData.length > 0 && dataManager.seriesMeta) {
-			visibleData = aggregateToInterval(
-				visibleData,
-				'30m',
-				dataManager.seriesMeta.seriesNames,
-				'mean'
-			);
+		if (isEnergy) {
+			// Category chart — update data directly (time field used as unique key)
+			chartStore.seriesData = visibleData;
+		} else {
+			// Time-series — aggregate and update domain/ticks
+			if (displayInterval === '30m' && visibleData.length > 0 && dataManager.seriesMeta) {
+				visibleData = aggregateToInterval(
+					visibleData,
+					'30m',
+					dataManager.seriesMeta.seriesNames,
+					'mean'
+				);
+			}
+
+			chartStore.seriesData = visibleData;
+			chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
+
+			const dayStarts = getDayStartDates(visibleData);
+			chartStore.xTicks = dayStarts;
+			chartStore.xGridlineTicks = dayStarts;
+			chartStore.formatTickX = formatXAxis;
 		}
-
-		chartStore.seriesData = visibleData;
-		chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
-
-		const dayStarts = getDayStartDates(visibleData);
-		chartStore.xTicks = dayStarts;
-		chartStore.xGridlineTicks = dayStarts;
 	});
 
 	// Update reference lines and yDomain reactively
 	$effect(() => {
 		if (!chartStore) return;
+
+		// No capacity reference lines for energy charts (MW doesn't apply to MWh)
+		if (isEnergyMetric) {
+			chartStore.yReferenceLines = [];
+			chartStore.setYDomain(undefined);
+			return;
+		}
 
 		const isProportion = chartStore.chartOptions.isDataTransformTypeProportion;
 		const isChangeSince = chartStore.chartOptions.isDataTransformTypeChangeSince;
@@ -435,7 +496,8 @@
 		// Track reactive dependencies
 		const start = viewStart;
 		const end = viewEnd;
-		const interval = selectedInterval;
+		const displayInterval = selectedInterval;
+		const isEnergy = isEnergyMetric;
 		const manager = dataManager;
 		const _cache = manager?.processedCache; // track cache changes
 		const callback = onvisibledata;
@@ -446,7 +508,7 @@
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
 			let rows = manager.getDataForRange(start, end);
-			if (interval === '30m' && rows.length > 0) {
+			if (!isEnergy && displayInterval === '30m' && rows.length > 0) {
 				rows = aggregateToInterval(rows, '30m', meta.seriesNames, 'mean');
 			}
 			callback({
@@ -469,13 +531,14 @@
 	 * @returns {string}
 	 */
 	function formatXAxis(d) {
-		if (!(d instanceof Date)) return String(d);
+		const date = d instanceof Date ? d : typeof d === 'number' ? new Date(d) : null;
+		if (!date) return String(d);
 
 		return new Intl.DateTimeFormat('en-AU', {
 			day: 'numeric',
 			month: 'short',
 			timeZone: ianaTimeZone
-		}).format(d);
+		}).format(date);
 	}
 
 	// ============================================
@@ -680,18 +743,20 @@
 	{/if}
 
 	<div class="flex items-center gap-2">
-		<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
-			{#each ['5m', '30m'] as interval}
-				<button
-					class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedInterval === interval
-						? 'bg-white text-dark-grey shadow-sm'
-						: 'text-mid-grey hover:text-dark-grey'}"
-					onclick={() => (selectedInterval = /** @type {'5m' | '30m'} */ (interval))}
-				>
-					{interval === '5m' ? '5 min' : '30 min'}
-				</button>
-			{/each}
-		</div>
+		{#if !isEnergyMetric}
+			<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
+				{#each ['5m', '30m'] as intv}
+					<button
+						class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedInterval === intv
+							? 'bg-white text-dark-grey shadow-sm'
+							: 'text-mid-grey hover:text-dark-grey'}"
+						onclick={() => (selectedInterval = /** @type {'5m' | '30m'} */ (intv))}
+					>
+						{intv === '5m' ? '5 min' : '30 min'}
+					</button>
+				{/each}
+			</div>
+		{/if}
 
 		<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
 			<button
@@ -727,6 +792,7 @@
 			onpanend={handlePanEnd}
 			onzoom={handleZoom}
 			enablePan={true}
+			viewDomain={isEnergyMetric ? [viewStart, viewEnd] : null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
 		/>
 	</div>

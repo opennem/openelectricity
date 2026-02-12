@@ -256,8 +256,11 @@ export default class ChartDataManager {
 
 		// Overlap buffer: fetch a few extra intervals past the cache boundary
 		// so there are no missing points at the seam. The dedup merge makes
-		// overlapping data harmless.
-		const OVERLAP_MS = 10 * 60 * 1000; // 10 minutes (2x 5m interval)
+		// overlapping data harmless. Scale by interval.
+		const OVERLAP_MS =
+			this.interval === '1M' ? 31 * 24 * 60 * 60 * 1000 :
+			this.interval === '1d' ? 24 * 60 * 60 * 1000 :
+			10 * 60 * 1000; // 10 minutes for 5m
 
 		/** @type {LoadingRange[]} */
 		const gaps = [];

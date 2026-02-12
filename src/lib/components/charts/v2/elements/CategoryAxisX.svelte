@@ -106,13 +106,13 @@
 		/>
 	{/if}
 
-	<!-- Gridlines and tick marks at step transitions (band starts) -->
-	{#each categories as category, i (category)}
+	<!-- Gridlines and tick marks at step transitions (band starts) — thinned to match labels -->
+	{#each categories as category, i (i)}
 		{@const bandX = bandScale?.(category) ?? 0}
 		{@const xPos = toPixels(bandX)}
 		{@const yPos = Math.max(...$yRange)}
 
-		{#if gridlines}
+		{#if gridlines && shouldShowLabel(i)}
 			<line
 				class="gridline"
 				{stroke}
@@ -124,13 +124,13 @@
 			/>
 		{/if}
 
-		{#if tickMarks}
+		{#if tickMarks && shouldShowLabel(i)}
 			<line class="tick-mark" {stroke} y1={yPos} y2={yPos + 6} x1={xPos} x2={xPos} />
 		{/if}
 	{/each}
 
 	<!-- Tick labels - positioned at center of each band, skip when overlapping -->
-	{#each categories as category, i (category)}
+	{#each categories as category, i (i)}
 		{@const bandX = bandScale?.(category) ?? 0}
 		{@const bandwidth = bandScale?.bandwidth?.() ?? 0}
 		{@const xPos = toPixels(bandX + bandwidth / 2)}
@@ -144,7 +144,7 @@
 	{/each}
 
 	<!-- Final gridline at the end of the last band -->
-	{#if gridlines && categories.length > 0}
+	{#if gridlines && categories.length > 0 && shouldShowLabel(categories.length)}
 		{@const lastCategory = categories[categories.length - 1]}
 		{@const lastBandX = bandScale?.(lastCategory) ?? 0}
 		{@const bandwidth = bandScale?.bandwidth?.() ?? 0}

@@ -22,10 +22,14 @@
 	 * @property {((factor: number, centerMs: number) => void) | undefined} [onzoom] - Called during zoom with scale factor and center time
 	 * @property {boolean} [enabled] - Whether pan interaction is enabled
 	 * @property {number} [extraHeight] - Extra height below chart area (e.g. to cover X axis)
+	 * @property {[number, number] | null} [viewDomain] - Explicit time domain [startMs, endMs] for computing msPerPx (used by category charts where xScale is not time-based)
+	 * @property {((evt: MouseEvent) => void) | undefined} [onmousemove] - Forwarded mousemove (suppressed during pan)
+	 * @property {(() => void) | undefined} [onmouseout] - Forwarded mouseout
+	 * @property {((evt: PointerEvent) => void) | undefined} [onpointerup] - Forwarded pointerup for clicks (suppressed during pan)
 	 */
 
 	/** @type {Props} */
-	let { dataset = [], onpanstart, onpan, onpanend, onzoom, enabled = true, extraHeight = 0 } = $props();
+	let { dataset = [], onpanstart, onpan, onpanend, onzoom, enabled = true, extraHeight = 0, viewDomain = null, onmousemove, onmouseout, onpointerup } = $props();
 
 	/** @type {boolean} */
 	let isPanning = $state(false);
@@ -178,11 +182,16 @@
 
 		// Capture ms/px ratio from the current scale so it stays
 		// constant for the entire drag gesture
-		const domain = $xScale.domain();
 		const rangeSpan = $width;
-		if (domain.length === 2 && rangeSpan > 0) {
-			const domainMs = domain[1].getTime() - domain[0].getTime();
-			msPerPx = domainMs / rangeSpan;
+		if (viewDomain && rangeSpan > 0) {
+			// Use explicit time domain (for category charts)
+			msPerPx = (viewDomain[1] - viewDomain[0]) / rangeSpan;
+		} else {
+			const domain = $xScale.domain();
+			if (domain.length === 2 && rangeSpan > 0) {
+				const domainMs = domain[1].getTime() - domain[0].getTime();
+				msPerPx = domainMs / rangeSpan;
+			}
 		}
 
 		window.addEventListener('pointermove', handleWindowPointerMove);
@@ -217,7 +226,9 @@
 				if (rectElement) {
 					const rect = rectElement.getBoundingClientRect();
 					const offsetX = midX - rect.left;
-					const centerMs = $xScale.invert(offsetX).getTime();
+					const centerMs = viewDomain
+						? viewDomain[0] + (offsetX / rect.width) * (viewDomain[1] - viewDomain[0])
+						: $xScale.invert(offsetX).getTime();
 
 					// Accumulate into zoom rAF
 					pendingZoomFactor *= factor;
@@ -308,6 +319,9 @@
 	style:pointer-events={enabled ? 'all' : 'none'}
 	style:touch-action="none"
 	onpointerdown={handlePointerDown}
+	onmousemove={(e) => !isPanning && !isPinching && onmousemove?.(e)}
+	onmouseout={() => !isPanning && onmouseout?.()}
+	onpointerup={(e) => !isPanning && !isPinching && onpointerup?.(e)}
 />
 
 <style>

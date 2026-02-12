@@ -19,7 +19,8 @@
 		LineY,
 		CategoryAxisX,
 		CategoryLine,
-		CategoryOverlay
+		CategoryOverlay,
+		PanZoomLayer
 	} from './elements';
 	import CategoryHoverLayer from './elements/CategoryHoverLayer.svelte';
 	import HatchPattern from '$lib/components/charts/elements/defs/HatchPattern.svelte';
@@ -33,6 +34,12 @@
 	 * @property {(evt: { data: any, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
 	 * @property {(evt: any) => void} [onpointerup]
+	 * @property {(() => void)} [onpanstart] - Called when pan starts
+	 * @property {((deltaMs: number) => void)} [onpan] - Called during pan with time delta
+	 * @property {(() => void)} [onpanend] - Called when pan ends
+	 * @property {((factor: number, centerMs: number) => void)} [onzoom] - Called during zoom
+	 * @property {boolean} [enablePan] - Whether panning is enabled
+	 * @property {[number, number] | null} [viewDomain] - Time domain for pan/zoom calculations
 	 */
 
 	/** @type {Props} */
@@ -43,7 +50,13 @@
 		overlayStart,
 		onmousemove,
 		onmouseout,
-		onpointerup
+		onpointerup,
+		onpanstart,
+		onpan,
+		onpanend,
+		onzoom,
+		enablePan = false,
+		viewDomain = null
 	} = $props();
 
 	// Overlay configuration
@@ -128,9 +141,63 @@
 	let netTotalData = $derived(
 		netTotalKey ? mappedData.map((d) => ({ ...d, _netTotal: d[netTotalKey] ?? 0 })) : []
 	);
+
+	// Chart width for coordinate conversion (set by LayerCake's width store via the SVG)
+	// We'll use bind:clientWidth on the container for simplicity
+	/** @type {number} */
+	let chartWidth = $state(0);
+	// Note: chartWidth is approximate (container width). The PanZoomLayer uses LayerCake's
+	// $width internally for pan math. We only need chartWidth for category lookup from raw events.
+
+	/**
+	 * Find category at a pixel x position (for PanZoomLayer event forwarding)
+	 * @param {number} offsetX
+	 * @returns {string | number | undefined}
+	 */
+	function findCategoryAtX(offsetX) {
+		if (!bandScale?.bandwidth || !chartWidth) return undefined;
+		const scaledX = (offsetX / chartWidth) * 100;
+		for (const cat of categories) {
+			const bandStart = bandScale(cat) ?? 0;
+			const bandEnd = bandStart + bandScale.bandwidth();
+			if (scaledX >= bandStart && scaledX <= bandEnd) return cat;
+		}
+		return undefined;
+	}
+
+	/**
+	 * Handle forwarded mousemove from PanZoomLayer — do category lookup
+	 * @param {MouseEvent} evt
+	 */
+	function handleForwardedMouseMove(evt) {
+		const category = findCategoryAtX(evt.offsetX);
+		if (category !== undefined) {
+			const item = chart.seriesScaledData.find((d) => d[chart.xKey] === category);
+			if (item) onmousemove?.({ data: item });
+		}
+	}
+
+	/**
+	 * Handle forwarded mouseout from PanZoomLayer
+	 */
+	function handleForwardedMouseOut() {
+		onmouseout?.();
+	}
+
+	/**
+	 * Handle forwarded pointerup from PanZoomLayer — do category lookup for click
+	 * @param {PointerEvent} evt
+	 */
+	function handleForwardedPointerUp(evt) {
+		const category = findCategoryAtX(evt.offsetX);
+		if (category !== undefined) {
+			const item = chart.seriesScaledData.find((d) => d[chart.xKey] === category);
+			if (item) onpointerup?.(item);
+		}
+	}
 </script>
 
-<div class="w-full {styles.chartHeightClasses}">
+<div class="w-full {styles.chartHeightPx ? '' : styles.chartHeightClasses}" style:height={styles.chartHeightPx ? `${styles.chartHeightPx}px` : undefined} style:touch-action={enablePan ? 'none' : undefined} bind:clientWidth={chartWidth}>
 	<LayerCake
 		padding={styles.chartPadding}
 		x={xAccessor}
@@ -188,7 +255,7 @@
 				/>
 			{/each}
 
-			<!-- Category hover layer on top for mouse interactions -->
+			<!-- Category hover layer — visual highlight/focus rects + interaction when no pan -->
 			<CategoryHoverLayer
 				dataset={chart.seriesScaledData}
 				xKey={chart.xKey}
@@ -196,10 +263,27 @@
 				useDivergingStack={chart.useDivergingStack}
 				highlightCategory={chart.hoverCategory}
 				focusCategory={chart.focusCategory}
-				{onmousemove}
-				{onmouseout}
-				{onpointerup}
+				onmousemove={enablePan ? undefined : onmousemove}
+				onmouseout={enablePan ? undefined : onmouseout}
+				onpointerup={enablePan ? undefined : onpointerup}
 			/>
+
+			<!-- Pan/zoom layer on top — handles drag + forwards mouse events for hover -->
+			{#if enablePan}
+				<PanZoomLayer
+					dataset={chart.seriesScaledData}
+					{onpanstart}
+					{onpan}
+					{onpanend}
+					{onzoom}
+					enabled={enablePan}
+					extraHeight={30}
+					{viewDomain}
+					onmousemove={handleForwardedMouseMove}
+					onmouseout={handleForwardedMouseOut}
+					onpointerup={handleForwardedPointerUp}
+				/>
+			{/if}
 		</Svg>
 
 		<!-- Axes -->

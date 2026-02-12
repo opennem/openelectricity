@@ -589,30 +589,195 @@ const result = processForChart(data, 'W', {
 
 ---
 
+## Internal Architecture
+
+### Component Hierarchy
+
+```
+StratumChart
+├── ChartHeader              # Title, options menu
+├── ChartTooltip             # Hover/focus value display
+└── [chart mode routing]
+    ├── StackedAreaChart      # Time-series (continuous x axis)
+    │   ├── LayerCake         # Responsive SVG container, scales
+    │   │   ├── HoverLayer    # Transparent rect for mouse events in empty space
+    │   │   ├── PanZoomLayer  # Drag-to-pan, pinch-to-zoom (optional)
+    │   │   ├── StackedArea   # Rendered area/line paths
+    │   │   ├── LineY         # Horizontal reference lines
+    │   │   ├── LineX / Dot   # Hover/focus indicators
+    │   │   ├── AxisX         # Time axis with gridlines
+    │   │   └── AxisY         # Value axis
+    │   └── LoadingOverlay    # Shaded regions for in-flight fetches
+    │
+    └── StackedCategoryChart  # Discrete categories (band x axis)
+        └── LayerCake         # xDomain [0, 100] with band scale
+            ├── StackedArea         # Rendered area paths (step curves)
+            ├── CategoryLine        # Optional net-total overlay line
+            ├── CategoryOverlay     # Hatched projection overlay
+            ├── LineY               # Horizontal reference lines
+            ├── CategoryHoverLayer  # Visual highlight/focus rects
+            ├── PanZoomLayer        # Drag-to-pan with event forwarding (optional)
+            ├── CategoryAxisX       # Band axis with auto-thinned labels
+            └── AxisY               # Value axis
+```
+
+### Chart Mode Routing
+
+StratumChart routes between two chart implementations based on `chart.isCategoryChart`:
+
+| | StackedAreaChart | StackedCategoryChart |
+|---|---|---|
+| **X scale** | `scaleTime()` with `xDomain: [startMs, endMs]` | `scaleBand()` mapped to `[0, 100]` range |
+| **X accessor** | `d => d.date` (Date objects) | `d => d._bandX` (band position 0-100) |
+| **xKey** | `'date'` (default) | Set by consumer (e.g. `'time'` for unique timestamps) |
+| **Curve types** | `straight`, `step`, `monotone` | Typically `step` for block/bar appearance |
+| **Pan/zoom** | Via `PanZoomLayer` using `xScale.invert()` | Via `PanZoomLayer` using `viewDomain` prop |
+| **Hover** | `HoverLayer` + `StackedArea` mouse events | `CategoryHoverLayer` (or forwarded through `PanZoomLayer`) |
+| **Axis** | `AxisX` with tick/gridline arrays | `CategoryAxisX` with auto-thinned labels |
+
+### Pan and Zoom
+
+Pan/zoom is handled by `PanZoomLayer`, a transparent SVG rect that captures pointer events. It supports three input methods:
+
+1. **Drag-to-pan** -- Pointer down + move. Computes a `deltaMs` (time shift per pixel of drag) and emits `onpan(deltaMs)`. Uses `requestAnimationFrame` throttling.
+
+2. **Pinch-to-zoom** -- Two-pointer gesture. Computes a scale `factor` and center time, emits `onzoom(factor, centerMs)`.
+
+3. **Wheel zoom** -- Handled at the container `div` level (not inside SVG) with `Cmd`/`Ctrl` modifier. Attached imperatively with `{ passive: false }` so `preventDefault()` works.
+
+#### Time-series vs Category pan
+
+For time-series charts, PanZoomLayer reads `xScale.domain()` (Date objects) to compute `msPerPx`:
+
+```
+msPerPx = (domain[1].getTime() - domain[0].getTime()) / chartWidthPx
+```
+
+For category charts, the x scale is `[0, 100]` (not time-based). Instead, PanZoomLayer accepts a `viewDomain: [number, number]` prop -- the actual time range `[viewStart, viewEnd]` -- and computes:
+
+```
+msPerPx = (viewDomain[1] - viewDomain[0]) / chartWidthPx
+```
+
+The consuming component (e.g. FacilityChart) manages `viewStart`/`viewEnd` state and updates the chart data accordingly.
+
+#### Event layering with pan
+
+When pan is enabled on a category chart, PanZoomLayer sits on top of CategoryHoverLayer in the SVG stacking order. Since only the topmost SVG element receives pointer events, PanZoomLayer forwards mouse events (when not actively panning) through callback props:
+
+```
+PanZoomLayer (top)         -- captures pointerdown for pan
+  onmousemove forwarding   -- when not panning, forwards to parent
+  onmouseout forwarding    -- always forwards
+  onpointerup forwarding   -- when not panning (i.e. a click)
+
+CategoryHoverLayer (below) -- renders visual highlight/focus rects only
+                              interaction handlers disabled when pan is on
+```
+
+### ChartStore
+
+`ChartStore` is a Svelte 5 reactive class (`$state`, `$derived`) that holds all chart configuration and data:
+
+| Property | Description |
+|---|---|
+| `seriesData` | Raw data rows `[{ date, time, series1, series2, ... }]` |
+| `seriesNames` | Ordered list of series keys |
+| `seriesColours` | Map: series key -> hex colour |
+| `seriesLabels` | Map: series key -> display label |
+| `seriesScaledData` | Derived: data with SI-prefix scaling applied |
+| `xDomain` | `[start, end]` for time-series charts |
+| `xKey` | Which field to use as x value (default `'date'`, use `'time'` for category charts with timestamps) |
+| `isCategoryChart` | Route to StackedCategoryChart instead of StackedAreaChart |
+| `hoverData` / `hoverCategory` | Current hover state (time-series / category) |
+| `focusData` / `focusCategory` | Current focus (click-lock) state |
+| `yReferenceLines` | Horizontal annotations `[{ value, label, colour }]` |
+| `formatTickX` | Custom x-axis tick formatter `(d) => string` |
+
+### ChartDataManager
+
+`ChartDataManager` is a Svelte 5 reactive class that manages cached time-series data independently from the visible viewport. Used by FacilityChart for client-side data fetching and caching.
+
+```
+Server data ──seedCache()──> #dataCache (sorted rows by timestamp)
+                                  │
+Pan/zoom ───requestRange()──> #computeGaps() ──> #fetchFromApi()
+                                  │                    │
+                                  │              #mergeProcessedData()
+                                  │                    │
+                                  └────────────────────┘
+                                  │
+                       getDataForRange(start, end)
+                                  │
+                          visible chart data
+```
+
+Key behaviors:
+- **Gap detection**: Only fetches ranges not already in cache, with overlap buffers scaled by interval (10min for 5m, 1 day for 1d)
+- **Debounced fetching**: Batches rapid pan movements into single API calls (150ms debounce)
+- **Dedup merge**: New data rows overwrite existing ones at the same timestamp, then re-sort
+- **Metric-aware**: Accepts `interval` and `metric` config; recreated when these change
+
+### CategoryAxisX
+
+Renders the x axis for band-scale charts. Automatically thins labels, gridlines, and tick marks when the viewport is too narrow:
+
+```js
+const bandwidthPixels = chartWidth / categories.length;
+const skip = Math.ceil(minLabelWidth / bandwidthPixels);
+// Only show every `skip`-th label/gridline
+```
+
+Labels are centered within each band (between gridlines), matching the block/step visual style. Uses index-based `{#each}` keys to handle non-unique category values (e.g. date labels that repeat across year boundaries).
+
+---
+
 ## File Structure
 
 ```
 src/lib/components/charts/v2/
-├── index.js                 # Main exports
-├── README.md                # This file
-├── ChartStore.svelte.js     # Chart state management
-├── ChartOptions.svelte.js   # Chart options store
-├── ChartStyles.svelte.js    # Style configurations
-├── ChartTooltips.svelte.js  # Tooltip state
-├── StratumChart.svelte      # Main chart component
-├── StackedAreaChart.svelte  # Alternative chart type
-├── DateBrush.svelte         # Date range selector
-├── IntervalSelector.svelte  # Interval toggle
-├── dataProcessing.js        # Data processing utilities
-├── intervals.js             # Interval utilities
-├── sync.js                  # Chart synchronization
-└── presets.js               # Chart presets
+├── index.js                    # Main exports
+├── README.md                   # This file
+├── ChartStore.svelte.js        # Chart state management (runes)
+├── ChartOptions.svelte.js      # Chart type/transform options
+├── ChartStyles.svelte.js       # Style configurations
+├── ChartTooltips.svelte.js     # Tooltip state
+├── ChartDataManager.svelte.js  # Client-side data cache/fetcher
+├── StratumChart.svelte         # Router: header + tooltip + chart mode
+├── StackedAreaChart.svelte     # Time-series chart (continuous x)
+├── StackedCategoryChart.svelte # Category chart (band x)
+├── DateBrush.svelte            # Date range brush selector
+├── IntervalSelector.svelte     # Interval toggle
+├── dataProcessing.js           # Data processing utilities
+├── intervalConfig.js           # Interval/metric/curve definitions
+├── intervals.js                # Interval utilities
+├── sync.js                     # Multi-chart synchronization
+├── presets.js                  # Chart presets
+│
+└── elements/                   # Low-level SVG components
+    ├── AxisX.svelte            # Time axis with gridlines
+    ├── AxisY.svelte            # Value axis with gridlines
+    ├── CategoryAxisX.svelte    # Band axis with auto-thinned labels
+    ├── CategoryHoverLayer.svelte # Category highlight/focus rects
+    ├── CategoryLine.svelte     # Overlay line on category chart
+    ├── CategoryOverlay.svelte  # Hatched overlay region
+    ├── ClipPath.svelte         # SVG clip path definition
+    ├── Dot.svelte              # Hover/focus dot indicator
+    ├── HoverLayer.svelte       # Time-series mouse event layer
+    ├── Line.svelte             # General line element
+    ├── LineX.svelte            # Vertical line (hover/focus)
+    ├── LineY.svelte            # Horizontal line (reference)
+    ├── LoadingOverlay.svelte   # Shaded loading indicator
+    ├── PanZoomLayer.svelte     # Drag-to-pan + pinch-to-zoom
+    ├── Shading.svelte          # Background shading regions
+    ├── StackedArea.svelte      # Stacked area/line paths
+    └── index.js                # Element exports
 
 src/lib/utils/
 ├── Statistic/
-│   ├── index.js             # Original Statistic class
-│   └── v2.js                # StatisticV2 class
+│   ├── index.js                # Original Statistic class
+│   └── v2.js                   # StatisticV2 class
 └── TimeSeries/
-    ├── index.js             # Original TimeSeries class
-    └── v2.js                # TimeSeriesV2 class
+    ├── index.js                # Original TimeSeries class
+    └── v2.js                   # TimeSeriesV2 class
 ```
