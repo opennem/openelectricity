@@ -404,7 +404,8 @@
 						<RangeSelector
 							options={[
 								{ label: '3d', value: 3 },
-								{ label: '7d', value: 7 }
+								{ label: '7d', value: 7 },
+								{ label: '14d', value: 14 }
 							]}
 							bind:selected={selectedRange}
 							onchange={handleRangeSelect}
