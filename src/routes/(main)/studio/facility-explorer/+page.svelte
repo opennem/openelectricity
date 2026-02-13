@@ -6,7 +6,7 @@
 	 * with unit-level breakdown by fuel technology.
 	 */
 
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import {
 		FacilityChart,
@@ -34,7 +34,7 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {{ facilities: Array<{code: string, name: string, network_id: string, network_region: string}>, selectedCode: string|null, facility: any, powerData: any, timeZone: string, dateStart: string|null, dateEnd: string|null, error: string|null }} data
+	 * @property {{ facilities: Array<{code: string, name: string, network_id: string, network_region: string}>, selectedCode: string|null, facility: any, powerData: any, timeZone: string, dateStart: string|null, dateEnd: string|null, range: number|null, error: string|null }} data
 	 */
 
 	/** @type {Props} */
@@ -47,12 +47,13 @@
 	let searchQuery = $state('');
 
 	/**
-	 * Get default start date (3 days ago)
+	 * Get default start date based on range
+	 * @param {number} days
 	 * @returns {string}
 	 */
-	function getDefaultDateStart() {
+	function getDateStartForRange(days) {
 		const date = new Date();
-		date.setDate(date.getDate() - 3);
+		date.setDate(date.getDate() - days);
 		return date.toISOString().slice(0, 10);
 	}
 
@@ -64,7 +65,7 @@
 		return new Date().toISOString().slice(0, 10);
 	}
 
-	let dateStart = $state(data.dateStart || getDefaultDateStart());
+	let dateStart = $state(data.dateStart || getDateStartForRange(data.range ?? 3));
 	let dateEnd = $state(data.dateEnd || getDefaultDateEnd());
 
 	// ============================================
@@ -114,10 +115,15 @@
 		const facility = overrides.facility ?? data.selectedCode;
 		const ds = overrides.date_start ?? dateStart;
 		const de = overrides.date_end ?? dateEnd;
+		const range = overrides.range ?? selectedRange;
 
 		if (facility) params.set('facility', facility);
-		if (ds) params.set('date_start', ds);
-		if (de) params.set('date_end', de);
+		if (range) {
+			params.set('days', String(range));
+		} else {
+			if (ds) params.set('date_start', ds);
+			if (de) params.set('date_end', de);
+		}
 
 		return `?${params.toString()}`;
 	}
@@ -142,18 +148,38 @@
 	 */
 	function handleDateRangeChange(range) {
 		selectedRange = null;
-		activeInterval = '5m';
-		activeMetric = 'power';
+
+		const tz = timeZone || '+10:00';
+		const startMs = new Date(range.start + 'T00:00:00' + tz).getTime();
+		const endMs = new Date(range.end + 'T23:59:59' + tz).getTime();
+		const days = (endMs - startMs) / (24 * 60 * 60 * 1000);
+
+		// Auto-detect metric/interval from selected range
+		if (days >= 548) {
+			activeInterval = '1M';
+			activeMetric = 'energy';
+		} else if (days > 14) {
+			activeInterval = '1d';
+			activeMetric = 'energy';
+		} else {
+			activeInterval = '5m';
+			activeMetric = 'power';
+		}
+
 		if (data.selectedCode && chartComponent) {
-			const tz = timeZone || '+10:00';
-			const startMs = new Date(range.start + 'T00:00:00' + tz).getTime();
-			const endMs = new Date(range.end + 'T23:59:59' + tz).getTime();
 			chartComponent.setViewport(startMs, endMs);
 		}
+
+		// Update URL with date range (no range preset)
+		replaceState(buildUrl({ range: null }), {});
 	}
 
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let metricSwitchTimer = null;
+
 	/**
-	 * Handle viewport change from chart pan — sync DateRangePicker display.
+	 * Handle viewport change from chart pan/zoom — sync DateRangePicker display
+	 * and auto-switch metric when crossing thresholds.
 	 * Convert UTC ms to a date string in the network's timezone.
 	 * @param {{ start: number, end: number }} range
 	 */
@@ -162,6 +188,35 @@
 		const offsetMs = timeZone === '+08:00' ? 8 * 3600_000 : 10 * 3600_000;
 		dateStart = new Date(range.start + offsetMs).toISOString().slice(0, 10);
 		dateEnd = new Date(range.end + offsetMs).toISOString().slice(0, 10);
+
+		// Auto-switch metric/interval based on viewport duration (with hysteresis)
+		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
+		let targetMetric = activeMetric;
+		let targetInterval = activeInterval;
+
+		if (activeMetric === 'power' && durationDays >= 12) {
+			targetMetric = 'energy';
+			targetInterval = durationDays >= 548 ? '1M' : '1d';
+		} else if (activeMetric === 'energy' && durationDays <= 10) {
+			targetMetric = 'power';
+			targetInterval = '5m';
+		} else if (activeMetric === 'energy') {
+			// Within energy mode, switch between daily and monthly
+			if (activeInterval === '1d' && durationDays >= 548) {
+				targetInterval = '1M';
+			} else if (activeInterval === '1M' && durationDays < 365) {
+				targetInterval = '1d';
+			}
+		}
+
+		if (targetMetric !== activeMetric || targetInterval !== activeInterval) {
+			// Debounce the switch so continuous zoom gestures don't cause rapid flipping
+			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
+			metricSwitchTimer = setTimeout(() => {
+				activeMetric = targetMetric;
+				activeInterval = targetInterval;
+			}, 300);
+		}
 	}
 
 	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
@@ -204,16 +259,16 @@
 	});
 
 	/** @type {number | null} */
-	let selectedRange = $state(3);
+	let selectedRange = $state(data.range ?? 3);
 
-	/** Active interval/metric — only updated on explicit range button or date picker actions, NOT on zoom/pan */
+	/** Active interval/metric — derived from initial range */
 	/** @type {string} */
-	let activeInterval = $state('5m');
+	let activeInterval = $state((data.range ?? 3) >= 548 ? '1M' : (data.range ?? 3) > 14 ? '1d' : '5m');
 	/** @type {string} */
-	let activeMetric = $state('power');
+	let activeMetric = $state((data.range ?? 3) > 14 ? 'energy' : 'power');
 
 	/**
-	 * Handle quick range selection (3d/7d/14d/30d/1y)
+	 * Handle quick range selection (3d/7d/30d/1y)
 	 * @param {number} days
 	 */
 	function handleRangeSelect(days) {
@@ -221,6 +276,9 @@
 		if (days <= 14) {
 			activeInterval = '5m';
 			activeMetric = 'power';
+		} else if (days >= 548) {
+			activeInterval = '1M';
+			activeMetric = 'energy';
 		} else {
 			activeInterval = '1d';
 			activeMetric = 'energy';
@@ -237,6 +295,9 @@
 			const endMs = new Date(dateEnd + 'T23:59:59' + tz).getTime();
 			chartComponent.setViewport(startMs, endMs);
 		}
+
+		// Update URL without navigation
+		replaceState(buildUrl({ range: String(days) }), {});
 	}
 
 	/** @type {string[]} */
@@ -422,7 +483,6 @@
 							options={[
 								{ label: '3d', value: 3 },
 								{ label: '7d', value: 7 },
-								{ label: '14d', value: 14 },
 								{ label: '30d', value: 30 },
 								{ label: '1y', value: 365 }
 							]}
@@ -434,22 +494,26 @@
 							endDate={dateEnd}
 							onchange={handleDateRangeChange}
 						/>
+						<span class="text-xs text-mid-grey whitespace-nowrap">
+							{activeMetric === 'energy' ? 'Energy (daily)' : 'Power (5min)'}
+						</span>
 					</div>
 
-					<!-- Power Chart -->
-					{#if data.powerData}
-						<div class="bg-light-warm-grey/30 rounded-xl p-4">
-							<FacilityChart
+					<!-- Chart -->
+					<div class="bg-light-warm-grey/30 rounded-xl p-4">
+						<FacilityChart
 							bind:this={chartComponent}
 							facility={selectedFacility}
 							powerData={data.powerData}
 							{timeZone}
+							{dateStart}
+							{dateEnd}
 							interval={activeInterval}
 							metric={activeMetric}
 							onviewportchange={handleViewportChange}
 							onvisibledata={handleVisibleData}
 						/>
-						</div>
+					</div>
 
 					{#if tableData}
 						<div class="mt-2 border border-light-warm-grey rounded-lg overflow-y-auto max-h-[300px]">
@@ -459,17 +523,6 @@
 								seriesLabels={tableData.seriesLabels}
 								{timeZone}
 							/>
-						</div>
-					{/if}
-				{:else}
-						<div class="bg-light-warm-grey/30 rounded-xl p-4 h-[350px] flex flex-col items-center justify-center">
-							{#if data.error}
-								<AlertCircle size={24} class="mb-2 text-warm-grey" />
-								<p class="text-sm text-mid-grey">Failed to load power data</p>
-								<p class="text-xs text-warm-grey mt-1">{data.error}</p>
-							{:else}
-								<p class="text-sm text-mid-grey">No power data available for this facility</p>
-							{/if}
 						</div>
 					{/if}
 				</Accordion.Content>

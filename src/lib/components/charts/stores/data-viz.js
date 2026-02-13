@@ -1,4 +1,4 @@
-import { curveStep, curveLinear, curveMonotoneX } from 'd3-shape';
+import { curveStepAfter, curveLinear, curveMonotoneX } from 'd3-shape';
 import { get, readable, derived, writable } from 'svelte/store';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import { convert } from '$lib/utils/si-units';
@@ -63,7 +63,7 @@ export default function () {
 		{
 			label: 'Step',
 			value: 'step',
-			curveFunction: curveStep
+			curveFunction: curveStepAfter
 		}
 	]);
 	const curveType = writable('straight');

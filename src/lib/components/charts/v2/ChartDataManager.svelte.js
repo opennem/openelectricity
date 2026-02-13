@@ -58,6 +58,9 @@ export default class ChartDataManager {
 	/** @type {number | null} */ #cacheStart = $state(null);
 	/** @type {number | null} */ #cacheEnd = $state(null);
 
+	/** Whether the first data load (seed or fetch) has completed */
+	initialLoadComplete = $state(false);
+
 	// Loading state
 	/** @type {LoadingRange[]} */
 	loadingRanges = $state([]);
@@ -87,6 +90,9 @@ export default class ChartDataManager {
 	get isLoading() {
 		return this.loadingRanges.length > 0;
 	}
+
+	/** Whether a fetch is pending (debouncing) or in-flight */
+	hasPendingFetch = $state(false);
 
 	get cacheStart() {
 		return this.#cacheStart;
@@ -140,10 +146,16 @@ export default class ChartDataManager {
 	 * @param {any} powerResponse - Raw API response
 	 */
 	seedCache(powerResponse) {
-		if (!powerResponse?.data) return;
+		if (!powerResponse?.data) {
+			this.initialLoadComplete = true;
+			return;
+		}
 
 		const result = this.#processResponse(powerResponse);
-		if (!result || !result.data.length) return;
+		if (!result || !result.data.length) {
+			this.initialLoadComplete = true;
+			return;
+		}
 
 		this.#dataCache = result.data;
 		this.#seriesMeta = {
@@ -153,6 +165,7 @@ export default class ChartDataManager {
 		};
 
 		this.#updateCacheRange();
+		this.initialLoadComplete = true;
 		console.log('ChartDataManager seedCache:', {
 			facilityCode: this.facilityCode,
 			rows: this.#dataCache.length,
@@ -202,12 +215,37 @@ export default class ChartDataManager {
 		} else {
 			this.#pendingFetch = { start, end };
 		}
+		this.hasPendingFetch = true;
 
 		// Debounce
 		if (this.#fetchTimer) clearTimeout(this.#fetchTimer);
 		this.#fetchTimer = setTimeout(() => {
 			this.#executeFetch();
 		}, 150);
+	}
+
+	/** API max range per request (1000 days in ms) */
+	static #MAX_API_RANGE_MS = 1000 * 24 * 60 * 60 * 1000;
+
+	/**
+	 * Split a gap into chunks that fit within the API's max range limit.
+	 * @param {LoadingRange} gap
+	 * @returns {LoadingRange[]}
+	 */
+	#splitGapIntoBatches(gap) {
+		const maxRange = ChartDataManager.#MAX_API_RANGE_MS;
+		const duration = gap.end - gap.start;
+		if (duration <= maxRange) return [gap];
+
+		/** @type {LoadingRange[]} */
+		const batches = [];
+		let cursor = gap.start;
+		while (cursor < gap.end) {
+			const batchEnd = Math.min(cursor + maxRange, gap.end);
+			batches.push({ start: cursor, end: batchEnd });
+			cursor = batchEnd;
+		}
+		return batches;
 	}
 
 	async #executeFetch() {
@@ -217,18 +255,29 @@ export default class ChartDataManager {
 
 		// Calculate actual gaps to fetch
 		const gaps = this.#computeGaps(pending.start, pending.end);
-		if (!gaps.length) return;
+		if (!gaps.length) {
+			this.hasPendingFetch = false;
+			this.initialLoadComplete = true;
+			return;
+		}
 
+		// Split any gap that exceeds the API's 1000-day limit into batches
+		/** @type {LoadingRange[]} */
+		const allBatches = [];
 		for (const gap of gaps) {
-			const key = `${gap.start}-${gap.end}`;
+			allBatches.push(...this.#splitGapIntoBatches(gap));
+		}
+
+		for (const batch of allBatches) {
+			const key = `${batch.start}-${batch.end}`;
 			if (this.#inFlightKeys.has(key)) continue;
 			this.#inFlightKeys.add(key);
 
 			// Add to loading ranges
-			this.loadingRanges = [...this.loadingRanges, gap];
+			this.loadingRanges = [...this.loadingRanges, batch];
 
 			try {
-				const data = await this.#fetchFromApi(gap.start, gap.end);
+				const data = await this.#fetchFromApi(batch.start, batch.end);
 				if (data) {
 					this.#mergeProcessedData(data);
 				}
@@ -237,8 +286,10 @@ export default class ChartDataManager {
 			} finally {
 				this.#inFlightKeys.delete(key);
 				this.loadingRanges = this.loadingRanges.filter(
-					(r) => r.start !== gap.start || r.end !== gap.end
+					(r) => r.start !== batch.start || r.end !== batch.end
 				);
+				this.initialLoadComplete = true;
+				this.hasPendingFetch = this.#pendingFetch !== null || this.loadingRanges.length > 0;
 			}
 		}
 	}
@@ -283,11 +334,18 @@ export default class ChartDataManager {
 	 * @returns {Promise<any|null>}
 	 */
 	async #fetchFromApi(startMs, endMs) {
+		// Clamp date range — no data before Dec 1998, no future dates
+		const EARLIEST_MS = new Date('1998-12-01T00:00:00Z').getTime();
+		const now = Date.now();
+		const clampedStart = Math.max(Math.min(startMs, now), EARLIEST_MS);
+		const clampedEnd = Math.min(endMs, now);
+		if (clampedStart >= clampedEnd) return null;
+
 		// The API expects timezone-naive dates in the network's local time.
 		// Convert UTC ms → local time by adding the network's UTC offset.
 		const offsetMs = this.networkId === 'WEM' ? 8 * 3600_000 : 10 * 3600_000;
-		const dateStart = new Date(startMs + offsetMs).toISOString().slice(0, 19);
-		const dateEnd = new Date(endMs + offsetMs).toISOString().slice(0, 19);
+		const dateStart = new Date(clampedStart + offsetMs).toISOString().slice(0, 19);
+		const dateEnd = new Date(clampedEnd + offsetMs).toISOString().slice(0, 19);
 
 		const params = new URLSearchParams({
 			network_id: this.networkId,
@@ -375,6 +433,8 @@ export default class ChartDataManager {
 		this.#cacheStart = null;
 		this.#cacheEnd = null;
 		this.loadingRanges = [];
+		this.initialLoadComplete = false;
+		this.hasPendingFetch = false;
 		if (this.#fetchTimer) clearTimeout(this.#fetchTimer);
 		this.#pendingFetch = null;
 	}

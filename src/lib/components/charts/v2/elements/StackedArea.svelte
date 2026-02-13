@@ -31,6 +31,7 @@
 	 * @property {string} [dotStroke] - Dot stroke colour
 	 * @property {string} [dotStrokeWidth] - Dot stroke width
 	 * @property {boolean} [lighterNegative] - Use lighter color for negative values
+	 * @property {boolean} [stepMode] - Use floor-based band detection (for step curves)
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
 	 * @property {(data: TimeSeriesData) => void} [onpointerup]
@@ -50,6 +51,7 @@
 		dotStroke = 'black',
 		dotStrokeWidth = '1px',
 		lighterNegative = false,
+		stepMode = false,
 		onmousemove,
 		onmouseout,
 		onpointerup
@@ -120,6 +122,21 @@
 		}
 
 		const xInvert = $xScale.invert(offsetX);
+
+		if (stepMode) {
+			// Floor-based: find last data point with time <= cursor
+			const cursorTime = new Date(xInvert).getTime();
+			let found = undefined;
+			for (const d of dataset) {
+				if (d.time <= cursorTime) {
+					found = d;
+				} else {
+					break;
+				}
+			}
+			return found;
+		}
+
 		const closest = closestTo(new Date(xInvert), compareDates);
 
 		if (!closest) return undefined;

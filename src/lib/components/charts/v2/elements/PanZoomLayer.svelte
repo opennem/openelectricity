@@ -10,6 +10,7 @@
 	 * move/up listeners to window so dragging outside the chart still works.
 	 */
 	import { getContext } from 'svelte';
+	import { closestTo } from 'date-fns';
 
 	const { xScale, width, height } = getContext('LayerCake');
 
@@ -23,13 +24,14 @@
 	 * @property {boolean} [enabled] - Whether pan interaction is enabled
 	 * @property {number} [extraHeight] - Extra height below chart area (e.g. to cover X axis)
 	 * @property {[number, number] | null} [viewDomain] - Explicit time domain [startMs, endMs] for computing msPerPx (used by category charts where xScale is not time-based)
-	 * @property {((evt: MouseEvent) => void) | undefined} [onmousemove] - Forwarded mousemove (suppressed during pan)
+	 * @property {boolean} [stepMode] - Use floor-based band detection for hover (step curves)
+	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove] - Forwarded hover event (suppressed during pan)
 	 * @property {(() => void) | undefined} [onmouseout] - Forwarded mouseout
-	 * @property {((evt: PointerEvent) => void) | undefined} [onpointerup] - Forwarded pointerup for clicks (suppressed during pan)
+	 * @property {(data: TimeSeriesData) => void} [onpointerup] - Forwarded click with data (suppressed during pan)
 	 */
 
 	/** @type {Props} */
-	let { dataset = [], onpanstart, onpan, onpanend, onzoom, enabled = true, extraHeight = 0, viewDomain = null, onmousemove, onmouseout, onpointerup } = $props();
+	let { dataset = [], onpanstart, onpan, onpanend, onzoom, enabled = true, extraHeight = 0, viewDomain = null, stepMode = false, onmousemove, onmouseout, onpointerup } = $props();
 
 	/** @type {boolean} */
 	let isPanning = $state(false);
@@ -173,8 +175,9 @@
 			return;
 		}
 
-		// Single pointer — start pan tracking
+		// Single pointer — require Cmd/Ctrl for pan (like zoom)
 		if (event.button !== 0) return; // only primary button
+		if (!event.metaKey && !event.ctrlKey) return;
 
 		startX = event.clientX;
 		lastX = event.clientX;
@@ -304,6 +307,39 @@
 		}
 	}
 
+	// --- Hover detection (mirrors HoverLayer logic) ---
+
+	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
+
+	/**
+	 * Find the closest data point to a mouse event's x position
+	 * @param {MouseEvent} evt
+	 * @returns {TimeSeriesData | undefined}
+	 */
+	function findClosestDataPoint(evt) {
+		const rect = rectElement?.getBoundingClientRect();
+		if (!rect) return undefined;
+		const offsetX = evt.clientX - rect.left;
+		const xInvert = $xScale.invert(offsetX);
+
+		if (stepMode) {
+			const cursorTime = new Date(xInvert).getTime();
+			let found = undefined;
+			for (const d of dataset) {
+				if (d.time <= cursorTime) {
+					found = d;
+				} else {
+					break;
+				}
+			}
+			return found;
+		}
+
+		const closest = closestTo(new Date(xInvert), compareDates);
+		if (!closest) return undefined;
+		return dataset.find((d) => d.time === closest.getTime());
+	}
+
 	// Note: Wheel zoom is handled at the FacilityChart container div level
 	// to avoid SVG event propagation issues with stacked LayerCake SVG layers.
 </script>
@@ -319,14 +355,22 @@
 	style:pointer-events={enabled ? 'all' : 'none'}
 	style:touch-action="none"
 	onpointerdown={handlePointerDown}
-	onmousemove={(e) => !isPanning && !isPinching && onmousemove?.(e)}
+	onmousemove={(e) => {
+		if (isPanning || isPinching) return;
+		const item = findClosestDataPoint(e);
+		if (item) onmousemove?.({ data: item });
+	}}
 	onmouseout={() => !isPanning && onmouseout?.()}
-	onpointerup={(e) => !isPanning && !isPinching && onpointerup?.(e)}
+	onpointerup={(e) => {
+		if (isPanning || isPinching) return;
+		const item = findClosestDataPoint(e);
+		if (item) onpointerup?.(item);
+	}}
 />
 
 <style>
 	.pan-zoom-layer {
-		cursor: grab;
+		cursor: default;
 	}
 	.pan-zoom-layer.panning {
 		cursor: grabbing;

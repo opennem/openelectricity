@@ -21,6 +21,7 @@ export { default as CategoryAxisX } from './CategoryAxisX.svelte';
 export { default as LineX } from './LineX.svelte';
 export { default as LineY } from './LineY.svelte';
 export { default as Dot } from './Dot.svelte';
+export { default as StepHoverBand } from './StepHoverBand.svelte';
 
 // Overlays
 export { default as CategoryOverlay } from './CategoryOverlay.svelte';

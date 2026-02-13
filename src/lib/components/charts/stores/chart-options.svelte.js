@@ -1,8 +1,8 @@
-import { curveStep, curveStepAfter, curveLinear, curveMonotoneX } from 'd3-shape';
+import { curveStepAfter, curveLinear, curveMonotoneX } from 'd3-shape';
 import { transformToProportion, transformToChangeSince } from '$lib/utils/data-transform';
 
 /** @typedef {'absolute' | 'proportion' | 'changeSince'} DataTransformType */
-/** @typedef {'smooth' | 'straight' | 'step' | 'stepAfter'} CurveType */
+/** @typedef {'smooth' | 'straight' | 'step'} CurveType */
 /** @typedef {'area' | 'line'} ChartType */
 const DEFAULT_DATA_TRANSFORM_TYPE = 'absolute';
 const DEFAULT_CURVE_TYPE = 'straight';
@@ -49,11 +49,11 @@ export default class ChartOptionsState {
 			value: 'step'
 		}
 	]);
+	// Note: 'step' uses curveStepAfter (d3) — the old curveStep was removed
 	curveFunctionsMap = Object.freeze({
 		smooth: curveMonotoneX,
 		straight: curveLinear,
-		step: curveStep,
-		stepAfter: curveStepAfter
+		step: curveStepAfter
 	});
 	/** @type {CurveType} */
 	selectedCurveType = $state(DEFAULT_CURVE_TYPE);
@@ -122,8 +122,9 @@ export default class ChartOptionsState {
 		this.selectedCurveType = 'smooth';
 	}
 
+	/** @deprecated Use setStepCurve() instead */
 	setStepAfterCurve() {
-		this.selectedCurveType = 'stepAfter';
+		this.selectedCurveType = 'step';
 	}
 
 	setLineChart() {

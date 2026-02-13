@@ -13,13 +13,14 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {TimeSeriesData[]} [dataset] - The dataset to search for closest point
+	 * @property {boolean} [stepMode] - Use floor-based band detection (for step curves)
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove] - Mouse move callback
 	 * @property {() => void} [onmouseout] - Mouse out callback
 	 * @property {(data: TimeSeriesData) => void} [onpointerup] - Pointer up (click) callback
 	 */
 
 	/** @type {Props} */
-	let { dataset = [], onmousemove, onmouseout, onpointerup } = $props();
+	let { dataset = [], stepMode = false, onmousemove, onmouseout, onpointerup } = $props();
 
 	// Extract unique dates for comparison
 	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
@@ -43,6 +44,21 @@
 		}
 
 		const xInvert = $xScale.invert(offsetX);
+
+		if (stepMode) {
+			// Floor-based: find last data point with time <= cursor
+			const cursorTime = new Date(xInvert).getTime();
+			let found = undefined;
+			for (const d of dataset) {
+				if (d.time <= cursorTime) {
+					found = d;
+				} else {
+					break;
+				}
+			}
+			return found;
+		}
+
 		const closest = closestTo(new Date(xInvert), compareDates);
 
 		if (!closest) return undefined;

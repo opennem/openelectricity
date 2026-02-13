@@ -8,11 +8,11 @@
  * - Unit prefixes
  */
 
-import { curveStep, curveStepAfter, curveLinear, curveMonotoneX } from 'd3-shape';
+import { curveStepAfter, curveLinear, curveMonotoneX } from 'd3-shape';
 import { transformToProportion, transformToChangeSince } from '$lib/utils/data-transform';
 
 /** @typedef {'absolute' | 'proportion' | 'changeSince'} DataTransformType */
-/** @typedef {'smooth' | 'straight' | 'step' | 'stepAfter'} CurveType */
+/** @typedef {'smooth' | 'straight' | 'step'} CurveType */
 /** @typedef {'area' | 'line'} ChartType */
 
 const DEFAULT_DATA_TRANSFORM_TYPE = /** @type {DataTransformType} */ ('absolute');
@@ -53,19 +53,21 @@ export default class ChartOptions {
 	isDataTransformTypeChangeSince = $derived(this.selectedDataTransformType === 'changeSince');
 
 	// Curve options
+	// Note: "Step" uses curveStepAfter (d3) which works better for time-series
+	// energy data — the value at time T is drawn as a horizontal bar from T to T+1.
+	// The old curveStep (centered step) was removed as it doesn't align with
+	// how interval data is conventionally displayed.
 	curveOptions = Object.freeze([
 		{ label: 'Smooth', value: /** @type {CurveType} */ ('smooth') },
 		{ label: 'Straight', value: /** @type {CurveType} */ ('straight') },
-		{ label: 'Step', value: /** @type {CurveType} */ ('step') },
-		{ label: 'Step After', value: /** @type {CurveType} */ ('stepAfter') }
+		{ label: 'Step', value: /** @type {CurveType} */ ('step') }
 	]);
 
 	/** @type {Record<CurveType, Function>} */
 	#curveFunctions = Object.freeze({
 		smooth: curveMonotoneX,
 		straight: curveLinear,
-		step: curveStep,
-		stepAfter: curveStepAfter
+		step: curveStepAfter
 	});
 
 	/** @type {CurveType} */

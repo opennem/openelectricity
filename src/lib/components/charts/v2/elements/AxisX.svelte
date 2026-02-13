@@ -27,6 +27,7 @@
 	 * @property {'start' | 'middle' | 'end'} [textAnchor] - Default text anchor
 	 * @property {string} [textClass] - CSS class for tick labels
 	 * @property {string} [xTextClasses] - Alias for textClass (backwards compatibility)
+	 * @property {boolean} [stepMode] - Step chart mode: tick marks at gridline positions, labels at midpoints
 	 */
 
 	/** @type {Props} */
@@ -47,7 +48,8 @@
 		fill = 'white',
 		textAnchor = 'middle',
 		textClass = 'text-xxs font-light text-mid-warm-grey',
-		xTextClasses = ''
+		xTextClasses = '',
+		stepMode = false
 	} = $props();
 
 	// Use xTextClasses if provided (backwards compatibility)
@@ -106,14 +108,23 @@
 		{/each}
 	{/if}
 
-	<!-- Tick labels and marks -->
+	<!-- Step mode: tick marks at gridline (band boundary) positions -->
+	{#if stepMode && tickMarks}
+		{#each gridlineTickVals as tick (tick)}
+			{@const xPos = $xScale(tick)}
+			{@const yPos = Math.max(...$yRange)}
+			<line class="tick-mark" {stroke} y1={yPos} y2={yPos + 6} x1={xPos} x2={xPos} />
+		{/each}
+	{/if}
+
+	<!-- Tick labels (and non-step tick marks) -->
 	{#each tickVals as tick, i (tick)}
 		{@const xPos = $xScale(tick)}
 		{@const yPos = Math.max(...$yRange)}
 
 		<g class="tick tick-{i}" transform="translate({xPos}, {yPos})">
-			<!-- Tick mark -->
-			{#if tickMarks}
+			<!-- Tick mark (non-step mode only) -->
+			{#if tickMarks && !stepMode}
 				<line
 					class="tick-mark"
 					stroke="black"

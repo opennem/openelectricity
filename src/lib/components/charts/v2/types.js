@@ -52,7 +52,7 @@
 
 /**
  * Curve interpolation type
- * @typedef {'smooth' | 'straight' | 'step' | 'stepAfter'} CurveType
+ * @typedef {'smooth' | 'straight' | 'step'} CurveType
  */
 
 /**

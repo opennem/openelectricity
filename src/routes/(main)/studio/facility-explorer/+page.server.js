@@ -39,6 +39,7 @@ const client = new OpenElectricityClient({
  * @property {string} timeZone - Timezone offset string
  * @property {string | null} dateStart - Start date for data range
  * @property {string | null} dateEnd - End date for data range
+ * @property {number | null} range - Preselected range in days
  * @property {string | null} error - Error message if any
  */
 
@@ -64,6 +65,7 @@ export async function load({ url, fetch }) {
 		timeZone: '+10:00',
 		dateStart,
 		dateEnd,
+		range: days ? parseInt(days, 10) : null,
 		error: null
 	};
 
@@ -94,23 +96,27 @@ export async function load({ url, fetch }) {
 				// WEM = +08:00 (AWST), NEM = +10:00 (AEST)
 				result.timeZone = selectedFacility.network_id === 'WEM' ? '+08:00' : '+10:00';
 
-				// Build API URL with optional date params
-				const apiParams = new URLSearchParams({
-					network_id: selectedFacility.network_id
-				});
-				if (dateStart) apiParams.set('date_start', dateStart);
-				if (dateEnd) apiParams.set('date_end', dateEnd);
-				if (days) apiParams.set('days', days);
+				// Only fetch power data server-side for short ranges (≤14 days).
+				// Energy ranges (>14 days) are fetched client-side by ChartDataManager.
+				const numDays = days ? parseInt(days, 10) : 3;
+				if (numDays <= 14) {
+					const apiParams = new URLSearchParams({
+						network_id: selectedFacility.network_id
+					});
+					if (dateStart) apiParams.set('date_start', dateStart);
+					if (dateEnd) apiParams.set('date_end', dateEnd);
+					if (days) apiParams.set('days', days);
 
-				const powerRes = await fetch(
-					`/api/facilities/${selectedCode}/power?${apiParams.toString()}`
-				);
+					const powerRes = await fetch(
+						`/api/facilities/${selectedCode}/power?${apiParams.toString()}`
+					);
 
-				if (powerRes.ok) {
-					const powerJson = await powerRes.json();
-					result.powerData = powerJson.response;
-				} else {
-					result.error = 'Failed to fetch power data';
+					if (powerRes.ok) {
+						const powerJson = await powerRes.json();
+						result.powerData = powerJson.response;
+					} else {
+						result.error = 'Failed to fetch power data';
+					}
 				}
 			} else {
 				result.error = `Facility "${selectedCode}" not found`;

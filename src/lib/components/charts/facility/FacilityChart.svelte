@@ -42,6 +42,8 @@
 	 * @property {string} [chartHeight] - Chart height class
 	 * @property {number} [chartHeightPx] - Chart height in pixels (overrides chartHeight when set)
 	 * @property {boolean} [useDivergingStack] - Stack positive/negative values independently (default: false)
+	 * @property {string} [dateStart] - Initial date start string (YYYY-MM-DD) for viewport when no seeded cache
+	 * @property {string} [dateEnd] - Initial date end string (YYYY-MM-DD) for viewport when no seeded cache
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
 	 */
@@ -57,6 +59,8 @@
 		chartHeight = 'h-[400px]',
 		chartHeightPx = 0,
 		useDivergingStack = false,
+		dateStart = '',
+		dateEnd = '',
 		onviewportchange,
 		onvisibledata
 	} = $props();
@@ -215,10 +219,13 @@
 	/** Whether we're showing energy data (1d interval) vs power (5m) */
 	let isEnergyMetric = $derived(metric === 'energy');
 
-	/** Minimum viewport duration: 1 hour for power, 7 days for energy */
-	let MIN_VIEWPORT_MS = $derived(isEnergyMetric ? 7 * 24 * 60 * 60 * 1000 : 1 * 60 * 60 * 1000);
-	/** Maximum viewport duration: 14 days for power, 730 days for energy */
-	let MAX_VIEWPORT_MS = $derived(isEnergyMetric ? 730 * 24 * 60 * 60 * 1000 : 14 * 24 * 60 * 60 * 1000);
+	/** Minimum viewport duration: 1 hour for power, 5 days for energy */
+	let MIN_VIEWPORT_MS = $derived(isEnergyMetric ? 5 * 24 * 60 * 60 * 1000 : 1 * 60 * 60 * 1000);
+	/** Maximum viewport duration: 16 days for power, 10 years for energy */
+	let MAX_VIEWPORT_MS = $derived(isEnergyMetric ? 10 * 365 * 24 * 60 * 60 * 1000 : 16 * 24 * 60 * 60 * 1000);
+
+	/** Prefetch buffer multiplier — energy uses wider buffers since intervals are daily */
+	let fetchBufferMultiplier = $derived(isEnergyMetric ? 3 : 1);
 
 	/** Track the last pan direction for prefetching */
 	/** @type {number} */
@@ -258,7 +265,7 @@
 
 	// Initialize/reinitialize data manager when facility or interval/metric changes
 	$effect(() => {
-		if (!facility || !powerData) {
+		if (!facility) {
 			dataManager = null;
 			return;
 		}
@@ -291,8 +298,8 @@
 			getColour
 		});
 
-		// Only seed with server power data if the metric matches
-		if (currentMetric === 'power') {
+		// Only seed with server power data if the metric matches and data exists
+		if (currentMetric === 'power' && powerData) {
 			manager.seedCache(powerData);
 		}
 
@@ -305,10 +312,22 @@
 			if (manager.cacheStart !== null && manager.cacheEnd !== null) {
 				viewStart = manager.cacheStart;
 				viewEnd = manager.cacheEnd;
+			} else if (dateStart && dateEnd) {
+				// No seeded cache (e.g. energy mode on page load) — use date props
+				const tz = timeZone || '+10:00';
+				viewStart = new Date(dateStart + 'T00:00:00' + tz).getTime();
+				viewEnd = Math.min(new Date(dateEnd + 'T23:59:59' + tz).getTime(), Date.now());
+				const duration = viewEnd - viewStart;
+				const bufferMultiplier = currentMetric === 'energy' ? 3 : 1;
+				const buffer = duration * bufferMultiplier;
+				manager.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, Date.now()));
 			}
 		} else {
-			// Switching interval/metric — keep current viewport, fetch any gaps
-			manager.requestRange(start, end);
+			// Switching interval/metric — keep current viewport, fetch with buffer
+			const duration = end - start;
+			const bufferMultiplier = currentMetric === 'energy' ? 3 : 1;
+			const buffer = duration * bufferMultiplier;
+			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()));
 		}
 
 		dataManager = manager;
@@ -321,58 +340,33 @@
 	/** @type {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} */
 	let chartStore = $state(null);
 
-	// Create chart store once when facility/data changes (not on viewport changes)
+	// Create chart store ONCE per facility — never recreated on metric switch.
+	// Uses time-series mode for both power and energy (step curves for energy).
 	$effect(() => {
-		if (!dataManager || !dataManager.processedCache) {
+		const currentFacility = facility;
+		if (!currentFacility) {
 			chartStore = null;
 			return;
 		}
 
-		const processed = dataManager.processedCache;
-
-		const isEnergy = isEnergyMetric;
+		// Only create if we don't have a store yet (or facility changed)
+		const existing = untrack(() => chartStore);
+		if (existing) return;
 
 		const chart = new ChartStore({
 			key: Symbol('facility-chart'),
-			title: facility?.name || 'Facility Power',
+			title: currentFacility.name || 'Facility',
 			prefix: 'M',
 			displayPrefix: 'M',
-			baseUnit: isEnergy ? 'Wh' : 'W',
+			baseUnit: 'W',
 			timeZone: timeZone
 		});
-		chart.chartOptions.selectedCurveType = /** @type {any} */ (isEnergy ? 'step' : 'straight');
 		chart.chartStyles.chartHeightClasses = chartHeight;
 		if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.useDivergingStack = useDivergingStack;
 		chart.lighterNegative = hasBatteryUnits;
-
-		chart.seriesNames = processed.seriesNames;
-		chart.seriesColours = processed.seriesColours;
-		chart.seriesLabels = processed.seriesLabels;
-
-		// Set initial data from viewport — use untrack so this effect doesn't
-		// re-run on every pan frame (Effect 2 handles viewport updates)
-		const start = untrack(() => viewStart);
-		const end = untrack(() => viewEnd);
-		let visibleData = dataManager.getDataForRange(start, end);
-
-		if (isEnergy) {
-			// Category chart mode — discrete date axis with step bars
-			chart.isCategoryChart = true;
-			chart.xKey = 'time';
-			chart.formatTickX = formatXAxis;
-			chart.seriesData = visibleData;
-		} else {
-			// Time-series mode — continuous x axis with pan/zoom
-			chart.formatTickX = formatXAxis;
-			chart.seriesData = visibleData;
-			chart.xDomain = /** @type {[number, number]} */ ([start, end]);
-
-			const dayStarts = getDayStartDates(visibleData);
-			chart.xTicks = dayStarts;
-			chart.xGridlineTicks = dayStarts;
-		}
+		chart.formatTickX = formatXAxis;
 
 		chartStore = chart;
 	});
@@ -384,11 +378,29 @@
 		}
 	});
 
-	// Update chart data/domain when viewport or interval changes (without recreating the store)
+	// Update series metadata when data manager provides processed data
 	$effect(() => {
 		if (!chartStore || !dataManager?.processedCache) return;
 
-		// Read viewport + interval to track as dependencies
+		const processed = dataManager.processedCache;
+		chartStore.seriesNames = processed.seriesNames;
+		chartStore.seriesColours = processed.seriesColours;
+		chartStore.seriesLabels = processed.seriesLabels;
+	});
+
+	// Update metric-dependent config (curve type, unit) reactively
+	$effect(() => {
+		if (!chartStore) return;
+
+		const isEnergy = isEnergyMetric;
+		chartStore.chartOptions.baseUnit = isEnergy ? 'Wh' : 'W';
+		chartStore.chartOptions.selectedCurveType = /** @type {any} */ (isEnergy ? 'step' : 'straight');
+	});
+
+	// Update chart data/domain when viewport, interval, or data changes
+	$effect(() => {
+		if (!chartStore || !dataManager?.processedCache) return;
+
 		const start = viewStart;
 		const end = viewEnd;
 		const displayInterval = selectedInterval;
@@ -396,23 +408,214 @@
 
 		let visibleData = dataManager.getDataForRange(start, end);
 
-		if (isEnergy) {
-			// Category chart — update data directly (time field used as unique key)
-			chartStore.seriesData = visibleData;
-		} else {
-			// Time-series — aggregate and update domain/ticks
-			if (displayInterval === '30m' && visibleData.length > 0 && dataManager.seriesMeta) {
-				visibleData = aggregateToInterval(
-					visibleData,
-					'30m',
-					dataManager.seriesMeta.seriesNames,
-					'mean'
-				);
+		// Aggregate to 30m for power mode when selected
+		if (!isEnergy && displayInterval === '30m' && visibleData.length > 0 && dataManager.seriesMeta) {
+			visibleData = aggregateToInterval(
+				visibleData,
+				'30m',
+				dataManager.seriesMeta.seriesNames,
+				'mean'
+			);
+		}
+
+		chartStore.seriesData = visibleData;
+		chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
+
+		if (isEnergy && visibleData.length > 1) {
+			// Use actual data point times for gridlines — ensures perfect alignment
+			// with step curve transitions and hover bands
+			/** @type {Date[]} */
+			const dataStarts = visibleData.map((/** @type {any} */ d) => new Date(d.time));
+
+			// Detect if data is monthly interval (bandMs > 20 days)
+			const bandMsEst = dataStarts.length > 1
+				? dataStarts[1].getTime() - dataStarts[0].getTime()
+				: 24 * 60 * 60 * 1000;
+			const isMonthlyInterval = bandMsEst > 20 * 24 * 60 * 60 * 1000;
+
+			// Viewport duration in years — used for yearly gridline snapping
+			const viewportDays = (end - start) / (24 * 60 * 60 * 1000);
+			const useYearlyGridlines = viewportDays >= 3 * 365;
+
+			// Smart thinning based on number of data points and interval
+			const numPoints = dataStarts.length;
+			let skip;
+			if (useYearlyGridlines) {
+				// 3+ years: yearly gridlines (skip value used for format selection)
+				skip = isMonthlyInterval ? 12 : 365;
+			} else if (isMonthlyInterval) {
+				// Monthly data: thin by calendar-meaningful intervals
+				if (numPoints <= 18) skip = 1;        // ≤1.5y: every month
+				else if (numPoints <= 24) skip = 3;   // ≤2y: quarterly
+				else skip = 6;                         // 2-3y: half-yearly
+			} else {
+				// Daily data
+				if (numPoints <= 14) skip = 1;
+				else if (numPoints <= 45) skip = 7;
+				else if (numPoints <= 120) skip = 14;
+				else if (numPoints <= 400) skip = 30;
+				else skip = 90;
 			}
 
-			chartStore.seriesData = visibleData;
-			chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
+			// Build gridlines
+			/** @type {Date[]} */
+			let thinnedGridlines;
+			const ymFmt = new Intl.DateTimeFormat('en-AU', {
+				year: 'numeric', month: '2-digit', timeZone: ianaTimeZone
+			});
 
+			if (useYearlyGridlines) {
+				// Snap to January boundaries (first data point of each year)
+				/** @type {Set<string>} */
+				const seenYears = new Set();
+				thinnedGridlines = [];
+				for (const d of dataStarts) {
+					const parts = ymFmt.formatToParts(d);
+					const y = parts.find((p) => p.type === 'year')?.value;
+					const m = parts.find((p) => p.type === 'month')?.value;
+					if (m === '01' && y && !seenYears.has(y)) {
+						seenYears.add(y);
+						thinnedGridlines.push(d);
+					}
+				}
+			} else if (!isMonthlyInterval && skip >= 28) {
+				// Daily data at monthly scale: snap to month boundaries
+				/** @type {Set<string>} */
+				const seen = new Set();
+				/** @type {Date[]} */
+				const monthBoundaries = [];
+				for (const d of dataStarts) {
+					const parts = ymFmt.formatToParts(d);
+					const y = parts.find((p) => p.type === 'year')?.value;
+					const m = parts.find((p) => p.type === 'month')?.value;
+					const key = `${y}-${m}`;
+					if (!seen.has(key)) {
+						seen.add(key);
+						monthBoundaries.push(d);
+					}
+				}
+				// Further thin based on number of months visible
+				// Update skip to reflect actual months-per-label for format selection
+				const numMonths = monthBoundaries.length;
+				if (numMonths > 24) {
+					// 2+ years: every 6th month (half-yearly)
+					thinnedGridlines = monthBoundaries.filter((_, i) => i % 6 === 0);
+					skip = 6 * 30; // signal half-yearly to formatter
+				} else if (numMonths > 14) {
+					// 1-2 years: every 3rd month (quarterly)
+					thinnedGridlines = monthBoundaries.filter((_, i) => i % 3 === 0);
+					skip = 3 * 30; // signal quarterly to formatter
+				} else {
+					thinnedGridlines = monthBoundaries;
+					skip = 30; // signal monthly to formatter
+				}
+			} else {
+				thinnedGridlines = dataStarts.filter((_, i) => i % skip === 0);
+			}
+
+			// Compute midpoints between consecutive gridlines for centered labels
+			const bandMs = dataStarts.length > 1
+				? dataStarts[1].getTime() - dataStarts[0].getTime()
+				: 24 * 60 * 60 * 1000;
+			const skipBandMs = bandMs * skip;
+
+			/** @type {Date[]} */
+			const midpoints = [];
+			/** @type {Map<number, Date>} */
+			const midToStart = new Map();
+			/** @type {Map<number, Date>} */
+			const midToEnd = new Map();
+
+			for (let i = 0; i < thinnedGridlines.length; i++) {
+				const bandStart = thinnedGridlines[i];
+				const bandEnd = thinnedGridlines[i + 1] || new Date(bandStart.getTime() + skipBandMs);
+				const mid = new Date((bandStart.getTime() + bandEnd.getTime()) / 2);
+				midpoints.push(mid);
+				midToStart.set(mid.getTime(), bandStart);
+				// Last data point in this group = one interval before next gridline
+				midToEnd.set(mid.getTime(), new Date(bandEnd.getTime() - bandMs));
+			}
+
+			chartStore.xGridlineTicks = thinnedGridlines;
+			chartStore.xTicks = midpoints;
+
+			// Format: label shows the band start date, positioned at midpoint
+			if (useYearlyGridlines) {
+				// Yearly labels: "'21 — '22" range or just "'26"
+				chartStore.formatTickX = (/** @type {any} */ d) => {
+					const date = d instanceof Date ? d : new Date(d);
+					const rangeStart = midToStart.get(date.getTime());
+					const rangeEnd = midToEnd.get(date.getTime());
+					if (!rangeStart) return '';
+					const sYear = new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone: ianaTimeZone }).format(rangeStart);
+					if (!rangeEnd) return sYear;
+					const eYear = new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone: ianaTimeZone }).format(rangeEnd);
+					if (sYear === eYear) return sYear;
+					return `${sYear} — ${eYear}`;
+				};
+			} else if (isMonthlyInterval || skip >= 28) {
+				// Monthly labels — only show year when Jan is in the range
+				chartStore.formatTickX = (/** @type {any} */ d) => {
+					const date = d instanceof Date ? d : new Date(d);
+					const rangeStart = midToStart.get(date.getTime()) || date;
+					const rangeEnd = midToEnd.get(date.getTime());
+
+					const myfmt = new Intl.DateTimeFormat('en-AU', {
+						month: 'short', year: '2-digit', timeZone: ianaTimeZone
+					});
+					const monthNumFmt = new Intl.DateTimeFormat('en-AU', {
+						month: 'numeric', timeZone: ianaTimeZone
+					});
+
+					const sParts = myfmt.formatToParts(rangeStart);
+					const sMonth = sParts.find((p) => p.type === 'month')?.value || '';
+					const sYear = sParts.find((p) => p.type === 'year')?.value || '';
+					const sMonthNum = parseInt(monthNumFmt.format(rangeStart));
+
+					// Single-month band: "Jan '26" or "Feb"
+					// Check if start and end are in the same month (or no end)
+					const eMonthNumVal = rangeEnd ? parseInt(monthNumFmt.format(rangeEnd)) : sMonthNum;
+					const eYearVal = rangeEnd ? myfmt.formatToParts(rangeEnd).find((p) => p.type === 'year')?.value : sYear;
+					if (!rangeEnd || (sMonthNum === eMonthNumVal && sYear === eYearVal)) {
+						return sMonthNum === 1 ? `${sMonth} '${sYear}` : sMonth;
+					}
+
+					// Multi-month range
+					const eParts = myfmt.formatToParts(rangeEnd);
+					const eMonth = eParts.find((p) => p.type === 'month')?.value || '';
+					const eYear = eParts.find((p) => p.type === 'year')?.value || '';
+					const eMonthNum = parseInt(monthNumFmt.format(rangeEnd));
+
+					// Check if Jan is in the range: start is Jan, or range wraps (end < start)
+					const hasJan = sMonthNum === 1 || eMonthNum < sMonthNum;
+
+					if (!hasJan) {
+						// No January in range: "Feb — May"
+						return `${sMonth} — ${eMonth}`;
+					}
+					if (sYear !== eYear) {
+						// Cross-year with Jan: "Nov — Jan '26"
+						return `${sMonth} — ${eMonth} '${eYear}`;
+					}
+					// Same year with Jan (start is Jan): "Jan — Mar '26"
+					return `${sMonth} — ${eMonth} '${eYear}`;
+				};
+			} else {
+				// Daily/weekly: show date range "21 — 27 Jan"
+				chartStore.formatTickX = (/** @type {any} */ d) => {
+					const date = d instanceof Date ? d : new Date(d);
+					const rangeStart = midToStart.get(date.getTime());
+					const rangeEnd = midToEnd.get(date.getTime());
+					if (!rangeStart || !rangeEnd) return formatXAxis(date);
+
+					// Single-day band (skip=1): just "21 Jan"
+					if (rangeStart.getTime() === rangeEnd.getTime()) {
+						return formatXAxis(rangeStart);
+					}
+					return formatDateRange(rangeStart, rangeEnd);
+				};
+			}
+		} else {
 			const dayStarts = getDayStartDates(visibleData);
 			chartStore.xTicks = dayStarts;
 			chartStore.xGridlineTicks = dayStarts;
@@ -519,7 +722,16 @@
 		}, 300);
 	});
 
-	let isDataReady = $derived(chartStore !== null);
+	/**
+	 * Show loading overlay when the chart has no visible data and data is being fetched.
+	 */
+	let showLoadingOverlay = $derived.by(() => {
+		if (!dataManager || !chartStore) return false;
+		if (chartStore.seriesData.length > 0) return false;
+
+		// No data yet — show overlay if still loading or haven't loaded
+		return !dataManager.initialLoadComplete || dataManager.isLoading || dataManager.hasPendingFetch;
+	});
 
 	// ============================================
 	// Formatters
@@ -539,6 +751,41 @@
 			month: 'short',
 			timeZone: ianaTimeZone
 		}).format(date);
+	}
+
+	/**
+	 * Format a date range for x-axis labels in step/energy mode.
+	 * Same month: "21 — 27 Jan", different month: "28 Jan — 3 Feb",
+	 * different year: "28 Dec '25 — 3 Jan '26"
+	 * @param {Date} start
+	 * @param {Date} end
+	 * @returns {string}
+	 */
+	function formatDateRange(start, end) {
+		const partsFmt = new Intl.DateTimeFormat('en-AU', {
+			day: 'numeric',
+			month: 'short',
+			year: '2-digit',
+			timeZone: ianaTimeZone
+		});
+
+		const sParts = partsFmt.formatToParts(start);
+		const eParts = partsFmt.formatToParts(end);
+
+		const sDay = sParts.find((p) => p.type === 'day')?.value;
+		const eDay = eParts.find((p) => p.type === 'day')?.value;
+		const sMonth = sParts.find((p) => p.type === 'month')?.value;
+		const eMonth = eParts.find((p) => p.type === 'month')?.value;
+		const sYear = sParts.find((p) => p.type === 'year')?.value;
+		const eYear = eParts.find((p) => p.type === 'year')?.value;
+
+		if (sYear !== eYear) {
+			return `${sDay} ${sMonth} '${sYear} — ${eDay} ${eMonth} '${eYear}`;
+		}
+		if (sMonth !== eMonth) {
+			return `${sDay} ${sMonth} — ${eDay} ${eMonth}`;
+		}
+		return `${sDay} — ${eDay} ${eMonth}`;
 	}
 
 	// ============================================
@@ -572,22 +819,25 @@
 		viewEnd = newEnd;
 		lastPanDelta = deltaMs;
 
-		// Request data for any uncached range
-		dataManager?.requestRange(viewStart, viewEnd);
+		// Request data for any uncached range (wider buffer for energy)
+		const viewportWidth = viewEnd - viewStart;
+		const buffer = viewportWidth * fetchBufferMultiplier;
+		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
 	}
 
 	function handlePanEnd() {
 		isPanning = false;
 
-		// Prefetch 1x viewport ahead in the pan direction
+		// Prefetch ahead in the pan direction (wider for energy)
 		const viewportWidth = viewEnd - viewStart;
+		const prefetch = viewportWidth * fetchBufferMultiplier;
 		const now = Date.now();
 		if (lastPanDelta < 0 && viewEnd < now) {
 			// Was panning left (toward future) — prefetch ahead, clamped to now
-			dataManager?.requestRange(viewEnd, Math.min(viewEnd + viewportWidth, now));
+			dataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
 		} else if (lastPanDelta > 0) {
 			// Was panning right (toward past) — prefetch behind
-			dataManager?.requestRange(viewStart - viewportWidth, viewStart);
+			dataManager?.requestRange(viewStart - prefetch, viewStart);
 		}
 
 		// Notify parent of viewport change
@@ -622,8 +872,9 @@
 		viewStart = newStart;
 		viewEnd = newEnd;
 
-		// Request data for any uncached range
-		dataManager?.requestRange(viewStart, viewEnd);
+		// Request data for any uncached range (wider buffer for energy)
+		const buffer = newDuration * fetchBufferMultiplier;
+		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
 
 		// Notify parent of viewport change
 		onviewportchange?.({ start: viewStart, end: viewEnd });
@@ -724,7 +975,11 @@
 		const now = Date.now();
 		viewStart = startMs;
 		viewEnd = Math.min(endMs, now);
-		dataManager?.requestRange(viewStart, viewEnd);
+
+		// Prefetch with buffer so panning has data ready
+		const duration = viewEnd - viewStart;
+		const buffer = duration * fetchBufferMultiplier;
+		dataManager?.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, now));
 	}
 
 	/**
@@ -780,8 +1035,8 @@
 </div>
 
 <!-- Main Chart -->
-{#if isDataReady && chartStore}
-	<div bind:this={chartContainerEl} class="border border-light-warm-grey rounded-lg p-4">
+{#if chartStore}
+	<div bind:this={chartContainerEl} class="border border-light-warm-grey rounded-lg p-4 relative">
 		<StratumChart
 			chart={chartStore}
 			onhover={handleHover}
@@ -792,24 +1047,39 @@
 			onpanend={handlePanEnd}
 			onzoom={handleZoom}
 			enablePan={true}
-			viewDomain={isEnergyMetric ? [viewStart, viewEnd] : null}
+			viewDomain={null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
 		/>
+
+		{#if showLoadingOverlay}
+			<!-- Loading overlay — previous chart stays visible underneath -->
+			<div class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
+				<div class="flex items-center gap-3 text-mid-warm-grey">
+					<svg
+						class="animate-spin h-5 w-5"
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+					>
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<path
+							class="opacity-75"
+							fill="currentColor"
+							d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+						></path>
+					</svg>
+					<span class="text-sm">Loading data...</span>
+				</div>
+			</div>
+		{/if}
 	</div>
 
-{:else if powerData !== null && !isDataReady}
-	<!-- No data found -->
+{:else}
+	<!-- No facility — chart store not created yet -->
 	<div
 		class="border border-light-warm-grey rounded-lg bg-light-warm-grey/30 flex items-center justify-center {chartHeightPx ? '' : chartHeight}"
 		style:height={chartHeightPx ? `${chartHeightPx}px` : undefined}
 	>
-		<div class="text-center text-mid-grey">
-			<p class="text-sm">No power data found</p>
-			<p class="text-xs mt-1">Data may not be available for this facility</p>
-		</div>
-	</div>
-{:else if powerData === null}
-	<div class="flex items-center justify-center py-12">
 		<div class="flex items-center gap-3 text-mid-warm-grey">
 			<svg
 				class="animate-spin h-5 w-5"
@@ -817,15 +1087,14 @@
 				fill="none"
 				viewBox="0 0 24 24"
 			>
-				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
-				></circle>
+				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
 				<path
 					class="opacity-75"
 					fill="currentColor"
 					d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
 				></path>
 			</svg>
-			<span>Loading power data...</span>
+			<span class="text-sm">Loading data...</span>
 		</div>
 	</div>
 {/if}

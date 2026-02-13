@@ -177,8 +177,8 @@
 		hideChartTypeOptions: true
 	});
 
-	// Set the curve type to stepAfter
-	chart.chartOptions.selectedCurveType = 'stepAfter';
+	// Set the curve type to step
+	chart.chartOptions.selectedCurveType = 'step';
 
 	// Use divergent stacking for positive/negative values
 	chart.useDivergingStack = true;

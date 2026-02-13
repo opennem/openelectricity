@@ -22,7 +22,8 @@
 		LineX,
 		LineY,
 		Dot,
-		Shading
+		Shading,
+		StepHoverBand
 	} from './elements';
 
 	/**
@@ -86,6 +87,9 @@
 				: []
 	);
 
+	// Determine if curve type is step (for band hover + axis alignment)
+	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
+
 	// Clip path IDs
 	let clipPathId = $derived(`${id}-clip-path`);
 	let clipPathAxisId = $derived(`${id}-clip-path-axis`);
@@ -116,17 +120,21 @@
 			</defs>
 
 			<!-- Hover layer for mouse interactions in empty space -->
-			<HoverLayer dataset={chart.seriesScaledData} {onmousemove} {onmouseout} {onpointerup} />
+			<HoverLayer dataset={chart.seriesScaledData} stepMode={isStepMode} {onmousemove} {onmouseout} {onpointerup} />
 
 			<!-- Pan layer on top — captures pointerdown for drag, passes clicks through -->
 			{#if enablePan}
 				<PanZoomLayer
 					dataset={chart.seriesScaledData}
+					stepMode={isStepMode}
 					{onpanstart}
 					{onpan}
 					{onpanend}
 					enabled={enablePan}
 					extraHeight={30}
+					{onmousemove}
+					{onmouseout}
+					{onpointerup}
 				/>
 			{/if}
 
@@ -144,6 +152,7 @@
 					seriesColours={chart.seriesColours}
 					highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
 					lighterNegative={chart.lighterNegative}
+					stepMode={isStepMode}
 					{onmousemove}
 					{onmouseout}
 					{onpointerup}
@@ -175,40 +184,48 @@
 			</defs>
 
 			<g clip-path={clipPathAxis}>
-				<!-- Hover line -->
-				{#if chart.hoverData}
-					<LineX
-						xValue={chart.hoverData}
-						yValue={styles.showHoverYLine ? chart.hoverData : undefined}
-						strokeArray="none"
+				{#if isStepMode}
+					<!-- Step mode: band highlight like category charts -->
+					<StepHoverBand
+						dataset={chart.seriesScaledData}
+						hoverTime={chart.hoverTime}
+						focusTime={chart.focusTime}
 					/>
-					{#if styles.showHoverDot}
-						<Dot
-							domains={chart.visibleSeriesNames}
-							value={chart.hoverData}
-							isStacked={true}
-							colour="#333"
-							r={4}
+				{:else}
+					<!-- Continuous mode: vertical line + dots -->
+					{#if chart.hoverData}
+						<LineX
+							xValue={chart.hoverData}
+							yValue={styles.showHoverYLine ? chart.hoverData : undefined}
+							strokeArray="none"
 						/>
+						{#if styles.showHoverDot}
+							<Dot
+								domains={chart.visibleSeriesNames}
+								value={chart.hoverData}
+								isStacked={true}
+								colour="#333"
+								r={4}
+							/>
+						{/if}
 					{/if}
-				{/if}
 
-				<!-- Focus line -->
-				{#if chart.focusData}
-					<LineX
-						xValue={chart.focusData}
-						yValue={styles.showFocusYLine ? chart.focusData : undefined}
-						strokeArray="none"
-						strokeColour={styles.focusYLineStrokeColour}
-					/>
-					{#if styles.showFocusDot}
-						<Dot
-							domains={chart.visibleSeriesNames}
-							value={chart.focusData}
-							isStacked={true}
-							colour={styles.focusYLineDotColour}
-							r={styles.focusYLineDotRadius}
+					{#if chart.focusData}
+						<LineX
+							xValue={chart.focusData}
+							yValue={styles.showFocusYLine ? chart.focusData : undefined}
+							strokeArray="none"
+							strokeColour={styles.focusYLineStrokeColour}
 						/>
+						{#if styles.showFocusDot}
+							<Dot
+								domains={chart.visibleSeriesNames}
+								value={chart.focusData}
+								isStacked={true}
+								colour={styles.focusYLineDotColour}
+								r={styles.focusYLineDotRadius}
+							/>
+						{/if}
 					{/if}
 				{/if}
 			</g>
@@ -241,6 +258,7 @@
 					fill={styles.xAxisFill}
 					xTextClasses={styles.xTextClasses}
 					yTick={styles.xAxisYTick}
+					stepMode={isStepMode}
 				/>
 			</g>
 		</Svg>

@@ -9,21 +9,21 @@
 export const INTERVAL_CONFIG = [
 	{ id: '5m', maxViewportDays: 3, metric: 'power', curveType: 'straight', label: '5 min' },
 	{ id: '1h', maxViewportDays: 14, metric: 'power', curveType: 'straight', label: '1 hour' },
-	{ id: '1d', maxViewportDays: 90, metric: 'energy', curveType: 'stepAfter', label: '1 day' },
-	{ id: '7d', maxViewportDays: 365, metric: 'energy', curveType: 'stepAfter', label: '1 week' },
-	{ id: '1M', maxViewportDays: 730, metric: 'energy', curveType: 'stepAfter', label: '1 month' },
+	{ id: '1d', maxViewportDays: 90, metric: 'energy', curveType: 'step', label: '1 day' },
+	{ id: '7d', maxViewportDays: 365, metric: 'energy', curveType: 'step', label: '1 week' },
+	{ id: '1M', maxViewportDays: 730, metric: 'energy', curveType: 'step', label: '1 month' },
 	{
 		id: '3M',
 		maxViewportDays: 1825,
 		metric: 'energy',
-		curveType: 'stepAfter',
+		curveType: 'step',
 		label: '3 months'
 	},
 	{
 		id: '1y',
 		maxViewportDays: Infinity,
 		metric: 'energy',
-		curveType: 'stepAfter',
+		curveType: 'step',
 		label: '1 year'
 	}
 ];
