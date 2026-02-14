@@ -662,7 +662,7 @@
 		bind:clientHeight={containerHeight}
 		class="relative grid grid-cols-1 md:grid-cols-12 {isFullscreen
 			? 'flex-1 min-h-0'
-			: 'h-[calc(100dvh-280px)] md:h-[calc(100dvh-500px)]'}"
+			: 'h-[calc(100dvh-280px)] md:h-[calc(100dvh-500px)] min-h-[400px]'}"
 	>
 		<!-- Left panel: List or Timeline (5/12 width on desktop) -->
 		<div
