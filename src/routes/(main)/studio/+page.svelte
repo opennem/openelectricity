@@ -43,6 +43,12 @@
 			link: '/studio/lens-on-emissions'
 		},
 		{
+			title: 'Solar Heatmap',
+			description:
+				"Visualises solar's growing share of Australia's electricity generation since 2013.",
+			link: '/studio/solar'
+		},
+		{
 			title: 'TrackerGrid',
 			description: 'A new data visualization tool for tracking and analyzing grid data.',
 			link: '/studio/tracker-grid',

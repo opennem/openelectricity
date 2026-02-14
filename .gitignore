@@ -14,5 +14,8 @@ test-results/
 playwright-report/
 package-lock.json
 
+# Large data files
+static/data/ignore/
+
 # Personal notes
 TODO.md
