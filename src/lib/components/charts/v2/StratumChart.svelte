@@ -177,7 +177,10 @@
 				/>
 			{/if}
 		{:else}
-			<div class="flex items-center justify-center h-64 text-gray-400">
+			<div
+				class="flex items-center justify-center text-gray-400 {chart.chartStyles.chartHeightPx ? '' : chart.chartStyles.chartHeightClasses}"
+				style:height={chart.chartStyles.chartHeightPx ? `${chart.chartStyles.chartHeightPx}px` : undefined}
+			>
 				<span>No data available</span>
 			</div>
 		{/if}

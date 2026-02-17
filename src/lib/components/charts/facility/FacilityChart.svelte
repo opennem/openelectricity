@@ -46,6 +46,7 @@
 	 * @property {string} [dateEnd] - Initial date end string (YYYY-MM-DD) for viewport when no seeded cache
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
+	 * @property {((interval: '5m' | '30m') => void)} [ondisplayintervalchange] - Callback when power display interval changes
 	 */
 
 	/** @type {Props} */
@@ -62,7 +63,8 @@
 		dateStart = '',
 		dateEnd = '',
 		onviewportchange,
-		onvisibledata
+		onvisibledata,
+		ondisplayintervalchange
 	} = $props();
 
 	// ============================================
@@ -1005,7 +1007,10 @@
 						class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedInterval === intv
 							? 'bg-white text-dark-grey shadow-sm'
 							: 'text-mid-grey hover:text-dark-grey'}"
-						onclick={() => (selectedInterval = /** @type {'5m' | '30m'} */ (intv))}
+						onclick={() => {
+							selectedInterval = /** @type {'5m' | '30m'} */ (intv);
+							ondisplayintervalchange?.(/** @type {'5m' | '30m'} */ (intv));
+						}}
 					>
 						{intv === '5m' ? '5 min' : '30 min'}
 					</button>

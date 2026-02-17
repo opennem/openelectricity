@@ -267,6 +267,10 @@
 	/** @type {string} */
 	let activeMetric = $state((data.range ?? 3) > 14 ? 'energy' : 'power');
 
+	/** Display interval for power mode (5m/30m) — set by FacilityChart toggle */
+	/** @type {'5m' | '30m'} */
+	let powerDisplayInterval = $state('30m');
+
 	/**
 	 * Handle quick range selection (3d/7d/30d/1y)
 	 * @param {number} days
@@ -495,7 +499,9 @@
 							onchange={handleDateRangeChange}
 						/>
 						<span class="text-xs text-mid-grey whitespace-nowrap">
-							{activeMetric === 'energy' ? 'Energy (daily)' : 'Power (5min)'}
+							{activeMetric === 'energy'
+								? `Energy (${activeInterval === '1M' ? 'monthly' : 'daily'})`
+								: `Power (${powerDisplayInterval === '30m' ? '30min' : '5min'})`}
 						</span>
 					</div>
 
@@ -512,6 +518,7 @@
 							metric={activeMetric}
 							onviewportchange={handleViewportChange}
 							onvisibledata={handleVisibleData}
+							ondisplayintervalchange={(intv) => (powerDisplayInterval = intv)}
 						/>
 					</div>
 
