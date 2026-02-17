@@ -9,12 +9,9 @@
 	import { stack as lcStack, groupLonger } from 'layercake';
 	import { stack as d3Stack, stackOffsetDiverging } from 'd3-shape';
 	import { scaleOrdinal, scaleTime } from 'd3-scale';
-
 	// v2 Element components
 	import {
 		StackedArea,
-		HoverLayer,
-		PanZoomLayer,
 		LoadingOverlay,
 		AxisX,
 		AxisY,
@@ -25,19 +22,20 @@
 		Shading,
 		StepHoverBand
 	} from './elements';
+	import NetTotalLine from './elements/NetTotalLine.svelte';
+	import HatchOverlay from './elements/HatchOverlay.svelte';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('./ChartStore.svelte.js').default} chart - The chart store instance
-	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
+	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove] - Series-key hover from StackedArea paths
 	 * @property {() => void} [onmouseout]
 	 * @property {(evt: TimeSeriesData) => void} [onpointerup]
-	 * @property {(() => void)} [onpanstart] - Called when pan starts
-	 * @property {((deltaMs: number) => void)} [onpan] - Called during pan with time delta
-	 * @property {(() => void)} [onpanend] - Called when pan ends
-	 * @property {((factor: number, centerMs: number) => void)} [onzoom] - Called during zoom
-	 * @property {boolean} [enablePan] - Whether panning is enabled
+	 * @property {boolean} [enablePan] - Whether panning is enabled (controls touch-action CSS)
 	 * @property {Array<{start: number, end: number}>} [loadingRanges] - Ranges currently being fetched
+	 * @property {string} [netTotalKey] - Key for net total values in data (renders step line)
+	 * @property {string} [netTotalColor] - Color for net total line
+	 * @property {number | null} [overlayStart] - Start time (ms) for hatched projection overlay
 	 */
 
 	/** @type {Props} */
@@ -46,12 +44,11 @@
 		onmousemove,
 		onmouseout,
 		onpointerup,
-		onpanstart,
-		onpan,
-		onpanend,
-		onzoom,
 		enablePan = false,
-		loadingRanges = []
+		loadingRanges = [],
+		netTotalKey,
+		netTotalColor = '#C74523',
+		overlayStart
 	} = $props();
 
 	// Get chart styles
@@ -119,25 +116,6 @@
 				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
 			</defs>
 
-			<!-- Hover layer for mouse interactions in empty space -->
-			<HoverLayer dataset={chart.seriesScaledData} stepMode={isStepMode} {onmousemove} {onmouseout} {onpointerup} />
-
-			<!-- Pan layer on top — captures pointerdown for drag, passes clicks through -->
-			{#if enablePan}
-				<PanZoomLayer
-					dataset={chart.seriesScaledData}
-					stepMode={isStepMode}
-					{onpanstart}
-					{onpan}
-					{onpanend}
-					enabled={enablePan}
-					extraHeight={30}
-					{onmousemove}
-					{onmouseout}
-					{onpointerup}
-				/>
-			{/if}
-
 			<!-- Shading overlay (behind chart content) -->
 			{#if chart.shadingData?.length > 0}
 				<Shading dataset={chart.shadingData} fill={chart.shadingFill} {clipPathId} />
@@ -157,6 +135,18 @@
 					{onmouseout}
 					{onpointerup}
 				/>
+
+				{#if netTotalKey && isStepMode}
+					<NetTotalLine
+						dataset={chart.seriesScaledData}
+						valueKey={netTotalKey}
+						stroke={netTotalColor}
+					/>
+				{/if}
+
+				{#if overlayStart != null}
+					<HatchOverlay startTime={overlayStart} patternId="{id}-hatch-pattern" />
+				{/if}
 			</g>
 
 			<!-- Reference lines (capacity annotations) -->

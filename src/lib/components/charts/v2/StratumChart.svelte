@@ -2,43 +2,44 @@
 	/**
 	 * Stratum Chart Component
 	 *
-	 * Main wrapper component that combines header, tooltip, and chart.
-	 * Provides a complete, self-contained chart experience.
+	 * Main wrapper that combines header, tooltip, and chart with a unified
+	 * interaction layer.  Named "Stratum" to reflect the layered nature of
+	 * the visualization.
 	 *
-	 * Named "Stratum" to reflect the layered/stacked nature of the visualization.
+	 * InteractionLayer handles all pointer interactions on the chart-area div.
+	 * StackedArea's onmousemove is the only SVG-level interaction kept —
+	 * it provides the series key for hover highlighting.
 	 */
 	import ChartHeader from './ChartHeader.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import StackedAreaChart from './StackedAreaChart.svelte';
-	import StackedCategoryChart from './StackedCategoryChart.svelte';
+	import { InteractionLayer } from './elements';
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {import('./ChartStore.svelte.js').default} chart - The chart store instance
-	 * @property {boolean} [showHeader] - Whether to show the header
-	 * @property {boolean} [showTooltip] - Whether to show the tooltip
-	 * @property {boolean} [showOptions] - Whether to show options button in header
-	 * @property {string} [defaultTooltipText] - Default text when nothing is hovered
-	 * @property {string} [class] - Additional CSS classes for the container
-	 * @property {string} [chartPadding] - CSS classes for chart padding
-	 * @property {number} [height] - Chart height in pixels
-	 * @property {string} [netTotalKey] - Key for net total values (category chart only)
+	 * @property {import('./ChartStore.svelte.js').default} chart
+	 * @property {boolean} [showHeader]
+	 * @property {boolean} [showTooltip]
+	 * @property {boolean} [showOptions]
+	 * @property {string} [defaultTooltipText]
+	 * @property {string} [class]
+	 * @property {string} [chartPadding]
+	 * @property {string} [netTotalKey] - Key for net total values
 	 * @property {string} [netTotalColor] - Color for net total line
 	 * @property {*} [overlayStart] - Start category for hatched overlay (e.g., projection start)
-	 * @property {(time: number, key?: string) => void} [onhover] - Callback when hovering
-	 * @property {() => void} [onhoverend] - Callback when hover ends
-	 * @property {(time: number) => void} [onfocus] - Callback when focusing (clicking)
-	 * @property {(() => void)} [onpanstart] - Called when pan starts
-	 * @property {((deltaMs: number) => void)} [onpan] - Called during pan with time delta
-	 * @property {(() => void)} [onpanend] - Called when pan ends
-	 * @property {((factor: number, centerMs: number) => void)} [onzoom] - Called during zoom
-	 * @property {boolean} [enablePan] - Whether panning is enabled
-	 * @property {Array<{start: number, end: number}>} [loadingRanges] - Ranges being fetched
-	 * @property {[number, number] | null} [viewDomain] - Time domain for category chart pan/zoom
-	 * @property {import('svelte').Snippet} [header] - Custom header content
-	 * @property {import('svelte').Snippet} [tooltip] - Custom tooltip content
-	 * @property {import('svelte').Snippet} [footer] - Custom footer content
-	 * @property {number} [_height] - Chart height in pixels (unused, reserved)
+	 * @property {(time: number, key?: string) => void} [onhover]
+	 * @property {() => void} [onhoverend]
+	 * @property {(time: number) => void} [onfocus]
+	 * @property {(() => void)} [onpanstart]
+	 * @property {((deltaMs: number) => void)} [onpan]
+	 * @property {(() => void)} [onpanend]
+	 * @property {((factor: number, centerMs: number) => void)} [onzoom]
+	 * @property {boolean} [enablePan]
+	 * @property {Array<{start: number, end: number}>} [loadingRanges]
+	 * @property {[number, number] | null} [viewDomain]
+	 * @property {import('svelte').Snippet} [header]
+	 * @property {import('svelte').Snippet} [tooltip]
+	 * @property {import('svelte').Snippet} [footer]
 	 */
 
 	/** @type {Props} */
@@ -50,7 +51,6 @@
 		defaultTooltipText = '',
 		class: className = '',
 		chartPadding = 'px-0',
-		_height,
 		netTotalKey,
 		netTotalColor,
 		overlayStart,
@@ -69,62 +69,45 @@
 		footer
 	} = $props();
 
-	// Check if chart has data
 	let hasData = $derived(chart?.seriesData?.length > 0);
 
+	/** @type {'none' | 'hover' | 'mouse-pan' | 'touch-pan'} Bound from InteractionLayer */
+	let interactionMode = $state('none');
+
+	// ---- StackedArea series-key hover (SVG level) ----
+	// StackedArea's onmousemove provides { data, key } when the mouse is
+	// over a coloured path.  This "upgrades" the basic time-hover with
+	// series highlighting.  Suppressed during pan/zoom.
+
 	/**
-	 * Handle mouse move events from the chart
 	 * @param {{ data: any, key?: string }} event
 	 */
-	function handleMouseMove(event) {
+	function handleSeriesHover(event) {
+		if (interactionMode !== 'none') return;
 		if (event?.data) {
-			if (chart.isCategoryChart) {
-				const category = event.data[chart.xKey];
-				chart.setHoverCategory(category, event.key);
-				onhover?.(category, event.key);
-			} else {
-				chart.setHover(event.data.time, event.key);
-				onhover?.(event.data.time, event.key);
-			}
+			chart.setHover(event.data.time, event.key);
+			onhover?.(event.data.time, event.key);
 		}
 	}
 
-	/**
-	 * Handle mouse out events
-	 */
-	function handleMouseOut() {
+	function handleSeriesHoverOut() {
+		if (interactionMode !== 'none') return;
 		chart.clearHover();
 		onhoverend?.();
 	}
 
 	/**
-	 * Handle click/pointer up events
 	 * @param {any} data
 	 */
-	function handlePointerUp(data) {
-		if (chart.isCategoryChart) {
-			const category = data?.[chart.xKey];
-			if (category !== undefined) {
-				if (onfocus) {
-					onfocus(category);
-				} else {
-					chart.toggleFocusCategory(category);
-				}
-			}
-		} else if (data?.time) {
-			if (onfocus) {
-				// Let parent handle sync across all charts
-				onfocus(data.time);
-			} else {
-				// No sync, handle locally
-				chart.toggleFocus(data.time);
-			}
+	function handleSeriesClick(data) {
+		if (interactionMode !== 'none') return;
+		if (data?.time) {
+			onfocus ? onfocus(data.time) : chart.toggleFocus(data.time);
 		}
 	}
 </script>
 
 <div class="stratum-chart {className}">
-	<!-- Header -->
 	{#if showHeader}
 		{#if header}
 			{@render header()}
@@ -133,7 +116,6 @@
 		{/if}
 	{/if}
 
-	<!-- Tooltip -->
 	{#if showTooltip}
 		<div class="relative z-10" style="padding-right: var(--pad-right, 0);">
 			{#if tooltip}
@@ -144,56 +126,52 @@
 		</div>
 	{/if}
 
-	<!-- Chart -->
-	<div class={chartPadding}>
+	<InteractionLayer
+		{chart}
+		{enablePan}
+		{viewDomain}
+		class={chartPadding}
+		bind:interactionMode
+		{onhover}
+		{onhoverend}
+		{onfocus}
+		{onpanstart}
+		{onpan}
+		{onpanend}
+		{onzoom}
+	>
 		{#if hasData}
-			{#if chart.isCategoryChart}
-				<StackedCategoryChart
-					{chart}
-					{netTotalKey}
-					{netTotalColor}
-					{overlayStart}
-					onmousemove={handleMouseMove}
-					onmouseout={handleMouseOut}
-					onpointerup={handlePointerUp}
-					{onpanstart}
-					{onpan}
-					{onpanend}
-					{onzoom}
-					{enablePan}
-					{viewDomain}
-				/>
-			{:else}
-				<StackedAreaChart
-					{chart}
-					onmousemove={handleMouseMove}
-					onmouseout={handleMouseOut}
-					onpointerup={handlePointerUp}
-					{onpanstart}
-					{onpan}
-					{onpanend}
-					{enablePan}
-					{loadingRanges}
-				/>
-			{/if}
+			<StackedAreaChart
+				{chart}
+				{netTotalKey}
+				{netTotalColor}
+				{overlayStart}
+				onmousemove={handleSeriesHover}
+				onmouseout={handleSeriesHoverOut}
+				onpointerup={handleSeriesClick}
+				{enablePan}
+				{loadingRanges}
+			/>
 		{:else}
 			<div
-				class="flex items-center justify-center text-gray-400 {chart.chartStyles.chartHeightPx ? '' : chart.chartStyles.chartHeightClasses}"
-				style:height={chart.chartStyles.chartHeightPx ? `${chart.chartStyles.chartHeightPx}px` : undefined}
+				class="flex items-center justify-center text-gray-400 {chart.chartStyles.chartHeightPx
+					? ''
+					: chart.chartStyles.chartHeightClasses}"
+				style:height={chart.chartStyles.chartHeightPx
+					? `${chart.chartStyles.chartHeightPx}px`
+					: undefined}
 			>
 				<span>No data available</span>
 			</div>
 		{/if}
-	</div>
+	</InteractionLayer>
 
-	<!-- Footer (optional) -->
 	{#if footer}
 		{@render footer()}
 	{/if}
 </div>
 
 <style>
-	/* Remove focus outlines from all SVG elements within charts */
 	.stratum-chart :global(svg *:focus) {
 		outline: none;
 	}

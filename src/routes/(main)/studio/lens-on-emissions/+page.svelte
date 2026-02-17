@@ -12,7 +12,7 @@
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { aggregateToYearly, filterByFYRange, mergeData } from './helpers/csv-parser.js';
 	import { SECTOR_ORDER, SECTOR_COLORS, SECTOR_LABELS, TIME_RANGES } from './helpers/config.js';
-	import { formatFYRange, getFinancialYear } from './helpers/financial-year.js';
+	import { getFinancialYear, fyStartDate } from './helpers/financial-year.js';
 	import TimeRangeControls from './components/TimeRangeControls.svelte';
 	import EmissionsLegend from './components/EmissionsLegend.svelte';
 	import SectorSparklines from './components/SectorSparklines.svelte';
@@ -183,10 +183,6 @@
 	// Use divergent stacking for positive/negative values
 	chart.useDivergingStack = true;
 
-	// Enable category chart mode for FY-based axis
-	chart.isCategoryChart = true;
-	chart.xKey = 'fy';
-
 	// Set chart height
 	chart.chartStyles.chartHeightClasses = 'h-[400px]';
 
@@ -264,13 +260,9 @@
 			// Apply rolling sum if enabled
 			const processed = useRollingSum ? calculateRollingYearlySum(filtered) : filtered;
 
-			// Add quarter label for category axis
 			// Skip first 3 quarters if rolling sum (incomplete data)
 			const startIndex = useRollingSum ? 3 : 0;
-			return processed.slice(startIndex).map((d) => ({
-				...d,
-				quarter: formatQuarterLabel(d.date)
-			}));
+			return processed.slice(startIndex);
 		}
 
 		// Aggregate to yearly (exclude incomplete years)
@@ -357,41 +349,51 @@
 	// Effects - Update Chart
 	// ============================================
 
+	/**
+	 * Extend data with a phantom point one interval after the last data point.
+	 * This ensures curveStepAfter draws the final bar.
+	 */
+	let extendedChartData = $derived.by(() => {
+		if (chartData.length < 2) return chartData;
+		const last = chartData[chartData.length - 1];
+		const prev = chartData[chartData.length - 2];
+		const interval = last.time - prev.time;
+		return [
+			...chartData,
+			{
+				...last,
+				date: new Date(last.time + interval),
+				time: last.time + interval
+			}
+		];
+	});
+
 	$effect(() => {
-		if (!chartData.length) return;
+		if (!extendedChartData.length) return;
 
 		// Update chart store with data
-		chart.seriesData = chartData;
+		chart.seriesData = extendedChartData;
 		chart.seriesNames = visibleSectors;
 		chart.seriesColours = SECTOR_COLORS;
 		chart.seriesLabels = SECTOR_LABELS;
 
-		// Set xKey and formatter based on interval type
+		// Set xDomain so InteractionLayer can map pixel → time
+		chart.xDomain = [
+			extendedChartData[0].time,
+			extendedChartData[extendedChartData.length - 1].time
+		];
+
+		// Set formatter based on interval type (xScale is scaleTime, ticks are Date objects)
 		if (intervalType === 'quarter') {
-			chart.xKey = 'quarter';
-			// Axis labels: just "Q1 25"
-			chart.formatTickX = (d) => String(d);
-			// Tooltip: "Year to Q1 25" when rolling, otherwise just "Q1 25"
-			chart.formatX = useRollingSum ? (d) => `Year to ${d}` : (d) => String(d);
+			chart.formatTickX = (/** @type {Date} */ d) => formatQuarterLabel(d);
+			chart.formatX = useRollingSum
+				? (/** @type {Date} */ d) => `Year to ${formatQuarterLabel(d)}`
+				: (/** @type {Date} */ d) => formatQuarterLabel(d);
 		} else {
-			chart.xKey = 'fy';
-			chart.formatTickX = formatXAxis;
-			chart.formatX = formatXAxis;
+			chart.formatTickX = (/** @type {Date} */ d) => `FY ${getFinancialYear(d)}`;
+			chart.formatX = (/** @type {Date} */ d) => `FY ${getFinancialYear(d)}`;
 		}
 	});
-
-	// ============================================
-	// Formatters
-	// ============================================
-
-	/**
-	 * Format FY for X axis ticks
-	 * @param {number | any} d - Financial year number
-	 * @returns {string}
-	 */
-	function formatXAxis(d) {
-		return `FY ${d}`;
-	}
 
 	// ============================================
 	// Event Handlers
@@ -485,11 +487,11 @@
 	 * Get the label for the currently focused/hovered/total period
 	 */
 	let legendLabel = $derived.by(() => {
-		if (chart.focusCategory !== undefined) {
-			return intervalType === 'quarter' ? String(chart.focusCategory) : `FY ${chart.focusCategory}`;
-		}
-		if (chart.hoverCategory !== undefined) {
-			return intervalType === 'quarter' ? String(chart.hoverCategory) : `FY ${chart.hoverCategory}`;
+		const time = chart.focusTime ?? chart.hoverTime;
+		if (time !== undefined) {
+			const d = new Date(time);
+			if (intervalType === 'quarter') return formatQuarterLabel(d);
+			return `FY ${getFinancialYear(d)}`;
 		}
 		return 'Total';
 	});
@@ -497,7 +499,7 @@
 	/**
 	 * Whether the legend is showing focused data
 	 */
-	let isFocused = $derived(chart.focusCategory !== undefined);
+	let isFocused = $derived(chart.focusTime !== undefined);
 
 	/**
 	 * Clear the focus
@@ -534,8 +536,8 @@
 		<div class="mb-6">
 			<CategoryBrush
 				data={fullChartData}
-				xKey={intervalType === 'quarter' ? 'quarter' : 'fy'}
-				formatLabel={intervalType === 'quarter' ? (d) => String(d) : (d) => `FY ${d}`}
+				xKey={intervalType === 'quarter' ? 'date' : 'fy'}
+				formatLabel={intervalType === 'quarter' ? (d) => formatQuarterLabel(d) : (d) => `FY ${d}`}
 				{brushedRange}
 				onbrush={handleBrushChange}
 			/>
@@ -597,7 +599,7 @@
 					{chart}
 					netTotalKey="net_total"
 					netTotalColor={NET_TOTAL_COLOR}
-					overlayStart={showProjections ? TIME_RANGES.PROJECTION_START_FY : null}
+					overlayStart={showProjections ? fyStartDate(TIME_RANGES.PROJECTION_START_FY).getTime() : null}
 				/>
 			</div>
 		{:else}
