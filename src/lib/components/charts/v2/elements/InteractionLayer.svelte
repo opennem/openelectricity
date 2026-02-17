@@ -80,6 +80,11 @@
 		if (viewDomain) return viewDomain;
 		const xd = chart.xDomain;
 		if (xd && xd.length === 2) return [Number(xd[0]), Number(xd[1])];
+		// Fall back to data time range
+		const data = chart.seriesScaledData;
+		if (data?.length >= 2) {
+			return [data[0].time, data[data.length - 1].time];
+		}
 		return null;
 	}
 

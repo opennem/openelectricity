@@ -377,12 +377,6 @@
 		chart.seriesColours = SECTOR_COLORS;
 		chart.seriesLabels = SECTOR_LABELS;
 
-		// Set xDomain so InteractionLayer can map pixel → time
-		chart.xDomain = [
-			extendedChartData[0].time,
-			extendedChartData[extendedChartData.length - 1].time
-		];
-
 		// Set formatter based on interval type (xScale is scaleTime, ticks are Date objects)
 		if (intervalType === 'quarter') {
 			chart.formatTickX = (/** @type {Date} */ d) => formatQuarterLabel(d);
