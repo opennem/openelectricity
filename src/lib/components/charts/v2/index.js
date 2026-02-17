@@ -81,7 +81,6 @@ export {
 	StackedArea,
 	Line,
 	HoverLayer,
-	PanZoomLayer,
 	LoadingOverlay,
 	AxisX,
 	AxisY,

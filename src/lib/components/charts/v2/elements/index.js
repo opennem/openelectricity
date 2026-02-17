@@ -30,7 +30,6 @@ export { default as LoadingOverlay } from './LoadingOverlay.svelte';
 
 // Interaction
 export { default as InteractionLayer } from './InteractionLayer.svelte';
-export { default as PanZoomLayer } from './PanZoomLayer.svelte';
 
 // Definitions
 export { default as ClipPath } from './ClipPath.svelte';
