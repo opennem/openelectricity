@@ -144,6 +144,20 @@
 		return map;
 	});
 
+	/** Map from unit.code → unit.code_display for UI labels */
+	let unitCodeDisplayMap = $derived.by(() => {
+		if (!facility?.units) return {};
+
+		/** @type {Record<string, string>} */
+		const map = {};
+		for (const unit of facility.units) {
+			if (unit.code_display) {
+				map[unit.code] = unit.code_display;
+			}
+		}
+		return map;
+	});
+
 	let unitOrder = $derived.by(() => {
 		if (!facility?.units) return [];
 
@@ -247,7 +261,8 @@
 	 * @returns {string}
 	 */
 	function getLabel(unitCode, fuelTech) {
-		return `${unitCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
+		const displayCode = unitCodeDisplayMap[unitCode] ?? unitCode;
+		return `${displayCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
 	}
 
 	/**

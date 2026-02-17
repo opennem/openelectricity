@@ -26,7 +26,7 @@
 	let units = $derived(
 		data.map((unit) => ({
 			...unit,
-			code: decodeURIComponent(unit.code)
+			code: unit.code_display ?? decodeURIComponent(unit.code)
 		}))
 	);
 </script>

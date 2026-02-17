@@ -128,7 +128,7 @@
 								class:text-sm={compact}
 								class:text-base={!compact}
 							>
-								{unit.code}
+								{unit.code_display ?? unit.code}
 							</span>
 							<span class="text-mid-grey truncate" class:text-xs={compact} class:text-sm={!compact}>
 								{fuelTechNameMap[unit.fueltech_id] || unit.fueltech_id}

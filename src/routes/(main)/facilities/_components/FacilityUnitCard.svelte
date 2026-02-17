@@ -107,7 +107,7 @@
 
 				{#if facility.units.length > 1}
 					<small class="text-mid-warm-grey text-xs font-light">
-						({facility.unit.code})
+						({facility.unit.code_display ?? facility.unit.code})
 					</small>
 				{/if}
 			</div>
