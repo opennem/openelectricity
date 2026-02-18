@@ -8,7 +8,6 @@
 // Core chart elements
 export { default as StackedArea } from './StackedArea.svelte';
 export { default as Line } from './Line.svelte';
-export { default as HoverLayer } from './HoverLayer.svelte';
 export { default as CategoryHoverLayer } from './CategoryHoverLayer.svelte';
 export { default as CategoryLine } from './CategoryLine.svelte';
 

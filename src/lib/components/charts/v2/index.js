@@ -80,7 +80,6 @@ export {
 export {
 	StackedArea,
 	Line,
-	HoverLayer,
 	LoadingOverlay,
 	AxisX,
 	AxisY,
