@@ -182,7 +182,7 @@ requestRange(start, end)
 ### Pan & Zoom flow
 
 **Pan**:
-1. `PanZoomLayer` (SVG) captures pointer events → converts `deltaPx × msPerPx` to `deltaMs` → rAF batching
+1. `InteractionLayer` (HTML div) captures pointer events → converts `deltaPx × msPerPx` to `deltaMs` → rAF batching
 2. `FacilityChart.handlePan(deltaMs)`: shifts `viewStart`/`viewEnd`, clamps to now, calls `dataManager.requestRange(viewport ± buffer)`
 3. `FacilityChart.handlePanEnd()`: direction-aware prefetch (prefetches 1x/3x viewport in the pan direction), notifies parent via `onviewportchange`
 

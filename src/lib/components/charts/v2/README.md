@@ -342,19 +342,31 @@ The main chart component for stacked area/bar charts:
 
 #### Props
 
-| Prop                 | Type                   | Default  | Description                          |
-| -------------------- | ---------------------- | -------- | ------------------------------------ |
-| `chart`              | `ChartStore`           | required | The chart store instance             |
-| `showHeader`         | `boolean`              | `true`   | Whether to show the header           |
-| `showTooltip`        | `boolean`              | `true`   | Whether to show the tooltip          |
-| `showOptions`        | `boolean`              | `true`   | Whether to show options button       |
-| `defaultTooltipText` | `string`               | `''`     | Default text when nothing is hovered |
-| `class`              | `string`               | `''`     | Additional CSS classes               |
-| `chartPadding`       | `string`               | `'px-0'` | CSS classes for chart padding        |
-| `height`             | `number`               | -        | Chart height in pixels               |
-| `onhover`            | `(time, key?) => void` | -        | Callback when hovering               |
-| `onhoverend`         | `() => void`           | -        | Callback when hover ends             |
-| `onfocus`            | `(time) => void`       | -        | Callback when focusing (clicking)    |
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `chart` | `ChartStore` | required | The chart store instance |
+| `showHeader` | `boolean` | `true` | Whether to show the header |
+| `showTooltip` | `boolean` | `true` | Whether to show the tooltip |
+| `showOptions` | `boolean` | `true` | Whether to show options button |
+| `defaultTooltipText` | `string` | `''` | Default text when nothing is hovered |
+| `class` | `string` | `''` | Additional CSS classes |
+| `chartPadding` | `string` | `'px-0'` | CSS classes for chart padding |
+| `netTotalKey` | `string` | - | Key for net total values in data (renders step line overlay) |
+| `netTotalColor` | `string` | `'#C74523'` | Color for net total line |
+| `overlayStart` | `number \| null` | - | Start time (ms) for hatched projection overlay |
+| `enablePan` | `boolean` | `false` | Enable pan/zoom gestures via InteractionLayer |
+| `loadingRanges` | `Array<{start, end}>` | `[]` | Time ranges currently being fetched (shaded overlay) |
+| `viewDomain` | `[number, number] \| null` | `null` | Explicit time domain for InteractionLayer coordinate mapping |
+| `onhover` | `(time, key?) => void` | - | Callback when hovering |
+| `onhoverend` | `() => void` | - | Callback when hover ends |
+| `onfocus` | `(time) => void` | - | Callback when focusing (clicking) |
+| `onpanstart` | `() => void` | - | Callback when pan gesture starts |
+| `onpan` | `(deltaMs) => void` | - | Callback during pan with time delta |
+| `onpanend` | `() => void` | - | Callback when pan gesture ends |
+| `onzoom` | `(factor, centerMs) => void` | - | Callback for zoom with scale factor and center |
+| `header` | `Snippet` | - | Custom header snippet (replaces ChartHeader) |
+| `tooltip` | `Snippet` | - | Custom tooltip snippet (replaces ChartTooltip) |
+| `footer` | `Snippet` | - | Footer snippet rendered below the chart |
 
 #### Synced Charts Example
 
@@ -595,85 +607,78 @@ const result = processForChart(data, 'W', {
 
 ```
 StratumChart
-├── ChartHeader              # Title, options menu
-├── ChartTooltip             # Hover/focus value display
-└── [chart mode routing]
-    ├── StackedAreaChart      # Time-series (continuous x axis)
-    │   ├── LayerCake         # Responsive SVG container, scales
-    │   │   ├── HoverLayer    # Transparent rect for mouse events in empty space
-    │   │   ├── PanZoomLayer  # Drag-to-pan, pinch-to-zoom (optional)
-    │   │   ├── StackedArea   # Rendered area/line paths
-    │   │   ├── LineY         # Horizontal reference lines
-    │   │   ├── LineX / Dot   # Hover/focus indicators
-    │   │   ├── AxisX         # Time axis with gridlines
-    │   │   └── AxisY         # Value axis
-    │   └── LoadingOverlay    # Shaded regions for in-flight fetches
-    │
-    └── StackedCategoryChart  # Discrete categories (band x axis)
-        └── LayerCake         # xDomain [0, 100] with band scale
-            ├── StackedArea         # Rendered area paths (step curves)
-            ├── CategoryLine        # Optional net-total overlay line
-            ├── CategoryOverlay     # Hatched projection overlay
-            ├── LineY               # Horizontal reference lines
-            ├── CategoryHoverLayer  # Visual highlight/focus rects
-            ├── PanZoomLayer        # Drag-to-pan with event forwarding (optional)
-            ├── CategoryAxisX       # Band axis with auto-thinned labels
-            └── AxisY               # Value axis
+├── ChartHeader (or custom header snippet)
+├── ChartTooltip (or custom tooltip snippet)
+├── InteractionLayer                 # HTML div wrapping the chart area
+│   │                                # Handles all pointer interactions:
+│   │                                # mouse hover, click-to-focus, Cmd+drag pan,
+│   │                                # touch hover, tap-to-focus, 2-finger pan/pinch
+│   │
+│   └── StackedAreaChart             # Time-series chart (scaleTime x axis)
+│       └── LayerCake                # Responsive SVG container with scales
+│           ├── Shading              # Background shading regions
+│           ├── [clipped group]
+│           │   ├── StackedArea      # Rendered area/line paths (series-key hover)
+│           │   ├── NetTotalLine     # Step line overlay for net total (optional)
+│           │   └── HatchOverlay     # Hatched projection overlay (optional)
+│           ├── LineY                # Horizontal reference lines
+│           ├── StepHoverBand        # Band highlight for step mode
+│           ├── LineX / Dot          # Hover/focus indicators for continuous mode
+│           ├── AxisX                # Time axis with gridlines
+│           ├── AxisY                # Value axis
+│           └── LoadingOverlay       # Shaded regions for in-flight fetches
+│
+└── footer snippet (optional)
 ```
 
-### Chart Mode Routing
+### Interaction Architecture
 
-StratumChart routes between two chart implementations based on `chart.isCategoryChart`:
+All pointer interactions are handled by **InteractionLayer**, an HTML `<div>` that wraps the chart content. This avoids SVG layer stacking issues — a single HTML element captures all gestures, while SVG elements inside remain pointer-passive (except StackedArea, which provides series-key hover).
 
-| | StackedAreaChart | StackedCategoryChart |
-|---|---|---|
-| **X scale** | `scaleTime()` with `xDomain: [startMs, endMs]` | `scaleBand()` mapped to `[0, 100]` range |
-| **X accessor** | `d => d.date` (Date objects) | `d => d._bandX` (band position 0-100) |
-| **xKey** | `'date'` (default) | Set by consumer (e.g. `'time'` for unique timestamps) |
-| **Curve types** | `straight`, `step`, `monotone` | Typically `step` for block/bar appearance |
-| **Pan/zoom** | Via `PanZoomLayer` using `xScale.invert()` | Via `PanZoomLayer` using `viewDomain` prop |
-| **Hover** | `HoverLayer` + `StackedArea` mouse events | `CategoryHoverLayer` (or forwarded through `PanZoomLayer`) |
-| **Axis** | `AxisX` with tick/gridline arrays | `CategoryAxisX` with auto-thinned labels |
+**InteractionLayer** supports:
 
-### Pan and Zoom
+| Input | Gesture | Result |
+|-------|---------|--------|
+| Mouse | Move | Hover: snap to nearest data point, highlight series |
+| Mouse | Click | Focus: lock tooltip to clicked time |
+| Mouse | Cmd/Ctrl + drag | Pan: shift viewport by `deltaPx × msPerPx` |
+| Touch | 1-finger drag | Hover: track finger position |
+| Touch | 1-finger tap | Focus: lock tooltip |
+| Touch | 2-finger drag | Pan: shift viewport |
+| Touch | 2-finger pinch | Zoom: scale factor anchored to midpoint |
 
-Pan/zoom is handled by `PanZoomLayer`, a transparent SVG rect that captures pointer events. It supports three input methods:
+Wheel zoom is handled at the consuming component level (e.g. FacilityChart attaches a wheel listener with `{ passive: false }` for `Cmd`/`Ctrl` + scroll).
 
-1. **Drag-to-pan** -- Pointer down + move. Computes a `deltaMs` (time shift per pixel of drag) and emits `onpan(deltaMs)`. Uses `requestAnimationFrame` throttling.
+**Coordinate mapping**: InteractionLayer converts `clientX` to time using the chart's time domain. It resolves the domain from (in order of priority):
+1. `viewDomain` prop (explicit, used by FacilityChart)
+2. `chart.xDomain` (set by consumer on the ChartStore)
+3. `chart.seriesScaledData` first/last `.time` (automatic fallback)
 
-2. **Pinch-to-zoom** -- Two-pointer gesture. Computes a scale `factor` and center time, emits `onzoom(factor, centerMs)`.
+**Time snapping**: Raw pixel-to-time values are snapped to the nearest data point. Step mode uses floor semantics (finds the last data point at or before the raw time); continuous mode uses closest-match via binary search.
 
-3. **Wheel zoom** -- Handled at the container `div` level (not inside SVG) with `Cmd`/`Ctrl` modifier. Attached imperatively with `{ passive: false }` so `preventDefault()` works.
+**Interaction mode**: InteractionLayer exposes a bindable `interactionMode` state (`'none' | 'hover' | 'mouse-pan' | 'touch-pan'`). StratumChart uses this to suppress StackedArea's SVG-level series hover during pan/zoom gestures.
 
-#### Time-series vs Category pan
+**StackedArea series hover**: The only SVG-level interaction kept. When the mouse is over a coloured `<path>`, StackedArea emits `onmousemove({ data, key })` which StratumChart uses to "upgrade" the basic time-hover with series highlighting (bold stroke on the hovered series).
 
-For time-series charts, PanZoomLayer reads `xScale.domain()` (Date objects) to compute `msPerPx`:
+### Step Mode
 
+When `chart.chartOptions.selectedCurveType === 'step'`, StackedAreaChart renders with `curveStepAfter` and uses **StepHoverBand** instead of LineX/Dot for hover/focus indicators. This creates a bar-chart-like appearance suitable for interval data (e.g. financial year emissions, hourly energy).
+
+For step mode to draw the final bar, consumers should append a **phantom extension point** — a duplicate of the last data point shifted one interval forward:
+
+```js
+const last = data[data.length - 1];
+const interval = last.time - data[data.length - 2].time;
+const extended = [...data, { ...last, time: last.time + interval }];
 ```
-msPerPx = (domain[1].getTime() - domain[0].getTime()) / chartWidthPx
-```
 
-For category charts, the x scale is `[0, 100]` (not time-based). Instead, PanZoomLayer accepts a `viewDomain: [number, number]` prop -- the actual time range `[viewStart, viewEnd]` -- and computes:
+### Net Total Line & Hatch Overlay
 
-```
-msPerPx = (viewDomain[1] - viewDomain[0]) / chartWidthPx
-```
+Two optional SVG elements for specialized visualizations:
 
-The consuming component (e.g. FacilityChart) manages `viewStart`/`viewEnd` state and updates the chart data accordingly.
+- **NetTotalLine** (`netTotalKey` prop): Renders a step-after line showing net total values on top of the stacked area. Uses `d3-shape`'s `line()` with `curveStepAfter`. Only renders in step mode.
 
-#### Event layering with pan
-
-When pan is enabled on a category chart, PanZoomLayer sits on top of CategoryHoverLayer in the SVG stacking order. Since only the topmost SVG element receives pointer events, PanZoomLayer forwards mouse events (when not actively panning) through callback props:
-
-```
-PanZoomLayer (top)         -- captures pointerdown for pan
-  onmousemove forwarding   -- when not panning, forwards to parent
-  onmouseout forwarding    -- always forwards
-  onpointerup forwarding   -- when not panning (i.e. a click)
-
-CategoryHoverLayer (below) -- renders visual highlight/focus rects only
-                              interaction handlers disabled when pan is on
-```
+- **HatchOverlay** (`overlayStart` prop): Renders a hatched rectangle from `overlayStart` (time in ms) to the right edge of the chart. Uses the existing `HatchPattern` SVG def. Useful for marking projection/forecast regions.
 
 ### ChartStore
 
@@ -686,13 +691,14 @@ CategoryHoverLayer (below) -- renders visual highlight/focus rects only
 | `seriesColours` | Map: series key -> hex colour |
 | `seriesLabels` | Map: series key -> display label |
 | `seriesScaledData` | Derived: data with SI-prefix scaling applied |
-| `xDomain` | `[start, end]` for time-series charts |
-| `xKey` | Which field to use as x value (default `'date'`, use `'time'` for category charts with timestamps) |
-| `isCategoryChart` | Route to StackedCategoryChart instead of StackedAreaChart |
-| `hoverData` / `hoverCategory` | Current hover state (time-series / category) |
-| `focusData` / `focusCategory` | Current focus (click-lock) state |
+| `xDomain` | `[start, end]` time domain for the chart |
+| `xKey` | Which field to use as x value (default `'date'`) |
+| `hoverTime` / `hoverData` | Current hover state (time value / full data row) |
+| `focusTime` / `focusData` | Current focus (click-lock) state |
+| `hoverKey` | Series key being hovered (for highlight) |
 | `yReferenceLines` | Horizontal annotations `[{ value, label, colour }]` |
 | `formatTickX` | Custom x-axis tick formatter `(d) => string` |
+| `useDivergingStack` | Use d3 diverging offset for independent pos/neg stacking |
 
 ### ChartDataManager
 
@@ -718,17 +724,14 @@ Key behaviors:
 - **Dedup merge**: New data rows overwrite existing ones at the same timestamp, then re-sort
 - **Metric-aware**: Accepts `interval` and `metric` config; recreated when these change
 
-### CategoryAxisX
+### Legacy Category Elements
 
-Renders the x axis for band-scale charts. Automatically thins labels, gridlines, and tick marks when the viewport is too narrow:
+The following elements were used by the now-deleted `StackedCategoryChart` and are no longer actively consumed. They remain exported from `elements/index.js` but can be safely deleted:
 
-```js
-const bandwidthPixels = chartWidth / categories.length;
-const skip = Math.ceil(minLabelWidth / bandwidthPixels);
-// Only show every `skip`-th label/gridline
-```
-
-Labels are centered within each band (between gridlines), matching the block/step visual style. Uses index-based `{#each}` keys to handle non-unique category values (e.g. date labels that repeat across year boundaries).
+- `CategoryHoverLayer` — Visual highlight/focus rects for band-scale charts
+- `CategoryAxisX` — Band axis with auto-thinned labels
+- `CategoryLine` — Overlay line on category chart
+- `CategoryOverlay` — Hatched overlay region for category chart
 
 ---
 
@@ -743,9 +746,8 @@ src/lib/components/charts/v2/
 ├── ChartStyles.svelte.js       # Style configurations
 ├── ChartTooltips.svelte.js     # Tooltip state
 ├── ChartDataManager.svelte.js  # Client-side data cache/fetcher
-├── StratumChart.svelte         # Router: header + tooltip + chart mode
-├── StackedAreaChart.svelte     # Time-series chart (continuous x)
-├── StackedCategoryChart.svelte # Category chart (band x)
+├── StratumChart.svelte         # Wrapper: header + tooltip + InteractionLayer + chart
+├── StackedAreaChart.svelte     # Time-series chart (scaleTime x axis)
 ├── DateBrush.svelte            # Date range brush selector
 ├── IntervalSelector.svelte     # Interval toggle
 ├── dataProcessing.js           # Data processing utilities
@@ -754,24 +756,28 @@ src/lib/components/charts/v2/
 ├── sync.js                     # Multi-chart synchronization
 ├── presets.js                  # Chart presets
 │
-└── elements/                   # Low-level SVG components
+└── elements/                   # Low-level SVG/HTML components
+    ├── index.js                # Element exports
+    ├── InteractionLayer.svelte # HTML-level unified interaction handler (hover, click, pan, zoom)
+    ├── StackedArea.svelte      # Stacked area/line paths (series-key hover)
+    ├── NetTotalLine.svelte     # Step-after line for net total overlay
+    ├── HatchOverlay.svelte     # Hatched projection overlay region
+    ├── StepHoverBand.svelte    # Band highlight for step mode hover/focus
     ├── AxisX.svelte            # Time axis with gridlines
     ├── AxisY.svelte            # Value axis with gridlines
-    ├── CategoryAxisX.svelte    # Band axis with auto-thinned labels
-    ├── CategoryHoverLayer.svelte # Category highlight/focus rects
-    ├── CategoryLine.svelte     # Overlay line on category chart
-    ├── CategoryOverlay.svelte  # Hatched overlay region
     ├── ClipPath.svelte         # SVG clip path definition
     ├── Dot.svelte              # Hover/focus dot indicator
-    ├── HoverLayer.svelte       # Time-series mouse event layer
     ├── Line.svelte             # General line element
     ├── LineX.svelte            # Vertical line (hover/focus)
     ├── LineY.svelte            # Horizontal line (reference)
     ├── LoadingOverlay.svelte   # Shaded loading indicator
-    ├── PanZoomLayer.svelte     # Drag-to-pan + pinch-to-zoom
     ├── Shading.svelte          # Background shading regions
-    ├── StackedArea.svelte      # Stacked area/line paths
-    └── index.js                # Element exports
+    │
+    │   # Legacy (unused, safe to delete):
+    ├── CategoryAxisX.svelte    # Band axis (was StackedCategoryChart)
+    ├── CategoryHoverLayer.svelte # Category highlight rects
+    ├── CategoryLine.svelte     # Category overlay line
+    └── CategoryOverlay.svelte  # Category hatched overlay
 
 src/lib/utils/
 ├── Statistic/
