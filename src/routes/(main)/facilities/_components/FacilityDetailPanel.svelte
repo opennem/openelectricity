@@ -60,10 +60,10 @@
 		let targetMetric = activeMetric;
 		let targetInterval = activeInterval;
 
-		if (activeMetric === 'power' && durationDays >= 12) {
+		if (activeMetric === 'power' && durationDays >= 15) {
 			targetMetric = 'energy';
 			targetInterval = '1d';
-		} else if (activeMetric === 'energy' && durationDays <= 10) {
+		} else if (activeMetric === 'energy' && durationDays <= 13) {
 			targetMetric = 'power';
 			targetInterval = '5m';
 		}

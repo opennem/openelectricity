@@ -139,6 +139,29 @@
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let chartComponent = $state(undefined);
 
+	/** Earliest selectable date: 1 Dec 1998 */
+	const MIN_DATE = '1998-12-01';
+	/** Latest selectable date: today */
+	let maxDate = $derived(new Date().toISOString().slice(0, 10));
+
+	/**
+	 * Auto-detect metric and interval from a duration in days.
+	 * - Under 2 days → power / 5m
+	 * - Under 15 days → power / 5m (chart auto-displays as 30min)
+	 * - Under 1 year → energy / 1d
+	 * - 1 year or more → energy / 1d (chart auto-displays as monthly)
+	 * @param {number} days
+	 */
+	function autoSetMetricInterval(days) {
+		if (days < 15) {
+			activeInterval = '5m';
+			activeMetric = 'power';
+		} else {
+			activeInterval = '1d';
+			activeMetric = 'energy';
+		}
+	}
+
 	/**
 	 * Handle date range change from DateRangePicker — update viewport client-side.
 	 * The picker emits bare date strings like "2025-01-01". We interpret them as
@@ -147,6 +170,17 @@
 	 * @param {{ start: string, end: string }} range
 	 */
 	function handleDateRangeChange(range) {
+		// Validate: start must be before end
+		if (range.start >= range.end) return;
+
+		// Validate: at least 1 day apart
+		const startParts = range.start.split('-').map(Number);
+		const endParts = range.end.split('-').map(Number);
+		const startDay = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+		const endDay = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+		const dayDiff = (endDay.getTime() - startDay.getTime()) / (24 * 60 * 60 * 1000);
+		if (dayDiff < 1) return;
+
 		selectedRange = null;
 
 		const tz = timeZone || '+10:00';
@@ -154,14 +188,7 @@
 		const endMs = new Date(range.end + 'T23:59:59' + tz).getTime();
 		const days = (endMs - startMs) / (24 * 60 * 60 * 1000);
 
-		// Auto-detect metric/interval from selected range
-		if (days > 14) {
-			activeInterval = '1d';
-			activeMetric = 'energy';
-		} else {
-			activeInterval = '5m';
-			activeMetric = 'power';
-		}
+		autoSetMetricInterval(days);
 
 		if (data.selectedCode && chartComponent) {
 			chartComponent.setViewport(startMs, endMs);
@@ -191,10 +218,10 @@
 		let targetMetric = activeMetric;
 		let targetInterval = activeInterval;
 
-		if (activeMetric === 'power' && durationDays >= 12) {
+		if (activeMetric === 'power' && durationDays >= 15) {
 			targetMetric = 'energy';
 			targetInterval = '1d';
-		} else if (activeMetric === 'energy' && durationDays <= 10) {
+		} else if (activeMetric === 'energy' && durationDays <= 13) {
 			targetMetric = 'power';
 			targetInterval = '5m';
 		}
@@ -253,9 +280,9 @@
 
 	/** Active interval/metric — derived from initial range */
 	/** @type {string} */
-	let activeInterval = $state((data.range ?? 3) > 14 ? '1d' : '5m');
+	let activeInterval = $state((data.range ?? 3) >= 15 ? '1d' : '5m');
 	/** @type {string} */
-	let activeMetric = $state((data.range ?? 3) > 14 ? 'energy' : 'power');
+	let activeMetric = $state((data.range ?? 3) >= 15 ? 'energy' : 'power');
 
 	/** Display interval — set by FacilityChart toggle (power: '5m'/'30m', energy: '1d'/'1M') */
 	/** @type {string} */
@@ -266,14 +293,7 @@
 	 * @param {number} days
 	 */
 	function handleRangeSelect(days) {
-		// Update interval/metric based on range
-		if (days <= 14) {
-			activeInterval = '5m';
-			activeMetric = 'power';
-		} else {
-			activeInterval = '1d';
-			activeMetric = 'energy';
-		}
+		autoSetMetricInterval(days);
 
 		const tz = timeZone || '+10:00';
 		const now = new Date();
@@ -483,6 +503,8 @@
 						<DateRangePicker
 							startDate={dateStart}
 							endDate={dateEnd}
+							minDate={MIN_DATE}
+							{maxDate}
 							onchange={handleDateRangeChange}
 						/>
 						<span class="text-xs text-mid-grey whitespace-nowrap">

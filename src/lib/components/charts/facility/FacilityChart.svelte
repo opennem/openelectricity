@@ -232,8 +232,8 @@
 	/** Whether the user has manually picked an interval (overrides auto) */
 	let manualInterval = $state(/** @type {'5m' | '30m' | null} */ (null));
 
-	/** Auto-select 5m when zoomed into ≤1 day, 30m otherwise */
-	const AUTO_5M_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+	/** Auto-select 5m when zoomed into < 2 days, 30m otherwise */
+	const AUTO_5M_THRESHOLD_MS = 2 * 24 * 60 * 60 * 1000;
 	let autoInterval = $derived(
 		/** @type {'5m' | '30m'} */ (viewEnd - viewStart <= AUTO_5M_THRESHOLD_MS ? '5m' : '30m')
 	);
