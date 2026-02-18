@@ -155,10 +155,7 @@
 		const days = (endMs - startMs) / (24 * 60 * 60 * 1000);
 
 		// Auto-detect metric/interval from selected range
-		if (days >= 548) {
-			activeInterval = '1M';
-			activeMetric = 'energy';
-		} else if (days > 14) {
+		if (days > 14) {
 			activeInterval = '1d';
 			activeMetric = 'energy';
 		} else {
@@ -196,17 +193,10 @@
 
 		if (activeMetric === 'power' && durationDays >= 12) {
 			targetMetric = 'energy';
-			targetInterval = durationDays >= 548 ? '1M' : '1d';
+			targetInterval = '1d';
 		} else if (activeMetric === 'energy' && durationDays <= 10) {
 			targetMetric = 'power';
 			targetInterval = '5m';
-		} else if (activeMetric === 'energy') {
-			// Within energy mode, switch between daily and monthly
-			if (activeInterval === '1d' && durationDays >= 548) {
-				targetInterval = '1M';
-			} else if (activeInterval === '1M' && durationDays < 365) {
-				targetInterval = '1d';
-			}
 		}
 
 		if (targetMetric !== activeMetric || targetInterval !== activeInterval) {
@@ -263,7 +253,7 @@
 
 	/** Active interval/metric — derived from initial range */
 	/** @type {string} */
-	let activeInterval = $state((data.range ?? 3) >= 548 ? '1M' : (data.range ?? 3) > 14 ? '1d' : '5m');
+	let activeInterval = $state((data.range ?? 3) > 14 ? '1d' : '5m');
 	/** @type {string} */
 	let activeMetric = $state((data.range ?? 3) > 14 ? 'energy' : 'power');
 
@@ -280,9 +270,6 @@
 		if (days <= 14) {
 			activeInterval = '5m';
 			activeMetric = 'power';
-		} else if (days >= 548) {
-			activeInterval = '1M';
-			activeMetric = 'energy';
 		} else {
 			activeInterval = '1d';
 			activeMetric = 'energy';

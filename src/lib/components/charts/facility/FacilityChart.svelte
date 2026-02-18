@@ -1133,37 +1133,47 @@
 	{/if}
 
 	<div class="flex items-center gap-2">
-		{#if !isEnergyMetric}
-			<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
-				{#each ['5m', '30m'] as intv}
-					<button
-						class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedInterval === intv
-							? 'bg-white text-dark-grey shadow-sm'
-							: 'text-mid-grey hover:text-dark-grey'}"
-						onclick={() => {
-							manualInterval = /** @type {'5m' | '30m'} */ (intv);
-						}}
-					>
-						{intv === '5m' ? '5 min' : '30 min'}
-					</button>
-				{/each}
-			</div>
-		{:else}
-			<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
-				{#each ['1d', '1M'] as intv}
-					<button
-						class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedEnergyInterval === intv
-							? 'bg-white text-dark-grey shadow-sm'
-							: 'text-mid-grey hover:text-dark-grey'}"
-						onclick={() => {
-							manualEnergyInterval = /** @type {'1d' | '1M'} */ (intv);
-						}}
-					>
-						{intv === '1d' ? 'Daily' : 'Monthly'}
-					</button>
-				{/each}
-			</div>
-		{/if}
+		<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
+			<button
+				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {!isEnergyMetric && selectedInterval === '5m'
+					? 'bg-white text-dark-grey shadow-sm'
+					: isEnergyMetric
+						? 'text-mid-warm-grey cursor-not-allowed'
+						: 'text-mid-grey hover:text-dark-grey'}"
+				disabled={isEnergyMetric}
+				onclick={() => { manualInterval = '5m'; }}
+			>5 min</button>
+			<button
+				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {!isEnergyMetric && selectedInterval === '30m'
+					? 'bg-white text-dark-grey shadow-sm'
+					: isEnergyMetric
+						? 'text-mid-warm-grey cursor-not-allowed'
+						: 'text-mid-grey hover:text-dark-grey'}"
+				disabled={isEnergyMetric}
+				onclick={() => { manualInterval = '30m'; }}
+			>30 min</button>
+
+			<div class="w-px h-4 bg-mid-warm-grey/40 mx-0.5"></div>
+
+			<button
+				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {isEnergyMetric && selectedEnergyInterval === '1d'
+					? 'bg-white text-dark-grey shadow-sm'
+					: !isEnergyMetric
+						? 'text-mid-warm-grey cursor-not-allowed'
+						: 'text-mid-grey hover:text-dark-grey'}"
+				disabled={!isEnergyMetric}
+				onclick={() => { manualEnergyInterval = '1d'; }}
+			>Daily</button>
+			<button
+				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {isEnergyMetric && selectedEnergyInterval === '1M'
+					? 'bg-white text-dark-grey shadow-sm'
+					: !isEnergyMetric
+						? 'text-mid-warm-grey cursor-not-allowed'
+						: 'text-mid-grey hover:text-dark-grey'}"
+				disabled={!isEnergyMetric}
+				onclick={() => { manualEnergyInterval = '1M'; }}
+			>Monthly</button>
+		</div>
 
 		<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
 			<button
