@@ -19,8 +19,7 @@
 	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
 	import { MapPin, AlertCircle, SearchX, ChevronDown, ExternalLink } from '@lucide/svelte';
-	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
-	import RangeSelector from '$lib/components/form-elements/RangeSelector.svelte';
+	import { ChartRangeBar } from '$lib/components/charts/v2';
 	import { Accordion } from 'bits-ui';
 
 	/**
@@ -47,11 +46,25 @@
 	let searchQuery = $state('');
 
 	/**
-	 * Get default start date based on range
+	 * Get default start date based on range.
+	 * For -1 ("All"), uses the facility's earliest data date or MIN_DATE.
 	 * @param {number} days
 	 * @returns {string}
 	 */
 	function getDateStartForRange(days) {
+		if (days === -1) {
+			// "All" — resolve from facility data or fallback
+			if (data.facility?.units?.length) {
+				/** @type {string | null} */
+				let earliest = null;
+				for (const unit of data.facility.units) {
+					const d = unit.data_first_seen;
+					if (d && (!earliest || d < earliest)) earliest = d;
+				}
+				if (earliest) return earliest.slice(0, 10);
+			}
+			return '1998-12-01';
+		}
 		const date = new Date();
 		date.setDate(date.getDate() - days);
 		return date.toISOString().slice(0, 10);
@@ -139,9 +152,6 @@
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let chartComponent = $state(undefined);
 
-	/** @type {import('$lib/components/ui/date-range-picker/DateRangePicker.svelte').default | undefined} */
-	let datePickerComponent = $state(undefined);
-
 	/** Earliest selectable date: 1 Dec 1998 */
 	const MIN_DATE = '1998-12-01';
 	/** Latest selectable date: today */
@@ -159,8 +169,14 @@
 		if (days < 15) {
 			activeInterval = '5m';
 			activeMetric = 'power';
-		} else {
+		} else if (days < 365) {
 			activeInterval = '1d';
+			activeMetric = 'energy';
+		} else if (days <= 1825) {
+			activeInterval = '3M';
+			activeMetric = 'energy';
+		} else {
+			activeInterval = '1y';
 			activeMetric = 'energy';
 		}
 	}
@@ -211,7 +227,11 @@
 	 * @param {{ start: number, end: number }} range
 	 */
 	function handleViewportChange(range) {
-		selectedRange = null;
+		if (isPresetNavigation) {
+			isPresetNavigation = false;
+		} else {
+			selectedRange = null;
+		}
 		const offsetMs = timeZone === '+08:00' ? 8 * 3600_000 : 10 * 3600_000;
 		dateStart = new Date(range.start + offsetMs).toISOString().slice(0, 10);
 		dateEnd = new Date(range.end + offsetMs).toISOString().slice(0, 10);
@@ -221,10 +241,23 @@
 		let targetMetric = activeMetric;
 		let targetInterval = activeInterval;
 
+		// Zoom out thresholds (coarser interval)
+		// power/5m → energy/1d → energy/3M → energy/1y
 		if (activeMetric === 'power' && durationDays >= 15) {
 			targetMetric = 'energy';
 			targetInterval = '1d';
-		} else if (activeMetric === 'energy' && durationDays <= 13) {
+		} else if (activeMetric === 'energy' && activeInterval === '1d' && durationDays >= 365) {
+			targetInterval = '3M';
+		} else if (activeMetric === 'energy' && activeInterval === '3M' && durationDays >= 1825) {
+			targetInterval = '1y';
+		}
+		// Zoom in thresholds (finer interval, with hysteresis gap)
+		// energy/1y → energy/3M → energy/1d → power/5m
+		else if (activeMetric === 'energy' && activeInterval === '1y' && durationDays < 1500) {
+			targetInterval = '3M';
+		} else if (activeMetric === 'energy' && activeInterval === '3M' && durationDays < 300) {
+			targetInterval = '1d';
+		} else if (activeMetric === 'energy' && activeInterval === '1d' && durationDays <= 13) {
 			targetMetric = 'power';
 			targetInterval = '5m';
 		}
@@ -281,31 +314,94 @@
 	/** @type {number | null} */
 	let selectedRange = $state(data.range ?? 3);
 
+	/**
+	 * Resolve initial days for metric/interval calculation.
+	 * For -1 ("All"), compute actual days from dateStart.
+	 */
+	function getInitialDays() {
+		const range = data.range ?? 3;
+		if (range === -1) {
+			const start = new Date(dateStart);
+			const now = new Date();
+			return Math.ceil((now.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
+		}
+		return range;
+	}
+
 	/** Active interval/metric — derived from initial range */
+	const _initDays = getInitialDays();
 	/** @type {string} */
-	let activeInterval = $state((data.range ?? 3) >= 15 ? '1d' : '5m');
+	let activeInterval = $state(_initDays >= 1825 ? '1y' : _initDays >= 365 ? '3M' : _initDays >= 15 ? '1d' : '5m');
 	/** @type {string} */
-	let activeMetric = $state((data.range ?? 3) >= 15 ? 'energy' : 'power');
+	let activeMetric = $state(_initDays >= 15 ? 'energy' : 'power');
 
 	/** Display interval — set by FacilityChart toggle (power: '5m'/'30m', energy: '1d'/'1M') */
 	/** @type {string} */
 	let displayInterval = $state('30m');
 
+	/** Earliest data date for the selected facility (for "All" range) */
+	let earliestDate = $derived.by(() => {
+		if (!selectedFacility?.units?.length) return null;
+		/** @type {string | null} */
+		let earliest = null;
+		for (const unit of selectedFacility.units) {
+			const d = unit.data_first_seen;
+			if (d && (!earliest || d < earliest)) earliest = d;
+		}
+		return earliest ? earliest.slice(0, 10) : null;
+	});
+
 	/**
-	 * Handle quick range selection (3d/7d/30d/1y)
+	 * Handle interval change from ChartRangeBar dropdown
+	 * @param {string} interval
+	 */
+	function handleIntervalChange(interval) {
+		displayInterval = interval;
+		if (interval === '3M' || interval === '1y') {
+			// API-level intervals — change the API request directly
+			activeInterval = interval;
+			activeMetric = 'energy';
+		} else if (interval === '1d' || interval === '1M') {
+			activeInterval = '1d';
+			activeMetric = 'energy';
+			chartComponent?.setDisplayInterval(interval);
+		} else {
+			// '5m' or '30m'
+			activeInterval = '5m';
+			activeMetric = 'power';
+			chartComponent?.setDisplayInterval(interval);
+		}
+	}
+
+	/** Guard: when true, handleViewportChange preserves selectedRange */
+	let isPresetNavigation = false;
+
+	/**
+	 * Handle quick range selection (1D/3D/7D/1M/6M/1Y/5Y/All)
 	 * @param {number} days
 	 */
 	function handleRangeSelect(days) {
-		datePickerComponent?.clearErrors();
-		autoSetMetricInterval(days);
+		selectedRange = days;
+
+		// "All" (-1): compute actual days from earliest data date
+		let actualDays = days;
+		if (days === -1) {
+			const refDate = earliestDate || MIN_DATE;
+			const startDate = new Date(refDate);
+			const nowDate = new Date();
+			actualDays = Math.ceil((nowDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
+		}
+
+		autoSetMetricInterval(actualDays);
 
 		const tz = timeZone || '+10:00';
 		const now = new Date();
 		const start = new Date();
-		start.setDate(now.getDate() - days);
+		start.setDate(now.getDate() - actualDays);
 		dateStart = start.toISOString().slice(0, 10);
 		dateEnd = now.toISOString().slice(0, 10);
 		if (chartComponent) {
+			isPresetNavigation = true;
 			const startMs = new Date(dateStart + 'T00:00:00' + tz).getTime();
 			const endMs = new Date(dateEnd + 'T23:59:59' + tz).getTime();
 			chartComponent.setViewport(startMs, endMs);
@@ -492,31 +588,21 @@
 					</Accordion.Trigger>
 				</Accordion.Header>
 				<Accordion.Content class="px-4 pb-4">
-					<!-- Date Range Picker -->
-					<div class="flex items-center gap-2 mb-4">
-						<RangeSelector
-							options={[
-								{ label: '3d', value: 3 },
-								{ label: '7d', value: 7 },
-								{ label: '30d', value: 30 },
-								{ label: '1y', value: 365 }
-							]}
-							bind:selected={selectedRange}
-							onchange={handleRangeSelect}
-						/>
-						<DateRangePicker
-							bind:this={datePickerComponent}
+					<!-- Range / Calendar / Interval toolbar -->
+					<div class="mb-4">
+						<ChartRangeBar
+							{selectedRange}
+							{activeMetric}
+							{displayInterval}
 							startDate={dateStart}
 							endDate={dateEnd}
 							minDate={MIN_DATE}
 							{maxDate}
-							onchange={handleDateRangeChange}
+							{earliestDate}
+							onrangeselect={handleRangeSelect}
+							ondaterangechange={handleDateRangeChange}
+							onintervalchange={handleIntervalChange}
 						/>
-						<span class="text-xs text-mid-grey whitespace-nowrap">
-							{activeMetric === 'energy'
-								? `Energy (${displayInterval === '1M' ? 'monthly' : 'daily'})`
-								: `Power (${displayInterval === '30m' ? '30min' : '5min'})`}
-						</span>
 					</div>
 
 					<!-- Chart -->
@@ -530,6 +616,7 @@
 							{dateEnd}
 							interval={activeInterval}
 							metric={activeMetric}
+							showIntervalToggle={false}
 							onviewportchange={handleViewportChange}
 							onvisibledata={handleVisibleData}
 							ondisplayintervalchange={(intv) => (displayInterval = intv)}

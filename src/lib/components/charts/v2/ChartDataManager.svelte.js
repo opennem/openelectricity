@@ -231,8 +231,16 @@ export default class ChartDataManager {
 		}
 	}
 
-	/** API max range per request (1000 days in ms) */
-	static #MAX_API_RANGE_MS = 1000 * 24 * 60 * 60 * 1000;
+	/**
+	 * API max range per request, scaled by interval.
+	 * @returns {number} max range in ms
+	 */
+	get #maxApiRangeMs() {
+		const DAY = 24 * 60 * 60 * 1000;
+		if (this.interval === '1y') return 3700 * DAY;
+		if (this.interval === '3M') return 1830 * DAY;
+		return 1000 * DAY;
+	}
 
 	/**
 	 * Split a gap into chunks that fit within the API's max range limit.
@@ -240,7 +248,7 @@ export default class ChartDataManager {
 	 * @returns {LoadingRange[]}
 	 */
 	#splitGapIntoBatches(gap) {
-		const maxRange = ChartDataManager.#MAX_API_RANGE_MS;
+		const maxRange = this.#maxApiRangeMs;
 		const duration = gap.end - gap.start;
 		if (duration <= maxRange) return [gap];
 
@@ -315,9 +323,12 @@ export default class ChartDataManager {
 		// Overlap buffer: fetch a few extra intervals past the cache boundary
 		// so there are no missing points at the seam. The dedup merge makes
 		// overlapping data harmless. Scale by interval.
+		const DAY_MS = 24 * 60 * 60 * 1000;
 		const OVERLAP_MS =
-			this.interval === '1M' ? 31 * 24 * 60 * 60 * 1000 :
-			this.interval === '1d' ? 24 * 60 * 60 * 1000 :
+			this.interval === '1y' ? 365 * DAY_MS :
+			this.interval === '3M' ? 92 * DAY_MS :
+			this.interval === '1M' ? 31 * DAY_MS :
+			this.interval === '1d' ? DAY_MS :
 			10 * 60 * 1000; // 10 minutes for 5m
 
 		/** @type {LoadingRange[]} */
@@ -355,7 +366,20 @@ export default class ChartDataManager {
 		let dateEnd = new Date(clampedEnd + offsetMs).toISOString().slice(0, 19);
 
 		// Snap date boundaries to match the interval
-		if (this.interval === '1M') {
+		if (this.interval === '1y') {
+			// Yearly: snap to 1 Jan
+			dateStart = dateStart.slice(0, 4) + '-01-01T00:00:00';
+			dateEnd = dateEnd.slice(0, 4) + '-01-01T00:00:00';
+		} else if (this.interval === '3M') {
+			// Quarterly: snap to start of quarter (Jan, Apr, Jul, Oct)
+			const snapToQuarter = (/** @type {string} */ ds) => {
+				const m = parseInt(ds.slice(5, 7), 10);
+				const qMonth = String(Math.floor((m - 1) / 3) * 3 + 1).padStart(2, '0');
+				return ds.slice(0, 4) + '-' + qMonth + '-01T00:00:00';
+			};
+			dateStart = snapToQuarter(dateStart);
+			dateEnd = snapToQuarter(dateEnd);
+		} else if (this.interval === '1M') {
 			// Monthly: snap to first of month at midnight
 			dateStart = dateStart.slice(0, 7) + '-01T00:00:00';
 			dateEnd = dateEnd.slice(0, 7) + '-01T00:00:00';

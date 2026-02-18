@@ -99,7 +99,7 @@ export async function load({ url, fetch }) {
 				// Only fetch power data server-side for short ranges (≤14 days).
 				// Energy ranges (>14 days) are fetched client-side by ChartDataManager.
 				const numDays = days ? parseInt(days, 10) : 3;
-				if (numDays <= 14) {
+				if (numDays > 0 && numDays <= 14) {
 					const apiParams = new URLSearchParams({
 						network_id: selectedFacility.network_id
 					});

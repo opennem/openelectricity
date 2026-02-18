@@ -47,6 +47,7 @@
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
 	 * @property {((interval: string) => void)} [ondisplayintervalchange] - Callback when display interval changes (power: '5m'/'30m', energy: '1d'/'1M')
+	 * @property {boolean} [showIntervalToggle] - Whether to show the interval toggle buttons (default: true)
 	 */
 
 	/** @type {Props} */
@@ -64,8 +65,21 @@
 		dateEnd = '',
 		onviewportchange,
 		onvisibledata,
-		ondisplayintervalchange
+		ondisplayintervalchange,
+		showIntervalToggle = true
 	} = $props();
+
+	/**
+	 * Set the display interval from outside (e.g. ChartRangeBar dropdown)
+	 * @param {string} intv - '5m' | '30m' | '1d' | '1M'
+	 */
+	export function setDisplayInterval(intv) {
+		if (intv === '5m' || intv === '30m') {
+			manualInterval = /** @type {'5m' | '30m'} */ (intv);
+		} else if (intv === '1d' || intv === '1M') {
+			manualEnergyInterval = /** @type {'1d' | '1M'} */ (intv);
+		}
+	}
 
 	// ============================================
 	// Derived: Timezone
@@ -270,14 +284,17 @@
 
 	// Notify parent when effective display interval changes
 	$effect(() => {
-		const intv = isEnergyMetric ? selectedEnergyInterval : selectedInterval;
+		// For coarse API intervals (3M, 1y), report the API interval directly
+		const intv = (interval === '3M' || interval === '1y')
+			? interval
+			: isEnergyMetric ? selectedEnergyInterval : selectedInterval;
 		ondisplayintervalchange?.(intv);
 	});
 
 	/** Minimum viewport duration: 1 hour for power, 5 days for energy */
 	let MIN_VIEWPORT_MS = $derived(isEnergyMetric ? 5 * 24 * 60 * 60 * 1000 : 1 * 60 * 60 * 1000);
 	/** Maximum viewport duration: 16 days for power, 10 years for energy */
-	let MAX_VIEWPORT_MS = $derived(isEnergyMetric ? 10 * 365 * 24 * 60 * 60 * 1000 : 16 * 24 * 60 * 60 * 1000);
+	let MAX_VIEWPORT_MS = $derived(isEnergyMetric ? 50 * 365 * 24 * 60 * 60 * 1000 : 16 * 24 * 60 * 60 * 1000);
 
 	/** Prefetch buffer multiplier — energy uses wider buffers since intervals are daily */
 	let fetchBufferMultiplier = $derived(isEnergyMetric ? 3 : 1);
@@ -531,8 +548,11 @@
 
 		let visibleData = dataManager.getDataForRange(start, end);
 
-		// Aggregate daily energy to monthly when selected
-		if (isEnergy && energyDisplayInterval === '1M' && visibleData.length > 0 && dataManager.seriesMeta) {
+		// Skip client-side aggregation when API interval is already coarse (3M, 1y)
+		const apiInterval = interval;
+
+		// Aggregate daily energy to monthly when selected (only if API returned daily data)
+		if (isEnergy && apiInterval === '1d' && energyDisplayInterval === '1M' && visibleData.length > 0 && dataManager.seriesMeta) {
 			visibleData = aggregateToMonth(
 				visibleData,
 				dataManager.seriesMeta.seriesNames,
@@ -845,7 +865,7 @@
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
 			let rows = manager.getDataForRange(start, end);
-			if (isEnergy && energyDisplayInterval === '1M' && rows.length > 0) {
+			if (isEnergy && interval === '1d' && energyDisplayInterval === '1M' && rows.length > 0) {
 				rows = aggregateToMonth(rows, meta.seriesNames, ianaTimeZone, 'sum');
 			} else if (!isEnergy && displayInterval === '30m' && rows.length > 0) {
 				rows = aggregateToInterval(rows, '30m', meta.seriesNames, 'mean');
@@ -1137,6 +1157,7 @@
 	{/if}
 
 	<div class="flex items-center gap-2">
+		{#if showIntervalToggle}
 		<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
 			<button
 				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {!isEnergyMetric && selectedInterval === '5m'
@@ -1175,6 +1196,7 @@
 				onclick={() => { manualEnergyInterval = '1M'; }}
 			>Monthly</button>
 		</div>
+		{/if}
 
 		<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
 			<button
