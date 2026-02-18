@@ -344,8 +344,19 @@ export default class ChartDataManager {
 		// The API expects timezone-naive dates in the network's local time.
 		// Convert UTC ms → local time by adding the network's UTC offset.
 		const offsetMs = this.networkId === 'WEM' ? 8 * 3600_000 : 10 * 3600_000;
-		const dateStart = new Date(clampedStart + offsetMs).toISOString().slice(0, 19);
-		const dateEnd = new Date(clampedEnd + offsetMs).toISOString().slice(0, 19);
+		let dateStart = new Date(clampedStart + offsetMs).toISOString().slice(0, 19);
+		let dateEnd = new Date(clampedEnd + offsetMs).toISOString().slice(0, 19);
+
+		// Snap date boundaries to match the interval
+		if (this.interval === '1M') {
+			// Monthly: snap to first of month at midnight
+			dateStart = dateStart.slice(0, 7) + '-01T00:00:00';
+			dateEnd = dateEnd.slice(0, 7) + '-01T00:00:00';
+		} else if (this.interval === '1d') {
+			// Daily: snap to midnight
+			dateStart = dateStart.slice(0, 10) + 'T00:00:00';
+			dateEnd = dateEnd.slice(0, 10) + 'T00:00:00';
+		}
 
 		const params = new URLSearchParams({
 			network_id: this.networkId,

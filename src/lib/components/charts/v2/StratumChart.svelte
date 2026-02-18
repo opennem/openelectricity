@@ -154,14 +154,13 @@
 			/>
 		{:else}
 			<div
-				class="flex items-center justify-center text-gray-400 {chart.chartStyles.chartHeightPx
+				class="flex items-center justify-center {chart.chartStyles.chartHeightPx
 					? ''
 					: chart.chartStyles.chartHeightClasses}"
 				style:height={chart.chartStyles.chartHeightPx
 					? `${chart.chartStyles.chartHeightPx}px`
 					: undefined}
 			>
-				<span>No data available</span>
 			</div>
 		{/if}
 	</InteractionLayer>
