@@ -59,7 +59,8 @@ export function processFacilityPower(powerResponse, config) {
 
 		for (const series of metric.results || []) {
 			const unitCode = series.columns?.unit_code || series.name?.replace(`${metricFilter}_`, '');
-			const fuelTech = unitFuelTechMap[unitCode] || 'unknown';
+			if (!(unitCode in unitFuelTechMap)) continue;
+			const fuelTech = unitFuelTechMap[unitCode];
 			const seriesId = series.name || `${metricFilter}_${unitCode}`;
 			const shouldInvert = loadsToInvert.includes(seriesId);
 
