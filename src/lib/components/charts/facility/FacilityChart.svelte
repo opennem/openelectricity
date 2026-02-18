@@ -280,10 +280,14 @@
 	/** @type {ChartDataManager | null} */
 	let dataManager = $state(null);
 
+	/** @type {Map<string, ChartDataManager>} Background prefetched managers */
+	let prefetchCache = new Map();
+
 	// Initialize/reinitialize data manager when facility or interval/metric changes
 	$effect(() => {
 		if (!facility) {
 			dataManager = null;
+			prefetchCache.clear();
 			return;
 		}
 
@@ -291,6 +295,12 @@
 		const currentInterval = interval;
 		const currentMetric = metric;
 		const currentCode = facility.code;
+
+		// Clear prefetch cache if facility changed
+		const existingCode = untrack(() => dataManager?.facilityCode);
+		if (existingCode && existingCode !== currentCode) {
+			prefetchCache.clear();
+		}
 
 		// Skip recreation if existing manager already matches
 		const existing = untrack(() => dataManager);
@@ -300,6 +310,25 @@
 			existing.interval === currentInterval &&
 			existing.metric === currentMetric
 		) {
+			return;
+		}
+
+		// Check prefetch cache before creating a new manager
+		const prefetchKey = `${currentInterval}-${currentMetric}`;
+		const prefetched = prefetchCache.get(prefetchKey);
+		if (prefetched && prefetched.facilityCode === currentCode) {
+			prefetchCache.delete(prefetchKey);
+			dataManager = prefetched;
+
+			// Still need to request the viewport range (may already be cached)
+			const start = untrack(() => viewStart);
+			const end = untrack(() => viewEnd);
+			if (start && end) {
+				const duration = end - start;
+				const bufferMultiplier = currentMetric === 'energy' ? 3 : 1;
+				const buffer = duration * bufferMultiplier;
+				prefetched.requestRange(start - buffer, Math.min(end + buffer, Date.now()));
+			}
 			return;
 		}
 
@@ -348,6 +377,42 @@
 		}
 
 		dataManager = manager;
+	});
+
+	// Prefetch common ranges after initial load completes
+	$effect(() => {
+		const manager = dataManager;
+		if (!manager || !manager.initialLoadComplete) return;
+		if (!facility) return;
+
+		// Only prefetch from the initial power mode (don't re-prefetch on every switch)
+		if (manager.metric !== 'power') return;
+
+		const now = Date.now();
+
+		// 1. Extend power cache to 7 days
+		const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+		manager.requestRange(sevenDaysAgo, now);
+
+		// 2. Background energy/1d manager for 1-year range
+		const energyKey = '1d-energy';
+		if (prefetchCache.has(energyKey)) return;
+
+		const energyManager = new ChartDataManager({
+			facilityCode: facility.code,
+			networkId: facility.network_id,
+			interval: '1d',
+			metric: 'energy',
+			unitFuelTechMap,
+			unitOrder,
+			loadsToInvert: loadIds,
+			getLabel,
+			getColour
+		});
+
+		const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
+		energyManager.requestRange(oneYearAgo, now);
+		prefetchCache.set(energyKey, energyManager);
 	});
 
 	// ============================================
