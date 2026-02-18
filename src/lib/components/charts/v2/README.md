@@ -724,15 +724,6 @@ Key behaviors:
 - **Dedup merge**: New data rows overwrite existing ones at the same timestamp, then re-sort
 - **Metric-aware**: Accepts `interval` and `metric` config; recreated when these change
 
-### Legacy Category Elements
-
-The following elements were used by the now-deleted `StackedCategoryChart` and are no longer actively consumed. They remain exported from `elements/index.js` but can be safely deleted:
-
-- `CategoryHoverLayer` — Visual highlight/focus rects for band-scale charts
-- `CategoryAxisX` — Band axis with auto-thinned labels
-- `CategoryLine` — Overlay line on category chart
-- `CategoryOverlay` — Hatched overlay region for category chart
-
 ---
 
 ## File Structure
@@ -771,13 +762,7 @@ src/lib/components/charts/v2/
     ├── LineX.svelte            # Vertical line (hover/focus)
     ├── LineY.svelte            # Horizontal line (reference)
     ├── LoadingOverlay.svelte   # Shaded loading indicator
-    ├── Shading.svelte          # Background shading regions
-    │
-    │   # Legacy (unused, safe to delete):
-    ├── CategoryAxisX.svelte    # Band axis (was StackedCategoryChart)
-    ├── CategoryHoverLayer.svelte # Category highlight rects
-    ├── CategoryLine.svelte     # Category overlay line
-    └── CategoryOverlay.svelte  # Category hatched overlay
+    └── Shading.svelte          # Background shading regions
 
 src/lib/utils/
 ├── Statistic/
