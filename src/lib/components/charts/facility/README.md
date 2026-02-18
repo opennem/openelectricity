@@ -6,9 +6,10 @@ Components for visualizing facility-level power data with per-unit breakdown, ho
 
 The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orchestrates these components:
 
-1. **Server load** (`+page.server.js`): Fetches all facilities + selected facility. For ranges **≤14 days**, fetches 5m power data server-side. For **>14 days**, skips — ChartDataManager handles it client-side.
-2. **Page component** (`+page.svelte`): Manages `activeMetric`/`activeInterval`, syncs DateRangePicker ↔ chart viewport, handles auto metric/interval switching.
-3. **FacilityChart**: Owns the viewport state (`viewStart`/`viewEnd`), creates ChartDataManager, renders via StratumChart → StackedAreaChart.
+1. **Server load** (`+page.server.js`): Fetches all facilities + selected facility. For ranges **1–14 days**, fetches 5m power data server-side. For **>14 days or "All" (-1)**, skips — ChartDataManager handles it client-side.
+2. **Page component** (`+page.svelte`): Manages `activeMetric`/`activeInterval`, syncs ChartRangeBar ↔ chart viewport, handles auto metric/interval switching.
+3. **ChartRangeBar** (`v2/ChartRangeBar.svelte`): Unified toolbar with range presets (1D/3D/7D/1M/6M/1Y/5Y/All), calendar popover (DateRangePicker), and interval dropdown (5min/30min for power; Daily/Monthly/Quarterly/Yearly for energy).
+4. **FacilityChart**: Owns the viewport state (`viewStart`/`viewEnd`), creates ChartDataManager, renders via StratumChart → StackedAreaChart.
 
 ## Files
 
@@ -81,24 +82,30 @@ The old `transformFacilityPowerData` is still exported for backward compatibilit
 
 The chart automatically switches between power and energy metrics based on the viewport duration. This is managed by the **page component** (`+page.svelte`), not FacilityChart itself.
 
-### Thresholds
+### Thresholds (auto-set by `autoSetMetricInterval`)
 
-| Viewport duration | Metric | Interval | Prefetch buffer |
-|-------------------|--------|----------|-----------------|
-| ≤14 days | `power` | `5m` | 1x viewport |
-| 14–548 days | `energy` | `1d` | 3x viewport |
-| ≥548 days (~1.5y) | `energy` | `1M` | 3x viewport |
+| Viewport duration | Metric | API Interval | Display options |
+|-------------------|--------|--------------|-----------------|
+| < 15 days | `power` | `5m` | 5 min, 30 min (client-side aggregation) |
+| 15–364 days | `energy` | `1d` | Daily, Monthly (client-side aggregation) |
+| 365–1825 days | `energy` | `3M` | Quarterly (API-level) |
+| > 1825 days | `energy` | `1y` | Yearly (API-level) |
 
 ### Auto-switching with hysteresis
 
 To prevent rapid flipping during continuous zoom, the switch thresholds differ by direction:
 
-- **Power → Energy**: triggers at **12 days** (not 14)
-- **Energy → Power**: triggers at **10 days** (not 14)
-- **Daily → Monthly**: triggers at **548 days**
-- **Monthly → Daily**: triggers at **365 days**
+**Zoom out (→ coarser):**
+- **Power/5m → Energy/1d**: at **15+ days**
+- **Energy/1d → Energy/3M**: at **365+ days**
+- **Energy/3M → Energy/1y**: at **1825+ days**
 
-Both switches are debounced by 300ms.
+**Zoom in (→ finer, with hysteresis gap):**
+- **Energy/1y → Energy/3M**: at **< 1500 days**
+- **Energy/3M → Energy/1d**: at **< 300 days**
+- **Energy/1d → Power/5m**: at **≤ 13 days**
+
+All switches are debounced by 300ms.
 
 ### What happens on switch
 
@@ -108,9 +115,17 @@ Both switches are debounced by 300ms.
 4. New data is fetched with a buffer (3x for energy, 1x for power)
 5. Chart re-renders with the new data
 
-### 5m/30m display toggle (power mode only)
+### Display interval vs API interval
 
-FacilityChart has an internal `selectedInterval` toggle ('5m' | '30m'). This is **client-side only** — the API is always called with `5m`. When `30m` is selected, `aggregateToInterval()` averages the 5m data into 30m buckets before rendering.
+FacilityChart has internal display interval toggles that perform **client-side aggregation** on top of cached API data:
+
+- **Power mode**: API always fetches `5m`. Toggle between `5m` (raw) and `30m` (`aggregateToInterval` averages).
+- **Energy mode with `1d` API interval**: Toggle between `1d` (raw) and `1M` (`aggregateToMonth` sums).
+- **Energy mode with `3M` or `1y` API interval**: No client-side aggregation — data is already at the right granularity.
+
+The `showIntervalToggle` prop (default `true`) controls whether FacilityChart shows its own interval buttons. When using ChartRangeBar (which has its own interval dropdown), pass `showIntervalToggle={false}`.
+
+The `setDisplayInterval(intv)` export method allows external control of the display interval (for `5m`/`30m`/`1d`/`1M` — the client-side aggregation levels).
 
 ## ChartDataManager
 
@@ -123,7 +138,7 @@ Reactive Svelte 5 class that manages a processed data cache independently from t
 - **`getDataForRange(startMs, endMs)`** — Slice cache by viewport bounds
 - **`clearCache()`** — Reset all state
 
-Internally calls `processFacilityPower()` and merges results by timestamp (dedup on overlap). Fetches include overlap buffers at cache boundaries (10min for 5m, 1 day for 1d, 31 days for 1M).
+Internally calls `processFacilityPower()` and merges results by timestamp (dedup on overlap). Fetches include overlap buffers at cache boundaries (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y).
 
 ### Cache structure
 
@@ -141,7 +156,7 @@ requestRange(start, end)
   → debounce 150ms
   → #executeFetch()
     → #computeGaps() — find uncached ranges (with overlap buffer)
-    → #splitGapIntoBatches() — split >1000-day gaps
+    → #splitGapIntoBatches() — split gaps exceeding max range (1000d default, 1830d for 3M, 3700d for 1y)
     → for each batch (sequential):
         → skip if #inFlightKeys has this range
         → #fetchFromApi() — call /api/facilities/[code]/power
@@ -163,10 +178,12 @@ requestRange(start, end)
 | `useDivergingStack` | boolean | Stack positive/negative independently |
 | `onviewportchange` | callback | Fired when viewport changes |
 | `onvisibledata` | callback | Debounced visible data for external table |
+| `ondisplayintervalchange` | callback | Fired when display interval changes |
+| `showIntervalToggle` | boolean | Show built-in interval toggle buttons (default: `true`) |
 
 ### Features
 
-- **Interval toggle**: 5m (raw) or 30m (client-side aggregation via `aggregateToInterval`)
+- **Interval toggle**: 5m/30m for power, 1d/1M for energy (client-side aggregation). Hidden when `showIntervalToggle={false}`
 - **Pan**: Drag to scroll through time; direction-aware prefetch on pan end
 - **Zoom**: Cmd+scroll, pinch, or +/- buttons; anchored to cursor position
 - **Viewport clamping**: Cannot pan past current time
@@ -177,7 +194,7 @@ requestRange(start, end)
 | Mode | Min viewport | Max viewport |
 |------|-------------|-------------|
 | Power (5m) | 1 hour | 16 days |
-| Energy (1d/1M) | 5 days | 10 years |
+| Energy (1d/3M/1y) | 5 days | 50 years |
 
 ### Pan & Zoom flow
 

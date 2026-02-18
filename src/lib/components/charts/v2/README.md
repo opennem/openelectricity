@@ -442,6 +442,69 @@ Toggle between time intervals:
 />
 ```
 
+### ChartRangeBar
+
+A unified toolbar combining range presets, a calendar popover, and an interval dropdown. Designed for the Facility Explorer but reusable with any chart.
+
+```svelte
+<script>
+	import { ChartRangeBar } from '$lib/components/charts/v2';
+</script>
+
+<ChartRangeBar
+	selectedRange={3}
+	activeMetric="power"
+	displayInterval="5m"
+	startDate="2026-01-01"
+	endDate="2026-02-18"
+	minDate="1998-12-01"
+	maxDate="2026-02-18"
+	earliestDate="2005-06-01"
+	onrangeselect={(days) => handleRangeSelect(days)}
+	ondaterangechange={(range) => handleDateRangeChange(range)}
+	onintervalchange={(interval) => handleIntervalChange(interval)}
+/>
+```
+
+#### Props
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `selectedRange` | `number \| null` | Active preset in days (`null` = custom, `-1` = All) |
+| `activeMetric` | `string` | `'power'` or `'energy'` — controls which intervals are shown |
+| `displayInterval` | `string` | Current interval (`'5m'`, `'30m'`, `'1d'`, `'1M'`, `'3M'`, `'1y'`) |
+| `startDate` | `string \| null` | Start date (YYYY-MM-DD) for the DateRangePicker |
+| `endDate` | `string \| null` | End date (YYYY-MM-DD) for the DateRangePicker |
+| `minDate` | `string \| null` | Earliest selectable date |
+| `maxDate` | `string \| null` | Latest selectable date |
+| `earliestDate` | `string \| null` | Earliest data date (used by "All" preset) |
+| `onrangeselect` | `(days) => void` | Called when a range preset is clicked |
+| `ondaterangechange` | `({start, end}) => void` | Called when dates change via the calendar |
+| `onintervalchange` | `(interval) => void` | Called when the interval dropdown changes |
+
+#### Range presets
+
+| Label | Days | Default interval |
+|-------|------|-----------------|
+| 1D | 1 | power/5m |
+| 3D | 3 | power/5m |
+| 7D | 7 | power/5m |
+| 1M | 30 | energy/1d |
+| 6M | 182 | energy/1d |
+| 1Y | 365 | energy/3M |
+| 5Y | 1825 | energy/3M |
+| All | -1 | energy/1y |
+
+#### Interval options by metric
+
+- **Power**: 5 min, 30 min
+- **Energy**: Daily, Monthly, Quarterly, Yearly
+
+#### Responsive behavior
+
+- **Desktop** (`sm:` and up): Range buttons as a switcher, calendar icon popover, interval dropdown
+- **Mobile** (below `sm:`): Range as dropdown, interval as dropdown, no calendar
+
 ---
 
 ## Interval Utilities
@@ -719,7 +782,9 @@ Pan/zoom ───requestRange()──> #computeGaps() ──> #fetchFromApi()
 ```
 
 Key behaviors:
-- **Gap detection**: Only fetches ranges not already in cache, with overlap buffers scaled by interval (10min for 5m, 1 day for 1d)
+- **Gap detection**: Only fetches ranges not already in cache, with overlap buffers scaled by interval (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y)
+- **Interval-aware fetch limits**: Max range per API request scales with interval — 1000 days (default), 1830 days (3M), 3700 days (1y)
+- **Date snapping**: Aligns request boundaries to interval periods — midnight for 1d, 1st of month for 1M, quarter start for 3M, Jan 1 for 1y
 - **Debounced fetching**: Batches rapid pan movements into single API calls (150ms debounce)
 - **Dedup merge**: New data rows overwrite existing ones at the same timestamp, then re-sort
 - **Metric-aware**: Accepts `interval` and `metric` config; recreated when these change
@@ -739,6 +804,7 @@ src/lib/components/charts/v2/
 ├── ChartDataManager.svelte.js  # Client-side data cache/fetcher
 ├── StratumChart.svelte         # Wrapper: header + tooltip + InteractionLayer + chart
 ├── StackedAreaChart.svelte     # Time-series chart (scaleTime x axis)
+├── ChartRangeBar.svelte        # Unified toolbar: range presets + calendar + interval dropdown
 ├── DateBrush.svelte            # Date range brush selector
 ├── IntervalSelector.svelte     # Interval toggle
 ├── dataProcessing.js           # Data processing utilities
