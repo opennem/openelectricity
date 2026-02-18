@@ -114,12 +114,17 @@
 		// Track the prop-derived range
 		const _s = initialRange.start;
 		const _e = initialRange.end;
+		clearErrors();
+	});
+
+	/** Reset local range and clear all validation errors */
+	export function clearErrors() {
 		localRange = null;
 		pendingValidation = { error: '', startErr: false, endErr: false };
 		errorMessage = '';
 		startHasError = false;
 		endHasError = false;
-	});
+	}
 
 	// ============================================
 	// Validation

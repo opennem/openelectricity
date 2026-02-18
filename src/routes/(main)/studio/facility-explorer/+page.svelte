@@ -139,6 +139,9 @@
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let chartComponent = $state(undefined);
 
+	/** @type {import('$lib/components/ui/date-range-picker/DateRangePicker.svelte').default | undefined} */
+	let datePickerComponent = $state(undefined);
+
 	/** Earliest selectable date: 1 Dec 1998 */
 	const MIN_DATE = '1998-12-01';
 	/** Latest selectable date: today */
@@ -293,6 +296,7 @@
 	 * @param {number} days
 	 */
 	function handleRangeSelect(days) {
+		datePickerComponent?.clearErrors();
 		autoSetMetricInterval(days);
 
 		const tz = timeZone || '+10:00';
@@ -501,6 +505,7 @@
 							onchange={handleRangeSelect}
 						/>
 						<DateRangePicker
+							bind:this={datePickerComponent}
 							startDate={dateStart}
 							endDate={dateEnd}
 							minDate={MIN_DATE}
