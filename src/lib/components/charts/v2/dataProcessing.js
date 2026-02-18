@@ -237,5 +237,90 @@ function parseIntervalMs(interval) {
 	}
 }
 
+/**
+ * Aggregate time series data to calendar months (timezone-aware).
+ *
+ * @param {any[]} data - Time series data with `time` (UTC ms)
+ * @param {string[]} seriesNames - Names of series to aggregate
+ * @param {string} ianaTimeZone - IANA timezone for month bucketing (e.g. 'Australia/Brisbane')
+ * @param {'sum' | 'mean'} [method='sum'] - Aggregation method
+ * @returns {any[]}
+ */
+export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum') {
+	const buckets = new Map();
+	const ymFmt = new Intl.DateTimeFormat('en-AU', {
+		year: 'numeric',
+		month: '2-digit',
+		timeZone: ianaTimeZone
+	});
+
+	// Derive UTC offset from the IANA zone name (DST-free zones only)
+	const offsetHours = ianaTimeZone === 'Australia/Perth' ? 8 : 10;
+
+	for (const point of data) {
+		const parts = ymFmt.formatToParts(new Date(point.time));
+		const y = parts.find((p) => p.type === 'year')?.value || '2000';
+		const m = parts.find((p) => p.type === 'month')?.value || '01';
+		const key = `${y}-${m}`;
+
+		if (!buckets.has(key)) {
+			// Start of month in local tz, expressed as UTC ms
+			const monthStart = new Date(
+				Date.UTC(parseInt(y), parseInt(m) - 1, 1, -offsetHours)
+			);
+			/** @type {any} */
+			const bucket = {
+				time: monthStart.getTime(),
+				date: monthStart,
+				_values: {},
+				_count: 0
+			};
+			seriesNames.forEach((name) => {
+				bucket._values[name] = [];
+			});
+			buckets.set(key, bucket);
+		}
+
+		const bucket = buckets.get(key);
+		bucket._count++;
+
+		seriesNames.forEach((name) => {
+			const value = point[name];
+			if (value !== null && value !== undefined) {
+				bucket._values[name].push(value);
+			}
+		});
+	}
+
+	/** @type {any[]} */
+	const result = [];
+	for (const bucket of buckets.values()) {
+		/** @type {any} */
+		const point = { date: bucket.date, time: bucket.time };
+
+		seriesNames.forEach((name) => {
+			const values = bucket._values[name];
+			if (values.length === 0) {
+				point[name] = null;
+			} else if (method === 'sum') {
+				point[name] = values.reduce(
+					(/** @type {number} */ a, /** @type {number} */ b) => a + b,
+					0
+				);
+			} else {
+				point[name] =
+					values.reduce(
+						(/** @type {number} */ a, /** @type {number} */ b) => a + b,
+						0
+					) / values.length;
+			}
+		});
+
+		result.push(point);
+	}
+
+	return result.sort((a, b) => a.time - b.time);
+}
+
 // Re-export the v2 classes for direct use
 export { StatisticV2, TimeSeriesV2 };

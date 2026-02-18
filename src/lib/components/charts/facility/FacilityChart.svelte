@@ -10,7 +10,7 @@
 		ChartStore,
 		StratumChart
 	} from '$lib/components/charts/v2';
-	import { aggregateToInterval } from '$lib/components/charts/v2/dataProcessing.js';
+	import { aggregateToInterval, aggregateToMonth } from '$lib/components/charts/v2/dataProcessing.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { loadFuelTechs, fuelTechNameMap } from '$lib/fuel_techs';
@@ -46,7 +46,7 @@
 	 * @property {string} [dateEnd] - Initial date end string (YYYY-MM-DD) for viewport when no seeded cache
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
-	 * @property {((interval: '5m' | '30m') => void)} [ondisplayintervalchange] - Callback when power display interval changes
+	 * @property {((interval: string) => void)} [ondisplayintervalchange] - Callback when display interval changes (power: '5m'/'30m', energy: '1d'/'1M')
 	 */
 
 	/** @type {Props} */
@@ -242,14 +242,37 @@
 	$effect(() => {
 		const _auto = autoInterval; // track
 		manualInterval = null;
-		ondisplayintervalchange?.(_auto);
 	});
 
 	/** @type {'5m' | '30m'} */
 	let selectedInterval = $derived(manualInterval ?? autoInterval);
 
+	/** Whether the user has manually picked an energy display interval */
+	let manualEnergyInterval = $state(/** @type {'1d' | '1M' | null} */ (null));
+
+	/** Auto-select monthly when viewport > 1 year, daily otherwise */
+	const AUTO_MONTHLY_THRESHOLD_MS = 366 * 24 * 60 * 60 * 1000;
+	let autoEnergyInterval = $derived(
+		/** @type {'1d' | '1M'} */ (viewEnd - viewStart >= AUTO_MONTHLY_THRESHOLD_MS ? '1M' : '1d')
+	);
+
+	// Clear manual energy override when auto changes (zoom crosses threshold)
+	$effect(() => {
+		const _auto = autoEnergyInterval;
+		manualEnergyInterval = null;
+	});
+
+	/** @type {'1d' | '1M'} */
+	let selectedEnergyInterval = $derived(manualEnergyInterval ?? autoEnergyInterval);
+
 	/** Whether we're showing energy data (1d interval) vs power (5m) */
 	let isEnergyMetric = $derived(metric === 'energy');
+
+	// Notify parent when effective display interval changes
+	$effect(() => {
+		const intv = isEnergyMetric ? selectedEnergyInterval : selectedInterval;
+		ondisplayintervalchange?.(intv);
+	});
 
 	/** Minimum viewport duration: 1 hour for power, 5 days for energy */
 	let MIN_VIEWPORT_MS = $derived(isEnergyMetric ? 5 * 24 * 60 * 60 * 1000 : 1 * 60 * 60 * 1000);
@@ -502,9 +525,20 @@
 		const start = viewStart;
 		const end = viewEnd;
 		const displayInterval = selectedInterval;
+		const energyDisplayInterval = selectedEnergyInterval;
 		const isEnergy = isEnergyMetric;
 
 		let visibleData = dataManager.getDataForRange(start, end);
+
+		// Aggregate daily energy to monthly when selected
+		if (isEnergy && energyDisplayInterval === '1M' && visibleData.length > 0 && dataManager.seriesMeta) {
+			visibleData = aggregateToMonth(
+				visibleData,
+				dataManager.seriesMeta.seriesNames,
+				ianaTimeZone,
+				'sum'
+			);
+		}
 
 		// Aggregate to 30m for power mode when selected
 		if (!isEnergy && displayInterval === '30m' && visibleData.length > 0 && dataManager.seriesMeta) {
@@ -798,6 +832,7 @@
 		const start = viewStart;
 		const end = viewEnd;
 		const displayInterval = selectedInterval;
+		const energyDisplayInterval = selectedEnergyInterval;
 		const isEnergy = isEnergyMetric;
 		const manager = dataManager;
 		const _cache = manager?.processedCache; // track cache changes
@@ -809,7 +844,9 @@
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
 			let rows = manager.getDataForRange(start, end);
-			if (!isEnergy && displayInterval === '30m' && rows.length > 0) {
+			if (isEnergy && energyDisplayInterval === '1M' && rows.length > 0) {
+				rows = aggregateToMonth(rows, meta.seriesNames, ianaTimeZone, 'sum');
+			} else if (!isEnergy && displayInterval === '30m' && rows.length > 0) {
 				rows = aggregateToInterval(rows, '30m', meta.seriesNames, 'mean');
 			}
 			callback({
@@ -1105,10 +1142,24 @@
 							: 'text-mid-grey hover:text-dark-grey'}"
 						onclick={() => {
 							manualInterval = /** @type {'5m' | '30m'} */ (intv);
-							ondisplayintervalchange?.(/** @type {'5m' | '30m'} */ (intv));
 						}}
 					>
 						{intv === '5m' ? '5 min' : '30 min'}
+					</button>
+				{/each}
+			</div>
+		{:else}
+			<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
+				{#each ['1d', '1M'] as intv}
+					<button
+						class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedEnergyInterval === intv
+							? 'bg-white text-dark-grey shadow-sm'
+							: 'text-mid-grey hover:text-dark-grey'}"
+						onclick={() => {
+							manualEnergyInterval = /** @type {'1d' | '1M'} */ (intv);
+						}}
+					>
+						{intv === '1d' ? 'Daily' : 'Monthly'}
 					</button>
 				{/each}
 			</div>
