@@ -109,6 +109,18 @@
 	/** @type {{ start: CalendarDate | undefined, end: CalendarDate | undefined }} */
 	let dateRange = $derived(localRange ?? initialRange);
 
+	// Clear local overrides and errors when parent updates props (e.g. range preset selected)
+	$effect(() => {
+		// Track the prop-derived range
+		const _s = initialRange.start;
+		const _e = initialRange.end;
+		localRange = null;
+		pendingValidation = { error: '', startErr: false, endErr: false };
+		errorMessage = '';
+		startHasError = false;
+		endHasError = false;
+	});
+
 	// ============================================
 	// Validation
 	// ============================================
