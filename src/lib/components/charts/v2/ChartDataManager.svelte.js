@@ -196,8 +196,9 @@ export default class ChartDataManager {
 	 *
 	 * @param {number} start - Start timestamp (ms)
 	 * @param {number} end - End timestamp (ms)
+	 * @param {{ immediate?: boolean }} [options] - Set immediate to skip debounce
 	 */
-	requestRange(start, end) {
+	requestRange(start, end, { immediate = false } = {}) {
 		// If fully cached, skip
 		if (
 			this.#cacheStart !== null &&
@@ -217,11 +218,17 @@ export default class ChartDataManager {
 		}
 		this.hasPendingFetch = true;
 
-		// Debounce
-		if (this.#fetchTimer) clearTimeout(this.#fetchTimer);
-		this.#fetchTimer = setTimeout(() => {
+		if (immediate) {
+			// Execute immediately — used for initial load after metric switch
+			if (this.#fetchTimer) clearTimeout(this.#fetchTimer);
 			this.#executeFetch();
-		}, 150);
+		} else {
+			// Debounce
+			if (this.#fetchTimer) clearTimeout(this.#fetchTimer);
+			this.#fetchTimer = setTimeout(() => {
+				this.#executeFetch();
+			}, 150);
+		}
 	}
 
 	/** API max range per request (1000 days in ms) */

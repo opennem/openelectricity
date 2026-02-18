@@ -396,7 +396,7 @@
 			// First load — set viewport from seeded cache
 			if (manager.cacheStart !== null && manager.cacheEnd !== null) {
 				viewStart = manager.cacheStart;
-				viewEnd = manager.cacheEnd;
+				viewEnd = Math.min(manager.cacheEnd, Date.now());
 			} else if (dateStart && dateEnd) {
 				// No seeded cache (e.g. energy mode on page load) — use date props
 				const tz = timeZone || '+10:00';
@@ -408,11 +408,12 @@
 				manager.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, Date.now()));
 			}
 		} else {
-			// Switching interval/metric — keep current viewport, fetch with buffer
+			// Switching interval/metric — keep current viewport, fetch immediately
+			// (no debounce) so data loads even during continuous zoom gestures
 			const duration = end - start;
 			const bufferMultiplier = currentMetric === 'energy' ? 3 : 1;
 			const buffer = duration * bufferMultiplier;
-			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()));
+			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
 		dataManager = manager;

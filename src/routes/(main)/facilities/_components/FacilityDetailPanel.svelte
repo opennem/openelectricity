@@ -35,6 +35,56 @@
 	// 3 days at 5-minute intervals = 3 * 24 * 12 = 864 data points
 	const LAST_3_DAYS_POINTS = 3 * 24 * 12;
 
+	/** @type {string} */
+	let activeInterval = $state('5m');
+	/** @type {string} */
+	let activeMetric = $state('power');
+	/** @type {string} */
+	let displayInterval = $state('30m');
+
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let metricSwitchTimer = null;
+
+	let chartTitle = $derived(
+		activeMetric === 'energy'
+			? `Energy (${displayInterval === '1M' ? 'monthly' : 'daily'})`
+			: `Power (${displayInterval === '30m' ? '30min' : '5min'})`
+	);
+
+	/**
+	 * Handle viewport change — auto-switch between power and energy
+	 * @param {{ start: number, end: number }} range
+	 */
+	function handleViewportChange(range) {
+		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
+		let targetMetric = activeMetric;
+		let targetInterval = activeInterval;
+
+		if (activeMetric === 'power' && durationDays >= 12) {
+			targetMetric = 'energy';
+			targetInterval = '1d';
+		} else if (activeMetric === 'energy' && durationDays <= 10) {
+			targetMetric = 'power';
+			targetInterval = '5m';
+		}
+
+		if (targetMetric !== activeMetric || targetInterval !== activeInterval) {
+			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
+			metricSwitchTimer = setTimeout(() => {
+				activeMetric = targetMetric;
+				activeInterval = targetInterval;
+			}, 300);
+		}
+	}
+
+	// Reset metric/interval when facility changes
+	$effect(() => {
+		const _fac = facility?.code;
+		activeInterval = '5m';
+		activeMetric = 'power';
+		displayInterval = '30m';
+	});
+
 	/**
 	 * Filter data array to last N points
 	 * @param {any[]} data - Array of [timestamp, value] pairs
@@ -157,9 +207,13 @@
 						facility={filteredFacility}
 						powerData={filteredPowerData}
 						{timeZone}
-						title="Power Generation (Last 3 Days)"
+						title={chartTitle}
 						chartHeightPx={chartPixelHeight}
 						useDivergingStack={true}
+						interval={activeInterval}
+						metric={activeMetric}
+						onviewportchange={handleViewportChange}
+						ondisplayintervalchange={(intv) => (displayInterval = intv)}
 					/>
 				</div>
 
