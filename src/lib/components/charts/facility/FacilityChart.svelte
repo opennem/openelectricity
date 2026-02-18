@@ -976,9 +976,15 @@
 			dataManager?.requestRange(viewStart - prefetch, viewStart);
 		}
 
-		// Notify parent of viewport change
-		onviewportchange?.({ start: viewStart, end: viewEnd });
 	}
+
+	// Reactively notify parent whenever viewport changes (pan, zoom, setViewport, initial load, metric switch)
+	$effect(() => {
+		const start = viewStart;
+		const end = viewEnd;
+		if (!start || !end) return;
+		onviewportchange?.({ start, end });
+	});
 
 	// ============================================
 	// Zoom Handler
@@ -1011,9 +1017,6 @@
 		// Request data for any uncached range (wider buffer for energy)
 		const buffer = newDuration * fetchBufferMultiplier;
 		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
-
-		// Notify parent of viewport change
-		onviewportchange?.({ start: viewStart, end: viewEnd });
 	}
 
 	// ============================================
@@ -1143,7 +1146,7 @@
 						: 'text-mid-grey hover:text-dark-grey'}"
 				disabled={isEnergyMetric}
 				onclick={() => { manualInterval = '5m'; }}
-			>5 min</button>
+			>5min</button>
 			<button
 				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {!isEnergyMetric && selectedInterval === '30m'
 					? 'bg-white text-dark-grey shadow-sm'
@@ -1152,10 +1155,7 @@
 						: 'text-mid-grey hover:text-dark-grey'}"
 				disabled={isEnergyMetric}
 				onclick={() => { manualInterval = '30m'; }}
-			>30 min</button>
-
-			<div class="w-px h-4 bg-mid-warm-grey/40 mx-0.5"></div>
-
+			>30min</button>
 			<button
 				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {isEnergyMetric && selectedEnergyInterval === '1d'
 					? 'bg-white text-dark-grey shadow-sm'
