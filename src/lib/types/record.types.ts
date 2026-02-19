@@ -1,6 +1,8 @@
 import type { NetworkCode, DataMetric } from 'openelectricity';
 import type { FuelTechCode } from './fuel_tech.types';
 
+export type Period = 'interval' | 'day' | '7d' | 'month' | 'quarter' | 'year';
+
 export type MilestoneRecord = {
 	aggregate: string;
 	description?: string;
@@ -10,7 +12,7 @@ export type MilestoneRecord = {
 	metric: DataMetric;
 	network_id: NetworkCode;
 	network_region?: string | null;
-	period: string; // TODO: this should be enum
+	period: Period;
 	previous_instance_id?: string;
 	record_id: string;
 	significance?: number;
@@ -26,5 +28,3 @@ export type DailyRecords = {
 		[recordId: string]: MilestoneRecord[];
 	};
 };
-
-export type Period = 'interval' | 'day' | '7d' | 'month' | 'quarter' | 'year';
