@@ -391,9 +391,9 @@
 	</div>
 {:else if selectedFacility}
 	<!-- Filter Bar -->
-	<div class="flex items-center px-4 pt-3 pb-3 gap-4 border-b border-warm-grey bg-white sticky top-0" style="z-index: 99">
-		<!-- Facility selector -->
-		<div class="flex items-center gap-2">
+	<div class="flex flex-col sm:flex-row sm:items-center px-4 pt-3 pb-3 gap-3 sm:gap-4 border-b border-warm-grey bg-white sticky top-0" style="z-index: 99">
+		<!-- Facility selector — full width on mobile with arrows at edges -->
+		<div class="flex items-center w-full sm:w-auto sm:ml-8">
 			<button
 				class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
 				onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
@@ -402,12 +402,14 @@
 				<IconChevronLeft class="w-8 h-8" />
 			</button>
 
-			<FacilitySearchPopover
-				facilities={data.facilities}
-				label={selectedFacility.name}
-				bind:open={searchOpen}
-				onselect={handleFacilitySelect}
-			/>
+			<div class="flex-1 flex justify-center sm:flex-initial">
+				<FacilitySearchPopover
+					facilities={data.facilities}
+					label={selectedFacility.name}
+					bind:open={searchOpen}
+					onselect={handleFacilitySelect}
+				/>
+			</div>
 
 			<button
 				class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
@@ -418,63 +420,79 @@
 			</button>
 		</div>
 
-		<div class="w-px h-6 bg-warm-grey"></div>
+		<div class="hidden sm:block w-px h-6 bg-warm-grey"></div>
 
-		<Switch
-			buttons={rangeButtons}
-			selected={String(selectedRange ?? '')}
-			onchange={(d) => handleRangeSelect(parseInt(d.value, 10))}
-			xPad={6}
-			yPad={3}
-			textSize="xs"
-			roundedSize="lg"
-		/>
+		<!-- Range / Calendar / Interval controls -->
+		<div class="flex items-center justify-center sm:justify-start gap-4">
+			<!-- Range: Switch on desktop, dropdown on mobile -->
+			<div class="hidden sm:block">
+				<Switch
+					buttons={rangeButtons}
+					selected={String(selectedRange ?? '')}
+					onchange={(d) => handleRangeSelect(parseInt(d.value, 10))}
+					xPad={6}
+					yPad={3}
+					textSize="xs"
+					roundedSize="lg"
+				/>
+			</div>
+			<div class="sm:hidden">
+				<FormSelect
+					selected={String(selectedRange ?? '')}
+					options={rangeButtons.map((b) => ({ label: b.label, value: b.value }))}
+					widthClass="w-auto"
+					paddingX="px-4"
+					paddingY="py-3"
+					onchange={(opt) => handleRangeSelect(parseInt(/** @type {string} */ (opt.value), 10))}
+				/>
+			</div>
 
-		<div class="w-px h-6 bg-warm-grey"></div>
+			<div class="w-px h-6 bg-warm-grey"></div>
 
-		<!-- Date range picker popover -->
-		<div class="relative" use:clickoutside onclickoutside={() => (datePickerOpen = false)}>
-			<button
-				class="flex items-center px-4 py-3 rounded-lg hover:bg-warm-grey"
-				onclick={() => (datePickerOpen = !datePickerOpen)}
-			>
-				<Calendar size={18} class="text-mid-grey" />
-			</button>
-
-			{#if datePickerOpen}
-				<div
-					class="border border-mid-grey bg-white absolute top-14 left-1/2 -translate-x-1/2 rounded-lg z-50 shadow-md p-4 w-[220px]"
-					in:fly={{ y: -5, duration: 150 }}
-					out:fly={{ y: -5, duration: 150 }}
+			<!-- Date range picker popover -->
+			<div class="relative" use:clickoutside onclickoutside={() => (datePickerOpen = false)}>
+				<button
+					class="flex items-center px-4 py-3 rounded-lg hover:bg-warm-grey"
+					onclick={() => (datePickerOpen = !datePickerOpen)}
 				>
-					<DateRangePicker
-						bind:this={datePickerRef}
-						startDate={dateStart}
-						endDate={dateEnd}
-						minDate={MIN_DATE}
-						{maxDate}
-						size="sm"
-						inlineCalendar
-						onchange={(range) => {
-							handleDateRangeChange(range);
-							datePickerOpen = false;
-						}}
-					/>
-				</div>
-			{/if}
+					<Calendar size={18} class="text-mid-grey" />
+				</button>
+
+				{#if datePickerOpen}
+					<div
+						class="border border-mid-grey bg-white absolute top-14 left-1/2 -translate-x-1/2 rounded-lg z-50 shadow-md p-4 w-[220px]"
+						in:fly={{ y: -5, duration: 150 }}
+						out:fly={{ y: -5, duration: 150 }}
+					>
+						<DateRangePicker
+							bind:this={datePickerRef}
+							startDate={dateStart}
+							endDate={dateEnd}
+							minDate={MIN_DATE}
+							{maxDate}
+							size="sm"
+							inlineCalendar
+							onchange={(range) => {
+								handleDateRangeChange(range);
+								datePickerOpen = false;
+							}}
+						/>
+					</div>
+				{/if}
+			</div>
+
+			<div class="w-px h-6 bg-warm-grey"></div>
+
+			<!-- Interval dropdown -->
+			<FormSelect
+				selected={displayInterval}
+				options={intervalOptions}
+				widthClass="w-auto"
+				paddingX="px-4"
+				paddingY="py-3"
+				onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
+			/>
 		</div>
-
-		<div class="w-px h-6 bg-warm-grey"></div>
-
-		<!-- Interval dropdown -->
-		<FormSelect
-			selected={displayInterval}
-			options={intervalOptions}
-			widthClass="w-auto"
-			paddingX="px-4"
-			paddingY="py-3"
-			onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
-		/>
 	</div>
 
 	<!-- Chart -->
