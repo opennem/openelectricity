@@ -410,6 +410,9 @@
 		{#if inlineCalendar}
 			<div class="mt-3 pt-3 border-t border-warm-grey font-sans">
 				{@render calendarContent()}
+				{#if errorMessage}
+					<p class="text-xs text-red text-center mt-2">{errorMessage}</p>
+				{/if}
 			</div>
 		{:else}
 			<DateRangePicker.Content
@@ -418,10 +421,9 @@
 			>
 				{@render calendarContent()}
 			</DateRangePicker.Content>
+			{#if errorMessage}
+				<p class="text-xs text-red mt-1">{errorMessage}</p>
+			{/if}
 		{/if}
 	</DateRangePicker.Root>
-
-	{#if errorMessage}
-		<p class="text-xs text-red-500 mt-1">{errorMessage}</p>
-	{/if}
 </div>

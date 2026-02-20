@@ -390,39 +390,36 @@
 		<p class="text-xs">Could not load the facilities list. Please try again later.</p>
 	</div>
 {:else if selectedFacility}
-	<!-- Sticky Filter Bar -->
-	<div class="bg-light-warm-grey sticky top-0 shadow-xs" style="z-index: 99">
-		<div class="flex items-center px-6 py-2 md:px-12">
-			<!-- Facility selector -->
-			<div class="flex items-center gap-2">
-				<button
-					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
-					onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
-					title={prevFacility?.name}
-				>
-					<IconChevronLeft class="w-8 h-8" />
-				</button>
+	<!-- Filter Bar -->
+	<div class="flex items-center px-4 pt-3 pb-3 gap-4 border-b border-warm-grey bg-white sticky top-0" style="z-index: 99">
+		<!-- Facility selector -->
+		<div class="flex items-center gap-2">
+			<button
+				class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
+				onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
+				title={prevFacility?.name}
+			>
+				<IconChevronLeft class="w-8 h-8" />
+			</button>
 
-				<FacilitySearchPopover
-					facilities={data.facilities}
-					label={selectedFacility.name}
-					bind:open={searchOpen}
-					onselect={handleFacilitySelect}
-				/>
+			<FacilitySearchPopover
+				facilities={data.facilities}
+				label={selectedFacility.name}
+				bind:open={searchOpen}
+				onselect={handleFacilitySelect}
+			/>
 
-				<button
-					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
-					onclick={() => nextFacility && handleFacilitySelect(nextFacility.code)}
-					title={nextFacility?.name}
-				>
-					<IconChevronLeft class="w-8 h-8 rotate-180" />
-				</button>
-			</div>
+			<button
+				class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
+				onclick={() => nextFacility && handleFacilitySelect(nextFacility.code)}
+				title={nextFacility?.name}
+			>
+				<IconChevronLeft class="w-8 h-8 rotate-180" />
+			</button>
 		</div>
-	</div>
 
-	<!-- Range Bar -->
-	<div class="flex items-center px-4 pt-3 pb-6 gap-4 my-4 border-b border-warm-grey">
+		<div class="w-px h-6 bg-warm-grey"></div>
+
 		<Switch
 			buttons={rangeButtons}
 			selected={String(selectedRange ?? '')}
