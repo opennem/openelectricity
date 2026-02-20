@@ -348,24 +348,14 @@
 	// Chart Store — created once, updated reactively
 	// ============================================
 
+	// Create chart store per facility — recreated when facility changes.
 	/** @type {import('$lib/components/charts/v2/ChartStore.svelte.js').default | null} */
-	let chartStore = $state(null);
-
-	// Create chart store ONCE per facility — never recreated on metric switch.
-	$effect(() => {
-		const currentFacility = facility;
-		if (!currentFacility) {
-			chartStore = null;
-			return;
-		}
-
-		// Only create if we don't have a store yet (or facility changed)
-		const existing = untrack(() => chartStore);
-		if (existing) return;
+	let chartStore = $derived.by(() => {
+		if (!facility) return null;
 
 		const chart = new ChartStore({
 			key: Symbol('facility-chart'),
-			title: currentFacility.name || 'Facility',
+			title: title || facility.name || 'Facility',
 			prefix: 'M',
 			displayPrefix: 'M',
 			baseUnit: 'W',
@@ -378,7 +368,7 @@
 		chart.lighterNegative = hasBatteryUnits;
 		chart.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
 
-		chartStore = chart;
+		return chart;
 	});
 
 	// Update chart height when panel resizes

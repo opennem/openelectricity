@@ -18,9 +18,9 @@
 	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
 	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
-	import { MapPin, AlertCircle, SearchX, ChevronDown, ExternalLink } from '@lucide/svelte';
+	import { MapPin, AlertCircle, SearchX, ExternalLink, ChevronLeft, ChevronRight } from '@lucide/svelte';
 	import { ChartRangeBar } from '$lib/components/charts/v2';
-	import { Accordion } from 'bits-ui';
+	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
 	import {
 		getMetricIntervalForDays,
 		getHysteresisSwitch,
@@ -51,7 +51,9 @@
 	// State
 	// ============================================
 
-	let searchQuery = $state('');
+	let searchOpen = $state(false);
+	/** @type {'units' | 'data'} */
+	let activeTab = $state('units');
 
 	let dateStart = $state(data.dateStart || getDateStartForRange(data.range ?? 7, data.facility?.units));
 	let dateEnd = $state(data.dateEnd || getDefaultDateEnd());
@@ -60,16 +62,14 @@
 	// Derived: Facility Selection
 	// ============================================
 
-	let filteredFacilities = $derived(
-		data.facilities.filter(
-			(f) =>
-				f.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-				f.code.toLowerCase().includes(searchQuery.toLowerCase())
-		)
-	);
-
 	let selectedFacility = $derived(data.facility);
 	let timeZone = $derived(data.timeZone);
+
+	// Prev/next navigation (wrap-around)
+	let currentIndex = $derived(data.facilities.findIndex((f) => f.code === data.selectedCode));
+	let len = $derived(data.facilities.length);
+	let prevFacility = $derived(len > 0 ? data.facilities.at((currentIndex - 1 + len) % len) : null);
+	let nextFacility = $derived(len > 0 ? data.facilities.at((currentIndex + 1) % len) : null);
 
 	// ============================================
 	// Derived: Unit Analysis (for info panel and table)
@@ -110,7 +110,7 @@
 	}
 
 	/**
-	 * Handle facility selection from search
+	 * Handle facility selection from search or prev/next
 	 * @param {string} code
 	 */
 	function handleFacilitySelect(code) {
@@ -300,236 +300,242 @@
 		replaceState(buildUrl({ range: String(days) }), {});
 	}
 
-	/** @type {string[]} */
-	let accordionValue = $state(['data']);
+	/**
+	 * Handle keyboard shortcuts for facility navigation
+	 * @param {KeyboardEvent} e
+	 */
+	function handleKeydown(e) {
+		// Skip when typing in an input or when search popover is open
+		const tag = /** @type {HTMLElement} */ (e.target).tagName;
+		if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || searchOpen) return;
+
+		if (e.key === 'ArrowLeft' && prevFacility) {
+			e.preventDefault();
+			handleFacilitySelect(prevFacility.code);
+		} else if (e.key === 'ArrowRight' && nextFacility) {
+			e.preventDefault();
+			handleFacilitySelect(nextFacility.code);
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
 	<title>Facility Explorer</title>
 </svelte:head>
 
-<div class="p-4 max-w-7xl mx-auto">
-	<header class="mb-6">
-		<h1 class="text-2xl font-bold">Facility Explorer</h1>
-		<p class="text-sm text-mid-warm-grey">
-			Explore power generation data for Australian electricity facilities
-		</p>
-	</header>
-
-	<!-- Facility Selector -->
-	<div class="mb-6 max-w-md">
-		<label for="facility-search" class="block text-sm font-medium mb-2">Select Facility</label>
-		<input
-			id="facility-search"
-			type="text"
-			list="facilities-list"
-			placeholder="Search by name or code..."
-			class="w-full px-4 py-3 border border-warm-grey rounded-lg focus:border-dark-grey focus:outline-none"
-			bind:value={searchQuery}
-			onchange={(e) => {
-				const target = /** @type {HTMLInputElement} */ (e.target);
-				const value = target.value;
-				const match = data.facilities.find((f) => f.name === value || f.code === value);
-				if (match) handleFacilitySelect(match.code);
-			}}
-		/>
-		<datalist id="facilities-list">
-			{#each filteredFacilities.slice(0, 50) as facility (facility.code)}
-				<option value={facility.name}>{facility.code}</option>
-			{/each}
-		</datalist>
+{#if data.error && !selectedFacility}
+	<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
+		<AlertCircle size={32} class="mb-3 text-warm-grey" />
+		<p class="text-sm font-medium text-dark-grey mb-1">Unable to load facility</p>
+		<p class="text-xs">{data.error}</p>
 	</div>
+{:else if !data.facilities.length}
+	<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
+		<AlertCircle size={32} class="mb-3 text-warm-grey" />
+		<p class="text-sm font-medium text-dark-grey mb-1">No facilities available</p>
+		<p class="text-xs">Could not load the facilities list. Please try again later.</p>
+	</div>
+{:else if selectedFacility}
+	<!-- Sticky Header Bar -->
+	<div class="sticky top-0 z-30 bg-white border-b border-warm-grey">
+		<div class="max-w-7xl mx-auto px-4">
+			<!-- Row 1: Search + Nav + Facility Name + Metadata (desktop) -->
+			<div class="flex items-center gap-3 py-2.5">
+				<FacilitySearchPopover
+					facilities={data.facilities}
+					bind:open={searchOpen}
+					onselect={handleFacilitySelect}
+				/>
 
-	{#if data.error && !selectedFacility}
-		<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
-			<AlertCircle size={32} class="mb-3 text-warm-grey" />
-			<p class="text-sm font-medium text-dark-grey mb-1">Unable to load facility</p>
-			<p class="text-xs">{data.error}</p>
-		</div>
-	{:else if !data.facilities.length}
-		<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
-			<AlertCircle size={32} class="mb-3 text-warm-grey" />
-			<p class="text-sm font-medium text-dark-grey mb-1">No facilities available</p>
-			<p class="text-xs">Could not load the facilities list. Please try again later.</p>
-		</div>
-	{:else if selectedFacility}
-		<h2 class="text-lg font-semibold mb-4">{selectedFacility.name}</h2>
-
-		<Accordion.Root type="multiple" bind:value={accordionValue} class="space-y-3">
-			<!-- Info Section (collapsed by default) -->
-			<Accordion.Item value="info" class="border border-warm-grey rounded-lg overflow-hidden">
-				<Accordion.Header>
-					<Accordion.Trigger
-						class="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-dark-grey hover:bg-light-warm-grey/50 transition-colors group"
+				<div class="flex items-center gap-1">
+					<button
+						class="p-1 rounded hover:bg-light-warm-grey text-mid-grey hover:text-dark-grey transition-colors"
+						onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
+						title={prevFacility?.name}
 					>
-						<span>Info</span>
-						<ChevronDown
-							size={16}
-							class="text-mid-grey transition-transform duration-200 group-data-[state=open]:rotate-180"
-						/>
-					</Accordion.Trigger>
-				</Accordion.Header>
-				<Accordion.Content class="px-4 pb-4">
-					<div class="space-y-3">
-						<!-- Region, Network, Code -->
-						<div class="flex items-center gap-2 flex-wrap">
-							<span
-								class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-dark-grey"
-							>
-								{regionLabel}
-							</span>
-							<span
-								class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-mid-grey"
-							>
-								{selectedFacility.network_id}
-							</span>
-							<span class="text-xs text-mid-grey font-mono">{selectedFacility.code}</span>
-						</div>
+						<ChevronLeft size={18} />
+					</button>
 
-						<!-- Capacity & Units summary -->
-						<div class="flex items-center gap-4">
-							<div class="flex items-baseline gap-1">
-								<span class="font-mono text-lg text-dark-grey">{formatValue(totalCapacity)}</span>
-								<span class="text-xs text-mid-grey">MW</span>
-							</div>
-							<span class="text-xs text-mid-grey">
-								{unitCount} unit{unitCount !== 1 ? 's' : ''}
-							</span>
-							{#if weightedEmissionsIntensity}
-								<div class="flex items-baseline gap-1">
-									<span class="font-mono text-dark-grey">{formatValue(Math.round(weightedEmissionsIntensity))}</span>
-									<span class="text-xs text-mid-grey">kgCO₂/MWh</span>
-								</div>
-							{/if}
-						</div>
+					<h1 class="text-base font-semibold text-dark-grey truncate max-w-xs sm:max-w-md">
+						{selectedFacility.name}
+					</h1>
 
-						<!-- Fuel tech badges -->
-						{#if unitGroups.length}
-							<div class="flex items-center gap-1.5 flex-wrap">
-								{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
-									<div class="flex items-center gap-1">
-										<FuelTechBadge
-											fueltech_id={group.fueltech_id}
-											status_id={group.status_id}
-											isCommissioning={group.isCommissioning}
-											size="sm"
-										/>
-										<span class="text-xs text-mid-grey">
-											{formatValue(group.totalCapacity)} MW
-										</span>
-									</div>
-								{/each}
-							</div>
-						{/if}
-
-						<!-- Location -->
-						{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
-							<div class="flex items-center gap-1 text-xs text-mid-grey">
-								<MapPin size={12} />
-								<span>{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}</span>
-							</div>
-						{/if}
-
-						<!-- Description -->
-						{#if selectedFacility.description}
-							<p class="text-sm text-mid-grey">{selectedFacility.description}</p>
-						{/if}
-
-						<!-- Units Table -->
-						{#if selectedFacility.units?.length}
-							<div class="border border-warm-grey rounded-lg mt-2">
-								<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
-							</div>
-							<p class="text-xxs text-mid-grey mt-2">
-								Capacity shown is maximum capacity where available, otherwise registered capacity.
-							</p>
-						{/if}
-
-						<!-- Explore Link -->
-						{#if explorePath}
-							<div class="mt-3">
-								<a
-									href={explorePath}
-									target="_blank"
-									rel="noopener noreferrer"
-									class="inline-flex items-center gap-1.5 text-xs text-mid-grey hover:text-dark-grey transition-colors"
-								>
-									<ExternalLink size={12} />
-									View on OpenElectricity
-								</a>
-							</div>
-						{/if}
-					</div>
-				</Accordion.Content>
-			</Accordion.Item>
-
-			<!-- Data Section (expanded by default) -->
-			<Accordion.Item value="data" class="border border-warm-grey rounded-lg overflow-hidden">
-				<Accordion.Header>
-					<Accordion.Trigger
-						class="flex w-full items-center justify-between px-4 py-3 text-sm font-medium text-dark-grey hover:bg-light-warm-grey/50 transition-colors group"
+					<button
+						class="p-1 rounded hover:bg-light-warm-grey text-mid-grey hover:text-dark-grey transition-colors"
+						onclick={() => nextFacility && handleFacilitySelect(nextFacility.code)}
+						title={nextFacility?.name}
 					>
-						<span>Data</span>
-						<ChevronDown
-							size={16}
-							class="text-mid-grey transition-transform duration-200 group-data-[state=open]:rotate-180"
-						/>
-					</Accordion.Trigger>
-				</Accordion.Header>
-				<Accordion.Content class="px-4 pb-4">
-					<!-- Range / Calendar / Interval toolbar -->
-					<div class="mb-4">
-						<ChartRangeBar
-							{selectedRange}
-							{activeMetric}
-							{displayInterval}
-							startDate={dateStart}
-							endDate={dateEnd}
-							minDate={MIN_DATE}
-							{maxDate}
-							{earliestDate}
-							onrangeselect={handleRangeSelect}
-							ondaterangechange={handleDateRangeChange}
-							onintervalchange={handleIntervalChange}
-						/>
-					</div>
+						<ChevronRight size={18} />
+					</button>
+				</div>
 
-					<!-- Chart -->
-					<div class="bg-light-warm-grey/30 rounded-xl p-4">
-						<FacilityChart
-							bind:this={chartComponent}
-							facility={selectedFacility}
-							powerData={data.powerData}
-							{timeZone}
-							{dateStart}
-							{dateEnd}
-							interval={activeInterval}
-							metric={activeMetric}
-							showIntervalToggle={false}
-							onviewportchange={handleViewportChange}
-							onvisibledata={handleVisibleData}
-							ondisplayintervalchange={(intv) => (displayInterval = intv)}
-						/>
-					</div>
-
-					{#if tableData}
-						<div class="mt-2 border border-light-warm-grey rounded-lg overflow-y-auto max-h-[300px]">
-							<FacilityDataTable
-								data={tableData.data}
-								seriesNames={tableData.seriesNames}
-								seriesLabels={tableData.seriesLabels}
-								{timeZone}
-							/>
+				<!-- Desktop metadata -->
+				<div class="hidden sm:flex items-center gap-2 ml-auto text-xs text-mid-grey flex-shrink-0">
+					<span class="px-1.5 py-0.5 rounded bg-light-warm-grey text-dark-grey font-medium">{regionLabel}</span>
+					<span class="px-1.5 py-0.5 rounded bg-light-warm-grey">{selectedFacility.network_id}</span>
+					<span class="font-mono">{formatValue(totalCapacity)} MW</span>
+					<span>{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
+					{#if weightedEmissionsIntensity}
+						<span class="font-mono">{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh</span>
+					{/if}
+					{#if unitGroups.length}
+						<div class="flex items-center gap-0.5">
+							{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
+								<FuelTechBadge
+									fueltech_id={group.fueltech_id}
+									status_id={group.status_id}
+									isCommissioning={group.isCommissioning}
+									size="sm"
+								/>
+							{/each}
 						</div>
 					{/if}
-				</Accordion.Content>
-			</Accordion.Item>
-		</Accordion.Root>
-	{:else}
-		<!-- Empty State -->
-		<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
-			<SearchX size={32} class="mb-3 text-warm-grey" />
-			<p class="text-sm">Select a facility to view its power generation data.</p>
+				</div>
+			</div>
+
+			<!-- Row 2: Mobile metadata -->
+			<div class="flex sm:hidden items-center gap-2 pb-2 text-xs text-mid-grey flex-wrap">
+				<span class="px-1.5 py-0.5 rounded bg-light-warm-grey text-dark-grey font-medium">{regionLabel}</span>
+				<span class="px-1.5 py-0.5 rounded bg-light-warm-grey">{selectedFacility.network_id}</span>
+				<span class="font-mono">{formatValue(totalCapacity)} MW</span>
+				<span>{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
+				{#if weightedEmissionsIntensity}
+					<span class="font-mono">{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh</span>
+				{/if}
+				{#if unitGroups.length}
+					<div class="flex items-center gap-0.5">
+						{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
+							<FuelTechBadge
+								fueltech_id={group.fueltech_id}
+								status_id={group.status_id}
+								isCommissioning={group.isCommissioning}
+								size="sm"
+							/>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</div>
-	{/if}
-</div>
+	</div>
+
+	<!-- Main Content -->
+	<div class="max-w-7xl mx-auto px-4 py-4">
+		<!-- Chart Range Bar -->
+		<div class="mb-4">
+			<ChartRangeBar
+				{selectedRange}
+				{activeMetric}
+				{displayInterval}
+				startDate={dateStart}
+				endDate={dateEnd}
+				minDate={MIN_DATE}
+				{maxDate}
+				{earliestDate}
+				onrangeselect={handleRangeSelect}
+				ondaterangechange={handleDateRangeChange}
+				onintervalchange={handleIntervalChange}
+			/>
+		</div>
+
+		<!-- Chart -->
+		<div class="bg-light-warm-grey/30 rounded-xl p-4">
+			<FacilityChart
+				bind:this={chartComponent}
+				facility={selectedFacility}
+				powerData={data.powerData}
+				title={selectedFacility.name}
+				{timeZone}
+				{dateStart}
+				{dateEnd}
+				interval={activeInterval}
+				metric={activeMetric}
+				showIntervalToggle={false}
+				onviewportchange={handleViewportChange}
+				onvisibledata={handleVisibleData}
+				ondisplayintervalchange={(intv) => (displayInterval = intv)}
+			/>
+		</div>
+
+		<!-- Tab Switcher -->
+		<div class="flex gap-4 mt-6 border-b border-warm-grey">
+			<button
+				class="pb-2 text-sm font-medium transition-colors {activeTab === 'units'
+					? 'border-b-2 border-dark-grey text-dark-grey'
+					: 'text-mid-grey hover:text-dark-grey'}"
+				onclick={() => (activeTab = 'units')}
+			>
+				Units
+			</button>
+			<button
+				class="pb-2 text-sm font-medium transition-colors {activeTab === 'data'
+					? 'border-b-2 border-dark-grey text-dark-grey'
+					: 'text-mid-grey hover:text-dark-grey'}"
+				onclick={() => (activeTab = 'data')}
+			>
+				Data
+			</button>
+		</div>
+
+		<!-- Tab Content -->
+		<div class="py-4">
+			{#if activeTab === 'units'}
+				{#if selectedFacility.units?.length}
+					<div class="border border-warm-grey rounded-lg">
+						<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
+					</div>
+					<p class="text-xxs text-mid-grey mt-2">
+						Capacity shown is maximum capacity where available, otherwise registered capacity.
+					</p>
+				{/if}
+
+				{#if explorePath}
+					<div class="mt-3">
+						<a
+							href={explorePath}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex items-center gap-1.5 text-xs text-mid-grey hover:text-dark-grey transition-colors"
+						>
+							<ExternalLink size={12} />
+							View on OpenElectricity
+						</a>
+					</div>
+				{/if}
+
+				{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
+					<div class="flex items-center gap-1 text-xs text-mid-grey mt-3">
+						<MapPin size={12} />
+						<span>{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}</span>
+					</div>
+				{/if}
+
+				{#if selectedFacility.description}
+					<p class="text-sm text-mid-grey mt-3">{selectedFacility.description}</p>
+				{/if}
+			{:else}
+				{#if tableData}
+					<div class="border border-light-warm-grey rounded-lg overflow-y-auto max-h-[300px]">
+						<FacilityDataTable
+							data={tableData.data}
+							seriesNames={tableData.seriesNames}
+							seriesLabels={tableData.seriesLabels}
+							{timeZone}
+						/>
+					</div>
+				{:else}
+					<div class="flex items-center justify-center py-8 text-sm text-mid-grey">
+						Loading data...
+					</div>
+				{/if}
+			{/if}
+		</div>
+	</div>
+{:else}
+	<!-- Empty State -->
+	<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
+		<SearchX size={32} class="mb-3 text-warm-grey" />
+		<p class="text-sm">Select a facility to view its power generation data.</p>
+	</div>
+{/if}
