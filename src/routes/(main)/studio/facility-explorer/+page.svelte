@@ -18,9 +18,11 @@
 	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
 	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
+	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { MapPin, AlertCircle, SearchX, ExternalLink } from '@lucide/svelte';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
-	import { ChartRangeBar } from '$lib/components/charts/v2';
+	import Switch from '$lib/components/Switch.svelte';
 	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
 	import {
 		getMetricIntervalForDays,
@@ -107,6 +109,17 @@
 	/** @type {number | null} */
 	let selectedRange = $state(data.range ?? 7);
 
+	const rangeButtons = [
+		{ label: '1D', value: '1' },
+		{ label: '3D', value: '3' },
+		{ label: '7D', value: '7' },
+		{ label: '1M', value: '30' },
+		{ label: '6M', value: '182' },
+		{ label: '1Y', value: '365' },
+		{ label: '5Y', value: '1825' },
+		{ label: 'All', value: '-1' }
+	];
+
 	/**
 	 * Build URL with current params
 	 * @param {Record<string, string | null>} overrides
@@ -134,6 +147,9 @@
 
 	/** Latest selectable date: today */
 	let maxDate = $derived(new Date().toISOString().slice(0, 10));
+
+	/** @type {import('$lib/components/ui/date-range-picker/DateRangePicker.svelte').default | undefined} */
+	let datePickerRef = $state(undefined);
 
 	/**
 	 * Handle date range change from DateRangePicker — update viewport client-side.
@@ -165,6 +181,27 @@
 		}
 
 		replaceState(buildUrl({ range: null }), {});
+	}
+
+	/**
+	 * Handle interval change from interval dropdown
+	 * @param {string} interval
+	 */
+	function handleIntervalChange(interval) {
+		displayInterval = interval;
+		if (interval === '3M' || interval === '1y') {
+			activeInterval = interval;
+			activeMetric = 'energy';
+		} else if (interval === '1d' || interval === '1M') {
+			activeInterval = '1d';
+			activeMetric = 'energy';
+			chartComponent?.setDisplayInterval(interval);
+		} else {
+			// '5m' or '30m'
+			activeInterval = '5m';
+			activeMetric = 'power';
+			chartComponent?.setDisplayInterval(interval);
+		}
 	}
 
 	/** @type {ReturnType<typeof setTimeout> | null} */
@@ -241,6 +278,21 @@
 	/** @type {string} */
 	let displayInterval = $state('30m');
 
+	let intervalOptions = $derived(
+		activeMetric === 'power'
+			? [
+					{ value: '5m', label: '5 min' },
+					{ value: '30m', label: '30 min' }
+				]
+			: [
+					{ value: '1d', label: 'Daily' },
+					{ value: '1M', label: 'Monthly' },
+					{ value: '3M', label: 'Quarterly' },
+					{ value: '1y', label: 'Yearly' }
+				]
+	);
+
+
 	/** Earliest data date for the selected facility (for "All" range) */
 	let earliestDate = $derived.by(() => {
 		if (!selectedFacility?.units?.length) return null;
@@ -252,27 +304,6 @@
 		}
 		return earliest ? earliest.slice(0, 10) : null;
 	});
-
-	/**
-	 * Handle interval change from ChartRangeBar dropdown
-	 * @param {string} interval
-	 */
-	function handleIntervalChange(interval) {
-		displayInterval = interval;
-		if (interval === '3M' || interval === '1y') {
-			activeInterval = interval;
-			activeMetric = 'energy';
-		} else if (interval === '1d' || interval === '1M') {
-			activeInterval = '1d';
-			activeMetric = 'energy';
-			chartComponent?.setDisplayInterval(interval);
-		} else {
-			// '5m' or '30m'
-			activeInterval = '5m';
-			activeMetric = 'power';
-			chartComponent?.setDisplayInterval(interval);
-		}
-	}
 
 	/** Guard: when true, handleViewportChange preserves selectedRange */
 	let isPresetNavigation = true;
@@ -350,10 +381,11 @@
 		<p class="text-xs">Could not load the facilities list. Please try again later.</p>
 	</div>
 {:else if selectedFacility}
-	<!-- Sticky Filter Bar (matches /records/[id] PageNav design) -->
+	<!-- Sticky Filter Bar -->
 	<div class="bg-light-warm-grey sticky top-0 shadow-xs" style="z-index: 99">
 		<div class="flex items-center gap-4 md:gap-6 px-6 py-2 md:px-12">
-			<div class="flex items-center gap-2">
+			<!-- Facility selector -->
+			<div class="flex items-center gap-2 flex-shrink-0">
 				<button
 					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
 					onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
@@ -378,8 +410,41 @@
 				</button>
 			</div>
 
-			<!-- Desktop metadata -->
-			<div class="hidden sm:flex items-center gap-3 text-sm text-mid-grey">
+			<!-- Range switcher + date picker + interval (center) -->
+			<div class="hidden md:flex items-center gap-2">
+				<Switch
+					buttons={rangeButtons}
+					selected={String(selectedRange ?? '')}
+					onchange={(d) => handleRangeSelect(parseInt(d.value, 10))}
+					xPad={6}
+					yPad={3}
+					textSize="xs"
+					roundedSize="lg"
+				/>
+
+				<!-- Date range picker -->
+				<DateRangePicker
+					bind:this={datePickerRef}
+					startDate={dateStart}
+					endDate={dateEnd}
+					minDate={MIN_DATE}
+					{maxDate}
+					size="sm"
+					onchange={handleDateRangeChange}
+				/>
+
+				<!-- Interval dropdown -->
+				<FormSelect
+					selected={displayInterval}
+					options={intervalOptions}
+					paddingX="px-4"
+					paddingY="py-3"
+					onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
+				/>
+			</div>
+
+			<!-- Facility info (right) -->
+			<div class="hidden sm:flex items-center gap-3 text-sm text-mid-grey ml-auto flex-shrink-0">
 				<span class="font-medium text-dark-grey">{regionLabel}</span>
 				<span>{selectedFacility.network_id}</span>
 				<span class="font-mono">{formatValue(totalCapacity)} MW</span>
@@ -402,7 +467,26 @@
 			</div>
 		</div>
 
-		<!-- Mobile metadata -->
+		<!-- Mobile: range switcher + interval -->
+		<div class="flex md:hidden items-center gap-2 px-6 pb-2 flex-wrap">
+			<Switch
+				buttons={rangeButtons}
+				selected={String(selectedRange ?? '')}
+				onchange={(d) => handleRangeSelect(parseInt(d.value, 10))}
+				xPad={4}
+				yPad={2}
+				textSize="xs"
+				roundedSize="lg"
+				class="!mx-0"
+			/>
+
+			<!-- Interval dropdown (mobile) -->
+			<FormSelect
+				selected={displayInterval}
+				options={intervalOptions}
+				onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
+			/>
+		</div>
 		<div class="flex sm:hidden items-center gap-2 px-6 pb-2 text-sm text-mid-grey flex-wrap">
 			<span class="font-medium text-dark-grey">{regionLabel}</span>
 			<span>{selectedFacility.network_id}</span>
@@ -428,22 +512,6 @@
 
 	<!-- Main Content -->
 	<div class="max-w-7xl mx-auto px-4 py-4">
-		<!-- Chart Range Bar -->
-		<div class="mb-4">
-			<ChartRangeBar
-				{selectedRange}
-				{activeMetric}
-				{displayInterval}
-				startDate={dateStart}
-				endDate={dateEnd}
-				minDate={MIN_DATE}
-				{maxDate}
-				{earliestDate}
-				onrangeselect={handleRangeSelect}
-				ondaterangechange={handleDateRangeChange}
-				onintervalchange={handleIntervalChange}
-			/>
-		</div>
 
 		<!-- Chart -->
 		<div class="bg-light-warm-grey/30 rounded-xl p-4">
