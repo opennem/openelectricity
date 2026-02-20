@@ -65,7 +65,7 @@ export async function load({ url, fetch }) {
 		timeZone: '+10:00',
 		dateStart,
 		dateEnd,
-		range: days ? parseInt(days, 10) : null,
+		range: days ? parseInt(days, 10) : 7,
 		error: null
 	};
 
@@ -98,14 +98,14 @@ export async function load({ url, fetch }) {
 
 				// Only fetch power data server-side for short ranges (≤14 days).
 				// Energy ranges (>14 days) are fetched client-side by ChartDataManager.
-				const numDays = days ? parseInt(days, 10) : 3;
+				const numDays = days ? parseInt(days, 10) : 7;
 				if (numDays > 0 && numDays <= 14) {
 					const apiParams = new URLSearchParams({
 						network_id: selectedFacility.network_id
 					});
 					if (dateStart) apiParams.set('date_start', dateStart);
 					if (dateEnd) apiParams.set('date_end', dateEnd);
-					if (days) apiParams.set('days', days);
+					apiParams.set('days', days || String(numDays));
 
 					const powerRes = await fetch(
 						`/api/facilities/${selectedCode}/power?${apiParams.toString()}`
