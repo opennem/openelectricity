@@ -18,7 +18,8 @@
 	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
 	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
-	import { MapPin, AlertCircle, SearchX, ExternalLink, ChevronLeft, ChevronRight } from '@lucide/svelte';
+	import { MapPin, AlertCircle, SearchX, ExternalLink } from '@lucide/svelte';
+	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import { ChartRangeBar } from '$lib/components/charts/v2';
 	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
 	import {
@@ -338,67 +339,38 @@
 		<p class="text-xs">Could not load the facilities list. Please try again later.</p>
 	</div>
 {:else if selectedFacility}
-	<!-- Sticky Header Bar -->
-	<div class="sticky top-0 z-30 bg-white border-b border-warm-grey">
-		<div class="max-w-7xl mx-auto px-4">
-			<!-- Row 1: Search + Nav + Facility Name + Metadata (desktop) -->
-			<div class="flex items-center gap-3 py-2.5">
+	<!-- Sticky Filter Bar (matches /records/[id] PageNav design) -->
+	<div class="bg-light-warm-grey sticky top-0 shadow-xs" style="z-index: 99">
+		<div class="flex items-center gap-4 md:gap-6 px-6 py-2 md:px-12">
+			<div class="flex items-center gap-2">
+				<button
+					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
+					onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
+					title={prevFacility?.name}
+				>
+					<IconChevronLeft class="w-8 h-8" />
+				</button>
+
 				<FacilitySearchPopover
 					facilities={data.facilities}
+					label={selectedFacility.name}
 					bind:open={searchOpen}
 					onselect={handleFacilitySelect}
 				/>
 
-				<div class="flex items-center gap-1">
-					<button
-						class="p-1 rounded hover:bg-light-warm-grey text-mid-grey hover:text-dark-grey transition-colors"
-						onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
-						title={prevFacility?.name}
-					>
-						<ChevronLeft size={18} />
-					</button>
-
-					<h1 class="text-base font-semibold text-dark-grey truncate max-w-xs sm:max-w-md">
-						{selectedFacility.name}
-					</h1>
-
-					<button
-						class="p-1 rounded hover:bg-light-warm-grey text-mid-grey hover:text-dark-grey transition-colors"
-						onclick={() => nextFacility && handleFacilitySelect(nextFacility.code)}
-						title={nextFacility?.name}
-					>
-						<ChevronRight size={18} />
-					</button>
-				</div>
-
-				<!-- Desktop metadata -->
-				<div class="hidden sm:flex items-center gap-2 ml-auto text-xs text-mid-grey flex-shrink-0">
-					<span class="px-1.5 py-0.5 rounded bg-light-warm-grey text-dark-grey font-medium">{regionLabel}</span>
-					<span class="px-1.5 py-0.5 rounded bg-light-warm-grey">{selectedFacility.network_id}</span>
-					<span class="font-mono">{formatValue(totalCapacity)} MW</span>
-					<span>{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
-					{#if weightedEmissionsIntensity}
-						<span class="font-mono">{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh</span>
-					{/if}
-					{#if unitGroups.length}
-						<div class="flex items-center gap-0.5">
-							{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
-								<FuelTechBadge
-									fueltech_id={group.fueltech_id}
-									status_id={group.status_id}
-									isCommissioning={group.isCommissioning}
-									size="sm"
-								/>
-							{/each}
-						</div>
-					{/if}
-				</div>
+				<button
+					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
+					onclick={() => nextFacility && handleFacilitySelect(nextFacility.code)}
+					title={nextFacility?.name}
+				>
+					<IconChevronLeft class="w-8 h-8 rotate-180" />
+				</button>
 			</div>
 
-			<!-- Row 2: Mobile metadata -->
-			<div class="flex sm:hidden items-center gap-2 pb-2 text-xs text-mid-grey flex-wrap">
-				<span class="px-1.5 py-0.5 rounded bg-light-warm-grey text-dark-grey font-medium">{regionLabel}</span>
-				<span class="px-1.5 py-0.5 rounded bg-light-warm-grey">{selectedFacility.network_id}</span>
+			<!-- Desktop metadata -->
+			<div class="hidden sm:flex items-center gap-3 text-sm text-mid-grey">
+				<span class="font-medium text-dark-grey">{regionLabel}</span>
+				<span>{selectedFacility.network_id}</span>
 				<span class="font-mono">{formatValue(totalCapacity)} MW</span>
 				<span>{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
 				{#if weightedEmissionsIntensity}
@@ -417,6 +389,29 @@
 					</div>
 				{/if}
 			</div>
+		</div>
+
+		<!-- Mobile metadata -->
+		<div class="flex sm:hidden items-center gap-2 px-6 pb-2 text-sm text-mid-grey flex-wrap">
+			<span class="font-medium text-dark-grey">{regionLabel}</span>
+			<span>{selectedFacility.network_id}</span>
+			<span class="font-mono">{formatValue(totalCapacity)} MW</span>
+			<span>{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
+			{#if weightedEmissionsIntensity}
+				<span class="font-mono">{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh</span>
+			{/if}
+			{#if unitGroups.length}
+				<div class="flex items-center gap-0.5">
+					{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
+						<FuelTechBadge
+							fueltech_id={group.fueltech_id}
+							status_id={group.status_id}
+							isCommissioning={group.isCommissioning}
+							size="sm"
+						/>
+					{/each}
+				</div>
+			{/if}
 		</div>
 	</div>
 

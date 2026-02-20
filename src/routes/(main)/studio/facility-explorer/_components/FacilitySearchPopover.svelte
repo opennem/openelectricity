@@ -1,6 +1,7 @@
 <script>
-	import { Popover } from 'bits-ui';
-	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import { fly } from 'svelte/transition';
+	import { clickoutside } from '@svelte-put/clickoutside';
+	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 
 	/**
 	 * @typedef {Object} Facility
@@ -13,19 +14,22 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {Facility[]} facilities
+	 * @property {string} label
 	 * @property {boolean} open
 	 * @property {(code: string) => void} onselect
 	 */
 
 	/** @type {Props} */
-	let { facilities, open = $bindable(false), onselect } = $props();
+	let { facilities, label, open = $bindable(false), onselect } = $props();
 
 	let query = $state('');
 
 	let filtered = $derived.by(() => {
 		const q = query.toLowerCase().trim();
 		if (!q) return facilities.slice(0, 50);
-		return facilities.filter((f) => f.name.toLowerCase().includes(q) || f.code.toLowerCase().includes(q)).slice(0, 50);
+		return facilities
+			.filter((f) => f.name.toLowerCase().includes(q) || f.code.toLowerCase().includes(q))
+			.slice(0, 50);
 	});
 
 	/**
@@ -38,38 +42,49 @@
 	}
 </script>
 
-<Popover.Root bind:open>
-	<Popover.Trigger
-		class="px-2.5 py-1.5 text-sm font-medium rounded-md flex items-center gap-1.5 transition-colors {open
-			? 'bg-dark-grey text-white'
-			: 'border border-warm-grey text-mid-grey hover:bg-light-warm-grey'}"
+<div
+	class="relative"
+	use:clickoutside
+	onclickoutside={() => {
+		open = false;
+		query = '';
+	}}
+>
+	<button
+		class="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-warm-grey"
+		onclick={() => (open = !open)}
 	>
-		Search
-		<ChevronDown size={14} />
-	</Popover.Trigger>
+		<span class="font-semibold text-base capitalize">{label}</span>
+		<IconChevronUpDown class="w-8 h-8" />
+	</button>
 
-	<Popover.Content sideOffset={6} class="z-50 border border-warm-grey bg-white shadow-lg rounded-xl w-80 overflow-hidden">
-		<input
-			type="text"
-			placeholder="Search facilities..."
-			class="w-full px-3 py-2 text-sm border-b border-warm-grey focus:outline-none"
-			bind:value={query}
-		/>
+	{#if open}
+		<div
+			class="border border-mid-grey bg-white absolute top-12 left-0 flex flex-col rounded-lg z-50 shadow-md text-sm w-96 overflow-hidden"
+			in:fly={{ y: -5, duration: 150 }}
+			out:fly={{ y: -5, duration: 150 }}
+		>
+			<input
+				type="text"
+				placeholder="Search facilities..."
+				class="w-full px-4 py-2.5 text-sm border-b border-warm-grey focus:outline-none"
+				bind:value={query}
+			/>
 
-		<div class="max-h-80 overflow-y-auto">
-			{#if filtered.length === 0}
-				<div class="px-3 py-4 text-sm text-mid-grey text-center">No facilities found</div>
-			{:else}
-				{#each filtered as facility (facility.code)}
-					<button
-						class="w-full text-left px-3 py-2 text-sm hover:bg-light-warm-grey transition-colors"
-						onclick={() => handleSelect(facility.code)}
-					>
-						<div class="text-dark-grey">{facility.name}</div>
-						<span class="text-xs text-mid-grey">{facility.code} · {facility.network_region}</span>
-					</button>
-				{/each}
-			{/if}
+			<div class="max-h-[450px] overflow-y-auto p-2">
+				{#if filtered.length === 0}
+					<div class="px-4 py-3 text-sm text-mid-grey text-center">No facilities found</div>
+				{:else}
+					{#each filtered as facility (facility.code)}
+						<button
+							class="hover:bg-warm-grey w-full rounded-md px-4 py-2 text-left text-dark-grey"
+							onclick={() => handleSelect(facility.code)}
+						>
+							{facility.name}
+						</button>
+					{/each}
+				{/if}
+			</div>
 		</div>
-	</Popover.Content>
-</Popover.Root>
+	{/if}
+</div>
