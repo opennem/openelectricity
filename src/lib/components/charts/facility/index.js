@@ -16,3 +16,4 @@ export {
 	transformFacilityPowerData
 } from './helpers.js';
 export { processFacilityPower } from './process-facility-power.js';
+export { analyzeUnits } from './unit-analysis.js';

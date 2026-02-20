@@ -11,9 +11,9 @@
 	import {
 		FacilityChart,
 		FacilityDataTable,
-		FacilityUnitsTable,
-		buildUnitColourMap
+		FacilityUnitsTable
 	} from '$lib/components/charts/facility';
+	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
 	import { getRegionLabel } from '../../facilities/_utils/filters';
 	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
 	import formatValue from '../../facilities/_utils/format-value';
@@ -21,6 +21,14 @@
 	import { MapPin, AlertCircle, SearchX, ChevronDown, ExternalLink } from '@lucide/svelte';
 	import { ChartRangeBar } from '$lib/components/charts/v2';
 	import { Accordion } from 'bits-ui';
+	import {
+		getMetricIntervalForDays,
+		getHysteresisSwitch,
+		MIN_DATE,
+		getDateStartForRange,
+		getDefaultDateEnd,
+		buildFacilityExplorerUrl
+	} from './_utils';
 
 	/**
 	 * Get color for a fuel tech code
@@ -45,40 +53,7 @@
 
 	let searchQuery = $state('');
 
-	/**
-	 * Get default start date based on range.
-	 * For -1 ("All"), uses the facility's earliest data date or MIN_DATE.
-	 * @param {number} days
-	 * @returns {string}
-	 */
-	function getDateStartForRange(days) {
-		if (days === -1) {
-			// "All" — resolve from facility data or fallback
-			if (data.facility?.units?.length) {
-				/** @type {string | null} */
-				let earliest = null;
-				for (const unit of data.facility.units) {
-					const d = unit.data_first_seen;
-					if (d && (!earliest || d < earliest)) earliest = d;
-				}
-				if (earliest) return earliest.slice(0, 10);
-			}
-			return '1998-12-01';
-		}
-		const date = new Date();
-		date.setDate(date.getDate() - days);
-		return date.toISOString().slice(0, 10);
-	}
-
-	/**
-	 * Get default end date (today)
-	 * @returns {string}
-	 */
-	function getDefaultDateEnd() {
-		return new Date().toISOString().slice(0, 10);
-	}
-
-	let dateStart = $state(data.dateStart || getDateStartForRange(data.range ?? 3));
+	let dateStart = $state(data.dateStart || getDateStartForRange(data.range ?? 7, data.facility?.units));
 	let dateEnd = $state(data.dateEnd || getDefaultDateEnd());
 
 	// ============================================
@@ -100,15 +75,14 @@
 	// Derived: Unit Analysis (for info panel and table)
 	// ============================================
 
-	/**
-	 * Build colour map for units with shading for same fuel tech
-	 */
-	let unitColours = $derived.by(() => {
-		if (!selectedFacility?.units) return {};
-		return buildUnitColourMap(selectedFacility.units, getFuelTechColor);
+	let analysis = $derived.by(() => {
+		if (!selectedFacility) return null;
+		return analyzeUnits(selectedFacility, getFuelTechColor);
 	});
 
-	// Facility info derived values (matching FacilityDetailPanel)
+	let unitColours = $derived(analysis?.unitColours ?? {});
+
+	// Facility info derived values
 	let regionLabel = $derived(
 		selectedFacility ? getRegionLabel(selectedFacility.network_id, selectedFacility.network_region) : ''
 	);
@@ -118,27 +92,21 @@
 	// Event Handlers
 	// ============================================
 
+	/** @type {number | null} */
+	let selectedRange = $state(data.range ?? 7);
+
 	/**
 	 * Build URL with current params
 	 * @param {Record<string, string | null>} overrides
 	 * @returns {string}
 	 */
 	function buildUrl(overrides = {}) {
-		const params = new URLSearchParams();
-		const facility = overrides.facility ?? data.selectedCode;
-		const ds = overrides.date_start ?? dateStart;
-		const de = overrides.date_end ?? dateEnd;
-		const range = overrides.range ?? selectedRange;
-
-		if (facility) params.set('facility', facility);
-		if (range) {
-			params.set('days', String(range));
-		} else {
-			if (ds) params.set('date_start', ds);
-			if (de) params.set('date_end', de);
-		}
-
-		return `?${params.toString()}`;
+		return buildFacilityExplorerUrl({
+			facility: overrides.facility ?? data.selectedCode,
+			dateStart: overrides.date_start !== undefined ? overrides.date_start : dateStart,
+			dateEnd: overrides.date_end !== undefined ? overrides.date_end : dateEnd,
+			range: overrides.range !== undefined ? overrides.range : selectedRange
+		});
 	}
 
 	/**
@@ -152,47 +120,16 @@
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let chartComponent = $state(undefined);
 
-	/** Earliest selectable date: 1 Dec 1998 */
-	const MIN_DATE = '1998-12-01';
 	/** Latest selectable date: today */
 	let maxDate = $derived(new Date().toISOString().slice(0, 10));
 
 	/**
-	 * Auto-detect metric and interval from a duration in days.
-	 * - Under 2 days → power / 5m
-	 * - Under 15 days → power / 5m (chart auto-displays as 30min)
-	 * - Under 1 year → energy / 1d
-	 * - 1 year or more → energy / 1d (chart auto-displays as monthly)
-	 * @param {number} days
-	 */
-	function autoSetMetricInterval(days) {
-		if (days < 15) {
-			activeInterval = '5m';
-			activeMetric = 'power';
-		} else if (days < 365) {
-			activeInterval = '1d';
-			activeMetric = 'energy';
-		} else if (days <= 1825) {
-			activeInterval = '3M';
-			activeMetric = 'energy';
-		} else {
-			activeInterval = '1y';
-			activeMetric = 'energy';
-		}
-	}
-
-	/**
 	 * Handle date range change from DateRangePicker — update viewport client-side.
-	 * The picker emits bare date strings like "2025-01-01". We interpret them as
-	 * midnight in the network's timezone so ChartDataManager (which adds the network
-	 * offset when building API params) produces correct API dates.
 	 * @param {{ start: string, end: string }} range
 	 */
 	function handleDateRangeChange(range) {
-		// Validate: start must be before end
 		if (range.start >= range.end) return;
 
-		// Validate: at least 1 day apart
 		const startParts = range.start.split('-').map(Number);
 		const endParts = range.end.split('-').map(Number);
 		const startDay = new Date(startParts[0], startParts[1] - 1, startParts[2]);
@@ -207,13 +144,14 @@
 		const endMs = new Date(range.end + 'T23:59:59' + tz).getTime();
 		const days = (endMs - startMs) / (24 * 60 * 60 * 1000);
 
-		autoSetMetricInterval(days);
+		const mi = getMetricIntervalForDays(days);
+		activeInterval = mi.interval;
+		activeMetric = mi.metric;
 
 		if (data.selectedCode && chartComponent) {
 			chartComponent.setViewport(startMs, endMs);
 		}
 
-		// Update URL with date range (no range preset)
 		replaceState(buildUrl({ range: null }), {});
 	}
 
@@ -223,7 +161,6 @@
 	/**
 	 * Handle viewport change from chart pan/zoom — sync DateRangePicker display
 	 * and auto-switch metric when crossing thresholds.
-	 * Convert UTC ms to a date string in the network's timezone.
 	 * @param {{ start: number, end: number }} range
 	 */
 	function handleViewportChange(range) {
@@ -236,38 +173,14 @@
 		dateStart = new Date(range.start + offsetMs).toISOString().slice(0, 10);
 		dateEnd = new Date(range.end + offsetMs).toISOString().slice(0, 10);
 
-		// Auto-switch metric/interval based on viewport duration (with hysteresis)
 		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
-		let targetMetric = activeMetric;
-		let targetInterval = activeInterval;
+		const switchResult = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
 
-		// Zoom out thresholds (coarser interval)
-		// power/5m → energy/1d → energy/3M → energy/1y
-		if (activeMetric === 'power' && durationDays >= 15) {
-			targetMetric = 'energy';
-			targetInterval = '1d';
-		} else if (activeMetric === 'energy' && activeInterval === '1d' && durationDays >= 365) {
-			targetInterval = '3M';
-		} else if (activeMetric === 'energy' && activeInterval === '3M' && durationDays >= 1825) {
-			targetInterval = '1y';
-		}
-		// Zoom in thresholds (finer interval, with hysteresis gap)
-		// energy/1y → energy/3M → energy/1d → power/5m
-		else if (activeMetric === 'energy' && activeInterval === '1y' && durationDays < 1500) {
-			targetInterval = '3M';
-		} else if (activeMetric === 'energy' && activeInterval === '3M' && durationDays < 300) {
-			targetInterval = '1d';
-		} else if (activeMetric === 'energy' && activeInterval === '1d' && durationDays <= 13) {
-			targetMetric = 'power';
-			targetInterval = '5m';
-		}
-
-		if (targetMetric !== activeMetric || targetInterval !== activeInterval) {
-			// Debounce the switch so continuous zoom gestures don't cause rapid flipping
+		if (switchResult) {
 			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
 			metricSwitchTimer = setTimeout(() => {
-				activeMetric = targetMetric;
-				activeInterval = targetInterval;
+				activeMetric = switchResult.metric;
+				activeInterval = switchResult.interval;
 			}, 300);
 		}
 	}
@@ -289,30 +202,7 @@
 	let totalCapacity = $derived(unitGroups.reduce((/** @type {number} */ sum, /** @type {any} */ g) => sum + g.totalCapacity, 0));
 	let unitCount = $derived(selectedFacility?.units?.length ?? 0);
 	let explorePath = $derived(getExploreUrl(selectedFacility));
-
-	/**
-	 * Capacity-weighted average emissions intensity in kgCO₂/MWh
-	 * Only includes generator units with emissions data
-	 */
-	let weightedEmissionsIntensity = $derived.by(() => {
-		if (!selectedFacility?.units) return null;
-		let totalWeighted = 0;
-		let totalCap = 0;
-		for (const unit of selectedFacility.units) {
-			const ef = Number(unit.emissions_factor_co2);
-			const cap = Number(unit.capacity_maximum || unit.capacity_registered);
-			if (ef && cap && !isNaN(ef) && !isNaN(cap) && unit.dispatch_type !== 'LOAD') {
-				totalWeighted += ef * cap;
-				totalCap += cap;
-			}
-		}
-		if (totalCap === 0) return null;
-		const result = (totalWeighted / totalCap) * 1000;
-		return isNaN(result) ? null : result;
-	});
-
-	/** @type {number | null} */
-	let selectedRange = $state(data.range ?? 3);
+	let weightedEmissionsIntensity = $derived(analysis?.weightedEmissionsIntensity ?? null);
 
 	/**
 	 * Resolve initial days for metric/interval calculation.
@@ -329,11 +219,11 @@
 	}
 
 	/** Active interval/metric — derived from initial range */
-	const _initDays = getInitialDays();
+	const _init = getMetricIntervalForDays(getInitialDays());
 	/** @type {string} */
-	let activeInterval = $state(_initDays >= 1825 ? '1y' : _initDays >= 365 ? '3M' : _initDays >= 15 ? '1d' : '5m');
+	let activeInterval = $state(_init.interval);
 	/** @type {string} */
-	let activeMetric = $state(_initDays >= 15 ? 'energy' : 'power');
+	let activeMetric = $state(_init.metric);
 
 	/** Display interval — set by FacilityChart toggle (power: '5m'/'30m', energy: '1d'/'1M') */
 	/** @type {string} */
@@ -358,7 +248,6 @@
 	function handleIntervalChange(interval) {
 		displayInterval = interval;
 		if (interval === '3M' || interval === '1y') {
-			// API-level intervals — change the API request directly
 			activeInterval = interval;
 			activeMetric = 'energy';
 		} else if (interval === '1d' || interval === '1M') {
@@ -383,7 +272,6 @@
 	function handleRangeSelect(days) {
 		selectedRange = days;
 
-		// "All" (-1): compute actual days from earliest data date
 		let actualDays = days;
 		if (days === -1) {
 			const refDate = earliestDate || MIN_DATE;
@@ -392,7 +280,9 @@
 			actualDays = Math.ceil((nowDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000));
 		}
 
-		autoSetMetricInterval(actualDays);
+		const mi = getMetricIntervalForDays(actualDays);
+		activeInterval = mi.interval;
+		activeMetric = mi.metric;
 
 		const tz = timeZone || '+10:00';
 		const now = new Date();
@@ -407,7 +297,6 @@
 			chartComponent.setViewport(startMs, endMs);
 		}
 
-		// Update URL without navigation
 		replaceState(buildUrl({ range: String(days) }), {});
 	}
 

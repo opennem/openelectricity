@@ -67,6 +67,12 @@ export {
 	needsAggregation
 } from './intervals.js';
 
+// Energy gridline computation
+export { computeEnergyGridlines } from './energy-gridlines.js';
+
+// Formatters
+export { formatXAxis, formatDateRange, getStartOfDay, getDayStartDates } from './formatters.js';
+
 // Data processing utilities
 export {
 	processData,

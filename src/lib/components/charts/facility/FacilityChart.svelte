@@ -13,14 +13,12 @@
 	import { aggregateToInterval, aggregateToMonth } from '$lib/components/charts/v2/dataProcessing.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import { loadFuelTechs, fuelTechNameMap } from '$lib/fuel_techs';
-	import detailedGroup from '$lib/fuel-tech-groups/detailed';
-	import { buildUnitColourMap } from './helpers.js';
+	import { fuelTechNameMap } from '$lib/fuel_techs';
+	import { analyzeUnits } from './unit-analysis.js';
+	import { computeEnergyGridlines } from '$lib/components/charts/v2/energy-gridlines.js';
+	import { formatXAxis, getDayStartDates } from '$lib/components/charts/v2/formatters.js';
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
-
-	/** Fuel tech display order from detailed group */
-	const fuelTechOrder = detailedGroup.order;
 
 	/**
 	 * Get color for a fuel tech code
@@ -91,148 +89,22 @@
 	 */
 	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
 
-	/**
-	 * Get start of day in the facility's timezone
-	 * @param {Date} date
-	 * @returns {Date}
-	 */
-	function getStartOfDay(date) {
-		const formatter = new Intl.DateTimeFormat('en-AU', {
-			year: 'numeric',
-			month: '2-digit',
-			day: '2-digit',
-			timeZone: ianaTimeZone
-		});
-		const parts = formatter.formatToParts(date);
-		const year = parseInt(parts.find((p) => p.type === 'year')?.value || '0');
-		const month = parseInt(parts.find((p) => p.type === 'month')?.value || '0') - 1;
-		const day = parseInt(parts.find((p) => p.type === 'day')?.value || '0');
-
-		const offsetHours = timeZone === '+08:00' ? 8 : 10;
-		return new Date(Date.UTC(year, month, day, -offsetHours, 0, 0, 0));
-	}
-
-	/**
-	 * Compute day-start dates from series data for gridlines
-	 * @param {any[]} data - Series data with date property
-	 * @returns {Date[]}
-	 */
-	function getDayStartDates(data) {
-		if (!data?.length) return [];
-
-		const dayStarts = new Set();
-		/** @type {Date[]} */
-		const result = [];
-
-		for (const d of data) {
-			const date = d.date || new Date(d.time);
-			const dayStart = getStartOfDay(date);
-			const key = dayStart.getTime();
-
-			if (!dayStarts.has(key)) {
-				dayStarts.add(key);
-				result.push(dayStart);
-			}
-		}
-
-		return result.sort((a, b) => a.getTime() - b.getTime());
-	}
-
 	// ============================================
 	// Derived: Unit Analysis
 	// ============================================
 
-	let unitColours = $derived.by(() => {
-		if (!facility?.units) return {};
-		return buildUnitColourMap(facility.units, getFuelTechColor);
+	let analysis = $derived.by(() => {
+		if (!facility) return null;
+		return analyzeUnits(facility, getFuelTechColor);
 	});
 
-	let unitFuelTechMap = $derived.by(() => {
-		if (!facility?.units) return {};
-
-		/** @type {Record<string, string>} */
-		const map = {};
-		for (const unit of facility.units) {
-			map[unit.code] = unit.fueltech_id;
-		}
-		return map;
-	});
-
-	/** Map from unit.code → unit.code_display for UI labels */
-	let unitCodeDisplayMap = $derived.by(() => {
-		if (!facility?.units) return {};
-
-		/** @type {Record<string, string>} */
-		const map = {};
-		for (const unit of facility.units) {
-			if (unit.code_display) {
-				map[unit.code] = unit.code_display;
-			}
-		}
-		return map;
-	});
-
-	let unitOrder = $derived.by(() => {
-		if (!facility?.units) return [];
-
-		const unitPairs = facility.units.map((/** @type {any} */ unit) => ({
-			id: `power_${unit.code}`,
-			fueltech: unit.fueltech_id
-		}));
-
-		unitPairs.sort((/** @type {any} */ a, /** @type {any} */ b) => {
-			const aIndex = fuelTechOrder.indexOf(a.fueltech);
-			const bIndex = fuelTechOrder.indexOf(b.fueltech);
-			const aPos = aIndex === -1 ? 999 : aIndex;
-			const bPos = bIndex === -1 ? 999 : bIndex;
-			return aPos - bPos;
-		});
-
-		return unitPairs.map((/** @type {any} */ p) => p.id);
-	});
-
-	/** @type {string[]} */
-	let loadIds = $derived.by(() => {
-		if (!facility?.units) return [];
-		const ids = [];
-		for (const unit of facility.units) {
-			if (loadFuelTechs.includes(unit.fueltech_id)) {
-				ids.push(`power_${unit.code}`);
-			}
-		}
-		return ids;
-	});
-
-	const BATTERY_FUEL_TECHS = ['battery'];
-
-	let hasBatteryUnits = $derived(
-		facility?.units?.some((/** @type {any} */ u) => BATTERY_FUEL_TECHS.includes(u.fueltech_id))
-	);
-
-	let capacitySums = $derived.by(() => {
-		if (!facility?.units) return { positive: 0, negative: 0 };
-
-		let positive = 0;
-		let negative = 0;
-
-		const allBattery = facility.units.every((/** @type {any} */ u) =>
-			BATTERY_FUEL_TECHS.includes(u.fueltech_id)
-		);
-
-		for (const unit of facility.units) {
-			const capacity = Number(unit.capacity_maximum || unit.capacity_registered) || 0;
-			if (loadFuelTechs.includes(unit.fueltech_id)) {
-				negative += capacity;
-			} else if (allBattery && unit.fueltech_id === 'battery') {
-				positive += capacity;
-				negative += capacity;
-			} else {
-				positive += capacity;
-			}
-		}
-
-		return { positive, negative };
-	});
+	let unitColours = $derived(analysis?.unitColours ?? {});
+	let unitFuelTechMap = $derived(analysis?.unitFuelTechMap ?? {});
+	let unitCodeDisplayMap = $derived(analysis?.unitCodeDisplayMap ?? {});
+	let unitOrder = $derived(analysis?.unitOrder ?? []);
+	let loadIds = $derived(analysis?.loadIds ?? []);
+	let hasBatteryUnits = $derived(analysis?.hasBatteryUnits ?? false);
+	let capacitySums = $derived(analysis?.capacitySums ?? { positive: 0, negative: 0 });
 
 	// ============================================
 	// Viewport State
@@ -328,7 +200,7 @@
 		const colourMap = unitColours;
 		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
 			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = loadFuelTechs.includes(fuelTech);
+			const isLoad = analysis?.loadIds.includes(`power_${unitCode}`) ?? false;
 			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
 		};
 	});
@@ -480,7 +352,6 @@
 	let chartStore = $state(null);
 
 	// Create chart store ONCE per facility — never recreated on metric switch.
-	// Uses time-series mode for both power and energy (step curves for energy).
 	$effect(() => {
 		const currentFacility = facility;
 		if (!currentFacility) {
@@ -505,7 +376,7 @@
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.useDivergingStack = useDivergingStack;
 		chart.lighterNegative = hasBatteryUnits;
-		chart.formatTickX = formatXAxis;
+		chart.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
 
 		chartStore = chart;
 	});
@@ -575,204 +446,15 @@
 		chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
 
 		if (isEnergy && visibleData.length > 1) {
-			// Use actual data point times for gridlines — ensures perfect alignment
-			// with step curve transitions and hover bands
-			/** @type {Date[]} */
-			const dataStarts = visibleData.map((/** @type {any} */ d) => new Date(d.time));
-
-			// Detect if data is monthly interval (bandMs > 20 days)
-			const bandMsEst = dataStarts.length > 1
-				? dataStarts[1].getTime() - dataStarts[0].getTime()
-				: 24 * 60 * 60 * 1000;
-			const isMonthlyInterval = bandMsEst > 20 * 24 * 60 * 60 * 1000;
-
-			// Viewport duration in years — used for yearly gridline snapping
-			const viewportDays = (end - start) / (24 * 60 * 60 * 1000);
-			const useYearlyGridlines = viewportDays >= 3 * 365;
-
-			// Smart thinning based on number of data points and interval
-			const numPoints = dataStarts.length;
-			let skip;
-			if (useYearlyGridlines) {
-				// 3+ years: yearly gridlines (skip value used for format selection)
-				skip = isMonthlyInterval ? 12 : 365;
-			} else if (isMonthlyInterval) {
-				// Monthly data: thin by calendar-meaningful intervals
-				if (numPoints <= 18) skip = 1;        // ≤1.5y: every month
-				else if (numPoints <= 24) skip = 3;   // ≤2y: quarterly
-				else skip = 6;                         // 2-3y: half-yearly
-			} else {
-				// Daily data
-				if (numPoints <= 14) skip = 1;
-				else if (numPoints <= 45) skip = 7;
-				else if (numPoints <= 120) skip = 14;
-				else if (numPoints <= 400) skip = 30;
-				else skip = 90;
-			}
-
-			// Build gridlines
-			/** @type {Date[]} */
-			let thinnedGridlines;
-			const ymFmt = new Intl.DateTimeFormat('en-AU', {
-				year: 'numeric', month: '2-digit', timeZone: ianaTimeZone
-			});
-
-			if (useYearlyGridlines) {
-				// Snap to January boundaries (first data point of each year)
-				/** @type {Set<string>} */
-				const seenYears = new Set();
-				thinnedGridlines = [];
-				for (const d of dataStarts) {
-					const parts = ymFmt.formatToParts(d);
-					const y = parts.find((p) => p.type === 'year')?.value;
-					const m = parts.find((p) => p.type === 'month')?.value;
-					if (m === '01' && y && !seenYears.has(y)) {
-						seenYears.add(y);
-						thinnedGridlines.push(d);
-					}
-				}
-			} else if (!isMonthlyInterval && skip >= 28) {
-				// Daily data at monthly scale: snap to month boundaries
-				/** @type {Set<string>} */
-				const seen = new Set();
-				/** @type {Date[]} */
-				const monthBoundaries = [];
-				for (const d of dataStarts) {
-					const parts = ymFmt.formatToParts(d);
-					const y = parts.find((p) => p.type === 'year')?.value;
-					const m = parts.find((p) => p.type === 'month')?.value;
-					const key = `${y}-${m}`;
-					if (!seen.has(key)) {
-						seen.add(key);
-						monthBoundaries.push(d);
-					}
-				}
-				// Further thin based on number of months visible
-				// Update skip to reflect actual months-per-label for format selection
-				const numMonths = monthBoundaries.length;
-				if (numMonths > 24) {
-					// 2+ years: every 6th month (half-yearly)
-					thinnedGridlines = monthBoundaries.filter((_, i) => i % 6 === 0);
-					skip = 6 * 30; // signal half-yearly to formatter
-				} else if (numMonths > 14) {
-					// 1-2 years: every 3rd month (quarterly)
-					thinnedGridlines = monthBoundaries.filter((_, i) => i % 3 === 0);
-					skip = 3 * 30; // signal quarterly to formatter
-				} else {
-					thinnedGridlines = monthBoundaries;
-					skip = 30; // signal monthly to formatter
-				}
-			} else {
-				thinnedGridlines = dataStarts.filter((_, i) => i % skip === 0);
-			}
-
-			// Compute midpoints between consecutive gridlines for centered labels
-			const bandMs = dataStarts.length > 1
-				? dataStarts[1].getTime() - dataStarts[0].getTime()
-				: 24 * 60 * 60 * 1000;
-			const skipBandMs = bandMs * skip;
-
-			/** @type {Date[]} */
-			const midpoints = [];
-			/** @type {Map<number, Date>} */
-			const midToStart = new Map();
-			/** @type {Map<number, Date>} */
-			const midToEnd = new Map();
-
-			for (let i = 0; i < thinnedGridlines.length; i++) {
-				const bandStart = thinnedGridlines[i];
-				const bandEnd = thinnedGridlines[i + 1] || new Date(bandStart.getTime() + skipBandMs);
-				const mid = new Date((bandStart.getTime() + bandEnd.getTime()) / 2);
-				midpoints.push(mid);
-				midToStart.set(mid.getTime(), bandStart);
-				// Last data point in this group = one interval before next gridline
-				midToEnd.set(mid.getTime(), new Date(bandEnd.getTime() - bandMs));
-			}
-
-			chartStore.xGridlineTicks = thinnedGridlines;
-			chartStore.xTicks = midpoints;
-
-			// Format: label shows the band start date, positioned at midpoint
-			if (useYearlyGridlines) {
-				// Yearly labels: "'21 — '22" range or just "'26"
-				chartStore.formatTickX = (/** @type {any} */ d) => {
-					const date = d instanceof Date ? d : new Date(d);
-					const rangeStart = midToStart.get(date.getTime());
-					const rangeEnd = midToEnd.get(date.getTime());
-					if (!rangeStart) return '';
-					const sYear = new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone: ianaTimeZone }).format(rangeStart);
-					if (!rangeEnd) return sYear;
-					const eYear = new Intl.DateTimeFormat('en-AU', { year: 'numeric', timeZone: ianaTimeZone }).format(rangeEnd);
-					if (sYear === eYear) return sYear;
-					return `${sYear} — ${eYear}`;
-				};
-			} else if (isMonthlyInterval || skip >= 28) {
-				// Monthly labels — only show year when Jan is in the range
-				chartStore.formatTickX = (/** @type {any} */ d) => {
-					const date = d instanceof Date ? d : new Date(d);
-					const rangeStart = midToStart.get(date.getTime()) || date;
-					const rangeEnd = midToEnd.get(date.getTime());
-
-					const myfmt = new Intl.DateTimeFormat('en-AU', {
-						month: 'short', year: '2-digit', timeZone: ianaTimeZone
-					});
-					const monthNumFmt = new Intl.DateTimeFormat('en-AU', {
-						month: 'numeric', timeZone: ianaTimeZone
-					});
-
-					const sParts = myfmt.formatToParts(rangeStart);
-					const sMonth = sParts.find((p) => p.type === 'month')?.value || '';
-					const sYear = sParts.find((p) => p.type === 'year')?.value || '';
-					const sMonthNum = parseInt(monthNumFmt.format(rangeStart));
-
-					// Single-month band: "Jan '26" or "Feb"
-					// Check if start and end are in the same month (or no end)
-					const eMonthNumVal = rangeEnd ? parseInt(monthNumFmt.format(rangeEnd)) : sMonthNum;
-					const eYearVal = rangeEnd ? myfmt.formatToParts(rangeEnd).find((p) => p.type === 'year')?.value : sYear;
-					if (!rangeEnd || (sMonthNum === eMonthNumVal && sYear === eYearVal)) {
-						return sMonthNum === 1 ? `${sMonth} '${sYear}` : sMonth;
-					}
-
-					// Multi-month range
-					const eParts = myfmt.formatToParts(rangeEnd);
-					const eMonth = eParts.find((p) => p.type === 'month')?.value || '';
-					const eYear = eParts.find((p) => p.type === 'year')?.value || '';
-					const eMonthNum = parseInt(monthNumFmt.format(rangeEnd));
-
-					// Check if Jan is in the range: start is Jan, or range wraps (end < start)
-					const hasJan = sMonthNum === 1 || eMonthNum < sMonthNum;
-
-					if (!hasJan) {
-						// No January in range: "Feb — May"
-						return `${sMonth} — ${eMonth}`;
-					}
-					if (sYear !== eYear) {
-						// Cross-year with Jan: "Nov — Jan '26"
-						return `${sMonth} — ${eMonth} '${eYear}`;
-					}
-					// Same year with Jan (start is Jan): "Jan — Mar '26"
-					return `${sMonth} — ${eMonth} '${eYear}`;
-				};
-			} else {
-				// Daily/weekly: show date range "21 — 27 Jan"
-				chartStore.formatTickX = (/** @type {any} */ d) => {
-					const date = d instanceof Date ? d : new Date(d);
-					const rangeStart = midToStart.get(date.getTime());
-					const rangeEnd = midToEnd.get(date.getTime());
-					if (!rangeStart || !rangeEnd) return formatXAxis(date);
-
-					// Single-day band (skip=1): just "21 Jan"
-					if (rangeStart.getTime() === rangeEnd.getTime()) {
-						return formatXAxis(rangeStart);
-					}
-					return formatDateRange(rangeStart, rangeEnd);
-				};
-			}
+			const g = computeEnergyGridlines(visibleData, start, end, ianaTimeZone);
+			chartStore.xGridlineTicks = g.gridlineTicks;
+			chartStore.xTicks = g.ticks;
+			chartStore.formatTickX = g.formatTick;
 		} else {
-			const dayStarts = getDayStartDates(visibleData);
+			const dayStarts = getDayStartDates(visibleData, ianaTimeZone, timeZone);
 			chartStore.xTicks = dayStarts;
 			chartStore.xGridlineTicks = dayStarts;
-			chartStore.formatTickX = formatXAxis;
+			chartStore.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
 		}
 	});
 
@@ -888,61 +570,6 @@
 		// No data yet — show overlay if still loading or haven't loaded
 		return !dataManager.initialLoadComplete || dataManager.isLoading || dataManager.hasPendingFetch;
 	});
-
-	// ============================================
-	// Formatters
-	// ============================================
-
-	/**
-	 * Format date for X axis ticks (day starts only)
-	 * @param {Date | any} d
-	 * @returns {string}
-	 */
-	function formatXAxis(d) {
-		const date = d instanceof Date ? d : typeof d === 'number' ? new Date(d) : null;
-		if (!date) return String(d);
-
-		return new Intl.DateTimeFormat('en-AU', {
-			day: 'numeric',
-			month: 'short',
-			timeZone: ianaTimeZone
-		}).format(date);
-	}
-
-	/**
-	 * Format a date range for x-axis labels in step/energy mode.
-	 * Same month: "21 — 27 Jan", different month: "28 Jan — 3 Feb",
-	 * different year: "28 Dec '25 — 3 Jan '26"
-	 * @param {Date} start
-	 * @param {Date} end
-	 * @returns {string}
-	 */
-	function formatDateRange(start, end) {
-		const partsFmt = new Intl.DateTimeFormat('en-AU', {
-			day: 'numeric',
-			month: 'short',
-			year: '2-digit',
-			timeZone: ianaTimeZone
-		});
-
-		const sParts = partsFmt.formatToParts(start);
-		const eParts = partsFmt.formatToParts(end);
-
-		const sDay = sParts.find((p) => p.type === 'day')?.value;
-		const eDay = eParts.find((p) => p.type === 'day')?.value;
-		const sMonth = sParts.find((p) => p.type === 'month')?.value;
-		const eMonth = eParts.find((p) => p.type === 'month')?.value;
-		const sYear = sParts.find((p) => p.type === 'year')?.value;
-		const eYear = eParts.find((p) => p.type === 'year')?.value;
-
-		if (sYear !== eYear) {
-			return `${sDay} ${sMonth} '${sYear} — ${eDay} ${eMonth} '${eYear}`;
-		}
-		if (sMonth !== eMonth) {
-			return `${sDay} ${sMonth} — ${eDay} ${eMonth}`;
-		}
-		return `${sDay} — ${eDay} ${eMonth}`;
-	}
 
 	// ============================================
 	// Pan Handlers
