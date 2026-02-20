@@ -213,6 +213,7 @@
 						interval={activeInterval}
 						metric={activeMetric}
 						{displayInterval}
+						showAnnotations={true}
 						onviewportchange={handleViewportChange}
 					/>
 				</div>
