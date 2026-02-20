@@ -63,7 +63,18 @@
 	// Derived: Facility Selection
 	// ============================================
 
-	let selectedFacility = $derived(data.facility);
+	// Strip redundant battery_charging/discharging units at the source
+	let selectedFacility = $derived.by(() => {
+		const f = data.facility;
+		if (!f?.units) return f;
+		return {
+			...f,
+			units: f.units.filter(
+				(/** @type {any} */ u) =>
+					u.fueltech_id !== 'battery_charging' && u.fueltech_id !== 'battery_discharging'
+			)
+		};
+	});
 	let timeZone = $derived(data.timeZone);
 
 	// Prev/next navigation (wrap-around)
@@ -476,7 +487,7 @@
 		<!-- Tab Content -->
 		<div class="py-4">
 			{#if activeTab === 'units'}
-				{#if selectedFacility.units?.length}
+				{#if selectedFacility?.units?.length}
 					<div class="border border-warm-grey rounded-lg">
 						<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
 					</div>
