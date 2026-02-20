@@ -18,9 +18,11 @@
 	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
 	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
+	import { fly } from 'svelte/transition';
+	import { clickoutside } from '@svelte-put/clickoutside';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import { MapPin, AlertCircle, SearchX, ExternalLink } from '@lucide/svelte';
+	import { MapPin, AlertCircle, SearchX, ExternalLink, Calendar } from '@lucide/svelte';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
@@ -147,6 +149,8 @@
 
 	/** Latest selectable date: today */
 	let maxDate = $derived(new Date().toISOString().slice(0, 10));
+
+	let datePickerOpen = $state(false);
 
 	/** @type {import('$lib/components/ui/date-range-picker/DateRangePicker.svelte').default | undefined} */
 	let datePickerRef = $state(undefined);
@@ -422,16 +426,41 @@
 					roundedSize="lg"
 				/>
 
-				<!-- Date range picker -->
-				<DateRangePicker
-					bind:this={datePickerRef}
-					startDate={dateStart}
-					endDate={dateEnd}
-					minDate={MIN_DATE}
-					{maxDate}
-					size="sm"
-					onchange={handleDateRangeChange}
-				/>
+				<!-- Date range picker popover -->
+				<div
+					class="relative"
+					use:clickoutside
+					onclickoutside={() => (datePickerOpen = false)}
+				>
+					<button
+						class="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-warm-grey"
+						onclick={() => (datePickerOpen = !datePickerOpen)}
+					>
+						<Calendar size={16} class="text-mid-grey" />
+					</button>
+
+					{#if datePickerOpen}
+						<div
+							class="border border-mid-grey bg-white absolute top-14 left-0 rounded-lg z-50 shadow-md p-4"
+							in:fly={{ y: -5, duration: 150 }}
+							out:fly={{ y: -5, duration: 150 }}
+						>
+							<DateRangePicker
+								bind:this={datePickerRef}
+								startDate={dateStart}
+								endDate={dateEnd}
+								minDate={MIN_DATE}
+								{maxDate}
+								size="sm"
+								inlineCalendar
+								onchange={(range) => {
+									handleDateRangeChange(range);
+									datePickerOpen = false;
+								}}
+							/>
+						</div>
+					{/if}
+				</div>
 
 				<!-- Interval dropdown -->
 				<FormSelect

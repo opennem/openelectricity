@@ -18,11 +18,12 @@
 	 * @property {string | null} [minDate] - Earliest selectable date in YYYY-MM-DD format
 	 * @property {string | null} [maxDate] - Latest selectable date in YYYY-MM-DD format
 	 * @property {'sm' | 'md' | 'lg'} [size] - Size variant
+	 * @property {boolean} [inlineCalendar] - When true, renders the calendar inline below the input instead of in a popover
 	 * @property {(event: DateRangeChangeEvent) => void} [onchange] - Callback when date range changes
 	 */
 
 	/** @type {Props} */
-	let { startDate = null, endDate = null, minDate = null, maxDate = null, size = 'md', onchange } = $props();
+	let { startDate = null, endDate = null, minDate = null, maxDate = null, size = 'md', inlineCalendar = false, onchange } = $props();
 
 	let minValue = $derived(parseDate(minDate));
 	let maxValue = $derived(parseDate(maxDate));
@@ -73,6 +74,9 @@
 	};
 
 	let s = $derived(sizeConfig[size]);
+
+	let inlineHeadCell = $derived(inlineCalendar ? 'flex-1 text-center text-[10px]' : s.headCell);
+	let inlineDayCell = $derived(inlineCalendar ? 'w-full h-9 text-xs' : s.dayCell);
 
 	/**
 	 * Parse a YYYY-MM-DD string into a CalendarDate
@@ -299,7 +303,7 @@
 		{maxValue}
 	>
 		<div
-			class="inline-flex items-center border transition-colors bg-white {hasError
+			class="inline-flex items-center border transition-colors bg-white {inlineCalendar ? 'w-full' : ''} {hasError
 				? 'border-red-300 focus-within:border-red-400'
 				: 'border-warm-grey focus-within:border-dark-grey'} {s.input}"
 		>
@@ -331,17 +335,16 @@
 				{/if}
 			{/each}
 
-			<DateRangePicker.Trigger
-				class="rounded text-mid-grey transition-colors hover:text-dark-grey focus:outline-none {s.trigger}"
-			>
-				<Calendar class={s.iconSize} />
-			</DateRangePicker.Trigger>
+			{#if !inlineCalendar}
+				<DateRangePicker.Trigger
+					class="rounded text-mid-grey transition-colors hover:text-dark-grey focus:outline-none {s.trigger}"
+				>
+					<Calendar class={s.iconSize} />
+				</DateRangePicker.Trigger>
+			{/if}
 		</div>
 
-		<DateRangePicker.Content
-			sideOffset={6}
-			class="z-50 border border-warm-grey bg-white shadow-lg {s.content}"
-		>
+		{#snippet calendarContent()}
 			<DateRangePicker.Calendar>
 				{#snippet children({ months, weekdays })}
 					<DateRangePicker.Header class="flex items-center justify-between pb-3">
@@ -366,7 +369,7 @@
 								<DateRangePicker.GridRow class="flex w-full">
 									{#each weekdays as day (day)}
 										<DateRangePicker.HeadCell
-											class="text-center font-medium text-mid-grey {s.headCell}"
+											class="text-center font-medium text-mid-grey {inlineHeadCell}"
 										>
 											{day.slice(0, 2)}
 										</DateRangePicker.HeadCell>
@@ -381,10 +384,10 @@
 											<DateRangePicker.Cell
 												{date}
 												month={month.value}
-												class="relative p-0 text-center"
+												class="relative p-0 text-center {inlineCalendar ? 'flex-1' : ''}"
 											>
 												<DateRangePicker.Day
-													class="relative inline-flex items-center justify-center rounded-md text-dark-grey transition-colors hover:bg-light-warm-grey focus:outline-none data-[disabled]:pointer-events-none data-[outside-month]:text-warm-grey data-[outside-month]:pointer-events-none data-[highlighted]:bg-light-warm-grey data-[highlighted]:rounded-none data-[selected]:bg-dark-grey data-[selected]:text-white data-[selected]:rounded-none data-[selection-start]:rounded-l-md data-[selection-end]:rounded-r-md data-[disabled]:text-warm-grey {s.dayCell}"
+													class="relative inline-flex items-center justify-center rounded-md text-dark-grey transition-colors hover:bg-light-warm-grey focus:outline-none data-[disabled]:pointer-events-none data-[outside-month]:text-warm-grey data-[outside-month]:pointer-events-none data-[highlighted]:bg-light-warm-grey data-[highlighted]:rounded-none data-[selected]:bg-dark-grey data-[selected]:text-white data-[selected]:rounded-none data-[selection-start]:rounded-l-md data-[selection-end]:rounded-r-md data-[disabled]:text-warm-grey {inlineDayCell}"
 												>
 													{date.day}
 													{#if isToday(date)}
@@ -402,7 +405,20 @@
 					{/each}
 				{/snippet}
 			</DateRangePicker.Calendar>
-		</DateRangePicker.Content>
+		{/snippet}
+
+		{#if inlineCalendar}
+			<div class="mt-3 pt-3 border-t border-warm-grey font-sans">
+				{@render calendarContent()}
+			</div>
+		{:else}
+			<DateRangePicker.Content
+				sideOffset={6}
+				class="z-50 border border-warm-grey bg-white shadow-lg {s.content}"
+			>
+				{@render calendarContent()}
+			</DateRangePicker.Content>
+		{/if}
 	</DateRangePicker.Root>
 
 	{#if errorMessage}
