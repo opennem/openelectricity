@@ -22,7 +22,7 @@
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import { MapPin, AlertCircle, SearchX, ExternalLink, Calendar } from '@lucide/svelte';
+	import { MapPin, CircleAlert, SearchX, ExternalLink, Calendar } from '@lucide/svelte';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
@@ -60,7 +60,9 @@
 	/** @type {'units' | 'data'} */
 	let activeTab = $state('units');
 
-	let dateStart = $state(data.dateStart || getDateStartForRange(data.range ?? 7, data.facility?.units));
+	let dateStart = $state(
+		data.dateStart || getDateStartForRange(data.range ?? 7, data.facility?.units)
+	);
 	let dateEnd = $state(data.dateEnd || getDefaultDateEnd());
 
 	// ============================================
@@ -100,7 +102,9 @@
 
 	// Facility info derived values
 	let regionLabel = $derived(
-		selectedFacility ? getRegionLabel(selectedFacility.network_id, selectedFacility.network_region) : ''
+		selectedFacility
+			? getRegionLabel(selectedFacility.network_id, selectedFacility.network_region)
+			: ''
 	);
 	let unitGroups = $derived(selectedFacility ? groupUnits(selectedFacility) : []);
 
@@ -252,7 +256,9 @@
 	// Computed UI Values
 	// ============================================
 
-	let totalCapacity = $derived(unitGroups.reduce((/** @type {number} */ sum, /** @type {any} */ g) => sum + g.totalCapacity, 0));
+	let totalCapacity = $derived(
+		unitGroups.reduce((/** @type {number} */ sum, /** @type {any} */ g) => sum + g.totalCapacity, 0)
+	);
 	let unitCount = $derived(selectedFacility?.units?.length ?? 0);
 	let explorePath = $derived(getExploreUrl(selectedFacility));
 	let weightedEmissionsIntensity = $derived(analysis?.weightedEmissionsIntensity ?? null);
@@ -295,7 +301,6 @@
 					{ value: '1y', label: 'Yearly' }
 				]
 	);
-
 
 	/** Earliest data date for the selected facility (for "All" range) */
 	let earliestDate = $derived.by(() => {
@@ -374,22 +379,22 @@
 
 {#if data.error && !selectedFacility}
 	<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
-		<AlertCircle size={32} class="mb-3 text-warm-grey" />
+		<CircleAlert size={32} class="mb-3 text-warm-grey" />
 		<p class="text-sm font-medium text-dark-grey mb-1">Unable to load facility</p>
 		<p class="text-xs">{data.error}</p>
 	</div>
 {:else if !data.facilities.length}
 	<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
-		<AlertCircle size={32} class="mb-3 text-warm-grey" />
+		<CircleAlert size={32} class="mb-3 text-warm-grey" />
 		<p class="text-sm font-medium text-dark-grey mb-1">No facilities available</p>
 		<p class="text-xs">Could not load the facilities list. Please try again later.</p>
 	</div>
 {:else if selectedFacility}
 	<!-- Sticky Filter Bar -->
 	<div class="bg-light-warm-grey sticky top-0 shadow-xs" style="z-index: 99">
-		<div class="flex items-center gap-4 md:gap-6 px-6 py-2 md:px-12">
+		<div class="flex items-center px-6 py-2 md:px-12">
 			<!-- Facility selector -->
-			<div class="flex items-center gap-2 flex-shrink-0">
+			<div class="flex items-center gap-2">
 				<button
 					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
 					onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
@@ -413,136 +418,70 @@
 					<IconChevronLeft class="w-8 h-8 rotate-180" />
 				</button>
 			</div>
-
-			<!-- Range switcher + date picker + interval (center) -->
-			<div class="hidden md:flex items-center gap-2">
-				<Switch
-					buttons={rangeButtons}
-					selected={String(selectedRange ?? '')}
-					onchange={(d) => handleRangeSelect(parseInt(d.value, 10))}
-					xPad={6}
-					yPad={3}
-					textSize="xs"
-					roundedSize="lg"
-				/>
-
-				<!-- Date range picker popover -->
-				<div
-					class="relative"
-					use:clickoutside
-					onclickoutside={() => (datePickerOpen = false)}
-				>
-					<button
-						class="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-warm-grey"
-						onclick={() => (datePickerOpen = !datePickerOpen)}
-					>
-						<Calendar size={16} class="text-mid-grey" />
-					</button>
-
-					{#if datePickerOpen}
-						<div
-							class="border border-mid-grey bg-white absolute top-14 left-0 rounded-lg z-50 shadow-md p-4"
-							in:fly={{ y: -5, duration: 150 }}
-							out:fly={{ y: -5, duration: 150 }}
-						>
-							<DateRangePicker
-								bind:this={datePickerRef}
-								startDate={dateStart}
-								endDate={dateEnd}
-								minDate={MIN_DATE}
-								{maxDate}
-								size="sm"
-								inlineCalendar
-								onchange={(range) => {
-									handleDateRangeChange(range);
-									datePickerOpen = false;
-								}}
-							/>
-						</div>
-					{/if}
-				</div>
-
-				<!-- Interval dropdown -->
-				<FormSelect
-					selected={displayInterval}
-					options={intervalOptions}
-					paddingX="px-4"
-					paddingY="py-3"
-					onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
-				/>
-			</div>
-
-			<!-- Facility info (right) -->
-			<div class="hidden sm:flex items-center gap-3 text-sm text-mid-grey ml-auto flex-shrink-0">
-				<span class="font-medium text-dark-grey">{regionLabel}</span>
-				<span>{selectedFacility.network_id}</span>
-				<span class="font-mono">{formatValue(totalCapacity)} MW</span>
-				<span>{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
-				{#if weightedEmissionsIntensity}
-					<span class="font-mono">{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh</span>
-				{/if}
-				{#if unitGroups.length}
-					<div class="flex items-center gap-0.5">
-						{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
-							<FuelTechBadge
-								fueltech_id={group.fueltech_id}
-								status_id={group.status_id}
-								isCommissioning={group.isCommissioning}
-								size="sm"
-							/>
-						{/each}
-					</div>
-				{/if}
-			</div>
-		</div>
-
-		<!-- Mobile: range switcher + interval -->
-		<div class="flex md:hidden items-center gap-2 px-6 pb-2 flex-wrap">
-			<Switch
-				buttons={rangeButtons}
-				selected={String(selectedRange ?? '')}
-				onchange={(d) => handleRangeSelect(parseInt(d.value, 10))}
-				xPad={4}
-				yPad={2}
-				textSize="xs"
-				roundedSize="lg"
-				class="!mx-0"
-			/>
-
-			<!-- Interval dropdown (mobile) -->
-			<FormSelect
-				selected={displayInterval}
-				options={intervalOptions}
-				onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
-			/>
-		</div>
-		<div class="flex sm:hidden items-center gap-2 px-6 pb-2 text-sm text-mid-grey flex-wrap">
-			<span class="font-medium text-dark-grey">{regionLabel}</span>
-			<span>{selectedFacility.network_id}</span>
-			<span class="font-mono">{formatValue(totalCapacity)} MW</span>
-			<span>{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
-			{#if weightedEmissionsIntensity}
-				<span class="font-mono">{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh</span>
-			{/if}
-			{#if unitGroups.length}
-				<div class="flex items-center gap-0.5">
-					{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
-						<FuelTechBadge
-							fueltech_id={group.fueltech_id}
-							status_id={group.status_id}
-							isCommissioning={group.isCommissioning}
-							size="sm"
-						/>
-					{/each}
-				</div>
-			{/if}
 		</div>
 	</div>
 
-	<!-- Main Content -->
-	<div class="max-w-7xl mx-auto px-4 py-4">
+	<!-- Range Bar -->
+	<div class="flex items-center px-4 pt-3 pb-6 gap-4 my-4 border-b border-warm-grey">
+		<Switch
+			buttons={rangeButtons}
+			selected={String(selectedRange ?? '')}
+			onchange={(d) => handleRangeSelect(parseInt(d.value, 10))}
+			xPad={6}
+			yPad={3}
+			textSize="xs"
+			roundedSize="lg"
+		/>
 
-		<!-- Chart -->
+		<div class="w-px h-6 bg-warm-grey"></div>
+
+		<!-- Date range picker popover -->
+		<div class="relative" use:clickoutside onclickoutside={() => (datePickerOpen = false)}>
+			<button
+				class="flex items-center px-4 py-3 rounded-lg hover:bg-warm-grey"
+				onclick={() => (datePickerOpen = !datePickerOpen)}
+			>
+				<Calendar size={18} class="text-mid-grey" />
+			</button>
+
+			{#if datePickerOpen}
+				<div
+					class="border border-mid-grey bg-white absolute top-14 left-1/2 -translate-x-1/2 rounded-lg z-50 shadow-md p-4"
+					in:fly={{ y: -5, duration: 150 }}
+					out:fly={{ y: -5, duration: 150 }}
+				>
+					<DateRangePicker
+						bind:this={datePickerRef}
+						startDate={dateStart}
+						endDate={dateEnd}
+						minDate={MIN_DATE}
+						{maxDate}
+						size="sm"
+						inlineCalendar
+						onchange={(range) => {
+							handleDateRangeChange(range);
+							datePickerOpen = false;
+						}}
+					/>
+				</div>
+			{/if}
+		</div>
+
+		<div class="w-px h-6 bg-warm-grey"></div>
+
+		<!-- Interval dropdown -->
+		<FormSelect
+			selected={displayInterval}
+			options={intervalOptions}
+			widthClass="w-auto"
+			paddingX="px-4"
+			paddingY="py-3"
+			onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
+		/>
+	</div>
+
+	<!-- Chart -->
+	<div class="px-4">
 		<div class="bg-light-warm-grey/30 rounded-xl p-4">
 			<FacilityChart
 				bind:this={chartComponent}
@@ -560,9 +499,37 @@
 				ondisplayintervalchange={(intv) => (displayInterval = intv)}
 			/>
 		</div>
+	</div>
+
+	<!-- Content below chart -->
+	<div class="max-w-7xl mx-auto px-4 py-4">
+		<!-- Facility Info -->
+		<div class="flex items-center gap-3 text-sm text-mid-grey flex-wrap">
+			<span class="font-medium text-dark-grey">{regionLabel}</span>
+			<span>{selectedFacility.network_id}</span>
+			<span class="font-mono">{formatValue(totalCapacity)} MW</span>
+			<span>{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
+			{#if weightedEmissionsIntensity}
+				<span class="font-mono"
+					>{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh</span
+				>
+			{/if}
+			{#if unitGroups.length}
+				<div class="flex items-center gap-0.5">
+					{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
+						<FuelTechBadge
+							fueltech_id={group.fueltech_id}
+							status_id={group.status_id}
+							isCommissioning={group.isCommissioning}
+							size="sm"
+						/>
+					{/each}
+				</div>
+			{/if}
+		</div>
 
 		<!-- Tab Switcher -->
-		<div class="flex gap-4 mt-6 border-b border-warm-grey">
+		<div class="flex gap-4 mt-4 border-b border-warm-grey">
 			<button
 				class="pb-2 text-sm font-medium transition-colors {activeTab === 'units'
 					? 'border-b-2 border-dark-grey text-dark-grey'
@@ -610,28 +577,30 @@
 				{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
 					<div class="flex items-center gap-1 text-xs text-mid-grey mt-3">
 						<MapPin size={12} />
-						<span>{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}</span>
+						<span
+							>{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(
+								4
+							)}</span
+						>
 					</div>
 				{/if}
 
 				{#if selectedFacility.description}
 					<p class="text-sm text-mid-grey mt-3">{selectedFacility.description}</p>
 				{/if}
+			{:else if tableData}
+				<div class="border border-light-warm-grey rounded-lg overflow-y-auto max-h-[300px]">
+					<FacilityDataTable
+						data={tableData.data}
+						seriesNames={tableData.seriesNames}
+						seriesLabels={tableData.seriesLabels}
+						{timeZone}
+					/>
+				</div>
 			{:else}
-				{#if tableData}
-					<div class="border border-light-warm-grey rounded-lg overflow-y-auto max-h-[300px]">
-						<FacilityDataTable
-							data={tableData.data}
-							seriesNames={tableData.seriesNames}
-							seriesLabels={tableData.seriesLabels}
-							{timeZone}
-						/>
-					</div>
-				{:else}
-					<div class="flex items-center justify-center py-8 text-sm text-mid-grey">
-						Loading data...
-					</div>
-				{/if}
+				<div class="flex items-center justify-center py-8 text-sm text-mid-grey">
+					Loading data...
+				</div>
 			{/if}
 		</div>
 	</div>
