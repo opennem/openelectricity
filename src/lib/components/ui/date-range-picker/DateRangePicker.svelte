@@ -37,8 +37,8 @@
 			iconSize: 'size-3.5',
 			content: 'p-3 rounded-xl',
 			heading: 'text-xs',
-			navButton: 'p-0.5',
-			navIcon: 'size-3.5',
+			navButton: 'p-1',
+			navIcon: 'size-5',
 			headCell: 'w-7 text-[10px]',
 			dayCell: 'h-7 w-7 text-[11px]',
 			todayDot: 'h-0.5 w-0.5 bottom-0.5'

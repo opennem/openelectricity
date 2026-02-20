@@ -446,7 +446,7 @@
 
 			{#if datePickerOpen}
 				<div
-					class="border border-mid-grey bg-white absolute top-14 left-1/2 -translate-x-1/2 rounded-lg z-50 shadow-md p-4"
+					class="border border-mid-grey bg-white absolute top-14 left-1/2 -translate-x-1/2 rounded-lg z-50 shadow-md p-4 w-[220px]"
 					in:fly={{ y: -5, duration: 150 }}
 					out:fly={{ y: -5, duration: 150 }}
 				>
