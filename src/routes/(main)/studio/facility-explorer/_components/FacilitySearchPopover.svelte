@@ -26,10 +26,10 @@
 
 	let filtered = $derived.by(() => {
 		const q = query.toLowerCase().trim();
-		if (!q) return facilities.slice(0, 50);
-		return facilities
-			.filter((f) => f.name.toLowerCase().includes(q) || f.code.toLowerCase().includes(q))
-			.slice(0, 50);
+		if (!q) return facilities;
+		return facilities.filter(
+			(f) => f.name.toLowerCase().includes(q) || f.code.toLowerCase().includes(q)
+		);
 	});
 
 	/**
