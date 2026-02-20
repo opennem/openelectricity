@@ -386,6 +386,8 @@
 	 */
 	function handleClick(event) {
 		if (interactionMode !== 'none') return;
+		// Cmd/Ctrl+click is used for zoom — don't focus
+		if (event.metaKey || event.ctrlKey) return;
 		// StackedArea handles clicks on SVG paths via onpointerup — skip to avoid double-toggle
 		const target = /** @type {Element} */ (event.target);
 		if (target.tagName === 'path') return;

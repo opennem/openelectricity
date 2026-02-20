@@ -162,6 +162,8 @@
 	 * @param {string} _key
 	 */
 	function handlePointerUp(evt, _key) {
+		// Cmd/Ctrl+click is used for zoom — don't trigger focus
+		if ('metaKey' in evt && (evt.metaKey || evt.ctrlKey)) return;
 		const item = findClosestDataPoint(evt);
 		if (item) {
 			onpointerup?.(item);
