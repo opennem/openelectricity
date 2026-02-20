@@ -203,12 +203,10 @@
 		} else if (interval === '1d' || interval === '1M') {
 			activeInterval = '1d';
 			activeMetric = 'energy';
-			chartComponent?.setDisplayInterval(interval);
 		} else {
 			// '5m' or '30m'
 			activeInterval = '5m';
 			activeMetric = 'power';
-			chartComponent?.setDisplayInterval(interval);
 		}
 	}
 
@@ -232,6 +230,13 @@
 
 		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
 		const switchResult = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
+
+		// Auto-adjust display interval based on zoom level
+		if (activeMetric === 'power') {
+			displayInterval = durationDays < 2 ? '5m' : '30m';
+		} else if (activeMetric === 'energy') {
+			displayInterval = durationDays >= 366 ? '1M' : '1d';
+		}
 
 		if (switchResult) {
 			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
@@ -502,16 +507,14 @@
 				bind:this={chartComponent}
 				facility={selectedFacility}
 				powerData={data.powerData}
-				title={selectedFacility.name}
 				{timeZone}
 				{dateStart}
 				{dateEnd}
 				interval={activeInterval}
 				metric={activeMetric}
-				showIntervalToggle={false}
+				{displayInterval}
 				onviewportchange={handleViewportChange}
 				onvisibledata={handleVisibleData}
-				ondisplayintervalchange={(intv) => (displayInterval = intv)}
 			/>
 		</div>
 	</div>

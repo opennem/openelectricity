@@ -38,7 +38,7 @@
 	 * @property {string} timeZone - Timezone offset string (+10:00 or +08:00)
 	 * @property {string} [interval] - API interval (5m, 1d, 1M)
 	 * @property {string} [metric] - API metric (power, energy)
-	 * @property {string} [title] - Chart title
+	 * @property {string} [displayInterval] - Display interval for aggregation (5m, 30m, 1d, 1M)
 	 * @property {string} [chartHeight] - Chart height class
 	 * @property {number} [chartHeightPx] - Chart height in pixels (overrides chartHeight when set)
 	 * @property {boolean} [useDivergingStack] - Stack positive/negative values independently (default: false)
@@ -46,8 +46,6 @@
 	 * @property {string} [dateEnd] - Initial date end string (YYYY-MM-DD) for viewport when no seeded cache
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
-	 * @property {((interval: string) => void)} [ondisplayintervalchange] - Callback when display interval changes (power: '5m'/'30m', energy: '1d'/'1M')
-	 * @property {boolean} [showIntervalToggle] - Whether to show the interval toggle buttons (default: true)
 	 * @property {boolean} [showAnnotations] - Whether to show capacity reference lines (default: false)
 	 */
 
@@ -58,7 +56,7 @@
 		timeZone,
 		interval = '5m',
 		metric = 'power',
-		title = '',
+		displayInterval = '30m',
 		chartHeight = 'h-[400px]',
 		chartHeightPx = 0,
 		useDivergingStack = false,
@@ -66,22 +64,8 @@
 		dateEnd = '',
 		onviewportchange,
 		onvisibledata,
-		ondisplayintervalchange,
-		showIntervalToggle = true,
 		showAnnotations = false
 	} = $props();
-
-	/**
-	 * Set the display interval from outside (e.g. ChartRangeBar dropdown)
-	 * @param {string} intv - '5m' | '30m' | '1d' | '1M'
-	 */
-	export function setDisplayInterval(intv) {
-		if (intv === '5m' || intv === '30m') {
-			manualInterval = /** @type {'5m' | '30m'} */ (intv);
-		} else if (intv === '1d' || intv === '1M') {
-			manualEnergyInterval = /** @type {'1d' | '1M'} */ (intv);
-		}
-	}
 
 	// ============================================
 	// Derived: Timezone
@@ -119,53 +103,8 @@
 	/** @type {number} */
 	let viewEnd = $state(0);
 
-	/** Whether the user has manually picked an interval (overrides auto) */
-	let manualInterval = $state(/** @type {'5m' | '30m' | null} */ (null));
-
-	/** Auto-select 5m when zoomed into < 2 days, 30m otherwise */
-	const AUTO_5M_THRESHOLD_MS = 2 * 24 * 60 * 60 * 1000;
-	let autoInterval = $derived(
-		/** @type {'5m' | '30m'} */ (viewEnd - viewStart <= AUTO_5M_THRESHOLD_MS ? '5m' : '30m')
-	);
-
-	// Clear manual override when auto interval changes (zoom crosses threshold)
-	$effect(() => {
-		const _auto = autoInterval; // track
-		manualInterval = null;
-	});
-
-	/** @type {'5m' | '30m'} */
-	let selectedInterval = $derived(manualInterval ?? autoInterval);
-
-	/** Whether the user has manually picked an energy display interval */
-	let manualEnergyInterval = $state(/** @type {'1d' | '1M' | null} */ (null));
-
-	/** Auto-select monthly when viewport > 1 year, daily otherwise */
-	const AUTO_MONTHLY_THRESHOLD_MS = 366 * 24 * 60 * 60 * 1000;
-	let autoEnergyInterval = $derived(
-		/** @type {'1d' | '1M'} */ (viewEnd - viewStart >= AUTO_MONTHLY_THRESHOLD_MS ? '1M' : '1d')
-	);
-
-	// Clear manual energy override when auto changes (zoom crosses threshold)
-	$effect(() => {
-		const _auto = autoEnergyInterval;
-		manualEnergyInterval = null;
-	});
-
-	/** @type {'1d' | '1M'} */
-	let selectedEnergyInterval = $derived(manualEnergyInterval ?? autoEnergyInterval);
-
 	/** Whether we're showing energy data (1d interval) vs power (5m) */
 	let isEnergyMetric = $derived(metric === 'energy');
-
-	// Notify parent when effective display interval changes
-	$effect(() => {
-		// For coarse API intervals (3M, 1y), report the API interval directly
-		const intv = (interval === '3M' || interval === '1y')
-			? interval
-			: isEnergyMetric ? selectedEnergyInterval : selectedInterval;
-		ondisplayintervalchange?.(intv);
-	});
 
 	/** Minimum viewport duration: 1 hour for power, 5 days for energy */
 	let MIN_VIEWPORT_MS = $derived(isEnergyMetric ? 5 * 24 * 60 * 60 * 1000 : 1 * 60 * 60 * 1000);
@@ -359,7 +298,7 @@
 
 		const chart = new ChartStore({
 			key: Symbol('facility-chart'),
-			title: title || facility.name || 'Facility',
+			title: facility.name || 'Facility',
 			prefix: 'M',
 			displayPrefix: 'M',
 			baseUnit: 'W',
@@ -407,8 +346,7 @@
 
 		const start = viewStart;
 		const end = viewEnd;
-		const displayInterval = selectedInterval;
-		const energyDisplayInterval = selectedEnergyInterval;
+		const currentDisplayInterval = displayInterval;
 		const isEnergy = isEnergyMetric;
 
 		let visibleData = dataManager.getDataForRange(start, end);
@@ -417,7 +355,7 @@
 		const apiInterval = interval;
 
 		// Aggregate daily energy to monthly when selected (only if API returned daily data)
-		if (isEnergy && apiInterval === '1d' && energyDisplayInterval === '1M' && visibleData.length > 0 && dataManager.seriesMeta) {
+		if (isEnergy && apiInterval === '1d' && currentDisplayInterval === '1M' && visibleData.length > 0 && dataManager.seriesMeta) {
 			visibleData = aggregateToMonth(
 				visibleData,
 				dataManager.seriesMeta.seriesNames,
@@ -427,7 +365,7 @@
 		}
 
 		// Aggregate to 30m for power mode when selected
-		if (!isEnergy && displayInterval === '30m' && visibleData.length > 0 && dataManager.seriesMeta) {
+		if (!isEnergy && currentDisplayInterval === '30m' && visibleData.length > 0 && dataManager.seriesMeta) {
 			visibleData = aggregateToInterval(
 				visibleData,
 				'30m',
@@ -524,8 +462,7 @@
 		// Track reactive dependencies
 		const start = viewStart;
 		const end = viewEnd;
-		const displayInterval = selectedInterval;
-		const energyDisplayInterval = selectedEnergyInterval;
+		const currentDisplayInterval = displayInterval;
 		const isEnergy = isEnergyMetric;
 		const manager = dataManager;
 		const _cache = manager?.processedCache; // track cache changes
@@ -537,9 +474,9 @@
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
 			let rows = manager.getDataForRange(start, end);
-			if (isEnergy && interval === '1d' && energyDisplayInterval === '1M' && rows.length > 0) {
+			if (isEnergy && interval === '1d' && currentDisplayInterval === '1M' && rows.length > 0) {
 				rows = aggregateToMonth(rows, meta.seriesNames, ianaTimeZone, 'sum');
-			} else if (!isEnergy && displayInterval === '30m' && rows.length > 0) {
+			} else if (!isEnergy && currentDisplayInterval === '30m' && rows.length > 0) {
 				rows = aggregateToInterval(rows, '30m', meta.seriesNames, 'mean');
 			}
 			callback({
@@ -766,57 +703,6 @@
 		return unitColours;
 	}
 </script>
-
-<!-- Chart Header -->
-<div class="flex flex-wrap items-center justify-between gap-1 mb-1">
-	{#if title}
-		<h3 class="text-sm font-medium text-dark-grey">{title}</h3>
-	{/if}
-
-	<div class="flex items-center gap-2">
-		{#if showIntervalToggle}
-		<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
-			<button
-				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {!isEnergyMetric && selectedInterval === '5m'
-					? 'bg-white text-dark-grey shadow-sm'
-					: isEnergyMetric
-						? 'text-mid-warm-grey cursor-not-allowed'
-						: 'text-mid-grey hover:text-dark-grey'}"
-				disabled={isEnergyMetric}
-				onclick={() => { manualInterval = '5m'; }}
-			>5min</button>
-			<button
-				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {!isEnergyMetric && selectedInterval === '30m'
-					? 'bg-white text-dark-grey shadow-sm'
-					: isEnergyMetric
-						? 'text-mid-warm-grey cursor-not-allowed'
-						: 'text-mid-grey hover:text-dark-grey'}"
-				disabled={isEnergyMetric}
-				onclick={() => { manualInterval = '30m'; }}
-			>30min</button>
-			<button
-				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {isEnergyMetric && selectedEnergyInterval === '1d'
-					? 'bg-white text-dark-grey shadow-sm'
-					: !isEnergyMetric
-						? 'text-mid-warm-grey cursor-not-allowed'
-						: 'text-mid-grey hover:text-dark-grey'}"
-				disabled={!isEnergyMetric}
-				onclick={() => { manualEnergyInterval = '1d'; }}
-			>Daily</button>
-			<button
-				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {isEnergyMetric && selectedEnergyInterval === '1M'
-					? 'bg-white text-dark-grey shadow-sm'
-					: !isEnergyMetric
-						? 'text-mid-warm-grey cursor-not-allowed'
-						: 'text-mid-grey hover:text-dark-grey'}"
-				disabled={!isEnergyMetric}
-				onclick={() => { manualEnergyInterval = '1M'; }}
-			>Monthly</button>
-		</div>
-		{/if}
-
-	</div>
-</div>
 
 <!-- Main Chart -->
 {#if chartStore}

@@ -45,12 +45,6 @@
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
 
-	let chartTitle = $derived(
-		activeMetric === 'energy'
-			? `Energy (${displayInterval === '1M' ? 'monthly' : 'daily'})`
-			: `Power (${displayInterval === '30m' ? '30min' : '5min'})`
-	);
-
 	/**
 	 * Handle viewport change — auto-switch between power and energy
 	 * @param {{ start: number, end: number }} range
@@ -66,6 +60,13 @@
 		} else if (activeMetric === 'energy' && durationDays <= 13) {
 			targetMetric = 'power';
 			targetInterval = '5m';
+		}
+
+		// Auto-adjust display interval based on zoom level
+		if (activeMetric === 'power') {
+			displayInterval = durationDays < 2 ? '5m' : '30m';
+		} else if (activeMetric === 'energy') {
+			displayInterval = durationDays >= 366 ? '1M' : '1d';
 		}
 
 		if (targetMetric !== activeMetric || targetInterval !== activeInterval) {
@@ -207,13 +208,12 @@
 						facility={filteredFacility}
 						powerData={filteredPowerData}
 						{timeZone}
-						title={chartTitle}
 						chartHeightPx={chartPixelHeight}
 						useDivergingStack={true}
 						interval={activeInterval}
 						metric={activeMetric}
+						{displayInterval}
 						onviewportchange={handleViewportChange}
-						ondisplayintervalchange={(intv) => (displayInterval = intv)}
 					/>
 				</div>
 
