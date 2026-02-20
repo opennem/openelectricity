@@ -263,7 +263,7 @@
 	}
 
 	/** Guard: when true, handleViewportChange preserves selectedRange */
-	let isPresetNavigation = false;
+	let isPresetNavigation = true;
 
 	/**
 	 * Handle quick range selection (1D/3D/7D/1M/6M/1Y/5Y/All)
