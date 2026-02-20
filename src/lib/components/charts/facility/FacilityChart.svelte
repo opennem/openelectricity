@@ -18,6 +18,8 @@
 	import { computeEnergyGridlines } from '$lib/components/charts/v2/energy-gridlines.js';
 	import { formatXAxis, getDayStartDates } from '$lib/components/charts/v2/formatters.js';
 	import chroma from 'chroma-js';
+	import Plus from '@lucide/svelte/icons/plus';
+	import Minus from '@lucide/svelte/icons/minus';
 	import { untrack } from 'svelte';
 
 	/**
@@ -46,6 +48,7 @@
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
 	 * @property {((interval: string) => void)} [ondisplayintervalchange] - Callback when display interval changes (power: '5m'/'30m', energy: '1d'/'1M')
 	 * @property {boolean} [showIntervalToggle] - Whether to show the interval toggle buttons (default: true)
+	 * @property {boolean} [showAnnotations] - Whether to show capacity reference lines (default: false)
 	 */
 
 	/** @type {Props} */
@@ -64,7 +67,8 @@
 		onviewportchange,
 		onvisibledata,
 		ondisplayintervalchange,
-		showIntervalToggle = true
+		showIntervalToggle = true,
+		showAnnotations = false
 	} = $props();
 
 	/**
@@ -472,13 +476,9 @@
 		if (isLine || isChangeSince) {
 			const maxCapacity = Math.max(capacitySums.positive, capacitySums.negative);
 			if (maxCapacity > 0) {
-				chartStore.yReferenceLines = [
-					{
-						value: maxCapacity,
-						label: 'Capacity',
-						colour: 'var(--chart-1)'
-					}
-				];
+				chartStore.yReferenceLines = showAnnotations
+					? [{ value: maxCapacity, label: 'Capacity', colour: 'var(--chart-1)' }]
+					: [];
 				const padding = 0.15;
 				chartStore.setYDomain([0, maxCapacity * (1 + padding)]);
 			} else {
@@ -503,7 +503,7 @@
 				colour: 'var(--chart-1)'
 			});
 		}
-		chartStore.yReferenceLines = refLines;
+		chartStore.yReferenceLines = showAnnotations ? refLines : [];
 
 		const padding = 0.15;
 		const yMax = capacitySums.positive > 0 ? capacitySums.positive * (1 + padding) : undefined;
@@ -865,7 +865,7 @@
 				disabled={isAtMaxZoom}
 				title="Zoom out"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+				<Minus size={14} />
 			</button>
 			<button
 				class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMinZoom ? 'text-mid-warm-grey cursor-not-allowed' : 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
@@ -873,7 +873,7 @@
 				disabled={isAtMinZoom}
 				title="Zoom in"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+				<Plus size={14} />
 			</button>
 		</div>
 	</div>
