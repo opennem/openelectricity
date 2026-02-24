@@ -30,12 +30,7 @@
 			class="container max-w-none lg:container block md:grid md:grid-cols-2 footer-info-grid gap-8 md:gap-48 text-sm md:after:content-[''] relative"
 		>
 			<div>
-				<p>
-					<strong>For any inquiries</strong>, suggestions, or feedback, contact the Open Electricity
-					team at
-					<a href="mailto:inquiries@openelectricity.org.au">inquiries@openelectricity.org.au</a>
-				</p>
-				<h5 class="mt-12">Acknowledgement of Country</h5>
+				<h5>Acknowledgement of Country</h5>
 				<p>
 					We pay our respects to the Traditional Custodians of the lands on which we live and work,
 					as well as the Traditional Custodians of the lands and waters we may visit during our
