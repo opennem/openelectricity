@@ -31,7 +31,12 @@
 			class="container max-w-none lg:container block md:grid md:grid-cols-2 footer-info-grid gap-8 md:gap-48 text-sm md:after:content-[''] relative"
 		>
 			<div>
-				<h5>Acknowledgement of Country</h5>
+				<p class="flex flex-col gap-4 md:flex-row md:gap-12 text-base mb-8">
+					<SectionLink href="/about" title="About" />
+					<SectionLink href="/newsletter" title="Newsletter" />
+				</p>
+
+				<h5 class="mt-12">Acknowledgement of Country</h5>
 				<p>
 					We pay our respects to the Traditional Custodians of the lands on which we live and work,
 					as well as the Traditional Custodians of the lands and waters we may visit during our
@@ -44,14 +49,21 @@
 				</p>
 			</div>
 			<div class="mt-16 md:mt-0">
-				<p class="flex flex-col gap-4 md:flex-row md:gap-12 text-base mb-8">
-					<SectionLink href="/about" title="About" />
+				<h5>For Developers</h5>
+				<p>
+					Access real-time and historical energy data from across Australia's electricity grid. Built for teams that need reliable, well-documented APIs and clear usage tooling.
+				</p>
+				<p class="flex flex-col gap-4 md:flex-row md:gap-12 text-base">
 					<SectionLink
-						href="https://docs.openelectricity.org.au/introduction"
+						href="https://platform.openelectricity.org.au/"
 						target="_blank"
-						title="Developer Resources"
+						title="Platform"
 					/>
-					<SectionLink href="/newsletter" title="Newsletter" />
+					<SectionLink
+						href="https://docs.openelectricity.org.au/"
+						target="_blank"
+						title="Documentation"
+					/>
 				</p>
 
 				<h5 class="mt-12">Transparency & Accountability</h5>
