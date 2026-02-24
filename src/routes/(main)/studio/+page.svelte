@@ -10,25 +10,10 @@
 			released: true
 		},
 		{
-			title: 'UI Components',
-			description: 'Modern UI components showcase using shadcn-svelte and Svelte 5 patterns.',
-			link: '/studio/ui-components'
-		},
-		{
-			title: 'Lens on Ember',
-			description: 'Visualises energy and emissions data from regions around the world.',
-			link: '/studio/lens-on-ember'
-		},
-		{
-			title: "Lens on Australia's electricity system and market",
-			description: 'Visualises energy, pricing and emissions data from Australia.',
-			link: '/studio/lens-on-au-grid'
-		},
-		{
 			title: "Timeline of Australia's power generation facilities",
 			description: 'Exploring power generation facilities from Australia.',
 			link: '/facilities?view=timeline',
-			disabled: false
+			released: true
 		},
 		{
 			title: 'Facility Explorer',
@@ -37,16 +22,26 @@
 			link: '/studio/facility-explorer'
 		},
 		{
-			title: 'Lens on Emissions',
-			description:
-				"Visualises the latest estimates of Australia's greenhouse gas emissions to 2040.",
-			link: '/studio/lens-on-emissions'
+			title: "Lens on Australia's electricity system and market",
+			description: 'Visualises energy, pricing and emissions data from Australia.',
+			link: '/studio/lens-on-au-grid'
 		},
 		{
 			title: 'Solar Heatmap',
 			description:
 				"Visualises solar's growing share of Australia's electricity generation since 2013.",
 			link: '/studio/solar'
+		},
+		{
+			title: 'Lens on Ember',
+			description: 'Visualises energy and emissions data from regions around the world.',
+			link: '/studio/lens-on-ember'
+		},
+		{
+			title: 'Lens on Emissions',
+			description:
+				"Visualises the latest estimates of Australia's greenhouse gas emissions to 2040.",
+			link: '/studio/lens-on-emissions'
 		},
 		{
 			title: 'TrackerGrid',
