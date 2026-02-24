@@ -227,17 +227,19 @@
 />
 
 <PageHeaderSimple>
-	<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
-	<div slot="main-heading">
-		<h1 class="tracking-widest text-center">Lens on Ember</h1>
-	</div>
-	<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
-	<div slot="sub-heading">
-		<p class="text-sm text-center w-full md:w-[800px] mx-auto">
-			Charts from Open Electricity. Data from
-			<a href="https://ember-energy.org/" target="_blank">Ember</a>.
-		</p>
-	</div>
+	{#snippet heading()}
+		<div>
+			<h1 class="tracking-widest text-center">Lens on Ember</h1>
+		</div>
+	{/snippet}
+	{#snippet subheading()}
+		<div>
+			<p class="text-sm text-center w-full md:w-[800px] mx-auto">
+				Charts from Open Electricity. Data from
+				<a href="https://ember-energy.org/" target="_blank">Ember</a>.
+			</p>
+		</div>
+	{/snippet}
 </PageHeaderSimple>
 
 <section class="py-12">

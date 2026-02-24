@@ -10,12 +10,16 @@
 />
 
 <PageHeaderSimple>
-	<div slot="main-heading">
-		<h1 class="tracking-widest text-center">TrackerGrid</h1>
-	</div>
-	<div slot="sub-heading">
-		<p class="text-sm text-center w-full md:w-[800px] mx-auto">TrackerGrid visualization tool.</p>
-	</div>
+	{#snippet heading()}
+		<div>
+			<h1 class="tracking-widest text-center">TrackerGrid</h1>
+		</div>
+	{/snippet}
+	{#snippet subheading()}
+		<div>
+			<p class="text-sm text-center w-full md:w-[800px] mx-auto">TrackerGrid visualization tool.</p>
+		</div>
+	{/snippet}
 </PageHeaderSimple>
 
 <section class="md:container py-12">

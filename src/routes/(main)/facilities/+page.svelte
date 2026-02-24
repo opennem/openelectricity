@@ -568,19 +568,21 @@
 />
 
 {#if !isFullscreen}
-	<PageHeaderSimple>
-		<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
-		<div slot="main-heading">
-			<h1 class="md:tracking-widest text-center text-xl md:text-6xl mb-0 md:mb-[0.5em]">Facilities</h1>
-		</div>
-		<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
-		<div slot="sub-heading" class="mt-1 md:mt-4">
-			<p class="text-xs md:text-sm text-center w-full md:w-[610px] mx-auto">
-				Explore Australia's power generation facilities across the NEM and WEM. View upcoming
-				projects on the timeline, browse the full list of facilities, or discover their locations on
-				the map.
-			</p>
-		</div>
+	<PageHeaderSimple class="!h-[80px] md:!h-[300px]">
+		{#snippet heading()}
+			<div>
+				<h1 class="md:tracking-widest text-center text-xl md:text-6xl mb-0 md:mb-[0.5em]">Facilities</h1>
+			</div>
+		{/snippet}
+		{#snippet subheading()}
+			<div class="hidden md:block mt-4">
+				<p class="text-sm text-center w-[610px] mx-auto">
+					Explore Australia's power generation facilities across the NEM and WEM. View upcoming
+					projects on the timeline, browse the full list of facilities, or discover their locations on
+					the map.
+				</p>
+			</div>
+		{/snippet}
 	</PageHeaderSimple>
 {/if}
 
@@ -662,7 +664,7 @@
 		bind:clientHeight={containerHeight}
 		class="relative grid grid-cols-1 md:grid-cols-12 {isFullscreen
 			? 'flex-1 min-h-0'
-			: 'h-[calc(100dvh-280px)] md:h-[calc(100dvh-500px)] min-h-[400px]'}"
+			: 'h-[calc(100dvh-280px)] md:h-[calc(100dvh-500px)] min-h-[800px]'}"
 	>
 		<!-- Left panel: List or Timeline (5/12 width on desktop) -->
 		<div

@@ -113,15 +113,19 @@
 />
 
 <PageHeaderSimple>
-	<div slot="main-heading">
-		<h1 class="tracking-widest text-center">When the Sun Powers the Grid</h1>
-	</div>
-	<div slot="sub-heading">
-		<p class="text-sm text-center w-full md:w-[600px] mx-auto">
-			Each row is a day, each column a 30-minute interval. Colour intensity shows solar's percentage
-			of total NEM generation — from pale yellow (low) to deep red (high).
-		</p>
-	</div>
+	{#snippet heading()}
+		<div>
+			<h1 class="tracking-widest text-center">When the Sun Powers the Grid</h1>
+		</div>
+	{/snippet}
+	{#snippet subheading()}
+		<div>
+			<p class="text-sm text-center w-full md:w-[600px] mx-auto">
+				Each row is a day, each column a 30-minute interval. Colour intensity shows solar's percentage
+				of total NEM generation — from pale yellow (low) to deep red (high).
+			</p>
+		</div>
+	{/snippet}
 </PageHeaderSimple>
 
 <div class="container max-w-7xl mx-auto px-4 py-12">

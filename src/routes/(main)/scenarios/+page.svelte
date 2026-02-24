@@ -523,18 +523,20 @@
 />
 
 <PageHeaderSimple>
-	<!-- @migration-task: migrate this slot by hand, `main-heading` is an invalid identifier -->
-	<div slot="main-heading">
-		<h1 class="tracking-widest text-center">Scenario Explorer</h1>
-	</div>
-	<!-- @migration-task: migrate this slot by hand, `sub-heading` is an invalid identifier -->
-	<div slot="sub-heading">
-		<p class="text-sm text-center w-full md:w-[600px] mx-auto">
-			Explore the future of Australia’s electricity market. A range of modelled scenarios exist
-			which envision the future of the NEM. These scenarios aim to steer Australia towards a
-			cost-effective, reliable and safe energy system en route to a zero-emissions network
-		</p>
-	</div>
+	{#snippet heading()}
+		<div>
+			<h1 class="tracking-widest text-center">Scenario Explorer</h1>
+		</div>
+	{/snippet}
+	{#snippet subheading()}
+		<div>
+			<p class="text-sm text-center w-full md:w-[600px] mx-auto">
+				Explore the future of Australia's electricity market. A range of modelled scenarios exist
+				which envision the future of the NEM. These scenarios aim to steer Australia towards a
+				cost-effective, reliable and safe energy system en route to a zero-emissions network
+			</p>
+		</div>
+	{/snippet}
 </PageHeaderSimple>
 
 <Filters />

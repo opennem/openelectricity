@@ -366,14 +366,18 @@
 />
 
 <PageHeaderSimple>
-	<div slot="main-heading">
-		<h1 class="tracking-widest text-center">Generation Trends & Profiles</h1>
-	</div>
-	<div slot="sub-heading">
-		{#if dateRange}
-			<p class="text-lg text-gray-600 text-center mt-2">{dateRange}</p>
-		{/if}
-	</div>
+	{#snippet heading()}
+		<div>
+			<h1 class="tracking-widest text-center">Generation Trends & Profiles</h1>
+		</div>
+	{/snippet}
+	{#snippet subheading()}
+		<div>
+			{#if dateRange}
+				<p class="text-lg text-gray-600 text-center mt-2">{dateRange}</p>
+			{/if}
+		</div>
+	{/snippet}
 </PageHeaderSimple>
 
 <!-- Fuel Technology Selector -->
