@@ -20,7 +20,8 @@
 		onclick,
 		hoveredFacility = null,
 		clickedFacility = null,
-		selectedFacilityCode = null
+		selectedFacilityCode = null,
+		hideToday = false
 	} = $props();
 
 	// Scroll to facility when clickedFacility changes (from map click)
@@ -54,12 +55,14 @@
 
 	let flattenedData = $derived.by(() => {
 		/** @type {*[]} */
-		let data = [
-			{
-				zonedDateTime: today(getLocalTimeZone()),
-				isToday: true
-			}
-		];
+		let data = hideToday
+			? []
+			: [
+					{
+						zonedDateTime: today(getLocalTimeZone()),
+						isToday: true
+					}
+				];
 		facilities.forEach((facility) => {
 			const offset = facility.network_id === 'WEM' ? '+08:00' : '+10:00';
 			facility.units.forEach((/** @type {*} */ unit) => {

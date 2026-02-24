@@ -773,7 +773,16 @@
 					/>
 				</div>
 			{:else if selectedView === 'timeline'}
-				{#if showTodayButton && searchTerm.length === 0}
+				{#if availableYears.length > 0}
+					<YearScrubber
+						years={availableYears}
+						active={yearFilterEnabled}
+						{selectedYear}
+						ontoggleyearfilter={handleToggleYearFilter}
+						onyearselect={handleYearSelect}
+					/>
+				{/if}
+				{#if showTodayButton && searchTerm.length === 0 && !yearFilterEnabled}
 					<div
 						class="absolute z-20 w-full flex justify-center pointer-events-none"
 						class:top-4={todayButtonPosition === 'top'}
@@ -801,6 +810,7 @@
 							{hoveredFacility}
 							{clickedFacility}
 							selectedFacilityCode={selectedFacility?.code ?? null}
+							hideToday={yearFilterEnabled}
 							ontodaybuttonvisible={handleTodayButtonVisible}
 							scrollContainer={timelineScrollContainer}
 							scrollToToday={!hasInitiallyScrolledToToday}
@@ -812,15 +822,6 @@
 						/>
 					</div>
 				</div>
-				{#if availableYears.length > 0}
-					<YearScrubber
-						years={availableYears}
-						active={yearFilterEnabled}
-						{selectedYear}
-						ontoggleyearfilter={handleToggleYearFilter}
-						onyearselect={handleYearSelect}
-					/>
-				{/if}
 			{/if}
 			{@render summaryBar()}
 		</div>

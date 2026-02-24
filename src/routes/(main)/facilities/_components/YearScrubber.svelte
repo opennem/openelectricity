@@ -29,36 +29,41 @@
 	});
 </script>
 
-<div class="flex items-center gap-2 px-3 py-2 border-t border-mid-warm-grey bg-white">
+<div class="flex items-center gap-2 px-3 py-2 border-b border-mid-warm-grey bg-white">
 	<button
-		class="shrink-0 flex items-center justify-center w-8 h-8 rounded cursor-pointer transition-colors {active
+		class="shrink-0 flex items-center gap-1.5 px-2 h-8 rounded cursor-pointer transition-colors {active
 			? 'bg-dark-grey text-white'
 			: 'text-mid-grey hover:bg-warm-grey'}"
 		onclick={ontoggleyearfilter}
 	>
 		<CalendarClock size={14} />
+		{#if !active}
+			<span class="text-xxs font-space whitespace-nowrap">Filter by year</span>
+		{/if}
 	</button>
 
-	<div class="w-px h-5 bg-mid-warm-grey shrink-0 self-center"></div>
+	{#if active}
+		<div class="w-px h-5 bg-mid-warm-grey shrink-0 self-center"></div>
 
-	<div
-		bind:this={scrollContainer}
-		class="flex gap-1 overflow-x-auto"
-		style="scrollbar-width: none;"
-	>
-		{#each sortedYears as year (year)}
-			<button
-				data-year={year}
-				class="shrink-0 px-2 py-1 rounded text-xxs font-space cursor-pointer transition-colors whitespace-nowrap {active &&
-				year === selectedYear
-					? 'bg-dark-grey text-white'
-					: 'text-mid-grey hover:bg-warm-grey'}"
-				onclick={() => onyearselect(year)}
-			>
-				{year}
-			</button>
-		{/each}
-	</div>
+		<div
+			bind:this={scrollContainer}
+			class="flex gap-1 overflow-x-auto"
+			style="scrollbar-width: none;"
+		>
+			{#each sortedYears as year (year)}
+				<button
+					data-year={year}
+					class="shrink-0 px-2 py-1 rounded text-xxs font-space cursor-pointer transition-colors whitespace-nowrap {year ===
+					selectedYear
+						? 'bg-dark-grey text-white'
+						: 'text-mid-grey hover:bg-warm-grey'}"
+					onclick={() => onyearselect(year)}
+				>
+					{year}
+				</button>
+			{/each}
+		</div>
+	{/if}
 </div>
 
 <style>
