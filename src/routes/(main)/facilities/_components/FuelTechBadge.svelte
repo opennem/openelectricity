@@ -59,7 +59,7 @@
 	title="{fueltech_id} ({status_id})"
 >
 	<FuelTechIcon fuelTech={fueltech_id} sizeClass={sizeClasses.iconSize} />
-	{#if status_id}
+	{#if status_id && (status_id !== 'operating' || isCommissioning)}
 		<div class="absolute {sizeClasses.statusPosition} z-10">
 			<FacilityStatusIcon status={status_id} {isCommissioning} />
 		</div>
