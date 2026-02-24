@@ -11,12 +11,14 @@
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import formatValue from './_utils/format-value';
+	import getUnitYear from './_utils/get-unit-year';
 	import { statusColours } from './_utils/filters.js';
 
 	import Map from './Map.svelte';
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
 	import List from './List.svelte';
+	import YearScrubber from './_components/YearScrubber.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
@@ -92,6 +94,11 @@
 	/** @type {HTMLElement | null} */
 	let timelineScrollContainer = $state(null);
 	let hasInitiallyScrolledToToday = $state(false);
+
+	// Year filter state
+	let yearFilterEnabled = $state(false);
+	/** @type {number | null} */
+	let selectedYear = $state(null);
 
 	let searchTerm = $state('');
 	/** @type {any | null} */
@@ -277,6 +284,32 @@
 		facilities ? filterFacilities(facilities, searchTerm, capacityRange, selectedView) : []
 	);
 
+	// All unique years from filtered facilities (pre-year-filter) — always shows full range in scrubber
+	let availableYears = $derived.by(() => {
+		/** @type {Set<number>} */
+		const years = new Set();
+		for (const facility of filteredFacilities) {
+			for (const unit of facility.units ?? []) {
+				const year = getUnitYear(unit, facility.network_id);
+				if (year !== null) years.add(year);
+			}
+		}
+		return [...years].sort((a, b) => a - b);
+	});
+
+	// When year filter is active, keep only facilities with units matching selectedYear
+	let yearFilteredFacilities = $derived.by(() => {
+		if (!yearFilterEnabled || selectedYear === null) return filteredFacilities;
+		return filteredFacilities
+			.map((facility) => ({
+				...facility,
+				units: (facility.units ?? []).filter(
+					(/** @type {any} */ unit) => getUnitYear(unit, facility.network_id) === selectedYear
+				)
+			}))
+			.filter((facility) => facility.units.length > 0);
+	});
+
 	/**
 	 * Check if facility has valid location data
 	 * @param {any} facility
@@ -301,22 +334,22 @@
 		return facilityList.filter(hasValidLocation);
 	}
 
-	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
+	let filteredWithLocation = $derived(filterWithLocation(yearFilteredFacilities));
 
 	// Get power data from server (only if a facility is selected)
 	let powerData = $derived(
 		data.selectedFacility === selectedFacility?.code ? (data.powerData ?? null) : null
 	);
 
-	// Calculate totals for filtered facilities
-	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
+	// Calculate totals for filtered facilities (after year filter)
+	let filteredUnits = $derived(yearFilteredFacilities?.flatMap((f) => f.units) ?? []);
 	let totalCapacityMW = $derived(
 		filteredUnits.reduce(
 			(sum, u) => sum + (Number(u.capacity_maximum) || Number(u.capacity_registered) || 0),
 			0
 		)
 	);
-	let totalFacilitiesCount = $derived(filteredFacilities?.length ?? 0);
+	let totalFacilitiesCount = $derived(yearFilteredFacilities?.length ?? 0);
 	let totalUnitsCount = $derived(filteredUnits?.length ?? 0);
 
 	// Calculate capacity by status
@@ -481,11 +514,59 @@
 	}
 
 	/**
+	 * Toggle year filter on/off
+	 */
+	function handleToggleYearFilter() {
+		if (yearFilterEnabled) {
+			// Turn off
+			yearFilterEnabled = false;
+			selectedYear = null;
+		} else {
+			// Turn on — default to current year or nearest available
+			const currentYear = new Date().getFullYear();
+			if (availableYears.includes(currentYear)) {
+				selectedYear = currentYear;
+			} else if (availableYears.length > 0) {
+				// Find nearest year to current
+				selectedYear = availableYears.reduce((nearest, y) =>
+					Math.abs(y - currentYear) < Math.abs(nearest - currentYear) ? y : nearest
+				);
+			}
+			yearFilterEnabled = true;
+		}
+	}
+
+	/**
+	 * Select a specific year (auto-enables filter if off)
+	 * @param {number} year
+	 */
+	function handleYearSelect(year) {
+		selectedYear = year;
+		if (!yearFilterEnabled) {
+			yearFilterEnabled = true;
+		}
+	}
+
+	// Guard: auto-disable year filter if selectedYear is no longer available
+	$effect(() => {
+		if (yearFilterEnabled && selectedYear !== null && !availableYears.includes(selectedYear)) {
+			yearFilterEnabled = false;
+			selectedYear = null;
+		}
+	});
+
+	/**
 	 * @param {'list' | 'timeline' | 'map'} value
 	 */
 	function handleSelectedViewChange(value) {
 		// Optimistic update
 		selectedView = value;
+
+		// Auto-disable year filter when switching away from timeline
+		if (value !== 'timeline') {
+			yearFilterEnabled = false;
+			selectedYear = null;
+		}
 
 		// Reset capacity range to match new view's bounds
 		// (timeline uses unit capacities, list/map uses facility capacities)
@@ -675,7 +756,7 @@
 			{#if selectedView === 'list' || selectedView === 'map'}
 				<div class="flex-1 overflow-y-auto min-h-0 mt-4">
 					<List
-						facilities={filteredFacilities}
+						facilities={yearFilteredFacilities}
 						{hoveredFacility}
 						{clickedFacility}
 						selectedFacilityCode={selectedFacility?.code ?? null}
@@ -731,6 +812,15 @@
 						/>
 					</div>
 				</div>
+				{#if availableYears.length > 0}
+					<YearScrubber
+						years={availableYears}
+						active={yearFilterEnabled}
+						{selectedYear}
+						ontoggleyearfilter={handleToggleYearFilter}
+						onyearselect={handleYearSelect}
+					/>
+				{/if}
 			{/if}
 			{@render summaryBar()}
 		</div>
