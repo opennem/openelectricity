@@ -37,6 +37,10 @@
 	 *   onregionschange?: (values: string[]) => void,
 	 *   onfueltechschange?: (values: string[]) => void,
 	 *   oncapacityrangechange?: (range: [number, number]) => void,
+	 *   yearRange?: [number, number],
+	 *   yearMin?: number,
+	 *   yearMax?: number,
+	 *   onyearrangechange?: (range: [number, number]) => void,
 	 *   onsearchchange?: (value: string) => void,
 	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void,
 	 *   onfullscreenchange?: () => void
@@ -56,6 +60,10 @@
 		onregionschange,
 		onfueltechschange,
 		oncapacityrangechange,
+		yearRange = [1900, 2040],
+		yearMin = 1900,
+		yearMax = 2040,
+		onyearrangechange,
 		onsearchchange,
 		onviewchange,
 		onfullscreenchange
@@ -162,6 +170,15 @@
 			return `${formatted} GW`;
 		}
 		return `${Math.round(val)} MW`;
+	}
+
+	/**
+	 * Format year value for display
+	 * @param {number} val
+	 * @returns {string}
+	 */
+	function formatYear(val) {
+		return String(val);
 	}
 
 	// ============================================
@@ -337,6 +354,11 @@
 	onstatuseschange={(values, isMetaPressed) => handleStatusChange(values[0], isMetaPressed)}
 	onfueltechschange={handleFuelTechChange}
 	oncapacityrangechange={(range) => oncapacityrangechange?.(range)}
+	{yearRange}
+	{yearMin}
+	{yearMax}
+	onyearrangechange={(range) => onyearrangechange?.(range)}
+	onclearyears={() => onyearrangechange?.([yearMin, yearMax])}
 	onclearregions={() => onregionschange?.([])}
 	onclearstatuses={() => onstatuseschange?.([])}
 	onclearfueltechs={() => onfueltechschange?.([])}
@@ -448,12 +470,25 @@
 					max={capacityMax}
 					value={capacityRange}
 					step={10}
-					label="Sizes"
+					label="Capacity"
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
 					onchange={(range) => oncapacityrangechange?.(range)}
 					onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 					formatValue={formatCapacity}
+				/>
+
+				<RangeDropdown
+					min={yearMin}
+					max={yearMax}
+					value={yearRange}
+					step={1}
+					label="Years"
+					paddingX="pl-5 pr-4"
+					paddingY="py-3"
+					onchange={(range) => onyearrangechange?.(range)}
+					onclear={() => onyearrangechange?.([yearMin, yearMax])}
+					formatValue={formatYear}
 				/>
 			</div>
 		</div>

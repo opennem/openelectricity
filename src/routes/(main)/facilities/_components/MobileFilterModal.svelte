@@ -27,7 +27,12 @@
 	 *   onclearregions: () => void,
 	 *   onclearstatuses: () => void,
 	 *   onclearfueltechs: () => void,
-	 *   onclearcapacity: () => void
+	 *   onclearcapacity: () => void,
+	 *   yearRange: [number, number],
+	 *   yearMin: number,
+	 *   yearMax: number,
+	 *   onyearrangechange: (range: [number, number]) => void,
+	 *   onclearyears: () => void
 	 * }}
 	 */
 	let {
@@ -50,10 +55,16 @@
 		onclearregions,
 		onclearstatuses,
 		onclearfueltechs,
-		onclearcapacity
+		onclearcapacity,
+		yearRange,
+		yearMin,
+		yearMax,
+		onyearrangechange,
+		onclearyears
 	} = $props();
 
 	let isCapacityFiltered = $derived(capacityRange[0] > capacityMin || capacityRange[1] < capacityMax);
+	let isYearFiltered = $derived(yearRange[0] > yearMin || yearRange[1] < yearMax);
 </script>
 
 {#if open}
@@ -124,6 +135,29 @@
 					step={10}
 					onchange={oncapacityrangechange}
 					formatValue={formatCapacity}
+				/>
+			</div>
+
+			<div class="flex flex-col gap-2">
+				<div class="flex items-center justify-between">
+					<span class="text-sm font-medium text-dark-grey">Year</span>
+					{#if isYearFiltered}
+						<button
+							type="button"
+							class="text-xs text-mid-grey hover:text-dark-grey transition-colors cursor-pointer"
+							onclick={onclearyears}
+						>
+							Clear
+						</button>
+					{/if}
+				</div>
+				<RangeSlider
+					min={yearMin}
+					max={yearMax}
+					value={yearRange}
+					step={1}
+					onchange={onyearrangechange}
+					formatValue={(v) => String(v)}
 				/>
 			</div>
 		</section>

@@ -61,6 +61,11 @@ export async function load({ url }) {
 	const capacityMaxParam = searchParams.get('capacity_max');
 	const capacityMin = capacityMinParam ? parseInt(capacityMinParam, 10) : null;
 	const capacityMax = capacityMaxParam ? parseInt(capacityMaxParam, 10) : null;
+	// Year range - parsed on client, just pass through
+	const yearMinParam = searchParams.get('year_min');
+	const yearMaxParam = searchParams.get('year_max');
+	const yearMin = yearMinParam ? parseInt(yearMinParam, 10) : null;
+	const yearMax = yearMaxParam ? parseInt(yearMaxParam, 10) : null;
 	const selectedFacility = searchParams.get('facility') || null;
 
 	const filterParams = { statuses, regions, fuelTechs };
@@ -78,6 +83,8 @@ export async function load({ url }) {
 			fuelTechs,
 			capacityMin,
 			capacityMax,
+			yearMin,
+			yearMax,
 			selectedFacility,
 			powerData,
 			fromCache: true
@@ -126,6 +133,8 @@ export async function load({ url }) {
 		fuelTechs,
 		capacityMin,
 		capacityMax,
+		yearMin,
+		yearMax,
 		selectedFacility,
 		powerData,
 		fromCache: false
