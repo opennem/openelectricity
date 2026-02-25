@@ -11,6 +11,7 @@
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import formatValue from './_utils/format-value';
+	import getUnitYear from './_utils/get-unit-year';
 	import { statusColours } from './_utils/filters.js';
 
 	import Map from './Map.svelte';
@@ -55,6 +56,8 @@
 	let fuelTechs = $state([]);
 	/** @type {[number, number]} */
 	let capacityRange = $state(/** @type {[number, number]} */ ([0, 10000]));
+	/** @type {[number, number]} */
+	let yearRange = $state(/** @type {[number, number]} */ ([1900, 2040]));
 	/** @type {'list' | 'timeline' | 'map'} */
 	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ (data.view));
 	/** @type {any | null} */
@@ -84,6 +87,17 @@
 		const minCapacity = minFromUrl ?? bounds.min;
 		const maxCapacity = maxFromUrl ?? bounds.max;
 		capacityRange = [minCapacity, maxCapacity];
+	});
+
+	// Separate effect to initialize year range when data changes
+	$effect(() => {
+		const minFromUrl = data.yearMin;
+		const maxFromUrl = data.yearMax;
+
+		const bounds = untrack(() => yearBounds);
+		const minYear = minFromUrl ?? bounds.min;
+		const maxYear = maxFromUrl ?? bounds.max;
+		yearRange = [minYear, maxYear];
 	});
 
 	let showTodayButton = $state(false);
@@ -230,17 +244,54 @@
 		return { min, max };
 	});
 
+	// Calculate year bounds from all unit dates
+	let yearBounds = $derived.by(() => {
+		if (!facilities || facilities.length === 0) return { min: 1900, max: 2040 };
+
+		/** @type {number[]} */
+		const years = facilities.flatMap((facility) =>
+			(facility.units ?? [])
+				.filter(
+					(/** @type {any} */ unit) =>
+						unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
+				)
+				.map((/** @type {any} */ unit) => getUnitYear(unit))
+				.filter((/** @type {number | null} */ y) => y !== null)
+		);
+
+		if (years.length === 0) return { min: 1900, max: 2040 };
+		return { min: Math.min(...years), max: Math.max(...years) };
+	});
+
 	/**
-	 * Filter facilities - in Timeline view, filter by unit capacity; in List/Map view, filter by facility capacity
+	 * Check if a unit's year falls within the year range
+	 * @param {any} unit
+	 * @param {[number, number]} yearRangeFilter
+	 * @param {boolean} isYearFiltered
+	 * @returns {boolean}
+	 */
+	function unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered) {
+		if (!isYearFiltered) return true;
+		const unitYear = getUnitYear(unit);
+		if (unitYear === null) return false;
+		return unitYear >= yearRangeFilter[0] && unitYear <= yearRangeFilter[1];
+	}
+
+	/**
+	 * Filter facilities - in Timeline view, filter by unit capacity/year; in List/Map view, filter by facility capacity/year
 	 * @param {any[]} facilityList
 	 * @param {string} searchTerm
 	 * @param {[number, number]} capacityRangeFilter
+	 * @param {[number, number]} yearRangeFilter
+	 * @param {{ min: number, max: number }} yearBoundsRef
 	 * @param {'list' | 'timeline' | 'map'} view
 	 * @returns {any[]}
 	 */
-	function filterFacilities(facilityList, searchTerm, capacityRangeFilter, view) {
+	function filterFacilities(facilityList, searchTerm, capacityRangeFilter, yearRangeFilter, yearBoundsRef, view) {
+		const isYearFiltered = yearRangeFilter[0] > yearBoundsRef.min || yearRangeFilter[1] < yearBoundsRef.max;
+
 		if (view === 'timeline') {
-			// Timeline: filter units by individual capacity, keep facilities with matching units
+			// Timeline: filter units by individual capacity and year, keep facilities with matching units
 			return facilityList
 				.map((facility) => ({
 					...facility,
@@ -250,12 +301,13 @@
 							unit.fueltech_id !== 'battery_discharging' &&
 							(searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true) &&
 							getUnitCapacity(unit) >= capacityRangeFilter[0] &&
-							getUnitCapacity(unit) <= capacityRangeFilter[1]
+							getUnitCapacity(unit) <= capacityRangeFilter[1] &&
+							unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered)
 					)
 				}))
 				.filter((facility) => facility.units && facility.units.length > 0);
 		} else {
-			// List/Map: filter by total facility capacity
+			// List/Map: filter by total facility capacity and year
 			return facilityList
 				.map((facility) => ({
 					...facility,
@@ -273,12 +325,18 @@
 						0
 					);
 					return totalCapacity >= capacityRangeFilter[0] && totalCapacity <= capacityRangeFilter[1];
+				})
+				.filter((facility) => {
+					if (!isYearFiltered) return true;
+					return facility.units.some(
+						(/** @type {any} */ unit) => unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered)
+					);
 				});
 		}
 	}
 
 	let filteredFacilities = $derived(
-		facilities ? filterFacilities(facilities, searchTerm, capacityRange, selectedView) : []
+		facilities ? filterFacilities(facilities, searchTerm, capacityRange, yearRange, yearBounds, selectedView) : []
 	);
 
 	/**
@@ -344,8 +402,12 @@
 	});
 
 	/**
+	 * @typedef {{statuses: string[], regions: string[], fuelTechs: string[], capacityRange: [number, number], yearRange: [number, number], view: string, facility?: string | null, fullscreen?: boolean}} NavParams
+	 */
+
+	/**
 	 * Build URL from params
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], capacityRange: [number, number], view: string, facility?: string | null, fullscreen?: boolean}} params
+	 * @param {NavParams} params
 	 * @returns {string}
 	 */
 	function buildUrl({
@@ -353,6 +415,7 @@
 		regions: r,
 		fuelTechs: ft,
 		capacityRange: cr,
+		yearRange: yr,
 		view: v,
 		facility: f = null,
 		fullscreen: fs = false
@@ -361,6 +424,10 @@
 		// Only include capacity range if it's been filtered from defaults
 		if (cr[0] > 0 || cr[1] < capacityBounds.max) {
 			url += `&capacity_min=${cr[0]}&capacity_max=${cr[1]}`;
+		}
+		// Only include year range if it's been filtered from defaults
+		if (yr[0] > yearBounds.min || yr[1] < yearBounds.max) {
+			url += `&year_min=${yr[0]}&year_max=${yr[1]}`;
 		}
 		if (f) {
 			url += `&facility=${f}`;
@@ -386,7 +453,7 @@
 
 	/**
 	 * Navigate and refetch data (for filter changes that affect API query)
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], capacityRange: [number, number], view: string, facility?: string | null, fullscreen?: boolean}} params
+	 * @param {NavParams} params
 	 */
 	function navigateWithRefetch(params) {
 		goto(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {
@@ -398,7 +465,7 @@
 	/**
 	 * Update URL without refetch (for view/facility/capacity changes that use cached data)
 	 * Uses replaceState to avoid triggering the load function
-	 * @param {{statuses: string[], regions: string[], fuelTechs: string[], capacityRange: [number, number], view: string, facility?: string | null, fullscreen?: boolean}} params
+	 * @param {NavParams} params
 	 */
 	function navigateWithoutRefetch(params) {
 		replaceState(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {});
@@ -415,6 +482,7 @@
 				regions,
 				fuelTechs,
 				capacityRange,
+				yearRange,
 				view: selectedView,
 				facility: selectedFacility?.code ?? null,
 				fullscreen: newFullscreen
@@ -457,7 +525,7 @@
 		// Optimistic update - immediately update local state
 		regions = values;
 		// Then navigate to fetch new data (filter change requires refetch)
-		navigateWithRefetch({ statuses, regions: values, fuelTechs, capacityRange, view: selectedView });
+		navigateWithRefetch({ statuses, regions: values, fuelTechs, capacityRange, yearRange, view: selectedView });
 	}
 
 	/**
@@ -467,7 +535,7 @@
 		// Optimistic update
 		fuelTechs = values;
 		// Filter change requires refetch
-		navigateWithRefetch({ statuses, regions, fuelTechs: values, capacityRange, view: selectedView });
+		navigateWithRefetch({ statuses, regions, fuelTechs: values, capacityRange, yearRange, view: selectedView });
 	}
 
 	/**
@@ -477,7 +545,7 @@
 		// Optimistic update
 		statuses = values;
 		// Filter change requires refetch
-		navigateWithRefetch({ statuses: values, regions, fuelTechs, capacityRange, view: selectedView });
+		navigateWithRefetch({ statuses: values, regions, fuelTechs, capacityRange, yearRange, view: selectedView });
 	}
 
 	/**
@@ -487,7 +555,17 @@
 		// Optimistic update
 		capacityRange = range;
 		// Capacity is client-side filtered, no refetch needed
-		navigateWithoutRefetch({ statuses, regions, fuelTechs, capacityRange: range, view: selectedView });
+		navigateWithoutRefetch({ statuses, regions, fuelTechs, capacityRange: range, yearRange, view: selectedView });
+	}
+
+	/**
+	 * @param {[number, number]} range
+	 */
+	function handleYearRangeChange(range) {
+		// Optimistic update
+		yearRange = range;
+		// Year is client-side filtered, no refetch needed
+		navigateWithoutRefetch({ statuses, regions, fuelTechs, capacityRange, yearRange: range, view: selectedView });
 	}
 
 	/**
@@ -500,6 +578,7 @@
 		// Reset capacity range to match new view's bounds
 		// (timeline uses unit capacities, list/map uses facility capacities)
 		capacityRange = [capacityBounds.min, capacityBounds.max];
+		yearRange = [yearBounds.min, yearBounds.max];
 
 		// View change uses cached data, no refetch needed
 		navigateWithoutRefetch({
@@ -507,6 +586,7 @@
 			regions,
 			fuelTechs,
 			capacityRange,
+			yearRange,
 			view: value,
 			facility: selectedFacility?.code ?? null
 		});
@@ -545,6 +625,7 @@
 					regions,
 					fuelTechs,
 					capacityRange,
+					yearRange,
 					view: selectedView,
 					facility: facility.code
 				});
@@ -563,6 +644,7 @@
 			regions,
 			fuelTechs,
 			capacityRange,
+			yearRange,
 			view: selectedView,
 			facility: null
 		});
@@ -610,11 +692,15 @@
 				{capacityRange}
 				capacityMin={capacityBounds.min}
 				capacityMax={capacityBounds.max}
+				{yearRange}
+				yearMin={yearBounds.min}
+				yearMax={yearBounds.max}
 				onsearchchange={handleSearchChange}
 				onstatuseschange={handleStatusesChange}
 				onregionschange={handleRegionsChange}
 				onfueltechschange={handleFuelTechsChange}
 				oncapacityrangechange={handleCapacityRangeChange}
+				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
 				onfullscreenchange={toggleFullscreen}
 			/>
