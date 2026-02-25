@@ -31,7 +31,7 @@
 				class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
 				>F</kbd
 			>
-			<span class="text-xs text-mid-grey">fullscreen</span>
+			<span class="text-xs text-mid-grey">enter/exit fullscreen</span>
 		</div>
 
 		<div class="flex items-center gap-1.5">
@@ -40,14 +40,6 @@
 				>/</kbd
 			>
 			<span class="text-xs text-mid-grey">search</span>
-		</div>
-
-		<div class="flex items-center gap-1.5">
-			<kbd
-				class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
-				>Esc</kbd
-			>
-			<span class="text-xs text-mid-grey">exit fullscreen</span>
 		</div>
 
 		<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
