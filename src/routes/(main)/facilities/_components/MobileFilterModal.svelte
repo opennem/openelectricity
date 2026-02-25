@@ -82,7 +82,7 @@
 			</div>
 		</header>
 
-		<section class="p-10 pb-0 w-full flex flex-col gap-6">
+		<section class="p-10 pb-12 w-full flex flex-col gap-8">
 			<HierarchicalMultiSelect
 				options={regionOptions}
 				selected={selectedRegions}
