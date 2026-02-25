@@ -33,6 +33,7 @@
 	 *   searchTerm?: string,
 	 *   selectedView?: 'list' | 'timeline' | 'map',
 	 *   isFullscreen?: boolean,
+	 *   showShortcuts?: boolean,
 	 *   onstatuseschange?: (values: string[]) => void,
 	 *   onregionschange?: (values: string[]) => void,
 	 *   onfueltechschange?: (values: string[]) => void,
@@ -52,6 +53,7 @@
 		searchTerm = '',
 		selectedView = 'timeline',
 		isFullscreen = false,
+		showShortcuts = false,
 		onstatuseschange,
 		onregionschange,
 		onfueltechschange,
@@ -398,13 +400,18 @@
 			{/if}
 
 			<!-- Desktop Search -->
-			<div class="hidden md:flex items-center ml-6 pl-6 border-l border-warm-grey">
+			<div class="relative hidden md:flex items-center ml-6 pl-6 border-l border-warm-grey">
 				<SearchInput
 					bind:this={desktopSearchRef}
 					value={searchTerm}
 					onchange={(value) => onsearchchange?.(value)}
 					class="w-[200px]"
 				/>
+				{#if showShortcuts}
+					<div class="absolute left-1/2 -translate-x-1/2 -bottom-7 pointer-events-none z-10">
+						<kbd class="text-xs font-sans text-dark-grey bg-white border border-dark-grey/30 rounded-md px-2 py-1 shadow-sm ring-1 ring-dark-grey/10">/</kbd>
+					</div>
+				{/if}
 			</div>
 
 			<!-- Desktop Filter Dropdowns -->
@@ -487,7 +494,7 @@
 	</div>
 
 	<!-- Fullscreen Toggle - Desktop -->
-	<div class="hidden md:block pl-4 ml-4 border-l border-warm-grey">
+	<div class="relative hidden md:flex items-center pl-4 ml-4 border-l border-warm-grey">
 		<button
 			onclick={() => onfullscreenchange?.()}
 			class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
@@ -501,6 +508,11 @@
 				<Maximize2 class="size-6 text-mid-grey" />
 			{/if}
 		</button>
+		{#if showShortcuts}
+			<div class="absolute left-1/2 -translate-x-1/2 -bottom-7 pointer-events-none z-10">
+				<kbd class="text-xs font-sans text-dark-grey bg-white border border-dark-grey/30 rounded-md px-2 py-1 shadow-sm ring-1 ring-dark-grey/10">F</kbd>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Mobile Filter Button -->
