@@ -21,6 +21,7 @@
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
+	import ShortcutsToast from './ShortcutsToast.svelte';
 
 	let { data } = $props();
 
@@ -120,6 +121,9 @@
 
 	// Container height for responsive detail panel
 	let containerHeight = $state(0);
+
+	// Shortcuts toast
+	let showShortcutsToast = $state(true);
 
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
 	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
@@ -430,6 +434,12 @@
 			toggleFullscreen();
 		}
 
+		// '?' key toggles shortcuts toast
+		if (e.key === '?') {
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+			showShortcutsToast = !showShortcutsToast;
+		}
+
 		// 'G' key toggles golf courses (easter egg)
 		if (e.key === 'g' || e.key === 'G') {
 			// Don't trigger if typing in an input
@@ -593,6 +603,7 @@
 				{searchTerm}
 				{selectedView}
 				{isFullscreen}
+				showShortcuts={showShortcutsToast}
 				selectedStatuses={statuses}
 				selectedFuelTechs={fuelTechs}
 				selectedRegions={regions}
@@ -862,3 +873,5 @@
 		{/if}
 	</section>
 </div>
+
+<ShortcutsToast visible={showShortcutsToast} ondismiss={() => (showShortcutsToast = false)} />
