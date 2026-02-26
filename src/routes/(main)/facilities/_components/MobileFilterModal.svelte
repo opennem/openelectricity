@@ -36,6 +36,7 @@
 	 *   onclearyears: () => void,
 	 *   isYearPlaying?: boolean,
 	 *   ontoggleyearanimation?: () => void,
+	 *   ghostYearRange?: [number, number] | null,
 	 *   selectedView?: 'list' | 'timeline' | 'map'
 	 * }}
 	 */
@@ -67,6 +68,7 @@
 		onclearyears,
 		isYearPlaying = false,
 		ontoggleyearanimation,
+		ghostYearRange = null,
 		selectedView = 'timeline'
 	} = $props();
 
@@ -180,6 +182,7 @@
 					step={1}
 					onchange={onyearrangechange}
 					formatValue={(v) => String(v)}
+					ghostRange={ghostYearRange}
 				/>
 			</div>
 		</section>

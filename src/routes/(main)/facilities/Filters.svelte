@@ -98,6 +98,7 @@
 	let isYearPlaying = $state(false);
 	/** @type {ReturnType<typeof setInterval> | null} */
 	let yearPlayInterval = $state(null);
+	let animationEndYear = 0;
 
 	let isYearFiltered = $derived(yearRange[0] > yearMin || yearRange[1] < yearMax);
 	let yearDisplayLabel = $derived.by(() => {
@@ -109,17 +110,19 @@
 	let showYearStopButton = $derived(isYearPlaying && !showYearDropdown);
 
 	function startYearAnimation() {
-		// If already at max, restart from beginning
-		if (yearRange[1] >= yearMax) {
-			onyearrangechange?.([yearRange[0], yearRange[0]]);
-		}
+		// Capture the selected end year as the animation upper bound
+		animationEndYear = yearRange[1];
+
+		// Reset to start of range
+		onyearrangechange?.([yearRange[0], yearRange[0]]);
 
 		isYearPlaying = true;
 		onyearplayingchange?.(true);
 		yearPlayInterval = setInterval(() => {
 			const nextEnd = yearRange[1] + 1;
 
-			if (nextEnd > yearMax) {
+			if (nextEnd > animationEndYear) {
+				onyearrangechange?.([yearRange[0], animationEndYear]);
 				stopYearAnimation();
 				return;
 			}
@@ -455,6 +458,7 @@
 	}}
 	{isYearPlaying}
 	ontoggleyearanimation={toggleYearAnimation}
+	ghostYearRange={isYearPlaying ? [yearRange[0], animationEndYear] : null}
 	{selectedView}
 	onclearregions={() => onregionschange?.([])}
 	onclearstatuses={() => onstatuseschange?.([])}
@@ -630,6 +634,7 @@
 									onyearrangechange?.(range);
 								}}
 								formatValue={formatYear}
+								ghostRange={isYearPlaying ? [yearRange[0], animationEndYear] : null}
 							/>
 
 							<div class="border-t border-warm-grey mt-4 pt-4">
