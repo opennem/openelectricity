@@ -8,7 +8,8 @@
 	 *   value?: [number, number],
 	 *   step?: number,
 	 *   onchange?: (value: [number, number]) => void,
-	 *   formatValue?: (value: number) => string
+	 *   formatValue?: (value: number) => string,
+	 *   ghostRange?: [number, number] | null
 	 * }}
 	 */
 	let {
@@ -17,7 +18,8 @@
 		value = [0, 100],
 		step = 1,
 		onchange,
-		formatValue = (v) => String(v)
+		formatValue = (v) => String(v),
+		ghostRange = null
 	} = $props();
 
 	// Local state for immediate UI feedback
@@ -59,6 +61,14 @@
 
 	let displayMin = $derived(parseFormattedValue(formatValue(localValue[0] ?? min)));
 	let displayMax = $derived(parseFormattedValue(formatValue(localValue[1] ?? max)));
+
+	// Ghost range positioning (percentage-based)
+	let ghostLeft = $derived(
+		ghostRange ? ((ghostRange[0] - min) / (max - min)) * 100 : 0
+	);
+	let ghostWidth = $derived(
+		ghostRange ? ((ghostRange[1] - ghostRange[0]) / (max - min)) * 100 : 0
+	);
 </script>
 
 <div class="flex flex-col gap-2 w-full">
@@ -88,9 +98,29 @@
 		{#snippet children({ thumbItems })}
 			<!-- Track -->
 			<span class="relative h-1.5 w-full grow overflow-hidden rounded-full bg-warm-grey">
+				{#if ghostRange}
+					<!-- Ghost range bar -->
+					<span
+						class="absolute h-full bg-mid-warm-grey"
+						style="left: {ghostLeft}%; width: {ghostWidth}%"
+					></span>
+				{/if}
+
 				<!-- Range (filled area between thumbs) -->
 				<Slider.Range class="absolute h-full bg-dark-grey" />
 			</span>
+
+			{#if ghostRange}
+				<!-- Ghost markers at ghost range endpoints -->
+				<span
+					class="absolute size-2 rounded-full bg-mid-warm-grey pointer-events-none"
+					style="left: {ghostLeft}%; translate: -50% 0"
+				></span>
+				<span
+					class="absolute size-2 rounded-full bg-mid-warm-grey pointer-events-none"
+					style="left: {ghostLeft + ghostWidth}%; translate: -50% 0"
+				></span>
+			{/if}
 
 			<!-- Thumbs -->
 			{#each thumbItems as { index } (index)}

@@ -1,9 +1,10 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { clickoutside } from '@svelte-put/clickoutside';
 	import { X } from '@lucide/svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import RangeSlider from './RangeSlider.svelte';
+	import { portal } from '$lib/actions/portal.js';
+	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 
 	/**
 	 * @type {{
@@ -34,6 +35,17 @@
 
 	let showDropdown = $state(false);
 
+	/** @type {HTMLElement | undefined} */
+	let triggerRef = $state();
+	/** @type {HTMLElement | undefined} */
+	let dropdownRef = $state();
+
+	function handleDocumentClick(/** @type {MouseEvent} */ e) {
+		const target = /** @type {Node} */ (e.target);
+		if (triggerRef?.contains(target) || dropdownRef?.contains(target)) return;
+		showDropdown = false;
+	}
+
 	let isFiltered = $derived(value[0] > min || value[1] < max);
 
 	let displayLabel = $derived.by(() => {
@@ -56,13 +68,11 @@
 </script>
 
 <svelte:window onscroll={handleScroll} />
+<svelte:document onclick={handleDocumentClick} />
 
-<div
-	class="relative text-base"
-	use:clickoutside
-	onclickoutside={() => (showDropdown = false)}
->
+<div class="relative text-sm lg:text-base">
 	<div
+		bind:this={triggerRef}
 		role="button"
 		tabindex="0"
 		onclick={() => (showDropdown = !showDropdown)}
@@ -70,7 +80,7 @@
 		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
 		class:hover:bg-warm-grey={!showDropdown}
 	>
-		<span class="font-semibold text-sm md:text-base">
+		<span class="font-semibold text-sm lg:text-base">
 			{displayLabel}
 		</span>
 
@@ -90,7 +100,10 @@
 
 	{#if showDropdown}
 		<div
-			class="border border-mid-grey bg-white absolute top-14 left-0 flex flex-col rounded-lg z-50 shadow-md p-4 min-w-[250px]"
+			bind:this={dropdownRef}
+			use:portal
+			use:dropdownPosition={{ trigger: triggerRef }}
+			class="border border-mid-grey bg-white fixed flex flex-col rounded-lg z-50 shadow-md p-4 min-w-[250px]"
 			transition:fly={{ y: -10, duration: 150 }}
 		>
 			<RangeSlider

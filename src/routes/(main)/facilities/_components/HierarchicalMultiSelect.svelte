@@ -1,12 +1,13 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { untrack } from 'svelte';
-	import { clickoutside } from '@svelte-put/clickoutside';
 
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import IconChevronDown from '$lib/icons/ChevronDown.svelte';
 	import { X } from '@lucide/svelte';
+	import { portal } from '$lib/actions/portal.js';
+	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 
 	/**
 	 * @typedef {Object} OptionChild
@@ -51,6 +52,17 @@
 
 	let showOptions = $state(false);
 	let isMetaPressed = $state(false);
+
+	/** @type {HTMLElement | undefined} */
+	let triggerRef = $state();
+	/** @type {HTMLElement | undefined} */
+	let dropdownRef = $state();
+
+	function handleDocumentClick(/** @type {MouseEvent} */ e) {
+		const target = /** @type {Node} */ (e.target);
+		if (triggerRef?.contains(target) || dropdownRef?.contains(target)) return;
+		showOptions = false;
+	}
 
 	/** @type {Record<string, boolean>} */
 	let expandedState = $state(
@@ -201,14 +213,12 @@
 </script>
 
 <svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} onscroll={handleScroll} />
+<svelte:document onclick={handleDocumentClick} />
 
-<div
-	class="relative w-full text-base"
-	use:clickoutside
-	onclickoutside={() => (showOptions = false)}
->
+<div class="relative w-full text-sm lg:text-base">
 	{#if !staticDisplay}
 		<div
+			bind:this={triggerRef}
 			role="button"
 			tabindex="0"
 			onclick={() => (showOptions = !showOptions)}
@@ -336,7 +346,10 @@
 		</ul>
 	{:else if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[500px] overflow-y-auto left-0 top-16"
+			bind:this={dropdownRef}
+			use:portal
+			use:dropdownPosition={{ trigger: triggerRef }}
+			class="border border-mid-grey bg-white fixed flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[500px] overflow-y-auto"
 			in:fly={{ y: -5, duration: 150 }}
 			out:fly={{ y: -5, duration: 150 }}
 		>

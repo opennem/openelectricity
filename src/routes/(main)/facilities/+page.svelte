@@ -139,6 +139,9 @@
 	// Shortcuts toast
 	let showShortcutsToast = $state(true);
 
+	// Year animation playing state (from Filters)
+	let isYearPlaying = $state(false);
+
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
 	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
 	let golfUnlocked = $state(false);
@@ -703,6 +706,7 @@
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
 				onfullscreenchange={toggleFullscreen}
+			onyearplayingchange={(playing) => (isYearPlaying = playing)}
 			/>
 		</div>
 	</div>
@@ -855,7 +859,8 @@
 					showTransmissionLines={mapShowTransmissionLines}
 					{transmissionLineVisibility}
 					showGolfCourses={mapShowGolfCourses}
-					scrollZoom={true}
+					scrollZoom={!isYearPlaying}
+					suppressFitBounds={isYearPlaying}
 					cooperativeGestures={!isFullscreen}
 					flyToOffsetX={0}
 					flyToOffsetY={selectedFacility ? (isFullscreen ? -0.25 : -0.15) : 0}

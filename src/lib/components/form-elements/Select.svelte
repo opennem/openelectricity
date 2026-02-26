@@ -1,9 +1,10 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { clickoutside } from '@svelte-put/clickoutside';
 
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import RadioBigButton from '$lib/components/form-elements/RadioBigButton.svelte';
+	import { portal } from '$lib/actions/portal.js';
+	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -38,6 +39,17 @@
 	let showOptions = $state(false);
 	let selectedValue = $derived(selected && selected.value ? selected.value || selected : selected);
 
+	/** @type {HTMLElement | undefined} */
+	let triggerRef = $state();
+	/** @type {HTMLElement | undefined} */
+	let dropdownRef = $state();
+
+	function handleDocumentClick(/** @type {MouseEvent} */ e) {
+		const target = /** @type {Node} */ (e.target);
+		if (triggerRef?.contains(target) || dropdownRef?.contains(target)) return;
+		showOptions = false;
+	}
+
 	/**
 	 * @param {{label: string, value: string | number | null | undefined}} option
 	 */
@@ -54,11 +66,12 @@
 	let translateToMiddle = $derived(align === 'middle' ? 'left-1/2 transform -translate-x-1/2' : '');
 </script>
 
-<div class="relative {widthClass} text-base">
+<svelte:document onclick={handleDocumentClick} />
+
+<div class="relative {widthClass} text-sm lg:text-base">
 	<button
+		bind:this={triggerRef}
 		onclick={() => (showOptions = !showOptions)}
-		use:clickoutside
-		onclickoutside={() => (showOptions = false)}
 		class="flex items-center gap-2 {paddingX} {paddingY} rounded-lg"
 		class:hover:bg-warm-grey={!staticDisplay}
 	>
@@ -97,11 +110,10 @@
 		</ul>
 	{:else if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[450px] overflow-y-scroll {translateToMiddle}"
-			class:top-16={position === 'bottom'}
-			class:bottom-16={position === 'top'}
-			class:left-0={align === 'left'}
-			class:right-0={align === 'right'}
+			bind:this={dropdownRef}
+			use:portal
+			use:dropdownPosition={{ trigger: triggerRef, align, position }}
+			class="border border-mid-grey bg-white fixed flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[450px] overflow-y-scroll"
 			in:fly={{ y: -5, duration: 150 }}
 			out:fly={{ y: -5, duration: 150 }}
 		>
