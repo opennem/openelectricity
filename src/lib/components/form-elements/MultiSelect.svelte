@@ -1,10 +1,11 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { clickoutside } from '@svelte-put/clickoutside';
 
 	import IconCheckMark from '$lib/icons/CheckMark.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import { X } from '@lucide/svelte';
+	import { portal } from '$lib/actions/portal.js';
+	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -51,6 +52,17 @@
 
 	let showOptions = $state(false);
 	let isMetaPressed = false;
+
+	/** @type {HTMLElement | undefined} */
+	let triggerRef = $state();
+	/** @type {HTMLElement | undefined} */
+	let dropdownRef = $state();
+
+	function handleDocumentClick(/** @type {MouseEvent} */ e) {
+		const target = /** @type {Node} */ (e.target);
+		if (triggerRef?.contains(target) || dropdownRef?.contains(target)) return;
+		showOptions = false;
+	}
 
 	// Show the selected option's label when only 1 is selected
 	let displayLabel = $derived.by(() => {
@@ -105,12 +117,9 @@
 </script>
 
 <svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} onscroll={handleScroll} />
+<svelte:document onclick={handleDocumentClick} />
 
-<div
-	class="relative w-full text-base"
-	use:clickoutside
-	onclickoutside={() => (showOptions = false)}
->
+<div class="relative w-full text-sm lg:text-base">
 	{#if staticDisplay}
 		<div class="flex items-center justify-between {paddingX} {paddingY} mb-2 text-sm">
 			<span class={selectedLabelClass}>
@@ -129,6 +138,7 @@
 		</div>
 	{:else}
 		<div
+			bind:this={triggerRef}
 			role="button"
 			tabindex="0"
 			onclick={() => (showOptions = !showOptions)}
@@ -136,7 +146,7 @@
 			class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
 			class:hover:bg-warm-grey={!showOptions}
 		>
-			<span class={`${selectedLabelClass} text-sm md:text-base`}>
+			<span class={`${selectedLabelClass} text-sm lg:text-base`}>
 				{displayLabel}
 			</span>
 
@@ -193,11 +203,10 @@
 		</ul>
 	{:else if showOptions}
 		<ul
-			class="border border-mid-grey bg-white absolute flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[500px] overflow-y-scroll"
-			class:top-16={position === 'bottom'}
-			class:bottom-16={position === 'top'}
-			class:left-0={align === 'left'}
-			class:right-0={align === 'right'}
+			bind:this={dropdownRef}
+			use:portal
+			use:dropdownPosition={{ trigger: triggerRef, align, position }}
+			class="border border-mid-grey bg-white fixed flex flex-col rounded-lg z-50 shadow-md p-2 text-sm max-h-[500px] overflow-y-scroll"
 			in:fly={{ y: -5, duration: 150 }}
 			out:fly={{ y: -5, duration: 150 }}
 		>

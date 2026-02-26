@@ -7,9 +7,10 @@
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2, Play, Pause, Square } from '@lucide/svelte';
-	import { clickoutside } from '@svelte-put/clickoutside';
 	import { fly } from 'svelte/transition';
 	import { onDestroy } from 'svelte';
+	import { portal } from '$lib/actions/portal.js';
+	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import RangeDropdown from '$lib/components/ui/range-slider/RangeDropdown.svelte';
@@ -95,10 +96,22 @@
 	// ============================================
 
 	let showYearDropdown = $state(false);
+	/** @type {HTMLElement | undefined} */
+	let yearTriggerRef = $state();
+	/** @type {HTMLElement | undefined} */
+	let yearDropdownRef = $state();
+
+	function handleYearDocumentClick(/** @type {MouseEvent} */ e) {
+		const target = /** @type {Node} */ (e.target);
+		if (yearTriggerRef?.contains(target) || yearDropdownRef?.contains(target)) return;
+		showYearDropdown = false;
+	}
 	let isYearPlaying = $state(false);
 	/** @type {ReturnType<typeof setInterval> | null} */
 	let yearPlayInterval = $state(null);
 	let animationEndYear = 0;
+	/** @type {[number, number] | null} */
+	let animationOriginalRange = null;
 
 	let isYearFiltered = $derived(yearRange[0] > yearMin || yearRange[1] < yearMax);
 	let yearDisplayLabel = $derived.by(() => {
@@ -110,7 +123,8 @@
 	let showYearStopButton = $derived(isYearPlaying && !showYearDropdown);
 
 	function startYearAnimation() {
-		// Capture the selected end year as the animation upper bound
+		// Capture the selected range before animation begins
+		animationOriginalRange = /** @type {[number, number]} */ ([...yearRange]);
 		animationEndYear = yearRange[1];
 
 		// Reset to start of range
@@ -138,6 +152,15 @@
 			clearInterval(yearPlayInterval);
 			yearPlayInterval = null;
 		}
+	}
+
+	function stopAndResetYearAnimation() {
+		const originalRange = animationOriginalRange;
+		stopYearAnimation();
+		if (originalRange) {
+			onyearrangechange?.(originalRange);
+		}
+		animationOriginalRange = null;
 	}
 
 	function handleYearDropdownScroll() {
@@ -425,7 +448,7 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} onscroll={handleYearDropdownScroll} />
-<svelte:document onfullscreenchange={handleFullscreenChange} />
+<svelte:document onfullscreenchange={handleFullscreenChange} onclick={handleYearDocumentClick} />
 
 <!-- Mobile Filter Modal -->
 <MobileFilterModal
@@ -457,7 +480,10 @@
 		onyearrangechange?.([yearMin, yearMax]);
 	}}
 	{isYearPlaying}
-	ontoggleyearanimation={toggleYearAnimation}
+	onplayyearanimation={() => {
+		startYearAnimation();
+		showMobileFilterOptions = false;
+	}}
 	ghostYearRange={isYearPlaying ? [yearRange[0], animationEndYear] : null}
 	{selectedView}
 	onclearregions={() => onregionschange?.([])}
@@ -519,19 +545,15 @@
 					/>
 				</div>
 
-				{#if selectedView === 'map'}
+				{#if isYearPlaying}
 					<div class="md:hidden flex items-center gap-1">
 						<span class="text-xs text-mid-grey whitespace-nowrap">{yearDisplayLabel}</span>
 						<button
-							onclick={toggleYearAnimation}
+							onclick={stopAndResetYearAnimation}
 							class="p-1.5 rounded-md hover:bg-light-warm-grey transition-colors cursor-pointer"
-							title={isYearPlaying ? 'Pause' : 'Play'}
+							title="Stop year animation"
 						>
-							{#if isYearPlaying}
-								<Pause class="size-4 text-mid-grey" />
-							{:else}
-								<Play class="size-4 text-mid-grey" />
-							{/if}
+							<Square class="size-4 text-mid-grey fill-mid-grey" />
 						</button>
 					</div>
 				{/if}
@@ -554,7 +576,7 @@
 
 			<!-- Desktop Filter Dropdowns -->
 			<div
-				class="justify-start items-center gap-2 hidden md:flex ml-6 pl-6 border-l border-warm-grey"
+				class="justify-start items-center gap-2 hidden md:flex ml-6 pl-6 border-l border-warm-grey overflow-x-auto"
 			>
 				<HierarchicalMultiSelect
 					options={regionOptions}
@@ -602,12 +624,9 @@
 				/>
 
 				<!-- Years dropdown (inline for play/pause control) -->
-				<div
-					class="relative text-base"
-					use:clickoutside
-					onclickoutside={() => (showYearDropdown = false)}
-				>
+				<div class="relative text-sm lg:text-base">
 					<div
+						bind:this={yearTriggerRef}
 						role="button"
 						tabindex="0"
 						onclick={() => (showYearDropdown = !showYearDropdown)}
@@ -615,7 +634,7 @@
 						class="flex items-center gap-8 pl-5 pr-4 py-3 rounded-lg whitespace-nowrap cursor-pointer"
 						class:hover:bg-warm-grey={!showYearDropdown}
 					>
-						<span class="font-semibold text-sm md:text-base">
+						<span class="font-semibold text-sm lg:text-base">
 							{yearDisplayLabel}
 						</span>
 
@@ -638,7 +657,10 @@
 
 					{#if showYearDropdown}
 						<div
-							class="border border-mid-grey bg-white absolute top-14 left-0 flex flex-col rounded-lg z-50 shadow-md p-4 min-w-[250px]"
+							bind:this={yearDropdownRef}
+							use:portal
+							use:dropdownPosition={{ trigger: yearTriggerRef }}
+							class="border border-mid-grey bg-white fixed flex flex-col rounded-lg z-50 shadow-md p-4 min-w-[250px]"
 							transition:fly={{ y: -10, duration: 150 }}
 						>
 							<RangeSlider

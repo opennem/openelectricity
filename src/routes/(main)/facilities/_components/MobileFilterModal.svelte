@@ -5,7 +5,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import { Play, Pause } from '@lucide/svelte';
+	import { Play } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -35,7 +35,7 @@
 	 *   onyearrangechange: (range: [number, number]) => void,
 	 *   onclearyears: () => void,
 	 *   isYearPlaying?: boolean,
-	 *   ontoggleyearanimation?: () => void,
+	 *   onplayyearanimation?: () => void,
 	 *   ghostYearRange?: [number, number] | null,
 	 *   selectedView?: 'list' | 'timeline' | 'map'
 	 * }}
@@ -67,7 +67,7 @@
 		onyearrangechange,
 		onclearyears,
 		isYearPlaying = false,
-		ontoggleyearanimation,
+		onplayyearanimation,
 		ghostYearRange = null,
 		selectedView = 'timeline'
 	} = $props();
@@ -151,17 +151,13 @@
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-2">
 						<span class="text-sm font-medium text-dark-grey">Year</span>
-						{#if selectedView === 'map'}
+						{#if selectedView === 'map' && !isYearPlaying}
 							<button
-								onclick={ontoggleyearanimation}
+								onclick={onplayyearanimation}
 								class="p-1 rounded-md hover:bg-light-warm-grey transition-colors cursor-pointer"
-								title={isYearPlaying ? 'Pause' : 'Play'}
+								title="Play year animation"
 							>
-								{#if isYearPlaying}
-									<Pause class="size-4 text-mid-grey" />
-								{:else}
-									<Play class="size-4 text-mid-grey" />
-								{/if}
+								<Play class="size-4 text-mid-grey" />
 							</button>
 						{/if}
 					</div>
