@@ -123,12 +123,11 @@
 		return `${formatYear(yearRange[0])} – ${formatYear(yearRange[1])}`;
 	});
 
-	// Show external stop button when playing but dropdown is closed
 	function startYearAnimation() {
 		animationEndYear = yearRange[1];
+		const startFrom = playYear !== null && playYear < animationEndYear ? playYear : yearRange[0];
 
-		// Set initial playhead position
-		playYear = yearRange[0];
+		playYear = startFrom;
 		onplayyearchange?.(playYear);
 
 		isYearPlaying = true;
@@ -139,7 +138,7 @@
 			if (nextYear > animationEndYear) {
 				playYear = animationEndYear;
 				onplayyearchange?.(playYear);
-				stopYearAnimation();
+				pauseYearAnimation();
 				return;
 			}
 
@@ -148,19 +147,19 @@
 		}, 200);
 	}
 
-	function stopYearAnimation() {
+	function pauseYearAnimation() {
 		isYearPlaying = false;
 		onyearplayingchange?.(false);
-		playYear = null;
-		onplayyearchange?.(null);
 		if (yearPlayInterval) {
 			clearInterval(yearPlayInterval);
 			yearPlayInterval = null;
 		}
 	}
 
-	function stopAndResetYearAnimation() {
-		stopYearAnimation();
+	function stopYearAnimation() {
+		pauseYearAnimation();
+		playYear = null;
+		onplayyearchange?.(null);
 	}
 
 	function handleYearDropdownScroll() {
@@ -176,7 +175,7 @@
 
 	function toggleYearAnimation() {
 		if (isYearPlaying) {
-			stopYearAnimation();
+			pauseYearAnimation();
 		} else {
 			startYearAnimation();
 		}
