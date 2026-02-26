@@ -6,7 +6,7 @@
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
-	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2, Play, Pause, Square } from '@lucide/svelte';
+	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2 } from '@lucide/svelte';
 	import { fly } from 'svelte/transition';
 	import { onDestroy } from 'svelte';
 	import { portal } from '$lib/actions/portal.js';
@@ -50,7 +50,9 @@
 	 *   onsearchchange?: (value: string) => void,
 	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void,
 	 *   onfullscreenchange?: () => void,
-	 *   onyearplayingchange?: (playing: boolean) => void
+	 *   onyearplayingchange?: (playing: boolean) => void,
+	 *   onplayyearchange?: (year: number | null) => void,
+	 *   onregisteranimationcontrols?: (controls: { stop: () => void, toggle: () => void }) => void
 	 * }}
 	 */
 	let {
@@ -75,7 +77,9 @@
 		onsearchchange,
 		onviewchange,
 		onfullscreenchange,
-		onyearplayingchange
+		onyearplayingchange,
+		onplayyearchange,
+		onregisteranimationcontrols
 	} = $props();
 
 	// ============================================
@@ -110,8 +114,8 @@
 	/** @type {ReturnType<typeof setInterval> | null} */
 	let yearPlayInterval = $state(null);
 	let animationEndYear = 0;
-	/** @type {[number, number] | null} */
-	let animationOriginalRange = null;
+	/** @type {number | null} */
+	let playYear = $state(null);
 
 	let isYearFiltered = $derived(yearRange[0] > yearMin || yearRange[1] < yearMax);
 	let yearDisplayLabel = $derived.by(() => {
@@ -119,33 +123,31 @@
 		return `${formatYear(yearRange[0])} – ${formatYear(yearRange[1])}`;
 	});
 
-	// Show external stop button when playing but dropdown is closed
-	let showYearStopButton = $derived(isYearPlaying && !showYearDropdown);
-
 	function startYearAnimation() {
-		// Capture the selected range before animation begins
-		animationOriginalRange = /** @type {[number, number]} */ ([...yearRange]);
 		animationEndYear = yearRange[1];
+		const startFrom = playYear !== null && playYear < animationEndYear ? playYear : yearRange[0];
 
-		// Reset to start of range
-		onyearrangechange?.([yearRange[0], yearRange[0]]);
+		playYear = startFrom;
+		onplayyearchange?.(playYear);
 
 		isYearPlaying = true;
 		onyearplayingchange?.(true);
 		yearPlayInterval = setInterval(() => {
-			const nextEnd = yearRange[1] + 1;
+			const nextYear = (playYear ?? yearRange[0]) + 1;
 
-			if (nextEnd > animationEndYear) {
-				onyearrangechange?.([yearRange[0], animationEndYear]);
-				stopYearAnimation();
+			if (nextYear > animationEndYear) {
+				playYear = animationEndYear;
+				onplayyearchange?.(playYear);
+				pauseYearAnimation();
 				return;
 			}
 
-			onyearrangechange?.([yearRange[0], nextEnd]);
+			playYear = nextYear;
+			onplayyearchange?.(playYear);
 		}, 200);
 	}
 
-	function stopYearAnimation() {
+	function pauseYearAnimation() {
 		isYearPlaying = false;
 		onyearplayingchange?.(false);
 		if (yearPlayInterval) {
@@ -154,13 +156,10 @@
 		}
 	}
 
-	function stopAndResetYearAnimation() {
-		const originalRange = animationOriginalRange;
-		stopYearAnimation();
-		if (originalRange) {
-			onyearrangechange?.(originalRange);
-		}
-		animationOriginalRange = null;
+	function stopYearAnimation() {
+		pauseYearAnimation();
+		playYear = null;
+		onplayyearchange?.(null);
 	}
 
 	function handleYearDropdownScroll() {
@@ -176,11 +175,16 @@
 
 	function toggleYearAnimation() {
 		if (isYearPlaying) {
-			stopYearAnimation();
+			pauseYearAnimation();
 		} else {
 			startYearAnimation();
 		}
 	}
+
+	// Expose animation controls to parent
+	$effect(() => {
+		onregisteranimationcontrols?.({ stop: stopYearAnimation, toggle: toggleYearAnimation });
+	});
 
 	// Stop animation if view changes
 	/** @type {string} */
@@ -479,13 +483,6 @@
 		stopYearAnimation();
 		onyearrangechange?.([yearMin, yearMax]);
 	}}
-	{isYearPlaying}
-	onplayyearanimation={() => {
-		startYearAnimation();
-		showMobileFilterOptions = false;
-	}}
-	ghostYearRange={isYearPlaying ? [yearRange[0], animationEndYear] : null}
-	{selectedView}
 	onclearregions={() => onregionschange?.([])}
 	onclearstatuses={() => onstatuseschange?.([])}
 	onclearfueltechs={() => onfueltechschange?.([])}
@@ -544,19 +541,6 @@
 						widthClass="w-auto"
 					/>
 				</div>
-
-				{#if isYearPlaying}
-					<div class="md:hidden flex items-center gap-1">
-						<span class="text-xs text-mid-grey whitespace-nowrap">{yearDisplayLabel}</span>
-						<button
-							onclick={stopAndResetYearAnimation}
-							class="p-1.5 rounded-md hover:bg-light-warm-grey transition-colors cursor-pointer"
-							title="Stop year animation"
-						>
-							<Square class="size-4 text-mid-grey fill-mid-grey" />
-						</button>
-					</div>
-				{/if}
 			{/if}
 
 			<!-- Desktop Search -->
@@ -673,38 +657,10 @@
 									onyearrangechange?.(range);
 								}}
 								formatValue={formatYear}
-								ghostRange={isYearPlaying ? [yearRange[0], animationEndYear] : null}
 							/>
-
-							<div class="border-t border-warm-grey mt-4 pt-4">
-								<button
-									onclick={toggleYearAnimation}
-									class="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-light-warm-grey hover:bg-warm-grey transition-colors cursor-pointer text-sm text-mid-grey"
-									title={isYearPlaying ? 'Pause year animation' : 'Play year animation'}
-								>
-									{#if isYearPlaying}
-										<Pause class="size-4" />
-										<span>Pause</span>
-									{:else}
-										<Play class="size-4" />
-										<span>Play</span>
-									{/if}
-								</button>
-							</div>
 						</div>
 					{/if}
 				</div>
-
-				<!-- Stop button (visible when playing with dropdown closed) -->
-				{#if showYearStopButton}
-					<button
-						onclick={stopYearAnimation}
-						class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
-						title="Stop year animation"
-					>
-						<Square class="size-4 text-mid-grey fill-mid-grey" />
-					</button>
-				{/if}
 			</div>
 		</div>
 

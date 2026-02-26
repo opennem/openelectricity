@@ -4,7 +4,7 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { getContext, onDestroy, untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { X, Flag } from '@lucide/svelte';
+	import { X, Flag, Pause, Play } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -141,6 +141,11 @@
 
 	// Year animation playing state (from Filters)
 	let isYearPlaying = $state(false);
+	/** @type {number | null} */
+	let playYear = $state(null);
+	/** @type {{ stop: () => void, toggle: () => void } | null} */
+	let yearAnimationControls = $state(null);
+	let showYearOverlay = $state(false);
 
 	// Golf courses easter egg - show option with 'G' key or ?golf=true
 	let showGolfOption = $derived(page.url.searchParams.get('golf') === 'true');
@@ -267,13 +272,20 @@
 	});
 
 	/**
-	 * Check if a unit's year falls within the year range
+	 * Check if a unit's year falls within the year range.
+	 * During playback (playYearValue set), show all units up to the playhead year.
 	 * @param {any} unit
 	 * @param {[number, number]} yearRangeFilter
 	 * @param {boolean} isYearFiltered
+	 * @param {number | null} playYearValue
 	 * @returns {boolean}
 	 */
-	function unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered) {
+	function unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered, playYearValue) {
+		if (playYearValue !== null) {
+			const unitYear = getUnitYear(unit);
+			if (unitYear === null) return false;
+			return unitYear <= playYearValue;
+		}
 		if (!isYearFiltered) return true;
 		const unitYear = getUnitYear(unit);
 		if (unitYear === null) return false;
@@ -288,10 +300,11 @@
 	 * @param {[number, number]} yearRangeFilter
 	 * @param {{ min: number, max: number }} yearBoundsRef
 	 * @param {'list' | 'timeline' | 'map'} view
+	 * @param {number | null} playYearValue
 	 * @returns {any[]}
 	 */
-	function filterFacilities(facilityList, searchTerm, capacityRangeFilter, yearRangeFilter, yearBoundsRef, view) {
-		const isYearFiltered = yearRangeFilter[0] > yearBoundsRef.min || yearRangeFilter[1] < yearBoundsRef.max;
+	function filterFacilities(facilityList, searchTerm, capacityRangeFilter, yearRangeFilter, yearBoundsRef, view, playYearValue) {
+		const isYearFiltered = playYearValue !== null || yearRangeFilter[0] > yearBoundsRef.min || yearRangeFilter[1] < yearBoundsRef.max;
 
 		if (view === 'timeline') {
 			// Timeline: filter units by individual capacity and year, keep facilities with matching units
@@ -305,7 +318,7 @@
 							(searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true) &&
 							getUnitCapacity(unit) >= capacityRangeFilter[0] &&
 							getUnitCapacity(unit) <= capacityRangeFilter[1] &&
-							unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered)
+							unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered, playYearValue)
 					)
 				}))
 				.filter((facility) => facility.units && facility.units.length > 0);
@@ -332,14 +345,14 @@
 				.filter((facility) => {
 					if (!isYearFiltered) return true;
 					return facility.units.some(
-						(/** @type {any} */ unit) => unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered)
+						(/** @type {any} */ unit) => unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered, playYearValue)
 					);
 				});
 		}
 	}
 
 	let filteredFacilities = $derived(
-		facilities ? filterFacilities(facilities, searchTerm, capacityRange, yearRange, yearBounds, selectedView) : []
+		facilities ? filterFacilities(facilities, searchTerm, capacityRange, yearRange, yearBounds, selectedView, playYear) : []
 	);
 
 	/**
@@ -707,6 +720,8 @@
 				onviewchange={handleSelectedViewChange}
 				onfullscreenchange={toggleFullscreen}
 			onyearplayingchange={(playing) => (isYearPlaying = playing)}
+			onplayyearchange={(year) => (playYear = year)}
+			onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
 			/>
 		</div>
 	</div>
@@ -909,6 +924,78 @@
 						}}
 					/>
 				</div>
+
+				<!-- Year animation controls -->
+				{#if showYearOverlay}
+					{@const playheadPercent = playYear !== null && yearRange[1] > yearRange[0]
+						? ((playYear - yearRange[0]) / (yearRange[1] - yearRange[0])) * 100
+						: 0}
+					<div class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] flex flex-col gap-3">
+						<p class="text-[10px] text-mid-grey leading-tight mb-0">Showing facilities connected to the grid</p>
+
+						<!-- Playhead -->
+						<div class="flex flex-col gap-1.5">
+							<div class="flex items-center justify-between">
+								<span class="font-mono text-[10px] text-mid-grey">{yearRange[0]}</span>
+								<span class="font-mono text-xs font-semibold" class:text-dark-grey={playYear !== null} class:text-transparent={playYear === null}>
+									{playYear ?? yearRange[0]}
+								</span>
+								<span class="font-mono text-[10px] text-mid-grey">{yearRange[1]}</span>
+							</div>
+							<div class="relative h-1.5 w-full rounded-full bg-warm-grey">
+								{#if playYear !== null}
+									<span
+										class="absolute h-full bg-dark-grey rounded-full"
+										style="width: {playheadPercent}%"
+									></span>
+									<span
+										class="absolute top-1/2 size-3 rounded-full border-2 border-dark-grey bg-white shadow-sm pointer-events-none"
+										style="left: {playheadPercent}%; translate: -50% -50%"
+									></span>
+								{/if}
+							</div>
+						</div>
+
+						<!-- Controls -->
+						<div class="flex items-center gap-2">
+							<button
+								onclick={() => yearAnimationControls?.toggle()}
+								class="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg bg-light-warm-grey hover:bg-warm-grey transition-colors cursor-pointer text-xs text-mid-grey"
+								title={isYearPlaying ? 'Pause' : 'Play'}
+							>
+								{#if isYearPlaying}
+									<Pause class="size-3" />
+									<span>Pause</span>
+								{:else}
+									<Play class="size-3" />
+									<span>Play</span>
+								{/if}
+							</button>
+							<button
+								onclick={() => {
+									yearAnimationControls?.stop();
+									showYearOverlay = false;
+								}}
+								class="p-1.5 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
+								title="Close"
+							>
+								<X class="size-3.5 text-mid-grey" />
+							</button>
+						</div>
+					</div>
+				{:else}
+					<button
+						onclick={() => {
+							showYearOverlay = true;
+							yearAnimationControls?.toggle();
+						}}
+						class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
+						title="Play year animation"
+					>
+						<Play class="size-4 text-mid-grey" />
+						<span>Play</span>
+					</button>
+				{/if}
 
 				{#if mapShowTransmissionLines}
 					<TransmissionLinesLegend
