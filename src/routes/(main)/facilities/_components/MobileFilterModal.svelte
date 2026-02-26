@@ -5,7 +5,6 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import { Play } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -33,11 +32,7 @@
 	 *   yearMin: number,
 	 *   yearMax: number,
 	 *   onyearrangechange: (range: [number, number]) => void,
-	 *   onclearyears: () => void,
-	 *   isYearPlaying?: boolean,
-	 *   onplayyearanimation?: () => void,
-	 *   ghostYearRange?: [number, number] | null,
-	 *   selectedView?: 'list' | 'timeline' | 'map'
+	 *   onclearyears: () => void
 	 * }}
 	 */
 	let {
@@ -65,11 +60,7 @@
 		yearMin,
 		yearMax,
 		onyearrangechange,
-		onclearyears,
-		isYearPlaying = false,
-		onplayyearanimation,
-		ghostYearRange = null,
-		selectedView = 'timeline'
+		onclearyears
 	} = $props();
 
 	let isCapacityFiltered = $derived(capacityRange[0] > capacityMin || capacityRange[1] < capacityMax);
@@ -149,18 +140,7 @@
 
 			<div class="flex flex-col gap-2">
 				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-2">
-						<span class="text-sm font-medium text-dark-grey">Year</span>
-						{#if selectedView === 'map' && !isYearPlaying}
-							<button
-								onclick={onplayyearanimation}
-								class="p-1 rounded-md hover:bg-light-warm-grey transition-colors cursor-pointer"
-								title="Play year animation"
-							>
-								<Play class="size-4 text-mid-grey" />
-							</button>
-						{/if}
-					</div>
+					<span class="text-sm font-medium text-dark-grey">Year</span>
 					{#if isYearFiltered}
 						<button
 							type="button"
@@ -178,7 +158,6 @@
 					step={1}
 					onchange={onyearrangechange}
 					formatValue={(v) => String(v)}
-					ghostRange={ghostYearRange}
 				/>
 			</div>
 		</section>
