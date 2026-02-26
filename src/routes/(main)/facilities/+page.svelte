@@ -71,7 +71,7 @@
 		fuelTechs = data.fuelTechs;
 		selectedView = /** @type {'list' | 'timeline' | 'map'} */ (data.view);
 		selectedFacility = data.selectedFacility
-			? facilities?.find((f) => f.code === data.selectedFacility) ?? null
+			? (facilities?.find((f) => f.code === data.selectedFacility) ?? null)
 			: null;
 	});
 
@@ -212,7 +212,10 @@
 				(/** @type {any} */ unit) =>
 					unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
 			)
-			.reduce((/** @type {number} */ sum, /** @type {any} */ unit) => sum + getUnitCapacity(unit), 0);
+			.reduce(
+				(/** @type {number} */ sum, /** @type {any} */ unit) => sum + getUnitCapacity(unit),
+				0
+			);
 	}
 
 	/**
@@ -303,8 +306,19 @@
 	 * @param {number | null} playYearValue
 	 * @returns {any[]}
 	 */
-	function filterFacilities(facilityList, searchTerm, capacityRangeFilter, yearRangeFilter, yearBoundsRef, view, playYearValue) {
-		const isYearFiltered = playYearValue !== null || yearRangeFilter[0] > yearBoundsRef.min || yearRangeFilter[1] < yearBoundsRef.max;
+	function filterFacilities(
+		facilityList,
+		searchTerm,
+		capacityRangeFilter,
+		yearRangeFilter,
+		yearBoundsRef,
+		view,
+		playYearValue
+	) {
+		const isYearFiltered =
+			playYearValue !== null ||
+			yearRangeFilter[0] > yearBoundsRef.min ||
+			yearRangeFilter[1] < yearBoundsRef.max;
 
 		if (view === 'timeline') {
 			// Timeline: filter units by individual capacity and year, keep facilities with matching units
@@ -315,7 +329,9 @@
 						(/** @type {any} */ unit) =>
 							unit.fueltech_id !== 'battery_charging' &&
 							unit.fueltech_id !== 'battery_discharging' &&
-							(searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true) &&
+							(searchTerm
+								? facility.name.toLowerCase().includes(searchTerm.toLowerCase())
+								: true) &&
 							getUnitCapacity(unit) >= capacityRangeFilter[0] &&
 							getUnitCapacity(unit) <= capacityRangeFilter[1] &&
 							unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered, playYearValue)
@@ -344,15 +360,25 @@
 				})
 				.filter((facility) => {
 					if (!isYearFiltered) return true;
-					return facility.units.some(
-						(/** @type {any} */ unit) => unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered, playYearValue)
+					return facility.units.some((/** @type {any} */ unit) =>
+						unitMatchesYearRange(unit, yearRangeFilter, isYearFiltered, playYearValue)
 					);
 				});
 		}
 	}
 
 	let filteredFacilities = $derived(
-		facilities ? filterFacilities(facilities, searchTerm, capacityRange, yearRange, yearBounds, selectedView, playYear) : []
+		facilities
+			? filterFacilities(
+					facilities,
+					searchTerm,
+					capacityRange,
+					yearRange,
+					yearBounds,
+					selectedView,
+					playYear
+				)
+			: []
 	);
 
 	/**
@@ -541,7 +567,14 @@
 		// Optimistic update - immediately update local state
 		regions = values;
 		// Then navigate to fetch new data (filter change requires refetch)
-		navigateWithRefetch({ statuses, regions: values, fuelTechs, capacityRange, yearRange, view: selectedView });
+		navigateWithRefetch({
+			statuses,
+			regions: values,
+			fuelTechs,
+			capacityRange,
+			yearRange,
+			view: selectedView
+		});
 	}
 
 	/**
@@ -551,7 +584,14 @@
 		// Optimistic update
 		fuelTechs = values;
 		// Filter change requires refetch
-		navigateWithRefetch({ statuses, regions, fuelTechs: values, capacityRange, yearRange, view: selectedView });
+		navigateWithRefetch({
+			statuses,
+			regions,
+			fuelTechs: values,
+			capacityRange,
+			yearRange,
+			view: selectedView
+		});
 	}
 
 	/**
@@ -561,7 +601,14 @@
 		// Optimistic update
 		statuses = values;
 		// Filter change requires refetch
-		navigateWithRefetch({ statuses: values, regions, fuelTechs, capacityRange, yearRange, view: selectedView });
+		navigateWithRefetch({
+			statuses: values,
+			regions,
+			fuelTechs,
+			capacityRange,
+			yearRange,
+			view: selectedView
+		});
 	}
 
 	/**
@@ -571,7 +618,14 @@
 		// Optimistic update
 		capacityRange = range;
 		// Capacity is client-side filtered, no refetch needed
-		navigateWithoutRefetch({ statuses, regions, fuelTechs, capacityRange: range, yearRange, view: selectedView });
+		navigateWithoutRefetch({
+			statuses,
+			regions,
+			fuelTechs,
+			capacityRange: range,
+			yearRange,
+			view: selectedView
+		});
 	}
 
 	/**
@@ -581,7 +635,14 @@
 		// Optimistic update
 		yearRange = range;
 		// Year is client-side filtered, no refetch needed
-		navigateWithoutRefetch({ statuses, regions, fuelTechs, capacityRange, yearRange: range, view: selectedView });
+		navigateWithoutRefetch({
+			statuses,
+			regions,
+			fuelTechs,
+			capacityRange,
+			yearRange: range,
+			view: selectedView
+		});
 	}
 
 	/**
@@ -679,15 +740,17 @@
 	<PageHeaderSimple class="!h-[80px] md:!h-[300px]">
 		{#snippet heading()}
 			<div>
-				<h1 class="md:tracking-widest text-center text-xl md:text-6xl mb-0 md:mb-[0.5em]">Facilities</h1>
+				<h1 class="md:tracking-widest text-center text-xl md:text-6xl mb-0 md:mb-[0.5em]">
+					Facilities
+				</h1>
 			</div>
 		{/snippet}
 		{#snippet subheading()}
 			<div class="hidden md:block mt-4">
 				<p class="text-sm text-center w-[610px] mx-auto">
 					Explore Australia's power generation facilities across the NEM and WEM. View upcoming
-					projects on the timeline, browse the full list of facilities, or discover their locations on
-					the map.
+					projects on the timeline, browse the full list of facilities, or discover their locations
+					on the map.
 				</p>
 			</div>
 		{/snippet}
@@ -719,9 +782,9 @@
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
 				onfullscreenchange={toggleFullscreen}
-			onyearplayingchange={(playing) => (isYearPlaying = playing)}
-			onplayyearchange={(year) => (playYear = year)}
-			onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
+				onyearplayingchange={(playing) => (isYearPlaying = playing)}
+				onplayyearchange={(year) => (playYear = year)}
+				onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
 			/>
 		</div>
 	</div>
@@ -860,7 +923,9 @@
 			<!-- Map container -->
 			<div class="relative h-full md:rounded-lg md:border md:border-warm-grey overflow-hidden">
 				{#if !mapLoaded}
-					<div class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center md:rounded-lg">
+					<div
+						class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center md:rounded-lg"
+					>
 						<LogoMarkLoader />
 					</div>
 				{/if}
@@ -875,7 +940,6 @@
 					{transmissionLineVisibility}
 					showGolfCourses={mapShowGolfCourses}
 					scrollZoom={!isYearPlaying}
-					suppressFitBounds={isYearPlaying}
 					cooperativeGestures={!isFullscreen}
 					flyToOffsetX={0}
 					flyToOffsetY={selectedFacility ? (isFullscreen ? -0.25 : -0.15) : 0}
@@ -927,17 +991,26 @@
 
 				<!-- Year animation controls -->
 				{#if showYearOverlay}
-					{@const playheadPercent = playYear !== null && yearRange[1] > yearRange[0]
-						? ((playYear - yearRange[0]) / (yearRange[1] - yearRange[0])) * 100
-						: 0}
-					<div class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] flex flex-col gap-3">
-						<p class="text-[10px] text-mid-grey leading-tight mb-0">Showing facilities connected to the grid</p>
+					{@const playheadPercent =
+						playYear !== null && yearRange[1] > yearRange[0]
+							? ((playYear - yearRange[0]) / (yearRange[1] - yearRange[0])) * 100
+							: 0}
+					<div
+						class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] flex flex-col gap-3"
+					>
+						<p class="text-[10px] text-mid-grey leading-tight mb-0">
+							Showing facilities connected to the grid
+						</p>
 
 						<!-- Playhead -->
 						<div class="flex flex-col gap-1.5">
 							<div class="flex items-center justify-between">
 								<span class="font-mono text-[10px] text-mid-grey">{yearRange[0]}</span>
-								<span class="font-mono text-xs font-semibold" class:text-dark-grey={playYear !== null} class:text-transparent={playYear === null}>
+								<span
+									class="font-mono text-xs font-semibold"
+									class:text-dark-grey={playYear !== null}
+									class:text-transparent={playYear === null}
+								>
 									{playYear ?? yearRange[0]}
 								</span>
 								<span class="font-mono text-[10px] text-mid-grey">{yearRange[1]}</span>
