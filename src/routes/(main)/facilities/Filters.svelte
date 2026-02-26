@@ -493,8 +493,8 @@
 />
 
 <div class="flex items-center justify-between pt-3 pb-3 px-8 relative z-10 gap-4">
-	<div class="flex items-center gap-2 justify-between w-full">
-		<div class="flex items-center gap-4">
+	<div class="flex items-center gap-2 justify-between w-full min-w-0">
+		<div class="flex items-center gap-4 min-w-0">
 			<!-- Logo Mark - Fullscreen only (click to exit fullscreen) -->
 			{#if isFullscreen}
 				<button
@@ -576,7 +576,7 @@
 
 			<!-- Desktop Filter Dropdowns -->
 			<div
-				class="justify-start items-center gap-2 hidden md:flex ml-6 pl-6 border-l border-warm-grey overflow-x-auto"
+				class="filter-bar-scroll justify-start items-center gap-2 hidden md:flex ml-6 pl-6 border-l border-warm-grey overflow-x-auto min-w-0"
 			>
 				<HierarchicalMultiSelect
 					options={regionOptions}
@@ -765,3 +765,13 @@
 		</ButtonIcon>
 	</div>
 </div>
+
+<style>
+	.filter-bar-scroll {
+		-ms-overflow-style: none;
+		scrollbar-width: none;
+	}
+	.filter-bar-scroll::-webkit-scrollbar {
+		display: none;
+	}
+</style>

@@ -4,6 +4,7 @@
 
 /**
  * Svelte action that positions a fixed-position dropdown relative to a trigger element.
+ * Auto-aligns to the right if the dropdown would overflow the right edge of the viewport.
  * @param {HTMLElement} node - The dropdown element (should have position: fixed)
  * @param {DropdownPositionOpts} opts
  */
@@ -22,7 +23,17 @@ export function dropdownPosition(node, opts) {
 			node.style.bottom = '';
 		}
 
-		if (opts.align === 'right') {
+		// Determine horizontal alignment
+		let align = opts.align;
+		if (!align || align === 'left') {
+			// Auto-detect: if left-aligning would overflow the right edge, switch to right
+			const dropdownWidth = node.offsetWidth;
+			if (rect.left + dropdownWidth > window.innerWidth) {
+				align = 'right';
+			}
+		}
+
+		if (align === 'right') {
 			node.style.right = `${window.innerWidth - rect.right}px`;
 			node.style.left = '';
 		} else {
