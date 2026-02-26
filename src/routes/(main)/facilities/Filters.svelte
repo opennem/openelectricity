@@ -518,6 +518,23 @@
 						widthClass="w-auto"
 					/>
 				</div>
+
+				{#if selectedView === 'map'}
+					<div class="md:hidden flex items-center gap-1">
+						<span class="text-xs text-mid-grey whitespace-nowrap">{yearDisplayLabel}</span>
+						<button
+							onclick={toggleYearAnimation}
+							class="p-1.5 rounded-md hover:bg-light-warm-grey transition-colors cursor-pointer"
+							title={isYearPlaying ? 'Pause' : 'Play'}
+						>
+							{#if isYearPlaying}
+								<Pause class="size-4 text-mid-grey" />
+							{:else}
+								<Play class="size-4 text-mid-grey" />
+							{/if}
+						</button>
+					</div>
+				{/if}
 			{/if}
 
 			<!-- Desktop Search -->
