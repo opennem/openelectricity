@@ -32,6 +32,7 @@
 	 *   showGolfCourses?: boolean,
 	 *   scrollZoom?: boolean,
 	 *   cooperativeGestures?: boolean,
+	 *   suppressFitBounds?: boolean,
 	 *   flyToOffsetX?: number,
 	 *   flyToOffsetY?: number,
 	 *   onhover?: (facility: any | null) => void,
@@ -51,6 +52,7 @@
 		showGolfCourses = false,
 		scrollZoom = false,
 		cooperativeGestures = false,
+		suppressFitBounds = false,
 		flyToOffsetX = 0,
 		flyToOffsetY = 0,
 		onhover,
@@ -424,7 +426,7 @@
 
 	// Fit bounds when facilities change - use idle event
 	$effect(() => {
-		if (mapInstance && mapLoaded && facilities.length > 0 && !selectedFacilityCode) {
+		if (mapInstance && mapLoaded && facilities.length > 0 && !selectedFacilityCode && !suppressFitBounds) {
 			mapInstance.once('idle', () => {
 				fitMapToFacilities(facilities);
 			});

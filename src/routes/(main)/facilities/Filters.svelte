@@ -5,7 +5,11 @@
 	import SearchInput from './_components/SearchInput.svelte';
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2 } from '@lucide/svelte';
+	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
+	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2, Play, Pause, Square } from '@lucide/svelte';
+	import { clickoutside } from '@svelte-put/clickoutside';
+	import { fly } from 'svelte/transition';
+	import { onDestroy } from 'svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import RangeDropdown from '$lib/components/ui/range-slider/RangeDropdown.svelte';
@@ -44,7 +48,8 @@
 	 *   onyearrangechange?: (range: [number, number]) => void,
 	 *   onsearchchange?: (value: string) => void,
 	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void,
-	 *   onfullscreenchange?: () => void
+	 *   onfullscreenchange?: () => void,
+	 *   onyearplayingchange?: (playing: boolean) => void
 	 * }}
 	 */
 	let {
@@ -68,7 +73,8 @@
 		onyearrangechange,
 		onsearchchange,
 		onviewchange,
-		onfullscreenchange
+		onfullscreenchange,
+		onyearplayingchange
 	} = $props();
 
 	// ============================================
@@ -83,6 +89,86 @@
 	let mobileSearchRef = $state(null);
 	/** @type {SearchInput | null} */
 	let desktopSearchRef = $state(null);
+
+	// ============================================
+	// Year Dropdown & Animation (Play button)
+	// ============================================
+
+	let showYearDropdown = $state(false);
+	let isYearPlaying = $state(false);
+	/** @type {ReturnType<typeof setInterval> | null} */
+	let yearPlayInterval = $state(null);
+
+	let isYearFiltered = $derived(yearRange[0] > yearMin || yearRange[1] < yearMax);
+	let yearDisplayLabel = $derived.by(() => {
+		if (!isYearFiltered) return 'Years';
+		return `${formatYear(yearRange[0])} – ${formatYear(yearRange[1])}`;
+	});
+
+	// Show external stop button when playing but dropdown is closed
+	let showYearStopButton = $derived(isYearPlaying && !showYearDropdown);
+
+	function startYearAnimation() {
+		// If already at max, restart from beginning
+		if (yearRange[1] >= yearMax) {
+			onyearrangechange?.([yearRange[0], yearRange[0]]);
+		}
+
+		isYearPlaying = true;
+		onyearplayingchange?.(true);
+		yearPlayInterval = setInterval(() => {
+			const nextEnd = yearRange[1] + 1;
+
+			if (nextEnd > yearMax) {
+				stopYearAnimation();
+				return;
+			}
+
+			onyearrangechange?.([yearRange[0], nextEnd]);
+		}, 200);
+	}
+
+	function stopYearAnimation() {
+		isYearPlaying = false;
+		onyearplayingchange?.(false);
+		if (yearPlayInterval) {
+			clearInterval(yearPlayInterval);
+			yearPlayInterval = null;
+		}
+	}
+
+	function handleYearDropdownScroll() {
+		if (!isYearPlaying) {
+			showYearDropdown = false;
+		}
+	}
+
+	function handleYearClear() {
+		stopYearAnimation();
+		onyearrangechange?.([yearMin, yearMax]);
+	}
+
+	function toggleYearAnimation() {
+		if (isYearPlaying) {
+			stopYearAnimation();
+		} else {
+			startYearAnimation();
+		}
+	}
+
+	// Stop animation if view changes
+	/** @type {string} */
+	let prevSelectedView = $state('');
+	$effect(() => {
+		if (prevSelectedView && selectedView !== prevSelectedView) {
+			stopYearAnimation();
+		}
+		prevSelectedView = selectedView;
+	});
+
+	onDestroy(() => {
+		stopYearAnimation();
+	});
 
 	// ============================================
 	// Browser Fullscreen API
@@ -335,7 +421,7 @@
 	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} onscroll={handleYearDropdownScroll} />
 <svelte:document onfullscreenchange={handleFullscreenChange} />
 
 <!-- Mobile Filter Modal -->
@@ -359,8 +445,17 @@
 	{yearRange}
 	{yearMin}
 	{yearMax}
-	onyearrangechange={(range) => onyearrangechange?.(range)}
-	onclearyears={() => onyearrangechange?.([yearMin, yearMax])}
+	onyearrangechange={(range) => {
+		stopYearAnimation();
+		onyearrangechange?.(range);
+	}}
+	onclearyears={() => {
+		stopYearAnimation();
+		onyearrangechange?.([yearMin, yearMax]);
+	}}
+	{isYearPlaying}
+	ontoggleyearanimation={toggleYearAnimation}
+	{selectedView}
 	onclearregions={() => onregionschange?.([])}
 	onclearstatuses={() => onstatuseschange?.([])}
 	onclearfueltechs={() => onfueltechschange?.([])}
@@ -485,18 +580,87 @@
 					formatValue={formatCapacity}
 				/>
 
-				<RangeDropdown
-					min={yearMin}
-					max={yearMax}
-					value={yearRange}
-					step={1}
-					label="Years"
-					paddingX="pl-5 pr-4"
-					paddingY="py-3"
-					onchange={(range) => onyearrangechange?.(range)}
-					onclear={() => onyearrangechange?.([yearMin, yearMax])}
-					formatValue={formatYear}
-				/>
+				<!-- Years dropdown (inline for play/pause control) -->
+				<div
+					class="relative text-base"
+					use:clickoutside
+					onclickoutside={() => (showYearDropdown = false)}
+				>
+					<div
+						role="button"
+						tabindex="0"
+						onclick={() => (showYearDropdown = !showYearDropdown)}
+						onkeydown={(e) => e.key === 'Enter' && (showYearDropdown = !showYearDropdown)}
+						class="flex items-center gap-8 pl-5 pr-4 py-3 rounded-lg whitespace-nowrap cursor-pointer"
+						class:hover:bg-warm-grey={!showYearDropdown}
+					>
+						<span class="font-semibold text-sm md:text-base">
+							{yearDisplayLabel}
+						</span>
+
+						<div class="flex items-center gap-1">
+							{#if isYearFiltered}
+								<button
+									onclick={(e) => {
+										e.stopPropagation();
+										handleYearClear();
+									}}
+									class="p-1 rounded-full hover:bg-mid-warm-grey transition-colors"
+									title="Clear selection"
+								>
+									<X class="size-4 text-mid-grey" />
+								</button>
+							{/if}
+							<IconChevronUpDown class="w-7 h-7" />
+						</div>
+					</div>
+
+					{#if showYearDropdown}
+						<div
+							class="border border-mid-grey bg-white absolute top-14 left-0 flex flex-col rounded-lg z-50 shadow-md p-4 min-w-[250px]"
+							transition:fly={{ y: -10, duration: 150 }}
+						>
+							<RangeSlider
+								min={yearMin}
+								max={yearMax}
+								value={yearRange}
+								step={1}
+								onchange={(range) => {
+									stopYearAnimation();
+									onyearrangechange?.(range);
+								}}
+								formatValue={formatYear}
+							/>
+
+							<div class="border-t border-warm-grey mt-4 pt-4">
+								<button
+									onclick={toggleYearAnimation}
+									class="flex items-center justify-center gap-2 w-full py-2 rounded-lg bg-light-warm-grey hover:bg-warm-grey transition-colors cursor-pointer text-sm text-mid-grey"
+									title={isYearPlaying ? 'Pause year animation' : 'Play year animation'}
+								>
+									{#if isYearPlaying}
+										<Pause class="size-4" />
+										<span>Pause</span>
+									{:else}
+										<Play class="size-4" />
+										<span>Play</span>
+									{/if}
+								</button>
+							</div>
+						</div>
+					{/if}
+				</div>
+
+				<!-- Stop button (visible when playing with dropdown closed) -->
+				{#if showYearStopButton}
+					<button
+						onclick={stopYearAnimation}
+						class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
+						title="Stop year animation"
+					>
+						<Square class="size-4 text-mid-grey fill-mid-grey" />
+					</button>
+				{/if}
 			</div>
 		</div>
 

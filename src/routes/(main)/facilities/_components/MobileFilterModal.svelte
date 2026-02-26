@@ -5,6 +5,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import { Play, Pause } from '@lucide/svelte';
 
 	/**
 	 * @type {{
@@ -32,7 +33,10 @@
 	 *   yearMin: number,
 	 *   yearMax: number,
 	 *   onyearrangechange: (range: [number, number]) => void,
-	 *   onclearyears: () => void
+	 *   onclearyears: () => void,
+	 *   isYearPlaying?: boolean,
+	 *   ontoggleyearanimation?: () => void,
+	 *   selectedView?: 'list' | 'timeline' | 'map'
 	 * }}
 	 */
 	let {
@@ -60,7 +64,10 @@
 		yearMin,
 		yearMax,
 		onyearrangechange,
-		onclearyears
+		onclearyears,
+		isYearPlaying = false,
+		ontoggleyearanimation,
+		selectedView = 'timeline'
 	} = $props();
 
 	let isCapacityFiltered = $derived(capacityRange[0] > capacityMin || capacityRange[1] < capacityMax);
@@ -140,7 +147,22 @@
 
 			<div class="flex flex-col gap-2">
 				<div class="flex items-center justify-between">
-					<span class="text-sm font-medium text-dark-grey">Year</span>
+					<div class="flex items-center gap-2">
+						<span class="text-sm font-medium text-dark-grey">Year</span>
+						{#if selectedView === 'map'}
+							<button
+								onclick={ontoggleyearanimation}
+								class="p-1 rounded-md hover:bg-light-warm-grey transition-colors cursor-pointer"
+								title={isYearPlaying ? 'Pause' : 'Play'}
+							>
+								{#if isYearPlaying}
+									<Pause class="size-4 text-mid-grey" />
+								{:else}
+									<Play class="size-4 text-mid-grey" />
+								{/if}
+							</button>
+						{/if}
+					</div>
 					{#if isYearFiltered}
 						<button
 							type="button"
