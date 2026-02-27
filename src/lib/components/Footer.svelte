@@ -1,6 +1,7 @@
 <script>
 	import { version } from '$app/environment';
 	import { ScrollText } from '@lucide/svelte';
+	import ApiStatus from './ApiStatus.svelte';
 	import SectionLink from './SectionLink.svelte';
 	import SignUpForm from './SignUpForm.svelte';
 </script>
@@ -64,6 +65,7 @@
 						target="_blank"
 						title="Documentation"
 					/>
+					<ApiStatus />
 				</p>
 
 				<h5 class="mt-12">Transparency & Accountability</h5>
