@@ -44,6 +44,12 @@
 			link: '/studio/lens-on-emissions'
 		},
 		{
+			title: 'Stratify',
+			description:
+				'Create and embed data charts from CSV data. A simple chart builder for stacked area, area and line charts.',
+			link: '/studio/stratify'
+		},
+		{
 			title: 'TrackerGrid',
 			description: 'A new data visualization tool for tracking and analyzing grid data.',
 			link: '/studio/tracker-grid',

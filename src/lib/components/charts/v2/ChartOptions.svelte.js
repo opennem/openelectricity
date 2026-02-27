@@ -4,7 +4,7 @@
  * Manages chart configuration options including:
  * - Data transform type (absolute, proportion, change since)
  * - Curve interpolation type
- * - Chart type (area, line)
+ * - Chart type (stacked-area, area, line)
  * - Unit prefixes
  */
 
@@ -13,11 +13,11 @@ import { transformToProportion, transformToChangeSince } from '$lib/utils/data-t
 
 /** @typedef {'absolute' | 'proportion' | 'changeSince'} DataTransformType */
 /** @typedef {'smooth' | 'straight' | 'step'} CurveType */
-/** @typedef {'area' | 'line'} ChartType */
+/** @typedef {'stacked-area' | 'area' | 'line'} ChartType */
 
 const DEFAULT_DATA_TRANSFORM_TYPE = /** @type {DataTransformType} */ ('absolute');
 const DEFAULT_CURVE_TYPE = /** @type {CurveType} */ ('straight');
-const DEFAULT_CHART_TYPE = /** @type {ChartType} */ ('area');
+const DEFAULT_CHART_TYPE = /** @type {ChartType} */ ('stacked-area');
 
 /**
  * @typedef {Object} ChartOptionsConfig
@@ -77,13 +77,14 @@ export default class ChartOptions {
 
 	// Chart type options
 	chartTypeOptions = Object.freeze([
-		{ label: 'Area', value: /** @type {ChartType} */ ('area') },
+		{ label: 'Stacked Area', value: /** @type {ChartType} */ ('stacked-area') },
 		{ label: 'Line', value: /** @type {ChartType} */ ('line') }
 	]);
 
 	/** @type {ChartType} */
 	selectedChartType = $state(DEFAULT_CHART_TYPE);
 
+	isChartTypeStackedArea = $derived(this.selectedChartType === 'stacked-area');
 	isChartTypeArea = $derived(this.selectedChartType === 'area');
 	isChartTypeLine = $derived(this.selectedChartType === 'line');
 

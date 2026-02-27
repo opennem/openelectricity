@@ -12,6 +12,7 @@
 	// v2 Element components
 	import {
 		StackedArea,
+		Area,
 		LoadingOverlay,
 		AxisX,
 		AxisY,
@@ -74,15 +75,20 @@
 			: []
 	);
 
-	let chartData = $derived(chart.chartOptions.isChartTypeArea ? stackedData : groupedData);
+	let chartData = $derived(chart.chartOptions.isChartTypeStackedArea ? stackedData : groupedData);
 
 	let flatData = $derived(
-		chart.chartOptions.isChartTypeArea
+		chart.chartOptions.isChartTypeStackedArea
 			? flatten(stackedData)
 			: groupedData.length > 0
 				? flatten(groupedData, 'values')
 				: []
 	);
+
+	let isAreaOverlay = $derived(chart.chartOptions.isChartTypeArea);
+
+	/** @type {'stacked-area' | 'line'} */
+	let stackedAreaDisplay = $derived(chart.chartOptions.isChartTypeLine ? 'line' : 'stacked-area');
 
 	// Determine if curve type is step (for band hover + axis alignment)
 	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
@@ -94,7 +100,11 @@
 	let clipPathAxis = $derived(`url(#${clipPathAxisId})`);
 </script>
 
-<div class="w-full {styles.chartHeightPx ? '' : styles.chartHeightClasses}" style:height={styles.chartHeightPx ? `${styles.chartHeightPx}px` : undefined} style:touch-action={enablePan ? 'none' : undefined}>
+<div
+	class="w-full {styles.chartHeightPx ? '' : styles.chartHeightClasses}"
+	style:height={styles.chartHeightPx ? `${styles.chartHeightPx}px` : undefined}
+	style:touch-action={enablePan ? 'none' : undefined}
+>
 	<LayerCake
 		padding={styles.chartPadding}
 		x={chart.x}
@@ -123,18 +133,31 @@
 
 			<!-- Chart content (on top to capture hover with series info) -->
 			<g clip-path={clipPath}>
-				<StackedArea
-					dataset={chart.seriesScaledData}
-					display={chart.chartOptions.selectedChartType}
-					curveType={chart.chartOptions.curveFunction}
-					seriesColours={chart.seriesColours}
-					highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
-					lighterNegative={chart.lighterNegative}
-					stepMode={isStepMode}
-					{onmousemove}
-					{onmouseout}
-					{onpointerup}
-				/>
+				{#if isAreaOverlay}
+					<Area
+						dataset={chart.seriesScaledData}
+						curveType={chart.chartOptions.curveFunction}
+						seriesColours={chart.seriesColours}
+						highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
+						stepMode={isStepMode}
+						{onmousemove}
+						{onmouseout}
+						{onpointerup}
+					/>
+				{:else}
+					<StackedArea
+						dataset={chart.seriesScaledData}
+						display={stackedAreaDisplay}
+						curveType={chart.chartOptions.curveFunction}
+						seriesColours={chart.seriesColours}
+						highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
+						lighterNegative={chart.lighterNegative}
+						stepMode={isStepMode}
+						{onmousemove}
+						{onmouseout}
+						{onpointerup}
+					/>
+				{/if}
 
 				{#if netTotalKey && isStepMode}
 					<NetTotalLine

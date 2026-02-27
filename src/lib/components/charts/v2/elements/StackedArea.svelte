@@ -14,7 +14,7 @@
 	const { data, xGet, xScale, yScale, yGet, z, width, height } = getContext('LayerCake');
 
 	/**
-	 * @typedef {'area' | 'line'} DisplayType
+	 * @typedef {'stacked-area' | 'line'} DisplayType
 	 */
 
 	/**
@@ -40,7 +40,7 @@
 	/** @type {Props} */
 	let {
 		dataset = [],
-		display = 'area',
+		display = 'stacked-area',
 		curveType = curveLinear,
 		seriesColours = {},
 		highlightId = null,
@@ -218,7 +218,7 @@
 	</g>
 {/if}
 
-{#if display === 'area'}
+{#if display === 'stacked-area'}
 	<!-- Clip path definitions for positive/negative regions -->
 	{#if lighterNegative}
 		<defs>
