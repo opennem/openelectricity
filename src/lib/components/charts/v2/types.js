@@ -33,7 +33,7 @@
  * @property {SiPrefix} [displayPrefix] - SI prefix for display (can differ from data prefix)
  * @property {SiPrefix[]} [allowedPrefixes] - Allowed prefix options for user switching
  * @property {string} [baseUnit] - Base unit (e.g., 'W', 'Wh')
- * @property {ChartType} [chartType] - Initial chart type ('area' or 'line')
+ * @property {ChartType} [chartType] - Initial chart type ('stacked-area', 'area', or 'line')
  * @property {string} [timeZone] - IANA timezone string (default: 'Australia/Sydney')
  * @property {boolean} [hideDataOptions] - Hide data transform options in UI
  * @property {boolean} [hideChartTypeOptions] - Hide chart type selector in UI
@@ -42,7 +42,7 @@
 
 /**
  * Chart type options
- * @typedef {'area' | 'line'} ChartType
+ * @typedef {'stacked-area' | 'area' | 'line'} ChartType
  */
 
 /**

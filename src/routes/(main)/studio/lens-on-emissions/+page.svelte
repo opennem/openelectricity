@@ -171,7 +171,7 @@
 		prefix: 'M',
 		displayPrefix: 'M',
 		baseUnit: 'tCO\u2082e',
-		chartType: 'area',
+		chartType: 'stacked-area',
 		timeZone: 'Australia/Sydney',
 		hideDataOptions: true,
 		hideChartTypeOptions: true

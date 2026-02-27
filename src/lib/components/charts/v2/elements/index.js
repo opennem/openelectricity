@@ -7,6 +7,7 @@
 
 // Core chart elements
 export { default as StackedArea } from './StackedArea.svelte';
+export { default as Area } from './Area.svelte';
 export { default as Line } from './Line.svelte';
 
 // Axes

@@ -11,7 +11,7 @@
  * @property {SiPrefix} prefix - SI prefix for the data
  * @property {SiPrefix} displayPrefix - SI prefix for display
  * @property {SiPrefix[]} allowedPrefixes - Allowed prefixes for user switching
- * @property {'area' | 'line'} chartType - Default chart type
+ * @property {'stacked-area' | 'area' | 'line'} chartType - Default chart type
  * @property {string} [timeZone] - Default timezone
  */
 
@@ -25,7 +25,7 @@ export const powerChartPreset = {
 	prefix: 'M',
 	displayPrefix: 'M',
 	allowedPrefixes: ['M', 'G'],
-	chartType: 'area',
+	chartType: 'stacked-area',
 	timeZone: 'Australia/Sydney'
 };
 
@@ -39,7 +39,7 @@ export const energyChartPreset = {
 	prefix: 'G',
 	displayPrefix: 'G',
 	allowedPrefixes: ['G', 'T'],
-	chartType: 'area',
+	chartType: 'stacked-area',
 	timeZone: 'Australia/Sydney'
 };
 
@@ -53,7 +53,7 @@ export const emissionsChartPreset = {
 	prefix: 'k',
 	displayPrefix: 'k',
 	allowedPrefixes: ['k', 'M'],
-	chartType: 'area',
+	chartType: 'stacked-area',
 	timeZone: 'Australia/Sydney'
 };
 
@@ -108,7 +108,7 @@ export const percentageChartPreset = {
 	prefix: '',
 	displayPrefix: '',
 	allowedPrefixes: [],
-	chartType: 'area',
+	chartType: 'stacked-area',
 	timeZone: 'Australia/Sydney'
 };
 
@@ -123,7 +123,7 @@ export function createPreset(overrides) {
 		prefix: '',
 		displayPrefix: '',
 		allowedPrefixes: [],
-		chartType: 'area',
+		chartType: 'stacked-area',
 		timeZone: 'Australia/Sydney',
 		...overrides
 	};
