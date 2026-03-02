@@ -782,6 +782,7 @@
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
 				onfullscreenchange={toggleFullscreen}
+				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onyearplayingchange={(playing) => (isYearPlaying = playing)}
 				onplayyearchange={(year) => (playYear = year)}
 				onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}

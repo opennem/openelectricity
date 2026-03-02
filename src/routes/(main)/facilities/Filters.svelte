@@ -7,6 +7,7 @@
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
 	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2 } from '@lucide/svelte';
+	import OptionsMenu from './_components/OptionsMenu.svelte';
 	import { fly } from 'svelte/transition';
 	import { onDestroy } from 'svelte';
 	import { portal } from '$lib/actions/portal.js';
@@ -50,6 +51,7 @@
 	 *   onsearchchange?: (value: string) => void,
 	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void,
 	 *   onfullscreenchange?: () => void,
+	 *   onshowshortcuts?: () => void,
 	 *   onyearplayingchange?: (playing: boolean) => void,
 	 *   onplayyearchange?: (year: number | null) => void,
 	 *   onregisteranimationcontrols?: (controls: { stop: () => void, toggle: () => void }) => void
@@ -77,6 +79,7 @@
 		onsearchchange,
 		onviewchange,
 		onfullscreenchange,
+		onshowshortcuts,
 		onyearplayingchange,
 		onplayyearchange,
 		onregisteranimationcontrols
@@ -549,13 +552,9 @@
 					bind:this={desktopSearchRef}
 					value={searchTerm}
 					onchange={(value) => onsearchchange?.(value)}
+					showShortcutHint={showShortcuts}
 					class="w-[200px]"
 				/>
-				{#if showShortcuts}
-					<div class="absolute left-1/2 -translate-x-1/2 -bottom-7 pointer-events-none z-10">
-						<kbd class="text-xs font-sans text-dark-grey bg-white border border-dark-grey/30 rounded-md px-2 py-1 shadow-sm ring-1 ring-dark-grey/10">/</kbd>
-					</div>
-				{/if}
 			</div>
 
 			<!-- Desktop Filter Dropdowns -->
@@ -692,26 +691,13 @@
 		</div>
 	</div>
 
-	<!-- Fullscreen Toggle - Desktop -->
+	<!-- Options Menu - Desktop -->
 	<div class="relative hidden md:flex items-center pl-4 ml-4 border-l border-warm-grey">
-		<button
-			onclick={() => onfullscreenchange?.()}
-			class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
-			title={isFullscreen
-				? 'Exit full screen (F or Esc). Shift+F for browser fullscreen'
-				: 'Enter full screen (F). Shift+F for browser fullscreen'}
-		>
-			{#if isFullscreen}
-				<Minimize2 class="size-6 text-mid-grey" />
-			{:else}
-				<Maximize2 class="size-6 text-mid-grey" />
-			{/if}
-		</button>
-		{#if showShortcuts}
-			<div class="absolute left-1/2 -translate-x-1/2 -bottom-7 pointer-events-none z-10">
-				<kbd class="text-xs font-sans text-dark-grey bg-white border border-dark-grey/30 rounded-md px-2 py-1 shadow-sm ring-1 ring-dark-grey/10">F</kbd>
-			</div>
-		{/if}
+		<OptionsMenu
+			{isFullscreen}
+			onfullscreenchange={() => onfullscreenchange?.()}
+			onshowshortcuts={() => onshowshortcuts?.()}
+		/>
 	</div>
 
 	<!-- Mobile Filter Button -->
