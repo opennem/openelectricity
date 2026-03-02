@@ -1,53 +1,80 @@
 <script>
 	import { fly } from 'svelte/transition';
+	import { X } from '@lucide/svelte';
 
 	let { visible = false, ondismiss } = $props();
-
-	/** @type {ReturnType<typeof setTimeout> | undefined} */
-	let timer;
-
-	$effect(() => {
-		if (visible) {
-			clearTimeout(timer);
-			timer = setTimeout(() => {
-				ondismiss?.();
-			}, 5000);
-		}
-
-		return () => clearTimeout(timer);
-	});
 </script>
 
 {#if visible}
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
-		class="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 hidden md:flex items-center gap-4 bg-white border border-warm-grey rounded-full shadow-md px-5 py-2.5 cursor-pointer"
+		class="fixed inset-0 z-[10000] hidden md:flex items-center justify-center"
 		onclick={() => ondismiss?.()}
-		transition:fly={{ y: 20, duration: 300 }}
 	>
-		<div class="flex items-center gap-1.5">
-			<kbd
-				class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
-				>F</kbd
-			>
-			<span class="text-xs text-mid-grey">enter/exit fullscreen</span>
-		</div>
+		<!-- Backdrop -->
+		<div class="absolute inset-0 bg-black/20"></div>
 
-		<div class="flex items-center gap-1.5">
-			<kbd
-				class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
-				>/</kbd
-			>
-			<span class="text-xs text-mid-grey">search</span>
-		</div>
+		<!-- Panel -->
+		<div
+			class="relative bg-white border border-warm-grey rounded-2xl shadow-xl px-8 py-6 min-w-[320px]"
+			onclick={(e) => e.stopPropagation()}
+			transition:fly={{ y: 20, duration: 300 }}
+		>
+			<!-- Header -->
+			<div class="flex items-center justify-between pb-4 mb-5 border-b border-warm-grey">
+				<h3 class="text-base font-semibold text-dark-grey mb-0">Keyboard shortcuts</h3>
+				<button
+					onclick={() => ondismiss?.()}
+					class="p-1.5 -mr-1.5 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
+				>
+					<X class="size-5 text-mid-grey" />
+				</button>
+			</div>
 
-		<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
-			<kbd
-				class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
-				>?</kbd
-			>
-			<span class="text-xs text-mid-grey">show shortcuts</span>
+			<!-- Shortcuts list -->
+			<div class="flex flex-col gap-3">
+				<div class="flex items-center justify-between gap-8">
+					<span class="text-sm text-mid-grey">Enter / exit full screen</span>
+					<kbd
+						class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
+					>F</kbd>
+				</div>
+
+				<div class="flex items-center justify-between gap-8">
+					<span class="text-sm text-mid-grey">Browser full screen</span>
+					<div class="flex items-center gap-1">
+						<kbd
+							class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
+						>Shift</kbd>
+						<span class="text-xs text-mid-grey">+</span>
+						<kbd
+							class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
+						>F</kbd>
+					</div>
+				</div>
+
+				<div class="flex items-center justify-between gap-8">
+					<span class="text-sm text-mid-grey">Search</span>
+					<kbd
+						class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
+					>/</kbd>
+				</div>
+
+				<div class="flex items-center justify-between gap-8">
+					<span class="text-sm text-mid-grey">Show shortcuts</span>
+					<kbd
+						class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
+					>?</kbd>
+				</div>
+
+				<div class="flex items-center justify-between gap-8">
+					<span class="text-sm text-mid-grey">Exit</span>
+					<kbd
+						class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
+					>Esc</kbd>
+				</div>
+			</div>
 		</div>
 	</div>
 {/if}

@@ -52,6 +52,7 @@
 	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void,
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
+	 *   onshortcutinvoked?: () => void,
 	 *   onyearplayingchange?: (playing: boolean) => void,
 	 *   onplayyearchange?: (year: number | null) => void,
 	 *   onregisteranimationcontrols?: (controls: { stop: () => void, toggle: () => void }) => void
@@ -80,6 +81,7 @@
 		onviewchange,
 		onfullscreenchange,
 		onshowshortcuts,
+		onshortcutinvoked,
 		onyearplayingchange,
 		onplayyearchange,
 		onregisteranimationcontrols
@@ -341,12 +343,15 @@
 			} else {
 				desktopSearchRef?.focus();
 			}
+			onshortcutinvoked?.();
+			return;
 		}
 
 		// Shift+F for browser fullscreen
 		if ((e.key === 'f' || e.key === 'F') && e.shiftKey) {
 			e.preventDefault();
 			toggleBrowserFullscreen();
+			onshortcutinvoked?.();
 			return;
 		}
 
@@ -354,6 +359,7 @@
 		if (e.key === 'f' || e.key === 'F') {
 			e.preventDefault();
 			onfullscreenchange?.();
+			onshortcutinvoked?.();
 		}
 	}
 

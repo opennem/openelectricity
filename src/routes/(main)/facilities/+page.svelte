@@ -538,16 +538,24 @@
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
-		// Escape exits fullscreen
-		if (e.key === 'Escape' && isFullscreen) {
-			e.preventDefault();
-			toggleFullscreen();
+		// Escape closes shortcuts toast first, then exits fullscreen
+		if (e.key === 'Escape') {
+			if (showShortcutsToast) {
+				e.preventDefault();
+				showShortcutsToast = false;
+				return;
+			}
+			if (isFullscreen) {
+				e.preventDefault();
+				toggleFullscreen();
+			}
 		}
 
 		// '?' key toggles shortcuts toast
 		if (e.key === '?') {
 			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 			showShortcutsToast = !showShortcutsToast;
+			return;
 		}
 
 		// 'G' key toggles golf courses (easter egg)
@@ -557,6 +565,7 @@
 			golfUnlocked = true;
 			mapShowGolfCourses = !mapShowGolfCourses;
 			updateMapOptionsUrl();
+			showShortcutsToast = false;
 		}
 	}
 
@@ -783,6 +792,7 @@
 				onviewchange={handleSelectedViewChange}
 				onfullscreenchange={toggleFullscreen}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
+				onshortcutinvoked={() => (showShortcutsToast = false)}
 				onyearplayingchange={(playing) => (isYearPlaying = playing)}
 				onplayyearchange={(year) => (playYear = year)}
 				onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
