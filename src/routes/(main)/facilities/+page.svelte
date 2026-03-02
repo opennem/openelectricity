@@ -137,7 +137,7 @@
 	let containerHeight = $state(0);
 
 	// Shortcuts toast
-	let showShortcutsToast = $state(true);
+	let showShortcutsToast = $state(false);
 
 	// Year animation playing state (from Filters)
 	let isYearPlaying = $state(false);
