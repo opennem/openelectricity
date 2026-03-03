@@ -203,6 +203,9 @@
 			return;
 		}
 
+		// Read powerData without tracking — seeding is handled by a separate effect
+		const currentPowerData = untrack(() => powerData);
+
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
 			networkId: facility.network_id,
@@ -215,9 +218,9 @@
 			getColour
 		});
 
-		// Only seed with server power data if the metric matches and data exists
-		if (currentMetric === 'power' && powerData) {
-			manager.seedCache(powerData);
+		// Seed with server power data if available synchronously
+		if (currentMetric === 'power' && currentPowerData) {
+			manager.seedCache(currentPowerData);
 		}
 
 		// Use untrack so viewStart/viewEnd don't become dependencies of this effect.
@@ -251,7 +254,29 @@
 		dataManager = manager;
 	});
 
-	// Prefetch common ranges after initial load completes
+	// Seed manager with server power data when it arrives asynchronously
+	$effect(() => {
+		const manager = dataManager;
+		const data = powerData;
+		if (!manager || !data) return;
+		if (manager.metric !== 'power') return;
+		// Already has cached data — don't re-seed
+		if (manager.cacheStart !== null) return;
+
+		manager.seedCache(data);
+
+		// Set viewport from seeded cache if not yet set
+		const start = viewStart;
+		const end = viewEnd;
+		if (!start && !end && manager.cacheStart !== null && manager.cacheEnd !== null) {
+			viewStart = manager.cacheStart;
+			viewEnd = Math.min(manager.cacheEnd, Date.now());
+		}
+	});
+
+	// Prefetch common ranges after initial load completes.
+	// Uses untrack for requestRange calls to prevent cache $state from
+	// becoming dependencies (which would cause a feedback loop on every merge).
 	$effect(() => {
 		const manager = dataManager;
 		if (!manager || !manager.initialLoadComplete) return;
@@ -260,31 +285,36 @@
 		// Only prefetch from the initial power mode (don't re-prefetch on every switch)
 		if (manager.metric !== 'power') return;
 
-		const now = Date.now();
+		const currentCode = facility.code;
+		const currentNetworkId = facility.network_id;
 
-		// 1. Extend power cache to 7 days
-		const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
-		manager.requestRange(sevenDaysAgo, now);
+		untrack(() => {
+			const now = Date.now();
 
-		// 2. Background energy/1d manager for 1-year range
-		const energyKey = '1d-energy';
-		if (prefetchCache.has(energyKey)) return;
+			// 1. Extend power cache to 7 days
+			const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
+			manager.requestRange(sevenDaysAgo, now);
 
-		const energyManager = new ChartDataManager({
-			facilityCode: facility.code,
-			networkId: facility.network_id,
-			interval: '1d',
-			metric: 'energy',
-			unitFuelTechMap,
-			unitOrder,
-			loadsToInvert: loadIds,
-			getLabel,
-			getColour
+			// 2. Background energy/1d manager for 1-year range
+			const energyKey = '1d-energy';
+			if (prefetchCache.has(energyKey)) return;
+
+			const energyManager = new ChartDataManager({
+				facilityCode: currentCode,
+				networkId: currentNetworkId,
+				interval: '1d',
+				metric: 'energy',
+				unitFuelTechMap,
+				unitOrder,
+				loadsToInvert: loadIds,
+				getLabel,
+				getColour
+			});
+
+			const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
+			energyManager.requestRange(oneYearAgo, now);
+			prefetchCache.set(energyKey, energyManager);
 		});
-
-		const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
-		energyManager.requestRange(oneYearAgo, now);
-		prefetchCache.set(energyKey, energyManager);
 	});
 
 	// ============================================

@@ -141,6 +141,8 @@
 
 	// Year animation playing state (from Filters)
 	let isYearPlaying = $state(false);
+	let windowWidth = $state(0);
+	let isDesktop = $derived(windowWidth >= 768);
 	/** @type {number | null} */
 	let playYear = $state(null);
 	/** @type {{ stop: () => void, toggle: () => void } | null} */
@@ -737,7 +739,7 @@
 	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} bind:innerWidth={windowWidth} />
 
 <Meta
 	title="Facilities"
@@ -1090,23 +1092,25 @@
 				{/if}
 
 				<!-- Facility detail panel (desktop only) -->
-				<ResizablePanel
-					open={!!selectedFacility}
-					onclose={closeFacilityDetail}
-					title={selectedFacility?.name ?? ''}
-					direction="top"
-					defaultSize={containerHeight < 650 ? 100 : isFullscreen ? 66 : 50}
-					minSize={250}
-					containerSize={containerHeight}
-					class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20"
-				>
-					<FacilityDetailPanel facility={selectedFacility} {powerData} />
-				</ResizablePanel>
+				{#if isDesktop}
+					<ResizablePanel
+						open={!!selectedFacility}
+						onclose={closeFacilityDetail}
+						title={selectedFacility?.name ?? ''}
+						direction="top"
+						defaultSize={containerHeight < 650 ? 100 : isFullscreen ? 66 : 50}
+						minSize={250}
+						containerSize={containerHeight}
+						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20"
+					>
+						<FacilityDetailPanel facility={selectedFacility} {powerData} />
+					</ResizablePanel>
+				{/if}
 			</div>
 		</div>
 
 		<!-- Facility detail panel (mobile only - covers full section height) -->
-		{#if selectedFacility}
+		{#if selectedFacility && !isDesktop}
 			<div
 				class="md:hidden absolute inset-0 w-full bg-white z-30 flex flex-col overflow-hidden"
 				transition:fly={{ y: 200, duration: 250, easing: quintOut }}
