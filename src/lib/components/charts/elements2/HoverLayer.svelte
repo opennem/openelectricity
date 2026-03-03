@@ -18,6 +18,15 @@
 	/** @type {Props} */
 	let { dataset = [], onmousemove, onmouseout, onpointerup } = $props();
 
+	const META_KEYS = new Set(['date', 'time', '_totalPositive', '_totalNegative']);
+
+	/** Infer the first series key from a data item (excluding metadata keys) */
+	let firstSeriesKey = $derived.by(() => {
+		const item = dataset[0];
+		if (!item) return '';
+		return Object.keys(item).find((k) => !META_KEYS.has(k)) || '';
+	});
+
 	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
 	let rectHeight = $derived($height ? Math.abs($height) : 0);
 
@@ -47,7 +56,7 @@
 	function pointermove(evt) {
 		const item = findItem(evt);
 		if (item) {
-			onmousemove?.({ data: item, key: '' });
+			onmousemove?.({ data: item, key: firstSeriesKey });
 		}
 	}
 
