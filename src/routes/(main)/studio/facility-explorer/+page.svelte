@@ -22,10 +22,20 @@
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import { MapPin, CircleAlert, SearchX, ExternalLink, Calendar } from '@lucide/svelte';
+	import {
+		MapPin,
+		CircleAlert,
+		SearchX,
+		ExternalLink,
+		Calendar,
+		ChartArea,
+		Table2
+	} from '@lucide/svelte';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import Switch from '$lib/components/Switch.svelte';
+	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
+	import FacilityLocationMap from './_components/FacilityLocationMap.svelte';
 	import {
 		getMetricIntervalForDays,
 		getHysteresisSwitch,
@@ -57,8 +67,13 @@
 	// ============================================
 
 	let searchOpen = $state(false);
-	/** @type {'units' | 'data'} */
-	let activeTab = $state('units');
+	/** @type {'chart' | 'data'} */
+	let activeView = $state('chart');
+
+	const viewButtons = [
+		{ label: 'Chart', value: 'chart', icon: ChartArea, size: 'size-4' },
+		{ label: 'Data', value: 'data', icon: Table2, size: 'size-4' }
+	];
 
 	let dateStart = $state(
 		data.dateStart || getDateStartForRange(data.range ?? 7, data.facility?.units)
@@ -99,6 +114,25 @@
 	});
 
 	let unitColours = $derived(analysis?.unitColours ?? {});
+
+	let primaryFuelTechColor = $derived.by(() => {
+		if (!selectedFacility?.units?.length) return '#353535';
+		/** @type {Record<string, number>} */
+		const counts = {};
+		for (const unit of selectedFacility.units) {
+			const ft = unit.fueltech_id;
+			if (ft) counts[ft] = (counts[ft] || 0) + 1;
+		}
+		let maxFt = null;
+		let maxCount = 0;
+		for (const [ft, count] of Object.entries(counts)) {
+			if (count > maxCount) {
+				maxCount = count;
+				maxFt = ft;
+			}
+		}
+		return maxFt ? getFuelTechColor(maxFt) : '#353535';
+	});
 
 	// Facility info derived values
 	let regionLabel = $derived(
@@ -379,7 +413,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
-	<title>Facility Explorer</title>
+	<title>{selectedFacility ? `${selectedFacility.name} — ` : ''}Facility Explorer</title>
 </svelte:head>
 
 {#if data.error && !selectedFacility}
@@ -500,40 +534,91 @@
 		</div>
 	</div>
 
-	<!-- Chart -->
-	<div class="px-4">
-		<div class="bg-light-warm-grey/30 rounded-xl p-4">
-			<FacilityChart
-				bind:this={chartComponent}
-				facility={selectedFacility}
-				powerData={data.powerData}
-				{timeZone}
-				{dateStart}
-				{dateEnd}
-				interval={activeInterval}
-				metric={activeMetric}
-				{displayInterval}
-				onviewportchange={handleViewportChange}
-				onvisibledata={handleVisibleData}
-			/>
-		</div>
-	</div>
-
-	<!-- Content below chart -->
-	<div class="max-w-7xl mx-auto px-4 py-4">
-		<!-- Facility Info -->
-		<div class="flex items-center gap-3 text-sm text-mid-grey flex-wrap">
-			<span class="font-medium text-dark-grey">{regionLabel}</span>
-			<span>{selectedFacility.network_id}</span>
-			<span class="font-mono">{formatValue(totalCapacity)} MW</span>
-			<span>{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
-			{#if weightedEmissionsIntensity}
-				<span class="font-mono"
-					>{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh</span
-				>
+	<!-- Two-column layout -->
+	<div class="grid grid-cols-1 md:grid-cols-12 gap-0 md:gap-6 px-4 py-4">
+		<!-- LEFT: Chart / Data -->
+		<div class="col-span-1 md:col-span-8">
+			<!-- Description (HTML) -->
+			{#if selectedFacility.description}
+				<div class="text-base leading-lg text-mid-grey mb-4 [&_a]:text-dark-grey [&_a]:underline [&_p]:mb-[1em] [&_ul]:list-disc [&_ul]:ml-8 [&_ol]:list-decimal [&_ol]:ml-8">
+					{@html selectedFacility.description}
+				</div>
 			{/if}
+
+			<div class="mb-3">
+				<SwitchWithIcons
+					buttons={viewButtons}
+					selected={activeView}
+					onchange={(d) => {
+						activeView = /** @type {'chart' | 'data'} */ (d.value);
+					}}
+				/>
+			</div>
+
+			<!-- Chart (always rendered, hidden when data view active) -->
+			<div class:hidden={activeView !== 'chart'}>
+				<div class="bg-light-warm-grey/30 rounded-xl p-4">
+					<FacilityChart
+						bind:this={chartComponent}
+						facility={selectedFacility}
+						powerData={data.powerData}
+						{timeZone}
+						{dateStart}
+						{dateEnd}
+						interval={activeInterval}
+						metric={activeMetric}
+						{displayInterval}
+						onviewportchange={handleViewportChange}
+						onvisibledata={handleVisibleData}
+					/>
+				</div>
+			</div>
+
+			<!-- Data table -->
+			<div class:hidden={activeView !== 'data'}>
+				{#if tableData}
+					<div class="border border-warm-grey rounded-lg overflow-y-auto max-h-[500px]">
+						<FacilityDataTable
+							data={tableData.data}
+							seriesNames={tableData.seriesNames}
+							seriesLabels={tableData.seriesLabels}
+							{timeZone}
+						/>
+					</div>
+				{:else}
+					<div class="flex items-center justify-center py-16 text-sm text-mid-grey">
+						Loading data...
+					</div>
+				{/if}
+			</div>
+		</div>
+
+		<!-- RIGHT: Facility Info Sidebar -->
+		<div class="col-span-1 md:col-span-4 mt-6 md:mt-0">
+			<h2 class="text-lg font-semibold text-dark-grey leading-snug">
+				{selectedFacility.name}
+			</h2>
+
+			<!-- Metadata -->
+			<div class="flex items-center gap-2 mt-2 flex-wrap text-xs">
+				<span class="inline-flex items-center px-2 py-0.5 rounded bg-light-warm-grey font-medium text-dark-grey">
+					{regionLabel}
+				</span>
+				<span class="inline-flex items-center px-2 py-0.5 rounded bg-light-warm-grey text-mid-grey">
+					{selectedFacility.network_id}
+				</span>
+				<span class="text-mid-grey font-mono">{formatValue(totalCapacity)} MW</span>
+				<span class="text-mid-grey">{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
+				{#if weightedEmissionsIntensity}
+					<span class="text-mid-grey font-mono">
+						{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh
+					</span>
+				{/if}
+			</div>
+
+			<!-- Fuel tech badges -->
 			{#if unitGroups.length}
-				<div class="flex items-center gap-0.5">
+				<div class="flex items-center gap-1 mt-3 flex-wrap">
 					{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
 						<FuelTechBadge
 							fueltech_id={group.fueltech_id}
@@ -544,80 +629,46 @@
 					{/each}
 				</div>
 			{/if}
-		</div>
 
-		<!-- Tab Switcher -->
-		<div class="flex gap-4 mt-4 border-b border-warm-grey">
-			<button
-				class="pb-2 text-sm font-medium transition-colors {activeTab === 'units'
-					? 'border-b-2 border-dark-grey text-dark-grey'
-					: 'text-mid-grey hover:text-dark-grey'}"
-				onclick={() => (activeTab = 'units')}
-			>
-				Units
-			</button>
-			<button
-				class="pb-2 text-sm font-medium transition-colors {activeTab === 'data'
-					? 'border-b-2 border-dark-grey text-dark-grey'
-					: 'text-mid-grey hover:text-dark-grey'}"
-				onclick={() => (activeTab = 'data')}
-			>
-				Data
-			</button>
-		</div>
-
-		<!-- Tab Content -->
-		<div class="py-4">
-			{#if activeTab === 'units'}
-				{#if selectedFacility?.units?.length}
-					<div class="border border-warm-grey rounded-lg">
-						<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
-					</div>
-					<p class="text-xxs text-mid-grey mt-2">
-						Capacity shown is maximum capacity where available, otherwise registered capacity.
-					</p>
-				{/if}
-
-				{#if explorePath}
-					<div class="mt-3">
-						<a
-							href={explorePath}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="inline-flex items-center gap-1.5 text-xs text-mid-grey hover:text-dark-grey transition-colors"
-						>
-							<ExternalLink size={12} />
-							View on OpenElectricity
-						</a>
-					</div>
-				{/if}
-
-				{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
-					<div class="flex items-center gap-1 text-xs text-mid-grey mt-3">
-						<MapPin size={12} />
-						<span
-							>{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(
-								4
-							)}</span
-						>
-					</div>
-				{/if}
-
-				{#if selectedFacility.description}
-					<p class="text-sm text-mid-grey mt-3">{selectedFacility.description}</p>
-				{/if}
-			{:else if tableData}
-				<div class="border border-light-warm-grey rounded-lg overflow-y-auto max-h-[300px]">
-					<FacilityDataTable
-						data={tableData.data}
-						seriesNames={tableData.seriesNames}
-						seriesLabels={tableData.seriesLabels}
-						{timeZone}
+			<!-- Map -->
+			{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
+				<div class="mt-4">
+					<FacilityLocationMap
+						lat={selectedFacility.location.lat}
+						lng={selectedFacility.location.lng}
+						color={primaryFuelTechColor}
 					/>
+					<div class="flex items-center gap-1 text-xxs text-mid-grey mt-1.5">
+						<MapPin size={10} />
+						<span>
+							{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}
+						</span>
+					</div>
 				</div>
-			{:else}
-				<div class="flex items-center justify-center py-8 text-sm text-mid-grey">
-					Loading data...
+			{/if}
+
+			<!-- Units table -->
+			{#if selectedFacility?.units?.length}
+				<div class="mt-4 border border-warm-grey rounded-lg">
+					<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
+				</div>
+				<p class="text-xxs text-mid-grey mt-1.5">
+					Capacity shown is maximum capacity where available, otherwise registered capacity.
+				</p>
+			{/if}
+
+			<!-- External link -->
+			{#if explorePath}
+				<div class="mt-3">
+					<a
+						href={explorePath}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="inline-flex items-center gap-1.5 text-xs text-mid-grey hover:text-dark-grey transition-colors"
+					>
+						<ExternalLink size={12} />
+						View on OpenElectricity
+					</a>
 				</div>
 			{/if}
 		</div>
