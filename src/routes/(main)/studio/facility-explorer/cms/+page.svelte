@@ -271,6 +271,14 @@
 		return unit;
 	});
 
+	// Retain last selected unit data so the fly-out transition can still
+	// read properties while the panel animates away
+	/** @type {any} */
+	let displayUnit = $state(null);
+	$effect(() => {
+		if (selectedUnit) displayUnit = selectedUnit;
+	});
+
 	/**
 	 * @param {number | null | undefined} val
 	 * @returns {string}
@@ -695,13 +703,13 @@
 					<div class="flex-1 bg-white border-l border-warm-grey flex flex-col overflow-hidden">
 						<!-- Panel header (sticky) -->
 						<div class="flex items-center gap-2 px-4 py-3 border-b border-warm-grey flex-shrink-0">
-							<FacilityStatusIcon status={selectedUnit.status || 'operating'} />
+							<FacilityStatusIcon status={displayUnit?.status || 'operating'} />
 							<span
 								class="w-2.5 h-2.5 rounded-full flex-shrink-0"
-								style="background: {ftColour(selectedUnit.fuel_technology?.code)}"
+								style="background: {ftColour(displayUnit?.fuel_technology?.code)}"
 							></span>
 							<span class="text-[12px] font-medium text-dark-grey flex-1 truncate"
-								>{selectedUnit.code}</span
+								>{displayUnit?.code}</span
 							>
 							<button
 								onclick={() => (selectedUnitId = null)}
@@ -714,100 +722,100 @@
 						<!-- Scrollable content -->
 					<div class="flex-1 overflow-y-auto p-4">
 						<!-- Unit fields -->
-						{@render kv('code', selectedUnit.code)}
-						{@render kv('fuel_technology', selectedUnit.fuel_technology?.name)}
-						{@render kv('ft_code', selectedUnit.fuel_technology?.code)}
+						{@render kv('code', displayUnit?.code)}
+						{@render kv('fuel_technology', displayUnit?.fuel_technology?.name)}
+						{@render kv('ft_code', displayUnit?.fuel_technology?.code)}
 						{@render kv(
 							'renewable',
-							selectedUnit.fuel_technology?.renewable != null
-								? String(selectedUnit.fuel_technology.renewable)
+							displayUnit?.fuel_technology?.renewable != null
+								? String(displayUnit.fuel_technology.renewable)
 								: null
 						)}
-						{@render kv('dispatch_type', selectedUnit.dispatch_type)}
+						{@render kv('dispatch_type', displayUnit?.dispatch_type)}
 						{@render kv(
 							'ft_dispatch_type',
-							selectedUnit.fuel_technology?.dispatch_type
+							displayUnit?.fuel_technology?.dispatch_type
 						)}
-						{@render kv('status', selectedUnit.status)}
+						{@render kv('status', displayUnit?.status)}
 						{@render kv(
 							'capacity_registered',
-							selectedUnit.capacity_registered != null
-								? `${selectedUnit.capacity_registered} MW`
+							displayUnit?.capacity_registered != null
+								? `${displayUnit.capacity_registered} MW`
 								: null
 						)}
 						{@render kv(
 							'capacity_maximum',
-							selectedUnit.capacity_maximum != null
-								? `${selectedUnit.capacity_maximum} MW`
+							displayUnit?.capacity_maximum != null
+								? `${displayUnit.capacity_maximum} MW`
 								: null
 						)}
 						{@render kv(
 							'storage_capacity',
-							selectedUnit.storage_capacity != null
-								? `${selectedUnit.storage_capacity} MWh`
+							displayUnit?.storage_capacity != null
+								? `${displayUnit.storage_capacity} MWh`
 								: null
 						)}
 						{@render kv(
 							'min_generation',
-							selectedUnit.min_generation_capacity != null
-								? `${selectedUnit.min_generation_capacity} MW`
+							displayUnit?.min_generation_capacity != null
+								? `${displayUnit.min_generation_capacity} MW`
 								: null
 						)}
 						{@render kv(
 							'grid_forming',
-							selectedUnit.grid_forming != null
-								? String(selectedUnit.grid_forming)
+							displayUnit?.grid_forming != null
+								? String(displayUnit.grid_forming)
 								: null
 						)}
-						{@render kv('marginal_loss_factor', selectedUnit.marginal_loss_factor)}
-						{@render kv('emissions_co2', selectedUnit.emissions_factor_co2)}
-						{@render kv('emissions_source', selectedUnit.emissions_factor_source)}
-						{@render kv('data_first_seen', selectedUnit.data_first_seen)}
-						{@render kv('data_last_seen', selectedUnit.data_last_seen)}
+						{@render kv('marginal_loss_factor', displayUnit?.marginal_loss_factor)}
+						{@render kv('emissions_co2', displayUnit?.emissions_factor_co2)}
+						{@render kv('emissions_source', displayUnit?.emissions_factor_source)}
+						{@render kv('data_first_seen', displayUnit?.data_first_seen)}
+						{@render kv('data_last_seen', displayUnit?.data_last_seen)}
 						{@render kv(
 							'commissioning_confirmed',
-							selectedUnit.commissioning_confirmed != null
-								? String(selectedUnit.commissioning_confirmed)
+							displayUnit?.commissioning_confirmed != null
+								? String(displayUnit.commissioning_confirmed)
 								: null
 						)}
-						{@render kv('expected_operation', selectedUnit.expected_operation_date)}
+						{@render kv('expected_operation', displayUnit?.expected_operation_date)}
 						{@render kv(
 							'expected_op_specificity',
-							selectedUnit.expected_operation_date_specificity
+							displayUnit?.expected_operation_date_specificity
 						)}
-						{@render kv('expected_closure', selectedUnit.expected_closure_date)}
+						{@render kv('expected_closure', displayUnit?.expected_closure_date)}
 						{@render kv(
 							'expected_cl_specificity',
-							selectedUnit.expected_closure_date_specificity
+							displayUnit?.expected_closure_date_specificity
 						)}
-						{@render kv('commencement_date', selectedUnit.commencement_date)}
+						{@render kv('commencement_date', displayUnit?.commencement_date)}
 						{@render kv(
 							'commencement_specificity',
-							selectedUnit.commencement_date_specificity
+							displayUnit?.commencement_date_specificity
 						)}
-						{@render kv('closure_date', selectedUnit.closure_date)}
+						{@render kv('closure_date', displayUnit?.closure_date)}
 						{@render kv(
 							'closure_specificity',
-							selectedUnit.closure_date_specificity
+							displayUnit?.closure_date_specificity
 						)}
-						{@render kv('construction_start', selectedUnit.construction_start_date)}
-						{@render kv('construction_cost', selectedUnit.construction_cost)}
+						{@render kv('construction_start', displayUnit?.construction_start_date)}
+						{@render kv('construction_cost', displayUnit?.construction_cost)}
 						{@render kv(
 							'cis_tender_recipient',
-							selectedUnit.cis_tender_recipient != null
-								? String(selectedUnit.cis_tender_recipient)
+							displayUnit?.cis_tender_recipient != null
+								? String(displayUnit.cis_tender_recipient)
 								: null
 						)}
 
 						<!-- Unit types -->
-						{#if selectedUnit.unit_types?.length > 0}
+						{#if displayUnit?.unit_types?.length > 0}
 							<div class="mt-3 pt-3 border-t border-warm-grey/60">
 								<div
 									class="text-[9px] text-mid-grey uppercase tracking-widest mb-1"
 								>
-									Unit Types ({selectedUnit.unit_types.length})
+									Unit Types ({displayUnit.unit_types.length})
 								</div>
-								{#each selectedUnit.unit_types as ut, i (ut._id || i)}
+								{#each displayUnit.unit_types as ut, i (ut._id || i)}
 									{#if i > 0}
 										<div class="border-t border-warm-grey/40 mt-1 pt-1"></div>
 									{/if}
@@ -841,14 +849,14 @@
 						{/if}
 
 						<!-- Unit metadata -->
-						{#if selectedUnit.metadata_array?.length > 0}
+						{#if displayUnit?.metadata_array?.length > 0}
 							<div class="mt-3 pt-3 border-t border-warm-grey/60">
 								<div
 									class="text-[9px] text-mid-grey uppercase tracking-widest mb-1"
 								>
 									Metadata
 								</div>
-								{#each selectedUnit.metadata_array as meta, i (i)}
+								{#each displayUnit.metadata_array as meta, i (i)}
 									{@render kv(meta.key, meta.value)}
 								{/each}
 							</div>
