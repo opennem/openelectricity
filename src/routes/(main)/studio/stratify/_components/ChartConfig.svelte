@@ -1,10 +1,7 @@
 <script>
-	let {
-		title = $bindable(''),
-		description = $bindable(''),
-		dataSource = $bindable(''),
-		notes = $bindable('')
-	} = $props();
+	import { getStratifyContext } from '../_state/context.js';
+
+	const project = getStratifyContext();
 </script>
 
 <div class="space-y-3">
@@ -14,7 +11,7 @@
 		>
 		<input
 			type="text"
-			bind:value={title}
+			bind:value={project.title}
 			placeholder="Chart title"
 			class="bg-light-warm-grey border border-mid-warm-grey rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-dark-grey"
 		/>
@@ -25,7 +22,7 @@
 			>Description</span
 		>
 		<textarea
-			bind:value={description}
+			bind:value={project.description}
 			rows="2"
 			placeholder="Brief description of the chart"
 			class="bg-light-warm-grey border border-mid-warm-grey rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-dark-grey resize-y"
@@ -38,7 +35,7 @@
 		>
 		<input
 			type="text"
-			bind:value={dataSource}
+			bind:value={project.dataSource}
 			placeholder="e.g. Bureau of Meteorology"
 			class="bg-light-warm-grey border border-mid-warm-grey rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-dark-grey"
 		/>
@@ -49,7 +46,7 @@
 			>Notes</span
 		>
 		<textarea
-			bind:value={notes}
+			bind:value={project.notes}
 			rows="2"
 			placeholder="Additional notes or footnotes"
 			class="bg-light-warm-grey border border-mid-warm-grey rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-dark-grey resize-y"
