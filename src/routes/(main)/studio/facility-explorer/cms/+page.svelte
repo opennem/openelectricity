@@ -257,11 +257,19 @@
 	}
 
 	// Selected unit object
-	let selectedUnit = $derived(
-		selectedUnitId && selected?.units
-			? selected.units.find((/** @type {any} */ u) => u._id === selectedUnitId)
-			: null
-	);
+	// Close unit panel when the selected unit no longer exists (e.g. facility changed)
+	let selectedUnit = $derived.by(() => {
+		if (!selectedUnitId || !selected?.units) return null;
+		const unit = selected.units.find((/** @type {any} */ u) => u._id === selectedUnitId);
+		if (!unit) {
+			// Use queueMicrotask to avoid mutating state during derivation
+			queueMicrotask(() => {
+				selectedUnitId = null;
+			});
+			return null;
+		}
+		return unit;
+	});
 
 	/**
 	 * @param {number | null | undefined} val
