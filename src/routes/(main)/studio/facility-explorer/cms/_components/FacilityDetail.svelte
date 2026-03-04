@@ -1,0 +1,473 @@
+<script>
+	/**
+	 * FacilityDetail — inspector panel for a single facility.
+	 *
+	 * Shows all facility fields (header, photos, KV fields, description,
+	 * owners, metadata, units list) plus a slide-in unit detail panel.
+	 */
+
+	import { urlFor } from '$lib/sanity';
+	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { ChevronRight, ExternalLink, X } from '@lucide/svelte';
+	import { fly } from 'svelte/transition';
+	import FacilityStatusIcon from '../../../../facilities/_components/FacilityStatusIcon.svelte';
+	import { createDragHandler } from '../_utils/drag-resize.svelte.js';
+
+	/** @type {{ facility: any, selectedUnitId?: string | null }} */
+	let { facility, selectedUnitId = $bindable(null) } = $props();
+
+	// Resizable unit panel width (right-anchored — drag left to widen)
+	const unitPanelDrag = createDragHandler({
+		axis: 'x',
+		min: 360,
+		max: 800,
+		initial: 480,
+		storageKey: 'cms-explorer-unit-panel-width',
+		invert: true
+	});
+
+	// Total capacity
+	let totalCapacity = $derived(
+		facility?.units?.reduce(
+			(/** @type {number} */ s, /** @type {any} */ u) => s + (u.capacity_registered || 0),
+			0
+		) ?? 0
+	);
+
+	// Selected unit object — close panel when unit no longer exists (e.g. facility changed)
+	let selectedUnit = $derived.by(() => {
+		if (!selectedUnitId || !facility?.units) return null;
+		const unit = facility.units.find((/** @type {any} */ u) => u._id === selectedUnitId);
+		if (!unit) {
+			queueMicrotask(() => {
+				selectedUnitId = null;
+			});
+			return null;
+		}
+		return unit;
+	});
+
+	// Retain last selected unit data so the fly-out transition can still
+	// read properties while the panel animates away
+	/** @type {any} */
+	let displayUnit = $state(null);
+	$effect(() => {
+		if (selectedUnit) displayUnit = selectedUnit;
+	});
+
+	/**
+	 * @param {number | null | undefined} val
+	 * @returns {string}
+	 */
+	function fmtCap(val) {
+		if (val == null) return '—';
+		return val.toLocaleString('en-AU', { maximumFractionDigits: 1 });
+	}
+
+	/**
+	 * Get fuel tech colour for a code
+	 * @param {string | undefined} code
+	 * @returns {string}
+	 */
+	function ftColour(code) {
+		if (!code) return '#ccc';
+		return (
+			fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (code)] || '#888'
+		);
+	}
+</script>
+
+{#snippet kv(/** @type {string} */ label, /** @type {any} */ value)}
+	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
+		<span class="text-[11px] text-mid-grey font-mono truncate" title={label}>{label}</span>
+		{#if value != null && value !== ''}
+			<span class="text-[12px] text-dark-grey font-mono break-all col-span-2">{value}</span>
+		{:else}
+			<span class="text-[12px] text-mid-grey/50 font-mono col-span-2">—</span>
+		{/if}
+	</div>
+{/snippet}
+
+<div class="relative flex-1 overflow-y-auto min-h-0">
+	<div class="p-5">
+		<!-- Facility header -->
+		<div class="flex items-start gap-3 mb-5">
+			<span
+				class="w-3 h-3 rounded-full mt-1 flex-shrink-0"
+				style="background: {ftColour(
+					facility.units?.[0]?.fuel_technology?.code
+				)}"
+			></span>
+			<div class="flex-1 min-w-0">
+				<h2 class="text-sm font-medium text-dark-grey">
+					{facility.name || 'Unnamed'}
+				</h2>
+				<div class="flex items-center gap-3 mt-0.5 text-[10px] text-mid-grey">
+					<span>{facility.code}</span>
+					<span>{facility.network?.name || '—'}</span>
+					<span>{facility.region?.name || '—'}</span>
+					<span>{facility.units?.length || 0} units</span>
+					<span>{fmtCap(totalCapacity)} MW</span>
+				</div>
+			</div>
+			<!-- Links -->
+			{#if facility.website}
+				<a
+					href={facility.website}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
+				>
+					<ExternalLink size={10} /> web
+				</a>
+			{/if}
+			{#if facility.wikipedia}
+				<a
+					href={facility.wikipedia}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
+				>
+					<ExternalLink size={10} /> wiki
+				</a>
+			{/if}
+		</div>
+
+		<!-- Photos -->
+		{#if facility.photos?.length > 0}
+			<div class="flex gap-2 mb-5 overflow-x-auto pb-1">
+				{#each facility.photos as photo, i (photo._key || i)}
+					<div class="flex-shrink-0">
+						<img
+							src={photo.asset
+								? urlFor(photo).width(400).height(240).url()
+								: photo.url}
+							alt={photo.alt ||
+								photo.caption ||
+								`${facility.name} photo ${i + 1}`}
+							class="rounded border border-warm-grey object-cover h-[120px] max-w-[200px]"
+						/>
+						{#if photo.caption || photo.attribution}
+							<p class="text-[9px] text-mid-grey mt-1 truncate max-w-[200px]">
+								{photo.caption || ''}{#if photo.attribution}{photo.caption
+									? ' — '
+									: ''}{photo.attribution}{/if}
+							</p>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		{/if}
+
+		<!-- Facility section -->
+		<div class="mb-5">
+			<div
+				class="text-[10px] text-mid-grey uppercase tracking-widest mb-2 pb-1 border-b border-dark-grey"
+			>
+				Facility
+			</div>
+			{@render kv('code', facility.code)}
+			{@render kv('network', facility.network?.name)}
+			{@render kv('region', facility.region?.name)}
+			{@render kv(
+				'location',
+				facility.location?.lat && facility.location?.lng
+					? `${facility.location.lat.toFixed(5)}, ${facility.location.lng.toFixed(5)}`
+					: null
+			)}
+			{@render kv('website', facility.website)}
+			{@render kv('wikipedia', facility.wikipedia)}
+			{@render kv('wikidata_id', facility.wikidata_id)}
+			{@render kv('osm_way_id', facility.osm_way_id)}
+			{@render kv('npi_id', facility.npiId)}
+		</div>
+
+		<!-- Description -->
+		{#if facility.description?.length > 0}
+			<div class="mb-5">
+				<div
+					class="text-[10px] text-mid-grey uppercase tracking-widest mb-2 pb-1 border-b border-dark-grey"
+				>
+					Description
+				</div>
+				<div class="text-[12px] text-dark-grey leading-relaxed font-sans">
+					{#each facility.description as block, i (block._key || i)}
+						{#if block._type === 'block'}
+							<p class="mb-1.5">
+								{block.children
+									?.map((/** @type {any} */ c) => c.text)
+									.join('') || ''}
+							</p>
+						{/if}
+					{/each}
+				</div>
+			</div>
+		{/if}
+
+		<!-- Owners -->
+		{#if facility.owners?.length > 0}
+			<div class="mb-5">
+				<div
+					class="text-[10px] text-mid-grey uppercase tracking-widest mb-2 pb-1 border-b border-dark-grey"
+				>
+					Owners
+				</div>
+				{#each facility.owners as owner (owner._id)}
+					<div class="flex items-baseline gap-2 py-[3px] border-b border-warm-grey/60">
+						<span class="text-[12px] text-dark-grey"
+							>{owner.name || owner.legal_name}</span
+						>
+						{#if owner.website}
+							<a
+								href={owner.website}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-[10px] text-mid-grey hover:text-dark-grey"
+								>[web]</a
+							>
+						{/if}
+						{#if owner.contact_email}
+							<span class="text-[10px] text-mid-grey"
+								>{owner.contact_email}</span
+							>
+						{/if}
+					</div>
+				{/each}
+			</div>
+		{/if}
+
+		<!-- Metadata -->
+		{#if facility.metadata_array?.length > 0}
+			<div class="mb-5">
+				<div
+					class="text-[10px] text-mid-grey uppercase tracking-widest mb-2 pb-1 border-b border-dark-grey"
+				>
+					Metadata
+				</div>
+				{#each facility.metadata_array as meta, i (i)}
+					{@render kv(meta.key, meta.value)}
+				{/each}
+			</div>
+		{/if}
+
+		<!-- Units -->
+		{#if facility.units?.length > 0}
+			<div>
+				<div
+					class="text-[10px] text-mid-grey uppercase tracking-widest mb-2 pb-1 border-b border-dark-grey"
+				>
+					Units ({facility.units.length})
+				</div>
+				{#each facility.units as unit (unit._id)}
+					<button
+						onclick={() => (selectedUnitId = unit._id)}
+						class="w-full text-left grid grid-cols-[16px_8px_1fr_50px_14px] items-center gap-2 py-1.5 px-1 hover:bg-warm-grey/50 rounded transition-colors {selectedUnitId === unit._id ? 'bg-warm-grey/30' : ''}"
+					>
+						<FacilityStatusIcon status={unit.status || 'operating'} />
+						<span
+							class="w-2 h-2 rounded-full"
+							style="background: {ftColour(unit.fuel_technology?.code)}"
+						></span>
+						<span class="text-[11px] text-dark-grey truncate"
+							>{unit.code || '—'}</span
+						>
+						<span class="text-[10px] text-mid-grey tabular-nums text-right"
+							>{fmtCap(unit.capacity_registered)}</span
+						>
+						<ChevronRight
+							size={10}
+							class="text-mid-grey/50"
+						/>
+					</button>
+				{/each}
+			</div>
+		{/if}
+	</div>
+
+	<!-- Unit detail slide-in panel -->
+	{#if selectedUnit}
+		<div
+			class="absolute inset-y-0 right-0 flex z-20 shadow-lg"
+			style="width: {unitPanelDrag.value}px;"
+			transition:fly={{ x: unitPanelDrag.value, duration: 200 }}
+		>
+			<!-- Drag handle -->
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div
+				class="w-3 h-full cursor-col-resize flex-shrink-0 flex items-center justify-center group border-l border-warm-grey bg-light-warm-grey hover:bg-warm-grey active:bg-mid-warm-grey transition-colors {unitPanelDrag.isDragging ? 'bg-mid-warm-grey' : ''}"
+				onmousedown={unitPanelDrag.start}
+			>
+				<div class="flex flex-col gap-1">
+					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
+					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
+					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
+					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
+					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
+				</div>
+			</div>
+			<div class="flex-1 bg-white border-l border-warm-grey flex flex-col overflow-hidden">
+				<!-- Panel header (sticky) -->
+				<div class="flex items-center gap-2 px-4 py-3 border-b border-warm-grey flex-shrink-0">
+					<FacilityStatusIcon status={displayUnit?.status || 'operating'} />
+					<span
+						class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+						style="background: {ftColour(displayUnit?.fuel_technology?.code)}"
+					></span>
+					<span class="text-[12px] font-medium text-dark-grey flex-1 truncate"
+						>{displayUnit?.code}</span
+					>
+					<button
+						onclick={() => (selectedUnitId = null)}
+						class="p-1 hover:bg-warm-grey rounded transition-colors"
+					>
+						<X size={12} class="text-mid-grey" />
+					</button>
+				</div>
+
+				<!-- Scrollable content -->
+				<div class="flex-1 overflow-y-auto p-4">
+					<!-- Unit fields -->
+					{@render kv('code', displayUnit?.code)}
+					{@render kv('fuel_technology', displayUnit?.fuel_technology?.name)}
+					{@render kv('ft_code', displayUnit?.fuel_technology?.code)}
+					{@render kv(
+						'renewable',
+						displayUnit?.fuel_technology?.renewable != null
+							? String(displayUnit.fuel_technology.renewable)
+							: null
+					)}
+					{@render kv('dispatch_type', displayUnit?.dispatch_type)}
+					{@render kv(
+						'ft_dispatch_type',
+						displayUnit?.fuel_technology?.dispatch_type
+					)}
+					{@render kv('status', displayUnit?.status)}
+					{@render kv(
+						'capacity_registered',
+						displayUnit?.capacity_registered != null
+							? `${displayUnit.capacity_registered} MW`
+							: null
+					)}
+					{@render kv(
+						'capacity_maximum',
+						displayUnit?.capacity_maximum != null
+							? `${displayUnit.capacity_maximum} MW`
+							: null
+					)}
+					{@render kv(
+						'storage_capacity',
+						displayUnit?.storage_capacity != null
+							? `${displayUnit.storage_capacity} MWh`
+							: null
+					)}
+					{@render kv(
+						'min_generation',
+						displayUnit?.min_generation_capacity != null
+							? `${displayUnit.min_generation_capacity} MW`
+							: null
+					)}
+					{@render kv(
+						'grid_forming',
+						displayUnit?.grid_forming != null
+							? String(displayUnit.grid_forming)
+							: null
+					)}
+					{@render kv('marginal_loss_factor', displayUnit?.marginal_loss_factor)}
+					{@render kv('emissions_co2', displayUnit?.emissions_factor_co2)}
+					{@render kv('emissions_source', displayUnit?.emissions_factor_source)}
+					{@render kv('data_first_seen', displayUnit?.data_first_seen)}
+					{@render kv('data_last_seen', displayUnit?.data_last_seen)}
+					{@render kv(
+						'commissioning_confirmed',
+						displayUnit?.commissioning_confirmed != null
+							? String(displayUnit.commissioning_confirmed)
+							: null
+					)}
+					{@render kv('expected_operation', displayUnit?.expected_operation_date)}
+					{@render kv(
+						'expected_op_specificity',
+						displayUnit?.expected_operation_date_specificity
+					)}
+					{@render kv('expected_closure', displayUnit?.expected_closure_date)}
+					{@render kv(
+						'expected_cl_specificity',
+						displayUnit?.expected_closure_date_specificity
+					)}
+					{@render kv('commencement_date', displayUnit?.commencement_date)}
+					{@render kv(
+						'commencement_specificity',
+						displayUnit?.commencement_date_specificity
+					)}
+					{@render kv('closure_date', displayUnit?.closure_date)}
+					{@render kv(
+						'closure_specificity',
+						displayUnit?.closure_date_specificity
+					)}
+					{@render kv('construction_start', displayUnit?.construction_start_date)}
+					{@render kv('construction_cost', displayUnit?.construction_cost)}
+					{@render kv(
+						'cis_tender_recipient',
+						displayUnit?.cis_tender_recipient != null
+							? String(displayUnit.cis_tender_recipient)
+							: null
+					)}
+
+					<!-- Unit types -->
+					{#if displayUnit?.unit_types?.length > 0}
+						<div class="mt-3 pt-3 border-t border-warm-grey/60">
+							<div
+								class="text-[9px] text-mid-grey uppercase tracking-widest mb-1"
+							>
+								Unit Types ({displayUnit.unit_types.length})
+							</div>
+							{#each displayUnit.unit_types as ut, i (ut._id || i)}
+								{#if i > 0}
+									<div class="border-t border-warm-grey/40 mt-1 pt-1"></div>
+								{/if}
+								{@render kv('unit_number', ut.unit_number)}
+								{@render kv('unit_size', ut.unit_size)}
+								{@render kv(
+									'capacity',
+									ut.capacity != null ? `${ut.capacity} MW` : null
+								)}
+								{@render kv('brand', ut.unit_brand)}
+								{@render kv('model', ut.unit_model)}
+								{@render kv('model_year', ut.unit_model_year)}
+								{@render kv('model_url', ut.unit_model_url)}
+								{@render kv(
+									'height',
+									ut.unit_height != null ? `${ut.unit_height} m` : null
+								)}
+								{@render kv(
+									'weight',
+									ut.unit_weight != null ? `${ut.unit_weight} t` : null
+								)}
+								{@render kv('mounting_type', ut.mounting_type)}
+								{@render kv(
+									'efficiency',
+									ut.unit_efficiency != null
+										? `${ut.unit_efficiency}%`
+										: null
+								)}
+							{/each}
+						</div>
+					{/if}
+
+					<!-- Unit metadata -->
+					{#if displayUnit?.metadata_array?.length > 0}
+						<div class="mt-3 pt-3 border-t border-warm-grey/60">
+							<div
+								class="text-[9px] text-mid-grey uppercase tracking-widest mb-1"
+							>
+								Metadata
+							</div>
+							{#each displayUnit.metadata_array as meta, i (i)}
+								{@render kv(meta.key, meta.value)}
+							{/each}
+						</div>
+					{/if}
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>
