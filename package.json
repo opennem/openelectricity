@@ -1,26 +1,6 @@
 {
 	"name": "open-electriciy-web",
 	"version": "3.24.6",
-	"private": true,
-	"scripts": {
-		"dev": "vite dev",
-		"build": "vite build",
-		"preview": "vite preview",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
-		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
-		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write .",
-		"version:patch": "npm version patch",
-		"version:minor": "npm version minor",
-		"version:major": "npm version major",
-		"test": "vitest",
-		"test:e2e": "playwright test",
-		"test:e2e:ui": "playwright test --ui",
-		"test:e2e:debug": "playwright test --headed",
-		"data:fetch-power": "node scripts/solar-heatmap/fetch-power.js",
-		"data:build-solar": "node scripts/solar-heatmap/build.js",
-		"data:export-solar-csv": "node scripts/solar-heatmap/export-csv.js"
-	},
 	"devDependencies": {
 		"@eslint/js": "^9.39.2",
 		"@internationalized/date": "^3.9.0",
@@ -74,6 +54,26 @@
 		"typescript": "^5.8.3",
 		"vite": "^7.3.1",
 		"vitest": "^4.0.17"
+	},
+	"private": true,
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build",
+		"preview": "vite preview",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
+		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json --watch",
+		"lint": "prettier --check . && eslint .",
+		"format": "prettier --write .",
+		"version:patch": "npm version patch",
+		"version:minor": "npm version minor",
+		"version:major": "npm version major",
+		"test": "vitest",
+		"test:e2e": "playwright test",
+		"test:e2e:ui": "playwright test --ui",
+		"test:e2e:debug": "playwright test --headed",
+		"data:fetch-power": "node scripts/solar-heatmap/fetch-power.js",
+		"data:build-solar": "node scripts/solar-heatmap/build.js",
+		"data:export-solar-csv": "node scripts/solar-heatmap/export-csv.js"
 	},
 	"type": "module"
 }
