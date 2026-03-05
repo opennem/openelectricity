@@ -6,6 +6,8 @@
 	 * Keyboard navigable, technical/dense presentation of all CMS data.
 	 */
 
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { MapLibre, GeoJSONSource, CircleLayer, FillLayer, LineLayer, NavigationControl } from 'svelte-maplibre-gl';
 	import { Search, MapPin, Image } from '@lucide/svelte';
@@ -27,10 +29,11 @@
 
 	let searchQuery = $state('');
 	let showMap = $state(false);
-	/** @type {string | null} */
-	let selectedId = $state(null);
-	/** @type {string | null} */
-	let selectedUnitId = $state(null);
+
+	// URL-driven selection via optional route params
+	const BASE_PATH = '/studio/facility-explorer/cms';
+	let facilityCode = $derived(page.params.facility_code ?? null);
+	let unitCode = $derived(page.params.unit_code ?? null);
 
 	/** @type {HTMLElement | null} */
 	let listContainer = $state(null);
@@ -92,9 +95,9 @@
 		});
 	});
 
-	// Selected facility
+	// Selected facility (from URL param)
 	let selected = $derived(
-		selectedId ? data.facilities.find((/** @type {any} */ f) => f._id === selectedId) : null
+		facilityCode ? data.facilities.find((/** @type {any} */ f) => f.code === facilityCode) ?? null : null
 	);
 
 	// Stats
@@ -163,19 +166,27 @@
 			})
 	);
 
-	/** @param {string} id */
-	function selectFacility(id) {
-		if (selectedId === id) {
+	/** @param {string} code */
+	function selectFacility(code) {
+		if (facilityCode === code) {
 			deselectFacility();
 			return;
 		}
-		selectedId = id;
-		selectedUnitId = null;
+		goto(`${BASE_PATH}/${code}`, { noScroll: true, keepFocus: true });
 	}
 
 	function deselectFacility() {
-		selectedId = null;
-		selectedUnitId = null;
+		goto(BASE_PATH, { noScroll: true, keepFocus: true });
+	}
+
+	/** @param {string | null} code */
+	function selectUnit(code) {
+		if (!facilityCode) return;
+		if (code) {
+			goto(`${BASE_PATH}/${facilityCode}/${code}`, { noScroll: true, keepFocus: true });
+		} else {
+			goto(`${BASE_PATH}/${facilityCode}`, { noScroll: true, keepFocus: true });
+		}
 	}
 
 	/**
@@ -203,8 +214,8 @@
 	function handleMapClick(e) {
 		const feature = e.detail?.features?.[0];
 		if (!feature) return;
-		const id = feature.properties?.id;
-		if (id) selectFacility(id);
+		const code = feature.properties?.code;
+		if (code) selectFacility(code);
 	}
 
 	/** Keyboard navigation for facility list */
@@ -213,23 +224,23 @@
 		e.preventDefault();
 		const list = filteredFacilities;
 		if (!list.length) return;
-		const idx = selectedId ? list.findIndex((/** @type {any} */ f) => f._id === selectedId) : -1;
+		const idx = facilityCode ? list.findIndex((/** @type {any} */ f) => f.code === facilityCode) : -1;
 		let next;
 		if (e.key === 'ArrowDown') {
 			next = idx < list.length - 1 ? idx + 1 : 0;
 		} else {
 			next = idx > 0 ? idx - 1 : list.length - 1;
 		}
-		selectFacility(list[next]._id);
+		selectFacility(list[next].code);
 		tick().then(() => {
-			const el = listContainer?.querySelector(`[data-fid="${list[next]._id}"]`);
+			const el = listContainer?.querySelector(`[data-fid="${list[next].code}"]`);
 			el?.scrollIntoView({ block: 'nearest' });
 		});
 	}
 
 	// CircleLayer filter — show only selected facility when one is active
 	let circleFilter = $derived(
-		selectedId ? /** @type {any} */ (['==', ['get', 'id'], selectedId]) : undefined
+		facilityCode ? /** @type {any} */ (['==', ['get', 'code'], facilityCode]) : undefined
 	);
 
 	// GeoJSON for OSM polygon layer
@@ -275,7 +286,7 @@
 			fetchOsmPolygon(facility.osm_way_id)
 				.then((feature) => {
 					// Only apply if this facility is still selected
-					if (selectedId === facility._id) {
+					if (facilityCode === facility.code) {
 						osmPolygon = feature;
 					}
 				})
@@ -325,9 +336,9 @@
 					<GeoJSONSource data={geojson}>
 						<CircleLayer
 							paint={{
-								'circle-radius': selectedId ? 6 : 4,
+								'circle-radius': facilityCode ? 6 : 4,
 								'circle-color': ['get', 'colour'],
-								'circle-stroke-width': selectedId ? 2 : 1,
+								'circle-stroke-width': facilityCode ? 2 : 1,
 								'circle-stroke-color': '#fff'
 							}}
 							filter={circleFilter}
@@ -393,10 +404,10 @@
 						0
 					)}
 					<button
-						data-fid={facility._id}
-						onclick={() => selectFacility(facility._id)}
+						data-fid={facility.code}
+						onclick={() => selectFacility(facility.code)}
 						class="w-full text-left px-3 py-2 grid grid-cols-[8px_1fr_12px_12px_50px] items-center gap-2 border-b border-warm-grey/60 transition-colors cursor-pointer hover:bg-warm-grey/50
-						{selectedId === facility._id ? 'bg-warm-grey' : ''}"
+						{facilityCode === facility.code ? 'bg-warm-grey' : ''}"
 					>
 						<span
 							class="w-2 h-2 rounded-full"
@@ -443,7 +454,7 @@
 		<!-- RIGHT: Detail inspector -->
 		<div class="flex-1 flex flex-col min-h-0">
 			{#if selected}
-				<FacilityDetail facility={selected} bind:selectedUnitId onclose={deselectFacility} />
+				<FacilityDetail facility={selected} selectedUnitCode={unitCode} onclose={deselectFacility} onselectunit={selectUnit} />
 			{:else}
 				<!-- Empty state -->
 				<div class="flex-1 flex items-center justify-center text-[11px] text-mid-grey">

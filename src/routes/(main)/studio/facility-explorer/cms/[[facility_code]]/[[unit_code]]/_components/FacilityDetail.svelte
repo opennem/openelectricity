@@ -10,12 +10,12 @@
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { ChevronRight, ExternalLink, X } from '@lucide/svelte';
-	import { fly } from 'svelte/transition';
-	import FacilityStatusIcon from '../../../../facilities/_components/FacilityStatusIcon.svelte';
+	import { fade, fly } from 'svelte/transition';
+	import FacilityStatusIcon from '../../../../../../facilities/_components/FacilityStatusIcon.svelte';
 	import { createDragHandler } from '../_utils/drag-resize.svelte.js';
 
-	/** @type {{ facility: any, selectedUnitId?: string | null, onclose?: () => void }} */
-	let { facility, selectedUnitId = $bindable(null), onclose } = $props();
+	/** @type {{ facility: any, selectedUnitCode?: string | null, onclose?: () => void, onselectunit?: (code: string | null) => void }} */
+	let { facility, selectedUnitCode = null, onclose, onselectunit } = $props();
 
 	// Resizable unit panel width (right-anchored — drag left to widen)
 	const unitPanelDrag = createDragHandler({
@@ -35,23 +35,21 @@
 		) ?? 0
 	);
 
-	// Selected unit object — close panel when unit no longer exists (e.g. facility changed)
+	// Selected unit object (matched by code from URL param)
 	let selectedUnit = $derived.by(() => {
-		if (!selectedUnitId || !facility?.units) return null;
-		const unit = facility.units.find((/** @type {any} */ u) => u._id === selectedUnitId);
-		if (!unit) {
-			queueMicrotask(() => {
-				selectedUnitId = null;
-			});
-			return null;
-		}
-		return unit;
+		if (!selectedUnitCode || !facility?.units) return null;
+		return facility.units.find((/** @type {any} */ u) => u.code === selectedUnitCode) ?? null;
 	});
 
 	// Retain last selected unit data so the fly-out transition can still
 	// read properties while the panel animates away
 	/** @type {any} */
 	let displayUnit = $state(null);
+
+	/** Index of the photo shown in the lightbox (-1 = closed) */
+	let lightboxIndex = $state(-1);
+
+	let lightboxPhoto = $derived(lightboxIndex >= 0 ? facility.photos?.[lightboxIndex] : null);
 	$effect(() => {
 		if (selectedUnit) displayUnit = selectedUnit;
 	});
@@ -160,7 +158,7 @@
 		{#if facility.photos?.length > 0}
 			<div class="flex gap-2 mb-5 overflow-x-auto pb-1">
 				{#each facility.photos as photo, i (photo._key || i)}
-					<div class="flex-shrink-0">
+					<button class="flex-shrink-0 text-left cursor-zoom-in" onclick={() => (lightboxIndex = i)}>
 						<img
 							src={photo.asset
 								? urlFor(photo).width(400).height(240).url()
@@ -177,7 +175,7 @@
 									: ''}{photo.attribution}{/if}
 							</p>
 						{/if}
-					</div>
+					</button>
 				{/each}
 			</div>
 		{/if}
@@ -284,8 +282,8 @@
 				</div>
 				{#each facility.units as unit (unit._id)}
 					<button
-						onclick={() => (selectedUnitId = unit._id)}
-						class="w-full text-left grid grid-cols-[16px_8px_1fr_50px_14px] items-center gap-2 py-1.5 px-1 hover:bg-warm-grey/50 rounded transition-colors {selectedUnitId === unit._id ? 'bg-warm-grey/30' : ''}"
+						onclick={() => onselectunit?.(unit.code)}
+						class="w-full text-left grid grid-cols-[16px_8px_1fr_50px_14px] items-center gap-2 py-1.5 px-1 hover:bg-warm-grey/50 rounded transition-colors {selectedUnitCode === unit.code ? 'bg-warm-grey/30' : ''}"
 					>
 						<FacilityStatusIcon status={unit.status || 'operating'} />
 						<span
@@ -341,7 +339,7 @@
 						>{displayUnit?.code}</span
 					>
 					<button
-						onclick={() => (selectedUnitId = null)}
+						onclick={() => onselectunit?.(null)}
 						class="p-1 hover:bg-warm-grey rounded transition-colors"
 					>
 						<X size={12} class="text-mid-grey" />
@@ -491,6 +489,73 @@
 						</div>
 					{/if}
 				</div>
+			</div>
+		</div>
+	{/if}
+
+	<!-- Photo lightbox -->
+	{#if lightboxPhoto}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+			transition:fade={{ duration: 150 }}
+			onclick={() => (lightboxIndex = -1)}
+			onkeydown={(e) => {
+				if (e.key === 'Escape') lightboxIndex = -1;
+				else if (e.key === 'ArrowLeft' && lightboxIndex > 0) lightboxIndex--;
+				else if (e.key === 'ArrowRight' && lightboxIndex < (facility.photos?.length ?? 1) - 1) lightboxIndex++;
+			}}
+		>
+			<!-- Close button -->
+			<button
+				class="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors"
+				onclick={() => (lightboxIndex = -1)}
+			>
+				<X size={20} />
+			</button>
+
+			<!-- Navigation arrows -->
+			{#if facility.photos?.length > 1}
+				{#if lightboxIndex > 0}
+					<button
+						class="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white/50 hover:text-white transition-colors"
+						onclick={(e) => { e.stopPropagation(); lightboxIndex--; }}
+					>
+						<ChevronRight size={24} class="rotate-180" />
+					</button>
+				{/if}
+				{#if lightboxIndex < (facility.photos?.length ?? 1) - 1}
+					<button
+						class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white/50 hover:text-white transition-colors"
+						onclick={(e) => { e.stopPropagation(); lightboxIndex++; }}
+					>
+						<ChevronRight size={24} />
+					</button>
+				{/if}
+			{/if}
+
+			<!-- Image + caption -->
+			<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+			<div class="flex flex-col items-center gap-3" onclick={(e) => e.stopPropagation()}>
+				<img
+					src={lightboxPhoto.asset
+						? urlFor(lightboxPhoto).url()
+						: lightboxPhoto.url}
+					alt={lightboxPhoto.alt ||
+						lightboxPhoto.caption ||
+						`${facility.name} photo`}
+					class="max-h-[85vh] max-w-[90vw] object-contain rounded"
+				/>
+				{#if lightboxPhoto.caption || lightboxPhoto.attribution}
+					<p class="text-xs text-white/70 text-center max-w-[60vw]">
+						{lightboxPhoto.caption || ''}{#if lightboxPhoto.attribution}{lightboxPhoto.caption ? ' — ' : ''}{lightboxPhoto.attribution}{/if}
+					</p>
+				{/if}
+				{#if facility.photos?.length > 1}
+					<p class="text-[10px] text-white/40">
+						{lightboxIndex + 1} / {facility.photos.length}
+					</p>
+				{/if}
 			</div>
 		</div>
 	{/if}
