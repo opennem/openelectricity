@@ -233,7 +233,7 @@
 
 	/** @param {any} e */
 	function handleMapClick(e) {
-		const feature = e.detail?.features?.[0];
+		const feature = e.features?.[0];
 		if (!feature) return;
 		const code = feature.properties?.code;
 		if (code) selectFacility(code);
