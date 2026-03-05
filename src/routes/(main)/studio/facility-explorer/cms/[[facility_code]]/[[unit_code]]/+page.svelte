@@ -300,6 +300,38 @@
 		];
 	}
 
+	/**
+	 * Zoom the map to a facility — prefers cached OSM polygon bounds, falls back to point.
+	 * @param {any} facility
+	 */
+	function zoomToFacility(facility) {
+		if (!facility?.location?.lat || !facility?.location?.lng || !mapInstance) return;
+
+		if (facility.osm_way_id && isOsmCached(facility.osm_way_id)) {
+			fetchOsmPolygon(facility.osm_way_id).then((feature) => {
+				if (facilityCode !== facility.code) return;
+				if (feature) {
+					osmPolygon = feature;
+					osmStatus = 'ok';
+					const bounds = featureBounds(feature);
+					mapInstance?.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
+				} else {
+					mapInstance?.flyTo({
+						center: [facility.location.lng, facility.location.lat],
+						zoom: 14,
+						duration: 600
+					});
+				}
+			});
+		} else {
+			mapInstance.flyTo({
+				center: [facility.location.lng, facility.location.lat],
+				zoom: 14,
+				duration: 600
+			});
+		}
+	}
+
 	// Fly to selected facility on selection change
 	$effect(() => {
 		const facility = selected;
@@ -317,17 +349,16 @@
 		osmPolygon = null;
 		osmStatus = facility.osm_way_id && isOsmCached(facility.osm_way_id) ? 'ok' : 'idle';
 
-		// Fly to CMS location (only if map is already open)
-		if (facility.location?.lat && facility.location?.lng && untrack(() => showMap)) {
-			tick().then(() => {
-				mapInstance?.flyTo({
-					center: [facility.location.lng, facility.location.lat],
-					zoom: 14,
-					duration: 600
-				});
-			});
+		// Zoom to facility (only if map is already open)
+		if (untrack(() => showMap)) {
+			tick().then(() => zoomToFacility(facility));
 		}
 	});
+
+	/** Zoom to selected facility when the map first loads */
+	function handleMapLoad() {
+		zoomToFacility(selected);
+	}
 
 	/** Fetch OSM polygon on demand (called from FacilityDetail button) */
 	function handleOsmFetch() {
@@ -403,6 +434,7 @@
 					zoom={3.5}
 					class="w-full h-full"
 					bind:map={mapInstance}
+					onload={handleMapLoad}
 				>
 					<NavigationControl position="top-right" />
 					<GeoJSONSource data={geojson}>
