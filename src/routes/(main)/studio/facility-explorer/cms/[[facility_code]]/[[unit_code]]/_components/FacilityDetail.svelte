@@ -6,6 +6,7 @@
 	 * owners, metadata, units list) plus a slide-in unit detail panel.
 	 */
 
+	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
 	import { EXTERNAL_LINKS } from '$lib/constants/external-links';
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
@@ -27,13 +28,6 @@
 		invert: true
 	});
 
-	// Total capacity
-	let totalCapacity = $derived(
-		facility?.units?.reduce(
-			(/** @type {number} */ s, /** @type {any} */ u) => s + (u.capacity_registered || 0),
-			0
-		) ?? 0
-	);
 
 	// Selected unit object (matched by code from URL param)
 	let selectedUnit = $derived.by(() => {
@@ -100,59 +94,46 @@
 	</div>
 {/snippet}
 
-<div class="relative flex-1 overflow-y-auto min-h-0">
+<div class="relative flex-1 flex flex-col min-h-0">
+	<PanelHeader>
+		<span
+			class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+			style="background: {ftColour(facility.units?.[0]?.fuel_technology?.code)}"
+		></span>
+		<span class="text-[12px] font-medium text-dark-grey flex-1 truncate">{facility.name || 'Unnamed'}</span>
+		{#if facility.website}
+			<a
+				href={facility.website}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
+			>
+				<ExternalLink size={10} /> web
+			</a>
+		{/if}
+		{#if facility.wikipedia}
+			<a
+				href={facility.wikipedia}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
+			>
+				<ExternalLink size={10} /> wiki
+			</a>
+		{/if}
+		{#if onclose}
+			<button
+				onclick={onclose}
+				class="p-1 hover:bg-warm-grey rounded transition-colors"
+				title="Close"
+			>
+				<X size={12} class="text-mid-grey" />
+			</button>
+		{/if}
+	</PanelHeader>
+
+	<div class="flex-1 overflow-y-auto">
 	<div class="p-5">
-		<!-- Facility header -->
-		<div class="flex items-start gap-3 mb-5">
-			<span
-				class="w-3 h-3 rounded-full mt-1 flex-shrink-0"
-				style="background: {ftColour(
-					facility.units?.[0]?.fuel_technology?.code
-				)}"
-			></span>
-			<div class="flex-1 min-w-0">
-				<h2 class="text-sm font-medium text-dark-grey">
-					{facility.name || 'Unnamed'}
-				</h2>
-				<div class="flex items-center gap-3 mt-0.5 text-[10px] text-mid-grey">
-					<span>{facility.code}</span>
-					<span>{facility.network?.name || '—'}</span>
-					<span>{facility.region?.name || '—'}</span>
-					<span>{facility.units?.length || 0} units</span>
-					<span>{fmtCap(totalCapacity)} MW</span>
-				</div>
-			</div>
-			<!-- Links -->
-			{#if facility.website}
-				<a
-					href={facility.website}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
-				>
-					<ExternalLink size={10} /> web
-				</a>
-			{/if}
-			{#if facility.wikipedia}
-				<a
-					href={facility.wikipedia}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
-				>
-					<ExternalLink size={10} /> wiki
-				</a>
-			{/if}
-			{#if onclose}
-				<button
-					onclick={onclose}
-					class="p-1 hover:bg-warm-grey rounded transition-colors"
-					title="Close"
-				>
-					<X size={12} class="text-mid-grey" />
-				</button>
-			{/if}
-		</div>
 
 		<!-- Photos -->
 		{#if facility.photos?.length > 0}
@@ -305,6 +286,7 @@
 			</div>
 		{/if}
 	</div>
+	</div>
 
 	<!-- Unit detail slide-in panel -->
 	{#if selectedUnit}
@@ -313,23 +295,9 @@
 			style="width: {unitPanelDrag.value}px;"
 			transition:fly={{ x: unitPanelDrag.value, duration: 200 }}
 		>
-			<!-- Drag handle -->
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div
-				class="w-3 h-full cursor-col-resize flex-shrink-0 flex items-center justify-center group border-l border-warm-grey bg-light-warm-grey hover:bg-warm-grey active:bg-mid-warm-grey transition-colors {unitPanelDrag.isDragging ? 'bg-mid-warm-grey' : ''}"
-				onmousedown={unitPanelDrag.start}
-			>
-				<div class="flex flex-col gap-1">
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				</div>
-			</div>
+			<DragHandle axis="x" onstart={unitPanelDrag.start} active={unitPanelDrag.isDragging} class="border-l border-warm-grey" />
 			<div class="flex-1 bg-white border-l border-warm-grey flex flex-col overflow-hidden">
-				<!-- Panel header (sticky) -->
-				<div class="flex items-center gap-2 px-4 py-3 border-b border-warm-grey flex-shrink-0">
+				<PanelHeader>
 					<FacilityStatusIcon status={displayUnit?.status || 'operating'} />
 					<span
 						class="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -344,7 +312,7 @@
 					>
 						<X size={12} class="text-mid-grey" />
 					</button>
-				</div>
+				</PanelHeader>
 
 				<!-- Scrollable content -->
 				<div class="flex-1 overflow-y-auto p-4">

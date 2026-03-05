@@ -13,6 +13,7 @@
 	import { Search, MapPin, Image } from '@lucide/svelte';
 	import { fly } from 'svelte/transition';
 	import { getContext, onDestroy, onMount, tick } from 'svelte';
+	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
 	import AiChat from './_components/AiChat.svelte';
 	import FacilityDetail from './_components/FacilityDetail.svelte';
 	import { createDragHandler } from './_utils/drag-resize.svelte.js';
@@ -59,6 +60,15 @@
 		max: 600,
 		initial: 250,
 		storageKey: 'cms-explorer-list-width'
+	});
+
+	// Resizable map height
+	const mapDrag = createDragHandler({
+		axis: 'y',
+		min: 150,
+		max: 600,
+		initial: 300,
+		storageKey: 'cms-explorer-map-height'
 	});
 
 	// Debounced search
@@ -308,9 +318,7 @@
 		<span class="text-[11px] font-medium text-dark-grey tracking-wide uppercase"
 			>CMS Facilities</span
 		>
-		<span class="text-[10px] text-mid-grey ml-auto"
-			>{filteredFacilities.length}/{data.facilities.length}</span
-		>
+		<span class="ml-auto"></span>
 		<button
 			onclick={() => (showMap = !showMap)}
 			class="text-[10px] px-2 py-1 border rounded transition-colors {showMap
@@ -323,8 +331,8 @@
 
 	<!-- Map -->
 	{#if showMap}
-		<div class="border-b border-warm-grey" transition:fly={{ y: -10, duration: 200 }}>
-			<div class="h-[300px]">
+		<div transition:fly={{ y: -10, duration: 200 }}>
+			<div style="height: {mapDrag.value}px;">
 				<MapLibre
 					style="/map-styles/positron.json"
 					center={{ lng: 134, lat: -25 }}
@@ -364,6 +372,8 @@
 					</GeoJSONSource>
 				</MapLibre>
 			</div>
+
+			<DragHandle axis="y" onstart={mapDrag.start} active={mapDrag.isDragging} class="border-b border-warm-grey" />
 		</div>
 	{/if}
 
@@ -371,6 +381,11 @@
 	<div class="flex flex-1 min-h-0">
 		<!-- LEFT: Facility list -->
 		<div class="flex-shrink-0 border-r border-warm-grey flex flex-col min-h-0" style="width: {listDrag.value}px;">
+			<PanelHeader>
+				<span class="text-[12px] font-medium text-dark-grey flex-1 truncate">Facilities</span>
+				<span class="text-[10px] text-mid-grey tabular-nums">{filteredFacilities.length}/{data.facilities.length}</span>
+			</PanelHeader>
+
 			<!-- Search -->
 			<div class="px-3 py-2 border-b border-warm-grey">
 				<div class="relative">
@@ -436,20 +451,7 @@
 			</div>
 		</div>
 
-		<!-- List resize handle -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			class="w-3 h-full cursor-col-resize flex-shrink-0 flex items-center justify-center group border-r border-warm-grey bg-light-warm-grey hover:bg-warm-grey active:bg-mid-warm-grey transition-colors {listDrag.isDragging ? 'bg-mid-warm-grey' : ''}"
-			onmousedown={listDrag.start}
-		>
-			<div class="flex flex-col gap-1">
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-			</div>
-		</div>
+		<DragHandle axis="x" onstart={listDrag.start} active={listDrag.isDragging} class="border-r border-warm-grey" />
 
 		<!-- RIGHT: Detail inspector -->
 		<div class="flex-1 flex flex-col min-h-0">
