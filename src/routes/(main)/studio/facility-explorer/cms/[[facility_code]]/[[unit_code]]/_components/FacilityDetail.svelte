@@ -494,11 +494,6 @@
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
 			transition:fade={{ duration: 150 }}
 			onclick={() => (lightboxIndex = -1)}
-			onkeydown={(e) => {
-				if (e.key === 'Escape') lightboxIndex = -1;
-				else if (e.key === 'ArrowLeft' && lightboxIndex > 0) lightboxIndex--;
-				else if (e.key === 'ArrowRight' && lightboxIndex < (facility.photos?.length ?? 1) - 1) lightboxIndex++;
-			}}
 		>
 			<!-- Close button -->
 			<button
@@ -554,3 +549,10 @@
 		</div>
 	{/if}
 </div>
+
+<svelte:window onkeydown={(e) => {
+	if (lightboxIndex < 0) return;
+	if (e.key === 'Escape') lightboxIndex = -1;
+	else if (e.key === 'ArrowLeft' && lightboxIndex > 0) lightboxIndex--;
+	else if (e.key === 'ArrowRight' && lightboxIndex < (facility.photos?.length ?? 1) - 1) lightboxIndex++;
+}} />
