@@ -6,15 +6,17 @@
 	 * owners, metadata, units list) plus a slide-in unit detail panel.
 	 */
 
+	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
+	import { EXTERNAL_LINKS } from '$lib/constants/external-links';
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { ChevronRight, ExternalLink, X } from '@lucide/svelte';
-	import { fly } from 'svelte/transition';
-	import FacilityStatusIcon from '../../../../facilities/_components/FacilityStatusIcon.svelte';
+	import { fade, slide } from 'svelte/transition';
+	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import { createDragHandler } from '../_utils/drag-resize.svelte.js';
 
-	/** @type {{ facility: any, selectedUnitId?: string | null }} */
-	let { facility, selectedUnitId = $bindable(null) } = $props();
+	/** @type {{ facility: any, selectedUnitCode?: string | null, osmStatus?: 'idle' | 'loading' | 'ok' | 'not-found' | 'error', onclose?: () => void, onselectunit?: (code: string | null) => void, onfetchosm?: () => void }} */
+	let { facility, selectedUnitCode = null, osmStatus = 'idle', onclose, onselectunit, onfetchosm } = $props();
 
 	// Resizable unit panel width (right-anchored — drag left to widen)
 	const unitPanelDrag = createDragHandler({
@@ -26,31 +28,22 @@
 		invert: true
 	});
 
-	// Total capacity
-	let totalCapacity = $derived(
-		facility?.units?.reduce(
-			(/** @type {number} */ s, /** @type {any} */ u) => s + (u.capacity_registered || 0),
-			0
-		) ?? 0
-	);
 
-	// Selected unit object — close panel when unit no longer exists (e.g. facility changed)
+	// Selected unit object (matched by code from URL param)
 	let selectedUnit = $derived.by(() => {
-		if (!selectedUnitId || !facility?.units) return null;
-		const unit = facility.units.find((/** @type {any} */ u) => u._id === selectedUnitId);
-		if (!unit) {
-			queueMicrotask(() => {
-				selectedUnitId = null;
-			});
-			return null;
-		}
-		return unit;
+		if (!selectedUnitCode || !facility?.units) return null;
+		return facility.units.find((/** @type {any} */ u) => u.code === selectedUnitCode) ?? null;
 	});
 
 	// Retain last selected unit data so the fly-out transition can still
 	// read properties while the panel animates away
 	/** @type {any} */
 	let displayUnit = $state(null);
+
+	/** Index of the photo shown in the lightbox (-1 = closed) */
+	let lightboxIndex = $state(-1);
+
+	let lightboxPhoto = $derived(lightboxIndex >= 0 ? facility.photos?.[lightboxIndex] : null);
 	$effect(() => {
 		if (selectedUnit) displayUnit = selectedUnit;
 	});
@@ -88,56 +81,66 @@
 	</div>
 {/snippet}
 
-<div class="relative flex-1 overflow-y-auto min-h-0">
+{#snippet kvLink(/** @type {string} */ label, /** @type {any} */ displayText, /** @type {string | null} */ href, /** @type {string} */ description)}
+	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
+		<span class="text-[11px] text-mid-grey font-mono truncate" title={label}>{label}</span>
+		{#if displayText != null && displayText !== '' && href}
+			<a {href} target="_blank" rel="noopener noreferrer" title="Open on {description} (new tab)" class="text-[12px] text-dark-grey font-mono col-span-2 inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey rounded-sm">{displayText}<ExternalLink size={10} class="flex-shrink-0" /></a>
+		{:else if displayText != null && displayText !== ''}
+			<span class="text-[12px] text-dark-grey font-mono break-all col-span-2">{displayText}</span>
+		{:else}
+			<span class="text-[12px] text-mid-grey/50 font-mono col-span-2">—</span>
+		{/if}
+	</div>
+{/snippet}
+
+<div class="flex-1 flex flex-col min-h-0">
+	<PanelHeader>
+		<span
+			class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+			style="background: {ftColour(facility.units?.[0]?.fuel_technology?.code)}"
+		></span>
+		<span class="text-[12px] font-medium text-dark-grey flex-1 truncate">{facility.name || 'Unnamed'}</span>
+		{#if facility.website}
+			<a
+				href={facility.website}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
+			>
+				<ExternalLink size={10} /> web
+			</a>
+		{/if}
+		{#if facility.wikipedia}
+			<a
+				href={facility.wikipedia}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
+			>
+				<ExternalLink size={10} /> wiki
+			</a>
+		{/if}
+		{#if onclose}
+			<button
+				onclick={onclose}
+				class="p-1 hover:bg-warm-grey rounded transition-colors"
+				title="Close"
+			>
+				<X size={12} class="text-mid-grey" />
+			</button>
+		{/if}
+	</PanelHeader>
+
+	<div class="flex-1 flex min-h-0">
+	<div class="flex-1 overflow-y-auto min-w-0">
 	<div class="p-5">
-		<!-- Facility header -->
-		<div class="flex items-start gap-3 mb-5">
-			<span
-				class="w-3 h-3 rounded-full mt-1 flex-shrink-0"
-				style="background: {ftColour(
-					facility.units?.[0]?.fuel_technology?.code
-				)}"
-			></span>
-			<div class="flex-1 min-w-0">
-				<h2 class="text-sm font-medium text-dark-grey">
-					{facility.name || 'Unnamed'}
-				</h2>
-				<div class="flex items-center gap-3 mt-0.5 text-[10px] text-mid-grey">
-					<span>{facility.code}</span>
-					<span>{facility.network?.name || '—'}</span>
-					<span>{facility.region?.name || '—'}</span>
-					<span>{facility.units?.length || 0} units</span>
-					<span>{fmtCap(totalCapacity)} MW</span>
-				</div>
-			</div>
-			<!-- Links -->
-			{#if facility.website}
-				<a
-					href={facility.website}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
-				>
-					<ExternalLink size={10} /> web
-				</a>
-			{/if}
-			{#if facility.wikipedia}
-				<a
-					href={facility.wikipedia}
-					target="_blank"
-					rel="noopener noreferrer"
-					class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-0.5"
-				>
-					<ExternalLink size={10} /> wiki
-				</a>
-			{/if}
-		</div>
 
 		<!-- Photos -->
 		{#if facility.photos?.length > 0}
 			<div class="flex gap-2 mb-5 overflow-x-auto pb-1">
 				{#each facility.photos as photo, i (photo._key || i)}
-					<div class="flex-shrink-0">
+					<button class="flex-shrink-0 text-left cursor-zoom-in" onclick={() => (lightboxIndex = i)}>
 						<img
 							src={photo.asset
 								? urlFor(photo).width(400).height(240).url()
@@ -154,7 +157,7 @@
 									: ''}{photo.attribution}{/if}
 							</p>
 						{/if}
-					</div>
+					</button>
 				{/each}
 			</div>
 		{/if}
@@ -175,10 +178,34 @@
 					? `${facility.location.lat.toFixed(5)}, ${facility.location.lng.toFixed(5)}`
 					: null
 			)}
-			{@render kv('website', facility.website)}
-			{@render kv('wikipedia', facility.wikipedia)}
-			{@render kv('wikidata_id', facility.wikidata_id)}
-			{@render kv('osm_way_id', facility.osm_way_id)}
+			{@render kvLink('website', facility.website ? 'facility website' : null, facility.website, 'Website')}
+			{@render kvLink('wikipedia', facility.wikipedia, facility.wikipedia, EXTERNAL_LINKS.wikipedia.label)}
+			{@render kvLink('wikidata_id', facility.wikidata_id, facility.wikidata_id ? `${EXTERNAL_LINKS.wikidata.baseUrl}/${facility.wikidata_id}` : null, EXTERNAL_LINKS.wikidata.label)}
+			<!-- osm_way_id with fetch/view button -->
+		<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
+			<span class="text-[11px] text-mid-grey font-mono truncate" title="osm_way_id">osm_way_id</span>
+			{#if facility.osm_way_id}
+				<span class="text-[12px] text-dark-grey font-mono col-span-2 inline-flex items-center gap-1.5">
+					<a href="{EXTERNAL_LINKS.openStreetMap.baseUrl}/way/{facility.osm_way_id}" target="_blank" rel="noopener noreferrer" title="Open on {EXTERNAL_LINKS.openStreetMap.label} (new tab)" class="inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{facility.osm_way_id}<ExternalLink size={10} class="flex-shrink-0" /></a>
+					{#if osmStatus === 'loading'}
+						<button disabled class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-warm-grey text-mid-grey cursor-not-allowed">
+							<span class="w-3 h-3 border-[1.5px] border-mid-grey/60 border-t-dark-grey rounded-full animate-spin"></span>
+							Fetching
+						</button>
+					{:else if osmStatus === 'ok'}
+						<button onclick={onfetchosm} class="text-[10px] px-1.5 py-0.5 rounded border border-warm-grey text-dark-grey hover:bg-warm-grey/50 hover:border-dark-grey transition-colors cursor-pointer">View</button>
+					{:else if osmStatus === 'not-found'}
+						<span class="text-[10px] text-amber-500" title="No polygon found for this OSM ID">&#9888;</span>
+					{:else if osmStatus === 'error'}
+						<button onclick={onfetchosm} class="text-[10px] px-1.5 py-0.5 rounded border border-red-300 text-red-500 hover:bg-red-50 hover:border-red-400 transition-colors cursor-pointer">Retry</button>
+					{:else}
+						<button onclick={onfetchosm} class="text-[10px] px-1.5 py-0.5 rounded border border-warm-grey text-dark-grey hover:bg-warm-grey/50 hover:border-dark-grey transition-colors cursor-pointer">Fetch</button>
+					{/if}
+				</span>
+			{:else}
+				<span class="text-[12px] text-mid-grey/50 font-mono col-span-2">—</span>
+			{/if}
+		</div>
 			{@render kv('npi_id', facility.npiId)}
 		</div>
 
@@ -213,23 +240,24 @@
 					Owners
 				</div>
 				{#each facility.owners as owner (owner._id)}
-					<div class="flex items-baseline gap-2 py-[3px] border-b border-warm-grey/60">
-						<span class="text-[12px] text-dark-grey"
-							>{owner.name || owner.legal_name}</span
-						>
+					<div class="flex items-center gap-2 py-[3px] border-b border-warm-grey/60">
 						{#if owner.website}
 							<a
 								href={owner.website}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="text-[10px] text-mid-grey hover:text-dark-grey"
-								>[web]</a
-							>
+								title="Open website (new tab)"
+								class="text-[12px] text-dark-grey hover:text-black inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:decoration-solid hover:decoration-dark-grey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey rounded-sm"
+							>{owner.name || owner.legal_name}<ExternalLink size={10} class="flex-shrink-0" /></a>
+						{:else}
+							<span class="text-[12px] text-dark-grey">{owner.name || owner.legal_name}</span>
 						{/if}
 						{#if owner.contact_email}
-							<span class="text-[10px] text-mid-grey"
-								>{owner.contact_email}</span
-							>
+							<a
+								href="mailto:{owner.contact_email}"
+								title="Send email to {owner.contact_email}"
+								class="text-[10px] text-mid-grey hover:text-dark-grey underline decoration-dotted decoration-mid-grey underline-offset-2 hover:decoration-solid hover:decoration-dark-grey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey rounded-sm"
+							>{owner.contact_email}</a>
 						{/if}
 					</div>
 				{/each}
@@ -260,8 +288,8 @@
 				</div>
 				{#each facility.units as unit (unit._id)}
 					<button
-						onclick={() => (selectedUnitId = unit._id)}
-						class="w-full text-left grid grid-cols-[16px_8px_1fr_50px_14px] items-center gap-2 py-1.5 px-1 hover:bg-warm-grey/50 rounded transition-colors {selectedUnitId === unit._id ? 'bg-warm-grey/30' : ''}"
+						onclick={() => onselectunit?.(unit.code)}
+						class="w-full text-left grid grid-cols-[16px_8px_1fr_50px_14px] items-center gap-2 py-1.5 px-1 hover:bg-warm-grey/50 rounded transition-colors {selectedUnitCode === unit.code ? 'bg-warm-grey/30' : ''}"
 					>
 						<FacilityStatusIcon status={unit.status || 'operating'} />
 						<span
@@ -283,31 +311,18 @@
 			</div>
 		{/if}
 	</div>
+	</div>
 
 	<!-- Unit detail slide-in panel -->
 	{#if selectedUnit}
 		<div
-			class="absolute inset-y-0 right-0 flex z-20 shadow-lg"
+			class="flex shrink-0"
 			style="width: {unitPanelDrag.value}px;"
-			transition:fly={{ x: unitPanelDrag.value, duration: 200 }}
+			transition:slide={{ axis: 'x', duration: 200 }}
 		>
-			<!-- Drag handle -->
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div
-				class="w-3 h-full cursor-col-resize flex-shrink-0 flex items-center justify-center group border-l border-warm-grey bg-light-warm-grey hover:bg-warm-grey active:bg-mid-warm-grey transition-colors {unitPanelDrag.isDragging ? 'bg-mid-warm-grey' : ''}"
-				onmousedown={unitPanelDrag.start}
-			>
-				<div class="flex flex-col gap-1">
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-					<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				</div>
-			</div>
-			<div class="flex-1 bg-white border-l border-warm-grey flex flex-col overflow-hidden">
-				<!-- Panel header (sticky) -->
-				<div class="flex items-center gap-2 px-4 py-3 border-b border-warm-grey flex-shrink-0">
+			<DragHandle axis="x" onstart={unitPanelDrag.start} active={unitPanelDrag.isDragging} class="border-l border-warm-grey" />
+			<div class="flex-1 flex flex-col overflow-hidden">
+				<PanelHeader>
 					<FacilityStatusIcon status={displayUnit?.status || 'operating'} />
 					<span
 						class="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -317,12 +332,12 @@
 						>{displayUnit?.code}</span
 					>
 					<button
-						onclick={() => (selectedUnitId = null)}
+						onclick={() => onselectunit?.(null)}
 						class="p-1 hover:bg-warm-grey rounded transition-colors"
 					>
 						<X size={12} class="text-mid-grey" />
 					</button>
-				</div>
+				</PanelHeader>
 
 				<!-- Scrollable content -->
 				<div class="flex-1 overflow-y-auto p-4">
@@ -433,7 +448,7 @@
 								{@render kv('brand', ut.unit_brand)}
 								{@render kv('model', ut.unit_model)}
 								{@render kv('model_year', ut.unit_model_year)}
-								{@render kv('model_url', ut.unit_model_url)}
+								{@render kvLink('model_url', ut.unit_model_url ? 'model website' : null, ut.unit_model_url, 'Manufacturer')}
 								{@render kv(
 									'height',
 									ut.unit_height != null ? `${ut.unit_height} m` : null
@@ -470,4 +485,74 @@
 			</div>
 		</div>
 	{/if}
+	</div>
+
+	<!-- Photo lightbox -->
+	{#if lightboxPhoto}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div
+			class="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
+			transition:fade={{ duration: 150 }}
+			onclick={() => (lightboxIndex = -1)}
+		>
+			<!-- Close button -->
+			<button
+				class="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors"
+				onclick={() => (lightboxIndex = -1)}
+			>
+				<X size={20} />
+			</button>
+
+			<!-- Navigation arrows -->
+			{#if facility.photos?.length > 1}
+				{#if lightboxIndex > 0}
+					<button
+						class="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white/50 hover:text-white transition-colors"
+						onclick={(e) => { e.stopPropagation(); lightboxIndex--; }}
+					>
+						<ChevronRight size={24} class="rotate-180" />
+					</button>
+				{/if}
+				{#if lightboxIndex < (facility.photos?.length ?? 1) - 1}
+					<button
+						class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white/50 hover:text-white transition-colors"
+						onclick={(e) => { e.stopPropagation(); lightboxIndex++; }}
+					>
+						<ChevronRight size={24} />
+					</button>
+				{/if}
+			{/if}
+
+			<!-- Image + caption -->
+			<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+			<div class="flex flex-col items-center gap-3" onclick={(e) => e.stopPropagation()}>
+				<img
+					src={lightboxPhoto.asset
+						? urlFor(lightboxPhoto).url()
+						: lightboxPhoto.url}
+					alt={lightboxPhoto.alt ||
+						lightboxPhoto.caption ||
+						`${facility.name} photo`}
+					class="max-h-[85vh] max-w-[90vw] object-contain rounded"
+				/>
+				{#if lightboxPhoto.caption || lightboxPhoto.attribution}
+					<p class="text-xs text-white/70 text-center max-w-[60vw]">
+						{lightboxPhoto.caption || ''}{#if lightboxPhoto.attribution}{lightboxPhoto.caption ? ' — ' : ''}{lightboxPhoto.attribution}{/if}
+					</p>
+				{/if}
+				{#if facility.photos?.length > 1}
+					<p class="text-[10px] text-white/40">
+						{lightboxIndex + 1} / {facility.photos.length}
+					</p>
+				{/if}
+			</div>
+		</div>
+	{/if}
 </div>
+
+<svelte:window onkeydown={(e) => {
+	if (lightboxIndex < 0) return;
+	if (e.key === 'Escape') lightboxIndex = -1;
+	else if (e.key === 'ArrowLeft' && lightboxIndex > 0) lightboxIndex--;
+	else if (e.key === 'ArrowRight' && lightboxIndex < (facility.photos?.length ?? 1) - 1) lightboxIndex++;
+}} />

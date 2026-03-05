@@ -14,9 +14,7 @@
 		FacilityUnitsTable
 	} from '$lib/components/charts/facility';
 	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
-	import { getRegionLabel } from '../../facilities/_utils/filters';
 	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
-	import formatValue from '../../facilities/_utils/format-value';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
@@ -134,12 +132,6 @@
 		return maxFt ? getFuelTechColor(maxFt) : '#353535';
 	});
 
-	// Facility info derived values
-	let regionLabel = $derived(
-		selectedFacility
-			? getRegionLabel(selectedFacility.network_id, selectedFacility.network_region)
-			: ''
-	);
 	let unitGroups = $derived(selectedFacility ? groupUnits(selectedFacility) : []);
 
 	// ============================================
@@ -295,12 +287,7 @@
 	// Computed UI Values
 	// ============================================
 
-	let totalCapacity = $derived(
-		unitGroups.reduce((/** @type {number} */ sum, /** @type {any} */ g) => sum + g.totalCapacity, 0)
-	);
-	let unitCount = $derived(selectedFacility?.units?.length ?? 0);
 	let explorePath = $derived(getExploreUrl(selectedFacility));
-	let weightedEmissionsIntensity = $derived(analysis?.weightedEmissionsIntensity ?? null);
 
 	/**
 	 * Resolve initial days for metric/interval calculation.
@@ -598,23 +585,6 @@
 			<h2 class="text-lg font-semibold text-dark-grey leading-snug">
 				{selectedFacility.name}
 			</h2>
-
-			<!-- Metadata -->
-			<div class="flex items-center gap-2 mt-2 flex-wrap text-xs">
-				<span class="inline-flex items-center px-2 py-0.5 rounded bg-light-warm-grey font-medium text-dark-grey">
-					{regionLabel}
-				</span>
-				<span class="inline-flex items-center px-2 py-0.5 rounded bg-light-warm-grey text-mid-grey">
-					{selectedFacility.network_id}
-				</span>
-				<span class="text-mid-grey font-mono">{formatValue(totalCapacity)} MW</span>
-				<span class="text-mid-grey">{unitCount} unit{unitCount !== 1 ? 's' : ''}</span>
-				{#if weightedEmissionsIntensity}
-					<span class="text-mid-grey font-mono">
-						{formatValue(Math.round(weightedEmissionsIntensity))} kgCO&#x2082;/MWh
-					</span>
-				{/if}
-			</div>
 
 			<!-- Fuel tech badges -->
 			{#if unitGroups.length}

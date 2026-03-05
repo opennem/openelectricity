@@ -17,6 +17,7 @@
 
 	import { onMount } from 'svelte';
 	import { MessageSquare, X, Trash2, ChevronDown, KeyRound, Eye, EyeOff } from '@lucide/svelte';
+	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
 	import { buildChatContext } from '$lib/utils/ai-context';
 	import { buildQuerySystemPrompt, buildAnswerSystemPrompt } from '$lib/utils/ai-prompts';
 	import { parseQueryResponse, executeQuery } from '$lib/utils/ai-query-engine';
@@ -479,27 +480,9 @@
 		class="flex flex-col border-t border-warm-grey bg-white flex-shrink-0"
 		style="height: {heightDrag.value}px;"
 	>
-		<!-- Resize handle -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			class="h-3 cursor-row-resize flex items-center justify-center group bg-light-warm-grey hover:bg-warm-grey active:bg-mid-warm-grey transition-colors {heightDrag.isDragging
-				? 'bg-mid-warm-grey'
-				: ''}"
-			onmousedown={heightDrag.start}
-		>
-			<div class="flex gap-1">
-				{#each [1, 2, 3, 4, 5] as dot (dot)}
-					<span
-						class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"
-					></span>
-				{/each}
-			</div>
-		</div>
+		<DragHandle axis="y" onstart={heightDrag.start} active={heightDrag.isDragging} />
 
-		<!-- Header -->
-		<div
-			class="flex items-center gap-2 px-3 py-1.5 border-b border-warm-grey/60 flex-shrink-0"
-		>
+		<PanelHeader>
 			<MessageSquare size={12} class="text-mid-grey" />
 
 			<!-- Model selector -->
@@ -599,7 +582,7 @@
 					<X size={12} class="text-mid-grey" />
 				</button>
 			</div>
-		</div>
+		</PanelHeader>
 
 		<!-- API Key input bar -->
 		{#if showApiKeyInput}

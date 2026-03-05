@@ -6,14 +6,18 @@
 	 * Keyboard navigable, technical/dense presentation of all CMS data.
 	 */
 
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import { MapLibre, GeoJSONSource, CircleLayer, NavigationControl } from 'svelte-maplibre-gl';
+	import { MapLibre, GeoJSONSource, CircleLayer, FillLayer, LineLayer, NavigationControl } from 'svelte-maplibre-gl';
 	import { Search, MapPin, Image } from '@lucide/svelte';
-	import { fly } from 'svelte/transition';
-	import { getContext, onDestroy, onMount, tick } from 'svelte';
+	import { slide } from 'svelte/transition';
+	import { getContext, onDestroy, onMount, tick, untrack } from 'svelte';
+	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
 	import AiChat from './_components/AiChat.svelte';
 	import FacilityDetail from './_components/FacilityDetail.svelte';
 	import { createDragHandler } from './_utils/drag-resize.svelte.js';
+	import { fetchOsmPolygon, isOsmCached } from './_utils/osm.js';
 
 	// Go fullscreen to remove nav/footer — lets us own the full viewport
 	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */
@@ -25,14 +29,33 @@
 	let { data } = $props();
 
 	let searchQuery = $state('');
-	let showMap = $state(false);
-	/** @type {string | null} */
-	let selectedId = $state(null);
-	/** @type {string | null} */
-	let selectedUnitId = $state(null);
+	let showMap = $state(
+		typeof localStorage !== 'undefined'
+			? localStorage.getItem('cms-explorer-show-map') === 'true'
+			: false
+	);
+
+	$effect(() => {
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem('cms-explorer-show-map', String(showMap));
+		}
+	});
+
+	// URL-driven selection via optional route params
+	const BASE_PATH = '/studio/cms-facilities';
+	let facilityCode = $derived(page.params.facility_code ?? null);
+	let unitCode = $derived(page.params.unit_code ?? null);
 
 	/** @type {HTMLElement | null} */
 	let listContainer = $state(null);
+
+	/** @type {any | null} */
+	let mapInstance = $state(null);
+
+	/** @type {GeoJSON.Feature | null} */
+	let osmPolygon = $state(null);
+	/** @type {'idle' | 'loading' | 'ok' | 'not-found' | 'error'} */
+	let osmStatus = $state('idle');
 
 	// Delay rendering until client-side to prevent SSR/hydration flash
 	// when localStorage widths differ from defaults
@@ -48,6 +71,15 @@
 		max: 600,
 		initial: 250,
 		storageKey: 'cms-explorer-list-width'
+	});
+
+	// Resizable map height
+	const mapDrag = createDragHandler({
+		axis: 'y',
+		min: 150,
+		max: 600,
+		initial: 300,
+		storageKey: 'cms-explorer-map-height'
 	});
 
 	// Debounced search
@@ -84,9 +116,9 @@
 		});
 	});
 
-	// Selected facility
+	// Selected facility (from URL param)
 	let selected = $derived(
-		selectedId ? data.facilities.find((/** @type {any} */ f) => f._id === selectedId) : null
+		facilityCode ? data.facilities.find((/** @type {any} */ f) => f.code === facilityCode) ?? null : null
 	);
 
 	// Stats
@@ -155,10 +187,27 @@
 			})
 	);
 
-	/** @param {string} id */
-	function selectFacility(id) {
-		selectedId = id;
-		selectedUnitId = null;
+	/** @param {string} code */
+	function selectFacility(code) {
+		if (facilityCode === code) {
+			deselectFacility();
+			return;
+		}
+		goto(`${BASE_PATH}/${code}`, { noScroll: true, keepFocus: true });
+	}
+
+	function deselectFacility() {
+		goto(BASE_PATH, { noScroll: true, keepFocus: true });
+	}
+
+	/** @param {string | null} code */
+	function selectUnit(code) {
+		if (!facilityCode) return;
+		if (code) {
+			goto(`${BASE_PATH}/${facilityCode}/${code}`, { noScroll: true, keepFocus: true });
+		} else {
+			goto(`${BASE_PATH}/${facilityCode}`, { noScroll: true, keepFocus: true });
+		}
 	}
 
 	/**
@@ -184,10 +233,10 @@
 
 	/** @param {any} e */
 	function handleMapClick(e) {
-		const feature = e.detail?.features?.[0];
+		const feature = e.features?.[0];
 		if (!feature) return;
-		const id = feature.properties?.id;
-		if (id) selectFacility(id);
+		const code = feature.properties?.code;
+		if (code) selectFacility(code);
 	}
 
 	/** Keyboard navigation for facility list */
@@ -196,18 +245,170 @@
 		e.preventDefault();
 		const list = filteredFacilities;
 		if (!list.length) return;
-		const idx = selectedId ? list.findIndex((/** @type {any} */ f) => f._id === selectedId) : -1;
+		const idx = facilityCode ? list.findIndex((/** @type {any} */ f) => f.code === facilityCode) : -1;
 		let next;
 		if (e.key === 'ArrowDown') {
 			next = idx < list.length - 1 ? idx + 1 : 0;
 		} else {
 			next = idx > 0 ? idx - 1 : list.length - 1;
 		}
-		selectFacility(list[next]._id);
+		selectFacility(list[next].code);
 		tick().then(() => {
-			const el = listContainer?.querySelector(`[data-fid="${list[next]._id}"]`);
+			const el = listContainer?.querySelector(`[data-fid="${list[next].code}"]`);
 			el?.scrollIntoView({ block: 'nearest' });
 		});
+	}
+
+	// CircleLayer filter — show only selected facility when one is active
+	let circleFilter = $derived(
+		facilityCode ? /** @type {any} */ (['==', ['get', 'code'], facilityCode]) : undefined
+	);
+
+	// Switch to satellite when zoomed into a facility
+	let mapStyle = $derived(
+		facilityCode ? '/map-styles/satellite.json' : '/map-styles/positron.json'
+	);
+
+	// GeoJSON for OSM polygon layer
+	/** @type {GeoJSON.FeatureCollection} */
+	const emptyFeatureCollection = { type: 'FeatureCollection', features: [] };
+	let osmGeoJson = $derived(
+		osmPolygon
+			? /** @type {GeoJSON.FeatureCollection} */ ({
+					type: 'FeatureCollection',
+					features: [osmPolygon]
+				})
+			: emptyFeatureCollection
+	);
+
+	/**
+	 * Compute a bounding box from a GeoJSON polygon feature.
+	 * @param {GeoJSON.Feature} feature
+	 * @returns {[[number, number], [number, number]]}
+	 */
+	function featureBounds(feature) {
+		const geom = feature.geometry;
+		const coords =
+			geom.type === 'MultiPolygon'
+				? /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(2))
+				: /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(1));
+
+		let minLng = Infinity;
+		let maxLng = -Infinity;
+		let minLat = Infinity;
+		let maxLat = -Infinity;
+		for (const [lng, lat] of coords) {
+			if (lng < minLng) minLng = lng;
+			if (lng > maxLng) maxLng = lng;
+			if (lat < minLat) minLat = lat;
+			if (lat > maxLat) maxLat = lat;
+		}
+
+		return [
+			[minLng, minLat],
+			[maxLng, maxLat]
+		];
+	}
+
+	/**
+	 * Zoom the map to a facility — prefers cached OSM polygon bounds, falls back to point.
+	 * @param {any} facility
+	 */
+	function zoomToFacility(facility) {
+		if (!facility?.location?.lat || !facility?.location?.lng || !mapInstance) return;
+
+		if (facility.osm_way_id && isOsmCached(facility.osm_way_id)) {
+			fetchOsmPolygon(facility.osm_way_id).then((feature) => {
+				if (facilityCode !== facility.code) return;
+				if (feature) {
+					osmPolygon = feature;
+					osmStatus = 'ok';
+					const bounds = featureBounds(feature);
+					mapInstance?.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
+				} else {
+					mapInstance?.flyTo({
+						center: [facility.location.lng, facility.location.lat],
+						zoom: 14,
+						duration: 600
+					});
+				}
+			});
+		} else {
+			mapInstance.flyTo({
+				center: [facility.location.lng, facility.location.lat],
+				zoom: 14,
+				duration: 600
+			});
+		}
+	}
+
+	// Fly to selected facility on selection change
+	$effect(() => {
+		const facility = selected;
+
+		if (!facility) {
+			osmPolygon = null;
+			osmStatus = 'idle';
+			if (mapInstance) {
+				mapInstance.flyTo({ center: [134, -25], zoom: 3.5, duration: 600 });
+			}
+			return;
+		}
+
+		// Reset OSM state and check cache for the new facility
+		osmPolygon = null;
+		osmStatus = facility.osm_way_id && isOsmCached(facility.osm_way_id) ? 'ok' : 'idle';
+
+		// Zoom to facility (only if map is already open)
+		if (untrack(() => showMap)) {
+			tick().then(() => zoomToFacility(facility));
+		}
+	});
+
+	/** Zoom to selected facility when the map first loads */
+	function handleMapLoad() {
+		zoomToFacility(selected);
+	}
+
+	/** Fetch OSM polygon on demand (called from FacilityDetail button) */
+	function handleOsmFetch() {
+		const facility = selected;
+		if (!facility?.osm_way_id || osmStatus === 'loading') return;
+
+		// If already cached, just show the polygon and zoom
+		if (osmStatus === 'ok' && osmPolygon) {
+			showMap = true;
+			tick().then(() => {
+				if (mapInstance) {
+					const bounds = featureBounds(osmPolygon);
+					mapInstance.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
+				}
+			});
+			return;
+		}
+
+		osmStatus = 'loading';
+		fetchOsmPolygon(facility.osm_way_id)
+			.then((feature) => {
+				if (facilityCode !== facility.code) return;
+				osmPolygon = feature;
+				if (feature) {
+					osmStatus = 'ok';
+					showMap = true;
+					tick().then(() => {
+						if (mapInstance) {
+							const bounds = featureBounds(feature);
+							mapInstance.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
+						}
+					});
+				} else {
+					osmStatus = 'not-found';
+				}
+			})
+			.catch(() => {
+				if (facilityCode !== facility.code) return;
+				osmStatus = 'error';
+			});
 	}
 </script>
 
@@ -215,16 +416,10 @@
 <div class="flex flex-col h-dvh overflow-hidden font-mono">
 	<!-- Header bar -->
 	<div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
-		<a
-			href="/studio/facility-explorer"
-			class="text-[11px] text-mid-grey hover:text-dark-grey">&larr;</a
-		>
 		<span class="text-[11px] font-medium text-dark-grey tracking-wide uppercase"
 			>CMS Facilities</span
 		>
-		<span class="text-[10px] text-mid-grey ml-auto"
-			>{filteredFacilities.length}/{data.facilities.length}</span
-		>
+		<span class="ml-auto"></span>
 		<button
 			onclick={() => (showMap = !showMap)}
 			class="text-[10px] px-2 py-1 border rounded transition-colors {showMap
@@ -237,28 +432,49 @@
 
 	<!-- Map -->
 	{#if showMap}
-		<div class="border-b border-warm-grey" transition:fly={{ y: -10, duration: 200 }}>
-			<div class="h-[300px]">
+		<div transition:slide={{ duration: 200 }}>
+			<div style="height: {mapDrag.value}px;">
 				<MapLibre
-					style="/map-styles/positron.json"
+					style={mapStyle}
 					center={{ lng: 134, lat: -25 }}
 					zoom={3.5}
 					class="w-full h-full"
+					bind:map={mapInstance}
+					onload={handleMapLoad}
 				>
 					<NavigationControl position="top-right" />
 					<GeoJSONSource data={geojson}>
 						<CircleLayer
 							paint={{
-								'circle-radius': 4,
+								'circle-radius': facilityCode ? 6 : 4,
 								'circle-color': ['get', 'colour'],
-								'circle-stroke-width': 1,
+								'circle-stroke-width': facilityCode ? 2 : 1,
 								'circle-stroke-color': '#fff'
 							}}
+							filter={circleFilter}
 							onclick={handleMapClick}
+						/>
+					</GeoJSONSource>
+
+					<!-- OSM polygon -->
+					<GeoJSONSource id="osm-polygon" data={osmGeoJson}>
+						<FillLayer
+							paint={{
+								'fill-color': '#3b82f6',
+								'fill-opacity': 0.3
+							}}
+						/>
+						<LineLayer
+							paint={{
+								'line-color': '#2563eb',
+								'line-width': 2
+							}}
 						/>
 					</GeoJSONSource>
 				</MapLibre>
 			</div>
+
+			<DragHandle axis="y" onstart={mapDrag.start} active={mapDrag.isDragging} class="border-b border-warm-grey" />
 		</div>
 	{/if}
 
@@ -266,6 +482,11 @@
 	<div class="flex flex-1 min-h-0">
 		<!-- LEFT: Facility list -->
 		<div class="flex-shrink-0 border-r border-warm-grey flex flex-col min-h-0" style="width: {listDrag.value}px;">
+			<PanelHeader>
+				<span class="text-[12px] font-medium text-dark-grey flex-1 truncate">Facilities</span>
+				<span class="text-[10px] text-mid-grey tabular-nums">{filteredFacilities.length}/{data.facilities.length}</span>
+			</PanelHeader>
+
 			<!-- Search -->
 			<div class="px-3 py-2 border-b border-warm-grey">
 				<div class="relative">
@@ -299,10 +520,10 @@
 						0
 					)}
 					<button
-						data-fid={facility._id}
-						onclick={() => selectFacility(facility._id)}
+						data-fid={facility.code}
+						onclick={() => selectFacility(facility.code)}
 						class="w-full text-left px-3 py-2 grid grid-cols-[8px_1fr_12px_12px_50px] items-center gap-2 border-b border-warm-grey/60 transition-colors cursor-pointer hover:bg-warm-grey/50
-						{selectedId === facility._id ? 'bg-warm-grey' : ''}"
+						{facilityCode === facility.code ? 'bg-warm-grey' : ''}"
 					>
 						<span
 							class="w-2 h-2 rounded-full"
@@ -331,25 +552,12 @@
 			</div>
 		</div>
 
-		<!-- List resize handle -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			class="w-3 h-full cursor-col-resize flex-shrink-0 flex items-center justify-center group border-r border-warm-grey bg-light-warm-grey hover:bg-warm-grey active:bg-mid-warm-grey transition-colors {listDrag.isDragging ? 'bg-mid-warm-grey' : ''}"
-			onmousedown={listDrag.start}
-		>
-			<div class="flex flex-col gap-1">
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-				<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
-			</div>
-		</div>
+		<DragHandle axis="x" onstart={listDrag.start} active={listDrag.isDragging} class="border-r border-warm-grey" />
 
 		<!-- RIGHT: Detail inspector -->
 		<div class="flex-1 flex flex-col min-h-0">
 			{#if selected}
-				<FacilityDetail facility={selected} bind:selectedUnitId />
+				<FacilityDetail facility={selected} selectedUnitCode={unitCode} {osmStatus} onclose={deselectFacility} onselectunit={selectUnit} onfetchosm={handleOsmFetch} />
 			{:else}
 				<!-- Empty state -->
 				<div class="flex-1 flex items-center justify-center text-[11px] text-mid-grey">

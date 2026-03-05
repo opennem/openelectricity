@@ -22,6 +22,12 @@
 			link: '/studio/facility-explorer'
 		},
 		{
+			title: 'CMS Facilities',
+			description:
+				'Inspect and manage facility metadata from the CMS with AI-assisted exploration.',
+			link: '/studio/cms-facilities'
+		},
+		{
 			title: "Lens on Australia's electricity system and market",
 			description: 'Visualises energy, pricing and emissions data from Australia.',
 			link: '/studio/lens-on-au-grid'
