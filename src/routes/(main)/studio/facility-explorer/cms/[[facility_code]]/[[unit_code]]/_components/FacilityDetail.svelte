@@ -15,8 +15,8 @@
 	import FacilityStatusIcon from '../../../../../../facilities/_components/FacilityStatusIcon.svelte';
 	import { createDragHandler } from '../_utils/drag-resize.svelte.js';
 
-	/** @type {{ facility: any, selectedUnitCode?: string | null, onclose?: () => void, onselectunit?: (code: string | null) => void }} */
-	let { facility, selectedUnitCode = null, onclose, onselectunit } = $props();
+	/** @type {{ facility: any, selectedUnitCode?: string | null, osmStatus?: 'idle' | 'loading' | 'ok' | 'not-found' | 'error', onclose?: () => void, onselectunit?: (code: string | null) => void, onfetchosm?: () => void }} */
+	let { facility, selectedUnitCode = null, osmStatus = 'idle', onclose, onselectunit, onfetchosm } = $props();
 
 	// Resizable unit panel width (right-anchored — drag left to widen)
 	const unitPanelDrag = createDragHandler({
@@ -180,7 +180,31 @@
 			{@render kvLink('website', facility.website ? 'facility website' : null, facility.website, 'Website')}
 			{@render kvLink('wikipedia', facility.wikipedia, facility.wikipedia, EXTERNAL_LINKS.wikipedia.label)}
 			{@render kvLink('wikidata_id', facility.wikidata_id, facility.wikidata_id ? `${EXTERNAL_LINKS.wikidata.baseUrl}/${facility.wikidata_id}` : null, EXTERNAL_LINKS.wikidata.label)}
-			{@render kvLink('osm_way_id', facility.osm_way_id, facility.osm_way_id ? `${EXTERNAL_LINKS.openStreetMap.baseUrl}/way/${facility.osm_way_id}` : null, EXTERNAL_LINKS.openStreetMap.label)}
+			<!-- osm_way_id with fetch/view button -->
+		<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
+			<span class="text-[11px] text-mid-grey font-mono truncate" title="osm_way_id">osm_way_id</span>
+			{#if facility.osm_way_id}
+				<span class="text-[12px] text-dark-grey font-mono col-span-2 inline-flex items-center gap-1.5">
+					<a href="{EXTERNAL_LINKS.openStreetMap.baseUrl}/way/{facility.osm_way_id}" target="_blank" rel="noopener noreferrer" title="Open on {EXTERNAL_LINKS.openStreetMap.label} (new tab)" class="inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{facility.osm_way_id}<ExternalLink size={10} class="flex-shrink-0" /></a>
+					{#if osmStatus === 'loading'}
+						<button disabled class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-warm-grey text-mid-grey cursor-not-allowed">
+							<span class="w-3 h-3 border-[1.5px] border-mid-grey/60 border-t-dark-grey rounded-full animate-spin"></span>
+							Fetching
+						</button>
+					{:else if osmStatus === 'ok'}
+						<button onclick={onfetchosm} class="text-[10px] px-1.5 py-0.5 rounded border border-warm-grey text-dark-grey hover:bg-warm-grey/50 hover:border-dark-grey transition-colors cursor-pointer">View</button>
+					{:else if osmStatus === 'not-found'}
+						<span class="text-[10px] text-amber-500" title="No polygon found for this OSM ID">&#9888;</span>
+					{:else if osmStatus === 'error'}
+						<button onclick={onfetchosm} class="text-[10px] px-1.5 py-0.5 rounded border border-red-300 text-red-500 hover:bg-red-50 hover:border-red-400 transition-colors cursor-pointer">Retry</button>
+					{:else}
+						<button onclick={onfetchosm} class="text-[10px] px-1.5 py-0.5 rounded border border-warm-grey text-dark-grey hover:bg-warm-grey/50 hover:border-dark-grey transition-colors cursor-pointer">Fetch</button>
+					{/if}
+				</span>
+			{:else}
+				<span class="text-[12px] text-mid-grey/50 font-mono col-span-2">—</span>
+			{/if}
+		</div>
 			{@render kv('npi_id', facility.npiId)}
 		</div>
 

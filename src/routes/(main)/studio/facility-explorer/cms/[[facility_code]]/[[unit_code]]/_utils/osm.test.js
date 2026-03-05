@@ -246,6 +246,150 @@ describe('fetchOsmPolygon', () => {
 	});
 
 	// ------------------------------------------
+	// Relation elements — ring assembly
+	// ------------------------------------------
+
+	describe('relation elements — ring assembly', () => {
+		it('assembles outer boundary from two way segments', async () => {
+			// Square split into two halves sharing a midpoint
+			const segA = [
+				{ lon: 150.0, lat: -33.0 },
+				{ lon: 150.1, lat: -33.0 },
+				{ lon: 150.1, lat: -33.1 }
+			];
+			const segB = [
+				{ lon: 150.1, lat: -33.1 },
+				{ lon: 150.0, lat: -33.1 },
+				{ lon: 150.0, lat: -33.0 }
+			];
+			const members = [
+				{ type: 'way', role: 'outer', geometry: segA },
+				{ type: 'way', role: 'outer', geometry: segB }
+			];
+			stubFetchSuccess(buildRelationResponse(11000, members));
+
+			const result = await fetchOsmPolygon(11000);
+
+			expect(result).not.toBeNull();
+			expect(result.geometry.type).toBe('Polygon');
+			// Should be one assembled ring, not MultiPolygon with two
+			expect(result.geometry.coordinates).toHaveLength(1);
+			const ring = result.geometry.coordinates[0];
+			// 3 from segA + 2 from segB (skip shared node) + closing = 6
+			expect(ring[0]).toEqual(ring[ring.length - 1]); // closed
+			expect(ring.length).toBe(5); // 4 unique points + closing
+		});
+
+		it('assembles outer boundary from three way segments', async () => {
+			// Triangle split into three segments
+			const segA = [
+				{ lon: 150.0, lat: -33.0 },
+				{ lon: 150.1, lat: -33.0 }
+			];
+			const segB = [
+				{ lon: 150.1, lat: -33.0 },
+				{ lon: 150.05, lat: -33.1 }
+			];
+			const segC = [
+				{ lon: 150.05, lat: -33.1 },
+				{ lon: 150.0, lat: -33.0 }
+			];
+			const members = [
+				{ type: 'way', role: 'outer', geometry: segA },
+				{ type: 'way', role: 'outer', geometry: segB },
+				{ type: 'way', role: 'outer', geometry: segC }
+			];
+			stubFetchSuccess(buildRelationResponse(11001, members));
+
+			const result = await fetchOsmPolygon(11001);
+
+			expect(result).not.toBeNull();
+			expect(result.geometry.type).toBe('Polygon');
+			expect(result.geometry.coordinates).toHaveLength(1);
+			const ring = result.geometry.coordinates[0];
+			expect(ring[0]).toEqual(ring[ring.length - 1]);
+		});
+
+		it('assembles segments provided in reverse order', async () => {
+			// Two segments where second connects in reverse
+			const segA = [
+				{ lon: 150.0, lat: -33.0 },
+				{ lon: 150.1, lat: -33.0 }
+			];
+			const segB = [
+				{ lon: 150.0, lat: -33.0 },
+				{ lon: 150.0, lat: -33.1 },
+				{ lon: 150.1, lat: -33.1 },
+				{ lon: 150.1, lat: -33.0 }
+			];
+			const members = [
+				{ type: 'way', role: 'outer', geometry: segA },
+				{ type: 'way', role: 'outer', geometry: segB }
+			];
+			stubFetchSuccess(buildRelationResponse(11002, members));
+
+			const result = await fetchOsmPolygon(11002);
+
+			expect(result).not.toBeNull();
+			expect(result.geometry.type).toBe('Polygon');
+			expect(result.geometry.coordinates).toHaveLength(1);
+		});
+
+		it('assembles inner boundary from multiple segments', async () => {
+			// Complete outer, split inner
+			const innerSegA = [
+				{ lon: 150.03, lat: -33.03 },
+				{ lon: 150.07, lat: -33.03 }
+			];
+			const innerSegB = [
+				{ lon: 150.07, lat: -33.03 },
+				{ lon: 150.07, lat: -33.07 },
+				{ lon: 150.03, lat: -33.07 },
+				{ lon: 150.03, lat: -33.03 }
+			];
+			const members = [
+				{ type: 'way', role: 'outer', geometry: SQUARE_GEOM },
+				{ type: 'way', role: 'inner', geometry: innerSegA },
+				{ type: 'way', role: 'inner', geometry: innerSegB }
+			];
+			stubFetchSuccess(buildRelationResponse(11003, members));
+
+			const result = await fetchOsmPolygon(11003);
+
+			expect(result).not.toBeNull();
+			expect(result.geometry.type).toBe('Polygon');
+			// outer + one assembled inner
+			expect(result.geometry.coordinates).toHaveLength(2);
+		});
+
+		it('handles mix of complete and segmented outers', async () => {
+			// First outer is a complete single way, second outer is split in two
+			const splitA = [
+				{ lon: 151.0, lat: -34.0 },
+				{ lon: 151.1, lat: -34.0 }
+			];
+			const splitB = [
+				{ lon: 151.1, lat: -34.0 },
+				{ lon: 151.1, lat: -34.1 },
+				{ lon: 151.0, lat: -34.1 },
+				{ lon: 151.0, lat: -34.0 }
+			];
+			const members = [
+				{ type: 'way', role: 'outer', geometry: SQUARE_GEOM },
+				{ type: 'way', role: 'outer', geometry: splitA },
+				{ type: 'way', role: 'outer', geometry: splitB }
+			];
+			stubFetchSuccess(buildRelationResponse(11004, members));
+
+			const result = await fetchOsmPolygon(11004);
+
+			expect(result).not.toBeNull();
+			expect(result.geometry.type).toBe('MultiPolygon');
+			expect(result.geometry.coordinates).toHaveLength(2);
+		});
+	});
+
+	// ------------------------------------------
 	// Relation elements — edge cases
 	// ------------------------------------------
 
@@ -334,10 +478,10 @@ describe('fetchOsmPolygon', () => {
 
 			const result = await fetchOsmPolygon(9000);
 			expect(result).toBeNull();
-		});
+		}, 10000);
 
 		it('returns null on non-ok HTTP response', async () => {
-			stubFetchHttpError(429);
+			stubFetchHttpError(500);
 
 			const result = await fetchOsmPolygon(9001);
 			expect(result).toBeNull();
@@ -446,8 +590,11 @@ describe('fetchOsmPolygon', () => {
 			const mock = vi.fn();
 			vi.stubGlobal('fetch', mock);
 
-			// First call: network error
-			mock.mockRejectedValueOnce(new TypeError('fetch failed'));
+			// First call: all retry attempts fail with network error
+			mock
+				.mockRejectedValueOnce(new TypeError('fetch failed'))
+				.mockRejectedValueOnce(new TypeError('fetch failed'))
+				.mockRejectedValueOnce(new TypeError('fetch failed'));
 			const first = await fetchOsmPolygon(10004);
 			expect(first).toBeNull();
 
@@ -458,8 +605,8 @@ describe('fetchOsmPolygon', () => {
 			});
 			const second = await fetchOsmPolygon(10004);
 			expect(second).not.toBeNull();
-			expect(mock).toHaveBeenCalledTimes(2);
-		});
+			expect(mock).toHaveBeenCalledTimes(4); // 3 failed retries + 1 success
+		}, 10000);
 
 		it('does not cache HTTP errors (retry succeeds)', async () => {
 			const mock = vi.fn();

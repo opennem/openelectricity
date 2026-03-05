@@ -11,13 +11,13 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { MapLibre, GeoJSONSource, CircleLayer, FillLayer, LineLayer, NavigationControl } from 'svelte-maplibre-gl';
 	import { Search, MapPin, Image } from '@lucide/svelte';
-	import { fly } from 'svelte/transition';
+	import { slide } from 'svelte/transition';
 	import { getContext, onDestroy, onMount, tick } from 'svelte';
 	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
 	import AiChat from './_components/AiChat.svelte';
 	import FacilityDetail from './_components/FacilityDetail.svelte';
 	import { createDragHandler } from './_utils/drag-resize.svelte.js';
-	import { fetchOsmPolygon } from './_utils/osm.js';
+	import { fetchOsmPolygon, isOsmCached } from './_utils/osm.js';
 
 	// Go fullscreen to remove nav/footer — lets us own the full viewport
 	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */
@@ -44,7 +44,8 @@
 
 	/** @type {GeoJSON.Feature | null} */
 	let osmPolygon = $state(null);
-	let osmLoading = $state(false);
+	/** @type {'idle' | 'loading' | 'ok' | 'not-found' | 'error'} */
+	let osmStatus = $state('idle');
 
 	// Delay rendering until client-side to prevent SSR/hydration flash
 	// when localStorage widths differ from defaults
@@ -253,6 +254,11 @@
 		facilityCode ? /** @type {any} */ (['==', ['get', 'code'], facilityCode]) : undefined
 	);
 
+	// Switch to satellite when zoomed into a facility
+	let mapStyle = $derived(
+		facilityCode ? '/map-styles/satellite.json' : '/map-styles/positron.json'
+	);
+
 	// GeoJSON for OSM polygon layer
 	/** @type {GeoJSON.FeatureCollection} */
 	const emptyFeatureCollection = { type: 'FeatureCollection', features: [] };
@@ -265,19 +271,53 @@
 			: emptyFeatureCollection
 	);
 
-	// Fly to selected facility and fetch OSM polygon
+	/**
+	 * Compute a bounding box from a GeoJSON polygon feature.
+	 * @param {GeoJSON.Feature} feature
+	 * @returns {[[number, number], [number, number]]}
+	 */
+	function featureBounds(feature) {
+		const geom = feature.geometry;
+		const coords =
+			geom.type === 'MultiPolygon'
+				? /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(2))
+				: /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(1));
+
+		let minLng = Infinity;
+		let maxLng = -Infinity;
+		let minLat = Infinity;
+		let maxLat = -Infinity;
+		for (const [lng, lat] of coords) {
+			if (lng < minLng) minLng = lng;
+			if (lng > maxLng) maxLng = lng;
+			if (lat < minLat) minLat = lat;
+			if (lat > maxLat) maxLat = lat;
+		}
+
+		return [
+			[minLng, minLat],
+			[maxLng, maxLat]
+		];
+	}
+
+	// Fly to selected facility on selection change
 	$effect(() => {
 		const facility = selected;
 
 		if (!facility) {
 			osmPolygon = null;
+			osmStatus = 'idle';
 			if (mapInstance) {
 				mapInstance.flyTo({ center: [134, -25], zoom: 3.5, duration: 600 });
 			}
 			return;
 		}
 
-		// Show map and fly to location
+		// Reset OSM state and check cache for the new facility
+		osmPolygon = null;
+		osmStatus = facility.osm_way_id && isOsmCached(facility.osm_way_id) ? 'ok' : 'idle';
+
+		// Fly to CMS location
 		if (facility.location?.lat && facility.location?.lng) {
 			showMap = true;
 			tick().then(() => {
@@ -288,23 +328,48 @@
 				});
 			});
 		}
-
-		// Fetch OSM polygon
-		osmPolygon = null;
-		if (facility.osm_way_id) {
-			osmLoading = true;
-			fetchOsmPolygon(facility.osm_way_id)
-				.then((feature) => {
-					// Only apply if this facility is still selected
-					if (facilityCode === facility.code) {
-						osmPolygon = feature;
-					}
-				})
-				.finally(() => {
-					osmLoading = false;
-				});
-		}
 	});
+
+	/** Fetch OSM polygon on demand (called from FacilityDetail button) */
+	function handleOsmFetch() {
+		const facility = selected;
+		if (!facility?.osm_way_id || osmStatus === 'loading') return;
+
+		// If already cached, just show the polygon and zoom
+		if (osmStatus === 'ok' && osmPolygon) {
+			showMap = true;
+			tick().then(() => {
+				if (mapInstance) {
+					const bounds = featureBounds(osmPolygon);
+					mapInstance.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
+				}
+			});
+			return;
+		}
+
+		osmStatus = 'loading';
+		fetchOsmPolygon(facility.osm_way_id)
+			.then((feature) => {
+				if (facilityCode !== facility.code) return;
+				osmPolygon = feature;
+				if (feature) {
+					osmStatus = 'ok';
+					showMap = true;
+					tick().then(() => {
+						if (mapInstance) {
+							const bounds = featureBounds(feature);
+							mapInstance.fitBounds(bounds, { padding: 40, maxZoom: 16, duration: 600 });
+						}
+					});
+				} else {
+					osmStatus = 'not-found';
+				}
+			})
+			.catch(() => {
+				if (facilityCode !== facility.code) return;
+				osmStatus = 'error';
+			});
+	}
 </script>
 
 {#if mounted}
@@ -331,10 +396,10 @@
 
 	<!-- Map -->
 	{#if showMap}
-		<div transition:fly={{ y: -10, duration: 200 }}>
+		<div transition:slide={{ duration: 200 }}>
 			<div style="height: {mapDrag.value}px;">
 				<MapLibre
-					style="/map-styles/positron.json"
+					style={mapStyle}
 					center={{ lng: 134, lat: -25 }}
 					zoom={3.5}
 					class="w-full h-full"
@@ -359,14 +424,13 @@
 						<FillLayer
 							paint={{
 								'fill-color': '#3b82f6',
-								'fill-opacity': 0.2
+								'fill-opacity': 0.3
 							}}
 						/>
 						<LineLayer
 							paint={{
-								'line-color': '#3b82f6',
-								'line-width': 2,
-								'line-opacity': 0.8
+								'line-color': '#2563eb',
+								'line-width': 2
 							}}
 						/>
 					</GeoJSONSource>
@@ -456,7 +520,7 @@
 		<!-- RIGHT: Detail inspector -->
 		<div class="flex-1 flex flex-col min-h-0">
 			{#if selected}
-				<FacilityDetail facility={selected} selectedUnitCode={unitCode} onclose={deselectFacility} onselectunit={selectUnit} />
+				<FacilityDetail facility={selected} selectedUnitCode={unitCode} {osmStatus} onclose={deselectFacility} onselectunit={selectUnit} onfetchosm={handleOsmFetch} />
 			{:else}
 				<!-- Empty state -->
 				<div class="flex-1 flex items-center justify-center text-[11px] text-mid-grey">
