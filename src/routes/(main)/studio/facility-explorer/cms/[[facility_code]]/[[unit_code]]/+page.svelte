@@ -29,7 +29,17 @@
 	let { data } = $props();
 
 	let searchQuery = $state('');
-	let showMap = $state(false);
+	let showMap = $state(
+		typeof localStorage !== 'undefined'
+			? localStorage.getItem('cms-explorer-show-map') === 'true'
+			: false
+	);
+
+	$effect(() => {
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem('cms-explorer-show-map', String(showMap));
+		}
+	});
 
 	// URL-driven selection via optional route params
 	const BASE_PATH = '/studio/facility-explorer/cms';
