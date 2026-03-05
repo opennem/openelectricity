@@ -7,6 +7,7 @@
 	 */
 
 	import { goto, replaceState } from '$app/navigation';
+	import { getContext, onDestroy, onMount } from 'svelte';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import {
 		FacilityChart,
@@ -34,6 +35,7 @@
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
 	import FacilityLocationMap from './_components/FacilityLocationMap.svelte';
+	import SanityFacilityDetail from './_components/SanityFacilityDetail.svelte';
 	import {
 		getMetricIntervalForDays,
 		getHysteresisSwitch,
@@ -54,11 +56,23 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {{ facilities: Array<{code: string, name: string, network_id: string, network_region: string}>, selectedCode: string|null, facility: any, powerData: any, timeZone: string, dateStart: string|null, dateEnd: string|null, range: number|null, error: string|null }} data
+	 * @property {{ facilities: Array<{code: string, name: string, network_id: string, network_region: string}>, selectedCode: string|null, facility: any, powerData: any, timeZone: string, dateStart: string|null, dateEnd: string|null, range: number|null, sanityFacility: any|null, error: string|null }} data
 	 */
 
 	/** @type {Props} */
 	let { data } = $props();
+
+	// Go fullscreen to remove nav/footer
+	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */
+	const layoutContext = getContext('layout-fullscreen');
+	layoutContext?.setFullscreen(true);
+	onDestroy(() => layoutContext?.setFullscreen(false));
+
+	// Delay rendering until client-side to prevent SSR/hydration flash
+	let mounted = $state(false);
+	onMount(() => {
+		mounted = true;
+	});
 
 	// ============================================
 	// State
@@ -403,53 +417,53 @@
 	<title>{selectedFacility ? `${selectedFacility.name} — ` : ''}Facility Explorer</title>
 </svelte:head>
 
+{#if mounted}
 {#if data.error && !selectedFacility}
-	<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
+	<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
 		<CircleAlert size={32} class="mb-3 text-warm-grey" />
 		<p class="text-sm font-medium text-dark-grey mb-1">Unable to load facility</p>
 		<p class="text-xs">{data.error}</p>
 	</div>
 {:else if !data.facilities.length}
-	<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
+	<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
 		<CircleAlert size={32} class="mb-3 text-warm-grey" />
 		<p class="text-sm font-medium text-dark-grey mb-1">No facilities available</p>
 		<p class="text-xs">Could not load the facilities list. Please try again later.</p>
 	</div>
 {:else if selectedFacility}
-	<!-- Filter Bar -->
-	<div class="flex flex-col sm:flex-row sm:items-center px-4 pt-3 pb-3 gap-3 sm:gap-4 border-b border-warm-grey bg-white sticky top-0" style="z-index: 99">
-		<!-- Facility selector — full width on mobile with arrows at edges -->
-		<div class="flex items-center w-full sm:w-auto sm:ml-8">
-			<button
-				class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
-				onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
-				title={prevFacility?.name}
-			>
-				<IconChevronLeft class="w-8 h-8" />
-			</button>
+	<div class="flex flex-col h-dvh overflow-hidden">
+		<!-- Top Bar: facility nav only -->
+		<div class="flex items-center px-4 py-2 border-b border-warm-grey bg-white flex-shrink-0" style="z-index: 99">
+			<div class="flex items-center w-full justify-center">
+				<button
+					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
+					onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
+					title={prevFacility?.name}
+				>
+					<IconChevronLeft class="w-8 h-8" />
+				</button>
 
-			<div class="flex-1 flex justify-center sm:flex-initial">
-				<FacilitySearchPopover
-					facilities={data.facilities}
-					label={selectedFacility.name}
-					bind:open={searchOpen}
-					onselect={handleFacilitySelect}
-				/>
+				<div class="flex-1 flex justify-center sm:flex-initial sm:flex-none">
+					<FacilitySearchPopover
+						facilities={data.facilities}
+						label={selectedFacility.name}
+						bind:open={searchOpen}
+						onselect={handleFacilitySelect}
+					/>
+				</div>
+
+				<button
+					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
+					onclick={() => nextFacility && handleFacilitySelect(nextFacility.code)}
+					title={nextFacility?.name}
+				>
+					<IconChevronLeft class="w-8 h-8 rotate-180" />
+				</button>
 			</div>
-
-			<button
-				class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
-				onclick={() => nextFacility && handleFacilitySelect(nextFacility.code)}
-				title={nextFacility?.name}
-			>
-				<IconChevronLeft class="w-8 h-8 rotate-180" />
-			</button>
 		</div>
 
-		<div class="hidden sm:block w-px h-6 bg-warm-grey"></div>
-
-		<!-- Range / Calendar / Interval controls -->
-		<div class="flex items-center justify-center sm:justify-start gap-4">
+		<!-- Controls bar -->
+		<div class="flex items-center px-4 py-3 gap-4 border-b border-warm-grey bg-white flex-shrink-0">
 			<!-- Range: Switch on desktop, dropdown on mobile -->
 			<div class="hidden sm:block">
 				<Switch
@@ -518,135 +532,148 @@
 				paddingY="py-3"
 				onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
 			/>
+
+			<div class="w-px h-6 bg-warm-grey"></div>
+
+			<!-- Chart/Data toggle -->
+			<SwitchWithIcons
+				buttons={viewButtons}
+				selected={activeView}
+				onchange={(d) => {
+					activeView = /** @type {'chart' | 'data'} */ (d.value);
+				}}
+			/>
 		</div>
-	</div>
 
-	<!-- Two-column layout -->
-	<div class="grid grid-cols-1 md:grid-cols-12 gap-0 md:gap-6 px-4 py-4">
-		<!-- LEFT: Chart / Data -->
-		<div class="col-span-1 md:col-span-8">
-			<!-- Description (HTML) -->
-			{#if selectedFacility.description}
-				<div class="text-base leading-lg text-mid-grey mb-4 [&_a]:text-dark-grey [&_a]:underline [&_p]:mb-[1em] [&_ul]:list-disc [&_ul]:ml-8 [&_ol]:list-decimal [&_ol]:ml-8">
-					{@html selectedFacility.description}
-				</div>
-			{/if}
-
-			<div class="mb-3">
-				<SwitchWithIcons
-					buttons={viewButtons}
-					selected={activeView}
-					onchange={(d) => {
-						activeView = /** @type {'chart' | 'data'} */ (d.value);
-					}}
-				/>
-			</div>
-
-			<!-- Chart (always rendered, hidden when data view active) -->
-			<div class:hidden={activeView !== 'chart'}>
-				<div class="bg-light-warm-grey/30 rounded-xl p-4">
-					<FacilityChart
-						bind:this={chartComponent}
-						facility={selectedFacility}
-						powerData={data.powerData}
-						{timeZone}
-						{dateStart}
-						{dateEnd}
-						interval={activeInterval}
-						metric={activeMetric}
-						{displayInterval}
-						onviewportchange={handleViewportChange}
-						onvisibledata={handleVisibleData}
-					/>
-				</div>
-			</div>
-
-			<!-- Data table -->
-			<div class:hidden={activeView !== 'data'}>
-				{#if tableData}
-					<div class="border border-warm-grey rounded-lg overflow-y-auto max-h-[500px]">
-						<FacilityDataTable
-							data={tableData.data}
-							seriesNames={tableData.seriesNames}
-							seriesLabels={tableData.seriesLabels}
+		<!-- Scrollable content area -->
+		<div class="flex-1 overflow-y-auto min-h-0">
+			<!-- Chart / Data (full width) -->
+			<div class="p-4">
+				<!-- Chart (always rendered, hidden when data view active) -->
+				<div class:hidden={activeView !== 'chart'}>
+					<div class="bg-light-warm-grey/30 rounded-xl p-4">
+						<FacilityChart
+							bind:this={chartComponent}
+							facility={selectedFacility}
+							powerData={data.powerData}
 							{timeZone}
+							{dateStart}
+							{dateEnd}
+							interval={activeInterval}
+							metric={activeMetric}
+							{displayInterval}
+							onviewportchange={handleViewportChange}
+							onvisibledata={handleVisibleData}
 						/>
 					</div>
-				{:else}
-					<div class="flex items-center justify-center py-16 text-sm text-mid-grey">
-						Loading data...
-					</div>
-				{/if}
+				</div>
+
+				<!-- Data table -->
+				<div class:hidden={activeView !== 'data'}>
+					{#if tableData}
+						<div class="border border-warm-grey rounded-lg overflow-y-auto">
+							<FacilityDataTable
+								data={tableData.data}
+								seriesNames={tableData.seriesNames}
+								seriesLabels={tableData.seriesLabels}
+								{timeZone}
+							/>
+						</div>
+					{:else}
+						<div class="flex items-center justify-center py-16 text-sm text-mid-grey">
+							Loading data...
+						</div>
+					{/if}
+				</div>
 			</div>
-		</div>
 
-		<!-- RIGHT: Facility Info Sidebar -->
-		<div class="col-span-1 md:col-span-4 mt-6 md:mt-0">
-			<h2 class="text-lg font-semibold text-dark-grey leading-snug">
-				{selectedFacility.name}
-			</h2>
-
-			<!-- Fuel tech badges -->
-			{#if unitGroups.length}
-				<div class="flex items-center gap-1 mt-3 flex-wrap">
-					{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
-						<FuelTechBadge
-							fueltech_id={group.fueltech_id}
-							status_id={group.status_id}
-							isCommissioning={group.isCommissioning}
-							size="sm"
-						/>
-					{/each}
-				</div>
-			{/if}
-
-			<!-- Map -->
-			{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
-				<div class="mt-4">
-					<FacilityLocationMap
-						lat={selectedFacility.location.lat}
-						lng={selectedFacility.location.lng}
-						color={primaryFuelTechColor}
-					/>
-					<div class="flex items-center gap-1 text-xxs text-mid-grey mt-1.5">
-						<MapPin size={10} />
-						<span>
-							{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}
-						</span>
+			<!-- Two-column comparison -->
+			<div class="grid grid-cols-2 border-t border-warm-grey">
+				<!-- Left: OE API data -->
+				<div class="p-4 border-r border-warm-grey">
+					<div class="text-[10px] text-mid-grey uppercase tracking-widest mb-3 pb-1 border-b border-dark-grey">
+						OE API
 					</div>
-				</div>
-			{/if}
+					<h2 class="text-lg font-semibold text-dark-grey leading-snug">
+						{selectedFacility.name}
+					</h2>
 
-			<!-- Units table -->
-			{#if selectedFacility?.units?.length}
-				<div class="mt-4 border border-warm-grey rounded-lg">
-					<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
-				</div>
-				<p class="text-xxs text-mid-grey mt-1.5">
-					Capacity shown is maximum capacity where available, otherwise registered capacity.
-				</p>
-			{/if}
+					<!-- Description -->
+					{#if selectedFacility.description}
+						<div class="text-sm leading-relaxed text-mid-grey mt-3 [&_a]:text-dark-grey [&_a]:underline [&_p]:mb-[1em] [&_ul]:list-disc [&_ul]:ml-8 [&_ol]:list-decimal [&_ol]:ml-8">
+							{@html selectedFacility.description}
+						</div>
+					{/if}
 
-			<!-- External link -->
-			{#if explorePath}
-				<div class="mt-3">
-					<a
-						href={explorePath}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="inline-flex items-center gap-1.5 text-xs text-mid-grey hover:text-dark-grey transition-colors"
-					>
-						<ExternalLink size={12} />
-						View on OpenElectricity
-					</a>
+					<!-- Fuel tech badges -->
+					{#if unitGroups.length}
+						<div class="flex items-center gap-1 mt-3 flex-wrap">
+							{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
+								<FuelTechBadge
+									fueltech_id={group.fueltech_id}
+									status_id={group.status_id}
+									isCommissioning={group.isCommissioning}
+									size="sm"
+								/>
+							{/each}
+						</div>
+					{/if}
+
+					<!-- Map -->
+					{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
+						<div class="mt-4">
+							<FacilityLocationMap
+								lat={selectedFacility.location.lat}
+								lng={selectedFacility.location.lng}
+								color={primaryFuelTechColor}
+							/>
+							<div class="flex items-center gap-1 text-xxs text-mid-grey mt-1.5">
+								<MapPin size={10} />
+								<span>
+									{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}
+								</span>
+							</div>
+						</div>
+					{/if}
+
+					<!-- Units table -->
+					{#if selectedFacility?.units?.length}
+						<div class="mt-4 border border-warm-grey rounded-lg">
+							<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
+						</div>
+						<p class="text-xxs text-mid-grey mt-1.5">
+							Capacity shown is maximum capacity where available, otherwise registered capacity.
+						</p>
+					{/if}
+
+					<!-- External link -->
+					{#if explorePath}
+						<div class="mt-3">
+							<a
+								href={explorePath}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="inline-flex items-center gap-1.5 text-xs text-mid-grey hover:text-dark-grey transition-colors"
+							>
+								<ExternalLink size={12} />
+								View on OpenElectricity
+							</a>
+						</div>
+					{/if}
 				</div>
-			{/if}
+
+				<!-- Right: Sanity CMS data -->
+				<div class="overflow-y-auto">
+					<SanityFacilityDetail facility={data.sanityFacility} />
+				</div>
+			</div>
 		</div>
 	</div>
 {:else}
 	<!-- Empty State -->
-	<div class="flex flex-col items-center justify-center py-16 text-mid-grey">
+	<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
 		<SearchX size={32} class="mb-3 text-warm-grey" />
 		<p class="text-sm">Select a facility to view its power generation data.</p>
 	</div>
+{/if}
 {/if}

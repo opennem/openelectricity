@@ -7,6 +7,7 @@
 
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { client as sanityClient } from '$lib/sanity';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -40,6 +41,7 @@ const client = new OpenElectricityClient({
  * @property {string | null} dateStart - Start date for data range
  * @property {string | null} dateEnd - End date for data range
  * @property {number | null} range - Preselected range in days
+ * @property {any | null} sanityFacility - Sanity CMS facility data for comparison
  * @property {string | null} error - Error message if any
  */
 
@@ -66,6 +68,7 @@ export async function load({ url, fetch }) {
 		dateStart,
 		dateEnd,
 		range: days ? parseInt(days, 10) : 7,
+		sanityFacility: null,
 		error: null
 	};
 
@@ -85,9 +88,28 @@ export async function load({ url, fetch }) {
 			}))
 			.sort((a, b) => a.name.localeCompare(b.name));
 
-		// If a facility is selected, fetch its details and power data
+		// If a facility is selected, fetch its details, power data, and Sanity CMS data
 		if (selectedCode) {
 			const selectedFacility = facilitiesResponse.data?.find((f) => f.code === selectedCode);
+
+			// Fetch Sanity facility data in parallel
+			const sanityPromise = sanityClient.fetch(
+				`*[_type == "facility" && code == $code][0]{
+					_id, code, name, website, wikipedia, wikidata_id, osm_way_id, npiId, location,
+					description, metadata_array,
+					network->{_id, code, name},
+					region->{_id, code, name},
+					owners[]->{_id, name, legal_name, website, contact_email},
+					photos,
+					units[]->{
+						_id, code, dispatch_type, status, capacity_registered, capacity_maximum,
+						data_first_seen, data_last_seen, emissions_factor_co2,
+						fuel_technology->{_id, code, name, colour, renewable},
+						metadata_array
+					}
+				}`,
+				{ code: selectedCode }
+			).catch(() => null);
 
 			if (selectedFacility) {
 				result.facility = selectedFacility;
@@ -121,6 +143,8 @@ export async function load({ url, fetch }) {
 			} else {
 				result.error = `Facility "${selectedCode}" not found`;
 			}
+
+			result.sanityFacility = await sanityPromise;
 		}
 	} catch (err) {
 		console.error('Error loading facility explorer:', err);
