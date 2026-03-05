@@ -12,7 +12,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { ChevronRight, ExternalLink, X } from '@lucide/svelte';
 	import { fade, slide } from 'svelte/transition';
-	import FacilityStatusIcon from '../../../../../../facilities/_components/FacilityStatusIcon.svelte';
+	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import { createDragHandler } from '../_utils/drag-resize.svelte.js';
 
 	/** @type {{ facility: any, selectedUnitCode?: string | null, osmStatus?: 'idle' | 'loading' | 'ok' | 'not-found' | 'error', onclose?: () => void, onselectunit?: (code: string | null) => void, onfetchosm?: () => void }} */

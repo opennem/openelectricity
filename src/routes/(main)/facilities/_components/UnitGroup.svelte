@@ -3,7 +3,7 @@
 	import { stripDateTimezone } from '$lib/utils/date-format';
 	import { fuelTechName } from '$lib/fuel_techs';
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
-	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
+	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import formatValue from '../_utils/format-value';
 	import { needsDarkText } from '../_utils/fueltech-display';

@@ -42,7 +42,7 @@
 	});
 
 	// URL-driven selection via optional route params
-	const BASE_PATH = '/studio/facility-explorer/cms';
+	const BASE_PATH = '/studio/cms-facilities';
 	let facilityCode = $derived(page.params.facility_code ?? null);
 	let unitCode = $derived(page.params.unit_code ?? null);
 
@@ -416,10 +416,6 @@
 <div class="flex flex-col h-dvh overflow-hidden font-mono">
 	<!-- Header bar -->
 	<div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
-		<a
-			href="/studio/facility-explorer"
-			class="text-[11px] text-mid-grey hover:text-dark-grey">&larr;</a
-		>
 		<span class="text-[11px] font-medium text-dark-grey tracking-wide uppercase"
 			>CMS Facilities</span
 		>

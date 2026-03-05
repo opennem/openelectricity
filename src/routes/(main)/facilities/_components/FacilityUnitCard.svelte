@@ -1,6 +1,6 @@
 <script>
 	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
-	import FacilityStatusIcon from './FacilityStatusIcon.svelte';
+	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
