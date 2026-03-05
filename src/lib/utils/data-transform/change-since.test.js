@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import changeSince from '../change-since';
+import changeSince from './change-since';
 
 describe('changeSince', () => {
 	it('should return original data if dataset is empty', () => {

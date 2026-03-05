@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import ChartDataManager from '../ChartDataManager.svelte.js';
+import ChartDataManager from './ChartDataManager.svelte.js';
 
 // ============================================
 // Test Helpers
