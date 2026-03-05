@@ -6,6 +6,7 @@
 	 * owners, metadata, units list) plus a slide-in unit detail panel.
 	 */
 
+	import { EXTERNAL_LINKS } from '$lib/constants/external-links';
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { ChevronRight, ExternalLink, X } from '@lucide/svelte';
@@ -13,8 +14,8 @@
 	import FacilityStatusIcon from '../../../../facilities/_components/FacilityStatusIcon.svelte';
 	import { createDragHandler } from '../_utils/drag-resize.svelte.js';
 
-	/** @type {{ facility: any, selectedUnitId?: string | null }} */
-	let { facility, selectedUnitId = $bindable(null) } = $props();
+	/** @type {{ facility: any, selectedUnitId?: string | null, onclose?: () => void }} */
+	let { facility, selectedUnitId = $bindable(null), onclose } = $props();
 
 	// Resizable unit panel width (right-anchored — drag left to widen)
 	const unitPanelDrag = createDragHandler({
@@ -88,6 +89,19 @@
 	</div>
 {/snippet}
 
+{#snippet kvLink(/** @type {string} */ label, /** @type {any} */ displayText, /** @type {string | null} */ href, /** @type {string} */ description)}
+	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
+		<span class="text-[11px] text-mid-grey font-mono truncate" title={label}>{label}</span>
+		{#if displayText != null && displayText !== '' && href}
+			<a {href} target="_blank" rel="noopener noreferrer" title="Open on {description} (new tab)" class="text-[12px] text-dark-grey font-mono col-span-2 inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey rounded-sm">{displayText}<ExternalLink size={10} class="flex-shrink-0" /></a>
+		{:else if displayText != null && displayText !== ''}
+			<span class="text-[12px] text-dark-grey font-mono break-all col-span-2">{displayText}</span>
+		{:else}
+			<span class="text-[12px] text-mid-grey/50 font-mono col-span-2">—</span>
+		{/if}
+	</div>
+{/snippet}
+
 <div class="relative flex-1 overflow-y-auto min-h-0">
 	<div class="p-5">
 		<!-- Facility header -->
@@ -130,6 +144,15 @@
 				>
 					<ExternalLink size={10} /> wiki
 				</a>
+			{/if}
+			{#if onclose}
+				<button
+					onclick={onclose}
+					class="p-1 hover:bg-warm-grey rounded transition-colors"
+					title="Close"
+				>
+					<X size={12} class="text-mid-grey" />
+				</button>
 			{/if}
 		</div>
 
@@ -175,10 +198,10 @@
 					? `${facility.location.lat.toFixed(5)}, ${facility.location.lng.toFixed(5)}`
 					: null
 			)}
-			{@render kv('website', facility.website)}
-			{@render kv('wikipedia', facility.wikipedia)}
-			{@render kv('wikidata_id', facility.wikidata_id)}
-			{@render kv('osm_way_id', facility.osm_way_id)}
+			{@render kvLink('website', facility.website ? 'facility website' : null, facility.website, 'Website')}
+			{@render kvLink('wikipedia', facility.wikipedia, facility.wikipedia, EXTERNAL_LINKS.wikipedia.label)}
+			{@render kvLink('wikidata_id', facility.wikidata_id, facility.wikidata_id ? `${EXTERNAL_LINKS.wikidata.baseUrl}/${facility.wikidata_id}` : null, EXTERNAL_LINKS.wikidata.label)}
+			{@render kvLink('osm_way_id', facility.osm_way_id, facility.osm_way_id ? `${EXTERNAL_LINKS.openStreetMap.baseUrl}/way/${facility.osm_way_id}` : null, EXTERNAL_LINKS.openStreetMap.label)}
 			{@render kv('npi_id', facility.npiId)}
 		</div>
 
@@ -213,23 +236,24 @@
 					Owners
 				</div>
 				{#each facility.owners as owner (owner._id)}
-					<div class="flex items-baseline gap-2 py-[3px] border-b border-warm-grey/60">
-						<span class="text-[12px] text-dark-grey"
-							>{owner.name || owner.legal_name}</span
-						>
+					<div class="flex items-center gap-2 py-[3px] border-b border-warm-grey/60">
 						{#if owner.website}
 							<a
 								href={owner.website}
 								target="_blank"
 								rel="noopener noreferrer"
-								class="text-[10px] text-mid-grey hover:text-dark-grey"
-								>[web]</a
-							>
+								title="Open website (new tab)"
+								class="text-[12px] text-dark-grey hover:text-black inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:decoration-solid hover:decoration-dark-grey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey rounded-sm"
+							>{owner.name || owner.legal_name}<ExternalLink size={10} class="flex-shrink-0" /></a>
+						{:else}
+							<span class="text-[12px] text-dark-grey">{owner.name || owner.legal_name}</span>
 						{/if}
 						{#if owner.contact_email}
-							<span class="text-[10px] text-mid-grey"
-								>{owner.contact_email}</span
-							>
+							<a
+								href="mailto:{owner.contact_email}"
+								title="Send email to {owner.contact_email}"
+								class="text-[10px] text-mid-grey hover:text-dark-grey underline decoration-dotted decoration-mid-grey underline-offset-2 hover:decoration-solid hover:decoration-dark-grey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey rounded-sm"
+							>{owner.contact_email}</a>
 						{/if}
 					</div>
 				{/each}
@@ -433,7 +457,7 @@
 								{@render kv('brand', ut.unit_brand)}
 								{@render kv('model', ut.unit_model)}
 								{@render kv('model_year', ut.unit_model_year)}
-								{@render kv('model_url', ut.unit_model_url)}
+								{@render kvLink('model_url', ut.unit_model_url ? 'model website' : null, ut.unit_model_url, 'Manufacturer')}
 								{@render kv(
 									'height',
 									ut.unit_height != null ? `${ut.unit_height} m` : null

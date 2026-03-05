@@ -7,13 +7,14 @@
 	 */
 
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import { MapLibre, GeoJSONSource, CircleLayer, NavigationControl } from 'svelte-maplibre-gl';
+	import { MapLibre, GeoJSONSource, CircleLayer, FillLayer, LineLayer, NavigationControl } from 'svelte-maplibre-gl';
 	import { Search, MapPin, Image } from '@lucide/svelte';
 	import { fly } from 'svelte/transition';
 	import { getContext, onDestroy, onMount, tick } from 'svelte';
 	import AiChat from './_components/AiChat.svelte';
 	import FacilityDetail from './_components/FacilityDetail.svelte';
 	import { createDragHandler } from './_utils/drag-resize.svelte.js';
+	import { fetchOsmPolygon } from './_utils/osm.js';
 
 	// Go fullscreen to remove nav/footer — lets us own the full viewport
 	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */
@@ -33,6 +34,13 @@
 
 	/** @type {HTMLElement | null} */
 	let listContainer = $state(null);
+
+	/** @type {any | null} */
+	let mapInstance = $state(null);
+
+	/** @type {GeoJSON.Feature | null} */
+	let osmPolygon = $state(null);
+	let osmLoading = $state(false);
 
 	// Delay rendering until client-side to prevent SSR/hydration flash
 	// when localStorage widths differ from defaults
@@ -157,7 +165,16 @@
 
 	/** @param {string} id */
 	function selectFacility(id) {
+		if (selectedId === id) {
+			deselectFacility();
+			return;
+		}
 		selectedId = id;
+		selectedUnitId = null;
+	}
+
+	function deselectFacility() {
+		selectedId = null;
 		selectedUnitId = null;
 	}
 
@@ -209,6 +226,64 @@
 			el?.scrollIntoView({ block: 'nearest' });
 		});
 	}
+
+	// CircleLayer filter — show only selected facility when one is active
+	let circleFilter = $derived(
+		selectedId ? /** @type {any} */ (['==', ['get', 'id'], selectedId]) : undefined
+	);
+
+	// GeoJSON for OSM polygon layer
+	/** @type {GeoJSON.FeatureCollection} */
+	const emptyFeatureCollection = { type: 'FeatureCollection', features: [] };
+	let osmGeoJson = $derived(
+		osmPolygon
+			? /** @type {GeoJSON.FeatureCollection} */ ({
+					type: 'FeatureCollection',
+					features: [osmPolygon]
+				})
+			: emptyFeatureCollection
+	);
+
+	// Fly to selected facility and fetch OSM polygon
+	$effect(() => {
+		const facility = selected;
+
+		if (!facility) {
+			osmPolygon = null;
+			if (mapInstance) {
+				mapInstance.flyTo({ center: [134, -25], zoom: 3.5, duration: 600 });
+			}
+			return;
+		}
+
+		// Show map and fly to location
+		if (facility.location?.lat && facility.location?.lng) {
+			showMap = true;
+			tick().then(() => {
+				mapInstance?.flyTo({
+					center: [facility.location.lng, facility.location.lat],
+					zoom: 14,
+					duration: 600
+				});
+			});
+		}
+
+		// Fetch OSM polygon
+		osmPolygon = null;
+		if (facility.osm_way_id) {
+			osmLoading = true;
+			fetchOsmPolygon(facility.osm_way_id)
+				.then((feature) => {
+					// Only apply if this facility is still selected
+					if (selectedId === facility._id) {
+						osmPolygon = feature;
+					}
+				})
+				.finally(() => {
+					osmLoading = false;
+				});
+		}
+	});
 </script>
 
 {#if mounted}
@@ -244,17 +319,36 @@
 					center={{ lng: 134, lat: -25 }}
 					zoom={3.5}
 					class="w-full h-full"
+					bind:map={mapInstance}
 				>
 					<NavigationControl position="top-right" />
 					<GeoJSONSource data={geojson}>
 						<CircleLayer
 							paint={{
-								'circle-radius': 4,
+								'circle-radius': selectedId ? 6 : 4,
 								'circle-color': ['get', 'colour'],
-								'circle-stroke-width': 1,
+								'circle-stroke-width': selectedId ? 2 : 1,
 								'circle-stroke-color': '#fff'
 							}}
+							filter={circleFilter}
 							onclick={handleMapClick}
+						/>
+					</GeoJSONSource>
+
+					<!-- OSM polygon -->
+					<GeoJSONSource id="osm-polygon" data={osmGeoJson}>
+						<FillLayer
+							paint={{
+								'fill-color': '#3b82f6',
+								'fill-opacity': 0.2
+							}}
+						/>
+						<LineLayer
+							paint={{
+								'line-color': '#3b82f6',
+								'line-width': 2,
+								'line-opacity': 0.8
+							}}
 						/>
 					</GeoJSONSource>
 				</MapLibre>
@@ -349,7 +443,7 @@
 		<!-- RIGHT: Detail inspector -->
 		<div class="flex-1 flex flex-col min-h-0">
 			{#if selected}
-				<FacilityDetail facility={selected} bind:selectedUnitId />
+				<FacilityDetail facility={selected} bind:selectedUnitId onclose={deselectFacility} />
 			{:else}
 				<!-- Empty state -->
 				<div class="flex-1 flex items-center justify-center text-[11px] text-mid-grey">
