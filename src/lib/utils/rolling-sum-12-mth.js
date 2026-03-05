@@ -4,55 +4,41 @@ import PerfTime from './perf-time.js';
 const perfTime = new PerfTime('rolling-sum-12-mth');
 
 /**
- *
  * @param {TimeSeriesData[]} data
  * @param {string[]} keys
  * @returns {TimeSeriesData[]}
  */
-export default function (data, keys) {
+export default function rollingSum12Mth(data, keys) {
 	perfTime.time();
 
-	const cloneData = data.map((/** @type {any} */ d) => {
-		return {
-			...d,
-			date: new Date(d.date)
-		};
-	});
+	/** @type {TimeSeriesData[]} */
+	const cloneData = data.map((d) => ({
+		...d,
+		date: new Date(d.date)
+	}));
 
 	for (let x = cloneData.length - 1; x >= 0; x--) {
-		const d = cloneData[x];
-		const last = subMonths(cloneData[x].date, 12);
+		const current = cloneData[x];
+		const windowStart = subMonths(current.date, 12);
 
-		keys.forEach((/** @type {string} */ k) => {
-			const id = k;
-			let sum = d[id] || 0;
-			let index = x - 1;
-			let hasNulls = false;
+		keys.forEach((k) => {
+			let sum = /** @type {number} */ (current[k] ?? 0);
+			let hasNulls = current[k] == null;
 
-			if (index >= 0) {
-				while (isAfter(cloneData[index].date, last)) {
-					if (!cloneData[index][id] && cloneData[index][id] !== 0) {
-						hasNulls = true;
-					}
-
-					sum += cloneData[index][id] || 0;
-
-					index--;
-
-					if (index < 0) {
-						break;
-					}
+			for (let i = x - 1; i >= 0 && isAfter(cloneData[i].date, windowStart); i--) {
+				if (cloneData[i][k] == null) {
+					hasNulls = true;
 				}
+				sum += /** @type {number} */ (cloneData[i][k] ?? 0);
 			}
 
-			cloneData[x][id] = hasNulls ? null : sum;
+			cloneData[x][k] = hasNulls ? null : sum;
 		});
 	}
 
-	// filter out incomplete rolling sums
-	const firstDate = cloneData[0].date;
-	const firstAvailable = addMonths(firstDate, 12);
-	const updated = cloneData.filter((/** @type {any} */ d) => isAfter(d.date, firstAvailable));
+	// filter out incomplete rolling sums (first 12 months)
+	const firstAvailable = addMonths(cloneData[0].date, 12);
+	const updated = cloneData.filter((d) => isAfter(d.date, firstAvailable));
 
 	perfTime.timeEnd('--- data.12month-rolling-sum');
 

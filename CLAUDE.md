@@ -186,7 +186,7 @@ The application has a sophisticated fuel technology classification system:
 ### Testing Strategy
 
 - **Vitest** configuration for unit testing
-- Test files located alongside source code with `.test.js` naming
+- Test files are co-located alongside their source files with `.test.js` naming (e.g. `foo.js` and `foo.test.js` in the same directory). Do not use `__tests__/` subdirectories.
 - Focus on utility functions and data transformations
 - Component testing patterns for Svelte 5 components
 

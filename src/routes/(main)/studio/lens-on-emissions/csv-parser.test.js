@@ -5,7 +5,7 @@ import {
 	aggregateToYearly,
 	filterByFYRange,
 	mergeData
-} from '../helpers/csv-parser.js';
+} from './helpers/csv-parser.js';
 
 describe('parseQuarterlyCSV', () => {
 	it('parses quarterly CSV data correctly', () => {
