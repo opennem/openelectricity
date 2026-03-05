@@ -317,9 +317,8 @@
 		osmPolygon = null;
 		osmStatus = facility.osm_way_id && isOsmCached(facility.osm_way_id) ? 'ok' : 'idle';
 
-		// Fly to CMS location
-		if (facility.location?.lat && facility.location?.lng) {
-			showMap = true;
+		// Fly to CMS location (only if map is already open)
+		if (facility.location?.lat && facility.location?.lng && showMap) {
 			tick().then(() => {
 				mapInstance?.flyTo({
 					center: [facility.location.lng, facility.location.lat],

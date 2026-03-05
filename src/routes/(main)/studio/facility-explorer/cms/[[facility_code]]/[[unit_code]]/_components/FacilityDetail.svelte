@@ -11,7 +11,7 @@
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { ChevronRight, ExternalLink, X } from '@lucide/svelte';
-	import { fade, fly } from 'svelte/transition';
+	import { fade, slide } from 'svelte/transition';
 	import FacilityStatusIcon from '../../../../../../facilities/_components/FacilityStatusIcon.svelte';
 	import { createDragHandler } from '../_utils/drag-resize.svelte.js';
 
@@ -94,7 +94,7 @@
 	</div>
 {/snippet}
 
-<div class="relative flex-1 flex flex-col min-h-0">
+<div class="flex-1 flex flex-col min-h-0">
 	<PanelHeader>
 		<span
 			class="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -132,7 +132,8 @@
 		{/if}
 	</PanelHeader>
 
-	<div class="flex-1 overflow-y-auto">
+	<div class="flex-1 flex min-h-0">
+	<div class="flex-1 overflow-y-auto min-w-0">
 	<div class="p-5">
 
 		<!-- Photos -->
@@ -315,12 +316,12 @@
 	<!-- Unit detail slide-in panel -->
 	{#if selectedUnit}
 		<div
-			class="absolute inset-y-0 right-0 flex z-20 shadow-lg"
+			class="flex shrink-0"
 			style="width: {unitPanelDrag.value}px;"
-			transition:fly={{ x: unitPanelDrag.value, duration: 200 }}
+			transition:slide={{ axis: 'x', duration: 200 }}
 		>
 			<DragHandle axis="x" onstart={unitPanelDrag.start} active={unitPanelDrag.isDragging} class="border-l border-warm-grey" />
-			<div class="flex-1 bg-white border-l border-warm-grey flex flex-col overflow-hidden">
+			<div class="flex-1 flex flex-col overflow-hidden">
 				<PanelHeader>
 					<FacilityStatusIcon status={displayUnit?.status || 'operating'} />
 					<span
@@ -484,6 +485,7 @@
 			</div>
 		</div>
 	{/if}
+	</div>
 
 	<!-- Photo lightbox -->
 	{#if lightboxPhoto}
