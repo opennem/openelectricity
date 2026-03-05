@@ -12,7 +12,7 @@
 	import { MapLibre, GeoJSONSource, CircleLayer, FillLayer, LineLayer, NavigationControl } from 'svelte-maplibre-gl';
 	import { Search, MapPin, Image } from '@lucide/svelte';
 	import { slide } from 'svelte/transition';
-	import { getContext, onDestroy, onMount, tick } from 'svelte';
+	import { getContext, onDestroy, onMount, tick, untrack } from 'svelte';
 	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
 	import AiChat from './_components/AiChat.svelte';
 	import FacilityDetail from './_components/FacilityDetail.svelte';
@@ -318,7 +318,7 @@
 		osmStatus = facility.osm_way_id && isOsmCached(facility.osm_way_id) ? 'ok' : 'idle';
 
 		// Fly to CMS location (only if map is already open)
-		if (facility.location?.lat && facility.location?.lng && showMap) {
+		if (facility.location?.lat && facility.location?.lng && untrack(() => showMap)) {
 			tick().then(() => {
 				mapInstance?.flyTo({
 					center: [facility.location.lng, facility.location.lat],
