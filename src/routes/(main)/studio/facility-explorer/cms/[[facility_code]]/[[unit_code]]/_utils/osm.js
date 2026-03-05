@@ -3,35 +3,63 @@ const OVERPASS_ENDPOINTS = [
 	'https://overpass.kumi.systems/api/interpreter'
 ];
 const CACHE_TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+const STORAGE_PREFIX = 'osm-polygon:';
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1500; // ms
-
-/** @type {Map<string, { feature: GeoJSON.Feature | null, timestamp: number }>} */
-const cache = new Map();
 
 /** @type {Map<string, Promise<GeoJSON.Feature | null>>} */
 const inflight = new Map();
 
 /**
- * Check whether a result for the given OSM ID is in the in-memory cache.
+ * Read a cache entry from localStorage.
+ * @param {string} key
+ * @returns {{ feature: GeoJSON.Feature | null, timestamp: number } | null}
+ */
+function getCache(key) {
+	if (typeof localStorage === 'undefined') return null;
+	try {
+		const raw = localStorage.getItem(STORAGE_PREFIX + key);
+		if (!raw) return null;
+		return JSON.parse(raw);
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Write a cache entry to localStorage.
+ * @param {string} key
+ * @param {{ feature: GeoJSON.Feature | null, timestamp: number }} entry
+ */
+function setCache(key, entry) {
+	if (typeof localStorage === 'undefined') return;
+	try {
+		localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(entry));
+	} catch {
+		// Storage full or unavailable — silently ignore
+	}
+}
+
+/**
+ * Check whether a result for the given OSM ID is in the localStorage cache.
  * @param {string | number} osmId
  * @returns {boolean}
  */
 export function isOsmCached(osmId) {
-	const entry = cache.get(String(osmId));
+	const entry = getCache(String(osmId));
 	return !!entry && Date.now() - entry.timestamp < CACHE_TTL;
 }
 
 /**
  * Fetch polygon geometry for an OSM way/relation ID from the Overpass API.
- * Results are cached in memory for 30 days.
+ * Results are cached in localStorage for 30 days.
  *
  * @param {string | number} osmId
  * @returns {Promise<GeoJSON.Feature | null>}
  */
 export function fetchOsmPolygon(osmId) {
 	const key = String(osmId);
-	const cached = cache.get(key);
+	const cached = getCache(key);
 	if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
 		return Promise.resolve(cached.feature);
 	}
@@ -92,7 +120,7 @@ async function _fetchOsmPolygon(key, osmId) {
 	if (!gotResponse) return null;
 
 	if (!elements?.length) {
-		cache.set(key, { feature: null, timestamp: Date.now() });
+		setCache(key, { feature: null, timestamp: Date.now() });
 		return null;
 	}
 
@@ -105,7 +133,7 @@ async function _fetchOsmPolygon(key, osmId) {
 		feature = relationToFeature(element);
 	}
 
-	cache.set(key, { feature, timestamp: Date.now() });
+	setCache(key, { feature, timestamp: Date.now() });
 	return feature;
 }
 

@@ -81,6 +81,31 @@ function stubFetchNetworkError() {
 	return mock;
 }
 
+/**
+ * Create a simple in-memory localStorage mock.
+ * @returns {Storage}
+ */
+function createLocalStorageMock() {
+	/** @type {Record<string, string>} */
+	const store = {};
+	return /** @type {Storage} */ ({
+		getItem: (/** @type {string} */ key) => store[key] ?? null,
+		setItem: (/** @type {string} */ key, /** @type {string} */ value) => {
+			store[key] = value;
+		},
+		removeItem: (/** @type {string} */ key) => {
+			delete store[key];
+		},
+		clear: () => {
+			for (const key of Object.keys(store)) delete store[key];
+		},
+		get length() {
+			return Object.keys(store).length;
+		},
+		key: (/** @type {number} */ index) => Object.keys(store)[index] ?? null
+	});
+}
+
 // ============================================
 // Tests
 // ============================================
@@ -91,6 +116,7 @@ describe('fetchOsmPolygon', () => {
 
 	beforeEach(async () => {
 		vi.resetModules();
+		vi.stubGlobal('localStorage', createLocalStorageMock());
 		const mod = await import('./osm.js');
 		fetchOsmPolygon = mod.fetchOsmPolygon;
 	});
