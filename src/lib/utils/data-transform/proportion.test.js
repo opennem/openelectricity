@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import proportion from '../proportion';
+import proportion from './proportion';
 
 describe('proportion', () => {
 	it('should calculate proportions correctly for positive values', () => {

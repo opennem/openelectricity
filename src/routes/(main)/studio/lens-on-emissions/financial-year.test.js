@@ -7,7 +7,7 @@ import {
 	formatFYRange,
 	yearToDate,
 	calendarYearToFY
-} from '../helpers/financial-year.js';
+} from './helpers/financial-year.js';
 
 describe('parseQuarter', () => {
 	it('parses Sep-04 to September 2004', () => {

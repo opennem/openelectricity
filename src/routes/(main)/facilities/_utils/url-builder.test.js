@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildUrl } from '../url-builder.js';
+import { buildUrl } from './url-builder.js';
 
 describe('buildUrl', () => {
 	it('should build URL with all params', () => {
