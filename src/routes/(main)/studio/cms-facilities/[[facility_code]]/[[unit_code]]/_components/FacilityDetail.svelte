@@ -527,17 +527,17 @@
 			<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
 			<div class="flex flex-col items-center gap-3" onclick={(e) => e.stopPropagation()}>
 				<img
-					src={lightboxPhoto.asset
+					src={lightboxPhoto?.asset
 						? urlFor(lightboxPhoto).url()
-						: lightboxPhoto.url}
-					alt={lightboxPhoto.alt ||
-						lightboxPhoto.caption ||
+						: lightboxPhoto?.url}
+					alt={lightboxPhoto?.alt ||
+						lightboxPhoto?.caption ||
 						`${facility.name} photo`}
 					class="max-h-[85vh] max-w-[90vw] object-contain rounded"
 				/>
-				{#if lightboxPhoto.caption || lightboxPhoto.attribution}
+				{#if lightboxPhoto?.caption || lightboxPhoto?.attribution}
 					<p class="text-xs text-white/70 text-center max-w-[60vw]">
-						{lightboxPhoto.caption || ''}{#if lightboxPhoto.attribution}{lightboxPhoto.caption ? ' — ' : ''}{lightboxPhoto.attribution}{/if}
+						{lightboxPhoto?.caption || ''}{#if lightboxPhoto?.attribution}{lightboxPhoto?.caption ? ' — ' : ''}{lightboxPhoto?.attribution}{/if}
 					</p>
 				{/if}
 				{#if facility.photos?.length > 1}
