@@ -9,9 +9,11 @@
 export { default as StackedArea } from './StackedArea.svelte';
 export { default as Area } from './Area.svelte';
 export { default as Line } from './Line.svelte';
+export { default as GroupedBar } from './GroupedBar.svelte';
 
 // Axes
 export { default as AxisX } from './AxisX.svelte';
+export { default as AxisXRotated } from './AxisXRotated.svelte';
 export { default as AxisY } from './AxisY.svelte';
 
 // Annotations/Indicators

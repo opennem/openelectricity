@@ -36,7 +36,9 @@
 			<table class="w-full text-xs">
 				<thead>
 					<tr class="border-b border-mid-warm-grey">
-						<th class="text-left py-1 px-2 font-semibold text-mid-grey">Date</th>
+						<th class="text-left py-1 px-2 font-semibold text-mid-grey"
+							>{project.isCategory ? 'Category' : 'Date'}</th
+						>
 						{#each project.parsedData.seriesNames as name (name)}
 							<th class="text-right py-1 px-2 font-semibold text-mid-grey"
 								>{project.parsedData.seriesLabels[name] || name}</th
@@ -45,9 +47,11 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each previewRows as row (row.time)}
+					{#each previewRows as row, i (i)}
 						<tr class="border-b border-light-warm-grey">
-							<td class="py-1 px-2 text-mid-grey">{format(row.date, 'dd MMM yyyy')}</td>
+							<td class="py-1 px-2 text-mid-grey"
+								>{project.isCategory ? row.category : format(row.date, 'dd MMM yyyy')}</td
+							>
 							{#each project.parsedData.seriesNames as name (name)}
 								<td class="text-right py-1 px-2"
 									>{row[name] != null ? row[name].toLocaleString() : '—'}</td

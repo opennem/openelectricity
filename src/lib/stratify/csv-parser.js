@@ -11,10 +11,12 @@ import { assignColours } from './colour-palette.js';
 
 /**
  * @typedef {Object} ParseResult
- * @property {Array<{time: number, date: Date, [key: string]: any}>} data
+ * @property {'time-series' | 'category'} mode
+ * @property {Array<{[key: string]: any}>} data
  * @property {string[]} seriesNames
  * @property {Record<string, string>} seriesLabels
  * @property {Record<string, string>} seriesColours
+ * @property {Record<string, string>} [categoryLabels] - Map of category value to original label (category mode only)
  * @property {string[]} errors
  */
 
@@ -109,8 +111,13 @@ function toKey(header) {
 		.replace(/^_|_$/g, '');
 }
 
+/** @type {ParseResult} */
+const EMPTY_RESULT = { mode: 'time-series', data: [], seriesNames: [], seriesLabels: {}, seriesColours: {}, errors: [] };
+
 /**
  * Parse CSV or TSV text into StratumChart-compatible data.
+ * Auto-detects whether the first column contains dates (time-series mode)
+ * or text labels (category mode).
  * @param {string} csvText
  * @param {Record<string, string>} [existingColours] - Preserve existing colour assignments
  * @returns {ParseResult}
@@ -120,7 +127,7 @@ export function parseCSV(csvText, existingColours = {}) {
 	const errors = [];
 
 	if (!csvText.trim()) {
-		return { data: [], seriesNames: [], seriesLabels: {}, seriesColours: {}, errors };
+		return { ...EMPTY_RESULT, errors };
 	}
 
 	const delimiter = detectDelimiter(csvText);
@@ -128,17 +135,16 @@ export function parseCSV(csvText, existingColours = {}) {
 
 	if (lines.length < 2) {
 		errors.push('Need at least a header row and one data row.');
-		return { data: [], seriesNames: [], seriesLabels: {}, seriesColours: {}, errors };
+		return { ...EMPTY_RESULT, errors };
 	}
 
 	// Parse headers
 	const headers = lines[0].split(delimiter).map((h) => h.trim());
 	if (headers.length < 2) {
-		errors.push('Need at least two columns (date + one series).');
-		return { data: [], seriesNames: [], seriesLabels: {}, seriesColours: {}, errors };
+		errors.push('Need at least two columns (date/category + one series).');
+		return { ...EMPTY_RESULT, errors };
 	}
 
-	const dateHeader = headers[0];
 	const seriesHeaders = headers.slice(1);
 	const seriesNames = seriesHeaders.map(toKey);
 	const seriesLabels = Object.fromEntries(seriesNames.map((key, i) => [key, seriesHeaders[i]]));
@@ -149,31 +155,52 @@ export function parseCSV(csvText, existingColours = {}) {
 		seriesNames.map((key) => [key, existingColours[key] || freshColours[key]])
 	);
 
-	// Parse data rows
-	/** @type {Array<{time: number, date: Date, [key: string]: any}>} */
+	// Probe first column to detect mode: try parsing all non-empty first-column values as dates
+	const dataLines = lines.slice(1).filter((l) => l.trim());
+	let dateSuccesses = 0;
+	for (const line of dataLines) {
+		const firstCell = line.split(delimiter)[0] || '';
+		if (parseDate(firstCell)) dateSuccesses++;
+	}
+
+	const isCategory = dataLines.length > 0 && dateSuccesses / dataLines.length < 0.5;
+
+	if (isCategory) {
+		return parseCategoryData(dataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors);
+	}
+
+	return parseTimeSeriesData(dataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors);
+}
+
+/**
+ * Parse rows as time-series data (first column = dates).
+ * @param {string[]} dataLines
+ * @param {string} delimiter
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} seriesLabels
+ * @param {Record<string, string>} seriesColours
+ * @param {string[]} errors
+ * @returns {ParseResult}
+ */
+function parseTimeSeriesData(dataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors) {
+	/** @type {Array<{[key: string]: any}>} */
 	const data = [];
 	let dateErrors = 0;
 
-	for (let i = 1; i < lines.length; i++) {
-		const line = lines[i].trim();
-		if (!line) continue;
-
-		const cells = line.split(delimiter);
+	for (let i = 0; i < dataLines.length; i++) {
+		const cells = dataLines[i].split(delimiter);
 		const date = parseDate(cells[0] || '');
 
 		if (!date) {
 			dateErrors++;
 			if (dateErrors <= 3) {
-				errors.push(`Row ${i + 1}: could not parse date "${cells[0]?.trim()}".`);
+				errors.push(`Row ${i + 2}: could not parse date "${cells[0]?.trim()}".`);
 			}
 			continue;
 		}
 
-		/** @type {{time: number, date: Date, [key: string]: any}} */
-		const row = {
-			time: date.getTime(),
-			date
-		};
+		/** @type {{[key: string]: any}} */
+		const row = { time: date.getTime(), date };
 
 		for (let j = 0; j < seriesNames.length; j++) {
 			row[seriesNames[j]] = parseNumber(cells[j + 1] || '');
@@ -186,8 +213,42 @@ export function parseCSV(csvText, existingColours = {}) {
 		errors.push(`...and ${dateErrors - 3} more date parsing errors.`);
 	}
 
-	// Sort by time
 	data.sort((a, b) => a.time - b.time);
 
-	return { data, seriesNames, seriesLabels, seriesColours, errors };
+	return { mode: 'time-series', data, seriesNames, seriesLabels, seriesColours, errors };
+}
+
+/**
+ * Parse rows as category data (first column = text labels).
+ * @param {string[]} dataLines
+ * @param {string} delimiter
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} seriesLabels
+ * @param {Record<string, string>} seriesColours
+ * @param {string[]} errors
+ * @returns {ParseResult}
+ */
+function parseCategoryData(dataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors) {
+	/** @type {Array<{[key: string]: any}>} */
+	const data = [];
+	/** @type {Record<string, string>} */
+	const categoryLabels = {};
+
+	for (let i = 0; i < dataLines.length; i++) {
+		const cells = dataLines[i].split(delimiter);
+		const label = (cells[0] || '').trim();
+		if (!label) continue;
+
+		/** @type {{[key: string]: any}} */
+		const row = { category: label, _index: i };
+		categoryLabels[label] = label;
+
+		for (let j = 0; j < seriesNames.length; j++) {
+			row[seriesNames[j]] = parseNumber(cells[j + 1] || '');
+		}
+
+		data.push(row);
+	}
+
+	return { mode: 'category', data, seriesNames, seriesLabels, seriesColours, categoryLabels, errors };
 }

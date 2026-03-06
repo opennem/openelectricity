@@ -4,11 +4,15 @@
 
 	const project = getStratifyContext();
 
-	const buttons = [
+	const timeSeriesButtons = [
 		{ label: 'Stacked Area', value: 'stacked-area' },
 		{ label: 'Area', value: 'area' },
 		{ label: 'Line', value: 'line' }
 	];
+
+	const categoryButtons = [{ label: 'Grouped Bar', value: 'grouped-bar' }];
+
+	let buttons = $derived(project.isCategory ? categoryButtons : timeSeriesButtons);
 </script>
 
 <div>
@@ -18,6 +22,8 @@
 	<Switch
 		{buttons}
 		selected={project.chartType}
-		onChange={(value) => (project.chartType = /** @type {'stacked-area' | 'area' | 'line'} */ (value))}
+		onChange={(value) =>
+			(project.chartType =
+				/** @type {'stacked-area' | 'area' | 'line' | 'grouped-bar'} */ (value))}
 	/>
 </div>

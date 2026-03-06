@@ -6,7 +6,7 @@
 /**
  * @typedef {Object} StratifyExample
  * @property {string} name
- * @property {string} chartType - 'stacked-area' | 'area' | 'line'
+ * @property {string} chartType - 'stacked-area' | 'area' | 'line' | 'grouped-bar'
  * @property {string} title
  * @property {string} description
  * @property {string} dataSource
@@ -86,5 +86,26 @@ export const examples = [
 2024-04-01,55,48,62,72
 2024-07-01,75,68,82,95
 2024-10-01,62,55,70,80`
+	},
+	{
+		name: 'Battery cycle rates (grouped bar)',
+		chartType: 'grouped-bar',
+		title: 'Queensland battery cycle rates in November',
+		description: 'Number of cycles per day by facility.',
+		dataSource: 'AEMO',
+		notes: '',
+		csvData: `Facility,pre 2025 commencement,2025 commencement
+Wandoan South,0.95,
+Bouldercombe,0.82,
+Chinchilla,0.72,0.68
+Kennedy Energy Park,0.75,
+Western Downs,0.98,0.90
+Greenbank,,0.88
+Tarong,0.28,0.35
+Ulinda Park,,0.30
+Brendale,0.42,0.40
+Western Downs 2,,0.58
+Supernode,,0.04
+Swanbank,,0.02`
 	}
 ];
