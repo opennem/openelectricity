@@ -6,6 +6,8 @@
  */
 
 export { default as FacilityChart } from './FacilityChart.svelte';
+export { default as FacilityPriceChart } from './FacilityPriceChart.svelte';
+export { default as FacilitySummaryTable } from './FacilitySummaryTable.svelte';
 export { default as FacilityDataTable } from './FacilityDataTable.svelte';
 export { default as FacilityUnitsTable } from './FacilityUnitsTable.svelte';
 export {

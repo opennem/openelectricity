@@ -25,6 +25,8 @@ import { processFacilityPower } from '$lib/components/charts/facility/process-fa
  * @property {string[]} [loadsToInvert] - Series IDs to invert
  * @property {(unitCode: string, fuelTech: string) => string} getLabel - Returns display label for a unit
  * @property {(unitCode: string, fuelTech: string) => string} getColour - Returns hex colour for a unit
+ * @property {((response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null) | null} [processResponseFn] - Custom response processor (default: processFacilityPower)
+ * @property {((params: URLSearchParams) => string) | null} [buildFetchUrl] - Custom URL builder for API requests (default: /api/facilities/{code}/power)
  */
 
 export default class ChartDataManager {
@@ -38,6 +40,10 @@ export default class ChartDataManager {
 	/** @type {string[]} */ loadsToInvert;
 	/** @type {(unitCode: string, fuelTech: string) => string} */ getLabel;
 	/** @type {(unitCode: string, fuelTech: string) => string} */ getColour;
+	/** @type {((response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null) | null} */
+	processResponseFn;
+	/** @type {((params: URLSearchParams) => string) | null} */
+	buildFetchUrl;
 
 	/**
 	 * Processed chart data cache — sorted array of chart-ready rows,
@@ -85,6 +91,8 @@ export default class ChartDataManager {
 		this.loadsToInvert = config.loadsToInvert || [];
 		this.getLabel = config.getLabel;
 		this.getColour = config.getColour;
+		this.processResponseFn = config.processResponseFn || null;
+		this.buildFetchUrl = config.buildFetchUrl || null;
 	}
 
 	get isLoading() {
@@ -126,6 +134,10 @@ export default class ChartDataManager {
 	 * @returns {{ data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null}
 	 */
 	#processResponse(powerResponse) {
+		if (this.processResponseFn) {
+			return this.processResponseFn(powerResponse);
+		}
+
 		const networkTimezone = this.networkId === 'WEM' ? '+08:00' : '+10:00';
 
 		return processFacilityPower(powerResponse, {
@@ -397,7 +409,11 @@ export default class ChartDataManager {
 			date_end: dateEnd
 		});
 
-		const res = await fetch(`/api/facilities/${this.facilityCode}/power?${params.toString()}`);
+		const fetchUrl = this.buildFetchUrl
+			? this.buildFetchUrl(params)
+			: `/api/facilities/${this.facilityCode}/power?${params.toString()}`;
+
+		const res = await fetch(fetchUrl);
 		if (!res.ok) {
 			console.error('ChartDataManager: API returned', res.status);
 			return null;

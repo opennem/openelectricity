@@ -6,14 +6,13 @@
 	 * owners, metadata, units list) plus a slide-in unit detail panel.
 	 */
 
-	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
+	import { PanelHeader, DragHandle, createDragHandler } from '$lib/components/ui/panel';
 	import { EXTERNAL_LINKS } from '$lib/constants/external-links';
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { ChevronRight, ExternalLink, X } from '@lucide/svelte';
 	import { fade, slide } from 'svelte/transition';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import { createDragHandler } from '../_utils/drag-resize.svelte.js';
 
 	/** @type {{ facility: any, selectedUnitCode?: string | null, osmStatus?: 'idle' | 'loading' | 'ok' | 'not-found' | 'error', onclose?: () => void, onselectunit?: (code: string | null) => void, onfetchosm?: () => void }} */
 	let { facility, selectedUnitCode = null, osmStatus = 'idle', onclose, onselectunit, onfetchosm } = $props();

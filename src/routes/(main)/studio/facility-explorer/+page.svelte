@@ -11,10 +11,14 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import {
 		FacilityChart,
+		FacilityPriceChart,
+		FacilitySummaryTable,
 		FacilityDataTable,
 		FacilityUnitsTable
 	} from '$lib/components/charts/facility';
 	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
+	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
+	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
 	import { fly } from 'svelte/transition';
@@ -81,6 +85,24 @@
 	let searchOpen = $state(false);
 	/** @type {'chart' | 'data'} */
 	let activeView = $state('chart');
+
+	// Viewport state tracked from main chart for the secondary price chart
+	let currentViewStart = $state(0);
+	let currentViewEnd = $state(0);
+
+	// Summary table data from FacilityPriceChart
+	/** @type {{ mvData: any[], energyData: any[], mvSeriesNames: string[], energySeriesNames: string[], mvChartStore: any } | null} */
+	let summaryData = $state(null);
+
+	// Resizable pane for summary table (right side)
+	const tableResize = createDragHandler({
+		axis: 'x',
+		min: 200,
+		max: 600,
+		initial: 350,
+		storageKey: 'facility-explorer-table-width',
+		invert: true
+	});
 
 	const viewButtons = [
 		{ label: 'Chart', value: 'chart', icon: ChartArea, size: 'size-4' },
@@ -259,6 +281,9 @@
 	 * @param {{ start: number, end: number }} range
 	 */
 	function handleViewportChange(range) {
+		currentViewStart = range.start;
+		currentViewEnd = range.end;
+
 		if (isPresetNavigation) {
 			isPresetNavigation = false;
 		} else {
@@ -547,24 +572,71 @@
 
 		<!-- Scrollable content area -->
 		<div class="flex-1 overflow-y-auto min-h-0">
-			<!-- Chart / Data (full width) -->
+			<!-- Chart / Data -->
 			<div class="p-4">
 				<!-- Chart (always rendered, hidden when data view active) -->
-				<div class:hidden={activeView !== 'chart'}>
-					<div class="bg-light-warm-grey/30 rounded-xl p-4">
-						<FacilityChart
-							bind:this={chartComponent}
-							facility={selectedFacility}
-							powerData={data.powerData}
-							{timeZone}
-							{dateStart}
-							{dateEnd}
-							interval={activeInterval}
-							metric={activeMetric}
-							{displayInterval}
-							onviewportchange={handleViewportChange}
-							onvisibledata={handleVisibleData}
-						/>
+				<div class="grid min-h-full" class:hidden={activeView !== 'chart'}>
+					<div class="flex">
+						<!-- Charts (left) -->
+						<div class="flex-1 min-w-0">
+							<div class="bg-light-warm-grey/30 rounded-xl p-4">
+								<FacilityChart
+									bind:this={chartComponent}
+									facility={selectedFacility}
+									powerData={data.powerData}
+									{timeZone}
+									{dateStart}
+									{dateEnd}
+									interval={activeInterval}
+									metric={activeMetric}
+									{displayInterval}
+									onviewportchange={handleViewportChange}
+									onvisibledata={handleVisibleData}
+								/>
+
+								{#if currentViewStart && currentViewEnd}
+									<div class="mt-4">
+										<FacilityPriceChart
+											facility={selectedFacility}
+											{timeZone}
+											interval={activeInterval}
+											{displayInterval}
+											viewStart={currentViewStart}
+											viewEnd={currentViewEnd}
+											onsummarydata={(d) => { summaryData = d; }}
+										/>
+									</div>
+								{/if}
+							</div>
+						</div>
+
+						<!-- Drag handle -->
+						<DragHandle axis="x" onstart={tableResize.start} active={tableResize.isDragging} />
+
+						<!-- Summary table (right) -->
+						<div
+							class="flex-shrink-0 overflow-y-auto"
+							style="width: {tableResize.value}px;"
+						>
+							{#if summaryData && selectedFacility}
+								<div class="border border-warm-grey rounded-lg">
+									<FacilitySummaryTable
+										facility={selectedFacility}
+										mvData={summaryData.mvData}
+										energyData={summaryData.energyData}
+										mvSeriesNames={summaryData.mvSeriesNames}
+										energySeriesNames={summaryData.energySeriesNames}
+										mvChartStore={summaryData.mvChartStore}
+										{unitColours}
+										{timeZone}
+									/>
+								</div>
+							{:else}
+								<div class="flex items-center justify-center h-full text-xs text-mid-grey">
+									Loading summary...
+								</div>
+							{/if}
+						</div>
 					</div>
 				</div>
 
