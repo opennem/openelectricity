@@ -42,7 +42,7 @@
 
 /**
  * Chart type options
- * @typedef {'stacked-area' | 'area' | 'line' | 'grouped-bar'} ChartType
+ * @typedef {'stacked-area' | 'area' | 'line' | 'grouped-bar' | 'bar-stacked'} ChartType
  */
 
 /**

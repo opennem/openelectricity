@@ -15,6 +15,8 @@
 	import { DragHandle } from '$lib/components/ui/panel';
 	import { createDragHandler } from './_utils/drag-resize.svelte.js';
 	import AccordionSection from './_components/AccordionSection.svelte';
+	import SavedChartsPopover from './_components/SavedChartsPopover.svelte';
+	import { saveChart } from './_utils/storage.js';
 
 	// Hide nav/footer for full-screen builder layout
 	const layout = getContext('layout-fullscreen');
@@ -43,6 +45,22 @@
 	});
 
 	// Resizable left panel
+	/** @type {string} */
+	let saveStatus = $state('');
+
+	function handleSave() {
+		if (!project.hasData) return;
+		try {
+			const id = saveChart(project.toJSON(), project.currentChartId ?? undefined);
+			project.currentChartId = id;
+			saveStatus = 'Saved';
+			setTimeout(() => (saveStatus = ''), 2000);
+		} catch (e) {
+			saveStatus = 'Error';
+			setTimeout(() => (saveStatus = ''), 3000);
+		}
+	}
+
 	const leftDrag = createDragHandler({
 		axis: 'x',
 		min: 280,
@@ -58,27 +76,26 @@
 <div class="flex flex-col h-dvh overflow-hidden font-mono">
 	<!-- Header bar -->
 	<div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
-		<a
-			href="/studio"
-			class="text-mid-grey transition-colors hover:text-dark-grey"
-			title="Back to Studio"
-		>
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="14"
-				height="14"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-			>
-				<path d="M19 12H5" />
-				<path d="m12 19-7-7 7-7" />
-			</svg>
-		</a>
 		<span class="text-[11px] font-medium text-dark-grey tracking-wide uppercase">Stratify</span>
+
+		<div class="flex items-center gap-1 ml-auto">
+			<SavedChartsPopover />
+			<button
+				type="button"
+				onclick={() => project.reset()}
+				class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey"
+			>
+				New Chart
+			</button>
+			<button
+				type="button"
+				onclick={handleSave}
+				disabled={!project.hasData}
+				class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey disabled:opacity-40 disabled:pointer-events-none"
+			>
+				{saveStatus || (project.currentChartId ? 'Update' : 'Save')}
+			</button>
+		</div>
 	</div>
 
 	<!-- Split pane -->

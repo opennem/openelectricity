@@ -41,7 +41,7 @@ export default class StratifyProject {
 	notes = $state('');
 
 	// --- Chart config ---
-	/** @type {'stacked-area' | 'area' | 'line' | 'grouped-bar'} */
+	/** @type {import('$lib/components/charts/v2/types.js').ChartType} */
 	chartType = $state('stacked-area');
 
 	// --- Series customisation ---
@@ -53,6 +53,10 @@ export default class StratifyProject {
 
 	/** @type {Record<string, string>} */
 	userSeriesLabels = $state({});
+
+	// --- Session tracking (not serialised) ---
+	/** @type {string | null} */
+	currentChartId = $state(null);
 
 	// --- Derived from CSV ---
 	parsedData = $derived(parseCSV(this.csvText));
@@ -127,13 +131,30 @@ export default class StratifyProject {
 		});
 
 		// Auto-switch chart type when data mode changes
+		// Category mode only supports bar types; time-series supports all types
 		$effect(() => {
-			if (this.isCategory && this.chartType !== 'grouped-bar') {
-				this.chartType = 'grouped-bar';
-			} else if (!this.isCategory && this.chartType === 'grouped-bar') {
-				this.chartType = 'stacked-area';
+			if (this.isCategory) {
+				if (this.chartType !== 'grouped-bar' && this.chartType !== 'bar-stacked') {
+					this.chartType = 'grouped-bar';
+				}
 			}
 		});
+	}
+
+	/**
+	 * Reset the project to a blank state.
+	 */
+	reset() {
+		this.csvText = '';
+		this.title = '';
+		this.description = '';
+		this.dataSource = '';
+		this.notes = '';
+		this.chartType = 'stacked-area';
+		this.hiddenSeries = [];
+		this.userSeriesColours = {};
+		this.userSeriesLabels = {};
+		this.currentChartId = null;
 	}
 
 	/**
@@ -146,7 +167,9 @@ export default class StratifyProject {
 		this.description = example.description;
 		this.dataSource = example.dataSource;
 		this.notes = example.notes;
-		this.chartType = /** @type {'stacked-area' | 'area' | 'line' | 'grouped-bar'} */ (example.chartType);
+		this.chartType = /** @type {import('$lib/components/charts/v2/types.js').ChartType} */ (
+			example.chartType
+		);
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
 		this.hiddenSeries = [];
@@ -183,7 +206,7 @@ export default class StratifyProject {
 		project.description = snapshot.description ?? '';
 		project.dataSource = snapshot.dataSource ?? '';
 		project.notes = snapshot.notes ?? '';
-		project.chartType = /** @type {'stacked-area' | 'area' | 'line' | 'grouped-bar'} */ (
+		project.chartType = /** @type {import('$lib/components/charts/v2/types.js').ChartType} */ (
 			snapshot.chartType ?? 'stacked-area'
 		);
 		project.hiddenSeries = snapshot.hiddenSeries ?? [];

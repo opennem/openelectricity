@@ -13,7 +13,7 @@ import { transformToProportion, transformToChangeSince } from '$lib/utils/data-t
 
 /** @typedef {'absolute' | 'proportion' | 'changeSince'} DataTransformType */
 /** @typedef {'smooth' | 'straight' | 'step'} CurveType */
-/** @typedef {'stacked-area' | 'area' | 'line' | 'grouped-bar'} ChartType */
+/** @typedef {'stacked-area' | 'area' | 'line' | 'grouped-bar' | 'bar-stacked'} ChartType */
 
 const DEFAULT_DATA_TRANSFORM_TYPE = /** @type {DataTransformType} */ ('absolute');
 const DEFAULT_CURVE_TYPE = /** @type {CurveType} */ ('straight');
@@ -88,6 +88,13 @@ export default class ChartOptions {
 	isChartTypeArea = $derived(this.selectedChartType === 'area');
 	isChartTypeLine = $derived(this.selectedChartType === 'line');
 	isChartTypeGroupedBar = $derived(this.selectedChartType === 'grouped-bar');
+	isChartTypeBarStacked = $derived(this.selectedChartType === 'bar-stacked');
+	isAnyBarType = $derived(
+		this.selectedChartType === 'grouped-bar' || this.selectedChartType === 'bar-stacked'
+	);
+	isAnyStackedType = $derived(
+		this.selectedChartType === 'stacked-area' || this.selectedChartType === 'bar-stacked'
+	);
 
 	// Hover highlight option - when false, hovering over a series won't dim other series
 	/** @type {boolean} */

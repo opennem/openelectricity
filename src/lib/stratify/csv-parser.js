@@ -156,20 +156,23 @@ export function parseCSV(csvText, existingColours = {}) {
 	);
 
 	// Probe first column to detect mode: try parsing all non-empty first-column values as dates
-	const dataLines = lines.slice(1).filter((l) => l.trim());
+	const rawDataLines = lines.slice(1);
+	let nonEmptyCount = 0;
 	let dateSuccesses = 0;
-	for (const line of dataLines) {
+	for (const line of rawDataLines) {
+		if (!line.trim()) continue;
+		nonEmptyCount++;
 		const firstCell = line.split(delimiter)[0] || '';
 		if (parseDate(firstCell)) dateSuccesses++;
 	}
 
-	const isCategory = dataLines.length > 0 && dateSuccesses / dataLines.length < 0.5;
+	const isCategory = nonEmptyCount > 0 && dateSuccesses / nonEmptyCount < 0.5;
 
 	if (isCategory) {
-		return parseCategoryData(dataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors);
+		return parseCategoryData(rawDataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors);
 	}
 
-	return parseTimeSeriesData(dataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors);
+	return parseTimeSeriesData(rawDataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors);
 }
 
 /**
@@ -188,19 +191,21 @@ function parseTimeSeriesData(dataLines, delimiter, seriesNames, seriesLabels, se
 	let dateErrors = 0;
 
 	for (let i = 0; i < dataLines.length; i++) {
+		if (!dataLines[i].trim()) continue;
 		const cells = dataLines[i].split(delimiter);
-		const date = parseDate(cells[0] || '');
+		const dateStr = (cells[0] || '').trim();
+		const date = parseDate(dateStr);
 
 		if (!date) {
 			dateErrors++;
 			if (dateErrors <= 3) {
-				errors.push(`Row ${i + 2}: could not parse date "${cells[0]?.trim()}".`);
+				errors.push(`Row ${i + 2}: could not parse date "${dateStr}".`);
 			}
 			continue;
 		}
 
 		/** @type {{[key: string]: any}} */
-		const row = { time: date.getTime(), date };
+		const row = { time: date.getTime(), date, _dateStr: dateStr, _lineIndex: i + 1 };
 
 		for (let j = 0; j < seriesNames.length; j++) {
 			row[seriesNames[j]] = parseNumber(cells[j + 1] || '');
@@ -235,12 +240,13 @@ function parseCategoryData(dataLines, delimiter, seriesNames, seriesLabels, seri
 	const categoryLabels = {};
 
 	for (let i = 0; i < dataLines.length; i++) {
+		if (!dataLines[i].trim()) continue;
 		const cells = dataLines[i].split(delimiter);
 		const label = (cells[0] || '').trim();
 		if (!label) continue;
 
 		/** @type {{[key: string]: any}} */
-		const row = { category: label, _index: i };
+		const row = { category: label, _index: i, _lineIndex: i + 1 };
 		categoryLabels[label] = label;
 
 		for (let j = 0; j < seriesNames.length; j++) {

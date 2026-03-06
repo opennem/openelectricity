@@ -13,7 +13,7 @@
 	import ChartHeader from './ChartHeader.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import StackedAreaChart from './StackedAreaChart.svelte';
-	import GroupedBarChart from './GroupedBarChart.svelte';
+	import BarChart from './BarChart.svelte';
 	import { InteractionLayer } from './elements';
 
 	/**
@@ -131,10 +131,10 @@
 		</div>
 	{/if}
 
-	{#if chart.chartOptions.isChartTypeGroupedBar}
+	{#if chart.chartOptions.isAnyBarType}
 		<div class={chartPadding}>
 			{#if hasData}
-				<GroupedBarChart
+				<BarChart
 					{chart}
 					onmousemove={handleSeriesHover}
 					onmouseout={handleSeriesHoverOut}

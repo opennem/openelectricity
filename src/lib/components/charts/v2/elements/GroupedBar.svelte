@@ -31,35 +31,33 @@
 		onmouseout = () => {}
 	} = $props();
 
-	/** Inner scale for positioning series bars within each category band */
-	let innerScale = $derived(
-		scaleBand()
-			.domain(seriesNames)
-			.range([0, $xScale.bandwidth ? $xScale.bandwidth() : 0])
-			.paddingInner(0.05)
-	);
+	let bandwidth = $derived($xScale.bandwidth ? $xScale.bandwidth() : 0);
 </script>
 
 <g class="grouped-bar" role="group">
 	{#each dataset as row, i (i)}
-		{#each seriesNames as key (key)}
+		{@const label = row.category ?? row._xLabel}
+		{@const presentKeys = seriesNames.filter((k) => row[k] != null)}
+		{@const rowScale = scaleBand()
+			.domain(presentKeys)
+			.range([0, bandwidth])
+			.paddingInner(0.05)}
+		{#each presentKeys as key (key)}
 			{@const value = row[key]}
-			{#if value != null}
-				{@const x = ($xScale(row.category) ?? 0) + (innerScale(key) ?? 0)}
-				{@const barHeight = $height - $yScale(value)}
-				<rect
-					{x}
-					y={$yScale(value)}
-					width={innerScale.bandwidth()}
-					height={Math.max(0, barHeight)}
-					fill={seriesColours[key] || '#999'}
-					opacity={highlightId && highlightId !== key ? 0.3 : 1}
-					class="transition-opacity duration-150"
-					role="presentation"
-					onmouseenter={() => onmousemove({ data: row, key })}
-					onmouseleave={onmouseout}
-				/>
-			{/if}
+			{@const x = ($xScale(label) ?? 0) + (rowScale(key) ?? 0)}
+			{@const barHeight = $height - $yScale(value)}
+			<rect
+				{x}
+				y={$yScale(value)}
+				width={rowScale.bandwidth()}
+				height={Math.max(0, barHeight)}
+				fill={seriesColours[key] || '#999'}
+				opacity={highlightId && highlightId !== key ? 0.3 : 1}
+				class="transition-opacity duration-150"
+				role="presentation"
+				onmouseenter={() => onmousemove({ data: row, key })}
+				onmouseleave={onmouseout}
+			/>
 		{/each}
 	{/each}
 </g>

@@ -10,6 +10,7 @@ export { default as StackedArea } from './StackedArea.svelte';
 export { default as Area } from './Area.svelte';
 export { default as Line } from './Line.svelte';
 export { default as GroupedBar } from './GroupedBar.svelte';
+export { default as StackedBar } from './StackedBar.svelte';
 
 // Axes
 export { default as AxisX } from './AxisX.svelte';
