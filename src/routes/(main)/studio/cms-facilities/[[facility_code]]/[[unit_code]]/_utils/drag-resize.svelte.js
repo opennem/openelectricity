@@ -1,7 +1,7 @@
 /**
  * Reusable drag-resize handler factory.
  *
- * Creates a reactive drag handler for resizing panels by mouse drag.
+ * Creates a reactive drag handler for resizing panels by pointer drag.
  * Supports both horizontal (x-axis) and vertical (y-axis) resizing,
  * with localStorage persistence.
  *
@@ -11,21 +11,21 @@
  *   - initial: default value (used if nothing in localStorage)
  *   - storageKey: localStorage key for persistence
  *   - invert: if true, delta is negated (e.g. dragging left to increase width for right-anchored panels, or dragging up to increase height)
- * @returns {{ start: (e: MouseEvent) => void, value: number, isDragging: boolean }}
+ * @returns {{ start: (e: PointerEvent) => void, value: number, isDragging: boolean }}
  */
 export function createDragHandler({ axis, min, max, initial, storageKey, invert = false }) {
 	// Load persisted value
 	let value = $state(loadValue(storageKey, min, max, initial));
 	let isDragging = $state(false);
 
-	/** @param {MouseEvent} e */
+	/** @param {PointerEvent} e */
 	function start(e) {
 		e.preventDefault();
 		isDragging = true;
 		const startPos = axis === 'x' ? e.clientX : e.clientY;
 		const startValue = value;
 
-		/** @param {MouseEvent} moveEvent */
+		/** @param {PointerEvent} moveEvent */
 		function onMove(moveEvent) {
 			const currentPos = axis === 'x' ? moveEvent.clientX : moveEvent.clientY;
 			const rawDelta = currentPos - startPos;
@@ -35,15 +35,15 @@ export function createDragHandler({ axis, min, max, initial, storageKey, invert 
 
 		function onUp() {
 			isDragging = false;
-			window.removeEventListener('mousemove', onMove);
-			window.removeEventListener('mouseup', onUp);
+			window.removeEventListener('pointermove', onMove);
+			window.removeEventListener('pointerup', onUp);
 			if (typeof localStorage !== 'undefined') {
 				localStorage.setItem(storageKey, String(value));
 			}
 		}
 
-		window.addEventListener('mousemove', onMove);
-		window.addEventListener('mouseup', onUp);
+		window.addEventListener('pointermove', onMove);
+		window.addEventListener('pointerup', onUp);
 	}
 
 	return {
