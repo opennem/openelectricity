@@ -54,6 +54,7 @@
 	 * @property {string} [priceChartHeight] - Price chart height class
 	 * @property {string} [mvChartHeight] - Market value chart height class
 	 * @property {((data: SummaryData) => void)} [onsummarydata] - Callback with visible data for summary table
+	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange] - Callback when user pans/zooms
 	 */
 
 	/** @type {Props} */
@@ -66,7 +67,8 @@
 		viewEnd,
 		priceChartHeight = 'h-[150px]',
 		mvChartHeight = 'h-[200px]',
-		onsummarydata
+		onsummarydata,
+		onviewportchange
 	} = $props();
 
 	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
@@ -436,6 +438,110 @@
 	});
 
 	// ============================================
+	// Pan / Zoom Handlers
+	// ============================================
+
+	let lastPanDelta = 0;
+
+	function handlePanStart() {
+		priceChartStore?.clearHover();
+		mvChartStore?.clearHover();
+	}
+
+	/**
+	 * @param {number} deltaMs
+	 */
+	function handlePan(deltaMs) {
+		let newStart = viewStart - deltaMs;
+		let newEnd = viewEnd - deltaMs;
+
+		const now = Date.now();
+		if (newEnd > now) {
+			newEnd = now;
+			newStart = now - (viewEnd - viewStart);
+		}
+
+		lastPanDelta = deltaMs;
+		onviewportchange?.({ start: newStart, end: newEnd });
+	}
+
+	function handlePanEnd() {
+		// Prefetch in pan direction
+		const duration = viewEnd - viewStart;
+		const bufferMultiplier = isEnergyInterval ? 3 : 1;
+		const prefetch = duration * bufferMultiplier;
+		const now = Date.now();
+
+		if (lastPanDelta < 0 && viewEnd < now) {
+			mvDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
+			energyDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
+		} else if (lastPanDelta > 0) {
+			mvDataManager?.requestRange(viewStart - prefetch, viewStart);
+			energyDataManager?.requestRange(viewStart - prefetch, viewStart);
+		}
+	}
+
+	/**
+	 * @param {number} factor
+	 * @param {number} centerMs
+	 */
+	function handleZoom(factor, centerMs) {
+		const duration = viewEnd - viewStart;
+		const newDuration = duration / factor;
+
+		const ratio = (centerMs - viewStart) / duration;
+		let newStart = centerMs - ratio * newDuration;
+		let newEnd = newStart + newDuration;
+
+		const now = Date.now();
+		if (newEnd > now) {
+			newEnd = now;
+			newStart = now - newDuration;
+		}
+
+		onviewportchange?.({ start: newStart, end: newEnd });
+	}
+
+	// ---- Wheel Zoom ----
+
+	/** @type {HTMLDivElement | undefined} */
+	let priceContainerEl = $state(undefined);
+	/** @type {HTMLDivElement | undefined} */
+	let mvContainerEl = $state(undefined);
+
+	/**
+	 * @param {WheelEvent} event
+	 */
+	function handleWheel(event) {
+		if (!event.metaKey && !event.ctrlKey) return;
+		if (!onviewportchange) return;
+
+		event.preventDefault();
+
+		const factor = Math.pow(1.002, -event.deltaY);
+		const rect = /** @type {HTMLElement} */ (event.currentTarget).getBoundingClientRect();
+		const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+		const centerMs = viewStart + ratio * (viewEnd - viewStart);
+
+		handleZoom(factor, centerMs);
+	}
+
+	$effect(() => {
+		const els = [priceContainerEl, mvContainerEl].filter(Boolean);
+		if (!els.length) return;
+
+		for (const el of els) {
+			el?.addEventListener('wheel', handleWheel, { passive: false });
+		}
+
+		return () => {
+			for (const el of els) {
+				el?.removeEventListener('wheel', handleWheel);
+			}
+		};
+	});
+
+	// ============================================
 	// Hover Handlers
 	// ============================================
 
@@ -551,14 +657,18 @@
 {#if priceChartStore && mvChartStore}
 	<div class="space-y-4">
 		<!-- Derived Price Chart -->
-		<div class="border border-light-warm-grey rounded-lg p-4 relative">
+		<div bind:this={priceContainerEl} class="border border-light-warm-grey rounded-lg p-4 relative">
 			<StratumChart
 				chart={priceChartStore}
 				onhover={handlePriceHover}
 				onhoverend={handlePriceHoverEnd}
 				onfocus={handlePriceFocus}
-				enablePan={false}
-				viewDomain={null}
+				enablePan={!!onviewportchange}
+				viewDomain={/** @type {[number, number]} */ ([viewStart, viewEnd])}
+				onpanstart={handlePanStart}
+				onpan={handlePan}
+				onpanend={handlePanEnd}
+				onzoom={handleZoom}
 				loadingRanges={[
 					...(mvDataManager?.loadingRanges ?? []),
 					...(energyDataManager?.loadingRanges ?? [])
@@ -582,14 +692,18 @@
 		</div>
 
 		<!-- Market Value Chart -->
-		<div class="border border-light-warm-grey rounded-lg p-4 relative">
+		<div bind:this={mvContainerEl} class="border border-light-warm-grey rounded-lg p-4 relative">
 			<StratumChart
 				chart={mvChartStore}
 				onhover={handleMvHover}
 				onhoverend={handleMvHoverEnd}
 				onfocus={handleMvFocus}
-				enablePan={false}
-				viewDomain={null}
+				enablePan={!!onviewportchange}
+				viewDomain={/** @type {[number, number]} */ ([viewStart, viewEnd])}
+				onpanstart={handlePanStart}
+				onpan={handlePan}
+				onpanend={handlePanEnd}
+				onzoom={handleZoom}
 				loadingRanges={mvDataManager?.loadingRanges ?? []}
 			>
 				{#snippet tooltip()}
