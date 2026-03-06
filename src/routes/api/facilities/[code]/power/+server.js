@@ -20,7 +20,7 @@ export async function GET({ params, url, setHeaders }) {
 
 	// Interval and metric params (defaults: 5m, power)
 	const VALID_INTERVALS = ['5m', '1h', '1d', '7d', '1M', '3M', '1y'];
-	const VALID_METRICS = ['power', 'energy'];
+	const VALID_METRICS = ['power', 'energy', 'market_value'];
 	const intervalParam = url.searchParams.get('interval') || '5m';
 	const metricParam = url.searchParams.get('metric') || 'power';
 

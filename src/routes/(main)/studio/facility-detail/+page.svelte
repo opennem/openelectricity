@@ -1,9 +1,10 @@
 <script>
 	/**
-	 * Facility Explorer
+	 * Facility Detail
 	 *
-	 * Displays power generation data for a selected facility
-	 * with unit-level breakdown by fuel technology.
+	 * Displays power generation data and metrics for a selected facility
+	 * with unit-level breakdown by fuel technology. Builds on the
+	 * facility-explorer patterns with a dedicated FacilityMetrics panel.
 	 */
 
 	import { goto, replaceState } from '$app/navigation';
@@ -13,44 +14,35 @@
 		FacilityChart,
 		FacilityPriceChart,
 		FacilitySummaryTable,
-		FacilityDataTable,
-		FacilityUnitsTable
+		FacilityDataTable
 	} from '$lib/components/charts/facility';
 	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
 	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
-	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
-	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
+	import Switch from '$lib/components/Switch.svelte';
+	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import {
-		MapPin,
-		CircleAlert,
-		SearchX,
-		ExternalLink,
-		Calendar,
-		ChartArea,
-		Table2
-	} from '@lucide/svelte';
+	import { CircleAlert, SearchX, Calendar, ChartArea, Table2 } from '@lucide/svelte';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
-	import Switch from '$lib/components/Switch.svelte';
-	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
-	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
-	import FacilityLocationMap from './_components/FacilityLocationMap.svelte';
-	import SanityFacilityDetail from './_components/SanityFacilityDetail.svelte';
+
+	// Cross-route imports from facility-explorer
+	import FacilitySearchPopover from '../facility-explorer/_components/FacilitySearchPopover.svelte';
 	import {
 		getMetricIntervalForDays,
 		getHysteresisSwitch,
 		MIN_DATE,
 		getDateStartForRange,
-		getDefaultDateEnd,
-		buildFacilityExplorerUrl
-	} from './_utils';
+		getDefaultDateEnd
+	} from '../facility-explorer/_utils';
+
+	// Local components
+	import FacilityMetrics from './_components/FacilityMetrics.svelte';
 
 	/**
-	 * Get color for a fuel tech code
+	 * Get colour for a fuel tech code.
 	 * @param {string} ftCode
 	 * @returns {string}
 	 */
@@ -60,7 +52,7 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {{ facilities: Array<{code: string, name: string, network_id: string, network_region: string}>, selectedCode: string|null, facility: any, powerData: any, timeZone: string, dateStart: string|null, dateEnd: string|null, range: number|null, sanityFacility: any|null, error: string|null }} data
+	 * @property {{ facilities: Array<{code: string, name: string, network_id: string, network_region: string, fuelTechGroup?: string}>, selectedCode: string|null, facility: any, powerData: any, timeZone: string, dateStart: string|null, dateEnd: string|null, range: number|null, sanityFacility: any|null, error: string|null }} data
 	 */
 
 	/** @type {Props} */
@@ -100,7 +92,7 @@
 		min: 200,
 		max: 600,
 		initial: 350,
-		storageKey: 'facility-explorer-table-width',
+		storageKey: 'facility-detail-table-width',
 		invert: true
 	});
 
@@ -139,7 +131,7 @@
 	let nextFacility = $derived(len > 0 ? data.facilities.at((currentIndex + 1) % len) : null);
 
 	// ============================================
-	// Derived: Unit Analysis (for info panel and table)
+	// Derived: Unit Analysis
 	// ============================================
 
 	let analysis = $derived.by(() => {
@@ -149,26 +141,79 @@
 
 	let unitColours = $derived(analysis?.unitColours ?? {});
 
-	let primaryFuelTechColor = $derived.by(() => {
-		if (!selectedFacility?.units?.length) return '#353535';
-		/** @type {Record<string, number>} */
-		const counts = {};
-		for (const unit of selectedFacility.units) {
-			const ft = unit.fueltech_id;
-			if (ft) counts[ft] = (counts[ft] || 0) + 1;
-		}
-		let maxFt = null;
-		let maxCount = 0;
-		for (const [ft, count] of Object.entries(counts)) {
-			if (count > maxCount) {
-				maxCount = count;
-				maxFt = ft;
-			}
-		}
-		return maxFt ? getFuelTechColor(maxFt) : '#353535';
+	// ============================================
+	// Quick Links — one representative per fuel tech group
+	// ============================================
+
+	/** @type {Record<string, string>} */
+	const groupLabels = {
+		wind: 'Wind',
+		solar: 'Solar',
+		battery: 'Battery',
+		coal: 'Coal',
+		gas: 'Gas',
+		hydro: 'Hydro'
+	};
+
+	/** @type {Record<string, string>} */
+	const groupColours = {
+		wind: fuelTechColourMap.wind,
+		solar: fuelTechColourMap.solar,
+		battery: fuelTechColourMap.battery,
+		coal: fuelTechColourMap.coal,
+		gas: fuelTechColourMap.gas,
+		hydro: fuelTechColourMap.hydro
+	};
+
+	/** Preferred facility code per fuel tech group for quick links */
+	const preferredExamples = /** @type {Record<string, string>} */ ({
+		coal: 'CALL_B'
 	});
 
-	let unitGroups = $derived(selectedFacility ? groupUnits(selectedFacility) : []);
+	let quickLinks = $derived.by(() => {
+		const groups = ['wind', 'solar', 'battery', 'coal', 'gas', 'hydro'];
+		/** @type {Array<{group: string, code: string, name: string}>} */
+		const links = [];
+		for (const group of groups) {
+			const preferred = preferredExamples[group];
+			const match =
+				(preferred && data.facilities.find((f) => f.code === preferred)) ??
+				data.facilities.find(
+					(f) => f.fuelTechGroup === group && f.network_id === 'NEM'
+				) ??
+				data.facilities.find((f) => f.fuelTechGroup === group);
+			if (match) links.push({ group, code: match.code, name: match.name });
+		}
+		return links;
+	});
+
+	// ============================================
+	// URL Building
+	// ============================================
+
+	/**
+	 * Build a Facility Detail URL with the given params.
+	 * @param {Record<string, string | null>} overrides
+	 * @returns {string}
+	 */
+	function buildUrl(overrides = {}) {
+		const params = new URLSearchParams();
+
+		const facility = overrides.facility ?? data.selectedCode;
+		if (facility) params.set('facility', facility);
+
+		const range = overrides.range !== undefined ? overrides.range : selectedRange;
+		if (range) {
+			params.set('days', String(range));
+		} else {
+			const ds = overrides.date_start !== undefined ? overrides.date_start : dateStart;
+			const de = overrides.date_end !== undefined ? overrides.date_end : dateEnd;
+			if (ds) params.set('date_start', ds);
+			if (de) params.set('date_end', de);
+		}
+
+		return `/studio/facility-detail?${params.toString()}`;
+	}
 
 	// ============================================
 	// Event Handlers
@@ -189,21 +234,7 @@
 	];
 
 	/**
-	 * Build URL with current params
-	 * @param {Record<string, string | null>} overrides
-	 * @returns {string}
-	 */
-	function buildUrl(overrides = {}) {
-		return buildFacilityExplorerUrl({
-			facility: overrides.facility ?? data.selectedCode,
-			dateStart: overrides.date_start !== undefined ? overrides.date_start : dateStart,
-			dateEnd: overrides.date_end !== undefined ? overrides.date_end : dateEnd,
-			range: overrides.range !== undefined ? overrides.range : selectedRange
-		});
-	}
-
-	/**
-	 * Handle facility selection from search or prev/next
+	 * Handle facility selection from search or prev/next.
 	 * @param {string} code
 	 */
 	function handleFacilitySelect(code) {
@@ -222,7 +253,7 @@
 	let datePickerRef = $state(undefined);
 
 	/**
-	 * Handle date range change from DateRangePicker — update viewport client-side.
+	 * Handle date range change from DateRangePicker -- update viewport client-side.
 	 * @param {{ start: string, end: string }} range
 	 */
 	function handleDateRangeChange(range) {
@@ -246,6 +277,9 @@
 		activeInterval = mi.interval;
 		activeMetric = mi.metric;
 
+		dateStart = range.start;
+		dateEnd = range.end;
+
 		if (data.selectedCode && chartComponent) {
 			chartComponent.setViewport(startMs, endMs);
 		}
@@ -254,7 +288,7 @@
 	}
 
 	/**
-	 * Handle interval change from interval dropdown
+	 * Handle interval change from interval dropdown.
 	 * @param {string} interval
 	 */
 	function handleIntervalChange(interval) {
@@ -276,7 +310,7 @@
 	let metricSwitchTimer = null;
 
 	/**
-	 * Handle viewport change from chart pan/zoom — sync DateRangePicker display
+	 * Handle viewport change from chart pan/zoom -- sync DateRangePicker display
 	 * and auto-switch metric when crossing thresholds.
 	 * @param {{ start: number, end: number }} range
 	 */
@@ -316,6 +350,7 @@
 	let tableData = $state(null);
 
 	/**
+	 * Handle visible data callback from FacilityChart (used for data table view).
 	 * @param {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> }} d
 	 */
 	function handleVisibleData(d) {
@@ -325,8 +360,6 @@
 	// ============================================
 	// Computed UI Values
 	// ============================================
-
-	let explorePath = $derived(getExploreUrl(selectedFacility));
 
 	/**
 	 * Resolve initial days for metric/interval calculation.
@@ -342,14 +375,14 @@
 		return range;
 	}
 
-	/** Active interval/metric — derived from initial range */
+	/** Active interval/metric -- derived from initial range */
 	const _init = getMetricIntervalForDays(getInitialDays());
 	/** @type {string} */
 	let activeInterval = $state(_init.interval);
 	/** @type {string} */
 	let activeMetric = $state(_init.metric);
 
-	/** Display interval — set by FacilityChart toggle (power: '5m'/'30m', energy: '1d'/'1M') */
+	/** Display interval -- set by FacilityChart toggle (power: '5m'/'30m', energy: '1d'/'1M') */
 	/** @type {string} */
 	let displayInterval = $state('30m');
 
@@ -383,7 +416,7 @@
 	let isPresetNavigation = true;
 
 	/**
-	 * Handle quick range selection (1D/3D/7D/1M/6M/1Y/5Y/All)
+	 * Handle quick range selection (1D/3D/7D/1M/6M/1Y/5Y/All).
 	 * @param {number} days
 	 */
 	function handleRangeSelect(days) {
@@ -418,7 +451,7 @@
 	}
 
 	/**
-	 * Handle keyboard shortcuts for facility navigation
+	 * Handle keyboard shortcuts for facility navigation.
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
@@ -439,7 +472,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
-	<title>{selectedFacility ? `${selectedFacility.name} — ` : ''}Facility Explorer</title>
+	<title>{selectedFacility ? `${selectedFacility.name} — ` : ''}Facility Detail</title>
 </svelte:head>
 
 {#if mounted}
@@ -457,8 +490,8 @@
 	</div>
 {:else if selectedFacility}
 	<div class="flex flex-col h-dvh overflow-hidden">
-		<!-- Top Bar: facility nav only -->
-		<div class="flex items-center px-4 py-2 border-b border-warm-grey bg-white flex-shrink-0" style="z-index: 99">
+		<!-- Top Bar: facility nav -->
+		<div class="flex items-center px-4 py-2 border-b border-warm-grey bg-white flex-shrink-0">
 			<div class="flex items-center w-full justify-center">
 				<button
 					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
@@ -485,6 +518,20 @@
 					<IconChevronLeft class="w-8 h-8 rotate-180" />
 				</button>
 			</div>
+
+			{#if quickLinks.length > 0}
+				<div class="ml-auto flex-shrink-0">
+					<FormSelect
+						selected=""
+						options={quickLinks.map((l) => ({ label: groupLabels[l.group], value: l.code }))}
+						formLabel="Examples"
+						widthClass="w-auto"
+						paddingX="px-3"
+						paddingY="py-1.5"
+						onchange={(opt) => handleFacilitySelect(/** @type {string} */ (opt.value))}
+					/>
+				</div>
+			{/if}
 		</div>
 
 		<!-- Controls bar -->
@@ -572,6 +619,19 @@
 
 		<!-- Scrollable content area -->
 		<div class="flex-1 overflow-y-auto min-h-0">
+			<!-- Metrics panel -->
+			<div class="px-4 pt-2">
+				<div class="bg-light-warm-grey/30 rounded-xl p-4">
+					<FacilityMetrics
+						facility={selectedFacility}
+						sanityFacility={data.sanityFacility}
+						{summaryData}
+						intervalData={tableData}
+						{timeZone}
+					/>
+				</div>
+			</div>
+
 			<!-- Chart / Data -->
 			<div class="p-4">
 				<!-- Chart (always rendered, hidden when data view active) -->
@@ -659,94 +719,33 @@
 					{/if}
 				</div>
 			</div>
-
-			<!-- Two-column comparison -->
-			<div class="grid grid-cols-2 border-t border-warm-grey">
-				<!-- Left: OE API data -->
-				<div class="p-4 border-r border-warm-grey">
-					<div class="text-[10px] text-mid-grey uppercase tracking-widest mb-3 pb-1 border-b border-dark-grey">
-						OE API
-					</div>
-					<h2 class="text-lg font-semibold text-dark-grey leading-snug">
-						{selectedFacility.name}
-					</h2>
-
-					<!-- Description -->
-					{#if selectedFacility.description}
-						<div class="text-sm leading-relaxed text-mid-grey mt-3 [&_a]:text-dark-grey [&_a]:underline [&_p]:mb-[1em] [&_ul]:list-disc [&_ul]:ml-8 [&_ol]:list-decimal [&_ol]:ml-8">
-							{@html selectedFacility.description}
-						</div>
-					{/if}
-
-					<!-- Fuel tech badges -->
-					{#if unitGroups.length}
-						<div class="flex items-center gap-1 mt-3 flex-wrap">
-							{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
-								<FuelTechBadge
-									fueltech_id={group.fueltech_id}
-									status_id={group.status_id}
-									isCommissioning={group.isCommissioning}
-									size="sm"
-								/>
-							{/each}
-						</div>
-					{/if}
-
-					<!-- Map -->
-					{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
-						<div class="mt-4">
-							<FacilityLocationMap
-								lat={selectedFacility.location.lat}
-								lng={selectedFacility.location.lng}
-								color={primaryFuelTechColor}
-							/>
-							<div class="flex items-center gap-1 text-xxs text-mid-grey mt-1.5">
-								<MapPin size={10} />
-								<span>
-									{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}
-								</span>
-							</div>
-						</div>
-					{/if}
-
-					<!-- Units table -->
-					{#if selectedFacility?.units?.length}
-						<div class="mt-4 border border-warm-grey rounded-lg">
-							<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
-						</div>
-						<p class="text-xxs text-mid-grey mt-1.5">
-							Capacity shown is maximum capacity where available, otherwise registered capacity.
-						</p>
-					{/if}
-
-					<!-- External link -->
-					{#if explorePath}
-						<div class="mt-3">
-							<a
-								href={explorePath}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="inline-flex items-center gap-1.5 text-xs text-mid-grey hover:text-dark-grey transition-colors"
-							>
-								<ExternalLink size={12} />
-								View on OpenElectricity
-							</a>
-						</div>
-					{/if}
-				</div>
-
-				<!-- Right: Sanity CMS data -->
-				<div class="overflow-y-auto">
-					<SanityFacilityDetail facility={data.sanityFacility} />
-				</div>
-			</div>
 		</div>
 	</div>
 {:else}
 	<!-- Empty State -->
 	<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
 		<SearchX size={32} class="mb-3 text-warm-grey" />
-		<p class="text-sm">Select a facility to view its power generation data.</p>
+		<p class="text-sm mb-6">Select a facility to view its detail.</p>
+
+		{#if quickLinks.length > 0}
+			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-lg">
+				{#each quickLinks as link (link.group)}
+					<button
+						class="flex items-center gap-2.5 px-4 py-3 rounded-lg border border-warm-grey bg-white hover:border-mid-grey transition-colors text-left"
+						onclick={() => handleFacilitySelect(link.code)}
+					>
+						<span
+							class="size-3 rounded-full shrink-0"
+							style="background-color: {groupColours[link.group]}"
+						></span>
+						<div class="min-w-0">
+							<span class="block text-xs font-semibold text-dark-grey">{groupLabels[link.group]}</span>
+							<span class="block text-xxs text-mid-grey truncate">{link.name}</span>
+						</div>
+					</button>
+				{/each}
+			</div>
+		{/if}
 	</div>
 {/if}
 {/if}

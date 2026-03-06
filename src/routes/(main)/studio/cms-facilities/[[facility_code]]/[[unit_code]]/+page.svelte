@@ -13,10 +13,9 @@
 	import { Search, MapPin, Image } from '@lucide/svelte';
 	import { slide } from 'svelte/transition';
 	import { getContext, onDestroy, onMount, tick, untrack } from 'svelte';
-	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
+	import { PanelHeader, DragHandle, createDragHandler } from '$lib/components/ui/panel';
 	import AiChat from './_components/AiChat.svelte';
 	import FacilityDetail from './_components/FacilityDetail.svelte';
-	import { createDragHandler } from './_utils/drag-resize.svelte.js';
 	import { fetchOsmPolygon, isOsmCached } from './_utils/osm.js';
 
 	// Go fullscreen to remove nav/footer — lets us own the full viewport

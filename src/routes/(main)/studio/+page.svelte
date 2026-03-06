@@ -28,6 +28,12 @@
 			link: '/studio/cms-facilities'
 		},
 		{
+			title: 'Facility Detail',
+			description:
+				'Fuel-tech-specific facility analysis with tailored metrics for wind, solar, battery, coal, gas and hydro.',
+			link: '/studio/facility-detail'
+		},
+		{
 			title: "Lens on Australia's electricity system and market",
 			description: 'Visualises energy, pricing and emissions data from Australia.',
 			link: '/studio/lens-on-au-grid'

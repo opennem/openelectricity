@@ -1,13 +1,14 @@
 /**
- * Facility Explorer - Server-Side Page Load
+ * Facility Detail - Server-Side Page Load
  *
- * Fetches facilities list and selected facility's 7-day power data.
- * Uses server-side loading to keep API keys secure and avoid client-side fetching.
+ * Fetches facility list, selected facility details from OE API,
+ * enriched unit data from Sanity CMS, and power data for short ranges.
  */
 
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { client as sanityClient } from '$lib/sanity';
+import { getPrimaryFuelTechGroup } from './_utils/fuel-tech-group.js';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -15,41 +16,9 @@ const client = new OpenElectricityClient({
 });
 
 /**
- * @typedef {Object} FacilityListItem
- * @property {string} code
- * @property {string} name
- * @property {string} network_id
- * @property {string} network_region
- */
-
-/**
- * @typedef {Object} Unit
- * @property {string} code
- * @property {string} fueltech_id
- * @property {string} dispatch_type - 'GENERATOR' | 'LOAD'
- * @property {number} capacity_registered
- * @property {string} status_id
- */
-
-/**
- * @typedef {Object} PageData
- * @property {FacilityListItem[]} facilities - All facilities for selector
- * @property {string | null} selectedCode - Currently selected facility code
- * @property {any | null} facility - Selected facility details
- * @property {any | null} powerData - Power data for selected range
- * @property {string} timeZone - Timezone offset string
- * @property {string | null} dateStart - Start date for data range
- * @property {string | null} dateEnd - End date for data range
- * @property {number | null} range - Preselected range in days
- * @property {any | null} sanityFacility - Sanity CMS facility data for comparison
- * @property {string | null} error - Error message if any
- */
-
-/**
  * @param {Object} params
  * @param {URL} params.url
  * @param {typeof fetch} params.fetch
- * @returns {Promise<PageData>}
  */
 export async function load({ url, fetch }) {
 	const { searchParams } = url;
@@ -58,7 +27,7 @@ export async function load({ url, fetch }) {
 	const dateEnd = searchParams.get('date_end');
 	const days = searchParams.get('days');
 
-	/** @type {PageData} */
+	/** @type {any} */
 	let result = {
 		facilities: [],
 		selectedCode,
@@ -73,8 +42,6 @@ export async function load({ url, fetch }) {
 	};
 
 	try {
-		// Fetch facilities list (operating only - 'commissioning' is not a valid API status)
-		// Valid statuses are: 'committed', 'operating', 'retired'
 		const { response: facilitiesResponse } = await client.getFacilities({
 			status_id: ['operating']
 		});
@@ -84,42 +51,51 @@ export async function load({ url, fetch }) {
 				code: f.code,
 				name: f.name,
 				network_id: f.network_id,
-				network_region: f.network_region
+				network_region: f.network_region,
+				fuelTechGroup: getPrimaryFuelTechGroup(/** @type {any[]} */ (f.units ?? []))
 			}))
 			.sort((a, b) => a.name.localeCompare(b.name));
 
-		// If a facility is selected, fetch its details, power data, and Sanity CMS data
 		if (selectedCode) {
 			const selectedFacility = facilitiesResponse.data?.find((f) => f.code === selectedCode);
 
-			// Fetch Sanity facility data in parallel
-			const sanityPromise = sanityClient.fetch(
-				`*[_type == "facility" && code == $code][0]{
-					_id, code, name, website, wikipedia, wikidata_id, osm_way_id, npiId, location,
+			// Enriched Sanity query — includes MLF, storage capacity, unit_types,
+			// emissions factors, closure dates, commencement dates
+			const sanityPromise = sanityClient
+				.fetch(
+					`*[_type == "facility" && code == $code][0]{
+					_id, code, name, website, wikipedia, wikidata_id, location,
 					description, metadata_array,
 					network->{_id, code, name},
 					region->{_id, code, name},
-					owners[]->{_id, name, legal_name, website, contact_email},
+					owners[]->{_id, name, legal_name, website},
 					photos,
 					units[]->{
 						_id, code, dispatch_type, status, capacity_registered, capacity_maximum,
-						data_first_seen, data_last_seen, emissions_factor_co2,
-						fuel_technology->{_id, code, name, colour, renewable},
+						storage_capacity, min_generation_capacity, grid_forming,
+						marginal_loss_factor, emissions_factor_co2, emissions_factor_source,
+						data_first_seen, data_last_seen,
+						commencement_date, commencement_date_specificity,
+						expected_closure_date, expected_closure_date_specificity,
+						construction_start_date, construction_cost,
+						fuel_technology->{_id, code, name, renewable},
+						unit_types[]->{
+							unit_number, unit_size, capacity,
+							unit_brand, unit_model, unit_model_year,
+							unit_height, unit_weight, mounting_type, unit_efficiency
+						},
 						metadata_array
 					}
 				}`,
-				{ code: selectedCode }
-			).catch(() => null);
+					{ code: selectedCode }
+				)
+				.catch(() => null);
 
 			if (selectedFacility) {
 				result.facility = selectedFacility;
-
-				// Determine timezone offset based on network (no DST)
-				// WEM = +08:00 (AWST), NEM = +10:00 (AEST)
 				result.timeZone = selectedFacility.network_id === 'WEM' ? '+08:00' : '+10:00';
 
-				// Only fetch power data server-side for short ranges (≤14 days).
-				// Energy ranges (>14 days) are fetched client-side by ChartDataManager.
+				// Only fetch power data server-side for short ranges (≤14 days)
 				const numDays = days ? parseInt(days, 10) : 7;
 				if (numDays > 0 && numDays <= 14) {
 					const apiParams = new URLSearchParams({
@@ -147,7 +123,7 @@ export async function load({ url, fetch }) {
 			result.sanityFacility = await sanityPromise;
 		}
 	} catch (err) {
-		console.error('Error loading facility explorer:', err);
+		console.error('Error loading facility detail:', err);
 		result.error = /** @type {Error} */ (err).message;
 	}
 

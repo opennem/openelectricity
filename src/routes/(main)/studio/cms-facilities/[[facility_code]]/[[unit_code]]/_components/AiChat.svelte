@@ -17,12 +17,11 @@
 
 	import { onMount } from 'svelte';
 	import { MessageSquare, X, Trash2, ChevronDown, KeyRound, Eye, EyeOff } from '@lucide/svelte';
-	import { PanelHeader, DragHandle } from '$lib/components/ui/panel';
+	import { PanelHeader, DragHandle, createDragHandler } from '$lib/components/ui/panel';
 	import { buildChatContext } from '$lib/utils/ai-context';
 	import { buildQuerySystemPrompt, buildAnswerSystemPrompt } from '$lib/utils/ai-prompts';
 	import { parseQueryResponse, executeQuery } from '$lib/utils/ai-query-engine';
 	import { renderMarkdown } from '$lib/utils/render-markdown';
-	import { createDragHandler } from '../_utils/drag-resize.svelte.js';
 
 	/** @type {{ facilities: any[], selectedFacility: any }} */
 	let { facilities, selectedFacility } = $props();
