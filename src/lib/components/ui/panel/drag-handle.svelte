@@ -1,7 +1,7 @@
 <script>
 	import { cn } from '$lib/utils';
 
-	/** @type {{ axis: 'x' | 'y', onstart: (e: MouseEvent) => void, active?: boolean, class?: string }} */
+	/** @type {{ axis: 'x' | 'y', onstart: (e: PointerEvent) => void, active?: boolean, class?: string }} */
 	let { axis, onstart, active = false, class: className = '', ...restProps } = $props();
 
 	let isVertical = $derived(axis === 'x');
@@ -16,7 +16,8 @@
 		active ? 'bg-mid-warm-grey' : '',
 		className
 	)}
-	onmousedown={onstart}
+	onpointerdown={onstart}
+	style="touch-action: none;"
 	{...restProps}
 >
 	<div class={isVertical ? 'flex flex-col gap-1' : 'flex gap-1'}>
