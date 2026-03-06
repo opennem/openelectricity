@@ -4,22 +4,16 @@
 
 	const projects = [
 		{
-			title: 'Records',
-			description: 'Tracks significant events in the history of the Australian electricity market.',
-			link: '/records',
-			released: true
-		},
-		{
-			title: "Timeline of Australia's power generation facilities",
-			description: 'Exploring power generation facilities from Australia.',
-			link: '/facilities?view=timeline',
-			released: true
-		},
-		{
 			title: 'Facility Explorer',
 			description:
 				'Explore 7-day power generation data for Australian electricity facilities with unit-level breakdown.',
 			link: '/studio/facility-explorer'
+		},
+		{
+			title: 'Stratify',
+			description:
+				'Create and embed data charts from CSV data. A simple chart builder for stacked area, area and line charts.',
+			link: '/studio/stratify'
 		},
 		{
 			title: 'CMS Facilities',
@@ -56,12 +50,6 @@
 			link: '/studio/lens-on-emissions'
 		},
 		{
-			title: 'Stratify',
-			description:
-				'Create and embed data charts from CSV data. A simple chart builder for stacked area, area and line charts.',
-			link: '/studio/stratify'
-		},
-		{
 			title: 'TrackerGrid',
 			description: 'A new data visualization tool for tracking and analyzing grid data.',
 			link: '/studio/tracker-grid',
@@ -73,6 +61,18 @@
 				'Analyze generation patterns, trends, and profiles of different energy sources across time periods and regions.',
 			link: '/studio/generation-trends-profiles',
 			disabled: true
+		},
+		{
+			title: 'Records',
+			description: 'Tracks significant events in the history of the Australian electricity market.',
+			link: '/records',
+			released: true
+		},
+		{
+			title: "Timeline of Australia's power generation facilities",
+			description: 'Exploring power generation facilities from Australia.',
+			link: '/facilities?view=timeline',
+			released: true
 		}
 	];
 </script>
