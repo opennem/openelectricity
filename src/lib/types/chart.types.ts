@@ -6,6 +6,14 @@ export type TimeSeriesData = {
 	[key: string]: number | string | Date | null | undefined;
 };
 
+export type CategoryData = {
+	category: string;
+	_index: number;
+	[key: string]: number | string | null | undefined;
+};
+
+export type ChartData = TimeSeriesData | CategoryData;
+
 export type TimeSeriesGroupData = {
 	time: number;
 	date: Date;

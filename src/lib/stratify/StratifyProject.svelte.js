@@ -41,7 +41,7 @@ export default class StratifyProject {
 	notes = $state('');
 
 	// --- Chart config ---
-	/** @type {'stacked-area' | 'area' | 'line'} */
+	/** @type {import('$lib/components/charts/v2/types.js').ChartType} */
 	chartType = $state('stacked-area');
 
 	// --- Series customisation ---
@@ -54,10 +54,16 @@ export default class StratifyProject {
 	/** @type {Record<string, string>} */
 	userSeriesLabels = $state({});
 
+	// --- Session tracking (not serialised) ---
+	/** @type {string | null} */
+	currentChartId = $state(null);
+
 	// --- Derived from CSV ---
 	parsedData = $derived(parseCSV(this.csvText));
 
 	hasData = $derived(this.parsedData.data.length > 0);
+
+	isCategory = $derived(this.parsedData.mode === 'category');
 
 	/** Merged colours: user overrides take precedence over parsed defaults */
 	seriesColours = $derived.by(() => {
@@ -98,10 +104,22 @@ export default class StratifyProject {
 			hideChartTypeOptions: true
 		});
 
-		// Sync project state → chart store for rendering
+		// Sync all project state → chart store in a single effect to avoid
+		// intermediate states where chart type and data are out of sync.
 		$effect(() => {
+			// Category mode settings
+			this.chartStore.isCategoryChart = this.isCategory;
+			this.chartStore.xKey = this.isCategory ? 'category' : 'date';
+			this.chartStore.formatX = this.isCategory
+				? (/** @type {any} */ d) => String(d)
+				: (/** @type {any} */ d) => d;
+
+			// Chart type
+			this.chartStore.chartOptions.selectedChartType = this.chartType;
+
+			// Series data
 			if (this.hasData) {
-				this.chartStore.seriesData = this.parsedData.data;
+				this.chartStore.seriesData = /** @type {any} */ (this.parsedData.data);
 				this.chartStore.seriesNames = this.parsedData.seriesNames;
 				this.chartStore.seriesColours = this.seriesColours;
 				this.chartStore.seriesLabels = this.seriesLabels;
@@ -112,9 +130,31 @@ export default class StratifyProject {
 			}
 		});
 
+		// Auto-switch chart type when data mode changes
+		// Category mode only supports bar types; time-series supports all types
 		$effect(() => {
-			this.chartStore.chartOptions.selectedChartType = this.chartType;
+			if (this.isCategory) {
+				if (this.chartType !== 'grouped-bar' && this.chartType !== 'bar-stacked') {
+					this.chartType = 'grouped-bar';
+				}
+			}
 		});
+	}
+
+	/**
+	 * Reset the project to a blank state.
+	 */
+	reset() {
+		this.csvText = '';
+		this.title = '';
+		this.description = '';
+		this.dataSource = '';
+		this.notes = '';
+		this.chartType = 'stacked-area';
+		this.hiddenSeries = [];
+		this.userSeriesColours = {};
+		this.userSeriesLabels = {};
+		this.currentChartId = null;
 	}
 
 	/**
@@ -127,7 +167,9 @@ export default class StratifyProject {
 		this.description = example.description;
 		this.dataSource = example.dataSource;
 		this.notes = example.notes;
-		this.chartType = /** @type {'stacked-area' | 'area' | 'line'} */ (example.chartType);
+		this.chartType = /** @type {import('$lib/components/charts/v2/types.js').ChartType} */ (
+			example.chartType
+		);
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
 		this.hiddenSeries = [];
@@ -164,7 +206,7 @@ export default class StratifyProject {
 		project.description = snapshot.description ?? '';
 		project.dataSource = snapshot.dataSource ?? '';
 		project.notes = snapshot.notes ?? '';
-		project.chartType = /** @type {'stacked-area' | 'area' | 'line'} */ (
+		project.chartType = /** @type {import('$lib/components/charts/v2/types.js').ChartType} */ (
 			snapshot.chartType ?? 'stacked-area'
 		);
 		project.hiddenSeries = snapshot.hiddenSeries ?? [];

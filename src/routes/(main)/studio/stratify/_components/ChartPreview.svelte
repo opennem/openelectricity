@@ -6,5 +6,5 @@
 </script>
 
 <div class="chart-preview">
-	<StratifyChart {project} height="h-[calc(100vh-280px)]" />
+	<StratifyChart {project} height="h-[400px]" />
 </div>

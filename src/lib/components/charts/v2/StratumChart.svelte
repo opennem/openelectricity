@@ -13,6 +13,7 @@
 	import ChartHeader from './ChartHeader.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import StackedAreaChart from './StackedAreaChart.svelte';
+	import BarChart from './BarChart.svelte';
 	import { InteractionLayer } from './elements';
 
 	/**
@@ -85,8 +86,12 @@
 	function handleSeriesHover(event) {
 		if (interactionMode !== 'none') return;
 		if (event?.data) {
-			chart.setHover(event.data.time, event.key);
-			onhover?.(event.data.time, event.key);
+			if (chart.isCategoryChart && event.data.category !== undefined) {
+				chart.setHoverCategory(event.data.category, event.key);
+			} else {
+				chart.setHover(event.data.time, event.key);
+				onhover?.(event.data.time, event.key);
+			}
 		}
 	}
 
@@ -126,44 +131,67 @@
 		</div>
 	{/if}
 
-	<InteractionLayer
-		{chart}
-		{enablePan}
-		{viewDomain}
-		class={chartPadding}
-		bind:interactionMode
-		{onhover}
-		{onhoverend}
-		{onfocus}
-		{onpanstart}
-		{onpan}
-		{onpanend}
-		{onzoom}
-	>
-		{#if hasData}
-			<StackedAreaChart
-				{chart}
-				{netTotalKey}
-				{netTotalColor}
-				{overlayStart}
-				onmousemove={handleSeriesHover}
-				onmouseout={handleSeriesHoverOut}
-				onpointerup={handleSeriesClick}
-				{enablePan}
-				{loadingRanges}
-			/>
-		{:else}
-			<div
-				class="flex items-center justify-center {chart.chartStyles.chartHeightPx
-					? ''
-					: chart.chartStyles.chartHeightClasses}"
-				style:height={chart.chartStyles.chartHeightPx
-					? `${chart.chartStyles.chartHeightPx}px`
-					: undefined}
-			>
-			</div>
-		{/if}
-	</InteractionLayer>
+	{#if chart.chartOptions.isAnyBarType}
+		<div class={chartPadding}>
+			{#if hasData}
+				<BarChart
+					{chart}
+					onmousemove={handleSeriesHover}
+					onmouseout={handleSeriesHoverOut}
+					onpointerup={handleSeriesClick}
+				/>
+			{:else}
+				<div
+					class="flex items-center justify-center {chart.chartStyles.chartHeightPx
+						? ''
+						: chart.chartStyles.chartHeightClasses}"
+					style:height={chart.chartStyles.chartHeightPx
+						? `${chart.chartStyles.chartHeightPx}px`
+						: undefined}
+				>
+				</div>
+			{/if}
+		</div>
+	{:else}
+		<InteractionLayer
+			{chart}
+			{enablePan}
+			{viewDomain}
+			class={chartPadding}
+			bind:interactionMode
+			{onhover}
+			{onhoverend}
+			{onfocus}
+			{onpanstart}
+			{onpan}
+			{onpanend}
+			{onzoom}
+		>
+			{#if hasData}
+				<StackedAreaChart
+					{chart}
+					{netTotalKey}
+					{netTotalColor}
+					{overlayStart}
+					onmousemove={handleSeriesHover}
+					onmouseout={handleSeriesHoverOut}
+					onpointerup={handleSeriesClick}
+					{enablePan}
+					{loadingRanges}
+				/>
+			{:else}
+				<div
+					class="flex items-center justify-center {chart.chartStyles.chartHeightPx
+						? ''
+						: chart.chartStyles.chartHeightClasses}"
+					style:height={chart.chartStyles.chartHeightPx
+						? `${chart.chartStyles.chartHeightPx}px`
+						: undefined}
+				>
+				</div>
+			{/if}
+		</InteractionLayer>
+	{/if}
 
 	{#if footer}
 		{@render footer()}
