@@ -277,6 +277,9 @@
 		activeInterval = mi.interval;
 		activeMetric = mi.metric;
 
+		dateStart = range.start;
+		dateEnd = range.end;
+
 		if (data.selectedCode && chartComponent) {
 			chartComponent.setViewport(startMs, endMs);
 		}

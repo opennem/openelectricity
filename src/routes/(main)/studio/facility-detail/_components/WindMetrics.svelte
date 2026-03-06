@@ -110,7 +110,10 @@
 		const hours = getHoursInRange(energyData);
 		const cf = capacityFactor(totalEnergy, totalCapacity, hours);
 		const price = avgPriceReceived(totalMV, totalEnergy);
-		const peak = peakOutput(energyData, energySeriesNames);
+		const intervalHours = energyData.length >= 2
+			? (energyData[1].time - energyData[0].time) / 3_600_000
+			: 1;
+		const peak = peakOutput(energyData, energySeriesNames, intervalHours);
 
 		return {
 			totalEnergy,

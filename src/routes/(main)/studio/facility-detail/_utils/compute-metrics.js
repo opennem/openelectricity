@@ -57,11 +57,17 @@ export function avgPriceReceived(marketValue, energy) {
 
 /**
  * Find peak power output across all series in the data.
+ *
+ * When `intervalHours` is provided (> 0), each row's energy sum (MWh) is
+ * divided by it to convert to power (MW). This is necessary when the source
+ * data uses the `energy` metric rather than `power`.
+ *
  * @param {Array<Record<string, any>>} rows
  * @param {string[]} seriesNames
+ * @param {number} [intervalHours=0] - Interval duration in hours; when > 0, divides each row total to convert MWh → MW
  * @returns {number}
  */
-export function peakOutput(rows, seriesNames) {
+export function peakOutput(rows, seriesNames, intervalHours = 0) {
 	let max = 0;
 	for (const row of rows) {
 		let rowTotal = 0;
@@ -69,6 +75,7 @@ export function peakOutput(rows, seriesNames) {
 			const val = row[name];
 			if (typeof val === 'number' && val > 0) rowTotal += val;
 		}
+		if (intervalHours > 0) rowTotal /= intervalHours;
 		if (rowTotal > max) max = rowTotal;
 	}
 	return max;

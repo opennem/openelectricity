@@ -133,6 +133,27 @@ describe('peakOutput', () => {
 		const rows = [{ unit1: 0 }, { unit1: 0 }];
 		expect(peakOutput(rows, ['unit1'])).toBe(0);
 	});
+
+	it('converts energy to power when intervalHours is provided', () => {
+		// 120 MWh in a 24-hour interval = 5 MW peak
+		const rows = [
+			{ unit1: 50, unit2: 30 }, // 80 MWh → 80/24 = 3.33 MW
+			{ unit1: 80, unit2: 40 }, // 120 MWh → 120/24 = 5 MW
+			{ unit1: 60, unit2: 20 } // 80 MWh → 80/24 = 3.33 MW
+		];
+		expect(peakOutput(rows, ['unit1', 'unit2'], 24)).toBe(5);
+	});
+
+	it('does not convert when intervalHours is 0 (default)', () => {
+		const rows = [{ unit1: 120 }];
+		expect(peakOutput(rows, ['unit1'], 0)).toBe(120);
+	});
+
+	it('converts correctly for 5-minute intervals', () => {
+		// 10 MWh in 5 minutes (1/12 hour) = 120 MW
+		const rows = [{ unit1: 10 }];
+		expect(peakOutput(rows, ['unit1'], 5 / 60)).toBeCloseTo(120);
+	});
 });
 
 // ── totalEmissions ───────────────────────────────────────────────────
