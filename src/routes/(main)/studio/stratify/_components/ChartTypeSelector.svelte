@@ -1,23 +1,67 @@
 <script>
 	import Switch from '$lib/components/Switch.svelte';
+	import {
+		CHART_FAMILIES,
+		getFamily,
+		getAvailableFamilies,
+		getDefaultForFamily
+	} from '$lib/components/charts/v2/chart-families.js';
 	import { getStratifyContext } from '../_state/context.js';
 
 	const project = getStratifyContext();
 
-	const buttons = [
-		{ label: 'Stacked Area', value: 'stacked-area' },
-		{ label: 'Area', value: 'area' },
-		{ label: 'Line', value: 'line' }
-	];
+	// --- Family row ---
+	let availableFamilies = $derived(getAvailableFamilies(project.isCategory));
+
+	let familyButtons = $derived(
+		availableFamilies.map((f) => ({ label: CHART_FAMILIES[f].label, value: f }))
+	);
+
+	let currentFamily = $derived(getFamily(project.chartType));
+
+	/** @param {string} family */
+	function handleFamilyChange(family) {
+		project.chartType = /** @type {import('$lib/components/charts/v2/types.js').ChartType} */ (
+			getDefaultForFamily(/** @type {import('$lib/components/charts/v2/chart-families.js').ChartFamily} */ (family))
+		);
+	}
+
+	// --- Variant row ---
+	let familyConfig = $derived(CHART_FAMILIES[currentFamily]);
+
+	let variantButtons = $derived(
+		familyConfig.variants.map((v) => ({
+			label: familyConfig.variantLabels[v] ?? v,
+			value: v
+		}))
+	);
+
+	let visibleSeriesCount = $derived(
+		project.parsedData.seriesNames.filter((name) => !project.hiddenSeries.includes(name)).length
+	);
+
+	let showVariants = $derived(familyConfig.variants.length > 1 && visibleSeriesCount > 1);
+
+	/** @param {string} variant */
+	function handleVariantChange(variant) {
+		project.chartType = /** @type {import('$lib/components/charts/v2/types.js').ChartType} */ (
+			variant
+		);
+	}
 </script>
 
-<div>
-	<span class="block text-xs font-semibold mb-2 text-mid-grey uppercase tracking-wider"
-		>Chart type</span
-	>
+<div class="flex flex-col gap-2">
 	<Switch
-		{buttons}
-		selected={project.chartType}
-		onChange={(value) => (project.chartType = /** @type {'stacked-area' | 'area' | 'line'} */ (value))}
+		buttons={familyButtons}
+		selected={currentFamily}
+		onChange={handleFamilyChange}
 	/>
+
+	{#if showVariants}
+		<Switch
+			buttons={variantButtons}
+			selected={project.chartType}
+			onChange={handleVariantChange}
+		/>
+	{/if}
 </div>

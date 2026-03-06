@@ -7,6 +7,8 @@
 /** @typedef {import('$lib/types/stats.types').StatsInstance} StatsInstance */
 /** @typedef {import('$lib/types/chart.types').TimeSeriesInstance} TimeSeriesInstance */
 /** @typedef {import('$lib/types/chart.types').TimeSeriesData} TimeSeriesData */
+/** @typedef {import('$lib/types/chart.types').CategoryData} CategoryData */
+/** @typedef {import('$lib/types/chart.types').ChartData} ChartData */
 /** @typedef {import('$lib/types/chart.types').TimeSeriesGroupData} TimeSeriesGroupData */
 /** @typedef {import('$lib/types/scenario.types').ScenarioKey} ScenarioKey */
 /** @typedef {import('$lib/types/data_range.types').DataRange} DataRange */

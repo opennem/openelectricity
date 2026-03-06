@@ -1,85 +1,23 @@
 <script>
 	import { getStratifyContext } from '../../_state/context.js';
-	import {
-		saveChart,
-		loadChart,
-		listCharts,
-		deleteChart,
-		exportToFile,
-		importFromFile
-	} from '../../_utils/storage.js';
+	import { saveChart, exportToFile, importFromFile } from '../../_utils/storage.js';
 
 	const project = getStratifyContext();
 
-	/** @type {import('../../_utils/storage.js').SavedChartMeta[]} */
-	let savedCharts = $state([]);
-
-	/** @type {string | null} */
-	let currentChartId = $state(null);
-
 	/** @type {string} */
 	let statusMessage = $state('');
-
-	function refreshList() {
-		savedCharts = listCharts();
-	}
-
-	// Load list on mount
-	$effect(() => {
-		refreshList();
-	});
 
 	function handleSave() {
 		if (!project.hasData) return;
 		statusMessage = '';
 
 		try {
-			const id = saveChart(project.toJSON(), currentChartId ?? undefined);
-			currentChartId = id;
+			const id = saveChart(project.toJSON(), project.currentChartId ?? undefined);
+			project.currentChartId = id;
 			statusMessage = 'Saved';
-			refreshList();
 		} catch (e) {
 			statusMessage = `Error: ${e instanceof Error ? e.message : 'Failed to save'}`;
 		}
-	}
-
-	/**
-	 * Load a saved chart by ID.
-	 * @param {string} id
-	 */
-	function handleLoad(id) {
-		statusMessage = '';
-
-		try {
-			const chart = loadChart(id);
-			if (chart) {
-				project.csvText = chart.csvText ?? '';
-				project.title = chart.title ?? '';
-				project.description = chart.description ?? '';
-				project.dataSource = chart.dataSource ?? '';
-				project.notes = chart.notes ?? '';
-				project.chartType = /** @type {'stacked-area' | 'area' | 'line'} */ (
-					chart.chartType ?? 'stacked-area'
-				);
-				project.hiddenSeries = chart.hiddenSeries ?? [];
-				project.userSeriesColours = chart.userSeriesColours ?? {};
-				project.userSeriesLabels = chart.userSeriesLabels ?? {};
-				currentChartId = id;
-				statusMessage = 'Loaded';
-			}
-		} catch (e) {
-			statusMessage = `Error: ${e instanceof Error ? e.message : 'Failed to load'}`;
-		}
-	}
-
-	/**
-	 * Delete a saved chart by ID.
-	 * @param {string} id
-	 */
-	function handleDelete(id) {
-		deleteChart(id);
-		if (currentChartId === id) currentChartId = null;
-		refreshList();
 	}
 
 	function handleExportJSON() {
@@ -103,7 +41,7 @@
 		project.hiddenSeries = snapshot.hiddenSeries ?? [];
 		project.userSeriesColours = snapshot.userSeriesColours ?? {};
 		project.userSeriesLabels = snapshot.userSeriesLabels ?? {};
-		currentChartId = null;
+		project.currentChartId = null;
 		statusMessage = 'Imported';
 	}
 
@@ -188,7 +126,7 @@
 			disabled={!project.hasData}
 			class="w-full rounded-lg bg-black px-3 py-2 text-xs text-white hover:bg-dark-grey disabled:opacity-40 disabled:pointer-events-none"
 		>
-			{currentChartId ? 'Update' : 'Save'}
+			{project.currentChartId ? 'Update' : 'Save'}
 		</button>
 
 		{#if statusMessage}
@@ -201,39 +139,4 @@
 			</p>
 		{/if}
 	</div>
-
-	<!-- Saved charts list -->
-	{#if savedCharts.length > 0}
-		<div class="border-t border-mid-warm-grey pt-6">
-			<span class="block text-xs font-semibold mb-2 text-mid-grey uppercase tracking-wider"
-				>Saved charts</span
-			>
-			<div class="space-y-1">
-				{#each savedCharts as chart (chart.id)}
-					<div
-						class="flex items-center justify-between gap-2 rounded px-2 py-1.5 hover:bg-light-warm-grey {currentChartId ===
-						chart.id
-							? 'bg-light-warm-grey'
-							: ''}"
-					>
-						<button
-							type="button"
-							onclick={() => handleLoad(chart.id)}
-							class="flex-1 text-left text-xs truncate"
-						>
-							<span class="font-medium">{chart.title || 'Untitled'}</span>
-						</button>
-						<button
-							type="button"
-							onclick={() => handleDelete(chart.id)}
-							class="text-xs text-mid-warm-grey hover:text-dark-red shrink-0"
-							title="Delete"
-						>
-							&times;
-						</button>
-					</div>
-				{/each}
-			</div>
-		</div>
-	{/if}
 </div>

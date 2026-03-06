@@ -95,12 +95,12 @@ export default class ChartStore {
 
 	y = $derived.by(() => {
 		if (!this.chartOptions) return this.yKey;
-		return this.chartOptions.isChartTypeStackedArea ? this.yKey : 'value';
+		return this.chartOptions.isAnyStackedType ? this.yKey : 'value';
 	});
 
 	z = $derived.by(() => {
 		if (!this.chartOptions) return this.zKey;
-		return this.chartOptions.isChartTypeStackedArea ? this.zKey : 'group';
+		return this.chartOptions.isAnyStackedType ? this.zKey : 'group';
 	});
 
 	// Domain configuration
@@ -218,7 +218,7 @@ export default class ChartStore {
 			for (const name of this.visibleSeriesNames) {
 				const value = Number(d[name]) || 0;
 
-				if (this.chartOptions?.isChartTypeStackedArea) {
+				if (this.chartOptions?.isAnyStackedType) {
 					result._max += value;
 				} else {
 					result._max = Math.max(result._max, value);
