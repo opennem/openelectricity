@@ -11,6 +11,7 @@ import { transformToProportion } from '$lib/utils/data-transform';
 import ChartOptions from './ChartOptions.svelte.js';
 import ChartStyles from './ChartStyles.svelte.js';
 import ChartTooltips from './ChartTooltips.svelte.js';
+import { computeYDomain } from './compute-y-domain.js';
 
 /**
  * @typedef {import('./types.js').ChartType} ChartType
@@ -117,17 +118,7 @@ export default class ChartStore {
 			return /** @type {[number, number]} */ ([0, 100]);
 		}
 
-		const maxValues = this.seriesScaledDataWithMinMax.map((d) => d._max ?? 0);
-		const minValues = this.seriesScaledDataWithMinMax.map((d) => d._min ?? 0);
-
-		const datasetMax = maxValues.length ? Math.max(...maxValues) : 0;
-		const datasetMin = minValues.length ? Math.min(...minValues) : 0;
-
-		// Add 10% padding
-		const paddedMax = datasetMax + datasetMax * 0.1;
-		const paddedMin = datasetMin < 0 ? datasetMin + datasetMin * 0.1 : datasetMin;
-
-		return /** @type {[number, number]} */ ([Math.floor(paddedMin), Math.ceil(paddedMax)]);
+		return /** @type {[number, number]} */ (computeYDomain(this.seriesScaledDataWithMinMax));
 	});
 
 	/**
