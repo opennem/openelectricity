@@ -45,12 +45,13 @@
 		{#each presentKeys as key (key)}
 			{@const value = row[key]}
 			{@const x = ($xScale(label) ?? 0) + (rowScale(key) ?? 0)}
-			{@const barHeight = $height - $yScale(value)}
+			{@const y = Math.min($yScale(0), $yScale(value))}
+			{@const barHeight = Math.abs($yScale(0) - $yScale(value))}
 			<rect
 				{x}
-				y={$yScale(value)}
+				y={y}
 				width={rowScale.bandwidth()}
-				height={Math.max(0, barHeight)}
+				height={barHeight}
 				fill={seriesColours[key] || '#999'}
 				opacity={highlightId && highlightId !== key ? 0.3 : 1}
 				class="transition-opacity duration-150"
