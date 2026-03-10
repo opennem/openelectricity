@@ -87,6 +87,7 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 	const isBattery =
 		fuelTech === 'battery' || fuelTech === 'battery_discharging' || fuelTech === 'battery_charging';
 	const isPumps = fuelTech === 'pumps';
+	const isDemand = fuelTech === 'demand';
 	const isPrice = metric === 'price';
 	const isMarketValue = metric === 'market_value';
 	const isEmissions = metric === 'emissions';
@@ -111,6 +112,10 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 			return `${periodAggregate[0]} ${ftLabel}`;
 		}
 
+		if (isDemand) {
+			return `${periodAggregate[0]} ${ftLabel}`;
+		}
+
 		if (isPumps) {
 			return `${periodAggregate[0]} pumped-storage`;
 		}
@@ -120,6 +125,10 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 		}
 
 		return `${periodAggregate[0]} ${ftLabel} ${metricPeriod[0]}`;
+	}
+
+	if (isDemand) {
+		return `${periodAggregate[0]} ${ftLabel} ${periodAggregate[1] || ''}`.trim();
 	}
 
 	if (isPumps) {
