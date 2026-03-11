@@ -22,3 +22,6 @@ TODO.md
 
 # MCP config
 .mcp.json
+
+# Claude Code local settings
+.claude/settings.local.json
