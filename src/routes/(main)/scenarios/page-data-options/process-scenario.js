@@ -2,7 +2,6 @@ import { color } from 'd3-color';
 import Statistic from '$lib/utils/Statistic';
 import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
-import deepCopy from '$lib/utils/deep-copy';
 import { loadFuelTechs } from '$lib/fuel_techs.js';
 
 import { fuelTechMap, orderMap } from './groups-scenario';
@@ -141,7 +140,7 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 
 	projectionsStats.forEach((projection) => {
 		if (projection.stats.data.length) {
-			const netGenerationStats = deepCopy(projection.stats.data[0]);
+			const netGenerationStats = structuredClone(projection.stats.data[0]);
 			netGenerationStats.id = `${projection.id}`;
 			netGenerationStats.code = null;
 			netGenerationStats.fuel_tech = null;
@@ -230,7 +229,7 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
-	const netGenerationStats = deepCopy(historicalStats.data[0]);
+	const netGenerationStats = structuredClone(historicalStats.data[0]);
 	netGenerationStats.id = `historical`;
 	netGenerationStats.code = null;
 	netGenerationStats.fuel_tech = null;
@@ -312,8 +311,8 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 		// TODO: update this to be more reliable
 		const index = includeBatteryAndLoads ? 1 : 0;
 		const capacityStats = projection.stats.data[index]
-			? deepCopy(projection.stats.data[index])
-			: deepCopy(projection.stats.data[0]);
+			? structuredClone(projection.stats.data[index])
+			: structuredClone(projection.stats.data[0]);
 
 		if (capacityStats) {
 			capacityStats.id = `${projection.id}`;
@@ -348,7 +347,7 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 		.group(fuelTechMap[group], loadFuelTechs)
 		.reorder(orderMap[group] || []);
 
-	const netCapacityStats = deepCopy(historicalStats.data[0]);
+	const netCapacityStats = structuredClone(historicalStats.data[0]);
 	netCapacityStats.id = `historical`;
 	netCapacityStats.code = null;
 	netCapacityStats.fuel_tech = null;
@@ -422,7 +421,7 @@ function emissions({ projections, history, includeBatteryAndLoads }) {
 	const scenarioProjectionStats = [];
 
 	projectionsStats.forEach((projection) => {
-		const emissionStats = deepCopy(projection.stats.data[0]);
+		const emissionStats = structuredClone(projection.stats.data[0]);
 
 		if (emissionStats) {
 			emissionStats.id = `${projection.id}`;
@@ -493,7 +492,7 @@ function emissions({ projections, history, includeBatteryAndLoads }) {
  * @returns {ProcessedDataViz}
  */
 function intensity({ processedEmissions, processedEnergy }) {
-	const processedIntensity = deepCopy(processedEmissions);
+	const processedIntensity = structuredClone(processedEmissions);
 	const seriesNames = processedIntensity.seriesNames;
 
 	processedIntensity.seriesData = processedEmissions.seriesData.map((d, i) => {
