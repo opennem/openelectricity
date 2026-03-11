@@ -1,4 +1,4 @@
-import { client } from '$lib/sanity';
+import { createCmsClient, getAvailableDatasets, resolveDataset } from '$lib/sanity-cms.js';
 
 const FACILITIES_QUERY = `*[_type == "facility"] | order(name asc) {
 	_id, code, name, website, wikipedia, wikidata_id, osm_way_id, npiId, location,
@@ -25,10 +25,17 @@ const FACILITIES_QUERY = `*[_type == "facility"] | order(name asc) {
 }`;
 
 /** @type {import('./$types').PageServerLoad} */
-export async function load() {
+export async function load({ cookies }) {
+	const dataset = await resolveDataset(cookies);
+	const client = createCmsClient(dataset);
 	const facilities = await client.fetch(FACILITIES_QUERY);
 
 	return {
-		facilities: facilities ?? []
+		facilities: facilities ?? [],
+		sanity: {
+			projectId: client.config().projectId,
+			dataset,
+			availableDatasets: await getAvailableDatasets()
+		}
 	};
 }
