@@ -93,7 +93,7 @@ Statistic.prototype.reorder = function (/** @type {Array.<string | FuelTechCode>
 	domainOrder.forEach((domain) => {
 		const find = this.data.find((/** @type {StatsData} */ d) => d.fuel_tech === domain);
 		if (find) {
-			data.push(deepCopy(find));
+			data.push(structuredClone(find));
 		}
 	});
 
