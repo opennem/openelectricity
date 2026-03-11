@@ -1,6 +1,6 @@
 import { createClient } from '@sanity/client';
 import { PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID } from '$env/static/public';
-import imageUrlBuilder from '@sanity/image-url';
+import { createImageUrlBuilder } from '@sanity/image-url';
 
 export const client = createClient({
 	projectId: PUBLIC_SANITY_PROJECT_ID,
@@ -9,8 +9,18 @@ export const client = createClient({
 	useCdn: true // Enable CDN for faster read operations
 });
 
-const builder = imageUrlBuilder(client);
+const builder = createImageUrlBuilder(client);
 
 export const urlFor = (/** @type {any} */ source) => {
 	return builder.image(source);
 };
+
+/**
+ * Create a dataset-aware image URL helper.
+ * Use this when working with a non-default dataset (e.g. CMS dataset switching).
+ * @param {string} dataset
+ */
+export function createUrlFor(dataset) {
+	const b = createImageUrlBuilder({ projectId: PUBLIC_SANITY_PROJECT_ID, dataset });
+	return (/** @type {any} */ source) => b.image(source);
+}
