@@ -19,3 +19,6 @@ static/data/ignore/
 
 # Personal notes
 TODO.md
+
+# MCP config
+.mcp.json
