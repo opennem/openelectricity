@@ -234,22 +234,41 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 }
 
 /**
+ * @typedef {Object} BarChartOptions
+ * @property {object} [style]
+ * @property {number} [marginRight]
+ * @property {boolean} [legend]
+ * @property {any[]} [extraMarks] - Additional marks
+ * @property {string | ((d: number) => string)} [yTickFormat]
+ */
+
+/**
  * Stacked bar chart for category data.
  * @param {Array<Record<string, any>>} data - Parsed rows with `category` field
  * @param {string[]} seriesNames
  * @param {Record<string, string>} colours
  * @param {Record<string, string>} labels
+ * @param {BarChartOptions} [options]
  * @returns {import('@observablehq/plot').PlotOptions}
  */
-export function createStackedBarOptions(data, seriesNames, colours, labels) {
+export function createStackedBarOptions(data, seriesNames, colours, labels, options = {}) {
+	const {
+		style = SHARED_STYLE,
+		marginRight,
+		legend = true,
+		extraMarks = [],
+		yTickFormat = 's'
+	} = options;
 	const long = toLong(data, seriesNames, 'category');
 
 	return {
-		style: SHARED_STYLE,
-		color: colourScale(seriesNames, colours, labels),
+		style,
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: { ...colourScale(seriesNames, colours, labels), legend },
 		x: { label: null, tickPadding: 6 },
-		y: { label: null, grid: true, tickFormat: 's' },
+		y: { label: null, grid: true, tickFormat: yTickFormat },
 		marks: [
+			...extraMarks,
 			barY(
 				long,
 				stackY(
@@ -275,18 +294,28 @@ export function createStackedBarOptions(data, seriesNames, colours, labels) {
  * @param {string[]} seriesNames
  * @param {Record<string, string>} colours
  * @param {Record<string, string>} labels
+ * @param {BarChartOptions} [options]
  * @returns {import('@observablehq/plot').PlotOptions}
  */
-export function createGroupedBarOptions(data, seriesNames, colours, labels) {
+export function createGroupedBarOptions(data, seriesNames, colours, labels, options = {}) {
+	const {
+		style = SHARED_STYLE,
+		marginRight,
+		legend = true,
+		extraMarks = [],
+		yTickFormat
+	} = options;
 	const long = toLong(data, seriesNames, 'category');
 
 	return {
-		style: SHARED_STYLE,
-		color: colourScale(seriesNames, colours, labels),
+		style,
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: { ...colourScale(seriesNames, colours, labels), legend },
 		x: { label: null, tickPadding: 6, tickRotate: -30 },
-		y: { label: null, grid: true },
+		y: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		fx: { label: null, padding: 0.2 },
 		marks: [
+			...extraMarks,
 			barY(long, {
 				x: 'series',
 				y: 'value',

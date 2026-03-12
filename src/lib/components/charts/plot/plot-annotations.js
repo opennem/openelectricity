@@ -148,7 +148,8 @@ export function processAnnotations(
 					seriesLabels,
 					xKey,
 					height,
-					/** @type {EndLabelsAnnotation} */ (annotation).style
+					/** @type {EndLabelsAnnotation} */ (annotation).style,
+					['stacked-area', 'area'].includes(chartType)
 				);
 				break;
 			case 'x-rule':
@@ -193,15 +194,25 @@ export function processAnnotations(
  * @param {Array<Record<string, any>>} data
  * @param {string[]} seriesNames
  * @param {number} height
+ * @param {boolean} [stacked] - Whether the chart uses stacked positioning
  */
-function resolveOverlaps(labelData, data, seriesNames, height) {
+function resolveOverlaps(labelData, data, seriesNames, height, stacked = false) {
 	if (labelData.length <= 1) return;
 
-	const allValues = data.flatMap((row) =>
-		seriesNames.map((name) => row[name]).filter((v) => v != null)
-	);
-	const yMin = Math.min(0, ...allValues);
-	const yMax = Math.max(...allValues);
+	let yMin, yMax;
+	if (stacked) {
+		const totals = data.map((row) =>
+			seriesNames.reduce((sum, name) => sum + (Number(row[name]) || 0), 0)
+		);
+		yMin = 0;
+		yMax = Math.max(...totals);
+	} else {
+		const allValues = data.flatMap((row) =>
+			seriesNames.map((name) => row[name]).filter((v) => v != null)
+		);
+		yMin = Math.min(0, ...allValues);
+		yMax = Math.max(...allValues);
+	}
 	const yRange = yMax - yMin || 1;
 
 	const plotHeight = Math.max(height - 50, 100);
@@ -237,9 +248,10 @@ function resolveOverlaps(labelData, data, seriesNames, height) {
  * @param {string} xKey
  * @param {number} height
  * @param {AnnotationStyle} [style]
+ * @param {boolean} [stacked] - Whether the chart uses stacked positioning
  * @returns {AnnotationResult}
  */
-export function endLabels(data, seriesNames, seriesColours, seriesLabels, xKey, height, style) {
+export function endLabels(data, seriesNames, seriesColours, seriesLabels, xKey, height, style, stacked = false) {
 	if (!data.length) return { marks: [], marginRight: 0 };
 
 	const fontSize = style?.fontSize ?? DEFAULT_FONT_SIZE;
@@ -254,9 +266,13 @@ export function endLabels(data, seriesNames, seriesColours, seriesLabels, xKey, 
 		for (let i = data.length - 1; i >= 0; i--) {
 			if (data[i][name] != null) {
 				const label = seriesLabels[name] || name;
+				const y = stacked
+					? stackedMidpoint(data[i], name, seriesNames)
+					: data[i][name];
+				if (y == null) break;
 				labelData.push({
 					x: data[i][xKey],
-					y: data[i][name],
+					y,
 					label,
 					colour: style?.colour ?? seriesColours[name] ?? '#888',
 					dy: 0
@@ -269,7 +285,7 @@ export function endLabels(data, seriesNames, seriesColours, seriesLabels, xKey, 
 
 	if (!labelData.length) return { marks: [], marginRight: 0 };
 
-	resolveOverlaps(labelData, data, seriesNames, height);
+	resolveOverlaps(labelData, data, seriesNames, height, stacked);
 
 	const charWidth = fontSize * (CHAR_WIDTH / DEFAULT_FONT_SIZE);
 	const marginRight = LABEL_DX + longestLabel * charWidth + LABEL_PADDING;
