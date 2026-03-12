@@ -477,6 +477,171 @@ describe('ChartDataManager', () => {
 	});
 
 	// ------------------------------------------
+	// Metric/interval validation (Fix 2)
+	// ------------------------------------------
+
+	describe('metric/interval validation', () => {
+		it('should not fetch when interval=5m and metric=energy', async () => {
+			const fetchSpy = vi.fn();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '5m', metric: 'energy' });
+
+			// Request a range that would normally trigger a fetch
+			const now = Date.now();
+			manager.requestRange(now - 3600_000, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			// Should not have called fetch — the invalid combo is blocked
+			expect(fetchSpy).not.toHaveBeenCalled();
+		});
+
+		it('should allow interval=5m with metric=power', async () => {
+			const fetchSpy = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: buildPowerResponse({
+						networkId: 'NEM',
+						unitCodes: ['UNIT1'],
+						startISO: '2026-02-08T00:00:00+10:00',
+						pointCount: 12
+					})
+				})
+			});
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '5m', metric: 'power' });
+
+			const now = Date.now();
+			manager.requestRange(now - 3600_000, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalled();
+		});
+
+		it('should allow interval=1d with metric=energy', async () => {
+			const fetchSpy = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: buildPowerResponse({
+						networkId: 'NEM',
+						unitCodes: ['UNIT1'],
+						startISO: '2026-02-08T00:00:00+10:00',
+						pointCount: 12
+					})
+				})
+			});
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '1d', metric: 'energy' });
+
+			const now = Date.now();
+			manager.requestRange(now - 86400_000 * 10, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalled();
+		});
+	});
+
+	// ------------------------------------------
+	// Empty range tracking (Fix 4)
+	// ------------------------------------------
+
+	describe('empty range tracking', () => {
+		it('should not re-fetch a range that previously returned no data', async () => {
+			// First fetch returns empty data (no results)
+			const fetchSpy = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: { data: [] }
+				})
+			});
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager();
+
+			// Seed with some data so that the manager has a cache range
+			const startISO = '2026-02-08T00:00:00+10:00';
+			const startMs = new Date(startISO).getTime();
+			const response = buildPowerResponse({
+				networkId: 'NEM',
+				unitCodes: ['UNIT1'],
+				startISO,
+				pointCount: 20
+			});
+			manager.seedCache(response);
+
+			// Request before the cache — this will fetch and get empty data
+			const threeHoursMs = 3 * 60 * 60 * 1000;
+			manager.requestRange(startMs - threeHoursMs, startMs);
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledOnce();
+
+			// Now request the same range again — should NOT fetch
+			fetchSpy.mockClear();
+			manager.requestRange(startMs - threeHoursMs, startMs);
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).not.toHaveBeenCalled();
+		});
+
+		it('should reset empty ranges on clearCache', async () => {
+			const fetchSpy = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: { data: [] }
+				})
+			});
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager();
+
+			// Seed and then fetch an empty range
+			const startISO = '2026-02-08T00:00:00+10:00';
+			const startMs = new Date(startISO).getTime();
+			const response = buildPowerResponse({
+				networkId: 'NEM',
+				unitCodes: ['UNIT1'],
+				startISO,
+				pointCount: 20
+			});
+			manager.seedCache(response);
+
+			const threeHoursMs = 3 * 60 * 60 * 1000;
+			manager.requestRange(startMs - threeHoursMs, startMs);
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledOnce();
+
+			// Clear cache — should reset empty range tracking
+			manager.clearCache();
+
+			// Re-seed and request the same range — should fetch again
+			manager.seedCache(response);
+			fetchSpy.mockClear();
+
+			// Update mock to return actual data this time
+			fetchSpy.mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: buildPowerResponse({
+						networkId: 'NEM',
+						unitCodes: ['UNIT1'],
+						startISO: '2026-02-07T21:00:00+10:00',
+						pointCount: 36
+					})
+				})
+			});
+
+			manager.requestRange(startMs - threeHoursMs, startMs);
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledOnce();
+		});
+	});
+
+	// ------------------------------------------
 	// Zoom viewport math
 	// ------------------------------------------
 

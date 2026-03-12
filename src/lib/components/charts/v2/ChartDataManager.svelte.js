@@ -78,6 +78,9 @@ export default class ChartDataManager {
 	// Track in-flight requests to avoid duplicates
 	/** @type {Set<string>} */ #inFlightKeys = new Set();
 
+	// Ranges that returned no data — prevents re-fetching the same empty ranges
+	/** @type {LoadingRange[]} */ #emptyRanges = [];
+
 	/**
 	 * @param {ChartDataManagerConfig} config
 	 */
@@ -306,7 +309,16 @@ export default class ChartDataManager {
 			try {
 				const data = await this.#fetchFromApi(batch.start, batch.end);
 				if (data) {
+					const prevCacheSize = this.#dataCache.length;
 					this.#mergeProcessedData(data);
+
+					// If the cache didn't grow, this range has no data — record it
+					if (this.#dataCache.length === prevCacheSize) {
+						this.#emptyRanges.push(batch);
+					}
+				} else {
+					// null return means invalid combo or clamped-away range — record as empty
+					this.#emptyRanges.push(batch);
 				}
 			} catch (err) {
 				console.error('ChartDataManager fetch error:', err);
@@ -319,6 +331,39 @@ export default class ChartDataManager {
 				this.hasPendingFetch = this.#pendingFetch !== null || this.loadingRanges.length > 0;
 			}
 		}
+	}
+
+	/**
+	 * Subtract known-empty ranges from a gap, returning the remaining sub-ranges.
+	 * @param {LoadingRange} gap
+	 * @returns {LoadingRange[]}
+	 */
+	#subtractEmptyRanges(gap) {
+		/** @type {LoadingRange[]} */
+		let remaining = [gap];
+
+		for (const empty of this.#emptyRanges) {
+			/** @type {LoadingRange[]} */
+			const next = [];
+			for (const r of remaining) {
+				// No overlap — keep as-is
+				if (empty.end <= r.start || empty.start >= r.end) {
+					next.push(r);
+					continue;
+				}
+				// Left remainder
+				if (empty.start > r.start) {
+					next.push({ start: r.start, end: empty.start });
+				}
+				// Right remainder
+				if (empty.end < r.end) {
+					next.push({ start: empty.end, end: r.end });
+				}
+			}
+			remaining = next;
+		}
+
+		return remaining;
 	}
 
 	/**
@@ -354,7 +399,14 @@ export default class ChartDataManager {
 			gaps.push({ start: Math.max(start, this.#cacheEnd - OVERLAP_MS), end });
 		}
 
-		return gaps;
+		// Subtract ranges known to be empty so they aren't re-fetched
+		/** @type {LoadingRange[]} */
+		const filtered = [];
+		for (const gap of gaps) {
+			filtered.push(...this.#subtractEmptyRanges(gap));
+		}
+
+		return filtered;
 	}
 
 	/**
@@ -364,6 +416,12 @@ export default class ChartDataManager {
 	 * @returns {Promise<any|null>}
 	 */
 	async #fetchFromApi(startMs, endMs) {
+		// Validate metric/interval compatibility — 5m only supports power and market_value
+		if (this.interval === '5m' && this.metric === 'energy') {
+			console.warn(`ChartDataManager: skipping invalid combo interval=${this.interval}, metric=${this.metric}`);
+			return null;
+		}
+
 		// Clamp date range — no data before Dec 1998, no future dates
 		const EARLIEST_MS = new Date('1998-12-01T00:00:00Z').getTime();
 		const now = Date.now();
@@ -490,6 +548,7 @@ export default class ChartDataManager {
 		this.#seriesMeta = null;
 		this.#cacheStart = null;
 		this.#cacheEnd = null;
+		this.#emptyRanges = [];
 		this.loadingRanges = [];
 		this.initialLoadComplete = false;
 		this.hasPendingFetch = false;

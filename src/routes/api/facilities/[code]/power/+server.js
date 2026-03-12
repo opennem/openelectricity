@@ -1,5 +1,5 @@
 import { error } from '@sveltejs/kit';
-import { OpenElectricityClient } from 'openelectricity';
+import { OpenElectricityClient, NoDataFound } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 
 const client = new OpenElectricityClient({
@@ -19,16 +19,19 @@ export async function GET({ params, url, setHeaders }) {
 	const daysParam = url.searchParams.get('days');
 
 	// Interval and metric params (defaults: 5m, power)
+	// metric supports comma-separated values for multi-metric requests (e.g. metric=power,market_value)
 	const VALID_INTERVALS = ['5m', '1h', '1d', '7d', '1M', '3M', '1y'];
 	const VALID_METRICS = ['power', 'energy', 'market_value'];
 	const intervalParam = url.searchParams.get('interval') || '5m';
-	const metricParam = url.searchParams.get('metric') || 'power';
+	const metricParams = (url.searchParams.get('metric') || 'power').split(',');
 
 	if (!VALID_INTERVALS.includes(intervalParam)) {
 		return Response.json({ error: `Invalid interval: ${intervalParam}` }, { status: 400 });
 	}
-	if (!VALID_METRICS.includes(metricParam)) {
-		return Response.json({ error: `Invalid metric: ${metricParam}` }, { status: 400 });
+	for (const m of metricParams) {
+		if (!VALID_METRICS.includes(m)) {
+			return Response.json({ error: `Invalid metric: ${m}` }, { status: 400 });
+		}
 	}
 
 	if (!code) {
@@ -57,7 +60,7 @@ export async function GET({ params, url, setHeaders }) {
 			options.dateEnd = dateEnd;
 		}
 
-		const { response } = await client.getFacilityData(networkId, code, [/** @type {any} */ (metricParam)], options);
+		const { response } = await client.getFacilityData(networkId, code, /** @type {any} */ (metricParams), options);
 
 		// Set cache headers (5 minutes)
 		setHeaders({
@@ -70,6 +73,14 @@ export async function GET({ params, url, setHeaders }) {
 			response
 		});
 	} catch (err) {
+		if (err instanceof NoDataFound) {
+			return Response.json({
+				facility_code: code,
+				network_id: networkId,
+				response: { data: [] }
+			});
+		}
+
 		console.error('Error fetching facility power data:', err);
 		return Response.json(
 			{
