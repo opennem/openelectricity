@@ -1,27 +1,13 @@
 <script>
 	import { getContext, onMount, onDestroy } from 'svelte';
 	import Meta from '$lib/components/Meta.svelte';
-	import PlotChart from '$lib/components/charts/plot/PlotChart.svelte';
+	import StratifyPlotChart from '$lib/components/charts/plot/StratifyPlotChart.svelte';
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
 	import { examples } from '../stratify/_utils/examples.js';
-	import {
-		createStackedAreaOptions,
-		createLineOptions,
-		createStackedBarOptions,
-		createGroupedBarOptions
-	} from '$lib/components/charts/plot/plot-configs.js';
 
 	const layout = getContext('layout-fullscreen');
 	onMount(() => layout.setFullscreen(true));
 	onDestroy(() => layout.setFullscreen(false));
-
-	const configMap = {
-		'stacked-area': createStackedAreaOptions,
-		area: createStackedAreaOptions,
-		line: createLineOptions,
-		'bar-stacked': createStackedBarOptions,
-		'grouped-bar': createGroupedBarOptions
-	};
 
 	/** Pick one example per chart type to avoid duplicates */
 	const selectedExamples = [
@@ -31,18 +17,33 @@
 		examples.find((e) => e.chartType === 'grouped-bar')
 	].filter((e) => e !== undefined);
 
-	const charts = selectedExamples.map((example) => {
-		const parsed = parseCSV(example.csvData);
-		const configFn = configMap[/** @type {keyof configMap} */ (example.chartType)] || createLineOptions;
-		return {
-			title: example.title,
-			description: example.description,
-			dataSource: example.dataSource,
-			notes: example.notes,
-			chartType: example.chartType,
-			options: configFn(parsed.data, parsed.seriesNames, parsed.seriesColours, parsed.seriesLabels)
-		};
-	});
+	/** @type {Record<string, import('$lib/components/charts/plot/plot-annotations.js').Annotation[]>} */
+	const annotationsByType = {
+		'stacked-area': [
+			{ type: 'x-rule', x: '2024-04-01', text: 'Bushfires', style: { lineStyle: 'dotted' } },
+			{
+				type: 'point',
+				x: '2024-06-01',
+				series: 'gas',
+				stacked: true,
+				text: "We've paid too much for this.",
+				arrow: false,
+				style: { colour: '#000', fontSize: 16, fontWeight: 'bold' }
+			}
+		],
+		line: [{ type: 'end-labels' }],
+		'bar-stacked': [{ type: 'bar-labels' }]
+	};
+
+	const charts = selectedExamples.map((example) => ({
+		title: example.title,
+		description: example.description,
+		dataSource: example.dataSource,
+		notes: example.notes,
+		chartType: example.chartType,
+		parsed: parseCSV(example.csvData),
+		annotations: annotationsByType[example.chartType] ?? []
+	}));
 
 	let mounted = $state(false);
 	onMount(() => {
@@ -85,7 +86,15 @@
 						</div>
 
 						<div class="px-2">
-							<PlotChart options={chart.options} height={280} />
+							<StratifyPlotChart
+								data={chart.parsed.data}
+								seriesNames={chart.parsed.seriesNames}
+								seriesColours={chart.parsed.seriesColours}
+								seriesLabels={chart.parsed.seriesLabels}
+								chartType={chart.chartType}
+								annotations={chart.annotations}
+								height={280}
+							/>
 						</div>
 
 						{#if chart.dataSource || chart.notes}
