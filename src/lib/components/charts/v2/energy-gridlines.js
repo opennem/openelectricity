@@ -138,22 +138,15 @@ export function computeEnergyGridlines(visibleData, viewStart, viewEnd, ianaTime
 	let formatTick;
 
 	if (useYearlyGridlines) {
+		const yearFmt = new Intl.DateTimeFormat('en-AU', {
+			year: 'numeric',
+			timeZone: ianaTimeZone
+		});
 		formatTick = (/** @type {any} */ d) => {
 			const date = d instanceof Date ? d : new Date(d);
 			const rangeStart = midToStart.get(date.getTime());
-			const rangeEnd = midToEnd.get(date.getTime());
 			if (!rangeStart) return '';
-			const sYear = new Intl.DateTimeFormat('en-AU', {
-				year: 'numeric',
-				timeZone: ianaTimeZone
-			}).format(rangeStart);
-			if (!rangeEnd) return sYear;
-			const eYear = new Intl.DateTimeFormat('en-AU', {
-				year: 'numeric',
-				timeZone: ianaTimeZone
-			}).format(rangeEnd);
-			if (sYear === eYear) return sYear;
-			return `${sYear} \u2014 ${eYear}`;
+			return yearFmt.format(rangeStart);
 		};
 	} else if (isMonthlyInterval || skip >= 28) {
 		formatTick = (/** @type {any} */ d) => {

@@ -57,3 +57,50 @@ export function convert(fromPrefix, toPrefix, value) {
 	const toExponent = EXPONENT[toPrefix];
 	return value || value === 0 ? value * Math.pow(10, fromExponent - toExponent) : NaN;
 }
+
+/**
+ * Format a value with explicit SI prefix conversion.
+ *
+ * Combines `convert()` with `Intl.NumberFormat` into a single call
+ * for convenient, explicit SI-prefixed formatting anywhere.
+ *
+ * @param {number | null | undefined} value
+ * @param {Object} [options]
+ * @param {SiPrefix} [options.fromPrefix] - SI prefix the value is currently in (default: '')
+ * @param {SiPrefix} [options.toPrefix] - SI prefix to display as (default: '')
+ * @param {string} [options.baseUnit] - Base unit to append (e.g. 'W', 'Wh')
+ * @param {number} [options.maximumFractionDigits] - Decimal places (default: auto based on magnitude)
+ * @param {boolean} [options.useGrouping] - Use thousands separator (default: true)
+ * @returns {string}
+ */
+export function formatSI(value, options = {}) {
+	const {
+		fromPrefix = /** @type {SiPrefix} */ (''),
+		toPrefix = /** @type {SiPrefix} */ (''),
+		baseUnit = '',
+		maximumFractionDigits,
+		useGrouping = true
+	} = options;
+
+	if (value == null || isNaN(value)) return '—';
+
+	const converted = convert(fromPrefix, toPrefix, value);
+	if (isNaN(converted)) return '—';
+
+	const abs = Math.abs(converted);
+	const digits =
+		maximumFractionDigits !== undefined
+			? maximumFractionDigits
+			: abs < 10
+				? 2
+				: abs < 100
+					? 1
+					: 0;
+
+	const formatted = new Intl.NumberFormat('en-AU', {
+		maximumFractionDigits: digits,
+		useGrouping
+	}).format(converted);
+
+	return baseUnit ? `${formatted} ${toPrefix}${baseUnit}` : formatted;
+}
