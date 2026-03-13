@@ -19,3 +19,4 @@ export {
 } from './helpers.js';
 export { processFacilityPower } from './process-facility-power.js';
 export { analyzeUnits } from './unit-analysis.js';
+export { default as PollutionSection } from './pollution/PollutionSection.svelte';

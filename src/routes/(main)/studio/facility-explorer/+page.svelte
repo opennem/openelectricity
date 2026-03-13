@@ -14,7 +14,8 @@
 		FacilityPriceChart,
 		FacilitySummaryTable,
 		FacilityDataTable,
-		FacilityUnitsTable
+		FacilityUnitsTable,
+		PollutionSection
 	} from '$lib/components/charts/facility';
 	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
 	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
@@ -113,6 +114,39 @@
 		data.dateStart || getDateStartForRange(data.range ?? 7, data.facility?.units)
 	);
 	let dateEnd = $state(data.dateEnd || getDefaultDateEnd());
+
+	// Pollution data (lazy-loaded client-side)
+	/** @type {any[] | null} */
+	let pollutionData = $state(null);
+	let pollutionLoading = $state(false);
+
+	$effect(() => {
+		const code = data.selectedCode;
+		const hasNpi = selectedFacility?.npi_id;
+
+		if (!code || !hasNpi) {
+			pollutionData = null;
+			return;
+		}
+
+		pollutionLoading = true;
+		pollutionData = null;
+
+		fetch(`/api/facilities/${code}/pollution`)
+			.then((r) => r.json())
+			.then((json) => {
+				if (data.selectedCode === code) {
+					const d = json.response?.data;
+					pollutionData = d?.length ? d : null;
+				}
+			})
+			.catch(() => {
+				if (data.selectedCode === code) pollutionData = null;
+			})
+			.finally(() => {
+				if (data.selectedCode === code) pollutionLoading = false;
+			});
+	});
 
 	// ============================================
 	// Derived: Facility Selection
@@ -740,6 +774,24 @@
 					<SanityFacilityDetail facility={data.sanityFacility} />
 				</div>
 			</div>
+
+			<!-- Pollution data -->
+			{#if selectedFacility?.npi_id}
+				<div class="border-t border-warm-grey">
+					{#if pollutionLoading}
+						<div class="p-5 text-xs text-mid-grey">Loading pollution data...</div>
+					{:else if pollutionData}
+						<PollutionSection {pollutionData} />
+					{:else}
+						<div class="p-5">
+							<div class="text-[10px] text-mid-grey uppercase tracking-widest mb-2 pb-1 border-b border-dark-grey">
+								NPI Pollution Data
+							</div>
+							<p class="text-sm text-mid-grey">No pollution data available for this facility</p>
+						</div>
+					{/if}
+				</div>
+			{/if}
 		</div>
 	</div>
 {:else}
