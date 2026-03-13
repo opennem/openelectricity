@@ -26,7 +26,7 @@ export async function GET({ params, url, setHeaders }) {
 		});
 
 		setHeaders({
-			'Cache-Control': 'public, max-age=15552000'
+			'Cache-Control': 'public, max-age=2592000'
 		});
 
 		return Response.json({
