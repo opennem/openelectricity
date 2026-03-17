@@ -1,5 +1,6 @@
 <script>
 	// import { shortcut } from '@svelte-put/shortcut';
+	import { fly } from 'svelte/transition';
 	import { onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
 	import { setContext } from 'svelte';
@@ -12,6 +13,7 @@
 
 	// import { bannerOpen } from '$lib/stores/app';
 	import { showThemeSwitcher } from '$lib/stores/theme';
+	import { toastMessage } from '$lib/stores/toast';
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('svelte').Snippet} [children]
@@ -144,4 +146,13 @@
 
 {#if !isFullscreen}
 	<Footer />
+{/if}
+
+{#if $toastMessage}
+	<div
+		transition:fly={{ y: -20, duration: 300 }}
+		class="fixed top-6 left-1/2 -translate-x-1/2 z-[9999] rounded-lg bg-dark-grey text-white px-6 py-3 text-sm shadow-lg"
+	>
+		{$toastMessage}
+	</div>
 {/if}
