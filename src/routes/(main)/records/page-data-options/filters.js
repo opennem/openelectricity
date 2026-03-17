@@ -202,12 +202,12 @@ export const milestoneTypeOptions = [
 		displayPrefix: '',
 		allowedPrefixes: ['', 'k']
 	},
-	{
-		value: 'renewable_proportion',
-		label: 'Renewable Proportion',
-		displayPrefix: '',
-		allowedPrefixes: ['']
-	}
+	// {
+	// 	value: 'renewable_proportion',
+	// 	label: 'Renewable Proportion',
+	// 	displayPrefix: '',
+	// 	allowedPrefixes: ['']
+	// }
 	// {
 	// 	value: 'proportion',
 	// 	label: 'Proportion',

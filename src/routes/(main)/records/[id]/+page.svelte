@@ -15,12 +15,25 @@
 	import process from './RecordHistory/helpers/process';
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
 	import dateTimeQuery from '../page-data-options/date-time-query';
+	import { showToast } from '$lib/stores/toast';
 	/** @type {{ data: any }} */
 	let { data } = $props();
 	let { period, recordIds, focusTime } = $derived(data);
 	let loading = $state(false);
 	let defaultXDomain = $state();
 	let { chartCxt, dateBrushCxt } = init();
+
+	$effect(() => {
+		if (data.notFound) {
+			showToast(`Record "${data.notFoundId}" not found`);
+			if (history.length > 1) {
+				history.back();
+			} else {
+				goto('/records', { replaceState: true });
+			}
+			return;
+		}
+	});
 
 	$effect(() => {
 		recordState.recordIds = recordIds;

@@ -162,6 +162,15 @@ async function fetchRecords(
 			recordsData.sort((a, b) => b.date.getTime() - a.date.getTime());
 		}
 
+		// Filter out renewable_proportion records (not yet supported by OE API)
+		let renewableProportionRecords = recordsData.filter(
+			(d) => d.metric === 'renewable_proportion'
+		);
+		if (renewableProportionRecords.length > 0) {
+			console.log('renewable_proportion records:', renewableProportionRecords);
+		}
+		recordsData = recordsData.filter((d) => d.metric !== 'renewable_proportion');
+
 		totalRecords = jsonData.total_records;
 	} else {
 		errorMessage = jsonData.error;

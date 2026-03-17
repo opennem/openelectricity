@@ -1,4 +1,3 @@
-import { error } from '@sveltejs/kit';
 import { xTickValueFormatters } from './RecordHistory/helpers/config';
 // import parseId from './RecordHistory/helpers/parse-id';
 export async function load({ data, params, fetch }) {
@@ -32,7 +31,9 @@ export async function load({ data, params, fetch }) {
 		}
 	}
 
-	error(404, {
-		message: 'Record ID ' + id + ' not found'
-	});
+	return {
+		...data,
+		notFound: true,
+		notFoundId: id
+	};
 }
