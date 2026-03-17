@@ -26,7 +26,11 @@
 	$effect(() => {
 		if (data.notFound) {
 			showToast(`Record "${data.notFoundId}" not found`);
-			history.back();
+			if (history.length > 1) {
+				history.back();
+			} else {
+				goto('/records', { replaceState: true });
+			}
 			return;
 		}
 	});
