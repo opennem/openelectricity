@@ -197,6 +197,14 @@ The application has a sophisticated fuel technology classification system:
 - Adapter optimized for Cloudflare Pages/Workers
 - Route exclusions for static content (`/analysis/*`, `/content/*`)
 - Prerender configuration with HTTP error handling
+- Automatic deployments are **disabled** — builds are triggered via deploy hook only
+
+**Deploy Pipeline:**
+
+- `npm version patch|minor|major` creates a version tag + commit
+- `git push` pushes the commit and tag (push.followTags enabled)
+- GitHub Actions (`.github/workflows/deploy.yml`) triggers on `v*` tags and calls the Cloudflare deploy hook
+- Deploy hook URL is stored as a GitHub repo secret (`CLOUDFLARE_DEPLOY_HOOK_URL`)
 
 **Build Optimization:**
 
