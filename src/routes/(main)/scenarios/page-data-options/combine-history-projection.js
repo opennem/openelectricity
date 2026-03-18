@@ -75,7 +75,7 @@ export default function combineHistoryProjection({
 	// Fill missing series values with null
 	seriesData.forEach((d) => {
 		seriesNames.forEach((name) => {
-			if (!d[name]) {
+			if (d[name] === undefined) {
 				d[name] = null;
 			}
 		});

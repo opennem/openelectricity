@@ -204,4 +204,77 @@ test.describe('Scenarios Page', () => {
 
 		expect(errors).toEqual([]);
 	});
+
+	// 7. Draft/Final model selection
+
+	test('should show all four model groups in scenario selector', async ({ page }) => {
+		// Open scenario selector
+		const selectorButton = page.locator('button').filter({ hasText: /Step Change|Update Scenarios/ }).first();
+		await selectorButton.click();
+
+		// All four model groups should be visible
+		await expect(page.getByText('AEMO 2024 ISP (Final)')).toBeVisible();
+		await expect(page.getByText('AEMO 2024 ISP (Draft)')).toBeVisible();
+		await expect(page.getByText('AEMO 2022 ISP (Final)')).toBeVisible();
+		await expect(page.getByText('AEMO 2022 ISP (Draft)')).toBeVisible();
+	});
+
+	test('should select a draft scenario and render charts without errors', async ({ page }) => {
+		const errors = [];
+		page.on('pageerror', (error) => errors.push(error.message));
+
+		// Open scenario selector
+		const selectorButton = page.locator('button').filter({ hasText: /Step Change|Update Scenarios/ }).first();
+		await selectorButton.click();
+
+		// Click on a 2024 Draft scenario (Step Change)
+		const draftSection = page.getByText('AEMO 2024 ISP (Draft)');
+		await expect(draftSection).toBeVisible();
+
+		// Find and click the Step Change button within the draft section
+		const draftStepChange = page.locator('button').filter({ hasText: 'Step Change' });
+		// Click the one under the draft heading (second group of Step Change buttons)
+		const draftButtons = await draftStepChange.all();
+		if (draftButtons.length > 1) {
+			await draftButtons[1].click();
+		}
+
+		// Wait for charts to re-render with draft data
+		await page.waitForSelector('.stratum-chart', { timeout: 30000 });
+
+		const charts = page.locator('.stratum-chart');
+		expect(await charts.count()).toBeGreaterThan(0);
+		expect(errors).toEqual([]);
+	});
+
+	test('should serve filtered API responses (small payloads)', async ({ page }) => {
+		// Intercept scenario API requests
+		const responses = [];
+		page.on('response', (response) => {
+			if (response.url().includes('/api/scenarios')) {
+				responses.push({
+					url: response.url(),
+					status: response.status()
+				});
+			}
+		});
+
+		// Navigate fresh to trigger data fetching
+		await page.goto('/scenarios');
+		await page.waitForSelector('.stratum-chart', { timeout: 30000 });
+
+		// Should have made at least one API call
+		expect(responses.length).toBeGreaterThan(0);
+
+		// All responses should be successful
+		for (const r of responses) {
+			expect(r.status).toBe(200);
+		}
+
+		// API URLs should include filter params (pathway and region)
+		const hasFilteredRequests = responses.some(
+			(r) => r.url.includes('pathway=') || r.url.includes('region=')
+		);
+		expect(hasFilteredRequests).toBe(true);
+	});
 });

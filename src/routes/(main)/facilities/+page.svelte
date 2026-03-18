@@ -22,7 +22,7 @@
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
-	import ShortcutsToast from './ShortcutsToast.svelte';
+	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 
 	let { data } = $props();
 
@@ -1140,4 +1140,14 @@
 	</section>
 </div>
 
-<ShortcutsToast visible={showShortcutsToast} ondismiss={() => (showShortcutsToast = false)} />
+<ShortcutsToast
+	visible={showShortcutsToast}
+	ondismiss={() => (showShortcutsToast = false)}
+	shortcuts={[
+		{ label: 'Enter / exit full screen', keys: ['F'] },
+		{ label: 'Browser full screen', keys: ['Shift', 'F'] },
+		{ label: 'Search', keys: ['/'] },
+		{ label: 'Show shortcuts', keys: ['?'] },
+		{ label: 'Exit', keys: ['Esc'] }
+	]}
+/>

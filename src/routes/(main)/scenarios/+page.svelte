@@ -17,7 +17,7 @@
 
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
-	import ShortcutsToast from './components/ShortcutsToast.svelte';
+	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import ScenarioChart from './components/ScenarioChart.svelte';
 	import TableTechnology from './components/TableTechnology.svelte';
 	import TableScenario from './components/TableScenario.svelte';
@@ -749,4 +749,12 @@
 	/>
 {/if}
 
-<ShortcutsToast visible={showShortcutsToast} ondismiss={() => (showShortcutsToast = false)} />
+<ShortcutsToast
+	visible={showShortcutsToast}
+	ondismiss={() => (showShortcutsToast = false)}
+	shortcuts={[
+		{ label: 'Enter / exit full screen', keys: ['F'] },
+		{ label: 'Show shortcuts', keys: ['?'] },
+		{ label: 'Exit', keys: ['Esc'] }
+	]}
+/>

@@ -137,9 +137,9 @@
 </script>
 
 <div class="grid grid-cols-1 md:grid-cols-3 divide-x divide-warm-grey md:border-b border-warm-grey">
-	<div class="p-0 md:p-16 col-span-2">
+	<div class="p-0 md:p-16 col-span-2 flex flex-col gap-8">
 		{#each modelOptions as model, i (model.value)}
-			<div class:pb-8={i === 0}>
+			<div>
 				<h5
 					class="font-space uppercase text-sm text-mid-grey px-10 py-2 mb-0 md:pb-2 md:pl-1 text-right border-y border-warm-grey md:border-0 md:text-left"
 				>
