@@ -93,8 +93,8 @@
 	$effect(() => {
 		chartsList.forEach((chart) => {
 			if ($isScenarioViewSection) {
-				chart.xTicks = chartXTicks['aemo2024'];
-				chart.xHighlightTicks = chartXHighlightTicks['aemo2024'];
+				chart.xTicks = chartXTicks[modelOptions[0].value];
+				chart.xHighlightTicks = chartXHighlightTicks[modelOptions[0].value];
 			} else {
 				chart.xTicks = chartXTicks[$singleSelectionData.model];
 				chart.xHighlightTicks = chartXHighlightTicks[$singleSelectionData.model] || [];

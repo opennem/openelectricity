@@ -2,6 +2,11 @@ import { startOfYear } from 'date-fns';
 
 export const modelOptions = [
 	{
+		value: 'aemo2026draft',
+		label: 'AEMO 2026 ISP (Draft)',
+		description: "AEMO's 2026 Integrated System Plan (Draft)"
+	},
+	{
 		value: 'aemo2024',
 		label: 'AEMO 2024 ISP',
 		description: "AEMO's 2024 Integrated System Plan"
@@ -10,6 +15,16 @@ export const modelOptions = [
 		value: 'aemo2022',
 		label: 'AEMO 2022 ISP',
 		description: "AEMO's 2022 Integrated System Plan"
+	},
+	{
+		value: 'aemo2020',
+		label: 'AEMO 2020 ISP',
+		description: "AEMO's 2020 Integrated System Plan"
+	},
+	{
+		value: 'aemo2018',
+		label: 'AEMO 2018 ISP',
+		description: "AEMO's 2018 Integrated System Plan"
 	}
 ];
 
@@ -69,6 +84,12 @@ export const dataViewIntervalLabel = dataViewOptions.reduce(
 
 /** @type {Object.<string, Date[]>} */
 export const xTicks = {
+	aemo2026draft: [
+		startOfYear(new Date('2011-01-01')),
+		startOfYear(new Date('2026-01-01')),
+		startOfYear(new Date('2038-01-01')),
+		startOfYear(new Date('2052-01-01'))
+	],
 	aemo2024: [
 		startOfYear(new Date('2011-01-01')),
 		startOfYear(new Date('2025-01-01')),
@@ -80,6 +101,18 @@ export const xTicks = {
 		startOfYear(new Date('2024-01-01')),
 		startOfYear(new Date('2037-01-01')),
 		startOfYear(new Date('2051-01-01'))
+	],
+	aemo2020: [
+		startOfYear(new Date('2011-01-01')),
+		startOfYear(new Date('2021-01-01')),
+		startOfYear(new Date('2032-01-01')),
+		startOfYear(new Date('2043-01-01'))
+	],
+	aemo2018: [
+		startOfYear(new Date('2011-01-01')),
+		startOfYear(new Date('2018-01-01')),
+		startOfYear(new Date('2030-01-01')),
+		startOfYear(new Date('2041-01-01'))
 	]
 };
 
@@ -160,6 +193,33 @@ export const chartTypeOptions = [
 ];
 
 export const modelPathways = {
+	aemo2026draft: [
+		'CDP1',
+		'CDP2',
+		'CDP3',
+		'CDP4 (ODP)',
+		'CDP5',
+		'CDP6',
+		'CDP7',
+		'CDP8',
+		'CDP9',
+		'CDP10',
+		'CDP11',
+		'CDP12',
+		'CDP13',
+		'CDP14',
+		'CDP15',
+		'CDP16',
+		'CDP17',
+		'CDP18',
+		'CDP19',
+		'CDP20',
+		'CDP21',
+		'CDP22',
+		'CDP23',
+		'Counterfactual'
+	],
+
 	aemo2024: [
 		'CDP1',
 		'CDP2',
@@ -200,20 +260,37 @@ export const modelPathways = {
 		'CDP12',
 		'CDP13',
 		'Counterfactual'
-	]
+	],
+
+	aemo2020: [
+		'DP1',
+		'DP2',
+		'DP3',
+		'DP4',
+		'DP5',
+		'DP6',
+		'DP7',
+		'DP8'
+	],
+
+	aemo2018: ['default']
 };
 
 // Optimal Path
 /** @type {*} */
 export const defaultModelPathway = {
+	aemo2026draft: 'CDP4 (ODP)',
 	aemo2024: 'CDP14',
-	aemo2022: 'CDP12'
+	aemo2022: 'CDP12',
+	aemo2020: 'DP4',
+	aemo2018: 'default'
 };
 export const defaultPathwayOrder = [
 	'CDP1',
 	'CDP2',
 	'CDP3',
 	'CDP4',
+	'CDP4 (ODP)',
 	'CDP5',
 	'CDP6',
 	'CDP7',
@@ -235,10 +312,56 @@ export const defaultPathwayOrder = [
 	'CDP23',
 	'CDP24',
 	'CDP25',
-	'Counterfactual'
+	'Counterfactual',
+	'DP1',
+	'DP2',
+	'DP3',
+	'DP4',
+	'DP5',
+	'DP6',
+	'DP7',
+	'DP8',
+	'default'
 ];
 
 export const allScenarios = [
+	{
+		id: 'aemo2026draft-step_change',
+		model: 'aemo2026draft',
+		organisation: 'AEMO',
+		year: 2026,
+		draft: true,
+		scenario: 'Step Change',
+		scenarioId: 'step_change',
+		pathways: [...modelPathways.aemo2026draft],
+		defaultPathway: defaultModelPathway.aemo2026draft,
+		colour: '#A078D7'
+	},
+	{
+		id: 'aemo2026draft-accelerated_transition',
+		model: 'aemo2026draft',
+		organisation: 'AEMO',
+		year: 2026,
+		draft: true,
+		scenario: 'Accelerated Transition',
+		scenarioId: 'accelerated_transition',
+		pathways: [...modelPathways.aemo2026draft],
+		defaultPathway: defaultModelPathway.aemo2026draft,
+		colour: '#F480EE'
+	},
+	{
+		id: 'aemo2026draft-slower_growth',
+		model: 'aemo2026draft',
+		organisation: 'AEMO',
+		year: 2026,
+		draft: true,
+		scenario: 'Slower Growth',
+		scenarioId: 'slower_growth',
+		pathways: [...modelPathways.aemo2026draft],
+		defaultPathway: defaultModelPathway.aemo2026draft,
+		colour: '#069FAF'
+	},
+
 	{
 		id: 'aemo2024-step_change',
 		model: 'aemo2024',
@@ -249,7 +372,7 @@ export const allScenarios = [
 		scenarioId: 'step_change',
 		pathways: [...modelPathways.aemo2024],
 		defaultPathway: defaultModelPathway.aemo2024,
-		colour: '#A078D7'
+		colour: '#E78114'
 	},
 	{
 		id: 'aemo2024-progressive_change',
@@ -261,7 +384,7 @@ export const allScenarios = [
 		scenarioId: 'progressive_change',
 		pathways: [...modelPathways.aemo2024],
 		defaultPathway: defaultModelPathway.aemo2024,
-		colour: '#F480EE'
+		colour: '#4F5FD7'
 	},
 	{
 		id: 'aemo2024-green_energy_exports',
@@ -273,7 +396,7 @@ export const allScenarios = [
 		scenarioId: 'green_energy_exports',
 		pathways: [...modelPathways.aemo2024],
 		defaultPathway: defaultModelPathway.aemo2024,
-		colour: '#069FAF'
+		colour: '#545353'
 	},
 
 	{
@@ -323,5 +446,115 @@ export const allScenarios = [
 		pathways: [...modelPathways.aemo2022],
 		defaultPathway: defaultModelPathway.aemo2022,
 		colour: '#4F5FD7'
+	},
+
+	{
+		id: 'aemo2020-step_change',
+		model: 'aemo2020',
+		organisation: 'AEMO',
+		year: 2020,
+		draft: false,
+		scenario: 'Step Change',
+		scenarioId: 'step_change',
+		pathways: [...modelPathways.aemo2020],
+		defaultPathway: defaultModelPathway.aemo2020,
+		colour: '#A078D7'
+	},
+	{
+		id: 'aemo2020-slow_change',
+		model: 'aemo2020',
+		organisation: 'AEMO',
+		year: 2020,
+		draft: false,
+		scenario: 'Slow Change',
+		scenarioId: 'slow_change',
+		pathways: [...modelPathways.aemo2020],
+		defaultPathway: defaultModelPathway.aemo2020,
+		colour: '#F480EE'
+	},
+	{
+		id: 'aemo2020-central',
+		model: 'aemo2020',
+		organisation: 'AEMO',
+		year: 2020,
+		draft: false,
+		scenario: 'Central',
+		scenarioId: 'central',
+		pathways: [...modelPathways.aemo2020],
+		defaultPathway: defaultModelPathway.aemo2020,
+		colour: '#069FAF'
+	},
+
+	{
+		id: 'aemo2018-neutral',
+		model: 'aemo2018',
+		organisation: 'AEMO',
+		year: 2018,
+		draft: false,
+		scenario: 'Neutral',
+		scenarioId: 'neutral',
+		pathways: [...modelPathways.aemo2018],
+		defaultPathway: defaultModelPathway.aemo2018,
+		colour: '#BDBCBC'
+	},
+	{
+		id: 'aemo2018-neutral_with_storage',
+		model: 'aemo2018',
+		organisation: 'AEMO',
+		year: 2018,
+		draft: false,
+		scenario: 'Neutral with Storage',
+		scenarioId: 'neutral_with_storage',
+		pathways: [...modelPathways.aemo2018],
+		defaultPathway: defaultModelPathway.aemo2018,
+		colour: '#545353'
+	},
+	{
+		id: 'aemo2018-fast',
+		model: 'aemo2018',
+		organisation: 'AEMO',
+		year: 2018,
+		draft: false,
+		scenario: 'Fast',
+		scenarioId: 'fast',
+		pathways: [...modelPathways.aemo2018],
+		defaultPathway: defaultModelPathway.aemo2018,
+		colour: '#E78114'
+	},
+	{
+		id: 'aemo2018-slow',
+		model: 'aemo2018',
+		organisation: 'AEMO',
+		year: 2018,
+		draft: false,
+		scenario: 'Slow',
+		scenarioId: 'slow',
+		pathways: [...modelPathways.aemo2018],
+		defaultPathway: defaultModelPathway.aemo2018,
+		colour: '#4F5FD7'
+	},
+	{
+		id: 'aemo2018-high_der',
+		model: 'aemo2018',
+		organisation: 'AEMO',
+		year: 2018,
+		draft: false,
+		scenario: 'High DER',
+		scenarioId: 'high_der',
+		pathways: [...modelPathways.aemo2018],
+		defaultPathway: defaultModelPathway.aemo2018,
+		colour: '#A078D7'
+	},
+	{
+		id: 'aemo2018-irfg',
+		model: 'aemo2018',
+		organisation: 'AEMO',
+		year: 2018,
+		draft: false,
+		scenario: 'IRFG',
+		scenarioId: 'irfg',
+		pathways: [...modelPathways.aemo2018],
+		defaultPathway: defaultModelPathway.aemo2018,
+		colour: '#F480EE'
 	}
 ];

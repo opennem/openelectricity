@@ -6,6 +6,7 @@
 	import { colourReducer } from '$lib/stores/theme';
 	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
 	import { chartXHighlightTicks } from './page-data-options/chart-ticks';
+	import { modelOptions } from './page-data-options/models';
 
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -180,7 +181,7 @@
 
 	// Overlay start from chart tick config (un-shifted boundary year, e.g. 2024)
 	let overlayStartTime = $derived.by(() => {
-		const model = $isScenarioViewSection ? 'aemo2024' : $singleSelectionData?.model;
+		const model = $isScenarioViewSection ? modelOptions[0].value : $singleSelectionData?.model;
 		if (!model) return undefined;
 		const ticks = chartXHighlightTicks[model];
 		return ticks?.[0] ? +ticks[0] : undefined;
