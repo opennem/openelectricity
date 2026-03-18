@@ -344,11 +344,33 @@
 		}
 	}
 
+	// Map generation series names to capacity series names (they differ by type suffix,
+	// e.g. 'coal.energy.grouped' vs 'coal.capacity.grouped')
+	let genToCapNameMap = $derived.by(() => {
+		/** @type {Record<string, string>} */
+		const capByCode = {};
+		for (const name of capacityChart.seriesNames) {
+			capByCode[name.split('.')[0]] = name;
+		}
+		/** @type {Record<string, string>} */
+		const map = {};
+		for (const name of generationChart.seriesNames) {
+			const code = name.split('.')[0];
+			if (capByCode[code]) map[name] = capByCode[code];
+		}
+		return map;
+	});
+
 	// Sync hidden row names to all charts
 	$effect(() => {
-		chartsList.forEach((chart) => {
-			chart.hiddenSeriesNames = hiddenRowNames;
-		});
+		generationChart.hiddenSeriesNames = hiddenRowNames;
+		emissionsChart.hiddenSeriesNames = hiddenRowNames;
+		intensityChart.hiddenSeriesNames = hiddenRowNames;
+
+		// Capacity uses different series name suffixes — translate
+		capacityChart.hiddenSeriesNames = hiddenRowNames
+			.map((name) => genToCapNameMap[name])
+			.filter(Boolean);
 	});
 
 	// Set default focus time (2030) after mount

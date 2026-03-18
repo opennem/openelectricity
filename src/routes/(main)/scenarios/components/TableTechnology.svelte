@@ -18,6 +18,24 @@
 	const { selectedFuelTechGroup, includeBatteryAndLoads } = getContext('scenario-filters');
 	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
 
+	// Map generation series names to capacity series names (they differ by type suffix,
+	// e.g. 'coal.energy.grouped' vs 'coal.capacity.grouped')
+	let capNameMap = $derived.by(() => {
+		/** @type {Record<string, string>} */
+		const capByCode = {};
+		for (const name of capacity.seriesNames) {
+			const code = name.split('.')[0];
+			capByCode[code] = name;
+		}
+		/** @type {Record<string, string>} */
+		const map = {};
+		for (const name of generation.seriesNames) {
+			const code = name.split('.')[0];
+			if (capByCode[code]) map[name] = capByCode[code];
+		}
+		return map;
+	});
+
 	let sourceNames = $derived(
 		generation.seriesNames
 			.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
@@ -80,7 +98,7 @@
 					 * @param {number} acc
 					 * @param {string} id
 					 */
-					(acc, id) => acc + capacity.hoverData[id],
+					(acc, id) => acc + (capacity.hoverData[capNameMap[id]] || 0),
 					0
 				)
 			: capacity.focusData
@@ -89,7 +107,7 @@
 						 * @param {number} acc
 						 * @param {string} id
 						 */
-						(acc, id) => acc + capacity.focusData[id],
+						(acc, id) => acc + (capacity.focusData[capNameMap[id]] || 0),
 						0
 					)
 				: 0
@@ -256,9 +274,9 @@
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end mr-3">
 							{capacity.hoverData
-								? capacity.convertAndFormatValue(capacity.hoverData[name])
+								? capacity.convertAndFormatValue(capacity.hoverData[capNameMap[name]])
 								: capacity.focusData
-									? capacity.convertAndFormatValue(capacity.focusData[name])
+									? capacity.convertAndFormatValue(capacity.focusData[capNameMap[name]])
 									: ''}
 						</div>
 					</td>
@@ -320,9 +338,9 @@
 						<td class="px-2 py-1">
 							<div class="font-mono flex flex-col items-end mr-3">
 								{capacity.hoverData
-									? capacity.convertAndFormatValue(capacity.hoverData[name])
+									? capacity.convertAndFormatValue(capacity.hoverData[capNameMap[name]])
 									: capacity.focusData
-										? capacity.convertAndFormatValue(capacity.focusData[name])
+										? capacity.convertAndFormatValue(capacity.focusData[capNameMap[name]])
 										: ''}
 							</div>
 						</td>
