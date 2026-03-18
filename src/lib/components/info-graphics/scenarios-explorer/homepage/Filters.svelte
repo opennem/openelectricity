@@ -1,47 +1,28 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { getContext } from 'svelte';
 
-	import Switch from '$lib/components/Switch.svelte';
-	import IconPlus from '$lib/icons/Plus.svelte';
-	import IconMinus from '$lib/icons/Minus.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
-	import Selection from '../Selection.svelte';
-
-	import { modelOptions, dataViewOptions, displayViewOptions } from '../options';
+	import {
+		modelOptions
+	} from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
 	import { scenarioLabels } from '../descriptions';
-	import { homepageDataTechnologyGroupOptions, dataRegionCompareOptions } from '../helpers';
 
 	const {
 		selectedModel,
-
 		scenarioOptions,
-		selectedRegion,
-		selectedDataView,
-		selectedDisplayView,
-		selectedScenario,
-
-		showScenarioOptions,
-
-		isTechnologyDisplay,
-		isScenarioDisplay,
-		isRegionDisplay
+		selectedScenario
 	} = getContext('scenario-filters');
 
-	const { selectedGroup } = getContext('scenario-data');
+	// Map modelOptions to FormSelect format
+	const modelSelectOptions = modelOptions.map((m) => ({
+		value: m.value,
+		label: m.label
+	}));
 
-	$selectedModel = modelOptions[0].value;
-	$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
+	$selectedModel = modelSelectOptions[0].value;
 
-	run(() => {
-		if ($isTechnologyDisplay) {
-			$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
-		} else {
-			$selectedGroup = dataRegionCompareOptions[0].value;
-		}
-	});
+	let scenarios = $derived($scenarioOptions || []);
 </script>
 
 <div class="text-sm">
@@ -60,7 +41,7 @@
 		<FormSelect
 			paddingY="py-3"
 			paddingX="px-4"
-			options={modelOptions}
+			options={modelSelectOptions}
 			selected={$selectedModel}
 			onchange={(option) => ($selectedModel = option.value)}
 		/>
@@ -68,10 +49,10 @@
 
 	<div
 		class="grid gap-3 mt-6"
-		class:grid-cols-3={$scenarioOptions.length === 3}
-		class:grid-cols-2={$scenarioOptions.length !== 3}
+		class:grid-cols-3={scenarios.length === 3}
+		class:grid-cols-2={scenarios.length !== 3}
 	>
-		{#each $scenarioOptions as { label, value } (value)}
+		{#each scenarios as { label, value } (value)}
 			<button
 				class="w-full rounded-lg border hover:bg-light-warm-grey px-6 py-4 capitalize text-left leading-sm"
 				class:border-mid-warm-grey={$selectedScenario !== value}

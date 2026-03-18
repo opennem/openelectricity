@@ -259,6 +259,9 @@
 					zeroValueStroke={styles.zeroValueStroke || styles.yAxisStroke}
 					showLastTick={styles.showLastYTick}
 					lastTickDy={styles.lastYTickDy}
+					yLabelStartPos={styles.yLabelStartPos}
+					dxTick={styles.yLabelStartPos ? 6 : 0}
+					tickMarks={!!styles.yLabelStartPos}
 				/>
 
 				<AxisX
@@ -268,7 +271,7 @@
 					formatTick={chart.formatTickXWithTimeZone}
 					gridlines={styles.xGridlines}
 					tickMarks={true}
-					snapTicks={false}
+					snapTicks={styles.snapTicks}
 					stroke={styles.xAxisStroke}
 					fill={styles.xAxisFill}
 					xTextClasses={styles.xTextClasses}

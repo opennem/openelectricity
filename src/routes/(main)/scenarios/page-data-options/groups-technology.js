@@ -1,7 +1,11 @@
 import simpleGroup from '$lib/fuel-tech-groups/scenarios/simple';
 import detailedGroup from '$lib/fuel-tech-groups/scenarios/detailed';
+import {
+	homepagePreviewGroup,
+	homepageRenewablesVsFossilsGroup
+} from '$lib/components/info-graphics/scenarios-explorer/groups/index.js';
 
-export const groups = [simpleGroup, detailedGroup];
+export const groups = [simpleGroup, detailedGroup, homepagePreviewGroup, homepageRenewablesVsFossilsGroup];
 export const groupOptions = groups.map((group) => ({
 	label: group.label,
 	value: group.value

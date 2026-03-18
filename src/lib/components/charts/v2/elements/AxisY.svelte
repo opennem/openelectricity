@@ -103,6 +103,7 @@
 			{#if tickMarks}
 				<line
 					class="tick-mark"
+					stroke="#999"
 					x1="0"
 					x2={isBandwidth ? -6 : 6}
 					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}

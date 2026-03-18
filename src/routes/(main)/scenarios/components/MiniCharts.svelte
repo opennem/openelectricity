@@ -1,6 +1,7 @@
 <script>
 	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
 	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
+	import Icon from '$lib/components/Icon.svelte';
 
 	import { scenarioLabelMap } from '../page-data-options/models';
 
@@ -15,8 +16,10 @@
 	 * @property {boolean} [isButton]
 	 * @property {string} [selected]
 	 * @property {Record<string, string> | null} [seriesPathways]
+	 * @property {boolean} [showIcon]
 	 * @property {boolean} [showArea]
 	 * @property {string} [gridColClass]
+	 * @property {string} [gridGapClass]
 	 * @property {string} [sectionBorderClass]
 	 * @property {number | undefined} [hoverTime]
 	 * @property {number | undefined} [focusTime]
@@ -41,8 +44,10 @@
 		isButton = false,
 		selected = '',
 		seriesPathways = null,
+		showIcon = false,
 		showArea = true,
 		gridColClass = 'grid-cols-2 md:grid-cols-3',
+		gridGapClass = 'gap-3',
 		sectionBorderClass = '',
 		hoverTime,
 		focusTime,
@@ -50,6 +55,8 @@
 		formatTickX,
 		formatTickY,
 		overlayStart,
+		shadingData = [],
+		shadingFill = '',
 		onhover,
 		onhoverend,
 		onfocus,
@@ -154,6 +161,8 @@
 			store.xHighlightTicks = highlightTicks;
 			if (miniTicks) store.xTicks = miniTicks;
 			if (formatTickX) store.formatTickX = formatTickX;
+			if (shadingData.length) store.shadingData = shadingData;
+			if (shadingFill) store.shadingFill = shadingFill;
 
 			// Y-axis: set ticks to data min/max and use parent's formatter
 			if (formatTickY) {
@@ -197,14 +206,14 @@
 	}
 </script>
 
-<div class="grid {gridColClass} gap-3">
+<div class="grid {gridColClass} {gridGapClass}">
 	{#each [...miniChartEntries].reverse() as [key, store] (key)}
 		{@const title = scenarioLabelMap[key] || seriesLabels[key]}
 		{@const displayValue = getDisplayValue(store, key)}
 		{@const displayTime = getDisplayTime(store)}
 
 		<section
-			class="p-8 border-warm-grey border {sectionBorderClass}"
+			class="p-8 {sectionBorderClass || 'border-warm-grey border'}"
 			class:rounded-xl={isButton}
 			class:hover:!border-mid-warm-grey={isButton}
 			class:!border-mid-grey={selected === key}
@@ -219,7 +228,12 @@
 				onmousedown={() => handleScenarioClick(key)}
 			>
 				<div class="flex flex-col">
-					<h6 {title} class="truncate mb-0 col-span-5 text-dark-grey">{title}</h6>
+					<div class="flex justify-between items-center">
+						<h6 {title} class="truncate mb-0 col-span-5 text-dark-grey">{title}</h6>
+						{#if showIcon}
+							<Icon icon={key.replace(/\.(energy|power)\..+$/, '')} size={28} />
+						{/if}
+					</div>
 					{#if seriesPathways && seriesPathways[key]}
 						<small class="text-xs text-mid-grey">{seriesPathways[key]}</small>
 					{/if}
