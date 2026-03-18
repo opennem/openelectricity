@@ -1,8 +1,5 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { getContext } from 'svelte';
-	import { startOfYear } from 'date-fns';
 
 	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
@@ -26,10 +23,18 @@
 	import { modelOptions, modelScenarioPathwayOptions } from '../page-data-options/models';
 	import { groupOptions as groupTechnologyOptions } from '../page-data-options/groups-technology';
 	import { groupOptions as groupScenarioOptions } from '../page-data-options/groups-scenario';
-	import { chartXTicks, miniChartXTicks } from '../page-data-options/chart-ticks';
+	import { chartXTicks, chartXHighlightTicks } from '../page-data-options/chart-ticks';
 	import ScenarioSelection from './ScenarioSelection.svelte';
-	import DownloadButton from './DownloadButton.svelte';
-	import LinkCopyButton from '$lib/components/LinkCopyButton.svelte';
+	import OptionsMenu from './OptionsMenu.svelte';
+
+	/**
+	 * @type {{
+	 *   isFullscreen?: boolean,
+	 *   onfullscreenchange?: () => void,
+	 *   onshowshortcuts?: () => void
+	 * }}
+	 */
+	let { isFullscreen = false, onfullscreenchange, onshowshortcuts } = $props();
 
 	const {
 		singleSelectionData,
@@ -47,24 +52,19 @@
 		showScenarioOptions
 	} = getContext('scenario-filters');
 
-	const dataVizStores = [
-		getContext('energy-data-viz'),
-		getContext('emissions-data-viz'),
-		getContext('capacity-data-viz'),
-		getContext('intensity-data-viz')
-	];
+	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
+	const chartsList = [generation, emissions, intensity, capacity];
 
 	let showMobileFilterOptions = $state(false);
 
 	init();
 
 	function init() {
-		$selectedViewSection = 'technology'; // scenario, technology, region
+		$selectedViewSection = 'technology';
 		$selectedCharts = ['generation', 'emissions', 'intensity', 'capacity'];
 
 		const defaultModel = modelOptions[0];
 
-		// default to the first model and scenario
 		$singleSelectionData = {
 			id: defaultModel.scenarios[0].id,
 			model: defaultModel.value,
@@ -72,31 +72,9 @@
 			pathway: defaultModel.defaultPathway
 		};
 
-		// default to the first model and all its scenarios
 		$multiSelectionData = defaultModel.scenarios.map((s) =>
 			modelScenarioPathwayOptions.find((m) => m.id === `${s.id}-${defaultModel.defaultPathway}`)
 		);
-		// {
-		// 	id: s.id,
-		// 	model: defaultModel.value,
-		// 	scenario: s.value,
-		// 	pathway: defaultModel.defaultPathway
-		// }
-
-		// let allSelections = [];
-		// // load all selections
-		// modelOptions.forEach((model) => {
-		// 	allSelections = [
-		// 		...allSelections,
-		// 		...model.scenarios.map((s) => ({
-		// 			id: s.id,
-		// 			model: model.value,
-		// 			scenario: s.value,
-		// 			pathway: model.defaultPathway
-		// 		}))
-		// 	];
-		// });
-		// $multiSelectionData = allSelections;
 
 		$selectedDataType = 'energy';
 		$selectedRegion = '_all';
@@ -107,49 +85,21 @@
 			$selectedFuelTechGroup = groupScenarioOptions[0].value;
 		}
 
-		dataVizStores.forEach((store) => {
-			store.formatTickX.set(formatFyTickX);
+		chartsList.forEach((chart) => {
+			chart.formatTickX = formatFyTickX;
 		});
 	}
 
-	/**
-	 * @param {string} start
-	 * @param {string} end
-	 */
-	function updateChartOverlayDates(start, end) {
-		const overlayDates = {
-			xStartValue: startOfYear(new Date(start)),
-			xEndValue: startOfYear(new Date(end))
-		};
-		const overlayLineDate = { date: overlayDates.xStartValue };
-
-		dataVizStores.forEach((store) => {
-			store.chartOverlay.set(overlayDates);
-			store.chartOverlayLine.set(overlayLineDate);
-		});
-	}
-
-	run(() => {
-		// TODO: if singleselection model changes, update xTicks, otherwise use default xTicks
-		dataVizStores.forEach((store) => {
+	$effect(() => {
+		chartsList.forEach((chart) => {
 			if ($isScenarioViewSection) {
-				store.xTicks.set(chartXTicks['aemo2024']);
-				store.miniXTicks.set(miniChartXTicks['aemo2024']);
+				chart.xTicks = chartXTicks['aemo2024'];
+				chart.xHighlightTicks = chartXHighlightTicks['aemo2024'];
 			} else {
-				store.xTicks.set(chartXTicks[$singleSelectionData.model]);
-				store.miniXTicks.set(miniChartXTicks[$singleSelectionData.model]);
+				chart.xTicks = chartXTicks[$singleSelectionData.model];
+				chart.xHighlightTicks = chartXHighlightTicks[$singleSelectionData.model] || [];
 			}
 		});
-	});
-	run(() => {
-		if (
-			$isScenarioViewSection ||
-			($isSingleSelectionMode && $singleSelectionModel === 'aemo2024')
-		) {
-			updateChartOverlayDates('2024-01-01', '2052-01-01');
-		} else {
-			updateChartOverlayDates('2023-01-01', '2051-01-01');
-		}
 	});
 
 	/**
@@ -158,7 +108,6 @@
 	 * @param {ScenarioViewSection} view
 	 */
 	function handleDisplayViewChange(prevView, view) {
-		console.log('prevView', prevView, 'view', view);
 		if (prevView === view) return;
 
 		$selectedViewSection = view;
@@ -169,8 +118,12 @@
 			$selectedFuelTechGroup = groupScenarioOptions[0].value;
 		}
 
-		dataVizStores.forEach((store) => {
-			store.reset();
+		chartsList.forEach((chart) => {
+			chart.seriesData = [];
+			chart.seriesNames = [];
+			chart.seriesColours = {};
+			chart.seriesLabels = {};
+			chart.setYDomain(undefined);
 		});
 	}
 
@@ -228,14 +181,10 @@
 			{/if}
 		</section>
 
-		<!-- <h4 class="font-space uppercase text-sm text-dark-grey border-t border-warm-grey p-10">
-			Scenarios
-		</h4> -->
 		<ScenarioSelection mobileView={true} />
 
 		{#snippet buttons()}
 			<div class="flex gap-3 text-base">
-				<!-- <Button class="w-full">Cancel</Button> -->
 				<Button
 					class="bg-dark-grey! text-white hover:bg-black! w-full"
 					onclick={() => (showMobileFilterOptions = false)}>Close</Button
@@ -246,9 +195,9 @@
 {/if}
 
 <div
-	class="max-w-none flex gap-10 md:gap-16 justify-between px-10 md:px-16 py-6 border-b border-warm-grey"
+	class="max-w-none flex gap-4 md:gap-8 justify-between px-8 pt-3 pb-3 border-b border-warm-grey"
 >
-	<div class="w-full flex items-center justify-between md:justify-start gap-8 md:gap-18">
+	<div class="w-full flex items-center justify-between md:justify-start gap-4">
 		<div class="sm:hidden">
 			<FormSelect
 				options={viewSectionOptions}
@@ -264,18 +213,18 @@
 				buttons={/** @type {any} */ (viewSectionOptions)}
 				selected={$selectedViewSection}
 				onchange={(option) => handleDisplayViewChange($selectedViewSection, /** @type {ScenarioViewSection} */ (option.value))}
-				class="justify-center my-4"
+				class="justify-center"
 			/>
 		</div>
 
-		<div class="md:hidden pl-8 ml-4 border-l border-warm-grey">
+		<div class="md:hidden pl-4 ml-2 border-l border-warm-grey">
 			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 				<IconAdjustmentsHorizontal class="size-10" />
 			</ButtonIcon>
 		</div>
 
 		<div
-			class="hidden md:flex py-2 items-center gap-6 pl-4 ml-4 relative z-40 border-l border-warm-grey"
+			class="hidden md:flex items-center gap-2 ml-4 pl-4 relative z-40 border-l border-warm-grey"
 		>
 			<div class="flex items-center whitespace-nowrap">
 				<FormMultiSelect
@@ -298,15 +247,9 @@
 				{/if}
 			</div>
 
-			<!-- <FormSelect
-				options={groupOptions}
-				selected={$selectedFuelTechGroup}
-				onchange={(option) => ($selectedFuelTechGroup = option.value)}
-			/> -->
-
 			{#if $singleSelectionModel && $singleSelectionScenario}
 				<button
-					class="text-sm flex items-center gap-3 justify-center px-8 py-4 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
+					class="text-sm flex items-center gap-2 justify-center px-6 py-3 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
 					class:border-dark-grey={$showScenarioOptions}
 					class:border-mid-warm-grey={!$showScenarioOptions}
 					onclick={() => ($showScenarioOptions = !$showScenarioOptions)}
@@ -327,9 +270,8 @@
 		</div>
 	</div>
 
-	<div class="hidden sm:flex items-center gap-4 border-l border-warm-grey pl-8">
-		<DownloadButton />
-		<LinkCopyButton />
+	<div class="flex items-center border-l border-warm-grey pl-4 ml-4">
+		<OptionsMenu {isFullscreen} onfullscreenchange={() => onfullscreenchange?.()} onshowshortcuts={() => onshowshortcuts?.()} />
 	</div>
 </div>
 

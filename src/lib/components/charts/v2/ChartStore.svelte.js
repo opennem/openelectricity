@@ -136,6 +136,9 @@ export default class ChartStore {
 	/** @type {Date[] | undefined} */
 	xGridlineTicks = $state();
 
+	/** @type {any[]} */
+	xHighlightTicks = $state([]);
+
 	/** @type {number[] | number | undefined} */
 	yTicks = $state();
 

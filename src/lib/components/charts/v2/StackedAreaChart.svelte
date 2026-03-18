@@ -258,11 +258,13 @@
 					stroke={styles.yAxisStroke}
 					zeroValueStroke={styles.zeroValueStroke || styles.yAxisStroke}
 					showLastTick={styles.showLastYTick}
+					lastTickDy={styles.lastYTickDy}
 				/>
 
 				<AxisX
 					ticks={chart.xTicks}
 					gridlineTicks={chart.xGridlineTicks}
+					highlightTicks={chart.xHighlightTicks}
 					formatTick={chart.formatTickXWithTimeZone}
 					gridlines={styles.xGridlines}
 					tickMarks={true}

@@ -1,34 +1,32 @@
 <script>
-	import LineChart from '$lib/components/charts/LineChart.svelte';
-	// import Icon from '$lib/components/Icon.svelte';
+	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
+	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
 
 	import { scenarioLabelMap } from '../page-data-options/models';
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {any} seriesNames
-	 * @property {any} seriesLabels
-	 * @property {any} seriesColours
-	 * @property {any} xTicks
-	 * @property {any} formatTickX
-	 * @property {any} formatTickY
-	 * @property {any} chartOverlay
-	 * @property {any} chartOverlayLine
-	 * @property {any} chartOverlayHatchStroke
-	 * @property {any} hoverData
-	 * @property {any} focusData
+	 * @property {string[]} seriesNames
+	 * @property {Record<string, string>} seriesLabels
+	 * @property {Record<string, string>} seriesColours
+	 * @property {TimeSeriesData[]} seriesData
+	 * @property {string[]} [seriesLoadsIds]
 	 * @property {string} [displayUnit]
 	 * @property {boolean} [isButton]
 	 * @property {string} [selected]
-	 * @property {any} [seriesPathways]
-	 * @property {TimeSeriesData[]} seriesData
-	 * @property {string[]} [seriesLoadsIds]
+	 * @property {Record<string, string> | null} [seriesPathways]
 	 * @property {boolean} [showArea]
 	 * @property {string} [gridColClass]
 	 * @property {string} [sectionBorderClass]
-	 * @property {(data: any) => void} [onmousemove]
-	 * @property {() => void} [onmouseout]
-	 * @property {(data: any) => void} [onpointerup]
+	 * @property {number | undefined} [hoverTime]
+	 * @property {number | undefined} [focusTime]
+	 * @property {any} [xTicks]
+	 * @property {(value: any, timeZone?: string) => string} [formatTickX]
+	 * @property {(value: number) => string} [formatTickY]
+	 * @property {number | undefined} [overlayStart]
+	 * @property {(time: number, key?: string) => void} [onhover]
+	 * @property {() => void} [onhoverend]
+	 * @property {(time: number) => void} [onfocus]
 	 * @property {(detail: { key: string }) => void} [onscenarioclick]
 	 */
 
@@ -37,48 +35,26 @@
 		seriesNames,
 		seriesLabels,
 		seriesColours,
-		xTicks,
-		formatTickX,
-		formatTickY,
-		chartOverlay,
-		chartOverlayLine,
-		chartOverlayHatchStroke,
-		hoverData,
-		focusData,
+		seriesData,
+		seriesLoadsIds = [],
 		displayUnit = '',
 		isButton = false,
 		selected = '',
 		seriesPathways = null,
-		seriesData,
-		seriesLoadsIds = [],
 		showArea = true,
 		gridColClass = 'grid-cols-2 md:grid-cols-3',
 		sectionBorderClass = '',
-		onmousemove,
-		onmouseout,
-		onpointerup,
+		hoverTime,
+		focusTime,
+		xTicks,
+		formatTickX,
+		formatTickY,
+		overlayStart,
+		onhover,
+		onhoverend,
+		onfocus,
 		onscenarioclick
 	} = $props();
-
-	/**
-	 * @param {string} key
-	 */
-	function isLoad(key) {
-		return seriesLoadsIds.includes(key);
-	}
-
-	/**
-	 * @param {TimeSeriesData | undefined} data
-	 * @param {string} key
-	 */
-	function getUpdatedData(data, key) {
-		if (!data) return undefined;
-		const updatedData = { ...data };
-		if (isLoad(key)) {
-			updatedData[key] = data[key] ? -data[key] : data[key];
-		}
-		return updatedData;
-	}
 
 	/**
 	 * @param {string} key
@@ -88,8 +64,41 @@
 			onscenarioclick?.({ key });
 		}
 	}
+
 	let tag = $derived(isButton ? 'button' : 'header');
-	let keys = $derived([...seriesNames].reverse());
+
+	// Normalise overlayStart to a ms timestamp
+	let overlayStartMs = $derived.by(() => {
+		if (overlayStart == null) return undefined;
+		if (typeof overlayStart === 'number') return overlayStart;
+		const d = /** @type {any} */ (overlayStart)?.date;
+		return d ? +new Date(d) : undefined;
+	});
+
+	// Overlay start as a Date (shared reference for ticks + highlight)
+	let overlayStartDate = $derived(overlayStartMs != null ? new Date(overlayStartMs) : null);
+
+	// Compute mini chart ticks: start year, overlay start year, end year
+	let miniTicks = $derived.by(() => {
+		if (!seriesData.length) return xTicks;
+		const first = seriesData[0];
+		const last = seriesData[seriesData.length - 1];
+		if (!first?.time || !last?.time) return xTicks;
+
+		/** @type {Date[]} */
+		const ticks = [new Date(first.time), new Date(last.time)];
+
+		if (overlayStartDate) {
+			ticks.splice(1, 0, overlayStartDate);
+		}
+
+		return ticks;
+	});
+
+	// Highlight ticks — same reference as in miniTicks for exact match
+	let highlightTicks = $derived(overlayStartDate ? [overlayStartDate] : []);
+
+	/** Negate loads in the dataset */
 	let dataset = $derived(
 		seriesData.map((d) => {
 			const obj = { ...d };
@@ -99,23 +108,103 @@
 			return obj;
 		})
 	);
-	let getMaxValue = $derived((/** @type {string} */ key) => {
-		const values = /** @type {number[]} */ (dataset.map((d) => d[key] || 0));
-		const maxValue = Math.round(Math.max(...values));
-		return maxValue < 10 ? 10 : maxValue;
+
+	/**
+	 * Store pool + reactive entries list.
+	 * A single $effect syncs all props into ChartStore instances — this is the
+	 * correct pattern because ChartStore is an external stateful object (its
+	 * properties are $state) that cannot be written inside $derived.
+	 */
+	const storePool = new Map();
+
+	/** @type {Array<[string, ChartStore]>} */
+	let miniChartEntries = $state([]);
+
+	$effect(() => {
+		const chartType = showArea ? 'stacked-area' : 'line';
+		const currentKeys = new Set(seriesNames);
+
+		for (const key of storePool.keys()) {
+			if (!currentKeys.has(key)) storePool.delete(key);
+		}
+
+		for (const key of seriesNames) {
+			let store = storePool.get(key);
+			if (!store) {
+				store = new ChartStore({
+					key: Symbol(key),
+					chartType,
+					hideDataOptions: true,
+					hideChartTypeOptions: true,
+					chartStyles: { chartHeightClasses: 'h-[150px]' }
+				});
+				storePool.set(key, store);
+			}
+
+			store.seriesData = dataset;
+			store.seriesNames = [key];
+			store.seriesColours = { [key]: seriesColours[key] };
+			store.seriesLabels = { [key]: seriesLabels[key] };
+			store.hoverTime = hoverTime;
+			store.focusTime = focusTime;
+			// Show gridlines but make default stroke transparent — only highlighted ticks visible
+			store.chartStyles.xGridlines = true;
+			store.chartStyles.xAxisStroke = 'transparent';
+			store.chartStyles.lastYTickDy = 10;
+			store.xHighlightTicks = highlightTicks;
+			if (miniTicks) store.xTicks = miniTicks;
+			if (formatTickX) store.formatTickX = formatTickX;
+
+			// Y-axis: set ticks to data min/max and use parent's formatter
+			if (formatTickY) {
+				store.useFormatY = true;
+				store.formatY = formatTickY;
+			}
+			const seriesKey = key;
+			const vals = dataset
+				.map((d) => /** @type {number | null} */ (d[seriesKey]))
+				.filter((v) => v != null);
+			if (vals.length) {
+				const min = Math.min(0, .../** @type {number[]} */ (vals));
+				const max = Math.max(.../** @type {number[]} */ (vals));
+				store.yTicks = [min, max];
+			}
+		}
+
+		miniChartEntries = seriesNames.map(
+			(key) => /** @type {[string, ChartStore]} */ ([key, storePool.get(key)])
+		);
 	});
+
+	/**
+	 * @param {ChartStore} store
+	 * @param {string} key
+	 * @returns {number | undefined}
+	 */
+	function getDisplayValue(store, key) {
+		const data = store.hoverData || store.focusData;
+		if (!data) return undefined;
+		const raw = /** @type {number | undefined} */ (data[key]);
+		if (raw == null) return undefined;
+		return seriesLoadsIds.includes(key) ? -raw : raw;
+	}
+
+	/**
+	 * @param {ChartStore} store
+	 */
+	function getDisplayTime(store) {
+		return store.hoverTime || store.focusTime;
+	}
 </script>
 
 <div class="grid {gridColClass} gap-3">
-	{#each keys as key (key)}
+	{#each [...miniChartEntries].reverse() as [key, store] (key)}
 		{@const title = scenarioLabelMap[key] || seriesLabels[key]}
-		{@const updatedHoverData = getUpdatedData(hoverData, key)}
-		{@const updatedFocusData = getUpdatedData(focusData, key)}
-		{@const hoverValue = updatedHoverData ? updatedHoverData[key] || '—' : '—'}
-		{@const focusValue = updatedFocusData ? updatedFocusData[key] || '—' : '—'}
-		{@const yTicks = [0, getMaxValue(key)]}
+		{@const displayValue = getDisplayValue(store, key)}
+		{@const displayTime = getDisplayTime(store)}
+
 		<section
-			class="p-8 border-warm-grey border"
+			class="p-8 border-warm-grey border {sectionBorderClass}"
 			class:rounded-xl={isButton}
 			class:hover:!border-mid-warm-grey={isButton}
 			class:!border-mid-grey={selected === key}
@@ -134,54 +223,32 @@
 					{#if seriesPathways && seriesPathways[key]}
 						<small class="text-xs text-mid-grey">{seriesPathways[key]}</small>
 					{/if}
-					<!-- {#if fuelTechId}
-						<Icon icon={fuelTechId} size={28} />
-					{/if} -->
 				</div>
 
 				<h3 class="leading-sm h-14 mt-4 mb-0">
-					{#if hoverData}
-						{formatTickY(hoverValue)}
-						<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
-					{:else if focusData}
-						{formatTickY(focusValue)}
+					{#if displayTime}
+						{displayValue != null && formatTickY ? formatTickY(displayValue) : '—'}
 						<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
 					{/if}
 				</h3>
 			</svelte:element>
 
 			<div class="text-right h-8">
-				{#if hoverData}
+				{#if displayTime && formatTickX}
 					<span class="text-mid-grey text-xs">
-						{formatTickX(hoverData.time)}
-					</span>
-				{:else if focusData}
-					<span class="text-mid-grey text-xs">
-						{formatTickX(focusData.time)}
+						{formatTickX(displayTime)}
 					</span>
 				{/if}
 			</div>
 
-			<LineChart
-				{dataset}
-				xKey="date"
-				yKey={key}
-				zKey={seriesColours[key]}
-				{xTicks}
-				{yTicks}
-				{formatTickX}
-				{formatTickY}
-				overlay={chartOverlay}
-				overlayLine={chartOverlayLine}
-				overlayStroke={chartOverlayHatchStroke}
-				hoverData={updatedHoverData}
-				focusData={updatedFocusData}
-				{showArea}
-				chartHeightClasses="h-[150px]"
-				{onmousemove}
-				{onmouseout}
-				onpointerup={onpointerup}
-				onmousedown={() => handleScenarioClick(key)}
+			<StratumChart
+				chart={store}
+				overlayStart={overlayStartMs}
+				showHeader={false}
+				showTooltip={false}
+				{onhover}
+				{onhoverend}
+				{onfocus}
 			/>
 		</section>
 	{/each}

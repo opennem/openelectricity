@@ -1,5 +1,5 @@
 <script>
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext } from 'svelte';
 	import { color } from 'd3-color';
 	import { scenarioLabelMap } from '../page-data-options/models';
 	import { modelLabelMap } from '../page-data-options/models';
@@ -9,59 +9,15 @@
 	 * @typedef {Object} Props
 	 * @property {string[]} [hiddenRowNames]
 	 * @property {string} [title]
+	 * @property {(detail: { name: string, isMetaPressed: boolean, allNames: string[] }) => void} [onrowclick]
 	 */
 
 	/** @type {Props} */
-	let { hiddenRowNames = [], title = '' } = $props();
+	let { hiddenRowNames = [], title = '', onrowclick } = $props();
 
-	const dispatch = createEventDispatcher();
 	const { includeBatteryAndLoads } = getContext('scenario-filters');
 	const { orderedModelScenarioPathways } = getContext('by-scenario');
-	const {
-		seriesNames: energySeriesNames,
-		seriesLabels: energySeriesLabels,
-		seriesColours: energySeriesColours,
-		hoverData: energyHoverData,
-		hoverTime: energyHoverTime,
-		focusData: energyFocusData,
-		focusTime: energyFocusTime,
-		convertAndFormatValue: energyConvertAndFormatValue,
-		displayUnit: energyDisplayUnit,
-		displayPrefix: energyDisplayPrefix,
-		getNextPrefix: getEnergyNextPrefix
-	} = getContext('energy-data-viz');
-
-	const {
-		hoverData: emissionsHoverData,
-		focusData: emissionsFocusData,
-		convertAndFormatValue: emissionsConvertAndFormatValue,
-		displayUnit: emissionsDisplayUnit,
-		displayPrefix: emissionsDisplayPrefix,
-		getNextPrefix: getEmissionsNextPrefix
-	} = getContext('emissions-data-viz');
-	const {
-		hoverData: intensityHoverData,
-		focusData: intensityFocusData,
-		convertAndFormatValue: intensityConvertAndFormatvalue,
-		displayUnit: intensityDisplayUnit
-	} = getContext('intensity-data-viz');
-	const {
-		// seriesNames: capacitySeriesNames,
-		// seriesLabels: capacitySeriesLabels,
-		hoverData: capacityHoverData,
-		focusData: capacityFocusData,
-		convertAndFormatValue: capacityConvertAndFormatValue,
-		displayUnit: capacityDisplayUnit,
-		displayPrefix: capacityDisplayPrefix,
-		getNextPrefix: getCapacityNextPrefix
-	} = getContext('capacity-data-viz');
-
-	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
-
-	// $: orderedModels = Object.keys(modelScenarios).filter((d) => selectedModels.find((e) => e.model === d);
-	// $: console.log('selectedModels', selectedModels);
-	// $: console.log('orderedModels', orderedModels);
-	// $: console.log('orderedModelScenarioPathways', $orderedModelScenarioPathways);
+	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
 
 	let isMetaPressed = false;
 
@@ -69,7 +25,7 @@
 	 * @param {string} name
 	 */
 	function handleRowClick(name) {
-		dispatch('row-click', { name, isMetaPressed, allNames: $energySeriesNames });
+		onrowclick?.({ name, isMetaPressed, allNames: generation.seriesNames });
 	}
 
 	function handleKeyup() {
@@ -101,7 +57,7 @@
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
 		includeBatteryAndLoads={$includeBatteryAndLoads}
-		hoverTime={$energyHoverTime || $energyFocusTime}
+		hoverTime={generation.hoverTime || generation.focusTime}
 		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
 	/>
 	<table class="w-full border border-warm-grey mb-8">
@@ -115,9 +71,9 @@
 						<span class="block text-xs">Generation</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							onclick={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
+							onclick={() => generation.chartOptions.cyclePrefix()}
 						>
-							{$energyDisplayUnit}
+							{generation.chartOptions.displayUnit}
 						</button>
 					</div>
 				</th>
@@ -127,9 +83,9 @@
 						<span class="block text-xs">Capacity</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							onclick={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
+							onclick={() => capacity.chartOptions.cyclePrefix()}
 						>
-							{$capacityDisplayUnit}
+							{capacity.chartOptions.displayUnit}
 						</button>
 					</div>
 				</th>
@@ -139,16 +95,16 @@
 						<span class="block text-xs">Emissions</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							onclick={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
+							onclick={() => emissions.chartOptions.cyclePrefix()}
 						>
-							{$emissionsDisplayUnit}
+							{emissions.chartOptions.displayUnit}
 						</button>
 					</div>
 				</th>
 				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Intensity</span>
-						<small class="font-light text-xxs">{$intensityDisplayUnit}</small>
+						<small class="font-light text-xxs">{intensity.chartOptions.displayUnit}</small>
 					</div>
 				</th>
 			</tr>
@@ -174,8 +130,8 @@
 						{:else}
 							<div
 								class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
-								style:background-color={$energySeriesColours['historical']}
-								style:border-color={darken($energySeriesColours['historical'])}
+								style:background-color={generation.seriesColours['historical']}
+								style:border-color={darken(generation.seriesColours['historical'])}
 							></div>
 						{/if}
 						<div>Historical</div>
@@ -184,39 +140,39 @@
 
 				<td class="px-2 py-1 align-top">
 					<div class="font-mono flex flex-col items-end">
-						{$energyHoverData
-							? $energyConvertAndFormatValue($energyHoverData['historical'])
-							: $energyFocusData
-								? $energyConvertAndFormatValue($energyFocusData['historical'])
+						{generation.hoverData
+							? generation.convertAndFormatValue(generation.hoverData['historical'])
+							: generation.focusData
+								? generation.convertAndFormatValue(generation.focusData['historical'])
 								: ''}
 					</div>
 				</td>
 
 				<td class="px-2 py-1 align-top">
 					<div class="font-mono flex flex-col items-end">
-						{$capacityHoverData
-							? $capacityConvertAndFormatValue($capacityHoverData['historical'])
-							: $capacityFocusData
-								? $capacityConvertAndFormatValue($capacityFocusData['historical'])
+						{capacity.hoverData
+							? capacity.convertAndFormatValue(capacity.hoverData['historical'])
+							: capacity.focusData
+								? capacity.convertAndFormatValue(capacity.focusData['historical'])
 								: ''}
 					</div>
 				</td>
 
 				<td class="px-2 py-1 align-top">
 					<div class="font-mono flex flex-col items-end">
-						{$emissionsHoverData
-							? $emissionsConvertAndFormatValue($emissionsHoverData['historical'])
-							: $emissionsFocusData
-								? $emissionsConvertAndFormatValue($emissionsFocusData['historical'])
+						{emissions.hoverData
+							? emissions.convertAndFormatValue(emissions.hoverData['historical'])
+							: emissions.focusData
+								? emissions.convertAndFormatValue(emissions.focusData['historical'])
 								: ''}
 					</div>
 				</td>
 				<td class="px-2 py-1 align-top">
 					<div class="font-mono flex flex-col items-end mr-3">
-						{$intensityHoverData
-							? $intensityConvertAndFormatvalue($intensityHoverData['historical'])
-							: $intensityFocusData
-								? $intensityConvertAndFormatvalue($intensityFocusData['historical'])
+						{intensity.hoverData
+							? intensity.convertAndFormatValue(intensity.hoverData['historical'])
+							: intensity.focusData
+								? intensity.convertAndFormatValue(intensity.focusData['historical'])
 								: ''}
 					</div>
 				</td>
@@ -261,8 +217,8 @@
 									{:else}
 										<div
 											class="w-6 h-6 min-w-6 min-h-6 border rounded-sm relative top-1"
-											style:background-color={$energySeriesColours[id]}
-											style:border-color={darken($energySeriesColours[id])}
+											style:background-color={generation.seriesColours[id]}
+											style:border-color={darken(generation.seriesColours[id])}
 										></div>
 									{/if}
 									<div class="text-mid-grey font-normal block">{pathway}</div>
@@ -271,39 +227,39 @@
 
 							<td class="px-2 py-1 align-top">
 								<div class="font-mono flex flex-col items-end">
-									{$energyHoverData
-										? $energyConvertAndFormatValue($energyHoverData[id])
-										: $energyFocusData
-											? $energyConvertAndFormatValue($energyFocusData[id])
+									{generation.hoverData
+										? generation.convertAndFormatValue(generation.hoverData[id])
+										: generation.focusData
+											? generation.convertAndFormatValue(generation.focusData[id])
 											: ''}
 								</div>
 							</td>
 
 							<td class="px-2 py-1 align-top">
 								<div class="font-mono flex flex-col items-end">
-									{$capacityHoverData
-										? $capacityConvertAndFormatValue($capacityHoverData[id])
-										: $capacityFocusData
-											? $capacityConvertAndFormatValue($capacityFocusData[id])
+									{capacity.hoverData
+										? capacity.convertAndFormatValue(capacity.hoverData[id])
+										: capacity.focusData
+											? capacity.convertAndFormatValue(capacity.focusData[id])
 											: ''}
 								</div>
 							</td>
 
 							<td class="px-2 py-1 align-top">
 								<div class="font-mono flex flex-col items-end">
-									{$emissionsHoverData
-										? $emissionsConvertAndFormatValue($emissionsHoverData[id])
-										: $emissionsFocusData
-											? $emissionsConvertAndFormatValue($emissionsFocusData[id])
+									{emissions.hoverData
+										? emissions.convertAndFormatValue(emissions.hoverData[id])
+										: emissions.focusData
+											? emissions.convertAndFormatValue(emissions.focusData[id])
 											: ''}
 								</div>
 							</td>
 							<td class="px-2 py-1 align-top">
 								<div class="font-mono flex flex-col items-end mr-3">
-									{$intensityHoverData
-										? $intensityConvertAndFormatvalue($intensityHoverData[id])
-										: $intensityFocusData
-											? $intensityConvertAndFormatvalue($intensityFocusData[id])
+									{intensity.hoverData
+										? intensity.convertAndFormatValue(intensity.hoverData[id])
+										: intensity.focusData
+											? intensity.convertAndFormatValue(intensity.focusData[id])
 											: ''}
 								</div>
 							</td>

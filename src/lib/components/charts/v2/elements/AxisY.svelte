@@ -25,6 +25,7 @@
 	 * @property {any} [yLabelStartPos] - Custom start position for labels
 	 * @property {string} [zeroValueStroke] - Stroke colour for zero line
 	 * @property {boolean} [showLastTick] - Show the last (top) tick
+	 * @property {number | null} [lastTickDy] - dy offset for the last (top) tick label. null = use dyTick
 	 */
 
 	/** @type {Props} */
@@ -43,7 +44,8 @@
 		textAnchor = 'start',
 		yLabelStartPos = null,
 		zeroValueStroke = '#353535',
-		showLastTick = true
+		showLastTick = true,
+		lastTickDy = null
 	} = $props();
 
 	// Check if scale has bandwidth (band scale)
@@ -116,7 +118,7 @@
 				x={xTick}
 				y={isBandwidth ? $yScale.bandwidth() / 2 + yTick : yTick}
 				dx={isBandwidth ? -9 : dxTick}
-				dy={isBandwidth ? 4 : dyTick}
+				dy={isBandwidth ? 4 : (isLastTick && lastTickDy != null) ? lastTickDy : dyTick}
 				style="text-anchor: {isBandwidth ? 'end' : textAnchor};"
 			>
 				{formatTick(tick)}

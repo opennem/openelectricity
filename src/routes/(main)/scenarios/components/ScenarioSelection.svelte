@@ -56,12 +56,6 @@
 			: []
 	);
 
-	// $: console.log('selectedPathways', selectedPathways);
-	// $: console.log('focusScenarioModel', focusScenarioModel);
-	// $: console.log('focusPathways', focusPathways);
-
-	// $: console.log('singleSelectionData', $singleSelectionData);
-
 	/**
 	 * @param {string} id
 	 */

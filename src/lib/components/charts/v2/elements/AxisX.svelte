@@ -28,6 +28,8 @@
 	 * @property {string} [textClass] - CSS class for tick labels
 	 * @property {string} [xTextClasses] - Alias for textClass (backwards compatibility)
 	 * @property {boolean} [stepMode] - Step chart mode: tick marks at gridline positions, labels at midpoints
+	 * @property {any[]} [highlightTicks] - Tick values to render with a darker, solid stroke
+	 * @property {string} [highlightStroke] - Stroke colour for highlighted gridlines
 	 */
 
 	/** @type {Props} */
@@ -49,8 +51,12 @@
 		textAnchor = 'middle',
 		textClass = 'text-xxs font-light text-mid-warm-grey',
 		xTextClasses = '',
-		stepMode = false
+		stepMode = false,
+		highlightTicks = [],
+		highlightStroke = '#333'
 	} = $props();
+
+	let highlightTickSet = $derived(new Set(highlightTicks.map((/** @type {*} */ t) => +t)));
 
 	// Use xTextClasses if provided (backwards compatibility)
 	let effectiveTextClass = $derived(xTextClasses || textClass);
@@ -96,10 +102,11 @@
 		{#each gridlineTickVals as tick (tick)}
 			{@const xPos = $xScale(tick)}
 			{@const yPos = Math.max(...$yRange)}
+			{@const isHighlighted = highlightTickSet.has(+tick)}
 			<line
 				class="gridline"
-				{stroke}
-				stroke-dasharray={strokeArray}
+				stroke={isHighlighted ? highlightStroke : stroke}
+				stroke-dasharray={isHighlighted ? '2' : strokeArray}
 				y1={yPos - $height}
 				y2={yPos}
 				x1={xPos}

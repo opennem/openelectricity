@@ -71,6 +71,9 @@ export default class ChartStyles {
 	/** @type {boolean} */
 	showLastYTick = $state(true);
 
+	/** @type {number | null} */
+	lastYTickDy = $state(null);
+
 	/** @type {string} */
 	zeroValueStroke = $state('#33333344');
 

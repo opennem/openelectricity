@@ -1,6 +1,4 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { getContext } from 'svelte';
 	import Switch from '$lib/components/Switch.svelte';
 
@@ -9,33 +7,34 @@
 	import ScenarioDescription from './ScenarioDescription.svelte';
 	import MiniCharts from './MiniCharts.svelte';
 
-	/** @type {Object.<string, *>} */
-	const dataVizStores = {
-		energyDataVizStore: getContext('energy-data-viz'),
-		emissionsDataVizStore: getContext('emissions-data-viz'),
-		capacityDataVizStore: getContext('capacity-data-viz'),
-		intensityDataVizStore: getContext('intensity-data-viz')
-	};
 	/**
 	 * @typedef {Object} Props
-	 * @property {(data: any) => void} [onmousemove]
-	 * @property {() => void} [onmouseout]
-	 * @property {(data: any) => void} [onpointerup]
+	 * @property {(data: any) => void} [onhover]
+	 * @property {() => void} [onhoverend]
+	 * @property {(data: any) => void} [onfocus]
 	 */
 
 	/** @type {Props} */
-	let { onmousemove, onmouseout, onpointerup } = $props();
+	let { onhover, onhoverend, onfocus } = $props();
 
 	const { multiSelectionData } = getContext('scenario-filters');
 	const { orderedModelScenarioPathways, isScenarioViewSection } = getContext('by-scenario');
+	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
+
+	/** @type {Object.<string, *>} */
+	const chartStores = {
+		generation,
+		emissions,
+		capacity
+	};
 
 	const stores = [
-		{ value: 'energyDataVizStore', label: 'Generation' },
-		{ value: 'emissionsDataVizStore', label: 'Emissions' },
-		{ value: 'capacityDataVizStore', label: 'Capacity' }
+		{ value: 'generation', label: 'Generation' },
+		{ value: 'emissions', label: 'Emissions' },
+		{ value: 'capacity', label: 'Capacity' }
 	];
 
-	let selectedStoreName = $state('energyDataVizStore');
+	let selectedStoreName = $state('generation');
 	let selectedScenarioId = $state('');
 	let selectedScenarioPathwayId = $state('');
 
@@ -52,32 +51,25 @@
 		$multiSelectionData.find((/** @type {any} */ d) => `${d.model}-${d.scenario}` === selectedScenarioId)
 	);
 
-	let isEmissionsView = $derived(selectedStoreName === 'emissionsDataVizStore');
+	let isEmissionsView = $derived(selectedStoreName === 'emissions');
 
-	let selectedStore = $derived(dataVizStores[selectedStoreName]);
+	let selectedStore = $derived(chartStores[selectedStoreName]);
 	let seriesNames = $derived(selectedStore.seriesNames);
 	let seriesColours = $derived(selectedStore.seriesColours);
-	let xTicks = $derived(selectedStore.miniXTicks);
+	let xTicks = $derived(selectedStore.xTicks);
 	let formatTickX = $derived(selectedStore.formatTickX);
 	let formatTickY = $derived(selectedStore.convertAndFormatValue);
-	let chartOverlay = $derived(selectedStore.chartOverlay);
-	let chartOverlayLine = $derived(selectedStore.chartOverlayLine);
-	let chartOverlayHatchStroke = $derived(selectedStore.chartOverlayHatchStroke);
-	// $: hoverData = selectedStore.hoverData;
-	// $: focusData = selectedStore.focusData;
+	let overlayStart = $derived(selectedStore.chartStyles.chartOverlayLine);
 	let hoverTime = $derived(selectedStore.hoverTime);
 	let focusTime = $derived(selectedStore.focusTime);
 	let seriesData = $derived(selectedStore.seriesData);
-	let displayUnit = $derived(selectedStore.displayUnit);
+	let displayUnit = $derived(selectedStore.chartOptions.displayUnit);
 
-	let intensityStore = $derived(dataVizStores.intensityDataVizStore);
-	let intensitySeriesNames = $derived(intensityStore.seriesNames);
-	let intensityFormatTickY = $derived(intensityStore.convertAndFormatValue);
-	let intensitySeriesColours = $derived(intensityStore.seriesColours);
-	let intensityHoverData = $derived(intensityStore.hoverData);
-	let intensityFocusData = $derived(intensityStore.focusData);
-	let intensitySeriesData = $derived(intensityStore.seriesData);
-	let intensityDisplayUnit = $derived(intensityStore.displayUnit);
+	let intensitySeriesNames = $derived(intensity.seriesNames);
+	let intensityFormatTickY = $derived(intensity.convertAndFormatValue);
+	let intensitySeriesColours = $derived(intensity.seriesColours);
+	let intensitySeriesData = $derived(intensity.seriesData);
+	let intensityDisplayUnit = $derived(intensity.chartOptions.displayUnit);
 
 	let seriesPathways = $derived(
 		$multiSelectionData.reduce((/** @type {any} */ acc, /** @type {any} */ d) => {
@@ -86,13 +78,12 @@
 		}, {})
 	);
 
-	/** @type {TimeSeriesData[]} */
-	let mergedSeriesData = $state([]);
 	let seriesNamesWithoutHistorical = $derived(
-		$seriesNames.filter((/** @type {string} */ name) => name !== 'historical')
+		seriesNames.filter((/** @type {string} */ name) => name !== 'historical')
 	);
-	run(() => {
-		mergedSeriesData = $seriesData.map((/** @type {TimeSeriesData} */ d) => {
+	/** @type {TimeSeriesData[]} */
+	let mergedSeriesData = $derived.by(() => {
+		return seriesData.map((/** @type {TimeSeriesData} */ d) => {
 			const obj = {
 				...d
 			};
@@ -107,16 +98,13 @@
 			return obj;
 		});
 	});
-	let hoverData = $derived(mergedSeriesData.find((d) => d.time === $hoverTime));
-	let focusData = $derived(mergedSeriesData.find((d) => d.time === $focusTime));
 
-	/** @type {TimeSeriesData[]} */
-	let mergedIntensityData = $state([]);
 	let intensitySeriesNamesWithoutHistorical = $derived(
-		$intensitySeriesNames.filter((/** @type {string} */ name) => name !== 'historical')
+		intensitySeriesNames.filter((/** @type {string} */ name) => name !== 'historical')
 	);
-	run(() => {
-		mergedIntensityData = $intensitySeriesData.map((/** @type {TimeSeriesData} */ d) => {
+	/** @type {TimeSeriesData[]} */
+	let mergedIntensityData = $derived.by(() => {
+		return intensitySeriesData.map((/** @type {TimeSeriesData} */ d) => {
 			const obj = {
 				...d
 			};
@@ -130,8 +118,6 @@
 			return obj;
 		});
 	});
-
-	// $: console.log('hoverData', hoverData);
 
 	/**
 	 * @param {{ key: string }} detail
@@ -205,22 +191,20 @@
 							selected={selectedScenarioPathwayId}
 							seriesNames={names}
 							seriesLabels={labels}
-							seriesColours={$seriesColours}
+							{seriesColours}
 							{seriesPathways}
-							xTicks={$xTicks}
-							formatTickX={$formatTickX}
-							formatTickY={$formatTickY}
-							chartOverlay={$chartOverlay}
-							chartOverlayLine={$chartOverlayLine}
-							chartOverlayHatchStroke={$chartOverlayHatchStroke}
-							{hoverData}
-							{focusData}
+							{xTicks}
+							{formatTickX}
+							{formatTickY}
+							{hoverTime}
+							{focusTime}
+							{overlayStart}
 							seriesData={mergedSeriesData}
-							displayUnit={$displayUnit}
+							{displayUnit}
 							gridColClass="grid-cols-1"
-							{onmousemove}
-							{onmouseout}
-							{onpointerup}
+							{onhover}
+							{onhoverend}
+							{onfocus}
 							onscenarioclick={handleScenarioSelect}
 						/>
 						<MiniCharts
@@ -228,23 +212,21 @@
 							selected={selectedScenarioPathwayId}
 							seriesNames={names}
 							seriesLabels={labels}
-							seriesColours={$intensitySeriesColours}
+							seriesColours={intensitySeriesColours}
 							{seriesPathways}
-							xTicks={$xTicks}
-							formatTickX={$formatTickX}
-							formatTickY={$intensityFormatTickY}
-							chartOverlay={$chartOverlay}
-							chartOverlayLine={$chartOverlayLine}
-							chartOverlayHatchStroke={$chartOverlayHatchStroke}
-							hoverData={$intensityHoverData}
-							focusData={$intensityFocusData}
+							{xTicks}
+							{formatTickX}
+							formatTickY={intensityFormatTickY}
+							{hoverTime}
+							{focusTime}
+							{overlayStart}
 							seriesData={mergedIntensityData}
-							displayUnit={$intensityDisplayUnit}
+							displayUnit={intensityDisplayUnit}
 							showArea={false}
 							gridColClass="grid-cols-1"
-							{onmousemove}
-							{onmouseout}
-							{onpointerup}
+							{onhover}
+							{onhoverend}
+							{onfocus}
 							onscenarioclick={handleScenarioSelect}
 						/>
 					</div>
@@ -254,21 +236,19 @@
 						selected={selectedScenarioPathwayId}
 						seriesNames={names}
 						seriesLabels={labels}
-						seriesColours={$seriesColours}
+						{seriesColours}
 						{seriesPathways}
-						xTicks={$xTicks}
-						formatTickX={$formatTickX}
-						formatTickY={$formatTickY}
-						chartOverlay={$chartOverlay}
-						chartOverlayLine={$chartOverlayLine}
-						chartOverlayHatchStroke={$chartOverlayHatchStroke}
-						{hoverData}
-						{focusData}
+						{xTicks}
+						{formatTickX}
+						{formatTickY}
+						{hoverTime}
+						{focusTime}
+						{overlayStart}
 						seriesData={mergedSeriesData}
-						displayUnit={$displayUnit}
-						{onmousemove}
-						{onmouseout}
-						{onpointerup}
+						{displayUnit}
+						{onhover}
+						{onhoverend}
+						{onfocus}
 						onscenarioclick={handleScenarioSelect}
 					/>
 				{/if}
