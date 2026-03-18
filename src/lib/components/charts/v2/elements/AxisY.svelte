@@ -25,6 +25,7 @@
 	 * @property {any} [yLabelStartPos] - Custom start position for labels
 	 * @property {string} [zeroValueStroke] - Stroke colour for zero line
 	 * @property {boolean} [showLastTick] - Show the last (top) tick
+	 * @property {number | null} [lastTickDy] - dy offset for the last (top) tick label. null = use dyTick
 	 */
 
 	/** @type {Props} */
@@ -43,8 +44,21 @@
 		textAnchor = 'start',
 		yLabelStartPos = null,
 		zeroValueStroke = '#353535',
-		showLastTick = true
+		showLastTick = true,
+		lastTickDy = null,
+		animate = false
 	} = $props();
+
+	// Skip transition on first render — only animate subsequent changes
+	let canTransition = $state(false);
+
+	$effect(() => {
+		if (animate && tickVals.length > 0 && !canTransition) {
+			setTimeout(() => {
+				canTransition = true;
+			}, 100);
+		}
+	});
 
 	// Check if scale has bandwidth (band scale)
 	let isBandwidth = $derived(typeof $yScale.bandwidth === 'function');
@@ -73,7 +87,7 @@
 		{@const isZero = tick === 0}
 		{@const isLastTick = i === tickVals.length - 1}
 
-		<g class="tick tick-{tick}" transform="translate({xStart}, {yPos})">
+		<g class="tick tick-{tick}" class:tick-animate={canTransition} transform="translate({xStart}, {yPos})">
 			<!-- Gridline -->
 			{#if gridlines}
 				<line
@@ -101,6 +115,7 @@
 			{#if tickMarks}
 				<line
 					class="tick-mark"
+					stroke="#999"
 					x1="0"
 					x2={isBandwidth ? -6 : 6}
 					y1={isBandwidth ? $yScale.bandwidth() / 2 : 0}
@@ -116,7 +131,7 @@
 				x={xTick}
 				y={isBandwidth ? $yScale.bandwidth() / 2 + yTick : yTick}
 				dx={isBandwidth ? -9 : dxTick}
-				dy={isBandwidth ? 4 : dyTick}
+				dy={isBandwidth ? 4 : (isLastTick && lastTickDy != null) ? lastTickDy : dyTick}
 				style="text-anchor: {isBandwidth ? 'end' : textAnchor};"
 			>
 				{formatTick(tick)}
@@ -124,3 +139,9 @@
 		</g>
 	{/each}
 </g>
+
+<style>
+	.tick-animate {
+		transition: transform 400ms ease-in-out;
+	}
+</style>

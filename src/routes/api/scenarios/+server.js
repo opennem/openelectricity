@@ -1,29 +1,48 @@
 import { error } from '@sveltejs/kit';
-import { PUBLIC_JSON_URL } from '$env/static/public';
+import { modelPaths } from '../../(main)/scenarios/page-data-options/models';
+import { filterScenarioData, normaliseEmissions } from './utils';
 
-const basePath = PUBLIC_JSON_URL + '/models/v2';
-
-/** @type {*} */
-const modelPaths = {
-	aemo2022: '/2022_ISP_final',
-	aemo2024: '/2024_ISP_final'
-};
+/** @type {Map<string, any>} */
+const fileCache = new Map();
 
 export async function GET({ setHeaders, url, fetch }) {
-	// setHeaders({
-	// 	'cache-control': 'max-age=0'
-	// });
-
 	const { searchParams } = url;
 	const name = searchParams.get('name') || '';
 	const scenario = searchParams.get('scenario') || '';
+	const pathway = searchParams.get('pathway') || '';
+	const region = searchParams.get('region') || '';
+	const dataType = searchParams.get('dataType') || '';
 
-	const dataPath = `${basePath}${modelPaths[name]}/${scenario}.json`;
-
-	const res = await fetch(dataPath);
-	if (res.ok) {
-		return Response.json(await res.json());
+	const basePath = modelPaths[name];
+	if (!basePath) {
+		error(404, 'Invalid model name');
 	}
 
-	error(404, 'Not found');
+	const cacheKey = `${name}/${scenario}`;
+	let jsonData = fileCache.get(cacheKey);
+
+	if (!jsonData) {
+		const dataPath = `${basePath}/${scenario}.json`;
+		const res = await fetch(dataPath);
+
+		if (!res.ok) {
+			error(404, 'Not found');
+		}
+
+		jsonData = await res.json();
+		fileCache.set(cacheKey, jsonData);
+	}
+
+	let filteredData = filterScenarioData(jsonData.data || [], { pathway, region, dataType });
+	filteredData = normaliseEmissions(filteredData);
+
+	setHeaders({
+		'cache-control': 'public, max-age=86400, s-maxage=604800',
+		vary: 'Accept-Encoding'
+	});
+
+	return Response.json({
+		...jsonData,
+		data: filteredData
+	});
 }

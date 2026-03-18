@@ -8,58 +8,35 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} [seriesLoadsIds]
-	 * @property {(data: any) => void} [onmousemove]
-	 * @property {() => void} [onmouseout]
-	 * @property {(data: any) => void} [onpointerup]
+	 * @property {(time: number, key?: string) => void} [onhover]
+	 * @property {() => void} [onhoverend]
+	 * @property {(time: number) => void} [onfocus]
 	 */
 
 	/** @type {Props} */
-	let { seriesLoadsIds = [], onmousemove, onmouseout, onpointerup } = $props();
+	let { seriesLoadsIds = [], onhover, onhoverend, onfocus } = $props();
 
-	/** @type {Object.<string, *>} */
-	const dataVizStores = {
-		energyDataVizStore: getContext('energy-data-viz'),
-		emissionsDataVizStore: getContext('emissions-data-viz'),
-		capacityDataVizStore: getContext('capacity-data-viz'),
-		intensityDataVizStore: getContext('intensity-data-viz')
-	};
-
+	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
 	const { singleSelectionModel } = getContext('scenario-filters');
 
-	let selectedStoreName = $state('energyDataVizStore');
+	/** @type {Record<string, import('$lib/components/charts/v2/ChartStore.svelte.js').default>} */
+	const chartMap = {
+		generation,
+		emissions,
+		capacity
+	};
+
+	let selectedChartKey = $state('generation');
 
 	const stores = [
-		{ value: 'energyDataVizStore', label: 'Generation' },
-		{ value: 'emissionsDataVizStore', label: 'Emissions' },
-		{ value: 'capacityDataVizStore', label: 'Capacity' }
+		{ value: 'generation', label: 'Generation' },
+		{ value: 'emissions', label: 'Emissions' },
+		{ value: 'capacity', label: 'Capacity' }
 	];
 
-	let isEmissionsView = $derived(selectedStoreName === 'emissionsDataVizStore');
+	let isEmissionsView = $derived(selectedChartKey === 'emissions');
 
-	let selectedStore = $derived(dataVizStores[selectedStoreName]);
-	let seriesNames = $derived(selectedStore.seriesNames);
-	let seriesLabels = $derived(selectedStore.seriesLabels);
-	let seriesColours = $derived(selectedStore.seriesColours);
-	let xTicks = $derived(selectedStore.miniXTicks);
-	let formatTickX = $derived(selectedStore.formatTickX);
-	let formatTickY = $derived(selectedStore.convertAndFormatValue);
-	let chartOverlay = $derived(selectedStore.chartOverlay);
-	let chartOverlayLine = $derived(selectedStore.chartOverlayLine);
-	let chartOverlayHatchStroke = $derived(selectedStore.chartOverlayHatchStroke);
-	let hoverData = $derived(selectedStore.hoverData);
-	let focusData = $derived(selectedStore.focusData);
-	let seriesData = $derived(selectedStore.seriesData);
-	let displayUnit = $derived(selectedStore.displayUnit);
-
-	let intensityStore = $derived(dataVizStores.intensityDataVizStore);
-	let intensitySeriesNames = $derived(intensityStore.seriesNames);
-	let intensityFormatTickY = $derived(intensityStore.convertAndFormatValue);
-	let intensitySeriesLabels = $derived(intensityStore.seriesLabels);
-	let intensitySeriesColours = $derived(intensityStore.seriesColours);
-	let intensityHoverData = $derived(intensityStore.hoverData);
-	let intensityFocusData = $derived(intensityStore.focusData);
-	let intensitySeriesData = $derived(intensityStore.seriesData);
-	let intensityDisplayUnit = $derived(intensityStore.displayUnit);
+	let selectedChart = $derived(chartMap[selectedChartKey]);
 
 	let isAemo2024 = $derived($singleSelectionModel === 'aemo2024');
 </script>
@@ -77,8 +54,8 @@
 		<div class="flex justify-center mb-12">
 			<Switch
 				buttons={stores}
-				selected={selectedStoreName}
-				onchange={(detail) => (selectedStoreName = detail.value)}
+				selected={selectedChartKey}
+				onchange={(detail) => (selectedChartKey = detail.value)}
 				class="justify-center"
 			/>
 		</div>
@@ -86,66 +63,60 @@
 		{#if isEmissionsView}
 			<div class="grid grid-cols-2 md:grid-cols-3 gap-3">
 				<MiniCharts
-					seriesNames={$seriesNames}
-					seriesLabels={$seriesLabels}
-					seriesColours={$seriesColours}
-					xTicks={$xTicks}
-					formatTickX={$formatTickX}
-					formatTickY={$formatTickY}
-					chartOverlay={$chartOverlay}
-					chartOverlayLine={$chartOverlayLine}
-					chartOverlayHatchStroke={$chartOverlayHatchStroke}
-					hoverData={$hoverData}
-					focusData={$focusData}
-					seriesData={$seriesData}
-					displayUnit={$displayUnit}
+					seriesNames={selectedChart.seriesNames}
+					seriesLabels={selectedChart.seriesLabels}
+					seriesColours={selectedChart.seriesColours}
+					xTicks={selectedChart.xTicks}
+					formatTickX={selectedChart.formatTickX}
+					formatTickY={selectedChart.convertAndFormatValue}
+					overlayStart={selectedChart.chartStyles.chartOverlayLine}
+					hoverTime={selectedChart.hoverTime}
+					focusTime={selectedChart.focusTime}
+					seriesData={selectedChart.seriesData}
+					displayUnit={selectedChart.chartOptions.displayUnit}
 					{seriesLoadsIds}
 					gridColClass="grid-cols-1"
-					{onmousemove}
-					{onmouseout}
-					{onpointerup}
+					{onhover}
+					{onhoverend}
+					{onfocus}
 				/>
 				<MiniCharts
-					seriesNames={$intensitySeriesNames}
-					seriesLabels={$intensitySeriesLabels}
-					seriesColours={$intensitySeriesColours}
-					xTicks={$xTicks}
-					formatTickX={$formatTickX}
-					formatTickY={$intensityFormatTickY}
-					chartOverlay={$chartOverlay}
-					chartOverlayLine={$chartOverlayLine}
-					chartOverlayHatchStroke={$chartOverlayHatchStroke}
-					hoverData={$intensityHoverData}
-					focusData={$intensityFocusData}
-					seriesData={$intensitySeriesData}
-					displayUnit={$intensityDisplayUnit}
+					seriesNames={intensity.seriesNames}
+					seriesLabels={intensity.seriesLabels}
+					seriesColours={intensity.seriesColours}
+					xTicks={selectedChart.xTicks}
+					formatTickX={selectedChart.formatTickX}
+					formatTickY={intensity.convertAndFormatValue}
+					overlayStart={selectedChart.chartStyles.chartOverlayLine}
+					hoverTime={intensity.hoverTime}
+					focusTime={intensity.focusTime}
+					seriesData={intensity.seriesData}
+					displayUnit={intensity.chartOptions.displayUnit}
 					showArea={false}
 					{seriesLoadsIds}
 					gridColClass="grid-cols-1"
-					{onmousemove}
-					{onmouseout}
-					{onpointerup}
+					{onhover}
+					{onhoverend}
+					{onfocus}
 				/>
 			</div>
 		{:else}
 			<MiniCharts
-				seriesNames={$seriesNames}
-				seriesLabels={$seriesLabels}
-				seriesColours={$seriesColours}
-				xTicks={$xTicks}
-				formatTickX={$formatTickX}
-				formatTickY={$formatTickY}
-				chartOverlay={$chartOverlay}
-				chartOverlayLine={$chartOverlayLine}
-				chartOverlayHatchStroke={$chartOverlayHatchStroke}
-				hoverData={$hoverData}
-				focusData={$focusData}
-				seriesData={$seriesData}
-				displayUnit={$displayUnit}
+				seriesNames={selectedChart.seriesNames}
+				seriesLabels={selectedChart.seriesLabels}
+				seriesColours={selectedChart.seriesColours}
+				xTicks={selectedChart.xTicks}
+				formatTickX={selectedChart.formatTickX}
+				formatTickY={selectedChart.convertAndFormatValue}
+				overlayStart={selectedChart.chartStyles.chartOverlayLine}
+				hoverTime={selectedChart.hoverTime}
+				focusTime={selectedChart.focusTime}
+				seriesData={selectedChart.seriesData}
+				displayUnit={selectedChart.chartOptions.displayUnit}
 				{seriesLoadsIds}
-				{onmousemove}
-				{onmouseout}
-				{onpointerup}
+				{onhover}
+				{onhoverend}
+				{onfocus}
 			/>
 		{/if}
 	</section>

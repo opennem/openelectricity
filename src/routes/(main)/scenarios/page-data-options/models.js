@@ -15,7 +15,9 @@ import secondaryColourPalette from '$lib/theme/secondary-colour-palette';
  */
 
 export const AEMO_2022_ISP = 'aemo2022';
+export const AEMO_2022_ISP_DRAFT = 'aemo2022draft';
 export const AEMO_2024_ISP = 'aemo2024';
+export const AEMO_2024_ISP_DRAFT = 'aemo2024draft';
 
 export const modelLogoPath = {
 	AEMO: '/img/model-providers/aemo-logo.png' // https://gel.aemo.com.au/docs/branding/logo
@@ -28,7 +30,18 @@ export const modelScenarios = {
 		{ id: 'progressive_change', label: 'Progressive Change' },
 		{ id: 'green_energy_exports', label: 'Green Energy Exports' }
 	],
+	[AEMO_2024_ISP_DRAFT]: [
+		{ id: 'step_change', label: 'Step Change' },
+		{ id: 'progressive_change', label: 'Progressive Change' },
+		{ id: 'green_energy_exports', label: 'Green Energy Exports' }
+	],
 	[AEMO_2022_ISP]: [
+		{ id: 'step_change', label: 'Step Change' },
+		{ id: 'slow_change', label: 'Slow Change' },
+		{ id: 'progressive_change', label: 'Progressive Change' },
+		{ id: 'hydrogen_superpower', label: 'Hydrogen Superpower' }
+	],
+	[AEMO_2022_ISP_DRAFT]: [
 		{ id: 'step_change', label: 'Step Change' },
 		{ id: 'slow_change', label: 'Slow Change' },
 		{ id: 'progressive_change', label: 'Progressive Change' },
@@ -66,10 +79,48 @@ export const modelPathways = {
 		'Counterfactual'
 	],
 
+	[AEMO_2024_ISP_DRAFT]: [
+		'CDP1',
+		'CDP2',
+		'CDP3',
+		'CDP4',
+		'CDP5',
+		'CDP6',
+		'CDP7',
+		'CDP8',
+		'CDP9',
+		'CDP10',
+		'CDP11',
+		'CDP12',
+		'CDP13',
+		'CDP14',
+		'CDP15',
+		'CDP16',
+		'CDP17',
+		'Counterfactual'
+	],
+
 	[AEMO_2022_ISP]: [
 		'CDP2',
 		'CDP5',
 		'CDP6',
+		'CDP8',
+		'CDP9',
+		'CDP10',
+		'CDP11',
+		'CDP12',
+		'CDP13',
+		'Counterfactual'
+	],
+
+	[AEMO_2022_ISP_DRAFT]: [
+		'CDP1',
+		'CDP2',
+		'CDP3',
+		'CDP4',
+		'CDP5',
+		'CDP6',
+		'CDP7',
 		'CDP8',
 		'CDP9',
 		'CDP10',
@@ -113,13 +164,23 @@ export const defaultPathwayOrder = [
 /** @type {*} */
 export const defaultModelPathway = {
 	[AEMO_2024_ISP]: 'CDP14',
-	[AEMO_2022_ISP]: 'CDP12'
+	[AEMO_2024_ISP_DRAFT]: 'CDP3',
+	[AEMO_2022_ISP]: 'CDP12',
+	[AEMO_2022_ISP_DRAFT]: 'CDP12'
+};
+
+/** @type {Record<string, string>} */
+export const modelPaths = {
+	[AEMO_2024_ISP]: '/data/scenarios/2024_ISP_final',
+	[AEMO_2024_ISP_DRAFT]: '/data/scenarios/2024_ISP_draft',
+	[AEMO_2022_ISP]: '/data/scenarios/2022_ISP_final',
+	[AEMO_2022_ISP_DRAFT]: '/data/scenarios/2022_ISP_draft'
 };
 
 export const modelOptions = [
 	{
 		value: AEMO_2024_ISP,
-		label: 'AEMO 2024 ISP',
+		label: 'AEMO 2024 ISP (Final)',
 		description: "AEMO's 2024 Integrated System Plan",
 		organisation: 'AEMO',
 		year: 2024,
@@ -137,8 +198,27 @@ export const modelOptions = [
 		defaultPathway: defaultModelPathway[AEMO_2024_ISP]
 	},
 	{
+		value: AEMO_2024_ISP_DRAFT,
+		label: 'AEMO 2024 ISP (Draft)',
+		description: "AEMO's 2024 Integrated System Plan (Draft)",
+		organisation: 'AEMO',
+		year: 2024,
+		draft: true,
+		scenarios: [
+			...modelScenarios[AEMO_2024_ISP_DRAFT].map(({ id, label }) => ({
+				id: `${AEMO_2024_ISP_DRAFT}-${id}`,
+				model: AEMO_2024_ISP_DRAFT,
+				value: id,
+				label: label,
+				colour: '#000'
+			}))
+		],
+		pathways: [...modelPathways[AEMO_2024_ISP_DRAFT]],
+		defaultPathway: defaultModelPathway[AEMO_2024_ISP_DRAFT]
+	},
+	{
 		value: AEMO_2022_ISP,
-		label: 'AEMO 2022 ISP',
+		label: 'AEMO 2022 ISP (Final)',
 		description: "AEMO's 2022 Integrated System Plan",
 		organisation: 'AEMO',
 		year: 2022,
@@ -152,6 +232,23 @@ export const modelOptions = [
 		})),
 		pathways: [...modelPathways[AEMO_2022_ISP]],
 		defaultPathway: defaultModelPathway[AEMO_2022_ISP]
+	},
+	{
+		value: AEMO_2022_ISP_DRAFT,
+		label: 'AEMO 2022 ISP (Draft)',
+		description: "AEMO's 2022 Integrated System Plan (Draft)",
+		organisation: 'AEMO',
+		year: 2022,
+		draft: true,
+		scenarios: [...modelScenarios[AEMO_2022_ISP_DRAFT]].map(({ id, label }) => ({
+			id: `${AEMO_2022_ISP_DRAFT}-${id}`,
+			model: AEMO_2022_ISP_DRAFT,
+			value: id,
+			label: label,
+			colour: '#000'
+		})),
+		pathways: [...modelPathways[AEMO_2022_ISP_DRAFT]],
+		defaultPathway: defaultModelPathway[AEMO_2022_ISP_DRAFT]
 	}
 ];
 
@@ -199,12 +296,3 @@ export const scenarioLabelMap = scenarioOptions.reduce((/** @type {Record<string
 	acc[curr.id] = curr.label;
 	return acc;
 }, /** @type {Record<string, string>} */ ({}));
-
-// add secondary colours to scenarios
-// let colourIndex = 0;
-// let maxColours = secondaryColourPalette.length;
-
-// scenarioOptions.forEach((scenario) => {
-// 	scenario.colour = secondaryColourPalette[colourIndex % maxColours];
-// 	colourIndex++;
-// });

@@ -37,6 +37,8 @@
 	 * @property {string} [netTotalKey] - Key for net total values in data (renders step line)
 	 * @property {string} [netTotalColor] - Color for net total line
 	 * @property {number | null} [overlayStart] - Start time (ms) for hatched projection overlay
+	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
+	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
 	 */
 
 	/** @type {Props} */
@@ -49,7 +51,9 @@
 		loadingRanges = [],
 		netTotalKey,
 		netTotalColor = '#C74523',
-		overlayStart
+		overlayStart,
+		clampHoverLine = false,
+		animate = false
 	} = $props();
 
 	// Get chart styles
@@ -61,7 +65,6 @@
 		if (chart.seriesScaledData.length === 0) return [];
 
 		if (chart.useDivergingStack) {
-			// Use d3 stack with diverging offset for independent positive/negative stacking
 			const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
 			return stackGen(chart.seriesScaledData);
 		}
@@ -98,6 +101,19 @@
 	let clipPathAxisId = $derived(`${id}-clip-path-axis`);
 	let clipPath = $derived(`url(#${clipPathId})`);
 	let clipPathAxis = $derived(`url(#${clipPathAxisId})`);
+
+	// When clampHoverLine is true, limit the hover/focus line to the stacked area height
+	let hoverMaxY = $derived.by(() => {
+		if (!clampHoverLine || !chart.hoverTime) return undefined;
+		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.hoverTime);
+		return point?._max;
+	});
+
+	let focusMaxY = $derived.by(() => {
+		if (!clampHoverLine || !chart.focusTime) return undefined;
+		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.focusTime);
+		return point?._max;
+	});
 </script>
 
 <div
@@ -146,6 +162,7 @@
 					/>
 				{:else}
 					<StackedArea
+						{animate}
 						dataset={chart.seriesScaledData}
 						display={stackedAreaDisplay}
 						curveType={chart.chartOptions.curveFunction}
@@ -210,6 +227,7 @@
 						<LineX
 							xValue={chart.hoverData}
 							yValue={styles.showHoverYLine ? chart.hoverData : undefined}
+							maxYValue={hoverMaxY}
 							strokeArray="none"
 						/>
 						{#if styles.showHoverDot}
@@ -227,6 +245,7 @@
 						<LineX
 							xValue={chart.focusData}
 							yValue={styles.showFocusYLine ? chart.focusData : undefined}
+							maxYValue={focusMaxY}
 							strokeArray="none"
 							strokeColour={styles.focusYLineStrokeColour}
 						/>
@@ -258,20 +277,27 @@
 					stroke={styles.yAxisStroke}
 					zeroValueStroke={styles.zeroValueStroke || styles.yAxisStroke}
 					showLastTick={styles.showLastYTick}
+					lastTickDy={styles.lastYTickDy}
+					yLabelStartPos={styles.yLabelStartPos}
+					dxTick={styles.yLabelStartPos ? 6 : 0}
+					tickMarks={!!styles.yLabelStartPos}
+					{animate}
 				/>
 
 				<AxisX
 					ticks={chart.xTicks}
 					gridlineTicks={chart.xGridlineTicks}
+					highlightTicks={chart.xHighlightTicks}
 					formatTick={chart.formatTickXWithTimeZone}
 					gridlines={styles.xGridlines}
 					tickMarks={true}
-					snapTicks={false}
+					snapTicks={styles.snapTicks}
 					stroke={styles.xAxisStroke}
 					fill={styles.xAxisFill}
 					xTextClasses={styles.xTextClasses}
 					yTick={styles.xAxisYTick}
 					stepMode={isStepMode}
+					{animate}
 				/>
 			</g>
 		</Svg>

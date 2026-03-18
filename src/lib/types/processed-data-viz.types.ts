@@ -11,4 +11,6 @@ export type ProcessedDataViz = {
 	displayPrefix?: SiPrefix;
 	baseUnit?: string;
 	allowedPrefixes?: SiPrefix[];
+	projectionStartTime?: number | null;
+	projectionEndTime?: number | null;
 };

@@ -1,51 +1,25 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { getContext } from 'svelte';
 
-	import Switch from '$lib/components/Switch.svelte';
-	import IconPlus from '$lib/icons/Plus.svelte';
-	import IconMinus from '$lib/icons/Minus.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
-	import Selection from '../Selection.svelte';
+	import { modelOptions } from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
 
-	import { modelOptions, dataViewOptions, displayViewOptions } from '../options';
-	import { scenarioLabels } from '../descriptions';
-	import { homepageDataTechnologyGroupOptions, dataRegionCompareOptions } from '../helpers';
+	const { selectedModel, scenarioOptions, selectedScenario } = getContext('scenario-filters');
 
-	const {
-		selectedModel,
+	// Map modelOptions to FormSelect format
+	const modelSelectOptions = modelOptions.map((m) => ({
+		value: m.value,
+		label: m.label
+	}));
 
-		scenarioOptions,
-		selectedRegion,
-		selectedDataView,
-		selectedDisplayView,
-		selectedScenario,
+	$selectedModel = modelSelectOptions[0].value;
 
-		showScenarioOptions,
-
-		isTechnologyDisplay,
-		isScenarioDisplay,
-		isRegionDisplay
-	} = getContext('scenario-filters');
-
-	const { selectedGroup } = getContext('scenario-data');
-
-	$selectedModel = modelOptions[0].value;
-	$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
-
-	run(() => {
-		if ($isTechnologyDisplay) {
-			$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
-		} else {
-			$selectedGroup = dataRegionCompareOptions[0].value;
-		}
-	});
+	let scenarios = $derived($scenarioOptions || []);
 </script>
 
 <div class="text-sm">
-	<div class="">
+	<div class="pl-0 pt-0 md:pl-4 md:pt-4 mt-8">
 		<p>
 			A range of modelled scenarios exist which envision the evolution of Australia's National
 			Electricity Market (NEM) over the coming decades.
@@ -60,18 +34,18 @@
 		<FormSelect
 			paddingY="py-3"
 			paddingX="px-4"
-			options={modelOptions}
+			options={modelSelectOptions}
 			selected={$selectedModel}
 			onchange={(option) => ($selectedModel = option.value)}
 		/>
 	</div>
 
 	<div
-		class="grid gap-3 mt-6"
-		class:grid-cols-3={$scenarioOptions.length === 3}
-		class:grid-cols-2={$scenarioOptions.length !== 3}
+		class="grid gap-3 mt-6 ml-4"
+		class:grid-cols-3={scenarios.length === 3}
+		class:grid-cols-2={scenarios.length !== 3}
 	>
-		{#each $scenarioOptions as { label, value } (value)}
+		{#each scenarios as { label, value } (value)}
 			<button
 				class="w-full rounded-lg border hover:bg-light-warm-grey px-6 py-4 capitalize text-left leading-sm"
 				class:border-mid-warm-grey={$selectedScenario !== value}

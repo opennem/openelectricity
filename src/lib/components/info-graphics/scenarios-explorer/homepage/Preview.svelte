@@ -1,251 +1,222 @@
 <script>
 	import { setContext, getContext } from 'svelte';
-	import { startOfYear, format } from 'date-fns';
-
 	import { browser } from '$app/environment';
 
-	import selectOptionsMap from '$lib/utils/select-options-map';
-	import { getScenarioJson } from '$lib/scenarios';
-	import { getHistory } from '$lib/opennem';
+	import { colourReducer } from '$lib/stores/theme';
 
-	import filtersStore from '../stores/filters';
-	import dataStore from '../stores/data';
-	import cacheStore from '../stores/cache';
+	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
+	import { createSyncedCharts } from '$lib/components/charts/v2/sync.js';
+	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
 
+	import { fetchTechnologyViewData } from '../../../../../routes/(main)/scenarios/page-data-options/fetch.js';
+	import processTechnology from '../../../../../routes/(main)/scenarios/page-data-options/process-technology.js';
 	import {
-		allScenarios,
-		defaultModelPathway,
-		dataViewUnits,
-		dataViewLongLabel,
-		dataViewIntervalLabel
-	} from '../options';
-	import { covertHistoryDataToTWh, processTechnologyData, formatFyTickX } from '../helpers';
-
-	import Icon from '$lib/components/Icon.svelte';
+		modelOptions,
+		modelScenarios,
+		defaultModelPathway
+	} from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
+	import Tooltip from '../../../../../routes/(main)/scenarios/components/Tooltip.svelte';
+	import { chartXHighlightTicks } from '../../../../../routes/(main)/scenarios/page-data-options/chart-ticks.js';
 
 	import Filters from './Filters.svelte';
-	import ExplorerChart from './Chart.svelte';
 	import DetailedBreakdown from './DetailedBreakdown.svelte';
 	import ScenarioDescription from './ScenarioDescription.svelte';
-	import ExplorerTooltip from '../Tooltip.svelte';
 
+	import filtersStore from '../stores/filters';
+
+	// Keep filters context for ScenarioDescription to read from
 	setContext('scenario-filters', filtersStore());
-	setContext('scenario-data', dataStore());
-	setContext('scenario-cache', cacheStore());
 
 	const {
-		selectedDisplayView,
 		selectedModel,
 		selectedScenario,
-		selectedPathway,
 		selectedRegion,
-		selectedDataView,
-		selectedChartType,
-
-		scenarioOptions,
-		pathwayOptions,
-
-		selectedMultipleScenarios,
-		showScenarioOptions
+		scenarioOptions
 	} = getContext('scenario-filters');
 
-	const {
-		selectedGroup,
-		projectionStats,
-		projectionData,
-		historicalData,
-		projectionTimeSeries,
-		historicalTimeSeries
-	} = getContext('scenario-data');
-
-	const { cachedDisplayData } = getContext('scenario-cache');
-
-	/** @type {string[]} */
-	let seriesNames = $state([]);
-	/** @type {any[]} */
-	let seriesItems = $state([]);
-	let seriesColours = $state();
-	let seriesLabels = $state();
-	/** @type {any[]} */
-	let seriesData = $state([]);
-	/** @type {string[]} */
-	let seriesLoadsIds = $state([]);
-	/** @type {Array.<number | null>} */
-	let yDomain = $state([0, null]);
-	/** @type {TimeSeriesData | undefined} */
-	let hoverData = $state(undefined);
-	/** @type {string | undefined} */
-	let hoverKey = $state();
-
-	const handleMousemove = (/** @type {*} */ e) => {
-		if (e?.key) {
-			hoverKey = e.key;
-			hoverData = /** @type {TimeSeriesData} */ (e.data);
-		} else {
-			hoverKey = undefined;
-			hoverData = /** @type {TimeSeriesData} */ (e);
+	// --- ChartStore v2 ---
+	const generationChart = new ChartStore({
+		key: Symbol('homepage-generation'),
+		title: 'Generation',
+		chartType: 'stacked-area',
+		chartStyles: {
+			chartHeightClasses: 'h-[400px] md:h-[680px]',
+			snapTicks: true,
+			xAxisStroke: 'transparent',
+			yAxisStroke: 'transparent',
+			zeroValueStroke: 'transparent'
 		}
+	});
+	generationChart.yTicks = 3;
+	generationChart.chartOptions.allowHoverHighlight = false;
+	generationChart.formatTickX = (/** @type {any} */ d) => {
+		if (d instanceof Date) return String(d.getFullYear());
+		return String(d);
 	};
 
-	/**
-	 * Get data for by technology view
-	 * @param {*} param0
-	 */
-	async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
-		const [historyData, scenarioData] = await Promise.all([
-			getHistory(region),
-			getScenarioJson(model, scenario)
-		]);
-		const scenarios = allScenarios.filter((/** @type {any} */ d) => d.model === model);
+	const sync = createSyncedCharts([generationChart]);
 
-		updateScenarios(scenarios.map((/** @type {any} */ d) => d.scenarioId));
+	// --- Local state ---
+	let selectedGroup = $state('homepage_preview');
+	/** @type {FuelTechCode[] | undefined} */
+	let seriesLoadsIds = $state([]);
 
-		const filteredScenarioData = scenarioData.data.filter(
-			(/** @type {any} */ d) =>
-				d.pathway === pathway &&
-				d.region.toLowerCase() === region.toLowerCase() &&
-				d.type === dataView
+	// Data cache — plain variable (NOT $state) to avoid deep proxy overhead
+	/** @type {*} */
+	let cachedData;
+	let dataVersion = $state(0);
+
+	// Overlay start time derived from processed data
+	let overlayStartTime = $state(/** @type {number | undefined} */ (undefined));
+
+	// --- Derive default pathway and scenario options from selected model ---
+	let defaultPathway = $derived(defaultModelPathway[$selectedModel]);
+	let currentModelScenarios = $derived(
+		/** @type {Record<string, any>} */ (modelScenarios)[$selectedModel] || []
+	);
+
+	// Update scenario options when model changes
+	$effect(() => {
+		const scenarios = currentModelScenarios;
+		scenarioOptions.set(
+			scenarios.map((/** @type {any} */ s) => ({ label: s.label, value: s.id }))
 		);
 
-		$projectionData = filteredScenarioData.map((/** @type {any} */ d) => {
-			return {
-				...d,
-				model: model
-			};
+		// Always reset to first scenario when model changes
+		$selectedScenario = scenarios[0]?.id || 'step_change';
+	});
+
+	// --- updateChart helper (same as scenarios page) ---
+	/**
+	 * @param {ChartStore} chart
+	 * @param {ProcessedDataViz} processed
+	 */
+	function updateChart(chart, processed) {
+		chart.seriesData = processed.seriesData;
+		chart.seriesNames = processed.seriesNames;
+		chart.seriesColours = processed.seriesColours;
+		chart.seriesLabels = processed.seriesLabels;
+		chart.chartOptions.baseUnit = processed.baseUnit || '';
+		chart.chartOptions.prefix = processed.prefix || /** @type {SiPrefix} */ ('');
+		chart.chartOptions.displayPrefix =
+			processed.displayPrefix || processed.prefix || /** @type {SiPrefix} */ ('');
+		chart.chartOptions.allowedPrefixes = processed.allowedPrefixes || [];
+
+		const chartType = processed.chartType === 'area' ? 'stacked-area' : processed.chartType;
+		chart.chartOptions.selectedChartType =
+			/** @type {import('$lib/components/charts/v2/ChartOptions.svelte.js').ChartType} */ (
+				chartType
+			);
+
+		if (
+			processed.yDomain &&
+			processed.yDomain[0] !== undefined &&
+			processed.yDomain[1] !== undefined
+		) {
+			const yMax = /** @type {number} */ (processed.yDomain[1]);
+			chart.setYDomain(
+				/** @type {[number, number]} */ ([processed.yDomain[0], yMax * 1.15])
+			);
+		} else {
+			chart.setYDomain(undefined);
+		}
+	}
+
+	// --- Process cached data with current group ---
+	function processAndUpdate() {
+		if (!cachedData) return;
+
+		const processed = processTechnology.generation({
+			projection: cachedData.projectionEnergyData,
+			history: cachedData.historyEnergyData,
+			group: selectedGroup,
+			colourReducer: $colourReducer,
+			includeBatteryAndLoads: false
 		});
 
-		$historicalData = covertHistoryDataToTWh(historyData);
+		updateChart(generationChart, processed);
+		seriesLoadsIds = /** @type {FuelTechCode[] | undefined} */ (processed.seriesLoadsIds);
+
+		// Use the canonical projection start year from chart-ticks (e.g. 2024 for aemo2024)
+		const highlightDates = chartXHighlightTicks[$selectedModel] || [];
+		const overlayDate = highlightDates[0];
+
+		if (overlayDate) {
+			overlayStartTime = +overlayDate;
+			const endDate = processed.projectionEndTime
+				? new Date(processed.projectionEndTime)
+				: undefined;
+
+			generationChart.chartStyles.chartOverlayLine = { date: overlayDate };
+			if (endDate) {
+				generationChart.chartStyles.chartOverlay = { xStartValue: overlayDate, xEndValue: endDate };
+				// Use Shading component for projection background fill
+				generationChart.shadingData = [[overlayDate, endDate]];
+				generationChart.shadingFill = '#FAF9F6';
+			}
+
+			// Show only key years + projection start on x-axis
+			const lastTick = endDate || new Date('2050-01-01');
+			generationChart.xTicks = [
+				new Date('2010-01-01'),
+				overlayDate,
+				new Date('2040-01-01'),
+				lastTick
+			];
+			generationChart.xHighlightTicks = [overlayDate];
+			generationChart.chartStyles.yLabelStartPos = overlayDate;
+		}
 	}
 
-	/**
-	 *
-	 * @param {*[]} scenarios
-	 */
-	function updateScenarios(scenarios) {
-		scenarioOptions.set(selectOptionsMap(scenarios));
-
-		/**
-		 * set default values if the selected value is not in the updated list
-		 */
-		if (!scenarios.find((d) => d === $selectedScenario)) selectedScenario.set(scenarios[0]);
-	}
-
-	const auNumber = new Intl.NumberFormat('en-AU', {
-		maximumFractionDigits: 0
-	});
-	let generatedCsv = $state('');
-	let defaultPathway = $derived(defaultModelPathway[$selectedModel]);
-
-	$selectedGroup = 'homepage_preview';
+	// --- Fetch data when model/scenario/pathway changes ---
+	let fetchCacheKey = $state('');
 
 	$effect(() => {
 		if (browser) {
-			getTechnologyData({
+			const key = `${$selectedModel}-${$selectedScenario}-${defaultPathway}-${$selectedRegion}`;
+			if (key === fetchCacheKey) return;
+			fetchCacheKey = key;
+
+			fetchTechnologyViewData({
 				model: $selectedModel,
 				region: $selectedRegion,
 				scenario: $selectedScenario,
-				pathway: defaultPathway,
-				dataView: $selectedDataView
+				pathway: defaultPathway
+			}).then((/** @type {*} */ data) => {
+				cachedData = data;
+				dataVersion++;
 			});
 		}
 	});
+
+	// --- Re-process when data arrives or group changes ---
 	$effect(() => {
-		if ($projectionTimeSeries.data.length > 0 && $historicalTimeSeries.data.length > 0) {
-			const processed = processTechnologyData({
-				projectionTimeSeries: $projectionTimeSeries,
-				historicalTimeSeries: $historicalTimeSeries,
-				selectedDataView: $selectedDataView,
-				selectedModel: $selectedModel
-			});
-
-			console.log('processed', processed);
-
-			if (processed) {
-				update(processed);
-			}
+		if (dataVersion > 0) {
+			// Access selectedGroup to track it as dependency
+			const _group = selectedGroup;
+			processAndUpdate();
 		}
 	});
 
-	function update(/** @type {any} */ processed) {
-		seriesData = processed.data;
-		seriesNames = processed.names;
-		seriesColours = processed.colours;
-		seriesLabels = processed.labels;
-		seriesItems = processed.nameOptions;
-
-		const minMaxY = [
-			$projectionTimeSeries.minY,
-			$projectionTimeSeries.maxY + ($projectionTimeSeries.maxY * 15) / 100
-		];
-		yDomain = minMaxY;
-
-		const loadIds = $projectionStats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
-		seriesLoadsIds = loadIds;
-
-		$cachedDisplayData[$selectedDisplayView] = {
-			data: processed.data,
-			names: processed.names,
-			colours: processed.colours,
-			labels: processed.labels,
-			items: processed.nameOptions,
-			loadIds: loadIds,
-			yDomain: minMaxY
-		};
+	// --- Interaction handlers ---
+	/**
+	 * @param {number | undefined} time
+	 * @param {string} [key]
+	 */
+	function handleHover(time, key) {
+		sync.setHover(time, key);
 	}
 
-	let xTicks = $derived(
-		$selectedModel === 'aemo2024'
-			? [
-					startOfYear(new Date('2010-01-01')),
-					startOfYear(new Date('2024-01-01')),
-					startOfYear(new Date('2040-01-01')),
-					startOfYear(new Date('2052-01-01'))
-				]
-			: [
-					startOfYear(new Date('2010-01-01')),
-					startOfYear(new Date('2023-01-01')),
-					startOfYear(new Date('2040-01-01')),
-					startOfYear(new Date('2051-01-01'))
-				]
-	);
-	let overlay = $derived(
-		$selectedModel === 'aemo2024'
-			? {
-					xStartValue: startOfYear(new Date('2024-01-01')),
-					xEndValue: startOfYear(new Date('2052-01-01'))
-				}
-			: {
-					xStartValue: startOfYear(new Date('2023-01-01')),
-					xEndValue: startOfYear(new Date('2051-01-01'))
-				}
-	);
-	let overlayLine = $derived(
-		$selectedModel === 'aemo2024'
-			? { date: startOfYear(new Date('2024-01-01')) }
-			: { date: startOfYear(new Date('2023-01-01')) }
-	);
-	let defaultText = $derived(
-		/** @type {any} */ (dataViewLongLabel)[$selectedDataView] +
-			` (${/** @type {any} */ (dataViewUnits)[$selectedDataView]}) ` +
-			/** @type {any} */ (dataViewIntervalLabel)[$selectedDataView]
-	);
-	$effect(() => {
-		generatedCsv = '';
-		let newGeneratedCsv = ['date', ...seriesNames.map((/** @type {any} */ d) => /** @type {any} */ (seriesLabels)[d])].join(',') + '\n';
+	function handleHoverEnd() {
+		sync.clearHover();
+	}
 
-		seriesData.forEach((d) => {
-			const date = format(d.date, 'yyyy');
-			const row = [date];
-			seriesNames.forEach((key) => {
-				row.push(auNumber.format(d[key]));
-			});
-			newGeneratedCsv += row.join(',') + '\n';
-		});
-		generatedCsv = newGeneratedCsv;
-	});
-	let file = $derived(new Blob([generatedCsv], { type: 'text/plain' }));
-	let fileUrl = $derived(URL.createObjectURL(file));
-	let fileName = $derived(`${$selectedModel}-${$selectedScenario}.csv`);
+	/**
+	 * @param {string} newGroup
+	 */
+	function handleGroupChange(newGroup) {
+		selectedGroup = newGroup;
+	}
 </script>
 
 <div class="container max-w-none lg:container relative">
@@ -255,16 +226,6 @@
 		</h1>
 
 		<div class="hidden md:block">
-			<!-- <a
-				class="whitespace-nowrap flex gap-6 justify-between items-center rounded-lg font-space border border-black border-solid bg-white p-6 transition-all text-black hover:text-white hover:bg-black hover:no-underline"
-				href={fileUrl}
-				download={fileName}
-				target="_download"
-			>
-				<span>Download Data</span>
-				<Icon icon="arrow-down-tray" size={24} />
-			</a> -->
-
 			<a
 				href="/scenarios"
 				class="text-base mt-12 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
@@ -275,7 +236,7 @@
 	</header>
 
 	<div class="md:absolute z-50 md:flex md:mt-12 gap-36">
-		<div class="md:w-[28%]">
+		<div class="md:w-[28%] bg-white/30 backdrop-blur-sm rounded-lg p-4 -m-4">
 			<Filters />
 		</div>
 
@@ -286,52 +247,41 @@
 </div>
 
 <div class="max-w-none lg:container">
-	{#if seriesData.length > 0}
-		<div class="relative">
-			<ExplorerTooltip
-				{hoverData}
-				{hoverKey}
-				{defaultText}
-				{seriesColours}
-				{seriesLabels}
-				showTotal={true}
-			/>
-		</div>
-
-		<ExplorerChart
-			id="scenarios-preview-chart"
-			dataset={seriesData}
-			xKey="date"
-			yKey={[0, 1]}
-			zKey="key"
-			{xTicks}
-			yTicks={3}
-			{yDomain}
-			{seriesNames}
-			{seriesColours}
-			formatTickX={formatFyTickX}
-			display="area"
-			{overlay}
-			{overlayLine}
-			{hoverData}
-			yLabelStartPos={startOfYear(new Date('2024-01-01'))}
-			onmousemove={handleMousemove}
-			onmouseout={() => {
-				hoverKey = undefined;
-				hoverData = undefined;
-			}}
-		/>
+	<p class="text-xs text-mid-grey text-right mb-2 px-6 lg:px-0">Energy Generation (TWh) by Financial Year</p>
+	{#if generationChart.seriesData.length > 0}
+		<StratumChart
+			chart={generationChart}
+			showHeader={false}
+			overlayStart={overlayStartTime}
+			clampHoverLine={true}
+			animate={true}
+			onhover={handleHover}
+			onhoverend={handleHoverEnd}
+		>
+			{#snippet tooltip()}
+				<Tooltip
+					hoverData={generationChart.hoverData}
+					hoverKey={generationChart.hoverKey}
+					seriesColours={generationChart.seriesColours}
+					seriesLabels={generationChart.seriesLabels}
+					convertAndFormatValue={generationChart.convertAndFormatValue}
+					showTotal={true}
+				/>
+			{/snippet}
+		</StratumChart>
+	{:else}
+		<div class="h-[400px] md:h-[680px] rounded-lg bg-warm-grey animate-pulse"></div>
 	{/if}
 </div>
 
 <div class="max-w-none lg:container">
 	<DetailedBreakdown
-		{hoverData}
-		onmousemove={handleMousemove}
-		onmouseout={() => {
-			hoverKey = undefined;
-			hoverData = undefined;
-		}}
+		chart={generationChart}
+		{selectedGroup}
+		{seriesLoadsIds}
+		onhover={handleHover}
+		onhoverend={handleHoverEnd}
+		ongroupchange={handleGroupChange}
 	/>
 
 	<p class="text-xs text-mid-grey px-3 pt-12">

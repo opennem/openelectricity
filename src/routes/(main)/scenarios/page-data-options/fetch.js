@@ -1,47 +1,51 @@
 import { getScenarioJson, getScenarios } from '$lib/scenarios';
 import { getHistory } from '$lib/opennem';
+import parser from '$lib/opennem/parser';
 
 import { covertHistoryDataToTWh, mergeHistoricalEmissionsData } from './utils';
+
+/**
+ * Fetch energy endpoint once and parse for both 'energy' and 'emissions' data types.
+ * Avoids duplicate HTTP requests since both use the same URL.
+ * @param {string} region
+ * @returns {Promise<{ energyData: StatsData[], emissionsData: StatsData[] }>}
+ */
+async function getEnergyAndEmissions(region) {
+	const params = {
+		region: region && region === 'NEM' ? '' : region
+	};
+	const queryStrings = new URLSearchParams(params);
+	const response = await fetch('/api/energy?' + queryStrings);
+	const json = await response.json();
+
+	return {
+		energyData: parser(json.data, 'energy'),
+		emissionsData: parser(json.data, 'emissions')
+	};
+}
 
 /**
  * Fetch data for Technology view Energy data
  * @param {{ model: string, region: string, scenario: string, pathway: string, dataType: ScenarioDataType }} param0
  */
 async function fetchEmissionsData({ model, region, scenario, pathway, dataType }) {
-	console.log('fetchTechnologyViewEnergyData', { model, region, scenario, pathway, dataType });
-
-	/** @type {StatsData[][]} */
-	const [historyEmisssionsData, historyEnergyData, scenarioData] = await Promise.all([
-		getHistory(region, 'emissions'),
-		getHistory(region, 'energy'),
-		getScenarios(model, scenario)
+	const [energyAndEmissions, scenarioData] = await Promise.all([
+		getEnergyAndEmissions(region),
+		getScenarios(model, scenario, { pathway, region, dataType })
 	]);
 
-	console.log('historyEmisssionsData, historyEnergyData', historyEmisssionsData, historyEnergyData);
-	console.log('scenarioData', scenarioData);
+	const historyEmisssionsData = energyAndEmissions.emissionsData;
+	const historyEnergyData = energyAndEmissions.energyData;
 
-	const projection = scenarioData
-		.filter((/** @type {any} */ d) => filterScenarioData({ d, pathway, region, dataType }))
-		.map((/** @type {any} */ d) =>
-			remappedProjectionData(
-				{
-					...d,
-					fuel_tech: 'fossil_fuels'
-				},
-				model
-			)
-		);
-
-	// let energyHistoryData = [];
-
-	// if (dataType === 'emissions') {
-	// 	const mergedEmissionsData = mergeHistoricalEmissionsData(historyData);
-	// 	// also fetch energy data to calculate emissions intensity
-	// 	energyHistoryData = await getHistory(region, 'energy');
-	// 	// emissions / energy delivered (generation + storage_discharging - storage_charging)
-	// 	console.log('energyHistoryData', energyHistoryData);
-	// 	console.log('mergedEmissionsData', mergedEmissionsData);
-	// }
+	const projection = scenarioData.map((/** @type {any} */ d) =>
+		remappedProjectionData(
+			{
+				...d,
+				fuel_tech: 'fossil_fuels'
+			},
+			model
+		)
+	);
 
 	const history = mergeHistoricalEmissionsData(/** @type {any} */ (historyEmisssionsData), true);
 
@@ -59,28 +63,15 @@ async function fetchFuelTechData({ model, region, scenario, pathway, dataType })
 	/** @type {StatsData[][]} */
 	const [historyData, scenarioData] = await Promise.all([
 		getHistory(region, dataType),
-		getScenarios(model, scenario)
+		getScenarios(model, scenario, { pathway, region, dataType })
 	]);
 
-	const projection = scenarioData
-		.filter((/** @type {any} */ d) => filterScenarioData({ d, pathway, region, dataType }))
-		.map((/** @type {any} */ d) => remappedProjectionData(d, model));
+	const projection = scenarioData.map((/** @type {any} */ d) => remappedProjectionData(d, model));
 
 	return {
 		projection,
 		history: historyData
 	};
-}
-
-/**
- * Filter scenario data
- * @param {{ d: *, pathway: string, region: string, dataType: ScenarioDataType }} param0
- * @returns {boolean}
- */
-function filterScenarioData({ d, pathway, region, dataType }) {
-	return (
-		d.pathway === pathway && d.region.toLowerCase() === region.toLowerCase() && d.type === dataType
-	);
 }
 
 /**
@@ -110,42 +101,26 @@ function remappedProjectionData(data, model) {
  * }>}
  */
 async function fetchTechnologyViewData({ model, region, scenario, pathway }) {
-	// TODO: check which dataTypes are toggled and fetch accordingly
-	// fetch all for now
+	const [energyAndEmissions, historyCapacityData, scenarioData] = await Promise.all([
+		getEnergyAndEmissions(region),
+		getHistory(region, 'capacity'),
+		getScenarios(model, scenario, { pathway, region })
+	]);
 
-	/** @type {StatsData[][]} */
-	const [historyEmisssionsData, historyEnergyData, historyCapacityData, scenarioData] =
-		await Promise.all([
-			getHistory(region, 'emissions'),
-			getHistory(region, 'energy'),
-			getHistory(region, 'capacity'),
-			getScenarios(model, scenario)
-		]);
-
-	// TODO: check why 2022 emissions is duplicated
-	// console.log(
-	// 	'scenarioData',
-	// 	scenarioData.filter((d) => d.type === 'emissions')
-	// );
+	const historyEnergyData = energyAndEmissions.energyData;
+	const historyEmisssionsData = energyAndEmissions.emissionsData;
 
 	const projectionEnergyData = scenarioData
-		.filter((d) => filterScenarioData({ d, pathway, region, dataType: 'energy' }))
-		.map((d) => remappedProjectionData(d, model));
+		.filter((/** @type {any} */ d) => d.type === 'energy')
+		.map((/** @type {any} */ d) => remappedProjectionData(d, model));
 
 	const projectionCapacityData = scenarioData
-		.filter((d) => filterScenarioData({ d, pathway, region, dataType: 'capacity' }))
-		.map((d) => remappedProjectionData(d, model));
+		.filter((/** @type {any} */ d) => d.type === 'capacity')
+		.map((/** @type {any} */ d) => remappedProjectionData(d, model));
 
 	const projectionEmissionsData = scenarioData
-		.filter((d) => filterScenarioData({ d, pathway, region, dataType: 'emissions' }))
-		.map((d) => remappedProjectionData(d, model));
-
-	// console.log('projectionEnergyData', projectionEnergyData);
-	// console.log('projectionCapacityData', projectionCapacityData);
-	// console.log('projectionEmissionsData', projectionEmissionsData);
-	// console.log('historyEnergyData', historyEnergyData);
-	// console.log('historyCapacityData', historyCapacityData);
-	// console.log('historyEmisssionsData', historyEmisssionsData);
+		.filter((/** @type {any} */ d) => d.type === 'emissions')
+		.map((/** @type {any} */ d) => remappedProjectionData(d, model));
 
 	return {
 		projectionEnergyData,
@@ -179,30 +154,31 @@ async function fetchTechnologyViewData({ model, region, scenario, pathway }) {
  * }>}
  */
 async function fetchScenarioViewData({ scenarios, region }) {
-	/** @type {StatsData[][]} */
-	const [historyEmisssionsData, historyEnergyData, historyCapacityData] = await Promise.all([
-		getHistory(region, 'emissions'),
-		getHistory(region, 'energy'),
+	const [energyAndEmissions, historyCapacityData] = await Promise.all([
+		getEnergyAndEmissions(region),
 		getHistory(region, 'capacity')
 	]);
 
+	const historyEnergyData = energyAndEmissions.energyData;
+	const historyEmisssionsData = energyAndEmissions.emissionsData;
+
 	/** @type {StatsData[][]} */
 	const scenariosProjection = await Promise.all(
-		scenarios.map((s) => getScenarios(s.model, s.scenario))
+		scenarios.map((s) => getScenarios(s.model, s.scenario, { pathway: s.pathway, region }))
 	);
 
 	const projectionsData = scenarios.map((s, i) => {
 		const projectionEnergyData = scenariosProjection[i]
-			.filter((d) => filterScenarioData({ d, pathway: s.pathway, region, dataType: 'energy' }))
-			.map((d) => remappedProjectionData(d, s.model));
+			.filter((/** @type {any} */ d) => d.type === 'energy')
+			.map((/** @type {any} */ d) => remappedProjectionData(d, s.model));
 
 		const projectionCapacityData = scenariosProjection[i]
-			.filter((d) => filterScenarioData({ d, pathway: s.pathway, region, dataType: 'capacity' }))
-			.map((d) => remappedProjectionData(d, s.model));
+			.filter((/** @type {any} */ d) => d.type === 'capacity')
+			.map((/** @type {any} */ d) => remappedProjectionData(d, s.model));
 
 		const projectionEmissionsData = scenariosProjection[i]
-			.filter((d) => filterScenarioData({ d, pathway: s.pathway, region, dataType: 'emissions' }))
-			.map((d) => remappedProjectionData(d, s.model));
+			.filter((/** @type {any} */ d) => d.type === 'emissions')
+			.map((/** @type {any} */ d) => remappedProjectionData(d, s.model));
 
 		return {
 			...s,
@@ -211,11 +187,6 @@ async function fetchScenarioViewData({ scenarios, region }) {
 			projectionEmissionsData
 		};
 	});
-
-	// console.log('projectionsData', projectionsData);
-	// console.log('historyEnergyData', historyEnergyData);
-	// console.log('historyCapacityData', historyCapacityData);
-	// console.log('historyEmisssionsData', historyEmisssionsData);
 
 	return {
 		projectionsData,
@@ -230,36 +201,38 @@ async function fetchScenarioViewData({ scenarios, region }) {
  * @param {{ regions: any[], model: string, scenario: string, pathway: string }} param0
  */
 async function fetchRegionViewData({ regions, model, scenario, pathway }) {
-	console.log('regions', regions);
-
 	const regionsData = [...regions];
-	const scenarioData = await getScenarios(model, scenario);
 
-	for (const r of regionsData) {
-		const [regionHistoricalEnergy, regionHistoricalCapacity, regionHistoricalEmissions] =
-			await Promise.all([
-				getHistory(r.value.toUpperCase(), 'energy'),
-				getHistory(r.value.toUpperCase(), 'capacity'),
-				getHistory(r.value.toUpperCase(), 'emissions')
-			]);
+	// Fetch scenario data (all regions for this pathway), and energy+emissions + capacity per region, all in parallel
+	const [scenarioData, ...regionResults] = await Promise.all([
+		getScenarios(model, scenario, { pathway }),
+		...regionsData.flatMap((r) => [
+			getEnergyAndEmissions(r.value.toUpperCase()),
+			getHistory(r.value.toUpperCase(), 'capacity')
+		])
+	]);
+
+	for (let i = 0; i < regionsData.length; i++) {
+		const r = regionsData[i];
+		const base = i * 2;
 
 		r.id = r.value;
+		r.historicalEnergyData = regionResults[base].energyData;
+		r.historicalEmissionsData = regionResults[base].emissionsData;
+		r.historicalCapacityData = regionResults[base + 1];
 
+		const regionLower = r.value.toLowerCase();
 		r.projectionEnergyData = scenarioData
-			.filter((/** @type {any} */ d) => filterScenarioData({ d, pathway, region: r.value, dataType: 'energy' }))
+			.filter((/** @type {any} */ d) => d.region.toLowerCase() === regionLower && d.type === 'energy')
 			.map((/** @type {any} */ d) => remappedProjectionData(d, model));
 
 		r.projectionCapacityData = scenarioData
-			.filter((/** @type {any} */ d) => filterScenarioData({ d, pathway, region: r.value, dataType: 'capacity' }))
+			.filter((/** @type {any} */ d) => d.region.toLowerCase() === regionLower && d.type === 'capacity')
 			.map((/** @type {any} */ d) => remappedProjectionData(d, model));
 
 		r.projectionEmissionsData = scenarioData
-			.filter((/** @type {any} */ d) => filterScenarioData({ d, pathway, region: r.value, dataType: 'emissions' }))
+			.filter((/** @type {any} */ d) => d.region.toLowerCase() === regionLower && d.type === 'emissions')
 			.map((/** @type {any} */ d) => remappedProjectionData(d, model));
-
-		r.historicalEnergyData = regionHistoricalEnergy;
-		r.historicalCapacityData = regionHistoricalCapacity;
-		r.historicalEmissionsData = regionHistoricalEmissions;
 	}
 
 	return regionsData;

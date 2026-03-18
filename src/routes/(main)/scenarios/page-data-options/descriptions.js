@@ -7,11 +7,22 @@ export const scenarioLabels = {
 		progressive_change: 'AEMO Progressive Change 2024',
 		green_energy_exports: 'AEMO Green Energy Exports 2024'
 	},
+	aemo2024draft: {
+		step_change: 'AEMO Step Change 2024 (Draft)',
+		progressive_change: 'AEMO Progressive Change 2024 (Draft)',
+		green_energy_exports: 'AEMO Green Energy Exports 2024 (Draft)'
+	},
 	aemo2022: {
 		step_change: 'AEMO Step Change 2022',
 		progressive_change: 'AEMO Progressive Change 2022',
 		slow_change: 'AEMO Slow Change 2022',
 		hydrogen_superpower: 'AEMO Hydrogen Superpower 2022'
+	},
+	aemo2022draft: {
+		step_change: 'AEMO Step Change 2022 (Draft)',
+		progressive_change: 'AEMO Progressive Change 2022 (Draft)',
+		slow_change: 'AEMO Slow Change 2022 (Draft)',
+		hydrogen_superpower: 'AEMO Hydrogen Superpower 2022 (Draft)'
 	}
 };
 
@@ -171,3 +182,13 @@ export const scenarioParagraphs = {
 		]
 	}
 };
+
+// Draft versions share the same content as their final counterparts
+scenarioDescriptions.aemo2024draft = scenarioDescriptions.aemo2024;
+scenarioDescriptions.aemo2022draft = scenarioDescriptions.aemo2022;
+scenarioSummary.aemo2024draft = scenarioSummary.aemo2024;
+scenarioSummary.aemo2022draft = scenarioSummary.aemo2022;
+scenarioKeyPoints.aemo2024draft = scenarioKeyPoints.aemo2024;
+scenarioKeyPoints.aemo2022draft = scenarioKeyPoints.aemo2022;
+scenarioParagraphs.aemo2024draft = scenarioParagraphs.aemo2024;
+scenarioParagraphs.aemo2022draft = scenarioParagraphs.aemo2022;
