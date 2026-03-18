@@ -250,7 +250,7 @@
 			<div class="text-right h-8">
 				{#if displayTime && formatTickX}
 					<span class="text-mid-grey text-xs">
-						{formatTickX(displayTime)}
+						{formatTickX(new Date(displayTime))}
 					</span>
 				{/if}
 			</div>

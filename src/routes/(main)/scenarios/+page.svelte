@@ -14,6 +14,7 @@
 
 	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
 	import { createSyncedCharts } from '$lib/components/charts/v2/sync.js';
+	import { createRequestGuard } from '$lib/utils/request-guard';
 
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
@@ -382,6 +383,11 @@
 	/** @type {string} */
 	let regionCacheKey = $state('');
 
+	// Guards to discard stale fetch responses
+	const techGuard = createRequestGuard();
+	const scenarioGuard = createRequestGuard();
+	const regionGuard = createRequestGuard();
+
 	/**
 	 * @param {{
 	 * projectionEnergyData: StatsData[],
@@ -462,12 +468,14 @@
 			if (key === techCacheKey) return;
 			techCacheKey = key;
 
+			const { isCurrent } = techGuard.next();
 			fetchTechnologyViewData({
 				model: $singleSelectionData.model,
 				scenario: $singleSelectionData.scenario,
 				pathway: $singleSelectionData.pathway,
 				region: $selectedRegion
 			}).then((data) => {
+				if (!isCurrent()) return;
 				cachedTechnologyData = data;
 				techDataVersion++;
 			});
@@ -556,8 +564,10 @@
 			if (key === scenarioCacheKey) return;
 			scenarioCacheKey = key;
 
+			const { isCurrent } = scenarioGuard.next();
 			fetchScenarioViewData({ scenarios: $multiSelectionData, region: $selectedRegion }).then(
 				(data) => {
+					if (!isCurrent()) return;
 					cachedScenarioData = data;
 					scenarioDataVersion++;
 				}
@@ -613,12 +623,14 @@
 
 			const regionsOnly = regionOptions.filter((r) => r.value !== '_all');
 
+			const { isCurrent } = regionGuard.next();
 			fetchRegionViewData({
 				regions: regionsOnly,
 				model: $singleSelectionData.model,
 				scenario: $singleSelectionData.scenario,
 				pathway: $singleSelectionData.pathway
 			}).then((regionsData) => {
+				if (!isCurrent()) return;
 				cachedRegionsData = regionsData;
 				regionDataVersion++;
 			});

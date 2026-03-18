@@ -3,16 +3,9 @@
 
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
-	import {
-		modelOptions
-	} from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
-	import { scenarioLabels } from '../descriptions';
+	import { modelOptions } from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
 
-	const {
-		selectedModel,
-		scenarioOptions,
-		selectedScenario
-	} = getContext('scenario-filters');
+	const { selectedModel, scenarioOptions, selectedScenario } = getContext('scenario-filters');
 
 	// Map modelOptions to FormSelect format
 	const modelSelectOptions = modelOptions.map((m) => ({
@@ -26,7 +19,7 @@
 </script>
 
 <div class="text-sm">
-	<div class="">
+	<div class="pl-0 pt-0 md:pl-4 md:pt-4 mt-8">
 		<p>
 			A range of modelled scenarios exist which envision the evolution of Australia's National
 			Electricity Market (NEM) over the coming decades.
@@ -48,7 +41,7 @@
 	</div>
 
 	<div
-		class="grid gap-3 mt-6"
+		class="grid gap-3 mt-6 ml-4"
 		class:grid-cols-3={scenarios.length === 3}
 		class:grid-cols-2={scenarios.length !== 3}
 	>

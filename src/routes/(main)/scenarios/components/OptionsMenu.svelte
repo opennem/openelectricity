@@ -4,6 +4,7 @@
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { EllipsisVertical, Maximize2, Minimize2, CircleHelp, Share, ClipboardCheck, Download } from '@lucide/svelte';
 	import { writeToClipboard } from '$lib/utils/clipboard';
+	import { downloadCsv } from '$lib/utils/download-csv';
 
 	/**
 	 * @type {{
@@ -33,14 +34,16 @@
 	];
 
 	let isOpen = $state(false);
-	let downloadKey = $state('');
 	let copying = $state(false);
 
-	let selectedStore = $derived(downloadKey ? chartStores[downloadKey] : null);
-	let csvData = $derived(selectedStore ? selectedStore.seriesCsvData : '');
-	let file = $derived(new Blob([csvData], { type: 'text/plain' }));
-	let fileUrl = $derived(URL.createObjectURL(file));
-	let fileName = $derived(`${$filterShortName}-${downloadKey}.csv`);
+	/**
+	 * @param {string} key
+	 */
+	function handleDownload(key) {
+		const store = chartStores[key];
+		if (!store) return;
+		downloadCsv(store.seriesCsvData, `${$filterShortName}-${key}.csv`);
+	}
 
 	function handleClickOutside() {
 		isOpen = false;
@@ -83,15 +86,13 @@
 				Download as CSV
 			</div>
 			{#each downloadOptions as opt (opt.value)}
-				<a
-					href={fileUrl}
-					download={fileName}
-					class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left no-underline! text-dark-grey"
-					onpointerenter={() => (downloadKey = opt.value)}
+				<button
+					onclick={() => { handleDownload(opt.value); isOpen = false; }}
+					class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
 				>
 					<Download class="size-4 text-mid-grey" />
 					<span class="flex-1">{opt.label}</span>
-				</a>
+				</button>
 			{/each}
 
 			<div class="border-t border-warm-grey my-1"></div>

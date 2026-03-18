@@ -253,6 +253,7 @@
 			chart={generationChart}
 			showHeader={false}
 			overlayStart={overlayStartTime}
+			clampHoverLine={true}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 		>

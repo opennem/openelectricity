@@ -37,6 +37,7 @@
 	 * @property {string} [netTotalKey] - Key for net total values in data (renders step line)
 	 * @property {string} [netTotalColor] - Color for net total line
 	 * @property {number | null} [overlayStart] - Start time (ms) for hatched projection overlay
+	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 */
 
 	/** @type {Props} */
@@ -49,7 +50,8 @@
 		loadingRanges = [],
 		netTotalKey,
 		netTotalColor = '#C74523',
-		overlayStart
+		overlayStart,
+		clampHoverLine = false
 	} = $props();
 
 	// Get chart styles
@@ -98,6 +100,19 @@
 	let clipPathAxisId = $derived(`${id}-clip-path-axis`);
 	let clipPath = $derived(`url(#${clipPathId})`);
 	let clipPathAxis = $derived(`url(#${clipPathAxisId})`);
+
+	// When clampHoverLine is true, limit the hover/focus line to the stacked area height
+	let hoverMaxY = $derived.by(() => {
+		if (!clampHoverLine || !chart.hoverTime) return undefined;
+		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.hoverTime);
+		return point?._max;
+	});
+
+	let focusMaxY = $derived.by(() => {
+		if (!clampHoverLine || !chart.focusTime) return undefined;
+		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.focusTime);
+		return point?._max;
+	});
 </script>
 
 <div
@@ -210,6 +225,7 @@
 						<LineX
 							xValue={chart.hoverData}
 							yValue={styles.showHoverYLine ? chart.hoverData : undefined}
+							maxYValue={hoverMaxY}
 							strokeArray="none"
 						/>
 						{#if styles.showHoverDot}
@@ -227,6 +243,7 @@
 						<LineX
 							xValue={chart.focusData}
 							yValue={styles.showFocusYLine ? chart.focusData : undefined}
+							maxYValue={focusMaxY}
 							strokeArray="none"
 							strokeColour={styles.focusYLineStrokeColour}
 						/>
