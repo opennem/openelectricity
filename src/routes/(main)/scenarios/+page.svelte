@@ -675,9 +675,14 @@
 >
 	<section class="w-full flex flex-col gap-12 md:w-[60%]">
 		{#if generationChart.seriesData.length === 0}
-			{#each $selectedCharts as _ (_)}
+			{#each $selectedCharts as key (key)}
+				{@const isHalfHeight = key === 'emissions' || key === 'intensity'}
 				<div class="relative">
-					<Skeleton variant="chart" class="h-[400px] md:h-[450px] rounded-xl" />
+					<div
+						class="bg-warm-grey animate-pulse rounded-xl w-full {isHalfHeight
+							? 'h-[200px] md:h-[225px]'
+							: 'h-[400px] md:h-[450px]'}"
+					></div>
 					<div class="absolute inset-0 flex items-center justify-center">
 						<LogoMarkLoader />
 					</div>

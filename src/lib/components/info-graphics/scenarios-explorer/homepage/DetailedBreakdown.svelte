@@ -77,4 +77,14 @@
 			{onhoverend}
 		/>
 	</div>
+{:else}
+	<div class="border-t border-b md:border-x border-mid-warm-grey grid {gridColClass} gap-0">
+		{#each { length: 6 } as _, i (i)}
+			<div class="p-8 border-r border-mid-warm-grey animate-pulse">
+				<div class="h-4 w-2/3 bg-warm-grey rounded mb-4"></div>
+				<div class="h-8 w-1/3 bg-warm-grey rounded mb-6"></div>
+				<div class="h-[150px] bg-warm-grey rounded"></div>
+			</div>
+		{/each}
+	</div>
 {/if}

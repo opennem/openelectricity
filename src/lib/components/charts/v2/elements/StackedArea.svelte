@@ -32,6 +32,7 @@
 	 * @property {string} [dotStrokeWidth] - Dot stroke width
 	 * @property {boolean} [lighterNegative] - Use lighter color for negative values
 	 * @property {boolean} [stepMode] - Use floor-based band detection (for step curves)
+	 * @property {boolean} [animate] - Animate paths: grow from y=0 on mount, morph on data change
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
 	 * @property {(data: TimeSeriesData) => void} [onpointerup]
@@ -52,10 +53,22 @@
 		dotStrokeWidth = '1px',
 		lighterNegative = false,
 		stepMode = false,
+		animate = false,
 		onmousemove,
 		onmouseout,
 		onpointerup
 	} = $props();
+
+	// Track whether we've rendered data once — CSS d transitions only after first paint
+	let canTransition = $state(false);
+
+	$effect(() => {
+		if (animate && $data.length > 0 && !canTransition) {
+			setTimeout(() => {
+				canTransition = true;
+			}, 100);
+		}
+	});
 
 	// Unique ID for clip paths
 	let clipId = $derived(`area-clip-${Math.random().toString(36).slice(2, 9)}`);
@@ -207,6 +220,7 @@
 			<!-- Line path -->
 			<path
 				class="path-line"
+				class:path-animate={canTransition}
 				role="presentation"
 				d={lineGen(d.values)}
 				fill="transparent"
@@ -242,6 +256,7 @@
 				<!-- Positive region (normal color) -->
 				<path
 					class="path-area"
+					class:path-animate={canTransition}
 					role="presentation"
 					d={areaGen(d)}
 					fill={baseColor}
@@ -257,6 +272,7 @@
 				<!-- Negative region (lighter color) -->
 				<path
 					class="path-area"
+					class:path-animate={canTransition}
 					role="presentation"
 					d={areaGen(d)}
 					fill={getLighterColor(baseColor)}
@@ -272,6 +288,7 @@
 			{:else}
 				<path
 					class="path-area"
+					class:path-animate={canTransition}
 					role="presentation"
 					d={areaGen(d)}
 					fill={baseColor}
@@ -297,5 +314,9 @@
 	.path-area:focus,
 	.line-dot:focus {
 		outline: none;
+	}
+
+	.path-animate {
+		transition: d 400ms ease-in-out;
 	}
 </style>

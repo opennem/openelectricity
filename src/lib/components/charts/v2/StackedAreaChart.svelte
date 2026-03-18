@@ -38,6 +38,7 @@
 	 * @property {string} [netTotalColor] - Color for net total line
 	 * @property {number | null} [overlayStart] - Start time (ms) for hatched projection overlay
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
+	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
 	 */
 
 	/** @type {Props} */
@@ -51,7 +52,8 @@
 		netTotalKey,
 		netTotalColor = '#C74523',
 		overlayStart,
-		clampHoverLine = false
+		clampHoverLine = false,
+		animate = false
 	} = $props();
 
 	// Get chart styles
@@ -63,7 +65,6 @@
 		if (chart.seriesScaledData.length === 0) return [];
 
 		if (chart.useDivergingStack) {
-			// Use d3 stack with diverging offset for independent positive/negative stacking
 			const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
 			return stackGen(chart.seriesScaledData);
 		}
@@ -161,6 +162,7 @@
 					/>
 				{:else}
 					<StackedArea
+						{animate}
 						dataset={chart.seriesScaledData}
 						display={stackedAreaDisplay}
 						curveType={chart.chartOptions.curveFunction}
@@ -279,6 +281,7 @@
 					yLabelStartPos={styles.yLabelStartPos}
 					dxTick={styles.yLabelStartPos ? 6 : 0}
 					tickMarks={!!styles.yLabelStartPos}
+					{animate}
 				/>
 
 				<AxisX
@@ -294,6 +297,7 @@
 					xTextClasses={styles.xTextClasses}
 					yTick={styles.xAxisYTick}
 					stepMode={isStepMode}
+					{animate}
 				/>
 			</g>
 		</Svg>

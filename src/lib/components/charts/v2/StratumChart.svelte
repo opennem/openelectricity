@@ -39,6 +39,7 @@
 	 * @property {Array<{start: number, end: number}>} [loadingRanges]
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {[number, number] | null} [viewDomain]
+	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
 	 * @property {import('svelte').Snippet} [header]
 	 * @property {import('svelte').Snippet} [tooltip]
 	 * @property {import('svelte').Snippet} [footer]
@@ -67,6 +68,7 @@
 		loadingRanges = [],
 		clampHoverLine = false,
 		viewDomain = null,
+		animate = false,
 		header,
 		tooltip,
 		footer
@@ -176,6 +178,7 @@
 					{netTotalColor}
 					{overlayStart}
 					{clampHoverLine}
+					{animate}
 					onmousemove={handleSeriesHover}
 					onmouseout={handleSeriesHoverOut}
 					onpointerup={handleSeriesClick}

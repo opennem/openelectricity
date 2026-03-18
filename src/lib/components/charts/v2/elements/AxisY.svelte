@@ -45,8 +45,20 @@
 		yLabelStartPos = null,
 		zeroValueStroke = '#353535',
 		showLastTick = true,
-		lastTickDy = null
+		lastTickDy = null,
+		animate = false
 	} = $props();
+
+	// Skip transition on first render — only animate subsequent changes
+	let canTransition = $state(false);
+
+	$effect(() => {
+		if (animate && tickVals.length > 0 && !canTransition) {
+			setTimeout(() => {
+				canTransition = true;
+			}, 100);
+		}
+	});
 
 	// Check if scale has bandwidth (band scale)
 	let isBandwidth = $derived(typeof $yScale.bandwidth === 'function');
@@ -75,7 +87,7 @@
 		{@const isZero = tick === 0}
 		{@const isLastTick = i === tickVals.length - 1}
 
-		<g class="tick tick-{tick}" transform="translate({xStart}, {yPos})">
+		<g class="tick tick-{tick}" class:tick-animate={canTransition} transform="translate({xStart}, {yPos})">
 			<!-- Gridline -->
 			{#if gridlines}
 				<line
@@ -127,3 +139,9 @@
 		</g>
 	{/each}
 </g>
+
+<style>
+	.tick-animate {
+		transition: transform 400ms ease-in-out;
+	}
+</style>

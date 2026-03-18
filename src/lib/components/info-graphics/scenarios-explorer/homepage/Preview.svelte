@@ -254,6 +254,7 @@
 			showHeader={false}
 			overlayStart={overlayStartTime}
 			clampHoverLine={true}
+			animate={true}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 		>
@@ -268,6 +269,8 @@
 				/>
 			{/snippet}
 		</StratumChart>
+	{:else}
+		<div class="h-[400px] md:h-[680px] rounded-lg bg-warm-grey animate-pulse"></div>
 	{/if}
 </div>
 

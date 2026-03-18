@@ -53,8 +53,20 @@
 		xTextClasses = '',
 		stepMode = false,
 		highlightTicks = [],
-		highlightStroke = '#333'
+		highlightStroke = '#333',
+		animate = false
 	} = $props();
+
+	// Skip transition on first render — only animate subsequent changes
+	let canTransition = $state(false);
+
+	$effect(() => {
+		if (animate && tickVals.length > 0 && !canTransition) {
+			setTimeout(() => {
+				canTransition = true;
+			}, 100);
+		}
+	});
 
 	let highlightTickSet = $derived(new Set(highlightTicks.map((/** @type {*} */ t) => +t)));
 
@@ -129,7 +141,7 @@
 		{@const xPos = $xScale(tick)}
 		{@const yPos = Math.max(...$yRange)}
 
-		<g class="tick tick-{i}" transform="translate({xPos}, {yPos})">
+		<g class="tick tick-{i}" class:tick-animate={canTransition} transform="translate({xPos}, {yPos})">
 			<!-- Tick mark (non-step mode only) -->
 			{#if tickMarks && !stepMode}
 				<line
@@ -163,3 +175,9 @@
 		<line class="baseline" y1={$height + 0.5} y2={$height + 0.5} x1="0" x2={$width} />
 	{/if}
 </g>
+
+<style>
+	.tick-animate {
+		transition: transform 400ms ease-in-out;
+	}
+</style>

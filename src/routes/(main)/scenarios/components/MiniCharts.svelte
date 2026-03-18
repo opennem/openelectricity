@@ -260,6 +260,7 @@
 				overlayStart={overlayStartMs}
 				showHeader={false}
 				showTooltip={false}
+				animate={true}
 				{onhover}
 				{onhoverend}
 				{onfocus}
@@ -267,3 +268,4 @@
 		</section>
 	{/each}
 </div>
+
