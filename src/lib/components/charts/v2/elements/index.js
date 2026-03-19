@@ -23,6 +23,9 @@ export { default as LineY } from './LineY.svelte';
 export { default as Dot } from './Dot.svelte';
 export { default as StepHoverBand } from './StepHoverBand.svelte';
 
+// Annotations
+export { default as Annotations } from './Annotations.svelte';
+
 // Overlays
 export { default as Shading } from './Shading.svelte';
 export { default as LoadingOverlay } from './LoadingOverlay.svelte';

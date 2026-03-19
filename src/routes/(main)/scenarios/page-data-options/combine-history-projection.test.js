@@ -263,7 +263,7 @@ describe('gap interpolation', () => {
 		expect(derived._max).toBe(150);
 
 		expect(result.derivedStartTime).toBe(new Date('2026-01-01').getTime());
-		expect(result.derivedEndTime).toBe(new Date('2026-01-01').getTime());
+		expect(result.derivedEndTime).toBe(new Date('2027-01-01').getTime());
 	});
 
 	it('interpolates multiple gap years with correct fractions', () => {
@@ -300,7 +300,7 @@ describe('gap interpolation', () => {
 		expect(d2028.solar).toBe(300);
 
 		expect(result.derivedStartTime).toBe(new Date('2026-01-01').getTime());
-		expect(result.derivedEndTime).toBe(new Date('2028-01-01').getTime());
+		expect(result.derivedEndTime).toBe(new Date('2029-01-01').getTime());
 	});
 
 	it('sets null for interpolated values when boundary has null', () => {

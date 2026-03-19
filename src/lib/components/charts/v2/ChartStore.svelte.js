@@ -324,7 +324,7 @@ export default class ChartStore {
 	fgShadingData = $state([]);
 
 	/** @type {string} */
-	fgShadingFill = $state('rgba(180, 180, 180, 0.15)');
+	fgShadingFill = $state('rgba(255, 255, 255, 0.24)');
 
 	// Stacking options
 	/** @type {boolean} */
@@ -348,6 +348,12 @@ export default class ChartStore {
 	 * @type {Array<{value: number, label?: string, colour?: string}>}
 	 */
 	yReferenceLines = $state([]);
+
+	// Annotations (arbitrary SVG shapes and text at data coordinates)
+	/**
+	 * @type {Array<import('./elements/Annotations.svelte').Annotation>}
+	 */
+	annotations = $state([]);
 
 	/**
 	 * @param {ChartConfig} config

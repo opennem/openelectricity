@@ -289,9 +289,25 @@
 				// Shade derived (interpolated) region with a pale overlay
 				if (derivedStartTime != null && derivedEndTime != null) {
 					chart.fgShadingData = [[new Date(derivedStartTime), new Date(derivedEndTime)]];
-					chart.fgShadingFill = 'rgba(180, 180, 180, 0.15)';
+					chart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
+
+					// Label the derived region
+					const midTime = derivedStartTime + (derivedEndTime - derivedStartTime) / 2;
+					chart.annotations = [
+						{
+							type: 'text',
+							x: midTime,
+							y: 0,
+							text: 'DERIVED',
+							dy: -6,
+							textAnchor: 'middle',
+							fill: '#999',
+							fontSize: '8px'
+						}
+					];
 				} else {
 					chart.fgShadingData = [];
+					chart.annotations = [];
 				}
 			});
 		}

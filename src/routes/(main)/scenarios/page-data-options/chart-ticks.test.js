@@ -25,15 +25,21 @@ describe('chartXHighlightTicks', () => {
 	};
 
 	for (const [model, expectedYear] of Object.entries(expectedFyYears)) {
-		it(`${model} highlight tick is Jan 1 ${expectedYear}`, () => {
+		it(`${model} highlight tick includes Jan 1 ${expectedYear}`, () => {
 			const ticks = chartXHighlightTicks[model];
-			expect(ticks).toHaveLength(1);
-
-			const date = ticks[0];
-			expect(date).toBeInstanceOf(Date);
-			expect(date.getFullYear()).toBe(expectedYear);
-			expect(date.getMonth()).toBe(0);
-			expect(date.getDate()).toBe(1);
+			const match = ticks.find((d) => d.getFullYear() === expectedYear);
+			expect(match).toBeInstanceOf(Date);
+			expect(match.getMonth()).toBe(0);
+			expect(match.getDate()).toBe(1);
 		});
 	}
+
+	it('2026 ISP draft has highlight tick at FY24/25 for last historical data', () => {
+		const ticks = chartXHighlightTicks[AEMO_2026_ISP_DRAFT];
+		expect(ticks).toHaveLength(2);
+		const fy2425 = ticks.find((d) => d.getFullYear() === 2025);
+		expect(fy2425).toBeInstanceOf(Date);
+		expect(fy2425.getMonth()).toBe(0);
+		expect(fy2425.getDate()).toBe(1);
+	});
 });

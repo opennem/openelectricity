@@ -17,6 +17,7 @@
 	} from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
 	import Tooltip from '../../../../../routes/(main)/scenarios/components/Tooltip.svelte';
 	import { formatFyTickX } from '$lib/utils/formatters';
+	import { chartXHighlightTicks } from '../../../../../routes/(main)/scenarios/page-data-options/chart-ticks.js';
 
 	import Filters from './Filters.svelte';
 	import DetailedBreakdown from './DetailedBreakdown.svelte';
@@ -146,29 +147,53 @@
 				? new Date(processed.projectionEndTime)
 				: undefined;
 
-			// Determine the earliest shading start (derived region or projection)
-			const derivedStart = processed.derivedStartTime
-				? new Date(processed.derivedStartTime)
-				: null;
-			const shadingStart = derivedStart || overlayDate;
-
 			generationChart.chartStyles.chartOverlayLine = { date: overlayDate };
 			if (endDate) {
 				generationChart.chartStyles.chartOverlay = { xStartValue: overlayDate, xEndValue: endDate };
-				// Use Shading component for projection + derived background fill
-				generationChart.bgShadingData = [[shadingStart, endDate]];
+				// Background fill for the projection region
+				generationChart.bgShadingData = [[overlayDate, endDate]];
 				generationChart.bgShadingFill = '#FAF9F6';
+			}
+
+			// Foreground shading for the derived (interpolated) region
+			if (processed.derivedStartTime && processed.derivedEndTime) {
+				generationChart.fgShadingData = [[new Date(processed.derivedStartTime), new Date(processed.derivedEndTime)]];
+				generationChart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
+
+				const midTime = processed.derivedStartTime + (processed.derivedEndTime - processed.derivedStartTime) / 2;
+				generationChart.annotations = [
+					{
+						type: 'text',
+						x: midTime,
+						y: 0,
+						text: 'DERIVED',
+						dy: -6,
+						textAnchor: 'middle',
+						fill: '#999',
+						fontSize: '8px'
+					}
+				];
+			} else {
+				generationChart.fgShadingData = [];
+				generationChart.annotations = [];
 			}
 
 			// Show only key years + projection start on x-axis
 			const lastTick = endDate || new Date('2050-01-01');
-			generationChart.xTicks = [
-				new Date('2010-01-01'),
-				overlayDate,
-				new Date('2040-01-01'),
-				lastTick
-			];
-			generationChart.xHighlightTicks = [overlayDate];
+			const highlights = chartXHighlightTicks[$selectedModel] || [overlayDate];
+			const baseTicks = [new Date('2010-01-01'), new Date('2040-01-01'), lastTick];
+			// Merge highlight ticks into x ticks (deduplicated)
+			const allTicks = [...baseTicks, ...highlights];
+			const seen = new Set();
+			generationChart.xTicks = allTicks
+				.filter((d) => {
+					const key = d.getTime();
+					if (seen.has(key)) return false;
+					seen.add(key);
+					return true;
+				})
+				.sort((a, b) => a.getTime() - b.getTime());
+			generationChart.xHighlightTicks = highlights;
 			generationChart.chartStyles.yLabelStartPos = overlayDate;
 		}
 	}
@@ -255,12 +280,12 @@
 		</div>
 	</header>
 
-	<div class="md:absolute z-50 md:flex md:mt-12 gap-36">
+	<div class="md:absolute z-50 md:flex md:mt-12 md:right-0 md:left-0 md:justify-between">
 		<div class="md:w-[28%] bg-white/30 backdrop-blur-sm rounded-lg p-4 -m-4">
 			<Filters {isFetching} />
 		</div>
 
-		<div class="md:w-[40%]">
+		<div class="md:w-[35%]">
 			<ScenarioDescription />
 		</div>
 	</div>

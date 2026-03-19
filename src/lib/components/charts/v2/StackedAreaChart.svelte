@@ -21,7 +21,8 @@
 		LineY,
 		Dot,
 		Shading,
-		StepHoverBand
+		StepHoverBand,
+		Annotations
 	} from './elements';
 	import NetTotalLine from './elements/NetTotalLine.svelte';
 	import HatchOverlay from './elements/HatchOverlay.svelte';
@@ -201,6 +202,11 @@
 					strokeColour={refLine.colour || '#666'}
 				/>
 			{/each}
+
+			<!-- Custom annotations -->
+			{#if chart.annotations.length > 0}
+				<Annotations items={chart.annotations} />
+			{/if}
 		</Svg>
 
 		<!-- Loading overlay -->

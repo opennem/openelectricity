@@ -170,11 +170,10 @@ export default function combineHistoryProjection({
 	const projectionEndTime =
 		projectionTimeSeriesData[projectionTimeSeriesData.length - 1]?.time ?? null;
 
-	// Compute derived range (interpolated gap region)
-	const derivedStartTime = interpolatedRows.length > 0 ? interpolatedRows[0].time : null;
-	const derivedEndTime = interpolatedRows.length > 0
-		? interpolatedRows[interpolatedRows.length - 1].time
-		: null;
+	// Compute derived range from any _derived data points (including interpolated rows)
+	const derivedRows = seriesData.filter((d) => d._derived);
+	const derivedStartTime = derivedRows.length > 0 ? derivedRows[0].time : null;
+	const derivedEndTime = derivedRows.length > 0 ? projectionStartTime : null;
 
 	return {
 		seriesData,
