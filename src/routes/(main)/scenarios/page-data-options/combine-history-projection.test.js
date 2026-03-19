@@ -57,7 +57,7 @@ describe('combineHistoryProjection', () => {
 		expect(result).toHaveProperty('allowedPrefixes');
 	});
 
-	it('trims last history row on overlap when trimSide is history', () => {
+	it('trims history at overlap point — projection is authoritative', () => {
 		const result = combineHistoryProjection({
 			historicalTimeSeries: makeMockTimeSeries({
 				data: historyData,
@@ -66,11 +66,10 @@ describe('combineHistoryProjection', () => {
 			projectionTimeSeries: makeMockTimeSeries({
 				data: projectionData,
 				seriesNames: ['solar']
-			}),
-			trimSide: 'history'
+			})
 		});
 
-		// Should have 5 rows: 2 history + 3 projection (last history trimmed due to overlap at time=3000)
+		// Should have 5 rows: 2 history + 3 projection (history at time=3000 trimmed)
 		expect(result.seriesData).toHaveLength(5);
 		expect(result.seriesData[0].time).toBe(1000);
 		expect(result.seriesData[1].time).toBe(2000);
@@ -78,23 +77,56 @@ describe('combineHistoryProjection', () => {
 		expect(result.seriesData[2].solar).toBe(125); // projection value, not history
 	});
 
-	it('trims first projection row on overlap when trimSide is projection', () => {
+	it('trims multi-year overlap — projection starts well before history ends', () => {
+		const ONE_YEAR = 365.25 * 24 * 60 * 60 * 1000;
+		const baseTime = new Date('2019-01-01').getTime();
+
+		// History: FY2019–FY2024 (6 years)
+		const multiHistory = Array.from({ length: 6 }, (_, i) => ({
+			time: baseTime + i * ONE_YEAR,
+			date: new Date(2019 + i, 0, 1),
+			solar: 100 + i * 10,
+			_min: 0,
+			_max: 100 + i * 10
+		}));
+
+		// Projection: FY2022–FY2030 (overlaps history at FY2022–FY2024)
+		const multiProjection = Array.from({ length: 9 }, (_, i) => ({
+			time: baseTime + (3 + i) * ONE_YEAR,
+			date: new Date(2022 + i, 0, 1),
+			solar: 200 + i * 10,
+			_min: 0,
+			_max: 200 + i * 10
+		}));
+
 		const result = combineHistoryProjection({
 			historicalTimeSeries: makeMockTimeSeries({
-				data: historyData,
+				data: multiHistory,
 				seriesNames: ['solar']
 			}),
 			projectionTimeSeries: makeMockTimeSeries({
-				data: projectionData,
+				data: multiProjection,
 				seriesNames: ['solar']
-			}),
-			trimSide: 'projection'
+			})
 		});
 
-		// Should have 5 rows: 3 history + 2 projection (first projection trimmed)
-		expect(result.seriesData).toHaveLength(5);
-		expect(result.seriesData[2].time).toBe(3000);
-		expect(result.seriesData[2].solar).toBe(120); // history value, not projection
+		// History trimmed to FY2019–FY2021 (3 points), then 9 projection points = 12 total
+		expect(result.seriesData).toHaveLength(12);
+
+		// No duplicate timestamps
+		const times = result.seriesData.map((d) => d.time);
+		expect(new Set(times).size).toBe(times.length);
+
+		// First 3 rows are history
+		expect(result.seriesData[0].solar).toBe(100);
+		expect(result.seriesData[1].solar).toBe(110);
+		expect(result.seriesData[2].solar).toBe(120);
+
+		// From FY2022 onward, projection values are used
+		expect(result.seriesData[3].solar).toBe(200); // projection value, not history's 130
+
+		// projectionStartTime unchanged
+		expect(result.projectionStartTime).toBe(multiProjection[0].time);
 	});
 
 	it('does not trim when timestamps do not overlap', () => {

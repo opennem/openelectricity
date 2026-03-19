@@ -129,7 +129,7 @@ function generation({ projections, history, includeBatteryAndLoads }) {
 	return combineHistoryProjection({
 		historicalTimeSeries,
 		projectionTimeSeries,
-		trimSide: 'projection',
+
 		baseUnit: 'Wh',
 		prefix: /** @type {SiPrefix} */ ('G'),
 		displayPrefix: 'T',
@@ -205,7 +205,7 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 	return combineHistoryProjection({
 		historicalTimeSeries,
 		projectionTimeSeries,
-		trimSide: 'projection',
+
 		baseUnit: 'W',
 		prefix: /** @type {SiPrefix} */ ('M'),
 		displayPrefix: 'G',
@@ -281,7 +281,7 @@ function emissions({ projections, history, includeBatteryAndLoads }) {
 	return combineHistoryProjection({
 		historicalTimeSeries,
 		projectionTimeSeries,
-		trimSide: 'projection',
+
 		baseUnit: 'tCO2e',
 		prefix: /** @type {SiPrefix} */ (''),
 		displayPrefix: 'k',

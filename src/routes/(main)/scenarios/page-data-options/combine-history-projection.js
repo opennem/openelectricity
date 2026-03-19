@@ -57,7 +57,6 @@ function interpolateGap(lastRow, firstRow, gapYears, seriesNames) {
  *   projectionTimeSeries: import('$lib/utils/TimeSeries').default | { data: TimeSeriesData[], seriesNames: string[], seriesColours: Object.<string, string>, seriesLabels: Object.<string, string>, statsDatasets?: any[] },
  *   loadSeries?: string[],
  *   order?: FuelTechCode[],
- *   trimSide?: 'history' | 'projection',
  *   baseUnit?: string,
  *   prefix?: SiPrefix,
  *   displayPrefix?: SiPrefix,
@@ -71,7 +70,6 @@ export default function combineHistoryProjection({
 	projectionTimeSeries,
 	loadSeries = [],
 	order = [],
-	trimSide = 'history',
 	baseUnit = '',
 	prefix = /** @type {SiPrefix} */ (''),
 	displayPrefix = /** @type {SiPrefix} */ (''),
@@ -88,16 +86,13 @@ export default function combineHistoryProjection({
 		return emptyResult({ baseUnit, prefix, displayPrefix, allowedPrefixes, chartType });
 	}
 
-	// Handle overlapping timestamps at the boundary
+	// Handle overlap: trim history points that fall within projection range
+	// Projection data is authoritative over history in the overlap region
 	let historyData = historicalTimeSeriesData;
 	let projectionData = projectionTimeSeriesData;
 
-	if (lastHistory.time === firstProjection.time) {
-		if (trimSide === 'history') {
-			historyData = historicalTimeSeriesData.slice(0, -1);
-		} else {
-			projectionData = projectionTimeSeriesData.slice(1);
-		}
+	if (firstProjection.time <= lastHistory.time) {
+		historyData = historicalTimeSeriesData.filter((d) => d.time < firstProjection.time);
 	}
 
 	// Detect gap between history and projection (more than 1 year apart)
