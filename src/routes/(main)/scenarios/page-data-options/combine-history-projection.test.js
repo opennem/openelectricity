@@ -294,7 +294,8 @@ describe('gap interpolation', () => {
 		expect(derived._min).toBe(0);
 		expect(derived._max).toBe(150);
 
-		expect(result.derivedStartTime).toBe(new Date('2026-01-01').getTime());
+		// derivedStartTime is one year before first derived row
+		expect(result.derivedStartTime).toBe(new Date('2025-01-01').getTime());
 		expect(result.derivedEndTime).toBe(new Date('2027-01-01').getTime());
 	});
 
@@ -331,7 +332,8 @@ describe('gap interpolation', () => {
 		expect(d2027.solar).toBe(200);
 		expect(d2028.solar).toBe(300);
 
-		expect(result.derivedStartTime).toBe(new Date('2026-01-01').getTime());
+		// derivedStartTime is one year before first derived row
+		expect(result.derivedStartTime).toBe(new Date('2025-01-01').getTime());
 		expect(result.derivedEndTime).toBe(new Date('2029-01-01').getTime());
 	});
 

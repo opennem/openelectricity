@@ -286,8 +286,8 @@
 					chart.chartStyles.chartOverlay = { xStartValue: startDate, xEndValue: endDate };
 				}
 
-				// Shade derived (interpolated) region with a pale overlay
-				if (derivedStartTime != null && derivedEndTime != null) {
+				// Shade derived (interpolated) region with a pale overlay (not shown in By Scenario view)
+				if (!$isScenarioViewSection && derivedStartTime != null && derivedEndTime != null) {
 					chart.fgShadingData = [[new Date(derivedStartTime), new Date(derivedEndTime)]];
 					chart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
 

@@ -166,8 +166,12 @@ export default function combineHistoryProjection({
 		projectionTimeSeriesData[projectionTimeSeriesData.length - 1]?.time ?? null;
 
 	// Compute derived range from any _derived data points (including interpolated rows)
+	// Start shading one year before the first derived row so the shaded region
+	// covers the gap area correctly on the chart
 	const derivedRows = seriesData.filter((d) => d._derived);
-	const derivedStartTime = derivedRows.length > 0 ? derivedRows[0].time : null;
+	const derivedStartTime = derivedRows.length > 0
+		? addYears(derivedRows[0].date, -1).getTime()
+		: null;
 	const derivedEndTime = derivedRows.length > 0 ? projectionStartTime : null;
 
 	return {

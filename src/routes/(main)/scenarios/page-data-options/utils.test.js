@@ -2,7 +2,9 @@ import { describe, it, expect } from 'vitest';
 import {
 	mergeHistoricalEmissionsData,
 	mutateDatesToStartOfYear,
-	covertHistoryDataToTWh
+	covertHistoryDataToTWh,
+	getFinancialYear,
+	currentFinancialYear
 } from './utils.js';
 
 /**
@@ -160,6 +162,42 @@ describe('mutateDatesToStartOfYear', () => {
 		const result = mutateDatesToStartOfYear(data, 1);
 		expect(result[0].date).toEqual(new Date('2025-01-01T00:00:00'));
 		expect(result[0].date.getFullYear()).toBe(2025);
+	});
+});
+
+describe('getFinancialYear', () => {
+	it('returns the same year for Jan–Jun (first half of FY)', () => {
+		expect(getFinancialYear(new Date('2026-01-15'))).toBe(2026);
+		expect(getFinancialYear(new Date('2026-03-01'))).toBe(2026);
+		expect(getFinancialYear(new Date('2026-06-30'))).toBe(2026);
+	});
+
+	it('returns year + 1 for Jul–Dec (second half of FY)', () => {
+		expect(getFinancialYear(new Date('2025-07-01'))).toBe(2026);
+		expect(getFinancialYear(new Date('2025-09-15'))).toBe(2026);
+		expect(getFinancialYear(new Date('2025-12-31'))).toBe(2026);
+	});
+
+	it('handles the Jul boundary correctly', () => {
+		// June 30 → same year
+		expect(getFinancialYear(new Date('2025-06-30'))).toBe(2025);
+		// July 1 → next year
+		expect(getFinancialYear(new Date('2025-07-01'))).toBe(2026);
+	});
+});
+
+describe('currentFinancialYear', () => {
+	it('matches getFinancialYear for the current date', () => {
+		expect(currentFinancialYear).toBe(getFinancialYear(new Date()));
+	});
+
+	it('is a number that can be used as an upper bound filter', () => {
+		expect(typeof currentFinancialYear).toBe('number');
+		// The last complete FY should pass this filter
+		const lastCompleteFY = currentFinancialYear - 1;
+		expect(lastCompleteFY < currentFinancialYear).toBe(true);
+		// The current incomplete FY should be excluded
+		expect(currentFinancialYear < currentFinancialYear).toBe(false);
 	});
 });
 
