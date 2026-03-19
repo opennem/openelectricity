@@ -16,7 +16,7 @@
 		defaultModelPathway
 	} from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
 	import Tooltip from '../../../../../routes/(main)/scenarios/components/Tooltip.svelte';
-	import { chartXHighlightTicks } from '../../../../../routes/(main)/scenarios/page-data-options/chart-ticks.js';
+	import { formatFyTickX } from '$lib/utils/formatters';
 
 	import Filters from './Filters.svelte';
 	import DetailedBreakdown from './DetailedBreakdown.svelte';
@@ -49,10 +49,7 @@
 	});
 	generationChart.yTicks = 3;
 	generationChart.chartOptions.allowHoverHighlight = false;
-	generationChart.formatTickX = (/** @type {any} */ d) => {
-		if (d instanceof Date) return String(d.getFullYear());
-		return String(d);
-	};
+	generationChart.formatTickX = formatFyTickX;
 
 	const sync = createSyncedCharts([generationChart]);
 
@@ -60,6 +57,7 @@
 	let selectedGroup = $state('homepage_preview');
 	/** @type {FuelTechCode[] | undefined} */
 	let seriesLoadsIds = $state([]);
+	let isFetching = $state(false);
 
 	// Data cache — plain variable (NOT $state) to avoid deep proxy overhead
 	/** @type {*} */
@@ -137,9 +135,10 @@
 		updateChart(generationChart, processed);
 		seriesLoadsIds = /** @type {FuelTechCode[] | undefined} */ (processed.seriesLoadsIds);
 
-		// Use the canonical projection start year from chart-ticks (e.g. 2024 for aemo2024)
-		const highlightDates = chartXHighlightTicks[$selectedModel] || [];
-		const overlayDate = highlightDates[0];
+		// Derive overlay position from processed data's projection start time
+		const overlayDate = processed.projectionStartTime
+			? new Date(processed.projectionStartTime)
+			: null;
 
 		if (overlayDate) {
 			overlayStartTime = +overlayDate;
@@ -147,12 +146,18 @@
 				? new Date(processed.projectionEndTime)
 				: undefined;
 
+			// Determine the earliest shading start (derived region or projection)
+			const derivedStart = processed.derivedStartTime
+				? new Date(processed.derivedStartTime)
+				: null;
+			const shadingStart = derivedStart || overlayDate;
+
 			generationChart.chartStyles.chartOverlayLine = { date: overlayDate };
 			if (endDate) {
 				generationChart.chartStyles.chartOverlay = { xStartValue: overlayDate, xEndValue: endDate };
-				// Use Shading component for projection background fill
-				generationChart.shadingData = [[overlayDate, endDate]];
-				generationChart.shadingFill = '#FAF9F6';
+				// Use Shading component for projection + derived background fill
+				generationChart.bgShadingData = [[shadingStart, endDate]];
+				generationChart.bgShadingFill = '#FAF9F6';
 			}
 
 			// Show only key years + projection start on x-axis
@@ -170,6 +175,8 @@
 
 	// --- Fetch data when model/scenario/pathway changes ---
 	let fetchCacheKey = $state('');
+	/** @type {AbortController | null} */
+	let abortController = null;
 
 	$effect(() => {
 		if (browser) {
@@ -177,14 +184,27 @@
 			if (key === fetchCacheKey) return;
 			fetchCacheKey = key;
 
+			// Cancel any in-flight fetch
+			abortController?.abort();
+			const controller = new AbortController();
+			abortController = controller;
+			isFetching = true;
+
 			fetchTechnologyViewData({
 				model: $selectedModel,
 				region: $selectedRegion,
 				scenario: $selectedScenario,
-				pathway: defaultPathway
+				pathway: defaultPathway,
+				signal: controller.signal
 			}).then((/** @type {*} */ data) => {
 				cachedData = data;
 				dataVersion++;
+				isFetching = false;
+			}).catch((/** @type {any} */ err) => {
+				// Ignore aborted fetches
+				if (err?.name === 'AbortError') return;
+				console.error('Failed to fetch scenario data:', err);
+				isFetching = false;
 			});
 		}
 	});
@@ -237,7 +257,7 @@
 
 	<div class="md:absolute z-50 md:flex md:mt-12 gap-36">
 		<div class="md:w-[28%] bg-white/30 backdrop-blur-sm rounded-lg p-4 -m-4">
-			<Filters />
+			<Filters {isFetching} />
 		</div>
 
 		<div class="md:w-[40%]">

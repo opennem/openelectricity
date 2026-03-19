@@ -142,9 +142,9 @@
 				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
 			</defs>
 
-			<!-- Shading overlay (behind chart content) -->
-			{#if chart.shadingData?.length > 0}
-				<Shading dataset={chart.shadingData} fill={chart.shadingFill} {clipPathId} />
+			<!-- Background shading (behind chart content) -->
+			{#if chart.bgShadingData?.length > 0}
+				<Shading dataset={chart.bgShadingData} fill={chart.bgShadingFill} {clipPathId} />
 			{/if}
 
 			<!-- Chart content (on top to capture hover with series info) -->
@@ -182,6 +182,10 @@
 						valueKey={netTotalKey}
 						stroke={netTotalColor}
 					/>
+				{/if}
+
+				{#if chart.fgShadingData?.length > 0}
+					<Shading dataset={chart.fgShadingData} fill={chart.fgShadingFill} {clipPathId} />
 				{/if}
 
 				{#if overlayStart != null}

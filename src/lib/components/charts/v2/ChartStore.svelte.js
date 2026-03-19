@@ -312,12 +312,19 @@ export default class ChartStore {
 		return rows.join('\n');
 	});
 
-	// Shading/overlay data
+	// Background shading (behind stacked area)
 	/** @type {Date[][]} */
-	shadingData = $state([]);
+	bgShadingData = $state([]);
 
 	/** @type {string} */
-	shadingFill = $state('#33333311');
+	bgShadingFill = $state('#33333311');
+
+	// Foreground shading (in front of stacked area)
+	/** @type {Date[][]} */
+	fgShadingData = $state([]);
+
+	/** @type {string} */
+	fgShadingFill = $state('rgba(180, 180, 180, 0.15)');
 
 	// Stacking options
 	/** @type {boolean} */

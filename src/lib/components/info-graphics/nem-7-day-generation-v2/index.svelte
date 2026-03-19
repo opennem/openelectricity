@@ -77,8 +77,8 @@
 			if (dataWithDates.length > 0) {
 				const startDate = dataWithDates[0].date;
 				const endDate = dataWithDates[dataWithDates.length - 1].date;
-				chart.shadingData = nighttimes(startDate, endDate);
-				chart.shadingFill = '#33333311';
+				chart.bgShadingData = nighttimes(startDate, endDate);
+				chart.bgShadingFill = '#33333311';
 			}
 		}
 	});

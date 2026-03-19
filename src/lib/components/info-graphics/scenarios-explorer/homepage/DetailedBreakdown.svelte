@@ -37,8 +37,8 @@
 		return /** @type {number} */ (+new Date(/** @type {any} */ (overlay).date));
 	});
 
-	let shadingData = $derived(chart.shadingData);
-	let shadingFill = $derived(chart.shadingFill);
+	let bgShadingData = $derived(chart.bgShadingData);
+	let bgShadingFill = $derived(chart.bgShadingFill);
 </script>
 
 <div class="flex items-center gap-1 mb-6 px-6 lg:px-0">
@@ -65,8 +65,8 @@
 			formatTickX={chart.formatTickX}
 			formatTickY={chart.convertAndFormatValue}
 			overlayStart={overlayStartValue}
-			{shadingData}
-			{shadingFill}
+			shadingData={bgShadingData}
+			shadingFill={bgShadingFill}
 			hoverTime={chart.hoverTime}
 			focusTime={chart.focusTime}
 			{gridColClass}

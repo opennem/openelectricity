@@ -5,7 +5,6 @@
 
 	import { colourReducer } from '$lib/stores/theme';
 	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
-	import { chartXHighlightTicks } from './page-data-options/chart-ticks';
 	import { modelOptions } from './page-data-options/models';
 
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
@@ -179,13 +178,16 @@
 	/** @type {number | undefined} */
 	let projectionEndTime = $state();
 
-	// Overlay start from chart tick config (un-shifted boundary year, e.g. 2024)
-	let overlayStartTime = $derived.by(() => {
-		const model = $isScenarioViewSection ? modelOptions[0].value : $singleSelectionData?.model;
-		if (!model) return undefined;
-		const ticks = chartXHighlightTicks[model];
-		return ticks?.[0] ? +ticks[0] : undefined;
-	});
+	/** @type {number | undefined} */
+	let projectionStartTime = $state();
+
+	/** @type {number | undefined} */
+	let derivedStartTime = $state();
+	/** @type {number | undefined} */
+	let derivedEndTime = $state();
+
+	// Overlay start derived from processed data's projectionStartTime
+	let overlayStartTime = $derived(projectionStartTime);
 
 	// --- Chart update helpers ---
 
@@ -266,7 +268,10 @@
 			resetChart(intensityChart);
 		}
 
+		projectionStartTime = processedEnergy.projectionStartTime ?? undefined;
 		projectionEndTime = processedEnergy.projectionEndTime ?? undefined;
+		derivedStartTime = processedEnergy.derivedStartTime ?? undefined;
+		derivedEndTime = processedEnergy.derivedEndTime ?? undefined;
 	}
 
 	// --- Sync chart overlay styling with projection start/end ---
@@ -279,6 +284,14 @@
 				chart.chartStyles.chartOverlayLine = { date: startDate };
 				if (endDate) {
 					chart.chartStyles.chartOverlay = { xStartValue: startDate, xEndValue: endDate };
+				}
+
+				// Shade derived (interpolated) region with a pale overlay
+				if (derivedStartTime != null && derivedEndTime != null) {
+					chart.fgShadingData = [[new Date(derivedStartTime), new Date(derivedEndTime)]];
+					chart.fgShadingFill = 'rgba(180, 180, 180, 0.15)';
+				} else {
+					chart.fgShadingData = [];
 				}
 			});
 		}
