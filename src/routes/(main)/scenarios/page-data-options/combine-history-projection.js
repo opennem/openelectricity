@@ -1,3 +1,53 @@
+import { addYears } from 'date-fns';
+
+const ONE_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+
+/**
+ * Linearly interpolate gap years between the last history row and the first projection row.
+ * Each interpolated row is marked with `_derived: true`.
+ *
+ * @param {TimeSeriesData} lastRow - last history data point
+ * @param {TimeSeriesData} firstRow - first projection data point
+ * @param {number} gapYears - number of missing years to fill
+ * @param {string[]} seriesNames - series keys to interpolate
+ * @returns {TimeSeriesData[]}
+ */
+function interpolateGap(lastRow, firstRow, gapYears, seriesNames) {
+	/** @type {TimeSeriesData[]} */
+	const rows = [];
+
+	for (let i = 1; i <= gapYears; i++) {
+		const date = addYears(lastRow.date, i);
+		const t = i / (gapYears + 1);
+
+		/** @type {TimeSeriesData} */
+		const row = /** @type {any} */ ({ date, time: date.getTime(), _derived: true });
+
+		// Interpolate each series value
+		for (const name of seriesNames) {
+			const a = lastRow[name];
+			const b = firstRow[name];
+			if (a == null || b == null) {
+				row[name] = null;
+			} else {
+				row[name] = /** @type {number} */ (a) + t * (/** @type {number} */ (b) - /** @type {number} */ (a));
+			}
+		}
+
+		// Interpolate _min and _max for stacked area rendering
+		const lastMin = /** @type {number} */ (lastRow._min ?? 0);
+		const firstMin = /** @type {number} */ (firstRow._min ?? 0);
+		const lastMax = /** @type {number} */ (lastRow._max ?? 0);
+		const firstMax = /** @type {number} */ (firstRow._max ?? 0);
+		row._min = lastMin + t * (firstMin - lastMin);
+		row._max = lastMax + t * (firstMax - lastMax);
+
+		rows.push(row);
+	}
+
+	return rows;
+}
+
 /**
  * Shared utility for combining historical and projection time series data.
  * Used by process-technology, process-scenario, and process-region pipelines.
@@ -7,7 +57,6 @@
  *   projectionTimeSeries: import('$lib/utils/TimeSeries').default | { data: TimeSeriesData[], seriesNames: string[], seriesColours: Object.<string, string>, seriesLabels: Object.<string, string>, statsDatasets?: any[] },
  *   loadSeries?: string[],
  *   order?: FuelTechCode[],
- *   trimSide?: 'history' | 'projection',
  *   baseUnit?: string,
  *   prefix?: SiPrefix,
  *   displayPrefix?: SiPrefix,
@@ -21,7 +70,6 @@ export default function combineHistoryProjection({
 	projectionTimeSeries,
 	loadSeries = [],
 	order = [],
-	trimSide = 'history',
 	baseUnit = '',
 	prefix = /** @type {SiPrefix} */ (''),
 	displayPrefix = /** @type {SiPrefix} */ (''),
@@ -38,21 +86,21 @@ export default function combineHistoryProjection({
 		return emptyResult({ baseUnit, prefix, displayPrefix, allowedPrefixes, chartType });
 	}
 
-	// Handle overlapping timestamps at the boundary
+	// Handle overlap: trim history points that fall within projection range
+	// Projection data is authoritative over history in the overlap region
 	let historyData = historicalTimeSeriesData;
 	let projectionData = projectionTimeSeriesData;
 
-	if (lastHistory.time === firstProjection.time) {
-		if (trimSide === 'history') {
-			historyData = historicalTimeSeriesData.slice(0, -1);
-		} else {
-			projectionData = projectionTimeSeriesData.slice(1);
-		}
+	if (firstProjection.time <= lastHistory.time) {
+		historyData = historicalTimeSeriesData.filter((d) => d.time < firstProjection.time);
 	}
 
-	const seriesData = [...historyData, ...projectionData];
+	// Detect gap between history and projection (more than 1 year apart)
+	const lastHistoryRow = historyData[historyData.length - 1];
+	const firstProjectionRow = projectionData[0];
+	const gapYears = Math.round((firstProjectionRow.time - lastHistoryRow.time) / ONE_YEAR_MS) - 1;
 
-	// Determine series names — use order if provided, otherwise merge both sets
+	// Determine series names early so interpolation can use them
 	/** @type {string[]} */
 	let seriesNames = [];
 	if (order && order.length > 0) {
@@ -71,6 +119,32 @@ export default function combineHistoryProjection({
 			...new Set([...projectionTimeSeries.seriesNames, ...historicalTimeSeries.seriesNames])
 		];
 	}
+
+	// For line charts (By Scenario view), anchor each projection series to the
+	// last historical value so the lines visually connect back to the history endpoint
+	if (chartType === 'line') {
+		const projectionOnlyNames = seriesNames.filter(
+			(n) => !historicalTimeSeries.seriesNames.includes(n)
+		);
+
+		if (projectionOnlyNames.length > 0) {
+			const lastHistValue = historicalTimeSeries.seriesNames.reduce(
+				(sum, name) => sum + (Number(lastHistoryRow[name]) || 0),
+				0
+			);
+
+			projectionOnlyNames.forEach((name) => {
+				lastHistoryRow[name] = lastHistValue;
+			});
+		}
+	}
+
+	// Fill gap with linearly interpolated rows
+	const interpolatedRows = gapYears >= 1
+		? interpolateGap(lastHistoryRow, firstProjectionRow, gapYears, seriesNames)
+		: [];
+
+	const seriesData = [...historyData, ...interpolatedRows, ...projectionData];
 
 	// Fill missing series values with null
 	seriesData.forEach((d) => {
@@ -110,6 +184,15 @@ export default function combineHistoryProjection({
 	const projectionEndTime =
 		projectionTimeSeriesData[projectionTimeSeriesData.length - 1]?.time ?? null;
 
+	// Compute derived range from any _derived data points (including interpolated rows)
+	// Start shading one year before the first derived row so the shaded region
+	// covers the gap area correctly on the chart
+	const derivedRows = seriesData.filter((d) => d._derived);
+	const derivedStartTime = derivedRows.length > 0
+		? addYears(derivedRows[0].date, -1).getTime()
+		: null;
+	const derivedEndTime = derivedRows.length > 0 ? projectionStartTime : null;
+
 	return {
 		seriesData,
 		seriesNames,
@@ -120,6 +203,8 @@ export default function combineHistoryProjection({
 		yDomain,
 		projectionStartTime,
 		projectionEndTime,
+		derivedStartTime,
+		derivedEndTime,
 		prefix,
 		baseUnit,
 		displayPrefix,
@@ -143,6 +228,8 @@ function emptyResult({ baseUnit, prefix, displayPrefix, allowedPrefixes, chartTy
 		yDomain: [],
 		projectionStartTime: null,
 		projectionEndTime: null,
+		derivedStartTime: null,
+		derivedEndTime: null,
 		prefix,
 		baseUnit,
 		displayPrefix,
@@ -150,3 +237,5 @@ function emptyResult({ baseUnit, prefix, displayPrefix, allowedPrefixes, chartTy
 		chartType
 	};
 }
+
+export { interpolateGap };

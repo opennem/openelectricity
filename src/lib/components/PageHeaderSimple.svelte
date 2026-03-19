@@ -4,7 +4,7 @@
 </script>
 
 <div
-	class={`page-header bg-light-warm-grey border-b border-warm-grey h-[150px] md:h-[300px] flex items-center justify-center ${className}`}
+	class={`page-header bg-light-warm-grey border-b border-warm-grey py-20 md:h-[300px] flex items-center justify-center ${className}`}
 >
 	<header class="container max-w-none md:container">
 		<div>

@@ -40,6 +40,7 @@
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {[number, number] | null} [viewDomain]
 	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
+	 * @property {boolean} [hideAnnotationsOnMobile] - Hide annotations on mobile viewports
 	 * @property {import('svelte').Snippet} [header]
 	 * @property {import('svelte').Snippet} [tooltip]
 	 * @property {import('svelte').Snippet} [footer]
@@ -69,6 +70,7 @@
 		clampHoverLine = false,
 		viewDomain = null,
 		animate = false,
+		hideAnnotationsOnMobile = false,
 		header,
 		tooltip,
 		footer
@@ -179,6 +181,7 @@
 					{overlayStart}
 					{clampHoverLine}
 					{animate}
+					{hideAnnotationsOnMobile}
 					onmousemove={handleSeriesHover}
 					onmouseout={handleSeriesHoverOut}
 					onpointerup={handleSeriesClick}

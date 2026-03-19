@@ -5,20 +5,21 @@ import parser from './parser';
  *
  * @param {string} region
  * @param {string} dataType
+ * @param {{ signal?: AbortSignal }} [options]
  */
-async function getHistory(region, dataType = 'energy') {
+async function getHistory(region, dataType = 'energy', options) {
 	const params = {
 		region: region && region === 'NEM' ? '' : region
 	};
 	const queryStrings = new URLSearchParams(params);
 
 	if (dataType === 'capacity') {
-		const capacity = await fetch('/api/capacity?' + queryStrings);
+		const capacity = await fetch('/api/capacity?' + queryStrings, { signal: options?.signal });
 		const capacityJson = await capacity.json();
 		return capacityJson;
 	}
 
-	const history = await fetch('/api/energy?' + queryStrings);
+	const history = await fetch('/api/energy?' + queryStrings, { signal: options?.signal });
 	const historyJson = await history.json();
 	return parser(historyJson.data, dataType);
 }

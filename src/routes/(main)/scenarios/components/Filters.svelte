@@ -23,7 +23,7 @@
 	import { modelOptions, modelScenarioPathwayOptions } from '../page-data-options/models';
 	import { groupOptions as groupTechnologyOptions } from '../page-data-options/groups-technology';
 	import { groupOptions as groupScenarioOptions } from '../page-data-options/groups-scenario';
-	import { chartXTicks, chartXHighlightTicks } from '../page-data-options/chart-ticks';
+	import { chartXTicks, chartXHighlightTicks, chartXMobileHiddenTicks } from '../page-data-options/chart-ticks';
 	import ScenarioSelection from './ScenarioSelection.svelte';
 	import OptionsMenu from './OptionsMenu.svelte';
 
@@ -93,11 +93,13 @@
 	$effect(() => {
 		chartsList.forEach((chart) => {
 			if ($isScenarioViewSection) {
-				chart.xTicks = chartXTicks['aemo2024'];
-				chart.xHighlightTicks = chartXHighlightTicks['aemo2024'];
+				chart.xTicks = chartXTicks[modelOptions[0].value];
+				chart.xHighlightTicks = chartXHighlightTicks[modelOptions[0].value];
+				chart.xMobileHiddenTicks = chartXMobileHiddenTicks[modelOptions[0].value] || [];
 			} else {
 				chart.xTicks = chartXTicks[$singleSelectionData.model];
 				chart.xHighlightTicks = chartXHighlightTicks[$singleSelectionData.model] || [];
+				chart.xMobileHiddenTicks = chartXMobileHiddenTicks[$singleSelectionData.model] || [];
 			}
 		});
 	});

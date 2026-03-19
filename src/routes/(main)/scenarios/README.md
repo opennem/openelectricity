@@ -8,7 +8,7 @@ Explore the future of Australia's electricity market through modelled scenarios 
 +page.server.js      → Fetches articles from Sanity CMS
 +page.js             → Pipes server data to client
 +page.svelte         → Main page: chart rendering, data fetching, fullscreen/keyboard handling
-components/          → UI components (Filters, Charts, Tables, OptionsMenu, etc.)
+components/          → UI components (Filters, Charts, Tables, MiniCharts, etc.)
 page-data-options/   → Data fetching, processing, and configuration
 stores/              → Svelte stores for filters and by-scenario state
 ```
@@ -97,7 +97,8 @@ All in `page-data-options/`:
 
 | File | Purpose |
 |------|---------|
-| `combine-history-projection.js` | Merges history and projection arrays into a single time series |
+| `combine-history-projection.js` | Merges history and projection arrays into a single time series, handling overlapping timestamps and computing yDomain |
+| `exclude-battery-and-loads.js` | Filters battery/storage/export fuel techs from group maps |
 | `sum-fuel-tech-data.js` | Optimised summing of fuel tech data with Set-based group lookups |
 | `utils.js` | `mergeHistoricalEmissionsData()`, `covertHistoryDataToTWh()`, `mutateDatesToStartOfYear()` |
 
@@ -164,15 +165,66 @@ Uses ChartStore v2 (`$lib/components/charts/v2/ChartStore.svelte.js`) with four 
 | Intensity | line | `intensity` |
 | Capacity | stacked-area | `capacity` |
 
-Charts are synced via `createSyncedCharts()` for coordinated hover/focus interactions.
+Charts are synced via `createSyncedCharts()` for coordinated hover/focus interactions. Each chart is wrapped by `ScenarioChart.svelte` which provides the `StratumChart` integration with custom header snippets and tooltips.
+
+Row visibility toggling (`hiddenRowNames`) is synced across all four charts.
 
 ## Available Models
 
-Configured in `page-data-options/models.js`. Currently includes:
-- **AEMO 2024 ISP** (`aemo2024`) — scenarios: Step Change, Green Energy Exports, Progressive Change
-- **AEMO 2022 ISP** (`aemo2022`) — scenarios: Step Change, Hydrogen Superpower, Progressive Change, Slow Change
+Configured in `page-data-options/models.js`. Models are listed newest-first, with 2026 ISP Draft as the default:
 
-Static model files also exist in `$lib/models/` for 2022 ISP and draft 2024 ISP data.
+- **AEMO 2026 ISP (Draft)** (`aemo2026draft`) — scenarios: Step Change, Accelerated Transition, Slower Growth. CDPs 1–23 + Counterfactual, ODP = CDP4 (ODP)
+- **AEMO 2024 ISP (Final)** (`aemo2024`) — scenarios: Step Change, Progressive Change, Green Energy Exports. CDPs 1–25 + Counterfactual, ODP = CDP14
+- **AEMO 2024 ISP (Draft)** (`aemo2024draft`) — scenarios: Step Change, Progressive Change, Green Energy Exports. CDPs 1–17 + Counterfactual, ODP = CDP3
+- **AEMO 2022 ISP (Final)** (`aemo2022`) — scenarios: Step Change, Slow Change, Progressive Change, Hydrogen Superpower. CDPs 2,5,6,8–13 + Counterfactual, ODP = CDP12
+- **AEMO 2022 ISP (Draft)** (`aemo2022draft`) — scenarios: Step Change, Slow Change, Progressive Change, Hydrogen Superpower. CDPs 1–13 + Counterfactual, ODP = CDP12
+- **AEMO 2020 ISP (Final)** (`aemo2020`) — scenarios: Step Change, Slow Change, Central. DPs 1–8, default = DP4
+- **AEMO 2020 ISP (Draft)** (`aemo2020draft`) — scenarios: Step, Fast, Slow, Central, High DER. Single default pathway
+- **AEMO 2018 ISP** (`aemo2018`) — scenarios: Neutral, Neutral with Storage, Fast, Slow, High DER, IRFG. Single default pathway
+
+Static model JSON files are stored in `static/data/scenarios/` organised by model version.
+
+## Components
+
+| Component | Purpose |
+|-----------|---------|
+| `Filters.svelte` | Main filter UI with view switcher, region/model/scenario selection |
+| `ScenarioChart.svelte` | StratumChart wrapper with header snippets and tooltips |
+| `DetailedTechnology.svelte` | Mini-chart grid for technology view breakdown |
+| `DetailedScenario.svelte` | Mini-chart grid for scenario comparison |
+| `DetailedRegion.svelte` | Mini-chart grid for regional breakdown |
+| `MiniCharts.svelte` | Reusable mini-chart grid component |
+| `TableTechnology.svelte` | Data table for technology view |
+| `TableScenario.svelte` | Data table for scenario view |
+| `TableRegion.svelte` | Data table for region view |
+| `TableHeader.svelte` | Reusable table header |
+| `ScenarioSelection.svelte` | Multi-select for scenario view |
+| `ScenarioButton.svelte` | Individual scenario selector button |
+| `PathwaySelection.svelte` | Pathway dropdown |
+| `ScenarioDescription.svelte` | Scenario metadata and description display |
+| `Tooltip.svelte` | Custom chart tooltip |
+| `OptionsMenu.svelte` | Settings menu for chart display preferences |
+| `DownloadButton.svelte` | CSV/JSON export |
+| `ArticlesSection.svelte` | ISP-tagged articles from Sanity CMS |
+
+## Stores
+
+| Store | File | Purpose |
+|-------|------|---------|
+| Filters | `stores/filters.js` | Writable stores for view section, region, fuel tech group, model, scenario |
+| By-scenario | `stores/by-scenario.js` | Scenario selection state and ordering logic for scenario view |
+
+## Keyboard Shortcuts
+
+Handled in `+page.svelte` via `handleKeydown()`:
+
+| Key | Action |
+|-----|--------|
+| `F` | Toggle fullscreen mode (synced to URL `?fullscreen=true`) |
+| `?` | Toggle shortcuts toast |
+| `Esc` | Exit fullscreen |
+
+Fullscreen mode uses `layoutContext?.setFullscreen()` for layout coordination.
 
 ## Configuration Files
 
@@ -180,8 +232,13 @@ Static model files also exist in `$lib/models/` for 2022 ISP and draft 2024 ISP 
 |------|---------|
 | `page-data-options/view-sections.js` | View mode options (Technology, Scenario, Region) |
 | `page-data-options/data-types.js` | Chart display options (Generation, Emissions, Intensity, Capacity) |
-| `page-data-options/models.js` | Model definitions, scenarios, pathways |
+| `page-data-options/models.js` | Model definitions, scenarios, pathways, default pathway per model |
 | `page-data-options/descriptions.js` | Scenario labels and descriptions |
-| `page-data-options/groups-technology.js` | Fuel tech grouping options for technology view |
-| `page-data-options/groups-scenario.js` | Fuel tech grouping options for scenario view |
-| `page-data-options/chart-ticks.js` | X-axis tick configuration per model |
+| `page-data-options/groups-technology.js` | Fuel tech grouping for technology view (also includes homepage groups) |
+| `page-data-options/groups-scenario.js` | Fuel tech grouping for scenario view |
+| `page-data-options/groups-region.js` | Fuel tech grouping for region view |
+| `page-data-options/chart-ticks.js` | X-axis tick and highlight configuration per model |
+
+## Homepage Integration
+
+The homepage scenarios preview (`src/lib/components/info-graphics/scenarios-explorer/homepage/`) reuses the same data pipeline (`fetchTechnologyViewData`, `processTechnology.generation`) and chart system. It has its own fuel tech groups (`homepage_preview`, `homepage_renewables_vs_fossil_fuels`) registered in `groups-technology.js` but not shown in the scenario page filters.

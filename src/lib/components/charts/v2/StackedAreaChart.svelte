@@ -21,7 +21,8 @@
 		LineY,
 		Dot,
 		Shading,
-		StepHoverBand
+		StepHoverBand,
+		Annotations
 	} from './elements';
 	import NetTotalLine from './elements/NetTotalLine.svelte';
 	import HatchOverlay from './elements/HatchOverlay.svelte';
@@ -39,6 +40,7 @@
 	 * @property {number | null} [overlayStart] - Start time (ms) for hatched projection overlay
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
+	 * @property {boolean} [hideAnnotationsOnMobile] - Hide annotations on mobile viewports
 	 */
 
 	/** @type {Props} */
@@ -53,7 +55,8 @@
 		netTotalColor = '#C74523',
 		overlayStart,
 		clampHoverLine = false,
-		animate = false
+		animate = false,
+		hideAnnotationsOnMobile = false
 	} = $props();
 
 	// Get chart styles
@@ -142,9 +145,9 @@
 				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
 			</defs>
 
-			<!-- Shading overlay (behind chart content) -->
-			{#if chart.shadingData?.length > 0}
-				<Shading dataset={chart.shadingData} fill={chart.shadingFill} {clipPathId} />
+			<!-- Background shading (behind chart content) -->
+			{#if chart.bgShadingData?.length > 0}
+				<Shading dataset={chart.bgShadingData} fill={chart.bgShadingFill} {clipPathId} />
 			{/if}
 
 			<!-- Chart content (on top to capture hover with series info) -->
@@ -184,6 +187,10 @@
 					/>
 				{/if}
 
+				{#if chart.fgShadingData?.length > 0}
+					<Shading dataset={chart.fgShadingData} fill={chart.fgShadingFill} {clipPathId} />
+				{/if}
+
 				{#if overlayStart != null}
 					<HatchOverlay startTime={overlayStart} patternId="{id}-hatch-pattern" />
 				{/if}
@@ -197,6 +204,11 @@
 					strokeColour={refLine.colour || '#666'}
 				/>
 			{/each}
+
+			<!-- Custom annotations -->
+			{#if chart.annotations.length > 0}
+				<Annotations items={chart.annotations} hideOnMobile={hideAnnotationsOnMobile} />
+			{/if}
 		</Svg>
 
 		<!-- Loading overlay -->
@@ -288,6 +300,7 @@
 					ticks={chart.xTicks}
 					gridlineTicks={chart.xGridlineTicks}
 					highlightTicks={chart.xHighlightTicks}
+					mobileHiddenTicks={chart.xMobileHiddenTicks}
 					formatTick={chart.formatTickXWithTimeZone}
 					gridlines={styles.xGridlines}
 					tickMarks={true}

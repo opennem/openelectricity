@@ -6,7 +6,7 @@ import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
 import { fuelTechMap, orderMap } from './groups-technology';
 import excludeBatteryAndLoads from './exclude-battery-and-loads';
 import combineHistoryProjection from './combine-history-projection';
-import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils';
+import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData, currentFinancialYear } from './utils';
 
 /**
  * @param {StatsData[]} statsData
@@ -73,9 +73,9 @@ function generation({ projection, history, group, colourReducer, includeBatteryA
 		.rollup(parseInterval('FY'))
 		.updateMinMax(historicalLoadSeries);
 
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
+	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */
 
@@ -148,9 +148,9 @@ function capacity({ projection, history, group, colourReducer, includeBatteryAnd
 		.updateMinMax(historicalLoadSeries);
 
 	// Capacity is already in FY
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
+	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data, 1).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */
 
@@ -216,7 +216,7 @@ function emissions({ projection, history, includeBatteryAndLoads }) {
 		.updateMinMax();
 
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 
 	return {

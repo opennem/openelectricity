@@ -5,7 +5,7 @@
 
 	import { colourReducer } from '$lib/stores/theme';
 	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
-	import { chartXHighlightTicks } from './page-data-options/chart-ticks';
+	import { modelOptions } from './page-data-options/models';
 
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -34,7 +34,8 @@
 		fetchTechnologyViewData,
 		fetchScenarioViewData,
 		fetchRegionViewData
-	} from './page-data-options/fetch';
+	} from './page-data-options/fetch.svelte.js';
+	import { toggleDataSource, getUseOeApi } from './page-data-options/fetch.svelte.js';
 	import processTechnology from './page-data-options/process-technology';
 	import processScenario from './page-data-options/process-scenario';
 	import processRegion from './page-data-options/process-region';
@@ -144,6 +145,17 @@
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
+		// Cmd/Ctrl+. toggle — check before input guard so it works everywhere
+		if (e.key === '.' && (e.metaKey || e.ctrlKey)) {
+			e.preventDefault();
+			const isOeApi = toggleDataSource();
+			console.log(`[scenarios] Data source: ${isOeApi ? 'OE API' : 'Legacy'}`);
+			techCacheKey = '';
+			scenarioCacheKey = '';
+			regionCacheKey = '';
+			return;
+		}
+
 		const target = /** @type {HTMLElement} */ (e.target);
 		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
 			return;
@@ -167,6 +179,7 @@
 			showShortcutsToast = !showShortcutsToast;
 			return;
 		}
+
 	}
 
 	/** @type {FuelTechCode[] | undefined} */
@@ -178,13 +191,16 @@
 	/** @type {number | undefined} */
 	let projectionEndTime = $state();
 
-	// Overlay start from chart tick config (un-shifted boundary year, e.g. 2024)
-	let overlayStartTime = $derived.by(() => {
-		const model = $isScenarioViewSection ? 'aemo2024' : $singleSelectionData?.model;
-		if (!model) return undefined;
-		const ticks = chartXHighlightTicks[model];
-		return ticks?.[0] ? +ticks[0] : undefined;
-	});
+	/** @type {number | undefined} */
+	let projectionStartTime = $state();
+
+	/** @type {number | undefined} */
+	let derivedStartTime = $state();
+	/** @type {number | undefined} */
+	let derivedEndTime = $state();
+
+	// Overlay start derived from processed data's projectionStartTime
+	let overlayStartTime = $derived(projectionStartTime);
 
 	// --- Chart update helpers ---
 
@@ -265,7 +281,10 @@
 			resetChart(intensityChart);
 		}
 
+		projectionStartTime = processedEnergy.projectionStartTime ?? undefined;
 		projectionEndTime = processedEnergy.projectionEndTime ?? undefined;
+		derivedStartTime = processedEnergy.derivedStartTime ?? undefined;
+		derivedEndTime = processedEnergy.derivedEndTime ?? undefined;
 	}
 
 	// --- Sync chart overlay styling with projection start/end ---
@@ -278,6 +297,34 @@
 				chart.chartStyles.chartOverlayLine = { date: startDate };
 				if (endDate) {
 					chart.chartStyles.chartOverlay = { xStartValue: startDate, xEndValue: endDate };
+				}
+
+				if (derivedStartTime != null && derivedEndTime != null) {
+					// Shade derived region with a pale overlay (not in By Scenario view)
+					if (!$isScenarioViewSection) {
+						chart.fgShadingData = [[new Date(derivedStartTime), new Date(derivedEndTime)]];
+						chart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
+					} else {
+						chart.fgShadingData = [];
+					}
+
+					// Label the derived region
+					const midTime = derivedStartTime + (derivedEndTime - derivedStartTime) / 2;
+					chart.annotations = [
+						{
+							type: 'text',
+							x: midTime,
+							y: 0,
+							text: 'DERIVED',
+							dy: -6,
+							textAnchor: 'middle',
+							fill: '#999',
+							fontSize: '8px'
+						}
+					];
+				} else {
+					chart.fgShadingData = [];
+					chart.annotations = [];
 				}
 			});
 		}

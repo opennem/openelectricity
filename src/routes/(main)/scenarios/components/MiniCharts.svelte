@@ -55,8 +55,8 @@
 		formatTickX,
 		formatTickY,
 		overlayStart,
-		shadingData = [],
-		shadingFill = '',
+		bgShadingData = [],
+		bgShadingFill = '',
 		onhover,
 		onhoverend,
 		onfocus,
@@ -157,12 +157,13 @@
 			// Show gridlines but make default stroke transparent — only highlighted ticks visible
 			store.chartStyles.xGridlines = true;
 			store.chartStyles.xAxisStroke = 'transparent';
+			store.chartStyles.snapTicks = true;
 			store.chartStyles.lastYTickDy = 10;
 			store.xHighlightTicks = highlightTicks;
 			if (miniTicks) store.xTicks = miniTicks;
 			if (formatTickX) store.formatTickX = formatTickX;
-			if (shadingData.length) store.shadingData = shadingData;
-			if (shadingFill) store.shadingFill = shadingFill;
+			if (bgShadingData.length) store.bgShadingData = bgShadingData;
+			if (bgShadingFill) store.bgShadingFill = bgShadingFill;
 
 			// Y-axis: set ticks to data min/max and use parent's formatter
 			if (formatTickY) {

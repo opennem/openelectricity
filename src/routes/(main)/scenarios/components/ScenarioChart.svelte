@@ -29,6 +29,7 @@
 		<StratumChart
 			{chart}
 			overlayStart={projectionStartTime}
+			hideAnnotationsOnMobile={true}
 			{onhover}
 			{onhoverend}
 			{onfocus}

@@ -5,7 +5,7 @@ import { loadFuelTechs } from '$lib/fuel_techs.js';
 import { fuelTechMap } from './groups-region';
 import sumFuelTechData from './sum-fuel-tech-data';
 import combineHistoryProjection from './combine-history-projection';
-import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils';
+import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData, currentFinancialYear } from './utils';
 
 /**
  * @param {{
@@ -75,7 +75,7 @@ function generation({ regionsData, includeBatteryAndLoads }) {
 		.rollup(parseInterval('FY'));
 
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */
 
@@ -156,8 +156,9 @@ function capacity({ regionsData, includeBatteryAndLoads }) {
 		undefined
 	).transform();
 
-	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+	// Capacity is already in FY — add 1 year to align display dates
+	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data, 1).filter(
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */
 
@@ -243,7 +244,7 @@ function emissions({ regionsData, includeBatteryAndLoads }) {
 		.rollup(parseInterval('FY'));
 
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */
 

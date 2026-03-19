@@ -16,7 +16,7 @@ export default function (/** @type {any} */ filters = undefined) {
 	const selectedChartType = writable(filters?.chartType || chartTypeOptions[0].value);
 	const selectedRegion = writable(filters?.region || regionOptions[0].value);
 	const selectedScenario = writable(filters?.scenario || 'step_change');
-	const selectedPathway = writable(filters?.pathway || 'CDP14');
+	const selectedPathway = writable(filters?.pathway || 'CDP4 (ODP)');
 	const selectedGroup = writable(filters?.group || '');
 
 	const selectedMultipleScenarios = writable(filters?.multipleScenarios || []);

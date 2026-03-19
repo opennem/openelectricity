@@ -139,6 +139,9 @@ export default class ChartStore {
 	/** @type {any[]} */
 	xHighlightTicks = $state([]);
 
+	/** @type {any[]} Tick values whose labels are hidden on mobile (gridlines kept) */
+	xMobileHiddenTicks = $state([]);
+
 	/** @type {number[] | number | undefined} */
 	yTicks = $state();
 
@@ -312,12 +315,19 @@ export default class ChartStore {
 		return rows.join('\n');
 	});
 
-	// Shading/overlay data
+	// Background shading (behind stacked area)
 	/** @type {Date[][]} */
-	shadingData = $state([]);
+	bgShadingData = $state([]);
 
 	/** @type {string} */
-	shadingFill = $state('#33333311');
+	bgShadingFill = $state('#33333311');
+
+	// Foreground shading (in front of stacked area)
+	/** @type {Date[][]} */
+	fgShadingData = $state([]);
+
+	/** @type {string} */
+	fgShadingFill = $state('rgba(255, 255, 255, 0.24)');
 
 	// Stacking options
 	/** @type {boolean} */
@@ -341,6 +351,12 @@ export default class ChartStore {
 	 * @type {Array<{value: number, label?: string, colour?: string}>}
 	 */
 	yReferenceLines = $state([]);
+
+	// Annotations (arbitrary SVG shapes and text at data coordinates)
+	/**
+	 * @type {Array<import('./elements/Annotations.svelte').Annotation>}
+	 */
+	annotations = $state([]);
 
 	/**
 	 * @param {ChartConfig} config
