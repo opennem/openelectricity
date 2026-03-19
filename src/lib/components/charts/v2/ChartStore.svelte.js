@@ -139,6 +139,9 @@ export default class ChartStore {
 	/** @type {any[]} */
 	xHighlightTicks = $state([]);
 
+	/** @type {any[]} Tick values whose labels are hidden on mobile (gridlines kept) */
+	xMobileHiddenTicks = $state([]);
+
 	/** @type {number[] | number | undefined} */
 	yTicks = $state();
 

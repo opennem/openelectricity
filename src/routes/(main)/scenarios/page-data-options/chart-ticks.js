@@ -85,6 +85,11 @@ export const chartXHighlightTicks = {
 	[AEMO_2018_ISP]: [startOfYear(new Date('2019-01-01'))]
 };
 
+/** @type {Object.<string, Date[]>} Tick labels hidden on mobile (gridlines kept) */
+export const chartXMobileHiddenTicks = {
+	[AEMO_2026_ISP_DRAFT]: [startOfYear(new Date('2025-01-01'))]
+};
+
 /** @type {Object.<string, Date[]>} */
 export const miniChartXTicks = {
 	[AEMO_2026_ISP_DRAFT]: [

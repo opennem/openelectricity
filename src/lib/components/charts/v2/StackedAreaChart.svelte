@@ -40,6 +40,7 @@
 	 * @property {number | null} [overlayStart] - Start time (ms) for hatched projection overlay
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
+	 * @property {boolean} [hideAnnotationsOnMobile] - Hide annotations on mobile viewports
 	 */
 
 	/** @type {Props} */
@@ -54,7 +55,8 @@
 		netTotalColor = '#C74523',
 		overlayStart,
 		clampHoverLine = false,
-		animate = false
+		animate = false,
+		hideAnnotationsOnMobile = false
 	} = $props();
 
 	// Get chart styles
@@ -205,7 +207,7 @@
 
 			<!-- Custom annotations -->
 			{#if chart.annotations.length > 0}
-				<Annotations items={chart.annotations} />
+				<Annotations items={chart.annotations} hideOnMobile={hideAnnotationsOnMobile} />
 			{/if}
 		</Svg>
 
@@ -298,6 +300,7 @@
 					ticks={chart.xTicks}
 					gridlineTicks={chart.xGridlineTicks}
 					highlightTicks={chart.xHighlightTicks}
+					mobileHiddenTicks={chart.xMobileHiddenTicks}
 					formatTick={chart.formatTickXWithTimeZone}
 					gridlines={styles.xGridlines}
 					tickMarks={true}

@@ -72,7 +72,7 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="h-full text-right text-xs text-mid-grey py-1">
+		<div class="h-full text-right text-xs text-mid-grey mr-2">
 			{defaultText}
 		</div>
 	{/if}

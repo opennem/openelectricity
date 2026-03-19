@@ -17,7 +17,10 @@
 	} from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
 	import Tooltip from '../../../../../routes/(main)/scenarios/components/Tooltip.svelte';
 	import { formatFyTickX } from '$lib/utils/formatters';
-	import { chartXHighlightTicks } from '../../../../../routes/(main)/scenarios/page-data-options/chart-ticks.js';
+	import {
+		chartXHighlightTicks,
+		chartXMobileHiddenTicks
+	} from '../../../../../routes/(main)/scenarios/page-data-options/chart-ticks.js';
 
 	import Filters from './Filters.svelte';
 	import DetailedBreakdown from './DetailedBreakdown.svelte';
@@ -189,6 +192,7 @@
 				})
 				.sort((a, b) => a.getTime() - b.getTime());
 			generationChart.xHighlightTicks = highlights;
+			generationChart.xMobileHiddenTicks = chartXMobileHiddenTicks[$selectedModel] || [];
 			generationChart.chartStyles.yLabelStartPos = overlayDate;
 		}
 	}
@@ -262,15 +266,15 @@
 </script>
 
 <div class="container max-w-none lg:container relative">
-	<header class="flex justify-between gap-24 mb-12">
-		<h1 class="text-3xl leading-[3.7rem] mb-4 md:mb-6 md:text-5xl md:leading-5xl md:max-w-[600px]">
+	<header class="sm:flex justify-between gap-12 mb-8 sm:mb-12">
+		<h1 class="text-3xl leading-[3.7rem] mb-6 md:mb-6 md:text-5xl md:leading-5xl md:max-w-[600px]">
 			Explore the future of Australia's national electricity market
 		</h1>
 
 		<div class="hidden md:block">
 			<a
 				href="/scenarios"
-				class="text-base mt-12 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+				class="text-base mt-6 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
 			>
 				View scenario explorer
 			</a>
@@ -281,11 +285,9 @@
 </div>
 
 <div class="max-w-none lg:container relative">
-	<p class="text-xs text-mid-grey text-right mb-2 px-6 lg:px-0">
-		Energy Generation (TWh) by Financial Year
-	</p>
-
-	<div class="z-10 rounded bg-white/90 p-8 block">
+	<div
+		class="z-10 rounded bg-white/40 p-8 hidden sm:block sm:absolute sm:max-w-[30%] sm:ml-36 top-12 left-12"
+	>
 		<ScenarioDescription />
 	</div>
 
@@ -296,18 +298,22 @@
 			overlayStart={overlayStartTime}
 			clampHoverLine={true}
 			animate={true}
+			hideAnnotationsOnMobile={true}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 		>
 			{#snippet tooltip()}
-				<Tooltip
-					hoverData={generationChart.hoverData}
-					hoverKey={generationChart.hoverKey}
-					seriesColours={generationChart.seriesColours}
-					seriesLabels={generationChart.seriesLabels}
-					convertAndFormatValue={generationChart.convertAndFormatValue}
-					showTotal={true}
-				/>
+				<div class="mb-2">
+					<Tooltip
+						hoverData={generationChart.hoverData}
+						hoverKey={generationChart.hoverKey}
+						seriesColours={generationChart.seriesColours}
+						seriesLabels={generationChart.seriesLabels}
+						convertAndFormatValue={generationChart.convertAndFormatValue}
+						defaultText="Energy Generation (TWh) by Financial Year"
+						showTotal={true}
+					/>
+				</div>
 			{/snippet}
 		</StratumChart>
 	{:else}
@@ -333,4 +339,13 @@
 			AEMO Integrated System Plan for the National Electricity Market
 		</a>
 	</p>
+
+	<div class="block sm:hidden container mt-12">
+		<a
+			href="/scenarios"
+			class="text-base mt-6 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+		>
+			View scenario explorer
+		</a>
+	</div>
 </div>

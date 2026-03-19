@@ -157,6 +157,7 @@
 			// Show gridlines but make default stroke transparent — only highlighted ticks visible
 			store.chartStyles.xGridlines = true;
 			store.chartStyles.xAxisStroke = 'transparent';
+			store.chartStyles.snapTicks = true;
 			store.chartStyles.lastYTickDy = 10;
 			store.xHighlightTicks = highlightTicks;
 			if (miniTicks) store.xTicks = miniTicks;

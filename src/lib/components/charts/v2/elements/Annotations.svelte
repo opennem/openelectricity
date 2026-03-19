@@ -73,10 +73,11 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {Annotation[]} items - Array of annotation items to render
+	 * @property {boolean} [hideOnMobile] - Hide annotations on mobile viewports
 	 */
 
 	/** @type {Props} */
-	let { items = [] } = $props();
+	let { items = [], hideOnMobile = false } = $props();
 
 	/**
 	 * Convert a data x value (Date or number) to pixel position
@@ -95,7 +96,7 @@
 	}
 </script>
 
-<g class="annotations-group pointer-events-none">
+<g class="annotations-group pointer-events-none" class:hide-mobile={hideOnMobile}>
 	{#each items as item, i (i)}
 		{#if item.type === 'rect'}
 			<rect
@@ -149,3 +150,11 @@
 		{/if}
 	{/each}
 </g>
+
+<style>
+	@media (max-width: 767px) {
+		.hide-mobile {
+			display: none;
+		}
+	}
+</style>
