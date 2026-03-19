@@ -129,6 +129,82 @@ describe('processTechnology', () => {
 				expect(d.date.getDate()).toBe(1);
 			});
 		});
+
+		it('projection first FY matches expected year for 2024-07-01 start', () => {
+			const projection = [
+				makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
+			];
+			const history = [
+				makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
+			];
+
+			const result = processTechnology.generation({
+				projection,
+				history,
+				group: 'simple',
+				colourReducer,
+				includeBatteryAndLoads: false
+			});
+
+			// Projection start is 2024-07-01 → after mutateDatesToStartOfYear(data, 1) → 2025-01-01 (FY2025)
+			expect(result.projectionStartTime).toBeDefined();
+			const startDate = new Date(result.projectionStartTime);
+			expect(startDate.getFullYear()).toBe(2025);
+			expect(startDate.getMonth()).toBe(0);
+			expect(startDate.getDate()).toBe(1);
+		});
+
+		it('combined data has no duplicate timestamps', () => {
+			const projection = [
+				makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
+			];
+			const history = [
+				makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
+			];
+
+			const result = processTechnology.generation({
+				projection,
+				history,
+				group: 'simple',
+				colourReducer,
+				includeBatteryAndLoads: false
+			});
+
+			const times = result.seriesData.map((d) => d.time);
+			const uniqueTimes = [...new Set(times)];
+			expect(times.length).toBe(uniqueTimes.length);
+		});
+
+		it('projectionStartTime aligns with history end (no gap)', () => {
+			const projection = [
+				makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
+			];
+			const history = [
+				makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
+			];
+
+			const result = processTechnology.generation({
+				projection,
+				history,
+				group: 'simple',
+				colourReducer,
+				includeBatteryAndLoads: false
+			});
+
+			if (result.projectionStartTime) {
+				const projStart = result.projectionStartTime;
+				// Find the last historical point (before projection start)
+				const historicalPoints = result.seriesData.filter((d) => d.time < projStart);
+				if (historicalPoints.length > 0) {
+					const lastHistorical = historicalPoints[historicalPoints.length - 1];
+					const gap = projStart - lastHistorical.time;
+					// Gap should be roughly 1 year (within tolerance of leap years)
+					const oneYearMs = 365.25 * 24 * 60 * 60 * 1000;
+					expect(gap).toBeLessThanOrEqual(oneYearMs * 1.01);
+					expect(gap).toBeGreaterThanOrEqual(oneYearMs * 0.99);
+				}
+			}
+		});
 	});
 
 	describe('capacity', () => {

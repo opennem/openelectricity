@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import combineHistoryProjection from './combine-history-projection.js';
+import combineHistoryProjection, { interpolateGap } from './combine-history-projection.js';
 
 function makeMockTimeSeries({ data, seriesNames, seriesColours = {}, seriesLabels = {}, statsDatasets = [] }) {
 	return {
@@ -214,5 +214,151 @@ describe('combineHistoryProjection', () => {
 		// History row should have null for wind, projection row should have null for solar
 		expect(result.seriesData[0].wind).toBeNull();
 		expect(result.seriesData[1].solar).toBeNull();
+	});
+});
+
+describe('gap interpolation', () => {
+	it('does not interpolate when history and projection are adjacent (no gap)', () => {
+		const history = [
+			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), solar: 100, _min: 0, _max: 100 }
+		];
+		const projection = [
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: 200, _min: 0, _max: 200 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({ data: history, seriesNames: ['solar'] }),
+			projectionTimeSeries: makeMockTimeSeries({ data: projection, seriesNames: ['solar'] })
+		});
+
+		expect(result.derivedStartTime).toBeNull();
+		expect(result.derivedEndTime).toBeNull();
+		expect(result.seriesData).toHaveLength(2);
+	});
+
+	it('interpolates a single gap year', () => {
+		const history = [
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: 100, wind: 50, _min: 0, _max: 100 }
+		];
+		const projection = [
+			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), solar: 200, wind: 100, _min: 0, _max: 200 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({ data: history, seriesNames: ['solar', 'wind'] }),
+			projectionTimeSeries: makeMockTimeSeries({ data: projection, seriesNames: ['solar', 'wind'] })
+		});
+
+		expect(result.seriesData).toHaveLength(3);
+
+		// Middle row is interpolated
+		const derived = result.seriesData[1];
+		expect(derived._derived).toBe(true);
+		expect(derived.date.getFullYear()).toBe(2026);
+		expect(derived.date.getMonth()).toBe(0);
+		expect(derived.date.getDate()).toBe(1);
+		expect(derived.solar).toBe(150); // midpoint
+		expect(derived.wind).toBe(75); // midpoint
+		expect(derived._min).toBe(0);
+		expect(derived._max).toBe(150);
+
+		expect(result.derivedStartTime).toBe(new Date('2026-01-01').getTime());
+		expect(result.derivedEndTime).toBe(new Date('2026-01-01').getTime());
+	});
+
+	it('interpolates multiple gap years with correct fractions', () => {
+		const history = [
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: 0, _min: 0, _max: 0 }
+		];
+		const projection = [
+			{ time: new Date('2029-01-01').getTime(), date: new Date('2029-01-01'), solar: 400, _min: 0, _max: 400 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({ data: history, seriesNames: ['solar'] }),
+			projectionTimeSeries: makeMockTimeSeries({ data: projection, seriesNames: ['solar'] })
+		});
+
+		// 3 gap years: 2026, 2027, 2028
+		expect(result.seriesData).toHaveLength(5);
+
+		const d2026 = result.seriesData[1];
+		const d2027 = result.seriesData[2];
+		const d2028 = result.seriesData[3];
+
+		expect(d2026._derived).toBe(true);
+		expect(d2027._derived).toBe(true);
+		expect(d2028._derived).toBe(true);
+
+		expect(d2026.date.getFullYear()).toBe(2026);
+		expect(d2027.date.getFullYear()).toBe(2027);
+		expect(d2028.date.getFullYear()).toBe(2028);
+
+		// Fractions: 1/4, 2/4, 3/4
+		expect(d2026.solar).toBe(100);
+		expect(d2027.solar).toBe(200);
+		expect(d2028.solar).toBe(300);
+
+		expect(result.derivedStartTime).toBe(new Date('2026-01-01').getTime());
+		expect(result.derivedEndTime).toBe(new Date('2028-01-01').getTime());
+	});
+
+	it('sets null for interpolated values when boundary has null', () => {
+		const history = [
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: null, _min: 0, _max: 0 }
+		];
+		const projection = [
+			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), solar: 200, _min: 0, _max: 200 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({ data: history, seriesNames: ['solar'] }),
+			projectionTimeSeries: makeMockTimeSeries({ data: projection, seriesNames: ['solar'] })
+		});
+
+		const derived = result.seriesData[1];
+		expect(derived._derived).toBe(true);
+		expect(derived.solar).toBeNull();
+	});
+
+	it('interpolates _min and _max correctly', () => {
+		const history = [
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: 100, _min: -10, _max: 100 }
+		];
+		const projection = [
+			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), solar: 200, _min: -20, _max: 200 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({ data: history, seriesNames: ['solar'] }),
+			projectionTimeSeries: makeMockTimeSeries({ data: projection, seriesNames: ['solar'] })
+		});
+
+		const derived = result.seriesData[1];
+		expect(derived._min).toBe(-15);
+		expect(derived._max).toBe(150);
+	});
+});
+
+describe('interpolateGap', () => {
+	it('returns empty array for zero gap years', () => {
+		const result = interpolateGap(
+			{ time: 1000, date: new Date('2025-01-01'), solar: 100, _min: 0, _max: 100 },
+			{ time: 2000, date: new Date('2026-01-01'), solar: 200, _min: 0, _max: 200 },
+			0,
+			['solar']
+		);
+		expect(result).toHaveLength(0);
+	});
+
+	it('marks all rows as _derived', () => {
+		const result = interpolateGap(
+			{ time: 1000, date: new Date('2025-01-01'), solar: 100, _min: 0, _max: 100 },
+			{ time: 2000, date: new Date('2027-01-01'), solar: 200, _min: 0, _max: 200 },
+			1,
+			['solar']
+		);
+		expect(result).toHaveLength(1);
+		expect(result[0]._derived).toBe(true);
 	});
 });

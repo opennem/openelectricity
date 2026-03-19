@@ -5,6 +5,8 @@
 
 	import { modelOptions } from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
 
+	let { isFetching = false } = $props();
+
 	const { selectedModel, scenarioOptions, selectedScenario } = getContext('scenario-filters');
 
 	// Map modelOptions to FormSelect format
@@ -31,13 +33,23 @@
 
 		<p class="mb-0">Explore the scenarios:</p>
 
-		<FormSelect
-			paddingY="py-3"
-			paddingX="px-4"
-			options={modelSelectOptions}
-			selected={$selectedModel}
-			onchange={(option) => ($selectedModel = option.value)}
-		/>
+		<div class="flex items-center gap-2">
+			<div class="grow">
+				<FormSelect
+					paddingY="py-3"
+					paddingX="px-4"
+					options={modelSelectOptions}
+					selected={$selectedModel}
+					onchange={(option) => ($selectedModel = option.value)}
+				/>
+			</div>
+			{#if isFetching}
+				<svg class="animate-spin h-4 w-4 text-mid-grey shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+					<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+					<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+				</svg>
+			{/if}
+		</div>
 	</div>
 
 	<div

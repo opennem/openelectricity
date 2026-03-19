@@ -141,6 +141,26 @@ describe('mutateDatesToStartOfYear', () => {
 		expect(result).not.toBe(original);
 		expect(result[0]).not.toBe(original[0]);
 	});
+
+	it('FY rollup output: end-of-FY date 2024-06-30 becomes 2024-01-01', () => {
+		const data = [{ date: new Date('2024-06-30'), time: 0, value: 1 }];
+		const result = mutateDatesToStartOfYear(data);
+		expect(result[0].date).toEqual(new Date('2024-01-01T00:00:00'));
+	});
+
+	it('projection date with additionalYears=1: 2024-01-01 becomes 2025-01-01', () => {
+		const data = [{ date: new Date('2024-01-01'), time: 0, value: 1 }];
+		const result = mutateDatesToStartOfYear(data, 1);
+		expect(result[0].date).toEqual(new Date('2025-01-01T00:00:00'));
+	});
+
+	it('raw projection 2024-07-01 with startOfYear + additionalYears=1 yields FY2025', () => {
+		// Simulates the full pipeline: raw projection date → startOfYear → +1
+		const data = [{ date: new Date('2024-07-01'), time: 0, value: 1 }];
+		const result = mutateDatesToStartOfYear(data, 1);
+		expect(result[0].date).toEqual(new Date('2025-01-01T00:00:00'));
+		expect(result[0].date.getFullYear()).toBe(2025);
+	});
 });
 
 describe('covertHistoryDataToTWh', () => {

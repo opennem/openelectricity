@@ -8,14 +8,15 @@ import { covertHistoryDataToTWh, mergeHistoricalEmissionsData } from './utils';
  * Fetch energy endpoint once and parse for both 'energy' and 'emissions' data types.
  * Avoids duplicate HTTP requests since both use the same URL.
  * @param {string} region
+ * @param {{ signal?: AbortSignal }} [options]
  * @returns {Promise<{ energyData: StatsData[], emissionsData: StatsData[] }>}
  */
-async function getEnergyAndEmissions(region) {
+async function getEnergyAndEmissions(region, options) {
 	const params = {
 		region: region && region === 'NEM' ? '' : region
 	};
 	const queryStrings = new URLSearchParams(params);
-	const response = await fetch('/api/energy?' + queryStrings);
+	const response = await fetch('/api/energy?' + queryStrings, { signal: options?.signal });
 	const json = await response.json();
 
 	return {
@@ -90,7 +91,7 @@ function remappedProjectionData(data, model) {
 
 /**
  * Fetch and process data for technology view
- * @param {{ model: string, region: string, scenario: string, pathway: string }} param0
+ * @param {{ model: string, region: string, scenario: string, pathway: string, signal?: AbortSignal }} param0
  * @returns {Promise<{
  * projectionEnergyData: StatsData[],
  * projectionCapacityData: StatsData[],
@@ -100,11 +101,12 @@ function remappedProjectionData(data, model) {
  * historyEmisssionsData: StatsData[]
  * }>}
  */
-async function fetchTechnologyViewData({ model, region, scenario, pathway }) {
+async function fetchTechnologyViewData({ model, region, scenario, pathway, signal }) {
+	const opts = signal ? { signal } : undefined;
 	const [energyAndEmissions, historyCapacityData, scenarioData] = await Promise.all([
-		getEnergyAndEmissions(region),
-		getHistory(region, 'capacity'),
-		getScenarios(model, scenario, { pathway, region })
+		getEnergyAndEmissions(region, opts),
+		getHistory(region, 'capacity', opts),
+		getScenarios(model, scenario, { pathway, region }, opts)
 	]);
 
 	const historyEnergyData = energyAndEmissions.energyData;

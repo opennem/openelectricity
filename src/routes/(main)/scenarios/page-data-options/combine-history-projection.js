@@ -1,3 +1,53 @@
+import { addYears } from 'date-fns';
+
+const ONE_YEAR_MS = 365.25 * 24 * 60 * 60 * 1000;
+
+/**
+ * Linearly interpolate gap years between the last history row and the first projection row.
+ * Each interpolated row is marked with `_derived: true`.
+ *
+ * @param {TimeSeriesData} lastRow - last history data point
+ * @param {TimeSeriesData} firstRow - first projection data point
+ * @param {number} gapYears - number of missing years to fill
+ * @param {string[]} seriesNames - series keys to interpolate
+ * @returns {TimeSeriesData[]}
+ */
+function interpolateGap(lastRow, firstRow, gapYears, seriesNames) {
+	/** @type {TimeSeriesData[]} */
+	const rows = [];
+
+	for (let i = 1; i <= gapYears; i++) {
+		const date = addYears(lastRow.date, i);
+		const t = i / (gapYears + 1);
+
+		/** @type {TimeSeriesData} */
+		const row = /** @type {any} */ ({ date, time: date.getTime(), _derived: true });
+
+		// Interpolate each series value
+		for (const name of seriesNames) {
+			const a = lastRow[name];
+			const b = firstRow[name];
+			if (a == null || b == null) {
+				row[name] = null;
+			} else {
+				row[name] = /** @type {number} */ (a) + t * (/** @type {number} */ (b) - /** @type {number} */ (a));
+			}
+		}
+
+		// Interpolate _min and _max for stacked area rendering
+		const lastMin = /** @type {number} */ (lastRow._min ?? 0);
+		const firstMin = /** @type {number} */ (firstRow._min ?? 0);
+		const lastMax = /** @type {number} */ (lastRow._max ?? 0);
+		const firstMax = /** @type {number} */ (firstRow._max ?? 0);
+		row._min = lastMin + t * (firstMin - lastMin);
+		row._max = lastMax + t * (firstMax - lastMax);
+
+		rows.push(row);
+	}
+
+	return rows;
+}
+
 /**
  * Shared utility for combining historical and projection time series data.
  * Used by process-technology, process-scenario, and process-region pipelines.
@@ -50,9 +100,12 @@ export default function combineHistoryProjection({
 		}
 	}
 
-	const seriesData = [...historyData, ...projectionData];
+	// Detect gap between history and projection (more than 1 year apart)
+	const lastHistoryRow = historyData[historyData.length - 1];
+	const firstProjectionRow = projectionData[0];
+	const gapYears = Math.round((firstProjectionRow.time - lastHistoryRow.time) / ONE_YEAR_MS) - 1;
 
-	// Determine series names — use order if provided, otherwise merge both sets
+	// Determine series names early so interpolation can use them
 	/** @type {string[]} */
 	let seriesNames = [];
 	if (order && order.length > 0) {
@@ -71,6 +124,13 @@ export default function combineHistoryProjection({
 			...new Set([...projectionTimeSeries.seriesNames, ...historicalTimeSeries.seriesNames])
 		];
 	}
+
+	// Fill gap with linearly interpolated rows
+	const interpolatedRows = gapYears >= 1
+		? interpolateGap(lastHistoryRow, firstProjectionRow, gapYears, seriesNames)
+		: [];
+
+	const seriesData = [...historyData, ...interpolatedRows, ...projectionData];
 
 	// Fill missing series values with null
 	seriesData.forEach((d) => {
@@ -110,6 +170,12 @@ export default function combineHistoryProjection({
 	const projectionEndTime =
 		projectionTimeSeriesData[projectionTimeSeriesData.length - 1]?.time ?? null;
 
+	// Compute derived range (interpolated gap region)
+	const derivedStartTime = interpolatedRows.length > 0 ? interpolatedRows[0].time : null;
+	const derivedEndTime = interpolatedRows.length > 0
+		? interpolatedRows[interpolatedRows.length - 1].time
+		: null;
+
 	return {
 		seriesData,
 		seriesNames,
@@ -120,6 +186,8 @@ export default function combineHistoryProjection({
 		yDomain,
 		projectionStartTime,
 		projectionEndTime,
+		derivedStartTime,
+		derivedEndTime,
 		prefix,
 		baseUnit,
 		displayPrefix,
@@ -143,6 +211,8 @@ function emptyResult({ baseUnit, prefix, displayPrefix, allowedPrefixes, chartTy
 		yDomain: [],
 		projectionStartTime: null,
 		projectionEndTime: null,
+		derivedStartTime: null,
+		derivedEndTime: null,
 		prefix,
 		baseUnit,
 		displayPrefix,
@@ -150,3 +220,5 @@ function emptyResult({ baseUnit, prefix, displayPrefix, allowedPrefixes, chartTy
 		chartType
 	};
 }
+
+export { interpolateGap };
