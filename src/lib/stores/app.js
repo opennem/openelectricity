@@ -47,5 +47,29 @@ function toLocalStorage(store, storageKey) {
 /** @type {import('svelte/store').Readable<string>} */
 export const dataTrackerLink = readable(PUBLIC_EXPLORE_URL);
 
-export const bannerOpen = writable(fromLocalStorage('bannerOpen', true));
-toLocalStorage(bannerOpen, 'bannerOpen');
+const BANNER_STORAGE_KEY = 'bannerDismissedAt';
+const BANNER_EXPIRY_MS = 30 * 24 * 60 * 60 * 1000; // 1 month
+
+function isBannerOpen() {
+	if (browser) {
+		const dismissedAt = window.localStorage.getItem(BANNER_STORAGE_KEY);
+		if (dismissedAt) {
+			const elapsed = Date.now() - Number(dismissedAt);
+			if (elapsed < BANNER_EXPIRY_MS) return false;
+			window.localStorage.removeItem(BANNER_STORAGE_KEY);
+		}
+	}
+	return true;
+}
+
+export const bannerOpen = writable(isBannerOpen());
+
+if (browser) {
+	bannerOpen.subscribe((/** @type {boolean} */ value) => {
+		if (!value) {
+			window.localStorage.setItem(BANNER_STORAGE_KEY, String(Date.now()));
+		} else {
+			window.localStorage.removeItem(BANNER_STORAGE_KEY);
+		}
+	});
+}
