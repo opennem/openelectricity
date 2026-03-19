@@ -28,12 +28,8 @@
 	// Keep filters context for ScenarioDescription to read from
 	setContext('scenario-filters', filtersStore());
 
-	const {
-		selectedModel,
-		selectedScenario,
-		selectedRegion,
-		scenarioOptions
-	} = getContext('scenario-filters');
+	const { selectedModel, selectedScenario, selectedRegion, scenarioOptions } =
+		getContext('scenario-filters');
 
 	// --- ChartStore v2 ---
 	const generationChart = new ChartStore({
@@ -77,9 +73,7 @@
 	// Update scenario options when model changes
 	$effect(() => {
 		const scenarios = currentModelScenarios;
-		scenarioOptions.set(
-			scenarios.map((/** @type {any} */ s) => ({ label: s.label, value: s.id }))
-		);
+		scenarioOptions.set(scenarios.map((/** @type {any} */ s) => ({ label: s.label, value: s.id })));
 
 		// Always reset to first scenario when model changes
 		$selectedScenario = scenarios[0]?.id || 'step_change';
@@ -113,9 +107,7 @@
 			processed.yDomain[1] !== undefined
 		) {
 			const yMax = /** @type {number} */ (processed.yDomain[1]);
-			chart.setYDomain(
-				/** @type {[number, number]} */ ([processed.yDomain[0], yMax * 1.15])
-			);
+			chart.setYDomain(/** @type {[number, number]} */ ([processed.yDomain[0], yMax * 1.15]));
 		} else {
 			chart.setYDomain(undefined);
 		}
@@ -157,10 +149,13 @@
 
 			// Foreground shading for the derived (interpolated) region
 			if (processed.derivedStartTime && processed.derivedEndTime) {
-				generationChart.fgShadingData = [[new Date(processed.derivedStartTime), new Date(processed.derivedEndTime)]];
+				generationChart.fgShadingData = [
+					[new Date(processed.derivedStartTime), new Date(processed.derivedEndTime)]
+				];
 				generationChart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
 
-				const midTime = processed.derivedStartTime + (processed.derivedEndTime - processed.derivedStartTime) / 2;
+				const midTime =
+					processed.derivedStartTime + (processed.derivedEndTime - processed.derivedStartTime) / 2;
 				generationChart.annotations = [
 					{
 						type: 'text',
@@ -221,16 +216,18 @@
 				scenario: $selectedScenario,
 				pathway: defaultPathway,
 				signal: controller.signal
-			}).then((/** @type {*} */ data) => {
-				cachedData = data;
-				dataVersion++;
-				isFetching = false;
-			}).catch((/** @type {any} */ err) => {
-				// Ignore aborted fetches
-				if (err?.name === 'AbortError') return;
-				console.error('Failed to fetch scenario data:', err);
-				isFetching = false;
-			});
+			})
+				.then((/** @type {*} */ data) => {
+					cachedData = data;
+					dataVersion++;
+					isFetching = false;
+				})
+				.catch((/** @type {any} */ err) => {
+					// Ignore aborted fetches
+					if (err?.name === 'AbortError') return;
+					console.error('Failed to fetch scenario data:', err);
+					isFetching = false;
+				});
 		}
 	});
 
@@ -280,19 +277,18 @@
 		</div>
 	</header>
 
-	<div class="md:absolute z-50 md:flex md:mt-12 md:right-0 md:left-0 md:justify-between">
-		<div class="md:w-[28%] bg-white/30 backdrop-blur-sm rounded-lg p-4 -m-4">
-			<Filters {isFetching} />
-		</div>
-
-		<div class="md:w-[35%]">
-			<ScenarioDescription />
-		</div>
-	</div>
+	<Filters {isFetching} {selectedGroup} ongroupchange={handleGroupChange} />
 </div>
 
-<div class="max-w-none lg:container">
-	<p class="text-xs text-mid-grey text-right mb-2 px-6 lg:px-0">Energy Generation (TWh) by Financial Year</p>
+<div class="max-w-none lg:container relative">
+	<p class="text-xs text-mid-grey text-right mb-2 px-6 lg:px-0">
+		Energy Generation (TWh) by Financial Year
+	</p>
+
+	<div class="z-10 rounded bg-white/90 p-8 block">
+		<ScenarioDescription />
+	</div>
+
 	{#if generationChart.seriesData.length > 0}
 		<StratumChart
 			chart={generationChart}
@@ -326,7 +322,6 @@
 		{seriesLoadsIds}
 		onhover={handleHover}
 		onhoverend={handleHoverEnd}
-		ongroupchange={handleGroupChange}
 	/>
 
 	<p class="text-xs text-mid-grey px-3 pt-12">

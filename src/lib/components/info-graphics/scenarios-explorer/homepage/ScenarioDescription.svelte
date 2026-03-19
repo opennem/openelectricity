@@ -11,9 +11,9 @@
 </script>
 
 {#if label || description}
-	<div class="mt-12 pointer-events-none">
+	<div class="pointer-events-none">
 		{#if label}
-			<h6 class="subhead-secondary mb-6 md:block hidden">
+			<h6 class="subhead-secondary mb-6">
 				{label}
 			</h6>
 		{/if}

@@ -1,8 +1,5 @@
 <script>
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import MiniCharts from '../../../../../routes/(main)/scenarios/components/MiniCharts.svelte';
-
-	import { homepageDataTechnologyGroupOptions } from '../helpers';
 
 	/**
 	 * @typedef {Object} Props
@@ -11,7 +8,6 @@
 	 * @property {string[]} [seriesLoadsIds]
 	 * @property {(time: number, key?: string) => void} [onhover]
 	 * @property {() => void} [onhoverend]
-	 * @property {(group: string) => void} [ongroupchange]
 	 */
 
 	/** @type {Props} */
@@ -20,8 +16,7 @@
 		selectedGroup,
 		seriesLoadsIds = [],
 		onhover,
-		onhoverend,
-		ongroupchange
+		onhoverend
 	} = $props();
 
 	let gridColClass = $derived(
@@ -40,17 +35,6 @@
 	let bgShadingData = $derived(chart.bgShadingData);
 	let bgShadingFill = $derived(chart.bgShadingFill);
 </script>
-
-<div class="flex items-center gap-1 mb-6 px-6 lg:px-0">
-	View:
-	<div class="rounded-md whitespace-nowrap">
-		<FormSelect
-			options={homepageDataTechnologyGroupOptions}
-			selected={selectedGroup}
-			onchange={(option) => ongroupchange?.(/** @type {string} */ (option.value))}
-		/>
-	</div>
-</div>
 
 {#if chart.seriesData.length > 0}
 	<div class="border-t border-b md:border-x border-mid-warm-grey">
