@@ -286,10 +286,14 @@
 					chart.chartStyles.chartOverlay = { xStartValue: startDate, xEndValue: endDate };
 				}
 
-				// Shade derived (interpolated) region with a pale overlay (not shown in By Scenario view)
-				if (!$isScenarioViewSection && derivedStartTime != null && derivedEndTime != null) {
-					chart.fgShadingData = [[new Date(derivedStartTime), new Date(derivedEndTime)]];
-					chart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
+				if (derivedStartTime != null && derivedEndTime != null) {
+					// Shade derived region with a pale overlay (not in By Scenario view)
+					if (!$isScenarioViewSection) {
+						chart.fgShadingData = [[new Date(derivedStartTime), new Date(derivedEndTime)]];
+						chart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
+					} else {
+						chart.fgShadingData = [];
+					}
 
 					// Label the derived region
 					const midTime = derivedStartTime + (derivedEndTime - derivedStartTime) / 2;

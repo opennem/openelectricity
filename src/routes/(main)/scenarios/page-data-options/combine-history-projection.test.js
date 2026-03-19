@@ -396,3 +396,96 @@ describe('interpolateGap', () => {
 		expect(result[0]._derived).toBe(true);
 	});
 });
+
+describe('line chart scenario bridging', () => {
+	it('anchors projection series to last historical value when series names differ', () => {
+		const history = [
+			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), historical: 100 },
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), historical: 120 }
+		];
+		const projection = [
+			{ time: new Date('2026-01-01').getTime(), date: new Date('2026-01-01'), 'scenario-a': 200, 'scenario-b': 180 },
+			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), 'scenario-a': 220, 'scenario-b': 190 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a', 'scenario-b']
+			}),
+			chartType: 'line'
+		});
+
+		// Last history row should have projection series anchored to historical value
+		const lastHistRow = result.seriesData.find(
+			(d) => d.time === new Date('2025-01-01').getTime()
+		);
+		expect(lastHistRow.historical).toBe(120);
+		expect(lastHistRow['scenario-a']).toBe(120);
+		expect(lastHistRow['scenario-b']).toBe(120);
+	});
+
+	it('interpolates projection series through gap years from historical anchor', () => {
+		const history = [
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), historical: 100 }
+		];
+		const projection = [
+			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), 'scenario-a': 200 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a']
+			}),
+			chartType: 'line'
+		});
+
+		// 1 history + 1 interpolated gap + 1 projection = 3
+		expect(result.seriesData).toHaveLength(3);
+
+		// History row anchored
+		expect(result.seriesData[0]['scenario-a']).toBe(100);
+
+		// Interpolated gap row: midpoint between 100 and 200
+		const gapRow = result.seriesData[1];
+		expect(gapRow._derived).toBe(true);
+		expect(gapRow['scenario-a']).toBe(150);
+
+		// Historical series is null in gap (no false extension)
+		expect(gapRow.historical).toBeNull();
+	});
+
+	it('does not anchor when chart type is area', () => {
+		const history = [
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), historical: 100, _min: 0, _max: 100 }
+		];
+		const projection = [
+			{ time: new Date('2026-01-01').getTime(), date: new Date('2026-01-01'), 'scenario-a': 200, _min: 0, _max: 200 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a']
+			}),
+			chartType: 'area'
+		});
+
+		// Last history row should NOT have scenario-a anchored (filled with null instead)
+		const lastHistRow = result.seriesData[0];
+		expect(lastHistRow['scenario-a']).toBeNull();
+	});
+});

@@ -197,7 +197,8 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
 		undefined
 	).transform();
 
-	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
+	// Capacity is already in FY — add 1 year to align display dates
+	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data, 1).filter(
 		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */

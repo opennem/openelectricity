@@ -120,6 +120,25 @@ export default function combineHistoryProjection({
 		];
 	}
 
+	// For line charts (By Scenario view), anchor each projection series to the
+	// last historical value so the lines visually connect back to the history endpoint
+	if (chartType === 'line') {
+		const projectionOnlyNames = seriesNames.filter(
+			(n) => !historicalTimeSeries.seriesNames.includes(n)
+		);
+
+		if (projectionOnlyNames.length > 0) {
+			const lastHistValue = historicalTimeSeries.seriesNames.reduce(
+				(sum, name) => sum + (Number(lastHistoryRow[name]) || 0),
+				0
+			);
+
+			projectionOnlyNames.forEach((name) => {
+				lastHistoryRow[name] = lastHistValue;
+			});
+		}
+	}
+
 	// Fill gap with linearly interpolated rows
 	const interpolatedRows = gapYears >= 1
 		? interpolateGap(lastHistoryRow, firstProjectionRow, gapYears, seriesNames)
