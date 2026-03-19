@@ -34,7 +34,8 @@
 		fetchTechnologyViewData,
 		fetchScenarioViewData,
 		fetchRegionViewData
-	} from './page-data-options/fetch';
+	} from './page-data-options/fetch.svelte.js';
+	import { toggleDataSource, getUseOeApi } from './page-data-options/fetch.svelte.js';
 	import processTechnology from './page-data-options/process-technology';
 	import processScenario from './page-data-options/process-scenario';
 	import processRegion from './page-data-options/process-region';
@@ -144,6 +145,17 @@
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
+		// Cmd/Ctrl+. toggle — check before input guard so it works everywhere
+		if (e.key === '.' && (e.metaKey || e.ctrlKey)) {
+			e.preventDefault();
+			const isOeApi = toggleDataSource();
+			console.log(`[scenarios] Data source: ${isOeApi ? 'OE API' : 'Legacy'}`);
+			techCacheKey = '';
+			scenarioCacheKey = '';
+			regionCacheKey = '';
+			return;
+		}
+
 		const target = /** @type {HTMLElement} */ (e.target);
 		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
 			return;
@@ -167,6 +179,7 @@
 			showShortcutsToast = !showShortcutsToast;
 			return;
 		}
+
 	}
 
 	/** @type {FuelTechCode[] | undefined} */

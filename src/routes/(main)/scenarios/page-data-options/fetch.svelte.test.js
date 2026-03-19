@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { fetchTechnologyViewData } from './fetch.js';
+import { fetchTechnologyViewData, clearCaches } from './fetch.svelte.js';
 
 /**
  * Build a mock fetch that routes by URL prefix and respects AbortSignal.
@@ -17,7 +17,7 @@ function createMockFetch() {
 			return Promise.reject(new DOMException('The operation was aborted.', 'AbortError'));
 		}
 
-		// Return appropriate shaped data per endpoint
+		// Legacy historical energy+emissions (default)
 		if (url.startsWith('/api/energy')) {
 			return Promise.resolve({
 				json: () =>
@@ -63,6 +63,7 @@ function createMockFetch() {
 
 beforeEach(() => {
 	vi.restoreAllMocks();
+	clearCaches();
 });
 
 describe('fetchTechnologyViewData', () => {
@@ -80,7 +81,7 @@ describe('fetchTechnologyViewData', () => {
 			signal: controller.signal
 		});
 
-		// Should have made 3 parallel fetches: energy, capacity, scenarios
+		// Should have made 3 parallel fetches: scenarios/history, capacity, scenarios
 		expect(calls.length).toBe(3);
 
 		for (const call of calls) {
@@ -188,5 +189,20 @@ describe('fetchTechnologyViewData', () => {
 
 		const result2 = await promise2;
 		expect(result2).toHaveProperty('projectionEnergyData');
+	});
+
+	it('defaults to fetching from /api/energy (legacy endpoint)', async () => {
+		const { mockFetch, calls } = createMockFetch();
+		vi.stubGlobal('fetch', mockFetch);
+
+		await fetchTechnologyViewData({
+			model: 'aemo2024',
+			region: 'NSW',
+			scenario: 'step_change',
+			pathway: 'default'
+		});
+
+		const legacyCall = calls.find((c) => c.url.startsWith('/api/energy'));
+		expect(legacyCall).toBeDefined();
 	});
 });

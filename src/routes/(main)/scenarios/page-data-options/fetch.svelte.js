@@ -4,14 +4,58 @@ import parser from '$lib/opennem/parser';
 
 import { covertHistoryDataToTWh, mergeHistoricalEmissionsData } from './utils';
 
+// --- In-memory caches ---
+
+/** @type {Map<string, { energyData: StatsData[], emissionsData: StatsData[] }>} */
+const historyCache = new Map();
+
+/** @type {Map<string, StatsData[]>} */
+const capacityCache = new Map();
+
+/** @type {Map<string, StatsData[]>} */
+const scenarioCache = new Map();
+
+/** Reactive flag to switch between OE API and legacy static JSON for historical data */
+let useOeApi = $state(false);
+
+/** Toggle the data source and return the new value */
+export function toggleDataSource() {
+	useOeApi = !useOeApi;
+	return useOeApi;
+}
+
+/** @returns {boolean} */
+export function getUseOeApi() {
+	return useOeApi;
+}
+
 /**
- * Fetch energy endpoint once and parse for both 'energy' and 'emissions' data types.
- * Avoids duplicate HTTP requests since both use the same URL.
+ * Fetch historical energy and emissions data from the OE API.
  * @param {string} region
  * @param {{ signal?: AbortSignal }} [options]
  * @returns {Promise<{ energyData: StatsData[], emissionsData: StatsData[] }>}
  */
-async function getEnergyAndEmissions(region, options) {
+async function getEnergyAndEmissionsFromApi(region, options) {
+	const params = new URLSearchParams({
+		region: region && region === 'NEM' ? '' : region,
+		metrics: 'energy,emissions'
+	});
+	const response = await fetch('/api/scenarios/history?' + params, { signal: options?.signal });
+	const json = await response.json();
+
+	return {
+		energyData: json.energy || [],
+		emissionsData: json.emissions || []
+	};
+}
+
+/**
+ * Fetch historical energy and emissions data from the legacy static JSON endpoint.
+ * @param {string} region
+ * @param {{ signal?: AbortSignal }} [options]
+ * @returns {Promise<{ energyData: StatsData[], emissionsData: StatsData[] }>}
+ */
+async function getEnergyAndEmissionsFromLegacy(region, options) {
 	const params = {
 		region: region && region === 'NEM' ? '' : region
 	};
@@ -26,13 +70,77 @@ async function getEnergyAndEmissions(region, options) {
 }
 
 /**
+ * Fetch historical energy and emissions data.
+ * Switches between OE API and legacy endpoint based on USE_OE_API flag.
+ * @param {string} region
+ * @param {{ signal?: AbortSignal }} [options]
+ * @returns {Promise<{ energyData: StatsData[], emissionsData: StatsData[] }>}
+ */
+async function getEnergyAndEmissions(region, options) {
+	const source = useOeApi ? 'oe' : 'legacy';
+	const key = `${source}:${region}`;
+
+	if (historyCache.has(key)) return historyCache.get(key);
+
+	const result = await (useOeApi
+		? getEnergyAndEmissionsFromApi(region, options)
+		: getEnergyAndEmissionsFromLegacy(region, options));
+
+	if (!options?.signal?.aborted) {
+		historyCache.set(key, result);
+	}
+
+	return result;
+}
+
+/**
+ * Cached wrapper around getHistory for capacity data.
+ * @param {string} region
+ * @param {{ signal?: AbortSignal }} [options]
+ * @returns {Promise<StatsData[]>}
+ */
+async function getCachedCapacity(region, options) {
+	if (capacityCache.has(region)) return capacityCache.get(region);
+
+	const result = await getHistory(region, 'capacity', options);
+
+	if (!options?.signal?.aborted) {
+		capacityCache.set(region, result);
+	}
+
+	return result;
+}
+
+/**
+ * Cached wrapper around getScenarios.
+ * @param {string} model
+ * @param {string} scenario
+ * @param {Record<string, string>} filters
+ * @param {{ signal?: AbortSignal }} [options]
+ * @returns {Promise<StatsData[]>}
+ */
+async function getCachedScenarios(model, scenario, filters, options) {
+	const key = `${model}:${scenario}:${filters.pathway || ''}:${filters.region || ''}:${filters.dataType || ''}`;
+
+	if (scenarioCache.has(key)) return scenarioCache.get(key);
+
+	const result = await getScenarios(model, scenario, filters, options);
+
+	if (!options?.signal?.aborted) {
+		scenarioCache.set(key, result);
+	}
+
+	return result;
+}
+
+/**
  * Fetch data for Technology view Energy data
  * @param {{ model: string, region: string, scenario: string, pathway: string, dataType: ScenarioDataType }} param0
  */
 async function fetchEmissionsData({ model, region, scenario, pathway, dataType }) {
 	const [energyAndEmissions, scenarioData] = await Promise.all([
 		getEnergyAndEmissions(region),
-		getScenarios(model, scenario, { pathway, region, dataType })
+		getCachedScenarios(model, scenario, { pathway, region, dataType })
 	]);
 
 	const historyEmisssionsData = energyAndEmissions.emissionsData;
@@ -64,7 +172,7 @@ async function fetchFuelTechData({ model, region, scenario, pathway, dataType })
 	/** @type {StatsData[][]} */
 	const [historyData, scenarioData] = await Promise.all([
 		getHistory(region, dataType),
-		getScenarios(model, scenario, { pathway, region, dataType })
+		getCachedScenarios(model, scenario, { pathway, region, dataType })
 	]);
 
 	const projection = scenarioData.map((/** @type {any} */ d) => remappedProjectionData(d, model));
@@ -105,8 +213,8 @@ async function fetchTechnologyViewData({ model, region, scenario, pathway, signa
 	const opts = signal ? { signal } : undefined;
 	const [energyAndEmissions, historyCapacityData, scenarioData] = await Promise.all([
 		getEnergyAndEmissions(region, opts),
-		getHistory(region, 'capacity', opts),
-		getScenarios(model, scenario, { pathway, region }, opts)
+		getCachedCapacity(region, opts),
+		getCachedScenarios(model, scenario, { pathway, region }, opts)
 	]);
 
 	const historyEnergyData = energyAndEmissions.energyData;
@@ -158,7 +266,7 @@ async function fetchTechnologyViewData({ model, region, scenario, pathway, signa
 async function fetchScenarioViewData({ scenarios, region }) {
 	const [energyAndEmissions, historyCapacityData] = await Promise.all([
 		getEnergyAndEmissions(region),
-		getHistory(region, 'capacity')
+		getCachedCapacity(region)
 	]);
 
 	const historyEnergyData = energyAndEmissions.energyData;
@@ -166,7 +274,7 @@ async function fetchScenarioViewData({ scenarios, region }) {
 
 	/** @type {StatsData[][]} */
 	const scenariosProjection = await Promise.all(
-		scenarios.map((s) => getScenarios(s.model, s.scenario, { pathway: s.pathway, region }))
+		scenarios.map((s) => getCachedScenarios(s.model, s.scenario, { pathway: s.pathway, region }))
 	);
 
 	const projectionsData = scenarios.map((s, i) => {
@@ -207,10 +315,10 @@ async function fetchRegionViewData({ regions, model, scenario, pathway }) {
 
 	// Fetch scenario data (all regions for this pathway), and energy+emissions + capacity per region, all in parallel
 	const [scenarioData, ...regionResults] = await Promise.all([
-		getScenarios(model, scenario, { pathway }),
+		getCachedScenarios(model, scenario, { pathway }),
 		...regionsData.flatMap((r) => [
 			getEnergyAndEmissions(r.value.toUpperCase()),
-			getHistory(r.value.toUpperCase(), 'capacity')
+			getCachedCapacity(r.value.toUpperCase())
 		])
 	]);
 
@@ -238,6 +346,13 @@ async function fetchRegionViewData({ regions, model, scenario, pathway }) {
 	}
 
 	return regionsData;
+}
+
+/** Clear all in-memory caches. Exposed for testing. */
+export function clearCaches() {
+	historyCache.clear();
+	capacityCache.clear();
+	scenarioCache.clear();
 }
 
 export { fetchTechnologyViewData, fetchScenarioViewData, fetchRegionViewData };
