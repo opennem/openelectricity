@@ -137,6 +137,15 @@
 	{/if} -->
 
 {#if !isFullscreen}
+	<div
+		class="relative w-full bg-black text-white text-sm leading-sm px-10 md:px-8 py-6 font-light md:flex gap-3 justify-center"
+	>
+		<div>
+			🔮 <a href="https://forms.gle/oHzViVX2ePhHtaFX6" target="_blank" class="underline text-white"
+				>Have your say</a
+			> on the future of Open Electricity
+		</div>
+	</div>
 	<Nav />
 {/if}
 
