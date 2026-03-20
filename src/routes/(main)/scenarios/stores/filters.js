@@ -17,6 +17,9 @@ export default function () {
 
 	const includeBatteryAndLoads = writable(false);
 
+	/** @type {import('svelte/store').Writable<Record<string, string>>} */
+	const colourOverrides = writable({});
+
 	const isTechnologyViewSection = derived(selectedViewSection, ($selectedViewSection) => {
 		return $selectedViewSection === 'technology';
 	});
@@ -92,6 +95,7 @@ export default function () {
 		isRegionViewSection,
 
 		includeBatteryAndLoads,
+		colourOverrides,
 
 		filterShortName
 	};

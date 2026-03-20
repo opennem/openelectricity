@@ -108,7 +108,8 @@
 		singleSelectionData,
 		selectedFuelTechGroup,
 		multiSelectionData,
-		includeBatteryAndLoads
+		includeBatteryAndLoads,
+		colourOverrides
 	} = getContext('scenario-filters');
 	const { selectionData } = getContext('by-scenario');
 
@@ -601,7 +602,7 @@
 			: undefined;
 
 		// process colours
-		const updatedSeriesColours = processScenario.getScenarioColours(processedEnergy.seriesNames);
+		const updatedSeriesColours = processScenario.getScenarioColours(processedEnergy.seriesNames, $colourOverrides);
 
 		// update colours
 		processedEnergy.seriesColours = updatedSeriesColours;
@@ -786,9 +787,6 @@
 				title="Scenario"
 				{hiddenRowNames}
 				onrowclick={toggleRow}
-				onremove={(id) => {
-					$multiSelectionData = $multiSelectionData.filter((/** @type {any} */ s) => s.id !== id);
-				}}
 			/>
 		{:else if $isRegionViewSection}
 			<TableRegion title="Region" {seriesLoadsIds} {hiddenRowNames} onrowclick={toggleRow} />
@@ -839,6 +837,7 @@
 			(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
 		)}
 	/>
+
 {/if}
 
 <ShortcutsToast

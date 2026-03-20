@@ -330,9 +330,10 @@ function intensity({ processedEmissions, processedEnergy }) {
 
 /**
  * @param {string[]} seriesNames
+ * @param {Record<string, string>} [overrides]
  * @returns {Record<string, string>}
  */
-function getScenarioColours(seriesNames) {
+function getScenarioColours(seriesNames, overrides = {}) {
 	const scenarioPathways = seriesNames.filter((/** @type {string} */ name) => name !== 'historical');
 
 	const scenarioPathwayDetails = scenarioPathways.map((/** @type {string} */ name) => {
@@ -373,6 +374,12 @@ function getScenarioColours(seriesNames) {
 			}
 		});
 	});
+
+	for (const [key, value] of Object.entries(overrides)) {
+		if (key in newColours && value) {
+			newColours[key] = value;
+		}
+	}
 
 	return newColours;
 }

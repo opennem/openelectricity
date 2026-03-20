@@ -9,7 +9,7 @@
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import Modal from '$lib/components/Modal.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import IconPlus from '$lib/icons/Plus.svelte';
+
 
 	import { formatFyTickX } from '$lib/utils/formatters';
 
@@ -198,20 +198,7 @@
 		};
 	}
 
-	/**
-	 * Add the current plan/scenario/pathway combo to multiSelectionData
-	 */
-	function handleAddScenario() {
-		const { model, scenario, pathway } = $singleSelectionData;
-		const id = `${model}-${scenario}-${pathway}`;
-		if ($multiSelectionData.some((/** @type {any} */ s) => s.id === id)) return;
-		const entry = modelScenarioPathwayOptions.find((/** @type {any} */ m) => m.id === id);
-		if (entry) {
-			$multiSelectionData = [...$multiSelectionData, entry];
-		}
-	}
-
-	/**
+/**
 	 * Handle single pathway selection
 	 * @param {{label: string, value: string | number | null | undefined}} option
 	 */
@@ -240,17 +227,39 @@
 		</header>
 
 		<section class="p-10 w-full flex flex-col gap-12 relative z-50">
-			<div class="flex gap-12">
-				<FormMultiSelect
-					options={dataTypeDisplayOptions}
-					selected={$selectedCharts}
-					label="Charts"
+			{#if $isSingleSelectionMode}
+				<FormSelect
+					formLabel="Plan"
+					options={planOptions}
+					selected={selectedModel}
 					paddingX=""
 					staticDisplay={true}
 					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
+					onchange={handlePlanSelect}
 				/>
 
+				<FormSelect
+					formLabel="Scenario"
+					options={scenarioOptions}
+					selected={$singleSelectionData?.scenario || ''}
+					paddingX=""
+					staticDisplay={true}
+					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+					onchange={handleScenarioSelect}
+				/>
+
+				<FormSelect
+					formLabel="Pathway"
+					options={pathwayOptions}
+					selected={$singleSelectionData?.pathway || ''}
+					paddingX=""
+					staticDisplay={true}
+					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+					onchange={handlePathwaySelect}
+				/>
+			{/if}
+
+			<div class="flex gap-12">
 				{#if $isTechnologyViewSection || $isScenarioViewSection}
 					<FormSelect
 						formLabel="Region"
@@ -262,63 +271,17 @@
 						onchange={(option) => ($selectedRegion = option.value)}
 					/>
 				{/if}
+
+				<FormMultiSelect
+					options={dataTypeDisplayOptions}
+					selected={$selectedCharts}
+					label="Charts"
+					paddingX=""
+					staticDisplay={true}
+					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+					onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
+				/>
 			</div>
-
-			<FormSelect
-				formLabel="Plan"
-				options={planOptions}
-				selected={selectedModel}
-				paddingX=""
-				staticDisplay={true}
-				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-				onchange={handlePlanSelect}
-			/>
-
-			{#if $isSingleSelectionMode}
-				<FormSelect
-					formLabel="Scenario"
-					options={scenarioOptions}
-					selected={$singleSelectionData?.scenario || ''}
-					paddingX=""
-					staticDisplay={true}
-					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={handleScenarioSelect}
-				/>
-
-				<FormSelect
-					formLabel="Pathway"
-					options={pathwayOptions}
-					selected={$singleSelectionData?.pathway || ''}
-					paddingX=""
-					staticDisplay={true}
-					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={handlePathwaySelect}
-				/>
-			{:else}
-				<FormSelect
-					formLabel="Scenario"
-					options={scenarioOptions}
-					selected={$singleSelectionData?.scenario || ''}
-					paddingX=""
-					staticDisplay={true}
-					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={handleScenarioSelect}
-				/>
-
-				<FormSelect
-					formLabel="Pathway"
-					options={pathwayOptions}
-					selected={$singleSelectionData?.pathway || ''}
-					paddingX=""
-					staticDisplay={true}
-					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={handlePathwaySelect}
-				/>
-
-				<ButtonIcon onclick={handleAddScenario}>
-					<IconPlus class="size-5" />
-				</ButtonIcon>
-			{/if}
 		</section>
 
 		{#snippet buttons()}
@@ -336,6 +299,16 @@
 	class="max-w-none flex gap-4 md:gap-8 justify-between px-8 pt-3 pb-3 border-b border-warm-grey"
 >
 	<div class="w-full flex items-center justify-between md:justify-start gap-4">
+		{#if isFullscreen}
+			<button
+				onclick={() => onfullscreenchange?.()}
+				class="flex items-center cursor-pointer"
+				title="Exit full screen"
+			>
+				<img src="/logo-mark.png" alt="Open Electricity" class="h-10 w-auto" />
+			</button>
+		{/if}
+
 		<div class="sm:hidden">
 			<FormSelect
 				options={viewSectionOptions}
@@ -364,16 +337,35 @@
 		<div
 			class="hidden md:flex items-center gap-2 ml-4 pl-4 relative z-40 border-l border-warm-grey"
 		>
-			<div class="flex items-center whitespace-nowrap">
-				<FormMultiSelect
-					options={dataTypeDisplayOptions}
-					selected={$selectedCharts}
-					label="Charts"
-					paddingX="px-7"
-					paddingY="py-3"
-					onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
-				/>
+			{#if $isSingleSelectionMode}
+				<div class="flex items-center whitespace-nowrap">
+					<FormSelect
+						options={planOptions}
+						selected={selectedModel}
+						paddingX="px-7"
+						paddingY="py-3"
+						onchange={handlePlanSelect}
+					/>
 
+					<FormSelect
+						options={scenarioOptions}
+						selected={$singleSelectionData?.scenario || ''}
+						paddingX="px-7"
+						paddingY="py-3"
+						onchange={handleScenarioSelect}
+					/>
+
+					<FormSelect
+						options={pathwayOptions}
+						selected={$singleSelectionData?.pathway || ''}
+						paddingX="px-7"
+						paddingY="py-3"
+						onchange={handlePathwaySelect}
+					/>
+				</div>
+			{/if}
+
+			<div class="flex items-center whitespace-nowrap {$isSingleSelectionMode ? 'border-l border-warm-grey pl-4 ml-4' : ''}">
 				{#if $isTechnologyViewSection || $isScenarioViewSection}
 					<FormSelect
 						options={regionOptions}
@@ -384,51 +376,14 @@
 					/>
 				{/if}
 
-				<FormSelect
-					options={planOptions}
-					selected={selectedModel}
+				<FormMultiSelect
+					options={dataTypeDisplayOptions}
+					selected={$selectedCharts}
+					label="Charts"
 					paddingX="px-7"
 					paddingY="py-3"
-					onchange={handlePlanSelect}
+					onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
 				/>
-
-				{#if $isSingleSelectionMode}
-					<FormSelect
-						options={scenarioOptions}
-						selected={$singleSelectionData?.scenario || ''}
-						paddingX="px-7"
-						paddingY="py-3"
-						onchange={handleScenarioSelect}
-					/>
-
-					<FormSelect
-						options={pathwayOptions}
-						selected={$singleSelectionData?.pathway || ''}
-						paddingX="px-7"
-						paddingY="py-3"
-						onchange={handlePathwaySelect}
-					/>
-				{:else}
-					<FormSelect
-						options={scenarioOptions}
-						selected={$singleSelectionData?.scenario || ''}
-						paddingX="px-7"
-						paddingY="py-3"
-						onchange={handleScenarioSelect}
-					/>
-
-					<FormSelect
-						options={pathwayOptions}
-						selected={$singleSelectionData?.pathway || ''}
-						paddingX="px-7"
-						paddingY="py-3"
-						onchange={handlePathwaySelect}
-					/>
-
-					<ButtonIcon onclick={handleAddScenario}>
-						<IconPlus class="size-5" />
-					</ButtonIcon>
-				{/if}
 			</div>
 		</div>
 	</div>

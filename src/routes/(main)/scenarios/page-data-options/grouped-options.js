@@ -1,4 +1,5 @@
 import { modelOptions, defaultModelPathway } from './models';
+import { scenarioDescriptions } from './descriptions';
 
 /**
  * Plan (ISP model) options for the dropdown.
@@ -16,10 +17,12 @@ export const planOptions = modelOptions.map((m) => ({
 export function getScenarioOptions(modelValue) {
 	const model = modelOptions.find((m) => m.value === modelValue);
 	if (!model) return [];
+	const descriptions = scenarioDescriptions[modelValue] || {};
 	return model.scenarios.map((s) => ({
 		label: s.label,
 		value: s.value,
-		colour: s.colour
+		colour: s.colour,
+		description: descriptions[s.value] || ''
 	}));
 }
 
