@@ -464,6 +464,38 @@ describe('line chart scenario bridging', () => {
 		expect(gapRow.historical).toBeNull();
 	});
 
+	it('does not anchor or interpolate when keepFullHistory is true', () => {
+		const history = [
+			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), historical: 100 },
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), historical: 120 }
+		];
+		const projection = [
+			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), 'scenario-a': 200 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a']
+			}),
+			chartType: 'line',
+			keepFullHistory: true
+		});
+
+		// 2 history + 0 interpolated + 1 projection = 3 (no gap fill)
+		expect(result.seriesData).toHaveLength(3);
+		expect(result.seriesData.filter((d) => d._derived)).toHaveLength(0);
+
+		// Last history row should NOT have scenario-a anchored
+		const lastHistRow = result.seriesData[1];
+		expect(lastHistRow.historical).toBe(120);
+		expect(lastHistRow['scenario-a']).toBeNull();
+	});
+
 	it('does not anchor when chart type is area', () => {
 		const history = [
 			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), historical: 100, _min: 0, _max: 100 }
@@ -487,5 +519,260 @@ describe('line chart scenario bridging', () => {
 		// Last history row should NOT have scenario-a anchored (filled with null instead)
 		const lastHistRow = result.seriesData[0];
 		expect(lastHistRow['scenario-a']).toBeNull();
+	});
+});
+
+describe('keepFullHistory (By Scenario)', () => {
+	it('preserves all history rows when projection overlaps', () => {
+		const history = [
+			{ time: new Date('2020-01-01').getTime(), date: new Date('2020-01-01'), historical: 80 },
+			{ time: new Date('2021-01-01').getTime(), date: new Date('2021-01-01'), historical: 90 },
+			{ time: new Date('2022-01-01').getTime(), date: new Date('2022-01-01'), historical: 100 },
+			{ time: new Date('2023-01-01').getTime(), date: new Date('2023-01-01'), historical: 110 },
+			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), historical: 120 }
+		];
+		const projection = [
+			{ time: new Date('2022-01-01').getTime(), date: new Date('2022-01-01'), 'scenario-a': 200 },
+			{ time: new Date('2023-01-01').getTime(), date: new Date('2023-01-01'), 'scenario-a': 210 },
+			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), 'scenario-a': 220 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a']
+			}),
+			chartType: 'line',
+			keepFullHistory: true
+		});
+
+		// 5 unique time points (overlapping rows at 2022–2024 are merged)
+		expect(result.seriesData).toHaveLength(5);
+
+		// All history values preserved — no trimming
+		const historyRows = result.seriesData.filter((d) => d.historical != null);
+		expect(historyRows).toHaveLength(5);
+		expect(historyRows[4].historical).toBe(120);
+
+		// Overlapping rows have both history and projection values
+		const overlap2022 = result.seriesData.find(
+			(d) => d.time === new Date('2022-01-01').getTime()
+		);
+		expect(overlap2022.historical).toBe(100);
+		expect(overlap2022['scenario-a']).toBe(200);
+	});
+
+	it('trims history at overlap when keepFullHistory is false (default)', () => {
+		const history = [
+			{ time: new Date('2020-01-01').getTime(), date: new Date('2020-01-01'), historical: 80 },
+			{ time: new Date('2022-01-01').getTime(), date: new Date('2022-01-01'), historical: 100 },
+			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), historical: 120 }
+		];
+		const projection = [
+			{ time: new Date('2022-01-01').getTime(), date: new Date('2022-01-01'), 'scenario-a': 200 },
+			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), 'scenario-a': 220 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a']
+			}),
+			chartType: 'line'
+		});
+
+		// History trimmed to 1 row (before 2022) + 1 interpolated gap + 2 projection = 4
+		expect(result.seriesData).toHaveLength(4);
+		expect(result.seriesData[0].historical).toBe(80);
+		expect(result.seriesData[1]._derived).toBe(true);
+		expect(result.seriesData[2]['scenario-a']).toBe(200);
+	});
+
+	it('does not produce interpolated rows when keepFullHistory is true', () => {
+		const history = [
+			{ time: new Date('2020-01-01').getTime(), date: new Date('2020-01-01'), historical: 100 }
+		];
+		const projection = [
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), 'scenario-a': 300 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a']
+			}),
+			chartType: 'line',
+			keepFullHistory: true
+		});
+
+		// 1 history + 0 interpolated + 1 projection = 2
+		expect(result.seriesData).toHaveLength(2);
+		expect(result.seriesData.filter((d) => d._derived)).toHaveLength(0);
+	});
+
+	it('merges overlapping rows so history values are not overwritten with null', () => {
+		// Simulates adding a 2018 ISP pathway: projection starts at FY18,
+		// overlapping with history FY10–FY25. Without merging, duplicate rows
+		// at the same time would have historical: null on the projection copy,
+		// breaking the historical line on the chart.
+		const history = [
+			{ time: new Date('2018-01-01').getTime(), date: new Date('2018-01-01'), historical: 500 },
+			{ time: new Date('2019-01-01').getTime(), date: new Date('2019-01-01'), historical: 510 },
+			{ time: new Date('2020-01-01').getTime(), date: new Date('2020-01-01'), historical: 520 }
+		];
+		const projection = [
+			{ time: new Date('2018-01-01').getTime(), date: new Date('2018-01-01'), 'aemo2018-neutral-default': 480 },
+			{ time: new Date('2019-01-01').getTime(), date: new Date('2019-01-01'), 'aemo2018-neutral-default': 460 },
+			{ time: new Date('2020-01-01').getTime(), date: new Date('2020-01-01'), 'aemo2018-neutral-default': 440 },
+			{ time: new Date('2021-01-01').getTime(), date: new Date('2021-01-01'), 'aemo2018-neutral-default': 420 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['aemo2018-neutral-default']
+			}),
+			chartType: 'line',
+			keepFullHistory: true
+		});
+
+		// 3 overlapping + 1 projection-only = 4 unique time points
+		expect(result.seriesData).toHaveLength(4);
+
+		// No duplicate time points
+		const times = result.seriesData.map((d) => d.time);
+		expect(new Set(times).size).toBe(4);
+
+		// Historical values preserved at overlap points
+		const row2018 = result.seriesData.find((d) => d.time === new Date('2018-01-01').getTime());
+		expect(row2018.historical).toBe(500);
+		expect(row2018['aemo2018-neutral-default']).toBe(480);
+
+		const row2020 = result.seriesData.find((d) => d.time === new Date('2020-01-01').getTime());
+		expect(row2020.historical).toBe(520);
+		expect(row2020['aemo2018-neutral-default']).toBe(440);
+
+		// Projection-only row has null for historical
+		const row2021 = result.seriesData.find((d) => d.time === new Date('2021-01-01').getTime());
+		expect(row2021['aemo2018-neutral-default']).toBe(420);
+		expect(row2021.historical).toBeNull();
+	});
+
+	it('does not merge rows when keepFullHistory is false — trims history instead', () => {
+		const history = [
+			{ time: new Date('2016-01-01').getTime(), date: new Date('2016-01-01'), historical: 490 },
+			{ time: new Date('2018-01-01').getTime(), date: new Date('2018-01-01'), historical: 500 },
+			{ time: new Date('2020-01-01').getTime(), date: new Date('2020-01-01'), historical: 520 }
+		];
+		const projection = [
+			{ time: new Date('2018-01-01').getTime(), date: new Date('2018-01-01'), 'scenario-a': 480 },
+			{ time: new Date('2020-01-01').getTime(), date: new Date('2020-01-01'), 'scenario-a': 440 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a']
+			}),
+			chartType: 'line',
+			keepFullHistory: false
+		});
+
+		// History trimmed to 1 row (before 2018) + 2 projection = 3
+		// (plus possible interpolation, but gap is 1yr so anchoring applies)
+		expect(result.seriesData[0].historical).toBe(490);
+		// Projection rows present
+		const proj2018 = result.seriesData.find(
+			(d) => d.time === new Date('2018-01-01').getTime()
+		);
+		expect(proj2018['scenario-a']).toBe(480);
+	});
+
+	it('keeps null values in gap year rows so stacked-area charts cut off instead of drawing to 0', () => {
+		// Simulates By Scenario mini charts: history ends at FY25, projection starts at FY27,
+		// FY26 is the gap year. With keepFullHistory, no interpolation fills the gap.
+		// The gap row should have null for projection series so ChartStore marks it as undefined.
+		const history = [
+			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), historical: 100 },
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), historical: 120 }
+		];
+		const projection = [
+			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), 'scenario-a': 200 },
+			{ time: new Date('2028-01-01').getTime(), date: new Date('2028-01-01'), 'scenario-a': 220 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a']
+			}),
+			chartType: 'line',
+			keepFullHistory: true
+		});
+
+		// 2 history + 2 projection = 4 (no interpolation with keepFullHistory)
+		expect(result.seriesData).toHaveLength(4);
+		expect(result.seriesData.filter((d) => d._derived)).toHaveLength(0);
+
+		// History rows should have null for scenario-a
+		expect(result.seriesData[0]['scenario-a']).toBeNull();
+		expect(result.seriesData[1]['scenario-a']).toBeNull();
+
+		// Projection rows should have null for historical
+		expect(result.seriesData[2].historical).toBeNull();
+		expect(result.seriesData[3].historical).toBeNull();
+	});
+
+	it('preserves data order as sorted by time after merging', () => {
+		const history = [
+			{ time: new Date('2022-01-01').getTime(), date: new Date('2022-01-01'), historical: 100 },
+			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), historical: 120 }
+		];
+		const projection = [
+			{ time: new Date('2023-01-01').getTime(), date: new Date('2023-01-01'), 'scenario-a': 300 },
+			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), 'scenario-a': 400 }
+		];
+
+		const result = combineHistoryProjection({
+			historicalTimeSeries: makeMockTimeSeries({
+				data: history,
+				seriesNames: ['historical']
+			}),
+			projectionTimeSeries: makeMockTimeSeries({
+				data: projection,
+				seriesNames: ['scenario-a']
+			}),
+			chartType: 'line',
+			keepFullHistory: true
+		});
+
+		// Should be sorted by time
+		for (let i = 1; i < result.seriesData.length; i++) {
+			expect(result.seriesData[i].time).toBeGreaterThan(result.seriesData[i - 1].time);
+		}
 	});
 });

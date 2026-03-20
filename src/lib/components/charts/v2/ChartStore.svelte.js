@@ -211,9 +211,15 @@ export default class ChartStore {
 	seriesScaledDataWithMinMax = $derived.by(() => {
 		return this.seriesScaledData.map((d) => {
 			const result = { ...d, _max: 0, _min: 0 };
+			let hasValue = false;
 
 			for (const name of this.visibleSeriesNames) {
-				const value = Number(d[name]) || 0;
+				const raw = d[name];
+				const value = raw != null ? Number(raw) : null;
+
+				if (value === null) continue;
+
+				hasValue = true;
 
 				if (this.chartOptions?.isAnyStackedType) {
 					result._max += value;
@@ -224,6 +230,11 @@ export default class ChartStore {
 				if (value < 0) {
 					result._min += value;
 				}
+			}
+
+			if (!hasValue) {
+				result._max = NaN;
+				result._min = NaN;
 			}
 
 			return result;
