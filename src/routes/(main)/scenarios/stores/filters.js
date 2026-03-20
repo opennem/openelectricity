@@ -5,8 +5,6 @@ import { scenarioLabels } from '../page-data-options/descriptions';
 export default function () {
 	const selectedRegion = writable('');
 	const selectedFuelTechGroup = writable('');
-	const showScenarioOptions = writable(false);
-
 	/** @type {import('svelte/store').Writable<ScenarioSelect>} */
 	const singleSelectionData = writable();
 	/** @type {import('svelte/store').Writable<ScenarioSelect[]>} */
@@ -18,6 +16,9 @@ export default function () {
 	const selectedCharts = writable([]);
 
 	const includeBatteryAndLoads = writable(false);
+
+	/** @type {import('svelte/store').Writable<Record<string, string>>} */
+	const colourOverrides = writable({});
 
 	const isTechnologyViewSection = derived(selectedViewSection, ($selectedViewSection) => {
 		return $selectedViewSection === 'technology';
@@ -94,7 +95,7 @@ export default function () {
 		isRegionViewSection,
 
 		includeBatteryAndLoads,
-		showScenarioOptions,
+		colourOverrides,
 
 		filterShortName
 	};

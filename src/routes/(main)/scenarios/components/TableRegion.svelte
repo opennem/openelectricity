@@ -2,6 +2,7 @@
 	import { getContext } from 'svelte';
 	import { color } from 'd3-color';
 	import TableHeader from './TableHeader.svelte';
+	import AboutData from './AboutData.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -54,9 +55,8 @@
 
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
-		includeBatteryAndLoads={$includeBatteryAndLoads}
+		showCheckbox={false}
 		hoverTime={generation.hoverTime || generation.focusTime}
-		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
 	/>
 
 	<table class="w-full border border-warm-grey">
@@ -183,4 +183,12 @@
 			</tr>
 		</tbody>
 	</table>
+
+	<TableHeader
+		showLabel={false}
+		includeBatteryAndLoads={$includeBatteryAndLoads}
+		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+	/>
+
+	<AboutData />
 </div>

@@ -28,7 +28,7 @@
 	{#if chart.seriesNames.length}
 		<StratumChart
 			{chart}
-			overlayStart={projectionStartTime}
+			overlayStart={$isScenarioViewSection ? null : projectionStartTime}
 			hideAnnotationsOnMobile={true}
 			{onhover}
 			{onhoverend}

@@ -4,7 +4,6 @@
 
 	import { modelLabelMap, scenarioLabelMap } from '../page-data-options/models';
 
-	import ScenarioDescription from './ScenarioDescription.svelte';
 	import MiniCharts from './MiniCharts.svelte';
 
 	/**
@@ -47,10 +46,6 @@
 		}
 	});
 
-	let selectedScenario = $derived(
-		$multiSelectionData.find((/** @type {any} */ d) => `${d.model}-${d.scenario}` === selectedScenarioId)
-	);
-
 	let isEmissionsView = $derived(selectedStoreName === 'emissions');
 
 	let selectedStore = $derived(chartStores[selectedStoreName]);
@@ -59,7 +54,21 @@
 	let xTicks = $derived(selectedStore.xTicks);
 	let formatTickX = $derived(selectedStore.formatTickX);
 	let formatTickY = $derived(selectedStore.convertAndFormatValue);
-	let overlayStart = $derived(selectedStore.chartStyles.chartOverlayLine);
+	/**
+	 * Find the projection start time for a model's scenarios from the raw series data.
+	 * In keepFullHistory mode, projection series are null for history rows, so the
+	 * first non-null value marks the projection start.
+	 * @param {string[]} names - scenario series names for the model
+	 * @returns {number | undefined}
+	 */
+	function getModelProjectionStart(names) {
+		for (const d of seriesData) {
+			if (names.some((name) => d[name] != null)) {
+				return /** @type {number} */ (d.time);
+			}
+		}
+		return undefined;
+	}
 	let hoverTime = $derived(selectedStore.hoverTime);
 	let focusTime = $derived(selectedStore.focusTime);
 	let seriesData = $derived(selectedStore.seriesData);
@@ -162,13 +171,7 @@
 	}
 </script>
 
-<div class="container max-w-none lg:container md:grid grid-cols-2 px-0 md:px-16 lg:px-40">
-	<div class="px-10 md:px-0">
-		{#if selectedScenario}
-			<ScenarioDescription model={selectedScenario.model} scenario={selectedScenario.scenario} />
-		{/if}
-	</div>
-
+<div class="container max-w-none lg:container md:w-1/2 px-0 md:px-16 lg:px-40">
 	<section class="px-5 md:px-0">
 		<div class="flex justify-center mb-12">
 			<Switch
@@ -198,7 +201,7 @@
 							{formatTickY}
 							{hoverTime}
 							{focusTime}
-							{overlayStart}
+							overlayStart={getModelProjectionStart(names)}
 							seriesData={mergedSeriesData}
 							{displayUnit}
 							gridColClass="grid-cols-1"
@@ -219,7 +222,7 @@
 							formatTickY={intensityFormatTickY}
 							{hoverTime}
 							{focusTime}
-							{overlayStart}
+							overlayStart={getModelProjectionStart(names)}
 							seriesData={mergedIntensityData}
 							displayUnit={intensityDisplayUnit}
 							showArea={false}
@@ -243,7 +246,7 @@
 						{formatTickY}
 						{hoverTime}
 						{focusTime}
-						{overlayStart}
+						overlayStart={getModelProjectionStart(names)}
 						seriesData={mergedSeriesData}
 						{displayUnit}
 						{onhover}

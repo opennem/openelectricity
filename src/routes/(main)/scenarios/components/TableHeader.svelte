@@ -6,24 +6,30 @@
 	 * @typedef {Object} Props
 	 * @property {boolean} [includeBatteryAndLoads]
 	 * @property {any} [hoverTime]
+	 * @property {boolean} [showCheckbox]
+	 * @property {boolean} [showLabel]
 	 * @property {() => void} [onchange]
 	 */
 
 	/** @type {Props} */
-	let { includeBatteryAndLoads = false, hoverTime = null, onchange } = $props();
+	let { includeBatteryAndLoads = false, hoverTime = null, showCheckbox = true, showLabel = true, onchange } = $props();
 </script>
 
-<header class="flex justify-between h-12 px-10 md:px-0">
+<header class="flex items-center justify-between h-12 px-10 md:px-0">
 	<div>
-		<Checkbox
-			name="includeBatteryAndLoads"
-			label="Include Storage and Loads"
-			checked={includeBatteryAndLoads}
-			{onchange}
-		/>
+		{#if showCheckbox}
+			<Checkbox
+				name="includeBatteryAndLoads"
+				label="Include Storage and Loads"
+				checked={includeBatteryAndLoads}
+				{onchange}
+			/>
+		{/if}
 	</div>
 
-	<span class="font-semibold">
-		{hoverTime ? formatFyTickX(hoverTime) : ''}
-	</span>
+	{#if showLabel}
+		<span class="font-semibold text-base">
+			{hoverTime ? formatFyTickX(hoverTime) : ''}
+		</span>
+	{/if}
 </header>

@@ -61,7 +61,8 @@ function interpolateGap(lastRow, firstRow, gapYears, seriesNames) {
  *   prefix?: SiPrefix,
  *   displayPrefix?: SiPrefix,
  *   allowedPrefixes?: SiPrefix[],
- *   chartType?: 'area' | 'line'
+ *   chartType?: 'area' | 'line',
+ *   keepFullHistory?: boolean
  * }} options
  * @returns {ProcessedDataViz}
  */
@@ -74,7 +75,8 @@ export default function combineHistoryProjection({
 	prefix = /** @type {SiPrefix} */ (''),
 	displayPrefix = /** @type {SiPrefix} */ (''),
 	allowedPrefixes = [],
-	chartType = 'area'
+	chartType = 'area',
+	keepFullHistory = false
 }) {
 	const historicalTimeSeriesData = historicalTimeSeries.data;
 	const projectionTimeSeriesData = projectionTimeSeries.data;
@@ -88,10 +90,11 @@ export default function combineHistoryProjection({
 
 	// Handle overlap: trim history points that fall within projection range
 	// Projection data is authoritative over history in the overlap region
+	// When keepFullHistory is true (By Scenario), never trim history
 	let historyData = historicalTimeSeriesData;
 	let projectionData = projectionTimeSeriesData;
 
-	if (firstProjection.time <= lastHistory.time) {
+	if (!keepFullHistory && firstProjection.time <= lastHistory.time) {
 		historyData = historicalTimeSeriesData.filter((d) => d.time < firstProjection.time);
 	}
 
@@ -120,9 +123,9 @@ export default function combineHistoryProjection({
 		];
 	}
 
-	// For line charts (By Scenario view), anchor each projection series to the
+	// For line charts (not By Scenario), anchor each projection series to the
 	// last historical value so the lines visually connect back to the history endpoint
-	if (chartType === 'line') {
+	if (chartType === 'line' && !keepFullHistory) {
 		const projectionOnlyNames = seriesNames.filter(
 			(n) => !historicalTimeSeries.seriesNames.includes(n)
 		);
@@ -139,12 +142,45 @@ export default function combineHistoryProjection({
 		}
 	}
 
-	// Fill gap with linearly interpolated rows
-	const interpolatedRows = gapYears >= 1
+	// Fill gap with linearly interpolated rows (skip for By Scenario view)
+	const interpolatedRows = gapYears >= 1 && !keepFullHistory
 		? interpolateGap(lastHistoryRow, firstProjectionRow, gapYears, seriesNames)
 		: [];
 
-	const seriesData = [...historyData, ...interpolatedRows, ...projectionData];
+	let seriesData;
+
+	if (keepFullHistory && firstProjection.time <= lastHistory.time) {
+		// When keeping full history with overlapping projection, merge rows
+		// at duplicate time points so each timestamp appears once with values
+		// from both history and projection (projection fills in its series,
+		// history fills in its series)
+		/** @type {Map<number, TimeSeriesData>} */
+		const byTime = new Map();
+
+		for (const row of historyData) {
+			byTime.set(row.time, { ...row });
+		}
+
+		for (const row of projectionData) {
+			const existing = byTime.get(row.time);
+			if (existing) {
+				// Merge projection values into the existing history row,
+				// but don't overwrite non-null history values with null
+				for (const key of Object.keys(row)) {
+					if (key === 'date' || key === 'time') continue;
+					if (row[key] != null || existing[key] === undefined) {
+						existing[key] = row[key];
+					}
+				}
+			} else {
+				byTime.set(row.time, { ...row });
+			}
+		}
+
+		seriesData = [...byTime.values()].sort((a, b) => a.time - b.time);
+	} else {
+		seriesData = [...historyData, ...interpolatedRows, ...projectionData];
+	}
 
 	// Fill missing series values with null
 	seriesData.forEach((d) => {

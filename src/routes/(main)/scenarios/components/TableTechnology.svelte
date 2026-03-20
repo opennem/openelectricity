@@ -4,6 +4,7 @@
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { groupOptions } from '../page-data-options/groups-technology';
 	import TableHeader from './TableHeader.svelte';
+	import AboutData from './AboutData.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -167,9 +168,8 @@
 
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
-		includeBatteryAndLoads={$includeBatteryAndLoads}
+		showCheckbox={false}
 		hoverTime={generation.hoverTime || generation.focusTime}
-		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
 	/>
 
 	<table class="w-full table-fixed border border-warm-grey mb-8">
@@ -414,4 +414,12 @@
 			</tr>
 		</tbody>
 	</table>
+
+	<TableHeader
+		showLabel={false}
+		includeBatteryAndLoads={$includeBatteryAndLoads}
+		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+	/>
+
+	<AboutData />
 </div>

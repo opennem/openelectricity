@@ -9,7 +9,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} selected
-	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean}[] | undefined} [options]
+	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean, isGroupHeader?: boolean, description?: string}[] | undefined} [options]
 	 * @property {string} [paddingY]
 	 * @property {string} [paddingX]
 	 * @property {string} [selectedLabelClass]
@@ -59,7 +59,7 @@
 	}
 
 	function findSelectedOption() {
-		const find = options.find((opt) => opt.value === selectedValue);
+		const find = options.find((opt) => !opt.isGroupHeader && opt.value === selectedValue);
 		return find ? find.label : selectedValue || formLabel;
 	}
 
@@ -93,16 +93,23 @@
 					<li class="whitespace-nowrap">
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
+				{:else if opt.isGroupHeader}
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
 				{:else}
-					<li class="whitespace-nowrap border-b border-warm-grey">
+					<li class="border-b border-warm-grey">
 						<button
-							class="w-full px-0 py-1 flex gap-4 items-center text-sm"
+							class="w-full px-0 py-1 flex gap-4 items-start text-sm"
 							class:text-mid-grey={selectedValue !== opt.value}
 							class:text-black={selectedValue === opt.value}
 							onclick={() => handleSelect(opt)}
 						>
 							<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
-							<span class="capitalize">{opt.label}</span>
+							<span class="text-left">
+								<span class="capitalize">{opt.label}</span>
+								{#if opt.description}
+									<span class="block text-xs text-mid-grey font-normal mt-0.5">{opt.description}</span>
+								{/if}
+							</span>
 						</button>
 					</li>
 				{/if}
@@ -122,17 +129,26 @@
 					<li class="whitespace-nowrap">
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
+				{:else if opt.isGroupHeader}
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
 				{:else}
-					<li class="whitespace-nowrap">
+					<li class="{opt.description && i < options.length - 1 ? 'border-b border-warm-grey' : opt.description ? '' : 'whitespace-nowrap'}">
 						<button
-							class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
+							class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-start justify-between"
 							class:text-mid-grey={selectedValue !== opt.value}
 							class:text-black={selectedValue === opt.value}
 							onclick={() => handleSelect(opt)}
 						>
-							<span class="capitalize {opt.labelClassName}">{opt.label}</span>
+							<span class="text-left">
+								<span class="capitalize {opt.labelClassName}">{opt.label}</span>
+								{#if opt.description}
+									<span class="block text-xs text-mid-grey font-normal mt-0.5 max-w-80">{opt.description}</span>
+								{/if}
+							</span>
 
-							<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
+							<span class="mt-[3px] shrink-0">
+								<RadioBigButton radioOnly={true} checked={selectedValue === opt.value} />
+							</span>
 						</button>
 					</li>
 				{/if}

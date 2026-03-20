@@ -141,6 +141,116 @@ describe('processScenario', () => {
 
 			expect(result.seriesData[0].historical).toBe(0.5);
 		});
+
+		it('matches emissions and energy by time, not index', () => {
+			// Energy has an extra row at time=0 that emissions doesn't have,
+			// simulating misaligned arrays from different projection starts
+			const processedEmissions = {
+				seriesData: [
+					{ time: 2, date: new Date('2023-01-01'), historical: 480 },
+					{ time: 3, date: new Date('2024-01-01'), historical: 460 }
+				],
+				seriesNames: ['historical'],
+				seriesColours: { historical: '#000' },
+				seriesLabels: { historical: 'Historical' },
+				yDomain: [0, 500]
+			};
+
+			const processedEnergy = {
+				seriesData: [
+					{ time: 1, date: new Date('2022-01-01'), historical: 900 },
+					{ time: 2, date: new Date('2023-01-01'), historical: 1000 },
+					{ time: 3, date: new Date('2024-01-01'), historical: 1100 }
+				],
+				seriesNames: ['historical'],
+				seriesColours: {},
+				seriesLabels: {},
+				yDomain: [0, 1200]
+			};
+
+			const result = processScenario.intensity({
+				processedEmissions,
+				processedEnergy
+			});
+
+			// Should match by time, so time=2 emissions (480) / time=2 energy (1000) = 0.48
+			expect(result.seriesData[0].time).toBe(2);
+			expect(result.seriesData[0].historical).toBeCloseTo(0.48);
+
+			// time=3: 460 / 1100
+			expect(result.seriesData[1].time).toBe(3);
+			expect(result.seriesData[1].historical).toBeCloseTo(460 / 1100);
+		});
+
+		it('handles missing energy data for a time point gracefully', () => {
+			const processedEmissions = {
+				seriesData: [
+					{ time: 1, date: new Date('2022-01-01'), historical: 500 },
+					{ time: 2, date: new Date('2023-01-01'), historical: 480 }
+				],
+				seriesNames: ['historical'],
+				seriesColours: { historical: '#000' },
+				seriesLabels: { historical: 'Historical' },
+				yDomain: [0, 500]
+			};
+
+			// Energy only has time=1, missing time=2
+			const processedEnergy = {
+				seriesData: [
+					{ time: 1, date: new Date('2022-01-01'), historical: 1000 }
+				],
+				seriesNames: ['historical'],
+				seriesColours: {},
+				seriesLabels: {},
+				yDomain: [0, 1000]
+			};
+
+			const result = processScenario.intensity({
+				processedEmissions,
+				processedEnergy
+			});
+
+			expect(result.seriesData[0].historical).toBe(0.5);
+			// No matching energy row at time=2 — intensity should be undefined
+			expect(result.seriesData[1].historical).toBeUndefined();
+		});
+
+		it('computes intensity for multiple series with different date ranges', () => {
+			const processedEmissions = {
+				seriesData: [
+					{ time: 1, date: new Date('2020-01-01'), historical: 600, 'scenario-a': null },
+					{ time: 2, date: new Date('2025-01-01'), historical: null, 'scenario-a': 300 }
+				],
+				seriesNames: ['historical', 'scenario-a'],
+				seriesColours: { historical: '#000', 'scenario-a': '#f00' },
+				seriesLabels: { historical: 'Historical', 'scenario-a': 'Scenario A' },
+				yDomain: [0, 600]
+			};
+
+			const processedEnergy = {
+				seriesData: [
+					{ time: 1, date: new Date('2020-01-01'), historical: 1200, 'scenario-a': null },
+					{ time: 2, date: new Date('2025-01-01'), historical: null, 'scenario-a': 1000 }
+				],
+				seriesNames: ['historical', 'scenario-a'],
+				seriesColours: {},
+				seriesLabels: {},
+				yDomain: [0, 1200]
+			};
+
+			const result = processScenario.intensity({
+				processedEmissions,
+				processedEnergy
+			});
+
+			// time=1: historical 600/1200 = 0.5, scenario-a is null so undefined
+			expect(result.seriesData[0].historical).toBe(0.5);
+			expect(result.seriesData[0]['scenario-a']).toBeUndefined();
+
+			// time=2: historical is null so undefined, scenario-a 300/1000 = 0.3
+			expect(result.seriesData[1].historical).toBeUndefined();
+			expect(result.seriesData[1]['scenario-a']).toBeCloseTo(0.3);
+		});
 	});
 
 	describe('generation', () => {
