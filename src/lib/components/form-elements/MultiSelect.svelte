@@ -11,7 +11,7 @@
 	 * @typedef {Object} Props
 	 * @property {string[]} selected
 	 * @property {string} [label]
-	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean, colour?: string}[] | undefined} [options]
+	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean, isGroupHeader?: boolean, colour?: string}[] | undefined} [options]
 	 * @property {string} [paddingY]
 	 * @property {string} [paddingX]
 	 * @property {boolean} [staticDisplay]
@@ -172,6 +172,8 @@
 					<li class="whitespace-nowrap">
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
+				{:else if opt.isGroupHeader}
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
 				{:else}
 					<li class="whitespace-nowrap border-b border-warm-grey">
 						<button
@@ -215,6 +217,8 @@
 					<li class="whitespace-nowrap">
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
+				{:else if opt.isGroupHeader}
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
 				{:else}
 					<li class="whitespace-nowrap">
 						<button

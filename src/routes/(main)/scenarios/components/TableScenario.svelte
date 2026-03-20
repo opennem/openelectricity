@@ -1,6 +1,7 @@
 <script>
 	import { getContext } from 'svelte';
 	import { color } from 'd3-color';
+	import { X } from '@lucide/svelte';
 	import { scenarioLabelMap } from '../page-data-options/models';
 	import { modelLabelMap } from '../page-data-options/models';
 	import TableHeader from './TableHeader.svelte';
@@ -10,12 +11,13 @@
 	 * @property {string[]} [hiddenRowNames]
 	 * @property {string} [title]
 	 * @property {(detail: { name: string, isMetaPressed: boolean, allNames: string[] }) => void} [onrowclick]
+	 * @property {(id: string) => void} [onremove]
 	 */
 
 	/** @type {Props} */
-	let { hiddenRowNames = [], title = '', onrowclick } = $props();
+	let { hiddenRowNames = [], title = '', onrowclick, onremove } = $props();
 
-	const { includeBatteryAndLoads } = getContext('scenario-filters');
+	const { includeBatteryAndLoads, multiSelectionData } = getContext('scenario-filters');
 	const { orderedModelScenarioPathways } = getContext('by-scenario');
 	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
 
@@ -210,7 +212,16 @@
 						>
 							<td class="px-2 py-1 align-top">
 								<div class="flex items-start gap-3 ml-3">
-									{#if hiddenRowNames.includes(id)}
+									{#if $multiSelectionData.length > 1}
+										<button
+											class="w-6 h-6 min-w-6 min-h-6 border rounded-sm relative top-1 flex items-center justify-center text-white hover:opacity-80"
+											style:background-color={generation.seriesColours[id]}
+											style:border-color={darken(generation.seriesColours[id])}
+											onclick={(e) => { e.stopPropagation(); onremove?.(id); }}
+										>
+											<X class="size-3.5" />
+										</button>
+									{:else if hiddenRowNames.includes(id)}
 										<div
 											class="w-6 h-6 min-w-6 min-h-6 border rounded-sm bg-transparent border-mid-warm-grey group-hover:border-mid-grey relative top-1"
 										></div>
@@ -221,7 +232,7 @@
 											style:border-color={darken(generation.seriesColours[id])}
 										></div>
 									{/if}
-									<div class="text-mid-grey font-normal block">{pathway}</div>
+									<div class="text-mid-grey font-normal block flex-1">{pathway}</div>
 								</div>
 							</td>
 

@@ -108,8 +108,7 @@
 		singleSelectionData,
 		selectedFuelTechGroup,
 		multiSelectionData,
-		includeBatteryAndLoads,
-		showScenarioOptions
+		includeBatteryAndLoads
 	} = getContext('scenario-filters');
 	const { selectionData } = getContext('by-scenario');
 
@@ -294,37 +293,39 @@
 			const endDate = projectionEndTime != null ? new Date(projectionEndTime) : undefined;
 
 			chartsList.forEach((chart) => {
-				chart.chartStyles.chartOverlayLine = { date: startDate };
-				if (endDate) {
-					chart.chartStyles.chartOverlay = { xStartValue: startDate, xEndValue: endDate };
-				}
-
-				if (derivedStartTime != null && derivedEndTime != null) {
-					// Shade derived region with a pale overlay (not in By Scenario view)
-					if (!$isScenarioViewSection) {
-						chart.fgShadingData = [[new Date(derivedStartTime), new Date(derivedEndTime)]];
-						chart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
-					} else {
-						chart.fgShadingData = [];
-					}
-
-					// Label the derived region
-					const midTime = derivedStartTime + (derivedEndTime - derivedStartTime) / 2;
-					chart.annotations = [
-						{
-							type: 'text',
-							x: midTime,
-							y: 0,
-							text: 'DERIVED',
-							dy: -6,
-							textAnchor: 'middle',
-							fill: '#999',
-							fontSize: '8px'
-						}
-					];
-				} else {
+				if ($isScenarioViewSection) {
+					// By Scenario: no overlay line, hatching, shading, or annotations
+					chart.chartStyles.chartOverlayLine = undefined;
+					chart.chartStyles.chartOverlay = undefined;
 					chart.fgShadingData = [];
 					chart.annotations = [];
+				} else {
+					chart.chartStyles.chartOverlayLine = { date: startDate };
+					if (endDate) {
+						chart.chartStyles.chartOverlay = { xStartValue: startDate, xEndValue: endDate };
+					}
+
+					if (derivedStartTime != null && derivedEndTime != null) {
+						chart.fgShadingData = [[new Date(derivedStartTime), new Date(derivedEndTime)]];
+						chart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
+
+						const midTime = derivedStartTime + (derivedEndTime - derivedStartTime) / 2;
+						chart.annotations = [
+							{
+								type: 'text',
+								x: midTime,
+								y: 0,
+								text: 'DERIVED',
+								dy: -6,
+								textAnchor: 'middle',
+								fill: '#999',
+								fontSize: '8px'
+							}
+						];
+					} else {
+						chart.fgShadingData = [];
+						chart.annotations = [];
+					}
 				}
 			});
 		}
@@ -737,10 +738,8 @@
 
 <Filters {isFullscreen} onfullscreenchange={toggleFullscreen} onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)} />
 
-<!-- WORKAROUND: class:relative={!$showScenarioOptions} to allow Pathway dropdown to layer above -->
 <div
-	class="max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
-	class:relative={!$showScenarioOptions}
+	class="relative max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
 >
 	<section class="w-full flex flex-col gap-12 md:w-[60%]">
 		{#if generationChart.seriesData.length === 0}
@@ -783,7 +782,14 @@
 		{:else if $isTechnologyViewSection}
 			<TableTechnology {seriesLoadsIds} {hiddenRowNames} onrowclick={toggleRow} />
 		{:else if $isScenarioViewSection}
-			<TableScenario title="Scenario" {hiddenRowNames} onrowclick={toggleRow} />
+			<TableScenario
+				title="Scenario"
+				{hiddenRowNames}
+				onrowclick={toggleRow}
+				onremove={(id) => {
+					$multiSelectionData = $multiSelectionData.filter((/** @type {any} */ s) => s.id !== id);
+				}}
+			/>
 		{:else if $isRegionViewSection}
 			<TableRegion title="Region" {seriesLoadsIds} {hiddenRowNames} onrowclick={toggleRow} />
 		{/if}

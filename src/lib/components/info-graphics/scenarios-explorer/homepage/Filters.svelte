@@ -25,7 +25,7 @@
 	class="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-x-6 md:gap-y-3 text-sm border-b border-warm-grey pb-4 mb-2"
 >
 	<div class="flex items-center justify-between gap-2 md:justify-start">
-		<span class="text-mid-grey whitespace-nowrap w-[35%] md:w-auto">Plan</span>
+		<span class="text-mid-grey whitespace-nowrap w-[35%] md:w-auto">Model</span>
 		<FormSelect
 			options={modelSelectOptions}
 			selected={$selectedModel}

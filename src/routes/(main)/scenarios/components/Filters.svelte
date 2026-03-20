@@ -8,9 +8,8 @@
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import Modal from '$lib/components/Modal.svelte';
-	import IconPlus from '$lib/icons/Plus.svelte';
-	import IconMinus from '$lib/icons/Minus.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import IconPlus from '$lib/icons/Plus.svelte';
 
 	import { formatFyTickX } from '$lib/utils/formatters';
 
@@ -19,12 +18,17 @@
 	/** @type {any[]} */
 	const viewSectionOptions = _viewSectionOptions;
 	import { dataTypeDisplayOptions } from '../page-data-options/data-types';
-	import { scenarioLabels } from '../page-data-options/descriptions';
 	import { modelOptions, modelScenarioPathwayOptions } from '../page-data-options/models';
 	import { groupOptions as groupTechnologyOptions } from '../page-data-options/groups-technology';
 	import { groupOptions as groupScenarioOptions } from '../page-data-options/groups-scenario';
 	import { chartXTicks, chartXHighlightTicks, chartXMobileHiddenTicks } from '../page-data-options/chart-ticks';
-	import ScenarioSelection from './ScenarioSelection.svelte';
+	import {
+		planOptions,
+		getScenarioOptions,
+		getPathwayOptions,
+		getDefaultPathway,
+		getDefaultScenario
+	} from '../page-data-options/grouped-options';
 	import OptionsMenu from './OptionsMenu.svelte';
 
 	/**
@@ -48,8 +52,7 @@
 		selectedFuelTechGroup,
 		isTechnologyViewSection,
 		isScenarioViewSection,
-		isSingleSelectionMode,
-		showScenarioOptions
+		isSingleSelectionMode
 	} = getContext('scenario-filters');
 
 	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
@@ -72,9 +75,13 @@
 			pathway: defaultModel.defaultPathway
 		};
 
-		$multiSelectionData = defaultModel.scenarios.map((s) =>
-			modelScenarioPathwayOptions.find((m) => m.id === `${s.id}-${defaultModel.defaultPathway}`)
-		);
+		$multiSelectionData = defaultModel.scenarios
+			.map((s) =>
+				modelScenarioPathwayOptions.find(
+					(m) => m.id === `${s.id}-${defaultModel.defaultPathway}`
+				)
+			)
+			.filter(Boolean);
 
 		$selectedDataType = 'energy';
 		$selectedRegion = '_all';
@@ -93,10 +100,20 @@
 	$effect(() => {
 		chartsList.forEach((chart) => {
 			if ($isScenarioViewSection) {
-				chart.xTicks = chartXTicks[modelOptions[0].value];
-				chart.xHighlightTicks = chartXHighlightTicks[modelOptions[0].value];
+				const allTicks = chartXTicks[modelOptions[0].value];
+				const highlightTicks = chartXHighlightTicks[modelOptions[0].value] || [];
+
+				// Only hide projection start labels (highlight ticks after the first one);
+				// keep the first highlight tick (history end, e.g. FY25)
+				const projectionStartTicks = highlightTicks.slice(1);
+				const hideSet = new Set(projectionStartTicks.map((/** @type {Date} */ t) => +t));
+
+				chart.xGridlineTicks = allTicks.filter((/** @type {Date} */ t) => !hideSet.has(+t));
+				chart.xTicks = allTicks.filter((/** @type {Date} */ t) => !hideSet.has(+t));
+				chart.xHighlightTicks = highlightTicks;
 				chart.xMobileHiddenTicks = chartXMobileHiddenTicks[modelOptions[0].value] || [];
 			} else {
+				chart.xGridlineTicks = undefined;
 				chart.xTicks = chartXTicks[$singleSelectionData.model];
 				chart.xHighlightTicks = chartXHighlightTicks[$singleSelectionData.model] || [];
 				chart.xMobileHiddenTicks = chartXMobileHiddenTicks[$singleSelectionData.model] || [];
@@ -142,6 +159,69 @@
 			$selectedCharts = [...$selectedCharts, dataType];
 		}
 	}
+
+	// --- Plan / Scenario / Pathway inline dropdown handlers ---
+
+	// Derived options based on current model
+	let selectedModel = $derived($singleSelectionData?.model || '');
+	let scenarioOptions = $derived(getScenarioOptions(selectedModel));
+	let pathwayOptions = $derived(getPathwayOptions(selectedModel));
+
+
+	/**
+	 * Handle plan (ISP model) selection — resets scenario and pathway to defaults
+	 * @param {{label: string, value: string | number | null | undefined}} option
+	 */
+	function handlePlanSelect(option) {
+		const modelValue = /** @type {string} */ (option.value);
+		const scenario = getDefaultScenario(modelValue);
+		const pathway = getDefaultPathway(modelValue);
+
+		$singleSelectionData = {
+			id: `${modelValue}-${scenario}`,
+			model: modelValue,
+			scenario,
+			pathway
+		};
+	}
+
+	/**
+	 * Handle single scenario selection
+	 * @param {{label: string, value: string | number | null | undefined}} option
+	 */
+	function handleScenarioSelect(option) {
+		const scenario = /** @type {string} */ (option.value);
+		$singleSelectionData = {
+			...$singleSelectionData,
+			id: `${selectedModel}-${scenario}`,
+			scenario
+		};
+	}
+
+	/**
+	 * Add the current plan/scenario/pathway combo to multiSelectionData
+	 */
+	function handleAddScenario() {
+		const { model, scenario, pathway } = $singleSelectionData;
+		const id = `${model}-${scenario}-${pathway}`;
+		if ($multiSelectionData.some((/** @type {any} */ s) => s.id === id)) return;
+		const entry = modelScenarioPathwayOptions.find((/** @type {any} */ m) => m.id === id);
+		if (entry) {
+			$multiSelectionData = [...$multiSelectionData, entry];
+		}
+	}
+
+	/**
+	 * Handle single pathway selection
+	 * @param {{label: string, value: string | number | null | undefined}} option
+	 */
+	function handlePathwaySelect(option) {
+		$singleSelectionData = {
+			...$singleSelectionData,
+			pathway: /** @type {string} */ (option.value)
+		};
+	}
+
 </script>
 
 {#if showMobileFilterOptions}
@@ -159,31 +239,87 @@
 			</div>
 		</header>
 
-		<section class="p-10 w-full flex gap-12 relative z-50">
-			<FormMultiSelect
-				options={dataTypeDisplayOptions}
-				selected={$selectedCharts}
-				label="Charts"
-				paddingX=""
-				staticDisplay={true}
-				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-				onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
-			/>
-
-			{#if $isTechnologyViewSection || $isScenarioViewSection}
-				<FormSelect
-					formLabel="Region"
-					options={regionOptions}
-					selected={$selectedRegion}
+		<section class="p-10 w-full flex flex-col gap-12 relative z-50">
+			<div class="flex gap-12">
+				<FormMultiSelect
+					options={dataTypeDisplayOptions}
+					selected={$selectedCharts}
+					label="Charts"
 					paddingX=""
 					staticDisplay={true}
 					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
-					onchange={(option) => ($selectedRegion = option.value)}
+					onchange={(value, isMetaPressed) => handleDataTypeChange(value, isMetaPressed)}
 				/>
+
+				{#if $isTechnologyViewSection || $isScenarioViewSection}
+					<FormSelect
+						formLabel="Region"
+						options={regionOptions}
+						selected={$selectedRegion}
+						paddingX=""
+						staticDisplay={true}
+						selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+						onchange={(option) => ($selectedRegion = option.value)}
+					/>
+				{/if}
+			</div>
+
+			<FormSelect
+				formLabel="Plan"
+				options={planOptions}
+				selected={selectedModel}
+				paddingX=""
+				staticDisplay={true}
+				selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+				onchange={handlePlanSelect}
+			/>
+
+			{#if $isSingleSelectionMode}
+				<FormSelect
+					formLabel="Scenario"
+					options={scenarioOptions}
+					selected={$singleSelectionData?.scenario || ''}
+					paddingX=""
+					staticDisplay={true}
+					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+					onchange={handleScenarioSelect}
+				/>
+
+				<FormSelect
+					formLabel="Pathway"
+					options={pathwayOptions}
+					selected={$singleSelectionData?.pathway || ''}
+					paddingX=""
+					staticDisplay={true}
+					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+					onchange={handlePathwaySelect}
+				/>
+			{:else}
+				<FormSelect
+					formLabel="Scenario"
+					options={scenarioOptions}
+					selected={$singleSelectionData?.scenario || ''}
+					paddingX=""
+					staticDisplay={true}
+					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+					onchange={handleScenarioSelect}
+				/>
+
+				<FormSelect
+					formLabel="Pathway"
+					options={pathwayOptions}
+					selected={$singleSelectionData?.pathway || ''}
+					paddingX=""
+					staticDisplay={true}
+					selectedLabelClass="font-space uppercase text-sm font-semibold text-dark-grey"
+					onchange={handlePathwaySelect}
+				/>
+
+				<ButtonIcon onclick={handleAddScenario}>
+					<IconPlus class="size-5" />
+				</ButtonIcon>
 			{/if}
 		</section>
-
-		<ScenarioSelection mobileView={true} />
 
 		{#snippet buttons()}
 			<div class="flex gap-3 text-base">
@@ -247,28 +383,53 @@
 						onchange={(option) => ($selectedRegion = option.value)}
 					/>
 				{/if}
+
+				<FormSelect
+					options={planOptions}
+					selected={selectedModel}
+					paddingX="px-7"
+					paddingY="py-3"
+					onchange={handlePlanSelect}
+				/>
+
+				{#if $isSingleSelectionMode}
+					<FormSelect
+						options={scenarioOptions}
+						selected={$singleSelectionData?.scenario || ''}
+						paddingX="px-7"
+						paddingY="py-3"
+						onchange={handleScenarioSelect}
+					/>
+
+					<FormSelect
+						options={pathwayOptions}
+						selected={$singleSelectionData?.pathway || ''}
+						paddingX="px-7"
+						paddingY="py-3"
+						onchange={handlePathwaySelect}
+					/>
+				{:else}
+					<FormSelect
+						options={scenarioOptions}
+						selected={$singleSelectionData?.scenario || ''}
+						paddingX="px-7"
+						paddingY="py-3"
+						onchange={handleScenarioSelect}
+					/>
+
+					<FormSelect
+						options={pathwayOptions}
+						selected={$singleSelectionData?.pathway || ''}
+						paddingX="px-7"
+						paddingY="py-3"
+						onchange={handlePathwaySelect}
+					/>
+
+					<ButtonIcon onclick={handleAddScenario}>
+						<IconPlus class="size-5" />
+					</ButtonIcon>
+				{/if}
 			</div>
-
-			{#if $singleSelectionModel && $singleSelectionScenario}
-				<button
-					class="text-sm flex items-center gap-2 justify-center px-6 py-3 border rounded-xl whitespace-nowrap bg-white text-dark-grey"
-					class:border-dark-grey={$showScenarioOptions}
-					class:border-mid-warm-grey={!$showScenarioOptions}
-					onclick={() => ($showScenarioOptions = !$showScenarioOptions)}
-				>
-					{#if $isScenarioViewSection}
-						Update Scenarios
-					{:else}
-						{scenarioLabels[$singleSelectionModel][$singleSelectionScenario]}
-					{/if}
-
-					{#if $showScenarioOptions}
-						<IconMinus />
-					{:else}
-						<IconPlus />
-					{/if}
-				</button>
-			{/if}
 		</div>
 	</div>
 
@@ -276,17 +437,3 @@
 		<OptionsMenu {isFullscreen} onfullscreenchange={() => onfullscreenchange?.()} onshowshortcuts={() => onshowshortcuts?.()} />
 	</div>
 </div>
-
-{#if $selectedViewSection}
-	<div
-		class="transition-all relative"
-		class:z-20={$showScenarioOptions}
-		class:z-0={!$showScenarioOptions}
-		class:opacity-100={$showScenarioOptions}
-		class:h-auto={$showScenarioOptions}
-		class:opacity-0={!$showScenarioOptions}
-		class:h-0={!$showScenarioOptions}
-	>
-		<ScenarioSelection />
-	</div>
-{/if}

@@ -9,7 +9,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} selected
-	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean}[] | undefined} [options]
+	 * @property {{label: string, value: string | number | null | undefined, labelClassName?: string, divider?: boolean, isGroupHeader?: boolean}[] | undefined} [options]
 	 * @property {string} [paddingY]
 	 * @property {string} [paddingX]
 	 * @property {string} [selectedLabelClass]
@@ -59,7 +59,7 @@
 	}
 
 	function findSelectedOption() {
-		const find = options.find((opt) => opt.value === selectedValue);
+		const find = options.find((opt) => !opt.isGroupHeader && opt.value === selectedValue);
 		return find ? find.label : selectedValue || formLabel;
 	}
 
@@ -93,6 +93,8 @@
 					<li class="whitespace-nowrap">
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
+				{:else if opt.isGroupHeader}
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
 				{:else}
 					<li class="whitespace-nowrap border-b border-warm-grey">
 						<button
@@ -122,6 +124,8 @@
 					<li class="whitespace-nowrap">
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
+				{:else if opt.isGroupHeader}
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
 				{:else}
 					<li class="whitespace-nowrap">
 						<button
