@@ -1,7 +1,9 @@
 <script>
 	import { getContext } from 'svelte';
 
-	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
+	import { regionsNemOnlyOptions } from '$lib/regions';
+
+	const regionOptions = regionsNemOnlyOptions.map(({ description, ...rest }) => rest);
 	import Switch from '$lib/components/SwitchWithIcons.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
