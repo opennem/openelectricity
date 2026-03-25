@@ -52,6 +52,7 @@
 	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void,
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
+	 *   ondownloadcsv?: () => void,
 	 *   onshortcutinvoked?: () => void,
 	 *   onyearplayingchange?: (playing: boolean) => void,
 	 *   onplayyearchange?: (year: number | null) => void,
@@ -81,6 +82,7 @@
 		onviewchange,
 		onfullscreenchange,
 		onshowshortcuts,
+		ondownloadcsv,
 		onshortcutinvoked,
 		onyearplayingchange,
 		onplayyearchange,
@@ -703,6 +705,7 @@
 			{isFullscreen}
 			onfullscreenchange={() => onfullscreenchange?.()}
 			onshowshortcuts={() => onshowshortcuts?.()}
+			ondownloadcsv={() => ondownloadcsv?.()}
 		/>
 	</div>
 

@@ -13,6 +13,8 @@
 	import formatValue from './_utils/format-value';
 	import getUnitYear from './_utils/get-unit-year';
 	import { statusColours } from './_utils/filters.js';
+	import { facilitiesToCsv } from './_utils/facilities-csv.js';
+	import { downloadCsv } from '$lib/utils/download-csv.js';
 
 	import Map from './Map.svelte';
 	import Timeline from './Timeline.svelte';
@@ -515,6 +517,12 @@
 		replaceState(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {});
 	}
 
+	function handleDownloadCsv() {
+		if (filteredFacilities?.length) {
+			downloadCsv(facilitiesToCsv(filteredFacilities), 'facilities.csv');
+		}
+	}
+
 	/**
 	 * Toggle fullscreen mode
 	 */
@@ -793,6 +801,7 @@
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
 				onfullscreenchange={toggleFullscreen}
+				ondownloadcsv={handleDownloadCsv}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onshortcutinvoked={() => (showShortcutsToast = false)}
 				onyearplayingchange={(playing) => (isYearPlaying = playing)}
