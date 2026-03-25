@@ -1,18 +1,20 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { EllipsisVertical, Maximize2, Minimize2, CircleHelp } from '@lucide/svelte';
+	import { EllipsisVertical, Maximize2, Minimize2, CircleHelp, Download, Check } from '@lucide/svelte';
 
 	/**
 	 * @type {{
 	 *   isFullscreen?: boolean,
 	 *   onfullscreenchange?: () => void,
-	 *   onshowshortcuts?: () => void
+	 *   onshowshortcuts?: () => void,
+	 *   ondownloadcsv?: () => void
 	 * }}
 	 */
-	let { isFullscreen = false, onfullscreenchange, onshowshortcuts } = $props();
+	let { isFullscreen = false, onfullscreenchange, onshowshortcuts, ondownloadcsv } = $props();
 
 	let isOpen = $state(false);
+	let downloading = $state(false);
 
 	function handleClickOutside() {
 		isOpen = false;
@@ -25,6 +27,15 @@
 	function handleItemClick(callback) {
 		callback?.();
 		isOpen = false;
+	}
+
+	function handleDownloadCsv() {
+		downloading = true;
+		ondownloadcsv?.();
+		isOpen = false;
+		setTimeout(() => {
+			downloading = false;
+		}, 1000);
 	}
 </script>
 
@@ -42,6 +53,21 @@
 			class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-mid-warm-grey z-50 min-w-[200px] py-1"
 			in:fly={{ y: -5, duration: 150 }}
 		>
+			<!-- Download CSV -->
+			<button
+				onclick={handleDownloadCsv}
+				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
+			>
+				{#if downloading}
+					<Check class="size-4 text-mid-grey" />
+				{:else}
+					<Download class="size-4 text-mid-grey" />
+				{/if}
+				<span class="flex-1">{downloading ? 'Downloaded!' : 'Download CSV'}</span>
+			</button>
+
+			<div class="border-t border-warm-grey my-1"></div>
+
 			<!-- Fullscreen toggle -->
 			<button
 				onclick={() => handleItemClick(onfullscreenchange)}
