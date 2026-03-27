@@ -4,7 +4,12 @@
 		FacilityUnitsTable,
 		getNetworkTimezone
 	} from '$lib/components/charts/facility';
-	import { getExploreUrl, groupUnits } from '../_utils/units';
+	import {
+		getExploreUrl,
+		groupUnits,
+		hasBidirectionalBattery,
+		filterDerivedBatteryUnits
+	} from '../_utils/units';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import { ExternalLink, MapPin } from '@lucide/svelte';
@@ -104,12 +109,9 @@
 		return data.slice(-LAST_3_DAYS_POINTS);
 	}
 
-	// Filter out battery units for the primary chart
+	// Filter out derived battery units only when a bidirectional battery unit exists
 	let filteredUnits = $derived(
-		facility?.units?.filter(
-			(/** @type {any} */ unit) =>
-				unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
-		) ?? []
+		filterDerivedBatteryUnits(facility?.units ?? [], hasBidirectionalBattery(facility))
 	);
 	let filteredUnitCodes = $derived(new Set(filteredUnits.map((/** @type {any} */ u) => u.code)));
 
