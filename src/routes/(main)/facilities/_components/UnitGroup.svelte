@@ -15,6 +15,7 @@
 	 *   isCommissioning: boolean,
 	 *   capacity_maximum: number,
 	 *   capacity_registered: number,
+	 *   capacity_storage?: number,
 	 *   max_generation: number,
 	 *   bgColor: string,
 	 *   max_generation_interval?: string,
@@ -29,6 +30,7 @@
 		isCommissioning,
 		capacity_maximum,
 		capacity_registered,
+		capacity_storage = 0,
 		max_generation,
 		bgColor,
 		max_generation_interval,
@@ -111,6 +113,18 @@
 			{/if}
 		</div>
 	</div>
+
+	{#if capacity_storage > 0}
+		<div class="flex items-center justify-end">
+			<div class="text-xs">
+				<span class="text-xxs text-white/60">Storage:</span>
+				<span class="font-mono font-bold ml-1">
+					{formatValue(capacity_storage)}
+				</span>
+				<span class="text-xxs text-white/60">MWh</span>
+			</div>
+		</div>
+	{/if}
 
 	{#if isCommissioning}
 		<div class="mt-2">

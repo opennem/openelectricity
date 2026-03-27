@@ -1,6 +1,34 @@
 import { getFueltechColor } from './fueltech-display';
 
 /**
+ * Check if a facility has a bidirectional battery unit (fueltech_id === 'battery').
+ * When present, the separate charging/discharging units are derived and should be excluded.
+ * @param {any} facility
+ * @returns {boolean}
+ */
+export function hasBidirectionalBattery(facility) {
+	return (facility?.units ?? []).some(
+		(/** @type {any} */ unit) => unit.fueltech_id === 'battery'
+	);
+}
+
+/**
+ * Filter out battery_charging and battery_discharging units, but only when the facility
+ * also has a bidirectional battery unit (fueltech_id === 'battery'), since the
+ * charging/discharging units are derived from it.
+ * @param {any[]} units
+ * @param {boolean} hasBidirectional - whether the facility has a bidirectional battery unit
+ * @returns {any[]}
+ */
+export function filterDerivedBatteryUnits(units, hasBidirectional) {
+	if (!hasBidirectional) return units;
+	return units.filter(
+		(/** @type {any} */ unit) =>
+			unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
+	);
+}
+
+/**
  * Sum a numeric field across units
  * @param {any[]} units
  * @param {string} field
@@ -20,6 +48,7 @@ export function sumField(units, field) {
  * @property {string} bgColor
  * @property {number} capacity_maximum
  * @property {number} capacity_registered
+ * @property {number} capacity_storage
  * @property {number} max_generation
  */
 
@@ -37,10 +66,12 @@ export function groupUnits(facility, options = {}) {
 	/** @type {Map<string, {fueltech_id: string, status_id: string, units: any[]}>} */
 	const groups = new Map();
 
+	const bidirectional = skipBattery && hasBidirectionalBattery(facility);
+
 	for (const unit of facility.units) {
-		// Optionally skip battery_charging and battery_discharging
+		// Skip battery_charging/discharging only when a bidirectional battery unit exists
 		if (
-			skipBattery &&
+			bidirectional &&
 			(unit.fueltech_id === 'battery_charging' || unit.fueltech_id === 'battery_discharging')
 		) {
 			continue;
@@ -61,6 +92,7 @@ export function groupUnits(facility, options = {}) {
 	return Array.from(groups.values()).map((group) => {
 		const capacity_maximum = sumField(group.units, 'capacity_maximum');
 		const capacity_registered = sumField(group.units, 'capacity_registered');
+		const capacity_storage = sumField(group.units, 'capacity_storage');
 		const max_generation = sumField(group.units, 'max_generation');
 
 		return {
@@ -72,6 +104,7 @@ export function groupUnits(facility, options = {}) {
 			bgColor: getFueltechColor(group.fueltech_id),
 			capacity_maximum,
 			capacity_registered,
+			capacity_storage,
 			max_generation
 		};
 	});

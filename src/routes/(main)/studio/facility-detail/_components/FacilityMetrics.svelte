@@ -25,6 +25,7 @@
 	import CoalMetrics from './CoalMetrics.svelte';
 	import GasMetrics from './GasMetrics.svelte';
 	import HydroMetrics from './HydroMetrics.svelte';
+	import FuelTechMix from './FuelTechMix.svelte';
 
 	/**
 	 * @type {{
@@ -179,6 +180,8 @@
 			</span>
 		{/if}
 	</div>
+
+	<FuelTechMix {facility} />
 
 	{#if fuelTechGroup === 'wind'}
 		<div class="border border-dashed border-mid-grey rounded p-2">

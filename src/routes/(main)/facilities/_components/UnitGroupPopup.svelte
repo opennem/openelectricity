@@ -8,6 +8,7 @@
 	 * @property {boolean} [isCommissioning]
 	 * @property {number} capacity_maximum
 	 * @property {number} capacity_registered
+	 * @property {number} [capacity_storage]
 	 * @property {number} [max_generation]
 	 * @property {string} [max_generation_interval]
 	 * @property {string} [data_first_seen]
@@ -39,6 +40,7 @@
 				isCommissioning={unit.isCommissioning ?? false}
 				capacity_maximum={unit.capacity_maximum}
 				capacity_registered={unit.capacity_registered}
+				capacity_storage={unit.capacity_storage ?? 0}
 				max_generation={unit.max_generation ?? 0}
 				max_generation_interval={unit.max_generation_interval}
 				data_first_seen={unit.data_first_seen}

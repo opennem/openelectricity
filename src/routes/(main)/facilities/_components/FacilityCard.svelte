@@ -30,6 +30,7 @@
 
 	let unitGroups = $derived(groupUnits(facility));
 	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
+	let totalStorage = $derived(unitGroups.reduce((sum, g) => sum + (g.capacity_storage || 0), 0));
 	let hasMultipleGroups = $derived(unitGroups.length > 1);
 	let primaryGroup = $derived(unitGroups[0]);
 	let hasCommittedUnit = $derived(unitGroups.some((g) => g.status_id === 'committed'));
@@ -42,6 +43,7 @@
 			isCommissioning: g.isCommissioning,
 			capacity_maximum: g.capacity_maximum,
 			capacity_registered: g.capacity_registered,
+			capacity_storage: g.capacity_storage,
 			max_generation: g.max_generation,
 			bgColor: g.bgColor
 		}))
@@ -115,6 +117,13 @@
 					{formatValue(totalCapacity)}
 				</span>
 				<span class="text-xs {darkMode ? 'text-white/60' : 'text-mid-grey'}">MW</span>
+				{#if totalStorage > 0}
+					<span class="text-xs {darkMode ? 'text-white/40' : 'text-mid-warm-grey'}">/</span>
+					<span class="font-mono text-sm {darkMode ? 'text-white' : 'text-dark-grey'}">
+						{formatValue(totalStorage)}
+					</span>
+					<span class="text-xs {darkMode ? 'text-white/60' : 'text-mid-grey'}">MWh</span>
+				{/if}
 			</div>
 		</div>
 	</button>
@@ -134,22 +143,22 @@
 			class:bg-warm-grey={isHighlighted || isSelected}
 			onclick={() => onclick?.(facility)}
 		>
-			<div class="pl-6 pr-4 py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5">
-				<div class="text-base leading-base font-medium text-dark-grey">
+			<div class="pl-4 sm:pl-6 pr-4 py-3 sm:py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5">
+				<div class="text-sm md:text-base leading-snug md:leading-base font-medium text-dark-grey">
 					{facility.name || 'Unnamed Facility'}
 				</div>
 			</div>
 
 			<div
-				class="col-span-12 sm:col-span-7 grid grid-cols-[2fr_1fr_1fr] sm:flex items-center gap-4 px-4 sm:px-0 py-2 sm:py-0 border-t sm:border-t-0"
+				class="col-span-12 sm:col-span-7 grid grid-cols-[2fr_1fr_1fr] sm:grid-cols-[auto_1fr_auto_auto] items-center gap-4 px-4 sm:px-0 py-2 sm:py-0 border-t sm:border-t-0"
 				class:border-mid-warm-grey={isHighlighted || isSelected}
 				class:border-warm-grey={!isHighlighted && !isSelected}
 			>
 				<div
-					class="text-xs text-mid-grey col-start-2 sm:col-auto flex justify-end sm:justify-start"
+					class="text-xxs md:text-xs text-mid-grey col-start-2 sm:col-start-auto flex justify-end sm:justify-start"
 				>
 					<span
-						class="block w-18 border-r pr-6 text-right group-hover:border-light-warm-grey"
+						class="block w-14 md:w-18 border-r pr-4 md:pr-6 text-right group-hover:border-light-warm-grey"
 						class:border-mid-warm-grey={isHighlighted || isSelected}
 						class:border-warm-grey={!isHighlighted && !isSelected}
 					>
@@ -157,18 +166,27 @@
 					</span>
 				</div>
 
-				<div class="col-start-1 row-start-1 sm:col-auto sm:row-auto sm:ml-3 flex items-center">
+				<div class="col-start-1 row-start-1 sm:col-start-auto sm:row-start-auto sm:ml-3 flex items-center">
 					<span class="inline-flex flex-shrink-0">
 						{@render badgeGroup()}
 					</span>
 				</div>
 
-				<div class="sm:flex-1 flex justify-end items-center gap-2 group col-start-3 sm:col-auto">
-					<div class="flex justify-end items-baseline gap-2">
-						<span class="font-mono text-sm text-dark-grey" title="Total Capacity">
+				<div class="hidden sm:flex w-24 justify-end items-baseline gap-1 mr-4">
+					{#if totalStorage > 0}
+						<span class="font-mono text-xxs md:text-xs text-dark-grey" title="Storage Capacity">
+							{formatValue(totalStorage)}
+						</span>
+						<span class="text-xxs text-mid-grey">MWh</span>
+					{/if}
+				</div>
+
+				<div class="flex justify-end items-center gap-2 group col-start-3 sm:col-start-auto w-24">
+					<div class="flex justify-end items-baseline gap-1">
+						<span class="font-mono text-xs md:text-sm text-dark-grey" title="Total Capacity">
 							{formatValue(totalCapacity)}
 						</span>
-						<span class="text-xs text-mid-grey">MW</span>
+						<span class="text-xxs md:text-xs text-mid-grey">MW</span>
 					</div>
 
 					{#if primaryGroup}

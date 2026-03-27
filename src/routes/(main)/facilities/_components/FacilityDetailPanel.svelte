@@ -4,7 +4,12 @@
 		FacilityUnitsTable,
 		getNetworkTimezone
 	} from '$lib/components/charts/facility';
-	import { getExploreUrl, groupUnits } from '../_utils/units';
+	import {
+		getExploreUrl,
+		groupUnits,
+		hasBidirectionalBattery,
+		filterDerivedBatteryUnits
+	} from '../_utils/units';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import { ExternalLink, MapPin } from '@lucide/svelte';
@@ -30,6 +35,12 @@
 	);
 	let unitGroups = $derived(facility ? groupUnits(facility) : []);
 	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
+	let totalStorage = $derived(
+		(facility?.units ?? []).reduce(
+			(/** @type {number} */ sum, /** @type {any} */ u) => sum + (Number(u.capacity_storage) || 0),
+			0
+		)
+	);
 	let unitCount = $derived(facility?.units?.length ?? 0);
 
 	// 3 days at 5-minute intervals = 3 * 24 * 12 = 864 data points
@@ -98,12 +109,9 @@
 		return data.slice(-LAST_3_DAYS_POINTS);
 	}
 
-	// Filter out battery units for the primary chart
+	// Filter out derived battery units only when a bidirectional battery unit exists
 	let filteredUnits = $derived(
-		facility?.units?.filter(
-			(/** @type {any} */ unit) =>
-				unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
-		) ?? []
+		filterDerivedBatteryUnits(facility?.units ?? [], hasBidirectionalBattery(facility))
 	);
 	let filteredUnitCodes = $derived(new Set(filteredUnits.map((/** @type {any} */ u) => u.code)));
 
@@ -163,6 +171,12 @@
 						<span class="font-mono text-lg text-dark-grey">{formatValue(totalCapacity)}</span>
 						<span class="text-xs text-mid-grey">MW</span>
 					</div>
+					{#if totalStorage > 0}
+						<div class="flex items-baseline gap-1">
+							<span class="font-mono text-sm text-dark-grey">{formatValue(totalStorage)}</span>
+							<span class="text-xs text-mid-grey">MWh</span>
+						</div>
+					{/if}
 					<span class="text-xs text-mid-grey">
 						{unitCount} unit{unitCount !== 1 ? 's' : ''}
 					</span>
@@ -182,6 +196,11 @@
 								<span class="text-xs text-mid-grey">
 									{formatValue(group.totalCapacity)} MW
 								</span>
+								{#if group.capacity_storage > 0}
+									<span class="text-xxs text-mid-grey">
+										{formatValue(group.capacity_storage)} MWh
+									</span>
+								{/if}
 							</div>
 						{/each}
 					</div>

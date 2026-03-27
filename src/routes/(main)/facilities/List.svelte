@@ -11,11 +11,11 @@
 	 *   hoveredFacility?: any | null,
 	 *   clickedFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
-	 *   sortBy?: 'name' | 'region' | 'capacity',
+	 *   sortBy?: 'name' | 'region' | 'storage' | 'capacity',
 	 *   sortOrder?: 'asc' | 'desc',
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any) => void,
-	 *   onsortchange?: (sortBy: 'name' | 'region' | 'capacity', sortOrder: 'asc' | 'desc') => void
+	 *   onsortchange?: (sortBy: 'name' | 'region' | 'storage' | 'capacity', sortOrder: 'asc' | 'desc') => void
 	 * }}
 	 */
 	let {
@@ -43,6 +43,18 @@
 	}
 
 	/**
+	 * Get total storage for a facility
+	 * @param {any} facility
+	 * @returns {number}
+	 */
+	function getTotalStorage(facility) {
+		if (!facility.units) return 0;
+		return facility.units.reduce((/** @type {number} */ sum, /** @type {any} */ unit) => {
+			return sum + (Number(unit.capacity_storage) || 0);
+		}, 0);
+	}
+
+	/**
 	 * Get region label for sorting
 	 * @param {any} facility
 	 * @returns {string}
@@ -63,6 +75,9 @@
 				case 'region':
 					comparison = getRegion(a).localeCompare(getRegion(b));
 					break;
+				case 'storage':
+					comparison = getTotalStorage(a) - getTotalStorage(b);
+					break;
 				case 'capacity':
 					comparison = getTotalCapacity(a) - getTotalCapacity(b);
 					break;
@@ -74,18 +89,18 @@
 
 	/**
 	 * Handle sort column click
-	 * @param {'name' | 'region' | 'capacity'} column
+	 * @param {'name' | 'region' | 'storage' | 'capacity'} column
 	 */
 	function handleSort(column) {
 		/** @type {'asc' | 'desc'} */
 		let newOrder;
-		/** @type {'name' | 'region' | 'capacity'} */
+		/** @type {'name' | 'region' | 'storage' | 'capacity'} */
 		let newSortBy = column;
 
 		if (sortBy === column) {
 			newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
 		} else {
-			newOrder = column === 'capacity' ? 'desc' : 'asc';
+			newOrder = column === 'capacity' || column === 'storage' ? 'desc' : 'asc';
 		}
 
 		onsortchange?.(newSortBy, newOrder);
@@ -146,7 +161,7 @@
 				Facility
 				{@render sortIcon('name')}
 			</button>
-			<div class="col-span-7 flex items-center gap-4">
+			<div class="col-span-7 grid grid-cols-[auto_1fr_auto_auto] items-center gap-4">
 				<button
 					class="flex items-center gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer"
 					onclick={() => handleSort('region')}
@@ -156,7 +171,14 @@
 				</button>
 				<div class="ml-3 text-xs font-medium text-mid-grey">Tech</div>
 				<button
-					class="flex-1 flex items-center justify-end gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer"
+					class="flex items-center justify-end gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer w-24"
+					onclick={() => handleSort('storage')}
+				>
+					Storage
+					{@render sortIcon('storage')}
+				</button>
+				<button
+					class="flex items-center justify-end gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer w-24"
 					onclick={() => handleSort('capacity')}
 				>
 					Capacity

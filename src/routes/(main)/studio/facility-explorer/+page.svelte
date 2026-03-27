@@ -20,7 +20,12 @@
 	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
 	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
-	import { groupUnits, getExploreUrl } from '../../facilities/_utils/units';
+	import {
+		groupUnits,
+		getExploreUrl,
+		hasBidirectionalBattery,
+		filterDerivedBatteryUnits
+	} from '../../facilities/_utils/units';
 	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
@@ -39,6 +44,7 @@
 	import Switch from '$lib/components/Switch.svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
+	import FacilitySpotlight from './_components/FacilitySpotlight.svelte';
 	import FacilityLocationMap from './_components/FacilityLocationMap.svelte';
 	import SanityFacilityDetail from './_components/SanityFacilityDetail.svelte';
 	import {
@@ -84,6 +90,7 @@
 	// ============================================
 
 	let searchOpen = $state(false);
+	let spotlightOpen = $state(false);
 	/** @type {'chart' | 'data'} */
 	let activeView = $state('chart');
 
@@ -152,16 +159,13 @@
 	// Derived: Facility Selection
 	// ============================================
 
-	// Strip redundant battery_charging/discharging units at the source
+	// Strip derived battery_charging/discharging units only when a bidirectional battery exists
 	let selectedFacility = $derived.by(() => {
 		const f = data.facility;
 		if (!f?.units) return f;
 		return {
 			...f,
-			units: f.units.filter(
-				(/** @type {any} */ u) =>
-					u.fueltech_id !== 'battery_charging' && u.fueltech_id !== 'battery_discharging'
-			)
+			units: filterDerivedBatteryUnits(f.units, hasBidirectionalBattery(f))
 		};
 	});
 	let timeZone = $derived(data.timeZone);
@@ -456,11 +460,15 @@
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
-		// Skip when typing in an input or when search popover is open
+		// Skip when typing in an input or when search popover/spotlight is open
 		const tag = /** @type {HTMLElement} */ (e.target).tagName;
-		if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || searchOpen) return;
+		if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || searchOpen || spotlightOpen)
+			return;
 
-		if (e.key === 'ArrowLeft' && prevFacility) {
+		if (e.key === '/') {
+			e.preventDefault();
+			spotlightOpen = true;
+		} else if (e.key === 'ArrowLeft' && prevFacility) {
 			e.preventDefault();
 			handleFacilitySelect(prevFacility.code);
 		} else if (e.key === 'ArrowRight' && nextFacility) {
@@ -475,6 +483,12 @@
 <svelte:head>
 	<title>{selectedFacility ? `${selectedFacility.name} — ` : ''}Facility Explorer</title>
 </svelte:head>
+
+<FacilitySpotlight
+	facilities={data.facilities}
+	bind:open={spotlightOpen}
+	onselect={handleFacilitySelect}
+/>
 
 {#if mounted}
 {#if data.error && !selectedFacility}
