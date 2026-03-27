@@ -34,7 +34,7 @@
 					padding: 'p-1.5',
 					iconSize: 4,
 					statusPosition: '-top-[0.1rem] -right-[0.1rem]',
-					overlapMargin: 'ml-2'
+					overlapMargin: '-ml-1.5'
 				}
 			: {
 					padding: 'p-2',

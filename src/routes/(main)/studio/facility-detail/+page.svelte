@@ -40,6 +40,10 @@
 
 	// Local components
 	import FacilityMetrics from './_components/FacilityMetrics.svelte';
+	import {
+		hasBidirectionalBattery,
+		filterDerivedBatteryUnits
+	} from '../../facilities/_utils/units';
 
 	/**
 	 * Get colour for a fuel tech code.
@@ -110,16 +114,13 @@
 	// Derived: Facility Selection
 	// ============================================
 
-	// Strip redundant battery_charging/discharging units at the source
+	// Strip derived battery_charging/discharging units only when a bidirectional battery exists
 	let selectedFacility = $derived.by(() => {
 		const f = data.facility;
 		if (!f?.units) return f;
 		return {
 			...f,
-			units: f.units.filter(
-				(/** @type {any} */ u) =>
-					u.fueltech_id !== 'battery_charging' && u.fueltech_id !== 'battery_discharging'
-			)
+			units: filterDerivedBatteryUnits(f.units, hasBidirectionalBattery(f))
 		};
 	});
 	let timeZone = $derived(data.timeZone);

@@ -141,7 +141,12 @@ export const fuelTechOptions = [
 	{
 		value: 'battery',
 		label: 'Battery',
-		colour: '#3245c9'
+		colour: '#3245c9',
+		children: [
+			{ value: 'battery', label: 'Battery (Bidirectional)', colour: '#3245c9' },
+			{ value: 'battery_charging', label: 'Battery (Charging)', colour: '#3245c9' },
+			{ value: 'battery_discharging', label: 'Battery (Discharging)', colour: '#3245c9' }
+		]
 	},
 	{
 		value: 'gas',

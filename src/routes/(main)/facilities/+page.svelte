@@ -23,6 +23,10 @@
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import ShortcutsToast from './ShortcutsToast.svelte';
+	import {
+		hasBidirectionalBattery,
+		filterDerivedBatteryUnits
+	} from './_utils/units';
 
 	let { data } = $props();
 
@@ -209,11 +213,7 @@
 	 * @returns {number}
 	 */
 	function getFacilityCapacity(facility) {
-		return (facility.units ?? [])
-			.filter(
-				(/** @type {any} */ unit) =>
-					unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
-			)
+		return filterDerivedBatteryUnits(facility.units ?? [], hasBidirectionalBattery(facility))
 			.reduce(
 				(/** @type {number} */ sum, /** @type {any} */ unit) => sum + getUnitCapacity(unit),
 				0
@@ -227,11 +227,7 @@
 	 */
 	function getAllUnitCapacities(facilityList) {
 		return facilityList.flatMap((facility) =>
-			(facility.units ?? [])
-				.filter(
-					(/** @type {any} */ unit) =>
-						unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
-				)
+			filterDerivedBatteryUnits(facility.units ?? [], hasBidirectionalBattery(facility))
 				.map((/** @type {any} */ unit) => getUnitCapacity(unit))
 				.filter((/** @type {number} */ c) => c > 0)
 		);
@@ -263,11 +259,7 @@
 
 		/** @type {number[]} */
 		const years = facilities.flatMap((facility) =>
-			(facility.units ?? [])
-				.filter(
-					(/** @type {any} */ unit) =>
-						unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
-				)
+			filterDerivedBatteryUnits(facility.units ?? [], hasBidirectionalBattery(facility))
 				.map((/** @type {any} */ unit) => getUnitYear(unit))
 				.filter((/** @type {number | null} */ y) => y !== null)
 		);
@@ -327,10 +319,11 @@
 			return facilityList
 				.map((facility) => ({
 					...facility,
-					units: facility.units?.filter(
+					units: filterDerivedBatteryUnits(
+						facility.units ?? [],
+						hasBidirectionalBattery(facility)
+					).filter(
 						(/** @type {any} */ unit) =>
-							unit.fueltech_id !== 'battery_charging' &&
-							unit.fueltech_id !== 'battery_discharging' &&
 							(searchTerm
 								? facility.name.toLowerCase().includes(searchTerm.toLowerCase())
 								: true) &&
@@ -345,11 +338,12 @@
 			return facilityList
 				.map((facility) => ({
 					...facility,
-					units: facility.units?.filter(
+					units: filterDerivedBatteryUnits(
+						facility.units ?? [],
+						hasBidirectionalBattery(facility)
+					).filter(
 						(/** @type {any} */ unit) =>
-							unit.fueltech_id !== 'battery_charging' &&
-							unit.fueltech_id !== 'battery_discharging' &&
-							(searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true)
+							searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true
 					)
 				}))
 				.filter((facility) => facility.units && facility.units.length > 0)
@@ -860,7 +854,7 @@
 	>
 		<!-- Left panel: List or Timeline (5/12 width on desktop) -->
 		<div
-			class="relative col-span-1 md:col-span-5 bg-white flex flex-col min-h-0 z-10"
+			class="relative col-span-1 md:col-span-6 lg:col-span-5 bg-white flex flex-col min-h-0 z-10"
 			class:hidden={selectedView === 'map'}
 			class:md:flex={selectedView === 'map'}
 		>
@@ -929,7 +923,7 @@
 
 		<!-- Right panel: Map (7/12 width on desktop) -->
 		<div
-			class="col-span-1 md:col-span-7 md:p-6"
+			class="col-span-1 md:col-span-6 lg:col-span-7 md:p-6"
 			class:hidden={selectedView !== 'map'}
 			class:md:block={selectedView !== 'map'}
 		>

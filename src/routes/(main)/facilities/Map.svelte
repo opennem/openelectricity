@@ -211,6 +211,7 @@
 						isCommissioning: unit.isCommissioning,
 						capacity_maximum: 0,
 						capacity_registered: 0,
+						capacity_storage: 0,
 						max_generation: 0,
 						bgColor: fuelTechColourMap[unit.fueltech_id] || '#6A6A6A'
 					});
@@ -219,6 +220,7 @@
 				const group = groups.get(key);
 				group.capacity_maximum += Number(unit.capacity_maximum) || 0;
 				group.capacity_registered += Number(unit.capacity_registered) || 0;
+				group.capacity_storage += Number(unit.capacity_storage) || 0;
 				group.max_generation += Number(unit.max_generation) || 0;
 			}
 

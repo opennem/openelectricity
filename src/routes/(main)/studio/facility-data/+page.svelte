@@ -6,12 +6,25 @@
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import FacilitySearchPopover from '../facility-explorer/_components/FacilitySearchPopover.svelte';
+	import FacilitySpotlight from '../facility-explorer/_components/FacilitySpotlight.svelte';
 	import { PollutionSection } from '$lib/components/charts/facility';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
 
 	let searchOpen = $state(false);
+	let spotlightOpen = $state(false);
+
+	/** @param {KeyboardEvent} e */
+	function handleKeydown(e) {
+		const tag = /** @type {HTMLElement} */ (e.target).tagName;
+		if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+		if (e.key === '/') {
+			e.preventDefault();
+			spotlightOpen = true;
+		}
+	}
 
 	let currentIndex = $derived(
 		data.facilities.findIndex((/** @type {any} */ f) => f.code === data.selectedCode)
@@ -99,9 +112,17 @@
 
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <svelte:head>
 	<title>{data.facility ? `${data.facility.name} — ` : ''}Facility Data</title>
 </svelte:head>
+
+<FacilitySpotlight
+	facilities={data.facilities}
+	bind:open={spotlightOpen}
+	onselect={handleFacilitySelect}
+/>
 
 {#snippet kv(/** @type {string} */ label, /** @type {any} */ value)}
 	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">

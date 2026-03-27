@@ -30,6 +30,12 @@
 	);
 	let unitGroups = $derived(facility ? groupUnits(facility) : []);
 	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
+	let totalStorage = $derived(
+		(facility?.units ?? []).reduce(
+			(/** @type {number} */ sum, /** @type {any} */ u) => sum + (Number(u.capacity_storage) || 0),
+			0
+		)
+	);
 	let unitCount = $derived(facility?.units?.length ?? 0);
 
 	// 3 days at 5-minute intervals = 3 * 24 * 12 = 864 data points
@@ -163,6 +169,12 @@
 						<span class="font-mono text-lg text-dark-grey">{formatValue(totalCapacity)}</span>
 						<span class="text-xs text-mid-grey">MW</span>
 					</div>
+					{#if totalStorage > 0}
+						<div class="flex items-baseline gap-1">
+							<span class="font-mono text-sm text-dark-grey">{formatValue(totalStorage)}</span>
+							<span class="text-xs text-mid-grey">MWh</span>
+						</div>
+					{/if}
 					<span class="text-xs text-mid-grey">
 						{unitCount} unit{unitCount !== 1 ? 's' : ''}
 					</span>
@@ -182,6 +194,11 @@
 								<span class="text-xs text-mid-grey">
 									{formatValue(group.totalCapacity)} MW
 								</span>
+								{#if group.capacity_storage > 0}
+									<span class="text-xxs text-mid-grey">
+										{formatValue(group.capacity_storage)} MWh
+									</span>
+								{/if}
 							</div>
 						{/each}
 					</div>

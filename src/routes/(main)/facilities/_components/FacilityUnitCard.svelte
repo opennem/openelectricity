@@ -52,6 +52,7 @@
 						isCommissioning: facility.isCommissioning,
 						capacity_maximum: facility.unit.capacity_maximum,
 						capacity_registered: facility.unit.capacity_registered,
+						capacity_storage: facility.unit.capacity_storage,
 						max_generation: facility.unit.max_generation,
 						max_generation_interval: facility.unit.max_generation_interval,
 						data_first_seen: facility.unit.data_first_seen,
@@ -96,15 +97,6 @@
 			>
 				{facility.name || 'Unnamed Facility'}
 
-				{#if facility.unit.capacity_storage}
-					<span class="text-xs items-baseline text-mid-grey" title="Storage Capacity">
-						(<span class="font-mono">
-							{formatValue(facility.unit.capacity_storage)}
-						</span>
-						<span class="text-xxs">MWh</span>)
-					</span>
-				{/if}
-
 				{#if facility.units.length > 1}
 					<small class="text-mid-warm-grey text-xs font-light">
 						({facility.unit.code_display ?? facility.unit.code})
@@ -138,15 +130,24 @@
 
 			<div class="col-span-3 grid grid-cols-7 items-center gap-2 group">
 				<div class="col-span-6 flex flex-row-reverse gap-5 items-center">
-					<div class="flex justify-end items-baseline gap-2">
-						<span
-							class="font-mono text-sm text-dark-grey"
-							title={facility.unit.capacity_maximum ? 'Maximum Capacity' : 'Registered Capacity'}
-						>
-							{formatValue(facility.unit.capacity_maximum || facility.unit.capacity_registered)}
-						</span>
-
-						<span class="text-xs text-mid-grey">MW</span>
+					<div class="flex flex-col items-end">
+						<div class="flex items-baseline gap-2">
+							<span
+								class="font-mono text-sm text-dark-grey"
+								title={facility.unit.capacity_maximum ? 'Maximum Capacity' : 'Registered Capacity'}
+							>
+								{formatValue(facility.unit.capacity_maximum || facility.unit.capacity_registered)}
+							</span>
+							<span class="text-xs text-mid-grey">MW</span>
+						</div>
+						{#if facility.unit.capacity_storage}
+							<div class="flex items-baseline gap-1">
+								<span class="font-mono text-xxs text-dark-grey">
+									{formatValue(facility.unit.capacity_storage)}
+								</span>
+								<span class="text-xxs text-mid-grey">MWh</span>
+							</div>
+						{/if}
 					</div>
 
 					{#if facility.isCommissioning}

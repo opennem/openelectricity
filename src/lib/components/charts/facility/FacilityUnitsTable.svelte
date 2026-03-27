@@ -95,6 +95,13 @@
 </script>
 
 {#if units?.length}
+	<div class="grid grid-cols-12 items-center gap-3 px-2 py-1.5 text-xxs text-mid-grey border-b border-mid-warm-grey">
+		<div class="col-span-6">Unit</div>
+		<div class="col-span-2 text-right">Status</div>
+		<div class="col-span-2 text-right">Storage</div>
+		<div class="col-span-2 text-right">Capacity</div>
+	</div>
+
 	<ol class="divide-y divide-mid-warm-grey">
 		{#each units as unit (unit.code)}
 			{@const bgColor = colours[unit.code] || getFuelTechColor(unit.fueltech_id)}
@@ -110,7 +117,7 @@
 			>
 				<div class="grid grid-cols-12 items-center gap-3">
 					<!-- Fuel Tech Icon + Unit Info -->
-					<div class="col-span-8 flex items-center gap-3 min-w-0">
+					<div class="col-span-6 flex items-center gap-3 min-w-0">
 						<span
 							class="rounded-full flex-shrink-0 flex items-center justify-center"
 							class:p-1.5={compact}
@@ -149,6 +156,21 @@
 						<span class="capitalize text-mid-grey" class:text-xs={compact} class:text-sm={!compact}>
 							{unit.status_id}
 						</span>
+					</div>
+
+					<!-- Storage -->
+					<div class="col-span-2 flex items-baseline gap-1 justify-end">
+						{#if unit.capacity_storage}
+							<span
+								class="font-mono text-dark-grey"
+								class:text-xs={compact}
+								class:text-sm={!compact}
+								title="Storage Capacity"
+							>
+								{formatCapacity(unit.capacity_storage)}
+							</span>
+							<span class="text-mid-grey" class:text-xxs={compact} class:text-xs={!compact}>MWh</span>
+						{/if}
 					</div>
 
 					<!-- Capacity -->
