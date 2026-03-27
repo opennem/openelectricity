@@ -13,6 +13,8 @@
 	import formatValue from './_utils/format-value';
 	import getUnitYear from './_utils/get-unit-year';
 	import { statusColours } from './_utils/filters.js';
+	import { facilitiesToCsv } from './_utils/facilities-csv.js';
+	import { downloadCsv } from '$lib/utils/download-csv.js';
 
 	import Map from './Map.svelte';
 	import Timeline from './Timeline.svelte';
@@ -22,7 +24,7 @@
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
-	import ShortcutsToast from './ShortcutsToast.svelte';
+	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import {
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits
@@ -509,6 +511,12 @@
 		replaceState(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {});
 	}
 
+	function handleDownloadCsv() {
+		if (filteredFacilities?.length) {
+			downloadCsv(facilitiesToCsv(filteredFacilities), 'facilities.csv');
+		}
+	}
+
 	/**
 	 * Toggle fullscreen mode
 	 */
@@ -787,6 +795,7 @@
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
 				onfullscreenchange={toggleFullscreen}
+				ondownloadcsv={handleDownloadCsv}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onshortcutinvoked={() => (showShortcutsToast = false)}
 				onyearplayingchange={(playing) => (isYearPlaying = playing)}
@@ -1134,4 +1143,14 @@
 	</section>
 </div>
 
-<ShortcutsToast visible={showShortcutsToast} ondismiss={() => (showShortcutsToast = false)} />
+<ShortcutsToast
+	visible={showShortcutsToast}
+	ondismiss={() => (showShortcutsToast = false)}
+	shortcuts={[
+		{ label: 'Enter / exit full screen', keys: ['F'] },
+		{ label: 'Browser full screen', keys: ['Shift', 'F'] },
+		{ label: 'Search', keys: ['/'] },
+		{ label: 'Show shortcuts', keys: ['?'] },
+		{ label: 'Exit', keys: ['Esc'] }
+	]}
+/>

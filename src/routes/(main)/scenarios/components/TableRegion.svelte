@@ -1,60 +1,22 @@
 <script>
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext } from 'svelte';
 	import { color } from 'd3-color';
 	import TableHeader from './TableHeader.svelte';
+	import AboutData from './AboutData.svelte';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} [seriesLoadsIds]
 	 * @property {string[]} [hiddenRowNames]
 	 * @property {string} [title]
+	 * @property {(detail: {name: string, isMetaPressed: boolean, allNames: string[]}) => void} [onrowclick]
 	 */
 
 	/** @type {Props} */
-	let { seriesLoadsIds = [], hiddenRowNames = [], title = '' } = $props();
+	let { seriesLoadsIds = [], hiddenRowNames = [], title = '', onrowclick } = $props();
 
-	const dispatch = createEventDispatcher();
 	const { includeBatteryAndLoads } = getContext('scenario-filters');
-	const {
-		seriesNames: energySeriesNames,
-		seriesLabels: energySeriesLabels,
-		seriesColours: energySeriesColours,
-		hoverData: energyHoverData,
-		hoverTime: energyHoverTime,
-		focusData: energyFocusData,
-		focusTime: energyFocusTime,
-		convertAndFormatValue: energyConvertAndFormatValue,
-		displayUnit: energyDisplayUnit,
-		displayPrefix: energyDisplayPrefix,
-		getNextPrefix: getEnergyNextPrefix
-	} = getContext('energy-data-viz');
-
-	const {
-		hoverData: emissionsHoverData,
-		focusData: emissionsFocusData,
-		convertAndFormatValue: emissionsConvertAndFormatValue,
-		displayUnit: emissionsDisplayUnit,
-		displayPrefix: emissionsDisplayPrefix,
-		getNextPrefix: getEmissionsNextPrefix
-	} = getContext('emissions-data-viz');
-	const {
-		hoverData: intensityHoverData,
-		focusData: intensityFocusData,
-		convertAndFormatValue: intensityConvertAndFormatvalue,
-		displayUnit: intensityDisplayUnit
-	} = getContext('intensity-data-viz');
-	const {
-		// seriesNames: capacitySeriesNames,
-		// seriesLabels: capacitySeriesLabels,
-		hoverData: capacityHoverData,
-		focusData: capacityFocusData,
-		convertAndFormatValue: capacityConvertAndFormatValue,
-		displayUnit: capacityDisplayUnit,
-		displayPrefix: capacityDisplayPrefix,
-		getNextPrefix: getCapacityNextPrefix
-	} = getContext('capacity-data-viz');
-
-	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
+	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
 
 	let isMetaPressed = false;
 
@@ -62,7 +24,7 @@
 	 * @param {string} name
 	 */
 	function handleRowClick(name) {
-		dispatch('row-click', { name, isMetaPressed, allNames: $energySeriesNames });
+		onrowclick?.({ name, isMetaPressed, allNames: generation.seriesNames });
 	}
 
 	function handleKeyup() {
@@ -93,9 +55,8 @@
 
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
-		includeBatteryAndLoads={$includeBatteryAndLoads}
-		hoverTime={$energyHoverTime || $energyFocusTime}
-		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+		showCheckbox={false}
+		hoverTime={generation.hoverTime || generation.focusTime}
 	/>
 
 	<table class="w-full border border-warm-grey">
@@ -109,9 +70,9 @@
 						<span class="block text-xs">Generation</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							onclick={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
+							onclick={() => generation.chartOptions.cyclePrefix()}
 						>
-							{$energyDisplayUnit}
+							{generation.chartOptions.displayUnit}
 						</button>
 					</div>
 				</th>
@@ -121,9 +82,9 @@
 						<span class="block text-xs">Capacity</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							onclick={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
+							onclick={() => capacity.chartOptions.cyclePrefix()}
 						>
-							{$capacityDisplayUnit}
+							{capacity.chartOptions.displayUnit}
 						</button>
 					</div>
 				</th>
@@ -133,16 +94,16 @@
 						<span class="block text-xs">Emissions</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							onclick={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
+							onclick={() => emissions.chartOptions.cyclePrefix()}
 						>
-							{$emissionsDisplayUnit}
+							{emissions.chartOptions.displayUnit}
 						</button>
 					</div>
 				</th>
 				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Intensity</span>
-						<small class="font-light text-xxs">{$intensityDisplayUnit}</small>
+						<small class="font-light text-xxs">{intensity.chartOptions.displayUnit}</small>
 					</div>
 				</th>
 			</tr>
@@ -152,27 +113,12 @@
 			<tr>
 				<td colspan="5" class="h-4"></td>
 			</tr>
-			{#each $energySeriesNames as name, i (name)}
+			{#each generation.seriesNames as name, i (name)}
 				<tr
 					class="hover:bg-light-warm-grey group cursor-pointer text-sm"
 					onclick={() => handleRowClick(name)}
 					class:opacity-50={hiddenRowNames.includes(name)}
 				>
-					<!-- <td
-						class:!pb-8={i === regionNames.length - 1}
-						class:opacity-50={hiddenRowNames.includes(name)}
-					>
-						<div class="flex items-center gap-2">
-							<div
-								class="w-4 h-4 rounded-full"
-								style="background-color: {$energySeriesColours[name]}"
-							/>
-							<div>
-								{$energySeriesLabels[name]}
-							</div>
-						</div>
-					</td> -->
-
 					<td class="px-2 py-1">
 						<div class="flex items-start gap-3 ml-3">
 							{#if hiddenRowNames.includes(name)}
@@ -182,51 +128,51 @@
 							{:else}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm relative top-1"
-									style:background-color={$energySeriesColours[name]}
-									style:border-color={darken($energySeriesColours[name])}
+									style:background-color={generation.seriesColours[name]}
+									style:border-color={darken(generation.seriesColours[name])}
 								></div>
 							{/if}
 							<div>
-								{$energySeriesLabels[name]}
+								{generation.seriesLabels[name]}
 							</div>
 						</div>
 					</td>
 
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end">
-							{$energyHoverData
-								? $energyConvertAndFormatValue($energyHoverData[name])
-								: $energyFocusData
-									? $energyConvertAndFormatValue($energyFocusData[name])
+							{generation.hoverData
+								? generation.convertAndFormatValue(generation.hoverData[name])
+								: generation.focusData
+									? generation.convertAndFormatValue(generation.focusData[name])
 									: ''}
 						</div>
 					</td>
 
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end">
-							{$capacityHoverData
-								? $capacityConvertAndFormatValue($capacityHoverData[name])
-								: $capacityFocusData
-									? $capacityConvertAndFormatValue($capacityFocusData[name])
+							{capacity.hoverData
+								? capacity.convertAndFormatValue(capacity.hoverData[name])
+								: capacity.focusData
+									? capacity.convertAndFormatValue(capacity.focusData[name])
 									: ''}
 						</div>
 					</td>
 
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end">
-							{$emissionsHoverData
-								? $emissionsConvertAndFormatValue($emissionsHoverData[name])
-								: $emissionsFocusData
-									? $emissionsConvertAndFormatValue($emissionsFocusData[name])
+							{emissions.hoverData
+								? emissions.convertAndFormatValue(emissions.hoverData[name])
+								: emissions.focusData
+									? emissions.convertAndFormatValue(emissions.focusData[name])
 									: ''}
 						</div>
 					</td>
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end mr-3">
-							{$intensityHoverData
-								? $intensityConvertAndFormatvalue($intensityHoverData[name])
-								: $intensityFocusData
-									? $intensityConvertAndFormatvalue($intensityFocusData[name])
+							{intensity.hoverData
+								? intensity.convertAndFormatValue(intensity.hoverData[name])
+								: intensity.focusData
+									? intensity.convertAndFormatValue(intensity.focusData[name])
 									: ''}
 						</div>
 					</td>
@@ -237,4 +183,12 @@
 			</tr>
 		</tbody>
 	</table>
+
+	<TableHeader
+		showLabel={false}
+		includeBatteryAndLoads={$includeBatteryAndLoads}
+		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+	/>
+
+	<AboutData />
 </div>

@@ -3,15 +3,15 @@
 	import { fly } from 'svelte/transition';
 	import { onNavigate } from '$app/navigation';
 	import { page } from '$app/state';
-	import { setContext } from 'svelte';
+	import { setContext, onMount } from 'svelte';
 	// import '../../app.css';
 
 	import Nav from '$lib/components/Nav.svelte';
 	import Footer from '$lib/components/Footer.svelte';
-	// import IconXMark from '$lib/icons/XMark.svelte';
+	import IconXMark from '$lib/icons/XMark.svelte';
 	// import ThemeSwitcher from '$lib/components/ThemeSwitcher.svelte';
 
-	// import { bannerOpen } from '$lib/stores/app';
+	import { bannerOpen } from '$lib/stores/app';
 	import { showThemeSwitcher } from '$lib/stores/theme';
 	import { toastMessage } from '$lib/stores/toast';
 	/**
@@ -31,6 +31,18 @@
 		setFullscreen: (value) => {
 			isFullscreen = value;
 		}
+	});
+
+	/** Set to a snippet/string to enable the global banner, or null to disable */
+	const bannerMessage = 'Have your say on the future of Open Electricity';
+	const bannerLink = 'https://forms.gle/oHzViVX2ePhHtaFX6';
+	let bannerReady = $state(false);
+	let showBanner = $derived(!!bannerMessage && bannerReady && $bannerOpen);
+
+	onMount(() => {
+		setTimeout(() => {
+			bannerReady = true;
+		}, 10);
 	});
 
 	let currentRoute = $derived(page.url.pathname);
@@ -137,6 +149,25 @@
 	{/if} -->
 
 {#if !isFullscreen}
+	{#if showBanner}
+		<div
+			transition:fly={{ y: -40, duration: 300 }}
+			class="relative w-full bg-black text-white text-sm leading-sm px-10 md:px-8 py-6 font-light md:flex gap-3 justify-center"
+		>
+			<div>
+				🔮 <a href={bannerLink} target="_blank" class="underline text-white"
+					>{bannerMessage}</a
+				>
+			</div>
+
+			<button
+				class="absolute cursor right-5 top-7"
+				onclick={() => ($bannerOpen = false)}
+			>
+				<IconXMark classes="w-8 h-8" />
+			</button>
+		</div>
+	{/if}
 	<Nav />
 {/if}
 

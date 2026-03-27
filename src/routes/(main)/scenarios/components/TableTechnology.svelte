@@ -1,131 +1,114 @@
 <script>
-	import { getContext, createEventDispatcher } from 'svelte';
+	import { getContext } from 'svelte';
 	import { color } from 'd3-color';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { groupOptions } from '../page-data-options/groups-technology';
 	import TableHeader from './TableHeader.svelte';
+	import AboutData from './AboutData.svelte';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} [seriesLoadsIds]
 	 * @property {string[]} [hiddenRowNames]
+	 * @property {(detail: { name: string, isMetaPressed: boolean, allNames: string[] }) => void} [onrowclick]
 	 */
 
 	/** @type {Props} */
-	let { seriesLoadsIds = [], hiddenRowNames = [] } = $props();
+	let { seriesLoadsIds = [], hiddenRowNames = [], onrowclick } = $props();
 
-	const dispatch = createEventDispatcher();
 	const { selectedFuelTechGroup, includeBatteryAndLoads } = getContext('scenario-filters');
-	const {
-		seriesNames: energySeriesNames,
-		seriesLabels: energySeriesLabels,
-		seriesColours: energySeriesColours,
-		hoverTime: energyHoverTime,
-		hoverData: energyHoverData,
-		focusData: energyFocusData,
-		focusTime: energyFocusTime,
-		convertAndFormatValue: energyConvertAndFormatValue,
-		displayUnit: energyDisplayUnit,
-		displayPrefix: energyDisplayPrefix,
-		getNextPrefix: getEnergyNextPrefix
-	} = getContext('energy-data-viz');
+	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
 
-	const {
-		hoverData: emissionsHoverData,
-		focusData: emissionsFocusData,
-		convertAndFormatValue: emissionsConvertAndFormatValue,
-		displayUnit: emissionsDisplayUnit,
-		displayPrefix: emissionsDisplayPrefix,
-		getNextPrefix: getEmissionsNextPrefix
-	} = getContext('emissions-data-viz');
-	const {
-		hoverData: intensityHoverData,
-		focusData: intensityFocusData,
-		convertAndFormatValue: intensityConvertAndFormatvalue,
-		displayUnit: intensityDisplayUnit
-	} = getContext('intensity-data-viz');
-	const {
-		// seriesNames: capacitySeriesNames,
-		// seriesLabels: capacitySeriesLabels,
-		hoverData: capacityHoverData,
-		focusData: capacityFocusData,
-		convertAndFormatValue: capacityConvertAndFormatValue,
-		displayUnit: capacityDisplayUnit,
-		displayPrefix: capacityDisplayPrefix,
-		getNextPrefix: getCapacityNextPrefix
-	} = getContext('capacity-data-viz');
-
-	// $: console.log('energySeriesNames', $energySeriesNames);
-	// $: console.log('capacitySeriesNames', $capacitySeriesNames);
+	// Map generation series names to capacity series names (they differ by type suffix,
+	// e.g. 'coal.energy.grouped' vs 'coal.capacity.grouped')
+	let capNameMap = $derived.by(() => {
+		/** @type {Record<string, string>} */
+		const capByCode = {};
+		for (const name of capacity.seriesNames) {
+			const code = name.split('.')[0];
+			capByCode[code] = name;
+		}
+		/** @type {Record<string, string>} */
+		const map = {};
+		for (const name of generation.seriesNames) {
+			const code = name.split('.')[0];
+			if (capByCode[code]) map[name] = capByCode[code];
+		}
+		return map;
+	});
 
 	let sourceNames = $derived(
-		$energySeriesNames.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d)).reverse()
+		generation.seriesNames
+			.filter((/** @type {string} */ d) => !seriesLoadsIds.includes(d))
+			.reverse()
 	);
 
 	let loadNames = $derived(
-		$energySeriesNames.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d)).reverse()
+		generation.seriesNames
+			.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
+			.reverse()
 	);
 
 	let energySourcesTotal = $derived(
-		$energyHoverData
+		generation.hoverData
 			? sourceNames.reduce(
 					/**
 					 * @param {number} acc
 					 * @param {string} id
 					 */
-					(acc, id) => acc + $energyHoverData[id],
+					(acc, id) => acc + generation.hoverData[id],
 					0
 				)
-			: $energyFocusData
+			: generation.focusData
 				? sourceNames.reduce(
 						/**
 						 * @param {number} acc
 						 * @param {string} id
 						 */
-						(acc, id) => acc + $energyFocusData[id],
+						(acc, id) => acc + generation.focusData[id],
 						0
 					)
 				: 0
 	);
 	let energyLoadsTotal = $derived(
-		$energyHoverData
+		generation.hoverData
 			? loadNames.reduce(
 					/**
 					 * @param {number} acc
 					 * @param {string} id
 					 */
-					(acc, id) => acc + $energyHoverData[id],
+					(acc, id) => acc + generation.hoverData[id],
 					0
 				)
-			: $energyFocusData
+			: generation.focusData
 				? loadNames.reduce(
 						/**
 						 * @param {number} acc
 						 * @param {string} id
 						 */
-						(acc, id) => acc + $energyFocusData[id],
+						(acc, id) => acc + generation.focusData[id],
 						0
 					)
 				: 0
 	);
 
 	let capacitySourcesTotal = $derived(
-		$capacityHoverData
+		capacity.hoverData
 			? sourceNames.reduce(
 					/**
 					 * @param {number} acc
 					 * @param {string} id
 					 */
-					(acc, id) => acc + $capacityHoverData[id],
+					(acc, id) => acc + (capacity.hoverData[capNameMap[id]] || 0),
 					0
 				)
-			: $capacityFocusData
+			: capacity.focusData
 				? sourceNames.reduce(
 						/**
 						 * @param {number} acc
 						 * @param {string} id
 						 */
-						(acc, id) => acc + $capacityFocusData[id],
+						(acc, id) => acc + (capacity.focusData[capNameMap[id]] || 0),
 						0
 					)
 				: 0
@@ -137,7 +120,7 @@
 	 * @param {string} name
 	 */
 	function handleRowClick(name) {
-		dispatch('row-click', { name, isMetaPressed, allNames: $energySeriesNames });
+		onrowclick?.({ name, isMetaPressed, allNames: generation.seriesNames });
 	}
 
 	function handleKeyup() {
@@ -185,9 +168,8 @@
 
 <div class="sticky top-10 flex flex-col gap-2">
 	<TableHeader
-		includeBatteryAndLoads={$includeBatteryAndLoads}
-		hoverTime={$energyHoverTime || $energyFocusTime}
-		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+		showCheckbox={false}
+		hoverTime={generation.hoverTime || generation.focusTime}
 	/>
 
 	<table class="w-full table-fixed border border-warm-grey mb-8">
@@ -215,9 +197,9 @@
 						<span class="block text-xs">Generation</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							onclick={() => ($energyDisplayPrefix = getEnergyNextPrefix())}
+							onclick={() => generation.chartOptions.cyclePrefix()}
 						>
-							{$energyDisplayUnit}
+							{generation.chartOptions.displayUnit}
 						</button>
 					</div>
 				</th>
@@ -226,9 +208,9 @@
 						<span class="block text-xs">Capacity</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							onclick={() => ($capacityDisplayPrefix = getCapacityNextPrefix())}
+							onclick={() => capacity.chartOptions.cyclePrefix()}
 						>
-							{$capacityDisplayUnit}
+							{capacity.chartOptions.displayUnit}
 						</button>
 					</div>
 				</th>
@@ -242,12 +224,12 @@
 				</th>
 				<th class="border-b border-warm-grey px-2 py-1 pt-6 text-sm font-medium">
 					<div class="font-mono flex flex-col items-end">
-						{$energyConvertAndFormatValue(energySourcesTotal)}
+						{generation.convertAndFormatValue(energySourcesTotal)}
 					</div>
 				</th>
 				<th class="border-b border-warm-grey px-2 py-1 pt-6 text-sm font-medium">
 					<div class="font-mono flex flex-col items-end mr-3">
-						{$capacityConvertAndFormatValue(capacitySourcesTotal)}
+						{capacity.convertAndFormatValue(capacitySourcesTotal)}
 					</div>
 				</th>
 			</tr>
@@ -269,32 +251,32 @@
 							{:else}
 								<div
 									class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
-									style:background-color={$energySeriesColours[name]}
-									style:border-color={darken($energySeriesColours[name])}
+									style:background-color={generation.seriesColours[name]}
+									style:border-color={darken(generation.seriesColours[name])}
 								></div>
 							{/if}
 
 							<div>
-								{getLabel($energySeriesLabels[name])}
-								<span class="text-mid-grey">{getSublabel($energySeriesLabels[name])}</span>
+								{getLabel(generation.seriesLabels[name])}
+								<span class="text-mid-grey">{getSublabel(generation.seriesLabels[name])}</span>
 							</div>
 						</div>
 					</td>
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end">
-							{$energyHoverData
-								? $energyConvertAndFormatValue($energyHoverData[name])
-								: $energyFocusData
-									? $energyConvertAndFormatValue($energyFocusData[name])
+							{generation.hoverData
+								? generation.convertAndFormatValue(generation.hoverData[name])
+								: generation.focusData
+									? generation.convertAndFormatValue(generation.focusData[name])
 									: ''}
 						</div>
 					</td>
 					<td class="px-2 py-1">
 						<div class="font-mono flex flex-col items-end mr-3">
-							{$capacityHoverData
-								? $capacityConvertAndFormatValue($capacityHoverData[name])
-								: $capacityFocusData
-									? $capacityConvertAndFormatValue($capacityFocusData[name])
+							{capacity.hoverData
+								? capacity.convertAndFormatValue(capacity.hoverData[capNameMap[name]])
+								: capacity.focusData
+									? capacity.convertAndFormatValue(capacity.focusData[capNameMap[name]])
 									: ''}
 						</div>
 					</td>
@@ -310,7 +292,7 @@
 					</th>
 					<th class="border-b border-warm-grey px-2 py-1 pt-6 text-sm font-medium">
 						<div class="font-mono flex flex-col items-end">
-							{$energyConvertAndFormatValue(energyLoadsTotal)}
+							{generation.convertAndFormatValue(energyLoadsTotal)}
 						</div>
 					</th>
 					<th class="border-b border-warm-grey px-2 py-1 text-sm font-medium"></th>
@@ -333,32 +315,32 @@
 								{:else}
 									<div
 										class="w-6 h-6 min-w-6 min-h-6 border rounded-sm"
-										style:background-color={$energySeriesColours[name]}
-										style:border-color={darken($energySeriesColours[name])}
+										style:background-color={generation.seriesColours[name]}
+										style:border-color={darken(generation.seriesColours[name])}
 									></div>
 								{/if}
 
 								<div>
-									{getLabel($energySeriesLabels[name])}
-									<span class="text-mid-grey">{getSublabel($energySeriesLabels[name])}</span>
+									{getLabel(generation.seriesLabels[name])}
+									<span class="text-mid-grey">{getSublabel(generation.seriesLabels[name])}</span>
 								</div>
 							</div>
 						</td>
 						<td class="px-2 py-1">
 							<div class="font-mono flex flex-col items-end">
-								{$energyHoverData
-									? $energyConvertAndFormatValue($energyHoverData[name])
-									: $energyFocusData
-										? $energyConvertAndFormatValue($energyFocusData[name])
+								{generation.hoverData
+									? generation.convertAndFormatValue(generation.hoverData[name])
+									: generation.focusData
+										? generation.convertAndFormatValue(generation.focusData[name])
 										: ''}
 							</div>
 						</td>
 						<td class="px-2 py-1">
 							<div class="font-mono flex flex-col items-end mr-3">
-								{$capacityHoverData
-									? $capacityConvertAndFormatValue($capacityHoverData[name])
-									: $capacityFocusData
-										? $capacityConvertAndFormatValue($capacityFocusData[name])
+								{capacity.hoverData
+									? capacity.convertAndFormatValue(capacity.hoverData[capNameMap[name]])
+									: capacity.focusData
+										? capacity.convertAndFormatValue(capacity.focusData[capNameMap[name]])
 										: ''}
 							</div>
 						</td>
@@ -385,16 +367,16 @@
 						<span class="block text-xs">Volume</span>
 						<button
 							class="font-light text-xxs hover:underline"
-							onclick={() => ($emissionsDisplayPrefix = getEmissionsNextPrefix())}
+							onclick={() => emissions.chartOptions.cyclePrefix()}
 						>
-							{$emissionsDisplayUnit}
+							{emissions.chartOptions.displayUnit}
 						</button>
 					</div>
 				</th>
 				<th class="px-2 py-6 text-sm font-medium">
 					<div class="flex flex-col items-end mr-3">
 						<span class="block text-xs">Intensity</span>
-						<small class="font-light text-xxs">{$intensityDisplayUnit}</small>
+						<small class="font-light text-xxs">{intensity.chartOptions.displayUnit}</small>
 					</div>
 				</th>
 			</tr>
@@ -413,23 +395,31 @@
 
 				<th class="px-2 py-6! text-sm font-medium">
 					<div class="font-mono flex flex-col items-end">
-						{$emissionsHoverData
-							? $emissionsConvertAndFormatValue($emissionsHoverData['au.emissions.total'])
-							: $emissionsFocusData
-								? $emissionsConvertAndFormatValue($emissionsFocusData['au.emissions.total'])
+						{emissions.hoverData
+							? emissions.convertAndFormatValue(emissions.hoverData['au.emissions.total'])
+							: emissions.focusData
+								? emissions.convertAndFormatValue(emissions.focusData['au.emissions.total'])
 								: ''}
 					</div>
 				</th>
 				<th class="px-2 py-6! text-sm font-medium">
 					<div class="font-mono flex flex-col items-end mr-3">
-						{$intensityHoverData
-							? $intensityConvertAndFormatvalue($intensityHoverData['au.emission_intensity'])
-							: $intensityFocusData
-								? $intensityConvertAndFormatvalue($intensityFocusData['au.emission_intensity'])
+						{intensity.hoverData
+							? intensity.convertAndFormatValue(intensity.hoverData['au.emission_intensity'])
+							: intensity.focusData
+								? intensity.convertAndFormatValue(intensity.focusData['au.emission_intensity'])
 								: ''}
 					</div>
 				</th>
 			</tr>
 		</tbody>
 	</table>
+
+	<TableHeader
+		showLabel={false}
+		includeBatteryAndLoads={$includeBatteryAndLoads}
+		onchange={() => ($includeBatteryAndLoads = !$includeBatteryAndLoads)}
+	/>
+
+	<AboutData />
 </div>

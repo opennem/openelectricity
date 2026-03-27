@@ -28,6 +28,9 @@
 	 * @property {string} [textClass] - CSS class for tick labels
 	 * @property {string} [xTextClasses] - Alias for textClass (backwards compatibility)
 	 * @property {boolean} [stepMode] - Step chart mode: tick marks at gridline positions, labels at midpoints
+	 * @property {any[]} [highlightTicks] - Tick values to render with a darker, solid stroke
+	 * @property {string} [highlightStroke] - Stroke colour for highlighted gridlines
+	 * @property {any[]} [mobileHiddenTicks] - Tick values whose labels are hidden on mobile (gridlines kept)
 	 */
 
 	/** @type {Props} */
@@ -49,8 +52,26 @@
 		textAnchor = 'middle',
 		textClass = 'text-xxs font-light text-mid-warm-grey',
 		xTextClasses = '',
-		stepMode = false
+		stepMode = false,
+		highlightTicks = [],
+		highlightStroke = '#333',
+		mobileHiddenTicks = [],
+		animate = false
 	} = $props();
+
+	// Skip transition on first render — only animate subsequent changes
+	let canTransition = $state(false);
+
+	$effect(() => {
+		if (animate && tickVals.length > 0 && !canTransition) {
+			setTimeout(() => {
+				canTransition = true;
+			}, 100);
+		}
+	});
+
+	let highlightTickSet = $derived(new Set(highlightTicks.map((/** @type {*} */ t) => +t)));
+	let mobileHiddenTickSet = $derived(new Set(mobileHiddenTicks.map((/** @type {*} */ t) => +t)));
 
 	// Use xTextClasses if provided (backwards compatibility)
 	let effectiveTextClass = $derived(xTextClasses || textClass);
@@ -81,6 +102,19 @@
 		}
 		return textAnchor;
 	}
+
+	/**
+	 * Get x offset for snapped ticks — nudge first/last inward by 1px
+	 * @param {number} i - Tick index
+	 * @returns {number}
+	 */
+	function getSnapOffset(i) {
+		if (snapTicks) {
+			if (i === 0) return 1;
+			if (i === tickVals.length - 1) return -1;
+		}
+		return 0;
+	}
 </script>
 
 <g
@@ -96,10 +130,11 @@
 		{#each gridlineTickVals as tick (tick)}
 			{@const xPos = $xScale(tick)}
 			{@const yPos = Math.max(...$yRange)}
+			{@const isHighlighted = highlightTickSet.has(+tick)}
 			<line
 				class="gridline"
-				{stroke}
-				stroke-dasharray={strokeArray}
+				stroke={isHighlighted ? highlightStroke : stroke}
+				stroke-dasharray={isHighlighted ? '2' : strokeArray}
 				y1={yPos - $height}
 				y2={yPos}
 				x1={xPos}
@@ -122,7 +157,8 @@
 		{@const xPos = $xScale(tick)}
 		{@const yPos = Math.max(...$yRange)}
 
-		<g class="tick tick-{i}" transform="translate({xPos}, {yPos})">
+		{@const hideOnMobile = mobileHiddenTickSet.has(+tick)}
+		<g class="tick tick-{i}" class:tick-animate={canTransition} class:hide-label-mobile={hideOnMobile} transform="translate({xPos}, {yPos})">
 			<!-- Tick mark (non-step mode only) -->
 			{#if tickMarks && !stepMode}
 				<line
@@ -138,7 +174,7 @@
 			<!-- Tick label -->
 			{#if tickLabel}
 				<text
-					x={isBandwidth ? $xScale.bandwidth() / 2 + xTick : xTick}
+					x={isBandwidth ? $xScale.bandwidth() / 2 + xTick : xTick + getSnapOffset(i)}
 					y={yTick}
 					dx="0"
 					dy="2"
@@ -156,3 +192,15 @@
 		<line class="baseline" y1={$height + 0.5} y2={$height + 0.5} x1="0" x2={$width} />
 	{/if}
 </g>
+
+<style>
+	.tick-animate {
+		transition: transform 400ms ease-in-out;
+	}
+
+	@media (max-width: 767px) {
+		.hide-label-mobile text {
+			display: none;
+		}
+	}
+</style>

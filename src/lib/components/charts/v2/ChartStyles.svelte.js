@@ -27,6 +27,12 @@ import getSeqId from '$lib/utils/html-id-gen';
  * @property {number} [xAxisYTick]
  * @property {boolean} [showLastYTick]
  * @property {boolean} [xGridlines]
+ * @property {boolean} [snapTicks]
+ * @property {string} [xAxisStroke]
+ * @property {string} [yAxisStroke]
+ * @property {string} [zeroValueStroke]
+ * @property {any} [yLabelStartPos]
+ * @property {string} [chartOverlayBgFill]
  */
 
 export default class ChartStyles {
@@ -64,12 +70,21 @@ export default class ChartStyles {
 	/** @type {boolean} */
 	xGridlines = $state(true);
 
+	/** @type {boolean} */
+	snapTicks = $state(false);
+
+	/** @type {any} */
+	yLabelStartPos = $state(null);
+
 	// Y-axis styling
 	/** @type {string} */
 	yAxisStroke = $state('#33333344');
 
 	/** @type {boolean} */
 	showLastYTick = $state(true);
+
+	/** @type {number | null} */
+	lastYTickDy = $state(null);
 
 	/** @type {string} */
 	zeroValueStroke = $state('#33333344');
@@ -142,6 +157,9 @@ export default class ChartStyles {
 	/** @type {string} */
 	chartOverlayHatchStroke = $state('rgba(236, 233, 230, 0.4)');
 
+	/** @type {string} */
+	chartOverlayBgFill = $state('');
+
 	/** @type {boolean} */
 	chartClip = $state(true);
 
@@ -156,5 +174,11 @@ export default class ChartStyles {
 		if (config.xAxisYTick !== undefined) this.xAxisYTick = config.xAxisYTick;
 		if (config.showLastYTick !== undefined) this.showLastYTick = config.showLastYTick;
 		if (config.xGridlines !== undefined) this.xGridlines = config.xGridlines;
+		if (config.snapTicks !== undefined) this.snapTicks = config.snapTicks;
+		if (config.xAxisStroke) this.xAxisStroke = config.xAxisStroke;
+		if (config.yAxisStroke) this.yAxisStroke = config.yAxisStroke;
+		if (config.zeroValueStroke) this.zeroValueStroke = config.zeroValueStroke;
+		if (config.yLabelStartPos !== undefined) this.yLabelStartPos = config.yLabelStartPos;
+		if (config.chartOverlayBgFill) this.chartOverlayBgFill = config.chartOverlayBgFill;
 	}
 }

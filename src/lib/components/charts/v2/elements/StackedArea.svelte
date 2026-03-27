@@ -32,6 +32,7 @@
 	 * @property {string} [dotStrokeWidth] - Dot stroke width
 	 * @property {boolean} [lighterNegative] - Use lighter color for negative values
 	 * @property {boolean} [stepMode] - Use floor-based band detection (for step curves)
+	 * @property {boolean} [animate] - Animate paths: grow from y=0 on mount, morph on data change
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
 	 * @property {(data: TimeSeriesData) => void} [onpointerup]
@@ -52,10 +53,22 @@
 		dotStrokeWidth = '1px',
 		lighterNegative = false,
 		stepMode = false,
+		animate = false,
 		onmousemove,
 		onmouseout,
 		onpointerup
 	} = $props();
+
+	// Track whether we've rendered data once — CSS d transitions only after first paint
+	let canTransition = $state(false);
+
+	$effect(() => {
+		if (animate && $data.length > 0 && !canTransition) {
+			setTimeout(() => {
+				canTransition = true;
+			}, 100);
+		}
+	});
 
 	// Unique ID for clip paths
 	let clipId = $derived(`area-clip-${Math.random().toString(36).slice(2, 9)}`);
@@ -75,15 +88,23 @@
 	// Extract unique dates for event lookups
 	let compareDates = $derived([...new Set(dataset.map((d) => d.date))]);
 
-	// Area generator for stacked areas
-	let areaGen = $derived(
-		area()
+	// Area generator factory — creates a generator that checks the original row
+	// for null values so gaps render as breaks instead of drawing to 0.
+	/**
+	 * @param {string} key - Series key to check in original data
+	 */
+	function makeAreaGen(key) {
+		return area()
 			.x((d) => $xGet(d))
 			.y0((d) => $yScale(d[0]))
 			.y1((d) => $yScale(d[1]))
 			.curve(curveType)
-			.defined((d) => !isNaN(d[0]) && !isNaN(d[1]))
-	);
+			.defined((d) => {
+				if (isNaN(d[0]) || isNaN(d[1])) return false;
+				// @ts-ignore — d.data is the original row (D3 stack convention)
+				return d.data?.[key] != null;
+			});
+	}
 
 	// Line generator for line charts
 	let lineGen = $derived(
@@ -207,6 +228,7 @@
 			<!-- Line path -->
 			<path
 				class="path-line"
+				class:path-animate={canTransition}
 				role="presentation"
 				d={lineGen(d.values)}
 				fill="transparent"
@@ -242,8 +264,9 @@
 				<!-- Positive region (normal color) -->
 				<path
 					class="path-area"
+					class:path-animate={canTransition}
 					role="presentation"
-					d={areaGen(d)}
+					d={makeAreaGen(seriesKey)(d)}
 					fill={baseColor}
 					stroke="none"
 					opacity={getOpacity(d, 1, 0.4)}
@@ -257,8 +280,9 @@
 				<!-- Negative region (lighter color) -->
 				<path
 					class="path-area"
+					class:path-animate={canTransition}
 					role="presentation"
-					d={areaGen(d)}
+					d={makeAreaGen(seriesKey)(d)}
 					fill={getLighterColor(baseColor)}
 					stroke="none"
 					opacity={getOpacity(d, 1, 0.4)}
@@ -272,8 +296,9 @@
 			{:else}
 				<path
 					class="path-area"
+					class:path-animate={canTransition}
 					role="presentation"
-					d={areaGen(d)}
+					d={makeAreaGen(seriesKey)(d)}
 					fill={baseColor}
 					stroke="none"
 					opacity={getOpacity(d, 1, 0.4)}
@@ -297,5 +322,9 @@
 	.path-area:focus,
 	.line-dot:focus {
 		outline: none;
+	}
+
+	.path-animate {
+		transition: d 400ms ease-in-out;
 	}
 </style>

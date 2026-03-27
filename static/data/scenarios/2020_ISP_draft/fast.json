@@ -1,0 +1,2826 @@
+{
+  "version": "4.2",
+  "release": "2020_ISP_draft",
+  "created_at": "2026-03-18T22:01:07+1100",
+  "messages": [
+    "projections from AEMO's 2020_ISP_draft generation outlooks"
+  ],
+  "data": [
+    {
+      "id": "au.nem.nsw1.fuel_tech.coal_black.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [47020.9, 46261.1, 45544.1, 43349.3, 37668.5, 37360.2, 38332.1, 35518.7, 36685.9, 34414.5, 26075.7, 25766.9, 25783.3, 24900.1, 7848.9, 8091.2, 8277.5, 7749.5, 8400.4, 8089.1, 3471.9]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.coal_brown.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.gas_ccgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [13.2, 13.9, 51.2, 45.5, 46.2, 112.1, 463.2, 75.0, 66.0, 227.6, 56.2, 408.8, 395.4, 201.3, 778.4, 528.1, 1184.8, 246.8, 234.6, 601.2, 442.8]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.gas_ocgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [17.1, 6.2, 17.9, 36.6, 22.9, 15.6, 13.4, 26.5, 20.9, 31.7, 22.3, 31.4, 20.7, 20.9, 40.3, 146.0, 133.4, 67.7, 15.0, 58.6, 11.1]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.hydro.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2234.8, 1885.3, 2116.6, 2941.9, 2361.5, 2646.0, 2076.8, 4315.4, 4034.2, 3398.3, 3527.4, 3232.6, 3178.1, 3852.5, 2919.9, 3051.2, 1902.6, 4280.3, 3901.3, 2869.2, 3042.9]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.battery_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "battery_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.battery_VPP_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "battery_VPP_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [49.5, 56.5, 64.4, 76.6, 143.2, 221.2, 287.2, 399.0, 528.8, 629.8, 709.9, 780.4, 838.2, 888.8, 997.1, 1070.5, 1146.9, 1194.4, 1279.3, 1308.0, 1358.4]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.pumped_hydro_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "pumped_hydro_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [6.1, 7.6, 21.7, 271.7, 3314.9, 2871.8, 3823.7, 3565.8, 3775.3, 3739.0, 5317.6, 5428.4, 5429.0, 6030.6, 7737.9, 7519.9, 9173.1, 8500.4, 8548.3, 9743.2, 10091.1]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.wind.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4417.5, 4204.5, 4325.3, 4336.5, 4567.7, 4544.3, 4111.3, 4419.4, 4232.4, 4619.9, 4717.4, 9240.3, 9867.5, 10478.1, 19050.1, 20787.8, 19180.0, 21481.5, 20101.6, 18950.1, 17725.2]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.solar_utility.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4292.8, 4491.3, 4316.6, 4257.0, 10087.0, 8834.2, 12650.6, 11190.9, 11618.9, 13063.9, 15230.4, 15708.1, 18417.1, 17900.9, 23236.3, 20317.0, 30085.3, 26417.9, 27862.4, 33387.8, 34544.7]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.demand_response.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.solar_rooftop.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4811.0, 5574.2, 6315.3, 7085.3, 7557.8, 7647.8, 7747.7, 7862.4, 7989.3, 8091.3, 8214.3, 8415.7, 8747.2, 9214.5, 9943.5, 10553.7, 10912.5, 11241.4, 11540.9, 11928.2, 12450.6]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.coal_black.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [49973.1, 50262.2, 53479.9, 46277.8, 46529.3, 47365.9, 44825.3, 42786.6, 43071.6, 41543.2, 41771.2, 34208.6, 33018.1, 32809.1, 29754.2, 24950.4, 17581.3, 17980.2, 18263.0, 17445.4, 16897.3]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.coal_brown.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.gas_ccgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [80.8, 84.2, 146.9, 417.4, 366.8, 343.9, 627.3, 280.1, 271.9, 994.2, 733.9, 1333.2, 1271.2, 952.6, 1137.3, 1344.1, 2471.6, 1265.9, 917.5, 1446.7, 821.5]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.gas_ocgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2.6, 1.4, 6.8, 53.2, 32.9, 12.2, 18.0, 44.8, 33.4, 28.4, 1.7, 25.8, 14.6, 19.1, 21.8, 44.9, 61.1, 119.3, 15.0, 86.8, 5.1]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.hydro.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [696.2, 694.8, 693.4, 692.0, 690.6, 689.3, 687.9, 686.5, 685.1, 683.7, 682.3, 680.9, 679.6, 678.2, 676.8, 675.4, 253.9, 253.4, 252.9, 252.4, 251.9]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.battery_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "battery_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.battery_VPP_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "battery_VPP_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [32.3, 37.8, 44.5, 52.9, 75.9, 122.9, 157.7, 224.9, 302.3, 353.2, 398.5, 441.7, 481.0, 525.3, 586.8, 648.7, 665.4, 692.2, 760.6, 782.1, 816.7]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.pumped_hydro_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "pumped_hydro_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [55.4, 84.6, 174.4, 225.7, 359.4, 313.3, 468.9, 321.0, 377.6, 480.1, 1259.4, 2377.0, 3271.5, 3672.5, 3681.7, 3308.5, 5709.0, 5082.3, 5373.8, 7173.6, 8041.4]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.wind.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2391.9, 2495.5, 2387.4, 7225.3, 8079.5, 9448.0, 10044.1, 9990.8, 10035.8, 17390.7, 17458.9, 18451.4, 17436.3, 18003.1, 21136.3, 27539.9, 27591.9, 27765.0, 27544.8, 27609.6, 26740.1]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.solar_utility.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4585.4, 4713.7, 4640.2, 4632.1, 4716.4, 4069.0, 5783.9, 4787.3, 5290.4, 5439.7, 6381.2, 10968.2, 12606.0, 12678.1, 12743.4, 10912.1, 17609.0, 14911.1, 17156.8, 19799.9, 22529.5]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.demand_response.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.solar_rooftop.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [6485.0, 7274.3, 7781.6, 8266.4, 8691.1, 8928.5, 9182.8, 9412.9, 9657.9, 9902.0, 10168.3, 10431.5, 10771.7, 11169.0, 11706.7, 12233.4, 12654.9, 13037.9, 13426.7, 13852.6, 14384.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.coal_black.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.coal_brown.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [29444.1, 33514.8, 34778.4, 33913.1, 31108.5, 30875.7, 27686.2, 28988.5, 29261.9, 23420.3, 23323.9, 23136.2, 23231.8, 23213.3, 21977.5, 22138.8, 21765.3, 22251.7, 22601.0, 21722.5, 21256.7]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.gas_ccgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.gas_ocgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [57.1, 29.6, 15.0, 25.8, 52.8, 53.1, 41.4, 56.0, 22.2, 69.3, 41.1, 47.5, 28.6, 23.3, 64.0, 273.6, 299.9, 95.1, 8.0, 28.6, 3.2]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.hydro.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [3162.1, 2931.5, 2778.9, 3501.4, 2714.4, 3130.6, 1896.4, 3830.6, 3603.2, 2839.2, 3099.9, 2873.1, 2722.0, 3431.3, 2660.8, 3067.7, 1857.3, 3753.2, 3533.4, 2781.7, 3036.2]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.battery_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "battery_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [11.3, 21.9, 25.4, 25.2, 33.3, 33.8, 31.9, 30.1, 29.8, 30.2, 28.8, 29.2, 8.7, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.battery_VPP_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "battery_VPP_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [12.5, 30.6, 39.6, 48.4, 80.7, 119.9, 162.4, 229.9, 316.3, 394.3, 461.6, 508.9, 542.7, 592.0, 689.5, 757.9, 770.9, 815.4, 858.0, 887.4, 912.3]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.pumped_hydro_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "pumped_hydro_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 28.9, 28.1, 28.8, 284.0, 1008.2, 1018.1, 1000.8, 919.4, 969.5, 881.8, 942.0, 877.3, 807.3, 884.7, 1833.5]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.wind.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [13079.8, 11383.6, 11547.0, 11852.2, 12444.5, 12043.2, 12435.7, 12955.8, 13483.8, 13965.6, 17684.1, 15291.2, 14998.9, 15601.1, 17570.3, 17725.6, 17258.4, 16958.7, 17941.4, 18982.2, 21370.2]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.solar_utility.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2277.0, 2452.2, 2345.6, 2320.1, 2365.7, 2090.7, 3485.4, 3148.8, 3250.2, 5063.4, 5043.7, 6355.6, 6077.4, 5915.8, 6090.9, 5440.5, 6337.3, 5758.1, 5924.4, 5891.2, 5901.8]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.demand_response.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.solar_rooftop.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [3943.5, 4500.3, 4956.4, 5414.3, 5711.5, 5791.7, 5880.2, 5986.3, 6085.7, 6179.3, 6285.0, 6469.5, 6730.8, 7162.1, 7853.6, 8435.8, 8776.1, 9066.8, 9326.3, 9681.2, 10130.6]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.coal_black.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.coal_brown.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.gas_ccgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4512.0, 4507.0, 284.2, 226.2, 288.2, 298.1, 1039.2, 257.7, 192.1, 1247.6, 557.3, 1167.8, 1064.6, 719.8, 899.5, 703.9, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.gas_ocgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [26.5, 21.8, 33.0, 30.4, 36.8, 51.2, 132.3, 49.2, 32.6, 66.6, 32.9, 94.1, 64.8, 77.0, 100.1, 199.2, 356.2, 103.4, 44.4, 166.8, 59.1]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.hydro.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.battery_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "battery_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [18.7, 27.8, 34.8, 35.0, 40.0, 40.3, 38.8, 37.0, 36.9, 34.6, 34.0, 34.4, 34.6, 33.9, 34.1, 32.7, 34.2, 34.2, 34.1, 33.9, 34.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.battery_VPP_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "battery_VPP_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [26.4, 35.5, 38.7, 36.3, 44.6, 60.7, 75.8, 104.5, 132.8, 148.0, 164.0, 173.9, 186.7, 198.9, 224.3, 240.1, 252.8, 265.0, 280.2, 285.2, 292.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.pumped_hydro_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "pumped_hydro_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 127.1, 199.8, 1082.5, 1040.2, 1048.7, 1051.9, 1032.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.wind.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [6795.4, 6071.2, 6385.4, 6219.3, 6663.9, 6495.7, 6134.6, 6134.1, 5979.8, 7133.3, 9021.8, 7860.2, 7652.4, 6736.1, 9928.6, 9122.2, 9624.7, 9978.8, 9966.9, 9375.2, 10202.2]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.solar_utility.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [964.3, 1009.4, 972.5, 979.0, 3508.3, 3086.1, 4638.9, 4284.4, 4420.3, 4627.3, 4769.4, 6052.4, 6301.6, 6559.6, 6574.5, 5881.5, 6759.2, 6292.6, 6431.3, 6385.4, 6530.2]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.demand_response.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.solar_rooftop.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2279.6, 2419.7, 2531.0, 2625.5, 2667.9, 2672.6, 2681.7, 2688.5, 2693.0, 2700.9, 2714.5, 2731.5, 2756.0, 2799.0, 2909.7, 3005.3, 3060.6, 3114.1, 3163.5, 3236.9, 3353.8]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.coal_black.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.coal_brown.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.gas_ccgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.gas_ocgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.hydro.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [10045.8, 7810.0, 7903.5, 9382.7, 8719.9, 10195.1, 5900.9, 9182.3, 8531.7, 6834.0, 8856.0, 7679.4, 7519.6, 8504.9, 8231.6, 9812.1, 5835.2, 9485.5, 8451.9, 6813.8, 9604.7]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.battery_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "battery_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.battery_VPP_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "battery_VPP_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1.0, 0.2, 0.8, 1.9, 2.2, 4.8, 8.8, 2.0, 8.5, 17.8, 6.7, 15.2, 17.5, 15.0, 15.9, 42.6, 53.6, 45.0, 45.5, 59.2, 48.6]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.pumped_hydro_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "pumped_hydro_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.wind.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2125.2, 2049.5, 1949.4, 2118.5, 2206.6, 2198.3, 4805.9, 4845.9, 4777.1, 4780.0, 5056.0, 4846.7, 4604.7, 4958.4, 5031.3, 6374.1, 5760.9, 5918.0, 5805.2, 5653.0, 5969.2]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.solar_utility.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.demand_response.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.solar_rooftop.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [265.7, 289.9, 309.7, 331.1, 344.1, 343.3, 342.9, 343.7, 344.0, 343.9, 344.4, 347.6, 354.4, 370.6, 402.2, 428.3, 439.8, 450.0, 457.8, 470.6, 488.3]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.battery_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "battery_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.battery_VPP_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "battery_VPP_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [58.2, 66.7, 75.5, 90.1, 168.4, 260.2, 337.9, 469.4, 623.8, 739.3, 835.2, 918.0, 986.0, 1045.5, 1173.0, 1262.8, 1345.7, 1405.1, 1504.9, 1538.7, 1598.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.pumped_hydro_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "pumped_hydro_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [8.7, 10.9, 31.0, 363.6, 4373.8, 3789.4, 5061.8, 4712.0, 4988.7, 4960.1, 6913.1, 7053.0, 7055.8, 7781.6, 9932.6, 9673.7, 11722.6, 10840.6, 10913.7, 12419.2, 12848.9]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.battery_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "battery_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.battery_VPP_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "battery_VPP_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [38.0, 44.4, 52.4, 62.3, 89.3, 144.6, 185.5, 264.6, 355.6, 415.6, 468.8, 519.6, 565.8, 617.9, 690.3, 763.1, 782.8, 814.2, 894.8, 920.1, 960.7]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.pumped_hydro_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "pumped_hydro_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [79.1, 120.9, 249.1, 322.4, 513.4, 447.6, 669.8, 458.5, 539.4, 685.8, 1654.5, 3053.8, 4162.3, 4653.2, 4667.0, 4184.8, 7218.8, 6377.9, 6779.0, 9008.6, 10099.5]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.battery_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "battery_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [14.1, 27.0, 31.2, 31.1, 41.1, 41.7, 39.4, 37.2, 36.9, 37.2, 35.7, 36.0, 10.7, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.battery_VPP_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "battery_VPP_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [14.8, 36.0, 46.4, 57.0, 95.0, 141.1, 191.0, 270.4, 373.1, 462.9, 544.1, 597.6, 638.4, 696.4, 811.1, 893.9, 904.5, 959.2, 1010.0, 1043.3, 1073.2]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.pumped_hydro_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "pumped_hydro_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 36.1, 35.1, 36.2, 354.8, 1263.0, 1270.4, 1250.5, 1149.2, 1211.8, 1108.0, 1177.5, 1090.9, 1012.4, 1102.6, 2291.8]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.battery_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "battery_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [23.1, 34.5, 42.8, 43.2, 49.4, 49.7, 47.8, 45.7, 45.6, 42.6, 42.1, 42.4, 42.6, 41.9, 42.1, 40.5, 42.1, 42.2, 42.1, 41.9, 42.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.battery_VPP_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "battery_VPP_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [31.1, 41.8, 45.4, 42.7, 52.4, 71.4, 89.2, 122.9, 156.6, 173.7, 193.4, 204.5, 219.2, 233.9, 263.9, 283.3, 296.6, 311.7, 329.6, 335.5, 343.4]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.pumped_hydro_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "pumped_hydro_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 158.9, 250.5, 1353.1, 1299.5, 1311.2, 1314.6, 1290.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.battery_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "battery_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.battery_VPP_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "battery_VPP_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1.2, 0.2, 0.9, 2.2, 2.6, 5.6, 10.3, 2.5, 10.1, 20.8, 8.0, 17.9, 20.5, 17.6, 18.7, 50.3, 62.8, 52.9, 53.8, 69.4, 57.1]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.pumped_hydro_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "pumped_hydro_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.coal_black.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [10210.0, 9735.0, 8260.0, 8260.0, 6220.0, 6220.0, 6220.0, 6220.0, 6220.0, 5500.0, 4060.0, 4060.0, 4060.0, 4060.0, 1320.0, 1320.0, 1320.0, 1320.0, 1320.0, 1320.0, 660.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.coal_brown.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.gas_ccgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0, 440.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.gas_ocgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1561.2, 1511.2, 1511.2, 1511.2, 1511.2, 1511.2, 1511.2, 1511.2]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0, 2285.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.battery.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "battery",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.battery_VPP.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "battery_VPP",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [94.5, 110.2, 126.6, 144.1, 193.9, 282.7, 399.1, 542.1, 727.4, 879.0, 1026.0, 1122.3, 1214.7, 1309.3, 1433.5, 1544.1, 1642.2, 1741.5, 1851.1, 1905.0, 1957.8]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.pumped_hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "pumped_hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [240.0, 240.0, 240.0, 2280.0, 2280.0, 2280.0, 2280.0, 2280.0, 2280.0, 2280.0, 3017.3, 3017.3, 3017.3, 3588.3, 4128.3, 4236.9, 4722.8, 4722.8, 4884.0, 5102.7, 5395.1]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.wind.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1501.5, 1501.5, 1501.5, 1501.5, 1501.5, 1501.5, 1501.5, 1501.5, 1501.5, 1601.5, 1607.1, 3203.7, 3374.9, 3547.9, 6377.1, 6873.5, 6986.7, 6956.7, 6956.7, 6596.2, 6547.9]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.solar_utility.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1744.3, 1744.3, 1744.3, 1744.3, 3944.3, 3944.3, 4807.1, 4807.1, 4807.1, 5208.9, 5944.3, 5944.3, 7124.1, 7124.1, 8642.4, 8642.4, 11192.2, 11041.9, 11174.0, 13035.2, 13071.1]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.demand_response.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [109.0, 125.7, 141.6, 157.6, 172.6, 189.8, 205.3, 224.7, 243.8, 261.3, 279.5, 297.6, 315.4, 337.2, 354.2, 374.2, 395.7, 418.2, 438.9, 460.7, 481.6]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.solar_rooftop.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [3563.6, 4102.0, 4538.7, 5162.6, 5225.0, 5277.7, 5328.6, 5438.2, 5502.4, 5553.1, 5627.3, 5831.4, 6096.6, 6495.0, 7126.8, 7382.2, 7641.9, 7838.3, 8024.0, 8403.5, 8781.4]
+      }
+    },
+    {
+      "id": "au.nem.nsw1.fuel_tech.battery_distributed.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "nsw1",
+      "fuel_tech": "battery_distributed",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [141.7, 191.7, 257.2, 348.7, 420.6, 471.2, 519.6, 560.7, 609.0, 608.0, 599.9, 568.7, 547.2, 537.6, 549.0, 562.6, 578.3, 603.7, 631.7, 639.8, 647.2]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.coal_black.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [8186.0, 8186.0, 8186.0, 7066.0, 7066.0, 7066.0, 7066.0, 6366.0, 6366.0, 6366.0, 6366.0, 5271.0, 4991.0, 4991.0, 4711.0, 4011.0, 2861.0, 2861.0, 2861.0, 2861.0, 2861.0]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.coal_brown.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.gas_ccgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1596.9, 1596.9, 1596.9, 1596.9, 1596.9, 1596.9, 1596.9, 1211.9, 1211.9, 1211.9, 1211.9, 1211.9, 1211.9, 1211.9, 1211.9, 1211.9, 1211.9, 1211.9, 1068.5, 1068.5, 1068.5]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.gas_ocgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1845.5, 1845.5, 1845.5, 1845.5, 1845.5, 1845.5, 1845.5, 1845.5, 1845.5, 1845.5, 1845.5, 1845.5, 1553.5, 1436.5, 1436.5, 1436.5, 1436.5, 1436.5, 1436.5, 1436.5, 1436.5]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 152.4, 66.0, 66.0, 66.0, 66.0, 66.0]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.battery.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "battery",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.battery_VPP.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "battery_VPP",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [48.4, 56.9, 66.0, 76.0, 104.4, 155.4, 223.0, 302.8, 410.2, 482.9, 556.0, 627.5, 683.6, 749.1, 822.4, 885.2, 943.4, 1010.0, 1088.6, 1132.1, 1176.2]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.pumped_hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "pumped_hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [570.0, 570.0, 570.0, 570.0, 570.0, 570.0, 570.0, 570.0, 570.0, 570.0, 959.1, 1382.1, 1855.9, 2119.6, 2119.6, 2119.6, 2860.2, 2860.2, 2860.2, 3603.0, 4051.1]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.wind.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [676.6, 676.6, 676.6, 1854.9, 1954.9, 2284.6, 2552.6, 2552.6, 2552.6, 4576.6, 4576.6, 4870.1, 4870.1, 4880.8, 5496.5, 7320.0, 7689.3, 7689.3, 7689.3, 7689.3, 7689.3]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.solar_utility.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1819.3, 1819.3, 1819.3, 1819.3, 1819.3, 1819.3, 2214.5, 2214.5, 2214.5, 2214.5, 2491.1, 4163.7, 4919.3, 4919.3, 4798.3, 4798.3, 6717.4, 6717.4, 7088.0, 7991.9, 8574.1]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.demand_response.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [209.1, 217.4, 224.6, 231.5, 238.3, 245.4, 254.2, 261.5, 268.4, 275.7, 284.3, 291.7, 299.8, 307.9, 317.4, 325.4, 334.8, 343.0, 353.8, 363.0, 371.5]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.solar_rooftop.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4740.1, 5105.3, 5344.3, 5730.9, 5859.5, 5986.5, 6113.5, 6255.6, 6386.0, 6513.6, 6649.7, 6824.7, 7055.4, 7305.5, 7713.8, 7993.9, 8237.6, 8457.0, 8676.3, 9016.6, 9361.9]
+      }
+    },
+    {
+      "id": "au.nem.qld1.fuel_tech.battery_distributed.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "qld1",
+      "fuel_tech": "battery_distributed",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [72.6, 99.0, 134.1, 183.9, 226.4, 259.0, 290.3, 313.2, 343.4, 334.0, 325.1, 317.9, 307.9, 307.6, 315.0, 322.5, 332.2, 350.2, 371.5, 380.3, 388.8]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.coal_black.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.coal_brown.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4660.0, 4660.0, 4660.0, 4660.0, 4310.0, 4310.0, 3960.0, 3960.0, 3960.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.gas_ccgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.gas_ocgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2382.0, 2382.0, 2382.0, 2382.0, 2382.0, 2382.0, 2382.0, 2382.0, 2382.0, 2382.0, 2382.0, 2382.0, 2212.0, 2212.0, 2212.0, 2212.0, 2212.0, 2212.0, 1272.0, 1272.0, 1272.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0, 2206.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.battery.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "battery",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [75.0, 75.0, 75.0, 75.0, 75.0, 75.0, 75.0, 75.0, 75.0, 75.0, 75.0, 75.0, 20.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.battery_VPP.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "battery_VPP",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [47.1, 54.4, 62.9, 72.2, 98.6, 145.0, 210.2, 302.4, 422.3, 531.8, 643.5, 715.7, 777.0, 851.3, 950.9, 1040.3, 1117.7, 1197.0, 1284.2, 1328.5, 1372.2]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.pumped_hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "pumped_hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.3, 10.3, 10.3, 100.2, 377.9, 377.9, 377.9, 377.9, 377.9, 377.9, 377.9, 377.9, 377.9, 377.9, 841.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.wind.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [3985.0, 3985.0, 3985.1, 3985.0, 3985.0, 3985.0, 4378.9, 4378.9, 4378.9, 4685.0, 5222.5, 5222.5, 5170.0, 5170.0, 5556.4, 5556.4, 5989.8, 5569.8, 5703.4, 6375.7, 6375.7]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.solar_utility.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [964.5, 964.5, 964.5, 964.5, 964.5, 964.5, 1344.5, 1344.5, 1344.5, 2064.5, 2064.5, 2464.5, 2464.5, 2464.5, 2464.5, 2464.5, 2464.5, 2464.5, 2464.5, 2464.5, 2464.5]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.demand_response.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [97.4, 109.6, 121.9, 136.0, 147.3, 160.1, 172.6, 186.5, 199.1, 213.3, 227.5, 239.8, 252.8, 266.4, 280.3, 297.0, 312.2, 326.1, 344.7, 361.8, 379.0]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.solar_rooftop.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [3198.3, 3613.8, 3890.0, 4308.8, 4367.0, 4423.5, 4480.0, 4576.6, 4642.3, 4699.7, 4770.3, 4963.0, 5177.1, 5615.3, 6236.4, 6527.2, 6777.3, 6965.6, 7143.9, 7503.2, 7861.6]
+      }
+    },
+    {
+      "id": "au.nem.vic1.fuel_tech.battery_distributed.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "vic1",
+      "fuel_tech": "battery_distributed",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [70.7, 94.6, 127.7, 174.7, 213.8, 241.7, 273.7, 312.7, 353.5, 367.9, 376.3, 362.7, 350.0, 349.6, 364.2, 379.0, 393.6, 415.0, 438.2, 446.2, 453.6]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.coal_black.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.coal_brown.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.gas_ccgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1749.0, 1509.0, 1329.0, 1329.0, 1329.0, 1329.0, 1329.0, 1329.0, 1329.0, 1329.0, 1329.0, 1329.0, 1329.0, 1329.0, 529.0, 529.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.gas_ocgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1264.1, 1264.1, 1264.1, 1264.1, 1264.1, 1264.1, 1264.1, 1264.1, 1264.1, 881.6, 881.6, 647.3, 647.3, 567.3, 567.3, 567.3, 567.3, 567.3, 567.3, 567.3, 567.3]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.battery.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "battery",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [140.0, 140.0, 140.0, 140.0, 140.0, 140.0, 140.0, 140.0, 140.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.battery_VPP.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "battery_VPP",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [67.1, 61.2, 55.4, 49.3, 57.0, 75.4, 101.3, 140.6, 177.5, 204.2, 230.5, 245.9, 264.1, 285.9, 315.2, 341.0, 360.1, 379.6, 401.6, 411.0, 420.2]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.pumped_hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "pumped_hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 61.2, 102.5, 525.0, 525.0, 525.0, 525.0, 525.0]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.wind.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2139.7, 2139.7, 2139.7, 2139.7, 2140.9, 2140.9, 2231.3, 2132.6, 2041.9, 2440.0, 2832.7, 2832.7, 2705.2, 2435.2, 3234.8, 3001.5, 3434.1, 3275.1, 3218.4, 3185.1, 3185.1]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.solar_utility.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [378.0, 378.0, 378.0, 378.0, 1286.4, 1286.4, 1667.9, 1667.9, 1667.9, 1770.7, 1770.7, 2216.0, 2424.5, 2486.4, 2486.4, 2486.4, 2486.4, 2486.4, 2490.4, 2490.4, 2490.4]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.demand_response.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [37.0, 41.4, 45.5, 49.7, 53.8, 58.1, 61.8, 66.2, 70.8, 75.3, 80.2, 84.6, 88.0, 92.9, 97.1, 102.4, 107.7, 112.1, 116.6, 121.3, 127.2]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.solar_rooftop.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [1635.3, 1716.4, 1762.3, 1835.1, 1842.3, 1847.8, 1853.4, 1862.8, 1869.4, 1875.2, 1883.7, 1902.0, 1926.0, 1961.8, 2067.3, 2110.4, 2155.5, 2189.3, 2221.1, 2295.9, 2380.9]
+      }
+    },
+    {
+      "id": "au.nem.sa1.fuel_tech.battery_distributed.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "sa1",
+      "fuel_tech": "battery_distributed",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [100.7, 106.5, 112.6, 119.3, 123.6, 125.7, 131.8, 145.5, 148.6, 141.2, 134.8, 124.6, 118.9, 117.4, 120.7, 124.2, 126.8, 131.6, 137.0, 138.0, 138.9]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.coal_black.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.coal_brown.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.gas_ccgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.gas_ocgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 178.0, 58.0, 58.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2263.1, 2653.1, 2653.1, 2653.1, 2653.1, 2653.1, 2653.1]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.battery.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "battery",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.battery_VPP.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "battery_VPP",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [5.5, 6.1, 6.8, 7.7, 10.2, 14.8, 21.0, 29.4, 39.6, 47.5, 54.3, 58.3, 63.0, 68.3, 75.3, 81.3, 85.9, 90.5, 95.2, 96.9, 98.6]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.pumped_hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "pumped_hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.wind.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [573.0, 573.0, 573.0, 573.0, 575.8, 575.8, 1196.8, 1196.8, 1196.8, 1196.8, 1196.8, 1196.8, 1196.8, 1196.8, 1196.8, 1473.0, 1472.9, 1472.9, 1473.0, 1472.9, 1472.9]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.solar_utility.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.demand_response.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [29.5, 29.8, 30.0, 30.1, 30.2, 30.4, 29.8, 30.5, 31.1, 31.3, 31.4, 31.5, 31.7, 31.8, 31.8, 31.9, 32.2, 32.4, 32.6, 32.7, 33.0]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.solar_rooftop.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [221.4, 241.0, 253.5, 276.4, 276.4, 276.1, 275.7, 278.0, 278.2, 277.9, 278.3, 283.1, 290.8, 310.0, 342.7, 352.8, 363.3, 369.7, 375.0, 390.8, 406.2]
+      }
+    },
+    {
+      "id": "au.nem.tas1.fuel_tech.battery_distributed.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "tas1",
+      "fuel_tech": "battery_distributed",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [8.3, 10.6, 13.8, 18.7, 22.1, 24.6, 27.3, 30.4, 33.2, 32.8, 31.7, 29.5, 28.4, 28.1, 28.9, 29.6, 30.3, 31.4, 32.5, 32.5, 32.6]
+      }
+    },
+    {
+      "id": "au.nem._all.cost.variable_operating_and_maintenance.fast.default",
+      "type": "cost",
+      "network": "nem",
+      "region": "_all",
+      "category": "variable_operating_and_maintenance",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "$000s",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [766338.0, 754400.5, 753304.1, 748424.1, 711754.9, 729667.5, 698143.4, 718515.7, 719008.6, 708112.6, 695313.3, 669720.9, 655471.0, 661305.3, 613706.8, 632398.1, 560908.8, 601467.9, 587890.7, 565302.7, 557143.4]
+      }
+    },
+    {
+      "id": "au.nem._all.cost.fixed_operating_and_maintenance.fast.default",
+      "type": "cost",
+      "network": "nem",
+      "region": "_all",
+      "category": "fixed_operating_and_maintenance",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "$000s",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [3633696.7, 3377474.7, 2747114.9, 3994866.6, 3190758.5, 3222714.6, 3554046.6, 2655919.3, 2651761.2, 3290253.4, 3419044.6, 2826092.8, 2708164.3, 2716204.9, 2740267.5, 3190149.8, 3730365.8, 2856585.8, 2844309.7, 3571517.9, 2896586.2]
+      }
+    },
+    {
+      "id": "au.nem._all.cost.fuel.fast.default",
+      "type": "cost",
+      "network": "nem",
+      "region": "_all",
+      "category": "fuel",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "$000s",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [2561257.1, 2626861.0, 2518989.1, 2325269.8, 2120040.3, 2173002.2, 2340907.3, 2174308.9, 2180595.2, 2190101.8, 1838786.0, 1814137.5, 1764237.5, 1679170.8, 1228451.0, 1169190.7, 1110663.2, 875685.0, 832134.3, 900614.7, 647454.3]
+      }
+    },
+    {
+      "id": "au.nem._all.cost.generator_capital.fast.default",
+      "type": "cost",
+      "network": "nem",
+      "region": "_all",
+      "category": "generator_capital",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "$000s",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 174725.0, 443892.5, 491634.4, 842794.2, 842794.2, 842794.2, 1343201.7, 1716418.0, 2204164.3, 2425351.0, 2547308.9, 3365397.2, 3739149.2, 4513015.8, 4513015.8, 4605850.5, 5018467.7, 5201196.6]
+      }
+    },
+    {
+      "id": "au.nem._all.cost.generator_retirement.fast.default",
+      "type": "cost",
+      "network": "nem",
+      "region": "_all",
+      "category": "generator_retirement",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "$000s",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 112971.3, 267595.8, 182054.5, 388491.3, 0.0, 56892.0, 165709.3, 991.1, 256935.6, 234070.1, 188704.1, 68600.7, 11955.0, 603141.4, 117074.7, 274048.8, 9934.1, 64628.9, 12997.8, 107809.6]
+      }
+    },
+    {
+      "id": "au.nem._all.cost.dsp_use.fast.default",
+      "type": "cost",
+      "network": "nem",
+      "region": "_all",
+      "category": "dsp_use",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "$000s",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [6747.9, 7094.8, 9885.4, 127016.1, 3329.5, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 9347.6, 12021.4, 14479.8, 28565.7, 28382.1, 5999.6, 0.0, 9807.2, 0.0]
+      }
+    },
+    {
+      "id": "au.nem._all.cost.rez_augmentation.fast.default",
+      "type": "cost",
+      "network": "nem",
+      "region": "_all",
+      "category": "rez_augmentation",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "$000s",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 41708.2, 4572.4, 4572.4, 32015.0, 46091.0, 119803.0, 172582.9, 181391.6, 478819.5, 581194.1, 780932.5, 780932.5, 794622.0, 862261.2, 876113.7]
+      }
+    },
+    {
+      "id": "au.nem._all.cost.flow_path_augmentation.fast.default",
+      "type": "cost",
+      "network": "nem",
+      "region": "_all",
+      "category": "flow_path_augmentation",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "$000s",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 13919.7, 109637.1, 109637.1, 194093.7, 194093.7, 194093.7, 403045.5, 403045.5, 403045.5, 403045.5, 403045.5, 403045.5, 403045.5, 403045.5, 505175.4, 505175.4, 505175.4, 505175.4, 505175.4, 505175.4]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.battery.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "battery",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [215.0, 215.0, 215.0, 215.0, 215.0, 215.0, 215.0, 215.0, 215.0, 185.0, 185.0, 185.0, 130.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0, 110.0]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.battery_VPP.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "battery_VPP",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [262.7, 288.9, 317.7, 349.4, 464.0, 673.3, 954.6, 1317.3, 1777.1, 2145.3, 2510.2, 2769.7, 3002.4, 3263.9, 3597.2, 3891.9, 4149.3, 4418.6, 4720.6, 4873.5, 5025.1]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.battery_distributed.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "battery_distributed",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [394.0, 502.3, 645.4, 845.2, 1006.5, 1122.2, 1242.7, 1362.5, 1487.7, 1484.0, 1467.9, 1403.4, 1352.5, 1340.3, 1377.8, 1418.1, 1461.1, 1531.8, 1610.9, 1636.9, 1661.0]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.coal_black.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [18396.0, 17921.0, 16446.0, 15326.0, 13286.0, 13286.0, 13286.0, 12586.0, 12586.0, 11866.0, 10426.0, 9331.0, 9051.0, 9051.0, 6031.0, 5331.0, 4181.0, 4181.0, 4181.0, 4181.0, 3521.0]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.coal_brown.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4660.0, 4660.0, 4660.0, 4660.0, 4310.0, 4310.0, 3960.0, 3960.0, 3960.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0, 3210.0]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.demand_response.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [482.0, 523.9, 563.5, 604.9, 642.2, 683.7, 723.7, 769.4, 813.2, 856.9, 902.9, 945.2, 987.8, 1036.2, 1080.8, 1131.0, 1182.7, 1231.8, 1286.6, 1339.6, 1392.4]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.gas_ccgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [3785.9, 3545.9, 3365.9, 3365.9, 3365.9, 3365.9, 3365.9, 2980.9, 2980.9, 2980.9, 2980.9, 2980.9, 2980.9, 2980.9, 2180.9, 2180.9, 1651.9, 1651.9, 1508.5, 1508.5, 1508.5]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.gas_ocgt.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [7230.9, 7230.9, 7230.9, 7230.9, 7230.9, 7230.9, 7230.9, 7230.9, 7230.9, 6848.4, 6848.4, 6614.0, 6152.0, 5955.0, 5905.0, 5905.0, 5905.0, 5905.0, 4965.0, 4845.0, 4845.0]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 6906.5, 7296.5, 7210.1, 7210.1, 7210.1, 7210.1, 7210.1]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.pumped_hydro.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "pumped_hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [810.0, 810.0, 810.0, 2850.0, 2850.0, 2850.0, 2860.3, 2860.3, 2860.3, 2950.2, 4354.2, 4777.2, 5251.0, 6085.7, 6687.0, 6836.8, 8485.9, 8485.9, 8647.1, 9608.6, 10812.2]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.solar_rooftop.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [13358.7, 14778.5, 15788.7, 17313.9, 17570.1, 17811.6, 18051.3, 18411.2, 18678.4, 18919.4, 19209.3, 19804.2, 20545.8, 21687.6, 23486.9, 24366.4, 25175.7, 25820.0, 26440.3, 27609.9, 28791.9]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.solar_utility.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4906.1, 4906.1, 4906.1, 4906.1, 8014.5, 8014.5, 10033.9, 10033.9, 10033.9, 11258.6, 12270.6, 14788.4, 16932.4, 16994.3, 18391.6, 18391.6, 22860.6, 22710.3, 23216.9, 25982.0, 26600.2]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.wind.capacity.fast.default",
+      "type": "capacity",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "MW",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [8875.8, 8875.8, 8875.8, 10054.1, 10158.1, 10487.8, 11861.1, 11762.4, 11671.6, 14499.9, 15435.7, 17325.9, 17317.1, 17230.7, 21861.7, 24224.5, 25572.8, 24963.8, 25040.6, 25319.2, 25270.9]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.battery_VPP_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "battery_VPP_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [143.4, 189.2, 220.7, 254.2, 407.7, 623.0, 813.9, 1129.7, 1519.2, 1812.2, 2049.5, 2257.6, 2429.9, 2611.5, 2957.1, 3253.4, 3392.4, 3543.1, 3793.1, 3906.9, 4032.5]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.battery_VPP_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "battery_VPP_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [121.7, 160.5, 188.0, 216.1, 346.6, 529.5, 691.9, 960.3, 1288.7, 1543.1, 1740.7, 1920.0, 2066.1, 2219.9, 2513.7, 2759.7, 2889.5, 3011.9, 3223.6, 3321.9, 3427.9]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.battery_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "battery_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [37.2, 61.5, 74.0, 74.2, 90.5, 91.4, 87.2, 82.8, 82.5, 79.8, 77.7, 78.4, 53.3, 41.9, 42.1, 40.5, 42.1, 42.2, 42.1, 41.9, 42.0]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.battery_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "battery_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [30.0, 49.7, 60.2, 60.1, 73.3, 74.1, 70.7, 67.1, 66.7, 64.8, 62.8, 63.5, 43.3, 33.9, 34.1, 32.7, 34.2, 34.2, 34.1, 33.9, 34.0]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.coal_black.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "coal_black",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [96994.0, 96523.3, 99024.0, 89627.1, 84197.7, 84726.1, 83157.5, 78305.3, 79757.5, 75957.7, 67847.0, 59975.5, 58801.3, 57709.3, 37603.1, 33041.6, 25858.8, 25729.7, 26663.4, 25534.5, 20369.3]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.coal_brown.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "coal_brown",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [29444.1, 33514.8, 34778.4, 33913.1, 31108.5, 30875.7, 27686.2, 28988.5, 29261.9, 23420.3, 23323.9, 23136.2, 23231.8, 23213.3, 21977.5, 22138.8, 21765.3, 22251.7, 22601.0, 21722.5, 21256.7]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.demand_response.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "demand_response",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.gas_ccgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "gas_ccgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [4606.0, 4605.1, 482.3, 689.1, 701.2, 754.0, 2129.7, 612.8, 529.9, 2469.5, 1347.4, 2909.8, 2731.2, 1873.7, 2815.2, 2576.1, 3656.5, 1512.8, 1152.1, 2047.9, 1264.3]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.gas_ocgt.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "gas_ocgt",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [103.3, 59.0, 72.7, 145.9, 145.4, 132.1, 205.1, 176.6, 109.1, 195.9, 97.9, 198.7, 128.7, 140.3, 226.1, 663.7, 850.5, 385.5, 82.4, 340.8, 78.4]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.hydro.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "hydro",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [16138.9, 13321.6, 13492.4, 16518.1, 14486.4, 16660.9, 10562.0, 18014.8, 16854.1, 13755.3, 16165.7, 14466.0, 14099.1, 16466.9, 14489.1, 16606.4, 9849.1, 17772.4, 16139.5, 12717.1, 15935.6]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.pumped_hydro_charging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "pumped_hydro_charging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [87.8, 131.8, 280.1, 686.0, 4887.2, 4237.0, 5767.7, 5205.7, 5564.3, 6000.8, 9830.7, 11377.1, 12468.5, 13584.0, 15970.4, 15217.0, 21472.0, 19608.9, 20016.3, 23844.9, 26530.2]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.pumped_hydro_discharging.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "pumped_hydro_discharging",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [61.4, 92.3, 196.1, 497.4, 3674.3, 3185.1, 4321.4, 3914.9, 4181.7, 4503.1, 7585.1, 8823.4, 9701.3, 10622.5, 12516.2, 11910.0, 16906.6, 15500.2, 15778.1, 18853.5, 20998.0]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.solar_rooftop.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "solar_rooftop",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [17784.8, 20058.4, 21894.0, 23722.5, 24972.4, 25383.9, 25835.3, 26293.9, 26769.9, 27217.3, 27726.4, 28395.7, 29360.0, 30715.2, 32815.7, 34656.5, 35844.0, 36910.2, 37915.2, 39169.5, 40807.3]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.solar_utility.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "solar_utility",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [12119.6, 12666.6, 12274.9, 12188.3, 20677.3, 18080.1, 26558.9, 23411.3, 24579.8, 28194.3, 31424.7, 39084.4, 43402.1, 43054.4, 48645.2, 42551.1, 60790.9, 53379.7, 57374.9, 65464.3, 69506.2]
+      }
+    },
+    {
+      "id": "au.nem._all.fuel_tech.wind.energy.fast.default",
+      "type": "energy",
+      "network": "nem",
+      "region": "_all",
+      "fuel_tech": "wind",
+      "scenario": "fast",
+      "pathway": "default",
+      "units": "GWh",
+      "projection": {
+        "start": "2021-07-01T00:00:00+10:00",
+        "last": "2041-07-01T00:00:00+10:00",
+        "interval": "1Y",
+        "data": [28809.7, 26204.3, 26594.5, 31751.8, 33962.3, 34729.5, 37531.6, 38345.9, 38509.0, 47889.5, 53938.2, 55689.9, 54559.8, 55776.8, 72716.6, 81549.5, 79415.8, 82101.9, 81359.9, 80570.1, 82006.9]
+      }
+    }
+  ]
+}

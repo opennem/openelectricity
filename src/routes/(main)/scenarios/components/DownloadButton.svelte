@@ -14,14 +14,14 @@
 	/** @type {Props} */
 	let { position = 'bottom', align = 'right' } = $props();
 
-	/**
-	 * @type {Object.<string, *>}
-	 */
-	const dataVizStores = {
-		energy: getContext('energy-data-viz'),
-		emissions: getContext('emissions-data-viz'),
-		capacity: getContext('capacity-data-viz'),
-		intensity: getContext('intensity-data-viz')
+	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
+
+	/** @type {Record<string, *>} */
+	const chartStores = {
+		energy: generation,
+		emissions: emissions,
+		capacity: capacity,
+		intensity: intensity
 	};
 
 	const { filterShortName } = getContext('scenario-filters');
@@ -49,10 +49,10 @@
 		}
 	];
 
-	let selectedStore = $derived(downloadKey ? dataVizStores[downloadKey] : null);
-	let seriesCsvData = $derived(selectedStore ? selectedStore.seriesCsvData : null);
+	let selectedStore = $derived(downloadKey ? chartStores[downloadKey] : null);
+	let csvData = $derived(selectedStore ? selectedStore.seriesCsvData : '');
 
-	let file = $derived(new Blob([$seriesCsvData], { type: 'text/plain' }));
+	let file = $derived(new Blob([csvData], { type: 'text/plain' }));
 	let fileUrl = $derived(URL.createObjectURL(file));
 	let fileName = $derived(`${$filterShortName}-${downloadKey}.csv`);
 

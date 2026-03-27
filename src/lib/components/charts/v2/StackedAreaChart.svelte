@@ -21,7 +21,8 @@
 		LineY,
 		Dot,
 		Shading,
-		StepHoverBand
+		StepHoverBand,
+		Annotations
 	} from './elements';
 	import NetTotalLine from './elements/NetTotalLine.svelte';
 	import HatchOverlay from './elements/HatchOverlay.svelte';
@@ -37,6 +38,9 @@
 	 * @property {string} [netTotalKey] - Key for net total values in data (renders step line)
 	 * @property {string} [netTotalColor] - Color for net total line
 	 * @property {number | null} [overlayStart] - Start time (ms) for hatched projection overlay
+	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
+	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
+	 * @property {boolean} [hideAnnotationsOnMobile] - Hide annotations on mobile viewports
 	 */
 
 	/** @type {Props} */
@@ -49,7 +53,10 @@
 		loadingRanges = [],
 		netTotalKey,
 		netTotalColor = '#C74523',
-		overlayStart
+		overlayStart,
+		clampHoverLine = false,
+		animate = false,
+		hideAnnotationsOnMobile = false
 	} = $props();
 
 	// Get chart styles
@@ -61,7 +68,6 @@
 		if (chart.seriesScaledData.length === 0) return [];
 
 		if (chart.useDivergingStack) {
-			// Use d3 stack with diverging offset for independent positive/negative stacking
 			const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
 			return stackGen(chart.seriesScaledData);
 		}
@@ -98,6 +104,19 @@
 	let clipPathAxisId = $derived(`${id}-clip-path-axis`);
 	let clipPath = $derived(`url(#${clipPathId})`);
 	let clipPathAxis = $derived(`url(#${clipPathAxisId})`);
+
+	// When clampHoverLine is true, limit the hover/focus line to the stacked area height
+	let hoverMaxY = $derived.by(() => {
+		if (!clampHoverLine || !chart.hoverTime) return undefined;
+		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.hoverTime);
+		return point?._max;
+	});
+
+	let focusMaxY = $derived.by(() => {
+		if (!clampHoverLine || !chart.focusTime) return undefined;
+		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.focusTime);
+		return point?._max;
+	});
 </script>
 
 <div
@@ -126,9 +145,9 @@
 				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
 			</defs>
 
-			<!-- Shading overlay (behind chart content) -->
-			{#if chart.shadingData?.length > 0}
-				<Shading dataset={chart.shadingData} fill={chart.shadingFill} {clipPathId} />
+			<!-- Background shading (behind chart content) -->
+			{#if chart.bgShadingData?.length > 0}
+				<Shading dataset={chart.bgShadingData} fill={chart.bgShadingFill} {clipPathId} />
 			{/if}
 
 			<!-- Chart content (on top to capture hover with series info) -->
@@ -146,6 +165,7 @@
 					/>
 				{:else}
 					<StackedArea
+						{animate}
 						dataset={chart.seriesScaledData}
 						display={stackedAreaDisplay}
 						curveType={chart.chartOptions.curveFunction}
@@ -167,6 +187,10 @@
 					/>
 				{/if}
 
+				{#if chart.fgShadingData?.length > 0}
+					<Shading dataset={chart.fgShadingData} fill={chart.fgShadingFill} {clipPathId} />
+				{/if}
+
 				{#if overlayStart != null}
 					<HatchOverlay startTime={overlayStart} patternId="{id}-hatch-pattern" />
 				{/if}
@@ -180,6 +204,11 @@
 					strokeColour={refLine.colour || '#666'}
 				/>
 			{/each}
+
+			<!-- Custom annotations -->
+			{#if chart.annotations.length > 0}
+				<Annotations items={chart.annotations} hideOnMobile={hideAnnotationsOnMobile} />
+			{/if}
 		</Svg>
 
 		<!-- Loading overlay -->
@@ -210,6 +239,7 @@
 						<LineX
 							xValue={chart.hoverData}
 							yValue={styles.showHoverYLine ? chart.hoverData : undefined}
+							maxYValue={hoverMaxY}
 							strokeArray="none"
 						/>
 						{#if styles.showHoverDot}
@@ -227,6 +257,7 @@
 						<LineX
 							xValue={chart.focusData}
 							yValue={styles.showFocusYLine ? chart.focusData : undefined}
+							maxYValue={focusMaxY}
 							strokeArray="none"
 							strokeColour={styles.focusYLineStrokeColour}
 						/>
@@ -258,20 +289,28 @@
 					stroke={styles.yAxisStroke}
 					zeroValueStroke={styles.zeroValueStroke || styles.yAxisStroke}
 					showLastTick={styles.showLastYTick}
+					lastTickDy={styles.lastYTickDy}
+					yLabelStartPos={styles.yLabelStartPos}
+					dxTick={styles.yLabelStartPos ? 6 : 0}
+					tickMarks={!!styles.yLabelStartPos}
+					{animate}
 				/>
 
 				<AxisX
 					ticks={chart.xTicks}
 					gridlineTicks={chart.xGridlineTicks}
+					highlightTicks={chart.xHighlightTicks}
+					mobileHiddenTicks={chart.xMobileHiddenTicks}
 					formatTick={chart.formatTickXWithTimeZone}
 					gridlines={styles.xGridlines}
 					tickMarks={true}
-					snapTicks={false}
+					snapTicks={styles.snapTicks}
 					stroke={styles.xAxisStroke}
 					fill={styles.xAxisFill}
 					xTextClasses={styles.xTextClasses}
 					yTick={styles.xAxisYTick}
 					stepMode={isStepMode}
+					{animate}
 				/>
 			</g>
 		</Svg>

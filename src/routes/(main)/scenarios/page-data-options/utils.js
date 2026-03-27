@@ -1,6 +1,19 @@
 import { startOfYear, addYears } from 'date-fns';
 
 /**
+ * Returns the Australian financial year (Jul–Jun) for a given date.
+ * e.g. March 2026 → FY2026 (Jul 2025–Jun 2026), August 2026 → FY2027 (Jul 2026–Jun 2027)
+ * @param {Date} date
+ * @returns {number}
+ */
+export function getFinancialYear(date) {
+	return date.getMonth() >= 6 ? date.getFullYear() + 1 : date.getFullYear();
+}
+
+/** The current (potentially incomplete) Australian financial year. */
+export const currentFinancialYear = getFinancialYear(new Date());
+
+/**
  * Merge historical emissions data into total
  * @param {StatsData[]} historyData
  * @param {boolean} includeBatteryAndLoads

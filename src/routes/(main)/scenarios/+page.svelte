@@ -1,18 +1,24 @@
 <script>
-	import { run } from 'svelte/legacy';
-
-	import { setContext, getContext, onMount } from 'svelte';
+	import { setContext, getContext, onMount, onDestroy } from 'svelte';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	import { colourReducer } from '$lib/stores/theme';
 	import { regionsNemOnlyOptions as regionOptions } from '$lib/regions';
+	import { modelOptions } from './page-data-options/models';
 
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import Meta from '$lib/components/Meta.svelte';
+	import Skeleton from '$lib/components/Skeleton.svelte';
+	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 
-	import dataVizStore from '$lib/components/charts/stores/data-viz';
+	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
+	import { createSyncedCharts } from '$lib/components/charts/v2/sync.js';
+	import { createRequestGuard } from '$lib/utils/request-guard';
 
 	import ArticlesSection from './components/ArticlesSection.svelte';
 	import Filters from './components/Filters.svelte';
+	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import ScenarioChart from './components/ScenarioChart.svelte';
 	import TableTechnology from './components/TableTechnology.svelte';
 	import TableScenario from './components/TableScenario.svelte';
@@ -28,7 +34,8 @@
 		fetchTechnologyViewData,
 		fetchScenarioViewData,
 		fetchRegionViewData
-	} from './page-data-options/fetch';
+	} from './page-data-options/fetch.svelte.js';
+	import { toggleDataSource, getUseOeApi } from './page-data-options/fetch.svelte.js';
 	import processTechnology from './page-data-options/process-technology';
 	import processScenario from './page-data-options/process-scenario';
 	import processRegion from './page-data-options/process-region';
@@ -40,27 +47,56 @@
 	setContext('scenario-filters', filtersStore());
 	setContext('by-scenario', byScenarioStore());
 
-	const dataVizStoreNames = [
-		{
-			name: 'energy-data-viz',
-			chart: 'generation'
-		},
-		{
-			name: 'emissions-data-viz',
-			chart: 'emissions'
-		},
-		{
-			name: 'intensity-data-viz',
-			chart: 'intensity'
-		},
-		{
-			name: 'capacity-data-viz',
-			chart: 'capacity'
-		}
-	];
-	dataVizStoreNames.forEach(({ name }) => {
-		setContext(name, dataVizStore());
+	// --- ChartStore v2 instances ---
+	const generationChart = new ChartStore({
+		key: Symbol('generation'),
+		title: 'Generation',
+		chartType: 'stacked-area',
+		chartStyles: { chartHeightClasses: 'h-[400px] md:h-[450px]' }
 	});
+	generationChart.yTicks = 2;
+
+	const emissionsChart = new ChartStore({
+		key: Symbol('emissions'),
+		title: 'Emissions',
+		chartType: 'stacked-area',
+		chartStyles: { chartHeightClasses: 'h-[200px] md:h-[225px]' }
+	});
+	emissionsChart.yTicks = 2;
+
+	const intensityChart = new ChartStore({
+		key: Symbol('intensity'),
+		title: 'Intensity',
+		chartType: 'line',
+		hideDataOptions: true,
+		hideChartTypeOptions: true,
+		chartStyles: { chartHeightClasses: 'h-[200px] md:h-[225px]' }
+	});
+	intensityChart.yTicks = 2;
+
+	const capacityChart = new ChartStore({
+		key: Symbol('capacity'),
+		title: 'Capacity',
+		chartType: 'stacked-area',
+		chartStyles: { chartHeightClasses: 'h-[400px] md:h-[450px]' }
+	});
+	capacityChart.yTicks = 2;
+
+	const charts = {
+		generation: generationChart,
+		emissions: emissionsChart,
+		intensity: intensityChart,
+		capacity: capacityChart
+	};
+	const chartsList = [generationChart, emissionsChart, intensityChart, capacityChart];
+	const chartEntries = [
+		{ key: 'generation', chart: generationChart },
+		{ key: 'emissions', chart: emissionsChart },
+		{ key: 'intensity', chart: intensityChart },
+		{ key: 'capacity', chart: capacityChart }
+	];
+	const sync = createSyncedCharts(chartsList);
+	setContext('scenario-charts', charts);
 
 	const {
 		isTechnologyViewSection,
@@ -73,22 +109,78 @@
 		selectedFuelTechGroup,
 		multiSelectionData,
 		includeBatteryAndLoads,
-		showScenarioOptions
+		colourOverrides
 	} = getContext('scenario-filters');
 	const { selectionData } = getContext('by-scenario');
 
-	const dataVizStores = dataVizStoreNames.reduce(
-		/**
-		 * @param {Object.<string, *>} acc
-		 * @param {{name: string}} curr
-		 */ (acc, curr) => {
-			acc[curr.name] = getContext(curr.name);
-			return acc;
-		},
-		{}
-	);
+	// --- Fullscreen mode ---
+	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */
+	const layoutContext = getContext('layout-fullscreen');
 
-	const { focusTime: energyFocusTime } = dataVizStores['energy-data-viz'];
+	let isFullscreen = $derived($page.url.searchParams.get('fullscreen') === 'true');
+
+	$effect(() => {
+		layoutContext?.setFullscreen(isFullscreen);
+	});
+
+	onDestroy(() => {
+		layoutContext?.setFullscreen(false);
+	});
+
+	function toggleFullscreen() {
+		const newFullscreen = !isFullscreen;
+		const url = new URL($page.url);
+		if (newFullscreen) {
+			url.searchParams.set('fullscreen', 'true');
+		} else {
+			url.searchParams.delete('fullscreen');
+		}
+		goto(url.toString(), { noScroll: true });
+	}
+
+	// --- Shortcuts toast ---
+	let showShortcutsToast = $state(false);
+
+	/**
+	 * @param {KeyboardEvent} e
+	 */
+	function handleKeydown(e) {
+		// Cmd/Ctrl+. toggle — check before input guard so it works everywhere
+		if (e.key === '.' && (e.metaKey || e.ctrlKey)) {
+			e.preventDefault();
+			const isOeApi = toggleDataSource();
+			console.log(`[scenarios] Data source: ${isOeApi ? 'OE API' : 'Legacy'}`);
+			techCacheKey = '';
+			scenarioCacheKey = '';
+			regionCacheKey = '';
+			return;
+		}
+
+		const target = /** @type {HTMLElement} */ (e.target);
+		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+			return;
+		}
+
+		if (e.key === 'Escape') {
+			if (showShortcutsToast) {
+				showShortcutsToast = false;
+			} else if (isFullscreen) {
+				toggleFullscreen();
+			}
+			return;
+		}
+
+		if (e.key === 'f' && !e.metaKey && !e.ctrlKey && !e.shiftKey) {
+			toggleFullscreen();
+			return;
+		}
+
+		if (e.key === '?') {
+			showShortcutsToast = !showShortcutsToast;
+			return;
+		}
+
+	}
 
 	/** @type {FuelTechCode[] | undefined} */
 	let seriesLoadsIds = $state([]);
@@ -96,10 +188,68 @@
 	/** @type {string[]} */
 	let hiddenRowNames = $state([]);
 
-	let fetching = $state(false);
+	/** @type {number | undefined} */
+	let projectionEndTime = $state();
+
+	/** @type {number | undefined} */
+	let projectionStartTime = $state();
+
+	/** @type {number | undefined} */
+	let derivedStartTime = $state();
+	/** @type {number | undefined} */
+	let derivedEndTime = $state();
+
+	// Overlay start derived from processed data's projectionStartTime
+	let overlayStartTime = $derived(projectionStartTime);
+
+	// --- Chart update helpers ---
 
 	/**
-	 *
+	 * @param {ChartStore} chart
+	 * @param {ProcessedDataViz} processed
+	 */
+	function updateChart(chart, processed) {
+		chart.seriesData = processed.seriesData;
+		chart.seriesNames = processed.seriesNames;
+		chart.seriesColours = processed.seriesColours;
+		chart.seriesLabels = processed.seriesLabels;
+		chart.chartOptions.baseUnit = processed.baseUnit || '';
+		chart.chartOptions.prefix = processed.prefix || /** @type {SiPrefix} */ ('');
+		chart.chartOptions.displayPrefix =
+			processed.displayPrefix || processed.prefix || /** @type {SiPrefix} */ ('');
+		chart.chartOptions.allowedPrefixes = processed.allowedPrefixes || [];
+
+		const chartType = processed.chartType === 'area' ? 'stacked-area' : processed.chartType;
+		chart.chartOptions.selectedChartType =
+			/** @type {import('$lib/components/charts/v2/ChartOptions.svelte.js').ChartType} */ (
+				chartType
+			);
+
+		if (
+			processed.yDomain &&
+			processed.yDomain[0] !== undefined &&
+			processed.yDomain[1] !== undefined
+		) {
+			chart.setYDomain(
+				/** @type {[number, number]} */ ([processed.yDomain[0], processed.yDomain[1]])
+			);
+		} else {
+			chart.setYDomain(undefined);
+		}
+	}
+
+	/**
+	 * @param {ChartStore} chart
+	 */
+	function resetChart(chart) {
+		chart.seriesData = [];
+		chart.seriesNames = [];
+		chart.seriesColours = {};
+		chart.seriesLabels = {};
+		chart.setYDomain(undefined);
+	}
+
+	/**
 	 * @param {{
 	 * 		processedEnergy: ProcessedDataViz,
 	 * 		processedCapacity: ProcessedDataViz,
@@ -107,105 +257,127 @@
 	 * 		processedIntensity: ProcessedDataViz | undefined
 	 * }} param0
 	 */
-	function updateAllStores({
+	function updateAllCharts({
 		processedEnergy,
 		processedCapacity,
 		processedEmissions,
 		processedIntensity
 	}) {
-		dataVizStoreNames.forEach(({ name }) => {
-			const store = dataVizStores[name];
-			switch (name) {
-				case 'energy-data-viz':
-					updateDataVizStore('Generation', store, processedEnergy, 'h-[400px] md:h-[450px]');
-					break;
-				case 'capacity-data-viz':
-					updateDataVizStore('Capacity', store, processedCapacity, 'h-[400px] md:h-[450px]');
-					break;
-				case 'emissions-data-viz':
-					processedEmissions
-						? updateDataVizStore('Emissions', store, processedEmissions)
-						: store.reset();
-					break;
-				case 'intensity-data-viz':
-					processedIntensity
-						? updateDataVizStore('Intensity', store, processedIntensity)
-						: store.reset();
-					break;
-			}
-		});
-	}
+		updateChart(generationChart, processedEnergy);
+		generationChart.chartStyles.chartHeightClasses = 'h-[400px] md:h-[450px]';
 
-	/**
-	 * @param {string} title
-	 * @param {*} store
-	 * @param {ProcessedDataViz} p
-	 * @param {string} [chartHeightClasses]
-	 */
-	function updateDataVizStore(title, store, p, chartHeightClasses) {
-		store.title.set(title);
-		store.seriesData.set(p.seriesData);
-		store.seriesNames.set(p.seriesNames);
-		store.seriesColours.set(p.seriesColours);
-		store.seriesLabels.set(p.seriesLabels);
-		store.nameOptions.set(p.nameOptions);
-		store.yDomain.set(p.yDomain);
-		store.chartType.set(p.chartType);
-		store.chartHeightClasses.set(chartHeightClasses);
-		store.baseUnit.set(p.baseUnit);
-		store.prefix.set(p.prefix);
-		store.displayPrefix.set(p.displayPrefix);
-		store.allowedPrefixes.set(p.allowedPrefixes);
-	}
+		updateChart(capacityChart, processedCapacity);
+		capacityChart.chartStyles.chartHeightClasses = 'h-[400px] md:h-[450px]';
 
-	/**
-	 * @param {string | undefined} hoverKey
-	 * @param {TimeSeriesData | undefined} hoverData
-	 */
-	function updateStoreHover(hoverKey, hoverData) {
-		dataVizStoreNames.forEach(({ name }) => {
-			const store = dataVizStores[name];
-			store.hoverTime.set(hoverData ? hoverData.time : undefined);
-			store.hoverKey.set(hoverKey);
-		});
-	}
-
-	/**
-	 * @param {any} evt
-	 */
-	function handleMousemove(evt) {
-		if (evt?.key) {
-			updateStoreHover(evt.key, evt.data);
+		if (processedEmissions) {
+			updateChart(emissionsChart, processedEmissions);
 		} else {
-			updateStoreHover(undefined, evt);
+			resetChart(emissionsChart);
 		}
+
+		if (processedIntensity) {
+			updateChart(intensityChart, processedIntensity);
+		} else {
+			resetChart(intensityChart);
+		}
+
+		projectionStartTime = processedEnergy.projectionStartTime ?? undefined;
+		projectionEndTime = processedEnergy.projectionEndTime ?? undefined;
+		derivedStartTime = processedEnergy.derivedStartTime ?? undefined;
+		derivedEndTime = processedEnergy.derivedEndTime ?? undefined;
 	}
-	function handleMouseout() {
-		updateStoreHover(undefined, undefined);
+
+	// --- Sync chart overlay styling with projection start/end ---
+	$effect(() => {
+		if (overlayStartTime != null) {
+			const startDate = new Date(overlayStartTime);
+			const endDate = projectionEndTime != null ? new Date(projectionEndTime) : undefined;
+
+			chartsList.forEach((chart) => {
+				if ($isScenarioViewSection) {
+					// By Scenario: no overlay line, hatching, shading, or annotations
+					chart.chartStyles.chartOverlayLine = undefined;
+					chart.chartStyles.chartOverlay = undefined;
+					chart.fgShadingData = [];
+					chart.annotations = [];
+				} else {
+					chart.chartStyles.chartOverlayLine = { date: startDate };
+					if (endDate) {
+						chart.chartStyles.chartOverlay = { xStartValue: startDate, xEndValue: endDate };
+					}
+
+					if (derivedStartTime != null && derivedEndTime != null) {
+						chart.fgShadingData = [[new Date(derivedStartTime), new Date(derivedEndTime)]];
+						chart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
+
+						const midTime = derivedStartTime + (derivedEndTime - derivedStartTime) / 2;
+						chart.annotations = [
+							{
+								type: 'text',
+								x: midTime,
+								y: 0,
+								text: 'DERIVED',
+								dy: -6,
+								textAnchor: 'middle',
+								fill: '#999',
+								fontSize: '8px'
+							}
+						];
+					} else {
+						chart.fgShadingData = [];
+						chart.annotations = [];
+					}
+				}
+			});
+		}
+	});
+
+	// --- Lazy load mini charts when scrolled near ---
+	let showDetailedSection = $state(false);
+
+	/**
+	 * Svelte action: renders content when the element enters the viewport.
+	 * @param {HTMLElement} node
+	 */
+	function lazyLoad(node) {
+		const observer = new IntersectionObserver(
+			([entry]) => {
+				if (entry.isIntersecting) {
+					showDetailedSection = true;
+					observer.disconnect();
+				}
+			},
+			{ rootMargin: '200px' }
+		);
+		observer.observe(node);
+		return { destroy: () => observer.disconnect() };
+	}
+
+	// --- Interaction handlers ---
+
+	/**
+	 * @param {number | undefined} time
+	 * @param {string} [key]
+	 */
+	function handleHover(time, key) {
+		sync.setHover(time, key);
+	}
+
+	function handleHoverEnd() {
+		sync.clearHover();
 	}
 
 	/**
-	 * @param {any} evt
+	 * @param {number} time
 	 */
-	function handlePointerup(evt) {
-		const focusTime = evt?.time;
-		const isSame = focusTime ? $energyFocusTime === focusTime : false;
-		const time = isSame ? undefined : focusTime;
-
-		dataVizStoreNames.forEach(({ name }) => {
-			const store = dataVizStores[name];
-			store.focusTime.set(time);
-		});
+	function handleFocus(time) {
+		sync.toggleFocus(time);
 	}
 
 	/**
-	 * @param {CustomEvent<{ name: string, isMetaPressed: boolean, allNames: string[] }>} evt
+	 * @param {{ name: string, isMetaPressed: boolean, allNames: string[] }} param0
 	 */
-	function toggleRow(evt) {
-		const name = evt.detail.name;
-		const isMetaPressed = evt.detail.isMetaPressed;
-		const allNames = evt.detail.allNames;
-
+	function toggleRow({ name, isMetaPressed, allNames }) {
 		if (isMetaPressed) {
 			hiddenRowNames = allNames.filter((n) => n !== name);
 		} else {
@@ -221,30 +393,71 @@
 		}
 	}
 
-	function setDefaultFocusTime() {
-		// set 2030 as the default focus time
-		dataVizStoreNames.forEach(({ name }) => {
-			const store = dataVizStores[name];
-			store.focusTime.set(1893416400000);
-		});
-	}
+	// Map generation series names to capacity series names (they differ by type suffix,
+	// e.g. 'coal.energy.grouped' vs 'coal.capacity.grouped')
+	let genToCapNameMap = $derived.by(() => {
+		/** @type {Record<string, string>} */
+		const capByCode = {};
+		for (const name of capacityChart.seriesNames) {
+			capByCode[name.split('.')[0]] = name;
+		}
+		/** @type {Record<string, string>} */
+		const map = {};
+		for (const name of generationChart.seriesNames) {
+			const code = name.split('.')[0];
+			if (capByCode[code]) map[name] = capByCode[code];
+		}
+		return map;
+	});
 
+	// Sync hidden row names to all charts
+	$effect(() => {
+		generationChart.hiddenSeriesNames = hiddenRowNames;
+		emissionsChart.hiddenSeriesNames = hiddenRowNames;
+		intensityChart.hiddenSeriesNames = hiddenRowNames;
+
+		// Capacity uses different series name suffixes — translate
+		capacityChart.hiddenSeriesNames = hiddenRowNames
+			.map((name) => genToCapNameMap[name])
+			.filter(Boolean);
+	});
+
+	// Set default focus time (2030) after mount
 	onMount(() => {
 		setTimeout(() => {
-			setDefaultFocusTime();
+			chartsList.forEach((chart) => {
+				chart.focusTime = 1893416400000;
+			});
 		}, 1500);
 	});
 
-	/** @type {*} */
-	let cachedTechnologyData = $state(undefined);
-	/** @type {*} */
-	let cachedScenarioData = $state(undefined);
-	/** @type {*} */
-	let cachedRegionsData = $state(undefined);
+	// --- Data fetching and processing ---
 
-	let hasTechData = $derived(cachedTechnologyData !== undefined);
-	let hasScenarioData = $derived(cachedScenarioData !== undefined);
-	let hasRegionData = $derived(cachedRegionsData !== undefined);
+	// Data caches — plain variables (NOT $state) to avoid deep proxy overhead.
+	// Reactive version counters trigger processing effects when new data arrives.
+	/** @type {*} */
+	let cachedTechnologyData;
+	/** @type {*} */
+	let cachedScenarioData;
+	/** @type {*} */
+	let cachedRegionsData;
+
+	let techDataVersion = $state(0);
+	let scenarioDataVersion = $state(0);
+	let regionDataVersion = $state(0);
+
+	// Cache keys to avoid re-fetching when switching views with the same params
+	/** @type {string} */
+	let techCacheKey = $state('');
+	/** @type {string} */
+	let scenarioCacheKey = $state('');
+	/** @type {string} */
+	let regionCacheKey = $state('');
+
+	// Guards to discard stale fetch responses
+	const techGuard = createRequestGuard();
+	const scenarioGuard = createRequestGuard();
+	const regionGuard = createRequestGuard();
 
 	/**
 	 * @param {{
@@ -305,14 +518,13 @@
 	}
 
 	$effect(() => {
-		if ($isTechnologyViewSection && hasTechData) {
-			console.log('has tech data');
+		if ($isTechnologyViewSection && techDataVersion > 0) {
 			const { processedEnergy, processedCapacity, processedEmissions, processedIntensity } =
 				processTechnologyData(cachedTechnologyData);
 
 			seriesLoadsIds = /** @type {FuelTechCode[] | undefined} */ (processedEnergy.seriesLoadsIds);
 
-			updateAllStores({
+			updateAllCharts({
 				processedEnergy,
 				processedCapacity,
 				processedEmissions,
@@ -323,32 +535,21 @@
 
 	$effect(() => {
 		if ($isTechnologyViewSection) {
-			console.log('no tech data');
+			const key = `${$singleSelectionData.model}-${$singleSelectionData.scenario}-${$singleSelectionData.pathway}-${$selectedRegion}`;
+			if (key === techCacheKey) return;
+			techCacheKey = key;
+
+			const { isCurrent } = techGuard.next();
 			fetchTechnologyViewData({
 				model: $singleSelectionData.model,
 				scenario: $singleSelectionData.scenario,
 				pathway: $singleSelectionData.pathway,
 				region: $selectedRegion
-			}).then(
-				({
-					projectionEnergyData,
-					projectionCapacityData,
-					projectionEmissionsData,
-					historyEnergyData,
-					historyCapacityData,
-					historyEmisssionsData
-				}) => {
-					console.log('setting tech data');
-					cachedTechnologyData = {
-						projectionEnergyData,
-						projectionCapacityData,
-						projectionEmissionsData,
-						historyEnergyData,
-						historyCapacityData,
-						historyEmisssionsData
-					};
-				}
-			);
+			}).then((data) => {
+				if (!isCurrent()) return;
+				cachedTechnologyData = data;
+				techDataVersion++;
+			});
 		}
 	});
 
@@ -378,14 +579,12 @@
 		const processedEnergy = processScenario.generation({
 			projections: projectionsData,
 			history: historyEnergyData,
-			// group: $selectedFuelTechGroup,
 			includeBatteryAndLoads: $includeBatteryAndLoads
 		});
 
 		const processedCapacity = processScenario.capacity({
 			projections: projectionsData,
 			history: historyCapacityData,
-			// group: $selectedFuelTechGroup,
 			includeBatteryAndLoads: $includeBatteryAndLoads
 		});
 
@@ -403,7 +602,7 @@
 			: undefined;
 
 		// process colours
-		const updatedSeriesColours = processScenario.getScenarioColours(processedEnergy.seriesNames);
+		const updatedSeriesColours = processScenario.getScenarioColours(processedEnergy.seriesNames, $colourOverrides);
 
 		// update colours
 		processedEnergy.seriesColours = updatedSeriesColours;
@@ -413,7 +612,7 @@
 			processedIntensity.seriesColours = updatedSeriesColours;
 		}
 
-		updateAllStores({
+		updateAllCharts({
 			processedEnergy,
 			processedCapacity,
 			processedEmissions,
@@ -422,8 +621,7 @@
 	}
 
 	$effect(() => {
-		if ($isScenarioViewSection && hasScenarioData) {
-			console.log('has scenario data');
+		if ($isScenarioViewSection && scenarioDataVersion > 0) {
 			$selectionData = $multiSelectionData;
 			processScenarioData(cachedScenarioData);
 		}
@@ -431,17 +629,18 @@
 
 	$effect(() => {
 		if ($isScenarioViewSection) {
-			console.log('no scenario data');
 			$selectionData = $multiSelectionData;
 
+			const key = `${$multiSelectionData.map((/** @type {any} */ s) => s.id).join(',')}-${$selectedRegion}`;
+			if (key === scenarioCacheKey) return;
+			scenarioCacheKey = key;
+
+			const { isCurrent } = scenarioGuard.next();
 			fetchScenarioViewData({ scenarios: $multiSelectionData, region: $selectedRegion }).then(
-				({ projectionsData, historyEnergyData, historyEmisssionsData, historyCapacityData }) => {
-					cachedScenarioData = {
-						projectionsData,
-						historyEnergyData,
-						historyEmisssionsData,
-						historyCapacityData
-					};
+				(data) => {
+					if (!isCurrent()) return;
+					cachedScenarioData = data;
+					scenarioDataVersion++;
 				}
 			);
 		}
@@ -453,26 +652,18 @@
 	function processRegionData(regionsData) {
 		const processedEnergy = processRegion.generation({
 			regionsData,
-			// group: $selectedFuelTechGroup,
 			includeBatteryAndLoads: $includeBatteryAndLoads
 		});
-
-		console.log('processedEnergy', processedEnergy);
 
 		const processedCapacity = processRegion.capacity({
 			regionsData,
-			// group: $selectedFuelTechGroup,
 			includeBatteryAndLoads: $includeBatteryAndLoads
 		});
-
-		// console.log('processedCapacity', processedCapacity);
 
 		const processedEmissions = processRegion.emissions({
 			regionsData,
 			includeBatteryAndLoads: $includeBatteryAndLoads
 		});
-
-		// console.log('processedEmissions', processedEmissions);
 
 		const processedIntensity = processedEmissions
 			? processRegion.intensity({
@@ -481,9 +672,7 @@
 				})
 			: undefined;
 
-		// console.log('processedIntensity', processedIntensity);
-
-		updateAllStores({
+		updateAllCharts({
 			processedEnergy,
 			processedCapacity,
 			processedEmissions,
@@ -492,28 +681,35 @@
 	}
 
 	$effect(() => {
-		if ($isRegionViewSection && hasRegionData) {
-			console.log('has region data');
+		if ($isRegionViewSection && regionDataVersion > 0) {
 			processRegionData(cachedRegionsData);
 		}
 	});
 
 	$effect(() => {
 		if ($isRegionViewSection) {
-			console.log('no region data');
+			const key = `${$singleSelectionData.model}-${$singleSelectionData.scenario}-${$singleSelectionData.pathway}`;
+			if (key === regionCacheKey) return;
+			regionCacheKey = key;
+
 			const regionsOnly = regionOptions.filter((r) => r.value !== '_all');
 
+			const { isCurrent } = regionGuard.next();
 			fetchRegionViewData({
 				regions: regionsOnly,
 				model: $singleSelectionData.model,
 				scenario: $singleSelectionData.scenario,
 				pathway: $singleSelectionData.pathway
 			}).then((regionsData) => {
+				if (!isCurrent()) return;
 				cachedRegionsData = regionsData;
+				regionDataVersion++;
 			});
 		}
 	});
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <!-- TODO: Update preview image -->
 <Meta
@@ -522,112 +718,134 @@
 	image="/img/preview.jpg"
 />
 
-<PageHeaderSimple>
-	{#snippet heading()}
-		<div>
-			<h1 class="tracking-widest text-center">Scenario Explorer</h1>
-		</div>
-	{/snippet}
-	{#snippet subheading()}
-		<div>
-			<p class="text-sm text-center w-full md:w-[600px] mx-auto">
-				Explore the future of Australia's electricity market. A range of modelled scenarios exist
-				which envision the future of the NEM. These scenarios aim to steer Australia towards a
-				cost-effective, reliable and safe energy system en route to a zero-emissions network
-			</p>
-		</div>
-	{/snippet}
-</PageHeaderSimple>
+{#if !isFullscreen}
+	<PageHeaderSimple>
+		{#snippet heading()}
+			<div>
+				<h1 class="tracking-widest text-center">Scenario Explorer</h1>
+			</div>
+		{/snippet}
+		{#snippet subheading()}
+			<div>
+				<p class="text-sm text-center w-full md:w-[600px] mx-auto">
+					Explore the future of Australia's electricity market. A range of modelled scenarios exist
+					which envision the future of the NEM. These scenarios aim to steer Australia towards a
+					cost-effective, reliable and safe energy system en route to a zero-emissions network
+				</p>
+			</div>
+		{/snippet}
+	</PageHeaderSimple>
+{/if}
 
-<Filters />
+<Filters {isFullscreen} onfullscreenchange={toggleFullscreen} onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)} />
 
-<!-- WORKAROUND: class:relative={!$showScenarioOptions} to allow Pathway dropdown to layer above -->
 <div
-	class="max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
-	class:relative={!$showScenarioOptions}
+	class="relative max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
 >
 	<section class="w-full flex flex-col gap-12 md:w-[60%]">
-		{#each dataVizStoreNames as { name, chart } (name)}
-			{#if $selectedCharts.includes(chart)}
-				<ScenarioChart
-					store={dataVizStores[name]}
-					{hiddenRowNames}
-					{seriesLoadsIds}
-					onmousemove={handleMousemove}
-					onmouseout={handleMouseout}
-					onpointerup={handlePointerup}
-				/>
-			{/if}
-		{/each}
-
-		<!-- {#if fetching}
-			<div
-				class="h-screen bg-light-warm-grey flex justify-center items-center"
-				transition:fade={{ duration: 250 }}
-			>
-				<LogoMark />
-			</div>
+		{#if generationChart.seriesData.length === 0}
+			{#each $selectedCharts as key (key)}
+				{@const isHalfHeight = key === 'emissions' || key === 'intensity'}
+				<div class="relative">
+					<div
+						class="bg-warm-grey animate-pulse rounded-xl w-full {isHalfHeight
+							? 'h-[200px] md:h-[225px]'
+							: 'h-[400px] md:h-[450px]'}"
+					></div>
+					<div class="absolute inset-0 flex items-center justify-center">
+						<LogoMarkLoader />
+					</div>
+				</div>
+			{/each}
 		{:else}
-			{#each dataVizStoreNames as { name, chart } (name)}
-				{#if $selectedCharts.includes(chart)}
+			{#each chartEntries as { key, chart } (key)}
+				{#if $selectedCharts.includes(key)}
 					<ScenarioChart
-						store={dataVizStores[name]}
-						{hiddenRowNames}
-						on:mousemove={handleMousemove}
-						on:mouseout={handleMouseout}
-						on:pointerup={handlePointerup}
+						{chart}
+						projectionStartTime={overlayStartTime}
+						{seriesLoadsIds}
+						onhover={handleHover}
+						onhoverend={handleHoverEnd}
+						onfocus={handleFocus}
 					/>
 				{/if}
 			{/each}
-		{/if} -->
+		{/if}
 	</section>
 
-	{#if $isTechnologyViewSection}
-		<section class="md:w-[40%]">
-			<TableTechnology {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
-		</section>
-	{/if}
-	{#if $isScenarioViewSection}
-		<section class="md:w-[40%]">
-			<TableScenario title="Scenario" {hiddenRowNames} on:row-click={toggleRow} />
-		</section>
-	{/if}
-	{#if $isRegionViewSection}
-		<section class="md:w-[40%]">
-			<TableRegion title="Region" {seriesLoadsIds} {hiddenRowNames} on:row-click={toggleRow} />
-		</section>
-	{/if}
+	<section class="md:w-[40%]">
+		{#if generationChart.seriesData.length === 0}
+			<div class="flex flex-col gap-3 pt-12">
+				{#each Array(8) as _}
+					<Skeleton variant="text" class="h-6" />
+				{/each}
+			</div>
+		{:else if $isTechnologyViewSection}
+			<TableTechnology {seriesLoadsIds} {hiddenRowNames} onrowclick={toggleRow} />
+		{:else if $isScenarioViewSection}
+			<TableScenario
+				title="Scenario"
+				{hiddenRowNames}
+				onrowclick={toggleRow}
+			/>
+		{:else if $isRegionViewSection}
+			<TableRegion title="Region" {seriesLoadsIds} {hiddenRowNames} onrowclick={toggleRow} />
+		{/if}
+	</section>
 </div>
 
-<div class="text-base">
-	{#if $isTechnologyViewSection}
-		<DetailedTechnology
-			{seriesLoadsIds}
-			onmousemove={handleMousemove}
-			onmouseout={handleMouseout}
-			onpointerup={handlePointerup}
-		/>
-	{/if}
+{#if !isFullscreen}
+	<div class="text-base min-h-[600px]" use:lazyLoad>
+		{#if showDetailedSection}
+			{#if $isTechnologyViewSection}
+				<DetailedTechnology
+					{seriesLoadsIds}
+					onhover={handleHover}
+					onhoverend={handleHoverEnd}
+					onfocus={handleFocus}
+				/>
+			{/if}
 
-	{#if $isScenarioViewSection}
-		<DetailedScenario
-			onmousemove={handleMousemove}
-			onmouseout={handleMouseout}
-			onpointerup={handlePointerup}
-		/>
-	{/if}
+			{#if $isScenarioViewSection}
+				<DetailedScenario
+					onhover={handleHover}
+					onhoverend={handleHoverEnd}
+					onfocus={handleFocus}
+				/>
+			{/if}
 
-	{#if $isRegionViewSection}
-		<DetailedRegion
-			onmousemove={handleMousemove}
-			onmouseout={handleMouseout}
-			onpointerup={handlePointerup}
-		/>
-	{/if}
-</div>
+			{#if $isRegionViewSection}
+				<DetailedRegion
+					onhover={handleHover}
+					onhoverend={handleHoverEnd}
+					onfocus={handleFocus}
+				/>
+			{/if}
+		{:else}
+			<div class="container max-w-none lg:container px-0 md:px-16 lg:px-40">
+				<div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+					{#each Array(6) as _}
+						<Skeleton variant="chart" class="h-[250px] rounded-xl" />
+					{/each}
+				</div>
+			</div>
+		{/if}
+	</div>
 
-<ArticlesSection
-	analysisArticles={articles.filter(
-		(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
-	)}
+	<ArticlesSection
+		analysisArticles={articles.filter(
+			(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
+		)}
+	/>
+
+{/if}
+
+<ShortcutsToast
+	visible={showShortcutsToast}
+	ondismiss={() => (showShortcutsToast = false)}
+	shortcuts={[
+		{ label: 'Enter / exit full screen', keys: ['F'] },
+		{ label: 'Show shortcuts', keys: ['?'] },
+		{ label: 'Exit', keys: ['Esc'] }
+	]}
 />

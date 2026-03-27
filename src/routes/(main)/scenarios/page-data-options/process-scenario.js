@@ -1,277 +1,77 @@
 import { color } from 'd3-color';
-import Statistic from '$lib/utils/Statistic';
 import TimeSeries from '$lib/utils/TimeSeries';
 import parseInterval from '$lib/utils/intervals';
 import { loadFuelTechs } from '$lib/fuel_techs.js';
 
-import { fuelTechMap, orderMap } from './groups-scenario';
+import { fuelTechMap } from './groups-scenario';
 import { scenarioLabels } from './descriptions';
 import { scenarioColourMap } from './models';
-import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils';
+import sumFuelTechData from './sum-fuel-tech-data';
+import combineHistoryProjection from './combine-history-projection';
+import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData, currentFinancialYear } from './utils';
 
 /**
- * @param {{
- * historicalTimeSeries: TimeSeries,
- * projectionTimeSeries: TimeSeries,
- * baseUnit: string,
- * prefix: SiPrefix,
- * displayPrefix: SiPrefix,
- * allowedPrefixes: SiPrefix[],
- * }} param0
- * @returns {ProcessedDataViz}
- */
-function combineHistoryProjection({
-	historicalTimeSeries,
-	projectionTimeSeries,
-	baseUnit = '',
-	prefix = '',
-	displayPrefix = '',
-	allowedPrefixes = []
-}) {
-	const historicalTimeSeriesData = historicalTimeSeries.data;
-	const projectionTimeSeriesData = projectionTimeSeries.data;
-
-	// console.log('historicalTimeSeriesData', historicalTimeSeriesData);
-	// console.log('projectionTimeSeriesData', projectionTimeSeriesData);
-
-	/********* processing Combined series */
-	const lastHistory = historicalTimeSeriesData[historicalTimeSeriesData.length - 1];
-	const firstProjection = projectionTimeSeriesData[0];
-
-	if (lastHistory?.time && firstProjection?.time) {
-		// if last history time is the same as first projection time, remove the first projection data
-		// this is to avoid duplicate data points for comparing multiple scenarios of different years
-		const projectionData =
-			lastHistory?.time === firstProjection?.time
-				? projectionTimeSeriesData.slice(1)
-				: projectionTimeSeriesData;
-
-		// combine historical and projection data
-		const seriesData = [...historicalTimeSeriesData, ...projectionData];
-
-		// combine projection and historical series names to make sure they are all included in the time series
-		const seriesNames = [
-			...new Set([...projectionTimeSeries.seriesNames, ...historicalTimeSeries.seriesNames])
-		];
-
-		// combine projection and historical series colours and labels
-		/** @type {*} */
-		const seriesColours = {};
-		/** @type {*} */
-		const seriesLabels = {};
-		seriesNames.forEach((name) => {
-			seriesColours[name] =
-				historicalTimeSeries.seriesColours[name] || projectionTimeSeries.seriesColours[name];
-
-			seriesLabels[name] =
-				historicalTimeSeries.seriesLabels[name] || projectionTimeSeries.seriesLabels[name];
-		});
-		/********* end of processing Combined series */
-
-		return {
-			seriesData,
-			seriesNames,
-			nameOptions: [...seriesNames].reverse().map((name) => {
-				return { label: name, value: name };
-			}),
-			seriesColours,
-			seriesLabels,
-			yDomain: [0, null],
-			prefix,
-			baseUnit,
-			displayPrefix,
-			allowedPrefixes,
-			chartType: 'line'
-		};
-	}
-
-	return {
-		seriesData: [],
-		seriesNames: [],
-		seriesColours: {},
-		seriesLabels: {},
-		nameOptions: [],
-		seriesLoadsIds: [],
-		yDomain: [],
-		prefix,
-		baseUnit,
-		displayPrefix,
-		allowedPrefixes,
-		chartType: 'area'
-	};
-}
-
-/**
+ * Group projection stats by start date, transform each group into a TimeSeries,
+ * then merge them into a single projection object. This handles scenarios from
+ * different ISP models that have different projection start dates.
  *
- * @param {{
- * projections: {
- * 	id: string,
- * 	model: string,
- * 	scenario: string,
- * 	pathway: string,
- * 	projectionEnergyData: StatsData[],
- * 	projectionCapacityData: StatsData[],
- * 	projectionEmissionsData: StatsData[]
- * }[], history:  StatsData[], includeBatteryAndLoads: boolean}} param0
- * @returns
+ * @param {StatsData[]} stats
+ * @returns {{ data: TimeSeriesData[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> }}
  */
-function generation({ projections, history, includeBatteryAndLoads }) {
-	const group = includeBatteryAndLoads ? 'sources_loads' : 'sources_without_battery';
-
-	/********* processing Projection */
-	const projectionsStats = projections.map((projection) => {
-		return {
-			id: projection.id,
-			model: projection.model,
-			scenario: projection.scenario,
-			pathway: projection.pathway,
-			stats: new Statistic(projection.projectionEnergyData, 'projection', 'GWh')
-				.invertValues(loadFuelTechs)
-				.group(fuelTechMap[group], loadFuelTechs)
-				.reorder(orderMap[group] || [])
-		};
-	});
-
-	// derive net generation
-	// using total sources minus total load
-	// and create new stats data with all the scearios
-	/** @type {StatsData[]} */
-	const scenarioProjectionStats = [];
-
-	projectionsStats.forEach((projection) => {
-		if (projection.stats.data.length) {
-			const netGenerationStats = structuredClone(projection.stats.data[0]);
-			netGenerationStats.id = `${projection.id}`;
-			netGenerationStats.code = null;
-			netGenerationStats.fuel_tech = null;
-			netGenerationStats.label = scenarioLabels[projection.model][projection.scenario];
-			netGenerationStats.colour = scenarioColourMap[`${projection.model}-${projection.scenario}`];
-
-			if (includeBatteryAndLoads) {
-				const dataLoads = projection.stats.data[0].projection.data;
-				const dataSources = projection.stats.data[1].projection.data;
-				const netGenerationData = dataSources.map((/** @type {any} */ d, /** @type {any} */ i) => d + dataLoads[i]); // loads are already negative
-				netGenerationStats.projection.data = netGenerationData;
-			}
-
-			scenarioProjectionStats.push(netGenerationStats);
-		}
-	});
-
-	// group by start date and create time series for each start date
-	const starts = [...new Set(scenarioProjectionStats.map((d) => d.projection?.start))].map((d) => {
-		const stats = scenarioProjectionStats.filter((s) => s.projection?.start === d);
+function mergeProjectionsByStartDate(stats) {
+	const starts = [...new Set(stats.map((d) => d.projection?.start))].map((d) => {
+		const group = stats.filter((s) => s.projection?.start === d);
 		const timeSeries = new TimeSeries(
-			stats,
+			group,
 			parseInterval('1Y'),
 			'projection',
 			undefined,
 			undefined
 		).transform();
 
-		// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
 		timeSeries.data = mutateDatesToStartOfYear(timeSeries.data, 1);
 
-		return {
-			start: d,
-			stats,
-			timeSeries
-		};
+		return { start: d, timeSeries };
 	});
 
 	/** @type {TimeSeriesData[]} */
-	let mergedTimeSeriesData = [];
+	let mergedData = [];
 	starts.forEach((start) => {
-		if (mergedTimeSeriesData.length === 0) {
-			mergedTimeSeriesData = [...start.timeSeries.data];
+		if (mergedData.length === 0) {
+			mergedData = [...start.timeSeries.data];
 		} else {
-			start.timeSeries.data.forEach((d, i) => {
-				const index = mergedTimeSeriesData.findIndex((m) => m.date.getTime() === d.date.getTime());
+			start.timeSeries.data.forEach((d) => {
+				const index = mergedData.findIndex((m) => m.date.getTime() === d.date.getTime());
 				if (index !== -1) {
-					mergedTimeSeriesData[index] = {
-						...mergedTimeSeriesData[index],
-						...d
-					};
+					mergedData[index] = { ...mergedData[index], ...d };
 				} else {
-					mergedTimeSeriesData.push(d);
+					mergedData.push(d);
 				}
 			});
 		}
 	});
 
-	// sort the merged time series
-	mergedTimeSeriesData.sort((a, b) => a.time - b.time);
+	mergedData.sort((a, b) => a.time - b.time);
 
-	// combine all the time series
-/** @type {*} */
-	const projectionTimeSeries = starts.reduce(
-		(/** @type {any} */ acc, start) => {
-			return {
-				data: [],
-				seriesNames: [...acc.seriesNames, ...start.timeSeries.seriesNames],
-				seriesColours: { ...acc.seriesColours, ...start.timeSeries.seriesColours },
-				seriesLabels: { ...acc.seriesLabels, ...start.timeSeries.seriesLabels },
-				statsType: 'projection',
-				maxY: 0,
-				minY: 0,
-				statsInterval: start.timeSeries.statsInterval
-			};
-		},
+	const result = starts.reduce(
+		(/** @type {any} */ acc, start) => ({
+			data: [],
+			seriesNames: [...acc.seriesNames, ...start.timeSeries.seriesNames],
+			seriesColours: { ...acc.seriesColours, ...start.timeSeries.seriesColours },
+			seriesLabels: { ...acc.seriesLabels, ...start.timeSeries.seriesLabels },
+			statsType: 'projection',
+			maxY: 0,
+			minY: 0,
+			statsInterval: start.timeSeries.statsInterval
+		}),
 		{ data: [], seriesNames: [], seriesColours: {}, seriesLabels: {} }
 	);
 
-	projectionTimeSeries.data = mergedTimeSeriesData;
-	/********* end of processing Projection */
-
-	/********* processing Historical */
-	const historicalStats = new Statistic(history, 'history', 'GWh')
-		.invertValues(loadFuelTechs)
-		.group(fuelTechMap[group], loadFuelTechs)
-		.reorder(orderMap[group] || []);
-
-	const netGenerationStats = structuredClone(historicalStats.data[0]);
-	netGenerationStats.id = `historical`;
-	netGenerationStats.code = null;
-	netGenerationStats.fuel_tech = null;
-	netGenerationStats.label = 'Historical';
-	netGenerationStats.colour = '#000';
-
-	if (includeBatteryAndLoads) {
-		const dataLoads = historicalStats.data[0].history.data;
-		const dataSources = historicalStats.data[1].history.data;
-		const netGenerationData = dataSources.map((/** @type {any} */ d, /** @type {any} */ i) => d + dataLoads[i]); // loads are already negative
-
-		netGenerationStats.history.data = netGenerationData;
-	}
-
-	const historicalTimeSeries = new TimeSeries(
-		[netGenerationStats],
-		parseInterval('1M'),
-		'history',
-		undefined,
-		undefined
-	)
-		.transform()
-		.rollup(parseInterval('FY'));
-
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
-	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
-	);
-	/********* end of processing History */
-
-	return combineHistoryProjection({
-		historicalTimeSeries,
-		projectionTimeSeries,
-		baseUnit: projectionsStats[0].stats.baseUnit,
-		prefix: projectionsStats[0].stats.prefix,
-		displayPrefix: 'T',
-		allowedPrefixes: ['G', 'T']
-	});
+	result.data = mergedData;
+	return result;
 }
 
 /**
- *
  * @param {{
  * projections: {
  * 	id: string,
@@ -281,118 +81,137 @@ function generation({ projections, history, includeBatteryAndLoads }) {
  * 	projectionEnergyData: StatsData[],
  * 	projectionCapacityData: StatsData[],
  * 	projectionEmissionsData: StatsData[]
- * }[], history:  StatsData[], includeBatteryAndLoads: boolean}} param0
+ * }[], history: StatsData[], includeBatteryAndLoads: boolean}} param0
+ * @returns
+ */
+function generation({ projections, history, includeBatteryAndLoads }) {
+	const group = includeBatteryAndLoads ? 'sources_loads' : 'sources_without_battery';
+	const groupMap = fuelTechMap[group];
+
+	/********* processing Projection */
+	/** @type {StatsData[]} */
+	const scenarioProjectionStats = [];
+
+	projections.forEach((projection) => {
+		const netStats = sumFuelTechData(projection.projectionEnergyData, 'projection', groupMap, {
+			negateFuelTechs: loadFuelTechs,
+			id: projection.id,
+			label: scenarioLabels[projection.model][projection.scenario],
+			colour: scenarioColourMap[`${projection.model}-${projection.scenario}`]
+		});
+		if (netStats) scenarioProjectionStats.push(netStats);
+	});
+
+	const projectionTimeSeries = mergeProjectionsByStartDate(scenarioProjectionStats);
+	/********* end of processing Projection */
+
+	/********* processing Historical */
+	const historicalNetStats = sumFuelTechData(history, 'history', groupMap, {
+		negateFuelTechs: loadFuelTechs,
+		id: 'historical',
+		label: 'Historical',
+		colour: '#000'
+	});
+
+	const historicalTimeSeries = new TimeSeries(
+		historicalNetStats ? [historicalNetStats] : [],
+		parseInterval('1M'),
+		'history',
+		undefined,
+		undefined
+	)
+		.transform()
+		.rollup(parseInterval('FY'));
+
+	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
+	);
+	/********* end of processing History */
+
+	return combineHistoryProjection({
+		historicalTimeSeries,
+		projectionTimeSeries,
+
+		baseUnit: 'Wh',
+		prefix: /** @type {SiPrefix} */ ('G'),
+		displayPrefix: 'T',
+		allowedPrefixes: ['G', 'T'],
+		chartType: 'line',
+		keepFullHistory: true
+	});
+}
+
+/**
+ * @param {{
+ * projections: {
+ * 	id: string,
+ * 	model: string,
+ * 	scenario: string,
+ * 	pathway: string,
+ * 	projectionEnergyData: StatsData[],
+ * 	projectionCapacityData: StatsData[],
+ * 	projectionEmissionsData: StatsData[]
+ * }[], history: StatsData[], includeBatteryAndLoads: boolean}} param0
  * @returns
  */
 function capacity({ projections, history, includeBatteryAndLoads }) {
 	const group = includeBatteryAndLoads ? 'sources_loads' : 'sources_without_battery';
+	const groupMap = fuelTechMap[group];
 
 	/********* processing Projection */
-	const projectionsStats = projections.map((projection) => {
-		return {
-			id: projection.id,
-			model: projection.model,
-			scenario: projection.scenario,
-			pathway: projection.pathway,
-			stats: new Statistic(projection.projectionCapacityData, 'projection', 'MW')
-				.group(fuelTechMap[group])
-				.reorder(orderMap[group] || [])
-		};
-	});
-
-	// set the capacity data
-	// using total sources
-	// and create new stats data with all the scearios
 	/** @type {StatsData[]} */
 	const scenarioProjectionStats = [];
 
-	projectionsStats.forEach((projection) => {
-		// total_sources is the second data in the projection stats
-		// TODO: update this to be more reliable
-		const index = includeBatteryAndLoads ? 1 : 0;
-		const capacityStats = projection.stats.data[index]
-			? structuredClone(projection.stats.data[index])
-			: structuredClone(projection.stats.data[0]);
-
-		if (capacityStats) {
-			capacityStats.id = `${projection.id}`;
-			capacityStats.code = null;
-			capacityStats.fuel_tech = null;
-			capacityStats.label = scenarioLabels[projection.model][projection.scenario];
-			capacityStats.colour = scenarioColourMap[`${projection.model}-${projection.scenario}`];
-
-			scenarioProjectionStats.push(capacityStats);
-		}
+	projections.forEach((projection) => {
+		// For capacity, only include sources (exclude loads group)
+		const stats = sumFuelTechData(projection.projectionCapacityData, 'projection', groupMap, {
+			excludeGroups: ['total_loads'],
+			id: projection.id,
+			label: scenarioLabels[projection.model][projection.scenario],
+			colour: scenarioColourMap[`${projection.model}-${projection.scenario}`]
+		});
+		if (stats) scenarioProjectionStats.push(stats);
 	});
 
-	const projectionTimeSeries = new TimeSeries(
-		scenarioProjectionStats,
-		parseInterval('1Y'),
-		'projection',
-		undefined,
-		undefined
-	).transform();
-
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
-	projectionTimeSeries.data = mutateDatesToStartOfYear(projectionTimeSeries.data, 1);
+	const projectionTimeSeries = mergeProjectionsByStartDate(scenarioProjectionStats);
 	/********* end of processing Projection */
 
-	// console.log('capacity projectionsStats', projectionsStats);
-	// console.log('capacity scenarioProjectionStats', scenarioProjectionStats);
-	// console.log('capacity projectionTimeSeries', projectionTimeSeries);
-
 	/********* processing Historical */
-	const historicalStats = new Statistic(history, 'history', 'MW')
-		.invertValues(loadFuelTechs)
-		.group(fuelTechMap[group], loadFuelTechs)
-		.reorder(orderMap[group] || []);
-
-	const netCapacityStats = structuredClone(historicalStats.data[0]);
-	netCapacityStats.id = `historical`;
-	netCapacityStats.code = null;
-	netCapacityStats.fuel_tech = null;
-	netCapacityStats.label = 'Historical';
-	netCapacityStats.colour = '#000';
-
-	if (includeBatteryAndLoads) {
-		const totalSources = historicalStats.data.find((/** @type {any} */ d) => d.fuel_tech === 'total_sources');
-		const totalLoads = historicalStats.data.find((/** @type {any} */ d) => d.fuel_tech === 'total_loads');
-		const dataLoads = totalLoads ? totalLoads.history.data : [];
-		const dataSources = totalSources.history.data;
-		const netCapacityData = dataSources.map((/** @type {any} */ d, /** @type {any} */ i) => d + dataLoads[i]); // loads are already negative
-
-		netCapacityStats.history.data = netCapacityData;
-	}
+	const historicalNetStats = sumFuelTechData(history, 'history', groupMap, {
+		excludeGroups: ['total_loads'],
+		id: 'historical',
+		label: 'Historical',
+		colour: '#000'
+	});
 
 	const historicalTimeSeries = new TimeSeries(
-		[netCapacityStats],
+		historicalNetStats ? [historicalNetStats] : [],
 		parseInterval('1Y'),
 		'history',
 		undefined,
 		undefined
 	).transform();
 
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
-	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+	// Capacity is already in FY — add 1 year to align display dates
+	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data, 1).filter(
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */
-
-	// console.log('capacity historicalStats', historicalStats);
-	// console.log('capacity historicalTimeSeries', historicalTimeSeries);
 
 	return combineHistoryProjection({
 		historicalTimeSeries,
 		projectionTimeSeries,
-		baseUnit: projectionsStats[0].stats.baseUnit,
-		prefix: projectionsStats[0].stats.prefix,
+
+		baseUnit: 'W',
+		prefix: /** @type {SiPrefix} */ ('M'),
 		displayPrefix: 'G',
-		allowedPrefixes: ['M', 'G']
+		allowedPrefixes: ['M', 'G'],
+		chartType: 'line',
+		keepFullHistory: true
 	});
 }
 
 /**
- *
  * @param {{
  * projections: {
  * 	id: string,
@@ -402,62 +221,39 @@ function capacity({ projections, history, includeBatteryAndLoads }) {
  * 	projectionEnergyData: StatsData[],
  * 	projectionCapacityData: StatsData[],
  * 	projectionEmissionsData: StatsData[]
- * }[], history:  StatsData[], includeBatteryAndLoads: boolean}} param0
+ * }[], history: StatsData[], includeBatteryAndLoads: boolean}} param0
  * @returns
  */
 function emissions({ projections, history, includeBatteryAndLoads }) {
 	/********* processing Projection */
-	const projectionsStats = projections.map((projection) => {
-		return {
-			id: projection.id,
-			model: projection.model,
-			scenario: projection.scenario,
-			pathway: projection.pathway,
-			stats: new Statistic(projection.projectionEmissionsData, 'projection', 'tCO2e')
-		};
-	});
-
 	/** @type {StatsData[]} */
 	const scenarioProjectionStats = [];
 
-	projectionsStats.forEach((projection) => {
-		const emissionStats = structuredClone(projection.stats.data[0]);
-
-		if (emissionStats) {
-			emissionStats.id = `${projection.id}`;
-			emissionStats.code = null;
-			emissionStats.fuel_tech = null;
-			emissionStats.label = scenarioLabels[projection.model][projection.scenario];
-			emissionStats.colour = scenarioColourMap[`${projection.model}-${projection.scenario}`];
-
-			scenarioProjectionStats.push(emissionStats);
+	projections.forEach((projection) => {
+		if (projection.projectionEmissionsData.length) {
+			const first = projection.projectionEmissionsData[0];
+			scenarioProjectionStats.push({
+				...first,
+				id: projection.id,
+				code: null,
+				fuel_tech: null,
+				label: scenarioLabels[projection.model][projection.scenario],
+				colour: scenarioColourMap[`${projection.model}-${projection.scenario}`]
+			});
 		}
 	});
 
-	const projectionTimeSeries = new TimeSeries(
-		scenarioProjectionStats,
-		parseInterval('1Y'),
-		'projection',
-		undefined,
-		undefined
-	).transform();
-
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
-	projectionTimeSeries.data = mutateDatesToStartOfYear(projectionTimeSeries.data, 1);
+	const projectionTimeSeries = mergeProjectionsByStartDate(scenarioProjectionStats);
 	/********* end of processing Projection */
-
-	// console.log('emissions projectionsStats', projectionsStats);
-	// console.log('emissions projectionTimeSeries', projectionTimeSeries);
 
 	/********* processing Historical */
 	const merged = mergeHistoricalEmissionsData(history, includeBatteryAndLoads);
-	const historicalStats = new Statistic(merged, 'history', 'tCO2e');
-	historicalStats.data[0].id = 'historical';
-	historicalStats.data[0].label = 'Historical';
-	historicalStats.data[0].colour = '#444444';
+	merged[0].id = 'historical';
+	merged[0].label = 'Historical';
+	merged[0].colour = '#444444';
 
 	const historicalTimeSeries = new TimeSeries(
-		historicalStats.data,
+		merged,
 		parseInterval('1M'),
 		'history',
 		undefined,
@@ -466,70 +262,78 @@ function emissions({ projections, history, includeBatteryAndLoads }) {
 		.transform()
 		.rollup(parseInterval('FY'));
 
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */
-
-	// console.log('emissions history', history);
-	// console.log('emissions historicalStats', historicalStats);
-	// console.log('emissions netEmissionsStats', netEmissionsStats);
-	// console.log('emissions historicalTimeSeries', historicalTimeSeries);
 
 	return combineHistoryProjection({
 		historicalTimeSeries,
 		projectionTimeSeries,
-		baseUnit: projectionsStats[0].stats.baseUnit,
-		prefix: projectionsStats[0].stats.prefix,
+
+		baseUnit: 'tCO2e',
+		prefix: /** @type {SiPrefix} */ (''),
 		displayPrefix: 'k',
-		allowedPrefixes: ['k', 'M']
+		allowedPrefixes: ['k', 'M'],
+		chartType: 'line',
+		keepFullHistory: true
 	});
 }
+
 /**
- *
  * @param {{processedEmissions: ProcessedDataViz, processedEnergy: ProcessedDataViz}} param0
  * @returns {ProcessedDataViz}
  */
 function intensity({ processedEmissions, processedEnergy }) {
-	const processedIntensity = structuredClone(processedEmissions);
-	const seriesNames = processedIntensity.seriesNames;
+	const seriesNames = processedEmissions.seriesNames;
 
-	processedIntensity.seriesData = processedEmissions.seriesData.map((d, i) => {
-		/** @type {Record<string, any>} */
-		const obj = {
+	// Build a time-keyed lookup for energy data so we match by date, not index.
+	// Emissions and energy arrays can differ in length when scenarios have
+	// different projection start dates (e.g. 2018 vs 2026 ISP).
+	/** @type {Map<number, Record<string, any>>} */
+	const energyByTime = new Map();
+	processedEnergy.seriesData.forEach((d) => {
+		energyByTime.set(d.time, d);
+	});
+
+	const seriesData = processedEmissions.seriesData.map((d) => {
+		/** @type {TimeSeriesData} */
+		const obj = /** @type {any} */ ({
 			date: d.date,
 			time: d.time
-		};
+		});
+
+		const energyRecord = energyByTime.get(d.time);
 
 		seriesNames.forEach((/** @type {string} */ name) => {
 			/** @type {Record<string, any>} */
 			const dRecord = d;
-			/** @type {Record<string, any>} */
-			const energyRecord = processedEnergy.seriesData[i];
-			if (dRecord[name] && energyRecord[name]) {
-				obj[name] = dRecord[name] / energyRecord[name];
+			if (dRecord[name] && energyRecord && energyRecord[name]) {
+				/** @type {Record<string, any>} */ (obj)[name] = dRecord[name] / energyRecord[name];
 			}
 		});
 
 		return obj;
 	});
 
-	processedIntensity.yDomain = [0, 1200];
-	processedIntensity.chartType = 'line';
-	processedIntensity.prefix = '';
-	processedIntensity.baseUnit = 'kgCO2e/MWh';
-	processedIntensity.displayPrefix = '';
-	processedIntensity.allowedPrefixes = [];
-
-	return processedIntensity;
+	return {
+		...processedEmissions,
+		seriesData,
+		yDomain: [0, 1200],
+		chartType: 'line',
+		prefix: /** @type {SiPrefix} */ (''),
+		baseUnit: 'kgCO2e/MWh',
+		displayPrefix: /** @type {SiPrefix} */ (''),
+		allowedPrefixes: /** @type {SiPrefix[]} */ ([])
+	};
 }
 
 /**
  * @param {string[]} seriesNames
+ * @param {Record<string, string>} [overrides]
  * @returns {Record<string, string>}
  */
-function getScenarioColours(seriesNames) {
+function getScenarioColours(seriesNames, overrides = {}) {
 	const scenarioPathways = seriesNames.filter((/** @type {string} */ name) => name !== 'historical');
 
 	const scenarioPathwayDetails = scenarioPathways.map((/** @type {string} */ name) => {
@@ -570,6 +374,12 @@ function getScenarioColours(seriesNames) {
 			}
 		});
 	});
+
+	for (const [key, value] of Object.entries(overrides)) {
+		if (key in newColours && value) {
+			newColours[key] = value;
+		}
+	}
 
 	return newColours;
 }

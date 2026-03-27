@@ -7,57 +7,52 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {(data: any) => void} [onmousemove]
-	 * @property {() => void} [onmouseout]
-	 * @property {(data: any) => void} [onpointerup]
+	 * @property {(data: any) => void} [onhover]
+	 * @property {() => void} [onhoverend]
+	 * @property {(data: any) => void} [onfocus]
 	 */
 
 	/** @type {Props} */
-	let { onmousemove, onmouseout, onpointerup } = $props();
+	let { onhover, onhoverend, onfocus } = $props();
 
-	/** @type {Object.<string, *>} */
-	const dataVizStores = {
-		energyDataVizStore: getContext('energy-data-viz'),
-		emissionsDataVizStore: getContext('emissions-data-viz'),
-		capacityDataVizStore: getContext('capacity-data-viz'),
-		intensityDataVizStore: getContext('intensity-data-viz')
-	};
-
+	const { generation, emissions, intensity, capacity } = getContext('scenario-charts');
 	const { singleSelectionModel } = getContext('scenario-filters');
 
-	let selectedStoreName = $state('energyDataVizStore');
+	/** @type {Record<string, any>} */
+	const chartStores = {
+		generation,
+		emissions,
+		capacity
+	};
+
+	let selectedChartName = $state('generation');
 
 	const stores = [
-		{ value: 'energyDataVizStore', label: 'Generation' },
-		{ value: 'emissionsDataVizStore', label: 'Emissions' },
-		{ value: 'capacityDataVizStore', label: 'Capacity' }
+		{ value: 'generation', label: 'Generation' },
+		{ value: 'emissions', label: 'Emissions' },
+		{ value: 'capacity', label: 'Capacity' }
 	];
 
-	let isEmissionsView = $derived(selectedStoreName === 'emissionsDataVizStore');
+	let isEmissionsView = $derived(selectedChartName === 'emissions');
 
-	let selectedStore = $derived(dataVizStores[selectedStoreName]);
-	let seriesNames = $derived(selectedStore.seriesNames);
-	let seriesLabels = $derived(selectedStore.seriesLabels);
-	let seriesColours = $derived(selectedStore.seriesColours);
-	let xTicks = $derived(selectedStore.miniXTicks);
-	let formatTickX = $derived(selectedStore.formatTickX);
-	let formatTickY = $derived(selectedStore.convertAndFormatValue);
-	let chartOverlay = $derived(selectedStore.chartOverlay);
-	let chartOverlayLine = $derived(selectedStore.chartOverlayLine);
-	let chartOverlayHatchStroke = $derived(selectedStore.chartOverlayHatchStroke);
-	let hoverData = $derived(selectedStore.hoverData);
-	let focusData = $derived(selectedStore.focusData);
-	let seriesData = $derived(selectedStore.seriesData);
-	let displayUnit = $derived(selectedStore.displayUnit);
+	let selectedChart = $derived(chartStores[selectedChartName]);
+	let seriesNames = $derived(selectedChart.seriesNames);
+	let seriesLabels = $derived(selectedChart.seriesLabels);
+	let seriesColours = $derived(selectedChart.seriesColours);
+	let xTicks = $derived(selectedChart.xTicks);
+	let formatTickX = $derived(selectedChart.formatTickX);
+	let formatTickY = $derived(selectedChart.convertAndFormatValue);
+	let hoverTime = $derived(selectedChart.hoverTime);
+	let focusTime = $derived(selectedChart.focusTime);
+	let overlayStart = $derived(selectedChart.chartStyles.chartOverlayLine);
+	let seriesData = $derived(selectedChart.seriesData);
+	let displayUnit = $derived(selectedChart.chartOptions.displayUnit);
 
-	let intensityStore = $derived(dataVizStores.intensityDataVizStore);
-	let intensityFormatTickY = $derived(intensityStore.convertAndFormatValue);
-	let intensitySeriesLabels = $derived(intensityStore.seriesLabels);
-	let intensitySeriesColours = $derived(intensityStore.seriesColours);
-	let intensityHoverData = $derived(intensityStore.hoverData);
-	let intensityFocusData = $derived(intensityStore.focusData);
-	let intensitySeriesData = $derived(intensityStore.seriesData);
-	let intensityDisplayUnit = $derived(intensityStore.displayUnit);
+	let intensityFormatTickY = $derived(intensity.convertAndFormatValue);
+	let intensitySeriesLabels = $derived(intensity.seriesLabels);
+	let intensitySeriesColours = $derived(intensity.seriesColours);
+	let intensitySeriesData = $derived(intensity.seriesData);
+	let intensityDisplayUnit = $derived(intensity.chartOptions.displayUnit);
 
 	let isAemo2024 = $derived($singleSelectionModel === 'aemo2024');
 </script>
@@ -75,8 +70,8 @@
 		<div class="flex justify-center mb-12">
 			<Switch
 				buttons={stores}
-				selected={selectedStoreName}
-				onchange={(detail) => (selectedStoreName = detail.value)}
+				selected={selectedChartName}
+				onchange={(detail) => (selectedChartName = detail.value)}
 				class="justify-center"
 			/>
 		</div>
@@ -84,63 +79,57 @@
 		{#if isEmissionsView}
 			<div class="grid grid-cols-2 gap-3">
 				<MiniCharts
-					seriesNames={[...$seriesNames].reverse()}
-					seriesLabels={$seriesLabels}
-					seriesColours={$seriesColours}
-					xTicks={$xTicks}
-					formatTickX={$formatTickX}
-					formatTickY={$formatTickY}
-					chartOverlay={$chartOverlay}
-					chartOverlayLine={$chartOverlayLine}
-					chartOverlayHatchStroke={$chartOverlayHatchStroke}
-					hoverData={$hoverData}
-					focusData={$focusData}
-					seriesData={$seriesData}
-					displayUnit={$displayUnit}
+					seriesNames={[...seriesNames].reverse()}
+					{seriesLabels}
+					{seriesColours}
+					{xTicks}
+					{formatTickX}
+					{formatTickY}
+					{overlayStart}
+					{hoverTime}
+					{focusTime}
+					{seriesData}
+					{displayUnit}
 					gridColClass="grid-cols-1"
-					{onmousemove}
-					{onmouseout}
-					{onpointerup}
+					{onhover}
+					{onhoverend}
+					{onfocus}
 				/>
 				<MiniCharts
-					seriesNames={[...$seriesNames].reverse()}
-					seriesLabels={$intensitySeriesLabels}
-					seriesColours={$intensitySeriesColours}
-					xTicks={$xTicks}
-					formatTickX={$formatTickX}
-					formatTickY={$intensityFormatTickY}
-					chartOverlay={$chartOverlay}
-					chartOverlayLine={$chartOverlayLine}
-					chartOverlayHatchStroke={$chartOverlayHatchStroke}
-					hoverData={$intensityHoverData}
-					focusData={$intensityFocusData}
-					seriesData={$intensitySeriesData}
-					displayUnit={$intensityDisplayUnit}
+					seriesNames={[...seriesNames].reverse()}
+					seriesLabels={intensitySeriesLabels}
+					seriesColours={intensitySeriesColours}
+					{xTicks}
+					{formatTickX}
+					formatTickY={intensityFormatTickY}
+					{overlayStart}
+					{hoverTime}
+					{focusTime}
+					seriesData={intensitySeriesData}
+					displayUnit={intensityDisplayUnit}
 					showArea={false}
 					gridColClass="grid-cols-1"
-					{onmousemove}
-					{onmouseout}
-					{onpointerup}
+					{onhover}
+					{onhoverend}
+					{onfocus}
 				/>
 			</div>
 		{:else}
 			<MiniCharts
-				seriesNames={[...$seriesNames].reverse()}
-				seriesLabels={$seriesLabels}
-				seriesColours={$seriesColours}
-				xTicks={$xTicks}
-				formatTickX={$formatTickX}
-				formatTickY={$formatTickY}
-				chartOverlay={$chartOverlay}
-				chartOverlayLine={$chartOverlayLine}
-				chartOverlayHatchStroke={$chartOverlayHatchStroke}
-				hoverData={$hoverData}
-				focusData={$focusData}
-				seriesData={$seriesData}
-				displayUnit={$displayUnit}
-				{onmousemove}
-				{onmouseout}
-				{onpointerup}
+				seriesNames={[...seriesNames].reverse()}
+				{seriesLabels}
+				{seriesColours}
+				{xTicks}
+				{formatTickX}
+				{formatTickY}
+				{overlayStart}
+				{hoverTime}
+				{focusTime}
+				{seriesData}
+				{displayUnit}
+				{onhover}
+				{onhoverend}
+				{onfocus}
 			/>
 		{/if}
 	</section>

@@ -10,7 +10,9 @@ export const getNumberFormat = (maximumFractionDigits = 0, useGrouping = true) =
 	});
 
 export const formatFyTickX = (/** @type {Date | number} */ d) => {
-	return format(d, 'yyyy');
+	const year = parseInt(format(d, 'yyyy'), 10);
+	const curr = String(year).slice(-2);
+	return `FY${curr}`;
 };
 
 export const formatValue = (/** @type {number | null | undefined} */ d) => {

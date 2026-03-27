@@ -3,13 +3,24 @@
 	import { scenarioLabels, scenarioDescriptions } from '../descriptions';
 
 	const { selectedModel, selectedScenario } = getContext('scenario-filters');
+
+	let label = $derived(scenarioLabels[$selectedModel]?.[$selectedScenario] || '');
+	let description = $derived(
+		/** @type {any} */ (scenarioDescriptions)[$selectedModel]?.[$selectedScenario] || ''
+	);
 </script>
 
-<div class="mt-12 pointer-events-none">
-	<h6 class="subhead-secondary mb-6 md:block hidden">
-		{scenarioLabels[$selectedModel][$selectedScenario]}
-	</h6>
-	<p class="text-dark-grey text-base leading-base font-semibold md:text-xl md:leading-xl">
-		{/** @type {any} */ (scenarioDescriptions)[$selectedModel][$selectedScenario]}
-	</p>
-</div>
+{#if label || description}
+	<div class="pointer-events-none">
+		{#if label}
+			<h6 class="subhead-secondary mb-6">
+				{label}
+			</h6>
+		{/if}
+		{#if description}
+			<p class="text-dark-grey text-base leading-base font-semibold md:text-xl md:leading-xl">
+				{description}
+			</p>
+		{/if}
+	</div>
+{/if}

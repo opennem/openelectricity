@@ -1,89 +1,67 @@
 <script>
-	import { run } from 'svelte/legacy';
-
 	import { getContext } from 'svelte';
 
-	import Switch from '$lib/components/Switch.svelte';
-	import IconPlus from '$lib/icons/Plus.svelte';
-	import IconMinus from '$lib/icons/Minus.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 
-	import Selection from '../Selection.svelte';
+	import { modelOptions } from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
+	import { homepageDataTechnologyGroupOptions } from '../helpers';
 
-	import { modelOptions, dataViewOptions, displayViewOptions } from '../options';
-	import { scenarioLabels } from '../descriptions';
-	import { homepageDataTechnologyGroupOptions, dataRegionCompareOptions } from '../helpers';
+	let { isFetching = false, selectedGroup = 'homepage_preview', ongroupchange } = $props();
 
-	const {
-		selectedModel,
+	const { selectedModel, scenarioOptions, selectedScenario } = getContext('scenario-filters');
 
-		scenarioOptions,
-		selectedRegion,
-		selectedDataView,
-		selectedDisplayView,
-		selectedScenario,
+	// Map modelOptions to FormSelect format
+	const modelSelectOptions = modelOptions.map((m) => ({
+		value: m.value,
+		label: m.label
+	}));
 
-		showScenarioOptions,
+	$selectedModel = modelSelectOptions[0].value;
 
-		isTechnologyDisplay,
-		isScenarioDisplay,
-		isRegionDisplay
-	} = getContext('scenario-filters');
-
-	const { selectedGroup } = getContext('scenario-data');
-
-	$selectedModel = modelOptions[0].value;
-	$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
-
-	run(() => {
-		if ($isTechnologyDisplay) {
-			$selectedGroup = homepageDataTechnologyGroupOptions[0].value;
-		} else {
-			$selectedGroup = dataRegionCompareOptions[0].value;
-		}
-	});
+	let scenarios = $derived($scenarioOptions || []);
 </script>
 
-<div class="text-sm">
-	<div class="">
-		<p>
-			A range of modelled scenarios exist which envision the evolution of Australia's National
-			Electricity Market (NEM) over the coming decades.
-		</p>
-		<p>
-			These scenarios aim to steer Australia towards a cost-effective, reliable and safe energy
-			system en route to a zero-emissions electricity network.
-		</p>
-
-		<p class="mb-0">Explore the scenarios:</p>
-
+<div
+	class="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-x-6 md:gap-y-3 text-sm border-b border-warm-grey pb-4 mb-2"
+>
+	<div class="flex items-center justify-between gap-2 md:justify-start">
+		<span class="text-mid-grey whitespace-nowrap w-[35%] md:w-auto">Model</span>
 		<FormSelect
-			paddingY="py-3"
-			paddingX="px-4"
-			options={modelOptions}
+			options={modelSelectOptions}
 			selected={$selectedModel}
 			onchange={(option) => ($selectedModel = option.value)}
 		/>
 	</div>
 
-	<div
-		class="grid gap-3 mt-6"
-		class:grid-cols-3={$scenarioOptions.length === 3}
-		class:grid-cols-2={$scenarioOptions.length !== 3}
-	>
-		{#each $scenarioOptions as { label, value } (value)}
-			<button
-				class="w-full rounded-lg border hover:bg-light-warm-grey px-6 py-4 capitalize text-left leading-sm"
-				class:border-mid-warm-grey={$selectedScenario !== value}
-				class:text-mid-grey={$selectedScenario !== value}
-				class:border-dark-grey={$selectedScenario === value}
-				class:bg-white={$selectedScenario !== value}
-				class:bg-light-warm-grey={$selectedScenario === value}
-				{value}
-				onclick={() => ($selectedScenario = value)}
-			>
-				{label}
-			</button>
-		{/each}
+	<div class="flex items-center justify-between gap-2 md:justify-start">
+		<span class="text-mid-grey whitespace-nowrap w-[35%] md:w-auto">Scenario</span>
+		<FormSelect
+			options={scenarios}
+			selected={$selectedScenario}
+			onchange={(option) => ($selectedScenario = option.value)}
+		/>
 	</div>
+
+	<div class="flex items-center justify-between gap-2 md:justify-start">
+		<span class="text-mid-grey whitespace-nowrap w-[35%] md:w-auto">View</span>
+		<FormSelect
+			options={homepageDataTechnologyGroupOptions}
+			selected={selectedGroup}
+			onchange={(option) => ongroupchange?.(/** @type {string} */ (option.value))}
+		/>
+	</div>
+
+	{#if isFetching}
+		<svg
+			class="animate-spin h-4 w-4 text-mid-grey shrink-0"
+			xmlns="http://www.w3.org/2000/svg"
+			fill="none"
+			viewBox="0 0 24 24"
+		>
+			<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+			></circle>
+			<path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+			></path>
+		</svg>
+	{/if}
 </div>

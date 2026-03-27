@@ -1,205 +1,84 @@
 <script>
-	import { untrack, getContext } from 'svelte';
-	import StackedAreaChart from '$lib/components/charts/StackedAreaChart.svelte';
-	import LineChart from '$lib/components/charts/LineChart.svelte';
-
+	import { getContext } from 'svelte';
+	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
 	import Tooltip from './Tooltip.svelte';
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {any} store
-	 * @property {string[]} [hiddenRowNames]
+	 * @property {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
+	 * @property {number} [projectionStartTime]
 	 * @property {FuelTechCode[]} [seriesLoadsIds]
-	 * @property {(data: any) => void} [onmousemove]
-	 * @property {() => void} [onmouseout]
-	 * @property {(data: any) => void} [onpointerup]
+	 * @property {(time: number, key?: string) => void} [onhover]
+	 * @property {() => void} [onhoverend]
+	 * @property {(time: number) => void} [onfocus]
 	 */
 
 	/** @type {Props} */
-	let { store, hiddenRowNames = [], seriesLoadsIds = [], onmousemove, onmouseout, onpointerup } = $props();
-
-	// Destructure store properties (store reference is stable, internal state is reactive)
-	const {
-		title,
-		allowPrefixSwitch,
-		displayPrefix,
-		displayUnit,
-		convertAndFormatValue,
-		seriesData,
-		seriesNames,
-		seriesColours,
-		seriesLabels,
-		yDomain,
-		xTicks,
-		formatTickX,
-		chartType,
-		isChartTypeArea,
-		chartOverlay,
-		chartOverlayLine,
-		chartOverlayHatchStroke,
-		chartHeightClasses,
-		hoverKey,
-		hoverTime,
-		hoverData,
-		focusData,
-		getNextPrefix
-	} = untrack(() => store);
+	let { chart, projectionStartTime, seriesLoadsIds = [], onhover, onhoverend, onfocus } = $props();
 
 	const {
 		singleSelectionModelScenarioLabel,
 		singleSelectionPathway,
 		selectedRegionLabel,
-		isScenarioViewSection,
-		isRegionViewSection
+		isScenarioViewSection
 	} = getContext('scenario-filters');
-
-	let names = $derived(
-		$seriesNames.filter((/** @type {string} */ d) => !hiddenRowNames.includes(d))
-	);
-	let loadIds = $derived(names.filter((/** @type {string} */ d) => seriesLoadsIds.includes(/** @type {FuelTechCode} */ (d))));
-	let colours = $derived(names.map((/** @type {string} */ d) => $seriesColours[d]));
-
-	let updatedSeriesData = $derived(
-		$seriesData.map((/** @type {any} */ d) => {
-			/** @type {TimeSeriesData} */
-			const newObj = { ...d };
-			// get min and max values for each time series
-			newObj._max = 0;
-			newObj._min = 0;
-			names.forEach((/** @type {string} */ l) => {
-				const value = d[l] || 0;
-				if ($isChartTypeArea) {
-					if (newObj._max || newObj._max === 0) newObj._max += +value;
-				} else {
-					if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
-				}
-			});
-			loadIds.forEach((/** @type {string} */ l) => {
-				const value = d[l] || 0;
-				if ($isChartTypeArea) {
-					if (newObj._min || newObj._min === 0) newObj._min += +value;
-				} else {
-					if (newObj._min || newObj._min === 0) newObj._min = Math.min(newObj._min, +value);
-				}
-			});
-
-			return newObj;
-		})
-	);
-
-	let updatedYDomain = $derived(
-		(() => {
-			const addTenPercent = (/** @type {number} */ val) => val + val * 0.1;
-			const maxY = updatedSeriesData.map((/** @type {any} */ d) => d._max);
-			// @ts-ignore
-			const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
-
-			const minY = updatedSeriesData.map((/** @type {any} */ d) => d._min);
-			// @ts-ignore
-			const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
-
-			return [datasetMin, datasetMax];
-		})()
-	);
-
-	let updatedHoverData = $derived(
-		$hoverTime ? updatedSeriesData.find((/** @type {any} */ d) => d.time === $hoverTime) : null
-	);
-
-	function moveToNextDisplayPrefix() {
-		$displayPrefix = getNextPrefix();
-	}
 </script>
 
 <section>
-	{#if names.length}
-		<header>
-			<div class="md:flex gap-2 items-center px-10 md:px-0">
-				<div class="flex gap-2 items-center">
-					<h5 class="m-0 leading-none">
-						{$title}
-					</h5>
+	{#if chart.seriesNames.length}
+		<StratumChart
+			{chart}
+			overlayStart={$isScenarioViewSection ? null : projectionStartTime}
+			hideAnnotationsOnMobile={true}
+			{onhover}
+			{onhoverend}
+			{onfocus}
+		>
+			{#snippet header()}
+				<header>
+					<div class="md:flex gap-2 items-center px-10 md:px-0">
+						<div class="flex gap-2 items-center">
+							<h5 class="m-0 leading-none">
+								{chart.title}
+							</h5>
 
-					{#if $allowPrefixSwitch}
-						<button
-							class="font-light text-sm text-mid-grey hover:underline"
-							onclick={moveToNextDisplayPrefix}
-						>
-							{$displayUnit || ''}
-						</button>
-					{:else}
-						<span class="font-light text-sm text-mid-grey">{$displayUnit || ''}</span>
-					{/if}
+							{#if chart.chartOptions.allowPrefixSwitch}
+								<button
+									class="font-light text-sm text-mid-grey hover:underline"
+									onclick={() => chart.chartOptions.cyclePrefix()}
+								>
+									{chart.chartOptions.displayUnit || ''}
+								</button>
+							{:else}
+								<span class="font-light text-sm text-mid-grey">{chart.chartOptions.displayUnit || ''}</span>
+							{/if}
 
-					<span class="hidden md:block font-light text-sm text-mid-grey">—</span>
-				</div>
+							<span class="hidden md:block font-light text-sm text-mid-grey">—</span>
+						</div>
 
-				{#if $isScenarioViewSection}
-					<span class="font-light text-xs md:text-sm text-mid-grey relative -top-1 md:top-0">
-						{$selectedRegionLabel}
-					</span>
-				{:else}
-					<span class="font-light text-xs md:text-sm text-mid-grey relative -top-1 md:top-0">
-						{$singleSelectionModelScenarioLabel} ({$singleSelectionPathway}), {$selectedRegionLabel}
-					</span>
-				{/if}
-			</div>
+						{#if $isScenarioViewSection}
+							<span class="font-light text-xs md:text-sm text-mid-grey relative -top-1 md:top-0">
+								{$selectedRegionLabel}
+							</span>
+						{:else}
+							<span class="font-light text-xs md:text-sm text-mid-grey relative -top-1 md:top-0">
+								{$singleSelectionModelScenarioLabel} ({$singleSelectionPathway}), {$selectedRegionLabel}
+							</span>
+						{/if}
+					</div>
+				</header>
+			{/snippet}
 
-			<Tooltip
-				hoverData={updatedHoverData}
-				hoverKey={$hoverKey}
-				seriesColours={$seriesColours}
-				seriesLabels={$seriesLabels}
-				convertAndFormatValue={$convertAndFormatValue}
-				showTotal={$isChartTypeArea ? true : false}
-			/>
-		</header>
-
-		{#if $isChartTypeArea || $isScenarioViewSection || $isRegionViewSection}
-			<StackedAreaChart
-				dataset={updatedSeriesData}
-				xKey="date"
-				yKey={[0, 1]}
-				zKey="key"
-				xTicks={$xTicks}
-				yTicks={2}
-				yDomain={updatedYDomain}
-				seriesNames={names}
-				zRange={colours}
-				formatTickX={$formatTickX}
-				formatTickY={$convertAndFormatValue}
-				chartType={$chartType}
-				overlay={$chartOverlay}
-				overlayLine={$chartOverlayLine}
-				overlayStroke={$chartOverlayHatchStroke}
-				hoverData={$hoverData}
-				focusData={$focusData}
-				chartHeightClasses={$chartHeightClasses}
-				{onmousemove}
-				{onmouseout}
-				{onpointerup}
-			/>
-		{:else}
-			<LineChart
-				dataset={$seriesData}
-				xKey="date"
-				yKey={$seriesNames[0]}
-				zKey={colours[0]}
-				xTicks={$xTicks}
-				yTicks={2}
-				formatTickX={$formatTickX}
-				formatTickY={$convertAndFormatValue}
-				overlay={$chartOverlay}
-				overlayLine={$chartOverlayLine}
-				overlayStroke={$chartOverlayHatchStroke}
-				hoverData={$hoverData}
-				focusData={$focusData}
-				showArea={false}
-				chartHeightClasses={$chartHeightClasses}
-				{onmousemove}
-				{onmouseout}
-				onpointerup={onpointerup}
-			/>
-		{/if}
+			{#snippet tooltip()}
+				<Tooltip
+					hoverData={chart.hoverData}
+					hoverKey={chart.hoverKey}
+					seriesColours={chart.seriesColours}
+					seriesLabels={chart.seriesLabels}
+					convertAndFormatValue={chart.convertAndFormatValue}
+					showTotal={chart.chartOptions.isAnyStackedType}
+				/>
+			{/snippet}
+		</StratumChart>
 	{/if}
 </section>

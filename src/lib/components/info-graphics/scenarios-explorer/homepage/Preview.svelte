@@ -1,337 +1,344 @@
 <script>
 	import { setContext, getContext } from 'svelte';
-	import { startOfYear, format } from 'date-fns';
-
 	import { browser } from '$app/environment';
 
-	import selectOptionsMap from '$lib/utils/select-options-map';
-	import { getScenarioJson } from '$lib/scenarios';
-	import { getHistory } from '$lib/opennem';
+	import { colourReducer } from '$lib/stores/theme';
 
-	import filtersStore from '../stores/filters';
-	import dataStore from '../stores/data';
-	import cacheStore from '../stores/cache';
+	import ChartStore from '$lib/components/charts/v2/ChartStore.svelte.js';
+	import { createSyncedCharts } from '$lib/components/charts/v2/sync.js';
+	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
 
+	import { fetchTechnologyViewData, toggleDataSource } from '../../../../../routes/(main)/scenarios/page-data-options/fetch.svelte.js';
+	import processTechnology from '../../../../../routes/(main)/scenarios/page-data-options/process-technology.js';
 	import {
-		allScenarios,
-		defaultModelPathway,
-		dataViewUnits,
-		dataViewLongLabel,
-		dataViewIntervalLabel
-	} from '../options';
-	import { covertHistoryDataToTWh, processTechnologyData, formatFyTickX } from '../helpers';
-
-	import Icon from '$lib/components/Icon.svelte';
+		modelOptions,
+		modelScenarios,
+		defaultModelPathway
+	} from '../../../../../routes/(main)/scenarios/page-data-options/models.js';
+	import Tooltip from '../../../../../routes/(main)/scenarios/components/Tooltip.svelte';
+	import { formatFyTickX } from '$lib/utils/formatters';
+	import {
+		chartXHighlightTicks,
+		chartXMobileHiddenTicks
+	} from '../../../../../routes/(main)/scenarios/page-data-options/chart-ticks.js';
 
 	import Filters from './Filters.svelte';
-	import ExplorerChart from './Chart.svelte';
 	import DetailedBreakdown from './DetailedBreakdown.svelte';
 	import ScenarioDescription from './ScenarioDescription.svelte';
-	import ExplorerTooltip from '../Tooltip.svelte';
 
+	import filtersStore from '../stores/filters';
+
+	// Keep filters context for ScenarioDescription to read from
 	setContext('scenario-filters', filtersStore());
-	setContext('scenario-data', dataStore());
-	setContext('scenario-cache', cacheStore());
 
-	const {
-		selectedDisplayView,
-		selectedModel,
-		selectedScenario,
-		selectedPathway,
-		selectedRegion,
-		selectedDataView,
-		selectedChartType,
+	const { selectedModel, selectedScenario, selectedRegion, scenarioOptions } =
+		getContext('scenario-filters');
 
-		scenarioOptions,
-		pathwayOptions,
-
-		selectedMultipleScenarios,
-		showScenarioOptions
-	} = getContext('scenario-filters');
-
-	const {
-		selectedGroup,
-		projectionStats,
-		projectionData,
-		historicalData,
-		projectionTimeSeries,
-		historicalTimeSeries
-	} = getContext('scenario-data');
-
-	const { cachedDisplayData } = getContext('scenario-cache');
-
-	/** @type {string[]} */
-	let seriesNames = $state([]);
-	/** @type {any[]} */
-	let seriesItems = $state([]);
-	let seriesColours = $state();
-	let seriesLabels = $state();
-	/** @type {any[]} */
-	let seriesData = $state([]);
-	/** @type {string[]} */
-	let seriesLoadsIds = $state([]);
-	/** @type {Array.<number | null>} */
-	let yDomain = $state([0, null]);
-	/** @type {TimeSeriesData | undefined} */
-	let hoverData = $state(undefined);
-	/** @type {string | undefined} */
-	let hoverKey = $state();
-
-	const handleMousemove = (/** @type {*} */ e) => {
-		if (e?.key) {
-			hoverKey = e.key;
-			hoverData = /** @type {TimeSeriesData} */ (e.data);
-		} else {
-			hoverKey = undefined;
-			hoverData = /** @type {TimeSeriesData} */ (e);
+	// --- ChartStore v2 ---
+	const generationChart = new ChartStore({
+		key: Symbol('homepage-generation'),
+		title: 'Generation',
+		chartType: 'stacked-area',
+		chartStyles: {
+			chartHeightClasses: 'h-[400px] md:h-[680px]',
+			snapTicks: true,
+			xAxisStroke: 'transparent',
+			yAxisStroke: 'transparent',
+			zeroValueStroke: 'transparent'
 		}
-	};
+	});
+	generationChart.yTicks = 3;
+	generationChart.chartOptions.allowHoverHighlight = false;
+	generationChart.formatTickX = formatFyTickX;
 
+	const sync = createSyncedCharts([generationChart]);
+
+	// --- Local state ---
+	let selectedGroup = $state('homepage_preview');
+	/** @type {FuelTechCode[] | undefined} */
+	let seriesLoadsIds = $state([]);
+	let isFetching = $state(false);
+
+	// Data cache — plain variable (NOT $state) to avoid deep proxy overhead
+	/** @type {*} */
+	let cachedData;
+	let dataVersion = $state(0);
+
+	// Overlay start time derived from processed data
+	let overlayStartTime = $state(/** @type {number | undefined} */ (undefined));
+
+	// --- Derive default pathway and scenario options from selected model ---
+	let defaultPathway = $derived(defaultModelPathway[$selectedModel]);
+	let currentModelScenarios = $derived(
+		/** @type {Record<string, any>} */ (modelScenarios)[$selectedModel] || []
+	);
+
+	// Update scenario options when model changes
+	$effect(() => {
+		const scenarios = currentModelScenarios;
+		scenarioOptions.set(scenarios.map((/** @type {any} */ s) => ({ label: s.label, value: s.id })));
+
+		// Always reset to first scenario when model changes
+		$selectedScenario = scenarios[0]?.id || 'step_change';
+	});
+
+	// --- updateChart helper (same as scenarios page) ---
 	/**
-	 * Get data for by technology view
-	 * @param {*} param0
+	 * @param {ChartStore} chart
+	 * @param {ProcessedDataViz} processed
 	 */
-	async function getTechnologyData({ model, region, scenario, pathway, dataView }) {
-		const [historyData, scenarioData] = await Promise.all([
-			getHistory(region),
-			getScenarioJson(model, scenario)
-		]);
-		const scenarios = allScenarios.filter((/** @type {any} */ d) => d.model === model);
+	function updateChart(chart, processed) {
+		chart.seriesData = processed.seriesData;
+		chart.seriesNames = processed.seriesNames;
+		chart.seriesColours = processed.seriesColours;
+		chart.seriesLabels = processed.seriesLabels;
+		chart.chartOptions.baseUnit = processed.baseUnit || '';
+		chart.chartOptions.prefix = processed.prefix || /** @type {SiPrefix} */ ('');
+		chart.chartOptions.displayPrefix =
+			processed.displayPrefix || processed.prefix || /** @type {SiPrefix} */ ('');
+		chart.chartOptions.allowedPrefixes = processed.allowedPrefixes || [];
 
-		updateScenarios(scenarios.map((/** @type {any} */ d) => d.scenarioId));
+		const chartType = processed.chartType === 'area' ? 'stacked-area' : processed.chartType;
+		chart.chartOptions.selectedChartType =
+			/** @type {import('$lib/components/charts/v2/ChartOptions.svelte.js').ChartType} */ (
+				chartType
+			);
 
-		const filteredScenarioData = scenarioData.data.filter(
-			(/** @type {any} */ d) =>
-				d.pathway === pathway &&
-				d.region.toLowerCase() === region.toLowerCase() &&
-				d.type === dataView
-		);
+		if (
+			processed.yDomain &&
+			processed.yDomain[0] !== undefined &&
+			processed.yDomain[1] !== undefined
+		) {
+			const yMax = /** @type {number} */ (processed.yDomain[1]);
+			chart.setYDomain(/** @type {[number, number]} */ ([processed.yDomain[0], yMax * 1.15]));
+		} else {
+			chart.setYDomain(undefined);
+		}
+	}
 
-		$projectionData = filteredScenarioData.map((/** @type {any} */ d) => {
-			return {
-				...d,
-				model: model
-			};
+	// --- Process cached data with current group ---
+	function processAndUpdate() {
+		if (!cachedData) return;
+
+		const processed = processTechnology.generation({
+			projection: cachedData.projectionEnergyData,
+			history: cachedData.historyEnergyData,
+			group: selectedGroup,
+			colourReducer: $colourReducer,
+			includeBatteryAndLoads: false
 		});
 
-		$historicalData = covertHistoryDataToTWh(historyData);
+		updateChart(generationChart, processed);
+		seriesLoadsIds = /** @type {FuelTechCode[] | undefined} */ (processed.seriesLoadsIds);
+
+		// Derive overlay position from processed data's projection start time
+		const overlayDate = processed.projectionStartTime
+			? new Date(processed.projectionStartTime)
+			: null;
+
+		if (overlayDate) {
+			overlayStartTime = +overlayDate;
+			const endDate = processed.projectionEndTime
+				? new Date(processed.projectionEndTime)
+				: undefined;
+
+			generationChart.chartStyles.chartOverlayLine = { date: overlayDate };
+			if (endDate) {
+				generationChart.chartStyles.chartOverlay = { xStartValue: overlayDate, xEndValue: endDate };
+				// Background fill for the projection region
+				generationChart.bgShadingData = [[overlayDate, endDate]];
+				generationChart.bgShadingFill = '#FAF9F6';
+			}
+
+			// Foreground shading for the derived (interpolated) region
+			if (processed.derivedStartTime && processed.derivedEndTime) {
+				generationChart.fgShadingData = [
+					[new Date(processed.derivedStartTime), new Date(processed.derivedEndTime)]
+				];
+				generationChart.fgShadingFill = 'rgba(255, 255, 255, 0.24)';
+
+				const midTime =
+					processed.derivedStartTime + (processed.derivedEndTime - processed.derivedStartTime) / 2;
+				generationChart.annotations = [
+					{
+						type: 'text',
+						x: midTime,
+						y: 0,
+						text: 'DERIVED',
+						dy: -6,
+						textAnchor: 'middle',
+						fill: '#999',
+						fontSize: '8px'
+					}
+				];
+			} else {
+				generationChart.fgShadingData = [];
+				generationChart.annotations = [];
+			}
+
+			// Show only key years + projection start on x-axis
+			const lastTick = endDate || new Date('2050-01-01');
+			const highlights = chartXHighlightTicks[$selectedModel] || [overlayDate];
+			const baseTicks = [new Date('2010-01-01'), new Date('2040-01-01'), lastTick];
+			// Merge highlight ticks into x ticks (deduplicated)
+			const allTicks = [...baseTicks, ...highlights];
+			const seen = new Set();
+			generationChart.xTicks = allTicks
+				.filter((d) => {
+					const key = d.getTime();
+					if (seen.has(key)) return false;
+					seen.add(key);
+					return true;
+				})
+				.sort((a, b) => a.getTime() - b.getTime());
+			generationChart.xHighlightTicks = highlights;
+			generationChart.xMobileHiddenTicks = chartXMobileHiddenTicks[$selectedModel] || [];
+			generationChart.chartStyles.yLabelStartPos = overlayDate;
+		}
 	}
 
-	/**
-	 *
-	 * @param {*[]} scenarios
-	 */
-	function updateScenarios(scenarios) {
-		scenarioOptions.set(selectOptionsMap(scenarios));
-
-		/**
-		 * set default values if the selected value is not in the updated list
-		 */
-		if (!scenarios.find((d) => d === $selectedScenario)) selectedScenario.set(scenarios[0]);
-	}
-
-	const auNumber = new Intl.NumberFormat('en-AU', {
-		maximumFractionDigits: 0
-	});
-	let generatedCsv = $state('');
-	let defaultPathway = $derived(defaultModelPathway[$selectedModel]);
-
-	$selectedGroup = 'homepage_preview';
+	// --- Fetch data when model/scenario/pathway changes ---
+	let fetchCacheKey = $state('');
+	/** @type {AbortController | null} */
+	let abortController = null;
 
 	$effect(() => {
 		if (browser) {
-			getTechnologyData({
+			const key = `${$selectedModel}-${$selectedScenario}-${defaultPathway}-${$selectedRegion}`;
+			if (key === fetchCacheKey) return;
+			fetchCacheKey = key;
+
+			// Cancel any in-flight fetch
+			abortController?.abort();
+			const controller = new AbortController();
+			abortController = controller;
+			isFetching = true;
+
+			fetchTechnologyViewData({
 				model: $selectedModel,
 				region: $selectedRegion,
 				scenario: $selectedScenario,
 				pathway: defaultPathway,
-				dataView: $selectedDataView
-			});
+				signal: controller.signal
+			})
+				.then((/** @type {*} */ data) => {
+					cachedData = data;
+					dataVersion++;
+					isFetching = false;
+				})
+				.catch((/** @type {any} */ err) => {
+					// Ignore aborted fetches
+					if (err?.name === 'AbortError') return;
+					console.error('Failed to fetch scenario data:', err);
+					isFetching = false;
+				});
 		}
 	});
+
+	// --- Re-process when data arrives or group changes ---
 	$effect(() => {
-		if ($projectionTimeSeries.data.length > 0 && $historicalTimeSeries.data.length > 0) {
-			const processed = processTechnologyData({
-				projectionTimeSeries: $projectionTimeSeries,
-				historicalTimeSeries: $historicalTimeSeries,
-				selectedDataView: $selectedDataView,
-				selectedModel: $selectedModel
-			});
-
-			console.log('processed', processed);
-
-			if (processed) {
-				update(processed);
-			}
+		if (dataVersion > 0) {
+			// Access selectedGroup to track it as dependency
+			const _group = selectedGroup;
+			processAndUpdate();
 		}
 	});
 
-	function update(/** @type {any} */ processed) {
-		seriesData = processed.data;
-		seriesNames = processed.names;
-		seriesColours = processed.colours;
-		seriesLabels = processed.labels;
-		seriesItems = processed.nameOptions;
-
-		const minMaxY = [
-			$projectionTimeSeries.minY,
-			$projectionTimeSeries.maxY + ($projectionTimeSeries.maxY * 15) / 100
-		];
-		yDomain = minMaxY;
-
-		const loadIds = $projectionStats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
-		seriesLoadsIds = loadIds;
-
-		$cachedDisplayData[$selectedDisplayView] = {
-			data: processed.data,
-			names: processed.names,
-			colours: processed.colours,
-			labels: processed.labels,
-			items: processed.nameOptions,
-			loadIds: loadIds,
-			yDomain: minMaxY
-		};
+	// --- Interaction handlers ---
+	/**
+	 * @param {number | undefined} time
+	 * @param {string} [key]
+	 */
+	function handleHover(time, key) {
+		sync.setHover(time, key);
 	}
 
-	let xTicks = $derived(
-		$selectedModel === 'aemo2024'
-			? [
-					startOfYear(new Date('2010-01-01')),
-					startOfYear(new Date('2024-01-01')),
-					startOfYear(new Date('2040-01-01')),
-					startOfYear(new Date('2052-01-01'))
-				]
-			: [
-					startOfYear(new Date('2010-01-01')),
-					startOfYear(new Date('2023-01-01')),
-					startOfYear(new Date('2040-01-01')),
-					startOfYear(new Date('2051-01-01'))
-				]
-	);
-	let overlay = $derived(
-		$selectedModel === 'aemo2024'
-			? {
-					xStartValue: startOfYear(new Date('2024-01-01')),
-					xEndValue: startOfYear(new Date('2052-01-01'))
-				}
-			: {
-					xStartValue: startOfYear(new Date('2023-01-01')),
-					xEndValue: startOfYear(new Date('2051-01-01'))
-				}
-	);
-	let overlayLine = $derived(
-		$selectedModel === 'aemo2024'
-			? { date: startOfYear(new Date('2024-01-01')) }
-			: { date: startOfYear(new Date('2023-01-01')) }
-	);
-	let defaultText = $derived(
-		/** @type {any} */ (dataViewLongLabel)[$selectedDataView] +
-			` (${/** @type {any} */ (dataViewUnits)[$selectedDataView]}) ` +
-			/** @type {any} */ (dataViewIntervalLabel)[$selectedDataView]
-	);
-	$effect(() => {
-		generatedCsv = '';
-		let newGeneratedCsv = ['date', ...seriesNames.map((/** @type {any} */ d) => /** @type {any} */ (seriesLabels)[d])].join(',') + '\n';
+	function handleHoverEnd() {
+		sync.clearHover();
+	}
 
-		seriesData.forEach((d) => {
-			const date = format(d.date, 'yyyy');
-			const row = [date];
-			seriesNames.forEach((key) => {
-				row.push(auNumber.format(d[key]));
-			});
-			newGeneratedCsv += row.join(',') + '\n';
-		});
-		generatedCsv = newGeneratedCsv;
-	});
-	let file = $derived(new Blob([generatedCsv], { type: 'text/plain' }));
-	let fileUrl = $derived(URL.createObjectURL(file));
-	let fileName = $derived(`${$selectedModel}-${$selectedScenario}.csv`);
+	/**
+	 * @param {string} newGroup
+	 */
+	function handleGroupChange(newGroup) {
+		selectedGroup = newGroup;
+	}
 </script>
 
+<svelte:window
+	onkeydown={(e) => {
+		if (e.key === '.' && (e.metaKey || e.ctrlKey)) {
+			e.preventDefault();
+			const isOeApi = toggleDataSource();
+			console.log(`[scenarios] Data source: ${isOeApi ? 'OE API' : 'Legacy'}`);
+			fetchCacheKey = '';
+		}
+	}}
+/>
+
 <div class="container max-w-none lg:container relative">
-	<header class="flex justify-between gap-24 mb-12">
-		<h1 class="text-3xl leading-[3.7rem] mb-4 md:mb-6 md:text-5xl md:leading-5xl md:max-w-[600px]">
+	<header class="sm:flex justify-between gap-12 mb-8 sm:mb-12">
+		<h1 class="text-3xl leading-[3.7rem] mb-6 md:mb-6 md:text-5xl md:leading-5xl md:max-w-[600px]">
 			Explore the future of Australia's national electricity market
 		</h1>
 
 		<div class="hidden md:block">
-			<!-- <a
-				class="whitespace-nowrap flex gap-6 justify-between items-center rounded-lg font-space border border-black border-solid bg-white p-6 transition-all text-black hover:text-white hover:bg-black hover:no-underline"
-				href={fileUrl}
-				download={fileName}
-				target="_download"
-			>
-				<span>Download Data</span>
-				<Icon icon="arrow-down-tray" size={24} />
-			</a> -->
-
 			<a
 				href="/scenarios"
-				class="text-base mt-12 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+				class="text-base mt-6 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
 			>
 				View scenario explorer
 			</a>
 		</div>
 	</header>
 
-	<div class="md:absolute z-50 md:flex md:mt-12 gap-36">
-		<div class="md:w-[28%]">
-			<Filters />
-		</div>
-
-		<div class="md:w-[40%]">
-			<ScenarioDescription />
-		</div>
-	</div>
+	<Filters {isFetching} {selectedGroup} ongroupchange={handleGroupChange} />
 </div>
 
-<div class="max-w-none lg:container">
-	{#if seriesData.length > 0}
-		<div class="relative">
-			<ExplorerTooltip
-				{hoverData}
-				{hoverKey}
-				{defaultText}
-				{seriesColours}
-				{seriesLabels}
-				showTotal={true}
-			/>
-		</div>
+<div class="max-w-none lg:container relative">
+	<div
+		class="z-10 rounded bg-white/40 p-8 hidden sm:block sm:absolute sm:max-w-[30%] sm:ml-36 top-12 left-12"
+	>
+		<ScenarioDescription />
+	</div>
 
-		<ExplorerChart
-			id="scenarios-preview-chart"
-			dataset={seriesData}
-			xKey="date"
-			yKey={[0, 1]}
-			zKey="key"
-			{xTicks}
-			yTicks={3}
-			{yDomain}
-			{seriesNames}
-			{seriesColours}
-			formatTickX={formatFyTickX}
-			display="area"
-			{overlay}
-			{overlayLine}
-			{hoverData}
-			yLabelStartPos={startOfYear(new Date('2024-01-01'))}
-			onmousemove={handleMousemove}
-			onmouseout={() => {
-				hoverKey = undefined;
-				hoverData = undefined;
-			}}
-		/>
+	{#if generationChart.seriesData.length > 0}
+		<StratumChart
+			chart={generationChart}
+			showHeader={false}
+			overlayStart={overlayStartTime}
+			clampHoverLine={true}
+			animate={true}
+			hideAnnotationsOnMobile={true}
+			onhover={handleHover}
+			onhoverend={handleHoverEnd}
+		>
+			{#snippet tooltip()}
+				<div class="mb-2">
+					<Tooltip
+						hoverData={generationChart.hoverData}
+						hoverKey={generationChart.hoverKey}
+						seriesColours={generationChart.seriesColours}
+						seriesLabels={generationChart.seriesLabels}
+						convertAndFormatValue={generationChart.convertAndFormatValue}
+						defaultText="Energy Generation (TWh) by Financial Year"
+						showTotal={true}
+					/>
+				</div>
+			{/snippet}
+		</StratumChart>
+	{:else}
+		<div class="h-[400px] md:h-[680px] rounded-lg bg-warm-grey animate-pulse"></div>
 	{/if}
 </div>
 
 <div class="max-w-none lg:container">
 	<DetailedBreakdown
-		{hoverData}
-		onmousemove={handleMousemove}
-		onmouseout={() => {
-			hoverKey = undefined;
-			hoverData = undefined;
-		}}
+		chart={generationChart}
+		{selectedGroup}
+		{seriesLoadsIds}
+		onhover={handleHover}
+		onhoverend={handleHoverEnd}
 	/>
 
 	<p class="text-xs text-mid-grey px-3 pt-12">
@@ -343,4 +350,13 @@
 			AEMO Integrated System Plan for the National Electricity Market
 		</a>
 	</p>
+
+	<div class="block sm:hidden container mt-12">
+		<a
+			href="/scenarios"
+			class="text-base mt-6 md:mt-0 block text-center rounded-xl font-space border border-black border-solid p-6 transition-all text-white bg-black hover:bg-dark-grey hover:no-underline"
+		>
+			View scenario explorer
+		</a>
+	</div>
 </div>

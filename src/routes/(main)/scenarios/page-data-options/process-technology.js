@@ -5,7 +5,8 @@ import parseInterval from '$lib/utils/intervals';
 import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
 import { fuelTechMap, orderMap } from './groups-technology';
 import excludeBatteryAndLoads from './exclude-battery-and-loads';
-import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData } from './utils';
+import combineHistoryProjection from './combine-history-projection';
+import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData, currentFinancialYear } from './utils';
 
 /**
  * @param {StatsData[]} statsData
@@ -15,136 +16,6 @@ function getLoadIds(statsData) {
 	return statsData
 		.filter((/** @type {StatsData} */ d) => d.isLoad)
 		.map((/** @type {StatsData} */ d) => d.id);
-}
-
-/**
- * @param {{
- * historicalTimeSeries: TimeSeries,
- * projectionTimeSeries: TimeSeries,
- * loadSeries: string[],
- * order: FuelTechCode[],
- * baseUnit: string,
- * prefix: SiPrefix,
- * displayPrefix: SiPrefix,
- * allowedPrefixes: SiPrefix[],
- * chartType?: 'area' | 'line'
- * }} param0
- * @returns {ProcessedDataViz}
- */
-function combineHistoryProjection({
-	historicalTimeSeries,
-	projectionTimeSeries,
-	loadSeries,
-	order,
-	baseUnit = '',
-	prefix = '',
-	displayPrefix = '',
-	allowedPrefixes = [],
-	chartType = 'area'
-}) {
-	const historicalTimeSeriesData = historicalTimeSeries.data;
-	const projectionTimeSeriesData = projectionTimeSeries.data;
-
-	/********* processing Combined series */
-	const lastHistory = historicalTimeSeriesData[historicalTimeSeriesData.length - 1];
-	const firstProjection = projectionTimeSeriesData[0];
-
-	if (lastHistory?.time && firstProjection?.time) {
-		// if last history time is the same as first projection time, remove the last history data
-		const historyData =
-			lastHistory?.time === firstProjection?.time
-				? historicalTimeSeriesData.slice(0, -1)
-				: historicalTimeSeriesData;
-
-		// combine historical and projection data
-		const seriesData = [...historyData, ...projectionTimeSeriesData];
-
-		/** @type string[] */
-		let seriesNames = [];
-
-		// if order is provided, use it to order the series
-		if (order && order.length > 0) {
-			const combinedStats = [
-				...projectionTimeSeries.statsDatasets,
-				...historicalTimeSeries.statsDatasets
-			];
-
-			order.forEach((code) => {
-				const stats = combinedStats.find((d) => d.code === code);
-				if (stats) {
-					seriesNames.push(stats.id);
-				}
-			});
-		} else {
-			// combine projection and historical series names to make sure they are all included in the time series
-			seriesNames = [
-				...new Set([...projectionTimeSeries.seriesNames, ...historicalTimeSeries.seriesNames])
-			];
-		}
-
-		// populate missing data with nulls
-		seriesData.forEach((d) => {
-			seriesNames.forEach((name) => {
-				if (!d[name]) {
-					d[name] = null;
-				}
-			});
-		});
-
-		// combine projection and historical series colours and labels
-		/** @type {*} */
-		const seriesColours = {};
-		/** @type {*} */
-		const seriesLabels = {};
-		seriesNames.forEach((name) => {
-			seriesColours[name] =
-				historicalTimeSeries.seriesColours[name] || projectionTimeSeries.seriesColours[name];
-
-			seriesLabels[name] =
-				historicalTimeSeries.seriesLabels[name] || projectionTimeSeries.seriesLabels[name];
-		});
-
-		const maxY = [...seriesData.map((d) => d._max)];
-		// @ts-ignore
-		const datasetMax = maxY ? Math.max(...maxY) : 0;
-
-		const minY = [...seriesData.map((d) => d._min)];
-		// @ts-ignore
-		const datasetMin = minY ? Math.min(...minY) : 0;
-		/********* end of processing Combined series */
-
-		return {
-			seriesData,
-			seriesNames,
-			nameOptions: [...seriesNames].reverse().map((name) => {
-				return { label: name, value: name };
-			}),
-			seriesColours,
-			seriesLabels,
-			seriesLoadsIds: loadSeries,
-			yDomain: [datasetMin, datasetMax],
-			prefix,
-			baseUnit,
-			displayPrefix,
-			allowedPrefixes,
-			chartType
-		};
-	}
-
-	return {
-		seriesData: [],
-		seriesNames: [],
-		seriesColours: {},
-		seriesLabels: {},
-		nameOptions: [],
-		seriesLoadsIds: [],
-		yDomain: [],
-		prefix,
-		baseUnit,
-		displayPrefix,
-		allowedPrefixes,
-		chartType
-	};
 }
 
 /**
@@ -202,9 +73,9 @@ function generation({ projection, history, group, colourReducer, includeBatteryA
 		.rollup(parseInterval('FY'))
 		.updateMinMax(historicalLoadSeries);
 
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
+	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */
 
@@ -277,9 +148,9 @@ function capacity({ projection, history, group, colourReducer, includeBatteryAnd
 		.updateMinMax(historicalLoadSeries);
 
 	// Capacity is already in FY
-	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024) and filter out years outside of 2010-2024
+	// match FY dates, use start of year as display (i.e. 1 Jan 2024 == FY 2024)
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data, 1).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 	/********* end of processing History */
 
@@ -345,7 +216,7 @@ function emissions({ projection, history, includeBatteryAndLoads }) {
 		.updateMinMax();
 
 	historicalTimeSeries.data = mutateDatesToStartOfYear(historicalTimeSeries.data).filter(
-		(d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009
+		(d) => d.date.getFullYear() > 2009 && d.date.getFullYear() < currentFinancialYear
 	);
 
 	return {
@@ -390,10 +261,6 @@ function intensity({ processedEmissions, processedEnergy }) {
 				Number(d['au.emissions.total'] || 0) / Number(generationsNetTotalData[i]?.['au.net_generation.total'] || 1)
 		};
 	});
-
-	// console.log('emissionsTotalData', emissionsTotalData);
-	// console.log('generationsNetTotalData', generationsNetTotalData);
-	// console.log('intensityData', intensityData, processedEmissions);
 
 	return {
 		seriesData: intensityData,
