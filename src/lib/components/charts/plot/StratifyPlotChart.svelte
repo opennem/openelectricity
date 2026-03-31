@@ -8,7 +8,8 @@
 		createGroupedBarOptions,
 		createDotOptions,
 		createMixedMarkOptions,
-		createColourGroupedBarOptions
+		createColourGroupedBarOptions,
+		buildTooltipChannels
 	} from './plot-configs.js';
 	import { processAnnotations } from './plot-annotations.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
@@ -178,9 +179,7 @@
 			colourSeries && Object.keys(dataColumnLabels).length > 0
 				? dataColumnLabels
 				: Object.fromEntries(seriesNames.map((n) => [n, seriesLabels[n] || n]));
-		const channels = Object.fromEntries(
-			Object.entries(tooltipLabels).map(([key, label]) => [label, key])
-		);
+		const channels = buildTooltipChannels(tooltipLabels);
 
 		if (TIME_SERIES_TYPES.has(chartType)) {
 			opts.marks.push(

@@ -624,3 +624,30 @@ export function createMixedMarkOptions(
 		marks
 	};
 }
+
+// ── Tooltip Channels ────────────────────────────────────────────
+
+/**
+ * Build tooltip channels map from label lookups, disambiguating duplicate labels.
+ *
+ * Observable Plot tip() uses the channel keys as display text. Since we invert
+ * {dataKey → label} to {label → dataKey}, duplicate labels would silently
+ * overwrite each other. This function appends the data key in parentheses
+ * when labels collide.
+ *
+ * @param {Record<string, string>} tooltipLabels - Map of data key → display label
+ * @returns {Record<string, string>} Map of display label → data key
+ */
+export function buildTooltipChannels(tooltipLabels) {
+	const labelCounts = /** @type {Record<string, number>} */ ({});
+	for (const label of Object.values(tooltipLabels)) {
+		labelCounts[label] = (labelCounts[label] || 0) + 1;
+	}
+
+	return Object.fromEntries(
+		Object.entries(tooltipLabels).map(([key, label]) => {
+			const displayLabel = labelCounts[label] > 1 ? `${label} (${key})` : label;
+			return [displayLabel, key];
+		})
+	);
+}

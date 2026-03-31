@@ -318,7 +318,7 @@ function parseCategoryData(
 		columnStats[name] = { total: 0, numeric: 0 };
 	}
 
-	/** @type {Array<{ label: string, cells: string[] }>} */
+	/** @type {Array<{ label: string, cells: string[], lineIndex: number }>} */
 	const parsedLines = [];
 
 	for (let i = 0; i < dataLines.length; i++) {
@@ -326,7 +326,7 @@ function parseCategoryData(
 		const cells = dataLines[i].split(delimiter);
 		const label = (cells[0] || '').trim();
 		if (!label) continue;
-		parsedLines.push({ label, cells });
+		parsedLines.push({ label, cells, lineIndex: i + 1 });
 
 		for (let j = 0; j < seriesNames.length; j++) {
 			const raw = (cells[j + 1] || '').trim();
@@ -362,10 +362,10 @@ function parseCategoryData(
 
 	// Second pass: build data rows with text values preserved
 	for (let i = 0; i < parsedLines.length; i++) {
-		const { label, cells } = parsedLines[i];
+		const { label, cells, lineIndex } = parsedLines[i];
 
 		/** @type {{[key: string]: any}} */
-		const row = { category: label, _index: i, _lineIndex: i + 1 };
+		const row = { category: label, _index: i, _lineIndex: lineIndex };
 		categoryLabels[label] = label;
 
 		for (let j = 0; j < seriesNames.length; j++) {
