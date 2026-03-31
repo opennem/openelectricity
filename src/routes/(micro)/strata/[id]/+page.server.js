@@ -35,6 +35,11 @@ export async function load({ params }) {
 			showBranding: chart.showBranding ?? true,
 			chartHeight: chart.chartHeight ?? 400,
 			xTicks: chart.xTicks ?? 0,
+			xTickRotate: chart.xTickRotate ?? 0,
+			marginBottom: chart.marginBottom ?? 0,
+			colourSeries: chart.colourSeries ?? null,
+			xLabel: chart.xLabel ?? '',
+			yLabel: chart.yLabel ?? '',
 			publishedAt: chart.publishedAt
 		}
 	};

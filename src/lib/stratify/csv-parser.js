@@ -10,6 +10,10 @@ import { parse as dateParse, isValid } from 'date-fns';
 import { assignColours } from './colour-palette.js';
 
 /**
+ * @typedef {{ key: string, label: string, isNumeric: boolean }} ColumnMeta
+ */
+
+/**
  * @typedef {Object} ParseResult
  * @property {'time-series' | 'category'} mode
  * @property {Array<{[key: string]: any}>} data
@@ -17,6 +21,7 @@ import { assignColours } from './colour-palette.js';
  * @property {Record<string, string>} seriesLabels
  * @property {Record<string, string>} seriesColours
  * @property {Record<string, string>} [categoryLabels] - Map of category value to original label (category mode only)
+ * @property {ColumnMeta[]} allColumns - Metadata for every column (including the first)
  * @property {string[]} errors
  */
 
@@ -112,7 +117,15 @@ function toKey(header) {
 }
 
 /** @type {ParseResult} */
-const EMPTY_RESULT = { mode: 'time-series', data: [], seriesNames: [], seriesLabels: {}, seriesColours: {}, errors: [] };
+const EMPTY_RESULT = {
+	mode: 'time-series',
+	data: [],
+	seriesNames: [],
+	seriesLabels: {},
+	seriesColours: {},
+	allColumns: [],
+	errors: []
+};
 
 /**
  * Parse CSV or TSV text into StratumChart-compatible data.
@@ -178,10 +191,33 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto') {
 	}
 
 	if (isCategory) {
-		return parseCategoryData(rawDataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors);
+		return parseCategoryData(
+			rawDataLines,
+			delimiter,
+			headers,
+			seriesNames,
+			seriesLabels,
+			seriesColours,
+			errors
+		);
 	}
 
-	return parseTimeSeriesData(rawDataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors);
+	// Build allColumns for time-series (first column is date, rest are numeric)
+	/** @type {ColumnMeta[]} */
+	const allColumns = [
+		{ key: toKey(headers[0]), label: headers[0], isNumeric: false },
+		...seriesNames.map((key, i) => ({ key, label: seriesHeaders[i], isNumeric: true }))
+	];
+
+	return parseTimeSeriesData(
+		rawDataLines,
+		delimiter,
+		seriesNames,
+		seriesLabels,
+		seriesColours,
+		allColumns,
+		errors
+	);
 }
 
 /**
@@ -191,10 +227,19 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto') {
  * @param {string[]} seriesNames
  * @param {Record<string, string>} seriesLabels
  * @param {Record<string, string>} seriesColours
+ * @param {ColumnMeta[]} allColumns
  * @param {string[]} errors
  * @returns {ParseResult}
  */
-function parseTimeSeriesData(dataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors) {
+function parseTimeSeriesData(
+	dataLines,
+	delimiter,
+	seriesNames,
+	seriesLabels,
+	seriesColours,
+	allColumns,
+	errors
+) {
 	/** @type {Array<{[key: string]: any}>} */
 	const data = [];
 	let dateErrors = 0;
@@ -229,41 +274,121 @@ function parseTimeSeriesData(dataLines, delimiter, seriesNames, seriesLabels, se
 
 	data.sort((a, b) => a.time - b.time);
 
-	return { mode: 'time-series', data, seriesNames, seriesLabels, seriesColours, errors };
+	return {
+		mode: 'time-series',
+		data,
+		seriesNames,
+		seriesLabels,
+		seriesColours,
+		allColumns,
+		errors
+	};
 }
 
 /**
  * Parse rows as category data (first column = text labels).
+ * Detects text columns (>80% non-numeric) and preserves raw text values.
  * @param {string[]} dataLines
  * @param {string} delimiter
+ * @param {string[]} headers - All column headers (including first)
  * @param {string[]} seriesNames
  * @param {Record<string, string>} seriesLabels
  * @param {Record<string, string>} seriesColours
  * @param {string[]} errors
  * @returns {ParseResult}
  */
-function parseCategoryData(dataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors) {
+function parseCategoryData(
+	dataLines,
+	delimiter,
+	headers,
+	seriesNames,
+	seriesLabels,
+	seriesColours,
+	errors
+) {
 	/** @type {Array<{[key: string]: any}>} */
 	const data = [];
 	/** @type {Record<string, string>} */
 	const categoryLabels = {};
+
+	// First pass: parse all cells and track numeric success per column
+	/** @type {Record<string, { total: number, numeric: number }>} */
+	const columnStats = {};
+	for (const name of seriesNames) {
+		columnStats[name] = { total: 0, numeric: 0 };
+	}
+
+	/** @type {Array<{ label: string, cells: string[] }>} */
+	const parsedLines = [];
 
 	for (let i = 0; i < dataLines.length; i++) {
 		if (!dataLines[i].trim()) continue;
 		const cells = dataLines[i].split(delimiter);
 		const label = (cells[0] || '').trim();
 		if (!label) continue;
+		parsedLines.push({ label, cells });
+
+		for (let j = 0; j < seriesNames.length; j++) {
+			const raw = (cells[j + 1] || '').trim();
+			if (raw !== '' && raw !== '-') {
+				columnStats[seriesNames[j]].total++;
+				if (parseNumber(raw) !== null) {
+					columnStats[seriesNames[j]].numeric++;
+				}
+			}
+		}
+	}
+
+	// Determine which columns are text (>80% non-numeric)
+	/** @type {Set<string>} */
+	const textColumnSet = new Set();
+	for (const name of seriesNames) {
+		const stats = columnStats[name];
+		if (stats.total > 0 && stats.numeric / stats.total < 0.2) {
+			textColumnSet.add(name);
+		}
+	}
+
+	// Build allColumns metadata
+	/** @type {ColumnMeta[]} */
+	const allColumns = [
+		{ key: toKey(headers[0]), label: headers[0], isNumeric: false },
+		...seriesNames.map((key, i) => ({
+			key,
+			label: headers[i + 1],
+			isNumeric: !textColumnSet.has(key)
+		}))
+	];
+
+	// Second pass: build data rows with text values preserved
+	for (let i = 0; i < parsedLines.length; i++) {
+		const { label, cells } = parsedLines[i];
 
 		/** @type {{[key: string]: any}} */
 		const row = { category: label, _index: i, _lineIndex: i + 1 };
 		categoryLabels[label] = label;
 
 		for (let j = 0; j < seriesNames.length; j++) {
-			row[seriesNames[j]] = parseNumber(cells[j + 1] || '');
+			const raw = (cells[j + 1] || '').trim();
+			if (textColumnSet.has(seriesNames[j])) {
+				// Preserve raw text for text columns
+				row[seriesNames[j]] = raw || null;
+			} else {
+				row[seriesNames[j]] = parseNumber(cells[j + 1] || '');
+			}
 		}
 
 		data.push(row);
 	}
 
-	return { mode: 'category', data, seriesNames, seriesLabels, seriesColours, categoryLabels, errors };
+	return {
+		mode: 'category',
+		data,
+		seriesNames,
+		seriesLabels,
+		seriesColours,
+		categoryLabels,
+		allColumns,
+		errors
+	};
 }

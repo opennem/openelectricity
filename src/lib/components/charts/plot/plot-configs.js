@@ -332,6 +332,64 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 	};
 }
 
+// ── Colour-Grouped Bar Chart ────────────────────────────────────
+
+/**
+ * Bar chart where each bar is coloured by a categorical text column
+ * (e.g. Market: NEM/WEM) rather than by the series name.
+ * @param {Array<Record<string, any>>} data - Parsed rows with `category` field
+ * @param {string} valueKey - Column key for Y values (e.g. 'capacity_factor')
+ * @param {string[]} colourGroupNames - Unique colour group values (e.g. ['NEM', 'WEM'])
+ * @param {Record<string, string>} colours - Map of group name → colour
+ * @param {Record<string, string>} labels - Map of group name → display label
+ * @param {string} colourSeriesKey - Column key containing group values (e.g. 'market')
+ * @param {BarChartOptions} [options]
+ * @returns {import('@observablehq/plot').PlotOptions}
+ */
+export function createColourGroupedBarOptions(
+	data,
+	valueKey,
+	colourGroupNames,
+	colours,
+	labels,
+	colourSeriesKey,
+	options = {}
+) {
+	const {
+		style = SHARED_STYLE,
+		marginRight,
+		legend = true,
+		extraMarks = [],
+		yTickFormat
+	} = options;
+
+	const long = data
+		.filter((row) => row[valueKey] != null)
+		.map((row) => ({
+			x: row.category,
+			value: row[valueKey],
+			colourGroup: row[colourSeriesKey] ?? 'Unknown'
+		}));
+
+	return {
+		style,
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: {
+			domain: colourGroupNames,
+			range: colourGroupNames.map((g) => colours[g]),
+			legend,
+			tickFormat: (/** @type {string} */ d) => labels[d] || d
+		},
+		x: { label: null, tickPadding: 6, type: 'band' },
+		y: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+		marks: [
+			...extraMarks,
+			barY(long, { x: 'x', y: 'value', fill: 'colourGroup', sort: { x: '-y' } }),
+			ruleY([0])
+		]
+	};
+}
+
 // ── Dot Chart ───────────────────────────────────────────────────
 
 /**
@@ -498,12 +556,7 @@ export function createMixedMarkOptions(
 			marks.push(
 				barY(
 					long,
-					stackY(
-						groupX(
-							{ y: 'sum' },
-							{ x: 'x', y: 'value', fill: 'series', order: groups.bar }
-						)
-					)
+					stackY(groupX({ y: 'sum' }, { x: 'x', y: 'value', fill: 'series', order: groups.bar }))
 				)
 			);
 		} else {

@@ -68,6 +68,11 @@ export async function POST({ request }) {
 		showBranding: body.showBranding ?? true,
 		chartHeight: body.chartHeight ?? 400,
 		xTicks: body.xTicks ?? 0,
+		xTickRotate: body.xTickRotate ?? 0,
+		marginBottom: body.marginBottom ?? 0,
+		colourSeries: body.colourSeries ?? null,
+		xLabel: body.xLabel ?? '',
+		yLabel: body.yLabel ?? '',
 		snapshotVersion: body.version ?? 1,
 		publishedAt: null
 	});

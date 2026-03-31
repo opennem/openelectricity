@@ -79,13 +79,17 @@ export async function PATCH({ request, params }) {
 	if (body.annotations !== undefined) patches.annotations = JSON.stringify(body.annotations);
 	if (body.seriesChartTypes !== undefined)
 		patches.seriesChartTypes = JSON.stringify(body.seriesChartTypes);
-	if (body.plotOverrides !== undefined)
-		patches.plotOverrides = JSON.stringify(body.plotOverrides);
+	if (body.plotOverrides !== undefined) patches.plotOverrides = JSON.stringify(body.plotOverrides);
 	if (body.seriesOrder !== undefined) patches.seriesOrder = body.seriesOrder;
 	if (body.stylePreset !== undefined) patches.stylePreset = body.stylePreset;
 	if (body.showBranding !== undefined) patches.showBranding = body.showBranding;
 	if (body.chartHeight !== undefined) patches.chartHeight = body.chartHeight;
 	if (body.xTicks !== undefined) patches.xTicks = body.xTicks;
+	if (body.xTickRotate !== undefined) patches.xTickRotate = body.xTickRotate;
+	if (body.marginBottom !== undefined) patches.marginBottom = body.marginBottom;
+	if (body.colourSeries !== undefined) patches.colourSeries = body.colourSeries;
+	if (body.xLabel !== undefined) patches.xLabel = body.xLabel;
+	if (body.yLabel !== undefined) patches.yLabel = body.yLabel;
 	if (body.status !== undefined) patches.status = body.status;
 	if (body.publishedAt !== undefined) patches.publishedAt = body.publishedAt;
 	if (body.version !== undefined) patches.snapshotVersion = body.version;

@@ -1,7 +1,11 @@
 <script>
 	import StratifyPlotChart from '$lib/components/charts/plot/StratifyPlotChart.svelte';
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
-	import { getPreset, assignPresetColours, getPlotStyle } from '../../stratify/_config/chart-styles.js';
+	import {
+		getPreset,
+		assignPresetColours,
+		getPlotStyle
+	} from '../../stratify/_config/chart-styles.js';
 
 	/** @type {{ data: { chart: any } }} */
 	let { data } = $props();
@@ -11,30 +15,64 @@
 	const preset = $derived(getPreset(chart.stylePreset ?? 'oe'));
 	const plotStyleOptions = $derived({ style: getPlotStyle(chart.stylePreset ?? 'oe') });
 
+	// Labels for all non-first data columns (for tooltips)
+	const dataColumnLabels = $derived(
+		Object.fromEntries(
+			(parsed.allColumns ?? [])
+				.slice(1)
+				.map((/** @type {{ key: string, label: string }} */ col) => [col.key, col.label])
+		)
+	);
+
+	// Colour series support
+	const colourSeriesKey = $derived(chart.colourSeries ?? null);
+	const hasColourSeries = $derived(
+		colourSeriesKey !== null && parsed.seriesNames.includes(colourSeriesKey)
+	);
+	const colourGroupNames = $derived.by(() => {
+		if (!hasColourSeries) return [];
+		/** @type {Set<string>} */
+		const seen = new Set();
+		/** @type {string[]} */
+		const groups = [];
+		for (const row of parsed.data) {
+			const val = row[/** @type {string} */ (colourSeriesKey)];
+			if (val != null && !seen.has(String(val))) {
+				seen.add(String(val));
+				groups.push(String(val));
+			}
+		}
+		return groups;
+	});
+
 	// Merge colours: user overrides > preset palette > parsed defaults
+	// When colour series is active, keys are group names instead of series names
 	const seriesColours = $derived.by(() => {
-		const presetColours = assignPresetColours(parsed.seriesNames, chart.stylePreset ?? 'oe');
+		const names = hasColourSeries ? colourGroupNames : parsed.seriesNames;
+		const presetColours = assignPresetColours(names, chart.stylePreset ?? 'oe');
 		/** @type {Record<string, string>} */
 		const colours = {};
-		for (const name of parsed.seriesNames) {
-			colours[name] = chart.userSeriesColours[name] || presetColours[name] || parsed.seriesColours[name];
+		for (const name of names) {
+			colours[name] =
+				chart.userSeriesColours[name] || presetColours[name] || parsed.seriesColours[name];
 		}
 		return colours;
 	});
 
 	// Merge labels: user overrides > parsed defaults
 	const seriesLabels = $derived.by(() => {
+		const names = hasColourSeries ? colourGroupNames : parsed.seriesNames;
 		/** @type {Record<string, string>} */
 		const labels = {};
-		for (const name of parsed.seriesNames) {
-			labels[name] = chart.userSeriesLabels[name] || parsed.seriesLabels[name];
+		for (const name of names) {
+			labels[name] = chart.userSeriesLabels[name] || parsed.seriesLabels[name] || name;
 		}
 		return labels;
 	});
 
-	// Apply user-defined series order, then filter hidden
+	// Apply user-defined series order, then filter hidden (excluding colour series column)
 	const orderedSeriesNames = $derived.by(() => {
-		const names = parsed.seriesNames;
+		const names = parsed.seriesNames.filter((/** @type {string} */ n) => n !== colourSeriesKey);
 		const order = chart.seriesOrder;
 		if (!order || order.length === 0) return names;
 		const nameSet = new Set(names);
@@ -46,7 +84,9 @@
 		return ordered;
 	});
 	const hiddenSet = $derived(new Set(chart.hiddenSeries));
-	const visibleSeriesNames = $derived(orderedSeriesNames.filter((/** @type {string} */ name) => !hiddenSet.has(name)));
+	const visibleSeriesNames = $derived(
+		orderedSeriesNames.filter((/** @type {string} */ name) => !hiddenSet.has(name))
+	);
 
 	const visibleData = $derived.by(() => {
 		if (hiddenSet.size === 0) return parsed.data;
@@ -75,7 +115,8 @@
 				{#if chart.title}
 					<h1
 						class="text-dark-grey"
-						style="font-size: {preset.typography.titleSize}; font-weight: {preset.typography.titleWeight};"
+						style="font-size: {preset.typography.titleSize}; font-weight: {preset.typography
+							.titleWeight};"
 					>
 						{chart.title}
 					</h1>
@@ -95,10 +136,17 @@
 				chartType={chart.chartType}
 				seriesChartTypes={chart.seriesChartTypes}
 				plotOverrides={chart.plotOverrides}
+				colourSeries={colourSeriesKey}
+				{colourGroupNames}
+				{dataColumnLabels}
+				xLabel={chart.xLabel ?? ''}
+				yLabel={chart.yLabel ?? ''}
 				annotations={chart.annotations}
 				options={plotStyleOptions}
 				height={chart.chartHeight ?? 400}
 				xTicks={chart.xTicks ?? 0}
+				xTickRotate={chart.xTickRotate ?? 0}
+				marginBottom={chart.marginBottom ?? 0}
 			/>
 		{/if}
 

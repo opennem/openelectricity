@@ -12,15 +12,24 @@
 		{ label: 'Categories', value: 'category' }
 	];
 
+	// --- Column mapping derived values ---
+	let xColumnLabel = $derived(project.allColumns[0]?.label ?? '');
+	let nonFirstColumns = $derived(project.allColumns.slice(1));
+	let yColumnLabels = $derived(
+		project.allColumns
+			.slice(1)
+			.filter((col) => col.isNumeric && col.key !== project.colourSeries)
+			.map((col) => col.label)
+			.join(', ')
+	);
+
 	let showAdvanced = $state(false);
 	let overridesText = $state('');
 	let parseError = $state('');
 
 	$effect(() => {
 		if (showAdvanced) {
-			overridesText = project.plotOverrides
-				? JSON.stringify(project.plotOverrides, null, 2)
-				: '';
+			overridesText = project.plotOverrides ? JSON.stringify(project.plotOverrides, null, 2) : '';
 			parseError = '';
 		}
 	});
@@ -52,15 +61,48 @@
 <div class="flex flex-col gap-3">
 	<div>
 		<span class="block text-[10px] text-mid-grey uppercase tracking-wide mb-2">Data mode</span>
-		<Switch
-			buttons={modeButtons}
-			selected={project.displayMode}
-			onChange={handleModeChange}
-		/>
+		<Switch buttons={modeButtons} selected={project.displayMode} onChange={handleModeChange} />
 	</div>
 
 	<ChartTypeSelector />
 </div>
+
+{#if project.hasData && project.isCategory}
+	<div class="mt-3 pt-3 border-t border-warm-grey">
+		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Column mapping</p>
+
+		<div class="flex flex-col gap-2">
+			<div class="flex items-center gap-2">
+				<span class="text-[10px] text-mid-grey w-14 shrink-0">X axis</span>
+				<span class="text-[11px] text-dark-grey truncate">{xColumnLabel}</span>
+			</div>
+
+			<div class="flex items-center gap-2">
+				<span class="text-[10px] text-mid-grey w-14 shrink-0">Y value</span>
+				<span class="text-[11px] text-dark-grey truncate">{yColumnLabels}</span>
+			</div>
+
+			<label class="flex items-center gap-2">
+				<span class="text-[10px] text-mid-grey w-14 shrink-0">Colour</span>
+				<select
+					value={project.colourSeries ?? ''}
+					onchange={(e) => {
+						const val = e.currentTarget.value;
+						project.colourSeries = val || null;
+						project.userSeriesColours = {};
+						project.userSeriesLabels = {};
+					}}
+					class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+				>
+					<option value="">None</option>
+					{#each nonFirstColumns as col (col.key)}
+						<option value={col.key}>{col.label}</option>
+					{/each}
+				</select>
+			</label>
+		</div>
+	</div>
+{/if}
 
 <div class="mt-3 pt-3 border-t border-warm-grey">
 	<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Style</p>
@@ -86,6 +128,32 @@
 	</label>
 
 	<label class="flex items-center gap-2 mt-3">
+		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X-axis label</span>
+		<input
+			type="text"
+			value={project.xLabel}
+			placeholder={xColumnLabel || 'None'}
+			oninput={(e) => {
+				project.xLabel = e.currentTarget.value;
+			}}
+			class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+		/>
+	</label>
+
+	<label class="flex items-center gap-2 mt-3">
+		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y-axis label</span>
+		<input
+			type="text"
+			value={project.yLabel}
+			placeholder={yColumnLabels || 'None'}
+			oninput={(e) => {
+				project.yLabel = e.currentTarget.value;
+			}}
+			class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+		/>
+	</label>
+
+	<label class="flex items-center gap-2 mt-3">
 		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X-axis ticks</span>
 		<input
 			type="number"
@@ -96,6 +164,40 @@
 			oninput={(e) => {
 				const v = parseInt(e.currentTarget.value, 10);
 				if (v >= 0 && v <= 100) project.xTicks = v;
+			}}
+			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+		/>
+		<span class="text-[10px] text-mid-grey">0 = auto</span>
+	</label>
+
+	<label class="flex items-center gap-2 mt-3">
+		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X label angle</span>
+		<input
+			type="number"
+			min="-90"
+			max="90"
+			step="5"
+			value={project.xTickRotate}
+			oninput={(e) => {
+				const v = parseInt(e.currentTarget.value, 10);
+				if (v >= -90 && v <= 90) project.xTickRotate = v;
+			}}
+			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+		/>
+		<span class="text-[10px] text-mid-grey">degrees</span>
+	</label>
+
+	<label class="flex items-center gap-2 mt-3">
+		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X-axis height</span>
+		<input
+			type="number"
+			min="0"
+			max="300"
+			step="10"
+			value={project.marginBottom}
+			oninput={(e) => {
+				const v = parseInt(e.currentTarget.value, 10);
+				if (v >= 0 && v <= 300) project.marginBottom = v;
 			}}
 			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
 		/>
