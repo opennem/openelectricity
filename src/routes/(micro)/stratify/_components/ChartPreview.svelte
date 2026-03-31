@@ -17,7 +17,8 @@
 			{#if project.title}
 				<h2
 					class="text-dark-grey"
-					style="font-size: {project.activePreset.typography.titleSize}; font-weight: {project.activePreset.typography.titleWeight};"
+					style="font-size: {project.activePreset.typography.titleSize}; font-weight: {project
+						.activePreset.typography.titleWeight};"
 				>
 					{project.title}
 				</h2>
@@ -34,8 +35,18 @@
 		seriesColours={project.seriesColours}
 		seriesLabels={project.seriesLabels}
 		chartType={project.chartType}
+		seriesChartTypes={project.seriesChartTypes}
+		plotOverrides={project.plotOverrides}
+		colourSeries={project.colourSeries}
+		colourGroupNames={project.colourGroupNames}
+		dataColumnLabels={project.dataColumnLabels}
+		xLabel={project.xLabel}
+		yLabel={project.yLabel}
 		options={plotStyleOptions}
-		height={400}
+		height={project.chartHeight}
+		xTicks={project.xTicks}
+		xTickRotate={project.xTickRotate}
+		marginBottom={project.marginBottom}
 	/>
 
 	{#if project.notes || project.dataSource}

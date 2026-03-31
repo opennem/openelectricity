@@ -25,6 +25,8 @@ StratifyPlotChart          High-level component: data props + chart type + annot
 | `seriesColours` | `Record<string, string>` | required | Series key to colour hex |
 | `seriesLabels` | `Record<string, string>` | required | Series key to display label |
 | `chartType` | `StratifyPlotChartType` | required | Chart type (see below) |
+| `seriesChartTypes` | `Record<string, string>` | `{}` | Per-series chart type overrides (see below) |
+| `plotOverrides` | `PlotOverrides \| null` | `null` | Extended Plot config overrides (see below) |
 | `height` | `number` | `300` | Chart height in px |
 | `options` | `TimeSeriesOptions` | `{}` | Pass-through for curve, xDomain, margins, etc. |
 | `annotations` | `Annotation[]` | `[]` | Annotation configs (see below) |
@@ -39,6 +41,7 @@ StratifyPlotChart          High-level component: data props + chart type + annot
 | `'line'` | Multi-series line chart |
 | `'bar-stacked'` | Category stacked bar |
 | `'grouped-bar'` | Category grouped bar |
+| `'dot'` | Dot (scatter) chart |
 
 ### Basic Usage
 
@@ -188,7 +191,8 @@ annotations={[
 | `PlotChart.svelte` | Low-level rendering wrapper |
 | `StratifyPlotChart.svelte` | High-level component with data props, tooltips, annotations |
 | `plot-action.js` | Svelte action that calls Observable Plot |
-| `plot-configs.js` | Factory functions for each chart type |
+| `plot-configs.js` | Factory functions for each chart type + mixed mark support |
+| `plot-overrides.js` | PlotOverrides merge system for extended configuration |
 | `plot-annotations.js` | Annotation system (types, processing, mark generation) |
 | `PlotChartOptions.svelte.js` | Reactive chart options state (used by facility-plot) |
 | `PlotChartTheme.svelte.js` | Theme system with CSS custom properties |
@@ -209,3 +213,51 @@ annotations={[
 2. Add it to the `Annotation` union type
 3. Implement a handler function returning `{ marks, marginRight }`
 4. Add a case to the switch in `processAnnotations()`
+
+---
+
+## Per-Series Chart Type Override
+
+Override the chart type for individual series by passing `seriesChartTypes`:
+
+```svelte
+<StratifyPlotChart
+  {data}
+  {seriesNames}
+  {seriesColours}
+  {seriesLabels}
+  chartType="line"
+  seriesChartTypes={{ demand: 'bar', price: 'dot' }}
+/>
+```
+
+Available per-series mark types: `'area'`, `'line'`, `'bar'`, `'dot'`. When `seriesChartTypes` is empty or omitted, all series use the global `chartType`.
+
+The renderer partitions series by mark type and creates separate Observable Plot marks for each group. Area series are stacked, bar series grouped, and line/dot series overlaid.
+
+---
+
+## Plot Overrides
+
+The `plotOverrides` prop allows arbitrary Observable Plot configuration to be deep-merged into the factory output. This enables scale types, faceting, layout, and extra marks without modifying the chart factories.
+
+See `plot-overrides.js` for the `PlotOverrides` type definition and `resolveMarkSpec()` for the declarative mark format.
+
+### Example
+
+```svelte
+<StratifyPlotChart
+  {data}
+  {seriesNames}
+  {seriesColours}
+  {seriesLabels}
+  chartType="line"
+  plotOverrides={{
+    y: { type: 'log', nice: true },
+    layout: { title: 'Log Scale', marginLeft: 50 },
+    extraMarks: [
+      { markType: 'rule-y', data: [1000], options: { stroke: 'red', strokeDasharray: '4,3' } }
+    ]
+  }}
+/>
+```

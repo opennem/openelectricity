@@ -16,7 +16,7 @@
 	);
 	let embedCode = $derived(
 		shareUrl
-			? `<iframe src="${shareUrl}" width="100%" height="400" frameborder="0" style="border:0"></iframe>`
+			? `<iframe src="${shareUrl}" width="100%" height="${project.chartHeight + 120}" frameborder="0" style="border:0;max-width:1024px"></iframe>`
 			: ''
 	);
 

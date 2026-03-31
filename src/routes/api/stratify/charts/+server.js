@@ -61,8 +61,18 @@ export async function POST({ request }) {
 		userSeriesColours: JSON.stringify(body.userSeriesColours ?? {}),
 		userSeriesLabels: JSON.stringify(body.userSeriesLabels ?? {}),
 		annotations: JSON.stringify(body.annotations ?? []),
+		seriesChartTypes: JSON.stringify(body.seriesChartTypes ?? {}),
+		plotOverrides: JSON.stringify(body.plotOverrides ?? null),
+		seriesOrder: body.seriesOrder ?? [],
 		stylePreset: body.stylePreset ?? 'oe',
 		showBranding: body.showBranding ?? true,
+		chartHeight: body.chartHeight ?? 400,
+		xTicks: body.xTicks ?? 0,
+		xTickRotate: body.xTickRotate ?? 0,
+		marginBottom: body.marginBottom ?? 0,
+		colourSeries: body.colourSeries ?? null,
+		xLabel: body.xLabel ?? '',
+		yLabel: body.yLabel ?? '',
 		snapshotVersion: body.version ?? 1,
 		publishedAt: null
 	});

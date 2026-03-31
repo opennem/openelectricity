@@ -9,7 +9,7 @@ import { parseCSV } from '$lib/stratify/csv-parser.js';
 import { assignPresetColours, getPreset } from '../_config/chart-styles.js';
 
 /**
- * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar'} ChartType
+ * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'dot'} ChartType
  */
 
 /**
@@ -26,6 +26,16 @@ import { assignPresetColours, getPreset } from '../_config/chart-styles.js';
  * @property {string[]} hiddenSeries
  * @property {Record<string, string>} userSeriesColours
  * @property {Record<string, string>} userSeriesLabels
+ * @property {Record<string, string>} [seriesChartTypes]
+ * @property {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides} [plotOverrides]
+ * @property {string[]} [seriesOrder]
+ * @property {number} [chartHeight]
+ * @property {number} [xTicks]
+ * @property {number} [xTickRotate]
+ * @property {number} [marginBottom]
+ * @property {string | null} [colourSeries]
+ * @property {string} [xLabel]
+ * @property {string} [yLabel]
  */
 
 export default class StratifyPlotProject {
@@ -66,6 +76,38 @@ export default class StratifyPlotProject {
 	/** @type {Record<string, string>} */
 	userSeriesLabels = $state({});
 
+	/** @type {Record<string, import('$lib/components/charts/plot/plot-configs.js').SeriesMarkType>} */
+	seriesChartTypes = $state({});
+
+	/** @type {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides | null} */
+	plotOverrides = $state(null);
+
+	/** @type {string[]} User-defined series order (empty = use CSV column order) */
+	seriesOrder = $state([]);
+
+	/** @type {number} Chart height in pixels */
+	chartHeight = $state(400);
+
+	/** @type {number} Number of x-axis ticks to show (0 = auto) */
+	xTicks = $state(0);
+
+	/** @type {number} X-axis label rotation in degrees (0 = horizontal) */
+	xTickRotate = $state(0);
+
+	/** @type {number} Bottom margin for x-axis labels in pixels (0 = auto) */
+	marginBottom = $state(0);
+
+	// --- Column mapping ---
+	/** @type {string | null} Column key used as colour grouping */
+	colourSeries = $state(null);
+
+	// --- Axis labels ---
+	/** @type {string} X-axis label (empty = hidden) */
+	xLabel = $state('');
+
+	/** @type {string} Y-axis label (empty = hidden) */
+	yLabel = $state('');
+
 	// --- Publish settings ---
 	/** @type {'draft' | 'published'} */
 	status = $state('draft');
@@ -84,30 +126,65 @@ export default class StratifyPlotProject {
 
 	isCategory = $derived(this.parsedData.mode === 'category');
 
-	/** Merged colours: user overrides > preset palette > parsed defaults */
+	/** All column metadata from the parser */
+	allColumns = $derived(this.parsedData.allColumns ?? []);
+
+	/** Labels for all non-first data columns (for tooltips) */
+	dataColumnLabels = $derived(
+		Object.fromEntries(this.allColumns.slice(1).map((col) => [col.key, col.label]))
+	);
+
+	/** Whether a valid colour series is configured */
+	hasColourSeries = $derived(
+		this.colourSeries !== null && this.parsedData.seriesNames.includes(this.colourSeries)
+	);
+
+	/** Unique group values from the colour series column, in data order */
+	colourGroupNames = $derived.by(() => {
+		if (!this.hasColourSeries) return [];
+		/** @type {Set<string>} */
+		const seen = new Set();
+		/** @type {string[]} */
+		const groups = [];
+		for (const row of this.parsedData.data) {
+			const val = row[/** @type {string} */ (this.colourSeries)];
+			if (val != null && !seen.has(String(val))) {
+				seen.add(String(val));
+				groups.push(String(val));
+			}
+		}
+		return groups;
+	});
+
+	/** Merged colours: user overrides > preset palette > parsed defaults.
+	 *  When colour series is active, keys are group names (e.g. NEM, WEM). */
 	seriesColours = $derived.by(() => {
 		const parsed = this.parsedData;
-		if (parsed.seriesNames.length === 0) return this.userSeriesColours;
+		const names = this.hasColourSeries ? this.colourGroupNames : parsed.seriesNames;
+		if (names.length === 0) return this.userSeriesColours;
 
-		const presetColours = assignPresetColours(parsed.seriesNames, this.stylePreset);
+		const presetColours = assignPresetColours(names, this.stylePreset);
 
 		/** @type {Record<string, string>} */
 		const merged = {};
-		for (const name of parsed.seriesNames) {
-			merged[name] = this.userSeriesColours[name] || presetColours[name] || parsed.seriesColours[name];
+		for (const name of names) {
+			merged[name] =
+				this.userSeriesColours[name] || presetColours[name] || parsed.seriesColours[name];
 		}
 		return merged;
 	});
 
-	/** Merged labels: user overrides take precedence over parsed defaults */
+	/** Merged labels: user overrides take precedence over parsed defaults.
+	 *  When colour series is active, keys are group names. */
 	seriesLabels = $derived.by(() => {
 		const parsed = this.parsedData;
-		if (parsed.seriesNames.length === 0) return this.userSeriesLabels;
+		const names = this.hasColourSeries ? this.colourGroupNames : parsed.seriesNames;
+		if (names.length === 0) return this.userSeriesLabels;
 
 		/** @type {Record<string, string>} */
 		const merged = {};
-		for (const name of parsed.seriesNames) {
-			merged[name] = this.userSeriesLabels[name] || parsed.seriesLabels[name];
+		for (const name of names) {
+			merged[name] = this.userSeriesLabels[name] || parsed.seriesLabels[name] || name;
 		}
 		return merged;
 	});
@@ -115,9 +192,29 @@ export default class StratifyPlotProject {
 	/** The active style preset config */
 	activePreset = $derived(getPreset(this.stylePreset));
 
-	/** Visible series names (excluding hidden) */
+	/**
+	 * Series names in user-defined order, excluding the colour series column.
+	 * Falls back to CSV column order. Handles additions/removals when CSV changes.
+	 */
+	orderedSeriesNames = $derived.by(() => {
+		const colourKey = this.colourSeries;
+		const parsed = this.parsedData.seriesNames.filter((n) => n !== colourKey);
+		if (this.seriesOrder.length === 0) return parsed;
+
+		const parsedSet = new Set(parsed);
+		// Keep only names that still exist in the parsed data, in user order
+		const ordered = this.seriesOrder.filter((name) => parsedSet.has(name));
+		// Append any new series not in the user order
+		const orderedSet = new Set(ordered);
+		for (const name of parsed) {
+			if (!orderedSet.has(name)) ordered.push(name);
+		}
+		return ordered;
+	});
+
+	/** Visible series names (excluding hidden), respecting user order */
 	visibleSeriesNames = $derived(
-		this.parsedData.seriesNames.filter((name) => !this.hiddenSeries.includes(name))
+		this.orderedSeriesNames.filter((name) => !this.hiddenSeries.includes(name))
 	);
 
 	/** Visible data rows with hidden series stripped */
@@ -145,6 +242,13 @@ export default class StratifyPlotProject {
 				}
 			}
 		});
+
+		// Clear colour series if the column no longer exists in parsed data
+		$effect(() => {
+			if (this.colourSeries && !this.parsedData.seriesNames.includes(this.colourSeries)) {
+				this.colourSeries = null;
+			}
+		});
 	}
 
 	/** Reset the project to a blank state. */
@@ -160,6 +264,16 @@ export default class StratifyPlotProject {
 		this.hiddenSeries = [];
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
+		this.seriesChartTypes = {};
+		this.plotOverrides = null;
+		this.seriesOrder = [];
+		this.chartHeight = 400;
+		this.xTicks = 0;
+		this.xTickRotate = 0;
+		this.marginBottom = 0;
+		this.colourSeries = null;
+		this.xLabel = '';
+		this.yLabel = '';
 		this.status = 'draft';
 		this.showBranding = true;
 		this.currentChartId = null;
@@ -180,6 +294,16 @@ export default class StratifyPlotProject {
 		this.stylePreset = 'oe';
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
+		this.seriesChartTypes = {};
+		this.plotOverrides = null;
+		this.seriesOrder = [];
+		this.chartHeight = 400;
+		this.xTicks = 0;
+		this.xTickRotate = 0;
+		this.marginBottom = 0;
+		this.colourSeries = null;
+		this.xLabel = '';
+		this.yLabel = '';
 		this.hiddenSeries = [];
 		this.currentChartId = null;
 	}
@@ -190,7 +314,7 @@ export default class StratifyPlotProject {
 	 */
 	toJSON() {
 		return {
-			version: 1,
+			version: 2,
 			csvText: this.csvText,
 			title: this.title,
 			description: this.description,
@@ -201,7 +325,17 @@ export default class StratifyPlotProject {
 			stylePreset: this.stylePreset,
 			hiddenSeries: this.hiddenSeries,
 			userSeriesColours: this.userSeriesColours,
-			userSeriesLabels: this.userSeriesLabels
+			userSeriesLabels: this.userSeriesLabels,
+			seriesChartTypes: this.seriesChartTypes,
+			plotOverrides: this.plotOverrides,
+			seriesOrder: this.seriesOrder,
+			chartHeight: this.chartHeight,
+			xTicks: this.xTicks,
+			xTickRotate: this.xTickRotate,
+			marginBottom: this.marginBottom,
+			colourSeries: this.colourSeries,
+			xLabel: this.xLabel,
+			yLabel: this.yLabel
 		};
 	}
 
@@ -221,6 +355,16 @@ export default class StratifyPlotProject {
 		this.hiddenSeries = snapshot.hiddenSeries ?? [];
 		this.userSeriesColours = snapshot.userSeriesColours ?? {};
 		this.userSeriesLabels = snapshot.userSeriesLabels ?? {};
+		this.seriesChartTypes = snapshot.seriesChartTypes ?? {};
+		this.plotOverrides = snapshot.plotOverrides ?? null;
+		this.seriesOrder = snapshot.seriesOrder ?? [];
+		this.chartHeight = snapshot.chartHeight ?? 400;
+		this.xTicks = snapshot.xTicks ?? 0;
+		this.xTickRotate = snapshot.xTickRotate ?? 0;
+		this.marginBottom = snapshot.marginBottom ?? 0;
+		this.colourSeries = snapshot.colourSeries ?? null;
+		this.xLabel = snapshot.xLabel ?? '';
+		this.yLabel = snapshot.yLabel ?? '';
 		this.status = snapshot.status ?? 'draft';
 		this.showBranding = snapshot.showBranding ?? true;
 	}
