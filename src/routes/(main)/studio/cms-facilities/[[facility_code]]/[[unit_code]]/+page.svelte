@@ -15,7 +15,7 @@
 	import { getContext, onDestroy, onMount, tick, untrack } from 'svelte';
 	import { PanelHeader, DragHandle, createDragHandler } from '$lib/components/ui/panel';
 	import FacilityDetail from './_components/FacilityDetail.svelte';
-	import LoginGate from './_components/LoginGate.svelte';
+	import LoginGate from '$lib/components/auth/LoginGate.svelte';
 	import { getClerkState } from '$lib/auth/clerk.svelte.js';
 	import { fetchOsmPolygon, isOsmCached } from './_utils/osm.js';
 
@@ -437,7 +437,7 @@
 	}
 </script>
 
-<LoginGate>
+<LoginGate redirectUrl="/studio/cms-facilities">
 {#if mounted}
 <div class="flex flex-col h-dvh overflow-hidden font-mono">
 	<!-- Header bar -->

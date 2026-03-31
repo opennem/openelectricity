@@ -19,8 +19,14 @@
 	});
 </script>
 
-<div bind:clientWidth={containerWidth} class={className}>
+<div bind:clientWidth={containerWidth} class="plot-chart-container {className}">
 	{#if containerWidth > 0}
 		<div use:plotChart={resolvedOptions}></div>
 	{/if}
 </div>
+
+<style>
+	:global(.plot-chart-container [aria-label="bar"] rect) {
+		shape-rendering: crispEdges;
+	}
+</style>
