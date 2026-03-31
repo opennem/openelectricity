@@ -265,7 +265,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		style,
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
-		x: { label: null, tickPadding: 6 },
+		x: { label: null, tickPadding: 6, type: 'band' },
 		y: { label: null, grid: true, tickFormat: yTickFormat },
 		marks: [
 			...extraMarks,
@@ -311,7 +311,7 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 		style,
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
-		x: { label: null, tickPadding: 6, tickRotate: -30 },
+		x: { label: null, tickPadding: 6, tickRotate: -30, type: 'band' },
 		y: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		fx: { label: null, padding: 0.2 },
 		marks: [

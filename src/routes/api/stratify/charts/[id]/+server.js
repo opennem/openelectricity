@@ -67,6 +67,7 @@ export async function PATCH({ request, params }) {
 	if (body.notes !== undefined) patches.notes = body.notes;
 	if (body.csvText !== undefined) patches.csvText = body.csvText;
 	if (body.chartType !== undefined) patches.chartType = body.chartType;
+	if (body.displayMode !== undefined) patches.displayMode = body.displayMode;
 	if (body.hiddenSeries !== undefined) patches.hiddenSeries = body.hiddenSeries;
 	if (body.userSeriesColours !== undefined)
 		patches.userSeriesColours = JSON.stringify(body.userSeriesColours);

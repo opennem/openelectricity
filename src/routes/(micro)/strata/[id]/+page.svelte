@@ -7,7 +7,7 @@
 	let { data } = $props();
 
 	const chart = $derived(data.chart);
-	const parsed = $derived(parseCSV(chart.csvText));
+	const parsed = $derived(parseCSV(chart.csvText, {}, chart.displayMode ?? 'auto'));
 	const preset = $derived(getPreset(chart.stylePreset ?? 'oe'));
 	const plotStyleOptions = $derived({ style: getPlotStyle(chart.stylePreset ?? 'oe') });
 

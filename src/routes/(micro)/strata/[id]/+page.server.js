@@ -23,6 +23,7 @@ export async function load({ params }) {
 			notes: chart.notes ?? '',
 			csvText: chart.csvText ?? '',
 			chartType: chart.chartType ?? 'stacked-area',
+			displayMode: chart.displayMode ?? 'auto',
 			hiddenSeries: chart.hiddenSeries ?? [],
 			userSeriesColours: safeParseJSON(chart.userSeriesColours, {}),
 			userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),

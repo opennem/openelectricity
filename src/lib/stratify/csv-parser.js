@@ -117,12 +117,13 @@ const EMPTY_RESULT = { mode: 'time-series', data: [], seriesNames: [], seriesLab
 /**
  * Parse CSV or TSV text into StratumChart-compatible data.
  * Auto-detects whether the first column contains dates (time-series mode)
- * or text labels (category mode).
+ * or text labels (category mode), unless overridden by displayMode.
  * @param {string} csvText
  * @param {Record<string, string>} [existingColours] - Preserve existing colour assignments
+ * @param {'auto' | 'time-series' | 'category'} [displayMode='auto'] - Override auto-detection
  * @returns {ParseResult}
  */
-export function parseCSV(csvText, existingColours = {}) {
+export function parseCSV(csvText, existingColours = {}, displayMode = 'auto') {
 	/** @type {string[]} */
 	const errors = [];
 
@@ -155,18 +156,26 @@ export function parseCSV(csvText, existingColours = {}) {
 		seriesNames.map((key) => [key, existingColours[key] || freshColours[key]])
 	);
 
-	// Probe first column to detect mode: try parsing all non-empty first-column values as dates
 	const rawDataLines = lines.slice(1);
-	let nonEmptyCount = 0;
-	let dateSuccesses = 0;
-	for (const line of rawDataLines) {
-		if (!line.trim()) continue;
-		nonEmptyCount++;
-		const firstCell = line.split(delimiter)[0] || '';
-		if (parseDate(firstCell)) dateSuccesses++;
-	}
 
-	const isCategory = nonEmptyCount > 0 && dateSuccesses / nonEmptyCount < 0.5;
+	// Determine mode: explicit override or auto-detect from first column content
+	let isCategory;
+	if (displayMode === 'category') {
+		isCategory = true;
+	} else if (displayMode === 'time-series') {
+		isCategory = false;
+	} else {
+		// Auto-detect: probe first column for date-parseable values
+		let nonEmptyCount = 0;
+		let dateSuccesses = 0;
+		for (const line of rawDataLines) {
+			if (!line.trim()) continue;
+			nonEmptyCount++;
+			const firstCell = line.split(delimiter)[0] || '';
+			if (parseDate(firstCell)) dateSuccesses++;
+		}
+		isCategory = nonEmptyCount > 0 && dateSuccesses / nonEmptyCount < 0.5;
+	}
 
 	if (isCategory) {
 		return parseCategoryData(rawDataLines, delimiter, seriesNames, seriesLabels, seriesColours, errors);
