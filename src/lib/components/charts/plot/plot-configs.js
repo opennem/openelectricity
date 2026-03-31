@@ -4,7 +4,12 @@
  * Each function takes parsed CSV data (from csv-parser.js) and returns
  * a PlotOptions object ready to pass to PlotChart.
  */
-import { areaY, lineY, barY, ruleX, ruleY, stackY, groupX } from '@observablehq/plot';
+import { areaY, lineY, barY, dot, ruleX, ruleY, stackY, groupX } from '@observablehq/plot';
+
+/**
+ * Per-series mark type for mixed charts.
+ * @typedef {'area' | 'line' | 'bar' | 'dot'} SeriesMarkType
+ */
 
 const SHARED_STYLE = {
 	fontFamily: 'DM Mono, monospace',
@@ -324,5 +329,245 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 			}),
 			ruleY([0])
 		]
+	};
+}
+
+// ── Dot Chart ───────────────────────────────────────────────────
+
+/**
+ * Dot (scatter) chart for time-series data.
+ * @param {Array<Record<string, any>>} data - Parsed rows with `date` field
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} colours
+ * @param {Record<string, string>} labels
+ * @param {TimeSeriesOptions} [options]
+ * @returns {import('@observablehq/plot').PlotOptions}
+ */
+export function createDotOptions(data, seriesNames, colours, labels, options = {}) {
+	const {
+		xDomain,
+		style = SHARED_STYLE,
+		marginLeft,
+		marginRight,
+		legend = true,
+		xType,
+		extraMarks = [],
+		gridlines,
+		yDomain,
+		yTickFormat
+	} = options;
+	const long = toLong(data, seriesNames, 'date');
+
+	return {
+		style,
+		...(marginLeft !== undefined ? { marginLeft } : {}),
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: { ...colourScale(seriesNames, colours, labels), legend },
+		x: {
+			label: null,
+			...(xDomain ? { domain: xDomain } : {}),
+			...(xType ? { type: /** @type {any} */ (xType) } : {}),
+			...(gridlines ? { axis: null } : {})
+		},
+		y: {
+			label: null,
+			grid: !gridlines,
+			...(yTickFormat ? { tickFormat: yTickFormat } : {}),
+			...(yDomain ? { domain: yDomain } : {})
+		},
+		marks: [
+			...(gridlines ? gridlines.gridlineMarks : []),
+			...extraMarks,
+			dot(long, {
+				x: 'x',
+				y: 'value',
+				stroke: 'series',
+				fill: 'series',
+				fillOpacity: 0.6,
+				r: 3
+			}),
+			ruleY([0])
+		]
+	};
+}
+
+// ── Mixed Chart Type Support ────────────────────────────────────
+
+/**
+ * Map a global chart type to its default per-series mark type.
+ * @param {string} chartType - Global chart type value
+ * @returns {SeriesMarkType}
+ */
+export function globalTypeToMarkType(chartType) {
+	switch (chartType) {
+		case 'stacked-area':
+		case 'area':
+			return 'area';
+		case 'bar-stacked':
+		case 'grouped-bar':
+			return 'bar';
+		case 'dot':
+			return 'dot';
+		case 'line':
+		default:
+			return 'line';
+	}
+}
+
+/**
+ * Create Plot options with per-series chart type overrides.
+ *
+ * Partitions series by their effective mark type and creates the appropriate
+ * Observable Plot marks for each group. Area series are stacked together,
+ * bar series are grouped, and line/dot series are overlaid.
+ *
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} colours
+ * @param {Record<string, string>} labels
+ * @param {Record<string, SeriesMarkType>} seriesChartTypes - Per-series type overrides
+ * @param {string} defaultChartType - Global chart type (fallback)
+ * @param {TimeSeriesOptions} [options]
+ * @returns {import('@observablehq/plot').PlotOptions}
+ */
+export function createMixedMarkOptions(
+	data,
+	seriesNames,
+	colours,
+	labels,
+	seriesChartTypes,
+	defaultChartType,
+	options = {}
+) {
+	const {
+		curve,
+		xDomain,
+		style = SHARED_STYLE,
+		marginLeft,
+		marginRight,
+		legend = true,
+		xType,
+		extraMarks = [],
+		gridlines,
+		yDomain,
+		yTickFormat
+	} = options;
+
+	const defaultMarkType = globalTypeToMarkType(defaultChartType);
+
+	// Detect whether data is time-series or category
+	const isCategory = data.length > 0 && 'category' in data[0];
+	const xKey = isCategory ? 'category' : 'date';
+
+	// Partition series by effective mark type
+	/** @type {Record<SeriesMarkType, string[]>} */
+	const groups = { area: [], line: [], bar: [], dot: [] };
+	for (const name of seriesNames) {
+		const markType = seriesChartTypes[name] || defaultMarkType;
+		groups[markType].push(name);
+	}
+
+	// Build marks for each group
+	/** @type {any[]} */
+	const marks = [];
+
+	if (gridlines) marks.push(...gridlines.gridlineMarks);
+	marks.push(...extraMarks);
+
+	// Area series (stacked together)
+	if (groups.area.length > 0) {
+		const long = toLong(data, groups.area, xKey);
+		marks.push(
+			areaY(
+				long,
+				stackY({
+					x: 'x',
+					y: 'value',
+					fill: 'series',
+					...(curve ? { curve } : {}),
+					order: groups.area
+				})
+			)
+		);
+	}
+
+	// Bar series
+	if (groups.bar.length > 0) {
+		const long = toLong(data, groups.bar, xKey);
+		if (isCategory) {
+			marks.push(
+				barY(
+					long,
+					stackY(
+						groupX(
+							{ y: 'sum' },
+							{ x: 'x', y: 'value', fill: 'series', order: groups.bar }
+						)
+					)
+				)
+			);
+		} else {
+			// Time-series bars: use rectY-style bar with x as date
+			marks.push(
+				barY(long, {
+					x: 'x',
+					y: 'value',
+					fill: 'series',
+					...(groups.bar.length > 1 ? {} : {})
+				})
+			);
+		}
+	}
+
+	// Line series (overlaid)
+	if (groups.line.length > 0) {
+		const long = toLong(data, groups.line, xKey);
+		marks.push(
+			lineY(long, {
+				x: 'x',
+				y: 'value',
+				stroke: 'series',
+				strokeWidth: 1.5,
+				...(curve ? { curve } : {})
+			})
+		);
+	}
+
+	// Dot series (overlaid)
+	if (groups.dot.length > 0) {
+		const long = toLong(data, groups.dot, xKey);
+		marks.push(
+			dot(long, {
+				x: 'x',
+				y: 'value',
+				stroke: 'series',
+				fill: 'series',
+				fillOpacity: 0.6,
+				r: 3
+			})
+		);
+	}
+
+	marks.push(ruleY([0]));
+
+	return {
+		style,
+		...(marginLeft !== undefined ? { marginLeft } : {}),
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: { ...colourScale(seriesNames, colours, labels), legend },
+		x: {
+			label: null,
+			...(xDomain ? { domain: xDomain } : {}),
+			...(xType ? { type: /** @type {any} */ (xType) } : {}),
+			...(isCategory ? { tickPadding: 6, type: 'band' } : {}),
+			...(gridlines ? { axis: null } : {})
+		},
+		y: {
+			label: null,
+			grid: !gridlines,
+			...(yTickFormat ? { tickFormat: yTickFormat } : {}),
+			...(yDomain ? { domain: yDomain } : {})
+		},
+		marks
 	};
 }

@@ -34,6 +34,8 @@
 		seriesColours={project.seriesColours}
 		seriesLabels={project.seriesLabels}
 		chartType={project.chartType}
+		seriesChartTypes={project.seriesChartTypes}
+		plotOverrides={project.plotOverrides}
 		options={plotStyleOptions}
 		height={400}
 	/>

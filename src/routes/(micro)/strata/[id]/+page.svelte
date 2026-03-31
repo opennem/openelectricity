@@ -32,9 +32,21 @@
 		return labels;
 	});
 
-	// Filter hidden series
+	// Apply user-defined series order, then filter hidden
+	const orderedSeriesNames = $derived.by(() => {
+		const names = parsed.seriesNames;
+		const order = chart.seriesOrder;
+		if (!order || order.length === 0) return names;
+		const nameSet = new Set(names);
+		const ordered = order.filter((/** @type {string} */ n) => nameSet.has(n));
+		const orderedSet = new Set(ordered);
+		for (const n of names) {
+			if (!orderedSet.has(n)) ordered.push(n);
+		}
+		return ordered;
+	});
 	const hiddenSet = $derived(new Set(chart.hiddenSeries));
-	const visibleSeriesNames = $derived(parsed.seriesNames.filter((/** @type {string} */ name) => !hiddenSet.has(name)));
+	const visibleSeriesNames = $derived(orderedSeriesNames.filter((/** @type {string} */ name) => !hiddenSet.has(name)));
 
 	const visibleData = $derived.by(() => {
 		if (hiddenSet.size === 0) return parsed.data;
@@ -81,6 +93,8 @@
 				{seriesColours}
 				{seriesLabels}
 				chartType={chart.chartType}
+				seriesChartTypes={chart.seriesChartTypes}
+				plotOverrides={chart.plotOverrides}
 				annotations={chart.annotations}
 				options={plotStyleOptions}
 				height={400}

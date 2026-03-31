@@ -28,7 +28,10 @@ export async function GET({ request, params }) {
 			...chart,
 			userSeriesColours: safeParseJSON(chart.userSeriesColours, {}),
 			userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),
-			annotations: safeParseJSON(chart.annotations, [])
+			annotations: safeParseJSON(chart.annotations, []),
+			seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
+			plotOverrides: safeParseJSON(chart.plotOverrides, null),
+			seriesOrder: chart.seriesOrder ?? []
 		}
 	});
 }
@@ -74,6 +77,11 @@ export async function PATCH({ request, params }) {
 	if (body.userSeriesLabels !== undefined)
 		patches.userSeriesLabels = JSON.stringify(body.userSeriesLabels);
 	if (body.annotations !== undefined) patches.annotations = JSON.stringify(body.annotations);
+	if (body.seriesChartTypes !== undefined)
+		patches.seriesChartTypes = JSON.stringify(body.seriesChartTypes);
+	if (body.plotOverrides !== undefined)
+		patches.plotOverrides = JSON.stringify(body.plotOverrides);
+	if (body.seriesOrder !== undefined) patches.seriesOrder = body.seriesOrder;
 	if (body.stylePreset !== undefined) patches.stylePreset = body.stylePreset;
 	if (body.showBranding !== undefined) patches.showBranding = body.showBranding;
 	if (body.status !== undefined) patches.status = body.status;

@@ -9,7 +9,7 @@ import { parseCSV } from '$lib/stratify/csv-parser.js';
 import { assignPresetColours, getPreset } from '../_config/chart-styles.js';
 
 /**
- * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar'} ChartType
+ * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'dot'} ChartType
  */
 
 /**
@@ -26,6 +26,9 @@ import { assignPresetColours, getPreset } from '../_config/chart-styles.js';
  * @property {string[]} hiddenSeries
  * @property {Record<string, string>} userSeriesColours
  * @property {Record<string, string>} userSeriesLabels
+ * @property {Record<string, string>} [seriesChartTypes]
+ * @property {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides} [plotOverrides]
+ * @property {string[]} [seriesOrder]
  */
 
 export default class StratifyPlotProject {
@@ -65,6 +68,15 @@ export default class StratifyPlotProject {
 
 	/** @type {Record<string, string>} */
 	userSeriesLabels = $state({});
+
+	/** @type {Record<string, import('$lib/components/charts/plot/plot-configs.js').SeriesMarkType>} */
+	seriesChartTypes = $state({});
+
+	/** @type {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides | null} */
+	plotOverrides = $state(null);
+
+	/** @type {string[]} User-defined series order (empty = use CSV column order) */
+	seriesOrder = $state([]);
 
 	// --- Publish settings ---
 	/** @type {'draft' | 'published'} */
@@ -115,9 +127,28 @@ export default class StratifyPlotProject {
 	/** The active style preset config */
 	activePreset = $derived(getPreset(this.stylePreset));
 
-	/** Visible series names (excluding hidden) */
+	/**
+	 * Series names in user-defined order.
+	 * Falls back to CSV column order. Handles additions/removals when CSV changes.
+	 */
+	orderedSeriesNames = $derived.by(() => {
+		const parsed = this.parsedData.seriesNames;
+		if (this.seriesOrder.length === 0) return parsed;
+
+		const parsedSet = new Set(parsed);
+		// Keep only names that still exist in the parsed data, in user order
+		const ordered = this.seriesOrder.filter((name) => parsedSet.has(name));
+		// Append any new series not in the user order
+		const orderedSet = new Set(ordered);
+		for (const name of parsed) {
+			if (!orderedSet.has(name)) ordered.push(name);
+		}
+		return ordered;
+	});
+
+	/** Visible series names (excluding hidden), respecting user order */
 	visibleSeriesNames = $derived(
-		this.parsedData.seriesNames.filter((name) => !this.hiddenSeries.includes(name))
+		this.orderedSeriesNames.filter((name) => !this.hiddenSeries.includes(name))
 	);
 
 	/** Visible data rows with hidden series stripped */
@@ -160,6 +191,9 @@ export default class StratifyPlotProject {
 		this.hiddenSeries = [];
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
+		this.seriesChartTypes = {};
+		this.plotOverrides = null;
+		this.seriesOrder = [];
 		this.status = 'draft';
 		this.showBranding = true;
 		this.currentChartId = null;
@@ -180,6 +214,9 @@ export default class StratifyPlotProject {
 		this.stylePreset = 'oe';
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
+		this.seriesChartTypes = {};
+		this.plotOverrides = null;
+		this.seriesOrder = [];
 		this.hiddenSeries = [];
 		this.currentChartId = null;
 	}
@@ -190,7 +227,7 @@ export default class StratifyPlotProject {
 	 */
 	toJSON() {
 		return {
-			version: 1,
+			version: 2,
 			csvText: this.csvText,
 			title: this.title,
 			description: this.description,
@@ -201,7 +238,10 @@ export default class StratifyPlotProject {
 			stylePreset: this.stylePreset,
 			hiddenSeries: this.hiddenSeries,
 			userSeriesColours: this.userSeriesColours,
-			userSeriesLabels: this.userSeriesLabels
+			userSeriesLabels: this.userSeriesLabels,
+			seriesChartTypes: this.seriesChartTypes,
+			plotOverrides: this.plotOverrides,
+			seriesOrder: this.seriesOrder
 		};
 	}
 
@@ -221,6 +261,9 @@ export default class StratifyPlotProject {
 		this.hiddenSeries = snapshot.hiddenSeries ?? [];
 		this.userSeriesColours = snapshot.userSeriesColours ?? {};
 		this.userSeriesLabels = snapshot.userSeriesLabels ?? {};
+		this.seriesChartTypes = snapshot.seriesChartTypes ?? {};
+		this.plotOverrides = snapshot.plotOverrides ?? null;
+		this.seriesOrder = snapshot.seriesOrder ?? [];
 		this.status = snapshot.status ?? 'draft';
 		this.showBranding = snapshot.showBranding ?? true;
 	}

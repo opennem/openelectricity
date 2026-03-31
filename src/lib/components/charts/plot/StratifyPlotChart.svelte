@@ -5,12 +5,15 @@
 		createStackedAreaOptions,
 		createLineOptions,
 		createStackedBarOptions,
-		createGroupedBarOptions
+		createGroupedBarOptions,
+		createDotOptions,
+		createMixedMarkOptions
 	} from './plot-configs.js';
 	import { processAnnotations } from './plot-annotations.js';
+	import { applyPlotOverrides } from './plot-overrides.js';
 
 	/**
-	 * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar'} StratifyPlotChartType
+	 * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'dot'} StratifyPlotChartType
 	 */
 
 	/** @type {Record<string, Function>} */
@@ -19,10 +22,11 @@
 		area: createStackedAreaOptions,
 		line: createLineOptions,
 		'bar-stacked': createStackedBarOptions,
-		'grouped-bar': createGroupedBarOptions
+		'grouped-bar': createGroupedBarOptions,
+		dot: createDotOptions
 	};
 
-	const TIME_SERIES_TYPES = new Set(['stacked-area', 'area', 'line']);
+	const TIME_SERIES_TYPES = new Set(['stacked-area', 'area', 'line', 'dot']);
 
 	/**
 	 * @type {{
@@ -31,6 +35,8 @@
 	 *   seriesColours: Record<string, string>,
 	 *   seriesLabels: Record<string, string>,
 	 *   chartType: StratifyPlotChartType,
+	 *   seriesChartTypes?: Record<string, string>,
+	 *   plotOverrides?: import('./plot-overrides.js').PlotOverrides | null,
 	 *   height?: number,
 	 *   options?: import('./plot-configs.js').TimeSeriesOptions,
 	 *   annotations?: import('./plot-annotations.js').Annotation[],
@@ -43,6 +49,8 @@
 		seriesColours,
 		seriesLabels,
 		chartType,
+		seriesChartTypes = {},
+		plotOverrides = null,
 		height = 300,
 		options = {},
 		annotations = [],
@@ -66,8 +74,29 @@
 					}
 				: options;
 
-		const configFn = CONFIG_MAP[chartType] || createLineOptions;
-		const opts = configFn(data, seriesNames, seriesColours, seriesLabels, mergedOptions);
+		const hasMixedTypes = Object.keys(seriesChartTypes).length > 0;
+		let opts = hasMixedTypes
+			? createMixedMarkOptions(
+					data,
+					seriesNames,
+					seriesColours,
+					seriesLabels,
+					seriesChartTypes,
+					chartType,
+					mergedOptions
+				)
+			: (CONFIG_MAP[chartType] || createLineOptions)(
+					data,
+					seriesNames,
+					seriesColours,
+					seriesLabels,
+					mergedOptions
+				);
+
+		// Apply plot overrides before tooltips
+		if (plotOverrides) {
+			opts = applyPlotOverrides(opts, plotOverrides);
+		}
 
 		// Add tooltip marks
 		if (TIME_SERIES_TYPES.has(chartType)) {

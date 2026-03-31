@@ -5,7 +5,7 @@
  * Used by ChartTypeSelector to render the two-row family/variant UI.
  */
 
-/** @typedef {'area' | 'bar' | 'line'} ChartFamily */
+/** @typedef {'area' | 'bar' | 'line' | 'dot'} ChartFamily */
 
 /**
  * @typedef {Object} ChartFamilyConfig
@@ -34,11 +34,17 @@ export const CHART_FAMILIES = {
 		variants: ['line'],
 		variantLabels: {},
 		defaultVariant: 'line'
+	},
+	dot: {
+		label: 'Dot',
+		variants: ['dot'],
+		variantLabels: {},
+		defaultVariant: 'dot'
 	}
 };
 
 /** @type {ChartFamily[]} */
-const FAMILY_ORDER = ['area', 'bar', 'line'];
+const FAMILY_ORDER = ['area', 'bar', 'line', 'dot'];
 
 /** @type {Record<string, ChartFamily>} */
 const TYPE_TO_FAMILY = /** @type {Record<string, ChartFamily>} */ ({});
