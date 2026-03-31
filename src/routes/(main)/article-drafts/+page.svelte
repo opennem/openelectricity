@@ -216,31 +216,3 @@
 		{/each}
 	</div>
 </div> -->
-
-<style lang="postcss">
-	.records-sidebar:before {
-		content: '';
-		display: block;
-		width: 100vh;
-		height: 100%;
-		position: absolute;
-		right: 100%;
-		top: 0;
-		background-color: white;
-	}
-	.records-sidebar-fill:after {
-		content: '';
-		display: block;
-		width: 100vh;
-		height: 100%;
-		position: absolute;
-		left: 100%;
-		top: 0;
-		background-color: white;
-	}
-	@media (min-width: theme(screens.md)) {
-		.records-sidebar-fill:after {
-			display: none;
-		}
-	}
-</style>
