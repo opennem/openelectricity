@@ -21,6 +21,7 @@ import { assignPresetColours, getPreset } from '../_config/chart-styles.js';
  * @property {string} dataSource
  * @property {string} notes
  * @property {ChartType} chartType
+ * @property {'auto' | 'time-series' | 'category'} [displayMode]
  * @property {string} stylePreset
  * @property {string[]} hiddenSeries
  * @property {Record<string, string>} userSeriesColours
@@ -46,6 +47,9 @@ export default class StratifyPlotProject {
 	notes = $state('');
 
 	// --- Chart config ---
+	/** @type {'auto' | 'time-series' | 'category'} */
+	displayMode = $state('auto');
+
 	/** @type {ChartType} */
 	chartType = $state('stacked-area');
 
@@ -74,7 +78,7 @@ export default class StratifyPlotProject {
 	currentChartId = $state(null);
 
 	// --- Derived from CSV ---
-	parsedData = $derived(parseCSV(this.csvText));
+	parsedData = $derived(parseCSV(this.csvText, {}, this.displayMode));
 
 	hasData = $derived(this.parsedData.data.length > 0);
 
@@ -150,6 +154,7 @@ export default class StratifyPlotProject {
 		this.description = '';
 		this.dataSource = '';
 		this.notes = '';
+		this.displayMode = 'auto';
 		this.chartType = 'stacked-area';
 		this.stylePreset = 'oe';
 		this.hiddenSeries = [];
@@ -171,6 +176,7 @@ export default class StratifyPlotProject {
 		this.dataSource = example.dataSource;
 		this.notes = example.notes;
 		this.chartType = /** @type {ChartType} */ (example.chartType);
+		this.displayMode = 'auto';
 		this.stylePreset = 'oe';
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
@@ -191,6 +197,7 @@ export default class StratifyPlotProject {
 			dataSource: this.dataSource,
 			notes: this.notes,
 			chartType: this.chartType,
+			displayMode: this.displayMode,
 			stylePreset: this.stylePreset,
 			hiddenSeries: this.hiddenSeries,
 			userSeriesColours: this.userSeriesColours,
@@ -209,6 +216,7 @@ export default class StratifyPlotProject {
 		this.dataSource = snapshot.dataSource ?? '';
 		this.notes = snapshot.notes ?? '';
 		this.chartType = /** @type {ChartType} */ (snapshot.chartType ?? 'stacked-area');
+		this.displayMode = snapshot.displayMode ?? 'auto';
 		this.stylePreset = snapshot.stylePreset ?? 'oe';
 		this.hiddenSeries = snapshot.hiddenSeries ?? [];
 		this.userSeriesColours = snapshot.userSeriesColours ?? {};

@@ -17,6 +17,7 @@ import { parseCSV } from './csv-parser.js';
  * @property {string} dataSource
  * @property {string} notes
  * @property {string} chartType
+ * @property {'auto' | 'time-series' | 'category'} [displayMode]
  * @property {string[]} hiddenSeries
  * @property {Record<string, string>} userSeriesColours
  * @property {Record<string, string>} userSeriesLabels
@@ -41,6 +42,9 @@ export default class StratifyProject {
 	notes = $state('');
 
 	// --- Chart config ---
+	/** @type {'auto' | 'time-series' | 'category'} */
+	displayMode = $state('auto');
+
 	/** @type {import('$lib/components/charts/v2/types.js').ChartType} */
 	chartType = $state('stacked-area');
 
@@ -59,7 +63,7 @@ export default class StratifyProject {
 	currentChartId = $state(null);
 
 	// --- Derived from CSV ---
-	parsedData = $derived(parseCSV(this.csvText));
+	parsedData = $derived(parseCSV(this.csvText, {}, this.displayMode));
 
 	hasData = $derived(this.parsedData.data.length > 0);
 
@@ -150,6 +154,7 @@ export default class StratifyProject {
 		this.description = '';
 		this.dataSource = '';
 		this.notes = '';
+		this.displayMode = 'auto';
 		this.chartType = 'stacked-area';
 		this.hiddenSeries = [];
 		this.userSeriesColours = {};
@@ -170,6 +175,7 @@ export default class StratifyProject {
 		this.chartType = /** @type {import('$lib/components/charts/v2/types.js').ChartType} */ (
 			example.chartType
 		);
+		this.displayMode = 'auto';
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
 		this.hiddenSeries = [];
@@ -188,6 +194,7 @@ export default class StratifyProject {
 			dataSource: this.dataSource,
 			notes: this.notes,
 			chartType: this.chartType,
+			displayMode: this.displayMode,
 			hiddenSeries: this.hiddenSeries,
 			userSeriesColours: this.userSeriesColours,
 			userSeriesLabels: this.userSeriesLabels
@@ -209,6 +216,7 @@ export default class StratifyProject {
 		project.chartType = /** @type {import('$lib/components/charts/v2/types.js').ChartType} */ (
 			snapshot.chartType ?? 'stacked-area'
 		);
+		project.displayMode = snapshot.displayMode ?? 'auto';
 		project.hiddenSeries = snapshot.hiddenSeries ?? [];
 		project.userSeriesColours = snapshot.userSeriesColours ?? {};
 		project.userSeriesLabels = snapshot.userSeriesLabels ?? {};

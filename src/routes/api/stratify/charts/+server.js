@@ -56,6 +56,7 @@ export async function POST({ request }) {
 		notes: body.notes ?? '',
 		csvText: body.csvText,
 		chartType: body.chartType ?? 'stacked-area',
+		displayMode: body.displayMode ?? 'auto',
 		hiddenSeries: body.hiddenSeries ?? [],
 		userSeriesColours: JSON.stringify(body.userSeriesColours ?? {}),
 		userSeriesLabels: JSON.stringify(body.userSeriesLabels ?? {}),
