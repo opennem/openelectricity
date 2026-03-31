@@ -29,6 +29,8 @@ import { assignPresetColours, getPreset } from '../_config/chart-styles.js';
  * @property {Record<string, string>} [seriesChartTypes]
  * @property {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides} [plotOverrides]
  * @property {string[]} [seriesOrder]
+ * @property {number} [chartHeight]
+ * @property {number} [xTicks]
  */
 
 export default class StratifyPlotProject {
@@ -77,6 +79,12 @@ export default class StratifyPlotProject {
 
 	/** @type {string[]} User-defined series order (empty = use CSV column order) */
 	seriesOrder = $state([]);
+
+	/** @type {number} Chart height in pixels */
+	chartHeight = $state(400);
+
+	/** @type {number} Number of x-axis ticks to show (0 = auto) */
+	xTicks = $state(0);
 
 	// --- Publish settings ---
 	/** @type {'draft' | 'published'} */
@@ -194,6 +202,8 @@ export default class StratifyPlotProject {
 		this.seriesChartTypes = {};
 		this.plotOverrides = null;
 		this.seriesOrder = [];
+		this.chartHeight = 400;
+		this.xTicks = 0;
 		this.status = 'draft';
 		this.showBranding = true;
 		this.currentChartId = null;
@@ -217,6 +227,8 @@ export default class StratifyPlotProject {
 		this.seriesChartTypes = {};
 		this.plotOverrides = null;
 		this.seriesOrder = [];
+		this.chartHeight = 400;
+		this.xTicks = 0;
 		this.hiddenSeries = [];
 		this.currentChartId = null;
 	}
@@ -241,7 +253,9 @@ export default class StratifyPlotProject {
 			userSeriesLabels: this.userSeriesLabels,
 			seriesChartTypes: this.seriesChartTypes,
 			plotOverrides: this.plotOverrides,
-			seriesOrder: this.seriesOrder
+			seriesOrder: this.seriesOrder,
+			chartHeight: this.chartHeight,
+			xTicks: this.xTicks
 		};
 	}
 
@@ -264,6 +278,8 @@ export default class StratifyPlotProject {
 		this.seriesChartTypes = snapshot.seriesChartTypes ?? {};
 		this.plotOverrides = snapshot.plotOverrides ?? null;
 		this.seriesOrder = snapshot.seriesOrder ?? [];
+		this.chartHeight = snapshot.chartHeight ?? 400;
+		this.xTicks = snapshot.xTicks ?? 0;
 		this.status = snapshot.status ?? 'draft';
 		this.showBranding = snapshot.showBranding ?? true;
 	}

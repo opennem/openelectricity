@@ -38,6 +38,7 @@
 	 *   seriesChartTypes?: Record<string, string>,
 	 *   plotOverrides?: import('./plot-overrides.js').PlotOverrides | null,
 	 *   height?: number,
+	 *   xTicks?: number,
 	 *   options?: import('./plot-configs.js').TimeSeriesOptions,
 	 *   annotations?: import('./plot-annotations.js').Annotation[],
 	 *   class?: string
@@ -52,6 +53,7 @@
 		seriesChartTypes = {},
 		plotOverrides = null,
 		height = 300,
+		xTicks = 0,
 		options = {},
 		annotations = [],
 		class: className = ''
@@ -92,6 +94,20 @@
 					seriesLabels,
 					mergedOptions
 				);
+
+		// Apply x-axis tick count if configured
+		if (xTicks > 0) {
+			const xScale = opts.x || {};
+			if (xScale.type === 'band') {
+				// Band scales ignore `ticks` — use tickFormat to hide labels
+				const domain = xScale.domain || data.map((/** @type {any} */ d) => d.category);
+				const step = Math.max(1, Math.ceil(domain.length / xTicks));
+				const visible = new Set(domain.filter((/** @type {any} */ _, /** @type {number} */ i) => i % step === 0));
+				opts.x = { ...xScale, tickFormat: (/** @type {any} */ d) => visible.has(d) ? String(d) : '' };
+			} else {
+				opts.x = { ...xScale, ticks: xTicks };
+			}
+		}
 
 		// Apply plot overrides before tooltips
 		if (plotOverrides) {

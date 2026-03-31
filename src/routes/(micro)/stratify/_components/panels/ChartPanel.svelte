@@ -68,6 +68,42 @@
 </div>
 
 <div class="mt-3 pt-3 border-t border-warm-grey">
+	<label class="flex items-center gap-2">
+		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Chart height</span>
+		<input
+			type="number"
+			min="100"
+			max="1200"
+			step="50"
+			value={project.chartHeight}
+			oninput={(e) => {
+				const v = parseInt(e.currentTarget.value, 10);
+				if (v >= 100 && v <= 1200) project.chartHeight = v;
+			}}
+			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+		/>
+		<span class="text-[10px] text-mid-grey">px</span>
+	</label>
+
+	<label class="flex items-center gap-2 mt-3">
+		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X-axis ticks</span>
+		<input
+			type="number"
+			min="0"
+			max="100"
+			step="1"
+			value={project.xTicks}
+			oninput={(e) => {
+				const v = parseInt(e.currentTarget.value, 10);
+				if (v >= 0 && v <= 100) project.xTicks = v;
+			}}
+			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+		/>
+		<span class="text-[10px] text-mid-grey">0 = auto</span>
+	</label>
+</div>
+
+<div class="mt-3 pt-3 border-t border-warm-grey">
 	<button
 		type="button"
 		onclick={() => (showAdvanced = !showAdvanced)}

@@ -66,6 +66,8 @@ export async function POST({ request }) {
 		seriesOrder: body.seriesOrder ?? [],
 		stylePreset: body.stylePreset ?? 'oe',
 		showBranding: body.showBranding ?? true,
+		chartHeight: body.chartHeight ?? 400,
+		xTicks: body.xTicks ?? 0,
 		snapshotVersion: body.version ?? 1,
 		publishedAt: null
 	});

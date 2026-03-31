@@ -33,6 +33,8 @@ export async function load({ params }) {
 			seriesOrder: chart.seriesOrder ?? [],
 			stylePreset: chart.stylePreset ?? 'oe',
 			showBranding: chart.showBranding ?? true,
+			chartHeight: chart.chartHeight ?? 400,
+			xTicks: chart.xTicks ?? 0,
 			publishedAt: chart.publishedAt
 		}
 	};

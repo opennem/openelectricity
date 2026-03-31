@@ -84,6 +84,8 @@ export async function PATCH({ request, params }) {
 	if (body.seriesOrder !== undefined) patches.seriesOrder = body.seriesOrder;
 	if (body.stylePreset !== undefined) patches.stylePreset = body.stylePreset;
 	if (body.showBranding !== undefined) patches.showBranding = body.showBranding;
+	if (body.chartHeight !== undefined) patches.chartHeight = body.chartHeight;
+	if (body.xTicks !== undefined) patches.xTicks = body.xTicks;
 	if (body.status !== undefined) patches.status = body.status;
 	if (body.publishedAt !== undefined) patches.publishedAt = body.publishedAt;
 	if (body.version !== undefined) patches.snapshotVersion = body.version;

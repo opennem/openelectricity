@@ -69,7 +69,7 @@
 </svelte:head>
 
 <div class="flex flex-col min-h-dvh bg-white" style="font-family: {preset.typography.fontFamily};">
-	<div class="flex-1 flex flex-col max-w-5xl w-full mx-auto px-6 py-8">
+	<div class="flex-1 flex flex-col w-full px-6 py-8">
 		{#if chart.title || chart.description}
 			<div class="mb-4 space-y-1">
 				{#if chart.title}
@@ -97,7 +97,8 @@
 				plotOverrides={chart.plotOverrides}
 				annotations={chart.annotations}
 				options={plotStyleOptions}
-				height={400}
+				height={chart.chartHeight ?? 400}
+				xTicks={chart.xTicks ?? 0}
 			/>
 		{/if}
 

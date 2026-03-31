@@ -37,7 +37,8 @@
 		seriesChartTypes={project.seriesChartTypes}
 		plotOverrides={project.plotOverrides}
 		options={plotStyleOptions}
-		height={400}
+		height={project.chartHeight}
+		xTicks={project.xTicks}
 	/>
 
 	{#if project.notes || project.dataSource}
