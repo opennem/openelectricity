@@ -111,6 +111,10 @@
 
 		if (autoSaveTimer) clearTimeout(autoSaveTimer);
 		autoSaveTimer = setTimeout(() => handleSave('auto'), 3000);
+
+		return () => {
+			if (autoSaveTimer) clearTimeout(autoSaveTimer);
+		};
 	});
 
 	let publishing = $state(false);

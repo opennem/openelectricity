@@ -20,14 +20,10 @@
 			: charts
 	);
 
-	let hasLoaded = false;
+	import { onMount } from 'svelte';
 
-	// Load charts when auth is ready
-	$effect(() => {
-		if (clerkState.user && !hasLoaded) {
-			hasLoaded = true;
-			refreshList();
-		}
+	onMount(() => {
+		refreshList();
 	});
 
 	async function refreshList() {

@@ -1,7 +1,7 @@
 <script>
 	import { getStratifyContext } from '../../_state/context.js';
 	import { exportToFile, importFromFile } from '../../_utils/storage.js';
-	import { createChart, updateChart } from '../../_utils/api.js';
+	import { updateChart } from '../../_utils/api.js';
 
 	const project = getStratifyContext();
 
@@ -19,23 +19,6 @@
 			? `<iframe src="${shareUrl}" width="100%" height="${project.chartHeight + 120}" frameborder="0" style="border:0;max-width:1024px"></iframe>`
 			: ''
 	);
-
-	async function handleSave() {
-		if (!project.hasData) return;
-		statusMessage = '';
-
-		try {
-			if (project.currentChartId) {
-				await updateChart(project.currentChartId, project.toJSON());
-			} else {
-				const result = await createChart(project.toJSON());
-				project.currentChartId = result._id;
-			}
-			statusMessage = 'Saved';
-		} catch (e) {
-			statusMessage = `Error: ${e instanceof Error ? e.message : 'Failed to save'}`;
-		}
-	}
 
 	async function handlePublish() {
 		if (!project.hasData) return;

@@ -5,4 +5,6 @@
 	let { data } = $props();
 </script>
 
-<BuilderPage initialChartId={data.chartId} />
+{#key data.chartId}
+	<BuilderPage initialChartId={data.chartId} />
+{/key}
