@@ -118,7 +118,7 @@
 		<span class="text-[11px] font-medium text-dark-grey uppercase tracking-wide flex-1"
 			>Charts</span
 		>
-		<a href="/stratify/charts" class="text-[10px] text-mid-grey hover:text-dark-grey underline">
+		<a href="/stratify" class="text-[10px] text-mid-grey hover:text-dark-grey underline">
 			Full view
 		</a>
 		<button

@@ -1,249 +1,204 @@
 <script>
 	import { onMount } from 'svelte';
-	import { replaceState } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
 	import { getClerkState } from '$lib/auth/clerk.svelte.js';
 	import LoginGate from '$lib/components/auth/LoginGate.svelte';
-	import { DragHandle, createDragHandler } from '$lib/components/ui/panel';
-
-	import StratifyPlotProject from './_state/StratifyPlotProject.svelte.js';
-	import { setStratifyContext } from './_state/context.js';
-
-	import DataPanel from './_components/panels/DataPanel.svelte';
-	import ChartPanel from './_components/panels/ChartPanel.svelte';
-	import AnnotatePanel from './_components/panels/AnnotatePanel.svelte';
-	import SeriesPanel from './_components/panels/SeriesPanel.svelte';
-	import PublishPanel from './_components/panels/PublishPanel.svelte';
-	import ChartPreview from './_components/ChartPreview.svelte';
-	import ExamplePicker from './_components/ExamplePicker.svelte';
-	import AccordionSection from './_components/AccordionSection.svelte';
-	import ChartManager from './_components/ChartManager.svelte';
-	import { createChart, updateChart, getChart } from './_utils/api.js';
+	import * as api from './_utils/api.js';
 
 	const clerkState = getClerkState();
 
-	// Centralised project state
-	const project = new StratifyPlotProject();
-	setStratifyContext(project);
+	/** @type {import('./_utils/api.js').ChartSummary[]} */
+	let charts = $state([]);
+	let loading = $state(true);
+	let search = $state('');
+	let deletingId = $state('');
 
-	const sections = [
-		{ id: 'data', label: 'Data' },
-		{ id: 'chart', label: 'Chart' },
-		{ id: 'annotate', label: 'Annotate' },
-		{ id: 'series', label: 'Series' },
-		{ id: 'publish', label: 'Publish' }
-	];
+	let filteredCharts = $derived(
+		search.trim()
+			? charts.filter((c) =>
+					(c.title || 'Untitled').toLowerCase().includes(search.trim().toLowerCase())
+				)
+			: charts
+	);
 
-	/** @type {Record<string, boolean>} */
-	let openSections = $state({ data: true, chart: true, annotate: true, series: true, publish: true });
+	let hasLoaded = false;
 
-	// Toggle between accordion and chart manager in the left panel
-	let showChartManager = $state(false);
-
-	// Prevent SSR/hydration flash from localStorage-driven widths
-	let mounted = $state(false);
-	onMount(async () => {
-		mounted = true;
-
-		// Load chart from ?chart= query param if present
-		const params = new URLSearchParams(window.location.search);
-		const chartId = params.get('chart');
-		if (chartId) {
-			try {
-				const chart = await getChart(chartId);
-				if (chart) {
-					project.loadFromSnapshot(chart);
-					project.currentChartId = chart._id;
-				}
-			} catch {
-				// Chart not found or not accessible
-			}
-			// Clean the URL without reloading
-			replaceState('/stratify', {});
+	// Load charts when auth is ready
+	$effect(() => {
+		if (clerkState.user && !hasLoaded) {
+			hasLoaded = true;
+			refreshList();
 		}
 	});
 
-	// --- Save to Sanity ---
-	/** @type {'idle' | 'saving' | 'saved' | 'error'} */
-	let saveStatus = $state('idle');
-
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let autoSaveTimer = null;
-
-	/** @type {string} */
-	let lastSnapshotJSON = '';
-
-	/**
-	 * Save (create or update) the current chart to Sanity.
-	 * @param {'auto' | 'manual'} trigger
-	 */
-	async function handleSave(trigger = 'manual') {
-		if (!project.hasData) return;
-
-		const snapshot = project.toJSON();
-		const snapshotJSON = JSON.stringify(snapshot);
-
-		// Skip auto-save if nothing changed
-		if (trigger === 'auto' && snapshotJSON === lastSnapshotJSON) return;
-
-		saveStatus = 'saving';
-
+	async function refreshList() {
+		loading = true;
 		try {
-			if (project.currentChartId) {
-				await updateChart(project.currentChartId, snapshot);
-			} else {
-				const result = await createChart(snapshot);
-				project.currentChartId = result._id;
-			}
-			lastSnapshotJSON = snapshotJSON;
-			saveStatus = 'saved';
-			setTimeout(() => {
-				if (saveStatus === 'saved') saveStatus = 'idle';
-			}, 2000);
-
+			charts = await api.listCharts();
 		} catch {
-			saveStatus = 'error';
-			setTimeout(() => {
-				if (saveStatus === 'error') saveStatus = 'idle';
-			}, 3000);
+			charts = [];
+		} finally {
+			loading = false;
 		}
 	}
 
-	// Debounced auto-save: triggers 3s after any project change
-	$effect(() => {
-		// Read reactive deps to trigger on any project data change
-		const _ = project.toJSON();
-		const chartId = project.currentChartId;
+	/** @param {import('./_utils/api.js').ChartSummary} chart */
+	async function handleDuplicate(chart) {
+		try {
+			const full = await api.getChart(chart._id);
+			if (!full) return;
 
-		if (!project.hasData || !chartId) return;
+			const { _id, _createdAt, _updatedAt, userId, status, publishedAt, ...rest } = full;
+			const snapshot = {
+				...rest,
+				title: `${full.title || 'Untitled'} (copy)`
+			};
 
-		if (autoSaveTimer) clearTimeout(autoSaveTimer);
-		autoSaveTimer = setTimeout(() => handleSave('auto'), 3000);
-	});
+			await api.createChart(/** @type {any} */ (snapshot));
+			await refreshList();
+		} catch {
+			// Silently fail
+		}
+	}
 
-	/** @type {string} */
-	let saveButtonLabel = $derived.by(() => {
-		if (saveStatus === 'saving') return 'Saving...';
-		if (saveStatus === 'saved') return 'Saved';
-		if (saveStatus === 'error') return 'Error';
-		return project.currentChartId ? 'Update' : 'Save';
-	});
+	/** @param {string} id */
+	async function handleDelete(id) {
+		deletingId = id;
+		try {
+			await api.deleteChart(id);
+			await refreshList();
+		} catch {
+			// Silently fail
+		} finally {
+			deletingId = '';
+		}
+	}
 
-	const leftDrag = createDragHandler({
-		axis: 'x',
-		min: 280,
-		max: 600,
-		initial: 380,
-		storageKey: 'stratify-plot-left-width'
-	});
+	/**
+	 * @param {string} dateStr
+	 * @returns {string}
+	 */
+	function timeAgo(dateStr) {
+		const now = Date.now();
+		const then = new Date(dateStr).getTime();
+		const diff = now - then;
+		const mins = Math.floor(diff / 60000);
+		if (mins < 1) return 'just now';
+		if (mins < 60) return `${mins}m ago`;
+		const hours = Math.floor(mins / 60);
+		if (hours < 24) return `${hours}h ago`;
+		const days = Math.floor(hours / 24);
+		if (days < 30) return `${days}d ago`;
+		return new Date(dateStr).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
+	}
 </script>
 
 <Meta title="Stratify" description="Create and embed data charts" />
 
 <LoginGate redirectUrl="/stratify">
-	{#if mounted}
-		<div class="flex flex-col h-dvh overflow-hidden font-mono">
-			<!-- Header bar -->
-			<div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
-				<span class="text-[11px] font-medium text-dark-grey tracking-wide uppercase">Stratify</span>
+	<div class="flex flex-col h-dvh overflow-hidden font-mono">
+		<!-- Header -->
+		<div class="flex items-center gap-3 px-6 py-3 border-b border-warm-grey bg-light-warm-grey/50">
+			<span class="text-[11px] font-medium text-dark-grey tracking-wide uppercase">Stratify</span>
 
-				{#if project.currentChartId}
-					<span class="text-[10px] px-1.5 py-0.5 rounded {project.status === 'published'
-						? 'bg-green-100 text-green-700'
-						: 'bg-warm-grey text-mid-grey'}">
-						{project.status === 'published' ? 'Published' : 'Draft'}
+			<div class="flex items-center gap-2 ml-auto">
+				<a
+					href="/stratify/new"
+					class="rounded border border-warm-grey px-3 py-1 text-[11px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
+				>
+					New Chart
+				</a>
+
+				{#if clerkState.user}
+					<span class="text-[10px] text-mid-grey">
+						{clerkState.user.primaryEmailAddress?.emailAddress ?? ''}
 					</span>
-				{/if}
-
-				<div class="flex items-center gap-1 ml-auto">
 					<button
 						type="button"
-						onclick={() => (showChartManager = !showChartManager)}
-						class="rounded border px-2 py-1 text-[11px] transition-colors {showChartManager
-							? 'border-dark-grey text-dark-grey bg-white'
-							: 'border-transparent text-mid-grey hover:text-dark-grey hover:border-mid-warm-grey'}"
-					>
-						Charts
-					</button>
-					<button
-						type="button"
-						onclick={() => project.reset()}
+						onclick={() => clerkState.instance?.signOut({ redirectUrl: '/stratify' })}
 						class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey"
 					>
-						New Chart
+						Sign out
 					</button>
-					<button
-						type="button"
-						onclick={() => handleSave('manual')}
-						disabled={!project.hasData || saveStatus === 'saving'}
-						class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey disabled:opacity-40 disabled:pointer-events-none"
-					>
-						{saveButtonLabel}
-					</button>
-
-					<!-- User info + sign out -->
-					{#if clerkState.user}
-						<span class="text-[10px] text-mid-grey ml-2">
-							{clerkState.user.primaryEmailAddress?.emailAddress ?? ''}
-						</span>
-						<button
-							type="button"
-							onclick={() => clerkState.instance?.signOut({ redirectUrl: '/stratify' })}
-							class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey"
-						>
-							Sign out
-						</button>
-					{/if}
-				</div>
-			</div>
-
-			<!-- Split pane -->
-			<div class="flex flex-1 min-h-0">
-				<!-- Left panel: accordion sections or chart manager -->
-				<div
-					class="flex-shrink-0 flex flex-col min-h-0"
-					style="width: {leftDrag.value}px;"
-				>
-					{#if showChartManager}
-						<ChartManager onclose={() => (showChartManager = false)} />
-					{:else}
-						<div class="flex flex-col min-h-0 overflow-y-auto">
-							{#each sections as section (section.id)}
-								<AccordionSection
-									label={section.label}
-									open={openSections[section.id]}
-									ontoggle={() => (openSections[section.id] = !openSections[section.id])}
-								>
-									{#if section.id === 'data'}
-										<DataPanel />
-									{:else if section.id === 'chart'}
-										<ChartPanel />
-									{:else if section.id === 'annotate'}
-										<AnnotatePanel />
-									{:else if section.id === 'series'}
-										<SeriesPanel />
-									{:else if section.id === 'publish'}
-										<PublishPanel />
-									{/if}
-								</AccordionSection>
-							{/each}
-						</div>
-					{/if}
-				</div>
-
-				<DragHandle axis="x" onstart={leftDrag.start} active={leftDrag.isDragging} />
-
-				<!-- Right panel: chart preview -->
-				<div class="flex-1 flex flex-col min-h-0 overflow-hidden">
-					{#if project.hasData}
-						<div class="flex-1 min-h-0 p-6">
-							<ChartPreview />
-						</div>
-					{:else}
-						<ExamplePicker />
-					{/if}
-				</div>
+				{/if}
 			</div>
 		</div>
-	{/if}
+
+		<!-- Search bar -->
+		<div class="px-6 py-3 border-b border-warm-grey">
+			<input
+				type="text"
+				placeholder="Search charts..."
+				bind:value={search}
+				class="w-full max-w-sm bg-warm-grey/50 border border-warm-grey rounded px-3 py-1.5 text-[11px] focus:outline-none focus:border-dark-grey"
+			/>
+		</div>
+
+		<!-- Chart list -->
+		<div class="flex-1 overflow-y-auto px-6 py-4">
+			{#if loading}
+				<p class="text-[11px] text-mid-grey text-center py-12">Loading...</p>
+			{:else if filteredCharts.length === 0}
+				<div class="text-center py-12">
+					<p class="text-[11px] text-mid-grey mb-3">
+						{search.trim() ? 'No matching charts' : 'No charts yet'}
+					</p>
+					{#if !search.trim()}
+						<a
+							href="/stratify/new"
+							class="inline-block rounded border border-warm-grey px-4 py-2 text-[11px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
+						>
+							Create your first chart
+						</a>
+					{/if}
+				</div>
+			{:else}
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					{#each filteredCharts as chart (chart._id)}
+						<div class="border border-warm-grey rounded-lg overflow-hidden hover:border-mid-warm-grey transition-colors">
+							<div class="px-3 py-3">
+								<div class="flex items-center gap-2 mb-0.5">
+									<a
+										href="/stratify/{chart._id}"
+										class="text-[11px] font-medium text-dark-grey truncate hover:underline flex-1 min-w-0"
+									>
+										{chart.title || 'Untitled'}
+									</a>
+									<span class="text-[9px] px-1 py-0.5 rounded flex-shrink-0 {chart.status === 'published'
+										? 'bg-green-100 text-green-700'
+										: 'bg-warm-grey text-mid-grey'}">
+										{chart.status === 'published' ? 'Published' : 'Draft'}
+									</span>
+								</div>
+								<div class="flex items-center justify-between">
+									<span class="text-[10px] text-mid-grey">{timeAgo(chart._updatedAt)}</span>
+									<div class="flex items-center gap-2">
+										<button
+											type="button"
+											onclick={() => handleDuplicate(chart)}
+											class="text-[10px] text-mid-grey hover:text-dark-grey"
+										>
+											Duplicate
+										</button>
+										<button
+											type="button"
+											onclick={() => handleDelete(chart._id)}
+											disabled={deletingId === chart._id}
+											class="text-[10px] text-mid-grey hover:text-dark-red disabled:opacity-40"
+										>
+											{deletingId === chart._id ? '...' : 'Delete'}
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+					{/each}
+				</div>
+
+				<p class="text-[10px] text-mid-grey mt-3">
+					{filteredCharts.length} chart{filteredCharts.length === 1 ? '' : 's'}
+				</p>
+			{/if}
+		</div>
+	</div>
 </LoginGate>
