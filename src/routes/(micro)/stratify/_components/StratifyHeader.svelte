@@ -5,13 +5,11 @@
 	let showUserMenu = $state(false);
 </script>
 
-{#if showUserMenu}
-	<svelte:document onclick={(e) => {
-		if (!/** @type {HTMLElement} */ (e.target).closest('.user-menu-area')) {
-			showUserMenu = false;
-		}
-	}} />
-{/if}
+<svelte:document onclick={(e) => {
+	if (showUserMenu && !/** @type {HTMLElement} */ (e.target).closest('.user-menu-area')) {
+		showUserMenu = false;
+	}
+}} />
 
 <div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
 	<a href="/stratify" class="text-[11px] font-medium text-dark-grey tracking-wide uppercase hover:underline">
