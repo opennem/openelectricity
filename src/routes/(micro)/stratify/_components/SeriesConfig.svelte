@@ -124,7 +124,10 @@
 			project.seriesYAxis = rest;
 		} else {
 			if (project.seriesYAxis[key] === value) return;
-			project.seriesYAxis = { ...project.seriesYAxis, [key]: /** @type {'left' | 'right'} */ (value) };
+			project.seriesYAxis = {
+				...project.seriesYAxis,
+				[key]: /** @type {'left' | 'right'} */ (value)
+			};
 		}
 	}
 

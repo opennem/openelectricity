@@ -15,6 +15,12 @@
 	import { processAnnotations, formatCompact } from './plot-annotations.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
 
+	const dateFmt = new Intl.DateTimeFormat('en-AU', {
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric'
+	});
+
 	/**
 	 * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'dot'} StratifyPlotChartType
 	 */
@@ -54,6 +60,7 @@
 	 *   y2Ticks?: number,
 	 *   y2MinMax?: boolean,
 	 *   tooltipColumns?: string[],
+	 *   dateColumnKey?: string,
 	 *   xTicks?: number,
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
@@ -83,6 +90,7 @@
 		y2Ticks = 0,
 		y2MinMax = false,
 		tooltipColumns = [],
+		dateColumnKey = '',
 		xTicks = 0,
 		xTickRotate = 0,
 		marginBottom = 0,
@@ -113,8 +121,10 @@
 			const rightSet = new Set(rightAxisSeries);
 
 			// Single pass: compute domains for both axes
-			let leftMin = Infinity, leftMax = -Infinity;
-			let rightMin = Infinity, rightMax = -Infinity;
+			let leftMin = Infinity,
+				leftMax = -Infinity;
+			let rightMin = Infinity,
+				rightMax = -Infinity;
 
 			for (const row of data) {
 				for (const name of seriesNames) {
@@ -133,9 +143,7 @@
 			if (leftMin > 0) leftMin = 0;
 			if (rightMin > 0) rightMin = 0;
 
-			y2Scale = scaleLinear()
-				.domain([rightMin, rightMax])
-				.range([leftMin, leftMax]);
+			y2Scale = scaleLinear().domain([rightMin, rightMax]).range([leftMin, leftMax]);
 
 			// Rescale right-axis data to fit the left-axis domain
 			const scale = y2Scale;
@@ -231,7 +239,8 @@
 			const leftAxisOpts = { anchor: 'left', label: null };
 			if (yMinMax) {
 				const leftSeries = seriesNames.filter((n) => !rightAxisSeries.includes(n));
-				let min = Infinity, max = -Infinity;
+				let min = Infinity,
+					max = -Infinity;
 				for (const row of chartData) {
 					for (const name of leftSeries) {
 						const v = row[name];
@@ -255,7 +264,8 @@
 		} else {
 			// Single Y-axis: apply ticks and min/max
 			if (yMinMax) {
-				let min = Infinity, max = -Infinity;
+				let min = Infinity,
+					max = -Infinity;
 				for (const row of chartData) {
 					for (const name of seriesNames) {
 						const v = row[name];
@@ -279,7 +289,8 @@
 			const xScale = opts.x || {};
 			if (xScale.type === 'band') {
 				// Band scales ignore `ticks` — use tickFormat to hide labels
-				const domain = xScale.domain || chartData.map((/** @type {any} */ d) => d.category ?? d.date);
+				const domain =
+					xScale.domain || chartData.map((/** @type {any} */ d) => d.category ?? d.date);
 				const step = Math.max(1, Math.ceil(domain.length / xTicks));
 				const visible = new Set(
 					domain.filter((/** @type {any} */ _, /** @type {number} */ i) => i % step === 0)
@@ -313,13 +324,14 @@
 			opts = applyPlotOverrides(opts, plotOverrides);
 		}
 
-		// Add tooltip marks
+		// Add single tooltip mark with filtered channels
+		const isTimeSeries = data.length > 0 && 'date' in data[0];
+
 		let tooltipLabels =
 			colourSeries && Object.keys(dataColumnLabels).length > 0
 				? dataColumnLabels
 				: Object.fromEntries(seriesNames.map((n) => [n, seriesLabels[n] || n]));
 
-		// Filter to selected tooltip columns
 		if (tooltipColumns.length > 0) {
 			const allowed = new Set(tooltipColumns);
 			tooltipLabels = Object.fromEntries(
@@ -329,14 +341,36 @@
 
 		const channels = buildTooltipChannels(tooltipLabels);
 
-		const isTimeSeries = data.length > 0 && 'date' in data[0];
 		if (isTimeSeries) {
+			const showDate =
+				tooltipColumns.length === 0 || (dateColumnKey && tooltipColumns.includes(dateColumnKey));
+
+			/** @type {Record<string, any>} */
+			const tipChannels = {};
+			if (showDate) {
+				tipChannels.Date = {
+					value: (/** @type {any} */ d) => dateFmt.format(d.date)
+				};
+			}
+			Object.assign(tipChannels, channels);
+
 			opts.marks.push(
 				ruleX(data, pointerX({ x: 'date', stroke: '#888', strokeWidth: 0.5 })),
-				tip(data, pointerX({ x: 'date', channels }))
+				tip(
+					data,
+					pointerX({
+						x: 'date',
+						channels: tipChannels,
+						format: { x: false },
+						lineHeight: 1.3,
+						fontSize: 11
+					})
+				)
 			);
 		} else {
-			opts.marks.push(tip(data, pointerX({ x: 'category', channels })));
+			opts.marks.push(
+				tip(data, pointerX({ x: 'category', channels, lineHeight: 1.3, fontSize: 11 }))
+			);
 		}
 
 		// Add annotation marks

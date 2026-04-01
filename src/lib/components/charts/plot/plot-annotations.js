@@ -251,7 +251,16 @@ function resolveOverlaps(labelData, data, seriesNames, height, stacked = false) 
  * @param {boolean} [stacked] - Whether the chart uses stacked positioning
  * @returns {AnnotationResult}
  */
-export function endLabels(data, seriesNames, seriesColours, seriesLabels, xKey, height, style, stacked = false) {
+export function endLabels(
+	data,
+	seriesNames,
+	seriesColours,
+	seriesLabels,
+	xKey,
+	height,
+	style,
+	stacked = false
+) {
 	if (!data.length) return { marks: [], marginRight: 0 };
 
 	const fontSize = style?.fontSize ?? DEFAULT_FONT_SIZE;
@@ -266,9 +275,7 @@ export function endLabels(data, seriesNames, seriesColours, seriesLabels, xKey, 
 		for (let i = data.length - 1; i >= 0; i--) {
 			if (data[i][name] != null) {
 				const label = seriesLabels[name] || name;
-				const y = stacked
-					? stackedMidpoint(data[i], name, seriesNames)
-					: data[i][name];
+				const y = stacked ? stackedMidpoint(data[i], name, seriesNames) : data[i][name];
 				if (y == null) break;
 				labelData.push({
 					x: data[i][xKey],

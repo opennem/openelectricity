@@ -301,12 +301,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		marks.push(
 			barY(
 				long,
-				stackY(
-					groupX(
-						{ y: 'sum' },
-						{ x: 'x', y: 'value', fill: 'series', order: seriesNames }
-					)
-				)
+				stackY(groupX({ y: 'sum' }, { x: 'x', y: 'value', fill: 'series', order: seriesNames }))
 			)
 		);
 	} else {
