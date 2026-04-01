@@ -83,6 +83,16 @@
 			project.chartType === 'bar-grouped'
 	);
 
+	// Chart types that support multiple Y series
+	let allowMultipleY = $derived(
+		project.chartType === 'line' ||
+			project.chartType === 'area' ||
+			project.chartType === 'column-stacked' ||
+			project.chartType === 'column-grouped' ||
+			project.chartType === 'bar-stacked' ||
+			project.chartType === 'bar-grouped'
+	);
+
 	let showAdvanced = $state(false);
 	let overridesText = $state('');
 	let parseError = $state('');
@@ -154,15 +164,22 @@
 			<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-16 shrink-0">{isHorizontal ? 'X Axis' : 'Y Axis'}</span>
 				<select
-					value={selectedY || nonFirstColumns[0]?.key || ''}
+					value={selectedY || (allowMultipleY ? '' : nonFirstColumns[0]?.key || '')}
 					onchange={(e) => {
 						const val = e.currentTarget.value;
-						project.hiddenSeries = nonFirstColumns
-							.filter((c) => c.key !== val)
-							.map((c) => c.key);
+						if (val) {
+							project.hiddenSeries = nonFirstColumns
+								.filter((c) => c.key !== val)
+								.map((c) => c.key);
+						} else {
+							project.hiddenSeries = [];
+						}
 					}}
 					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				>
+					{#if allowMultipleY && nonFirstColumns.length > 1}
+						<option value="">All</option>
+					{/if}
 					{#each nonFirstColumns as col (col.key)}
 						<option value={col.key}>{col.label}</option>
 					{/each}
