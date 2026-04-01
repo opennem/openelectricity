@@ -26,16 +26,23 @@ import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
  * @property {string[]} hiddenSeries
  * @property {Record<string, string>} userSeriesColours
  * @property {Record<string, string>} userSeriesLabels
- * @property {Record<string, string>} [seriesChartTypes]
- * @property {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides} [plotOverrides]
+ * @property {Record<string, import('$lib/components/charts/plot/plot-configs.js').SeriesMarkType>} [seriesChartTypes]
+ * @property {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides | null} [plotOverrides]
  * @property {string[]} [seriesOrder]
  * @property {number} [chartHeight]
  * @property {number} [xTicks]
  * @property {number} [xTickRotate]
  * @property {number} [marginBottom]
+ * @property {number} [yTicks]
+ * @property {boolean} [yMinMax]
+ * @property {number} [y2Ticks]
+ * @property {boolean} [y2MinMax]
  * @property {string | null} [colourSeries]
  * @property {string} [xLabel]
  * @property {string} [yLabel]
+ * @property {Record<string, 'left' | 'right'>} [seriesYAxis]
+ * @property {string} [y2Label]
+ * @property {string[]} [tooltipColumns]
  */
 
 export default class StratifyPlotProject {
@@ -97,6 +104,21 @@ export default class StratifyPlotProject {
 	/** @type {number} Bottom margin for x-axis labels in pixels (0 = auto) */
 	marginBottom = $state(0);
 
+	/** @type {number} Number of y-axis ticks to show (0 = auto) */
+	yTicks = $state(0);
+
+	/** @type {boolean} Show min/max tick marks on left Y-axis */
+	yMinMax = $state(false);
+
+	/** @type {number} Number of right y-axis ticks to show (0 = auto) */
+	y2Ticks = $state(0);
+
+	/** @type {boolean} Show min/max tick marks on right Y-axis */
+	y2MinMax = $state(false);
+
+	/** @type {string[]} Columns to show in tooltip (empty = show all) */
+	tooltipColumns = $state([]);
+
 	// --- Column mapping ---
 	/** @type {string | null} Column key used as colour grouping */
 	colourSeries = $state(null);
@@ -107,6 +129,15 @@ export default class StratifyPlotProject {
 
 	/** @type {string} Y-axis label (empty = hidden) */
 	yLabel = $state('');
+
+	/** @type {Record<string, 'left' | 'right'>} Per-series Y-axis assignment */
+	seriesYAxis = $state({});
+
+	/** @type {string} Right Y-axis label (empty = hidden) */
+	y2Label = $state('');
+
+	/** Whether any series is assigned to the right Y-axis */
+	hasRightAxis = $derived(Object.values(this.seriesYAxis).some((v) => v === 'right'));
 
 	// --- Publish settings ---
 	/** @type {'draft' | 'published'} */
@@ -271,9 +302,16 @@ export default class StratifyPlotProject {
 		this.xTicks = 0;
 		this.xTickRotate = 0;
 		this.marginBottom = 0;
+		this.yTicks = 0;
+		this.yMinMax = false;
+		this.y2Ticks = 0;
+		this.y2MinMax = false;
+		this.tooltipColumns = [];
 		this.colourSeries = null;
 		this.xLabel = '';
 		this.yLabel = '';
+		this.seriesYAxis = {};
+		this.y2Label = '';
 		this.status = 'draft';
 		this.showBranding = true;
 		this.currentChartId = null;
@@ -301,9 +339,16 @@ export default class StratifyPlotProject {
 		this.xTicks = 0;
 		this.xTickRotate = 0;
 		this.marginBottom = 0;
+		this.yTicks = 0;
+		this.yMinMax = false;
+		this.y2Ticks = 0;
+		this.y2MinMax = false;
+		this.tooltipColumns = [];
 		this.colourSeries = null;
 		this.xLabel = '';
 		this.yLabel = '';
+		this.seriesYAxis = {};
+		this.y2Label = '';
 		this.hiddenSeries = [];
 		this.currentChartId = null;
 	}
@@ -333,9 +378,16 @@ export default class StratifyPlotProject {
 			xTicks: this.xTicks,
 			xTickRotate: this.xTickRotate,
 			marginBottom: this.marginBottom,
+			yTicks: this.yTicks,
+			yMinMax: this.yMinMax,
+			y2Ticks: this.y2Ticks,
+			y2MinMax: this.y2MinMax,
+			tooltipColumns: this.tooltipColumns,
 			colourSeries: this.colourSeries,
 			xLabel: this.xLabel,
-			yLabel: this.yLabel
+			yLabel: this.yLabel,
+			seriesYAxis: this.seriesYAxis,
+			y2Label: this.y2Label
 		};
 	}
 
@@ -362,9 +414,16 @@ export default class StratifyPlotProject {
 		this.xTicks = snapshot.xTicks ?? 0;
 		this.xTickRotate = snapshot.xTickRotate ?? 0;
 		this.marginBottom = snapshot.marginBottom ?? 0;
+		this.yTicks = snapshot.yTicks ?? 0;
+		this.yMinMax = snapshot.yMinMax ?? false;
+		this.y2Ticks = snapshot.y2Ticks ?? 0;
+		this.y2MinMax = snapshot.y2MinMax ?? false;
+		this.tooltipColumns = snapshot.tooltipColumns ?? [];
 		this.colourSeries = snapshot.colourSeries ?? null;
 		this.xLabel = snapshot.xLabel ?? '';
 		this.yLabel = snapshot.yLabel ?? '';
+		this.seriesYAxis = snapshot.seriesYAxis ?? {};
+		this.y2Label = snapshot.y2Label ?? '';
 		this.status = snapshot.status ?? 'draft';
 		this.showBranding = snapshot.showBranding ?? true;
 	}

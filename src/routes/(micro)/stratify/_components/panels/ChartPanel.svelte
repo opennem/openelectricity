@@ -154,6 +154,79 @@
 	</label>
 
 	<label class="flex items-center gap-2 mt-3">
+		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y-axis ticks</span>
+		<input
+			type="number"
+			min="0"
+			max="100"
+			step="1"
+			value={project.yTicks}
+			oninput={(e) => {
+				const v = parseInt(e.currentTarget.value, 10);
+				if (v >= 0 && v <= 100) project.yTicks = v;
+			}}
+			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+		/>
+		<span class="text-[10px] text-mid-grey">0 = auto</span>
+	</label>
+
+	<label class="flex items-center gap-2 mt-3">
+		<input
+			type="checkbox"
+			checked={project.yMinMax}
+			onchange={(e) => {
+				project.yMinMax = e.currentTarget.checked;
+			}}
+			class="accent-dark-grey"
+		/>
+		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y min/max ticks</span>
+	</label>
+
+	{#if project.hasRightAxis}
+		<label class="flex items-center gap-2 mt-3">
+			<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y2-axis label</span>
+			<input
+				type="text"
+				value={project.y2Label}
+				placeholder="None"
+				oninput={(e) => {
+					project.y2Label = e.currentTarget.value;
+				}}
+				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+			/>
+		</label>
+
+		<label class="flex items-center gap-2 mt-3">
+			<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y2-axis ticks</span>
+			<input
+				type="number"
+				min="0"
+				max="100"
+				step="1"
+				value={project.y2Ticks}
+				oninput={(e) => {
+					const v = parseInt(e.currentTarget.value, 10);
+					if (v >= 0 && v <= 100) project.y2Ticks = v;
+				}}
+				class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+			/>
+			<span class="text-[10px] text-mid-grey">0 = auto</span>
+		</label>
+
+		<label class="flex items-center gap-2 mt-3">
+			<input
+				type="checkbox"
+				checked={project.y2MinMax}
+				onchange={(e) => {
+					project.y2MinMax = e.currentTarget.checked;
+				}}
+				class="accent-dark-grey"
+			/>
+			<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y2 min/max ticks</span>
+		</label>
+	{/if}
+
+	<label class="flex items-center gap-2 mt-3">
 		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X-axis ticks</span>
 		<input
 			type="number"
@@ -204,6 +277,41 @@
 		<span class="text-[10px] text-mid-grey">0 = auto</span>
 	</label>
 </div>
+
+{#if project.hasData}
+	<div class="mt-3 pt-3 border-t border-warm-grey">
+		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Tooltip columns</p>
+		<div class="flex flex-col gap-1">
+			{#each project.allColumns as col (col.key)}
+				{@const isSelected =
+					project.tooltipColumns.length === 0 || project.tooltipColumns.includes(col.key)}
+				<label class="flex items-center gap-2">
+					<input
+						type="checkbox"
+						checked={isSelected}
+						onchange={() => {
+							const all = project.allColumns.map((c) => c.key);
+							if (project.tooltipColumns.length === 0) {
+								// First uncheck: select all except this one
+								project.tooltipColumns = all.filter((k) => k !== col.key);
+							} else if (isSelected) {
+								const next = project.tooltipColumns.filter((k) => k !== col.key);
+								// If unchecking would leave none, reset to show all
+								project.tooltipColumns = next.length === 0 ? [] : next;
+							} else {
+								const next = [...project.tooltipColumns, col.key];
+								// If all are now selected, reset to empty (= show all)
+								project.tooltipColumns = next.length === all.length ? [] : next;
+							}
+						}}
+						class="accent-dark-grey"
+					/>
+					<span class="text-[11px] text-dark-grey">{col.label}</span>
+				</label>
+			{/each}
+		</div>
+	</div>
+{/if}
 
 <div class="mt-3 pt-3 border-t border-warm-grey">
 	<button

@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { createClient } from '@sanity/client';
 import { PUBLIC_SANITY_DATASET, PUBLIC_SANITY_PROJECT_ID } from '$env/static/public';
 import { SANITY_TOKEN } from '$env/static/private';
+import { normaliseChart } from '$lib/stratify/chart-data.js';
 
 const client = createClient({
 	projectId: PUBLIC_SANITY_PROJECT_ID,
@@ -64,46 +65,8 @@ async function preloadStratifyCharts(content) {
 	/** @type {Record<string, any>} */
 	const chartMap = {};
 	for (const chart of charts) {
-		chartMap[chart._id] = {
-			_id: chart._id,
-			title: chart.title ?? '',
-			description: chart.description ?? '',
-			dataSource: chart.dataSource ?? '',
-			notes: chart.notes ?? '',
-			csvText: chart.csvText ?? '',
-			chartType: chart.chartType ?? 'stacked-area',
-			displayMode: chart.displayMode ?? 'auto',
-			hiddenSeries: chart.hiddenSeries ?? [],
-			userSeriesColours: safeParseJSON(chart.userSeriesColours, {}),
-			userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),
-			annotations: safeParseJSON(chart.annotations, []),
-			seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
-			plotOverrides: safeParseJSON(chart.plotOverrides, null),
-			seriesOrder: chart.seriesOrder ?? [],
-			stylePreset: chart.stylePreset ?? 'oe',
-			showBranding: chart.showBranding ?? true,
-			chartHeight: chart.chartHeight ?? 400,
-			xTicks: chart.xTicks ?? 0,
-			xTickRotate: chart.xTickRotate ?? 0,
-			marginBottom: chart.marginBottom ?? 0,
-			colourSeries: chart.colourSeries ?? null,
-			xLabel: chart.xLabel ?? '',
-			yLabel: chart.yLabel ?? ''
-		};
+		chartMap[chart._id] = normaliseChart(chart);
 	}
 
 	return chartMap;
-}
-
-/**
- * @param {any} value
- * @param {any} fallback
- */
-function safeParseJSON(value, fallback) {
-	if (typeof value !== 'string') return value ?? fallback;
-	try {
-		return JSON.parse(value);
-	} catch {
-		return fallback;
-	}
 }

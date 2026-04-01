@@ -68,7 +68,7 @@ function detectDelimiter(text) {
  * @returns {Date | null}
  */
 function parseDate(str) {
-	const trimmed = str.trim();
+	const trimmed = str.trim().replace(/^["']|["']$/g, '');
 	if (!trimmed) return null;
 
 	// Try native Date constructor first (handles ISO 8601 well)
@@ -95,7 +95,7 @@ function parseDate(str) {
  * @returns {number | null}
  */
 function parseNumber(str) {
-	const trimmed = str.trim();
+	const trimmed = str.trim().replace(/^["']|["']$/g, '');
 	if (trimmed === '' || trimmed === '-') return null;
 
 	const cleaned = trimmed.replace(/,/g, '');
@@ -152,8 +152,8 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto') {
 		return { ...EMPTY_RESULT, errors };
 	}
 
-	// Parse headers
-	const headers = lines[0].split(delimiter).map((h) => h.trim());
+	// Parse headers (strip surrounding quotes)
+	const headers = lines[0].split(delimiter).map((h) => h.trim().replace(/^["']|["']$/g, ''));
 	if (headers.length < 2) {
 		errors.push('Need at least two columns (date/category + one series).');
 		return { ...EMPTY_RESULT, errors };

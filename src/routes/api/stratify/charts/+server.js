@@ -70,9 +70,16 @@ export async function POST({ request }) {
 		xTicks: body.xTicks ?? 0,
 		xTickRotate: body.xTickRotate ?? 0,
 		marginBottom: body.marginBottom ?? 0,
+		yTicks: body.yTicks ?? 0,
+		yMinMax: body.yMinMax ?? false,
+		y2Ticks: body.y2Ticks ?? 0,
+		y2MinMax: body.y2MinMax ?? false,
+		tooltipColumns: body.tooltipColumns ?? [],
 		colourSeries: body.colourSeries ?? null,
 		xLabel: body.xLabel ?? '',
 		yLabel: body.yLabel ?? '',
+		seriesYAxis: JSON.stringify(body.seriesYAxis ?? {}),
+		y2Label: body.y2Label ?? '',
 		snapshotVersion: body.version ?? 1,
 		publishedAt: null
 	});

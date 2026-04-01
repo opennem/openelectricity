@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { createCmsClient } from '$lib/sanity-cms.js';
+import { normaliseChart } from '$lib/stratify/chart-data.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {
@@ -16,44 +17,8 @@ export async function load({ params }) {
 
 	return {
 		chart: {
-			_id: chart._id,
-			title: chart.title ?? '',
-			description: chart.description ?? '',
-			dataSource: chart.dataSource ?? '',
-			notes: chart.notes ?? '',
-			csvText: chart.csvText ?? '',
-			chartType: chart.chartType ?? 'stacked-area',
-			displayMode: chart.displayMode ?? 'auto',
-			hiddenSeries: chart.hiddenSeries ?? [],
-			userSeriesColours: safeParseJSON(chart.userSeriesColours, {}),
-			userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),
-			annotations: safeParseJSON(chart.annotations, []),
-			seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
-			plotOverrides: safeParseJSON(chart.plotOverrides, null),
-			seriesOrder: chart.seriesOrder ?? [],
-			stylePreset: chart.stylePreset ?? 'oe',
-			showBranding: chart.showBranding ?? true,
-			chartHeight: chart.chartHeight ?? 400,
-			xTicks: chart.xTicks ?? 0,
-			xTickRotate: chart.xTickRotate ?? 0,
-			marginBottom: chart.marginBottom ?? 0,
-			colourSeries: chart.colourSeries ?? null,
-			xLabel: chart.xLabel ?? '',
-			yLabel: chart.yLabel ?? '',
+			...normaliseChart(chart),
 			publishedAt: chart.publishedAt
 		}
 	};
-}
-
-/**
- * @param {any} value
- * @param {any} fallback
- */
-function safeParseJSON(value, fallback) {
-	if (typeof value !== 'string') return value ?? fallback;
-	try {
-		return JSON.parse(value);
-	} catch {
-		return fallback;
-	}
 }

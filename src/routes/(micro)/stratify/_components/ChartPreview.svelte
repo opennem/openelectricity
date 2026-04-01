@@ -42,8 +42,15 @@
 		dataColumnLabels={project.dataColumnLabels}
 		xLabel={project.xLabel}
 		yLabel={project.yLabel}
+		seriesYAxis={project.seriesYAxis}
+		y2Label={project.y2Label}
 		options={plotStyleOptions}
 		height={project.chartHeight}
+		yTicks={project.yTicks}
+		yMinMax={project.yMinMax}
+		y2Ticks={project.y2Ticks}
+		y2MinMax={project.y2MinMax}
+		tooltipColumns={project.tooltipColumns}
 		xTicks={project.xTicks}
 		xTickRotate={project.xTickRotate}
 		marginBottom={project.marginBottom}
