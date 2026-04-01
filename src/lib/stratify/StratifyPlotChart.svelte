@@ -1,6 +1,6 @@
 <script>
 	import PlotChart from '$lib/components/charts/plot/PlotChart.svelte';
-	import { ruleX, tip, pointerX, axisY } from '@observablehq/plot';
+	import { ruleX, ruleY, tip, pointerX, pointerY, axisY } from '@observablehq/plot';
 	import { scaleLinear } from 'd3-scale';
 	import {
 		createStackedAreaOptions,
@@ -37,8 +37,6 @@
 		'bar-stacked': createHorizontalBarOptions,
 		'bar-grouped': createGroupedHorizontalBarOptions
 	};
-
-	const BAR_TYPES = new Set([...HORIZONTAL_TYPES, ...COLUMN_TYPES]);
 
 	/**
 	 * @type {{
@@ -191,9 +189,9 @@
 					}
 				: options;
 
-		// Use colour-grouped bar when a colour series is active and chart is a bar type
+		const isBarType = HORIZONTAL_TYPES.has(chartType) || COLUMN_TYPES.has(chartType);
 		let opts;
-		if (colourSeries && colourGroupNames.length > 0 && BAR_TYPES.has(chartType)) {
+		if (colourSeries && colourGroupNames.length > 0 && isBarType) {
 			opts = createColourGroupedBarOptions(
 				chartData,
 				seriesNames[0],
@@ -205,12 +203,12 @@
 			);
 		} else {
 			opts = (CONFIG_MAP[chartType] || createLineOptions)(
-						chartData,
-						seriesNames,
-						seriesColours,
-						seriesLabels,
-						mergedOptions
-					);
+				chartData,
+				seriesNames,
+				seriesColours,
+				seriesLabels,
+				mergedOptions
+			);
 		}
 
 		if (hasRightAxis && y2Scale) {
@@ -277,7 +275,21 @@
 					opts.y = { ...(opts.y || {}), ticks: [min, max] };
 				}
 			} else if (yTicks > 0) {
-				opts.y = { ...(opts.y || {}), ticks: yTicks };
+				const yScale = opts.y || {};
+				if (yScale.type === 'band') {
+					const domain =
+						yScale.domain || chartData.map((/** @type {any} */ d) => d.category);
+					const step = Math.max(1, Math.ceil(domain.length / yTicks));
+					const visible = new Set(
+						domain.filter((/** @type {any} */ _, /** @type {number} */ i) => i % step === 0)
+					);
+					opts.y = {
+						...yScale,
+						tickFormat: (/** @type {any} */ d) => (visible.has(d) ? String(d) : '')
+					};
+				} else {
+					opts.y = { ...(opts.y || {}), ticks: yTicks };
+				}
 			}
 		}
 
@@ -408,18 +420,41 @@
 				Object.assign(tipChannels, buildTooltipChannels(tooltipLabels));
 			}
 
-			opts.marks.push(
-				tip(
-					data,
-					pointerX({
-						x: 'category',
-						channels: tipChannels,
-						format: { x: false },
-						lineHeight: 1.3,
-						fontSize: 11
-					})
-				)
-			);
+			const isHz = HORIZONTAL_TYPES.has(chartType);
+			if (isHz) {
+				// Position tooltip at the bar end
+				const valueKey = seriesNames[0];
+				opts.marks.push(
+					tip(
+						data,
+						pointerY({
+							y: 'category',
+							x: valueKey,
+							channels: tipChannels,
+							format: { y: false, x: false },
+							preferredAnchor: 'left',
+							lineHeight: 1.3,
+							fontSize: 11
+						})
+					)
+				);
+			} else {
+				const valueKey = seriesNames[0];
+				opts.marks.push(
+					tip(
+						data,
+						pointerX({
+							x: 'category',
+							y: valueKey,
+							channels: tipChannels,
+							format: { x: false, y: false },
+							preferredAnchor: 'bottom',
+							lineHeight: 1.3,
+							fontSize: 11
+						})
+					)
+				);
+			}
 		}
 
 		// Add annotation marks

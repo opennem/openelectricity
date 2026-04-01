@@ -524,7 +524,7 @@ export function createColourGroupedBarOptions(
 		.filter((row) => row[valueKey] != null)
 		.map((row) => ({
 			x: row.category,
-			value: row[valueKey],
+			value: Number(row[valueKey]),
 			colourGroup: row[colourSeriesKey] ?? 'Unknown'
 		}));
 
@@ -547,10 +547,10 @@ export function createColourGroupedBarOptions(
 			...(marginRight !== undefined ? { marginRight } : {}),
 			color: colorScale,
 			y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
-			x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+			x: { label: null, grid: true, zero: true, type: 'linear', ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 			marks: [
 				...extraMarks,
-				barX(long, { y: 'x', x: 'value', fill: 'colourGroup', sort: { y: '-x' } }),
+				barX(long, { y: 'x', x1: 0, x2: 'value', fill: 'colourGroup' }),
 				ruleX([0])
 			]
 		};
@@ -564,7 +564,7 @@ export function createColourGroupedBarOptions(
 		y: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		marks: [
 			...extraMarks,
-			barY(long, { x: 'x', y: 'value', fill: 'colourGroup', sort: { x: '-y' } }),
+			barY(long, { x: 'x', y1: 0, y2: 'value', fill: 'colourGroup' }),
 			ruleY([0])
 		]
 	};

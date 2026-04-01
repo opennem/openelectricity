@@ -95,7 +95,8 @@
 			/** @type {Record<string, any>} */
 			const filtered = {};
 			for (const [key, value] of Object.entries(row)) {
-				if (!hiddenSet.has(key)) filtered[key] = value;
+				// Keep the colour series column even if hidden as a series
+				if (!hiddenSet.has(key) || key === colourSeriesKey) filtered[key] = value;
 			}
 			return filtered;
 		});
@@ -137,15 +138,7 @@
 	const sortedXDomain = $derived(!isHorizontal ? sortedCategoryDomain : undefined);
 	const sortedYDomain = $derived(isHorizontal ? sortedCategoryDomain : undefined);
 
-	// Auto-scale height for horizontal bars
-	const chartHeight = $derived.by(() => {
-		const baseHeight = chart.chartHeight ?? 400;
-		if (isHorizontal && parsed.mode === 'category') {
-			const rowCount = sortedData.length;
-			return Math.max(baseHeight, rowCount * 22 + 60);
-		}
-		return baseHeight;
-	});
+	const chartHeight = $derived(chart.chartHeight ?? 400);
 </script>
 
 <svelte:element this={caption ? 'figure' : 'div'} style="font-family: {preset.typography.fontFamily};">
@@ -168,9 +161,6 @@
 	{/if}
 
 	{#if parsed.data.length > 0}
-		<div
-			style={chartHeight > (chart.chartHeight ?? 400) ? `max-height: ${(chart.chartHeight ?? 400) + 100}px; overflow-y: auto;` : ''}
-		>
 		<StratifyPlotChart
 			data={sortedData}
 			seriesNames={visibleSeriesNames}
@@ -202,7 +192,6 @@
 			xTickRotate={chart.xTickRotate ?? 0}
 			marginBottom={chart.marginBottom ?? 0}
 		/>
-		</div>
 	{/if}
 
 	{#if chart.dataSource || chart.notes}

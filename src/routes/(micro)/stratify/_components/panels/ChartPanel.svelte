@@ -240,7 +240,7 @@
 
 	<!-- X Axis appearance -->
 	<div class="mt-4">
-		<p class="text-[10px] text-dark-grey font-medium mb-1.5">X Axis</p>
+		<p class="text-[10px] text-dark-grey font-medium mb-1.5">{isHorizontal ? 'X Axis (values)' : 'X Axis'}</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 			<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-16 shrink-0">Label</span>
@@ -279,7 +279,7 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 100) project.xTicks = v;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
 				/>
 				<span class="text-[10px] text-mid-grey">0 = auto</span>
 			</label>
@@ -296,7 +296,7 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= -90 && v <= 90) project.xTickRotate = v;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
 				/>
 				<span class="text-[10px] text-mid-grey">degrees</span>
 			</label>
@@ -313,7 +313,7 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 300) project.marginBottom = v;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
 				/>
 				<span class="text-[10px] text-mid-grey">0 = auto</span>
 			</label>
@@ -322,7 +322,7 @@
 
 	<!-- Y Axis appearance -->
 	<div class="mt-4">
-		<p class="text-[10px] text-dark-grey font-medium mb-1.5">Y Axis</p>
+		<p class="text-[10px] text-dark-grey font-medium mb-1.5">{isHorizontal ? 'Y Axis (categories)' : 'Y Axis'}</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 			<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-16 shrink-0">Label</span>
@@ -349,7 +349,7 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 100) project.yTicks = v;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
 				/>
 				<span class="text-[10px] text-mid-grey">0 = auto</span>
 			</label>
@@ -398,7 +398,7 @@
 							const v = parseInt(e.currentTarget.value, 10);
 							if (v >= 0 && v <= 100) project.y2Ticks = v;
 						}}
-						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
+						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
 					/>
 					<span class="text-[10px] text-mid-grey">0 = auto</span>
 				</label>
