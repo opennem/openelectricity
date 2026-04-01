@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { client } from '$lib/sanity';
 import { createCmsClient } from '$lib/sanity-cms.js';
+import { normaliseChart } from '$lib/stratify/chart-data.js';
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ params }) {
@@ -14,8 +15,6 @@ export async function load({ params }) {
 	}
 
 	const article = data[0];
-
-	// Preload Stratify chart data for any strataEmbed blocks
 	const charts = await preloadStratifyCharts(article.content);
 
 	return {
@@ -57,46 +56,8 @@ async function preloadStratifyCharts(content) {
 	/** @type {Record<string, any>} */
 	const chartMap = {};
 	for (const chart of charts) {
-		chartMap[chart._id] = {
-			_id: chart._id,
-			title: chart.title ?? '',
-			description: chart.description ?? '',
-			dataSource: chart.dataSource ?? '',
-			notes: chart.notes ?? '',
-			csvText: chart.csvText ?? '',
-			chartType: chart.chartType ?? 'stacked-area',
-			displayMode: chart.displayMode ?? 'auto',
-			hiddenSeries: chart.hiddenSeries ?? [],
-			userSeriesColours: safeParseJSON(chart.userSeriesColours, {}),
-			userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),
-			annotations: safeParseJSON(chart.annotations, []),
-			seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
-			plotOverrides: safeParseJSON(chart.plotOverrides, null),
-			seriesOrder: chart.seriesOrder ?? [],
-			stylePreset: chart.stylePreset ?? 'oe',
-			showBranding: chart.showBranding ?? true,
-			chartHeight: chart.chartHeight ?? 400,
-			xTicks: chart.xTicks ?? 0,
-			xTickRotate: chart.xTickRotate ?? 0,
-			marginBottom: chart.marginBottom ?? 0,
-			colourSeries: chart.colourSeries ?? null,
-			xLabel: chart.xLabel ?? '',
-			yLabel: chart.yLabel ?? ''
-		};
+		chartMap[chart._id] = normaliseChart(chart);
 	}
 
 	return chartMap;
-}
-
-/**
- * @param {any} value
- * @param {any} fallback
- */
-function safeParseJSON(value, fallback) {
-	if (typeof value !== 'string') return value ?? fallback;
-	try {
-		return JSON.parse(value);
-	} catch {
-		return fallback;
-	}
 }

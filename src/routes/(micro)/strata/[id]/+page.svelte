@@ -141,9 +141,16 @@
 				{dataColumnLabels}
 				xLabel={chart.xLabel ?? ''}
 				yLabel={chart.yLabel ?? ''}
+				seriesYAxis={chart.seriesYAxis ?? {}}
+				y2Label={chart.y2Label ?? ''}
 				annotations={chart.annotations}
 				options={plotStyleOptions}
 				height={chart.chartHeight ?? 400}
+				yTicks={chart.yTicks ?? 0}
+				yMinMax={chart.yMinMax ?? false}
+				y2Ticks={chart.y2Ticks ?? 0}
+				y2MinMax={chart.y2MinMax ?? false}
+				tooltipColumns={chart.tooltipColumns ?? []}
 				xTicks={chart.xTicks ?? 0}
 				xTickRotate={chart.xTickRotate ?? 0}
 				marginBottom={chart.marginBottom ?? 0}

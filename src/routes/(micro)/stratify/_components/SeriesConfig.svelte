@@ -113,6 +113,22 @@
 	}
 
 	/**
+	 * Update Y-axis assignment for a series
+	 * @param {string} key
+	 * @param {string} value
+	 */
+	function updateSeriesYAxis(key, value) {
+		if (value === 'left') {
+			if (!(key in project.seriesYAxis)) return;
+			const { [key]: _, ...rest } = project.seriesYAxis;
+			project.seriesYAxis = rest;
+		} else {
+			if (project.seriesYAxis[key] === value) return;
+			project.seriesYAxis = { ...project.seriesYAxis, [key]: /** @type {'left' | 'right'} */ (value) };
+		}
+	}
+
+	/**
 	 * Update chart type override for a series
 	 * @param {string} key
 	 * @param {string} value
@@ -292,6 +308,17 @@
 							<option value="area">Area</option>
 							<option value="bar">Bar</option>
 							<option value="dot">Dot</option>
+						</select>
+
+						<!-- Y-axis toggle -->
+						<select
+							value={project.seriesYAxis[key] || 'left'}
+							onchange={(e) => updateSeriesYAxis(key, e.currentTarget.value)}
+							class="text-[10px] bg-transparent border border-transparent rounded px-1 py-0.5 focus:outline-none focus:border-warm-grey text-mid-grey cursor-pointer w-8 flex-shrink-0"
+							title="Y-axis for this series"
+						>
+							<option value="left">L</option>
+							<option value="right">R</option>
 						</select>
 
 						<!-- Visibility toggle -->

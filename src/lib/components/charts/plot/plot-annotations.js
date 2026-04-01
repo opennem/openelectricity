@@ -78,7 +78,7 @@ function toDasharray(lineStyle) {
  * @param {number} value
  * @returns {string}
  */
-function formatCompact(value) {
+export function formatCompact(value) {
 	if (Math.abs(value) >= 1_000_000) return (value / 1_000_000).toFixed(1) + 'M';
 	if (Math.abs(value) >= 1_000) return (value / 1_000).toFixed(1) + 'k';
 	return String(Math.round(value));

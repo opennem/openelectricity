@@ -1,6 +1,7 @@
 import { json } from '@sveltejs/kit';
 import { createCmsClient } from '$lib/sanity-cms.js';
 import { verifyAdmin } from '$lib/auth/clerk-server.js';
+import { safeParseJSON } from '$lib/stratify/chart-data.js';
 
 /**
  * GET /api/stratify/charts/:id — fetch a single chart (ownership check).
@@ -31,6 +32,7 @@ export async function GET({ request, params }) {
 			annotations: safeParseJSON(chart.annotations, []),
 			seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
 			plotOverrides: safeParseJSON(chart.plotOverrides, null),
+			seriesYAxis: safeParseJSON(chart.seriesYAxis, {}),
 			seriesOrder: chart.seriesOrder ?? []
 		}
 	});
@@ -87,9 +89,16 @@ export async function PATCH({ request, params }) {
 	if (body.xTicks !== undefined) patches.xTicks = body.xTicks;
 	if (body.xTickRotate !== undefined) patches.xTickRotate = body.xTickRotate;
 	if (body.marginBottom !== undefined) patches.marginBottom = body.marginBottom;
+	if (body.yTicks !== undefined) patches.yTicks = body.yTicks;
+	if (body.yMinMax !== undefined) patches.yMinMax = body.yMinMax;
+	if (body.y2Ticks !== undefined) patches.y2Ticks = body.y2Ticks;
+	if (body.y2MinMax !== undefined) patches.y2MinMax = body.y2MinMax;
+	if (body.tooltipColumns !== undefined) patches.tooltipColumns = body.tooltipColumns;
 	if (body.colourSeries !== undefined) patches.colourSeries = body.colourSeries;
 	if (body.xLabel !== undefined) patches.xLabel = body.xLabel;
 	if (body.yLabel !== undefined) patches.yLabel = body.yLabel;
+	if (body.seriesYAxis !== undefined) patches.seriesYAxis = JSON.stringify(body.seriesYAxis);
+	if (body.y2Label !== undefined) patches.y2Label = body.y2Label;
 	if (body.status !== undefined) patches.status = body.status;
 	if (body.publishedAt !== undefined) patches.publishedAt = body.publishedAt;
 	if (body.version !== undefined) patches.snapshotVersion = body.version;
@@ -130,16 +139,3 @@ export async function DELETE({ request, params }) {
 	return json({ deleted: true });
 }
 
-/**
- * Safely parse a JSON string, returning a fallback on failure.
- * @param {any} value
- * @param {any} fallback
- */
-function safeParseJSON(value, fallback) {
-	if (typeof value !== 'string') return value ?? fallback;
-	try {
-		return JSON.parse(value);
-	} catch {
-		return fallback;
-	}
-}
