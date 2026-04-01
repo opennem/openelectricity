@@ -38,6 +38,8 @@
 	let openSections = $state({ data: true, chart: true, annotate: true, series: true, publish: true });
 
 	let mounted = $state(false);
+	let loadingChart = $state(!!initialChartId);
+
 	onMount(async () => {
 		mounted = true;
 
@@ -50,6 +52,8 @@
 				}
 			} catch {
 				// Chart not found — stay on empty builder
+			} finally {
+				loadingChart = false;
 			}
 		}
 	});
@@ -130,7 +134,11 @@
 
 <Meta title="Stratify" description="Create and embed data charts" />
 
-{#if mounted}
+{#if !mounted || loadingChart}
+	<div class="flex items-center justify-center h-dvh font-mono">
+		<p class="text-[11px] text-mid-grey">Loading chart...</p>
+	</div>
+{:else}
 	<div class="flex flex-col h-dvh overflow-hidden font-mono">
 		<!-- Header bar -->
 		<div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
@@ -228,3 +236,4 @@
 		</div>
 	</div>
 {/if}
+
