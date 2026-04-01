@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
-	import { getClerkState } from '$lib/auth/clerk.svelte.js';
 	import { DragHandle, createDragHandler } from '$lib/components/ui/panel';
 
 	import StratifyPlotProject from '../_state/StratifyPlotProject.svelte.js';
@@ -16,12 +15,11 @@
 	import ChartPreview from './ChartPreview.svelte';
 	import ExamplePicker from './ExamplePicker.svelte';
 	import AccordionSection from './AccordionSection.svelte';
+	import StratifyHeader from './StratifyHeader.svelte';
 	import { createChart, updateChart, getChart } from '../_utils/api.js';
 
 	/** @type {{ initialChartId?: string }} */
 	let { initialChartId = '' } = $props();
-
-	const clerkState = getClerkState();
 
 	const project = new StratifyPlotProject();
 	setStratifyContext(project);
@@ -115,6 +113,46 @@
 		autoSaveTimer = setTimeout(() => handleSave('auto'), 3000);
 	});
 
+	let publishing = $state(false);
+
+	async function handlePublish() {
+		if (!project.hasData) return;
+		publishing = true;
+		try {
+			if (!project.currentChartId) {
+				const result = await createChart(project.toJSON());
+				project.currentChartId = result._id;
+				goto(`/stratify/${result._id}`, { replaceState: true });
+			}
+			await updateChart(project.currentChartId, {
+				...project.toJSON(),
+				status: 'published',
+				publishedAt: new Date().toISOString()
+			});
+			project.status = 'published';
+		} catch {
+			// handled silently
+		} finally {
+			publishing = false;
+		}
+	}
+
+	async function handleUnpublish() {
+		if (!project.currentChartId) return;
+		publishing = true;
+		try {
+			await updateChart(project.currentChartId, {
+				status: 'draft',
+				publishedAt: null
+			});
+			project.status = 'draft';
+		} catch {
+			// handled silently
+		} finally {
+			publishing = false;
+		}
+	}
+
 	/** @type {string} */
 	let saveButtonLabel = $derived.by(() => {
 		if (saveStatus === 'saving') return 'Saving...';
@@ -140,54 +178,60 @@
 	</div>
 {:else}
 	<div class="flex flex-col h-dvh overflow-hidden font-mono">
-		<!-- Header bar -->
-		<div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
-			<a href="/stratify" class="text-[11px] font-medium text-dark-grey tracking-wide uppercase hover:underline">
-				Stratify
-			</a>
+		<StratifyHeader />
 
-			{#if project.currentChartId}
-				<span class="text-[10px] px-1.5 py-0.5 rounded {project.status === 'published'
-					? 'bg-green-100 text-green-700'
-					: 'bg-warm-grey text-mid-grey'}">
-					{project.status === 'published' ? 'Published' : 'Draft'}
-				</span>
-			{/if}
+		<!-- Sub-header: chart info + actions -->
+		<div class="flex items-center gap-3 px-4 py-1.5 border-b border-warm-grey">
+			<div class="flex items-center gap-2">
+				{#if project.currentChartId}
+					{#if project.status === 'published'}
+						<a
+							href="/strata/{project.currentChartId}"
+							target="_blank"
+							class="inline-flex items-center gap-1 text-[10px] text-mid-grey hover:text-dark-grey"
+						>
+							Published link
+							<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+						</a>
+					{:else}
+						<span class="text-[9px] px-1.5 py-0.5 rounded bg-warm-grey text-mid-grey">Draft</span>
+					{/if}
+				{:else}
+					<span class="text-[10px] text-mid-grey">New chart</span>
+				{/if}
+			</div>
 
-			<div class="flex items-center gap-1 ml-auto">
-				<a
-					href="/stratify"
-					class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey"
-				>
-					Charts
-				</a>
-				<a
-					href="/stratify/new"
-					class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey"
-				>
-					New Chart
-				</a>
+			<div class="flex items-center gap-2 ml-auto">
+				{#if project.currentChartId}
+					{#if project.status === 'published'}
+						<button
+							type="button"
+							onclick={handleUnpublish}
+							disabled={publishing}
+							class="rounded border border-warm-grey px-2.5 py-1 text-[10px] text-mid-grey transition-colors hover:text-dark-grey hover:border-dark-grey disabled:opacity-40"
+						>
+							{publishing ? '...' : 'Unpublish'}
+						</button>
+					{:else}
+						<button
+							type="button"
+							onclick={handlePublish}
+							disabled={!project.hasData || publishing}
+							class="rounded border border-warm-grey px-2.5 py-1 text-[10px] text-mid-grey transition-colors hover:text-dark-grey hover:border-dark-grey disabled:opacity-40"
+						>
+							{publishing ? '...' : 'Publish'}
+						</button>
+					{/if}
+				{/if}
+
 				<button
 					type="button"
 					onclick={() => handleSave('manual')}
 					disabled={!project.hasData || saveStatus === 'saving'}
-					class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey disabled:opacity-40 disabled:pointer-events-none"
+					class="rounded bg-dark-grey px-2.5 py-1 text-[10px] text-white transition-colors hover:bg-black disabled:opacity-40 disabled:pointer-events-none"
 				>
 					{saveButtonLabel}
 				</button>
-
-				{#if clerkState.user}
-					<span class="text-[10px] text-mid-grey ml-2">
-						{clerkState.user.primaryEmailAddress?.emailAddress ?? ''}
-					</span>
-					<button
-						type="button"
-						onclick={() => clerkState.instance?.signOut({ redirectUrl: '/stratify' })}
-						class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey"
-					>
-						Sign out
-					</button>
-				{/if}
 			</div>
 		</div>
 

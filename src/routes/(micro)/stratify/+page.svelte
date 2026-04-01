@@ -1,8 +1,7 @@
 <script>
-	import { onMount } from 'svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import { getClerkState } from '$lib/auth/clerk.svelte.js';
-	import LoginGate from '$lib/components/auth/LoginGate.svelte';
+	import StratifyHeader from './_components/StratifyHeader.svelte';
 	import * as api from './_utils/api.js';
 
 	const clerkState = getClerkState();
@@ -95,36 +94,10 @@
 
 <Meta title="Stratify" description="Create and embed data charts" />
 
-<LoginGate redirectUrl="/stratify">
-	<div class="flex flex-col h-dvh overflow-hidden font-mono">
-		<!-- Header -->
-		<div class="flex items-center gap-3 px-6 py-3 border-b border-warm-grey bg-light-warm-grey/50">
-			<span class="text-[11px] font-medium text-dark-grey tracking-wide uppercase">Stratify</span>
+<div class="flex flex-col h-dvh overflow-hidden font-mono">
+	<StratifyHeader />
 
-			<div class="flex items-center gap-2 ml-auto">
-				<a
-					href="/stratify/new"
-					class="rounded border border-warm-grey px-3 py-1 text-[11px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
-				>
-					New Chart
-				</a>
-
-				{#if clerkState.user}
-					<span class="text-[10px] text-mid-grey">
-						{clerkState.user.primaryEmailAddress?.emailAddress ?? ''}
-					</span>
-					<button
-						type="button"
-						onclick={() => clerkState.instance?.signOut({ redirectUrl: '/stratify' })}
-						class="rounded border border-transparent px-2 py-1 text-[11px] text-mid-grey transition-colors hover:text-dark-grey hover:border-mid-warm-grey"
-					>
-						Sign out
-					</button>
-				{/if}
-			</div>
-		</div>
-
-		<!-- Search bar -->
+	<!-- Search bar -->
 		<div class="px-6 py-3 border-b border-warm-grey">
 			<input
 				type="text"
@@ -201,4 +174,3 @@
 			{/if}
 		</div>
 	</div>
-</LoginGate>
