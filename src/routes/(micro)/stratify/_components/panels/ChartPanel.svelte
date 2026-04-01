@@ -141,9 +141,28 @@
 				</select>
 			</label>
 
-			<div class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-14 shrink-0">Y value</span>
-				<span class="text-[11px] text-dark-grey truncate">{yColumnLabels}</span>
+			<div class="flex gap-2">
+				<span class="text-[10px] text-mid-grey w-14 shrink-0 pt-0.5">Y value</span>
+				<div class="flex flex-col gap-0.5 flex-1">
+					{#each nonFirstColumns as col (col.key)}
+						{@const isVisible = !project.hiddenSeries.includes(col.key)}
+						<label class="flex items-center gap-1.5">
+							<input
+								type="checkbox"
+								checked={isVisible}
+								onchange={() => {
+									if (isVisible) {
+										project.hiddenSeries = [...project.hiddenSeries, col.key];
+									} else {
+										project.hiddenSeries = project.hiddenSeries.filter((/** @type {string} */ k) => k !== col.key);
+									}
+								}}
+								class="accent-dark-grey"
+							/>
+							<span class="text-[11px] text-dark-grey truncate">{col.label}</span>
+						</label>
+					{/each}
+				</div>
 			</div>
 
 			<label class="flex items-center gap-2">
