@@ -174,9 +174,7 @@ export function applyPlotOverrides(baseOptions, overrides) {
 
 	// Extra marks — resolve from specs and append
 	if (overrides.extraMarks && overrides.extraMarks.length > 0) {
-		const resolvedMarks = overrides.extraMarks
-			.map(resolveMarkSpec)
-			.filter((m) => m !== null);
+		const resolvedMarks = overrides.extraMarks.map(resolveMarkSpec).filter((m) => m !== null);
 		if (resolvedMarks.length > 0) {
 			result.marks = [...(result.marks || []), ...resolvedMarks];
 		}
