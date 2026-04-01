@@ -5,6 +5,8 @@
  * documents into a consistent shape with defaults applied.
  */
 
+import { migrateChartType } from '$lib/stratify/chart-types.js';
+
 /**
  * Safely parse a JSON string, returning a fallback on failure.
  * @param {any} value
@@ -33,7 +35,7 @@ export function normaliseChart(chart) {
 		dataSource: chart.dataSource ?? '',
 		notes: chart.notes ?? '',
 		csvText: chart.csvText ?? '',
-		chartType: chart.chartType ?? 'stacked-area',
+		chartType: migrateChartType(chart.chartType ?? 'line'),
 		displayMode: chart.displayMode ?? 'auto',
 		hiddenSeries: chart.hiddenSeries ?? [],
 		userSeriesColours: safeParseJSON(chart.userSeriesColours, {}),

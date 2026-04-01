@@ -9,13 +9,16 @@
 		createGroupedBarOptions,
 		createHorizontalBarOptions,
 		createGroupedHorizontalBarOptions,
-		createDotOptions,
-		createMixedMarkOptions,
 		createColourGroupedBarOptions,
 		buildTooltipChannels
 	} from '$lib/components/charts/plot/plot-configs.js';
 	import { processAnnotations, formatCompact } from './plot-annotations.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
+	import {
+		HORIZONTAL_TYPES,
+		COLUMN_TYPES,
+		TIME_SERIES_TYPES
+	} from '$lib/stratify/chart-types.js';
 
 	const dateFmt = new Intl.DateTimeFormat('en-AU', {
 		day: 'numeric',
@@ -23,24 +26,19 @@
 		year: 'numeric'
 	});
 
-	/**
-	 * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'bar-horizontal' | 'grouped-bar-horizontal' | 'dot'} StratifyPlotChartType
-	 */
-
 	/** @type {Record<string, Function>} */
 	const CONFIG_MAP = {
-		'stacked-area': createStackedAreaOptions,
 		area: createStackedAreaOptions,
 		line: createLineOptions,
-		'bar-stacked': createStackedBarOptions,
-		'grouped-bar': createGroupedBarOptions,
-		'bar-horizontal': createHorizontalBarOptions,
-		'grouped-bar-horizontal': createGroupedHorizontalBarOptions,
-		dot: createDotOptions
+		column: createStackedBarOptions,
+		'column-stacked': createStackedBarOptions,
+		'column-grouped': createGroupedBarOptions,
+		bar: createHorizontalBarOptions,
+		'bar-stacked': createHorizontalBarOptions,
+		'bar-grouped': createGroupedHorizontalBarOptions
 	};
 
-	const TIME_SERIES_TYPES = new Set(['stacked-area', 'area', 'line', 'dot']);
-	const BAR_TYPES = new Set(['bar-stacked', 'grouped-bar', 'bar-horizontal', 'grouped-bar-horizontal']);
+	const BAR_TYPES = new Set([...HORIZONTAL_TYPES, ...COLUMN_TYPES]);
 
 	/**
 	 * @type {{
@@ -48,8 +46,7 @@
 	 *   seriesNames: string[],
 	 *   seriesColours: Record<string, string>,
 	 *   seriesLabels: Record<string, string>,
-	 *   chartType: StratifyPlotChartType,
-	 *   seriesChartTypes?: Record<string, import('./plot-configs.js').SeriesMarkType>,
+	 *   chartType: import('$lib/stratify/chart-types.js').ChartType,
 	 *   plotOverrides?: import('./plot-overrides.js').PlotOverrides | null,
 	 *   colourSeries?: string | null,
 	 *   colourGroupNames?: string[],
@@ -82,7 +79,6 @@
 		seriesColours,
 		seriesLabels,
 		chartType,
-		seriesChartTypes = {},
 		plotOverrides = null,
 		colourSeries = null,
 		colourGroupNames = [],
@@ -206,18 +202,7 @@
 				mergedOptions
 			);
 		} else {
-			const hasMixedTypes = Object.keys(seriesChartTypes).length > 0;
-			opts = hasMixedTypes
-				? createMixedMarkOptions(
-						chartData,
-						seriesNames,
-						seriesColours,
-						seriesLabels,
-						seriesChartTypes,
-						chartType,
-						mergedOptions
-					)
-				: (CONFIG_MAP[chartType] || createLineOptions)(
+			opts = (CONFIG_MAP[chartType] || createLineOptions)(
 						chartData,
 						seriesNames,
 						seriesColours,

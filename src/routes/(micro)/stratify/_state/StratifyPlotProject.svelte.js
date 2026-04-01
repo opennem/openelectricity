@@ -7,9 +7,10 @@
 
 import { parseCSV } from '$lib/stratify/csv-parser.js';
 import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
+import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
 
 /**
- * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'bar-horizontal' | 'grouped-bar-horizontal' | 'dot'} ChartType
+ * @typedef {import('$lib/stratify/chart-types.js').ChartType} ChartType
  */
 
 /**
@@ -26,8 +27,7 @@ import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
  * @property {string[]} hiddenSeries
  * @property {Record<string, string>} userSeriesColours
  * @property {Record<string, string>} userSeriesLabels
- * @property {Record<string, import('$lib/components/charts/plot/plot-configs.js').SeriesMarkType>} [seriesChartTypes]
- * @property {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides | null} [plotOverrides]
+ * @property {import('$lib/stratify/plot-overrides.js').PlotOverrides | null} [plotOverrides]
  * @property {string[]} [seriesOrder]
  * @property {number} [chartHeight]
  * @property {boolean} [showXTickLabels]
@@ -71,7 +71,7 @@ export default class StratifyPlotProject {
 	displayMode = $state('auto');
 
 	/** @type {ChartType} */
-	chartType = $state('stacked-area');
+	chartType = $state('line');
 
 	/** @type {string} */
 	stylePreset = $state('oe');
@@ -86,10 +86,7 @@ export default class StratifyPlotProject {
 	/** @type {Record<string, string>} */
 	userSeriesLabels = $state({});
 
-	/** @type {Record<string, import('$lib/components/charts/plot/plot-configs.js').SeriesMarkType>} */
-	seriesChartTypes = $state({});
-
-	/** @type {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides | null} */
+	/** @type {import('$lib/stratify/plot-overrides.js').PlotOverrides | null} */
 	plotOverrides = $state(null);
 
 	/** @type {string[]} User-defined series order (empty = use CSV column order) */
@@ -280,9 +277,8 @@ export default class StratifyPlotProject {
 		// Auto-switch chart type when data mode changes
 		$effect(() => {
 			if (this.isCategory) {
-				const areaTypes = new Set(['stacked-area', 'area']);
-				if (areaTypes.has(this.chartType)) {
-					this.chartType = 'grouped-bar';
+				if (this.chartType === 'area') {
+					this.chartType = 'column';
 				}
 			}
 		});
@@ -303,12 +299,11 @@ export default class StratifyPlotProject {
 		this.dataSource = '';
 		this.notes = '';
 		this.displayMode = 'auto';
-		this.chartType = 'stacked-area';
+		this.chartType = 'line';
 		this.stylePreset = 'oe';
 		this.hiddenSeries = [];
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
-		this.seriesChartTypes = {};
 		this.plotOverrides = null;
 		this.seriesOrder = [];
 		this.chartHeight = 400;
@@ -348,7 +343,6 @@ export default class StratifyPlotProject {
 		this.stylePreset = 'oe';
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
-		this.seriesChartTypes = {};
 		this.plotOverrides = null;
 		this.seriesOrder = [];
 		this.chartHeight = 400;
@@ -390,7 +384,6 @@ export default class StratifyPlotProject {
 			hiddenSeries: this.hiddenSeries,
 			userSeriesColours: this.userSeriesColours,
 			userSeriesLabels: this.userSeriesLabels,
-			seriesChartTypes: this.seriesChartTypes,
 			plotOverrides: this.plotOverrides,
 			seriesOrder: this.seriesOrder,
 			chartHeight: this.chartHeight,
@@ -423,13 +416,12 @@ export default class StratifyPlotProject {
 		this.description = snapshot.description ?? '';
 		this.dataSource = snapshot.dataSource ?? '';
 		this.notes = snapshot.notes ?? '';
-		this.chartType = /** @type {ChartType} */ (snapshot.chartType ?? 'stacked-area');
+		this.chartType = migrateChartType(snapshot.chartType ?? 'line');
 		this.displayMode = snapshot.displayMode ?? 'auto';
 		this.stylePreset = snapshot.stylePreset ?? 'oe';
 		this.hiddenSeries = snapshot.hiddenSeries ?? [];
 		this.userSeriesColours = snapshot.userSeriesColours ?? {};
 		this.userSeriesLabels = snapshot.userSeriesLabels ?? {};
-		this.seriesChartTypes = snapshot.seriesChartTypes ?? {};
 		this.plotOverrides = snapshot.plotOverrides ?? null;
 		this.seriesOrder = snapshot.seriesOrder ?? [];
 		this.chartHeight = snapshot.chartHeight ?? 400;

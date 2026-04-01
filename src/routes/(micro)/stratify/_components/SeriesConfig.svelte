@@ -131,24 +131,6 @@
 		}
 	}
 
-	/**
-	 * Update chart type override for a series
-	 * @param {string} key
-	 * @param {string} value
-	 */
-	function updateSeriesChartType(key, value) {
-		if (value === '') {
-			const { [key]: _, ...rest } = project.seriesChartTypes;
-			project.seriesChartTypes = rest;
-		} else {
-			project.seriesChartTypes = {
-				...project.seriesChartTypes,
-				[key]: /** @type {import('$lib/components/charts/plot/plot-configs.js').SeriesMarkType} */ (
-					value
-				)
-			};
-		}
-	}
 
 	/**
 	 * Close picker when clicking outside
@@ -298,20 +280,6 @@
 							oninput={(e) => updateLabel(key, e.currentTarget.value)}
 							class="bg-transparent border border-transparent rounded px-1.5 py-0.5 text-[11px] flex-1 min-w-0 focus:outline-none focus:border-warm-grey focus:bg-light-warm-grey/50"
 						/>
-
-						<!-- Chart type override -->
-						<select
-							value={project.seriesChartTypes[key] || ''}
-							onchange={(e) => updateSeriesChartType(key, e.currentTarget.value)}
-							class="text-[10px] bg-transparent border border-transparent rounded px-1 py-0.5 focus:outline-none focus:border-warm-grey text-mid-grey cursor-pointer w-16 flex-shrink-0"
-							title="Chart type for this series"
-						>
-							<option value="">Default</option>
-							<option value="line">Line</option>
-							<option value="area">Area</option>
-							<option value="bar">Bar</option>
-							<option value="dot">Dot</option>
-						</select>
 
 						<!-- Y-axis toggle -->
 						<select

@@ -151,7 +151,6 @@
 			{seriesColours}
 			{seriesLabels}
 			chartType={chart.chartType}
-			seriesChartTypes={chart.seriesChartTypes}
 			plotOverrides={chart.plotOverrides}
 			colourSeries={colourSeriesKey}
 			{colourGroupNames}
