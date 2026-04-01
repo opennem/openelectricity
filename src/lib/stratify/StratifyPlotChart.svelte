@@ -199,7 +199,7 @@
 				seriesColours,
 				seriesLabels,
 				colourSeries,
-				mergedOptions
+				{ ...mergedOptions, horizontal: HORIZONTAL_TYPES.has(chartType) }
 			);
 		} else {
 			opts = (CONFIG_MAP[chartType] || createLineOptions)(

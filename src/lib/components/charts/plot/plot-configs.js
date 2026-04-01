@@ -499,10 +499,12 @@ export function createColourGroupedBarOptions(
 ) {
 	const {
 		style = SHARED_STYLE,
+		marginLeft,
 		marginRight,
 		legend = true,
 		extraMarks = [],
-		yTickFormat
+		yTickFormat,
+		horizontal = false
 	} = options;
 
 	const long = data
@@ -513,15 +515,33 @@ export function createColourGroupedBarOptions(
 			colourGroup: row[colourSeriesKey] ?? 'Unknown'
 		}));
 
+	const colorScale = {
+		domain: colourGroupNames,
+		range: colourGroupNames.map((g) => colours[g]),
+		legend,
+		tickFormat: (/** @type {string} */ d) => labels[d] || d
+	};
+
+	if (horizontal) {
+		return {
+			style,
+			marginLeft: marginLeft ?? 100,
+			...(marginRight !== undefined ? { marginRight } : {}),
+			color: colorScale,
+			y: { label: null, tickPadding: 6, type: 'band' },
+			x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+			marks: [
+				...extraMarks,
+				barX(long, { y: 'x', x: 'value', fill: 'colourGroup', sort: { y: '-x' } }),
+				ruleX([0])
+			]
+		};
+	}
+
 	return {
 		style,
 		...(marginRight !== undefined ? { marginRight } : {}),
-		color: {
-			domain: colourGroupNames,
-			range: colourGroupNames.map((g) => colours[g]),
-			legend,
-			tickFormat: (/** @type {string} */ d) => labels[d] || d
-		},
+		color: colorScale,
 		x: { label: null, tickPadding: 6, type: 'band' },
 		y: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		marks: [
