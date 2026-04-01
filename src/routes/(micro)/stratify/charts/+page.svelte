@@ -42,17 +42,10 @@
 			const full = await api.getChart(chart._id);
 			if (!full) return;
 
+			const { _id, _createdAt, _updatedAt, userId, status, publishedAt, ...rest } = full;
 			const snapshot = {
-				version: 1,
-				csvText: full.csvText ?? '',
-				title: `${full.title || 'Untitled'} (copy)`,
-				description: full.description ?? '',
-				dataSource: full.dataSource ?? '',
-				notes: full.notes ?? '',
-				chartType: full.chartType ?? 'stacked-area',
-				hiddenSeries: full.hiddenSeries ?? [],
-				userSeriesColours: full.userSeriesColours ?? {},
-				userSeriesLabels: full.userSeriesLabels ?? {}
+				...rest,
+				title: `${full.title || 'Untitled'} (copy)`
 			};
 
 			await api.createChart(/** @type {any} */ (snapshot));
