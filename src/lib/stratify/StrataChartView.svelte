@@ -169,6 +169,7 @@
 			y2MinMax={chart.y2MinMax ?? false}
 			tooltipColumns={chart.tooltipColumns ?? []}
 			dateColumnKey={parsed.allColumns?.[0]?.key ?? ''}
+			dateColumnLabel={parsed.allColumns?.[0]?.label ?? ''}
 			xDomain={sortedXDomain}
 			showXTickLabels={chart.showXTickLabels ?? true}
 			xTicks={chart.xTicks ?? 0}

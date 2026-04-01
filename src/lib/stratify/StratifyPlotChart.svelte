@@ -61,6 +61,7 @@
 	 *   y2MinMax?: boolean,
 	 *   tooltipColumns?: string[],
 	 *   dateColumnKey?: string,
+	 *   dateColumnLabel?: string,
 	 *   xDomain?: string[],
 	 *   showXTickLabels?: boolean,
 	 *   xTicks?: number,
@@ -93,6 +94,7 @@
 		y2MinMax = false,
 		tooltipColumns = [],
 		dateColumnKey = '',
+		dateColumnLabel = '',
 		xDomain = undefined,
 		showXTickLabels = true,
 		xTicks = 0,
@@ -389,22 +391,26 @@
 				)
 			);
 		} else {
-			// Category mode: build channels in order, include category label
+			// Category mode: build channels in order with proper column label
 			/** @type {Record<string, any>} */
 			const tipChannels = {};
 			const catColumnKey = dateColumnKey; // first column key
+			const catLabel = dateColumnLabel || 'Category';
 			const showCat =
 				tooltipColumns.length === 0 || (catColumnKey && tooltipColumns.includes(catColumnKey));
 
 			if (tooltipColumns.length > 0) {
 				for (const key of tooltipColumns) {
-					if (key === catColumnKey) continue; // handled via x channel
-					if (key in tooltipLabels) {
-						const label = tooltipLabels[key];
-						tipChannels[label] = key;
+					if (key === catColumnKey && showCat) {
+						tipChannels[catLabel] = { value: (/** @type {any} */ d) => d.category };
+					} else if (key in tooltipLabels) {
+						tipChannels[tooltipLabels[key]] = key;
 					}
 				}
 			} else {
+				if (showCat) {
+					tipChannels[catLabel] = { value: (/** @type {any} */ d) => d.category };
+				}
 				Object.assign(tipChannels, buildTooltipChannels(tooltipLabels));
 			}
 
@@ -414,7 +420,7 @@
 					pointerX({
 						x: 'category',
 						channels: tipChannels,
-						format: { x: showCat },
+						format: { x: false },
 						lineHeight: 1.3,
 						fontSize: 11
 					})
