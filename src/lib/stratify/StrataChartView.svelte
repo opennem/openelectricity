@@ -100,6 +100,29 @@
 			return filtered;
 		});
 	});
+
+	// Sort category data by total Y value if requested
+	const sortedData = $derived.by(() => {
+		const sort = chart.categorySort ?? 'default';
+		if (sort === 'default' || parsed.mode !== 'category') return visibleData;
+
+		return [...visibleData].sort((a, b) => {
+			let totalA = 0,
+				totalB = 0;
+			for (const name of visibleSeriesNames) {
+				totalA += Number(a[name]) || 0;
+				totalB += Number(b[name]) || 0;
+			}
+			return sort === 'value-asc' ? totalA - totalB : totalB - totalA;
+		});
+	});
+
+	// Extract sorted x domain for category charts
+	const sortedXDomain = $derived(
+		(chart.categorySort ?? 'default') !== 'default' && parsed.mode === 'category'
+			? sortedData.map((/** @type {any} */ d) => d.category)
+			: undefined
+	);
 </script>
 
 <svelte:element this={caption ? 'figure' : 'div'} style="font-family: {preset.typography.fontFamily};">
@@ -123,7 +146,7 @@
 
 	{#if parsed.data.length > 0}
 		<StratifyPlotChart
-			data={visibleData}
+			data={sortedData}
 			seriesNames={visibleSeriesNames}
 			{seriesColours}
 			{seriesLabels}
@@ -146,6 +169,7 @@
 			y2MinMax={chart.y2MinMax ?? false}
 			tooltipColumns={chart.tooltipColumns ?? []}
 			dateColumnKey={parsed.allColumns?.[0]?.key ?? ''}
+			xDomain={sortedXDomain}
 			xTicks={chart.xTicks ?? 0}
 			xTickRotate={chart.xTickRotate ?? 0}
 			marginBottom={chart.marginBottom ?? 0}

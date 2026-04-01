@@ -43,6 +43,7 @@ import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
  * @property {Record<string, 'left' | 'right'>} [seriesYAxis]
  * @property {string} [y2Label]
  * @property {string[]} [tooltipColumns]
+ * @property {'default' | 'value-asc' | 'value-desc'} [categorySort]
  */
 
 export default class StratifyPlotProject {
@@ -115,6 +116,9 @@ export default class StratifyPlotProject {
 
 	/** @type {boolean} Show min/max tick marks on right Y-axis */
 	y2MinMax = $state(false);
+
+	/** @type {'default' | 'value-asc' | 'value-desc'} Category sort order */
+	categorySort = $state('default');
 
 	/** @type {string[]} Columns to show in tooltip (empty = show all) */
 	tooltipColumns = $state([]);
@@ -307,6 +311,7 @@ export default class StratifyPlotProject {
 		this.y2Ticks = 0;
 		this.y2MinMax = false;
 		this.tooltipColumns = [];
+		this.categorySort = 'default';
 		this.colourSeries = null;
 		this.xLabel = '';
 		this.yLabel = '';
@@ -344,6 +349,7 @@ export default class StratifyPlotProject {
 		this.y2Ticks = 0;
 		this.y2MinMax = false;
 		this.tooltipColumns = [];
+		this.categorySort = 'default';
 		this.colourSeries = null;
 		this.xLabel = '';
 		this.yLabel = '';
@@ -383,6 +389,7 @@ export default class StratifyPlotProject {
 			y2Ticks: this.y2Ticks,
 			y2MinMax: this.y2MinMax,
 			tooltipColumns: this.tooltipColumns,
+			categorySort: this.categorySort,
 			colourSeries: this.colourSeries,
 			xLabel: this.xLabel,
 			yLabel: this.yLabel,
@@ -419,6 +426,7 @@ export default class StratifyPlotProject {
 		this.y2Ticks = snapshot.y2Ticks ?? 0;
 		this.y2MinMax = snapshot.y2MinMax ?? false;
 		this.tooltipColumns = snapshot.tooltipColumns ?? [];
+		this.categorySort = snapshot.categorySort ?? 'default';
 		this.colourSeries = snapshot.colourSeries ?? null;
 		this.xLabel = snapshot.xLabel ?? '';
 		this.yLabel = snapshot.yLabel ?? '';

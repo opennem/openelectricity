@@ -101,6 +101,21 @@
 				</select>
 			</label>
 		</div>
+
+		<label class="flex items-center gap-2 mt-3">
+			<span class="text-[10px] text-mid-grey w-14 shrink-0">Sort by</span>
+			<select
+				value={project.categorySort}
+				onchange={(e) => {
+					project.categorySort = /** @type {'default' | 'value-asc' | 'value-desc'} */ (e.currentTarget.value);
+				}}
+				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+			>
+				<option value="default">X: data order</option>
+				<option value="value-asc">Y: ascending</option>
+				<option value="value-desc">Y: descending</option>
+			</select>
+		</label>
 	</div>
 {/if}
 

@@ -61,6 +61,7 @@
 	 *   y2MinMax?: boolean,
 	 *   tooltipColumns?: string[],
 	 *   dateColumnKey?: string,
+	 *   xDomain?: string[],
 	 *   xTicks?: number,
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
@@ -91,6 +92,7 @@
 		y2MinMax = false,
 		tooltipColumns = [],
 		dateColumnKey = '',
+		xDomain = undefined,
 		xTicks = 0,
 		xTickRotate = 0,
 		marginBottom = 0,
@@ -282,6 +284,11 @@
 			} else if (yTicks > 0) {
 				opts.y = { ...(opts.y || {}), ticks: yTicks };
 			}
+		}
+
+		// Apply explicit x domain (e.g. sorted categories)
+		if (xDomain) {
+			opts.x = { ...(opts.x || {}), domain: xDomain };
 		}
 
 		// Apply x-axis tick count if configured
