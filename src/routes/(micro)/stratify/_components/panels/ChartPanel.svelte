@@ -306,7 +306,9 @@
 						}}
 						class="accent-dark-grey"
 					/>
-					<span class="text-[11px] text-dark-grey">{col.label}</span>
+					<span class="text-[11px] text-dark-grey"
+						>{col === project.allColumns[0] && !project.isCategory ? 'Date' : col.label}</span
+					>
 				</label>
 			{/each}
 		</div>

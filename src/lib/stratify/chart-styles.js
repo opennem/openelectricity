@@ -67,7 +67,7 @@ export const CHART_STYLE_PRESETS = [
 			// Other
 			'#069FAF', // vre
 			'#545353', // residual
-			'#6A6A6A'  // demand
+			'#6A6A6A' // demand
 		],
 		typography: {
 			fontFamily: '"DM Sans", sans-serif',

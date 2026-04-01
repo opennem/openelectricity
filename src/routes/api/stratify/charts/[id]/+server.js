@@ -138,4 +138,3 @@ export async function DELETE({ request, params }) {
 
 	return json({ deleted: true });
 }
-
