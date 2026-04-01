@@ -1,5 +1,5 @@
 <script>
-	import PlotChart from './PlotChart.svelte';
+	import PlotChart from '$lib/components/charts/plot/PlotChart.svelte';
 	import { ruleX, tip, pointerX, axisY } from '@observablehq/plot';
 	import { scaleLinear } from 'd3-scale';
 	import {
@@ -11,7 +11,7 @@
 		createMixedMarkOptions,
 		createColourGroupedBarOptions,
 		buildTooltipChannels
-	} from './plot-configs.js';
+	} from '$lib/components/charts/plot/plot-configs.js';
 	import { processAnnotations, formatCompact } from './plot-annotations.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
 

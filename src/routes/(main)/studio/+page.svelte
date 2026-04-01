@@ -10,12 +10,6 @@
 			link: '/studio/facility-explorer'
 		},
 		{
-			title: 'Stratify',
-			description:
-				'Create and embed data charts from CSV data. A simple chart builder for stacked area, area and line charts.',
-			link: '/studio/stratify'
-		},
-		{
 			title: 'CMS Facilities',
 			description:
 				'Inspect and manage facility metadata from the CMS with AI-assisted exploration.',

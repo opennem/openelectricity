@@ -1,5 +1,5 @@
 <script>
-	import StratifyPlotChart from '$lib/components/charts/plot/StratifyPlotChart.svelte';
+	import StratifyPlotChart from '$lib/stratify/StratifyPlotChart.svelte';
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
 	import { getPreset, assignPresetColours, getPlotStyle } from '$lib/stratify/chart-styles.js';
 

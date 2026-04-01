@@ -57,20 +57,24 @@ src/routes/(micro)/strata/[id]/        # Embed route (public)
 ├── +page.server.js                    # Loads published chart from Sanity
 └── +page.svelte                       # Renders chart with style preset
 
-src/lib/stratify/                      # Shared Stratify utilities
+src/lib/stratify/                      # Stratify library
+├── StrataChartView.svelte             # Unified chart view (used by preview, embed, strata page)
+├── StratifyPlotChart.svelte           # Chart component (dual Y-axis, tooltips, annotations)
 ├── chart-data.js                      # safeParseJSON, normaliseChart (shared server-side)
 ├── chart-styles.js                    # Style presets (colours, typography)
 ├── csv-parser.js                      # CSV/TSV parser with date/category detection
-└── colour-palette.js                  # Default colour assignment
+├── colour-palette.js                  # Default colour assignment
+├── plot-annotations.js                # Annotation processing + formatCompact
+├── plot-overrides.js                  # PlotOverrides merge system
+└── *.test.js                          # Co-located tests
 
-src/lib/components/charts/plot/        # Shared Plot rendering library
-├── StratifyPlotChart.svelte           # High-level chart component (dual Y-axis, tooltips)
+src/lib/components/charts/plot/        # Shared Observable Plot utilities (used by Stratify + facility-plot)
 ├── PlotChart.svelte                   # Low-level Plot wrapper
 ├── plot-action.js                     # Svelte action for Observable Plot
 ├── plot-configs.js                    # Chart config factories (area, line, bar, dot, mixed)
-├── plot-overrides.js                  # PlotOverrides merge system
-├── plot-annotations.js                # Annotation processing + formatCompact
-└── *.test.js                          # Co-located tests
+├── plot-gridlines.js                  # Gridline computation
+├── plot-overlays.js                   # Night shading overlays
+└── Plot*.svelte.js                    # Options, theme, interaction, sync state
 
 src/lib/components/text-components/    # Article content rendering
 ├── RichText.svelte                    # Portable Text renderer (strataEmbed + embed blocks)
