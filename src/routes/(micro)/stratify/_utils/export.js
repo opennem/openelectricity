@@ -125,6 +125,7 @@ export async function downloadPNG(container, filename = 'chart.png', scale = 2) 
 	});
 }
 
+
 /**
  * Download a blob as a file.
  * @param {Blob} blob

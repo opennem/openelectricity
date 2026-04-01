@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { replaceState } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
 	import { getClerkState } from '$lib/auth/clerk.svelte.js';
 	import LoginGate from '$lib/components/auth/LoginGate.svelte';
@@ -58,7 +59,7 @@
 				// Chart not found or not accessible
 			}
 			// Clean the URL without reloading
-			window.history.replaceState({}, '', '/stratify');
+			replaceState('/stratify', {});
 		}
 	});
 
@@ -99,6 +100,7 @@
 			setTimeout(() => {
 				if (saveStatus === 'saved') saveStatus = 'idle';
 			}, 2000);
+
 		} catch {
 			saveStatus = 'error';
 			setTimeout(() => {

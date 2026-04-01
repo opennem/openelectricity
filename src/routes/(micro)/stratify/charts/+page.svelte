@@ -154,17 +154,14 @@
 					{/if}
 				</div>
 			{:else}
-				<div class="grid gap-0 border border-warm-grey rounded-lg overflow-hidden">
-					{#each filteredCharts as chart, i (chart._id)}
-						<div
-							class="flex items-center gap-4 px-4 py-3 {i > 0 ? 'border-t border-warm-grey' : ''} hover:bg-light-warm-grey/50"
-						>
-							<!-- Title + meta -->
-							<div class="flex-1 min-w-0">
+				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					{#each filteredCharts as chart (chart._id)}
+						<div class="border border-warm-grey rounded-lg overflow-hidden hover:border-mid-warm-grey transition-colors">
+								<div class="px-3 py-3">
 								<div class="flex items-center gap-2 mb-0.5">
 									<a
 										href="/stratify?chart={chart._id}"
-										class="text-[11px] font-medium text-dark-grey truncate hover:underline"
+										class="text-[11px] font-medium text-dark-grey truncate hover:underline flex-1 min-w-0"
 									>
 										{chart.title || 'Untitled'}
 									</a>
@@ -174,43 +171,26 @@
 										{chart.status === 'published' ? 'Published' : 'Draft'}
 									</span>
 								</div>
-								<div class="text-[10px] text-mid-grey flex items-center gap-2">
-									<span>{chart.chartType}</span>
-									{#if chart.description}
-										<span>&middot;</span>
-										<span class="truncate">{chart.description}</span>
-									{/if}
+								<div class="flex items-center justify-between">
+									<span class="text-[10px] text-mid-grey">{timeAgo(chart._updatedAt)}</span>
+									<div class="flex items-center gap-2">
+										<button
+											type="button"
+											onclick={() => handleDuplicate(chart)}
+											class="text-[10px] text-mid-grey hover:text-dark-grey"
+										>
+											Duplicate
+										</button>
+										<button
+											type="button"
+											onclick={() => handleDelete(chart._id)}
+											disabled={deletingId === chart._id}
+											class="text-[10px] text-mid-grey hover:text-dark-red disabled:opacity-40"
+										>
+											{deletingId === chart._id ? '...' : 'Delete'}
+										</button>
+									</div>
 								</div>
-							</div>
-
-							<!-- Updated -->
-							<span class="text-[10px] text-mid-grey flex-shrink-0">
-								{timeAgo(chart._updatedAt)}
-							</span>
-
-							<!-- Actions -->
-							<div class="flex items-center gap-3 flex-shrink-0">
-								<a
-									href="/stratify?chart={chart._id}"
-									class="text-[11px] text-mid-grey hover:text-dark-grey"
-								>
-									Open
-								</a>
-								<button
-									type="button"
-									onclick={() => handleDuplicate(chart)}
-									class="text-[11px] text-mid-grey hover:text-dark-grey"
-								>
-									Duplicate
-								</button>
-								<button
-									type="button"
-									onclick={() => handleDelete(chart._id)}
-									disabled={deletingId === chart._id}
-									class="text-[11px] text-mid-grey hover:text-dark-red disabled:opacity-40"
-								>
-									{deletingId === chart._id ? '...' : 'Delete'}
-								</button>
 							</div>
 						</div>
 					{/each}
