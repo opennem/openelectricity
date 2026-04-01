@@ -421,7 +421,7 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
 		y: { label: null, tickPadding: 6, type: 'band' },
-		x: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+		x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		marks: [
 			...extraMarks,
 			barX(
@@ -459,7 +459,7 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
 		y: { label: null, tickPadding: 6, type: 'band' },
-		x: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+		x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		fy: { label: null, padding: 0.2 },
 		marks: [
 			...extraMarks,
