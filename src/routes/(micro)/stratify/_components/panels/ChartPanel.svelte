@@ -77,6 +77,12 @@
 	let selectedY = $derived(visibleYColumns.length === 1 ? visibleYColumns[0]?.key : '');
 
 	// --- Advanced ---
+	let isHorizontal = $derived(
+		project.chartType === 'bar' ||
+			project.chartType === 'bar-stacked' ||
+			project.chartType === 'bar-grouped'
+	);
+
 	let showAdvanced = $state(false);
 	let overridesText = $state('');
 	let parseError = $state('');
@@ -114,9 +120,9 @@
 		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Data Encoding</p>
 
 		<div class="flex flex-col gap-2">
-			<!-- X Axis: column + type -->
+			<!-- Category axis: column + type -->
 			<div class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">X Axis</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">{isHorizontal ? 'Y Axis' : 'X Axis'}</span>
 				<select
 					value={project.xColumn || rawColumns[0]?.key || ''}
 					onchange={(e) => {
@@ -144,9 +150,9 @@
 				</select>
 			</div>
 
-			<!-- Y Axis -->
+			<!-- Value axis -->
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">Y Axis</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">{isHorizontal ? 'X Axis' : 'Y Axis'}</span>
 				<select
 					value={selectedY}
 					onchange={(e) => {
