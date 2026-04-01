@@ -111,19 +111,19 @@
 <!-- ═══ Section 2: Data Encoding ═══ -->
 {#if project.hasData}
 	<div class="mt-3 pt-3 border-t border-warm-grey">
-		<p class="section-label mb-2">Data Encoding</p>
+		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Data Encoding</p>
 
 		<div class="flex flex-col gap-2">
 			<!-- X Axis: column + type -->
 			<div class="flex items-center gap-2">
-				<span class="field-label w-16 shrink-0">X Axis</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">X Axis</span>
 				<select
 					value={project.xColumn || rawColumns[0]?.key || ''}
 					onchange={(e) => {
 						const val = e.currentTarget.value;
 						project.xColumn = val === rawColumns[0]?.key ? '' : val;
 					}}
-					class="field-select flex-1"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				>
 					{#each rawColumns as col (col.key)}
 						<option value={col.key}>{col.label}</option>
@@ -136,7 +136,7 @@
 							e.currentTarget.value
 						);
 					}}
-					class="field-select w-[72px] shrink-0"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-[72px] shrink-0"
 				>
 					<option value="auto">Auto</option>
 					<option value="category">Ordinal</option>
@@ -146,7 +146,7 @@
 
 			<!-- Y Axis -->
 			<label class="flex items-center gap-2">
-				<span class="field-label w-16 shrink-0">Y Axis</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">Y Axis</span>
 				<select
 					value={selectedY}
 					onchange={(e) => {
@@ -159,7 +159,7 @@
 							project.hiddenSeries = [];
 						}
 					}}
-					class="field-select flex-1"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				>
 					<option value="">All columns</option>
 					{#each nonFirstColumns as col (col.key)}
@@ -170,7 +170,7 @@
 
 			<!-- Z Colour -->
 			<label class="flex items-center gap-2">
-				<span class="field-label w-16 shrink-0">Z Colour</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">Z Colour</span>
 				<select
 					value={project.colourSeries ?? ''}
 					onchange={(e) => {
@@ -179,7 +179,7 @@
 						project.userSeriesColours = {};
 						project.userSeriesLabels = {};
 					}}
-					class="field-select flex-1"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				>
 					<option value="">None</option>
 					{#each nonFirstColumns as col (col.key)}
@@ -191,7 +191,7 @@
 			<!-- Sort (category only) -->
 			{#if project.isCategory}
 				<label class="flex items-center gap-2">
-					<span class="field-label w-16 shrink-0">Sort</span>
+					<span class="text-[10px] text-mid-grey w-16 shrink-0">Sort</span>
 					<select
 						value={project.categorySort}
 						onchange={(e) => {
@@ -200,7 +200,7 @@
 									e.currentTarget.value
 								);
 						}}
-						class="field-select flex-1"
+						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 					>
 						<option value="default">X: data order</option>
 						<option value="value-asc">Y: ascending</option>
@@ -214,12 +214,12 @@
 
 <!-- ═══ Section 3: Appearance ═══ -->
 <div class="mt-3 pt-3 border-t border-warm-grey">
-	<p class="section-label mb-2">Appearance</p>
+	<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Appearance</p>
 
 	<StylePresetPicker />
 
 	<label class="flex items-center gap-2 mt-3">
-		<span class="field-label">Chart height</span>
+		<span class="text-[10px] text-mid-grey">Chart height</span>
 		<input
 			type="number"
 			min="100"
@@ -230,17 +230,17 @@
 				const v = parseInt(e.currentTarget.value, 10);
 				if (v >= 100 && v <= 1200) project.chartHeight = v;
 			}}
-			class="field-input w-20"
+			class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
 		/>
-		<span class="field-hint">px</span>
+		<span class="text-[10px] text-mid-grey">px</span>
 	</label>
 
 	<!-- X Axis appearance -->
 	<div class="mt-4">
-		<p class="sub-label mb-1.5">X Axis</p>
+		<p class="text-[10px] text-dark-grey font-medium mb-1.5">X Axis</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 			<label class="flex items-center gap-2">
-				<span class="field-label w-16 shrink-0">Label</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">Label</span>
 				<input
 					type="text"
 					value={project.xLabel}
@@ -248,7 +248,7 @@
 					oninput={(e) => {
 						project.xLabel = e.currentTarget.value;
 					}}
-					class="field-input flex-1"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				/>
 			</label>
 
@@ -261,11 +261,11 @@
 					}}
 					class="accent-dark-grey"
 				/>
-				<span class="field-label">Show tick labels</span>
+				<span class="text-[10px] text-mid-grey">Show tick labels</span>
 			</label>
 
 			<label class="flex items-center gap-2">
-				<span class="field-label w-16 shrink-0">Ticks</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">Ticks</span>
 				<input
 					type="number"
 					min="0"
@@ -276,13 +276,13 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 100) project.xTicks = v;
 					}}
-					class="field-input w-16"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
 				/>
-				<span class="field-hint">0 = auto</span>
+				<span class="text-[10px] text-mid-grey">0 = auto</span>
 			</label>
 
 			<label class="flex items-center gap-2">
-				<span class="field-label w-16 shrink-0">Angle</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">Angle</span>
 				<input
 					type="number"
 					min="-90"
@@ -293,13 +293,13 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= -90 && v <= 90) project.xTickRotate = v;
 					}}
-					class="field-input w-16"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
 				/>
-				<span class="field-hint">degrees</span>
+				<span class="text-[10px] text-mid-grey">degrees</span>
 			</label>
 
 			<label class="flex items-center gap-2">
-				<span class="field-label w-16 shrink-0">Height</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">Height</span>
 				<input
 					type="number"
 					min="0"
@@ -310,19 +310,19 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 300) project.marginBottom = v;
 					}}
-					class="field-input w-16"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
 				/>
-				<span class="field-hint">0 = auto</span>
+				<span class="text-[10px] text-mid-grey">0 = auto</span>
 			</label>
 		</div>
 	</div>
 
 	<!-- Y Axis appearance -->
 	<div class="mt-4">
-		<p class="sub-label mb-1.5">Y Axis</p>
+		<p class="text-[10px] text-dark-grey font-medium mb-1.5">Y Axis</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 			<label class="flex items-center gap-2">
-				<span class="field-label w-16 shrink-0">Label</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">Label</span>
 				<input
 					type="text"
 					value={project.yLabel}
@@ -330,12 +330,12 @@
 					oninput={(e) => {
 						project.yLabel = e.currentTarget.value;
 					}}
-					class="field-input flex-1"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				/>
 			</label>
 
 			<label class="flex items-center gap-2">
-				<span class="field-label w-16 shrink-0">Ticks</span>
+				<span class="text-[10px] text-mid-grey w-16 shrink-0">Ticks</span>
 				<input
 					type="number"
 					min="0"
@@ -346,9 +346,9 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 100) project.yTicks = v;
 					}}
-					class="field-input w-16"
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
 				/>
-				<span class="field-hint">0 = auto</span>
+				<span class="text-[10px] text-mid-grey">0 = auto</span>
 			</label>
 
 			<label class="flex items-center gap-2">
@@ -360,7 +360,7 @@
 					}}
 					class="accent-dark-grey"
 				/>
-				<span class="field-label">Min/max ticks only</span>
+				<span class="text-[10px] text-mid-grey">Min/max ticks only</span>
 			</label>
 		</div>
 	</div>
@@ -368,10 +368,10 @@
 	<!-- Y2 Axis appearance (conditional) -->
 	{#if project.hasRightAxis}
 		<div class="mt-4">
-			<p class="sub-label mb-1.5">Y2 Axis</p>
+			<p class="text-[10px] text-dark-grey font-medium mb-1.5">Y2 Axis</p>
 			<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 				<label class="flex items-center gap-2">
-					<span class="field-label w-16 shrink-0">Label</span>
+					<span class="text-[10px] text-mid-grey w-16 shrink-0">Label</span>
 					<input
 						type="text"
 						value={project.y2Label}
@@ -379,12 +379,12 @@
 						oninput={(e) => {
 							project.y2Label = e.currentTarget.value;
 						}}
-						class="field-input flex-1"
+						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 					/>
 				</label>
 
 				<label class="flex items-center gap-2">
-					<span class="field-label w-16 shrink-0">Ticks</span>
+					<span class="text-[10px] text-mid-grey w-16 shrink-0">Ticks</span>
 					<input
 						type="number"
 						min="0"
@@ -395,9 +395,9 @@
 							const v = parseInt(e.currentTarget.value, 10);
 							if (v >= 0 && v <= 100) project.y2Ticks = v;
 						}}
-						class="field-input w-16"
+						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-16"
 					/>
-					<span class="field-hint">0 = auto</span>
+					<span class="text-[10px] text-mid-grey">0 = auto</span>
 				</label>
 
 				<label class="flex items-center gap-2">
@@ -409,7 +409,7 @@
 						}}
 						class="accent-dark-grey"
 					/>
-					<span class="field-label">Min/max ticks only</span>
+					<span class="text-[10px] text-mid-grey">Min/max ticks only</span>
 				</label>
 			</div>
 		</div>
@@ -419,7 +419,7 @@
 <!-- ═══ Section 4: Tooltip ═══ -->
 {#if project.hasData}
 	<div class="mt-3 pt-3 border-t border-warm-grey">
-		<p class="section-label mb-2">Tooltip</p>
+		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Tooltip</p>
 		<div
 			class="flex flex-col gap-1"
 			use:dndzone={{
@@ -499,49 +499,3 @@
 		</div>
 	{/if}
 </div>
-
-<style>
-	.section-label {
-		font-size: 10px;
-		color: var(--color-mid-grey);
-		text-transform: uppercase;
-		letter-spacing: 0.05em;
-	}
-	.sub-label {
-		font-size: 10px;
-		color: var(--color-dark-grey);
-		font-weight: 500;
-	}
-	.field-label {
-		font-size: 10px;
-		color: var(--color-mid-grey);
-	}
-	.field-hint {
-		font-size: 10px;
-		color: var(--color-mid-grey);
-	}
-	.field-select {
-		background: color-mix(in srgb, var(--color-light-warm-grey) 50%, transparent);
-		border: 1px solid var(--color-warm-grey);
-		border-radius: 0.25rem;
-		padding: 0.25rem 0.5rem;
-		font-size: 11px;
-		color: var(--color-dark-grey);
-	}
-	.field-select:focus {
-		outline: none;
-		border-color: var(--color-dark-grey);
-	}
-	.field-input {
-		background: color-mix(in srgb, var(--color-light-warm-grey) 50%, transparent);
-		border: 1px solid var(--color-warm-grey);
-		border-radius: 0.25rem;
-		padding: 0.25rem 0.5rem;
-		font-size: 11px;
-		color: var(--color-dark-grey);
-	}
-	.field-input:focus {
-		outline: none;
-		border-color: var(--color-dark-grey);
-	}
-</style>
