@@ -642,7 +642,12 @@ export function globalTypeToMarkType(chartType) {
 		case 'area':
 			return 'area';
 		case 'bar-stacked':
+		case 'bar-grouped':
+		case 'bar':
 		case 'grouped-bar':
+		case 'column':
+		case 'column-stacked':
+		case 'column-grouped':
 			return 'bar';
 		case 'dot':
 			return 'dot';
@@ -700,8 +705,10 @@ export function createMixedMarkOptions(
 	// Partition series by effective mark type
 	/** @type {Record<SeriesMarkType, string[]>} */
 	const groups = { area: [], line: [], bar: [], dot: [] };
+	/** @param {string} t */
+	const toMark = (t) => (t === 'column' ? 'bar' : t);
 	for (const name of seriesNames) {
-		const markType = seriesChartTypes[name] || defaultMarkType;
+		const markType = toMark(seriesChartTypes[name]) || defaultMarkType;
 		groups[markType].push(name);
 	}
 

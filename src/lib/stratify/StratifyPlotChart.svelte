@@ -10,6 +10,7 @@
 		createHorizontalBarOptions,
 		createGroupedHorizontalBarOptions,
 		createColourGroupedBarOptions,
+		createMixedMarkOptions,
 		buildTooltipChannels
 	} from '$lib/components/charts/plot/plot-configs.js';
 	import { processAnnotations, formatCompact } from './plot-annotations.js';
@@ -45,6 +46,7 @@
 	 *   seriesColours: Record<string, string>,
 	 *   seriesLabels: Record<string, string>,
 	 *   chartType: import('$lib/stratify/chart-types.js').ChartType,
+	 *   seriesChartTypes?: Record<string, string>,
 	 *   plotOverrides?: import('./plot-overrides.js').PlotOverrides | null,
 	 *   colourSeries?: string | null,
 	 *   colourGroupNames?: string[],
@@ -78,6 +80,7 @@
 		seriesColours,
 		seriesLabels,
 		chartType,
+		seriesChartTypes = {},
 		plotOverrides = null,
 		colourSeries = null,
 		colourGroupNames = [],
@@ -202,13 +205,24 @@
 				{ ...mergedOptions, horizontal: HORIZONTAL_TYPES.has(chartType) }
 			);
 		} else {
-			opts = (CONFIG_MAP[chartType] || createLineOptions)(
-				chartData,
-				seriesNames,
-				seriesColours,
-				seriesLabels,
-				mergedOptions
-			);
+			const hasMixedTypes = Object.keys(seriesChartTypes).length > 0;
+			opts = hasMixedTypes
+				? createMixedMarkOptions(
+						chartData,
+						seriesNames,
+						seriesColours,
+						seriesLabels,
+						seriesChartTypes,
+						chartType,
+						mergedOptions
+					)
+				: (CONFIG_MAP[chartType] || createLineOptions)(
+						chartData,
+						seriesNames,
+						seriesColours,
+						seriesLabels,
+						mergedOptions
+					);
 		}
 
 		if (hasRightAxis && y2Scale) {

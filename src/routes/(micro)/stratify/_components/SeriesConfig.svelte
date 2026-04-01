@@ -133,6 +133,20 @@
 
 
 	/**
+	 * Update chart type override for a right-axis series
+	 * @param {string} key
+	 * @param {string} value
+	 */
+	function updateSeriesChartType(key, value) {
+		if (value === '') {
+			const { [key]: _, ...rest } = project.seriesChartTypes;
+			project.seriesChartTypes = rest;
+		} else {
+			project.seriesChartTypes = { ...project.seriesChartTypes, [key]: value };
+		}
+	}
+
+	/**
 	 * Close picker when clicking outside
 	 * @param {MouseEvent} e
 	 */
@@ -291,6 +305,21 @@
 							<option value="left">L</option>
 							<option value="right">R</option>
 						</select>
+
+						<!-- Chart type override (right-axis only) -->
+						{#if project.seriesYAxis[key] === 'right'}
+							<select
+								value={project.seriesChartTypes[key] || ''}
+								onchange={(e) => updateSeriesChartType(key, e.currentTarget.value)}
+								class="text-[10px] bg-transparent border border-transparent rounded px-1 py-0.5 focus:outline-none focus:border-warm-grey text-mid-grey cursor-pointer w-16 flex-shrink-0"
+								title="Chart type for this series"
+							>
+								<option value="">Default</option>
+								<option value="line">Line</option>
+								<option value="column">Column</option>
+								<option value="area">Area</option>
+							</select>
+						{/if}
 
 						<!-- Visibility toggle -->
 						<button
