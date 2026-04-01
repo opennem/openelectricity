@@ -242,6 +242,18 @@
 	{/if}
 
 	<label class="flex items-center gap-2 mt-3">
+		<input
+			type="checkbox"
+			checked={project.showXTickLabels}
+			onchange={(e) => {
+				project.showXTickLabels = e.currentTarget.checked;
+			}}
+			class="accent-dark-grey"
+		/>
+		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Show X tick labels</span>
+	</label>
+
+	<label class="flex items-center gap-2 mt-3">
 		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X-axis ticks</span>
 		<input
 			type="number"
@@ -294,37 +306,78 @@
 </div>
 
 {#if project.hasData}
+	{@const orderedColumns = project.tooltipColumns.length > 0
+		? [
+				...project.tooltipColumns
+					.map((key) => project.allColumns.find((c) => c.key === key))
+					.filter(Boolean),
+				...project.allColumns.filter((c) => !project.tooltipColumns.includes(c.key))
+			]
+		: project.allColumns}
 	<div class="mt-3 pt-3 border-t border-warm-grey">
 		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Tooltip columns</p>
 		<div class="flex flex-col gap-1">
-			{#each project.allColumns as col (col.key)}
+			{#each orderedColumns as col, i (col.key)}
 				{@const isSelected =
 					project.tooltipColumns.length === 0 || project.tooltipColumns.includes(col.key)}
-				<label class="flex items-center gap-2">
-					<input
-						type="checkbox"
-						checked={isSelected}
-						onchange={() => {
-							const all = project.allColumns.map((c) => c.key);
-							if (project.tooltipColumns.length === 0) {
-								// First uncheck: select all except this one
-								project.tooltipColumns = all.filter((k) => k !== col.key);
-							} else if (isSelected) {
-								const next = project.tooltipColumns.filter((k) => k !== col.key);
-								// If unchecking would leave none, reset to show all
-								project.tooltipColumns = next.length === 0 ? [] : next;
-							} else {
-								const next = [...project.tooltipColumns, col.key];
-								// If all are now selected, reset to empty (= show all)
-								project.tooltipColumns = next.length === all.length ? [] : next;
-							}
-						}}
-						class="accent-dark-grey"
-					/>
-					<span class="text-[11px] text-dark-grey"
-						>{col === project.allColumns[0] && !project.isCategory ? 'Date' : col.label}</span
-					>
-				</label>
+				{@const colLabel =
+					col === project.allColumns[0] && !project.isCategory ? 'Date' : col.label}
+				<div class="flex items-center gap-1.5">
+					<div class="flex flex-col flex-shrink-0">
+						<button
+							type="button"
+							class="text-[8px] leading-none text-mid-warm-grey hover:text-mid-grey disabled:opacity-20"
+							disabled={i === 0}
+							onclick={() => {
+								const all = project.allColumns.map((c) => c.key);
+								const list = project.tooltipColumns.length > 0
+									? [...project.tooltipColumns]
+									: [...all];
+								const idx = list.indexOf(col.key);
+								if (idx > 0) {
+									[list[idx - 1], list[idx]] = [list[idx], list[idx - 1]];
+									project.tooltipColumns = list.length === all.length ? list : list;
+								}
+							}}
+						>▲</button>
+						<button
+							type="button"
+							class="text-[8px] leading-none text-mid-warm-grey hover:text-mid-grey disabled:opacity-20"
+							disabled={i === orderedColumns.length - 1}
+							onclick={() => {
+								const all = project.allColumns.map((c) => c.key);
+								const list = project.tooltipColumns.length > 0
+									? [...project.tooltipColumns]
+									: [...all];
+								const idx = list.indexOf(col.key);
+								if (idx >= 0 && idx < list.length - 1) {
+									[list[idx], list[idx + 1]] = [list[idx + 1], list[idx]];
+									project.tooltipColumns = list;
+								}
+							}}
+						>▼</button>
+					</div>
+					<label class="flex items-center gap-2 flex-1 min-w-0">
+						<input
+							type="checkbox"
+							checked={isSelected}
+							onchange={() => {
+								const all = project.allColumns.map((c) => c.key);
+								if (project.tooltipColumns.length === 0) {
+									project.tooltipColumns = all.filter((k) => k !== col.key);
+								} else if (isSelected) {
+									const next = project.tooltipColumns.filter((k) => k !== col.key);
+									project.tooltipColumns = next.length === 0 ? [] : next;
+								} else {
+									const next = [...project.tooltipColumns, col.key];
+									project.tooltipColumns = next.length === all.length ? next : next;
+								}
+							}}
+							class="accent-dark-grey"
+						/>
+						<span class="text-[11px] text-dark-grey truncate">{colLabel}</span>
+					</label>
+				</div>
 			{/each}
 		</div>
 	</div>

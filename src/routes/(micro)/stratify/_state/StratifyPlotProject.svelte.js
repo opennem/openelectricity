@@ -30,6 +30,7 @@ import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
  * @property {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides | null} [plotOverrides]
  * @property {string[]} [seriesOrder]
  * @property {number} [chartHeight]
+ * @property {boolean} [showXTickLabels]
  * @property {number} [xTicks]
  * @property {number} [xTickRotate]
  * @property {number} [marginBottom]
@@ -95,6 +96,9 @@ export default class StratifyPlotProject {
 
 	/** @type {number} Chart height in pixels */
 	chartHeight = $state(400);
+
+	/** @type {boolean} Show x-axis tick labels */
+	showXTickLabels = $state(true);
 
 	/** @type {number} Number of x-axis ticks to show (0 = auto) */
 	xTicks = $state(0);
@@ -303,6 +307,7 @@ export default class StratifyPlotProject {
 		this.plotOverrides = null;
 		this.seriesOrder = [];
 		this.chartHeight = 400;
+		this.showXTickLabels = true;
 		this.xTicks = 0;
 		this.xTickRotate = 0;
 		this.marginBottom = 0;
@@ -341,6 +346,7 @@ export default class StratifyPlotProject {
 		this.plotOverrides = null;
 		this.seriesOrder = [];
 		this.chartHeight = 400;
+		this.showXTickLabels = true;
 		this.xTicks = 0;
 		this.xTickRotate = 0;
 		this.marginBottom = 0;
@@ -381,6 +387,7 @@ export default class StratifyPlotProject {
 			plotOverrides: this.plotOverrides,
 			seriesOrder: this.seriesOrder,
 			chartHeight: this.chartHeight,
+			showXTickLabels: this.showXTickLabels,
 			xTicks: this.xTicks,
 			xTickRotate: this.xTickRotate,
 			marginBottom: this.marginBottom,
@@ -418,6 +425,7 @@ export default class StratifyPlotProject {
 		this.plotOverrides = snapshot.plotOverrides ?? null;
 		this.seriesOrder = snapshot.seriesOrder ?? [];
 		this.chartHeight = snapshot.chartHeight ?? 400;
+		this.showXTickLabels = snapshot.showXTickLabels ?? true;
 		this.xTicks = snapshot.xTicks ?? 0;
 		this.xTickRotate = snapshot.xTickRotate ?? 0;
 		this.marginBottom = snapshot.marginBottom ?? 0;

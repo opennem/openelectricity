@@ -170,6 +170,7 @@
 			tooltipColumns={chart.tooltipColumns ?? []}
 			dateColumnKey={parsed.allColumns?.[0]?.key ?? ''}
 			xDomain={sortedXDomain}
+			showXTickLabels={chart.showXTickLabels ?? true}
 			xTicks={chart.xTicks ?? 0}
 			xTickRotate={chart.xTickRotate ?? 0}
 			marginBottom={chart.marginBottom ?? 0}

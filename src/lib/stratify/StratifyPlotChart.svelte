@@ -62,6 +62,7 @@
 	 *   tooltipColumns?: string[],
 	 *   dateColumnKey?: string,
 	 *   xDomain?: string[],
+	 *   showXTickLabels?: boolean,
 	 *   xTicks?: number,
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
@@ -93,6 +94,7 @@
 		tooltipColumns = [],
 		dateColumnKey = '',
 		xDomain = undefined,
+		showXTickLabels = true,
 		xTicks = 0,
 		xTickRotate = 0,
 		marginBottom = 0,
@@ -291,6 +293,11 @@
 			opts.x = { ...(opts.x || {}), domain: xDomain };
 		}
 
+		// Hide x-axis tick labels if disabled
+		if (!showXTickLabels) {
+			opts.x = { ...(opts.x || {}), tickFormat: () => '' };
+		}
+
 		// Apply x-axis tick count if configured
 		if (xTicks > 0) {
 			const xScale = opts.x || {};
@@ -340,10 +347,13 @@
 				: Object.fromEntries(seriesNames.map((n) => [n, seriesLabels[n] || n]));
 
 		if (tooltipColumns.length > 0) {
-			const allowed = new Set(tooltipColumns);
-			tooltipLabels = Object.fromEntries(
-				Object.entries(tooltipLabels).filter(([key]) => allowed.has(key))
-			);
+			// Rebuild in tooltipColumns order (respects user reordering)
+			/** @type {Record<string, string>} */
+			const ordered = {};
+			for (const key of tooltipColumns) {
+				if (key in tooltipLabels) ordered[key] = tooltipLabels[key];
+			}
+			tooltipLabels = ordered;
 		}
 
 		const channels = buildTooltipChannels(tooltipLabels);

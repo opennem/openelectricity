@@ -95,6 +95,7 @@ export async function PATCH({ request, params }) {
 	if (body.y2MinMax !== undefined) patches.y2MinMax = body.y2MinMax;
 	if (body.tooltipColumns !== undefined) patches.tooltipColumns = body.tooltipColumns;
 	if (body.categorySort !== undefined) patches.categorySort = body.categorySort;
+	if (body.showXTickLabels !== undefined) patches.showXTickLabels = body.showXTickLabels;
 	if (body.colourSeries !== undefined) patches.colourSeries = body.colourSeries;
 	if (body.xLabel !== undefined) patches.xLabel = body.xLabel;
 	if (body.yLabel !== undefined) patches.yLabel = body.yLabel;
