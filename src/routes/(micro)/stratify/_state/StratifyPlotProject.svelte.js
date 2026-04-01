@@ -6,7 +6,7 @@
  */
 
 import { parseCSV } from '$lib/stratify/csv-parser.js';
-import { assignPresetColours, getPreset } from '../_config/chart-styles.js';
+import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
 
 /**
  * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'dot'} ChartType

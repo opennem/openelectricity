@@ -7,15 +7,19 @@
 		getPlotStyle
 	} from '$lib/stratify/chart-styles.js';
 
-	/** @type {{ data: { chart: any } }} */
-	let { data } = $props();
+	/**
+	 * @type {{
+	 *   chart: any,
+	 *   caption?: string
+	 * }}
+	 */
+	let { chart, caption = '' } = $props();
 
-	const chart = $derived(data.chart);
 	const parsed = $derived(parseCSV(chart.csvText, {}, chart.displayMode ?? 'auto'));
 	const preset = $derived(getPreset(chart.stylePreset ?? 'oe'));
 	const plotStyleOptions = $derived({ style: getPlotStyle(chart.stylePreset ?? 'oe') });
 
-	// Labels for all non-first data columns (for tooltips)
+	/** Labels for all non-first data columns (for tooltips) */
 	const dataColumnLabels = $derived(
 		Object.fromEntries(
 			(parsed.allColumns ?? [])
@@ -46,7 +50,6 @@
 	});
 
 	// Merge colours: user overrides > preset palette > parsed defaults
-	// When colour series is active, keys are group names instead of series names
 	const seriesColours = $derived.by(() => {
 		const names = hasColourSeries ? colourGroupNames : parsed.seriesNames;
 		const presetColours = assignPresetColours(names, chart.stylePreset ?? 'oe');
@@ -101,77 +104,67 @@
 	});
 </script>
 
-<svelte:head>
-	<title>{chart.title || 'Chart'} — Open Electricity</title>
-	{#if chart.description}
-		<meta name="description" content={chart.description} />
-	{/if}
-</svelte:head>
-
-<div class="flex flex-col min-h-dvh bg-white" style="font-family: {preset.typography.fontFamily};">
-	<div class="flex-1 flex flex-col w-full px-6 py-8">
-		{#if chart.title || chart.description}
-			<div class="mb-4 space-y-1">
-				{#if chart.title}
-					<h1
-						class="text-dark-grey"
-						style="font-size: {preset.typography.titleSize}; font-weight: {preset.typography
-							.titleWeight};"
-					>
-						{chart.title}
-					</h1>
-				{/if}
-				{#if chart.description}
-					<p class="text-xs text-mid-grey">{chart.description}</p>
-				{/if}
-			</div>
-		{/if}
-
-		{#if parsed.data.length > 0}
-			<StratifyPlotChart
-				data={visibleData}
-				seriesNames={visibleSeriesNames}
-				{seriesColours}
-				{seriesLabels}
-				chartType={chart.chartType}
-				seriesChartTypes={chart.seriesChartTypes}
-				plotOverrides={chart.plotOverrides}
-				colourSeries={colourSeriesKey}
-				{colourGroupNames}
-				{dataColumnLabels}
-				xLabel={chart.xLabel ?? ''}
-				yLabel={chart.yLabel ?? ''}
-				annotations={chart.annotations}
-				options={plotStyleOptions}
-				height={chart.chartHeight ?? 400}
-				xTicks={chart.xTicks ?? 0}
-				xTickRotate={chart.xTickRotate ?? 0}
-				marginBottom={chart.marginBottom ?? 0}
-			/>
-		{/if}
-
-		{#if chart.notes || chart.dataSource}
-			<div class="mt-4 space-y-0.5">
-				{#if chart.dataSource}
-					<p class="text-[10px] text-mid-grey">Source: {chart.dataSource}</p>
-				{/if}
-				{#if chart.notes}
-					<p class="text-[10px] text-mid-grey">{chart.notes}</p>
-				{/if}
-			</div>
-		{/if}
-	</div>
-
-	{#if chart.showBranding}
-		<div class="py-3 px-6 text-center">
-			<a
-				href="https://openelectricity.org.au"
-				target="_blank"
-				rel="noopener noreferrer"
-				class="text-[10px] text-mid-grey hover:text-dark-grey"
-			>
-				Open Electricity
-			</a>
+<figure class="stratify-embed" style="font-family: {preset.typography.fontFamily};">
+	{#if chart.title || chart.description}
+		<div class="mb-3 space-y-1">
+			{#if chart.title}
+				<h3
+					class="text-dark-grey"
+					style="font-size: {preset.typography.titleSize}; font-weight: {preset.typography.titleWeight};"
+				>
+					{chart.title}
+				</h3>
+			{/if}
+			{#if chart.description}
+				<p class="text-xs text-mid-grey">{chart.description}</p>
+			{/if}
 		</div>
 	{/if}
-</div>
+
+	{#if parsed.data.length > 0}
+		<StratifyPlotChart
+			data={visibleData}
+			seriesNames={visibleSeriesNames}
+			{seriesColours}
+			{seriesLabels}
+			chartType={chart.chartType}
+			seriesChartTypes={chart.seriesChartTypes}
+			plotOverrides={chart.plotOverrides}
+			colourSeries={colourSeriesKey}
+			{colourGroupNames}
+			{dataColumnLabels}
+			xLabel={chart.xLabel ?? ''}
+			yLabel={chart.yLabel ?? ''}
+			annotations={chart.annotations}
+			options={plotStyleOptions}
+			height={chart.chartHeight ?? 400}
+			xTicks={chart.xTicks ?? 0}
+			xTickRotate={chart.xTickRotate ?? 0}
+			marginBottom={chart.marginBottom ?? 0}
+		/>
+	{/if}
+
+	{#if chart.dataSource || chart.notes}
+		<div class="mt-3 space-y-0.5">
+			{#if chart.dataSource}
+				<p class="text-[10px] text-mid-grey">Source: {chart.dataSource}</p>
+			{/if}
+			{#if chart.notes}
+				<p class="text-[10px] text-mid-grey">{chart.notes}</p>
+			{/if}
+		</div>
+	{/if}
+
+	{#if caption}
+		<figcaption class="font-space text-xs font-medium text-mid-grey mt-4">
+			{caption}
+		</figcaption>
+	{/if}
+</figure>
+
+<style>
+	.stratify-embed {
+		width: 100%;
+		padding: 1rem 0;
+	}
+</style>

@@ -1,6 +1,6 @@
 <script>
 	import { getStratifyContext } from '../_state/context.js';
-	import { CHART_STYLE_PRESETS } from '../_config/chart-styles.js';
+	import { CHART_STYLE_PRESETS } from '$lib/stratify/chart-styles.js';
 
 	const project = getStratifyContext();
 </script>

@@ -3,6 +3,7 @@
 	import { Tweet, YouTube } from 'sveltekit-embed';
 
 	import Image from '$lib/components/text-components/Image.svelte';
+	import StratifyEmbed from '$lib/components/text-components/StratifyEmbed.svelte';
 
 	/**
 	 * @typedef {Object} Block
@@ -23,6 +24,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {Block[]} [content]
+	 * @property {Record<string, any>} [charts]
 	 */
 
 	type Block = {
@@ -47,7 +49,7 @@
 	};
 
 	/** @type {Props} */
-	let { content = null } = $props();
+	let { content = null, charts = {} } = $props();
 
 	// Process content blocks into narrow/wide sections reactively
 	let values = $derived.by(() => {
@@ -235,6 +237,24 @@
 		{:else if isYouTubeLink(value)}
 			<div class="mx-auto max-w-[800px] my-24">
 				<YouTube youTubeId={getYouTubeId(value) ?? ''} modestBranding={true} />
+			</div>
+		{:else if value._type === 'stratifyEmbed'}
+			<div class="mx-auto max-w-full my-12 border border-mid-warm-grey rounded-lg px-12 py-6">
+				{#if charts[value.chartId]}
+					<StratifyEmbed chart={charts[value.chartId]} caption={value.caption} />
+				{/if}
+			</div>
+		{:else if value._type === 'embed'}
+			<div class="mx-auto max-w-full my-12 border border-mid-warm-grey rounded-lg overflow-hidden">
+				<iframe
+					src={value.url}
+					width="100%"
+					height={value.height ?? 520}
+					frameborder="0"
+					style="border:0; max-width:100%;"
+					loading="lazy"
+					title="Embedded content"
+				></iframe>
 			</div>
 		{:else}
 			<div

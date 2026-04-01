@@ -110,7 +110,7 @@
 <div class="container max-w-none lg:container">
 	{#if data.content}
 		<div class="md:mt-24">
-			<RichText content={data.content} />
+			<RichText content={data.content} charts={data.charts} />
 		</div>
 	{/if}
 </div>

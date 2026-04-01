@@ -1,7 +1,7 @@
 <script>
 	import StratifyPlotChart from '$lib/components/charts/plot/StratifyPlotChart.svelte';
 	import { getStratifyContext } from '../_state/context.js';
-	import { getPlotStyle } from '../_config/chart-styles.js';
+	import { getPlotStyle } from '$lib/stratify/chart-styles.js';
 
 	const project = getStratifyContext();
 
