@@ -76,6 +76,9 @@
 			.join(', ')
 	);
 
+	let visibleYColumns = $derived(nonFirstColumns.filter((c) => !project.hiddenSeries.includes(c.key)));
+	let selectedY = $derived(visibleYColumns.length === 1 ? visibleYColumns[0]?.key : '');
+
 	let showAdvanced = $state(false);
 	let overridesText = $state('');
 	let parseError = $state('');
@@ -141,9 +144,7 @@
 				</select>
 			</label>
 
-		{@const visibleYColumns = nonFirstColumns.filter((c) => !project.hiddenSeries.includes(c.key))}
-			{@const selectedY = visibleYColumns.length === 1 ? visibleYColumns[0]?.key : ''}
-			<label class="flex items-center gap-2">
+		<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-14 shrink-0">Y value</span>
 				<select
 					value={selectedY}
