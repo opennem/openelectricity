@@ -101,12 +101,17 @@
 		});
 	});
 
-	// Sort category data by total Y value if requested
+	// Sort category data if requested
 	const sortedData = $derived.by(() => {
 		const sort = chart.categorySort ?? 'default';
 		if (sort === 'default' || parsed.mode !== 'category') return visibleData;
 
 		return [...visibleData].sort((a, b) => {
+			if (sort === 'x-asc' || sort === 'x-desc') {
+				const catA = String(a.category ?? '');
+				const catB = String(b.category ?? '');
+				return sort === 'x-asc' ? catA.localeCompare(catB) : catB.localeCompare(catA);
+			}
 			let totalA = 0,
 				totalB = 0;
 			for (const name of visibleSeriesNames) {

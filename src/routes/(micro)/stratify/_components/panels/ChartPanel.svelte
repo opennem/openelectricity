@@ -198,13 +198,15 @@
 						value={project.categorySort}
 						onchange={(e) => {
 							project.categorySort =
-								/** @type {'default' | 'value-asc' | 'value-desc'} */ (
+								/** @type {any} */ (
 									e.currentTarget.value
 								);
 						}}
 						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 					>
-						<option value="default">X: data order</option>
+						<option value="default">Data order</option>
+						<option value="x-asc">X: ascending</option>
+						<option value="x-desc">X: descending</option>
 						<option value="value-asc">Y: ascending</option>
 						<option value="value-desc">Y: descending</option>
 					</select>

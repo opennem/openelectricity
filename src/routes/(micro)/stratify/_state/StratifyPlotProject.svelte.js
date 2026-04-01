@@ -45,7 +45,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {string} [y2Label]
  * @property {string[]} [tooltipColumns]
  * @property {string} [xColumn]
- * @property {'default' | 'value-asc' | 'value-desc'} [categorySort]
+ * @property {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} [categorySort]
  */
 
 export default class StratifyPlotProject {
