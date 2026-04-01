@@ -161,7 +161,7 @@
 					}}
 					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				>
-					<option value="">All columns</option>
+					<option value="">{nonFirstColumns.length > 1 ? `All (${nonFirstColumns.length} columns)` : nonFirstColumns[0]?.label ?? 'None'}</option>
 					{#each nonFirstColumns as col (col.key)}
 						<option value={col.key}>{col.label}</option>
 					{/each}
