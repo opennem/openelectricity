@@ -1,7 +1,6 @@
 <script>
 	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
-	import Switch from '$lib/components/Switch.svelte';
 	import ChartTypeSelector from '../ChartTypeSelector.svelte';
 	import StylePresetPicker from '../StylePresetPicker.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
@@ -9,6 +8,7 @@
 	const project = getStratifyContext();
 	const FLIP_DURATION = 150;
 
+	// --- Tooltip DnD ---
 	/** @type {Array<{id: string, key: string, label: string}>} */
 	let tooltipDndItems = $state([]);
 
@@ -38,47 +38,45 @@
 	/** @param {CustomEvent} e */
 	function handleTooltipFinalize(e) {
 		tooltipDndItems = e.detail.items;
-		const selected = project.tooltipColumns.length > 0
-			? new Set(project.tooltipColumns)
-			: new Set(project.allColumns.map((c) => c.key));
-		project.tooltipColumns = tooltipDndItems.filter((item) => selected.has(item.key)).map((item) => item.key);
+		const selected =
+			project.tooltipColumns.length > 0
+				? new Set(project.tooltipColumns)
+				: new Set(project.allColumns.map((c) => c.key));
+		project.tooltipColumns = tooltipDndItems
+			.filter((item) => selected.has(item.key))
+			.map((item) => item.key);
 	}
 
-	const modeButtons = [
-		{ label: 'Auto', value: 'auto' },
-		{ label: 'Dates', value: 'time-series' },
-		{ label: 'Categories', value: 'category' }
-	];
-
-	// --- Column mapping derived values ---
-	// Raw column headers from CSV (before any xColumn rearrangement)
+	// --- Derived values ---
 	let rawColumns = $derived.by(() => {
 		const text = project.csvText?.trim();
 		if (!text) return [];
 		const firstLine = text.split('\n')[0] ?? '';
 		const delim = firstLine.includes('\t') ? '\t' : firstLine.includes(',') ? ',' : ';';
-		return firstLine
-			.split(delim)
-			.map((/** @type {string} */ h) => {
-				const label = h.trim().replace(/^["']|["']$/g, '');
-				const key = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
-				return { key, label };
-			});
+		return firstLine.split(delim).map((/** @type {string} */ h) => {
+			const label = h.trim().replace(/^["']|["']$/g, '');
+			const key = label
+				.toLowerCase()
+				.replace(/[^a-z0-9]+/g, '_')
+				.replace(/^_|_$/g, '');
+			return { key, label };
+		});
 	});
 
 	let xColumnLabel = $derived(project.allColumns[0]?.label ?? '');
 	let nonFirstColumns = $derived(project.allColumns.slice(1));
 	let yColumnLabels = $derived(
-		project.allColumns
-			.slice(1)
+		nonFirstColumns
 			.filter((col) => col.isNumeric && col.key !== project.colourSeries)
 			.map((col) => col.label)
 			.join(', ')
 	);
-
-	let visibleYColumns = $derived(nonFirstColumns.filter((c) => !project.hiddenSeries.includes(c.key)));
+	let visibleYColumns = $derived(
+		nonFirstColumns.filter((c) => !project.hiddenSeries.includes(c.key))
+	);
 	let selectedY = $derived(visibleYColumns.length === 1 ? visibleYColumns[0]?.key : '');
 
+	// --- Advanced ---
 	let showAdvanced = $state(false);
 	let overridesText = $state('');
 	let parseError = $state('');
@@ -91,20 +89,13 @@
 	});
 
 	/** @param {string} value */
-	function handleModeChange(value) {
-		project.displayMode = /** @type {'auto' | 'time-series' | 'category'} */ (value);
-	}
-
-	/** @param {string} value */
 	function handleOverridesInput(value) {
 		overridesText = value;
-
 		if (!value.trim()) {
 			project.plotOverrides = null;
 			parseError = '';
 			return;
 		}
-
 		try {
 			project.plotOverrides = JSON.parse(value);
 			parseError = '';
@@ -114,53 +105,61 @@
 	}
 </script>
 
-<div class="flex flex-col gap-3">
-	<div>
-		<span class="block text-[10px] text-mid-grey uppercase tracking-wide mb-2">Data mode</span>
-		<Switch buttons={modeButtons} selected={project.displayMode} onChange={handleModeChange} />
-	</div>
+<!-- ═══ Section 1: Chart Type ═══ -->
+<ChartTypeSelector />
 
-	<ChartTypeSelector />
-</div>
-
+<!-- ═══ Section 2: Data Encoding ═══ -->
 {#if project.hasData}
 	<div class="mt-3 pt-3 border-t border-warm-grey">
-		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Column mapping</p>
+		<p class="section-label mb-2">Data Encoding</p>
 
 		<div class="flex flex-col gap-2">
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-14 shrink-0">X axis</span>
+			<!-- X Axis: column + type -->
+			<div class="flex items-center gap-2">
+				<span class="field-label w-16 shrink-0">X Axis</span>
 				<select
 					value={project.xColumn || rawColumns[0]?.key || ''}
 					onchange={(e) => {
 						const val = e.currentTarget.value;
 						project.xColumn = val === rawColumns[0]?.key ? '' : val;
 					}}
-					class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+					class="field-select flex-1"
 				>
 					{#each rawColumns as col (col.key)}
 						<option value={col.key}>{col.label}</option>
 					{/each}
 				</select>
-			</label>
+				<select
+					value={project.displayMode}
+					onchange={(e) => {
+						project.displayMode = /** @type {'auto' | 'time-series' | 'category'} */ (
+							e.currentTarget.value
+						);
+					}}
+					class="field-select w-[72px] shrink-0"
+				>
+					<option value="auto">Auto</option>
+					<option value="category">Ordinal</option>
+					<option value="time-series">Temporal</option>
+				</select>
+			</div>
 
-		<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-14 shrink-0">Y value</span>
+			<!-- Y Axis -->
+			<label class="flex items-center gap-2">
+				<span class="field-label w-16 shrink-0">Y Axis</span>
 				<select
 					value={selectedY}
 					onchange={(e) => {
 						const val = e.currentTarget.value;
 						if (val) {
-							// Hide all other series, show only selected
 							project.hiddenSeries = nonFirstColumns
 								.filter((c) => c.key !== val)
 								.map((c) => c.key);
 						} else {
-							// Show all
 							project.hiddenSeries = [];
 						}
 					}}
-					class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+					class="field-select flex-1"
 				>
 					<option value="">All columns</option>
 					{#each nonFirstColumns as col (col.key)}
@@ -169,8 +168,9 @@
 				</select>
 			</label>
 
+			<!-- Z Colour -->
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-14 shrink-0">Z (colour)</span>
+				<span class="field-label w-16 shrink-0">Z Colour</span>
 				<select
 					value={project.colourSeries ?? ''}
 					onchange={(e) => {
@@ -179,7 +179,7 @@
 						project.userSeriesColours = {};
 						project.userSeriesLabels = {};
 					}}
-					class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+					class="field-select flex-1"
 				>
 					<option value="">None</option>
 					{#each nonFirstColumns as col (col.key)}
@@ -187,35 +187,39 @@
 					{/each}
 				</select>
 			</label>
-		</div>
 
-		{#if project.isCategory}
-			<label class="flex items-center gap-2 mt-3">
-				<span class="text-[10px] text-mid-grey w-14 shrink-0">Sort by</span>
-				<select
-					value={project.categorySort}
-					onchange={(e) => {
-						project.categorySort = /** @type {'default' | 'value-asc' | 'value-desc'} */ (e.currentTarget.value);
-					}}
-					class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-				>
-					<option value="default">X: data order</option>
-					<option value="value-asc">Y: ascending</option>
-					<option value="value-desc">Y: descending</option>
-				</select>
-			</label>
-		{/if}
+			<!-- Sort (category only) -->
+			{#if project.isCategory}
+				<label class="flex items-center gap-2">
+					<span class="field-label w-16 shrink-0">Sort</span>
+					<select
+						value={project.categorySort}
+						onchange={(e) => {
+							project.categorySort =
+								/** @type {'default' | 'value-asc' | 'value-desc'} */ (
+									e.currentTarget.value
+								);
+						}}
+						class="field-select flex-1"
+					>
+						<option value="default">X: data order</option>
+						<option value="value-asc">Y: ascending</option>
+						<option value="value-desc">Y: descending</option>
+					</select>
+				</label>
+			{/if}
+		</div>
 	</div>
 {/if}
 
+<!-- ═══ Section 3: Appearance ═══ -->
 <div class="mt-3 pt-3 border-t border-warm-grey">
-	<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Style</p>
-	<StylePresetPicker />
-</div>
+	<p class="section-label mb-2">Appearance</p>
 
-<div class="mt-3 pt-3 border-t border-warm-grey">
-	<label class="flex items-center gap-2">
-		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Chart height</span>
+	<StylePresetPicker />
+
+	<label class="flex items-center gap-2 mt-3">
+		<span class="field-label">Chart height</span>
 		<input
 			type="number"
 			min="100"
@@ -226,180 +230,203 @@
 				const v = parseInt(e.currentTarget.value, 10);
 				if (v >= 100 && v <= 1200) project.chartHeight = v;
 			}}
-			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+			class="field-input w-20"
 		/>
-		<span class="text-[10px] text-mid-grey">px</span>
+		<span class="field-hint">px</span>
 	</label>
 
-	<label class="flex items-center gap-2 mt-3">
-		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X-axis label</span>
-		<input
-			type="text"
-			value={project.xLabel}
-			placeholder={xColumnLabel || 'None'}
-			oninput={(e) => {
-				project.xLabel = e.currentTarget.value;
-			}}
-			class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-		/>
-	</label>
+	<!-- X Axis appearance -->
+	<div class="mt-4">
+		<p class="sub-label mb-1.5">X Axis</p>
+		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
+			<label class="flex items-center gap-2">
+				<span class="field-label w-16 shrink-0">Label</span>
+				<input
+					type="text"
+					value={project.xLabel}
+					placeholder={xColumnLabel || 'None'}
+					oninput={(e) => {
+						project.xLabel = e.currentTarget.value;
+					}}
+					class="field-input flex-1"
+				/>
+			</label>
 
-	<label class="flex items-center gap-2 mt-3">
-		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y-axis label</span>
-		<input
-			type="text"
-			value={project.yLabel}
-			placeholder={yColumnLabels || 'None'}
-			oninput={(e) => {
-				project.yLabel = e.currentTarget.value;
-			}}
-			class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-		/>
-	</label>
+			<label class="flex items-center gap-2">
+				<input
+					type="checkbox"
+					checked={project.showXTickLabels}
+					onchange={(e) => {
+						project.showXTickLabels = e.currentTarget.checked;
+					}}
+					class="accent-dark-grey"
+				/>
+				<span class="field-label">Show tick labels</span>
+			</label>
 
-	<label class="flex items-center gap-2 mt-3">
-		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y-axis ticks</span>
-		<input
-			type="number"
-			min="0"
-			max="100"
-			step="1"
-			value={project.yTicks}
-			oninput={(e) => {
-				const v = parseInt(e.currentTarget.value, 10);
-				if (v >= 0 && v <= 100) project.yTicks = v;
-			}}
-			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-		/>
-		<span class="text-[10px] text-mid-grey">0 = auto</span>
-	</label>
+			<label class="flex items-center gap-2">
+				<span class="field-label w-16 shrink-0">Ticks</span>
+				<input
+					type="number"
+					min="0"
+					max="100"
+					step="1"
+					value={project.xTicks}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= 0 && v <= 100) project.xTicks = v;
+					}}
+					class="field-input w-16"
+				/>
+				<span class="field-hint">0 = auto</span>
+			</label>
 
-	<label class="flex items-center gap-2 mt-3">
-		<input
-			type="checkbox"
-			checked={project.yMinMax}
-			onchange={(e) => {
-				project.yMinMax = e.currentTarget.checked;
-			}}
-			class="accent-dark-grey"
-		/>
-		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y min/max ticks</span>
-	</label>
+			<label class="flex items-center gap-2">
+				<span class="field-label w-16 shrink-0">Angle</span>
+				<input
+					type="number"
+					min="-90"
+					max="90"
+					step="5"
+					value={project.xTickRotate}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= -90 && v <= 90) project.xTickRotate = v;
+					}}
+					class="field-input w-16"
+				/>
+				<span class="field-hint">degrees</span>
+			</label>
 
+			<label class="flex items-center gap-2">
+				<span class="field-label w-16 shrink-0">Height</span>
+				<input
+					type="number"
+					min="0"
+					max="300"
+					step="10"
+					value={project.marginBottom}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= 0 && v <= 300) project.marginBottom = v;
+					}}
+					class="field-input w-16"
+				/>
+				<span class="field-hint">0 = auto</span>
+			</label>
+		</div>
+	</div>
+
+	<!-- Y Axis appearance -->
+	<div class="mt-4">
+		<p class="sub-label mb-1.5">Y Axis</p>
+		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
+			<label class="flex items-center gap-2">
+				<span class="field-label w-16 shrink-0">Label</span>
+				<input
+					type="text"
+					value={project.yLabel}
+					placeholder={yColumnLabels || 'None'}
+					oninput={(e) => {
+						project.yLabel = e.currentTarget.value;
+					}}
+					class="field-input flex-1"
+				/>
+			</label>
+
+			<label class="flex items-center gap-2">
+				<span class="field-label w-16 shrink-0">Ticks</span>
+				<input
+					type="number"
+					min="0"
+					max="100"
+					step="1"
+					value={project.yTicks}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= 0 && v <= 100) project.yTicks = v;
+					}}
+					class="field-input w-16"
+				/>
+				<span class="field-hint">0 = auto</span>
+			</label>
+
+			<label class="flex items-center gap-2">
+				<input
+					type="checkbox"
+					checked={project.yMinMax}
+					onchange={(e) => {
+						project.yMinMax = e.currentTarget.checked;
+					}}
+					class="accent-dark-grey"
+				/>
+				<span class="field-label">Min/max ticks only</span>
+			</label>
+		</div>
+	</div>
+
+	<!-- Y2 Axis appearance (conditional) -->
 	{#if project.hasRightAxis}
-		<label class="flex items-center gap-2 mt-3">
-			<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y2-axis label</span>
-			<input
-				type="text"
-				value={project.y2Label}
-				placeholder="None"
-				oninput={(e) => {
-					project.y2Label = e.currentTarget.value;
-				}}
-				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-			/>
-		</label>
+		<div class="mt-4">
+			<p class="sub-label mb-1.5">Y2 Axis</p>
+			<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
+				<label class="flex items-center gap-2">
+					<span class="field-label w-16 shrink-0">Label</span>
+					<input
+						type="text"
+						value={project.y2Label}
+						placeholder="None"
+						oninput={(e) => {
+							project.y2Label = e.currentTarget.value;
+						}}
+						class="field-input flex-1"
+					/>
+				</label>
 
-		<label class="flex items-center gap-2 mt-3">
-			<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y2-axis ticks</span>
-			<input
-				type="number"
-				min="0"
-				max="100"
-				step="1"
-				value={project.y2Ticks}
-				oninput={(e) => {
-					const v = parseInt(e.currentTarget.value, 10);
-					if (v >= 0 && v <= 100) project.y2Ticks = v;
-				}}
-				class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-			/>
-			<span class="text-[10px] text-mid-grey">0 = auto</span>
-		</label>
+				<label class="flex items-center gap-2">
+					<span class="field-label w-16 shrink-0">Ticks</span>
+					<input
+						type="number"
+						min="0"
+						max="100"
+						step="1"
+						value={project.y2Ticks}
+						oninput={(e) => {
+							const v = parseInt(e.currentTarget.value, 10);
+							if (v >= 0 && v <= 100) project.y2Ticks = v;
+						}}
+						class="field-input w-16"
+					/>
+					<span class="field-hint">0 = auto</span>
+				</label>
 
-		<label class="flex items-center gap-2 mt-3">
-			<input
-				type="checkbox"
-				checked={project.y2MinMax}
-				onchange={(e) => {
-					project.y2MinMax = e.currentTarget.checked;
-				}}
-				class="accent-dark-grey"
-			/>
-			<span class="text-[10px] text-mid-grey uppercase tracking-wide">Y2 min/max ticks</span>
-		</label>
+				<label class="flex items-center gap-2">
+					<input
+						type="checkbox"
+						checked={project.y2MinMax}
+						onchange={(e) => {
+							project.y2MinMax = e.currentTarget.checked;
+						}}
+						class="accent-dark-grey"
+					/>
+					<span class="field-label">Min/max ticks only</span>
+				</label>
+			</div>
+		</div>
 	{/if}
-
-	<label class="flex items-center gap-2 mt-3">
-		<input
-			type="checkbox"
-			checked={project.showXTickLabels}
-			onchange={(e) => {
-				project.showXTickLabels = e.currentTarget.checked;
-			}}
-			class="accent-dark-grey"
-		/>
-		<span class="text-[10px] text-mid-grey uppercase tracking-wide">Show X tick labels</span>
-	</label>
-
-	<label class="flex items-center gap-2 mt-3">
-		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X-axis ticks</span>
-		<input
-			type="number"
-			min="0"
-			max="100"
-			step="1"
-			value={project.xTicks}
-			oninput={(e) => {
-				const v = parseInt(e.currentTarget.value, 10);
-				if (v >= 0 && v <= 100) project.xTicks = v;
-			}}
-			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-		/>
-		<span class="text-[10px] text-mid-grey">0 = auto</span>
-	</label>
-
-	<label class="flex items-center gap-2 mt-3">
-		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X label angle</span>
-		<input
-			type="number"
-			min="-90"
-			max="90"
-			step="5"
-			value={project.xTickRotate}
-			oninput={(e) => {
-				const v = parseInt(e.currentTarget.value, 10);
-				if (v >= -90 && v <= 90) project.xTickRotate = v;
-			}}
-			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-		/>
-		<span class="text-[10px] text-mid-grey">degrees</span>
-	</label>
-
-	<label class="flex items-center gap-2 mt-3">
-		<span class="text-[10px] text-mid-grey uppercase tracking-wide">X-axis height</span>
-		<input
-			type="number"
-			min="0"
-			max="300"
-			step="10"
-			value={project.marginBottom}
-			oninput={(e) => {
-				const v = parseInt(e.currentTarget.value, 10);
-				if (v >= 0 && v <= 300) project.marginBottom = v;
-			}}
-			class="w-20 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-		/>
-		<span class="text-[10px] text-mid-grey">0 = auto</span>
-	</label>
 </div>
 
+<!-- ═══ Section 4: Tooltip ═══ -->
 {#if project.hasData}
 	<div class="mt-3 pt-3 border-t border-warm-grey">
-		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Tooltip columns</p>
+		<p class="section-label mb-2">Tooltip</p>
 		<div
 			class="flex flex-col gap-1"
-			use:dndzone={{ items: tooltipDndItems, flipDurationMs: FLIP_DURATION, type: 'tooltip-cols' }}
+			use:dndzone={{
+				items: tooltipDndItems,
+				flipDurationMs: FLIP_DURATION,
+				type: 'tooltip-cols'
+			}}
 			onconsider={handleTooltipConsider}
 			onfinalize={handleTooltipFinalize}
 		>
@@ -432,8 +459,7 @@
 									const next = project.tooltipColumns.filter((k) => k !== item.key);
 									project.tooltipColumns = next.length === 0 ? [] : next;
 								} else {
-									const next = [...project.tooltipColumns, item.key];
-									project.tooltipColumns = next;
+									project.tooltipColumns = [...project.tooltipColumns, item.key];
 								}
 							}}
 							class="accent-dark-grey"
@@ -446,6 +472,7 @@
 	</div>
 {/if}
 
+<!-- ═══ Section 5: Advanced ═══ -->
 <div class="mt-3 pt-3 border-t border-warm-grey">
 	<button
 		type="button"
@@ -472,3 +499,49 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+	.section-label {
+		font-size: 10px;
+		color: var(--color-mid-grey);
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+	}
+	.sub-label {
+		font-size: 10px;
+		color: var(--color-dark-grey);
+		font-weight: 500;
+	}
+	.field-label {
+		font-size: 10px;
+		color: var(--color-mid-grey);
+	}
+	.field-hint {
+		font-size: 10px;
+		color: var(--color-mid-grey);
+	}
+	.field-select {
+		background: color-mix(in srgb, var(--color-light-warm-grey) 50%, transparent);
+		border: 1px solid var(--color-warm-grey);
+		border-radius: 0.25rem;
+		padding: 0.25rem 0.5rem;
+		font-size: 11px;
+		color: var(--color-dark-grey);
+	}
+	.field-select:focus {
+		outline: none;
+		border-color: var(--color-dark-grey);
+	}
+	.field-input {
+		background: color-mix(in srgb, var(--color-light-warm-grey) 50%, transparent);
+		border: 1px solid var(--color-warm-grey);
+		border-radius: 0.25rem;
+		padding: 0.25rem 0.5rem;
+		font-size: 11px;
+		color: var(--color-dark-grey);
+	}
+	.field-input:focus {
+		outline: none;
+		border-color: var(--color-dark-grey);
+	}
+</style>
