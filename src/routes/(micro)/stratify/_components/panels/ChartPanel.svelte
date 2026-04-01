@@ -154,25 +154,18 @@
 			<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-16 shrink-0">{isHorizontal ? 'X Axis' : 'Y Axis'}</span>
 				<select
-					value={selectedY}
+					value={selectedY || nonFirstColumns[0]?.key || ''}
 					onchange={(e) => {
 						const val = e.currentTarget.value;
-						if (val) {
-							project.hiddenSeries = nonFirstColumns
-								.filter((c) => c.key !== val)
-								.map((c) => c.key);
-						} else {
-							project.hiddenSeries = [];
-						}
+						project.hiddenSeries = nonFirstColumns
+							.filter((c) => c.key !== val)
+							.map((c) => c.key);
 					}}
 					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				>
 					{#each nonFirstColumns as col (col.key)}
 						<option value={col.key}>{col.label}</option>
 					{/each}
-					{#if nonFirstColumns.length > 1}
-						<option value="">Multiple series</option>
-					{/if}
 				</select>
 			</label>
 
@@ -211,10 +204,10 @@
 						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 					>
 						<option value="default">Data order</option>
-						<option value="x-asc">X: ascending</option>
-						<option value="x-desc">X: descending</option>
-						<option value="value-asc">Y: ascending</option>
-						<option value="value-desc">Y: descending</option>
+						<option value="x-asc">Category: A to Z</option>
+						<option value="x-desc">Category: Z to A</option>
+						<option value="value-asc">Value: low to high</option>
+						<option value="value-desc">Value: high to low</option>
 					</select>
 				</label>
 			{/if}
