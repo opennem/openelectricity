@@ -134,9 +134,10 @@ const EMPTY_RESULT = {
  * @param {string} csvText
  * @param {Record<string, string>} [existingColours] - Preserve existing colour assignments
  * @param {'auto' | 'time-series' | 'category'} [displayMode='auto'] - Override auto-detection
+ * @param {number | string} [xColumn=0] - Index or key of the column to use as X axis
  * @returns {ParseResult}
  */
-export function parseCSV(csvText, existingColours = {}, displayMode = 'auto') {
+export function parseCSV(csvText, existingColours = {}, displayMode = 'auto', xColumn = 0) {
 	/** @type {string[]} */
 	const errors = [];
 
@@ -153,10 +154,25 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto') {
 	}
 
 	// Parse headers (strip surrounding quotes)
-	const headers = lines[0].split(delimiter).map((h) => h.trim().replace(/^["']|["']$/g, ''));
+	let headers = lines[0].split(delimiter).map((h) => h.trim().replace(/^["']|["']$/g, ''));
 	if (headers.length < 2) {
 		errors.push('Need at least two columns (date/category + one series).');
 		return { ...EMPTY_RESULT, errors };
+	}
+
+	// Resolve xColumn to an index and rearrange columns if needed
+	/** @type {number[] | null} */
+	let columnOrder = null;
+	const xIdx = typeof xColumn === 'number'
+		? xColumn
+		: headers.findIndex((h) => toKey(h) === xColumn);
+	if (xIdx > 0 && xIdx < headers.length) {
+		const indices = [xIdx];
+		for (let i = 0; i < headers.length; i++) {
+			if (i !== xIdx) indices.push(i);
+		}
+		columnOrder = indices;
+		headers = columnOrder.map((i) => headers[i]);
 	}
 
 	const seriesHeaders = headers.slice(1);
@@ -169,7 +185,13 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto') {
 		seriesNames.map((key) => [key, existingColours[key] || freshColours[key]])
 	);
 
-	const rawDataLines = lines.slice(1);
+	// Rearrange data lines to match header column order
+	const rawDataLines = columnOrder
+		? lines.slice(1).map((line) => {
+				const cells = line.split(delimiter);
+				return /** @type {number[]} */ (columnOrder).map((i) => cells[i] ?? '').join(delimiter);
+			})
+		: lines.slice(1);
 
 	// Determine mode: explicit override or auto-detect from first column content
 	let isCategory;

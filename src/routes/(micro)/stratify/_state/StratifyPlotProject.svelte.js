@@ -44,6 +44,7 @@ import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
  * @property {Record<string, 'left' | 'right'>} [seriesYAxis]
  * @property {string} [y2Label]
  * @property {string[]} [tooltipColumns]
+ * @property {string} [xColumn]
  * @property {'default' | 'value-asc' | 'value-desc'} [categorySort]
  */
 
@@ -128,6 +129,9 @@ export default class StratifyPlotProject {
 	tooltipColumns = $state([]);
 
 	// --- Column mapping ---
+	/** @type {string} Column key to use as X axis (empty = first column) */
+	xColumn = $state('');
+
 	/** @type {string | null} Column key used as colour grouping */
 	colourSeries = $state(null);
 
@@ -159,7 +163,7 @@ export default class StratifyPlotProject {
 	currentChartId = $state(null);
 
 	// --- Derived from CSV ---
-	parsedData = $derived(parseCSV(this.csvText, {}, this.displayMode));
+	parsedData = $derived(parseCSV(this.csvText, {}, this.displayMode, this.xColumn || 0));
 
 	hasData = $derived(this.parsedData.data.length > 0);
 
@@ -317,6 +321,7 @@ export default class StratifyPlotProject {
 		this.y2MinMax = false;
 		this.tooltipColumns = [];
 		this.categorySort = 'default';
+		this.xColumn = '';
 		this.colourSeries = null;
 		this.xLabel = '';
 		this.yLabel = '';
@@ -356,6 +361,7 @@ export default class StratifyPlotProject {
 		this.y2MinMax = false;
 		this.tooltipColumns = [];
 		this.categorySort = 'default';
+		this.xColumn = '';
 		this.colourSeries = null;
 		this.xLabel = '';
 		this.yLabel = '';
@@ -397,6 +403,7 @@ export default class StratifyPlotProject {
 			y2MinMax: this.y2MinMax,
 			tooltipColumns: this.tooltipColumns,
 			categorySort: this.categorySort,
+			xColumn: this.xColumn,
 			colourSeries: this.colourSeries,
 			xLabel: this.xLabel,
 			yLabel: this.yLabel,
@@ -435,6 +442,7 @@ export default class StratifyPlotProject {
 		this.y2MinMax = snapshot.y2MinMax ?? false;
 		this.tooltipColumns = snapshot.tooltipColumns ?? [];
 		this.categorySort = snapshot.categorySort ?? 'default';
+		this.xColumn = snapshot.xColumn ?? '';
 		this.colourSeries = snapshot.colourSeries ?? null;
 		this.xLabel = snapshot.xLabel ?? '';
 		this.yLabel = snapshot.yLabel ?? '';

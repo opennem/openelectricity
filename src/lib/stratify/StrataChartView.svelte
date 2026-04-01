@@ -13,7 +13,7 @@
 	 */
 	let { chart, caption = '', showBranding = false, headingTag = 'h2' } = $props();
 
-	const parsed = $derived(parseCSV(chart.csvText, {}, chart.displayMode ?? 'auto'));
+	const parsed = $derived(parseCSV(chart.csvText, {}, chart.displayMode ?? 'auto', chart.xColumn || 0));
 	const preset = $derived(getPreset(chart.stylePreset ?? 'oe'));
 	const plotStyleOptions = $derived({ style: getPlotStyle(chart.stylePreset ?? 'oe') });
 

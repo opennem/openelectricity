@@ -75,6 +75,7 @@ export async function POST({ request }) {
 		y2Ticks: body.y2Ticks ?? 0,
 		y2MinMax: body.y2MinMax ?? false,
 		tooltipColumns: body.tooltipColumns ?? [],
+		xColumn: body.xColumn ?? '',
 		categorySort: body.categorySort ?? 'default',
 		showXTickLabels: body.showXTickLabels ?? true,
 		colourSeries: body.colourSeries ?? null,

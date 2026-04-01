@@ -51,6 +51,21 @@
 	];
 
 	// --- Column mapping derived values ---
+	// Raw column headers from CSV (before any xColumn rearrangement)
+	let rawColumns = $derived.by(() => {
+		const text = project.csvText?.trim();
+		if (!text) return [];
+		const firstLine = text.split('\n')[0] ?? '';
+		const delim = firstLine.includes('\t') ? '\t' : firstLine.includes(',') ? ',' : ';';
+		return firstLine
+			.split(delim)
+			.map((/** @type {string} */ h) => {
+				const label = h.trim().replace(/^["']|["']$/g, '');
+				const key = label.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+				return { key, label };
+			});
+	});
+
 	let xColumnLabel = $derived(project.allColumns[0]?.label ?? '');
 	let nonFirstColumns = $derived(project.allColumns.slice(1));
 	let yColumnLabels = $derived(
@@ -105,15 +120,26 @@
 	<ChartTypeSelector />
 </div>
 
-{#if project.hasData && project.isCategory}
+{#if project.hasData}
 	<div class="mt-3 pt-3 border-t border-warm-grey">
 		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Column mapping</p>
 
 		<div class="flex flex-col gap-2">
-			<div class="flex items-center gap-2">
+			<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-14 shrink-0">X axis</span>
-				<span class="text-[11px] text-dark-grey truncate">{xColumnLabel}</span>
-			</div>
+				<select
+					value={project.xColumn || rawColumns[0]?.key || ''}
+					onchange={(e) => {
+						const val = e.currentTarget.value;
+						project.xColumn = val === rawColumns[0]?.key ? '' : val;
+					}}
+					class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+				>
+					{#each rawColumns as col (col.key)}
+						<option value={col.key}>{col.label}</option>
+					{/each}
+				</select>
+			</label>
 
 			<div class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-14 shrink-0">Y value</span>
@@ -140,20 +166,22 @@
 			</label>
 		</div>
 
-		<label class="flex items-center gap-2 mt-3">
-			<span class="text-[10px] text-mid-grey w-14 shrink-0">Sort by</span>
-			<select
-				value={project.categorySort}
-				onchange={(e) => {
-					project.categorySort = /** @type {'default' | 'value-asc' | 'value-desc'} */ (e.currentTarget.value);
-				}}
-				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
-			>
-				<option value="default">X: data order</option>
-				<option value="value-asc">Y: ascending</option>
-				<option value="value-desc">Y: descending</option>
-			</select>
-		</label>
+		{#if project.isCategory}
+			<label class="flex items-center gap-2 mt-3">
+				<span class="text-[10px] text-mid-grey w-14 shrink-0">Sort by</span>
+				<select
+					value={project.categorySort}
+					onchange={(e) => {
+						project.categorySort = /** @type {'default' | 'value-asc' | 'value-desc'} */ (e.currentTarget.value);
+					}}
+					class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+				>
+					<option value="default">X: data order</option>
+					<option value="value-asc">Y: ascending</option>
+					<option value="value-desc">Y: descending</option>
+				</select>
+			</label>
+		{/if}
 	</div>
 {/if}
 
