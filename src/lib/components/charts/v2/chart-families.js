@@ -75,7 +75,7 @@ export function getFamily(chartType) {
  * @returns {ChartFamily[]}
  */
 export function getAvailableFamilies(isCategory) {
-	return isCategory ? ['column', 'bar'] : FAMILY_ORDER;
+	return isCategory ? ['column', 'bar', 'line', 'dot'] : FAMILY_ORDER;
 }
 
 /**

@@ -280,8 +280,8 @@ export default class StratifyPlotProject {
 		// Auto-switch chart type when data mode changes
 		$effect(() => {
 			if (this.isCategory) {
-				const barTypes = new Set(['grouped-bar', 'bar-stacked', 'bar-horizontal', 'grouped-bar-horizontal']);
-				if (!barTypes.has(this.chartType)) {
+				const areaTypes = new Set(['stacked-area', 'area']);
+				if (areaTypes.has(this.chartType)) {
 					this.chartType = 'grouped-bar';
 				}
 			}
