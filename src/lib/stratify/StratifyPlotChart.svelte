@@ -64,6 +64,7 @@
 	 *   dateColumnKey?: string,
 	 *   dateColumnLabel?: string,
 	 *   xDomain?: string[],
+	 *   yDomain?: string[],
 	 *   showXTickLabels?: boolean,
 	 *   xTicks?: number,
 	 *   xTickRotate?: number,
@@ -96,6 +97,7 @@
 		dateColumnKey = '',
 		dateColumnLabel = '',
 		xDomain = undefined,
+		yDomain = undefined,
 		showXTickLabels = true,
 		xTicks = 0,
 		xTickRotate = 0,
@@ -279,9 +281,12 @@
 			}
 		}
 
-		// Apply explicit x domain (e.g. sorted categories)
+		// Apply explicit domain (e.g. sorted categories)
 		if (xDomain) {
 			opts.x = { ...(opts.x || {}), domain: xDomain };
+		}
+		if (yDomain) {
+			opts.y = { ...(opts.y || {}), domain: yDomain };
 		}
 
 		// Apply x-axis tick count if configured (before showXTickLabels so it can override)

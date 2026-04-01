@@ -122,12 +122,30 @@
 		});
 	});
 
-	// Extract sorted x domain for category charts
-	const sortedXDomain = $derived(
-		(chart.categorySort ?? 'default') !== 'default' && parsed.mode === 'category'
-			? sortedData.map((/** @type {any} */ d) => d.category)
-			: undefined
+	const isHorizontal = $derived(
+		chart.chartType === 'bar' || chart.chartType === 'bar-stacked' || chart.chartType === 'bar-grouped'
 	);
+
+	// Extract sorted domain for category charts
+	const hasSortedDomain = $derived(
+		(chart.categorySort ?? 'default') !== 'default' && parsed.mode === 'category'
+	);
+	const sortedCategoryDomain = $derived(
+		hasSortedDomain ? sortedData.map((/** @type {any} */ d) => d.category) : undefined
+	);
+	// For vertical charts, sorted domain goes to X; for horizontal, to Y
+	const sortedXDomain = $derived(!isHorizontal ? sortedCategoryDomain : undefined);
+	const sortedYDomain = $derived(isHorizontal ? sortedCategoryDomain : undefined);
+
+	// Auto-scale height for horizontal bars
+	const chartHeight = $derived.by(() => {
+		const baseHeight = chart.chartHeight ?? 400;
+		if (isHorizontal && parsed.mode === 'category') {
+			const rowCount = sortedData.length;
+			return Math.max(baseHeight, rowCount * 22 + 60);
+		}
+		return baseHeight;
+	});
 </script>
 
 <svelte:element this={caption ? 'figure' : 'div'} style="font-family: {preset.typography.fontFamily};">
@@ -150,6 +168,9 @@
 	{/if}
 
 	{#if parsed.data.length > 0}
+		<div
+			style={chartHeight > (chart.chartHeight ?? 400) ? `max-height: ${(chart.chartHeight ?? 400) + 100}px; overflow-y: auto;` : ''}
+		>
 		<StratifyPlotChart
 			data={sortedData}
 			seriesNames={visibleSeriesNames}
@@ -166,7 +187,7 @@
 			y2Label={chart.y2Label ?? ''}
 			annotations={chart.annotations}
 			options={plotStyleOptions}
-			height={chart.chartHeight ?? 400}
+			height={chartHeight}
 			yTicks={chart.yTicks ?? 0}
 			yMinMax={chart.yMinMax ?? false}
 			y2Ticks={chart.y2Ticks ?? 0}
@@ -175,11 +196,13 @@
 			dateColumnKey={parsed.allColumns?.[0]?.key ?? ''}
 			dateColumnLabel={parsed.allColumns?.[0]?.label ?? ''}
 			xDomain={sortedXDomain}
+			yDomain={sortedYDomain}
 			showXTickLabels={chart.showXTickLabels ?? true}
 			xTicks={chart.xTicks ?? 0}
 			xTickRotate={chart.xTickRotate ?? 0}
 			marginBottom={chart.marginBottom ?? 0}
 		/>
+		</div>
 	{/if}
 
 	{#if chart.dataSource || chart.notes}

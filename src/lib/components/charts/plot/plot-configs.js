@@ -407,7 +407,7 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 export function createHorizontalBarOptions(data, seriesNames, colours, labels, options = {}) {
 	const {
 		style = SHARED_STYLE,
-		marginLeft = 100,
+		marginLeft,
 		marginRight,
 		legend = true,
 		extraMarks = [],
@@ -415,12 +415,19 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 	} = options;
 	const long = toLong(data, seriesNames, 'category');
 
+	// Auto-compute left margin from longest category label
+	const maxLabelLen = data.reduce(
+		(max, row) => Math.max(max, String(row.category ?? '').length),
+		0
+	);
+	const autoMarginLeft = marginLeft ?? Math.min(Math.max(maxLabelLen * 6.5, 60), 200);
+
 	return {
 		style,
-		marginLeft,
+		marginLeft: autoMarginLeft,
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
-		y: { label: null, tickPadding: 6, type: 'band' },
+		y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
 		x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		marks: [
 			...extraMarks,
@@ -445,7 +452,7 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 export function createGroupedHorizontalBarOptions(data, seriesNames, colours, labels, options = {}) {
 	const {
 		style = SHARED_STYLE,
-		marginLeft = 100,
+		marginLeft,
 		marginRight,
 		legend = true,
 		extraMarks = [],
@@ -453,12 +460,18 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 	} = options;
 	const long = toLong(data, seriesNames, 'category');
 
+	const maxLabelLen = data.reduce(
+		(max, row) => Math.max(max, String(row.category ?? '').length),
+		0
+	);
+	const autoMarginLeft = marginLeft ?? Math.min(Math.max(maxLabelLen * 6.5, 60), 200);
+
 	return {
 		style,
-		marginLeft,
+		marginLeft: autoMarginLeft,
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
-		y: { label: null, tickPadding: 6, type: 'band' },
+		y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
 		x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		fy: { label: null, padding: 0.2 },
 		marks: [
@@ -523,12 +536,17 @@ export function createColourGroupedBarOptions(
 	};
 
 	if (horizontal) {
+		const maxLabelLen = data.reduce(
+			(max, row) => Math.max(max, String(row.category ?? '').length),
+			0
+		);
+		const autoMarginLeft = marginLeft ?? Math.min(Math.max(maxLabelLen * 6.5, 60), 200);
 		return {
 			style,
-			marginLeft: marginLeft ?? 100,
+			marginLeft: autoMarginLeft,
 			...(marginRight !== undefined ? { marginRight } : {}),
 			color: colorScale,
-			y: { label: null, tickPadding: 6, type: 'band' },
+			y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
 			x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 			marks: [
 				...extraMarks,
