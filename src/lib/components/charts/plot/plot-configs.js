@@ -4,7 +4,20 @@
  * Each function takes parsed CSV data (from csv-parser.js) and returns
  * a PlotOptions object ready to pass to PlotChart.
  */
-import { areaY, lineY, barY, rectY, dot, ruleX, ruleY, stackY, groupX } from '@observablehq/plot';
+import {
+	areaY,
+	lineY,
+	barX,
+	barY,
+	rectY,
+	dot,
+	ruleX,
+	ruleY,
+	stackX,
+	stackY,
+	groupX,
+	groupY
+} from '@observablehq/plot';
 
 /**
  * Per-series mark type for mixed charts.
@@ -376,6 +389,87 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 				fill: 'series'
 			}),
 			ruleY([0])
+		]
+	};
+}
+
+// ── Horizontal Bar Charts ──────────────────────────────────────
+
+/**
+ * Horizontal stacked bar chart.
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} colours
+ * @param {Record<string, string>} labels
+ * @param {BarChartOptions} [options]
+ * @returns {import('@observablehq/plot').PlotOptions}
+ */
+export function createHorizontalBarOptions(data, seriesNames, colours, labels, options = {}) {
+	const {
+		style = SHARED_STYLE,
+		marginLeft = 100,
+		marginRight,
+		legend = true,
+		extraMarks = [],
+		yTickFormat
+	} = options;
+	const long = toLong(data, seriesNames, 'category');
+
+	return {
+		style,
+		marginLeft,
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: { ...colourScale(seriesNames, colours, labels), legend },
+		y: { label: null, tickPadding: 6, type: 'band' },
+		x: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+		marks: [
+			...extraMarks,
+			barX(
+				long,
+				stackX(groupY({ x: 'sum' }, { y: 'x', x: 'value', fill: 'series', order: seriesNames }))
+			),
+			ruleX([0])
+		]
+	};
+}
+
+/**
+ * Horizontal grouped bar chart.
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} colours
+ * @param {Record<string, string>} labels
+ * @param {BarChartOptions} [options]
+ * @returns {import('@observablehq/plot').PlotOptions}
+ */
+export function createGroupedHorizontalBarOptions(data, seriesNames, colours, labels, options = {}) {
+	const {
+		style = SHARED_STYLE,
+		marginLeft = 100,
+		marginRight,
+		legend = true,
+		extraMarks = [],
+		yTickFormat
+	} = options;
+	const long = toLong(data, seriesNames, 'category');
+
+	return {
+		style,
+		marginLeft,
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: { ...colourScale(seriesNames, colours, labels), legend },
+		y: { label: null, tickPadding: 6, type: 'band' },
+		x: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+		fy: { label: null, padding: 0.2 },
+		marks: [
+			...extraMarks,
+			barX(long, {
+				y: 'series',
+				x: 'value',
+				fy: 'x',
+				fill: 'series'
+			}),
+			ruleX([0])
 		]
 	};
 }

@@ -7,6 +7,8 @@
 		createLineOptions,
 		createStackedBarOptions,
 		createGroupedBarOptions,
+		createHorizontalBarOptions,
+		createGroupedHorizontalBarOptions,
 		createDotOptions,
 		createMixedMarkOptions,
 		createColourGroupedBarOptions,
@@ -22,7 +24,7 @@
 	});
 
 	/**
-	 * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'dot'} StratifyPlotChartType
+	 * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'bar-horizontal' | 'grouped-bar-horizontal' | 'dot'} StratifyPlotChartType
 	 */
 
 	/** @type {Record<string, Function>} */
@@ -32,11 +34,13 @@
 		line: createLineOptions,
 		'bar-stacked': createStackedBarOptions,
 		'grouped-bar': createGroupedBarOptions,
+		'bar-horizontal': createHorizontalBarOptions,
+		'grouped-bar-horizontal': createGroupedHorizontalBarOptions,
 		dot: createDotOptions
 	};
 
 	const TIME_SERIES_TYPES = new Set(['stacked-area', 'area', 'line', 'dot']);
-	const BAR_TYPES = new Set(['bar-stacked', 'grouped-bar']);
+	const BAR_TYPES = new Set(['bar-stacked', 'grouped-bar', 'bar-horizontal', 'grouped-bar-horizontal']);
 
 	/**
 	 * @type {{

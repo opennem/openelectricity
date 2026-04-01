@@ -5,7 +5,7 @@
  * Used by ChartTypeSelector to render the two-row family/variant UI.
  */
 
-/** @typedef {'area' | 'bar' | 'line' | 'dot'} ChartFamily */
+/** @typedef {'area' | 'column' | 'bar' | 'line' | 'dot'} ChartFamily */
 
 /**
  * @typedef {Object} ChartFamilyConfig
@@ -23,11 +23,17 @@ export const CHART_FAMILIES = {
 		variantLabels: { 'stacked-area': 'Stacked', area: 'Overlay' },
 		defaultVariant: 'stacked-area'
 	},
-	bar: {
-		label: 'Bar',
+	column: {
+		label: 'Column',
 		variants: ['bar-stacked', 'grouped-bar'],
 		variantLabels: { 'bar-stacked': 'Stacked', 'grouped-bar': 'Grouped' },
 		defaultVariant: 'bar-stacked'
+	},
+	bar: {
+		label: 'Bar',
+		variants: ['bar-horizontal', 'grouped-bar-horizontal'],
+		variantLabels: { 'bar-horizontal': 'Stacked', 'grouped-bar-horizontal': 'Grouped' },
+		defaultVariant: 'bar-horizontal'
 	},
 	line: {
 		label: 'Line',
@@ -44,7 +50,7 @@ export const CHART_FAMILIES = {
 };
 
 /** @type {ChartFamily[]} */
-const FAMILY_ORDER = ['area', 'bar', 'line', 'dot'];
+const FAMILY_ORDER = ['area', 'column', 'bar', 'line', 'dot'];
 
 /** @type {Record<string, ChartFamily>} */
 const TYPE_TO_FAMILY = /** @type {Record<string, ChartFamily>} */ ({});
@@ -69,7 +75,7 @@ export function getFamily(chartType) {
  * @returns {ChartFamily[]}
  */
 export function getAvailableFamilies(isCategory) {
-	return isCategory ? ['bar'] : FAMILY_ORDER;
+	return isCategory ? ['column', 'bar'] : FAMILY_ORDER;
 }
 
 /**

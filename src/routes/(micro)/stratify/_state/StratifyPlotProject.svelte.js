@@ -9,7 +9,7 @@ import { parseCSV } from '$lib/stratify/csv-parser.js';
 import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
 
 /**
- * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'dot'} ChartType
+ * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'bar-horizontal' | 'grouped-bar-horizontal' | 'dot'} ChartType
  */
 
 /**
@@ -280,7 +280,8 @@ export default class StratifyPlotProject {
 		// Auto-switch chart type when data mode changes
 		$effect(() => {
 			if (this.isCategory) {
-				if (this.chartType !== 'grouped-bar' && this.chartType !== 'bar-stacked') {
+				const barTypes = new Set(['grouped-bar', 'bar-stacked', 'bar-horizontal', 'grouped-bar-horizontal']);
+				if (!barTypes.has(this.chartType)) {
 					this.chartType = 'grouped-bar';
 				}
 			}

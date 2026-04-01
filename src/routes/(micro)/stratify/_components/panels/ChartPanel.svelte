@@ -141,32 +141,35 @@
 				</select>
 			</label>
 
-			<div class="flex gap-2">
-				<span class="text-[10px] text-mid-grey w-14 shrink-0 pt-0.5">Y value</span>
-				<div class="flex flex-col gap-0.5 flex-1">
+		{@const visibleYColumns = nonFirstColumns.filter((c) => !project.hiddenSeries.includes(c.key))}
+			{@const selectedY = visibleYColumns.length === 1 ? visibleYColumns[0]?.key : ''}
+			<label class="flex items-center gap-2">
+				<span class="text-[10px] text-mid-grey w-14 shrink-0">Y value</span>
+				<select
+					value={selectedY}
+					onchange={(e) => {
+						const val = e.currentTarget.value;
+						if (val) {
+							// Hide all other series, show only selected
+							project.hiddenSeries = nonFirstColumns
+								.filter((c) => c.key !== val)
+								.map((c) => c.key);
+						} else {
+							// Show all
+							project.hiddenSeries = [];
+						}
+					}}
+					class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+				>
+					<option value="">All columns</option>
 					{#each nonFirstColumns as col (col.key)}
-						{@const isVisible = !project.hiddenSeries.includes(col.key)}
-						<label class="flex items-center gap-1.5">
-							<input
-								type="checkbox"
-								checked={isVisible}
-								onchange={() => {
-									if (isVisible) {
-										project.hiddenSeries = [...project.hiddenSeries, col.key];
-									} else {
-										project.hiddenSeries = project.hiddenSeries.filter((/** @type {string} */ k) => k !== col.key);
-									}
-								}}
-								class="accent-dark-grey"
-							/>
-							<span class="text-[11px] text-dark-grey truncate">{col.label}</span>
-						</label>
+						<option value={col.key}>{col.label}</option>
 					{/each}
-				</div>
-			</div>
+				</select>
+			</label>
 
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-14 shrink-0">Colour</span>
+				<span class="text-[10px] text-mid-grey w-14 shrink-0">Z (colour)</span>
 				<select
 					value={project.colourSeries ?? ''}
 					onchange={(e) => {
