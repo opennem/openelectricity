@@ -293,16 +293,10 @@
 			opts.x = { ...(opts.x || {}), domain: xDomain };
 		}
 
-		// Hide x-axis tick labels if disabled
-		if (!showXTickLabels) {
-			opts.x = { ...(opts.x || {}), tickFormat: () => '' };
-		}
-
-		// Apply x-axis tick count if configured
+		// Apply x-axis tick count if configured (before showXTickLabels so it can override)
 		if (xTicks > 0) {
 			const xScale = opts.x || {};
 			if (xScale.type === 'band') {
-				// Band scales ignore `ticks` — use tickFormat to hide labels
 				const domain =
 					xScale.domain || chartData.map((/** @type {any} */ d) => d.category ?? d.date);
 				const step = Math.max(1, Math.ceil(domain.length / xTicks));
@@ -316,6 +310,11 @@
 			} else {
 				opts.x = { ...xScale, ticks: xTicks };
 			}
+		}
+
+		// Hide x-axis tick labels if disabled (after xTicks so it takes precedence)
+		if (!showXTickLabels) {
+			opts.x = { ...(opts.x || {}), tickFormat: () => '' };
 		}
 
 		// Apply x-axis label rotation if configured
@@ -341,35 +340,40 @@
 		// Add single tooltip mark with filtered channels
 		const isTimeSeries = data.length > 0 && 'date' in data[0];
 
+		// Build series tooltip labels
 		let tooltipLabels =
 			colourSeries && Object.keys(dataColumnLabels).length > 0
 				? dataColumnLabels
 				: Object.fromEntries(seriesNames.map((n) => [n, seriesLabels[n] || n]));
 
-		if (tooltipColumns.length > 0) {
-			// Rebuild in tooltipColumns order (respects user reordering)
-			/** @type {Record<string, string>} */
-			const ordered = {};
-			for (const key of tooltipColumns) {
-				if (key in tooltipLabels) ordered[key] = tooltipLabels[key];
-			}
-			tooltipLabels = ordered;
-		}
-
-		const channels = buildTooltipChannels(tooltipLabels);
-
 		if (isTimeSeries) {
+			// Build channels in tooltipColumns order, interleaving Date at the right position
 			const showDate =
 				tooltipColumns.length === 0 || (dateColumnKey && tooltipColumns.includes(dateColumnKey));
 
 			/** @type {Record<string, any>} */
 			const tipChannels = {};
-			if (showDate) {
-				tipChannels.Date = {
-					value: (/** @type {any} */ d) => dateFmt.format(d.date)
-				};
+
+			if (tooltipColumns.length > 0) {
+				for (const key of tooltipColumns) {
+					if (key === dateColumnKey && showDate) {
+						tipChannels.Date = {
+							value: (/** @type {any} */ d) => dateFmt.format(d.date)
+						};
+					} else if (key in tooltipLabels) {
+						const label = tooltipLabels[key];
+						tipChannels[label] = key;
+					}
+				}
+			} else {
+				if (showDate) {
+					tipChannels.Date = {
+						value: (/** @type {any} */ d) => dateFmt.format(d.date)
+					};
+				}
+				const channels = buildTooltipChannels(tooltipLabels);
+				Object.assign(tipChannels, channels);
 			}
-			Object.assign(tipChannels, channels);
 
 			opts.marks.push(
 				ruleX(data, pointerX({ x: 'date', stroke: '#888', strokeWidth: 0.5 })),
@@ -385,8 +389,36 @@
 				)
 			);
 		} else {
+			// Category mode: build channels in order, include category label
+			/** @type {Record<string, any>} */
+			const tipChannels = {};
+			const catColumnKey = dateColumnKey; // first column key
+			const showCat =
+				tooltipColumns.length === 0 || (catColumnKey && tooltipColumns.includes(catColumnKey));
+
+			if (tooltipColumns.length > 0) {
+				for (const key of tooltipColumns) {
+					if (key === catColumnKey) continue; // handled via x channel
+					if (key in tooltipLabels) {
+						const label = tooltipLabels[key];
+						tipChannels[label] = key;
+					}
+				}
+			} else {
+				Object.assign(tipChannels, buildTooltipChannels(tooltipLabels));
+			}
+
 			opts.marks.push(
-				tip(data, pointerX({ x: 'category', channels, lineHeight: 1.3, fontSize: 11 }))
+				tip(
+					data,
+					pointerX({
+						x: 'category',
+						channels: tipChannels,
+						format: { x: showCat },
+						lineHeight: 1.3,
+						fontSize: 11
+					})
+				)
 			);
 		}
 
