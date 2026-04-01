@@ -39,7 +39,7 @@ export async function load({ params }) {
 }
 
 /**
- * Scan content blocks for stratifyEmbed types and batch-fetch chart data.
+ * Scan content blocks for strataEmbed types and batch-fetch chart data.
  * @param {any[] | null} content
  * @returns {Promise<Record<string, any>>}
  */
@@ -49,7 +49,7 @@ async function preloadStratifyCharts(content) {
 	const chartIds = [
 		...new Set(
 			content
-				.filter((/** @type {any} */ block) => block._type === 'stratifyEmbed' && block.chartId)
+				.filter((/** @type {any} */ block) => block._type === 'strataEmbed' && block.chartId)
 				.map((/** @type {any} */ block) => block.chartId)
 		)
 	];

@@ -15,7 +15,7 @@ export async function load({ params }) {
 
 	const article = data[0];
 
-	// Preload Stratify chart data for any stratifyEmbed blocks
+	// Preload Stratify chart data for any strataEmbed blocks
 	const charts = await preloadStratifyCharts(article.content);
 
 	return {
@@ -31,7 +31,7 @@ export async function load({ params }) {
 }
 
 /**
- * Scan content blocks for stratifyEmbed types and batch-fetch chart data from Sanity.
+ * Scan content blocks for strataEmbed types and batch-fetch chart data from Sanity.
  * @param {any[] | null} content
  * @returns {Promise<Record<string, any>>}
  */
@@ -41,7 +41,7 @@ async function preloadStratifyCharts(content) {
 	const chartIds = [
 		...new Set(
 			content
-				.filter((/** @type {any} */ block) => block._type === 'stratifyEmbed' && block.chartId)
+				.filter((/** @type {any} */ block) => block._type === 'strataEmbed' && block.chartId)
 				.map((/** @type {any} */ block) => block.chartId)
 		)
 	];

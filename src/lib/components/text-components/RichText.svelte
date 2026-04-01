@@ -3,7 +3,7 @@
 	import { Tweet, YouTube } from 'sveltekit-embed';
 
 	import Image from '$lib/components/text-components/Image.svelte';
-	import StratifyEmbed from '$lib/components/text-components/StratifyEmbed.svelte';
+	import StrataEmbed from '$lib/components/text-components/StrataEmbed.svelte';
 
 	/**
 	 * @typedef {Object} Block
@@ -238,10 +238,10 @@
 			<div class="mx-auto max-w-[800px] my-24">
 				<YouTube youTubeId={getYouTubeId(value) ?? ''} modestBranding={true} />
 			</div>
-		{:else if value._type === 'stratifyEmbed'}
+		{:else if value._type === 'strataEmbed'}
 			<div class="mx-auto max-w-full my-12 border border-mid-warm-grey rounded-lg px-12 py-6">
 				{#if charts[value.chartId]}
-					<StratifyEmbed chart={charts[value.chartId]} caption={value.caption} />
+					<StrataEmbed chart={charts[value.chartId]} caption={value.caption} />
 				{/if}
 			</div>
 		{:else if value._type === 'embed'}
