@@ -13,9 +13,11 @@
 	 *   headingTag?: 'h1' | 'h2' | 'h3'
 	 * }}
 	 */
-	let { chart, caption = '', showBranding = false, headingTag = 'h2' } = $props();
+	let { chart, caption = '', showBranding = false, headingTag = 'h1' } = $props();
 
-	const parsed = $derived(parseCSV(chart.csvText, {}, chart.displayMode ?? 'auto', chart.xColumn || 0));
+	const parsed = $derived(
+		parseCSV(chart.csvText, {}, chart.displayMode ?? 'auto', chart.xColumn || 0)
+	);
 	const preset = $derived(getPreset(chart.stylePreset ?? 'oe'));
 	const plotStyleOptions = $derived({ style: getPlotStyle(chart.stylePreset ?? 'oe') });
 
@@ -141,13 +143,16 @@
 	const chartHeight = $derived(chart.chartHeight ?? 400);
 </script>
 
-<svelte:element this={caption ? 'figure' : 'div'} style="font-family: {preset.typography.fontFamily};">
+<svelte:element
+	this={caption ? 'figure' : 'div'}
+	style="font-family: {preset.typography.fontFamily};"
+>
 	{#if chart.title || chart.description}
 		<div class="mb-3 space-y-1">
 			{#if chart.title}
 				<svelte:element
 					this={headingTag}
-					class="text-dark-grey"
+					class="text-dark-grey leading-2xl"
 					style="font-size: {preset.typography.titleSize}; font-weight: {preset.typography
 						.titleWeight};"
 				>

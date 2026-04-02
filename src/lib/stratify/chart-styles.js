@@ -24,7 +24,7 @@ export const CHART_THEMES = [
 			fontFamily: '"DM Sans", system-ui, -apple-system, sans-serif',
 			fontSize: '11px',
 			titleFont: '"DM Sans", system-ui, -apple-system, sans-serif',
-			titleSize: '14px',
+			titleSize: '18px',
 			titleWeight: '600'
 		},
 		chart: {
@@ -42,7 +42,7 @@ export const CHART_THEMES = [
 			fontFamily: '"DM Mono", ui-monospace, monospace',
 			fontSize: '10px',
 			titleFont: '"DM Mono", ui-monospace, monospace',
-			titleSize: '14px',
+			titleSize: '18px',
 			titleWeight: '600'
 		},
 		chart: {
