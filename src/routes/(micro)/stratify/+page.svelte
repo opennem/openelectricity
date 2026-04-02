@@ -154,7 +154,7 @@
 									{chart.title || 'Untitled'}
 								</a>
 								<span
-									class="text-[9px] px-1 py-0.5 rounded flex-shrink-0 {chart.status === 'published'
+									class="text-[9px] px-1 py-0.5 rounded shrink-0 {chart.status === 'published'
 										? 'bg-green-100 text-green-700'
 										: 'bg-warm-grey text-mid-grey'}"
 								>
