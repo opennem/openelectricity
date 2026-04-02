@@ -16,6 +16,7 @@
 	import ExamplePicker from './ExamplePicker.svelte';
 	import AccordionSection from './AccordionSection.svelte';
 	import StratifyHeader from './StratifyHeader.svelte';
+	import StratifyButton from './StratifyButton.svelte';
 	import { createChart, updateChart, getChart } from '../_utils/api.js';
 
 	/** @type {{ initialChartId?: string }} */
@@ -33,7 +34,11 @@
 	];
 
 	/** @type {Record<string, boolean>} */
-	let openSections = $state({ data: true, chart: true, annotate: true, series: true, publish: true });
+	let openSections = $state(
+		initialChartId
+			? { data: false, chart: true, annotate: true, series: true, publish: true }
+			: { data: true, chart: false, annotate: false, series: false, publish: false }
+	);
 
 	let mounted = $state(false);
 	let loadingChart = $state(!!initialChartId);
@@ -184,68 +189,25 @@
 	<div class="flex flex-col h-dvh overflow-hidden font-mono">
 		<StratifyHeader />
 
-		<!-- Sub-header: chart info + actions -->
-		<div class="flex items-center gap-3 px-4 py-1.5 border-b border-warm-grey">
-			<div class="flex items-center gap-2">
-				{#if project.currentChartId}
-					{#if project.status === 'published'}
-						<a
-							href="/strata/{project.currentChartId}"
-							target="_blank"
-							class="inline-flex items-center gap-1 text-[10px] text-mid-grey hover:text-dark-grey"
-						>
-							Published link
-							<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-						</a>
-					{:else}
-						<span class="text-[9px] px-1.5 py-0.5 rounded bg-warm-grey text-mid-grey">Draft</span>
-					{/if}
-				{:else}
-					<span class="text-[10px] text-mid-grey">New chart</span>
-				{/if}
-			</div>
-
-			<div class="flex items-center gap-2 ml-auto">
-				{#if project.currentChartId}
-					{#if project.status === 'published'}
-						<button
-							type="button"
-							onclick={handleUnpublish}
-							disabled={publishing}
-							class="rounded border border-warm-grey px-2.5 py-1 text-[10px] text-mid-grey transition-colors hover:text-dark-grey hover:border-dark-grey disabled:opacity-40"
-						>
-							{publishing ? '...' : 'Unpublish'}
-						</button>
-					{:else}
-						<button
-							type="button"
-							onclick={handlePublish}
-							disabled={!project.hasData || publishing}
-							class="rounded border border-warm-grey px-2.5 py-1 text-[10px] text-mid-grey transition-colors hover:text-dark-grey hover:border-dark-grey disabled:opacity-40"
-						>
-							{publishing ? '...' : 'Publish'}
-						</button>
-					{/if}
-				{/if}
-
-				<button
-					type="button"
-					onclick={() => handleSave('manual')}
-					disabled={!project.hasData || saveStatus === 'saving'}
-					class="rounded bg-dark-grey px-2.5 py-1 text-[10px] text-white transition-colors hover:bg-black disabled:opacity-40 disabled:pointer-events-none"
-				>
-					{saveButtonLabel}
-				</button>
-			</div>
-		</div>
-
 		<!-- Split pane -->
 		<div class="flex flex-1 min-h-0">
-			<!-- Left panel: accordion sections -->
+			<!-- Left panel -->
 			<div
 				class="flex-shrink-0 flex flex-col min-h-0"
 				style="width: {leftDrag.value}px;"
 			>
+				<!-- Left panel header -->
+				<div class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
+					<StratifyButton href="/stratify">
+						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+						Saved Charts
+					</StratifyButton>
+					<StratifyButton href="/stratify/new">
+						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+						New Chart
+					</StratifyButton>
+				</div>
+
 				<div class="flex flex-col min-h-0 overflow-y-auto">
 					{#each sections as section (section.id)}
 						<AccordionSection
@@ -271,8 +233,46 @@
 
 			<DragHandle axis="x" onstart={leftDrag.start} active={leftDrag.isDragging} />
 
-			<!-- Right panel: chart preview -->
+			<!-- Right panel: chart bar + preview -->
 			<div class="flex-1 flex flex-col min-h-0 overflow-hidden">
+				<!-- Chart action bar -->
+				<div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/30">
+					<div class="flex items-center gap-2">
+						{#if project.currentChartId}
+							{#if project.status === 'published'}
+								<a
+									href="/strata/{project.currentChartId}"
+									target="_blank"
+									class="inline-flex items-center gap-1 text-[10px] text-mid-grey hover:text-dark-grey"
+								>
+									Published link
+									<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+								</a>
+							{:else}
+								<span class="text-[9px] px-1.5 py-0.5 rounded bg-warm-grey text-mid-grey">Draft</span>
+							{/if}
+						{/if}
+					</div>
+
+					<div class="flex items-center gap-2 ml-auto">
+						{#if project.currentChartId}
+							{#if project.status === 'published'}
+								<StratifyButton onclick={handleUnpublish} disabled={publishing}>
+									{publishing ? '...' : 'Unpublish'}
+								</StratifyButton>
+							{:else}
+								<StratifyButton onclick={handlePublish} disabled={!project.hasData || publishing}>
+									{publishing ? '...' : 'Publish'}
+								</StratifyButton>
+							{/if}
+						{/if}
+
+						<StratifyButton variant="primary" onclick={() => handleSave('manual')} disabled={!project.hasData || saveStatus === 'saving'}>
+							{saveButtonLabel}
+						</StratifyButton>
+					</div>
+				</div>
+
 				{#if project.hasData}
 					<div class="flex-1 min-h-0 p-6">
 						<ChartPreview />

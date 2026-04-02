@@ -2,6 +2,7 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import { getClerkState } from '$lib/auth/clerk.svelte.js';
 	import StratifyHeader from './_components/StratifyHeader.svelte';
+	import StratifyButton from './_components/StratifyButton.svelte';
 	import * as api from './_utils/api.js';
 
 	const clerkState = getClerkState();
@@ -93,15 +94,19 @@
 <div class="flex flex-col h-dvh overflow-hidden font-mono">
 	<StratifyHeader />
 
-	<!-- Search bar -->
-		<div class="px-6 py-3 border-b border-warm-grey">
-			<input
-				type="text"
-				placeholder="Search charts..."
-				bind:value={search}
-				class="w-full max-w-sm bg-warm-grey/50 border border-warm-grey rounded px-3 py-1.5 text-[11px] focus:outline-none focus:border-dark-grey"
-			/>
-		</div>
+	<!-- Sub-header -->
+	<div class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
+		<StratifyButton href="/stratify/new">
+			<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+			New Chart
+		</StratifyButton>
+		<input
+			type="text"
+			placeholder="Search charts..."
+			bind:value={search}
+			class="ml-auto w-80 bg-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] focus:outline-none focus:border-dark-grey"
+		/>
+	</div>
 
 		<!-- Chart list -->
 		<div class="flex-1 overflow-y-auto px-6 py-4">
