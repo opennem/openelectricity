@@ -2,6 +2,7 @@
 	import { getStratifyContext } from '../../_state/context.js';
 	import { exportToFile, importFromFile } from '../../_utils/storage.js';
 	import { createChart, updateChart } from '../../_utils/api.js';
+	import SectionHeader from '../SectionHeader.svelte';
 
 	const project = getStratifyContext();
 
@@ -118,151 +119,126 @@
 	}
 </script>
 
-<div class="space-y-6">
-	<!-- Publish / Unpublish -->
-	<div>
-		<span class="block text-xs font-semibold mb-2 text-mid-grey uppercase tracking-wider"
-			>Status</span
-		>
-
-		{#if isPublished}
-			<div class="flex items-center gap-2 mb-3">
-				<span class="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700">Published</span>
-				<button
-					type="button"
-					onclick={handleUnpublish}
-					disabled={publishing}
-					class="text-[11px] text-mid-grey underline hover:text-dark-grey disabled:opacity-40"
-				>
-					Unpublish
-				</button>
-			</div>
-		{:else}
+<SectionHeader label="Status">
+	{#if isPublished}
+		<div class="flex items-center gap-2 mb-3">
+			<span class="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700">Published</span>
 			<button
 				type="button"
-				onclick={handlePublish}
-				disabled={!project.hasData || publishing}
-				class="w-full rounded-lg bg-dark-grey px-3 py-2 text-xs text-white hover:bg-black disabled:opacity-40 disabled:pointer-events-none"
+				onclick={handleUnpublish}
+				disabled={publishing}
+				class="text-[10px] text-mid-grey underline hover:text-dark-grey disabled:opacity-40"
 			>
-				{publishing ? 'Publishing...' : 'Publish'}
+				Unpublish
 			</button>
-		{/if}
+		</div>
+	{:else}
+		<button
+			type="button"
+			onclick={handlePublish}
+			disabled={!project.hasData || publishing}
+			class="w-full rounded bg-dark-grey px-3 py-1.5 text-[10px] text-white hover:bg-black disabled:opacity-40 disabled:pointer-events-none"
+		>
+			{publishing ? 'Publishing...' : 'Publish'}
+		</button>
+	{/if}
 
-		{#if statusMessage}
-			<p
-				class="text-xs mt-1 {statusMessage.startsWith('Error')
-					? 'text-dark-red'
-					: 'text-mid-grey'}"
-			>
-				{statusMessage}
-			</p>
-		{/if}
-	</div>
+	{#if statusMessage}
+		<p class="text-[10px] mt-1 {statusMessage.startsWith('Error') ? 'text-dark-red' : 'text-mid-grey'}">
+			{statusMessage}
+		</p>
+	{/if}
+</SectionHeader>
 
-	<!-- Embed / Share (only when published) -->
-	{#if isPublished && shareUrl}
-		<div class="border-t border-mid-warm-grey pt-6">
-			<span class="block text-xs font-semibold mb-2 text-mid-grey uppercase tracking-wider"
-				>Share / Embed</span
-			>
-
-			<!-- Direct link -->
-			<div class="mb-3">
+{#if isPublished && shareUrl}
+	<SectionHeader label="Share & Embed">
+		<div class="flex flex-col gap-3">
+			<div>
 				<span class="block text-[10px] text-mid-grey mb-1">Direct link</span>
 				<div class="flex gap-1">
 					<input
 						type="text"
 						readonly
 						value={shareUrl}
-						class="flex-1 bg-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] font-mono"
+						class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[10px] font-mono focus:outline-none"
 					/>
 					<button
 						type="button"
 						onclick={() => copyToClipboard(shareUrl)}
-						class="rounded border border-warm-grey px-2 py-1 text-[11px] hover:border-dark-grey"
+						class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey"
 					>
 						{copied ? 'Copied' : 'Copy'}
 					</button>
 				</div>
 			</div>
 
-			<!-- Embed code -->
-			<div class="mb-3">
+			<div>
 				<span class="block text-[10px] text-mid-grey mb-1">iframe embed</span>
 				<textarea
 					readonly
 					rows="2"
 					value={embedCode}
-					class="w-full bg-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[10px] font-mono resize-none"
+					class="w-full bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[10px] font-mono resize-none focus:outline-none"
 				></textarea>
 				<button
 					type="button"
 					onclick={() => copyToClipboard(embedCode)}
-					class="mt-1 text-[11px] text-mid-grey underline hover:text-dark-grey"
+					class="mt-1 text-[10px] text-mid-grey underline hover:text-dark-grey"
 				>
 					Copy embed code
 				</button>
 			</div>
 
-			<!-- Branding toggle -->
 			<label class="flex items-center gap-2 cursor-pointer">
 				<input
 					type="checkbox"
 					checked={project.showBranding}
 					onchange={handleToggleBranding}
-					class="rounded border-warm-grey"
+					class="accent-dark-grey"
 				/>
-				<span class="text-[11px] text-mid-grey">Show Open Electricity attribution</span>
+				<span class="text-[10px] text-mid-grey">Show Open Electricity attribution</span>
 			</label>
 		</div>
-	{/if}
+	</SectionHeader>
+{/if}
 
-	<!-- Image Export -->
-	<div class="border-t border-mid-warm-grey pt-6">
-		<span class="block text-xs font-semibold mb-2 text-mid-grey uppercase tracking-wider"
-			>Export image</span
+<SectionHeader label="Export Image">
+	<div class="flex gap-2">
+		<button
+			type="button"
+			onclick={handleExportSVG}
+			disabled={!project.hasData}
+			class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey disabled:opacity-40 disabled:pointer-events-none"
 		>
-		<div class="flex gap-2">
-			<button
-				type="button"
-				onclick={handleExportSVG}
-				disabled={!project.hasData}
-				class="rounded-lg border border-mid-warm-grey px-3 py-1.5 text-xs text-dark-grey hover:border-dark-grey hover:bg-light-warm-grey disabled:opacity-40 disabled:pointer-events-none"
-			>
-				Download SVG
-			</button>
-			<button
-				type="button"
-				onclick={handleExportPNG}
-				disabled={!project.hasData}
-				class="rounded-lg border border-mid-warm-grey px-3 py-1.5 text-xs text-dark-grey hover:border-dark-grey hover:bg-light-warm-grey disabled:opacity-40 disabled:pointer-events-none"
-			>
-				Download PNG
-			</button>
-		</div>
+			Download SVG
+		</button>
+		<button
+			type="button"
+			onclick={handleExportPNG}
+			disabled={!project.hasData}
+			class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey disabled:opacity-40 disabled:pointer-events-none"
+		>
+			Download PNG
+		</button>
 	</div>
+</SectionHeader>
 
-	<!-- JSON Export/Import -->
-	<div class="border-t border-mid-warm-grey pt-6">
-		<span class="block text-xs font-semibold mb-2 text-mid-grey uppercase tracking-wider"
-			>Export / Import config</span
+<SectionHeader label="Config">
+	<div class="flex gap-2">
+		<button
+			type="button"
+			onclick={handleExportJSON}
+			disabled={!project.hasData}
+			class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey disabled:opacity-40 disabled:pointer-events-none"
 		>
-		<div class="flex gap-2">
-			<button
-				type="button"
-				onclick={handleExportJSON}
-				disabled={!project.hasData}
-				class="rounded-lg border border-mid-warm-grey px-3 py-1.5 text-xs text-dark-grey hover:border-dark-grey hover:bg-light-warm-grey disabled:opacity-40 disabled:pointer-events-none"
-			>
-				Export JSON
-			</button>
-			<button
-				type="button"
-				onclick={handleImportJSON}
-				class="rounded-lg border border-mid-warm-grey px-3 py-1.5 text-xs text-dark-grey hover:border-dark-grey hover:bg-light-warm-grey"
-			>
-				Import JSON
-			</button>
-		</div>
+			Export JSON
+		</button>
+		<button
+			type="button"
+			onclick={handleImportJSON}
+			class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey"
+		>
+			Import JSON
+		</button>
 	</div>
-</div>
+</SectionHeader>

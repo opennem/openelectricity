@@ -48,7 +48,9 @@
 	}
 </script>
 
-<SeriesConfig />
+<SectionHeader label="Series">
+	<SeriesConfig />
+</SectionHeader>
 
 {#if project.hasData}
 	<SectionGroup>

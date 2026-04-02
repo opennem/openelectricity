@@ -247,8 +247,6 @@
 	</div>
 {:else if project.parsedData.seriesNames.length > 0}
 	<div>
-		<span class="block text-[10px] text-mid-grey uppercase tracking-wide mb-2">Series</span>
-
 		<div
 			class="space-y-1.5"
 			use:dndzone={{ items: dndItems, flipDurationMs: FLIP_DURATION, type: 'series' }}
@@ -300,11 +298,11 @@
 						<select
 							value={project.seriesYAxis[key] || 'left'}
 							onchange={(e) => updateSeriesYAxis(key, e.currentTarget.value)}
-							class="text-[10px] bg-transparent border border-transparent rounded px-1 py-0.5 focus:outline-none focus:border-warm-grey text-mid-grey cursor-pointer w-8 shrink-0"
+							class="text-[10px] bg-light-warm-grey/50 border border-warm-grey rounded pl-1 pr-8 py-0.5 focus:outline-none focus:border-dark-grey text-mid-grey cursor-pointer shrink-0"
 							title="Y-axis for this series"
 						>
-							<option value="left">L</option>
-							<option value="right">R</option>
+							<option value="left">Left</option>
+							<option value="right">Right</option>
 						</select>
 
 						<!-- Chart type override (right-axis only) -->
@@ -312,7 +310,7 @@
 							<select
 								value={project.seriesChartTypes[key] || ''}
 								onchange={(e) => updateSeriesChartType(key, e.currentTarget.value)}
-								class="text-[10px] bg-transparent border border-transparent rounded px-1 py-0.5 focus:outline-none focus:border-warm-grey text-mid-grey cursor-pointer w-16 shrink-0"
+								class="text-[10px] bg-light-warm-grey/50 border border-warm-grey rounded pl-1 pr-8 py-0.5 focus:outline-none focus:border-dark-grey text-mid-grey cursor-pointer shrink-0"
 								title="Chart type for this series"
 							>
 								<option value="">Default</option>
@@ -326,12 +324,12 @@
 						<button
 							type="button"
 							onclick={() => toggleVisibility(key)}
-							class="text-[10px] px-1.5 py-0.5 rounded shrink-0 {isHidden
-								? 'text-mid-warm-grey line-through'
-								: 'text-mid-grey hover:text-dark-grey'}"
+							class="text-[10px] px-2 py-0.5 rounded border shrink-0 transition-colors {isHidden
+								? 'border-warm-grey text-mid-warm-grey bg-light-warm-grey/50'
+								: 'border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
 							title={isHidden ? 'Show series' : 'Hide series'}
 						>
-							{isHidden ? 'Hidden' : 'Visible'}
+							{isHidden ? 'Show' : 'Hide'}
 						</button>
 					</div>
 

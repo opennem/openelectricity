@@ -34,8 +34,8 @@
 		{ id: 'chart', label: 'Chart' },
 		{ id: 'theme', label: 'Theme & Colours' },
 		{ id: 'headerfooter', label: 'Header & Footer' },
-		{ id: 'series', label: 'Series' },
-		{ id: 'publish', label: 'Publish' }
+		{ id: 'series', label: 'Series & Tooltip' },
+		{ id: 'publish', label: 'Publish & Export' }
 	];
 
 	/** @type {Record<string, boolean>} */
