@@ -99,6 +99,18 @@
 		);
 	}
 
+	const SANITY_STUDIO_BASE = 'https://www.sanity.io/@oWUWl4BzU/studio/41a3d18a0c474b3d11a5dc28';
+
+	/**
+	 * Build a Sanity Studio intent URL for editing a document.
+	 * @param {string} id - Document _id
+	 * @param {string} type - Document _type
+	 * @returns {string}
+	 */
+	function sanityEditUrl(id, type) {
+		return `${SANITY_STUDIO_BASE}/intent/edit/id=${id};type=${type}/?dataset=${dataset}`;
+	}
+
 	// --- Per-section edit mode ---
 	let editing = $state(false);
 	let descriptionText = $state('');
@@ -403,6 +415,134 @@
 		{ label: 'LOAD', value: 'LOAD' }
 	];
 
+	/** Keys handled explicitly in the unit detail template (references, special formatting, internal fields) */
+	const KNOWN_UNIT_KEYS = new Set([
+		'_id', '_type', '_rev', '_createdAt', '_updatedAt',
+		'code', 'fuel_technology', 'dispatch_type', 'status',
+		'capacity_registered', 'capacity_maximum', 'storage_capacity',
+		'min_generation_capacity', 'grid_forming', 'marginal_loss_factor',
+		'emissions_factor_co2', 'emissions_factor_source',
+		'data_first_seen', 'data_last_seen',
+		'commissioning_confirmed',
+		'expected_operation_date', 'expected_operation_date_specificity',
+		'expected_closure_date', 'expected_closure_date_specificity',
+		'commencement_date', 'commencement_date_specificity',
+		'closure_date', 'closure_date_specificity',
+		'construction_start_date', 'construction_start_date_source', 'construction_start_date_specificity',
+		'construction_cost', 'construction_cost_source',
+		'cis_tender_recipient',
+		'epbc_id', 'epbc_number',
+		'expected_closure_date_source',
+		'project_approval_date', 'project_approval_date_source', 'project_approval_lodgement_date',
+		'state_approval_date', 'state_approval_source', 'state_lodgement_date',
+		'unit_types', 'metadata_array'
+	]);
+
+	/** Extra unit keys not explicitly handled — auto-rendered at the end */
+	let extraUnitKeys = $derived.by(() => {
+		if (!displayUnit) return [];
+		return Object.keys(displayUnit).filter((k) => !KNOWN_UNIT_KEYS.has(k));
+	});
+
+	/** Primitive extra keys (editable) */
+	let extraPrimitiveKeys = $derived(
+		extraUnitKeys.filter((k) => {
+			const v = displayUnit?.[k];
+			return v == null || typeof v !== 'object';
+		})
+	);
+
+	/** Object/array extra keys (read-only) */
+	let extraObjectKeys = $derived(
+		extraUnitKeys.filter((k) => {
+			const v = displayUnit?.[k];
+			return v != null && typeof v === 'object';
+		})
+	);
+
+	/** Check if a value is a Sanity reference */
+	function isRef(/** @type {any} */ val) {
+		return val != null && typeof val === 'object' && '_ref' in val;
+	}
+
+	/** Resolved reference names, keyed by _ref ID */
+	let resolvedRefs = $state(/** @type {Record<string, any>} */ ({}));
+
+	/** Resolve _ref IDs to document names */
+	$effect(() => {
+		const refIds = extraObjectKeys
+			.map((k) => displayUnit?.[k])
+			.filter(isRef)
+			.map((/** @type {any} */ v) => v._ref)
+			.filter((/** @type {string} */ id) => !(id in resolvedRefs));
+
+		if (!refIds.length) return;
+
+		(async () => {
+			try {
+				const res = await fetch(`/api/cms/resolve-refs?ids=${refIds.join(',')}`, {
+					headers: await authHeaders()
+				});
+				if (res.ok) {
+					const data = await res.json();
+					/** @type {Record<string, any>} */
+					const merged = { ...resolvedRefs };
+					for (const id of refIds) {
+						merged[id] = data[id] ?? null;
+					}
+					resolvedRefs = merged;
+				}
+			} catch (e) {
+				console.error('Failed to resolve refs', e);
+			}
+		})();
+	});
+
+	/**
+	 * Format a reference value for display.
+	 * @param {any} val
+	 * @returns {string}
+	 */
+	function formatRefValue(val) {
+		if (!isRef(val)) return JSON.stringify(val);
+		const resolved = resolvedRefs[val._ref];
+		if (resolved) {
+			return resolved.name || resolved.title || resolved.code || val._ref;
+		}
+		return val._ref;
+	}
+
+	/**
+	 * Format a value for display — handles objects/arrays as JSON.
+	 * @param {any} val
+	 * @returns {string}
+	 */
+	function formatAutoValue(val) {
+		if (val == null) return '';
+		if (typeof val === 'object') return JSON.stringify(val);
+		return String(val);
+	}
+
+	/**
+	 * Check if a value looks like a URL.
+	 * @param {any} val
+	 * @returns {boolean}
+	 */
+	function isUrl(val) {
+		return typeof val === 'string' && (val.startsWith('http://') || val.startsWith('https://'));
+	}
+
+	/**
+	 * Infer edit field type from a value.
+	 * @param {any} val
+	 * @returns {'text' | 'number' | 'boolean'}
+	 */
+	function inferFieldType(val) {
+		if (typeof val === 'number') return 'number';
+		if (typeof val === 'boolean') return 'boolean';
+		return 'text';
+	}
+
 	/**
 	 * Patch a unit document in Sanity.
 	 * @param {string} unitId
@@ -539,7 +679,9 @@
 {#snippet kv(/** @type {string} */ label, /** @type {any} */ value)}
 	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
 		<span class="text-[11px] text-mid-grey font-mono truncate" title={label}>{label}</span>
-		{#if value != null && value !== ''}
+		{#if isUrl(value)}
+			<a href={value} target="_blank" rel="noopener noreferrer" class="text-[12px] text-dark-grey font-mono break-all col-span-2 inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{value}<ExternalLink size={10} class="flex-shrink-0" /></a>
+		{:else if value != null && value !== ''}
 			<span class="text-[12px] text-dark-grey font-mono break-all col-span-2">{value}</span>
 		{:else}
 			<span class="text-[12px] text-mid-grey/50 font-mono col-span-2">—</span>
@@ -608,6 +750,33 @@
 	</div>
 {/snippet}
 
+{#snippet kvAuto(/** @type {string} */ label, /** @type {any} */ value)}
+	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
+		<span class="text-[11px] text-mid-grey font-mono truncate" title={label}>{label}</span>
+		{#if isUrl(value)}
+			<a href={value} target="_blank" rel="noopener noreferrer" class="text-[9px] text-dark-grey/70 font-mono break-all col-span-2 leading-tight inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{value}<ExternalLink size={10} class="flex-shrink-0" /></a>
+		{:else if value != null && value !== ''}
+			<span class="text-[9px] text-dark-grey/70 font-mono break-all col-span-2 leading-tight">{value}</span>
+		{:else}
+			<span class="text-[9px] text-mid-grey/50 font-mono col-span-2">—</span>
+		{/if}
+	</div>
+{/snippet}
+
+{#snippet kvAutoEdit(/** @type {string} */ label, /** @type {any} */ value, /** @type {string} */ field, /** @type {string} */ displayProp, /** @type {'text' | 'number' | 'boolean'} */ type)}
+	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
+		<span class="text-[11px] text-mid-grey font-mono truncate" title={label}>{label}</span>
+		<input
+			type="text"
+			value={value ?? ''}
+			class="col-span-2 text-[9px] text-dark-grey/70 font-mono border border-warm-grey rounded px-1.5 py-0.5 hover:border-dark-grey focus:border-dark-grey focus:outline-none transition-colors bg-transparent leading-tight"
+			disabled={saving}
+			onblur={(e) => saveUnitField(field, e.currentTarget.value, displayProp, type)}
+			onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+		/>
+	</div>
+{/snippet}
+
 {#snippet sectionLabel(/** @type {string} */ title)}
 	<div class="text-[10px] text-mid-grey uppercase tracking-widest mb-2 pb-1 border-b border-dark-grey">
 		{title}
@@ -634,6 +803,15 @@
 			style="background: {ftColour(facility.units?.[0]?.fuel_technology?.code)}"
 		></span>
 		<span class="text-[12px] font-medium text-dark-grey flex-1 truncate">{facility.name || 'Unnamed'}</span>
+		<a
+			href={sanityEditUrl(facility._id, 'facility')}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="text-[9px] px-1.5 py-0.5 border border-warm-grey rounded transition-colors inline-flex items-center gap-1 flex-shrink-0 text-mid-grey hover:text-dark-grey hover:border-dark-grey no-underline"
+		>
+			<ExternalLink size={8} />
+			Edit in Sanity
+		</a>
 		<button
 			onclick={toggleEdit}
 			class="text-[9px] px-1.5 py-0.5 border rounded transition-colors inline-flex items-center gap-1 flex-shrink-0 {editing ? 'border-dark-grey bg-dark-grey text-white' : 'border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
@@ -979,6 +1157,15 @@
 					<span class="text-[12px] font-medium text-dark-grey flex-1 truncate"
 						>{displayUnit?.code}</span
 					>
+					<a
+						href={sanityEditUrl(displayUnit?._id, 'unit')}
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-[9px] px-1.5 py-0.5 border border-warm-grey rounded transition-colors inline-flex items-center gap-1 flex-shrink-0 text-mid-grey hover:text-dark-grey hover:border-dark-grey no-underline"
+					>
+						<ExternalLink size={8} />
+						Edit in Sanity
+					</a>
 					<button
 						onclick={() => onselectunit?.(null)}
 						class="p-1 hover:bg-warm-grey rounded transition-colors"
@@ -1018,8 +1205,30 @@
 						{@render kvUnitEdit('closure_date', displayUnit?.closure_date, 'closure_date', 'closure_date', 'text')}
 						{@render kvUnitEdit('closure_specificity', displayUnit?.closure_date_specificity, 'closure_date_specificity', 'closure_date_specificity', 'text')}
 						{@render kvUnitEdit('construction_start', displayUnit?.construction_start_date, 'construction_start_date', 'construction_start_date', 'text')}
+						{@render kvUnitEdit('construction_start_source', displayUnit?.construction_start_date_source, 'construction_start_date_source', 'construction_start_date_source', 'text')}
+						{@render kvUnitEdit('construction_start_specificity', displayUnit?.construction_start_date_specificity, 'construction_start_date_specificity', 'construction_start_date_specificity', 'text')}
 						{@render kvUnitEdit('construction_cost', displayUnit?.construction_cost, 'construction_cost', 'construction_cost', 'number')}
+						{@render kvUnitEdit('construction_cost_source', displayUnit?.construction_cost_source, 'construction_cost_source', 'construction_cost_source', 'text')}
 						{@render kvUnitEdit('cis_tender_recipient', displayUnit?.cis_tender_recipient != null ? String(displayUnit.cis_tender_recipient) : '', 'cis_tender_recipient', 'cis_tender_recipient', 'boolean')}
+						{@render kvUnitEdit('epbc_id', displayUnit?.epbc_id, 'epbc_id', 'epbc_id', 'text')}
+						{@render kvUnitEdit('epbc_number', displayUnit?.epbc_number, 'epbc_number', 'epbc_number', 'text')}
+						{@render kvUnitEdit('expected_closure_source', displayUnit?.expected_closure_date_source, 'expected_closure_date_source', 'expected_closure_date_source', 'text')}
+						{@render kvUnitEdit('project_approval_date', displayUnit?.project_approval_date, 'project_approval_date', 'project_approval_date', 'text')}
+						{@render kvUnitEdit('project_approval_source', displayUnit?.project_approval_date_source, 'project_approval_date_source', 'project_approval_date_source', 'text')}
+						{@render kvUnitEdit('project_approval_lodgement', displayUnit?.project_approval_lodgement_date, 'project_approval_lodgement_date', 'project_approval_lodgement_date', 'text')}
+						{@render kvUnitEdit('state_approval_date', displayUnit?.state_approval_date, 'state_approval_date', 'state_approval_date', 'text')}
+						{@render kvUnitEdit('state_approval_source', displayUnit?.state_approval_source, 'state_approval_source', 'state_approval_source', 'text')}
+						{@render kvUnitEdit('state_lodgement_date', displayUnit?.state_lodgement_date, 'state_lodgement_date', 'state_lodgement_date', 'text')}
+						{#if extraPrimitiveKeys.length > 0}
+							{#each extraPrimitiveKeys as key (key)}
+								{@render kvAutoEdit(key, formatAutoValue(displayUnit?.[key]), key, key, inferFieldType(displayUnit?.[key]))}
+							{/each}
+						{/if}
+						{#if extraObjectKeys.length > 0}
+							{#each extraObjectKeys as key (key)}
+								{@render kvAuto(key, isRef(displayUnit?.[key]) ? formatRefValue(displayUnit[key]) : JSON.stringify(displayUnit[key]))}
+							{/each}
+						{/if}
 					{:else}
 						{@render kv('code', displayUnit?.code)}
 						{@render kv('fuel_technology', displayUnit?.fuel_technology?.name)}
@@ -1098,13 +1307,35 @@
 							displayUnit?.closure_date_specificity
 						)}
 						{@render kv('construction_start', displayUnit?.construction_start_date)}
+						{@render kv('construction_start_source', displayUnit?.construction_start_date_source)}
+						{@render kv('construction_start_specificity', displayUnit?.construction_start_date_specificity)}
 						{@render kv('construction_cost', displayUnit?.construction_cost)}
+						{@render kv('construction_cost_source', displayUnit?.construction_cost_source)}
 						{@render kv(
 							'cis_tender_recipient',
 							displayUnit?.cis_tender_recipient != null
 								? String(displayUnit.cis_tender_recipient)
 								: null
 						)}
+						{@render kv('epbc_id', displayUnit?.epbc_id)}
+						{@render kv('epbc_number', displayUnit?.epbc_number)}
+						{@render kv('expected_closure_source', displayUnit?.expected_closure_date_source)}
+						{@render kv('project_approval_date', displayUnit?.project_approval_date)}
+						{@render kv('project_approval_source', displayUnit?.project_approval_date_source)}
+						{@render kv('project_approval_lodgement', displayUnit?.project_approval_lodgement_date)}
+						{@render kv('state_approval_date', displayUnit?.state_approval_date)}
+						{@render kv('state_approval_source', displayUnit?.state_approval_source)}
+						{@render kv('state_lodgement_date', displayUnit?.state_lodgement_date)}
+						{#if extraPrimitiveKeys.length > 0}
+							{#each extraPrimitiveKeys as key (key)}
+								{@render kvAuto(key, formatAutoValue(displayUnit?.[key]))}
+							{/each}
+						{/if}
+						{#if extraObjectKeys.length > 0}
+							{#each extraObjectKeys as key (key)}
+								{@render kvAuto(key, isRef(displayUnit?.[key]) ? formatRefValue(displayUnit[key]) : JSON.stringify(displayUnit[key]))}
+							{/each}
+						{/if}
 					{/if}
 
 					<!-- Unit types -->
