@@ -1,11 +1,8 @@
 <script>
 	import Meta from '$lib/components/Meta.svelte';
-	import { getClerkState } from '$lib/auth/clerk.svelte.js';
 	import StratifyHeader from './_components/StratifyHeader.svelte';
 	import StratifyButton from './_components/StratifyButton.svelte';
 	import * as api from './_utils/api.js';
-
-	const clerkState = getClerkState();
 
 	/** @type {import('./_utils/api.js').ChartSummary[]} */
 	let charts = $state([]);
@@ -97,7 +94,23 @@
 	<!-- Sub-header -->
 	<div class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
 		<StratifyButton href="/stratify/new">
-			<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="12"
+				height="12"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+				stroke-linecap="round"
+				stroke-linejoin="round"
+				><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line
+					x1="8"
+					y1="12"
+					x2="16"
+					y2="12"
+				/></svg
+			>
 			New Chart
 		</StratifyButton>
 		<input
@@ -108,70 +121,74 @@
 		/>
 	</div>
 
-		<!-- Chart list -->
-		<div class="flex-1 overflow-y-auto px-6 py-4">
-			{#if loading}
-				<p class="text-[11px] text-mid-grey text-center py-12">Loading...</p>
-			{:else if filteredCharts.length === 0}
-				<div class="text-center py-12">
-					<p class="text-[11px] text-mid-grey mb-3">
-						{search.trim() ? 'No matching charts' : 'No charts yet'}
-					</p>
-					{#if !search.trim()}
-						<a
-							href="/stratify/new"
-							class="inline-block rounded border border-warm-grey px-4 py-2 text-[11px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
-						>
-							Create your first chart
-						</a>
-					{/if}
-				</div>
-			{:else}
-				<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-					{#each filteredCharts as chart (chart._id)}
-						<div class="border border-warm-grey rounded-lg overflow-hidden hover:border-mid-warm-grey transition-colors">
-							<div class="px-3 py-3">
-								<div class="flex items-center gap-2 mb-0.5">
-									<a
-										href="/stratify/{chart._id}"
-										class="text-[11px] font-medium text-dark-grey truncate hover:underline flex-1 min-w-0"
-									>
-										{chart.title || 'Untitled'}
-									</a>
-									<span class="text-[9px] px-1 py-0.5 rounded flex-shrink-0 {chart.status === 'published'
+	<!-- Chart list -->
+	<div class="flex-1 overflow-y-auto px-6 py-4">
+		{#if loading}
+			<p class="text-[11px] text-mid-grey text-center py-12">Loading...</p>
+		{:else if filteredCharts.length === 0}
+			<div class="text-center py-12">
+				<p class="text-[11px] text-mid-grey mb-3">
+					{search.trim() ? 'No matching charts' : 'No charts yet'}
+				</p>
+				{#if !search.trim()}
+					<a
+						href="/stratify/new"
+						class="inline-block rounded border border-warm-grey px-4 py-2 text-[11px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
+					>
+						Create your first chart
+					</a>
+				{/if}
+			</div>
+		{:else}
+			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+				{#each filteredCharts as chart (chart._id)}
+					<div
+						class="border border-warm-grey rounded-lg overflow-hidden hover:border-mid-warm-grey transition-colors"
+					>
+						<div class="px-3 py-3">
+							<div class="flex items-center gap-2 mb-0.5">
+								<a
+									href="/stratify/{chart._id}"
+									class="text-[11px] font-medium text-dark-grey truncate hover:underline flex-1 min-w-0"
+								>
+									{chart.title || 'Untitled'}
+								</a>
+								<span
+									class="text-[9px] px-1 py-0.5 rounded flex-shrink-0 {chart.status === 'published'
 										? 'bg-green-100 text-green-700'
-										: 'bg-warm-grey text-mid-grey'}">
-										{chart.status === 'published' ? 'Published' : 'Draft'}
-									</span>
-								</div>
-								<div class="flex items-center justify-between">
-									<span class="text-[10px] text-mid-grey">{timeAgo(chart._updatedAt)}</span>
-									<div class="flex items-center gap-2">
-										<button
-											type="button"
-											onclick={() => handleDuplicate(chart)}
-											class="text-[10px] text-mid-grey hover:text-dark-grey"
-										>
-											Duplicate
-										</button>
-										<button
-											type="button"
-											onclick={() => handleDelete(chart._id)}
-											disabled={deletingId === chart._id}
-											class="text-[10px] text-mid-grey hover:text-dark-red disabled:opacity-40"
-										>
-											{deletingId === chart._id ? '...' : 'Delete'}
-										</button>
-									</div>
+										: 'bg-warm-grey text-mid-grey'}"
+								>
+									{chart.status === 'published' ? 'Published' : 'Draft'}
+								</span>
+							</div>
+							<div class="flex items-center justify-between">
+								<span class="text-[10px] text-mid-grey">{timeAgo(chart._updatedAt)}</span>
+								<div class="flex items-center gap-2">
+									<button
+										type="button"
+										onclick={() => handleDuplicate(chart)}
+										class="text-[10px] text-mid-grey hover:text-dark-grey"
+									>
+										Duplicate
+									</button>
+									<button
+										type="button"
+										onclick={() => handleDelete(chart._id)}
+										disabled={deletingId === chart._id}
+										class="text-[10px] text-mid-grey hover:text-dark-red disabled:opacity-40"
+									>
+										{deletingId === chart._id ? '...' : 'Delete'}
+									</button>
 								</div>
 							</div>
 						</div>
-					{/each}
-				</div>
+					</div>
+				{/each}
+			</div>
 
-				<p class="text-[10px] text-mid-grey mt-3">
-					{filteredCharts.length} chart{filteredCharts.length === 1 ? '' : 's'}
-				</p>
-			{/if}
-		</div>
+			<p class="text-[10px] text-mid-grey mt-3">
+				{filteredCharts.length} chart{filteredCharts.length === 1 ? '' : 's'}
+			</p>
+		{/if}
 	</div>
+</div>
