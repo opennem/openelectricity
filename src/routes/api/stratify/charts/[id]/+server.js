@@ -1,9 +1,11 @@
 import { json } from '@sveltejs/kit';
 import { createCmsClient } from '$lib/sanity-cms.js';
 import { verifyAdmin } from '$lib/auth/clerk-server.js';
+import { safeParseJSON } from '$lib/stratify/chart-data.js';
 
 /**
- * GET /api/stratify/charts/:id — fetch a single chart (ownership check).
+ * GET /api/stratify/charts/:id — fetch a single chart.
+ * Owner can always read. Others can read published charts. Superadmin can read any.
  * @type {import('./$types').RequestHandler}
  */
 export async function GET({ request, params }) {
@@ -13,16 +15,19 @@ export async function GET({ request, params }) {
 	}
 
 	const client = createCmsClient();
-	const chart = await client.fetch(
-		`*[_type == "stratifyChart" && _id == $id && userId == $userId][0]`,
-		{ id: params.id, userId: auth.userId }
-	);
+	const chart = await client.fetch(`*[_type == "stratifyChart" && _id == $id][0]`, {
+		id: params.id
+	});
 
 	if (!chart) {
 		return json({ error: 'Not found' }, { status: 404 });
 	}
 
-	// Parse JSON-stringified fields back to objects
+	const isOwner = chart.userId === auth.userId;
+	if (!isOwner && !auth.isSuperAdmin && chart.status !== 'published') {
+		return json({ error: 'Not found' }, { status: 404 });
+	}
+
 	return json({
 		chart: {
 			...chart,
@@ -31,13 +36,14 @@ export async function GET({ request, params }) {
 			annotations: safeParseJSON(chart.annotations, []),
 			seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
 			plotOverrides: safeParseJSON(chart.plotOverrides, null),
+			seriesYAxis: safeParseJSON(chart.seriesYAxis, {}),
 			seriesOrder: chart.seriesOrder ?? []
 		}
 	});
 }
 
 /**
- * PATCH /api/stratify/charts/:id — update a chart (ownership check).
+ * PATCH /api/stratify/charts/:id — update a chart (owner only).
  * @type {import('./$types').RequestHandler}
  */
 export async function PATCH({ request, params }) {
@@ -48,7 +54,7 @@ export async function PATCH({ request, params }) {
 
 	const client = createCmsClient();
 
-	// Verify ownership before updating
+	// Owner only — superadmin cannot edit others' charts
 	const existing = await client.fetch(
 		`*[_type == "stratifyChart" && _id == $id && userId == $userId][0]{ _id }`,
 		{ id: params.id, userId: auth.userId }
@@ -63,7 +69,6 @@ export async function PATCH({ request, params }) {
 	/** @type {Record<string, any>} */
 	const patches = {};
 
-	// Only set fields that are present in the request body
 	if (body.title !== undefined) patches.title = body.title;
 	if (body.description !== undefined) patches.description = body.description;
 	if (body.dataSource !== undefined) patches.dataSource = body.dataSource;
@@ -82,14 +87,25 @@ export async function PATCH({ request, params }) {
 	if (body.plotOverrides !== undefined) patches.plotOverrides = JSON.stringify(body.plotOverrides);
 	if (body.seriesOrder !== undefined) patches.seriesOrder = body.seriesOrder;
 	if (body.stylePreset !== undefined) patches.stylePreset = body.stylePreset;
+	if (body.colourPalette !== undefined) patches.colourPalette = body.colourPalette;
 	if (body.showBranding !== undefined) patches.showBranding = body.showBranding;
 	if (body.chartHeight !== undefined) patches.chartHeight = body.chartHeight;
 	if (body.xTicks !== undefined) patches.xTicks = body.xTicks;
 	if (body.xTickRotate !== undefined) patches.xTickRotate = body.xTickRotate;
 	if (body.marginBottom !== undefined) patches.marginBottom = body.marginBottom;
+	if (body.yTicks !== undefined) patches.yTicks = body.yTicks;
+	if (body.yMinMax !== undefined) patches.yMinMax = body.yMinMax;
+	if (body.y2Ticks !== undefined) patches.y2Ticks = body.y2Ticks;
+	if (body.y2MinMax !== undefined) patches.y2MinMax = body.y2MinMax;
+	if (body.tooltipColumns !== undefined) patches.tooltipColumns = body.tooltipColumns;
+	if (body.xColumn !== undefined) patches.xColumn = body.xColumn;
+	if (body.categorySort !== undefined) patches.categorySort = body.categorySort;
+	if (body.showXTickLabels !== undefined) patches.showXTickLabels = body.showXTickLabels;
 	if (body.colourSeries !== undefined) patches.colourSeries = body.colourSeries;
 	if (body.xLabel !== undefined) patches.xLabel = body.xLabel;
 	if (body.yLabel !== undefined) patches.yLabel = body.yLabel;
+	if (body.seriesYAxis !== undefined) patches.seriesYAxis = JSON.stringify(body.seriesYAxis);
+	if (body.y2Label !== undefined) patches.y2Label = body.y2Label;
 	if (body.status !== undefined) patches.status = body.status;
 	if (body.publishedAt !== undefined) patches.publishedAt = body.publishedAt;
 	if (body.version !== undefined) patches.snapshotVersion = body.version;
@@ -104,7 +120,7 @@ export async function PATCH({ request, params }) {
 }
 
 /**
- * DELETE /api/stratify/charts/:id — delete a chart (ownership check).
+ * DELETE /api/stratify/charts/:id — delete a chart (owner or superadmin).
  * @type {import('./$types').RequestHandler}
  */
 export async function DELETE({ request, params }) {
@@ -115,31 +131,20 @@ export async function DELETE({ request, params }) {
 
 	const client = createCmsClient();
 
-	// Verify ownership before deleting
 	const existing = await client.fetch(
-		`*[_type == "stratifyChart" && _id == $id && userId == $userId][0]{ _id }`,
-		{ id: params.id, userId: auth.userId }
+		`*[_type == "stratifyChart" && _id == $id][0]{ _id, userId }`,
+		{ id: params.id }
 	);
 
 	if (!existing) {
 		return json({ error: 'Not found' }, { status: 404 });
 	}
 
+	if (existing.userId !== auth.userId && !auth.isSuperAdmin) {
+		return json({ error: 'Forbidden' }, { status: 403 });
+	}
+
 	await client.delete(params.id);
 
 	return json({ deleted: true });
-}
-
-/**
- * Safely parse a JSON string, returning a fallback on failure.
- * @param {any} value
- * @param {any} fallback
- */
-function safeParseJSON(value, fallback) {
-	if (typeof value !== 'string') return value ?? fallback;
-	try {
-		return JSON.parse(value);
-	} catch {
-		return fallback;
-	}
 }

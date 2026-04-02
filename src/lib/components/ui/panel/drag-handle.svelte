@@ -11,7 +11,7 @@
 <div
 	data-slot="drag-handle"
 	class={cn(
-		'flex-shrink-0 flex items-center justify-center group bg-light-warm-grey hover:bg-warm-grey active:bg-mid-warm-grey transition-colors',
+		'shrink-0 flex items-center justify-center group bg-light-warm-grey hover:bg-warm-grey active:bg-mid-warm-grey transition-colors',
 		isVertical ? 'w-3 h-full cursor-col-resize' : 'h-3 cursor-row-resize',
 		active ? 'bg-mid-warm-grey' : '',
 		className

@@ -97,7 +97,7 @@
 				<!-- Left: Color swatch and label -->
 				<div class="flex items-center gap-2.5">
 					<span
-						class="w-3 h-3 rounded-full flex-shrink-0 transition-opacity"
+						class="w-3 h-3 rounded-full shrink-0 transition-opacity"
 						style="background-color: {sectorColors[sector]}"
 					></span>
 					<span class="text-sm text-dark-grey {isHidden ? 'line-through' : ''}"
@@ -134,7 +134,7 @@
 	>
 		<!-- Left: Line indicator and label -->
 		<div class="flex items-center gap-2.5">
-			<span class="w-3 h-0.5 flex-shrink-0" style="background-color: {netTotalColor}"></span>
+			<span class="w-3 h-0.5 shrink-0" style="background-color: {netTotalColor}"></span>
 			<span class="text-sm font-semibold text-dark-grey">Net Total</span>
 		</div>
 

@@ -119,7 +119,7 @@
 					<!-- Fuel Tech Icon + Unit Info -->
 					<div class="col-span-6 flex items-center gap-3 min-w-0">
 						<span
-							class="rounded-full flex-shrink-0 flex items-center justify-center"
+							class="rounded-full shrink-0 flex items-center justify-center"
 							class:p-1.5={compact}
 							class:p-2={!compact}
 							class:text-black={isDarkText}

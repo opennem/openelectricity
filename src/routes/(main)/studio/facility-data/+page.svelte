@@ -165,7 +165,7 @@
 				title="Open on {description} (new tab)"
 				class="text-[12px] text-dark-grey font-mono col-span-2 inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey"
 			>
-				{displayText}<ExternalLink size={10} class="flex-shrink-0" />
+				{displayText}<ExternalLink size={10} class="shrink-0" />
 			</a>
 		{:else if displayText}
 			<span class="text-[12px] text-dark-grey font-mono break-all col-span-2">{displayText}</span>
@@ -295,7 +295,7 @@
 
 <div class="flex flex-col h-dvh overflow-hidden">
 	<!-- Top bar -->
-	<div class="flex items-center px-4 py-2 border-b border-warm-grey bg-white flex-shrink-0">
+	<div class="flex items-center px-4 py-2 border-b border-warm-grey bg-white shrink-0">
 		<div class="flex items-center w-full justify-center">
 			<button
 				class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
@@ -345,7 +345,7 @@
 		</div>
 	{:else}
 		<!-- Column headers (fixed, not scrollable) -->
-		<div class="grid grid-cols-2 border-b border-warm-grey flex-shrink-0">
+		<div class="grid grid-cols-2 border-b border-warm-grey shrink-0">
 			<div
 				class="px-5 py-2 text-[10px] text-mid-grey uppercase tracking-widest border-r border-warm-grey"
 			>

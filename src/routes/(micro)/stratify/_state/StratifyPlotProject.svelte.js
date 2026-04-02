@@ -6,10 +6,12 @@
  */
 
 import { parseCSV } from '$lib/stratify/csv-parser.js';
-import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
+import { getPreset, migratePreset } from '$lib/stratify/chart-styles.js';
+import { assignPaletteColours, migratePresetToPalette } from '$lib/stratify/colour-palettes.js';
+import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
 
 /**
- * @typedef {'stacked-area' | 'area' | 'line' | 'bar-stacked' | 'grouped-bar' | 'dot'} ChartType
+ * @typedef {import('$lib/stratify/chart-types.js').ChartType} ChartType
  */
 
 /**
@@ -23,19 +25,30 @@ import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
  * @property {ChartType} chartType
  * @property {'auto' | 'time-series' | 'category'} [displayMode]
  * @property {string} stylePreset
+ * @property {string} [colourPalette]
  * @property {string[]} hiddenSeries
  * @property {Record<string, string>} userSeriesColours
  * @property {Record<string, string>} userSeriesLabels
  * @property {Record<string, string>} [seriesChartTypes]
- * @property {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides} [plotOverrides]
+ * @property {import('$lib/stratify/plot-overrides.js').PlotOverrides | null} [plotOverrides]
  * @property {string[]} [seriesOrder]
  * @property {number} [chartHeight]
+ * @property {boolean} [showXTickLabels]
  * @property {number} [xTicks]
  * @property {number} [xTickRotate]
  * @property {number} [marginBottom]
+ * @property {number} [yTicks]
+ * @property {boolean} [yMinMax]
+ * @property {number} [y2Ticks]
+ * @property {boolean} [y2MinMax]
  * @property {string | null} [colourSeries]
  * @property {string} [xLabel]
  * @property {string} [yLabel]
+ * @property {Record<string, 'left' | 'right'>} [seriesYAxis]
+ * @property {string} [y2Label]
+ * @property {string[]} [tooltipColumns]
+ * @property {string} [xColumn]
+ * @property {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} [categorySort]
  */
 
 export default class StratifyPlotProject {
@@ -61,10 +74,13 @@ export default class StratifyPlotProject {
 	displayMode = $state('auto');
 
 	/** @type {ChartType} */
-	chartType = $state('stacked-area');
+	chartType = $state('line');
 
 	/** @type {string} */
-	stylePreset = $state('oe');
+	stylePreset = $state('sans');
+
+	/** @type {string} Colour palette ID */
+	colourPalette = $state('oe-energy');
 
 	// --- Series customisation ---
 	/** @type {string[]} */
@@ -76,10 +92,10 @@ export default class StratifyPlotProject {
 	/** @type {Record<string, string>} */
 	userSeriesLabels = $state({});
 
-	/** @type {Record<string, import('$lib/components/charts/plot/plot-configs.js').SeriesMarkType>} */
+	/** @type {Record<string, string>} Per-series chart type override (right-axis series only) */
 	seriesChartTypes = $state({});
 
-	/** @type {import('$lib/components/charts/plot/plot-overrides.js').PlotOverrides | null} */
+	/** @type {import('$lib/stratify/plot-overrides.js').PlotOverrides | null} */
 	plotOverrides = $state(null);
 
 	/** @type {string[]} User-defined series order (empty = use CSV column order) */
@@ -87,6 +103,9 @@ export default class StratifyPlotProject {
 
 	/** @type {number} Chart height in pixels */
 	chartHeight = $state(400);
+
+	/** @type {boolean} Show x-axis tick labels */
+	showXTickLabels = $state(true);
 
 	/** @type {number} Number of x-axis ticks to show (0 = auto) */
 	xTicks = $state(0);
@@ -97,7 +116,28 @@ export default class StratifyPlotProject {
 	/** @type {number} Bottom margin for x-axis labels in pixels (0 = auto) */
 	marginBottom = $state(0);
 
+	/** @type {number} Number of y-axis ticks to show (0 = auto) */
+	yTicks = $state(0);
+
+	/** @type {boolean} Show min/max tick marks on left Y-axis */
+	yMinMax = $state(false);
+
+	/** @type {number} Number of right y-axis ticks to show (0 = auto) */
+	y2Ticks = $state(0);
+
+	/** @type {boolean} Show min/max tick marks on right Y-axis */
+	y2MinMax = $state(false);
+
+	/** @type {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} Category sort order */
+	categorySort = $state('default');
+
+	/** @type {string[]} Columns to show in tooltip (empty = show all) */
+	tooltipColumns = $state([]);
+
 	// --- Column mapping ---
+	/** @type {string} Column key to use as X axis (empty = first column) */
+	xColumn = $state('');
+
 	/** @type {string | null} Column key used as colour grouping */
 	colourSeries = $state(null);
 
@@ -107,6 +147,15 @@ export default class StratifyPlotProject {
 
 	/** @type {string} Y-axis label (empty = hidden) */
 	yLabel = $state('');
+
+	/** @type {Record<string, 'left' | 'right'>} Per-series Y-axis assignment */
+	seriesYAxis = $state({});
+
+	/** @type {string} Right Y-axis label (empty = hidden) */
+	y2Label = $state('');
+
+	/** Whether any series is assigned to the right Y-axis */
+	hasRightAxis = $derived(Object.values(this.seriesYAxis).some((v) => v === 'right'));
 
 	// --- Publish settings ---
 	/** @type {'draft' | 'published'} */
@@ -120,7 +169,7 @@ export default class StratifyPlotProject {
 	currentChartId = $state(null);
 
 	// --- Derived from CSV ---
-	parsedData = $derived(parseCSV(this.csvText, {}, this.displayMode));
+	parsedData = $derived(parseCSV(this.csvText, {}, this.displayMode, this.xColumn || 0));
 
 	hasData = $derived(this.parsedData.data.length > 0);
 
@@ -163,7 +212,7 @@ export default class StratifyPlotProject {
 		const names = this.hasColourSeries ? this.colourGroupNames : parsed.seriesNames;
 		if (names.length === 0) return this.userSeriesColours;
 
-		const presetColours = assignPresetColours(names, this.stylePreset);
+		const presetColours = assignPaletteColours(names, this.colourPalette);
 
 		/** @type {Record<string, string>} */
 		const merged = {};
@@ -237,8 +286,8 @@ export default class StratifyPlotProject {
 		// Auto-switch chart type when data mode changes
 		$effect(() => {
 			if (this.isCategory) {
-				if (this.chartType !== 'grouped-bar' && this.chartType !== 'bar-stacked') {
-					this.chartType = 'grouped-bar';
+				if (this.chartType === 'area') {
+					this.chartType = 'column';
 				}
 			}
 		});
@@ -259,8 +308,9 @@ export default class StratifyPlotProject {
 		this.dataSource = '';
 		this.notes = '';
 		this.displayMode = 'auto';
-		this.chartType = 'stacked-area';
-		this.stylePreset = 'oe';
+		this.chartType = 'line';
+		this.stylePreset = 'sans';
+		this.colourPalette = 'oe-energy';
 		this.hiddenSeries = [];
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
@@ -268,12 +318,22 @@ export default class StratifyPlotProject {
 		this.plotOverrides = null;
 		this.seriesOrder = [];
 		this.chartHeight = 400;
+		this.showXTickLabels = true;
 		this.xTicks = 0;
 		this.xTickRotate = 0;
 		this.marginBottom = 0;
+		this.yTicks = 0;
+		this.yMinMax = false;
+		this.y2Ticks = 0;
+		this.y2MinMax = false;
+		this.tooltipColumns = [];
+		this.categorySort = 'default';
+		this.xColumn = '';
 		this.colourSeries = null;
 		this.xLabel = '';
 		this.yLabel = '';
+		this.seriesYAxis = {};
+		this.y2Label = '';
 		this.status = 'draft';
 		this.showBranding = true;
 		this.currentChartId = null;
@@ -281,31 +341,18 @@ export default class StratifyPlotProject {
 
 	/**
 	 * Load an example dataset into the project.
-	 * @param {{ csvData: string, title: string, description: string, dataSource: string, notes: string, chartType: string }} example
+	 * @param {{ csvData: string, title: string, description: string, dataSource: string, notes: string, chartType?: string }} example
 	 */
 	loadExample(example) {
+		this.reset();
 		this.csvText = example.csvData;
 		this.title = example.title;
 		this.description = example.description;
 		this.dataSource = example.dataSource;
 		this.notes = example.notes;
-		this.chartType = /** @type {ChartType} */ (example.chartType);
-		this.displayMode = 'auto';
-		this.stylePreset = 'oe';
-		this.userSeriesColours = {};
-		this.userSeriesLabels = {};
-		this.seriesChartTypes = {};
-		this.plotOverrides = null;
-		this.seriesOrder = [];
-		this.chartHeight = 400;
-		this.xTicks = 0;
-		this.xTickRotate = 0;
-		this.marginBottom = 0;
-		this.colourSeries = null;
-		this.xLabel = '';
-		this.yLabel = '';
-		this.hiddenSeries = [];
-		this.currentChartId = null;
+		if (example.chartType) {
+			this.chartType = /** @type {ChartType} */ (example.chartType);
+		}
 	}
 
 	/**
@@ -323,6 +370,7 @@ export default class StratifyPlotProject {
 			chartType: this.chartType,
 			displayMode: this.displayMode,
 			stylePreset: this.stylePreset,
+			colourPalette: this.colourPalette,
 			hiddenSeries: this.hiddenSeries,
 			userSeriesColours: this.userSeriesColours,
 			userSeriesLabels: this.userSeriesLabels,
@@ -330,12 +378,22 @@ export default class StratifyPlotProject {
 			plotOverrides: this.plotOverrides,
 			seriesOrder: this.seriesOrder,
 			chartHeight: this.chartHeight,
+			showXTickLabels: this.showXTickLabels,
 			xTicks: this.xTicks,
 			xTickRotate: this.xTickRotate,
 			marginBottom: this.marginBottom,
+			yTicks: this.yTicks,
+			yMinMax: this.yMinMax,
+			y2Ticks: this.y2Ticks,
+			y2MinMax: this.y2MinMax,
+			tooltipColumns: this.tooltipColumns,
+			categorySort: this.categorySort,
+			xColumn: this.xColumn,
 			colourSeries: this.colourSeries,
 			xLabel: this.xLabel,
-			yLabel: this.yLabel
+			yLabel: this.yLabel,
+			seriesYAxis: this.seriesYAxis,
+			y2Label: this.y2Label
 		};
 	}
 
@@ -349,9 +407,10 @@ export default class StratifyPlotProject {
 		this.description = snapshot.description ?? '';
 		this.dataSource = snapshot.dataSource ?? '';
 		this.notes = snapshot.notes ?? '';
-		this.chartType = /** @type {ChartType} */ (snapshot.chartType ?? 'stacked-area');
+		this.chartType = migrateChartType(snapshot.chartType ?? 'line');
 		this.displayMode = snapshot.displayMode ?? 'auto';
-		this.stylePreset = snapshot.stylePreset ?? 'oe';
+		this.stylePreset = migratePreset(snapshot.stylePreset ?? 'sans');
+		this.colourPalette = snapshot.colourPalette ?? migratePresetToPalette(snapshot.stylePreset ?? 'oe');
 		this.hiddenSeries = snapshot.hiddenSeries ?? [];
 		this.userSeriesColours = snapshot.userSeriesColours ?? {};
 		this.userSeriesLabels = snapshot.userSeriesLabels ?? {};
@@ -359,12 +418,22 @@ export default class StratifyPlotProject {
 		this.plotOverrides = snapshot.plotOverrides ?? null;
 		this.seriesOrder = snapshot.seriesOrder ?? [];
 		this.chartHeight = snapshot.chartHeight ?? 400;
+		this.showXTickLabels = snapshot.showXTickLabels ?? true;
 		this.xTicks = snapshot.xTicks ?? 0;
 		this.xTickRotate = snapshot.xTickRotate ?? 0;
 		this.marginBottom = snapshot.marginBottom ?? 0;
+		this.yTicks = snapshot.yTicks ?? 0;
+		this.yMinMax = snapshot.yMinMax ?? false;
+		this.y2Ticks = snapshot.y2Ticks ?? 0;
+		this.y2MinMax = snapshot.y2MinMax ?? false;
+		this.tooltipColumns = snapshot.tooltipColumns ?? [];
+		this.categorySort = snapshot.categorySort ?? 'default';
+		this.xColumn = snapshot.xColumn ?? '';
 		this.colourSeries = snapshot.colourSeries ?? null;
 		this.xLabel = snapshot.xLabel ?? '';
 		this.yLabel = snapshot.yLabel ?? '';
+		this.seriesYAxis = snapshot.seriesYAxis ?? {};
+		this.y2Label = snapshot.y2Label ?? '';
 		this.status = snapshot.status ?? 'draft';
 		this.showBranding = snapshot.showBranding ?? true;
 	}

@@ -95,7 +95,7 @@
 							>
 								<div class="flex items-center justify-end gap-1.5">
 									<span
-										class="w-2 h-2 rounded-full flex-shrink-0"
+										class="w-2 h-2 rounded-full shrink-0"
 										style="background-color: {sectorColors[sector]}"
 									></span>
 									<span class="truncate max-w-[100px]">{sectorLabels[sector]}</span>

@@ -49,17 +49,34 @@ async function authFetch(url, options = {}) {
  * @property {string} chartType
  * @property {string} status
  * @property {string} description
+ * @property {string} [userEmail]
  * @property {string} _createdAt
  * @property {string} _updatedAt
  */
 
 /**
- * List all charts for the current user.
- * @returns {Promise<ChartSummary[]>}
+ * @typedef {Object} ChartsListResponse
+ * @property {ChartSummary[]} myCharts
+ * @property {ChartSummary[]} communityCharts
+ * @property {boolean} isSuperAdmin
  */
-export async function listCharts() {
-	const data = await authFetch('/api/stratify/charts');
-	return data.charts;
+
+/**
+ * List charts — returns own charts + community charts.
+ * @param {{ status?: string }} [filters]
+ * @returns {Promise<ChartsListResponse>}
+ */
+export async function listCharts(filters = {}) {
+	const params = new URLSearchParams();
+	if (filters.status) params.set('status', filters.status);
+	const qs = params.toString();
+	const url = `/api/stratify/charts${qs ? `?${qs}` : ''}`;
+	const data = await authFetch(url);
+	return {
+		myCharts: data.myCharts,
+		communityCharts: data.communityCharts,
+		isSuperAdmin: data.isSuperAdmin
+	};
 }
 
 /**
@@ -106,4 +123,14 @@ export async function updateChart(id, fields) {
  */
 export async function deleteChart(id) {
 	await authFetch(`/api/stratify/charts/${id}`, { method: 'DELETE' });
+}
+
+/**
+ * Fork a chart into the current user's account.
+ * @param {string} id
+ * @returns {Promise<{ _id: string }>}
+ */
+export async function forkChart(id) {
+	const data = await authFetch(`/api/stratify/charts/${id}/fork`, { method: 'POST' });
+	return data.chart;
 }

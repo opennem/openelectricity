@@ -771,7 +771,7 @@
 {/if}
 
 <div class={isFullscreen ? 'h-dvh flex flex-col' : ''}>
-	<div class="border-y border-warm-grey flex-shrink-0">
+	<div class="border-y border-warm-grey shrink-0">
 		<div class="relative text-base z-50">
 			<Filters
 				{searchTerm}

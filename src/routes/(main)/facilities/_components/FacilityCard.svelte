@@ -107,7 +107,7 @@
 			<span class="text-xs {darkMode ? 'text-white/30' : 'text-warm-grey'}">|</span>
 
 			<!-- Fuel tech badges with fan out -->
-			<div class="flex-shrink-0">
+			<div class="shrink-0">
 				{@render badgeGroup()}
 			</div>
 
@@ -167,7 +167,7 @@
 				</div>
 
 				<div class="col-start-1 row-start-1 sm:col-start-auto sm:row-start-auto sm:ml-3 flex items-center">
-					<span class="inline-flex flex-shrink-0">
+					<span class="inline-flex shrink-0">
 						{@render badgeGroup()}
 					</span>
 				</div>

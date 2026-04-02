@@ -4,12 +4,37 @@
  * Each function takes parsed CSV data (from csv-parser.js) and returns
  * a PlotOptions object ready to pass to PlotChart.
  */
-import { areaY, lineY, barY, dot, ruleX, ruleY, stackY, groupX } from '@observablehq/plot';
+import {
+	areaY,
+	lineY,
+	barX,
+	barY,
+	rectY,
+	dot,
+	ruleX,
+	ruleY,
+	stackX,
+	stackY,
+	groupX,
+	groupY
+} from '@observablehq/plot';
 
 /**
  * Per-series mark type for mixed charts.
  * @typedef {'area' | 'line' | 'bar' | 'dot'} SeriesMarkType
  */
+
+/**
+ * Compute left margin based on the longest category label.
+ * @param {Array<{category?: string}>} data
+ * @param {number} [marginLeft]
+ * @returns {number}
+ */
+function computeAutoMarginLeft(data, marginLeft) {
+	if (marginLeft != null) return marginLeft;
+	const maxLen = data.reduce((max, row) => Math.max(max, String(row.category ?? '').length), 0);
+	return Math.min(Math.max(maxLen * 6.5, 60), 200);
+}
 
 const SHARED_STYLE = {
 	fontFamily: 'DM Mono, monospace',
@@ -17,6 +42,31 @@ const SHARED_STYLE = {
 	background: 'transparent',
 	overflow: 'visible'
 };
+
+/**
+ * Pivot wide-format data to long-format for Observable Plot's stacked marks.
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {string} xKey - 'date' for time-series, 'category' for category
+ * @returns {Array<{x: any, series: string, value: number}>}
+ */
+/**
+ * Detect the median time gap between date rows in milliseconds.
+ * @param {Array<Record<string, any>>} data - Rows with a `date` field
+ * @returns {number} Median gap in ms (defaults to 7 days)
+ */
+function detectMedianGapMs(data) {
+	if (data.length < 2) return 7 * 86400000;
+	const gaps = [];
+	for (let i = 1; i < data.length; i++) {
+		const a = data[i - 1].date?.getTime?.();
+		const b = data[i].date?.getTime?.();
+		if (a != null && b != null) gaps.push(b - a);
+	}
+	if (gaps.length === 0) return 7 * 86400000;
+	gaps.sort((a, b) => a - b);
+	return gaps[Math.floor(gaps.length / 2)];
+}
 
 /**
  * Pivot wide-format data to long-format for Observable Plot's stacked marks.
@@ -241,10 +291,12 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 /**
  * @typedef {Object} BarChartOptions
  * @property {object} [style]
+ * @property {number} [marginLeft]
  * @property {number} [marginRight]
  * @property {boolean} [legend]
  * @property {any[]} [extraMarks] - Additional marks
  * @property {string | ((d: number) => string)} [yTickFormat]
+ * @property {boolean} [horizontal]
  */
 
 /**
@@ -264,32 +316,49 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		extraMarks = [],
 		yTickFormat = 's'
 	} = options;
-	const long = toLong(data, seriesNames, 'category');
+
+	const isCategory = data.length > 0 && 'category' in data[0];
+	const xKey = isCategory ? 'category' : 'date';
+	const long = toLong(data, seriesNames, xKey);
+
+	/** @type {any[]} */
+	const marks = [...extraMarks];
+
+	if (isCategory) {
+		marks.push(
+			barY(
+				long,
+				stackY(groupX({ y: 'sum' }, { x: 'x', y: 'value', fill: 'series', order: seriesNames }))
+			)
+		);
+	} else {
+		const halfGap = detectMedianGapMs(data) * 0.4;
+		marks.push(
+			rectY(
+				long,
+				stackY({
+					x1: (/** @type {any} */ d) => new Date(d.x.getTime() - halfGap),
+					x2: (/** @type {any} */ d) => new Date(d.x.getTime() + halfGap),
+					y: 'value',
+					fill: 'series',
+					order: seriesNames
+				})
+			)
+		);
+	}
+
+	marks.push(ruleY([0]));
 
 	return {
 		style,
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
-		x: { label: null, tickPadding: 6, type: 'band' },
+		x: {
+			label: null,
+			...(isCategory ? { tickPadding: 6, type: 'band' } : { type: 'utc' })
+		},
 		y: { label: null, grid: true, tickFormat: yTickFormat },
-		marks: [
-			...extraMarks,
-			barY(
-				long,
-				stackY(
-					groupX(
-						{ y: 'sum' },
-						{
-							x: 'x',
-							y: 'value',
-							fill: 'series',
-							order: seriesNames
-						}
-					)
-				)
-			),
-			ruleY([0])
-		]
+		marks
 	};
 }
 
@@ -310,13 +379,19 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 		extraMarks = [],
 		yTickFormat
 	} = options;
-	const long = toLong(data, seriesNames, 'category');
+
+	const isCategory = data.length > 0 && 'category' in data[0];
+	const xKey = isCategory ? 'category' : 'date';
+	const long = toLong(data, seriesNames, xKey);
 
 	return {
 		style,
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
-		x: { label: null, tickPadding: 6, tickRotate: -30, type: 'band' },
+		x: {
+			label: null,
+			...(isCategory ? { tickPadding: 6, tickRotate: -30, type: 'band' } : {})
+		},
 		y: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		fx: { label: null, padding: 0.2 },
 		marks: [
@@ -328,6 +403,89 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 				fill: 'series'
 			}),
 			ruleY([0])
+		]
+	};
+}
+
+// ── Horizontal Bar Charts ──────────────────────────────────────
+
+/**
+ * Horizontal stacked bar chart.
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} colours
+ * @param {Record<string, string>} labels
+ * @param {BarChartOptions} [options]
+ * @returns {import('@observablehq/plot').PlotOptions}
+ */
+export function createHorizontalBarOptions(data, seriesNames, colours, labels, options = {}) {
+	const {
+		style = SHARED_STYLE,
+		marginLeft,
+		marginRight,
+		legend = true,
+		extraMarks = [],
+		yTickFormat
+	} = options;
+	const long = toLong(data, seriesNames, 'category');
+	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
+
+	return {
+		style,
+		marginLeft: autoMarginLeft,
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: { ...colourScale(seriesNames, colours, labels), legend },
+		y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
+		x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+		marks: [
+			...extraMarks,
+			barX(
+				long,
+				stackX(groupY({ x: 'sum' }, { y: 'x', x: 'value', fill: 'series', order: seriesNames }))
+			),
+			ruleX([0])
+		]
+	};
+}
+
+/**
+ * Horizontal grouped bar chart.
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} colours
+ * @param {Record<string, string>} labels
+ * @param {BarChartOptions} [options]
+ * @returns {import('@observablehq/plot').PlotOptions}
+ */
+export function createGroupedHorizontalBarOptions(data, seriesNames, colours, labels, options = {}) {
+	const {
+		style = SHARED_STYLE,
+		marginLeft,
+		marginRight,
+		legend = true,
+		extraMarks = [],
+		yTickFormat
+	} = options;
+	const long = toLong(data, seriesNames, 'category');
+	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
+
+	return {
+		style,
+		marginLeft: autoMarginLeft,
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: { ...colourScale(seriesNames, colours, labels), legend },
+		y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
+		x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+		fy: { label: null, padding: 0.2 },
+		marks: [
+			...extraMarks,
+			barX(long, {
+				y: 'series',
+				x: 'value',
+				fy: 'x',
+				fill: 'series'
+			}),
+			ruleX([0])
 		]
 	};
 }
@@ -357,34 +515,55 @@ export function createColourGroupedBarOptions(
 ) {
 	const {
 		style = SHARED_STYLE,
+		marginLeft,
 		marginRight,
 		legend = true,
 		extraMarks = [],
-		yTickFormat
+		yTickFormat,
+		horizontal = false
 	} = options;
 
 	const long = data
 		.filter((row) => row[valueKey] != null)
 		.map((row) => ({
 			x: row.category,
-			value: row[valueKey],
+			value: Number(row[valueKey]),
 			colourGroup: row[colourSeriesKey] ?? 'Unknown'
 		}));
+
+	const colorScale = {
+		domain: colourGroupNames,
+		range: colourGroupNames.map((g) => colours[g]),
+		legend,
+		tickFormat: (/** @type {string} */ d) => labels[d] || d
+	};
+
+	if (horizontal) {
+		const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
+		return {
+			style,
+			marginLeft: autoMarginLeft,
+			...(marginRight !== undefined ? { marginRight } : {}),
+			color: colorScale,
+			y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
+			x: { label: null, grid: true, zero: true, type: 'linear', ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+			marks: [
+				...extraMarks,
+				barX(long, { y: 'x', x1: 0, x2: 'value', fill: 'colourGroup' }),
+				ruleX([0])
+			]
+		};
+	}
 
 	return {
 		style,
 		...(marginRight !== undefined ? { marginRight } : {}),
-		color: {
-			domain: colourGroupNames,
-			range: colourGroupNames.map((g) => colours[g]),
-			legend,
-			tickFormat: (/** @type {string} */ d) => labels[d] || d
-		},
+		color: colorScale,
 		x: { label: null, tickPadding: 6, type: 'band' },
 		y: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
 		marks: [
 			...extraMarks,
-			barY(long, { x: 'x', y: 'value', fill: 'colourGroup', sort: { x: '-y' } }),
+			barY(long, { x: 'x', y1: 0, y2: 'value', fill: 'colourGroup' }),
 			ruleY([0])
 		]
 	};
@@ -462,7 +641,12 @@ export function globalTypeToMarkType(chartType) {
 		case 'area':
 			return 'area';
 		case 'bar-stacked':
+		case 'bar-grouped':
+		case 'bar':
 		case 'grouped-bar':
+		case 'column':
+		case 'column-stacked':
+		case 'column-grouped':
 			return 'bar';
 		case 'dot':
 			return 'dot';
@@ -520,8 +704,10 @@ export function createMixedMarkOptions(
 	// Partition series by effective mark type
 	/** @type {Record<SeriesMarkType, string[]>} */
 	const groups = { area: [], line: [], bar: [], dot: [] };
+	/** @param {string} t @returns {SeriesMarkType} */
+	const toMark = (t) => /** @type {SeriesMarkType} */ (t === 'column' ? 'bar' : t);
 	for (const name of seriesNames) {
-		const markType = seriesChartTypes[name] || defaultMarkType;
+		const markType = toMark(seriesChartTypes[name]) || defaultMarkType;
 		groups[markType].push(name);
 	}
 
@@ -560,14 +746,18 @@ export function createMixedMarkOptions(
 				)
 			);
 		} else {
-			// Time-series bars: use rectY-style bar with x as date
+			const halfGap = detectMedianGapMs(data) * 0.4;
 			marks.push(
-				barY(long, {
-					x: 'x',
-					y: 'value',
-					fill: 'series',
-					...(groups.bar.length > 1 ? {} : {})
-				})
+				rectY(
+					long,
+					stackY({
+						x1: (/** @type {any} */ d) => new Date(d.x.getTime() - halfGap),
+						x2: (/** @type {any} */ d) => new Date(d.x.getTime() + halfGap),
+						y: 'value',
+						fill: 'series',
+						order: groups.bar
+					})
+				)
 			);
 		}
 	}

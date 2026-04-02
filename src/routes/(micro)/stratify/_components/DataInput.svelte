@@ -73,7 +73,7 @@
 				bind:value={project.csvText}
 				rows="10"
 				class={textareaClass}
-				placeholder="Date,Solar,Wind,Coal&#10;2024-01-01,150,200,300&#10;2024-01-02,160,180,290&#10;2024-01-03,170,210,280"
+				placeholder={'Date,Solar,Wind,Coal\n2024-01-01,150,200,300\n2024-01-02,160,180,290\n2024-01-03,170,210,280'}
 			></textarea>
 		{:else}
 			<div

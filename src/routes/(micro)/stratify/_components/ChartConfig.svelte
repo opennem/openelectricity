@@ -1,55 +1,54 @@
 <script>
 	import { getStratifyContext } from '../_state/context.js';
+	import SectionHeader from './SectionHeader.svelte';
 
 	const project = getStratifyContext();
 </script>
 
-<div class="space-y-3">
-	<label class="block">
-		<span class="block text-xs font-semibold mb-1 text-mid-grey uppercase tracking-wider"
-			>Title</span
-		>
-		<input
-			type="text"
-			bind:value={project.title}
-			placeholder="Chart title"
-			class="bg-light-warm-grey border border-mid-warm-grey rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-dark-grey"
-		/>
-	</label>
+<SectionHeader label="Header">
+	<div class="flex flex-col gap-2">
+		<label class="block">
+			<span class="block text-[10px] text-mid-grey mb-1">Title</span>
+			<input
+				type="text"
+				bind:value={project.title}
+				placeholder="Chart title"
+				class="w-full bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+			/>
+		</label>
 
-	<label class="block">
-		<span class="block text-xs font-semibold mb-1 text-mid-grey uppercase tracking-wider"
-			>Description</span
-		>
-		<textarea
-			bind:value={project.description}
-			rows="2"
-			placeholder="Brief description of the chart"
-			class="bg-light-warm-grey border border-mid-warm-grey rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-dark-grey resize-y"
-		></textarea>
-	</label>
+		<label class="block">
+			<span class="block text-[10px] text-mid-grey mb-1">Description</span>
+			<textarea
+				bind:value={project.description}
+				rows="2"
+				placeholder="Brief description"
+				class="w-full bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey resize-y"
+			></textarea>
+		</label>
+	</div>
+</SectionHeader>
 
-	<label class="block">
-		<span class="block text-xs font-semibold mb-1 text-mid-grey uppercase tracking-wider"
-			>Data source</span
-		>
-		<input
-			type="text"
-			bind:value={project.dataSource}
-			placeholder="e.g. Bureau of Meteorology"
-			class="bg-light-warm-grey border border-mid-warm-grey rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-dark-grey"
-		/>
-	</label>
+<SectionHeader label="Footer">
+	<div class="flex flex-col gap-2">
+		<label class="block">
+			<span class="block text-[10px] text-mid-grey mb-1">Source</span>
+			<input
+				type="text"
+				bind:value={project.dataSource}
+				placeholder="e.g. Bureau of Meteorology"
+				class="w-full bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey"
+			/>
+		</label>
 
-	<label class="block">
-		<span class="block text-xs font-semibold mb-1 text-mid-grey uppercase tracking-wider"
-			>Notes</span
-		>
-		<textarea
-			bind:value={project.notes}
-			rows="2"
-			placeholder="Additional notes or footnotes"
-			class="bg-light-warm-grey border border-mid-warm-grey rounded-lg px-3 py-2 text-sm w-full focus:outline-none focus:border-dark-grey resize-y"
-		></textarea>
-	</label>
-</div>
+		<label class="block">
+			<span class="block text-[10px] text-mid-grey mb-1">Notes</span>
+			<textarea
+				bind:value={project.notes}
+				rows="2"
+				placeholder="Additional notes or footnotes"
+				class="w-full bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey resize-y"
+			></textarea>
+		</label>
+	</div>
+</SectionHeader>

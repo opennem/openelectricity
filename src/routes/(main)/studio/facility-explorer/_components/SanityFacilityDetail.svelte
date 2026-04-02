@@ -85,7 +85,7 @@
 					title="Open on {description} (new tab)"
 					class="text-[12px] text-dark-grey font-mono col-span-2 inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey"
 				>
-					{displayText}<ExternalLink size={10} class="flex-shrink-0" />
+					{displayText}<ExternalLink size={10} class="shrink-0" />
 				</a>
 			{:else if displayText}
 				<span class="text-[12px] text-dark-grey font-mono break-all col-span-2">{displayText}</span>
@@ -174,7 +174,7 @@
 				</div>
 				<div class="flex gap-2 overflow-x-auto pb-1">
 					{#each facility.photos as photo, i (photo._key || i)}
-						<div class="flex-shrink-0">
+						<div class="shrink-0">
 							<img
 								src={photo.asset ? urlFor(photo).width(200).height(120).url() : photo.url}
 								alt={photo.alt || photo.caption || `${facility.name} photo ${i + 1}`}
@@ -210,7 +210,7 @@
 								rel="noopener noreferrer"
 								class="text-[12px] text-dark-grey hover:text-black inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:decoration-solid hover:decoration-dark-grey"
 							>
-								{owner.name || owner.legal_name}<ExternalLink size={10} class="flex-shrink-0" />
+								{owner.name || owner.legal_name}<ExternalLink size={10} class="shrink-0" />
 							</a>
 						{:else}
 							<span class="text-[12px] text-dark-grey">{owner.name || owner.legal_name}</span>
@@ -370,7 +370,7 @@
 								{unit.code || '\u2014'}
 							</span>
 							<span
-								class="w-2 h-2 rounded-full flex-shrink-0"
+								class="w-2 h-2 rounded-full shrink-0"
 								style="background: {ftColour(unit.fuel_technology?.code)}"
 							></span>
 							<span class="text-[11px] text-dark-grey truncate" title={unit.fuel_technology?.name}>

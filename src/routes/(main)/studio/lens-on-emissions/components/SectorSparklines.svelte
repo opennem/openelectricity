@@ -78,7 +78,7 @@
 		<div class="bg-white border border-light-warm-grey rounded-lg p-3">
 			<!-- Header with color swatch and label -->
 			<div class="flex items-center gap-2 mb-1">
-				<span class="w-3 h-3 rounded-full flex-shrink-0" style="background-color: {color}"></span>
+				<span class="w-3 h-3 rounded-full shrink-0" style="background-color: {color}"></span>
 				<span class="text-sm font-medium text-dark-grey truncate">{sectorLabels[sector]}</span>
 			</div>
 

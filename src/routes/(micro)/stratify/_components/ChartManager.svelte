@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { getStratifyContext } from '../_state/context.js';
 	import * as api from '../_utils/api.js';
+	import { timeAgo } from '../_utils/format.js';
 
 	const project = getStratifyContext();
 
@@ -33,7 +34,8 @@
 	async function refreshList() {
 		loading = true;
 		try {
-			charts = await api.listCharts();
+			const data = await api.listCharts();
+			charts = data.myCharts;
 		} catch {
 			charts = [];
 		} finally {
@@ -61,17 +63,10 @@
 			const full = await api.getChart(chart._id);
 			if (!full) return;
 
+			const { _id, _createdAt, _updatedAt, userId, userEmail, status, publishedAt, ...rest } = full;
 			const snapshot = {
-				version: 1,
-				csvText: full.csvText ?? '',
-				title: `${full.title || 'Untitled'} (copy)`,
-				description: full.description ?? '',
-				dataSource: full.dataSource ?? '',
-				notes: full.notes ?? '',
-				chartType: full.chartType ?? 'stacked-area',
-				hiddenSeries: full.hiddenSeries ?? [],
-				userSeriesColours: full.userSeriesColours ?? {},
-				userSeriesLabels: full.userSeriesLabels ?? {}
+				...rest,
+				title: `${full.title || 'Untitled'} (copy)`
 			};
 
 			await api.createChart(/** @type {any} */ (snapshot));
@@ -97,35 +92,17 @@
 		}
 	}
 
-	/**
-	 * Format relative time from ISO string.
-	 * @param {string} dateStr
-	 * @returns {string}
-	 */
-	function timeAgo(dateStr) {
-		const now = Date.now();
-		const then = new Date(dateStr).getTime();
-		const diff = now - then;
-		const mins = Math.floor(diff / 60000);
-		if (mins < 1) return 'just now';
-		if (mins < 60) return `${mins}m ago`;
-		const hours = Math.floor(mins / 60);
-		if (hours < 24) return `${hours}h ago`;
-		const days = Math.floor(hours / 24);
-		if (days < 30) return `${days}d ago`;
-		return new Date(dateStr).toLocaleDateString('en-AU', { day: 'numeric', month: 'short' });
-	}
 </script>
 
 <div class="flex flex-col h-full">
 	<!-- Header -->
 	<div
-		class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-mid-warm-grey/50 flex-shrink-0"
+		class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-mid-warm-grey/50 shrink-0"
 	>
 		<span class="text-[11px] font-medium text-dark-grey uppercase tracking-wide flex-1"
 			>Charts</span
 		>
-		<a href="/stratify/charts" class="text-[10px] text-mid-grey hover:text-dark-grey underline">
+		<a href="/stratify" class="text-[10px] text-mid-grey hover:text-dark-grey underline">
 			Full view
 		</a>
 		<button
@@ -139,7 +116,7 @@
 	</div>
 
 	<!-- Search -->
-	<div class="px-3 py-2 border-b border-warm-grey flex-shrink-0">
+	<div class="px-3 py-2 border-b border-warm-grey shrink-0">
 		<input
 			type="text"
 			placeholder="Search charts..."
@@ -176,7 +153,7 @@
 						<span
 							class="text-[9px] px-1 py-0.5 rounded {chart.status === 'published'
 								? 'bg-green-100 text-green-700'
-								: 'bg-warm-grey text-mid-grey'} flex-shrink-0"
+								: 'bg-warm-grey text-mid-grey'} shrink-0"
 						>
 							{chart.status === 'published' ? 'Published' : 'Draft'}
 						</span>
@@ -213,7 +190,7 @@
 	</div>
 
 	<!-- Footer -->
-	<div class="px-3 py-2 border-t border-warm-grey flex-shrink-0">
+	<div class="px-3 py-2 border-t border-warm-grey shrink-0">
 		<button
 			type="button"
 			onclick={() => {

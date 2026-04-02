@@ -78,9 +78,9 @@
 
 				<div class="flex items-center gap-2">
 					<!-- Color swatch and label -->
-					<div class="w-28 flex items-center gap-2 flex-shrink-0">
+					<div class="w-28 flex items-center gap-2 shrink-0">
 						<span
-							class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+							class="w-2.5 h-2.5 rounded-full shrink-0"
 							style="background-color: {sectorColors[sector]}"
 						></span>
 						<span class="text-xs text-dark-grey truncate">{sectorLabels[sector]}</span>
@@ -95,7 +95,7 @@
 					</div>
 
 					<!-- Value -->
-					<span class="w-14 text-right text-xs font-mono tabular-nums text-mid-grey flex-shrink-0">
+					<span class="w-14 text-right text-xs font-mono tabular-nums text-mid-grey shrink-0">
 						{isNegative ? '-' : ''}{formatEmissionsValue(value)}
 					</span>
 				</div>

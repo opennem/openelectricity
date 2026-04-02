@@ -56,13 +56,23 @@ describe('resolveMarkSpec', () => {
 	it('resolves simple mark types without error', () => {
 		// These marks work with empty data or no data
 		const simpleTypes = [
-			'dot', 'dot-x', 'dot-y',
-			'line', 'line-x', 'line-y',
-			'bar-x', 'bar-y',
-			'text', 'text-x', 'text-y',
-			'rule-x', 'rule-y',
-			'tick-x', 'tick-y',
-			'frame', 'image'
+			'dot',
+			'dot-x',
+			'dot-y',
+			'line',
+			'line-x',
+			'line-y',
+			'bar-x',
+			'bar-y',
+			'text',
+			'text-x',
+			'text-y',
+			'rule-x',
+			'rule-y',
+			'tick-x',
+			'tick-y',
+			'frame',
+			'image'
 		];
 		for (const markType of simpleTypes) {
 			const mark = resolveMarkSpec({
@@ -76,11 +86,19 @@ describe('resolveMarkSpec', () => {
 	it('resolves marks that require channels with proper data', () => {
 		const sampleData = [{ x: 1, y: 2, x1: 0, x2: 1, y1: 0, y2: 2 }];
 		const channelTypes = [
-			'area', 'area-x', 'area-y',
-			'rect', 'rect-x', 'rect-y',
-			'cell', 'cell-x',
-			'arrow', 'vector', 'link',
-			'waffle-x', 'waffle-y'
+			'area',
+			'area-x',
+			'area-y',
+			'rect',
+			'rect-x',
+			'rect-y',
+			'cell',
+			'cell-x',
+			'arrow',
+			'vector',
+			'link',
+			'waffle-x',
+			'waffle-y'
 		];
 		for (const markType of channelTypes) {
 			const mark = resolveMarkSpec({
@@ -194,9 +212,7 @@ describe('applyPlotOverrides', () => {
 
 	it('does not clobber existing marks when adding extra marks', () => {
 		const result = applyPlotOverrides(baseOptions, {
-			extraMarks: [
-				{ markType: 'rule-y', data: [100], options: { stroke: 'red' } }
-			]
+			extraMarks: [{ markType: 'rule-y', data: [100], options: { stroke: 'red' } }]
 		});
 		// Original mark still first
 		expect(result.marks[0]).toEqual({ _type: 'existing-mark' });
@@ -206,10 +222,7 @@ describe('applyPlotOverrides', () => {
 
 	it('skips unknown mark types in extraMarks', () => {
 		const result = applyPlotOverrides(baseOptions, {
-			extraMarks: [
-				{ markType: 'nonexistent' },
-				{ markType: 'rule-y', data: [0] }
-			]
+			extraMarks: [{ markType: 'nonexistent' }, { markType: 'rule-y', data: [0] }]
 		});
 		// Only the valid mark gets appended
 		expect(result.marks.length).toBe(2);
