@@ -24,6 +24,18 @@ import {
  * @typedef {'area' | 'line' | 'bar' | 'dot'} SeriesMarkType
  */
 
+/**
+ * Compute left margin based on the longest category label.
+ * @param {Array<{category?: string}>} data
+ * @param {number} [marginLeft]
+ * @returns {number}
+ */
+function computeAutoMarginLeft(data, marginLeft) {
+	if (marginLeft != null) return marginLeft;
+	const maxLen = data.reduce((max, row) => Math.max(max, String(row.category ?? '').length), 0);
+	return Math.min(Math.max(maxLen * 6.5, 60), 200);
+}
+
 const SHARED_STYLE = {
 	fontFamily: 'DM Mono, monospace',
 	fontSize: '10px',
@@ -416,13 +428,7 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 		yTickFormat
 	} = options;
 	const long = toLong(data, seriesNames, 'category');
-
-	// Auto-compute left margin from longest category label
-	const maxLabelLen = data.reduce(
-		(max, row) => Math.max(max, String(row.category ?? '').length),
-		0
-	);
-	const autoMarginLeft = marginLeft ?? Math.min(Math.max(maxLabelLen * 6.5, 60), 200);
+	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
 
 	return {
 		style,
@@ -461,12 +467,7 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 		yTickFormat
 	} = options;
 	const long = toLong(data, seriesNames, 'category');
-
-	const maxLabelLen = data.reduce(
-		(max, row) => Math.max(max, String(row.category ?? '').length),
-		0
-	);
-	const autoMarginLeft = marginLeft ?? Math.min(Math.max(maxLabelLen * 6.5, 60), 200);
+	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
 
 	return {
 		style,
@@ -538,11 +539,7 @@ export function createColourGroupedBarOptions(
 	};
 
 	if (horizontal) {
-		const maxLabelLen = data.reduce(
-			(max, row) => Math.max(max, String(row.category ?? '').length),
-			0
-		);
-		const autoMarginLeft = marginLeft ?? Math.min(Math.max(maxLabelLen * 6.5, 60), 200);
+		const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
 		return {
 			style,
 			marginLeft: autoMarginLeft,

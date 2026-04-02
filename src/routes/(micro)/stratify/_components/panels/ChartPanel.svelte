@@ -3,6 +3,7 @@
 	import SectionGroup from '../SectionGroup.svelte';
 	import SectionHeader from '../SectionHeader.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
+	import { HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
 
 	const project = getStratifyContext();
 
@@ -36,11 +37,7 @@
 	let selectedY = $derived(visibleYColumns.length === 1 ? visibleYColumns[0]?.key : '');
 
 	// --- Advanced ---
-	let isHorizontal = $derived(
-		project.chartType === 'bar' ||
-			project.chartType === 'bar-stacked' ||
-			project.chartType === 'bar-grouped'
-	);
+	let isHorizontal = $derived(HORIZONTAL_TYPES.has(project.chartType));
 
 	// Chart types that support multiple Y series
 	let allowMultipleY = $derived(

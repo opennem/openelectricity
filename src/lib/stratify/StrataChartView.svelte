@@ -3,6 +3,7 @@
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
 	import { getPreset, getPlotStyle } from '$lib/stratify/chart-styles.js';
 	import { assignPaletteColours } from '$lib/stratify/colour-palettes.js';
+	import { HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
 
 	/**
 	 * @type {{
@@ -124,9 +125,7 @@
 		});
 	});
 
-	const isHorizontal = $derived(
-		chart.chartType === 'bar' || chart.chartType === 'bar-stacked' || chart.chartType === 'bar-grouped'
-	);
+	const isHorizontal = $derived(HORIZONTAL_TYPES.has(chart.chartType));
 
 	// Extract sorted domain for category charts
 	const hasSortedDomain = $derived(

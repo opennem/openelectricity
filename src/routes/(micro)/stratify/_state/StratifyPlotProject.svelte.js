@@ -341,42 +341,18 @@ export default class StratifyPlotProject {
 
 	/**
 	 * Load an example dataset into the project.
-	 * @param {{ csvData: string, title: string, description: string, dataSource: string, notes: string, chartType: string }} example
+	 * @param {{ csvData: string, title: string, description: string, dataSource: string, notes: string, chartType?: string }} example
 	 */
 	loadExample(example) {
+		this.reset();
 		this.csvText = example.csvData;
 		this.title = example.title;
 		this.description = example.description;
 		this.dataSource = example.dataSource;
 		this.notes = example.notes;
-		this.chartType = /** @type {ChartType} */ (example.chartType);
-		this.displayMode = 'auto';
-		this.stylePreset = 'sans';
-		this.colourPalette = 'oe-energy';
-		this.userSeriesColours = {};
-		this.userSeriesLabels = {};
-		this.seriesChartTypes = {};
-		this.plotOverrides = null;
-		this.seriesOrder = [];
-		this.chartHeight = 400;
-		this.showXTickLabels = true;
-		this.xTicks = 0;
-		this.xTickRotate = 0;
-		this.marginBottom = 0;
-		this.yTicks = 0;
-		this.yMinMax = false;
-		this.y2Ticks = 0;
-		this.y2MinMax = false;
-		this.tooltipColumns = [];
-		this.categorySort = 'default';
-		this.xColumn = '';
-		this.colourSeries = null;
-		this.xLabel = '';
-		this.yLabel = '';
-		this.seriesYAxis = {};
-		this.y2Label = '';
-		this.hiddenSeries = [];
-		this.currentChartId = null;
+		if (example.chartType) {
+			this.chartType = /** @type {ChartType} */ (example.chartType);
+		}
 	}
 
 	/**
