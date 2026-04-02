@@ -39,18 +39,14 @@
 	];
 
 	/** @type {Record<string, boolean>} */
-	let openSections = $derived(
-		initialChartId
-			? { data: false, chart: true, theme: false, headerfooter: true, series: true, publish: true }
-			: {
-					data: true,
-					chart: false,
-					theme: false,
-					headerfooter: false,
-					series: false,
-					publish: false
-				}
-	);
+	let openSections = $state({
+		data: true,
+		chart: false,
+		theme: false,
+		headerfooter: false,
+		series: false,
+		publish: false
+	});
 
 	let mounted = $state(false);
 	let loadingChart = $derived(!!initialChartId);
