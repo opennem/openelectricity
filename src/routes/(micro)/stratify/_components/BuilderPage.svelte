@@ -26,9 +26,6 @@
 	/** @type {{ initialChartId?: string }} */
 	let { initialChartId = '' } = $props();
 
-	// svelte-ignore state_referenced_locally — component remounts via {#key} when ID changes
-	const chartId = initialChartId;
-
 	const project = new StratifyPlotProject();
 	setStratifyContext(project);
 
@@ -42,21 +39,28 @@
 	];
 
 	/** @type {Record<string, boolean>} */
-	let openSections = $state(
-		chartId
+	let openSections = $derived(
+		initialChartId
 			? { data: false, chart: true, theme: false, headerfooter: true, series: true, publish: true }
-			: { data: true, chart: false, theme: false, headerfooter: false, series: false, publish: false }
+			: {
+					data: true,
+					chart: false,
+					theme: false,
+					headerfooter: false,
+					series: false,
+					publish: false
+				}
 	);
 
 	let mounted = $state(false);
-	let loadingChart = $state(!!chartId);
+	let loadingChart = $derived(!!initialChartId);
 
 	onMount(async () => {
 		mounted = true;
 
-		if (chartId) {
+		if (initialChartId) {
 			try {
-				const chart = await getChart(chartId);
+				const chart = await getChart(initialChartId);
 				if (chart) {
 					project.loadFromSnapshot(chart);
 					project.currentChartId = chart._id;
@@ -118,9 +122,8 @@
 	// Debounced auto-save
 	$effect(() => {
 		const _ = project.toJSON();
-		const chartId = project.currentChartId;
 
-		if (!project.hasData || !chartId) return;
+		if (!project.hasData || !project.currentChartId) return;
 
 		if (autoSaveTimer) clearTimeout(autoSaveTimer);
 		autoSaveTimer = setTimeout(() => handleSave('auto'), 3000);
@@ -200,18 +203,46 @@
 		<!-- Split pane -->
 		<div class="flex flex-1 min-h-0">
 			<!-- Left panel -->
-			<div
-				class="shrink-0 flex flex-col min-h-0"
-				style="width: {leftDrag.value}px;"
-			>
+			<div class="shrink-0 flex flex-col min-h-0" style="width: {leftDrag.value}px;">
 				<!-- Left panel header -->
-				<div class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
+				<div
+					class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50"
+				>
 					<StratifyButton href="/stratify">
-						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="12"
+							height="12"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path
+								d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
+							/></svg
+						>
 						Saved Charts
 					</StratifyButton>
 					<StratifyButton href="/stratify/new">
-						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+						<svg
+							xmlns="http://www.w3.org/2000/svg"
+							width="12"
+							height="12"
+							viewBox="0 0 24 24"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line
+								x1="8"
+								y1="12"
+								x2="16"
+								y2="12"
+							/></svg
+						>
 						New Chart
 					</StratifyButton>
 				</div>
@@ -253,7 +284,9 @@
 			<!-- Right panel: chart bar + preview -->
 			<div class="flex-1 flex flex-col min-h-0 overflow-hidden">
 				<!-- Chart action bar -->
-				<div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/30">
+				<div
+					class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/30"
+				>
 					<div class="flex items-center gap-2">
 						{#if project.currentChartId}
 							{#if project.status === 'published'}
@@ -263,10 +296,25 @@
 									class="inline-flex items-center gap-1 text-[10px] text-mid-grey hover:text-dark-grey"
 								>
 									Published link
-									<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+									<svg
+										xmlns="http://www.w3.org/2000/svg"
+										width="10"
+										height="10"
+										viewBox="0 0 24 24"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										stroke-linecap="round"
+										stroke-linejoin="round"
+										><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline
+											points="15 3 21 3 21 9"
+										/><line x1="10" y1="14" x2="21" y2="3" /></svg
+									>
 								</a>
 							{:else}
-								<span class="text-[9px] px-1.5 py-0.5 rounded bg-warm-grey text-mid-grey">Draft</span>
+								<span class="text-[9px] px-1.5 py-0.5 rounded bg-warm-grey text-mid-grey"
+									>Draft</span
+								>
 							{/if}
 						{/if}
 					</div>
@@ -284,7 +332,11 @@
 							{/if}
 						{/if}
 
-						<StratifyButton variant="primary" onclick={() => handleSave('manual')} disabled={!project.hasData || saveStatus === 'saving'}>
+						<StratifyButton
+							variant="primary"
+							onclick={() => handleSave('manual')}
+							disabled={!project.hasData || saveStatus === 'saving'}
+						>
 							{saveButtonLabel}
 						</StratifyButton>
 					</div>
@@ -301,4 +353,3 @@
 		</div>
 	</div>
 {/if}
-
