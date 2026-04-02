@@ -26,6 +26,9 @@
 	/** @type {{ initialChartId?: string }} */
 	let { initialChartId = '' } = $props();
 
+	// svelte-ignore state_referenced_locally — component remounts via {#key} when ID changes
+	const chartId = initialChartId;
+
 	const project = new StratifyPlotProject();
 	setStratifyContext(project);
 
@@ -40,20 +43,20 @@
 
 	/** @type {Record<string, boolean>} */
 	let openSections = $state(
-		initialChartId
+		chartId
 			? { data: false, chart: true, theme: false, headerfooter: true, series: true, publish: true }
 			: { data: true, chart: false, theme: false, headerfooter: false, series: false, publish: false }
 	);
 
 	let mounted = $state(false);
-	let loadingChart = $state(!!initialChartId);
+	let loadingChart = $state(!!chartId);
 
 	onMount(async () => {
 		mounted = true;
 
-		if (initialChartId) {
+		if (chartId) {
 			try {
-				const chart = await getChart(initialChartId);
+				const chart = await getChart(chartId);
 				if (chart) {
 					project.loadFromSnapshot(chart);
 					project.currentChartId = chart._id;
