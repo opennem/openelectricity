@@ -4,7 +4,8 @@ import { verifyAdmin } from '$lib/auth/clerk-server.js';
 import { safeParseJSON } from '$lib/stratify/chart-data.js';
 
 /**
- * GET /api/stratify/charts/:id — fetch a single chart (ownership check).
+ * GET /api/stratify/charts/:id — fetch a single chart.
+ * Owner can always read. Others can read published charts. Superadmin can read any.
  * @type {import('./$types').RequestHandler}
  */
 export async function GET({ request, params }) {
@@ -14,16 +15,19 @@ export async function GET({ request, params }) {
 	}
 
 	const client = createCmsClient();
-	const chart = await client.fetch(
-		`*[_type == "stratifyChart" && _id == $id && userId == $userId][0]`,
-		{ id: params.id, userId: auth.userId }
-	);
+	const chart = await client.fetch(`*[_type == "stratifyChart" && _id == $id][0]`, {
+		id: params.id
+	});
 
 	if (!chart) {
 		return json({ error: 'Not found' }, { status: 404 });
 	}
 
-	// Parse JSON-stringified fields back to objects
+	const isOwner = chart.userId === auth.userId;
+	if (!isOwner && !auth.isSuperAdmin && chart.status !== 'published') {
+		return json({ error: 'Not found' }, { status: 404 });
+	}
+
 	return json({
 		chart: {
 			...chart,
@@ -39,7 +43,7 @@ export async function GET({ request, params }) {
 }
 
 /**
- * PATCH /api/stratify/charts/:id — update a chart (ownership check).
+ * PATCH /api/stratify/charts/:id — update a chart (owner only).
  * @type {import('./$types').RequestHandler}
  */
 export async function PATCH({ request, params }) {
@@ -50,7 +54,7 @@ export async function PATCH({ request, params }) {
 
 	const client = createCmsClient();
 
-	// Verify ownership before updating
+	// Owner only — superadmin cannot edit others' charts
 	const existing = await client.fetch(
 		`*[_type == "stratifyChart" && _id == $id && userId == $userId][0]{ _id }`,
 		{ id: params.id, userId: auth.userId }
@@ -65,7 +69,6 @@ export async function PATCH({ request, params }) {
 	/** @type {Record<string, any>} */
 	const patches = {};
 
-	// Only set fields that are present in the request body
 	if (body.title !== undefined) patches.title = body.title;
 	if (body.description !== undefined) patches.description = body.description;
 	if (body.dataSource !== undefined) patches.dataSource = body.dataSource;
@@ -117,7 +120,7 @@ export async function PATCH({ request, params }) {
 }
 
 /**
- * DELETE /api/stratify/charts/:id — delete a chart (ownership check).
+ * DELETE /api/stratify/charts/:id — delete a chart (owner or superadmin).
  * @type {import('./$types').RequestHandler}
  */
 export async function DELETE({ request, params }) {
@@ -128,14 +131,17 @@ export async function DELETE({ request, params }) {
 
 	const client = createCmsClient();
 
-	// Verify ownership before deleting
 	const existing = await client.fetch(
-		`*[_type == "stratifyChart" && _id == $id && userId == $userId][0]{ _id }`,
-		{ id: params.id, userId: auth.userId }
+		`*[_type == "stratifyChart" && _id == $id][0]{ _id, userId }`,
+		{ id: params.id }
 	);
 
 	if (!existing) {
 		return json({ error: 'Not found' }, { status: 404 });
+	}
+
+	if (existing.userId !== auth.userId && !auth.isSuperAdmin) {
+		return json({ error: 'Forbidden' }, { status: 403 });
 	}
 
 	await client.delete(params.id);

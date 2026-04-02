@@ -2,31 +2,41 @@ import { json } from '@sveltejs/kit';
 import { createCmsClient } from '$lib/sanity-cms.js';
 import { verifyAdmin } from '$lib/auth/clerk-server.js';
 
+const CHART_FIELDS = `_id, title, chartType, status, description, userEmail, _createdAt, _updatedAt`;
+
 /**
- * GET /api/stratify/charts — list the authenticated user's charts.
+ * GET /api/stratify/charts — list own charts + community charts.
  * @type {import('./$types').RequestHandler}
  */
-export async function GET({ request }) {
+export async function GET({ request, url }) {
 	const auth = await verifyAdmin(request);
 	if (!auth.isAdmin) {
 		return json({ error: 'Unauthorised' }, { status: auth.authenticated ? 403 : 401 });
 	}
 
+	const statusFilter = url.searchParams.get('status');
 	const client = createCmsClient();
-	const charts = await client.fetch(
-		`*[_type == "stratifyChart" && userId == $userId] | order(_updatedAt desc) {
-			_id,
-			title,
-			chartType,
-			status,
-			description,
-			_createdAt,
-			_updatedAt
-		}`,
-		{ userId: auth.userId }
-	);
 
-	return json({ charts });
+	// My charts (always includes both draft + published, filtered client-side or via param)
+	const myQuery = statusFilter
+		? `*[_type == "stratifyChart" && userId == $userId && status == $status] | order(_updatedAt desc) { ${CHART_FIELDS} }`
+		: `*[_type == "stratifyChart" && userId == $userId] | order(_updatedAt desc) { ${CHART_FIELDS} }`;
+
+	// Community charts: superadmin sees all, normal users see published only
+	const communityQuery = auth.isSuperAdmin
+		? statusFilter
+			? `*[_type == "stratifyChart" && userId != $userId && status == $status] | order(_updatedAt desc) { ${CHART_FIELDS} }`
+			: `*[_type == "stratifyChart" && userId != $userId] | order(_updatedAt desc) { ${CHART_FIELDS} }`
+		: `*[_type == "stratifyChart" && userId != $userId && status == "published"] | order(_updatedAt desc) { ${CHART_FIELDS} }`;
+
+	const params = { userId: auth.userId, ...(statusFilter ? { status: statusFilter } : {}) };
+
+	const [myCharts, communityCharts] = await Promise.all([
+		client.fetch(myQuery, params),
+		client.fetch(communityQuery, params)
+	]);
+
+	return json({ myCharts, communityCharts, isSuperAdmin: auth.isSuperAdmin });
 }
 
 /**
@@ -49,6 +59,7 @@ export async function POST({ request }) {
 	const doc = await client.create({
 		_type: 'stratifyChart',
 		userId: auth.userId,
+		userEmail: auth.userEmail,
 		status: 'draft',
 		title: body.title ?? '',
 		description: body.description ?? '',

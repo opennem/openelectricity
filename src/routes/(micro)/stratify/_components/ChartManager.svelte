@@ -33,7 +33,8 @@
 	async function refreshList() {
 		loading = true;
 		try {
-			charts = await api.listCharts();
+			const data = await api.listCharts();
+			charts = data.myCharts;
 		} catch {
 			charts = [];
 		} finally {
@@ -61,7 +62,7 @@
 			const full = await api.getChart(chart._id);
 			if (!full) return;
 
-			const { _id, _createdAt, _updatedAt, userId, status, publishedAt, ...rest } = full;
+			const { _id, _createdAt, _updatedAt, userId, userEmail, status, publishedAt, ...rest } = full;
 			const snapshot = {
 				...rest,
 				title: `${full.title || 'Untitled'} (copy)`
