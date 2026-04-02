@@ -31,7 +31,7 @@
 		{ id: 'data', label: 'Data' },
 		{ id: 'chart', label: 'Chart' },
 		{ id: 'theme', label: 'Theme & Colours' },
-		{ id: 'annotate', label: 'Annotate' },
+		{ id: 'headerfooter', label: 'Header & Footer' },
 		{ id: 'series', label: 'Series' },
 		{ id: 'publish', label: 'Publish' }
 	];
@@ -39,8 +39,8 @@
 	/** @type {Record<string, boolean>} */
 	let openSections = $state(
 		initialChartId
-			? { data: false, chart: true, theme: false, annotate: true, series: true, publish: true }
-			: { data: true, chart: false, theme: false, annotate: false, series: false, publish: false }
+			? { data: false, chart: true, theme: false, headerfooter: true, series: true, publish: true }
+			: { data: true, chart: false, theme: false, headerfooter: false, series: false, publish: false }
 	);
 
 	let mounted = $state(false);
@@ -233,7 +233,7 @@
 										<ColourPalettePicker />
 									</div>
 								</div>
-							{:else if section.id === 'annotate'}
+							{:else if section.id === 'headerfooter'}
 								<AnnotatePanel />
 							{:else if section.id === 'series'}
 								<SeriesPanel />

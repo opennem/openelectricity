@@ -131,7 +131,7 @@
 		<div class="flex flex-col gap-2">
 			<!-- Category axis: column + type -->
 			<div class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">{isHorizontal ? 'Y Axis' : 'X Axis'}</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">{isHorizontal ? 'Y Axis' : 'X Axis'}</span>
 				<select
 					value={project.xColumn || rawColumns[0]?.key || ''}
 					onchange={(e) => {
@@ -161,7 +161,7 @@
 
 			<!-- Value axis -->
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">{isHorizontal ? 'X Axis' : 'Y Axis'}</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">{isHorizontal ? 'X Axis' : 'Y Axis'}</span>
 				<select
 					value={selectedY || (allowMultipleY ? '' : nonFirstColumns[0]?.key || '')}
 					onchange={(e) => {
@@ -187,7 +187,7 @@
 
 			<!-- Z Colour -->
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">Z Colour</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Z Colour</span>
 				<select
 					value={project.colourSeries ?? ''}
 					onchange={(e) => {
@@ -208,7 +208,7 @@
 			<!-- Sort (category only) -->
 			{#if project.isCategory}
 				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-16 shrink-0">Sort</span>
+					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Sort</span>
 					<select
 						value={project.categorySort}
 						onchange={(e) => {
@@ -257,7 +257,7 @@
 		<p class="text-[10px] text-dark-grey font-medium mb-1.5">{isHorizontal ? 'X Axis (values)' : 'X Axis'}</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">Label</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Label</span>
 				<input
 					type="text"
 					value={project.xLabel}
@@ -282,7 +282,7 @@
 			</label>
 
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">Ticks</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Ticks</span>
 				<input
 					type="number"
 					min="0"
@@ -299,7 +299,7 @@
 			</label>
 
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">Angle</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Angle</span>
 				<input
 					type="number"
 					min="-90"
@@ -316,7 +316,7 @@
 			</label>
 
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">Height</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Height</span>
 				<input
 					type="number"
 					min="0"
@@ -339,7 +339,7 @@
 		<p class="text-[10px] text-dark-grey font-medium mb-1.5">{isHorizontal ? 'Y Axis (categories)' : 'Y Axis'}</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">Label</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Label</span>
 				<input
 					type="text"
 					value={project.yLabel}
@@ -352,7 +352,7 @@
 			</label>
 
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-16 shrink-0">Ticks</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Ticks</span>
 				<input
 					type="number"
 					min="0"
@@ -388,7 +388,7 @@
 			<p class="text-[10px] text-dark-grey font-medium mb-1.5">Y2 Axis</p>
 			<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-16 shrink-0">Label</span>
+					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Label</span>
 					<input
 						type="text"
 						value={project.y2Label}
@@ -401,7 +401,7 @@
 				</label>
 
 				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-16 shrink-0">Ticks</span>
+					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Ticks</span>
 					<input
 						type="number"
 						min="0"
