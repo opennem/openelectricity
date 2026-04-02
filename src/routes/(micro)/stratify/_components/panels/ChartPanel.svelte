@@ -2,7 +2,6 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
 	import ChartTypeSelector from '../ChartTypeSelector.svelte';
-	import StylePresetPicker from '../StylePresetPicker.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
 
 	const project = getStratifyContext();
@@ -235,8 +234,6 @@
 <!-- ═══ Section 3: Appearance ═══ -->
 <div class="mt-3 pt-3 border-t border-warm-grey">
 	<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Appearance</p>
-
-	<StylePresetPicker />
 
 	<label class="flex items-center gap-2 mt-3">
 		<span class="text-[10px] text-mid-grey">Chart height</span>

@@ -1,7 +1,8 @@
 <script>
 	import StratifyPlotChart from '$lib/stratify/StratifyPlotChart.svelte';
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
-	import { getPreset, assignPresetColours, getPlotStyle } from '$lib/stratify/chart-styles.js';
+	import { getPreset, getPlotStyle } from '$lib/stratify/chart-styles.js';
+	import { assignPaletteColours } from '$lib/stratify/colour-palettes.js';
 
 	/**
 	 * @type {{
@@ -50,7 +51,7 @@
 	// Merge colours: user overrides > preset palette > parsed defaults
 	const seriesColours = $derived.by(() => {
 		const names = hasColourSeries ? colourGroupNames : parsed.seriesNames;
-		const presetColours = assignPresetColours(names, chart.stylePreset ?? 'oe');
+		const presetColours = assignPaletteColours(names, chart.colourPalette ?? 'oe-energy');
 		/** @type {Record<string, string>} */
 		const colours = {};
 		for (const name of names) {

@@ -6,7 +6,8 @@
  */
 
 import { parseCSV } from '$lib/stratify/csv-parser.js';
-import { assignPresetColours, getPreset } from '$lib/stratify/chart-styles.js';
+import { getPreset, migratePreset } from '$lib/stratify/chart-styles.js';
+import { assignPaletteColours, migratePresetToPalette } from '$lib/stratify/colour-palettes.js';
 import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
 
 /**
@@ -74,7 +75,10 @@ export default class StratifyPlotProject {
 	chartType = $state('line');
 
 	/** @type {string} */
-	stylePreset = $state('oe');
+	stylePreset = $state('sans');
+
+	/** @type {string} Colour palette ID */
+	colourPalette = $state('oe-energy');
 
 	// --- Series customisation ---
 	/** @type {string[]} */
@@ -206,7 +210,7 @@ export default class StratifyPlotProject {
 		const names = this.hasColourSeries ? this.colourGroupNames : parsed.seriesNames;
 		if (names.length === 0) return this.userSeriesColours;
 
-		const presetColours = assignPresetColours(names, this.stylePreset);
+		const presetColours = assignPaletteColours(names, this.colourPalette);
 
 		/** @type {Record<string, string>} */
 		const merged = {};
@@ -303,7 +307,8 @@ export default class StratifyPlotProject {
 		this.notes = '';
 		this.displayMode = 'auto';
 		this.chartType = 'line';
-		this.stylePreset = 'oe';
+		this.stylePreset = 'sans';
+		this.colourPalette = 'oe-energy';
 		this.hiddenSeries = [];
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
@@ -344,7 +349,8 @@ export default class StratifyPlotProject {
 		this.notes = example.notes;
 		this.chartType = /** @type {ChartType} */ (example.chartType);
 		this.displayMode = 'auto';
-		this.stylePreset = 'oe';
+		this.stylePreset = 'sans';
+		this.colourPalette = 'oe-energy';
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
 		this.seriesChartTypes = {};
@@ -386,6 +392,7 @@ export default class StratifyPlotProject {
 			chartType: this.chartType,
 			displayMode: this.displayMode,
 			stylePreset: this.stylePreset,
+			colourPalette: this.colourPalette,
 			hiddenSeries: this.hiddenSeries,
 			userSeriesColours: this.userSeriesColours,
 			userSeriesLabels: this.userSeriesLabels,
@@ -424,7 +431,8 @@ export default class StratifyPlotProject {
 		this.notes = snapshot.notes ?? '';
 		this.chartType = migrateChartType(snapshot.chartType ?? 'line');
 		this.displayMode = snapshot.displayMode ?? 'auto';
-		this.stylePreset = snapshot.stylePreset ?? 'oe';
+		this.stylePreset = migratePreset(snapshot.stylePreset ?? 'sans');
+		this.colourPalette = snapshot.colourPalette ?? migratePresetToPalette(snapshot.stylePreset ?? 'oe');
 		this.hiddenSeries = snapshot.hiddenSeries ?? [];
 		this.userSeriesColours = snapshot.userSeriesColours ?? {};
 		this.userSeriesLabels = snapshot.userSeriesLabels ?? {};

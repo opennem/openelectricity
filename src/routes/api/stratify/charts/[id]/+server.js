@@ -84,6 +84,7 @@ export async function PATCH({ request, params }) {
 	if (body.plotOverrides !== undefined) patches.plotOverrides = JSON.stringify(body.plotOverrides);
 	if (body.seriesOrder !== undefined) patches.seriesOrder = body.seriesOrder;
 	if (body.stylePreset !== undefined) patches.stylePreset = body.stylePreset;
+	if (body.colourPalette !== undefined) patches.colourPalette = body.colourPalette;
 	if (body.showBranding !== undefined) patches.showBranding = body.showBranding;
 	if (body.chartHeight !== undefined) patches.chartHeight = body.chartHeight;
 	if (body.xTicks !== undefined) patches.xTicks = body.xTicks;

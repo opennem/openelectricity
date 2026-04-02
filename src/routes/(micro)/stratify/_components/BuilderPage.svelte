@@ -13,6 +13,8 @@
 	import SeriesPanel from './panels/SeriesPanel.svelte';
 	import PublishPanel from './panels/PublishPanel.svelte';
 	import ChartPreview from './ChartPreview.svelte';
+	import StylePresetPicker from './StylePresetPicker.svelte';
+	import ColourPalettePicker from './ColourPalettePicker.svelte';
 	import ExamplePicker from './ExamplePicker.svelte';
 	import AccordionSection from './AccordionSection.svelte';
 	import StratifyHeader from './StratifyHeader.svelte';
@@ -28,6 +30,7 @@
 	const sections = [
 		{ id: 'data', label: 'Data' },
 		{ id: 'chart', label: 'Chart' },
+		{ id: 'theme', label: 'Theme & Colours' },
 		{ id: 'annotate', label: 'Annotate' },
 		{ id: 'series', label: 'Series' },
 		{ id: 'publish', label: 'Publish' }
@@ -36,8 +39,8 @@
 	/** @type {Record<string, boolean>} */
 	let openSections = $state(
 		initialChartId
-			? { data: false, chart: true, annotate: true, series: true, publish: true }
-			: { data: true, chart: false, annotate: false, series: false, publish: false }
+			? { data: false, chart: true, theme: false, annotate: true, series: true, publish: true }
+			: { data: true, chart: false, theme: false, annotate: false, series: false, publish: false }
 	);
 
 	let mounted = $state(false);
@@ -219,6 +222,17 @@
 								<DataPanel />
 							{:else if section.id === 'chart'}
 								<ChartPanel />
+							{:else if section.id === 'theme'}
+								<div class="space-y-4">
+									<div>
+										<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Theme</p>
+										<StylePresetPicker />
+									</div>
+									<div>
+										<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Colours</p>
+										<ColourPalettePicker />
+									</div>
+								</div>
 							{:else if section.id === 'annotate'}
 								<AnnotatePanel />
 							{:else if section.id === 'series'}
