@@ -2,7 +2,6 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
 	import SeriesConfig from '../SeriesConfig.svelte';
-	import SectionGroup from '../SectionGroup.svelte';
 	import SectionHeader from '../SectionHeader.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
 
@@ -17,9 +16,7 @@
 		const ordered =
 			project.tooltipColumns.length > 0
 				? [
-						...project.tooltipColumns
-							.map((key) => all.find((c) => c.key === key))
-							.filter(Boolean),
+						...project.tooltipColumns.map((key) => all.find((c) => c.key === key)).filter(Boolean),
 						...all.filter((c) => !project.tooltipColumns.includes(c.key))
 					]
 				: all;
@@ -53,8 +50,7 @@
 </SectionHeader>
 
 {#if project.hasData}
-	<SectionGroup>
-		<SectionHeader label="Tooltip">
+	<SectionHeader label="Tooltip">
 		<div
 			class="flex flex-col gap-1"
 			use:dndzone={{
@@ -104,6 +100,5 @@
 				</div>
 			{/each}
 		</div>
-		</SectionHeader>
-		</SectionGroup>
+	</SectionHeader>
 {/if}

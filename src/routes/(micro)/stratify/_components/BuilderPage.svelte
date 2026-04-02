@@ -4,18 +4,22 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import { DragHandle, createDragHandler } from '$lib/components/ui/panel';
 
+	import BookIcon from '@lucide/svelte/icons/book-open';
+	import CirclePlusIcon from '@lucide/svelte/icons/circle-plus';
+	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
 	import StratifyPlotProject from '../_state/StratifyPlotProject.svelte.js';
 	import { setStratifyContext } from '../_state/context.js';
 
 	import DataPanel from './panels/DataPanel.svelte';
 	import ChartPanel from './panels/ChartPanel.svelte';
 	import AnnotatePanel from './panels/AnnotatePanel.svelte';
+	import ChartConfig from './ChartConfig.svelte';
+
 	import SeriesPanel from './panels/SeriesPanel.svelte';
 	import PublishPanel from './panels/PublishPanel.svelte';
 	import ChartPreview from './ChartPreview.svelte';
 	import StylePresetPicker from './StylePresetPicker.svelte';
 	import ColourPalettePicker from './ColourPalettePicker.svelte';
-	import SectionGroup from './SectionGroup.svelte';
 	import SectionHeader from './SectionHeader.svelte';
 	import ExamplePicker from './ExamplePicker.svelte';
 	import AccordionSection from './AccordionSection.svelte';
@@ -205,40 +209,11 @@
 					class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50"
 				>
 					<StratifyButton href="/stratify">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="12"
-							height="12"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path
-								d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"
-							/></svg
-						>
+						<BookIcon size={12} />
 						Saved Charts
 					</StratifyButton>
 					<StratifyButton href="/stratify/new">
-						<svg
-							xmlns="http://www.w3.org/2000/svg"
-							width="12"
-							height="12"
-							viewBox="0 0 24 24"
-							fill="none"
-							stroke="currentColor"
-							stroke-width="2"
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line
-								x1="8"
-								y1="12"
-								x2="16"
-								y2="12"
-							/></svg
-						>
+						<CirclePlusIcon size={12} />
 						New Chart
 					</StratifyButton>
 				</div>
@@ -255,16 +230,14 @@
 							{:else if section.id === 'chart'}
 								<ChartPanel />
 							{:else if section.id === 'theme'}
-								<SectionGroup>
-									<SectionHeader label="Theme">
-										<StylePresetPicker />
-									</SectionHeader>
-									<SectionHeader label="Colours">
-										<ColourPalettePicker />
-									</SectionHeader>
-								</SectionGroup>
+								<SectionHeader label="Theme">
+									<StylePresetPicker />
+								</SectionHeader>
+								<SectionHeader label="Colours">
+									<ColourPalettePicker />
+								</SectionHeader>
 							{:else if section.id === 'headerfooter'}
-								<AnnotatePanel />
+								<ChartConfig />
 							{:else if section.id === 'series'}
 								<SeriesPanel />
 							{:else if section.id === 'publish'}
@@ -292,20 +265,7 @@
 									class="inline-flex items-center gap-1 text-[10px] text-mid-grey hover:text-dark-grey"
 								>
 									Published link
-									<svg
-										xmlns="http://www.w3.org/2000/svg"
-										width="10"
-										height="10"
-										viewBox="0 0 24 24"
-										fill="none"
-										stroke="currentColor"
-										stroke-width="2"
-										stroke-linecap="round"
-										stroke-linejoin="round"
-										><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /><polyline
-											points="15 3 21 3 21 9"
-										/><line x1="10" y1="14" x2="21" y2="3" /></svg
-									>
+									<ExternalLinkIcon size={10} />
 								</a>
 							{:else}
 								<span class="text-[9px] px-1.5 py-0.5 rounded bg-warm-grey text-mid-grey"

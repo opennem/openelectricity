@@ -3,6 +3,11 @@
 	import { exportToFile, importFromFile } from '../../_utils/storage.js';
 	import { createChart, updateChart } from '../../_utils/api.js';
 	import SectionHeader from '../SectionHeader.svelte';
+	import StratifyButton from '../StratifyButton.svelte';
+	import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
+	import CopyIcon from '@lucide/svelte/icons/copy';
+	import DownloadIcon from '@lucide/svelte/icons/download';
+	import UploadIcon from '@lucide/svelte/icons/upload';
 
 	const project = getStratifyContext();
 
@@ -121,26 +126,22 @@
 
 <SectionHeader label="Status">
 	{#if isPublished}
-		<div class="flex items-center gap-2 mb-3">
-			<span class="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700">Published</span>
-			<button
-				type="button"
-				onclick={handleUnpublish}
-				disabled={publishing}
-				class="text-[10px] text-mid-grey underline hover:text-dark-grey disabled:opacity-40"
-			>
-				Unpublish
-			</button>
+		<div class="flex flex-col gap-2">
+			<div class="flex items-center gap-2">
+				<span class="text-[10px] px-1.5 py-0.5 rounded bg-green-100 text-green-700">Published</span>
+				<StratifyButton onclick={handleUnpublish} disabled={publishing}>
+					{publishing ? '...' : 'Unpublish'}
+				</StratifyButton>
+			</div>
+			<StratifyButton href="/strata/{project.currentChartId}" target="_blank">
+				<ExternalLinkIcon size={12} />
+				Published link
+			</StratifyButton>
 		</div>
 	{:else}
-		<button
-			type="button"
-			onclick={handlePublish}
-			disabled={!project.hasData || publishing}
-			class="w-full rounded bg-dark-grey px-3 py-1.5 text-[10px] text-white hover:bg-black disabled:opacity-40 disabled:pointer-events-none"
-		>
+		<StratifyButton variant="primary" onclick={handlePublish} disabled={!project.hasData || publishing}>
 			{publishing ? 'Publishing...' : 'Publish'}
-		</button>
+		</StratifyButton>
 	{/if}
 
 	{#if statusMessage}
@@ -162,13 +163,10 @@
 						value={shareUrl}
 						class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[10px] font-mono focus:outline-none"
 					/>
-					<button
-						type="button"
-						onclick={() => copyToClipboard(shareUrl)}
-						class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey"
-					>
+					<StratifyButton onclick={() => copyToClipboard(shareUrl)}>
+						<CopyIcon size={12} />
 						{copied ? 'Copied' : 'Copy'}
-					</button>
+					</StratifyButton>
 				</div>
 			</div>
 
@@ -180,13 +178,10 @@
 					value={embedCode}
 					class="w-full bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[10px] font-mono resize-none focus:outline-none"
 				></textarea>
-				<button
-					type="button"
-					onclick={() => copyToClipboard(embedCode)}
-					class="mt-1 text-[10px] text-mid-grey underline hover:text-dark-grey"
-				>
+				<StratifyButton onclick={() => copyToClipboard(embedCode)}>
+					<CopyIcon size={12} />
 					Copy embed code
-				</button>
+				</StratifyButton>
 			</div>
 
 			<label class="flex items-center gap-2 cursor-pointer">
@@ -204,41 +199,26 @@
 
 <SectionHeader label="Export Image">
 	<div class="flex gap-2">
-		<button
-			type="button"
-			onclick={handleExportSVG}
-			disabled={!project.hasData}
-			class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey disabled:opacity-40 disabled:pointer-events-none"
-		>
-			Download SVG
-		</button>
-		<button
-			type="button"
-			onclick={handleExportPNG}
-			disabled={!project.hasData}
-			class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey disabled:opacity-40 disabled:pointer-events-none"
-		>
-			Download PNG
-		</button>
+		<StratifyButton onclick={handleExportSVG} disabled={!project.hasData}>
+			<DownloadIcon size={12} />
+			SVG
+		</StratifyButton>
+		<StratifyButton onclick={handleExportPNG} disabled={!project.hasData}>
+			<DownloadIcon size={12} />
+			PNG
+		</StratifyButton>
 	</div>
 </SectionHeader>
 
 <SectionHeader label="Config">
 	<div class="flex gap-2">
-		<button
-			type="button"
-			onclick={handleExportJSON}
-			disabled={!project.hasData}
-			class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey disabled:opacity-40 disabled:pointer-events-none"
-		>
+		<StratifyButton onclick={handleExportJSON} disabled={!project.hasData}>
+			<DownloadIcon size={12} />
 			Export JSON
-		</button>
-		<button
-			type="button"
-			onclick={handleImportJSON}
-			class="rounded border border-warm-grey px-2 py-0.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey"
-		>
+		</StratifyButton>
+		<StratifyButton onclick={handleImportJSON}>
+			<UploadIcon size={12} />
 			Import JSON
-		</button>
+		</StratifyButton>
 	</div>
 </SectionHeader>

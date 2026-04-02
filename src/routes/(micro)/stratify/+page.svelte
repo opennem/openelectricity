@@ -2,6 +2,7 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import StratifyHeader from './_components/StratifyHeader.svelte';
 	import StratifyButton from './_components/StratifyButton.svelte';
+	import CirclePlusIcon from '@lucide/svelte/icons/circle-plus';
 	import * as api from './_utils/api.js';
 
 	/** @type {import('./_utils/api.js').ChartSummary[]} */
@@ -94,23 +95,7 @@
 	<!-- Sub-header -->
 	<div class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
 		<StratifyButton href="/stratify/new">
-			<svg
-				xmlns="http://www.w3.org/2000/svg"
-				width="12"
-				height="12"
-				viewBox="0 0 24 24"
-				fill="none"
-				stroke="currentColor"
-				stroke-width="2"
-				stroke-linecap="round"
-				stroke-linejoin="round"
-				><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="16" /><line
-					x1="8"
-					y1="12"
-					x2="16"
-					y2="12"
-				/></svg
-			>
+			<CirclePlusIcon size={12} />
 			New Chart
 		</StratifyButton>
 		<input

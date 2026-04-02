@@ -5,46 +5,6 @@
 	import { getStratifyContext } from '../../_state/context.js';
 
 	const project = getStratifyContext();
-	const FLIP_DURATION = 150;
-
-	// --- Tooltip DnD ---
-	/** @type {Array<{id: string, key: string, label: string}>} */
-	let tooltipDndItems = $state([]);
-
-	$effect(() => {
-		const all = project.allColumns;
-		const ordered =
-			project.tooltipColumns.length > 0
-				? [
-						...project.tooltipColumns
-							.map((key) => all.find((c) => c.key === key))
-							.filter(Boolean),
-						...all.filter((c) => !project.tooltipColumns.includes(c.key))
-					]
-				: all;
-		tooltipDndItems = ordered.map((col) => ({
-			id: col.key,
-			key: col.key,
-			label: col === all[0] && !project.isCategory ? 'Date' : col.label
-		}));
-	});
-
-	/** @param {CustomEvent} e */
-	function handleTooltipConsider(e) {
-		tooltipDndItems = e.detail.items;
-	}
-
-	/** @param {CustomEvent} e */
-	function handleTooltipFinalize(e) {
-		tooltipDndItems = e.detail.items;
-		const selected =
-			project.tooltipColumns.length > 0
-				? new Set(project.tooltipColumns)
-				: new Set(project.allColumns.map((c) => c.key));
-		project.tooltipColumns = tooltipDndItems
-			.filter((item) => selected.has(item.key))
-			.map((item) => item.key);
-	}
 
 	// --- Derived values ---
 	let rawColumns = $derived.by(() => {
@@ -127,12 +87,13 @@
 
 <!-- ═══ Section 2: Data Encoding ═══ -->
 {#if project.hasData}
-	<SectionGroup>
-		<SectionHeader label="Data Encoding">
+	<SectionHeader label="Data Encoding">
 		<div class="flex flex-col gap-2">
 			<!-- Category axis: column + type -->
 			<div class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">{isHorizontal ? 'Y Axis' : 'X Axis'}</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0"
+					>{isHorizontal ? 'Y Axis' : 'X Axis'}</span
+				>
 				<select
 					value={project.xColumn || rawColumns[0]?.key || ''}
 					onchange={(e) => {
@@ -162,15 +123,15 @@
 
 			<!-- Value axis -->
 			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">{isHorizontal ? 'X Axis' : 'Y Axis'}</span>
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0"
+					>{isHorizontal ? 'X Axis' : 'Y Axis'}</span
+				>
 				<select
 					value={selectedY || (allowMultipleY ? '' : nonFirstColumns[0]?.key || '')}
 					onchange={(e) => {
 						const val = e.currentTarget.value;
 						if (val) {
-							project.hiddenSeries = nonFirstColumns
-								.filter((c) => c.key !== val)
-								.map((c) => c.key);
+							project.hiddenSeries = nonFirstColumns.filter((c) => c.key !== val).map((c) => c.key);
 						} else {
 							project.hiddenSeries = [];
 						}
@@ -213,10 +174,7 @@
 					<select
 						value={project.categorySort}
 						onchange={(e) => {
-							project.categorySort =
-								/** @type {any} */ (
-									e.currentTarget.value
-								);
+							project.categorySort = /** @type {any} */ (e.currentTarget.value);
 						}}
 						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 					>
@@ -230,12 +188,10 @@
 			{/if}
 		</div>
 	</SectionHeader>
-	</SectionGroup>
 {/if}
 
 <!-- ═══ Section 3: Appearance ═══ -->
-<SectionGroup>
-	<SectionHeader label="Axes & Layout">
+<SectionHeader label="Axes & Layout">
 	<label class="flex items-center gap-2 mt-3">
 		<span class="text-[10px] text-mid-grey">Chart height</span>
 		<input
@@ -255,7 +211,9 @@
 
 	<!-- X Axis appearance -->
 	<div class="mt-4">
-		<p class="text-[10px] text-dark-grey font-medium mb-1.5">{isHorizontal ? 'X Axis (values)' : 'X Axis'}</p>
+		<p class="text-[10px] text-dark-grey font-medium mb-1.5">
+			{isHorizontal ? 'X Axis (values)' : 'X Axis'}
+		</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 			<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Label</span>
@@ -337,7 +295,9 @@
 
 	<!-- Y Axis appearance -->
 	<div class="mt-4">
-		<p class="text-[10px] text-dark-grey font-medium mb-1.5">{isHorizontal ? 'Y Axis (categories)' : 'Y Axis'}</p>
+		<p class="text-[10px] text-dark-grey font-medium mb-1.5">
+			{isHorizontal ? 'Y Axis (categories)' : 'Y Axis'}
+		</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
 			<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Label</span>
@@ -432,8 +392,7 @@
 			</div>
 		</div>
 	{/if}
-	</SectionHeader>
-</SectionGroup>
+</SectionHeader>
 
 <!-- ═══ Section 4: Advanced ═══ -->
 <SectionGroup>

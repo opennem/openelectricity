@@ -1,5 +1,7 @@
 <script>
 	import { getClerkState } from '$lib/auth/clerk.svelte.js';
+	import UserIcon from '@lucide/svelte/icons/user';
+	import LogOutIcon from '@lucide/svelte/icons/log-out';
 
 	/** @type {{ right?: import('svelte').Snippet }} */
 	let { right } = $props();
@@ -32,7 +34,7 @@
 					class="flex items-center justify-center w-7 h-7 rounded-full border border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
 					title={clerkState.user.primaryEmailAddress?.emailAddress ?? ''}
 				>
-					<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+					<UserIcon size={14} />
 				</button>
 
 				{#if showUserMenu}
@@ -48,7 +50,7 @@
 							}}
 							class="w-full text-left px-3 py-2 text-[11px] text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey/50 transition-colors flex items-center gap-2"
 						>
-							<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+							<LogOutIcon size={12} />
 							Sign out
 						</button>
 					</div>

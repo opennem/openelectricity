@@ -1,5 +1,6 @@
 <script>
 	import { slide } from 'svelte/transition';
+	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 
 	/**
 	 * @type {{
@@ -20,20 +21,9 @@
 			hover:bg-mid-warm-grey/50 transition-colors shrink-0 text-left cursor-pointer"
 		onclick={ontoggle}
 	>
-		<svg
-			xmlns="http://www.w3.org/2000/svg"
-			width="10"
-			height="10"
-			viewBox="0 0 24 24"
-			fill="none"
-			stroke="currentColor"
-			stroke-width="2.5"
-			stroke-linecap="round"
-			stroke-linejoin="round"
-			class="transition-transform duration-150 {open ? 'rotate-90' : ''}"
-		>
-			<path d="m9 18 6-6-6-6" />
-		</svg>
+		<span class="transition-transform duration-150 {open ? 'rotate-90' : ''}">
+			<ChevronRightIcon size={10} strokeWidth={2.5} />
+		</span>
 		{label}
 	</button>
 
