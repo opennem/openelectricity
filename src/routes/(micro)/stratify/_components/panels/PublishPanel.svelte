@@ -1,7 +1,7 @@
 <script>
 	import { getStratifyContext } from '../../_state/context.js';
 	import { exportToFile, importFromFile } from '../../_utils/storage.js';
-	import { updateChart } from '../../_utils/api.js';
+	import { createChart, updateChart } from '../../_utils/api.js';
 
 	const project = getStratifyContext();
 

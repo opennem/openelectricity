@@ -279,10 +279,12 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 /**
  * @typedef {Object} BarChartOptions
  * @property {object} [style]
+ * @property {number} [marginLeft]
  * @property {number} [marginRight]
  * @property {boolean} [legend]
  * @property {any[]} [extraMarks] - Additional marks
  * @property {string | ((d: number) => string)} [yTickFormat]
+ * @property {boolean} [horizontal]
  */
 
 /**
@@ -705,8 +707,8 @@ export function createMixedMarkOptions(
 	// Partition series by effective mark type
 	/** @type {Record<SeriesMarkType, string[]>} */
 	const groups = { area: [], line: [], bar: [], dot: [] };
-	/** @param {string} t */
-	const toMark = (t) => (t === 'column' ? 'bar' : t);
+	/** @param {string} t @returns {SeriesMarkType} */
+	const toMark = (t) => /** @type {SeriesMarkType} */ (t === 'column' ? 'bar' : t);
 	for (const name of seriesNames) {
 		const markType = toMark(seriesChartTypes[name]) || defaultMarkType;
 		groups[markType].push(name);

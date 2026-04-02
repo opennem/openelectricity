@@ -6,7 +6,6 @@
 </script>
 
 <div>
-	<span class="block text-[10px] text-mid-grey uppercase tracking-wide mb-2">Chart type</span>
 	<select
 		value={project.chartType}
 		onchange={(e) => {

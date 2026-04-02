@@ -15,6 +15,8 @@
 	import ChartPreview from './ChartPreview.svelte';
 	import StylePresetPicker from './StylePresetPicker.svelte';
 	import ColourPalettePicker from './ColourPalettePicker.svelte';
+	import SectionGroup from './SectionGroup.svelte';
+	import SectionHeader from './SectionHeader.svelte';
 	import ExamplePicker from './ExamplePicker.svelte';
 	import AccordionSection from './AccordionSection.svelte';
 	import StratifyHeader from './StratifyHeader.svelte';
@@ -223,16 +225,14 @@
 							{:else if section.id === 'chart'}
 								<ChartPanel />
 							{:else if section.id === 'theme'}
-								<div class="space-y-4">
-									<div>
-										<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Theme</p>
+								<SectionGroup>
+									<SectionHeader label="Theme">
 										<StylePresetPicker />
-									</div>
-									<div>
-										<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Colours</p>
+									</SectionHeader>
+									<SectionHeader label="Colours">
 										<ColourPalettePicker />
-									</div>
-								</div>
+									</SectionHeader>
+								</SectionGroup>
 							{:else if section.id === 'headerfooter'}
 								<AnnotatePanel />
 							{:else if section.id === 'series'}

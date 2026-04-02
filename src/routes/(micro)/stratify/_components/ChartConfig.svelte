@@ -1,13 +1,13 @@
 <script>
 	import { getStratifyContext } from '../_state/context.js';
+	import SectionGroup from './SectionGroup.svelte';
+	import SectionHeader from './SectionHeader.svelte';
 
 	const project = getStratifyContext();
 </script>
 
-<div class="flex flex-col gap-4">
-	<!-- Header -->
-	<div>
-		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Header</p>
+<SectionGroup>
+	<SectionHeader label="Header">
 		<div class="flex flex-col gap-2">
 			<label class="block">
 				<span class="block text-[10px] text-mid-grey mb-1">Title</span>
@@ -29,11 +29,9 @@
 				></textarea>
 			</label>
 		</div>
-	</div>
+	</SectionHeader>
 
-	<!-- Footer -->
-	<div class="pt-3 border-t border-warm-grey">
-		<p class="text-[10px] text-mid-grey uppercase tracking-wide mb-2">Footer</p>
+	<SectionHeader label="Footer">
 		<div class="flex flex-col gap-2">
 			<label class="block">
 				<span class="block text-[10px] text-mid-grey mb-1">Source</span>
@@ -55,5 +53,5 @@
 				></textarea>
 			</label>
 		</div>
-	</div>
-</div>
+	</SectionHeader>
+</SectionGroup>

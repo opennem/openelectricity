@@ -17,7 +17,6 @@
 				: 'border-warm-grey hover:border-mid-warm-grey'}"
 		>
 			<span class="text-[11px] text-dark-grey block leading-tight">{theme.name}</span>
-			<span class="text-[9px] text-mid-grey block leading-tight">{theme.description}</span>
 		</button>
 	{/each}
 </div>

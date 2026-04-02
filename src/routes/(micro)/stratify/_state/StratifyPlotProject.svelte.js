@@ -25,9 +25,11 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {ChartType} chartType
  * @property {'auto' | 'time-series' | 'category'} [displayMode]
  * @property {string} stylePreset
+ * @property {string} [colourPalette]
  * @property {string[]} hiddenSeries
  * @property {Record<string, string>} userSeriesColours
  * @property {Record<string, string>} userSeriesLabels
+ * @property {Record<string, string>} [seriesChartTypes]
  * @property {import('$lib/stratify/plot-overrides.js').PlotOverrides | null} [plotOverrides]
  * @property {string[]} [seriesOrder]
  * @property {number} [chartHeight]
@@ -126,7 +128,7 @@ export default class StratifyPlotProject {
 	/** @type {boolean} Show min/max tick marks on right Y-axis */
 	y2MinMax = $state(false);
 
-	/** @type {'default' | 'value-asc' | 'value-desc'} Category sort order */
+	/** @type {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} Category sort order */
 	categorySort = $state('default');
 
 	/** @type {string[]} Columns to show in tooltip (empty = show all) */

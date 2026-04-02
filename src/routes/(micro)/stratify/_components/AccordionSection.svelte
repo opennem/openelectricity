@@ -15,9 +15,9 @@
 <div class="flex flex-col flex-shrink-0 border-t border-warm-grey">
 	<button
 		type="button"
-		class="flex items-center gap-2 w-full px-4 py-2 border-b border-warm-grey bg-mid-warm-grey/50
+		class="flex items-center gap-2 w-full px-4 py-2 border-b border-warm-grey bg-warm-grey
 			text-[11px] font-bold text-dark-grey uppercase tracking-wide
-			hover:bg-mid-warm-grey transition-colors flex-shrink-0 text-left cursor-pointer"
+			hover:bg-mid-warm-grey/50 transition-colors flex-shrink-0 text-left cursor-pointer"
 		onclick={ontoggle}
 	>
 		<svg

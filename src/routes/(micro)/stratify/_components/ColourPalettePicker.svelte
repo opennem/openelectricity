@@ -28,7 +28,7 @@
 				class="px-2 py-0.5 text-[10px] rounded border transition-colors {activeType === type
 					? 'border-dark-grey text-dark-grey bg-white'
 					: 'border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
-				onclick={() => (activeType = type)}
+				onclick={() => (activeType = /** @type {import('$lib/stratify/colour-palettes.js').PaletteType} */ (type))}
 			>
 				{type.charAt(0).toUpperCase() + type.slice(1)}
 			</button>
