@@ -68,7 +68,7 @@
 					project.tooltipColumns.length === 0 || project.tooltipColumns.includes(item.key)}
 				<div class="flex items-center gap-1.5" animate:flip={{ duration: FLIP_DURATION }}>
 					<div
-						class="flex-shrink-0 cursor-grab active:cursor-grabbing text-mid-warm-grey hover:text-mid-grey"
+						class="shrink-0 cursor-grab active:cursor-grabbing text-mid-warm-grey hover:text-mid-grey"
 						title="Drag to reorder"
 					>
 						<svg width="8" height="12" viewBox="0 0 10 14" fill="currentColor">

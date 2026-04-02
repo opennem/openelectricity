@@ -492,7 +492,7 @@
 {:else if selectedFacility}
 	<div class="flex flex-col h-dvh overflow-hidden">
 		<!-- Top Bar: facility nav -->
-		<div class="flex items-center px-4 py-2 border-b border-warm-grey bg-white flex-shrink-0">
+		<div class="flex items-center px-4 py-2 border-b border-warm-grey bg-white shrink-0">
 			<div class="flex items-center w-full justify-center">
 				<button
 					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
@@ -521,7 +521,7 @@
 			</div>
 
 			{#if quickLinks.length > 0}
-				<div class="ml-auto flex-shrink-0">
+				<div class="ml-auto shrink-0">
 					<FormSelect
 						selected=""
 						options={quickLinks.map((l) => ({ label: groupLabels[l.group], value: l.code }))}
@@ -536,7 +536,7 @@
 		</div>
 
 		<!-- Controls bar -->
-		<div class="flex items-center px-4 py-3 gap-4 border-b border-warm-grey bg-white flex-shrink-0">
+		<div class="flex items-center px-4 py-3 gap-4 border-b border-warm-grey bg-white shrink-0">
 			<!-- Range: Switch on desktop, dropdown on mobile -->
 			<div class="hidden sm:block">
 				<Switch
@@ -677,7 +677,7 @@
 
 						<!-- Summary table (right) -->
 						<div
-							class="flex-shrink-0 overflow-y-auto"
+							class="shrink-0 overflow-y-auto"
 							style="width: {tableResize.value}px;"
 						>
 							{#if summaryData && selectedFacility}

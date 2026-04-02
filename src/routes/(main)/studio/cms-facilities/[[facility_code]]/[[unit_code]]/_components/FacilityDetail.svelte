@@ -680,7 +680,7 @@
 	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
 		<span class="text-[11px] text-mid-grey font-mono truncate" title={label}>{label}</span>
 		{#if isUrl(value)}
-			<a href={value} target="_blank" rel="noopener noreferrer" class="text-[12px] text-dark-grey font-mono break-all col-span-2 inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{value}<ExternalLink size={10} class="flex-shrink-0" /></a>
+			<a href={value} target="_blank" rel="noopener noreferrer" class="text-[12px] text-dark-grey font-mono break-all col-span-2 inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{value}<ExternalLink size={10} class="shrink-0" /></a>
 		{:else if value != null && value !== ''}
 			<span class="text-[12px] text-dark-grey font-mono break-all col-span-2">{value}</span>
 		{:else}
@@ -754,7 +754,7 @@
 	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
 		<span class="text-[11px] text-mid-grey font-mono truncate" title={label}>{label}</span>
 		{#if isUrl(value)}
-			<a href={value} target="_blank" rel="noopener noreferrer" class="text-[9px] text-dark-grey/70 font-mono break-all col-span-2 leading-tight inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{value}<ExternalLink size={10} class="flex-shrink-0" /></a>
+			<a href={value} target="_blank" rel="noopener noreferrer" class="text-[9px] text-dark-grey/70 font-mono break-all col-span-2 leading-tight inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{value}<ExternalLink size={10} class="shrink-0" /></a>
 		{:else if value != null && value !== ''}
 			<span class="text-[9px] text-dark-grey/70 font-mono break-all col-span-2 leading-tight">{value}</span>
 		{:else}
@@ -787,7 +787,7 @@
 	<div class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60">
 		<span class="text-[11px] text-mid-grey font-mono truncate" title={label}>{label}</span>
 		{#if displayText != null && displayText !== '' && href}
-			<a {href} target="_blank" rel="noopener noreferrer" title="Open on {description} (new tab)" class="text-[12px] text-dark-grey font-mono col-span-2 inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey rounded-sm">{displayText}<ExternalLink size={10} class="flex-shrink-0" /></a>
+			<a {href} target="_blank" rel="noopener noreferrer" title="Open on {description} (new tab)" class="text-[12px] text-dark-grey font-mono col-span-2 inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey rounded-sm">{displayText}<ExternalLink size={10} class="shrink-0" /></a>
 		{:else if displayText != null && displayText !== ''}
 			<span class="text-[12px] text-dark-grey font-mono break-all col-span-2">{displayText}</span>
 		{:else}
@@ -799,7 +799,7 @@
 <div class="flex-1 flex flex-col min-h-0 transition-colors" style:background-color={editing ? 'rgb(254 252 232)' : ''}>
 	<PanelHeader class={saving ? "saving-hatch" : ""}>
 		<span
-			class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+			class="w-2.5 h-2.5 rounded-full shrink-0"
 			style="background: {ftColour(facility.units?.[0]?.fuel_technology?.code)}"
 		></span>
 		<span class="text-[12px] font-medium text-dark-grey flex-1 truncate">{facility.name || 'Unnamed'}</span>
@@ -807,14 +807,14 @@
 			href={sanityEditUrl(facility._id, 'facility')}
 			target="_blank"
 			rel="noopener noreferrer"
-			class="text-[9px] px-1.5 py-0.5 border border-warm-grey rounded transition-colors inline-flex items-center gap-1 flex-shrink-0 text-mid-grey hover:text-dark-grey hover:border-dark-grey no-underline"
+			class="text-[9px] px-1.5 py-0.5 border border-warm-grey rounded transition-colors inline-flex items-center gap-1 shrink-0 text-mid-grey hover:text-dark-grey hover:border-dark-grey no-underline"
 		>
 			<ExternalLink size={8} />
 			Edit in Sanity
 		</a>
 		<button
 			onclick={toggleEdit}
-			class="text-[9px] px-1.5 py-0.5 border rounded transition-colors inline-flex items-center gap-1 flex-shrink-0 {editing ? 'border-dark-grey bg-dark-grey text-white' : 'border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
+			class="text-[9px] px-1.5 py-0.5 border rounded transition-colors inline-flex items-center gap-1 shrink-0 {editing ? 'border-dark-grey bg-dark-grey text-white' : 'border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
 		>
 			<Pencil size={8} />
 			{editing ? 'DONE' : 'EDIT'}
@@ -855,7 +855,7 @@
 
 				<div class="flex gap-2 overflow-x-auto pb-1">
 					{#each facility.photos ?? [] as photo, i (photo._key || i)}
-						<div class="flex-shrink-0 group max-w-[200px]">
+						<div class="shrink-0 group max-w-[200px]">
 							<div class="relative inline-block">
 								<img
 									src={photo.asset
@@ -900,7 +900,7 @@
 
 					{#if editing}
 						<button
-							class="flex-shrink-0 w-[120px] h-[120px] rounded border-2 border-dashed border-warm-grey flex flex-col items-center justify-center gap-1 text-mid-grey hover:border-dark-grey hover:text-dark-grey transition-colors"
+							class="shrink-0 w-[120px] h-[120px] rounded border-2 border-dashed border-warm-grey flex flex-col items-center justify-center gap-1 text-mid-grey hover:border-dark-grey hover:text-dark-grey transition-colors"
 							title="Add photo"
 							disabled={uploading}
 							onclick={() => {
@@ -979,7 +979,7 @@
 					<span class="text-[11px] text-mid-grey font-mono truncate" title="osm_way_id">osm_way_id</span>
 					{#if facility.osm_way_id}
 						<span class="text-[12px] text-dark-grey font-mono col-span-2 inline-flex items-center gap-1.5">
-							<a href="{EXTERNAL_LINKS.openStreetMap.baseUrl}/way/{facility.osm_way_id}" target="_blank" rel="noopener noreferrer" title="Open on {EXTERNAL_LINKS.openStreetMap.label} (new tab)" class="inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{facility.osm_way_id}<ExternalLink size={10} class="flex-shrink-0" /></a>
+							<a href="{EXTERNAL_LINKS.openStreetMap.baseUrl}/way/{facility.osm_way_id}" target="_blank" rel="noopener noreferrer" title="Open on {EXTERNAL_LINKS.openStreetMap.label} (new tab)" class="inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:text-black hover:decoration-solid hover:decoration-dark-grey">{facility.osm_way_id}<ExternalLink size={10} class="shrink-0" /></a>
 							{#if osmStatus === 'loading'}
 								<button disabled class="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-warm-grey text-mid-grey cursor-not-allowed">
 									<span class="w-3 h-3 border-[1.5px] border-mid-grey/60 border-t-dark-grey rounded-full animate-spin"></span>
@@ -1040,7 +1040,7 @@
 							<span class="text-[12px] text-dark-grey font-mono flex-1 truncate">{owner.name || owner.legal_name}</span>
 							<button
 								onclick={() => handleRemoveOwner(owner._id)}
-								class="p-0.5 rounded hover:bg-warm-grey transition-colors flex-shrink-0"
+								class="p-0.5 rounded hover:bg-warm-grey transition-colors shrink-0"
 								title="Remove owner"
 								disabled={saving}
 							>
@@ -1072,7 +1072,7 @@
 								rel="noopener noreferrer"
 								title="Open website (new tab)"
 								class="text-[12px] text-dark-grey hover:text-black inline-flex items-center gap-1 underline decoration-dotted decoration-mid-grey underline-offset-2 hover:decoration-solid hover:decoration-dark-grey focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-dark-grey rounded-sm"
-							>{owner.name || owner.legal_name}<ExternalLink size={10} class="flex-shrink-0" /></a>
+							>{owner.name || owner.legal_name}<ExternalLink size={10} class="shrink-0" /></a>
 						{:else}
 							<span class="text-[12px] text-dark-grey">{owner.name || owner.legal_name}</span>
 						{/if}
@@ -1151,7 +1151,7 @@
 				<PanelHeader class={saving ? "saving-hatch" : ""}>
 					<FacilityStatusIcon status={displayUnit?.status || 'operating'} />
 					<span
-						class="w-2.5 h-2.5 rounded-full flex-shrink-0"
+						class="w-2.5 h-2.5 rounded-full shrink-0"
 						style="background: {ftColour(displayUnit?.fuel_technology?.code)}"
 					></span>
 					<span class="text-[12px] font-medium text-dark-grey flex-1 truncate"
@@ -1161,7 +1161,7 @@
 						href={sanityEditUrl(displayUnit?._id, 'unit')}
 						target="_blank"
 						rel="noopener noreferrer"
-						class="text-[9px] px-1.5 py-0.5 border border-warm-grey rounded transition-colors inline-flex items-center gap-1 flex-shrink-0 text-mid-grey hover:text-dark-grey hover:border-dark-grey no-underline"
+						class="text-[9px] px-1.5 py-0.5 border border-warm-grey rounded transition-colors inline-flex items-center gap-1 shrink-0 text-mid-grey hover:text-dark-grey hover:border-dark-grey no-underline"
 					>
 						<ExternalLink size={8} />
 						Edit in Sanity

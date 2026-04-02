@@ -8,7 +8,7 @@
 	bind:this={ref}
 	data-slot="panel-header"
 	class={cn(
-		'flex items-center gap-2 px-4 py-3 border-b border-warm-grey bg-light-warm-grey/50 flex-shrink-0',
+		'flex items-center gap-2 px-4 py-3 border-b border-warm-grey bg-light-warm-grey/50 shrink-0',
 		className
 	)}
 	{...restProps}

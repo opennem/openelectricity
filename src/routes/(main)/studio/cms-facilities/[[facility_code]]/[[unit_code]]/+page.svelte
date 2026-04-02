@@ -552,7 +552,7 @@
 	<!-- Main split pane -->
 	<div class="flex flex-1 min-h-0">
 		<!-- LEFT: Facility list -->
-		<div class="flex-shrink-0 border-r border-warm-grey flex flex-col min-h-0" style="width: {listDrag.value}px;">
+		<div class="shrink-0 border-r border-warm-grey flex flex-col min-h-0" style="width: {listDrag.value}px;">
 			<PanelHeader>
 				<span class="text-[12px] font-medium text-dark-grey flex-1 truncate">Facilities</span>
 				<span class="text-[10px] text-mid-grey tabular-nums">{filteredFacilities.length}/{facilities.length}</span>

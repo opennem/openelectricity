@@ -74,7 +74,7 @@
 					: 'border-warm-grey hover:border-mid-warm-grey'}"
 				onclick={() => selectPalette(palette.id)}
 			>
-				<div class="flex gap-0.5 flex-shrink-0">
+				<div class="flex gap-0.5 shrink-0">
 					{#each colours.slice(0, 12) as colour}
 						<span
 							class="block w-3 h-3 rounded-sm"

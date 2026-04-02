@@ -113,7 +113,7 @@
 <div class="flex flex-col h-full">
 	<!-- Header -->
 	<div
-		class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-mid-warm-grey/50 flex-shrink-0"
+		class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-mid-warm-grey/50 shrink-0"
 	>
 		<span class="text-[11px] font-medium text-dark-grey uppercase tracking-wide flex-1"
 			>Charts</span
@@ -132,7 +132,7 @@
 	</div>
 
 	<!-- Search -->
-	<div class="px-3 py-2 border-b border-warm-grey flex-shrink-0">
+	<div class="px-3 py-2 border-b border-warm-grey shrink-0">
 		<input
 			type="text"
 			placeholder="Search charts..."
@@ -169,7 +169,7 @@
 						<span
 							class="text-[9px] px-1 py-0.5 rounded {chart.status === 'published'
 								? 'bg-green-100 text-green-700'
-								: 'bg-warm-grey text-mid-grey'} flex-shrink-0"
+								: 'bg-warm-grey text-mid-grey'} shrink-0"
 						>
 							{chart.status === 'published' ? 'Published' : 'Draft'}
 						</span>
@@ -206,7 +206,7 @@
 	</div>
 
 	<!-- Footer -->
-	<div class="px-3 py-2 border-t border-warm-grey flex-shrink-0">
+	<div class="px-3 py-2 border-t border-warm-grey shrink-0">
 		<button
 			type="button"
 			onclick={() => {

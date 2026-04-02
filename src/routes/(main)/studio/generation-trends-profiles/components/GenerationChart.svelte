@@ -47,7 +47,7 @@
 <div class="bg-white border border-gray-200 rounded-lg p-6">
 	<div class="flex justify-end items-center mb-6">
 		<!-- Toggle between chart and table view -->
-		<div class="flex-shrink-0">
+		<div class="shrink-0">
 			<ButtonGroup
 				buttons={[
 					{ label: 'Chart', value: 'chart' },

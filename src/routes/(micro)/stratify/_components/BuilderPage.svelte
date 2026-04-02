@@ -201,7 +201,7 @@
 		<div class="flex flex-1 min-h-0">
 			<!-- Left panel -->
 			<div
-				class="flex-shrink-0 flex flex-col min-h-0"
+				class="shrink-0 flex flex-col min-h-0"
 				style="width: {leftDrag.value}px;"
 			>
 				<!-- Left panel header -->

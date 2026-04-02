@@ -232,7 +232,7 @@
 									<button
 										type="button"
 										onclick={() => resetColour(group)}
-										class="text-[10px] text-mid-grey hover:text-dark-grey flex-shrink-0"
+										class="text-[10px] text-mid-grey hover:text-dark-grey shrink-0"
 										title="Reset to preset colour"
 									>
 										Reset
@@ -264,7 +264,7 @@
 					<div class="flex items-center gap-1.5">
 						<!-- Drag handle -->
 						<div
-							class="flex-shrink-0 cursor-grab active:cursor-grabbing text-mid-warm-grey hover:text-mid-grey"
+							class="shrink-0 cursor-grab active:cursor-grabbing text-mid-warm-grey hover:text-mid-grey"
 							title="Drag to reorder"
 						>
 							<svg width="10" height="14" viewBox="0 0 10 14" fill="currentColor">
@@ -300,7 +300,7 @@
 						<select
 							value={project.seriesYAxis[key] || 'left'}
 							onchange={(e) => updateSeriesYAxis(key, e.currentTarget.value)}
-							class="text-[10px] bg-transparent border border-transparent rounded px-1 py-0.5 focus:outline-none focus:border-warm-grey text-mid-grey cursor-pointer w-8 flex-shrink-0"
+							class="text-[10px] bg-transparent border border-transparent rounded px-1 py-0.5 focus:outline-none focus:border-warm-grey text-mid-grey cursor-pointer w-8 shrink-0"
 							title="Y-axis for this series"
 						>
 							<option value="left">L</option>
@@ -312,7 +312,7 @@
 							<select
 								value={project.seriesChartTypes[key] || ''}
 								onchange={(e) => updateSeriesChartType(key, e.currentTarget.value)}
-								class="text-[10px] bg-transparent border border-transparent rounded px-1 py-0.5 focus:outline-none focus:border-warm-grey text-mid-grey cursor-pointer w-16 flex-shrink-0"
+								class="text-[10px] bg-transparent border border-transparent rounded px-1 py-0.5 focus:outline-none focus:border-warm-grey text-mid-grey cursor-pointer w-16 shrink-0"
 								title="Chart type for this series"
 							>
 								<option value="">Default</option>
@@ -326,7 +326,7 @@
 						<button
 							type="button"
 							onclick={() => toggleVisibility(key)}
-							class="text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 {isHidden
+							class="text-[10px] px-1.5 py-0.5 rounded shrink-0 {isHidden
 								? 'text-mid-warm-grey line-through'
 								: 'text-mid-grey hover:text-dark-grey'}"
 							title={isHidden ? 'Show series' : 'Hide series'}
@@ -375,7 +375,7 @@
 									<button
 										type="button"
 										onclick={() => resetColour(key)}
-										class="text-[10px] text-mid-grey hover:text-dark-grey flex-shrink-0"
+										class="text-[10px] text-mid-grey hover:text-dark-grey shrink-0"
 										title="Reset to preset colour"
 									>
 										Reset
