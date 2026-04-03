@@ -218,8 +218,12 @@
 			>
 				<PortableText value={value.blocks ? value.blocks : value} {components} />
 			</div>
+		{:else if value.style === 'h2'}
+			<div class="mx-auto max-w-5xl pt-16 portable-override pb-6">
+				<PortableText value={value.blocks ? value.blocks : value} {components} />
+			</div>
 		{:else if value.style === 'h3'}
-			<div class="mx-auto max-w-5xl portable-override pt-20 pb-6">
+			<div class="mx-auto max-w-5xl pt-8 portable-override pb-6">
 				<PortableText value={value.blocks ? value.blocks : value} {components} />
 			</div>
 		{:else if value.style === 'h6'}
@@ -239,7 +243,9 @@
 				<YouTube youTubeId={getYouTubeId(value) ?? ''} modestBranding={true} />
 			</div>
 		{:else if value._type === 'strataEmbed'}
-			<div class="mx-auto max-w-full my-12 border border-mid-warm-grey rounded-lg px-12 py-6">
+			<div
+				class="mx-auto max-w-full my-12 border-x-0 md:border-x border-y md:border border-mid-warm-grey rounded-none md:rounded-lg px-0 md:px-12 py-6"
+			>
 				{#if charts[value.chartId]}
 					<StrataEmbed chart={charts[value.chartId]} caption={value.caption} />
 				{/if}

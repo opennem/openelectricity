@@ -152,7 +152,7 @@
 			{#if chart.title}
 				<svelte:element
 					this={headingTag}
-					class="text-dark-grey leading-2xl"
+					class="text-dark-grey leading-lg mt-2"
 					style="font-size: {preset.typography.titleSize}; font-weight: {preset.typography
 						.titleWeight};"
 				>
