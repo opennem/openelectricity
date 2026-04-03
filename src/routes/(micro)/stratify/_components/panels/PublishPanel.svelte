@@ -20,9 +20,14 @@
 	let shareUrl = $derived(
 		project.currentChartId ? `${window.location.origin}/strata/${project.currentChartId}` : ''
 	);
+	let embedUrl = $derived(
+		project.currentChartId
+			? `${window.location.origin}/strata-embed/${project.currentChartId}`
+			: ''
+	);
 	let embedCode = $derived(
-		shareUrl
-			? `<iframe src="${shareUrl}" width="100%" height="${project.chartHeight + 120}" frameborder="0" style="border:0;max-width:1024px"></iframe>`
+		embedUrl
+			? `<iframe src="${embedUrl}" width="100%" height="${project.chartHeight + 120}" frameborder="0" style="border:0;max-width:1024px"></iframe>`
 			: ''
 	);
 

@@ -1,5 +1,5 @@
 <script>
-	import StrataChartView from '$lib/stratify/StrataChartView.svelte';
+	import StrataChartCard from '$lib/stratify/StrataChartCard.svelte';
 
 	/** @type {{ data: { chart: any } }} */
 	let { data } = $props();
@@ -16,6 +16,11 @@
 
 <div class="flex flex-col min-h-dvh bg-white">
 	<div class="flex-1 w-full px-6 py-8">
-		<StrataChartView {chart} headingTag="h1" showBranding={chart.showBranding ?? true} />
+		<StrataChartCard
+			{chart}
+			headingTag="h1"
+			showHeader={false}
+			showBranding={chart.showBranding ?? true}
+		/>
 	</div>
 </div>
