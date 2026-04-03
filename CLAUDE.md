@@ -70,15 +70,20 @@ src/routes/
 │   ├── analysis/          # Editorial articles from Sanity CMS
 │   ├── records/           # Historical electricity records system
 │   ├── scenarios/         # Future energy modeling & projections
+│   ├── strata/[id]/       # Published chart detail pages
+│   ├── strata-community/  # Community gallery of published charts
 │   └── studio/            # Data exploration tools
 ├── (micro)/               # Embeddable widgets and micro-apps
 │   ├── record/[id]/       # Minimal record displays
+│   ├── strata-embed/[id]/ # Strata chart iframe embeds (bare page)
+│   ├── stratify/          # Stratify chart builder (closed beta)
 │   └── widget/            # Embeddable grid status widget
 └── api/                   # Data endpoints and server functions
     ├── energy/            # Historical energy data
     ├── power/             # Real-time power data
     ├── records/           # Record management
     ├── scenarios/         # Modeling data
+    ├── stratify/charts/   # Stratify chart CRUD + fork API
     └── tracker/           # Live tracking endpoints
 ```
 

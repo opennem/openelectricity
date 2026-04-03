@@ -67,10 +67,12 @@ src/
 │   │   ├── records/       # Historical electricity records
 │   │   ├── scenarios/     # Future energy modelling
 │   │   └── studio/        # Data exploration tools
-│   ├── (micro)/           # Embeddable widgets
+│   │   ├── strata/        # Published chart detail pages
+│   │   └── strata-community/ # Community chart gallery
+│   ├── (micro)/           # Embeddable widgets and micro-apps
 │   │   ├── record/        # Minimal record displays
-│   │   ├── strata/        # Strata chart embeds
-│   │   ├── stratify/      # Stratify chart builder
+│   │   ├── strata-embed/  # Strata chart iframe embeds
+│   │   ├── stratify/      # Stratify chart builder (closed beta)
 │   │   └── widget/        # Grid status widget
 │   └── api/               # Server-side data endpoints
 └── ...

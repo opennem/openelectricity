@@ -4,11 +4,12 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 
 ## Features
 
-- **Chart types**: Stacked Area, Overlay Area, Line, Stacked Bar, Grouped Bar, Dot (scatter)
+- **Chart types**: Line, Area, Column, Stacked Columns, Grouped Columns, Bar, Stacked Bars, Grouped Bars
 - **Per-series chart type**: Override the chart type for individual series (e.g. one series as a line, another as a bar)
 - **Data input**: Paste CSV or tab-separated data (e.g. from Google Sheets)
 - **Auto-detection**: Automatically detects dates vs categories, delimiter type
-- **Style presets**: Open Electricity, Default (Tableau 10), Warm Earth, Cool Slate, Vibrant, Muted Pastel
+- **Themes**: Sans (DM Sans) and Mono (DM Mono) — control typography only
+- **Colour palettes**: 30+ palettes — qualitative (OE Energy, Tableau 10, Set1–3, etc.), sequential (Blues, Greens, etc.), diverging (RdBu, Spectral, etc.)
 - **Series config**: Customise colours, labels, visibility, chart type, Y-axis assignment, and order per series
 - **Dual Y-axis**: Assign series to left or right Y-axis with independent scales and labels
 - **Drag-to-reorder**: Reorder series via drag-and-drop (affects stacking order and legend)
@@ -17,6 +18,9 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 - **Tooltip columns**: Select which columns appear in the tooltip, with formatted date display
 - **Plot overrides**: Power-user JSON config for arbitrary Observable Plot customisation
 - **Article embeds**: Native inline rendering (`strataEmbed`) and generic iframe (`embed`) in editorial articles
+- **Multi-user**: Clerk JWT authentication, per-user chart ownership, superadmin controls
+- **Community gallery**: Public gallery of published charts at `/strata-community`
+- **Forking**: Fork published charts to create your own copy
 - **Publishing**: Save to Sanity CMS, publish with shareable URL, iframe embed code
 - **Export**: SVG, PNG, and JSON config export
 
@@ -25,45 +29,59 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 ### Route Structure
 
 ```
-src/routes/(micro)/stratify/           # Builder UI
-├── +page.svelte                       # Main builder page
-├── +layout.svelte                     # Micro layout (no nav/footer)
-├── charts/+page.svelte                # Charts list page
+src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/footer)
+├── +page.svelte                       # Chart list + new chart entry point
+├── +layout.svelte                     # Micro layout wrapper
+├── new/                               # New chart builder (blank)
+├── [id]/                              # Edit existing chart
 ├── _state/
 │   ├── StratifyPlotProject.svelte.js  # Central state class (runes)
 │   └── context.js                     # setContext/getContext helpers
 ├── _utils/
-│   ├── api.js                         # Sanity CMS CRUD client
+│   ├── api.js                         # Sanity CMS CRUD client (list, get, create, update, delete, fork)
 │   ├── storage.js                     # localStorage + JSON file export/import
 │   ├── export.js                      # SVG/PNG capture
+│   ├── format.js                      # Date formatting (timeAgo)
 │   └── examples.js                    # Built-in example datasets
 └── _components/
+    ├── BuilderPage.svelte             # Main layout; coordinates all panels, auto-save
     ├── ChartPreview.svelte            # Live chart preview
     ├── ChartTypeSelector.svelte       # Chart family/variant toggle
     ├── SeriesConfig.svelte            # Per-series colour, label, type, Y-axis, visibility
     ├── DataInput.svelte               # CSV/TSV textarea + data preview
     ├── ExamplePicker.svelte           # Example dataset buttons
     ├── ChartManager.svelte            # Full chart management modal
-    ├── SavedChartsPopover.svelte      # Quick chart list dropdown
-    ├── StylePresetPicker.svelte       # Style preset selector
+    ├── StylePresetPicker.svelte       # Theme selector (sans/mono)
+    ├── ColourPalettePicker.svelte     # Colour palette selector
     └── panels/
         ├── DataPanel.svelte           # Data input + examples
         ├── ChartPanel.svelte          # Chart type, style, axis controls, tooltip, advanced overrides
-        ├── SeriesPanel.svelte         # Series customisation
+        ├── SeriesPanel.svelte         # Series customisation + drag-to-reorder
         ├── AnnotatePanel.svelte       # Annotation settings
-        └── PublishPanel.svelte        # Save, publish, export, embed
+        └── PublishPanel.svelte        # Save, publish/unpublish, share URL, embed code, export
 
-src/routes/(micro)/strata/[id]/        # Embed route (public)
+src/routes/(main)/strata/[id]/         # Public chart detail page
 ├── +page.server.js                    # Loads published chart from Sanity
-└── +page.svelte                       # Renders chart with style preset
+└── +page.svelte                       # Full chart view with header, metadata, source/notes
+
+src/routes/(main)/strata-community/    # Community gallery
+├── +page.server.js                    # Loads latest published charts
+└── +page.svelte                       # Grid of chart cards
+
+src/routes/(micro)/strata-embed/[id]/  # Bare embed route (iframe-friendly)
+├── +page.server.js                    # Loads published chart from Sanity
+└── +page.svelte                       # Minimal chart render (no nav/footer)
 
 src/lib/stratify/                      # Stratify library
 ├── StrataChartView.svelte             # Unified chart view (used by preview, embed, strata page)
+├── StrataChartCard.svelte             # Card component for published charts (header, chart, menu)
 ├── StratifyPlotChart.svelte           # Chart component (dual Y-axis, tooltips, annotations)
 ├── chart-data.js                      # safeParseJSON, normaliseChart (shared server-side)
-├── chart-styles.js                    # Style presets (colours, typography)
+├── chart-types.js                     # Chart type definitions and type constants
+├── chart-styles.js                    # Themes — sans (DM Sans) and mono (DM Mono)
+├── colour-palette.js                  # Default colour assignment for series
+├── colour-palettes.js                 # 30+ palettes (qualitative, sequential, diverging)
 ├── csv-parser.js                      # CSV/TSV parser with date/category detection
-├── colour-palette.js                  # Default colour assignment
 ├── plot-annotations.js                # Annotation processing + formatCompact
 ├── plot-overrides.js                  # PlotOverrides merge system
 └── *.test.js                          # Co-located tests
@@ -84,18 +102,18 @@ src/lib/components/text-components/    # Article content rendering
 
 ## Chart Types
 
-| Value          | Family | Description                           |
-| -------------- | ------ | ------------------------------------- |
-| `stacked-area` | Area   | Time-series stacked area              |
-| `area`         | Area   | Time-series overlay area              |
-| `line`         | Line   | Multi-series line chart               |
-| `bar-stacked`  | Bar    | Stacked bar (category or time-series) |
-| `grouped-bar`  | Bar    | Category grouped bar                  |
-| `dot`          | Dot    | Scatter / dot plot                    |
+| Value              | Family | Description                              |
+| ------------------ | ------ | ---------------------------------------- |
+| `line`             | Line   | Multi-series line chart                  |
+| `area`             | Area   | Stacked area (time-series)               |
+| `column`           | Column | Vertical bars                            |
+| `column-stacked`   | Column | Stacked vertical bars                    |
+| `column-grouped`   | Column | Grouped vertical bars                    |
+| `bar`              | Bar    | Horizontal bars                          |
+| `bar-stacked`      | Bar    | Stacked horizontal bars                  |
+| `bar-grouped`      | Bar    | Grouped horizontal bars                  |
 
-Category data mode only supports Bar charts. When switching to category mode, the chart type auto-switches to `grouped-bar` if needed.
-
-Time-series bar charts use `rectY` with auto-detected intervals (day/week/month/year) and centred bars on each data point. Category bar charts use `barY` with a band scale.
+Time-series types (`area`, `line`) auto-detect dates from the first column. Column and bar charts support both time-series and category modes. Horizontal bar types use `barX` in Observable Plot; column types use `barY`/`rectY`.
 
 ## Per-Series Chart Type Override
 
@@ -325,9 +343,10 @@ The JSON format used for persistence (localStorage, file export, Sanity CMS):
 	"description": "Monthly generation mix.",
 	"dataSource": "Open Electricity",
 	"notes": "Values in GWh.",
-	"chartType": "stacked-area",
+	"chartType": "area",
 	"displayMode": "auto",
-	"stylePreset": "oe",
+	"stylePreset": "sans",
+	"colourPalette": "oe-energy",
 	"hiddenSeries": [],
 	"userSeriesColours": { "solar": "#f28e2b" },
 	"userSeriesLabels": { "solar": "Solar PV" },
@@ -381,22 +400,70 @@ Date,Solar,Wind,Coal
 
 Tab-separated data (pasted from spreadsheets) is also supported.
 
+## Themes & Colour Palettes
+
+### Themes (`stylePreset`)
+
+| ID     | Name | Font    | Description              |
+| ------ | ---- | ------- | ------------------------ |
+| `sans` | Sans | DM Sans | Clean sans-serif default |
+| `mono` | Mono | DM Mono | Technical monospace      |
+
+Themes control typography and gridline styling only. Data colours are handled separately by the palette system.
+
+### Colour Palettes (`colourPalette`)
+
+**Qualitative** (fixed colour arrays): `oe-energy`, `tableau10`, `set1`, `set2`, `set3`, `paired`, `dark2`, `pastel1`, `pastel2`, `accent`
+
+**Sequential** (interpolated for any N): `blues`, `greens`, `oranges`, `purples`, `reds`, `greys`, `ylgn`, `ylorrd`, `bugn`, `pubu`
+
+**Diverging**: `rdbu`, `rdylgn`, `brbg`, `piyg`, `prgn`, `rdylbu`, `spectral`
+
+The `oe-energy` palette is the default, with 12 hand-picked colours inspired by fuel technology colours.
+
+## Multi-User & Permissions
+
+All API requests require **Clerk JWT** authentication. Charts are owned by the creating user.
+
+| Action                  | Owner | Other Users | Superadmin |
+| ----------------------- | ----- | ----------- | ---------- |
+| Create chart            | Yes   | Yes         | Yes        |
+| Read own charts         | Yes   | —           | Yes (all)  |
+| Read others' published  | Yes   | Yes         | Yes        |
+| Read others' drafts     | No    | No          | Yes        |
+| Edit own chart          | Yes   | —           | —          |
+| Delete own chart        | Yes   | —           | Yes (any)  |
+| Fork published chart    | Yes   | Yes         | Yes        |
+| Fork others' draft      | No    | No          | Yes        |
+
+### Chart Listings
+
+- **My Charts**: User's own drafts + published charts
+- **Community Charts**: Published charts from all other users (superadmins see all statuses)
+
 ## Publishing Workflow
 
-1. Build chart in the builder (CSV data, chart config, metadata)
-2. Save to Sanity CMS (creates draft)
-3. Publish — sets status to `published`, generates shareable URL
-4. Published charts viewable at `/strata/{chartId}`
-5. Embed via iframe: `<iframe src="/strata/{chartId}" width="800" height="500"></iframe>`
+1. Build chart in the builder at `/stratify/new` or `/stratify/{id}` (CSV data, chart config, metadata)
+2. Auto-save (debounced 3s) persists to Sanity CMS as a draft
+3. Publish — sets status to `published`, generates shareable URLs
+4. **Share URL**: `/strata/{chartId}` — full chart detail page with header, metadata
+5. **Embed URL**: `/strata-embed/{chartId}` — bare iframe-friendly page
+6. **Embed code**: `<iframe src="/strata-embed/{chartId}" width="100%" height="520" frameborder="0" style="border:0;max-width:1024px"></iframe>`
+7. Published charts appear in the community gallery at `/strata-community`
+
+## Community Gallery
+
+The `/strata-community` page displays the 10 most recently published charts in a grid layout. Each chart card shows the title, description, author, and publish date, linking through to the full `/strata/{id}` detail page.
 
 ## API Endpoints
 
-| Method | Path                       | Description         |
-| ------ | -------------------------- | ------------------- |
-| GET    | `/api/stratify/charts`     | List user's charts  |
-| POST   | `/api/stratify/charts`     | Create new chart    |
-| GET    | `/api/stratify/charts/:id` | Get single chart    |
-| PATCH  | `/api/stratify/charts/:id` | Update chart fields |
-| DELETE | `/api/stratify/charts/:id` | Delete chart        |
+| Method | Path                            | Description                  |
+| ------ | ------------------------------- | ---------------------------- |
+| GET    | `/api/stratify/charts`          | List user's + community charts |
+| POST   | `/api/stratify/charts`          | Create new chart             |
+| GET    | `/api/stratify/charts/:id`      | Get single chart             |
+| PATCH  | `/api/stratify/charts/:id`      | Update chart fields          |
+| DELETE | `/api/stratify/charts/:id`      | Delete chart                 |
+| POST   | `/api/stratify/charts/:id/fork` | Fork chart to current user   |
 
 All endpoints require Clerk JWT authentication.
