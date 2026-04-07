@@ -1,0 +1,21 @@
+{
+	"name": "@openelectricity/stratify-mcp",
+	"version": "0.1.0",
+	"description": "MCP server for creating Stratify charts via Claude",
+	"type": "module",
+	"bin": {
+		"stratify-mcp": "./bin/stratify-mcp.js"
+	},
+	"main": "src/index.js",
+	"scripts": {
+		"start": "node bin/stratify-mcp.js"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.12.1"
+	},
+	"keywords": ["mcp", "stratify", "charts", "openelectricity"],
+	"license": "MIT",
+	"engines": {
+		"node": ">=18"
+	}
+}
