@@ -51,6 +51,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {string} [xColumn]
  * @property {'none' | 'cumulative'} [dataTransform]
  * @property {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} [categorySort]
+ * @property {boolean} [showBranding]
  */
 
 export default class StratifyPlotProject {
@@ -407,7 +408,8 @@ export default class StratifyPlotProject {
 			xLabel: this.xLabel,
 			yLabel: this.yLabel,
 			seriesYAxis: this.seriesYAxis,
-			y2Label: this.y2Label
+			y2Label: this.y2Label,
+			showBranding: this.showBranding
 		};
 	}
 
