@@ -49,6 +49,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {string} [y2Label]
  * @property {string[]} [tooltipColumns]
  * @property {string} [xColumn]
+ * @property {'none' | 'cumulative'} [dataTransform]
  * @property {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} [categorySort]
  */
 
@@ -131,6 +132,9 @@ export default class StratifyPlotProject {
 
 	/** @type {boolean} Show min/max tick marks on right Y-axis */
 	y2MinMax = $state(false);
+
+	/** @type {'none' | 'cumulative'} Data transform to apply */
+	dataTransform = $state('none');
 
 	/** @type {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} Category sort order */
 	categorySort = $state('default');
@@ -332,6 +336,7 @@ export default class StratifyPlotProject {
 		this.y2Ticks = 0;
 		this.y2MinMax = false;
 		this.tooltipColumns = [];
+		this.dataTransform = 'none';
 		this.categorySort = 'default';
 		this.xColumn = '';
 		this.colourSeries = null;
@@ -393,6 +398,7 @@ export default class StratifyPlotProject {
 			y2Ticks: this.y2Ticks,
 			y2MinMax: this.y2MinMax,
 			tooltipColumns: this.tooltipColumns,
+			dataTransform: this.dataTransform,
 			categorySort: this.categorySort,
 			xColumn: this.xColumn,
 			colourSeries: this.colourSeries,
@@ -434,6 +440,7 @@ export default class StratifyPlotProject {
 		this.y2Ticks = snapshot.y2Ticks ?? 0;
 		this.y2MinMax = snapshot.y2MinMax ?? false;
 		this.tooltipColumns = snapshot.tooltipColumns ?? [];
+		this.dataTransform = snapshot.dataTransform ?? 'none';
 		this.categorySort = snapshot.categorySort ?? 'default';
 		this.xColumn = snapshot.xColumn ?? '';
 		this.colourSeries = snapshot.colourSeries ?? null;

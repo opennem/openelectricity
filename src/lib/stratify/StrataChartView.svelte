@@ -127,6 +127,26 @@
 		});
 	});
 
+	// Apply data transform (e.g. cumulative running sum)
+	const transformedData = $derived.by(() => {
+		if ((chart.dataTransform ?? 'none') === 'none') return sortedData;
+
+		/** @type {Record<string, number>} */
+		const sums = {};
+		for (const name of visibleSeriesNames) sums[name] = 0;
+
+		return sortedData.map((/** @type {Record<string, any>} */ row) => {
+			const newRow = { ...row };
+			for (const name of visibleSeriesNames) {
+				if (newRow[name] != null) {
+					sums[name] += Number(newRow[name]) || 0;
+					newRow[name] = sums[name];
+				}
+			}
+			return newRow;
+		});
+	});
+
 	const isHorizontal = $derived(HORIZONTAL_TYPES.has(chart.chartType));
 
 	// Extract sorted domain for category charts
@@ -134,7 +154,7 @@
 		(chart.categorySort ?? 'default') !== 'default' && parsed.mode === 'category'
 	);
 	const sortedCategoryDomain = $derived(
-		hasSortedDomain ? sortedData.map((/** @type {any} */ d) => d.category) : undefined
+		hasSortedDomain ? transformedData.map((/** @type {any} */ d) => d.category) : undefined
 	);
 	// For vertical charts, sorted domain goes to X; for horizontal, to Y
 	const sortedXDomain = $derived(!isHorizontal ? sortedCategoryDomain : undefined);
@@ -167,7 +187,7 @@
 
 	{#if parsed.data.length > 0}
 		<StratifyPlotChart
-			data={sortedData}
+			data={transformedData}
 			seriesNames={visibleSeriesNames}
 			{seriesColours}
 			{seriesLabels}

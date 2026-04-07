@@ -164,6 +164,22 @@
 				</select>
 			</label>
 
+			<label class="flex items-center gap-2">
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Transform</span>
+				<select
+					value={project.dataTransform}
+					onchange={(e) => {
+						project.dataTransform = /** @type {'none' | 'cumulative'} */ (
+							e.currentTarget.value
+						);
+					}}
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+				>
+					<option value="none">None</option>
+					<option value="cumulative">Cumulative</option>
+				</select>
+			</label>
+
 			<!-- Sort (category only) -->
 			{#if project.isCategory}
 				<label class="flex items-center gap-2">

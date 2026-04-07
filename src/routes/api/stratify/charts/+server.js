@@ -89,6 +89,7 @@ export async function POST({ request }) {
 		y2MinMax: body.y2MinMax ?? false,
 		tooltipColumns: body.tooltipColumns ?? [],
 		xColumn: body.xColumn ?? '',
+		dataTransform: body.dataTransform ?? 'none',
 		categorySort: body.categorySort ?? 'default',
 		showXTickLabels: body.showXTickLabels ?? true,
 		colourSeries: body.colourSeries ?? null,

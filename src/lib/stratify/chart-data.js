@@ -58,6 +58,7 @@ export function normaliseChart(chart) {
 		y2MinMax: chart.y2MinMax ?? false,
 		tooltipColumns: chart.tooltipColumns ?? [],
 		xColumn: chart.xColumn ?? '',
+		dataTransform: chart.dataTransform ?? 'none',
 		categorySort: chart.categorySort ?? 'default',
 		showXTickLabels: chart.showXTickLabels ?? true,
 		colourSeries: chart.colourSeries ?? null,
