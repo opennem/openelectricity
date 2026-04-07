@@ -3,7 +3,8 @@ import { createCmsClient } from '$lib/sanity-cms.js';
 import { normaliseChart } from '$lib/stratify/chart-data.js';
 
 /** @type {import('./$types').PageServerLoad} */
-export async function load({ params }) {
+export async function load({ params, setHeaders }) {
+	setHeaders({ 'Cache-Control': 'no-store, max-age=0' });
 	const client = createCmsClient();
 
 	const chart = await client.fetch(
