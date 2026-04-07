@@ -283,7 +283,7 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 				x: 'x',
 				y: 'value',
 				stroke: 'series',
-				strokeWidth: 1.5,
+				strokeWidth: 2,
 				...(curve ? { curve } : {})
 			}),
 			ruleY([0])
@@ -773,7 +773,7 @@ export function createMixedMarkOptions(
 				x: 'x',
 				y: 'value',
 				stroke: 'series',
-				strokeWidth: 1.5,
+				strokeWidth: 2,
 				...(curve ? { curve } : {})
 			})
 		);

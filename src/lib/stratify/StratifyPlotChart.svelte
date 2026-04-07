@@ -320,7 +320,7 @@
 		// Apply x-axis tick count if configured (before showXTickLabels so it can override)
 		if (xTicks > 0) {
 			const xScale = opts.x || {};
-			if (xScale.type === 'band') {
+			if (xScale.type === 'band' || xScale.type === 'point') {
 				const domain =
 					xScale.domain || chartData.map((/** @type {any} */ d) => d.category ?? d.date);
 				const step = Math.max(1, Math.ceil(domain.length / xTicks));
