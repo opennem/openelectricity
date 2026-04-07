@@ -75,64 +75,65 @@
 				</time>
 			</div>
 
-			<div
-				class="relative"
-				use:clickoutside
-				onclickoutside={() => {
-					menuOpen = false;
-				}}
-			>
-				<button
-					onclick={toggleMenu}
-					class="px-3 py-6 rounded-lg hover:bg-warm-grey transition-colors cursor-pointer"
-					title="More options"
-				>
-					<EllipsisVertical class="size-7 text-mid-grey" />
-				</button>
-
-				{#if menuOpen}
-					<div
-						class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-mid-warm-grey z-50 min-w-50 py-1 whitespace-nowrap"
-						in:fly={{ y: -5, duration: 150 }}
+			<div class="flex items-center gap-1">
+				{#if showOpen}
+					<a
+						href="/strata/{chart._id}"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dark-grey text-white text-xs font-medium hover:bg-black hover:no-underline transition-colors"
 					>
-						{#if showOpen}
-							<a
-								href="/strata/{chart._id}"
-								target="_blank"
-								rel="noopener noreferrer"
-								onclick={() => (menuOpen = false)}
-								class="text-dark-grey w-full pl-3 pr-8 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey hover:no-underline transition-colors text-left"
-							>
-								<ExternalLink class="size-4 text-mid-grey" />
-								<span class="flex-1">Open</span>
-							</a>
-						{/if}
-
-						<button
-							onclick={copyLink}
-							class="w-full pl-3 pr-8 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
-						>
-							{#if copied}
-								<ClipboardCheck class="size-4 text-mid-grey" />
-							{:else}
-								<Link class="size-4 text-mid-grey" />
-							{/if}
-							<span class="flex-1">{copied ? 'Copied!' : 'Copy link'}</span>
-						</button>
-
-						<button
-							onclick={copyEmbed}
-							class="w-full pl-3 pr-8 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
-						>
-							{#if copied}
-								<ClipboardCheck class="size-4 text-mid-grey" />
-							{:else}
-								<Code class="size-4 text-mid-grey" />
-							{/if}
-							<span class="flex-1">{copied ? 'Copied!' : 'Copy embed code'}</span>
-						</button>
-					</div>
+						<span>Open</span>
+						<ExternalLink class="size-3.5" />
+					</a>
 				{/if}
+
+				<div
+					class="relative"
+					use:clickoutside
+					onclickoutside={() => {
+						menuOpen = false;
+					}}
+				>
+					<button
+						onclick={toggleMenu}
+						class="px-3 py-6 rounded-lg hover:bg-warm-grey transition-colors cursor-pointer"
+						title="More options"
+					>
+						<EllipsisVertical class="size-7 text-mid-grey" />
+					</button>
+
+					{#if menuOpen}
+						<div
+							class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-mid-warm-grey z-50 min-w-50 py-1 whitespace-nowrap"
+							in:fly={{ y: -5, duration: 150 }}
+						>
+								<button
+									onclick={copyLink}
+									class="w-full pl-3 pr-8 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
+								>
+									{#if copied}
+										<ClipboardCheck class="size-4 text-mid-grey" />
+									{:else}
+										<Link class="size-4 text-mid-grey" />
+									{/if}
+									<span class="flex-1">{copied ? 'Copied!' : 'Copy link'}</span>
+								</button>
+
+								<button
+									onclick={copyEmbed}
+									class="w-full pl-3 pr-8 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
+								>
+									{#if copied}
+										<ClipboardCheck class="size-4 text-mid-grey" />
+									{:else}
+										<Code class="size-4 text-mid-grey" />
+									{/if}
+									<span class="flex-1">{copied ? 'Copied!' : 'Copy embed code'}</span>
+								</button>
+							</div>
+					{/if}
+				</div>
 			</div>
 		</header>
 	{/if}
