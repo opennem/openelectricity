@@ -36,6 +36,18 @@ function computeAutoMarginLeft(data, marginLeft) {
 	return Math.min(Math.max(maxLen * 6.5, 60), 200);
 }
 
+/**
+ * Detect the x-axis key and mode from data rows.
+ * @param {Array<Record<string, any>>} data
+ * @returns {{ xKey: string, isCategory: boolean, isLinear: boolean }}
+ */
+export function detectXMode(data) {
+	if (data.length === 0) return { xKey: 'date', isCategory: false, isLinear: false };
+	if ('category' in data[0]) return { xKey: 'category', isCategory: true, isLinear: false };
+	if ('linear' in data[0]) return { xKey: 'linear', isCategory: false, isLinear: true };
+	return { xKey: 'date', isCategory: false, isLinear: false };
+}
+
 const SHARED_STYLE = {
 	fontFamily: 'DM Mono, monospace',
 	fontSize: '10px',
@@ -57,10 +69,11 @@ const SHARED_STYLE = {
  */
 function detectMedianGapMs(data) {
 	if (data.length < 2) return 7 * 86400000;
+	const isLinear = 'linear' in (data[0] || {});
 	const gaps = [];
 	for (let i = 1; i < data.length; i++) {
-		const a = data[i - 1].date?.getTime?.();
-		const b = data[i].date?.getTime?.();
+		const a = isLinear ? data[i - 1].linear : data[i - 1].date?.getTime?.();
+		const b = isLinear ? data[i].linear : data[i].date?.getTime?.();
 		if (a != null && b != null) gaps.push(b - a);
 	}
 	if (gaps.length === 0) return 7 * 86400000;
@@ -194,7 +207,8 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 		yDomain,
 		yTickFormat = 's'
 	} = options;
-	const long = toLong(data, seriesNames, 'date');
+	const { xKey, isLinear } = detectXMode(data);
+	const long = toLong(data, seriesNames, xKey);
 
 	return {
 		style,
@@ -205,6 +219,7 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 			label: null,
 			...(xDomain ? { domain: xDomain } : {}),
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
+			...(isLinear ? { type: 'linear' } : {}),
 			...(gridlines ? { axis: null } : {})
 		},
 		y: {
@@ -254,8 +269,7 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 		yDomain,
 		yTickFormat
 	} = options;
-	const isCategory = data.length > 0 && 'category' in data[0];
-	const xKey = isCategory ? 'category' : 'date';
+	const { xKey, isCategory, isLinear } = detectXMode(data);
 	const long = toLong(data, seriesNames, xKey);
 
 	return {
@@ -268,6 +282,7 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 			...(xDomain ? { domain: xDomain } : {}),
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isCategory ? { tickPadding: 6, type: 'point' } : {}),
+			...(isLinear ? { type: 'linear' } : {}),
 			...(gridlines ? { axis: null } : {})
 		},
 		y: {
@@ -320,8 +335,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		yTickFormat = 's'
 	} = options;
 
-	const isCategory = data.length > 0 && 'category' in data[0];
-	const xKey = isCategory ? 'category' : 'date';
+	const { xKey, isCategory, isLinear } = detectXMode(data);
 	const long = toLong(data, seriesNames, xKey);
 
 	/** @type {any[]} */
@@ -332,6 +346,20 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 			barY(
 				long,
 				stackY(groupX({ y: 'sum' }, { x: 'x', y: 'value', fill: 'series', order: seriesNames }))
+			)
+		);
+	} else if (isLinear) {
+		const halfGap = detectMedianGapMs(data) * 0.4;
+		marks.push(
+			rectY(
+				long,
+				stackY({
+					x1: (/** @type {any} */ d) => d.x - halfGap,
+					x2: (/** @type {any} */ d) => d.x + halfGap,
+					y: 'value',
+					fill: 'series',
+					order: seriesNames
+				})
 			)
 		);
 	} else {
@@ -358,7 +386,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		color: { ...colourScale(seriesNames, colours, labels), legend },
 		x: {
 			label: null,
-			...(isCategory ? { tickPadding: 6, type: 'band' } : { type: 'utc' })
+			...(isCategory ? { tickPadding: 6, type: 'band' } : isLinear ? { type: 'linear' } : { type: 'utc' })
 		},
 		y: { label: null, grid: true, tickFormat: yTickFormat },
 		marks
@@ -383,8 +411,7 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 		yTickFormat
 	} = options;
 
-	const isCategory = data.length > 0 && 'category' in data[0];
-	const xKey = isCategory ? 'category' : 'date';
+	const { xKey, isCategory } = detectXMode(data);
 	const long = toLong(data, seriesNames, xKey);
 
 	return {
@@ -596,7 +623,8 @@ export function createDotOptions(data, seriesNames, colours, labels, options = {
 		yDomain,
 		yTickFormat
 	} = options;
-	const long = toLong(data, seriesNames, 'date');
+	const { xKey, isLinear } = detectXMode(data);
+	const long = toLong(data, seriesNames, xKey);
 
 	return {
 		style,
@@ -607,6 +635,7 @@ export function createDotOptions(data, seriesNames, colours, labels, options = {
 			label: null,
 			...(xDomain ? { domain: xDomain } : {}),
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
+			...(isLinear ? { type: 'linear' } : {}),
 			...(gridlines ? { axis: null } : {})
 		},
 		y: {
@@ -700,9 +729,8 @@ export function createMixedMarkOptions(
 
 	const defaultMarkType = globalTypeToMarkType(defaultChartType);
 
-	// Detect whether data is time-series or category
-	const isCategory = data.length > 0 && 'category' in data[0];
-	const xKey = isCategory ? 'category' : 'date';
+	// Detect whether data is time-series, category, or linear
+	const { xKey, isCategory, isLinear } = detectXMode(data);
 
 	// Partition series by effective mark type
 	/** @type {Record<SeriesMarkType, string[]>} */
@@ -746,6 +774,20 @@ export function createMixedMarkOptions(
 				barY(
 					long,
 					stackY(groupX({ y: 'sum' }, { x: 'x', y: 'value', fill: 'series', order: groups.bar }))
+				)
+			);
+		} else if (isLinear) {
+			const halfGap = detectMedianGapMs(data) * 0.4;
+			marks.push(
+				rectY(
+					long,
+					stackY({
+						x1: (/** @type {any} */ d) => d.x - halfGap,
+						x2: (/** @type {any} */ d) => d.x + halfGap,
+						y: 'value',
+						fill: 'series',
+						order: groups.bar
+					})
 				)
 			);
 		} else {
@@ -806,6 +848,7 @@ export function createMixedMarkOptions(
 			...(xDomain ? { domain: xDomain } : {}),
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isCategory ? { tickPadding: 6, type: 'band' } : {}),
+			...(isLinear ? { type: 'linear' } : {}),
 			...(gridlines ? { axis: null } : {})
 		},
 		y: {

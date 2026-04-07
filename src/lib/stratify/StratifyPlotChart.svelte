@@ -368,6 +368,7 @@
 
 		// Add single tooltip mark with filtered channels
 		const isTimeSeries = data.length > 0 && 'date' in data[0];
+		const isLinear = data.length > 0 && 'linear' in data[0];
 
 		// Build series tooltip labels
 		let tooltipLabels =
@@ -410,6 +411,43 @@
 					data,
 					pointerX({
 						x: 'date',
+						channels: tipChannels,
+						format: { x: false },
+						lineHeight: 1.3,
+						fontSize: 11
+					})
+				)
+			);
+		} else if (isLinear) {
+			// Linear mode: numeric x-axis with pointer tooltip
+			const xColLabel = dateColumnLabel || 'X';
+			const showX =
+				tooltipColumns.length === 0 || (dateColumnKey && tooltipColumns.includes(dateColumnKey));
+
+			/** @type {Record<string, any>} */
+			const tipChannels = {};
+
+			if (tooltipColumns.length > 0) {
+				for (const key of tooltipColumns) {
+					if (key === dateColumnKey && showX) {
+						tipChannels[xColLabel] = { value: (/** @type {any} */ d) => d.linear };
+					} else if (key in tooltipLabels) {
+						tipChannels[tooltipLabels[key]] = key;
+					}
+				}
+			} else {
+				if (showX) {
+					tipChannels[xColLabel] = { value: (/** @type {any} */ d) => d.linear };
+				}
+				Object.assign(tipChannels, buildTooltipChannels(tooltipLabels));
+			}
+
+			opts.marks.push(
+				ruleX(data, pointerX({ x: 'linear', stroke: '#888', strokeWidth: 0.5 })),
+				tip(
+					data,
+					pointerX({
+						x: 'linear',
 						channels: tipChannels,
 						format: { x: false },
 						lineHeight: 1.3,

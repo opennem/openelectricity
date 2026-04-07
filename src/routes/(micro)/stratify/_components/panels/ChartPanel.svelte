@@ -106,7 +106,7 @@
 				<select
 					value={project.displayMode}
 					onchange={(e) => {
-						project.displayMode = /** @type {'auto' | 'time-series' | 'category'} */ (
+						project.displayMode = /** @type {'auto' | 'time-series' | 'category' | 'linear'} */ (
 							e.currentTarget.value
 						);
 					}}
@@ -115,6 +115,7 @@
 					<option value="auto">Auto</option>
 					<option value="category">Ordinal</option>
 					<option value="time-series">Temporal</option>
+					<option value="linear">Linear</option>
 				</select>
 			</div>
 

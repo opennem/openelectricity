@@ -23,7 +23,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {string} dataSource
  * @property {string} notes
  * @property {ChartType} chartType
- * @property {'auto' | 'time-series' | 'category'} [displayMode]
+ * @property {'auto' | 'time-series' | 'category' | 'linear'} [displayMode]
  * @property {string} stylePreset
  * @property {string} [colourPalette]
  * @property {string[]} hiddenSeries
@@ -72,7 +72,7 @@ export default class StratifyPlotProject {
 	notes = $state('');
 
 	// --- Chart config ---
-	/** @type {'auto' | 'time-series' | 'category'} */
+	/** @type {'auto' | 'time-series' | 'category' | 'linear'} */
 	displayMode = $state('auto');
 
 	/** @type {ChartType} */
@@ -182,6 +182,8 @@ export default class StratifyPlotProject {
 	hasData = $derived(this.parsedData.data.length > 0);
 
 	isCategory = $derived(this.parsedData.mode === 'category');
+
+	isLinear = $derived(this.parsedData.mode === 'linear');
 
 	/** All column metadata from the parser */
 	allColumns = $derived(this.parsedData.allColumns ?? []);

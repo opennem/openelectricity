@@ -15,7 +15,7 @@ import { assignColours } from './colour-palette.js';
 
 /**
  * @typedef {Object} ParseResult
- * @property {'time-series' | 'category'} mode
+ * @property {'time-series' | 'category' | 'linear'} mode
  * @property {Array<{[key: string]: any}>} data
  * @property {string[]} seriesNames
  * @property {Record<string, string>} seriesLabels
@@ -133,7 +133,7 @@ const EMPTY_RESULT = {
  * or text labels (category mode), unless overridden by displayMode.
  * @param {string} csvText
  * @param {Record<string, string>} [existingColours] - Preserve existing colour assignments
- * @param {'auto' | 'time-series' | 'category'} [displayMode='auto'] - Override auto-detection
+ * @param {'auto' | 'time-series' | 'category' | 'linear'} [displayMode='auto'] - Override auto-detection
  * @param {number | string} [xColumn=0] - Index or key of the column to use as X axis
  * @returns {ParseResult}
  */
@@ -194,25 +194,32 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto', xC
 		: lines.slice(1);
 
 	// Determine mode: explicit override or auto-detect from first column content
-	let isCategory;
-	if (displayMode === 'category') {
-		isCategory = true;
-	} else if (displayMode === 'time-series') {
-		isCategory = false;
+	/** @type {'time-series' | 'category' | 'linear'} */
+	let detectedMode;
+	if (displayMode === 'category' || displayMode === 'time-series' || displayMode === 'linear') {
+		detectedMode = displayMode;
 	} else {
-		// Auto-detect: probe first column for date-parseable values
+		// Auto-detect: probe first column for date-parseable or numeric values
 		let nonEmptyCount = 0;
 		let dateSuccesses = 0;
+		let numericSuccesses = 0;
 		for (const line of rawDataLines) {
 			if (!line.trim()) continue;
 			nonEmptyCount++;
 			const firstCell = line.split(delimiter)[0] || '';
 			if (parseDate(firstCell)) dateSuccesses++;
+			if (parseNumber(firstCell) !== null) numericSuccesses++;
 		}
-		isCategory = nonEmptyCount > 0 && dateSuccesses / nonEmptyCount < 0.5;
+		if (nonEmptyCount > 0 && dateSuccesses / nonEmptyCount >= 0.5) {
+			detectedMode = 'time-series';
+		} else if (nonEmptyCount > 0 && numericSuccesses / nonEmptyCount >= 0.5) {
+			detectedMode = 'linear';
+		} else {
+			detectedMode = 'category';
+		}
 	}
 
-	if (isCategory) {
+	if (detectedMode === 'category') {
 		return parseCategoryData(
 			rawDataLines,
 			delimiter,
@@ -224,12 +231,24 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto', xC
 		);
 	}
 
-	// Build allColumns for time-series (first column is date, rest are numeric)
+	// Build allColumns (first column is date/numeric, rest are numeric series)
 	/** @type {ColumnMeta[]} */
 	const allColumns = [
-		{ key: toKey(headers[0]), label: headers[0], isNumeric: false },
+		{ key: toKey(headers[0]), label: headers[0], isNumeric: detectedMode === 'linear' },
 		...seriesNames.map((key, i) => ({ key, label: seriesHeaders[i], isNumeric: true }))
 	];
+
+	if (detectedMode === 'linear') {
+		return parseLinearData(
+			rawDataLines,
+			delimiter,
+			seriesNames,
+			seriesLabels,
+			seriesColours,
+			allColumns,
+			errors
+		);
+	}
 
 	return parseTimeSeriesData(
 		rawDataLines,
@@ -410,6 +429,70 @@ function parseCategoryData(
 		seriesLabels,
 		seriesColours,
 		categoryLabels,
+		allColumns,
+		errors
+	};
+}
+
+/**
+ * Parse rows as linear data (first column = numeric values).
+ * @param {string[]} dataLines
+ * @param {string} delimiter
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} seriesLabels
+ * @param {Record<string, string>} seriesColours
+ * @param {ColumnMeta[]} allColumns
+ * @param {string[]} errors
+ * @returns {ParseResult}
+ */
+function parseLinearData(
+	dataLines,
+	delimiter,
+	seriesNames,
+	seriesLabels,
+	seriesColours,
+	allColumns,
+	errors
+) {
+	/** @type {Array<{[key: string]: any}>} */
+	const data = [];
+	let parseErrors = 0;
+
+	for (let i = 0; i < dataLines.length; i++) {
+		if (!dataLines[i].trim()) continue;
+		const cells = dataLines[i].split(delimiter);
+		const xVal = parseNumber(cells[0] || '');
+
+		if (xVal === null) {
+			parseErrors++;
+			if (parseErrors <= 3) {
+				errors.push(`Row ${i + 2}: could not parse number "${(cells[0] || '').trim()}".`);
+			}
+			continue;
+		}
+
+		/** @type {{[key: string]: any}} */
+		const row = { linear: xVal, _lineIndex: i + 1 };
+
+		for (let j = 0; j < seriesNames.length; j++) {
+			row[seriesNames[j]] = parseNumber(cells[j + 1] || '');
+		}
+
+		data.push(row);
+	}
+
+	if (parseErrors > 3) {
+		errors.push(`...and ${parseErrors - 3} more number parsing errors.`);
+	}
+
+	data.sort((a, b) => a.linear - b.linear);
+
+	return {
+		mode: 'linear',
+		data,
+		seriesNames,
+		seriesLabels,
+		seriesColours,
 		allColumns,
 		errors
 	};
