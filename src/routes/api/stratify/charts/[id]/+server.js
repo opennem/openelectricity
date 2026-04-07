@@ -93,6 +93,7 @@ export async function PATCH({ request, params }) {
 	if (body.xTicks !== undefined) patches.xTicks = body.xTicks;
 	if (body.xTickRotate !== undefined) patches.xTickRotate = body.xTickRotate;
 	if (body.marginBottom !== undefined) patches.marginBottom = body.marginBottom;
+	if (body.marginLeft !== undefined) patches.marginLeft = body.marginLeft;
 	if (body.yTicks !== undefined) patches.yTicks = body.yTicks;
 	if (body.yMinMax !== undefined) patches.yMinMax = body.yMinMax;
 	if (body.y2Ticks !== undefined) patches.y2Ticks = body.y2Ticks;

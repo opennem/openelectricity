@@ -69,6 +69,7 @@
 	 *   xTicks?: number,
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
+ *   marginLeft?: number,
 	 *   options?: import('./plot-configs.js').TimeSeriesOptions,
 	 *   annotations?: import('./plot-annotations.js').Annotation[],
 	 *   class?: string
@@ -103,6 +104,7 @@
 		xTicks = 0,
 		xTickRotate = 0,
 		marginBottom = 0,
+		marginLeft = 0,
 		options = {},
 		annotations = [],
 		class: className = ''
@@ -347,6 +349,11 @@
 		// Apply bottom margin for x-axis label space
 		if (marginBottom > 0) {
 			opts.marginBottom = marginBottom;
+		}
+
+		// Apply left margin for y-axis label space
+		if (marginLeft > 0) {
+			opts.marginLeft = marginLeft;
 		}
 
 		// Suppress Plot's built-in axis labels — rendered externally for consistent styling

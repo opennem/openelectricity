@@ -82,6 +82,7 @@ export async function POST({ request }) {
 		xTicks: body.xTicks ?? 0,
 		xTickRotate: body.xTickRotate ?? 0,
 		marginBottom: body.marginBottom ?? 0,
+		marginLeft: body.marginLeft ?? 0,
 		yTicks: body.yTicks ?? 0,
 		yMinMax: body.yMinMax ?? false,
 		y2Ticks: body.y2Ticks ?? 0,

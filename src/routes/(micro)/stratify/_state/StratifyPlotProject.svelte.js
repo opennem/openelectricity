@@ -37,6 +37,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {number} [xTicks]
  * @property {number} [xTickRotate]
  * @property {number} [marginBottom]
+ * @property {number} [marginLeft]
  * @property {number} [yTicks]
  * @property {boolean} [yMinMax]
  * @property {number} [y2Ticks]
@@ -115,6 +116,9 @@ export default class StratifyPlotProject {
 
 	/** @type {number} Bottom margin for x-axis labels in pixels (0 = auto) */
 	marginBottom = $state(0);
+
+	/** @type {number} Left margin for y-axis labels in pixels (0 = auto) */
+	marginLeft = $state(0);
 
 	/** @type {number} Number of y-axis ticks to show (0 = auto) */
 	yTicks = $state(0);
@@ -322,6 +326,7 @@ export default class StratifyPlotProject {
 		this.xTicks = 0;
 		this.xTickRotate = 0;
 		this.marginBottom = 0;
+		this.marginLeft = 0;
 		this.yTicks = 0;
 		this.yMinMax = false;
 		this.y2Ticks = 0;
@@ -382,6 +387,7 @@ export default class StratifyPlotProject {
 			xTicks: this.xTicks,
 			xTickRotate: this.xTickRotate,
 			marginBottom: this.marginBottom,
+			marginLeft: this.marginLeft,
 			yTicks: this.yTicks,
 			yMinMax: this.yMinMax,
 			y2Ticks: this.y2Ticks,
@@ -422,6 +428,7 @@ export default class StratifyPlotProject {
 		this.xTicks = snapshot.xTicks ?? 0;
 		this.xTickRotate = snapshot.xTickRotate ?? 0;
 		this.marginBottom = snapshot.marginBottom ?? 0;
+		this.marginLeft = snapshot.marginLeft ?? 0;
 		this.yTicks = snapshot.yTicks ?? 0;
 		this.yMinMax = snapshot.yMinMax ?? false;
 		this.y2Ticks = snapshot.y2Ticks ?? 0;

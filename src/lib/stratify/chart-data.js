@@ -51,6 +51,7 @@ export function normaliseChart(chart) {
 		xTicks: chart.xTicks ?? 0,
 		xTickRotate: chart.xTickRotate ?? 0,
 		marginBottom: chart.marginBottom ?? 0,
+		marginLeft: chart.marginLeft ?? 0,
 		yTicks: chart.yTicks ?? 0,
 		yMinMax: chart.yMinMax ?? false,
 		y2Ticks: chart.y2Ticks ?? 0,

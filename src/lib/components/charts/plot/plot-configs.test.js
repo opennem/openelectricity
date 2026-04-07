@@ -176,6 +176,23 @@ describe('createLineOptions', () => {
 		});
 		expect(result.marginRight).toBe(100);
 	});
+
+	it('produces valid options with category data', () => {
+		const result = createLineOptions(CATEGORY_DATA, SERIES, COLOURS, LABELS);
+		expect(result.style).toBeDefined();
+		expect(result.color).toBeDefined();
+		expect(result.marks.length).toBeGreaterThan(0);
+	});
+
+	it('sets point x-scale type for category data', () => {
+		const result = createLineOptions(CATEGORY_DATA, SERIES, COLOURS, LABELS);
+		expect(result.x.type).toBe('point');
+	});
+
+	it('does not override x-scale type for time-series data', () => {
+		const result = createLineOptions(timeData, SERIES, COLOURS, LABELS);
+		expect(result.x.type).toBeUndefined();
+	});
 });
 
 // ── createDotOptions ────────────────────────────────────────────

@@ -197,6 +197,7 @@
 			xTicks={chart.xTicks ?? 0}
 			xTickRotate={chart.xTickRotate ?? 0}
 			marginBottom={chart.marginBottom ?? 0}
+			marginLeft={chart.marginLeft ?? 0}
 		/>
 	{/if}
 

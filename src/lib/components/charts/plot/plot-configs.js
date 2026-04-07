@@ -232,8 +232,8 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 }
 
 /**
- * Multi-series line chart for time-series data.
- * @param {Array<Record<string, any>>} data - Parsed rows with `date` field
+ * Multi-series line chart for time-series or category data.
+ * @param {Array<Record<string, any>>} data - Parsed rows with `date` or `category` field
  * @param {string[]} seriesNames
  * @param {Record<string, string>} colours
  * @param {Record<string, string>} labels
@@ -254,7 +254,9 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 		yDomain,
 		yTickFormat
 	} = options;
-	const long = toLong(data, seriesNames, 'date');
+	const isCategory = data.length > 0 && 'category' in data[0];
+	const xKey = isCategory ? 'category' : 'date';
+	const long = toLong(data, seriesNames, xKey);
 
 	return {
 		style,
@@ -265,6 +267,7 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 			label: null,
 			...(xDomain ? { domain: xDomain } : {}),
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
+			...(isCategory ? { tickPadding: 6, type: 'point' } : {}),
 			...(gridlines ? { axis: null } : {})
 		},
 		y: {

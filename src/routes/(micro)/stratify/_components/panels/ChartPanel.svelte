@@ -337,6 +337,23 @@
 				/>
 				<span class="text-[10px] text-mid-grey">Min/max ticks only</span>
 			</label>
+
+			<label class="flex items-center gap-2">
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Width</span>
+				<input
+					type="number"
+					min="0"
+					max="300"
+					step="10"
+					value={project.marginLeft}
+					oninput={(e) => {
+						const v = parseInt(e.currentTarget.value, 10);
+						if (v >= 0 && v <= 300) project.marginLeft = v;
+					}}
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+				/>
+				<span class="text-[10px] text-mid-grey">0 = auto</span>
+			</label>
 		</div>
 	</div>
 
