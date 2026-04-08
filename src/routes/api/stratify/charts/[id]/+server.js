@@ -35,6 +35,7 @@ export async function GET({ request, params }) {
 			userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),
 			annotations: safeParseJSON(chart.annotations, []),
 			seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
+			seriesLineStyles: safeParseJSON(chart.seriesLineStyles, {}),
 			plotOverrides: safeParseJSON(chart.plotOverrides, null),
 			seriesYAxis: safeParseJSON(chart.seriesYAxis, {}),
 			seriesOrder: chart.seriesOrder ?? []
@@ -84,6 +85,8 @@ export async function PATCH({ request, params }) {
 	if (body.annotations !== undefined) patches.annotations = JSON.stringify(body.annotations);
 	if (body.seriesChartTypes !== undefined)
 		patches.seriesChartTypes = JSON.stringify(body.seriesChartTypes);
+	if (body.seriesLineStyles !== undefined)
+		patches.seriesLineStyles = JSON.stringify(body.seriesLineStyles);
 	if (body.plotOverrides !== undefined) patches.plotOverrides = JSON.stringify(body.plotOverrides);
 	if (body.seriesOrder !== undefined) patches.seriesOrder = body.seriesOrder;
 	if (body.stylePreset !== undefined) patches.stylePreset = body.stylePreset;

@@ -47,6 +47,7 @@
 	 *   seriesLabels: Record<string, string>,
 	 *   chartType: import('$lib/stratify/chart-types.js').ChartType,
 	 *   seriesChartTypes?: Record<string, string>,
+	 *   seriesLineStyles?: Record<string, string>,
 	 *   plotOverrides?: import('./plot-overrides.js').PlotOverrides | null,
 	 *   colourSeries?: string | null,
 	 *   colourGroupNames?: string[],
@@ -82,6 +83,7 @@
 		seriesLabels,
 		chartType,
 		seriesChartTypes = {},
+		seriesLineStyles = {},
 		plotOverrides = null,
 		colourSeries = null,
 		colourGroupNames = [],
@@ -194,6 +196,9 @@
 					}
 				: options;
 
+		// Include line styles so rendering functions can apply per-series dash patterns
+		const optionsWithLineStyles = { ...mergedOptions, seriesLineStyles };
+
 		const isBarType = HORIZONTAL_TYPES.has(chartType) || COLUMN_TYPES.has(chartType);
 		let opts;
 		if (colourSeries && colourGroupNames.length > 0 && isBarType) {
@@ -204,7 +209,7 @@
 				seriesColours,
 				seriesLabels,
 				colourSeries,
-				{ ...mergedOptions, horizontal: HORIZONTAL_TYPES.has(chartType) }
+				{ ...optionsWithLineStyles, horizontal: HORIZONTAL_TYPES.has(chartType) }
 			);
 		} else {
 			const hasMixedTypes = Object.keys(seriesChartTypes).length > 0;
@@ -216,14 +221,14 @@
 						seriesLabels,
 						seriesChartTypes,
 						chartType,
-						mergedOptions
+						optionsWithLineStyles
 					)
 				: (CONFIG_MAP[chartType] || createLineOptions)(
 						chartData,
 						seriesNames,
 						seriesColours,
 						seriesLabels,
-						mergedOptions
+						optionsWithLineStyles
 					);
 		}
 

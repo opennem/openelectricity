@@ -73,6 +73,7 @@ export async function POST({ request }) {
 		userSeriesLabels: JSON.stringify(body.userSeriesLabels ?? {}),
 		annotations: JSON.stringify(body.annotations ?? []),
 		seriesChartTypes: JSON.stringify(body.seriesChartTypes ?? {}),
+		seriesLineStyles: JSON.stringify(body.seriesLineStyles ?? {}),
 		plotOverrides: JSON.stringify(body.plotOverrides ?? null),
 		seriesOrder: body.seriesOrder ?? [],
 		stylePreset: body.stylePreset ?? 'sans',

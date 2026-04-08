@@ -1,4 +1,4 @@
-import { CHART_TYPES, DISPLAY_MODES, DATA_TRANSFORMS, CATEGORY_SORTS } from '../schema/chart-types.js';
+import { CHART_TYPES, DISPLAY_MODES, DATA_TRANSFORMS, CATEGORY_SORTS, LINE_STYLES } from '../schema/chart-types.js';
 import { COLOUR_PALETTES } from '../schema/palettes.js';
 
 /**
@@ -31,6 +31,11 @@ export function getReferenceToolDefinitions() {
 		{
 			name: 'list_style_presets',
 			description: 'List available typography/style presets.',
+			inputSchema: { type: 'object', properties: {} }
+		},
+		{
+			name: 'list_line_styles',
+			description: 'List available line styles for per-series line chart customisation.',
 			inputSchema: { type: 'object', properties: {} }
 		}
 	];
@@ -78,6 +83,18 @@ export function handleReferenceTool(name) {
 							{ id: 'mono', name: 'Mono', description: 'Technical monospace (DM Mono).' }
 						],
 						default: 'sans'
+					}, null, 2)
+				}]
+			};
+
+		case 'list_line_styles':
+			return {
+				content: [{
+					type: 'text',
+					text: JSON.stringify({
+						lineStyles: LINE_STYLES,
+						default: 'solid',
+						note: 'Line styles apply per-series on line charts. Set via seriesLineStyles: { "series_key": "dashed" }'
 					}, null, 2)
 				}]
 			};

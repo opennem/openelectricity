@@ -1,5 +1,5 @@
 import { buildSnapshot, validateSnapshot } from '../schema/snapshot.js';
-import { CHART_TYPE_VALUES } from '../schema/chart-types.js';
+import { CHART_TYPE_VALUES, LINE_STYLE_VALUES } from '../schema/chart-types.js';
 import { PALETTE_IDS } from '../schema/palettes.js';
 
 /** @returns {any[]} Tool definitions for chart config tools */
@@ -77,6 +77,10 @@ Style presets: sans (default), mono`,
 					seriesYAxis: {
 						type: 'object',
 						description: 'Assign series to left/right Y-axis: { "series_key": "right" }'
+					},
+					seriesLineStyles: {
+						type: 'object',
+						description: `Per-series line style overrides (line charts only): { "series_key": "dashed" }. Valid styles: ${LINE_STYLE_VALUES.join(', ')}`
 					},
 					xTicks: { type: 'number', description: 'Number of x-axis ticks (0 = auto)' },
 					yTicks: { type: 'number', description: 'Number of y-axis ticks (0 = auto)' },

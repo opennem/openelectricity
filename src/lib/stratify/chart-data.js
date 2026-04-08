@@ -42,6 +42,7 @@ export function normaliseChart(chart) {
 		userSeriesLabels: safeParseJSON(chart.userSeriesLabels, {}),
 		annotations: safeParseJSON(chart.annotations, []),
 		seriesChartTypes: safeParseJSON(chart.seriesChartTypes, {}),
+		seriesLineStyles: safeParseJSON(chart.seriesLineStyles, {}),
 		plotOverrides: safeParseJSON(chart.plotOverrides, null),
 		seriesOrder: chart.seriesOrder ?? [],
 		stylePreset: chart.stylePreset ?? 'sans',

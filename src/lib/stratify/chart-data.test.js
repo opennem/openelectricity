@@ -45,6 +45,7 @@ describe('normaliseChart', () => {
 		expect(result.userSeriesLabels).toEqual({});
 		expect(result.annotations).toEqual([]);
 		expect(result.seriesChartTypes).toEqual({});
+		expect(result.seriesLineStyles).toEqual({});
 		expect(result.plotOverrides).toBeNull();
 		expect(result.seriesOrder).toEqual([]);
 		expect(result.stylePreset).toBe('sans');
@@ -101,6 +102,7 @@ describe('normaliseChart', () => {
 			userSeriesLabels: '{"solar_gen":"Solar Generation"}',
 			annotations: '[{"type":"line","x":"2024-01-01"}]',
 			seriesChartTypes: '{"wind":"line"}',
+			seriesLineStyles: '{"solar":"dashed","wind":"dotted"}',
 			seriesYAxis: '{"price":"right"}'
 		});
 
@@ -108,6 +110,7 @@ describe('normaliseChart', () => {
 		expect(result.userSeriesLabels).toEqual({ 'solar_gen': 'Solar Generation' });
 		expect(result.annotations).toEqual([{ type: 'line', x: '2024-01-01' }]);
 		expect(result.seriesChartTypes).toEqual({ wind: 'line' });
+		expect(result.seriesLineStyles).toEqual({ solar: 'dashed', wind: 'dotted' });
 		expect(result.seriesYAxis).toEqual({ price: 'right' });
 	});
 
@@ -116,11 +119,13 @@ describe('normaliseChart', () => {
 			_id: 'chart3',
 			userSeriesColours: '{bad json',
 			annotations: 'not an array',
-			plotOverrides: '{{{'
+			plotOverrides: '{{{',
+			seriesLineStyles: '{bad'
 		});
 
 		expect(result.userSeriesColours).toEqual({});
 		expect(result.annotations).toEqual([]);
+		expect(result.seriesLineStyles).toEqual({});
 		expect(result.plotOverrides).toBeNull();
 	});
 

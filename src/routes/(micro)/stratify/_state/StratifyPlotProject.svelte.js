@@ -30,6 +30,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {Record<string, string>} userSeriesColours
  * @property {Record<string, string>} userSeriesLabels
  * @property {Record<string, string>} [seriesChartTypes]
+ * @property {Record<string, string>} [seriesLineStyles]
  * @property {import('$lib/stratify/plot-overrides.js').PlotOverrides | null} [plotOverrides]
  * @property {string[]} [seriesOrder]
  * @property {number} [chartHeight]
@@ -97,6 +98,9 @@ export default class StratifyPlotProject {
 
 	/** @type {Record<string, string>} Per-series chart type override (right-axis series only) */
 	seriesChartTypes = $state({});
+
+	/** @type {Record<string, string>} Per-series line style override */
+	seriesLineStyles = $state({});
 
 	/** @type {import('$lib/stratify/plot-overrides.js').PlotOverrides | null} */
 	plotOverrides = $state(null);
@@ -326,6 +330,7 @@ export default class StratifyPlotProject {
 		this.userSeriesColours = {};
 		this.userSeriesLabels = {};
 		this.seriesChartTypes = {};
+		this.seriesLineStyles = {};
 		this.plotOverrides = null;
 		this.seriesOrder = [];
 		this.chartHeight = 400;
@@ -388,6 +393,7 @@ export default class StratifyPlotProject {
 			userSeriesColours: this.userSeriesColours,
 			userSeriesLabels: this.userSeriesLabels,
 			seriesChartTypes: this.seriesChartTypes,
+			seriesLineStyles: this.seriesLineStyles,
 			plotOverrides: this.plotOverrides,
 			seriesOrder: this.seriesOrder,
 			chartHeight: this.chartHeight,
@@ -431,6 +437,7 @@ export default class StratifyPlotProject {
 		this.userSeriesColours = snapshot.userSeriesColours ?? {};
 		this.userSeriesLabels = snapshot.userSeriesLabels ?? {};
 		this.seriesChartTypes = snapshot.seriesChartTypes ?? {};
+		this.seriesLineStyles = snapshot.seriesLineStyles ?? {};
 		this.plotOverrides = snapshot.plotOverrides ?? null;
 		this.seriesOrder = snapshot.seriesOrder ?? [];
 		this.chartHeight = snapshot.chartHeight ?? 400;

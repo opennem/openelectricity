@@ -18,6 +18,7 @@ import {
 	groupX,
 	groupY
 } from '@observablehq/plot';
+import { getLineDasharray } from '$lib/stratify/chart-types.js';
 
 /**
  * Per-series mark type for mixed charts.
@@ -182,6 +183,7 @@ export function capacityMarks(capacitySums, { isLine, isEnergyMetric }) {
  * @property {{ ticks: Date[], tickFormat: (d: any) => string, gridlineMarks: any[] }} [gridlines]
  * @property {[number, number]} [yDomain] - Explicit y-domain (e.g. extended for capacity lines)
  * @property {string | ((d: number) => string)} [yTickFormat] - Custom y-axis tick format (default: 's')
+ * @property {Record<string, string>} [seriesLineStyles] - Per-series line style overrides
  */
 
 /**
@@ -247,6 +249,58 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 }
 
 /**
+ * Build lineY marks, grouping series by dash pattern when needed.
+ * When all series are solid, returns a single mark (fast path).
+ * @param {Array<Record<string, any>>} data
+ * @param {string[]} seriesNames
+ * @param {string} xKey
+ * @param {Record<string, string>} seriesLineStyles
+ * @param {string} [curve]
+ * @returns {any[]}
+ */
+function buildLineMarks(data, seriesNames, xKey, seriesLineStyles, curve) {
+	const hasCustomStyles = seriesNames.some((n) => getLineDasharray(seriesLineStyles[n]) !== undefined);
+
+	if (!hasCustomStyles) {
+		const long = toLong(data, seriesNames, xKey);
+		return [
+			lineY(long, {
+				x: 'x',
+				y: 'value',
+				stroke: 'series',
+				strokeWidth: 2,
+				...(curve ? { curve } : {})
+			})
+		];
+	}
+
+	/** @type {Map<string, string[]>} dasharray key → series names */
+	const groups = new Map();
+	for (const name of seriesNames) {
+		const dash = getLineDasharray(seriesLineStyles[name]) ?? '__solid__';
+		if (!groups.has(dash)) groups.set(dash, []);
+		groups.get(dash)?.push(name);
+	}
+
+	/** @type {any[]} */
+	const marks = [];
+	for (const [dash, groupNames] of groups) {
+		const long = toLong(data, groupNames, xKey);
+		marks.push(
+			lineY(long, {
+				x: 'x',
+				y: 'value',
+				stroke: 'series',
+				strokeWidth: 2,
+				...(curve ? { curve } : {}),
+				...(dash !== '__solid__' ? { strokeDasharray: dash } : {})
+			})
+		);
+	}
+	return marks;
+}
+
+/**
  * Multi-series line chart for time-series or category data.
  * @param {Array<Record<string, any>>} data - Parsed rows with `date` or `category` field
  * @param {string[]} seriesNames
@@ -267,10 +321,12 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 		extraMarks = [],
 		gridlines,
 		yDomain,
-		yTickFormat
+		yTickFormat,
+		seriesLineStyles = {}
 	} = options;
 	const { xKey, isCategory, isLinear } = detectXMode(data);
-	const long = toLong(data, seriesNames, xKey);
+
+	const lineMarks = buildLineMarks(data, seriesNames, xKey, seriesLineStyles, curve);
 
 	return {
 		style,
@@ -294,13 +350,7 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 		marks: [
 			...(gridlines ? gridlines.gridlineMarks : []),
 			...extraMarks,
-			lineY(long, {
-				x: 'x',
-				y: 'value',
-				stroke: 'series',
-				strokeWidth: 2,
-				...(curve ? { curve } : {})
-			}),
+			...lineMarks,
 			ruleY([0])
 		]
 	};
@@ -724,7 +774,8 @@ export function createMixedMarkOptions(
 		extraMarks = [],
 		gridlines,
 		yDomain,
-		yTickFormat
+		yTickFormat,
+		seriesLineStyles = {}
 	} = options;
 
 	const defaultMarkType = globalTypeToMarkType(defaultChartType);
@@ -807,18 +858,9 @@ export function createMixedMarkOptions(
 		}
 	}
 
-	// Line series (overlaid)
+	// Line series (overlaid, grouped by dash pattern)
 	if (groups.line.length > 0) {
-		const long = toLong(data, groups.line, xKey);
-		marks.push(
-			lineY(long, {
-				x: 'x',
-				y: 'value',
-				stroke: 'series',
-				strokeWidth: 2,
-				...(curve ? { curve } : {})
-			})
-		);
+		marks.push(...buildLineMarks(data, groups.line, xKey, seriesLineStyles, curve));
 	}
 
 	// Dot series (overlaid)

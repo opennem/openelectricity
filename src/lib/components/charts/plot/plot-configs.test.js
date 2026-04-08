@@ -12,6 +12,7 @@ import {
 	createColourGroupedBarOptions,
 	buildTooltipChannels
 } from './plot-configs.js';
+import { getLineDasharray } from '$lib/stratify/chart-types.js';
 
 const CATEGORY_DATA = [
 	{ category: 'A', solar: 10, wind: 20 },
@@ -555,5 +556,147 @@ describe('buildTooltipChannels', () => {
 			'X (b)': 'b',
 			'X (c)': 'c'
 		});
+	});
+});
+
+// ── getLineDasharray ───────────────────────────────────────────
+
+describe('getLineDasharray', () => {
+	it('returns undefined for solid', () => {
+		expect(getLineDasharray('solid')).toBeUndefined();
+	});
+
+	it('returns undefined for undefined input', () => {
+		expect(getLineDasharray(undefined)).toBeUndefined();
+	});
+
+	it('returns undefined for unknown values', () => {
+		expect(getLineDasharray('unknown')).toBeUndefined();
+	});
+
+	it('returns correct dasharray for dashed', () => {
+		expect(getLineDasharray('dashed')).toBe('8,4');
+	});
+
+	it('returns correct dasharray for dotted', () => {
+		expect(getLineDasharray('dotted')).toBe('2,2');
+	});
+
+	it('returns correct dasharray for dash-dot', () => {
+		expect(getLineDasharray('dash-dot')).toBe('8,4,2,4');
+	});
+
+	it('returns correct dasharray for long-dash', () => {
+		expect(getLineDasharray('long-dash')).toBe('12,6');
+	});
+});
+
+// ── createLineOptions with seriesLineStyles ────────────────────
+
+describe('createLineOptions with seriesLineStyles', () => {
+	const timeData = [
+		{ date: new Date('2024-01-01'), solar: 10, wind: 20 },
+		{ date: new Date('2024-01-02'), solar: 30, wind: 40 }
+	];
+
+	it('uses single mark when all series are solid (default)', () => {
+		const result = createLineOptions(timeData, SERIES, COLOURS, LABELS, {
+			seriesLineStyles: {}
+		});
+		// 1 lineY + ruleY = 2 marks
+		expect(result.marks.length).toBe(2);
+	});
+
+	it('uses single mark when seriesLineStyles is not provided', () => {
+		const result = createLineOptions(timeData, SERIES, COLOURS, LABELS);
+		expect(result.marks.length).toBe(2);
+	});
+
+	it('creates separate marks when series have different styles', () => {
+		const result = createLineOptions(timeData, SERIES, COLOURS, LABELS, {
+			seriesLineStyles: { solar: 'dashed', wind: 'dotted' }
+		});
+		// 2 lineY marks (one per style) + ruleY = 3 marks
+		expect(result.marks.length).toBe(3);
+	});
+
+	it('groups series with the same style into one mark', () => {
+		const THREE = ['solar', 'wind', 'coal'];
+		const TCOL = { solar: '#f00', wind: '#00f', coal: '#333' };
+		const TLAB = { solar: 'Solar', wind: 'Wind', coal: 'Coal' };
+		const data = [
+			{ date: new Date('2024-01-01'), solar: 10, wind: 20, coal: 30 },
+			{ date: new Date('2024-01-02'), solar: 15, wind: 25, coal: 35 }
+		];
+		const result = createLineOptions(data, THREE, TCOL, TLAB, {
+			seriesLineStyles: { solar: 'dashed', wind: 'dashed' }
+			// coal defaults to solid
+		});
+		// solid group (coal) + dashed group (solar, wind) + ruleY = 3 marks
+		expect(result.marks.length).toBe(3);
+	});
+
+	it('handles mix of styled and solid series', () => {
+		const result = createLineOptions(timeData, SERIES, COLOURS, LABELS, {
+			seriesLineStyles: { solar: 'dash-dot' }
+			// wind defaults to solid
+		});
+		// solid group (wind) + dash-dot group (solar) + ruleY = 3 marks
+		expect(result.marks.length).toBe(3);
+	});
+});
+
+// ── createMixedMarkOptions with seriesLineStyles ───────────────
+
+describe('createMixedMarkOptions with seriesLineStyles', () => {
+	const timeData = [
+		{ date: new Date('2024-01-01'), solar: 10, wind: 20 },
+		{ date: new Date('2024-01-02'), solar: 30, wind: 40 }
+	];
+
+	it('applies line styles to line series in mixed mode', () => {
+		const result = createMixedMarkOptions(
+			timeData,
+			SERIES,
+			COLOURS,
+			LABELS,
+			{ solar: 'line', wind: 'line' },
+			'line',
+			{ seriesLineStyles: { solar: 'dashed', wind: 'dotted' } }
+		);
+		// 2 lineY marks (different styles) + ruleY = 3 marks
+		expect(result.marks.length).toBe(3);
+	});
+
+	it('does not affect non-line marks in mixed mode', () => {
+		const threeSeriesData = [
+			{ date: new Date('2024-01-01'), solar: 10, wind: 20, coal: 30 },
+			{ date: new Date('2024-01-02'), solar: 15, wind: 25, coal: 35 }
+		];
+		const result = createMixedMarkOptions(
+			threeSeriesData,
+			['solar', 'wind', 'coal'],
+			{ solar: '#f00', wind: '#00f', coal: '#333' },
+			{ solar: 'Solar', wind: 'Wind', coal: 'Coal' },
+			{ wind: 'bar' },
+			'line', // solar and coal default to line
+			{ seriesLineStyles: { solar: 'dotted' } }
+		);
+		// line solid group (coal) + line dotted group (solar) + bar (wind) + ruleY = 4 marks
+		expect(result.marks.length).toBe(4);
+	});
+
+	it('uses single line mark in mixed mode when no custom styles', () => {
+		const result = createMixedMarkOptions(
+			timeData,
+			SERIES,
+			COLOURS,
+			LABELS,
+			{},
+			'line',
+			{ seriesLineStyles: {} }
+		);
+		// 1 lineY + ruleY = 2 marks
+		expect(result.marks.length).toBe(2);
 	});
 });

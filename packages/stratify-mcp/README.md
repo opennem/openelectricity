@@ -70,6 +70,7 @@ To save charts directly to Stratify, add environment variables:
 | `list_chart_types` | Offline | List available chart types |
 | `list_colour_palettes` | Offline | List available colour palettes |
 | `list_style_presets` | Offline | List available style presets |
+| `list_line_styles` | Offline | List available line styles for per-series customisation |
 | `save_chart` | Online | Save a chart to Stratify |
 | `update_chart` | Online | Update an existing chart |
 | `get_chart` | Online | Fetch a chart by ID |
@@ -95,3 +96,9 @@ To save charts directly to Stratify, add environment variables:
 **Sequential:** `blues`, `greens`, `oranges`, `purples`, `reds`, `greys`, `ylgn`, `ylorrd`, `bugn`, `pubu`
 
 **Diverging:** `rdbu`, `rdylgn`, `brbg`, `piyg`, `prgn`, `rdylbu`, `spectral`
+
+## Line styles
+
+`solid` (default), `dashed`, `dotted`, `dash-dot`, `long-dash`
+
+Set per-series via `seriesLineStyles: { "series_key": "dashed" }`. Only applies to line chart series.

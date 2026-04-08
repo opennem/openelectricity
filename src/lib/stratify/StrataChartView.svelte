@@ -193,6 +193,7 @@
 			{seriesLabels}
 			chartType={chart.chartType}
 			seriesChartTypes={chart.seriesChartTypes ?? {}}
+			seriesLineStyles={chart.seriesLineStyles ?? {}}
 			plotOverrides={chart.plotOverrides}
 			colourSeries={colourSeriesKey}
 			{colourGroupNames}

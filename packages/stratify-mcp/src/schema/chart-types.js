@@ -24,6 +24,16 @@ export const DATA_TRANSFORMS = [
 	{ value: 'cumulative', description: 'Running sum per series' }
 ];
 
+export const LINE_STYLES = [
+	{ value: 'solid', label: 'Solid', description: 'Continuous line (default)' },
+	{ value: 'dashed', label: 'Dashed', description: 'Long dashes (8,4)' },
+	{ value: 'dotted', label: 'Dotted', description: 'Dots (2,2)' },
+	{ value: 'dash-dot', label: 'Dash-Dot', description: 'Alternating dash and dot (8,4,2,4)' },
+	{ value: 'long-dash', label: 'Long Dash', description: 'Extra-long dashes (12,6)' }
+];
+
+export const LINE_STYLE_VALUES = LINE_STYLES.map((s) => s.value);
+
 export const CATEGORY_SORTS = [
 	{ value: 'default', description: 'Data order (as in CSV)' },
 	{ value: 'x-asc', description: 'Category A to Z' },

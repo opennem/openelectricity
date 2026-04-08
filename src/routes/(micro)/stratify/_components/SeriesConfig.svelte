@@ -3,6 +3,7 @@
 	import { flip } from 'svelte/animate';
 	import { getStratifyContext } from '../_state/context.js';
 	import { getPaletteColours } from '$lib/stratify/colour-palettes.js';
+	import { LINE_STYLES } from '$lib/stratify/chart-types.js';
 
 	const project = getStratifyContext();
 
@@ -144,6 +145,31 @@
 			project.seriesChartTypes = rest;
 		} else {
 			project.seriesChartTypes = { ...project.seriesChartTypes, [key]: value };
+		}
+	}
+
+	/**
+	 * Whether a series will render as a line.
+	 * @param {string} key
+	 * @returns {boolean}
+	 */
+	function isLineSeries(key) {
+		const override = project.seriesChartTypes[key];
+		if (override) return override === 'line';
+		return project.chartType === 'line';
+	}
+
+	/**
+	 * Update line style for a series
+	 * @param {string} key
+	 * @param {string} value
+	 */
+	function updateSeriesLineStyle(key, value) {
+		if (value === '' || value === 'solid') {
+			const { [key]: _, ...rest } = project.seriesLineStyles;
+			project.seriesLineStyles = rest;
+		} else {
+			project.seriesLineStyles = { ...project.seriesLineStyles, [key]: value };
 		}
 	}
 
@@ -304,6 +330,20 @@
 							<option value="left">Left</option>
 							<option value="right">Right</option>
 						</select>
+
+						<!-- Line style (line series only) -->
+						{#if isLineSeries(key)}
+							<select
+								value={project.seriesLineStyles[key] || 'solid'}
+								onchange={(e) => updateSeriesLineStyle(key, e.currentTarget.value)}
+								class="text-[10px] bg-light-warm-grey/50 border border-warm-grey rounded pl-1 pr-8 py-0.5 focus:outline-none focus:border-dark-grey text-mid-grey cursor-pointer shrink-0"
+								title="Line style for this series"
+							>
+								{#each LINE_STYLES as style (style.value)}
+									<option value={style.value}>{style.label}</option>
+								{/each}
+							</select>
+						{/if}
 
 						<!-- Chart type override (right-axis only) -->
 						{#if project.seriesYAxis[key] === 'right'}

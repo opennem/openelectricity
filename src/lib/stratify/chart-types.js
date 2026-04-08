@@ -33,6 +33,42 @@ export const HORIZONTAL_TYPES = new Set(['bar', 'bar-stacked', 'bar-grouped']);
 /** Chart types that use vertical bars/columns (barY/rectY) */
 export const COLUMN_TYPES = new Set(['column', 'column-stacked', 'column-grouped']);
 
+// ── Line Style Definitions ─────────────────────────────────────
+
+/**
+ * @typedef {'solid' | 'dashed' | 'dotted' | 'dash-dot' | 'long-dash'} LineStyle
+ */
+
+/** @type {Array<{value: LineStyle, label: string}>} */
+export const LINE_STYLES = [
+	{ value: 'solid', label: 'Solid' },
+	{ value: 'dashed', label: 'Dashed' },
+	{ value: 'dotted', label: 'Dotted' },
+	{ value: 'dash-dot', label: 'Dash-Dot' },
+	{ value: 'long-dash', label: 'Long Dash' }
+];
+
+/**
+ * Map a LineStyle value to an SVG stroke-dasharray string.
+ * Returns undefined for solid/unset (no dasharray needed).
+ * @param {string | undefined} style
+ * @returns {string | undefined}
+ */
+export function getLineDasharray(style) {
+	switch (style) {
+		case 'dashed':
+			return '8,4';
+		case 'dotted':
+			return '2,2';
+		case 'dash-dot':
+			return '8,4,2,4';
+		case 'long-dash':
+			return '12,6';
+		default:
+			return undefined;
+	}
+}
+
 /**
  * Migrate old chart type values to new ones.
  * @param {string} chartType

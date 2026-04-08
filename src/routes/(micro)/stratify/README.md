@@ -10,7 +10,8 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 - **Auto-detection**: Automatically detects dates vs categories, delimiter type
 - **Themes**: Sans (DM Sans) and Mono (DM Mono) — control typography only
 - **Colour palettes**: 30+ palettes — qualitative (OE Energy, Tableau 10, Set1–3, etc.), sequential (Blues, Greens, etc.), diverging (RdBu, Spectral, etc.)
-- **Series config**: Customise colours, labels, visibility, chart type, Y-axis assignment, and order per series
+- **Series config**: Customise colours, labels, visibility, chart type, line style, Y-axis assignment, and order per series
+- **Line styles**: Per-series line style for line charts — solid, dashed, dotted, dash-dot, long-dash
 - **Dual Y-axis**: Assign series to left or right Y-axis with independent scales and labels
 - **Drag-to-reorder**: Reorder series via drag-and-drop (affects stacking order and legend)
 - **Annotations**: End-labels, vertical rules, bar labels, point annotations
@@ -159,6 +160,33 @@ In the Series panel, each series row has a dropdown to set its chart type:
 
 - **Default** — inherits from the global chart type selector
 - **Line**, **Area**, **Bar**, **Dot** — overrides this specific series
+
+## Per-Series Line Styles
+
+Line chart series can use different stroke styles to improve readability (especially for print or greyscale).
+
+### Available Styles
+
+| Value       | Label     | SVG `stroke-dasharray` |
+| ----------- | --------- | ---------------------- |
+| `solid`     | Solid     | _(none)_               |
+| `dashed`    | Dashed    | `8,4`                  |
+| `dotted`    | Dotted    | `2,2`                  |
+| `dash-dot`  | Dash-Dot  | `8,4,2,4`              |
+| `long-dash` | Long Dash | `12,6`                 |
+
+### Data Model
+
+- `seriesLineStyles: Record<string, string>` — per-series line style override (default: `{}`, all solid)
+- Only applies to series that render as lines (global `chartType` is `line`, or series has `seriesChartTypes[key] === 'line'`)
+
+### How It Works
+
+When any series has a non-solid style, the renderer groups series by their dasharray value and creates separate `lineY()` marks per group. When all series are solid (the common case), the existing single-mark path is used with zero overhead.
+
+### Builder UI
+
+In the Series panel, each series row shows a line style dropdown when the series will render as a line. The dropdown hides when the chart type changes to a non-line type, but the style data persists for round-trip fidelity.
 
 ## Dual Y-Axis
 
@@ -351,6 +379,7 @@ The JSON format used for persistence (localStorage, file export, Sanity CMS):
 	"userSeriesColours": { "solar": "#f28e2b" },
 	"userSeriesLabels": { "solar": "Solar PV" },
 	"seriesChartTypes": { "demand": "bar" },
+	"seriesLineStyles": { "wind": "dashed" },
 	"plotOverrides": { "y": { "type": "log" } },
 	"seriesOrder": ["wind", "solar", "demand"],
 	"chartHeight": 400,
@@ -375,6 +404,7 @@ The JSON format used for persistence (localStorage, file export, Sanity CMS):
 v1 snapshots are fully backward compatible. Missing fields get defaults:
 
 - `seriesChartTypes` defaults to `{}` (all series use global type)
+- `seriesLineStyles` defaults to `{}` (all series solid)
 - `plotOverrides` defaults to `null` (no overrides applied)
 - `seriesOrder` defaults to `[]` (use CSV column order)
 - `seriesYAxis` defaults to `{}` (all series on left axis)
@@ -467,3 +497,14 @@ The `/strata-community` page displays the 10 most recently published charts in a
 | POST   | `/api/stratify/charts/:id/fork` | Fork chart to current user   |
 
 All endpoints require Clerk JWT authentication.
+
+## MCP Package
+
+The Stratify MCP server (`packages/stratify-mcp/`) mirrors the chart configuration schema. When adding, removing, or changing chart fields (snapshot schema, chart types, palettes, etc.), always update the MCP package in the same change:
+
+- `packages/stratify-mcp/src/schema/snapshot.js` — `SNAPSHOT_DEFAULTS` and `validateSnapshot()`
+- `packages/stratify-mcp/src/schema/chart-types.js` — chart type and line style constants
+- `packages/stratify-mcp/src/schema/palettes.js` — colour palette definitions
+- `packages/stratify-mcp/src/tools/chart-config.js` — `create_chart_config` tool input schema
+- `packages/stratify-mcp/src/tools/reference.js` — reference tool definitions and handlers
+- `packages/stratify-mcp/README.md` — user-facing documentation

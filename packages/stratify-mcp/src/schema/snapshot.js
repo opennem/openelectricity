@@ -1,3 +1,5 @@
+import { LINE_STYLE_VALUES } from './chart-types.js';
+
 /**
  * Default values for a StratifyPlotSnapshot.
  * Used when creating a new chart config.
@@ -17,6 +19,7 @@ export const SNAPSHOT_DEFAULTS = {
 	userSeriesColours: {},
 	userSeriesLabels: {},
 	seriesChartTypes: {},
+	seriesLineStyles: {},
 	plotOverrides: null,
 	seriesOrder: [],
 	chartHeight: 400,
@@ -90,6 +93,14 @@ export function validateSnapshot(config) {
 	const validTransforms = ['none', 'cumulative'];
 	if (config.dataTransform && !validTransforms.includes(config.dataTransform)) {
 		errors.push(`Invalid dataTransform "${config.dataTransform}". Valid: ${validTransforms.join(', ')}`);
+	}
+
+	if (config.seriesLineStyles && typeof config.seriesLineStyles === 'object') {
+		for (const [key, value] of Object.entries(config.seriesLineStyles)) {
+			if (!LINE_STYLE_VALUES.includes(/** @type {string} */ (value))) {
+				errors.push(`Invalid line style "${value}" for series "${key}". Valid: ${LINE_STYLE_VALUES.join(', ')}`);
+			}
+		}
 	}
 
 	if (config.chartHeight != null && (config.chartHeight < 100 || config.chartHeight > 1200)) {
