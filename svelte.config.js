@@ -21,7 +21,8 @@ const config = {
 			handleHttpError: 'warn'
 		},
 		version: {
-			name: pkg.version
+			name: pkg.version,
+			pollInterval: 5 * 60 * 1000
 		}
 	},
 	vitePlugin: {

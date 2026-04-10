@@ -2,7 +2,7 @@
 	// import { shortcut } from '@svelte-put/shortcut';
 	import { fly } from 'svelte/transition';
 	import { onNavigate } from '$app/navigation';
-	import { page } from '$app/state';
+	import { page, updated } from '$app/state';
 	import { setContext, onMount } from 'svelte';
 	// import '../../app.css';
 
@@ -177,6 +177,21 @@
 
 {#if !isFullscreen}
 	<Footer />
+{/if}
+
+{#if updated.current}
+	<div
+		transition:fly={{ y: 20, duration: 300 }}
+		class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] rounded-lg bg-dark-grey text-white px-6 py-3 text-sm shadow-lg flex items-center gap-4"
+	>
+		<span>A new version of Open Electricity is available</span>
+		<button
+			class="underline font-medium whitespace-nowrap"
+			onclick={() => location.reload()}
+		>
+			Refresh
+		</button>
+	</div>
 {/if}
 
 {#if $toastMessage}
