@@ -38,7 +38,22 @@ export default function sumFuelTechData(data, statsType, groupMap, options = {})
 	const statsData = template[statsType];
 	if (!statsData?.data) return null;
 
-	const dataLength = statsData.data.length;
+	// Find the maximum data length and widest date range across all relevant fuel techs.
+	// Different fuel techs may have different array lengths (e.g. coal_black ended in 2016
+	// while solar_utility continues to 2025). Using only the first fuel tech's length would
+	// silently truncate data from longer series.
+	let dataLength = 0;
+	let earliestStart = statsData.start;
+	let latestLast = statsData.last;
+
+	for (const d of relevant) {
+		const s = d[statsType];
+		if (!s?.data) continue;
+		if (s.data.length > dataLength) dataLength = s.data.length;
+		if (s.start && s.start < earliestStart) earliestStart = s.start;
+		if (s.last && s.last > latestLast) latestLast = s.last;
+	}
+
 	const summed = new Array(dataLength).fill(0);
 
 	for (const d of relevant) {
@@ -63,6 +78,8 @@ export default function sumFuelTechData(data, statsType, groupMap, options = {})
 		units: template.units,
 		[statsType]: {
 			...statsData,
+			start: earliestStart,
+			last: latestLast,
 			data: summed
 		}
 	};

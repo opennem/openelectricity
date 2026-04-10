@@ -39,8 +39,10 @@ function parser(jsonData, dataType = 'energy') {
 		}
 
 		if (lastDiff > 0) {
-			// TODO pad out last date
-			console.warn('Last dates are different, need to pad data.');
+			for (let i = 0; i < lastDiff; i++) {
+				d.history.data.push(null);
+			}
+			d.history.last = dataLast;
 		}
 	});
 
