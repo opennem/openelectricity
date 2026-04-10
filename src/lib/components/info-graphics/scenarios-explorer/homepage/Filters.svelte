@@ -10,25 +10,16 @@
 
 	const { selectedModel, scenarioOptions, selectedScenario } = getContext('scenario-filters');
 
-	// Map modelOptions to FormSelect format
-	const modelSelectOptions = modelOptions.map((m) => ({
-		value: m.value,
-		label: m.label
-	}));
-
-	$selectedModel = modelSelectOptions[0].value;
+	const latestModel = modelOptions[0];
+	$selectedModel = latestModel.value;
 
 	let scenarios = $derived($scenarioOptions || []);
 </script>
 
 <div class="text-sm border-b border-warm-grey pb-4 mb-2 sm:flex gap-8">
-	<div class="flex items-center justify-between gap-2 sm:justify-start">
+	<div class="flex items-center gap-2">
 		<span class="text-mid-grey whitespace-nowrap w-[35%] sm:w-auto">Model</span>
-		<FormSelect
-			options={modelSelectOptions}
-			selected={$selectedModel}
-			onchange={(option) => ($selectedModel = option.value)}
-		/>
+		<span class="whitespace-nowrap font-semibold">{latestModel.label}</span>
 	</div>
 
 	<div class="flex items-center justify-between gap-2 sm:justify-start">
