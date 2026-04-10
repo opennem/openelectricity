@@ -8,7 +8,10 @@
 	import { createSyncedCharts } from '$lib/components/charts/v2/sync.js';
 	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
 
-	import { fetchTechnologyViewData, toggleDataSource } from '../../../../../routes/(main)/scenarios/page-data-options/fetch.svelte.js';
+	import {
+		fetchTechnologyViewData,
+		toggleDataSource
+	} from '../../../../../routes/(main)/scenarios/page-data-options/fetch.svelte.js';
 	import processTechnology from '../../../../../routes/(main)/scenarios/page-data-options/process-technology.js';
 	import {
 		modelOptions,
@@ -297,7 +300,7 @@
 
 <div class="max-w-none lg:container relative">
 	<div
-		class="z-10 rounded bg-white/40 p-8 hidden sm:block sm:absolute sm:max-w-[30%] sm:ml-36 top-12 left-12"
+		class="z-10 rounded bg-white/40 p-8 hidden ml-12 sm:block sm:absolute sm:max-w-[40%] md:max-w-[30%] lg:max-w-[25%] sm:ml-4 md:ml-8 top-8"
 	>
 		<ScenarioDescription />
 	</div>

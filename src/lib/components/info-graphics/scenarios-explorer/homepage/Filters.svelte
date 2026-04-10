@@ -21,11 +21,9 @@
 	let scenarios = $derived($scenarioOptions || []);
 </script>
 
-<div
-	class="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center md:gap-x-6 md:gap-y-3 text-sm border-b border-warm-grey pb-4 mb-2"
->
-	<div class="flex items-center justify-between gap-2 md:justify-start">
-		<span class="text-mid-grey whitespace-nowrap w-[35%] md:w-auto">Model</span>
+<div class="text-sm border-b border-warm-grey pb-4 mb-2 sm:flex gap-8">
+	<div class="flex items-center justify-between gap-2 sm:justify-start">
+		<span class="text-mid-grey whitespace-nowrap w-[35%] sm:w-auto">Model</span>
 		<FormSelect
 			options={modelSelectOptions}
 			selected={$selectedModel}
@@ -33,8 +31,8 @@
 		/>
 	</div>
 
-	<div class="flex items-center justify-between gap-2 md:justify-start">
-		<span class="text-mid-grey whitespace-nowrap w-[35%] md:w-auto">Scenario</span>
+	<div class="flex items-center justify-between gap-2 sm:justify-start">
+		<span class="text-mid-grey whitespace-nowrap w-[35%] sm:w-auto">Scenario</span>
 		<FormSelect
 			options={scenarios}
 			selected={$selectedScenario}
@@ -42,8 +40,8 @@
 		/>
 	</div>
 
-	<div class="flex items-center justify-between gap-2 md:justify-start">
-		<span class="text-mid-grey whitespace-nowrap w-[35%] md:w-auto">View</span>
+	<div class="flex items-center justify-between gap-2 sm:justify-start">
+		<span class="text-mid-grey whitespace-nowrap w-[35%] sm:w-auto">View</span>
 		<FormSelect
 			options={homepageDataTechnologyGroupOptions}
 			selected={selectedGroup}
