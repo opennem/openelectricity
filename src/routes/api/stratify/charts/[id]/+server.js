@@ -44,7 +44,7 @@ export async function GET({ request, params }) {
 }
 
 /**
- * PATCH /api/stratify/charts/:id — update a chart (owner only).
+ * PATCH /api/stratify/charts/:id — update a chart (owner or superadmin).
  * @type {import('./$types').RequestHandler}
  */
 export async function PATCH({ request, params }) {
@@ -55,14 +55,17 @@ export async function PATCH({ request, params }) {
 
 	const client = createCmsClient();
 
-	// Owner only — superadmin cannot edit others' charts
 	const existing = await client.fetch(
-		`*[_type == "stratifyChart" && _id == $id && userId == $userId][0]{ _id }`,
-		{ id: params.id, userId: auth.userId }
+		`*[_type == "stratifyChart" && _id == $id][0]{ _id, userId }`,
+		{ id: params.id }
 	);
 
 	if (!existing) {
 		return json({ error: 'Not found' }, { status: 404 });
+	}
+
+	if (existing.userId !== auth.userId && !auth.isSuperAdmin) {
+		return json({ error: 'Forbidden' }, { status: 403 });
 	}
 
 	const body = await request.json();

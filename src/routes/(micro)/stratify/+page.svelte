@@ -299,6 +299,12 @@
 												{forkingId === chart._id ? 'Forking...' : 'Fork'}
 											</button>
 											{#if isSuperAdmin}
+												<a
+													href="/stratify/{chart._id}"
+													class="text-[10px] text-mid-grey hover:text-dark-grey"
+												>
+													Edit
+												</a>
 												<button
 													type="button"
 													onclick={() => promptDelete(chart)}
