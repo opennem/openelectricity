@@ -427,7 +427,10 @@ export default class ChartDataManager {
 		const now = Date.now();
 		const clampedStart = Math.max(Math.min(startMs, now), EARLIEST_MS);
 		const clampedEnd = Math.min(endMs, now);
-		if (clampedStart >= clampedEnd) return null;
+		// Require at least 1 second between start and end — the API formats dates
+		// at second precision (see below), so sub-second ranges collapse to an
+		// empty window and the API returns NoDataFound.
+		if (clampedEnd - clampedStart < 1000) return null;
 
 		// The API expects timezone-naive dates in the network's local time.
 		// Convert UTC ms → local time by adding the network's UTC offset.
