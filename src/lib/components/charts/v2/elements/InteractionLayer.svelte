@@ -6,7 +6,7 @@
 	 * div and handles all pointer interactions at the HTML level, avoiding SVG
 	 * layer stacking issues.
 	 *
-	 * Mouse:  hover, click to focus, Cmd/Ctrl+drag to pan
+	 * Mouse:  hover, click to focus, drag to pan, wheel to zoom
 	 * Touch:  1-finger drag → hover, 1-finger tap → focus,
 	 *         2-finger drag → pan, 2-finger pinch → zoom
 	 *
@@ -226,9 +226,8 @@
 			return;
 		}
 
-		// --- Mouse: Cmd/Ctrl+drag to pan ---
+		// --- Mouse: left-button drag to pan ---
 		if (event.button !== 0) return;
-		if (!event.metaKey && !event.ctrlKey) return;
 
 		tapStartX = event.clientX;
 		panLastX = event.clientX;
@@ -284,7 +283,7 @@
 			return;
 		}
 
-		// Mouse Cmd+drag pan
+		// Mouse drag pan
 		if (event.pointerType !== 'touch') {
 			const dx = Math.abs(event.clientX - tapStartX);
 
@@ -386,8 +385,6 @@
 	 */
 	function handleClick(event) {
 		if (interactionMode !== 'none') return;
-		// Cmd/Ctrl+click is used for zoom — don't focus
-		if (event.metaKey || event.ctrlKey) return;
 		// StackedArea handles clicks on SVG paths via onpointerup — skip to avoid double-toggle
 		const target = /** @type {Element} */ (event.target);
 		if (target.tagName === 'path') return;

@@ -659,13 +659,11 @@
 
 	/**
 	 * Wheel zoom handler — attached imperatively with { passive: false }
-	 * on the chart container div so preventDefault() works.
-	 * Only activates when Cmd (Mac) or Ctrl (Win/Linux) is held.
+	 * on the chart container div so preventDefault() works. Any wheel event
+	 * over the chart zooms; the user can mouse away to scroll the page.
 	 * @param {WheelEvent} event
 	 */
 	function handleWheel(event) {
-		if (!event.metaKey && !event.ctrlKey) return;
-
 		event.preventDefault();
 
 		const factor = Math.pow(1.002, -event.deltaY);
