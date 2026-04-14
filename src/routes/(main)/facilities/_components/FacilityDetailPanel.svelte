@@ -4,16 +4,7 @@
 		FacilityUnitsTable,
 		getNetworkTimezone
 	} from '$lib/components/charts/facility';
-	import {
-		getExploreUrl,
-		groupUnits,
-		hasBidirectionalBattery,
-		filterDerivedBatteryUnits
-	} from '../_utils/units';
-	import { getRegionLabel } from '../_utils/filters';
-	import formatValue from '../_utils/format-value';
-	import { ExternalLink, MapPin } from '@lucide/svelte';
-	import FuelTechBadge from './FuelTechBadge.svelte';
+	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../_utils/units';
 
 	/**
 	 * @type {{
@@ -23,27 +14,9 @@
 	 */
 	let { facility = null, powerData = null } = $props();
 
-	let panelHeight = $state(0);
-	let chartPixelHeight = $derived(Math.min(480, Math.max(150, panelHeight - 200)));
-
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
-	let explorePath = $derived(getExploreUrl(facility));
 
-	// Facility info
-	let regionLabel = $derived(
-		facility ? getRegionLabel(facility.network_id, facility.network_region) : ''
-	);
-	let unitGroups = $derived(facility ? groupUnits(facility) : []);
-	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
-	let totalStorage = $derived(
-		(facility?.units ?? []).reduce(
-			(/** @type {number} */ sum, /** @type {any} */ u) => sum + (Number(u.capacity_storage) || 0),
-			0
-		)
-	);
-	let unitCount = $derived(facility?.units?.length ?? 0);
-
-	// 3 days at 5-minute intervals = 3 * 24 * 12 = 864 data points
+	// 3 days at 5-minute intervals
 	const LAST_3_DAYS_POINTS = 3 * 24 * 12;
 
 	/** @type {string} */
@@ -57,7 +30,7 @@
 	let metricSwitchTimer = null;
 
 	/**
-	 * Handle viewport change — auto-switch between power and energy
+	 * Auto-switch between power and energy based on zoom duration.
 	 * @param {{ start: number, end: number }} range
 	 */
 	function handleViewportChange(range) {
@@ -73,7 +46,6 @@
 			targetInterval = '5m';
 		}
 
-		// Auto-adjust display interval based on zoom level
 		if (activeMetric === 'power') {
 			displayInterval = durationDays < 2 ? '5m' : '30m';
 		} else if (activeMetric === 'energy') {
@@ -89,7 +61,6 @@
 		}
 	}
 
-	// Reset metric/interval when facility changes
 	$effect(() => {
 		const _fac = facility?.code;
 		activeInterval = '5m';
@@ -98,8 +69,7 @@
 	});
 
 	/**
-	 * Filter data array to last N points
-	 * @param {any[]} data - Array of [timestamp, value] pairs
+	 * @param {any[]} data
 	 * @returns {any[]}
 	 */
 	function filterLastNPoints(data) {
@@ -109,7 +79,6 @@
 		return data.slice(-LAST_3_DAYS_POINTS);
 	}
 
-	// Filter out derived battery units only when a bidirectional battery unit exists
 	let filteredUnits = $derived(
 		filterDerivedBatteryUnits(facility?.units ?? [], hasBidirectionalBattery(facility))
 	);
@@ -145,136 +114,40 @@
 </script>
 
 {#if facility}
-	<div class="h-full flex flex-col" bind:clientHeight={panelHeight}>
-		<!-- Scrollable Content -->
-		<div class="flex-1 overflow-y-auto px-6">
-			<!-- Facility Info (hidden - to be formatted later) -->
-			<div class="py-4 space-y-3 hidden">
-				<!-- Region, Network, Code -->
-				<div class="flex items-center gap-2 flex-wrap">
-					<span
-						class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-dark-grey"
-					>
-						{regionLabel}
-					</span>
-					<span
-						class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-light-warm-grey text-mid-grey"
-					>
-						{facility.network_id}
-					</span>
-					<span class="text-xs text-mid-grey font-mono">{facility.code}</span>
-				</div>
-
-				<!-- Capacity & Units summary -->
-				<div class="flex items-center gap-4">
-					<div class="flex items-baseline gap-1">
-						<span class="font-mono text-lg text-dark-grey">{formatValue(totalCapacity)}</span>
-						<span class="text-xs text-mid-grey">MW</span>
-					</div>
-					{#if totalStorage > 0}
-						<div class="flex items-baseline gap-1">
-							<span class="font-mono text-sm text-dark-grey">{formatValue(totalStorage)}</span>
-							<span class="text-xs text-mid-grey">MWh</span>
-						</div>
-					{/if}
-					<span class="text-xs text-mid-grey">
-						{unitCount} unit{unitCount !== 1 ? 's' : ''}
-					</span>
-				</div>
-
-				<!-- Fuel tech badges -->
-				{#if unitGroups.length}
-					<div class="flex items-center gap-1.5 flex-wrap">
-						{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
-							<div class="flex items-center gap-1">
-								<FuelTechBadge
-									fueltech_id={group.fueltech_id}
-									status_id={group.status_id}
-									isCommissioning={group.isCommissioning}
-									size="sm"
-								/>
-								<span class="text-xs text-mid-grey">
-									{formatValue(group.totalCapacity)} MW
-								</span>
-								{#if group.capacity_storage > 0}
-									<span class="text-xxs text-mid-grey">
-										{formatValue(group.capacity_storage)} MWh
-									</span>
-								{/if}
-							</div>
-						{/each}
-					</div>
-				{/if}
-
-				<!-- Location -->
-				{#if facility.location?.lat && facility.location?.lng}
-					<div class="flex items-center gap-1 text-xs text-mid-grey">
-						<MapPin size={12} />
-						<span>{facility.location.lat.toFixed(4)}, {facility.location.lng.toFixed(4)}</span>
-					</div>
-				{/if}
-
-				<!-- Description -->
-				{#if facility.description}
-					<p class="text-sm text-mid-grey">{facility.description}</p>
-				{/if}
+	<div class="px-6 pt-4 pb-6">
+		<!-- Power Chart -->
+		{#if filteredPowerData}
+			<FacilityChart
+				facility={filteredFacility}
+				powerData={filteredPowerData}
+				{timeZone}
+				chartHeightPx={220}
+				useDivergingStack={true}
+				interval={activeInterval}
+				metric={activeMetric}
+				{displayInterval}
+				showAnnotations={false}
+				showHeader={false}
+				showContainer={false}
+				tooltipMode="floating"
+				onviewportchange={handleViewportChange}
+			/>
+		{:else if powerData}
+			<div class="flex items-center justify-center" style="height: 220px">
+				<p class="text-sm text-mid-grey">No power data available</p>
 			</div>
+		{:else}
+			<div class="animate-pulse bg-light-warm-grey/30 rounded" style="height: 220px"></div>
+		{/if}
 
-			<!-- Power Chart -->
-			{#if filteredPowerData}
-				<div class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0">
-					<FacilityChart
-						facility={filteredFacility}
-						powerData={filteredPowerData}
-						{timeZone}
-						chartHeightPx={chartPixelHeight}
-						useDivergingStack={true}
-						interval={activeInterval}
-						metric={activeMetric}
-						{displayInterval}
-						showAnnotations={true}
-						onviewportchange={handleViewportChange}
-					/>
-				</div>
-
-			{:else if powerData}
-				<div
-					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 flex items-center justify-center"
-					style="height: {chartPixelHeight}px"
-				>
-					<p class="text-sm text-mid-grey">No power data available</p>
-				</div>
-			{:else}
-				<div
-					class="bg-light-warm-grey/30 rounded-xl p-4 -mx-2 mb-0 animate-pulse"
-					style="height: {chartPixelHeight}px"
-				></div>
-			{/if}
-
-			<!-- Units Table -->
-			{#if filteredUnits.length}
-				<div class="border border-warm-grey rounded-lg mx-2">
-					<FacilityUnitsTable units={filteredUnits} compact />
-				</div>
-			{/if}
-
-			<!-- Capacity Info -->
+		<!-- Units Table -->
+		{#if filteredUnits.length}
+			<div class="border border-warm-grey rounded-lg mx-2 mt-4">
+				<FacilityUnitsTable units={filteredUnits} compact />
+			</div>
 			<p class="text-xxs text-mid-grey mt-3 mx-2">
 				Capacity shown is maximum capacity where available, otherwise registered capacity.
 			</p>
-		</div>
-
-		<!-- Fixed Footer -->
-		<div class="shrink-0 p-4 border-t border-warm-grey bg-white flex justify-end">
-			<a
-				href={explorePath}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="inline-flex items-center justify-center gap-2 w-auto px-12 py-3 text-sm font-medium text-white bg-dark-grey hover:bg-black rounded-lg transition-colors"
-			>
-				<ExternalLink size={14} />
-				View Facility
-			</a>
-		</div>
+		{/if}
 	</div>
 {/if}

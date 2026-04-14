@@ -259,6 +259,21 @@ export function getRegionLabel(network_id, network_region) {
 }
 
 /**
+ * Get the full region name (e.g. "New South Wales") for a given network/region.
+ * Falls back to the short label, then the raw network_region, then network_id.
+ * @param {string} network_id
+ * @param {string} network_region
+ * @returns {string}
+ */
+export function getRegionLongLabel(network_id, network_region) {
+	if (network_region) {
+		const match = regions.find((r) => r.value === network_region.toLowerCase());
+		return match?.longLabel || match?.label || network_region;
+	}
+	return network_id?.toUpperCase() || '';
+}
+
+/**
  * Get the display label for a status
  * @param {string} status
  * @returns {string}

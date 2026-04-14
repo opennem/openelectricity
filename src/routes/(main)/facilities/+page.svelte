@@ -23,6 +23,7 @@
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
+	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import {
@@ -1099,13 +1100,15 @@
 					<ResizablePanel
 						open={!!selectedFacility}
 						onclose={closeFacilityDetail}
-						title={selectedFacility?.name ?? ''}
 						direction="top"
 						defaultSize={containerHeight < 650 ? 100 : isFullscreen ? 66 : 50}
 						minSize={250}
 						containerSize={containerHeight}
 						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20"
 					>
+						{#snippet header()}
+							<FacilityPanelHeader facility={selectedFacility} onclose={closeFacilityDetail} />
+						{/snippet}
 						<FacilityDetailPanel facility={selectedFacility} {powerData} />
 					</ResizablePanel>
 				{/if}
@@ -1118,23 +1121,8 @@
 				class="md:hidden absolute inset-0 w-full bg-white z-30 flex flex-col overflow-hidden"
 				transition:fly={{ y: 200, duration: 250, easing: quintOut }}
 			>
-				<!-- Header -->
-				<header
-					class="flex items-center justify-between px-6 py-4 border-b border-warm-grey shrink-0"
-				>
-					<h2 class="text-lg font-medium text-dark-grey m-0 truncate pr-4">
-						{selectedFacility?.name ?? ''}
-					</h2>
-					<button
-						onclick={closeFacilityDetail}
-						class="p-2 rounded-lg hover:bg-warm-grey transition-colors text-mid-grey hover:text-dark-grey cursor-pointer"
-						aria-label="Close panel"
-					>
-						<X size={20} />
-					</button>
-				</header>
+				<FacilityPanelHeader facility={selectedFacility} onclose={closeFacilityDetail} />
 
-				<!-- Content -->
 				<div class="flex-1 overflow-y-auto min-h-0">
 					<FacilityDetailPanel facility={selectedFacility} {powerData} />
 				</div>
