@@ -136,6 +136,29 @@
 	/** @type {string[]} */
 	let timelineOrderedCodes = $state([]);
 
+	// When a facility is selected, switch the map to satellite view so the
+	// site's surroundings are visible. Remember the prior value and restore
+	// it when the facility is deselected (panel closed / zoom-out).
+	/** @type {boolean | null} */
+	let priorMapSatelliteView = $state(null);
+	$effect(() => {
+		if (selectedFacility) {
+			if (priorMapSatelliteView === null) {
+				priorMapSatelliteView = mapSatelliteView;
+			}
+			if (!mapSatelliteView) {
+				mapSatelliteView = true;
+				updateMapOptionsUrl();
+			}
+		} else if (priorMapSatelliteView !== null) {
+			if (mapSatelliteView !== priorMapSatelliteView) {
+				mapSatelliteView = priorMapSatelliteView;
+				updateMapOptionsUrl();
+			}
+			priorMapSatelliteView = null;
+		}
+	});
+
 	// Map options - read initial values from URL params
 	// satellite: default false, transmission: default true, clustering: default false, golf: default false
 	let mapSatelliteView = $state(page.url.searchParams.get('satellite') === 'true');
@@ -1212,6 +1235,7 @@
 		{ label: 'Enter / exit full screen', keys: ['F'] },
 		{ label: 'Browser full screen', keys: ['Shift', 'F'] },
 		{ label: 'Search', keys: ['/'] },
+		{ label: 'Previous / next facility', keys: ['↑', '↓'] },
 		{ label: 'Show shortcuts', keys: ['?'] },
 		{ label: 'Exit', keys: ['Esc'] }
 	]}
