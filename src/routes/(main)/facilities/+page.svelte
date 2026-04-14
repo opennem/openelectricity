@@ -14,6 +14,7 @@
 	import getUnitYear from './_utils/get-unit-year';
 	import { statusColours } from './_utils/filters.js';
 	import { facilitiesToCsv } from './_utils/facilities-csv.js';
+	import { sortFacilities } from './_utils/sort-facilities';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
 
 	import Map from './Map.svelte';
@@ -127,6 +128,13 @@
 	let listSortBy = $state('name');
 	/** @type {'asc' | 'desc'} */
 	let listSortOrder = $state('asc');
+
+	// Timeline's visual order — codes of facilities in the order the Timeline
+	// displays them (first-appearance, sorted desc by commissioning/retired
+	// date). Populated via Timeline's `onorderchange` callback and used for
+	// keyboard navigation in timeline view.
+	/** @type {string[]} */
+	let timelineOrderedCodes = $state([]);
 
 	// Map options - read initial values from URL params
 	// satellite: default false, transmission: default true, clustering: default false, golf: default false
@@ -544,6 +552,49 @@
 	}
 
 	/**
+	 * Facilities in the order the active view displays them. Used by
+	 * up/down arrow-key navigation so pressing an arrow moves selection
+	 * along the same visible order the user sees.
+	 */
+	let orderedFacilities = $derived.by(() => {
+		if (selectedView === 'list') {
+			return sortFacilities(filteredFacilities, listSortBy, listSortOrder);
+		}
+		if (selectedView === 'timeline' && timelineOrderedCodes.length) {
+			/** @type {Record<string, any>} */
+			const lookup = {};
+			for (const f of filteredFacilities ?? []) lookup[f.code] = f;
+			/** @type {any[]} */
+			const ordered = [];
+			for (const code of timelineOrderedCodes) {
+				const f = lookup[code];
+				if (f) ordered.push(f);
+			}
+			return ordered;
+		}
+		return filteredFacilities ?? [];
+	});
+
+	/**
+	 * Move selection to the previous/next facility in the current view.
+	 * @param {1 | -1} direction
+	 */
+	function moveSelection(direction) {
+		const list = orderedFacilities;
+		if (!list?.length) return;
+
+		if (!selectedFacility) {
+			handleFacilitySelect(list[0]);
+			return;
+		}
+
+		const idx = list.findIndex((f) => f.code === selectedFacility.code);
+		const nextIdx = idx < 0 ? 0 : Math.max(0, Math.min(list.length - 1, idx + direction));
+		if (nextIdx === idx) return;
+		handleFacilitySelect(list[nextIdx]);
+	}
+
+	/**
 	 * Handle keyboard shortcuts
 	 * @param {KeyboardEvent} e
 	 */
@@ -559,6 +610,15 @@
 				e.preventDefault();
 				toggleFullscreen();
 			}
+		}
+
+		// Arrow up/down: navigate through facilities in the List/Timeline view
+		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+			if (selectedView !== 'list' && selectedView !== 'timeline') return;
+			e.preventDefault();
+			moveSelection(e.key === 'ArrowDown' ? 1 : -1);
+			return;
 		}
 
 		// '?' key toggles shortcuts toast
@@ -930,6 +990,7 @@
 							onclick={(/** @type {any} */ f) => {
 								handleFacilitySelect(f);
 							}}
+							onorderchange={(/** @type {string[]} */ codes) => (timelineOrderedCodes = codes)}
 						/>
 					</div>
 				</div>

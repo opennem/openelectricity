@@ -18,6 +18,7 @@
 		onscrolledtotoday,
 		onhover,
 		onclick,
+		onorderchange,
 		hoveredFacility = null,
 		clickedFacility = null,
 		selectedFacilityCode = null
@@ -112,6 +113,26 @@
 			(a, b) => b.zonedDateTime?.toDate().getTime() - a.zonedDateTime?.toDate().getTime()
 		)
 	);
+
+	// Unique facility codes in visual-timeline order — emitted to parent for
+	// keyboard navigation so Arrow Up/Down steps in the same order the user sees.
+	let orderedFacilityCodes = $derived.by(() => {
+		/** @type {Set<string>} */
+		const seen = new Set();
+		/** @type {string[]} */
+		const codes = [];
+		for (const d of sortedFlattenedData) {
+			if (d.isToday || !d.code) continue;
+			if (seen.has(d.code)) continue;
+			seen.add(d.code);
+			codes.push(d.code);
+		}
+		return codes;
+	});
+
+	$effect(() => {
+		onorderchange?.(orderedFacilityCodes);
+	});
 
 	let groupedData = $derived(groupByMonthDay(sortedFlattenedData));
 

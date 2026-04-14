@@ -3,7 +3,7 @@
 	import { ChevronUp, ChevronDown } from '@lucide/svelte';
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
-	import { getRegionLabel } from './_utils/filters';
+	import { sortFacilities } from './_utils/sort-facilities';
 
 	/**
 	 * @type {{
@@ -30,62 +30,7 @@
 		onsortchange
 	} = $props();
 
-	/**
-	 * Get total capacity for a facility
-	 * @param {any} facility
-	 * @returns {number}
-	 */
-	function getTotalCapacity(facility) {
-		if (!facility.units) return 0;
-		return facility.units.reduce((/** @type {number} */ sum, /** @type {any} */ unit) => {
-			return sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0);
-		}, 0);
-	}
-
-	/**
-	 * Get total storage for a facility
-	 * @param {any} facility
-	 * @returns {number}
-	 */
-	function getTotalStorage(facility) {
-		if (!facility.units) return 0;
-		return facility.units.reduce((/** @type {number} */ sum, /** @type {any} */ unit) => {
-			return sum + (Number(unit.capacity_storage) || 0);
-		}, 0);
-	}
-
-	/**
-	 * Get region label for sorting
-	 * @param {any} facility
-	 * @returns {string}
-	 */
-	function getRegion(facility) {
-		return getRegionLabel(facility.network_id, facility.network_region);
-	}
-
-	// Sorted facilities
-	let sortedFacilities = $derived.by(() => {
-		const sorted = [...facilities];
-		sorted.sort((a, b) => {
-			let comparison = 0;
-			switch (sortBy) {
-				case 'name':
-					comparison = (a.name || '').localeCompare(b.name || '');
-					break;
-				case 'region':
-					comparison = getRegion(a).localeCompare(getRegion(b));
-					break;
-				case 'storage':
-					comparison = getTotalStorage(a) - getTotalStorage(b);
-					break;
-				case 'capacity':
-					comparison = getTotalCapacity(a) - getTotalCapacity(b);
-					break;
-			}
-			return sortOrder === 'asc' ? comparison : -comparison;
-		});
-		return sorted;
-	});
+	let sortedFacilities = $derived(sortFacilities(facilities, sortBy, sortOrder));
 
 	/**
 	 * Handle sort column click
