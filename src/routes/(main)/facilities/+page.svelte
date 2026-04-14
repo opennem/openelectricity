@@ -24,6 +24,7 @@
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
+	import FacilityPanelFooter from './_components/FacilityPanelFooter.svelte';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import {
@@ -1109,6 +1110,9 @@
 						{#snippet header()}
 							<FacilityPanelHeader facility={selectedFacility} onclose={closeFacilityDetail} />
 						{/snippet}
+						{#snippet footer()}
+							<FacilityPanelFooter />
+						{/snippet}
 						<FacilityDetailPanel facility={selectedFacility} {powerData} />
 					</ResizablePanel>
 				{/if}
@@ -1126,6 +1130,8 @@
 				<div class="flex-1 overflow-y-auto min-h-0">
 					<FacilityDetailPanel facility={selectedFacility} {powerData} />
 				</div>
+
+				<FacilityPanelFooter />
 			</div>
 		{/if}
 	</section>

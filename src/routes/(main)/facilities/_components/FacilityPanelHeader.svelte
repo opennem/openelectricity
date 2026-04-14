@@ -59,7 +59,7 @@
 {#if facility}
 	<header class="shrink-0 bg-light-warm-grey/40 border-b border-warm-grey">
 		<!-- Row 1: icons · name · view button · close -->
-		<div class="flex items-center gap-3 px-6 py-3">
+		<div class="flex items-center gap-3 px-6 py-2">
 			{#if headerFuelTechs.length}
 				<div class="flex items-center shrink-0">
 					{#each headerFuelTechs as group, i (group.fueltech_id)}
@@ -88,10 +88,10 @@
 				href={explorePath}
 				target="_blank"
 				rel="noopener noreferrer"
-				class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-dark-grey hover:bg-black rounded-md transition-colors"
+				class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-dark-grey hover:bg-black rounded-md transition-colors no-underline hover:no-underline"
 			>
 				<ExternalLink size={12} />
-				View facility
+				View
 			</a>
 
 			{#if onclose}
@@ -106,7 +106,7 @@
 		</div>
 
 		<!-- Row 2: stat strip — matches the List footer style (+page.svelte:809) -->
-		<div class="flex items-center gap-4 px-6 py-3 text-xs font-space flex-wrap">
+		<div class="flex items-center gap-4 px-6 py-2 text-xs font-space flex-wrap border-t border-warm-grey">
 			<div class="flex items-center gap-1.5">
 				<span class="text-dark-grey">{regionLabel}</span>
 			</div>

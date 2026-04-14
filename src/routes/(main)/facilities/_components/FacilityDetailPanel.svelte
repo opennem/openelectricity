@@ -1,10 +1,7 @@
 <script>
-	import {
-		FacilityChart,
-		FacilityUnitsTable,
-		getNetworkTimezone
-	} from '$lib/components/charts/facility';
+	import { FacilityChart, getNetworkTimezone } from '$lib/components/charts/facility';
 	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../_utils/units';
+	import FacilityUnitsLegend from './FacilityUnitsLegend.svelte';
 
 	/**
 	 * @type {{
@@ -142,15 +139,10 @@
 			<div class="animate-pulse bg-light-warm-grey/30 rounded" style="height: 220px"></div>
 		{/if}
 
-		<!-- Units Table -->
+		<!-- Units legend (single horizontal scrolling row) -->
 		{#if filteredUnits.length}
-			<div class="px-6 mt-4">
-				<div class="border border-warm-grey rounded-lg">
-					<FacilityUnitsTable units={filteredUnits} compact />
-				</div>
-				<p class="text-xxs text-mid-grey mt-3">
-					Capacity shown is maximum capacity where available, otherwise registered capacity.
-				</p>
+			<div class="mt-2">
+				<FacilityUnitsLegend units={filteredUnits} />
 			</div>
 		{/if}
 	</div>
