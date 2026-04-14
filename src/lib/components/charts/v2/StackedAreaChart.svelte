@@ -294,6 +294,7 @@
 					showLastTick={styles.showLastYTick}
 					lastTickDy={styles.lastYTickDy}
 					yLabelStartPos={styles.yLabelStartPos}
+					xTick={tightAxisClip ? 8 : 0}
 					dxTick={styles.yLabelStartPos ? 6 : 0}
 					tickMarks={!!styles.yLabelStartPos}
 					{animate}
