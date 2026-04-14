@@ -4,7 +4,7 @@
 	import { goto, replaceState } from '$app/navigation';
 	import { getContext, onDestroy, untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { X, Flag, Pause, Play } from '@lucide/svelte';
+	import { X, Flag, Pause, Play, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -850,6 +850,7 @@
 					label="Retired"
 				/>
 				<div class="flex items-center gap-1.5 pl-5 border-l border-warm-grey">
+					<Zap size={14} class="text-mid-grey" />
 					<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
 					<span class="text-mid-grey">MW</span>
 				</div>
