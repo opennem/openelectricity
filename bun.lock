@@ -43,7 +43,7 @@
         "layercake": "^10.0.2",
         "lz-string": "^1.5.0",
         "md5": "^2.3.0",
-        "openelectricity": "^0.7.1-0",
+        "openelectricity": "^0.8.1",
         "postcss": "^8.5.9",
         "prettier": "^3.8.1",
         "prettier-plugin-svelte": "^3.5.1",
@@ -874,7 +874,7 @@
 
     "date-fns-tz": ["date-fns-tz@3.2.0", "", { "peerDependencies": { "date-fns": "^3.0.0 || ^4.0.0" } }, "sha512-sg8HqoTEulcbbbVXeg84u5UnlsQa8GS5QXMqjjYIhS4abEVVKIUwe0/l/UhrZdKaL/W5eWZNlbTeEIiOXTcsBQ=="],
 
-    "dayjs": ["dayjs@1.11.19", "", {}, "sha512-t5EcLVS6QPBNqM2z8fakk/NKel+Xzshgt8FFKAn+qwlD1pzZWxh0nVCrvFK7ZDb6XucZeF9z8C7CBWTRIVApAw=="],
+    "dayjs": ["dayjs@1.11.20", "", {}, "sha512-YbwwqR/uYpeoP4pu043q+LTDLFBLApUP6VxRihdfNTqu4ubqMlGDLd6ErXhEgsyvY0K6nCs7nggYumAN+9uEuQ=="],
 
     "debug": ["debug@4.4.3", "", { "dependencies": { "ms": "^2.1.3" } }, "sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA=="],
 
@@ -1318,7 +1318,7 @@
 
     "open": ["open@7.4.2", "", { "dependencies": { "is-docker": "^2.0.0", "is-wsl": "^2.1.1" } }, "sha512-MVHddDVweXZF3awtlAS+6pgKLlm/JgxZ90+/NBurBoQctVOOB/zDdVjcyPzQ+0laDGbsWgrRkflI65sQeOgT9Q=="],
 
-    "openelectricity": ["openelectricity@0.7.1-0", "", { "dependencies": { "dayjs": "^1.11.13" } }, "sha512-eWpTjs2SwcratQD8mxLt8srrkJ1NE+JokGpKpGY4kbH7TkMUoJO8EFK7vGuqkKRwxxdR20dMtdHKBsSaDP6opw=="],
+    "openelectricity": ["openelectricity@0.8.1", "", { "dependencies": { "dayjs": "^1.11.20" } }, "sha512-Ov/IOhEKkh2F3pgqm+Yf3k3Gtmg8moOpYZGuzTCqOM9wgwYlOgXT069f+RVat3UXxvuqQ3p/IvvV/AB+xnqmFw=="],
 
     "optionator": ["optionator@0.9.4", "", { "dependencies": { "deep-is": "^0.1.3", "fast-levenshtein": "^2.0.6", "levn": "^0.4.1", "prelude-ls": "^1.2.1", "type-check": "^0.4.0", "word-wrap": "^1.2.5" } }, "sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g=="],
 
