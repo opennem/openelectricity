@@ -1049,7 +1049,7 @@
 					scrollZoom={!isYearPlaying}
 					cooperativeGestures={!isFullscreen}
 					flyToOffsetX={0}
-					flyToOffsetY={selectedFacility ? (isFullscreen ? -0.25 : -0.15) : 0}
+					flyToOffsetY={selectedFacility ? -0.15 : 0}
 					onhover={(f) => (hoveredFacility = f)}
 					onclick={(f) => (clickedFacility = f)}
 					onselect={handleFacilitySelect}
