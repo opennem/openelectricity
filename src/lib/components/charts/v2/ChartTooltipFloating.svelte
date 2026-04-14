@@ -11,11 +11,12 @@
 	 * @typedef {Object} Props
 	 * @property {import('./ChartStore.svelte.js').default} chart
 	 * @property {number} [dodgeRightPx] - Width of a top-right UI element (e.g. zoom buttons) to dodge. If the tooltip's right edge would land inside the last `dodgeRightPx` pixels of the container, the tooltip drops down to avoid overlap.
+	 * @property {number} [insetPx] - Horizontal gap (px) to keep between the tooltip card and both edges of the container. Useful when the chart is rendered full-bleed and you still want the overlay to stand off from the edges.
 	 * @property {string} [class]
 	 */
 
 	/** @type {Props} */
-	let { chart, dodgeRightPx = 0, class: className = '' } = $props();
+	let { chart, dodgeRightPx = 0, insetPx = 0, class: className = '' } = $props();
 
 	/** @type {HTMLDivElement | undefined} */
 	let wrapperEl = $state(undefined);
@@ -78,12 +79,12 @@
 		return drawLeft + ratio * drawWidth;
 	});
 
-	// Position tooltip horizontally, clamped within [8, wrapperWidth - tooltipWidth - 8].
+	// Position tooltip horizontally, clamped within [insetPx, wrapperWidth - tooltipWidth - insetPx].
 	let tooltipLeft = $derived.by(() => {
 		if (hoverX === null || !tooltipWidth || !wrapperWidth) return 0;
 		const halfTip = tooltipWidth / 2;
 		const desired = hoverX - halfTip;
-		return Math.max(0, Math.min(wrapperWidth - tooltipWidth, desired));
+		return Math.max(insetPx, Math.min(wrapperWidth - tooltipWidth - insetPx, desired));
 	});
 
 	// Dodge a top-right UI element (e.g. zoom buttons). If the tooltip's right

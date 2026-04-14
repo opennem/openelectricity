@@ -24,6 +24,7 @@
 	 * @property {boolean} [showTooltip] - DEPRECATED alias for tooltipMode: if set false, tooltipMode becomes 'none'. Prefer tooltipMode.
 	 * @property {'strip' | 'floating' | 'none'} [tooltipMode] - 'strip' (default) renders above the chart; 'floating' overlays at the cursor; 'none' disables the tooltip entirely.
 	 * @property {number} [tooltipDodgeRightPx] - For 'floating' mode: pixel width of a top-right UI element (e.g. zoom buttons) that the tooltip should dodge vertically.
+	 * @property {number} [tooltipInsetPx] - For 'floating' mode: horizontal standoff (px) the tooltip keeps from the container's left and right edges. Use when the chart is full-bleed.
 	 * @property {boolean} [showOptions]
 	 * @property {string} [defaultTooltipText]
 	 * @property {string} [class]
@@ -44,6 +45,7 @@
 	 * @property {[number, number] | null} [viewDomain]
 	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
 	 * @property {boolean} [hideAnnotationsOnMobile] - Hide annotations on mobile viewports
+	 * @property {boolean} [tightAxisClip] - Clip axis content to the exact chart area (no 15 px overflow on each side) — useful for compact charts where gridlines shouldn't extend past the edges.
 	 * @property {import('svelte').Snippet} [header]
 	 * @property {import('svelte').Snippet} [tooltip]
 	 * @property {import('svelte').Snippet} [footer]
@@ -56,6 +58,7 @@
 		showTooltip = true,
 		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip'),
 		tooltipDodgeRightPx = 0,
+		tooltipInsetPx = 0,
 		showOptions = true,
 		defaultTooltipText = '',
 		class: className = '',
@@ -76,6 +79,7 @@
 		viewDomain = null,
 		animate = false,
 		hideAnnotationsOnMobile = false,
+		tightAxisClip = false,
 		header,
 		tooltip,
 		footer
@@ -191,6 +195,7 @@
 					{clampHoverLine}
 					{animate}
 					{hideAnnotationsOnMobile}
+					{tightAxisClip}
 					onmousemove={handleSeriesHover}
 					onmouseout={handleSeriesHoverOut}
 					onpointerup={handleSeriesClick}
@@ -212,7 +217,11 @@
 	{/if}
 
 		{#if effectiveTooltipMode === 'floating'}
-			<ChartTooltipFloating {chart} dodgeRightPx={tooltipDodgeRightPx} />
+			<ChartTooltipFloating
+				{chart}
+				dodgeRightPx={tooltipDodgeRightPx}
+				insetPx={tooltipInsetPx}
+			/>
 		{/if}
 	</div>
 

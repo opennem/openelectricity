@@ -114,8 +114,8 @@
 </script>
 
 {#if facility}
-	<div class="px-6 pt-4 pb-6">
-		<!-- Power Chart -->
+	<div class="pt-4 pb-6">
+		<!-- Power Chart — full-bleed, extends to the panel edges -->
 		{#if filteredPowerData}
 			<FacilityChart
 				facility={filteredFacility}
@@ -130,6 +130,8 @@
 				showHeader={false}
 				showContainer={false}
 				tooltipMode="floating"
+				tightAxisClip={true}
+				overlayInsetPx={8}
 				onviewportchange={handleViewportChange}
 			/>
 		{:else if powerData}
@@ -142,12 +144,14 @@
 
 		<!-- Units Table -->
 		{#if filteredUnits.length}
-			<div class="border border-warm-grey rounded-lg mx-2 mt-4">
-				<FacilityUnitsTable units={filteredUnits} compact />
+			<div class="px-6 mt-4">
+				<div class="border border-warm-grey rounded-lg">
+					<FacilityUnitsTable units={filteredUnits} compact />
+				</div>
+				<p class="text-xxs text-mid-grey mt-3">
+					Capacity shown is maximum capacity where available, otherwise registered capacity.
+				</p>
 			</div>
-			<p class="text-xxs text-mid-grey mt-3 mx-2">
-				Capacity shown is maximum capacity where available, otherwise registered capacity.
-			</p>
 		{/if}
 	</div>
 {/if}

@@ -52,6 +52,8 @@
 	 * @property {boolean} [showZoomControls] - Whether to show the +/- zoom buttons overlaid on the chart (default: true)
 	 * @property {boolean} [showContainer] - Whether to wrap the chart in the default bordered + padded container (default: true). Set false to render the chart flush against the parent.
 	 * @property {'strip' | 'floating' | 'none'} [tooltipMode] - Tooltip style: 'strip' above the chart (default), 'floating' overlaid at the cursor, or 'none'.
+	 * @property {boolean} [tightAxisClip] - Clip gridlines/axis labels to the exact chart area (default: false). Use for compact charts where gridlines shouldn't extend past the edges.
+	 * @property {number} [overlayInsetPx] - Horizontal standoff (px) between overlay controls (zoom buttons, floating tooltip) and the chart's left/right edges. Use when the chart is rendered flush to its container and the overlays would otherwise touch the edge. Default 0.
 	 */
 
 	/** @type {Props} */
@@ -74,7 +76,9 @@
 		showOptions = true,
 		showZoomControls = true,
 		showContainer = true,
-		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip')
+		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip'),
+		tightAxisClip = false,
+		overlayInsetPx = 0
 	} = $props();
 
 	// ============================================
@@ -768,7 +772,9 @@
 			{showHeader}
 			{showOptions}
 			{tooltipMode}
+			{tightAxisClip}
 			tooltipDodgeRightPx={showZoomControls ? zoomButtonsWidth + 8 : 0}
+			tooltipInsetPx={overlayInsetPx}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
@@ -807,7 +813,8 @@
 		{#if showZoomControls}
 		<div
 			bind:clientWidth={zoomButtonsWidth}
-			class="absolute -top-3 right-0 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-30"
+			class="absolute -top-3 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-30"
+			style:right="{overlayInsetPx}px"
 		>
 			<button
 				class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMaxZoom ? 'text-mid-warm-grey cursor-not-allowed' : 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"

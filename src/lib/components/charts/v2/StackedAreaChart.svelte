@@ -41,6 +41,7 @@
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
 	 * @property {boolean} [hideAnnotationsOnMobile] - Hide annotations on mobile viewports
+	 * @property {boolean} [tightAxisClip] - When true, clip axis content (gridlines, labels) to the exact chart area rather than the default expanded region that gives axis labels 15 px of overflow on each side. Use for compact charts where gridlines shouldn't extend past the chart edges.
 	 */
 
 	/** @type {Props} */
@@ -56,7 +57,8 @@
 		overlayStart,
 		clampHoverLine = false,
 		animate = false,
-		hideAnnotationsOnMobile = false
+		hideAnnotationsOnMobile = false,
+		tightAxisClip = false
 	} = $props();
 
 	// Get chart styles
@@ -103,7 +105,8 @@
 	let clipPathId = $derived(`${id}-clip-path`);
 	let clipPathAxisId = $derived(`${id}-clip-path-axis`);
 	let clipPath = $derived(`url(#${clipPathId})`);
-	let clipPathAxis = $derived(`url(#${clipPathAxisId})`);
+	// When `tightAxisClip` is true, reuse the tight clip for axis content too.
+	let clipPathAxis = $derived(`url(#${tightAxisClip ? clipPathId : clipPathAxisId})`);
 
 	// When clampHoverLine is true, limit the hover/focus line to the stacked area height
 	let hoverMaxY = $derived.by(() => {
