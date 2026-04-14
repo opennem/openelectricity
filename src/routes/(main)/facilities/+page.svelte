@@ -848,7 +848,7 @@
 					colour={statusColours.retired}
 					label="Retired"
 				/>
-				<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
+				<div class="flex items-center gap-1.5 pl-5 border-l border-warm-grey">
 					<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
 					<span class="text-mid-grey">MW</span>
 				</div>
