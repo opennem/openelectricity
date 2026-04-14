@@ -12,6 +12,7 @@
 	 */
 	import ChartHeader from './ChartHeader.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
+	import ChartTooltipFloating from './ChartTooltipFloating.svelte';
 	import StackedAreaChart from './StackedAreaChart.svelte';
 	import BarChart from './BarChart.svelte';
 	import { InteractionLayer } from './elements';
@@ -20,7 +21,9 @@
 	 * @typedef {Object} Props
 	 * @property {import('./ChartStore.svelte.js').default} chart
 	 * @property {boolean} [showHeader]
-	 * @property {boolean} [showTooltip]
+	 * @property {boolean} [showTooltip] - DEPRECATED alias for tooltipMode: if set false, tooltipMode becomes 'none'. Prefer tooltipMode.
+	 * @property {'strip' | 'floating' | 'none'} [tooltipMode] - 'strip' (default) renders above the chart; 'floating' overlays at the cursor; 'none' disables the tooltip entirely.
+	 * @property {number} [tooltipDodgeRightPx] - For 'floating' mode: pixel width of a top-right UI element (e.g. zoom buttons) that the tooltip should dodge vertically.
 	 * @property {boolean} [showOptions]
 	 * @property {string} [defaultTooltipText]
 	 * @property {string} [class]
@@ -51,6 +54,8 @@
 		chart,
 		showHeader = true,
 		showTooltip = true,
+		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip'),
+		tooltipDodgeRightPx = 0,
 		showOptions = true,
 		defaultTooltipText = '',
 		class: className = '',
@@ -77,6 +82,9 @@
 	} = $props();
 
 	let hasData = $derived(chart?.seriesData?.length > 0);
+
+	// Resolve the effective tooltip mode, honouring the legacy `showTooltip={false}`.
+	let effectiveTooltipMode = $derived(showTooltip === false ? 'none' : tooltipMode);
 
 	/** @type {'none' | 'hover' | 'mouse-pan' | 'touch-pan'} Bound from InteractionLayer */
 	let interactionMode = $state('none');
@@ -127,7 +135,7 @@
 		{/if}
 	{/if}
 
-	{#if showTooltip}
+	{#if effectiveTooltipMode === 'strip'}
 		<div class="relative z-10" style="padding-right: var(--pad-right, 0);">
 			{#if tooltip}
 				{@render tooltip()}
@@ -137,6 +145,7 @@
 		</div>
 	{/if}
 
+	<div class="relative">
 	{#if chart.chartOptions.isAnyBarType}
 		<div class={chartPadding}>
 			{#if hasData}
@@ -201,6 +210,11 @@
 			{/if}
 		</InteractionLayer>
 	{/if}
+
+		{#if effectiveTooltipMode === 'floating'}
+			<ChartTooltipFloating {chart} dodgeRightPx={tooltipDodgeRightPx} />
+		{/if}
+	</div>
 
 	{#if footer}
 		{@render footer()}

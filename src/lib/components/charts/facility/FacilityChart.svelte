@@ -47,6 +47,11 @@
 	 * @property {((range: {start: number, end: number}) => void)} [onviewportchange] - Callback when viewport changes (for DateRangePicker sync)
 	 * @property {((tableData: {data: any[], seriesNames: string[], seriesLabels: Record<string, string>}) => void)} [onvisibledata] - Callback with debounced visible data for external table
 	 * @property {boolean} [showAnnotations] - Whether to show capacity reference lines (default: false)
+	 * @property {boolean} [showHeader] - Whether to show the chart title/header bar (default: true)
+	 * @property {boolean} [showOptions] - Whether to show the chart options (download, etc) in the header (default: true)
+	 * @property {boolean} [showZoomControls] - Whether to show the +/- zoom buttons overlaid on the chart (default: true)
+	 * @property {boolean} [showContainer] - Whether to wrap the chart in the default bordered + padded container (default: true). Set false to render the chart flush against the parent.
+	 * @property {'strip' | 'floating' | 'none'} [tooltipMode] - Tooltip style: 'strip' above the chart (default), 'floating' overlaid at the cursor, or 'none'.
 	 */
 
 	/** @type {Props} */
@@ -64,7 +69,12 @@
 		dateEnd = '',
 		onviewportchange,
 		onvisibledata,
-		showAnnotations = false
+		showAnnotations = false,
+		showHeader = true,
+		showOptions = true,
+		showZoomControls = true,
+		showContainer = true,
+		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip')
 	} = $props();
 
 	// ============================================
@@ -630,6 +640,9 @@
 	/** @type {HTMLDivElement | undefined} */
 	let chartContainerEl = $state(undefined);
 
+	/** Measured width of the zoom-buttons cluster (for floating-tooltip dodge). */
+	let zoomButtonsWidth = $state(0);
+
 	/**
 	 * Wheel zoom handler — attached imperatively with { passive: false }
 	 * on the chart container div so preventDefault() works.
@@ -736,9 +749,16 @@
 
 <!-- Main Chart -->
 {#if chartStore}
-	<div bind:this={chartContainerEl} class="border border-light-warm-grey rounded-lg p-4 relative">
+	<div
+		bind:this={chartContainerEl}
+		class="group relative {showContainer ? 'border border-light-warm-grey rounded-lg p-4' : ''}"
+	>
 		<StratumChart
 			chart={chartStore}
+			{showHeader}
+			{showOptions}
+			{tooltipMode}
+			tooltipDodgeRightPx={showZoomControls ? zoomButtonsWidth + 8 : 0}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
@@ -773,8 +793,12 @@
 			</div>
 		{/if}
 
-		<!-- Zoom buttons (centered) -->
-		<div class="absolute top-24 right-6 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey">
+		<!-- Zoom buttons (top right, visible on hover) -->
+		{#if showZoomControls}
+		<div
+			bind:clientWidth={zoomButtonsWidth}
+			class="absolute -top-3 right-0 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-30"
+		>
 			<button
 				class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMaxZoom ? 'text-mid-warm-grey cursor-not-allowed' : 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
 				onclick={zoomOut}
@@ -792,6 +816,7 @@
 				<Plus size={14} />
 			</button>
 		</div>
+		{/if}
 	</div>
 
 {:else}
