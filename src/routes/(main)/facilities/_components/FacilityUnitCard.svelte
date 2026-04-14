@@ -118,7 +118,7 @@
 			class:border-mid-warm-grey={isHighlighted || isSelected}
 			class:border-warm-grey={!isHighlighted && !isSelected}
 		>
-			<div class="text-xs text-mid-grey col-span-2">
+			<div class="text-xs text-mid-grey col-span-2 flex items-center">
 				<span
 					class="block w-18 border-r-0 pr-4 group-hover:border-light-warm-grey sm:border-r"
 					class:border-mid-warm-grey={isHighlighted || isSelected}
