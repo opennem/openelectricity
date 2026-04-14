@@ -451,12 +451,22 @@
 			return;
 		}
 
+		// When capacity annotations aren't requested, let the chart use its
+		// data-driven domain (computeYDomain with +10% padding) instead of
+		// pinning to nameplate capacity — that way dispatch data fills the
+		// chart naturally without a weird empty headroom above the peak.
+		if (!showAnnotations) {
+			chartStore.yReferenceLines = [];
+			chartStore.setYDomain(undefined);
+			return;
+		}
+
 		if (isLine || isChangeSince) {
 			const maxCapacity = Math.max(capacitySums.positive, capacitySums.negative);
 			if (maxCapacity > 0) {
-				chartStore.yReferenceLines = showAnnotations
-					? [{ value: maxCapacity, label: 'Capacity', colour: 'var(--chart-1)' }]
-					: [];
+				chartStore.yReferenceLines = [
+					{ value: maxCapacity, label: 'Capacity', colour: 'var(--chart-1)' }
+				];
 				const padding = 0.15;
 				chartStore.setYDomain([0, maxCapacity * (1 + padding)]);
 			} else {
@@ -481,7 +491,7 @@
 				colour: 'var(--chart-1)'
 			});
 		}
-		chartStore.yReferenceLines = showAnnotations ? refLines : [];
+		chartStore.yReferenceLines = refLines;
 
 		const padding = 0.15;
 		const yMax = capacitySums.positive > 0 ? capacitySums.positive * (1 + padding) : undefined;
