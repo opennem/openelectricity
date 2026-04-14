@@ -111,7 +111,7 @@
 </script>
 
 {#if facility}
-	<div class="pt-4 pb-6">
+	<div>
 		<!-- Power Chart — full-bleed, extends to the panel edges -->
 		{#if filteredPowerData}
 			<FacilityChart
@@ -141,9 +141,7 @@
 
 		<!-- Units legend (single horizontal scrolling row) -->
 		{#if filteredUnits.length}
-			<div class="mt-2">
-				<FacilityUnitsLegend units={filteredUnits} />
-			</div>
+			<FacilityUnitsLegend units={filteredUnits} />
 		{/if}
 	</div>
 {/if}

@@ -88,13 +88,14 @@
 	});
 
 	// Dodge a top-right UI element (e.g. zoom buttons). If the tooltip's right
-	// edge lands inside the last `dodgeRightPx` of the container, drop it below.
+	// edge lands inside the last `dodgeRightPx` of the container, drop it below
+	// so it clears the element (which starts at the chart's top edge).
 	let tooltipTop = $derived.by(() => {
 		if (dodgeRightPx <= 0) return 8;
 		if (hoverX === null || !tooltipWidth || !wrapperWidth) return 8;
 		const tooltipRight = tooltipLeft + tooltipWidth;
 		const zoneLeft = wrapperWidth - dodgeRightPx;
-		return tooltipRight > zoneLeft ? 20 : 8;
+		return tooltipRight > zoneLeft ? 36 : 8;
 	});
 </script>
 

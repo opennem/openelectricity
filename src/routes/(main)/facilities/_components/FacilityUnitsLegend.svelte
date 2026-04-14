@@ -54,19 +54,19 @@
 
 {#if units?.length}
 	<div
-		class="flex overflow-x-auto px-6 py-3 divide-x divide-warm-grey scrollbar-thin scrollbar-thumb-warm-grey scrollbar-track-transparent"
+		class="flex overflow-x-auto px-3 py-3 divide-x divide-warm-grey scrollbar-thin scrollbar-thumb-warm-grey scrollbar-track-transparent"
 	>
 		{#each sortedUnits as unit (unit.code)}
 			{@const colour = unitColourMap[unit.code] ?? '#888'}
 			{@const capacity = unit.capacity_maximum ?? unit.capacity_registered}
 			{@const isRetired = unit.status_id === 'retired'}
 			<div
-				class="shrink-0 inline-flex items-center gap-2 px-4 text-xs"
+				class="shrink-0 inline-flex items-center gap-2 px-3 text-xs"
 				class:opacity-60={isRetired}
 				title={unit.fueltech_id}
 			>
 				<span
-					class="w-3.5 h-3.5 rounded-full shrink-0"
+					class="w-4 h-4 rounded-[3px] shrink-0"
 					style:background-color={colour}
 				></span>
 				<span class="font-mono text-dark-grey">{unit.code}</span>

@@ -813,7 +813,7 @@
 		{#if showZoomControls}
 		<div
 			bind:clientWidth={zoomButtonsWidth}
-			class="absolute -top-3 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-30"
+			class="absolute top-0 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-30"
 			style:right="{overlayInsetPx}px"
 		>
 			<button

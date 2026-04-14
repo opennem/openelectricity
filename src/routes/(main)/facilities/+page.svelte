@@ -144,6 +144,10 @@
 	// Container height for responsive detail panel
 	let containerHeight = $state(0);
 
+	// Default pixel height of the facility detail panel — sized so the content
+	// fits without scrolling: drag handle + header + chart + legend + footer.
+	const FACILITY_PANEL_DEFAULT_PX = 391;
+
 	// Shortcuts toast
 	let showShortcutsToast = $state(false);
 
@@ -1103,7 +1107,9 @@
 						open={!!selectedFacility}
 						onclose={closeFacilityDetail}
 						direction="top"
-						defaultSize={containerHeight < 650 ? 100 : isFullscreen ? 66 : 50}
+						defaultSize={containerHeight < 650
+							? 100
+							: Math.min(100, Math.max(30, (FACILITY_PANEL_DEFAULT_PX / containerHeight) * 100))}
 						minSize={250}
 						containerSize={containerHeight}
 						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20"
