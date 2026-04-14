@@ -1,8 +1,10 @@
 /**
  * Facility Explorer - Server-Side Page Load
  *
- * Fetches facilities list and selected facility's 7-day power data.
- * Uses server-side loading to keep API keys secure and avoid client-side fetching.
+ * Strategy: fetch the selected facility's full metadata via the OE API's
+ * `/facilities/?facility_code=...` endpoint (fast, single record). Stream the
+ * full facilities list in parallel for the selector UI without blocking the
+ * critical render.
  */
 
 import { OpenElectricityClient } from 'openelectricity';
@@ -15,6 +17,24 @@ const client = new OpenElectricityClient({
 });
 
 /**
+ * Fetch a single facility by code via the raw OE API. The 0.8.1 SDK's
+ * getFacilities() doesn't expose a facility_code filter, but the underlying
+ * endpoint accepts it.
+ *
+ * @param {string} code
+ * @returns {Promise<any | null>}
+ */
+async function fetchFacilityByCode(code) {
+	const url = `${PUBLIC_OE_API_URL}/facilities/?facility_code=${encodeURIComponent(code)}`;
+	const res = await fetch(url, {
+		headers: { Authorization: `Bearer ${PUBLIC_OE_API_KEY}` }
+	});
+	if (!res.ok) return null;
+	const json = await res.json();
+	return json.data?.[0] ?? null;
+}
+
+/**
  * @typedef {Object} FacilityListItem
  * @property {string} code
  * @property {string} name
@@ -23,26 +43,17 @@ const client = new OpenElectricityClient({
  */
 
 /**
- * @typedef {Object} Unit
- * @property {string} code
- * @property {string} fueltech_id
- * @property {string} dispatch_type - 'GENERATOR' | 'LOAD'
- * @property {number} capacity_registered
- * @property {string} status_id
- */
-
-/**
  * @typedef {Object} PageData
- * @property {FacilityListItem[]} facilities - All facilities for selector
- * @property {string | null} selectedCode - Currently selected facility code
- * @property {any | null} facility - Selected facility details
+ * @property {Promise<FacilityListItem[]>} facilities - Streamed list for selector
+ * @property {string | null} selectedCode
+ * @property {any | null} facility - Selected facility details (from /facilities/?facility_code=...)
  * @property {any | null} powerData - Power data for selected range
- * @property {string} timeZone - Timezone offset string
- * @property {string | null} dateStart - Start date for data range
- * @property {string | null} dateEnd - End date for data range
- * @property {number | null} range - Preselected range in days
- * @property {any | null} sanityFacility - Sanity CMS facility data for comparison
- * @property {string | null} error - Error message if any
+ * @property {string} timeZone
+ * @property {string | null} dateStart
+ * @property {string | null} dateEnd
+ * @property {number | null} range
+ * @property {any | null} sanityFacility
+ * @property {string | null} error
  */
 
 /**
@@ -58,9 +69,28 @@ export async function load({ url, fetch }) {
 	const dateEnd = searchParams.get('date_end');
 	const days = searchParams.get('days');
 
+	// Kick off both requests in parallel.
+	// - `facility` is awaited because the critical render depends on it.
+	// - `facilitiesListPromise` is streamed to the client without blocking.
+	const facilityPromise = fetchFacilityByCode(selectedCode);
+
+	const facilitiesListPromise = client
+		.getFacilities({ status_id: ['operating'] })
+		.then((r) =>
+			(r.response.data || [])
+				.map((f) => ({
+					code: f.code,
+					name: f.name,
+					network_id: f.network_id,
+					network_region: f.network_region
+				}))
+				.sort((a, b) => a.name.localeCompare(b.name))
+		)
+		.catch(() => /** @type {FacilityListItem[]} */ ([]));
+
 	/** @type {PageData} */
-	let result = {
-		facilities: [],
+	const result = {
+		facilities: facilitiesListPromise,
 		selectedCode,
 		facility: null,
 		powerData: null,
@@ -73,27 +103,19 @@ export async function load({ url, fetch }) {
 	};
 
 	try {
-		// Fetch facilities list (operating only - 'commissioning' is not a valid API status)
-		// Valid statuses are: 'committed', 'operating', 'retired'
-		const { response: facilitiesResponse } = await client.getFacilities({
-			status_id: ['operating']
-		});
+		const selectedFacility = await facilityPromise;
 
-		result.facilities = (facilitiesResponse.data || [])
-			.map((f) => ({
-				code: f.code,
-				name: f.name,
-				network_id: f.network_id,
-				network_region: f.network_region
-			}))
-			.sort((a, b) => a.name.localeCompare(b.name));
+		if (!selectedFacility) {
+			result.error = `Facility "${selectedCode}" not found`;
+			return result;
+		}
 
-		// If a facility is selected, fetch its details, power data, and Sanity CMS data
-		if (selectedCode) {
-			const selectedFacility = facilitiesResponse.data?.find((f) => f.code === selectedCode);
+		result.facility = selectedFacility;
+		result.timeZone = selectedFacility.network_id === 'WEM' ? '+08:00' : '+10:00';
 
-			// Fetch Sanity facility data in parallel
-			const sanityPromise = sanityClient.fetch(
+		// Fetch Sanity data and power data in parallel
+		const sanityPromise = sanityClient
+			.fetch(
 				`*[_type == "facility" && code == $code][0]{
 					_id, code, name, website, wikipedia, wikidata_id, osm_way_id, npiId, location,
 					description, metadata_array,
@@ -109,43 +131,36 @@ export async function load({ url, fetch }) {
 					}
 				}`,
 				{ code: selectedCode }
-			).catch(() => null);
+			)
+			.catch(() => null);
 
-			if (selectedFacility) {
-				result.facility = selectedFacility;
+		// Only fetch power data server-side for short ranges (≤14 days).
+		// Energy ranges (>14 days) are fetched client-side by ChartDataManager.
+		const numDays = days ? parseInt(days, 10) : 7;
+		let powerPromise = /** @type {Promise<any | null>} */ (Promise.resolve(null));
+		if (numDays > 0 && numDays <= 14) {
+			const apiParams = new URLSearchParams({
+				network_id: selectedFacility.network_id
+			});
+			if (dateStart) apiParams.set('date_start', dateStart);
+			if (dateEnd) apiParams.set('date_end', dateEnd);
+			apiParams.set('days', days || String(numDays));
 
-				// Determine timezone offset based on network (no DST)
-				// WEM = +08:00 (AWST), NEM = +10:00 (AEST)
-				result.timeZone = selectedFacility.network_id === 'WEM' ? '+08:00' : '+10:00';
-
-				// Only fetch power data server-side for short ranges (≤14 days).
-				// Energy ranges (>14 days) are fetched client-side by ChartDataManager.
-				const numDays = days ? parseInt(days, 10) : 7;
-				if (numDays > 0 && numDays <= 14) {
-					const apiParams = new URLSearchParams({
-						network_id: selectedFacility.network_id
-					});
-					if (dateStart) apiParams.set('date_start', dateStart);
-					if (dateEnd) apiParams.set('date_end', dateEnd);
-					apiParams.set('days', days || String(numDays));
-
-					const powerRes = await fetch(
-						`/api/facilities/${selectedCode}/power?${apiParams.toString()}`
-					);
-
-					if (powerRes.ok) {
-						const powerJson = await powerRes.json();
-						result.powerData = powerJson.response;
-					} else {
+			powerPromise = fetch(`/api/facilities/${selectedCode}/power?${apiParams.toString()}`)
+				.then(async (res) => {
+					if (!res.ok) {
 						result.error = 'Failed to fetch power data';
+						return null;
 					}
-				}
-			} else {
-				result.error = `Facility "${selectedCode}" not found`;
-			}
-
-			result.sanityFacility = await sanityPromise;
+					const json = await res.json();
+					return json.response;
+				})
+				.catch(() => null);
 		}
+
+		const [sanityFacility, powerData] = await Promise.all([sanityPromise, powerPromise]);
+		result.sanityFacility = sanityFacility;
+		result.powerData = powerData;
 	} catch (err) {
 		console.error('Error loading facility explorer:', err);
 		result.error = /** @type {Error} */ (err).message;

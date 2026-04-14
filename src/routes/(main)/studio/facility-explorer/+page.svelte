@@ -14,39 +14,27 @@
 		FacilityPriceChart,
 		FacilitySummaryTable,
 		FacilityDataTable,
-		FacilityUnitsTable,
 		PollutionSection
 	} from '$lib/components/charts/facility';
 	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
 	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 	import {
-		groupUnits,
-		getExploreUrl,
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits
 	} from '../../facilities/_utils/units';
-	import FuelTechBadge from '../../facilities/_components/FuelTechBadge.svelte';
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import {
-		MapPin,
-		CircleAlert,
-		SearchX,
-		ExternalLink,
-		Calendar,
-		ChartArea,
-		Table2
-	} from '@lucide/svelte';
+	import { CircleAlert, SearchX, Calendar, ChartArea, Table2 } from '@lucide/svelte';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 	import Switch from '$lib/components/Switch.svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import FacilitySearchPopover from './_components/FacilitySearchPopover.svelte';
 	import FacilitySpotlight from './_components/FacilitySpotlight.svelte';
-	import FacilityLocationMap from './_components/FacilityLocationMap.svelte';
 	import SanityFacilityDetail from './_components/SanityFacilityDetail.svelte';
+	import FacilityOeDetail from './_components/FacilityOeDetail.svelte';
 	import {
 		getMetricIntervalForDays,
 		getHysteresisSwitch,
@@ -66,12 +54,38 @@
 	}
 
 	/**
+	 * @typedef {Object} FacilityListItem
+	 * @property {string} code
+	 * @property {string} name
+	 * @property {string} network_id
+	 * @property {string} network_region
+	 */
+
+	/**
 	 * @typedef {Object} Props
-	 * @property {{ facilities: Array<{code: string, name: string, network_id: string, network_region: string}>, selectedCode: string|null, facility: any, powerData: any, timeZone: string, dateStart: string|null, dateEnd: string|null, range: number|null, sanityFacility: any|null, error: string|null }} data
+	 * @property {{ facilities: Promise<FacilityListItem[]>, selectedCode: string|null, facility: any, powerData: any, timeZone: string, dateStart: string|null, dateEnd: string|null, range: number|null, sanityFacility: any|null, error: string|null }} data
 	 */
 
 	/** @type {Props} */
 	let { data } = $props();
+
+	/**
+	 * Streamed list of all facilities. Populates once `data.facilities` resolves
+	 * — the critical render uses `data.facility` (the selected one) and doesn't
+	 * block on this.
+	 * @type {FacilityListItem[]}
+	 */
+	let facilitiesList = $state([]);
+
+	$effect(() => {
+		let cancelled = false;
+		data.facilities.then((list) => {
+			if (!cancelled) facilitiesList = list;
+		});
+		return () => {
+			cancelled = true;
+		};
+	});
 
 	// Go fullscreen to remove nav/footer
 	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */
@@ -171,10 +185,10 @@
 	let timeZone = $derived(data.timeZone);
 
 	// Prev/next navigation (wrap-around)
-	let currentIndex = $derived(data.facilities.findIndex((f) => f.code === data.selectedCode));
-	let len = $derived(data.facilities.length);
-	let prevFacility = $derived(len > 0 ? data.facilities.at((currentIndex - 1 + len) % len) : null);
-	let nextFacility = $derived(len > 0 ? data.facilities.at((currentIndex + 1) % len) : null);
+	let currentIndex = $derived(facilitiesList.findIndex((f) => f.code === data.selectedCode));
+	let len = $derived(facilitiesList.length);
+	let prevFacility = $derived(len > 0 ? facilitiesList.at((currentIndex - 1 + len) % len) : null);
+	let nextFacility = $derived(len > 0 ? facilitiesList.at((currentIndex + 1) % len) : null);
 
 	// ============================================
 	// Derived: Unit Analysis (for info panel and table)
@@ -186,27 +200,6 @@
 	});
 
 	let unitColours = $derived(analysis?.unitColours ?? {});
-
-	let primaryFuelTechColor = $derived.by(() => {
-		if (!selectedFacility?.units?.length) return '#353535';
-		/** @type {Record<string, number>} */
-		const counts = {};
-		for (const unit of selectedFacility.units) {
-			const ft = unit.fueltech_id;
-			if (ft) counts[ft] = (counts[ft] || 0) + 1;
-		}
-		let maxFt = null;
-		let maxCount = 0;
-		for (const [ft, count] of Object.entries(counts)) {
-			if (count > maxCount) {
-				maxCount = count;
-				maxFt = ft;
-			}
-		}
-		return maxFt ? getFuelTechColor(maxFt) : '#353535';
-	});
-
-	let unitGroups = $derived(selectedFacility ? groupUnits(selectedFacility) : []);
 
 	// ============================================
 	// Event Handlers
@@ -364,8 +357,6 @@
 	// Computed UI Values
 	// ============================================
 
-	let explorePath = $derived(getExploreUrl(selectedFacility));
-
 	/**
 	 * Resolve initial days for metric/interval calculation.
 	 * For -1 ("All"), compute actual days from dateStart.
@@ -485,7 +476,7 @@
 </svelte:head>
 
 <FacilitySpotlight
-	facilities={data.facilities}
+	facilities={facilitiesList}
 	bind:open={spotlightOpen}
 	onselect={handleFacilitySelect}
 />
@@ -496,12 +487,6 @@
 		<CircleAlert size={32} class="mb-3 text-warm-grey" />
 		<p class="text-sm font-medium text-dark-grey mb-1">Unable to load facility</p>
 		<p class="text-xs">{data.error}</p>
-	</div>
-{:else if !data.facilities.length}
-	<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
-		<CircleAlert size={32} class="mb-3 text-warm-grey" />
-		<p class="text-sm font-medium text-dark-grey mb-1">No facilities available</p>
-		<p class="text-xs">Could not load the facilities list. Please try again later.</p>
 	</div>
 {:else if selectedFacility}
 	<div class="flex flex-col h-dvh overflow-hidden">
@@ -518,7 +503,7 @@
 
 				<div class="flex-1 flex justify-center sm:flex-initial sm:flex-none">
 					<FacilitySearchPopover
-						facilities={data.facilities}
+						facilities={facilitiesList}
 						label={selectedFacility.name}
 						bind:open={searchOpen}
 						onselect={handleFacilitySelect}
@@ -708,79 +693,16 @@
 				</div>
 			</div>
 
-			<!-- Two-column comparison -->
-			<div class="grid grid-cols-2 border-t border-warm-grey">
-				<!-- Left: OE API data -->
-				<div class="p-4 border-r border-warm-grey">
-					<div class="text-[10px] text-mid-grey uppercase tracking-widest mb-3 pb-1 border-b border-dark-grey">
-						OE API
-					</div>
-					<h2 class="text-lg font-semibold text-dark-grey leading-snug">
-						{selectedFacility.name}
-					</h2>
+			<!-- Three-column comparison -->
+			<div class="grid grid-cols-3 border-t border-warm-grey">
+				<!-- Left: OE API (filtered selected facility) -->
+				<div class="border-r border-warm-grey overflow-y-auto">
+					<FacilityOeDetail label="OE API" facility={selectedFacility} />
+				</div>
 
-					<!-- Description -->
-					{#if selectedFacility.description}
-						<div class="text-sm leading-relaxed text-mid-grey mt-3 [&_a]:text-dark-grey [&_a]:underline [&_p]:mb-[1em] [&_ul]:list-disc [&_ul]:ml-8 [&_ol]:list-decimal [&_ol]:ml-8">
-							{@html selectedFacility.description}
-						</div>
-					{/if}
-
-					<!-- Fuel tech badges -->
-					{#if unitGroups.length}
-						<div class="flex items-center gap-1 mt-3 flex-wrap">
-							{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
-								<FuelTechBadge
-									fueltech_id={group.fueltech_id}
-									status_id={group.status_id}
-									isCommissioning={group.isCommissioning}
-									size="sm"
-								/>
-							{/each}
-						</div>
-					{/if}
-
-					<!-- Map -->
-					{#if selectedFacility.location?.lat && selectedFacility.location?.lng}
-						<div class="mt-4">
-							<FacilityLocationMap
-								lat={selectedFacility.location.lat}
-								lng={selectedFacility.location.lng}
-								color={primaryFuelTechColor}
-							/>
-							<div class="flex items-center gap-1 text-xxs text-mid-grey mt-1.5">
-								<MapPin size={10} />
-								<span>
-									{selectedFacility.location.lat.toFixed(4)}, {selectedFacility.location.lng.toFixed(4)}
-								</span>
-							</div>
-						</div>
-					{/if}
-
-					<!-- Units table -->
-					{#if selectedFacility?.units?.length}
-						<div class="mt-4 border border-warm-grey rounded-lg">
-							<FacilityUnitsTable units={selectedFacility.units} {unitColours} compact detailed />
-						</div>
-						<p class="text-xxs text-mid-grey mt-1.5">
-							Capacity shown is maximum capacity where available, otherwise registered capacity.
-						</p>
-					{/if}
-
-					<!-- External link -->
-					{#if explorePath}
-						<div class="mt-3">
-							<a
-								href={explorePath}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="inline-flex items-center gap-1.5 text-xs text-mid-grey hover:text-dark-grey transition-colors"
-							>
-								<ExternalLink size={12} />
-								View on OpenElectricity
-							</a>
-						</div>
-					{/if}
+				<!-- Middle: Single facility call (raw response) -->
+				<div class="border-r border-warm-grey overflow-y-auto">
+					<FacilityOeDetail label="Single facility call" facility={data.facility} />
 				</div>
 
 				<!-- Right: Sanity CMS data -->
