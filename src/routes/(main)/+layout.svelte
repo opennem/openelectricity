@@ -22,14 +22,17 @@
 	/** @type {Props} */
 	let { children } = $props();
 
-	// Fullscreen mode state - can be controlled by child pages via context
-	let isFullscreen = $state(false);
+	// Fullscreen mode — derived from the `?fullscreen=true` URL param (available at
+	// SSR / first paint, so Nav/Footer never flash in before the page mounts) and
+	// OR'd with an override set by child pages that force fullscreen imperatively.
+	let contextFullscreen = $state(false);
+	let urlFullscreen = $derived(page.url.searchParams.get('fullscreen') === 'true');
+	let isFullscreen = $derived(contextFullscreen || urlFullscreen);
 
-	// Provide setter function to children via context
 	setContext('layout-fullscreen', {
 		/** @param {boolean} value */
 		setFullscreen: (value) => {
-			isFullscreen = value;
+			contextFullscreen = value;
 		}
 	});
 

@@ -2,7 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 	import { goto, replaceState } from '$app/navigation';
-	import { getContext, onDestroy, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { X, Flag, Pause, Play, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
@@ -26,6 +26,7 @@
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
 	import FacilityPanelFooter from './_components/FacilityPanelFooter.svelte';
+	import FullscreenHeader from './_components/FullscreenHeader.svelte';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import {
@@ -35,22 +36,8 @@
 
 	let { data } = $props();
 
-	// Fullscreen mode - get context from layout
-	/** @type {{ setFullscreen: (value: boolean) => void } | undefined} */
-	const layoutContext = getContext('layout-fullscreen');
-
-	// Parse fullscreen from URL
+	// Fullscreen mode — layout reads the same URL param, so no context sync needed
 	let isFullscreen = $derived(page.url.searchParams.get('fullscreen') === 'true');
-
-	// Sync fullscreen state with layout
-	$effect(() => {
-		layoutContext?.setFullscreen(isFullscreen);
-	});
-
-	// Reset fullscreen on unmount
-	onDestroy(() => {
-		layoutContext?.setFullscreen(false);
-	});
 
 	// Server data (updates when server responds)
 	let facilities = $derived(data.facilities);
@@ -860,6 +847,9 @@
 {/if}
 
 <div class={isFullscreen ? 'h-dvh flex flex-col' : ''}>
+	{#if isFullscreen}
+		<FullscreenHeader onexitfullscreen={toggleFullscreen} />
+	{/if}
 	<div class="border-y border-warm-grey shrink-0">
 		<div class="relative text-base z-50">
 			<Filters

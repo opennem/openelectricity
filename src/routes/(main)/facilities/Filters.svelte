@@ -501,20 +501,13 @@
 	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 />
 
-<div class="flex items-center justify-between pt-3 pb-3 px-8 relative z-10 gap-4">
+<div
+	class="flex items-center justify-between relative z-10 gap-4 {isFullscreen
+		? 'py-1.5 px-4'
+		: 'pt-3 pb-3 px-8'}"
+>
 	<div class="flex items-center gap-2 justify-between w-full min-w-0">
 		<div class="flex items-center gap-4 min-w-0">
-			<!-- Logo Mark - Fullscreen only (click to exit fullscreen) -->
-			{#if isFullscreen}
-				<button
-					onclick={() => onfullscreenchange?.()}
-					class="flex items-center cursor-pointer"
-					title="Exit full screen"
-				>
-					<img src="/logo-mark.png" alt="Open Electricity" class="h-10 w-auto" />
-				</button>
-			{/if}
-
 			<!-- View Switcher - Desktop -->
 			<div class="hidden md:block">
 				<SwitchWithIcons
@@ -556,7 +549,11 @@
 			{/if}
 
 			<!-- Desktop Search -->
-			<div class="relative hidden md:flex items-center ml-6 pl-6 border-l border-warm-grey">
+			<div
+				class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
+					? 'ml-3 pl-3'
+					: 'ml-6 pl-6'}"
+			>
 				<SearchInput
 					bind:this={desktopSearchRef}
 					value={searchTerm}
@@ -568,14 +565,16 @@
 
 			<!-- Desktop Filter Dropdowns -->
 			<div
-				class="filter-bar-scroll justify-start items-center gap-2 hidden md:flex ml-6 pl-6 border-l border-warm-grey overflow-x-auto min-w-0"
+				class="filter-bar-scroll justify-start items-center gap-2 hidden md:flex border-l border-warm-grey overflow-x-auto min-w-0 {isFullscreen
+					? 'ml-3 pl-3'
+					: 'ml-6 pl-6'}"
 			>
 				<HierarchicalMultiSelect
 					options={regionOptions}
 					selected={selectedRegions}
 					label={regionLabel}
 					paddingX="pl-5 pr-4"
-					paddingY="py-3"
+					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
 					defaultExpanded={['nem']}
 					onchange={handleRegionChange}
 					onclear={() => onregionschange?.([])}
@@ -587,7 +586,7 @@
 					label={statusLabel}
 					withColours={true}
 					paddingX="pl-5 pr-4"
-					paddingY="py-3"
+					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
 					clearLabel="Reset to defaults"
 					onchange={handleStatusChange}
 					onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
@@ -598,7 +597,7 @@
 					selected={selectedFuelTechs}
 					label={fuelTechLabel}
 					paddingX="pl-5 pr-4"
-					paddingY="py-3"
+					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
 					onchange={handleFuelTechChange}
 					onclear={() => onfueltechschange?.([])}
 				/>
@@ -610,7 +609,7 @@
 					step={10}
 					label="Capacity"
 					paddingX="pl-5 pr-4"
-					paddingY="py-3"
+					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
 					onchange={(range) => oncapacityrangechange?.(range)}
 					onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 					formatValue={formatCapacity}
@@ -624,7 +623,9 @@
 						tabindex="0"
 						onclick={() => (showYearDropdown = !showYearDropdown)}
 						onkeydown={(e) => e.key === 'Enter' && (showYearDropdown = !showYearDropdown)}
-						class="flex items-center gap-8 pl-5 pr-4 py-3 rounded-lg whitespace-nowrap cursor-pointer"
+						class="flex items-center gap-8 pl-5 pr-4 rounded-lg whitespace-nowrap cursor-pointer {isFullscreen
+							? 'py-1.5'
+							: 'py-3'}"
 						class:hover:bg-warm-grey={!showYearDropdown}
 					>
 						<span class="font-semibold text-sm lg:text-base">
@@ -702,7 +703,11 @@
 	</div>
 
 	<!-- Options Menu - Desktop -->
-	<div class="relative hidden md:flex items-center pl-4 ml-4 border-l border-warm-grey">
+	<div
+		class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
+			? 'pl-2 ml-2'
+			: 'pl-4 ml-4'}"
+	>
 		<OptionsMenu
 			{isFullscreen}
 			onfullscreenchange={() => onfullscreenchange?.()}

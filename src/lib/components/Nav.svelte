@@ -3,25 +3,9 @@
 	import { afterNavigate } from '$app/navigation';
 	import { dataTrackerLink } from '$lib/stores/app';
 	import { fly } from 'svelte/transition';
+	import { getNavItems } from '$lib/components/nav/nav-items.js';
 
-	/**
-	 * @typedef {Object} NavItem
-	 * @property {string} name
-	 * @property {string} href
-	 * @property {NavItem[]} [children]
-	 * @property {boolean} [show]
-	 * @property {boolean} [beta]
-	 */
-
-	/** @type {NavItem[]} */
-	let navItems = [
-		{ name: 'Tracker', href: $dataTrackerLink },
-		{ name: 'Facilities', href: '/facilities' },
-		{ name: 'Scenarios', href: '/scenarios' },
-		{ name: 'Records', href: '/records' },
-		{ name: 'Analysis', href: '/analysis' },
-		{ name: 'About', href: '/about' }
-	];
+	let navItems = getNavItems($dataTrackerLink);
 
 	let mobileNavActive = $state(false);
 	/** @type {string | null} */
