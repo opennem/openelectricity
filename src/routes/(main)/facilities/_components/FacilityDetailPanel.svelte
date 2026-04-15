@@ -6,10 +6,14 @@
 	/**
 	 * @type {{
 	 *   facility: any | null,
-	 *   powerData: any | null
+	 *   powerData: any | null,
+	 *   fillHeight?: boolean
 	 * }}
 	 */
-	let { facility = null, powerData = null } = $props();
+	let { facility = null, powerData = null, fillHeight = false } = $props();
+
+	let chartContainerHeight = $state(0);
+	let chartHeightPx = $derived(fillHeight ? chartContainerHeight || 220 : 220);
 
 	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
 
@@ -111,37 +115,47 @@
 </script>
 
 {#if facility}
-	<div>
+	<div class={fillHeight ? 'flex flex-col h-full min-h-0' : ''}>
 		<!-- Power Chart — full-bleed, extends to the panel edges -->
-		{#if filteredPowerData}
-			<FacilityChart
-				facility={filteredFacility}
-				powerData={filteredPowerData}
-				{timeZone}
-				chartHeightPx={220}
-				useDivergingStack={true}
-				interval={activeInterval}
-				metric={activeMetric}
-				{displayInterval}
-				showAnnotations={false}
-				showHeader={false}
-				showContainer={false}
-				tooltipMode="floating"
-				tightAxisClip={true}
-				overlayInsetPx={8}
-				onviewportchange={handleViewportChange}
-			/>
-		{:else if powerData}
-			<div class="flex items-center justify-center" style="height: 220px">
-				<p class="text-sm text-mid-grey">No power data available</p>
-			</div>
-		{:else}
-			<div class="animate-pulse bg-light-warm-grey/30 rounded" style="height: 220px"></div>
-		{/if}
+		<div
+			class={fillHeight ? 'flex-1 min-h-0 relative' : ''}
+			bind:clientHeight={chartContainerHeight}
+		>
+			{#if filteredPowerData}
+				<FacilityChart
+					facility={filteredFacility}
+					powerData={filteredPowerData}
+					{timeZone}
+					{chartHeightPx}
+					useDivergingStack={true}
+					interval={activeInterval}
+					metric={activeMetric}
+					{displayInterval}
+					showAnnotations={false}
+					showHeader={false}
+					showContainer={false}
+					tooltipMode="floating"
+					tightAxisClip={true}
+					overlayInsetPx={8}
+					onviewportchange={handleViewportChange}
+				/>
+			{:else if powerData}
+				<div class="flex items-center justify-center h-full" style:min-height="220px">
+					<p class="text-sm text-mid-grey">No power data available</p>
+				</div>
+			{:else}
+				<div
+					class="animate-pulse bg-light-warm-grey/30 rounded h-full"
+					style:min-height="220px"
+				></div>
+			{/if}
+		</div>
 
 		<!-- Units legend (single horizontal scrolling row) -->
 		{#if filteredUnits.length}
-			<FacilityUnitsLegend units={filteredUnits} />
+			<div class={fillHeight ? 'shrink-0' : ''}>
+				<FacilityUnitsLegend units={filteredUnits} />
+			</div>
 		{/if}
 	</div>
 {/if}
