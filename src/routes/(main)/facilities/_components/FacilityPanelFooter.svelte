@@ -1,26 +1,29 @@
 <script>
 	/**
-	 * FacilityPanelFooter — pinned note bar at the bottom of the facility
-	 * detail panel. Shows the capacity-definition caveat with a link to the
-	 * OpenElectricity docs.
+	 * FacilityPanelFooter — pinned footer at the bottom of the facility detail
+	 * panel. Shows the facility owner name(s).
 	 */
-	import { Info, ExternalLink } from '@lucide/svelte';
+	import { Building2 } from '@lucide/svelte';
+
+	/**
+	 * @type {{
+	 *   owners?: Array<{ _id: string, name: string, legal_name?: string, website?: string }>
+	 * }}
+	 */
+	let { owners = [] } = $props();
+
+	let label = $derived(owners.map((o) => o.name).join(', '));
 </script>
 
 <div
 	class="shrink-0 border-t border-warm-grey px-5 py-3 flex items-center gap-2 text-xxs text-mid-grey bg-white"
 >
-	<Info size={14} class="shrink-0" />
-	<span class="min-w-0">
-		Capacity shown is maximum capacity where available, otherwise registered capacity.
+	<Building2 size={14} class="shrink-0" />
+	<span class="min-w-0 truncate">
+		{#if owners.length}
+			Owner: <span class="text-dark-grey font-medium">{label}</span>
+		{:else}
+			Owner unknown
+		{/if}
 	</span>
-	<a
-		href="https://docs.openelectricity.org.au/guides/capacity"
-		target="_blank"
-		rel="noopener noreferrer"
-		class="ml-auto shrink-0 inline-flex items-center gap-1 text-dark-grey hover:underline no-underline"
-	>
-		Learn more
-		<ExternalLink size={12} />
-	</a>
 </div>

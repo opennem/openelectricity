@@ -38,6 +38,7 @@ import {
 	filterFacilitiesByRegions
 } from './_utils/status-utils.js';
 import { fetchFacilityPowerData } from './_utils/fetch-power-data.js';
+import { fetchFacilityOwners } from './_utils/fetch-facility-owners.js';
 import { DEFAULT_STATUSES, ALL_STATUSES } from './_utils/filters.js';
 
 const client = new OpenElectricityClient({
@@ -77,7 +78,10 @@ export async function load({ url }) {
 	// Check server-side cache first
 	const cached = getCachedFacilities(filterParams);
 	if (cached) {
-		const powerData = await fetchFacilityPowerData(client, cached, selectedFacility);
+		const [powerData, selectedFacilityOwners] = await Promise.all([
+			fetchFacilityPowerData(client, cached, selectedFacility),
+			fetchFacilityOwners(selectedFacility)
+		]);
 
 		return {
 			facilities: cached,
@@ -91,6 +95,7 @@ export async function load({ url }) {
 			yearMax,
 			selectedFacility,
 			powerData,
+			selectedFacilityOwners,
 			fromCache: true
 		};
 	}
@@ -122,8 +127,11 @@ export async function load({ url }) {
 	// Store in server cache
 	setCachedFacilities(filterParams, processedFacilities);
 
-	// Fetch power data for selected facility
-	const powerData = await fetchFacilityPowerData(client, processedFacilities, selectedFacility);
+	// Fetch power data and owner info for the selected facility in parallel
+	const [powerData, selectedFacilityOwners] = await Promise.all([
+		fetchFacilityPowerData(client, processedFacilities, selectedFacility),
+		fetchFacilityOwners(selectedFacility)
+	]);
 
 	return {
 		facilities: processedFacilities,
@@ -137,6 +145,7 @@ export async function load({ url }) {
 		yearMax,
 		selectedFacility,
 		powerData,
+		selectedFacilityOwners,
 		fromCache: false
 	};
 }

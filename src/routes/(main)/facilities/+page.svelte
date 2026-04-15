@@ -1,7 +1,7 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
-	import { goto, replaceState } from '$app/navigation';
+	import { goto, replaceState, afterNavigate } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
 	import { X, Flag, Pause, Play, Zap } from '@lucide/svelte';
@@ -184,10 +184,25 @@
 	let golfUnlocked = $state(false);
 	let showGolf = $derived(showGolfOption || golfUnlocked);
 
+	// Guard against calling replaceState before the client router is initialised
+	// (e.g. during hydration when a facility is already selected via URL param).
+	// `afterNavigate` is dispatched during the initial navigation commit — the
+	// router isn't fully ready yet at that moment, so we flip the flag on the
+	// next microtask. Any state changes during hydration will be picked up by
+	// the next user interaction and synced to the URL then.
+	let routerReady = $state(false);
+	afterNavigate(() => {
+		if (routerReady) return;
+		queueMicrotask(() => {
+			routerReady = true;
+		});
+	});
+
 	/**
 	 * Update map options in URL without refetch
 	 */
 	function updateMapOptionsUrl() {
+		if (!routerReady) return;
 		const params = new URLSearchParams(page.url.searchParams);
 
 		// satellite: only include if true (default is false)
@@ -1202,7 +1217,7 @@
 							<FacilityPanelHeader facility={selectedFacility} onclose={closeFacilityDetail} />
 						{/snippet}
 						{#snippet footer()}
-							<FacilityPanelFooter />
+							<FacilityPanelFooter owners={data.selectedFacilityOwners ?? []} />
 						{/snippet}
 						<FacilityDetailPanel facility={selectedFacility} {powerData} />
 					</ResizablePanel>
@@ -1222,7 +1237,7 @@
 					<FacilityDetailPanel facility={selectedFacility} {powerData} fillHeight={true} />
 				</div>
 
-				<FacilityPanelFooter />
+				<FacilityPanelFooter owners={data.selectedFacilityOwners ?? []} />
 			</div>
 		{/if}
 		</section>

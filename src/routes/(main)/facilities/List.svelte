@@ -4,6 +4,8 @@
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
 	import { sortFacilities } from './_utils/sort-facilities';
+	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import { CAPACITY_TOOLTIP } from './_utils/capacity-tooltip.js';
 
 	/**
 	 * @type {{
@@ -126,7 +128,12 @@
 					class="flex items-center justify-end gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer w-24"
 					onclick={() => handleSort('capacity')}
 				>
-					Capacity
+					<Tooltip
+						text={CAPACITY_TOOLTIP.text}
+						learnMoreHref={CAPACITY_TOOLTIP.learnMoreHref}
+					>
+						Capacity
+					</Tooltip>
 					{@render sortIcon('capacity')}
 				</button>
 			</div>

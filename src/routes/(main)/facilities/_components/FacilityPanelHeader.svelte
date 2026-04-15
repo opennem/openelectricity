@@ -14,6 +14,8 @@
 	import { getRegionLongLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import FuelTechBadge from './FuelTechBadge.svelte';
+	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import { CAPACITY_TOOLTIP } from '../_utils/capacity-tooltip.js';
 
 	/**
 	 * @type {{
@@ -128,7 +130,13 @@
 
 				<div class="flex items-baseline gap-1.5 {totalStorage > 0 ? 'pl-4 border-l border-warm-grey' : ''}">
 					<Zap size={14} class="text-mid-grey self-center" />
-					<span class="text-mid-grey">Capacity</span>
+					<Tooltip
+						text={CAPACITY_TOOLTIP.text}
+						learnMoreHref={CAPACITY_TOOLTIP.learnMoreHref}
+						class="text-mid-grey cursor-help"
+					>
+						Capacity
+					</Tooltip>
 					<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacity)}</span>
 					<span class="text-mid-grey text-xxs">MW</span>
 				</div>
