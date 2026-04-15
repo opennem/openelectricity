@@ -1,5 +1,6 @@
 <script>
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
+	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import FullscreenNavDropdown from '$lib/components/fullscreen/FullscreenNavDropdown.svelte';
 	import HierarchicalMultiSelect from './_components/HierarchicalMultiSelect.svelte';
 	import MobileFilterModal from './_components/MobileFilterModal.svelte';
@@ -14,7 +15,6 @@
 	import { portal } from '$lib/actions/portal.js';
 	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import RangeDropdown from '$lib/components/ui/range-slider/RangeDropdown.svelte';
 	import RangeSlider from '$lib/components/ui/range-slider/RangeSlider.svelte';
 
@@ -533,32 +533,30 @@
 				/>
 			</div>
 
-			<!-- View Switcher - Mobile (dropdown) -->
-			{#if !showMobileSearch}
-				<!-- Fullscreen Toggle - Mobile (only when not already fullscreen; logo handles exit) -->
-				{#if !isFullscreen}
-					<div class="md:hidden">
-						<button
-							onclick={() => onfullscreenchange?.()}
-							class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
-							title="Enter full screen (F). Shift+F for browser fullscreen"
-						>
-							<Maximize2 class="size-7 text-mid-grey" />
-						</button>
-					</div>
-				{/if}
-
+			<!-- Fullscreen Toggle - Mobile (only when not already fullscreen; logo handles exit) -->
+			{#if !isFullscreen}
 				<div class="md:hidden">
-					<FormSelect
-						options={viewOptions}
-						selected={selectedViewOption}
-						onchange={handleViewSelectChange}
-						paddingX="px-4"
-						paddingY="py-3"
-						widthClass="w-auto"
-					/>
+					<button
+						onclick={() => onfullscreenchange?.()}
+						class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
+						title="Enter full screen (F). Shift+F for browser fullscreen"
+					>
+						<Maximize2 class="size-7 text-mid-grey" />
+					</button>
 				</div>
 			{/if}
+
+			<!-- View Switcher - Mobile (dropdown) -->
+			<div class="md:hidden">
+				<FormSelect
+					options={viewOptions}
+					selected={selectedViewOption}
+					onchange={handleViewSelectChange}
+					paddingX="px-4"
+					paddingY="py-3"
+					widthClass="w-auto"
+				/>
+			</div>
 
 			<!-- Desktop Search -->
 			<div
@@ -686,32 +684,6 @@
 			</div>
 		</div>
 
-		<!-- Mobile Search -->
-		<div class="md:hidden flex items-center justify-end gap-2 flex-1 my-2">
-			{#if showMobileSearch}
-				<div class="flex items-center gap-2 w-full">
-					<SearchInput
-						bind:this={mobileSearchRef}
-						value={searchTerm}
-						onchange={(value) => onsearchchange?.(value)}
-						class="flex-1"
-					/>
-					<button
-						class="p-3 rounded-full hover:bg-warm-grey transition-colors cursor-pointer"
-						onclick={closeMobileSearch}
-					>
-						<X class="size-5 text-mid-grey" />
-					</button>
-				</div>
-			{:else}
-				<button
-					class="p-4 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
-					onclick={openMobileSearch}
-				>
-					<Search class="size-6 text-mid-grey" />
-				</button>
-			{/if}
-		</div>
 	</div>
 
 	<!-- Options Menu - Desktop -->
@@ -734,6 +706,41 @@
 			<IconAdjustmentsHorizontal class="size-10" />
 		</ButtonIcon>
 	</div>
+</div>
+
+<!-- Mobile floating search (expands from bottom-left button to input pill) -->
+<div class="md:hidden fixed bottom-4 left-4 right-4 z-40 flex pointer-events-none">
+	{#if showMobileSearch}
+		<div
+			class="flex items-center gap-2 w-full bg-white rounded-full shadow-lg border border-warm-grey px-3 py-2 pointer-events-auto"
+			in:fly={{ x: -20, duration: 200 }}
+			out:fly={{ x: -20, duration: 150 }}
+		>
+			<Search class="size-5 text-mid-grey shrink-0" />
+			<SearchInput
+				bind:this={mobileSearchRef}
+				value={searchTerm}
+				onchange={(value) => onsearchchange?.(value)}
+				class="flex-1"
+			/>
+			<button
+				class="p-2 rounded-full hover:bg-warm-grey transition-colors cursor-pointer shrink-0"
+				onclick={closeMobileSearch}
+				aria-label="Close search"
+			>
+				<X class="size-5 text-mid-grey" />
+			</button>
+		</div>
+	{:else}
+		<button
+			class="p-4 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer shadow-lg pointer-events-auto"
+			onclick={openMobileSearch}
+			aria-label="Search"
+			in:fly={{ x: -20, duration: 200 }}
+		>
+			<Search class="size-6 text-mid-grey" />
+		</button>
+	{/if}
 </div>
 
 <style>
