@@ -7,6 +7,7 @@
 	 *   placeholder?: string,
 	 *   debounceMs?: number,
 	 *   class?: string,
+	 *   compact?: boolean,
 	 *   showShortcutHint?: boolean,
 	 *   onchange: (value: string) => void
 	 * }}
@@ -16,6 +17,7 @@
 		placeholder = 'Filter by name',
 		debounceMs = 150,
 		class: className = '',
+		compact = false,
 		showShortcutHint = false,
 		onchange
 	} = $props();
@@ -74,7 +76,9 @@
 		onfocus={() => (isFocused = true)}
 		onblur={() => (isFocused = false)}
 		{placeholder}
-		class="rounded-full border border-warm-grey bg-white px-5 py-4 text-sm transition-colors hover:border-dark-grey focus:border-dark-grey focus:outline-none w-full"
+		class="rounded-full border border-warm-grey bg-white transition-colors hover:border-dark-grey focus:border-dark-grey focus:outline-none w-full {compact
+			? 'px-4 py-2 text-xs'
+			: 'px-5 py-4 text-sm'}"
 	/>
 	{#if showKbd}
 		<kbd

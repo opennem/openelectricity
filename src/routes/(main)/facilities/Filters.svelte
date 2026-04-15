@@ -571,6 +571,7 @@
 					value={searchTerm}
 					onchange={(value) => onsearchchange?.(value)}
 					showShortcutHint={showShortcuts}
+					compact={isFullscreen}
 					class="w-[200px]"
 				/>
 			</div>
