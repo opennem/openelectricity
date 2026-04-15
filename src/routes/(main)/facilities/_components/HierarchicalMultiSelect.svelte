@@ -401,11 +401,11 @@
 					</div>
 
 					{#if hasChildren && expandedState[opt.value]}
-						<ul class="ml-[36px] border-l-1 border-warm-grey">
+						<ul class="ml-[36px] mr-1 border-l-1 border-warm-grey">
 							{#each opt.children as child (child.value)}
 								<li class="whitespace-nowrap ml-[4px]">
 									<button
-										class="w-full hover:bg-warm-grey rounded-md pl-4 pr-2 py-2 flex gap-4 items-center"
+										class="w-full hover:bg-warm-grey rounded-md px-4 py-2 flex gap-4 items-center"
 										class:text-mid-grey={!isSelected(child.value)}
 										class:text-black={isSelected(child.value)}
 										onclick={() => handleSelect(child.value)}
