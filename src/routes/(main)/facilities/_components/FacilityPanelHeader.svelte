@@ -97,15 +97,6 @@
 					<ExternalLink size={12} />
 					View
 				</a>
-
-				{#if facility?.code}
-					<a
-						href={`/facility/${facility.code}`}
-						class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-mid-grey hover:bg-dark-grey rounded-md transition-colors no-underline hover:no-underline"
-					>
-						View <span class="text-xxs opacity-75">(beta)</span>
-					</a>
-				{/if}
 			{/if}
 
 			{#if onclose}

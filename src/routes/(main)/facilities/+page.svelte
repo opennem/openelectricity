@@ -1208,7 +1208,10 @@
 							<FacilityPanelHeader facility={selectedFacility} onclose={closeFacilityDetail} />
 						{/snippet}
 						{#snippet footer()}
-							<FacilityPanelFooter owners={data.selectedFacilityOwners ?? []} />
+							<FacilityPanelFooter
+								owners={data.selectedFacilityOwners ?? []}
+								facilityCode={selectedFacility?.code ?? null}
+							/>
 						{/snippet}
 						<FacilityDetailPanel
 							facility={selectedFacility}
@@ -1232,7 +1235,10 @@
 					<FacilityDetailPanel facility={selectedFacility} {powerData} fillHeight={true} />
 				</div>
 
-				<FacilityPanelFooter owners={data.selectedFacilityOwners ?? []} />
+				<FacilityPanelFooter
+					owners={data.selectedFacilityOwners ?? []}
+					facilityCode={selectedFacility?.code ?? null}
+				/>
 			</div>
 		{/if}
 		</section>
