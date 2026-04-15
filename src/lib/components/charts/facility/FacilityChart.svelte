@@ -54,6 +54,7 @@
 	 * @property {'strip' | 'floating' | 'none'} [tooltipMode] - Tooltip style: 'strip' above the chart (default), 'floating' overlaid at the cursor, or 'none'.
 	 * @property {boolean} [tightAxisClip] - Clip gridlines/axis labels to the exact chart area (default: false). Use for compact charts where gridlines shouldn't extend past the edges.
 	 * @property {number} [overlayInsetPx] - Horizontal standoff (px) between overlay controls (zoom buttons, floating tooltip) and the chart's left/right edges. Use when the chart is rendered flush to its container and the overlays would otherwise touch the edge. Default 0.
+	 * @property {string} [title] - Override the chart header title (defaults to facility.name).
 	 */
 
 	/** @type {Props} */
@@ -78,7 +79,8 @@
 		showContainer = true,
 		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip'),
 		tightAxisClip = false,
-		overlayInsetPx = 0
+		overlayInsetPx = 0,
+		title = ''
 	} = $props();
 
 	// ============================================
@@ -342,7 +344,7 @@
 
 		const chart = new ChartStore({
 			key: Symbol('facility-chart'),
-			title: facility.name || 'Facility',
+			title: title || facility.name || 'Facility',
 			prefix: 'M',
 			displayPrefix: 'M',
 			baseUnit: 'W',
@@ -362,6 +364,13 @@
 	$effect(() => {
 		if (chartStore && chartHeightPx) {
 			chartStore.chartStyles.chartHeightPx = chartHeightPx;
+		}
+	});
+
+	// Keep chart title in sync with the `title` prop (e.g. Power ↔ Energy)
+	$effect(() => {
+		if (chartStore) {
+			chartStore.title = title || facility?.name || 'Facility';
 		}
 	});
 

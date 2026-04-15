@@ -20,10 +20,11 @@
 	/**
 	 * @type {{
 	 *   facility: any,
-	 *   onclose?: () => void
+	 *   onclose?: () => void,
+	 *   showViewButtons?: boolean
 	 * }}
 	 */
-	let { facility, onclose } = $props();
+	let { facility, onclose, showViewButtons = true } = $props();
 
 	let explorePath = $derived(getExploreUrl(facility));
 	let regionLabel = $derived(
@@ -86,15 +87,26 @@
 				{facility.name}
 			</h2>
 
-			<a
-				href={explorePath}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-dark-grey hover:bg-black rounded-md transition-colors no-underline hover:no-underline"
-			>
-				<ExternalLink size={12} />
-				View
-			</a>
+			{#if showViewButtons}
+				<a
+					href={explorePath}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-dark-grey hover:bg-black rounded-md transition-colors no-underline hover:no-underline"
+				>
+					<ExternalLink size={12} />
+					View
+				</a>
+
+				{#if facility?.code}
+					<a
+						href={`/facility/${facility.code}`}
+						class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-mid-grey hover:bg-dark-grey rounded-md transition-colors no-underline hover:no-underline"
+					>
+						View <span class="text-xxs opacity-75">(beta)</span>
+					</a>
+				{/if}
+			{/if}
 
 			{#if onclose}
 				<button

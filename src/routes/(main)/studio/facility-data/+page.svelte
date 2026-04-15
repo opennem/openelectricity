@@ -5,7 +5,7 @@
 	import { EXTERNAL_LINKS } from '$lib/constants/external-links';
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import FacilitySearchPopover from '../facility-explorer/_components/FacilitySearchPopover.svelte';
+	import FacilitySearchPopover from '$lib/components/facility/FacilitySearchPopover.svelte';
 	import FacilitySpotlight from '../facility-explorer/_components/FacilitySpotlight.svelte';
 	import { PollutionSection } from '$lib/components/charts/facility';
 

@@ -54,19 +54,21 @@
 			in:fly={{ y: -5, duration: 150 }}
 		>
 			<!-- Download CSV -->
-			<button
-				onclick={handleDownloadCsv}
-				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
-			>
-				{#if downloading}
-					<Check class="size-4 text-mid-grey" />
-				{:else}
-					<Download class="size-4 text-mid-grey" />
-				{/if}
-				<span class="flex-1">{downloading ? 'Downloaded!' : 'Download CSV'}</span>
-			</button>
+			{#if ondownloadcsv}
+				<button
+					onclick={handleDownloadCsv}
+					class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
+				>
+					{#if downloading}
+						<Check class="size-4 text-mid-grey" />
+					{:else}
+						<Download class="size-4 text-mid-grey" />
+					{/if}
+					<span class="flex-1">{downloading ? 'Downloaded!' : 'Download CSV'}</span>
+				</button>
 
-			<div class="border-t border-warm-grey my-1"></div>
+				<div class="border-t border-warm-grey my-1"></div>
+			{/if}
 
 			<!-- Fullscreen toggle -->
 			<button

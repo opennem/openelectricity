@@ -28,8 +28,8 @@
 	import { CircleAlert, SearchX, Calendar, ChartArea, Table2 } from '@lucide/svelte';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 
+	import FacilitySearchPopover from '$lib/components/facility/FacilitySearchPopover.svelte';
 	// Cross-route imports from facility-explorer
-	import FacilitySearchPopover from '../facility-explorer/_components/FacilitySearchPopover.svelte';
 	import {
 		getMetricIntervalForDays,
 		getHysteresisSwitch,
