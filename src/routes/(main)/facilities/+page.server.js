@@ -38,6 +38,7 @@ import {
 	filterFacilitiesByRegions
 } from './_utils/status-utils.js';
 import { fetchFacilityPowerData } from './_utils/fetch-power-data.js';
+import { DEFAULT_STATUSES, ALL_STATUSES } from './_utils/filters.js';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -47,9 +48,12 @@ const client = new OpenElectricityClient({
 export async function load({ url }) {
 	const { searchParams } = url;
 	const view = searchParams.get('view') || 'timeline';
-	const statuses = searchParams.get('statuses')
-		? /** @type {string} */ (searchParams.get('statuses')).split(',')
-		: ['operating', 'commissioning'];
+	const statusesParam = searchParams.has('statuses')
+		? /** @type {string} */ (searchParams.get('statuses')).split(',').filter(Boolean)
+		: DEFAULT_STATUSES;
+
+	// Empty selection means "all statuses"
+	const statuses = statusesParam.length === 0 ? ALL_STATUSES : statusesParam;
 	const regions = searchParams.get('regions')
 		? /** @type {string} */ (searchParams.get('regions')).split(',')
 		: [];
@@ -78,7 +82,7 @@ export async function load({ url }) {
 		return {
 			facilities: cached,
 			view,
-			statuses,
+			statuses: statusesParam.length === 0 ? [] : statuses,
 			regions,
 			fuelTechs,
 			capacityMin,
@@ -124,7 +128,7 @@ export async function load({ url }) {
 	return {
 		facilities: processedFacilities,
 		view,
-		statuses,
+		statuses: statusesParam.length === 0 ? [] : statuses,
 		regions,
 		fuelTechs,
 		capacityMin,

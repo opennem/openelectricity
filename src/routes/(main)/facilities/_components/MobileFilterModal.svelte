@@ -101,6 +101,7 @@
 				withColours={true}
 				paddingX=""
 				staticDisplay={true}
+				clearLabel="Reset to defaults"
 				onchange={(value, isMetaPressed) => onstatuseschange([value], isMetaPressed)}
 				onclear={onclearstatuses}
 			/>

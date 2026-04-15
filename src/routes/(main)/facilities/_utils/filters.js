@@ -74,6 +74,9 @@ export const statusOptions = [
 	}
 ];
 
+export const ALL_STATUSES = statusOptions.map((opt) => opt.value);
+export const DEFAULT_STATUSES = ['operating', 'commissioning'];
+
 export const regions = [
 	// { longValue: 'au.nem', value: 'nem', label: 'NEM', longLabel: 'National Electricity Market' },
 	// { value: undefined, label: '', divider: true },

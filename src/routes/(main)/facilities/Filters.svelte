@@ -25,7 +25,8 @@
 		getFlatRegionOptions,
 		getParentFuelTechValues,
 		getParentRegionValues,
-		statusOptions
+		statusOptions,
+		DEFAULT_STATUSES
 	} from './_utils/filters.js';
 
 	/**
@@ -495,7 +496,7 @@
 		onyearrangechange?.([yearMin, yearMax]);
 	}}
 	onclearregions={() => onregionschange?.([])}
-	onclearstatuses={() => onstatuseschange?.([])}
+	onclearstatuses={() => onstatuseschange?.([...DEFAULT_STATUSES])}
 	onclearfueltechs={() => onfueltechschange?.([])}
 	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 />
@@ -587,8 +588,9 @@
 					withColours={true}
 					paddingX="pl-5 pr-4"
 					paddingY="py-3"
+					clearLabel="Reset to defaults"
 					onchange={handleStatusChange}
-					onclear={() => onstatuseschange?.([])}
+					onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
 				/>
 
 				<HierarchicalMultiSelect

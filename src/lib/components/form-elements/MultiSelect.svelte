@@ -19,6 +19,7 @@
 	 * @property {string} [position] - top, bottom
 	 * @property {string} [align] - left, right
 	 * @property {boolean} [withColours]
+	 * @property {string} [clearLabel]
 	 * @property {(value: string, isMetaPressed: boolean) => void} [onchange]
 	 * @property {() => void} [onclear]
 	 */
@@ -35,6 +36,7 @@
 		position = 'bottom',
 		align = 'left',
 		withColours = false,
+		clearLabel = 'Clear all',
 		onchange,
 		onclear
 	} = $props();
@@ -132,7 +134,7 @@
 					class="text-mid-grey hover:text-dark-grey text-sm"
 					title="Clear selection"
 				>
-					Clear all
+					{clearLabel}
 				</button>
 			{/if}
 		</div>
@@ -254,7 +256,7 @@
 						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 text-mid-grey hover:text-dark-grey text-left"
 						onclick={handleClear}
 					>
-						Clear all
+						{clearLabel}
 					</button>
 				</li>
 			{/if}
