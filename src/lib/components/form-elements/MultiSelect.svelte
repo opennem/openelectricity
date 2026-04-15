@@ -19,6 +19,7 @@
 	 * @property {string} [position] - top, bottom
 	 * @property {string} [align] - left, right
 	 * @property {boolean} [withColours]
+	 * @property {boolean} [compact]
 	 * @property {string} [clearLabel]
 	 * @property {(value: string, isMetaPressed: boolean) => void} [onchange]
 	 * @property {() => void} [onclear]
@@ -36,6 +37,7 @@
 		position = 'bottom',
 		align = 'left',
 		withColours = false,
+		compact = false,
 		clearLabel = 'Clear all',
 		onchange,
 		onclear
@@ -145,10 +147,10 @@
 			tabindex="0"
 			onclick={() => (showOptions = !showOptions)}
 			onkeydown={(e) => e.key === 'Enter' && (showOptions = !showOptions)}
-			class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
+			class="flex items-center {compact ? 'gap-4' : 'gap-8'} {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
 			class:hover:bg-warm-grey={!showOptions}
 		>
-			<span class={`${selectedLabelClass} text-sm lg:text-base`}>
+			<span class={`${selectedLabelClass} ${compact ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}`}>
 				{displayLabel}
 			</span>
 
@@ -162,7 +164,7 @@
 						<X class="size-4 text-mid-grey" />
 					</button>
 				{/if}
-				<IconChevronUpDown class="w-7 h-7" />
+				<IconChevronUpDown class={compact ? 'w-5 h-5' : 'w-7 h-7'} />
 			</div>
 		</div>
 	{/if}
@@ -224,7 +226,9 @@
 				{:else}
 					<li class="whitespace-nowrap">
 						<button
-							class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-center justify-between"
+							class="hover:bg-warm-grey w-full rounded-md flex items-center justify-between {compact
+								? 'px-3 py-1.5 gap-8'
+								: 'px-4 py-2 gap-16'}"
 							class:text-mid-grey={!isSelected(opt.value)}
 							class:text-black={isSelected(opt.value)}
 							onclick={() => handleSelect(opt)}
@@ -237,13 +241,15 @@
 							</div>
 
 							<div
-								class="border rounded-sm size-7"
+								class="border rounded-sm flex items-center justify-center {compact
+									? 'size-5'
+									: 'size-7'}"
 								class:border-mid-warm-grey={!isSelected(opt.value)}
 								class:border-dark-grey={isSelected(opt.value)}
 								class:bg-warm-grey={isSelected(opt.value)}
 							>
 								{#if isSelected(opt.value)}
-									<IconCheckMark class="size-6" />
+									<IconCheckMark class={compact ? 'size-4' : 'size-6'} />
 								{/if}
 							</div>
 						</button>
@@ -253,7 +259,9 @@
 			{#if hasSelection && onclear}
 				<li class="whitespace-nowrap border-t border-warm-grey mt-1 pt-1">
 					<button
-						class="hover:bg-warm-grey w-full rounded-md px-4 py-2 text-mid-grey hover:text-dark-grey text-left"
+						class="hover:bg-warm-grey w-full rounded-md text-mid-grey hover:text-dark-grey text-left {compact
+							? 'px-3 py-1.5'
+							: 'px-4 py-2'}"
 						onclick={handleClear}
 					>
 						{clearLabel}

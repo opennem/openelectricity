@@ -529,6 +529,7 @@
 				<SwitchWithIcons
 					buttons={viewButtonsDesktop}
 					selected={selectedView}
+					compact={isFullscreen}
 					onchange={handleViewChange}
 				/>
 			</div>
@@ -555,6 +556,7 @@
 					paddingX="px-4"
 					paddingY="py-3"
 					widthClass="w-auto"
+					compact={isFullscreen}
 				/>
 			</div>
 
@@ -585,6 +587,7 @@
 					label={regionLabel}
 					paddingX="pl-5 pr-4"
 					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+					compact={isFullscreen}
 					defaultExpanded={['nem']}
 					onchange={handleRegionChange}
 					onclear={() => onregionschange?.([])}
@@ -597,6 +600,7 @@
 					withColours={true}
 					paddingX="pl-5 pr-4"
 					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+					compact={isFullscreen}
 					clearLabel="Reset to defaults"
 					onchange={handleStatusChange}
 					onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
@@ -608,6 +612,7 @@
 					label={fuelTechLabel}
 					paddingX="pl-5 pr-4"
 					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+					compact={isFullscreen}
 					onchange={handleFuelTechChange}
 					onclear={() => onfueltechschange?.([])}
 				/>
@@ -620,6 +625,7 @@
 					label="Capacity"
 					paddingX="pl-5 pr-4"
 					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+					compact={isFullscreen}
 					onchange={(range) => oncapacityrangechange?.(range)}
 					onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 					formatValue={formatCapacity}
@@ -633,12 +639,12 @@
 						tabindex="0"
 						onclick={() => (showYearDropdown = !showYearDropdown)}
 						onkeydown={(e) => e.key === 'Enter' && (showYearDropdown = !showYearDropdown)}
-						class="flex items-center gap-8 pl-5 pr-4 rounded-lg whitespace-nowrap cursor-pointer {isFullscreen
-							? 'py-1.5'
-							: 'py-3'}"
+						class="flex items-center pl-5 pr-4 rounded-lg whitespace-nowrap cursor-pointer {isFullscreen
+							? 'py-1.5 gap-4'
+							: 'py-3 gap-8'}"
 						class:hover:bg-warm-grey={!showYearDropdown}
 					>
-						<span class="font-semibold text-sm lg:text-base">
+						<span class="font-semibold {isFullscreen ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}">
 							{yearDisplayLabel}
 						</span>
 

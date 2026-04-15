@@ -18,6 +18,7 @@
 	 * @property {string} [position] - top, bottom
 	 * @property {string} [align] - left, right, middle
 	 * @property {string} [widthClass]
+	 * @property {boolean} [compact]
 	 * @property {(option: {label: string, value: string | number | null | undefined}) => void} [onchange]
 	 */
 
@@ -33,6 +34,7 @@
 		position = 'bottom',
 		align = 'left',
 		widthClass = 'w-full',
+		compact = false,
 		onchange
 	} = $props();
 
@@ -78,11 +80,15 @@
 		{#if staticDisplay}
 			<span class="{selectedLabelClass} font-space text-sm">{formLabel}</span>
 		{:else}
-			<span class="{selectedLabelClass} mb-0 capitalize">
+			<span
+				class="{selectedLabelClass} mb-0 capitalize {compact
+					? 'text-xs lg:text-sm'
+					: 'text-sm lg:text-base'}"
+			>
 				{selected && selected.label ? selected?.label : findSelectedOption() || formLabel}
 			</span>
 
-			<IconChevronUpDown class="w-7 h-7" />
+			<IconChevronUpDown class={compact ? 'w-5 h-5' : 'w-7 h-7'} />
 		{/if}
 	</button>
 
@@ -134,7 +140,9 @@
 				{:else}
 					<li class="{opt.description && i < options.length - 1 ? 'border-b border-warm-grey' : opt.description ? '' : 'whitespace-nowrap'}">
 						<button
-							class="hover:bg-warm-grey w-full rounded-md px-4 py-2 flex gap-16 items-start justify-between"
+							class="hover:bg-warm-grey w-full rounded-md flex items-start justify-between {compact
+								? 'px-3 py-1.5 gap-8'
+								: 'px-4 py-2 gap-16'}"
 							class:text-mid-grey={selectedValue !== opt.value}
 							class:text-black={selectedValue === opt.value}
 							onclick={() => handleSelect(opt)}

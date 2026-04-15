@@ -15,6 +15,7 @@
 	 *   label?: string,
 	 *   paddingX?: string,
 	 *   paddingY?: string,
+	 *   compact?: boolean,
 	 *   onchange?: (value: [number, number]) => void,
 	 *   onclear?: () => void,
 	 *   formatValue?: (value: number) => string
@@ -28,6 +29,7 @@
 		label = 'Range',
 		paddingX = 'pl-5 pr-4',
 		paddingY = 'py-3',
+		compact = false,
 		onchange,
 		onclear,
 		formatValue = (v) => String(v)
@@ -77,10 +79,10 @@
 		tabindex="0"
 		onclick={() => (showDropdown = !showDropdown)}
 		onkeydown={(e) => e.key === 'Enter' && (showDropdown = !showDropdown)}
-		class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
+		class="flex items-center {compact ? 'gap-4' : 'gap-8'} {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
 		class:hover:bg-warm-grey={!showDropdown}
 	>
-		<span class="font-semibold text-sm lg:text-base">
+		<span class="font-semibold {compact ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}">
 			{displayLabel}
 		</span>
 
@@ -94,7 +96,7 @@
 					<X class="size-4 text-mid-grey" />
 				</button>
 			{/if}
-			<IconChevronUpDown class="w-7 h-7" />
+			<IconChevronUpDown class={compact ? 'w-5 h-5' : 'w-7 h-7'} />
 		</div>
 	</div>
 

@@ -32,6 +32,7 @@
 	 * @property {boolean} [staticDisplay]
 	 * @property {string} [paddingX]
 	 * @property {string} [paddingY]
+	 * @property {boolean} [compact]
 	 * @property {string[]} [defaultExpanded]
 	 * @property {(value: string | string[], isMetaPressed: boolean) => void} [onchange]
 	 * @property {() => void} [onclear]
@@ -45,6 +46,7 @@
 		staticDisplay = false,
 		paddingX = 'px-2',
 		paddingY = 'py-1',
+		compact = false,
 		defaultExpanded = [],
 		onchange,
 		onclear
@@ -223,10 +225,14 @@
 			tabindex="0"
 			onclick={() => (showOptions = !showOptions)}
 			onkeydown={(e) => e.key === 'Enter' && (showOptions = !showOptions)}
-			class="flex items-center gap-8 {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
+			class="flex items-center {compact ? 'gap-4' : 'gap-8'} {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
 			class:hover:bg-warm-grey={!showOptions}
 		>
-			<span class="font-semibold mb-0 capitalize">
+			<span
+				class="font-semibold mb-0 capitalize {compact
+					? 'text-xs lg:text-sm'
+					: 'text-sm lg:text-base'}"
+			>
 				{displayLabel}
 			</span>
 
@@ -240,7 +246,7 @@
 						<X class="size-4 text-mid-grey" />
 					</button>
 				{/if}
-				<IconChevronUpDown class="w-7 h-7" />
+				<IconChevronUpDown class={compact ? 'w-5 h-5' : 'w-7 h-7'} />
 			</div>
 		</div>
 	{/if}
