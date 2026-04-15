@@ -1219,7 +1219,11 @@
 						{#snippet footer()}
 							<FacilityPanelFooter owners={data.selectedFacilityOwners ?? []} />
 						{/snippet}
-						<FacilityDetailPanel facility={selectedFacility} {powerData} />
+						<FacilityDetailPanel
+							facility={selectedFacility}
+							{powerData}
+							fillHeight={isFullscreen}
+						/>
 					</ResizablePanel>
 				{/if}
 			</div>
