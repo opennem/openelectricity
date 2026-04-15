@@ -719,7 +719,7 @@
 <div class="md:hidden fixed bottom-4 left-4 right-4 z-40 flex justify-end pointer-events-none">
 	{#if showMobileSearch}
 		<div
-			class="flex items-center gap-2 w-full bg-white rounded-full shadow-lg border border-warm-grey px-3 py-2 pointer-events-auto"
+			class="h-14 flex items-center gap-2 w-full bg-white rounded-full shadow-lg border border-warm-grey px-4 pointer-events-auto"
 			in:fly={{ x: 20, duration: 200 }}
 			out:fly={{ x: 20, duration: 150 }}
 		>
@@ -728,6 +728,7 @@
 				bind:this={mobileSearchRef}
 				value={searchTerm}
 				onchange={(value) => onsearchchange?.(value)}
+				compact={true}
 				class="flex-1"
 			/>
 			<button
@@ -740,7 +741,7 @@
 		</div>
 	{:else}
 		<button
-			class="p-4 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer shadow-lg pointer-events-auto"
+			class="h-14 w-14 flex items-center justify-center rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer shadow-lg pointer-events-auto"
 			onclick={openMobileSearch}
 			aria-label="Search"
 			in:fly={{ x: 20, duration: 200 }}
