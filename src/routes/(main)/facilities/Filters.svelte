@@ -1,12 +1,13 @@
 <script>
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
+	import FullscreenNavDropdown from '$lib/components/fullscreen/FullscreenNavDropdown.svelte';
 	import HierarchicalMultiSelect from './_components/HierarchicalMultiSelect.svelte';
 	import MobileFilterModal from './_components/MobileFilterModal.svelte';
 	import SearchInput from './_components/SearchInput.svelte';
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
-	import { Search, X, CalendarClock, List, Map, Maximize2, Minimize2 } from '@lucide/svelte';
+	import { Search, X, CalendarClock, List, Map, Maximize2 } from '@lucide/svelte';
 	import OptionsMenu from './_components/OptionsMenu.svelte';
 	import { fly } from 'svelte/transition';
 	import { onDestroy } from 'svelte';
@@ -502,12 +503,27 @@
 />
 
 <div
-	class="flex items-center justify-between relative z-10 gap-4 {isFullscreen
-		? 'py-1.5 px-4'
-		: 'pt-3 pb-3 px-8'}"
+	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 px-8 {isFullscreen
+		? 'md:py-1.5 md:px-4 md:rounded-lg md:border md:border-mid-warm-grey md:bg-white'
+		: ''}"
 >
 	<div class="flex items-center gap-2 justify-between w-full min-w-0">
 		<div class="flex items-center gap-4 min-w-0">
+			<!-- Logo + main nav dropdown - Fullscreen only -->
+			{#if isFullscreen}
+				<div class="flex items-center gap-1 shrink-0">
+					<button
+						onclick={() => onfullscreenchange?.()}
+						class="flex items-center cursor-pointer px-2"
+						title="Exit full screen"
+					>
+						<img src="/logo-mark.png" alt="Open Electricity" class="h-8 w-auto" />
+					</button>
+					<FullscreenNavDropdown />
+				</div>
+				<div class="h-8 border-l border-warm-grey"></div>
+			{/if}
+
 			<!-- View Switcher - Desktop -->
 			<div class="hidden md:block">
 				<SwitchWithIcons
@@ -519,22 +535,18 @@
 
 			<!-- View Switcher - Mobile (dropdown) -->
 			{#if !showMobileSearch}
-				<!-- Fullscreen Toggle - Mobile -->
-				<div class="md:hidden">
-					<button
-						onclick={() => onfullscreenchange?.()}
-						class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
-						title={isFullscreen
-							? 'Exit full screen (F or Esc). Shift+F for browser fullscreen'
-							: 'Enter full screen (F). Shift+F for browser fullscreen'}
-					>
-						{#if isFullscreen}
-							<Minimize2 class="size-7 text-mid-grey" />
-						{:else}
+				<!-- Fullscreen Toggle - Mobile (only when not already fullscreen; logo handles exit) -->
+				{#if !isFullscreen}
+					<div class="md:hidden">
+						<button
+							onclick={() => onfullscreenchange?.()}
+							class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
+							title="Enter full screen (F). Shift+F for browser fullscreen"
+						>
 							<Maximize2 class="size-7 text-mid-grey" />
-						{/if}
-					</button>
-				</div>
+						</button>
+					</div>
+				{/if}
 
 				<div class="md:hidden">
 					<FormSelect

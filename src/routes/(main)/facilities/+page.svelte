@@ -26,7 +26,7 @@
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
 	import FacilityPanelFooter from './_components/FacilityPanelFooter.svelte';
-	import FullscreenHeader from './_components/FullscreenHeader.svelte';
+	import FullscreenLayout from '$lib/components/fullscreen/FullscreenLayout.svelte';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import {
@@ -605,23 +605,25 @@
 	}
 
 	/**
+	 * Esc handler passed to FullscreenLayout. Close the shortcuts toast first
+	 * if it's open; otherwise fall through to exiting fullscreen.
+	 * @param {KeyboardEvent} e
+	 */
+	function handleEscape(e) {
+		if (showShortcutsToast) {
+			e.preventDefault();
+			showShortcutsToast = false;
+			return;
+		}
+		e.preventDefault();
+		toggleFullscreen();
+	}
+
+	/**
 	 * Handle keyboard shortcuts
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
-		// Escape closes shortcuts toast first, then exits fullscreen
-		if (e.key === 'Escape') {
-			if (showShortcutsToast) {
-				e.preventDefault();
-				showShortcutsToast = false;
-				return;
-			}
-			if (isFullscreen) {
-				e.preventDefault();
-				toggleFullscreen();
-			}
-		}
-
 		// Arrow up/down: navigate through facilities in the List/Timeline view
 		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -846,101 +848,109 @@
 	</PageHeaderSimple>
 {/if}
 
-<div class={isFullscreen ? 'h-dvh flex flex-col' : ''}>
-	{#if isFullscreen}
-		<FullscreenHeader onexitfullscreen={toggleFullscreen} />
-	{/if}
-	<div class="border-y border-warm-grey shrink-0">
-		<div class="relative text-base z-50">
-			<Filters
-				{searchTerm}
-				{selectedView}
-				{isFullscreen}
-				showShortcuts={showShortcutsToast}
-				selectedStatuses={statuses}
-				selectedFuelTechs={fuelTechs}
-				selectedRegions={regions}
-				{capacityRange}
-				capacityMin={capacityBounds.min}
-				capacityMax={capacityBounds.max}
-				{yearRange}
-				yearMin={yearBounds.min}
-				yearMax={yearBounds.max}
-				onsearchchange={handleSearchChange}
-				onstatuseschange={handleStatusesChange}
-				onregionschange={handleRegionsChange}
-				onfueltechschange={handleFuelTechsChange}
-				oncapacityrangechange={handleCapacityRangeChange}
-				onyearrangechange={handleYearRangeChange}
-				onviewchange={handleSelectedViewChange}
-				onfullscreenchange={toggleFullscreen}
-				ondownloadcsv={handleDownloadCsv}
-				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
-				onshortcutinvoked={() => (showShortcutsToast = false)}
-				onyearplayingchange={(playing) => (isYearPlaying = playing)}
-				onplayyearchange={(year) => (playYear = year)}
-				onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
+{#snippet summaryBar()}
+	<div
+		class="z-20 bg-white border-t border-mid-warm-grey px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
+	>
+		<div class="flex items-center gap-4 text-xs font-space">
+			<div class="flex items-center gap-1.5">
+				<span class="text-mid-grey">{totalFacilitiesCount.toLocaleString()}</span>
+				<span class="text-mid-grey">facilities</span>
+			</div>
+			<div class="flex items-center gap-1.5">
+				<span class="text-mid-grey">{totalUnitsCount.toLocaleString()}</span>
+				<span class="text-mid-grey">units</span>
+			</div>
+			{#if mapShowGolfCourses}
+				<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
+					<Flag class="size-5" style="color: #16a34a;" />
+					<span class="text-green-600 font-medium">1,573</span>
+					<span class="text-mid-grey">golf courses</span>
+				</div>
+			{/if}
+		</div>
+		<div class="flex items-center gap-5 text-xs">
+			<StatusCapacityBadge
+				capacity={capacityByStatus.operating}
+				colour={statusColours.operating}
+				label="Operating"
 			/>
+			<StatusCapacityBadge
+				capacity={capacityByStatus.commissioning}
+				colour={statusColours.commissioning}
+				label="Commissioning"
+			/>
+			<StatusCapacityBadge
+				capacity={capacityByStatus.committed}
+				colour={statusColours.committed}
+				label="Committed"
+			/>
+			<StatusCapacityBadge
+				capacity={capacityByStatus.retired}
+				colour={statusColours.retired}
+				label="Retired"
+			/>
+			<div class="flex items-center gap-1.5 pl-5 border-l border-warm-grey">
+				<Zap size={14} class="text-mid-grey" />
+				<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
+				<span class="text-mid-grey">MW</span>
+			</div>
 		</div>
 	</div>
+{/snippet}
 
-	{#snippet summaryBar()}
+<FullscreenLayout
+	{isFullscreen}
+	onexitfullscreen={toggleFullscreen}
+	onescape={handleEscape}
+>
+	{#snippet filterBar()}
 		<div
-			class="z-20 bg-white border-t border-mid-warm-grey px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
+			class="shrink-0 border-y border-warm-grey {isFullscreen
+				? 'md:border-0 md:px-6 md:pt-6'
+				: ''}"
 		>
-			<div class="flex items-center gap-4 text-xs font-space">
-				<div class="flex items-center gap-1.5">
-					<span class="text-mid-grey">{totalFacilitiesCount.toLocaleString()}</span>
-					<span class="text-mid-grey">facilities</span>
-				</div>
-				<div class="flex items-center gap-1.5">
-					<span class="text-mid-grey">{totalUnitsCount.toLocaleString()}</span>
-					<span class="text-mid-grey">units</span>
-				</div>
-				{#if mapShowGolfCourses}
-					<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
-						<Flag class="size-5" style="color: #16a34a;" />
-						<span class="text-green-600 font-medium">1,573</span>
-						<span class="text-mid-grey">golf courses</span>
-					</div>
-				{/if}
-			</div>
-			<div class="flex items-center gap-5 text-xs">
-				<StatusCapacityBadge
-					capacity={capacityByStatus.operating}
-					colour={statusColours.operating}
-					label="Operating"
+			<div class="relative text-base z-50">
+				<Filters
+					{searchTerm}
+					{selectedView}
+					{isFullscreen}
+					showShortcuts={showShortcutsToast}
+					selectedStatuses={statuses}
+					selectedFuelTechs={fuelTechs}
+					selectedRegions={regions}
+					{capacityRange}
+					capacityMin={capacityBounds.min}
+					capacityMax={capacityBounds.max}
+					{yearRange}
+					yearMin={yearBounds.min}
+					yearMax={yearBounds.max}
+					onsearchchange={handleSearchChange}
+					onstatuseschange={handleStatusesChange}
+					onregionschange={handleRegionsChange}
+					onfueltechschange={handleFuelTechsChange}
+					oncapacityrangechange={handleCapacityRangeChange}
+					onyearrangechange={handleYearRangeChange}
+					onviewchange={handleSelectedViewChange}
+					onfullscreenchange={toggleFullscreen}
+					ondownloadcsv={handleDownloadCsv}
+					onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
+					onshortcutinvoked={() => (showShortcutsToast = false)}
+					onyearplayingchange={(playing) => (isYearPlaying = playing)}
+					onplayyearchange={(year) => (playYear = year)}
+					onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
 				/>
-				<StatusCapacityBadge
-					capacity={capacityByStatus.commissioning}
-					colour={statusColours.commissioning}
-					label="Commissioning"
-				/>
-				<StatusCapacityBadge
-					capacity={capacityByStatus.committed}
-					colour={statusColours.committed}
-					label="Committed"
-				/>
-				<StatusCapacityBadge
-					capacity={capacityByStatus.retired}
-					colour={statusColours.retired}
-					label="Retired"
-				/>
-				<div class="flex items-center gap-1.5 pl-5 border-l border-warm-grey">
-					<Zap size={14} class="text-mid-grey" />
-					<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
-					<span class="text-mid-grey">MW</span>
-				</div>
 			</div>
 		</div>
 	{/snippet}
 
-	<section
-		bind:clientHeight={containerHeight}
-		class="relative grid grid-cols-1 md:grid-cols-12 {isFullscreen
-			? 'flex-1 min-h-0'
-			: 'h-[calc(100dvh-214px)] md:h-[calc(100dvh-500px)] md:min-h-[800px]'}"
-	>
+	{#snippet content()}
+		<section
+			bind:clientHeight={containerHeight}
+			class="relative grid grid-cols-1 md:grid-cols-12 {isFullscreen
+				? 'flex-1 min-h-0'
+				: 'h-[calc(100dvh-214px)] md:h-[calc(100dvh-500px)] md:min-h-[800px]'}"
+		>
 		<!-- Left panel: List or Timeline (5/12 width on desktop) -->
 		<div
 			class="relative col-span-1 md:col-span-6 lg:col-span-5 bg-white flex flex-col min-h-0 z-10"
@@ -1215,8 +1225,9 @@
 				<FacilityPanelFooter />
 			</div>
 		{/if}
-	</section>
-</div>
+		</section>
+	{/snippet}
+</FullscreenLayout>
 
 <ShortcutsToast
 	visible={showShortcutsToast}
