@@ -657,19 +657,38 @@
 	/** Measured width of the zoom-buttons cluster (for floating-tooltip dodge). */
 	let zoomButtonsWidth = $state(0);
 
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let wheelPanEndTimeout = null;
+
 	/**
-	 * Wheel zoom handler — attached imperatively with { passive: false }
-	 * on the chart container div so preventDefault() works. Any wheel event
-	 * over the chart zooms; the user can mouse away to scroll the page.
+	 * Wheel handler — attached imperatively with { passive: false }
+	 * on the chart container div so preventDefault() works. Horizontal
+	 * scroll pans the viewport; vertical scroll zooms.
 	 * @param {WheelEvent} event
 	 */
 	function handleWheel(event) {
 		event.preventDefault();
 
-		const factor = Math.pow(1.002, -event.deltaY);
-
-		// Approximate cursor position in time-domain using the div's width
 		const rect = /** @type {HTMLElement} */ (event.currentTarget).getBoundingClientRect();
+
+		// Horizontal scroll → pan. Scroll right advances forward in time.
+		if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
+			const msPerPixel = (viewEnd - viewStart) / rect.width;
+			const deltaMs = -event.deltaX * msPerPixel;
+
+			if (!isPanning) handlePanStart();
+			handlePan(deltaMs);
+
+			if (wheelPanEndTimeout) clearTimeout(wheelPanEndTimeout);
+			wheelPanEndTimeout = setTimeout(() => {
+				wheelPanEndTimeout = null;
+				handlePanEnd();
+			}, 150);
+			return;
+		}
+
+		// Vertical scroll → zoom at cursor
+		const factor = Math.pow(1.002, -event.deltaY);
 		const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
 		const centerMs = viewStart + ratio * (viewEnd - viewStart);
 
