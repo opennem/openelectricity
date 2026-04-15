@@ -6,7 +6,7 @@
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import FacilitySearchPopover from '$lib/components/facility/FacilitySearchPopover.svelte';
-	import FacilitySpotlight from '../facility-explorer/_components/FacilitySpotlight.svelte';
+	import FacilitySpotlight from '$lib/components/facility/FacilitySpotlight.svelte';
 	import { PollutionSection } from '$lib/components/charts/facility';
 
 	/** @type {{ data: any }} */

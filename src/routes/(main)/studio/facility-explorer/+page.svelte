@@ -32,7 +32,7 @@
 	import Switch from '$lib/components/Switch.svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import FacilitySearchPopover from '$lib/components/facility/FacilitySearchPopover.svelte';
-	import FacilitySpotlight from './_components/FacilitySpotlight.svelte';
+	import FacilitySpotlight from '$lib/components/facility/FacilitySpotlight.svelte';
 	import SanityFacilityDetail from './_components/SanityFacilityDetail.svelte';
 	import FacilityOeDetail from './_components/FacilityOeDetail.svelte';
 	import {

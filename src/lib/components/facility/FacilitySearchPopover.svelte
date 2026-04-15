@@ -16,11 +16,20 @@
 	 * @property {Facility[]} facilities
 	 * @property {string} label
 	 * @property {boolean} open
+	 * @property {boolean} [compact]
+	 * @property {boolean} [asText] - Render the trigger as a plain text label (no chevron, breadcrumb-style padding).
 	 * @property {(code: string) => void} onselect
 	 */
 
 	/** @type {Props} */
-	let { facilities, label, open = $bindable(false), onselect } = $props();
+	let {
+		facilities,
+		label,
+		open = $bindable(false),
+		compact = false,
+		asText = false,
+		onselect
+	} = $props();
 
 	let query = $state('');
 
@@ -51,11 +60,21 @@
 	}}
 >
 	<button
-		class="flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-warm-grey"
+		class="flex items-center rounded-lg hover:bg-warm-grey text-dark-grey {asText
+			? compact
+				? 'px-2 py-1'
+				: 'px-3 py-2'
+			: compact
+				? 'gap-1 px-3 py-1.5'
+				: 'gap-2 px-4 py-3'}"
 		onclick={() => (open = !open)}
 	>
-		<span class="font-semibold text-base capitalize">{label}</span>
-		<IconChevronUpDown class="w-8 h-8" />
+		<span class="font-semibold capitalize {compact ? 'text-xs lg:text-sm' : 'text-base'}"
+			>{label}</span
+		>
+		{#if !asText}
+			<IconChevronUpDown class={compact ? 'w-5 h-5' : 'w-8 h-8'} />
+		{/if}
 	</button>
 
 	{#if open}

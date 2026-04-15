@@ -2,11 +2,10 @@
 	import { formatDateTime } from '$lib/utils/formatters';
 	import { stripDateTimezone } from '$lib/utils/date-format';
 	import { fuelTechName } from '$lib/fuel_techs';
-	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
+	import FuelTechBadge from './FuelTechBadge.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import formatValue from '../_utils/format-value';
-	import { needsDarkText } from '../_utils/fueltech-display';
 
 	/**
 	 * @type {{
@@ -38,8 +37,6 @@
 		data_last_seen,
 		network_id = 'NEM'
 	} = $props();
-
-	let isDarkText = $derived(needsDarkText(fueltech_id));
 
 	let capacity = $derived(capacity_maximum || capacity_registered);
 	let offset = $derived(network_id === 'WEM' ? '+08:00' : '+10:00');
@@ -76,14 +73,7 @@
 <div>
 	<div class="flex items-center justify-between text-xs gap-4">
 		<div class="flex items-center gap-2">
-			<span
-				class="rounded-full p-1.5 block border border-white/40"
-				class:text-black={isDarkText}
-				class:text-white={!isDarkText}
-				style="background-color: {bgColor};"
-			>
-				<FuelTechIcon fuelTech={fueltech_id} sizeClass={5} />
-			</span>
+			<FuelTechBadge {fueltech_id} size="md" darkMode={true} />
 			<span class="font-medium">{fuelTechName(/** @type {FuelTechCode} */ (fueltech_id))}</span>
 		</div>
 

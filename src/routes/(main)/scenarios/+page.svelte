@@ -161,11 +161,11 @@
 			return;
 		}
 
+		// Esc: close the shortcuts toast. (Fullscreen exit is NOT bound to Esc —
+		// use the logo mark, options menu, or F shortcut.)
 		if (e.key === 'Escape') {
 			if (showShortcutsToast) {
 				showShortcutsToast = false;
-			} else if (isFullscreen) {
-				toggleFullscreen();
 			}
 			return;
 		}
@@ -845,7 +845,6 @@
 	ondismiss={() => (showShortcutsToast = false)}
 	shortcuts={[
 		{ label: 'Enter / exit full screen', keys: ['F'] },
-		{ label: 'Show shortcuts', keys: ['?'] },
-		{ label: 'Exit', keys: ['Esc'] }
+		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />

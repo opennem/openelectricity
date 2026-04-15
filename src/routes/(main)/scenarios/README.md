@@ -222,7 +222,7 @@ Handled in `+page.svelte` via `handleKeydown()`:
 |-----|--------|
 | `F` | Toggle fullscreen mode (synced to URL `?fullscreen=true`) |
 | `?` | Toggle shortcuts toast |
-| `Esc` | Exit fullscreen |
+| `Esc` | Dismiss shortcuts toast (does not exit fullscreen) |
 
 Fullscreen mode uses `layoutContext?.setFullscreen()` for layout coordination.
 

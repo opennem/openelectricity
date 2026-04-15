@@ -7,10 +7,12 @@
 	import { FacilityChart, FacilityPriceChart } from '$lib/components/charts/facility';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
+	import FacilitySpotlight from '$lib/components/facility/FacilitySpotlight.svelte';
 	import {
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits
 	} from '../../facilities/_utils/units';
+	import { regions as regionDefs } from '../../facilities/_utils/filters.js';
 
 	import FacilityPickerBar from './_components/FacilityPickerBar.svelte';
 	import FacilityDescriptionPanel from './_components/FacilityDescriptionPanel.svelte';
@@ -144,6 +146,11 @@
 		goto(`/facility/${code}`);
 	}
 
+	let regionValue = $derived(selectedFacility?.network_region?.toLowerCase() ?? null);
+	let regionLabel = $derived(
+		regionValue ? regionDefs.find((r) => r.value === regionValue)?.longLabel ?? '' : ''
+	);
+
 	let hasPowerData = $derived(
 		Boolean(
 			data.powerData?.data?.length && data.powerData.data[0].results?.some(
@@ -173,23 +180,29 @@
 	}
 
 	let showShortcutsToast = $state(false);
-
-	/** @param {KeyboardEvent} e */
-	function handleEscape(e) {
-		if (showShortcutsToast) {
-			e.preventDefault();
-			showShortcutsToast = false;
-			return;
-		}
-		if (isFullscreen) {
-			e.preventDefault();
-			toggleFullscreen();
-		}
-	}
+	let spotlightOpen = $state(false);
 
 	/** @param {KeyboardEvent} e */
 	function handleKeydown(e) {
+		// Esc: close the shortcuts toast. (Spotlight handles its own Esc; fullscreen
+		// exit is NOT bound to Esc — use the logo mark, options menu, or F shortcut.)
+		if (e.key === 'Escape') {
+			if (spotlightOpen) return;
+			if (showShortcutsToast) {
+				e.preventDefault();
+				showShortcutsToast = false;
+			}
+			return;
+		}
+
 		if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+		if (spotlightOpen) return;
+
+		if (e.key === '/') {
+			e.preventDefault();
+			spotlightOpen = true;
+			return;
+		}
 
 		if (e.key === '?') {
 			showShortcutsToast = !showShortcutsToast;
@@ -211,15 +224,19 @@
 	<title>{selectedFacility?.name ?? 'Facility'} — Open Electricity</title>
 </svelte:head>
 
-<FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen} onescape={handleEscape}>
+<FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
 	{#snippet filterBar()}
-		<div class="border-b border-warm-grey shrink-0 {isFullscreen ? '' : 'px-4'}">
+		<div
+			class="shrink-0 border-b border-warm-grey {isFullscreen
+				? 'md:border-0 md:px-6 md:pt-6'
+				: 'px-4'}"
+		>
 			<FacilityPickerBar
-				facilities={facilitiesList}
 				selectedLabel={selectedFacility?.name ?? ''}
+				{regionValue}
+				{regionLabel}
 				{isFullscreen}
 				{showDescription}
-				onselect={handleFacilitySelect}
 				ontoggledescription={() => (showDescription = !showDescription)}
 				onfullscreenchange={toggleFullscreen}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
@@ -250,6 +267,7 @@
 								interval={activeInterval}
 								metric={activeMetric}
 								{displayInterval}
+								chartHeight="h-[267px]"
 								title={activeMetric === 'energy' ? 'Energy' : 'Power'}
 								onviewportchange={handlePowerViewportChange}
 							/>
@@ -277,24 +295,36 @@
 			</div>
 
 			<!-- Description panel (desktop default open, mobile default closed) -->
-			{#if mounted && showDescription}
-				<aside class="w-full md:w-80 shrink-0 border-t md:border-t-0 md:border-l border-warm-grey bg-white">
+			<aside
+				class="shrink-0 overflow-hidden bg-white transition-[width,border-width] duration-250 ease-out {mounted &&
+				showDescription
+					? 'w-full md:w-1/2 border-t md:border-t-0 md:border-l border-warm-grey'
+					: 'w-0 border-0'}"
+				aria-hidden={!showDescription}
+			>
+				<div class="w-screen md:w-[50vw] h-full">
 					<FacilityDescriptionPanel
 						sanityFacility={data.sanityFacility}
 						onclose={() => (showDescription = false)}
 					/>
-				</aside>
-			{/if}
+				</div>
+			</aside>
 		</section>
 	{/snippet}
 </FullscreenLayout>
+
+<FacilitySpotlight
+	facilities={facilitiesList}
+	bind:open={spotlightOpen}
+	onselect={handleFacilitySelect}
+/>
 
 <ShortcutsToast
 	visible={showShortcutsToast}
 	ondismiss={() => (showShortcutsToast = false)}
 	shortcuts={[
+		{ label: 'Search facilities', keys: ['/'] },
 		{ label: 'Enter / exit full screen', keys: ['F'] },
-		{ label: 'Show shortcuts', keys: ['?'] },
-		{ label: 'Exit', keys: ['Esc'] }
+		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />

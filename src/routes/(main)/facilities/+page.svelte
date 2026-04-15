@@ -620,25 +620,20 @@
 	}
 
 	/**
-	 * Esc handler passed to FullscreenLayout. Close the shortcuts toast first
-	 * if it's open; otherwise fall through to exiting fullscreen.
-	 * @param {KeyboardEvent} e
-	 */
-	function handleEscape(e) {
-		if (showShortcutsToast) {
-			e.preventDefault();
-			showShortcutsToast = false;
-			return;
-		}
-		e.preventDefault();
-		toggleFullscreen();
-	}
-
-	/**
 	 * Handle keyboard shortcuts
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
+		// Esc: close the shortcuts toast if it's showing. (Fullscreen exit is NOT
+		// bound to Esc — use the logo mark, options menu, or F shortcut.)
+		if (e.key === 'Escape') {
+			if (showShortcutsToast) {
+				e.preventDefault();
+				showShortcutsToast = false;
+			}
+			return;
+		}
+
 		// Arrow up/down: navigate through facilities in the List/Timeline view
 		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 			if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
@@ -914,11 +909,7 @@
 	</div>
 {/snippet}
 
-<FullscreenLayout
-	{isFullscreen}
-	onexitfullscreen={toggleFullscreen}
-	onescape={handleEscape}
->
+<FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
 	{#snippet filterBar()}
 		<div
 			class="shrink-0 border-y border-warm-grey {isFullscreen
@@ -1256,7 +1247,6 @@
 		{ label: 'Browser full screen', keys: ['Shift', 'F'] },
 		{ label: 'Search', keys: ['/'] },
 		{ label: 'Previous / next facility', keys: ['↑', '↓'] },
-		{ label: 'Show shortcuts', keys: ['?'] },
-		{ label: 'Exit', keys: ['Esc'] }
+		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />

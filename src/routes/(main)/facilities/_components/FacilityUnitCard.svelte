@@ -1,11 +1,11 @@
 <script>
-	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
+	import FuelTechBadge from './FuelTechBadge.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
-	import { getFueltechColor, needsDarkText } from '../_utils/fueltech-display';
+	import { getFueltechColor } from '../_utils/fueltech-display';
 
 	/**
 	 * @type {{
@@ -40,7 +40,6 @@
 	});
 
 	let bgColor = $derived(facility.unit ? getFueltechColor(facility.unit.fueltech_id) : '#FFFFFF');
-	let isDarkText = $derived(facility.unit ? needsDarkText(facility.unit.fueltech_id) : false);
 
 	// Data for UnitGroupPopup
 	let popupUnits = $derived(
@@ -81,15 +80,8 @@
 		onclick={() => onclick?.(facility)}
 	>
 		<div class="p-4 pb-2 sm:pb-4 flex items-center gap-4 @container col-span-12 sm:col-span-7">
-			<div class="flex gap-1 items-center">
-				<span
-					class="rounded-full p-2 block ml-2"
-					class:text-black={isDarkText}
-					class:text-white={!isDarkText}
-					style="background-color: {bgColor};"
-				>
-					<FuelTechIcon fuelTech={facility.unit.fueltech_id} sizeClass={8} />
-				</span>
+			<div class="flex gap-1 items-center ml-2">
+				<FuelTechBadge fueltech_id={facility.unit.fueltech_id} size="md" />
 			</div>
 
 			<div

@@ -1,42 +1,35 @@
 <script>
-	import { goto } from '$app/navigation';
-	import FullscreenNavDropdown from '$lib/components/fullscreen/FullscreenNavDropdown.svelte';
-	import FacilitySearchPopover from '$lib/components/facility/FacilitySearchPopover.svelte';
 	import OptionsMenu from '../../../facilities/_components/OptionsMenu.svelte';
-	import { PanelRightOpen, PanelRightClose } from '@lucide/svelte';
-
-	/**
-	 * @typedef {Object} FacilityListItem
-	 * @property {string} code
-	 * @property {string} name
-	 * @property {string} network_id
-	 * @property {string} network_region
-	 */
+	import { PanelRightOpen, PanelRightClose, ChevronRight } from '@lucide/svelte';
 
 	/**
 	 * @type {{
-	 *   facilities: FacilityListItem[],
 	 *   selectedLabel: string,
+	 *   regionValue?: string | null,
+	 *   regionLabel?: string,
 	 *   isFullscreen?: boolean,
 	 *   showDescription?: boolean,
-	 *   onselect: (code: string) => void,
 	 *   ontoggledescription?: () => void,
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void
 	 * }}
 	 */
 	let {
-		facilities,
 		selectedLabel,
+		regionValue = null,
+		regionLabel = '',
 		isFullscreen = false,
 		showDescription = false,
-		onselect,
 		ontoggledescription,
 		onfullscreenchange,
 		onshowshortcuts
 	} = $props();
 
-	let searchOpen = $state(false);
+	let crumbTextClass = $derived(
+		isFullscreen ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'
+	);
+	let crumbPadClass = $derived(isFullscreen ? 'px-2 py-1' : 'px-3 py-2');
+	let separatorSize = $derived(isFullscreen ? 14 : 16);
 </script>
 
 <div
@@ -46,25 +39,41 @@
 >
 	<div class="flex items-center gap-4 min-w-0">
 		{#if isFullscreen}
-			<div class="flex items-center gap-1 shrink-0">
-				<button
-					onclick={() => onfullscreenchange?.()}
-					class="flex items-center cursor-pointer px-2"
-					title="Exit full screen"
-				>
-					<img src="/logo-mark.png" alt="Open Electricity" class="h-8 w-auto" />
-				</button>
-				<FullscreenNavDropdown />
-			</div>
-			<div class="h-8 border-l border-warm-grey"></div>
+			<button
+				onclick={() => onfullscreenchange?.()}
+				class="flex items-center cursor-pointer px-2 shrink-0"
+				title="Exit full screen"
+			>
+				<img src="/logo-mark.png" alt="Open Electricity" class="h-8 w-auto" />
+			</button>
 		{/if}
 
-		<FacilitySearchPopover
-			{facilities}
-			label={selectedLabel}
-			bind:open={searchOpen}
-			{onselect}
-		/>
+		<nav class="flex items-center gap-1 min-w-0" aria-label="Breadcrumb">
+			<a
+				href="/facilities?fullscreen=true"
+				class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
+			>
+				Facilities
+			</a>
+
+			{#if regionValue && regionLabel}
+				<ChevronRight size={separatorSize} class="text-mid-grey shrink-0" />
+				<a
+					href={`/facilities?regions=${regionValue}&fullscreen=true`}
+					class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
+				>
+					{regionLabel}
+				</a>
+			{/if}
+
+			<ChevronRight size={separatorSize} class="text-mid-grey shrink-0" />
+
+			<span
+				class="font-semibold text-dark-grey capitalize {crumbTextClass} {crumbPadClass}"
+			>
+				{selectedLabel}
+			</span>
+		</nav>
 	</div>
 
 	<div class="flex items-center gap-1 shrink-0">
