@@ -12,10 +12,13 @@ export function createViewportSync() {
 		/** @param {() => void} fn */
 		runSuppressed(fn) {
 			suppressed = true;
-			fn();
-			queueMicrotask(() => {
-				suppressed = false;
-			});
+			try {
+				fn();
+			} finally {
+				queueMicrotask(() => {
+					suppressed = false;
+				});
+			}
 		}
 	};
 }

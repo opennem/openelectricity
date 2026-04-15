@@ -14,6 +14,8 @@
 	} from '../../facilities/_utils/units';
 	import { regions as regionDefs } from '../../facilities/_utils/filters.js';
 
+	import { computeMetricSwitch } from '$lib/components/charts/facility/metric-switch.js';
+
 	import FacilityPickerBar from './_components/FacilityPickerBar.svelte';
 	import FacilityDescriptionPanel from './_components/FacilityDescriptionPanel.svelte';
 	import { createViewportSync } from './_utils/viewport-sync.js';
@@ -40,7 +42,7 @@
 	});
 
 	/** @type {FacilityListItem[]} */
-	let facilitiesList = $state([]);
+	let facilitiesList = $state.raw([]);
 
 	$effect(() => {
 		let cancelled = false;
@@ -95,28 +97,19 @@
 	/** @param {{ start: number, end: number }} range */
 	function applyMetricSwitch(range) {
 		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
-		let targetMetric = activeMetric;
-		let targetInterval = activeInterval;
+		const next = computeMetricSwitch({
+			metric: activeMetric,
+			interval: activeInterval,
+			durationDays
+		});
 
-		if (activeMetric === 'power' && durationDays >= 15) {
-			targetMetric = 'energy';
-			targetInterval = '1d';
-		} else if (activeMetric === 'energy' && durationDays <= 13) {
-			targetMetric = 'power';
-			targetInterval = '5m';
-		}
+		displayInterval = next.displayInterval;
 
-		if (activeMetric === 'power') {
-			displayInterval = durationDays < 2 ? '5m' : '30m';
-		} else if (activeMetric === 'energy') {
-			displayInterval = durationDays >= 366 ? '1M' : '1d';
-		}
-
-		if (targetMetric !== activeMetric || targetInterval !== activeInterval) {
+		if (next.changed) {
 			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
 			metricSwitchTimer = setTimeout(() => {
-				activeMetric = targetMetric;
-				activeInterval = targetInterval;
+				activeMetric = next.metric;
+				activeInterval = next.interval;
 			}, 300);
 		}
 	}
@@ -250,7 +243,6 @@
 				? 'flex-1 min-h-0'
 				: 'h-[calc(100dvh-214px)] md:h-[calc(100dvh-300px)] md:min-h-[700px]'}"
 		>
-			<!-- Main column: header + charts -->
 			<div class="flex-1 min-w-0 flex flex-col min-h-0">
 				<FacilityPanelHeader facility={selectedFacility} showViewButtons={false} />
 
@@ -294,7 +286,6 @@
 				</div>
 			</div>
 
-			<!-- Description panel (desktop default open, mobile default closed) -->
 			<aside
 				class="shrink-0 overflow-hidden bg-white transition-[width,border-width] duration-250 ease-out {mounted &&
 				showDescription

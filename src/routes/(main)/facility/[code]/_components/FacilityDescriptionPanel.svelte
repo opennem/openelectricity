@@ -1,6 +1,7 @@
 <script>
 	import { ExternalLink, X } from '@lucide/svelte';
 	import { urlFor } from '$lib/sanity';
+	import { extractParagraphs } from '$lib/utils/portable-text.js';
 
 	/**
 	 * @type {{
@@ -9,21 +10,6 @@
 	 * }}
 	 */
 	let { sanityFacility, onclose } = $props();
-
-	/**
-	 * @param {any[] | undefined} blocks
-	 * @returns {string[]}
-	 */
-	function extractParagraphs(blocks) {
-		if (!blocks?.length) return [];
-		return blocks
-			.filter((/** @type {any} */ b) => b._type === 'block')
-			.map(
-				(/** @type {any} */ b) =>
-					b.children?.map((/** @type {any} */ c) => c.text).join('') || ''
-			)
-			.filter(Boolean);
-	}
 
 	let paragraphs = $derived(extractParagraphs(sanityFacility?.description));
 	let photos = $derived(sanityFacility?.photos ?? []);

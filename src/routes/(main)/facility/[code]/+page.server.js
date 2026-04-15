@@ -32,6 +32,9 @@ const DEFAULT_RANGE_DAYS = 7;
 export async function load({ params, fetch }) {
 	const { code } = params;
 
+	// Kick off every request that doesn't depend on the facility record in
+	// parallel with the facility fetch itself. Only the power endpoint needs
+	// `network_id`, so it's the only one chained after `facility` resolves.
 	const facilityPromise = fetchFacilityByCode(code);
 
 	const facilitiesList = client
@@ -60,11 +63,6 @@ export async function load({ params, fetch }) {
 		)
 		.catch(() => /** @type {FacilityListItem[]} */ ([]));
 
-	const facility = await facilityPromise;
-	if (!facility) throw error(404, `Facility "${code}" not found`);
-
-	const timeZone = facility.network_id === 'WEM' ? '+08:00' : '+10:00';
-
 	const sanityPromise = sanityClient
 		.fetch(
 			`*[_type == "facility" && code == $code][0]{
@@ -75,6 +73,11 @@ export async function load({ params, fetch }) {
 			{ code }
 		)
 		.catch(() => null);
+
+	const facility = await facilityPromise;
+	if (!facility) throw error(404, `Facility "${code}" not found`);
+
+	const timeZone = facility.network_id === 'WEM' ? '+08:00' : '+10:00';
 
 	const powerParams = new URLSearchParams({
 		network_id: facility.network_id,

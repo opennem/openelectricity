@@ -10,6 +10,7 @@
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { EXTERNAL_LINKS } from '$lib/constants/external-links';
+	import { extractParagraphs } from '$lib/utils/portable-text.js';
 	import { ExternalLink } from '@lucide/svelte';
 
 	/** @type {{ facility: any | null, expandedUnits?: boolean }} */
@@ -33,21 +34,6 @@
 	function ftColour(code) {
 		if (!code) return '#ccc';
 		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (code)] || '#888';
-	}
-
-	/**
-	 * Extract plain text from a portable text description array
-	 * @param {any[] | undefined} blocks
-	 * @returns {string[]}
-	 */
-	function extractParagraphs(blocks) {
-		if (!blocks?.length) return [];
-		return blocks
-			.filter((/** @type {any} */ b) => b._type === 'block')
-			.map(
-				(/** @type {any} */ b) => b.children?.map((/** @type {any} */ c) => c.text).join('') || ''
-			)
-			.filter(Boolean);
 	}
 
 	let paragraphs = $derived(extractParagraphs(facility?.description));

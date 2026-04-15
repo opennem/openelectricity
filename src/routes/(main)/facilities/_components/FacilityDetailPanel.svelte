@@ -1,5 +1,6 @@
 <script>
 	import { FacilityChart, getNetworkTimezone } from '$lib/components/charts/facility';
+	import { computeMetricSwitch } from '$lib/components/charts/facility/metric-switch.js';
 	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../_utils/units';
 	import FacilityUnitsLegend from './FacilityUnitsLegend.svelte';
 
@@ -30,34 +31,22 @@
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
 
-	/**
-	 * Auto-switch between power and energy based on zoom duration.
-	 * @param {{ start: number, end: number }} range
-	 */
+	/** @param {{ start: number, end: number }} range */
 	function handleViewportChange(range) {
 		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
-		let targetMetric = activeMetric;
-		let targetInterval = activeInterval;
+		const next = computeMetricSwitch({
+			metric: activeMetric,
+			interval: activeInterval,
+			durationDays
+		});
 
-		if (activeMetric === 'power' && durationDays >= 15) {
-			targetMetric = 'energy';
-			targetInterval = '1d';
-		} else if (activeMetric === 'energy' && durationDays <= 13) {
-			targetMetric = 'power';
-			targetInterval = '5m';
-		}
+		displayInterval = next.displayInterval;
 
-		if (activeMetric === 'power') {
-			displayInterval = durationDays < 2 ? '5m' : '30m';
-		} else if (activeMetric === 'energy') {
-			displayInterval = durationDays >= 366 ? '1M' : '1d';
-		}
-
-		if (targetMetric !== activeMetric || targetInterval !== activeInterval) {
+		if (next.changed) {
 			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
 			metricSwitchTimer = setTimeout(() => {
-				activeMetric = targetMetric;
-				activeInterval = targetInterval;
+				activeMetric = next.metric;
+				activeInterval = next.interval;
 			}, 300);
 		}
 	}
