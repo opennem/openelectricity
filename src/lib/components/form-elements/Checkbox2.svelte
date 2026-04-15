@@ -27,7 +27,7 @@
 		bind:checked
 		bind:indeterminate
 		{onchange}
-		class="size-6 rounded-sm border-gray-300 text-dark-grey focus:ring-dark-grey"
+		class="size-6 rounded-sm border-gray-300 text-red focus:ring-red"
 	/>
 	<div class="ml-3 text-sm">
 		<label for={name}>{label}</label>

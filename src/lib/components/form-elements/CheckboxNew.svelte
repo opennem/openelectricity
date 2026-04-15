@@ -33,7 +33,7 @@
 		bind:checked
 		bind:indeterminate
 		onchange={handleChange}
-		class="hidden size-6 rounded-sm border-gray-300 text-dark-grey focus:ring-dark-grey"
+		class="hidden size-6 rounded-sm border-gray-300 text-red focus:ring-red"
 	/>
 
 	<div class="border border-mid-warm-grey rounded-sm size-7" class:bg-warm-grey={checked}>

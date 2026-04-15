@@ -161,14 +161,16 @@
 			transition:fly={{ y: -10, duration: 150 }}
 			onclick={(e) => e.stopPropagation()}
 		>
-			<input
-				use:autofocus
-				type="text"
-				placeholder="Search facilities by name, fuel tech and region"
-				class="w-full text-sm px-5 py-3 border-b border-warm-grey focus:outline-none placeholder:text-xs placeholder:text-mid-grey"
-				bind:value={query}
-				onkeydown={handleKeydown}
-			/>
+			<div class="p-3 border-b border-warm-grey">
+				<input
+					use:autofocus
+					type="text"
+					placeholder="Search facilities by name, fuel tech and region"
+					class="w-full text-base px-4 py-2.5 rounded-lg bg-light-warm-grey/50 border border-warm-grey focus:outline-none focus:ring-0 focus:border-red focus:bg-white transition-colors placeholder:text-sm placeholder:text-mid-grey"
+					bind:value={query}
+					onkeydown={handleKeydown}
+				/>
+			</div>
 
 			<div bind:this={listEl} class="max-h-[400px] overflow-y-auto p-2 min-h-[60px]">
 				{#if filtered.length === 0}

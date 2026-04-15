@@ -22,7 +22,7 @@
 		{value}
 		bind:group={checked}
 		{onchange}
-		class="h-4 w-4 border-gray-300 text-dark-grey focus:ring-dark-grey"
+		class="h-4 w-4 border-gray-300 text-red focus:ring-red"
 	/>
 	<label for={radioId} class="ml-3 block text-sm font-medium leading-6 text-gray-900">{label}</label
 	>

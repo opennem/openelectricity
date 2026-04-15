@@ -15,7 +15,7 @@
 
 <input
 	{type}
-	class={`rounded-md border-solid placeholder:font-light border-[0.05rem] border-mid-warm-grey p-4 font-sans text-sm placeholder:text-mid-warm-grey focus:ring-0 focus:border-dark-grey ${rest.class}`}
+	class={`rounded-md border-solid placeholder:font-light border-[0.05rem] border-mid-warm-grey p-4 font-sans text-sm placeholder:text-mid-warm-grey focus:ring-0 focus:border-red focus:outline-none ${rest.class}`}
 	{placeholder}
 	{value}
 	oninput={preventDefault(/** @type {(event: Event, ...args: unknown[]) => void} */ (changeHandler))}

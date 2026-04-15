@@ -27,7 +27,7 @@
 	<button
 		onclick={bubble('click')}
 		type="button"
-		class="{background} relative inline-flex h-10 w-16 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-dark-grey focus:ring-offset-2"
+		class="{background} relative inline-flex h-10 w-16 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-hidden focus:ring-2 focus:ring-red focus:ring-offset-2"
 		role="switch"
 		aria-checked="false"
 		name="toggle"
