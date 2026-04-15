@@ -504,7 +504,7 @@
 
 <div
 	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 px-8 {isFullscreen
-		? 'md:py-1.5 md:px-4 md:rounded-lg md:border md:border-mid-warm-grey md:bg-white'
+		? 'md:py-3 md:px-4 md:rounded-lg md:border md:border-warm-grey md:bg-light-warm-grey/50'
 		: ''}"
 >
 	<div class="flex items-center gap-2 justify-between w-full min-w-0">
@@ -715,13 +715,13 @@
 	</div>
 </div>
 
-<!-- Mobile floating search (expands from bottom-left button to input pill) -->
-<div class="md:hidden fixed bottom-4 left-4 right-4 z-40 flex pointer-events-none">
+<!-- Mobile floating search (expands from bottom-right button to input pill) -->
+<div class="md:hidden fixed bottom-4 left-4 right-4 z-40 flex justify-end pointer-events-none">
 	{#if showMobileSearch}
 		<div
 			class="flex items-center gap-2 w-full bg-white rounded-full shadow-lg border border-warm-grey px-3 py-2 pointer-events-auto"
-			in:fly={{ x: -20, duration: 200 }}
-			out:fly={{ x: -20, duration: 150 }}
+			in:fly={{ x: 20, duration: 200 }}
+			out:fly={{ x: 20, duration: 150 }}
 		>
 			<Search class="size-5 text-mid-grey shrink-0" />
 			<SearchInput
@@ -743,7 +743,7 @@
 			class="p-4 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer shadow-lg pointer-events-auto"
 			onclick={openMobileSearch}
 			aria-label="Search"
-			in:fly={{ x: -20, duration: 200 }}
+			in:fly={{ x: 20, duration: 200 }}
 		>
 			<Search class="size-6 text-mid-grey" />
 		</button>
