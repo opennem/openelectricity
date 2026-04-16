@@ -525,7 +525,7 @@
 			{/if}
 
 			<!-- View Switcher - Desktop -->
-			<div class="hidden md:block">
+			<div class="hidden md:block {isFullscreen ? 'pl-3' : ''}">
 				<SwitchWithIcons
 					buttons={viewButtonsDesktop}
 					selected={selectedView}
@@ -563,8 +563,8 @@
 			<!-- Desktop Search -->
 			<div
 				class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
-					? 'ml-3 pl-3'
-					: 'ml-6 pl-6'}"
+					? 'ml-3 pl-7'
+					: 'ml-6 pl-10'}"
 			>
 				<SearchInput
 					bind:this={desktopSearchRef}
