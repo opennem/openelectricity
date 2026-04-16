@@ -1,17 +1,26 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { EllipsisVertical, Maximize2, Minimize2, CircleHelp, Download, Check } from '@lucide/svelte';
+	import { EllipsisVertical, Maximize2, Minimize2, CircleHelp, Download, Check, Search } from '@lucide/svelte';
 
 	/**
 	 * @type {{
 	 *   isFullscreen?: boolean,
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
-	 *   ondownloadcsv?: () => void
+	 *   ondownloadcsv?: () => void,
+	 *   onsearchfacilities?: () => void,
+	 *   searchShortcutKeys?: string[]
 	 * }}
 	 */
-	let { isFullscreen = false, onfullscreenchange, onshowshortcuts, ondownloadcsv } = $props();
+	let {
+		isFullscreen = false,
+		onfullscreenchange,
+		onshowshortcuts,
+		ondownloadcsv,
+		onsearchfacilities,
+		searchShortcutKeys = ['/']
+	} = $props();
 
 	let isOpen = $state(false);
 	let downloading = $state(false);
@@ -65,6 +74,30 @@
 						<Download class="size-4 text-mid-grey" />
 					{/if}
 					<span class="flex-1">{downloading ? 'Downloaded!' : 'Download CSV'}</span>
+				</button>
+
+				<div class="border-t border-warm-grey my-1"></div>
+			{/if}
+
+			<!-- Search facilities -->
+			{#if onsearchfacilities}
+				<button
+					onclick={() => handleItemClick(onsearchfacilities)}
+					class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
+				>
+					<Search class="size-4 text-mid-grey" />
+					<span class="flex-1">Search facilities</span>
+					<span class="flex items-center gap-0.5 shrink-0">
+						{#each searchShortcutKeys as key, i (key)}
+							{#if i > 0}
+								<span class="text-[10px] text-mid-grey">+</span>
+							{/if}
+							<kbd
+								class="text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
+								>{key}</kbd
+							>
+						{/each}
+					</span>
 				</button>
 
 				<div class="border-t border-warm-grey my-1"></div>
