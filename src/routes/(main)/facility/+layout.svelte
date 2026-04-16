@@ -95,7 +95,7 @@
 	/** @param {string} code */
 	function handleFacilitySelect(code) {
 		if (code === currentCode) return;
-		goto(`/facility/${code}`, { noScroll: true, keepFocus: true });
+		goto(`/facility/${code}${page.url.search}`, { noScroll: true, keepFocus: true });
 	}
 
 	/** @param {KeyboardEvent} e */
