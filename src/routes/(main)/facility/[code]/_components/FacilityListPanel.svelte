@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { X } from '@lucide/svelte';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import FuelTechBadge from '../../../facilities/_components/FuelTechBadge.svelte';
+	import { getFueltechColor } from '../../../facilities/_utils/fueltech-display';
 	import { regions as regionDefs } from '../../../facilities/_utils/filters.js';
 	import formatValue from '../../../facilities/_utils/format-value.js';
 	import { PanelHeader } from '$lib/components/ui/panel';
@@ -221,31 +221,45 @@
 				<button
 					data-index={i}
 					data-code={facility.code}
-					class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left text-dark-grey transition-colors border-l-2 border-transparent {isActive
+					class="flex w-full items-stretch gap-2 text-left text-dark-grey transition-colors border-l-2 border-transparent {isActive
 						? 'bg-warm-grey'
 						: 'hover:bg-light-warm-grey'} {isCurrent ? 'border-red' : ''}"
 					onclick={() => {
 						activeIndex = i;
 						handleSelect(facility.code);
+						inputEl?.focus();
 					}}
 				>
-					<span class="text-sm truncate flex-1 min-w-0">{facility.name}</span>
 					{#if facility.fuel_techs?.length}
-						<span class="flex items-center gap-1 shrink-0">
+						<span class="flex shrink-0 self-stretch" aria-hidden="true">
 							{#each facility.fuel_techs as ft (ft)}
 								<span
+									class="w-[4px] self-stretch"
+									style="background: {getFueltechColor(ft)}"
 									title={fuelTechNameMap[/** @type {keyof typeof fuelTechNameMap} */ (ft)] || ft}
-								>
-									<FuelTechBadge fueltech_id={ft} size="sm" />
-								</span>
+								></span>
 							{/each}
 						</span>
 					{/if}
-					<span class="text-[10px] uppercase tracking-wider text-mid-grey font-mono shrink-0">
-						{facility.network_region}
-					</span>
-					<span class="text-[11px] tabular-nums text-mid-grey font-mono shrink-0 w-14 text-right">
-						{facility.capacity > 0 ? `${formatValue(facility.capacity)} MW` : '—'}
+					<span
+						class="flex-1 min-w-0 flex items-center gap-2 py-2 pr-3 {facility.fuel_techs?.length
+							? ''
+							: 'pl-3'}"
+					>
+						<span class="text-sm truncate min-w-0">{facility.name}</span>
+						<span class="text-[9px] uppercase tracking-wider text-mid-grey font-mono shrink-0">
+							{facility.network_region}
+						</span>
+						<span
+							class="ml-auto font-mono tabular-nums shrink-0 w-20 text-right whitespace-nowrap text-dark-grey"
+						>
+							{#if facility.capacity > 0}
+								<span class="text-[11px]">{formatValue(facility.capacity)}</span>
+								<span class="text-[9px] text-mid-grey ml-0.5">MW</span>
+							{:else}
+								<span class="text-[11px] text-mid-grey">—</span>
+							{/if}
+						</span>
 					</span>
 				</button>
 			{/each}
