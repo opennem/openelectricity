@@ -172,9 +172,9 @@
 				<div class="flex-1 flex flex-col md:flex-row min-h-0">
 					{#if !isMobile}
 						<div
-							class="shrink-0 overflow-hidden transition-[width] duration-200 ease-out {leftOpen
+							class="shrink-0 overflow-hidden {leftOpen
 								? 'border-r border-warm-grey'
-								: ''}"
+								: ''} {listDrag.isDragging ? '' : 'transition-[width] duration-200 ease-out'}"
 							style="width: {leftOpen ? listDrag.value : 0}px"
 						>
 							{#if leftOpen}

@@ -221,7 +221,7 @@
 				<button
 					data-index={i}
 					data-code={facility.code}
-					class="flex w-full items-stretch gap-2 text-left text-dark-grey transition-colors border-l-2 border-transparent {isActive
+					class="flex w-full items-stretch gap-2 text-left text-dark-grey transition-colors border-l-2 border-transparent [content-visibility:auto] [contain-intrinsic-size:auto_36px] {isActive
 						? 'bg-warm-grey'
 						: 'hover:bg-light-warm-grey'} {isCurrent ? 'border-red' : ''}"
 					onclick={() => {
