@@ -143,7 +143,7 @@
 <FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
 	{#snippet filterBar()}
 		<div
-			class="shrink-0 border-b border-warm-grey {isFullscreen
+			class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen
 				? 'md:border-0 md:px-6 md:pt-6'
 				: 'px-4'}"
 		>
