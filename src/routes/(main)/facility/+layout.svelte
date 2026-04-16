@@ -1,7 +1,9 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page, navigating } from '$app/state';
+	import { version } from '$app/environment';
 	import { onMount } from 'svelte';
+	import { Maximize2 } from '@lucide/svelte';
 
 	import FullscreenLayout from '$lib/components/fullscreen/FullscreenLayout.svelte';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
@@ -218,13 +220,29 @@
 				<footer
 					class="shrink-0 border-t border-warm-grey bg-light-warm-grey/40 px-4 py-2 flex items-center justify-between gap-3"
 				>
-					<a
-						href="/"
-						class="text-[10px] font-semibold tracking-wider uppercase text-dark-grey no-underline hover:text-red"
-					>
-						Open Electricity
-					</a>
-					<span class="text-[10px] text-mid-grey font-mono">Australian energy data</span>
+					{#if isFullscreen}
+						<span class="text-[10px] text-mid-grey font-mono">v{version}</span>
+						<a
+							href="/"
+							class="text-[10px] text-dark-grey no-underline hover:text-red"
+						>
+							Open Electricity
+						</a>
+					{:else}
+						<span></span>
+						<button
+							onclick={toggleFullscreen}
+							class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-1.5 cursor-pointer transition-colors"
+							title="Enter full screen"
+						>
+							<Maximize2 size={12} />
+							<span>Enter full screen</span>
+							<kbd
+								class="text-[10px] font-sans text-dark-grey bg-white border border-warm-grey rounded px-1.5 py-0.5 leading-none"
+								>F</kbd
+							>
+						</button>
+					{/if}
 				</footer>
 			</div>
 		</section>
