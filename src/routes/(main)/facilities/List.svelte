@@ -84,15 +84,15 @@
 </script>
 
 {#snippet sortIcon(/** @type {string} */ column)}
-	<span class="w-4 inline-flex justify-center">
-		{#if sortBy === column}
+	{#if sortBy === column}
+		<span class="w-4 inline-flex justify-center">
 			{#if sortOrder === 'asc'}
 				<ChevronUp size={14} />
 			{:else}
 				<ChevronDown size={14} />
 			{/if}
-		{/if}
-	</span>
+		</span>
+	{/if}
 {/snippet}
 
 {#if facilities.length === 0}
