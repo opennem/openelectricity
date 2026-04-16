@@ -18,5 +18,5 @@
 	{:else}
 		<span class="size-4 shrink-0" aria-hidden="true"></span>
 	{/if}
-	<span>{@render children()}</span>
+	{@render children()}
 </div>

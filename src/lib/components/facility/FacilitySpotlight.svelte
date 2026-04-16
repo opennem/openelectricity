@@ -2,7 +2,7 @@
 	import { fly, fade } from 'svelte/transition';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import FuelTechBadge from '../../../routes/(main)/facilities/_components/FuelTechBadge.svelte';
-	import { regions as regionDefs } from '../../../routes/(main)/facilities/_utils/filters.js';
+	import { buildFacilityHaystack, parseQueryTerms } from './facility-search.js';
 
 	/**
 	 * @typedef {Object} Facility
@@ -12,49 +12,6 @@
 	 * @property {string} network_region
 	 * @property {string[]} [fuel_techs]
 	 */
-
-	/** Network-level labels beyond region (e.g. "WEM" → "Western Australia") */
-	const networkLabels = {
-		WEM: ['wem', 'western australia', 'wa'],
-		NEM: ['nem', 'national electricity market']
-	};
-
-	/**
-	 * Build a lowercase search haystack for a facility: name, code,
-	 * fuel-tech names, region short/long labels, network labels.
-	 * @param {Facility} f
-	 * @returns {string}
-	 */
-	function buildHaystack(f) {
-		const parts = [f.name, f.code];
-
-		if (f.fuel_techs?.length) {
-			for (const ft of f.fuel_techs) {
-				parts.push(ft);
-				const name =
-					fuelTechNameMap[/** @type {keyof typeof fuelTechNameMap} */ (ft)];
-				if (name) parts.push(name);
-			}
-		}
-
-		if (f.network_region) {
-			const key = f.network_region.toLowerCase();
-			parts.push(key);
-			const match = regionDefs.find((r) => r.value === key);
-			if (match) {
-				if (match.label) parts.push(match.label);
-				if (match.longLabel) parts.push(match.longLabel);
-			}
-		}
-
-		if (f.network_id) {
-			parts.push(f.network_id);
-			const extras = networkLabels[/** @type {keyof typeof networkLabels} */ (f.network_id)];
-			if (extras) parts.push(...extras);
-		}
-
-		return parts.join(' ').toLowerCase();
-	}
 
 	/**
 	 * @typedef {Object} Props
@@ -72,16 +29,12 @@
 	/** @type {HTMLDivElement | undefined} */
 	let listEl = $state(undefined);
 
-	// Pre-compute haystacks once per facilities array so typing doesn't rebuild them
-	let haystacks = $derived(facilities.map((f) => buildHaystack(f)));
+	let haystacks = $derived(facilities.map(buildFacilityHaystack));
 
 	let filtered = $derived.by(() => {
-		const q = query.toLowerCase().trim();
-		if (!q) return facilities;
-		const terms = q.split(/\s+/).filter(Boolean);
-		return facilities.filter((_, i) =>
-			terms.every((term) => haystacks[i].includes(term))
-		);
+		const terms = parseQueryTerms(query);
+		if (terms.length === 0) return facilities;
+		return facilities.filter((_, i) => terms.every((term) => haystacks[i].includes(term)));
 	});
 
 	// Reset highlight only when the user types (query changes) — not when the

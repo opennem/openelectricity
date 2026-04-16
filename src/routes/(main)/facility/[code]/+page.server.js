@@ -3,7 +3,8 @@ import { client as sanityClient } from '$lib/sanity';
 import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
 
 const DEFAULT_RANGE_DAYS = 7;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 50;
 
 /**
  * @typedef {Object} CacheEntry
@@ -14,19 +15,27 @@ const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
  * @property {number} expires
  */
 
-/**
- * Module-level cache for the full facility page payload. Keyed by facility code
- * with a short TTL so rapid navigation through the list panel (arrow keys,
- * back-and-forth selection) reuses prior fetches instead of re-hitting the OE
- * API, Sanity, and the internal /api/facilities/[code]/power endpoint.
- *
- * @type {Map<string, CacheEntry>}
- */
+// Module-level cache for the full facility page payload. On Cloudflare Workers
+// this is per-isolate and not shared across edges — a best-effort speedup for
+// rapid list-panel navigation within a single session, not a global cache.
+/** @type {Map<string, CacheEntry>} */
 const facilityCache = new Map();
 
 /**
- * Fetch the full payload for a facility, using the cache when fresh.
- * Returns null when the facility code is not found upstream.
+ * @param {string} code
+ * @param {CacheEntry} entry
+ */
+function cacheSet(code, entry) {
+	// Map iteration preserves insertion order, so the oldest entry is first.
+	if (facilityCache.size >= CACHE_MAX_ENTRIES && !facilityCache.has(code)) {
+		const oldest = facilityCache.keys().next().value;
+		if (oldest !== undefined) facilityCache.delete(oldest);
+	}
+	facilityCache.delete(code);
+	facilityCache.set(code, entry);
+}
+
+/**
  * @param {string} code
  * @param {typeof fetch} fetch
  * @returns {Promise<CacheEntry | null>}
@@ -34,9 +43,8 @@ const facilityCache = new Map();
 async function loadFacilityPayload(code, fetch) {
 	const now = Date.now();
 	const cached = facilityCache.get(code);
-	if (cached && cached.expires > now) {
-		return cached;
-	}
+	if (cached && cached.expires > now) return cached;
+	if (cached) facilityCache.delete(code);
 
 	const facilityPromise = fetchFacilityByCode(code);
 	const sanityPromise = sanityClient
@@ -70,7 +78,7 @@ async function loadFacilityPayload(code, fetch) {
 		timeZone,
 		expires: now + CACHE_TTL_MS
 	};
-	facilityCache.set(code, entry);
+	cacheSet(code, entry);
 	return entry;
 }
 

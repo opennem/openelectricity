@@ -3,9 +3,12 @@
 	import { X } from '@lucide/svelte';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getFueltechColor } from '../../../facilities/_utils/fueltech-display';
-	import { regions as regionDefs } from '../../../facilities/_utils/filters.js';
 	import formatValue from '../../../facilities/_utils/format-value.js';
 	import { PanelHeader } from '$lib/components/ui/panel';
+	import {
+		buildFacilityHaystack,
+		parseQueryTerms
+	} from '$lib/components/facility/facility-search.js';
 
 	/**
 	 * @typedef {Object} Facility
@@ -25,55 +28,11 @@
 	 * @property {(code: string) => void} onselect
 	 */
 
-	/** Network-level labels beyond region (e.g. "WEM" → "Western Australia") */
-	const networkLabels = {
-		WEM: ['wem', 'western australia', 'wa'],
-		NEM: ['nem', 'national electricity market']
-	};
-
-	/**
-	 * Build a lowercase search haystack for a facility: name, code,
-	 * fuel-tech names, region short/long labels, network labels.
-	 * @param {Facility} f
-	 * @returns {string}
-	 */
-	function buildHaystack(f) {
-		const parts = [f.name, f.code];
-
-		if (f.fuel_techs?.length) {
-			for (const ft of f.fuel_techs) {
-				parts.push(ft);
-				const name = fuelTechNameMap[/** @type {keyof typeof fuelTechNameMap} */ (ft)];
-				if (name) parts.push(name);
-			}
-		}
-
-		if (f.network_region) {
-			const key = f.network_region.toLowerCase();
-			parts.push(key);
-			const match = regionDefs.find((r) => r.value === key);
-			if (match) {
-				if (match.label) parts.push(match.label);
-				if (match.longLabel) parts.push(match.longLabel);
-			}
-		}
-
-		if (f.network_id) {
-			parts.push(f.network_id);
-			const extras = networkLabels[/** @type {keyof typeof networkLabels} */ (f.network_id)];
-			if (extras) parts.push(...extras);
-		}
-
-		return parts.join(' ').toLowerCase();
-	}
-
 	/** @type {Props} */
 	let { facilities, currentCode, onclose, onselect } = $props();
 
 	let query = $state('');
 
-	// Initialise highlight at the currently-selected facility so arrow keys start there.
-	// We only want the initial value here — no reactivity needed.
 	// svelte-ignore state_referenced_locally
 	const initialIndex = facilities.findIndex((f) => f.code === currentCode);
 	let activeIndex = $state(initialIndex >= 0 ? initialIndex : 0);
@@ -83,26 +42,12 @@
 	/** @type {HTMLDivElement | undefined} */
 	let listEl = $state(undefined);
 
-	// Pre-compute haystacks once per facilities array so typing doesn't rebuild them
-	let haystacks = $derived(facilities.map((f) => buildHaystack(f)));
+	let haystacks = $derived(facilities.map(buildFacilityHaystack));
 
 	let filtered = $derived.by(() => {
-		const q = query.toLowerCase().trim();
-		if (!q) return facilities;
-		const terms = q.split(/\s+/).filter(Boolean);
+		const terms = parseQueryTerms(query);
+		if (terms.length === 0) return facilities;
 		return facilities.filter((_, i) => terms.every((term) => haystacks[i].includes(term)));
-	});
-
-	// Reset highlight to 0 when the user types — but skip the initial effect run
-	// so the onMount-set activeIndex (pointing at currentCode) is preserved.
-	let hasUserTyped = false;
-	$effect(() => {
-		const _ = query;
-		if (hasUserTyped) {
-			activeIndex = 0;
-		} else {
-			hasUserTyped = true;
-		}
 	});
 
 	export function focusSearch() {
@@ -110,7 +55,6 @@
 		inputEl?.select();
 	}
 
-	// On mount (panel just opened), scroll the currently-selected facility into view
 	onMount(() => {
 		queueMicrotask(() => {
 			if (!listEl) return;
@@ -133,11 +77,8 @@
 		onselect(code);
 	}
 
-	/**
-	 * Debounced select for arrow-key navigation — avoids firing a fresh page
-	 * load on every keystroke when the user is scrubbing through the list.
-	 * @param {string} code
-	 */
+	// Debounced so holding an arrow key doesn't kick off a goto() on every keystroke.
+	/** @param {string} code */
 	function debouncedSelect(code) {
 		if (navDebounceTimer) clearTimeout(navDebounceTimer);
 		navDebounceTimer = setTimeout(() => {
@@ -196,6 +137,7 @@
 			placeholder="Search facilities"
 			class="flex-1 min-w-0 text-xs px-3 py-1.5 rounded-md bg-white border border-warm-grey focus:outline-none focus:ring-0 focus:border-red transition-colors placeholder:text-mid-grey"
 			bind:value={query}
+			oninput={() => (activeIndex = 0)}
 			onkeydown={handleKeydown}
 		/>
 		<span class="text-[10px] text-mid-grey tabular-nums font-mono shrink-0">

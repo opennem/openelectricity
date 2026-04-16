@@ -72,13 +72,11 @@
 		</nav>
 	</div>
 
-	<div class="flex items-center gap-1 shrink-0">
-		<OptionsMenu
-			{isFullscreen}
-			onfullscreenchange={() => onfullscreenchange?.()}
-			onshowshortcuts={() => onshowshortcuts?.()}
-			onsearchfacilities={() => onsearchfacilities?.()}
-			{searchShortcutKeys}
-		/>
-	</div>
+	<OptionsMenu
+		{isFullscreen}
+		{onfullscreenchange}
+		{onshowshortcuts}
+		{onsearchfacilities}
+		{searchShortcutKeys}
+	/>
 </div>

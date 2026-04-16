@@ -17,7 +17,6 @@
 	/** @type {{ data: any }} */
 	let { data } = $props();
 
-	// Strip derived battery_charging/discharging units when a bidirectional battery exists
 	let selectedFacility = $derived.by(() => {
 		const f = data.facility;
 		if (!f?.units) return f;
@@ -55,8 +54,8 @@
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
 
-	// Reset when facility changes
 	$effect(() => {
+		// Reset chart-viewport-driven state when the underlying facility changes.
 		const _code = data.facility?.code;
 		activeInterval = '5m';
 		activeMetric = 'power';
@@ -134,8 +133,8 @@
 
 <FacilityPanelHeader facility={selectedFacility} showViewButtons={false} />
 
+<!-- order swap: on mobile, charts above description; on md+, description left of charts -->
 <div class="flex-1 flex flex-col md:flex-row min-h-0">
-	<!-- MIDDLE: description (desktop first, mobile second — below charts) -->
 	<div
 		class="order-2 md:order-1 md:shrink-0 overflow-hidden border-t md:border-t-0 md:border-r border-warm-grey"
 		style:width={isMobile ? '' : `${middleDrag.value}px`}
@@ -150,7 +149,6 @@
 		class="hidden md:flex md:order-2"
 	/>
 
-	<!-- RIGHT: charts (mobile first, desktop last) -->
 	<div class="order-1 md:order-3 flex-1 min-w-0 min-h-0 overflow-y-auto p-4 space-y-4">
 		{#if selectedFacility}
 			{#if hasPowerData}

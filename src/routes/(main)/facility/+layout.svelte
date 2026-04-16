@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page, navigating } from '$app/state';
 	import { version } from '$app/environment';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { Maximize2 } from '@lucide/svelte';
 
 	import FullscreenLayout from '$lib/components/fullscreen/FullscreenLayout.svelte';
@@ -40,7 +40,6 @@
 		};
 	});
 
-	// Picker bar needs the currently-selected facility (from the nested page load)
 	let selectedFacility = $derived.by(() => {
 		const f = page.data.facility;
 		if (!f?.units) return f;
@@ -53,7 +52,6 @@
 		regionValue ? (regionDefs.find((r) => r.value === regionValue)?.longLabel ?? '') : ''
 	);
 
-	// Fullscreen state driven by ?fullscreen=true URL param
 	let isFullscreen = $derived(page.url.searchParams.get('fullscreen') === 'true');
 
 	function toggleFullscreen() {
@@ -87,9 +85,10 @@
 		storageKey: 'facility-detail-list-width'
 	});
 
-	function openLeftPanelAndFocus() {
+	async function openLeftPanelAndFocus() {
 		if (!leftOpen) leftOpen = true;
-		queueMicrotask(() => listPanel?.focusSearch());
+		await tick();
+		listPanel?.focusSearch();
 	}
 
 	/** @param {string} code */
@@ -108,7 +107,7 @@
 			return;
 		}
 
-		// ⌘K / Ctrl+K: toggle the list panel (works even when focus is in an input)
+		// Handled above the input-focus guard so it still fires while typing in the search input.
 		if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
 			e.preventDefault();
 			if (leftOpen) leftOpen = false;
@@ -202,7 +201,6 @@
 						</div>
 					{/if}
 
-					<!-- Middle + right: rendered by the nested page -->
 					<div class="flex-1 flex flex-col min-w-0 min-h-0 relative">
 						{@render children()}
 						{#if navigating.to && navigating.to.url.pathname.startsWith('/facility/')}
@@ -222,10 +220,7 @@
 				>
 					{#if isFullscreen}
 						<span class="text-[10px] text-mid-grey font-mono">v{version}</span>
-						<a
-							href="/"
-							class="text-[10px] text-dark-grey no-underline hover:text-red"
-						>
+						<a href="/" class="text-[10px] text-dark-grey no-underline hover:text-red">
 							Open Electricity
 						</a>
 					{:else}
