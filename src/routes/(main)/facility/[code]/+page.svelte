@@ -112,7 +112,7 @@
 		axis: 'x',
 		min: 320,
 		max: 720,
-		initial: 420,
+		initial: 450,
 		storageKey: 'facility-detail-middle-width'
 	});
 
