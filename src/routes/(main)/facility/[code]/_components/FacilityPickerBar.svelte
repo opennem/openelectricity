@@ -32,7 +32,7 @@
 
 <div
 	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 px-4 {isFullscreen
-		? 'md:py-3 md:px-4 md:rounded-lg md:border md:border-warm-grey md:bg-light-warm-grey/50'
+		? 'md:py-3 md:px-4 md:rounded-lg md:border md:border-warm-grey md:bg-light-warm-grey/75'
 		: ''}"
 >
 	<div class="flex items-center gap-4 min-w-0">

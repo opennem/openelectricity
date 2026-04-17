@@ -139,7 +139,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
+<FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen} class={isFullscreen ? 'gridline-bg' : ''}>
 	{#snippet filterBar()}
 		<div
 			class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen
@@ -254,3 +254,10 @@
 		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />
+
+<style>
+	:global(.gridline-bg) {
+		background-image: radial-gradient(circle, #d5d4d1 1px, transparent 1px);
+		background-size: 20px 20px;
+	}
+</style>
