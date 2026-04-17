@@ -1,7 +1,7 @@
 <script>
 	import { fly, fade } from 'svelte/transition';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import FuelTechBadge from '../../../routes/(main)/facilities/_components/FuelTechBadge.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import { buildFacilityHaystack, parseQueryTerms } from './facility-search.js';
 
 	/**
@@ -149,7 +149,7 @@
 											title={fuelTechNameMap[/** @type {keyof typeof fuelTechNameMap} */ (ft)] ||
 												ft}
 										>
-											<FuelTechBadge fueltech_id={ft} size="sm" />
+											<FuelTechBadge fuelTech={ft} size="sm" />
 										</span>
 									{/each}
 								</span>

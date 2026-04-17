@@ -13,7 +13,7 @@
 	} from '../_utils/units';
 	import { getRegionLongLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
-	import FuelTechBadge from './FuelTechBadge.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import { CAPACITY_TOOLTIP } from '../_utils/capacity-tooltip.js';
 
@@ -73,8 +73,8 @@
 								: ''}"
 						>
 							<FuelTechBadge
-								fueltech_id={group.fueltech_id}
-								status_id={group.status_id}
+								fuelTech={group.fueltech_id}
+								status={group.status_id}
 								isCommissioning={group.isCommissioning}
 								size="md"
 							/>

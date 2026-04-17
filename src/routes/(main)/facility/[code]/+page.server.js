@@ -50,7 +50,7 @@ async function loadFacilityPayload(code, fetch) {
 	const sanityPromise = sanityClient
 		.fetch(
 			`*[_type == "facility" && code == $code][0]{
-				_id, code, name, website, wikipedia,
+				_id, code, name, website, wikipedia, wikidata_id, location,
 				description, photos,
 				owners[]->{_id, name, legal_name, website}
 			}`,

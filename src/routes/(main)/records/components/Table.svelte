@@ -1,6 +1,6 @@
 <script>
 	import { formatRecordValue } from '../page-data-options/formatters';
-	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import { xTickValueFormatters } from '../[id]/RecordHistory/helpers/config';
 	import { regions } from '../page-data-options/filters';
@@ -50,7 +50,7 @@
 								class:text-black={record.fueltech_id === 'solar'}
 								class:text-white={record.fueltech_id !== 'solar'}
 							>
-								<FuelTechIcon fuelTech={record.fueltech_id} sizeClass={5} />
+								<FuelTechBadge fuelTech={record.fueltech_id} iconOnly iconSize={5} />
 							</span>
 							<!-- <span class="relative top-[2px] z-0">
 								<FuelTechTag

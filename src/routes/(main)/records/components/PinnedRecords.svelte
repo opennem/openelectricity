@@ -4,7 +4,7 @@
 	import { formatRecordValue } from '../page-data-options/formatters';
 	import getRelativeTime from '../page-data-options/relative-time';
 	import recordDescription from '../page-data-options/record-description';
-	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import dateTimeQuery from '../page-data-options/date-time-query';
 	import {
 		PINNED_CONFIG as pinned,
@@ -113,7 +113,7 @@
 									class:text-black={fuelTech === 'solar'}
 									class:text-white={fuelTech !== 'solar'}
 								>
-									<FuelTechIcon {fuelTech} sizeClass={12} />
+									<FuelTechBadge {fuelTech} iconOnly iconSize={12} />
 								</span>
 
 								{#if showRegionLabel}
@@ -153,7 +153,7 @@
 							class:text-black={fuelTech === 'solar'}
 							class:text-white={fuelTech !== 'solar'}
 						>
-							<FuelTechIcon {fuelTech} sizeClass={12} />
+							<FuelTechBadge {fuelTech} iconOnly iconSize={12} />
 						</span>
 					</div>
 				{/if}
@@ -164,7 +164,7 @@
 						class:text-black={fuelTech === 'solar'}
 						class:text-white={fuelTech !== 'solar'}
 					>
-						<FuelTechIcon {fuelTech} sizeClass={12} />
+						<FuelTechBadge {fuelTech} iconOnly iconSize={12} />
 					</span>
 
 					<div role="status" class="text-black animate-pulse">

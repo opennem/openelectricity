@@ -5,7 +5,7 @@
 	import Meta from '$lib/components/Meta.svelte';
 	import { regionsWithLabels } from '$lib/regions';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import PageNav from './RecordHistory/PageNav.svelte';
 	import RecordHistory from './RecordHistory/index.svelte';
@@ -258,7 +258,7 @@
 							class:text-black={ftId === 'solar'}
 							class:text-white={ftId !== 'solar'}
 						>
-							<FuelTechIcon fuelTech={ftId} sizeClass={10} />
+							<FuelTechBadge fuelTech={ftId} iconOnly iconSize={10} />
 						</span>
 
 						<h2 class="leading-lg text-lg font-medium mb-0">

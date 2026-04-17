@@ -1,7 +1,7 @@
 <script>
 	import { regionsWithLabels } from '$lib/regions';
 	import { getNumberFormat } from '$lib/utils/formatters';
-	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../../../(main)/records/page-data-options/record-description';
 	import { xTickValueFormatters } from '../../../(main)/records/[id]/RecordHistory/helpers/config';
 	import MiniTracker from './components/MiniTracker.svelte';
@@ -49,7 +49,7 @@
 						class:text-black={ftId === 'solar'}
 						class:text-white={ftId !== 'solar'}
 					>
-						<FuelTechIcon fuelTech={ftId} sizeClass={16} />
+						<FuelTechBadge fuelTech={ftId} iconOnly iconSize={16} />
 					</span>
 
 					<h2 class="leading-3xl text-3xl font-medium mb-0">

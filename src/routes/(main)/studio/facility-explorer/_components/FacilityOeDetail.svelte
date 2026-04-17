@@ -10,7 +10,7 @@
 	import { FacilityUnitsTable } from '$lib/components/charts/facility';
 	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
 	import { groupUnits, getExploreUrl } from '../../../facilities/_utils/units';
-	import FuelTechBadge from '../../../facilities/_components/FuelTechBadge.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import FacilityLocationMap from './FacilityLocationMap.svelte';
 
 	/**
@@ -86,8 +86,8 @@
 			<div class="flex items-center gap-1 mt-3 flex-wrap">
 				{#each unitGroups as group (`${group.fueltech_id}-${group.status_id}`)}
 					<FuelTechBadge
-						fueltech_id={group.fueltech_id}
-						status_id={group.status_id}
+						fuelTech={group.fueltech_id}
+						status={group.status_id}
 						isCommissioning={group.isCommissioning}
 						size="sm"
 					/>

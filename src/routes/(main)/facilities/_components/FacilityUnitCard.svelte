@@ -1,6 +1,6 @@
 <script>
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import FuelTechBadge from './FuelTechBadge.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
@@ -81,7 +81,7 @@
 	>
 		<div class="p-4 pb-2 sm:pb-4 flex items-center gap-4 @container col-span-12 sm:col-span-7">
 			<div class="flex gap-1 items-center ml-2">
-				<FuelTechBadge fueltech_id={facility.unit.fueltech_id} size="md" />
+				<FuelTechBadge fuelTech={facility.unit.fueltech_id} size="md" />
 			</div>
 
 			<div

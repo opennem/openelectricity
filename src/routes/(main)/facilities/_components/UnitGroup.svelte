@@ -3,7 +3,7 @@
 	import { stripDateTimezone } from '$lib/utils/date-format';
 	import { fuelTechName } from '$lib/fuel_techs';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import FuelTechBadge from './FuelTechBadge.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import GenCapViz from './GenCapViz.svelte';
 	import formatValue from '../_utils/format-value';
 
@@ -73,7 +73,7 @@
 <div>
 	<div class="flex items-center justify-between text-xs gap-4">
 		<div class="flex items-center gap-2">
-			<FuelTechBadge {fueltech_id} size="md" darkMode={true} />
+			<FuelTechBadge fuelTech={fueltech_id} size="md" darkMode={true} />
 			<span class="font-medium">{fuelTechName(/** @type {FuelTechCode} */ (fueltech_id))}</span>
 		</div>
 

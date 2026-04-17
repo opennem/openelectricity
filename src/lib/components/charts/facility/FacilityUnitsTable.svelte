@@ -6,7 +6,7 @@
 	 * Detailed mode shows additional info: emissions factor, dispatch type, capacity breakdown, data dates.
 	 */
 
-	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import { fuelTechColourMap, statusColours } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
@@ -126,7 +126,7 @@
 							class:text-white={!isDarkText}
 							style="background-color: {bgColor};"
 						>
-							<FuelTechIcon fuelTech={unit.fueltech_id} sizeClass={compact ? 4 : 5} />
+							<FuelTechBadge fuelTech={unit.fueltech_id} iconOnly iconSize={compact ? 4 : 5} />
 						</span>
 
 						<div class="flex items-center gap-2 min-w-0">

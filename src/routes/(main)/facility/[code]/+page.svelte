@@ -139,7 +139,7 @@
 		class="order-2 md:order-1 md:shrink-0 overflow-hidden border-t md:border-t-0 md:border-r border-warm-grey"
 		style:width={isMobile ? '' : `${middleDrag.value}px`}
 	>
-		<FacilityDescriptionPanel sanityFacility={data.sanityFacility} />
+		<FacilityDescriptionPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
 	</div>
 
 	<DragHandle

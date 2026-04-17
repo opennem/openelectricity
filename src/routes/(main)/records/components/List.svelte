@@ -1,7 +1,7 @@
 <script>
 	import { regionsWithLabels } from '$lib/regions';
 	import { formatRecordValue } from '../page-data-options/formatters';
-	import FuelTechIcon from '$lib/components/FuelTechIcon.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import recordDescription from '../page-data-options/record-description';
 	import { regions } from '../page-data-options/filters';
 	import dateTimeQuery from '../page-data-options/date-time-query';
@@ -114,7 +114,7 @@
 												class:text-black={record.fueltech_id === 'solar'}
 												class:text-white={record.fueltech_id !== 'solar'}
 											>
-												<FuelTechIcon fuelTech={record.fueltech_id || 'demand'} sizeClass={8} />
+												<FuelTechBadge fuelTech={record.fueltech_id || 'demand'} iconOnly iconSize={8} />
 											</span>
 											<!-- <div class="text-xs text-mid-grey font-space">
 												{getRegionLabel(record.network_id, record.network_region)}
@@ -175,7 +175,7 @@
 												class:text-black={record.fueltech_id === 'solar'}
 												class:text-white={record.fueltech_id !== 'solar'}
 											>
-												<FuelTechIcon fuelTech={record.fueltech_id || 'demand'} sizeClass={8} />
+												<FuelTechBadge fuelTech={record.fueltech_id || 'demand'} iconOnly iconSize={8} />
 											</span>
 											<!-- <div class="text-xs text-mid-grey font-space">
 												{getRegionLabel(record.network_id, record.network_region)}
@@ -241,7 +241,7 @@
 													class:text-black={latest.fueltech_id === 'solar'}
 													class:text-white={latest.fueltech_id !== 'solar'}
 												>
-													<FuelTechIcon fuelTech={latest.fueltech_id || 'demand'} sizeClass={8} />
+													<FuelTechBadge fuelTech={latest.fueltech_id || 'demand'} iconOnly iconSize={8} />
 												</span>
 											</div>
 
