@@ -55,6 +55,29 @@
 	});
 
 	let hasContent = $derived(hasDescription || photos.length > 0 || hasLinks || hasLocation);
+
+	// Read more / expand
+	let expanded = $state(false);
+	/** @type {HTMLDivElement | undefined} */
+	let descriptionEl = $state(undefined);
+	let needsExpand = $state(false);
+
+	$effect(() => {
+		// Re-measure when element binds or description changes
+		const _desc = description;
+		if (descriptionEl) {
+			// Tick to let content render
+			requestAnimationFrame(() => {
+				needsExpand = descriptionEl ? descriptionEl.scrollHeight > 160 : false;
+			});
+		}
+	});
+
+	// Reset expanded state when facility changes
+	$effect(() => {
+		const _code = sanityFacility?.code;
+		expanded = false;
+	});
 </script>
 
 <div class="flex flex-col h-full min-h-0 overflow-y-auto">
@@ -152,8 +175,29 @@
 
 			<!-- Description -->
 			{#if hasDescription}
+				{@const MAX_HEIGHT = 160}
 				<div class="border-t border-warm-grey mt-8 pt-6">
-					<PortableTextBody value={description} class="text-sm text-dark-grey/80 leading-relaxed px-5" />
+					<div
+						class="relative overflow-hidden"
+						style:max-height={!expanded ? `${MAX_HEIGHT}px` : 'none'}
+					>
+						<div bind:this={descriptionEl}>
+							<PortableTextBody value={description} class="text-sm text-dark-grey/80 leading-relaxed px-5" />
+						</div>
+
+						{#if needsExpand && !expanded}
+							<div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none"></div>
+						{/if}
+					</div>
+
+					{#if needsExpand}
+						<button
+							class="mt-2 px-5 text-xs text-mid-grey/60 hover:text-mid-grey transition-colors cursor-pointer"
+							onclick={() => (expanded = !expanded)}
+						>
+							{expanded ? 'Show less' : 'Read more'}
+						</button>
+					{/if}
 				</div>
 			{/if}
 		</div>
