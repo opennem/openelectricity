@@ -7,7 +7,8 @@
 	 */
 
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import { fuelTechColourMap, statusColours } from '$lib/theme/openelectricity';
+	import { statusColours } from '$lib/theme/openelectricity';
+	import { needsDarkText, getFueltechColor } from '$lib/utils/fueltech-display';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import { buildUnitColourMap } from './helpers.js';
@@ -57,25 +58,6 @@
 	}
 
 	/**
-	 * Get color for a fuel tech code
-	 * @param {string} ftCode
-	 * @returns {string}
-	 */
-	function getFuelTechColor(ftCode) {
-		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (ftCode)] || '#888888';
-	}
-
-	/**
-	 * Check if fuel tech needs dark text
-	 * @param {string} ftCode
-	 * @returns {boolean}
-	 */
-	function needsDarkText(ftCode) {
-		const lightBgFuelTechs = ['solar_utility', 'solar_rooftop', 'solar_thermal', 'solar'];
-		return lightBgFuelTechs.includes(ftCode);
-	}
-
-	/**
 	 * @typedef {Object} Props
 	 * @property {any[]} units - Array of unit objects
 	 * @property {Record<string, string>} [unitColours] - Optional pre-computed colour map
@@ -90,7 +72,7 @@
 	let colours = $derived.by(() => {
 		if (unitColours) return unitColours;
 		if (!units?.length) return {};
-		return buildUnitColourMap(units, getFuelTechColor);
+		return buildUnitColourMap(units, getFueltechColor);
 	});
 </script>
 
@@ -104,7 +86,7 @@
 
 	<ol class="divide-y divide-mid-warm-grey">
 		{#each units as unit (unit.code)}
-			{@const bgColor = colours[unit.code] || getFuelTechColor(unit.fueltech_id)}
+			{@const bgColor = colours[unit.code] || getFueltechColor(unit.fueltech_id)}
 			{@const isDarkText = needsDarkText(unit.fueltech_id)}
 			{@const hasBothCapacities = unit.capacity_maximum && unit.capacity_registered && unit.capacity_maximum !== unit.capacity_registered}
 

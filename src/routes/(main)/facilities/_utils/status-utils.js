@@ -1,4 +1,5 @@
 import isCommissioningCheck from './is-commissioning';
+import { hasBidirectionalBattery } from './units';
 
 /**
  * Prepare statuses for API call.
@@ -36,9 +37,7 @@ export function processFacilitiesWithStatuses(facilities, selectedStatuses) {
 
 	// First, mark commissioning units
 	facilities.forEach((facility) => {
-		const hasBidirectional = facility.units.some(
-			(/** @type {any} */ u) => u.fueltech_id === 'battery'
-		);
+		const hasBidirectional = hasBidirectionalBattery(facility);
 		facility.units.forEach((/** @type {any} */ unit) => {
 			if (isCommissioningCheck(unit, { hasBidirectionalBattery: hasBidirectional })) {
 				unit.isCommissioning = true;

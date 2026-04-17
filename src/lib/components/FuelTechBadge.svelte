@@ -15,14 +15,12 @@
 		return module.default;
 	}
 
-	/** Fueltechs that need dark text for contrast on their background colour */
-	const LIGHT_FUELTECHS = ['solar_utility', 'solar', 'solar_rooftop', 'gas_ocgt', 'gas_recip'];
 </script>
 
 <script>
 	import GlobeAlt from '$lib/icons/GlobeAlt.svelte';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { needsDarkText, getFueltechColor } from '$lib/utils/fueltech-display';
 
 	/**
 	 * @type {{
@@ -52,18 +50,18 @@
 	/**
 	 * @param {string} ft
 	 */
-	function fuelTechName(ft) {
+	function fuelTechIconName(ft) {
 		return ft
 			.split('_')
 			.map((word) => word.charAt(0).toUpperCase() + word.slice(1))
 			.join('');
 	}
 
-	let iconPromise = $derived(getIcon(fuelTechName(fuelTech)));
+	let iconPromise = $derived(getIcon(fuelTechIconName(fuelTech)));
 
 	// Badge-mode derived values
-	let bgColor = $derived(fuelTechColourMap[fuelTech] || '#FFFFFF');
-	let isDarkText = $derived(LIGHT_FUELTECHS.includes(fuelTech));
+	let bgColor = $derived(getFueltechColor(fuelTech));
+	let isDarkText = $derived(needsDarkText(fuelTech));
 
 	let sizeClasses = $derived(
 		size === 'sm'

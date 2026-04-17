@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { X } from '@lucide/svelte';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import { getFueltechColor } from '../../../facilities/_utils/fueltech-display';
+	import { getFueltechColor } from '$lib/utils/fueltech-display';
 	import formatValue from '../../../facilities/_utils/format-value.js';
 	import { PanelHeader } from '$lib/components/ui/panel';
 	import {

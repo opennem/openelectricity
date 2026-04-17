@@ -86,8 +86,18 @@
 	$effect(() => {
 		const _code = sanityFacility?.code;
 		expanded = false;
+		needsExpand = false;
 	});
+
+	const PILL_CLASSES = 'inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey bg-light-warm-grey rounded-full border border-warm-grey hover:bg-warm-grey hover:text-black transition-colors no-underline';
 </script>
+
+{#snippet linkPill(/** @type {string} */ href, /** @type {any} */ Icon, /** @type {string} */ label)}
+	<a {href} target="_blank" rel="noopener noreferrer" class={PILL_CLASSES}>
+		<Icon size={11} class="shrink-0" />
+		{label}
+	</a>
+{/snippet}
 
 <div class="flex flex-col h-full min-h-0 overflow-y-auto">
 	{#if !hasContent}
@@ -114,66 +124,22 @@
 
 		<!-- Content area -->
 		<div class="px-5 pb-5 space-y-4 {photos.length > 0 || hasLocation ? '' : 'pt-5'}">
-			<!-- Links -->
 			{#if hasLinks}
 				<div class="flex flex-wrap gap-1.5">
 					{#if websiteUrl}
-						<a
-							href={websiteUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
-								bg-light-warm-grey rounded-full border border-warm-grey
-								hover:bg-warm-grey hover:text-black transition-colors no-underline"
-						>
-							<Globe size={11} class="shrink-0" />
-							Website
-						</a>
+						{@render linkPill(websiteUrl, Globe, 'Website')}
 					{/if}
 					{#if wikipediaUrl}
-						<a
-							href={wikipediaUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
-								bg-light-warm-grey rounded-full border border-warm-grey
-								hover:bg-warm-grey hover:text-black transition-colors no-underline"
-						>
-							<BookOpen size={11} class="shrink-0" />
-							Wikipedia
-						</a>
+						{@render linkPill(wikipediaUrl, BookOpen, 'Wikipedia')}
 					{/if}
 					{#if wikidataUrl}
-						<a
-							href={wikidataUrl}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
-								bg-light-warm-grey rounded-full border border-warm-grey
-								hover:bg-warm-grey hover:text-black transition-colors no-underline"
-						>
-							<ExternalLink size={11} class="shrink-0" />
-							Wikidata
-						</a>
+						{@render linkPill(wikidataUrl, ExternalLink, 'Wikidata')}
 					{/if}
 					{#each owners as owner (owner._id)}
 						{#if owner.website}
-							<a
-								href={owner.website}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
-									bg-light-warm-grey rounded-full border border-warm-grey
-									hover:bg-warm-grey hover:text-black transition-colors no-underline"
-							>
-								<Building2 size={11} class="shrink-0" />
-								{owner.name || owner.legal_name}
-							</a>
+							{@render linkPill(owner.website, Building2, owner.name || owner.legal_name)}
 						{:else}
-							<span
-								class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
-									bg-light-warm-grey rounded-full border border-warm-grey"
-							>
+							<span class={PILL_CLASSES}>
 								<Building2 size={11} class="shrink-0" />
 								{owner.name || owner.legal_name}
 							</span>

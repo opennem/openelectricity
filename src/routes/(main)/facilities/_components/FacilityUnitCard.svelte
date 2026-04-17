@@ -5,7 +5,7 @@
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
-	import { getFueltechColor } from '../_utils/fueltech-display';
+	import { getFueltechColor } from '$lib/utils/fueltech-display';
 
 	/**
 	 * @type {{

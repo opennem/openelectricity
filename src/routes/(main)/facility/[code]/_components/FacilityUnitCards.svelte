@@ -4,46 +4,15 @@
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import GenCapViz from '$lib/components/facilities/GenCapViz.svelte';
 	import { fuelTechName } from '$lib/fuel_techs';
-	import { formatDateTime } from '$lib/utils/formatters';
-	import { stripDateTimezone } from '$lib/utils/date-format';
 	import { groupUnits } from '../../../facilities/_utils/units';
 	import formatValue from '../../../facilities/_utils/format-value';
+	import { getPercentage, getParsedDate, formatTimestampLabel } from '../../../facilities/_utils/unit-helpers';
 
 	/** @type {{ facility: any }} */
 	let { facility } = $props();
 
 	let unitGroups = $derived(groupUnits(facility, { skipBattery: true }));
-
-	/**
-	 * @param {number} maxGen
-	 * @param {number} cap
-	 * @returns {string}
-	 */
-	function getPercentage(maxGen, cap) {
-		if (!cap || cap === 0) return '0';
-		return ((maxGen / cap) * 100).toFixed(0);
-	}
-
 	let offset = $derived(facility?.network_id === 'WEM' ? '+08:00' : '+10:00');
-
-	/**
-	 * @param {string} dateValue
-	 * @returns {Date}
-	 */
-	function getParsedDate(dateValue) {
-		if (!dateValue) return new Date();
-		return new Date(stripDateTimezone(dateValue) + offset);
-	}
-
-	/**
-	 * @param {Date} date
-	 * @returns {string}
-	 */
-	function formatDatetime(date) {
-		const time = formatDateTime({ date, hour: 'numeric', minute: '2-digit', hour12: true }).split(' ').join('');
-		const day = formatDateTime({ date, month: 'short', day: 'numeric', year: 'numeric' });
-		return `${time} on ${day}`;
-	}
 </script>
 
 <div class="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
@@ -114,19 +83,19 @@
 				<div class="mt-2 space-y-0.5">
 					{#if firstUnit.max_generation_interval && group.isCommissioning}
 						<div class="text-xxs text-mid-grey">
-							Max generated at {formatDatetime(getParsedDate(firstUnit.max_generation_interval))}
+							Max generated at {formatTimestampLabel(getParsedDate(firstUnit.max_generation_interval, offset))}
 						</div>
 					{/if}
 
 					{#if (group.status_id === 'operating' || group.isCommissioning) && firstUnit.data_first_seen}
 						<div class="text-xxs text-mid-grey">
-							First generated at {formatDatetime(getParsedDate(firstUnit.data_first_seen))}
+							First generated at {formatTimestampLabel(getParsedDate(firstUnit.data_first_seen, offset))}
 						</div>
 					{/if}
 
 					{#if group.status_id === 'retired' && firstUnit.data_last_seen}
 						<div class="text-xxs text-mid-grey">
-							Last generated at {formatDatetime(getParsedDate(firstUnit.data_last_seen))}
+							Last generated at {formatTimestampLabel(getParsedDate(firstUnit.data_last_seen, offset))}
 						</div>
 					{/if}
 				</div>

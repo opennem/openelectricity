@@ -1,4 +1,4 @@
-import { getFueltechColor } from './fueltech-display';
+import { getFueltechColor } from '$lib/utils/fueltech-display';
 
 /**
  * Check if a facility has a bidirectional battery unit (fueltech_id === 'battery').
