@@ -1,9 +1,9 @@
 <script>
 	import { ExternalLink, Globe, BookOpen, Building2 } from '@lucide/svelte';
-	import { urlFor } from '$lib/sanity';
-	import { extractParagraphs } from '$lib/utils/portable-text.js';
 	import { EXTERNAL_LINKS } from '$lib/constants/external-links.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
+	import PortableTextBody from '$lib/components/PortableTextBody.svelte';
 	import FacilityMiniMap from './FacilityMiniMap.svelte';
 
 	/**
@@ -14,7 +14,8 @@
 	 */
 	let { sanityFacility, facility = null } = $props();
 
-	let paragraphs = $derived(extractParagraphs(sanityFacility?.description));
+	let description = $derived(sanityFacility?.description ?? []);
+	let hasDescription = $derived(description.length > 0);
 	let photos = $derived(sanityFacility?.photos ?? []);
 	let owners = $derived(sanityFacility?.owners ?? []);
 
@@ -53,7 +54,7 @@
 		return maxFt ? fuelTechColourMap[maxFt] || '#ffffff' : '#ffffff';
 	});
 
-	let hasContent = $derived(paragraphs.length > 0 || photos.length > 0 || hasLinks || hasLocation);
+	let hasContent = $derived(hasDescription || photos.length > 0 || hasLinks || hasLocation);
 </script>
 
 <div class="flex flex-col h-full min-h-0 overflow-y-auto p-5 space-y-5">
@@ -127,43 +128,24 @@
 			</div>
 		{/if}
 
-		{#if photos.length > 0}
-			{@const hero = photos[0]}
-			<figure class="m-0">
-				<img
-					src={hero.asset ? urlFor(hero).width(640).url() : hero.url}
-					alt={hero.alt || hero.caption || sanityFacility?.name || 'Facility photo'}
-					class="w-full h-auto rounded-lg border border-warm-grey object-cover"
-				/>
-				{#if hero.caption || hero.attribution}
-					<figcaption class="text-xxs text-mid-grey mt-1.5">
-						{hero.caption ?? ''}{#if hero.attribution}{hero.caption
-								? ' — '
-								: ''}{hero.attribution}{/if}
-					</figcaption>
+		{#if photos.length > 0 || hasLocation}
+			<div class="grid {photos.length > 0 && hasLocation ? 'grid-cols-2' : 'grid-cols-1'} gap-3 min-h-[180px]">
+				{#if photos.length > 0}
+					<PhotoCarousel {photos} fill />
 				{/if}
-			</figure>
-		{/if}
 
-		{#if hasLocation}
-			<div>
-				<FacilityMiniMap
-					lat={location.lat}
-					lng={location.lng}
-					color={primaryFuelTechColor}
-				/>
-				<p class="text-xxs text-mid-grey mt-1.5 m-0 tabular-nums">
-					{location.lat.toFixed(4)}, {location.lng.toFixed(4)}
-				</p>
+				{#if hasLocation}
+					<FacilityMiniMap
+						lat={location.lat}
+						lng={location.lng}
+						color={primaryFuelTechColor}
+					/>
+				{/if}
 			</div>
 		{/if}
 
-		{#if paragraphs.length > 0}
-			<div class="text-sm text-dark-grey leading-relaxed space-y-3">
-				{#each paragraphs as text, i (i)}
-					<p class="m-0">{text}</p>
-				{/each}
-			</div>
+		{#if hasDescription}
+			<PortableTextBody value={description} class="text-sm text-dark-grey leading-relaxed" />
 		{/if}
 	{/if}
 </div>

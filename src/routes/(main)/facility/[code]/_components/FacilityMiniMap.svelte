@@ -10,19 +10,6 @@
 	 * }}
 	 */
 	let { lat, lng, color = '#ffffff', zoom = 14 } = $props();
-
-	/** @type {any | null} */
-	let mapInstance = $state(null);
-
-	$effect(() => {
-		if (mapInstance && lat && lng) {
-			mapInstance.flyTo({
-				center: [lng, lat],
-				zoom,
-				duration: 400
-			});
-		}
-	});
 </script>
 
 {#snippet markerContent()}
@@ -32,17 +19,18 @@
 	></div>
 {/snippet}
 
-<div class="w-full h-[180px] rounded-lg overflow-hidden border border-warm-grey">
-	<MapLibre
-		style="/map-styles/satellite.json"
-		class="w-full h-full"
-		center={{ lng, lat }}
-		{zoom}
-		scrollZoom={false}
-		cooperativeGestures={true}
-		attributionControl={false}
-		bind:map={mapInstance}
-	>
-		<Marker lnglat={[lng, lat]} content={markerContent} />
-	</MapLibre>
-</div>
+{#key `${lat},${lng}`}
+	<div class="w-full h-full min-h-[120px] rounded-lg overflow-hidden border border-warm-grey">
+		<MapLibre
+			style="/map-styles/satellite.json"
+			class="w-full h-full"
+			center={{ lng, lat }}
+			{zoom}
+			scrollZoom={false}
+			cooperativeGestures={true}
+			attributionControl={false}
+		>
+			<Marker lnglat={[lng, lat]} content={markerContent} />
+		</MapLibre>
+	</div>
+{/key}

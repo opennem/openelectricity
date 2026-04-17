@@ -10,7 +10,7 @@
 	import { urlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { EXTERNAL_LINKS } from '$lib/constants/external-links';
-	import { extractParagraphs } from '$lib/utils/portable-text.js';
+	import PortableTextBody from '$lib/components/PortableTextBody.svelte';
 	import { ExternalLink } from '@lucide/svelte';
 
 	/** @type {{ facility: any | null, expandedUnits?: boolean }} */
@@ -36,7 +36,7 @@
 		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (code)] || '#888';
 	}
 
-	let paragraphs = $derived(extractParagraphs(facility?.description));
+	let description = $derived(facility?.description ?? []);
 </script>
 
 {#if !facility}
@@ -135,18 +135,14 @@
 		</div>
 
 		<!-- Description -->
-		{#if paragraphs.length > 0}
+		{#if description.length > 0}
 			<div>
 				<div
 					class="text-[10px] text-mid-grey uppercase tracking-widest mb-2 pb-1 border-b border-dark-grey"
 				>
 					Description
 				</div>
-				<div class="text-[12px] text-dark-grey leading-relaxed font-sans">
-					{#each paragraphs as text, i (i)}
-						<p class="mb-1.5">{text}</p>
-					{/each}
-				</div>
+				<PortableTextBody value={description} class="text-[12px] text-dark-grey leading-relaxed font-sans" />
 			</div>
 		{/if}
 

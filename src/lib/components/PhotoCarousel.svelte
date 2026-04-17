@@ -6,10 +6,11 @@
 	/**
 	 * @type {{
 	 *   photos: any[],
+	 *   fill?: boolean,
 	 *   class?: string
 	 * }}
 	 */
-	let { photos = [], class: className = '' } = $props();
+	let { photos = [], fill = false, class: className = '' } = $props();
 
 	let photoIndex = $state(0);
 	let currentPhoto = $derived(photos[photoIndex]);
@@ -38,8 +39,8 @@
 />
 
 {#if photos.length > 0}
-	<div class="overflow-hidden rounded-xl border border-warm-grey {className}">
-		<div class="relative aspect-[4/3] bg-light-warm-grey overflow-hidden">
+	<div class="overflow-hidden rounded-lg border border-warm-grey {className}">
+		<div class="relative bg-light-warm-grey overflow-hidden {fill ? 'h-full' : 'aspect-[4/3]'}">
 			{#key photoIndex}
 				<!-- svelte-ignore a11y_click_events_have_key_events -->
 				<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -54,11 +55,11 @@
 
 				{#if currentPhoto?.caption}
 					<div
-						class="absolute bottom-0 left-0 right-0 bg-black/10 px-4 py-3 backdrop-blur-xs"
+						class="absolute bottom-0 left-0 right-0 bg-black/10 px-2 py-1.5 backdrop-blur-xs rounded-b-lg flex items-center justify-center"
 						in:fly={{ x: slideDirection * 300, duration: 250 }}
 						out:fly={{ x: slideDirection * -300, duration: 250 }}
 					>
-						<p class="text-sm text-white text-center">{currentPhoto.caption}</p>
+						<p class="text-xs text-white truncate m-0">{currentPhoto.caption}</p>
 					</div>
 				{/if}
 			{/key}
