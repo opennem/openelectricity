@@ -86,17 +86,13 @@
 
 {#if iconOnly}
 	{#await iconPromise}
-		<div class="size-{iconSize}">
-			<GlobeAlt class="size-{iconSize}" />
-		</div>
+		<GlobeAlt class="size-{iconSize}" />
 	{:then SvelteComponent}
-		<div class="size-{iconSize}">
-			<SvelteComponent class="size-{iconSize}" />
-		</div>
+		<SvelteComponent class="size-{iconSize}" />
 	{/await}
 {:else}
-	<span
-		class="rounded-full {sizeClasses.padding} block relative {borderClasses} {overlap
+	<div
+		class="rounded-full {sizeClasses.padding} relative {borderClasses} {overlap
 			? sizeClasses.overlapMargin
 			: ''}"
 		class:text-black={isDarkText}
@@ -105,18 +101,14 @@
 		title="{fuelTech} ({status})"
 	>
 		{#await iconPromise}
-			<div class="size-{sizeClasses.icon}">
-				<GlobeAlt class="size-{sizeClasses.icon}" />
-			</div>
+			<GlobeAlt class="size-{sizeClasses.icon}" />
 		{:then SvelteComponent}
-			<div class="size-{sizeClasses.icon}">
-				<SvelteComponent class="size-{sizeClasses.icon}" />
-			</div>
+			<SvelteComponent class="size-{sizeClasses.icon}" />
 		{/await}
 		{#if status && (status !== 'operating' || isCommissioning)}
 			<div class="absolute {sizeClasses.statusPosition} z-10">
 				<FacilityStatusIcon {status} {isCommissioning} />
 			</div>
 		{/if}
-	</span>
+	</div>
 {/if}
