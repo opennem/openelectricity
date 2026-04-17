@@ -16,7 +16,7 @@
 
 <style>
 	.portable-text-body :global(p) {
-		margin: 0 0 0.75rem;
+		margin: 0 0 1rem;
 	}
 	.portable-text-body :global(p:last-child) {
 		margin-bottom: 0;

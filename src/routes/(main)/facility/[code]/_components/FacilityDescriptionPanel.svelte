@@ -57,79 +57,15 @@
 	let hasContent = $derived(hasDescription || photos.length > 0 || hasLinks || hasLocation);
 </script>
 
-<div class="flex flex-col h-full min-h-0 overflow-y-auto p-5 space-y-5">
+<div class="flex flex-col h-full min-h-0 overflow-y-auto">
 	{#if !hasContent}
-		<p class="text-sm text-mid-grey">No description available.</p>
+		<div class="p-5">
+			<p class="text-sm text-mid-grey">No description available.</p>
+		</div>
 	{:else}
-		{#if hasLinks}
-			<div class="flex flex-wrap gap-2">
-				{#if websiteUrl}
-					<a
-						href={websiteUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-dark-grey
-							bg-light-warm-grey rounded-full border border-warm-grey
-							hover:bg-warm-grey hover:text-black transition-colors no-underline"
-					>
-						<Globe size={12} class="shrink-0" />
-						Website
-					</a>
-				{/if}
-				{#if wikipediaUrl}
-					<a
-						href={wikipediaUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-dark-grey
-							bg-light-warm-grey rounded-full border border-warm-grey
-							hover:bg-warm-grey hover:text-black transition-colors no-underline"
-					>
-						<BookOpen size={12} class="shrink-0" />
-						Wikipedia
-					</a>
-				{/if}
-				{#if wikidataUrl}
-					<a
-						href={wikidataUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-dark-grey
-							bg-light-warm-grey rounded-full border border-warm-grey
-							hover:bg-warm-grey hover:text-black transition-colors no-underline"
-					>
-						<ExternalLink size={12} class="shrink-0" />
-						Wikidata
-					</a>
-				{/if}
-				{#each owners as owner (owner._id)}
-					{#if owner.website}
-						<a
-							href={owner.website}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-dark-grey
-								bg-light-warm-grey rounded-full border border-warm-grey
-								hover:bg-warm-grey hover:text-black transition-colors no-underline"
-						>
-							<Building2 size={12} class="shrink-0" />
-							{owner.name || owner.legal_name}
-						</a>
-					{:else}
-						<span
-							class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs text-dark-grey
-								bg-light-warm-grey rounded-full border border-warm-grey"
-						>
-							<Building2 size={12} class="shrink-0" />
-							{owner.name || owner.legal_name}
-						</span>
-					{/if}
-				{/each}
-			</div>
-		{/if}
-
+		<!-- Media row: photo + map -->
 		{#if photos.length > 0 || hasLocation}
-			<div class="grid {photos.length > 0 && hasLocation ? 'grid-cols-2' : 'grid-cols-1'} gap-3 min-h-[180px]">
+			<div class="grid {photos.length > 0 && hasLocation ? 'grid-cols-2' : 'grid-cols-1'} gap-3 px-5 pt-5 pb-4 min-h-[180px]">
 				{#if photos.length > 0}
 					<PhotoCarousel {photos} fill />
 				{/if}
@@ -144,8 +80,82 @@
 			</div>
 		{/if}
 
-		{#if hasDescription}
-			<PortableTextBody value={description} class="text-sm text-dark-grey leading-relaxed" />
-		{/if}
+		<!-- Content area -->
+		<div class="px-5 pb-5 space-y-4 {photos.length > 0 || hasLocation ? '' : 'pt-5'}">
+			<!-- Links -->
+			{#if hasLinks}
+				<div class="flex flex-wrap gap-1.5">
+					{#if websiteUrl}
+						<a
+							href={websiteUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
+								bg-light-warm-grey rounded-full border border-warm-grey
+								hover:bg-warm-grey hover:text-black transition-colors no-underline"
+						>
+							<Globe size={11} class="shrink-0" />
+							Website
+						</a>
+					{/if}
+					{#if wikipediaUrl}
+						<a
+							href={wikipediaUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
+								bg-light-warm-grey rounded-full border border-warm-grey
+								hover:bg-warm-grey hover:text-black transition-colors no-underline"
+						>
+							<BookOpen size={11} class="shrink-0" />
+							Wikipedia
+						</a>
+					{/if}
+					{#if wikidataUrl}
+						<a
+							href={wikidataUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
+								bg-light-warm-grey rounded-full border border-warm-grey
+								hover:bg-warm-grey hover:text-black transition-colors no-underline"
+						>
+							<ExternalLink size={11} class="shrink-0" />
+							Wikidata
+						</a>
+					{/if}
+					{#each owners as owner (owner._id)}
+						{#if owner.website}
+							<a
+								href={owner.website}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
+									bg-light-warm-grey rounded-full border border-warm-grey
+									hover:bg-warm-grey hover:text-black transition-colors no-underline"
+							>
+								<Building2 size={11} class="shrink-0" />
+								{owner.name || owner.legal_name}
+							</a>
+						{:else}
+							<span
+								class="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs text-dark-grey
+									bg-light-warm-grey rounded-full border border-warm-grey"
+							>
+								<Building2 size={11} class="shrink-0" />
+								{owner.name || owner.legal_name}
+							</span>
+						{/if}
+					{/each}
+				</div>
+			{/if}
+
+			<!-- Description -->
+			{#if hasDescription}
+				<div class="border-t border-warm-grey mt-8 pt-6">
+					<PortableTextBody value={description} class="text-sm text-dark-grey/80 leading-relaxed px-5" />
+				</div>
+			{/if}
+		</div>
 	{/if}
 </div>
