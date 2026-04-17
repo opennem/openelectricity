@@ -8,6 +8,7 @@
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits
 	} from '../../facilities/_utils/units';
+	import isCommissioningCheck from '../../facilities/_utils/is-commissioning';
 
 	import { computeMetricSwitch } from '$lib/components/charts/facility/metric-switch.js';
 
@@ -20,10 +21,16 @@
 	let selectedFacility = $derived.by(() => {
 		const f = data.facility;
 		if (!f?.units) return f;
-		return {
-			...f,
-			units: filterDerivedBatteryUnits(f.units, hasBidirectionalBattery(f))
-		};
+		const hasBidirectional = hasBidirectionalBattery(f);
+		const filtered = filterDerivedBatteryUnits(f.units, hasBidirectional);
+		// Mark commissioning units client-side (same as /facilities page)
+		const units = filtered.map((/** @type {any} */ unit) => {
+			if (isCommissioningCheck(unit, { hasBidirectionalBattery: hasBidirectional })) {
+				return { ...unit, isCommissioning: true, status_id: 'commissioning' };
+			}
+			return unit;
+		});
+		return { ...f, units };
 	});
 
 	let timeZone = $derived(data.timeZone);

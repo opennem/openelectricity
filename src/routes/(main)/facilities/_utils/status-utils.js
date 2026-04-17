@@ -36,8 +36,11 @@ export function processFacilitiesWithStatuses(facilities, selectedStatuses) {
 
 	// First, mark commissioning units
 	facilities.forEach((facility) => {
+		const hasBidirectional = facility.units.some(
+			(/** @type {any} */ u) => u.fueltech_id === 'battery'
+		);
 		facility.units.forEach((/** @type {any} */ unit) => {
-			if (isCommissioningCheck(unit)) {
+			if (isCommissioningCheck(unit, { hasBidirectionalBattery: hasBidirectional })) {
 				unit.isCommissioning = true;
 				unit.status_id = 'commissioning';
 			}

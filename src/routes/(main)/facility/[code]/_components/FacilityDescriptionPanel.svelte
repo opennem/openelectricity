@@ -1,10 +1,12 @@
 <script>
-	import { ExternalLink, Globe, BookOpen, Building2 } from '@lucide/svelte';
+	import { ExternalLink, Globe, BookOpen, Building2, LayoutList, Grid2x2 } from '@lucide/svelte';
 	import { EXTERNAL_LINKS } from '$lib/constants/external-links.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
 	import PortableTextBody from '$lib/components/PortableTextBody.svelte';
+	import { FacilityUnitsTable } from '$lib/components/charts/facility';
 	import FacilityMiniMap from './FacilityMiniMap.svelte';
+	import FacilityUnitCards from './FacilityUnitCards.svelte';
 
 	/**
 	 * @type {{
@@ -54,7 +56,14 @@
 		return maxFt ? fuelTechColourMap[maxFt] || '#ffffff' : '#ffffff';
 	});
 
-	let hasContent = $derived(hasDescription || photos.length > 0 || hasLinks || hasLocation);
+	// Units
+	let units = $derived(facility?.units ?? []);
+	let hasUnits = $derived(units.length > 0);
+
+	/** @type {'table' | 'card'} */
+	let viewMode = $state('card');
+
+	let hasContent = $derived(hasDescription || photos.length > 0 || hasLinks || hasLocation || hasUnits);
 
 	// Read more / expand
 	let expanded = $state(false);
@@ -197,6 +206,43 @@
 						>
 							{expanded ? 'Show less' : 'Read more'}
 						</button>
+					{/if}
+				</div>
+			{/if}
+
+			<!-- Units -->
+			{#if hasUnits}
+				<div class="border-t border-warm-grey mt-8 pt-6">
+					<div class="flex items-center justify-between mb-4">
+						<h4 class="text-xs uppercase text-mid-grey m-0">
+							{units.length} {units.length === 1 ? 'Unit' : 'Units'}
+						</h4>
+						<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
+							<button
+								class="p-1.5 rounded transition-colors cursor-pointer {viewMode === 'table'
+									? 'bg-white shadow-sm text-dark-grey'
+									: 'text-mid-grey hover:text-dark-grey'}"
+								onclick={() => (viewMode = 'table')}
+								aria-label="Table view"
+							>
+								<LayoutList size={14} />
+							</button>
+							<button
+								class="p-1.5 rounded transition-colors cursor-pointer {viewMode === 'card'
+									? 'bg-white shadow-sm text-dark-grey'
+									: 'text-mid-grey hover:text-dark-grey'}"
+								onclick={() => (viewMode = 'card')}
+								aria-label="Card view"
+							>
+								<Grid2x2 size={14} />
+							</button>
+						</div>
+					</div>
+
+					{#if viewMode === 'table'}
+						<FacilityUnitsTable {units} compact detailed />
+					{:else}
+						<FacilityUnitCards {facility} />
 					{/if}
 				</div>
 			{/if}

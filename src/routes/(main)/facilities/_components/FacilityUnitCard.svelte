@@ -1,7 +1,7 @@
 <script>
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import GenCapViz from './GenCapViz.svelte';
+	import GenCapViz from '$lib/components/facilities/GenCapViz.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';

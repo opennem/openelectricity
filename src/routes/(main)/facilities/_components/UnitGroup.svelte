@@ -4,7 +4,7 @@
 	import { fuelTechName } from '$lib/fuel_techs';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import GenCapViz from './GenCapViz.svelte';
+	import GenCapViz from '$lib/components/facilities/GenCapViz.svelte';
 	import formatValue from '../_utils/format-value';
 
 	/**
