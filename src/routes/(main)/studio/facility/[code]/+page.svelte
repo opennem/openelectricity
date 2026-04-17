@@ -203,8 +203,8 @@
 				<div class="flex flex-wrap items-center gap-2">
 					{#each unitGroups as group (group.fueltech_id + '---' + group.status_id)}
 						<FuelTechBadge
-							fueltech_id={group.fueltech_id}
-							status_id={group.status_id}
+							fuelTech={group.fueltech_id}
+							status={group.status_id}
 							isCommissioning={group.isCommissioning}
 							size="md"
 						/>

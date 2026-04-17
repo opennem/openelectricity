@@ -124,13 +124,19 @@
 	});
 
 	let isMobile = $state(false);
+	let ready = $state(false);
 
 	onMount(() => {
 		const mq = window.matchMedia('(max-width: 767px)');
 		isMobile = mq.matches;
 		const update = (/** @type {MediaQueryListEvent} */ e) => (isMobile = e.matches);
 		mq.addEventListener('change', update);
-		return () => mq.removeEventListener('change', update);
+		// Brief delay so layout settles with the persisted width
+		const timer = setTimeout(() => (ready = true), 50);
+		return () => {
+			mq.removeEventListener('change', update);
+			clearTimeout(timer);
+		};
 	});
 </script>
 
@@ -141,7 +147,7 @@
 <FacilityPanelHeader facility={selectedFacility} showViewButtons={false} />
 
 <!-- order swap: on mobile, charts above description; on md+, description left of charts -->
-<div class="flex-1 flex flex-col md:flex-row min-h-0">
+<div class="flex-1 flex flex-col md:flex-row min-h-0 transition-opacity duration-200 {ready ? 'opacity-100' : 'opacity-0'}">
 	<div
 		class="order-2 md:order-1 md:shrink-0 overflow-hidden border-t md:border-t-0 md:border-r border-warm-grey"
 		style:width={isMobile ? '' : `${middleDrag.value}px`}
