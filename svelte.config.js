@@ -14,7 +14,19 @@ const config = {
 		adapter: adapter({
 			routes: {
 				include: ['/*'],
-				exclude: ['<build>', '<files>', '/analysis/*', '/content/*', '/isp/*']
+				exclude: [
+					'<build>',
+					'/_app/*',
+					'/data/*',
+					'/fonts/*',
+					'/img/*',
+					'/map-styles/*',
+					'/favicon.png',
+					'/studio/lens-on-emissions/data/*',
+					'/analysis/*',
+					'/content/*',
+					'/isp/*'
+				]
 			}
 		}),
 		prerender: {
