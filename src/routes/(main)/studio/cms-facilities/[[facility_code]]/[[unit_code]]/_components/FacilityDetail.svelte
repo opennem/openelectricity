@@ -857,16 +857,21 @@
 					{#each facility.photos ?? [] as photo, i (photo._key || i)}
 						<div class="shrink-0 group max-w-[200px]">
 							<div class="relative inline-block">
-								<img
-									src={photo.asset
-										? urlFor(photo).width(400).url()
-										: photo.url}
-									alt={photo.alt ||
-										photo.caption ||
-										`${facility.name} photo ${i + 1}`}
-									class="rounded border border-warm-grey max-h-[120px] max-w-[200px] cursor-zoom-in"
+								<button
+									type="button"
+									class="block cursor-zoom-in"
 									onclick={() => (lightboxIndex = i)}
-								/>
+								>
+									<img
+										src={photo.asset
+											? urlFor(photo).width(400).url()
+											: photo.url}
+										alt={photo.alt ||
+											photo.caption ||
+											`${facility.name} photo ${i + 1}`}
+										class="rounded border border-warm-grey max-h-[120px] max-w-[200px]"
+									/>
+								</button>
 								{#if editing}
 									<button
 										class="absolute top-0.5 right-0.5 z-10 opacity-70 hover:opacity-100 transition-opacity"
@@ -1414,7 +1419,7 @@
 
 	<!-- Photo lightbox -->
 	{#if lightboxPhoto}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 		<div
 			class="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
 			transition:fade={{ duration: 150 }}
@@ -1449,7 +1454,7 @@
 			{/if}
 
 			<!-- Image + caption -->
-			<!-- svelte-ignore a11y_no_static_element_interactions a11y_click_events_have_key_events -->
+			<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 			<div class="flex flex-col items-center gap-3" onclick={(e) => e.stopPropagation()}>
 				<img
 					src={lightboxPhoto?.asset

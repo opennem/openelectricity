@@ -131,10 +131,10 @@
 		{ label: 'Data', value: 'data', icon: Table2, size: 'size-4' }
 	];
 
-	let dateStart = $state(
+	let dateStart = $derived(
 		data.dateStart || getDateStartForRange(data.range ?? 7, data.facility?.units)
 	);
-	let dateEnd = $state(data.dateEnd || getDefaultDateEnd());
+	let dateEnd = $derived(data.dateEnd || getDefaultDateEnd());
 
 	// Pollution data (lazy-loaded client-side)
 	/** @type {any[] | null} */
@@ -206,7 +206,7 @@
 	// ============================================
 
 	/** @type {number | null} */
-	let selectedRange = $state(data.range ?? 7);
+	let selectedRange = $derived(data.range ?? 7);
 
 	const rangeButtons = [
 		{ label: '1D', value: '1' },

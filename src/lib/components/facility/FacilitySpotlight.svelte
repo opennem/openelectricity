@@ -102,13 +102,13 @@
 </script>
 
 {#if open}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 	<div
 		class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[10000] flex items-start justify-center pt-[15vh]"
 		transition:fade={{ duration: 150 }}
 		onclick={close}
 	>
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 		<div
 			class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden"
 			transition:fly={{ y: -10, duration: 150 }}

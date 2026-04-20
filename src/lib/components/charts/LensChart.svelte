@@ -17,14 +17,14 @@
 		customHeader?: () => any,
 		customTooltips?: () => any
 	}} */
-	let props = $props();
 	let {
 		showHeader = true,
 		showTooltip = true,
 		chartPaddingClasses = 'px-6',
 		customHeader,
-		customTooltips
-	} = props;
+		customTooltips,
+		...props
+	} = $props();
 </script>
 
 <div>

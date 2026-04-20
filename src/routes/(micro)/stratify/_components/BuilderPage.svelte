@@ -53,7 +53,7 @@
 	});
 
 	let mounted = $state(false);
-	let loadingChart = $state(!!initialChartId);
+	let loadingChart = $derived(!!initialChartId);
 
 	onMount(async () => {
 		mounted = true;

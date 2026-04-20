@@ -20,6 +20,7 @@
 	);
 
 	let canvas = $state(null);
+	/** @type {HTMLElement | null} */
 	let container = $state(null);
 	let containerWidth = $state(0);
 	let containerHeight = $state(0);
@@ -163,10 +164,11 @@
 	</div>
 {:else}
 	<!-- Thumbnail mode -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
+	<button
+		type="button"
 		class="relative w-full cursor-pointer"
 		style="aspect-ratio: 48 / 28;"
+		aria-label={`Expand heatmap${year ? ` for ${year}` : ''}`}
 		bind:this={container}
 		use:resizeObserve
 		onclick={handleClick}
@@ -176,5 +178,5 @@
 			class="absolute inset-0 w-full h-full rounded"
 			style="image-rendering: pixelated;"
 		></canvas>
-	</div>
+	</button>
 {/if}

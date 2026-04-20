@@ -24,13 +24,9 @@
 		playheadPosition = null
 	} = $props();
 
-	// Local state for immediate UI feedback
-	let localValue = $state(/** @type {number[]} */ ([...value]));
-
-	// Sync local state when props change
-	$effect(() => {
-		localValue = [...value];
-	});
+	// Local state for immediate UI feedback — follows `value`, can be overridden
+	// by drag handlers until the next prop change or commit.
+	let localValue = $derived(/** @type {number[]} */ ([...value]));
 
 	/**
 	 * Handle value change during drag
