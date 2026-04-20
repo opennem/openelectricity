@@ -16,7 +16,6 @@ const config = {
 				include: ['/*'],
 				exclude: [
 					'<build>',
-					'/_app/*',
 					'/data/*',
 					'/fonts/*',
 					'/img/*',
