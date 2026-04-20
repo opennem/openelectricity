@@ -5,7 +5,6 @@
 	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
 	import PortableTextBody from '$lib/components/PortableTextBody.svelte';
 	import { FacilityUnitsTable } from '$lib/components/charts/facility';
-	import FacilityMiniMap from './FacilityMiniMap.svelte';
 	import FacilityUnitCards from './FacilityUnitCards.svelte';
 
 	/**
@@ -113,11 +112,13 @@
 				{/if}
 
 				{#if hasLocation}
-					<FacilityMiniMap
-						lat={location.lat}
-						lng={location.lng}
-						color={primaryFuelTechColor}
-					/>
+					{#await import('./FacilityMiniMap.svelte') then { default: FacilityMiniMap }}
+						<FacilityMiniMap
+							lat={location.lat}
+							lng={location.lng}
+							color={primaryFuelTechColor}
+						/>
+					{/await}
 				{/if}
 			</div>
 		{/if}

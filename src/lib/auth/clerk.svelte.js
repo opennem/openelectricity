@@ -1,7 +1,6 @@
-import { Clerk } from '@clerk/clerk-js';
 import { PUBLIC_CLERK_PUBLISHABLE_KEY } from '$env/static/public';
 
-/** @type {Clerk | null} */
+/** @type {import('@clerk/clerk-js').Clerk | null} */
 let clerkInstance = $state(null);
 
 /** @type {import('@clerk/types').UserResource | null | undefined} */
@@ -9,14 +8,15 @@ let clerkUser = $state(undefined); // undefined = loading, null = signed out
 
 let isLoaded = $state(false);
 
-/** @type {Promise<Clerk> | null} */
+/** @type {Promise<import('@clerk/clerk-js').Clerk> | null} */
 let initPromise = null;
 
-/** Initialise Clerk (idempotent) */
+/** Initialise Clerk (idempotent). Dynamic-imports the SDK so non-auth routes don't pay the ~1.5 MB cost. */
 export function initClerk() {
 	if (initPromise) return initPromise;
 
 	initPromise = (async () => {
+		const { Clerk } = await import('@clerk/clerk-js');
 		const clerk = new Clerk(PUBLIC_CLERK_PUBLISHABLE_KEY);
 		await clerk.load();
 

@@ -17,7 +17,6 @@
 	import { sortFacilities } from './_utils/sort-facilities';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
 
-	import Map from './Map.svelte';
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
 	import List from './List.svelte';
@@ -55,7 +54,7 @@
 	/** @type {[number, number]} */
 	let yearRange = $state(/** @type {[number, number]} */ ([1900, 2040]));
 	/** @type {'list' | 'timeline' | 'map'} */
-	let selectedView = $state(/** @type {'list' | 'timeline' | 'map'} */ (data.view));
+	let selectedView = $derived(/** @type {'list' | 'timeline' | 'map'} */ (data.view));
 	/** @type {any | null} */
 	let selectedFacility = $state(null);
 
@@ -65,7 +64,6 @@
 		statuses = data.statuses;
 		regions = data.regions;
 		fuelTechs = data.fuelTechs;
-		selectedView = /** @type {'list' | 'timeline' | 'map'} */ (data.view);
 		selectedFacility = data.selectedFacility
 			? (facilities?.find((f) => f.code === data.selectedFacility) ?? null)
 			: null;
@@ -1042,25 +1040,27 @@
 						<LogoMarkLoader />
 					</div>
 				{/if}
-				<Map
-					bind:this={mapRef}
-					facilities={filteredWithLocation}
-					{hoveredFacility}
-					selectedFacilityCode={selectedFacility?.code ?? null}
-					clustering={mapClustering}
-					satelliteView={mapSatelliteView}
-					showTransmissionLines={mapShowTransmissionLines}
-					{transmissionLineVisibility}
-					showGolfCourses={mapShowGolfCourses}
-					scrollZoom={!isYearPlaying}
-					cooperativeGestures={!isFullscreen}
-					flyToOffsetX={0}
-					flyToOffsetY={selectedFacility ? -0.15 : 0}
-					onhover={(f) => (hoveredFacility = f)}
-					onclick={(f) => (clickedFacility = f)}
-					onselect={handleFacilitySelect}
-					onload={() => setTimeout(() => (mapLoaded = true), 250)}
-				/>
+				{#await import('./Map.svelte') then { default: Map }}
+					<Map
+						bind:this={mapRef}
+						facilities={filteredWithLocation}
+						{hoveredFacility}
+						selectedFacilityCode={selectedFacility?.code ?? null}
+						clustering={mapClustering}
+						satelliteView={mapSatelliteView}
+						showTransmissionLines={mapShowTransmissionLines}
+						{transmissionLineVisibility}
+						showGolfCourses={mapShowGolfCourses}
+						scrollZoom={!isYearPlaying}
+						cooperativeGestures={!isFullscreen}
+						flyToOffsetX={0}
+						flyToOffsetY={selectedFacility ? -0.15 : 0}
+						onhover={(f) => (hoveredFacility = f)}
+						onclick={(f) => (clickedFacility = f)}
+						onselect={handleFacilitySelect}
+						onload={() => setTimeout(() => (mapLoaded = true), 250)}
+					/>
+				{/await}
 
 				<!-- Map controls -->
 				<div class="absolute top-3 right-20 z-20 flex items-center gap-2">
