@@ -3,6 +3,7 @@
 	import { fly } from 'svelte/transition';
 	import { onNavigate } from '$app/navigation';
 	import { page, updated } from '$app/state';
+	import { building } from '$app/environment';
 	import { setContext, onMount } from 'svelte';
 	// import '../../app.css';
 
@@ -26,7 +27,9 @@
 	// SSR / first paint, so Nav/Footer never flash in before the page mounts) and
 	// OR'd with an override set by child pages that force fullscreen imperatively.
 	let contextFullscreen = $state(false);
-	let urlFullscreen = $derived(page.url.searchParams.get('fullscreen') === 'true');
+	let urlFullscreen = $derived(
+		!building && page.url.searchParams.get('fullscreen') === 'true'
+	);
 	let isFullscreen = $derived(contextFullscreen || urlFullscreen);
 
 	setContext('layout-fullscreen', {
