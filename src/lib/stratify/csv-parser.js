@@ -62,8 +62,30 @@ function detectDelimiter(text) {
 	return ',';
 }
 
+const TZ_MARKER_RE = /[Zz]$|[+-]\d{2}:?\d{2}$/;
+
+/**
+ * Reinterpret a Date's wall-clock components as UTC.
+ * @param {Date} d
+ */
+function asUTC(d) {
+	return new Date(
+		Date.UTC(
+			d.getFullYear(),
+			d.getMonth(),
+			d.getDate(),
+			d.getHours(),
+			d.getMinutes(),
+			d.getSeconds(),
+			d.getMilliseconds()
+		)
+	);
+}
+
 /**
  * Parse a date string using multiple format attempts.
+ * Strings without a timezone marker are treated as UTC so wall-clock values
+ * render consistently regardless of the browser's timezone.
  * @param {string} str
  * @returns {Date | null}
  */
@@ -71,19 +93,22 @@ function parseDate(str) {
 	const trimmed = str.trim().replace(/^["']|["']$/g, '');
 	if (!trimmed) return null;
 
-	// Try native Date constructor first (handles ISO 8601 well)
-	const native = new Date(trimmed);
-	if (isValid(native) && !isNaN(native.getTime())) {
-		return native;
+	const hasTz = TZ_MARKER_RE.test(trimmed);
+
+	if (hasTz) {
+		const native = new Date(trimmed);
+		if (isValid(native) && !isNaN(native.getTime())) return native;
 	}
 
-	// Try each format with date-fns
 	const ref = new Date();
 	for (const fmt of DATE_FORMATS) {
 		const parsed = dateParse(trimmed, fmt, ref);
-		if (isValid(parsed)) {
-			return parsed;
-		}
+		if (isValid(parsed)) return asUTC(parsed);
+	}
+
+	const native = new Date(trimmed);
+	if (isValid(native) && !isNaN(native.getTime())) {
+		return hasTz ? native : asUTC(native);
 	}
 
 	return null;
@@ -163,9 +188,8 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto', xC
 	// Resolve xColumn to an index and rearrange columns if needed
 	/** @type {number[] | null} */
 	let columnOrder = null;
-	const xIdx = typeof xColumn === 'number'
-		? xColumn
-		: headers.findIndex((h) => toKey(h) === xColumn);
+	const xIdx =
+		typeof xColumn === 'number' ? xColumn : headers.findIndex((h) => toKey(h) === xColumn);
 	if (xIdx > 0 && xIdx < headers.length) {
 		const indices = [xIdx];
 		for (let i = 0; i < headers.length; i++) {

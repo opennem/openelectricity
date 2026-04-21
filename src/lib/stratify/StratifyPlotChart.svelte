@@ -20,7 +20,8 @@
 	const dateFmt = new Intl.DateTimeFormat('en-AU', {
 		day: 'numeric',
 		month: 'short',
-		year: 'numeric'
+		year: 'numeric',
+		timeZone: 'UTC'
 	});
 
 	/** @type {Record<string, Function>} */

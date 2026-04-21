@@ -210,3 +210,49 @@ B,`;
 		expect(result.data[1].market).toBeNull();
 	});
 });
+
+// ── timezone-less date parsing ──────────────────────────────────
+
+describe('parseCSV timezone-less date parsing', () => {
+	it('treats dates without a timezone marker as UTC wall-clock', () => {
+		const csv = `Time,Value
+2025-12-18 00:00:00,1
+2025-12-18 14:00:00,2`;
+
+		const result = parseCSV(csv, {}, 'time-series');
+		expect(result.data).toHaveLength(2);
+
+		const d0 = /** @type {Date} */ (result.data[0].date);
+		expect(d0.getUTCFullYear()).toBe(2025);
+		expect(d0.getUTCMonth()).toBe(11);
+		expect(d0.getUTCDate()).toBe(18);
+		expect(d0.getUTCHours()).toBe(0);
+		expect(d0.getUTCMinutes()).toBe(0);
+
+		const d1 = /** @type {Date} */ (result.data[1].date);
+		expect(d1.getUTCHours()).toBe(14);
+	});
+
+	it('honours an explicit timezone offset on the input', () => {
+		const csv = `Time,Value
+2025-12-18T00:00:00+10:00,1`;
+
+		const result = parseCSV(csv, {}, 'time-series');
+		const d = /** @type {Date} */ (result.data[0].date);
+		// 2025-12-18 00:00:00+10:00 → 2025-12-17 14:00:00 UTC
+		expect(d.getUTCFullYear()).toBe(2025);
+		expect(d.getUTCMonth()).toBe(11);
+		expect(d.getUTCDate()).toBe(17);
+		expect(d.getUTCHours()).toBe(14);
+	});
+
+	it('treats ISO 8601 with T separator and no TZ as UTC', () => {
+		const csv = `Time,Value
+2025-12-18T00:00:00,1`;
+
+		const result = parseCSV(csv, {}, 'time-series');
+		const d = /** @type {Date} */ (result.data[0].date);
+		expect(d.getUTCHours()).toBe(0);
+		expect(d.getUTCDate()).toBe(18);
+	});
+});
