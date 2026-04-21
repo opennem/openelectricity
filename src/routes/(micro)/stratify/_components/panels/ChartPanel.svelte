@@ -170,9 +170,7 @@
 				<select
 					value={project.dataTransform}
 					onchange={(e) => {
-						project.dataTransform = /** @type {'none' | 'cumulative'} */ (
-							e.currentTarget.value
-						);
+						project.dataTransform = /** @type {'none' | 'cumulative'} */ (e.currentTarget.value);
 					}}
 					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				>
@@ -355,6 +353,38 @@
 				<span class="text-[10px] text-mid-grey">Min/max ticks only</span>
 			</label>
 
+			{#if !isHorizontal}
+				<label class="flex items-center gap-2">
+					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Min</span>
+					<input
+						type="number"
+						value={project.y1Min ?? ''}
+						placeholder="auto"
+						oninput={(e) => {
+							const v = e.currentTarget.value;
+							project.y1Min = v === '' ? null : Number(v);
+						}}
+						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1 min-w-0"
+					/>
+					<span class="text-[10px] text-mid-grey">blank = auto</span>
+				</label>
+
+				<label class="flex items-center gap-2">
+					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Max</span>
+					<input
+						type="number"
+						value={project.y1Max ?? ''}
+						placeholder="auto"
+						oninput={(e) => {
+							const v = e.currentTarget.value;
+							project.y1Max = v === '' ? null : Number(v);
+						}}
+						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1 min-w-0"
+					/>
+					<span class="text-[10px] text-mid-grey">blank = auto</span>
+				</label>
+			{/if}
+
 			<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Width</span>
 				<input
@@ -419,6 +449,36 @@
 						class="accent-dark-grey"
 					/>
 					<span class="text-[10px] text-mid-grey">Min/max ticks only</span>
+				</label>
+
+				<label class="flex items-center gap-2">
+					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Min</span>
+					<input
+						type="number"
+						value={project.y2Min ?? ''}
+						placeholder="auto"
+						oninput={(e) => {
+							const v = e.currentTarget.value;
+							project.y2Min = v === '' ? null : Number(v);
+						}}
+						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1 min-w-0"
+					/>
+					<span class="text-[10px] text-mid-grey">blank = auto</span>
+				</label>
+
+				<label class="flex items-center gap-2">
+					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Max</span>
+					<input
+						type="number"
+						value={project.y2Max ?? ''}
+						placeholder="auto"
+						oninput={(e) => {
+							const v = e.currentTarget.value;
+							project.y2Max = v === '' ? null : Number(v);
+						}}
+						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1 min-w-0"
+					/>
+					<span class="text-[10px] text-mid-grey">blank = auto</span>
 				</label>
 			</div>
 		</div>

@@ -15,11 +15,7 @@
 	} from '$lib/components/charts/plot/plot-configs.js';
 	import { processAnnotations, formatCompact } from './plot-annotations.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
-	import {
-		HORIZONTAL_TYPES,
-		COLUMN_TYPES,
-		TIME_SERIES_TYPES
-	} from '$lib/stratify/chart-types.js';
+	import { HORIZONTAL_TYPES, COLUMN_TYPES, TIME_SERIES_TYPES } from '$lib/stratify/chart-types.js';
 
 	const dateFmt = new Intl.DateTimeFormat('en-AU', {
 		day: 'numeric',
@@ -59,8 +55,12 @@
 	 *   seriesYAxis?: Record<string, 'left' | 'right'>,
 	 *   yTicks?: number,
 	 *   yMinMax?: boolean,
+	 *   y1Min?: number | null,
+	 *   y1Max?: number | null,
 	 *   y2Ticks?: number,
 	 *   y2MinMax?: boolean,
+	 *   y2Min?: number | null,
+	 *   y2Max?: number | null,
 	 *   tooltipColumns?: string[],
 	 *   dateColumnKey?: string,
 	 *   dateColumnLabel?: string,
@@ -70,7 +70,7 @@
 	 *   xTicks?: number,
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
- *   marginLeft?: number,
+	 *   marginLeft?: number,
 	 *   options?: import('./plot-configs.js').TimeSeriesOptions,
 	 *   annotations?: import('./plot-annotations.js').Annotation[],
 	 *   class?: string
@@ -95,8 +95,12 @@
 		seriesYAxis = {},
 		yTicks = 0,
 		yMinMax = false,
+		y1Min = null,
+		y1Max = null,
 		y2Ticks = 0,
 		y2MinMax = false,
+		y2Min = null,
+		y2Max = null,
 		tooltipColumns = [],
 		dateColumnKey = '',
 		dateColumnLabel = '',
@@ -153,10 +157,17 @@
 				}
 			}
 
-			if (leftMin > 0) leftMin = 0;
-			if (rightMin > 0) rightMin = 0;
+			// Clamp auto-computed bounds to include zero; skip the clamp
+			// when the user has provided an explicit bound on that side.
+			if (y1Min == null && leftMin > 0) leftMin = 0;
+			if (y2Min == null && rightMin > 0) rightMin = 0;
 
-			y2Scale = scaleLinear().domain([rightMin, rightMax]).range([leftMin, leftMax]);
+			const leftLo = y1Min != null ? y1Min : leftMin;
+			const leftHi = y1Max != null ? y1Max : leftMax;
+			const rightLo = y2Min != null ? y2Min : rightMin;
+			const rightHi = y2Max != null ? y2Max : rightMax;
+
+			y2Scale = scaleLinear().domain([rightLo, rightHi]).range([leftLo, leftHi]);
 
 			// Rescale right-axis data to fit the left-axis domain
 			const scale = y2Scale;
@@ -252,7 +263,11 @@
 
 			// Build left-axis tick options
 			/** @type {Record<string, any>} */
-			const leftAxisOpts = { anchor: 'left', label: null };
+			const leftAxisOpts = {
+				anchor: 'left',
+				label: null,
+				tickFormat: (/** @type {number} */ v) => formatCompact(v)
+			};
 			if (yMinMax) {
 				const leftSeries = seriesNames.filter((n) => !rightAxisSeries.includes(n));
 				let min = Infinity,
@@ -274,10 +289,20 @@
 
 			opts.marks.push(axisY(rightAxisOpts));
 			// Suppress the default left axis and re-add it explicitly,
-			// so both left and right axes render
-			opts.y = { ...(opts.y || {}), axis: null };
+			// so both left and right axes render. Force the y-scale domain
+			// to the (possibly overridden) left-axis bounds.
+			opts.y = { ...(opts.y || {}), axis: null, domain: scale.range() };
 			opts.marks.push(axisY(leftAxisOpts));
 		} else {
+			// Single Y-axis: apply compact tick formatting for numeric scales
+			const yScaleType = (opts.y || {}).type;
+			if (yScaleType !== 'band' && yScaleType !== 'point') {
+				opts.y = {
+					...(opts.y || {}),
+					tickFormat: (/** @type {number} */ v) => formatCompact(v)
+				};
+			}
+
 			// Single Y-axis: apply ticks and min/max
 			if (yMinMax) {
 				let min = Infinity,
@@ -298,8 +323,7 @@
 			} else if (yTicks > 0) {
 				const yScale = opts.y || {};
 				if (yScale.type === 'band') {
-					const domain =
-						yScale.domain || chartData.map((/** @type {any} */ d) => d.category);
+					const domain = yScale.domain || chartData.map((/** @type {any} */ d) => d.category);
 					const step = Math.max(1, Math.ceil(domain.length / yTicks));
 					const visible = new Set(
 						domain.filter((/** @type {any} */ _, /** @type {number} */ i) => i % step === 0)
@@ -310,6 +334,28 @@
 					};
 				} else {
 					opts.y = { ...(opts.y || {}), ticks: yTicks };
+				}
+			}
+
+			// Apply manual Y1 min/max override for numeric scales.
+			// Skip when an external yDomain is supplied (categorical sort) or the scale is band/point.
+			if ((y1Min != null || y1Max != null) && !yDomain) {
+				const yScaleType = (opts.y || {}).type;
+				if (yScaleType !== 'band' && yScaleType !== 'point') {
+					let dMin = Infinity,
+						dMax = -Infinity;
+					for (const row of chartData) {
+						for (const name of seriesNames) {
+							const v = row[name];
+							if (v != null && isFinite(v)) {
+								if (v < dMin) dMin = v;
+								if (v > dMax) dMax = v;
+							}
+						}
+					}
+					const lo = y1Min != null ? y1Min : isFinite(dMin) ? (dMin > 0 ? 0 : dMin) : 0;
+					const hi = y1Max != null ? y1Max : isFinite(dMax) ? dMax : 1;
+					opts.y = { ...(opts.y || {}), domain: [lo, hi] };
 				}
 			}
 		}

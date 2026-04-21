@@ -41,8 +41,12 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {number} [marginLeft]
  * @property {number} [yTicks]
  * @property {boolean} [yMinMax]
+ * @property {number | null} [y1Min]
+ * @property {number | null} [y1Max]
  * @property {number} [y2Ticks]
  * @property {boolean} [y2MinMax]
+ * @property {number | null} [y2Min]
+ * @property {number | null} [y2Max]
  * @property {string | null} [colourSeries]
  * @property {string} [xLabel]
  * @property {string} [yLabel]
@@ -132,11 +136,23 @@ export default class StratifyPlotProject {
 	/** @type {boolean} Show min/max tick marks on left Y-axis */
 	yMinMax = $state(false);
 
+	/** @type {number | null} Manual left Y-axis lower bound (null = auto) */
+	y1Min = $state(null);
+
+	/** @type {number | null} Manual left Y-axis upper bound (null = auto) */
+	y1Max = $state(null);
+
 	/** @type {number} Number of right y-axis ticks to show (0 = auto) */
 	y2Ticks = $state(0);
 
 	/** @type {boolean} Show min/max tick marks on right Y-axis */
 	y2MinMax = $state(false);
+
+	/** @type {number | null} Manual right Y-axis lower bound (null = auto) */
+	y2Min = $state(null);
+
+	/** @type {number | null} Manual right Y-axis upper bound (null = auto) */
+	y2Max = $state(null);
 
 	/** @type {'none' | 'cumulative'} Data transform to apply */
 	dataTransform = $state('none');
@@ -341,8 +357,12 @@ export default class StratifyPlotProject {
 		this.marginLeft = 0;
 		this.yTicks = 0;
 		this.yMinMax = false;
+		this.y1Min = null;
+		this.y1Max = null;
 		this.y2Ticks = 0;
 		this.y2MinMax = false;
+		this.y2Min = null;
+		this.y2Max = null;
 		this.tooltipColumns = [];
 		this.dataTransform = 'none';
 		this.categorySort = 'default';
@@ -404,8 +424,12 @@ export default class StratifyPlotProject {
 			marginLeft: this.marginLeft,
 			yTicks: this.yTicks,
 			yMinMax: this.yMinMax,
+			y1Min: this.y1Min,
+			y1Max: this.y1Max,
 			y2Ticks: this.y2Ticks,
 			y2MinMax: this.y2MinMax,
+			y2Min: this.y2Min,
+			y2Max: this.y2Max,
 			tooltipColumns: this.tooltipColumns,
 			dataTransform: this.dataTransform,
 			categorySort: this.categorySort,
@@ -432,7 +456,8 @@ export default class StratifyPlotProject {
 		this.chartType = migrateChartType(snapshot.chartType ?? 'line');
 		this.displayMode = snapshot.displayMode ?? 'auto';
 		this.stylePreset = migratePreset(snapshot.stylePreset ?? 'sans');
-		this.colourPalette = snapshot.colourPalette ?? migratePresetToPalette(snapshot.stylePreset ?? 'oe');
+		this.colourPalette =
+			snapshot.colourPalette ?? migratePresetToPalette(snapshot.stylePreset ?? 'oe');
 		this.hiddenSeries = snapshot.hiddenSeries ?? [];
 		this.userSeriesColours = snapshot.userSeriesColours ?? {};
 		this.userSeriesLabels = snapshot.userSeriesLabels ?? {};
@@ -448,8 +473,12 @@ export default class StratifyPlotProject {
 		this.marginLeft = snapshot.marginLeft ?? 0;
 		this.yTicks = snapshot.yTicks ?? 0;
 		this.yMinMax = snapshot.yMinMax ?? false;
+		this.y1Min = snapshot.y1Min ?? null;
+		this.y1Max = snapshot.y1Max ?? null;
 		this.y2Ticks = snapshot.y2Ticks ?? 0;
 		this.y2MinMax = snapshot.y2MinMax ?? false;
+		this.y2Min = snapshot.y2Min ?? null;
+		this.y2Max = snapshot.y2Max ?? null;
 		this.tooltipColumns = snapshot.tooltipColumns ?? [];
 		this.dataTransform = snapshot.dataTransform ?? 'none';
 		this.categorySort = snapshot.categorySort ?? 'default';

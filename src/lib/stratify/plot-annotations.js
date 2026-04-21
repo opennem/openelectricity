@@ -79,8 +79,9 @@ function toDasharray(lineStyle) {
  * @returns {string}
  */
 export function formatCompact(value) {
-	if (Math.abs(value) >= 1_000_000) return (value / 1_000_000).toFixed(1) + 'M';
-	if (Math.abs(value) >= 1_000) return (value / 1_000).toFixed(1) + 'k';
+	const trim = (/** @type {number} */ n) => n.toFixed(1).replace(/\.0$/, '');
+	if (Math.abs(value) >= 1_000_000) return trim(value / 1_000_000) + 'M';
+	if (Math.abs(value) >= 1_000) return trim(value / 1_000) + 'k';
 	return String(Math.round(value));
 }
 

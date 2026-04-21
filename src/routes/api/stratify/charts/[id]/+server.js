@@ -102,8 +102,12 @@ export async function PATCH({ request, params }) {
 	if (body.marginLeft !== undefined) patches.marginLeft = body.marginLeft;
 	if (body.yTicks !== undefined) patches.yTicks = body.yTicks;
 	if (body.yMinMax !== undefined) patches.yMinMax = body.yMinMax;
+	if (body.y1Min !== undefined) patches.y1Min = body.y1Min;
+	if (body.y1Max !== undefined) patches.y1Max = body.y1Max;
 	if (body.y2Ticks !== undefined) patches.y2Ticks = body.y2Ticks;
 	if (body.y2MinMax !== undefined) patches.y2MinMax = body.y2MinMax;
+	if (body.y2Min !== undefined) patches.y2Min = body.y2Min;
+	if (body.y2Max !== undefined) patches.y2Max = body.y2Max;
 	if (body.tooltipColumns !== undefined) patches.tooltipColumns = body.tooltipColumns;
 	if (body.xColumn !== undefined) patches.xColumn = body.xColumn;
 	if (body.dataTransform !== undefined) patches.dataTransform = body.dataTransform;

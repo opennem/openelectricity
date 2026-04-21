@@ -207,8 +207,12 @@
 			height={chartHeight}
 			yTicks={chart.yTicks ?? 0}
 			yMinMax={chart.yMinMax ?? false}
+			y1Min={chart.y1Min ?? null}
+			y1Max={chart.y1Max ?? null}
 			y2Ticks={chart.y2Ticks ?? 0}
 			y2MinMax={chart.y2MinMax ?? false}
+			y2Min={chart.y2Min ?? null}
+			y2Max={chart.y2Max ?? null}
 			tooltipColumns={chart.tooltipColumns ?? []}
 			dateColumnKey={parsed.allColumns?.[0]?.key ?? ''}
 			dateColumnLabel={parsed.allColumns?.[0]?.label ?? ''}
