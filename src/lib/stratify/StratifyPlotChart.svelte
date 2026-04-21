@@ -266,7 +266,7 @@
 			const leftAxisOpts = {
 				anchor: 'left',
 				label: null,
-				tickFormat: (/** @type {number} */ v) => formatCompact(v)
+				tickFormat: formatCompact
 			};
 			if (yMinMax) {
 				const leftSeries = seriesNames.filter((n) => !rightAxisSeries.includes(n));
@@ -294,16 +294,13 @@
 			opts.y = { ...(opts.y || {}), axis: null, domain: scale.range() };
 			opts.marks.push(axisY(leftAxisOpts));
 		} else {
-			// Single Y-axis: apply compact tick formatting for numeric scales
 			const yScaleType = (opts.y || {}).type;
-			if (yScaleType !== 'band' && yScaleType !== 'point') {
-				opts.y = {
-					...(opts.y || {}),
-					tickFormat: (/** @type {number} */ v) => formatCompact(v)
-				};
+			const isNumericScale = yScaleType !== 'band' && yScaleType !== 'point';
+
+			if (isNumericScale) {
+				opts.y = { ...(opts.y || {}), tickFormat: formatCompact };
 			}
 
-			// Single Y-axis: apply ticks and min/max
 			if (yMinMax) {
 				let min = Infinity,
 					max = -Infinity;
@@ -337,11 +334,11 @@
 				}
 			}
 
-			// Apply manual Y1 min/max override for numeric scales.
 			// Skip when an external yDomain is supplied (categorical sort) or the scale is band/point.
-			if ((y1Min != null || y1Max != null) && !yDomain) {
-				const yScaleType = (opts.y || {}).type;
-				if (yScaleType !== 'band' && yScaleType !== 'point') {
+			if ((y1Min != null || y1Max != null) && !yDomain && isNumericScale) {
+				let lo = y1Min;
+				let hi = y1Max;
+				if (lo == null || hi == null) {
 					let dMin = Infinity,
 						dMax = -Infinity;
 					for (const row of chartData) {
@@ -353,10 +350,10 @@
 							}
 						}
 					}
-					const lo = y1Min != null ? y1Min : isFinite(dMin) ? (dMin > 0 ? 0 : dMin) : 0;
-					const hi = y1Max != null ? y1Max : isFinite(dMax) ? dMax : 1;
-					opts.y = { ...(opts.y || {}), domain: [lo, hi] };
+					if (lo == null) lo = isFinite(dMin) ? (dMin > 0 ? 0 : dMin) : 0;
+					if (hi == null) hi = isFinite(dMax) ? dMax : 1;
 				}
+				opts.y = { ...(opts.y || {}), domain: [lo, hi] };
 			}
 		}
 
