@@ -244,7 +244,7 @@
 			</div>
 		{:else if value._type === 'strataEmbed'}
 			<div
-				class="mx-auto max-w-full my-12 border-x-0 md:border-x border-y md:border border-mid-warm-grey rounded-none md:rounded-lg px-0 md:px-12 py-6"
+				class="mx-auto max-w-[800px] my-12 border-x-0 md:border-x border-y md:border border-mid-warm-grey rounded-none md:rounded-lg px-0 md:px-12 py-6"
 			>
 				{#if charts[value.chartId]}
 					<StrataEmbed chart={charts[value.chartId]} caption={value.caption} />
