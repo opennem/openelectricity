@@ -20,6 +20,16 @@ Run these checks in parallel (single message, multiple `Bash` calls). **Refuse t
 3. `git fetch origin && git rev-list --count HEAD..origin/main` — must be `0` (not behind).
 4. `git log origin/main..HEAD --oneline` — show the user what's about to ship. If there are zero commits ahead, ask the user whether to continue (pure version bumps are valid but unusual).
 
+## Pre-release verification — run before bumping
+
+Run these in parallel (single message, multiple `Bash` calls). These verify the release candidate actually works before we tag it.
+
+1. `bun run test` — Vitest suite. Blocking: **must pass**. On failure, stop and show the user.
+2. `bun run build` — Vite production build. Blocking: **must complete**. On failure, stop and show the user.
+3. `bun run check` — SvelteKit sync + svelte-check. Informational: this project has pre-existing type errors in its baseline (see `bun run check` output on `main`). Report the count to the user; block **only** if the change introduces errors in files modified by the commits being released (`git diff origin/main..HEAD --name-only`). Otherwise proceed.
+
+If the user wants a local preview of the build before releasing, offer to run `bun run preview` in the background — don't block on it, they'll interrupt when they're happy.
+
 ## Bump and push
 
 Do these sequentially (each depends on the last):
