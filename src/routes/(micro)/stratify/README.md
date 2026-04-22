@@ -497,14 +497,3 @@ The `/strata-community` page displays the 10 most recently published charts in a
 | POST   | `/api/stratify/charts/:id/fork` | Fork chart to current user   |
 
 All endpoints require Clerk JWT authentication.
-
-## MCP Package
-
-The Stratify MCP server (`packages/stratify-mcp/`) mirrors the chart configuration schema. When adding, removing, or changing chart fields (snapshot schema, chart types, palettes, etc.), always update the MCP package in the same change:
-
-- `packages/stratify-mcp/src/schema/snapshot.js` — `SNAPSHOT_DEFAULTS` and `validateSnapshot()`
-- `packages/stratify-mcp/src/schema/chart-types.js` — chart type and line style constants
-- `packages/stratify-mcp/src/schema/palettes.js` — colour palette definitions
-- `packages/stratify-mcp/src/tools/chart-config.js` — `create_chart_config` tool input schema
-- `packages/stratify-mcp/src/tools/reference.js` — reference tool definitions and handlers
-- `packages/stratify-mcp/README.md` — user-facing documentation
