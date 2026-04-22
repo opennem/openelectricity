@@ -9,6 +9,6 @@ export default defineConfig({
 		chunkSizeWarningLimit: 1600
 	},
 	test: {
-		exclude: ['node_modules', 'tests/e2e/**']
+		exclude: ['**/node_modules/**', 'tests/e2e/**']
 	}
 });

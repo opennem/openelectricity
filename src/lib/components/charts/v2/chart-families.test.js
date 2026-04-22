@@ -36,12 +36,20 @@ describe('getFamily', () => {
 		expect(getFamily('area')).toBe('area');
 	});
 
-	it('maps bar-stacked to bar', () => {
-		expect(getFamily('bar-stacked')).toBe('bar');
+	it('maps bar-stacked to column', () => {
+		expect(getFamily('bar-stacked')).toBe('column');
 	});
 
-	it('maps grouped-bar to bar', () => {
-		expect(getFamily('grouped-bar')).toBe('bar');
+	it('maps grouped-bar to column', () => {
+		expect(getFamily('grouped-bar')).toBe('column');
+	});
+
+	it('maps bar-horizontal to bar', () => {
+		expect(getFamily('bar-horizontal')).toBe('bar');
+	});
+
+	it('maps grouped-bar-horizontal to bar', () => {
+		expect(getFamily('grouped-bar-horizontal')).toBe('bar');
 	});
 
 	it('maps line to line', () => {
@@ -61,17 +69,18 @@ describe('getAvailableFamilies', () => {
 	it('returns all families for time-series mode', () => {
 		const families = getAvailableFamilies(false);
 		expect(families).toContain('area');
+		expect(families).toContain('column');
 		expect(families).toContain('bar');
 		expect(families).toContain('line');
 		expect(families).toContain('dot');
 	});
 
-	it('returns only bar for category mode', () => {
-		expect(getAvailableFamilies(true)).toEqual(['bar']);
+	it('excludes area in category mode', () => {
+		expect(getAvailableFamilies(true)).toEqual(['column', 'bar', 'line', 'dot']);
 	});
 
-	it('does not include dot in category mode', () => {
-		expect(getAvailableFamilies(true)).not.toContain('dot');
+	it('does not include area in category mode', () => {
+		expect(getAvailableFamilies(true)).not.toContain('area');
 	});
 });
 
@@ -80,8 +89,12 @@ describe('getDefaultForFamily', () => {
 		expect(getDefaultForFamily('area')).toBe('stacked-area');
 	});
 
-	it('returns bar-stacked for bar family', () => {
-		expect(getDefaultForFamily('bar')).toBe('bar-stacked');
+	it('returns bar-stacked for column family', () => {
+		expect(getDefaultForFamily('column')).toBe('bar-stacked');
+	});
+
+	it('returns bar-horizontal for bar family', () => {
+		expect(getDefaultForFamily('bar')).toBe('bar-horizontal');
 	});
 
 	it('returns line for line family', () => {
