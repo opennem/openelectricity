@@ -4,12 +4,15 @@
 	import { dataTrackerLink } from '$lib/stores/app';
 	import { fly } from 'svelte/transition';
 	import { getNavItems } from '$lib/components/nav/nav-items.js';
+	import { isNonProductionHost } from '$lib/utils/environment.js';
 
 	let navItems = getNavItems($dataTrackerLink);
 
 	let mobileNavActive = $state(false);
 	/** @type {string | null} */
 	let activeDropdown = $state(null);
+
+	let isNonProduction = $derived(isNonProductionHost(page.url.hostname));
 
 	afterNavigate(() => {
 		mobileNavActive = false;
@@ -29,6 +32,14 @@
 					<img class="block" src="/img/logo.svg" alt="Open Electricity" />
 				</h1>
 			</a>
+			{#if isNonProduction}
+				<span
+					class="px-2 py-0.5 text-xxs font-semibold uppercase tracking-widest bg-red text-white rounded-sm"
+					title="Non-production environment"
+				>
+					dev
+				</span>
+			{/if}
 		</div>
 
 		<nav
