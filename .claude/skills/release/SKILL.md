@@ -32,6 +32,18 @@ Do these sequentially (each depends on the last):
 
 Within ~10s of push, run `gh run list --workflow=deploy.yml --limit 1` and report the status to the user. Don't poll — one check is enough.
 
+## Sync `dev` with `main`
+
+Once the tag is pushed, fast-forward `dev` to the released `main` so both branches stay aligned (dev powers `dev.openelectricity.org.au`, main powers production):
+
+```bash
+git checkout dev && git merge --ff-only main && git push && git checkout main
+```
+
+- Use `--ff-only` — this should always be a fast-forward. If it isn't, `dev` has diverged; stop and ask the user how to resolve before pushing anything.
+- Return the user to `main` at the end so they're back on the release branch.
+- `dev` is protected against deletion and force-push but allows direct merges, so this push succeeds without a PR.
+
 ## Guardrails (always)
 
 - **Never** force-push, rewrite, or amend published commits.
