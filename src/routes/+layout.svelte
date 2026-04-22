@@ -17,10 +17,11 @@
 		};
 		apply();
 
-		const titleEl = document.querySelector('title');
-		if (!titleEl) return;
+		// Observe document.head rather than the <title> element directly: SvelteKit
+		// may replace the title element on navigation, and reactive expressions
+		// inside <svelte:head><title> update its text node — both surface here.
 		const observer = new MutationObserver(apply);
-		observer.observe(titleEl, { childList: true });
+		observer.observe(document.head, { childList: true, subtree: true, characterData: true });
 		return () => observer.disconnect();
 	});
 </script>
