@@ -80,7 +80,12 @@ src/
 
 ## Deployment
 
-Deployments are triggered via a Cloudflare deploy hook on version tags:
+| Branch | Environment                                                        |
+| ------ | ------------------------------------------------------------------ |
+| `main` | Production — [openelectricity.org.au](https://openelectricity.org.au) |
+| `dev`  | Staging — [dev.openelectricity.org.au](https://dev.openelectricity.org.au) |
+
+Production deployments are triggered via a Cloudflare deploy hook on version tags:
 
 ```bash
 npm version patch   # or minor / major
