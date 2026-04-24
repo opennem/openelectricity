@@ -15,6 +15,7 @@
 	import ChartTooltipFloating from './ChartTooltipFloating.svelte';
 	import StackedAreaChart from './StackedAreaChart.svelte';
 	import BarChart from './BarChart.svelte';
+	import ChartResizeHandle from './ChartResizeHandle.svelte';
 	import { InteractionLayer } from './elements';
 
 	/**
@@ -46,6 +47,12 @@
 	 * @property {boolean} [animate] - When true, stacked area grows from y=0 on data change
 	 * @property {boolean} [hideAnnotationsOnMobile] - Hide annotations on mobile viewports
 	 * @property {boolean} [tightAxisClip] - Clip axis content to the exact chart area (no 15 px overflow on each side) — useful for compact charts where gridlines shouldn't extend past the edges.
+	 * @property {boolean} [resizable] - When true, shows a vertical resize handle below the chart that drives `chart.chartStyles.chartHeightPx`. Handle is hidden until hover on mouse devices; always visible on touch.
+	 * @property {string} [heightStorageKey] - If set, the resized height persists to localStorage under this key.
+	 * @property {number} [minHeight] - Minimum height (px) when resizing. Default 120.
+	 * @property {number} [maxHeight] - Maximum height (px) when resizing. Default 800.
+	 * @property {(height: number) => void} [onresize] - Called on every height change during drag.
+	 * @property {(height: number) => void} [onresizeend] - Called once when the drag finishes.
 	 * @property {import('svelte').Snippet} [header]
 	 * @property {import('svelte').Snippet} [tooltip]
 	 * @property {import('svelte').Snippet} [footer]
@@ -80,6 +87,12 @@
 		animate = false,
 		hideAnnotationsOnMobile = false,
 		tightAxisClip = false,
+		resizable = false,
+		heightStorageKey,
+		minHeight = 120,
+		maxHeight = 800,
+		onresize,
+		onresizeend,
 		header,
 		tooltip,
 		footer
@@ -150,78 +163,83 @@
 	{/if}
 
 	<div class="relative">
-	{#if chart.chartOptions.isAnyBarType}
-		<div class={chartPadding}>
-			{#if hasData}
-				<BarChart
-					{chart}
-					onmousemove={handleSeriesHover}
-					onmouseout={handleSeriesHoverOut}
-					onpointerup={handleSeriesClick}
-				/>
-			{:else}
-				<div
-					class="flex items-center justify-center {chart.chartStyles.chartHeightPx
-						? ''
-						: chart.chartStyles.chartHeightClasses}"
-					style:height={chart.chartStyles.chartHeightPx
-						? `${chart.chartStyles.chartHeightPx}px`
-						: undefined}
-				>
-				</div>
-			{/if}
-		</div>
-	{:else}
-		<InteractionLayer
-			{chart}
-			{enablePan}
-			{viewDomain}
-			class={chartPadding}
-			bind:interactionMode
-			{onhover}
-			{onhoverend}
-			{onfocus}
-			{onpanstart}
-			{onpan}
-			{onpanend}
-			{onzoom}
-		>
-			{#if hasData}
-				<StackedAreaChart
-					{chart}
-					{netTotalKey}
-					{netTotalColor}
-					{overlayStart}
-					{clampHoverLine}
-					{animate}
-					{hideAnnotationsOnMobile}
-					{tightAxisClip}
-					onmousemove={handleSeriesHover}
-					onmouseout={handleSeriesHoverOut}
-					onpointerup={handleSeriesClick}
-					{enablePan}
-					{loadingRanges}
-				/>
-			{:else}
-				<div
-					class="flex items-center justify-center {chart.chartStyles.chartHeightPx
-						? ''
-						: chart.chartStyles.chartHeightClasses}"
-					style:height={chart.chartStyles.chartHeightPx
-						? `${chart.chartStyles.chartHeightPx}px`
-						: undefined}
-				>
-				</div>
-			{/if}
-		</InteractionLayer>
-	{/if}
+		{#if chart.chartOptions.isAnyBarType}
+			<div class={chartPadding}>
+				{#if hasData}
+					<BarChart
+						{chart}
+						onmousemove={handleSeriesHover}
+						onmouseout={handleSeriesHoverOut}
+						onpointerup={handleSeriesClick}
+					/>
+				{:else}
+					<div
+						class="flex items-center justify-center {chart.chartStyles.chartHeightPx
+							? ''
+							: chart.chartStyles.chartHeightClasses}"
+						style:height={chart.chartStyles.chartHeightPx
+							? `${chart.chartStyles.chartHeightPx}px`
+							: undefined}
+					></div>
+				{/if}
+			</div>
+		{:else}
+			<InteractionLayer
+				{chart}
+				{enablePan}
+				{viewDomain}
+				class={chartPadding}
+				bind:interactionMode
+				{onhover}
+				{onhoverend}
+				{onfocus}
+				{onpanstart}
+				{onpan}
+				{onpanend}
+				{onzoom}
+			>
+				{#if hasData}
+					<StackedAreaChart
+						{chart}
+						{netTotalKey}
+						{netTotalColor}
+						{overlayStart}
+						{clampHoverLine}
+						{animate}
+						{hideAnnotationsOnMobile}
+						{tightAxisClip}
+						onmousemove={handleSeriesHover}
+						onmouseout={handleSeriesHoverOut}
+						onpointerup={handleSeriesClick}
+						{enablePan}
+						{loadingRanges}
+					/>
+				{:else}
+					<div
+						class="flex items-center justify-center {chart.chartStyles.chartHeightPx
+							? ''
+							: chart.chartStyles.chartHeightClasses}"
+						style:height={chart.chartStyles.chartHeightPx
+							? `${chart.chartStyles.chartHeightPx}px`
+							: undefined}
+					></div>
+				{/if}
+			</InteractionLayer>
+		{/if}
+
+		{#if resizable}
+			<ChartResizeHandle
+				{chart}
+				storageKey={heightStorageKey}
+				{minHeight}
+				{maxHeight}
+				{onresize}
+				{onresizeend}
+			/>
+		{/if}
 
 		{#if effectiveTooltipMode === 'floating'}
-			<ChartTooltipFloating
-				{chart}
-				dodgeRightPx={tooltipDodgeRightPx}
-				insetPx={tooltipInsetPx}
-			/>
+			<ChartTooltipFloating {chart} dodgeRightPx={tooltipDodgeRightPx} insetPx={tooltipInsetPx} />
 		{/if}
 	</div>
 

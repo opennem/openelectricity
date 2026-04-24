@@ -55,7 +55,10 @@
 
 				{#if currentPhoto?.caption}
 					<div
-						class="absolute bottom-0 left-0 right-0 bg-black/10 px-2 py-1.5 backdrop-blur-xs rounded-b-lg flex items-center justify-center"
+						class="absolute left-0 right-0 bg-black/10 px-2 py-1.5 backdrop-blur-xs flex items-center justify-center {photos.length >
+						1
+							? 'bottom-6'
+							: 'bottom-0 rounded-b-lg'}"
 						in:fly={{ x: slideDirection * 300, duration: 250 }}
 						out:fly={{ x: slideDirection * -300, duration: 250 }}
 					>

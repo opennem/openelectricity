@@ -6,11 +6,11 @@
 	 * horizontal panning, client-side data caching, and fuel tech color coding.
 	 */
 
+	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import {
-		ChartStore,
-		StratumChart
-	} from '$lib/components/charts/v2';
-	import { aggregateToInterval, aggregateToMonth } from '$lib/components/charts/v2/dataProcessing.js';
+		aggregateToInterval,
+		aggregateToMonth
+	} from '$lib/components/charts/v2/dataProcessing.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
@@ -125,7 +125,9 @@
 	/** Minimum viewport duration: 1 hour for power, 5 days for energy */
 	let MIN_VIEWPORT_MS = $derived(isEnergyMetric ? 5 * 24 * 60 * 60 * 1000 : 1 * 60 * 60 * 1000);
 	/** Maximum viewport duration: 16 days for power, 10 years for energy */
-	let MAX_VIEWPORT_MS = $derived(isEnergyMetric ? 50 * 365 * 24 * 60 * 60 * 1000 : 16 * 24 * 60 * 60 * 1000);
+	let MAX_VIEWPORT_MS = $derived(
+		isEnergyMetric ? 50 * 365 * 24 * 60 * 60 * 1000 : 16 * 24 * 60 * 60 * 1000
+	);
 
 	/** Prefetch buffer multiplier — energy uses wider buffers since intervals are daily */
 	let fetchBufferMultiplier = $derived(isEnergyMetric ? 3 : 1);
@@ -408,7 +410,13 @@
 		const apiInterval = interval;
 
 		// Aggregate daily energy to monthly when selected (only if API returned daily data)
-		if (isEnergy && apiInterval === '1d' && currentDisplayInterval === '1M' && visibleData.length > 0 && dataManager.seriesMeta) {
+		if (
+			isEnergy &&
+			apiInterval === '1d' &&
+			currentDisplayInterval === '1M' &&
+			visibleData.length > 0 &&
+			dataManager.seriesMeta
+		) {
 			visibleData = aggregateToMonth(
 				visibleData,
 				dataManager.seriesMeta.seriesNames,
@@ -418,7 +426,12 @@
 		}
 
 		// Aggregate to 30m for power mode when selected
-		if (!isEnergy && currentDisplayInterval === '30m' && visibleData.length > 0 && dataManager.seriesMeta) {
+		if (
+			!isEnergy &&
+			currentDisplayInterval === '30m' &&
+			visibleData.length > 0 &&
+			dataManager.seriesMeta
+		) {
 			visibleData = aggregateToInterval(
 				visibleData,
 				'30m',
@@ -612,7 +625,6 @@
 			// Was panning right (toward past) — prefetch behind
 			dataManager?.requestRange(viewStart - prefetch, viewStart);
 		}
-
 	}
 
 	// Reactively notify parent whenever viewport changes (pan, zoom, setViewport, initial load, metric switch)
@@ -811,6 +823,10 @@
 			enablePan={true}
 			viewDomain={null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
+			resizable
+			heightStorageKey="facility-chart-height-generation"
+			minHeight={160}
+			maxHeight={700}
 		/>
 
 		{#if showLoadingOverlay}
@@ -823,7 +839,8 @@
 						fill="none"
 						viewBox="0 0 24 24"
 					>
-						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+						></circle>
 						<path
 							class="opacity-75"
 							fill="currentColor"
@@ -837,35 +854,40 @@
 
 		<!-- Zoom buttons (top right, visible on hover) -->
 		{#if showZoomControls}
-		<div
-			bind:clientWidth={zoomButtonsWidth}
-			class="absolute top-0 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-30"
-			style:right="{overlayInsetPx}px"
-		>
-			<button
-				class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMaxZoom ? 'text-mid-warm-grey cursor-not-allowed' : 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
-				onclick={zoomOut}
-				disabled={isAtMaxZoom}
-				title="Zoom out"
+			<div
+				bind:clientWidth={zoomButtonsWidth}
+				class="absolute top-0 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-30"
+				style:right="{overlayInsetPx}px"
 			>
-				<Minus size={14} />
-			</button>
-			<button
-				class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMinZoom ? 'text-mid-warm-grey cursor-not-allowed' : 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
-				onclick={zoomIn}
-				disabled={isAtMinZoom}
-				title="Zoom in"
-			>
-				<Plus size={14} />
-			</button>
-		</div>
+				<button
+					class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMaxZoom
+						? 'text-mid-warm-grey cursor-not-allowed'
+						: 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
+					onclick={zoomOut}
+					disabled={isAtMaxZoom}
+					title="Zoom out"
+				>
+					<Minus size={14} />
+				</button>
+				<button
+					class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMinZoom
+						? 'text-mid-warm-grey cursor-not-allowed'
+						: 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
+					onclick={zoomIn}
+					disabled={isAtMinZoom}
+					title="Zoom in"
+				>
+					<Plus size={14} />
+				</button>
+			</div>
 		{/if}
 	</div>
-
 {:else}
 	<!-- No facility — chart store not created yet -->
 	<div
-		class="border border-light-warm-grey rounded-lg bg-light-warm-grey/30 flex items-center justify-center {chartHeightPx ? '' : chartHeight}"
+		class="border border-light-warm-grey rounded-lg bg-light-warm-grey/30 flex items-center justify-center {chartHeightPx
+			? ''
+			: chartHeight}"
 		style:height={chartHeightPx ? `${chartHeightPx}px` : undefined}
 	>
 		<div class="flex items-center gap-3 text-mid-warm-grey">
@@ -875,7 +897,8 @@
 				fill="none"
 				viewBox="0 0 24 24"
 			>
-				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+				></circle>
 				<path
 					class="opacity-75"
 					fill="currentColor"

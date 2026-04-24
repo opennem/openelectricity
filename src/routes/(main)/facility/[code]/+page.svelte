@@ -1,9 +1,17 @@
 <script>
 	import { onMount } from 'svelte';
 
-	import { FacilityChart, FacilityPriceChart } from '$lib/components/charts/facility';
+	import {
+		FacilityChart,
+		FacilityPriceChart,
+		FacilityMarketValueChart,
+		FacilityFinancialDataProvider
+	} from '$lib/components/charts/facility';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
+	import { ToggleGroup } from 'bits-ui';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import {
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits
@@ -58,11 +66,60 @@
 	let activeMetric = $state('power');
 	let displayInterval = $state('30m');
 
+	const CHART_OPTIONS = [
+		{ label: 'Generation', value: 'generation' },
+		{ label: 'Price', value: 'price' },
+		{ label: 'Market Value', value: 'marketValue' }
+	];
+	const DEFAULT_SELECTED_CHARTS = ['generation'];
+	const CHARTS_QUERY_KEY = 'charts';
+
+	/**
+	 * @param {URLSearchParams} searchParams
+	 * @returns {string[]}
+	 */
+	function parseChartsParam(searchParams) {
+		const raw = searchParams.get(CHARTS_QUERY_KEY);
+		if (raw === null) return [...DEFAULT_SELECTED_CHARTS];
+		if (raw === '') return [];
+		const validIds = new Set(CHART_OPTIONS.map((o) => o.value));
+		return raw.split(',').filter((v) => validIds.has(v));
+	}
+
+	let selectedCharts = $state(parseChartsParam($page.url.searchParams));
+
+	// Guard so the first $effect pass (on mount) doesn't write the URL before
+	// the user has interacted.
+	let urlSyncReady = false;
+	onMount(() => {
+		urlSyncReady = true;
+	});
+
+	// Mirror `selectedCharts` into the `?charts=` query param via replaceState —
+	// shareable URLs + state survives facility navigation.
+	$effect(() => {
+		const current = selectedCharts;
+		if (!urlSyncReady) return;
+		const serialized = current.join(',');
+		if ($page.url.searchParams.get(CHARTS_QUERY_KEY) === serialized) return;
+		const url = new URL($page.url);
+		url.searchParams.set(CHARTS_QUERY_KEY, serialized);
+		goto(url, { replaceState: true, keepFocus: true, noScroll: true });
+	});
+	let showGeneration = $derived(selectedCharts.includes('generation'));
+	let showPrice = $derived(selectedCharts.includes('price'));
+	let showMarketValue = $derived(selectedCharts.includes('marketValue'));
+	let financialActive = $derived(showPrice || showMarketValue);
+
+	let noneSelected = $derived(selectedCharts.length === 0);
+
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
 
 	$effect(() => {
 		// Reset chart-viewport-driven state when the underlying facility changes.
+		// `selectedCharts` is intentionally not reset — user's chart selection
+		// persists across facility navigation.
 		const _code = data.facility?.code;
 		activeInterval = '5m';
 		activeMetric = 'power';
@@ -147,7 +204,11 @@
 <FacilityPanelHeader facility={selectedFacility} showViewButtons={false} />
 
 <!-- order swap: on mobile, charts above description; on md+, description left of charts -->
-<div class="flex-1 flex flex-col md:flex-row min-h-0 transition-opacity duration-200 {ready ? 'opacity-100' : 'opacity-0'}">
+<div
+	class="flex-1 flex flex-col md:flex-row min-h-0 transition-opacity duration-200 {ready
+		? 'opacity-100'
+		: 'opacity-0'}"
+>
 	<div
 		class="order-2 md:order-1 md:shrink-0 overflow-hidden border-t md:border-t-0 md:border-r border-warm-grey"
 		style:width={isMobile ? '' : `${middleDrag.value}px`}
@@ -165,32 +226,68 @@
 	<div class="order-1 md:order-3 flex-1 min-w-0 min-h-0 overflow-y-auto p-4 space-y-4">
 		{#if selectedFacility}
 			{#if hasPowerData}
-				<FacilityChart
-					bind:this={powerChart}
-					facility={selectedFacility}
-					powerData={data.powerData}
-					{timeZone}
-					{dateStart}
-					{dateEnd}
-					interval={activeInterval}
-					metric={activeMetric}
-					{displayInterval}
-					chartHeight="h-[267px]"
-					title={activeMetric === 'energy' ? 'Energy' : 'Power'}
-					onviewportchange={handlePowerViewportChange}
-				/>
+				<div class="flex justify-center">
+					<ToggleGroup.Root
+						type="multiple"
+						bind:value={selectedCharts}
+						class="inline-flex rounded-lg border border-mid-warm-grey bg-light-warm-grey p-1 gap-1"
+					>
+						{#each CHART_OPTIONS as opt (opt.value)}
+							<ToggleGroup.Item
+								value={opt.value}
+								class="px-4 py-1.5 rounded-md text-sm text-mid-grey hover:text-black transition-colors data-[state=on]:bg-white data-[state=on]:text-black data-[state=on]:shadow-sm"
+							>
+								{opt.label}
+							</ToggleGroup.Item>
+						{/each}
+					</ToggleGroup.Root>
+				</div>
 
-				{#if viewStart && viewEnd}
-					<FacilityPriceChart
-						facility={selectedFacility}
-						{timeZone}
-						interval={activeInterval}
-						{displayInterval}
-						{viewStart}
-						{viewEnd}
-						onviewportchange={handlePriceViewportChange}
-					/>
-				{/if}
+				<FacilityFinancialDataProvider
+					active={financialActive}
+					facility={selectedFacility}
+					{timeZone}
+					interval={activeInterval}
+					{displayInterval}
+					{viewStart}
+					{viewEnd}
+					onviewportchange={handlePriceViewportChange}
+				>
+					{#if noneSelected}
+						<div
+							class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 h-[240px]"
+						>
+							<p class="text-sm text-mid-grey m-0">Select a chart to display</p>
+						</div>
+					{:else}
+						<div class="space-y-4">
+							{#if showGeneration}
+								<FacilityChart
+									bind:this={powerChart}
+									facility={selectedFacility}
+									powerData={data.powerData}
+									{timeZone}
+									{dateStart}
+									{dateEnd}
+									interval={activeInterval}
+									metric={activeMetric}
+									{displayInterval}
+									chartHeight="h-[267px]"
+									title={activeMetric === 'energy' ? 'Energy' : 'Power'}
+									onviewportchange={handlePowerViewportChange}
+								/>
+							{/if}
+
+							{#if showPrice && viewStart && viewEnd}
+								<FacilityPriceChart />
+							{/if}
+
+							{#if showMarketValue && viewStart && viewEnd}
+								<FacilityMarketValueChart />
+							{/if}
+						</div>
+					{/if}
+				</FacilityFinancialDataProvider>
 			{:else}
 				<div
 					class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 h-full min-h-[240px]"
