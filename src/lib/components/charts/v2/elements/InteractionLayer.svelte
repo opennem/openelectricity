@@ -84,7 +84,9 @@
 
 	function getTimeDomain() {
 		if (viewDomain) return viewDomain;
-		const xd = chart.xDomain;
+		// `renderXDomain` is `xDomain` extended for step mode; using it here
+		// keeps pointer→time in sync with the LayerCake `$xScale`.
+		const xd = chart.renderXDomain;
 		if (xd && xd.length === 2) return [Number(xd[0]), Number(xd[1])];
 		// Fall back to data time range
 		const data = chart.seriesScaledData;
@@ -116,7 +118,8 @@
 
 	/**
 	 * Snap a raw time to the nearest data point.
-	 * Uses floor semantics for step curves, closest-match otherwise.
+	 * Uses floor semantics for step curves (curveStepAfter: value at T covers
+	 * [T, T+I)), closest-match otherwise.
 	 * @param {number} rawTime
 	 * @returns {number}
 	 */

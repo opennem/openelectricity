@@ -82,7 +82,7 @@
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
 			enablePan={hasViewportHandler}
-			viewDomain={[viewStart, viewEnd]}
+			viewDomain={null}
 			onpanstart={ctx.handlePanStart}
 			onpan={ctx.handlePan}
 			onpanend={ctx.handlePanEnd}

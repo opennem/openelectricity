@@ -53,10 +53,11 @@ export default class ChartOptions {
 	isDataTransformTypeChangeSince = $derived(this.selectedDataTransformType === 'changeSince');
 
 	// Curve options
-	// Note: "Step" uses curveStepAfter (d3) which works better for time-series
-	// energy data — the value at time T is drawn as a horizontal bar from T to T+1.
-	// The old curveStep (centered step) was removed as it doesn't align with
-	// how interval data is conventionally displayed.
+	// Note: "Step" uses curveStepAfter — the value at time T is drawn as a
+	// horizontal bar from T to T+I (interval-start convention). This matches
+	// calendar-aligned buckets ("1 June" bar spans all of June). The last
+	// point is given a phantom trailing partner in StackedAreaChart so it
+	// also renders a full-width bar.
 	curveOptions = Object.freeze([
 		{ label: 'Smooth', value: /** @type {CurveType} */ ('smooth') },
 		{ label: 'Straight', value: /** @type {CurveType} */ ('straight') },

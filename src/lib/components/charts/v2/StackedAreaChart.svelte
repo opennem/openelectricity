@@ -65,21 +65,38 @@
 	let styles = $derived(chart.chartStyles);
 	let id = $derived(styles.htmlId);
 
-	// Process data based on chart type
+	// Determine if curve type is step (for band hover + axis alignment)
+	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
+
+	// In step mode, append a phantom trailing point one interval past the last
+	// real point. Under `curveStep` (centred), this turns the last real point
+	// into an interior point whose band spans [T_n - I/2, T_n + I/2] — a full
+	// bucket. The phantom itself is clipped by the LayerCake chart area.
+	// `chart.renderXDomain` already extends the visible area by I/2 to match.
+	let renderSeriesData = $derived.by(() => {
+		if (!isStepMode || chart.stepIntervalMs <= 0) return chart.seriesScaledData;
+		const src = chart.seriesScaledData;
+		const last = src[src.length - 1];
+		const phantomTime = last.time + chart.stepIntervalMs;
+		return [...src, { ...last, time: phantomTime, date: new Date(phantomTime) }];
+	});
+
+	// Process data based on chart type (using render data so step charts get
+	// the phantom trailing point).
 	let stackedData = $derived.by(() => {
-		if (chart.seriesScaledData.length === 0) return [];
+		if (renderSeriesData.length === 0) return [];
 
 		if (chart.useDivergingStack) {
 			const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
-			return stackGen(chart.seriesScaledData);
+			return stackGen(renderSeriesData);
 		}
 
-		return lcStack(chart.seriesScaledData, chart.visibleSeriesNames);
+		return lcStack(renderSeriesData, chart.visibleSeriesNames);
 	});
 
 	let groupedData = $derived(
-		chart.seriesScaledData.length > 0
-			? groupLonger(chart.seriesScaledData, chart.visibleSeriesNames)
+		renderSeriesData.length > 0
+			? groupLonger(renderSeriesData, chart.visibleSeriesNames)
 			: []
 	);
 
@@ -97,9 +114,6 @@
 
 	/** @type {'stacked-area' | 'line'} */
 	let stackedAreaDisplay = $derived(chart.chartOptions.isChartTypeLine ? 'line' : 'stacked-area');
-
-	// Determine if curve type is step (for band hover + axis alignment)
-	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
 
 	// Clip path IDs
 	let clipPathId = $derived(`${id}-clip-path`);
@@ -133,7 +147,7 @@
 		y={chart.y}
 		z={chart.z}
 		yDomain={chart.yDomain}
-		xDomain={chart.xDomain}
+		xDomain={chart.renderXDomain}
 		zDomain={chart.seriesNames}
 		xScale={scaleTime()}
 		zScale={scaleOrdinal()}
@@ -184,7 +198,7 @@
 
 				{#if netTotalKey && isStepMode}
 					<NetTotalLine
-						dataset={chart.seriesScaledData}
+						dataset={renderSeriesData}
 						valueKey={netTotalKey}
 						stroke={netTotalColor}
 					/>

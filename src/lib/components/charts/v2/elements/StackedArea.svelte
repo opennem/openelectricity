@@ -31,7 +31,7 @@
 	 * @property {string} [dotStroke] - Dot stroke colour
 	 * @property {string} [dotStrokeWidth] - Dot stroke width
 	 * @property {boolean} [lighterNegative] - Use lighter color for negative values
-	 * @property {boolean} [stepMode] - Use floor-based band detection (for step curves)
+	 * @property {boolean} [stepMode] - Use floor-based data-point lookup for step curves (value at T covers [T, T+I))
 	 * @property {boolean} [animate] - Animate paths: grow from y=0 on mount, morph on data change
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
@@ -145,7 +145,8 @@
 		const xInvert = $xScale.invert(offsetX);
 
 		if (stepMode) {
-			// Floor-based: find last data point with time <= cursor
+			// Floor-based: curveStepAfter puts y_i's bar over [T_i, T_{i+1}),
+			// so the last d with d.time <= cursor is the active bucket.
 			const cursorTime = new Date(xInvert).getTime();
 			let found = undefined;
 			for (const d of dataset) {

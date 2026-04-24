@@ -18,7 +18,7 @@
 	 * @property {*} [curveType] - D3 curve type
 	 * @property {Object.<string, string>} [seriesColours] - Map of series id to colour
 	 * @property {string | null} [highlightId] - Currently highlighted series id
-	 * @property {boolean} [stepMode] - Use floor-based band detection (for step curves)
+	 * @property {boolean} [stepMode] - Use floor-based data-point lookup for step curves (value at T covers [T, T+I))
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
 	 * @property {() => void} [onmouseout]
 	 * @property {(data: TimeSeriesData) => void} [onpointerup]
@@ -78,7 +78,8 @@
 		const xInvert = $xScale.invert(offsetX);
 
 		if (stepMode) {
-			// Floor-based: find last data point with time <= cursor
+			// Floor-based: curveStepAfter puts y_i's bar over [T_i, T_{i+1}),
+			// so the last d with d.time <= cursor is the active bucket.
 			const cursorTime = new Date(xInvert).getTime();
 			let found = undefined;
 			for (const d of dataset) {

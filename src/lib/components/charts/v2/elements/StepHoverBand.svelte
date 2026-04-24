@@ -3,10 +3,12 @@
 	 * StepHoverBand Component
 	 *
 	 * Renders highlight and focus rectangle bands for step/category-like hover
-	 * in time-series charts using step curves. Each band spans from the data
-	 * point's time to the next data point's time, covering the full chart height.
+	 * in time-series charts using centred step curves. Each band is centred on
+	 * its data point (midpoint-to-midpoint with its neighbours), covering the
+	 * full chart height.
 	 */
 	import { getContext } from 'svelte';
+	import { computeStepBand } from './step-band.js';
 
 	const { xScale, yScale, height } = getContext('LayerCake');
 
@@ -29,7 +31,7 @@
 	} = $props();
 
 	/**
-	 * Get the pixel x and width for a band at the given time
+	 * Get the pixel x and width for a centred-step band at the given time.
 	 * @param {number | undefined} time
 	 * @returns {{ x: number, width: number } | null}
 	 */
@@ -39,21 +41,11 @@
 		const idx = dataset.findIndex((d) => d.time === time);
 		if (idx === -1) return null;
 
-		const start = time;
-		let end;
+		const band = computeStepBand(idx, dataset);
+		if (!band) return null;
 
-		if (idx < dataset.length - 1) {
-			end = dataset[idx + 1].time;
-		} else if (idx > 0) {
-			// Last point: extrapolate using previous interval
-			const prevInterval = time - dataset[idx - 1].time;
-			end = time + prevInterval;
-		} else {
-			return null;
-		}
-
-		const x1 = $xScale(start);
-		const x2 = $xScale(end);
+		const x1 = $xScale(band.startMs);
+		const x2 = $xScale(band.endMs);
 		return { x: Math.min(x1, x2), width: Math.abs(x2 - x1) };
 	}
 

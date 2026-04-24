@@ -108,6 +108,28 @@ export default class ChartStore {
 	/** @type {[number, number] | undefined} */
 	xDomain = $state();
 
+	// Step-mode: last interval between consecutive data points, in ms. Used
+	// to extend the render domain (and the area path via a phantom trailing
+	// point) by a full interval, so the last bar under `curveStepAfter`
+	// renders at the same width as the others.
+	stepIntervalMs = $derived.by(() => {
+		if (this.chartOptions?.selectedCurveType !== 'step') return 0;
+		const d = this.seriesScaledData;
+		if (!d || d.length < 2) return 0;
+		return d[d.length - 1].time - d[d.length - 2].time;
+	});
+
+	// Chart-render domain: `xDomain` extended by `stepIntervalMs` on the
+	// right in step mode. Both `InteractionLayer` (pointer→time) and the
+	// LayerCake `$xScale` read this, so hover coordinates always match the
+	// drawn path.
+	renderXDomain = $derived.by(() => {
+		const d = this.xDomain;
+		if (!d || d.length !== 2) return d;
+		if (this.stepIntervalMs <= 0) return d;
+		return /** @type {[number, number]} */ ([d[0], d[1] + this.stepIntervalMs]);
+	});
+
 	/** @type {[number, number] | undefined} */
 	#customYDomain = $state();
 

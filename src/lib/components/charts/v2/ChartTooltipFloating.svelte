@@ -65,6 +65,7 @@
 	});
 
 	let activeData = $derived(getActiveData(chart));
+	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
 	let formattedDate = $derived(formatTooltipDate(chart, activeData));
 	let rows = $derived(activeData ? buildSeriesRows(chart, activeData) : []);
 	let total = $derived(getTotalForRow(chart, activeData));
@@ -132,8 +133,8 @@
 	class="absolute inset-0 pointer-events-none z-20 {className}"
 >
 	{#if activeData}
-		<!-- Vertical hover line -->
-		{#if hoverX !== null}
+		<!-- Vertical hover line — suppressed in step mode since the highlight band already marks the bucket -->
+		{#if hoverX !== null && !isStepMode}
 			<div class="absolute top-0 bottom-0 w-px bg-mid-warm-grey/40" style:left="{hoverX}px"></div>
 		{/if}
 

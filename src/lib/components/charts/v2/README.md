@@ -765,8 +765,8 @@ All pointer interactions are handled by **InteractionLayer**, an HTML `<div>` th
 Wheel pan/zoom is a built-in default — it fires the same `onpan` / `onzoom` callbacks as pointer gestures, so any consumer that handles those gets wheel support for free. The classification and deltas are pure helpers in [`wheel-interaction.js`](./wheel-interaction.js) (`classifyWheelIntent`, `wheelPanDeltaMs`, `wheelZoomFactor`) and unit-tested in `wheel-interaction.test.js`.
 
 **Coordinate mapping**: InteractionLayer converts `clientX` to time using the chart's time domain. It resolves the domain from (in order of priority):
-1. `viewDomain` prop (explicit, used by FacilityChart)
-2. `chart.xDomain` (set by consumer on the ChartStore)
+1. `viewDomain` prop (explicit override — used when a consumer needs to force a domain that differs from `chart.xDomain`, e.g. category charts)
+2. `chart.renderXDomain` (derived on ChartStore — equals `xDomain`, with step-mode extension folded in; **this is what both the pointer mapping and the LayerCake `$xScale` read**, so hover coordinates always match the drawn path)
 3. `chart.seriesScaledData` first/last `.time` (automatic fallback)
 
 **Time snapping**: Raw pixel-to-time values are snapped to the nearest data point. Step mode uses floor semantics (finds the last data point at or before the raw time); continuous mode uses closest-match via binary search.
@@ -777,15 +777,13 @@ Wheel pan/zoom is a built-in default — it fires the same `onpan` / `onzoom` ca
 
 ### Step Mode
 
-When `chart.chartOptions.selectedCurveType === 'step'`, StackedAreaChart renders with `curveStepAfter` and uses **StepHoverBand** instead of LineX/Dot for hover/focus indicators. This creates a bar-chart-like appearance suitable for interval data (e.g. financial year emissions, hourly energy).
+When `chart.chartOptions.selectedCurveType === 'step'`, StackedAreaChart renders with d3's `curveStepAfter` (value at T is drawn as a horizontal bar from T to T+I) and uses **StepHoverBand** instead of LineX/Dot for hover/focus indicators. This aligns with interval-start timestamps — a point at "1 June" visually spans all of June — and is suitable for daily / weekly / monthly energy data.
 
-For step mode to draw the final bar, consumers should append a **phantom extension point** — a duplicate of the last data point shifted one interval forward:
+**Automatic last-bar rendering**: StackedAreaChart internally appends a phantom trailing point one interval past the last real point (in `renderSeriesData`), and the ChartStore derives `renderXDomain` to extend `xDomain` by one full interval on the right. Together these make the last bar render at full width without the consumer doing anything — both `chart.stepIntervalMs` and `chart.renderXDomain` are exposed on ChartStore as derived values (see the table below).
 
-```js
-const last = data[data.length - 1];
-const interval = last.time - data[data.length - 2].time;
-const extended = [...data, { ...last, time: last.time + interval }];
-```
+**Hover band math**: the pixel band for a hovered point comes from the pure helper [`step-band.js`](./elements/step-band.js) (`computeStepBand(index, dataset) → { startMs, endMs }`), covered by unit tests in `step-band.test.js`. Interior points get `[T_i, T_{i+1})`; the last point extrapolates by the previous interval to match the phantom extension.
+
+**Hover crosshair**: the floating tooltip suppresses its vertical crosshair in step mode — the `StepHoverBand` rectangle already marks the active bucket, so the line would just clutter.
 
 ### Net Total Line & Hatch Overlay
 
@@ -806,7 +804,9 @@ Two optional SVG elements for specialized visualizations:
 | `seriesColours` | Map: series key -> hex colour |
 | `seriesLabels` | Map: series key -> display label |
 | `seriesScaledData` | Derived: data with SI-prefix scaling applied |
-| `xDomain` | `[start, end]` time domain for the chart |
+| `xDomain` | `[start, end]` time domain for the chart (set by the consumer — typically the pan/zoom viewport) |
+| `stepIntervalMs` | Derived: last gap between consecutive data points in step mode, `0` otherwise. Drives the render-domain extension and the phantom trailing point |
+| `renderXDomain` | Derived: `xDomain` extended by `stepIntervalMs` on the right in step mode. What both the pointer mapping and the LayerCake `$xScale` read — ensures the hover band lines up with the drawn bar |
 | `xKey` | Which field to use as x value (default `'date'`) |
 | `hoverTime` / `hoverData` | Current hover state (time value / full data row) |
 | `focusTime` / `focusData` | Current focus (click-lock) state |
@@ -894,6 +894,7 @@ src/lib/components/charts/v2/
     ├── NetTotalLine.svelte     # Step-after line for net total overlay
     ├── HatchOverlay.svelte     # Hatched projection overlay region
     ├── StepHoverBand.svelte    # Band highlight for step mode hover/focus
+    ├── step-band.js            # Pure math: computeStepBand(index, dataset) for StepHoverBand
     ├── AxisX.svelte            # Time axis with gridlines
     ├── AxisY.svelte            # Value axis with gridlines
     ├── ClipPath.svelte         # SVG clip path definition
