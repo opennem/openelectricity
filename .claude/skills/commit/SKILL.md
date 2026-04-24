@@ -27,20 +27,28 @@ From the status output:
 - If the status lists obvious **secret files** (`.env`, `.env.local`, `credentials.json`, `*.pem`, `service-account*.json`, etc.), **stop and ask** — never auto-stage them.
 - If the user named specific files, narrow down to those; otherwise the whole working-tree diff is the scope.
 
-## Step 2 — Verify the change is ready
+## Step 2 — Run the `simplify` skill on the diff
 
-Run `bun run test` (blocking) and `bun run check` (informational) in parallel. On failure:
+Invoke the `simplify` skill (available in the harness — `Skill` tool with `skill: "simplify"`) to review the changed code for reuse, quality, and efficiency. The skill may apply fixes directly; if it does, those fixes become part of this commit.
+
+- **Skip this step** when the user says "skip simplify" or "just commit", or when the diff is docs-only (`*.md`, comments, skill files) — `simplify` has nothing useful to say about prose.
+- After simplify finishes, re-run `git status --porcelain` to catch any files it touched outside the original diff (helpers it extracted, tests it added, imports it cleaned up). Include them in the commit scope.
+- If simplify surfaces a refactor it *didn't* apply automatically but recommends, summarise to the user and ask whether to include before proceeding.
+
+## Step 3 — Verify the change is ready
+
+Run `bun run test` (blocking) and `bun run check` (informational) in parallel. Running after simplify ensures any fixes it applied don't break anything.
 
 - **Tests fail**: stop. Show the failing names to the user and ask whether to fix or commit anyway. Do not commit broken tests unless the user explicitly overrides.
 - **Type check has errors**: this repo has a pre-existing baseline (studio/stratify/auth pages). Only block if the errors are in files being committed. Otherwise proceed and note the count.
 
 Skip tests/check only if the user says "skip checks" or "just commit" explicitly.
 
-## Step 3 — Docs and test coverage review
+## Step 4 — Docs and test coverage review
 
 Before staging, scan the diff for things that usually need a companion update. Default is to fold updates into the same commit unless the user says otherwise.
 
-### 3a — Find every relevant README
+### 4a — Find every relevant README
 
 For each file in the diff, walk **up** the directory tree from the file's folder to the repo root, collecting every `README.md` on the way. Deduplicate.
 
@@ -78,12 +86,12 @@ done | sort -u
 
 If nothing in a given README is affected, skip it — don't rewrite just to touch the file.
 
-### 3b — Test coverage
+### 4b — Test coverage
 
 - **Pure helpers added** (new `.js` module with exported functions, no runes / no framework) → should have a co-located `*.test.js`. Existing convention: `wheel-interaction.js` + `wheel-interaction.test.js`, `step-band.js` + `step-band.test.js`, `tooltip-derivations.js` + `tooltip-derivations.test.js`.
 - **Runes class additions** (new `$derived` getters on `ChartStore` etc.) → extend the corresponding `*.test.js` to cover the new derivation. Look at `ChartStore.test.js` as a template.
 
-### 3c — Surface what you found
+### 4c — Surface what you found
 
 Before staging, report back what you're about to include. Example:
 
@@ -93,7 +101,7 @@ Before staging, report back what you're about to include. Example:
 
 If unsure whether an update is warranted, ask; default to including it.
 
-## Step 4 — Stage by filename
+## Step 5 — Stage by filename
 
 **Never** use `git add -A`, `git add -u`, or `git add .`. Always name files:
 
@@ -108,7 +116,7 @@ This protects against accidentally staging:
 
 Quote paths with parens (`src/routes/(main)/…`) if using shell interpolation, but git commands handle them fine without quoting.
 
-## Step 5 — Write the message
+## Step 6 — Write the message
 
 **Title** (first line, under 70 chars):
 
@@ -144,7 +152,7 @@ EOF
 )"
 ```
 
-## Step 6 — Post-commit sanity check
+## Step 7 — Post-commit sanity check
 
 After the commit succeeds:
 
@@ -154,7 +162,7 @@ After the commit succeeds:
 
 Short summary back to the user: `"Committed as <hash>. Working tree clean, N commits ahead of origin. Not pushed."`
 
-## Step 7 — Don't push
+## Step 8 — Don't push
 
 Never push unless the user explicitly says "push", "push to main", "send it up", etc. Per the commit-safety protocol and global preference, pushing is always a separate authorisation.
 
