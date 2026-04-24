@@ -7,6 +7,7 @@
 	 */
 
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
+	import ChartZoomControls from '$lib/components/charts/v2/ChartZoomControls.svelte';
 	import {
 		aggregateToInterval,
 		aggregateToMonth
@@ -18,8 +19,6 @@
 	import { computeEnergyGridlines } from '$lib/components/charts/v2/energy-gridlines.js';
 	import { formatXAxis, getDayStartDates } from '$lib/components/charts/v2/formatters.js';
 	import chroma from 'chroma-js';
-	import Plus from '@lucide/svelte/icons/plus';
-	import Minus from '@lucide/svelte/icons/minus';
 	import { untrack } from 'svelte';
 
 	/**
@@ -672,62 +671,8 @@
 		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
 	}
 
-	// ============================================
-	// Wheel Zoom (on container div, outside SVG)
-	// ============================================
-
-	/** @type {HTMLDivElement | undefined} */
-	let chartContainerEl = $state(undefined);
-
 	/** Measured width of the zoom-buttons cluster (for floating-tooltip dodge). */
 	let zoomButtonsWidth = $state(0);
-
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let wheelPanEndTimeout = null;
-
-	/**
-	 * Wheel handler — attached imperatively with { passive: false }
-	 * on the chart container div so preventDefault() works. Horizontal
-	 * scroll pans the viewport; vertical scroll zooms.
-	 * @param {WheelEvent} event
-	 */
-	function handleWheel(event) {
-		event.preventDefault();
-
-		const rect = /** @type {HTMLElement} */ (event.currentTarget).getBoundingClientRect();
-
-		// Horizontal scroll → pan. Scroll right advances forward in time.
-		if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) {
-			const msPerPixel = (viewEnd - viewStart) / rect.width;
-			const deltaMs = -event.deltaX * msPerPixel;
-
-			if (!isPanning) handlePanStart();
-			handlePan(deltaMs);
-
-			if (wheelPanEndTimeout) clearTimeout(wheelPanEndTimeout);
-			wheelPanEndTimeout = setTimeout(() => {
-				wheelPanEndTimeout = null;
-				handlePanEnd();
-			}, 150);
-			return;
-		}
-
-		// Vertical scroll → zoom at cursor
-		const factor = Math.pow(1.002, -event.deltaY);
-		const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-		const centerMs = viewStart + ratio * (viewEnd - viewStart);
-
-		handleZoom(factor, centerMs);
-	}
-
-	// Attach wheel listener imperatively with { passive: false }
-	$effect(() => {
-		const el = chartContainerEl;
-		if (!el) return;
-
-		el.addEventListener('wheel', handleWheel, { passive: false });
-		return () => el.removeEventListener('wheel', handleWheel);
-	});
 
 	// ============================================
 	// Button Zoom
@@ -823,10 +768,7 @@
 
 <!-- Main Chart -->
 {#if chartStore}
-	<div
-		bind:this={chartContainerEl}
-		class="group relative {showContainer ? 'rounded-lg p-4' : ''}"
-	>
+	<div class="group relative {showContainer ? 'rounded-lg p-4' : ''}">
 		<StratumChart
 			chart={chartStore}
 			{showHeader}
@@ -874,34 +816,15 @@
 			</div>
 		{/if}
 
-		<!-- Zoom buttons (top right, visible on hover) -->
 		{#if showZoomControls}
-			<div
-				bind:clientWidth={zoomButtonsWidth}
-				class="absolute top-0 flex items-center gap-0.5 bg-white/80 backdrop-blur-sm rounded-md p-0.5 shadow-sm border border-light-warm-grey opacity-0 -translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-200 z-30"
-				style:right="{overlayInsetPx}px"
-			>
-				<button
-					class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMaxZoom
-						? 'text-mid-warm-grey cursor-not-allowed'
-						: 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
-					onclick={zoomOut}
-					disabled={isAtMaxZoom}
-					title="Zoom out"
-				>
-					<Minus size={14} />
-				</button>
-				<button
-					class="px-1.5 py-1 text-xs font-medium rounded transition-colors {isAtMinZoom
-						? 'text-mid-warm-grey cursor-not-allowed'
-						: 'text-mid-grey hover:text-dark-grey hover:bg-light-warm-grey'}"
-					onclick={zoomIn}
-					disabled={isAtMinZoom}
-					title="Zoom in"
-				>
-					<Plus size={14} />
-				</button>
-			</div>
+			<ChartZoomControls
+				onzoomin={zoomIn}
+				onzoomout={zoomOut}
+				{isAtMinZoom}
+				{isAtMaxZoom}
+				{overlayInsetPx}
+				bind:width={zoomButtonsWidth}
+			/>
 		{/if}
 	</div>
 {:else}

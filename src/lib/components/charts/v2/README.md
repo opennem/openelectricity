@@ -346,27 +346,44 @@ The main chart component for stacked area/bar charts:
 |------|------|---------|-------------|
 | `chart` | `ChartStore` | required | The chart store instance |
 | `showHeader` | `boolean` | `true` | Whether to show the header |
-| `showTooltip` | `boolean` | `true` | Whether to show the tooltip |
+| `tooltipMode` | `'strip' \| 'floating' \| 'none'` | `'strip'` | See [Tooltip modes](#tooltip-modes) |
+| `tooltipDodgeRightPx` | `number` | `0` | Floating mode: width of a top-right UI element to dodge |
+| `tooltipInsetPx` | `number` | `0` | Floating mode: horizontal gap kept from container edges |
+| `showTooltip` | `boolean` | `true` | **Deprecated** — setting `false` forces `tooltipMode='none'`; prefer `tooltipMode` |
 | `showOptions` | `boolean` | `true` | Whether to show options button |
-| `defaultTooltipText` | `string` | `''` | Default text when nothing is hovered |
+| `defaultTooltipText` | `string` | `''` | Default text when nothing is hovered (strip mode) |
 | `class` | `string` | `''` | Additional CSS classes |
 | `chartPadding` | `string` | `'px-0'` | CSS classes for chart padding |
 | `netTotalKey` | `string` | - | Key for net total values in data (renders step line overlay) |
 | `netTotalColor` | `string` | `'#C74523'` | Color for net total line |
 | `overlayStart` | `number \| null` | - | Start time (ms) for hatched projection overlay |
-| `enablePan` | `boolean` | `false` | Enable pan/zoom gestures via InteractionLayer |
+| `enablePan` | `boolean` | `false` | Enable pan/zoom gestures (pointer + wheel) via InteractionLayer |
 | `loadingRanges` | `Array<{start, end}>` | `[]` | Time ranges currently being fetched (shaded overlay) |
 | `viewDomain` | `[number, number] \| null` | `null` | Explicit time domain for InteractionLayer coordinate mapping |
+| `resizable` | `boolean` | `false` | Show a vertical resize handle below the chart (`ChartResizeHandle`) |
+| `heightStorageKey` | `string` | - | `localStorage` key used by the resize handle to persist height |
+| `minHeight` / `maxHeight` | `number` | `120` / `800` | Bounds for the resize handle |
 | `onhover` | `(time, key?) => void` | - | Callback when hovering |
 | `onhoverend` | `() => void` | - | Callback when hover ends |
 | `onfocus` | `(time) => void` | - | Callback when focusing (clicking) |
 | `onpanstart` | `() => void` | - | Callback when pan gesture starts |
-| `onpan` | `(deltaMs) => void` | - | Callback during pan with time delta |
-| `onpanend` | `() => void` | - | Callback when pan gesture ends |
-| `onzoom` | `(factor, centerMs) => void` | - | Callback for zoom with scale factor and center |
+| `onpan` | `(deltaMs) => void` | - | Callback during pan with time delta (fires for pointer drag **and** horizontal wheel) |
+| `onpanend` | `() => void` | - | Callback when pan gesture ends (debounced 150 ms for wheel) |
+| `onzoom` | `(factor, centerMs) => void` | - | Callback for zoom (fires for pinch **and** vertical wheel) |
+| `onresize` / `onresizeend` | `(height) => void` | - | Called during / after a resize drag |
 | `header` | `Snippet` | - | Custom header snippet (replaces ChartHeader) |
-| `tooltip` | `Snippet` | - | Custom tooltip snippet (replaces ChartTooltip) |
+| `tooltip` | `Snippet` | - | Custom tooltip snippet — only rendered in `strip` mode |
 | `footer` | `Snippet` | - | Footer snippet rendered below the chart |
+
+#### Tooltip modes
+
+`tooltipMode` picks which built-in tooltip StratumChart renders:
+
+- **`strip`** (default) — a fixed 21 px strip above the chart showing the date + the single hovered series + optional total. Consumers can pass a custom `tooltip` Snippet to fully replace the strip content.
+- **`floating`** — a cursor-following card overlaid on the chart area. Shows the date as a header, then one row per visible series (colour dot + label + value) with the hovered row subtly tinted. Positions itself beside the crosshair (left/right of the cursor) and flips to the bottom of the chart when the cursor is near the top so the data under the cursor stays visible. Uses `tooltipDodgeRightPx` to avoid overlapping a top-right element like the zoom controls.
+- **`none`** — no tooltip rendered. The vertical space normally reserved for the strip is also removed.
+
+The shared derivation logic used by both built-in tooltips (hover/focus precedence, `visibleSeriesNames` total, date formatting for time-based and category charts, per-series row building) lives as pure helpers in [`tooltip-derivations.js`](./tooltip-derivations.js) with `tooltip-derivations.test.js` covering the edge cases.
 
 #### Synced Charts Example
 
@@ -441,6 +458,39 @@ Toggle between time intervals:
 	onchange={(interval) => (selectedInterval = interval)}
 />
 ```
+
+### ChartZoomControls
+
+Top-right +/- buttons that fade in on parent `group-hover`. Wire to the same `onzoom`-compatible handler used by wheel/pinch:
+
+```svelte
+<script>
+	import { StratumChart, ChartZoomControls } from '$lib/components/charts/v2';
+
+	const FACTOR = 1.5;
+	let zoomButtonsWidth = $state(0);
+
+	function zoomIn() {
+		handleZoom(FACTOR, (viewStart + viewEnd) / 2);
+	}
+	function zoomOut() {
+		handleZoom(1 / FACTOR, (viewStart + viewEnd) / 2);
+	}
+</script>
+
+<div class="group relative">
+	<StratumChart
+		{chart}
+		enablePan
+		onzoom={handleZoom}
+		tooltipMode="floating"
+		tooltipDodgeRightPx={zoomButtonsWidth + 8}
+	/>
+	<ChartZoomControls onzoomin={zoomIn} onzoomout={zoomOut} bind:width={zoomButtonsWidth} />
+</div>
+```
+
+Props: `onzoomin`, `onzoomout`, `isAtMinZoom`, `isAtMaxZoom`, `overlayInsetPx`, `width` (bindable). The parent must carry the `group` class so the buttons fade in on hover. Feed `width` into StratumChart's `tooltipDodgeRightPx` so the floating tooltip moves out of the buttons' way.
 
 ### ChartRangeBar
 
@@ -704,13 +754,15 @@ All pointer interactions are handled by **InteractionLayer**, an HTML `<div>` th
 |-------|---------|--------|
 | Mouse | Move | Hover: snap to nearest data point, highlight series |
 | Mouse | Click | Focus: lock tooltip to clicked time |
-| Mouse | Cmd/Ctrl + drag | Pan: shift viewport by `deltaPx × msPerPx` |
+| Mouse | Left-button drag | Pan: shift viewport by `deltaPx × msPerPx` (after a 3 px threshold) |
+| Mouse | Wheel — vertical | Zoom at cursor: `factor = 1.002^(-deltaY)` |
+| Mouse | Wheel — horizontal | Pan: shift viewport, debounced `onpanend` 150 ms after the last tick |
 | Touch | 1-finger drag | Hover: track finger position |
 | Touch | 1-finger tap | Focus: lock tooltip |
 | Touch | 2-finger drag | Pan: shift viewport |
 | Touch | 2-finger pinch | Zoom: scale factor anchored to midpoint |
 
-Wheel zoom is handled at the consuming component level (e.g. FacilityChart attaches a wheel listener with `{ passive: false }` for `Cmd`/`Ctrl` + scroll).
+Wheel pan/zoom is a built-in default — it fires the same `onpan` / `onzoom` callbacks as pointer gestures, so any consumer that handles those gets wheel support for free. The classification and deltas are pure helpers in [`wheel-interaction.js`](./wheel-interaction.js) (`classifyWheelIntent`, `wheelPanDeltaMs`, `wheelZoomFactor`) and unit-tested in `wheel-interaction.test.js`.
 
 **Coordinate mapping**: InteractionLayer converts `clientX` to time using the chart's time domain. It resolves the domain from (in order of priority):
 1. `viewDomain` prop (explicit, used by FacilityChart)
@@ -797,26 +849,48 @@ Key behaviors:
 src/lib/components/charts/v2/
 ├── index.js                    # Main exports
 ├── README.md                   # This file
+│
 ├── ChartStore.svelte.js        # Chart state management (runes)
 ├── ChartOptions.svelte.js      # Chart type/transform options
 ├── ChartStyles.svelte.js       # Style configurations
 ├── ChartTooltips.svelte.js     # Tooltip state
 ├── ChartDataManager.svelte.js  # Client-side data cache/fetcher
+│
 ├── StratumChart.svelte         # Wrapper: header + tooltip + InteractionLayer + chart
-├── StackedAreaChart.svelte     # Time-series chart (scaleTime x axis)
+├── StackedAreaChart.svelte     # Stacked area / line time-series chart
+├── BarChart.svelte             # Stacked-bar chart
+├── GroupedBarChart.svelte      # Grouped bar chart
+├── ChartHeader.svelte          # Title + options row above the chart
+├── ChartControls.svelte        # Chart type / transform toggles
+├── ChartTooltip.svelte         # Built-in "strip" tooltip above the chart
+├── ChartTooltipFloating.svelte # Built-in "floating" all-series card overlaid on the chart
+├── ChartZoomControls.svelte    # +/- zoom buttons (top-right, hover-reveal)
+├── ChartResizeHandle.svelte    # Vertical resize handle below the chart
 ├── ChartRangeBar.svelte        # Unified toolbar: range presets + calendar + interval dropdown
 ├── DateBrush.svelte            # Date range brush selector
 ├── IntervalSelector.svelte     # Interval toggle
+│
 ├── dataProcessing.js           # Data processing utilities
+├── chart-families.js           # Chart-type family metadata (stacked-area, bar, etc.)
+├── compute-y-domain.js         # Y-domain computation for single/dual axes
+├── energy-gridlines.js         # Gridline tick computation for energy intervals
+├── formatters.js               # Axis / tick formatters
 ├── intervalConfig.js           # Interval/metric/curve definitions
 ├── intervals.js                # Interval utilities
-├── sync.js                     # Multi-chart synchronization
 ├── presets.js                  # Chart presets
+├── sync.js                     # Multi-chart synchronization
+├── tooltip-derivations.js      # Pure helpers shared by both tooltip components
+├── wheel-interaction.js        # Pure wheel→pan/zoom math (used by InteractionLayer)
+│
+├── *.test.js                   # Vitest unit tests co-located with each module
 │
 └── elements/                   # Low-level SVG/HTML components
     ├── index.js                # Element exports
-    ├── InteractionLayer.svelte # HTML-level unified interaction handler (hover, click, pan, zoom)
+    ├── InteractionLayer.svelte # HTML-level unified interaction handler (hover, click, pan, zoom, wheel)
     ├── StackedArea.svelte      # Stacked area/line paths (series-key hover)
+    ├── Area.svelte             # Single-series area path
+    ├── GroupedBar.svelte       # Grouped-bar rect group
+    ├── StackedBar.svelte       # Stacked-bar rect group
     ├── NetTotalLine.svelte     # Step-after line for net total overlay
     ├── HatchOverlay.svelte     # Hatched projection overlay region
     ├── StepHoverBand.svelte    # Band highlight for step mode hover/focus

@@ -8,20 +8,12 @@
 	 */
 
 	import { StratumChart } from '$lib/components/charts/v2';
+	import ChartZoomControls from '$lib/components/charts/v2/ChartZoomControls.svelte';
 	import { getFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 
+	const BUTTON_ZOOM_FACTOR = 1.5;
+
 	const ctx = getFacilityFinancialDataContext();
-
-	/** @type {HTMLDivElement | undefined} */
-	let containerEl = $state(undefined);
-
-	$effect(() => {
-		const el = containerEl;
-		if (!el || !ctx) return;
-		const onWheel = ctx.handleWheel;
-		el.addEventListener('wheel', onWheel, { passive: false });
-		return () => el.removeEventListener('wheel', onWheel);
-	});
 
 	/**
 	 * @param {number} time
@@ -49,6 +41,18 @@
 	let loadingRanges = $derived(ctx?.mvLoadingRanges ?? []);
 	let showLoadingOverlay = $derived(ctx?.showLoadingOverlay ?? false);
 
+	let zoomButtonsWidth = $state(0);
+
+	function zoomIn() {
+		if (!ctx || !viewStart || !viewEnd) return;
+		ctx.handleZoom(BUTTON_ZOOM_FACTOR, (viewStart + viewEnd) / 2);
+	}
+
+	function zoomOut() {
+		if (!ctx || !viewStart || !viewEnd) return;
+		ctx.handleZoom(1 / BUTTON_ZOOM_FACTOR, (viewStart + viewEnd) / 2);
+	}
+
 	// Mirror externally-driven hover time into the local chart store. Only
 	// active when a parent has opted in via `onhoverchange` — otherwise the
 	// effect would clear the hover that the user's own handler just set.
@@ -67,10 +71,7 @@
 </script>
 
 {#if ctx && mvChartStore}
-	<div
-		bind:this={containerEl}
-		class="rounded-lg p-4 relative bg-white"
-	>
+	<div class="group rounded-lg p-4 relative bg-white">
 		<StratumChart
 			chart={mvChartStore}
 			onhover={handleHover}
@@ -84,6 +85,7 @@
 			onzoom={ctx.handleZoom}
 			{loadingRanges}
 			tooltipMode="floating"
+			tooltipDodgeRightPx={hasViewportHandler ? zoomButtonsWidth + 8 : 0}
 			resizable
 			heightStorageKey="facility-chart-height-market-value"
 			minHeight={120}
@@ -141,6 +143,14 @@
 					<span class="text-xs">Loading financial data...</span>
 				</div>
 			</div>
+		{/if}
+
+		{#if hasViewportHandler}
+			<ChartZoomControls
+				onzoomin={zoomIn}
+				onzoomout={zoomOut}
+				bind:width={zoomButtonsWidth}
+			/>
 		{/if}
 	</div>
 {:else}

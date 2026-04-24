@@ -570,20 +570,8 @@
 		onviewportchange?.({ start: newStart, end: newEnd });
 	}
 
-	/** @param {WheelEvent} event */
-	function handleWheel(event) {
-		if (!event.metaKey && !event.ctrlKey) return;
-		if (!onviewportchange) return;
-
-		event.preventDefault();
-
-		const factor = Math.pow(1.002, -event.deltaY);
-		const rect = /** @type {HTMLElement} */ (event.currentTarget).getBoundingClientRect();
-		const ratio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
-		const centerMs = viewStart + ratio * (viewEnd - viewStart);
-
-		handleZoom(factor, centerMs);
-	}
+	// Wheel zoom / pan is handled by `InteractionLayer` inside StratumChart —
+	// it fires our existing onpan/onzoom callbacks directly.
 
 	// ============================================
 	// Loading overlay state
@@ -694,7 +682,6 @@
 		handlePan,
 		handlePanEnd,
 		handleZoom,
-		handleWheel,
 		getTooltipData,
 		formatPriceValue,
 		formatDollarValue

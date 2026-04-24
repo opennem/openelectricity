@@ -23,7 +23,6 @@ const KEY = Symbol('facility-financial-data');
  * @property {(deltaMs: number) => void} handlePan
  * @property {() => void} handlePanEnd
  * @property {(factor: number, centerMs: number) => void} handleZoom
- * @property {(event: WheelEvent) => void} handleWheel
  * @property {(chart: import('$lib/components/charts/v2/ChartStore.svelte.js').default) => {
  *   data: any,
  *   key: string | undefined,

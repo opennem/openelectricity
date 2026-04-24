@@ -14,6 +14,12 @@
 	 * SVG-level interactions (e.g. StackedArea series hover) during pan/zoom.
 	 */
 
+	import {
+		classifyWheelIntent,
+		wheelPanDeltaMs,
+		wheelZoomFactor
+	} from '../wheel-interaction.js';
+
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('../ChartStore.svelte.js').default} chart - Chart store for hover/focus state
@@ -393,6 +399,49 @@
 		onfocus ? onfocus(time) : chart.toggleFocus(time);
 	}
 
+	// ---- Wheel (pan/zoom) ----
+
+	/** @type {ReturnType<typeof setTimeout> | null} */
+	let wheelPanEndTimeout = null;
+
+	/**
+	 * Horizontal scroll pans the viewport; vertical scroll zooms at the
+	 * cursor. Fires the same onpan/onzoom callbacks as pointer gestures, so
+	 * consumers get wheel support for free.
+	 * @param {WheelEvent} event
+	 */
+	function handleWheel(event) {
+		if (!enablePan) return;
+		if (interactionMode !== 'none') return;
+		if (!onpan && !onzoom) return;
+
+		const rect = el?.getBoundingClientRect();
+		if (!rect || rect.width === 0) return;
+
+		const domain = getTimeDomain();
+		if (!domain) return;
+
+		event.preventDefault();
+
+		const intent = classifyWheelIntent(event.deltaX, event.deltaY);
+
+		if (intent === 'pan') {
+			if (!onpan) return;
+			const deltaMs = wheelPanDeltaMs(event.deltaX, rect.width, domain[1] - domain[0]);
+			onpan(deltaMs);
+
+			if (wheelPanEndTimeout) clearTimeout(wheelPanEndTimeout);
+			wheelPanEndTimeout = setTimeout(() => {
+				wheelPanEndTimeout = null;
+				onpanend?.();
+			}, 150);
+			return;
+		}
+
+		if (!onzoom) return;
+		onzoom(wheelZoomFactor(event.deltaY), clientXToTime(event.clientX));
+	}
+
 	// ---- Lifecycle ----
 
 	$effect(() => {
@@ -400,9 +449,16 @@
 		if (!target || !enablePan) return;
 
 		target.addEventListener('pointerdown', handlePointerDown);
+		// Wheel needs `{ passive: false }` so we can preventDefault().
+		target.addEventListener('wheel', handleWheel, { passive: false });
 
 		return () => {
 			target.removeEventListener('pointerdown', handlePointerDown);
+			target.removeEventListener('wheel', handleWheel);
+			if (wheelPanEndTimeout) {
+				clearTimeout(wheelPanEndTimeout);
+				wheelPanEndTimeout = null;
+			}
 			cleanup();
 		};
 	});
