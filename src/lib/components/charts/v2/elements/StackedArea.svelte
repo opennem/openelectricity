@@ -234,7 +234,7 @@
 				fill="transparent"
 				stroke={seriesColours[$z(d)]}
 				stroke-width={strokeWidth}
-				opacity={getOpacity(d, 1, 0.3)}
+				opacity={getOpacity(d, 1, 0.5)}
 			/>
 		{/each}
 	</g>
@@ -269,7 +269,7 @@
 					d={makeAreaGen(seriesKey)(d)}
 					fill={baseColor}
 					stroke="none"
-					opacity={getOpacity(d, 1, 0.4)}
+					opacity={getOpacity(d, 1, 0.65)}
 					clip-path="url(#{clipId}-positive)"
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
@@ -285,7 +285,7 @@
 					d={makeAreaGen(seriesKey)(d)}
 					fill={getLighterColor(baseColor)}
 					stroke="none"
-					opacity={getOpacity(d, 1, 0.4)}
+					opacity={getOpacity(d, 1, 0.65)}
 					clip-path="url(#{clipId}-negative)"
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
@@ -301,7 +301,7 @@
 					d={makeAreaGen(seriesKey)(d)}
 					fill={baseColor}
 					stroke="none"
-					opacity={getOpacity(d, 1, 0.4)}
+					opacity={getOpacity(d, 1, 0.65)}
 					onmousemove={(e) => handlePointerMove(e, seriesKey)}
 					onmouseout={handleMouseOut}
 					ontouchmove={(e) => handlePointerMove(e, seriesKey)}

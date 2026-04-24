@@ -144,7 +144,7 @@
 			fill={baseColor}
 			stroke={baseColor}
 			stroke-width="1"
-			opacity={getOpacity(d, 0.6, 0.2)}
+			opacity={getOpacity(d, 0.6, 0.45)}
 			onmousemove={(e) => handlePointerMove(e, seriesKey)}
 			onmouseout={handleMouseOut}
 			ontouchmove={(e) => handlePointerMove(e, seriesKey)}

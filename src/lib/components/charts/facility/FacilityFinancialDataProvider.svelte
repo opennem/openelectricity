@@ -55,6 +55,8 @@
 	 * @property {string} [priceChartHeight]
 	 * @property {string} [mvChartHeight]
 	 * @property {boolean} [active] - When false, skip manager instantiation (no fetch fires).
+	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync.
+	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when a financial chart's local hover changes.
 	 * @property {((data: SummaryData) => void)} [onsummarydata]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
 	 * @property {import('svelte').Snippet} [children]
@@ -71,6 +73,8 @@
 		priceChartHeight = 'h-[150px]',
 		mvChartHeight = 'h-[200px]',
 		active = true,
+		hoverTime = undefined,
+		onhoverchange,
 		onsummarydata,
 		onviewportchange,
 		children
@@ -679,6 +683,12 @@
 		},
 		get hasViewportHandler() {
 			return !!onviewportchange;
+		},
+		get hoverTime() {
+			return hoverTime;
+		},
+		get onhoverchange() {
+			return onhoverchange;
 		},
 		handlePanStart,
 		handlePan,

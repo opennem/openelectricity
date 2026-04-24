@@ -30,10 +30,12 @@
 	 */
 	function handleHover(time, key) {
 		ctx?.priceChartStore?.setHover(time, key);
+		ctx?.onhoverchange?.(time);
 	}
 
 	function handleHoverEnd() {
 		ctx?.priceChartStore?.clearHover();
+		ctx?.onhoverchange?.(undefined);
 	}
 
 	/** @param {number} time */
@@ -48,6 +50,22 @@
 	let hasViewportHandler = $derived(ctx?.hasViewportHandler ?? false);
 	let loadingRanges = $derived(ctx?.priceLoadingRanges ?? []);
 
+	// Mirror externally-driven hover time into the local chart store. Only
+	// active when a parent has opted in via `onhoverchange` — otherwise the
+	// effect would clear the hover that the user's own handler just set.
+	$effect(() => {
+		if (!ctx?.onhoverchange) return;
+		const t = ctx.hoverTime;
+		const store = priceChartStore;
+		if (!store) return;
+		if (store.hoverTime === t) return;
+		if (t === undefined) {
+			store.clearHover();
+		} else {
+			store.setHover(t);
+		}
+	});
+
 	// Suppress unused warnings — these are captured via context closures
 	untrack(() => ctx);
 </script>
@@ -55,7 +73,7 @@
 {#if ctx && priceChartStore}
 	<div
 		bind:this={containerEl}
-		class="border border-light-warm-grey rounded-lg p-4 relative bg-white"
+		class="rounded-lg p-4 relative bg-white"
 	>
 		<StratumChart
 			chart={priceChartStore}
@@ -69,6 +87,7 @@
 			onpanend={ctx.handlePanEnd}
 			onzoom={ctx.handleZoom}
 			{loadingRanges}
+			tooltipMode="floating"
 			resizable
 			heightStorageKey="facility-chart-height-price"
 			minHeight={100}

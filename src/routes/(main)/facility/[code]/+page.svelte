@@ -113,6 +113,14 @@
 
 	let noneSelected = $derived(selectedCharts.length === 0);
 
+	/** Shared hover time — syncs crosshair/tooltip across all three charts. */
+	/** @type {number | undefined} */
+	let hoverTime = $state(undefined);
+	/** @param {number | undefined} time */
+	function handleHoverChange(time) {
+		hoverTime = time;
+	}
+
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
 
@@ -235,7 +243,7 @@
 						{#each CHART_OPTIONS as opt (opt.value)}
 							<ToggleGroup.Item
 								value={opt.value}
-								class="px-4 py-1.5 rounded-md text-sm text-mid-grey hover:text-black transition-colors data-[state=on]:bg-white data-[state=on]:text-black data-[state=on]:shadow-sm"
+								class="px-3 py-1 rounded-md text-xs text-mid-grey hover:text-black transition-colors data-[state=on]:bg-white data-[state=on]:text-black data-[state=on]:shadow-sm"
 							>
 								{opt.label}
 							</ToggleGroup.Item>
@@ -251,6 +259,8 @@
 					{displayInterval}
 					{viewStart}
 					{viewEnd}
+					{hoverTime}
+					onhoverchange={handleHoverChange}
 					onviewportchange={handlePriceViewportChange}
 				>
 					{#if noneSelected}
@@ -274,6 +284,9 @@
 									{displayInterval}
 									chartHeight="h-[267px]"
 									title={activeMetric === 'energy' ? 'Energy' : 'Power'}
+									tooltipMode="floating"
+									{hoverTime}
+									onhoverchange={handleHoverChange}
 									onviewportchange={handlePowerViewportChange}
 								/>
 							{/if}

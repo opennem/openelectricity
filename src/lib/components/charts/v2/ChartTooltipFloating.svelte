@@ -2,10 +2,22 @@
 	/**
 	 * ChartTooltipFloating — cursor-following tooltip overlaid on the chart.
 	 *
+	 * Renders a multi-row card: date header, one row per visible series, and
+	 * an optional total footer. The row whose key matches `chart.hoverKey`
+	 * gets a subtle background tint so the user can see which series the
+	 * pointer is over.
+	 *
 	 * Reads `chart.hoverTime` (set by InteractionLayer / StackedArea mouse
-	 * events) and positions itself at the corresponding x-pixel inside the
+	 * events) and positions the card at the corresponding x-pixel inside the
 	 * chart area, with boundary-aware flipping near the edges.
 	 */
+
+	import {
+		getActiveData,
+		getTotalForRow,
+		formatTooltipDate,
+		buildSeriesRows
+	} from './tooltip-derivations.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -21,48 +33,43 @@
 	/** @type {HTMLDivElement | undefined} */
 	let wrapperEl = $state(undefined);
 	let wrapperWidth = $state(0);
-
-	/** @type {HTMLDivElement | undefined} */
-	let tooltipEl = $state(undefined);
+	let wrapperHeight = $state(0);
 	let tooltipWidth = $state(0);
+	let tooltipHeight = $state(0);
+	/** Cursor Y inside the wrapper (null while pointer is outside). */
+	let cursorY = $state(/** @type {number | null} */ (null));
 
-	let activeData = $derived(chart.hoverData || chart.focusData);
-	let valueKey = $derived(chart.chartTooltips.valueKey || chart.hoverKey);
-	let value = $derived(activeData && valueKey !== undefined ? activeData[valueKey] : undefined);
-
-	let total = $derived.by(() => {
-		if (!activeData) return 0;
-		return chart.visibleSeriesNames.reduce(
-			(/** @type {number} */ sum, /** @type {string} */ name) =>
-				sum + (Number(activeData[name]) || 0),
-			0
-		);
-	});
-
-	let formattedValue = $derived(
-		value !== undefined ? chart.convertAndFormatValue(Number(value)) : ''
-	);
-	let formattedTotal = $derived(chart.convertAndFormatValue(total));
-	let activeColour = $derived(valueKey ? chart.seriesColours[valueKey] : undefined);
-	let activeLabel = $derived(valueKey ? chart.seriesLabels[valueKey] : undefined);
-
-	let formattedDate = $derived.by(() => {
-		if (!activeData) return '';
-		if (chart.isCategoryChart) {
-			const categoryValue = activeData[chart.xKey];
-			if (categoryValue !== undefined) return chart.formatX(categoryValue);
-			return '';
+	// Track the pointer globally so we can read its position even though the
+	// tooltip overlay itself is `pointer-events-none`. Listening on the window
+	// and projecting into the wrapper's local coordinates avoids intercepting
+	// chart pointer events.
+	$effect(() => {
+		if (!wrapperEl) return;
+		/** @type {HTMLDivElement} */
+		const el = wrapperEl;
+		/** @param {PointerEvent} e */
+		function onMove(e) {
+			const rect = el.getBoundingClientRect();
+			const y = e.clientY - rect.top;
+			cursorY = y >= 0 && y <= rect.height ? y : null;
 		}
-		if (!activeData.date) return '';
-		return new Intl.DateTimeFormat('en-AU', {
-			timeZone: chart.timeZone,
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		}).format(activeData.date);
+		function onLeave() {
+			cursorY = null;
+		}
+		window.addEventListener('pointermove', onMove);
+		window.addEventListener('pointerleave', onLeave);
+		return () => {
+			window.removeEventListener('pointermove', onMove);
+			window.removeEventListener('pointerleave', onLeave);
+		};
 	});
+
+	let activeData = $derived(getActiveData(chart));
+	let formattedDate = $derived(formatTooltipDate(chart, activeData));
+	let rows = $derived(activeData ? buildSeriesRows(chart, activeData) : []);
+	let total = $derived(getTotalForRow(chart, activeData));
+	let formattedTotal = $derived(chart.convertAndFormatValue(total));
+	let displayUnit = $derived(chart.chartOptions.displayUnit ?? '');
 
 	// Convert hoverTime → x-pixel in the chart area, accounting for padding.
 	let hoverX = $derived.by(() => {
@@ -79,66 +86,110 @@
 		return drawLeft + ratio * drawWidth;
 	});
 
-	// Position tooltip horizontally, clamped within [insetPx, wrapperWidth - tooltipWidth - insetPx].
+	// Place the card to the side of the crosshair (not over it) so the column
+	// under the cursor stays visible. Put it on whichever side has more room —
+	// right of the cursor when it's in the left half of the chart, left of the
+	// cursor otherwise. Final position is clamped inside the container.
 	let tooltipLeft = $derived.by(() => {
 		if (hoverX === null || !tooltipWidth || !wrapperWidth) return 0;
-		const halfTip = tooltipWidth / 2;
-		const desired = hoverX - halfTip;
+		const GAP = 12;
+		const placeRight = hoverX < wrapperWidth / 2;
+		const desired = placeRight ? hoverX + GAP : hoverX - tooltipWidth - GAP;
 		return Math.max(insetPx, Math.min(wrapperWidth - tooltipWidth - insetPx, desired));
 	});
 
-	// Dodge a top-right UI element (e.g. zoom buttons). If the tooltip's right
-	// edge lands inside the last `dodgeRightPx` of the container, drop it below
-	// so it clears the element (which starts at the chart's top edge).
+	// Flip to the bottom of the chart when the cursor is near the default top
+	// position — keeps the chart details under the cursor visible. Falls back
+	// to the top (with optional dodge for top-right UI like zoom buttons) when
+	// the cursor is in the lower half or we don't yet have measurements.
 	let tooltipTop = $derived.by(() => {
-		if (dodgeRightPx <= 0) return 8;
-		if (hoverX === null || !tooltipWidth || !wrapperWidth) return 8;
+		const TOP = 8;
+		const DODGE_TOP = 36;
+		const BOTTOM_GAP = 8;
+		const TOP_ZONE_BUFFER = 16;
+
+		const canFlip =
+			cursorY !== null && tooltipHeight > 0 && wrapperHeight > tooltipHeight + BOTTOM_GAP + TOP;
+		const cursorInTopZone =
+			canFlip && cursorY !== null && cursorY < TOP + tooltipHeight + TOP_ZONE_BUFFER;
+
+		if (cursorInTopZone) {
+			return wrapperHeight - tooltipHeight - BOTTOM_GAP;
+		}
+
+		if (dodgeRightPx <= 0) return TOP;
+		if (hoverX === null || !tooltipWidth || !wrapperWidth) return TOP;
 		const tooltipRight = tooltipLeft + tooltipWidth;
 		const zoneLeft = wrapperWidth - dodgeRightPx;
-		return tooltipRight > zoneLeft ? 36 : 8;
+		return tooltipRight > zoneLeft ? DODGE_TOP : TOP;
 	});
 </script>
 
 <div
 	bind:this={wrapperEl}
 	bind:clientWidth={wrapperWidth}
+	bind:clientHeight={wrapperHeight}
 	class="absolute inset-0 pointer-events-none z-20 {className}"
 >
 	{#if activeData}
 		<!-- Vertical hover line -->
 		{#if hoverX !== null}
-			<div
-				class="absolute top-0 bottom-0 w-px bg-mid-warm-grey/40"
-				style:left="{hoverX}px"
-			></div>
+			<div class="absolute top-0 bottom-0 w-px bg-mid-warm-grey/40" style:left="{hoverX}px"></div>
 		{/if}
 
 		<!-- Tooltip card -->
 		<div
-			bind:this={tooltipEl}
 			bind:clientWidth={tooltipWidth}
-			class="absolute flex items-center gap-3 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-md shadow-sm border border-warm-grey text-xs whitespace-nowrap transition-[top] duration-150"
+			bind:clientHeight={tooltipHeight}
+			class="absolute min-w-[180px] flex flex-col bg-white/70 backdrop-blur-md backdrop-saturate-150 rounded-md shadow-sm border border-warm-grey text-xs whitespace-nowrap transition-[top,left] duration-150 px-3 py-2"
 			style:left="{tooltipLeft}px"
 			style:top="{tooltipTop}px"
 		>
-			<span class="font-light text-mid-grey">{formattedDate}</span>
-
-			{#if value !== undefined}
-				<span class="flex items-center gap-1.5">
-					<span
-						class="w-2 h-2 rounded-full shrink-0"
-						style:background-color={activeColour}
-					></span>
-					<span class="text-dark-grey">{activeLabel}</span>
-					<span class="font-mono font-medium text-dark-grey">{formattedValue}</span>
-				</span>
+			<!-- Date header -->
+			{#if formattedDate}
+				<div
+					class="text-mid-grey font-light pb-1.5 mb-1.5 border-b border-warm-grey/60"
+				>
+					{formattedDate}
+				</div>
 			{/if}
 
+			<!-- One row per visible series -->
+			<div class="flex flex-col gap-1">
+				{#each rows as row (row.key)}
+					<div
+						class="flex items-center gap-3 justify-between rounded-sm {row.isHovered
+							? '-mx-2 px-2 py-0.5 bg-light-warm-grey/60'
+							: ''}"
+					>
+						<span class="flex items-center gap-1.5 min-w-0">
+							<span
+								class="w-2 h-2 rounded-full shrink-0"
+								style:background-color={row.colour}
+							></span>
+							<span class="text-dark-grey truncate">{row.label}</span>
+						</span>
+						<span class="font-mono font-medium text-dark-grey tabular-nums">
+							{#if row.formattedValue}
+								{row.formattedValue}{#if displayUnit}&nbsp;{displayUnit}{/if}
+							{:else}
+								—
+							{/if}
+						</span>
+					</div>
+				{/each}
+			</div>
+
+			<!-- Optional total footer -->
 			{#if chart.chartTooltips.showTotal}
-				<span class="flex items-center gap-1.5 pl-3 border-l border-warm-grey">
+				<div
+					class="flex items-center gap-3 justify-between pt-1.5 mt-1.5 border-t border-warm-grey/60"
+				>
 					<span class="text-mid-grey">Total</span>
-					<span class="font-mono font-medium text-dark-grey">{formattedTotal}</span>
-				</span>
+					<span class="font-mono font-semibold text-dark-grey tabular-nums">
+						{formattedTotal}{#if displayUnit}&nbsp;{displayUnit}{/if}
+					</span>
+				</div>
 			{/if}
 		</div>
 	{/if}

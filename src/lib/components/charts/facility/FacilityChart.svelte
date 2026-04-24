@@ -55,6 +55,8 @@
 	 * @property {boolean} [tightAxisClip] - Clip gridlines/axis labels to the exact chart area (default: false). Use for compact charts where gridlines shouldn't extend past the edges.
 	 * @property {number} [overlayInsetPx] - Horizontal standoff (px) between overlay controls (zoom buttons, floating tooltip) and the chart's left/right edges. Use when the chart is rendered flush to its container and the overlays would otherwise touch the edge. Default 0.
 	 * @property {string} [title] - Override the chart header title (defaults to facility.name).
+	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync. When set, the chart renders its crosshair/tooltip at this time.
+	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when the local hover state changes so a parent can sync peer charts.
 	 */
 
 	/** @type {Props} */
@@ -80,7 +82,9 @@
 		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip'),
 		tightAxisClip = false,
 		overlayInsetPx = 0,
-		title = ''
+		title = '',
+		hoverTime = undefined,
+		onhoverchange
 	} = $props();
 
 	// ============================================
@@ -756,11 +760,29 @@
 	function handleHover(time, key) {
 		if (isPanning) return;
 		chartStore?.setHover(time, key);
+		onhoverchange?.(time);
 	}
 
 	function handleHoverEnd() {
 		chartStore?.clearHover();
+		onhoverchange?.(undefined);
 	}
+
+	// Sync externally-driven hover time (from peer charts) into the local chart
+	// store. Only active when the parent has opted in via `onhoverchange` —
+	// otherwise the effect would interpret a missing prop as "clear" and wipe
+	// the hover the moment the user's own handler set it.
+	$effect(() => {
+		if (!onhoverchange) return;
+		const t = hoverTime;
+		if (!chartStore) return;
+		if (chartStore.hoverTime === t) return;
+		if (t === undefined) {
+			chartStore.clearHover();
+		} else {
+			chartStore.setHover(t);
+		}
+	});
 
 	/**
 	 * @param {number} time
@@ -803,7 +825,7 @@
 {#if chartStore}
 	<div
 		bind:this={chartContainerEl}
-		class="group relative {showContainer ? 'border border-light-warm-grey rounded-lg p-4' : ''}"
+		class="group relative {showContainer ? 'rounded-lg p-4' : ''}"
 	>
 		<StratumChart
 			chart={chartStore}

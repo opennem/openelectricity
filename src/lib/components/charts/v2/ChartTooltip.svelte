@@ -1,10 +1,19 @@
 <script>
 	/**
-	 * Chart Tooltip Component
+	 * Chart Tooltip Component (strip variant)
 	 *
-	 * Displays hover/focus information for the chart.
-	 * Shows date, selected series value, and total.
+	 * Renders a fixed 21px strip above the chart showing the active row's
+	 * date, the single hovered series value, and an optional total. Shares
+	 * derivation logic with `ChartTooltipFloating.svelte` via
+	 * `tooltip-derivations.js`.
 	 */
+
+	import {
+		getActiveData,
+		getValueKey,
+		getTotalForRow,
+		formatTooltipDate
+	} from './tooltip-derivations.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -16,59 +25,18 @@
 	/** @type {Props} */
 	let { chart, defaultText = '', class: className = '' } = $props();
 
-	// Use focus data if available, otherwise hover data
-	let activeData = $derived(chart.hoverData || chart.focusData);
-
-	// Get the value key (from tooltip config or hover key)
-	let valueKey = $derived(chart.chartTooltips.valueKey || chart.hoverKey);
-
-	// Get the value for the active key
+	let activeData = $derived(getActiveData(chart));
+	let valueKey = $derived(getValueKey(chart));
 	let value = $derived(activeData && valueKey !== undefined ? activeData[valueKey] : undefined);
 
-	// Get total (sum of all visible series values)
-	let total = $derived.by(() => {
-		if (!activeData) return 0;
-		return chart.visibleSeriesNames.reduce((sum, name) => sum + (Number(activeData[name]) || 0), 0);
-	});
-
-	// Format values
+	let total = $derived(getTotalForRow(chart, activeData));
 	let formattedValue = $derived(
 		value !== undefined ? chart.convertAndFormatValue(Number(value)) : ''
 	);
 	let formattedTotal = $derived(chart.convertAndFormatValue(total));
-
-	// Get colour for the active key
 	let activeColour = $derived(valueKey ? chart.seriesColours[valueKey] : undefined);
-
-	// Get label for the active key
 	let activeLabel = $derived(valueKey ? chart.seriesLabels[valueKey] : undefined);
-
-	// Format date/category label
-	let formattedDate = $derived.by(() => {
-		if (!activeData) return '';
-
-		// For category charts, use the xKey value with formatX (or formatTickX as fallback)
-		if (chart.isCategoryChart) {
-			const categoryValue = activeData[chart.xKey];
-			if (categoryValue !== undefined) {
-				// Use formatX for tooltip display (can be different from axis tick labels)
-				return chart.formatX(categoryValue);
-			}
-			return '';
-		}
-
-		// For time-based charts, format the date
-		if (!activeData.date) return '';
-		const date = activeData.date;
-		return new Intl.DateTimeFormat('en-AU', {
-			timeZone: chart.timeZone,
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		}).format(date);
-	});
+	let formattedDate = $derived(formatTooltipDate(chart, activeData));
 </script>
 
 <div class="h-[21px] {className}">
