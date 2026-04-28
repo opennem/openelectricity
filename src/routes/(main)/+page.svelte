@@ -4,6 +4,7 @@
 	import { browser } from '$app/environment';
 	import { isSafari } from '$lib/utils/browser-detect';
 
+	import { showToast } from '$lib/stores/toast';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
@@ -24,7 +25,29 @@
 
 	// Server-side data
 	let homepageData = $derived(data.homepageData);
-	let historyEnergyNemData = $derived(data.historyEnergyNemData);
+	let renewablesInput = $derived(data.renewablesInput?.data ?? null);
+	let renewablesError = $derived(data.renewablesInput?.error ?? null);
+	let renewablesRawPayloads = $derived(data.renewablesInput?.rawPayloads ?? null);
+
+	$effect(() => {
+		if (browser && renewablesError) showToast(renewablesError);
+	});
+
+	$effect(() => {
+		if (!browser || !renewablesRawPayloads) return;
+		/** @param {string} label @param {{ call: any, response: any }} entry */
+		function logCall(label, entry) {
+			const { method, network, metrics, options } = entry.call;
+			const args = [JSON.stringify(network), JSON.stringify(metrics), JSON.stringify(options)].join(
+				', '
+			);
+			console.log(`[OE API] ${label} — client.${method}(${args})`, entry.response);
+		}
+		logCall('fueltech energy', renewablesRawPayloads.fueltechEnergy);
+		logCall('generation_renewable_energy', renewablesRawPayloads.generationRenewableEnergy);
+		logCall('demand_gross_energy', renewablesRawPayloads.demandGrossEnergy);
+		logCall('energy by renewable grouping', renewablesRawPayloads.renewableGrouping);
+	});
 	let articles = $derived(data.articles);
 	let flows = $derived(data.flows);
 	let prices = $derived(data.prices);
@@ -125,18 +148,20 @@
 			(entries) => {
 				if (entries[0].isIntersecting) {
 					Promise.all([
-						fetch('/api/region-power').then((r) => r.ok ? r.json() : null),
-						fetch('/api/region-energy').then((r) => r.ok ? r.json() : null),
-						fetch('/api/region-emissions').then((r) => r.ok ? r.json() : null),
+						fetch('/api/region-power').then((r) => (r.ok ? r.json() : null)),
+						fetch('/api/region-energy').then((r) => (r.ok ? r.json() : null)),
+						fetch('/api/region-emissions').then((r) => (r.ok ? r.json() : null)),
 						import('$lib/components/info-graphics/system-snapshot/index.svelte')
-					]).then(([power, energy, emissions, module]) => {
-						regionPower = power;
-						regionEnergy = energy;
-						regionEmissions = emissions;
-						SystemSnapshotComponent = module.default;
-					}).catch((e) => {
-						console.error('Failed to fetch system snapshot:', e);
-					});
+					])
+						.then(([power, energy, emissions, module]) => {
+							regionPower = power;
+							regionEnergy = energy;
+							regionEmissions = emissions;
+							SystemSnapshotComponent = module.default;
+						})
+						.catch((e) => {
+							console.error('Failed to fetch system snapshot:', e);
+						});
 					snapshotObserver.disconnect();
 				}
 			},
@@ -152,7 +177,7 @@
 			(entries) => {
 				if (entries[0].isIntersecting) {
 					fetch('/api/notable-records')
-						.then((r) => r.ok ? r.json() : null)
+						.then((r) => (r.ok ? r.json() : null))
 						.then((data) => {
 							pinnedRecords = data;
 						})
@@ -219,9 +244,9 @@
 <!-- Hero Section: Fossil Fuels vs Renewables -->
 <div class="bg-light-warm-grey py-12" in:fade={{ duration: 400 }}>
 	<div class="container max-w-none lg:container relative">
-		{#if historyEnergyNemData && heroChartReady}
+		{#if renewablesInput && heroChartReady}
 			<InfoGraphicFossilFuelsRenewables
-				data={historyEnergyNemData}
+				data={renewablesInput}
 				title={banner_title}
 				description={banner_statement}
 				skipAnimation={skipHeroAnimation}

@@ -35,7 +35,6 @@
 		fetchScenarioViewData,
 		fetchRegionViewData
 	} from './page-data-options/fetch.svelte.js';
-	import { toggleDataSource, getUseOeApi } from './page-data-options/fetch.svelte.js';
 	import processTechnology from './page-data-options/process-technology';
 	import processScenario from './page-data-options/process-scenario';
 	import processRegion from './page-data-options/process-region';
@@ -145,17 +144,6 @@
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
-		// Cmd/Ctrl+. toggle — check before input guard so it works everywhere
-		if (e.key === '.' && (e.metaKey || e.ctrlKey)) {
-			e.preventDefault();
-			const isOeApi = toggleDataSource();
-			console.log(`[scenarios] Data source: ${isOeApi ? 'OE API' : 'Legacy'}`);
-			techCacheKey = '';
-			scenarioCacheKey = '';
-			regionCacheKey = '';
-			return;
-		}
-
 		const target = /** @type {HTMLElement} */ (e.target);
 		if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
 			return;
@@ -179,7 +167,6 @@
 			showShortcutsToast = !showShortcutsToast;
 			return;
 		}
-
 	}
 
 	/** @type {FuelTechCode[] | undefined} */
@@ -602,7 +589,10 @@
 			: undefined;
 
 		// process colours
-		const updatedSeriesColours = processScenario.getScenarioColours(processedEnergy.seriesNames, $colourOverrides);
+		const updatedSeriesColours = processScenario.getScenarioColours(
+			processedEnergy.seriesNames,
+			$colourOverrides
+		);
 
 		// update colours
 		processedEnergy.seriesColours = updatedSeriesColours;
@@ -737,7 +727,11 @@
 	</PageHeaderSimple>
 {/if}
 
-<Filters {isFullscreen} onfullscreenchange={toggleFullscreen} onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)} />
+<Filters
+	{isFullscreen}
+	onfullscreenchange={toggleFullscreen}
+	onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
+/>
 
 <div
 	class="relative max-w-none py-10 md:p-16 md:flex gap-12 z-30 border-b border-mid-warm-grey pb-24 mb-24"
@@ -783,11 +777,7 @@
 		{:else if $isTechnologyViewSection}
 			<TableTechnology {seriesLoadsIds} {hiddenRowNames} onrowclick={toggleRow} />
 		{:else if $isScenarioViewSection}
-			<TableScenario
-				title="Scenario"
-				{hiddenRowNames}
-				onrowclick={toggleRow}
-			/>
+			<TableScenario title="Scenario" {hiddenRowNames} onrowclick={toggleRow} />
 		{:else if $isRegionViewSection}
 			<TableRegion title="Region" {seriesLoadsIds} {hiddenRowNames} onrowclick={toggleRow} />
 		{/if}
@@ -807,19 +797,11 @@
 			{/if}
 
 			{#if $isScenarioViewSection}
-				<DetailedScenario
-					onhover={handleHover}
-					onhoverend={handleHoverEnd}
-					onfocus={handleFocus}
-				/>
+				<DetailedScenario onhover={handleHover} onhoverend={handleHoverEnd} onfocus={handleFocus} />
 			{/if}
 
 			{#if $isRegionViewSection}
-				<DetailedRegion
-					onhover={handleHover}
-					onhoverend={handleHoverEnd}
-					onfocus={handleFocus}
-				/>
+				<DetailedRegion onhover={handleHover} onhoverend={handleHoverEnd} onfocus={handleFocus} />
 			{/if}
 		{:else}
 			<div class="container max-w-none lg:container px-0 md:px-16 lg:px-40">
@@ -837,7 +819,6 @@
 			(article) => article.tags && article.tags.find((tag) => tag.title === 'ISP')
 		)}
 	/>
-
 {/if}
 
 <ShortcutsToast
