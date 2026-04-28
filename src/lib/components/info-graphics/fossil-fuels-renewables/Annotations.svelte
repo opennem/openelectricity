@@ -9,6 +9,7 @@
 	 * @property {boolean} [rounded]
 	 * @property {boolean} [showBesideLatestPoint]
 	 * @property {any} [seriesLabels]
+	 * @property {string} [unit]
 	 */
 
 	/** @type {Props} */
@@ -17,7 +18,8 @@
 		dataset,
 		rounded = false,
 		showBesideLatestPoint = false,
-		seriesLabels = {}
+		seriesLabels = {},
+		unit = '%'
 	} = $props();
 
 	const { data, xGet, yGet, zGet } = getContext('LayerCake');
@@ -76,7 +78,7 @@
 				<span class="text-2xl font-semibold">
 					{getValue(group)}
 				</span>
-				<span class="text-lg">%</span>
+				<span class="text-lg">{unit}</span>
 			</div>
 		</div>
 	{/each}

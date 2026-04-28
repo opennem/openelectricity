@@ -1,16 +1,12 @@
 <script>
-	import Statistic from '$lib/utils/Statistic';
-	import TimeSeries from '$lib/utils/TimeSeries';
-	import parseInterval from '$lib/utils/intervals';
-
-	import { domainGroups, loadFts, totalId, labelReducer } from './helpers';
 	import { colourReducer } from '$lib/stores/theme';
+	import { calculateRenewables } from '$lib/oe-api/calculate-renewables';
 
 	import Chart from './Chart.svelte';
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {StatsData[]} data
+	 * @property {{ fueltechStats: StatsData[], marketStats: StatsData[], legacyFueltechStats?: StatsData[] } | null} data
 	 * @property {string} [title]
 	 * @property {string} [description]
 	 * @property {boolean} [skipAnimation]
@@ -19,38 +15,32 @@
 	/** @type {Props} */
 	let { data, title = '', description = '', skipAnimation = false } = $props();
 
-	let hasData = $derived(data && data.length > 0);
-
-	let statsDatasets = $derived(
-		hasData
-			? new Statistic(data, 'history').group(domainGroups).addTotalMinusLoads(loadFts, totalId)
-			: null
+	let hasData = $derived(
+		!!data &&
+			(data.fueltechStats?.length > 0 ||
+				data.marketStats?.length > 0 ||
+				(data.legacyFueltechStats?.length ?? 0) > 0)
 	);
 
-	let timeSeriesDatasets = $derived(
-		statsDatasets
-			? new TimeSeries(statsDatasets.data, parseInterval('1M'), 'history', labelReducer, $colourReducer)
-					.transform()
-					.calculate12MthRollingSum()
-					.convertToPercentage(totalId)
+	// Homepage uses the legacy OpenNEM JSON source, 12-month rolling, percentage.
+	// All other modes / smoothing / value-type combinations live on /studio/renewables.
+	let result = $derived.by(() =>
+		hasData && data
+			? calculateRenewables(data, 'legacy_opennem', $colourReducer, 'rolling12mth', 'percentage')
 			: null
 	);
-
-	let dataset = $derived(timeSeriesDatasets?.data ?? []);
-	let seriesNames = $derived(timeSeriesDatasets?.seriesNames.filter((name) => name !== totalId) ?? []);
-	let seriesColours = $derived(timeSeriesDatasets?.seriesColours ?? {});
-	let seriesLabels = $derived(timeSeriesDatasets?.seriesLabels ?? {});
 </script>
 
-{#if hasData}
+{#if hasData && result}
 	<Chart
 		{title}
 		{description}
-		{dataset}
-		{seriesNames}
-		{seriesColours}
-		{seriesLabels}
+		valueType="percentage"
+		dataset={result.dataset}
+		seriesNames={result.seriesNames}
+		seriesColours={result.seriesColours}
+		seriesLabels={result.seriesLabels}
 		{skipAnimation}
-		historicalDataset={statsDatasets?.data ?? []}
+		historicalDataset={result.statsDatasets}
 	/>
 {/if}

@@ -17,7 +17,7 @@
 
 	import Annotations from './Annotations.svelte';
 
-	import { formatTickX, formatTickY, xDomain, displayXTicks } from './helpers';
+	import { formatTickX, formatTickY, formatTickYRaw, xDomain, displayXTicks } from './helpers';
 
 	const formatHoverTickX = (/** @type {Date | number} */ d) => format(d, 'MMM yyyy');
 	let isSafariBrowser = $state(true);
@@ -32,6 +32,12 @@
 	 * @property {Object.<string, string>} [seriesLabels]
 	 * @property {Object.<string, string>} [seriesColours]
 	 * @property {boolean} [skipAnimation]
+	 * @property {string} [chartLabel]
+	 * @property {'percentage' | 'raw'} [valueType]
+	 * @property {string} [containerClass]
+	 * @property {number | undefined} [externalHoverTime]
+	 * @property {((time: number | undefined) => void) | undefined} [onHoverTimeChange]
+	 * @property {'auto' | true | false} [annotationPlacement]
 	 */
 
 	/** @type {Props} */
@@ -42,12 +48,32 @@
 		dataset = [],
 		seriesNames = [],
 		seriesLabels = {},
+		chartLabel = 'NEM 12 Month Average (%)',
 		seriesColours = {},
-		skipAnimation = false
+		skipAnimation = false,
+		valueType = 'percentage',
+		containerClass = 'chart-container h-[350px] md:h-[650px]',
+		externalHoverTime = undefined,
+		onHoverTimeChange = undefined,
+		annotationPlacement = 'auto'
 	} = $props();
 
+	let yTickFormatter = $derived(valueType === 'percentage' ? formatTickY : formatTickYRaw);
+	let annotationUnit = $derived(valueType === 'percentage' ? '%' : 'GWh');
+
+	/** Local hover state — used when no external hover time is supplied. */
 	/** @type {TimeSeriesData | undefined} */
-	let hoverData = $state(undefined);
+	let localHoverData = $state(undefined);
+
+	/** O(1) lookup of dataset row by `time` for syncing the external hover. */
+	let datasetByTime = $derived(
+		new Map(dataset.map((/** @type {any} */ d) => [d.time, d]))
+	);
+
+	/** Effective hover data: external time wins when set, else local mouseover. */
+	let hoverData = $derived(
+		externalHoverTime != null ? datasetByTime.get(externalHoverTime) : localHoverData
+	);
 
 	let innerWidth = $state(0);
 
@@ -59,6 +85,10 @@
 	let chartBottom = $derived(md ? 40 : 100);
 	let chartLeft = $derived(md ? 0 : 0);
 	let chartRight = $derived(md ? 0 : 0);
+
+	let showBesideLatestPoint = $derived(
+		annotationPlacement === 'auto' ? md : annotationPlacement
+	);
 
 	let groupedData = $derived(dataset ? groupLonger(dataset, seriesNames) : []);
 
@@ -97,7 +127,7 @@
 
 <svelte:window bind:innerWidth />
 
-{#if show}
+{#if show && title}
 	<div
 		class="py-3 md:absolute md:w-6/12 md:mt-[180px] md:ml-24 md:pt-0 md:z-10 md:pointer-events-none"
 	>
@@ -108,7 +138,7 @@
 	</div>
 {/if}
 
-<div class="chart-container h-[350px] md:h-[650px]">
+<div class={containerClass}>
 	<LayerCake
 		padding={{ top: 20, right: chartRight, bottom: chartBottom, left: chartLeft }}
 		x="date"
@@ -123,9 +153,11 @@
 		data={groupedData}
 		{flatData}
 	>
-		<Html pointerEvents={false}>
-			<div class={chartLabelStyles}>NEM 12 Month Average (%)</div>
-		</Html>
+		{#if chartLabel}
+			<Html pointerEvents={false}>
+				<div class={chartLabelStyles}>{chartLabel}</div>
+			</Html>
+		{/if}
 
 		<Svg>
 			<AxisX
@@ -139,16 +171,22 @@
 				tickLabel={!hoverData}
 				fill="transparent"
 			/>
-			<AxisY formatTick={formatTickY} ticks={5} xTick={2} />
+			<AxisY formatTick={yTickFormatter} ticks={5} xTick={2} />
 
 			<MultiLine opacity={0.1} drawDurationObject={drawDuration} />
 
 			<MultiLine {hoverData} drawDurationObject={drawDuration} />
 			<HoverLayer
 				{dataset}
-				onmousemove={(d) =>
-					(hoverData = interact ? /** @type {TimeSeriesData} */ (d) : undefined)}
-				onmouseout={() => (hoverData = undefined)}
+				onmousemove={(d) => {
+					const next = interact ? /** @type {TimeSeriesData} */ (d) : undefined;
+					localHoverData = next;
+					onHoverTimeChange?.(next ? /** @type {any} */ (next).time : undefined);
+				}}
+				onmouseout={() => {
+					localHoverData = undefined;
+					onHoverTimeChange?.(undefined);
+				}}
 			/>
 		</Svg>
 
@@ -167,7 +205,8 @@
 						annotation={hoverData || latestDatapoint}
 						dataset={historicalDataset}
 						{seriesLabels}
-						showBesideLatestPoint={md}
+						{showBesideLatestPoint}
+						unit={annotationUnit}
 					/>
 				</div>
 			{/if}

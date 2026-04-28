@@ -57,6 +57,12 @@
 			disabled: true
 		},
 		{
+			title: 'Renewables — calculation methods',
+			description:
+				'Side-by-side comparison of every renewable-share calculation method, including the legacy OpenNEM JSON and OE API variants.',
+			link: '/studio/renewables'
+		},
+		{
 			title: 'Records',
 			description: 'Tracks significant events in the history of the Australian electricity market.',
 			link: '/records',

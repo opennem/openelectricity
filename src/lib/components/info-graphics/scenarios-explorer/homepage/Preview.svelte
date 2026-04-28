@@ -8,10 +8,7 @@
 	import { createSyncedCharts } from '$lib/components/charts/v2/sync.js';
 	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
 
-	import {
-		fetchTechnologyViewData,
-		toggleDataSource
-	} from '../../../../../routes/(main)/scenarios/page-data-options/fetch.svelte.js';
+	import { fetchTechnologyViewData } from '../../../../../routes/(main)/scenarios/page-data-options/fetch.svelte.js';
 	import processTechnology from '../../../../../routes/(main)/scenarios/page-data-options/process-technology.js';
 	import {
 		modelOptions,
@@ -267,17 +264,6 @@
 		selectedGroup = newGroup;
 	}
 </script>
-
-<svelte:window
-	onkeydown={(e) => {
-		if (e.key === '.' && (e.metaKey || e.ctrlKey)) {
-			e.preventDefault();
-			const isOeApi = toggleDataSource();
-			console.log(`[scenarios] Data source: ${isOeApi ? 'OE API' : 'Legacy'}`);
-			fetchCacheKey = '';
-		}
-	}}
-/>
 
 <div class="container max-w-none lg:container relative">
 	<header class="sm:flex justify-between gap-12 mb-8 sm:mb-12">

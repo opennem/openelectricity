@@ -46,6 +46,7 @@ export const colourReducer = (
 
 export const formatTickX = (/** @type {Date} */ d) => formatInTimeZone(d, '+10:00', 'yyyy');
 export const formatTickY = (/** @type {number} */ d) => `${d3Format('~s')(d)}%`;
+export const formatTickYRaw = (/** @type {number} */ d) => `${d3Format('~s')(d)}`;
 
 const years = getYears();
 export const xDomain = [

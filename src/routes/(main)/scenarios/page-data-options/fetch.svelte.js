@@ -15,47 +15,15 @@ const capacityCache = new Map();
 /** @type {Map<string, StatsData[]>} */
 const scenarioCache = new Map();
 
-/** Reactive flag to switch between OE API and legacy static JSON for historical data */
-let useOeApi = $state(false);
-
-/** Toggle the data source and return the new value */
-export function toggleDataSource() {
-	useOeApi = !useOeApi;
-	return useOeApi;
-}
-
-/** @returns {boolean} */
-export function getUseOeApi() {
-	return useOeApi;
-}
-
-/**
- * Fetch historical energy and emissions data from the OE API.
- * @param {string} region
- * @param {{ signal?: AbortSignal }} [options]
- * @returns {Promise<{ energyData: StatsData[], emissionsData: StatsData[] }>}
- */
-async function getEnergyAndEmissionsFromApi(region, options) {
-	const params = new URLSearchParams({
-		region: region && region === 'NEM' ? '' : region,
-		metrics: 'energy,emissions'
-	});
-	const response = await fetch('/api/scenarios/history?' + params, { signal: options?.signal });
-	const json = await response.json();
-
-	return {
-		energyData: json.energy || [],
-		emissionsData: json.emissions || []
-	};
-}
-
 /**
  * Fetch historical energy and emissions data from the legacy static JSON endpoint.
  * @param {string} region
  * @param {{ signal?: AbortSignal }} [options]
  * @returns {Promise<{ energyData: StatsData[], emissionsData: StatsData[] }>}
  */
-async function getEnergyAndEmissionsFromLegacy(region, options) {
+async function getEnergyAndEmissions(region, options) {
+	if (historyCache.has(region)) return historyCache.get(region);
+
 	const params = {
 		region: region && region === 'NEM' ? '' : region
 	};
@@ -63,31 +31,13 @@ async function getEnergyAndEmissionsFromLegacy(region, options) {
 	const response = await fetch('/api/energy?' + queryStrings, { signal: options?.signal });
 	const json = await response.json();
 
-	return {
+	const result = {
 		energyData: parser(json.data, 'energy'),
 		emissionsData: parser(json.data, 'emissions')
 	};
-}
-
-/**
- * Fetch historical energy and emissions data.
- * Switches between OE API and legacy endpoint based on USE_OE_API flag.
- * @param {string} region
- * @param {{ signal?: AbortSignal }} [options]
- * @returns {Promise<{ energyData: StatsData[], emissionsData: StatsData[] }>}
- */
-async function getEnergyAndEmissions(region, options) {
-	const source = useOeApi ? 'oe' : 'legacy';
-	const key = `${source}:${region}`;
-
-	if (historyCache.has(key)) return historyCache.get(key);
-
-	const result = await (useOeApi
-		? getEnergyAndEmissionsFromApi(region, options)
-		: getEnergyAndEmissionsFromLegacy(region, options));
 
 	if (!options?.signal?.aborted) {
-		historyCache.set(key, result);
+		historyCache.set(region, result);
 	}
 
 	return result;
@@ -333,15 +283,21 @@ async function fetchRegionViewData({ regions, model, scenario, pathway }) {
 
 		const regionLower = r.value.toLowerCase();
 		r.projectionEnergyData = scenarioData
-			.filter((/** @type {any} */ d) => d.region.toLowerCase() === regionLower && d.type === 'energy')
+			.filter(
+				(/** @type {any} */ d) => d.region.toLowerCase() === regionLower && d.type === 'energy'
+			)
 			.map((/** @type {any} */ d) => remappedProjectionData(d, model));
 
 		r.projectionCapacityData = scenarioData
-			.filter((/** @type {any} */ d) => d.region.toLowerCase() === regionLower && d.type === 'capacity')
+			.filter(
+				(/** @type {any} */ d) => d.region.toLowerCase() === regionLower && d.type === 'capacity'
+			)
 			.map((/** @type {any} */ d) => remappedProjectionData(d, model));
 
 		r.projectionEmissionsData = scenarioData
-			.filter((/** @type {any} */ d) => d.region.toLowerCase() === regionLower && d.type === 'emissions')
+			.filter(
+				(/** @type {any} */ d) => d.region.toLowerCase() === regionLower && d.type === 'emissions'
+			)
 			.map((/** @type {any} */ d) => remappedProjectionData(d, model));
 	}
 
