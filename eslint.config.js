@@ -69,8 +69,13 @@ export default [
 		ignores: [
 			'build/',
 			'.svelte-kit/',
+			'.wrangler/',
 			'dist/',
 			'node_modules/',
+			'static/',
+			'playwright-report/',
+			'test-results/',
+			'coverage/',
 			// TypeScript Svelte files that need TS parser configuration
 			'src/lib/components/text-components/*.svelte'
 		]
