@@ -101,16 +101,6 @@ export async function fetchRenewablesInput(fetchFn) {
 		/** @type {{ method: string, network: string, metrics: string[], options: Record<string, unknown> }[]} */
 		const calls = [
 			{
-				method: 'getNetworkData',
-				network: 'NEM',
-				metrics: ['energy'],
-				options: {
-					interval: '1M',
-					dateStart: RENEWABLES_DATE_START,
-					secondaryGrouping: ['fueltech']
-				}
-			},
-			{
 				method: 'getMarket',
 				network: 'NEM',
 				metrics: ['generation_renewable_energy'],
@@ -135,13 +125,12 @@ export async function fetchRenewablesInput(fetchFn) {
 		];
 
 		const [
-			fueltechRes,
 			generationRenewableRes,
 			demandGrossRes,
 			renewableGroupingRes,
 			legacyFueltechStats
 		] = await Promise.all([
-			oe.getNetworkData(
+			oe.getMarket(
 				/** @type {any} */ (calls[0].network),
 				/** @type {any} */ (calls[0].metrics),
 				/** @type {any} */ (calls[0].options)
@@ -151,22 +140,14 @@ export async function fetchRenewablesInput(fetchFn) {
 				/** @type {any} */ (calls[1].metrics),
 				/** @type {any} */ (calls[1].options)
 			),
-			oe.getMarket(
+			oe.getNetworkData(
 				/** @type {any} */ (calls[2].network),
 				/** @type {any} */ (calls[2].metrics),
 				/** @type {any} */ (calls[2].options)
 			),
-			oe.getNetworkData(
-				/** @type {any} */ (calls[3].network),
-				/** @type {any} */ (calls[3].metrics),
-				/** @type {any} */ (calls[3].options)
-			),
 			fetchLegacyOpenNemFueltechStats(fetchFn)
 		]);
 
-		const fueltechStatsRaw = fueltechRes.response.data[0]
-			? transformOeToStatsData(fueltechRes.response.data[0])
-			: [];
 		const marketStatsRaw = [
 			...(generationRenewableRes.response.data[0]
 				? transformOeToStatsData(generationRenewableRes.response.data[0])
@@ -184,18 +165,14 @@ export async function fetchRenewablesInput(fetchFn) {
 		// month so every chart on the renewables comparison page lines up at the
 		// same right edge and we never plot a partial month.
 		const legacyLast = findLatestLastDate(legacyFueltechStats);
-		const fueltechStats = legacyLast
-			? trimStatsDataToLastDate(fueltechStatsRaw, legacyLast)
-			: fueltechStatsRaw;
 		const marketStats = legacyLast
 			? trimStatsDataToLastDate(marketStatsRaw, legacyLast)
 			: marketStatsRaw;
 
 		const rawPayloads = {
-			fueltechEnergy: { call: calls[0], response: fueltechRes.response },
-			generationRenewableEnergy: { call: calls[1], response: generationRenewableRes.response },
-			demandGrossEnergy: { call: calls[2], response: demandGrossRes.response },
-			renewableGrouping: { call: calls[3], response: renewableGroupingRes.response },
+			generationRenewableEnergy: { call: calls[0], response: generationRenewableRes.response },
+			demandGrossEnergy: { call: calls[1], response: demandGrossRes.response },
+			renewableGrouping: { call: calls[2], response: renewableGroupingRes.response },
 			legacyOpenNem: {
 				call: { method: 'fetch', url: '/api/energy', via: 'energyParser' },
 				response: { count: legacyFueltechStats.length, last: legacyLast }
@@ -203,7 +180,7 @@ export async function fetchRenewablesInput(fetchFn) {
 		};
 
 		return {
-			data: { fueltechStats, marketStats, legacyFueltechStats },
+			data: { marketStats, legacyFueltechStats },
 			error: null,
 			rawPayloads
 		};

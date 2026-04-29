@@ -38,6 +38,7 @@
 	 * @property {number | undefined} [externalHoverTime]
 	 * @property {((time: number | undefined) => void) | undefined} [onHoverTimeChange]
 	 * @property {'auto' | true | false} [annotationPlacement]
+	 * @property {boolean} [showAnnotations]
 	 */
 
 	/** @type {Props} */
@@ -55,7 +56,8 @@
 		containerClass = 'chart-container h-[350px] md:h-[650px]',
 		externalHoverTime = undefined,
 		onHoverTimeChange = undefined,
-		annotationPlacement = 'auto'
+		annotationPlacement = 'auto',
+		showAnnotations = true
 	} = $props();
 
 	let yTickFormatter = $derived(valueType === 'percentage' ? formatTickY : formatTickYRaw);
@@ -198,7 +200,7 @@
 			</HoverText>
 			<HoverLine {hoverData} />
 
-			{#if show}
+			{#if show && showAnnotations}
 				<div transition:fade={fadeTransition}>
 					<Annotations
 						rounded={hoverData !== undefined}

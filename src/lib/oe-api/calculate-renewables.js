@@ -4,7 +4,7 @@ import parseInterval from '$lib/utils/intervals';
 
 import { alignStatsDataToCommonRange } from './align-stats-data';
 
-/** @typedef {'legacy_opennem' | 'current' | 'current_gross_demand' | 'oe_proportion' | 'oe_with_storage' | 'oe_secondary_renewable'} RenewableMode */
+/** @typedef {'legacy_opennem' | 'oe_proportion' | 'oe_secondary_renewable'} RenewableMode */
 
 /** @typedef {{
  *   id: RenewableMode,
@@ -26,28 +26,15 @@ import { alignStatsDataToCommonRange } from './align-stats-data';
  */
 export const RENEWABLE_MODES = [
 	{
-		id: 'legacy_opennem',
-		label: 'OpenNEM JSON · fueltech sum ÷ generation − loads',
+		id: 'oe_proportion',
+		label: 'OE getMarket · generation_renewable ÷ gross demand',
 		description:
-			'Original homepage data path. Local fueltech grouping sourced from the legacy /api/energy static JSON file.',
+			'Official OE method (per the renewables guide). Empirically the numerator equals bioenergy + hydro + solar_utility + wind only — the OE docs claim it also includes solar_rooftop, battery_discharging and pumps, but cross-checking the live API shows those three are excluded (the docs formula likely matches generation_renewable_with_storage_energy, which currently returns null on the API). Rooftop is captured by the gross-demand denominator instead.',
 		numerator:
-			'Σ(solar_utility + solar_rooftop + wind + hydro + bioenergy_*) — local sum from OpenNEM static JSON',
+			'generation_renewable_energy from OE getMarket — empirically bioenergy + hydro + solar_utility + wind (excludes solar_rooftop, battery_discharging, pumps)',
 		fossilNumerator:
-			'Σ(coal_black + coal_brown + gas_ccgt + gas_ocgt + gas_recip + gas_steam + gas_wcmg + distillate) — local sum from OpenNEM static JSON',
-		denominator:
-			'Σ(all generation fueltechs) − Σ(exports + battery_charging + pumps)'
-	},
-	{
-		id: 'current',
-		label: 'OE getNetworkData · fueltech sum ÷ generation − loads',
-		description:
-			'Same calculation as the OpenNEM JSON mode, but the fueltech series come from the OE API getNetworkData endpoint instead of the static JSON file.',
-		numerator:
-			'Σ(solar_utility + solar_rooftop + wind + hydro + bioenergy_*) — local sum from OE getNetworkData',
-		fossilNumerator:
-			'Σ(coal_black + coal_brown + gas_ccgt + gas_ocgt + gas_recip + gas_steam + gas_wcmg + distillate) — local sum from OE getNetworkData',
-		denominator:
-			'Σ(all generation fueltechs) − Σ(exports + battery_charging + pumps)'
+			'demand_gross_energy − generation_renewable_energy (derived — includes everything not in the limited renewable numerator: rooftop, batteries, pumps, imports, all fossil generation)',
+		denominator: 'demand_gross_energy from OE getMarket (operational demand + rooftop solar)'
 	},
 	{
 		id: 'oe_secondary_renewable',
@@ -61,36 +48,16 @@ export const RENEWABLE_MODES = [
 		denominator: 'demand_gross_energy from OE getMarket (operational demand + rooftop solar)'
 	},
 	{
-		id: 'current_gross_demand',
-		label: 'OE getNetworkData · fueltech sum ÷ gross demand',
+		id: 'legacy_opennem',
+		label: 'OpenNEM JSON · fueltech sum ÷ generation − loads (reference)',
 		description:
-			'Hybrid: the local fueltech grouping (same as the homepage / OpenNEM JSON modes) on the numerator, but the OE gross-demand metric as denominator. Apples-to-apples comparison vs the OE getMarket modes.',
+			'Reference baseline — the original homepage data path before the OE API migration. Local fueltech grouping sourced from the legacy /api/energy static JSON file. Battery charging is subtracted as a load; battery discharging is summed into the denominator as generation. Neither is in the renewable numerator.',
 		numerator:
-			'Σ(solar_utility + solar_rooftop + wind + hydro + bioenergy_*) — local sum from OE getNetworkData',
+			'Σ(solar_utility + solar_rooftop + wind + hydro + bioenergy_*) — local sum from OpenNEM static JSON',
 		fossilNumerator:
-			'Σ(coal_black + coal_brown + gas_ccgt + gas_ocgt + gas_recip + gas_steam + gas_wcmg + distillate) — local sum from OE getNetworkData',
-		denominator: 'demand_gross_energy from OE getMarket (operational demand + rooftop solar)'
-	},
-	{
-		id: 'oe_proportion',
-		label: 'OE getMarket · generation_renewable ÷ gross demand',
-		description:
-			'Official OE method (per the renewables guide). The numerator excludes rooftop solar because rooftop is treated as a demand-side offset that already shrinks the denominator.',
-		numerator: 'generation_renewable_energy from OE getMarket — excludes rooftop solar',
-		fossilNumerator:
-			'demand_gross_energy − generation_renewable_energy (derived — also includes battery discharge, imports, etc.)',
-		denominator: 'demand_gross_energy from OE getMarket (operational demand + rooftop solar)'
-	},
-	{
-		id: 'oe_with_storage',
-		label: 'OE getMarket · gen_renewable + battery ÷ gross demand',
-		description:
-			'OE method with battery discharge added to the renewable numerator. Mirrors the OE renewable_with_storage_proportion metric (computed locally because the SDK does not expose it yet — pumped-hydro discharge is also not broken out).',
-		numerator:
-			'generation_renewable_energy from OE getMarket + battery_discharging from OE getNetworkData',
-		fossilNumerator:
-			'demand_gross_energy − (generation_renewable_energy + battery_discharging) (derived — also includes imports, etc.)',
-		denominator: 'demand_gross_energy from OE getMarket (operational demand + rooftop solar)'
+			'Σ(coal_black + coal_brown + gas_ccgt + gas_ocgt + gas_recip + gas_steam + gas_wcmg + distillate) — local sum from OpenNEM static JSON',
+		denominator:
+			'Σ(all generation fueltechs, incl. battery_discharging) − Σ(exports + battery_charging + pumps)'
 	}
 ];
 
@@ -170,7 +137,7 @@ export const RENEWABLE_VALUE_TYPE_OPTIONS = [
 ];
 
 /**
- * @param {{ fueltechStats: StatsData[], marketStats: StatsData[], legacyFueltechStats?: StatsData[] }} input
+ * @param {{ marketStats: StatsData[], legacyFueltechStats?: StatsData[] }} input
  * @param {RenewableMode} mode
  * @param {(acc: Object<string,string>, d: StatsData) => Object<string,string>} [colourReducer]
  * @param {RenewableSmoothing} [smoothing]
@@ -190,7 +157,6 @@ export function calculateRenewables(
 	smoothing = 'rolling12mth',
 	valueType = 'percentage'
 ) {
-	const fueltechStats = input?.fueltechStats ?? [];
 	const marketStats = input?.marketStats ?? [];
 	const legacyFueltechStats = input?.legacyFueltechStats ?? [];
 
@@ -204,16 +170,9 @@ export function calculateRenewables(
 
 	let statsDatasets;
 	if (mode === 'legacy_opennem') {
-		// Same calculation as `current`, different data source.
-		statsDatasets = buildCurrentStats(legacyFueltechStats);
-	} else if (mode === 'current') {
-		statsDatasets = buildCurrentStats(fueltechStats);
-	} else if (mode === 'current_gross_demand') {
-		statsDatasets = buildCurrentGrossDemandStats(fueltechStats, marketStats);
+		statsDatasets = buildLocalGroupingStats(legacyFueltechStats);
 	} else if (mode === 'oe_proportion') {
 		statsDatasets = buildOeProportionStats(marketStats);
-	} else if (mode === 'oe_with_storage') {
-		statsDatasets = buildOeWithStorageStats(marketStats, fueltechStats);
 	} else if (mode === 'oe_secondary_renewable') {
 		statsDatasets = buildOeSecondaryRenewableStats(marketStats);
 	} else {
@@ -253,47 +212,20 @@ export function calculateRenewables(
 }
 
 /**
- * Mode `current` — preserves existing infographic behaviour.
+ * Mode `legacy_opennem` — preserves the original homepage calculation.
  * Aligns fueltech series (Statistic.group requires equal lengths), groups them
  * into fossil_fuels / renewables, and uses generation-minus-loads as the total.
  *
  * @param {StatsData[]} fueltechStats
  * @returns {StatsData[]}
  */
-function buildCurrentStats(fueltechStats) {
+function buildLocalGroupingStats(fueltechStats) {
 	if (!fueltechStats || fueltechStats.length === 0) return [];
 	const aligned = alignStatsDataToCommonRange(fueltechStats);
 	const stats = new Statistic(aligned, 'history')
 		.group(DOMAIN_GROUPS)
 		.addTotalMinusLoads(LOAD_FUEL_TECHS, TOTAL_ID);
 	return stats.data;
-}
-
-/**
- * Mode `current_gross_demand` — local fueltech grouping but with the OE
- * gross-demand metric as the denominator. Lets you compare apples-to-apples
- * with the OE methods on the same denominator.
- *
- * @param {StatsData[]} fueltechStats
- * @param {StatsData[]} marketStats
- * @returns {StatsData[]}
- */
-function buildCurrentGrossDemandStats(fueltechStats, marketStats) {
-	if (!fueltechStats || fueltechStats.length === 0) return [];
-	const demand = findByDataType(marketStats, METRIC.demand);
-	if (!demand) return [];
-
-	const aligned = alignStatsDataToCommonRange(fueltechStats);
-	const grouped = new Statistic(aligned, 'history').group(DOMAIN_GROUPS);
-
-	// Replace the auto-generated total with demand_gross_energy as au-total.
-	const meta = {
-		start: demand.history.start,
-		last: demand.history.last,
-		interval: demand.history.interval
-	};
-
-	return [...grouped.data, makeTotalStats(TOTAL_ID, [...demand.history.data], meta)];
 }
 
 /**
@@ -379,62 +311,6 @@ function buildOeProportionStats(marketStats) {
 			'Fossils (derived: gross demand − renewable)'
 		),
 		makeGroupedStats(RENEWABLES_ID, 'renewables', renewablesData, meta),
-		makeTotalStats(TOTAL_ID, demandData, meta)
-	];
-}
-
-/**
- * Mode `oe_with_storage` — OE proportion with battery discharge added to the
- * renewable numerator. Implements the storage-inclusive variant from
- * https://docs.openelectricity.org.au/guides/renewables.
- *
- * SDK v0.8.1 does not expose `renewable_with_storage_proportion`, so we derive
- * locally. NOTE: pumped-hydro discharge is not a separate fueltech in this
- * dataset (`pumps` represents pumping load), so this approximation under-counts
- * pumped-hydro storage relative to the official metric. TODO: revisit when the
- * SDK exposes the metric directly.
- *
- * @param {StatsData[]} marketStats
- * @param {StatsData[]} fueltechStats
- * @returns {StatsData[]}
- */
-function buildOeWithStorageStats(marketStats, fueltechStats) {
-	const renewable = findByDataType(marketStats, METRIC.renewable);
-	const demand = findByDataType(marketStats, METRIC.demand);
-	const battery = fueltechStats.find((d) => d.fuel_tech === 'battery_discharging');
-	if (!renewable || !demand) return [];
-
-	const sources = battery ? [renewable, demand, battery] : [renewable, demand];
-	const aligned = alignStatsDataToCommonRange(sources);
-	const alignedRenewable = aligned[0];
-	const alignedDemand = aligned[1];
-	const alignedBattery = battery ? aligned[2] : null;
-
-	const renewablePlusStorageRaw = alignedBattery
-		? addArrays(alignedRenewable.history.data, alignedBattery.history.data)
-		: [...alignedRenewable.history.data];
-	const demandRaw = alignedDemand.history.data;
-	const fossilRaw = subtractArrays(demandRaw, renewablePlusStorageRaw);
-
-	const { arrays, meta } = trimSharedNulls(
-		[fossilRaw, renewablePlusStorageRaw, demandRaw],
-		{
-			start: alignedDemand.history.start,
-			last: alignedDemand.history.last,
-			interval: alignedDemand.history.interval
-		}
-	);
-	const [fossilData, renewablePlusStorage, demandData] = arrays;
-
-	return [
-		makeGroupedStats(
-			FOSSIL_ID,
-			'fossil_fuels',
-			fossilData,
-			meta,
-			'Fossils (derived: gross demand − renewable − battery)'
-		),
-		makeGroupedStats(RENEWABLES_ID, 'renewables', renewablePlusStorage, meta),
 		makeTotalStats(TOTAL_ID, demandData, meta)
 	];
 }
@@ -551,23 +427,6 @@ function subtractArrays(a, b) {
 		const av = a[i];
 		const bv = b[i];
 		out[i] = av == null || bv == null ? null : av - bv;
-	}
-	return out;
-}
-
-/**
- * @param {Array<number | null>} a
- * @param {Array<number | null>} b
- * @returns {Array<number | null>}
- */
-function addArrays(a, b) {
-	const len = Math.max(a.length, b.length);
-	const out = /** @type {Array<number | null>} */ (new Array(len));
-	for (let i = 0; i < len; i++) {
-		const av = a[i];
-		const bv = b[i];
-		if (av == null && bv == null) out[i] = null;
-		else out[i] = (av ?? 0) + (bv ?? 0);
 	}
 	return out;
 }

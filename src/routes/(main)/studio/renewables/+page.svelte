@@ -3,6 +3,7 @@
 	import { colourReducer } from '$lib/stores/theme';
 	import Select from '$lib/components/form-elements/Select.svelte';
 	import Chart from '$lib/components/info-graphics/fossil-fuels-renewables/Chart.svelte';
+	import StudioAnnotations from './_components/StudioAnnotations.svelte';
 	import {
 		calculateRenewables,
 		RENEWABLE_MODES,
@@ -30,7 +31,6 @@
 				: `${JSON.stringify(url)}${via ? ` → ${via}` : ''}`;
 			console.log(`[OE API] ${label} — client.${method}(${args})`, entry.response);
 		}
-		logCall('fueltech energy', renewablesRawPayloads.fueltechEnergy);
 		logCall('generation_renewable_energy', renewablesRawPayloads.generationRenewableEnergy);
 		logCall('demand_gross_energy', renewablesRawPayloads.demandGrossEnergy);
 		logCall('energy by renewable grouping', renewablesRawPayloads.renewableGrouping);
@@ -129,10 +129,14 @@
 	{#if !renewablesInput}
 		<p class="text-mid-grey">Loading renewables data…</p>
 	{:else}
-		<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+		<div class="flex flex-col gap-6">
 			{#each RENEWABLE_MODES as mode (mode.id)}
 				{@const result = calc(mode.id)}
-				<section class="relative border border-warm-grey rounded-lg p-4 pb-32 bg-white">
+				{@const isReference = mode.id === 'legacy_opennem'}
+				<section
+					class="relative border border-warm-grey rounded-lg p-4 bg-white"
+					class:opacity-50={isReference}
+				>
 					<header class="mb-3">
 						<h2 class="text-base font-space font-semibold leading-tight">{mode.label}</h2>
 						<p class="text-xs text-mid-grey leading-snug mt-2">{mode.description}</p>
@@ -159,24 +163,36 @@
 					<p class="text-xs text-mid-grey mb-1 font-space uppercase">{unitSuffix}</p>
 
 					{#if result && result.dataset.length > 0}
-						<Chart
-							title=""
-							description=""
-							chartLabel=""
-							valueType={selectedValueType}
-							dataset={result.dataset}
-							seriesNames={result.seriesNames}
-							seriesColours={result.seriesColours}
-							seriesLabels={result.seriesLabels}
-							skipAnimation={true}
-							historicalDataset={result.statsDatasets}
-							containerClass="chart-container h-[350px]"
-							externalHoverTime={sharedHoverTime}
-							onHoverTimeChange={(t) => (sharedHoverTime = t)}
-							annotationPlacement={false}
-						/>
+						<div class="flex gap-4 items-stretch">
+							<div class="flex-1 min-w-0">
+								<Chart
+									title=""
+									description=""
+									chartLabel=""
+									valueType={selectedValueType}
+									dataset={result.dataset}
+									seriesNames={result.seriesNames}
+									seriesColours={result.seriesColours}
+									seriesLabels={result.seriesLabels}
+									skipAnimation={true}
+									historicalDataset={result.statsDatasets}
+									containerClass="chart-container h-[200px]"
+									externalHoverTime={sharedHoverTime}
+									onHoverTimeChange={(t) => (sharedHoverTime = t)}
+									showAnnotations={false}
+								/>
+							</div>
+							<StudioAnnotations
+								dataset={result.dataset}
+								seriesNames={result.seriesNames}
+								seriesColours={result.seriesColours}
+								seriesLabels={result.seriesLabels}
+								hoverTime={sharedHoverTime}
+								unit={selectedValueType === 'percentage' ? '%' : 'GWh'}
+							/>
+						</div>
 					{:else}
-						<div class="h-[350px] flex items-center justify-center text-sm text-mid-grey">
+						<div class="h-[200px] flex items-center justify-center text-sm text-mid-grey">
 							No data for this mode
 						</div>
 					{/if}

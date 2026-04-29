@@ -6,7 +6,7 @@
 
 	/**
 	 * @typedef {Object} Props
-	 * @property {{ fueltechStats: StatsData[], marketStats: StatsData[], legacyFueltechStats?: StatsData[] } | null} data
+	 * @property {{ marketStats: StatsData[], legacyFueltechStats?: StatsData[] } | null} data
 	 * @property {string} [title]
 	 * @property {string} [description]
 	 * @property {boolean} [skipAnimation]
@@ -17,9 +17,7 @@
 
 	let hasData = $derived(
 		!!data &&
-			(data.fueltechStats?.length > 0 ||
-				data.marketStats?.length > 0 ||
-				(data.legacyFueltechStats?.length ?? 0) > 0)
+			(data.marketStats?.length > 0 || (data.legacyFueltechStats?.length ?? 0) > 0)
 	);
 
 	// Homepage uses the legacy OpenNEM JSON source, 12-month rolling, percentage.

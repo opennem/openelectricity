@@ -43,7 +43,6 @@
 			);
 			console.log(`[OE API] ${label} — client.${method}(${args})`, entry.response);
 		}
-		logCall('fueltech energy', renewablesRawPayloads.fueltechEnergy);
 		logCall('generation_renewable_energy', renewablesRawPayloads.generationRenewableEnergy);
 		logCall('demand_gross_energy', renewablesRawPayloads.demandGrossEnergy);
 		logCall('energy by renewable grouping', renewablesRawPayloads.renewableGrouping);

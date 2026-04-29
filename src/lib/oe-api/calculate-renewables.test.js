@@ -66,14 +66,11 @@ const N = 24;
 const constArr = (v) => new Array(N).fill(v);
 
 describe('RENEWABLE_MODES', () => {
-	it('exposes the six modes in the expected order with legacy first', () => {
+	it('exposes the three modes with legacy_opennem last as the reference baseline', () => {
 		expect(RENEWABLE_MODES.map((m) => m.id)).toEqual([
-			'legacy_opennem',
-			'current',
-			'oe_secondary_renewable',
-			'current_gross_demand',
 			'oe_proportion',
-			'oe_with_storage'
+			'oe_secondary_renewable',
+			'legacy_opennem'
 		]);
 	});
 });
@@ -81,30 +78,33 @@ describe('RENEWABLE_MODES', () => {
 describe('calculateRenewables — empty / invalid inputs', () => {
 	it('returns empty result for null input', () => {
 		// @ts-expect-error testing null input
-		const out = calculateRenewables(null, 'current');
+		const out = calculateRenewables(null, 'legacy_opennem');
 		expect(out.dataset).toEqual([]);
 		expect(out.statsDatasets).toEqual([]);
 	});
 
-	it('returns empty result when fueltechStats is empty in current mode', () => {
-		const out = calculateRenewables({ fueltechStats: [], marketStats: [] }, 'current');
+	it('returns empty result when legacyFueltechStats is empty in legacy_opennem mode', () => {
+		const out = calculateRenewables(
+			{ marketStats: [], legacyFueltechStats: [] },
+			'legacy_opennem'
+		);
 		expect(out.dataset).toEqual([]);
 	});
 
 	it('returns empty result when market metrics are missing in oe_proportion mode', () => {
-		const out = calculateRenewables({ fueltechStats: [], marketStats: [] }, 'oe_proportion');
+		const out = calculateRenewables({ marketStats: [] }, 'oe_proportion');
 		expect(out.dataset).toEqual([]);
 	});
 
 	it('throws on unknown mode', () => {
 		expect(() =>
-			calculateRenewables({ fueltechStats: [], marketStats: [] }, /** @type {any} */ ('bogus'))
+			calculateRenewables({ marketStats: [] }, /** @type {any} */ ('bogus'))
 		).toThrow(/Unknown renewable mode/);
 	});
 });
 
 describe('calculateRenewables — legacy_opennem mode', () => {
-	it('uses legacyFueltechStats and applies the same calculation as `current`', () => {
+	it('groups local fueltechs and computes % using generation − loads as denominator', () => {
 		const legacyFueltechStats = [
 			makeFueltech('coal_black', constArr(100)),
 			makeFueltech('gas_ccgt', constArr(50)),
@@ -113,50 +113,18 @@ describe('calculateRenewables — legacy_opennem mode', () => {
 			makeFueltech('exports', constArr(10))
 		];
 
-		// Pass empty fueltechStats (the OE API source) — only legacy is used
 		const out = calculateRenewables(
-			{ fueltechStats: [], marketStats: [], legacyFueltechStats },
+			{ marketStats: [], legacyFueltechStats },
 			'legacy_opennem'
 		);
-
-		expect(out.statsDatasets.map((d) => d.id)).toEqual([FOSSIL_ID, RENEWABLES_ID, TOTAL_ID]);
-
-		const last = out.dataset[out.dataset.length - 1];
-		// Same numbers as the `current` mode test below: fossil 75%, renewables 25%
-		expect(last[FOSSIL_ID]).toBeCloseTo(75, 5);
-		expect(last[RENEWABLES_ID]).toBeCloseTo(25, 5);
-	});
-
-	it('returns empty when legacyFueltechStats is missing', () => {
-		const out = calculateRenewables(
-			{ fueltechStats: [], marketStats: [] },
-			'legacy_opennem'
-		);
-		expect(out.dataset).toEqual([]);
-	});
-});
-
-describe('calculateRenewables — current mode', () => {
-	it('produces fossil + renewables + au-total series with the expected shape', () => {
-		const fueltechStats = [
-			makeFueltech('coal_black', constArr(100)),
-			makeFueltech('gas_ccgt', constArr(50)),
-			makeFueltech('wind', constArr(30)),
-			makeFueltech('solar_utility', constArr(20)),
-			makeFueltech('exports', constArr(10))
-		];
-
-		const out = calculateRenewables({ fueltechStats, marketStats: [] }, 'current');
 
 		expect(out.statsDatasets.map((d) => d.id)).toEqual([FOSSIL_ID, RENEWABLES_ID, TOTAL_ID]);
 		expect(out.seriesNames).toEqual([FOSSIL_ID, RENEWABLES_ID]);
 
-		// Rolling sum drops the first 12 months
 		// rolling-sum-12-mth strips months whose 12-mth window isn't strictly after
 		// the first available date, which empirically drops 13 rows for an N-month input.
 		expect(out.dataset.length).toBe(N - 13);
 
-		// Each row sums to (fossil/total + renewables/total)*100 within rounding.
 		// generation = 100+50+30+20 = 200; loads excluded → total = 200.
 		// fossil = 150/200 = 75%, renewables = 50/200 = 25%
 		const last = out.dataset[out.dataset.length - 1];
@@ -166,50 +134,21 @@ describe('calculateRenewables — current mode', () => {
 
 	it('handles fueltech series with offset start dates by aligning before grouping', () => {
 		// solar_utility starts 6 months after the others.
-		const fueltechStats = [
+		const legacyFueltechStats = [
 			makeFueltech('coal_black', constArr(100)),
 			makeFueltech('wind', constArr(30)),
 			makeFueltech('solar_utility', constArr(20).slice(0, N - 6))
 		];
 
-		const out = calculateRenewables({ fueltechStats, marketStats: [] }, 'current');
-		// Should not crash and should produce a non-empty dataset.
+		const out = calculateRenewables(
+			{ marketStats: [], legacyFueltechStats },
+			'legacy_opennem'
+		);
 		expect(out.dataset.length).toBeGreaterThan(0);
 	});
-});
 
-describe('calculateRenewables — current_gross_demand mode', () => {
-	it('uses local fueltech grouping but demand_gross_energy as denominator', () => {
-		// generation = 100 (coal) + 50 (gas) + 30 (wind) + 20 (solar) = 200 GWh per month.
-		// demand_gross = 250 GWh per month (more than generation, e.g. with rooftop offset).
-		const fueltechStats = [
-			makeFueltech('coal_black', constArr(100)),
-			makeFueltech('gas_ccgt', constArr(50)),
-			makeFueltech('wind', constArr(30)),
-			makeFueltech('solar_utility', constArr(20))
-		];
-		const marketStats = [makeMarket('demand_gross_energy', constArr(250))];
-
-		const out = calculateRenewables(
-			{ fueltechStats, marketStats },
-			'current_gross_demand',
-			undefined,
-			'monthly'
-		);
-
-		const last = out.dataset[out.dataset.length - 1];
-		// renewables = 50 / 250 = 20%
-		expect(last[RENEWABLES_ID]).toBeCloseTo(20, 5);
-		// fossil = 150 / 250 = 60%
-		expect(last[FOSSIL_ID]).toBeCloseTo(60, 5);
-	});
-
-	it('returns empty when demand_gross_energy is missing', () => {
-		const fueltechStats = [makeFueltech('coal_black', constArr(100))];
-		const out = calculateRenewables(
-			{ fueltechStats, marketStats: [] },
-			'current_gross_demand'
-		);
+	it('returns empty when legacyFueltechStats is missing', () => {
+		const out = calculateRenewables({ marketStats: [] }, 'legacy_opennem');
 		expect(out.dataset).toEqual([]);
 	});
 });
@@ -223,7 +162,7 @@ describe('calculateRenewables — oe_proportion mode', () => {
 			makeMarket('demand_gross_energy', demand)
 		];
 
-		const out = calculateRenewables({ fueltechStats: [], marketStats }, 'oe_proportion');
+		const out = calculateRenewables({ marketStats }, 'oe_proportion');
 		// rolling-sum-12-mth strips months whose 12-mth window isn't strictly after
 		// the first available date, which empirically drops 13 rows for an N-month input.
 		expect(out.dataset.length).toBe(N - 13);
@@ -243,49 +182,10 @@ describe('calculateRenewables — oe_proportion mode', () => {
 			makeMarket('demand_gross_energy', demand)
 		];
 
-		const out = calculateRenewables({ fueltechStats: [], marketStats }, 'oe_proportion');
+		const out = calculateRenewables({ marketStats }, 'oe_proportion');
 		// Should not throw; the 6 missing months at the front become null and
 		// the rolling-sum filter takes care of the leading gap.
 		expect(out.dataset.length).toBeGreaterThan(0);
-	});
-});
-
-describe('calculateRenewables — oe_with_storage mode', () => {
-	it('adds battery_discharging to the renewable numerator', () => {
-		const renewable = constArr(40);
-		const demand = constArr(100);
-		const battery = constArr(5);
-
-		const marketStats = [
-			makeMarket('generation_renewable_energy', renewable),
-			makeMarket('demand_gross_energy', demand)
-		];
-		const fueltechStats = [makeFueltech('battery_discharging', battery)];
-
-		const out = calculateRenewables({ fueltechStats, marketStats }, 'oe_with_storage');
-		// rolling-sum-12-mth strips months whose 12-mth window isn't strictly after
-		// the first available date, which empirically drops 13 rows for an N-month input.
-		expect(out.dataset.length).toBe(N - 13);
-
-		const last = out.dataset[out.dataset.length - 1];
-		// renewables_with_storage / demand = 45 / 100 = 45%
-		expect(last[RENEWABLES_ID]).toBeCloseTo(45, 5);
-		// fossil = (100 - 45) / 100 = 55%
-		expect(last[FOSSIL_ID]).toBeCloseTo(55, 5);
-	});
-
-	it('falls back to plain renewable when battery_discharging series is absent', () => {
-		const renewable = constArr(40);
-		const demand = constArr(100);
-		const marketStats = [
-			makeMarket('generation_renewable_energy', renewable),
-			makeMarket('demand_gross_energy', demand)
-		];
-
-		const out = calculateRenewables({ fueltechStats: [], marketStats }, 'oe_with_storage');
-		const last = out.dataset[out.dataset.length - 1];
-		expect(last[RENEWABLES_ID]).toBeCloseTo(40, 5);
-		expect(last[FOSSIL_ID]).toBeCloseTo(60, 5);
 	});
 });
 
@@ -298,7 +198,7 @@ describe('calculateRenewables — smoothing', () => {
 			makeMarket('demand_gross_energy', demand)
 		];
 
-		const out = calculateRenewables({ fueltechStats: [], marketStats }, 'oe_proportion');
+		const out = calculateRenewables({ marketStats }, 'oe_proportion');
 		expect(out.dataset.length).toBe(N - 13);
 	});
 
@@ -311,7 +211,7 @@ describe('calculateRenewables — smoothing', () => {
 		];
 
 		const out = calculateRenewables(
-			{ fueltechStats: [], marketStats },
+			{ marketStats },
 			'oe_proportion',
 			undefined,
 			'monthly'
@@ -345,10 +245,7 @@ describe('calculateRenewables — oe_secondary_renewable mode', () => {
 		const demand = makeMarket('demand_gross_energy', constArr(20000));
 
 		const out = calculateRenewables(
-			{
-				fueltechStats: [],
-				marketStats: [renewableAggregate, nonRenewableAggregate, demand]
-			},
+			{ marketStats: [renewableAggregate, nonRenewableAggregate, demand] },
 			'oe_secondary_renewable',
 			undefined,
 			'monthly'
@@ -371,7 +268,7 @@ describe('calculateRenewables — oe_secondary_renewable mode', () => {
 		const demand = makeMarket('demand_gross_energy', constArr(100));
 
 		const out = calculateRenewables(
-			{ fueltechStats: [], marketStats: [renewableAggregate, demand] },
+			{ marketStats: [renewableAggregate, demand] },
 			'oe_secondary_renewable',
 			undefined,
 			'monthly'
@@ -386,7 +283,7 @@ describe('calculateRenewables — oe_secondary_renewable mode', () => {
 	it('returns empty when generation_renewable_aggregate is missing', () => {
 		const demand = makeMarket('demand_gross_energy', constArr(100));
 		const out = calculateRenewables(
-			{ fueltechStats: [], marketStats: [demand] },
+			{ marketStats: [demand] },
 			'oe_secondary_renewable'
 		);
 		expect(out.dataset).toEqual([]);
@@ -403,7 +300,7 @@ describe('calculateRenewables — value type', () => {
 		];
 
 		const out = calculateRenewables(
-			{ fueltechStats: [], marketStats },
+			{ marketStats },
 			'oe_proportion',
 			undefined,
 			'monthly',
@@ -429,7 +326,7 @@ describe('calculateRenewables — value type', () => {
 		];
 
 		const out = calculateRenewables(
-			{ fueltechStats: [], marketStats },
+			{ marketStats },
 			'oe_proportion',
 			undefined,
 			'rolling12mth',
@@ -443,24 +340,3 @@ describe('calculateRenewables — value type', () => {
 	});
 });
 
-describe('calculateRenewables — cross-mode comparison', () => {
-	it('oe_with_storage renewables % > oe_proportion renewables % when battery > 0', () => {
-		const renewable = constArr(40);
-		const demand = constArr(100);
-		const battery = constArr(5);
-
-		const marketStats = [
-			makeMarket('generation_renewable_energy', renewable),
-			makeMarket('demand_gross_energy', demand)
-		];
-		const fueltechStats = [makeFueltech('battery_discharging', battery)];
-
-		const proportion = calculateRenewables({ fueltechStats, marketStats }, 'oe_proportion');
-		const withStorage = calculateRenewables({ fueltechStats, marketStats }, 'oe_with_storage');
-
-		const propLast = proportion.dataset[proportion.dataset.length - 1];
-		const stoLast = withStorage.dataset[withStorage.dataset.length - 1];
-
-		expect(stoLast[RENEWABLES_ID]).toBeGreaterThan(/** @type {number} */ (propLast[RENEWABLES_ID]));
-	});
-});
