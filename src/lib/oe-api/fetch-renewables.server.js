@@ -38,6 +38,58 @@ async function fetchLegacyOpenNemFueltechStats(fetchFn) {
 }
 
 /**
+ * Latest `history.last` across a set of StatsData (ISO-8601 sorts
+ * lexicographically so direct comparison works for monthly timestamps).
+ *
+ * @param {StatsData[]} stats
+ * @returns {string | null}
+ */
+function findLatestLastDate(stats) {
+	let latest = null;
+	for (const d of stats) {
+		const last = d.history?.last;
+		if (last && (!latest || last > latest)) latest = last;
+	}
+	return latest;
+}
+
+/**
+ * Trim every StatsData record so its `history.last` does not extend past
+ * `targetLast`. Drops any trailing months from `history.data` accordingly.
+ * Records that already end on or before `targetLast` are returned as-is.
+ *
+ * @param {StatsData[]} stats
+ * @param {string} targetLast — ISO month timestamp (e.g. '2026-03-01T00:00:00+10:00')
+ * @returns {StatsData[]}
+ */
+function trimStatsDataToLastDate(stats, targetLast) {
+	return stats.map((d) => {
+		if (!d.history?.last || d.history.last <= targetLast) return d;
+		const dropCount = monthsBetween(targetLast, d.history.last);
+		if (dropCount <= 0) return d;
+		return {
+			...d,
+			history: {
+				...d.history,
+				last: targetLast,
+				data: d.history.data.slice(0, d.history.data.length - dropCount)
+			}
+		};
+	});
+}
+
+/**
+ * @param {string} earlierIso
+ * @param {string} laterIso
+ * @returns {number}
+ */
+function monthsBetween(earlierIso, laterIso) {
+	const [ey, em] = earlierIso.split('T')[0].split('-').map(Number);
+	const [ly, lm] = laterIso.split('T')[0].split('-').map(Number);
+	return ly * 12 + (lm - 1) - (ey * 12 + (em - 1));
+}
+
+/**
  * Fetch all data sources required by the renewables calculator (fossil-fuels-
  * renewables infographic + studio comparison page). Returns the aligned
  * inputs plus the raw OE API payloads for client-side debugging.
@@ -112,10 +164,10 @@ export async function fetchRenewablesInput(fetchFn) {
 			fetchLegacyOpenNemFueltechStats(fetchFn)
 		]);
 
-		const fueltechStats = fueltechRes.response.data[0]
+		const fueltechStatsRaw = fueltechRes.response.data[0]
 			? transformOeToStatsData(fueltechRes.response.data[0])
 			: [];
-		const marketStats = [
+		const marketStatsRaw = [
 			...(generationRenewableRes.response.data[0]
 				? transformOeToStatsData(generationRenewableRes.response.data[0])
 				: []),
@@ -127,6 +179,18 @@ export async function fetchRenewablesInput(fetchFn) {
 				: [])
 		];
 
+		// OE returns the current (incomplete) month; the legacy OpenNEM JSON only
+		// publishes full months. Trim OE-derived stats to the legacy file's last
+		// month so every chart on the renewables comparison page lines up at the
+		// same right edge and we never plot a partial month.
+		const legacyLast = findLatestLastDate(legacyFueltechStats);
+		const fueltechStats = legacyLast
+			? trimStatsDataToLastDate(fueltechStatsRaw, legacyLast)
+			: fueltechStatsRaw;
+		const marketStats = legacyLast
+			? trimStatsDataToLastDate(marketStatsRaw, legacyLast)
+			: marketStatsRaw;
+
 		const rawPayloads = {
 			fueltechEnergy: { call: calls[0], response: fueltechRes.response },
 			generationRenewableEnergy: { call: calls[1], response: generationRenewableRes.response },
@@ -134,7 +198,7 @@ export async function fetchRenewablesInput(fetchFn) {
 			renewableGrouping: { call: calls[3], response: renewableGroupingRes.response },
 			legacyOpenNem: {
 				call: { method: 'fetch', url: '/api/energy', via: 'energyParser' },
-				response: { count: legacyFueltechStats.length }
+				response: { count: legacyFueltechStats.length, last: legacyLast }
 			}
 		};
 

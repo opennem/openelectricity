@@ -135,11 +135,25 @@
 				<section class="relative border border-warm-grey rounded-lg p-4 pb-32 bg-white">
 					<header class="mb-3">
 						<h2 class="text-base font-space font-semibold leading-tight">{mode.label}</h2>
-						<p class="text-xs text-mid-grey mt-1">{mode.description}</p>
-						<p class="text-xs text-mid-grey leading-snug mt-2">{mode.summary}</p>
-						<p class="font-mono text-[11px] text-dark-grey mt-1 break-words">
-							{mode.formula}
-						</p>
+						<p class="text-xs text-mid-grey leading-snug mt-2">{mode.description}</p>
+						<dl class="text-xs text-mid-grey leading-snug mt-3 space-y-1">
+							<div class="flex gap-2">
+								<dt class="font-semibold text-dark-grey shrink-0">Renewables =</dt>
+								<dd>{mode.numerator}</dd>
+							</div>
+							<div class="flex gap-2">
+								<dt class="font-semibold text-dark-grey shrink-0">Fossils =</dt>
+								<dd>{mode.fossilNumerator}</dd>
+							</div>
+							<div class="flex gap-2">
+								<dt class="font-semibold text-dark-grey shrink-0">Denominator =</dt>
+								<dd>{mode.denominator}</dd>
+							</div>
+							<div class="flex gap-2">
+								<dt class="font-semibold text-dark-grey shrink-0">% =</dt>
+								<dd>(series ÷ Denominator) × 100</dd>
+							</div>
+						</dl>
 					</header>
 
 					<p class="text-xs text-mid-grey mb-1 font-space uppercase">{unitSuffix}</p>

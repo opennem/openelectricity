@@ -27,15 +27,28 @@
 		show = true;
 	}, 100);
 
+	// Build the SVG path by walking the points and splitting into separate
+	// `M…L…` segments wherever y is null/undefined/NaN. A single naive
+	// `M0,undefined L…` string makes the whole path invalid and the line
+	// disappears, so any series with a missing value would silently vanish
+	// (rolling-sum + raw mode can produce these gaps).
 	let path = $derived((/** @type {any[]} */ values) => {
-		return (
-			'M' +
-			values
-				.map((/** @type {any} */ d) => {
-					return $xGet(d) + ',' + $yGet(d);
-				})
-				.join('L')
-		);
+		const segments = [];
+		let current = '';
+		for (const d of values) {
+			const y = $yGet(d);
+			if (y == null || Number.isNaN(y)) {
+				if (current) {
+					segments.push(current);
+					current = '';
+				}
+				continue;
+			}
+			const point = `${$xGet(d)},${y}`;
+			current = current ? `${current}L${point}` : `M${point}`;
+		}
+		if (current) segments.push(current);
+		return segments.join(' ');
 	});
 
 	let updatedData = $derived(
