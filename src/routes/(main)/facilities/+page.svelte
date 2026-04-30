@@ -928,42 +928,40 @@
 				? 'md:border-0 md:px-6 md:pt-6'
 				: 'px-4'}"
 		>
-			<div class="relative text-base z-50">
-				<Filters
-					{searchTerm}
-					{selectedView}
-					{isFullscreen}
-					showShortcuts={showShortcutsToast}
-					selectedStatuses={statuses}
-					selectedFuelTechs={fuelTechs}
-					selectedRegions={regions}
-					{capacityRange}
-					capacityMin={capacityBounds.min}
-					capacityMax={capacityBounds.max}
-					{yearRange}
-					yearMin={yearBounds.min}
-					yearMax={yearBounds.max}
-					onsearchchange={handleSearchChange}
-					onstatuseschange={handleStatusesChange}
-					onregionschange={handleRegionsChange}
-					onfueltechschange={handleFuelTechsChange}
-					oncapacityrangechange={handleCapacityRangeChange}
-					onyearrangechange={handleYearRangeChange}
-					onviewchange={handleSelectedViewChange}
-					onfullscreenchange={toggleFullscreen}
-					ondownloadcsv={handleDownloadCsv}
-					onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
-					onshortcutinvoked={() => (showShortcutsToast = false)}
-					onyearplayingchange={(playing) => (isYearPlaying = playing)}
-					onplayyearchange={(year) => (playYear = year)}
-					onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
-				/>
-			</div>
+			<Filters
+				{searchTerm}
+				{selectedView}
+				{isFullscreen}
+				showShortcuts={showShortcutsToast}
+				selectedStatuses={statuses}
+				selectedFuelTechs={fuelTechs}
+				selectedRegions={regions}
+				{capacityRange}
+				capacityMin={capacityBounds.min}
+				capacityMax={capacityBounds.max}
+				{yearRange}
+				yearMin={yearBounds.min}
+				yearMax={yearBounds.max}
+				onsearchchange={handleSearchChange}
+				onstatuseschange={handleStatusesChange}
+				onregionschange={handleRegionsChange}
+				onfueltechschange={handleFuelTechsChange}
+				oncapacityrangechange={handleCapacityRangeChange}
+				onyearrangechange={handleYearRangeChange}
+				onviewchange={handleSelectedViewChange}
+				onfullscreenchange={toggleFullscreen}
+				ondownloadcsv={handleDownloadCsv}
+				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
+				onshortcutinvoked={() => (showShortcutsToast = false)}
+				onyearplayingchange={(playing) => (isYearPlaying = playing)}
+				onplayyearchange={(year) => (playYear = year)}
+				onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
+			/>
 		</div>
 	{/snippet}
 
 	{#snippet content()}
-		<FullscreenContainer {isFullscreen}>
+		<FullscreenContainer {isFullscreen} class="[view-transition-name:page-body]">
 			<div
 				bind:clientHeight={containerHeight}
 				class="flex-1 flex flex-col md:flex-row min-h-0 relative"

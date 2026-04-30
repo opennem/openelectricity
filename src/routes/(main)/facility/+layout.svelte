@@ -163,7 +163,7 @@
 	{/snippet}
 
 	{#snippet content()}
-		<FullscreenContainer {isFullscreen}>
+		<FullscreenContainer {isFullscreen} class="[view-transition-name:page-body]">
 			<div class="flex-1 flex flex-col md:flex-row min-h-0">
 				{#if !isMobile}
 					<div

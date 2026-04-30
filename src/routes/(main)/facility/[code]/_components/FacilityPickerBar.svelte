@@ -1,7 +1,7 @@
 <script>
 	import OptionsMenu from '../../../facilities/_components/OptionsMenu.svelte';
 	import { ChevronRight } from '@lucide/svelte';
-	import { FullscreenNavDropdown } from '$lib/components/fullscreen';
+	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
 
 	/**
 	 * @type {{
@@ -33,24 +33,21 @@
 	let separatorSize = $derived(isFullscreen ? 16 : 18);
 </script>
 
-<div
-	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 px-4 {isFullscreen
-		? 'md:py-3 md:px-4 md:rounded-lg md:border md:border-warm-grey md:bg-light-warm-grey/75'
-		: ''}"
->
-	<div class="flex items-center gap-4 min-w-0">
+<FullscreenFilterBar {isFullscreen} routeKey="detail">
+	{#snippet stable()}
 		{#if isFullscreen}
 			<FullscreenNavDropdown />
 		{/if}
+		<a
+			href="/facilities?view=list&fullscreen=true"
+			class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
+		>
+			Facilities
+		</a>
+	{/snippet}
 
+	{#snippet rest()}
 		<nav class="flex items-center gap-1 min-w-0" aria-label="Breadcrumb">
-			<a
-				href="/facilities?view=list&fullscreen=true"
-				class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
-			>
-				Facilities
-			</a>
-
 			{#if regionValue && regionLabel}
 				<ChevronRight size={separatorSize} class="text-mid-grey shrink-0" />
 				<a
@@ -76,13 +73,15 @@
 				</span>
 			{/if}
 		</nav>
-	</div>
+	{/snippet}
 
-	<OptionsMenu
-		{isFullscreen}
-		{onfullscreenchange}
-		{onshowshortcuts}
-		{onsearchfacilities}
-		{searchShortcutKeys}
-	/>
-</div>
+	{#snippet options()}
+		<OptionsMenu
+			{isFullscreen}
+			{onfullscreenchange}
+			{onshowshortcuts}
+			{onsearchfacilities}
+			{searchShortcutKeys}
+		/>
+	{/snippet}
+</FullscreenFilterBar>

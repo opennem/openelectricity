@@ -1,7 +1,7 @@
 <script>
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import { FullscreenNavDropdown } from '$lib/components/fullscreen';
+	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
 	import HierarchicalMultiSelect from './_components/HierarchicalMultiSelect.svelte';
 	import MobileFilterModal from './_components/MobileFilterModal.svelte';
 	import SearchInput from './_components/SearchInput.svelte';
@@ -502,217 +502,219 @@
 	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 />
 
-<div
-	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 px-8 {isFullscreen
-		? 'md:py-3 md:px-4 md:rounded-lg md:border md:border-warm-grey md:bg-light-warm-grey/50'
-		: ''}"
+<FullscreenFilterBar
+	{isFullscreen}
+	routeKey="list"
+	paddingX="px-8"
+	bgClass="md:bg-light-warm-grey/50"
 >
-	<div class="flex items-center gap-2 justify-between w-full min-w-0">
-		<div class="flex items-center gap-4 min-w-0">
-			<!-- Logomark + main nav dropdown + first breadcrumb - Fullscreen only -->
-			{#if isFullscreen}
-				<nav class="flex items-center gap-1 min-w-0" aria-label="Breadcrumb">
-					<FullscreenNavDropdown />
-					<a
-						href="/facilities?view=list&fullscreen=true"
-						class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
-					>
-						Facilities
-					</a>
-				</nav>
-				<div class="h-8 border-l border-warm-grey"></div>
-			{/if}
-
-			<!-- View Switcher - Desktop -->
-			<div class="hidden md:block {isFullscreen ? 'pl-3' : ''}">
-				<SwitchWithIcons
-					buttons={viewButtonsDesktop}
-					selected={selectedView}
-					compact={isFullscreen}
-					onchange={handleViewChange}
-				/>
-			</div>
-
-			<!-- Fullscreen Toggle - Mobile (only when not already fullscreen; logo handles exit) -->
-			{#if !isFullscreen}
-				<div class="md:hidden">
-					<button
-						onclick={() => onfullscreenchange?.()}
-						class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
-						title="Enter full screen (F). Shift+F for browser fullscreen"
-					>
-						<Maximize2 class="size-7 text-mid-grey" />
-					</button>
-				</div>
-			{/if}
-
-			<!-- View Switcher - Mobile (dropdown) -->
-			<div class="md:hidden">
-				<FormSelect
-					options={viewOptions}
-					selected={selectedViewOption}
-					onchange={handleViewSelectChange}
-					paddingX="px-4"
-					paddingY="py-3"
-					widthClass="w-auto"
-					compact={isFullscreen}
-				/>
-			</div>
-
-			<!-- Desktop Search -->
-			<div
-				class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
-					? 'ml-3 pl-7'
-					: 'ml-6 pl-10'}"
+	{#snippet stable()}
+		{#if isFullscreen}
+			<FullscreenNavDropdown />
+			<a
+				href="/facilities?view=list&fullscreen=true"
+				class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
 			>
-				<SearchInput
-					bind:this={desktopSearchRef}
-					value={searchTerm}
-					onchange={(value) => onsearchchange?.(value)}
-					showShortcutHint={showShortcuts}
-					compact={isFullscreen}
-					class="w-[200px]"
-				/>
-			</div>
+				Facilities
+			</a>
+		{/if}
+	{/snippet}
 
-			<!-- Desktop Filter Dropdowns -->
-			<div
-				class="filter-bar-scroll justify-start items-center gap-2 hidden md:flex border-l border-warm-grey overflow-x-auto min-w-0 {isFullscreen
-					? 'ml-3 pl-3'
-					: 'ml-6 pl-6'}"
-			>
-				<HierarchicalMultiSelect
-					options={regionOptions}
-					selected={selectedRegions}
-					label={regionLabel}
-					paddingX="pl-5 pr-4"
-					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
-					compact={isFullscreen}
-					defaultExpanded={['nem']}
-					onchange={handleRegionChange}
-					onclear={() => onregionschange?.([])}
-				/>
+	{#snippet rest()}
+		{#if isFullscreen}
+			<div class="h-8 border-l border-warm-grey shrink-0"></div>
+		{/if}
 
-				<FormMultiSelect
-					options={statusOptions}
-					selected={selectedStatuses}
-					label={statusLabel}
-					withColours={true}
-					paddingX="pl-5 pr-4"
-					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
-					compact={isFullscreen}
-					clearLabel="Reset to defaults"
-					onchange={handleStatusChange}
-					onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
-				/>
-
-				<HierarchicalMultiSelect
-					options={fuelTechOptions}
-					selected={selectedFuelTechs}
-					label={fuelTechLabel}
-					paddingX="pl-5 pr-4"
-					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
-					compact={isFullscreen}
-					onchange={handleFuelTechChange}
-					onclear={() => onfueltechschange?.([])}
-				/>
-
-				<RangeDropdown
-					min={capacityMin}
-					max={capacityMax}
-					value={capacityRange}
-					step={10}
-					label="Capacity"
-					paddingX="pl-5 pr-4"
-					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
-					compact={isFullscreen}
-					onchange={(range) => oncapacityrangechange?.(range)}
-					onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
-					formatValue={formatCapacity}
-				/>
-
-				<!-- Years dropdown (inline for play/pause control) -->
-				<div class="relative text-sm lg:text-base">
-					<div
-						bind:this={yearTriggerRef}
-						role="button"
-						tabindex="0"
-						onclick={() => (showYearDropdown = !showYearDropdown)}
-						onkeydown={(e) => e.key === 'Enter' && (showYearDropdown = !showYearDropdown)}
-						class="flex items-center pl-5 pr-4 rounded-lg whitespace-nowrap cursor-pointer {isFullscreen
-							? 'py-1.5 gap-4'
-							: 'py-3 gap-8'}"
-						class:hover:bg-warm-grey={!showYearDropdown}
-					>
-						<span class="font-semibold {isFullscreen ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}">
-							{yearDisplayLabel}
-						</span>
-
-						<div class="flex items-center gap-1">
-							{#if isYearFiltered}
-								<button
-									onclick={(e) => {
-										e.stopPropagation();
-										handleYearClear();
-									}}
-									class="p-1 rounded-full hover:bg-mid-warm-grey transition-colors"
-									title="Clear selection"
-								>
-									<X class="size-4 text-mid-grey" />
-								</button>
-							{/if}
-							<IconChevronUpDown class="w-7 h-7" />
-						</div>
-					</div>
-
-					{#if showYearDropdown}
-						<div
-							bind:this={yearDropdownRef}
-							use:portal
-							use:dropdownPosition={{ trigger: yearTriggerRef }}
-							class="border border-mid-grey bg-white fixed flex flex-col rounded-lg z-50 shadow-md p-4 min-w-[250px]"
-							transition:fly={{ y: -10, duration: 150 }}
-						>
-							<RangeSlider
-								min={yearMin}
-								max={yearMax}
-								value={yearRange}
-								step={1}
-								onchange={(range) => {
-									stopYearAnimation();
-									onyearrangechange?.(range);
-								}}
-								formatValue={formatYear}
-							/>
-						</div>
-					{/if}
-				</div>
-			</div>
+		<!-- View Switcher - Desktop -->
+		<div class="hidden md:block {isFullscreen ? 'pl-3' : ''}">
+			<SwitchWithIcons
+				buttons={viewButtonsDesktop}
+				selected={selectedView}
+				compact={isFullscreen}
+				onchange={handleViewChange}
+			/>
 		</div>
 
-	</div>
+		<!-- Fullscreen Toggle - Mobile (only when not already fullscreen; logo handles exit) -->
+		{#if !isFullscreen}
+			<div class="md:hidden">
+				<button
+					onclick={() => onfullscreenchange?.()}
+					class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
+					title="Enter full screen (F). Shift+F for browser fullscreen"
+				>
+					<Maximize2 class="size-7 text-mid-grey" />
+				</button>
+			</div>
+		{/if}
 
-	<!-- Options Menu - Desktop -->
-	<div
-		class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
-			? 'pl-2 ml-2'
-			: 'pl-4 ml-4'}"
-	>
-		<OptionsMenu
-			{isFullscreen}
-			onfullscreenchange={() => onfullscreenchange?.()}
-			onshowshortcuts={() => onshowshortcuts?.()}
-			ondownloadcsv={() => ondownloadcsv?.()}
-		/>
-	</div>
+		<!-- View Switcher - Mobile (dropdown) -->
+		<div class="md:hidden">
+			<FormSelect
+				options={viewOptions}
+				selected={selectedViewOption}
+				onchange={handleViewSelectChange}
+				paddingX="px-4"
+				paddingY="py-3"
+				widthClass="w-auto"
+				compact={isFullscreen}
+			/>
+		</div>
 
-	<!-- Mobile Filter Button -->
-	<div class="md:hidden pl-2 ml-0">
-		<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
-			<IconAdjustmentsHorizontal class="size-10" />
-		</ButtonIcon>
-	</div>
-</div>
+		<!-- Desktop Search -->
+		<div
+			class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
+				? 'ml-3 pl-7'
+				: 'ml-6 pl-10'}"
+		>
+			<SearchInput
+				bind:this={desktopSearchRef}
+				value={searchTerm}
+				onchange={(value) => onsearchchange?.(value)}
+				showShortcutHint={showShortcuts}
+				compact={isFullscreen}
+				class="w-[200px]"
+			/>
+		</div>
+
+		<!-- Desktop Filter Dropdowns -->
+		<div
+			class="filter-bar-scroll justify-start items-center gap-2 hidden md:flex border-l border-warm-grey overflow-x-auto min-w-0 {isFullscreen
+				? 'ml-3 pl-3'
+				: 'ml-6 pl-6'}"
+		>
+			<HierarchicalMultiSelect
+				options={regionOptions}
+				selected={selectedRegions}
+				label={regionLabel}
+				paddingX="pl-5 pr-4"
+				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+				compact={isFullscreen}
+				defaultExpanded={['nem']}
+				onchange={handleRegionChange}
+				onclear={() => onregionschange?.([])}
+			/>
+
+			<FormMultiSelect
+				options={statusOptions}
+				selected={selectedStatuses}
+				label={statusLabel}
+				withColours={true}
+				paddingX="pl-5 pr-4"
+				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+				compact={isFullscreen}
+				clearLabel="Reset to defaults"
+				onchange={handleStatusChange}
+				onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
+			/>
+
+			<HierarchicalMultiSelect
+				options={fuelTechOptions}
+				selected={selectedFuelTechs}
+				label={fuelTechLabel}
+				paddingX="pl-5 pr-4"
+				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+				compact={isFullscreen}
+				onchange={handleFuelTechChange}
+				onclear={() => onfueltechschange?.([])}
+			/>
+
+			<RangeDropdown
+				min={capacityMin}
+				max={capacityMax}
+				value={capacityRange}
+				step={10}
+				label="Capacity"
+				paddingX="pl-5 pr-4"
+				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+				compact={isFullscreen}
+				onchange={(range) => oncapacityrangechange?.(range)}
+				onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
+				formatValue={formatCapacity}
+			/>
+
+			<!-- Years dropdown (inline for play/pause control) -->
+			<div class="relative text-sm lg:text-base">
+				<div
+					bind:this={yearTriggerRef}
+					role="button"
+					tabindex="0"
+					onclick={() => (showYearDropdown = !showYearDropdown)}
+					onkeydown={(e) => e.key === 'Enter' && (showYearDropdown = !showYearDropdown)}
+					class="flex items-center pl-5 pr-4 rounded-lg whitespace-nowrap cursor-pointer {isFullscreen
+						? 'py-1.5 gap-4'
+						: 'py-3 gap-8'}"
+					class:hover:bg-warm-grey={!showYearDropdown}
+				>
+					<span class="font-semibold {isFullscreen ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}">
+						{yearDisplayLabel}
+					</span>
+
+					<div class="flex items-center gap-1">
+						{#if isYearFiltered}
+							<button
+								onclick={(e) => {
+									e.stopPropagation();
+									handleYearClear();
+								}}
+								class="p-1 rounded-full hover:bg-mid-warm-grey transition-colors"
+								title="Clear selection"
+							>
+								<X class="size-4 text-mid-grey" />
+							</button>
+						{/if}
+						<IconChevronUpDown class="w-7 h-7" />
+					</div>
+				</div>
+
+				{#if showYearDropdown}
+					<div
+						bind:this={yearDropdownRef}
+						use:portal
+						use:dropdownPosition={{ trigger: yearTriggerRef }}
+						class="border border-mid-grey bg-white fixed flex flex-col rounded-lg z-50 shadow-md p-4 min-w-[250px]"
+						transition:fly={{ y: -10, duration: 150 }}
+					>
+						<RangeSlider
+							min={yearMin}
+							max={yearMax}
+							value={yearRange}
+							step={1}
+							onchange={(range) => {
+								stopYearAnimation();
+								onyearrangechange?.(range);
+							}}
+							formatValue={formatYear}
+						/>
+					</div>
+				{/if}
+			</div>
+		</div>
+	{/snippet}
+
+	{#snippet options()}
+		<!-- Options Menu - Desktop -->
+		<div
+			class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
+				? 'pl-2 ml-2'
+				: 'pl-4 ml-4'}"
+		>
+			<OptionsMenu
+				{isFullscreen}
+				onfullscreenchange={() => onfullscreenchange?.()}
+				onshowshortcuts={() => onshowshortcuts?.()}
+				ondownloadcsv={() => ondownloadcsv?.()}
+			/>
+		</div>
+
+		<!-- Mobile Filter Button -->
+		<div class="md:hidden pl-2 ml-0">
+			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
+				<IconAdjustmentsHorizontal class="size-10" />
+			</ButtonIcon>
+		</div>
+	{/snippet}
+</FullscreenFilterBar>
 
 <!-- Mobile floating search (expands from bottom-right button to input pill) -->
 <div class="md:hidden fixed bottom-4 left-4 right-4 z-40 flex justify-end pointer-events-none">

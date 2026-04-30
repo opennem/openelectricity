@@ -61,6 +61,17 @@
 		// @ts-ignore
 		if (!document.startViewTransition) return;
 
+		// Skip view transitions for in-section navigations:
+		//   - /facilities filter changes / map clicks (same pathname)
+		//   - /facility/[code] → /facility/[code'] when stepping through the
+		//     sidebar facility list (different code, same /facility/ section)
+		// We only want to animate the cross-route hop between /facilities and
+		// /facility/[code].
+		const fromPath = navigation.from?.url.pathname ?? '';
+		const toPath = navigation.to?.url.pathname ?? '';
+		if (fromPath === toPath) return;
+		if (fromPath.startsWith('/facility/') && toPath.startsWith('/facility/')) return;
+
 		return new Promise((resolve) => {
 			// @ts-ignore
 			document.startViewTransition(async () => {
@@ -208,3 +219,48 @@
 		{$toastMessage}
 	</div>
 {/if}
+
+<style>
+	/* Experimental: paired view-transition for /facilities ↔ /facility/[code].
+	   The logomark + first breadcrumb (filter-bar-stable) stays put across the
+	   route swap; everything after — the rest of the breadcrumbs / filter
+	   controls (filter-bar-rest) and the options menu (filter-bar-options) —
+	   slides in from the left. Body card (page-body) uses the browser default
+	   cross-fade. Remove this block plus the matching `view-transition-name`
+	   hooks in the two routes to revert. */
+	:global {
+		::view-transition-group(filter-bar-stable),
+		::view-transition-old(filter-bar-stable),
+		::view-transition-new(filter-bar-stable) {
+			animation: none;
+		}
+		/* Each route uses its OWN view-transition-name for the rest/options
+		   regions (-list on /facilities, -detail on /facility/[code]). The
+		   names don't pair, so each side keeps its natural width and
+		   slides/fades without the default group-size morph (the "zoom"). */
+		::view-transition-old(filter-bar-rest-list),
+		::view-transition-old(filter-bar-rest-detail),
+		::view-transition-old(filter-bar-options-list),
+		::view-transition-old(filter-bar-options-detail) {
+			animation: facilities-filter-bar-slide-out 240ms ease both;
+		}
+		::view-transition-new(filter-bar-rest-list),
+		::view-transition-new(filter-bar-rest-detail),
+		::view-transition-new(filter-bar-options-list),
+		::view-transition-new(filter-bar-options-detail) {
+			animation: facilities-filter-bar-slide-in 240ms ease both;
+		}
+		@keyframes facilities-filter-bar-slide-out {
+			to {
+				transform: translateX(24px);
+				opacity: 0;
+			}
+		}
+		@keyframes facilities-filter-bar-slide-in {
+			from {
+				transform: translateX(-24px);
+				opacity: 0;
+			}
+		}
+	}
+</style>
