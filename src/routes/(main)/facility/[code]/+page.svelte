@@ -11,7 +11,7 @@
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import { ToggleGroup } from 'bits-ui';
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
+	import { replaceState } from '$app/navigation';
 	import {
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits
@@ -104,7 +104,7 @@
 		if ($page.url.searchParams.get(CHARTS_QUERY_KEY) === serialized) return;
 		const url = new URL($page.url);
 		url.searchParams.set(CHARTS_QUERY_KEY, serialized);
-		goto(url, { replaceState: true, keepFocus: true, noScroll: true });
+		replaceState(url, $page.state);
 	});
 	let showGeneration = $derived(selectedCharts.includes('generation'));
 	let showPrice = $derived(selectedCharts.includes('price'));

@@ -12,6 +12,7 @@
 	 *   isSelected?: boolean,
 	 *   compact?: boolean,
 	 *   darkMode?: boolean,
+	 *   isFullscreen?: boolean,
 	 *   onclick?: (facility: any) => void,
 	 *   onmouseenter?: (facility: any) => void,
 	 *   onmouseleave?: () => void
@@ -23,6 +24,7 @@
 		isSelected = false,
 		compact = false,
 		darkMode = false,
+		isFullscreen = false,
 		onclick,
 		onmouseenter,
 		onmouseleave
@@ -144,7 +146,11 @@
 			onclick={() => onclick?.(facility)}
 		>
 			<div class="pl-4 sm:pl-6 pr-4 py-3 sm:py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5">
-				<div class="text-sm md:text-base leading-snug md:leading-base font-medium text-dark-grey">
+				<div
+					class="{isFullscreen
+						? 'text-xs md:text-sm'
+						: 'text-sm md:text-base'} leading-snug md:leading-base font-medium text-dark-grey"
+				>
 					{facility.name || 'Unnamed Facility'}
 				</div>
 			</div>

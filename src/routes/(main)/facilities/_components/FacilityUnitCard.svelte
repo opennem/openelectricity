@@ -14,6 +14,7 @@
 	 *   isSelected?: boolean,
 	 *   isFirst?: boolean,
 	 *   isLast?: boolean,
+	 *   isFullscreen?: boolean,
 	 *   onclick?: (facility: any) => void,
 	 *   onmouseenter?: (facility: any) => void,
 	 *   onmouseleave?: () => void
@@ -25,6 +26,7 @@
 		isSelected = false,
 		isFirst = false,
 		isLast = false,
+		isFullscreen = false,
 		onclick,
 		onmouseenter,
 		onmouseleave
@@ -85,7 +87,7 @@
 			</div>
 
 			<div
-				class="text-base leading-base font-medium text-dark-grey flex flex-col @sm:flex-row items-bottom gap-0 @sm:gap-3"
+				class="{isFullscreen ? 'text-sm' : 'text-base'} leading-base font-medium text-dark-grey flex flex-col @sm:flex-row items-bottom gap-0 @sm:gap-3"
 			>
 				{facility.name || 'Unnamed Facility'}
 

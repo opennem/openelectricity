@@ -1,7 +1,7 @@
 <script>
 	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
 	import FormSelect from '$lib/components/form-elements/Select.svelte';
-	import FullscreenNavDropdown from '$lib/components/fullscreen/FullscreenNavDropdown.svelte';
+	import { FullscreenNavDropdown } from '$lib/components/fullscreen';
 	import HierarchicalMultiSelect from './_components/HierarchicalMultiSelect.svelte';
 	import MobileFilterModal from './_components/MobileFilterModal.svelte';
 	import SearchInput from './_components/SearchInput.svelte';
@@ -509,18 +509,17 @@
 >
 	<div class="flex items-center gap-2 justify-between w-full min-w-0">
 		<div class="flex items-center gap-4 min-w-0">
-			<!-- Logo + main nav dropdown - Fullscreen only -->
+			<!-- Logomark + main nav dropdown + first breadcrumb - Fullscreen only -->
 			{#if isFullscreen}
-				<div class="flex items-center gap-1 shrink-0">
-					<button
-						onclick={() => onfullscreenchange?.()}
-						class="flex items-center cursor-pointer px-2"
-						title="Exit full screen"
-					>
-						<img src="/logo-mark.png" alt="Open Electricity" class="h-8 w-auto" />
-					</button>
+				<nav class="flex items-center gap-1 min-w-0" aria-label="Breadcrumb">
 					<FullscreenNavDropdown />
-				</div>
+					<a
+						href="/facilities?view=list&fullscreen=true"
+						class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
+					>
+						Facilities
+					</a>
+				</nav>
 				<div class="h-8 border-l border-warm-grey"></div>
 			{/if}
 

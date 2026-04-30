@@ -15,6 +15,7 @@
 	 *   selectedFacilityCode?: string | null,
 	 *   sortBy?: 'name' | 'region' | 'storage' | 'capacity',
 	 *   sortOrder?: 'asc' | 'desc',
+	 *   isFullscreen?: boolean,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any) => void,
 	 *   onsortchange?: (sortBy: 'name' | 'region' | 'storage' | 'capacity', sortOrder: 'asc' | 'desc') => void
@@ -27,6 +28,7 @@
 		selectedFacilityCode = null,
 		sortBy = 'name',
 		sortOrder = 'asc',
+		isFullscreen = false,
 		onhover,
 		onclick,
 		onsortchange
@@ -146,6 +148,7 @@
 				{facility}
 				isHighlighted={hoveredFacility?.code === facility.code}
 				isSelected={selectedFacilityCode === facility.code}
+				{isFullscreen}
 				onclick={(f) => onclick?.(f)}
 				onmouseenter={handleMouseEnter}
 				onmouseleave={handleMouseLeave}

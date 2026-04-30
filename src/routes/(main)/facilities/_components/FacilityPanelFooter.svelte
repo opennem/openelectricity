@@ -31,7 +31,7 @@
 
 	{#if facilityCode}
 		<a
-			href={`/facility/${facilityCode}`}
+			href={`/facility/${facilityCode}?fullscreen=true`}
 			class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-dark-grey bg-transparent border border-warm-grey hover:bg-warm-grey hover:border-dark-grey rounded-md transition-colors no-underline hover:no-underline"
 		>
 			Open <span class="text-xxs opacity-60">(beta)</span>

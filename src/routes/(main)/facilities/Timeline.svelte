@@ -21,7 +21,8 @@
 		onorderchange,
 		hoveredFacility = null,
 		clickedFacility = null,
-		selectedFacilityCode = null
+		selectedFacilityCode = null,
+		isFullscreen = false
 	} = $props();
 
 	// Scroll to facility when clickedFacility changes (from map click)
@@ -307,6 +308,7 @@
 									isSelected={selectedFacilityCode === facility.code}
 									isFirst={i === 0}
 									isLast={i === facilities.length - 1}
+									{isFullscreen}
 									onclick={(/** @type {any} */ f) => onclick?.(f)}
 									onmouseenter={handleMouseEnter}
 									onmouseleave={handleMouseLeave}

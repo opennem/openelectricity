@@ -1,11 +1,13 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page, navigating } from '$app/state';
-	import { version } from '$app/environment';
 	import { onMount, tick } from 'svelte';
-	import { Maximize2 } from '@lucide/svelte';
 
-	import FullscreenLayout from '$lib/components/fullscreen/FullscreenLayout.svelte';
+	import {
+		FullscreenLayout,
+		FullscreenContainer,
+		FullscreenFooter
+	} from '$lib/components/fullscreen';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../facilities/_utils/units';
@@ -139,7 +141,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen} class={isFullscreen ? 'gridline-bg' : ''}>
+<FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
 	{#snippet filterBar()}
 		<div
 			class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen
@@ -148,6 +150,7 @@
 		>
 			<FacilityPickerBar
 				selectedLabel={selectedFacility?.name ?? ''}
+				selectedCode={currentCode}
 				{regionValue}
 				{regionLabel}
 				{isFullscreen}
@@ -160,37 +163,16 @@
 	{/snippet}
 
 	{#snippet content()}
-		<section
-			class="relative flex flex-col px-4 pb-4 md:px-6 md:pb-6 pt-3 md:pt-4 {isFullscreen
-				? 'flex-1 min-h-0'
-				: 'h-[calc(100dvh-214px)] md:h-[calc(100dvh-300px)] md:min-h-[700px]'}"
-		>
-			<div
-				class="flex-1 flex flex-col min-h-0 rounded-lg border border-warm-grey overflow-hidden bg-white"
-			>
-				<div class="flex-1 flex flex-col md:flex-row min-h-0">
-					{#if !isMobile}
-						<div
-							class="shrink-0 overflow-hidden {leftOpen
-								? 'border-r border-warm-grey'
-								: ''} {listDrag.isDragging ? '' : 'transition-[width] duration-200 ease-out'}"
-							style="width: {leftOpen ? listDrag.value : 0}px"
-						>
-							{#if leftOpen}
-								<FacilityListPanel
-									bind:this={listPanel}
-									facilities={facilitiesList}
-									{currentCode}
-									onclose={() => (leftOpen = false)}
-									onselect={handleFacilitySelect}
-								/>
-							{/if}
-						</div>
+		<FullscreenContainer {isFullscreen}>
+			<div class="flex-1 flex flex-col md:flex-row min-h-0">
+				{#if !isMobile}
+					<div
+						class="shrink-0 overflow-hidden {leftOpen
+							? 'border-r border-warm-grey'
+							: ''} {listDrag.isDragging ? '' : 'transition-[width] duration-200 ease-out'}"
+						style="width: {leftOpen ? listDrag.value : 0}px"
+					>
 						{#if leftOpen}
-							<DragHandle axis="x" onstart={listDrag.start} active={listDrag.isDragging} />
-						{/if}
-					{:else if leftOpen}
-						<div class="fixed inset-0 z-40 bg-white">
 							<FacilityListPanel
 								bind:this={listPanel}
 								facilities={facilitiesList}
@@ -198,49 +180,41 @@
 								onclose={() => (leftOpen = false)}
 								onselect={handleFacilitySelect}
 							/>
-						</div>
-					{/if}
-
-					<div class="flex-1 flex flex-col min-w-0 min-h-0 relative">
-						{@render children()}
-						{#if navigating.to && navigating.to.url.pathname.startsWith('/facility/')}
-							<div
-								class="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none"
-							>
-								<div
-									class="w-8 h-8 border-2 border-warm-grey border-t-red rounded-full animate-spin"
-								></div>
-							</div>
 						{/if}
 					</div>
-				</div>
-
-				<footer
-					class="shrink-0 border-t border-warm-grey bg-light-warm-grey/40 px-4 py-2 flex items-center justify-between gap-3"
-				>
-					{#if isFullscreen}
-						<span class="text-[10px] text-mid-grey font-mono">v{version}</span>
-						<a href="/" class="text-[10px] text-dark-grey no-underline hover:text-red">
-							Open Electricity
-						</a>
-					{:else}
-						<span></span>
-						<button
-							onclick={toggleFullscreen}
-							class="text-[10px] text-mid-grey hover:text-dark-grey flex items-center gap-1.5 cursor-pointer transition-colors"
-							title="Enter full screen"
-						>
-							<Maximize2 size={12} />
-							<span>Enter full screen</span>
-							<kbd
-								class="text-[10px] font-sans text-dark-grey bg-white border border-warm-grey rounded px-1.5 py-0.5 leading-none"
-								>F</kbd
-							>
-						</button>
+					{#if leftOpen}
+						<DragHandle axis="x" onstart={listDrag.start} active={listDrag.isDragging} />
 					{/if}
-				</footer>
+				{:else if leftOpen}
+					<div class="fixed inset-0 z-40 bg-white">
+						<FacilityListPanel
+							bind:this={listPanel}
+							facilities={facilitiesList}
+							{currentCode}
+							onclose={() => (leftOpen = false)}
+							onselect={handleFacilitySelect}
+						/>
+					</div>
+				{/if}
+
+				<div class="flex-1 flex flex-col min-w-0 min-h-0 relative">
+					{@render children()}
+					{#if navigating.to && navigating.to.url.pathname.startsWith('/facility/')}
+						<div
+							class="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none"
+						>
+							<div
+								class="w-8 h-8 border-2 border-warm-grey border-t-red rounded-full animate-spin"
+							></div>
+						</div>
+					{/if}
+				</div>
 			</div>
-		</section>
+
+			{#snippet footer()}
+				<FullscreenFooter {isFullscreen} onenterfullscreen={toggleFullscreen} />
+			{/snippet}
+		</FullscreenContainer>
 	{/snippet}
 </FullscreenLayout>
 
@@ -255,9 +229,3 @@
 	]}
 />
 
-<style>
-	:global(.gridline-bg) {
-		background-image: radial-gradient(circle, #d5d4d1 1px, transparent 1px);
-		background-size: 20px 20px;
-	}
-</style>

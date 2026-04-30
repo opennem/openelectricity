@@ -25,8 +25,13 @@
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
 	import FacilityPanelFooter from './_components/FacilityPanelFooter.svelte';
-	import FullscreenLayout from '$lib/components/fullscreen/FullscreenLayout.svelte';
+	import {
+		FullscreenLayout,
+		FullscreenContainer,
+		FullscreenFooter
+	} from '$lib/components/fullscreen';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
+	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import {
 		hasBidirectionalBattery,
@@ -159,6 +164,15 @@
 
 	// Container height for responsive detail panel
 	let containerHeight = $state(0);
+
+	// Draggable divider between the list/timeline column and the map column.
+	const mainDrag = createDragHandler({
+		axis: 'x',
+		min: 320,
+		max: 720,
+		initial: 480,
+		storageKey: 'facilities-list-width'
+	});
 
 	// Default pixel height of the facility detail panel — sized so the content
 	// fits without scrolling: drag handle + header + chart + legend + footer.
@@ -910,9 +924,9 @@
 <FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
 	{#snippet filterBar()}
 		<div
-			class="shrink-0 border-y border-warm-grey {isFullscreen
+			class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen
 				? 'md:border-0 md:px-6 md:pt-6'
-				: ''}"
+				: 'px-4'}"
 		>
 			<div class="relative text-base z-50">
 				<Filters
@@ -949,18 +963,18 @@
 	{/snippet}
 
 	{#snippet content()}
-		<section
-			bind:clientHeight={containerHeight}
-			class="relative grid grid-cols-1 md:grid-cols-12 {isFullscreen
-				? 'flex-1 min-h-0'
-				: 'h-[calc(100dvh-214px)] md:h-[calc(100dvh-500px)] md:min-h-[800px]'}"
-		>
-		<!-- Left panel: List or Timeline (5/12 width on desktop) -->
-		<div
-			class="relative col-span-1 md:col-span-6 lg:col-span-5 bg-white flex flex-col min-h-0 z-10"
-			class:hidden={selectedView === 'map'}
-			class:md:flex={selectedView === 'map'}
-		>
+		<FullscreenContainer {isFullscreen}>
+			<div
+				bind:clientHeight={containerHeight}
+				class="flex-1 flex flex-col md:flex-row min-h-0 relative"
+			>
+			<!-- Left panel: List or Timeline (resizable on desktop) -->
+			<div
+				class="relative bg-white flex flex-col min-h-0 z-10 w-full md:shrink-0"
+				class:hidden={selectedView === 'map'}
+				class:md:flex={selectedView === 'map'}
+				style={isDesktop ? `width: ${mainDrag.value}px` : ''}
+			>
 			{#if selectedView === 'list' || selectedView === 'map'}
 				<div class="flex-1 overflow-y-auto min-h-0 mt-4">
 					<List
@@ -970,6 +984,7 @@
 						selectedFacilityCode={selectedFacility?.code ?? null}
 						sortBy={listSortBy}
 						sortOrder={listSortOrder}
+						{isFullscreen}
 						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 						onclick={(/** @type {any} */ f) => {
 							handleFacilitySelect(f);
@@ -1009,6 +1024,7 @@
 							{hoveredFacility}
 							{clickedFacility}
 							selectedFacilityCode={selectedFacility?.code ?? null}
+							{isFullscreen}
 							ontodaybuttonvisible={handleTodayButtonVisible}
 							scrollContainer={timelineScrollContainer}
 							scrollToToday={!hasInitiallyScrolledToToday}
@@ -1025,14 +1041,19 @@
 			{@render summaryBar()}
 		</div>
 
-		<!-- Right panel: Map (7/12 width on desktop) -->
+		<!-- Resizable divider (desktop only) -->
+		{#if isDesktop}
+			<DragHandle axis="x" onstart={mainDrag.start} active={mainDrag.isDragging} />
+		{/if}
+
+		<!-- Right panel: Map (flex-1 on desktop) -->
 		<div
-			class="col-span-1 md:col-span-6 lg:col-span-7 md:p-6"
+			class="relative md:flex-1 md:min-w-0"
 			class:hidden={selectedView !== 'map'}
 			class:md:block={selectedView !== 'map'}
 		>
 			<!-- Map container -->
-			<div class="relative h-full md:rounded-lg md:border md:border-warm-grey overflow-hidden">
+			<div class="relative h-full overflow-hidden">
 				{#if !mapLoaded}
 					<div
 						class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center md:rounded-lg"
@@ -1241,7 +1262,12 @@
 				/>
 			</div>
 		{/if}
-		</section>
+			</div>
+
+			{#snippet footer()}
+				<FullscreenFooter {isFullscreen} onenterfullscreen={toggleFullscreen} />
+			{/snippet}
+		</FullscreenContainer>
 	{/snippet}
 </FullscreenLayout>
 
