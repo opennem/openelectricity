@@ -33,6 +33,9 @@ export const HORIZONTAL_TYPES = new Set(['bar', 'bar-stacked', 'bar-grouped']);
 /** Chart types that use vertical bars/columns (barY/rectY) */
 export const COLUMN_TYPES = new Set(['column', 'column-stacked', 'column-grouped']);
 
+/** Chart types that render category bars side-by-side via fx/fy faceting */
+export const GROUPED_TYPES = new Set(['bar-grouped', 'column-grouped']);
+
 // ── Line Style Definitions ─────────────────────────────────────
 
 /**

@@ -15,7 +15,12 @@
 	} from '$lib/components/charts/plot/plot-configs.js';
 	import { processAnnotations, formatCompact } from './plot-annotations.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
-	import { HORIZONTAL_TYPES, COLUMN_TYPES, TIME_SERIES_TYPES } from '$lib/stratify/chart-types.js';
+	import {
+		HORIZONTAL_TYPES,
+		COLUMN_TYPES,
+		TIME_SERIES_TYPES,
+		GROUPED_TYPES
+	} from '$lib/stratify/chart-types.js';
 
 	const dateFmt = new Intl.DateTimeFormat('en-AU', {
 		day: 'numeric',
@@ -358,12 +363,23 @@
 			}
 		}
 
-		// Apply explicit domain (e.g. sorted categories)
+		// Apply explicit domain (e.g. sorted categories). For grouped charts the
+		// category axis is the facet scale (fx for vertical, fy for horizontal),
+		// not the inner positional scale that holds seriesNames.
+		const isGrouped = GROUPED_TYPES.has(chartType);
 		if (xDomain) {
-			opts.x = { ...(opts.x || {}), domain: xDomain };
+			if (isGrouped) {
+				opts.fx = { ...(opts.fx || {}), domain: xDomain };
+			} else {
+				opts.x = { ...(opts.x || {}), domain: xDomain };
+			}
 		}
 		if (yDomain) {
-			opts.y = { ...(opts.y || {}), domain: yDomain };
+			if (isGrouped) {
+				opts.fy = { ...(opts.fy || {}), domain: yDomain };
+			} else {
+				opts.y = { ...(opts.y || {}), domain: yDomain };
+			}
 		}
 
 		// Apply x-axis tick count if configured (before showXTickLabels so it can override)

@@ -463,6 +463,7 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 
 	const { xKey } = detectXMode(data);
 	const long = toLong(data, seriesNames, xKey);
+	const categoryDomain = data.map((/** @type {any} */ d) => d[xKey]);
 
 	return {
 		style,
@@ -472,6 +473,7 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 		y: { label: null, grid: true, tickFormat: yTickFormat },
 		fx: {
 			label: null,
+			domain: categoryDomain,
 			padding: 0.1,
 			tickPadding: 6,
 			tickRotate: -30,
@@ -551,6 +553,7 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 	} = options;
 	const long = toLong(data, seriesNames, 'category');
 	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
+	const categoryDomain = data.map((/** @type {any} */ d) => d.category);
 
 	return {
 		style,
@@ -561,6 +564,7 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 		x: { label: null, grid: true, zero: true, tickFormat: yTickFormat },
 		fy: {
 			label: null,
+			domain: categoryDomain,
 			padding: 0.1,
 			tickPadding: 6,
 			axis: 'left'
