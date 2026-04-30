@@ -458,22 +458,25 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 		marginRight,
 		legend = true,
 		extraMarks = [],
-		yTickFormat
+		yTickFormat = 's'
 	} = options;
 
-	const { xKey, isCategory } = detectXMode(data);
+	const { xKey } = detectXMode(data);
 	const long = toLong(data, seriesNames, xKey);
 
 	return {
 		style,
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
-		x: {
+		x: { axis: null, type: 'band', domain: seriesNames, padding: 0.05 },
+		y: { label: null, grid: true, tickFormat: yTickFormat },
+		fx: {
 			label: null,
-			...(isCategory ? { tickPadding: 6, tickRotate: -30, type: 'band' } : {})
+			padding: 0.1,
+			tickPadding: 6,
+			tickRotate: -30,
+			axis: 'bottom'
 		},
-		y: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
-		fx: { label: null, padding: 0.2 },
 		marks: [
 			...extraMarks,
 			barY(long, {
@@ -544,7 +547,7 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 		marginRight,
 		legend = true,
 		extraMarks = [],
-		yTickFormat
+		yTickFormat = 's'
 	} = options;
 	const long = toLong(data, seriesNames, 'category');
 	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
@@ -554,9 +557,14 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 		marginLeft: autoMarginLeft,
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
-		y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
-		x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
-		fy: { label: null, padding: 0.2 },
+		y: { axis: null, type: 'band', domain: seriesNames, padding: 0.05 },
+		x: { label: null, grid: true, zero: true, tickFormat: yTickFormat },
+		fy: {
+			label: null,
+			padding: 0.1,
+			tickPadding: 6,
+			axis: 'left'
+		},
 		marks: [
 			...extraMarks,
 			barX(long, {
