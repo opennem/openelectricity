@@ -19,7 +19,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Development**: `bun run dev` - Start Vite development server (reads `.env` — the default for contributors using their own API keys)
 - **Maintainer Development**: `bun run doppler-dev` - Same as `dev` but injects secrets via `doppler run` (requires Doppler login + `doppler setup` linking)
 - **Build**: `bun run build` - Production build with Vite
+- **Maintainer Build**: `bun run doppler-build` - Same as `build` but with secrets injected from Doppler
 - **Preview**: `bun run preview` - Preview built application
+- **Maintainer Preview**: `bun run doppler-preview` - Same as `preview` but with secrets injected from Doppler
 - **Type Checking**: `bun run check` - SvelteKit sync + svelte-check with jsconfig.json
 - **Type Checking (Watch)**: `bun run check:watch` - Continuous type checking
 - **Linting**: `bun run lint` - Prettier format check + ESLint

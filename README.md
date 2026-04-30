@@ -51,16 +51,18 @@ doppler setup            # link this directory to the openelectricity project + 
 bun run doppler-dev      # runs vite dev with secrets injected from Doppler
 ```
 
-`bun run doppler-dev` is purely a maintainer convenience. `bun run dev` (with a local `.env`) remains the canonical path for contributors and forks — no Doppler account required.
+`doppler-dev`, `doppler-build`, and `doppler-preview` are maintainer conveniences that wrap their plain counterparts in `doppler run --`. The plain scripts (with a local `.env`) remain the canonical path for contributors and forks — no Doppler account required.
 
 ## Commands
 
 | Command               | Description                                        |
 | --------------------- | -------------------------------------------------- |
-| `bun run dev`         | Start dev server using `.env` (default)            |
-| `bun run doppler-dev` | Start dev server with secrets injected from Doppler (maintainers) |
-| `bun run build`       | Production build                                   |
-| `bun run preview`     | Preview production build                           |
+| `bun run dev`             | Start dev server using `.env` (default)            |
+| `bun run doppler-dev`     | Start dev server with secrets injected from Doppler (maintainers) |
+| `bun run build`           | Production build                                   |
+| `bun run doppler-build`   | Production build with secrets injected from Doppler (maintainers) |
+| `bun run preview`         | Preview production build                           |
+| `bun run doppler-preview` | Preview production build with secrets injected from Doppler (maintainers) |
 | `bun run check`       | Type check with svelte-check                       |
 | `bun run lint`        | Lint with Prettier + ESLint                        |
 | `bun run format`      | Auto-format with Prettier                          |
