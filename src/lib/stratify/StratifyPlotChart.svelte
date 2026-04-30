@@ -11,7 +11,8 @@
 		createGroupedHorizontalBarOptions,
 		createColourGroupedBarOptions,
 		createMixedMarkOptions,
-		buildTooltipChannels
+		buildTooltipChannels,
+		toLong
 	} from '$lib/components/charts/plot/plot-configs.js';
 	import { processAnnotations, formatCompact } from './plot-annotations.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
@@ -545,7 +546,54 @@
 			}
 
 			const isHz = HORIZONTAL_TYPES.has(chartType);
-			if (isHz) {
+			if (isGrouped) {
+				// Grouped charts render bars in faceted space, so the tooltip
+				// must hunt within facets on the long-format data.
+				const longData = toLong(data, seriesNames, 'category');
+				/** @type {Record<string, any>} */
+				const groupedChannels = {};
+				if (showCat) {
+					groupedChannels[catLabel] = { value: (/** @type {any} */ d) => d.x };
+				}
+				groupedChannels['Series'] = {
+					value: (/** @type {any} */ d) => seriesLabels[d.series] || d.series
+				};
+				groupedChannels['Value'] = { value: (/** @type {any} */ d) => d.value };
+
+				if (isHz) {
+					opts.marks.push(
+						tip(
+							longData,
+							pointerY({
+								fy: 'x',
+								y: 'series',
+								x: 'value',
+								channels: groupedChannels,
+								format: { y: false, x: false, fy: false },
+								preferredAnchor: 'left',
+								lineHeight: 1.3,
+								fontSize: 11
+							})
+						)
+					);
+				} else {
+					opts.marks.push(
+						tip(
+							longData,
+							pointerX({
+								fx: 'x',
+								x: 'series',
+								y: 'value',
+								channels: groupedChannels,
+								format: { x: false, y: false, fx: false },
+								preferredAnchor: 'bottom',
+								lineHeight: 1.3,
+								fontSize: 11
+							})
+						)
+					);
+				}
+			} else if (isHz) {
 				// Position tooltip at the bar end
 				const valueKey = seriesNames[0];
 				opts.marks.push(
