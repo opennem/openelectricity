@@ -4,7 +4,7 @@
 
 	import ScenarioDescription from './ScenarioDescription.svelte';
 	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
-	import { scenarioLabelMap } from '../page-data-options/models';
+	import { withScenarioLabels } from '../page-data-options/models';
 
 	/**
 	 * @typedef {Object} Props
@@ -38,7 +38,7 @@
 
 	let selectedChart = $derived(chartStores[selectedChartName]);
 	let seriesNames = $derived(selectedChart.seriesNames);
-	let seriesLabels = $derived({ ...selectedChart.seriesLabels, ...scenarioLabelMap });
+	let seriesLabels = $derived(withScenarioLabels(selectedChart.seriesLabels));
 	let seriesColours = $derived(selectedChart.seriesColours);
 	let xTicks = $derived(selectedChart.xTicks);
 	let formatTickX = $derived(selectedChart.formatTickX);
@@ -50,7 +50,7 @@
 	let displayUnit = $derived(selectedChart.chartOptions.displayUnit);
 
 	let intensityFormatTickY = $derived(intensity.convertAndFormatValue);
-	let intensitySeriesLabels = $derived({ ...intensity.seriesLabels, ...scenarioLabelMap });
+	let intensitySeriesLabels = $derived(withScenarioLabels(intensity.seriesLabels));
 	let intensitySeriesColours = $derived(intensity.seriesColours);
 	let intensitySeriesData = $derived(intensity.seriesData);
 	let intensityDisplayUnit = $derived(intensity.chartOptions.displayUnit);

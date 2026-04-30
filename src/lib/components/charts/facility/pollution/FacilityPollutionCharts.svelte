@@ -85,6 +85,11 @@
 	/**
 	 * Reshape a single category's `PollutantSeries[]` into the prop bundle
 	 * `MiniCharts` expects. Returns null if the category has no usable data.
+	 *
+	 * `time` is the start-of-FY (1 July) timestamp; `date` is the same value
+	 * as a Date — ChartStore's default xKey is 'date' so the area path reads
+	 * from there, while hover lookups go through `time`.
+	 *
 	 * @param {string} catKey
 	 */
 	function buildCategoryProps(catKey) {
@@ -103,10 +108,6 @@
 			active.map((p, i) => [p.code, palette[i]])
 		);
 
-		// One row per year; one numeric column per pollutant code.
-		// `time` is the start-of-FY (1 July) timestamp; `date` is the same
-		// value as a Date object — ChartStore's default xKey is 'date' so the
-		// area path reads from there, while hover lookups go through `time`.
 		const seriesData = data.years.map((year) => {
 			const startYear = parseInt(String(year).slice(0, 4), 10);
 			const time = Date.UTC(startYear, 6, 1);
@@ -118,12 +119,21 @@
 
 		return { seriesNames, seriesLabels, seriesColours, seriesData };
 	}
+
+	// Cache the per-category prop bundles so hover-driven re-renders don't
+	// re-run buildCategoryProps (which allocates fresh arrays + Date objects)
+	// — the result only depends on `data`, not on hover state. Without this,
+	// every mousemove cascades into MiniCharts seeing a fresh `seriesData`
+	// reference and re-syncing every per-series ChartStore.
+	let categoryPropsByKey = $derived(
+		Object.fromEntries(categoryOrder.map((key) => [key, buildCategoryProps(key)]))
+	);
 </script>
 
 <div class="space-y-5">
 	{#each categoryOrder as catKey (catKey)}
 		{@const catMeta = CATEGORY_META[catKey]}
-		{@const props = buildCategoryProps(catKey)}
+		{@const props = categoryPropsByKey[catKey]}
 
 		{#if props}
 			<section>

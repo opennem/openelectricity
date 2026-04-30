@@ -1,6 +1,6 @@
 <script>
 	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
-	import { scenarioLabelMap } from '../../../../../routes/(main)/scenarios/page-data-options/models';
+	import { withScenarioLabels } from '../../../../../routes/(main)/scenarios/page-data-options/models';
 
 	/**
 	 * @typedef {Object} Props
@@ -41,7 +41,7 @@
 	<div class="border-t border-b md:border-x border-mid-warm-grey">
 		<MiniCharts
 			seriesNames={chart.seriesNames}
-			seriesLabels={{ ...chart.seriesLabels, ...scenarioLabelMap }}
+			seriesLabels={withScenarioLabels(chart.seriesLabels)}
 			seriesColours={chart.seriesColours}
 			seriesData={chart.seriesData}
 			{seriesLoadsIds}

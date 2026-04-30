@@ -455,3 +455,16 @@ export const scenarioLabelMap = scenarioOptions.reduce((/** @type {Record<string
 	acc[curr.id] = curr.label;
 	return acc;
 }, /** @type {Record<string, string>} */ ({}));
+
+/**
+ * Merge a chart's `seriesLabels` with `scenarioLabelMap` so MiniCharts (now a
+ * generic v2 component with no scenarios-specific knowledge) still falls back
+ * to the friendly scenario name for keys that aren't in the chart's own label
+ * map. scenarioLabelMap entries take precedence.
+ *
+ * @param {Record<string, string>} labels
+ * @returns {Record<string, string>}
+ */
+export function withScenarioLabels(labels) {
+	return { ...labels, ...scenarioLabelMap };
+}

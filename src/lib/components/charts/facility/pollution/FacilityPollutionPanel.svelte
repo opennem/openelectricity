@@ -1,5 +1,4 @@
 <script>
-	import { untrack } from 'svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import { transformPollutionData } from './transform-pollution.js';
 	import FacilityPollutionCharts from './FacilityPollutionCharts.svelte';
@@ -27,21 +26,16 @@
 		const npi = hasNpi;
 
 		if (!currentCode || !npi) {
-			untrack(() => {
-				pollutionData = null;
-				loading = false;
-				errored = false;
-			});
+			pollutionData = null;
+			loading = false;
+			errored = false;
 			return;
 		}
 
 		const controller = new AbortController();
-
-		untrack(() => {
-			loading = true;
-			errored = false;
-			pollutionData = null;
-		});
+		loading = true;
+		errored = false;
+		pollutionData = null;
 
 		fetch(`/api/facilities/${currentCode}/pollution`, { signal: controller.signal })
 			.then((r) => r.json())

@@ -82,7 +82,6 @@
 
 	let tag = $derived(isButton ? 'button' : 'header');
 
-	// Normalise overlayStart to a ms timestamp
 	let overlayStartMs = $derived.by(() => {
 		if (overlayStart == null) return undefined;
 		if (typeof overlayStart === 'number') return overlayStart;
@@ -90,10 +89,10 @@
 		return d ? +new Date(d) : undefined;
 	});
 
-	// Overlay start as a Date (shared reference for ticks + highlight)
+	// Same reference is used for ticks + highlight so the chart matches the
+	// overlay-start tick exactly.
 	let overlayStartDate = $derived(overlayStartMs != null ? new Date(overlayStartMs) : null);
 
-	// Compute mini chart ticks: start year, overlay start year, end year
 	let miniTicks = $derived.by(() => {
 		if (!seriesData.length) return xTicks;
 		const first = seriesData[0];
@@ -110,10 +109,8 @@
 		return ticks;
 	});
 
-	// Highlight ticks — same reference as in miniTicks for exact match
 	let highlightTicks = $derived(overlayStartDate ? [overlayStartDate] : []);
 
-	/** Negate loads in the dataset */
 	let dataset = $derived(
 		seriesData.map((d) => {
 			const obj = { ...d };
@@ -173,7 +170,6 @@
 			if (bgShadingData.length) store.bgShadingData = bgShadingData;
 			if (bgShadingFill) store.bgShadingFill = bgShadingFill;
 
-			// Y-axis: set ticks to data min/max and use parent's formatter
 			if (formatTickY) {
 				store.useFormatY = true;
 				store.formatY = formatTickY;
@@ -244,6 +240,12 @@
 		const idx = Math.round(fraction * (data.length - 1));
 		const point = data[idx];
 		if (!point?.time) return;
+
+		// No-op when the cursor stays inside the same data bucket — avoids
+		// firing setHover (and the parent onhover propagation) on every
+		// pixel of mouse movement, which would re-trigger the per-store
+		// prop-sync $effect across every card in the panel.
+		if (store.hoverTime === point.time) return;
 
 		store.setHover(point.time);
 		onhover?.(point.time, key);
