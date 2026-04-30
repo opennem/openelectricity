@@ -61,6 +61,7 @@
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
+		"doppler-dev": "doppler run -- vite dev",
 		"build": "vite build",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",

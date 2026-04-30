@@ -16,7 +16,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | Format     | `bun run format` | `npm run format`    |
 | Test       | `bun run test`   | `npm run test`      |
 
-- **Development**: `bun run dev` - Start Vite development server
+- **Development**: `bun run dev` - Start Vite development server (reads `.env` — the default for contributors using their own API keys)
+- **Maintainer Development**: `bun run doppler-dev` - Same as `dev` but injects secrets via `doppler run` (requires Doppler login + `doppler setup` linking)
 - **Build**: `bun run build` - Production build with Vite
 - **Preview**: `bun run preview` - Preview built application
 - **Type Checking**: `bun run check` - SvelteKit sync + svelte-check with jsconfig.json
@@ -25,6 +26,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Formatting**: `bun run format` - Auto-format with Prettier
 - **Testing**: `bun run test` - Run Vitest test suite
 - **Version Management**: `npm run version:patch|minor|major` - Bump version using npm version (npm required)
+
+## Environment variables
+
+This is an open-source project. The canonical local-dev path is `bun run dev` reading from a hand-edited `.env` — anyone can clone the repo, supply their own keys (Open Electricity API, Sanity, Clerk, etc.), and run it. Do not remove the `.env` workflow or assume Doppler is available.
+
+Maintainers use Doppler to sync secrets across machines via `bun run doppler-dev`. When making changes that affect env vars:
+- Always update `.env.example` with the new key (commented placeholder).
+- Mention both flows in any user-facing docs you touch.
+- Don't add Doppler as a hard requirement for `dev`, `build`, `preview`, etc.
 
 ## Technology Stack
 
