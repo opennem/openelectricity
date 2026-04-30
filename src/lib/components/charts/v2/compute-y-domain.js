@@ -28,5 +28,12 @@ export function computeYDomain(data, options = {}) {
 	const paddedMax = datasetMax + datasetMax * padding;
 	const paddedMin = datasetMin < 0 ? datasetMin + datasetMin * padding : datasetMin;
 
-	return [Math.floor(paddedMin), Math.ceil(paddedMax)];
+	// For sub-unit data (|v| < 1) `Math.floor` / `Math.ceil` collapse the
+	// domain to integers — e.g. a max of 0.0017 kg ceils to 1 kg, which then
+	// squashes the actual values against the baseline. Keep the padded
+	// fractional value when the magnitude is already below 1.
+	const ceilMax = Math.abs(paddedMax) >= 1 ? Math.ceil(paddedMax) : paddedMax;
+	const floorMin = Math.abs(paddedMin) >= 1 ? Math.floor(paddedMin) : paddedMin;
+
+	return [floorMin, ceilMax];
 }

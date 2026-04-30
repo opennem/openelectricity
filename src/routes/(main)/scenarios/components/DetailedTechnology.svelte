@@ -3,7 +3,8 @@
 	import Switch from '$lib/components/Switch.svelte';
 
 	import ScenarioDescription from './ScenarioDescription.svelte';
-	import MiniCharts from './MiniCharts.svelte';
+	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
+	import { scenarioLabelMap } from '../page-data-options/models';
 
 	/**
 	 * @typedef {Object} Props
@@ -64,7 +65,7 @@
 			<div class="grid grid-cols-2 md:grid-cols-3 gap-3">
 				<MiniCharts
 					seriesNames={selectedChart.seriesNames}
-					seriesLabels={selectedChart.seriesLabels}
+					seriesLabels={{ ...selectedChart.seriesLabels, ...scenarioLabelMap }}
 					seriesColours={selectedChart.seriesColours}
 					xTicks={selectedChart.xTicks}
 					formatTickX={selectedChart.formatTickX}
@@ -82,7 +83,7 @@
 				/>
 				<MiniCharts
 					seriesNames={intensity.seriesNames}
-					seriesLabels={intensity.seriesLabels}
+					seriesLabels={{ ...intensity.seriesLabels, ...scenarioLabelMap }}
 					seriesColours={intensity.seriesColours}
 					xTicks={selectedChart.xTicks}
 					formatTickX={selectedChart.formatTickX}
@@ -103,7 +104,7 @@
 		{:else}
 			<MiniCharts
 				seriesNames={selectedChart.seriesNames}
-				seriesLabels={selectedChart.seriesLabels}
+				seriesLabels={{ ...selectedChart.seriesLabels, ...scenarioLabelMap }}
 				seriesColours={selectedChart.seriesColours}
 				xTicks={selectedChart.xTicks}
 				formatTickX={selectedChart.formatTickX}

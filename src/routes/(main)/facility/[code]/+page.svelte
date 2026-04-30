@@ -5,7 +5,8 @@
 		FacilityChart,
 		FacilityPriceChart,
 		FacilityMarketValueChart,
-		FacilityFinancialDataProvider
+		FacilityFinancialDataProvider,
+		FacilityPollutionPanel
 	} from '$lib/components/charts/facility';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
@@ -69,7 +70,8 @@
 	const CHART_OPTIONS = [
 		{ label: 'Generation', value: 'generation' },
 		{ label: 'Price', value: 'price' },
-		{ label: 'Market Value', value: 'marketValue' }
+		{ label: 'Market Value', value: 'marketValue' },
+		{ label: 'Pollution', value: 'pollution' }
 	];
 	const DEFAULT_SELECTED_CHARTS = ['generation'];
 	const CHARTS_QUERY_KEY = 'charts';
@@ -109,7 +111,17 @@
 	let showGeneration = $derived(selectedCharts.includes('generation'));
 	let showPrice = $derived(selectedCharts.includes('price'));
 	let showMarketValue = $derived(selectedCharts.includes('marketValue'));
+	let showPollution = $derived(selectedCharts.includes('pollution'));
 	let financialActive = $derived(showPrice || showMarketValue);
+
+	// Hide the Pollution toggle (and panel) when the facility has no NPI
+	// registration. CHART_OPTIONS is left untouched so the parser still keeps
+	// `?charts=pollution` in the URL — when the user navigates to a facility
+	// that DOES have an NPI, the tab reappears with pollution pre-selected.
+	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
+	let visibleChartOptions = $derived(
+		hasNpi ? CHART_OPTIONS : CHART_OPTIONS.filter((o) => o.value !== 'pollution')
+	);
 
 	let noneSelected = $derived(selectedCharts.length === 0);
 
@@ -240,7 +252,7 @@
 						bind:value={selectedCharts}
 						class="inline-flex rounded-lg border border-mid-warm-grey bg-light-warm-grey p-1 gap-1"
 					>
-						{#each CHART_OPTIONS as opt (opt.value)}
+						{#each visibleChartOptions as opt (opt.value)}
 							<ToggleGroup.Item
 								value={opt.value}
 								class="px-3 py-1 rounded-md text-xs text-mid-grey hover:text-black transition-colors data-[state=on]:bg-white data-[state=on]:text-black data-[state=on]:shadow-sm"
@@ -297,6 +309,10 @@
 
 							{#if showMarketValue && viewStart && viewEnd}
 								<FacilityMarketValueChart />
+							{/if}
+
+							{#if showPollution && hasNpi}
+								<FacilityPollutionPanel facility={selectedFacility} />
 							{/if}
 						</div>
 					{/if}

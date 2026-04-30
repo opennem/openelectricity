@@ -12,6 +12,7 @@
 	 */
 	import ChartHeader from './ChartHeader.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
+	import ChartTooltipCompactStrip from './ChartTooltipCompactStrip.svelte';
 	import ChartTooltipFloating from './ChartTooltipFloating.svelte';
 	import StackedAreaChart from './StackedAreaChart.svelte';
 	import BarChart from './BarChart.svelte';
@@ -23,7 +24,7 @@
 	 * @property {import('./ChartStore.svelte.js').default} chart
 	 * @property {boolean} [showHeader]
 	 * @property {boolean} [showTooltip] - DEPRECATED alias for tooltipMode: if set false, tooltipMode becomes 'none'. Prefer tooltipMode.
-	 * @property {'strip' | 'floating' | 'none'} [tooltipMode] - 'strip' (default) renders above the chart; 'floating' overlays at the cursor; 'none' disables the tooltip entirely.
+	 * @property {'strip' | 'compact-strip' | 'floating' | 'none'} [tooltipMode] - 'strip' (default) renders the full strip above the chart; 'compact-strip' is a single-line "FY20 — value unit" version above the chart; 'floating' overlays at the cursor; 'none' disables the tooltip entirely.
 	 * @property {number} [tooltipDodgeRightPx] - For 'floating' mode: pixel width of a top-right UI element (e.g. zoom buttons) that the tooltip should dodge vertically.
 	 * @property {number} [tooltipInsetPx] - For 'floating' mode: horizontal standoff (px) the tooltip keeps from the container's left and right edges. Use when the chart is full-bleed.
 	 * @property {boolean} [showOptions]
@@ -63,7 +64,7 @@
 		chart,
 		showHeader = true,
 		showTooltip = true,
-		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip'),
+		tooltipMode = /** @type {'strip' | 'compact-strip' | 'floating' | 'none'} */ ('strip'),
 		tooltipDodgeRightPx = 0,
 		tooltipInsetPx = 0,
 		showOptions = true,
@@ -158,6 +159,14 @@
 				{@render tooltip()}
 			{:else}
 				<ChartTooltip {chart} defaultText={defaultTooltipText} />
+			{/if}
+		</div>
+	{:else if effectiveTooltipMode === 'compact-strip'}
+		<div class="relative z-10" style="padding-right: var(--pad-right, 0);">
+			{#if tooltip}
+				{@render tooltip()}
+			{:else}
+				<ChartTooltipCompactStrip {chart} defaultText={defaultTooltipText} />
 			{/if}
 		</div>
 	{/if}

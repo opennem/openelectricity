@@ -222,32 +222,33 @@
 
 <style>
 	/* Experimental: paired view-transition for /facilities ↔ /facility/[code].
-	   The logomark + first breadcrumb (filter-bar-stable) stays put across the
-	   route swap; everything after — the rest of the breadcrumbs / filter
-	   controls (filter-bar-rest) and the options menu (filter-bar-options) —
-	   slides in from the left. Body card (page-body) uses the browser default
+	   The logomark + first breadcrumb (filter-bar-stable) and the options
+	   dropdown (filter-bar-options) stay put across the route swap; only the
+	   page-specific middle region (filter-bar-rest-{routeKey}) slides in
+	   from the left. Body card (page-body) uses the browser default
 	   cross-fade. Remove this block plus the matching `view-transition-name`
 	   hooks in the two routes to revert. */
 	:global {
+		/* Logo + first breadcrumb on the left, options dropdown on the right —
+		   both stay visually fixed across the route swap. */
 		::view-transition-group(filter-bar-stable),
 		::view-transition-old(filter-bar-stable),
-		::view-transition-new(filter-bar-stable) {
+		::view-transition-new(filter-bar-stable),
+		::view-transition-group(filter-bar-options),
+		::view-transition-old(filter-bar-options),
+		::view-transition-new(filter-bar-options) {
 			animation: none;
 		}
-		/* Each route uses its OWN view-transition-name for the rest/options
-		   regions (-list on /facilities, -detail on /facility/[code]). The
+		/* The middle (page-specific) region uses its OWN view-transition-name
+		   per route (-list on /facilities, -detail on /facility/[code]). The
 		   names don't pair, so each side keeps its natural width and
 		   slides/fades without the default group-size morph (the "zoom"). */
 		::view-transition-old(filter-bar-rest-list),
-		::view-transition-old(filter-bar-rest-detail),
-		::view-transition-old(filter-bar-options-list),
-		::view-transition-old(filter-bar-options-detail) {
+		::view-transition-old(filter-bar-rest-detail) {
 			animation: facilities-filter-bar-slide-out 240ms ease both;
 		}
 		::view-transition-new(filter-bar-rest-list),
-		::view-transition-new(filter-bar-rest-detail),
-		::view-transition-new(filter-bar-options-list),
-		::view-transition-new(filter-bar-options-detail) {
+		::view-transition-new(filter-bar-rest-detail) {
 			animation: facilities-filter-bar-slide-in 240ms ease both;
 		}
 		@keyframes facilities-filter-bar-slide-out {

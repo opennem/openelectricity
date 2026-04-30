@@ -3,8 +3,6 @@
 	import StratumChart from '$lib/components/charts/v2/StratumChart.svelte';
 	import Icon from '$lib/components/Icon.svelte';
 
-	import { scenarioLabelMap } from '../page-data-options/models';
-
 	/**
 	 * @typedef {Object} Props
 	 * @property {string[]} seriesNames
@@ -21,6 +19,11 @@
 	 * @property {string} [gridColClass]
 	 * @property {string} [gridGapClass]
 	 * @property {string} [sectionBorderClass]
+	 * @property {string} [sectionPaddingClass]
+	 * @property {boolean} [reverseOrder]
+	 * @property {boolean} [showMaxReferenceLine]
+	 * @property {'strip' | 'compact-strip' | 'floating' | 'none'} [tooltipMode]
+	 * @property {boolean} [showCardSummary] - When false, hides the big-number value + year label that normally sit above each card's chart. Useful when the tooltip already conveys the active value (e.g. compact-strip mode).
 	 * @property {number | undefined} [hoverTime]
 	 * @property {number | undefined} [focusTime]
 	 * @property {any} [xTicks]
@@ -49,6 +52,11 @@
 		gridColClass = 'grid-cols-2 md:grid-cols-3',
 		gridGapClass = 'gap-3',
 		sectionBorderClass = '',
+		sectionPaddingClass = 'p-8',
+		reverseOrder = true,
+		showMaxReferenceLine = false,
+		tooltipMode = /** @type {'strip' | 'compact-strip' | 'floating' | 'none'} */ ('none'),
+		showCardSummary = true,
 		hoverTime,
 		focusTime,
 		xTicks,
@@ -177,7 +185,17 @@
 			if (vals.length) {
 				const min = Math.min(0, .../** @type {number[]} */ (vals));
 				const max = Math.max(.../** @type {number[]} */ (vals));
-				store.yTicks = [min, max];
+				if (showMaxReferenceLine) {
+					// Reference line owns the max label — keep only the 0
+					// baseline tick on the y-axis to avoid a duplicate label.
+					store.yTicks = [min];
+					store.yReferenceLines = [
+						{ value: max, label: formatTickY ? formatTickY(max) : String(max) }
+					];
+				} else {
+					store.yTicks = [min, max];
+					store.yReferenceLines = [];
+				}
 			}
 		}
 
@@ -205,20 +223,54 @@
 	function getDisplayTime(store) {
 		return store.hoverTime || store.focusTime;
 	}
+
+	/**
+	 * Snap a cursor x-position (relative to the card) to the nearest data
+	 * point time on the given store. Lets hover-triggering work over the
+	 * whole card surface, not just the InteractionLayer hit area inside the
+	 * chart's draw box.
+	 * @param {MouseEvent} event
+	 * @param {ChartStore} store
+	 * @param {string} key
+	 */
+	function handleSectionHover(event, store, key) {
+		const data = store.seriesData;
+		if (!data?.length) return;
+
+		const rect = /** @type {HTMLElement} */ (event.currentTarget).getBoundingClientRect();
+		if (rect.width === 0) return;
+
+		const fraction = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+		const idx = Math.round(fraction * (data.length - 1));
+		const point = data[idx];
+		if (!point?.time) return;
+
+		store.setHover(point.time);
+		onhover?.(point.time, key);
+	}
+
+	/** @param {ChartStore} store */
+	function handleSectionHoverEnd(store) {
+		store.clearHover();
+		onhoverend?.();
+	}
 </script>
 
 <div class="grid {gridColClass} {gridGapClass}">
-	{#each [...miniChartEntries].reverse() as [key, store] (key)}
-		{@const title = scenarioLabelMap[key] || seriesLabels[key]}
+	{#each reverseOrder ? [...miniChartEntries].reverse() : miniChartEntries as [key, store] (key)}
+		{@const title = seriesLabels[key]}
 		{@const displayValue = getDisplayValue(store, key)}
 		{@const displayTime = getDisplayTime(store)}
 
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<section
-			class="p-8 {sectionBorderClass || 'border-warm-grey border'}"
+			class="{sectionPaddingClass} {sectionBorderClass || 'border-warm-grey border'}"
 			class:rounded-xl={isButton}
 			class:hover:!border-mid-warm-grey={isButton}
 			class:!border-mid-grey={selected === key}
 			class:shadow-xl={selected === key}
+			onmousemove={(e) => handleSectionHover(e, store, key)}
+			onmouseleave={() => handleSectionHoverEnd(store)}
 		>
 			<svelte:element
 				this={tag}
@@ -240,27 +292,31 @@
 					{/if}
 				</div>
 
-				<h3 class="leading-sm h-14 mt-4 mb-0">
-					{#if displayTime}
-						{displayValue != null && formatTickY ? formatTickY(displayValue) : '—'}
-						<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
-					{/if}
-				</h3>
+				{#if showCardSummary}
+					<h3 class="leading-sm h-14 mt-4 mb-0">
+						{#if displayTime}
+							{displayValue != null && formatTickY ? formatTickY(displayValue) : '—'}
+							<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
+						{/if}
+					</h3>
+				{/if}
 			</svelte:element>
 
-			<div class="text-right h-8">
-				{#if displayTime && formatTickX}
-					<span class="text-mid-grey text-xs">
-						{formatTickX(new Date(displayTime))}
-					</span>
-				{/if}
-			</div>
+			{#if showCardSummary}
+				<div class="text-right h-8">
+					{#if displayTime && formatTickX}
+						<span class="text-mid-grey text-xs">
+							{formatTickX(new Date(displayTime))}
+						</span>
+					{/if}
+				</div>
+			{/if}
 
 			<StratumChart
 				chart={store}
 				overlayStart={overlayStartMs}
 				showHeader={false}
-				showTooltip={false}
+				{tooltipMode}
 				animate={true}
 				{onhover}
 				{onhoverend}

@@ -506,7 +506,6 @@
 	{isFullscreen}
 	routeKey="list"
 	paddingX="px-8"
-	bgClass="md:bg-light-warm-grey/50"
 >
 	{#snippet stable()}
 		{#if isFullscreen}
@@ -694,11 +693,7 @@
 
 	{#snippet options()}
 		<!-- Options Menu - Desktop -->
-		<div
-			class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
-				? 'pl-2 ml-2'
-				: 'pl-4 ml-4'}"
-		>
+		<div class="hidden md:flex items-center">
 			<OptionsMenu
 				{isFullscreen}
 				onfullscreenchange={() => onfullscreenchange?.()}
@@ -708,7 +703,7 @@
 		</div>
 
 		<!-- Mobile Filter Button -->
-		<div class="md:hidden pl-2 ml-0">
+		<div class="md:hidden">
 			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
 				<IconAdjustmentsHorizontal class="size-10" />
 			</ButtonIcon>

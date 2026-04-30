@@ -2,13 +2,16 @@
 	/**
 	 * FullscreenFilterBar — shared chrome for the filter bar at the top of
 	 * /facilities and /facility/[code]. Owns the outer flex wrapper, the
-	 * common spacing and fullscreen rounded-card styling, and the
-	 * `view-transition-name` hooks used to animate cross-route transitions
-	 * between the two pages:
+	 * common spacing and fullscreen rounded-card styling, the desktop
+	 * divider in front of the options menu, and the `view-transition-name`
+	 * hooks used to animate cross-route transitions between the two pages:
 	 *
-	 *   - `filter-bar-stable`        → stays put (paired across both routes)
-	 *   - `filter-bar-rest-{key}`    → unpaired so it slides without zooming
-	 *   - `filter-bar-options-{key}` → unpaired so it slides without zooming
+	 *   - `filter-bar-stable`     → logo + first crumb. Paired across both
+	 *     routes, animation: none.
+	 *   - `filter-bar-rest-{key}` → page-specific middle content. Unpaired
+	 *     so it slides without zooming.
+	 *   - `filter-bar-options`    → options dropdown on the right. Paired
+	 *     across both routes, animation: none.
 	 *
 	 * The animation keyframes live in `(main)/+layout.svelte`.
 	 *
@@ -34,7 +37,7 @@
 </script>
 
 <div
-	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 {paddingX} {isFullscreen
+	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 min-h-[46.5px] {paddingX} {isFullscreen
 		? `md:py-3 md:px-4 md:rounded-lg md:border md:border-warm-grey ${bgClass}`
 		: ''}"
 >
@@ -57,7 +60,12 @@
 		{/if}
 	</div>
 	{#if options}
-		<div style="view-transition-name: filter-bar-options-{routeKey}">
+		<div
+			class="flex items-center md:border-l md:border-warm-grey {isFullscreen
+				? 'md:pl-2 md:ml-2'
+				: 'md:pl-4 md:ml-4'}"
+			style="view-transition-name: filter-bar-options"
+		>
 			{@render options()}
 		</div>
 	{/if}

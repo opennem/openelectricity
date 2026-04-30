@@ -4,7 +4,7 @@ import chroma from 'chroma-js';
 export const CATEGORY_META = {
 	air_pollutant: { label: 'Air Pollutants', colour: '#E07A5F' },
 	water_pollutant: { label: 'Water Pollutants', colour: '#3D85C6' },
-	heavy_metal: { label: 'Heavy Metals', colour: '#81B29A' },
+	heavy_metal: { label: 'Heavy Metals', colour: '#4A7A6B' },
 	organic: { label: 'Organics', colour: '#F2CC8F' }
 };
 

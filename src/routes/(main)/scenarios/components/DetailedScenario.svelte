@@ -4,7 +4,7 @@
 
 	import { modelLabelMap, scenarioLabelMap } from '../page-data-options/models';
 
-	import MiniCharts from './MiniCharts.svelte';
+	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
 
 	/**
 	 * @typedef {Object} Props

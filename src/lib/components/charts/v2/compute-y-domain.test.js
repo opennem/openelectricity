@@ -65,4 +65,13 @@ describe('computeYDomain', () => {
 		// min: -3.2 + (-0.32) = -3.52 → floor = -4
 		expect(computeYDomain(data)).toEqual([-4, 9]);
 	});
+
+	it('preserves the padded fractional value for sub-unit data', () => {
+		// Sub-unit max (e.g. NPI dioxin reported in fractions of a kg). Without
+		// this, Math.ceil(0.00187) = 1 which collapses the chart's y-domain.
+		const data = [{ _min: 0, _max: 0.0017 }];
+		const [min, max] = computeYDomain(data);
+		expect(min).toBe(0);
+		expect(max).toBeCloseTo(0.00187, 6);
+	});
 });
