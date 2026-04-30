@@ -52,34 +52,79 @@ export function getTotalForRow(chart, activeData) {
 }
 
 /**
- * Format the active row's x-axis label for tooltip display:
- *  - category charts route through `chart.formatX`
- *  - time-based charts get a DST-free en-AU date-time (matches the legacy
- *    formatter in ChartTooltipFloating.svelte)
- * Returns `''` when there's nothing to format.
+ * en-AU date-time used as the default tooltip x-format when no consumer
+ * formatter is in play.
+ *
+ * @param {Date} date
+ * @param {string | undefined} timeZone
+ * @returns {string}
+ */
+function intlTooltipDate(date, timeZone) {
+	return new Intl.DateTimeFormat('en-AU', {
+		timeZone,
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit'
+	}).format(date);
+}
+
+/**
+ * Resolve the formatted x-axis label for the tooltip's active row. Routes
+ * category charts through `chart.formatX`. For time-based charts, calls the
+ * consumer-provided `chart.formatTickX` first; if that returns a Date (i.e.
+ * the default passthrough hasn't been customised), falls back to the en-AU
+ * Intl format the original `formatTooltipDate` produced. Returns `''` when
+ * there's nothing to format.
+ *
+ * @param {ChartStoreLike} chart
+ * @param {any} activeData
+ * @returns {string}
+ */
+export function getFormattedX(chart, activeData) {
+	if (!activeData) return '';
+
+	if (chart.isCategoryChart) {
+		const categoryValue = activeData[chart.xKey];
+		return categoryValue === undefined ? '' : chart.formatX(categoryValue);
+	}
+
+	if (!activeData.date) return '';
+	const asDate = activeData.date instanceof Date ? activeData.date : new Date(activeData.date);
+
+	const formatted = chart.formatTickX?.(asDate, chart.timeZone);
+	if (typeof formatted === 'string') return formatted;
+	return intlTooltipDate(asDate, chart.timeZone);
+}
+
+/**
+ * Resolve the formatted y-axis value for the tooltip's active row. Honours
+ * the consumer's `formatY` (when `useFormatY` is true) so per-card unit
+ * conversions like `formatPollutantMass` flow through; falls back to
+ * `convertAndFormatValue` for unconfigured charts.
+ *
+ * @param {ChartStoreLike} chart
+ * @param {number | string | null | undefined} value
+ * @returns {string}
+ */
+export function getFormattedY(chart, value) {
+	if (value === undefined || value === null) return '';
+	const n = Number(value);
+	if (Number.isNaN(n)) return '';
+	return chart.useFormatY ? chart.formatY(n) : chart.convertAndFormatValue(n);
+}
+
+/**
+ * @deprecated Use `getFormattedX` instead — it routes through `formatTickX`
+ * with an Intl fallback so consumer formatters flow through to the tooltip.
  *
  * @param {ChartStoreLike} chart
  * @param {any} activeData
  * @returns {string}
  */
 export function formatTooltipDate(chart, activeData) {
-	if (!activeData) return '';
-
-	if (chart.isCategoryChart) {
-		const categoryValue = activeData[chart.xKey];
-		if (categoryValue === undefined) return '';
-		return chart.formatX(categoryValue);
-	}
-
-	if (!activeData.date) return '';
-	return new Intl.DateTimeFormat('en-AU', {
-		timeZone: chart.timeZone,
-		day: 'numeric',
-		month: 'short',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit'
-	}).format(activeData.date);
+	return getFormattedX(chart, activeData);
 }
 
 /**

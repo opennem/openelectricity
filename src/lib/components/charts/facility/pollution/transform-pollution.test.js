@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { transformPollutionData } from './transform-pollution.js';
+import { transformPollutionData, buildCategoryMeta } from './transform-pollution.js';
 
 /**
  * Mock data matching the real API shape:
@@ -129,34 +129,29 @@ describe('transformPollutionData', () => {
 		expect(hg?.label).toBe('Mercury & compounds');
 	});
 
-	it('builds chart data per category with correct shape', () => {
-		const result = transformPollutionData(makeMockData());
-		const airChart = result.chartDataByCategory['air_pollutant'];
-
-		expect(airChart).toBeDefined();
-		expect(airChart.seriesNames).toEqual(['nox', 'so2']);
-		expect(airChart.data).toHaveLength(3);
-		expect(airChart.data[0]).toMatchObject({
-			category: '2020',
-			time: 0,
-			nox: 1200,
-			so2: 500,
-			date: new Date(2020, 0, 1)
-		});
-		expect(airChart.seriesLabels['nox']).toBe('Nitrogen Oxides');
-	});
-
-	it('substitutes 0 for null in chart data rows', () => {
-		const result = transformPollutionData(makeMockData());
-		const airChart = result.chartDataByCategory['air_pollutant'];
-		expect(airChart.data[2].so2).toBe(0);
-	});
-
 	it('returns empty structures for empty input', () => {
 		const result = transformPollutionData([]);
 		expect(result.years).toEqual([]);
 		expect(result.pollutants).toEqual([]);
 		expect(Object.keys(result.byCategory)).toHaveLength(0);
-		expect(Object.keys(result.chartDataByCategory)).toHaveLength(0);
+	});
+});
+
+describe('buildCategoryMeta', () => {
+	it('returns ordered series names, palette colours, labels, and unit', () => {
+		const result = transformPollutionData(makeMockData());
+		const meta = buildCategoryMeta('air_pollutant', result.byCategory['air_pollutant']);
+
+		expect(meta.seriesNames).toEqual(['nox', 'so2']);
+		expect(meta.seriesLabels).toEqual({ nox: 'Nitrogen Oxides', so2: 'Sulphur Dioxide' });
+		expect(meta.unit).toBe('kg');
+		expect(typeof meta.seriesColours.nox).toBe('string');
+		expect(typeof meta.seriesColours.so2).toBe('string');
+	});
+
+	it('returns an empty unit when the pollutant list is empty', () => {
+		const meta = buildCategoryMeta('air_pollutant', []);
+		expect(meta.seriesNames).toEqual([]);
+		expect(meta.unit).toBe('');
 	});
 });

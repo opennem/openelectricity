@@ -9,7 +9,7 @@
  * @module transform-pollution
  */
 
-import { CATEGORY_META, getCategoryPalette } from './pollution-constants.js';
+import { getCategoryPalette } from './pollution-constants.js';
 
 /**
  * @typedef {Object} PollutantSeries
@@ -21,12 +21,11 @@ import { CATEGORY_META, getCategoryPalette } from './pollution-constants.js';
  */
 
 /**
- * @typedef {Object} CategoryChartData
- * @property {Array<Record<string, any>>} data - Rows for ChartStore: [{ category: '2015', time: 0, pollCode: val, ... }]
- * @property {string[]} seriesNames
- * @property {Record<string, string>} seriesColours
- * @property {Record<string, string>} seriesLabels
- * @property {string} unit
+ * @typedef {Object} CategoryMeta
+ * @property {string[]} seriesNames - Ordered pollutant codes
+ * @property {Record<string, string>} seriesColours - code → palette colour
+ * @property {Record<string, string>} seriesLabels - code → display label
+ * @property {string} unit - Common unit across the category (NPI reports kg)
  */
 
 /**
@@ -34,7 +33,6 @@ import { CATEGORY_META, getCategoryPalette } from './pollution-constants.js';
  * @property {string[]} years - Sorted year strings
  * @property {PollutantSeries[]} pollutants - All pollutant series with data
  * @property {Record<string, PollutantSeries[]>} byCategory - Pollutants grouped by category
- * @property {Record<string, CategoryChartData>} chartDataByCategory - ChartStore-ready grouped-bar data per category
  */
 
 /**
@@ -87,7 +85,8 @@ export function transformPollutionData(apiData) {
 	const years = [...yearSet].sort();
 	const pollutants = [...seriesMap.values()];
 
-	// Group by category, ordered by CATEGORY_META keys
+	// Group by category, preserving insertion order of pollutants within
+	// each group.
 	/** @type {Record<string, PollutantSeries[]>} */
 	const byCategory = {};
 	for (const p of pollutants) {
@@ -95,41 +94,34 @@ export function transformPollutionData(apiData) {
 		byCategory[p.category].push(p);
 	}
 
-	// Build ChartStore-ready data per category
-	/** @type {Record<string, CategoryChartData>} */
-	const chartDataByCategory = {};
+	return { years, pollutants, byCategory };
+}
 
-	for (const [catKey, catPollutants] of Object.entries(byCategory)) {
-		const seriesNames = catPollutants.map((p) => p.code);
-		const palette = getCategoryPalette(catKey, seriesNames.length);
-
-		/** @type {Record<string, string>} */
-		const seriesColours = {};
-		/** @type {Record<string, string>} */
-		const seriesLabels = {};
-
-		seriesNames.forEach((name, i) => {
-			seriesColours[name] = palette[i];
-			seriesLabels[name] = catPollutants[i].label;
-		});
-
-		const data = years.map((year, i) => {
-			/** @type {Record<string, any>} */
-			const row = { category: year, time: i, date: new Date(Number(year), 0, 1) };
-			for (const p of catPollutants) {
-				row[p.code] = p.values[year] ?? 0;
-			}
-			return row;
-		});
-
-		chartDataByCategory[catKey] = {
-			data,
-			seriesNames,
-			seriesColours,
-			seriesLabels,
-			unit: catPollutants[0]?.unit || ''
-		};
-	}
-
-	return { years, pollutants, byCategory, chartDataByCategory };
+/**
+ * Compute the per-category meta (series names, colour palette, labels, unit)
+ * used by both the public small-multiples panel and the studio bar charts.
+ * Row shapes differ between consumers — they build the actual `data` array
+ * themselves — but the series identity and palette are shared.
+ *
+ * @param {string} catKey
+ * @param {PollutantSeries[]} pollutants
+ * @returns {CategoryMeta}
+ */
+export function buildCategoryMeta(catKey, pollutants) {
+	const seriesNames = pollutants.map((p) => p.code);
+	const palette = getCategoryPalette(catKey, seriesNames.length);
+	/** @type {Record<string, string>} */
+	const seriesColours = {};
+	/** @type {Record<string, string>} */
+	const seriesLabels = {};
+	seriesNames.forEach((name, i) => {
+		seriesColours[name] = palette[i];
+		seriesLabels[name] = pollutants[i].label;
+	});
+	return {
+		seriesNames,
+		seriesColours,
+		seriesLabels,
+		unit: pollutants[0]?.unit ?? ''
+	};
 }

@@ -1,6 +1,7 @@
 <script>
 	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
-	import { CATEGORY_META, getCategoryPalette } from './pollution-constants.js';
+	import { CATEGORY_META } from './pollution-constants.js';
+	import { buildCategoryMeta } from './transform-pollution.js';
 
 	/**
 	 * Small-multiples view for the public /facility/[code] pollution panel.
@@ -99,14 +100,7 @@
 		);
 		if (!active.length) return null;
 
-		const seriesNames = active.map((p) => p.code);
-		/** @type {Record<string, string>} */
-		const seriesLabels = Object.fromEntries(active.map((p) => [p.code, p.label]));
-		const palette = getCategoryPalette(catKey, active.length);
-		/** @type {Record<string, string>} */
-		const seriesColours = Object.fromEntries(
-			active.map((p, i) => [p.code, palette[i]])
-		);
+		const meta = buildCategoryMeta(catKey, active);
 
 		const seriesData = data.years.map((year) => {
 			const startYear = parseInt(String(year).slice(0, 4), 10);
@@ -117,7 +111,12 @@
 			return row;
 		});
 
-		return { seriesNames, seriesLabels, seriesColours, seriesData };
+		return {
+			seriesNames: meta.seriesNames,
+			seriesLabels: meta.seriesLabels,
+			seriesColours: meta.seriesColours,
+			seriesData
+		};
 	}
 
 	// Cache the per-category prop bundles so hover-driven re-renders don't
@@ -128,6 +127,23 @@
 	let categoryPropsByKey = $derived(
 		Object.fromEntries(categoryOrder.map((key) => [key, buildCategoryProps(key)]))
 	);
+
+	// Pollution-mode visual preset for MiniCharts. Bundles the seven layout +
+	// behaviour overrides this panel needs — tighter card padding, rounded
+	// border, the dashed max line, the compact-strip tooltip, no big-number
+	// summary (the tooltip carries the active value), and natural data order.
+	// Spread directly onto the <MiniCharts> call.
+	const POLLUTION_MINI_CHART_PROPS = /** @type {const} */ ({
+		gridColClass: 'grid-cols-2 md:grid-cols-4',
+		gridGapClass: 'gap-3',
+		sectionPaddingClass: 'p-4',
+		sectionBorderClass: 'rounded-xl border border-warm-grey',
+		reverseOrder: false,
+		showMaxReferenceLine: true,
+		tooltipMode: 'compact-strip',
+		showCardSummary: false,
+		displayUnit: ''
+	});
 </script>
 
 <div class="space-y-5">
@@ -148,19 +164,11 @@
 				</header>
 
 				<MiniCharts
+					{...POLLUTION_MINI_CHART_PROPS}
 					seriesNames={props.seriesNames}
 					seriesLabels={props.seriesLabels}
 					seriesColours={props.seriesColours}
 					seriesData={props.seriesData}
-					displayUnit=""
-					gridColClass="grid-cols-2 md:grid-cols-4"
-					gridGapClass="gap-3"
-					sectionPaddingClass="p-4"
-					sectionBorderClass="rounded-xl border border-warm-grey"
-					reverseOrder={false}
-					showMaxReferenceLine={true}
-					tooltipMode="compact-strip"
-					showCardSummary={false}
 					{hoverTime}
 					{focusTime}
 					formatTickX={fiscalYearLabel}

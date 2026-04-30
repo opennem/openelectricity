@@ -17,7 +17,12 @@
 	 * for the value (matching how the y-axis ticks render).
 	 */
 
-	import { getActiveData, getValueKey } from './tooltip-derivations.js';
+	import {
+		getActiveData,
+		getValueKey,
+		getFormattedX,
+		getFormattedY
+	} from './tooltip-derivations.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -33,23 +38,8 @@
 	let valueKey = $derived(getValueKey(chart));
 	let value = $derived(activeData && valueKey !== undefined ? activeData[valueKey] : undefined);
 
-	let formattedValue = $derived.by(() => {
-		if (value === undefined) return '';
-		const n = Number(value);
-		return chart.useFormatY ? chart.formatY(n) : chart.convertAndFormatValue(n);
-	});
-
-	let formattedDate = $derived.by(() => {
-		if (!activeData) return '';
-		if (chart.isCategoryChart) {
-			const categoryValue = activeData[chart.xKey];
-			return categoryValue === undefined ? '' : chart.formatX(categoryValue);
-		}
-		const dateValue = activeData.date ?? activeData.time;
-		if (dateValue == null) return '';
-		const asDate = dateValue instanceof Date ? dateValue : new Date(dateValue);
-		return chart.formatTickX(asDate, chart.timeZone);
-	});
+	let formattedValue = $derived(getFormattedY(chart, value));
+	let formattedDate = $derived(getFormattedX(chart, activeData));
 
 	let displayUnit = $derived(chart.chartOptions?.displayUnit ?? '');
 </script>

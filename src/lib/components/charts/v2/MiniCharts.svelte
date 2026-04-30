@@ -121,17 +121,14 @@
 		})
 	);
 
-	/**
-	 * Store pool + reactive entries list.
-	 * A single $effect syncs all props into ChartStore instances — this is the
-	 * correct pattern because ChartStore is an external stateful object (its
-	 * properties are $state) that cannot be written inside $derived.
-	 */
 	const storePool = new Map();
 
 	/** @type {Array<[string, ChartStore]>} */
 	let miniChartEntries = $state([]);
 
+	// Static config: re-syncs only when the data shape, series identity, or
+	// formatters change — NOT on hover. Without this split, every hover
+	// rewrites every store property and re-cascades through subscribers.
 	$effect(() => {
 		const chartType = showArea ? 'stacked-area' : 'line';
 		const currentKeys = new Set(seriesNames);
@@ -157,9 +154,8 @@
 			store.seriesNames = [key];
 			store.seriesColours = { [key]: seriesColours[key] };
 			store.seriesLabels = { [key]: seriesLabels[key] };
-			store.hoverTime = hoverTime;
-			store.focusTime = focusTime;
-			// Show gridlines but make default stroke transparent — only highlighted ticks visible
+			// Gridlines on with a transparent default stroke so only the
+			// xHighlightTicks render visibly.
 			store.chartStyles.xGridlines = true;
 			store.chartStyles.xAxisStroke = 'transparent';
 			store.chartStyles.snapTicks = true;
@@ -174,9 +170,8 @@
 				store.useFormatY = true;
 				store.formatY = formatTickY;
 			}
-			const seriesKey = key;
 			const vals = dataset
-				.map((d) => /** @type {number | null} */ (d[seriesKey]))
+				.map((d) => /** @type {number | null} */ (d[key]))
 				.filter((v) => v != null);
 			if (vals.length) {
 				const min = Math.min(0, .../** @type {number[]} */ (vals));
@@ -198,6 +193,16 @@
 		miniChartEntries = seriesNames.map(
 			(key) => /** @type {[string, ChartStore]} */ ([key, storePool.get(key)])
 		);
+	});
+
+	// Hover/focus sync: writes the lifted hover/focus times onto every store
+	// without touching the rest of their config. Runs on every hover; the
+	// other effect doesn't.
+	$effect(() => {
+		for (const [, store] of miniChartEntries) {
+			if (store.hoverTime !== hoverTime) store.hoverTime = hoverTime;
+			if (store.focusTime !== focusTime) store.focusTime = focusTime;
+		}
 	});
 
 	/**

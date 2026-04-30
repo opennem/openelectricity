@@ -15,7 +15,7 @@
 	import {
 		getActiveData,
 		getTotalForRow,
-		formatTooltipDate,
+		getFormattedX,
 		buildSeriesRows
 	} from './tooltip-derivations.js';
 
@@ -66,7 +66,7 @@
 
 	let activeData = $derived(getActiveData(chart));
 	let isStepMode = $derived(chart.chartOptions.selectedCurveType === 'step');
-	let formattedDate = $derived(formatTooltipDate(chart, activeData));
+	let formattedDate = $derived(getFormattedX(chart, activeData));
 	let rows = $derived(activeData ? buildSeriesRows(chart, activeData) : []);
 	let total = $derived(getTotalForRow(chart, activeData));
 	let formattedTotal = $derived(chart.convertAndFormatValue(total));
