@@ -9,7 +9,6 @@
 		FacilityPollutionPanel
 	} from '$lib/components/charts/facility';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
-	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import { ToggleGroup } from 'bits-ui';
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
@@ -192,29 +191,6 @@
 		)
 	);
 
-	const middleDrag = createDragHandler({
-		axis: 'x',
-		min: 320,
-		max: 720,
-		initial: 450,
-		storageKey: 'facility-detail-middle-width'
-	});
-
-	let isMobile = $state(false);
-	let ready = $state(false);
-
-	onMount(() => {
-		const mq = window.matchMedia('(max-width: 767px)');
-		isMobile = mq.matches;
-		const update = (/** @type {MediaQueryListEvent} */ e) => (isMobile = e.matches);
-		mq.addEventListener('change', update);
-		// Brief delay so layout settles with the persisted width
-		const timer = setTimeout(() => (ready = true), 50);
-		return () => {
-			mq.removeEventListener('change', update);
-			clearTimeout(timer);
-		};
-	});
 </script>
 
 <svelte:head>
@@ -223,107 +199,93 @@
 
 <FacilityPanelHeader facility={selectedFacility} showViewButtons={false} />
 
-<!-- order swap: on mobile, charts above description; on md+, description left of charts -->
-<div
-	class="flex-1 flex flex-col md:flex-row min-h-0 transition-opacity duration-200 {ready
-		? 'opacity-100'
-		: 'opacity-0'}"
->
-	<div
-		class="order-2 md:order-1 md:shrink-0 overflow-hidden border-t md:border-t-0 md:border-r border-warm-grey"
-		style:width={isMobile ? '' : `${middleDrag.value}px`}
-	>
-		<FacilityDescriptionPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
-	</div>
-
-	<DragHandle
-		axis="x"
-		onstart={middleDrag.start}
-		active={middleDrag.isDragging}
-		class="hidden md:flex md:order-2"
-	/>
-
-	<div class="order-1 md:order-3 flex-1 min-w-0 min-h-0 overflow-y-auto p-4 space-y-4">
-		{#if selectedFacility}
-			{#if hasPowerData}
-				<div class="flex justify-center">
-					<ToggleGroup.Root
-						type="multiple"
-						bind:value={selectedCharts}
-						class="inline-flex rounded-lg border border-mid-warm-grey bg-light-warm-grey p-1 gap-1"
-					>
-						{#each visibleChartOptions as opt (opt.value)}
-							<ToggleGroup.Item
-								value={opt.value}
-								class="px-3 py-1 rounded-md text-xs text-mid-grey hover:text-black transition-colors data-[state=on]:bg-white data-[state=on]:text-black data-[state=on]:shadow-sm"
-							>
-								{opt.label}
-							</ToggleGroup.Item>
-						{/each}
-					</ToggleGroup.Root>
-				</div>
-
-				<FacilityFinancialDataProvider
-					active={financialActive}
-					facility={selectedFacility}
-					{timeZone}
-					interval={activeInterval}
-					{displayInterval}
-					{viewStart}
-					{viewEnd}
-					{hoverTime}
-					onhoverchange={handleHoverChange}
-					onviewportchange={handlePriceViewportChange}
+<div class="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+	{#if selectedFacility}
+		{#if hasPowerData}
+			<div class="flex justify-center">
+				<ToggleGroup.Root
+					type="multiple"
+					bind:value={selectedCharts}
+					class="inline-flex rounded-lg border border-mid-warm-grey bg-light-warm-grey p-1 gap-1"
 				>
-					{#if noneSelected}
-						<div
-							class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 h-[240px]"
+					{#each visibleChartOptions as opt (opt.value)}
+						<ToggleGroup.Item
+							value={opt.value}
+							class="px-3 py-1 rounded-md text-xs text-mid-grey hover:text-black transition-colors data-[state=on]:bg-white data-[state=on]:text-black data-[state=on]:shadow-sm"
 						>
-							<p class="text-sm text-mid-grey m-0">Select a chart to display</p>
-						</div>
-					{:else}
-						<div class="space-y-4">
-							{#if showGeneration}
-								<FacilityChart
-									bind:this={powerChart}
-									facility={selectedFacility}
-									powerData={data.powerData}
-									{timeZone}
-									{dateStart}
-									{dateEnd}
-									interval={activeInterval}
-									metric={activeMetric}
-									{displayInterval}
-									chartHeight="h-[267px]"
-									title={activeMetric === 'energy' ? 'Energy' : 'Power'}
-									tooltipMode="floating"
-									{hoverTime}
-									onhoverchange={handleHoverChange}
-									onviewportchange={handlePowerViewportChange}
-								/>
-							{/if}
+							{opt.label}
+						</ToggleGroup.Item>
+					{/each}
+				</ToggleGroup.Root>
+			</div>
 
-							{#if showPrice && viewStart && viewEnd}
-								<FacilityPriceChart />
-							{/if}
+			<FacilityFinancialDataProvider
+				active={financialActive}
+				facility={selectedFacility}
+				{timeZone}
+				interval={activeInterval}
+				{displayInterval}
+				{viewStart}
+				{viewEnd}
+				{hoverTime}
+				onhoverchange={handleHoverChange}
+				onviewportchange={handlePriceViewportChange}
+			>
+				{#if noneSelected}
+					<div
+						class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 h-[240px]"
+					>
+						<p class="text-sm text-mid-grey m-0">Select a chart to display</p>
+					</div>
+				{:else}
+					<div class="space-y-4">
+						{#if showGeneration}
+							<FacilityChart
+								bind:this={powerChart}
+								facility={selectedFacility}
+								powerData={data.powerData}
+								{timeZone}
+								{dateStart}
+								{dateEnd}
+								interval={activeInterval}
+								metric={activeMetric}
+								{displayInterval}
+								chartHeight="h-[267px]"
+								title={activeMetric === 'energy' ? 'Energy' : 'Power'}
+								tooltipMode="floating"
+								{hoverTime}
+								onhoverchange={handleHoverChange}
+								onviewportchange={handlePowerViewportChange}
+							/>
+						{/if}
 
-							{#if showMarketValue && viewStart && viewEnd}
-								<FacilityMarketValueChart />
-							{/if}
+						{#if showPrice && viewStart && viewEnd}
+							<FacilityPriceChart />
+						{/if}
 
-							{#if showPollution && hasNpi}
-								<FacilityPollutionPanel facility={selectedFacility} />
-							{/if}
-						</div>
-					{/if}
-				</FacilityFinancialDataProvider>
-			{:else}
-				<div
-					class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 h-full min-h-[240px]"
-				>
-					<p class="text-sm text-mid-grey m-0">No data available</p>
-				</div>
-			{/if}
+						{#if showMarketValue && viewStart && viewEnd}
+							<FacilityMarketValueChart />
+						{/if}
+
+						{#if showPollution && hasNpi}
+							<FacilityPollutionPanel facility={selectedFacility} />
+						{/if}
+					</div>
+				{/if}
+			</FacilityFinancialDataProvider>
+		{:else}
+			<div
+				class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 min-h-[240px]"
+			>
+				<p class="text-sm text-mid-grey m-0">No data available</p>
+			</div>
 		{/if}
-	</div>
+
+		<div class="border-t border-warm-grey pt-4">
+			<FacilityDescriptionPanel
+				sanityFacility={data.sanityFacility}
+				facility={selectedFacility}
+			/>
+		</div>
+	{/if}
 </div>

@@ -98,7 +98,7 @@
 	</a>
 {/snippet}
 
-<div class="flex flex-col h-full min-h-0 overflow-y-auto">
+<div>
 	{#if !hasContent}
 		<div class="p-5">
 			<p class="text-sm text-mid-grey">No description available.</p>
