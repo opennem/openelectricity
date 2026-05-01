@@ -5,7 +5,7 @@
 	 * Provides controls for data transform, chart type, curve style, and units.
 	 * Displayed in a dropdown panel from the chart header.
 	 */
-	import Switch from '$lib/components/Switch.svelte';
+	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 
 	/**
 	 * @typedef {Object} Props
@@ -80,15 +80,12 @@
 <div class="p-6 flex flex-col gap-4">
 	{#if displayDataOptions}
 		<div class="grid grid-cols-5 gap-4 items-center">
-			<span class="font-space font-semibold uppercase text-xs text-mid-grey">Data</span>
+			<span class="font-space font-normal uppercase text-xxs text-mid-grey">Data</span>
 			<div class="col-span-4">
-				<Switch
+				<SwitchTabs
 					buttons={dataTransformOptions}
 					selected={chart.chartOptions.selectedDataTransformType}
 					onChange={handleDataTransformChange}
-					xPad={4}
-					yPad={2}
-					textSize="xs"
 				/>
 			</div>
 		</div>
@@ -96,15 +93,12 @@
 
 	{#if displayChartTypeOptions}
 		<div class="grid grid-cols-5 gap-4 items-center">
-			<span class="font-space font-semibold uppercase text-xs text-mid-grey">Chart</span>
+			<span class="font-space font-normal uppercase text-xxs text-mid-grey">Chart</span>
 			<div class="col-span-4">
-				<Switch
+				<SwitchTabs
 					buttons={chartTypeOptions}
 					selected={chart.chartOptions.selectedChartType}
 					onChange={handleChartTypeChange}
-					xPad={4}
-					yPad={2}
-					textSize="xs"
 				/>
 			</div>
 		</div>
@@ -112,15 +106,12 @@
 
 	{#if showCurveOptions}
 		<div class="grid grid-cols-5 gap-4 items-center">
-			<span class="font-space font-semibold uppercase text-xs text-mid-grey">Style</span>
+			<span class="font-space font-normal uppercase text-xxs text-mid-grey">Style</span>
 			<div class="col-span-4">
-				<Switch
+				<SwitchTabs
 					buttons={curveOptions}
 					selected={chart.chartOptions.selectedCurveType}
 					onChange={handleCurveTypeChange}
-					xPad={4}
-					yPad={2}
-					textSize="xs"
 				/>
 			</div>
 		</div>
@@ -128,15 +119,12 @@
 
 	{#if showUnitOptions && chart.chartOptions.allowPrefixSwitch}
 		<div class="grid grid-cols-5 gap-4 items-center">
-			<span class="font-space font-semibold uppercase text-xs text-mid-grey">Units</span>
+			<span class="font-space font-normal uppercase text-xxs text-mid-grey">Units</span>
 			<div class="col-span-4">
-				<Switch
+				<SwitchTabs
 					buttons={unitOptions}
 					selected={chart.chartOptions.displayPrefix}
 					onChange={handleUnitChange}
-					xPad={4}
-					yPad={2}
-					textSize="xs"
 				/>
 			</div>
 		</div>

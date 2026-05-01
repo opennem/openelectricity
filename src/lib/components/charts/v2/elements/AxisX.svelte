@@ -115,6 +115,19 @@
 		}
 		return 0;
 	}
+
+	/**
+	 * When snapTicks is on, the first/last tick coincide with the chart's
+	 * left/right edges and the gridline + tick mark there visually clash with
+	 * the chart frame. Skip rendering those edge indicators.
+	 *
+	 * @param {number} i
+	 * @param {number} total
+	 * @returns {boolean}
+	 */
+	function isEdgeTick(i, total) {
+		return snapTicks && (i === 0 || i === total - 1);
+	}
 </script>
 
 <g
@@ -127,28 +140,32 @@
 
 	<!-- Gridlines (rendered separately if gridlineTicks is provided) -->
 	{#if gridlines}
-		{#each gridlineTickVals as tick (tick)}
-			{@const xPos = $xScale(tick)}
-			{@const yPos = Math.max(...$yRange)}
-			{@const isHighlighted = highlightTickSet.has(+tick)}
-			<line
-				class="gridline"
-				stroke={isHighlighted ? highlightStroke : stroke}
-				stroke-dasharray={isHighlighted ? '2' : strokeArray}
-				y1={yPos - $height}
-				y2={yPos}
-				x1={xPos}
-				x2={xPos}
-			/>
+		{#each gridlineTickVals as tick, i (tick)}
+			{#if !isEdgeTick(i, gridlineTickVals.length)}
+				{@const xPos = $xScale(tick)}
+				{@const yPos = Math.max(...$yRange)}
+				{@const isHighlighted = highlightTickSet.has(+tick)}
+				<line
+					class="gridline"
+					stroke={isHighlighted ? highlightStroke : stroke}
+					stroke-dasharray={isHighlighted ? '2' : strokeArray}
+					y1={yPos - $height}
+					y2={yPos}
+					x1={xPos}
+					x2={xPos}
+				/>
+			{/if}
 		{/each}
 	{/if}
 
 	<!-- Step mode: tick marks at gridline (band boundary) positions -->
 	{#if stepMode && tickMarks}
-		{#each gridlineTickVals as tick (tick)}
-			{@const xPos = $xScale(tick)}
-			{@const yPos = Math.max(...$yRange)}
-			<line class="tick-mark" {stroke} y1={yPos} y2={yPos + 6} x1={xPos} x2={xPos} />
+		{#each gridlineTickVals as tick, i (tick)}
+			{#if !isEdgeTick(i, gridlineTickVals.length)}
+				{@const xPos = $xScale(tick)}
+				{@const yPos = Math.max(...$yRange)}
+				<line class="tick-mark" {stroke} y1={yPos} y2={yPos + 6} x1={xPos} x2={xPos} />
+			{/if}
 		{/each}
 	{/if}
 
@@ -160,7 +177,7 @@
 		{@const hideOnMobile = mobileHiddenTickSet.has(+tick)}
 		<g class="tick tick-{i}" class:tick-animate={canTransition} class:hide-label-mobile={hideOnMobile} transform="translate({xPos}, {yPos})">
 			<!-- Tick mark (non-step mode only) -->
-			{#if tickMarks && !stepMode}
+			{#if tickMarks && !stepMode && !isEdgeTick(i, tickVals.length)}
 				<line
 					class="tick-mark"
 					stroke="black"

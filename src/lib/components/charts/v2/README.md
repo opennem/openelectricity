@@ -371,6 +371,10 @@ The main chart component for stacked area/bar charts:
 | `onpanend` | `() => void` | - | Callback when pan gesture ends (debounced 150 ms for wheel) |
 | `onzoom` | `(factor, centerMs) => void` | - | Callback for zoom (fires for pinch **and** vertical wheel) |
 | `onresize` / `onresizeend` | `(height) => void` | - | Called during / after a resize drag |
+| `zoomMode` | `'floating' \| 'static' \| 'none'` | `'none'` | Where to render +/- zoom buttons. `'floating'` overlays a card at the top-right that fades in on hover; `'static'` renders flat buttons inline at the right of the options bar (`ChartHeader`); `'none'` hides them |
+| `onzoomin` / `onzoomout` | `() => void` | - | Required when `zoomMode !== 'none'` |
+| `isAtMinZoom` / `isAtMaxZoom` | `boolean` | `false` | Disables the matching zoom button |
+| `zoomOverlayInsetPx` | `number` | `0` | Floating mode: horizontal inset from the container's right edge |
 | `header` | `Snippet` | - | Custom header snippet (replaces ChartHeader) |
 | `tooltip` | `Snippet` | - | Custom tooltip snippet — only rendered in `strip` mode |
 | `footer` | `Snippet` | - | Footer snippet rendered below the chart |
@@ -459,23 +463,17 @@ Toggle between time intervals:
 />
 ```
 
-### ChartZoomControls
+### Zoom buttons
 
-Top-right +/- buttons that fade in on parent `group-hover`. Wire to the same `onzoom`-compatible handler used by wheel/pinch:
+StratumChart owns the +/- zoom button rendering — pass `zoomMode` plus the click handlers and it picks the layout:
 
 ```svelte
 <script>
-	import { StratumChart, ChartZoomControls } from '$lib/components/charts/v2';
+	import { StratumChart } from '$lib/components/charts/v2';
 
 	const FACTOR = 1.5;
-	let zoomButtonsWidth = $state(0);
-
-	function zoomIn() {
-		handleZoom(FACTOR, (viewStart + viewEnd) / 2);
-	}
-	function zoomOut() {
-		handleZoom(1 / FACTOR, (viewStart + viewEnd) / 2);
-	}
+	function zoomIn() { handleZoom(FACTOR, (viewStart + viewEnd) / 2); }
+	function zoomOut() { handleZoom(1 / FACTOR, (viewStart + viewEnd) / 2); }
 </script>
 
 <div class="group relative">
@@ -484,13 +482,18 @@ Top-right +/- buttons that fade in on parent `group-hover`. Wire to the same `on
 		enablePan
 		onzoom={handleZoom}
 		tooltipMode="floating"
-		tooltipDodgeRightPx={zoomButtonsWidth + 8}
+		zoomMode="floating"
+		onzoomin={zoomIn}
+		onzoomout={zoomOut}
 	/>
-	<ChartZoomControls onzoomin={zoomIn} onzoomout={zoomOut} bind:width={zoomButtonsWidth} />
 </div>
 ```
 
-Props: `onzoomin`, `onzoomout`, `isAtMinZoom`, `isAtMaxZoom`, `overlayInsetPx`, `width` (bindable). The parent must carry the `group` class so the buttons fade in on hover. Feed `width` into StratumChart's `tooltipDodgeRightPx` so the floating tooltip moves out of the buttons' way.
+- **`zoomMode='floating'`** — card-style overlay at the top-right that fades in on parent `group-hover`. Parent must carry the `group` class. StratumChart measures the overlay's width internally so the floating tooltip dodges automatically — no need to bind `width`.
+- **`zoomMode='static'`** — flat +/- buttons rendered inline at the right of the options bar (`ChartHeader`). Always visible, no hover gating, no tooltip dodge needed.
+- **`zoomMode='none'`** (default) — buttons not rendered.
+
+The underlying `ChartZoomControls` component (used internally by floating mode) is also exported if you need to compose it into a custom layout.
 
 ### ChartRangeBar
 

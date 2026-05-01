@@ -1,6 +1,4 @@
 <script>
-	import { onMount } from 'svelte';
-
 	import {
 		FacilityChart,
 		FacilityPriceChart,
@@ -8,10 +6,8 @@
 		FacilityFinancialDataProvider,
 		FacilityPollutionPanel
 	} from '$lib/components/charts/facility';
+	import { formatDateRange } from '$lib/components/charts/v2';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
-	import { ToggleGroup } from 'bits-ui';
-	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import {
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits
@@ -66,63 +62,14 @@
 	let activeMetric = $state('power');
 	let displayInterval = $state('30m');
 
-	const CHART_OPTIONS = [
-		{ label: 'Generation', value: 'generation' },
-		{ label: 'Price', value: 'price' },
-		{ label: 'Market Value', value: 'marketValue' },
-		{ label: 'Pollution', value: 'pollution' }
-	];
-	const DEFAULT_SELECTED_CHARTS = ['generation'];
-	const CHARTS_QUERY_KEY = 'charts';
-
-	/**
-	 * @param {URLSearchParams} searchParams
-	 * @returns {string[]}
-	 */
-	function parseChartsParam(searchParams) {
-		const raw = searchParams.get(CHARTS_QUERY_KEY);
-		if (raw === null) return [...DEFAULT_SELECTED_CHARTS];
-		if (raw === '') return [];
-		const validIds = new Set(CHART_OPTIONS.map((o) => o.value));
-		return raw.split(',').filter((v) => validIds.has(v));
-	}
-
-	let selectedCharts = $state(parseChartsParam($page.url.searchParams));
-
-	// Guard so the first $effect pass (on mount) doesn't write the URL before
-	// the user has interacted.
-	let urlSyncReady = false;
-	onMount(() => {
-		urlSyncReady = true;
-	});
-
-	// Mirror `selectedCharts` into the `?charts=` query param via replaceState —
-	// shareable URLs + state survives facility navigation.
-	$effect(() => {
-		const current = selectedCharts;
-		if (!urlSyncReady) return;
-		const serialized = current.join(',');
-		if ($page.url.searchParams.get(CHARTS_QUERY_KEY) === serialized) return;
-		const url = new URL($page.url);
-		url.searchParams.set(CHARTS_QUERY_KEY, serialized);
-		goto(url, { replaceState: true, keepFocus: true, noScroll: true });
-	});
-	let showGeneration = $derived(selectedCharts.includes('generation'));
-	let showPrice = $derived(selectedCharts.includes('price'));
-	let showMarketValue = $derived(selectedCharts.includes('marketValue'));
-	let showPollution = $derived(selectedCharts.includes('pollution'));
-	let financialActive = $derived(showPrice || showMarketValue);
-
-	// Hide the Pollution toggle (and panel) when the facility has no NPI
-	// registration. CHART_OPTIONS is left untouched so the parser still keeps
-	// `?charts=pollution` in the URL — when the user navigates to a facility
-	// that DOES have an NPI, the tab reappears with pollution pre-selected.
 	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
-	let visibleChartOptions = $derived(
-		hasNpi ? CHART_OPTIONS : CHART_OPTIONS.filter((o) => o.value !== 'pollution')
-	);
 
-	let noneSelected = $derived(selectedCharts.length === 0);
+	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let dateRangeLabel = $derived.by(() => {
+		const start = viewStart || defaultStart;
+		const end = viewEnd || defaultEnd;
+		return formatDateRange(new Date(start), new Date(end), ianaTimeZone);
+	});
 
 	/** Shared hover time — syncs crosshair/tooltip across all three charts. */
 	/** @type {number | undefined} */
@@ -137,8 +84,6 @@
 
 	$effect(() => {
 		// Reset chart-viewport-driven state when the underlying facility changes.
-		// `selectedCharts` is intentionally not reset — user's chart selection
-		// persists across facility navigation.
 		const _code = data.facility?.code;
 		activeInterval = '5m';
 		activeMetric = 'power';
@@ -199,28 +144,11 @@
 
 <FacilityPanelHeader facility={selectedFacility} showViewButtons={false} />
 
-<div class="flex-1 min-h-0 overflow-y-auto p-4 space-y-4">
+<div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey p-8 space-y-8">
 	{#if selectedFacility}
 		{#if hasPowerData}
-			<div class="flex justify-center">
-				<ToggleGroup.Root
-					type="multiple"
-					bind:value={selectedCharts}
-					class="inline-flex rounded-lg border border-mid-warm-grey bg-light-warm-grey p-1 gap-1"
-				>
-					{#each visibleChartOptions as opt (opt.value)}
-						<ToggleGroup.Item
-							value={opt.value}
-							class="px-3 py-1 rounded-md text-xs text-mid-grey hover:text-black transition-colors data-[state=on]:bg-white data-[state=on]:text-black data-[state=on]:shadow-sm"
-						>
-							{opt.label}
-						</ToggleGroup.Item>
-					{/each}
-				</ToggleGroup.Root>
-			</div>
-
 			<FacilityFinancialDataProvider
-				active={financialActive}
+				active={true}
 				facility={selectedFacility}
 				{timeZone}
 				interval={activeInterval}
@@ -231,15 +159,22 @@
 				onhoverchange={handleHoverChange}
 				onviewportchange={handlePriceViewportChange}
 			>
-				{#if noneSelected}
-					<div
-						class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 h-[240px]"
-					>
-						<p class="text-sm text-mid-grey m-0">Select a chart to display</p>
-					</div>
-				{:else}
-					<div class="space-y-4">
-						{#if showGeneration}
+				<div class="space-y-4">
+					<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
+						<div
+							class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
+						>
+							<h3 class="text-sm font-semibold text-dark-grey m-0">Generation &amp; Market</h3>
+							<div class="flex items-center gap-3 text-xs text-mid-grey">
+								<span>{dateRangeLabel}</span>
+								<span
+									class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey uppercase tracking-wider"
+								>
+									{displayInterval}
+								</span>
+							</div>
+						</div>
+						<div class="divide-y divide-mid-warm-grey/40">
 							<FacilityChart
 								bind:this={powerChart}
 								facility={selectedFacility}
@@ -253,25 +188,23 @@
 								chartHeight="h-[267px]"
 								title={activeMetric === 'energy' ? 'Energy' : 'Power'}
 								tooltipMode="floating"
+								showContainer={false}
 								{hoverTime}
 								onhoverchange={handleHoverChange}
 								onviewportchange={handlePowerViewportChange}
 							/>
-						{/if}
 
-						{#if showPrice && viewStart && viewEnd}
-							<FacilityPriceChart />
-						{/if}
-
-						{#if showMarketValue && viewStart && viewEnd}
-							<FacilityMarketValueChart />
-						{/if}
-
-						{#if showPollution && hasNpi}
-							<FacilityPollutionPanel facility={selectedFacility} />
-						{/if}
+							{#if viewStart && viewEnd}
+								<FacilityPriceChart showContainer={false} />
+								<FacilityMarketValueChart showContainer={false} />
+							{/if}
+						</div>
 					</div>
-				{/if}
+
+					{#if hasNpi}
+						<FacilityPollutionPanel facility={selectedFacility} />
+					{/if}
+				</div>
 			</FacilityFinancialDataProvider>
 		{:else}
 			<div

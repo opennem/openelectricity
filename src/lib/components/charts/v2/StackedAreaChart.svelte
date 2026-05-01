@@ -115,12 +115,35 @@
 	/** @type {'stacked-area' | 'line'} */
 	let stackedAreaDisplay = $derived(chart.chartOptions.isChartTypeLine ? 'line' : 'stacked-area');
 
-	// Clip path IDs
-	let clipPathId = $derived(`${id}-clip-path`);
-	let clipPathAxisId = $derived(`${id}-clip-path-axis`);
-	let clipPath = $derived(`url(#${clipPathId})`);
+	// Clip path IDs — each <Svg> defines its own pair so cross-svg
+	// `url(#…)` references can't accidentally resolve to a sibling layer's
+	// clipPath when the document has multiple layered svgs with the same
+	// LayerCake context.
+	let dataClipPathId = $derived(`${id}-clip-data`);
+	let dataClipPathAxisId = $derived(`${id}-clip-data-axis`);
+	let hoverClipPathId = $derived(`${id}-clip-hover`);
+	let hoverClipPathAxisId = $derived(`${id}-clip-hover-axis`);
+	let axesClipPathId = $derived(`${id}-clip-axes`);
+	let axesClipPathAxisId = $derived(`${id}-clip-axes-axis`);
+
+	// `clipPathId` is exposed to consumer Shading components — they live inside
+	// the data <Svg>, so they share the data svg's tight clip.
+	let clipPathId = $derived(dataClipPathId);
+	let clipPath = $derived(`url(#${dataClipPathId})`);
 	// When `tightAxisClip` is true, reuse the tight clip for axis content too.
-	let clipPathAxis = $derived(`url(#${tightAxisClip ? clipPathId : clipPathAxisId})`);
+	let hoverClipPath = $derived(
+		`url(#${tightAxisClip ? hoverClipPathId : hoverClipPathAxisId})`
+	);
+	let axesClipPath = $derived(`url(#${tightAxisClip ? axesClipPathId : axesClipPathAxisId})`);
+
+	// Axis clip allows axis labels to extend `axisBufferLeft/Right` pixels past
+	// the data area on each side. We cover at least 15 px (the historical default
+	// for charts that ride flush against their container) but expand further
+	// when the chart reserves real left/right padding for axis labels —
+	// `AxisY` already shifts its labels by `-$padding.left` to land them in
+	// that gutter, so the clip needs to cover the shifted area.
+	let axisBufferLeft = $derived(Math.max(15, styles.chartPadding.left));
+	let axisBufferRight = $derived(Math.max(15, styles.chartPadding.right));
 
 	// When clampHoverLine is true, limit the hover/focus line to the stacked area height
 	let hoverMaxY = $derived.by(() => {
@@ -158,8 +181,12 @@
 		<!-- Main chart area -->
 		<Svg>
 			<defs>
-				<ClipPath id={clipPathId} />
-				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
+				<ClipPath id={dataClipPathId} customPaddingLeft={0} customPaddingRight={0} />
+				<ClipPath
+					id={dataClipPathAxisId}
+					customPaddingLeft={axisBufferLeft}
+					customPaddingRight={axisBufferRight}
+				/>
 			</defs>
 
 			<!-- Background shading (behind chart content) -->
@@ -238,11 +265,15 @@
 		<!-- Hover/Focus indicators -->
 		<Svg pointerEvents={false}>
 			<defs>
-				<ClipPath id={clipPathId} />
-				<ClipPath customPaddingLeft={15} customPaddingRight={15} id={clipPathAxisId} />
+				<ClipPath id={hoverClipPathId} customPaddingLeft={0} customPaddingRight={0} />
+				<ClipPath
+					id={hoverClipPathAxisId}
+					customPaddingLeft={axisBufferLeft}
+					customPaddingRight={axisBufferRight}
+				/>
 			</defs>
 
-			<g clip-path={clipPathAxis}>
+			<g clip-path={hoverClipPath}>
 				{#if isStepMode}
 					<!-- Step mode: band highlight like category charts -->
 					<StepHoverBand
@@ -294,7 +325,15 @@
 
 		<!-- Axes -->
 		<Svg pointerEvents={false}>
-			<g clip-path={clipPathAxis}>
+			<defs>
+				<ClipPath id={axesClipPathId} customPaddingLeft={0} customPaddingRight={0} />
+				<ClipPath
+					id={axesClipPathAxisId}
+					customPaddingLeft={axisBufferLeft}
+					customPaddingRight={axisBufferRight}
+				/>
+			</defs>
+			<g clip-path={axesClipPath}>
 				<AxisY
 					ticks={chart.yTicks}
 					formatTick={chart.useFormatY

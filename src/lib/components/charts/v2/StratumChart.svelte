@@ -14,6 +14,7 @@
 	import ChartTooltip from './ChartTooltip.svelte';
 	import ChartTooltipCompactStrip from './ChartTooltipCompactStrip.svelte';
 	import ChartTooltipFloating from './ChartTooltipFloating.svelte';
+	import ChartZoomControls from './ChartZoomControls.svelte';
 	import StackedAreaChart from './StackedAreaChart.svelte';
 	import BarChart from './BarChart.svelte';
 	import ChartResizeHandle from './ChartResizeHandle.svelte';
@@ -54,6 +55,12 @@
 	 * @property {number} [maxHeight] - Maximum height (px) when resizing. Default 800.
 	 * @property {(height: number) => void} [onresize] - Called on every height change during drag.
 	 * @property {(height: number) => void} [onresizeend] - Called once when the drag finishes.
+	 * @property {'floating' | 'static' | 'none'} [zoomMode] - 'floating' renders a card-style overlay at the top-right that fades in on hover; 'static' renders flat zoom buttons inline at the right of the options bar. Default: 'none'.
+	 * @property {(() => void)} [onzoomin]
+	 * @property {(() => void)} [onzoomout]
+	 * @property {boolean} [isAtMinZoom]
+	 * @property {boolean} [isAtMaxZoom]
+	 * @property {number} [zoomOverlayInsetPx] - For 'floating' mode: horizontal inset (px) from the container's right edge.
 	 * @property {import('svelte').Snippet} [header]
 	 * @property {import('svelte').Snippet} [tooltip]
 	 * @property {import('svelte').Snippet} [footer]
@@ -94,10 +101,23 @@
 		maxHeight = 800,
 		onresize,
 		onresizeend,
+		zoomMode = /** @type {'floating' | 'static' | 'none'} */ ('none'),
+		onzoomin,
+		onzoomout,
+		isAtMinZoom = false,
+		isAtMaxZoom = false,
+		zoomOverlayInsetPx = 0,
 		header,
 		tooltip,
 		footer
 	} = $props();
+
+	let floatingZoomWidth = $state(0);
+	let effectiveDodgeRightPx = $derived(
+		zoomMode === 'floating' && floatingZoomWidth > 0
+			? floatingZoomWidth + 8
+			: tooltipDodgeRightPx
+	);
 
 	let hasData = $derived(chart?.seriesData?.length > 0);
 
@@ -148,6 +168,15 @@
 	{#if showHeader}
 		{#if header}
 			{@render header()}
+		{:else if zoomMode === 'static'}
+			<ChartHeader
+				{chart}
+				{showOptions}
+				{onzoomin}
+				{onzoomout}
+				{isAtMinZoom}
+				{isAtMaxZoom}
+			/>
 		{:else}
 			<ChartHeader {chart} {showOptions} />
 		{/if}
@@ -248,7 +277,22 @@
 		{/if}
 
 		{#if effectiveTooltipMode === 'floating'}
-			<ChartTooltipFloating {chart} dodgeRightPx={tooltipDodgeRightPx} insetPx={tooltipInsetPx} />
+			<ChartTooltipFloating
+				{chart}
+				dodgeRightPx={effectiveDodgeRightPx}
+				insetPx={tooltipInsetPx}
+			/>
+		{/if}
+
+		{#if zoomMode === 'floating' && onzoomin && onzoomout}
+			<ChartZoomControls
+				{onzoomin}
+				{onzoomout}
+				{isAtMinZoom}
+				{isAtMaxZoom}
+				overlayInsetPx={zoomOverlayInsetPx}
+				bind:width={floatingZoomWidth}
+			/>
 		{/if}
 	</div>
 

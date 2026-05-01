@@ -123,16 +123,20 @@
 				/>
 			{/if}
 
-			<!-- Tick label -->
+			<!-- Tick label — `paint-order: stroke fill` + a white stroke draws a
+			     halo around the glyphs so they stay readable when the label
+			     overlays the rendered chart data. -->
 			<text
 				class="text-xxs font-light text-mid-warm-grey"
 				class:hidden={isLastTick && !showLastTick}
 				fill={textFill}
+				stroke="white"
+				stroke-width="3"
 				x={xTick}
 				y={isBandwidth ? $yScale.bandwidth() / 2 + yTick : yTick}
 				dx={isBandwidth ? -9 : dxTick}
 				dy={isBandwidth ? 4 : (isLastTick && lastTickDy != null) ? lastTickDy : dyTick}
-				style="text-anchor: {isBandwidth ? 'end' : textAnchor};"
+				style="text-anchor: {isBandwidth ? 'end' : textAnchor}; paint-order: stroke fill;"
 			>
 				{formatTick(tick)}
 			</text>

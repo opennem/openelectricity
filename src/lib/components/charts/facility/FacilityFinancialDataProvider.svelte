@@ -414,6 +414,7 @@
 
 		chart.chartStyles.chartHeightClasses = priceChartHeight;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
+		chart.chartStyles.snapTicks = true;
 		chart.hideDataOptions = true;
 		chart.hideChartTypeOptions = true;
 		chart.useFormatY = true;
@@ -466,6 +467,7 @@
 
 		chart.chartStyles.chartHeightClasses = mvChartHeight;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
+		chart.chartStyles.snapTicks = true;
 		chart.useFormatY = true;
 		chart.formatY = (/** @type {number} */ d) => {
 			const converted = chart.convertAndFormatValue(d);

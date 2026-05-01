@@ -7,7 +7,6 @@
 	 */
 
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import ChartZoomControls from '$lib/components/charts/v2/ChartZoomControls.svelte';
 	import {
 		aggregateToInterval,
 		aggregateToMonth
@@ -48,7 +47,8 @@
 	 * @property {boolean} [showAnnotations] - Whether to show capacity reference lines (default: false)
 	 * @property {boolean} [showHeader] - Whether to show the chart title/header bar (default: true)
 	 * @property {boolean} [showOptions] - Whether to show the chart options (download, etc) in the header (default: true)
-	 * @property {boolean} [showZoomControls] - Whether to show the +/- zoom buttons overlaid on the chart (default: true)
+	 * @property {boolean} [showZoomControls] - Whether to show the +/- zoom buttons (default: true). See `zoomMode` for placement.
+	 * @property {'floating' | 'static' | 'none'} [zoomMode] - Zoom button placement: 'floating' (card overlay at the top-right that fades in on hover) or 'static' (flat buttons inline at the right of the options bar). Default: 'static'.
 	 * @property {boolean} [showContainer] - Whether to wrap the chart in the default bordered + padded container (default: true). Set false to render the chart flush against the parent.
 	 * @property {'strip' | 'floating' | 'none'} [tooltipMode] - Tooltip style: 'strip' above the chart (default), 'floating' overlaid at the cursor, or 'none'.
 	 * @property {boolean} [tightAxisClip] - Clip gridlines/axis labels to the exact chart area (default: false). Use for compact charts where gridlines shouldn't extend past the edges.
@@ -77,6 +77,7 @@
 		showHeader = true,
 		showOptions = true,
 		showZoomControls = true,
+		zoomMode = /** @type {'floating' | 'static' | 'none'} */ ('static'),
 		showContainer = true,
 		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip'),
 		tightAxisClip = false,
@@ -358,6 +359,7 @@
 		chart.chartStyles.chartHeightClasses = chartHeight;
 		if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
+		chart.chartStyles.snapTicks = true;
 		chart.useDivergingStack = useDivergingStack;
 		chart.lighterNegative = hasBatteryUnits;
 		chart.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
@@ -671,9 +673,6 @@
 		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
 	}
 
-	/** Measured width of the zoom-buttons cluster (for floating-tooltip dodge). */
-	let zoomButtonsWidth = $state(0);
-
 	// ============================================
 	// Button Zoom
 	// ============================================
@@ -775,7 +774,12 @@
 			{showOptions}
 			{tooltipMode}
 			{tightAxisClip}
-			tooltipDodgeRightPx={showZoomControls ? zoomButtonsWidth + 8 : 0}
+			zoomMode={showZoomControls ? zoomMode : 'none'}
+			onzoomin={zoomIn}
+			onzoomout={zoomOut}
+			{isAtMinZoom}
+			{isAtMaxZoom}
+			zoomOverlayInsetPx={overlayInsetPx}
 			tooltipInsetPx={overlayInsetPx}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
@@ -816,16 +820,6 @@
 			</div>
 		{/if}
 
-		{#if showZoomControls}
-			<ChartZoomControls
-				onzoomin={zoomIn}
-				onzoomout={zoomOut}
-				{isAtMinZoom}
-				{isAtMaxZoom}
-				{overlayInsetPx}
-				bind:width={zoomButtonsWidth}
-			/>
-		{/if}
 	</div>
 {:else}
 	<!-- No facility — chart store not created yet -->

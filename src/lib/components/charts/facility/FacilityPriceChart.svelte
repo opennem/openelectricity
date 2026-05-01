@@ -8,11 +8,13 @@
 	 */
 
 	import { StratumChart } from '$lib/components/charts/v2';
-	import ChartZoomControls from '$lib/components/charts/v2/ChartZoomControls.svelte';
 	import { untrack } from 'svelte';
 	import { getFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 
 	const BUTTON_ZOOM_FACTOR = 1.5;
+
+	/** @type {{ showContainer?: boolean, zoomMode?: 'floating' | 'static' | 'none' }} */
+	let { showContainer = true, zoomMode = 'static' } = $props();
 
 	const ctx = getFacilityFinancialDataContext();
 
@@ -41,8 +43,6 @@
 	let viewEnd = $derived(ctx?.viewEnd ?? 0);
 	let hasViewportHandler = $derived(ctx?.hasViewportHandler ?? false);
 	let loadingRanges = $derived(ctx?.priceLoadingRanges ?? []);
-
-	let zoomButtonsWidth = $state(0);
 
 	function zoomIn() {
 		if (!ctx || !viewStart || !viewEnd) return;
@@ -75,7 +75,7 @@
 </script>
 
 {#if ctx && priceChartStore}
-	<div class="group rounded-lg p-4 relative bg-white">
+	<div class="group relative {showContainer ? 'rounded-lg p-4 bg-white' : ''}">
 		<StratumChart
 			chart={priceChartStore}
 			onhover={handleHover}
@@ -89,7 +89,9 @@
 			onzoom={ctx.handleZoom}
 			{loadingRanges}
 			tooltipMode="floating"
-			tooltipDodgeRightPx={hasViewportHandler ? zoomButtonsWidth + 8 : 0}
+			zoomMode={hasViewportHandler ? zoomMode : 'none'}
+			onzoomin={zoomIn}
+			onzoomout={zoomOut}
 			resizable
 			heightStorageKey="facility-chart-height-price"
 			minHeight={100}
@@ -110,14 +112,6 @@
 				</div>
 			{/snippet}
 		</StratumChart>
-
-		{#if hasViewportHandler}
-			<ChartZoomControls
-				onzoomin={zoomIn}
-				onzoomout={zoomOut}
-				bind:width={zoomButtonsWidth}
-			/>
-		{/if}
 	</div>
 {:else}
 	<div

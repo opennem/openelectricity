@@ -38,7 +38,7 @@
 
 <div
 	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 min-h-[46.5px] {paddingX} {isFullscreen
-		? `md:py-3 md:px-4 md:rounded-lg md:border md:border-warm-grey ${bgClass}`
+		? `md:py-3 md:px-4 ${bgClass}`
 		: ''}"
 >
 	<div class="flex items-center gap-4 min-w-0">

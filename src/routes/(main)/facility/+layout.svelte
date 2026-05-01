@@ -145,7 +145,7 @@
 	{#snippet filterBar()}
 		<div
 			class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen
-				? 'md:border-0 md:px-6 md:pt-6'
+				? ''
 				: 'px-4'}"
 		>
 			<FacilityPickerBar
@@ -224,6 +224,7 @@
 	shortcuts={[
 		{ label: 'Toggle facility list', keys: [isMac ? '⌘' : 'Ctrl', 'K'] },
 		{ label: 'Search facilities', keys: ['/'] },
+		{ label: 'Toggle navigation menu', keys: ['G'] },
 		{ label: 'Enter / exit full screen', keys: ['F'] },
 		{ label: 'Show shortcuts', keys: ['?'] }
 	]}

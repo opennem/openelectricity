@@ -20,12 +20,14 @@
 </script>
 
 <section
-	class="relative flex flex-col px-4 pb-4 md:px-6 md:pb-6 pt-3 md:pt-4 {isFullscreen
+	class="relative flex flex-col {isFullscreen
 		? 'flex-1 min-h-0'
-		: 'h-[calc(100dvh-214px)] md:h-[calc(100dvh-300px)] md:min-h-[700px]'} {className}"
+		: 'px-4 pb-4 md:px-6 md:pb-6 pt-3 md:pt-4 h-[calc(100dvh-214px)] md:h-[calc(100dvh-300px)] md:min-h-[700px]'} {className}"
 >
 	<div
-		class="flex-1 flex flex-col min-h-0 rounded-lg border border-warm-grey overflow-hidden bg-white"
+		class="flex-1 flex flex-col min-h-0 overflow-hidden bg-white {isFullscreen
+			? ''
+			: 'rounded-lg border border-warm-grey'}"
 	>
 		{@render children?.()}
 		{@render footer?.()}

@@ -99,23 +99,26 @@
 		return Math.max(insetPx, Math.min(wrapperWidth - tooltipWidth - insetPx, desired));
 	});
 
-	// Flip to the bottom of the chart when the cursor is near the default top
-	// position — keeps the chart details under the cursor visible. Falls back
-	// to the top (with optional dodge for top-right UI like zoom buttons) when
-	// the cursor is in the lower half or we don't yet have measurements.
+	// Flip below the cursor when the cursor is near the default top position —
+	// keeps the chart details under the cursor visible while keeping the
+	// tooltip itself close to the pointer. Falls back to the top (with optional
+	// dodge for top-right UI like zoom buttons) when the cursor is in the lower
+	// half or we don't yet have measurements.
 	let tooltipTop = $derived.by(() => {
 		const TOP = 8;
 		const DODGE_TOP = 36;
 		const BOTTOM_GAP = 8;
 		const TOP_ZONE_BUFFER = 16;
+		const CURSOR_GAP = 24;
 
 		const canFlip =
 			cursorY !== null && tooltipHeight > 0 && wrapperHeight > tooltipHeight + BOTTOM_GAP + TOP;
 		const cursorInTopZone =
 			canFlip && cursorY !== null && cursorY < TOP + tooltipHeight + TOP_ZONE_BUFFER;
 
-		if (cursorInTopZone) {
-			return wrapperHeight - tooltipHeight - BOTTOM_GAP;
+		if (cursorInTopZone && cursorY !== null) {
+			const maxTop = wrapperHeight - tooltipHeight - BOTTOM_GAP;
+			return Math.min(cursorY + CURSOR_GAP, maxTop);
 		}
 
 		if (dodgeRightPx <= 0) return TOP;
@@ -133,11 +136,6 @@
 	class="absolute inset-0 pointer-events-none z-20 {className}"
 >
 	{#if activeData}
-		<!-- Vertical hover line — suppressed in step mode since the highlight band already marks the bucket -->
-		{#if hoverX !== null && !isStepMode}
-			<div class="absolute top-0 bottom-0 w-px bg-mid-warm-grey/40" style:left="{hoverX}px"></div>
-		{/if}
-
 		<!-- Tooltip card -->
 		<div
 			bind:clientWidth={tooltipWidth}
