@@ -163,9 +163,9 @@
 				<button
 					data-index={i}
 					data-code={facility.code}
-					class="flex w-full items-stretch gap-2 text-left text-dark-grey transition-colors border-l-2 border-transparent [content-visibility:auto] [contain-intrinsic-size:auto_36px] {isActive
+					class="flex w-full items-stretch gap-2 text-left text-dark-grey transition-colors border-l-2 border-b border-b-warm-grey border-l-transparent last:border-b-0 [content-visibility:auto] [contain-intrinsic-size:auto_72px] {isActive
 						? 'bg-warm-grey'
-						: 'hover:bg-light-warm-grey'} {isCurrent ? 'border-red' : ''}"
+						: 'hover:bg-light-warm-grey'} {isCurrent ? 'border-l-red' : ''}"
 					onclick={() => {
 						activeIndex = i;
 						handleSelect(facility.code);
@@ -184,22 +184,26 @@
 						</span>
 					{/if}
 					<span
-						class="flex-1 min-w-0 flex items-center gap-2 py-2 pr-3 {facility.fuel_techs?.length
+						class="flex-1 min-w-0 flex items-center gap-2 py-3 pr-3 {facility.fuel_techs?.length
 							? ''
 							: 'pl-3'}"
 					>
-						<span class="text-sm truncate min-w-0">{facility.name}</span>
-						<span class="text-[9px] uppercase tracking-wider text-mid-grey font-mono shrink-0">
-							{facility.network_region}
+						<span class="flex-1 min-w-0 flex flex-col gap-1">
+							<span class="text-sm truncate min-w-0">{facility.name}</span>
+							<span
+								class="self-start text-[9px] uppercase tracking-wider text-mid-grey font-mono px-1.5 py-0.5 rounded bg-warm-grey/60"
+							>
+								{facility.network_region}
+							</span>
 						</span>
 						<span
-							class="ml-auto font-mono tabular-nums shrink-0 w-20 text-right whitespace-nowrap text-dark-grey"
+							class="ml-auto font-mono tabular-nums shrink-0 w-20 text-right whitespace-nowrap text-dark-grey flex flex-col items-end gap-1"
 						>
 							{#if facility.capacity > 0}
-								<span class="text-[11px]">{formatValue(facility.capacity)}</span>
-								<span class="text-[9px] text-mid-grey ml-0.5">MW</span>
+								<span class="text-sm font-bold">{formatValue(facility.capacity)}</span>
+								<span class="text-[11px] text-mid-grey">MW</span>
 							{:else}
-								<span class="text-[11px] text-mid-grey">—</span>
+								<span class="text-sm text-mid-grey">—</span>
 							{/if}
 						</span>
 					</span>
