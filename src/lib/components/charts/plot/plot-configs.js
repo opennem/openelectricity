@@ -16,7 +16,8 @@ import {
 	stackX,
 	stackY,
 	groupX,
-	groupY
+	groupY,
+	text
 } from '@observablehq/plot';
 import { getLineDasharray } from '$lib/stratify/chart-types.js';
 
@@ -83,22 +84,136 @@ function detectMedianGapMs(data) {
 }
 
 /**
+ * Field names used on long-format rows for Plot's facet channels.
+ * `FACET_FIELD` carries the raw facet value (e.g. 'NSW'). `FACET_X_FIELD`
+ * and `FACET_Y_FIELD` carry the synthetic grid indexes used when wrapping
+ * panels into a 2-D layout. Exported so callers (e.g. tooltip suppression)
+ * can refer to the same identifiers without duplicating the literals.
+ */
+export const FACET_FIELD = 'facet';
+export const FACET_X_FIELD = '_fx';
+export const FACET_Y_FIELD = '_fy';
+
+/**
+ * @typedef {Object} FacetGrid
+ * @property {number} cols - Number of columns in the wrapped grid
+ * @property {number} rows - Number of rows in the wrapped grid
+ * @property {Map<any, { col: number, row: number }>} indexByFacet - Facet value → grid position
+ */
+
+/**
  * Pivot wide-format data to long-format for Observable Plot's stacked marks.
  * @param {Array<Record<string, any>>} data
  * @param {string[]} seriesNames
  * @param {string} xKey - 'date' for time-series, 'category' for category
- * @returns {Array<{x: any, series: string, value: number}>}
+ * @param {string | null} [facetKey] - Optional column key to include as `facet` on each row
+ * @param {FacetGrid | null} [facetGrid] - Optional grid layout; adds `_fx`/`_fy` per row
+ * @returns {Array<Record<string, any>>}
  */
-export function toLong(data, seriesNames, xKey) {
+export function toLong(data, seriesNames, xKey, facetKey = null, facetGrid = null) {
 	return data.flatMap((row) =>
 		seriesNames
 			.filter((name) => row[name] != null)
-			.map((name) => ({
-				x: row[xKey],
-				series: name,
-				value: row[name]
-			}))
+			.map((name) => {
+				/** @type {Record<string, any>} */
+				const out = { x: row[xKey], series: name, value: row[name] };
+				if (facetKey) {
+					out[FACET_FIELD] = row[facetKey];
+					if (facetGrid) {
+						const pos = facetGrid.indexByFacet.get(row[facetKey]);
+						if (pos) {
+							out[FACET_X_FIELD] = pos.col;
+							out[FACET_Y_FIELD] = pos.row;
+						}
+					}
+				}
+				return out;
+			})
 	);
+}
+
+/**
+ * Build the facet grid layout map from an ordered list of facet values.
+ * @param {any[]} facetValues - Unique facet values, in display order
+ * @param {number} cols - Number of columns per row
+ * @returns {FacetGrid}
+ */
+export function buildFacetGrid(facetValues, cols) {
+	const safeCols = Math.max(1, cols);
+	/** @type {Map<any, { col: number, row: number }>} */
+	const indexByFacet = new Map();
+	facetValues.forEach((v, i) => {
+		indexByFacet.set(v, { col: i % safeCols, row: Math.floor(i / safeCols) });
+	});
+	return {
+		cols: safeCols,
+		rows: Math.ceil(facetValues.length / safeCols),
+		indexByFacet
+	};
+}
+
+/**
+ * Mark-level facet spec. Single-row faceting uses `fx: 'facet'` (Plot
+ * renders one auto-labelled panel per value). Grid faceting uses synthetic
+ * `_fx`/`_fy` indexes so panels wrap into a 2-D grid.
+ * @param {string | null} facetColumn
+ * @param {FacetGrid | null} facetGrid
+ */
+function getFacetMarkSpec(facetColumn, facetGrid) {
+	if (!facetColumn) return {};
+	if (facetGrid) return { fx: FACET_X_FIELD, fy: FACET_Y_FIELD };
+	return { fx: FACET_FIELD };
+}
+
+/**
+ * Top-level fx/fy scale config for facets. Grid mode hides the auto axes
+ * (synthetic indexes aren't meaningful labels — we render text marks instead).
+ * @param {string | null} facetColumn
+ * @param {FacetGrid | null} facetGrid
+ */
+function getFacetScales(facetColumn, facetGrid) {
+	if (!facetColumn) return {};
+	if (facetGrid) {
+		// fy.padding leaves room for the per-panel label rendered above each row.
+		return {
+			fx: { axis: null, padding: 0.04 },
+			fy: { axis: null, padding: 0.25 }
+		};
+	}
+	return { fx: { label: null, padding: 0.05 } };
+}
+
+/**
+ * Build a `text` mark that renders the facet name in the top-right of each
+ * grid panel. Returns null when grid faceting is not active.
+ * @param {string | null} facetColumn
+ * @param {FacetGrid | null} facetGrid
+ * @returns {any | null}
+ */
+function buildFacetLabelMark(facetColumn, facetGrid) {
+	if (!facetColumn || !facetGrid) return null;
+	/** @type {Array<Record<string, any>>} */
+	const labelData = [];
+	for (const [name, pos] of facetGrid.indexByFacet) {
+		labelData.push({
+			[FACET_X_FIELD]: pos.col,
+			[FACET_Y_FIELD]: pos.row,
+			label: String(name)
+		});
+	}
+	return text(labelData, {
+		fx: FACET_X_FIELD,
+		fy: FACET_Y_FIELD,
+		text: 'label',
+		frameAnchor: 'top-right',
+		// `lineAnchor: 'bottom'` + negative `dy` keeps the label entirely
+		// above the panel frame instead of overlapping the data area.
+		dx: -2,
+		dy: -4,
+		lineAnchor: 'bottom',
+		fontWeight: 600,
+		fontSize: 11
+	});
 }
 
 /**
@@ -184,6 +299,8 @@ export function capacityMarks(capacitySums, { isLine, isEnergyMetric }) {
  * @property {[number, number]} [yDomain] - Explicit y-domain (e.g. extended for capacity lines)
  * @property {string | ((d: number) => string)} [yTickFormat] - Custom y-axis tick format (default: 's')
  * @property {Record<string, string>} [seriesLineStyles] - Per-series line style overrides
+ * @property {string | null} [facetColumn] - Column key to partition data into small-multiple panels (Plot fx)
+ * @property {FacetGrid | null} [facetGrid] - Optional 2-D grid layout for wrapped small multiples
  */
 
 /**
@@ -207,10 +324,14 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 		extraMarks = [],
 		gridlines,
 		yDomain,
-		yTickFormat = 's'
+		yTickFormat = 's',
+		facetColumn = null,
+		facetGrid = null
 	} = options;
 	const { xKey, isLinear } = detectXMode(data);
-	const long = toLong(data, seriesNames, xKey);
+	const long = toLong(data, seriesNames, xKey, facetColumn, facetGrid);
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
+	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
 
 	return {
 		style,
@@ -222,14 +343,15 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 			...(xDomain ? { domain: xDomain } : {}),
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isLinear ? { type: 'linear' } : {}),
-			...(gridlines ? { axis: null } : {})
+			...(gridlines ? { axis: null } : {}),
 		},
 		y: {
 			label: null,
 			grid: !gridlines,
 			tickFormat: yTickFormat,
-			...(yDomain ? { domain: yDomain } : {})
+			...(yDomain ? { domain: yDomain } : {}),
 		},
+		...getFacetScales(facetColumn, facetGrid),
 		marks: [
 			...(gridlines ? gridlines.gridlineMarks : []),
 			...extraMarks,
@@ -239,11 +361,13 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 					x: 'x',
 					y: 'value',
 					fill: 'series',
+					...facetMark,
 					...(curve ? { curve } : {}),
 					order: seriesNames
 				})
 			),
-			ruleY([0])
+			ruleY([0]),
+			...(labelMark ? [labelMark] : [])
 		]
 	};
 }
@@ -256,19 +380,23 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
  * @param {string} xKey
  * @param {Record<string, string>} seriesLineStyles
  * @param {string} [curve]
+ * @param {string | null} [facetColumn]
+ * @param {FacetGrid | null} [facetGrid]
  * @returns {any[]}
  */
-function buildLineMarks(data, seriesNames, xKey, seriesLineStyles, curve) {
+function buildLineMarks(data, seriesNames, xKey, seriesLineStyles, curve, facetColumn = null, facetGrid = null) {
 	const hasCustomStyles = seriesNames.some((n) => getLineDasharray(seriesLineStyles[n]) !== undefined);
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
 
 	if (!hasCustomStyles) {
-		const long = toLong(data, seriesNames, xKey);
+		const long = toLong(data, seriesNames, xKey, facetColumn, facetGrid);
 		return [
 			lineY(long, {
 				x: 'x',
 				y: 'value',
 				stroke: 'series',
 				strokeWidth: 2,
+				...facetMark,
 				...(curve ? { curve } : {})
 			})
 		];
@@ -285,13 +413,14 @@ function buildLineMarks(data, seriesNames, xKey, seriesLineStyles, curve) {
 	/** @type {any[]} */
 	const marks = [];
 	for (const [dash, groupNames] of groups) {
-		const long = toLong(data, groupNames, xKey);
+		const long = toLong(data, groupNames, xKey, facetColumn, facetGrid);
 		marks.push(
 			lineY(long, {
 				x: 'x',
 				y: 'value',
 				stroke: 'series',
 				strokeWidth: 2,
+				...facetMark,
 				...(curve ? { curve } : {}),
 				...(dash !== '__solid__' ? { strokeDasharray: dash } : {})
 			})
@@ -322,11 +451,15 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 		gridlines,
 		yDomain,
 		yTickFormat,
-		seriesLineStyles = {}
+		seriesLineStyles = {},
+		facetColumn = null,
+		facetGrid = null
 	} = options;
 	const { xKey, isCategory, isLinear } = detectXMode(data);
 
-	const lineMarks = buildLineMarks(data, seriesNames, xKey, seriesLineStyles, curve);
+	const lineMarks = buildLineMarks(data, seriesNames, xKey, seriesLineStyles, curve, facetColumn, facetGrid);
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
+	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
 
 	return {
 		style,
@@ -339,19 +472,21 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isCategory ? { tickPadding: 6, type: 'point' } : {}),
 			...(isLinear ? { type: 'linear' } : {}),
-			...(gridlines ? { axis: null } : {})
+			...(gridlines ? { axis: null } : {}),
 		},
 		y: {
 			label: null,
 			grid: !gridlines,
 			...(yTickFormat ? { tickFormat: yTickFormat } : {}),
-			...(yDomain ? { domain: yDomain } : {})
+			...(yDomain ? { domain: yDomain } : {}),
 		},
+		...getFacetScales(facetColumn, facetGrid),
 		marks: [
 			...(gridlines ? gridlines.gridlineMarks : []),
 			...extraMarks,
 			...lineMarks,
-			ruleY([0])
+			ruleY([0]),
+			...(labelMark ? [labelMark] : [])
 		]
 	};
 }
@@ -365,6 +500,8 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
  * @property {any[]} [extraMarks] - Additional marks
  * @property {string | ((d: number) => string)} [yTickFormat]
  * @property {boolean} [horizontal]
+ * @property {string | null} [facetColumn] - Column key to partition data into small-multiple panels (Plot fx)
+ * @property {FacetGrid | null} [facetGrid] - Optional 2-D grid layout for wrapped small multiples
  */
 
 /**
@@ -382,11 +519,15 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		marginRight,
 		legend = true,
 		extraMarks = [],
-		yTickFormat = 's'
+		yTickFormat = 's',
+		facetColumn = null,
+		facetGrid = null
 	} = options;
 
 	const { xKey, isCategory, isLinear } = detectXMode(data);
-	const long = toLong(data, seriesNames, xKey);
+	const long = toLong(data, seriesNames, xKey, facetColumn, facetGrid);
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
+	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
 
 	/** @type {any[]} */
 	const marks = [...extraMarks];
@@ -395,7 +536,12 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		marks.push(
 			barY(
 				long,
-				stackY(groupX({ y: 'sum' }, { x: 'x', y: 'value', fill: 'series', order: seriesNames }))
+				stackY(
+					groupX(
+						{ y: 'sum' },
+						{ x: 'x', y: 'value', fill: 'series', ...facetMark, order: seriesNames }
+					)
+				)
 			)
 		);
 	} else if (isLinear) {
@@ -408,6 +554,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 					x2: (/** @type {any} */ d) => d.x + halfGap,
 					y: 'value',
 					fill: 'series',
+					...facetMark,
 					order: seriesNames
 				})
 			)
@@ -422,6 +569,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 					x2: (/** @type {any} */ d) => new Date(d.x.getTime() + halfGap),
 					y: 'value',
 					fill: 'series',
+					...facetMark,
 					order: seriesNames
 				})
 			)
@@ -429,6 +577,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 	}
 
 	marks.push(ruleY([0]));
+	if (labelMark) marks.push(labelMark);
 
 	return {
 		style,
@@ -439,6 +588,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 			...(isCategory ? { tickPadding: 6, type: 'band' } : isLinear ? { type: 'linear' } : { type: 'utc' })
 		},
 		y: { label: null, grid: true, tickFormat: yTickFormat },
+		...getFacetScales(facetColumn, facetGrid),
 		marks
 	};
 }
@@ -458,12 +608,25 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 		marginRight,
 		legend = true,
 		extraMarks = [],
-		yTickFormat = 's'
+		yTickFormat = 's',
+		facetColumn = null
 	} = options;
 
 	const { xKey } = detectXMode(data);
-	const long = toLong(data, seriesNames, xKey);
+	const long = toLong(data, seriesNames, xKey, facetColumn);
 	const categoryDomain = data.map((/** @type {any} */ d) => d[xKey]);
+
+	// When facet is on, the user's facet takes the fx slot; the inner category
+	// grouping moves to fy so both dimensions remain visible as a 2-D grid.
+	const groupAxis = facetColumn ? 'fy' : 'fx';
+	const groupScaleConfig = {
+		label: null,
+		domain: categoryDomain,
+		padding: 0.1,
+		tickPadding: 6,
+		tickRotate: -30,
+		axis: facetColumn ? /** @type {const} */ ('left') : /** @type {const} */ ('bottom')
+	};
 
 	return {
 		style,
@@ -471,20 +634,15 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 		color: { ...colourScale(seriesNames, colours, labels), legend },
 		x: { axis: null, type: 'band', domain: seriesNames, padding: 0.05 },
 		y: { label: null, grid: true, tickFormat: yTickFormat },
-		fx: {
-			label: null,
-			domain: categoryDomain,
-			padding: 0.1,
-			tickPadding: 6,
-			tickRotate: -30,
-			axis: 'bottom'
-		},
+		[groupAxis]: groupScaleConfig,
+		...(facetColumn ? { fx: { label: null, padding: 0.05 } } : {}),
 		marks: [
 			...extraMarks,
 			barY(long, {
 				x: 'series',
 				y: 'value',
-				fx: 'x',
+				[groupAxis]: 'x',
+				...(facetColumn ? { fx: FACET_FIELD } : {}),
 				fill: 'series'
 			}),
 			ruleY([0])
@@ -510,10 +668,14 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 		marginRight,
 		legend = true,
 		extraMarks = [],
-		yTickFormat
+		yTickFormat,
+		facetColumn = null,
+		facetGrid = null
 	} = options;
-	const long = toLong(data, seriesNames, 'category');
+	const long = toLong(data, seriesNames, 'category', facetColumn, facetGrid);
 	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
+	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
 
 	return {
 		style,
@@ -521,14 +683,26 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 		...(marginRight !== undefined ? { marginRight } : {}),
 		color: { ...colourScale(seriesNames, colours, labels), legend },
 		y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
-		x: { label: null, grid: true, zero: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+		x: {
+			label: null,
+			grid: true,
+			zero: true,
+			...(yTickFormat ? { tickFormat: yTickFormat } : {})
+		},
+		...getFacetScales(facetColumn, facetGrid),
 		marks: [
 			...extraMarks,
 			barX(
 				long,
-				stackX(groupY({ x: 'sum' }, { y: 'x', x: 'value', fill: 'series', order: seriesNames }))
+				stackX(
+					groupY(
+						{ x: 'sum' },
+						{ y: 'x', x: 'value', fill: 'series', ...facetMark, order: seriesNames }
+					)
+				)
 			),
-			ruleX([0])
+			ruleX([0]),
+			...(labelMark ? [labelMark] : [])
 		]
 	};
 }
@@ -549,11 +723,22 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 		marginRight,
 		legend = true,
 		extraMarks = [],
-		yTickFormat = 's'
+		yTickFormat = 's',
+		facetColumn = null
 	} = options;
-	const long = toLong(data, seriesNames, 'category');
+	const long = toLong(data, seriesNames, 'category', facetColumn);
 	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
 	const categoryDomain = data.map((/** @type {any} */ d) => d.category);
+
+	// When facet is on, fx is taken; the inner category grouping stays on fy.
+	// Plot will render fy panels stacked within each fx column — a 2-D grid.
+	const innerScaleConfig = {
+		label: null,
+		domain: categoryDomain,
+		padding: 0.1,
+		tickPadding: 6,
+		axis: /** @type {const} */ ('left')
+	};
 
 	return {
 		style,
@@ -562,19 +747,15 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 		color: { ...colourScale(seriesNames, colours, labels), legend },
 		y: { axis: null, type: 'band', domain: seriesNames, padding: 0.05 },
 		x: { label: null, grid: true, zero: true, tickFormat: yTickFormat },
-		fy: {
-			label: null,
-			domain: categoryDomain,
-			padding: 0.1,
-			tickPadding: 6,
-			axis: 'left'
-		},
+		fy: innerScaleConfig,
+		...(facetColumn ? { fx: { label: null, padding: 0.05 } } : {}),
 		marks: [
 			...extraMarks,
 			barX(long, {
 				y: 'series',
 				x: 'value',
 				fy: 'x',
+				...(facetColumn ? { fx: FACET_FIELD } : {}),
 				fill: 'series'
 			}),
 			ruleX([0])
@@ -612,16 +793,31 @@ export function createColourGroupedBarOptions(
 		legend = true,
 		extraMarks = [],
 		yTickFormat,
-		horizontal = false
+		horizontal = false,
+		facetColumn = null,
+		facetGrid = null
 	} = options;
 
 	const long = data
 		.filter((row) => row[valueKey] != null)
-		.map((row) => ({
-			x: row.category,
-			value: Number(row[valueKey]),
-			colourGroup: row[colourSeriesKey] ?? 'Unknown'
-		}));
+		.map((row) => {
+			const out = /** @type {Record<string, any>} */ ({
+				x: row.category,
+				value: Number(row[valueKey]),
+				colourGroup: row[colourSeriesKey] ?? 'Unknown'
+			});
+			if (facetColumn) {
+				out.facet = row[facetColumn];
+				if (facetGrid) {
+					const pos = facetGrid.indexByFacet.get(row[facetColumn]);
+					if (pos) {
+						out._fx = pos.col;
+						out._fy = pos.row;
+					}
+				}
+			}
+			return out;
+		});
 
 	const colorScale = {
 		domain: colourGroupNames,
@@ -629,6 +825,10 @@ export function createColourGroupedBarOptions(
 		legend,
 		tickFormat: (/** @type {string} */ d) => labels[d] || d
 	};
+
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
+	const facetScale = getFacetScales(facetColumn, facetGrid);
+	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
 
 	if (horizontal) {
 		const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
@@ -638,11 +838,19 @@ export function createColourGroupedBarOptions(
 			...(marginRight !== undefined ? { marginRight } : {}),
 			color: colorScale,
 			y: { label: null, tickPadding: 6, type: 'band', padding: 0.15 },
-			x: { label: null, grid: true, zero: true, type: 'linear', ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+			x: {
+				label: null,
+				grid: true,
+				zero: true,
+				type: 'linear',
+				...(yTickFormat ? { tickFormat: yTickFormat } : {})
+			},
+			...facetScale,
 			marks: [
 				...extraMarks,
-				barX(long, { y: 'x', x1: 0, x2: 'value', fill: 'colourGroup' }),
-				ruleX([0])
+				barX(long, { y: 'x', x1: 0, x2: 'value', fill: 'colourGroup', ...facetMark }),
+				ruleX([0]),
+				...(labelMark ? [labelMark] : [])
 			]
 		};
 	}
@@ -653,10 +861,12 @@ export function createColourGroupedBarOptions(
 		color: colorScale,
 		x: { label: null, tickPadding: 6, type: 'band' },
 		y: { label: null, grid: true, ...(yTickFormat ? { tickFormat: yTickFormat } : {}) },
+		...facetScale,
 		marks: [
 			...extraMarks,
-			barY(long, { x: 'x', y1: 0, y2: 'value', fill: 'colourGroup' }),
-			ruleY([0])
+			barY(long, { x: 'x', y1: 0, y2: 'value', fill: 'colourGroup', ...facetMark }),
+			ruleY([0]),
+			...(labelMark ? [labelMark] : [])
 		]
 	};
 }
@@ -683,10 +893,14 @@ export function createDotOptions(data, seriesNames, colours, labels, options = {
 		extraMarks = [],
 		gridlines,
 		yDomain,
-		yTickFormat
+		yTickFormat,
+		facetColumn = null,
+		facetGrid = null
 	} = options;
 	const { xKey, isLinear } = detectXMode(data);
-	const long = toLong(data, seriesNames, xKey);
+	const long = toLong(data, seriesNames, xKey, facetColumn, facetGrid);
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
+	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
 
 	return {
 		style,
@@ -698,14 +912,15 @@ export function createDotOptions(data, seriesNames, colours, labels, options = {
 			...(xDomain ? { domain: xDomain } : {}),
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isLinear ? { type: 'linear' } : {}),
-			...(gridlines ? { axis: null } : {})
+			...(gridlines ? { axis: null } : {}),
 		},
 		y: {
 			label: null,
 			grid: !gridlines,
 			...(yTickFormat ? { tickFormat: yTickFormat } : {}),
-			...(yDomain ? { domain: yDomain } : {})
+			...(yDomain ? { domain: yDomain } : {}),
 		},
+		...getFacetScales(facetColumn, facetGrid),
 		marks: [
 			...(gridlines ? gridlines.gridlineMarks : []),
 			...extraMarks,
@@ -714,10 +929,12 @@ export function createDotOptions(data, seriesNames, colours, labels, options = {
 				y: 'value',
 				stroke: 'series',
 				fill: 'series',
+				...facetMark,
 				fillOpacity: 0.6,
 				r: 3
 			}),
-			ruleY([0])
+			ruleY([0]),
+			...(labelMark ? [labelMark] : [])
 		]
 	};
 }
@@ -787,10 +1004,14 @@ export function createMixedMarkOptions(
 		gridlines,
 		yDomain,
 		yTickFormat,
-		seriesLineStyles = {}
+		seriesLineStyles = {},
+		facetColumn = null,
+		facetGrid = null
 	} = options;
 
 	const defaultMarkType = globalTypeToMarkType(defaultChartType);
+	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
+	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
 
 	// Detect whether data is time-series, category, or linear
 	const { xKey, isCategory, isLinear } = detectXMode(data);
@@ -814,7 +1035,7 @@ export function createMixedMarkOptions(
 
 	// Area series (stacked together)
 	if (groups.area.length > 0) {
-		const long = toLong(data, groups.area, xKey);
+		const long = toLong(data, groups.area, xKey, facetColumn, facetGrid);
 		marks.push(
 			areaY(
 				long,
@@ -822,6 +1043,7 @@ export function createMixedMarkOptions(
 					x: 'x',
 					y: 'value',
 					fill: 'series',
+					...facetMark,
 					...(curve ? { curve } : {}),
 					order: groups.area
 				})
@@ -831,12 +1053,17 @@ export function createMixedMarkOptions(
 
 	// Bar series
 	if (groups.bar.length > 0) {
-		const long = toLong(data, groups.bar, xKey);
+		const long = toLong(data, groups.bar, xKey, facetColumn, facetGrid);
 		if (isCategory) {
 			marks.push(
 				barY(
 					long,
-					stackY(groupX({ y: 'sum' }, { x: 'x', y: 'value', fill: 'series', order: groups.bar }))
+					stackY(
+						groupX(
+							{ y: 'sum' },
+							{ x: 'x', y: 'value', fill: 'series', ...facetMark, order: groups.bar }
+						)
+					)
 				)
 			);
 		} else if (isLinear) {
@@ -849,6 +1076,7 @@ export function createMixedMarkOptions(
 						x2: (/** @type {any} */ d) => d.x + halfGap,
 						y: 'value',
 						fill: 'series',
+						...facetMark,
 						order: groups.bar
 					})
 				)
@@ -863,6 +1091,7 @@ export function createMixedMarkOptions(
 						x2: (/** @type {any} */ d) => new Date(d.x.getTime() + halfGap),
 						y: 'value',
 						fill: 'series',
+						...facetMark,
 						order: groups.bar
 					})
 				)
@@ -872,18 +1101,21 @@ export function createMixedMarkOptions(
 
 	// Line series (overlaid, grouped by dash pattern)
 	if (groups.line.length > 0) {
-		marks.push(...buildLineMarks(data, groups.line, xKey, seriesLineStyles, curve));
+		marks.push(
+			...buildLineMarks(data, groups.line, xKey, seriesLineStyles, curve, facetColumn, facetGrid)
+		);
 	}
 
 	// Dot series (overlaid)
 	if (groups.dot.length > 0) {
-		const long = toLong(data, groups.dot, xKey);
+		const long = toLong(data, groups.dot, xKey, facetColumn, facetGrid);
 		marks.push(
 			dot(long, {
 				x: 'x',
 				y: 'value',
 				stroke: 'series',
 				fill: 'series',
+				...facetMark,
 				fillOpacity: 0.6,
 				r: 3
 			})
@@ -891,6 +1123,7 @@ export function createMixedMarkOptions(
 	}
 
 	marks.push(ruleY([0]));
+	if (labelMark) marks.push(labelMark);
 
 	return {
 		style,
@@ -903,14 +1136,15 @@ export function createMixedMarkOptions(
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isCategory ? { tickPadding: 6, type: 'band' } : {}),
 			...(isLinear ? { type: 'linear' } : {}),
-			...(gridlines ? { axis: null } : {})
+			...(gridlines ? { axis: null } : {}),
 		},
 		y: {
 			label: null,
 			grid: !gridlines,
 			...(yTickFormat ? { tickFormat: yTickFormat } : {}),
-			...(yDomain ? { domain: yDomain } : {})
+			...(yDomain ? { domain: yDomain } : {}),
 		},
+		...getFacetScales(facetColumn, facetGrid),
 		marks
 	};
 }

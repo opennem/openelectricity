@@ -44,7 +44,7 @@
 
 	function copyEmbed() {
 		const url = `${window.location.origin}/strata-embed/${chart._id}`;
-		const height = chart.chartHeight ?? 400;
+		const height = chart.chartHeight ?? 250;
 		const code = `<iframe src="${url}" width="100%" height="${height + 120}" frameborder="0" style="border:0;max-width:1024px"></iframe>`;
 		writeToClipboard(code);
 		copied = true;

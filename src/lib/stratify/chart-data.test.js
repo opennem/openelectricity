@@ -52,7 +52,7 @@ describe('normaliseChart', () => {
 		expect(result.colourPalette).toBe('oe-energy');
 		expect(result.showLegend).toBe(true);
 		expect(result.showBranding).toBe(true);
-		expect(result.chartHeight).toBe(400);
+		expect(result.chartHeight).toBe(250);
 		expect(result.xTicks).toBe(0);
 		expect(result.xTickRotate).toBe(0);
 		expect(result.marginBottom).toBe(0);
@@ -65,6 +65,7 @@ describe('normaliseChart', () => {
 		expect(result.categorySort).toBe('default');
 		expect(result.showXTickLabels).toBe(true);
 		expect(result.colourSeries).toBeNull();
+		expect(result.facetColumn).toBeNull();
 		expect(result.xLabel).toBe('');
 		expect(result.yLabel).toBe('');
 		expect(result.seriesYAxis).toEqual({});
@@ -138,6 +139,11 @@ describe('normaliseChart', () => {
 	it('preserves showLegend: true explicitly', () => {
 		const result = normaliseChart({ _id: 'chart-legend-on', showLegend: true });
 		expect(result.showLegend).toBe(true);
+	});
+
+	it('preserves facetColumn when provided', () => {
+		const result = normaliseChart({ _id: 'chart-facet', facetColumn: 'region' });
+		expect(result.facetColumn).toBe('region');
 	});
 
 	it('does not include extra fields from the raw document', () => {

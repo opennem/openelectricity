@@ -48,6 +48,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {number | null} [y2Min]
  * @property {number | null} [y2Max]
  * @property {string | null} [colourSeries]
+ * @property {string | null} [facetColumn]
  * @property {string} [xLabel]
  * @property {string} [yLabel]
  * @property {Record<string, 'left' | 'right'>} [seriesYAxis]
@@ -114,7 +115,7 @@ export default class StratifyPlotProject {
 	seriesOrder = $state([]);
 
 	/** @type {number} Chart height in pixels */
-	chartHeight = $state(400);
+	chartHeight = $state(250);
 
 	/** @type {boolean} Show the colour legend */
 	showLegend = $state(true);
@@ -173,6 +174,9 @@ export default class StratifyPlotProject {
 
 	/** @type {string | null} Column key used as colour grouping */
 	colourSeries = $state(null);
+
+	/** @type {string | null} Column key used to partition into small-multiple panels (Plot fx) */
+	facetColumn = $state(null);
 
 	// --- Axis labels ---
 	/** @type {string} X-axis label (empty = hidden) */
@@ -277,12 +281,14 @@ export default class StratifyPlotProject {
 	activePreset = $derived(getPreset(this.stylePreset));
 
 	/**
-	 * Series names in user-defined order, excluding the colour series column.
-	 * Falls back to CSV column order. Handles additions/removals when CSV changes.
+	 * Series names in user-defined order, excluding the colour-series and facet
+	 * columns. Falls back to CSV column order. Handles additions/removals when
+	 * CSV changes.
 	 */
 	orderedSeriesNames = $derived.by(() => {
 		const colourKey = this.colourSeries;
-		const parsed = this.parsedData.seriesNames.filter((n) => n !== colourKey);
+		const facetKey = this.facetColumn;
+		const parsed = this.parsedData.seriesNames.filter((n) => n !== colourKey && n !== facetKey);
 		if (this.seriesOrder.length === 0) return parsed;
 
 		const parsedSet = new Set(parsed);
@@ -333,6 +339,30 @@ export default class StratifyPlotProject {
 				this.colourSeries = null;
 			}
 		});
+
+		// Clear facet column if the column no longer exists in parsed data
+		$effect(() => {
+			if (this.facetColumn && !this.parsedData.seriesNames.includes(this.facetColumn)) {
+				this.facetColumn = null;
+			}
+		});
+
+		// Recover from a stale Y selection: when a column moves into the
+		// facet/colour pickers (or stops being numeric) the previous Y
+		// selection's hiddenSeries can leave every eligible series hidden,
+		// so the chart renders nothing. Reset hiddenSeries to "all visible"
+		// in that case so the picker falls back to "All".
+		$effect(() => {
+			const facet = this.facetColumn;
+			const colour = this.colourSeries;
+			const eligible = this.allColumns
+				.slice(1)
+				.filter((c) => c.isNumeric && c.key !== facet && c.key !== colour)
+				.map((c) => c.key);
+			if (eligible.length === 0) return;
+			const allHidden = eligible.every((k) => this.hiddenSeries.includes(k));
+			if (allHidden) this.hiddenSeries = [];
+		});
 	}
 
 	/** Reset the project to a blank state. */
@@ -353,7 +383,7 @@ export default class StratifyPlotProject {
 		this.seriesLineStyles = {};
 		this.plotOverrides = null;
 		this.seriesOrder = [];
-		this.chartHeight = 400;
+		this.chartHeight = 250;
 		this.showXTickLabels = true;
 		this.xTicks = 0;
 		this.xTickRotate = 0;
@@ -372,6 +402,7 @@ export default class StratifyPlotProject {
 		this.categorySort = 'default';
 		this.xColumn = '';
 		this.colourSeries = null;
+		this.facetColumn = null;
 		this.xLabel = '';
 		this.yLabel = '';
 		this.seriesYAxis = {};
@@ -440,6 +471,7 @@ export default class StratifyPlotProject {
 			categorySort: this.categorySort,
 			xColumn: this.xColumn,
 			colourSeries: this.colourSeries,
+			facetColumn: this.facetColumn,
 			xLabel: this.xLabel,
 			yLabel: this.yLabel,
 			seriesYAxis: this.seriesYAxis,
@@ -471,7 +503,7 @@ export default class StratifyPlotProject {
 		this.seriesLineStyles = snapshot.seriesLineStyles ?? {};
 		this.plotOverrides = snapshot.plotOverrides ?? null;
 		this.seriesOrder = snapshot.seriesOrder ?? [];
-		this.chartHeight = snapshot.chartHeight ?? 400;
+		this.chartHeight = snapshot.chartHeight ?? 250;
 		this.showXTickLabels = snapshot.showXTickLabels ?? true;
 		this.xTicks = snapshot.xTicks ?? 0;
 		this.xTickRotate = snapshot.xTickRotate ?? 0;
@@ -490,6 +522,7 @@ export default class StratifyPlotProject {
 		this.categorySort = snapshot.categorySort ?? 'default';
 		this.xColumn = snapshot.xColumn ?? '';
 		this.colourSeries = snapshot.colourSeries ?? null;
+		this.facetColumn = snapshot.facetColumn ?? null;
 		this.xLabel = snapshot.xLabel ?? '';
 		this.yLabel = snapshot.yLabel ?? '';
 		this.seriesYAxis = snapshot.seriesYAxis ?? {};

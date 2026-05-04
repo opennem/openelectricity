@@ -12,7 +12,10 @@
 		createColourGroupedBarOptions,
 		createMixedMarkOptions,
 		buildTooltipChannels,
-		toLong
+		toLong,
+		buildFacetGrid,
+		FACET_X_FIELD,
+		FACET_Y_FIELD
 	} from '$lib/components/charts/plot/plot-configs.js';
 	import { processAnnotations, formatCompact } from './plot-annotations.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
@@ -29,6 +32,15 @@
 		year: 'numeric',
 		timeZone: 'UTC'
 	});
+
+	// Hide the synthetic facet channels (data fields and Plot's scale names)
+	// from every tooltip — Plot inherits both on tip marks in faceted charts.
+	const TIP_HIDE_FACET = {
+		fx: false,
+		fy: false,
+		[FACET_X_FIELD]: false,
+		[FACET_Y_FIELD]: false
+	};
 
 	/** @type {Record<string, Function>} */
 	const CONFIG_MAP = {
@@ -75,6 +87,7 @@
 	 *   yDomain?: string[],
 	 *   showXTickLabels?: boolean,
 	 *   showLegend?: boolean,
+	 *   facetColumn?: string | null,
 	 *   xTicks?: number,
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
@@ -116,6 +129,7 @@
 		yDomain = undefined,
 		showXTickLabels = true,
 		showLegend = true,
+		facetColumn = null,
 		xTicks = 0,
 		xTickRotate = 0,
 		marginBottom = 0,
@@ -133,6 +147,48 @@
 			.filter((name) => seriesNames.includes(name))
 	);
 	const hasRightAxis = $derived(rightAxisSeries.length > 0);
+
+	// --- Facet grid layout (small multiples wrap into 2-D grid) ---
+	const MIN_PANEL_WIDTH = 250;
+	let containerWidth = $state(0);
+
+	/** Unique facet values in data order — preserves first-seen order. */
+	const facetValues = $derived.by(() => {
+		if (!facetColumn) return [];
+		/** @type {Set<any>} */
+		const seen = new Set();
+		/** @type {any[]} */
+		const out = [];
+		for (const row of data) {
+			const v = row[facetColumn];
+			if (v == null) continue;
+			if (!seen.has(v)) {
+				seen.add(v);
+				out.push(v);
+			}
+		}
+		return out;
+	});
+
+	const facetGrid = $derived.by(() => {
+		if (!facetColumn || facetValues.length === 0 || containerWidth === 0) return null;
+		const n = facetValues.length;
+		const maxCols = Math.max(1, Math.floor(containerWidth / MIN_PANEL_WIDTH));
+		// Pick the largest divisor of n at or below maxCols so the grid has
+		// no empty cells — Plot otherwise draws the perimeter axes into the
+		// empty cell as a phantom chart.
+		let cols = Math.min(maxCols, n);
+		for (let c = cols; c >= 1; c--) {
+			if (n % c === 0) {
+				cols = c;
+				break;
+			}
+		}
+		return buildFacetGrid(facetValues, cols);
+	});
+
+	/** Effective chart height — multiplied by row count when faceting wraps into a grid. */
+	const effectiveHeight = $derived(facetGrid ? height * facetGrid.rows : height);
 
 	let plotOptions = $derived.by(() => {
 		if (!data.length || !seriesNames.length) return null;
@@ -218,7 +274,15 @@
 
 		// Include line styles so rendering functions can apply per-series dash patterns.
 		// Inject legend visibility — overrides the per-factory default (true).
-		const optionsWithLineStyles = { ...mergedOptions, seriesLineStyles, legend: showLegend };
+		// Inject facetColumn + facetGrid so each factory can route data into a
+		// 2-D wrapped grid of small-multiple panels.
+		const optionsWithLineStyles = {
+			...mergedOptions,
+			seriesLineStyles,
+			legend: showLegend,
+			facetColumn,
+			facetGrid
+		};
 
 		const isBarType = HORIZONTAL_TYPES.has(chartType) || COLUMN_TYPES.has(chartType);
 		let opts;
@@ -481,7 +545,7 @@
 					pointerX({
 						x: 'date',
 						channels: tipChannels,
-						format: { x: false },
+						format: { x: false, ...TIP_HIDE_FACET },
 						lineHeight: 1.3,
 						fontSize: 11
 					})
@@ -518,7 +582,7 @@
 					pointerX({
 						x: 'linear',
 						channels: tipChannels,
-						format: { x: false },
+						format: { x: false, ...TIP_HIDE_FACET },
 						lineHeight: 1.3,
 						fontSize: 11
 					})
@@ -572,7 +636,7 @@
 								y: 'series',
 								x: 'value',
 								channels: groupedChannels,
-								format: { y: false, x: false, fy: false },
+								format: { x: false, y: false, ...TIP_HIDE_FACET },
 								preferredAnchor: 'left',
 								lineHeight: 1.3,
 								fontSize: 11
@@ -588,7 +652,7 @@
 								x: 'series',
 								y: 'value',
 								channels: groupedChannels,
-								format: { x: false, y: false, fx: false },
+								format: { x: false, y: false, ...TIP_HIDE_FACET },
 								preferredAnchor: 'bottom',
 								lineHeight: 1.3,
 								fontSize: 11
@@ -606,7 +670,7 @@
 							y: 'category',
 							x: valueKey,
 							channels: tipChannels,
-							format: { y: false, x: false },
+							format: { x: false, y: false, ...TIP_HIDE_FACET },
 							preferredAnchor: 'left',
 							lineHeight: 1.3,
 							fontSize: 11
@@ -622,7 +686,7 @@
 							x: 'category',
 							y: valueKey,
 							channels: tipChannels,
-							format: { x: false, y: false },
+							format: { x: false, y: false, ...TIP_HIDE_FACET },
 							preferredAnchor: 'bottom',
 							lineHeight: 1.3,
 							fontSize: 11
@@ -642,17 +706,17 @@
 </script>
 
 {#if plotOptions}
-	<div class="stratify-plot-outer {className}">
+	<div class="stratify-plot-outer {className}" bind:clientWidth={containerWidth}>
 		<div class="stratify-plot-wrapper">
-			{#if yLabel}
+			{#if yLabel?.trim()}
 				<span class="stratify-axis-label stratify-y-label">{yLabel}</span>
 			{/if}
-			<PlotChart options={plotOptions} {height} class="flex-1 min-w-0" />
-			{#if y2Label}
+			<PlotChart options={plotOptions} height={effectiveHeight} class="flex-1 min-w-0" />
+			{#if y2Label?.trim()}
 				<span class="stratify-axis-label stratify-y2-label">{y2Label}</span>
 			{/if}
 		</div>
-		{#if xLabel}
+		{#if xLabel?.trim()}
 			<span class="stratify-axis-label stratify-x-label">{xLabel}</span>
 		{/if}
 	</div>

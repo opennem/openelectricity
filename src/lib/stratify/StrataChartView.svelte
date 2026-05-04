@@ -32,6 +32,7 @@
 
 	// Colour series support
 	const colourSeriesKey = $derived(chart.colourSeries ?? null);
+	const facetColumnKey = $derived(chart.facetColumn ?? null);
 	const hasColourSeries = $derived(
 		colourSeriesKey !== null && parsed.seriesNames.includes(colourSeriesKey)
 	);
@@ -75,9 +76,11 @@
 		return labels;
 	});
 
-	// Apply user-defined series order, then filter hidden (excluding colour series column)
+	// Apply user-defined series order, then filter hidden (excluding colour-series and facet columns)
 	const orderedSeriesNames = $derived.by(() => {
-		const names = parsed.seriesNames.filter((/** @type {string} */ n) => n !== colourSeriesKey);
+		const names = parsed.seriesNames.filter(
+			(/** @type {string} */ n) => n !== colourSeriesKey && n !== facetColumnKey
+		);
 		const order = chart.seriesOrder;
 		if (!order || order.length === 0) return names;
 		const nameSet = new Set(names);
@@ -99,8 +102,9 @@
 			/** @type {Record<string, any>} */
 			const filtered = {};
 			for (const [key, value] of Object.entries(row)) {
-				// Keep the colour series column even if hidden as a series
-				if (!hiddenSet.has(key) || key === colourSeriesKey) filtered[key] = value;
+				// Keep the colour-series and facet columns even if hidden as a series
+				if (!hiddenSet.has(key) || key === colourSeriesKey || key === facetColumnKey)
+					filtered[key] = value;
 			}
 			return filtered;
 		});
@@ -160,7 +164,7 @@
 	const sortedXDomain = $derived(!isHorizontal ? sortedCategoryDomain : undefined);
 	const sortedYDomain = $derived(isHorizontal ? sortedCategoryDomain : undefined);
 
-	const chartHeight = $derived(chart.chartHeight ?? 400);
+	const chartHeight = $derived(chart.chartHeight ?? 250);
 </script>
 
 <svelte:element
@@ -220,6 +224,7 @@
 			yDomain={sortedYDomain}
 			showXTickLabels={chart.showXTickLabels ?? true}
 			showLegend={chart.showLegend ?? true}
+			facetColumn={chart.facetColumn ?? null}
 			xTicks={chart.xTicks ?? 0}
 			xTickRotate={chart.xTickRotate ?? 0}
 			marginBottom={chart.marginBottom ?? 0}

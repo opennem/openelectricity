@@ -299,7 +299,7 @@
 				</div>
 
 				{#if project.hasData}
-					<div class="flex-1 min-h-0 p-6">
+					<div class="flex-1 min-h-0 overflow-y-auto p-6">
 						<ChartPreview />
 					</div>
 				{:else}

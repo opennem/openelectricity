@@ -25,14 +25,19 @@
 
 	let xColumnLabel = $derived(project.allColumns[0]?.label ?? '');
 	let nonFirstColumns = $derived(project.allColumns.slice(1));
-	let yColumnLabels = $derived(
-		nonFirstColumns
-			.filter((col) => col.isNumeric && col.key !== project.colourSeries)
-			.map((col) => col.label)
-			.join(', ')
+	// Columns eligible to be picked as a Y series: numeric, not used by the
+	// colour-series picker, and not used by the facet (Partition by) picker.
+	let eligibleYColumns = $derived(
+		nonFirstColumns.filter(
+			(col) =>
+				col.isNumeric &&
+				col.key !== project.colourSeries &&
+				col.key !== project.facetColumn
+		)
 	);
+	let yColumnLabels = $derived(eligibleYColumns.map((col) => col.label).join(', '));
 	let visibleYColumns = $derived(
-		nonFirstColumns.filter((c) => !project.hiddenSeries.includes(c.key))
+		eligibleYColumns.filter((c) => !project.hiddenSeries.includes(c.key))
 	);
 	let selectedY = $derived(visibleYColumns.length === 1 ? visibleYColumns[0]?.key : '');
 
@@ -125,21 +130,23 @@
 					>{isHorizontal ? 'X Axis' : 'Y Axis'}</span
 				>
 				<select
-					value={selectedY || (allowMultipleY ? '' : nonFirstColumns[0]?.key || '')}
+					value={selectedY || (allowMultipleY ? '' : eligibleYColumns[0]?.key || '')}
 					onchange={(e) => {
 						const val = e.currentTarget.value;
 						if (val) {
-							project.hiddenSeries = nonFirstColumns.filter((c) => c.key !== val).map((c) => c.key);
+							project.hiddenSeries = eligibleYColumns
+								.filter((c) => c.key !== val)
+								.map((c) => c.key);
 						} else {
 							project.hiddenSeries = [];
 						}
 					}}
 					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
 				>
-					{#if allowMultipleY && nonFirstColumns.length > 1}
+					{#if allowMultipleY && eligibleYColumns.length > 1}
 						<option value="">All</option>
 					{/if}
-					{#each nonFirstColumns as col (col.key)}
+					{#each eligibleYColumns as col (col.key)}
 						<option value={col.key}>{col.label}</option>
 					{/each}
 				</select>
@@ -160,7 +167,29 @@
 				>
 					<option value="">None</option>
 					{#each nonFirstColumns as col (col.key)}
-						<option value={col.key}>{col.label}</option>
+						{#if col.key !== project.facetColumn}
+							<option value={col.key}>{col.label}</option>
+						{/if}
+					{/each}
+				</select>
+			</label>
+
+			<!-- Partition by (small multiples) -->
+			<label class="flex items-center gap-2">
+				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Partition by</span>
+				<select
+					value={project.facetColumn ?? ''}
+					onchange={(e) => {
+						const val = e.currentTarget.value;
+						project.facetColumn = val || null;
+					}}
+					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+				>
+					<option value="">None</option>
+					{#each nonFirstColumns as col (col.key)}
+						{#if col.key !== project.colourSeries}
+							<option value={col.key}>{col.label}</option>
+						{/if}
 					{/each}
 				</select>
 			</label>
@@ -219,6 +248,9 @@
 			class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
 		/>
 		<span class="text-[10px] text-mid-grey">px</span>
+		{#if project.facetColumn}
+			<span class="text-[10px] text-mid-grey italic">per panel (partitioned)</span>
+		{/if}
 	</label>
 
 	<!-- X Axis appearance -->

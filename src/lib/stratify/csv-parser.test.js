@@ -209,6 +209,53 @@ B,`;
 		expect(result.data[0].market).toBe('NEM');
 		expect(result.data[1].market).toBeNull();
 	});
+
+	it('preserves text column in time-series mode (regression: was nulled by parseNumber)', () => {
+		const csv = `Date,Region,Value
+2024-01-01,NSW,100
+2024-02-01,NSW,110
+2024-01-01,VIC,200
+2024-02-01,VIC,220`;
+
+		const result = parseCSV(csv, {}, 'time-series');
+		const regionCol = result.allColumns.find((c) => c.key === 'region');
+		expect(regionCol?.isNumeric).toBe(false);
+		// All four rows should keep their region label as a string
+		const regions = result.data.map((d) => d.region);
+		expect(regions).toEqual(expect.arrayContaining(['NSW', 'VIC']));
+		expect(regions.every((r) => typeof r === 'string')).toBe(true);
+	});
+
+	it('does NOT auto-detect short integer columns as time-series (regression: hour 0-23 → year 1923)', () => {
+		// xColumn = 'hour' (numeric 0-23) — auto-detect must pick `linear`, not
+		// `time-series`. Previously the `yyyy` date format would parse "23" as
+		// year 23 → 1923, making 100% of rows look like dates.
+		const csv = `month,hour,value
+2024-05,0,10
+2024-05,1,12
+2024-05,23,8`;
+
+		const result = parseCSV(csv, {}, 'auto', 'hour');
+		expect(result.mode).toBe('linear');
+		expect(result.data[0].linear).toBe(0);
+		expect(result.data[2].linear).toBe(23);
+	});
+
+	it('preserves text column in linear mode (regression: was nulled by parseNumber)', () => {
+		// xColumn = 'hour' (numeric) → linear mode; 'month' is a non-numeric label column
+		const csv = `month,hour,value
+2024-05,0,1.5
+2024-05,1,2.0
+2024-06,0,3.5
+2024-06,1,4.0`;
+
+		const result = parseCSV(csv, {}, 'linear', 'hour');
+		const monthCol = result.allColumns.find((c) => c.key === 'month');
+		expect(monthCol?.isNumeric).toBe(false);
+		const months = result.data.map((d) => d.month);
+		expect(months).toEqual(expect.arrayContaining(['2024-05', '2024-06']));
+		expect(months.every((m) => typeof m === 'string')).toBe(true);
+	});
 });
 
 // ── timezone-less date parsing ──────────────────────────────────

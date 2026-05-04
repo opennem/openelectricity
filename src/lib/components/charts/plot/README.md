@@ -27,7 +27,9 @@ StratifyPlotChart          High-level component: data props + chart type + annot
 | `chartType` | `StratifyPlotChartType` | required | Chart type (see below) |
 | `seriesChartTypes` | `Record<string, string>` | `{}` | Per-series chart type overrides (see below) |
 | `plotOverrides` | `PlotOverrides \| null` | `null` | Extended Plot config overrides (see below) |
-| `height` | `number` | `300` | Chart height in px |
+| `height` | `number` | `300` | Chart height in px (per-panel when faceting) |
+| `showLegend` | `boolean` | `true` | Show/hide the colour legend |
+| `facetColumn` | `string \| null` | `null` | Column key to partition data into small-multiple panels |
 | `options` | `TimeSeriesOptions` | `{}` | Pass-through for curve, xDomain, margins, etc. |
 | `annotations` | `Annotation[]` | `[]` | Annotation configs (see below) |
 | `class` | `string` | `''` | CSS classes for the outer container |

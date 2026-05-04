@@ -17,6 +17,7 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 - **Annotations**: End-labels, vertical rules, bar labels, point annotations
 - **Axis controls**: Y/Y2 tick counts, min/max tick marks, X tick count/rotation/height
 - **Legend toggle**: Show or hide the colour legend per chart (Series (Legend) & Tooltip panel → "Show legend")
+- **Small multiples**: Split any chart type into panels by a CSV column (Plot `fx` faceting) — Chart panel → "Partition by"
 - **Tooltip columns**: Select which columns appear in the tooltip, with formatted date display
 - **Plot overrides**: Power-user JSON config for arbitrary Observable Plot customisation
 - **Article embeds**: Native inline rendering (`strataEmbed`) and generic iframe (`embed`) in editorial articles
@@ -227,6 +228,66 @@ The Chart panel includes a "Tooltip columns" section with checkboxes for each da
 - Date columns display as "Date" in the picker and show formatted dates (`1 Jan 2025`) in the tooltip
 - The tooltip uses Observable Plot's channel system with `pointerX` for x-snapping
 
+## Small Multiples (Faceting)
+
+Use **Chart panel → Data Encoding → Partition by** to split the chart into one panel per unique value of a CSV column. This uses Observable Plot's `fx` faceting and works for every chart type (line, area, column, bar, mixed, dot).
+
+### Data shape
+
+The CSV needs one row per (X position × facet value), with the numeric series in the remaining columns. The facet column is automatically excluded from the Y-series picker.
+
+Sample stacked-area dataset (4 regions × 6 months × 3 fuel techs):
+
+```csv
+Region,Date,Solar,Wind,Coal
+NSW,2024-01-01,180,320,720
+NSW,2024-02-01,195,305,710
+NSW,2024-03-01,210,290,700
+NSW,2024-04-01,225,275,690
+NSW,2024-05-01,240,260,680
+NSW,2024-06-01,255,245,670
+VIC,2024-01-01,140,380,520
+VIC,2024-02-01,150,365,510
+VIC,2024-03-01,160,350,500
+VIC,2024-04-01,170,335,490
+VIC,2024-05-01,180,320,480
+VIC,2024-06-01,190,305,470
+QLD,2024-01-01,260,180,840
+QLD,2024-02-01,275,170,830
+QLD,2024-03-01,290,160,820
+QLD,2024-04-01,305,150,810
+QLD,2024-05-01,320,140,800
+QLD,2024-06-01,335,130,790
+SA,2024-01-01,220,420,180
+SA,2024-02-01,230,410,175
+SA,2024-03-01,240,400,170
+SA,2024-04-01,250,390,165
+SA,2024-05-01,260,380,160
+SA,2024-06-01,270,370,155
+```
+
+### Builder workflow with this CSV
+
+1. Paste the CSV into the Data panel.
+2. In the Chart panel: set X Axis = `Date` (Temporal), Y Axis = `All`, **Partition by** = `Region`.
+3. Pick chart type = Area (stacked).
+4. Result: four stacked-area panels (NSW / VIC / QLD / SA) wrapping horizontally with a shared colour legend and shared axes.
+
+### Partition by vs Z Colour
+
+Both pickers consume a column. They're mutually exclusive in the picker — selecting a column for one removes it from the other's options.
+
+| Picker         | What it does                                                              |
+| -------------- | ------------------------------------------------------------------------- |
+| Z Colour       | Splits one value column by the picked column, colouring each group        |
+| Partition by   | Splits the whole chart by the picked column, rendering one panel per group |
+
+### Limitations
+
+- **Annotations** replicate across panels — per-panel annotation editing isn't supported yet.
+- **Dual Y-axis** is single-panel only — combining it with Partition by is not recommended.
+- **Grouped column / bar** charts (`column-grouped`, `bar-grouped`) already use one of Plot's facet axes for their own grouping. When you also pick a Partition by column, the chart becomes a 2-D grid (facet on one axis, category grouping on the other). This can feel tight at narrow widths.
+
 ## Article Embeds
 
 Stratify charts can be embedded in editorial articles via two Sanity content block types:
@@ -397,7 +458,8 @@ The JSON format used for persistence (localStorage, file export, Sanity CMS):
 	"seriesYAxis": { "demand": "right" },
 	"y2Label": "Demand (MW)",
 	"tooltipColumns": ["solar", "wind"],
-	"showLegend": true
+	"showLegend": true,
+	"facetColumn": null
 }
 ```
 
@@ -415,6 +477,7 @@ v1 snapshots are fully backward compatible. Missing fields get defaults:
 - `yMinMax`, `y2MinMax` default to `false`
 - `tooltipColumns` defaults to `[]` (show all)
 - `showLegend` defaults to `true` (legend visible — preserves prior behaviour)
+- `facetColumn` defaults to `null` (no faceting — single-panel render as before)
 
 ## Data Format
 
@@ -500,3 +563,14 @@ The `/strata-community` page displays the 10 most recently published charts in a
 | POST   | `/api/stratify/charts/:id/fork` | Fork chart to current user   |
 
 All endpoints require Clerk JWT authentication.
+
+## Sanity Storage
+
+`stratifyChart` documents are stored in the same Sanity dataset as the rest of the
+CMS content (`PUBLIC_SANITY_DATASET`), but they are **schemaless** — there is no
+`stratifyChart` type registered in the deployed Sanity schema, and no Sanity Studio
+editor UI for them. The Stratify builder is the only editor; documents are created
+and patched directly via the API endpoints above. Adding a new field requires no
+schema change — extend the snapshot in `StratifyPlotProject.toJSON()` /
+`loadFromSnapshot()`, the normaliser in `chart-data.js`, and the POST/PATCH
+endpoints; the new field round-trips through Sanity automatically.

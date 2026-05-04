@@ -115,6 +115,7 @@ export async function PATCH({ request, params }) {
 	if (body.categorySort !== undefined) patches.categorySort = body.categorySort;
 	if (body.showXTickLabels !== undefined) patches.showXTickLabels = body.showXTickLabels;
 	if (body.colourSeries !== undefined) patches.colourSeries = body.colourSeries;
+	if (body.facetColumn !== undefined) patches.facetColumn = body.facetColumn;
 	if (body.xLabel !== undefined) patches.xLabel = body.xLabel;
 	if (body.yLabel !== undefined) patches.yLabel = body.yLabel;
 	if (body.seriesYAxis !== undefined) patches.seriesYAxis = JSON.stringify(body.seriesYAxis);

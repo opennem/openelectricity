@@ -10,7 +10,8 @@ import {
 	globalTypeToMarkType,
 	createMixedMarkOptions,
 	createColourGroupedBarOptions,
-	buildTooltipChannels
+	buildTooltipChannels,
+	buildFacetGrid
 } from './plot-configs.js';
 import { getLineDasharray } from '$lib/stratify/chart-types.js';
 
@@ -39,6 +40,59 @@ describe('toLong', () => {
 		const data = [{ category: 'A', solar: 10, wind: null }];
 		const result = toLong(data, SERIES, 'category');
 		expect(result).toEqual([{ x: 'A', series: 'solar', value: 10 }]);
+	});
+
+	it('attaches facet field when facetKey is provided', () => {
+		const data = [
+			{ region: 'NSW', category: 'A', solar: 10, wind: 20 },
+			{ region: 'VIC', category: 'A', solar: 11, wind: 21 }
+		];
+		const result = toLong(data, SERIES, 'category', 'region');
+		expect(result).toEqual([
+			{ x: 'A', series: 'solar', value: 10, facet: 'NSW' },
+			{ x: 'A', series: 'wind', value: 20, facet: 'NSW' },
+			{ x: 'A', series: 'solar', value: 11, facet: 'VIC' },
+			{ x: 'A', series: 'wind', value: 21, facet: 'VIC' }
+		]);
+	});
+
+	it('omits facet field when facetKey is null', () => {
+		const result = toLong(CATEGORY_DATA, SERIES, 'category', null);
+		expect(result.every((row) => !('facet' in row))).toBe(true);
+	});
+
+	it('attaches _fx and _fy from facetGrid when provided', () => {
+		const data = [
+			{ region: 'NSW', category: 'A', solar: 10, wind: 20 },
+			{ region: 'QLD', category: 'A', solar: 12, wind: 22 }
+		];
+		const grid = buildFacetGrid(['NSW', 'QLD', 'VIC', 'SA'], 2);
+		const result = toLong(data, SERIES, 'category', 'region', grid);
+		const nsw = result.find((r) => r.facet === 'NSW' && r.series === 'solar');
+		const qld = result.find((r) => r.facet === 'QLD' && r.series === 'solar');
+		expect(nsw._fx).toBe(0);
+		expect(nsw._fy).toBe(0);
+		expect(qld._fx).toBe(1);
+		expect(qld._fy).toBe(0);
+	});
+});
+
+describe('buildFacetGrid', () => {
+	it('lays facets out left-to-right then wraps to next row', () => {
+		const grid = buildFacetGrid(['A', 'B', 'C', 'D', 'E'], 3);
+		expect(grid.cols).toBe(3);
+		expect(grid.rows).toBe(2);
+		expect(grid.indexByFacet.get('A')).toEqual({ col: 0, row: 0 });
+		expect(grid.indexByFacet.get('B')).toEqual({ col: 1, row: 0 });
+		expect(grid.indexByFacet.get('C')).toEqual({ col: 2, row: 0 });
+		expect(grid.indexByFacet.get('D')).toEqual({ col: 0, row: 1 });
+		expect(grid.indexByFacet.get('E')).toEqual({ col: 1, row: 1 });
+	});
+
+	it('clamps cols to at least 1', () => {
+		const grid = buildFacetGrid(['A', 'B'], 0);
+		expect(grid.cols).toBe(1);
+		expect(grid.rows).toBe(2);
 	});
 });
 
@@ -145,6 +199,26 @@ describe('createGroupedBarOptions', () => {
 		const result = createGroupedBarOptions(CATEGORY_DATA, SERIES, COLOURS, LABELS, {});
 		expect(result.marginRight).toBeUndefined();
 	});
+
+	it('keeps internal category grouping on fx when no facetColumn is set', () => {
+		const result = createGroupedBarOptions(CATEGORY_DATA, SERIES, COLOURS, LABELS);
+		expect(result.fx).toBeDefined();
+		expect(result.fy).toBeUndefined();
+	});
+
+	it('moves internal category grouping to fy when facetColumn is set', () => {
+		const data = [
+			{ region: 'NSW', category: 'A', solar: 10, wind: 20 },
+			{ region: 'VIC', category: 'A', solar: 11, wind: 21 }
+		];
+		const result = createGroupedBarOptions(data, SERIES, COLOURS, LABELS, {
+			facetColumn: 'region'
+		});
+		expect(result.fy).toBeDefined();
+		// fx now belongs to the user's facet column
+		expect(result.fx).toBeDefined();
+		expect(result.fx.label).toBeNull();
+	});
 });
 
 // ── createStackedAreaOptions ────────────────────────────────────
@@ -160,6 +234,19 @@ describe('createStackedAreaOptions', () => {
 			marginRight: 100
 		});
 		expect(result.marginRight).toBe(100);
+	});
+
+	it('omits fx scale when facetColumn is not set', () => {
+		const result = createStackedAreaOptions(timeData, SERIES, COLOURS, LABELS);
+		expect(result.fx).toBeUndefined();
+	});
+
+	it('adds fx scale when facetColumn is set', () => {
+		const result = createStackedAreaOptions(timeData, SERIES, COLOURS, LABELS, {
+			facetColumn: 'region'
+		});
+		expect(result.fx).toBeDefined();
+		expect(result.fx.label).toBeNull();
 	});
 });
 
@@ -193,6 +280,14 @@ describe('createLineOptions', () => {
 	it('does not override x-scale type for time-series data', () => {
 		const result = createLineOptions(timeData, SERIES, COLOURS, LABELS);
 		expect(result.x.type).toBeUndefined();
+	});
+
+	it('adds fx scale when facetColumn is set', () => {
+		const result = createLineOptions(timeData, SERIES, COLOURS, LABELS, {
+			facetColumn: 'region'
+		});
+		expect(result.fx).toBeDefined();
+		expect(result.fx.label).toBeNull();
 	});
 });
 

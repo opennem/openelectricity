@@ -93,6 +93,11 @@ function parseDate(str) {
 	const trimmed = str.trim().replace(/^["']|["']$/g, '');
 	if (!trimmed) return null;
 
+	// Reject 1-3 digit integer strings outright. The `yyyy` format below would
+	// happily parse them as years (e.g. "23" → year 23 → 1923-01-01), causing
+	// hour / index / day-of-month columns to be misdetected as time-series.
+	if (/^-?\d{1,3}$/.test(trimmed)) return null;
+
 	const hasTz = TZ_MARKER_RE.test(trimmed);
 
 	if (hasTz) {
@@ -255,21 +260,14 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto', xC
 		);
 	}
 
-	// Build allColumns (first column is date/numeric, rest are numeric series)
-	/** @type {ColumnMeta[]} */
-	const allColumns = [
-		{ key: toKey(headers[0]), label: headers[0], isNumeric: detectedMode === 'linear' },
-		...seriesNames.map((key, i) => ({ key, label: seriesHeaders[i], isNumeric: true }))
-	];
-
 	if (detectedMode === 'linear') {
 		return parseLinearData(
 			rawDataLines,
 			delimiter,
+			headers,
 			seriesNames,
 			seriesLabels,
 			seriesColours,
-			allColumns,
 			errors
 		);
 	}
@@ -277,34 +275,104 @@ export function parseCSV(csvText, existingColours = {}, displayMode = 'auto', xC
 	return parseTimeSeriesData(
 		rawDataLines,
 		delimiter,
+		headers,
 		seriesNames,
 		seriesLabels,
 		seriesColours,
-		allColumns,
 		errors
 	);
+}
+
+/**
+ * Identify columns whose values are >80% non-numeric (text columns).
+ * Mirrors the detection in parseCategoryData so non-numeric columns
+ * (e.g. region/month labels) are preserved as strings rather than
+ * silently nulled by parseNumber. Used by linear/time-series parsers.
+ *
+ * @param {string[]} dataLines
+ * @param {string} delimiter
+ * @param {string[]} seriesNames
+ * @returns {Set<string>}
+ */
+function detectTextColumns(dataLines, delimiter, seriesNames) {
+	/** @type {Record<string, { total: number, numeric: number }>} */
+	const stats = {};
+	for (const name of seriesNames) stats[name] = { total: 0, numeric: 0 };
+
+	for (const line of dataLines) {
+		if (!line.trim()) continue;
+		const cells = line.split(delimiter);
+		for (let j = 0; j < seriesNames.length; j++) {
+			const raw = (cells[j + 1] || '').trim();
+			if (raw === '' || raw === '-') continue;
+			stats[seriesNames[j]].total++;
+			if (parseNumber(raw) !== null) stats[seriesNames[j]].numeric++;
+		}
+	}
+
+	/** @type {Set<string>} */
+	const text = new Set();
+	for (const name of seriesNames) {
+		const s = stats[name];
+		if (s.total > 0 && s.numeric / s.total < 0.2) text.add(name);
+	}
+	return text;
+}
+
+/**
+ * Populate a row's series values, preserving raw strings for text columns
+ * and parsing the rest as numbers. Shared between time-series, linear,
+ * and category parsers.
+ *
+ * @param {Record<string, any>} row - Row object to mutate (keyed by series name)
+ * @param {string[]} cells - Raw cell values from the CSV row (column 0 is the X cell)
+ * @param {string[]} seriesNames - Series names in order (matches cells[1..])
+ * @param {Set<string>} textColumnSet - Series names detected as text columns
+ */
+function setRowSeriesValues(row, cells, seriesNames, textColumnSet) {
+	for (let j = 0; j < seriesNames.length; j++) {
+		const name = seriesNames[j];
+		const raw = (cells[j + 1] || '').trim();
+		if (textColumnSet.has(name)) {
+			row[name] = raw || null;
+		} else {
+			row[name] = parseNumber(cells[j + 1] || '');
+		}
+	}
 }
 
 /**
  * Parse rows as time-series data (first column = dates).
  * @param {string[]} dataLines
  * @param {string} delimiter
+ * @param {string[]} headers
  * @param {string[]} seriesNames
  * @param {Record<string, string>} seriesLabels
  * @param {Record<string, string>} seriesColours
- * @param {ColumnMeta[]} allColumns
  * @param {string[]} errors
  * @returns {ParseResult}
  */
 function parseTimeSeriesData(
 	dataLines,
 	delimiter,
+	headers,
 	seriesNames,
 	seriesLabels,
 	seriesColours,
-	allColumns,
 	errors
 ) {
+	const textColumnSet = detectTextColumns(dataLines, delimiter, seriesNames);
+
+	/** @type {ColumnMeta[]} */
+	const allColumns = [
+		{ key: toKey(headers[0]), label: headers[0], isNumeric: false },
+		...seriesNames.map((key, i) => ({
+			key,
+			label: headers[i + 1],
+			isNumeric: !textColumnSet.has(key)
+		}))
+	];
+
 	/** @type {Array<{[key: string]: any}>} */
 	const data = [];
 	let dateErrors = 0;
@@ -326,9 +394,7 @@ function parseTimeSeriesData(
 		/** @type {{[key: string]: any}} */
 		const row = { time: date.getTime(), date, _dateStr: dateStr, _lineIndex: i + 1 };
 
-		for (let j = 0; j < seriesNames.length; j++) {
-			row[seriesNames[j]] = parseNumber(cells[j + 1] || '');
-		}
+		setRowSeriesValues(row, cells, seriesNames, textColumnSet);
 
 		data.push(row);
 	}
@@ -433,15 +499,7 @@ function parseCategoryData(
 		const row = { category: label, _index: i, _lineIndex: lineIndex };
 		categoryLabels[label] = label;
 
-		for (let j = 0; j < seriesNames.length; j++) {
-			const raw = (cells[j + 1] || '').trim();
-			if (textColumnSet.has(seriesNames[j])) {
-				// Preserve raw text for text columns
-				row[seriesNames[j]] = raw || null;
-			} else {
-				row[seriesNames[j]] = parseNumber(cells[j + 1] || '');
-			}
-		}
+		setRowSeriesValues(row, cells, seriesNames, textColumnSet);
 
 		data.push(row);
 	}
@@ -462,22 +520,34 @@ function parseCategoryData(
  * Parse rows as linear data (first column = numeric values).
  * @param {string[]} dataLines
  * @param {string} delimiter
+ * @param {string[]} headers
  * @param {string[]} seriesNames
  * @param {Record<string, string>} seriesLabels
  * @param {Record<string, string>} seriesColours
- * @param {ColumnMeta[]} allColumns
  * @param {string[]} errors
  * @returns {ParseResult}
  */
 function parseLinearData(
 	dataLines,
 	delimiter,
+	headers,
 	seriesNames,
 	seriesLabels,
 	seriesColours,
-	allColumns,
 	errors
 ) {
+	const textColumnSet = detectTextColumns(dataLines, delimiter, seriesNames);
+
+	/** @type {ColumnMeta[]} */
+	const allColumns = [
+		{ key: toKey(headers[0]), label: headers[0], isNumeric: true },
+		...seriesNames.map((key, i) => ({
+			key,
+			label: headers[i + 1],
+			isNumeric: !textColumnSet.has(key)
+		}))
+	];
+
 	/** @type {Array<{[key: string]: any}>} */
 	const data = [];
 	let parseErrors = 0;
@@ -498,9 +568,7 @@ function parseLinearData(
 		/** @type {{[key: string]: any}} */
 		const row = { linear: xVal, _lineIndex: i + 1 };
 
-		for (let j = 0; j < seriesNames.length; j++) {
-			row[seriesNames[j]] = parseNumber(cells[j + 1] || '');
-		}
+		setRowSeriesValues(row, cells, seriesNames, textColumnSet);
 
 		data.push(row);
 	}
