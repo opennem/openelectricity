@@ -47,6 +47,7 @@ export function normaliseChart(chart) {
 		seriesOrder: chart.seriesOrder ?? [],
 		stylePreset: chart.stylePreset ?? 'sans',
 		colourPalette: chart.colourPalette ?? 'oe-energy',
+		showLegend: chart.showLegend ?? true,
 		showBranding: chart.showBranding ?? true,
 		chartHeight: chart.chartHeight ?? 400,
 		xTicks: chart.xTicks ?? 0,

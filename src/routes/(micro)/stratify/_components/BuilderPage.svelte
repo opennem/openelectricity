@@ -38,7 +38,7 @@
 		{ id: 'chart', label: 'Chart' },
 		{ id: 'theme', label: 'Theme & Colours' },
 		{ id: 'headerfooter', label: 'Header & Footer' },
-		{ id: 'series', label: 'Series & Tooltip' },
+		{ id: 'series', label: 'Series (Legend) & Tooltip' },
 		{ id: 'publish', label: 'Publish & Export' }
 	];
 

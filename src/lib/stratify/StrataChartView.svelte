@@ -219,6 +219,7 @@
 			xDomain={sortedXDomain}
 			yDomain={sortedYDomain}
 			showXTickLabels={chart.showXTickLabels ?? true}
+			showLegend={chart.showLegend ?? true}
 			xTicks={chart.xTicks ?? 0}
 			xTickRotate={chart.xTickRotate ?? 0}
 			marginBottom={chart.marginBottom ?? 0}

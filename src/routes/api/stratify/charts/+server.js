@@ -78,6 +78,7 @@ export async function POST({ request }) {
 		seriesOrder: body.seriesOrder ?? [],
 		stylePreset: body.stylePreset ?? 'sans',
 		colourPalette: body.colourPalette ?? 'oe-energy',
+		showLegend: body.showLegend ?? true,
 		showBranding: body.showBranding ?? true,
 		chartHeight: body.chartHeight ?? 400,
 		xTicks: body.xTicks ?? 0,

@@ -16,6 +16,7 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 - **Drag-to-reorder**: Reorder series via drag-and-drop (affects stacking order and legend)
 - **Annotations**: End-labels, vertical rules, bar labels, point annotations
 - **Axis controls**: Y/Y2 tick counts, min/max tick marks, X tick count/rotation/height
+- **Legend toggle**: Show or hide the colour legend per chart (Series (Legend) & Tooltip panel → "Show legend")
 - **Tooltip columns**: Select which columns appear in the tooltip, with formatted date display
 - **Plot overrides**: Power-user JSON config for arbitrary Observable Plot customisation
 - **Article embeds**: Native inline rendering (`strataEmbed`) and generic iframe (`embed`) in editorial articles
@@ -395,7 +396,8 @@ The JSON format used for persistence (localStorage, file export, Sanity CMS):
 	"yLabel": "",
 	"seriesYAxis": { "demand": "right" },
 	"y2Label": "Demand (MW)",
-	"tooltipColumns": ["solar", "wind"]
+	"tooltipColumns": ["solar", "wind"],
+	"showLegend": true
 }
 ```
 
@@ -412,6 +414,7 @@ v1 snapshots are fully backward compatible. Missing fields get defaults:
 - `yTicks`, `y2Ticks` default to `0` (auto)
 - `yMinMax`, `y2MinMax` default to `false`
 - `tooltipColumns` defaults to `[]` (show all)
+- `showLegend` defaults to `true` (legend visible — preserves prior behaviour)
 
 ## Data Format
 

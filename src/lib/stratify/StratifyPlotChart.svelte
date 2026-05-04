@@ -74,6 +74,7 @@
 	 *   xDomain?: string[],
 	 *   yDomain?: string[],
 	 *   showXTickLabels?: boolean,
+	 *   showLegend?: boolean,
 	 *   xTicks?: number,
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
@@ -114,6 +115,7 @@
 		xDomain = undefined,
 		yDomain = undefined,
 		showXTickLabels = true,
+		showLegend = true,
 		xTicks = 0,
 		xTickRotate = 0,
 		marginBottom = 0,
@@ -214,8 +216,9 @@
 					}
 				: options;
 
-		// Include line styles so rendering functions can apply per-series dash patterns
-		const optionsWithLineStyles = { ...mergedOptions, seriesLineStyles };
+		// Include line styles so rendering functions can apply per-series dash patterns.
+		// Inject legend visibility — overrides the per-factory default (true).
+		const optionsWithLineStyles = { ...mergedOptions, seriesLineStyles, legend: showLegend };
 
 		const isBarType = HORIZONTAL_TYPES.has(chartType) || COLUMN_TYPES.has(chartType);
 		let opts;

@@ -46,6 +46,17 @@
 </script>
 
 <SectionHeader label="Series">
+	<label class="flex items-center gap-2 mb-3">
+		<input
+			type="checkbox"
+			checked={project.showLegend}
+			onchange={(e) => {
+				project.showLegend = e.currentTarget.checked;
+			}}
+			class="accent-dark-grey"
+		/>
+		<span class="text-[10px] text-mid-grey">Show legend</span>
+	</label>
 	<SeriesConfig />
 </SectionHeader>
 

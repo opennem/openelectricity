@@ -56,6 +56,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {string} [xColumn]
  * @property {'none' | 'cumulative'} [dataTransform]
  * @property {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} [categorySort]
+ * @property {boolean} [showLegend]
  * @property {boolean} [showBranding]
  */
 
@@ -114,6 +115,9 @@ export default class StratifyPlotProject {
 
 	/** @type {number} Chart height in pixels */
 	chartHeight = $state(400);
+
+	/** @type {boolean} Show the colour legend */
+	showLegend = $state(true);
 
 	/** @type {boolean} Show x-axis tick labels */
 	showXTickLabels = $state(true);
@@ -373,6 +377,7 @@ export default class StratifyPlotProject {
 		this.seriesYAxis = {};
 		this.y2Label = '';
 		this.status = 'draft';
+		this.showLegend = true;
 		this.showBranding = true;
 		this.currentChartId = null;
 	}
@@ -439,6 +444,7 @@ export default class StratifyPlotProject {
 			yLabel: this.yLabel,
 			seriesYAxis: this.seriesYAxis,
 			y2Label: this.y2Label,
+			showLegend: this.showLegend,
 			showBranding: this.showBranding
 		};
 	}
@@ -489,6 +495,7 @@ export default class StratifyPlotProject {
 		this.seriesYAxis = snapshot.seriesYAxis ?? {};
 		this.y2Label = snapshot.y2Label ?? '';
 		this.status = snapshot.status ?? 'draft';
+		this.showLegend = snapshot.showLegend ?? true;
 		this.showBranding = snapshot.showBranding ?? true;
 	}
 }

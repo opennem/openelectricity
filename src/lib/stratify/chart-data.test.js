@@ -50,6 +50,7 @@ describe('normaliseChart', () => {
 		expect(result.seriesOrder).toEqual([]);
 		expect(result.stylePreset).toBe('sans');
 		expect(result.colourPalette).toBe('oe-energy');
+		expect(result.showLegend).toBe(true);
 		expect(result.showBranding).toBe(true);
 		expect(result.chartHeight).toBe(400);
 		expect(result.xTicks).toBe(0);
@@ -127,6 +128,16 @@ describe('normaliseChart', () => {
 		expect(result.annotations).toEqual([]);
 		expect(result.seriesLineStyles).toEqual({});
 		expect(result.plotOverrides).toBeNull();
+	});
+
+	it('preserves showLegend: false', () => {
+		const result = normaliseChart({ _id: 'chart-legend-off', showLegend: false });
+		expect(result.showLegend).toBe(false);
+	});
+
+	it('preserves showLegend: true explicitly', () => {
+		const result = normaliseChart({ _id: 'chart-legend-on', showLegend: true });
+		expect(result.showLegend).toBe(true);
 	});
 
 	it('does not include extra fields from the raw document', () => {
