@@ -93,7 +93,7 @@ export function normaliseChart(chart) {
 		facetColumn: chart.facetColumn ?? null,
 		animateAsOneChart: chart.animateAsOneChart ?? false,
 		animationSpeedMs: chart.animationSpeedMs ?? 800,
-		animateAutoLoop: chart.animateAutoLoop ?? false,
+		animationAutoLoop: chart.animationAutoLoop ?? false,
 		chartCurve: chart.chartCurve ?? 'linear',
 		xLabel: chart.xLabel ?? '',
 		yLabel: chart.yLabel ?? '',

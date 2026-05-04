@@ -2,6 +2,7 @@
 	import ChartTypeSelector from '../ChartTypeSelector.svelte';
 	import SectionGroup from '../SectionGroup.svelte';
 	import SectionHeader from '../SectionHeader.svelte';
+	import ControlInput, { CONTROL_INPUT_CLASS } from '../ControlInput.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
 	import { HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
 
@@ -29,10 +30,7 @@
 	// colour-series picker, and not used by the facet (Partition by) picker.
 	let eligibleYColumns = $derived(
 		nonFirstColumns.filter(
-			(col) =>
-				col.isNumeric &&
-				col.key !== project.colourSeries &&
-				col.key !== project.facetColumn
+			(col) => col.isNumeric && col.key !== project.colourSeries && col.key !== project.facetColumn
 		)
 	);
 	let yColumnLabels = $derived(eligibleYColumns.map((col) => col.label).join(', '));
@@ -102,7 +100,7 @@
 						const val = e.currentTarget.value;
 						project.xColumn = val === rawColumns[0]?.key ? '' : val;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+					class={`${CONTROL_INPUT_CLASS} flex-1`}
 				>
 					{#each rawColumns as col (col.key)}
 						<option value={col.key}>{col.label}</option>
@@ -115,7 +113,7 @@
 							e.currentTarget.value
 						);
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-[72px] shrink-0"
+					class={`${CONTROL_INPUT_CLASS} w-[72px] shrink-0`}
 				>
 					<option value="auto">Auto</option>
 					<option value="category">Ordinal</option>
@@ -125,10 +123,7 @@
 			</div>
 
 			<!-- Value axis -->
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0"
-					>{isHorizontal ? 'X Axis' : 'Y Axis'}</span
-				>
+			<ControlInput label={isHorizontal ? 'X Axis' : 'Y Axis'}>
 				<select
 					value={selectedY || (allowMultipleY ? '' : eligibleYColumns[0]?.key || '')}
 					onchange={(e) => {
@@ -141,7 +136,7 @@
 							project.hiddenSeries = [];
 						}
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+					class={`${CONTROL_INPUT_CLASS} flex-1`}
 				>
 					{#if allowMultipleY && eligibleYColumns.length > 1}
 						<option value="">All</option>
@@ -150,11 +145,10 @@
 						<option value={col.key}>{col.label}</option>
 					{/each}
 				</select>
-			</label>
+			</ControlInput>
 
 			<!-- Z Colour -->
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Z Colour</span>
+			<ControlInput label="Z Colour">
 				<select
 					value={project.colourSeries ?? ''}
 					onchange={(e) => {
@@ -163,7 +157,7 @@
 						project.userSeriesColours = {};
 						project.userSeriesLabels = {};
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+					class={`${CONTROL_INPUT_CLASS} flex-1`}
 				>
 					<option value="">None</option>
 					{#each nonFirstColumns as col (col.key)}
@@ -172,18 +166,17 @@
 						{/if}
 					{/each}
 				</select>
-			</label>
+			</ControlInput>
 
 			<!-- Partition by (small multiples) -->
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Partition by</span>
+			<ControlInput label="Partition by">
 				<select
 					value={project.facetColumn ?? ''}
 					onchange={(e) => {
 						const val = e.currentTarget.value;
 						project.facetColumn = val || null;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+					class={`${CONTROL_INPUT_CLASS} flex-1`}
 				>
 					<option value="">None</option>
 					{#each nonFirstColumns as col (col.key)}
@@ -192,12 +185,11 @@
 						{/if}
 					{/each}
 				</select>
-			</label>
+			</ControlInput>
 
 			<!-- Animate options (only meaningful when partitioning) -->
 			{#if project.facetColumn}
-				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0"></span>
+				<ControlInput suffix="Animate as one chart">
 					<input
 						type="checkbox"
 						checked={project.animateAsOneChart}
@@ -206,12 +198,10 @@
 						}}
 						class="accent-dark-grey"
 					/>
-					<span class="text-[10px] text-mid-grey">Animate as one chart</span>
-				</label>
+				</ControlInput>
 
 				{#if project.animateAsOneChart}
-					<label class="flex items-center gap-2">
-						<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Speed</span>
+					<ControlInput label="Speed" suffix="ms / frame">
 						<input
 							type="number"
 							min="100"
@@ -222,34 +212,30 @@
 								const v = parseInt(e.currentTarget.value, 10);
 								if (v >= 100 && v <= 3000) project.animationSpeedMs = v;
 							}}
-							class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+							class={`${CONTROL_INPUT_CLASS} w-20`}
 						/>
-						<span class="text-[10px] text-mid-grey">ms / frame</span>
-					</label>
-					<label class="flex items-center gap-2">
-						<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0"></span>
+					</ControlInput>
+					<ControlInput suffix="Auto-loop">
 						<input
 							type="checkbox"
-							checked={project.animateAutoLoop}
+							checked={project.animationAutoLoop}
 							onchange={(e) => {
-								project.animateAutoLoop = e.currentTarget.checked;
+								project.animationAutoLoop = e.currentTarget.checked;
 							}}
 							class="accent-dark-grey"
 						/>
-						<span class="text-[10px] text-mid-grey">Auto-loop</span>
-					</label>
+					</ControlInput>
 				{/if}
 			{/if}
 
 			{#if project.chartType === 'line' || project.chartType === 'area'}
-				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Curve</span>
+				<ControlInput label="Curve">
 					<select
 						value={project.chartCurve}
 						onchange={(e) => {
 							project.chartCurve = e.currentTarget.value;
 						}}
-						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+						class={`${CONTROL_INPUT_CLASS} flex-1`}
 					>
 						<option value="linear">Linear</option>
 						<option value="monotone-x">Smooth (monotone)</option>
@@ -259,33 +245,31 @@
 						<option value="step-before">Step before</option>
 						<option value="step-after">Step after</option>
 					</select>
-				</label>
+				</ControlInput>
 			{/if}
 
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Transform</span>
+			<ControlInput label="Transform">
 				<select
 					value={project.dataTransform}
 					onchange={(e) => {
 						project.dataTransform = /** @type {'none' | 'cumulative'} */ (e.currentTarget.value);
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+					class={`${CONTROL_INPUT_CLASS} flex-1`}
 				>
 					<option value="none">None</option>
 					<option value="cumulative">Cumulative</option>
 				</select>
-			</label>
+			</ControlInput>
 
 			<!-- Sort (category only) -->
 			{#if project.isCategory}
-				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Sort</span>
+				<ControlInput label="Sort">
 					<select
 						value={project.categorySort}
 						onchange={(e) => {
 							project.categorySort = /** @type {any} */ (e.currentTarget.value);
 						}}
-						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+						class={`${CONTROL_INPUT_CLASS} flex-1`}
 					>
 						<option value="default">Data order</option>
 						<option value="x-asc">Category: A to Z</option>
@@ -293,7 +277,7 @@
 						<option value="value-asc">Value: low to high</option>
 						<option value="value-desc">Value: high to low</option>
 					</select>
-				</label>
+				</ControlInput>
 			{/if}
 		</div>
 	</SectionHeader>
@@ -313,7 +297,7 @@
 				const v = parseInt(e.currentTarget.value, 10);
 				if (v >= 100 && v <= 1200) project.chartHeight = v;
 			}}
-			class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+			class={`${CONTROL_INPUT_CLASS} w-20`}
 		/>
 		<span class="text-[10px] text-mid-grey">px</span>
 		{#if project.facetColumn}
@@ -327,8 +311,7 @@
 			{isHorizontal ? 'X Axis (values)' : 'X Axis'}
 		</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Label</span>
+			<ControlInput label="Label">
 				<input
 					type="text"
 					value={project.xLabel}
@@ -336,11 +319,11 @@
 					oninput={(e) => {
 						project.xLabel = e.currentTarget.value;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+					class={`${CONTROL_INPUT_CLASS} flex-1`}
 				/>
-			</label>
+			</ControlInput>
 
-			<label class="flex items-center gap-2">
+			<ControlInput suffix="Show tick labels">
 				<input
 					type="checkbox"
 					checked={project.showXTickLabels}
@@ -349,11 +332,9 @@
 					}}
 					class="accent-dark-grey"
 				/>
-				<span class="text-[10px] text-mid-grey">Show tick labels</span>
-			</label>
+			</ControlInput>
 
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Ticks</span>
+			<ControlInput label="Ticks" suffix="0 = auto">
 				<input
 					type="number"
 					min="0"
@@ -364,13 +345,11 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 100) project.xTicks = v;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+					class={`${CONTROL_INPUT_CLASS} w-20`}
 				/>
-				<span class="text-[10px] text-mid-grey">0 = auto</span>
-			</label>
+			</ControlInput>
 
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Angle</span>
+			<ControlInput label="Angle" suffix="degrees">
 				<input
 					type="number"
 					min="-90"
@@ -381,13 +360,11 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= -90 && v <= 90) project.xTickRotate = v;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+					class={`${CONTROL_INPUT_CLASS} w-20`}
 				/>
-				<span class="text-[10px] text-mid-grey">degrees</span>
-			</label>
+			</ControlInput>
 
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Height</span>
+			<ControlInput label="Height" suffix="0 = auto">
 				<input
 					type="number"
 					min="0"
@@ -398,10 +375,9 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 300) project.marginBottom = v;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+					class={`${CONTROL_INPUT_CLASS} w-20`}
 				/>
-				<span class="text-[10px] text-mid-grey">0 = auto</span>
-			</label>
+			</ControlInput>
 		</div>
 	</div>
 
@@ -411,8 +387,7 @@
 			{isHorizontal ? 'Y Axis (categories)' : 'Y Axis'}
 		</p>
 		<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Label</span>
+			<ControlInput label="Label">
 				<input
 					type="text"
 					value={project.yLabel}
@@ -420,12 +395,11 @@
 					oninput={(e) => {
 						project.yLabel = e.currentTarget.value;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+					class={`${CONTROL_INPUT_CLASS} flex-1`}
 				/>
-			</label>
+			</ControlInput>
 
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Ticks</span>
+			<ControlInput label="Ticks" suffix="0 = auto">
 				<input
 					type="number"
 					min="0"
@@ -436,12 +410,11 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 100) project.yTicks = v;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+					class={`${CONTROL_INPUT_CLASS} w-20`}
 				/>
-				<span class="text-[10px] text-mid-grey">0 = auto</span>
-			</label>
+			</ControlInput>
 
-			<label class="flex items-center gap-2">
+			<ControlInput suffix="Min/max ticks only">
 				<input
 					type="checkbox"
 					checked={project.yMinMax}
@@ -450,12 +423,10 @@
 					}}
 					class="accent-dark-grey"
 				/>
-				<span class="text-[10px] text-mid-grey">Min/max ticks only</span>
-			</label>
+			</ControlInput>
 
 			{#if !isHorizontal}
-				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Min</span>
+				<ControlInput label="Min" suffix="blank = auto">
 					<input
 						type="number"
 						value={project.y1Min ?? ''}
@@ -464,13 +435,11 @@
 							const v = e.currentTarget.value;
 							project.y1Min = v === '' ? null : Number(v);
 						}}
-						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1 min-w-0"
+						class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
 					/>
-					<span class="text-[10px] text-mid-grey">blank = auto</span>
-				</label>
+				</ControlInput>
 
-				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Max</span>
+				<ControlInput label="Max" suffix="blank = auto">
 					<input
 						type="number"
 						value={project.y1Max ?? ''}
@@ -479,14 +448,12 @@
 							const v = e.currentTarget.value;
 							project.y1Max = v === '' ? null : Number(v);
 						}}
-						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1 min-w-0"
+						class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
 					/>
-					<span class="text-[10px] text-mid-grey">blank = auto</span>
-				</label>
+				</ControlInput>
 			{/if}
 
-			<label class="flex items-center gap-2">
-				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Width</span>
+			<ControlInput label="Width" suffix="0 = auto">
 				<input
 					type="number"
 					min="0"
@@ -497,10 +464,9 @@
 						const v = parseInt(e.currentTarget.value, 10);
 						if (v >= 0 && v <= 300) project.marginLeft = v;
 					}}
-					class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+					class={`${CONTROL_INPUT_CLASS} w-20`}
 				/>
-				<span class="text-[10px] text-mid-grey">0 = auto</span>
-			</label>
+			</ControlInput>
 		</div>
 	</div>
 
@@ -509,8 +475,7 @@
 		<div class="mt-4">
 			<p class="text-[10px] text-dark-grey font-medium mb-1.5">Y2 Axis</p>
 			<div class="flex flex-col gap-2 pl-2 border-l-2 border-light-warm-grey">
-				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Label</span>
+				<ControlInput label="Label">
 					<input
 						type="text"
 						value={project.y2Label}
@@ -518,12 +483,11 @@
 						oninput={(e) => {
 							project.y2Label = e.currentTarget.value;
 						}}
-						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+						class={`${CONTROL_INPUT_CLASS} flex-1`}
 					/>
-				</label>
+				</ControlInput>
 
-				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Ticks</span>
+				<ControlInput label="Ticks" suffix="0 = auto">
 					<input
 						type="number"
 						min="0"
@@ -534,12 +498,11 @@
 							const v = parseInt(e.currentTarget.value, 10);
 							if (v >= 0 && v <= 100) project.y2Ticks = v;
 						}}
-						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+						class={`${CONTROL_INPUT_CLASS} w-20`}
 					/>
-					<span class="text-[10px] text-mid-grey">0 = auto</span>
-				</label>
+				</ControlInput>
 
-				<label class="flex items-center gap-2">
+				<ControlInput suffix="Min/max ticks only">
 					<input
 						type="checkbox"
 						checked={project.y2MinMax}
@@ -548,11 +511,9 @@
 						}}
 						class="accent-dark-grey"
 					/>
-					<span class="text-[10px] text-mid-grey">Min/max ticks only</span>
-				</label>
+				</ControlInput>
 
-				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Min</span>
+				<ControlInput label="Min" suffix="blank = auto">
 					<input
 						type="number"
 						value={project.y2Min ?? ''}
@@ -561,13 +522,11 @@
 							const v = e.currentTarget.value;
 							project.y2Min = v === '' ? null : Number(v);
 						}}
-						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1 min-w-0"
+						class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
 					/>
-					<span class="text-[10px] text-mid-grey">blank = auto</span>
-				</label>
+				</ControlInput>
 
-				<label class="flex items-center gap-2">
-					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Max</span>
+				<ControlInput label="Max" suffix="blank = auto">
 					<input
 						type="number"
 						value={project.y2Max ?? ''}
@@ -576,10 +535,9 @@
 							const v = e.currentTarget.value;
 							project.y2Max = v === '' ? null : Number(v);
 						}}
-						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1 min-w-0"
+						class={`${CONTROL_INPUT_CLASS} flex-1 min-w-0`}
 					/>
-					<span class="text-[10px] text-mid-grey">blank = auto</span>
-				</label>
+				</ControlInput>
 			</div>
 		</div>
 	{/if}

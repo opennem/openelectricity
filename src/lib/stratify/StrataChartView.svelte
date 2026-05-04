@@ -256,7 +256,7 @@
 				facetColumn={/** @type {string} */ (facetColumnKey)}
 				facetValues={animateFacetValues}
 				frameDurationMs={chart.animationSpeedMs}
-				loop={chart.animateAutoLoop}
+				loop={chart.animationAutoLoop}
 			>
 				{#snippet children(frame)}
 					{@render plotChart(

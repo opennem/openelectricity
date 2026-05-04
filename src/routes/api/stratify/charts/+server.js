@@ -102,7 +102,7 @@ export async function POST({ request }) {
 		facetColumn: body.facetColumn ?? null,
 		animateAsOneChart: body.animateAsOneChart ?? false,
 		animationSpeedMs: body.animationSpeedMs ?? 800,
-		animateAutoLoop: body.animateAutoLoop ?? false,
+		animationAutoLoop: body.animationAutoLoop ?? false,
 		chartCurve: body.chartCurve ?? 'linear',
 		xLabel: body.xLabel ?? '',
 		yLabel: body.yLabel ?? '',

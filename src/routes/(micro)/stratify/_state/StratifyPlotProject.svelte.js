@@ -51,7 +51,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {string | null} [facetColumn]
  * @property {boolean} [animateAsOneChart]
  * @property {number} [animationSpeedMs]
- * @property {boolean} [animateAutoLoop]
+ * @property {boolean} [animationAutoLoop]
  * @property {string} [chartCurve]
  * @property {string} [xLabel]
  * @property {string} [yLabel]
@@ -189,7 +189,7 @@ export default class StratifyPlotProject {
 	animationSpeedMs = $state(800);
 
 	/** @type {boolean} When true, animation loops back to the first frame after the last */
-	animateAutoLoop = $state(false);
+	animationAutoLoop = $state(false);
 
 	/** @type {string} Plot curve type for line/area charts: linear, monotone-x, step, step-before, step-after, basis, natural */
 	chartCurve = $state('linear');
@@ -429,7 +429,7 @@ export default class StratifyPlotProject {
 		this.facetColumn = null;
 		this.animateAsOneChart = false;
 		this.animationSpeedMs = 800;
-		this.animateAutoLoop = false;
+		this.animationAutoLoop = false;
 		this.chartCurve = 'linear';
 		this.xLabel = '';
 		this.yLabel = '';
@@ -502,7 +502,7 @@ export default class StratifyPlotProject {
 			facetColumn: this.facetColumn,
 			animateAsOneChart: this.animateAsOneChart,
 			animationSpeedMs: this.animationSpeedMs,
-			animateAutoLoop: this.animateAutoLoop,
+			animationAutoLoop: this.animationAutoLoop,
 			chartCurve: this.chartCurve,
 			xLabel: this.xLabel,
 			yLabel: this.yLabel,
@@ -557,7 +557,7 @@ export default class StratifyPlotProject {
 		this.facetColumn = snapshot.facetColumn ?? null;
 		this.animateAsOneChart = snapshot.animateAsOneChart ?? false;
 		this.animationSpeedMs = snapshot.animationSpeedMs ?? 800;
-		this.animateAutoLoop = snapshot.animateAutoLoop ?? false;
+		this.animationAutoLoop = snapshot.animationAutoLoop ?? false;
 		this.chartCurve = snapshot.chartCurve ?? 'linear';
 		this.xLabel = snapshot.xLabel ?? '';
 		this.yLabel = snapshot.yLabel ?? '';
