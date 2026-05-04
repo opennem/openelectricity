@@ -19,6 +19,7 @@
 	} from '$lib/components/charts/plot/plot-configs.js';
 	import { processAnnotations, formatCompact } from './plot-annotations.js';
 	import { applyPlotOverrides } from './plot-overrides.js';
+	import { uniqueColumnValues } from './chart-data.js';
 	import {
 		HORIZONTAL_TYPES,
 		COLUMN_TYPES,
@@ -152,23 +153,7 @@
 	const MIN_PANEL_WIDTH = 250;
 	let containerWidth = $state(0);
 
-	/** Unique facet values in data order — preserves first-seen order. */
-	const facetValues = $derived.by(() => {
-		if (!facetColumn) return [];
-		/** @type {Set<any>} */
-		const seen = new Set();
-		/** @type {any[]} */
-		const out = [];
-		for (const row of data) {
-			const v = row[facetColumn];
-			if (v == null) continue;
-			if (!seen.has(v)) {
-				seen.add(v);
-				out.push(v);
-			}
-		}
-		return out;
-	});
+	const facetValues = $derived(uniqueColumnValues(data, facetColumn));
 
 	const facetGrid = $derived.by(() => {
 		if (!facetColumn || facetValues.length === 0 || containerWidth === 0) return null;

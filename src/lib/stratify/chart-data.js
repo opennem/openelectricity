@@ -8,6 +8,28 @@
 import { migrateChartType } from '$lib/stratify/chart-types.js';
 
 /**
+ * Collect the unique values of a column from a row array, preserving
+ * first-seen order. Skips null/undefined.
+ * @param {Array<Record<string, any>>} data
+ * @param {string | null} columnKey
+ * @returns {any[]}
+ */
+export function uniqueColumnValues(data, columnKey) {
+	if (!columnKey) return [];
+	/** @type {Set<any>} */
+	const seen = new Set();
+	/** @type {any[]} */
+	const out = [];
+	for (const row of data) {
+		const v = row[columnKey];
+		if (v == null || seen.has(v)) continue;
+		seen.add(v);
+		out.push(v);
+	}
+	return out;
+}
+
+/**
  * Safely parse a JSON string, returning a fallback on failure.
  * @param {any} value
  * @param {any} fallback
@@ -69,6 +91,10 @@ export function normaliseChart(chart) {
 		showXTickLabels: chart.showXTickLabels ?? true,
 		colourSeries: chart.colourSeries ?? null,
 		facetColumn: chart.facetColumn ?? null,
+		animateAsOneChart: chart.animateAsOneChart ?? false,
+		animationSpeedMs: chart.animationSpeedMs ?? 800,
+		animateAutoLoop: chart.animateAutoLoop ?? false,
+		chartCurve: chart.chartCurve ?? 'linear',
 		xLabel: chart.xLabel ?? '',
 		yLabel: chart.yLabel ?? '',
 		seriesYAxis: safeParseJSON(chart.seriesYAxis, {}),

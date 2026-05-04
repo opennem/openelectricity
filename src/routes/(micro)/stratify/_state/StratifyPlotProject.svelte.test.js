@@ -95,3 +95,36 @@ describe('StratifyPlotProject — facetColumn', () => {
 		expect(project.orderedSeriesNames).toEqual(expect.arrayContaining(['solar', 'wind']));
 	});
 });
+
+describe('StratifyPlotProject — animateAsOneChart', () => {
+	it('defaults to false', () => {
+		const project = createProject();
+		expect(project.animateAsOneChart).toBe(false);
+	});
+
+	it('toJSON() includes animateAsOneChart', () => {
+		const project = createProject();
+		project.animateAsOneChart = true;
+		expect(project.toJSON().animateAsOneChart).toBe(true);
+	});
+
+	it('loadFromSnapshot() restores animateAsOneChart', () => {
+		const project = createProject();
+		project.loadFromSnapshot(/** @type {any} */ ({ animateAsOneChart: true }));
+		expect(project.animateAsOneChart).toBe(true);
+	});
+
+	it('loadFromSnapshot() defaults to false when omitted', () => {
+		const project = createProject();
+		project.animateAsOneChart = true;
+		project.loadFromSnapshot(/** @type {any} */ ({}));
+		expect(project.animateAsOneChart).toBe(false);
+	});
+
+	it('reset() restores animateAsOneChart to false', () => {
+		const project = createProject();
+		project.animateAsOneChart = true;
+		project.reset();
+		expect(project.animateAsOneChart).toBe(false);
+	});
+});

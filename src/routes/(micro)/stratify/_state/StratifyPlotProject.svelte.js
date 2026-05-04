@@ -49,6 +49,10 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {number | null} [y2Max]
  * @property {string | null} [colourSeries]
  * @property {string | null} [facetColumn]
+ * @property {boolean} [animateAsOneChart]
+ * @property {number} [animationSpeedMs]
+ * @property {boolean} [animateAutoLoop]
+ * @property {string} [chartCurve]
  * @property {string} [xLabel]
  * @property {string} [yLabel]
  * @property {Record<string, 'left' | 'right'>} [seriesYAxis]
@@ -177,6 +181,18 @@ export default class StratifyPlotProject {
 
 	/** @type {string | null} Column key used to partition into small-multiple panels (Plot fx) */
 	facetColumn = $state(null);
+
+	/** @type {boolean} When true and facetColumn is set, render a single chart that animates through the partitions instead of small multiples */
+	animateAsOneChart = $state(false);
+
+	/** @type {number} Milliseconds per facet transition when animating */
+	animationSpeedMs = $state(800);
+
+	/** @type {boolean} When true, animation loops back to the first frame after the last */
+	animateAutoLoop = $state(false);
+
+	/** @type {string} Plot curve type for line/area charts: linear, monotone-x, step, step-before, step-after, basis, natural */
+	chartCurve = $state('linear');
 
 	// --- Axis labels ---
 	/** @type {string} X-axis label (empty = hidden) */
@@ -347,6 +363,14 @@ export default class StratifyPlotProject {
 			}
 		});
 
+		// Reset animate toggle when the partition column is cleared, so
+		// reselecting later doesn't resurrect a previous setting silently.
+		$effect(() => {
+			if (!this.facetColumn && this.animateAsOneChart) {
+				this.animateAsOneChart = false;
+			}
+		});
+
 		// Recover from a stale Y selection: when a column moves into the
 		// facet/colour pickers (or stops being numeric) the previous Y
 		// selection's hiddenSeries can leave every eligible series hidden,
@@ -403,6 +427,10 @@ export default class StratifyPlotProject {
 		this.xColumn = '';
 		this.colourSeries = null;
 		this.facetColumn = null;
+		this.animateAsOneChart = false;
+		this.animationSpeedMs = 800;
+		this.animateAutoLoop = false;
+		this.chartCurve = 'linear';
 		this.xLabel = '';
 		this.yLabel = '';
 		this.seriesYAxis = {};
@@ -472,6 +500,10 @@ export default class StratifyPlotProject {
 			xColumn: this.xColumn,
 			colourSeries: this.colourSeries,
 			facetColumn: this.facetColumn,
+			animateAsOneChart: this.animateAsOneChart,
+			animationSpeedMs: this.animationSpeedMs,
+			animateAutoLoop: this.animateAutoLoop,
+			chartCurve: this.chartCurve,
 			xLabel: this.xLabel,
 			yLabel: this.yLabel,
 			seriesYAxis: this.seriesYAxis,
@@ -523,6 +555,10 @@ export default class StratifyPlotProject {
 		this.xColumn = snapshot.xColumn ?? '';
 		this.colourSeries = snapshot.colourSeries ?? null;
 		this.facetColumn = snapshot.facetColumn ?? null;
+		this.animateAsOneChart = snapshot.animateAsOneChart ?? false;
+		this.animationSpeedMs = snapshot.animationSpeedMs ?? 800;
+		this.animateAutoLoop = snapshot.animateAutoLoop ?? false;
+		this.chartCurve = snapshot.chartCurve ?? 'linear';
 		this.xLabel = snapshot.xLabel ?? '';
 		this.yLabel = snapshot.yLabel ?? '';
 		this.seriesYAxis = snapshot.seriesYAxis ?? {};

@@ -146,6 +146,16 @@ describe('normaliseChart', () => {
 		expect(result.facetColumn).toBe('region');
 	});
 
+	it('defaults animateAsOneChart to false', () => {
+		const result = normaliseChart({ _id: 'chart-anim-default' });
+		expect(result.animateAsOneChart).toBe(false);
+	});
+
+	it('preserves animateAsOneChart: true', () => {
+		const result = normaliseChart({ _id: 'chart-anim', animateAsOneChart: true });
+		expect(result.animateAsOneChart).toBe(true);
+	});
+
 	it('does not include extra fields from the raw document', () => {
 		const result = normaliseChart({
 			_id: 'chart4',

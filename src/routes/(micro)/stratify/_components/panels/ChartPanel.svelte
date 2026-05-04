@@ -194,6 +194,74 @@
 				</select>
 			</label>
 
+			<!-- Animate options (only meaningful when partitioning) -->
+			{#if project.facetColumn}
+				<label class="flex items-center gap-2">
+					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0"></span>
+					<input
+						type="checkbox"
+						checked={project.animateAsOneChart}
+						onchange={(e) => {
+							project.animateAsOneChart = e.currentTarget.checked;
+						}}
+						class="accent-dark-grey"
+					/>
+					<span class="text-[10px] text-mid-grey">Animate as one chart</span>
+				</label>
+
+				{#if project.animateAsOneChart}
+					<label class="flex items-center gap-2">
+						<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Speed</span>
+						<input
+							type="number"
+							min="100"
+							max="3000"
+							step="100"
+							value={project.animationSpeedMs}
+							oninput={(e) => {
+								const v = parseInt(e.currentTarget.value, 10);
+								if (v >= 100 && v <= 3000) project.animationSpeedMs = v;
+							}}
+							class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey w-20"
+						/>
+						<span class="text-[10px] text-mid-grey">ms / frame</span>
+					</label>
+					<label class="flex items-center gap-2">
+						<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0"></span>
+						<input
+							type="checkbox"
+							checked={project.animateAutoLoop}
+							onchange={(e) => {
+								project.animateAutoLoop = e.currentTarget.checked;
+							}}
+							class="accent-dark-grey"
+						/>
+						<span class="text-[10px] text-mid-grey">Auto-loop</span>
+					</label>
+				{/if}
+			{/if}
+
+			{#if project.chartType === 'line' || project.chartType === 'area'}
+				<label class="flex items-center gap-2">
+					<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Curve</span>
+					<select
+						value={project.chartCurve}
+						onchange={(e) => {
+							project.chartCurve = e.currentTarget.value;
+						}}
+						class="bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] text-dark-grey focus:outline-none focus:border-dark-grey flex-1"
+					>
+						<option value="linear">Linear</option>
+						<option value="monotone-x">Smooth (monotone)</option>
+						<option value="basis">Smooth (basis)</option>
+						<option value="natural">Smooth (natural)</option>
+						<option value="step">Step</option>
+						<option value="step-before">Step before</option>
+						<option value="step-after">Step after</option>
+					</select>
+				</label>
+			{/if}
+
 			<label class="flex items-center gap-2">
 				<span class="text-[10px] text-mid-grey w-[30%] max-w-[80px] shrink-0">Transform</span>
 				<select

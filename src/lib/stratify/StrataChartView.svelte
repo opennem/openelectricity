@@ -1,6 +1,8 @@
 <script>
 	import StratifyPlotChart from '$lib/stratify/StratifyPlotChart.svelte';
+	import AnimatedFacetChart from '$lib/stratify/AnimatedFacetChart.svelte';
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
+	import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
 	import { getPreset, getPlotStyle } from '$lib/stratify/chart-styles.js';
 	import { assignPaletteColours } from '$lib/stratify/colour-palettes.js';
 	import { HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
@@ -19,7 +21,10 @@
 		parseCSV(chart.csvText, {}, chart.displayMode ?? 'auto', chart.xColumn || 0)
 	);
 	const preset = $derived(getPreset(chart.stylePreset ?? 'oe'));
-	const plotStyleOptions = $derived({ style: getPlotStyle(chart.stylePreset ?? 'oe') });
+	const plotStyleOptions = $derived({
+		style: getPlotStyle(chart.stylePreset ?? 'oe'),
+		curve: chart.chartCurve
+	});
 
 	// Labels for all non-first data columns (for tooltips)
 	const dataColumnLabels = $derived(
@@ -153,6 +158,12 @@
 
 	const isHorizontal = $derived(HORIZONTAL_TYPES.has(chart.chartType));
 
+	// Animation mode requires a facet column, the toggle, and >1 frame.
+	const animateFacetValues = $derived(uniqueColumnValues(transformedData, facetColumnKey));
+	const isAnimating = $derived(
+		!!chart.animateAsOneChart && !!facetColumnKey && animateFacetValues.length > 1
+	);
+
 	// Extract sorted domain for category charts
 	const hasSortedDomain = $derived(
 		(chart.categorySort ?? 'default') !== 'default' && parsed.mode === 'category'
@@ -189,9 +200,14 @@
 		</div>
 	{/if}
 
-	{#if parsed.data.length > 0}
+	{#snippet plotChart(
+		/** @type {Array<Record<string, any>>} */ chartData,
+		/** @type {string | null} */ overrideFacet,
+		/** @type {number | null} */ overrideY1Min,
+		/** @type {number | null} */ overrideY1Max
+	)}
 		<StratifyPlotChart
-			data={transformedData}
+			data={chartData}
 			seriesNames={visibleSeriesNames}
 			{seriesColours}
 			{seriesLabels}
@@ -211,8 +227,8 @@
 			height={chartHeight}
 			yTicks={chart.yTicks ?? 0}
 			yMinMax={chart.yMinMax ?? false}
-			y1Min={chart.y1Min ?? null}
-			y1Max={chart.y1Max ?? null}
+			y1Min={overrideY1Min}
+			y1Max={overrideY1Max}
 			y2Ticks={chart.y2Ticks ?? 0}
 			y2MinMax={chart.y2MinMax ?? false}
 			y2Min={chart.y2Min ?? null}
@@ -224,12 +240,41 @@
 			yDomain={sortedYDomain}
 			showXTickLabels={chart.showXTickLabels ?? true}
 			showLegend={chart.showLegend ?? true}
-			facetColumn={chart.facetColumn ?? null}
+			facetColumn={overrideFacet}
 			xTicks={chart.xTicks ?? 0}
 			xTickRotate={chart.xTickRotate ?? 0}
 			marginBottom={chart.marginBottom ?? 0}
 			marginLeft={chart.marginLeft ?? 0}
 		/>
+	{/snippet}
+
+	{#if parsed.data.length > 0}
+		{#if isAnimating}
+			<AnimatedFacetChart
+				data={transformedData}
+				seriesNames={visibleSeriesNames}
+				facetColumn={/** @type {string} */ (facetColumnKey)}
+				facetValues={animateFacetValues}
+				frameDurationMs={chart.animationSpeedMs}
+				loop={chart.animateAutoLoop}
+			>
+				{#snippet children(frame)}
+					{@render plotChart(
+						frame.data,
+						null,
+						chart.y1Min ?? frame.yMin,
+						chart.y1Max ?? frame.yMax
+					)}
+				{/snippet}
+			</AnimatedFacetChart>
+		{:else}
+			{@render plotChart(
+				transformedData,
+				chart.facetColumn ?? null,
+				chart.y1Min ?? null,
+				chart.y1Max ?? null
+			)}
+		{/if}
 	{/if}
 
 	{#if chart.dataSource || chart.notes}
