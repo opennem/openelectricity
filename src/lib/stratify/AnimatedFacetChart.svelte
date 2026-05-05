@@ -224,19 +224,6 @@
 		if (displayedFrame >= facetValues.length) displayedFrame = 0;
 	});
 
-	/** @type {HTMLDivElement | undefined} */
-	let chartHost = $state();
-	let plotTopOffset = $state(0);
-
-	$effect(() => {
-		if (!chartHost) return;
-		const plot = chartHost.querySelector('.plot-chart-container');
-		if (!plot) return;
-		const hostRect = chartHost.getBoundingClientRect();
-		const plotRect = plot.getBoundingClientRect();
-		plotTopOffset = Math.max(0, plotRect.top - hostRect.top);
-	});
-
 	// Measured to size the play button as a true square matching the timeline
 	// (aspect-ratio is unreliable when the height comes from flex-stretch).
 	let timelineHeight = $state(0);
@@ -249,14 +236,16 @@
 </script>
 
 <div class="flex flex-col gap-3">
-	<div bind:this={chartHost} class="relative">
+	<div class="relative">
 		{#if facetValues.length >= 2}
-			<span
-				class="absolute right-0 z-10 text-base font-bold text-dark-grey tabular-nums mr-6"
-				style="top: {plotTopOffset}px"
+			<div
+				class="absolute top-2 left-0 right-8 z-10 flex justify-between items-center pointer-events-none"
 			>
-				{String(currentFacet)}
-			</span>
+				<span></span>
+				<span class="text-base font-bold text-dark-grey tabular-nums">
+					{String(currentFacet)}
+				</span>
+			</div>
 		{/if}
 		{@render children({
 			data: frameData,
