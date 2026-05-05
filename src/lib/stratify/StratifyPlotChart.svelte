@@ -93,7 +93,7 @@
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
 	 *   marginLeft?: number,
-	 *   options?: import('./plot-configs.js').TimeSeriesOptions,
+	 *   options?: import('$lib/components/charts/plot/plot-configs.js').TimeSeriesOptions,
 	 *   annotations?: import('./plot-annotations.js').Annotation[],
 	 *   class?: string
 	 * }}
@@ -289,7 +289,9 @@
 						seriesNames,
 						seriesColours,
 						seriesLabels,
-						seriesChartTypes,
+						/** @type {Record<string, import('$lib/components/charts/plot/plot-configs.js').SeriesMarkType>} */ (
+							seriesChartTypes
+						),
 						chartType,
 						optionsWithLineStyles
 					)

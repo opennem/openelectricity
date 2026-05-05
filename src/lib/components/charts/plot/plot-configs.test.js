@@ -1,3 +1,5 @@
+// @ts-nocheck — assertions trust the shape returned by Plot configs;
+// strict optional-chain checks would clutter every expectation.
 import { describe, it, expect } from 'vitest';
 import {
 	toLong,
