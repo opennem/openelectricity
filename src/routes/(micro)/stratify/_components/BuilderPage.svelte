@@ -1,6 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
-	import { goto } from '$app/navigation';
+	import { goto, beforeNavigate } from '$app/navigation';
 	import Meta from '$lib/components/Meta.svelte';
 	import { DragHandle, createDragHandler } from '$lib/components/ui/panel';
 
@@ -25,6 +25,7 @@
 	import AccordionSection from './AccordionSection.svelte';
 	import StratifyHeader from './StratifyHeader.svelte';
 	import StratifyButton from './StratifyButton.svelte';
+	import ConfirmModal from './ConfirmModal.svelte';
 	import { createChart, updateChart, getChart } from '../_utils/api.js';
 
 	/** @type {{ initialChartId?: string }} */
@@ -71,36 +72,110 @@
 				loadingChart = false;
 			}
 		}
+
+		markSaved();
 	});
 
 	// --- Save to Sanity ---
 	/** @type {'idle' | 'saving' | 'saved' | 'error'} */
 	let saveStatus = $state('idle');
 
-	/** Save (create or update) the current chart to Sanity. */
-	async function handleSave() {
-		if (!project.hasData) return;
+	/** @type {string | null} JSON of the project state at the last save (or initial load). */
+	let lastSavedSnapshotJSON = $state(null);
 
+	const currentSnapshotJSON = $derived(
+		project.hasData ? JSON.stringify(project.toJSON()) : ''
+	);
+	const isDirty = $derived(
+		project.hasData && lastSavedSnapshotJSON !== null && currentSnapshotJSON !== lastSavedSnapshotJSON
+	);
+
+	function markSaved() {
+		lastSavedSnapshotJSON = JSON.stringify(project.toJSON());
+	}
+
+	/** Persist to Sanity. Returns true on success. */
+	async function saveProject() {
+		if (!project.hasData) return false;
 		saveStatus = 'saving';
-
 		try {
 			if (project.currentChartId) {
 				await updateChart(project.currentChartId, project.toJSON());
 			} else {
 				const result = await createChart(project.toJSON());
 				project.currentChartId = result._id;
-				goto(`/stratify/${result._id}`, { replaceState: true });
 			}
+			markSaved();
 			saveStatus = 'saved';
 			setTimeout(() => {
 				if (saveStatus === 'saved') saveStatus = 'idle';
 			}, 2000);
+			return true;
 		} catch {
 			saveStatus = 'error';
 			setTimeout(() => {
 				if (saveStatus === 'error') saveStatus = 'idle';
 			}, 3000);
+			return false;
 		}
+	}
+
+	/** Manual save via the toolbar button — also routes to the new chart on create. */
+	async function handleSave() {
+		const wasNew = !project.currentChartId;
+		const success = await saveProject();
+		if (success && wasNew && project.currentChartId) {
+			goto(`/stratify/${project.currentChartId}`, { replaceState: true });
+		}
+	}
+
+	// --- Unsaved-changes guards ---
+
+	/** @type {URL | null} */
+	let pendingNavigation = $state(null);
+	let savingFromModal = $state(false);
+
+	beforeNavigate((navigation) => {
+		if (!isDirty) return;
+		// Tab close / external nav: trigger the browser's native warning. We
+		// can't show a custom modal because the dialog has to be synchronous.
+		if (navigation.type === 'leave') {
+			navigation.cancel();
+			return;
+		}
+		if (!navigation.to || pendingNavigation) return;
+		pendingNavigation = navigation.to.url;
+		navigation.cancel();
+	});
+
+	/** @param {BeforeUnloadEvent} e */
+	function handleBeforeUnload(e) {
+		if (!isDirty) return;
+		e.preventDefault();
+		// Some older browsers still require returnValue to be set.
+		e.returnValue = '';
+	}
+
+	async function modalSave() {
+		savingFromModal = true;
+		const success = await saveProject();
+		savingFromModal = false;
+		if (success) resumePendingNavigation();
+	}
+
+	function modalDiscard() {
+		markSaved();
+		resumePendingNavigation();
+	}
+
+	function modalCancel() {
+		pendingNavigation = null;
+	}
+
+	function resumePendingNavigation() {
+		const url = pendingNavigation;
+		pendingNavigation = null;
+		if (url) goto(url);
 	}
 
 	let publishing = $state(false);
@@ -112,6 +187,7 @@
 			if (!project.currentChartId) {
 				const result = await createChart(project.toJSON());
 				project.currentChartId = result._id;
+				markSaved();
 				goto(`/stratify/${result._id}`, { replaceState: true });
 			}
 			await updateChart(project.currentChartId, {
@@ -120,6 +196,7 @@
 				publishedAt: new Date().toISOString()
 			});
 			project.status = 'published';
+			markSaved();
 		} catch {
 			// handled silently
 		} finally {
@@ -136,6 +213,7 @@
 				publishedAt: null
 			});
 			project.status = 'draft';
+			markSaved();
 		} catch {
 			// handled silently
 		} finally {
@@ -161,6 +239,21 @@
 </script>
 
 <Meta title="Stratify" description="Create and embed data charts" />
+
+<svelte:window onbeforeunload={handleBeforeUnload} />
+
+<ConfirmModal
+	open={pendingNavigation !== null}
+	title="Unsaved changes"
+	message="You have unsaved changes to this chart. What would you like to do?"
+	confirmLabel="Save"
+	loading={savingFromModal}
+	loadingConfirmLabel="Saving…"
+	secondaryLabel="Don't save"
+	onconfirm={modalSave}
+	onsecondary={modalDiscard}
+	oncancel={modalCancel}
+/>
 
 {#if !mounted || loadingChart}
 	<div class="flex items-center justify-center h-dvh font-mono">

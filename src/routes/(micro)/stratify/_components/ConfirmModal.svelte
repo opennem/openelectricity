@@ -5,11 +5,26 @@
 	 *   title: string,
 	 *   message: string,
 	 *   confirmLabel?: string,
+	 *   loading?: boolean,
+	 *   loadingConfirmLabel?: string,
+	 *   secondaryLabel?: string,
 	 *   onconfirm: () => void,
+	 *   onsecondary?: () => void,
 	 *   oncancel: () => void
 	 * }}
 	 */
-	let { open, title, message, confirmLabel = 'Delete', onconfirm, oncancel } = $props();
+	let {
+		open,
+		title,
+		message,
+		confirmLabel = 'Delete',
+		loading = false,
+		loadingConfirmLabel = '...',
+		secondaryLabel,
+		onconfirm,
+		onsecondary,
+		oncancel
+	} = $props();
 
 	/** @param {KeyboardEvent} e */
 	function handleKeydown(e) {
@@ -44,16 +59,28 @@
 				<button
 					type="button"
 					onclick={oncancel}
-					class="rounded border border-warm-grey px-3 py-1.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors"
+					disabled={loading}
+					class="rounded border border-warm-grey px-3 py-1.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors disabled:opacity-50"
 				>
 					Cancel
 				</button>
+				{#if onsecondary && secondaryLabel}
+					<button
+						type="button"
+						onclick={onsecondary}
+						disabled={loading}
+						class="rounded border border-warm-grey px-3 py-1.5 text-[10px] text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors disabled:opacity-50"
+					>
+						{secondaryLabel}
+					</button>
+				{/if}
 				<button
 					type="button"
 					onclick={onconfirm}
-					class="rounded bg-dark-grey px-3 py-1.5 text-[10px] text-white hover:bg-black transition-colors"
+					disabled={loading}
+					class="rounded bg-dark-grey px-3 py-1.5 text-[10px] text-white hover:bg-black transition-colors disabled:opacity-50"
 				>
-					{confirmLabel}
+					{loading ? loadingConfirmLabel : confirmLabel}
 				</button>
 			</div>
 		</div>
