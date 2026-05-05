@@ -1,5 +1,5 @@
 <script>
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import clamp from '$lib/utils/clamp.js';
 
 	/**
@@ -15,6 +15,7 @@
 	 *   facetValues: any[],
 	 *   frameDurationMs?: number,
 	 *   loop?: boolean,
+	 *   autoPlay?: boolean,
 	 *   children: (frame: {
 	 *     data: Array<Record<string, any>>,
 	 *     yMin: number,
@@ -30,6 +31,7 @@
 		facetValues,
 		frameDurationMs = 800,
 		loop = false,
+		autoPlay = false,
 		children
 	} = $props();
 
@@ -112,12 +114,24 @@
 		return out;
 	});
 
-	function stop() {
+	function haltPlayback() {
 		isPlaying = false;
 		if (rafHandle != null) {
 			cancelAnimationFrame(rafHandle);
 			rafHandle = null;
 		}
+	}
+
+	function snapDisplayedFrame() {
+		// Integer displayedFrame ⇒ frameData's t=0 ⇒ raw frame, no interpolation.
+		if (Number.isFinite(displayedFrame)) {
+			displayedFrame = Math.round(displayedFrame);
+		}
+	}
+
+	function stop() {
+		haltPlayback();
+		snapDisplayedFrame();
 	}
 
 	function play() {
@@ -167,6 +181,41 @@
 		displayedFrame = clamp(index, 0, lastIndex);
 	}
 
+	let isScrubbing = $state(false);
+	/** @type {DOMRect | null} */
+	let scrubRect = null;
+
+	/** @param {PointerEvent} event */
+	function scrubToEvent(event) {
+		if (lastIndex === 0 || !scrubRect) return;
+		const pct = clamp((event.clientX - scrubRect.left) / scrubRect.width, 0, 1);
+		displayedFrame = pct * lastIndex;
+	}
+
+	/** @param {PointerEvent} event */
+	function handleScrubPointerDown(event) {
+		if (facetValues.length < 2) return;
+		haltPlayback();
+		isScrubbing = true;
+		const target = /** @type {HTMLElement} */ (event.currentTarget);
+		target.setPointerCapture(event.pointerId);
+		scrubRect = target.getBoundingClientRect();
+		scrubToEvent(event);
+	}
+
+	/** @param {PointerEvent} event */
+	function handleScrubPointerMove(event) {
+		if (!isScrubbing) return;
+		scrubToEvent(event);
+	}
+
+	function handleScrubPointerUp() {
+		if (!isScrubbing) return;
+		isScrubbing = false;
+		scrubRect = null;
+		snapDisplayedFrame();
+	}
+
 	const timelineProgress = $derived(
 		lastIndex > 0 ? Math.min(1, safeFrame / lastIndex) * 100 : 0
 	);
@@ -175,92 +224,113 @@
 		if (displayedFrame >= facetValues.length) displayedFrame = 0;
 	});
 
+	/** @type {HTMLDivElement | undefined} */
+	let chartHost = $state();
+	let plotTopOffset = $state(0);
+
+	$effect(() => {
+		if (!chartHost) return;
+		const plot = chartHost.querySelector('.plot-chart-container');
+		if (!plot) return;
+		const hostRect = chartHost.getBoundingClientRect();
+		const plotRect = plot.getBoundingClientRect();
+		plotTopOffset = Math.max(0, plotRect.top - hostRect.top);
+	});
+
+	// Measured to size the play button as a true square matching the timeline
+	// (aspect-ratio is unreliable when the height comes from flex-stretch).
+	let timelineHeight = $state(0);
+
+	onMount(() => {
+		if (autoPlay && facetValues.length >= 2) play();
+	});
+
 	onDestroy(stop);
 </script>
 
-<div class="flex flex-col gap-2">
-	<div class="flex items-center gap-2 px-1">
+<div class="flex flex-col gap-3">
+	<div bind:this={chartHost} class="relative">
+		{#if facetValues.length >= 2}
+			<span
+				class="absolute right-0 z-10 text-base font-bold text-dark-grey tabular-nums mr-6"
+				style="top: {plotTopOffset}px"
+			>
+				{String(currentFacet)}
+			</span>
+		{/if}
+		{@render children({
+			data: frameData,
+			yMin: yBounds.min,
+			yMax: yBounds.max,
+			facet: currentFacet
+		})}
+	</div>
+
+	<div class="flex items-start gap-2 max-w-[600px] mx-auto w-full">
 		<button
 			type="button"
 			onclick={togglePlay}
 			disabled={facetValues.length < 2}
-			class="inline-flex items-center justify-center w-7 h-7 rounded border border-warm-grey bg-light-warm-grey/50 text-dark-grey hover:bg-warm-grey/40 disabled:opacity-40 disabled:cursor-not-allowed"
+			style="width: {timelineHeight}px; height: {timelineHeight}px"
+			class="shrink-0 bg-black text-white rounded-lg transition-all hover:bg-dark-grey disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center"
+			title={isPlaying ? 'Pause' : 'Play'}
 			aria-label={isPlaying ? 'Pause' : 'Play'}
 		>
 			{#if isPlaying}
-				<svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-					<rect x="1" y="1" width="3" height="8" />
-					<rect x="6" y="1" width="3" height="8" />
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+					<rect x="6" y="5" width="4" height="14" rx="1" />
+					<rect x="14" y="5" width="4" height="14" rx="1" />
 				</svg>
 			{:else}
-				<svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
-					<polygon points="2,1 9,5 2,9" />
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+					<path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.04-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14Z" />
 				</svg>
 			{/if}
 		</button>
-		<button
-			type="button"
-			onclick={() => step(-1)}
-			disabled={facetValues.length < 2}
-			class="inline-flex items-center justify-center w-7 h-7 rounded border border-warm-grey bg-light-warm-grey/50 text-dark-grey hover:bg-warm-grey/40 disabled:opacity-40"
-			aria-label="Previous frame"
-		>
-			‹
-		</button>
-		<button
-			type="button"
-			onclick={() => step(1)}
-			disabled={facetValues.length < 2}
-			class="inline-flex items-center justify-center w-7 h-7 rounded border border-warm-grey bg-light-warm-grey/50 text-dark-grey hover:bg-warm-grey/40 disabled:opacity-40"
-			aria-label="Next frame"
-		>
-			›
-		</button>
-		<span class="text-xs text-mid-grey font-medium ml-2">
-			{String(currentFacet)}
-			<span class="text-mid-grey/60">
-				({currentFrameIndex + 1} / {facetValues.length})
-			</span>
-		</span>
-	</div>
 
-	{#if facetValues.length >= 2}
-		<div class="px-1">
-			<div class="relative h-6">
-				<div class="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-warm-grey"></div>
-				{#each facetValues as value, i (i)}
-					{@const left = (i / (facetValues.length - 1)) * 100}
-					{@const isCurrent = i === currentFrameIndex}
-					<button
-						type="button"
-						onclick={() => seek(i)}
-						aria-label={`Go to ${String(value)}`}
-						class="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 group flex items-center justify-center w-3 h-6 cursor-pointer"
-						style="left: {left}%"
+		<div class="flex-1 min-w-0">
+			{#if facetValues.length >= 2}
+				<div bind:clientHeight={timelineHeight} class="border border-warm-grey rounded-lg px-3 py-2">
+					<div
+						role="slider"
+						tabindex="0"
+						aria-label="Animation timeline"
+						aria-valuemin="0"
+						aria-valuemax={lastIndex}
+						aria-valuenow={currentFrameIndex}
+						aria-valuetext={String(currentFacet)}
+						onpointerdown={handleScrubPointerDown}
+						onpointermove={handleScrubPointerMove}
+						onpointerup={handleScrubPointerUp}
+						onpointercancel={handleScrubPointerUp}
+						class="relative h-3 cursor-pointer touch-none group flex items-center select-none"
 					>
-						<span
-							class="block w-px transition-all {isCurrent
-								? 'h-4 bg-dark-grey'
-								: 'h-2 bg-mid-grey/60 group-hover:h-3 group-hover:bg-dark-grey'}"
-						></span>
-					</button>
-				{/each}
-				<div
-					class="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-dark-grey ring-2 ring-light-warm-grey"
-					style="left: {timelineProgress}%"
-				></div>
-			</div>
-			<div class="flex justify-between text-[10px] text-mid-grey mt-0.5">
-				<span>{String(facetValues[0])}</span>
-				<span>{String(facetValues[facetValues.length - 1])}</span>
-			</div>
+						<div class="relative w-full h-1 rounded-full bg-warm-grey/50 overflow-hidden">
+							<div
+								class="absolute inset-y-0 left-0 rounded-full bg-dark-grey"
+								style="width: {timelineProgress}%"
+							></div>
+						</div>
+						{#each facetValues as _value, i (i)}
+							{@const left = (i / (facetValues.length - 1)) * 100}
+							<span
+								class="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-px h-2 bg-mid-grey/40"
+								style="left: {left}%"
+							></span>
+						{/each}
+						<div
+							class="pointer-events-none absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-dark-grey shadow-sm ring-2 ring-light-warm-grey transition-transform group-hover:scale-125 {isScrubbing
+								? 'scale-125'
+								: ''}"
+							style="left: {timelineProgress}%"
+						></div>
+					</div>
+				</div>
+				<div class="flex justify-between text-[10px] text-mid-grey mt-1.5 px-3 tabular-nums">
+					<span>{String(facetValues[0])}</span>
+					<span>{String(facetValues[facetValues.length - 1])}</span>
+				</div>
+			{/if}
 		</div>
-	{/if}
-
-	{@render children({
-		data: frameData,
-		yMin: yBounds.min,
-		yMax: yBounds.max,
-		facet: currentFacet
-	})}
+	</div>
 </div>

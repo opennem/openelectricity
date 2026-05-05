@@ -119,6 +119,7 @@ export async function PATCH({ request, params }) {
 	if (body.animateAsOneChart !== undefined) patches.animateAsOneChart = body.animateAsOneChart;
 	if (body.animationSpeedMs !== undefined) patches.animationSpeedMs = body.animationSpeedMs;
 	if (body.animationAutoLoop !== undefined) patches.animationAutoLoop = body.animationAutoLoop;
+	if (body.animationAutoPlay !== undefined) patches.animationAutoPlay = body.animationAutoPlay;
 	if (body.chartCurve !== undefined) patches.chartCurve = body.chartCurve;
 	if (body.xLabel !== undefined) patches.xLabel = body.xLabel;
 	if (body.yLabel !== undefined) patches.yLabel = body.yLabel;

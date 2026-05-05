@@ -215,6 +215,16 @@
 							class={`${CONTROL_INPUT_CLASS} w-20`}
 						/>
 					</ControlInput>
+					<ControlInput suffix="Auto-play">
+						<input
+							type="checkbox"
+							checked={project.animationAutoPlay}
+							onchange={(e) => {
+								project.animationAutoPlay = e.currentTarget.checked;
+							}}
+							class="accent-dark-grey"
+						/>
+					</ControlInput>
 					<ControlInput suffix="Auto-loop">
 						<input
 							type="checkbox"

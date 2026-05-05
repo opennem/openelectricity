@@ -94,6 +94,7 @@ export function normaliseChart(chart) {
 		animateAsOneChart: chart.animateAsOneChart ?? false,
 		animationSpeedMs: chart.animationSpeedMs ?? 800,
 		animationAutoLoop: chart.animationAutoLoop ?? false,
+		animationAutoPlay: chart.animationAutoPlay ?? false,
 		chartCurve: chart.chartCurve ?? 'linear',
 		xLabel: chart.xLabel ?? '',
 		yLabel: chart.yLabel ?? '',

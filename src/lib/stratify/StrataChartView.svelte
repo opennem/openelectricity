@@ -257,6 +257,7 @@
 				facetValues={animateFacetValues}
 				frameDurationMs={chart.animationSpeedMs}
 				loop={chart.animationAutoLoop}
+				autoPlay={chart.animationAutoPlay}
 			>
 				{#snippet children(frame)}
 					{@render plotChart(

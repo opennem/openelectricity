@@ -103,6 +103,7 @@ export async function POST({ request }) {
 		animateAsOneChart: body.animateAsOneChart ?? false,
 		animationSpeedMs: body.animationSpeedMs ?? 800,
 		animationAutoLoop: body.animationAutoLoop ?? false,
+		animationAutoPlay: body.animationAutoPlay ?? false,
 		chartCurve: body.chartCurve ?? 'linear',
 		xLabel: body.xLabel ?? '',
 		yLabel: body.yLabel ?? '',

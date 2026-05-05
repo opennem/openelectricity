@@ -18,7 +18,7 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 - **Axis controls**: Y/Y2 tick counts, min/max tick marks, X tick count/rotation/height
 - **Legend toggle**: Show or hide the colour legend per chart (Series (Legend) & Tooltip panel → "Show legend")
 - **Small multiples**: Split any chart type into panels by a CSV column (Plot `fx` faceting) — Chart panel → "Partition by"
-- **Animate as one chart**: Toggle to render a single chart that auto-plays through partitions instead of small multiples (Play / Pause / Prev / Next controls; stable Y axis across frames)
+- **Animate as one chart**: Toggle to render a single chart that morphs through partitions instead of small multiples (play/pause + drag scrubber, auto-play and auto-loop options, stable Y axis across frames)
 - **Tooltip columns**: Select which columns appear in the tooltip, with formatted date display
 - **Plot overrides**: Power-user JSON config for arbitrary Observable Plot customisation
 - **Article embeds**: Native inline rendering (`strataEmbed`) and generic iframe (`embed`) in editorial articles
@@ -481,6 +481,7 @@ v1 snapshots are fully backward compatible. Missing fields get defaults:
 - `showLegend` defaults to `true` (legend visible — preserves prior behaviour)
 - `facetColumn` defaults to `null` (no faceting — single-panel render as before)
 - `animateAsOneChart` defaults to `false` (small multiples instead of animated single chart)
+- `animationAutoPlay` defaults to `false` (animation does not start until the user clicks play)
 
 ## Data Format
 
