@@ -77,36 +77,20 @@
 	/** @type {'idle' | 'saving' | 'saved' | 'error'} */
 	let saveStatus = $state('idle');
 
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let autoSaveTimer = null;
-
-	/** @type {string} */
-	let lastSnapshotJSON = '';
-
-	/**
-	 * Save (create or update) the current chart to Sanity.
-	 * @param {'auto' | 'manual'} trigger
-	 */
-	async function handleSave(trigger = 'manual') {
+	/** Save (create or update) the current chart to Sanity. */
+	async function handleSave() {
 		if (!project.hasData) return;
-
-		const snapshot = project.toJSON();
-		const snapshotJSON = JSON.stringify(snapshot);
-
-		if (trigger === 'auto' && snapshotJSON === lastSnapshotJSON) return;
 
 		saveStatus = 'saving';
 
 		try {
 			if (project.currentChartId) {
-				await updateChart(project.currentChartId, snapshot);
+				await updateChart(project.currentChartId, project.toJSON());
 			} else {
-				const result = await createChart(snapshot);
+				const result = await createChart(project.toJSON());
 				project.currentChartId = result._id;
-				// Navigate to the edit route for the new chart
 				goto(`/stratify/${result._id}`, { replaceState: true });
 			}
-			lastSnapshotJSON = snapshotJSON;
 			saveStatus = 'saved';
 			setTimeout(() => {
 				if (saveStatus === 'saved') saveStatus = 'idle';
@@ -118,20 +102,6 @@
 			}, 3000);
 		}
 	}
-
-	// Debounced auto-save
-	$effect(() => {
-		const _ = project.toJSON();
-
-		if (!project.hasData || !project.currentChartId) return;
-
-		if (autoSaveTimer) clearTimeout(autoSaveTimer);
-		autoSaveTimer = setTimeout(() => handleSave('auto'), 3000);
-
-		return () => {
-			if (autoSaveTimer) clearTimeout(autoSaveTimer);
-		};
-	});
 
 	let publishing = $state(false);
 
@@ -290,7 +260,7 @@
 
 						<StratifyButton
 							variant="primary"
-							onclick={() => handleSave('manual')}
+							onclick={() => handleSave()}
 							disabled={!project.hasData || saveStatus === 'saving'}
 						>
 							{saveButtonLabel}
