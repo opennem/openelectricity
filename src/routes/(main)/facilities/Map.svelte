@@ -26,7 +26,8 @@
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
 	 *   clustering?: boolean,
-	 *   satelliteView?: boolean,
+	 *   mapTheme?: 'light' | 'dark' | 'satellite',
+	 *   mapMarkerStyle?: 'circles' | 'hex' | 'heatmap',
 	 *   showTransmissionLines?: boolean,
 	 *   transmissionLineVisibility?: TransmissionLineVisibility,
 	 *   showGolfCourses?: boolean,
@@ -48,7 +49,8 @@
 		hoveredFacility = null,
 		selectedFacilityCode = null,
 		clustering = false,
-		satelliteView = false,
+		mapTheme = 'light',
+		mapMarkerStyle = 'circles',
 		showTransmissionLines = true,
 		transmissionLineVisibility = { high: true, medium: true, low: true, lowest: true },
 		showGolfCourses = false,
@@ -64,6 +66,49 @@
 		onselect,
 		onload
 	} = $props();
+
+	// Derived booleans for things that still consume the legacy boolean
+	// shape (existing satellite-aware logic, deck.gl visibility, etc).
+	// Marker styles are mutually exclusive — exactly one of these is true.
+	let satelliteView = $derived(mapTheme === 'satellite');
+	let showCircles = $derived(mapMarkerStyle === 'circles');
+	let showHexBins = $derived(mapMarkerStyle === 'hex');
+	let showHeatmap = $derived(mapMarkerStyle === 'heatmap');
+	// deck.gl overlay covers both hex and heatmap modes — single dynamic
+	// import handles the chunk for either.
+	let showDeckOverlay = $derived(showHexBins || showHeatmap);
+	// Mode for the deck.gl overlay. Clustering is intentionally ignored
+	// for hex/heat — those modes have their own visual semantics
+	// (per-facility hex columns, smooth heatmap density) and don't pair
+	// well with the count-based aggregate. Clustering only drives the
+	// circle layer.
+	let deckMode = $derived(
+		/** @type {'column' | 'heatmap'} */ (showHeatmap ? 'heatmap' : 'column')
+	);
+
+	// Per-facility data for the deck.gl hex columns. Each facility becomes
+	// a hexagonal pillar centred on its lat/lng with height proportional
+	// to capacity (MW). Colour mirrors the existing fuel-tech palette so
+	// the columns read like 3D versions of the circle markers.
+	let hexagonData = $derived.by(() => {
+		return facilities
+			.filter((f) => f.location?.lng != null && f.location?.lat != null)
+			.map((f) => {
+				const hex = (getFacilityColor(f) || '#888888').replace('#', '');
+				/** @type {[number, number, number]} */
+				const color = [
+					parseInt(hex.slice(0, 2), 16),
+					parseInt(hex.slice(2, 4), 16),
+					parseInt(hex.slice(4, 6), 16)
+				];
+				return {
+					position: /** @type {[number, number]} */ ([f.location.lng, f.location.lat]),
+					weight: getTotalCapacity(f) || 1,
+					code: f.code,
+					color
+				};
+			});
+	});
 
 	// Build filter for transmission lines based on visibility settings
 	let transmissionFilter = $derived.by(() => {
@@ -119,10 +164,35 @@
 	let isDragging = $state(false);
 	let isZooming = $state(false);
 
-	// Map style (positron or satellite)
+	// Map style derives from the theme tri-state. Dark uses a locally-hosted
+	// copy of CARTO's dark-matter style with the glyphs URL swapped to our
+	// own `/fonts/...` path — CARTO's hosted fonts CDN 404s on `DM_Mono`,
+	// which broke labels when we pointed straight at the upstream JSON.
 	let mapStyle = $derived(
-		satelliteView ? '/map-styles/satellite.json' : '/map-styles/positron.json'
+		mapTheme === 'satellite'
+			? '/map-styles/satellite.json'
+			: mapTheme === 'dark'
+				? '/map-styles/dark-matter.json'
+				: '/map-styles/positron.json'
 	);
+
+	// Tilt the camera into 3D when hex columns are visible so their height
+	// reads, and ease back to top-down when only circles are showing.
+	// Tracks user pitch via the map's `pitch` event so we don't fight the
+	// user — once they've dragged to a custom angle, we leave it alone
+	// until they next change marker style.
+	const PITCH_3D = 50;
+	const PITCH_FLAT = 0;
+	const PITCH_TRANSITION_MS = 800;
+	$effect(() => {
+		const wantsTilt = showHexBins;
+		const map = mapInstance;
+		if (!map || !mapLoaded) return;
+		const targetPitch = wantsTilt ? PITCH_3D : PITCH_FLAT;
+		const currentPitch = map.getPitch();
+		if (Math.abs(currentPitch - targetPitch) < 0.5) return;
+		map.easeTo({ pitch: targetPitch, duration: PITCH_TRANSITION_MS, essential: true });
+	});
 
 	// Cluster panel state
 	/** @type {any[]} */
@@ -549,10 +619,16 @@
 		// Ignore clicks that happen right after dragging or during cluster processing
 		if (isDragging || clusterClickInProgress) return;
 
-		// Check if click was on a facility point or cluster
-		const layersToCheck = clustering
+		// Check if click was on a facility point or cluster. Some marker
+		// modes don't render the circle layers at all (e.g. hex-only) — skip
+		// the query in that case so we don't throw on a missing layer id.
+		const layerIds =
+			mapInstance?.getStyle?.()?.layers?.map((/** @type {{ id: string }} */ l) => l.id) ?? [];
+		const candidates = clustering
 			? ['facility-points-unclustered', 'cluster-circles']
 			: ['facility-points'];
+		const layersToCheck = candidates.filter((id) => layerIds.includes(id));
+		if (layersToCheck.length === 0) return;
 		const features = mapInstance?.queryRenderedFeatures(e.point, { layers: layersToCheck });
 		if (!features || features.length === 0) {
 			// Clicked on empty space - clear selection and close panel
@@ -794,6 +870,7 @@
 			/>
 		</GeoJSONSource>
 
+		{#if showCircles}
 		{#if clustering}
 			<!-- Clustered GeoJSON source -->
 			<GeoJSONSource
@@ -939,6 +1016,7 @@
 				/>
 			</GeoJSONSource>
 		{/if}
+		{/if}
 
 		<!-- Popup for hovered facility - uses lazy computed content -->
 		{#if popupContent}
@@ -1002,6 +1080,22 @@
 					</div>
 				</div>
 			</Popup>
+		{/if}
+
+		<!-- deck.gl overlay (hex columns or heatmap) is code-split — the
+		     ~200 KB bundle only loads the first time the user picks a
+		     non-default marker mode. After that the chunk is cached so
+		     subsequent toggles are instant. -->
+		{#if showDeckOverlay}
+			{#await import('./_components/MapHexLayer.svelte') then { default: MapHexLayer }}
+				<MapHexLayer
+					visible={showDeckOverlay}
+					data={hexagonData}
+					mode={deckMode}
+					radius={6500}
+					elevationScale={400}
+				/>
+			{/await}
 		{/if}
 	</MapLibre>
 </div>

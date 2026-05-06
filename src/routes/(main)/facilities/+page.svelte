@@ -129,31 +129,48 @@
 	let timelineOrderedCodes = $state([]);
 
 	// When a facility is selected, switch the map to satellite view so the
-	// site's surroundings are visible. Remember the prior value and restore
+	// site's surroundings are visible. Remember the prior theme and restore
 	// it when the facility is deselected (panel closed / zoom-out).
-	/** @type {boolean | null} */
-	let priorMapSatelliteView = $state(null);
+	/** @type {'light' | 'dark' | 'satellite' | null} */
+	let priorMapTheme = $state(null);
 	$effect(() => {
 		if (selectedFacility) {
-			if (priorMapSatelliteView === null) {
-				priorMapSatelliteView = mapSatelliteView;
+			if (priorMapTheme === null) {
+				priorMapTheme = mapTheme;
 			}
-			if (!mapSatelliteView) {
-				mapSatelliteView = true;
+			if (mapTheme !== 'satellite') {
+				mapTheme = 'satellite';
 				updateMapOptionsUrl();
 			}
-		} else if (priorMapSatelliteView !== null) {
-			if (mapSatelliteView !== priorMapSatelliteView) {
-				mapSatelliteView = priorMapSatelliteView;
+		} else if (priorMapTheme !== null) {
+			if (mapTheme !== priorMapTheme) {
+				mapTheme = priorMapTheme;
 				updateMapOptionsUrl();
 			}
-			priorMapSatelliteView = null;
+			priorMapTheme = null;
 		}
 	});
 
 	// Map options - read initial values from URL params
 	// satellite: default false, transmission: default true, clustering: default false, golf: default false
-	let mapSatelliteView = $state(page.url.searchParams.get('satellite') === 'true');
+	const VALID_THEMES = /** @type {const} */ (['light', 'dark', 'satellite']);
+	const VALID_MARKER_STYLES = /** @type {const} */ (['circles', 'hex', 'heatmap']);
+
+	const initialTheme = page.url.searchParams.get('theme') ?? 'light';
+	const initialMarkerStyle = page.url.searchParams.get('markers') ?? 'circles';
+
+	let mapTheme = $state(
+		/** @type {'light' | 'dark' | 'satellite'} */ (
+			VALID_THEMES.includes(/** @type {any} */ (initialTheme)) ? initialTheme : 'light'
+		)
+	);
+	let mapMarkerStyle = $state(
+		/** @type {'circles' | 'hex' | 'heatmap'} */ (
+			VALID_MARKER_STYLES.includes(/** @type {any} */ (initialMarkerStyle))
+				? initialMarkerStyle
+				: 'circles'
+		)
+	);
 	let mapShowTransmissionLines = $state(page.url.searchParams.get('transmission') !== 'false');
 	let mapClustering = $state(page.url.searchParams.get('clustering') === 'true');
 	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
@@ -324,12 +341,23 @@
 		if (!routerReady) return;
 		const params = new URLSearchParams(page.url.searchParams);
 
-		// satellite: only include if true (default is false)
-		if (mapSatelliteView) {
-			params.set('satellite', 'true');
+		// theme: only include if non-default (default is light)
+		if (mapTheme !== 'light') {
+			params.set('theme', mapTheme);
 		} else {
-			params.delete('satellite');
+			params.delete('theme');
 		}
+		// Drop the legacy satellite=… param if a previous URL had it.
+		params.delete('satellite');
+
+		// markers: only include if non-default (default is circles)
+		if (mapMarkerStyle !== 'circles') {
+			params.set('markers', mapMarkerStyle);
+		} else {
+			params.delete('markers');
+		}
+		// Drop the legacy hex=… param if a previous URL had it.
+		params.delete('hex');
 
 		// transmission: only include if false (default is true)
 		if (!mapShowTransmissionLines) {
@@ -665,8 +693,11 @@
 			url += '&fullscreen=true';
 		}
 		// Preserve map layer options
-		if (mapSatelliteView) {
-			url += '&satellite=true';
+		if (mapTheme !== 'light') {
+			url += `&theme=${mapTheme}`;
+		}
+		if (mapMarkerStyle !== 'circles') {
+			url += `&markers=${mapMarkerStyle}`;
 		}
 		if (!mapShowTransmissionLines) {
 			url += '&transmission=false';
@@ -1219,7 +1250,8 @@
 						{hoveredFacility}
 						selectedFacilityCode={selectedFacility?.code ?? null}
 						clustering={mapClustering}
-						satelliteView={mapSatelliteView}
+						{mapTheme}
+						{mapMarkerStyle}
 						showTransmissionLines={mapShowTransmissionLines}
 						{transmissionLineVisibility}
 						showGolfCourses={mapShowGolfCourses}
@@ -1251,14 +1283,19 @@
 						Reset Map
 					</button>
 					<MapOptionsDropdown
-						satelliteView={mapSatelliteView}
+						{mapTheme}
+						markerStyle={mapMarkerStyle}
 						showTransmissionLines={mapShowTransmissionLines}
 						showGolfCourses={mapShowGolfCourses}
 						showGolfOption={showGolf}
 						showMagicIndicator={showGolf}
 						clustering={mapClustering}
-						onsatellitechange={(v) => {
-							mapSatelliteView = v;
+						onmapthemechange={(v) => {
+							mapTheme = v;
+							updateMapOptionsUrl();
+						}}
+						onmarkerstylechange={(v) => {
+							mapMarkerStyle = v;
 							updateMapOptionsUrl();
 						}}
 						ontransmissionlineschange={(v) => {
@@ -1359,7 +1396,7 @@
 
 				{#if mapShowTransmissionLines}
 					<TransmissionLinesLegend
-						satelliteView={mapSatelliteView}
+						satelliteView={mapTheme !== 'light'}
 						visibility={transmissionLineVisibility}
 						onvisibilitychange={(v) => (transmissionLineVisibility = v)}
 					/>

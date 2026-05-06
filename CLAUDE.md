@@ -38,6 +38,13 @@ Maintainers use Doppler to sync secrets across machines via `bun run doppler-dev
 - Mention both flows in any user-facing docs you touch.
 - Don't add Doppler as a hard requirement for `dev`, `build`, `preview`, etc.
 
+## Dependencies
+
+This is a **Svelte 5 + SvelteKit** project — no React in the runtime. When adding third-party packages:
+
+- **Avoid React-tied packages.** If a library ships meta-packages bundling React (e.g. `deck.gl` pulls `@deck.gl/react`), install only the framework-agnostic scoped sub-packages you actually use (e.g. `@deck.gl/core`, `@deck.gl/layers`, `@deck.gl/mapbox`). Skip the meta package — it triggers spurious peer-dep warnings about React 19 and adds dead bytes.
+- **Always install with `-D`** (`bun add -D …`). SvelteKit bundles everything at build time via Vite, so the deploy artifact never reads `dependencies` at runtime. By convention every package — runtime libs, build tools, types — goes in `devDependencies`. Don't split deps from devDeps.
+
 ## Technology Stack
 
 ### Core Framework

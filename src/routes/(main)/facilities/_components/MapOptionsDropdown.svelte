@@ -1,30 +1,34 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
-	import { Layers, Map as MapIcon, Satellite, ChevronDown, Flag, Sparkles } from '@lucide/svelte';
+	import { Layers, ChevronDown, Flag, Sparkles } from '@lucide/svelte';
 
 	/**
 	 * @type {{
-	 *   satelliteView: boolean,
+	 *   mapTheme?: 'light' | 'dark' | 'satellite',
+	 *   markerStyle?: 'circles' | 'hex' | 'heatmap',
 	 *   showTransmissionLines: boolean,
 	 *   showGolfCourses: boolean,
 	 *   showGolfOption: boolean,
 	 *   showMagicIndicator: boolean,
 	 *   clustering: boolean,
-	 *   onsatellitechange?: (value: boolean) => void,
+	 *   onmapthemechange?: (value: 'light' | 'dark' | 'satellite') => void,
+	 *   onmarkerstylechange?: (value: 'circles' | 'hex' | 'heatmap') => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
 	 *   ongolfcourseschange?: (value: boolean) => void,
 	 *   onclusteringchange?: (value: boolean) => void
 	 * }}
 	 */
 	let {
-		satelliteView = false,
+		mapTheme = 'light',
+		markerStyle = 'circles',
 		showTransmissionLines = true,
 		showGolfCourses = false,
 		showGolfOption = false,
 		showMagicIndicator = false,
 		clustering = true,
-		onsatellitechange,
+		onmapthemechange,
+		onmarkerstylechange,
 		ontransmissionlineschange,
 		ongolfcourseschange,
 		onclusteringchange
@@ -35,6 +39,20 @@
 	function handleClickOutside() {
 		isOpen = false;
 	}
+
+	const THEMES = /** @type {const} */ ([
+		{ value: 'light', label: 'Light' },
+		{ value: 'dark', label: 'Dark' },
+		{ value: 'satellite', label: 'Satellite' }
+	]);
+
+	const MARKER_STYLES = /** @type {const} */ ([
+		{ value: 'circles', label: 'Circles' },
+		{ value: 'hex', label: 'Hex' },
+		{ value: 'heatmap', label: 'Heat' }
+	]);
+
+	let clusteringDisabled = $derived(markerStyle !== 'circles');
 </script>
 
 <div class="relative" use:clickoutside onclickoutside={handleClickOutside}>
@@ -54,26 +72,58 @@
 
 	{#if isOpen}
 		<div
-			class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-mid-warm-grey z-50 min-w-[180px] py-1"
+			class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-mid-warm-grey z-50 min-w-[220px] py-2"
 			in:fly={{ y: -5, duration: 150 }}
 		>
-			<!-- Base map toggle -->
-			<button
-				onclick={() => {
-					onsatellitechange?.(!satelliteView);
-				}}
-				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
-			>
-				{#if satelliteView}
-					<Satellite class="size-5 text-mid-grey" />
-				{:else}
-					<MapIcon class="size-5 text-mid-grey" />
-				{/if}
-				<span class="flex-1">Base map</span>
-				<span class="text-mid-grey">{satelliteView ? 'Satellite' : 'Map'}</span>
-			</button>
+			<!-- Map theme (Light / Dark / Satellite) -->
+			<div class="px-3 py-1">
+				<div class="text-[10px] font-semibold uppercase tracking-wider text-mid-grey mb-1.5">
+					Map theme
+				</div>
+				<div class="inline-flex w-full rounded-md border border-warm-grey overflow-hidden">
+					{#each THEMES as { value, label } (value)}
+						<button
+							type="button"
+							onclick={() => onmapthemechange?.(value)}
+							class="flex-1 px-2 py-1 text-xs transition-colors cursor-pointer"
+							class:bg-dark-grey={mapTheme === value}
+							class:text-white={mapTheme === value}
+							class:font-medium={mapTheme === value}
+							class:text-mid-grey={mapTheme !== value}
+							class:hover:text-dark-grey={mapTheme !== value}
+							class:hover:bg-light-warm-grey={mapTheme !== value}
+						>
+							{label}
+						</button>
+					{/each}
+				</div>
+			</div>
 
-			<div class="border-t border-warm-grey my-1"></div>
+			<!-- Marker style (Circles / Hex / Both) -->
+			<div class="px-3 py-1 mt-2">
+				<div class="text-[10px] font-semibold uppercase tracking-wider text-mid-grey mb-1.5">
+					Marker style
+				</div>
+				<div class="inline-flex w-full rounded-md border border-warm-grey overflow-hidden">
+					{#each MARKER_STYLES as { value, label } (value)}
+						<button
+							type="button"
+							onclick={() => onmarkerstylechange?.(value)}
+							class="flex-1 px-2 py-1 text-xs transition-colors cursor-pointer"
+							class:bg-dark-grey={markerStyle === value}
+							class:text-white={markerStyle === value}
+							class:font-medium={markerStyle === value}
+							class:text-mid-grey={markerStyle !== value}
+							class:hover:text-dark-grey={markerStyle !== value}
+							class:hover:bg-light-warm-grey={markerStyle !== value}
+						>
+							{label}
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<div class="border-t border-warm-grey my-2"></div>
 
 			<!-- Transmission lines toggle -->
 			<button
@@ -103,20 +153,26 @@
 				<span class="flex-1">Transmission lines</span>
 			</button>
 
-			<!-- Clustering toggle -->
+			<!-- Clustering toggle (only meaningful for the Circles marker
+			     style — hex and heatmap have their own visual semantics) -->
 			<button
+				disabled={clusteringDisabled}
 				onclick={() => {
-					onclusteringchange?.(!clustering);
+					if (!clusteringDisabled) onclusteringchange?.(!clustering);
 				}}
-				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
+				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50"
+				class:hover:bg-light-warm-grey={!clusteringDisabled}
+				title={clusteringDisabled
+					? 'Clustering only applies to the Circles marker style'
+					: ''}
 			>
 				<span
 					class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
-					class:bg-dark-grey={clustering}
-					class:border-dark-grey={clustering}
-					class:border-mid-warm-grey={!clustering}
+					class:bg-dark-grey={clustering && !clusteringDisabled}
+					class:border-dark-grey={clustering && !clusteringDisabled}
+					class:border-mid-warm-grey={!clustering || clusteringDisabled}
 				>
-					{#if clustering}
+					{#if clustering && !clusteringDisabled}
 						<svg
 							class="w-3 h-3 text-white"
 							fill="none"
@@ -145,7 +201,7 @@
 						class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
 						class:border-mid-warm-grey={!showGolfCourses}
 						style={showGolfCourses
-							? `background-color: ${satelliteView ? '#4ade80' : '#16a34a'}; border-color: ${satelliteView ? '#4ade80' : '#16a34a'};`
+							? `background-color: ${mapTheme === 'satellite' ? '#4ade80' : '#16a34a'}; border-color: ${mapTheme === 'satellite' ? '#4ade80' : '#16a34a'};`
 							: ''}
 					>
 						{#if showGolfCourses}
