@@ -49,6 +49,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {number | null} [y2Max]
  * @property {string | null} [colourSeries]
  * @property {string | null} [facetColumn]
+ * @property {number} [facetPanelsPerRow]
  * @property {boolean} [animateAsOneChart]
  * @property {number} [animationSpeedMs]
  * @property {boolean} [animationAutoLoop]
@@ -182,6 +183,9 @@ export default class StratifyPlotProject {
 
 	/** @type {string | null} Column key used to partition into small-multiple panels (Plot fx) */
 	facetColumn = $state(null);
+
+	/** @type {number} Fixed number of small-multiple panels per row (0 = auto) */
+	facetPanelsPerRow = $state(0);
 
 	/** @type {boolean} When true and facetColumn is set, render a single chart that animates through the partitions instead of small multiples */
 	animateAsOneChart = $state(false);
@@ -431,6 +435,7 @@ export default class StratifyPlotProject {
 		this.xColumn = '';
 		this.colourSeries = null;
 		this.facetColumn = null;
+		this.facetPanelsPerRow = 0;
 		this.animateAsOneChart = false;
 		this.animationSpeedMs = 800;
 		this.animationAutoLoop = false;
@@ -505,6 +510,7 @@ export default class StratifyPlotProject {
 			xColumn: this.xColumn,
 			colourSeries: this.colourSeries,
 			facetColumn: this.facetColumn,
+			facetPanelsPerRow: this.facetPanelsPerRow,
 			animateAsOneChart: this.animateAsOneChart,
 			animationSpeedMs: this.animationSpeedMs,
 			animationAutoLoop: this.animationAutoLoop,
@@ -561,6 +567,7 @@ export default class StratifyPlotProject {
 		this.xColumn = snapshot.xColumn ?? '';
 		this.colourSeries = snapshot.colourSeries ?? null;
 		this.facetColumn = snapshot.facetColumn ?? null;
+		this.facetPanelsPerRow = snapshot.facetPanelsPerRow ?? 0;
 		this.animateAsOneChart = snapshot.animateAsOneChart ?? false;
 		this.animationSpeedMs = snapshot.animationSpeedMs ?? 800;
 		this.animationAutoLoop = snapshot.animationAutoLoop ?? false;

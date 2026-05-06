@@ -91,6 +91,7 @@ export function normaliseChart(chart) {
 		showXTickLabels: chart.showXTickLabels ?? true,
 		colourSeries: chart.colourSeries ?? null,
 		facetColumn: chart.facetColumn ?? null,
+		facetPanelsPerRow: chart.facetPanelsPerRow ?? 0,
 		animateAsOneChart: chart.animateAsOneChart ?? false,
 		animationSpeedMs: chart.animationSpeedMs ?? 800,
 		animationAutoLoop: chart.animationAutoLoop ?? false,

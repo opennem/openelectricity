@@ -89,6 +89,7 @@
 	 *   showXTickLabels?: boolean,
 	 *   showLegend?: boolean,
 	 *   facetColumn?: string | null,
+	 *   facetPanelsPerRow?: number,
 	 *   xTicks?: number,
 	 *   xTickRotate?: number,
 	 *   marginBottom?: number,
@@ -131,6 +132,7 @@
 		showXTickLabels = true,
 		showLegend = true,
 		facetColumn = null,
+		facetPanelsPerRow = 0,
 		xTicks = 0,
 		xTickRotate = 0,
 		marginBottom = 0,
@@ -158,6 +160,10 @@
 	const facetGrid = $derived.by(() => {
 		if (!facetColumn || facetValues.length === 0 || containerWidth === 0) return null;
 		const n = facetValues.length;
+		// Explicit override: use exactly that many columns (clamped to n).
+		if (facetPanelsPerRow > 0) {
+			return buildFacetGrid(facetValues, Math.min(facetPanelsPerRow, n));
+		}
 		const maxCols = Math.max(1, Math.floor(containerWidth / MIN_PANEL_WIDTH));
 		// Pick the largest divisor of n at or below maxCols so the grid has
 		// no empty cells — Plot otherwise draws the perimeter axes into the

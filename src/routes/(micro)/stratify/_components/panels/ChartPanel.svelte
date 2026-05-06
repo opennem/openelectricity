@@ -200,6 +200,25 @@
 					/>
 				</ControlInput>
 
+				{#if !project.animateAsOneChart}
+					<ControlInput label="Panels per row" suffix="(0 = auto)">
+						<input
+							type="number"
+							min="0"
+							max="12"
+							step="1"
+							value={project.facetPanelsPerRow}
+							oninput={(e) => {
+								const v = parseInt(e.currentTarget.value, 10);
+								if (Number.isFinite(v) && v >= 0 && v <= 12) {
+									project.facetPanelsPerRow = v;
+								}
+							}}
+							class={`${CONTROL_INPUT_CLASS} w-20`}
+						/>
+					</ControlInput>
+				{/if}
+
 				{#if project.animateAsOneChart}
 					<ControlInput label="Speed" suffix="ms / frame">
 						<input

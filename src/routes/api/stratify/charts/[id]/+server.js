@@ -116,6 +116,7 @@ export async function PATCH({ request, params }) {
 	if (body.showXTickLabels !== undefined) patches.showXTickLabels = body.showXTickLabels;
 	if (body.colourSeries !== undefined) patches.colourSeries = body.colourSeries;
 	if (body.facetColumn !== undefined) patches.facetColumn = body.facetColumn;
+	if (body.facetPanelsPerRow !== undefined) patches.facetPanelsPerRow = body.facetPanelsPerRow;
 	if (body.animateAsOneChart !== undefined) patches.animateAsOneChart = body.animateAsOneChart;
 	if (body.animationSpeedMs !== undefined) patches.animationSpeedMs = body.animationSpeedMs;
 	if (body.animationAutoLoop !== undefined) patches.animationAutoLoop = body.animationAutoLoop;

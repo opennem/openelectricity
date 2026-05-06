@@ -100,6 +100,7 @@ export async function POST({ request }) {
 		showXTickLabels: body.showXTickLabels ?? true,
 		colourSeries: body.colourSeries ?? null,
 		facetColumn: body.facetColumn ?? null,
+		facetPanelsPerRow: body.facetPanelsPerRow ?? 0,
 		animateAsOneChart: body.animateAsOneChart ?? false,
 		animationSpeedMs: body.animationSpeedMs ?? 800,
 		animationAutoLoop: body.animationAutoLoop ?? false,
