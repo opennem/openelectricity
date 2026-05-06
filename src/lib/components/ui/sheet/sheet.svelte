@@ -1,6 +1,7 @@
 <script>
-	import { fade } from 'svelte/transition';
 	import { X } from '@lucide/svelte';
+	import { portal } from '$lib/actions/portal.js';
+	import { Backdrop } from '$lib/components/ui/backdrop';
 
 	/**
 	 * @type {{
@@ -12,7 +13,8 @@
 	 *   size?: string,
 	 *   width?: string,
 	 *   height?: string,
-	 *   align?: 'start' | 'center' | 'end',
+	 *   align?: 'start' | 'center' | 'end' | 'stretch',
+	 *   rounded?: boolean,
 	 *   children?: import('svelte').Snippet
 	 * }}
 	 */
@@ -26,6 +28,7 @@
 		width,
 		height,
 		align = 'end',
+		rounded = true,
 		children
 	} = $props();
 
@@ -46,6 +49,8 @@
 				return 'left-0';
 			case 'center':
 				return 'left-1/2 -translate-x-1/2';
+			case 'stretch':
+				return 'left-0 right-0';
 			case 'end':
 			default:
 				return 'right-0';
@@ -59,6 +64,8 @@
 				return 'top-0';
 			case 'center':
 				return 'top-1/2 -translate-y-1/2';
+			case 'stretch':
+				return 'top-0 bottom-0';
 			case 'end':
 			default:
 				return 'bottom-0';
@@ -97,6 +104,7 @@
 
 	// Compute rounded corner classes based on side and alignment
 	let roundedClasses = $derived.by(() => {
+		if (!rounded || align === 'stretch') return '';
 		switch (side) {
 			case 'top':
 				if (align === 'start') return 'rounded-br-xl';
@@ -151,19 +159,14 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-{#if backdrop && open}
-	<!-- Backdrop -->
-	<button
-		class="fixed inset-0 bg-black/20 z-40 cursor-default"
-		transition:fade={{ duration: 200 }}
-		onclick={() => onclose?.()}
-		aria-label="Close panel"
-	></button>
+{#if backdrop}
+	<Backdrop open={open} onclick={() => onclose?.()} />
 {/if}
 
-<!-- Sheet panel -->
+<!-- Sheet panel — portalled so it stacks above all page chrome. -->
 <div
-	class="fixed bg-white shadow-xl z-50 flex flex-col border-warm-grey transition-transform duration-300 ease-out {positionClasses} {borderClasses} {roundedClasses}"
+	use:portal
+	class="fixed bg-white shadow-xl z-[9999] flex flex-col border-warm-grey transition-transform duration-300 ease-out {positionClasses} {borderClasses} {roundedClasses}"
 	style="{sizeStyle} transform: {open ? 'translate(0, 0)' : slideTransform};"
 >
 	<!-- Header -->

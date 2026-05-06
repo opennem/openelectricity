@@ -1,7 +1,9 @@
 <script>
 	import { urlFor } from '$lib/sanity';
-	import { fade, fly } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
 	import { ChevronLeft, ChevronRight, X } from '@lucide/svelte';
+	import { portal } from '$lib/actions/portal.js';
+	import { Backdrop } from '$lib/components/ui/backdrop';
 
 	/**
 	 * @type {{
@@ -111,20 +113,21 @@
 	</div>
 {/if}
 
+<Backdrop
+	open={!!lightboxPhoto}
+	variant="lightbox"
+	onclick={() => (lightboxIndex = -1)}
+	duration={150}
+/>
+
 {#if lightboxPhoto}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<div
-		class="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90"
-		transition:fade={{ duration: 150 }}
-		onclick={() => (lightboxIndex = -1)}
+		use:portal
+		class="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
 	>
 		<button
-			class="absolute right-4 top-4 text-white/70 hover:text-white"
-			onclick={(e) => {
-				e.stopPropagation();
-				lightboxIndex = -1;
-			}}
+			class="absolute right-4 top-4 text-white/70 hover:text-white pointer-events-auto"
+			onclick={() => (lightboxIndex = -1)}
 		>
 			<X size={24} />
 		</button>
@@ -132,31 +135,23 @@
 		{#if photos.length > 1}
 			{#if lightboxIndex > 0}
 				<button
-					class="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
-					onclick={(e) => {
-						e.stopPropagation();
-						lightboxIndex--;
-					}}
+					class="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white pointer-events-auto"
+					onclick={() => lightboxIndex--}
 				>
 					<ChevronLeft size={32} />
 				</button>
 			{/if}
 			{#if lightboxIndex < photos.length - 1}
 				<button
-					class="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white"
-					onclick={(e) => {
-						e.stopPropagation();
-						lightboxIndex++;
-					}}
+					class="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white pointer-events-auto"
+					onclick={() => lightboxIndex++}
 				>
 					<ChevronRight size={32} />
 				</button>
 			{/if}
 		{/if}
 
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<div class="flex flex-col items-center gap-2" onclick={(e) => e.stopPropagation()}>
+		<div class="flex flex-col items-center gap-2 pointer-events-auto">
 			<img
 				src={lightboxPhoto.asset ? urlFor(lightboxPhoto).url() : ''}
 				alt={lightboxPhoto.alt || lightboxPhoto.caption || 'Facility photo'}

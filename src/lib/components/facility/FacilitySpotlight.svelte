@@ -1,5 +1,7 @@
 <script>
-	import { fly, fade } from 'svelte/transition';
+	import { fly } from 'svelte/transition';
+	import { portal } from '$lib/actions/portal.js';
+	import { Backdrop } from '$lib/components/ui/backdrop';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import { buildFacilityHaystack, parseQueryTerms } from './facility-search.js';
@@ -101,18 +103,17 @@
 	}
 </script>
 
+<Backdrop {open} onclick={close} duration={150} />
+
 {#if open}
-	<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 	<div
-		class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[10000] flex items-start justify-center pt-[15vh]"
-		transition:fade={{ duration: 150 }}
-		onclick={close}
+		use:portal
+		class="fixed inset-0 z-[9999] flex items-start justify-center pt-[15vh] pointer-events-none"
 	>
 		<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 		<div
-			class="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden"
+			class="bg-white rounded-xl shadow-2xl w-full max-w-2xl mx-4 overflow-hidden pointer-events-auto"
 			transition:fly={{ y: -10, duration: 150 }}
-			onclick={(e) => e.stopPropagation()}
 		>
 			<div class="p-3 border-b border-warm-grey">
 				<input

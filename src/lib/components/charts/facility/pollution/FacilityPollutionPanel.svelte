@@ -1,13 +1,16 @@
 <script>
+	import { ExternalLink } from '@lucide/svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import { transformPollutionData } from './transform-pollution.js';
+	import { buildNpiFacilityUrl } from './npi-url.js';
 	import FacilityPollutionCharts from './FacilityPollutionCharts.svelte';
 
 	/**
 	 * Public-facing pollution panel for /facility/[code]. Fetches NPI pollution
 	 * data for the given facility on mount (and re-fetches when the facility
-	 * code changes), then renders the small-multiples chart view via
-	 * FacilityPollutionCharts.
+	 * code changes), then renders the row-based table via
+	 * FacilityPollutionCharts. Card chrome matches the Generation & Market
+	 * panel above it (rounded border, header with title + external link).
 	 *
 	 * @type {{ facility: any | null | undefined }}
 	 */
@@ -56,29 +59,50 @@
 
 	let transformed = $derived(pollutionData ? transformPollutionData(pollutionData) : null);
 	let hasPollutants = $derived(transformed ? transformed.pollutants.length > 0 : false);
+
+	let npiHref = $derived(
+		buildNpiFacilityUrl({
+			npiId: facility?.npi_id,
+			networkRegion: facility?.network_region,
+			year: transformed?.years[transformed.years.length - 1] ?? null
+		})
+	);
 </script>
 
-<div class="group relative rounded-lg p-4 bg-white">
+<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
 	<div
-		class="text-[10px] text-mid-grey uppercase tracking-widest mb-3 pb-1 border-b border-dark-grey"
+		class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
 	>
-		NPI Pollution Data
+		<h3 class="text-sm font-semibold text-dark-grey m-0">NPI Pollution Data</h3>
+		{#if npiHref}
+			<a
+				href={npiHref}
+				target="_blank"
+				rel="noopener noreferrer"
+				class="inline-flex items-center gap-1 text-xs text-mid-grey hover:text-dark-grey whitespace-nowrap"
+			>
+				View on NPI
+				<ExternalLink size={12} />
+			</a>
+		{/if}
 	</div>
 
-	{#if loading}
-		<div class="space-y-2">
-			<Skeleton variant="text" class="h-5 w-1/3" />
-			<Skeleton variant="text" class="h-4 w-full" />
-			<Skeleton variant="text" class="h-4 w-full" />
-			<Skeleton variant="text" class="h-4 w-full" />
-		</div>
-	{:else if errored}
-		<p class="text-sm text-mid-grey">Failed to load pollution data.</p>
-	{:else if !hasNpi}
-		<p class="text-sm text-mid-grey">This facility is not registered with the NPI.</p>
-	{:else if !hasPollutants}
-		<p class="text-sm text-mid-grey">No pollution data available for this facility.</p>
-	{:else}
-		<FacilityPollutionCharts data={transformed} />
-	{/if}
+	<div class="px-6 py-4">
+		{#if loading}
+			<div class="space-y-2">
+				<Skeleton variant="text" class="h-5 w-1/3" />
+				<Skeleton variant="text" class="h-4 w-full" />
+				<Skeleton variant="text" class="h-4 w-full" />
+				<Skeleton variant="text" class="h-4 w-full" />
+			</div>
+		{:else if errored}
+			<p class="text-sm text-mid-grey m-0">Failed to load pollution data.</p>
+		{:else if !hasNpi}
+			<p class="text-sm text-mid-grey m-0">This facility is not registered with the NPI.</p>
+		{:else if !hasPollutants || !transformed}
+			<p class="text-sm text-mid-grey m-0">No pollution data available for this facility.</p>
+		{:else}
+			<FacilityPollutionCharts data={transformed} />
+		{/if}
+	</div>
 </div>

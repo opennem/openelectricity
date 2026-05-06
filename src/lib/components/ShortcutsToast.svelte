@@ -1,6 +1,8 @@
 <script>
 	import { fly } from 'svelte/transition';
 	import { X } from '@lucide/svelte';
+	import { portal } from '$lib/actions/portal.js';
+	import { Backdrop } from '$lib/components/ui/backdrop';
 
 	/**
 	 * @typedef {{ label: string, keys: string[] }} Shortcut
@@ -16,20 +18,16 @@
 	let { visible = false, ondismiss, shortcuts = [] } = $props();
 </script>
 
-{#if visible}
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div
-		class="fixed inset-0 z-[10000] hidden md:flex items-center justify-center"
-		onclick={() => ondismiss?.()}
-	>
-		<!-- Backdrop -->
-		<div class="absolute inset-0 bg-black/20"></div>
+<Backdrop open={visible} onclick={() => ondismiss?.()} />
 
+{#if visible}
+	<div
+		use:portal
+		class="fixed inset-0 z-[9999] hidden md:flex items-center justify-center pointer-events-none"
+	>
 		<!-- Panel -->
 		<div
-			class="relative bg-white border border-warm-grey rounded-2xl shadow-xl px-8 py-6 min-w-[320px]"
-			onclick={(e) => e.stopPropagation()}
+			class="bg-white border border-warm-grey rounded-2xl shadow-xl px-8 py-6 min-w-[320px] pointer-events-auto"
 			transition:fly={{ y: 20, duration: 300 }}
 		>
 			<!-- Header -->

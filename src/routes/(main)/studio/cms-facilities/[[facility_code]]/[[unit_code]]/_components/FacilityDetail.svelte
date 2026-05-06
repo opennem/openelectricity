@@ -11,7 +11,9 @@
 	import { createUrlFor } from '$lib/sanity';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { ChevronRight, CircleX, ExternalLink, Minus, Pencil, Plus, X } from '@lucide/svelte';
-	import { fade, slide } from 'svelte/transition';
+	import { slide } from 'svelte/transition';
+	import { portal } from '$lib/actions/portal.js';
+	import { Backdrop } from '$lib/components/ui/backdrop';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import InlineDropdown from './InlineDropdown.svelte';
 	import { getClerkState } from '$lib/auth/clerk.svelte.js';
@@ -1418,16 +1420,21 @@
 	</div>
 
 	<!-- Photo lightbox -->
+	<Backdrop
+		open={!!lightboxPhoto}
+		variant="lightbox"
+		onclick={() => (lightboxIndex = -1)}
+		duration={150}
+	/>
+
 	{#if lightboxPhoto}
-		<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
 		<div
-			class="fixed inset-0 z-50 flex items-center justify-center bg-black/90"
-			transition:fade={{ duration: 150 }}
-			onclick={() => (lightboxIndex = -1)}
+			use:portal
+			class="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
 		>
 			<!-- Close button -->
 			<button
-				class="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors"
+				class="absolute top-4 right-4 p-2 text-white/70 hover:text-white transition-colors pointer-events-auto"
 				onclick={() => (lightboxIndex = -1)}
 			>
 				<X size={20} />
@@ -1437,16 +1444,16 @@
 			{#if facility.photos?.length > 1}
 				{#if lightboxIndex > 0}
 					<button
-						class="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white/50 hover:text-white transition-colors"
-						onclick={(e) => { e.stopPropagation(); lightboxIndex--; }}
+						class="absolute left-4 top-1/2 -translate-y-1/2 p-2 text-white/50 hover:text-white transition-colors pointer-events-auto"
+						onclick={() => lightboxIndex--}
 					>
 						<ChevronRight size={24} class="rotate-180" />
 					</button>
 				{/if}
 				{#if lightboxIndex < (facility.photos?.length ?? 1) - 1}
 					<button
-						class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white/50 hover:text-white transition-colors"
-						onclick={(e) => { e.stopPropagation(); lightboxIndex++; }}
+						class="absolute right-4 top-1/2 -translate-y-1/2 p-2 text-white/50 hover:text-white transition-colors pointer-events-auto"
+						onclick={() => lightboxIndex++}
 					>
 						<ChevronRight size={24} />
 					</button>
@@ -1454,8 +1461,7 @@
 			{/if}
 
 			<!-- Image + caption -->
-			<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
-			<div class="flex flex-col items-center gap-3" onclick={(e) => e.stopPropagation()}>
+			<div class="flex flex-col items-center gap-3 pointer-events-auto">
 				<img
 					src={lightboxPhoto?.asset
 						? urlFor(lightboxPhoto).url()

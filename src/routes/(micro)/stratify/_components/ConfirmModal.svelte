@@ -1,4 +1,7 @@
 <script>
+	import { portal } from '$lib/actions/portal.js';
+	import { Backdrop } from '$lib/components/ui/backdrop';
+
 	/**
 	 * @type {{
 	 *   open: boolean,
@@ -36,20 +39,15 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
+<Backdrop {open} onclick={oncancel} />
+
 {#if open}
-	<!-- Backdrop -->
 	<div
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-		role="presentation"
-		onclick={oncancel}
+		use:portal
+		class="fixed inset-0 z-[9999] flex items-center justify-center pointer-events-none"
 	>
 		<!-- Modal card -->
-		<!-- svelte-ignore a11y_click_events_have_key_events -->
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			class="bg-white rounded-lg shadow-lg w-80 mx-4 font-mono"
-			onclick={(e) => e.stopPropagation()}
-		>
+		<div class="bg-white rounded-lg shadow-lg w-80 mx-4 font-mono pointer-events-auto">
 			<div class="px-4 pt-4 pb-3">
 				<h3 class="text-[11px] font-bold text-dark-grey uppercase tracking-wide">{title}</h3>
 				<p class="text-[11px] text-mid-grey mt-2 leading-relaxed">{message}</p>
