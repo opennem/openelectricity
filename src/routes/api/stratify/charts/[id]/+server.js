@@ -121,6 +121,7 @@ export async function PATCH({ request, params }) {
 	if (body.animationSpeedMs !== undefined) patches.animationSpeedMs = body.animationSpeedMs;
 	if (body.animationAutoLoop !== undefined) patches.animationAutoLoop = body.animationAutoLoop;
 	if (body.animationAutoPlay !== undefined) patches.animationAutoPlay = body.animationAutoPlay;
+	if (body.animationTween !== undefined) patches.animationTween = body.animationTween;
 	if (body.chartCurve !== undefined) patches.chartCurve = body.chartCurve;
 	if (body.chartBorderWidth !== undefined) patches.chartBorderWidth = body.chartBorderWidth;
 	if (body.chartBorderColour !== undefined) patches.chartBorderColour = body.chartBorderColour;

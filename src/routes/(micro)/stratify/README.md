@@ -482,6 +482,7 @@ v1 snapshots are fully backward compatible. Missing fields get defaults:
 - `facetColumn` defaults to `null` (no faceting — single-panel render as before)
 - `animateAsOneChart` defaults to `false` (small multiples instead of animated single chart)
 - `animationAutoPlay` defaults to `false` (animation does not start until the user clicks play)
+- `animationTween` defaults to `true` (chart smoothly interpolates between facet frames; set `false` to jump directly between frames)
 - `facetPanelsPerRow` defaults to `0` (auto-fit columns based on container width and `MIN_PANEL_WIDTH`)
 - `chartBorderWidth` defaults to `0.5` (faint stroke around bar/column/area marks; `0` = none, accepts fractional values)
 - `chartBorderColour` defaults to `#000000` (stroke colour applied when `chartBorderWidth > 0`)

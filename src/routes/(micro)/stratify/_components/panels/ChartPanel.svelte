@@ -284,6 +284,16 @@
 							class="accent-dark-grey"
 						/>
 					</ControlInput>
+					<ControlInput suffix="Animate between frames">
+						<input
+							type="checkbox"
+							checked={project.animationTween}
+							onchange={(e) => {
+								project.animationTween = e.currentTarget.checked;
+							}}
+							class="accent-dark-grey"
+						/>
+					</ControlInput>
 				{/if}
 			{/if}
 

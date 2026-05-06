@@ -16,6 +16,7 @@
 	 *   frameDurationMs?: number,
 	 *   loop?: boolean,
 	 *   autoPlay?: boolean,
+	 *   tween?: boolean,
 	 *   children: (frame: {
 	 *     data: Array<Record<string, any>>,
 	 *     yMin: number,
@@ -32,6 +33,7 @@
 		frameDurationMs = 800,
 		loop = false,
 		autoPlay = false,
+		tween = true,
 		children
 	} = $props();
 
@@ -89,18 +91,21 @@
 	const frameData = $derived.by(() => {
 		const frames = framesByIndex;
 		if (frames.length === 0) return [];
-		const floor = Math.floor(safeFrame);
-		const i = floor % frames.length;
+		// When tweening, lerp between floor and next frame using the fraction.
+		// When not, snap to the nearest frame so the chart matches the label
+		// (currentFrameIndex uses round) and jumps cleanly during playback.
+		const baseIndex = tween ? Math.floor(safeFrame) : Math.min(Math.round(safeFrame), frames.length - 1);
+		const i = baseIndex % frames.length;
 		const next = (i + 1) % frames.length;
-		const t = safeFrame - floor;
+		const t = tween ? safeFrame - Math.floor(safeFrame) : 0;
 		const fromFrame = frames[i];
 		const toFrame = frames[next];
-		if (!fromFrame || !toFrame) return [];
+		if (!fromFrame) return [];
 
 		/** @type {Array<Record<string, any>>} */
 		const out = [];
 		for (const [xVal, fromRow] of fromFrame) {
-			const toRow = toFrame.get(xVal);
+			const toRow = toFrame?.get(xVal);
 			const merged = { ...fromRow };
 			if (toRow && t > 0) {
 				for (const name of seriesNames) {

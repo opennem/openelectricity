@@ -261,6 +261,7 @@
 				frameDurationMs={chart.animationSpeedMs}
 				loop={chart.animationAutoLoop}
 				autoPlay={chart.animationAutoPlay}
+				tween={chart.animationTween ?? true}
 			>
 				{#snippet children(frame)}
 					{@render plotChart(

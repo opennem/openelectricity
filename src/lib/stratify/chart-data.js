@@ -96,6 +96,7 @@ export function normaliseChart(chart) {
 		animationSpeedMs: chart.animationSpeedMs ?? 800,
 		animationAutoLoop: chart.animationAutoLoop ?? false,
 		animationAutoPlay: chart.animationAutoPlay ?? false,
+		animationTween: chart.animationTween ?? true,
 		chartCurve: chart.chartCurve ?? 'linear',
 		chartBorderWidth: chart.chartBorderWidth ?? 0.5,
 		chartBorderColour: chart.chartBorderColour ?? '#000000',

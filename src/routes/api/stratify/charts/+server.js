@@ -105,6 +105,7 @@ export async function POST({ request }) {
 		animationSpeedMs: body.animationSpeedMs ?? 800,
 		animationAutoLoop: body.animationAutoLoop ?? false,
 		animationAutoPlay: body.animationAutoPlay ?? false,
+		animationTween: body.animationTween ?? true,
 		chartCurve: body.chartCurve ?? 'linear',
 		chartBorderWidth: body.chartBorderWidth ?? 0.5,
 		chartBorderColour: body.chartBorderColour ?? '#000000',

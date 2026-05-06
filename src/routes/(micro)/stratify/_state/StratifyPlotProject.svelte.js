@@ -54,6 +54,7 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {number} [animationSpeedMs]
  * @property {boolean} [animationAutoLoop]
  * @property {boolean} [animationAutoPlay]
+ * @property {boolean} [animationTween]
  * @property {string} [chartCurve]
  * @property {number} [chartBorderWidth]
  * @property {string} [chartBorderColour]
@@ -200,6 +201,9 @@ export default class StratifyPlotProject {
 
 	/** @type {boolean} When true, animation begins playing automatically on mount */
 	animationAutoPlay = $state(false);
+
+	/** @type {boolean} When true, the chart smoothly interpolates between facet frames; when false, it jumps directly */
+	animationTween = $state(true);
 
 	/** @type {string} Plot curve type for line/area charts: linear, monotone-x, step, step-before, step-after, basis, natural */
 	chartCurve = $state('linear');
@@ -448,6 +452,7 @@ export default class StratifyPlotProject {
 		this.animationSpeedMs = 800;
 		this.animationAutoLoop = false;
 		this.animationAutoPlay = false;
+		this.animationTween = true;
 		this.chartCurve = 'linear';
 		this.chartBorderWidth = 0.5;
 		this.chartBorderColour = '#000000';
@@ -525,6 +530,7 @@ export default class StratifyPlotProject {
 			animationSpeedMs: this.animationSpeedMs,
 			animationAutoLoop: this.animationAutoLoop,
 			animationAutoPlay: this.animationAutoPlay,
+			animationTween: this.animationTween,
 			chartCurve: this.chartCurve,
 			chartBorderWidth: this.chartBorderWidth,
 			chartBorderColour: this.chartBorderColour,
@@ -584,6 +590,7 @@ export default class StratifyPlotProject {
 		this.animationSpeedMs = snapshot.animationSpeedMs ?? 800;
 		this.animationAutoLoop = snapshot.animationAutoLoop ?? false;
 		this.animationAutoPlay = snapshot.animationAutoPlay ?? false;
+		this.animationTween = snapshot.animationTween ?? true;
 		this.chartCurve = snapshot.chartCurve ?? 'linear';
 		this.chartBorderWidth = snapshot.chartBorderWidth ?? 0.5;
 		this.chartBorderColour = snapshot.chartBorderColour ?? '#000000';
