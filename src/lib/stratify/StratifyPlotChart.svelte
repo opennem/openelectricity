@@ -389,13 +389,10 @@
 				if (yScale.type === 'band') {
 					const domain = yScale.domain || chartData.map((/** @type {any} */ d) => d.category);
 					const step = Math.max(1, Math.ceil(domain.length / yTicks));
-					const visible = new Set(
-						domain.filter((/** @type {any} */ _, /** @type {number} */ i) => i % step === 0)
+					const visibleTicks = domain.filter(
+						(/** @type {any} */ _, /** @type {number} */ i) => i % step === 0
 					);
-					opts.y = {
-						...yScale,
-						tickFormat: (/** @type {any} */ d) => (visible.has(d) ? String(d) : '')
-					};
+					opts.y = { ...yScale, ticks: visibleTicks };
 				} else {
 					opts.y = { ...(opts.y || {}), ticks: yTicks };
 				}
@@ -450,13 +447,10 @@
 				const domain =
 					xScale.domain || chartData.map((/** @type {any} */ d) => d.category ?? d.date);
 				const step = Math.max(1, Math.ceil(domain.length / xTicks));
-				const visible = new Set(
-					domain.filter((/** @type {any} */ _, /** @type {number} */ i) => i % step === 0)
+				const visibleTicks = domain.filter(
+					(/** @type {any} */ _, /** @type {number} */ i) => i % step === 0
 				);
-				opts.x = {
-					...xScale,
-					tickFormat: (/** @type {any} */ d) => (visible.has(d) ? String(d) : '')
-				};
+				opts.x = { ...xScale, ticks: visibleTicks };
 			} else {
 				opts.x = { ...xScale, ticks: xTicks };
 			}
