@@ -97,6 +97,8 @@ export function normaliseChart(chart) {
 		animationAutoLoop: chart.animationAutoLoop ?? false,
 		animationAutoPlay: chart.animationAutoPlay ?? false,
 		chartCurve: chart.chartCurve ?? 'linear',
+		chartBorderWidth: chart.chartBorderWidth ?? 0.5,
+		chartBorderColour: chart.chartBorderColour ?? '#000000',
 		xLabel: chart.xLabel ?? '',
 		yLabel: chart.yLabel ?? '',
 		seriesYAxis: safeParseJSON(chart.seriesYAxis, {}),

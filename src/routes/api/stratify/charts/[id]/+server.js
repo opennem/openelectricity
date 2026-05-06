@@ -122,6 +122,8 @@ export async function PATCH({ request, params }) {
 	if (body.animationAutoLoop !== undefined) patches.animationAutoLoop = body.animationAutoLoop;
 	if (body.animationAutoPlay !== undefined) patches.animationAutoPlay = body.animationAutoPlay;
 	if (body.chartCurve !== undefined) patches.chartCurve = body.chartCurve;
+	if (body.chartBorderWidth !== undefined) patches.chartBorderWidth = body.chartBorderWidth;
+	if (body.chartBorderColour !== undefined) patches.chartBorderColour = body.chartBorderColour;
 	if (body.xLabel !== undefined) patches.xLabel = body.xLabel;
 	if (body.yLabel !== undefined) patches.yLabel = body.yLabel;
 	if (body.seriesYAxis !== undefined) patches.seriesYAxis = JSON.stringify(body.seriesYAxis);

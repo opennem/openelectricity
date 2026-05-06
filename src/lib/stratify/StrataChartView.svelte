@@ -23,7 +23,9 @@
 	const preset = $derived(getPreset(chart.stylePreset ?? 'oe'));
 	const plotStyleOptions = $derived({
 		style: getPlotStyle(chart.stylePreset ?? 'oe'),
-		curve: chart.chartCurve
+		curve: chart.chartCurve,
+		borderWidth: chart.chartBorderWidth ?? 0.5,
+		borderColour: chart.chartBorderColour ?? '#000000'
 	});
 
 	// Labels for all non-first data columns (for tooltips)

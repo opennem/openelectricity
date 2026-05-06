@@ -106,6 +106,8 @@ export async function POST({ request }) {
 		animationAutoLoop: body.animationAutoLoop ?? false,
 		animationAutoPlay: body.animationAutoPlay ?? false,
 		chartCurve: body.chartCurve ?? 'linear',
+		chartBorderWidth: body.chartBorderWidth ?? 0.5,
+		chartBorderColour: body.chartBorderColour ?? '#000000',
 		xLabel: body.xLabel ?? '',
 		yLabel: body.yLabel ?? '',
 		seriesYAxis: JSON.stringify(body.seriesYAxis ?? {}),

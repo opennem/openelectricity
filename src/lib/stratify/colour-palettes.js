@@ -62,6 +62,17 @@ const OE_ENERGY = [
 	'#594929'  // fossil fuels
 ];
 
+/** OE Secondary palette — supplementary qualitative palette */
+const OE_SECONDARY = [
+	'#545353',
+	'#DE4E28',
+	'#F480EE',
+	'#069FAF',
+	'#3245C9',
+	'#BDBCBC',
+	'#A078D7'
+];
+
 /**
  * Sample N evenly-spaced colours from a d3 interpolator.
  * @param {(t: number) => string} interpolator
@@ -77,6 +88,7 @@ function sampleInterpolator(interpolator, n) {
 export const PALETTES = [
 	// Qualitative
 	{ id: 'oe-energy', name: 'OE Energy', type: 'qualitative', colours: OE_ENERGY },
+	{ id: 'oe-secondary', name: 'OE Secondary', type: 'qualitative', colours: OE_SECONDARY },
 	{ id: 'tableau10', name: 'Tableau 10', type: 'qualitative', colours: [...schemeTableau10] },
 	{ id: 'set1', name: 'Set 1', type: 'qualitative', colours: [...schemeSet1] },
 	{ id: 'set2', name: 'Set 2', type: 'qualitative', colours: [...schemeSet2] },
@@ -131,6 +143,21 @@ export function getPaletteColours(paletteId, n) {
 		return palette.colours.slice(0, n);
 	}
 	return Array.from({ length: n }, (_, i) => palette.colours[i % palette.colours.length]);
+}
+
+/**
+ * Get the unique colour swatches for a palette — for the colour-picker UI,
+ * which should never show repeated colours when the palette is shorter than
+ * the requested count. Sequential/diverging palettes are sampled at `max`.
+ * @param {string} paletteId
+ * @param {number} [max]
+ * @returns {string[]}
+ */
+export function getPaletteSwatchColours(paletteId, max = 12) {
+	const palette = PALETTES_BY_ID[paletteId];
+	if (!palette) return getPaletteSwatchColours('oe-energy', max);
+	if (typeof palette.colours === 'function') return palette.colours(max);
+	return palette.colours.slice(0, max);
 }
 
 /**

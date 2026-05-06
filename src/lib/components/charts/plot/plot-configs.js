@@ -58,6 +58,18 @@ const SHARED_STYLE = {
 };
 
 /**
+ * Build the stroke props for bar/area marks when a non-zero border width is set.
+ * Returns an empty object when borderWidth is 0 so Plot keeps its default
+ * (no stroke).
+ * @param {number} [borderWidth]
+ * @param {string} [borderColour]
+ * @returns {{ stroke: string, strokeWidth: number } | {}}
+ */
+function borderProps(borderWidth = 0, borderColour = '#000000') {
+	return borderWidth > 0 ? { stroke: borderColour, strokeWidth: borderWidth } : {};
+}
+
+/**
  * Pivot wide-format data to long-format for Observable Plot's stacked marks.
  * @param {Array<Record<string, any>>} data
  * @param {string[]} seriesNames
@@ -301,6 +313,8 @@ export function capacityMarks(capacitySums, { isLine, isEnergyMetric }) {
  * @property {Record<string, string>} [seriesLineStyles] - Per-series line style overrides
  * @property {string | null} [facetColumn] - Column key to partition data into small-multiple panels (Plot fx)
  * @property {FacetGrid | null} [facetGrid] - Optional 2-D grid layout for wrapped small multiples
+ * @property {number} [borderWidth] - Stroke width in px around bar/area marks (0 = none)
+ * @property {string} [borderColour] - Stroke colour for bar/area marks (defaults to white)
  */
 
 /**
@@ -326,8 +340,11 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 		yDomain,
 		yTickFormat = 's',
 		facetColumn = null,
-		facetGrid = null
+		facetGrid = null,
+		borderWidth = 0,
+		borderColour
 	} = options;
+	const border = borderProps(borderWidth, borderColour);
 	const { xKey, isLinear } = detectXMode(data);
 	const long = toLong(data, seriesNames, xKey, facetColumn, facetGrid);
 	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
@@ -363,6 +380,7 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 					fill: 'series',
 					...facetMark,
 					...(curve ? { curve } : {}),
+					...border,
 					order: seriesNames
 				})
 			),
@@ -502,6 +520,8 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
  * @property {boolean} [horizontal]
  * @property {string | null} [facetColumn] - Column key to partition data into small-multiple panels (Plot fx)
  * @property {FacetGrid | null} [facetGrid] - Optional 2-D grid layout for wrapped small multiples
+ * @property {number} [borderWidth] - Stroke width in px around bar marks (0 = none)
+ * @property {string} [borderColour] - Stroke colour for bar marks (defaults to white)
  */
 
 /**
@@ -521,8 +541,11 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		extraMarks = [],
 		yTickFormat = 's',
 		facetColumn = null,
-		facetGrid = null
+		facetGrid = null,
+		borderWidth = 0,
+		borderColour
 	} = options;
+	const border = borderProps(borderWidth, borderColour);
 
 	const { xKey, isCategory, isLinear } = detectXMode(data);
 	const long = toLong(data, seriesNames, xKey, facetColumn, facetGrid);
@@ -539,7 +562,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 				stackY(
 					groupX(
 						{ y: 'sum' },
-						{ x: 'x', y: 'value', fill: 'series', ...facetMark, order: seriesNames }
+						{ x: 'x', y: 'value', fill: 'series', ...facetMark, ...border, order: seriesNames }
 					)
 				)
 			)
@@ -555,6 +578,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 					y: 'value',
 					fill: 'series',
 					...facetMark,
+					...border,
 					order: seriesNames
 				})
 			)
@@ -570,6 +594,7 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 					y: 'value',
 					fill: 'series',
 					...facetMark,
+					...border,
 					order: seriesNames
 				})
 			)
@@ -609,8 +634,11 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 		legend = true,
 		extraMarks = [],
 		yTickFormat = 's',
-		facetColumn = null
+		facetColumn = null,
+		borderWidth = 0,
+		borderColour
 	} = options;
+	const border = borderProps(borderWidth, borderColour);
 
 	const { xKey } = detectXMode(data);
 	const long = toLong(data, seriesNames, xKey, facetColumn);
@@ -643,7 +671,8 @@ export function createGroupedBarOptions(data, seriesNames, colours, labels, opti
 				y: 'value',
 				[groupAxis]: 'x',
 				...(facetColumn ? { fx: FACET_FIELD } : {}),
-				fill: 'series'
+				fill: 'series',
+				...border
 			}),
 			ruleY([0])
 		]
@@ -670,8 +699,11 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 		extraMarks = [],
 		yTickFormat,
 		facetColumn = null,
-		facetGrid = null
+		facetGrid = null,
+		borderWidth = 0,
+		borderColour
 	} = options;
+	const border = borderProps(borderWidth, borderColour);
 	const long = toLong(data, seriesNames, 'category', facetColumn, facetGrid);
 	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
 	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
@@ -697,7 +729,7 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
 				stackX(
 					groupY(
 						{ x: 'sum' },
-						{ y: 'x', x: 'value', fill: 'series', ...facetMark, order: seriesNames }
+						{ y: 'x', x: 'value', fill: 'series', ...facetMark, ...border, order: seriesNames }
 					)
 				)
 			),
@@ -724,8 +756,11 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 		legend = true,
 		extraMarks = [],
 		yTickFormat = 's',
-		facetColumn = null
+		facetColumn = null,
+		borderWidth = 0,
+		borderColour
 	} = options;
+	const border = borderProps(borderWidth, borderColour);
 	const long = toLong(data, seriesNames, 'category', facetColumn);
 	const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
 	const categoryDomain = data.map((/** @type {any} */ d) => d.category);
@@ -756,7 +791,8 @@ export function createGroupedHorizontalBarOptions(data, seriesNames, colours, la
 				x: 'value',
 				fy: 'x',
 				...(facetColumn ? { fx: FACET_FIELD } : {}),
-				fill: 'series'
+				fill: 'series',
+				...border
 			}),
 			ruleX([0])
 		]
@@ -795,8 +831,11 @@ export function createColourGroupedBarOptions(
 		yTickFormat,
 		horizontal = false,
 		facetColumn = null,
-		facetGrid = null
+		facetGrid = null,
+		borderWidth = 0,
+		borderColour
 	} = options;
+	const border = borderProps(borderWidth, borderColour);
 
 	const long = data
 		.filter((row) => row[valueKey] != null)
@@ -848,7 +887,7 @@ export function createColourGroupedBarOptions(
 			...facetScale,
 			marks: [
 				...extraMarks,
-				barX(long, { y: 'x', x1: 0, x2: 'value', fill: 'colourGroup', ...facetMark }),
+				barX(long, { y: 'x', x1: 0, x2: 'value', fill: 'colourGroup', ...facetMark, ...border }),
 				ruleX([0]),
 				...(labelMark ? [labelMark] : [])
 			]
@@ -864,7 +903,7 @@ export function createColourGroupedBarOptions(
 		...facetScale,
 		marks: [
 			...extraMarks,
-			barY(long, { x: 'x', y1: 0, y2: 'value', fill: 'colourGroup', ...facetMark }),
+			barY(long, { x: 'x', y1: 0, y2: 'value', fill: 'colourGroup', ...facetMark, ...border }),
 			ruleY([0]),
 			...(labelMark ? [labelMark] : [])
 		]
@@ -1006,8 +1045,11 @@ export function createMixedMarkOptions(
 		yTickFormat,
 		seriesLineStyles = {},
 		facetColumn = null,
-		facetGrid = null
+		facetGrid = null,
+		borderWidth = 0,
+		borderColour
 	} = options;
+	const border = borderProps(borderWidth, borderColour);
 
 	const defaultMarkType = globalTypeToMarkType(defaultChartType);
 	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
@@ -1045,6 +1087,7 @@ export function createMixedMarkOptions(
 					fill: 'series',
 					...facetMark,
 					...(curve ? { curve } : {}),
+					...border,
 					order: groups.area
 				})
 			)
@@ -1061,7 +1104,7 @@ export function createMixedMarkOptions(
 					stackY(
 						groupX(
 							{ y: 'sum' },
-							{ x: 'x', y: 'value', fill: 'series', ...facetMark, order: groups.bar }
+							{ x: 'x', y: 'value', fill: 'series', ...facetMark, ...border, order: groups.bar }
 						)
 					)
 				)
@@ -1077,6 +1120,7 @@ export function createMixedMarkOptions(
 						y: 'value',
 						fill: 'series',
 						...facetMark,
+						...border,
 						order: groups.bar
 					})
 				)
@@ -1092,6 +1136,7 @@ export function createMixedMarkOptions(
 						y: 'value',
 						fill: 'series',
 						...facetMark,
+						...border,
 						order: groups.bar
 					})
 				)

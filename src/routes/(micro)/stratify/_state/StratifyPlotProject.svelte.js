@@ -55,6 +55,8 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {boolean} [animationAutoLoop]
  * @property {boolean} [animationAutoPlay]
  * @property {string} [chartCurve]
+ * @property {number} [chartBorderWidth]
+ * @property {string} [chartBorderColour]
  * @property {string} [xLabel]
  * @property {string} [yLabel]
  * @property {Record<string, 'left' | 'right'>} [seriesYAxis]
@@ -201,6 +203,12 @@ export default class StratifyPlotProject {
 
 	/** @type {string} Plot curve type for line/area charts: linear, monotone-x, step, step-before, step-after, basis, natural */
 	chartCurve = $state('linear');
+
+	/** @type {number} Border (stroke) width in pixels for bar, column and area marks (0 = no border) */
+	chartBorderWidth = $state(0.5);
+
+	/** @type {string} Border (stroke) colour for bar, column and area marks (CSS hex/rgba) */
+	chartBorderColour = $state('#000000');
 
 	// --- Axis labels ---
 	/** @type {string} X-axis label (empty = hidden) */
@@ -441,6 +449,8 @@ export default class StratifyPlotProject {
 		this.animationAutoLoop = false;
 		this.animationAutoPlay = false;
 		this.chartCurve = 'linear';
+		this.chartBorderWidth = 0.5;
+		this.chartBorderColour = '#000000';
 		this.xLabel = '';
 		this.yLabel = '';
 		this.seriesYAxis = {};
@@ -516,6 +526,8 @@ export default class StratifyPlotProject {
 			animationAutoLoop: this.animationAutoLoop,
 			animationAutoPlay: this.animationAutoPlay,
 			chartCurve: this.chartCurve,
+			chartBorderWidth: this.chartBorderWidth,
+			chartBorderColour: this.chartBorderColour,
 			xLabel: this.xLabel,
 			yLabel: this.yLabel,
 			seriesYAxis: this.seriesYAxis,
@@ -573,6 +585,8 @@ export default class StratifyPlotProject {
 		this.animationAutoLoop = snapshot.animationAutoLoop ?? false;
 		this.animationAutoPlay = snapshot.animationAutoPlay ?? false;
 		this.chartCurve = snapshot.chartCurve ?? 'linear';
+		this.chartBorderWidth = snapshot.chartBorderWidth ?? 0.5;
+		this.chartBorderColour = snapshot.chartBorderColour ?? '#000000';
 		this.xLabel = snapshot.xLabel ?? '';
 		this.yLabel = snapshot.yLabel ?? '';
 		this.seriesYAxis = snapshot.seriesYAxis ?? {};

@@ -483,6 +483,8 @@ v1 snapshots are fully backward compatible. Missing fields get defaults:
 - `animateAsOneChart` defaults to `false` (small multiples instead of animated single chart)
 - `animationAutoPlay` defaults to `false` (animation does not start until the user clicks play)
 - `facetPanelsPerRow` defaults to `0` (auto-fit columns based on container width and `MIN_PANEL_WIDTH`)
+- `chartBorderWidth` defaults to `0.5` (faint stroke around bar/column/area marks; `0` = none, accepts fractional values)
+- `chartBorderColour` defaults to `#000000` (stroke colour applied when `chartBorderWidth > 0`)
 
 ## Data Format
 
@@ -514,7 +516,7 @@ Themes control typography and gridline styling only. Data colours are handled se
 
 ### Colour Palettes (`colourPalette`)
 
-**Qualitative** (fixed colour arrays): `oe-energy`, `tableau10`, `set1`, `set2`, `set3`, `paired`, `dark2`, `pastel1`, `pastel2`, `accent`
+**Qualitative** (fixed colour arrays): `oe-energy`, `oe-secondary`, `tableau10`, `set1`, `set2`, `set3`, `paired`, `dark2`, `pastel1`, `pastel2`, `accent`
 
 **Sequential** (interpolated for any N): `blues`, `greens`, `oranges`, `purples`, `reds`, `greys`, `ylgn`, `ylorrd`, `bugn`, `pubu`
 

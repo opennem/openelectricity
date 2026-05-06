@@ -2,7 +2,7 @@
 	import { dndzone } from 'svelte-dnd-action';
 	import { flip } from 'svelte/animate';
 	import { getStratifyContext } from '../_state/context.js';
-	import { getPaletteColours } from '$lib/stratify/colour-palettes.js';
+	import { getPaletteSwatchColours } from '$lib/stratify/colour-palettes.js';
 	import { LINE_STYLES } from '$lib/stratify/chart-types.js';
 
 	const project = getStratifyContext();
@@ -223,7 +223,7 @@
 						<div class="mt-1.5 ml-0.5 p-2.5 bg-white border border-warm-grey rounded-lg shadow-md">
 							<!-- Preset palette swatches -->
 							<div class="flex flex-wrap gap-1 mb-2">
-								{#each getPaletteColours(project.colourPalette, 12) as colour, i (colour + i)}
+								{#each getPaletteSwatchColours(project.colourPalette) as colour, i (colour + i)}
 									<button
 										type="button"
 										onclick={() => setColour(colour)}
@@ -378,7 +378,7 @@
 						<div class="mt-1.5 ml-5.5 p-2.5 bg-white border border-warm-grey rounded-lg shadow-md">
 							<!-- Preset palette swatches -->
 							<div class="flex flex-wrap gap-1 mb-2">
-								{#each getPaletteColours(project.colourPalette, 12) as colour, i (colour + i)}
+								{#each getPaletteSwatchColours(project.colourPalette) as colour, i (colour + i)}
 									<button
 										type="button"
 										onclick={() => setColour(colour)}

@@ -82,7 +82,37 @@
 
 <!-- ═══ Section 1: Chart Type ═══ -->
 <SectionHeader label="Type">
-	<ChartTypeSelector />
+	<div class="flex flex-col gap-2">
+		<ChartTypeSelector />
+		{#if project.chartType !== 'line'}
+			<ControlInput label="Border" suffix="px">
+				<input
+					type="number"
+					min="0"
+					max="10"
+					step="0.5"
+					value={project.chartBorderWidth}
+					oninput={(e) => {
+						const v = parseFloat(e.currentTarget.value);
+						if (Number.isFinite(v) && v >= 0 && v <= 10) {
+							project.chartBorderWidth = v;
+						}
+					}}
+					class={`${CONTROL_INPUT_CLASS} w-20`}
+				/>
+				<input
+					type="color"
+					value={project.chartBorderColour}
+					oninput={(e) => {
+						project.chartBorderColour = e.currentTarget.value;
+					}}
+					class="w-6 h-6 rounded border border-warm-grey cursor-pointer p-0"
+					title="Border colour"
+					aria-label="Border colour"
+				/>
+			</ControlInput>
+		{/if}
+	</div>
 </SectionHeader>
 
 <!-- ═══ Section 2: Data Encoding ═══ -->
