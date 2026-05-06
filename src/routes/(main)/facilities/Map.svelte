@@ -35,6 +35,8 @@
 	 *   suppressFitBounds?: boolean,
 	 *   flyToOffsetX?: number,
 	 *   flyToOffsetY?: number,
+	 *   metricValues?: Map<string, number | null>,
+	 *   metricMissingByCode?: Set<string>,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
 	 *   onselect?: (facility: any | null) => void,
@@ -55,6 +57,8 @@
 		suppressFitBounds = false,
 		flyToOffsetX = 0,
 		flyToOffsetY = 0,
+		metricValues = new Map(),
+		metricMissingByCode = new Set(),
 		onhover,
 		onclick,
 		onselect,
@@ -230,26 +234,36 @@
 		return cache;
 	});
 
-	// Convert facilities to GeoJSON for clustering
+	// Convert facilities to GeoJSON for clustering. Facilities without a value
+	// for the active metric are dropped here so they're hidden from both the
+	// circle layer and any clustering — e.g. clean renewables disappear when
+	// 'Pollution' is the active metric.
 	let facilitiesGeoJSON = $derived.by(() => {
 		/** @type {GeoJSON.FeatureCollection} */
 		const geojson = {
 			type: 'FeatureCollection',
-			features: facilities.map((facility) => ({
-				type: 'Feature',
-				geometry: {
-					type: 'Point',
-					coordinates: [facility.location.lng, facility.location.lat]
-				},
-				properties: {
-					code: facility.code,
-					name: facility.name,
-					color: getFacilityColor(facility),
-					network_id: facility.network_id,
-					network_region: facility.network_region,
-					capacity: getTotalCapacity(facility)
-				}
-			}))
+			features: facilities
+				.filter((facility) => !metricMissingByCode.has(facility.code))
+				.map((facility) => {
+					const normalised = metricValues.get(facility.code);
+					return {
+						type: 'Feature',
+						geometry: {
+							type: 'Point',
+							coordinates: [facility.location.lng, facility.location.lat]
+						},
+						properties: {
+							code: facility.code,
+							name: facility.name,
+							color: getFacilityColor(facility),
+							network_id: facility.network_id,
+							network_region: facility.network_region,
+							capacity: getTotalCapacity(facility),
+							// Active metric, normalised to 0..1 — drives marker radius.
+							metric_value: typeof normalised === 'number' ? normalised : 0
+						}
+					};
+				})
 		};
 		return geojson;
 	});
@@ -834,38 +848,17 @@
 							[
 								'interpolate',
 								['linear'],
-								['sqrt', ['get', 'capacity']],
-								0,
-								6,
-								10,
-								10,
-								20,
-								14,
-								30,
-								18,
-								45,
-								24,
-								60,
-								30
+								['get', 'metric_value'],
+								0, 6, 0.25, 10, 0.5, 16, 0.75, 24, 1, 30
 							],
 							[
 								'interpolate',
 								['linear'],
-								['sqrt', ['get', 'capacity']],
-								0,
-								4,
-								10,
-								8,
-								20,
-								12,
-								30,
-								16,
-								45,
-								22,
-								60,
-								28
+								['get', 'metric_value'],
+								0, 4, 0.25, 8, 0.5, 14, 0.75, 22, 1, 28
 							]
 						],
+						'circle-radius-transition': { duration: 400, delay: 0 },
 						'circle-stroke-width': [
 							'case',
 							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
@@ -907,38 +900,17 @@
 							[
 								'interpolate',
 								['linear'],
-								['sqrt', ['get', 'capacity']],
-								0,
-								6,
-								10,
-								10,
-								20,
-								14,
-								30,
-								18,
-								45,
-								24,
-								60,
-								30
+								['get', 'metric_value'],
+								0, 6, 0.25, 10, 0.5, 16, 0.75, 24, 1, 30
 							],
 							[
 								'interpolate',
 								['linear'],
-								['sqrt', ['get', 'capacity']],
-								0,
-								4,
-								10,
-								8,
-								20,
-								12,
-								30,
-								16,
-								45,
-								22,
-								60,
-								28
+								['get', 'metric_value'],
+								0, 4, 0.25, 8, 0.5, 14, 0.75, 22, 1, 28
 							]
 						],
+						'circle-radius-transition': { duration: 400, delay: 0 },
 						'circle-stroke-width': [
 							'case',
 							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],

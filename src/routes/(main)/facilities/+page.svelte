@@ -7,6 +7,8 @@
 	import { X, Flag, Pause, Play, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
+	import { fetchMetricData } from './_utils/fetch-metric-data.js';
+	import { normaliseMetric } from './_utils/normalise-metric.js';
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
@@ -156,6 +158,111 @@
 	let mapClustering = $state(page.url.searchParams.get('clustering') === 'true');
 	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
 
+	// Metric switch — drives marker sizing on the map. Defaults to capacity
+	// (current behaviour). Pollution exposes a sub-picker; emissions is a
+	// disabled placeholder.
+	const VALID_METRICS = /** @type {const} */ (['capacity', 'generation', 'pollution', 'emissions']);
+	const VALID_POLLUTANTS = /** @type {const} */ ([
+		'air_pollutant',
+		'water_pollutant',
+		'heavy_metal',
+		'organic'
+	]);
+	const VALID_GENERATION_MODES = /** @type {const} */ (['live', 'daily']);
+	const initialMetric = page.url.searchParams.get('metric') ?? 'capacity';
+	const initialPollutant = page.url.searchParams.get('pollutant') ?? 'air_pollutant';
+	const initialGenerationMode = page.url.searchParams.get('mode') ?? 'daily';
+	let mapMetric = $state(
+		/** @type {'capacity' | 'generation' | 'pollution' | 'emissions'} */ (
+			VALID_METRICS.includes(/** @type {any} */ (initialMetric)) ? initialMetric : 'capacity'
+		)
+	);
+	let mapPollutantCategory = $state(
+		/** @type {'air_pollutant' | 'water_pollutant' | 'heavy_metal' | 'organic'} */ (
+			VALID_POLLUTANTS.includes(/** @type {any} */ (initialPollutant))
+				? initialPollutant
+				: 'air_pollutant'
+		)
+	);
+	let mapGenerationMode = $state(
+		/** @type {'live' | 'daily'} */ (
+			VALID_GENERATION_MODES.includes(/** @type {any} */ (initialGenerationMode))
+				? initialGenerationMode
+				: 'daily'
+		)
+	);
+	let metricLoading = $state(false);
+	/** @type {string | null} */
+	let metricError = $state(null);
+	/** @type {Map<string, number>} */
+	let metricValuesRaw = $state(new Map());
+
+	// Capacity values come from the loaded facility list — no fetch needed.
+	// Other metrics are fetched via /api/facilities/{generation,pollution} and
+	// stored in metricValuesRaw. The active map property is normalised below.
+	let capacityValuesByCode = $derived.by(() => {
+		const m = new Map();
+		for (const f of facilities ?? []) m.set(f.code, getFacilityCapacity(f));
+		return m;
+	});
+
+	$effect(() => {
+		const metric = mapMetric;
+		const category = mapPollutantCategory;
+		const generationMode = mapGenerationMode;
+
+		if (metric === 'capacity' || metric === 'emissions') {
+			metricValuesRaw = new Map();
+			metricLoading = false;
+			metricError = null;
+			return;
+		}
+
+		const controller = new AbortController();
+		metricLoading = true;
+		metricError = null;
+
+		fetchMetricData({ metric, category, generationMode, signal: controller.signal })
+			.then((m) => {
+				metricValuesRaw = m;
+			})
+			.catch((/** @type {unknown} */ err) => {
+				if (err instanceof DOMException && err.name === 'AbortError') return;
+				metricError = `Couldn't load ${metric} data — showing capacity`;
+				metricValuesRaw = new Map();
+				// Auto-revert to capacity after a short delay so the user isn't
+				// stuck with empty markers.
+				setTimeout(() => {
+					if (mapMetric === metric) mapMetric = 'capacity';
+				}, 3000);
+			})
+			.finally(() => {
+				metricLoading = false;
+			});
+
+		return () => controller.abort();
+	});
+
+	// Normalised 0..1 map-friendly values for the active metric. Capacity is
+	// always the fallback so the map always has something to size by.
+	let metricValues = $derived.by(() => {
+		if (mapMetric === 'capacity' || mapMetric === 'emissions' || metricValuesRaw.size === 0) {
+			return normaliseMetric(capacityValuesByCode);
+		}
+		return normaliseMetric(metricValuesRaw);
+	});
+
+	// When the active metric is non-capacity, facilities without a value should
+	// fade on the map. Capacity always has a value for every facility.
+	let metricMissingByCode = $derived.by(() => {
+		const out = new Set();
+		if (mapMetric === 'capacity' || mapMetric === 'emissions') return out;
+		for (const f of facilities ?? []) {
+			if (!metricValuesRaw.has(f.code)) out.add(f.code);
+		}
+		return out;
+	});
+
 	/** @type {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} */
 	let transmissionLineVisibility = $state({ high: true, medium: true, low: true, lowest: true });
 
@@ -243,6 +350,37 @@
 			params.set('golf', 'true');
 		} else {
 			params.delete('golf');
+		}
+
+		// metric: only include if non-default (default is capacity)
+		if (mapMetric !== 'capacity') {
+			params.set('metric', mapMetric);
+		} else {
+			params.delete('metric');
+		}
+
+		// pollutant: only include if metric is pollution AND non-default category
+		if (mapMetric === 'pollution' && mapPollutantCategory !== 'air_pollutant') {
+			params.set('pollutant', mapPollutantCategory);
+		} else {
+			params.delete('pollutant');
+		}
+
+		// mode: only include if metric is generation AND non-default
+		if (mapMetric === 'generation' && mapGenerationMode !== 'daily') {
+			params.set('mode', mapGenerationMode);
+		} else {
+			params.delete('mode');
+		}
+
+		// facility: re-source from local state rather than the (potentially
+		// stale) URL params. `page.url` updates async after replaceState,
+		// so reading from it here can re-introduce a facility param that
+		// closeFacilityDetail just removed.
+		if (selectedFacility?.code) {
+			params.set('facility', selectedFacility.code);
+		} else {
+			params.delete('facility');
 		}
 
 		const newUrl = `${page.url.pathname}?${params.toString()}`;
@@ -956,6 +1094,21 @@
 				onyearplayingchange={(playing) => (isYearPlaying = playing)}
 				onplayyearchange={(year) => (playYear = year)}
 				onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
+				{mapMetric}
+				{mapPollutantCategory}
+				{mapGenerationMode}
+				onmetricchange={(m) => {
+					mapMetric = m;
+					updateMapOptionsUrl();
+				}}
+				oncategorychange={(c) => {
+					mapPollutantCategory = c;
+					updateMapOptionsUrl();
+				}}
+				ongenerationmodechange={(m) => {
+					mapGenerationMode = m;
+					updateMapOptionsUrl();
+				}}
 			/>
 		</div>
 	{/snippet}
@@ -1074,6 +1227,8 @@
 						cooperativeGestures={!isFullscreen}
 						flyToOffsetX={0}
 						flyToOffsetY={selectedFacility ? -0.15 : 0}
+						{metricValues}
+						{metricMissingByCode}
 						onhover={(f) => (hoveredFacility = f)}
 						onclick={(f) => (clickedFacility = f)}
 						onselect={handleFacilitySelect}

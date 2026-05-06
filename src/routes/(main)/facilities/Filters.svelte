@@ -58,7 +58,13 @@
 	 *   onshortcutinvoked?: () => void,
 	 *   onyearplayingchange?: (playing: boolean) => void,
 	 *   onplayyearchange?: (year: number | null) => void,
-	 *   onregisteranimationcontrols?: (controls: { stop: () => void, toggle: () => void }) => void
+	 *   onregisteranimationcontrols?: (controls: { stop: () => void, toggle: () => void }) => void,
+	 *   mapMetric?: 'capacity' | 'generation' | 'pollution' | 'emissions',
+	 *   mapPollutantCategory?: 'air_pollutant' | 'water_pollutant' | 'heavy_metal' | 'organic',
+	 *   mapGenerationMode?: 'live' | 'daily',
+	 *   onmetricchange?: (metric: 'capacity' | 'generation' | 'pollution' | 'emissions') => void,
+	 *   oncategorychange?: (category: 'air_pollutant' | 'water_pollutant' | 'heavy_metal' | 'organic') => void,
+	 *   ongenerationmodechange?: (mode: 'live' | 'daily') => void
 	 * }}
 	 */
 	let {
@@ -88,8 +94,85 @@
 		onshortcutinvoked,
 		onyearplayingchange,
 		onplayyearchange,
-		onregisteranimationcontrols
+		onregisteranimationcontrols,
+		mapMetric = 'capacity',
+		mapPollutantCategory = 'air_pollutant',
+		mapGenerationMode = 'daily',
+		onmetricchange,
+		oncategorychange,
+		ongenerationmodechange
 	} = $props();
+
+	// Map metric "Show by" dropdown — hidden for now. State + handler kept
+	// in `+page.svelte` (mapMetric / mapPollutantCategory / mapGenerationMode)
+	// so the marker-sizing pipeline still works via URL params; this block
+	// only owns the dropdown UI and its decompose logic. See the matching
+	// commented FormSelect in the markup below to re-enable.
+	/*
+	const METRIC_OPTIONS = [
+		{ value: 'capacity', label: 'Capacity', description: 'Registered capacity (MW)' },
+		{ isGroupHeader: true, value: '__gen', label: 'Generation' },
+		{
+			value: 'generation:daily',
+			label: 'Daily energy',
+			description: 'Most recent fully-published day (MWh) — both networks'
+		},
+		{
+			value: 'generation:live',
+			label: 'Live',
+			description: 'Latest 5-min reading (MW) — NEM only'
+		},
+		{ isGroupHeader: true, value: '__pol', label: 'Pollution' },
+		{ value: 'pollution:air_pollutant', label: 'Air' },
+		{ value: 'pollution:water_pollutant', label: 'Water' },
+		{ value: 'pollution:heavy_metal', label: 'Heavy Metals' },
+		{ value: 'pollution:organic', label: 'Organics' }
+	];
+
+	let metricSelected = $derived.by(() => {
+		if (mapMetric === 'generation') {
+			return {
+				label: `Generation · ${mapGenerationMode === 'live' ? 'Live' : 'Daily energy'}`,
+				value: `generation:${mapGenerationMode}`
+			};
+		}
+		if (mapMetric === 'pollution') {
+			const labels = {
+				air_pollutant: 'Air',
+				water_pollutant: 'Water',
+				heavy_metal: 'Heavy Metals',
+				organic: 'Organics'
+			};
+			return {
+				label: `Pollution · ${labels[mapPollutantCategory] ?? 'Air'}`,
+				value: `pollution:${mapPollutantCategory}`
+			};
+		}
+		return { label: 'Capacity', value: 'capacity' };
+	});
+
+	function handleMetricChange(option) {
+		const value = option.value;
+		if (typeof value !== 'string') return;
+		const [metric, sub] = value.split(':');
+		if (metric === 'generation') {
+			if (sub === 'live' || sub === 'daily') ongenerationmodechange?.(sub);
+			onmetricchange?.('generation');
+		} else if (metric === 'pollution') {
+			if (
+				sub === 'air_pollutant' ||
+				sub === 'water_pollutant' ||
+				sub === 'heavy_metal' ||
+				sub === 'organic'
+			) {
+				oncategorychange?.(sub);
+			}
+			onmetricchange?.('pollution');
+		} else if (metric === 'capacity' || metric === 'emissions') {
+			onmetricchange?.(metric);
+		}
+	}
+	*/
 
 	// ============================================
 	// Local State
@@ -631,6 +714,22 @@
 				onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 				formatValue={formatCapacity}
 			/>
+
+			<!-- Map metric "Show by" dropdown — hidden for now.
+			     To re-enable: uncomment the FormSelect below AND the
+			     METRIC_OPTIONS/metricSelected/handleMetricChange block in
+			     the script.
+			<FormSelect
+				selected={metricSelected}
+				options={METRIC_OPTIONS}
+				formLabel="Show by"
+				paddingX="pl-5 pr-4"
+				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+				compact={isFullscreen}
+				align="right"
+				onchange={handleMetricChange}
+			/>
+			-->
 
 			<!-- Years dropdown (inline for play/pause control) -->
 			<div class="relative text-sm lg:text-base">
