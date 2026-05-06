@@ -15,7 +15,8 @@
 	 *   height?: string,
 	 *   align?: 'start' | 'center' | 'end' | 'stretch',
 	 *   rounded?: boolean,
-	 *   children?: import('svelte').Snippet
+	 *   children?: import('svelte').Snippet,
+	 *   footer?: import('svelte').Snippet
 	 * }}
 	 */
 	let {
@@ -29,7 +30,8 @@
 		height,
 		align = 'end',
 		rounded = true,
-		children
+		children,
+		footer
 	} = $props();
 
 	/**
@@ -185,4 +187,10 @@
 	<div class="flex-1 overflow-y-auto min-h-0">
 		{@render children?.()}
 	</div>
+
+	{#if footer}
+		<footer class="px-6 py-3 border-t border-warm-grey shrink-0">
+			{@render footer()}
+		</footer>
+	{/if}
 </div>

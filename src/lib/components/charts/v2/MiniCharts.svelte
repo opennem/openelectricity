@@ -34,6 +34,7 @@
 	 * @property {() => void} [onhoverend]
 	 * @property {(time: number) => void} [onfocus]
 	 * @property {(detail: { key: string }) => void} [onscenarioclick]
+	 * @property {string} [chartHeightClass] - Tailwind height class applied to each card's chart area (default `h-[150px]`).
 	 */
 
 	/** @type {Props} */
@@ -53,6 +54,7 @@
 		gridGapClass = 'gap-3',
 		sectionBorderClass = '',
 		sectionPaddingClass = 'p-8',
+		chartHeightClass = 'h-[150px]',
 		reverseOrder = true,
 		showMaxReferenceLine = false,
 		tooltipMode = /** @type {'strip' | 'compact-strip' | 'floating' | 'none'} */ ('none'),
@@ -145,7 +147,7 @@
 					chartType,
 					hideDataOptions: true,
 					hideChartTypeOptions: true,
-					chartStyles: { chartHeightClasses: 'h-[150px]' }
+					chartStyles: { chartHeightClasses: chartHeightClass }
 				});
 				storePool.set(key, store);
 			}

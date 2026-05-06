@@ -9,6 +9,35 @@ const client = new OpenElectricityClient({
 
 const DEFAULT_CATEGORIES = ['air_pollutant', 'water_pollutant', 'heavy_metal', 'organic'];
 
+/**
+ * Fetch a single category for a facility. The OE API mis-stamps the
+ * `pollutant_category` column when multiple categories are requested in one
+ * call (everything collapses to `air_pollutant` / `heavy_metal`), so we issue
+ * one request per category and re-stamp the column ourselves based on the
+ * request parameter — which is the only reliable source of truth.
+ *
+ * @param {string} code
+ * @param {string} category
+ */
+async function fetchCategory(code, category) {
+	try {
+		const r = await client.getFacilityPollution({
+			facility_code: [code],
+			pollutant_category: /** @type {any} */ ([category])
+		});
+		const data = r.response.data ?? [];
+		for (const ts of data) {
+			for (const result of ts.results ?? []) {
+				if (result.columns) result.columns.pollutant_category = category;
+			}
+		}
+		return data;
+	} catch (err) {
+		if (err instanceof NoDataFound) return [];
+		throw err;
+	}
+}
+
 export async function GET({ params, url, setHeaders }) {
 	const { code } = params;
 
@@ -20,10 +49,10 @@ export async function GET({ params, url, setHeaders }) {
 	const categories = categoryParam ? categoryParam.split(',') : DEFAULT_CATEGORIES;
 
 	try {
-		const r = await client.getFacilityPollution({
-			facility_code: [code],
-			pollutant_category: /** @type {any} */ (categories)
-		});
+		const perCategory = await Promise.all(
+			categories.map((cat) => fetchCategory(code, cat))
+		);
+		const data = perCategory.flat();
 
 		setHeaders({
 			'Cache-Control': 'public, max-age=2592000'
@@ -31,16 +60,9 @@ export async function GET({ params, url, setHeaders }) {
 
 		return Response.json({
 			facility_code: code,
-			response: { data: r.response.data ?? [] }
+			response: { data }
 		});
 	} catch (err) {
-		if (err instanceof NoDataFound) {
-			return Response.json({
-				facility_code: code,
-				response: { data: [] }
-			});
-		}
-
 		console.error('Error fetching facility pollution data:', err);
 		return Response.json(
 			{

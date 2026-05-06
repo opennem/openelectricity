@@ -74,17 +74,6 @@
 		class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
 	>
 		<h3 class="text-sm font-semibold text-dark-grey m-0">NPI Pollution Data</h3>
-		{#if npiHref}
-			<a
-				href={npiHref}
-				target="_blank"
-				rel="noopener noreferrer"
-				class="inline-flex items-center gap-1 text-xs text-mid-grey hover:text-dark-grey whitespace-nowrap"
-			>
-				View on NPI
-				<ExternalLink size={12} />
-			</a>
-		{/if}
 	</div>
 
 	<div class="px-6 py-4">
@@ -102,7 +91,28 @@
 		{:else if !hasPollutants || !transformed}
 			<p class="text-sm text-mid-grey m-0">No pollution data available for this facility.</p>
 		{:else}
-			<FacilityPollutionCharts data={transformed} />
+			<FacilityPollutionCharts data={transformed} {npiHref} />
 		{/if}
 	</div>
+
+	{#if hasNpi && hasPollutants}
+		<div
+			class="px-6 py-3 border-t border-mid-warm-grey/40 text-xs text-mid-grey"
+		>
+			Source:
+			{#if npiHref}
+				<a
+					href={npiHref}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="inline-flex items-center gap-1 text-black underline hover:opacity-70"
+				>
+					National Pollutant Inventory
+					<ExternalLink size={11} />
+				</a>
+			{:else}
+				National Pollutant Inventory
+			{/if}
+		</div>
+	{/if}
 </div>
