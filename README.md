@@ -97,6 +97,7 @@ The full JSON object replaces the previous value, so include every flag you want
 | `bun run format`      | Auto-format with Prettier                          |
 | `bun run test`        | Run unit tests (Vitest)                            |
 | `bun run test:e2e`    | Run end-to-end tests (Playwright)                  |
+| `bun run dev-sync`    | After a release: fast-forward `dev` to `main` and push (returns to `main`) |
 
 ## Project Structure
 
