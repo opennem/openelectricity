@@ -17,6 +17,7 @@
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import RangeDropdown from '$lib/components/ui/range-slider/RangeDropdown.svelte';
 	import RangeSlider from '$lib/components/ui/range-slider/RangeSlider.svelte';
+	import { isFeatureEnabled } from '$lib/stores/app.js';
 
 	import {
 		regions,
@@ -103,12 +104,12 @@
 		ongenerationmodechange
 	} = $props();
 
-	// Map metric "Show by" dropdown — hidden for now. State + handler kept
-	// in `+page.svelte` (mapMetric / mapPollutantCategory / mapGenerationMode)
-	// so the marker-sizing pipeline still works via URL params; this block
-	// only owns the dropdown UI and its decompose logic. See the matching
-	// commented FormSelect in the markup below to re-enable.
-	/*
+	// Map metric "Show by" dropdown — gated by the `show_map_experiments`
+	// feature flag (see `PUBLIC_FEATURE_FLAGS` in `.env`). State + handler
+	// live in `+page.svelte` (mapMetric / mapPollutantCategory /
+	// mapGenerationMode); this block owns the dropdown UI and decompose
+	// logic. The matching FormSelect in the markup below is wrapped in
+	// `{#if isFeatureEnabled('show_map_experiments')}`.
 	const METRIC_OPTIONS = [
 		{ value: 'capacity', label: 'Capacity', description: 'Registered capacity (MW)' },
 		{ isGroupHeader: true, value: '__gen', label: 'Generation' },
@@ -151,6 +152,7 @@
 		return { label: 'Capacity', value: 'capacity' };
 	});
 
+	/** @param {{ label: string; value: string | number | null | undefined }} option */
 	function handleMetricChange(option) {
 		const value = option.value;
 		if (typeof value !== 'string') return;
@@ -172,7 +174,6 @@
 			onmetricchange?.(metric);
 		}
 	}
-	*/
 
 	// ============================================
 	// Local State
@@ -715,21 +716,19 @@
 				formatValue={formatCapacity}
 			/>
 
-			<!-- Map metric "Show by" dropdown — hidden for now.
-			     To re-enable: uncomment the FormSelect below AND the
-			     METRIC_OPTIONS/metricSelected/handleMetricChange block in
-			     the script.
-			<FormSelect
-				selected={metricSelected}
-				options={METRIC_OPTIONS}
-				formLabel="Show by"
-				paddingX="pl-5 pr-4"
-				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
-				compact={isFullscreen}
-				align="right"
-				onchange={handleMetricChange}
-			/>
-			-->
+			<!-- Map metric "Show by" dropdown — gated by `show_map_experiments` flag -->
+			{#if isFeatureEnabled('show_map_experiments')}
+				<FormSelect
+					selected={metricSelected}
+					options={METRIC_OPTIONS}
+					formLabel="Show by"
+					paddingX="pl-5 pr-4"
+					paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
+					compact={isFullscreen}
+					align="right"
+					onchange={handleMetricChange}
+				/>
+			{/if}
 
 			<!-- Years dropdown (inline for play/pause control) -->
 			<div class="relative text-sm lg:text-base">

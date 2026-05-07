@@ -16,6 +16,9 @@
 	 *   sortBy?: 'name' | 'region' | 'storage' | 'capacity',
 	 *   sortOrder?: 'asc' | 'desc',
 	 *   isFullscreen?: boolean,
+	 *   metricMeta?: { label: string, shortLabel: string, unit: string },
+	 *   metricActive?: boolean,
+	 *   metricValuesRaw?: Map<string, number>,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any) => void,
 	 *   onsortchange?: (sortBy: 'name' | 'region' | 'storage' | 'capacity', sortOrder: 'asc' | 'desc') => void
@@ -29,12 +32,19 @@
 		sortBy = 'name',
 		sortOrder = 'asc',
 		isFullscreen = false,
+		metricMeta = { label: 'Capacity', shortLabel: 'Capacity', unit: 'MW' },
+		metricActive = false,
+		metricValuesRaw = new Map(),
 		onhover,
 		onclick,
 		onsortchange
 	} = $props();
 
-	let sortedFacilities = $derived(sortFacilities(facilities, sortBy, sortOrder));
+	// When a non-capacity metric is active, the rightmost column sorts by the
+	// raw metric value rather than by registered capacity (MW).
+	let sortedFacilities = $derived(
+		sortFacilities(facilities, sortBy, sortOrder, metricActive ? metricValuesRaw : null)
+	);
 
 	/**
 	 * Handle sort column click
@@ -130,12 +140,16 @@
 					class="flex items-center justify-end gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer w-24"
 					onclick={() => handleSort('capacity')}
 				>
-					<Tooltip
-						text={CAPACITY_TOOLTIP.text}
-						learnMoreHref={CAPACITY_TOOLTIP.learnMoreHref}
-					>
-						Capacity
-					</Tooltip>
+					{#if metricActive}
+						{metricMeta.shortLabel}
+					{:else}
+						<Tooltip
+							text={CAPACITY_TOOLTIP.text}
+							learnMoreHref={CAPACITY_TOOLTIP.learnMoreHref}
+						>
+							Capacity
+						</Tooltip>
+					{/if}
 					{@render sortIcon('capacity')}
 				</button>
 			</div>
@@ -149,6 +163,8 @@
 				isHighlighted={hoveredFacility?.code === facility.code}
 				isSelected={selectedFacilityCode === facility.code}
 				{isFullscreen}
+				metricValue={metricActive ? (metricValuesRaw.get(facility.code) ?? null) : null}
+				metricUnit={metricActive ? metricMeta.unit : null}
 				onclick={(f) => onclick?.(f)}
 				onmouseenter={handleMouseEnter}
 				onmouseleave={handleMouseLeave}

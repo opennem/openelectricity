@@ -13,6 +13,8 @@
 	 *   compact?: boolean,
 	 *   darkMode?: boolean,
 	 *   isFullscreen?: boolean,
+	 *   metricValue?: number | null,
+	 *   metricUnit?: string | null,
 	 *   onclick?: (facility: any) => void,
 	 *   onmouseenter?: (facility: any) => void,
 	 *   onmouseleave?: () => void
@@ -25,10 +27,17 @@
 		compact = false,
 		darkMode = false,
 		isFullscreen = false,
+		metricValue = null,
+		metricUnit = null,
 		onclick,
 		onmouseenter,
 		onmouseleave
 	} = $props();
+
+	// When a non-capacity "Show by" metric is active, the parent passes the raw
+	// per-facility value + unit and the rightmost cell renders that instead of
+	// the registered MW total. `null` falls back to the default capacity view.
+	let showMetric = $derived(metricValue != null && metricUnit != null);
 
 	let unitGroups = $derived(groupUnits(facility));
 	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
@@ -113,18 +122,25 @@
 				{@render badgeGroup()}
 			</div>
 
-			<!-- Capacity (aligned right) -->
+			<!-- Active "Show by" metric (or capacity by default), aligned right -->
 			<div class="flex-1 flex justify-end items-baseline gap-1">
-				<span class="font-mono text-sm {darkMode ? 'text-white' : 'text-dark-grey'}">
-					{formatValue(totalCapacity)}
-				</span>
-				<span class="text-xs {darkMode ? 'text-white/60' : 'text-mid-grey'}">MW</span>
-				{#if totalStorage > 0}
-					<span class="text-xs {darkMode ? 'text-white/40' : 'text-mid-warm-grey'}">/</span>
+				{#if showMetric}
 					<span class="font-mono text-sm {darkMode ? 'text-white' : 'text-dark-grey'}">
-						{formatValue(totalStorage)}
+						{formatValue(/** @type {number} */ (metricValue))}
 					</span>
-					<span class="text-xs {darkMode ? 'text-white/60' : 'text-mid-grey'}">MWh</span>
+					<span class="text-xs {darkMode ? 'text-white/60' : 'text-mid-grey'}">{metricUnit}</span>
+				{:else}
+					<span class="font-mono text-sm {darkMode ? 'text-white' : 'text-dark-grey'}">
+						{formatValue(totalCapacity)}
+					</span>
+					<span class="text-xs {darkMode ? 'text-white/60' : 'text-mid-grey'}">MW</span>
+					{#if totalStorage > 0}
+						<span class="text-xs {darkMode ? 'text-white/40' : 'text-mid-warm-grey'}">/</span>
+						<span class="font-mono text-sm {darkMode ? 'text-white' : 'text-dark-grey'}">
+							{formatValue(totalStorage)}
+						</span>
+						<span class="text-xs {darkMode ? 'text-white/60' : 'text-mid-grey'}">MWh</span>
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -189,10 +205,17 @@
 
 				<div class="flex justify-end items-center gap-2 group col-start-3 sm:col-start-auto w-24">
 					<div class="flex justify-end items-baseline gap-1">
-						<span class="font-mono text-xs md:text-sm text-dark-grey" title="Total Capacity">
-							{formatValue(totalCapacity)}
-						</span>
-						<span class="text-xxs md:text-xs text-mid-grey">MW</span>
+						{#if showMetric}
+							<span class="font-mono text-xs md:text-sm text-dark-grey">
+								{formatValue(/** @type {number} */ (metricValue))}
+							</span>
+							<span class="text-xxs md:text-xs text-mid-grey">{metricUnit}</span>
+						{:else}
+							<span class="font-mono text-xs md:text-sm text-dark-grey" title="Total Capacity">
+								{formatValue(totalCapacity)}
+							</span>
+							<span class="text-xxs md:text-xs text-mid-grey">MW</span>
+						{/if}
 					</div>
 
 					{#if primaryGroup}

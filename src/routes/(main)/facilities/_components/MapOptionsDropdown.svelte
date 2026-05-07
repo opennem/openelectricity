@@ -7,6 +7,7 @@
 	 * @type {{
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   markerStyle?: 'circles' | 'hex' | 'heatmap',
+	 *   showMarkerStyleOption?: boolean,
 	 *   showTransmissionLines: boolean,
 	 *   showGolfCourses: boolean,
 	 *   showGolfOption: boolean,
@@ -22,6 +23,7 @@
 	let {
 		mapTheme = 'light',
 		markerStyle = 'circles',
+		showMarkerStyleOption = false,
 		showTransmissionLines = true,
 		showGolfCourses = false,
 		showGolfOption = false,
@@ -99,29 +101,31 @@
 				</div>
 			</div>
 
-			<!-- Marker style (Circles / Hex / Both) -->
-			<div class="px-3 py-1 mt-2">
-				<div class="text-[10px] font-semibold uppercase tracking-wider text-mid-grey mb-1.5">
-					Marker style
+			<!-- Marker style (Circles / Hex / Heat) — gated by `show_map_experiments` -->
+			{#if showMarkerStyleOption}
+				<div class="px-3 py-1 mt-2">
+					<div class="text-[10px] font-semibold uppercase tracking-wider text-mid-grey mb-1.5">
+						Marker style
+					</div>
+					<div class="inline-flex w-full rounded-md border border-warm-grey overflow-hidden">
+						{#each MARKER_STYLES as { value, label } (value)}
+							<button
+								type="button"
+								onclick={() => onmarkerstylechange?.(value)}
+								class="flex-1 px-2 py-1 text-xs transition-colors cursor-pointer"
+								class:bg-dark-grey={markerStyle === value}
+								class:text-white={markerStyle === value}
+								class:font-medium={markerStyle === value}
+								class:text-mid-grey={markerStyle !== value}
+								class:hover:text-dark-grey={markerStyle !== value}
+								class:hover:bg-light-warm-grey={markerStyle !== value}
+							>
+								{label}
+							</button>
+						{/each}
+					</div>
 				</div>
-				<div class="inline-flex w-full rounded-md border border-warm-grey overflow-hidden">
-					{#each MARKER_STYLES as { value, label } (value)}
-						<button
-							type="button"
-							onclick={() => onmarkerstylechange?.(value)}
-							class="flex-1 px-2 py-1 text-xs transition-colors cursor-pointer"
-							class:bg-dark-grey={markerStyle === value}
-							class:text-white={markerStyle === value}
-							class:font-medium={markerStyle === value}
-							class:text-mid-grey={markerStyle !== value}
-							class:hover:text-dark-grey={markerStyle !== value}
-							class:hover:bg-light-warm-grey={markerStyle !== value}
-						>
-							{label}
-						</button>
-					{/each}
-				</div>
-			</div>
+			{/if}
 
 			<div class="border-t border-warm-grey my-2"></div>
 

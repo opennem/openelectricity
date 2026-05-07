@@ -40,12 +40,19 @@ function getRegion(facility) {
 
 /**
  * Return a new array sorted to match the List view's display order.
+ *
+ * `sortBy: 'capacity'` sorts by the rightmost-column metric. When the user has
+ * a non-capacity "Show by" metric active, pass `metricValues` (raw per-facility
+ * values keyed by code) and the column will sort by that instead — keeps the
+ * user's "tallest first" intent meaningful when the displayed value changes.
+ *
  * @param {any[]} facilities
  * @param {'name' | 'region' | 'storage' | 'capacity'} sortBy
  * @param {'asc' | 'desc'} sortOrder
+ * @param {Map<string, number> | null} [metricValues]
  * @returns {any[]}
  */
-export function sortFacilities(facilities, sortBy, sortOrder) {
+export function sortFacilities(facilities, sortBy, sortOrder, metricValues = null) {
 	const sorted = [...facilities];
 	sorted.sort((a, b) => {
 		let comparison = 0;
@@ -60,7 +67,13 @@ export function sortFacilities(facilities, sortBy, sortOrder) {
 				comparison = getTotalStorage(a) - getTotalStorage(b);
 				break;
 			case 'capacity':
-				comparison = getTotalCapacity(a) - getTotalCapacity(b);
+				if (metricValues) {
+					const av = metricValues.get(a.code) ?? 0;
+					const bv = metricValues.get(b.code) ?? 0;
+					comparison = av - bv;
+				} else {
+					comparison = getTotalCapacity(a) - getTotalCapacity(b);
+				}
 				break;
 		}
 		return sortOrder === 'asc' ? comparison : -comparison;

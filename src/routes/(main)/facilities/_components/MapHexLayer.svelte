@@ -26,7 +26,20 @@
 	 *   visible?: boolean,
 	 *   mode?: 'column' | 'aggregate' | 'heatmap',
 	 *   radius?: number,
-	 *   elevationScale?: number
+	 *   elevationScale?: number,
+	 *   hexDiskResolution?: number,
+	 *   hexBrightMix?: number,
+	 *   hexFillAlpha?: number,
+	 *   hexGlowRadiusMultiplier?: number,
+	 *   hexGlowAlpha?: number,
+	 *   hexOutlineAlpha?: number,
+	 *   hexExtruded?: boolean,
+	 *   hexMaterial?: boolean,
+	 *   heatmapRadiusPixels?: number,
+	 *   heatmapIntensity?: number,
+	 *   heatmapThreshold?: number,
+	 *   heatmapDebounceMs?: number,
+	 *   heatmapTextureSize?: number
 	 * }}
 	 */
 	let {
@@ -34,7 +47,20 @@
 		visible = false,
 		mode = 'column',
 		radius = 8000,
-		elevationScale = 1
+		elevationScale = 1,
+		hexDiskResolution = 6,
+		hexBrightMix = 0.35,
+		hexFillAlpha = 240,
+		hexGlowRadiusMultiplier = 2.5,
+		hexGlowAlpha = 60,
+		hexOutlineAlpha = 220,
+		hexExtruded = true,
+		hexMaterial = false,
+		heatmapRadiusPixels = 75,
+		heatmapIntensity = 1.4,
+		heatmapThreshold = 0.02,
+		heatmapDebounceMs = 300,
+		heatmapTextureSize = 512
 	} = $props();
 
 	const mapCtx = getMapContext();
@@ -65,15 +91,19 @@
 					getPosition: (d) => d.position,
 					getWeight: (d) => d.weight,
 					aggregation: 'SUM',
-					// radiusPixels controls how wide each facility's
-					// Gaussian kernel paints on screen. Bigger = blobs
-					// merge further apart, denser-looking overall heat.
-					radiusPixels: 90,
-					intensity: 1.4,
-					// threshold is the alpha cutoff (relative to peak)
-					// below which pixels render transparent — lower
-					// extends the soft tail outward.
-					threshold: 0.02,
+					radiusPixels: heatmapRadiusPixels,
+					// `debounceTimeout` defers re-aggregation during continuous
+					// zoom/pan gestures (renders a stretched last frame mid-
+					// gesture, recomputes when the user settles). Default 2048
+					// `weightsTextureSize` is overkill for AU-scale data; 512
+					// is 16× cheaper per frame.
+					debounceTimeout: heatmapDebounceMs,
+					weightsTextureSize: heatmapTextureSize,
+					intensity: heatmapIntensity,
+					// `threshold` is the alpha cutoff (relative to peak) below
+					// which pixels render transparent — lower extends the soft
+					// tail outward.
+					threshold: heatmapThreshold,
 					colorRange: [
 						[0, 0, 0, 0],
 						[10, 30, 80, 120],
@@ -158,17 +188,17 @@
 			];
 		}
 
-		// Brighten the fuel-tech RGB by mixing 35 % toward white. Dark coal
-		// browns / wind greens read better as glowing pillars when bumped up
-		// in lightness; subtle enough that fuel identity stays intact.
-		const BRIGHT_MIX = 0.35;
+		// Brighten the fuel-tech RGB by mixing toward white. Dark coal browns
+		// / wind greens read better as glowing pillars when bumped up in
+		// lightness. Mix amount is tunable via `hexBrightMix` (0 = raw fuel
+		// colour, 1 = solid white).
 		/** @param {[number, number, number] | undefined} c */
 		function brighten(c) {
 			if (!c) return /** @type {[number, number, number]} */ ([255, 200, 90]);
 			return /** @type {[number, number, number]} */ ([
-				Math.round(c[0] + (255 - c[0]) * BRIGHT_MIX),
-				Math.round(c[1] + (255 - c[1]) * BRIGHT_MIX),
-				Math.round(c[2] + (255 - c[2]) * BRIGHT_MIX)
+				Math.round(c[0] + (255 - c[0]) * hexBrightMix),
+				Math.round(c[1] + (255 - c[1]) * hexBrightMix),
+				Math.round(c[2] + (255 - c[2]) * hexBrightMix)
 			]);
 		}
 
@@ -183,29 +213,30 @@
 				filled: true,
 				radiusUnits: 'meters',
 				getPosition: (d) => d.position,
-				getRadius: radius * 2.5,
+				getRadius: radius * hexGlowRadiusMultiplier,
 				getFillColor: (d) => {
 					const b = brighten(d.color);
-					return [b[0], b[1], b[2], 60];
+					return [b[0], b[1], b[2], hexGlowAlpha];
 				}
 			}),
 			new ColumnLayer({
 				id: 'facilities-hex-columns',
 				data,
-				diskResolution: 6, // 6 = hexagon
+				diskResolution: hexDiskResolution,
 				radius,
-				extruded: true,
+				extruded: hexExtruded,
 				elevationScale,
 				pickable: true,
 				// `material: false` disables PBR lighting so each face renders
 				// at full colour intensity — much brighter against the dark
-				// basemap than the default lit shading.
-				material: false,
+				// basemap than the default lit shading. Toggle via
+				// `hexMaterial` for the lit look.
+				material: hexMaterial,
 				getPosition: (d) => d.position,
 				getElevation: (d) => d.weight,
 				getFillColor: (d) => {
 					const b = brighten(d.color);
-					return [b[0], b[1], b[2], 240];
+					return [b[0], b[1], b[2], hexFillAlpha];
 				},
 				getLineColor: (d) => {
 					const b = brighten(d.color);
@@ -213,7 +244,7 @@
 						Math.min(255, b[0] + 30),
 						Math.min(255, b[1] + 30),
 						Math.min(255, b[2] + 30),
-						220
+						hexOutlineAlpha
 					];
 				},
 				lineWidthUnits: 'pixels',
@@ -229,6 +260,19 @@
 		const _radius = radius;
 		const _elevationScale = elevationScale;
 		const _mode = mode;
+		const _hexDiskResolution = hexDiskResolution;
+		const _hexBrightMix = hexBrightMix;
+		const _hexFillAlpha = hexFillAlpha;
+		const _hexGlowRadiusMultiplier = hexGlowRadiusMultiplier;
+		const _hexGlowAlpha = hexGlowAlpha;
+		const _hexOutlineAlpha = hexOutlineAlpha;
+		const _hexExtruded = hexExtruded;
+		const _hexMaterial = hexMaterial;
+		const _heatmapRadiusPixels = heatmapRadiusPixels;
+		const _heatmapIntensity = heatmapIntensity;
+		const _heatmapThreshold = heatmapThreshold;
+		const _heatmapDebounceMs = heatmapDebounceMs;
+		const _heatmapTextureSize = heatmapTextureSize;
 		const isVisible = visible;
 		const map = mapCtx.map;
 		if (!map) return;
@@ -240,13 +284,33 @@
 
 		ensureOverlay();
 		if (!overlay) return;
-		// `_radius`/`_elevationScale`/`_mode` are read inside buildLayers via
-		// the closures — referenced here to make the $effect track them.
+		// Read inside buildLayers via closures — referenced here to make the
+		// $effect track them.
 		void _radius;
 		void _elevationScale;
 		void _mode;
+		void _hexDiskResolution;
+		void _hexBrightMix;
+		void _hexFillAlpha;
+		void _hexGlowRadiusMultiplier;
+		void _hexGlowAlpha;
+		void _hexOutlineAlpha;
+		void _hexExtruded;
+		void _hexMaterial;
+		void _heatmapRadiusPixels;
+		void _heatmapIntensity;
+		void _heatmapThreshold;
+		void _heatmapDebounceMs;
+		void _heatmapTextureSize;
 
-		overlay.setProps({ layers: buildLayers() });
+		// Heatmap mode caps the deck canvas at 1× DPR — the GPU pipeline is
+		// ~4× cheaper on Retina and the smooth Gaussian blobs absorb the
+		// resolution drop without looking soft. Column / aggregate modes
+		// keep full DPR so hex outlines stay crisp.
+		overlay.setProps({
+			useDevicePixels: _mode === 'heatmap' ? false : true,
+			layers: buildLayers()
+		});
 	});
 
 	onDestroy(teardownOverlay);

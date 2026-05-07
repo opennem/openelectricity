@@ -38,6 +38,25 @@
 	 *   flyToOffsetY?: number,
 	 *   metricValues?: Map<string, number | null>,
 	 *   metricMissingByCode?: Set<string>,
+	 *   tuning?: {
+	 *     circleMin: number,
+	 *     circleMax: number,
+	 *     hexRadius: number,
+	 *     hexElevationScale: number,
+	 *     hexDiskResolution: number,
+	 *     hexBrightMix: number,
+	 *     hexFillAlpha: number,
+	 *     hexGlowRadiusMultiplier: number,
+	 *     hexGlowAlpha: number,
+	 *     hexOutlineAlpha: number,
+	 *     hexExtruded: boolean,
+	 *     hexMaterial: boolean,
+	 *     heatmapRadius: number,
+	 *     heatmapIntensity: number,
+	 *     heatmapThreshold: number,
+	 *     heatmapDebounce: number,
+	 *     heatmapTextureSize: number
+	 *   },
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
 	 *   onselect?: (facility: any | null) => void,
@@ -61,11 +80,47 @@
 		flyToOffsetY = 0,
 		metricValues = new Map(),
 		metricMissingByCode = new Set(),
+		tuning = {
+			circleMin: 4,
+			circleMax: 28,
+			hexRadius: 6500,
+			hexElevationScale: 200,
+			hexDiskResolution: 6,
+			hexBrightMix: 0.35,
+			hexFillAlpha: 240,
+			hexGlowRadiusMultiplier: 2.5,
+			hexGlowAlpha: 60,
+			hexOutlineAlpha: 220,
+			hexExtruded: true,
+			hexMaterial: false,
+			heatmapRadius: 75,
+			heatmapIntensity: 1.4,
+			heatmapThreshold: 0.02,
+			heatmapDebounce: 300,
+			heatmapTextureSize: 512
+		},
 		onhover,
 		onclick,
 		onselect,
 		onload
 	} = $props();
+
+	// Circle radius interpolation stops (5-stop linear from min → max). The
+	// hovered variant matches the existing curve's +2 px bump.
+	function buildCircleStops(/** @type {number} */ min, /** @type {number} */ max) {
+		const span = max - min;
+		return [
+			0, min,
+			0.25, min + span * 0.25,
+			0.5, min + span * 0.5,
+			0.75, min + span * 0.75,
+			1, max
+		];
+	}
+	let circleStops = $derived(buildCircleStops(tuning.circleMin, tuning.circleMax));
+	let circleStopsHovered = $derived(
+		buildCircleStops(tuning.circleMin + 2, tuning.circleMax + 2)
+	);
 
 	// Derived booleans for things that still consume the legacy boolean
 	// shape (existing satellite-aware logic, deck.gl visibility, etc).
@@ -86,13 +141,18 @@
 		/** @type {'column' | 'heatmap'} */ (showHeatmap ? 'heatmap' : 'column')
 	);
 
-	// Per-facility data for the deck.gl hex columns. Each facility becomes
-	// a hexagonal pillar centred on its lat/lng with height proportional
-	// to capacity (MW). Colour mirrors the existing fuel-tech palette so
-	// the columns read like 3D versions of the circle markers.
+	// Per-facility data for the deck.gl hex columns and heatmap. Weight is
+	// driven by the active "Show by" metric — `metricValues` is already
+	// normalised (sqrt-of-ratio, 0..1) by `normaliseMetric`, so we scale it
+	// up to a MW-equivalent visual range so column heights and heatmap
+	// intensities stay comparable across capacity / generation / pollution
+	// modes. Facilities missing a value for the active metric (e.g. clean
+	// renewables under "Pollution") drop out — matching circle markers.
+	const HEX_WEIGHT_SCALE = 10000;
 	let hexagonData = $derived.by(() => {
 		return facilities
 			.filter((f) => f.location?.lng != null && f.location?.lat != null)
+			.filter((f) => !metricMissingByCode.has(f.code))
 			.map((f) => {
 				const hex = (getFacilityColor(f) || '#888888').replace('#', '');
 				/** @type {[number, number, number]} */
@@ -101,9 +161,12 @@
 					parseInt(hex.slice(2, 4), 16),
 					parseInt(hex.slice(4, 6), 16)
 				];
+				const normalised = metricValues.get(f.code);
+				const weight =
+					typeof normalised === 'number' ? normalised * HEX_WEIGHT_SCALE : 1;
 				return {
 					position: /** @type {[number, number]} */ ([f.location.lng, f.location.lat]),
-					weight: getTotalCapacity(f) || 1,
+					weight,
 					code: f.code,
 					color
 				};
@@ -922,18 +985,8 @@
 						'circle-radius': [
 							'case',
 							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							[
-								'interpolate',
-								['linear'],
-								['get', 'metric_value'],
-								0, 6, 0.25, 10, 0.5, 16, 0.75, 24, 1, 30
-							],
-							[
-								'interpolate',
-								['linear'],
-								['get', 'metric_value'],
-								0, 4, 0.25, 8, 0.5, 14, 0.75, 22, 1, 28
-							]
+							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
+							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
 						],
 						'circle-radius-transition': { duration: 400, delay: 0 },
 						'circle-stroke-width': [
@@ -974,18 +1027,8 @@
 						'circle-radius': [
 							'case',
 							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							[
-								'interpolate',
-								['linear'],
-								['get', 'metric_value'],
-								0, 6, 0.25, 10, 0.5, 16, 0.75, 24, 1, 30
-							],
-							[
-								'interpolate',
-								['linear'],
-								['get', 'metric_value'],
-								0, 4, 0.25, 8, 0.5, 14, 0.75, 22, 1, 28
-							]
+							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
+							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
 						],
 						'circle-radius-transition': { duration: 400, delay: 0 },
 						'circle-stroke-width': [
@@ -1092,8 +1135,21 @@
 					visible={showDeckOverlay}
 					data={hexagonData}
 					mode={deckMode}
-					radius={6500}
-					elevationScale={400}
+					radius={tuning.hexRadius}
+					elevationScale={tuning.hexElevationScale}
+					hexDiskResolution={tuning.hexDiskResolution}
+					hexBrightMix={tuning.hexBrightMix}
+					hexFillAlpha={tuning.hexFillAlpha}
+					hexGlowRadiusMultiplier={tuning.hexGlowRadiusMultiplier}
+					hexGlowAlpha={tuning.hexGlowAlpha}
+					hexOutlineAlpha={tuning.hexOutlineAlpha}
+					hexExtruded={tuning.hexExtruded}
+					hexMaterial={tuning.hexMaterial}
+					heatmapRadiusPixels={tuning.heatmapRadius}
+					heatmapIntensity={tuning.heatmapIntensity}
+					heatmapThreshold={tuning.heatmapThreshold}
+					heatmapDebounceMs={tuning.heatmapDebounce}
+					heatmapTextureSize={tuning.heatmapTextureSize}
 				/>
 			{/await}
 		{/if}

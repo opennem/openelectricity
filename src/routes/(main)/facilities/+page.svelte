@@ -9,6 +9,9 @@
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
 	import { fetchMetricData } from './_utils/fetch-metric-data.js';
 	import { normaliseMetric } from './_utils/normalise-metric.js';
+	import { getMetricMeta, isMetricActive } from './_utils/metric-meta.js';
+	import { isFeatureEnabled } from '$lib/stores/app.js';
+	import MapTuningPanel from './_components/MapTuningPanel.svelte';
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
@@ -116,7 +119,7 @@
 	let clickedFacility = $state(null);
 
 	// List sorting state (persists across view changes)
-	/** @type {'name' | 'region' | 'capacity'} */
+	/** @type {'name' | 'region' | 'storage' | 'capacity'} */
 	let listSortBy = $state('name');
 	/** @type {'asc' | 'desc'} */
 	let listSortOrder = $state('asc');
@@ -164,8 +167,12 @@
 			VALID_THEMES.includes(/** @type {any} */ (initialTheme)) ? initialTheme : 'light'
 		)
 	);
+	// Marker style picker is part of the `show_map_experiments` feature flag —
+	// when the flag is off, force `circles` regardless of any URL/persisted
+	// override so non-experiment users can't land on hex/heatmap.
 	let mapMarkerStyle = $state(
 		/** @type {'circles' | 'hex' | 'heatmap'} */ (
+			isFeatureEnabled('show_map_experiments') &&
 			VALID_MARKER_STYLES.includes(/** @type {any} */ (initialMarkerStyle))
 				? initialMarkerStyle
 				: 'circles'
@@ -282,6 +289,32 @@
 
 	/** @type {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} */
 	let transmissionLineVisibility = $state({ high: true, medium: true, low: true, lowest: true });
+
+	// Live-tunable visual constants for circles / hex / heatmap. Defaults
+	// match the values previously hardcoded inside Map.svelte and
+	// MapHexLayer.svelte. Surfaced in `MapTuningPanel` (gated by the
+	// `show_map_experiments` feature flag) so designers can iterate without
+	// a rebuild — outside the panel these stay at the defaults.
+	let tuning = $state({
+		circleMin: 4,
+		circleMax: 28,
+		hexRadius: 6500,
+		hexElevationScale: 200,
+		hexDiskResolution: 6,
+		hexBrightMix: 0.35,
+		hexFillAlpha: 240,
+		hexGlowRadiusMultiplier: 2.5,
+		hexGlowAlpha: 60,
+		hexOutlineAlpha: 220,
+		hexExtruded: true,
+		hexMaterial: false,
+		heatmapRadius: 75,
+		heatmapIntensity: 1.4,
+		heatmapThreshold: 0.02,
+		heatmapDebounce: 300,
+		heatmapTextureSize: 512
+	});
+	let mapExperimentsEnabled = $derived(isFeatureEnabled('show_map_experiments'));
 
 	// Map loading state
 	let mapLoaded = $state(false);
@@ -582,19 +615,36 @@
 		}
 	}
 
-	let filteredFacilities = $derived(
-		facilities
-			? filterFacilities(
-					facilities,
-					searchTerm,
-					capacityRange,
-					yearRange,
-					yearBounds,
-					selectedView,
-					playYear
-				)
-			: []
+	// Active "Show by" metric metadata — drives column labels in List and any
+	// downstream surface that needs to render the metric value with units.
+	let metricMeta = $derived(
+		getMetricMeta({
+			metric: mapMetric,
+			category: mapPollutantCategory,
+			generationMode: mapGenerationMode
+		})
 	);
+	let metricActive = $derived(isMetricActive({ metric: mapMetric }));
+	// Pass the raw values into `sortFacilities` only when a non-capacity metric
+	// is active — capacity falls back to the registered MW sum on the facility.
+	let metricSortValues = $derived(metricActive ? metricValuesRaw : null);
+
+	let filteredFacilities = $derived.by(() => {
+		if (!facilities) return [];
+		const userFiltered = filterFacilities(
+			facilities,
+			searchTerm,
+			capacityRange,
+			yearRange,
+			yearBounds,
+			selectedView,
+			playYear
+		);
+		// Drop facilities with no value for the active "Show by" metric — keeps
+		// List, Timeline, and Map (markers + hex/heat) showing the same set.
+		if (!metricMissingByCode.size) return userFiltered;
+		return userFiltered.filter((f) => !metricMissingByCode.has(f.code));
+	});
 
 	/**
 	 * Check if facility has valid location data
@@ -764,7 +814,7 @@
 	 */
 	let orderedFacilities = $derived.by(() => {
 		if (selectedView === 'list') {
-			return sortFacilities(filteredFacilities, listSortBy, listSortOrder);
+			return sortFacilities(filteredFacilities, listSortBy, listSortOrder, metricSortValues);
 		}
 		if (selectedView === 'timeline' && timelineOrderedCodes.length) {
 			/** @type {Record<string, any>} */
@@ -1167,6 +1217,9 @@
 						sortBy={listSortBy}
 						sortOrder={listSortOrder}
 						{isFullscreen}
+						{metricMeta}
+						{metricActive}
+						{metricValuesRaw}
 						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 						onclick={(/** @type {any} */ f) => {
 							handleFacilitySelect(f);
@@ -1261,12 +1314,17 @@
 						flyToOffsetY={selectedFacility ? -0.15 : 0}
 						{metricValues}
 						{metricMissingByCode}
+						{tuning}
 						onhover={(f) => (hoveredFacility = f)}
 						onclick={(f) => (clickedFacility = f)}
 						onselect={handleFacilitySelect}
 						onload={() => setTimeout(() => (mapLoaded = true), 250)}
 					/>
 				{/await}
+
+				{#if mapExperimentsEnabled}
+					<MapTuningPanel bind:tuning markerStyle={mapMarkerStyle} />
+				{/if}
 
 				<!-- Map controls -->
 				<div class="absolute top-3 right-20 z-20 flex items-center gap-2">
@@ -1285,6 +1343,7 @@
 					<MapOptionsDropdown
 						{mapTheme}
 						markerStyle={mapMarkerStyle}
+						showMarkerStyleOption={mapExperimentsEnabled}
 						showTransmissionLines={mapShowTransmissionLines}
 						showGolfCourses={mapShowGolfCourses}
 						showGolfOption={showGolf}
