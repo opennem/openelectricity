@@ -1,26 +1,9 @@
 <script>
 	import { Sliders, X } from '@lucide/svelte';
+	import { DEFAULT_TUNING } from '../_utils/map-tuning.js';
 
 	/**
-	 * @typedef {{
-	 *   circleMin: number,
-	 *   circleMax: number,
-	 *   hexRadius: number,
-	 *   hexElevationScale: number,
-	 *   hexDiskResolution: number,
-	 *   hexBrightMix: number,
-	 *   hexFillAlpha: number,
-	 *   hexGlowRadiusMultiplier: number,
-	 *   hexGlowAlpha: number,
-	 *   hexOutlineAlpha: number,
-	 *   hexExtruded: boolean,
-	 *   hexMaterial: boolean,
-	 *   heatmapRadius: number,
-	 *   heatmapIntensity: number,
-	 *   heatmapThreshold: number,
-	 *   heatmapDebounce: number,
-	 *   heatmapTextureSize: number
-	 * }} Tuning
+	 * @typedef {import('../_utils/map-tuning.js').Tuning} Tuning
 	 *
 	 * @typedef {{
 	 *   key: keyof Tuning,
@@ -42,27 +25,6 @@
 	let { tuning = $bindable(), markerStyle } = $props();
 
 	let open = $state(false);
-
-	/** @type {Tuning} */
-	const DEFAULTS = {
-		circleMin: 4,
-		circleMax: 28,
-		hexRadius: 6500,
-		hexElevationScale: 200,
-		hexDiskResolution: 6,
-		hexBrightMix: 0.35,
-		hexFillAlpha: 240,
-		hexGlowRadiusMultiplier: 2.5,
-		hexGlowAlpha: 60,
-		hexOutlineAlpha: 220,
-		hexExtruded: true,
-		hexMaterial: false,
-		heatmapRadius: 75,
-		heatmapIntensity: 1.4,
-		heatmapThreshold: 0.02,
-		heatmapDebounce: 300,
-		heatmapTextureSize: 512
-	};
 
 	/** @type {Field[]} */
 	const CIRCLE_FIELDS = [
@@ -150,20 +112,24 @@
 		}
 	];
 
-	let activeFields = $derived(
-		markerStyle === 'circles' ? CIRCLE_FIELDS : markerStyle === 'hex' ? HEX_FIELDS : HEATMAP_FIELDS
-	);
+	/** @type {Record<'circles' | 'hex' | 'heatmap', Field[]>} */
+	const FIELDS_BY_STYLE = {
+		circles: CIRCLE_FIELDS,
+		hex: HEX_FIELDS,
+		heatmap: HEATMAP_FIELDS
+	};
+	/** @type {Record<'circles' | 'hex' | 'heatmap', string>} */
+	const TITLE_BY_STYLE = {
+		circles: 'Tune circles',
+		hex: 'Tune hex',
+		heatmap: 'Tune heatmap'
+	};
 
-	let title = $derived(
-		markerStyle === 'circles'
-			? 'Tune circles'
-			: markerStyle === 'hex'
-				? 'Tune hex'
-				: 'Tune heatmap'
-	);
+	let activeFields = $derived(FIELDS_BY_STYLE[markerStyle]);
+	let title = $derived(TITLE_BY_STYLE[markerStyle]);
 
 	function reset() {
-		Object.assign(tuning, DEFAULTS);
+		Object.assign(tuning, DEFAULT_TUNING);
 	}
 </script>
 

@@ -255,60 +255,23 @@
 	}
 
 	$effect(() => {
-		// Reactive deps
-		const _data = data;
-		const _radius = radius;
-		const _elevationScale = elevationScale;
-		const _mode = mode;
-		const _hexDiskResolution = hexDiskResolution;
-		const _hexBrightMix = hexBrightMix;
-		const _hexFillAlpha = hexFillAlpha;
-		const _hexGlowRadiusMultiplier = hexGlowRadiusMultiplier;
-		const _hexGlowAlpha = hexGlowAlpha;
-		const _hexOutlineAlpha = hexOutlineAlpha;
-		const _hexExtruded = hexExtruded;
-		const _hexMaterial = hexMaterial;
-		const _heatmapRadiusPixels = heatmapRadiusPixels;
-		const _heatmapIntensity = heatmapIntensity;
-		const _heatmapThreshold = heatmapThreshold;
-		const _heatmapDebounceMs = heatmapDebounceMs;
-		const _heatmapTextureSize = heatmapTextureSize;
-		const isVisible = visible;
 		const map = mapCtx.map;
 		if (!map) return;
 
-		if (!isVisible || _data.length === 0) {
+		if (!visible || data.length === 0) {
 			teardownOverlay();
 			return;
 		}
 
 		ensureOverlay();
 		if (!overlay) return;
-		// Read inside buildLayers via closures — referenced here to make the
-		// $effect track them.
-		void _radius;
-		void _elevationScale;
-		void _mode;
-		void _hexDiskResolution;
-		void _hexBrightMix;
-		void _hexFillAlpha;
-		void _hexGlowRadiusMultiplier;
-		void _hexGlowAlpha;
-		void _hexOutlineAlpha;
-		void _hexExtruded;
-		void _hexMaterial;
-		void _heatmapRadiusPixels;
-		void _heatmapIntensity;
-		void _heatmapThreshold;
-		void _heatmapDebounceMs;
-		void _heatmapTextureSize;
 
 		// Heatmap mode caps the deck canvas at 1× DPR — the GPU pipeline is
 		// ~4× cheaper on Retina and the smooth Gaussian blobs absorb the
 		// resolution drop without looking soft. Column / aggregate modes
 		// keep full DPR so hex outlines stay crisp.
 		overlay.setProps({
-			useDevicePixels: _mode === 'heatmap' ? false : true,
+			useDevicePixels: mode === 'heatmap' ? false : true,
 			layers: buildLayers()
 		});
 	});

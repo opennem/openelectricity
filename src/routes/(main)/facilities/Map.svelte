@@ -14,6 +14,8 @@
 	import UnitGroup from './_components/UnitGroup.svelte';
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import { getRegionLabel } from './_utils/filters';
+	import { DEFAULT_TUNING } from './_utils/map-tuning.js';
+	import { hexToRgb } from '$lib/utils/colour-darken.js';
 	import { X } from '@lucide/svelte';
 
 	/**
@@ -38,25 +40,7 @@
 	 *   flyToOffsetY?: number,
 	 *   metricValues?: Map<string, number | null>,
 	 *   metricMissingByCode?: Set<string>,
-	 *   tuning?: {
-	 *     circleMin: number,
-	 *     circleMax: number,
-	 *     hexRadius: number,
-	 *     hexElevationScale: number,
-	 *     hexDiskResolution: number,
-	 *     hexBrightMix: number,
-	 *     hexFillAlpha: number,
-	 *     hexGlowRadiusMultiplier: number,
-	 *     hexGlowAlpha: number,
-	 *     hexOutlineAlpha: number,
-	 *     hexExtruded: boolean,
-	 *     hexMaterial: boolean,
-	 *     heatmapRadius: number,
-	 *     heatmapIntensity: number,
-	 *     heatmapThreshold: number,
-	 *     heatmapDebounce: number,
-	 *     heatmapTextureSize: number
-	 *   },
+	 *   tuning?: import('./_utils/map-tuning.js').Tuning,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
 	 *   onselect?: (facility: any | null) => void,
@@ -80,25 +64,7 @@
 		flyToOffsetY = 0,
 		metricValues = new Map(),
 		metricMissingByCode = new Set(),
-		tuning = {
-			circleMin: 4,
-			circleMax: 28,
-			hexRadius: 6500,
-			hexElevationScale: 200,
-			hexDiskResolution: 6,
-			hexBrightMix: 0.35,
-			hexFillAlpha: 240,
-			hexGlowRadiusMultiplier: 2.5,
-			hexGlowAlpha: 60,
-			hexOutlineAlpha: 220,
-			hexExtruded: true,
-			hexMaterial: false,
-			heatmapRadius: 75,
-			heatmapIntensity: 1.4,
-			heatmapThreshold: 0.02,
-			heatmapDebounce: 300,
-			heatmapTextureSize: 512
-		},
+		tuning = DEFAULT_TUNING,
 		onhover,
 		onclick,
 		onselect,
@@ -141,26 +107,29 @@
 		/** @type {'column' | 'heatmap'} */ (showHeatmap ? 'heatmap' : 'column')
 	);
 
-	// Per-facility data for the deck.gl hex columns and heatmap. Weight is
-	// driven by the active "Show by" metric — `metricValues` is already
-	// normalised (sqrt-of-ratio, 0..1) by `normaliseMetric`, so we scale it
-	// up to a MW-equivalent visual range so column heights and heatmap
-	// intensities stay comparable across capacity / generation / pollution
-	// modes. Facilities missing a value for the active metric (e.g. clean
-	// renewables under "Pollution") drop out — matching circle markers.
+	// `metricValues` is sqrt-normalised (0..1) by `normaliseMetric`; we
+	// scale up to a MW-equivalent visual range so column heights and heatmap
+	// intensities stay comparable across capacity / generation / pollution.
 	const HEX_WEIGHT_SCALE = 10000;
+
+	// Hex parsing is the heaviest per-facility bit and only depends on the
+	// facility's fuel-tech colour — cache by code and reuse across metric /
+	// missing-set updates so dragging tuning sliders doesn't re-parse 600+
+	// hex strings each frame.
+	let facilityColours = $derived.by(() => {
+		/** @type {Map<string, [number, number, number]>} */
+		const out = new Map();
+		for (const f of facilities) {
+			out.set(f.code, hexToRgb(getFacilityColor(f) || '#888888'));
+		}
+		return out;
+	});
+
 	let hexagonData = $derived.by(() => {
 		return facilities
 			.filter((f) => f.location?.lng != null && f.location?.lat != null)
 			.filter((f) => !metricMissingByCode.has(f.code))
 			.map((f) => {
-				const hex = (getFacilityColor(f) || '#888888').replace('#', '');
-				/** @type {[number, number, number]} */
-				const color = [
-					parseInt(hex.slice(0, 2), 16),
-					parseInt(hex.slice(2, 4), 16),
-					parseInt(hex.slice(4, 6), 16)
-				];
 				const normalised = metricValues.get(f.code);
 				const weight =
 					typeof normalised === 'number' ? normalised * HEX_WEIGHT_SCALE : 1;
@@ -168,7 +137,7 @@
 					position: /** @type {[number, number]} */ ([f.location.lng, f.location.lat]),
 					weight,
 					code: f.code,
-					color
+					color: facilityColours.get(f.code) ?? [136, 136, 136]
 				};
 			});
 	});

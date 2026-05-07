@@ -12,6 +12,7 @@
 	import { getMetricMeta, isMetricActive } from './_utils/metric-meta.js';
 	import { isFeatureEnabled } from '$lib/stores/app.js';
 	import MapTuningPanel from './_components/MapTuningPanel.svelte';
+	import { DEFAULT_TUNING } from './_utils/map-tuning.js';
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
@@ -167,9 +168,8 @@
 			VALID_THEMES.includes(/** @type {any} */ (initialTheme)) ? initialTheme : 'light'
 		)
 	);
-	// Marker style picker is part of the `show_map_experiments` feature flag —
-	// when the flag is off, force `circles` regardless of any URL/persisted
-	// override so non-experiment users can't land on hex/heatmap.
+	// Force `circles` when `show_map_experiments` is off so URL overrides
+	// can't land non-experiment users on hex/heatmap.
 	let mapMarkerStyle = $state(
 		/** @type {'circles' | 'hex' | 'heatmap'} */ (
 			isFeatureEnabled('show_map_experiments') &&
@@ -290,30 +290,9 @@
 	/** @type {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} */
 	let transmissionLineVisibility = $state({ high: true, medium: true, low: true, lowest: true });
 
-	// Live-tunable visual constants for circles / hex / heatmap. Defaults
-	// match the values previously hardcoded inside Map.svelte and
-	// MapHexLayer.svelte. Surfaced in `MapTuningPanel` (gated by the
-	// `show_map_experiments` feature flag) so designers can iterate without
-	// a rebuild — outside the panel these stay at the defaults.
-	let tuning = $state({
-		circleMin: 4,
-		circleMax: 28,
-		hexRadius: 6500,
-		hexElevationScale: 200,
-		hexDiskResolution: 6,
-		hexBrightMix: 0.35,
-		hexFillAlpha: 240,
-		hexGlowRadiusMultiplier: 2.5,
-		hexGlowAlpha: 60,
-		hexOutlineAlpha: 220,
-		hexExtruded: true,
-		hexMaterial: false,
-		heatmapRadius: 75,
-		heatmapIntensity: 1.4,
-		heatmapThreshold: 0.02,
-		heatmapDebounce: 300,
-		heatmapTextureSize: 512
-	});
+	// Surfaced in `MapTuningPanel` when `show_map_experiments` is on so
+	// designers can iterate without a rebuild.
+	let tuning = $state({ ...DEFAULT_TUNING });
 	let mapExperimentsEnabled = $derived(isFeatureEnabled('show_map_experiments'));
 
 	// Map loading state
@@ -615,8 +594,6 @@
 		}
 	}
 
-	// Active "Show by" metric metadata — drives column labels in List and any
-	// downstream surface that needs to render the metric value with units.
 	let metricMeta = $derived(
 		getMetricMeta({
 			metric: mapMetric,
@@ -625,8 +602,7 @@
 		})
 	);
 	let metricActive = $derived(isMetricActive({ metric: mapMetric }));
-	// Pass the raw values into `sortFacilities` only when a non-capacity metric
-	// is active — capacity falls back to the registered MW sum on the facility.
+	// `null` falls through to capacity sort inside `sortFacilities`.
 	let metricSortValues = $derived(metricActive ? metricValuesRaw : null);
 
 	let filteredFacilities = $derived.by(() => {

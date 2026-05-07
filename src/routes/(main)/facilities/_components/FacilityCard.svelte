@@ -34,9 +34,6 @@
 		onmouseleave
 	} = $props();
 
-	// When a non-capacity "Show by" metric is active, the parent passes the raw
-	// per-facility value + unit and the rightmost cell renders that instead of
-	// the registered MW total. `null` falls back to the default capacity view.
 	let showMetric = $derived(metricValue != null && metricUnit != null);
 
 	let unitGroups = $derived(groupUnits(facility));
