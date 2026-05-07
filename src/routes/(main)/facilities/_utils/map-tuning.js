@@ -1,7 +1,20 @@
 /**
  * Visual constants for the Facilities map's marker styles. Single source of
  * truth for the live tuning panel and the prop defaults on Map / MapHexLayer.
+ */
+
+/**
+ * Renderer options shared by `circleRenderer` and `transmissionRenderer` —
+ * referenced by the tuning panel's select fields.
  *
+ * @type {Array<{ value: 'maplibre' | 'deck', label: string }>}
+ */
+export const RENDERER_OPTIONS = [
+	{ value: 'maplibre', label: 'MapLibre' },
+	{ value: 'deck', label: 'deck.gl' }
+];
+
+/**
  * @typedef {{
  *   circleMin: number,
  *   circleMax: number,
@@ -19,7 +32,9 @@
  *   heatmapIntensity: number,
  *   heatmapThreshold: number,
  *   heatmapDebounce: number,
- *   heatmapTextureSize: number
+ *   heatmapTextureSize: number,
+ *   circleRenderer: 'maplibre' | 'deck',
+ *   transmissionRenderer: 'maplibre' | 'deck'
  * }} Tuning
  */
 
@@ -41,5 +56,7 @@ export const DEFAULT_TUNING = {
 	heatmapIntensity: 1.4,
 	heatmapThreshold: 0.02,
 	heatmapDebounce: 300,
-	heatmapTextureSize: 512
+	heatmapTextureSize: 512,
+	circleRenderer: 'deck',
+	transmissionRenderer: 'deck'
 };

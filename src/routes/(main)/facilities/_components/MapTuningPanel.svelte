@@ -1,6 +1,6 @@
 <script>
 	import { Sliders, X } from '@lucide/svelte';
-	import { DEFAULT_TUNING } from '../_utils/map-tuning.js';
+	import { DEFAULT_TUNING, RENDERER_OPTIONS } from '../_utils/map-tuning.js';
 
 	/**
 	 * @typedef {import('../_utils/map-tuning.js').Tuning} Tuning
@@ -14,12 +14,12 @@
 	 *   step?: number,
 	 *   unit?: string,
 	 *   format?: (n: number) => string,
-	 *   options?: Array<{ value: number, label: string }>
+	 *   options?: Array<{ value: number | string, label: string }>
 	 * }} Field
 	 *
 	 * @type {{
 	 *   tuning: Tuning,
-	 *   markerStyle: 'circles' | 'hex' | 'heatmap'
+	 *   markerStyle: 'circles' | 'columns' | 'heatmap'
 	 * }}
 	 */
 	let { tuning = $bindable(), markerStyle } = $props();
@@ -28,6 +28,7 @@
 
 	/** @type {Field[]} */
 	const CIRCLE_FIELDS = [
+		{ key: 'circleRenderer', label: 'Renderer', type: 'select', options: RENDERER_OPTIONS },
 		{ key: 'circleMin', label: 'Min radius', type: 'range', min: 1, max: 20, step: 1, unit: 'px' },
 		{ key: 'circleMax', label: 'Max radius', type: 'range', min: 5, max: 60, step: 1, unit: 'px' }
 	];
@@ -112,16 +113,21 @@
 		}
 	];
 
-	/** @type {Record<'circles' | 'hex' | 'heatmap', Field[]>} */
+	/** @type {Field[]} */
+	const TRANSMISSION_FIELDS = [
+		{ key: 'transmissionRenderer', label: 'Renderer', type: 'select', options: RENDERER_OPTIONS }
+	];
+
+	/** @type {Record<'circles' | 'columns' | 'heatmap', Field[]>} */
 	const FIELDS_BY_STYLE = {
 		circles: CIRCLE_FIELDS,
-		hex: HEX_FIELDS,
+		columns: HEX_FIELDS,
 		heatmap: HEATMAP_FIELDS
 	};
-	/** @type {Record<'circles' | 'hex' | 'heatmap', string>} */
+	/** @type {Record<'circles' | 'columns' | 'heatmap', string>} */
 	const TITLE_BY_STYLE = {
 		circles: 'Tune circles',
-		hex: 'Tune hex',
+		columns: 'Tune columns',
 		heatmap: 'Tune heatmap'
 	};
 
@@ -132,6 +138,71 @@
 		Object.assign(tuning, DEFAULT_TUNING);
 	}
 </script>
+
+{#snippet fieldControl(/** @type {Field} */ field, /** @type {boolean} */ disabled)}
+	{@const raw = tuning[field.key]}
+	{#if field.type === 'toggle'}
+		<label class="flex items-center justify-between gap-2 cursor-pointer" class:opacity-40={disabled}>
+			<span class="text-mid-grey">{field.label}</span>
+			<input
+				type="checkbox"
+				{disabled}
+				checked={/** @type {boolean} */ (raw)}
+				onchange={(e) => {
+					/** @type {any} */ (tuning)[field.key] =
+						/** @type {HTMLInputElement} */ (e.currentTarget).checked;
+				}}
+				class="accent-chart-1"
+			/>
+		</label>
+	{:else if field.type === 'select'}
+		{@const optionsAreNumeric = (field.options ?? []).every((o) => typeof o.value === 'number')}
+		<label class="flex flex-col gap-1" class:opacity-40={disabled}>
+			<span class="flex items-center justify-between text-mid-grey">
+				<span>{field.label}</span>
+				{#if field.unit}<span class="font-mono text-dark-grey">{raw} {field.unit}</span>{/if}
+			</span>
+			<select
+				class="border border-warm-grey rounded px-2 py-1 bg-white text-dark-grey"
+				{disabled}
+				value={raw}
+				onchange={(e) => {
+					const next = /** @type {HTMLSelectElement} */ (e.currentTarget).value;
+					/** @type {any} */ (tuning)[field.key] = optionsAreNumeric ? Number(next) : next;
+				}}
+			>
+				{#each field.options ?? [] as opt (opt.value)}
+					<option value={opt.value}>{opt.label}</option>
+				{/each}
+			</select>
+		</label>
+	{:else}
+		{@const numeric = /** @type {number} */ (raw)}
+		{@const display = field.format ? field.format(numeric) : String(numeric)}
+		<label class="flex flex-col gap-1" class:opacity-40={disabled}>
+			<span class="flex items-center justify-between text-mid-grey">
+				<span>{field.label}</span>
+				<span class="font-mono text-dark-grey">
+					{display}{field.unit ? ` ${field.unit}` : ''}
+				</span>
+			</span>
+			<input
+				type="range"
+				min={field.min}
+				max={field.max}
+				step={field.step}
+				{disabled}
+				value={numeric}
+				oninput={(e) => {
+					/** @type {any} */ (tuning)[field.key] = Number(
+						/** @type {HTMLInputElement} */ (e.currentTarget).value
+					);
+				}}
+				class="w-full accent-chart-1"
+			/>
+		</label>
+	{/if}
+{/snippet}
 
 <div class="absolute bottom-4 left-4 z-30 select-none">
 	{#if open}
@@ -149,66 +220,15 @@
 
 			<div class="flex flex-col gap-3 px-3 py-3 overflow-y-auto">
 				{#each activeFields as field (field.key)}
-					{@const raw = tuning[field.key]}
-					{#if field.type === 'toggle'}
-						<label class="flex items-center justify-between gap-2 cursor-pointer">
-							<span class="text-mid-grey">{field.label}</span>
-							<input
-								type="checkbox"
-								checked={/** @type {boolean} */ (raw)}
-								onchange={(e) => {
-									/** @type {any} */ (tuning)[field.key] =
-										/** @type {HTMLInputElement} */ (e.currentTarget).checked;
-								}}
-								class="accent-chart-1"
-							/>
-						</label>
-					{:else if field.type === 'select'}
-						{@const numeric = /** @type {number} */ (raw)}
-						<label class="flex flex-col gap-1">
-							<span class="flex items-center justify-between text-mid-grey">
-								<span>{field.label}</span>
-								{#if field.unit}<span class="font-mono text-dark-grey">{numeric} {field.unit}</span>{/if}
-							</span>
-							<select
-								class="border border-warm-grey rounded px-2 py-1 bg-white text-dark-grey"
-								value={numeric}
-								onchange={(e) => {
-									/** @type {any} */ (tuning)[field.key] = Number(
-										/** @type {HTMLSelectElement} */ (e.currentTarget).value
-									);
-								}}
-							>
-								{#each field.options ?? [] as opt (opt.value)}
-									<option value={opt.value}>{opt.label}</option>
-								{/each}
-							</select>
-						</label>
-					{:else}
-						{@const numeric = /** @type {number} */ (raw)}
-						{@const display = field.format ? field.format(numeric) : String(numeric)}
-						<label class="flex flex-col gap-1">
-							<span class="flex items-center justify-between text-mid-grey">
-								<span>{field.label}</span>
-								<span class="font-mono text-dark-grey">
-									{display}{field.unit ? ` ${field.unit}` : ''}
-								</span>
-							</span>
-							<input
-								type="range"
-								min={field.min}
-								max={field.max}
-								step={field.step}
-								value={numeric}
-								oninput={(e) => {
-									/** @type {any} */ (tuning)[field.key] = Number(
-										/** @type {HTMLInputElement} */ (e.currentTarget).value
-									);
-								}}
-								class="w-full accent-chart-1"
-							/>
-						</label>
-					{/if}
+					{@render fieldControl(field, false)}
+				{/each}
+
+				<div class="border-t border-warm-grey -mx-3 my-1"></div>
+				<div class="text-[10px] font-semibold uppercase tracking-wider text-mid-grey">
+					Transmission
+				</div>
+				{#each TRANSMISSION_FIELDS as field (field.key)}
+					{@render fieldControl(field, false)}
 				{/each}
 			</div>
 

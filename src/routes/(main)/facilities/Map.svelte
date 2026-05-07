@@ -29,7 +29,8 @@
 	 *   selectedFacilityCode?: string | null,
 	 *   clustering?: boolean,
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
-	 *   mapMarkerStyle?: 'circles' | 'hex' | 'heatmap',
+	 *   mapMarkerStyle?: 'circles' | 'columns' | 'heatmap',
+	 *   experimentalCircles?: boolean,
 	 *   showTransmissionLines?: boolean,
 	 *   transmissionLineVisibility?: TransmissionLineVisibility,
 	 *   showGolfCourses?: boolean,
@@ -40,6 +41,7 @@
 	 *   flyToOffsetY?: number,
 	 *   metricValues?: Map<string, number | null>,
 	 *   metricMissingByCode?: Set<string>,
+	 *   useDeckTransmission?: boolean,
 	 *   tuning?: import('./_utils/map-tuning.js').Tuning,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
@@ -54,6 +56,7 @@
 		clustering = false,
 		mapTheme = 'light',
 		mapMarkerStyle = 'circles',
+		experimentalCircles = false,
 		showTransmissionLines = true,
 		transmissionLineVisibility = { high: true, medium: true, low: true, lowest: true },
 		showGolfCourses = false,
@@ -64,6 +67,7 @@
 		flyToOffsetY = 0,
 		metricValues = new Map(),
 		metricMissingByCode = new Set(),
+		useDeckTransmission = false,
 		tuning = DEFAULT_TUNING,
 		onhover,
 		onclick,
@@ -92,19 +96,21 @@
 	// shape (existing satellite-aware logic, deck.gl visibility, etc).
 	// Marker styles are mutually exclusive — exactly one of these is true.
 	let satelliteView = $derived(mapTheme === 'satellite');
-	let showCircles = $derived(mapMarkerStyle === 'circles');
-	let showHexBins = $derived(mapMarkerStyle === 'hex');
+	let showColumns = $derived(mapMarkerStyle === 'columns');
 	let showHeatmap = $derived(mapMarkerStyle === 'heatmap');
-	// deck.gl overlay covers both hex and heatmap modes — single dynamic
-	// import handles the chunk for either.
-	let showDeckOverlay = $derived(showHexBins || showHeatmap);
+	// "Circles" maps to two render paths: the maplibre `CircleLayer` (default)
+	// or, when `experimentalCircles` is on, deck.gl's `ScatterplotLayer`.
+	let showCirclesAsScatter = $derived(mapMarkerStyle === 'circles' && experimentalCircles);
+	let showCircles = $derived(mapMarkerStyle === 'circles' && !showCirclesAsScatter);
+	let showDeckOverlay = $derived(showColumns || showHeatmap || showCirclesAsScatter);
 	// Mode for the deck.gl overlay. Clustering is intentionally ignored
-	// for hex/heat — those modes have their own visual semantics
-	// (per-facility hex columns, smooth heatmap density) and don't pair
-	// well with the count-based aggregate. Clustering only drives the
-	// circle layer.
+	// for the deck modes — they have their own visual semantics and don't
+	// pair well with the count-based maplibre aggregate. Clustering only
+	// drives the maplibre circle layer.
 	let deckMode = $derived(
-		/** @type {'column' | 'heatmap'} */ (showHeatmap ? 'heatmap' : 'column')
+		/** @type {'column' | 'heatmap' | 'scatter'} */ (
+			showHeatmap ? 'heatmap' : showCirclesAsScatter ? 'scatter' : 'column'
+		)
 	);
 
 	// `metricValues` is sqrt-normalised (0..1) by `normaliseMetric`; we
@@ -112,13 +118,14 @@
 	// intensities stay comparable across capacity / generation / pollution.
 	const HEX_WEIGHT_SCALE = 10000;
 
-	// Hex parsing is the heaviest per-facility bit and only depends on the
-	// facility's fuel-tech colour — cache by code and reuse across metric /
-	// missing-set updates so dragging tuning sliders doesn't re-parse 600+
-	// hex strings each frame.
+	// Both `facilityColours` and `hexagonData` only feed deck.gl marker
+	// modes — skip the work entirely in maplibre-only renders so dragging
+	// metric / filter sliders doesn't re-parse 600 hex strings + rebuild
+	// 600-entry arrays per tick.
 	let facilityColours = $derived.by(() => {
 		/** @type {Map<string, [number, number, number]>} */
 		const out = new Map();
+		if (!showDeckOverlay) return out;
 		for (const f of facilities) {
 			out.set(f.code, hexToRgb(getFacilityColor(f) || '#888888'));
 		}
@@ -126,6 +133,7 @@
 	});
 
 	let hexagonData = $derived.by(() => {
+		if (!showDeckOverlay) return [];
 		return facilities
 			.filter((f) => f.location?.lng != null && f.location?.lat != null)
 			.filter((f) => !metricMissingByCode.has(f.code))
@@ -217,7 +225,7 @@
 	const PITCH_FLAT = 0;
 	const PITCH_TRANSITION_MS = 800;
 	$effect(() => {
-		const wantsTilt = showHexBins;
+		const wantsTilt = showColumns;
 		const map = mapInstance;
 		if (!map || !mapLoaded) return;
 		const targetPitch = wantsTilt ? PITCH_3D : PITCH_FLAT;
@@ -838,7 +846,7 @@
 			/>
 		</GeoJSONSource>
 
-		<!-- Transmission lines layer (always rendered, visibility controlled via layout) -->
+		{#if !useDeckTransmission}
 		<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
 			<LineLayer
 				id="transmission-lines-layer"
@@ -901,6 +909,14 @@
 				}}
 			/>
 		</GeoJSONSource>
+		{:else if showTransmissionLines}
+			{#await import('./_components/MapTransmissionLayer.svelte') then { default: MapTransmissionLayer }}
+				<MapTransmissionLayer
+					voltageVisibility={transmissionLineVisibility}
+					{facilities}
+				/>
+			{/await}
+		{/if}
 
 		{#if showCircles}
 		{#if clustering}
@@ -1119,6 +1135,8 @@
 					heatmapThreshold={tuning.heatmapThreshold}
 					heatmapDebounceMs={tuning.heatmapDebounce}
 					heatmapTextureSize={tuning.heatmapTextureSize}
+					circleMin={tuning.circleMin}
+					circleMax={tuning.circleMax}
 				/>
 			{/await}
 		{/if}

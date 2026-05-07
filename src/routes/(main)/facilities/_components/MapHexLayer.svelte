@@ -4,7 +4,6 @@
 	import { MapboxOverlay } from '@deck.gl/mapbox';
 	import { ColumnLayer, ScatterplotLayer } from '@deck.gl/layers';
 	import { HeatmapLayer } from '@deck.gl/aggregation-layers';
-	import { clusterByGrid } from '../_utils/cluster-by-grid.js';
 
 	/**
 	 * deck.gl overlay for the facilities map. Single component owns the
@@ -15,16 +14,15 @@
 	 * Modes:
 	 *   - `column` (default): one hexagonal column per facility (`ColumnLayer`
 	 *     with `diskResolution: 6`). Height = facility weight × elevationScale.
-	 *   - `aggregate`: facilities clustered into a coarse lat/lng grid.
-	 *     Each cell renders as one hex column — radius scaled by facility
-	 *     count, height by summed metric (capacity / generation / etc).
 	 *   - `heatmap`: smooth 2D density heatmap (`HeatmapLayer`). Flat —
 	 *     pairs well with top-down camera.
+	 *   - `scatter`: per-facility deck.gl `ScatterplotLayer` circles. Drop-in
+	 *     for the maplibre `CircleLayer` with smoother anti-aliasing.
 	 *
 	 * @type {{
 	 *   data: Array<{ position: [number, number], weight: number, code?: string, color?: [number, number, number] }>,
 	 *   visible?: boolean,
-	 *   mode?: 'column' | 'aggregate' | 'heatmap',
+	 *   mode?: 'column' | 'heatmap' | 'scatter',
 	 *   radius?: number,
 	 *   elevationScale?: number,
 	 *   hexDiskResolution?: number,
@@ -39,7 +37,9 @@
 	 *   heatmapIntensity?: number,
 	 *   heatmapThreshold?: number,
 	 *   heatmapDebounceMs?: number,
-	 *   heatmapTextureSize?: number
+	 *   heatmapTextureSize?: number,
+	 *   circleMin?: number,
+	 *   circleMax?: number
 	 * }}
 	 */
 	let {
@@ -60,7 +60,9 @@
 		heatmapIntensity = 1.4,
 		heatmapThreshold = 0.02,
 		heatmapDebounceMs = 300,
-		heatmapTextureSize = 512
+		heatmapTextureSize = 512,
+		circleMin = 4,
+		circleMax = 28
 	} = $props();
 
 	const mapCtx = getMapContext();
@@ -83,6 +85,49 @@
 	}
 
 	function buildLayers() {
+		if (mode === 'scatter') {
+			// Per-facility circles drawn as three stacked discs to fake a
+			// radial gradient — wide faint halo + mid blend + bright core.
+			// `weight` is sqrt-normalised metric × HEX_WEIGHT_SCALE upstream
+			// (0..10000); we map it onto the user-tunable [circleMin,
+			// circleMax] pixel range, then scale per disc.
+			const range = Math.max(0.1, circleMax - circleMin);
+			/** @param {any} d */
+			const baseRadius = (d) => circleMin + (d.weight / 10000) * range;
+			const stack = [
+				{ mult: 2.2, alpha: 20 },
+				{ mult: 1.7, alpha: 55 },
+				{ mult: 1.3, alpha: 115 },
+				{ mult: 1.0, alpha: 235 }
+			];
+			return stack.map(
+				({ mult, alpha }, i) =>
+					new ScatterplotLayer({
+						id: `facilities-scatter-${i}`,
+						data,
+						// Picking only on the bright top disc — avoids
+						// overlapping picks per facility.
+						pickable: i === stack.length - 1,
+						stroked: false,
+						filled: true,
+						radiusUnits: 'pixels',
+						radiusMinPixels: 2,
+						getPosition: (/** @type {any} */ d) => d.position,
+						getRadius: (/** @type {any} */ d) => baseRadius(d) * mult,
+						getFillColor: (/** @type {any} */ d) => {
+							const c = d.color ?? [136, 136, 136];
+							return [c[0], c[1], c[2], alpha];
+						},
+						// Without explicit triggers, deck.gl reuses cached
+						// per-feature radius from previous renders even when
+						// the accessor closure changes, so dragging the
+						// min/max sliders looked like it had no effect.
+						updateTriggers: {
+							getRadius: [circleMin, circleMax]
+						}
+					})
+			);
+		}
 		if (mode === 'heatmap') {
 			return [
 				new HeatmapLayer({
@@ -113,77 +158,6 @@
 						[255, 110, 50, 255]
 					],
 					pickable: false
-				})
-			];
-		}
-
-		if (mode === 'aggregate') {
-			// Cluster facilities into a coarse lat/lng grid; each non-empty
-			// cell becomes one column whose hex radius scales with the
-			// facility count and whose height scales (sqrt) with the
-			// summed metric. We sqrt-compress because linear sums blow
-			// out fast — Hunter Valley alone sums to ~9 GW which would
-			// otherwise render as a 3,500 km needle that dominates the
-			// view. Sqrt keeps the relative ordering monotonic but maps
-			// the range into something readable on a continental map.
-			const clustered = clusterByGrid(data, 0.5);
-			// Radius scales with sqrt(count) off the per-facility radius
-			// so a count=1 cell is visually similar to a single hex under
-			// non-clustered mode, and a count=4 cell is 2× the footprint
-			// (4× area).
-			const aggregateRadius = (/** @type {number} */ count) =>
-				Math.sqrt(Math.max(count, 1)) * radius;
-			// Sqrt of weight × an amplified scale. With the default
-			// elevationScale=400, scale here = 6000 — that lands a 200 MW
-			// single facility at ~85 km (close to its per-facility column
-			// height of 80 km), Bayswater (2.6 GW) at ~310 km, and the
-			// Hunter Valley aggregate (~9 GW) at ~570 km. Clean ordering,
-			// no stratospheric needles.
-			const AGGREGATE_HEIGHT_SCALE = elevationScale * 15;
-			/** @typedef {ReturnType<typeof clusterByGrid>[number]} ClusterCell */
-			return [
-				new ScatterplotLayer({
-					id: 'facilities-hex-aggregate-glow',
-					data: clustered,
-					pickable: false,
-					stroked: false,
-					filled: true,
-					radiusUnits: 'meters',
-					getPosition: (/** @type {ClusterCell} */ d) => d.position,
-					getRadius: (/** @type {ClusterCell} */ d) => aggregateRadius(d.count) * 2.5,
-					getFillColor: (/** @type {ClusterCell} */ d) => [
-						d.color[0],
-						d.color[1],
-						d.color[2],
-						50
-					]
-				}),
-				new ColumnLayer({
-					id: 'facilities-hex-aggregate',
-					data: clustered,
-					diskResolution: 6,
-					extruded: true,
-					pickable: true,
-					material: false,
-					getPosition: (/** @type {ClusterCell} */ d) => d.position,
-					getRadius: (/** @type {ClusterCell} */ d) => aggregateRadius(d.count),
-					getElevation: (/** @type {ClusterCell} */ d) =>
-						Math.sqrt(Math.max(d.weight, 0)) * AGGREGATE_HEIGHT_SCALE,
-					getFillColor: (/** @type {ClusterCell} */ d) => [
-						d.color[0],
-						d.color[1],
-						d.color[2],
-						230
-					],
-					stroked: true,
-					getLineColor: (/** @type {ClusterCell} */ d) => [
-						Math.min(255, d.color[0] + 40),
-						Math.min(255, d.color[1] + 40),
-						Math.min(255, d.color[2] + 40),
-						220
-					],
-					lineWidthUnits: 'pixels',
-					lineWidthMinPixels: 1
 				})
 			];
 		}

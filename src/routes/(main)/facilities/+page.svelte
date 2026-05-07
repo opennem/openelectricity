@@ -158,7 +158,7 @@
 	// Map options - read initial values from URL params
 	// satellite: default false, transmission: default true, clustering: default false, golf: default false
 	const VALID_THEMES = /** @type {const} */ (['light', 'dark', 'satellite']);
-	const VALID_MARKER_STYLES = /** @type {const} */ (['circles', 'hex', 'heatmap']);
+	const VALID_MARKER_STYLES = /** @type {const} */ (['circles', 'columns', 'heatmap']);
 
 	const initialTheme = page.url.searchParams.get('theme') ?? 'light';
 	const initialMarkerStyle = page.url.searchParams.get('markers') ?? 'circles';
@@ -171,7 +171,7 @@
 	// Force `circles` when `show_map_experiments` is off so URL overrides
 	// can't land non-experiment users on hex/heatmap.
 	let mapMarkerStyle = $state(
-		/** @type {'circles' | 'hex' | 'heatmap'} */ (
+		/** @type {'circles' | 'columns' | 'heatmap'} */ (
 			isFeatureEnabled('show_map_experiments') &&
 			VALID_MARKER_STYLES.includes(/** @type {any} */ (initialMarkerStyle))
 				? initialMarkerStyle
@@ -1281,6 +1281,7 @@
 						clustering={mapClustering}
 						{mapTheme}
 						{mapMarkerStyle}
+						experimentalCircles={mapExperimentsEnabled && mapMarkerStyle === 'circles' && tuning.circleRenderer === 'deck'}
 						showTransmissionLines={mapShowTransmissionLines}
 						{transmissionLineVisibility}
 						showGolfCourses={mapShowGolfCourses}
@@ -1290,6 +1291,7 @@
 						flyToOffsetY={selectedFacility ? -0.15 : 0}
 						{metricValues}
 						{metricMissingByCode}
+						useDeckTransmission={mapExperimentsEnabled && tuning.transmissionRenderer === 'deck'}
 						{tuning}
 						onhover={(f) => (hoveredFacility = f)}
 						onclick={(f) => (clickedFacility = f)}

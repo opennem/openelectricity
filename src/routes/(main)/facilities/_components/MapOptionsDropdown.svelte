@@ -6,7 +6,7 @@
 	/**
 	 * @type {{
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
-	 *   markerStyle?: 'circles' | 'hex' | 'heatmap',
+	 *   markerStyle?: 'circles' | 'columns' | 'heatmap',
 	 *   showMarkerStyleOption?: boolean,
 	 *   showTransmissionLines: boolean,
 	 *   showGolfCourses: boolean,
@@ -14,7 +14,7 @@
 	 *   showMagicIndicator: boolean,
 	 *   clustering: boolean,
 	 *   onmapthemechange?: (value: 'light' | 'dark' | 'satellite') => void,
-	 *   onmarkerstylechange?: (value: 'circles' | 'hex' | 'heatmap') => void,
+	 *   onmarkerstylechange?: (value: 'circles' | 'columns' | 'heatmap') => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
 	 *   ongolfcourseschange?: (value: boolean) => void,
 	 *   onclusteringchange?: (value: boolean) => void
@@ -50,7 +50,7 @@
 
 	const MARKER_STYLES = /** @type {const} */ ([
 		{ value: 'circles', label: 'Circles' },
-		{ value: 'hex', label: 'Hex' },
+		{ value: 'columns', label: 'Columns' },
 		{ value: 'heatmap', label: 'Heat' }
 	]);
 
