@@ -2,6 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { Layers, ChevronDown, Flag, Sparkles } from '@lucide/svelte';
+	import { MARKER_STYLES } from '../_utils/marker-styles.js';
 
 	/**
 	 * @type {{
@@ -46,12 +47,6 @@
 		{ value: 'light', label: 'Light' },
 		{ value: 'dark', label: 'Dark' },
 		{ value: 'satellite', label: 'Satellite' }
-	]);
-
-	const MARKER_STYLES = /** @type {const} */ ([
-		{ value: 'circles', label: 'Circles' },
-		{ value: 'columns', label: 'Columns' },
-		{ value: 'heatmap', label: 'Heat' }
 	]);
 
 	let clusteringDisabled = $derived(markerStyle !== 'circles');

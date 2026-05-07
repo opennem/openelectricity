@@ -30,7 +30,6 @@
 	 *   clustering?: boolean,
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   mapMarkerStyle?: 'circles' | 'columns' | 'heatmap',
-	 *   experimentalCircles?: boolean,
 	 *   showTransmissionLines?: boolean,
 	 *   transmissionLineVisibility?: TransmissionLineVisibility,
 	 *   showGolfCourses?: boolean,
@@ -41,7 +40,7 @@
 	 *   flyToOffsetY?: number,
 	 *   metricValues?: Map<string, number | null>,
 	 *   metricMissingByCode?: Set<string>,
-	 *   useDeckTransmission?: boolean,
+	 *   experimentsEnabled?: boolean,
 	 *   tuning?: import('./_utils/map-tuning.js').Tuning,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
@@ -56,7 +55,6 @@
 		clustering = false,
 		mapTheme = 'light',
 		mapMarkerStyle = 'circles',
-		experimentalCircles = false,
 		showTransmissionLines = true,
 		transmissionLineVisibility = { high: true, medium: true, low: true, lowest: true },
 		showGolfCourses = false,
@@ -67,7 +65,7 @@
 		flyToOffsetY = 0,
 		metricValues = new Map(),
 		metricMissingByCode = new Set(),
-		useDeckTransmission = false,
+		experimentsEnabled = false,
 		tuning = DEFAULT_TUNING,
 		onhover,
 		onclick,
@@ -98,10 +96,17 @@
 	let satelliteView = $derived(mapTheme === 'satellite');
 	let showColumns = $derived(mapMarkerStyle === 'columns');
 	let showHeatmap = $derived(mapMarkerStyle === 'heatmap');
-	// "Circles" maps to two render paths: the maplibre `CircleLayer` (default)
-	// or, when `experimentalCircles` is on, deck.gl's `ScatterplotLayer`.
-	let showCirclesAsScatter = $derived(mapMarkerStyle === 'circles' && experimentalCircles);
+	// "Circles" maps to two render paths: the maplibre `CircleLayer`
+	// (default) or — when experiments are on AND the panel's circle
+	// renderer is `'deck'` — deck.gl's `ScatterplotLayer`. Likewise for
+	// transmission.
+	let showCirclesAsScatter = $derived(
+		experimentsEnabled && mapMarkerStyle === 'circles' && tuning.circleRenderer === 'deck'
+	);
 	let showCircles = $derived(mapMarkerStyle === 'circles' && !showCirclesAsScatter);
+	let useDeckTransmission = $derived(
+		experimentsEnabled && tuning.transmissionRenderer === 'deck'
+	);
 	let showDeckOverlay = $derived(showColumns || showHeatmap || showCirclesAsScatter);
 	// Mode for the deck.gl overlay. Clustering is intentionally ignored
 	// for the deck modes — they have their own visual semantics and don't

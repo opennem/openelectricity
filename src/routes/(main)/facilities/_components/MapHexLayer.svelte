@@ -4,6 +4,7 @@
 	import { MapboxOverlay } from '@deck.gl/mapbox';
 	import { ColumnLayer, ScatterplotLayer } from '@deck.gl/layers';
 	import { HeatmapLayer } from '@deck.gl/aggregation-layers';
+	import { mixRgb } from '$lib/utils/colour-darken.js';
 
 	/**
 	 * deck.gl overlay for the facilities map. Single component owns the
@@ -162,20 +163,21 @@
 			];
 		}
 
-		// Brighten the fuel-tech RGB by mixing toward white. Dark coal browns
-		// / wind greens read better as glowing pillars when bumped up in
-		// lightness. Mix amount is tunable via `hexBrightMix` (0 = raw fuel
-		// colour, 1 = solid white).
-		/** @param {[number, number, number] | undefined} c */
+		/** Brighten the fuel-tech RGB by mixing toward white — dark coal
+		 * browns / wind greens read better as glowing pillars at higher
+		 * lightness. `hexBrightMix` of 0 = raw fuel colour, 1 = solid white.
+		 *
+		 * @param {[number, number, number] | undefined} c
+		 */
 		function brighten(c) {
-			if (!c) return /** @type {[number, number, number]} */ ([255, 200, 90]);
-			return /** @type {[number, number, number]} */ ([
-				Math.round(c[0] + (255 - c[0]) * hexBrightMix),
-				Math.round(c[1] + (255 - c[1]) * hexBrightMix),
-				Math.round(c[2] + (255 - c[2]) * hexBrightMix)
-			]);
+			return mixRgb(c ?? [255, 200, 90], [255, 255, 255], hexBrightMix);
 		}
 
+		// `updateTriggers` lets deck.gl skip the cached attribute buffers
+		// when these tuning props change but `data` reference hasn't —
+		// without them, dragging the brighten / alpha sliders would only
+		// re-render top-level props and leave per-feature colours stale.
+		const colourTriggers = [hexBrightMix, hexFillAlpha, hexGlowAlpha, hexOutlineAlpha];
 		return [
 			// Flat halo / ground glow underneath every column. Wide and faint
 			// so columns look like they're radiating onto the basemap.
@@ -191,7 +193,8 @@
 				getFillColor: (d) => {
 					const b = brighten(d.color);
 					return [b[0], b[1], b[2], hexGlowAlpha];
-				}
+				},
+				updateTriggers: { getFillColor: colourTriggers }
 			}),
 			new ColumnLayer({
 				id: 'facilities-hex-columns',
@@ -223,7 +226,11 @@
 				},
 				lineWidthUnits: 'pixels',
 				lineWidthMinPixels: 1,
-				stroked: true
+				stroked: true,
+				updateTriggers: {
+					getFillColor: colourTriggers,
+					getLineColor: colourTriggers
+				}
 			})
 		];
 	}

@@ -13,6 +13,7 @@
 	import { isFeatureEnabled } from '$lib/stores/app.js';
 	import MapTuningPanel from './_components/MapTuningPanel.svelte';
 	import { DEFAULT_TUNING } from './_utils/map-tuning.js';
+	import { MARKER_STYLE_VALUES } from './_utils/marker-styles.js';
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
@@ -158,7 +159,7 @@
 	// Map options - read initial values from URL params
 	// satellite: default false, transmission: default true, clustering: default false, golf: default false
 	const VALID_THEMES = /** @type {const} */ (['light', 'dark', 'satellite']);
-	const VALID_MARKER_STYLES = /** @type {const} */ (['circles', 'columns', 'heatmap']);
+	const VALID_MARKER_STYLES = MARKER_STYLE_VALUES;
 
 	const initialTheme = page.url.searchParams.get('theme') ?? 'light';
 	const initialMarkerStyle = page.url.searchParams.get('markers') ?? 'circles';
@@ -171,7 +172,7 @@
 	// Force `circles` when `show_map_experiments` is off so URL overrides
 	// can't land non-experiment users on hex/heatmap.
 	let mapMarkerStyle = $state(
-		/** @type {'circles' | 'columns' | 'heatmap'} */ (
+		/** @type {import('./_utils/marker-styles.js').MarkerStyle} */ (
 			isFeatureEnabled('show_map_experiments') &&
 			VALID_MARKER_STYLES.includes(/** @type {any} */ (initialMarkerStyle))
 				? initialMarkerStyle
@@ -1281,7 +1282,7 @@
 						clustering={mapClustering}
 						{mapTheme}
 						{mapMarkerStyle}
-						experimentalCircles={mapExperimentsEnabled && mapMarkerStyle === 'circles' && tuning.circleRenderer === 'deck'}
+						experimentsEnabled={mapExperimentsEnabled}
 						showTransmissionLines={mapShowTransmissionLines}
 						{transmissionLineVisibility}
 						showGolfCourses={mapShowGolfCourses}
@@ -1291,7 +1292,6 @@
 						flyToOffsetY={selectedFacility ? -0.15 : 0}
 						{metricValues}
 						{metricMissingByCode}
-						useDeckTransmission={mapExperimentsEnabled && tuning.transmissionRenderer === 'deck'}
 						{tuning}
 						onhover={(f) => (hoveredFacility = f)}
 						onclick={(f) => (clickedFacility = f)}

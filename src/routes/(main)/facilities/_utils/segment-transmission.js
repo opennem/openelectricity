@@ -7,6 +7,8 @@
  * A LineString feature with N coordinates yields N-1 segment entries.
  */
 
+import { mixRgb } from '$lib/utils/colour-darken.js';
+
 /**
  * @typedef {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} VoltageVisibility
  *
@@ -61,22 +63,6 @@ export const NEAR_RGB = [244, 63, 94]; // rose
 // red zones that visually merge into hotter regions.
 const NEAR_DEG = 0.05;
 const FAR_DEG = 0.5;
-
-/**
- * Mix two RGB triples by `t` (0 = a, 1 = b).
- *
- * @param {[number, number, number]} a
- * @param {[number, number, number]} b
- * @param {number} t
- * @returns {[number, number, number]}
- */
-function mixRgb(a, b, t) {
-	return [
-		Math.round(a[0] + (b[0] - a[0]) * t),
-		Math.round(a[1] + (b[1] - a[1]) * t),
-		Math.round(a[2] + (b[2] - a[2]) * t)
-	];
-}
 
 /**
  * Compute the proximity score `0..1` for a point against a list of facility
