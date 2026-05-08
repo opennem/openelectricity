@@ -303,3 +303,65 @@ describe('parseCSV timezone-less date parsing', () => {
 		expect(d.getUTCDate()).toBe(18);
 	});
 });
+
+// ── browser-portable month-year parsing ─────────────────────────
+
+describe('parseCSV month-year formats (Safari portability)', () => {
+	// Safari rejects `new Date('Jan 2024')` and `new Date('2024-01')`,
+	// so these must be parsed by date-fns rather than the native fallback.
+	it('parses "MMM yyyy" (e.g. "Jan 2024") as the first of the month UTC', () => {
+		const csv = `Month,Value
+Jan 2024,10
+Feb 2024,20
+Mar 2024,30`;
+
+		const result = parseCSV(csv, {}, 'time-series');
+		expect(result.mode).toBe('time-series');
+		expect(result.data).toHaveLength(3);
+		expect(result.errors).toEqual([]);
+
+		const d0 = /** @type {Date} */ (result.data[0].date);
+		expect(d0.getUTCFullYear()).toBe(2024);
+		expect(d0.getUTCMonth()).toBe(0);
+		expect(d0.getUTCDate()).toBe(1);
+
+		const d2 = /** @type {Date} */ (result.data[2].date);
+		expect(d2.getUTCMonth()).toBe(2);
+	});
+
+	it('parses "MMMM yyyy" (e.g. "January 2024")', () => {
+		const csv = `Month,Value
+January 2024,10
+February 2024,20`;
+
+		const result = parseCSV(csv, {}, 'time-series');
+		expect(result.data).toHaveLength(2);
+		expect(result.errors).toEqual([]);
+		const d0 = /** @type {Date} */ (result.data[0].date);
+		expect(d0.getUTCFullYear()).toBe(2024);
+		expect(d0.getUTCMonth()).toBe(0);
+	});
+
+	it('parses "yyyy-MM" (e.g. "2024-01")', () => {
+		const csv = `Month,Value
+2024-01,10
+2024-02,20`;
+
+		const result = parseCSV(csv, {}, 'time-series');
+		expect(result.data).toHaveLength(2);
+		expect(result.errors).toEqual([]);
+		const d0 = /** @type {Date} */ (result.data[0].date);
+		expect(d0.getUTCFullYear()).toBe(2024);
+		expect(d0.getUTCMonth()).toBe(0);
+		expect(d0.getUTCDate()).toBe(1);
+	});
+
+	it('auto-detects "MMM yyyy" data as time-series', () => {
+		const csv = `Month,Value
+Jan 2024,10
+Feb 2024,20`;
+
+		const result = parseCSV(csv);
+		expect(result.mode).toBe('time-series');
+	});
+});

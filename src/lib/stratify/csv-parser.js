@@ -39,6 +39,10 @@ const DATE_FORMATS = [
 	'd MMMM yyyy',
 	'MMM d, yyyy',
 	'MMMM d, yyyy',
+	'MMM yyyy',
+	'MMMM yyyy',
+	'yyyy-MM',
+	'yyyy/MM',
 	'yyyy'
 ];
 
