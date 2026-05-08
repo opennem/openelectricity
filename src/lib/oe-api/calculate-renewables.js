@@ -29,7 +29,7 @@ export const RENEWABLE_MODES = [
 		id: 'oe_proportion',
 		label: 'OE getMarket · generation_renewable ÷ gross demand',
 		description:
-			'Official OE method (per the renewables guide). Empirically the numerator equals bioenergy + hydro + solar_utility + wind only — the OE docs claim it also includes solar_rooftop, battery_discharging and pumps, but cross-checking the live API shows those three are excluded (the docs formula likely matches generation_renewable_with_storage_energy, which currently returns null on the API). Rooftop is captured by the gross-demand denominator instead.',
+			'Official OE method (per the renewables guide). Empirically the numerator equals bioenergy + hydro + solar_utility + wind only — the OE docs claim it also includes solar_rooftop, battery_discharging and pumps, but cross-checking the live API shows those three are excluded (the docs formula likely matches generation_renewable_with_storage_energy, which currently returns null on the API). Rooftop is captured by the gross-demand denominator instead. Series start May 2006: generation_renewable_energy goes back to Jan 2000, but demand_gross_energy returns null before May 2006 (rooftop solar coverage starts then), so all three lines are clipped to the demand series\' first non-null month.',
 		numerator:
 			'generation_renewable_energy from OE getMarket — empirically bioenergy + hydro + solar_utility + wind (excludes solar_rooftop, battery_discharging, pumps)',
 		fossilNumerator:
@@ -40,7 +40,7 @@ export const RENEWABLE_MODES = [
 		id: 'oe_secondary_renewable',
 		label: 'OE getNetworkData(renewable) · renewable=true ÷ gross demand',
 		description:
-			'OE classifies each fueltech as renewable=true/false and aggregates them server-side. The renewable=true bucket includes rooftop solar.',
+			'OE classifies each fueltech as renewable=true/false and aggregates them server-side. The renewable=true bucket includes rooftop solar. Series start May 2006: both renewable=true and renewable=false buckets have full data back to Jan 2000, but demand_gross_energy returns null before May 2006 (rooftop solar coverage starts then), so all three lines are clipped to the demand series\' first non-null month.',
 		numerator:
 			'OE getNetworkData with secondary_grouping=renewable, the renewable=true row',
 		fossilNumerator:
