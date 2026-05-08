@@ -24,7 +24,7 @@
 	);
 </script>
 
-<div class="w-[350px] shrink-0 text-xs text-mid-grey">
+<div class="w-full text-xs text-mid-grey">
 	{#if point}
 		<p class="font-space text-xs uppercase mb-2 text-dark-grey">
 			{fmtDate(/** @type {any} */ (point).date, 'MMM yyyy')}

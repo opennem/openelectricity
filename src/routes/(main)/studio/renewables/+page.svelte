@@ -4,6 +4,7 @@
 	import Select from '$lib/components/form-elements/Select.svelte';
 	import Chart from '$lib/components/info-graphics/fossil-fuels-renewables/Chart.svelte';
 	import StudioAnnotations from './_components/StudioAnnotations.svelte';
+	import StudioDataTable from './_components/StudioDataTable.svelte';
 	import {
 		calculateRenewables,
 		RENEWABLE_MODES,
@@ -38,14 +39,17 @@
 	});
 
 	/** @type {import('$lib/oe-api/calculate-renewables').RenewableSmoothing} */
-	let selectedSmoothing = $state('monthly');
+	let selectedSmoothing = $state('rolling12mth');
 
 	/** @type {import('$lib/oe-api/calculate-renewables').RenewableValueType} */
-	let selectedValueType = $state('raw');
+	let selectedValueType = $state('percentage');
 
 	/** Shared hover time across all charts so hovering one highlights the same x in all. */
 	/** @type {number | undefined} */
 	let sharedHoverTime = $state(undefined);
+
+	/** @type {'chart' | 'table'} */
+	let viewMode = $state('chart');
 
 	const smoothingOptions = RENEWABLE_SMOOTHING_OPTIONS.map((s) => ({
 		label: s.label,
@@ -66,6 +70,7 @@
 		'raw:monthly': '(GWh, monthly)'
 	};
 	let unitSuffix = $derived(UNIT_SUFFIX[`${selectedValueType}:${selectedSmoothing}`]);
+	let unitLabel = $derived(selectedValueType === 'percentage' ? '%' : 'GWh');
 
 	/** @param {import('$lib/oe-api/calculate-renewables').RenewableMode} mode */
 	function calc(mode) {
@@ -94,7 +99,9 @@
 	</header>
 
 	<!-- Shared filters -->
-	<div class="flex items-center gap-4 mb-6 whitespace-nowrap justify-start text-base md:text-lg">
+	<div
+		class="flex flex-wrap items-center gap-x-4 gap-y-2 mb-6 whitespace-nowrap justify-start text-base md:text-lg"
+	>
 		<span class="text-sm md:text-base text-mid-grey uppercase font-space">View:</span>
 		<Select
 			selected={smoothingOptions.find((o) => o.value === selectedSmoothing)}
@@ -124,6 +131,32 @@
 					);
 			}}
 		/>
+		<div
+			class="ml-auto inline-flex rounded-md border border-warm-grey overflow-hidden text-xs md:text-sm font-space"
+			role="group"
+			aria-label="View mode"
+		>
+			<button
+				type="button"
+				class="px-3 py-2 transition-colors {viewMode === 'chart'
+					? 'bg-dark-grey text-white'
+					: 'bg-white text-mid-grey hover:bg-light-warm-grey'}"
+				aria-pressed={viewMode === 'chart'}
+				onclick={() => (viewMode = 'chart')}
+			>
+				Chart
+			</button>
+			<button
+				type="button"
+				class="px-3 py-2 transition-colors border-l border-warm-grey {viewMode === 'table'
+					? 'bg-dark-grey text-white'
+					: 'bg-white text-mid-grey hover:bg-light-warm-grey'}"
+				aria-pressed={viewMode === 'table'}
+				onclick={() => (viewMode = 'table')}
+			>
+				Table
+			</button>
+		</div>
 	</div>
 
 	{#if !renewablesInput}
@@ -163,36 +196,50 @@
 					<p class="text-xs text-mid-grey mb-1 font-space uppercase">{unitSuffix}</p>
 
 					{#if result && result.dataset.length > 0}
-						<div class="flex gap-4 items-stretch">
-							<div class="flex-1 min-w-0">
-								<Chart
-									title=""
-									description=""
-									chartLabel=""
-									valueType={selectedValueType}
-									dataset={result.dataset}
-									seriesNames={result.seriesNames}
-									seriesColours={result.seriesColours}
-									seriesLabels={result.seriesLabels}
-									skipAnimation={true}
-									historicalDataset={result.statsDatasets}
-									containerClass="chart-container h-[200px]"
-									externalHoverTime={sharedHoverTime}
-									onHoverTimeChange={(t) => (sharedHoverTime = t)}
-									showAnnotations={false}
-								/>
+						{#if viewMode === 'chart'}
+							<div class="flex flex-col md:flex-row gap-4 md:items-stretch">
+								<div class="flex-1 min-w-0">
+									<Chart
+										title=""
+										description=""
+										chartLabel=""
+										valueType={selectedValueType}
+										dataset={result.dataset}
+										seriesNames={result.seriesNames}
+										seriesColours={result.seriesColours}
+										seriesLabels={result.seriesLabels}
+										skipAnimation={true}
+										historicalDataset={result.statsDatasets}
+										containerClass="chart-container h-[300px] md:h-[350px]"
+										externalHoverTime={sharedHoverTime}
+										onHoverTimeChange={(t) => (sharedHoverTime = t)}
+										showAnnotations={false}
+									/>
+								</div>
+								<div class="w-full md:w-[350px] md:shrink-0">
+									<StudioAnnotations
+										dataset={result.dataset}
+										seriesNames={result.seriesNames}
+										seriesColours={result.seriesColours}
+										seriesLabels={result.seriesLabels}
+										hoverTime={sharedHoverTime}
+										unit={unitLabel}
+									/>
+								</div>
 							</div>
-							<StudioAnnotations
+						{:else}
+							<StudioDataTable
 								dataset={result.dataset}
 								seriesNames={result.seriesNames}
 								seriesColours={result.seriesColours}
 								seriesLabels={result.seriesLabels}
-								hoverTime={sharedHoverTime}
-								unit={selectedValueType === 'percentage' ? '%' : 'GWh'}
+								unit={unitLabel}
 							/>
-						</div>
+						{/if}
 					{:else}
-						<div class="h-[200px] flex items-center justify-center text-sm text-mid-grey">
+						<div
+							class="h-[300px] md:h-[350px] flex items-center justify-center text-sm text-mid-grey"
+						>
 							No data for this mode
 						</div>
 					{/if}
