@@ -18,14 +18,14 @@ For the **Data Tracker** (a.k.a. OpenNEM), see [opennem/opennem-fe](https://gith
 ### Prerequisites
 
 - [Node.js](https://nodejs.org/) >= 22.12.0
-- [Bun](https://bun.sh/) (recommended for local development)
+- [pnpm](https://pnpm.io/) — pinned via the `packageManager` field in `package.json`, so the easiest install is via [Corepack](https://nodejs.org/api/corepack.html): `corepack enable` (ships with Node 22+).
 
 ### Setup
 
 ```bash
-bun install
+pnpm install
 cp .env.example .env   # fill in your own keys — see "Environment variables" below
-bun run dev
+pnpm run dev
 ```
 
 The dev server starts at `http://localhost:5173`.
@@ -36,7 +36,7 @@ Open Electricity is an open-source project, and contributors are expected to bri
 
 1. Copy `.env.example` to `.env`.
 2. Fill in keys for the services you need. Most `PUBLIC_*` URLs in the example are sensible defaults; the API keys are yours to provide.
-3. Run `bun run dev`.
+3. Run `pnpm run dev`.
 
 `.env` is gitignored. Only `.env.example` is checked in — keep it up to date when adding new variables.
 
@@ -48,7 +48,7 @@ Core maintainers use [Doppler](https://www.doppler.com/) to share secrets across
 brew install dopplerhq/cli/doppler
 doppler login
 doppler setup            # link this directory to the openelectricity project + dev config
-bun run doppler-dev      # runs vite dev with secrets injected from Doppler
+pnpm run doppler-dev     # runs vite dev with secrets injected from Doppler
 ```
 
 `doppler-dev`, `doppler-build`, and `doppler-preview` are maintainer conveniences that wrap their plain counterparts in `doppler run --`. The plain scripts (with a local `.env`) remain the canonical path for contributors and forks — no Doppler account required.
@@ -84,20 +84,20 @@ The full JSON object replaces the previous value, so include every flag you want
 
 ## Commands
 
-| Command               | Description                                        |
-| --------------------- | -------------------------------------------------- |
-| `bun run dev`             | Start dev server using `.env` (default)            |
-| `bun run doppler-dev`     | Start dev server with secrets injected from Doppler (maintainers) |
-| `bun run build`           | Production build                                   |
-| `bun run doppler-build`   | Production build with secrets injected from Doppler (maintainers) |
-| `bun run preview`         | Preview production build                           |
-| `bun run doppler-preview` | Preview production build with secrets injected from Doppler (maintainers) |
-| `bun run check`       | Type check with svelte-check                       |
-| `bun run lint`        | Lint with Prettier + ESLint                        |
-| `bun run format`      | Auto-format with Prettier                          |
-| `bun run test`        | Run unit tests (Vitest)                            |
-| `bun run test:e2e`    | Run end-to-end tests (Playwright)                  |
-| `bun run dev-sync`    | After a release: fast-forward `dev` to `main` and push (returns to `main`) |
+| Command                    | Description                                        |
+| -------------------------- | -------------------------------------------------- |
+| `pnpm run dev`             | Start dev server using `.env` (default)            |
+| `pnpm run doppler-dev`     | Start dev server with secrets injected from Doppler (maintainers) |
+| `pnpm run build`           | Production build                                   |
+| `pnpm run doppler-build`   | Production build with secrets injected from Doppler (maintainers) |
+| `pnpm run preview`         | Preview production build                           |
+| `pnpm run doppler-preview` | Preview production build with secrets injected from Doppler (maintainers) |
+| `pnpm run check`           | Type check with svelte-check                       |
+| `pnpm run lint`            | Lint with Prettier + ESLint                        |
+| `pnpm run format`          | Auto-format with Prettier                          |
+| `pnpm run test`            | Run unit tests (Vitest)                            |
+| `pnpm run test:e2e`        | Run end-to-end tests (Playwright)                  |
+| `pnpm run dev-sync`        | After a release: fast-forward `dev` to `main` and push (returns to `main`) |
 
 ## Project Structure
 
@@ -145,8 +145,8 @@ src/
 Production deployments are triggered via a Cloudflare deploy hook on version tags:
 
 ```bash
-npm version patch   # or minor / major
-git push            # push.followTags pushes the tag automatically
+pnpm version patch   # or minor / major
+git push             # push.followTags pushes the tag automatically
 ```
 
 GitHub Actions picks up the `v*` tag and triggers the Cloudflare build.

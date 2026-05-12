@@ -111,7 +111,7 @@ The project uses a hybrid approach:
 ### Type Checking
 
 ```bash
-npm run check
+pnpm run check
 ```
 
 ### Adding More Components

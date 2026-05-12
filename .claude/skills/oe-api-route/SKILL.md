@@ -104,6 +104,6 @@ const options = { interval, dateStart };
 
 ## After writing the file
 
-1. Run `bun run check` to verify no new type errors.
+1. Run `pnpm run check` to verify no new type errors.
 2. Remind the user to update `TODO.md` "API Route Cleanup" → "Remaining client-facing routes" table if the new route is client-facing.
 3. Tell the user about the rate-limiting / origin-check TODOs that apply to all new `/api/*` routes.

@@ -6,7 +6,7 @@
  * Reduces GeoJSON file sizes for faster map loading. Optimizes files in static/data/.
  *
  * Usage:
- *   bun run scripts/optimize-geojson.js
+ *   node scripts/optimize-geojson.js
  *
  * Optimizations applied:
  *   1. Coordinate precision - Reduces decimal places from 7+ to 5 (~1.1m accuracy)

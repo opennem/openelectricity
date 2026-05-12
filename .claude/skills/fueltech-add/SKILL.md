@@ -47,7 +47,7 @@ If an SVG icon exists for the new fuel-tech, drop it under `src/lib/icons/fuel-t
 
 After all edits:
 
-1. `bun run check` — verify no new type errors, especially in `FuelTechCode` typings.
+1. `pnpm run check` — verify no new type errors, especially in `FuelTechCode` typings.
 2. Grep for the new code to confirm it resolves everywhere:
    ```
    Grep "new_fueltech_code"

@@ -1,6 +1,6 @@
 ---
 name: release
-description: Bump the version (patch/minor/major), commit and tag via npm version, and push to main so the v* tag fires the Cloudflare deploy hook. Use when the user says "ship it", "release", "deploy", "cut a version", or asks to bump the version.
+description: Bump the version (patch/minor/major), commit and tag via pnpm version, and push to main so the v* tag fires the Cloudflare deploy hook. Use when the user says "ship it", "release", "deploy", "cut a version", or asks to bump the version.
 ---
 
 # Release: bump, tag, push
@@ -24,17 +24,17 @@ Run these checks in parallel (single message, multiple `Bash` calls). **Refuse t
 
 Run these in parallel (single message, multiple `Bash` calls). These verify the release candidate actually works before we tag it.
 
-1. `bun run test` — Vitest suite. Blocking: **must pass**. On failure, stop and show the user.
-2. `bun run build` — Vite production build. Blocking: **must complete**. On failure, stop and show the user.
-3. `bun run check` — SvelteKit sync + svelte-check. Informational: this project has pre-existing type errors in its baseline (see `bun run check` output on `main`). Report the count to the user; block **only** if the change introduces errors in files modified by the commits being released (`git diff origin/main..HEAD --name-only`). Otherwise proceed.
+1. `pnpm run test` — Vitest suite. Blocking: **must pass**. On failure, stop and show the user.
+2. `pnpm run build` — Vite production build. Blocking: **must complete**. On failure, stop and show the user.
+3. `pnpm run check` — SvelteKit sync + svelte-check. Informational: this project has pre-existing type errors in its baseline (see `pnpm run check` output on `main`). Report the count to the user; block **only** if the change introduces errors in files modified by the commits being released (`git diff origin/main..HEAD --name-only`). Otherwise proceed.
 
-If the user wants a local preview of the build before releasing, offer to run `bun run preview` in the background — don't block on it, they'll interrupt when they're happy.
+If the user wants a local preview of the build before releasing, offer to run `pnpm run preview` in the background — don't block on it, they'll interrupt when they're happy.
 
 ## Bump and push
 
 Do these sequentially (each depends on the last):
 
-1. `npm version <level>` — creates a commit like `3.27.9` and tag `v3.27.9`. Never pass `--no-git-tag-version`. Never use `bun` here — the project's CLAUDE.md explicitly requires npm for version bumps.
+1. `pnpm version <level>` — creates a commit like `3.27.9` and tag `v3.27.9`. Never pass `--no-git-tag-version`.
 2. `git push` — `push.followTags` is enabled globally (per project memory), so the tag ships with the commit. Do **not** force-push. Do **not** use `--no-verify`.
 3. Show the user the new tag and the GH Actions URL. Grab the repo from `gh repo view --json nameWithOwner -q .nameWithOwner` if needed. The run shows up at `https://github.com/<owner>/<repo>/actions/workflows/deploy.yml`.
 
@@ -47,7 +47,7 @@ Within ~10s of push, run `gh run list --workflow=deploy.yml --limit 1` and repor
 Once the tag is pushed, fast-forward `dev` to the released `main` so both branches stay aligned (dev powers `dev.openelectricity.org.au`, main powers production):
 
 ```bash
-bun run dev-sync
+pnpm run dev-sync
 ```
 
 The `dev-sync` script in `package.json` wraps `git checkout dev && git merge --ff-only main && git push && git checkout main`. Notes:
@@ -60,8 +60,8 @@ The `dev-sync` script in `package.json` wraps `git checkout dev && git merge --f
 
 - **Never** force-push, rewrite, or amend published commits.
 - **Never** skip hooks.
-- **Never** edit `package.json`'s `version` field by hand — always use `npm version`.
-- If `npm version` fails (e.g. pre-commit hook rejects), fix the underlying issue and create a NEW commit. Don't `--amend`.
+- **Never** edit `package.json`'s `version` field by hand — always use `pnpm version`.
+- If `pnpm version` fails (e.g. pre-commit hook rejects), fix the underlying issue and create a NEW commit. Don't `--amend`.
 - If the user asks to release while on a non-`main` branch, stop and ask whether they really want to tag from that branch.
 
 ## References

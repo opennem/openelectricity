@@ -4,36 +4,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Development Commands
 
-**Local Development** uses [Bun](https://bun.sh/) for faster package management and script execution. **Cloudflare deployment** uses npm (configured in CI/CD).
+This project uses **[pnpm](https://pnpm.io/)** for package management and script execution, locally and on Cloudflare's build image (pinned via the `packageManager` field in `package.json`, picked up automatically through Corepack). Bun and npm are no longer used.
 
-| Command    | Local (Bun)      | CI/Cloudflare (npm) |
-| ---------- | ---------------- | ------------------- |
-| Install    | `bun install`    | `npm install`       |
-| Dev server | `bun run dev`    | `npm run dev`       |
-| Build      | `bun run build`  | `npm run build`     |
-| Type check | `bun run check`  | `npm run check`     |
-| Lint       | `bun run lint`   | `npm run lint`      |
-| Format     | `bun run format` | `npm run format`    |
-| Test       | `bun run test`   | `npm run test`      |
+| Command    | Invocation         |
+| ---------- | ------------------ |
+| Install    | `pnpm install`     |
+| Dev server | `pnpm run dev`     |
+| Build      | `pnpm run build`   |
+| Type check | `pnpm run check`   |
+| Lint       | `pnpm run lint`    |
+| Format     | `pnpm run format`  |
+| Test       | `pnpm run test`    |
 
-- **Development**: `bun run dev` - Start Vite development server (reads `.env` — the default for contributors using their own API keys)
-- **Maintainer Development**: `bun run doppler-dev` - Same as `dev` but injects secrets via `doppler run` (requires Doppler login + `doppler setup` linking)
-- **Build**: `bun run build` - Production build with Vite
-- **Maintainer Build**: `bun run doppler-build` - Same as `build` but with secrets injected from Doppler
-- **Preview**: `bun run preview` - Preview built application
-- **Maintainer Preview**: `bun run doppler-preview` - Same as `preview` but with secrets injected from Doppler
-- **Type Checking**: `bun run check` - SvelteKit sync + svelte-check with jsconfig.json
-- **Type Checking (Watch)**: `bun run check:watch` - Continuous type checking
-- **Linting**: `bun run lint` - Prettier format check + ESLint
-- **Formatting**: `bun run format` - Auto-format with Prettier
-- **Testing**: `bun run test` - Run Vitest test suite
-- **Version Management**: `npm run version:patch|minor|major` - Bump version using npm version (npm required)
+- **Development**: `pnpm run dev` - Start Vite development server (reads `.env` — the default for contributors using their own API keys)
+- **Maintainer Development**: `pnpm run doppler-dev` - Same as `dev` but injects secrets via `doppler run` (requires Doppler login + `doppler setup` linking)
+- **Build**: `pnpm run build` - Production build with Vite
+- **Maintainer Build**: `pnpm run doppler-build` - Same as `build` but with secrets injected from Doppler
+- **Preview**: `pnpm run preview` - Preview built application
+- **Maintainer Preview**: `pnpm run doppler-preview` - Same as `preview` but with secrets injected from Doppler
+- **Type Checking**: `pnpm run check` - SvelteKit sync + svelte-check with jsconfig.json
+- **Type Checking (Watch)**: `pnpm run check:watch` - Continuous type checking
+- **Linting**: `pnpm run lint` - Prettier format check + ESLint
+- **Formatting**: `pnpm run format` - Auto-format with Prettier
+- **Testing**: `pnpm run test` - Run Vitest test suite
+- **Version Management**: `pnpm run version:patch|minor|major` - Bump version (creates a git tag + commit via `pnpm version`)
 
 ## Environment variables
 
-This is an open-source project. The canonical local-dev path is `bun run dev` reading from a hand-edited `.env` — anyone can clone the repo, supply their own keys (Open Electricity API, Sanity, Clerk, etc.), and run it. Do not remove the `.env` workflow or assume Doppler is available.
+This is an open-source project. The canonical local-dev path is `pnpm run dev` reading from a hand-edited `.env` — anyone can clone the repo, supply their own keys (Open Electricity API, Sanity, Clerk, etc.), and run it. Do not remove the `.env` workflow or assume Doppler is available.
 
-Maintainers use Doppler to sync secrets across machines via `bun run doppler-dev`. When making changes that affect env vars:
+Maintainers use Doppler to sync secrets across machines via `pnpm run doppler-dev`. When making changes that affect env vars:
 - Always update `.env.example` with the new key (commented placeholder).
 - Mention both flows in any user-facing docs you touch.
 - Don't add Doppler as a hard requirement for `dev`, `build`, `preview`, etc.
@@ -43,7 +43,7 @@ Maintainers use Doppler to sync secrets across machines via `bun run doppler-dev
 This is a **Svelte 5 + SvelteKit** project — no React in the runtime. When adding third-party packages:
 
 - **Avoid React-tied packages.** If a library ships meta-packages bundling React (e.g. `deck.gl` pulls `@deck.gl/react`), install only the framework-agnostic scoped sub-packages you actually use (e.g. `@deck.gl/core`, `@deck.gl/layers`, `@deck.gl/mapbox`). Skip the meta package — it triggers spurious peer-dep warnings about React 19 and adds dead bytes.
-- **Always install with `-D`** (`bun add -D …`). SvelteKit bundles everything at build time via Vite, so the deploy artifact never reads `dependencies` at runtime. By convention every package — runtime libs, build tools, types — goes in `devDependencies`. Don't split deps from devDeps.
+- **Always install with `-D`** (`pnpm add -D …`). SvelteKit bundles everything at build time via Vite, so the deploy artifact never reads `dependencies` at runtime. By convention every package — runtime libs, build tools, types — goes in `devDependencies`. Don't split deps from devDeps.
 
 ## Technology Stack
 
@@ -225,7 +225,7 @@ The application has a sophisticated fuel technology classification system:
 
 **Deploy Pipeline:**
 
-- `npm version patch|minor|major` creates a version tag + commit
+- `pnpm version patch|minor|major` creates a version tag + commit
 - `git push` pushes the commit and tag (push.followTags enabled)
 - GitHub Actions (`.github/workflows/deploy.yml`) triggers on `v*` tags and calls the Cloudflare deploy hook
 - Deploy hook URL is stored as a GitHub repo secret (`CLOUDFLARE_DEPLOY_HOOK_URL`)

@@ -37,7 +37,7 @@ Invoke the `simplify` skill (available in the harness — `Skill` tool with `ski
 
 ## Step 3 — Verify the change is ready
 
-Run `bun run test` (blocking) and `bun run check` (informational) in parallel. Running after simplify ensures any fixes it applied don't break anything.
+Run `pnpm run test` (blocking) and `pnpm run check` (informational) in parallel. Running after simplify ensures any fixes it applied don't break anything.
 
 - **Tests fail**: stop. Show the failing names to the user and ask whether to fix or commit anyway. Do not commit broken tests unless the user explicitly overrides.
 - **Type check has errors**: this repo has a pre-existing baseline (studio/stratify/auth pages). Only block if the errors are in files being committed. Otherwise proceed and note the count.
@@ -182,7 +182,7 @@ Remind them once: "The standing rule is to wait for manual testing before commit
 ## References
 
 - Global `CLAUDE.md` — UK English; no Co-Authored-By; no "Generated with Claude Code".
-- Project `CLAUDE.md` — Bun for local tests/build, npm for version bumps, Cloudflare deploy pipeline.
+- Project `CLAUDE.md` — pnpm for tests/build/version bumps, Cloudflare deploy pipeline.
 - Memory `feedback_no_commit_until_tested.md` — why we wait for the user to test.
 - Memory `feedback_no_test_plan_pr.md` — PR descriptions are summary-only (relevant if the commit is followed by PR creation).
-- `release/SKILL.md` — for `npm version` bumps and deploy, not plain commits.
+- `release/SKILL.md` — for `pnpm version` bumps and deploy, not plain commits.
