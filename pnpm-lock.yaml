@@ -101,9 +101,24 @@ importers:
       d3-array:
         specifier: ^3.2.4
         version: 3.2.4
+      d3-color:
+        specifier: ^3.1.0
+        version: 3.1.0
+      d3-format:
+        specifier: ^3.1.2
+        version: 3.1.2
       d3-interpolate:
         specifier: ^3.0.1
         version: 3.0.1
+      d3-scale:
+        specifier: ^4.0.2
+        version: 4.0.2
+      d3-scale-chromatic:
+        specifier: ^3.1.0
+        version: 3.1.0
+      d3-shape:
+        specifier: ^3.2.0
+        version: 3.2.0
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
@@ -5480,7 +5495,7 @@ snapshots:
 
   '@types/connect@3.4.38':
     dependencies:
-      '@types/node': 12.20.55
+      '@types/node': 25.7.0
 
   '@types/cookie@0.6.0': {}
 
@@ -5544,7 +5559,7 @@ snapshots:
 
   '@types/ws@7.4.7':
     dependencies:
-      '@types/node': 12.20.55
+      '@types/node': 25.7.0
 
   '@types/ws@8.18.1':
     dependencies:
