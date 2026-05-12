@@ -342,49 +342,51 @@ The main chart component for stacked area/bar charts:
 
 #### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `chart` | `ChartStore` | required | The chart store instance |
-| `showHeader` | `boolean` | `true` | Whether to show the header |
-| `tooltipMode` | `'strip' \| 'floating' \| 'none'` | `'strip'` | See [Tooltip modes](#tooltip-modes) |
-| `tooltipDodgeRightPx` | `number` | `0` | Floating mode: width of a top-right UI element to dodge |
-| `tooltipInsetPx` | `number` | `0` | Floating mode: horizontal gap kept from container edges |
-| `showTooltip` | `boolean` | `true` | **Deprecated** — setting `false` forces `tooltipMode='none'`; prefer `tooltipMode` |
-| `showOptions` | `boolean` | `true` | Whether to show options button |
-| `defaultTooltipText` | `string` | `''` | Default text when nothing is hovered (strip mode) |
-| `class` | `string` | `''` | Additional CSS classes |
-| `chartPadding` | `string` | `'px-0'` | CSS classes for chart padding |
-| `netTotalKey` | `string` | - | Key for net total values in data (renders step line overlay) |
-| `netTotalColor` | `string` | `'#C74523'` | Color for net total line |
-| `overlayStart` | `number \| null` | - | Start time (ms) for hatched projection overlay |
-| `enablePan` | `boolean` | `false` | Enable pan/zoom gestures (pointer + wheel) via InteractionLayer |
-| `loadingRanges` | `Array<{start, end}>` | `[]` | Time ranges currently being fetched (shaded overlay) |
-| `viewDomain` | `[number, number] \| null` | `null` | Explicit time domain for InteractionLayer coordinate mapping |
-| `resizable` | `boolean` | `false` | Show a vertical resize handle below the chart (`ChartResizeHandle`) |
-| `heightStorageKey` | `string` | - | `localStorage` key used by the resize handle to persist height |
-| `minHeight` / `maxHeight` | `number` | `120` / `800` | Bounds for the resize handle |
-| `onhover` | `(time, key?) => void` | - | Callback when hovering |
-| `onhoverend` | `() => void` | - | Callback when hover ends |
-| `onfocus` | `(time) => void` | - | Callback when focusing (clicking) |
-| `onpanstart` | `() => void` | - | Callback when pan gesture starts |
-| `onpan` | `(deltaMs) => void` | - | Callback during pan with time delta (fires for pointer drag **and** horizontal wheel) |
-| `onpanend` | `() => void` | - | Callback when pan gesture ends (debounced 150 ms for wheel) |
-| `onzoom` | `(factor, centerMs) => void` | - | Callback for zoom (fires for pinch **and** vertical wheel) |
-| `onresize` / `onresizeend` | `(height) => void` | - | Called during / after a resize drag |
-| `zoomMode` | `'floating' \| 'static' \| 'none'` | `'none'` | Where to render +/- zoom buttons. `'floating'` overlays a card at the top-right that fades in on hover; `'static'` renders flat buttons inline at the right of the options bar (`ChartHeader`); `'none'` hides them |
-| `onzoomin` / `onzoomout` | `() => void` | - | Required when `zoomMode !== 'none'` |
-| `isAtMinZoom` / `isAtMaxZoom` | `boolean` | `false` | Disables the matching zoom button |
-| `zoomOverlayInsetPx` | `number` | `0` | Floating mode: horizontal inset from the container's right edge |
-| `header` | `Snippet` | - | Custom header snippet (replaces ChartHeader) |
-| `tooltip` | `Snippet` | - | Custom tooltip snippet — only rendered in `strip` mode |
-| `footer` | `Snippet` | - | Footer snippet rendered below the chart |
+| Prop                          | Type                               | Default       | Description                                                                                                                                                                                                                                                                                                     |
+| ----------------------------- | ---------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `chart`                       | `ChartStore`                       | required      | The chart store instance                                                                                                                                                                                                                                                                                        |
+| `showHeader`                  | `boolean`                          | `true`        | Whether to show the header                                                                                                                                                                                                                                                                                      |
+| `tooltipMode`                 | `'strip' \| 'floating' \| 'none'`  | `'strip'`     | See [Tooltip modes](#tooltip-modes)                                                                                                                                                                                                                                                                             |
+| `tooltipDodgeRightPx`         | `number`                           | `0`           | Floating mode: width of a top-right UI element to dodge                                                                                                                                                                                                                                                         |
+| `tooltipInsetPx`              | `number`                           | `0`           | Floating mode: horizontal gap kept from container edges                                                                                                                                                                                                                                                         |
+| `showTooltip`                 | `boolean`                          | `true`        | **Deprecated** — setting `false` forces `tooltipMode='none'`; prefer `tooltipMode`                                                                                                                                                                                                                              |
+| `showOptions`                 | `boolean`                          | `true`        | Whether to show options button                                                                                                                                                                                                                                                                                  |
+| `defaultTooltipText`          | `string`                           | `''`          | Default text when nothing is hovered (strip mode)                                                                                                                                                                                                                                                               |
+| `class`                       | `string`                           | `''`          | Additional CSS classes                                                                                                                                                                                                                                                                                          |
+| `chartPadding`                | `string`                           | `'px-0'`      | CSS classes for chart padding                                                                                                                                                                                                                                                                                   |
+| `netTotalKey`                 | `string`                           | -             | Key for net total values in data (renders step line overlay)                                                                                                                                                                                                                                                    |
+| `netTotalColor`               | `string`                           | `'#C74523'`   | Color for net total line                                                                                                                                                                                                                                                                                        |
+| `overlayStart`                | `number \| null`                   | -             | Start time (ms) for hatched projection overlay                                                                                                                                                                                                                                                                  |
+| `enablePan`                   | `boolean`                          | `false`       | Enable pan/zoom gestures (pointer + wheel) via InteractionLayer                                                                                                                                                                                                                                                 |
+| `panZoomMode`                 | `'always' \| 'tap-to-engage'`      | `'always'`    | `'always'` keeps pan/zoom active whenever `enablePan` is true (existing behaviour). `'tap-to-engage'` renders a hover hint pill and gates pan/zoom behind `engaged` — the first tap engages, subsequent gestures work normally. A "Scroll to zoom · Esc to exit" pill appears at the bottom-right while engaged |
+| `engaged`                     | `boolean`                          | `false`       | Bindable engagement state for `'tap-to-engage'` mode. Set to `true` by the first tap and back to `false` by the parent (e.g. ESC or click-outside). Ignored when `panZoomMode === 'always'`                                                                                                                     |
+| `loadingRanges`               | `Array<{start, end}>`              | `[]`          | Time ranges currently being fetched (shaded overlay)                                                                                                                                                                                                                                                            |
+| `viewDomain`                  | `[number, number] \| null`         | `null`        | Explicit time domain for InteractionLayer coordinate mapping                                                                                                                                                                                                                                                    |
+| `resizable`                   | `boolean`                          | `false`       | Show a vertical resize handle below the chart (`ChartResizeHandle`)                                                                                                                                                                                                                                             |
+| `heightStorageKey`            | `string`                           | -             | `localStorage` key used by the resize handle to persist height                                                                                                                                                                                                                                                  |
+| `minHeight` / `maxHeight`     | `number`                           | `120` / `800` | Bounds for the resize handle                                                                                                                                                                                                                                                                                    |
+| `onhover`                     | `(time, key?) => void`             | -             | Callback when hovering                                                                                                                                                                                                                                                                                          |
+| `onhoverend`                  | `() => void`                       | -             | Callback when hover ends                                                                                                                                                                                                                                                                                        |
+| `onfocus`                     | `(time) => void`                   | -             | Callback when focusing (clicking)                                                                                                                                                                                                                                                                               |
+| `onpanstart`                  | `() => void`                       | -             | Callback when pan gesture starts                                                                                                                                                                                                                                                                                |
+| `onpan`                       | `(deltaMs) => void`                | -             | Callback during pan with time delta (fires for pointer drag **and** horizontal wheel)                                                                                                                                                                                                                           |
+| `onpanend`                    | `() => void`                       | -             | Callback when pan gesture ends (debounced 150 ms for wheel)                                                                                                                                                                                                                                                     |
+| `onzoom`                      | `(factor, centerMs) => void`       | -             | Callback for zoom (fires for pinch **and** vertical wheel)                                                                                                                                                                                                                                                      |
+| `onresize` / `onresizeend`    | `(height) => void`                 | -             | Called during / after a resize drag                                                                                                                                                                                                                                                                             |
+| `zoomMode`                    | `'floating' \| 'static' \| 'none'` | `'none'`      | Where to render +/- zoom buttons. `'floating'` overlays a card at the top-right that fades in on hover; `'static'` renders flat buttons inline at the right of the options bar (`ChartHeader`); `'none'` hides them                                                                                             |
+| `onzoomin` / `onzoomout`      | `() => void`                       | -             | Required when `zoomMode !== 'none'`                                                                                                                                                                                                                                                                             |
+| `isAtMinZoom` / `isAtMaxZoom` | `boolean`                          | `false`       | Disables the matching zoom button                                                                                                                                                                                                                                                                               |
+| `zoomOverlayInsetPx`          | `number`                           | `0`           | Floating mode: horizontal inset from the container's right edge                                                                                                                                                                                                                                                 |
+| `header`                      | `Snippet`                          | -             | Custom header snippet (replaces ChartHeader)                                                                                                                                                                                                                                                                    |
+| `tooltip`                     | `Snippet`                          | -             | Custom tooltip snippet — only rendered in `strip` mode                                                                                                                                                                                                                                                          |
+| `footer`                      | `Snippet`                          | -             | Footer snippet rendered below the chart                                                                                                                                                                                                                                                                         |
 
 #### Tooltip modes
 
 `tooltipMode` picks which built-in tooltip StratumChart renders:
 
 - **`strip`** (default) — a fixed 21 px strip above the chart showing the date + the single hovered series + optional total. Consumers can pass a custom `tooltip` Snippet to fully replace the strip content.
-- **`floating`** — a cursor-following card overlaid on the chart area. Shows the date as a header, then one row per visible series (colour dot + label + value) with the hovered row subtly tinted. Positions itself beside the crosshair (left/right of the cursor) and flips to the bottom of the chart when the cursor is near the top so the data under the cursor stays visible. Uses `tooltipDodgeRightPx` to avoid overlapping a top-right element like the zoom controls.
+- **`floating`** — a card overlaid on the chart area. Shows the date as a header, then one row per visible series (colour dot + label + value) with the hovered row subtly tinted. **Horizontal**: anchored beside the crosshair — right of the data point when the band centre is in the chart's left half, left of it otherwise. In step mode the card anchors on the band's outer edge (via [`computeStepBand`](./elements/step-band.js)) so it never overlaps the active step's band. **Vertical**: binary snap — pinned to the bottom of the chart when the cursor is in the upper half, top when it's in the lower half. Uses `tooltipDodgeRightPx` to drop below a top-right element like the zoom controls when top-anchored.
 - **`none`** — no tooltip rendered. The vertical space normally reserved for the strip is also removed.
 
 The shared derivation logic used by both built-in tooltips (hover/focus precedence, `visibleSeriesNames` total, date formatting for time-based and category charts, per-series row building) lives as pure helpers in [`tooltip-derivations.js`](./tooltip-derivations.js) with `tooltip-derivations.test.js` covering the edge cases.
@@ -472,8 +474,12 @@ StratumChart owns the +/- zoom button rendering — pass `zoomMode` plus the cli
 	import { StratumChart } from '$lib/components/charts/v2';
 
 	const FACTOR = 1.5;
-	function zoomIn() { handleZoom(FACTOR, (viewStart + viewEnd) / 2); }
-	function zoomOut() { handleZoom(1 / FACTOR, (viewStart + viewEnd) / 2); }
+	function zoomIn() {
+		handleZoom(FACTOR, (viewStart + viewEnd) / 2);
+	}
+	function zoomOut() {
+		handleZoom(1 / FACTOR, (viewStart + viewEnd) / 2);
+	}
 </script>
 
 <div class="group relative">
@@ -521,32 +527,32 @@ A unified toolbar combining range presets, a calendar popover, and an interval d
 
 #### Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `selectedRange` | `number \| null` | Active preset in days (`null` = custom, `-1` = All) |
-| `activeMetric` | `string` | `'power'` or `'energy'` — controls which intervals are shown |
-| `displayInterval` | `string` | Current interval (`'5m'`, `'30m'`, `'1d'`, `'1M'`, `'3M'`, `'1y'`) |
-| `startDate` | `string \| null` | Start date (YYYY-MM-DD) for the DateRangePicker |
-| `endDate` | `string \| null` | End date (YYYY-MM-DD) for the DateRangePicker |
-| `minDate` | `string \| null` | Earliest selectable date |
-| `maxDate` | `string \| null` | Latest selectable date |
-| `earliestDate` | `string \| null` | Earliest data date (used by "All" preset) |
-| `onrangeselect` | `(days) => void` | Called when a range preset is clicked |
-| `ondaterangechange` | `({start, end}) => void` | Called when dates change via the calendar |
-| `onintervalchange` | `(interval) => void` | Called when the interval dropdown changes |
+| Prop                | Type                     | Description                                                        |
+| ------------------- | ------------------------ | ------------------------------------------------------------------ |
+| `selectedRange`     | `number \| null`         | Active preset in days (`null` = custom, `-1` = All)                |
+| `activeMetric`      | `string`                 | `'power'` or `'energy'` — controls which intervals are shown       |
+| `displayInterval`   | `string`                 | Current interval (`'5m'`, `'30m'`, `'1d'`, `'1M'`, `'3M'`, `'1y'`) |
+| `startDate`         | `string \| null`         | Start date (YYYY-MM-DD) for the DateRangePicker                    |
+| `endDate`           | `string \| null`         | End date (YYYY-MM-DD) for the DateRangePicker                      |
+| `minDate`           | `string \| null`         | Earliest selectable date                                           |
+| `maxDate`           | `string \| null`         | Latest selectable date                                             |
+| `earliestDate`      | `string \| null`         | Earliest data date (used by "All" preset)                          |
+| `onrangeselect`     | `(days) => void`         | Called when a range preset is clicked                              |
+| `ondaterangechange` | `({start, end}) => void` | Called when dates change via the calendar                          |
+| `onintervalchange`  | `(interval) => void`     | Called when the interval dropdown changes                          |
 
 #### Range presets
 
 | Label | Days | Default interval |
-|-------|------|-----------------|
-| 1D | 1 | power/5m |
-| 3D | 3 | power/5m |
-| 7D | 7 | power/5m |
-| 1M | 30 | energy/1d |
-| 6M | 182 | energy/1d |
-| 1Y | 365 | energy/3M |
-| 5Y | 1825 | energy/3M |
-| All | -1 | energy/1y |
+| ----- | ---- | ---------------- |
+| 1D    | 1    | power/5m         |
+| 3D    | 3    | power/5m         |
+| 7D    | 7    | power/5m         |
+| 1M    | 30   | energy/1d        |
+| 6M    | 182  | energy/1d        |
+| 1Y    | 365  | energy/3M        |
+| 5Y    | 1825 | energy/3M        |
+| All   | -1   | energy/1y        |
 
 #### Interval options by metric
 
@@ -753,21 +759,22 @@ All pointer interactions are handled by **InteractionLayer**, an HTML `<div>` th
 
 **InteractionLayer** supports:
 
-| Input | Gesture | Result |
-|-------|---------|--------|
-| Mouse | Move | Hover: snap to nearest data point, highlight series |
-| Mouse | Click | Focus: lock tooltip to clicked time |
-| Mouse | Left-button drag | Pan: shift viewport by `deltaPx × msPerPx` (after a 3 px threshold) |
-| Mouse | Wheel — vertical | Zoom at cursor: `factor = 1.002^(-deltaY)` |
+| Input | Gesture            | Result                                                               |
+| ----- | ------------------ | -------------------------------------------------------------------- |
+| Mouse | Move               | Hover: snap to nearest data point, highlight series                  |
+| Mouse | Click              | Focus: lock tooltip to clicked time                                  |
+| Mouse | Left-button drag   | Pan: shift viewport by `deltaPx × msPerPx` (after a 3 px threshold)  |
+| Mouse | Wheel — vertical   | Zoom at cursor: `factor = 1.002^(-deltaY)`                           |
 | Mouse | Wheel — horizontal | Pan: shift viewport, debounced `onpanend` 150 ms after the last tick |
-| Touch | 1-finger drag | Hover: track finger position |
-| Touch | 1-finger tap | Focus: lock tooltip |
-| Touch | 2-finger drag | Pan: shift viewport |
-| Touch | 2-finger pinch | Zoom: scale factor anchored to midpoint |
+| Touch | 1-finger drag      | Hover: track finger position                                         |
+| Touch | 1-finger tap       | Focus: lock tooltip                                                  |
+| Touch | 2-finger drag      | Pan: shift viewport                                                  |
+| Touch | 2-finger pinch     | Zoom: scale factor anchored to midpoint                              |
 
 Wheel pan/zoom is a built-in default — it fires the same `onpan` / `onzoom` callbacks as pointer gestures, so any consumer that handles those gets wheel support for free. The classification and deltas are pure helpers in [`wheel-interaction.js`](./wheel-interaction.js) (`classifyWheelIntent`, `wheelPanDeltaMs`, `wheelZoomFactor`) and unit-tested in `wheel-interaction.test.js`.
 
 **Coordinate mapping**: InteractionLayer converts `clientX` to time using the chart's time domain. It resolves the domain from (in order of priority):
+
 1. `viewDomain` prop (explicit override — used when a consumer needs to force a domain that differs from `chart.xDomain`, e.g. category charts)
 2. `chart.renderXDomain` (derived on ChartStore — equals `xDomain`, with step-mode extension folded in; **this is what both the pointer mapping and the LayerCake `$xScale` read**, so hover coordinates always match the drawn path)
 3. `chart.seriesScaledData` first/last `.time` (automatic fallback)
@@ -800,23 +807,23 @@ Two optional SVG elements for specialized visualizations:
 
 `ChartStore` is a Svelte 5 reactive class (`$state`, `$derived`) that holds all chart configuration and data:
 
-| Property | Description |
-|---|---|
-| `seriesData` | Raw data rows `[{ date, time, series1, series2, ... }]` |
-| `seriesNames` | Ordered list of series keys |
-| `seriesColours` | Map: series key -> hex colour |
-| `seriesLabels` | Map: series key -> display label |
-| `seriesScaledData` | Derived: data with SI-prefix scaling applied |
-| `xDomain` | `[start, end]` time domain for the chart (set by the consumer — typically the pan/zoom viewport) |
-| `stepIntervalMs` | Derived: last gap between consecutive data points in step mode, `0` otherwise. Drives the render-domain extension and the phantom trailing point |
-| `renderXDomain` | Derived: `xDomain` extended by `stepIntervalMs` on the right in step mode. What both the pointer mapping and the LayerCake `$xScale` read — ensures the hover band lines up with the drawn bar |
-| `xKey` | Which field to use as x value (default `'date'`) |
-| `hoverTime` / `hoverData` | Current hover state (time value / full data row) |
-| `focusTime` / `focusData` | Current focus (click-lock) state |
-| `hoverKey` | Series key being hovered (for highlight) |
-| `yReferenceLines` | Horizontal annotations `[{ value, label, colour }]` |
-| `formatTickX` | Custom x-axis tick formatter `(d) => string` |
-| `useDivergingStack` | Use d3 diverging offset for independent pos/neg stacking |
+| Property                  | Description                                                                                                                                                                                    |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `seriesData`              | Raw data rows `[{ date, time, series1, series2, ... }]`                                                                                                                                        |
+| `seriesNames`             | Ordered list of series keys                                                                                                                                                                    |
+| `seriesColours`           | Map: series key -> hex colour                                                                                                                                                                  |
+| `seriesLabels`            | Map: series key -> display label                                                                                                                                                               |
+| `seriesScaledData`        | Derived: data with SI-prefix scaling applied                                                                                                                                                   |
+| `xDomain`                 | `[start, end]` time domain for the chart (set by the consumer — typically the pan/zoom viewport)                                                                                               |
+| `stepIntervalMs`          | Derived: last gap between consecutive data points in step mode, `0` otherwise. Drives the render-domain extension and the phantom trailing point                                               |
+| `renderXDomain`           | Derived: `xDomain` extended by `stepIntervalMs` on the right in step mode. What both the pointer mapping and the LayerCake `$xScale` read — ensures the hover band lines up with the drawn bar |
+| `xKey`                    | Which field to use as x value (default `'date'`)                                                                                                                                               |
+| `hoverTime` / `hoverData` | Current hover state (time value / full data row)                                                                                                                                               |
+| `focusTime` / `focusData` | Current focus (click-lock) state                                                                                                                                                               |
+| `hoverKey`                | Series key being hovered (for highlight)                                                                                                                                                       |
+| `yReferenceLines`         | Horizontal annotations `[{ value, label, colour }]`                                                                                                                                            |
+| `formatTickX`             | Custom x-axis tick formatter `(d) => string`                                                                                                                                                   |
+| `useDivergingStack`       | Use d3 diverging offset for independent pos/neg stacking                                                                                                                                       |
 
 ### ChartDataManager
 
@@ -837,6 +844,7 @@ Pan/zoom ───requestRange()──> #computeGaps() ──> #fetchFromApi()
 ```
 
 Key behaviors:
+
 - **Gap detection**: Only fetches ranges not already in cache, with overlap buffers scaled by interval (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y)
 - **Interval-aware fetch limits**: Max range per API request scales with interval — 1000 days (default), 1830 days (3M), 3700 days (1y)
 - **Date snapping**: Aligns request boundaries to interval periods — midnight for 1d, 1st of month for 1M, quarter start for 3M, Jan 1 for 1y

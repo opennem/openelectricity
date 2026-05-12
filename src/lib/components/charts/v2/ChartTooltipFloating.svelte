@@ -18,6 +18,7 @@
 		getFormattedX,
 		buildSeriesRows
 	} from './tooltip-derivations.js';
+	import { computeStepBand } from './elements/step-band.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -72,10 +73,18 @@
 	let formattedTotal = $derived(chart.convertAndFormatValue(total));
 	let displayUnit = $derived(chart.chartOptions.displayUnit ?? '');
 
-	// Convert hoverTime → x-pixel in the chart area, accounting for padding.
-	let hoverX = $derived.by(() => {
-		if (!activeData || !wrapperWidth) return null;
-		const domain = chart.xDomain;
+	/**
+	 * Map a time value to its pixel position inside the chart area, mirroring
+	 * LayerCake's xScale. Uses `renderXDomain` (xDomain extended by one
+	 * `stepIntervalMs` on the right in step mode) so the conversion matches
+	 * the drawn path — otherwise pixels in step mode would be off by the
+	 * trailing-interval stretch factor.
+	 * @param {number} time
+	 * @returns {number | null}
+	 */
+	function timeToX(time) {
+		if (!wrapperWidth) return null;
+		const domain = chart.renderXDomain ?? chart.xDomain;
 		if (!domain || domain.length !== 2) return null;
 		const [xMin, xMax] = domain;
 		if (xMax === xMin) return null;
@@ -83,42 +92,60 @@
 		const drawLeft = pad.left || 0;
 		const drawWidth = wrapperWidth - drawLeft - (pad.right || 0);
 		if (drawWidth <= 0) return null;
-		const ratio = (activeData.time - xMin) / (xMax - xMin);
+		const ratio = (time - xMin) / (xMax - xMin);
 		return drawLeft + ratio * drawWidth;
+	}
+
+	// Convert hoverTime → x-pixel in the chart area. In step mode this is the
+	// band's left edge (because activeData.time is snapped to the band start).
+	let hoverX = $derived(activeData ? timeToX(activeData.time) : null);
+
+	// Right edge of the active band — only meaningful in step mode. Returns
+	// null outside step mode so the line-mode placement is unchanged.
+	let activeBandRightX = $derived.by(() => {
+		if (!isStepMode || !activeData) return null;
+		const data = chart.seriesScaledData;
+		if (!data?.length) return null;
+		const idx = data.findIndex((/** @type {{ time: number }} */ d) => d.time === activeData.time);
+		if (idx < 0) return null;
+		const band = computeStepBand(idx, data);
+		return band ? timeToX(band.endMs) : null;
 	});
 
 	// Place the card to the side of the crosshair (not over it) so the column
-	// under the cursor stays visible. Put it on whichever side has more room —
-	// right of the cursor when it's in the left half of the chart, left of the
-	// cursor otherwise. Final position is clamped inside the container.
+	// under the cursor stays visible. In line mode the anchor is the data point
+	// itself; in step mode the anchor is the band's outer edge — right side for
+	// right placement, left side for left — so the card never overlaps the
+	// active step's band. Side choice uses the band centre so the decision is
+	// stable as the cursor moves within a wide band. Position is clamped inside
+	// the container.
 	let tooltipLeft = $derived.by(() => {
 		if (hoverX === null || !tooltipWidth || !wrapperWidth) return 0;
 		const GAP = 12;
-		const placeRight = hoverX < wrapperWidth / 2;
-		const desired = placeRight ? hoverX + GAP : hoverX - tooltipWidth - GAP;
+		const bandLeftX = hoverX;
+		const bandRightX = activeBandRightX ?? hoverX;
+		const anchorForSide = (bandLeftX + bandRightX) / 2;
+		const placeRight = anchorForSide < wrapperWidth / 2;
+		const desired = placeRight ? bandRightX + GAP : bandLeftX - tooltipWidth - GAP;
 		return Math.max(insetPx, Math.min(wrapperWidth - tooltipWidth - insetPx, desired));
 	});
 
-	// Flip below the cursor when the cursor is near the default top position —
-	// keeps the chart details under the cursor visible while keeping the
-	// tooltip itself close to the pointer. Falls back to the top (with optional
-	// dodge for top-right UI like zoom buttons) when the cursor is in the lower
-	// half or we don't yet have measurements.
+	// Snap the tooltip to the top or bottom of the chart depending on which
+	// half the cursor is in. Cursor in upper half → tooltip at the bottom;
+	// cursor in lower half → tooltip at the top (with optional dodge for
+	// top-right UI like zoom buttons). Binary placement keeps the card from
+	// jittering vertically as the pointer moves; the CSS top/left transition
+	// smooths the actual swap.
 	let tooltipTop = $derived.by(() => {
 		const TOP = 8;
 		const DODGE_TOP = 36;
 		const BOTTOM_GAP = 8;
-		const TOP_ZONE_BUFFER = 16;
-		const CURSOR_GAP = 24;
 
-		const canFlip =
+		const canSnapBottom =
 			cursorY !== null && tooltipHeight > 0 && wrapperHeight > tooltipHeight + BOTTOM_GAP + TOP;
-		const cursorInTopZone =
-			canFlip && cursorY !== null && cursorY < TOP + tooltipHeight + TOP_ZONE_BUFFER;
 
-		if (cursorInTopZone && cursorY !== null) {
-			const maxTop = wrapperHeight - tooltipHeight - BOTTOM_GAP;
-			return Math.min(cursorY + CURSOR_GAP, maxTop);
+		if (canSnapBottom && cursorY !== null && cursorY < wrapperHeight / 2) {
+			return wrapperHeight - tooltipHeight - BOTTOM_GAP;
 		}
 
 		if (dodgeRightPx <= 0) return TOP;
@@ -146,9 +173,7 @@
 		>
 			<!-- Date header -->
 			{#if formattedDate}
-				<div
-					class="text-mid-grey font-light pb-1.5 mb-1.5 border-b border-warm-grey/60"
-				>
+				<div class="text-mid-grey font-light pb-1.5 mb-1.5 border-b border-warm-grey/60">
 					{formattedDate}
 				</div>
 			{/if}
@@ -162,9 +187,7 @@
 							: ''}"
 					>
 						<span class="flex items-center gap-1.5 min-w-0">
-							<span
-								class="w-2 h-2 rounded-full shrink-0"
-								style:background-color={row.colour}
+							<span class="w-2 h-2 rounded-full shrink-0" style:background-color={row.colour}
 							></span>
 							<span class="text-dark-grey truncate">{row.label}</span>
 						</span>

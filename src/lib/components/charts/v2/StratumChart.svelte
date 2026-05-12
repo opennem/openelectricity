@@ -43,6 +43,8 @@
 	 * @property {(() => void)} [onpanend]
 	 * @property {((factor: number, centerMs: number) => void)} [onzoom]
 	 * @property {boolean} [enablePan]
+	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' renders a hover hint pill and gates pan/zoom behind the bindable `engaged` flag.
+	 * @property {boolean} [engaged] - Bindable engagement state for tap-to-engage mode.
 	 * @property {Array<{start: number, end: number}>} [loadingRanges]
 	 * @property {boolean} [clampHoverLine] - When true, hover line spans from y=0 to the stacked area max
 	 * @property {[number, number] | null} [viewDomain]
@@ -89,6 +91,8 @@
 		onpanend,
 		onzoom,
 		enablePan = false,
+		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
+		engaged = $bindable(false),
 		loadingRanges = [],
 		clampHoverLine = false,
 		viewDomain = null,
@@ -114,9 +118,7 @@
 
 	let floatingZoomWidth = $state(0);
 	let effectiveDodgeRightPx = $derived(
-		zoomMode === 'floating' && floatingZoomWidth > 0
-			? floatingZoomWidth + 8
-			: tooltipDodgeRightPx
+		zoomMode === 'floating' && floatingZoomWidth > 0 ? floatingZoomWidth + 8 : tooltipDodgeRightPx
 	);
 
 	let hasData = $derived(chart?.seriesData?.length > 0);
@@ -158,6 +160,11 @@
 	 */
 	function handleSeriesClick(data) {
 		if (interactionMode !== 'none') return;
+		// First tap in tap-to-engage mode engages pan/zoom instead of toggling focus.
+		if (panZoomMode === 'tap-to-engage' && enablePan && !engaged) {
+			engaged = true;
+			return;
+		}
 		if (data?.time) {
 			onfocus ? onfocus(data.time) : chart.toggleFocus(data.time);
 		}
@@ -169,14 +176,7 @@
 		{#if header}
 			{@render header()}
 		{:else if zoomMode === 'static'}
-			<ChartHeader
-				{chart}
-				{showOptions}
-				{onzoomin}
-				{onzoomout}
-				{isAtMinZoom}
-				{isAtMaxZoom}
-			/>
+			<ChartHeader {chart} {showOptions} {onzoomin} {onzoomout} {isAtMinZoom} {isAtMaxZoom} />
 		{:else}
 			<ChartHeader {chart} {showOptions} />
 		{/if}
@@ -200,7 +200,7 @@
 		</div>
 	{/if}
 
-	<div class="relative">
+	<div class="stratum-chart-area relative">
 		{#if chart.chartOptions.isAnyBarType}
 			<div class={chartPadding}>
 				{#if hasData}
@@ -225,6 +225,8 @@
 			<InteractionLayer
 				{chart}
 				{enablePan}
+				{panZoomMode}
+				bind:engaged
 				{viewDomain}
 				class={chartPadding}
 				bind:interactionMode
@@ -277,11 +279,7 @@
 		{/if}
 
 		{#if effectiveTooltipMode === 'floating'}
-			<ChartTooltipFloating
-				{chart}
-				dodgeRightPx={effectiveDodgeRightPx}
-				insetPx={tooltipInsetPx}
-			/>
+			<ChartTooltipFloating {chart} dodgeRightPx={effectiveDodgeRightPx} insetPx={tooltipInsetPx} />
 		{/if}
 
 		{#if zoomMode === 'floating' && onzoomin && onzoomout}
@@ -294,6 +292,29 @@
 				bind:width={floatingZoomWidth}
 			/>
 		{/if}
+
+		{#if panZoomMode === 'tap-to-engage' && enablePan && hasData}
+			{#if engaged}
+				<div class="pointer-events-none absolute bottom-2 right-2 z-10" aria-hidden="true">
+					<div
+						class="px-3 py-1.5 rounded-full bg-dark-grey/85 text-white text-xs font-medium shadow-sm"
+					>
+						Scroll to zoom · Esc to exit
+					</div>
+				</div>
+			{:else}
+				<div
+					class="pan-zoom-hint pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-150"
+					aria-hidden="true"
+				>
+					<div
+						class="px-3 py-1.5 rounded-full bg-dark-grey/85 text-white text-xs font-medium shadow-sm"
+					>
+						Click to enable pan &amp; zoom
+					</div>
+				</div>
+			{/if}
+		{/if}
 	</div>
 
 	{#if footer}
@@ -304,5 +325,8 @@
 <style>
 	.stratum-chart :global(svg *:focus) {
 		outline: none;
+	}
+	.stratum-chart-area:hover :global(.pan-zoom-hint) {
+		opacity: 1;
 	}
 </style>

@@ -14,16 +14,14 @@
 	 * SVG-level interactions (e.g. StackedArea series hover) during pan/zoom.
 	 */
 
-	import {
-		classifyWheelIntent,
-		wheelPanDeltaMs,
-		wheelZoomFactor
-	} from '../wheel-interaction.js';
+	import { classifyWheelIntent, wheelPanDeltaMs, wheelZoomFactor } from '../wheel-interaction.js';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {import('../ChartStore.svelte.js').default} chart - Chart store for hover/focus state
 	 * @property {boolean} [enablePan] - Enable pan/zoom gestures
+	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active whenever `enablePan` is true. 'tap-to-engage' gates pan/zoom behind the bindable `engaged` flag — the first tap engages instead of toggling focus.
+	 * @property {boolean} [engaged] - Bindable engagement state for tap-to-engage mode.
 	 * @property {[number, number] | null} [viewDomain] - Explicit time domain (category charts)
 	 * @property {string} [class] - CSS classes for the wrapper div
 	 * @property {'none' | 'hover' | 'mouse-pan' | 'touch-pan'} [interactionMode] - Current mode (bindable)
@@ -41,6 +39,8 @@
 	let {
 		chart,
 		enablePan = false,
+		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
+		engaged = $bindable(false),
 		viewDomain = null,
 		class: className = '',
 		interactionMode = $bindable('none'),
@@ -53,6 +53,8 @@
 		onzoom,
 		children
 	} = $props();
+
+	let effectiveEnablePan = $derived(enablePan && (panZoomMode === 'always' || engaged));
 
 	/** @type {HTMLDivElement | undefined} */
 	let el = $state(undefined);
@@ -398,6 +400,12 @@
 		const target = /** @type {Element} */ (event.target);
 		if (target.tagName === 'path') return;
 
+		// First tap in tap-to-engage mode engages pan/zoom instead of setting focus.
+		if (panZoomMode === 'tap-to-engage' && !engaged) {
+			engaged = true;
+			return;
+		}
+
 		const time = snapTime(clientXToTime(event.clientX));
 		onfocus ? onfocus(time) : chart.toggleFocus(time);
 	}
@@ -414,7 +422,7 @@
 	 * @param {WheelEvent} event
 	 */
 	function handleWheel(event) {
-		if (!enablePan) return;
+		if (!effectiveEnablePan) return;
 		if (interactionMode !== 'none') return;
 		if (!onpan && !onzoom) return;
 
@@ -449,7 +457,7 @@
 
 	$effect(() => {
 		const target = el;
-		if (!target || !enablePan) return;
+		if (!target || !effectiveEnablePan) return;
 
 		target.addEventListener('pointerdown', handlePointerDown);
 		// Wheel needs `{ passive: false }` so we can preventDefault().
@@ -472,7 +480,7 @@
 <div
 	bind:this={el}
 	class={className}
-	style:touch-action={enablePan ? 'none' : undefined}
+	style:touch-action={effectiveEnablePan ? 'none' : undefined}
 	onmousemove={handleMouseMove}
 	onmouseleave={handleMouseLeave}
 	onclick={handleClick}

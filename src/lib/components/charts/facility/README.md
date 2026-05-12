@@ -13,14 +13,14 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 
 ## Files
 
-| File | Description |
-|------|-------------|
-| `FacilityChart.svelte` | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping |
-| `FacilityDataTable.svelte` | Tabular view of visible chart data |
-| `FacilityUnitsTable.svelte` | Facility unit metadata table |
-| `process-facility-power.js` | Core data processing — converts API response to chart-ready rows |
-| `helpers.js` | Color shading (`buildUnitColourMap`), timezone helpers, legacy `transformFacilityPowerData` |
-| `index.js` | Barrel exports |
+| File                        | Description                                                                                 |
+| --------------------------- | ------------------------------------------------------------------------------------------- |
+| `FacilityChart.svelte`      | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping           |
+| `FacilityDataTable.svelte`  | Tabular view of visible chart data                                                          |
+| `FacilityUnitsTable.svelte` | Facility unit metadata table                                                                |
+| `process-facility-power.js` | Core data processing — converts API response to chart-ready rows                            |
+| `helpers.js`                | Color shading (`buildUnitColourMap`), timezone helpers, legacy `transformFacilityPowerData` |
+| `index.js`                  | Barrel exports                                                                              |
 
 ## Data Pipeline
 
@@ -44,14 +44,14 @@ The OE API returns power data as `[timestamp, value]` pairs per unit:
 
 ```js
 processFacilityPower(powerResponse, {
-  unitFuelTechMap,   // Record<string, string> — unit code → fuel tech
-  unitOrder,         // string[] — series ordering (e.g. ['power_UNIT1', 'power_UNIT2'])
-  loadsToInvert,     // string[] — series IDs to negate
-  getLabel,          // (unitCode: string, fuelTech: string) => string
-  getColour,         // (unitCode: string, fuelTech: string) => string
-  metricFilter,      // string — default 'power'
-  networkTimezone    // string — '+10:00' (NEM) or '+08:00' (WEM)
-})
+	unitFuelTechMap, // Record<string, string> — unit code → fuel tech
+	unitOrder, // string[] — series ordering (e.g. ['power_UNIT1', 'power_UNIT2'])
+	loadsToInvert, // string[] — series IDs to negate
+	getLabel, // (unitCode: string, fuelTech: string) => string
+	getColour, // (unitCode: string, fuelTech: string) => string
+	metricFilter, // string — default 'power'
+	networkTimezone // string — '+10:00' (NEM) or '+08:00' (WEM)
+});
 ```
 
 ### Output
@@ -68,6 +68,7 @@ processFacilityPower(powerResponse, {
 ### Timestamp parsing
 
 API timestamps have inconsistent timezone formats (`Z` or `+HH:MM`). The pipeline:
+
 1. Strips the timezone suffix via `stripDateTimezone()`
 2. Re-appends the network timezone (`+10:00` or `+08:00`)
 3. Parses to UTC milliseconds
@@ -84,23 +85,25 @@ The chart automatically switches between power and energy metrics based on the v
 
 ### Thresholds (auto-set by `autoSetMetricInterval`)
 
-| Viewport duration | Metric | API Interval | Display options |
-|-------------------|--------|--------------|-----------------|
-| < 15 days | `power` | `5m` | 5 min, 30 min (client-side aggregation) |
-| 15–364 days | `energy` | `1d` | Daily, Monthly (client-side aggregation) |
-| 365–1825 days | `energy` | `3M` | Quarterly (API-level) |
-| > 1825 days | `energy` | `1y` | Yearly (API-level) |
+| Viewport duration | Metric   | API Interval | Display options                          |
+| ----------------- | -------- | ------------ | ---------------------------------------- |
+| < 15 days         | `power`  | `5m`         | 5 min, 30 min (client-side aggregation)  |
+| 15–364 days       | `energy` | `1d`         | Daily, Monthly (client-side aggregation) |
+| 365–1825 days     | `energy` | `3M`         | Quarterly (API-level)                    |
+| > 1825 days       | `energy` | `1y`         | Yearly (API-level)                       |
 
 ### Auto-switching with hysteresis
 
 To prevent rapid flipping during continuous zoom, the switch thresholds differ by direction:
 
 **Zoom out (→ coarser):**
+
 - **Power/5m → Energy/1d**: at **15+ days**
 - **Energy/1d → Energy/3M**: at **365+ days**
 - **Energy/3M → Energy/1y**: at **1825+ days**
 
 **Zoom in (→ finer, with hysteresis gap):**
+
 - **Energy/1y → Energy/3M**: at **< 1500 days**
 - **Energy/3M → Energy/1d**: at **< 300 days**
 - **Energy/1d → Power/5m**: at **≤ 13 days**
@@ -168,18 +171,20 @@ requestRange(start, end)
 
 ### Props
 
-| Prop | Type | Description |
-|------|------|-------------|
-| `facility` | object | Facility with `units` array |
-| `powerData` | object | Power data from API |
-| `timeZone` | string | `'+10:00'` or `'+08:00'` |
-| `title` | string | Chart title |
-| `chartHeight` | string | Tailwind height class |
-| `useDivergingStack` | boolean | Stack positive/negative independently |
-| `onviewportchange` | callback | Fired when viewport changes |
-| `onvisibledata` | callback | Debounced visible data for external table |
-| `ondisplayintervalchange` | callback | Fired when display interval changes |
-| `showIntervalToggle` | boolean | Show built-in interval toggle buttons (default: `true`) |
+| Prop                      | Type                          | Description                                                                                                                                                                                                                                            |
+| ------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `facility`                | object                        | Facility with `units` array                                                                                                                                                                                                                            |
+| `powerData`               | object                        | Power data from API                                                                                                                                                                                                                                    |
+| `timeZone`                | string                        | `'+10:00'` or `'+08:00'`                                                                                                                                                                                                                               |
+| `title`                   | string                        | Chart title                                                                                                                                                                                                                                            |
+| `chartHeight`             | string                        | Tailwind height class                                                                                                                                                                                                                                  |
+| `useDivergingStack`       | boolean                       | Stack positive/negative independently                                                                                                                                                                                                                  |
+| `onviewportchange`        | callback                      | Fired when viewport changes                                                                                                                                                                                                                            |
+| `onvisibledata`           | callback                      | Debounced visible data for external table                                                                                                                                                                                                              |
+| `ondisplayintervalchange` | callback                      | Fired when display interval changes                                                                                                                                                                                                                    |
+| `showIntervalToggle`      | boolean                       | Show built-in interval toggle buttons (default: `true`)                                                                                                                                                                                                |
+| `panZoomMode`             | `'always' \| 'tap-to-engage'` | Forwarded to StratumChart. `'always'` is the default; `'tap-to-engage'` shows a "Click to enable" hint pill and gates gestures behind `panZoomEngaged`. Used on `/facility/[code]` to keep the chart from hijacking page scroll until the user opts in |
+| `panZoomEngaged`          | `boolean` (bindable)          | Engagement state for tap-to-engage mode. The facility page binds the same state across the three stacked charts (FacilityChart + FacilityPriceChart + FacilityMarketValueChart) and resets it on ESC, click-outside, or facility change                |
 
 ### Features
 
@@ -191,28 +196,37 @@ requestRange(start, end)
 
 ### Viewport limits
 
-| Mode | Min viewport | Max viewport |
-|------|-------------|-------------|
-| Power (5m) | 1 hour | 16 days |
-| Energy (1d/3M/1y) | 5 days | 50 years |
+| Mode              | Min viewport | Max viewport |
+| ----------------- | ------------ | ------------ |
+| Power (5m)        | 1 hour       | 16 days      |
+| Energy (1d/3M/1y) | 5 days       | 50 years     |
 
 ### Pan & Zoom flow
 
 **Pan**:
+
 1. `InteractionLayer` (HTML div) captures pointer events → converts `deltaPx × msPerPx` to `deltaMs` → rAF batching
 2. `FacilityChart.handlePan(deltaMs)`: shifts `viewStart`/`viewEnd`, clamps to now, calls `dataManager.requestRange(viewport ± buffer)`
 3. `FacilityChart.handlePanEnd()`: direction-aware prefetch (prefetches 1x/3x viewport in the pan direction), notifies parent via `onviewportchange`
 
 **Zoom**:
+
 - **Wheel**: Cmd/Ctrl + scroll → `factor = 1.002^(-deltaY)`, anchored to cursor position in time domain
 - **Buttons**: 1.5x zoom in/out, anchored to viewport center
 - **Pinch**: Two-pointer distance ratio, anchored to midpoint
 - All three call `handleZoom(factor, centerMs)` which clamps to min/max viewport and now
 
 **Viewport → Page sync**:
+
 - `onviewportchange({start, end})` fires on pan end and zoom
 - Page converts to dates for DateRangePicker display
 - Page runs hysteresis logic for auto metric/interval switching
+
+**Tap-to-engage** (`/facility/[code]`):
+
+- Page passes `panZoomMode="tap-to-engage"` and `bind:panZoomEngaged` to all three stacked charts so a single tap engages them together (they're viewport-synced).
+- First tap on the chart sets `panZoomEngaged = true` and skips the usual focus-marker toggle.
+- The page's `<svelte:window onkeydown onclick>` handles ESC and click-outside, resetting the shared flag. ESC calls `preventDefault` + `stopPropagation` so it never escalates to exiting fullscreen.
 
 ### Data update flow
 

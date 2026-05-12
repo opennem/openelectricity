@@ -79,6 +79,12 @@
 		hoverTime = time;
 	}
 
+	/** Shared pan/zoom engagement across the three stacked charts. */
+	let panZoomEngaged = $state(false);
+
+	/** @type {HTMLElement | undefined} */
+	let chartCardEl = $state(undefined);
+
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
 
@@ -88,6 +94,7 @@
 		activeInterval = '5m';
 		activeMetric = 'power';
 		displayInterval = '30m';
+		panZoomEngaged = false;
 	});
 
 	/** @param {{ start: number, end: number }} range */
@@ -136,7 +143,26 @@
 		)
 	);
 
+	/** @param {KeyboardEvent} e */
+	function handlePanZoomKeydown(e) {
+		if (e.key === 'Escape' && panZoomEngaged) {
+			e.preventDefault();
+			e.stopPropagation();
+			panZoomEngaged = false;
+		}
+	}
+
+	/** @param {MouseEvent} e */
+	function handlePanZoomClickOutside(e) {
+		if (!panZoomEngaged || !chartCardEl) return;
+		const target = /** @type {Node | null} */ (e.target);
+		if (target && !chartCardEl.contains(target)) {
+			panZoomEngaged = false;
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handlePanZoomKeydown} onclick={handlePanZoomClickOutside} />
 
 <svelte:head>
 	<title>{selectedFacility?.name ?? 'Facility'} — Open Electricity</title>
@@ -160,7 +186,10 @@
 				onviewportchange={handlePriceViewportChange}
 			>
 				<div class="space-y-4">
-					<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
+					<div
+						bind:this={chartCardEl}
+						class="relative rounded-lg border border-mid-warm-grey/40 bg-white"
+					>
 						<div
 							class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
 						>
@@ -192,11 +221,21 @@
 								{hoverTime}
 								onhoverchange={handleHoverChange}
 								onviewportchange={handlePowerViewportChange}
+								panZoomMode="tap-to-engage"
+								bind:panZoomEngaged
 							/>
 
 							{#if viewStart && viewEnd}
-								<FacilityPriceChart showContainer={false} />
-								<FacilityMarketValueChart showContainer={false} />
+								<FacilityPriceChart
+									showContainer={false}
+									panZoomMode="tap-to-engage"
+									bind:panZoomEngaged
+								/>
+								<FacilityMarketValueChart
+									showContainer={false}
+									panZoomMode="tap-to-engage"
+									bind:panZoomEngaged
+								/>
 							{/if}
 						</div>
 					</div>
@@ -215,10 +254,7 @@
 		{/if}
 
 		<div class="border-t border-warm-grey pt-4">
-			<FacilityDescriptionPanel
-				sanityFacility={data.sanityFacility}
-				facility={selectedFacility}
-			/>
+			<FacilityDescriptionPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
 		</div>
 	{/if}
 </div>

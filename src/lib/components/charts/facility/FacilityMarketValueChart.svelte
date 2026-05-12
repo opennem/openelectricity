@@ -12,8 +12,13 @@
 
 	const BUTTON_ZOOM_FACTOR = 1.5;
 
-	/** @type {{ showContainer?: boolean, zoomMode?: 'floating' | 'static' | 'none' }} */
-	let { showContainer = true, zoomMode = 'static' } = $props();
+	/** @type {{ showContainer?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean }} */
+	let {
+		showContainer = true,
+		zoomMode = 'static',
+		panZoomMode = 'always',
+		panZoomEngaged = $bindable(false)
+	} = $props();
 
 	const ctx = getFacilityFinancialDataContext();
 
@@ -78,6 +83,8 @@
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
 			enablePan={hasViewportHandler}
+			{panZoomMode}
+			bind:engaged={panZoomEngaged}
 			viewDomain={null}
 			onpanstart={ctx.handlePanStart}
 			onpan={ctx.handlePan}

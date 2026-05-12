@@ -56,6 +56,8 @@
 	 * @property {string} [title] - Override the chart header title (defaults to facility.name).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync. When set, the chart renders its crosshair/tooltip at this time.
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when the local hover state changes so a parent can sync peer charts.
+	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active. 'tap-to-engage' gates pan/zoom behind the bindable `panZoomEngaged` flag.
+	 * @property {boolean} [panZoomEngaged] - Bindable engagement state for tap-to-engage mode.
 	 */
 
 	/** @type {Props} */
@@ -84,7 +86,9 @@
 		overlayInsetPx = 0,
 		title = '',
 		hoverTime = undefined,
-		onhoverchange
+		onhoverchange,
+		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
+		panZoomEngaged = $bindable(false)
 	} = $props();
 
 	// ============================================
@@ -789,6 +793,8 @@
 			onpanend={handlePanEnd}
 			onzoom={handleZoom}
 			enablePan={true}
+			{panZoomMode}
+			bind:engaged={panZoomEngaged}
 			viewDomain={null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
 			resizable
@@ -819,7 +825,6 @@
 				</div>
 			</div>
 		{/if}
-
 	</div>
 {:else}
 	<!-- No facility — chart store not created yet -->
