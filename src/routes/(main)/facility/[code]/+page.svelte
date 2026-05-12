@@ -1,4 +1,5 @@
 <script>
+	import { onMount } from 'svelte';
 	import {
 		FacilityChart,
 		FacilityPriceChart,
@@ -15,9 +16,17 @@
 	import isCommissioningCheck from '../../facilities/_utils/is-commissioning';
 
 	import { computeMetricSwitch } from '$lib/components/charts/facility/metric-switch.js';
+	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
+	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 
-	import FacilityDescriptionPanel from './_components/FacilityDescriptionPanel.svelte';
+	import FacilityInfoPanel from './_components/FacilityInfoPanel.svelte';
+	import FacilityUnitsPanel from './_components/FacilityUnitsPanel.svelte';
 	import { createViewportSync } from './_utils/viewport-sync.js';
+	import {
+		CHARTS_FRACTION_COOKIE,
+		CHARTS_FRACTION_MIN,
+		CHARTS_FRACTION_MAX
+	} from './_utils/charts-fraction.js';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -84,6 +93,36 @@
 
 	/** @type {HTMLElement | undefined} */
 	let chartCardEl = $state(undefined);
+
+	/** @type {HTMLElement | undefined} */
+	let splitContainerEl = $state(undefined);
+	let isMobile = $state(false);
+
+	const splitDrag = createDragHandler({
+		axis: 'x',
+		min: CHARTS_FRACTION_MIN,
+		max: CHARTS_FRACTION_MAX,
+		initial: data.chartsFraction,
+		scale: () => splitContainerEl?.clientWidth ?? 1,
+		persist: {
+			read: () => data.chartsFraction,
+			write: (v) => {
+				if (typeof document === 'undefined') return;
+				// 1 year, scoped to the site root so the cookie travels with SSR navigations.
+				document.cookie = `${CHARTS_FRACTION_COOKIE}=${v}; path=/; max-age=31536000; SameSite=Lax`;
+			}
+		}
+	});
+
+	let leftWidthPercent = $derived(isMobile ? null : `${splitDrag.value * 100}%`);
+
+	onMount(() => {
+		const mq = window.matchMedia('(max-width: 767px)');
+		isMobile = mq.matches;
+		const update = (/** @type {MediaQueryListEvent} */ e) => (isMobile = e.matches);
+		mq.addEventListener('change', update);
+		return () => mq.removeEventListener('change', update);
+	});
 
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
@@ -172,89 +211,108 @@
 
 <div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey p-8 space-y-8">
 	{#if selectedFacility}
-		{#if hasPowerData}
-			<FacilityFinancialDataProvider
-				active={true}
-				facility={selectedFacility}
-				{timeZone}
-				interval={activeInterval}
-				{displayInterval}
-				{viewStart}
-				{viewEnd}
-				{hoverTime}
-				onhoverchange={handleHoverChange}
-				onviewportchange={handlePriceViewportChange}
+		<div bind:this={splitContainerEl} class="flex flex-col md:flex-row min-h-0">
+			<div
+				class="md:shrink-0 md:pr-4 space-y-4 {splitDrag.isDragging
+					? ''
+					: 'md:transition-[width] md:duration-200 md:ease-out'}"
+				style:width={leftWidthPercent}
 			>
-				<div class="space-y-4">
-					<div
-						bind:this={chartCardEl}
-						class="relative rounded-lg border border-mid-warm-grey/40 bg-white"
+				{#if hasPowerData}
+					<FacilityFinancialDataProvider
+						active={true}
+						facility={selectedFacility}
+						{timeZone}
+						interval={activeInterval}
+						{displayInterval}
+						{viewStart}
+						{viewEnd}
+						{hoverTime}
+						onhoverchange={handleHoverChange}
+						onviewportchange={handlePriceViewportChange}
 					>
-						<div
-							class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-						>
-							<h3 class="text-sm font-semibold text-dark-grey m-0">Generation &amp; Market</h3>
-							<div class="flex items-center gap-3 text-xs text-mid-grey">
-								<span>{dateRangeLabel}</span>
-								<span
-									class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey uppercase tracking-wider"
+						<div class="space-y-4">
+							<div
+								bind:this={chartCardEl}
+								class="relative rounded-lg border border-mid-warm-grey/40 bg-white"
+							>
+								<div
+									class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
 								>
-									{displayInterval}
-								</span>
-							</div>
-						</div>
-						<div class="divide-y divide-mid-warm-grey/40">
-							<FacilityChart
-								bind:this={powerChart}
-								facility={selectedFacility}
-								powerData={data.powerData}
-								{timeZone}
-								{dateStart}
-								{dateEnd}
-								interval={activeInterval}
-								metric={activeMetric}
-								{displayInterval}
-								chartHeight="h-[267px]"
-								title={activeMetric === 'energy' ? 'Energy' : 'Power'}
-								tooltipMode="floating"
-								showContainer={false}
-								{hoverTime}
-								onhoverchange={handleHoverChange}
-								onviewportchange={handlePowerViewportChange}
-								panZoomMode="tap-to-engage"
-								bind:panZoomEngaged
-							/>
+									<h3 class="text-sm font-semibold text-dark-grey m-0">Generation &amp; Market</h3>
+									<div class="flex items-center gap-3 text-xs text-mid-grey">
+										<span>{dateRangeLabel}</span>
+										<span
+											class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey uppercase tracking-wider"
+										>
+											{displayInterval}
+										</span>
+									</div>
+								</div>
+								<div class="divide-y divide-mid-warm-grey/40">
+									<FacilityChart
+										bind:this={powerChart}
+										facility={selectedFacility}
+										powerData={data.powerData}
+										{timeZone}
+										{dateStart}
+										{dateEnd}
+										interval={activeInterval}
+										metric={activeMetric}
+										{displayInterval}
+										chartHeight="h-[267px]"
+										title={activeMetric === 'energy' ? 'Energy' : 'Power'}
+										tooltipMode="floating"
+										showContainer={false}
+										{hoverTime}
+										onhoverchange={handleHoverChange}
+										onviewportchange={handlePowerViewportChange}
+										panZoomMode="tap-to-engage"
+										bind:panZoomEngaged
+									/>
 
-							{#if viewStart && viewEnd}
-								<FacilityPriceChart
-									showContainer={false}
-									panZoomMode="tap-to-engage"
-									bind:panZoomEngaged
-								/>
-								<FacilityMarketValueChart
-									showContainer={false}
-									panZoomMode="tap-to-engage"
-									bind:panZoomEngaged
-								/>
+									{#if viewStart && viewEnd}
+										<FacilityPriceChart
+											showContainer={false}
+											panZoomMode="tap-to-engage"
+											bind:panZoomEngaged
+										/>
+										<FacilityMarketValueChart
+											showContainer={false}
+											panZoomMode="tap-to-engage"
+											bind:panZoomEngaged
+										/>
+									{/if}
+								</div>
+							</div>
+
+							{#if hasNpi}
+								<FacilityPollutionPanel facility={selectedFacility} />
 							{/if}
 						</div>
+					</FacilityFinancialDataProvider>
+				{:else}
+					<div
+						class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 min-h-[240px]"
+					>
+						<p class="text-sm text-mid-grey m-0">No data available</p>
 					</div>
-
-					{#if hasNpi}
-						<FacilityPollutionPanel facility={selectedFacility} />
-					{/if}
-				</div>
-			</FacilityFinancialDataProvider>
-		{:else}
-			<div
-				class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 min-h-[240px]"
-			>
-				<p class="text-sm text-mid-grey m-0">No data available</p>
+				{/if}
 			</div>
-		{/if}
 
-		<div class="border-t border-warm-grey pt-4">
-			<FacilityDescriptionPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
+			{#if !isMobile}
+				<DragHandle
+					axis="x"
+					onstart={splitDrag.start}
+					active={splitDrag.isDragging}
+					class="h-auto self-stretch"
+				/>
+			{/if}
+
+			<div class="flex-1 min-w-0 md:pl-4 space-y-4">
+				<FacilityInfoPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
+				<FacilityUnitsPanel facility={selectedFacility} />
+			</div>
 		</div>
 	{/if}
 </div>

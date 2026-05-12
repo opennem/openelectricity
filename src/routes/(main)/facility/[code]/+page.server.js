@@ -1,6 +1,12 @@
 import { error } from '@sveltejs/kit';
 import { client as sanityClient } from '$lib/sanity';
 import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
+import {
+	CHARTS_FRACTION_COOKIE,
+	CHARTS_FRACTION_DEFAULT,
+	CHARTS_FRACTION_MIN,
+	CHARTS_FRACTION_MAX
+} from './_utils/charts-fraction.js';
 
 const DEFAULT_RANGE_DAYS = 7;
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -86,18 +92,29 @@ async function loadFacilityPayload(code, fetch) {
  * @param {Object} params
  * @param {{ code: string }} params.params
  * @param {typeof fetch} params.fetch
+ * @param {import('@sveltejs/kit').Cookies} params.cookies
  */
-export async function load({ params, fetch }) {
+export async function load({ params, fetch, cookies }) {
 	const { code } = params;
 
 	const payload = await loadFacilityPayload(code, fetch);
 	if (!payload) throw error(404, `Facility "${code}" not found`);
+
+	const rawFraction = cookies.get(CHARTS_FRACTION_COOKIE);
+	const parsedFraction = rawFraction ? parseFloat(rawFraction) : NaN;
+	const chartsFraction =
+		Number.isFinite(parsedFraction) &&
+		parsedFraction >= CHARTS_FRACTION_MIN &&
+		parsedFraction <= CHARTS_FRACTION_MAX
+			? parsedFraction
+			: CHARTS_FRACTION_DEFAULT;
 
 	return {
 		facility: payload.facility,
 		sanityFacility: payload.sanityFacility,
 		powerData: payload.powerData,
 		timeZone: payload.timeZone,
-		rangeDays: DEFAULT_RANGE_DAYS
+		rangeDays: DEFAULT_RANGE_DAYS,
+		chartsFraction
 	};
 }

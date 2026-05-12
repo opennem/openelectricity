@@ -145,4 +145,85 @@ describe('createDragHandler', () => {
 		drag.value = 400;
 		expect(drag.value).toBe(400);
 	});
+
+	it('fraction mode scales pixel deltas by container size', () => {
+		const drag = createDragHandler({
+			axis: 'x',
+			min: 0.2,
+			max: 0.8,
+			initial: 0.5,
+			storageKey: 'test-fraction',
+			scale: () => 1000
+		});
+
+		drag.start(/** @type {any} */ ({ clientX: 500, clientY: 0, preventDefault: () => {} }));
+		listeners.pointermove({ clientX: 600, clientY: 0 });
+		// +100px / 1000px scale = +0.1 fraction
+		expect(drag.value).toBeCloseTo(0.6, 5);
+
+		listeners.pointermove({ clientX: 9999, clientY: 0 });
+		expect(drag.value).toBeCloseTo(0.8, 5);
+
+		listeners.pointermove({ clientX: -9999, clientY: 0 });
+		expect(drag.value).toBeCloseTo(0.2, 5);
+
+		listeners.pointerup();
+		expect(parseFloat(localStorage.getItem('test-fraction') ?? '')).toBeCloseTo(0.2, 5);
+	});
+
+	it('fraction mode loads a persisted fractional value', () => {
+		localStorage.setItem('test-fraction-load', '0.65');
+		const drag = createDragHandler({
+			axis: 'x',
+			min: 0.2,
+			max: 0.8,
+			initial: 0.5,
+			storageKey: 'test-fraction-load',
+			scale: () => 800
+		});
+		expect(drag.value).toBeCloseTo(0.65, 5);
+	});
+
+	it('persist override bypasses localStorage on read and write', () => {
+		localStorage.setItem('test-persist-override', '0.999'); // should be ignored
+		const writes = [];
+		const drag = createDragHandler({
+			axis: 'x',
+			min: 0.2,
+			max: 0.8,
+			initial: 0.5,
+			storageKey: 'test-persist-override',
+			scale: () => 1000,
+			persist: {
+				read: () => 0.42,
+				write: (v) => writes.push(v)
+			}
+		});
+		expect(drag.value).toBeCloseTo(0.42, 5);
+
+		drag.start(/** @type {any} */ ({ clientX: 100, clientY: 0, preventDefault: () => {} }));
+		listeners.pointermove({ clientX: 200, clientY: 0 });
+		listeners.pointerup();
+
+		expect(writes).toHaveLength(1);
+		expect(writes[0]).toBeCloseTo(0.52, 5);
+		// localStorage must remain untouched
+		expect(localStorage.getItem('test-persist-override')).toBe('0.999');
+	});
+
+	it('persist.read returning null falls back to initial', () => {
+		const drag = createDragHandler({
+			axis: 'x',
+			min: 0.2,
+			max: 0.8,
+			initial: 0.5,
+			storageKey: 'unused',
+			scale: () => 1000,
+			persist: {
+				read: () => null,
+				write: () => {}
+			}
+		});
+		expect(drag.value).toBeCloseTo(0.5, 5);
+	});
 });
