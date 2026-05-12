@@ -42,7 +42,9 @@
 	{@const ftId = fuelTechId || 'demand'}
 	<div class="h-full mx-auto text-black bg-white grid grid-cols-1 gap-4 content-between">
 		<div>
-			<header class="flex gap-12 justify-between items-center m-20 mb-10">
+			<header
+				class="flex flex-col md:flex-row gap-6 md:gap-12 md:justify-between md:items-center m-20 mb-10"
+			>
 				<div class="flex flex-col gap-6 pt-5 md:pt-0">
 					<span
 						class="bg-{ftId} rounded-full p-3 place-self-start"
