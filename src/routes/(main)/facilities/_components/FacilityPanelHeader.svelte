@@ -5,7 +5,7 @@
 	 * metric + per-fueltech/status unit breakdown.
 	 */
 
-	import { BatteryMedium, BookOpen, ExternalLink, Globe, X, Zap } from '@lucide/svelte';
+	import { BookOpen, ExternalLink, Globe, X, Zap } from '@lucide/svelte';
 	import {
 		getExploreUrl,
 		groupUnits,
@@ -17,9 +17,9 @@
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+	import { Tooltip as BitsTooltip } from 'bits-ui';
 	import { CAPACITY_TOOLTIP } from '../_utils/capacity-tooltip.js';
 	import { EXTERNAL_LINKS } from '$lib/constants/external-links.js';
-	import { fuelTechNameMap } from '$lib/fuel_techs.js';
 	import { getFueltechColor } from '$lib/utils/fueltech-display';
 	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 
@@ -32,6 +32,9 @@
 	 * }}
 	 */
 	let { facility, sanityFacility = null, onclose, showViewButtons = true } = $props();
+
+	// Mobile tap-to-toggle for the capacity breakdown (hover popover on desktop).
+	let mobileExpanded = $state(false);
 
 	let websiteUrl = $derived(sanityFacility?.website ?? null);
 	let wikipediaUrl = $derived(sanityFacility?.wikipedia ?? null);
@@ -153,6 +156,59 @@
 		}
 		return Array.from(seen.values());
 	});
+
+	// One row per group. When a facility models its battery as separate
+	// `battery_charging` + `battery_discharging` units (no bidirectional
+	// `battery` parent), flag them as a pair so the bracket renders.
+	let displayRows = $derived.by(() => {
+		/** @type {any[]} */
+		const rows = [];
+		const hasBidirectional = unitGroups.some(
+			(/** @type {any} */ g) => g.fueltech_id === 'battery'
+		);
+		const hasBatteryPair =
+			!hasBidirectional &&
+			unitGroups.some((/** @type {any} */ g) => g.fueltech_id === 'battery_discharging') &&
+			unitGroups.some((/** @type {any} */ g) => g.fueltech_id === 'battery_charging');
+		for (const g of unitGroups) {
+			const cap = g.capacity_maximum || g.capacity_registered;
+			const isPair =
+				hasBatteryPair &&
+				(g.fueltech_id === 'battery_discharging' || g.fueltech_id === 'battery_charging');
+			rows.push({
+				fueltechId: g.fueltech_id,
+				cap,
+				storage: g.capacity_storage,
+				status: g.status_id,
+				isCommissioning: g.isCommissioning,
+				isRetired: g.status_id === 'retired',
+				key: `${g.fueltech_id}|||${g.status_id}`,
+				pairPosition:
+					/** @type {'top' | 'bottom' | null} */ (
+						isPair ? (g.fueltech_id === 'battery_discharging' ? 'top' : 'bottom') : null
+					)
+			});
+		}
+		return rows;
+	});
+
+	/**
+	 * Split a fueltech_id into primary + subtype labels.
+	 *   solar_utility → { primary: 'Solar', subtype: 'Utility' }
+	 *   battery_discharging → { primary: 'Battery', subtype: 'Discharging' }
+	 *   wind → { primary: 'Wind', subtype: '' }
+	 * @param {string} ftId
+	 */
+	function splitFuelTechId(ftId) {
+		if (!ftId) return { primary: '', subtype: '' };
+		const parts = ftId.split('_');
+		const cap = (/** @type {string} */ s) =>
+			s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+		return {
+			primary: cap(parts[0]),
+			subtype: parts.slice(1).map(cap).join(' ')
+		};
+	}
 </script>
 
 {#snippet linkPill(
@@ -289,13 +345,8 @@
 				{/if}
 			</div>
 
-			<!-- Right column: total capacity headline + proportion bar + per-group breakdown -->
-			<div
-				class="min-w-0 w-full rounded-lg border border-warm-grey bg-light-warm-grey/40 p-4 md:w-[360px] md:rounded-none md:border-0 md:bg-transparent md:p-0 {activeUnitGroups.length >
-				1
-					? ''
-					: 'md:self-center'}"
-			>
+			<!-- Right column: total capacity headline + proportion bar; rows live in a hover tooltip -->
+			{#snippet capacityHeadline()}
 				<div class="flex flex-col items-start gap-1 md:items-end">
 					<span
 						class="text-[10px] uppercase tracking-wider text-mid-grey inline-flex items-center gap-1"
@@ -315,67 +366,134 @@
 						>
 					</span>
 				</div>
+			{/snippet}
 
-				{#if activeUnitGroups.length > 1 && totalCapacity > 0}
-					<div class="mt-3 flex h-1.5 w-full overflow-hidden rounded-full bg-warm-grey/40">
-						{#each activeUnitGroups as group (group.fueltech_id + '|||' + group.status_id)}
-							{@const cap = group.capacity_maximum || group.capacity_registered}
-							{#if cap > 0}
+			{#snippet proportionBar()}
+				<div class="mt-3 flex h-3 w-full overflow-hidden rounded-full bg-warm-grey/40">
+					{#each activeUnitGroups as group (group.fueltech_id + '|||' + group.status_id)}
+						{@const cap = group.capacity_maximum || group.capacity_registered}
+						{#if cap > 0}
+							<span
+								class="block h-full"
+								style="width: {(cap / totalCapacity) * 100}%; background-color: {getFueltechColor(
+									group.fueltech_id
+								)};"
+							></span>
+						{/if}
+					{/each}
+				</div>
+			{/snippet}
+
+			{#snippet breakdownRows()}
+				<div class="divide-y divide-dashed divide-mid-warm-grey/60">
+					{#each displayRows as row (row.key)}
+						{@const split = splitFuelTechId(row.fueltechId)}
+						<div
+							class="relative flex items-center gap-2 text-xs py-2 {row.pairPosition
+								? 'pl-5'
+								: ''} {row.isRetired ? 'opacity-50' : ''}"
+						>
+							{#if row.pairPosition === 'top'}
 								<span
-									class="block h-full"
-									style="width: {(cap / totalCapacity) * 100}%; background-color: {getFueltechColor(
-										group.fueltech_id
-									)};"
+									class="absolute left-1 top-1/2 bottom-0 w-2 border-l border-t border-mid-warm-grey rounded-tl-sm pointer-events-none"
+									aria-hidden="true"
+								></span>
+							{:else if row.pairPosition === 'bottom'}
+								<span
+									class="absolute left-1 top-0 bottom-1/2 w-2 border-l border-b border-mid-warm-grey rounded-bl-sm pointer-events-none"
+									aria-hidden="true"
 								></span>
 							{/if}
-						{/each}
-					</div>
-
-					<div class="mt-3 space-y-1.5">
-						{#each unitGroups as group (group.fueltech_id + '|||' + group.status_id)}
-							{@const cap = group.capacity_maximum || group.capacity_registered}
+							<Tooltip text={row.status} class="capitalize cursor-help shrink-0">
+								<FuelTechBadge
+									fuelTech={row.fueltechId}
+									status={row.status}
+									isCommissioning={row.isCommissioning}
+									size="md"
+								/>
+							</Tooltip>
+							<span class="text-dark-grey truncate">
+								<span class="font-semibold">{split.primary}</span>
+								{#if split.subtype}
+									<span class="ml-1 font-normal text-mid-grey">{split.subtype}</span>
+								{/if}
+							</span>
 							<div
-								class="flex items-center gap-2 text-xs {group.status_id === 'retired'
-									? 'opacity-50'
-									: ''}"
+								class="ml-auto flex items-center gap-2 shrink-0 font-mono text-dark-grey tabular-nums"
 							>
-								<Tooltip text={group.status_id} class="capitalize cursor-help shrink-0">
-									<FuelTechBadge
-										fuelTech={group.fueltech_id}
-										status={group.status_id}
-										isCommissioning={group.isCommissioning}
-										size="md"
-									/>
-								</Tooltip>
-								<span class="text-dark-grey font-medium truncate">
-									{fuelTechNameMap[group.fueltech_id] ?? group.fueltech_id}
-								</span>
-								<div class="ml-auto flex items-center gap-3 shrink-0">
-									{#if group.capacity_storage > 0}
-										<span
-											class="inline-flex items-center gap-1 font-mono text-dark-grey tabular-nums"
+								{#if row.storage > 0}
+									<span>
+										{formatValue(row.storage)}<span
+											class="ml-0.5 text-[10px] font-normal text-mid-grey">MWh</span
 										>
-											<BatteryMedium size={11} class="text-mid-grey shrink-0" />
-											{formatValue(group.capacity_storage)}<span
-												class="ml-0.5 text-[10px] font-normal text-mid-grey">MWh</span
-											>
-										</span>
-									{/if}
-									<span
-										class="font-mono text-dark-grey tabular-nums {group.capacity_storage > 0
-											? `before:content-['·'] before:mr-3 before:text-mid-grey`
-											: ''}"
-									>
-										{formatValue(cap)}<span class="ml-1 text-[10px] font-normal text-mid-grey"
-											>MW</span
+									</span>
+									<span class="text-mid-grey">·</span>
+								{/if}
+								<span>
+									{formatValue(row.cap)}<span
+										class="ml-0.5 text-[10px] font-normal text-mid-grey">MW</span
 										>
 									</span>
 								</div>
 							</div>
 						{/each}
 					</div>
-				{/if}
+				{/snippet}
+
+				<!-- Right column: headline + bar inline; rows in a hover popover when there's a breakdown -->
+				<div
+					class="min-w-0 w-full rounded-lg border border-warm-grey bg-light-warm-grey/40 p-4 md:w-[360px] md:rounded-none md:border-0 md:bg-transparent md:p-0 {activeUnitGroups.length >
+					1
+						? ''
+						: 'md:self-center'}"
+				>
+					{#if activeUnitGroups.length > 1 && totalCapacity > 0}
+						<!-- Mobile: tap to toggle inline breakdown -->
+						<div class="md:hidden">
+							<button
+								type="button"
+								class="block w-full text-left cursor-pointer"
+								onclick={() => (mobileExpanded = !mobileExpanded)}
+								aria-expanded={mobileExpanded}
+							>
+								{@render capacityHeadline()}
+								{@render proportionBar()}
+							</button>
+							{#if mobileExpanded}
+								<div class="mt-3">
+									{@render breakdownRows()}
+								</div>
+							{/if}
+						</div>
+
+						<!-- Desktop: hover popover -->
+						<div class="hidden md:block">
+							<BitsTooltip.Provider>
+								<BitsTooltip.Root delayDuration={100}>
+									<BitsTooltip.Trigger>
+										{#snippet child({ props })}
+											<div {...props} class="block w-full text-left cursor-pointer">
+												{@render capacityHeadline()}
+												{@render proportionBar()}
+											</div>
+										{/snippet}
+									</BitsTooltip.Trigger>
+									<BitsTooltip.Portal>
+										<BitsTooltip.Content sideOffset={8} side="bottom" class="z-[9999]">
+											<div
+												class="bg-white border border-mid-warm-grey/60 rounded-lg shadow-lg px-4 py-2 min-w-[360px]"
+											>
+												{@render breakdownRows()}
+											</div>
+										</BitsTooltip.Content>
+									</BitsTooltip.Portal>
+								</BitsTooltip.Root>
+							</BitsTooltip.Provider>
+						</div>
+					{:else}
+						{@render capacityHeadline()}
+					{/if}
+				</div>
 			</div>
-		</div>
-	</header>
+		</header>
 {/if}
