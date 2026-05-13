@@ -145,6 +145,28 @@ const fuelTechNameReducer = (acc, d) => {
 	return acc;
 };
 
+/**
+ * Sort units (or unit groups) by the detailed chart-stack order. Items must
+ * expose `fueltech_id`. Unknown fuel techs are placed at the end. Pass
+ * `{ reverse: true }` to surface the top of the stack first.
+ *
+ * @template {{ fueltech_id: string }} T
+ * @param {T[]} items
+ * @param {{ reverse?: boolean }} [options]
+ * @returns {T[]}
+ */
+export function sortByDetailedOrder(items, { reverse = false } = {}) {
+	const rank = (/** @type {string} */ ft) => {
+		const i = order.indexOf(ft);
+		return i === -1 ? order.length : i;
+	};
+	return [...items].sort((a, b) =>
+		reverse
+			? rank(b.fueltech_id) - rank(a.fueltech_id)
+			: rank(a.fueltech_id) - rank(b.fueltech_id)
+	);
+}
+
 /** @type {FuelTechGroup} */
 export default Object.freeze({
 	label: 'Detailed',

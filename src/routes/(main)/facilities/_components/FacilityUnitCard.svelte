@@ -83,7 +83,7 @@
 	>
 		<div class="p-4 pb-2 sm:pb-4 flex items-center gap-4 @container col-span-12 sm:col-span-7">
 			<div class="flex gap-1 items-center ml-2">
-				<FuelTechBadge fuelTech={facility.unit.fueltech_id} size="md" />
+				<FuelTechBadge fuelTech={facility.unit.fueltech_id} size="lg" />
 			</div>
 
 			<div

@@ -1,5 +1,6 @@
 <script>
 	import { onMount } from 'svelte';
+	import { LineChart } from '@lucide/svelte';
 	import {
 		FacilityChart,
 		FacilityPriceChart,
@@ -49,7 +50,7 @@
 	let timeZone = $derived(data.timeZone);
 	let rangeDays = $derived(data.rangeDays ?? 7);
 
-	let defaultEnd = $state(Date.now());
+	let defaultEnd = $derived(data.retiredEndMs ?? Date.now());
 	let defaultStart = $derived(defaultEnd - rangeDays * 24 * 60 * 60 * 1000);
 
 	function toDateString(/** @type {number} */ ms) {
@@ -207,31 +208,37 @@
 	<title>{selectedFacility?.name ?? 'Facility'} — Open Electricity</title>
 </svelte:head>
 
-<FacilityPanelHeader facility={selectedFacility} showViewButtons={false} />
-
-<div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey p-8 space-y-8">
+<div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey">
+	<div class="md:sticky md:top-0 md:z-40">
+		<FacilityPanelHeader
+			facility={selectedFacility}
+			sanityFacility={data.sanityFacility}
+			showViewButtons={false}
+		/>
+	</div>
 	{#if selectedFacility}
-		<div bind:this={splitContainerEl} class="flex flex-col md:flex-row min-h-0">
+		<div class="p-8 space-y-8">
+			<div bind:this={splitContainerEl} class="flex flex-col md:flex-row min-h-0">
 			<div
 				class="md:shrink-0 md:pr-4 space-y-4 {splitDrag.isDragging
 					? ''
 					: 'md:transition-[width] md:duration-200 md:ease-out'}"
 				style:width={leftWidthPercent}
 			>
-				{#if hasPowerData}
-					<FacilityFinancialDataProvider
-						active={true}
-						facility={selectedFacility}
-						{timeZone}
-						interval={activeInterval}
-						{displayInterval}
-						{viewStart}
-						{viewEnd}
-						{hoverTime}
-						onhoverchange={handleHoverChange}
-						onviewportchange={handlePriceViewportChange}
-					>
-						<div class="space-y-4">
+				<div class="space-y-10">
+					{#if hasPowerData}
+						<FacilityFinancialDataProvider
+							active={true}
+							facility={selectedFacility}
+							{timeZone}
+							interval={activeInterval}
+							{displayInterval}
+							{viewStart}
+							{viewEnd}
+							{hoverTime}
+							onhoverchange={handleHoverChange}
+							onviewportchange={handlePriceViewportChange}
+						>
 							<div
 								bind:this={chartCardEl}
 								class="relative rounded-lg border border-mid-warm-grey/40 bg-white"
@@ -285,19 +292,27 @@
 									{/if}
 								</div>
 							</div>
-
-							{#if hasNpi}
-								<FacilityPollutionPanel facility={selectedFacility} />
-							{/if}
+						</FacilityFinancialDataProvider>
+					{:else}
+						<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
+							<div
+								class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
+							>
+								<h3 class="text-sm font-semibold text-dark-grey m-0">Generation &amp; Market</h3>
+							</div>
+							<div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
+								<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
+									<LineChart size={24} strokeWidth={1.5} />
+								</div>
+								<p class="text-sm font-medium text-dark-grey m-0">No data available</p>
+							</div>
 						</div>
-					</FacilityFinancialDataProvider>
-				{:else}
-					<div
-						class="flex items-center justify-center rounded-lg border border-light-warm-grey bg-light-warm-grey/30 min-h-[240px]"
-					>
-						<p class="text-sm text-mid-grey m-0">No data available</p>
-					</div>
-				{/if}
+					{/if}
+
+					{#if hasNpi}
+						<FacilityPollutionPanel facility={selectedFacility} />
+					{/if}
+				</div>
 			</div>
 
 			{#if !isMobile}
@@ -309,9 +324,10 @@
 				/>
 			{/if}
 
-			<div class="flex-1 min-w-0 md:pl-4 space-y-4">
+			<div class="flex-1 min-w-0 md:pl-4 space-y-10">
 				<FacilityInfoPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
 				<FacilityUnitsPanel facility={selectedFacility} />
+			</div>
 			</div>
 		</div>
 	{/if}

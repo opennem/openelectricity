@@ -57,8 +57,8 @@
 		}))
 	);
 
-	/** @type {'sm' | 'md'} */
-	let badgeSize = $derived(compact ? 'sm' : 'md');
+	/** @type {'sm' | 'md' | 'lg'} */
+	let badgeSize = $derived(compact ? 'sm' : 'lg');
 </script>
 
 {#snippet badgeGroup()}

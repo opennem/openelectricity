@@ -206,7 +206,7 @@
 							fuelTech={group.fueltech_id}
 							status={group.status_id}
 							isCommissioning={group.isCommissioning}
-							size="md"
+							size="lg"
 						/>
 					{/each}
 				</div>

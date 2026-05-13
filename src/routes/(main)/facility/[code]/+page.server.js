@@ -18,6 +18,7 @@ const CACHE_MAX_ENTRIES = 50;
  * @property {any} sanityFacility
  * @property {any} powerData
  * @property {string} timeZone
+ * @property {number | null} retiredEndMs
  * @property {number} expires
  */
 
@@ -69,10 +70,49 @@ async function loadFacilityPayload(code, fetch) {
 
 	const timeZone = facility.network_id === 'WEM' ? '+08:00' : '+10:00';
 
+	// Retired facilities have no data near "now" — anchor the default chart
+	// window to the latest `data_last_seen` across units (or the latest
+	// `closure_date` when no unit has data) so we surface the final operating
+	// period instead of an empty range.
+	const units = Array.isArray(facility.units) ? facility.units : [];
+	const isFullyRetired =
+		units.length > 0 && units.every((/** @type {any} */ u) => u.status_id === 'retired');
+	/** @type {number | null} */
+	let retiredEndMs = null;
+	if (isFullyRetired) {
+		/** @type {string | null} */
+		let anchor = null;
+		for (const u of units) {
+			const d = u.data_last_seen;
+			if (!d) continue;
+			if (!anchor || d > anchor) anchor = d;
+		}
+		if (!anchor) {
+			for (const u of units) {
+				const d = u.closure_date;
+				if (!d) continue;
+				if (!anchor || d > anchor) anchor = d;
+			}
+		}
+		if (anchor) {
+			const t = new Date(anchor).getTime();
+			if (Number.isFinite(t)) retiredEndMs = t;
+		}
+	}
+
 	const powerParams = new URLSearchParams({
-		network_id: facility.network_id,
-		days: String(DEFAULT_RANGE_DAYS)
+		network_id: facility.network_id
 	});
+	if (retiredEndMs != null) {
+		const endIso = new Date(retiredEndMs).toISOString().slice(0, 19);
+		const startIso = new Date(retiredEndMs - DEFAULT_RANGE_DAYS * 24 * 60 * 60 * 1000)
+			.toISOString()
+			.slice(0, 19);
+		powerParams.set('date_start', startIso);
+		powerParams.set('date_end', endIso);
+	} else {
+		powerParams.set('days', String(DEFAULT_RANGE_DAYS));
+	}
 	const powerData = await fetch(`/api/facilities/${code}/power?${powerParams.toString()}`)
 		.then(async (res) => (res.ok ? (await res.json()).response : null))
 		.catch(() => null);
@@ -82,6 +122,7 @@ async function loadFacilityPayload(code, fetch) {
 		sanityFacility,
 		powerData,
 		timeZone,
+		retiredEndMs,
 		expires: now + CACHE_TTL_MS
 	};
 	cacheSet(code, entry);
@@ -114,6 +155,7 @@ export async function load({ params, fetch, cookies }) {
 		sanityFacility: payload.sanityFacility,
 		powerData: payload.powerData,
 		timeZone: payload.timeZone,
+		retiredEndMs: payload.retiredEndMs,
 		rangeDays: DEFAULT_RANGE_DAYS,
 		chartsFraction
 	};

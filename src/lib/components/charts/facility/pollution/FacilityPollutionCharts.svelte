@@ -4,7 +4,10 @@
 	import { Sheet } from '$lib/components/ui/sheet';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { CATEGORY_META } from './pollution-constants.js';
-	import { formatPollutantMass } from './format-pollutant-mass.js';
+	import {
+		formatPollutantMass,
+		formatPollutantMassParts
+	} from './format-pollutant-mass.js';
 	import { computePollutantTrend } from './pollutant-trend.js';
 	import Sparkline from './Sparkline.svelte';
 
@@ -31,6 +34,7 @@
 	);
 
 	let latestYear = $derived(data.years[data.years.length - 1] ?? '');
+	let startYear = $derived(data.years[0] ?? '');
 
 	/** @type {string | null} */
 	let openCategory = $state(null);
@@ -145,46 +149,60 @@
 			<table class="w-full text-xs border-collapse table-fixed">
 				<colgroup>
 					<col />
-					<col class="w-[88px]" />
-					<col class="w-[96px]" />
 					<col class="w-[80px]" />
+					<col class="w-[80px]" />
+					<col class="w-[64px]" />
 				</colgroup>
 				<thead>
-					<tr class="text-xs font-medium text-mid-grey">
-						<th scope="col" class="py-2 pr-3 text-left">Pollutant</th>
-						<th scope="col" class="py-2 px-3 text-left">Trend</th>
-						<th scope="col" class="py-2 px-3 text-right whitespace-nowrap">
-							Latest{#if latestYear}&nbsp;({fiscalYearLabel(latestYear)}){/if}
+					<tr
+						class="bg-dark-grey text-[10px] font-medium uppercase tracking-wider text-white"
+					>
+						<th scope="col" class="py-2 pl-3 text-left">Pollutant</th>
+						<th scope="col" colspan="2" class="py-2 text-center whitespace-nowrap">
+							{#if startYear && latestYear}
+								{fiscalYearLabel(startYear)} — {fiscalYearLabel(latestYear)}
+							{:else if latestYear}
+								{fiscalYearLabel(latestYear)}
+							{:else}
+								Latest
+							{/if}
 						</th>
-						<th scope="col" class="py-2 pl-3 text-right whitespace-nowrap">vs 5y avg</th>
+						<th scope="col" class="py-2 pr-3 text-right whitespace-nowrap">vs 5y avg</th>
 					</tr>
 				</thead>
 				<tbody>
 					{#each pollutants as pollutant (pollutant.code)}
 						{@const yearValues = data.years.map((y) => pollutant.values[y] ?? null)}
 						{@const latest = pollutant.values[latestYear] ?? null}
+						{@const latestParts = formatPollutantMassParts(latest)}
 						{@const trend = computePollutantTrend(yearValues)}
 
 						<tr class="border-b border-warm-grey/40 align-middle">
 							<th
 								scope="row"
-								class="py-2 pr-3 text-left font-medium text-dark-grey"
+								class="py-2 pl-3 text-left font-medium text-dark-grey truncate"
+								title={pollutant.label}
 							>
 								{pollutant.label}
 							</th>
-							<td class="py-2 px-3">
-								<Sparkline
-									values={yearValues}
-									colour={SPARKLINE_COLOUR}
-									ariaLabel="Trend for {pollutant.label}"
-								/>
+							<td class="py-2">
+								<div class="flex justify-end">
+									<Sparkline
+										values={yearValues}
+										colour={SPARKLINE_COLOUR}
+										ariaLabel="Trend for {pollutant.label}"
+									/>
+								</div>
 							</td>
 							<td
-								class="py-2 px-3 text-right font-mono tabular-nums text-dark-grey whitespace-nowrap"
+								class="py-2 pl-3 text-left font-mono tabular-nums text-dark-grey whitespace-nowrap"
 							>
-								{formatPollutantMass(latest)}
+								{latestParts.value}{#if latestParts.unit}<span
+										class="ml-1 text-[10px] font-normal text-mid-grey"
+										>{latestParts.unit}</span
+									>{/if}
 							</td>
-							<td class="py-2 pl-3 text-right font-mono tabular-nums whitespace-nowrap">
+							<td class="py-2 pr-3 text-right font-mono tabular-nums whitespace-nowrap">
 								{#if trend === null}
 									<span class="text-mid-grey">—</span>
 								{:else if trend.direction === 'up'}

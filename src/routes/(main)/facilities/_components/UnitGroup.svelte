@@ -73,7 +73,7 @@
 <div>
 	<div class="flex items-center justify-between text-xs gap-4">
 		<div class="flex items-center gap-2">
-			<FuelTechBadge fuelTech={fueltech_id} size="md" darkMode={true} />
+			<FuelTechBadge fuelTech={fueltech_id} size="lg" darkMode={true} />
 			<span class="font-medium">{fuelTechName(/** @type {FuelTechCode} */ (fueltech_id))}</span>
 		</div>
 

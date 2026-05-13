@@ -2,6 +2,7 @@
 	import { LayoutList, Grid2x2 } from '@lucide/svelte';
 	import { FacilityUnitsTable } from '$lib/components/charts/facility';
 	import FacilityUnitCards from './FacilityUnitCards.svelte';
+	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 
 	/**
 	 * @type {{
@@ -10,7 +11,8 @@
 	 */
 	let { facility = null } = $props();
 
-	let units = $derived(facility?.units ?? []);
+	// Top-of-stack first, matching the facility header + chart paint order.
+	let units = $derived(sortByDetailedOrder(facility?.units ?? [], { reverse: true }));
 	let hasUnits = $derived(units.length > 0);
 
 	/** @type {'table' | 'card'} */

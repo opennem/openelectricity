@@ -7,11 +7,15 @@
 	import { groupUnits } from '../../../facilities/_utils/units';
 	import formatValue from '../../../facilities/_utils/format-value';
 	import { getPercentage, getParsedDate, formatTimestampLabel } from '../../../facilities/_utils/unit-helpers';
+	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 
 	/** @type {{ facility: any }} */
 	let { facility } = $props();
 
-	let unitGroups = $derived(groupUnits(facility, { skipBattery: true }));
+	// Top-of-stack first, matching the facility header + chart paint order.
+	let unitGroups = $derived(
+		facility ? sortByDetailedOrder(groupUnits(facility, { skipBattery: true }), { reverse: true }) : []
+	);
 	let offset = $derived(facility?.network_id === 'WEM' ? '+08:00' : '+10:00');
 </script>
 
@@ -35,7 +39,7 @@
 
 			<!-- Badge + name -->
 			<div class="flex items-center gap-2 min-w-0 text-xs pr-6">
-				<FuelTechBadge fuelTech={group.fueltech_id} size="md" />
+				<FuelTechBadge fuelTech={group.fueltech_id} size="lg" />
 				<div class="min-w-0 leading-tight {group.units.length > 1 ? 'pt-1' : ''}">
 					<span class="font-medium text-dark-grey truncate block">
 						{fuelTechName(/** @type {FuelTechCode} */ (group.fueltech_id))}

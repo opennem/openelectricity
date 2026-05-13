@@ -27,7 +27,7 @@
 	 *   fuelTech: string,
 	 *   iconOnly?: boolean,
 	 *   iconSize?: number,
-	 *   size?: 'sm' | 'md',
+	 *   size?: 'sm' | 'md' | 'lg',
 	 *   status?: string,
 	 *   isCommissioning?: boolean,
 	 *   darkMode?: boolean,
@@ -71,12 +71,21 @@
 					statusPosition: '-top-[0.1rem] -right-[0.1rem]',
 					overlapMargin: '-ml-1.5'
 				}
-			: {
-					padding: 'p-2',
-					icon: 8,
-					statusPosition: '-top-[0.2rem] -right-[0.2rem]',
-					overlapMargin: 'ml-2'
-				}
+			: size === 'lg'
+				? {
+						padding: 'p-2',
+						icon: 8,
+						statusPosition: '-top-[0.2rem] -right-[0.2rem]',
+						overlapMargin: 'ml-2'
+					}
+				: {
+						// `md` — between `sm` (28px) and `lg` (48px); ~36px badge with the
+						// records-style 20px glyph from `iconOnly iconSize={5}`.
+						padding: 'p-1.5',
+						icon: 5,
+						statusPosition: '-top-[0.15rem] -right-[0.15rem]',
+						overlapMargin: '-ml-2'
+					}
 	);
 
 	let borderClasses = $derived(darkMode ? 'border border-white/30' : '');

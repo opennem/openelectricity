@@ -50,9 +50,9 @@
 
 	let currentCode = $derived(page.params.code ?? '');
 	let regionValue = $derived(selectedFacility?.network_region?.toLowerCase() ?? null);
-	let regionLabel = $derived(
-		regionValue ? (regionDefs.find((r) => r.value === regionValue)?.longLabel ?? '') : ''
-	);
+	let regionDef = $derived(regionValue ? regionDefs.find((r) => r.value === regionValue) : null);
+	let regionLabel = $derived(regionDef?.longLabel ?? '');
+	let regionShortLabel = $derived(regionDef?.label ?? '');
 
 	let isFullscreen = $derived(page.url.searchParams.get('fullscreen') === 'true');
 
@@ -153,6 +153,7 @@
 				selectedCode={currentCode}
 				{regionValue}
 				{regionLabel}
+				{regionShortLabel}
 				{isFullscreen}
 				onfullscreenchange={toggleFullscreen}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}

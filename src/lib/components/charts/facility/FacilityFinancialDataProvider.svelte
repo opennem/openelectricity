@@ -155,14 +155,25 @@
 			return;
 		}
 
+		// `unitOrder` and `loadIds` come from analyzeUnits as `power_…` series
+		// IDs. The MV data manager produces `market_value_…` IDs, so rewrite the
+		// prefix or processFacilityPower's `unitOrder.filter(...)` call falls
+		// through to the raw API order and the chart stack misorders.
+		const mvUnitOrder = unitOrder.map((/** @type {string} */ id) =>
+			id.replace(/^power_/, 'market_value_')
+		);
+		const mvLoadsToInvert = loadIds.map((/** @type {string} */ id) =>
+			id.replace(/^power_/, 'market_value_')
+		);
+
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
 			networkId,
 			interval: currentInterval,
 			metric: 'market_value',
 			unitFuelTechMap,
-			unitOrder,
-			loadsToInvert: loadIds,
+			unitOrder: mvUnitOrder,
+			loadsToInvert: mvLoadsToInvert,
 			getLabel,
 			getColour: getMvColour,
 			buildFetchUrl: (params) => {

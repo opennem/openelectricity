@@ -11,11 +11,13 @@
 	let sizeClass = $derived(
 		size === 'lg' ? 'w-5 h-5' : 'w-4 h-4'
 	);
+
+	let isOperating = $derived(!isCommissioning && status === 'operating');
 </script>
 
 <div class="flex">
 	<span
 		class="rounded-full {sizeClass} border border-white"
-		style="background-color: {colour};"
+		style="background-color: {colour};{isOperating ? ` box-shadow: 0 0 6px ${colour};` : ''}"
 	></span>
 </div>

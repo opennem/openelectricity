@@ -9,6 +9,7 @@
 	 *   selectedCode?: string,
 	 *   regionValue?: string | null,
 	 *   regionLabel?: string,
+	 *   regionShortLabel?: string,
 	 *   isFullscreen?: boolean,
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
@@ -21,6 +22,7 @@
 		selectedCode = '',
 		regionValue = null,
 		regionLabel = '',
+		regionShortLabel = '',
 		isFullscreen = false,
 		onfullscreenchange,
 		onshowshortcuts,
@@ -54,7 +56,8 @@
 					href={`/facilities?regions=${regionValue}&view=list&fullscreen=true`}
 					class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
 				>
-					{regionLabel}
+					<span class="md:hidden">{regionShortLabel || regionLabel}</span>
+					<span class="hidden md:inline">{regionLabel}</span>
 				</a>
 			{/if}
 
