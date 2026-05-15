@@ -4,7 +4,7 @@
 	import { goto, replaceState, afterNavigate } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { X, Flag, Pause, Play, Zap } from '@lucide/svelte';
+	import { ExternalLink, Flag, Pause, Play, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
 	import { fetchMetricData } from './_utils/fetch-metric-data.js';
@@ -42,7 +42,8 @@
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import {
 		hasBidirectionalBattery,
-		filterDerivedBatteryUnits
+		filterDerivedBatteryUnits,
+		getExploreUrl
 	} from './_utils/units';
 
 	let { data } = $props();
@@ -445,11 +446,13 @@
 	 * @returns {number}
 	 */
 	function getFacilityCapacity(facility) {
-		return filterDerivedBatteryUnits(facility.units ?? [], hasBidirectionalBattery(facility))
-			.reduce(
-				(/** @type {number} */ sum, /** @type {any} */ unit) => sum + getUnitCapacity(unit),
-				0
-			);
+		return filterDerivedBatteryUnits(
+			facility.units ?? [],
+			hasBidirectionalBattery(facility)
+		).reduce(
+			(/** @type {number} */ sum, /** @type {any} */ unit) => sum + getUnitCapacity(unit),
+			0
+		);
 	}
 
 	/**
@@ -573,9 +576,8 @@
 					units: filterDerivedBatteryUnits(
 						facility.units ?? [],
 						hasBidirectionalBattery(facility)
-					).filter(
-						(/** @type {any} */ unit) =>
-							searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true
+					).filter((/** @type {any} */ unit) =>
+						searchTerm ? facility.name.toLowerCase().includes(searchTerm.toLowerCase()) : true
 					)
 				}))
 				.filter((facility) => facility.units && facility.units.length > 0)
@@ -1066,6 +1068,29 @@
 	</PageHeaderSimple>
 {/if}
 
+{#snippet facilityActionBar(/** @type {any} */ facility)}
+	<div
+		class="shrink-0 flex items-center justify-end gap-1.5 px-3 pt-1.5 pb-3 bg-light-warm-grey/60 border-b border-warm-grey"
+	>
+		<a
+			href={getExploreUrl(facility)}
+			target="_blank"
+			rel="noopener noreferrer"
+			class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-white bg-dark-grey hover:bg-black rounded transition-colors no-underline hover:no-underline"
+		>
+			<ExternalLink size={10} />
+			View
+		</a>
+		<button
+			onclick={closeFacilityDetail}
+			class="shrink-0 p-1 rounded hover:bg-warm-grey transition-colors text-mid-grey hover:text-dark-grey cursor-pointer"
+			aria-label="Close panel"
+		>
+			<X size={14} />
+		</button>
+	</div>
+{/snippet}
+
 {#snippet summaryBar()}
 	<div
 		class="z-20 bg-white border-t border-mid-warm-grey px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
@@ -1119,11 +1144,7 @@
 
 <FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
 	{#snippet filterBar()}
-		<div
-			class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen
-				? ''
-				: 'px-4'}"
-		>
+		<div class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}">
 			<Filters
 				{searchTerm}
 				{selectedView}
@@ -1177,318 +1198,326 @@
 				bind:clientHeight={containerHeight}
 				class="flex-1 flex flex-col md:flex-row min-h-0 relative"
 			>
-			<!-- Left panel: List or Timeline (resizable on desktop) -->
-			<div
-				class="relative bg-white flex flex-col min-h-0 z-10 w-full md:shrink-0"
-				class:hidden={selectedView === 'map'}
-				class:md:flex={selectedView === 'map'}
-				style={isDesktop ? `width: ${mainDrag.value}px` : ''}
-			>
-			{#if selectedView === 'list' || selectedView === 'map'}
-				<div class="flex-1 overflow-y-auto min-h-0 mt-4">
-					<List
-						facilities={filteredFacilities}
-						{hoveredFacility}
-						{clickedFacility}
-						selectedFacilityCode={selectedFacility?.code ?? null}
-						sortBy={listSortBy}
-						sortOrder={listSortOrder}
-						{isFullscreen}
-						{metricMeta}
-						{metricActive}
-						{metricValuesRaw}
-						onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
-						onclick={(/** @type {any} */ f) => {
-							handleFacilitySelect(f);
-						}}
-						onsortchange={(by, order) => {
-							listSortBy = by;
-							listSortOrder = order;
-						}}
-					/>
-				</div>
-			{:else if selectedView === 'timeline'}
-				{#if showTodayButton && searchTerm.length === 0}
-					<div
-						class="absolute z-20 w-full flex justify-center pointer-events-none"
-						class:top-4={todayButtonPosition === 'top'}
-						class:bottom-28={todayButtonPosition === 'bottom'}
-						transition:fly={{ y: -10, duration: 300 }}
-					>
-						<button
-							class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300 pointer-events-auto"
-							onclick={() => timelineRef?.jumpToToday()}
-						>
-							{#if todayButtonPosition === 'bottom'}
-								<span class="text-xxs">↓</span>
-							{:else}
-								<span class="text-xxs">↑</span>
-							{/if}
-							Jump to today
-						</button>
-					</div>
-				{/if}
-				<div class="flex-1 overflow-y-auto min-h-0" bind:this={timelineScrollContainer}>
-					<div class="p-6">
-						<Timeline
-							bind:this={timelineRef}
-							facilities={filteredWithLocation}
-							{hoveredFacility}
-							{clickedFacility}
-							selectedFacilityCode={selectedFacility?.code ?? null}
-							{isFullscreen}
-							ontodaybuttonvisible={handleTodayButtonVisible}
-							scrollContainer={timelineScrollContainer}
-							scrollToToday={!hasInitiallyScrolledToToday}
-							onscrolledtotoday={() => (hasInitiallyScrolledToToday = true)}
-							onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
-							onclick={(/** @type {any} */ f) => {
-								handleFacilitySelect(f);
-							}}
-							onorderchange={(/** @type {string[]} */ codes) => (timelineOrderedCodes = codes)}
-						/>
-					</div>
-				</div>
-			{/if}
-			{@render summaryBar()}
-		</div>
-
-		<!-- Resizable divider (desktop only) -->
-		{#if isDesktop}
-			<DragHandle axis="x" onstart={mainDrag.start} active={mainDrag.isDragging} />
-		{/if}
-
-		<!-- Right panel: Map (flex-1 on desktop) -->
-		<div
-			class="relative md:flex-1 md:min-w-0"
-			class:hidden={selectedView !== 'map'}
-			class:md:block={selectedView !== 'map'}
-		>
-			<!-- Map container -->
-			<div class="relative h-full overflow-hidden">
-				{#if !mapLoaded}
-					<div
-						class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center md:rounded-lg"
-					>
-						<LogoMarkLoader />
-					</div>
-				{/if}
-				{#await import('./Map.svelte') then { default: Map }}
-					<Map
-						bind:this={mapRef}
-						facilities={filteredWithLocation}
-						{hoveredFacility}
-						selectedFacilityCode={selectedFacility?.code ?? null}
-						clustering={mapClustering}
-						{mapTheme}
-						{mapMarkerStyle}
-						experimentsEnabled={mapExperimentsEnabled}
-						showTransmissionLines={mapShowTransmissionLines}
-						{transmissionLineVisibility}
-						showGolfCourses={mapShowGolfCourses}
-						scrollZoom={!isYearPlaying}
-						cooperativeGestures={!isFullscreen}
-						flyToOffsetX={0}
-						flyToOffsetY={selectedFacility ? -0.15 : 0}
-						{metricValues}
-						{metricMissingByCode}
-						{tuning}
-						onhover={(f) => (hoveredFacility = f)}
-						onclick={(f) => (clickedFacility = f)}
-						onselect={handleFacilitySelect}
-						onload={() => setTimeout(() => (mapLoaded = true), 250)}
-					/>
-				{/await}
-
-				{#if mapExperimentsEnabled}
-					<MapTuningPanel bind:tuning markerStyle={mapMarkerStyle} />
-				{/if}
-
-				<!-- Map controls -->
-				<div class="absolute top-3 right-20 z-20 flex items-center gap-2">
-					<button
-						onclick={() => {
-							mapRef?.resetView();
-							if (selectedFacility) {
-								closeFacilityDetail();
-							}
-						}}
-						class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
-						title="Reset map to show all facilities"
-					>
-						Reset Map
-					</button>
-					<MapOptionsDropdown
-						{mapTheme}
-						markerStyle={mapMarkerStyle}
-						showMarkerStyleOption={mapExperimentsEnabled}
-						showTransmissionLines={mapShowTransmissionLines}
-						showGolfCourses={mapShowGolfCourses}
-						showGolfOption={showGolf}
-						showMagicIndicator={showGolf}
-						clustering={mapClustering}
-						onmapthemechange={(v) => {
-							mapTheme = v;
-							updateMapOptionsUrl();
-						}}
-						onmarkerstylechange={(v) => {
-							mapMarkerStyle = v;
-							updateMapOptionsUrl();
-						}}
-						ontransmissionlineschange={(v) => {
-							mapShowTransmissionLines = v;
-							updateMapOptionsUrl();
-						}}
-						ongolfcourseschange={(v) => {
-							mapShowGolfCourses = v;
-							updateMapOptionsUrl();
-						}}
-						onclusteringchange={(v) => {
-							mapClustering = v;
-							updateMapOptionsUrl();
-						}}
-					/>
-				</div>
-
-				<!-- Year animation controls -->
-				{#if showYearOverlay}
-					{@const playheadPercent =
-						playYear !== null && yearRange[1] > yearRange[0]
-							? ((playYear - yearRange[0]) / (yearRange[1] - yearRange[0])) * 100
-							: 0}
-					<div
-						class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] flex flex-col gap-3"
-					>
-						<p class="text-[10px] text-mid-grey leading-tight mb-0">
-							Showing facilities connected to the grid
-						</p>
-
-						<!-- Playhead -->
-						<div class="flex flex-col gap-1.5">
-							<div class="flex items-center justify-between">
-								<span class="font-mono text-[10px] text-mid-grey">{yearRange[0]}</span>
-								<span
-									class="font-mono text-xs font-semibold"
-									class:text-dark-grey={playYear !== null}
-									class:text-transparent={playYear === null}
+				<!-- Left panel: List or Timeline (resizable on desktop) -->
+				<div
+					class="relative bg-white flex flex-col min-h-0 z-10 w-full md:shrink-0"
+					class:hidden={selectedView === 'map'}
+					class:md:flex={selectedView === 'map'}
+					style={isDesktop ? `width: ${mainDrag.value}px` : ''}
+				>
+					{#if selectedView === 'list' || selectedView === 'map'}
+						<div class="flex-1 overflow-y-auto min-h-0 mt-4">
+							<List
+								facilities={filteredFacilities}
+								{hoveredFacility}
+								{clickedFacility}
+								selectedFacilityCode={selectedFacility?.code ?? null}
+								sortBy={listSortBy}
+								sortOrder={listSortOrder}
+								{isFullscreen}
+								{metricMeta}
+								{metricActive}
+								{metricValuesRaw}
+								onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
+								onclick={(/** @type {any} */ f) => {
+									handleFacilitySelect(f);
+								}}
+								onsortchange={(by, order) => {
+									listSortBy = by;
+									listSortOrder = order;
+								}}
+							/>
+						</div>
+					{:else if selectedView === 'timeline'}
+						{#if showTodayButton && searchTerm.length === 0}
+							<div
+								class="absolute z-20 w-full flex justify-center pointer-events-none"
+								class:top-4={todayButtonPosition === 'top'}
+								class:bottom-28={todayButtonPosition === 'bottom'}
+								transition:fly={{ y: -10, duration: 300 }}
+							>
+								<button
+									class="flex items-center gap-2 bg-chart-1 cursor-pointer text-white rounded-full text-xxs px-4 py-2 font-space shadow-sm hover:bg-chart-1/80 transition-all duration-300 pointer-events-auto"
+									onclick={() => timelineRef?.jumpToToday()}
 								>
-									{playYear ?? yearRange[0]}
-								</span>
-								<span class="font-mono text-[10px] text-mid-grey">{yearRange[1]}</span>
+									{#if todayButtonPosition === 'bottom'}
+										<span class="text-xxs">↓</span>
+									{:else}
+										<span class="text-xxs">↑</span>
+									{/if}
+									Jump to today
+								</button>
 							</div>
-							<div class="relative h-1.5 w-full rounded-full bg-warm-grey">
-								{#if playYear !== null}
-									<span
-										class="absolute h-full bg-dark-grey rounded-full"
-										style="width: {playheadPercent}%"
-									></span>
-									<span
-										class="absolute top-1/2 size-3 rounded-full border-2 border-dark-grey bg-white shadow-sm pointer-events-none"
-										style="left: {playheadPercent}%; translate: -50% -50%"
-									></span>
-								{/if}
+						{/if}
+						<div class="flex-1 overflow-y-auto min-h-0" bind:this={timelineScrollContainer}>
+							<div class="p-6">
+								<Timeline
+									bind:this={timelineRef}
+									facilities={filteredWithLocation}
+									{hoveredFacility}
+									{clickedFacility}
+									selectedFacilityCode={selectedFacility?.code ?? null}
+									{isFullscreen}
+									ontodaybuttonvisible={handleTodayButtonVisible}
+									scrollContainer={timelineScrollContainer}
+									scrollToToday={!hasInitiallyScrolledToToday}
+									onscrolledtotoday={() => (hasInitiallyScrolledToToday = true)}
+									onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
+									onclick={(/** @type {any} */ f) => {
+										handleFacilitySelect(f);
+									}}
+									onorderchange={(/** @type {string[]} */ codes) => (timelineOrderedCodes = codes)}
+								/>
 							</div>
 						</div>
+					{/if}
+					{@render summaryBar()}
+				</div>
 
-						<!-- Controls -->
-						<div class="flex items-center gap-2">
-							<button
-								onclick={() => yearAnimationControls?.toggle()}
-								class="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg bg-light-warm-grey hover:bg-warm-grey transition-colors cursor-pointer text-xs text-mid-grey"
-								title={isYearPlaying ? 'Pause' : 'Play'}
+				<!-- Resizable divider (desktop only) -->
+				{#if isDesktop}
+					<DragHandle axis="x" onstart={mainDrag.start} active={mainDrag.isDragging} />
+				{/if}
+
+				<!-- Right panel: Map (flex-1 on desktop) -->
+				<div
+					class="relative md:flex-1 md:min-w-0"
+					class:hidden={selectedView !== 'map'}
+					class:md:block={selectedView !== 'map'}
+				>
+					<!-- Map container -->
+					<div class="relative h-full overflow-hidden">
+						{#if !mapLoaded}
+							<div
+								class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center md:rounded-lg"
 							>
-								{#if isYearPlaying}
-									<Pause class="size-3" />
-									<span>Pause</span>
-								{:else}
-									<Play class="size-3" />
-									<span>Play</span>
-								{/if}
-							</button>
+								<LogoMarkLoader />
+							</div>
+						{/if}
+						{#await import('./Map.svelte') then { default: Map }}
+							<Map
+								bind:this={mapRef}
+								facilities={filteredWithLocation}
+								{hoveredFacility}
+								selectedFacilityCode={selectedFacility?.code ?? null}
+								clustering={mapClustering}
+								{mapTheme}
+								{mapMarkerStyle}
+								experimentsEnabled={mapExperimentsEnabled}
+								showTransmissionLines={mapShowTransmissionLines}
+								{transmissionLineVisibility}
+								showGolfCourses={mapShowGolfCourses}
+								scrollZoom={!isYearPlaying}
+								cooperativeGestures={!isFullscreen}
+								flyToOffsetX={0}
+								flyToOffsetY={selectedFacility ? -0.15 : 0}
+								{metricValues}
+								{metricMissingByCode}
+								{tuning}
+								onhover={(f) => (hoveredFacility = f)}
+								onclick={(f) => (clickedFacility = f)}
+								onselect={handleFacilitySelect}
+								onload={() => setTimeout(() => (mapLoaded = true), 250)}
+							/>
+						{/await}
+
+						{#if mapExperimentsEnabled}
+							<MapTuningPanel bind:tuning markerStyle={mapMarkerStyle} />
+						{/if}
+
+						<!-- Map controls -->
+						<div class="absolute top-3 right-20 z-20 flex items-center gap-2">
 							<button
 								onclick={() => {
-									yearAnimationControls?.stop();
-									showYearOverlay = false;
+									mapRef?.resetView();
+									if (selectedFacility) {
+										closeFacilityDetail();
+									}
 								}}
-								class="p-1.5 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
-								title="Close"
+								class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
+								title="Reset map to show all facilities"
 							>
-								<X class="size-3.5 text-mid-grey" />
+								Reset Map
 							</button>
-						</div>
-					</div>
-				{:else}
-					<button
-						onclick={() => {
-							showYearOverlay = true;
-							yearAnimationControls?.toggle();
-						}}
-						class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
-						title="Play year animation"
-					>
-						<Play class="size-4 text-mid-grey" />
-						<span>Play</span>
-					</button>
-				{/if}
-
-				{#if mapShowTransmissionLines}
-					<TransmissionLinesLegend
-						satelliteView={mapTheme !== 'light'}
-						visibility={transmissionLineVisibility}
-						onvisibilitychange={(v) => (transmissionLineVisibility = v)}
-					/>
-				{/if}
-
-				<!-- Facility detail panel (desktop only) -->
-				{#if isDesktop}
-					<ResizablePanel
-						open={!!selectedFacility}
-						onclose={closeFacilityDetail}
-						direction="top"
-						defaultSize={containerHeight < 650
-							? 100
-							: Math.min(100, Math.max(30, (FACILITY_PANEL_DEFAULT_PX / containerHeight) * 100))}
-						minSize={250}
-						containerSize={containerHeight}
-						class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20"
-					>
-						{#snippet header()}
-							<FacilityPanelHeader facility={selectedFacility} onclose={closeFacilityDetail} />
-						{/snippet}
-						{#snippet footer()}
-							<FacilityPanelFooter
-								owners={data.selectedFacilityOwners ?? []}
-								facilityCode={selectedFacility?.code ?? null}
+							<MapOptionsDropdown
+								{mapTheme}
+								markerStyle={mapMarkerStyle}
+								showMarkerStyleOption={mapExperimentsEnabled}
+								showTransmissionLines={mapShowTransmissionLines}
+								showGolfCourses={mapShowGolfCourses}
+								showGolfOption={showGolf}
+								showMagicIndicator={showGolf}
+								clustering={mapClustering}
+								onmapthemechange={(v) => {
+									mapTheme = v;
+									updateMapOptionsUrl();
+								}}
+								onmarkerstylechange={(v) => {
+									mapMarkerStyle = v;
+									updateMapOptionsUrl();
+								}}
+								ontransmissionlineschange={(v) => {
+									mapShowTransmissionLines = v;
+									updateMapOptionsUrl();
+								}}
+								ongolfcourseschange={(v) => {
+									mapShowGolfCourses = v;
+									updateMapOptionsUrl();
+								}}
+								onclusteringchange={(v) => {
+									mapClustering = v;
+									updateMapOptionsUrl();
+								}}
 							/>
-						{/snippet}
-						<FacilityDetailPanel
-							facility={selectedFacility}
-							{powerData}
-							fillHeight={isFullscreen}
-						/>
-					</ResizablePanel>
-				{/if}
-			</div>
-		</div>
+						</div>
 
-		<!-- Facility detail panel (mobile only - covers full section height) -->
-		{#if selectedFacility && !isDesktop}
-			<div
-				class="md:hidden absolute inset-0 w-full bg-white z-30 flex flex-col overflow-hidden"
-				transition:fly={{ y: 200, duration: 250, easing: quintOut }}
-			>
-				<FacilityPanelHeader facility={selectedFacility} onclose={closeFacilityDetail} />
+						<!-- Year animation controls -->
+						{#if showYearOverlay}
+							{@const playheadPercent =
+								playYear !== null && yearRange[1] > yearRange[0]
+									? ((playYear - yearRange[0]) / (yearRange[1] - yearRange[0])) * 100
+									: 0}
+							<div
+								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] flex flex-col gap-3"
+							>
+								<p class="text-[10px] text-mid-grey leading-tight mb-0">
+									Showing facilities connected to the grid
+								</p>
 
-				<div class="flex-1 min-h-0">
-					<FacilityDetailPanel facility={selectedFacility} {powerData} fillHeight={true} />
+								<!-- Playhead -->
+								<div class="flex flex-col gap-1.5">
+									<div class="flex items-center justify-between">
+										<span class="font-mono text-[10px] text-mid-grey">{yearRange[0]}</span>
+										<span
+											class="font-mono text-xs font-semibold"
+											class:text-dark-grey={playYear !== null}
+											class:text-transparent={playYear === null}
+										>
+											{playYear ?? yearRange[0]}
+										</span>
+										<span class="font-mono text-[10px] text-mid-grey">{yearRange[1]}</span>
+									</div>
+									<div class="relative h-1.5 w-full rounded-full bg-warm-grey">
+										{#if playYear !== null}
+											<span
+												class="absolute h-full bg-dark-grey rounded-full"
+												style="width: {playheadPercent}%"
+											></span>
+											<span
+												class="absolute top-1/2 size-3 rounded-full border-2 border-dark-grey bg-white shadow-sm pointer-events-none"
+												style="left: {playheadPercent}%; translate: -50% -50%"
+											></span>
+										{/if}
+									</div>
+								</div>
+
+								<!-- Controls -->
+								<div class="flex items-center gap-2">
+									<button
+										onclick={() => yearAnimationControls?.toggle()}
+										class="flex items-center justify-center gap-1.5 flex-1 py-1.5 rounded-lg bg-light-warm-grey hover:bg-warm-grey transition-colors cursor-pointer text-xs text-mid-grey"
+										title={isYearPlaying ? 'Pause' : 'Play'}
+									>
+										{#if isYearPlaying}
+											<Pause class="size-3" />
+											<span>Pause</span>
+										{:else}
+											<Play class="size-3" />
+											<span>Play</span>
+										{/if}
+									</button>
+									<button
+										onclick={() => {
+											yearAnimationControls?.stop();
+											showYearOverlay = false;
+										}}
+										class="p-1.5 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
+										title="Close"
+									>
+										<X class="size-3.5 text-mid-grey" />
+									</button>
+								</div>
+							</div>
+						{:else}
+							<button
+								onclick={() => {
+									showYearOverlay = true;
+									yearAnimationControls?.toggle();
+								}}
+								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
+								title="Play year animation"
+							>
+								<Play class="size-4 text-mid-grey" />
+								<span>Play</span>
+							</button>
+						{/if}
+
+						{#if mapShowTransmissionLines}
+							<TransmissionLinesLegend
+								satelliteView={mapTheme !== 'light'}
+								visibility={transmissionLineVisibility}
+								onvisibilitychange={(v) => (transmissionLineVisibility = v)}
+							/>
+						{/if}
+
+						<!-- Facility detail panel (desktop only) -->
+						{#if isDesktop}
+							<ResizablePanel
+								open={!!selectedFacility}
+								onclose={closeFacilityDetail}
+								direction="top"
+								defaultSize={containerHeight < 650
+									? 100
+									: Math.min(
+											100,
+											Math.max(30, (FACILITY_PANEL_DEFAULT_PX / containerHeight) * 100)
+										)}
+								minSize={250}
+								containerSize={containerHeight}
+								class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20"
+								dragHandleClass="bg-light-warm-grey/60"
+							>
+								{#snippet header()}
+									{#if selectedFacility}
+										{@render facilityActionBar(selectedFacility)}
+									{/if}
+									<FacilityPanelHeader facility={selectedFacility} />
+								{/snippet}
+								{#snippet footer()}
+									<FacilityPanelFooter
+										owners={data.selectedFacilityOwners ?? []}
+										facilityCode={selectedFacility?.code ?? null}
+									/>
+								{/snippet}
+								<FacilityDetailPanel
+									facility={selectedFacility}
+									{powerData}
+									fillHeight={isFullscreen}
+								/>
+							</ResizablePanel>
+						{/if}
+					</div>
 				</div>
 
-				<FacilityPanelFooter
-					owners={data.selectedFacilityOwners ?? []}
-					facilityCode={selectedFacility?.code ?? null}
-				/>
-			</div>
-		{/if}
+				<!-- Facility detail panel (mobile only - covers full section height) -->
+				{#if selectedFacility && !isDesktop}
+					<div
+						class="md:hidden absolute inset-0 w-full bg-white z-30 flex flex-col overflow-hidden"
+						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
+					>
+						{@render facilityActionBar(selectedFacility)}
+						<FacilityPanelHeader facility={selectedFacility} />
+
+						<div class="flex-1 min-h-0">
+							<FacilityDetailPanel facility={selectedFacility} {powerData} fillHeight={true} />
+						</div>
+
+						<FacilityPanelFooter
+							owners={data.selectedFacilityOwners ?? []}
+							facilityCode={selectedFacility?.code ?? null}
+						/>
+					</div>
+				{/if}
 			</div>
 
 			{#snippet footer()}

@@ -5,13 +5,8 @@
 	 * metric + per-fueltech/status unit breakdown.
 	 */
 
-	import { BookOpen, ExternalLink, Globe, X, Zap } from '@lucide/svelte';
-	import {
-		getExploreUrl,
-		groupUnits,
-		hasBidirectionalBattery,
-		filterDerivedBatteryUnits
-	} from '../_utils/units';
+	import { Battery, BookOpen, ExternalLink, Globe, Zap } from '@lucide/svelte';
+	import { groupUnits, hasBidirectionalBattery, filterDerivedBatteryUnits } from '../_utils/units';
 	import { getRegionLabel, getRegionLongLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
@@ -26,12 +21,10 @@
 	/**
 	 * @type {{
 	 *   facility: any,
-	 *   sanityFacility?: any | null,
-	 *   onclose?: () => void,
-	 *   showViewButtons?: boolean
+	 *   sanityFacility?: any | null
 	 * }}
 	 */
-	let { facility, sanityFacility = null, onclose, showViewButtons = true } = $props();
+	let { facility, sanityFacility = null } = $props();
 
 	// Mobile tap-to-toggle for the capacity breakdown (hover popover on desktop).
 	let mobileExpanded = $state(false);
@@ -84,7 +77,6 @@
 	const PILL_CLASSES =
 		'inline-flex items-center gap-1 px-2 py-1 -mr-px -mb-px text-[11px] text-dark-grey bg-white border border-warm-grey hover:bg-warm-grey hover:text-black transition-colors no-underline md:py-0.5 md:m-0 md:rounded-full';
 
-	let explorePath = $derived(getExploreUrl(facility));
 	let regionLabel = $derived(
 		facility ? getRegionLongLabel(facility.network_id, facility.network_region) : ''
 	);
@@ -100,7 +92,9 @@
 	// Top-of-stack first so icons, proportion bar, and per-group rows mirror
 	// what the chart paints on top.
 	let unitGroups = $derived(
-		facility ? sortByDetailedOrder(groupUnits(facility, { skipBattery: true }), { reverse: true }) : []
+		facility
+			? sortByDetailedOrder(groupUnits(facility, { skipBattery: true }), { reverse: true })
+			: []
 	);
 	let activeUnitGroups = $derived(
 		unitGroups.filter((/** @type {any} */ g) => g.status_id !== 'retired')
@@ -163,9 +157,7 @@
 	let displayRows = $derived.by(() => {
 		/** @type {any[]} */
 		const rows = [];
-		const hasBidirectional = unitGroups.some(
-			(/** @type {any} */ g) => g.fueltech_id === 'battery'
-		);
+		const hasBidirectional = unitGroups.some((/** @type {any} */ g) => g.fueltech_id === 'battery');
 		const hasBatteryPair =
 			!hasBidirectional &&
 			unitGroups.some((/** @type {any} */ g) => g.fueltech_id === 'battery_discharging') &&
@@ -183,10 +175,9 @@
 				isCommissioning: g.isCommissioning,
 				isRetired: g.status_id === 'retired',
 				key: `${g.fueltech_id}|||${g.status_id}`,
-				pairPosition:
-					/** @type {'top' | 'bottom' | null} */ (
-						isPair ? (g.fueltech_id === 'battery_discharging' ? 'top' : 'bottom') : null
-					)
+				pairPosition: /** @type {'top' | 'bottom' | null} */ (
+					isPair ? (g.fueltech_id === 'battery_discharging' ? 'top' : 'bottom') : null
+				)
 			});
 		}
 		return rows;
@@ -202,8 +193,7 @@
 	function splitFuelTechId(ftId) {
 		if (!ftId) return { primary: '', subtype: '' };
 		const parts = ftId.split('_');
-		const cap = (/** @type {string} */ s) =>
-			s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
+		const cap = (/** @type {string} */ s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : '');
 		return {
 			primary: cap(parts[0]),
 			subtype: parts.slice(1).map(cap).join(' ')
@@ -251,28 +241,6 @@
 					>
 						{facility.name}
 					</h2>
-
-					{#if showViewButtons}
-						<a
-							href={explorePath}
-							target="_blank"
-							rel="noopener noreferrer"
-							class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-dark-grey hover:bg-black rounded-md transition-colors no-underline hover:no-underline"
-						>
-							<ExternalLink size={12} />
-							View
-						</a>
-					{/if}
-
-					{#if onclose}
-						<button
-							onclick={onclose}
-							class="shrink-0 p-1.5 rounded-lg hover:bg-warm-grey transition-colors text-mid-grey hover:text-dark-grey cursor-pointer"
-							aria-label="Close panel"
-						>
-							<X size={18} />
-						</button>
-					{/if}
 				</div>
 
 				<div
@@ -422,7 +390,8 @@
 								class="ml-auto flex items-center gap-2 shrink-0 font-mono text-dark-grey tabular-nums"
 							>
 								{#if row.storage > 0}
-									<span>
+									<span class="inline-flex items-center gap-1" title="Storage Capacity">
+										<Battery size={11} class="text-mid-grey shrink-0" />
 										{formatValue(row.storage)}<span
 											class="ml-0.5 text-[10px] font-normal text-mid-grey">MWh</span
 										>
@@ -430,70 +399,70 @@
 									<span class="text-mid-grey">·</span>
 								{/if}
 								<span>
-									{formatValue(row.cap)}<span
-										class="ml-0.5 text-[10px] font-normal text-mid-grey">MW</span
-										>
-									</span>
-								</div>
+									{formatValue(row.cap)}<span class="ml-0.5 text-[10px] font-normal text-mid-grey"
+										>MW</span
+									>
+								</span>
 							</div>
-						{/each}
-					</div>
-				{/snippet}
-
-				<!-- Right column: headline + bar inline; rows in a hover popover when there's a breakdown -->
-				<div
-					class="min-w-0 w-full rounded-lg border border-warm-grey bg-light-warm-grey/40 p-4 md:w-[360px] md:rounded-none md:border-0 md:bg-transparent md:p-0 {activeUnitGroups.length >
-					1
-						? ''
-						: 'md:self-center'}"
-				>
-					{#if activeUnitGroups.length > 1 && totalCapacity > 0}
-						<!-- Mobile: tap to toggle inline breakdown -->
-						<div class="md:hidden">
-							<button
-								type="button"
-								class="block w-full text-left cursor-pointer"
-								onclick={() => (mobileExpanded = !mobileExpanded)}
-								aria-expanded={mobileExpanded}
-							>
-								{@render capacityHeadline()}
-								{@render proportionBar()}
-							</button>
-							{#if mobileExpanded}
-								<div class="mt-3">
-									{@render breakdownRows()}
-								</div>
-							{/if}
 						</div>
-
-						<!-- Desktop: hover popover -->
-						<div class="hidden md:block">
-							<BitsTooltip.Provider>
-								<BitsTooltip.Root delayDuration={100}>
-									<BitsTooltip.Trigger>
-										{#snippet child({ props })}
-											<div {...props} class="block w-full text-left cursor-pointer">
-												{@render capacityHeadline()}
-												{@render proportionBar()}
-											</div>
-										{/snippet}
-									</BitsTooltip.Trigger>
-									<BitsTooltip.Portal>
-										<BitsTooltip.Content sideOffset={8} side="bottom" class="z-[9999]">
-											<div
-												class="bg-white border border-mid-warm-grey/60 rounded-lg shadow-lg px-4 py-2 min-w-[360px]"
-											>
-												{@render breakdownRows()}
-											</div>
-										</BitsTooltip.Content>
-									</BitsTooltip.Portal>
-								</BitsTooltip.Root>
-							</BitsTooltip.Provider>
-						</div>
-					{:else}
-						{@render capacityHeadline()}
-					{/if}
+					{/each}
 				</div>
+			{/snippet}
+
+			<!-- Right column: headline + bar inline; rows in a hover popover when there's a breakdown -->
+			<div
+				class="min-w-0 w-full rounded-lg border border-warm-grey bg-light-warm-grey/40 p-4 md:w-[360px] md:rounded-none md:border-0 md:bg-transparent md:p-0 {activeUnitGroups.length >
+				1
+					? ''
+					: 'md:self-center'}"
+			>
+				{#if activeUnitGroups.length > 1 && totalCapacity > 0}
+					<!-- Mobile: tap to toggle inline breakdown -->
+					<div class="md:hidden">
+						<button
+							type="button"
+							class="block w-full text-left cursor-pointer"
+							onclick={() => (mobileExpanded = !mobileExpanded)}
+							aria-expanded={mobileExpanded}
+						>
+							{@render capacityHeadline()}
+							{@render proportionBar()}
+						</button>
+						{#if mobileExpanded}
+							<div class="mt-3">
+								{@render breakdownRows()}
+							</div>
+						{/if}
+					</div>
+
+					<!-- Desktop: hover popover -->
+					<div class="hidden md:block">
+						<BitsTooltip.Provider>
+							<BitsTooltip.Root delayDuration={100}>
+								<BitsTooltip.Trigger>
+									{#snippet child({ props })}
+										<div {...props} class="block w-full text-left cursor-pointer">
+											{@render capacityHeadline()}
+											{@render proportionBar()}
+										</div>
+									{/snippet}
+								</BitsTooltip.Trigger>
+								<BitsTooltip.Portal>
+									<BitsTooltip.Content sideOffset={8} side="bottom" class="z-[9999]">
+										<div
+											class="bg-white border border-mid-warm-grey/60 rounded-lg shadow-lg px-4 py-2 min-w-[360px]"
+										>
+											{@render breakdownRows()}
+										</div>
+									</BitsTooltip.Content>
+								</BitsTooltip.Portal>
+							</BitsTooltip.Root>
+						</BitsTooltip.Provider>
+					</div>
+				{:else}
+					{@render capacityHeadline()}
+				{/if}
 			</div>
-		</header>
+		</div>
+	</header>
 {/if}

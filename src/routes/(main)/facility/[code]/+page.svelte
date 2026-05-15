@@ -240,11 +240,7 @@
 
 <div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey">
 	<div class="md:sticky md:top-0 md:z-40">
-		<FacilityPanelHeader
-			facility={selectedFacility}
-			sanityFacility={data.sanityFacility}
-			showViewButtons={false}
-		/>
+		<FacilityPanelHeader facility={selectedFacility} sanityFacility={data.sanityFacility} />
 	</div>
 	{#if selectedFacility}
 		<div class="p-8 space-y-8">

@@ -16,6 +16,10 @@
 		snapThreshold = 85,
 		containerSize = 0,
 		class: className = '',
+		/** Extra classes applied to the drag-handle wrapper (the strip the
+		 *  grip pill sits in), so callers can colour the chrome band around
+		 *  the resize affordance without restyling the pill itself. */
+		dragHandleClass = '',
 		header = undefined,
 		footer = undefined,
 		children
@@ -119,7 +123,7 @@
 {#snippet dragHandle()}
 	{#if isVertical}
 		<div
-			class="shrink-0 flex items-center justify-center cursor-ns-resize select-none touch-none py-1.5 group"
+			class="shrink-0 flex items-center justify-center cursor-ns-resize select-none touch-none py-1.5 group {dragHandleClass}"
 			onpointerdown={onResizePointerDown}
 			role="separator"
 			aria-orientation="horizontal"
@@ -132,7 +136,7 @@
 		</div>
 	{:else}
 		<div
-			class="shrink-0 flex items-center justify-center cursor-ew-resize select-none touch-none px-1.5 group"
+			class="shrink-0 flex items-center justify-center cursor-ew-resize select-none touch-none px-1.5 group {dragHandleClass}"
 			onpointerdown={onResizePointerDown}
 			role="separator"
 			aria-orientation="vertical"
