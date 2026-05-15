@@ -21,7 +21,7 @@ export async function GET({ params, url, setHeaders }) {
 	// Interval and metric params (defaults: 5m, power)
 	// metric supports comma-separated values for multi-metric requests (e.g. metric=power,market_value)
 	const VALID_INTERVALS = ['5m', '1h', '1d', '7d', '1M', '3M', '1y'];
-	const VALID_METRICS = ['power', 'energy', 'market_value'];
+	const VALID_METRICS = ['power', 'energy', 'emissions', 'market_value'];
 	const intervalParam = url.searchParams.get('interval') || '5m';
 	const metricParams = (url.searchParams.get('metric') || 'power').split(',');
 
@@ -60,7 +60,12 @@ export async function GET({ params, url, setHeaders }) {
 			options.dateEnd = dateEnd;
 		}
 
-		const { response } = await client.getFacilityData(networkId, code, /** @type {any} */ (metricParams), options);
+		const { response } = await client.getFacilityData(
+			networkId,
+			code,
+			/** @type {any} */ (metricParams),
+			options
+		);
 
 		// Set cache headers (5 minutes)
 		setHeaders({

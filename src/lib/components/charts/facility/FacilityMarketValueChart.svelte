@@ -96,7 +96,7 @@
 			onzoomin={zoomIn}
 			onzoomout={zoomOut}
 			resizable
-			heightStorageKey="facility-chart-height-market-value"
+			heightStorageKey="facility-chart-height-market"
 			minHeight={120}
 			maxHeight={700}
 		>

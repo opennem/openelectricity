@@ -1,12 +1,16 @@
 <script>
 	/**
-	 * FacilityFinancialDataProvider — owns the shared state for the facility
-	 * financial charts (Price line + Market Value stacked area). Two sibling
-	 * components (`FacilityPriceChart`, `FacilityMarketValueChart`) render from
-	 * the context this provider sets up, so a single data fetch powers both.
+	 * FacilityEmissionsDataProvider — owns the shared state for the facility
+	 * emissions charts (Intensity line + Emissions Volume stacked area). Two
+	 * sibling components (`FacilityEmissionsIntensityChart`,
+	 * `FacilityEmissionsVolumeChart`) render from the context this provider sets
+	 * up, so a single data fetch powers both. The combined fetch URL
+	 * (`metric=power,market_value,emissions`) is identical to the one used by
+	 * `FacilityFinancialDataProvider`, so all four data managers across the two
+	 * providers collapse to one network round-trip per range.
 	 *
 	 * When `active` is false, no data managers are created and no fetches fire
-	 * — safe to always wrap even when financial charts are hidden.
+	 * — safe to always wrap even when emissions charts are hidden.
 	 */
 
 	import { ChartStore } from '$lib/components/charts/v2';
@@ -23,10 +27,10 @@
 	import { formatXAxis, getDayStartDates } from '$lib/components/charts/v2/formatters.js';
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
-	import { setFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
+	import { setFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
 	import { getIntervalHours } from './interval-hours.js';
 
-	const PRICE_LINE_COLOUR = '#e63946';
+	const INTENSITY_LINE_COLOUR = '#6b7280';
 
 	/**
 	 * @param {string} ftCode
@@ -37,15 +41,6 @@
 	}
 
 	/**
-	 * @typedef {Object} SummaryData
-	 * @property {any[]} mvData
-	 * @property {any[]} energyData
-	 * @property {string[]} mvSeriesNames
-	 * @property {string[]} energySeriesNames
-	 * @property {import('$lib/components/charts/v2/ChartStore.svelte.js').default} mvChartStore
-	 */
-
-	/**
 	 * @typedef {Object} Props
 	 * @property {any} facility
 	 * @property {string} timeZone
@@ -53,12 +48,11 @@
 	 * @property {string} [displayInterval]
 	 * @property {number} viewStart
 	 * @property {number} viewEnd
-	 * @property {string} [priceChartHeight]
-	 * @property {string} [mvChartHeight]
+	 * @property {string} [intensityChartHeight]
+	 * @property {string} [emissionsVolumeChartHeight]
 	 * @property {boolean} [active] - When false, skip manager instantiation (no fetch fires).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync.
-	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when a financial chart's local hover changes.
-	 * @property {((data: SummaryData) => void)} [onsummarydata]
+	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when an emissions chart's local hover changes.
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
 	 * @property {import('svelte').Snippet} [children]
 	 */
@@ -71,12 +65,11 @@
 		displayInterval = '30m',
 		viewStart,
 		viewEnd,
-		priceChartHeight = 'h-[200px]',
-		mvChartHeight = 'h-[200px]',
+		intensityChartHeight = 'h-[200px]',
+		emissionsVolumeChartHeight = 'h-[200px]',
 		active = true,
 		hoverTime = undefined,
 		onhoverchange,
-		onsummarydata,
 		onviewportchange,
 		children
 	} = $props();
@@ -108,11 +101,14 @@
 		return `${displayCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
 	}
 
-	let getMvColour = $derived.by(() => {
+	let getEmissionsColour = $derived.by(() => {
 		const colourMap = unitColours;
+		const emissionsLoadIds = loadIds.map((/** @type {string} */ id) =>
+			id.replace(/^power_/, 'emissions_')
+		);
 		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
 			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = analysis?.loadIds.includes(`market_value_${unitCode}`) ?? false;
+			const isLoad = emissionsLoadIds.includes(`emissions_${unitCode}`);
 			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
 		};
 	});
@@ -132,13 +128,13 @@
 	// ============================================
 
 	/** @type {ChartDataManager | null} */
-	let mvDataManager = $state(null);
+	let emissionsDataManager = $state(null);
 	/** @type {ChartDataManager | null} */
 	let powerDataManager = $state(null);
 
 	$effect(() => {
 		if (!active || !facility) {
-			mvDataManager = null;
+			emissionsDataManager = null;
 			return;
 		}
 
@@ -146,38 +142,38 @@
 		const currentCode = facility.code;
 		const networkId = facility.network_id;
 
-		const existing = untrack(() => mvDataManager);
+		const existing = untrack(() => emissionsDataManager);
 		if (
 			existing &&
 			existing.facilityCode === currentCode &&
 			existing.interval === currentInterval &&
-			existing.metric === 'market_value'
+			existing.metric === 'emissions'
 		) {
 			return;
 		}
 
-		// `unitOrder` and `loadIds` come from analyzeUnits as `power_…` series
-		// IDs. The MV data manager produces `market_value_…` IDs, so rewrite the
-		// prefix or processFacilityPower's `unitOrder.filter(...)` call falls
-		// through to the raw API order and the chart stack misorders.
-		const mvUnitOrder = unitOrder.map((/** @type {string} */ id) =>
-			id.replace(/^power_/, 'market_value_')
+		// `unitOrder` and `loadIds` from analyzeUnits are `power_…` series IDs.
+		// The emissions manager produces `emissions_…` IDs, so rewrite the prefix
+		// or processFacilityPower's `unitOrder.filter(...)` falls through to the
+		// raw API order and the stack misorders.
+		const emissionsUnitOrder = unitOrder.map((/** @type {string} */ id) =>
+			id.replace(/^power_/, 'emissions_')
 		);
-		const mvLoadsToInvert = loadIds.map((/** @type {string} */ id) =>
-			id.replace(/^power_/, 'market_value_')
+		const emissionsLoadsToInvert = loadIds.map((/** @type {string} */ id) =>
+			id.replace(/^power_/, 'emissions_')
 		);
 
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
 			networkId,
 			interval: currentInterval,
-			metric: 'market_value',
+			metric: 'emissions',
 			unitFuelTechMap,
-			unitOrder: mvUnitOrder,
-			loadsToInvert: mvLoadsToInvert,
+			unitOrder: emissionsUnitOrder,
+			loadsToInvert: emissionsLoadsToInvert,
 			getLabel,
-			getColour: getMvColour,
-			// Same combined URL as FacilityEmissionsDataProvider's managers so
+			getColour: getEmissionsColour,
+			// Same combined URL as FacilityFinancialDataProvider's managers so
 			// the API computes all three metrics in one query and the 5-minute
 			// HTTP cache can serve repeat fetches across providers.
 			buildFetchUrl: (params) => {
@@ -195,7 +191,7 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
-		mvDataManager = manager;
+		emissionsDataManager = manager;
 	});
 
 	$effect(() => {
@@ -228,7 +224,7 @@
 			loadsToInvert: loadIds,
 			getLabel,
 			getColour: getPowerColour,
-			// Same combined URL as FacilityEmissionsDataProvider's managers so
+			// Same combined URL as FacilityFinancialDataProvider's managers so
 			// the API computes all three metrics in one query and the 5-minute
 			// HTTP cache can serve repeat fetches across providers.
 			buildFetchUrl: (params) => {
@@ -262,7 +258,7 @@
 		const bufferedStart = start - buffer;
 		const bufferedEnd = Math.min(end + buffer, Date.now());
 
-		mvDataManager?.requestRange(bufferedStart, bufferedEnd);
+		emissionsDataManager?.requestRange(bufferedStart, bufferedEnd);
 		powerDataManager?.requestRange(bufferedStart, bufferedEnd);
 	});
 
@@ -306,15 +302,16 @@
 	}
 
 	// ============================================
-	// Derived Price Data — price = total_market_value / (total_power × interval_hours)
+	// Derived Intensity Data — intensity = (total_emissions_tonnes × 1000) / (total_power × interval_hours)
+	// Result: kgCO₂e/MWh
 	// ============================================
 
-	let priceData = $derived.by(() => {
-		if (!mvDataManager?.processedCache || !powerDataManager?.processedCache) return [];
+	let intensityData = $derived.by(() => {
+		if (!emissionsDataManager?.processedCache || !powerDataManager?.processedCache) return [];
 
-		const mvRows = getVisibleData(mvDataManager, 'sum');
+		const emissionsRows = getVisibleData(emissionsDataManager, 'sum');
 		const powerRows = getVisibleData(powerDataManager, 'mean');
-		const mvSeriesNames = mvDataManager.seriesMeta?.seriesNames ?? [];
+		const emissionsSeriesNames = emissionsDataManager.seriesMeta?.seriesNames ?? [];
 		const powerSeriesNames = powerDataManager.seriesMeta?.seriesNames ?? [];
 		const di = displayInterval;
 
@@ -329,171 +326,134 @@
 			powerMap.set(row.time, total);
 		}
 
-		return mvRows.map((row) => {
-			let mvTotal = 0;
-			for (const key of mvSeriesNames) {
+		return emissionsRows.map((row) => {
+			let emissionsTotal = 0; // tonnes CO₂e
+			for (const key of emissionsSeriesNames) {
 				const v = row[key];
-				if (typeof v === 'number' && !isNaN(v)) mvTotal += v;
+				if (typeof v === 'number' && !isNaN(v)) emissionsTotal += v;
 			}
-			const powerTotal = powerMap.get(row.time) ?? 0;
+			const powerTotal = powerMap.get(row.time) ?? 0; // MW
 			const intervalHrs = getIntervalHours(di, row.time);
-			const energy = powerTotal * intervalHrs;
+			const energyMWh = powerTotal * intervalHrs;
 			return {
 				date: row.date,
 				time: row.time,
-				price: energy > 0 ? mvTotal / energy : null
+				// tonnes → kg (×1000), divided by MWh → kgCO₂e/MWh
+				intensity: energyMWh > 0 ? (emissionsTotal * 1000) / energyMWh : null
 			};
 		});
 	});
 
 	// ============================================
-	// Summary data callback
+	// Intensity Chart Store (line chart)
 	// ============================================
 
-	$effect(() => {
-		if (!onsummarydata) return;
-		if (!mvDataManager?.processedCache || !powerDataManager?.processedCache || !mvChartStore)
-			return;
-
-		const mvRows = getVisibleData(mvDataManager, 'sum');
-		const powerRows = getVisibleData(powerDataManager, 'mean');
-		const powerSeriesNames = powerDataManager.seriesMeta?.seriesNames ?? [];
-		const di = displayInterval;
-
-		const energyRows = powerRows.map((row) => {
-			const intervalHrs = getIntervalHours(di, row.time);
-			/** @type {Record<string, any>} */
-			const energyRow = { date: row.date, time: row.time };
-			for (const key of powerSeriesNames) {
-				const energyKey = key.replace('power_', 'energy_');
-				const v = row[key];
-				energyRow[energyKey] = typeof v === 'number' ? v * intervalHrs : v;
-			}
-			return energyRow;
-		});
-		const energySeriesNames = powerSeriesNames.map((k) => k.replace('power_', 'energy_'));
-
-		onsummarydata({
-			mvData: mvRows,
-			energyData: energyRows,
-			mvSeriesNames: mvDataManager.seriesMeta?.seriesNames ?? [],
-			energySeriesNames,
-			mvChartStore
-		});
-	});
-
-	// ============================================
-	// Price Chart Store (line chart)
-	// ============================================
-
-	let priceChartStore = $derived.by(() => {
+	let intensityChartStore = $derived.by(() => {
 		if (!facility) return null;
 
 		const chart = new ChartStore({
-			key: Symbol('facility-price-chart'),
-			title: 'Price',
+			key: Symbol('facility-emissions-intensity-chart'),
+			title: 'Emissions Intensity',
 			prefix: '',
 			displayPrefix: '',
-			baseUnit: '$/MWh',
+			baseUnit: 'kgCO₂e/MWh',
 			chartType: 'line',
 			timeZone: timeZone
 		});
 
-		chart.chartStyles.chartHeightClasses = priceChartHeight;
+		chart.chartStyles.chartHeightClasses = intensityChartHeight;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.chartStyles.snapTicks = true;
 		chart.hideDataOptions = true;
 		chart.hideChartTypeOptions = true;
 		chart.useFormatY = true;
-		chart.formatY = (/** @type {number} */ d) => '$' + dollarFormatter.format(d);
+		chart.formatY = (/** @type {number} */ d) => intensityFormatter.format(d);
 
 		return chart;
 	});
 
 	$effect(() => {
-		if (!priceChartStore) return;
+		if (!intensityChartStore) return;
 
-		priceChartStore.seriesNames = ['price'];
-		priceChartStore.seriesColours = { price: PRICE_LINE_COLOUR };
-		priceChartStore.seriesLabels = { price: 'Av. Price ($/MWh)' };
-		priceChartStore.seriesData = priceData;
-		priceChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
-		priceChartStore.chartOptions.selectedCurveType = /** @type {any} */ (
+		intensityChartStore.seriesNames = ['intensity'];
+		intensityChartStore.seriesColours = { intensity: INTENSITY_LINE_COLOUR };
+		intensityChartStore.seriesLabels = { intensity: 'Emissions Intensity (kgCO₂e/MWh)' };
+		intensityChartStore.seriesData = intensityData;
+		intensityChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
+		intensityChartStore.chartOptions.selectedCurveType = /** @type {any} */ (
 			isEnergyInterval ? 'step' : 'straight'
 		);
 
-		if (isEnergyInterval && priceData.length > 1) {
-			const g = computeEnergyGridlines(priceData, viewStart, viewEnd, ianaTimeZone);
-			priceChartStore.xGridlineTicks = g.gridlineTicks;
-			priceChartStore.xTicks = g.ticks;
-			priceChartStore.formatTickX = g.formatTick;
-		} else if (priceData.length > 0) {
-			const dayStarts = getDayStartDates(priceData, ianaTimeZone, timeZone);
-			priceChartStore.xTicks = dayStarts;
-			priceChartStore.xGridlineTicks = dayStarts;
-			priceChartStore.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
+		if (isEnergyInterval && intensityData.length > 1) {
+			const g = computeEnergyGridlines(intensityData, viewStart, viewEnd, ianaTimeZone);
+			intensityChartStore.xGridlineTicks = g.gridlineTicks;
+			intensityChartStore.xTicks = g.ticks;
+			intensityChartStore.formatTickX = g.formatTick;
+		} else if (intensityData.length > 0) {
+			const dayStarts = getDayStartDates(intensityData, ianaTimeZone, timeZone);
+			intensityChartStore.xTicks = dayStarts;
+			intensityChartStore.xGridlineTicks = dayStarts;
+			intensityChartStore.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
 		}
 	});
 
 	// ============================================
-	// Market Value Chart Store (stacked area)
+	// Emissions Volume Chart Store (stacked area)
 	// ============================================
 
-	let mvChartStore = $derived.by(() => {
+	let emissionsVolumeChartStore = $derived.by(() => {
 		if (!facility) return null;
 
 		const chart = new ChartStore({
-			key: Symbol('facility-market-value-chart'),
-			title: 'Market Value',
+			key: Symbol('facility-emissions-volume-chart'),
+			title: 'Emissions',
 			prefix: '',
-			displayPrefix: 'k',
-			baseUnit: '$',
+			displayPrefix: '',
+			baseUnit: 't',
 			chartType: 'stacked-area',
 			timeZone: timeZone
 		});
 
-		chart.chartStyles.chartHeightClasses = mvChartHeight;
+		chart.chartStyles.chartHeightClasses = emissionsVolumeChartHeight;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.chartStyles.snapTicks = true;
 		chart.useFormatY = true;
-		chart.formatY = (/** @type {number} */ d) => {
-			const converted = chart.convertAndFormatValue(d);
-			return '$' + converted + chart.chartOptions.displayPrefix;
-		};
+		chart.formatY = (/** @type {number} */ d) => chart.convertAndFormatValue(d) + ' t';
 
 		return chart;
 	});
 
 	$effect(() => {
-		if (!mvChartStore || !mvDataManager?.processedCache) return;
+		if (!emissionsVolumeChartStore || !emissionsDataManager?.processedCache) return;
 
-		const processed = mvDataManager.processedCache;
-		mvChartStore.seriesNames = processed.seriesNames;
-		mvChartStore.seriesColours = processed.seriesColours;
-		mvChartStore.seriesLabels = processed.seriesLabels;
+		const processed = emissionsDataManager.processedCache;
+		emissionsVolumeChartStore.seriesNames = processed.seriesNames;
+		emissionsVolumeChartStore.seriesColours = processed.seriesColours;
+		emissionsVolumeChartStore.seriesLabels = processed.seriesLabels;
 	});
 
 	$effect(() => {
-		if (!mvChartStore || !mvDataManager?.processedCache) return;
+		if (!emissionsVolumeChartStore || !emissionsDataManager?.processedCache) return;
 
-		const visibleData = getVisibleData(mvDataManager, 'sum');
+		const visibleData = getVisibleData(emissionsDataManager, 'sum');
 
-		mvChartStore.seriesData = visibleData;
-		mvChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
-		mvChartStore.chartOptions.selectedCurveType = /** @type {any} */ (
+		emissionsVolumeChartStore.seriesData = visibleData;
+		emissionsVolumeChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
+		emissionsVolumeChartStore.chartOptions.selectedCurveType = /** @type {any} */ (
 			isEnergyInterval ? 'step' : 'straight'
 		);
 
 		if (isEnergyInterval && visibleData.length > 1) {
 			const g = computeEnergyGridlines(visibleData, viewStart, viewEnd, ianaTimeZone);
-			mvChartStore.xGridlineTicks = g.gridlineTicks;
-			mvChartStore.xTicks = g.ticks;
-			mvChartStore.formatTickX = g.formatTick;
+			emissionsVolumeChartStore.xGridlineTicks = g.gridlineTicks;
+			emissionsVolumeChartStore.xTicks = g.ticks;
+			emissionsVolumeChartStore.formatTickX = g.formatTick;
 		} else if (visibleData.length > 0) {
 			const dayStarts = getDayStartDates(visibleData, ianaTimeZone, timeZone);
-			mvChartStore.xTicks = dayStarts;
-			mvChartStore.xGridlineTicks = dayStarts;
-			mvChartStore.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
+			emissionsVolumeChartStore.xTicks = dayStarts;
+			emissionsVolumeChartStore.xGridlineTicks = dayStarts;
+			emissionsVolumeChartStore.formatTickX = (/** @type {any} */ d) =>
+				formatXAxis(d, ianaTimeZone);
 		}
 	});
 
@@ -504,8 +464,8 @@
 	let lastPanDelta = 0;
 
 	function handlePanStart() {
-		priceChartStore?.clearHover();
-		mvChartStore?.clearHover();
+		intensityChartStore?.clearHover();
+		emissionsVolumeChartStore?.clearHover();
 	}
 
 	/** @param {number} deltaMs */
@@ -530,10 +490,10 @@
 		const now = Date.now();
 
 		if (lastPanDelta < 0 && viewEnd < now) {
-			mvDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
+			emissionsDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
 			powerDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
 		} else if (lastPanDelta > 0) {
-			mvDataManager?.requestRange(viewStart - prefetch, viewStart);
+			emissionsDataManager?.requestRange(viewStart - prefetch, viewStart);
 			powerDataManager?.requestRange(viewStart - prefetch, viewStart);
 		}
 	}
@@ -567,10 +527,12 @@
 	// ============================================
 
 	let showLoadingOverlay = $derived.by(() => {
-		if (!mvDataManager || !mvChartStore) return false;
-		if (mvChartStore.seriesData.length > 0) return false;
+		if (!emissionsDataManager || !emissionsVolumeChartStore) return false;
+		if (emissionsVolumeChartStore.seriesData.length > 0) return false;
 		return (
-			!mvDataManager.initialLoadComplete || mvDataManager.isLoading || mvDataManager.hasPendingFetch
+			!emissionsDataManager.initialLoadComplete ||
+			emissionsDataManager.isLoading ||
+			emissionsDataManager.hasPendingFetch
 		);
 	});
 
@@ -578,7 +540,7 @@
 	// Tooltip formatting
 	// ============================================
 
-	const dollarFormatter = getNumberFormat(0);
+	const intensityFormatter = getNumberFormat(0);
 
 	let tooltipDateFormatter = $derived(
 		new Intl.DateTimeFormat('en-AU', {
@@ -595,13 +557,13 @@
 	 * @param {import('$lib/components/charts/v2/ChartStore.svelte.js').default} chart
 	 * @param {number} value
 	 */
-	function formatDollarValue(chart, value) {
-		return '$' + chart.convertAndFormatValue(value) + chart.chartOptions.displayPrefix;
+	function formatEmissionsValue(chart, value) {
+		return chart.convertAndFormatValue(value) + ' t';
 	}
 
 	/** @param {number} value */
-	function formatPriceValue(value) {
-		return '$' + dollarFormatter.format(value);
+	function formatIntensityValue(value) {
+		return intensityFormatter.format(value) + ' kgCO₂e/MWh';
 	}
 
 	/**
@@ -633,18 +595,21 @@
 	// Publish context (getters preserve reactivity across consumers)
 	// ============================================
 
-	setFacilityFinancialDataContext({
-		get priceChartStore() {
-			return priceChartStore;
+	setFacilityEmissionsDataContext({
+		get intensityChartStore() {
+			return intensityChartStore;
 		},
-		get mvChartStore() {
-			return mvChartStore;
+		get emissionsVolumeChartStore() {
+			return emissionsVolumeChartStore;
 		},
-		get priceLoadingRanges() {
-			return [...(mvDataManager?.loadingRanges ?? []), ...(powerDataManager?.loadingRanges ?? [])];
+		get intensityLoadingRanges() {
+			return [
+				...(emissionsDataManager?.loadingRanges ?? []),
+				...(powerDataManager?.loadingRanges ?? [])
+			];
 		},
-		get mvLoadingRanges() {
-			return mvDataManager?.loadingRanges ?? [];
+		get emissionsVolumeLoadingRanges() {
+			return emissionsDataManager?.loadingRanges ?? [];
 		},
 		get showLoadingOverlay() {
 			return showLoadingOverlay;
@@ -672,8 +637,8 @@
 		handlePanEnd,
 		handleZoom,
 		getTooltipData,
-		formatPriceValue,
-		formatDollarValue
+		formatIntensityValue,
+		formatEmissionsValue
 	});
 </script>
 

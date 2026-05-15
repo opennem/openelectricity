@@ -1,14 +1,14 @@
 <script>
 	/**
-	 * FacilityPriceChart — derived $/MWh line chart.
+	 * FacilityEmissionsVolumeChart — stacked-area chart of per-unit emissions (tCO₂e).
 	 *
-	 * Render-only consumer: all state (chart store, formatters, viewport, pan/
-	 * zoom handlers) comes from `FacilityFinancialDataProvider` via context.
-	 * Hover/focus state is local since it's per-chart.
+	 * Render-only consumer of `FacilityEmissionsDataProvider` (via context).
+	 * Hover/focus state is local (per-chart), all data / formatters / pan-zoom
+	 * flow from context.
 	 */
 
 	import { StratumChart } from '$lib/components/charts/v2';
-	import { getFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
+	import { getFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
 
 	const BUTTON_ZOOM_FACTOR = 1.5;
 
@@ -20,33 +20,33 @@
 		panZoomEngaged = $bindable(false)
 	} = $props();
 
-	const ctx = getFacilityFinancialDataContext();
+	const ctx = getFacilityEmissionsDataContext();
 
 	/**
 	 * @param {number} time
 	 * @param {string} [key]
 	 */
 	function handleHover(time, key) {
-		ctx?.priceChartStore?.setHover(time, key);
+		ctx?.emissionsVolumeChartStore?.setHover(time, key);
 		ctx?.onhoverchange?.(time);
 	}
 
 	function handleHoverEnd() {
-		ctx?.priceChartStore?.clearHover();
+		ctx?.emissionsVolumeChartStore?.clearHover();
 		ctx?.onhoverchange?.(undefined);
 	}
 
 	/** @param {number} time */
 	function handleFocus(time) {
-		ctx?.priceChartStore?.toggleFocus(time);
+		ctx?.emissionsVolumeChartStore?.toggleFocus(time);
 	}
 
-	// Destructure reactive getters at render time
-	let priceChartStore = $derived(ctx?.priceChartStore ?? null);
+	let emissionsVolumeChartStore = $derived(ctx?.emissionsVolumeChartStore ?? null);
 	let viewStart = $derived(ctx?.viewStart ?? 0);
 	let viewEnd = $derived(ctx?.viewEnd ?? 0);
 	let hasViewportHandler = $derived(ctx?.hasViewportHandler ?? false);
-	let loadingRanges = $derived(ctx?.priceLoadingRanges ?? []);
+	let loadingRanges = $derived(ctx?.emissionsVolumeLoadingRanges ?? []);
+	let showLoadingOverlay = $derived(ctx?.showLoadingOverlay ?? false);
 
 	function zoomIn() {
 		if (!ctx || !viewStart || !viewEnd) return;
@@ -64,7 +64,7 @@
 	$effect(() => {
 		if (!ctx?.onhoverchange) return;
 		const t = ctx.hoverTime;
-		const store = priceChartStore;
+		const store = emissionsVolumeChartStore;
 		if (!store) return;
 		if (store.hoverTime === t) return;
 		if (t === undefined) {
@@ -75,10 +75,10 @@
 	});
 </script>
 
-{#if ctx && priceChartStore}
+{#if ctx && emissionsVolumeChartStore}
 	<div class="group relative {showContainer ? 'rounded-lg p-4 bg-white' : ''}">
 		<StratumChart
-			chart={priceChartStore}
+			chart={emissionsVolumeChartStore}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
@@ -96,25 +96,63 @@
 			onzoomin={zoomIn}
 			onzoomout={zoomOut}
 			resizable
-			heightStorageKey="facility-chart-height-market"
+			heightStorageKey="facility-chart-height-emissions"
 			minHeight={120}
 			maxHeight={700}
 		>
 			{#snippet tooltip()}
-				{@const tip = ctx.getTooltipData(priceChartStore)}
+				{@const tip = ctx.getTooltipData(emissionsVolumeChartStore)}
 				<div class="h-[21px]">
 					{#if tip}
 						<div class="h-full flex items-center justify-end text-xs">
 							<span class="px-3 py-1 font-light bg-white/40">{tip.date}</span>
 							<div class="bg-light-warm-grey px-4 py-1 flex gap-4 items-center">
-								<span class="text-mid-grey">Av. Price</span>
-								<strong class="font-semibold">{ctx.formatPriceValue(tip.total)}/MWh</strong>
+								{#if tip.value !== undefined && tip.key}
+									<div class="flex items-center gap-2">
+										<span class="w-2.5 h-2.5 rounded-sm" style="background-color: {tip.colour}"
+										></span>
+										<span class="text-mid-grey">{tip.label}</span>
+										<strong class="font-semibold"
+											>{ctx.formatEmissionsValue(emissionsVolumeChartStore, tip.value)}</strong
+										>
+									</div>
+								{/if}
+								{#if emissionsVolumeChartStore.chartTooltips.showTotal}
+									<span class="flex items-center gap-2">
+										<span class="text-mid-grey">Total</span>
+										<strong class="font-semibold"
+											>{ctx.formatEmissionsValue(emissionsVolumeChartStore, tip.total)}</strong
+										>
+									</span>
+								{/if}
 							</div>
 						</div>
 					{/if}
 				</div>
 			{/snippet}
 		</StratumChart>
+
+		{#if showLoadingOverlay}
+			<div class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
+				<div class="flex items-center gap-3 text-mid-warm-grey">
+					<svg
+						class="animate-spin h-4 w-4"
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+					>
+						<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
+						></circle>
+						<path
+							class="opacity-75"
+							fill="currentColor"
+							d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+						></path>
+					</svg>
+					<span class="text-xs">Loading emissions data...</span>
+				</div>
+			</div>
+		{/if}
 	</div>
 {:else}
 	<div

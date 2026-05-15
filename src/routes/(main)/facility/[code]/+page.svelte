@@ -6,6 +6,9 @@
 		FacilityPriceChart,
 		FacilityMarketValueChart,
 		FacilityFinancialDataProvider,
+		FacilityEmissionsIntensityChart,
+		FacilityEmissionsVolumeChart,
+		FacilityEmissionsDataProvider,
 		FacilityPollutionPanel
 	} from '$lib/components/charts/facility';
 	import { formatDateRange } from '$lib/components/charts/v2';
@@ -22,6 +25,7 @@
 
 	import FacilityInfoPanel from './_components/FacilityInfoPanel.svelte';
 	import FacilityUnitsPanel from './_components/FacilityUnitsPanel.svelte';
+	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { createViewportSync } from './_utils/viewport-sync.js';
 	import {
 		CHARTS_FRACTION_COOKIE,
@@ -74,6 +78,17 @@
 
 	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
 
+	/** Whether any unit on this facility actually emits CO₂. Drives whether
+	 *  the Emissions card renders. Renewables/storage facilities skip the
+	 *  emissions provider entirely so no emissions-only fetch fires. */
+	let hasEmittingUnits = $derived(
+		Boolean(
+			selectedFacility?.units?.some(
+				(/** @type {any} */ u) => Number(u.emissions_factor_co2) > 0 && u.dispatch_type !== 'LOAD'
+			)
+		)
+	);
+
 	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
 	let dateRangeLabel = $derived.by(() => {
 		const start = viewStart || defaultStart;
@@ -89,8 +104,18 @@
 		hoverTime = time;
 	}
 
-	/** Shared pan/zoom engagement across the three stacked charts. */
+	/** Shared pan/zoom engagement across the stacked charts. */
 	let panZoomEngaged = $state(false);
+
+	/** Which chart of the Market pair to show. Default: price (the derived
+	 *  $/MWh line — what most viewers come to a facility page for). */
+	/** @type {'price' | 'mv'} */
+	let activeMarketTab = $state('price');
+
+	/** Which chart of the Emissions pair to show. Default: volume (per-unit
+	 *  tCO₂e stacked area — the headline emissions output). */
+	/** @type {'intensity' | 'volume'} */
+	let activeEmissionsTab = $state('volume');
 
 	/** @type {HTMLElement | undefined} */
 	let chartCardEl = $state(undefined);
@@ -165,8 +190,13 @@
 		applyMetricSwitch(range);
 	}
 
+	/** Viewport change emitted by a derived-chart provider (financial OR emissions).
+	 *  Both providers receive the same `viewStart`/`viewEnd` props and react to
+	 *  the resulting state update; the generation chart owns its own viewport
+	 *  internally so we push the new range through `sync.runSuppressed` to avoid
+	 *  an echo. */
 	/** @param {{ start: number, end: number }} range */
-	function handlePriceViewportChange(range) {
+	function handleDerivedViewportChange(range) {
 		if (sync.isSuppressed()) return;
 		viewStart = range.start;
 		viewEnd = range.end;
@@ -219,44 +249,33 @@
 	{#if selectedFacility}
 		<div class="p-8 space-y-8">
 			<div bind:this={splitContainerEl} class="flex flex-col md:flex-row min-h-0">
-			<div
-				class="md:shrink-0 md:pr-4 space-y-4 {splitDrag.isDragging
-					? ''
-					: 'md:transition-[width] md:duration-200 md:ease-out'}"
-				style:width={leftWidthPercent}
-			>
-				<div class="space-y-10">
-					{#if hasPowerData}
-						<FacilityFinancialDataProvider
-							active={true}
-							facility={selectedFacility}
-							{timeZone}
-							interval={activeInterval}
-							{displayInterval}
-							{viewStart}
-							{viewEnd}
-							{hoverTime}
-							onhoverchange={handleHoverChange}
-							onviewportchange={handlePriceViewportChange}
-						>
-							<div
-								bind:this={chartCardEl}
-								class="relative rounded-lg border border-mid-warm-grey/40 bg-white"
-							>
-								<div
-									class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-								>
-									<h3 class="text-sm font-semibold text-dark-grey m-0">Generation &amp; Market</h3>
-									<div class="flex items-center gap-3 text-xs text-mid-grey">
-										<span>{dateRangeLabel}</span>
-										<span
-											class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey uppercase tracking-wider"
-										>
-											{displayInterval}
-										</span>
+				<div
+					class="md:shrink-0 md:pr-4 space-y-4 {splitDrag.isDragging
+						? ''
+						: 'md:transition-[width] md:duration-200 md:ease-out'}"
+					style:width={leftWidthPercent}
+				>
+					<div class="space-y-10">
+						{#if hasPowerData}
+							<!-- chartCardEl wraps all three cards so the pan/zoom click-outside
+							     handler treats clicks between cards as "still engaged". -->
+							<div bind:this={chartCardEl} class="space-y-8">
+								<!-- Generation card — full width. Date range + interval badge
+								     anchor here because Generation is the primary chart. -->
+								<div class="relative rounded-lg border border-mid-warm-grey/40 bg-white">
+									<div
+										class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
+									>
+										<h3 class="text-sm font-semibold text-dark-grey m-0">Generation</h3>
+										<div class="flex items-center gap-3 text-xs text-mid-grey">
+											<span>{dateRangeLabel}</span>
+											<span
+												class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey uppercase tracking-wider"
+											>
+												{displayInterval}
+											</span>
+										</div>
 									</div>
-								</div>
-								<div class="divide-y divide-mid-warm-grey/40">
 									<FacilityChart
 										bind:this={powerChart}
 										facility={selectedFacility}
@@ -277,57 +296,133 @@
 										panZoomMode="tap-to-engage"
 										bind:panZoomEngaged
 									/>
+								</div>
 
-									{#if viewStart && viewEnd}
-										<FacilityPriceChart
-											showContainer={false}
-											panZoomMode="tap-to-engage"
-											bind:panZoomEngaged
-										/>
-										<FacilityMarketValueChart
-											showContainer={false}
-											panZoomMode="tap-to-engage"
-											bind:panZoomEngaged
-										/>
-									{/if}
+								<FacilityFinancialDataProvider
+									facility={selectedFacility}
+									{timeZone}
+									interval={activeInterval}
+									{displayInterval}
+									{viewStart}
+									{viewEnd}
+									{hoverTime}
+									onhoverchange={handleHoverChange}
+									onviewportchange={handleDerivedViewportChange}
+								>
+									<div class="relative rounded-lg border border-mid-warm-grey/40 bg-white">
+										<div
+											class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
+										>
+											<h3 class="text-sm font-semibold text-dark-grey m-0">Market</h3>
+											<SwitchTabs
+												buttons={[
+													{ label: 'Price', value: 'price' },
+													{ label: 'Market Value', value: 'mv' }
+												]}
+												selected={activeMarketTab}
+												onChange={(v) => (activeMarketTab = /** @type {'price' | 'mv'} */ (v))}
+											/>
+										</div>
+										{#if viewStart && viewEnd}
+											{#if activeMarketTab === 'price'}
+												<FacilityPriceChart
+													showContainer={false}
+													panZoomMode="tap-to-engage"
+													bind:panZoomEngaged
+												/>
+											{:else}
+												<FacilityMarketValueChart
+													showContainer={false}
+													panZoomMode="tap-to-engage"
+													bind:panZoomEngaged
+												/>
+											{/if}
+										{/if}
+									</div>
+								</FacilityFinancialDataProvider>
+
+								{#if hasEmittingUnits}
+									<!-- Hidden for non-emitting facilities so no emissions fetch fires. -->
+									<FacilityEmissionsDataProvider
+										facility={selectedFacility}
+										{timeZone}
+										interval={activeInterval}
+										{displayInterval}
+										{viewStart}
+										{viewEnd}
+										{hoverTime}
+										onhoverchange={handleHoverChange}
+										onviewportchange={handleDerivedViewportChange}
+									>
+										<div class="relative rounded-lg border border-mid-warm-grey/40 bg-white">
+											<div
+												class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
+											>
+												<h3 class="text-sm font-semibold text-dark-grey m-0">Emissions</h3>
+												<SwitchTabs
+													buttons={[
+														{ label: 'Volume', value: 'volume' },
+														{ label: 'Intensity', value: 'intensity' }
+													]}
+													selected={activeEmissionsTab}
+													onChange={(v) =>
+														(activeEmissionsTab = /** @type {'intensity' | 'volume'} */ (v))}
+												/>
+											</div>
+											{#if viewStart && viewEnd}
+												{#if activeEmissionsTab === 'volume'}
+													<FacilityEmissionsVolumeChart
+														showContainer={false}
+														panZoomMode="tap-to-engage"
+														bind:panZoomEngaged
+													/>
+												{:else}
+													<FacilityEmissionsIntensityChart
+														showContainer={false}
+														panZoomMode="tap-to-engage"
+														bind:panZoomEngaged
+													/>
+												{/if}
+											{/if}
+										</div>
+									</FacilityEmissionsDataProvider>
+								{/if}
+							</div>
+						{:else}
+							<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
+								<div
+									class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
+								>
+									<h3 class="text-sm font-semibold text-dark-grey m-0">Generation</h3>
+								</div>
+								<div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
+									<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
+										<LineChart size={24} strokeWidth={1.5} />
+									</div>
+									<p class="text-sm font-medium text-dark-grey m-0">No data available</p>
 								</div>
 							</div>
-						</FacilityFinancialDataProvider>
-					{:else}
-						<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
-							<div
-								class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-							>
-								<h3 class="text-sm font-semibold text-dark-grey m-0">Generation &amp; Market</h3>
-							</div>
-							<div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-								<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
-									<LineChart size={24} strokeWidth={1.5} />
-								</div>
-								<p class="text-sm font-medium text-dark-grey m-0">No data available</p>
-							</div>
-						</div>
-					{/if}
+						{/if}
 
-					{#if hasNpi}
-						<FacilityPollutionPanel facility={selectedFacility} />
-					{/if}
+						{#if hasNpi}
+							<FacilityPollutionPanel facility={selectedFacility} />
+						{/if}
+					</div>
 				</div>
-			</div>
 
-			{#if !isMobile}
-				<DragHandle
-					axis="x"
-					onstart={splitDrag.start}
-					active={splitDrag.isDragging}
-					class="h-auto self-stretch"
-				/>
-			{/if}
+				{#if !isMobile}
+					<DragHandle
+						axis="x"
+						onstart={splitDrag.start}
+						active={splitDrag.isDragging}
+						class="h-auto self-stretch"
+					/>
+				{/if}
 
-			<div class="flex-1 min-w-0 md:pl-4 space-y-10">
-				<FacilityInfoPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
-				<FacilityUnitsPanel facility={selectedFacility} />
-			</div>
+				<div class="flex-1 min-w-0 md:pl-4 space-y-10">
+					<FacilityInfoPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
+					<FacilityUnitsPanel facility={selectedFacility} />
+				</div>
 			</div>
 		</div>
 	{/if}

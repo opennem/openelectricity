@@ -184,7 +184,7 @@ requestRange(start, end)
 | `ondisplayintervalchange` | callback                      | Fired when display interval changes                                                                                                                                                                                                                    |
 | `showIntervalToggle`      | boolean                       | Show built-in interval toggle buttons (default: `true`)                                                                                                                                                                                                |
 | `panZoomMode`             | `'always' \| 'tap-to-engage'` | Forwarded to StratumChart. `'always'` is the default; `'tap-to-engage'` shows a "Click to enable" hint pill and gates gestures behind `panZoomEngaged`. Used on `/facility/[code]` to keep the chart from hijacking page scroll until the user opts in |
-| `panZoomEngaged`          | `boolean` (bindable)          | Engagement state for tap-to-engage mode. The facility page binds the same state across the three stacked charts (FacilityChart + FacilityPriceChart + FacilityMarketValueChart) and resets it on ESC, click-outside, or facility change                |
+| `panZoomEngaged`          | `boolean` (bindable)          | Engagement state for tap-to-engage mode. The facility page binds the same state across the visible charts (FacilityChart plus whichever of the financial/emissions tab pairs are mounted) and resets it on ESC, click-outside, or facility change      |
 
 ### Features
 
@@ -224,7 +224,7 @@ requestRange(start, end)
 
 **Tap-to-engage** (`/facility/[code]`):
 
-- Page passes `panZoomMode="tap-to-engage"` and `bind:panZoomEngaged` to all three stacked charts so a single tap engages them together (they're viewport-synced).
+- Page passes `panZoomMode="tap-to-engage"` and `bind:panZoomEngaged` to every mounted chart in the column (Generation plus the currently-visible Market and Emissions tabs) so a single tap engages them together — they're viewport-synced.
 - First tap on the chart sets `panZoomEngaged = true` and skips the usual focus-marker toggle.
 - The page's `<svelte:window onkeydown onclick>` handles ESC and click-outside, resetting the shared flag. ESC calls `preventDefault` + `stopPropagation` so it never escalates to exiting fullscreen.
 

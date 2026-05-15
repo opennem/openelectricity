@@ -1,14 +1,14 @@
 <script>
 	/**
-	 * FacilityPriceChart — derived $/MWh line chart.
+	 * FacilityEmissionsIntensityChart — derived kgCO₂e/MWh line chart.
 	 *
 	 * Render-only consumer: all state (chart store, formatters, viewport, pan/
-	 * zoom handlers) comes from `FacilityFinancialDataProvider` via context.
+	 * zoom handlers) comes from `FacilityEmissionsDataProvider` via context.
 	 * Hover/focus state is local since it's per-chart.
 	 */
 
 	import { StratumChart } from '$lib/components/charts/v2';
-	import { getFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
+	import { getFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
 
 	const BUTTON_ZOOM_FACTOR = 1.5;
 
@@ -20,33 +20,33 @@
 		panZoomEngaged = $bindable(false)
 	} = $props();
 
-	const ctx = getFacilityFinancialDataContext();
+	const ctx = getFacilityEmissionsDataContext();
 
 	/**
 	 * @param {number} time
 	 * @param {string} [key]
 	 */
 	function handleHover(time, key) {
-		ctx?.priceChartStore?.setHover(time, key);
+		ctx?.intensityChartStore?.setHover(time, key);
 		ctx?.onhoverchange?.(time);
 	}
 
 	function handleHoverEnd() {
-		ctx?.priceChartStore?.clearHover();
+		ctx?.intensityChartStore?.clearHover();
 		ctx?.onhoverchange?.(undefined);
 	}
 
 	/** @param {number} time */
 	function handleFocus(time) {
-		ctx?.priceChartStore?.toggleFocus(time);
+		ctx?.intensityChartStore?.toggleFocus(time);
 	}
 
 	// Destructure reactive getters at render time
-	let priceChartStore = $derived(ctx?.priceChartStore ?? null);
+	let intensityChartStore = $derived(ctx?.intensityChartStore ?? null);
 	let viewStart = $derived(ctx?.viewStart ?? 0);
 	let viewEnd = $derived(ctx?.viewEnd ?? 0);
 	let hasViewportHandler = $derived(ctx?.hasViewportHandler ?? false);
-	let loadingRanges = $derived(ctx?.priceLoadingRanges ?? []);
+	let loadingRanges = $derived(ctx?.intensityLoadingRanges ?? []);
 
 	function zoomIn() {
 		if (!ctx || !viewStart || !viewEnd) return;
@@ -64,7 +64,7 @@
 	$effect(() => {
 		if (!ctx?.onhoverchange) return;
 		const t = ctx.hoverTime;
-		const store = priceChartStore;
+		const store = intensityChartStore;
 		if (!store) return;
 		if (store.hoverTime === t) return;
 		if (t === undefined) {
@@ -75,10 +75,10 @@
 	});
 </script>
 
-{#if ctx && priceChartStore}
+{#if ctx && intensityChartStore}
 	<div class="group relative {showContainer ? 'rounded-lg p-4 bg-white' : ''}">
 		<StratumChart
-			chart={priceChartStore}
+			chart={intensityChartStore}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
@@ -96,19 +96,19 @@
 			onzoomin={zoomIn}
 			onzoomout={zoomOut}
 			resizable
-			heightStorageKey="facility-chart-height-market"
+			heightStorageKey="facility-chart-height-emissions"
 			minHeight={120}
 			maxHeight={700}
 		>
 			{#snippet tooltip()}
-				{@const tip = ctx.getTooltipData(priceChartStore)}
+				{@const tip = ctx.getTooltipData(intensityChartStore)}
 				<div class="h-[21px]">
 					{#if tip}
 						<div class="h-full flex items-center justify-end text-xs">
 							<span class="px-3 py-1 font-light bg-white/40">{tip.date}</span>
 							<div class="bg-light-warm-grey px-4 py-1 flex gap-4 items-center">
-								<span class="text-mid-grey">Av. Price</span>
-								<strong class="font-semibold">{ctx.formatPriceValue(tip.total)}/MWh</strong>
+								<span class="text-mid-grey">Emissions Intensity</span>
+								<strong class="font-semibold">{ctx.formatIntensityValue(tip.total)}</strong>
 							</div>
 						</div>
 					{/if}
