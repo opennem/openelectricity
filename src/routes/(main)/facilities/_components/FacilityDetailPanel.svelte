@@ -1,6 +1,6 @@
 <script>
 	import { FacilityChart, getNetworkTimezone } from '$lib/components/charts/facility';
-	import { computeMetricSwitch } from '$lib/components/charts/facility/metric-switch.js';
+	import { getHysteresisSwitch, getDisplayIntervalForDays } from '$lib/utils/metric-interval';
 	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../_utils/units';
 	import FacilityUnitsLegend from './FacilityUnitsLegend.svelte';
 
@@ -34,15 +34,15 @@
 	/** @param {{ start: number, end: number }} range */
 	function handleViewportChange(range) {
 		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
-		const next = computeMetricSwitch({
-			metric: activeMetric,
-			interval: activeInterval,
+		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
+
+		displayInterval = getDisplayIntervalForDays(
+			next?.metric ?? activeMetric,
+			next?.interval ?? activeInterval,
 			durationDays
-		});
+		);
 
-		displayInterval = next.displayInterval;
-
-		if (next.changed) {
+		if (next) {
 			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
 			metricSwitchTimer = setTimeout(() => {
 				activeMetric = next.metric;

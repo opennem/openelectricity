@@ -14,6 +14,7 @@
 	 * @property {string | null} [minDate] - Earliest selectable date
 	 * @property {string | null} [maxDate] - Latest selectable date
 	 * @property {string | null} [earliestDate] - Earliest data date (for "All" range)
+	 * @property {boolean} [showIntervalDropdown] - When false, the interval renders as a static badge instead of a Select dropdown. Default `true`.
 	 * @property {(days: number) => void} [onrangeselect]
 	 * @property {(range: {start: string, end: string}) => void} [ondaterangechange]
 	 * @property {(interval: string) => void} [onintervalchange]
@@ -29,6 +30,7 @@
 		minDate = null,
 		maxDate = null,
 		earliestDate = null,
+		showIntervalDropdown = true,
 		onrangeselect,
 		ondaterangechange,
 		onintervalchange
@@ -81,13 +83,22 @@
 	}
 </script>
 
+{#snippet intervalBadge()}
+	<span
+		class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey"
+	>
+		{currentIntervalLabel}
+	</span>
+{/snippet}
+
 <!-- Desktop layout -->
 <div class="hidden sm:flex items-center gap-1.5">
 	<!-- Range preset switcher -->
 	<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
 		{#each rangePresets as preset (preset.days)}
 			<button
-				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedRange === preset.days
+				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedRange ===
+				preset.days
 					? 'bg-white text-dark-grey shadow-sm'
 					: 'text-mid-grey hover:text-dark-grey'}"
 				onclick={() => handlePresetClick(preset.days)}
@@ -108,11 +119,14 @@
 		>
 			<Calendar size={14} />
 		</Popover.Trigger>
-		<Popover.Content sideOffset={6} class="z-50 border border-warm-grey bg-white shadow-lg p-3 rounded-xl">
+		<Popover.Content
+			sideOffset={6}
+			class="z-50 border border-warm-grey bg-white shadow-lg p-3 rounded-xl"
+		>
 			<DateRangePicker
 				bind:this={datePickerRef}
-				startDate={startDate}
-				endDate={endDate}
+				{startDate}
+				{endDate}
 				{minDate}
 				{maxDate}
 				size="sm"
@@ -123,34 +137,38 @@
 
 	<span class="text-warm-grey text-xs">|</span>
 
-	<!-- Interval dropdown -->
-	<Select.Root
-		type="single"
-		value={displayInterval}
-		onValueChange={(v) => onintervalchange?.(v)}
-		items={intervalOptions}
-	>
-		<Select.Trigger
-			class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
+	{#if showIntervalDropdown}
+		<!-- Interval dropdown -->
+		<Select.Root
+			type="single"
+			value={displayInterval}
+			onValueChange={(v) => onintervalchange?.(v)}
+			items={intervalOptions}
 		>
-			{currentIntervalLabel}
-			<ChevronDown size={12} />
-		</Select.Trigger>
-		<Select.Content
-			sideOffset={4}
-			class="z-50 border border-warm-grey bg-white shadow-lg rounded-lg p-1"
-		>
-			{#each intervalOptions as option (option.value)}
-				<Select.Item
-					value={option.value}
-					label={option.label}
-					class="px-3 py-1.5 text-xs rounded cursor-pointer outline-none transition-colors data-[highlighted]:bg-light-warm-grey data-[selected]:font-medium data-[selected]:text-dark-grey"
-				>
-					{option.label}
-				</Select.Item>
-			{/each}
-		</Select.Content>
-	</Select.Root>
+			<Select.Trigger
+				class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
+			>
+				{currentIntervalLabel}
+				<ChevronDown size={12} />
+			</Select.Trigger>
+			<Select.Content
+				sideOffset={4}
+				class="z-50 border border-warm-grey bg-white shadow-lg rounded-lg p-1"
+			>
+				{#each intervalOptions as option (option.value)}
+					<Select.Item
+						value={option.value}
+						label={option.label}
+						class="px-3 py-1.5 text-xs rounded cursor-pointer outline-none transition-colors data-[highlighted]:bg-light-warm-grey data-[selected]:font-medium data-[selected]:text-dark-grey"
+					>
+						{option.label}
+					</Select.Item>
+				{/each}
+			</Select.Content>
+		</Select.Root>
+	{:else}
+		{@render intervalBadge()}
+	{/if}
 </div>
 
 <!-- Mobile layout -->
@@ -187,32 +205,36 @@
 		</Select.Content>
 	</Select.Root>
 
-	<!-- Interval dropdown -->
-	<Select.Root
-		type="single"
-		value={displayInterval}
-		onValueChange={(v) => onintervalchange?.(v)}
-		items={intervalOptions}
-	>
-		<Select.Trigger
-			class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
+	{#if showIntervalDropdown}
+		<!-- Interval dropdown -->
+		<Select.Root
+			type="single"
+			value={displayInterval}
+			onValueChange={(v) => onintervalchange?.(v)}
+			items={intervalOptions}
 		>
-			{currentIntervalLabel}
-			<ChevronDown size={12} />
-		</Select.Trigger>
-		<Select.Content
-			sideOffset={4}
-			class="z-50 border border-warm-grey bg-white shadow-lg rounded-lg p-1"
-		>
-			{#each intervalOptions as option (option.value)}
-				<Select.Item
-					value={option.value}
-					label={option.label}
-					class="px-3 py-1.5 text-xs rounded cursor-pointer outline-none transition-colors data-[highlighted]:bg-light-warm-grey data-[selected]:font-medium data-[selected]:text-dark-grey"
-				>
-					{option.label}
-				</Select.Item>
-			{/each}
-		</Select.Content>
-	</Select.Root>
+			<Select.Trigger
+				class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
+			>
+				{currentIntervalLabel}
+				<ChevronDown size={12} />
+			</Select.Trigger>
+			<Select.Content
+				sideOffset={4}
+				class="z-50 border border-warm-grey bg-white shadow-lg rounded-lg p-1"
+			>
+				{#each intervalOptions as option (option.value)}
+					<Select.Item
+						value={option.value}
+						label={option.label}
+						class="px-3 py-1.5 text-xs rounded cursor-pointer outline-none transition-colors data-[highlighted]:bg-light-warm-grey data-[selected]:font-medium data-[selected]:text-dark-grey"
+					>
+						{option.label}
+					</Select.Item>
+				{/each}
+			</Select.Content>
+		</Select.Root>
+	{:else}
+		{@render intervalBadge()}
+	{/if}
 </div>

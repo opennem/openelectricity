@@ -537,6 +537,7 @@ A unified toolbar combining range presets, a calendar popover, and an interval d
 | `minDate`           | `string \| null`         | Earliest selectable date                                           |
 | `maxDate`           | `string \| null`         | Latest selectable date                                             |
 | `earliestDate`      | `string \| null`         | Earliest data date (used by "All" preset)                          |
+| `showIntervalDropdown` | `boolean`             | When `false`, renders the interval as a static badge instead of a Select. Default `true`. |
 | `onrangeselect`     | `(days) => void`         | Called when a range preset is clicked                              |
 | `ondaterangechange` | `({start, end}) => void` | Called when dates change via the calendar                          |
 | `onintervalchange`  | `(interval) => void`     | Called when the interval dropdown changes                          |

@@ -34,6 +34,7 @@
 		getMetricIntervalForDays,
 		getHysteresisSwitch,
 		MIN_DATE,
+		getEarliestDate,
 		getDateStartForRange,
 		getDefaultDateEnd
 	} from '../facility-explorer/_utils';
@@ -179,9 +180,7 @@
 			const preferred = preferredExamples[group];
 			const match =
 				(preferred && data.facilities.find((f) => f.code === preferred)) ??
-				data.facilities.find(
-					(f) => f.fuelTechGroup === group && f.network_id === 'NEM'
-				) ??
+				data.facilities.find((f) => f.fuelTechGroup === group && f.network_id === 'NEM') ??
 				data.facilities.find((f) => f.fuelTechGroup === group);
 			if (match) links.push({ group, code: match.code, name: match.name });
 		}
@@ -402,16 +401,7 @@
 	);
 
 	/** Earliest data date for the selected facility (for "All" range) */
-	let earliestDate = $derived.by(() => {
-		if (!selectedFacility?.units?.length) return null;
-		/** @type {string | null} */
-		let earliest = null;
-		for (const unit of selectedFacility.units) {
-			const d = unit.data_first_seen;
-			if (d && (!earliest || d < earliest)) earliest = d;
-		}
-		return earliest ? earliest.slice(0, 10) : null;
-	});
+	let earliestDate = $derived(getEarliestDate(selectedFacility?.units ?? []));
 
 	/** Guard: when true, handleViewportChange preserves selectedRange */
 	let isPresetNavigation = true;
@@ -477,276 +467,278 @@
 </svelte:head>
 
 {#if mounted}
-{#if data.error && !selectedFacility}
-	<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
-		<CircleAlert size={32} class="mb-3 text-warm-grey" />
-		<p class="text-sm font-medium text-dark-grey mb-1">Unable to load facility</p>
-		<p class="text-xs">{data.error}</p>
-	</div>
-{:else if !data.facilities.length}
-	<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
-		<CircleAlert size={32} class="mb-3 text-warm-grey" />
-		<p class="text-sm font-medium text-dark-grey mb-1">No facilities available</p>
-		<p class="text-xs">Could not load the facilities list. Please try again later.</p>
-	</div>
-{:else if selectedFacility}
-	<div class="flex flex-col h-dvh overflow-hidden">
-		<!-- Top Bar: facility nav -->
-		<div class="flex items-center px-4 py-2 border-b border-warm-grey bg-white shrink-0">
-			<div class="flex items-center w-full justify-center">
-				<button
-					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
-					onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
-					title={prevFacility?.name}
-				>
-					<IconChevronLeft class="w-8 h-8" />
-				</button>
-
-				<div class="flex-1 flex justify-center sm:flex-initial sm:flex-none">
-					<FacilitySearchPopover
-						facilities={data.facilities}
-						label={selectedFacility.name}
-						bind:open={searchOpen}
-						onselect={handleFacilitySelect}
-					/>
-				</div>
-
-				<button
-					class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
-					onclick={() => nextFacility && handleFacilitySelect(nextFacility.code)}
-					title={nextFacility?.name}
-				>
-					<IconChevronLeft class="w-8 h-8 rotate-180" />
-				</button>
-			</div>
-
-			{#if quickLinks.length > 0}
-				<div class="ml-auto shrink-0">
-					<FormSelect
-						selected=""
-						options={quickLinks.map((l) => ({ label: groupLabels[l.group], value: l.code }))}
-						formLabel="Examples"
-						widthClass="w-auto"
-						paddingX="px-3"
-						paddingY="py-1.5"
-						onchange={(opt) => handleFacilitySelect(/** @type {string} */ (opt.value))}
-					/>
-				</div>
-			{/if}
+	{#if data.error && !selectedFacility}
+		<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
+			<CircleAlert size={32} class="mb-3 text-warm-grey" />
+			<p class="text-sm font-medium text-dark-grey mb-1">Unable to load facility</p>
+			<p class="text-xs">{data.error}</p>
 		</div>
-
-		<!-- Controls bar -->
-		<div class="flex items-center px-4 py-3 gap-4 border-b border-warm-grey bg-white shrink-0">
-			<!-- Range: Switch on desktop, dropdown on mobile -->
-			<div class="hidden sm:block">
-				<Switch
-					buttons={rangeButtons}
-					selected={String(selectedRange ?? '')}
-					onchange={(d) => handleRangeSelect(parseInt(d.value, 10))}
-					xPad={6}
-					yPad={3}
-					textSize="xs"
-					roundedSize="lg"
-				/>
-			</div>
-			<div class="sm:hidden">
-				<FormSelect
-					selected={String(selectedRange ?? '')}
-					options={rangeButtons.map((b) => ({ label: b.label, value: b.value }))}
-					widthClass="w-auto"
-					paddingX="px-4"
-					paddingY="py-3"
-					onchange={(opt) => handleRangeSelect(parseInt(/** @type {string} */ (opt.value), 10))}
-				/>
-			</div>
-
-			<div class="w-px h-6 bg-warm-grey"></div>
-
-			<!-- Date range picker popover -->
-			<div class="relative" use:clickoutside onclickoutside={() => (datePickerOpen = false)}>
-				<button
-					class="flex items-center px-4 py-3 rounded-lg hover:bg-warm-grey"
-					onclick={() => (datePickerOpen = !datePickerOpen)}
-				>
-					<Calendar size={18} class="text-mid-grey" />
-				</button>
-
-				{#if datePickerOpen}
-					<div
-						class="border border-mid-grey bg-white absolute top-14 left-1/2 -translate-x-1/2 rounded-lg z-50 shadow-md p-4 w-[220px]"
-						in:fly={{ y: -5, duration: 150 }}
-						out:fly={{ y: -5, duration: 150 }}
+	{:else if !data.facilities.length}
+		<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
+			<CircleAlert size={32} class="mb-3 text-warm-grey" />
+			<p class="text-sm font-medium text-dark-grey mb-1">No facilities available</p>
+			<p class="text-xs">Could not load the facilities list. Please try again later.</p>
+		</div>
+	{:else if selectedFacility}
+		<div class="flex flex-col h-dvh overflow-hidden">
+			<!-- Top Bar: facility nav -->
+			<div class="flex items-center px-4 py-2 border-b border-warm-grey bg-white shrink-0">
+				<div class="flex items-center w-full justify-center">
+					<button
+						class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
+						onclick={() => prevFacility && handleFacilitySelect(prevFacility.code)}
+						title={prevFacility?.name}
 					>
-						<DateRangePicker
-							bind:this={datePickerRef}
-							startDate={dateStart}
-							endDate={dateEnd}
-							minDate={MIN_DATE}
-							{maxDate}
-							size="sm"
-							inlineCalendar
-							onchange={(range) => {
-								handleDateRangeChange(range);
-								datePickerOpen = false;
-							}}
+						<IconChevronLeft class="w-8 h-8" />
+					</button>
+
+					<div class="flex-1 flex justify-center sm:flex-initial sm:flex-none">
+						<FacilitySearchPopover
+							facilities={data.facilities}
+							label={selectedFacility.name}
+							bind:open={searchOpen}
+							onselect={handleFacilitySelect}
+						/>
+					</div>
+
+					<button
+						class="p-1 rounded-lg hover:bg-warm-grey text-dark-grey transition-colors"
+						onclick={() => nextFacility && handleFacilitySelect(nextFacility.code)}
+						title={nextFacility?.name}
+					>
+						<IconChevronLeft class="w-8 h-8 rotate-180" />
+					</button>
+				</div>
+
+				{#if quickLinks.length > 0}
+					<div class="ml-auto shrink-0">
+						<FormSelect
+							selected=""
+							options={quickLinks.map((l) => ({ label: groupLabels[l.group], value: l.code }))}
+							formLabel="Examples"
+							widthClass="w-auto"
+							paddingX="px-3"
+							paddingY="py-1.5"
+							onchange={(opt) => handleFacilitySelect(/** @type {string} */ (opt.value))}
 						/>
 					</div>
 				{/if}
 			</div>
 
-			<div class="w-px h-6 bg-warm-grey"></div>
-
-			<!-- Interval dropdown -->
-			<FormSelect
-				selected={displayInterval}
-				options={intervalOptions}
-				widthClass="w-auto"
-				paddingX="px-4"
-				paddingY="py-3"
-				onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
-			/>
-
-			<div class="w-px h-6 bg-warm-grey"></div>
-
-			<!-- Chart/Data toggle -->
-			<SwitchWithIcons
-				buttons={viewButtons}
-				selected={activeView}
-				onchange={(d) => {
-					activeView = /** @type {'chart' | 'data'} */ (d.value);
-				}}
-			/>
-		</div>
-
-		<!-- Scrollable content area -->
-		<div class="flex-1 overflow-y-auto min-h-0">
-			<!-- Metrics panel -->
-			<div class="px-4 pt-2">
-				<div class="bg-light-warm-grey/30 rounded-xl p-4">
-					<FacilityMetrics
-						facility={selectedFacility}
-						sanityFacility={data.sanityFacility}
-						{summaryData}
-						intervalData={tableData}
-						{timeZone}
+			<!-- Controls bar -->
+			<div class="flex items-center px-4 py-3 gap-4 border-b border-warm-grey bg-white shrink-0">
+				<!-- Range: Switch on desktop, dropdown on mobile -->
+				<div class="hidden sm:block">
+					<Switch
+						buttons={rangeButtons}
+						selected={String(selectedRange ?? '')}
+						onchange={(d) => handleRangeSelect(parseInt(d.value, 10))}
+						xPad={6}
+						yPad={3}
+						textSize="xs"
+						roundedSize="lg"
 					/>
 				</div>
+				<div class="sm:hidden">
+					<FormSelect
+						selected={String(selectedRange ?? '')}
+						options={rangeButtons.map((b) => ({ label: b.label, value: b.value }))}
+						widthClass="w-auto"
+						paddingX="px-4"
+						paddingY="py-3"
+						onchange={(opt) => handleRangeSelect(parseInt(/** @type {string} */ (opt.value), 10))}
+					/>
+				</div>
+
+				<div class="w-px h-6 bg-warm-grey"></div>
+
+				<!-- Date range picker popover -->
+				<div class="relative" use:clickoutside onclickoutside={() => (datePickerOpen = false)}>
+					<button
+						class="flex items-center px-4 py-3 rounded-lg hover:bg-warm-grey"
+						onclick={() => (datePickerOpen = !datePickerOpen)}
+					>
+						<Calendar size={18} class="text-mid-grey" />
+					</button>
+
+					{#if datePickerOpen}
+						<div
+							class="border border-mid-grey bg-white absolute top-14 left-1/2 -translate-x-1/2 rounded-lg z-50 shadow-md p-4 w-[220px]"
+							in:fly={{ y: -5, duration: 150 }}
+							out:fly={{ y: -5, duration: 150 }}
+						>
+							<DateRangePicker
+								bind:this={datePickerRef}
+								startDate={dateStart}
+								endDate={dateEnd}
+								minDate={MIN_DATE}
+								{maxDate}
+								size="sm"
+								inlineCalendar
+								onchange={(range) => {
+									handleDateRangeChange(range);
+									datePickerOpen = false;
+								}}
+							/>
+						</div>
+					{/if}
+				</div>
+
+				<div class="w-px h-6 bg-warm-grey"></div>
+
+				<!-- Interval dropdown -->
+				<FormSelect
+					selected={displayInterval}
+					options={intervalOptions}
+					widthClass="w-auto"
+					paddingX="px-4"
+					paddingY="py-3"
+					onchange={(opt) => handleIntervalChange(/** @type {string} */ (opt.value))}
+				/>
+
+				<div class="w-px h-6 bg-warm-grey"></div>
+
+				<!-- Chart/Data toggle -->
+				<SwitchWithIcons
+					buttons={viewButtons}
+					selected={activeView}
+					onchange={(d) => {
+						activeView = /** @type {'chart' | 'data'} */ (d.value);
+					}}
+				/>
 			</div>
 
-			<!-- Chart / Data -->
-			<div class="p-4">
-				<!-- Chart (always rendered, hidden when data view active) -->
-				<div class="grid min-h-full" class:hidden={activeView !== 'chart'}>
-					<div class="flex">
-						<!-- Charts (left) -->
-						<div class="flex-1 min-w-0">
-							<div class="bg-light-warm-grey/30 rounded-xl p-4">
-								<FacilityChart
-									bind:this={chartComponent}
-									facility={selectedFacility}
-									powerData={data.powerData}
-									{timeZone}
-									{dateStart}
-									{dateEnd}
-									interval={activeInterval}
-									metric={activeMetric}
-									{displayInterval}
-									onviewportchange={handleViewportChange}
-									onvisibledata={handleVisibleData}
-								/>
+			<!-- Scrollable content area -->
+			<div class="flex-1 overflow-y-auto min-h-0">
+				<!-- Metrics panel -->
+				<div class="px-4 pt-2">
+					<div class="bg-light-warm-grey/30 rounded-xl p-4">
+						<FacilityMetrics
+							facility={selectedFacility}
+							sanityFacility={data.sanityFacility}
+							{summaryData}
+							intervalData={tableData}
+							{timeZone}
+						/>
+					</div>
+				</div>
 
-								{#if currentViewStart && currentViewEnd}
-									<div class="mt-4">
-										<FacilityPriceChart
+				<!-- Chart / Data -->
+				<div class="p-4">
+					<!-- Chart (always rendered, hidden when data view active) -->
+					<div class="grid min-h-full" class:hidden={activeView !== 'chart'}>
+						<div class="flex">
+							<!-- Charts (left) -->
+							<div class="flex-1 min-w-0">
+								<div class="bg-light-warm-grey/30 rounded-xl p-4">
+									<FacilityChart
+										bind:this={chartComponent}
+										facility={selectedFacility}
+										powerData={data.powerData}
+										{timeZone}
+										{dateStart}
+										{dateEnd}
+										interval={activeInterval}
+										metric={activeMetric}
+										{displayInterval}
+										onviewportchange={handleViewportChange}
+										onvisibledata={handleVisibleData}
+									/>
+
+									{#if currentViewStart && currentViewEnd}
+										<div class="mt-4">
+											<FacilityPriceChart
+												facility={selectedFacility}
+												{timeZone}
+												interval={activeInterval}
+												{displayInterval}
+												viewStart={currentViewStart}
+												viewEnd={currentViewEnd}
+												onsummarydata={(d) => {
+													summaryData = d;
+												}}
+												onviewportchange={(range) =>
+													chartComponent?.setViewport(range.start, range.end)}
+											/>
+										</div>
+									{/if}
+								</div>
+							</div>
+
+							<!-- Drag handle -->
+							<DragHandle axis="x" onstart={tableResize.start} active={tableResize.isDragging} />
+
+							<!-- Summary table (right) -->
+							<div class="shrink-0 overflow-y-auto" style="width: {tableResize.value}px;">
+								{#if summaryData && selectedFacility}
+									<div class="border border-warm-grey rounded-lg">
+										<FacilitySummaryTable
 											facility={selectedFacility}
+											mvData={summaryData.mvData}
+											energyData={summaryData.energyData}
+											mvSeriesNames={summaryData.mvSeriesNames}
+											energySeriesNames={summaryData.energySeriesNames}
+											mvChartStore={summaryData.mvChartStore}
+											{unitColours}
 											{timeZone}
-											interval={activeInterval}
-											{displayInterval}
-											viewStart={currentViewStart}
-											viewEnd={currentViewEnd}
-											onsummarydata={(d) => { summaryData = d; }}
-											onviewportchange={(range) => chartComponent?.setViewport(range.start, range.end)}
 										/>
+									</div>
+								{:else}
+									<div class="flex items-center justify-center h-full text-xs text-mid-grey">
+										Loading summary...
 									</div>
 								{/if}
 							</div>
 						</div>
-
-						<!-- Drag handle -->
-						<DragHandle axis="x" onstart={tableResize.start} active={tableResize.isDragging} />
-
-						<!-- Summary table (right) -->
-						<div
-							class="shrink-0 overflow-y-auto"
-							style="width: {tableResize.value}px;"
-						>
-							{#if summaryData && selectedFacility}
-								<div class="border border-warm-grey rounded-lg">
-									<FacilitySummaryTable
-										facility={selectedFacility}
-										mvData={summaryData.mvData}
-										energyData={summaryData.energyData}
-										mvSeriesNames={summaryData.mvSeriesNames}
-										energySeriesNames={summaryData.energySeriesNames}
-										mvChartStore={summaryData.mvChartStore}
-										{unitColours}
-										{timeZone}
-									/>
-								</div>
-							{:else}
-								<div class="flex items-center justify-center h-full text-xs text-mid-grey">
-									Loading summary...
-								</div>
-							{/if}
-						</div>
 					</div>
-				</div>
 
-				<!-- Data table -->
-				<div class:hidden={activeView !== 'data'}>
-					{#if tableData}
-						<div class="border border-warm-grey rounded-lg overflow-y-auto">
-							<FacilityDataTable
-								data={tableData.data}
-								seriesNames={tableData.seriesNames}
-								seriesLabels={tableData.seriesLabels}
-								{timeZone}
-							/>
-						</div>
-					{:else}
-						<div class="flex items-center justify-center py-16 text-sm text-mid-grey">
-							Loading data...
-						</div>
-					{/if}
+					<!-- Data table -->
+					<div class:hidden={activeView !== 'data'}>
+						{#if tableData}
+							<div class="border border-warm-grey rounded-lg overflow-y-auto">
+								<FacilityDataTable
+									data={tableData.data}
+									seriesNames={tableData.seriesNames}
+									seriesLabels={tableData.seriesLabels}
+									{timeZone}
+								/>
+							</div>
+						{:else}
+							<div class="flex items-center justify-center py-16 text-sm text-mid-grey">
+								Loading data...
+							</div>
+						{/if}
+					</div>
 				</div>
 			</div>
 		</div>
-	</div>
-{:else}
-	<!-- Empty State -->
-	<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
-		<SearchX size={32} class="mb-3 text-warm-grey" />
-		<p class="text-sm mb-6">Select a facility to view its detail.</p>
+	{:else}
+		<!-- Empty State -->
+		<div class="flex flex-col h-dvh items-center justify-center text-mid-grey">
+			<SearchX size={32} class="mb-3 text-warm-grey" />
+			<p class="text-sm mb-6">Select a facility to view its detail.</p>
 
-		{#if quickLinks.length > 0}
-			<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-lg">
-				{#each quickLinks as link (link.group)}
-					<button
-						class="flex items-center gap-2.5 px-4 py-3 rounded-lg border border-warm-grey bg-white hover:border-mid-grey transition-colors text-left"
-						onclick={() => handleFacilitySelect(link.code)}
-					>
-						<span
-							class="size-3 rounded-full shrink-0"
-							style="background-color: {groupColours[link.group]}"
-						></span>
-						<div class="min-w-0">
-							<span class="block text-xs font-semibold text-dark-grey">{groupLabels[link.group]}</span>
-							<span class="block text-xxs text-mid-grey truncate">{link.name}</span>
-						</div>
-					</button>
-				{/each}
-			</div>
-		{/if}
-	</div>
-{/if}
+			{#if quickLinks.length > 0}
+				<div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-lg">
+					{#each quickLinks as link (link.group)}
+						<button
+							class="flex items-center gap-2.5 px-4 py-3 rounded-lg border border-warm-grey bg-white hover:border-mid-grey transition-colors text-left"
+							onclick={() => handleFacilitySelect(link.code)}
+						>
+							<span
+								class="size-3 rounded-full shrink-0"
+								style="background-color: {groupColours[link.group]}"
+							></span>
+							<div class="min-w-0">
+								<span class="block text-xs font-semibold text-dark-grey"
+									>{groupLabels[link.group]}</span
+								>
+								<span class="block text-xxs text-mid-grey truncate">{link.name}</span>
+							</div>
+						</button>
+					{/each}
+				</div>
+			{/if}
+		</div>
+	{/if}
 {/if}

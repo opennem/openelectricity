@@ -1,11 +1,13 @@
 /**
- * Date-range utilities for Facility Explorer.
+ * Date-range utilities for facility-style time-series charts.
  *
- * Provides constants and helpers for computing default date ranges
- * from facility units and range presets.
+ * Constants and helpers for computing default date ranges from facility
+ * units and range presets. Lives in `$lib/utils/` so any chart route can
+ * consume the same logic; callers today: `/studio/facility-explorer`,
+ * `/studio/facility-detail`, `/facility/[code]`.
  */
 
-/** Earliest selectable date */
+/** Earliest selectable date across the data set. */
 export const MIN_DATE = '1998-12-01';
 
 /**

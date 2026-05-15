@@ -11,7 +11,7 @@
 		FacilityEmissionsDataProvider,
 		FacilityPollutionPanel
 	} from '$lib/components/charts/facility';
-	import { formatDateRange } from '$lib/components/charts/v2';
+	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
 	import {
 		hasBidirectionalBattery,
@@ -19,7 +19,12 @@
 	} from '../../facilities/_utils/units';
 	import isCommissioningCheck from '../../facilities/_utils/is-commissioning';
 
-	import { computeMetricSwitch } from '$lib/components/charts/facility/metric-switch.js';
+	import {
+		getMetricIntervalForDays,
+		getHysteresisSwitch,
+		getDisplayIntervalForDays
+	} from '$lib/utils/metric-interval';
+	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
 	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 
@@ -117,6 +122,24 @@
 	/** @type {'intensity' | 'volume'} */
 	let activeEmissionsTab = $state('volume');
 
+	/** Currently selected range preset in days (-1 = All). null when a custom
+	 *  date range is in use or the user has panned/zoomed off any preset. */
+	/** @type {number | null} */
+	let selectedRange = $state(data.rangeDays ?? 7);
+
+	/** Earliest data point across the facility's units, used as the floor for
+	 *  the date picker and the "All" preset. */
+	let earliestDate = $derived(getEarliestDate(selectedFacility?.units ?? []));
+
+	/** Latest selectable date — today, or retiredEndMs for retired facilities. */
+	let maxDate = $derived(toDateString(defaultEnd));
+
+	/** Track the live viewport so the calendar popover always reflects what's
+	 *  currently visible (falls back to the default range before the chart
+	 *  reports its first viewport). */
+	let pickerStartDate = $derived(toDateString(viewStart || defaultStart));
+	let pickerEndDate = $derived(toDateString(viewEnd || defaultEnd));
+
 	/** @type {HTMLElement | undefined} */
 	let chartCardEl = $state(undefined);
 
@@ -165,18 +188,24 @@
 		panZoomEngaged = false;
 	});
 
+	const DAY_MS = 24 * 60 * 60 * 1000;
+
+	/** Hysteresis-aware metric/interval switching for pan/zoom — keeps the
+	 *  current axis where it is unless duration crosses a 13/15-day (and
+	 *  300/365-day, 1500/1825-day) threshold. Display interval is recomputed
+	 *  every tick from the (possibly newly-targeted) metric/interval. */
 	/** @param {{ start: number, end: number }} range */
 	function applyMetricSwitch(range) {
-		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
-		const next = computeMetricSwitch({
-			metric: activeMetric,
-			interval: activeInterval,
+		const durationDays = (range.end - range.start) / DAY_MS;
+		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
+
+		displayInterval = getDisplayIntervalForDays(
+			next?.metric ?? activeMetric,
+			next?.interval ?? activeInterval,
 			durationDays
-		});
+		);
 
-		displayInterval = next.displayInterval;
-
-		if (next.changed) {
+		if (next) {
 			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
 			metricSwitchTimer = setTimeout(() => {
 				activeMetric = next.metric;
@@ -185,11 +214,52 @@
 		}
 	}
 
+	/** Explicit range selection (preset or custom dates) — memoryless, no
+	 *  debounce. Picks the metric/interval directly from duration and tells
+	 *  the chart to refetch via the existing FacilityChart.setViewport(). */
+	/** @param {number} startMs @param {number} endMs @param {number} days */
+	function applyRangeSwitch(startMs, endMs, days) {
+		const mi = getMetricIntervalForDays(days);
+		activeMetric = mi.metric;
+		activeInterval = mi.interval;
+		displayInterval = getDisplayIntervalForDays(mi.metric, mi.interval, days);
+		viewStart = startMs;
+		viewEnd = endMs;
+		if (powerChart) {
+			sync.runSuppressed(() => powerChart?.setViewport(startMs, endMs));
+		}
+	}
+
+	/** @param {number} days */
+	function handleRangeSelect(days) {
+		selectedRange = days;
+		const endMs = defaultEnd;
+		let actualDays = days;
+		if (days === -1) {
+			const earliestMs = earliestDate
+				? new Date(earliestDate).getTime()
+				: new Date(MIN_DATE).getTime();
+			actualDays = Math.max(1, Math.ceil((endMs - earliestMs) / DAY_MS));
+		}
+		const startMs = endMs - actualDays * DAY_MS;
+		applyRangeSwitch(startMs, endMs, actualDays);
+	}
+
+	/** @param {{ start: string, end: string }} range */
+	function handleDateRangeChange(range) {
+		selectedRange = null;
+		const startMs = new Date(range.start).getTime();
+		const endMs = new Date(range.end).getTime();
+		const days = Math.max(1, Math.ceil((endMs - startMs) / DAY_MS));
+		applyRangeSwitch(startMs, endMs, days);
+	}
+
 	/** @param {{ start: number, end: number }} range */
 	function handlePowerViewportChange(range) {
 		if (sync.isSuppressed()) return;
 		viewStart = range.start;
 		viewEnd = range.end;
+		selectedRange = null;
 		applyMetricSwitch(range);
 	}
 
@@ -203,6 +273,7 @@
 		if (sync.isSuppressed()) return;
 		viewStart = range.start;
 		viewEnd = range.end;
+		selectedRange = null;
 		applyMetricSwitch(range);
 		if (powerChart) {
 			sync.runSuppressed(() => powerChart?.setViewport(range.start, range.end));
@@ -264,24 +335,44 @@
 				>
 					<div class="space-y-10">
 						{#if hasPowerData}
-							<!-- chartCardEl wraps all three cards so the pan/zoom click-outside
-							     handler treats clicks between cards as "still engaged". -->
+							<!-- Range/date picker — sits outside chartCardEl so clicking the
+							     bar disengages tap-to-engage pan/zoom (deliberate: choosing a
+							     new range is a different interaction modality from chart
+							     manipulation). -->
+							<div class="flex items-center justify-between gap-4 flex-wrap">
+								<span class="text-xs font-medium text-dark-grey">{dateRangeLabel}</span>
+								<ChartRangeBar
+									{selectedRange}
+									{activeMetric}
+									{displayInterval}
+									startDate={pickerStartDate}
+									endDate={pickerEndDate}
+									minDate={MIN_DATE}
+									{maxDate}
+									{earliestDate}
+									showIntervalDropdown={false}
+									onrangeselect={handleRangeSelect}
+									ondaterangechange={handleDateRangeChange}
+								/>
+							</div>
+
+							<!-- chartCardEl wraps the chart cards (not the range bar) so
+							     pan/zoom click-outside detection treats clicks between cards
+							     as "still engaged" but disengages on a range-bar click. -->
 							<div bind:this={chartCardEl} class="space-y-8">
-								<!-- Generation card — full width. Date range + interval badge
-								     anchor here because Generation is the primary chart. -->
+								<!-- Generation card — full width. The interval badge stays here
+								     as the per-chart aggregation cue; the shared date range
+								     lives in the bar above. -->
 								<div class="relative rounded-lg border border-mid-warm-grey/40 bg-white">
 									<div
 										class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
 									>
 										<h3 class="text-sm font-semibold text-dark-grey m-0">Generation</h3>
-										<div class="flex items-center gap-3 text-xs text-mid-grey">
-											<span>{dateRangeLabel}</span>
-											<span
-												class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey uppercase tracking-wider"
-											>
-												{displayInterval}
-											</span>
-										</div>
+										<span
+											class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey text-xs uppercase tracking-wider"
+										>
+											{displayInterval}
+										</span>
 									</div>
 									<FacilityChart
 										bind:this={powerChart}
