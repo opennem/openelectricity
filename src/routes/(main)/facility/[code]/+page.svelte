@@ -124,6 +124,9 @@
 	let splitContainerEl = $state(undefined);
 	let isMobile = $state(false);
 
+	/** Measured live so both columns can stick just below the header. */
+	let headerHeight = $state(0);
+
 	const splitDrag = createDragHandler({
 		axis: 'x',
 		min: CHARTS_FRACTION_MIN,
@@ -239,14 +242,22 @@
 </svelte:head>
 
 <div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey">
-	<div class="md:sticky md:top-0 md:z-40">
+	<div class="md:sticky md:top-0 md:z-40" bind:clientHeight={headerHeight}>
 		<FacilityPanelHeader facility={selectedFacility} sanityFacility={data.sanityFacility} />
 	</div>
 	{#if selectedFacility}
 		<div class="p-8 space-y-8">
-			<div bind:this={splitContainerEl} class="flex flex-col md:flex-row min-h-0">
+			<!-- md:items-start keeps the columns at their natural heights — flex's
+			     default `stretch` align would equalise them and leave sticky no
+			     room to slide. --col-top hoists the sticky-top expression out of
+			     the per-column class strings so both stay in lockstep. -->
+			<div
+				bind:this={splitContainerEl}
+				class="flex flex-col md:flex-row md:items-start min-h-0"
+				style="--hdr-h: {headerHeight}px; --col-top: calc(var(--hdr-h) + 2rem);"
+			>
 				<div
-					class="md:shrink-0 md:pr-4 space-y-4 {splitDrag.isDragging
+					class="md:shrink-0 md:pr-4 md:sticky md:top-[var(--col-top)] space-y-4 {splitDrag.isDragging
 						? ''
 						: 'md:transition-[width] md:duration-200 md:ease-out'}"
 					style:width={leftWidthPercent}
@@ -415,7 +426,7 @@
 					/>
 				{/if}
 
-				<div class="flex-1 min-w-0 md:pl-4 space-y-10">
+				<div class="flex-1 min-w-0 md:pl-4 md:sticky md:top-[var(--col-top)] space-y-10">
 					<FacilityInfoPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
 					<FacilityUnitsPanel facility={selectedFacility} />
 				</div>
