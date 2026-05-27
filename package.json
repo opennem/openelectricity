@@ -69,18 +69,6 @@
 	},
 	"private": true,
 	"packageManager": "pnpm@11.1.1",
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"@clerk/shared",
-			"browser-tabs-lock",
-			"bufferutil",
-			"core-js",
-			"esbuild",
-			"sharp",
-			"utf-8-validate",
-			"workerd"
-		]
-	},
 	"scripts": {
 		"dev": "vite dev",
 		"doppler-dev": "doppler run -- vite dev",
