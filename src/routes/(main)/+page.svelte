@@ -27,26 +27,11 @@
 	let homepageData = $derived(data.homepageData);
 	let renewablesInput = $derived(data.renewablesInput?.data ?? null);
 	let renewablesError = $derived(data.renewablesInput?.error ?? null);
-	let renewablesRawPayloads = $derived(data.renewablesInput?.rawPayloads ?? null);
 
 	$effect(() => {
 		if (browser && renewablesError) showToast(renewablesError);
 	});
 
-	$effect(() => {
-		if (!browser || !renewablesRawPayloads) return;
-		/** @param {string} label @param {{ call: any, response: any }} entry */
-		function logCall(label, entry) {
-			const { method, network, metrics, options } = entry.call;
-			const args = [JSON.stringify(network), JSON.stringify(metrics), JSON.stringify(options)].join(
-				', '
-			);
-			console.log(`[OE API] ${label} — client.${method}(${args})`, entry.response);
-		}
-		logCall('generation_renewable_energy', renewablesRawPayloads.generationRenewableEnergy);
-		logCall('demand_gross_energy', renewablesRawPayloads.demandGrossEnergy);
-		logCall('energy by renewable grouping', renewablesRawPayloads.renewableGrouping);
-	});
 	let articles = $derived(data.articles);
 	let flows = $derived(data.flows);
 	let prices = $derived(data.prices);

@@ -2,7 +2,7 @@ import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 
 import { transformOeToStatsData } from './transform';
-import energyParser from '$lib/opennem/parser';
+import { fetchLegacyOpenNemFueltechStats } from './fetch-legacy-energy.server';
 
 const oe = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -13,29 +13,6 @@ const oe = new OpenElectricityClient({
 // 2000-01-01 keeps us comfortably inside that window and matches the
 // infographic's x-axis which already starts at year 2000.
 const RENEWABLES_DATE_START = '2000-01-01';
-
-/**
- * Fetch the legacy OpenNEM static-JSON energy data and parse it the same way
- * the homepage used to before the OE-API migration. Used as a baseline data
- * source in the calculation-method dropdown.
- *
- * @param {typeof fetch} fetchFn
- * @returns {Promise<StatsData[]>}
- */
-async function fetchLegacyOpenNemFueltechStats(fetchFn) {
-	try {
-		const res = await fetchFn('/api/energy');
-		if (!res.ok) {
-			console.error(`Legacy /api/energy fetch failed: ${res.status}`);
-			return [];
-		}
-		const json = await res.json();
-		return json?.data ? energyParser(json.data) : [];
-	} catch (e) {
-		console.error('Failed to fetch legacy /api/energy:', e);
-		return [];
-	}
-}
 
 /**
  * Latest `history.last` across a set of StatsData (ISO-8601 sorts
