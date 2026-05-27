@@ -24,9 +24,11 @@ Run these checks in parallel (single message, multiple `Bash` calls). **Refuse t
 
 Run these in parallel (single message, multiple `Bash` calls). These verify the release candidate actually works before we tag it.
 
-1. `pnpm run test` — Vitest suite. Blocking: **must pass**. On failure, stop and show the user.
-2. `pnpm run build` — Vite production build. Blocking: **must complete**. On failure, stop and show the user.
-3. `pnpm run check` — SvelteKit sync + svelte-check. Informational: this project has pre-existing type errors in its baseline (see `pnpm run check` output on `main`). Report the count to the user; block **only** if the change introduces errors in files modified by the commits being released (`git diff origin/main..HEAD --name-only`). Otherwise proceed.
+Both build and test need Doppler-injected env vars (e.g. `PUBLIC_JSON_URL`, `PUBLIC_SANITY_PROJECT_ID`) to succeed locally — without them the build fails at Rollup with `"PUBLIC_JSON_URL" is not exported` and `sanity.test.js` throws on `createClient`. Always run them through Doppler:
+
+1. `doppler run -- pnpm run test` — Vitest suite. Blocking: **must pass**. On failure, stop and show the user. (There's no `doppler-test` script, so wrap manually.)
+2. `pnpm run doppler-build` — Vite production build with Doppler-injected secrets. Blocking: **must complete**. On failure, stop and show the user.
+3. `pnpm run check` — SvelteKit sync + svelte-check. Informational: this project has pre-existing type errors in its baseline (see `pnpm run check` output on `main`). Report the count to the user; block **only** if the change introduces errors in files modified by the commits being released (`git diff origin/main..HEAD --name-only`). Otherwise proceed. (The two `PUBLIC_OE_API_*` "module has no exported member" errors are part of the baseline and stem from the same missing env vars — they don't block.)
 
 If the user wants a local preview of the build before releasing, offer to run `pnpm run preview` in the background — don't block on it, they'll interrupt when they're happy.
 
@@ -35,12 +37,14 @@ If the user wants a local preview of the build before releasing, offer to run `p
 Do these sequentially (each depends on the last):
 
 1. `pnpm version <level>` — creates a commit like `3.27.9` and tag `v3.27.9`. Never pass `--no-git-tag-version`.
-2. `git push` — `push.followTags` is enabled globally (per project memory), so the tag ships with the commit. Do **not** force-push. Do **not** use `--no-verify`.
+2. `git push && git push origin v<new-version>` — push the commit and tag separately. `push.followTags` is **not** set in this repo or globally, so a bare `git push` ships only the commit; the deploy hook fires on the `v*` tag, so you must push it explicitly or the deploy won't run. Do **not** force-push. Do **not** use `--no-verify`.
 3. Show the user the new tag and the GH Actions URL. Grab the repo from `gh repo view --json nameWithOwner -q .nameWithOwner` if needed. The run shows up at `https://github.com/<owner>/<repo>/actions/workflows/deploy.yml`.
 
 ## After push — confirm the deploy fired
 
 Within ~10s of push, run `gh run list --workflow=deploy.yml --limit 1` and report the status to the user. Don't poll — one check is enough.
+
+A green run here only means the GitHub Actions hook successfully called the Cloudflare deploy webhook — the actual Cloudflare Pages build runs asynchronously on Cloudflare's side and is **not visible via `gh`**. If the user reports a failed build, ask for the Cloudflare Pages log; common cause is `pnpm install` rejecting because of unapproved build scripts (see `pnpm-workspace.yaml` → `allowBuilds`).
 
 ## Sync `dev` with `main`
 
