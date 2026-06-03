@@ -128,3 +128,77 @@ describe('StratifyPlotProject — animateAsOneChart', () => {
 		expect(project.animateAsOneChart).toBe(false);
 	});
 });
+
+describe('StratifyPlotProject — map fields', () => {
+	it('defaults the 10 map fields on a fresh project', () => {
+		const project = createProject();
+		expect(project.latColumn).toBeNull();
+		expect(project.lngColumn).toBeNull();
+		expect(project.labelColumn).toBeNull();
+		expect(project.sizeColumn).toBeNull();
+		expect(project.colourColumn).toBeNull();
+		expect(project.mapColourMode).toBe('single');
+		expect(project.singleMarkerColour).toBe('#3b82f6');
+		expect(project.mapMinRadius).toBe(4);
+		expect(project.mapMaxRadius).toBe(24);
+		expect(project.mapTheme).toBe('light');
+	});
+
+	it('toJSON() round-trips through loadFromSnapshot()', () => {
+		const project = createProject();
+		project.chartType = 'map';
+		project.latColumn = 'lat';
+		project.lngColumn = 'lng';
+		project.labelColumn = 'name';
+		project.sizeColumn = 'capacity';
+		project.colourColumn = 'fueltech';
+		project.mapColourMode = 'category';
+		project.singleMarkerColour = '#ff0000';
+		project.mapMinRadius = 8;
+		project.mapMaxRadius = 40;
+		project.mapTheme = 'satellite';
+
+		const snapshot = project.toJSON();
+		const restored = createProject();
+		restored.loadFromSnapshot(snapshot);
+
+		expect(restored.chartType).toBe('map');
+		expect(restored.latColumn).toBe('lat');
+		expect(restored.lngColumn).toBe('lng');
+		expect(restored.labelColumn).toBe('name');
+		expect(restored.sizeColumn).toBe('capacity');
+		expect(restored.colourColumn).toBe('fueltech');
+		expect(restored.mapColourMode).toBe('category');
+		expect(restored.singleMarkerColour).toBe('#ff0000');
+		expect(restored.mapMinRadius).toBe(8);
+		expect(restored.mapMaxRadius).toBe(40);
+		expect(restored.mapTheme).toBe('satellite');
+	});
+
+	it('reset() restores all map fields to defaults', () => {
+		const project = createProject();
+		project.latColumn = 'lat';
+		project.mapColourMode = 'category';
+		project.mapTheme = 'dark';
+		project.reset();
+
+		expect(project.latColumn).toBeNull();
+		expect(project.mapColourMode).toBe('single');
+		expect(project.mapTheme).toBe('light');
+	});
+
+	it('mapColourGroupNames returns unique values of colourColumn in data order', () => {
+		const project = createProject();
+		project.csvText =
+			'name,lat,lng,fueltech\nBayswater,-32.4,150.9,coal\nLiddell,-32.3,150.9,coal\nHornsdale,-33.1,138.3,battery';
+		project.colourColumn = 'fueltech';
+
+		expect(project.mapColourGroupNames).toEqual(['coal', 'battery']);
+	});
+
+	it('mapColourGroupNames is empty when colourColumn is null', () => {
+		const project = createProject();
+		project.csvText = 'name,lat,lng,fueltech\nBayswater,-32.4,150.9,coal';
+		expect(project.mapColourGroupNames).toEqual([]);
+	});
+});

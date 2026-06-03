@@ -132,6 +132,16 @@ export async function PATCH({ request, params }) {
 	if (body.status !== undefined) patches.status = body.status;
 	if (body.publishedAt !== undefined) patches.publishedAt = body.publishedAt;
 	if (body.version !== undefined) patches.snapshotVersion = body.version;
+	if (body.latColumn !== undefined) patches.latColumn = body.latColumn;
+	if (body.lngColumn !== undefined) patches.lngColumn = body.lngColumn;
+	if (body.labelColumn !== undefined) patches.labelColumn = body.labelColumn;
+	if (body.sizeColumn !== undefined) patches.sizeColumn = body.sizeColumn;
+	if (body.mapColourMode !== undefined) patches.mapColourMode = body.mapColourMode;
+	if (body.colourColumn !== undefined) patches.colourColumn = body.colourColumn;
+	if (body.singleMarkerColour !== undefined) patches.singleMarkerColour = body.singleMarkerColour;
+	if (body.mapMinRadius !== undefined) patches.mapMinRadius = body.mapMinRadius;
+	if (body.mapMaxRadius !== undefined) patches.mapMaxRadius = body.mapMaxRadius;
+	if (body.mapTheme !== undefined) patches.mapTheme = body.mapTheme;
 
 	if (Object.keys(patches).length === 0) {
 		return json({ error: 'No fields to update' }, { status: 400 });

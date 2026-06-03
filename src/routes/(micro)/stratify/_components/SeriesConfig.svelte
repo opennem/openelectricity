@@ -133,7 +133,6 @@
 		}
 	}
 
-
 	/**
 	 * Update chart type override for a right-axis series
 	 * @param {string} key
@@ -187,13 +186,16 @@
 
 <svelte:document onclick={handleClickOutside} />
 
-{#if project.hasColourSeries}
+{#if project.hasColourSeries || project.isMapCategory}
+	{@const groupNames = project.isMapCategory
+		? project.mapColourGroupNames
+		: project.colourGroupNames}
 	<!-- Colour group mode: show group values with swatches -->
 	<div>
 		<span class="block text-[10px] text-mid-grey uppercase tracking-wide mb-2">Colour groups</span>
 
 		<div class="space-y-1.5">
-			{#each project.colourGroupNames as group (group)}
+			{#each groupNames as group (group)}
 				{@const hasOverride = group in project.userSeriesColours}
 
 				<div class="colour-picker-area">
@@ -271,7 +273,7 @@
 			{/each}
 		</div>
 	</div>
-{:else if project.parsedData.seriesNames.length > 0}
+{:else if project.parsedData.seriesNames.length > 0 && project.chartType !== 'map'}
 	<div>
 		<div
 			class="space-y-1.5"

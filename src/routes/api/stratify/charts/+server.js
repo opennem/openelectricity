@@ -113,6 +113,16 @@ export async function POST({ request }) {
 		yLabel: body.yLabel ?? '',
 		seriesYAxis: JSON.stringify(body.seriesYAxis ?? {}),
 		y2Label: body.y2Label ?? '',
+		latColumn: body.latColumn ?? null,
+		lngColumn: body.lngColumn ?? null,
+		labelColumn: body.labelColumn ?? null,
+		sizeColumn: body.sizeColumn ?? null,
+		mapColourMode: body.mapColourMode ?? 'single',
+		colourColumn: body.colourColumn ?? null,
+		singleMarkerColour: body.singleMarkerColour ?? '#3b82f6',
+		mapMinRadius: body.mapMinRadius ?? 4,
+		mapMaxRadius: body.mapMaxRadius ?? 24,
+		mapTheme: body.mapTheme ?? 'light',
 		snapshotVersion: body.version ?? 1,
 		publishedAt: null
 	});

@@ -1,11 +1,12 @@
 <script>
 	import StratifyPlotChart from '$lib/stratify/StratifyPlotChart.svelte';
+	import StratifyMapChart from '$lib/stratify/StratifyMapChart.svelte';
 	import AnimatedFacetChart from '$lib/stratify/AnimatedFacetChart.svelte';
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
 	import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
 	import { getPreset, getPlotStyle } from '$lib/stratify/chart-styles.js';
 	import { assignPaletteColours } from '$lib/stratify/colour-palettes.js';
-	import { HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
+	import { HORIZONTAL_TYPES, MAP_TYPES } from '$lib/stratify/chart-types.js';
 
 	/**
 	 * @type {{
@@ -16,6 +17,8 @@
 	 * }}
 	 */
 	let { chart, caption = '', showBranding = false, headingTag = 'h1' } = $props();
+
+	const isMap = $derived(MAP_TYPES.has(chart.chartType));
 
 	const parsed = $derived(
 		parseCSV(chart.csvText, {}, chart.displayMode ?? 'auto', chart.xColumn || 0)
@@ -251,12 +254,14 @@
 		/>
 	{/snippet}
 
-	{#if parsed.data.length > 0}
+	{#if isMap}
+		<StratifyMapChart {chart} height={chartHeight} />
+	{:else if parsed.data.length > 0}
 		{#if isAnimating}
 			<AnimatedFacetChart
 				data={transformedData}
 				seriesNames={visibleSeriesNames}
-				facetColumn={/** @type {string} */ (facetColumnKey)}
+				facetColumn={facetColumnKey}
 				facetValues={animateFacetValues}
 				frameDurationMs={chart.animationSpeedMs}
 				loop={chart.animationAutoLoop}

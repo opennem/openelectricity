@@ -70,6 +70,45 @@ describe('normaliseChart', () => {
 		expect(result.yLabel).toBe('');
 		expect(result.seriesYAxis).toEqual({});
 		expect(result.y2Label).toBe('');
+		expect(result.latColumn).toBeNull();
+		expect(result.lngColumn).toBeNull();
+		expect(result.labelColumn).toBeNull();
+		expect(result.sizeColumn).toBeNull();
+		expect(result.colourColumn).toBeNull();
+		expect(result.mapColourMode).toBe('single');
+		expect(result.singleMarkerColour).toBe('#3b82f6');
+		expect(result.mapMinRadius).toBe(4);
+		expect(result.mapMaxRadius).toBe(24);
+		expect(result.mapTheme).toBe('light');
+	});
+
+	it('preserves map field values for the map chart type', () => {
+		const result = normaliseChart({
+			_id: 'chart-map',
+			chartType: 'map',
+			latColumn: 'lat',
+			lngColumn: 'lng',
+			labelColumn: 'name',
+			sizeColumn: 'capacity',
+			colourColumn: 'fueltech',
+			mapColourMode: 'category',
+			singleMarkerColour: '#ff0000',
+			mapMinRadius: 8,
+			mapMaxRadius: 40,
+			mapTheme: 'satellite'
+		});
+
+		expect(result.chartType).toBe('map');
+		expect(result.latColumn).toBe('lat');
+		expect(result.lngColumn).toBe('lng');
+		expect(result.labelColumn).toBe('name');
+		expect(result.sizeColumn).toBe('capacity');
+		expect(result.colourColumn).toBe('fueltech');
+		expect(result.mapColourMode).toBe('category');
+		expect(result.singleMarkerColour).toBe('#ff0000');
+		expect(result.mapMinRadius).toBe(8);
+		expect(result.mapMaxRadius).toBe(40);
+		expect(result.mapTheme).toBe('satellite');
 	});
 
 	it('preserves provided values', () => {

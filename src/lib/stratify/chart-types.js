@@ -3,7 +3,7 @@
  */
 
 /**
- * @typedef {'bar' | 'bar-stacked' | 'bar-grouped' | 'column' | 'column-stacked' | 'column-grouped' | 'line' | 'area'} ChartType
+ * @typedef {'bar' | 'bar-stacked' | 'bar-grouped' | 'column' | 'column-stacked' | 'column-grouped' | 'line' | 'area' | 'map'} ChartType
  */
 
 /**
@@ -21,7 +21,8 @@ export const CHART_TYPES = [
 	{ value: 'column-grouped', label: 'Grouped Columns' },
 	{ value: 'bar', label: 'Bar Chart' },
 	{ value: 'bar-stacked', label: 'Stacked Bars' },
-	{ value: 'bar-grouped', label: 'Grouped Bars' }
+	{ value: 'bar-grouped', label: 'Grouped Bars' },
+	{ value: 'map', label: 'Map' }
 ];
 
 /** Chart types that use time-series x-axis by default */
@@ -35,6 +36,9 @@ export const COLUMN_TYPES = new Set(['column', 'column-stacked', 'column-grouped
 
 /** Chart types that render category bars side-by-side via fx/fy faceting */
 export const GROUPED_TYPES = new Set(['bar-grouped', 'column-grouped']);
+
+/** Chart types that render a geographic map instead of an x/y plot */
+export const MAP_TYPES = new Set(['map']);
 
 // ── Line Style Definitions ─────────────────────────────────────
 

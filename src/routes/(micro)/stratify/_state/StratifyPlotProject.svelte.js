@@ -9,6 +9,12 @@ import { parseCSV } from '$lib/stratify/csv-parser.js';
 import { getPreset, migratePreset } from '$lib/stratify/chart-styles.js';
 import { assignPaletteColours, migratePresetToPalette } from '$lib/stratify/colour-palettes.js';
 import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
+import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
+import {
+	detectLatColumn,
+	detectLngColumn,
+	detectLabelColumn
+} from '$lib/stratify/map-detection.js';
 
 /**
  * @typedef {import('$lib/stratify/chart-types.js').ChartType} ChartType
@@ -68,6 +74,16 @@ import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js
  * @property {'default' | 'x-asc' | 'x-desc' | 'value-asc' | 'value-desc'} [categorySort]
  * @property {boolean} [showLegend]
  * @property {boolean} [showBranding]
+ * @property {string | null} [latColumn]
+ * @property {string | null} [lngColumn]
+ * @property {string | null} [labelColumn]
+ * @property {string | null} [sizeColumn]
+ * @property {'single' | 'category'} [mapColourMode]
+ * @property {string | null} [colourColumn]
+ * @property {string} [singleMarkerColour]
+ * @property {number} [mapMinRadius]
+ * @property {number} [mapMaxRadius]
+ * @property {'light' | 'dark' | 'satellite'} [mapTheme]
  */
 
 export default class StratifyPlotProject {
@@ -230,6 +246,42 @@ export default class StratifyPlotProject {
 	/** Whether any series is assigned to the right Y-axis */
 	hasRightAxis = $derived(Object.values(this.seriesYAxis).some((v) => v === 'right'));
 
+	// --- Map type column mapping ---
+	/** @type {string | null} CSV column key for latitude (map chart type) */
+	latColumn = $state(null);
+
+	/** @type {string | null} CSV column key for longitude (map chart type) */
+	lngColumn = $state(null);
+
+	/** @type {string | null} CSV column key for marker popup title (map chart type) */
+	labelColumn = $state(null);
+
+	/** @type {string | null} Numeric CSV column key driving marker radius (null = fixed) */
+	sizeColumn = $state(null);
+
+	/** @type {'single' | 'category'} Map marker colour strategy */
+	mapColourMode = $state('single');
+
+	/** @type {string | null} Categorical column key when mapColourMode === 'category' */
+	colourColumn = $state(null);
+
+	/** @type {string} Single marker colour when mapColourMode === 'single' */
+	singleMarkerColour = $state('#3b82f6');
+
+	/** @type {number} Minimum marker radius in pixels */
+	mapMinRadius = $state(4);
+
+	/** @type {number} Maximum marker radius in pixels */
+	mapMaxRadius = $state(24);
+
+	/** @type {'light' | 'dark' | 'satellite'} Basemap theme for map chart type */
+	mapTheme = $state('light');
+
+	/** Unique values of colourColumn, in data order — used by SeriesConfig swatches in map category mode */
+	mapColourGroupNames = $derived.by(() =>
+		uniqueColumnValues(this.parsedData.data, this.colourColumn).map(String)
+	);
+
 	// --- Publish settings ---
 	/** @type {'draft' | 'published'} */
 	status = $state('draft');
@@ -280,11 +332,21 @@ export default class StratifyPlotProject {
 		return groups;
 	});
 
+	/** Whether the map chart is grouping markers by a category column */
+	isMapCategory = $derived(
+		this.chartType === 'map' && this.mapColourMode === 'category' && !!this.colourColumn
+	);
+
 	/** Merged colours: user overrides > preset palette > parsed defaults.
-	 *  When colour series is active, keys are group names (e.g. NEM, WEM). */
+	 *  When colour series is active, keys are group names (e.g. NEM, WEM).
+	 *  When the map chart groups by a column, keys are that column's unique values. */
 	seriesColours = $derived.by(() => {
 		const parsed = this.parsedData;
-		const names = this.hasColourSeries ? this.colourGroupNames : parsed.seriesNames;
+		const names = this.isMapCategory
+			? this.mapColourGroupNames
+			: this.hasColourSeries
+				? this.colourGroupNames
+				: parsed.seriesNames;
 		if (names.length === 0) return this.userSeriesColours;
 
 		const presetColours = assignPaletteColours(names, this.colourPalette);
@@ -302,7 +364,11 @@ export default class StratifyPlotProject {
 	 *  When colour series is active, keys are group names. */
 	seriesLabels = $derived.by(() => {
 		const parsed = this.parsedData;
-		const names = this.hasColourSeries ? this.colourGroupNames : parsed.seriesNames;
+		const names = this.isMapCategory
+			? this.mapColourGroupNames
+			: this.hasColourSeries
+				? this.colourGroupNames
+				: parsed.seriesNames;
 		if (names.length === 0) return this.userSeriesLabels;
 
 		/** @type {Record<string, string>} */
@@ -407,6 +473,26 @@ export default class StratifyPlotProject {
 			const allHidden = eligible.every((k) => this.hiddenSeries.includes(k));
 			if (allHidden) this.hiddenSeries = [];
 		});
+
+		// Auto-detect lat/lng/label whenever the chart is in map mode and the
+		// columns aren't set yet. Lives on the project (not ChartPanel) so it
+		// runs even when the Chart accordion is collapsed.
+		$effect(() => {
+			if (this.chartType !== 'map') return;
+			if (this.allColumns.length === 0) return;
+			if (this.latColumn === null) {
+				const lat = detectLatColumn(this.allColumns, this.parsedData.data);
+				if (lat) this.latColumn = lat;
+			}
+			if (this.lngColumn === null) {
+				const lng = detectLngColumn(this.allColumns, this.parsedData.data);
+				if (lng) this.lngColumn = lng;
+			}
+			if (this.labelColumn === null) {
+				const label = detectLabelColumn(this.allColumns);
+				if (label) this.labelColumn = label;
+			}
+		});
 	}
 
 	/** Reset the project to a blank state. */
@@ -464,6 +550,16 @@ export default class StratifyPlotProject {
 		this.showLegend = true;
 		this.showBranding = true;
 		this.currentChartId = null;
+		this.latColumn = null;
+		this.lngColumn = null;
+		this.labelColumn = null;
+		this.sizeColumn = null;
+		this.mapColourMode = 'single';
+		this.colourColumn = null;
+		this.singleMarkerColour = '#3b82f6';
+		this.mapMinRadius = 4;
+		this.mapMaxRadius = 24;
+		this.mapTheme = 'light';
 	}
 
 	/**
@@ -539,7 +635,17 @@ export default class StratifyPlotProject {
 			seriesYAxis: this.seriesYAxis,
 			y2Label: this.y2Label,
 			showLegend: this.showLegend,
-			showBranding: this.showBranding
+			showBranding: this.showBranding,
+			latColumn: this.latColumn,
+			lngColumn: this.lngColumn,
+			labelColumn: this.labelColumn,
+			sizeColumn: this.sizeColumn,
+			mapColourMode: this.mapColourMode,
+			colourColumn: this.colourColumn,
+			singleMarkerColour: this.singleMarkerColour,
+			mapMinRadius: this.mapMinRadius,
+			mapMaxRadius: this.mapMaxRadius,
+			mapTheme: this.mapTheme
 		};
 	}
 
@@ -601,5 +707,15 @@ export default class StratifyPlotProject {
 		this.status = snapshot.status ?? 'draft';
 		this.showLegend = snapshot.showLegend ?? true;
 		this.showBranding = snapshot.showBranding ?? true;
+		this.latColumn = snapshot.latColumn ?? null;
+		this.lngColumn = snapshot.lngColumn ?? null;
+		this.labelColumn = snapshot.labelColumn ?? null;
+		this.sizeColumn = snapshot.sizeColumn ?? null;
+		this.mapColourMode = snapshot.mapColourMode ?? 'single';
+		this.colourColumn = snapshot.colourColumn ?? null;
+		this.singleMarkerColour = snapshot.singleMarkerColour ?? '#3b82f6';
+		this.mapMinRadius = snapshot.mapMinRadius ?? 4;
+		this.mapMaxRadius = snapshot.mapMaxRadius ?? 24;
+		this.mapTheme = snapshot.mapTheme ?? 'light';
 	}
 }

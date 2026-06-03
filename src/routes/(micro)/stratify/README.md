@@ -4,7 +4,7 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 
 ## Features
 
-- **Chart types**: Line, Area, Column, Stacked Columns, Grouped Columns, Bar, Stacked Bars, Grouped Bars
+- **Chart types**: Line, Area, Column, Stacked Columns, Grouped Columns, Bar, Stacked Bars, Grouped Bars, Map (lat/lng point map)
 - **Per-series chart type**: Override the chart type for individual series (e.g. one series as a line, another as a bar)
 - **Data input**: Paste CSV or tab-separated data (e.g. from Google Sheets)
 - **Auto-detection**: Automatically detects dates vs categories, delimiter type
@@ -77,18 +77,24 @@ src/routes/(micro)/strata-embed/[id]/  # Bare embed route (iframe-friendly)
 └── +page.svelte                       # Minimal chart render (no nav/footer)
 
 src/lib/stratify/                      # Stratify library
-├── StrataChartView.svelte             # Unified chart view (used by preview, embed, strata page)
+├── StrataChartView.svelte             # Unified chart view (used by preview, embed, strata page); forks Plot vs map
 ├── StrataChartCard.svelte             # Card component for published charts (header, chart, menu)
-├── StratifyPlotChart.svelte           # Chart component (dual Y-axis, tooltips, annotations)
-├── chart-data.js                      # safeParseJSON, normaliseChart (shared server-side)
-├── chart-types.js                     # Chart type definitions and type constants
+├── StratifyPlotChart.svelte           # Plot chart component (dual Y-axis, tooltips, annotations)
+├── StratifyMapChart.svelte            # Map chart wrapper — CSV → PointMap points, size/colour scales
+├── chart-data.js                      # safeParseJSON, normaliseChart, uniqueColumnValues (shared server-side)
+├── chart-types.js                     # Chart type definitions and type constants (incl. MAP_TYPES)
 ├── chart-styles.js                    # Themes — sans (DM Sans) and mono (DM Mono)
 ├── colour-palette.js                  # Default colour assignment for series
 ├── colour-palettes.js                 # 30+ palettes (qualitative, sequential, diverging)
 ├── csv-parser.js                      # CSV/TSV parser with date/category detection
+├── map-detection.js                   # Auto-detect lat/lng/label columns from headers + value ranges
 ├── plot-annotations.js                # Annotation processing + formatCompact
 ├── plot-overrides.js                  # PlotOverrides merge system
 └── *.test.js                          # Co-located tests
+
+src/lib/components/map/                # Generic point-map components (MapLibre)
+├── PointMap.svelte                    # Lat/lng marker map with popup-on-click, theme + fit-bounds
+└── types.js                           # Shared MapPoint typedef
 
 src/lib/components/charts/plot/        # Shared Observable Plot utilities (used by Stratify + facility-plot)
 ├── PlotChart.svelte                   # Low-level Plot wrapper
@@ -106,18 +112,74 @@ src/lib/components/text-components/    # Article content rendering
 
 ## Chart Types
 
-| Value              | Family | Description                              |
-| ------------------ | ------ | ---------------------------------------- |
-| `line`             | Line   | Multi-series line chart                  |
-| `area`             | Area   | Stacked area (time-series)               |
-| `column`           | Column | Vertical bars                            |
-| `column-stacked`   | Column | Stacked vertical bars                    |
-| `column-grouped`   | Column | Grouped vertical bars                    |
-| `bar`              | Bar    | Horizontal bars                          |
-| `bar-stacked`      | Bar    | Stacked horizontal bars                  |
-| `bar-grouped`      | Bar    | Grouped horizontal bars                  |
+| Value            | Family | Description                            |
+| ---------------- | ------ | -------------------------------------- |
+| `line`           | Line   | Multi-series line chart                |
+| `area`           | Area   | Stacked area (time-series)             |
+| `column`         | Column | Vertical bars                          |
+| `column-stacked` | Column | Stacked vertical bars                  |
+| `column-grouped` | Column | Grouped vertical bars                  |
+| `bar`            | Bar    | Horizontal bars                        |
+| `bar-stacked`    | Bar    | Stacked horizontal bars                |
+| `bar-grouped`    | Bar    | Grouped horizontal bars                |
+| `map`            | Map    | Lat/lng point map (MapLibre, not Plot) |
 
-Time-series types (`area`, `line`) auto-detect dates from the first column. Column and bar charts support both time-series and category modes. Horizontal bar types use `barX` in Observable Plot; column types use `barY`/`rectY`.
+Time-series types (`area`, `line`) auto-detect dates from the first column. Column and bar charts support both time-series and category modes. Horizontal bar types use `barX` in Observable Plot; column types use `barY`/`rectY`. The `map` type takes a different render path entirely — see [Map Chart Type](#map-chart-type) below.
+
+## Map Chart Type
+
+The `map` chart type renders each CSV row as a marker on a MapLibre basemap (powered by `svelte-maplibre-gl` and the same `/map-styles/{positron,dark-matter,satellite}.json` styles used by the Facilities page). It runs through a parallel render path — `StrataChartView` forks on `MAP_TYPES.has(chartType)` to `StratifyMapChart.svelte` → `PointMap.svelte` instead of the Observable Plot pipeline.
+
+### CSV format
+
+No new schema — the user picks which CSV columns are latitude, longitude, label, size, and colour-group via dropdowns in the Chart panel.
+
+```csv
+name,lat,lng,capacity_mw,fueltech
+Bayswater,-32.394,150.949,2640,coal
+Liddell,-32.378,150.978,2000,coal
+Hornsdale,-33.105,138.310,150,battery
+```
+
+### Auto-detection
+
+When the user switches the chart type to `map`, an `$effect` in `StratifyPlotProject` runs once and seeds `latColumn`, `lngColumn`, `labelColumn` if they're still `null`. Detection rules (see `map-detection.js`):
+
+- **Latitude**: header matches `/^(lat|latitude|y)$/i` AND values fall in `[-90, 90]`
+- **Longitude**: header matches `/^(lng|lon|long|longitude|x)$/i` AND values fall in `[-180, 180]`
+- **Label**: first non-numeric column
+
+Already-set values are not overwritten on CSV edit — manual choices stick.
+
+### Column-to-role mapping
+
+| Field            | Type             | Purpose                                           |
+| ---------------- | ---------------- | ------------------------------------------------- |
+| `latColumn`      | `string \| null` | Marker latitude (numeric column)                  |
+| `lngColumn`      | `string \| null` | Marker longitude (numeric column)                 |
+| `labelColumn`    | `string \| null` | Popup title                                       |
+| `sizeColumn`     | `string \| null` | Numeric column driving marker radius (sqrt scale) |
+| `colourColumn`   | `string \| null` | Categorical column for marker colour grouping     |
+| `tooltipColumns` | `string[]`       | Columns rendered as key/value rows in the popup   |
+
+### Marker sizing
+
+When `sizeColumn` is set, marker radius interpolates via `d3-scale.scaleSqrt()` from `[min, max]` of the column to `[mapMinRadius, mapMaxRadius]` (defaults 4–24px). When unset, every marker uses the midpoint.
+
+### Marker colour
+
+| `mapColourMode` | Behaviour                                                                                                                                                                       |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `'single'`      | Every marker uses `singleMarkerColour` (single colour-picker UI)                                                                                                                |
+| `'category'`    | Group by unique values of `colourColumn`; assign palette colours; per-group overrides via `userSeriesColours` (reuses the same per-series swatch UI from `SeriesConfig.svelte`) |
+
+### First-column popup quirk
+
+The CSV parser stores the first column under a synthetic key (`category` / `linear` / `_dateStr`) instead of the column's display key. `StratifyMapChart` aliases the synthetic value back onto the display key on every row (`rowsWithFirstColAliased`) so picking the first column for lat / lng / label / size / colour / popup all works uniformly.
+
+### Sanity persistence
+
+The 10 map fields (`latColumn`, `lngColumn`, `labelColumn`, `sizeColumn`, `mapColourMode`, `colourColumn`, `singleMarkerColour`, `mapMinRadius`, `mapMaxRadius`, `mapTheme`) round-trip through Sanity via `POST /api/stratify/charts`, `PATCH /api/stratify/charts/:id`, and `normaliseChart()` in `chart-data.js`. They're also covered by `StratifyPlotProject.toJSON()` / `loadFromSnapshot()` and the `reset()` defaults.
 
 ## Per-Series Chart Type Override
 
@@ -278,10 +340,10 @@ SA,2024-06-01,270,370,155
 
 Both pickers consume a column. They're mutually exclusive in the picker — selecting a column for one removes it from the other's options.
 
-| Picker         | What it does                                                              |
-| -------------- | ------------------------------------------------------------------------- |
-| Z Colour       | Splits one value column by the picked column, colouring each group        |
-| Partition by   | Splits the whole chart by the picked column, rendering one panel per group |
+| Picker       | What it does                                                               |
+| ------------ | -------------------------------------------------------------------------- |
+| Z Colour     | Splits one value column by the picked column, colouring each group         |
+| Partition by | Splits the whole chart by the picked column, rendering one panel per group |
 
 ### Limitations
 
@@ -461,7 +523,17 @@ The JSON format used for persistence (localStorage, file export, Sanity CMS):
 	"tooltipColumns": ["solar", "wind"],
 	"showLegend": true,
 	"facetColumn": null,
-	"animateAsOneChart": false
+	"animateAsOneChart": false,
+	"latColumn": null,
+	"lngColumn": null,
+	"labelColumn": null,
+	"sizeColumn": null,
+	"mapColourMode": "single",
+	"colourColumn": null,
+	"singleMarkerColour": "#3b82f6",
+	"mapMinRadius": 4,
+	"mapMaxRadius": 24,
+	"mapTheme": "light"
 }
 ```
 
@@ -486,6 +558,11 @@ v1 snapshots are fully backward compatible. Missing fields get defaults:
 - `facetPanelsPerRow` defaults to `0` (auto-fit columns based on container width and `MIN_PANEL_WIDTH`)
 - `chartBorderWidth` defaults to `0.5` (faint stroke around bar/column/area marks; `0` = none, accepts fractional values)
 - `chartBorderColour` defaults to `#000000` (stroke colour applied when `chartBorderWidth > 0`)
+- `latColumn`, `lngColumn`, `labelColumn`, `sizeColumn`, `colourColumn` default to `null` (map chart type only)
+- `mapColourMode` defaults to `'single'` (one colour for every marker)
+- `singleMarkerColour` defaults to `'#3b82f6'`
+- `mapMinRadius` / `mapMaxRadius` default to `4` / `24` (px range when `sizeColumn` is set)
+- `mapTheme` defaults to `'light'` (basemap style — `'dark'` and `'satellite'` also supported)
 
 ## Data Format
 
@@ -529,16 +606,16 @@ The `oe-energy` palette is the default, with 12 hand-picked colours inspired by 
 
 All API requests require **Clerk JWT** authentication. Charts are owned by the creating user.
 
-| Action                  | Owner | Other Users | Superadmin |
-| ----------------------- | ----- | ----------- | ---------- |
-| Create chart            | Yes   | Yes         | Yes        |
-| Read own charts         | Yes   | —           | Yes (all)  |
-| Read others' published  | Yes   | Yes         | Yes        |
-| Read others' drafts     | No    | No          | Yes        |
-| Edit own chart          | Yes   | —           | —          |
-| Delete own chart        | Yes   | —           | Yes (any)  |
-| Fork published chart    | Yes   | Yes         | Yes        |
-| Fork others' draft      | No    | No          | Yes        |
+| Action                 | Owner | Other Users | Superadmin |
+| ---------------------- | ----- | ----------- | ---------- |
+| Create chart           | Yes   | Yes         | Yes        |
+| Read own charts        | Yes   | —           | Yes (all)  |
+| Read others' published | Yes   | Yes         | Yes        |
+| Read others' drafts    | No    | No          | Yes        |
+| Edit own chart         | Yes   | —           | —          |
+| Delete own chart       | Yes   | —           | Yes (any)  |
+| Fork published chart   | Yes   | Yes         | Yes        |
+| Fork others' draft     | No    | No          | Yes        |
 
 ### Chart Listings
 
@@ -561,14 +638,14 @@ The `/strata-community` page displays the 10 most recently published charts in a
 
 ## API Endpoints
 
-| Method | Path                            | Description                  |
-| ------ | ------------------------------- | ---------------------------- |
+| Method | Path                            | Description                    |
+| ------ | ------------------------------- | ------------------------------ |
 | GET    | `/api/stratify/charts`          | List user's + community charts |
-| POST   | `/api/stratify/charts`          | Create new chart             |
-| GET    | `/api/stratify/charts/:id`      | Get single chart             |
-| PATCH  | `/api/stratify/charts/:id`      | Update chart fields          |
-| DELETE | `/api/stratify/charts/:id`      | Delete chart                 |
-| POST   | `/api/stratify/charts/:id/fork` | Fork chart to current user   |
+| POST   | `/api/stratify/charts`          | Create new chart               |
+| GET    | `/api/stratify/charts/:id`      | Get single chart               |
+| PATCH  | `/api/stratify/charts/:id`      | Update chart fields            |
+| DELETE | `/api/stratify/charts/:id`      | Delete chart                   |
+| POST   | `/api/stratify/charts/:id/fork` | Fork chart to current user     |
 
 All endpoints require Clerk JWT authentication.
 

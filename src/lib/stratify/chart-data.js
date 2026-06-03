@@ -103,6 +103,16 @@ export function normaliseChart(chart) {
 		xLabel: chart.xLabel ?? '',
 		yLabel: chart.yLabel ?? '',
 		seriesYAxis: safeParseJSON(chart.seriesYAxis, {}),
-		y2Label: chart.y2Label ?? ''
+		y2Label: chart.y2Label ?? '',
+		latColumn: chart.latColumn ?? null,
+		lngColumn: chart.lngColumn ?? null,
+		labelColumn: chart.labelColumn ?? null,
+		sizeColumn: chart.sizeColumn ?? null,
+		mapColourMode: chart.mapColourMode ?? 'single',
+		colourColumn: chart.colourColumn ?? null,
+		singleMarkerColour: chart.singleMarkerColour ?? '#3b82f6',
+		mapMinRadius: chart.mapMinRadius ?? 4,
+		mapMaxRadius: chart.mapMaxRadius ?? 24,
+		mapTheme: chart.mapTheme ?? 'light'
 	};
 }
