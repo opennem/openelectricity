@@ -3,7 +3,7 @@
 	import { flip } from 'svelte/animate';
 	import { getStratifyContext } from '../_state/context.js';
 	import { getPaletteSwatchColours } from '$lib/stratify/colour-palettes.js';
-	import { LINE_STYLES } from '$lib/stratify/chart-types.js';
+	import { LINE_STYLES, WATERFALL_ROLE_KEYS } from '$lib/stratify/chart-types.js';
 
 	const project = getStratifyContext();
 
@@ -186,13 +186,23 @@
 
 <svelte:document onclick={handleClickOutside} />
 
-{#if project.hasColourSeries || project.isMapCategory}
+{#if project.hasColourSeries || project.isMapCategory || project.isWaterfallPerRow || project.isWaterfallSemantic}
 	{@const groupNames = project.isMapCategory
 		? project.mapColourGroupNames
-		: project.colourGroupNames}
-	<!-- Colour group mode: show group values with swatches -->
+		: project.isWaterfallSemantic
+			? WATERFALL_ROLE_KEYS
+			: project.isWaterfallPerRow
+				? project.waterfallRowNames
+				: project.colourGroupNames}
+	<!-- Colour group / per-row / semantic mode: show each value with a colour swatch -->
 	<div>
-		<span class="block text-[10px] text-mid-grey uppercase tracking-wide mb-2">Colour groups</span>
+		<span class="block text-[10px] text-mid-grey uppercase tracking-wide mb-2"
+			>{project.isWaterfallSemantic
+				? 'Waterfall colours'
+				: project.isWaterfallPerRow
+					? 'Bar colours'
+					: 'Colour groups'}</span
+		>
 
 		<div class="space-y-1.5">
 			{#each groupNames as group (group)}

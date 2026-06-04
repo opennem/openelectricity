@@ -5,8 +5,15 @@
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
 	import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
 	import { getPreset, getPlotStyle } from '$lib/stratify/chart-styles.js';
-	import { assignPaletteColours } from '$lib/stratify/colour-palettes.js';
-	import { HORIZONTAL_TYPES, MAP_TYPES } from '$lib/stratify/chart-types.js';
+	import { assignPaletteColours, getPaletteSwatchColours } from '$lib/stratify/colour-palettes.js';
+	import {
+		HORIZONTAL_TYPES,
+		MAP_TYPES,
+		WATERFALL_TYPES,
+		WATERFALL_ROLE_KEYS,
+		WATERFALL_ROLE_LABELS,
+		getWaterfallRoleColours
+	} from '$lib/stratify/chart-types.js';
 
 	/**
 	 * @type {{
@@ -84,6 +91,76 @@
 			labels[name] = chart.userSeriesLabels[name] || parsed.seriesLabels[name] || name;
 		}
 		return labels;
+	});
+
+	// Waterfall colouring (single/sum): 'semantic' colours by role
+	// (start/up/down/total); 'series' colours each CSV row individually.
+	const isWaterfallColourable = $derived(
+		WATERFALL_TYPES.has(chart.chartType) &&
+			(chart.waterfallMode === 'single' || chart.waterfallMode === 'sum')
+	);
+	const waterfallColourMode = $derived(chart.waterfallColourMode ?? 'semantic');
+	const isWaterfallPerRow = $derived(isWaterfallColourable && waterfallColourMode === 'series');
+	const isWaterfallSemantic = $derived(isWaterfallColourable && waterfallColourMode === 'semantic');
+
+	const waterfallSemanticColours = $derived.by(() => {
+		if (!isWaterfallSemantic) return {};
+		const defaults = getWaterfallRoleColours(
+			getPaletteSwatchColours(chart.colourPalette ?? 'oe-energy')
+		);
+		/** @type {Record<string, string>} */
+		const map = {};
+		for (const role of WATERFALL_ROLE_KEYS) {
+			map[role] = chart.userSeriesColours[role] || defaults[role];
+		}
+		return map;
+	});
+	const waterfallSemanticLabels = $derived.by(() => {
+		if (!isWaterfallSemantic) return {};
+		/** @type {Record<string, string>} */
+		const map = {};
+		for (const role of WATERFALL_ROLE_KEYS) {
+			map[role] = chart.userSeriesLabels[role] || WATERFALL_ROLE_LABELS[role];
+		}
+		return map;
+	});
+	const waterfallRowNames = $derived.by(() => {
+		if (!isWaterfallPerRow) return [];
+		const key = parsed.mode === 'category' ? 'category' : parsed.mode === 'linear' ? 'linear' : 'date';
+		/** @type {Set<string>} */
+		const seen = new Set();
+		/** @type {string[]} */
+		const names = [];
+		for (const row of parsed.data) {
+			const name = String(row[key]);
+			if (!seen.has(name)) {
+				seen.add(name);
+				names.push(name);
+			}
+		}
+		if (chart.waterfallShowTotal ?? true) names.push('Total');
+		return names;
+	});
+	const waterfallRowColours = $derived.by(() => {
+		if (!isWaterfallPerRow) return {};
+		const firstCol = parsed.seriesNames[0];
+		const presetCols = assignPaletteColours(parsed.seriesNames, chart.colourPalette ?? 'oe-energy');
+		const base =
+			chart.userSeriesColours[firstCol] ||
+			presetCols[firstCol] ||
+			parsed.seriesColours[firstCol] ||
+			'#888';
+		/** @type {Record<string, string>} */
+		const map = {};
+		for (const name of waterfallRowNames) map[name] = chart.userSeriesColours[name] || base;
+		return map;
+	});
+	const waterfallRowLabels = $derived.by(() => {
+		if (!isWaterfallPerRow) return {};
+		/** @type {Record<string, string>} */
+		const map = {};
+		for (const name of waterfallRowNames) map[name] = chart.userSeriesLabels[name] || name;
+		return map;
 	});
 
 	// Apply user-defined series order, then filter hidden (excluding colour-series and facet columns)
@@ -217,6 +294,14 @@
 			{seriesColours}
 			{seriesLabels}
 			chartType={chart.chartType}
+			waterfallMode={chart.waterfallMode ?? 'single'}
+			waterfallShowTotal={chart.waterfallShowTotal ?? true}
+			waterfallColourMode={chart.waterfallColourMode ?? 'semantic'}
+			{waterfallRowColours}
+			{waterfallRowLabels}
+			{waterfallSemanticColours}
+			{waterfallSemanticLabels}
+			valueFormat={chart.valueFormat ?? '1'}
 			seriesChartTypes={chart.seriesChartTypes ?? {}}
 			seriesLineStyles={chart.seriesLineStyles ?? {}}
 			plotOverrides={chart.plotOverrides}

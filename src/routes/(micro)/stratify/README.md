@@ -122,6 +122,8 @@ src/lib/components/text-components/    # Article content rendering
 | `bar`            | Bar    | Horizontal bars                        |
 | `bar-stacked`    | Bar    | Stacked horizontal bars                |
 | `bar-grouped`    | Bar    | Grouped horizontal bars                |
+| `waterfall`             | Waterfall | Running-cumulative vertical bars    |
+| `waterfall-horizontal`  | Waterfall | Running-cumulative horizontal bars  |
 | `map`            | Map    | Lat/lng point map (MapLibre, not Plot) |
 
 Time-series types (`area`, `line`) auto-detect dates from the first column. Column and bar charts support both time-series and category modes. Horizontal bar types use `barX` in Observable Plot; column types use `barY`/`rectY`. The `map` type takes a different render path entirely — see [Map Chart Type](#map-chart-type) below.
@@ -180,6 +182,53 @@ The CSV parser stores the first column under a synthetic key (`category` / `line
 ### Sanity persistence
 
 The 10 map fields (`latColumn`, `lngColumn`, `labelColumn`, `sizeColumn`, `mapColourMode`, `colourColumn`, `singleMarkerColour`, `mapMinRadius`, `mapMaxRadius`, `mapTheme`) round-trip through Sanity via `POST /api/stratify/charts`, `PATCH /api/stratify/charts/:id`, and `normaliseChart()` in `chart-data.js`. They're also covered by `StratifyPlotProject.toJSON()` / `loadFromSnapshot()` and the `reset()` defaults.
+
+## Waterfall Chart Type
+
+`waterfall` (vertical) and `waterfall-horizontal` (horizontal) draw running-cumulative
+bars: each bar is offset by the prior total, so sequential contributions build to a final
+value. `createWaterfallOptions` in `plot-configs.js` precomputes each bar's `start`/`end`
+and draws an interval mark (`barY` with `y1/y2`, or `barX` with `x1/x2`) — it does not use
+Plot's stack transform. Connector lines and a per-bar change label are drawn automatically
+(value labels go above starting/increase/total bars, below decrease bars).
+
+### Aggregation (`waterfallMode`)
+
+| Value     | Behaviour                                                            |
+| --------- | ------------------------------------------------------------------- |
+| `single`  | First (or chosen) series only — one bar per row                     |
+| `sum`     | Sum of all series per row — one bar per row                         |
+| `stacked` | Every series stacked within each step (per-column, series-coloured) |
+
+A full-height **Total** bar (anchored at 0) is appended when `waterfallShowTotal` is on.
+In `sum`/`stacked` modes the single-series Y-axis selector is hidden (all series consumed).
+
+### Colouring (`waterfallColourMode`, single/sum only)
+
+- `semantic` (default) — bars coloured by role: **starting**, **increase**, **decrease**,
+  **total**. Starting & total share a colour; the first three theme colours are the
+  defaults. The Series panel shows four editable role swatches.
+- `series` — each CSV row is its own legend entry, colourable individually (defaults to one
+  base colour). Row colours/labels persist in `userSeriesColours`/`userSeriesLabels` keyed by
+  category. `stacked` always colours per-column regardless of this setting.
+
+Both the per-row and semantic colour/label derivations exist in `StratifyPlotProject`
+(builder state, feeds `SeriesConfig` swatches) and in `StrataChartView` (snapshot render,
+passes `waterfallRowColours` / `waterfallSemanticColours` etc. as props) — the same
+snapshot-boundary split used by the colour-series logic.
+
+### Displayed-value format (`valueFormat`)
+
+`valueFormat` (Series panel → Tooltip → "Value format") controls how numeric values render in
+**all** chart tooltips and in waterfall labels: `auto` (Plot default), `0`–`3` fixed decimals,
+or `compact` (reuses `formatCompact`). Default `1`. Implemented by `makeValueFormatter` in
+`plot-configs.js`, threaded through `buildTooltipChannels`.
+
+### Sanity persistence
+
+`waterfallMode`, `waterfallShowTotal`, `waterfallColourMode`, and `valueFormat` round-trip
+through `POST` / `PATCH /api/stratify/charts`, `StratifyPlotProject.toJSON()` /
+`loadFromSnapshot()`, and the `reset()` defaults — same pattern as the other scalar fields.
 
 ## Per-Series Chart Type Override
 

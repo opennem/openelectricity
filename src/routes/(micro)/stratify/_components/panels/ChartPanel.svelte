@@ -4,7 +4,7 @@
 	import SectionHeader from '../SectionHeader.svelte';
 	import ControlInput, { CONTROL_INPUT_CLASS } from '../ControlInput.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
-	import { HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
+	import { HORIZONTAL_TYPES, WATERFALL_TYPES } from '$lib/stratify/chart-types.js';
 
 	const project = getStratifyContext();
 
@@ -53,6 +53,13 @@
 
 	// --- Advanced ---
 	let isHorizontal = $derived(HORIZONTAL_TYPES.has(project.chartType));
+
+	// A waterfall in sum/stacked mode consumes every series, so the single-series
+	// value-axis selector is meaningless — hide it.
+	let hideValueAxis = $derived(
+		WATERFALL_TYPES.has(project.chartType) &&
+			(project.waterfallMode === 'sum' || project.waterfallMode === 'stacked')
+	);
 
 	// Chart types that support multiple Y series
 	let allowMultipleY = $derived(
@@ -380,29 +387,31 @@
 			</div>
 
 			<!-- Value axis -->
-			<ControlInput label={isHorizontal ? 'X Axis' : 'Y Axis'}>
-				<select
-					value={selectedY || (allowMultipleY ? '' : eligibleYColumns[0]?.key || '')}
-					onchange={(e) => {
-						const val = e.currentTarget.value;
-						if (val) {
-							project.hiddenSeries = eligibleYColumns
-								.filter((c) => c.key !== val)
-								.map((c) => c.key);
-						} else {
-							project.hiddenSeries = [];
-						}
-					}}
-					class={`${CONTROL_INPUT_CLASS} flex-1`}
-				>
-					{#if allowMultipleY && eligibleYColumns.length > 1}
-						<option value="">All</option>
-					{/if}
-					{#each eligibleYColumns as col (col.key)}
-						<option value={col.key}>{col.label}</option>
-					{/each}
-				</select>
-			</ControlInput>
+			{#if !hideValueAxis}
+				<ControlInput label={isHorizontal ? 'X Axis' : 'Y Axis'}>
+					<select
+						value={selectedY || (allowMultipleY ? '' : eligibleYColumns[0]?.key || '')}
+						onchange={(e) => {
+							const val = e.currentTarget.value;
+							if (val) {
+								project.hiddenSeries = eligibleYColumns
+									.filter((c) => c.key !== val)
+									.map((c) => c.key);
+							} else {
+								project.hiddenSeries = [];
+							}
+						}}
+						class={`${CONTROL_INPUT_CLASS} flex-1`}
+					>
+						{#if allowMultipleY && eligibleYColumns.length > 1}
+							<option value="">All</option>
+						{/if}
+						{#each eligibleYColumns as col (col.key)}
+							<option value={col.key}>{col.label}</option>
+						{/each}
+					</select>
+				</ControlInput>
+			{/if}
 
 			<!-- Z Colour -->
 			<ControlInput label="Z Colour">
@@ -522,6 +531,37 @@
 						/>
 					</ControlInput>
 				{/if}
+			{/if}
+
+			{#if project.chartType === 'waterfall' || project.chartType === 'waterfall-horizontal'}
+				<ControlInput label="Mode">
+					<select
+						value={project.waterfallMode}
+						onchange={(e) => {
+							const mode = /** @type {'single' | 'sum' | 'stacked'} */ (e.currentTarget.value);
+							project.waterfallMode = mode;
+							// sum/stacked consume every series, so clear any single-series
+							// selection left over from 'single' mode.
+							if (mode === 'sum' || mode === 'stacked') project.hiddenSeries = [];
+						}}
+						class={`${CONTROL_INPUT_CLASS} flex-1`}
+					>
+						<option value="single">Single Series</option>
+						<option value="sum">Sum All Series</option>
+						<option value="stacked">Stacked Series</option>
+					</select>
+				</ControlInput>
+
+				<ControlInput suffix="Show total bar">
+					<input
+						type="checkbox"
+						checked={project.waterfallShowTotal}
+						onchange={(e) => {
+							project.waterfallShowTotal = e.currentTarget.checked;
+						}}
+						class="accent-dark-grey"
+					/>
+				</ControlInput>
 			{/if}
 
 			{#if project.chartType === 'line' || project.chartType === 'area'}

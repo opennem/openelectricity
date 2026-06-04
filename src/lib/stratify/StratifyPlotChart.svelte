@@ -10,8 +10,10 @@
 		createHorizontalBarOptions,
 		createGroupedHorizontalBarOptions,
 		createColourGroupedBarOptions,
+		createWaterfallOptions,
 		createMixedMarkOptions,
 		buildTooltipChannels,
+		makeValueFormatter,
 		toLong,
 		buildFacetGrid,
 		FACET_X_FIELD,
@@ -24,7 +26,8 @@
 		HORIZONTAL_TYPES,
 		COLUMN_TYPES,
 		TIME_SERIES_TYPES,
-		GROUPED_TYPES
+		GROUPED_TYPES,
+		WATERFALL_TYPES
 	} from '$lib/stratify/chart-types.js';
 
 	const dateFmt = new Intl.DateTimeFormat('en-AU', {
@@ -52,7 +55,9 @@
 		'column-grouped': createGroupedBarOptions,
 		bar: createHorizontalBarOptions,
 		'bar-stacked': createHorizontalBarOptions,
-		'bar-grouped': createGroupedHorizontalBarOptions
+		'bar-grouped': createGroupedHorizontalBarOptions,
+		waterfall: createWaterfallOptions,
+		'waterfall-horizontal': createWaterfallOptions
 	};
 
 	/**
@@ -62,6 +67,14 @@
 	 *   seriesColours: Record<string, string>,
 	 *   seriesLabels: Record<string, string>,
 	 *   chartType: import('$lib/stratify/chart-types.js').ChartType,
+	 *   waterfallMode?: 'single' | 'sum' | 'stacked',
+	 *   waterfallShowTotal?: boolean,
+	 *   waterfallColourMode?: 'semantic' | 'series',
+	 *   waterfallRowColours?: Record<string, string>,
+	 *   waterfallRowLabels?: Record<string, string>,
+	 *   waterfallSemanticColours?: Record<string, string>,
+	 *   waterfallSemanticLabels?: Record<string, string>,
+	 *   valueFormat?: string,
 	 *   seriesChartTypes?: Record<string, string>,
 	 *   seriesLineStyles?: Record<string, string>,
 	 *   plotOverrides?: import('./plot-overrides.js').PlotOverrides | null,
@@ -105,6 +118,14 @@
 		seriesColours,
 		seriesLabels,
 		chartType,
+		waterfallMode = 'single',
+		waterfallShowTotal = true,
+		waterfallColourMode = 'semantic',
+		waterfallRowColours = {},
+		waterfallRowLabels = {},
+		waterfallSemanticColours = {},
+		waterfallSemanticLabels = {},
+		valueFormat = '1',
 		seriesChartTypes = {},
 		seriesLineStyles = {},
 		plotOverrides = null,
@@ -272,10 +293,21 @@
 			seriesLineStyles,
 			legend: showLegend,
 			facetColumn,
-			facetGrid
+			facetGrid,
+			waterfallMode,
+			waterfallHorizontal: chartType === 'waterfall-horizontal',
+			waterfallShowTotal,
+			waterfallColourMode,
+			waterfallRowColours,
+			waterfallRowLabels,
+			waterfallSemanticColours,
+			waterfallSemanticLabels,
+			valueFormat
 		};
 
-		const isBarType = HORIZONTAL_TYPES.has(chartType) || COLUMN_TYPES.has(chartType);
+		const isWaterfall = WATERFALL_TYPES.has(chartType);
+		const isBarType =
+			!isWaterfall && (HORIZONTAL_TYPES.has(chartType) || COLUMN_TYPES.has(chartType));
 		let opts;
 		if (colourSeries && colourGroupNames.length > 0 && isBarType) {
 			opts = createColourGroupedBarOptions(
@@ -288,7 +320,7 @@
 				{ ...optionsWithLineStyles, horizontal: HORIZONTAL_TYPES.has(chartType) }
 			);
 		} else {
-			const hasMixedTypes = Object.keys(seriesChartTypes).length > 0;
+			const hasMixedTypes = !isWaterfall && Object.keys(seriesChartTypes).length > 0;
 			opts = hasMixedTypes
 				? createMixedMarkOptions(
 						chartData,
@@ -424,15 +456,17 @@
 		// Apply explicit domain (e.g. sorted categories). For grouped charts the
 		// category axis is the facet scale (fx for vertical, fy for horizontal),
 		// not the inner positional scale that holds seriesNames.
+		// Waterfall sets its own band domain (incl. the synthetic 'Total' entry),
+		// so skip the categorical-sort override that would drop the Total bar.
 		const isGrouped = GROUPED_TYPES.has(chartType);
-		if (xDomain) {
+		if (xDomain && !isWaterfall) {
 			if (isGrouped) {
 				opts.fx = { ...(opts.fx || {}), domain: xDomain };
 			} else {
 				opts.x = { ...(opts.x || {}), domain: xDomain };
 			}
 		}
-		if (yDomain) {
+		if (yDomain && !isWaterfall) {
 			if (isGrouped) {
 				opts.fy = { ...(opts.fy || {}), domain: yDomain };
 			} else {
@@ -490,13 +524,19 @@
 		const isTimeSeries = data.length > 0 && 'date' in data[0];
 		const isLinear = data.length > 0 && 'linear' in data[0];
 
+		// Formats displayed series values in every tooltip (waterfall supplies its own).
+		const formatValue = makeValueFormatter(valueFormat);
+
 		// Build series tooltip labels
 		let tooltipLabels =
 			colourSeries && Object.keys(dataColumnLabels).length > 0
 				? dataColumnLabels
 				: Object.fromEntries(seriesNames.map((n) => [n, seriesLabels[n] || n]));
 
-		if (isTimeSeries) {
+		if (isWaterfall) {
+			// createWaterfallOptions supplies its own tooltip (Category / Change / Total)
+			// bound to the precomputed cumulative bars, so skip the generic channels.
+		} else if (isTimeSeries) {
 			// Build channels in tooltipColumns order, interleaving Date at the right position
 			const showDate =
 				tooltipColumns.length === 0 || (dateColumnKey && tooltipColumns.includes(dateColumnKey));
@@ -512,7 +552,7 @@
 						};
 					} else if (key in tooltipLabels) {
 						const label = tooltipLabels[key];
-						tipChannels[label] = key;
+						tipChannels[label] = { value: (/** @type {any} */ d) => formatValue(d[key]) };
 					}
 				}
 			} else {
@@ -521,7 +561,7 @@
 						value: (/** @type {any} */ d) => dateFmt.format(d.date)
 					};
 				}
-				const channels = buildTooltipChannels(tooltipLabels);
+				const channels = buildTooltipChannels(tooltipLabels, formatValue);
 				Object.assign(tipChannels, channels);
 			}
 
@@ -552,14 +592,16 @@
 					if (key === dateColumnKey && showX) {
 						tipChannels[xColLabel] = { value: (/** @type {any} */ d) => d.linear };
 					} else if (key in tooltipLabels) {
-						tipChannels[tooltipLabels[key]] = key;
+						tipChannels[tooltipLabels[key]] = {
+							value: (/** @type {any} */ d) => formatValue(d[key])
+						};
 					}
 				}
 			} else {
 				if (showX) {
 					tipChannels[xColLabel] = { value: (/** @type {any} */ d) => d.linear };
 				}
-				Object.assign(tipChannels, buildTooltipChannels(tooltipLabels));
+				Object.assign(tipChannels, buildTooltipChannels(tooltipLabels, formatValue));
 			}
 
 			opts.marks.push(
@@ -589,14 +631,16 @@
 					if (key === catColumnKey && showCat) {
 						tipChannels[catLabel] = { value: (/** @type {any} */ d) => d.category };
 					} else if (key in tooltipLabels) {
-						tipChannels[tooltipLabels[key]] = key;
+						tipChannels[tooltipLabels[key]] = {
+							value: (/** @type {any} */ d) => formatValue(d[key])
+						};
 					}
 				}
 			} else {
 				if (showCat) {
 					tipChannels[catLabel] = { value: (/** @type {any} */ d) => d.category };
 				}
-				Object.assign(tipChannels, buildTooltipChannels(tooltipLabels));
+				Object.assign(tipChannels, buildTooltipChannels(tooltipLabels, formatValue));
 			}
 
 			const isHz = HORIZONTAL_TYPES.has(chartType);
@@ -612,7 +656,7 @@
 				groupedChannels['Series'] = {
 					value: (/** @type {any} */ d) => seriesLabels[d.series] || d.series
 				};
-				groupedChannels['Value'] = { value: (/** @type {any} */ d) => d.value };
+				groupedChannels['Value'] = { value: (/** @type {any} */ d) => formatValue(d.value) };
 
 				if (isHz) {
 					opts.marks.push(

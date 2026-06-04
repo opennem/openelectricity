@@ -7,8 +7,19 @@
 
 import { parseCSV } from '$lib/stratify/csv-parser.js';
 import { getPreset, migratePreset } from '$lib/stratify/chart-styles.js';
-import { assignPaletteColours, migratePresetToPalette } from '$lib/stratify/colour-palettes.js';
-import { migrateChartType, HORIZONTAL_TYPES } from '$lib/stratify/chart-types.js';
+import {
+	assignPaletteColours,
+	migratePresetToPalette,
+	getPaletteSwatchColours
+} from '$lib/stratify/colour-palettes.js';
+import {
+	migrateChartType,
+	HORIZONTAL_TYPES,
+	WATERFALL_TYPES,
+	WATERFALL_ROLE_KEYS,
+	WATERFALL_ROLE_LABELS,
+	getWaterfallRoleColours
+} from '$lib/stratify/chart-types.js';
 import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
 import {
 	detectLatColumn,
@@ -62,6 +73,10 @@ import {
  * @property {boolean} [animationAutoPlay]
  * @property {boolean} [animationTween]
  * @property {string} [chartCurve]
+ * @property {'single' | 'sum' | 'stacked'} [waterfallMode]
+ * @property {boolean} [waterfallShowTotal]
+ * @property {'semantic' | 'series'} [waterfallColourMode]
+ * @property {string} [valueFormat]
  * @property {number} [chartBorderWidth]
  * @property {string} [chartBorderColour]
  * @property {string} [xLabel]
@@ -224,6 +239,18 @@ export default class StratifyPlotProject {
 	/** @type {string} Plot curve type for line/area charts: linear, monotone-x, step, step-before, step-after, basis, natural */
 	chartCurve = $state('linear');
 
+	/** @type {'single' | 'sum' | 'stacked'} Waterfall aggregation: 'single' uses the first series, 'sum' totals all series per row, 'stacked' stacks every series within each step */
+	waterfallMode = $state('single');
+
+	/** @type {boolean} Append a full-height "Total" bar (anchored at 0) to the waterfall */
+	waterfallShowTotal = $state(true);
+
+	/** @type {'semantic' | 'series'} Waterfall colour mode: 'semantic' colours by role (start/up/down/total), 'series' colours per row */
+	waterfallColourMode = $state('semantic');
+
+	/** @type {string} Displayed-value format for tooltips & annotations: '0'|'1'|'2'|'3' decimals, 'compact', or 'auto' */
+	valueFormat = $state('1');
+
 	/** @type {number} Border (stroke) width in pixels for bar, column and area marks (0 = no border) */
 	chartBorderWidth = $state(0.5);
 
@@ -332,6 +359,39 @@ export default class StratifyPlotProject {
 		return groups;
 	});
 
+	/** Whether the waterfall colours single/sum bars (not stacked, which is per-column) */
+	isWaterfallColourable = $derived(
+		WATERFALL_TYPES.has(this.chartType) &&
+			(this.waterfallMode === 'single' || this.waterfallMode === 'sum')
+	);
+
+	/** Per-row colouring: each CSV row picks its own colour ('series' mode) */
+	isWaterfallPerRow = $derived(this.isWaterfallColourable && this.waterfallColourMode === 'series');
+
+	/** Semantic colouring: bars coloured by role (starting/increase/decrease/total) */
+	isWaterfallSemantic = $derived(
+		this.isWaterfallColourable && this.waterfallColourMode === 'semantic'
+	);
+
+	/** Row (category) keys for per-row waterfall colouring, in data order (+ Total) */
+	waterfallRowNames = $derived.by(() => {
+		if (!this.isWaterfallPerRow) return [];
+		const key = this.isCategory ? 'category' : this.isLinear ? 'linear' : 'date';
+		/** @type {Set<string>} */
+		const seen = new Set();
+		/** @type {string[]} */
+		const names = [];
+		for (const row of this.parsedData.data) {
+			const name = String(row[key]);
+			if (!seen.has(name)) {
+				seen.add(name);
+				names.push(name);
+			}
+		}
+		if (this.waterfallShowTotal) names.push('Total');
+		return names;
+	});
+
 	/** Whether the map chart is grouping markers by a category column */
 	isMapCategory = $derived(
 		this.chartType === 'map' && this.mapColourMode === 'category' && !!this.colourColumn
@@ -342,6 +402,37 @@ export default class StratifyPlotProject {
 	 *  When the map chart groups by a column, keys are that column's unique values. */
 	seriesColours = $derived.by(() => {
 		const parsed = this.parsedData;
+
+		// Semantic waterfall: keys are roles (starting/increase/decrease/total),
+		// defaulting to the first theme colours (starting & total share one).
+		if (this.isWaterfallSemantic) {
+			const defaults = getWaterfallRoleColours(getPaletteSwatchColours(this.colourPalette));
+			/** @type {Record<string, string>} */
+			const roleMerged = {};
+			for (const role of WATERFALL_ROLE_KEYS) {
+				roleMerged[role] = this.userSeriesColours[role] || defaults[role];
+			}
+			return roleMerged;
+		}
+
+		// Per-row waterfall: keys are row categories, all defaulting to one base
+		// colour (the first column's), individually overridable.
+		if (this.isWaterfallPerRow) {
+			const firstCol = parsed.seriesNames[0];
+			const presetCols = assignPaletteColours(parsed.seriesNames, this.colourPalette);
+			const base =
+				this.userSeriesColours[firstCol] ||
+				presetCols[firstCol] ||
+				parsed.seriesColours[firstCol] ||
+				'#888';
+			/** @type {Record<string, string>} */
+			const rowMerged = {};
+			for (const name of this.waterfallRowNames) {
+				rowMerged[name] = this.userSeriesColours[name] || base;
+			}
+			return rowMerged;
+		}
+
 		const names = this.isMapCategory
 			? this.mapColourGroupNames
 			: this.hasColourSeries
@@ -364,6 +455,27 @@ export default class StratifyPlotProject {
 	 *  When colour series is active, keys are group names. */
 	seriesLabels = $derived.by(() => {
 		const parsed = this.parsedData;
+
+		// Semantic waterfall: keys are roles with fixed default labels.
+		if (this.isWaterfallSemantic) {
+			/** @type {Record<string, string>} */
+			const roleMerged = {};
+			for (const role of WATERFALL_ROLE_KEYS) {
+				roleMerged[role] = this.userSeriesLabels[role] || WATERFALL_ROLE_LABELS[role];
+			}
+			return roleMerged;
+		}
+
+		// Per-row waterfall: keys are row categories; default label is the category.
+		if (this.isWaterfallPerRow) {
+			/** @type {Record<string, string>} */
+			const rowMerged = {};
+			for (const name of this.waterfallRowNames) {
+				rowMerged[name] = this.userSeriesLabels[name] || name;
+			}
+			return rowMerged;
+		}
+
 		const names = this.isMapCategory
 			? this.mapColourGroupNames
 			: this.hasColourSeries
@@ -540,6 +652,10 @@ export default class StratifyPlotProject {
 		this.animationAutoPlay = false;
 		this.animationTween = true;
 		this.chartCurve = 'linear';
+		this.waterfallMode = 'single';
+		this.waterfallShowTotal = true;
+		this.waterfallColourMode = 'semantic';
+		this.valueFormat = '1';
 		this.chartBorderWidth = 0.5;
 		this.chartBorderColour = '#000000';
 		this.xLabel = '';
@@ -628,6 +744,10 @@ export default class StratifyPlotProject {
 			animationAutoPlay: this.animationAutoPlay,
 			animationTween: this.animationTween,
 			chartCurve: this.chartCurve,
+			waterfallMode: this.waterfallMode,
+			waterfallShowTotal: this.waterfallShowTotal,
+			waterfallColourMode: this.waterfallColourMode,
+			valueFormat: this.valueFormat,
 			chartBorderWidth: this.chartBorderWidth,
 			chartBorderColour: this.chartBorderColour,
 			xLabel: this.xLabel,
@@ -698,6 +818,10 @@ export default class StratifyPlotProject {
 		this.animationAutoPlay = snapshot.animationAutoPlay ?? false;
 		this.animationTween = snapshot.animationTween ?? true;
 		this.chartCurve = snapshot.chartCurve ?? 'linear';
+		this.waterfallMode = snapshot.waterfallMode ?? 'single';
+		this.waterfallShowTotal = snapshot.waterfallShowTotal ?? true;
+		this.waterfallColourMode = snapshot.waterfallColourMode ?? 'semantic';
+		this.valueFormat = snapshot.valueFormat ?? '1';
 		this.chartBorderWidth = snapshot.chartBorderWidth ?? 0.5;
 		this.chartBorderColour = snapshot.chartBorderColour ?? '#000000';
 		this.xLabel = snapshot.xLabel ?? '';

@@ -11,15 +11,20 @@ import {
 	barY,
 	rectY,
 	dot,
+	link,
 	ruleX,
 	ruleY,
 	stackX,
 	stackY,
 	groupX,
 	groupY,
-	text
+	text,
+	tip,
+	pointerX,
+	pointerY
 } from '@observablehq/plot';
-import { getLineDasharray } from '$lib/stratify/chart-types.js';
+import { getLineDasharray, WATERFALL_ROLE_KEYS } from '$lib/stratify/chart-types.js';
+import { formatCompact } from '$lib/stratify/plot-annotations.js';
 
 /**
  * Per-series mark type for mixed charts.
@@ -48,6 +53,26 @@ export function detectXMode(data) {
 	if ('category' in data[0]) return { xKey: 'category', isCategory: true, isLinear: false };
 	if ('linear' in data[0]) return { xKey: 'linear', isCategory: false, isLinear: true };
 	return { xKey: 'date', isCategory: false, isLinear: false };
+}
+
+/**
+ * Build a value formatter for displayed numbers (tooltips, annotation labels).
+ * 'auto' passes values through unchanged (Plot's default formatting); '0'–'3'
+ * fix the decimal places; 'compact' abbreviates (1.2k). Non-numbers pass through.
+ * @param {string} [format]
+ * @returns {(value: any) => any}
+ */
+export function makeValueFormatter(format = 'auto') {
+	if (!format || format === 'auto') return (v) => v;
+	// Reuse the shared compact formatter so values match axis-tick formatting.
+	if (format === 'compact') {
+		return (v) => (typeof v === 'number' && isFinite(v) ? formatCompact(v) : v);
+	}
+	const nf = new Intl.NumberFormat('en-AU', {
+		minimumFractionDigits: Number(format) || 0,
+		maximumFractionDigits: Number(format) || 0
+	});
+	return (v) => (typeof v === 'number' && isFinite(v) ? nf.format(v) : v);
 }
 
 const SHARED_STYLE = {
@@ -978,6 +1003,339 @@ export function createColourGroupedBarOptions(
 	};
 }
 
+// ── Waterfall Chart ─────────────────────────────────────────────
+
+/**
+ * @typedef {Object} WaterfallChartOptions
+ * @property {object} [style]
+ * @property {number} [marginLeft]
+ * @property {number} [marginRight]
+ * @property {any[]} [extraMarks] - Additional marks
+ * @property {string | ((d: number) => string)} [yTickFormat]
+ * @property {number} [borderWidth] - Stroke width in px around bar marks (0 = none)
+ * @property {string} [borderColour] - Stroke colour for bar marks
+ * @property {boolean} [legend] - Show the colour legend (stacked mode only)
+ * @property {'single' | 'sum' | 'stacked'} [waterfallMode] - 'single' uses the first series; 'sum' totals all series per row; 'stacked' stacks every series within each step
+ * @property {boolean} [waterfallHorizontal] - Render horizontally (barX) instead of vertically (barY)
+ * @property {boolean} [waterfallShowTotal] - Append a full-height "Total" bar anchored at 0
+ * @property {'semantic' | 'series'} [waterfallColourMode] - 'semantic' colours by role (start/up/down/total); 'series' colours per row
+ * @property {Record<string, string>} [waterfallRowColours] - Per-row (category) colour overrides for series mode
+ * @property {Record<string, string>} [waterfallRowLabels] - Per-row (category) legend labels for series mode
+ * @property {Record<string, string>} [waterfallSemanticColours] - Role → colour for semantic mode (starting/increase/decrease/total)
+ * @property {Record<string, string>} [waterfallSemanticLabels] - Role → legend label for semantic mode
+ * @property {string} [valueFormat] - Displayed-value format: '0'|'1'|'2'|'3' decimals, 'compact', or 'auto'
+ */
+
+/**
+ * Waterfall chart: each bar is offset by the running cumulative total, so it
+ * shows how sequential contributions build to a final value. Increases and
+ * decreases are distinguished by bar direction.
+ *
+ * Three modes:
+ * - `single`  — uses the first series; one single-coloured bar per row.
+ * - `sum`     — totals all series per row; one single-coloured bar per row.
+ * - `stacked` — stacks every series within each step (series-coloured segments,
+ *               with a legend); the step's total still advances the running sum.
+ *
+ * An optional full-height "Total" bar (anchored at 0) is appended; in stacked
+ * mode it stacks each series' grand total so the colours match the steps.
+ *
+ * Unlike the stacked-bar factories this does not use Plot's stack transform:
+ * the cumulative start/end are precomputed per segment and drawn as an interval
+ * mark (barY with y1/y2, or barX with x1/x2).
+ *
+ * @param {Array<Record<string, any>>} data - Parsed rows (category/date/linear x)
+ * @param {string[]} seriesNames
+ * @param {Record<string, string>} colours
+ * @param {Record<string, string>} labels
+ * @param {WaterfallChartOptions} [options]
+ * @returns {import('@observablehq/plot').PlotOptions}
+ */
+export function createWaterfallOptions(data, seriesNames, colours, labels, options = {}) {
+	const {
+		style = SHARED_STYLE,
+		marginLeft,
+		marginRight,
+		legend = true,
+		extraMarks = [],
+		yTickFormat = 's',
+		borderWidth = 0,
+		borderColour,
+		waterfallMode = 'single',
+		waterfallHorizontal = false,
+		waterfallShowTotal = true,
+		waterfallColourMode = 'semantic',
+		waterfallRowColours = {},
+		waterfallRowLabels = {},
+		waterfallSemanticColours = {},
+		waterfallSemanticLabels = {},
+		valueFormat = '1'
+	} = options;
+	const formatValue = makeValueFormatter(valueFormat);
+	const border = borderProps(borderWidth, borderColour);
+
+	const { xKey } = detectXMode(data);
+	const isStacked = waterfallMode === 'stacked' && seriesNames.length > 1;
+	const barColour = colours[seriesNames[0]] || '#888';
+
+	// Precompute each bar (or stacked segment) with absolute start/end offsets
+	// derived from the running cumulative total.
+	let running = 0;
+	/** @type {Array<Record<string, any>>} */
+	const bars = [];
+	if (isStacked) {
+		for (const row of data) {
+			let segStart = running;
+			for (const name of seriesNames) {
+				const value = Number(row[name]) || 0;
+				bars.push({ x: row[xKey], series: name, value, start: segStart, end: segStart + value });
+				segStart += value;
+			}
+			running = segStart;
+		}
+	} else {
+		/** @param {Record<string, any>} row */
+		const rowValue = (row) =>
+			waterfallMode === 'sum'
+				? seriesNames.reduce((sum, name) => sum + (Number(row[name]) || 0), 0)
+				: Number(row[seriesNames[0]]) || 0;
+		data.forEach((row, i) => {
+			const value = rowValue(row);
+			const start = running;
+			running += value;
+			// `colourKey` ties each bar to its per-row legend entry (keyed by
+			// category); `role` drives the semantic start/increase/decrease/total
+			// colouring. The first bar is the starting value; the rest are deltas.
+			const role = i === 0 ? 'starting' : value >= 0 ? 'increase' : 'decrease';
+			bars.push({ x: row[xKey], colourKey: String(row[xKey]), role, value, start, end: running });
+		});
+	}
+
+	// Band domain is one entry per category (+ optional Total), regardless of
+	// how many stacked segments share each category.
+	const domain = data.map((row) => row[xKey]);
+	if (waterfallShowTotal) {
+		if (isStacked) {
+			let segStart = 0;
+			for (const name of seriesNames) {
+				const value = data.reduce((sum, row) => sum + (Number(row[name]) || 0), 0);
+				bars.push({ x: 'Total', series: name, value, start: segStart, end: segStart + value });
+				segStart += value;
+			}
+		} else {
+			bars.push({ x: 'Total', colourKey: 'Total', role: 'total', value: running, start: 0, end: running });
+		}
+		domain.push('Total');
+	}
+
+	// Colour & legend. Stacked mode colours by input series. Single/sum colour
+	// each bar (CSV row) individually: the fill is the per-row `colourKey`, and
+	// the colour scale's domain is the ordered list of rows so every bar gets its
+	// own legend entry, defaulting to one base colour until overridden.
+	const firstKey = seriesNames[0];
+	const barLabel = waterfallMode === 'sum' ? 'Sum' : labels[firstKey] || firstKey;
+
+	// Stacked colours by input series; single/sum show the change + running total.
+	/** @type {Record<string, any>} */
+	const tipChannels = isStacked
+		? {
+				Category: { value: (/** @type {any} */ d) => d.x },
+				Series: { value: (/** @type {any} */ d) => labels[d.series] || d.series },
+				Value: { value: (/** @type {any} */ d) => formatValue(d.value) }
+			}
+		: {
+				Category: { value: (/** @type {any} */ d) => d.x },
+				[barLabel]: { value: (/** @type {any} */ d) => formatValue(d.value) },
+				'Running total': { value: (/** @type {any} */ d) => formatValue(d.end) }
+			};
+
+	let fill;
+	let colorConfig;
+	if (isStacked) {
+		fill = 'series';
+		colorConfig = { ...colourScale(seriesNames, colours, labels), legend };
+	} else if (waterfallColourMode === 'semantic') {
+		// Colour by bar role (starting / increase / decrease / total).
+		fill = 'role';
+		const roles = WATERFALL_ROLE_KEYS.filter((r) => bars.some((b) => b.role === r));
+		colorConfig = {
+			domain: roles,
+			range: roles.map((r) => waterfallSemanticColours[r] || barColour),
+			legend,
+			tickFormat: (/** @type {string} */ r) => waterfallSemanticLabels[r] || r
+		};
+	} else {
+		// Per-row colouring: each bar (CSV row) is its own legend entry.
+		fill = 'colourKey';
+		/** @type {string[]} */
+		const rowKeys = [];
+		const seenKeys = new Set();
+		for (const bar of bars) {
+			if (!seenKeys.has(bar.colourKey)) {
+				seenKeys.add(bar.colourKey);
+				rowKeys.push(bar.colourKey);
+			}
+		}
+		colorConfig = {
+			domain: rowKeys,
+			range: rowKeys.map((k) => waterfallRowColours[k] || barColour),
+			legend,
+			tickFormat: (/** @type {string} */ k) => waterfallRowLabels[k] || k
+		};
+	}
+
+	// In stacked mode, anchor the tooltip at each segment's midpoint so hovering
+	// resolves to the segment under the cursor rather than the topmost bar.
+	const tipPos = isStacked ? (/** @type {any} */ d) => (d.start + d.end) / 2 : 'end';
+
+	// Map the category-axis ticks so a renamed bar shows its custom label,
+	// matching the legend. In per-row mode every category can be relabelled; in
+	// semantic mode only the appended "Total" bar carries a custom (role) label.
+	const bandTickFormat = isStacked
+		? null
+		: waterfallColourMode === 'semantic'
+			? (/** @type {any} */ d) =>
+					String(d) === 'Total' ? waterfallSemanticLabels.total || d : d
+			: (/** @type {any} */ d) => waterfallRowLabels[String(d)] ?? d;
+
+	// Auto annotations (non-stacked only): connector lines linking the running
+	// total across consecutive bars, plus a change-value label on each bar —
+	// above for starting/increase/total, below for decrease.
+	const showAnnotations = !isStacked;
+	/** @type {Array<{ a: any, b: any, level: number }>} */
+	const connectors = [];
+	if (showAnnotations) {
+		for (let i = 0; i < bars.length - 1; i++) {
+			connectors.push({ a: bars[i].x, b: bars[i + 1].x, level: bars[i].end });
+		}
+	}
+	const topBars = showAnnotations ? bars.filter((b) => b.role !== 'decrease') : [];
+	const belowBars = showAnnotations ? bars.filter((b) => b.role === 'decrease') : [];
+	const labelStyle = { fontFamily: 'DM Mono, monospace', fontSize: 10, fill: '#3c3c3c' };
+	const connectorStroke = { stroke: '#b0b0b0', strokeWidth: 1 };
+	/** @param {any} d */
+	const fmtChange = (d) => {
+		const abs = formatValue(Math.abs(d.value));
+		if (d.role === 'increase') return `+${abs}`;
+		if (d.role === 'decrease') return `−${abs}`;
+		return formatValue(Number(d.value));
+	};
+
+	if (waterfallHorizontal) {
+		const autoMarginLeft = computeAutoMarginLeft(data, marginLeft);
+		return {
+			style,
+			marginLeft: autoMarginLeft,
+			...(marginRight !== undefined ? { marginRight } : {}),
+			color: colorConfig,
+			y: {
+				label: null,
+				tickPadding: 6,
+				type: 'band',
+				domain,
+				padding: 0.15,
+				...(bandTickFormat ? { tickFormat: bandTickFormat } : {})
+			},
+			x: { label: null, grid: true, zero: true, type: 'linear', tickFormat: yTickFormat },
+			marks: [
+				...extraMarks,
+				...(connectors.length
+					? [link(connectors, { y1: 'a', y2: 'b', x1: 'level', x2: 'level', ...connectorStroke })]
+					: []),
+				barX(bars, { y: 'x', x1: 'start', x2: 'end', fill, ...border }),
+				ruleX([0]),
+				...(showAnnotations
+					? [
+							text(topBars, {
+								y: 'x',
+								x: (/** @type {any} */ d) => Math.max(d.start, d.end),
+								text: fmtChange,
+								textAnchor: 'start',
+								dx: 3,
+								...labelStyle
+							}),
+							text(belowBars, {
+								y: 'x',
+								x: (/** @type {any} */ d) => Math.min(d.start, d.end),
+								text: fmtChange,
+								textAnchor: 'end',
+								dx: -3,
+								...labelStyle
+							})
+						]
+					: []),
+				tip(
+					bars,
+					pointerY({
+						y: 'x',
+						x: tipPos,
+						channels: tipChannels,
+						format: { x: false, y: false },
+						preferredAnchor: 'left',
+						lineHeight: 1.3,
+						fontSize: 11
+					})
+				)
+			]
+		};
+	}
+
+	return {
+		style,
+		...(marginLeft !== undefined ? { marginLeft } : {}),
+		...(marginRight !== undefined ? { marginRight } : {}),
+		color: colorConfig,
+		x: {
+			label: null,
+			tickPadding: 6,
+			type: 'band',
+			domain,
+			...(bandTickFormat ? { tickFormat: bandTickFormat } : {})
+		},
+		y: { label: null, grid: true, tickFormat: yTickFormat },
+		marks: [
+			...extraMarks,
+			...(connectors.length
+				? [link(connectors, { x1: 'a', x2: 'b', y1: 'level', y2: 'level', ...connectorStroke })]
+				: []),
+			barY(bars, { x: 'x', y1: 'start', y2: 'end', fill, ...border }),
+			ruleY([0]),
+			...(showAnnotations
+				? [
+						text(topBars, {
+							x: 'x',
+							y: (/** @type {any} */ d) => Math.max(d.start, d.end),
+							text: fmtChange,
+							lineAnchor: 'bottom',
+							dy: -3,
+							...labelStyle
+						}),
+						text(belowBars, {
+							x: 'x',
+							y: (/** @type {any} */ d) => Math.min(d.start, d.end),
+							text: fmtChange,
+							lineAnchor: 'top',
+							dy: 3,
+							...labelStyle
+						})
+					]
+				: []),
+			tip(
+				bars,
+				pointerX({
+					x: 'x',
+					y: tipPos,
+					channels: tipChannels,
+					format: { x: false, y: false },
+					preferredAnchor: 'bottom',
+					lineHeight: 1.3,
+					fontSize: 11
+				})
+			)
+		]
+	};
+}
+
 // ── Dot Chart ───────────────────────────────────────────────────
 
 /**
@@ -1285,9 +1643,10 @@ export function createMixedMarkOptions(
  * when labels collide.
  *
  * @param {Record<string, string>} tooltipLabels - Map of data key → display label
- * @returns {Record<string, string>} Map of display label → data key
+ * @param {(value: any) => any} [formatValue] - Optional formatter for the channel values
+ * @returns {Record<string, any>} Map of display label → channel (data key or value spec)
  */
-export function buildTooltipChannels(tooltipLabels) {
+export function buildTooltipChannels(tooltipLabels, formatValue) {
 	const labelCounts = /** @type {Record<string, number>} */ ({});
 	for (const label of Object.values(tooltipLabels)) {
 		labelCounts[label] = (labelCounts[label] || 0) + 1;
@@ -1296,7 +1655,8 @@ export function buildTooltipChannels(tooltipLabels) {
 	return Object.fromEntries(
 		Object.entries(tooltipLabels).map(([key, label]) => {
 			const displayLabel = labelCounts[label] > 1 ? `${label} (${key})` : label;
-			return [displayLabel, key];
+			const channel = formatValue ? { value: (/** @type {any} */ d) => formatValue(d[key]) } : key;
+			return [displayLabel, channel];
 		})
 	);
 }

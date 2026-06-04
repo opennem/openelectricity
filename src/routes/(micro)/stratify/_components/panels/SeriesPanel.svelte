@@ -4,9 +4,19 @@
 	import SeriesConfig from '../SeriesConfig.svelte';
 	import SectionHeader from '../SectionHeader.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
+	import { WATERFALL_TYPES } from '$lib/stratify/chart-types.js';
 
 	const project = getStratifyContext();
 	const FLIP_DURATION = 150;
+
+	// Waterfall charts render a fixed tooltip (the bar/column), so the
+	// per-column tooltip picker below doesn't apply.
+	let isWaterfall = $derived(WATERFALL_TYPES.has(project.chartType));
+
+	// Single/sum waterfalls let the user choose semantic vs per-row colouring.
+	let isWaterfallColourable = $derived(
+		isWaterfall && (project.waterfallMode === 'single' || project.waterfallMode === 'sum')
+	);
 
 	/** @type {Array<{id: string, key: string, label: string}>} */
 	let tooltipDndItems = $state([]);
@@ -57,21 +67,54 @@
 		/>
 		<span class="text-[10px] text-mid-grey">Show legend</span>
 	</label>
+	{#if isWaterfallColourable}
+		<label class="flex items-center gap-2 mb-3">
+			<span class="text-[10px] text-mid-grey shrink-0">Colour by</span>
+			<select
+				value={project.waterfallColourMode}
+				onchange={(e) => {
+					project.waterfallColourMode = /** @type {'semantic' | 'series'} */ (e.currentTarget.value);
+				}}
+				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] focus:outline-none focus:border-dark-grey"
+			>
+				<option value="semantic">Waterfall (start / up / down / total)</option>
+				<option value="series">Series (colour each row)</option>
+			</select>
+		</label>
+	{/if}
 	<SeriesConfig />
 </SectionHeader>
 
 {#if project.hasData}
 	<SectionHeader label="Tooltip">
-		<div
-			class="flex flex-col gap-1"
-			use:dndzone={{
-				items: tooltipDndItems,
-				flipDurationMs: FLIP_DURATION,
-				type: 'tooltip-cols'
-			}}
-			onconsider={handleTooltipConsider}
-			onfinalize={handleTooltipFinalize}
-		>
+		<label class="flex items-center gap-2 mb-3">
+			<span class="text-[10px] text-mid-grey shrink-0">Value format</span>
+			<select
+				value={project.valueFormat}
+				onchange={(e) => {
+					project.valueFormat = e.currentTarget.value;
+				}}
+				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] focus:outline-none focus:border-dark-grey"
+			>
+				<option value="auto">Auto</option>
+				<option value="0">0 decimals</option>
+				<option value="1">1 decimal</option>
+				<option value="2">2 decimals</option>
+				<option value="3">3 decimals</option>
+				<option value="compact">Compact (1.2k)</option>
+			</select>
+		</label>
+		{#if !isWaterfall}
+			<div
+				class="flex flex-col gap-1"
+				use:dndzone={{
+					items: tooltipDndItems,
+					flipDurationMs: FLIP_DURATION,
+					type: 'tooltip-cols'
+				}}
+				onconsider={handleTooltipConsider}
+				onfinalize={handleTooltipFinalize}
+			>
 			{#each tooltipDndItems as item (item.id)}
 				{@const isSelected =
 					project.tooltipColumns.length === 0 || project.tooltipColumns.includes(item.key)}
@@ -111,5 +154,6 @@
 				</div>
 			{/each}
 		</div>
+		{/if}
 	</SectionHeader>
 {/if}
