@@ -80,6 +80,10 @@ describe('normaliseChart', () => {
 		expect(result.mapMinRadius).toBe(4);
 		expect(result.mapMaxRadius).toBe(24);
 		expect(result.mapTheme).toBe('light');
+		expect(result.waterfallMode).toBe('single');
+		expect(result.waterfallShowTotal).toBe(true);
+		expect(result.waterfallColourMode).toBe('semantic');
+		expect(result.valueFormat).toBe('1');
 	});
 
 	it('preserves map field values for the map chart type', () => {

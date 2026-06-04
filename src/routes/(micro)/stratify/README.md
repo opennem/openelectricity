@@ -228,7 +228,9 @@ or `compact` (reuses `formatCompact`). Default `1`. Implemented by `makeValueFor
 
 `waterfallMode`, `waterfallShowTotal`, `waterfallColourMode`, and `valueFormat` round-trip
 through `POST` / `PATCH /api/stratify/charts`, `StratifyPlotProject.toJSON()` /
-`loadFromSnapshot()`, and the `reset()` defaults — same pattern as the other scalar fields.
+`loadFromSnapshot()`, the `reset()` defaults, **and `normaliseChart()` in `chart-data.js`**
+(the published `/strata/{id}` + embed render path — missing fields there fall back to single
+colour) — same pattern as the other scalar fields.
 
 ## Per-Series Chart Type Override
 
