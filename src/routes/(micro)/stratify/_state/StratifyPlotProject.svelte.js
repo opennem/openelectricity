@@ -93,9 +93,11 @@ import {
  * @property {string | null} [lngColumn]
  * @property {string | null} [labelColumn]
  * @property {string | null} [sizeColumn]
- * @property {'single' | 'category'} [mapColourMode]
+ * @property {'single' | 'category' | 'range'} [mapColourMode]
  * @property {string | null} [colourColumn]
  * @property {string} [singleMarkerColour]
+ * @property {string} [mapRangeMinColour]
+ * @property {string} [mapRangeMaxColour]
  * @property {number} [mapMinRadius]
  * @property {number} [mapMaxRadius]
  * @property {'light' | 'dark' | 'satellite'} [mapTheme]
@@ -286,14 +288,20 @@ export default class StratifyPlotProject {
 	/** @type {string | null} Numeric CSV column key driving marker radius (null = fixed) */
 	sizeColumn = $state(null);
 
-	/** @type {'single' | 'category'} Map marker colour strategy */
+	/** @type {'single' | 'category' | 'range'} Map marker colour strategy */
 	mapColourMode = $state('single');
 
-	/** @type {string | null} Categorical column key when mapColourMode === 'category' */
+	/** @type {string | null} Colour column key: categorical (`category`) or numeric (`range`) */
 	colourColumn = $state(null);
 
 	/** @type {string} Single marker colour when mapColourMode === 'single' */
 	singleMarkerColour = $state('#3b82f6');
+
+	/** @type {string} Colour at the lowest value when mapColourMode === 'range' */
+	mapRangeMinColour = $state('#dbeafe');
+
+	/** @type {string} Colour at the highest value when mapColourMode === 'range' */
+	mapRangeMaxColour = $state('#1e3a8a');
 
 	/** @type {number} Minimum marker radius in pixels */
 	mapMinRadius = $state(4);
@@ -673,6 +681,8 @@ export default class StratifyPlotProject {
 		this.mapColourMode = 'single';
 		this.colourColumn = null;
 		this.singleMarkerColour = '#3b82f6';
+		this.mapRangeMinColour = '#dbeafe';
+		this.mapRangeMaxColour = '#1e3a8a';
 		this.mapMinRadius = 4;
 		this.mapMaxRadius = 24;
 		this.mapTheme = 'light';
@@ -763,6 +773,8 @@ export default class StratifyPlotProject {
 			mapColourMode: this.mapColourMode,
 			colourColumn: this.colourColumn,
 			singleMarkerColour: this.singleMarkerColour,
+			mapRangeMinColour: this.mapRangeMinColour,
+			mapRangeMaxColour: this.mapRangeMaxColour,
 			mapMinRadius: this.mapMinRadius,
 			mapMaxRadius: this.mapMaxRadius,
 			mapTheme: this.mapTheme
@@ -838,6 +850,8 @@ export default class StratifyPlotProject {
 		this.mapColourMode = snapshot.mapColourMode ?? 'single';
 		this.colourColumn = snapshot.colourColumn ?? null;
 		this.singleMarkerColour = snapshot.singleMarkerColour ?? '#3b82f6';
+		this.mapRangeMinColour = snapshot.mapRangeMinColour ?? '#dbeafe';
+		this.mapRangeMaxColour = snapshot.mapRangeMaxColour ?? '#1e3a8a';
 		this.mapMinRadius = snapshot.mapMinRadius ?? 4;
 		this.mapMaxRadius = snapshot.mapMaxRadius ?? 24;
 		this.mapTheme = snapshot.mapTheme ?? 'light';

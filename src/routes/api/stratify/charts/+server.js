@@ -124,6 +124,8 @@ export async function POST({ request }) {
 		mapColourMode: body.mapColourMode ?? 'single',
 		colourColumn: body.colourColumn ?? null,
 		singleMarkerColour: body.singleMarkerColour ?? '#3b82f6',
+		mapRangeMinColour: body.mapRangeMinColour ?? '#dbeafe',
+		mapRangeMaxColour: body.mapRangeMaxColour ?? '#1e3a8a',
 		mapMinRadius: body.mapMinRadius ?? 4,
 		mapMaxRadius: body.mapMaxRadius ?? 24,
 		mapTheme: body.mapTheme ?? 'light',

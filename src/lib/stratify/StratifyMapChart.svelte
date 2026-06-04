@@ -1,5 +1,6 @@
 <script>
-	import { scaleSqrt } from 'd3-scale';
+	import { scaleSqrt, scaleLinear } from 'd3-scale';
+	import { interpolateLab } from 'd3-interpolate';
 	import PointMap from '$lib/components/map/PointMap.svelte';
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
 	import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
@@ -52,21 +53,26 @@
 		);
 	});
 
-	// Range of the size column. scaleSqrt over [minVal, maxVal] → [minR, maxR].
-	const sizeRange = $derived.by(() => {
-		if (!sizeKey) return null;
+	/**
+	 * Min/max of a numeric column across the alias-resolved rows.
+	 * @param {string} col
+	 * @returns {{ min: number, max: number } | null}
+	 */
+	function columnExtent(col) {
 		let min = Infinity;
 		let max = -Infinity;
 		for (const row of rowsWithFirstColAliased) {
-			const v = Number(row[sizeKey]);
+			const v = Number(row[col]);
 			if (Number.isFinite(v)) {
 				if (v < min) min = v;
 				if (v > max) max = v;
 			}
 		}
-		if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
-		return { min, max };
-	});
+		return Number.isFinite(min) && Number.isFinite(max) ? { min, max } : null;
+	}
+
+	// Range of the size column. scaleSqrt over [minVal, maxVal] → [minR, maxR].
+	const sizeRange = $derived(sizeKey ? columnExtent(sizeKey) : null);
 
 	const minRadius = $derived(chart.mapMinRadius ?? 4);
 	const maxRadius = $derived(chart.mapMaxRadius ?? 24);
@@ -103,6 +109,24 @@
 
 	const singleColour = $derived(chart.singleMarkerColour ?? '#3b82f6');
 
+	// Range mode: interpolate marker colour across the numeric colour column,
+	// from mapRangeMinColour (at the lowest value) to mapRangeMaxColour (highest).
+	const rangeMinColour = $derived(chart.mapRangeMinColour ?? '#dbeafe');
+	const rangeMaxColour = $derived(chart.mapRangeMaxColour ?? '#1e3a8a');
+
+	const colourRange = $derived(
+		colourMode === 'range' && colourColumn ? columnExtent(colourColumn) : null
+	);
+
+	const colourScale = $derived.by(() => {
+		if (!colourRange) return null;
+		if (colourRange.min === colourRange.max) return () => rangeMaxColour;
+		return scaleLinear()
+			.domain([colourRange.min, colourRange.max])
+			.range([rangeMinColour, rangeMaxColour])
+			.interpolate(interpolateLab);
+	});
+
 	const points = $derived.by(() => {
 		if (!latKey || !lngKey) return [];
 		/** @type {import('$lib/components/map/types.js').MapPoint[]} */
@@ -124,6 +148,9 @@
 			if (colourMode === 'category' && colourColumn) {
 				const key = String(row[colourColumn] ?? '');
 				colour = categoryColours[key] ?? singleColour;
+			} else if (colourMode === 'range' && colourScale && colourColumn) {
+				const v = Number(row[colourColumn]);
+				colour = Number.isFinite(v) ? String(colourScale(v)) : rangeMinColour;
 			}
 
 			const label = labelKey ? String(row[labelKey] ?? '') : '';

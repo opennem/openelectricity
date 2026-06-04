@@ -52,6 +52,7 @@ src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/foo
     ├── ChartPreview.svelte            # Live chart preview
     ├── ChartTypeSelector.svelte       # Chart family/variant toggle
     ├── SeriesConfig.svelte            # Per-series colour, label, type, Y-axis, visibility
+    ├── ColourPicker.svelte            # Shared colour picker: theme swatches + native + hex + reset (Series panel + map controls)
     ├── DataInput.svelte               # CSV/TSV textarea + data preview
     ├── ExamplePicker.svelte           # Example dataset buttons
     ├── ChartManager.svelte            # Full chart management modal
@@ -161,7 +162,7 @@ Already-set values are not overwritten on CSV edit — manual choices stick.
 | `lngColumn`      | `string \| null` | Marker longitude (numeric column)                 |
 | `labelColumn`    | `string \| null` | Popup title                                       |
 | `sizeColumn`     | `string \| null` | Numeric column driving marker radius (sqrt scale) |
-| `colourColumn`   | `string \| null` | Categorical column for marker colour grouping     |
+| `colourColumn`   | `string \| null` | Colour column — categorical (`category`) or numeric (`range`) |
 | `tooltipColumns` | `string[]`       | Columns rendered as key/value rows in the popup   |
 
 ### Marker sizing
@@ -174,6 +175,7 @@ When `sizeColumn` is set, marker radius interpolates via `d3-scale.scaleSqrt()` 
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `'single'`      | Every marker uses `singleMarkerColour` (single colour-picker UI)                                                                                                                |
 | `'category'`    | Group by unique values of `colourColumn`; assign palette colours; per-group overrides via `userSeriesColours` (reuses the same per-series swatch UI from `SeriesConfig.svelte`) |
+| `'range'`       | Interpolate colour across the numeric `colourColumn` via `d3-scale.scaleLinear` + `interpolateLab`, from `mapRangeMinColour` (lowest value) to `mapRangeMaxColour` (highest)    |
 
 ### First-column popup quirk
 
@@ -181,7 +183,7 @@ The CSV parser stores the first column under a synthetic key (`category` / `line
 
 ### Sanity persistence
 
-The 10 map fields (`latColumn`, `lngColumn`, `labelColumn`, `sizeColumn`, `mapColourMode`, `colourColumn`, `singleMarkerColour`, `mapMinRadius`, `mapMaxRadius`, `mapTheme`) round-trip through Sanity via `POST /api/stratify/charts`, `PATCH /api/stratify/charts/:id`, and `normaliseChart()` in `chart-data.js`. They're also covered by `StratifyPlotProject.toJSON()` / `loadFromSnapshot()` and the `reset()` defaults.
+The 12 map fields (`latColumn`, `lngColumn`, `labelColumn`, `sizeColumn`, `mapColourMode`, `colourColumn`, `singleMarkerColour`, `mapRangeMinColour`, `mapRangeMaxColour`, `mapMinRadius`, `mapMaxRadius`, `mapTheme`) round-trip through Sanity via `POST /api/stratify/charts`, `PATCH /api/stratify/charts/:id`, and `normaliseChart()` in `chart-data.js`. They're also covered by `StratifyPlotProject.toJSON()` / `loadFromSnapshot()` and the `reset()` defaults.
 
 ## Waterfall Chart Type
 

@@ -115,6 +115,8 @@ export function normaliseChart(chart) {
 		mapColourMode: chart.mapColourMode ?? 'single',
 		colourColumn: chart.colourColumn ?? null,
 		singleMarkerColour: chart.singleMarkerColour ?? '#3b82f6',
+		mapRangeMinColour: chart.mapRangeMinColour ?? '#dbeafe',
+		mapRangeMaxColour: chart.mapRangeMaxColour ?? '#1e3a8a',
 		mapMinRadius: chart.mapMinRadius ?? 4,
 		mapMaxRadius: chart.mapMaxRadius ?? 24,
 		mapTheme: chart.mapTheme ?? 'light'

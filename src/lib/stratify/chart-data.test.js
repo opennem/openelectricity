@@ -77,6 +77,8 @@ describe('normaliseChart', () => {
 		expect(result.colourColumn).toBeNull();
 		expect(result.mapColourMode).toBe('single');
 		expect(result.singleMarkerColour).toBe('#3b82f6');
+		expect(result.mapRangeMinColour).toBe('#dbeafe');
+		expect(result.mapRangeMaxColour).toBe('#1e3a8a');
 		expect(result.mapMinRadius).toBe(4);
 		expect(result.mapMaxRadius).toBe(24);
 		expect(result.mapTheme).toBe('light');

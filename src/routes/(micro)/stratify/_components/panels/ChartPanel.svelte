@@ -3,6 +3,7 @@
 	import SectionGroup from '../SectionGroup.svelte';
 	import SectionHeader from '../SectionHeader.svelte';
 	import ControlInput, { CONTROL_INPUT_CLASS } from '../ControlInput.svelte';
+	import ColourPicker from '../ColourPicker.svelte';
 	import { getStratifyContext } from '../../_state/context.js';
 	import { HORIZONTAL_TYPES, WATERFALL_TYPES } from '$lib/stratify/chart-types.js';
 
@@ -238,7 +239,7 @@
 				<select
 					value={project.mapColourMode}
 					onchange={(e) => {
-						const v = /** @type {'single' | 'category'} */ (e.currentTarget.value);
+						const v = /** @type {'single' | 'category' | 'range'} */ (e.currentTarget.value);
 						project.mapColourMode = v;
 						if (v === 'single') {
 							project.userSeriesColours = {};
@@ -247,36 +248,20 @@
 					class={`${CONTROL_INPUT_CLASS} flex-1`}
 				>
 					<option value="single">Single colour</option>
-					<option value="category">Column</option>
+					<option value="category">Column (category)</option>
+					<option value="range">Column (numeric range)</option>
 				</select>
 			</ControlInput>
 
 			{#if project.mapColourMode === 'single'}
 				<ControlInput label="Colour">
-					<input
-						type="color"
+					<ColourPicker
 						value={project.singleMarkerColour}
-						oninput={(e) => {
-							project.singleMarkerColour = e.currentTarget.value;
-						}}
-						class="w-6 h-6 rounded border border-warm-grey cursor-pointer p-0"
-						aria-label="Marker colour"
-					/>
-					<input
-						type="text"
-						value={project.singleMarkerColour}
-						oninput={(e) => {
-							const v = e.currentTarget.value.trim();
-							if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(v)) {
-								project.singleMarkerColour = v;
-							}
-						}}
-						placeholder="#3b82f6"
-						class={`${CONTROL_INPUT_CLASS} flex-1`}
+						onChange={(c) => (project.singleMarkerColour = c)}
 					/>
 				</ControlInput>
 			{:else}
-				<ControlInput label="Group column">
+				<ControlInput label={project.mapColourMode === 'range' ? 'Value column' : 'Group column'}>
 					<select
 						value={project.colourColumn ?? ''}
 						onchange={(e) => {
@@ -291,6 +276,21 @@
 							<option value={col.key}>{col.label}</option>
 						{/each}
 					</select>
+				</ControlInput>
+			{/if}
+
+			{#if project.mapColourMode === 'range'}
+				<ControlInput label="Min colour">
+					<ColourPicker
+						value={project.mapRangeMinColour}
+						onChange={(c) => (project.mapRangeMinColour = c)}
+					/>
+				</ControlInput>
+				<ControlInput label="Max colour">
+					<ColourPicker
+						value={project.mapRangeMaxColour}
+						onChange={(c) => (project.mapRangeMaxColour = c)}
+					/>
 				</ControlInput>
 			{/if}
 

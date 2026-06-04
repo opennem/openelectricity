@@ -143,6 +143,8 @@ export async function PATCH({ request, params }) {
 	if (body.mapColourMode !== undefined) patches.mapColourMode = body.mapColourMode;
 	if (body.colourColumn !== undefined) patches.colourColumn = body.colourColumn;
 	if (body.singleMarkerColour !== undefined) patches.singleMarkerColour = body.singleMarkerColour;
+	if (body.mapRangeMinColour !== undefined) patches.mapRangeMinColour = body.mapRangeMinColour;
+	if (body.mapRangeMaxColour !== undefined) patches.mapRangeMaxColour = body.mapRangeMaxColour;
 	if (body.mapMinRadius !== undefined) patches.mapMinRadius = body.mapMinRadius;
 	if (body.mapMaxRadius !== undefined) patches.mapMaxRadius = body.mapMaxRadius;
 	if (body.mapTheme !== undefined) patches.mapTheme = body.mapTheme;
