@@ -73,7 +73,9 @@
 			<select
 				value={project.waterfallColourMode}
 				onchange={(e) => {
-					project.waterfallColourMode = /** @type {'semantic' | 'series'} */ (e.currentTarget.value);
+					project.waterfallColourMode = /** @type {'semantic' | 'series'} */ (
+						e.currentTarget.value
+					);
 				}}
 				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] focus:outline-none focus:border-dark-grey"
 			>
@@ -85,36 +87,18 @@
 	<SeriesConfig />
 </SectionHeader>
 
-{#if project.hasData}
+{#if project.hasData && !isWaterfall}
 	<SectionHeader label="Tooltip">
-		<label class="flex items-center gap-2 mb-3">
-			<span class="text-[10px] text-mid-grey shrink-0">Value format</span>
-			<select
-				value={project.valueFormat}
-				onchange={(e) => {
-					project.valueFormat = e.currentTarget.value;
-				}}
-				class="flex-1 bg-light-warm-grey/50 border border-warm-grey rounded px-2 py-1 text-[11px] focus:outline-none focus:border-dark-grey"
-			>
-				<option value="auto">Auto</option>
-				<option value="0">0 decimals</option>
-				<option value="1">1 decimal</option>
-				<option value="2">2 decimals</option>
-				<option value="3">3 decimals</option>
-				<option value="compact">Compact (1.2k)</option>
-			</select>
-		</label>
-		{#if !isWaterfall}
-			<div
-				class="flex flex-col gap-1"
-				use:dndzone={{
-					items: tooltipDndItems,
-					flipDurationMs: FLIP_DURATION,
-					type: 'tooltip-cols'
-				}}
-				onconsider={handleTooltipConsider}
-				onfinalize={handleTooltipFinalize}
-			>
+		<div
+			class="flex flex-col gap-1"
+			use:dndzone={{
+				items: tooltipDndItems,
+				flipDurationMs: FLIP_DURATION,
+				type: 'tooltip-cols'
+			}}
+			onconsider={handleTooltipConsider}
+			onfinalize={handleTooltipFinalize}
+		>
 			{#each tooltipDndItems as item (item.id)}
 				{@const isSelected =
 					project.tooltipColumns.length === 0 || project.tooltipColumns.includes(item.key)}
@@ -154,6 +138,5 @@
 				</div>
 			{/each}
 		</div>
-		{/if}
 	</SectionHeader>
 {/if}

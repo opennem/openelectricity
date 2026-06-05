@@ -221,10 +221,11 @@ snapshot-boundary split used by the colour-series logic.
 
 ### Displayed-value format (`valueFormat`)
 
-`valueFormat` (Series panel → Tooltip → "Value format") controls how numeric values render in
-**all** chart tooltips and in waterfall labels: `auto` (Plot default), `0`–`3` fixed decimals,
-or `compact` (reuses `formatCompact`). Default `1`. Implemented by `makeValueFormatter` in
-`plot-configs.js`, threaded through `buildTooltipChannels`.
+`valueFormat` (Data panel → "Number format") controls how numeric values render in
+**all** chart tooltips, in waterfall labels, and in the map legend's range min/max: `auto`
+(Plot default), `0`–`3` fixed decimals, or `compact` (reuses `formatCompact`). Default `1`.
+Implemented by `makeValueFormatter` in `plot-configs.js`, threaded through `buildTooltipChannels`
+and (for maps) `StratifyMapChart`'s legend descriptor.
 
 ### Sanity persistence
 

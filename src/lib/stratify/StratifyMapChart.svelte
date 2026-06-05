@@ -5,6 +5,7 @@
 	import { parseCSV } from '$lib/stratify/csv-parser.js';
 	import { uniqueColumnValues } from '$lib/stratify/chart-data.js';
 	import { assignPaletteColours } from '$lib/stratify/colour-palettes.js';
+	import { makeValueFormatter } from '$lib/components/charts/plot/plot-configs.js';
 
 	/** First-column synthetic keys, by parse mode. The CSV parser stores the
 	 * first column under one of these instead of the column's own key. */
@@ -171,6 +172,46 @@
 	const popupColumns = $derived(chart.tooltipColumns ?? []);
 	const mapTheme = $derived(chart.mapTheme ?? 'light');
 
+	// Legend descriptor — mirrors the active colour mode. Category labels reuse
+	// the per-group overrides set in the Series panel; the range/category title
+	// uses the colour column's display label.
+	const legend = $derived.by(() => {
+		if ((chart.showLegend ?? true) === false) return null;
+		const overrides = chart.userSeriesLabels ?? {};
+		const columnLabel = colourColumn ? (dataColumnLabels[colourColumn] ?? colourColumn) : undefined;
+
+		if (colourMode === 'category' && colourColumn && colourGroupNames.length > 0) {
+			return {
+				mode: /** @type {const} */ ('category'),
+				label: columnLabel,
+				items: colourGroupNames.map((name) => ({
+					label: overrides[name] || name,
+					colour: categoryColours[name] ?? singleColour
+				}))
+			};
+		}
+
+		if (colourMode === 'range' && colourColumn && colourRange) {
+			const fmt = makeValueFormatter(chart.valueFormat ?? '1');
+			return {
+				mode: /** @type {const} */ ('range'),
+				label: columnLabel,
+				min: colourRange.min,
+				max: colourRange.max,
+				minColour: rangeMinColour,
+				maxColour: rangeMaxColour,
+				formatValue: (/** @type {number} */ n) => String(fmt(n))
+			};
+		}
+
+		const singleLabel = labelKey ? dataColumnLabels[labelKey] : undefined;
+		return {
+			mode: /** @type {const} */ ('single'),
+			colour: singleColour,
+			label: singleLabel
+		};
+	});
+
 	const missingMapping = $derived(!latKey || !lngKey);
 </script>
 
@@ -193,6 +234,7 @@
 		{points}
 		{mapTheme}
 		{popupColumns}
+		{legend}
 		popupColumnLabels={dataColumnLabels}
 		height={`${height}px`}
 	/>

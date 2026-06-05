@@ -7,9 +7,11 @@
 		GeoJSONSource,
 		CircleLayer
 	} from 'svelte-maplibre-gl';
+	import MapLegend from './MapLegend.svelte';
 
 	/**
 	 * @typedef {import('./types.js').MapPoint} MapPoint
+	 * @typedef {import('./types.js').MapLegendSpec} MapLegendSpec
 	 */
 
 	/**
@@ -21,6 +23,7 @@
 	 *   suppressFitBounds?: boolean,
 	 *   popupColumns?: string[],
 	 *   popupColumnLabels?: Record<string, string>,
+	 *   legend?: MapLegendSpec | null,
 	 *   height?: string,
 	 *   onclick?: (point: MapPoint | null) => void
 	 * }}
@@ -33,6 +36,7 @@
 		suppressFitBounds = false,
 		popupColumns = [],
 		popupColumnLabels = {},
+		legend = null,
 		height = '500px',
 		onclick
 	} = $props();
@@ -195,6 +199,10 @@
 			</Popup>
 		{/if}
 	</MapLibre>
+
+	{#if legend}
+		<MapLegend spec={legend} />
+	{/if}
 </div>
 
 <style>
