@@ -172,44 +172,60 @@
 	const popupColumns = $derived(chart.tooltipColumns ?? []);
 	const mapTheme = $derived(chart.mapTheme ?? 'light');
 
-	// Legend descriptor — mirrors the active colour mode. Category labels reuse
-	// the per-group overrides set in the Series panel; the range/category title
-	// uses the colour column's display label.
+	// Shared value formatter for the numeric legend channels (range colour + size).
+	const valueFormatter = $derived(makeValueFormatter(chart.valueFormat ?? '1'));
+
+	// Legend descriptor — two independent channels. `colour` mirrors the active
+	// colour mode (category labels reuse the per-group overrides set in the Series
+	// panel; the range/category title uses the colour column's display label).
+	// `size` describes the radius encoding, shown only when the size column spans
+	// an actual range (a constant column gives every marker the same radius).
 	const legend = $derived.by(() => {
 		if ((chart.showLegend ?? true) === false) return null;
 		const overrides = chart.userSeriesLabels ?? {};
 		const columnLabel = colourColumn ? (dataColumnLabels[colourColumn] ?? colourColumn) : undefined;
 
+		/** @type {import('$lib/components/map/types.js').MapColourLegend} */
+		let colour;
 		if (colourMode === 'category' && colourColumn && colourGroupNames.length > 0) {
-			return {
-				mode: /** @type {const} */ ('category'),
+			colour = {
+				mode: 'category',
 				label: columnLabel,
 				items: colourGroupNames.map((name) => ({
 					label: overrides[name] || name,
 					colour: categoryColours[name] ?? singleColour
 				}))
 			};
-		}
-
-		if (colourMode === 'range' && colourColumn && colourRange) {
-			const fmt = makeValueFormatter(chart.valueFormat ?? '1');
-			return {
-				mode: /** @type {const} */ ('range'),
+		} else if (colourMode === 'range' && colourColumn && colourRange) {
+			colour = {
+				mode: 'range',
 				label: columnLabel,
 				min: colourRange.min,
 				max: colourRange.max,
 				minColour: rangeMinColour,
 				maxColour: rangeMaxColour,
-				formatValue: (/** @type {number} */ n) => String(fmt(n))
+				formatValue: (/** @type {number} */ n) => String(valueFormatter(n))
+			};
+		} else {
+			const singleLabel = labelKey ? dataColumnLabels[labelKey] : undefined;
+			colour = { mode: 'single', colour: singleColour, label: singleLabel };
+		}
+
+		/** @type {import('$lib/components/map/types.js').MapSizeLegend | null} */
+		let size = null;
+		if (sizeKey && sizeRange && sizeScale && sizeRange.min !== sizeRange.max) {
+			const mid = (sizeRange.min + sizeRange.max) / 2;
+			size = {
+				label: dataColumnLabels[sizeKey] ?? sizeKey,
+				stops: [sizeRange.min, mid, sizeRange.max].map((value) => ({
+					value,
+					radius: Number(sizeScale(value))
+				})),
+				formatValue: (/** @type {number} */ n) => String(valueFormatter(n))
 			};
 		}
 
-		const singleLabel = labelKey ? dataColumnLabels[labelKey] : undefined;
-		return {
-			mode: /** @type {const} */ ('single'),
-			colour: singleColour,
-			label: singleLabel
-		};
+		return { colour, size };
 	});
 
 	const missingMapping = $derived(!latKey || !lngKey);
