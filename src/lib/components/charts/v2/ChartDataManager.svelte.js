@@ -247,13 +247,26 @@ export default class ChartDataManager {
 	}
 
 	/**
-	 * API max range per request, scaled by interval.
+	 * Max range per request, scaled by interval. Acts as a safety net that
+	 * chunks very wide gaps into sequential fetches (see #splitGapIntoBatches).
+	 *
+	 * The OE API no longer caps query range, so coarse intervals can pull a
+	 * full facility lifetime in a single request — the cap only stays tight
+	 * for 5m, where a full history would be millions of points.
+	 *
 	 * @returns {number} max range in ms
 	 */
 	get #maxApiRangeMs() {
 		const DAY = 24 * 60 * 60 * 1000;
+		// Coarse intervals already span a huge window per request.
 		if (this.interval === '1y') return 3700 * DAY;
 		if (this.interval === '3M') return 1830 * DAY;
+		// Daily/monthly stay modest even over a full facility lifetime
+		// (~30y daily ≈ 11k points, monthly ≈ 360 points), so allow the whole
+		// history in one request rather than batching it.
+		if (this.interval === '1d' || this.interval === '1M') return 11000 * DAY;
+		// High-resolution 5m: keep the tighter cap and let
+		// #splitGapIntoBatches chunk anything wider.
 		return 1000 * DAY;
 	}
 
@@ -291,7 +304,7 @@ export default class ChartDataManager {
 			return;
 		}
 
-		// Split any gap that exceeds the API's 1000-day limit into batches
+		// Split any gap that exceeds the per-interval request cap into batches
 		/** @type {LoadingRange[]} */
 		const allBatches = [];
 		for (const gap of gaps) {
@@ -382,11 +395,15 @@ export default class ChartDataManager {
 		// overlapping data harmless. Scale by interval.
 		const DAY_MS = 24 * 60 * 60 * 1000;
 		const OVERLAP_MS =
-			this.interval === '1y' ? 365 * DAY_MS :
-			this.interval === '3M' ? 92 * DAY_MS :
-			this.interval === '1M' ? 31 * DAY_MS :
-			this.interval === '1d' ? DAY_MS :
-			10 * 60 * 1000; // 10 minutes for 5m
+			this.interval === '1y'
+				? 365 * DAY_MS
+				: this.interval === '3M'
+					? 92 * DAY_MS
+					: this.interval === '1M'
+						? 31 * DAY_MS
+						: this.interval === '1d'
+							? DAY_MS
+							: 10 * 60 * 1000; // 10 minutes for 5m
 
 		/** @type {LoadingRange[]} */
 		const gaps = [];
@@ -418,7 +435,9 @@ export default class ChartDataManager {
 	async #fetchFromApi(startMs, endMs) {
 		// Validate metric/interval compatibility — 5m only supports power and market_value
 		if (this.interval === '5m' && this.metric === 'energy') {
-			console.warn(`ChartDataManager: skipping invalid combo interval=${this.interval}, metric=${this.metric}`);
+			console.warn(
+				`ChartDataManager: skipping invalid combo interval=${this.interval}, metric=${this.metric}`
+			);
 			return null;
 		}
 
@@ -481,7 +500,12 @@ export default class ChartDataManager {
 		}
 
 		const json = await res.json();
-		console.log('ChartDataManager fetch:', { facilityCode: this.facilityCode, dateStart, dateEnd, response: json.response });
+		console.log('ChartDataManager fetch:', {
+			facilityCode: this.facilityCode,
+			dateStart,
+			dateEnd,
+			response: json.response
+		});
 		return json.response;
 	}
 

@@ -63,7 +63,7 @@ function createManager(overrides = {}) {
 		unitOrder: ['power_UNIT1', 'power_UNIT2'],
 		loadsToInvert: [],
 		getLabel: (unitCode, fuelTech) => `${unitCode} (${fuelTech})`,
-		getColour: (unitCode, _fuelTech) => unitCode === 'UNIT1' ? '#ff0000' : '#0000ff',
+		getColour: (unitCode, _fuelTech) => (unitCode === 'UNIT1' ? '#ff0000' : '#0000ff'),
 		...overrides
 	});
 }
@@ -328,7 +328,10 @@ describe('ChartDataManager', () => {
 
 	describe('merge deduplication', () => {
 		it('should not create duplicate rows when fetched data overlaps with cache', async () => {
-			const manager = createManager({ unitFuelTechMap: { UNIT1: 'solar_utility' }, unitOrder: ['power_UNIT1'] });
+			const manager = createManager({
+				unitFuelTechMap: { UNIT1: 'solar_utility' },
+				unitOrder: ['power_UNIT1']
+			});
 
 			// Seed with 20 points starting at T0
 			const startISO = '2026-02-08T00:00:00+10:00';
@@ -344,7 +347,9 @@ describe('ChartDataManager', () => {
 			});
 			manager.seedCache(response1);
 
-			const originalLength = /** @type {NonNullable<typeof manager.processedCache>} */ (manager.processedCache).data.length;
+			const originalLength = /** @type {NonNullable<typeof manager.processedCache>} */ (
+				manager.processedCache
+			).data.length;
 
 			// Build overlapping data: starts 5 points earlier, overlaps 10 points
 			const overlapStartISO = new Date(startMs - 5 * intervalMs).toISOString();
@@ -372,7 +377,9 @@ describe('ChartDataManager', () => {
 			// Wait for the async fetch to complete
 			await vi.advanceTimersByTimeAsync(100);
 
-			const allData = /** @type {NonNullable<typeof manager.processedCache>} */ (manager.processedCache).data;
+			const allData = /** @type {NonNullable<typeof manager.processedCache>} */ (
+				manager.processedCache
+			).data;
 
 			// Check no duplicate timestamps
 			const timestamps = allData.map((/** @type {any} */ row) => row.time);
@@ -544,6 +551,70 @@ describe('ChartDataManager', () => {
 	});
 
 	// ------------------------------------------
+	// Per-request range cap (#maxApiRangeMs / batch splitting)
+	// ------------------------------------------
+
+	describe('per-request range cap', () => {
+		const DAY = 24 * 60 * 60 * 1000;
+
+		/** Resolve a successful power response for any fetch. */
+		function okFetchSpy() {
+			return vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: buildPowerResponse({
+						networkId: 'NEM',
+						unitCodes: ['UNIT1'],
+						startISO: '2026-02-08T00:00:00+10:00',
+						pointCount: 12
+					})
+				})
+			});
+		}
+
+		it('fetches a full-lifetime monthly range in a single request', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '1M', metric: 'energy' });
+
+			// ~25 years — comfortably under the 30-year monthly cap, so no batching.
+			const now = Date.now();
+			manager.requestRange(now - 25 * 365 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it('fetches a full-lifetime daily range in a single request', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '1d', metric: 'energy' });
+
+			const now = Date.now();
+			manager.requestRange(now - 25 * 365 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it('still batches high-resolution 5m ranges that exceed the tighter cap', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '5m', metric: 'power' });
+
+			// 2500 days at a 1000-day cap → three sequential batches.
+			const now = Date.now();
+			manager.requestRange(now - 2500 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(3);
+		});
+	});
+
+	// ------------------------------------------
 	// Empty range tracking (Fix 4)
 	// ------------------------------------------
 
@@ -661,10 +732,7 @@ describe('ChartDataManager', () => {
 		 */
 		function computeZoom(viewStart, viewEnd, factor, centerMs, now = Date.now()) {
 			const duration = viewEnd - viewStart;
-			const newDuration = Math.min(
-				Math.max(duration / factor, MIN_VIEWPORT_MS),
-				MAX_VIEWPORT_MS
-			);
+			const newDuration = Math.min(Math.max(duration / factor, MIN_VIEWPORT_MS), MAX_VIEWPORT_MS);
 
 			const ratio = (centerMs - viewStart) / duration;
 			let newStart = centerMs - ratio * newDuration;

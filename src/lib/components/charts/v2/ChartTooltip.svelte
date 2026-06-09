@@ -42,9 +42,11 @@
 	{#if activeData}
 		<div class="h-full flex items-center justify-end text-xs">
 			<!-- Date -->
-			<span class="px-3 py-1 font-light bg-white/40">
-				{formattedDate}
-			</span>
+			{#if formattedDate}
+				<span class="px-3 py-1 font-light bg-white/40">
+					{formattedDate}
+				</span>
+			{/if}
 
 			{#if value !== undefined || chart.chartTooltips.showTotal}
 				<div class="bg-light-warm-grey px-4 py-1 flex gap-4 items-center">

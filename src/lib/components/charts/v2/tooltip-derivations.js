@@ -90,8 +90,16 @@ export function getFormattedX(chart, activeData) {
 		return categoryValue === undefined ? '' : chart.formatX(categoryValue);
 	}
 
+	// Consumers can hide the tooltip date/time header via the tooltips store.
+	if (chart.chartTooltips?.showDate === false) return '';
+
 	if (!activeData.date) return '';
 	const asDate = activeData.date instanceof Date ? activeData.date : new Date(activeData.date);
+
+	// Prefer a dedicated tooltip formatter — `formatTickX` is keyed to gridline
+	// midpoints and returns '' for arbitrary hovered points.
+	const tip = chart.formatTooltipX?.(asDate, chart.timeZone);
+	if (typeof tip === 'string' && tip) return tip;
 
 	const formatted = chart.formatTickX?.(asDate, chart.timeZone);
 	if (typeof formatted === 'string') return formatted;

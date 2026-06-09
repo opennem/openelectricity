@@ -58,8 +58,10 @@
 		<div
 			class="inline-flex items-center gap-1.5 bg-white/70 backdrop-blur-md backdrop-saturate-150 rounded-md shadow-sm border border-warm-grey text-xs px-2.5 py-1 whitespace-nowrap"
 		>
-			<span class="text-mid-grey font-light">{formattedDate}</span>
-			<span class="text-mid-grey font-light" aria-hidden="true">—</span>
+			{#if formattedDate}
+				<span class="text-mid-grey font-light">{formattedDate}</span>
+				<span class="text-mid-grey font-light" aria-hidden="true">—</span>
+			{/if}
 			<strong class="font-semibold text-dark-grey tabular-nums">
 				{formattedValue}{displayUnit ? ` ${displayUnit}` : ''}
 			</strong>

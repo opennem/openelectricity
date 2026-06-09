@@ -15,8 +15,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { analyzeUnits } from './unit-analysis.js';
-	import { computeEnergyGridlines } from '$lib/components/charts/v2/energy-gridlines.js';
-	import { formatXAxis, getDayStartDates } from '$lib/components/charts/v2/formatters.js';
+	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 
@@ -51,6 +50,7 @@
 	 * @property {'floating' | 'static' | 'none'} [zoomMode] - Zoom button placement: 'floating' (card overlay at the top-right that fades in on hover) or 'static' (flat buttons inline at the right of the options bar). Default: 'static'.
 	 * @property {boolean} [showContainer] - Whether to wrap the chart in the default bordered + padded container (default: true). Set false to render the chart flush against the parent.
 	 * @property {'strip' | 'floating' | 'none'} [tooltipMode] - Tooltip style: 'strip' above the chart (default), 'floating' overlaid at the cursor, or 'none'.
+	 * @property {boolean} [showTooltipDate] - Whether the tooltip shows its date/time header (default: true).
 	 * @property {boolean} [tightAxisClip] - Clip gridlines/axis labels to the exact chart area (default: false). Use for compact charts where gridlines shouldn't extend past the edges.
 	 * @property {number} [overlayInsetPx] - Horizontal standoff (px) between overlay controls (zoom buttons, floating tooltip) and the chart's left/right edges. Use when the chart is rendered flush to its container and the overlays would otherwise touch the edge. Default 0.
 	 * @property {string} [title] - Override the chart header title (defaults to facility.name).
@@ -82,6 +82,7 @@
 		zoomMode = /** @type {'floating' | 'static' | 'none'} */ ('static'),
 		showContainer = true,
 		tooltipMode = /** @type {'strip' | 'floating' | 'none'} */ ('strip'),
+		showTooltipDate = true,
 		tightAxisClip = false,
 		overlayInsetPx = 0,
 		title = '',
@@ -385,6 +386,11 @@
 		}
 	});
 
+	// Mirror the tooltip date toggle into the store.
+	$effect(() => {
+		if (chartStore) chartStore.chartTooltips.showDate = showTooltipDate;
+	});
+
 	// Update series metadata when data manager provides processed data
 	$effect(() => {
 		if (!chartStore || !dataManager?.processedCache) return;
@@ -452,17 +458,15 @@
 		chartStore.seriesData = visibleData;
 		chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
 
-		if (isEnergy && visibleData.length > 1) {
-			const g = computeEnergyGridlines(visibleData, start, end, ianaTimeZone);
-			chartStore.xGridlineTicks = g.gridlineTicks;
-			chartStore.xTicks = g.ticks;
-			chartStore.formatTickX = g.formatTick;
-		} else {
-			const dayStarts = getDayStartDates(visibleData, ianaTimeZone, timeZone);
-			chartStore.xTicks = dayStarts;
-			chartStore.xGridlineTicks = dayStarts;
-			chartStore.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
-		}
+		applyFacilityTimeAxis(chartStore, {
+			data: visibleData,
+			viewStart: start,
+			viewEnd: end,
+			ianaTimeZone,
+			timeZone,
+			isEnergy,
+			displayInterval: currentDisplayInterval
+		});
 	});
 
 	// Update reference lines and yDomain reactively
@@ -753,6 +757,16 @@
 		const now = Date.now();
 		viewStart = startMs;
 		viewEnd = Math.min(endMs, now);
+
+		// If an interval/metric switch is pending (the props have changed but the
+		// data-manager $effect hasn't swapped the manager yet), don't fetch against
+		// the stale manager — e.g. selecting "All" flips to energy/1y, but the live
+		// manager is still power/5m and would request a multi-year 5m range the API
+		// rejects. The init $effect creates the correct manager and fetches this
+		// viewport immediately.
+		if (dataManager && (dataManager.interval !== interval || dataManager.metric !== metric)) {
+			return;
+		}
 
 		// Prefetch with buffer so panning has data ready
 		const duration = viewEnd - viewStart;

@@ -19,8 +19,7 @@
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import { analyzeUnits } from './unit-analysis.js';
-	import { computeEnergyGridlines } from '$lib/components/charts/v2/energy-gridlines.js';
-	import { formatXAxis, getDayStartDates } from '$lib/components/charts/v2/formatters.js';
+	import { applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 	import { setFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
@@ -55,6 +54,7 @@
 	 * @property {string} [priceChartHeight]
 	 * @property {string} [mvChartHeight]
 	 * @property {boolean} [active] - When false, skip manager instantiation (no fetch fires).
+	 * @property {boolean} [showTooltipDate] - Whether the tooltips show their date/time header (default: true).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync.
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when a financial chart's local hover changes.
 	 * @property {((data: SummaryData) => void)} [onsummarydata]
@@ -73,12 +73,19 @@
 		priceChartHeight = 'h-[200px]',
 		mvChartHeight = 'h-[200px]',
 		active = true,
+		showTooltipDate = true,
 		hoverTime = undefined,
 		onhoverchange,
 		onsummarydata,
 		onviewportchange,
 		children
 	} = $props();
+
+	// Mirror the tooltip date toggle into both chart stores.
+	$effect(() => {
+		if (priceChartStore) priceChartStore.chartTooltips.showDate = showTooltipDate;
+		if (mvChartStore) mvChartStore.chartTooltips.showDate = showTooltipDate;
+	});
 
 	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
 	let isEnergyInterval = $derived(interval !== '5m');
@@ -421,17 +428,15 @@
 			isEnergyInterval ? 'step' : 'straight'
 		);
 
-		if (isEnergyInterval && priceData.length > 1) {
-			const g = computeEnergyGridlines(priceData, viewStart, viewEnd, ianaTimeZone);
-			priceChartStore.xGridlineTicks = g.gridlineTicks;
-			priceChartStore.xTicks = g.ticks;
-			priceChartStore.formatTickX = g.formatTick;
-		} else if (priceData.length > 0) {
-			const dayStarts = getDayStartDates(priceData, ianaTimeZone, timeZone);
-			priceChartStore.xTicks = dayStarts;
-			priceChartStore.xGridlineTicks = dayStarts;
-			priceChartStore.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
-		}
+		applyFacilityTimeAxis(priceChartStore, {
+			data: priceData,
+			viewStart,
+			viewEnd,
+			ianaTimeZone,
+			timeZone,
+			isEnergy: isEnergyInterval,
+			displayInterval
+		});
 	});
 
 	// ============================================
@@ -483,17 +488,15 @@
 			isEnergyInterval ? 'step' : 'straight'
 		);
 
-		if (isEnergyInterval && visibleData.length > 1) {
-			const g = computeEnergyGridlines(visibleData, viewStart, viewEnd, ianaTimeZone);
-			mvChartStore.xGridlineTicks = g.gridlineTicks;
-			mvChartStore.xTicks = g.ticks;
-			mvChartStore.formatTickX = g.formatTick;
-		} else if (visibleData.length > 0) {
-			const dayStarts = getDayStartDates(visibleData, ianaTimeZone, timeZone);
-			mvChartStore.xTicks = dayStarts;
-			mvChartStore.xGridlineTicks = dayStarts;
-			mvChartStore.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
-		}
+		applyFacilityTimeAxis(mvChartStore, {
+			data: visibleData,
+			viewStart,
+			viewEnd,
+			ianaTimeZone,
+			timeZone,
+			isEnergy: isEnergyInterval,
+			displayInterval
+		});
 	});
 
 	// ============================================

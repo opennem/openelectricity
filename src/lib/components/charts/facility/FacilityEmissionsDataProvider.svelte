@@ -23,8 +23,7 @@
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import { analyzeUnits } from './unit-analysis.js';
-	import { computeEnergyGridlines } from '$lib/components/charts/v2/energy-gridlines.js';
-	import { formatXAxis, getDayStartDates } from '$lib/components/charts/v2/formatters.js';
+	import { applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 	import { setFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
@@ -50,6 +49,7 @@
 	 * @property {string} [intensityChartHeight]
 	 * @property {string} [emissionsVolumeChartHeight]
 	 * @property {boolean} [active] - When false, skip manager instantiation (no fetch fires).
+	 * @property {boolean} [showTooltipDate] - Whether the tooltips show their date/time header (default: true).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync.
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when an emissions chart's local hover changes.
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
@@ -67,6 +67,7 @@
 		intensityChartHeight = 'h-[200px]',
 		emissionsVolumeChartHeight = 'h-[200px]',
 		active = true,
+		showTooltipDate = true,
 		hoverTime = undefined,
 		onhoverchange,
 		onviewportchange,
@@ -75,6 +76,13 @@
 
 	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
 	let isEnergyInterval = $derived(interval !== '5m');
+
+	// Mirror the tooltip date toggle into both chart stores.
+	$effect(() => {
+		if (intensityChartStore) intensityChartStore.chartTooltips.showDate = showTooltipDate;
+		if (emissionsVolumeChartStore)
+			emissionsVolumeChartStore.chartTooltips.showDate = showTooltipDate;
+	});
 
 	// ============================================
 	// Unit Analysis
@@ -383,17 +391,15 @@
 			isEnergyInterval ? 'step' : 'straight'
 		);
 
-		if (isEnergyInterval && intensityData.length > 1) {
-			const g = computeEnergyGridlines(intensityData, viewStart, viewEnd, ianaTimeZone);
-			intensityChartStore.xGridlineTicks = g.gridlineTicks;
-			intensityChartStore.xTicks = g.ticks;
-			intensityChartStore.formatTickX = g.formatTick;
-		} else if (intensityData.length > 0) {
-			const dayStarts = getDayStartDates(intensityData, ianaTimeZone, timeZone);
-			intensityChartStore.xTicks = dayStarts;
-			intensityChartStore.xGridlineTicks = dayStarts;
-			intensityChartStore.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
-		}
+		applyFacilityTimeAxis(intensityChartStore, {
+			data: intensityData,
+			viewStart,
+			viewEnd,
+			ianaTimeZone,
+			timeZone,
+			isEnergy: isEnergyInterval,
+			displayInterval
+		});
 	});
 
 	// ============================================
@@ -442,18 +448,15 @@
 			isEnergyInterval ? 'step' : 'straight'
 		);
 
-		if (isEnergyInterval && visibleData.length > 1) {
-			const g = computeEnergyGridlines(visibleData, viewStart, viewEnd, ianaTimeZone);
-			emissionsVolumeChartStore.xGridlineTicks = g.gridlineTicks;
-			emissionsVolumeChartStore.xTicks = g.ticks;
-			emissionsVolumeChartStore.formatTickX = g.formatTick;
-		} else if (visibleData.length > 0) {
-			const dayStarts = getDayStartDates(visibleData, ianaTimeZone, timeZone);
-			emissionsVolumeChartStore.xTicks = dayStarts;
-			emissionsVolumeChartStore.xGridlineTicks = dayStarts;
-			emissionsVolumeChartStore.formatTickX = (/** @type {any} */ d) =>
-				formatXAxis(d, ianaTimeZone);
-		}
+		applyFacilityTimeAxis(emissionsVolumeChartStore, {
+			data: visibleData,
+			viewStart,
+			viewEnd,
+			ianaTimeZone,
+			timeZone,
+			isEnergy: isEnergyInterval,
+			displayInterval
+		});
 	});
 
 	// ============================================

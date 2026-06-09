@@ -158,6 +158,15 @@ describe('formatTooltipDate', () => {
 		const chart = makeChart({ isCategoryChart: true, xKey: 'missing' });
 		expect(formatTooltipDate(chart, { other: 'ignored' })).toBe('');
 	});
+
+	it('returns empty string when the tooltips store hides the date', () => {
+		const chart = makeChart({
+			timeZone: 'Australia/Brisbane',
+			chartTooltips: { valueKey: undefined, showTotal: false, showDate: false }
+		});
+		const date = new Date(Date.UTC(2026, 2, 12, 4, 30));
+		expect(formatTooltipDate(chart, { time: date.getTime(), date })).toBe('');
+	});
 });
 
 describe('buildSeriesRows', () => {
@@ -207,7 +216,10 @@ describe('buildSeriesRows', () => {
 		const chart = makeChart({
 			visibleSeriesNames: ['coal', 'gas', 'wind']
 		});
-		const rows = buildSeriesRows(chart, { coal: 10 /* gas missing, wind non-numeric */, wind: 'nope' });
+		const rows = buildSeriesRows(chart, {
+			coal: 10 /* gas missing, wind non-numeric */,
+			wind: 'nope'
+		});
 		expect(rows).toHaveLength(3);
 		expect(rows.find((r) => r.key === 'gas')?.value).toBeUndefined();
 		expect(rows.find((r) => r.key === 'gas')?.formattedValue).toBe('');

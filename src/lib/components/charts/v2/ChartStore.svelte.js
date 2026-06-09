@@ -176,6 +176,15 @@ export default class ChartStore {
 
 	formatTickXWithTimeZone = $derived((/** @type {any} */ d) => this.formatTickX(d, this.timeZone));
 
+	/**
+	 * Optional tooltip-specific x formatter. The tooltip prefers this over
+	 * `formatTickX` because the axis formatter is keyed to gridline midpoints
+	 * and returns '' for arbitrary hovered points. Consumers set it to a full
+	 * date/time formatter; `null` falls back to the axis formatter.
+	 * @type {((value: any, timeZone?: string) => string) | null}
+	 */
+	formatTooltipX = $state(null);
+
 	/** @type {(value: any, timeZone?: string) => string} */
 	formatX = $state((/** @type {any} */ d) => d);
 

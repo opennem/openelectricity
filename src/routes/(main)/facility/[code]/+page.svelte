@@ -254,6 +254,36 @@
 		applyRangeSwitch(startMs, endMs, days);
 	}
 
+	/** Maps a dropdown granularity to the API metric + interval. '30m' is a
+	 *  client-side aggregation of power/5m; the energy intervals fetch at their
+	 *  native API grain (incl. monthly), so wide ranges stay light. */
+	/** @type {Record<string, { metric: string, interval: string }>} */
+	const INTERVAL_MAP = {
+		'5m': { metric: 'power', interval: '5m' },
+		'30m': { metric: 'power', interval: '5m' },
+		'1d': { metric: 'energy', interval: '1d' },
+		'1M': { metric: 'energy', interval: '1M' },
+		'3M': { metric: 'energy', interval: '3M' },
+		'1y': { metric: 'energy', interval: '1y' }
+	};
+
+	/** Manual interval override from the dropdown. Keeps the current viewport
+	 *  and refetches at the chosen grain. A later range/pan re-derives the
+	 *  interval automatically (memoryless), so the override sticks until then. */
+	/** @param {string} value */
+	function handleIntervalChange(value) {
+		const target = INTERVAL_MAP[value];
+		if (!target) return;
+		activeMetric = target.metric;
+		activeInterval = target.interval;
+		displayInterval = value;
+		const startMs = viewStart || defaultStart;
+		const endMs = viewEnd || defaultEnd;
+		if (powerChart) {
+			sync.runSuppressed(() => powerChart?.setViewport(startMs, endMs));
+		}
+	}
+
 	/** @param {{ start: number, end: number }} range */
 	function handlePowerViewportChange(range) {
 		if (sync.isSuppressed()) return;
@@ -350,9 +380,10 @@
 									minDate={MIN_DATE}
 									{maxDate}
 									{earliestDate}
-									showIntervalDropdown={false}
+									showIntervalDropdown={true}
 									onrangeselect={handleRangeSelect}
 									ondaterangechange={handleDateRangeChange}
+									onintervalchange={handleIntervalChange}
 								/>
 							</div>
 

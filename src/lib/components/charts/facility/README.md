@@ -159,7 +159,7 @@ requestRange(start, end)
   → debounce 150ms
   → #executeFetch()
     → #computeGaps() — find uncached ranges (with overlap buffer)
-    → #splitGapIntoBatches() — split gaps exceeding max range (1000d default, 1830d for 3M, 3700d for 1y)
+    → #splitGapIntoBatches() — split gaps exceeding max range (~11000d for 1d/1M, 1830d for 3M, 3700d for 1y, 1000d for 5m)
     → for each batch (sequential):
         → skip if #inFlightKeys has this range
         → #fetchFromApi() — call /api/facilities/[code]/power
