@@ -173,6 +173,15 @@
 	image="/img/records-preview.jpg"
 />
 
+<svelte:head>
+	<link
+		rel="alternate"
+		type="application/rss+xml"
+		title="OpenElectricity — Latest Records"
+		href="/records/rss.xml"
+	/>
+</svelte:head>
+
 <div class="bg-light-warm-grey">
 	<section class="md:container py-12">
 		<div class="flex items-center gap-2 justify-between md:justify-center pl-10 pr-5 md:px-0">
