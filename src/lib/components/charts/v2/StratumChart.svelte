@@ -13,6 +13,7 @@
 	import ChartHeader from './ChartHeader.svelte';
 	import ChartTooltip from './ChartTooltip.svelte';
 	import ChartTooltipCompactStrip from './ChartTooltipCompactStrip.svelte';
+	import ChartTooltipCompactCard from './ChartTooltipCompactCard.svelte';
 	import ChartTooltipFloating from './ChartTooltipFloating.svelte';
 	import ChartZoomControls from './ChartZoomControls.svelte';
 	import StackedAreaChart from './StackedAreaChart.svelte';
@@ -25,7 +26,8 @@
 	 * @property {import('./ChartStore.svelte.js').default} chart
 	 * @property {boolean} [showHeader]
 	 * @property {boolean} [showTooltip] - DEPRECATED alias for tooltipMode: if set false, tooltipMode becomes 'none'. Prefer tooltipMode.
-	 * @property {'strip' | 'compact-strip' | 'floating' | 'none'} [tooltipMode] - 'strip' (default) renders the full strip above the chart; 'compact-strip' is a single-line "FY20 — value unit" version above the chart; 'floating' overlays at the cursor; 'none' disables the tooltip entirely.
+	 * @property {'strip' | 'compact-strip' | 'compact-card' | 'floating' | 'none'} [tooltipMode] - 'strip' (default) renders the full strip above the chart; 'compact-strip' is a single-line "FY20 — value unit" version above the chart; 'compact-card' renders a small glassy card (FY + value grouped together) above the chart; 'floating' overlays at the cursor; 'none' disables the tooltip entirely.
+	 * @property {'left' | 'center' | 'right'} [tooltipCardAlign] - For 'compact-card' mode: horizontal placement of the card above the chart. Default 'left'.
 	 * @property {number} [tooltipDodgeRightPx] - For 'floating' mode: pixel width of a top-right UI element (e.g. zoom buttons) that the tooltip should dodge vertically.
 	 * @property {number} [tooltipInsetPx] - For 'floating' mode: horizontal standoff (px) the tooltip keeps from the container's left and right edges. Use when the chart is full-bleed.
 	 * @property {boolean} [showOptions]
@@ -73,7 +75,10 @@
 		chart,
 		showHeader = true,
 		showTooltip = true,
-		tooltipMode = /** @type {'strip' | 'compact-strip' | 'floating' | 'none'} */ ('strip'),
+		tooltipMode = /** @type {'strip' | 'compact-strip' | 'compact-card' | 'floating' | 'none'} */ (
+			'strip'
+		),
+		tooltipCardAlign = /** @type {'left' | 'center' | 'right'} */ ('left'),
 		tooltipDodgeRightPx = 0,
 		tooltipInsetPx = 0,
 		showOptions = true,
@@ -196,6 +201,18 @@
 				{@render tooltip()}
 			{:else}
 				<ChartTooltipCompactStrip {chart} defaultText={defaultTooltipText} />
+			{/if}
+		</div>
+	{:else if effectiveTooltipMode === 'compact-card'}
+		<div class="relative z-10 mb-1" style="padding-right: var(--pad-right, 0);">
+			{#if tooltip}
+				{@render tooltip()}
+			{:else}
+				<ChartTooltipCompactCard
+					{chart}
+					align={tooltipCardAlign}
+					defaultText={defaultTooltipText}
+				/>
 			{/if}
 		</div>
 	{/if}

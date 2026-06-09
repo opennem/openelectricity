@@ -4,10 +4,7 @@
 	import { Sheet } from '$lib/components/ui/sheet';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { CATEGORY_META } from './pollution-constants.js';
-	import {
-		formatPollutantMass,
-		formatPollutantMassParts
-	} from './format-pollutant-mass.js';
+	import { formatPollutantMass, formatPollutantMassParts } from './format-pollutant-mass.js';
 	import { computePollutantTrend } from './pollutant-trend.js';
 	import Sparkline from './Sparkline.svelte';
 
@@ -76,9 +73,7 @@
 	 */
 	function fiscalYearLabel(value) {
 		const startYear =
-			value instanceof Date
-				? value.getUTCFullYear()
-				: parseInt(String(value).slice(0, 4), 10);
+			value instanceof Date ? value.getUTCFullYear() : parseInt(String(value).slice(0, 4), 10);
 		if (Number.isNaN(startYear)) return '';
 		const fyEnd = (startYear + 1) % 100;
 		return `FY${String(fyEnd).padStart(2, '0')}`;
@@ -154,9 +149,7 @@
 					<col class="w-[64px]" />
 				</colgroup>
 				<thead>
-					<tr
-						class="bg-dark-grey text-[10px] font-medium uppercase tracking-wider text-white"
-					>
+					<tr class="bg-dark-grey text-[10px] font-medium uppercase tracking-wider text-white">
 						<th scope="col" class="py-2 pl-3 text-left">Pollutant</th>
 						<th scope="col" colspan="2" class="py-2 text-center whitespace-nowrap">
 							{#if startYear && latestYear}
@@ -198,8 +191,7 @@
 								class="py-2 pl-3 text-left font-mono tabular-nums text-dark-grey whitespace-nowrap"
 							>
 								{latestParts.value}{#if latestParts.unit}<span
-										class="ml-1 text-[10px] font-normal text-mid-grey"
-										>{latestParts.unit}</span
+										class="ml-1 text-[10px] font-normal text-mid-grey">{latestParts.unit}</span
 									>{/if}
 							</td>
 							<td class="py-2 pr-3 text-right font-mono tabular-nums whitespace-nowrap">
@@ -262,7 +254,7 @@
 					{@const trend = computePollutantTrend(yearValues)}
 
 					<section
-						class="grid grid-cols-[1fr_72px] gap-4 items-center border-t border-warm-grey first:border-t-0 py-3 first:pt-0"
+						class="grid grid-cols-[1fr_96px] gap-4 items-center border-t border-warm-grey first:border-t-0 py-3 first:pt-0"
 					>
 						<div class="min-w-0">
 							<MiniCharts
@@ -273,7 +265,8 @@
 								chartHeightClass="h-[90px]"
 								reverseOrder={false}
 								showMaxReferenceLine
-								tooltipMode="compact-strip"
+								tooltipMode="compact-card"
+								tooltipCardAlign="right"
 								showCardSummary={false}
 								displayUnit=""
 								seriesNames={[pollutant.code]}
@@ -294,19 +287,19 @@
 								<span class="text-mid-grey">—</span>
 							{:else if trend.direction === 'up'}
 								<div
-									class="inline-flex items-center justify-end gap-1 text-red font-mono tabular-nums"
+									class="inline-flex items-center justify-end gap-1 text-red font-mono tabular-nums text-xl font-semibold"
 									aria-label="Up {formatDelta(trend.delta)} vs 5-year average"
 								>
-									<span aria-hidden="true" class="text-[9px] leading-none">▲</span>
+									<span aria-hidden="true" class="text-sm leading-none">▲</span>
 									{formatDelta(trend.delta)}
 								</div>
 								<div class="text-[10px] text-mid-grey mt-0.5">vs 5y avg</div>
 							{:else if trend.direction === 'down'}
 								<div
-									class="inline-flex items-center justify-end gap-1 text-success-green font-mono tabular-nums"
+									class="inline-flex items-center justify-end gap-1 text-success-green font-mono tabular-nums text-xl font-semibold"
 									aria-label="Down {formatDelta(trend.delta)} vs 5-year average"
 								>
-									<span aria-hidden="true" class="text-[9px] leading-none">▼</span>
+									<span aria-hidden="true" class="text-sm leading-none">▼</span>
 									{formatDelta(trend.delta)}
 								</div>
 								<div class="text-[10px] text-mid-grey mt-0.5">vs 5y avg</div>
@@ -322,10 +315,7 @@
 				<table class="w-full text-xs border-collapse">
 					<thead>
 						<tr class="text-[10px] font-medium text-mid-grey uppercase tracking-wider">
-							<th
-								scope="col"
-								class="sticky left-0 bg-white py-2 pr-3 text-left whitespace-nowrap"
-							>
+							<th scope="col" class="sticky left-0 bg-white py-2 pr-3 text-left whitespace-nowrap">
 								Pollutant
 							</th>
 							{#each data.years as year (year)}
@@ -350,8 +340,7 @@
 								{#each data.years as year (year)}
 									{@const v = pollutant.values[year] ?? null}
 									<td
-										class="py-2 px-2 text-right font-mono tabular-nums whitespace-nowrap {v ==
-										null
+										class="py-2 px-2 text-right font-mono tabular-nums whitespace-nowrap {v == null
 											? 'text-mid-grey'
 											: 'text-dark-grey'}"
 									>

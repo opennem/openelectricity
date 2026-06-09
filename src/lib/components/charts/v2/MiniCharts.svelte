@@ -22,7 +22,8 @@
 	 * @property {string} [sectionPaddingClass]
 	 * @property {boolean} [reverseOrder]
 	 * @property {boolean} [showMaxReferenceLine]
-	 * @property {'strip' | 'compact-strip' | 'floating' | 'none'} [tooltipMode]
+	 * @property {'strip' | 'compact-strip' | 'compact-card' | 'floating' | 'none'} [tooltipMode]
+	 * @property {'left' | 'center' | 'right'} [tooltipCardAlign] - For 'compact-card' mode.
 	 * @property {boolean} [showCardSummary] - When false, hides the big-number value + year label that normally sit above each card's chart. Useful when the tooltip already conveys the active value (e.g. compact-strip mode).
 	 * @property {number | undefined} [hoverTime]
 	 * @property {number | undefined} [focusTime]
@@ -30,6 +31,8 @@
 	 * @property {(value: any, timeZone?: string) => string} [formatTickX]
 	 * @property {(value: number) => string} [formatTickY]
 	 * @property {number | undefined} [overlayStart]
+	 * @property {any[]} [bgShadingData]
+	 * @property {string} [bgShadingFill]
 	 * @property {(time: number, key?: string) => void} [onhover]
 	 * @property {() => void} [onhoverend]
 	 * @property {(time: number) => void} [onfocus]
@@ -57,7 +60,10 @@
 		chartHeightClass = 'h-[150px]',
 		reverseOrder = true,
 		showMaxReferenceLine = false,
-		tooltipMode = /** @type {'strip' | 'compact-strip' | 'floating' | 'none'} */ ('none'),
+		tooltipMode = /** @type {'strip' | 'compact-strip' | 'compact-card' | 'floating' | 'none'} */ (
+			'none'
+		),
+		tooltipCardAlign = /** @type {'left' | 'center' | 'right'} */ ('left'),
 		showCardSummary = true,
 		hoverTime,
 		focusTime,
@@ -156,6 +162,15 @@
 			store.seriesNames = [key];
 			store.seriesColours = { [key]: seriesColours[key] };
 			store.seriesLabels = { [key]: seriesLabels[key] };
+			// Each card renders a single series, so a tooltip Total row would
+			// just repeat that series' value — suppress it.
+			store.chartTooltips.showTotal = false;
+			// Pin the tooltip value to this card's one series. Without it the
+			// value resolves via `hoverKey`, which is only set while the pointer
+			// is over the area shape — so the strip would stay blank on sibling
+			// cards (synced via shared hoverTime) and when hovering anywhere off
+			// the area. Pinning makes the value follow hoverTime alone.
+			store.chartTooltips.valueKey = key;
 			// Gridlines on with a transparent default stroke so only the
 			// xHighlightTicks render visibly.
 			store.chartStyles.xGridlines = true;
@@ -326,6 +341,7 @@
 				overlayStart={overlayStartMs}
 				showHeader={false}
 				{tooltipMode}
+				{tooltipCardAlign}
 				animate={true}
 				{onhover}
 				{onhoverend}
@@ -334,4 +350,3 @@
 		</section>
 	{/each}
 </div>
-
