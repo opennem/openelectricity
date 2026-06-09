@@ -117,10 +117,10 @@
 	/** @type {'price' | 'mv'} */
 	let activeMarketTab = $state('price');
 
-	/** Which chart of the Emissions pair to show. Default: volume (per-unit
-	 *  tCO₂e stacked area — the headline emissions output). */
+	/** Which chart of the Emissions pair to show. Default: intensity
+	 *  (kgCO₂e/MWh line — the headline emissions measure). */
 	/** @type {'intensity' | 'volume'} */
-	let activeEmissionsTab = $state('volume');
+	let activeEmissionsTab = $state('intensity');
 
 	/** Currently selected range preset in days (-1 = All). null when a custom
 	 *  date range is in use or the user has panned/zoomed off any preset. */
@@ -459,8 +459,8 @@
 												<h3 class="text-sm font-semibold text-dark-grey m-0">Emissions</h3>
 												<SwitchTabs
 													buttons={[
-														{ label: 'Volume', value: 'volume' },
-														{ label: 'Intensity', value: 'intensity' }
+														{ label: 'Intensity', value: 'intensity' },
+														{ label: 'Volume', value: 'volume' }
 													]}
 													selected={activeEmissionsTab}
 													onChange={(v) =>

@@ -30,7 +30,8 @@
 	import { setFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
 	import { getIntervalHours } from './interval-hours.js';
 
-	const INTENSITY_LINE_COLOUR = '#6b7280';
+	// Matches the price line (FacilityFinancialDataProvider PRICE_LINE_COLOUR).
+	const INTENSITY_LINE_COLOUR = '#e63946';
 
 	/**
 	 * @param {string} ftCode
