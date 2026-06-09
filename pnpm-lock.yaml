@@ -9,11 +9,11 @@ importers:
   .:
     devDependencies:
       '@clerk/backend':
-        specifier: ^3.2.7
-        version: 3.4.7(react@19.2.6)
+        specifier: ^3.5.0
+        version: 3.5.0(react@19.2.6)
       '@clerk/clerk-js':
-        specifier: ^6.5.0
-        version: 6.10.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(bs58@6.0.0)(bufferutil@4.1.0)(react-native@0.85.3(@babel/core@7.29.0)(bufferutil@4.1.0)(react@19.2.6)(utf-8-validate@6.0.6))(react@19.2.6)(typescript@5.9.3)(utf-8-validate@6.0.6)
+        specifier: ^6.14.0
+        version: 6.14.0(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(bs58@6.0.0)(bufferutil@4.1.0)(react-native@0.85.3(@babel/core@7.29.0)(bufferutil@4.1.0)(react@19.2.6)(utf-8-validate@6.0.6))(react@19.2.6)(typescript@5.9.3)(utf-8-validate@6.0.6)
       '@deck.gl/aggregation-layers':
         specifier: ^9.3.2
         version: 9.3.2(@deck.gl/core@9.3.2)(@deck.gl/layers@9.3.2(@deck.gl/core@9.3.2)(@loaders.gl/core@4.4.1)(@luma.gl/core@9.3.3)(@luma.gl/engine@9.3.3(@luma.gl/core@9.3.3)(@luma.gl/shadertools@9.3.3(@luma.gl/core@9.3.3))))(@luma.gl/core@9.3.3)(@luma.gl/engine@9.3.3(@luma.gl/core@9.3.3)(@luma.gl/shadertools@9.3.3(@luma.gl/core@9.3.3)))
@@ -150,8 +150,8 @@ importers:
         specifier: ^2.3.0
         version: 2.3.0
       openelectricity:
-        specifier: ^0.8.1
-        version: 0.8.1
+        specifier: ^0.9.1
+        version: 0.9.1
       postcss:
         specifier: ^8.5.9
         version: 8.5.14
@@ -284,16 +284,16 @@ packages:
   '@base-org/account@2.0.1':
     resolution: {integrity: sha512-tySVNx+vd6XEynZL0uvB10uKiwnAfThr8AbKTwILVG86mPbLAhEOInQIk+uDnvpTvfdUhC1Bi5T/46JvFoLZQQ==}
 
-  '@clerk/backend@3.4.7':
-    resolution: {integrity: sha512-zAELfaYtrlxlxxB6PT3EHPsHck6IPuyTQSKm7hWQqXp9GoFOM6wKOflFZgI0Q2M1C5SgrkDcrMNchkWXRwbsQw==}
+  '@clerk/backend@3.5.0':
+    resolution: {integrity: sha512-g1bjzqj7/mb6rnrQ5zr+ybjpilTIWADaCoHE1HnEAjQfbcdfn3gb9PPX0wJ1KWw8OOQEQYSjzXPzvofEB1j+ww==}
     engines: {node: '>=20.9.0'}
 
-  '@clerk/clerk-js@6.10.1':
-    resolution: {integrity: sha512-a8zAv28F29qapvE0vHgB5kkGAG5Fk1r+FvSofVN/KJU3emMMT6tG8wecYKwtpZrfhmfL8l31Hx+R3OV68atDgg==}
+  '@clerk/clerk-js@6.14.0':
+    resolution: {integrity: sha512-xreDPw31OIk/VQj36qdgjzc4Rk2HwMar25nOu/ts2gf7PrbhU4XQdrtnt74g4fTmSMp8xeyjzHqa9adDXVjISw==}
     engines: {node: '>=20.9.0'}
 
-  '@clerk/shared@4.10.2':
-    resolution: {integrity: sha512-2RXGaCV94U2wYWaMQZA/AhVkqjcSx8f+oVjh6wgr4yXDmZ24BQRjPJ+K4L6IHiB/agoaXtKWJ0GI8InRZjo9/g==}
+  '@clerk/shared@4.15.0':
+    resolution: {integrity: sha512-uX8nfLb69m8mA6KWKWfuPSwoVNDRyUdufeCeTEZsdZxbRUsEYT/c0KWFN28IOQCtK09tpVtzrUHvW44v5Dc5OA==}
     engines: {node: '>=20.9.0'}
     peerDependencies:
       react: ^18.0.0 || ~19.0.3 || ~19.1.4 || ~19.2.3 || ~19.3.0-0
@@ -2792,9 +2792,9 @@ packages:
   js-base64@3.7.8:
     resolution: {integrity: sha512-hNngCeKxIUQiEUN3GPJOkz4wF/YvdUdbNL9hsBcMQTkKzboD7T/q3OYOuuPZLUE6dBxSGpwhk5mwuDud7JVAow==}
 
-  js-cookie@3.0.5:
-    resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
-    engines: {node: '>=14'}
+  js-cookie@3.0.7:
+    resolution: {integrity: sha512-z/wZZgDrkNV1eA0ULjM/F9/50Ya8fbzgKneSpoPsXSGd0KnpdtHfOZWK+GcwLk+EZbS4F9RBhU+K2RgzuDaItw==}
+    engines: {node: '>=20'}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -3176,8 +3176,8 @@ packages:
     resolution: {integrity: sha512-MVHddDVweXZF3awtlAS+6pgKLlm/JgxZ90+/NBurBoQctVOOB/zDdVjcyPzQ+0laDGbsWgrRkflI65sQeOgT9Q==}
     engines: {node: '>=8'}
 
-  openelectricity@0.8.1:
-    resolution: {integrity: sha512-Ov/IOhEKkh2F3pgqm+Yf3k3Gtmg8moOpYZGuzTCqOM9wgwYlOgXT069f+RVat3UXxvuqQ3p/IvvV/AB+xnqmFw==}
+  openelectricity@0.9.1:
+    resolution: {integrity: sha512-XFoQI/fHzIBP6PaT/2WFwSQphjVR2Bjyv2+oRTFf/Tux+MaH5eHZ5nn3YyVh1tjFfwT1CZy0tMpTBWekkiHRFg==}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -3543,9 +3543,6 @@ packages:
   statuses@2.0.2:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
     engines: {node: '>= 0.8'}
-
-  std-env@3.10.0:
-    resolution: {integrity: sha512-5GS12FdOZNliM5mAOxFRg7Ir0pWz8MdpYm6AY6VPkGpbA7ZzmbzNcBJQ0GPvvyWgcY7QAhCgf9Uy89I03faLkg==}
 
   std-env@4.1.0:
     resolution: {integrity: sha512-Rq7ybcX2RuC55r9oaPVEW7/xu3tj8u4GeBYHBWCychFtzMIr86A7e3PPEBPT37sHStKX3+TiX/Fr/ACmJLVlLQ==}
@@ -4194,25 +4191,26 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@clerk/backend@3.4.7(react@19.2.6)':
+  '@clerk/backend@3.5.0(react@19.2.6)':
     dependencies:
-      '@clerk/shared': 4.10.2(react@19.2.6)
+      '@clerk/shared': 4.15.0(react@19.2.6)
       standardwebhooks: 1.0.0
       tslib: 2.8.1
     transitivePeerDependencies:
       - react
       - react-dom
 
-  '@clerk/clerk-js@6.10.1(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(bs58@6.0.0)(bufferutil@4.1.0)(react-native@0.85.3(@babel/core@7.29.0)(bufferutil@4.1.0)(react@19.2.6)(utf-8-validate@6.0.6))(react@19.2.6)(typescript@5.9.3)(utf-8-validate@6.0.6)':
+  '@clerk/clerk-js@6.14.0(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(bs58@6.0.0)(bufferutil@4.1.0)(react-native@0.85.3(@babel/core@7.29.0)(bufferutil@4.1.0)(react@19.2.6)(utf-8-validate@6.0.6))(react@19.2.6)(typescript@5.9.3)(utf-8-validate@6.0.6)':
     dependencies:
       '@base-org/account': 2.0.1(bufferutil@4.1.0)(react@19.2.6)(typescript@5.9.3)(utf-8-validate@6.0.6)
-      '@clerk/shared': 4.10.2(react@19.2.6)
+      '@clerk/shared': 4.15.0(react@19.2.6)
       '@coinbase/wallet-sdk': 4.3.7(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)
       '@solana/wallet-adapter-base': 0.9.27(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))
       '@solana/wallet-adapter-react': 0.15.39(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(bs58@6.0.0)(react-native@0.85.3(@babel/core@7.29.0)(bufferutil@4.1.0)(react@19.2.6)(utf-8-validate@6.0.6))(react@19.2.6)(typescript@5.9.3)
       '@solana/wallet-standard': 1.1.4(@solana/wallet-adapter-base@0.9.27(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)))(@solana/web3.js@1.98.4(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6))(bs58@6.0.0)(react@19.2.6)
       '@stripe/stripe-js': 5.6.0
       '@swc/helpers': 0.5.21
+      '@tanstack/query-core': 5.100.10
       '@wallet-standard/core': 1.1.1
       '@zxcvbn-ts/core': 3.0.4
       '@zxcvbn-ts/language-common': 3.0.4
@@ -4236,13 +4234,12 @@ snapshots:
       - utf-8-validate
       - zod
 
-  '@clerk/shared@4.10.2(react@19.2.6)':
+  '@clerk/shared@4.15.0(react@19.2.6)':
     dependencies:
       '@tanstack/query-core': 5.100.10
       dequal: 2.0.3
       glob-to-regexp: 0.4.1
-      js-cookie: 3.0.5
-      std-env: 3.10.0
+      js-cookie: 3.0.7
     optionalDependencies:
       react: 19.2.6
 
@@ -6609,7 +6606,7 @@ snapshots:
 
   js-base64@3.7.8: {}
 
-  js-cookie@3.0.5: {}
+  js-cookie@3.0.7: {}
 
   js-tokens@4.0.0: {}
 
@@ -7055,7 +7052,7 @@ snapshots:
       is-docker: 2.2.1
       is-wsl: 2.2.0
 
-  openelectricity@0.8.1:
+  openelectricity@0.9.1:
     dependencies:
       dayjs: 1.11.20
 
@@ -7076,7 +7073,7 @@ snapshots:
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.7.0
       '@scure/bip39': 1.6.0
-      abitype: 1.2.3(typescript@5.9.3)
+      abitype: 1.2.4(typescript@5.9.3)
       eventemitter3: 5.0.1
     optionalDependencies:
       typescript: 5.9.3
@@ -7486,8 +7483,6 @@ snapshots:
   statuses@1.5.0: {}
 
   statuses@2.0.2: {}
-
-  std-env@3.10.0: {}
 
   std-env@4.1.0: {}
 
