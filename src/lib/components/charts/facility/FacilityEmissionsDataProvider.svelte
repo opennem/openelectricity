@@ -29,9 +29,7 @@
 	import { untrack } from 'svelte';
 	import { setFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
 	import { getIntervalHours } from './interval-hours.js';
-
-	// Matches the price line (FacilityFinancialDataProvider PRICE_LINE_COLOUR).
-	const INTENSITY_LINE_COLOUR = '#e63946';
+	import { LINE_COLOUR } from './colours.js';
 
 	/**
 	 * @param {string} ftCode
@@ -377,7 +375,7 @@
 		if (!intensityChartStore) return;
 
 		intensityChartStore.seriesNames = ['intensity'];
-		intensityChartStore.seriesColours = { intensity: INTENSITY_LINE_COLOUR };
+		intensityChartStore.seriesColours = { intensity: LINE_COLOUR };
 		intensityChartStore.seriesLabels = { intensity: 'Emissions Intensity (kgCO₂e/MWh)' };
 		intensityChartStore.seriesData = intensityData;
 		intensityChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);

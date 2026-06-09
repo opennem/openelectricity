@@ -10,14 +10,13 @@
  */
 
 import { stripDateTimezone } from '$lib/utils/date-format.js';
-
-const PRICE_COLOUR = '#e63946';
+import { LINE_COLOUR } from './colours.js';
 
 /**
  * @typedef {Object} ProcessPriceDataConfig
  * @property {string} [metricFilter] - Metric to filter for (default: 'price')
  * @property {string} [networkTimezone] - Timezone offset string (default: '+10:00')
- * @property {string} [colour] - Colour for the price line (default: '#e63946')
+ * @property {string} [colour] - Colour for the price line (default: LINE_COLOUR)
  * @property {string} [label] - Label for the price series (default: 'Price ($/MWh)')
  */
 
@@ -34,7 +33,7 @@ export function processPriceData(apiResponse, config) {
 	const {
 		metricFilter = 'price',
 		networkTimezone = '+10:00',
-		colour = PRICE_COLOUR,
+		colour = LINE_COLOUR,
 		label = 'Price ($/MWh)'
 	} = config;
 

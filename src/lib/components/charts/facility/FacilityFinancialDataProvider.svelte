@@ -25,8 +25,7 @@
 	import { untrack } from 'svelte';
 	import { setFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 	import { getIntervalHours } from './interval-hours.js';
-
-	const PRICE_LINE_COLOUR = '#e63946';
+	import { LINE_COLOUR } from './colours.js';
 
 	/**
 	 * @param {string} ftCode
@@ -414,7 +413,7 @@
 		if (!priceChartStore) return;
 
 		priceChartStore.seriesNames = ['price'];
-		priceChartStore.seriesColours = { price: PRICE_LINE_COLOUR };
+		priceChartStore.seriesColours = { price: LINE_COLOUR };
 		priceChartStore.seriesLabels = { price: 'Av. Price ($/MWh)' };
 		priceChartStore.seriesData = priceData;
 		priceChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
