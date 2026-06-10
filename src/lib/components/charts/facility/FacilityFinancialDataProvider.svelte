@@ -23,6 +23,7 @@
 	import {
 		getBasisMetric,
 		combinedMetricsFor,
+		buildCombinedMetricsUrl,
 		rewriteSeriesPrefix,
 		sumSeries,
 		buildEnergyMap,
@@ -186,13 +187,10 @@
 			loadsToInvert: mvLoadsToInvert,
 			getLabel,
 			getColour: getMvColour,
-			// Same combined URL as FacilityEmissionsDataProvider's managers so
-			// the API computes all metrics in one query and the 5-minute HTTP
-			// cache can serve repeat fetches across providers.
-			buildFetchUrl: (params) => {
-				params.set('metric', metricParam);
-				return `/api/facilities/${currentCode}/power?${params.toString()}`;
-			}
+			// One combined URL shared with the emissions provider + generation chart
+			// so the API computes all metrics once and the in-flight dedup collapses
+			// the managers into a single request.
+			buildFetchUrl: buildCombinedMetricsUrl(currentCode, metricParam)
 		});
 
 		const start = untrack(() => viewStart);
@@ -245,13 +243,10 @@
 			loadsToInvert: basisLoadsToInvert,
 			getLabel,
 			getColour: getBasisColour,
-			// Same combined URL as FacilityEmissionsDataProvider's managers so
-			// the API computes all metrics in one query and the 5-minute HTTP
-			// cache can serve repeat fetches across providers.
-			buildFetchUrl: (params) => {
-				params.set('metric', metricParam);
-				return `/api/facilities/${currentCode}/power?${params.toString()}`;
-			}
+			// One combined URL shared with the emissions provider + generation chart
+			// so the API computes all metrics once and the in-flight dedup collapses
+			// the managers into a single request.
+			buildFetchUrl: buildCombinedMetricsUrl(currentCode, metricParam)
 		});
 
 		const start = untrack(() => viewStart);
@@ -389,6 +384,8 @@
 		chart.chartStyles.snapTicks = true;
 		chart.hideDataOptions = true;
 		chart.hideChartTypeOptions = true;
+		// Single-series line — the floating-tooltip total just repeats the value.
+		chart.chartTooltips.showTotal = false;
 		chart.useFormatY = true;
 		chart.formatY = (/** @type {number} */ d) => '$' + dollarFormatter.format(d);
 

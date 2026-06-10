@@ -430,6 +430,7 @@
 										onviewportchange={handlePowerViewportChange}
 										panZoomMode="tap-to-engage"
 										bind:panZoomEngaged
+										bundleDerivedMetrics
 									/>
 								</div>
 

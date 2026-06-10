@@ -13,6 +13,7 @@
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { analyzeUnits } from './unit-analysis.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
+	import { combinedMetricsFor, buildCombinedMetricsUrl } from './energy-basis.js';
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 
@@ -55,6 +56,7 @@
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when the local hover state changes so a parent can sync peer charts.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active. 'tap-to-engage' gates pan/zoom behind the bindable `panZoomEngaged` flag.
 	 * @property {boolean} [panZoomEngaged] - Bindable engagement state for tap-to-engage mode.
+	 * @property {boolean} [bundleDerivedMetrics] - Fetch via the combined `metric=<metric>,market_value,emissions` URL so this chart shares one request with the financial/emissions providers mounted alongside it. Only enable when those providers are present (the facility detail page); off elsewhere to avoid pulling unused metrics.
 	 */
 
 	/** @type {Props} */
@@ -86,7 +88,8 @@
 		hoverTime = undefined,
 		onhoverchange,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
-		panZoomEngaged = $bindable(false)
+		panZoomEngaged = $bindable(false),
+		bundleDerivedMetrics = false
 	} = $props();
 
 	// ============================================
@@ -172,6 +175,21 @@
 		};
 	});
 
+	/**
+	 * When `bundleDerivedMetrics` is on, fetch via the combined
+	 * `metric=<metric>,market_value,emissions` URL so this chart shares a single
+	 * request with the financial/emissions providers (whose basis metric matches
+	 * this chart's). Returns `null` otherwise so the manager uses its default URL.
+	 *
+	 * @param {string} code
+	 * @param {string} metricForBundle
+	 * @returns {((params: URLSearchParams) => string) | null}
+	 */
+	function bundledFetchUrl(code, metricForBundle) {
+		if (!bundleDerivedMetrics) return null;
+		return buildCombinedMetricsUrl(code, combinedMetricsFor(metricForBundle));
+	}
+
 	/** @type {ChartDataManager | null} */
 	let dataManager = $state(null);
 
@@ -239,7 +257,8 @@
 			unitOrder,
 			loadsToInvert: loadIds,
 			getLabel,
-			getColour
+			getColour,
+			buildFetchUrl: bundledFetchUrl(currentCode, currentMetric)
 		});
 
 		// Seed with server power data if available synchronously
@@ -332,7 +351,8 @@
 				unitOrder,
 				loadsToInvert: loadIds,
 				getLabel,
-				getColour
+				getColour,
+				buildFetchUrl: bundledFetchUrl(currentCode, 'energy')
 			});
 
 			const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;

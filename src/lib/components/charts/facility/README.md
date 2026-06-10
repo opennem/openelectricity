@@ -157,7 +157,7 @@ Reactive Svelte 5 class that manages a processed data cache independently from t
 - **`getDataForRange(startMs, endMs)`** — Slice cache by viewport bounds
 - **`clearCache()`** — Reset all state
 
-Internally calls `processFacilityPower()` and merges results by timestamp (dedup on overlap). Fetches include overlap buffers at cache boundaries (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y).
+Internally calls `processFacilityPower()` and merges results by timestamp (dedup on overlap). The newest (right) boundary keeps an interval-scaled overlap (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y) to refresh the latest bucket; the older (left) boundary fetches contiguously up to the cache start. Concurrent identical fetches across managers (e.g. the generation chart and the price/emissions providers' combined URL) collapse to one network request via an in-flight dedup.
 
 ### Cache structure
 

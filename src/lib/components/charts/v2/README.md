@@ -855,7 +855,8 @@ Pan/zoom ───requestRange()──> #computeGaps() ──> #fetchFromApi()
 
 Key behaviors:
 
-- **Gap detection**: Only fetches ranges not already in cache, with overlap buffers scaled by interval (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y)
+- **Gap detection**: Only fetches ranges not already in cache. The newest (right) boundary keeps an interval-scaled overlap (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y) so the still-growing latest bucket is refreshed; the older (left) boundary fetches contiguously up to `cacheStart` (no overlap) so an over-buffered "All" range doesn't re-fetch cached data each tick. The empty pre-data span before the facility's first point is recorded once so it's never re-requested
+- **Request dedup**: Concurrent identical fetches share one network request via a module-level in-flight map keyed by URL — so the generation chart and the price/emissions providers (which build the same `metric=<basis>,market_value,emissions` URL) collapse to a single call. The entry clears on settle, so later repeats fall through to the HTTP cache
 - **Interval-aware fetch limits**: Every daily-or-coarser energy grain (1d/1M/3M/1y) pulls a full facility lifetime in one request (~11000-day cap — at most ~11k points), so wide ranges like "All" never batch. Only the sub-daily grains (5m, 1h) keep a tight ~1000-day cap, with `#splitGapIntoBatches` chunking anything wider
 - **Date snapping**: Aligns request boundaries to interval periods — midnight for 1d, 1st of month for 1M, quarter start for 3M, Jan 1 for 1y
 - **Debounced fetching**: Batches rapid pan movements into single API calls (150ms debounce)

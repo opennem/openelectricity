@@ -40,6 +40,23 @@ export function combinedMetricsFor(basisMetric) {
 }
 
 /**
+ * Build a `buildFetchUrl` callback that points the facility power endpoint at a
+ * combined metric string. Shared by the generation chart and the price/emissions
+ * providers so every manager resolves to one URL (and the in-flight fetch dedup
+ * collapses them into a single request).
+ *
+ * @param {string} facilityCode
+ * @param {string} combinedMetric - e.g. `energy,market_value,emissions`
+ * @returns {(params: URLSearchParams) => string}
+ */
+export function buildCombinedMetricsUrl(facilityCode, combinedMetric) {
+	return (/** @type {URLSearchParams} */ params) => {
+		params.set('metric', combinedMetric);
+		return `/api/facilities/${facilityCode}/power?${params.toString()}`;
+	};
+}
+
+/**
  * Rewrite `power_<unit>` series IDs (as produced by analyzeUnits) to another
  * metric's prefix. `power → power` is a no-op.
  *

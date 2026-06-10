@@ -12,6 +12,43 @@ import { processFacilityPower } from '$lib/components/charts/facility/process-fa
 const EARLIEST_DATA_MS = new Date('1998-12-01T00:00:00Z').getTime();
 
 /**
+ * Concurrent identical API requests share a single in-flight fetch, keyed by URL.
+ * The price and emissions providers each run a market_value/emissions manager
+ * plus a basis (energy) manager, and all of them resolve to the *same* combined
+ * `metric=energy,market_value,emissions` URL — without this they'd each fire
+ * their own network request. The entry is removed once the fetch settles, so
+ * later (non-concurrent) repeats fall through to the HTTP cache as before.
+ *
+ * @type {Map<string, Promise<any>>}
+ */
+const inFlightFetches = new Map();
+
+/**
+ * Fetch a URL, collapsing concurrent identical requests into one network call.
+ * Resolves to the API `response` payload, or `null` on a non-OK status.
+ *
+ * @param {string} url
+ * @returns {Promise<any>}
+ */
+function sharedFetch(url) {
+	let pending = inFlightFetches.get(url);
+	if (!pending) {
+		pending = fetch(url)
+			.then(async (res) => {
+				if (!res.ok) {
+					console.error('ChartDataManager: API returned', res.status);
+					return null;
+				}
+				const json = await res.json();
+				return json.response;
+			})
+			.finally(() => inFlightFetches.delete(url));
+		inFlightFetches.set(url, pending);
+	}
+	return pending;
+}
+
+/**
  * @typedef {Object} LoadingRange
  * @property {number} start - Start timestamp (ms)
  * @property {number} end - End timestamp (ms)
@@ -361,6 +398,20 @@ export default class ChartDataManager {
 				this.hasPendingFetch = this.#pendingFetch !== null || this.loadingRanges.length > 0;
 			}
 		}
+
+		// The requested window started before the earliest data point (the 1998
+		// clamp on an over-buffered "All" range) — that pre-data span is empty.
+		// Record it so later viewport ticks don't recompute a left gap and
+		// re-fetch it. Energy ranges load in one batch, so cacheStart is the true
+		// earliest; 5m never reaches back this far (viewport-limited). Guard against
+		// re-pushing the same span on every tick (right-gap refreshes re-enter here).
+		if (this.#cacheStart !== null && reqStart < this.#cacheStart) {
+			const start = reqStart;
+			const end = this.#cacheStart;
+			if (!this.#emptyRanges.some((r) => r.start === start && r.end === end)) {
+				this.#emptyRanges.push({ start, end });
+			}
+		}
 	}
 
 	/**
@@ -426,10 +477,15 @@ export default class ChartDataManager {
 		const gaps = [];
 
 		if (start < this.#cacheStart) {
-			gaps.push({ start, end: Math.min(end, this.#cacheStart + OVERLAP_MS) });
+			// No overlap on the left: the existing first bucket is complete, so a
+			// fetch up to cacheStart is contiguous. Extending past it would re-fetch
+			// already-cached data on every over-buffered "All" viewport tick.
+			gaps.push({ start, end: Math.min(end, this.#cacheStart) });
 		}
 
 		if (end > this.#cacheEnd) {
+			// Keep the overlap on the right so the latest (possibly still-growing)
+			// bucket is refreshed.
 			gaps.push({ start: Math.max(start, this.#cacheEnd - OVERLAP_MS), end });
 		}
 
@@ -509,20 +565,14 @@ export default class ChartDataManager {
 			? this.buildFetchUrl(params)
 			: `/api/facilities/${this.facilityCode}/power?${params.toString()}`;
 
-		const res = await fetch(fetchUrl);
-		if (!res.ok) {
-			console.error('ChartDataManager: API returned', res.status);
-			return null;
-		}
-
-		const json = await res.json();
+		const response = await sharedFetch(fetchUrl);
 		console.log('ChartDataManager fetch:', {
 			facilityCode: this.facilityCode,
 			dateStart,
 			dateEnd,
-			response: json.response
+			response
 		});
-		return json.response;
+		return response;
 	}
 
 	/**

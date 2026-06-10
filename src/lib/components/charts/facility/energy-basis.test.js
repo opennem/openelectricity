@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	getBasisMetric,
 	combinedMetricsFor,
+	buildCombinedMetricsUrl,
 	rewriteSeriesPrefix,
 	sumSeries,
 	buildEnergyMap,
@@ -27,6 +28,35 @@ describe('combinedMetricsFor', () => {
 	it('builds the shared combined query string', () => {
 		expect(combinedMetricsFor('energy')).toBe('energy,market_value,emissions');
 		expect(combinedMetricsFor('power')).toBe('power,market_value,emissions');
+	});
+});
+
+describe('buildCombinedMetricsUrl', () => {
+	it('sets the combined metric on the facility power endpoint, keeping other params', () => {
+		const build = buildCombinedMetricsUrl('ABC', 'energy,market_value,emissions');
+		const params = new URLSearchParams({
+			network_id: 'NEM',
+			interval: '1M',
+			metric: 'energy',
+			date_start: '2026-01-01T00:00:00',
+			date_end: '2026-02-01T00:00:00'
+		});
+		const url = build(params);
+		expect(url.startsWith('/api/facilities/ABC/power?')).toBe(true);
+		const parsed = new URL(url, 'http://localhost');
+		expect(parsed.searchParams.get('metric')).toBe('energy,market_value,emissions');
+		expect(parsed.searchParams.get('interval')).toBe('1M');
+		expect(parsed.searchParams.get('network_id')).toBe('NEM');
+	});
+
+	it('produces identical URLs for the same facility + combined metric (dedup key)', () => {
+		const a = buildCombinedMetricsUrl('F1', 'energy,market_value,emissions')(
+			new URLSearchParams({ interval: '1M', metric: 'energy' })
+		);
+		const b = buildCombinedMetricsUrl('F1', 'energy,market_value,emissions')(
+			new URLSearchParams({ interval: '1M', metric: 'market_value' })
+		);
+		expect(a).toBe(b);
 	});
 });
 

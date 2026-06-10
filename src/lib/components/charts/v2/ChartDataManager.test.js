@@ -50,7 +50,7 @@ function buildPowerResponse({ networkId, unitCodes, startISO, pointCount, valueF
 
 /**
  * Create a ChartDataManager with sensible defaults for testing.
- * @param {Partial<import('../ChartDataManager.svelte.js').ChartDataManagerConfig>} [overrides]
+ * @param {Partial<import('./ChartDataManager.svelte.js').ChartDataManagerConfig>} [overrides]
  * @returns {ChartDataManager}
  */
 function createManager(overrides = {}) {
@@ -273,7 +273,7 @@ describe('ChartDataManager', () => {
 	// ------------------------------------------
 
 	describe('gap overlap at cache boundary', () => {
-		it('should fetch data that overlaps with cache boundary to prevent seam gaps', async () => {
+		it('fetches the left gap up to the cache boundary (contiguous, no overlap)', async () => {
 			const fetchSpy = vi.fn().mockResolvedValue({
 				ok: true,
 				json: async () => ({
@@ -309,16 +309,19 @@ describe('ChartDataManager', () => {
 
 			expect(fetchSpy).toHaveBeenCalledOnce();
 			const url = new URL(fetchSpy.mock.calls[0][0], 'http://localhost');
+			const dateStart = url.searchParams.get('date_start');
 			const dateEnd = url.searchParams.get('date_end');
 
-			// The fetch date_end should extend PAST the cache start (10-min overlap buffer)
-			// Cache starts at 00:00 AEST, so date_end should be ~00:10 AEST, not 00:00
+			// The left gap is fetched right up to — not past — the cache start. That
+			// is contiguous with the cached data (no seam gap) without re-fetching
+			// already-cached buckets, which is what made over-buffered "All" ranges
+			// re-request the same span on every viewport tick.
 			const fetchEndMs = Date.parse(dateEnd + '+10:00');
-			expect(fetchEndMs).toBeGreaterThan(cacheStartMs);
+			expect(fetchEndMs).toBe(cacheStartMs);
 
-			// Verify the overlap is ~10 minutes
-			const overlapMs = fetchEndMs - cacheStartMs;
-			expect(overlapMs).toBe(10 * 60 * 1000);
+			// ...and it starts at the requested viewStart, so the older span is loaded.
+			const fetchStartMs = Date.parse(dateStart + '+10:00');
+			expect(fetchStartMs).toBe(cacheStartMs - threeHoursMs);
 		});
 	});
 
@@ -656,6 +659,143 @@ describe('ChartDataManager', () => {
 			await vi.advanceTimersByTimeAsync(200);
 
 			expect(fetchSpy).toHaveBeenCalledTimes(3);
+		});
+	});
+
+	// ------------------------------------------
+	// Shared in-flight fetch dedup
+	// ------------------------------------------
+
+	describe('shared in-flight fetch dedup', () => {
+		const DAY = 24 * 60 * 60 * 1000;
+
+		/** A fetch spy that stays pending until the returned controller resolves. */
+		function deferredFetchSpy() {
+			/** @type {(v: any) => void} */
+			let resolveFetch = () => {};
+			const ready = new Promise((r) => (resolveFetch = r));
+			const spy = vi.fn().mockImplementation(async () => {
+				await ready;
+				return {
+					ok: true,
+					json: async () => ({
+						response: buildPowerResponse({
+							networkId: 'NEM',
+							unitCodes: ['UNIT1'],
+							startISO: '2026-02-08T00:00:00+10:00',
+							pointCount: 12
+						})
+					})
+				};
+			});
+			return { spy, resolveFetch };
+		}
+
+		it('collapses concurrent identical requests across managers into one fetch', async () => {
+			const { spy, resolveFetch } = deferredFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			// Two managers with the same facility/interval/metric — e.g. the price
+			// and intensity providers both hitting the combined energy URL — resolve
+			// to the same URL, so only one network request should fire.
+			const m1 = createManager({ interval: '1M', metric: 'energy' });
+			const m2 = createManager({ interval: '1M', metric: 'energy' });
+
+			const now = Date.now();
+			m1.requestRange(now - 100 * DAY, now, { immediate: true });
+			m2.requestRange(now - 100 * DAY, now, { immediate: true });
+
+			// Both requests are in flight before any resolves → single fetch.
+			expect(spy).toHaveBeenCalledTimes(1);
+
+			resolveFetch(undefined);
+			await vi.advanceTimersByTimeAsync(200);
+			expect(spy).toHaveBeenCalledTimes(1);
+		});
+
+		it('re-fetches once the first request has settled (entry is cleared)', async () => {
+			const fetchSpy = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: buildPowerResponse({
+						networkId: 'NEM',
+						unitCodes: ['UNIT1'],
+						startISO: '2026-02-08T00:00:00+10:00',
+						pointCount: 12
+					})
+				})
+			});
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const now = Date.now();
+			const m1 = createManager({ interval: '1M', metric: 'energy' });
+			m1.requestRange(now - 100 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			const m2 = createManager({ interval: '1M', metric: 'energy' });
+			m2.requestRange(now - 100 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+		});
+	});
+
+	// ------------------------------------------
+	// Pre-data empty-span suppression (over-buffered "All")
+	// ------------------------------------------
+
+	describe('pre-data empty-span suppression', () => {
+		const DAY = 24 * 60 * 60 * 1000;
+		const dataStart = new Date('2026-02-08T00:00:00+10:00').getTime();
+		const lastPoint = dataStart + 55 * 60 * 1000; // 12 × 5-min points
+
+		function okFetchSpy() {
+			return vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: buildPowerResponse({
+						networkId: 'NEM',
+						unitCodes: ['UNIT1'],
+						startISO: '2026-02-08T00:00:00+10:00',
+						pointCount: 12
+					})
+				})
+			});
+		}
+
+		it('does not re-fetch the empty pre-data span on a repeated over-buffered request', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '5m', metric: 'power' });
+			const reqStart = dataStart - 50 * DAY; // reaches before the first data point
+
+			manager.requestRange(reqStart, lastPoint, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+			// Same over-buffered range again: the pre-data span is recorded empty and
+			// the rest is cached, so no second request fires.
+			manager.requestRange(reqStart, lastPoint, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it('still fetches a genuinely older left gap (no left-overlap regression)', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '5m', metric: 'power' });
+			// Load exactly the data range → cache = [dataStart, lastPoint], no
+			// pre-data span recorded (reqStart === cacheStart).
+			manager.requestRange(dataStart, lastPoint, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+			// Pan back to an earlier, uncached range → the left gap must still fetch.
+			manager.requestRange(dataStart - 10 * DAY, lastPoint, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
 		});
 	});
 
