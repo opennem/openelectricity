@@ -2,17 +2,26 @@
 	import { page } from '$app/state';
 	import { goto } from '$app/navigation';
 	import { fly } from 'svelte/transition';
-	import { clickoutside } from '@svelte-put/clickoutside';
-	import { dataTrackerLink } from '$lib/stores/app';
+	import { portal } from '$lib/actions/portal.js';
+	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
+	import { dataTrackerLink, parsedFeatureFlags } from '$lib/stores/app';
 	import { getNavItems } from '$lib/components/nav/nav-items.js';
 
 	const TOGGLE_KEY = 'g';
 
 	/** @type {{ name: string, href: string }[]} */
-	let navItems = $derived([{ name: 'Home', href: '/' }, ...getNavItems($dataTrackerLink)]);
+	let navItems = $derived([
+		{ name: 'Home', href: '/' },
+		...getNavItems($dataTrackerLink, parsedFeatureFlags)
+	]);
 
 	let isOpen = $state(false);
 	let activeIndex = $state(0);
+
+	/** @type {HTMLElement | undefined} */
+	let triggerRef = $state();
+	/** @type {HTMLElement | undefined} */
+	let dropdownRef = $state();
 
 	function openMenu() {
 		activeIndex = 0;
@@ -28,7 +37,10 @@
 		else openMenu();
 	}
 
-	function handleClickOutside() {
+	/** @param {MouseEvent} e */
+	function handleDocumentClick(e) {
+		const target = /** @type {Node} */ (e.target);
+		if (triggerRef?.contains(target) || dropdownRef?.contains(target)) return;
 		closeMenu();
 	}
 
@@ -73,9 +85,11 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
+<svelte:document onclick={handleDocumentClick} />
 
-<div class="relative shrink-0" use:clickoutside onclickoutside={handleClickOutside}>
+<div class="relative shrink-0">
 	<button
+		bind:this={triggerRef}
 		onclick={toggleMenu}
 		class="flex items-center px-2 py-1 rounded-lg hover:bg-warm-grey transition-colors cursor-pointer"
 		title="Open navigation menu (g)"
@@ -87,7 +101,10 @@
 
 	{#if isOpen}
 		<div
-			class="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-mid-warm-grey z-50 min-w-[180px] py-1"
+			bind:this={dropdownRef}
+			use:portal
+			use:dropdownPosition={{ trigger: triggerRef, align: 'left', position: 'bottom' }}
+			class="fixed bg-white rounded-lg shadow-lg border border-mid-warm-grey z-[60] min-w-[180px] py-1"
 			in:fly={{ y: -5, duration: 150 }}
 			role="menu"
 		>

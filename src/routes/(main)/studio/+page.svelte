@@ -4,6 +4,12 @@
 
 	const projects = [
 		{
+			title: 'Explorer',
+			description:
+				'A reimagined, customisable Tracker — generation and price by region, range and fuel-tech grouping, with a live fuel-tech breakdown.',
+			link: '/studio/explorer'
+		},
+		{
 			title: 'Facility Explorer',
 			description:
 				'Explore 7-day power generation data for Australian electricity facilities with unit-level breakdown.',

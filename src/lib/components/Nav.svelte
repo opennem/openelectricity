@@ -1,12 +1,12 @@
 <script>
 	import { page } from '$app/state';
 	import { afterNavigate } from '$app/navigation';
-	import { dataTrackerLink } from '$lib/stores/app';
+	import { dataTrackerLink, parsedFeatureFlags } from '$lib/stores/app';
 	import { fly } from 'svelte/transition';
 	import { getNavItems } from '$lib/components/nav/nav-items.js';
 	import { isNonProductionHost } from '$lib/utils/environment.js';
 
-	let navItems = getNavItems($dataTrackerLink);
+	let navItems = getNavItems($dataTrackerLink, parsedFeatureFlags);
 
 	let mobileNavActive = $state(false);
 	/** @type {string | null} */

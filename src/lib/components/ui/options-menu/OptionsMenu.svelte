@@ -1,7 +1,8 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { clickoutside } from '@svelte-put/clickoutside';
 	import { EllipsisVertical, Maximize2, Minimize2, CircleHelp, BookOpen } from '@lucide/svelte';
+	import { portal } from '$lib/actions/portal.js';
+	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 	import OptionsMenuItem from './OptionsMenuItem.svelte';
 	import OptionsMenuDivider from './OptionsMenuDivider.svelte';
 
@@ -19,24 +20,45 @@
 
 	let isOpen = $state(false);
 
+	/** @type {HTMLElement | undefined} */
+	let triggerRef = $state();
+	/** @type {HTMLElement | undefined} */
+	let dropdownRef = $state();
+
 	function close() {
 		isOpen = false;
 	}
+
+	/** @param {MouseEvent} e */
+	function handleDocumentClick(e) {
+		const target = /** @type {Node} */ (e.target);
+		if (triggerRef?.contains(target) || dropdownRef?.contains(target)) return;
+		close();
+	}
 </script>
 
-<div class="relative" use:clickoutside onclickoutside={close}>
+<svelte:document onclick={handleDocumentClick} />
+
+<div class="relative">
 	<button
+		bind:this={triggerRef}
 		onclick={() => (isOpen = !isOpen)}
 		class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
 		title="Options"
+		aria-haspopup="menu"
+		aria-expanded={isOpen}
 	>
 		<EllipsisVertical class="size-6 text-mid-grey" />
 	</button>
 
 	{#if isOpen}
 		<div
-			class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-mid-warm-grey z-50 min-w-[200px] py-1"
+			bind:this={dropdownRef}
+			use:portal
+			use:dropdownPosition={{ trigger: triggerRef, align: 'right', position: 'bottom' }}
+			class="fixed bg-white rounded-lg shadow-lg border border-mid-warm-grey z-[60] min-w-[200px] py-1"
 			in:fly={{ y: -5, duration: 150 }}
+			role="menu"
 		>
 			{#if sections}
 				{@render sections({ close })}
