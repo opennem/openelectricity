@@ -24,6 +24,12 @@
 		getHysteresisSwitch,
 		getDisplayIntervalForDays
 	} from '$lib/utils/metric-interval';
+	import {
+		getIntervalSpec,
+		getPresetByDays,
+		getDefaultIntervalForRange,
+		getIntervalOptionsForDays
+	} from '$lib/components/charts/facility/range-interval-config.js';
 	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
 	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
@@ -190,6 +196,17 @@
 
 	const DAY_MS = 24 * 60 * 60 * 1000;
 
+	/** Span of the current view in days — drives the interval options offered for
+	 *  a custom (calendar) range when no preset is active. */
+	let customDays = $derived(
+		Math.max(1, Math.ceil(((viewEnd || defaultEnd) - (viewStart || defaultStart)) / DAY_MS))
+	);
+
+	/** Display intervals that only the explicit picker produces (pan/zoom never
+	 *  auto-derives them). A small pan that doesn't cross a native threshold must
+	 *  not clobber one of these back to a native grain. */
+	const COARSE_PICKER_INTERVALS = new Set(['7d', 'season', 'quarter', 'half', 'fy']);
+
 	/** Hysteresis-aware metric/interval switching for pan/zoom — keeps the
 	 *  current axis where it is unless duration crosses a 13/15-day (and
 	 *  300/365-day, 1500/1825-day) threshold. Display interval is recomputed
@@ -198,6 +215,10 @@
 	function applyMetricSwitch(range) {
 		const durationDays = (range.end - range.start) / DAY_MS;
 		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
+
+		// Preserve an explicit coarse pick (Season/Quarter/Half/Fin-Year/Week)
+		// across small pans that don't cross a native fetch threshold.
+		if (!next && COARSE_PICKER_INTERVALS.has(displayInterval)) return;
 
 		displayInterval = getDisplayIntervalForDays(
 			next?.metric ?? activeMetric,
@@ -214,15 +235,16 @@
 		}
 	}
 
-	/** Explicit range selection (preset or custom dates) — memoryless, no
-	 *  debounce. Picks the metric/interval directly from duration and tells
-	 *  the chart to refetch via the existing FacilityChart.setViewport(). */
-	/** @param {number} startMs @param {number} endMs @param {number} days */
-	function applyRangeSwitch(startMs, endMs, days) {
-		const mi = getMetricIntervalForDays(days);
-		activeMetric = mi.metric;
-		activeInterval = mi.interval;
-		displayInterval = getDisplayIntervalForDays(mi.metric, mi.interval, days);
+	/** Explicit selection (preset, custom dates, or interval dropdown) — resolves
+	 *  the interval id to its native fetch grain via the config and refetches the
+	 *  given viewport through `FacilityChart.setViewport()`. */
+	/** @param {number} startMs @param {number} endMs @param {string} intervalId */
+	function applyRangeSwitch(startMs, endMs, intervalId) {
+		const spec = getIntervalSpec(intervalId);
+		if (!spec) return;
+		activeMetric = spec.metric;
+		activeInterval = spec.apiInterval;
+		displayInterval = intervalId;
 		viewStart = startMs;
 		viewEnd = endMs;
 		if (powerChart) {
@@ -242,7 +264,11 @@
 			actualDays = Math.max(1, Math.ceil((endMs - earliestMs) / DAY_MS));
 		}
 		const startMs = endMs - actualDays * DAY_MS;
-		applyRangeSwitch(startMs, endMs, actualDays);
+		const preset = getPresetByDays(days);
+		const intervalId = preset
+			? getDefaultIntervalForRange(preset.id)
+			: getMetricIntervalForDays(actualDays).interval;
+		applyRangeSwitch(startMs, endMs, intervalId);
 	}
 
 	/** @param {{ start: string, end: string }} range */
@@ -251,37 +277,17 @@
 		const startMs = new Date(range.start).getTime();
 		const endMs = new Date(range.end).getTime();
 		const days = Math.max(1, Math.ceil((endMs - startMs) / DAY_MS));
-		applyRangeSwitch(startMs, endMs, days);
+		applyRangeSwitch(startMs, endMs, getIntervalOptionsForDays(days).default);
 	}
 
-	/** Maps a dropdown granularity to the API metric + interval. '30m' is a
-	 *  client-side aggregation of power/5m; the energy intervals fetch at their
-	 *  native API grain (incl. monthly), so wide ranges stay light. */
-	/** @type {Record<string, { metric: string, interval: string }>} */
-	const INTERVAL_MAP = {
-		'5m': { metric: 'power', interval: '5m' },
-		'30m': { metric: 'power', interval: '5m' },
-		'1d': { metric: 'energy', interval: '1d' },
-		'1M': { metric: 'energy', interval: '1M' },
-		'3M': { metric: 'energy', interval: '3M' },
-		'1y': { metric: 'energy', interval: '1y' }
-	};
-
-	/** Manual interval override from the dropdown. Keeps the current viewport
-	 *  and refetches at the chosen grain. A later range/pan re-derives the
-	 *  interval automatically (memoryless), so the override sticks until then. */
+	/** Manual interval override from the dropdown. Keeps the current viewport and
+	 *  refetches at the chosen grain. A later range/pan re-derives the interval
+	 *  automatically (memoryless), so the override sticks until then. */
 	/** @param {string} value */
 	function handleIntervalChange(value) {
-		const target = INTERVAL_MAP[value];
-		if (!target) return;
-		activeMetric = target.metric;
-		activeInterval = target.interval;
-		displayInterval = value;
 		const startMs = viewStart || defaultStart;
 		const endMs = viewEnd || defaultEnd;
-		if (powerChart) {
-			sync.runSuppressed(() => powerChart?.setViewport(startMs, endMs));
-		}
+		applyRangeSwitch(startMs, endMs, value);
 	}
 
 	/** @param {{ start: number, end: number }} range */
@@ -373,7 +379,7 @@
 								<span class="text-xs font-medium text-dark-grey">{dateRangeLabel}</span>
 								<ChartRangeBar
 									{selectedRange}
-									{activeMetric}
+									{customDays}
 									{displayInterval}
 									startDate={pickerStartDate}
 									endDate={pickerEndDate}
@@ -402,7 +408,7 @@
 										<span
 											class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey text-xs uppercase tracking-wider"
 										>
-											{displayInterval}
+											{getIntervalSpec(displayInterval)?.label ?? displayInterval}
 										</span>
 									</div>
 									<FacilityChart

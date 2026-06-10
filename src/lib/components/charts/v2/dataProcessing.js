@@ -7,6 +7,7 @@
 
 import StatisticV2 from '$lib/utils/Statistic/v2.js';
 import TimeSeriesV2 from '$lib/utils/TimeSeries/v2.js';
+import { bucketStartMs } from './bucket-boundaries.js';
 
 /**
  * @typedef {Object} ProcessingOptions
@@ -203,7 +204,9 @@ export function aggregateToInterval(data, targetInterval, seriesNames, method = 
 			} else if (method === 'sum') {
 				point[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
 			} else {
-				point[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) / values.length;
+				point[name] =
+					values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) /
+					values.length;
 			}
 		});
 
@@ -265,9 +268,7 @@ export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum'
 
 		if (!buckets.has(key)) {
 			// Start of month in local tz, expressed as UTC ms
-			const monthStart = new Date(
-				Date.UTC(parseInt(y), parseInt(m) - 1, 1, -offsetHours)
-			);
+			const monthStart = new Date(Date.UTC(parseInt(y), parseInt(m) - 1, 1, -offsetHours));
 			/** @type {any} */
 			const bucket = {
 				time: monthStart.getTime(),
@@ -303,16 +304,11 @@ export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum'
 			if (values.length === 0) {
 				point[name] = null;
 			} else if (method === 'sum') {
-				point[name] = values.reduce(
-					(/** @type {number} */ a, /** @type {number} */ b) => a + b,
-					0
-				);
+				point[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
 			} else {
 				point[name] =
-					values.reduce(
-						(/** @type {number} */ a, /** @type {number} */ b) => a + b,
-						0
-					) / values.length;
+					values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) /
+					values.length;
 			}
 		});
 
@@ -320,6 +316,115 @@ export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum'
 	}
 
 	return result.sort((a, b) => a.time - b.time);
+}
+
+/**
+ * Aggregate time series data into calendar buckets (quarter, season, half-year,
+ * financial-year) in network-local time. Generalises `aggregateToMonth` to any
+ * boundary `kind` understood by `bucketStartMs`.
+ *
+ * @param {any[]} data - Rows with `time` (UTC ms)
+ * @param {string[]} seriesNames
+ * @param {string} kind - 'quarter' | 'season' | 'half' | 'fy' | 'month' | '1y'
+ * @param {string} ianaTimeZone - 'Australia/Brisbane' (NEM) or 'Australia/Perth' (WEM)
+ * @param {'sum' | 'mean'} [method='sum']
+ * @returns {any[]}
+ */
+export function aggregateByBoundary(data, seriesNames, kind, ianaTimeZone, method = 'sum') {
+	const offsetHours = ianaTimeZone === 'Australia/Perth' ? 8 : 10;
+	/** @type {Map<number, any>} */
+	const buckets = new Map();
+
+	for (const point of data) {
+		const start = bucketStartMs(kind, point.time, offsetHours);
+		let bucket = buckets.get(start);
+		if (!bucket) {
+			bucket = { time: start, date: new Date(start), _values: {} };
+			seriesNames.forEach((name) => {
+				bucket._values[name] = [];
+			});
+			buckets.set(start, bucket);
+		}
+		seriesNames.forEach((name) => {
+			const value = point[name];
+			if (value !== null && value !== undefined) bucket._values[name].push(value);
+		});
+	}
+
+	/** @type {any[]} */
+	const result = [];
+	for (const bucket of buckets.values()) {
+		/** @type {any} */
+		const out = { date: bucket.date, time: bucket.time };
+		seriesNames.forEach((name) => {
+			const values = bucket._values[name];
+			if (values.length === 0) {
+				out[name] = null;
+			} else if (method === 'sum') {
+				out[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+			} else {
+				out[name] =
+					values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) /
+					values.length;
+			}
+		});
+		result.push(out);
+	}
+
+	return result.sort((a, b) => a.time - b.time);
+}
+
+/**
+ * Single dispatch for render-layer aggregation: maps a `displayInterval` (and
+ * the native `apiInterval` it was fetched at) to the right aggregation, or
+ * returns the data unchanged when the fetched grain already matches. Used by
+ * FacilityChart and the financial/emissions providers so they don't diverge.
+ *
+ * @param {any[]} data
+ * @param {string[]} seriesNames
+ * @param {Object} opts
+ * @param {string} opts.apiInterval - native interval the data was fetched at
+ * @param {string} opts.displayInterval - user-facing interval to render
+ * @param {string} opts.ianaTimeZone
+ * @param {'sum' | 'mean'} [opts.method='sum']
+ * @returns {any[]}
+ */
+export function aggregateForDisplay(
+	data,
+	seriesNames,
+	{ apiInterval, displayInterval, ianaTimeZone, method = 'sum' }
+) {
+	if (!data || data.length === 0) return data;
+
+	switch (displayInterval) {
+		case '30m':
+			// Aggregate raw 5m power; mean (averaged MW), not sum.
+			return aggregateToInterval(data, '30m', seriesNames, method);
+		case '1M':
+			// Monthly display from daily energy; native 1M needs no aggregation.
+			return apiInterval === '1d'
+				? aggregateToMonth(data, seriesNames, ianaTimeZone, method)
+				: data;
+		case 'season':
+			return apiInterval === '1M'
+				? aggregateByBoundary(data, seriesNames, 'season', ianaTimeZone, method)
+				: data;
+		case 'half':
+			// No native half-year — always aggregate from monthly.
+			return aggregateByBoundary(data, seriesNames, 'half', ianaTimeZone, method);
+		case 'fy':
+			return apiInterval === '1M'
+				? aggregateByBoundary(data, seriesNames, 'fy', ianaTimeZone, method)
+				: data;
+		case 'quarter':
+			// Native 3M needs no aggregation; otherwise bucket from monthly.
+			return apiInterval === '3M'
+				? data
+				: aggregateByBoundary(data, seriesNames, 'quarter', ianaTimeZone, method);
+		default:
+			// Native grains: 5m, 1d, 7d, 1M(native), 3M, 1y.
+			return data;
+	}
 }
 
 // Re-export the v2 classes for direct use

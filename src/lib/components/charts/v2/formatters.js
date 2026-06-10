@@ -8,6 +8,12 @@
 import { computeEnergyGridlines } from './energy-gridlines.js';
 
 /**
+ * Coarse calendar buckets that don't align to the Jan/month gridlines the axis
+ * inference assumes, and so need an explicit bucket labeller.
+ */
+const COARSE_BUCKET_INTERVALS = new Set(['quarter', 'season', 'half', 'fy']);
+
+/**
  * Format a date for X-axis tick labels (day starts only).
  *
  * @param {Date | any} d
@@ -26,20 +32,72 @@ export function formatXAxis(d, ianaTimeZone) {
 }
 
 /**
+ * Network-local year + 0-based month for a UTC date.
+ * @param {Date} date
+ * @param {string} ianaTimeZone
+ * @returns {{ year: number, month0: number }}
+ */
+function localYearMonth(date, ianaTimeZone) {
+	const parts = new Intl.DateTimeFormat('en-AU', {
+		year: 'numeric',
+		month: '2-digit',
+		timeZone: ianaTimeZone
+	}).formatToParts(date);
+	const year = parseInt(parts.find((p) => p.type === 'year')?.value || '2000', 10);
+	const month0 = parseInt(parts.find((p) => p.type === 'month')?.value || '1', 10) - 1;
+	return { year, month0 };
+}
+
+/**
+ * Label for a coarse calendar bucket (quarter / season / half-year / financial
+ * year), given a timestamp that falls in the bucket. AU conventions: seasons are
+ * meteorological, FY runs July–June and is named by its ending year.
+ *
+ * @param {Date | number} d
+ * @param {string} ianaTimeZone
+ * @param {'quarter' | 'season' | 'half' | 'fy'} kind
+ * @returns {string}
+ */
+export function formatBucketLabel(d, ianaTimeZone, kind) {
+	const date = d instanceof Date ? d : new Date(d);
+	if (Number.isNaN(date.getTime())) return '';
+	const { year, month0 } = localYearMonth(date, ianaTimeZone);
+
+	if (kind === 'quarter') return `Q${Math.floor(month0 / 3) + 1} ${year}`;
+	if (kind === 'half') return `${month0 < 6 ? 'H1' : 'H2'} ${year}`;
+	if (kind === 'fy') {
+		// Bucket starts in July of `year`; FY is named by its ending year.
+		const endYear = month0 >= 6 ? year + 1 : year;
+		return `FY${endYear}`;
+	}
+	// season — label by the bucket-start month; summer crosses the year.
+	if (month0 === 11) return `Summer ${year}/${String((year + 1) % 100).padStart(2, '0')}`;
+	if (month0 <= 1) return `Summer ${year - 1}/${String(year % 100).padStart(2, '0')}`;
+	if (month0 <= 4) return `Autumn ${year}`;
+	if (month0 <= 7) return `Winter ${year}`;
+	return `Spring ${year}`;
+}
+
+/**
  * Format the hovered point's timestamp for a tooltip header.
  *
  * Unlike the axis tick formatter (which is keyed to gridline midpoints and
  * returns '' for arbitrary points), this always renders a full, readable date
- * for the exact point, adding the time of day for sub-daily (power) intervals.
+ * for the exact point, adding the time of day for sub-daily (power) intervals
+ * and a named label for the coarse calendar buckets.
  *
  * @param {Date | number} d
  * @param {string} ianaTimeZone - e.g. 'Australia/Brisbane'
- * @param {string} displayInterval - '5m' | '30m' | '1h' | '1d' | '1M' | '3M' | '1y'
+ * @param {string} displayInterval - '5m' | '30m' | '1h' | '1d' | '1M' | '3M' | 'quarter' | 'season' | 'half' | 'fy' | '1y'
  * @returns {string}
  */
 export function formatTooltipDateTime(d, ianaTimeZone, displayInterval) {
 	const date = d instanceof Date ? d : typeof d === 'number' ? new Date(d) : null;
 	if (!date || Number.isNaN(date.getTime())) return '';
+
+	if (COARSE_BUCKET_INTERVALS.has(displayInterval)) {
+		return formatBucketLabel(date, ianaTimeZone, displayInterval);
+	}
 
 	/** @type {Intl.DateTimeFormatOptions} */
 	let options;
@@ -196,7 +254,18 @@ export function applyFacilityTimeAxis(
 		formatTooltipDateTime(d, ianaTimeZone, displayInterval);
 
 	if (isEnergy && data.length > 1) {
-		const g = computeEnergyGridlines(data, viewStart, viewEnd, ianaTimeZone);
+		// Coarse calendar buckets (season/quarter/half/fy) don't align to the
+		// Jan/month gridlines the inference assumes — drive them by an explicit
+		// bucket labeller instead.
+		const coarseLabel = COARSE_BUCKET_INTERVALS.has(displayInterval)
+			? (/** @type {any} */ d) =>
+					formatBucketLabel(
+						d,
+						ianaTimeZone,
+						/** @type {'quarter' | 'season' | 'half' | 'fy'} */ (displayInterval)
+					)
+			: null;
+		const g = computeEnergyGridlines(data, viewStart, viewEnd, ianaTimeZone, coarseLabel);
 		store.xGridlineTicks = g.gridlineTicks;
 		store.xTicks = g.ticks;
 		store.formatTickX = g.formatTick;

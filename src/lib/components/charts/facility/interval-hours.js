@@ -1,18 +1,35 @@
+import { bucketSpanHours } from '$lib/components/charts/v2/bucket-boundaries.js';
+
+/** Average-length estimates (hours) for calendar intervals lacking a timestamp. */
+const FALLBACK_HOURS = {
+	'1M': 730,
+	'3M': 91.25 * 24,
+	quarter: 91.25 * 24,
+	season: 91.25 * 24,
+	half: 182.5 * 24,
+	fy: 365 * 24,
+	'1y': 365.25 * 24
+};
+
 /**
  * Convert a `displayInterval` token (used by the facility chart providers) to
- * the number of hours that interval spans. `1M` is calendar-aware: pass the
- * row's `timestampMs` so the result reflects the actual length of that month.
+ * the number of hours that interval spans. Calendar-aware intervals (`1M`,
+ * `quarter`, `season`, `half`, `fy`, `1y`) vary in length, so pass the row's
+ * `timestampMs` and the network `ianaTimeZone` to get the actual bucket length.
  *
  * Shared between `FacilityFinancialDataProvider` (price derivation) and
  * `FacilityEmissionsDataProvider` (intensity derivation) — both compute
  *   derived = volumeMetric / (power_total × intervalHours)
- * and must agree on the conversion exactly.
+ * and must agree on the conversion exactly. A wrong hour count skews the line.
  *
  * @param {string} displayInterval
  * @param {number} [timestampMs]
+ * @param {string} [ianaTimeZone] - 'Australia/Brisbane' (NEM) or 'Australia/Perth' (WEM)
  * @returns {number}
  */
-export function getIntervalHours(displayInterval, timestampMs) {
+export function getIntervalHours(displayInterval, timestampMs, ianaTimeZone) {
+	const offsetHours = ianaTimeZone === 'Australia/Perth' ? 8 : 10;
+
 	switch (displayInterval) {
 		case '5m':
 			return 5 / 60;
@@ -24,16 +41,19 @@ export function getIntervalHours(displayInterval, timestampMs) {
 			return 24;
 		case '7d':
 			return 7 * 24;
-		case '1M': {
-			if (!timestampMs) return 730;
-			const d = new Date(timestampMs);
-			const daysInMonth = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
-			return daysInMonth * 24;
-		}
+		case '1M':
 		case '3M':
-			return 91.25 * 24;
-		case '1y':
-			return 365.25 * 24;
+		case 'quarter':
+		case 'season':
+		case 'half':
+		case 'fy':
+		case '1y': {
+			if (timestampMs == null) {
+				// No timestamp — fall back to average-length estimates (hours).
+				return FALLBACK_HOURS[/** @type {keyof typeof FALLBACK_HOURS} */ (displayInterval)] ?? 24;
+			}
+			return bucketSpanHours(displayInterval, timestampMs, offsetHours);
+		}
 		default:
 			return 24;
 	}

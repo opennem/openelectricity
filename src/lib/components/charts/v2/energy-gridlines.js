@@ -19,17 +19,32 @@
  * @param {number} viewStart        - Viewport start (ms)
  * @param {number} viewEnd          - Viewport end (ms)
  * @param {string} ianaTimeZone     - IANA timezone (e.g. 'Australia/Brisbane')
+ * @param {((d: Date) => string) | null} [coarseLabel] - When set, the data is in
+ *        coarse calendar buckets (season/quarter/half/fy); label one tick per
+ *        bucket with this fn and skip the Jan/month-aligned gridline inference.
  * @returns {EnergyGridlines}
  */
-export function computeEnergyGridlines(visibleData, viewStart, viewEnd, ianaTimeZone) {
+export function computeEnergyGridlines(
+	visibleData,
+	viewStart,
+	viewEnd,
+	ianaTimeZone,
+	coarseLabel = null
+) {
 	/** @type {Date[]} */
 	const dataStarts = visibleData.map((/** @type {any} */ d) => new Date(d.time));
 
+	// Coarse calendar buckets: one gridline per bucket, thinned to ~12 labels,
+	// labelled at the bucket start (the inference below assumes month/day grids).
+	if (coarseLabel) {
+		const skip = Math.max(1, Math.ceil(dataStarts.length / 12));
+		const ticks = dataStarts.filter((_, i) => i % skip === 0);
+		return { gridlineTicks: ticks, ticks, formatTick: coarseLabel };
+	}
+
 	// Detect if data is monthly interval (bandMs > 20 days)
 	const bandMsEst =
-		dataStarts.length > 1
-			? dataStarts[1].getTime() - dataStarts[0].getTime()
-			: 24 * 60 * 60 * 1000;
+		dataStarts.length > 1 ? dataStarts[1].getTime() - dataStarts[0].getTime() : 24 * 60 * 60 * 1000;
 	const isMonthlyInterval = bandMsEst > 20 * 24 * 60 * 60 * 1000;
 
 	// Viewport duration in years — used for yearly gridline snapping
@@ -111,9 +126,7 @@ export function computeEnergyGridlines(visibleData, viewStart, viewEnd, ianaTime
 	// ── Midpoints for centred labels ─────────────────────────────
 
 	const bandMs =
-		dataStarts.length > 1
-			? dataStarts[1].getTime() - dataStarts[0].getTime()
-			: 24 * 60 * 60 * 1000;
+		dataStarts.length > 1 ? dataStarts[1].getTime() - dataStarts[0].getTime() : 24 * 60 * 60 * 1000;
 	const skipBandMs = bandMs * skip;
 
 	/** @type {Date[]} */

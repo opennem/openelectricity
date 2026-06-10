@@ -8,7 +8,7 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 
 1. **Server load** (`+page.server.js`): Fetches all facilities + selected facility. For ranges **1–14 days**, fetches 5m power data server-side. For **>14 days or "All" (-1)**, skips — ChartDataManager handles it client-side.
 2. **Page component** (`+page.svelte`): Manages `activeMetric`/`activeInterval`, syncs ChartRangeBar ↔ chart viewport, handles auto metric/interval switching.
-3. **ChartRangeBar** (`v2/ChartRangeBar.svelte`): Unified toolbar with range presets (1D/3D/7D/1M/6M/1Y/5Y/All), calendar popover (DateRangePicker), and interval dropdown (5min/30min for power; Daily/Monthly/Quarterly/Yearly for energy).
+3. **ChartRangeBar** (`v2/ChartRangeBar.svelte`): Unified toolbar with range presets (1D/3D/7D/30D/1Y/All), calendar popover (DateRangePicker), and an interval dropdown whose options follow the selected range (resolved from `range-interval-config.js`).
 4. **FacilityChart**: Owns the viewport state (`viewStart`/`viewEnd`), creates ChartDataManager, renders via StratumChart → StackedAreaChart.
 
 ## Files
@@ -19,6 +19,8 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 | `FacilityDataTable.svelte`  | Tabular view of visible chart data                                                          |
 | `FacilityUnitsTable.svelte` | Facility unit metadata table                                                                |
 | `process-facility-power.js` | Core data processing — converts API response to chart-ready rows                            |
+| `range-interval-config.js`  | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec |
+| `interval-hours.js`         | `displayInterval` → bucket length in hours (calendar-aware) for energy/price/intensity derivation |
 | `helpers.js`                | Color shading (`buildUnitColourMap`), timezone helpers, legacy `transformFacilityPowerData` |
 | `index.js`                  | Barrel exports                                                                              |
 
@@ -85,12 +87,17 @@ The chart automatically switches between power and energy metrics based on the v
 
 ### Thresholds (auto-set by `autoSetMetricInterval`)
 
-| Viewport duration | Metric   | API Interval | Display options                          |
-| ----------------- | -------- | ------------ | ---------------------------------------- |
-| < 15 days         | `power`  | `5m`         | 5 min, 30 min (client-side aggregation)  |
-| 15–364 days       | `energy` | `1d`         | Daily, Monthly (client-side aggregation) |
-| 365–1825 days     | `energy` | `3M`         | Quarterly (API-level)                    |
-| > 1825 days       | `energy` | `1y`         | Yearly (API-level)                       |
+The auto-switch ladder only ever lands on a **native** fetch interval
+(`5m ↔ 1d ↔ 1M ↔ 1y`) so each switch is a single valid `ChartDataManager`
+request. Coarser display grains (Week, Quarter, Season, Half-year, Fin-year) are
+explicit picker choices (see `range-interval-config.js`), never auto-selected.
+
+| Viewport duration | Metric   | API Interval | Auto display |
+| ----------------- | -------- | ------------ | ------------ |
+| < 15 days         | `power`  | `5m`         | 5 min        |
+| 15–364 days       | `energy` | `1d`         | Daily        |
+| 365–1824 days     | `energy` | `1M`         | Month        |
+| ≥ 1825 days       | `energy` | `1y`         | Year         |
 
 ### Auto-switching with hysteresis
 
@@ -99,16 +106,18 @@ To prevent rapid flipping during continuous zoom, the switch thresholds differ b
 **Zoom out (→ coarser):**
 
 - **Power/5m → Energy/1d**: at **15+ days**
-- **Energy/1d → Energy/3M**: at **365+ days**
-- **Energy/3M → Energy/1y**: at **1825+ days**
+- **Energy/1d → Energy/1M**: at **365+ days**
+- **Energy/1M → Energy/1y**: at **1825+ days**
 
 **Zoom in (→ finer, with hysteresis gap):**
 
-- **Energy/1y → Energy/3M**: at **< 1500 days**
-- **Energy/3M → Energy/1d**: at **< 300 days**
+- **Energy/1y → Energy/1M**: at **< 1500 days**
+- **Energy/1M → Energy/1d**: at **< 300 days**
 - **Energy/1d → Power/5m**: at **≤ 13 days**
 
-All switches are debounced by 300ms.
+All switches are debounced by 300ms. A small pan that doesn't cross a native
+threshold preserves an explicit coarse pick (Week/Quarter/Season/Half/Fin-Year)
+rather than snapping it back to the native grain.
 
 ### What happens on switch
 
@@ -123,8 +132,14 @@ All switches are debounced by 300ms.
 FacilityChart has internal display interval toggles that perform **client-side aggregation** on top of cached API data:
 
 - **Power mode**: API always fetches `5m`. Toggle between `5m` (raw) and `30m` (`aggregateToInterval` averages).
-- **Energy mode with `1d` API interval**: Toggle between `1d` (raw) and `1M` (`aggregateToMonth` sums).
-- **Energy mode with `3M` or `1y` API interval**: No client-side aggregation — data is already at the right granularity.
+- **Energy mode with `1d` API interval**: Daily (raw) or Monthly (`aggregateToMonth` sums).
+- **Energy mode with `1M` API interval**: Monthly (raw), or the coarse calendar picks — Season / Half-year / Fin-year — bucketed client-side via `aggregateByBoundary`.
+- **Energy mode with `3M` or `1y` API interval**: Quarter / Year render at the fetched grain — no further aggregation.
+
+All render-layer aggregation is funnelled through a single dispatcher,
+`aggregateForDisplay(data, seriesNames, { apiInterval, displayInterval, ianaTimeZone, method })`
+in `v2/dataProcessing.js`, so FacilityChart and the financial/emissions providers
+stay in lock-step.
 
 The `showIntervalToggle` prop (default `true`) controls whether FacilityChart shows its own interval buttons. When using ChartRangeBar (which has its own interval dropdown), pass `showIntervalToggle={false}`.
 

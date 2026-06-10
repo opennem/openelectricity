@@ -515,8 +515,8 @@ A unified toolbar combining range presets, a calendar popover, and an interval d
 
 <ChartRangeBar
 	selectedRange={3}
-	activeMetric="power"
-	displayInterval="5m"
+	customDays={3}
+	displayInterval="30m"
 	startDate="2026-01-01"
 	endDate="2026-02-18"
 	minDate="1998-12-01"
@@ -533,8 +533,8 @@ A unified toolbar combining range presets, a calendar popover, and an interval d
 | Prop                   | Type                     | Description                                                                               |
 | ---------------------- | ------------------------ | ----------------------------------------------------------------------------------------- |
 | `selectedRange`        | `number \| null`         | Active preset in days (`null` = custom, `-1` = All)                                       |
-| `activeMetric`         | `string`                 | `'power'` or `'energy'` — controls which intervals are shown                              |
-| `displayInterval`      | `string`                 | Current interval (`'5m'`, `'30m'`, `'1d'`, `'1M'`, `'3M'`, `'1y'`)                        |
+| `customDays`           | `number \| null`         | Span (days) of the current custom view — derives the interval options when no preset is active |
+| `displayInterval`      | `string`                 | Current interval id (`'5m'`, `'30m'`, `'1h'`, `'1d'`, `'7d'`, `'1M'`, `'season'`, `'quarter'`, `'half'`, `'fy'`, `'1y'`) |
 | `startDate`            | `string \| null`         | Start date (YYYY-MM-DD) for the DateRangePicker                                           |
 | `endDate`              | `string \| null`         | End date (YYYY-MM-DD) for the DateRangePicker                                             |
 | `minDate`              | `string \| null`         | Earliest selectable date                                                                  |
@@ -547,21 +547,26 @@ A unified toolbar combining range presets, a calendar popover, and an interval d
 
 #### Range presets
 
+Defined in [`range-interval-config.js`](../facility/range-interval-config.js) (`RANGE_PRESETS` + `RANGE_INTERVALS`):
+
 | Label | Days | Default interval |
 | ----- | ---- | ---------------- |
 | 1D    | 1    | power/5m         |
-| 3D    | 3    | power/5m         |
-| 7D    | 7    | power/5m         |
-| 1M    | 30   | energy/1d        |
-| 6M    | 182  | energy/1d        |
-| 1Y    | 365  | energy/3M        |
-| 5Y    | 1825 | energy/3M        |
-| All   | -1   | energy/1y        |
+| 3D    | 3    | power/30m        |
+| 7D    | 7    | power/30m        |
+| 30D   | 30   | energy/1d        |
+| 1Y    | 365  | energy/1M        |
+| All   | -1   | energy/1M        |
 
-#### Interval options by metric
+#### Interval options by range
 
-- **Power**: 5 min, 30 min
-- **Energy**: Daily, Monthly, Quarterly, Yearly
+The dropdown's options follow the selected range (or the custom span's tier via
+`getIntervalOptionsForDays`), not the metric alone:
+
+- **1D / 3D / 7D**: 5 min, 30 min
+- **30D**: Hourly, Daily
+- **1Y**: Daily, Week, Month
+- **All**: Month, Season, Quarter, Half-Year, Fin-Year, Year
 
 #### Responsive behavior
 
@@ -886,7 +891,8 @@ src/lib/components/charts/v2/
 ├── DateBrush.svelte            # Date range brush selector
 ├── IntervalSelector.svelte     # Interval toggle
 │
-├── dataProcessing.js           # Data processing utilities
+├── dataProcessing.js           # Data processing utilities (incl. aggregateForDisplay / aggregateByBoundary)
+├── bucket-boundaries.js        # Pure calendar math: network-local quarter/season/half/fy bucket starts + spans
 ├── chart-families.js           # Chart-type family metadata (stacked-area, bar, etc.)
 ├── compute-y-domain.js         # Y-domain computation for single/dual axes
 ├── energy-gridlines.js         # Gridline tick computation for energy intervals

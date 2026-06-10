@@ -29,7 +29,7 @@
 		}}
 		{@const firstUnit = group.units[0]}
 
-		<div class="rounded-lg border border-warm-grey px-3 py-3 relative">
+		<div class="rounded-lg border border-warm-grey bg-white px-3 py-3 relative">
 			<!-- Status dot -->
 			<div class="absolute top-3 right-3">
 				<Tooltip text={group.status_id} class="capitalize cursor-default">

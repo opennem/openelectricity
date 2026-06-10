@@ -3,12 +3,19 @@
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
 	import Calendar from '@lucide/svelte/icons/calendar';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
+	import {
+		RANGE_PRESETS,
+		getPresetByDays,
+		getIntervalsForRange,
+		getIntervalOptionsForDays,
+		getIntervalSpec
+	} from '$lib/components/charts/facility/range-interval-config.js';
 
 	/**
 	 * @typedef {Object} Props
 	 * @property {number | null} [selectedRange] - Active preset in days (null = custom date range)
-	 * @property {string} [activeMetric] - 'power' | 'energy'
-	 * @property {string} [displayInterval] - '5m' | '30m' | '1d' | '1M'
+	 * @property {number | null} [customDays] - Span (days) of the current custom view, used to derive interval options when no preset is active
+	 * @property {string} [displayInterval] - Active interval id (5m | 30m | 1d | 7d | 1M | season | quarter | half | fy | 1y)
 	 * @property {string | null} [startDate] - YYYY-MM-DD for DateRangePicker
 	 * @property {string | null} [endDate] - YYYY-MM-DD for DateRangePicker
 	 * @property {string | null} [minDate] - Earliest selectable date
@@ -23,7 +30,7 @@
 	/** @type {Props} */
 	let {
 		selectedRange = null,
-		activeMetric = 'power',
+		customDays = null,
 		displayInterval = '5m',
 		startDate = null,
 		endDate = null,
@@ -36,38 +43,20 @@
 		onintervalchange
 	} = $props();
 
-	const rangePresets = [
-		{ label: '1D', days: 1 },
-		{ label: '3D', days: 3 },
-		{ label: '7D', days: 7 },
-		{ label: '1M', days: 30 },
-		{ label: '6M', days: 182 },
-		{ label: '1Y', days: 365 },
-		{ label: '5Y', days: 1825 },
-		{ label: 'All', days: -1 }
-	];
+	const rangePresets = RANGE_PRESETS;
 
-	let intervalOptions = $derived(
-		activeMetric === 'power'
-			? [
-					{ value: '5m', label: '5 min' },
-					{ value: '30m', label: '30 min' }
-				]
-			: [
-					{ value: '1d', label: 'Daily' },
-					{ value: '1M', label: 'Monthly' },
-					{ value: '3M', label: 'Quarterly' },
-					{ value: '1y', label: 'Yearly' }
-				]
-	);
+	// Interval options follow the selected range (or the custom span's tier).
+	let intervalOptions = $derived.by(() => {
+		const preset = selectedRange != null ? getPresetByDays(selectedRange) : null;
+		const ids = preset
+			? getIntervalsForRange(preset.id).options
+			: getIntervalOptionsForDays(customDays ?? 0).options;
+		return ids.map((id) => ({ value: id, label: getIntervalSpec(id)?.label ?? id }));
+	});
 
-	let currentIntervalLabel = $derived(
-		intervalOptions.find((o) => o.value === displayInterval)?.label ?? displayInterval
-	);
+	let currentIntervalLabel = $derived(getIntervalSpec(displayInterval)?.label ?? displayInterval);
 
-	let currentRangeLabel = $derived(
-		rangePresets.find((p) => p.days === selectedRange)?.label ?? 'Range'
-	);
+	let currentRangeLabel = $derived(getPresetByDays(selectedRange ?? NaN)?.label ?? 'Range');
 
 	let popoverOpen = $state(false);
 

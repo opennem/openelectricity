@@ -7,10 +7,7 @@
 	 */
 
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import {
-		aggregateToInterval,
-		aggregateToMonth
-	} from '$lib/components/charts/v2/dataProcessing.js';
+	import { aggregateForDisplay } from '$lib/components/charts/v2/dataProcessing.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
@@ -421,38 +418,16 @@
 
 		let visibleData = dataManager.getDataForRange(start, end);
 
-		// Skip client-side aggregation when API interval is already coarse (3M, 1y)
-		const apiInterval = interval;
-
-		// Aggregate daily energy to monthly when selected (only if API returned daily data)
-		if (
-			isEnergy &&
-			apiInterval === '1d' &&
-			currentDisplayInterval === '1M' &&
-			visibleData.length > 0 &&
-			dataManager.seriesMeta
-		) {
-			visibleData = aggregateToMonth(
-				visibleData,
-				dataManager.seriesMeta.seriesNames,
+		// Aggregate the fetched native grain to the selected display interval
+		// (30m from 5m, or season/half/fy/month from coarser energy data). Power
+		// averages (mean MW); energy volume sums.
+		if (dataManager.seriesMeta) {
+			visibleData = aggregateForDisplay(visibleData, dataManager.seriesMeta.seriesNames, {
+				apiInterval: interval,
+				displayInterval: currentDisplayInterval,
 				ianaTimeZone,
-				'sum'
-			);
-		}
-
-		// Aggregate to 30m for power mode when selected
-		if (
-			!isEnergy &&
-			currentDisplayInterval === '30m' &&
-			visibleData.length > 0 &&
-			dataManager.seriesMeta
-		) {
-			visibleData = aggregateToInterval(
-				visibleData,
-				'30m',
-				dataManager.seriesMeta.seriesNames,
-				'mean'
-			);
+				method: isEnergy ? 'sum' : 'mean'
+			});
 		}
 
 		chartStore.seriesData = visibleData;
@@ -548,10 +523,14 @@
 	let tableDebounceTimer = null;
 
 	$effect(() => {
-		// Track reactive dependencies
+		// Track reactive dependencies — capture everything the debounced callback
+		// needs as plain values so the timer (which may fire after this effect is
+		// destroyed during facility navigation) never reads a stale `$derived`.
 		const start = viewStart;
 		const end = viewEnd;
 		const currentDisplayInterval = displayInterval;
+		const currentInterval = interval;
+		const currentIana = ianaTimeZone;
 		const isEnergy = isEnergyMetric;
 		const manager = dataManager;
 		const _cache = manager?.processedCache; // track cache changes
@@ -562,18 +541,24 @@
 
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
-			let rows = manager.getDataForRange(start, end);
-			if (isEnergy && interval === '1d' && currentDisplayInterval === '1M' && rows.length > 0) {
-				rows = aggregateToMonth(rows, meta.seriesNames, ianaTimeZone, 'sum');
-			} else if (!isEnergy && currentDisplayInterval === '30m' && rows.length > 0) {
-				rows = aggregateToInterval(rows, '30m', meta.seriesNames, 'mean');
-			}
+			const rows = aggregateForDisplay(manager.getDataForRange(start, end), meta.seriesNames, {
+				apiInterval: currentInterval,
+				displayInterval: currentDisplayInterval,
+				ianaTimeZone: currentIana,
+				method: isEnergy ? 'sum' : 'mean'
+			});
 			callback({
 				data: rows,
 				seriesNames: meta.seriesNames,
 				seriesLabels: meta.seriesLabels
 			});
 		}, 300);
+
+		// Cancel a pending timer when this effect is destroyed (e.g. the chart is
+		// unmounted on facility navigation) so it can't fire against stale state.
+		return () => {
+			if (tableDebounceTimer) clearTimeout(tableDebounceTimer);
+		};
 	});
 
 	/**

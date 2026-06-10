@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTooltipDateTime, getPowerAxisTicks } from './formatters.js';
+import { formatTooltipDateTime, getPowerAxisTicks, formatBucketLabel } from './formatters.js';
 
 const TZ = 'Australia/Brisbane'; // AEST +10, no DST
 const OFFSET = '+10:00';
@@ -46,6 +46,34 @@ describe('formatTooltipDateTime', () => {
 
 	it('returns empty string for invalid input', () => {
 		expect(formatTooltipDateTime(new Date('nope'), TZ, '1d')).toBe('');
+	});
+
+	it('labels coarse calendar buckets', () => {
+		const HOUR = 60 * 60 * 1000;
+		const local = (/** @type {number} */ y, /** @type {number} */ m0) =>
+			new Date(Date.UTC(y, m0, 1) - 10 * HOUR);
+		expect(formatTooltipDateTime(local(2026, 0), TZ, 'quarter')).toBe('Q1 2026');
+		expect(formatTooltipDateTime(local(2026, 0), TZ, 'half')).toBe('H1 2026');
+		expect(formatTooltipDateTime(local(2026, 6), TZ, 'half')).toBe('H2 2026');
+		expect(formatTooltipDateTime(local(2025, 6), TZ, 'fy')).toBe('FY2026'); // Jul 2025 → FY2026
+		expect(formatTooltipDateTime(local(2025, 11), TZ, 'season')).toBe('Summer 2025/26');
+		expect(formatTooltipDateTime(local(2026, 2), TZ, 'season')).toBe('Autumn 2026');
+	});
+});
+
+describe('formatBucketLabel', () => {
+	const HOUR = 60 * 60 * 1000;
+	const local = (/** @type {number} */ y, /** @type {number} */ m0) =>
+		new Date(Date.UTC(y, m0, 1) - 10 * HOUR);
+
+	it('names AU seasons (summer crosses the year)', () => {
+		expect(formatBucketLabel(local(2025, 11), TZ, 'season')).toBe('Summer 2025/26');
+		expect(formatBucketLabel(local(2026, 5), TZ, 'season')).toBe('Winter 2026');
+		expect(formatBucketLabel(local(2026, 8), TZ, 'season')).toBe('Spring 2026');
+	});
+
+	it('names the financial year by its ending year', () => {
+		expect(formatBucketLabel(local(2025, 6), TZ, 'fy')).toBe('FY2026');
 	});
 });
 

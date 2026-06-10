@@ -58,4 +58,35 @@ describe('getIntervalHours', () => {
 			expect(getIntervalHours('1M', apr)).toBe(30 * 24);
 		});
 	});
+
+	describe('coarse calendar intervals (network-time, with timestamp)', () => {
+		const HOUR = 60 * 60 * 1000;
+		const NEM = 'Australia/Brisbane';
+		/** Local (AEST) start-of-month UTC ms. */
+		const localStart = (/** @type {number} */ y, /** @type {number} */ m0) =>
+			Date.UTC(y, m0, 1) - 10 * HOUR;
+
+		it('quarter spans the real quarter length', () => {
+			// Q1 2026 (Jan–Mar) = 90 days.
+			expect(getIntervalHours('quarter', localStart(2026, 0), NEM)).toBe(90 * 24);
+		});
+
+		it('season summer spans Dec–Feb (crosses the year)', () => {
+			expect(getIntervalHours('season', localStart(2025, 11), NEM)).toBe(90 * 24);
+		});
+
+		it('half-year H1 2026 = 181 days', () => {
+			expect(getIntervalHours('half', localStart(2026, 0), NEM)).toBe(181 * 24);
+		});
+
+		it('financial year 2025–26 = 365 days', () => {
+			expect(getIntervalHours('fy', localStart(2025, 6), NEM)).toBe(365 * 24);
+		});
+
+		it('falls back to estimates when no timestamp is given', () => {
+			expect(getIntervalHours('season')).toBe(91.25 * 24);
+			expect(getIntervalHours('half')).toBe(182.5 * 24);
+			expect(getIntervalHours('fy')).toBe(365 * 24);
+		});
+	});
 });

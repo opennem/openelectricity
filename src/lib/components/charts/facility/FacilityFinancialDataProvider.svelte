@@ -10,10 +10,7 @@
 	 */
 
 	import { ChartStore } from '$lib/components/charts/v2';
-	import {
-		aggregateToInterval,
-		aggregateToMonth
-	} from '$lib/components/charts/v2/dataProcessing.js';
+	import { aggregateForDisplay } from '$lib/components/charts/v2/dataProcessing.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
@@ -282,33 +279,18 @@
 	 * @returns {any[]}
 	 */
 	function getVisibleData(manager, aggMode) {
-		if (!manager?.processedCache) return [];
+		if (!manager?.processedCache || !manager.seriesMeta) return [];
 
-		let data = manager.getDataForRange(viewStart, viewEnd);
-		const managerInterval = manager.interval;
-		const managerIsEnergyInterval = managerInterval !== '5m';
-		const currentDisplayInterval = displayInterval;
-
-		if (
-			managerIsEnergyInterval &&
-			managerInterval === '1d' &&
-			currentDisplayInterval === '1M' &&
-			data.length > 0 &&
-			manager.seriesMeta
-		) {
-			data = aggregateToMonth(data, manager.seriesMeta.seriesNames, ianaTimeZone, aggMode);
-		}
-
-		if (
-			!managerIsEnergyInterval &&
-			currentDisplayInterval === '30m' &&
-			data.length > 0 &&
-			manager.seriesMeta
-		) {
-			data = aggregateToInterval(data, '30m', manager.seriesMeta.seriesNames, aggMode);
-		}
-
-		return data;
+		return aggregateForDisplay(
+			manager.getDataForRange(viewStart, viewEnd),
+			manager.seriesMeta.seriesNames,
+			{
+				apiInterval: manager.interval,
+				displayInterval,
+				ianaTimeZone,
+				method: aggMode
+			}
+		);
 	}
 
 	// ============================================
@@ -342,7 +324,7 @@
 				if (typeof v === 'number' && !isNaN(v)) mvTotal += v;
 			}
 			const powerTotal = powerMap.get(row.time) ?? 0;
-			const intervalHrs = getIntervalHours(di, row.time);
+			const intervalHrs = getIntervalHours(di, row.time, ianaTimeZone);
 			const energy = powerTotal * intervalHrs;
 			return {
 				date: row.date,
@@ -367,7 +349,7 @@
 		const di = displayInterval;
 
 		const energyRows = powerRows.map((row) => {
-			const intervalHrs = getIntervalHours(di, row.time);
+			const intervalHrs = getIntervalHours(di, row.time, ianaTimeZone);
 			/** @type {Record<string, any>} */
 			const energyRow = { date: row.date, time: row.time };
 			for (const key of powerSeriesNames) {

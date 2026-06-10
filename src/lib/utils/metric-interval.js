@@ -2,35 +2,40 @@
  * Metric/Interval threshold logic for facility-style time-series charts.
  *
  * Maps a viewport duration (in days) to the correct OE API metric
- * (`power` | `energy`) and interval (`5m` | `1d` | `3M` | `1y`),
- * with hysteresis so continuous zoom doesn't thrash near a threshold,
- * plus a derivation of the chart's display interval (the client-side
- * aggregation level layered on top of the fetched API interval).
+ * (`power` | `energy`) and a **native** interval (`5m` | `1d` | `1M` | `1y`),
+ * with hysteresis so continuous zoom doesn't thrash near a threshold, plus a
+ * derivation of the chart's display interval (the client-side aggregation level
+ * layered on top of the fetched API interval).
  *
- * Lives in `$lib/utils/` so any chart route can consume the same logic;
- * direct callers today: `/studio/facility-explorer`, `/studio/facility-detail`,
- * `/facility/[code]`.
+ * The auto-switch ladder is `5m ↔ 1d ↔ 1M ↔ 1y` — only native fetch intervals,
+ * so each switch yields a valid single `ChartDataManager` request. Coarser
+ * grains (week, quarter, season, half-year, fin-year) are explicit picker
+ * choices (see `range-interval-config.js`), never auto-selected by pan/zoom.
+ *
+ * Lives in `$lib/utils/` so any chart route can consume the same logic; direct
+ * callers: `/studio/facility-explorer`, `/studio/facility-detail`,
+ * `/facilities` detail panel, `/facility/[code]`.
  */
 
 // ── Threshold constants ──────────────────────────────────────────────
 
 /** Days below which we use power/5m. */
 export const POWER_THRESHOLD = 15;
-/** Days at which we switch from energy/1d to energy/3M. */
-export const QUARTERLY_THRESHOLD = 365;
-/** Days at which we switch from energy/3M to energy/1y. */
+/** Days at which we switch from energy/1d to energy/1M. */
+export const MONTHLY_THRESHOLD = 365;
+/** Days at which we switch from energy/1M to energy/1y. */
 export const YEARLY_THRESHOLD = 1825;
 
-// Hysteresis zoom-in thresholds (lower than the zoom-out ones, so a small
-// pan near the boundary doesn't flip back and forth).
-const HYST_YEARLY_TO_QUARTERLY = 1500;
-const HYST_QUARTERLY_TO_DAILY = 300;
+// Hysteresis zoom-in thresholds (lower than the zoom-out ones, so a small pan
+// near the boundary doesn't flip back and forth).
+const HYST_YEARLY_TO_MONTHLY = 1500;
+const HYST_MONTHLY_TO_DAILY = 300;
 const HYST_DAILY_TO_POWER = 13;
 
 /**
- * Determine the metric and API interval for a given number of days.
- * Memoryless — used on initial load and when a range preset / custom date
- * range is selected. For pan/zoom use `getHysteresisSwitch` instead.
+ * Determine the metric and native API interval for a given number of days.
+ * Memoryless — used on initial load and when a range preset / custom date range
+ * is selected. For pan/zoom use `getHysteresisSwitch` instead.
  *
  * @param {number} days
  * @returns {{ metric: string, interval: string }}
@@ -39,19 +44,20 @@ export function getMetricIntervalForDays(days) {
 	if (days < POWER_THRESHOLD) {
 		return { metric: 'power', interval: '5m' };
 	}
-	if (days < QUARTERLY_THRESHOLD) {
+	if (days < MONTHLY_THRESHOLD) {
 		return { metric: 'energy', interval: '1d' };
 	}
-	if (days <= YEARLY_THRESHOLD) {
-		return { metric: 'energy', interval: '3M' };
+	if (days < YEARLY_THRESHOLD) {
+		return { metric: 'energy', interval: '1M' };
 	}
 	return { metric: 'energy', interval: '1y' };
 }
 
 /**
- * Given the *current* metric/interval and the viewport duration, decide
- * whether a switch is needed (with hysteresis). Returns `null` when no
- * switch is needed, otherwise `{ metric, interval }`.
+ * Given the *current* metric/interval and the viewport duration, decide whether
+ * a switch is needed (with hysteresis). Returns `null` when no switch is needed,
+ * otherwise `{ metric, interval }`. Operates only on the native ladder
+ * `5m ↔ 1d ↔ 1M ↔ 1y`.
  *
  * @param {string} currentMetric
  * @param {string} currentInterval
@@ -69,12 +75,12 @@ export function getHysteresisSwitch(currentMetric, currentInterval, durationDays
 	} else if (
 		currentMetric === 'energy' &&
 		currentInterval === '1d' &&
-		durationDays >= QUARTERLY_THRESHOLD
+		durationDays >= MONTHLY_THRESHOLD
 	) {
-		targetInterval = '3M';
+		targetInterval = '1M';
 	} else if (
 		currentMetric === 'energy' &&
-		currentInterval === '3M' &&
+		currentInterval === '1M' &&
 		durationDays >= YEARLY_THRESHOLD
 	) {
 		targetInterval = '1y';
@@ -83,13 +89,13 @@ export function getHysteresisSwitch(currentMetric, currentInterval, durationDays
 	else if (
 		currentMetric === 'energy' &&
 		currentInterval === '1y' &&
-		durationDays < HYST_YEARLY_TO_QUARTERLY
+		durationDays < HYST_YEARLY_TO_MONTHLY
 	) {
-		targetInterval = '3M';
+		targetInterval = '1M';
 	} else if (
 		currentMetric === 'energy' &&
-		currentInterval === '3M' &&
-		durationDays < HYST_QUARTERLY_TO_DAILY
+		currentInterval === '1M' &&
+		durationDays < HYST_MONTHLY_TO_DAILY
 	) {
 		targetInterval = '1d';
 	} else if (
@@ -108,12 +114,11 @@ export function getHysteresisSwitch(currentMetric, currentInterval, durationDays
 }
 
 /**
- * Display interval (client-side aggregation level layered on top of the
- * fetched API interval). The chart fetches at `interval` and renders at
- * the returned display interval — e.g. fetched power/5m can render as 5m
- * (raw) or 30m (averaged); fetched energy/1d can render as 1d or 1M
- * (summed). Coarser API intervals (3M, 1y) have no further client-side
- * aggregation.
+ * Display interval (client-side aggregation level layered on top of the fetched
+ * API interval). The chart fetches at `interval` and renders at the returned
+ * display interval — e.g. fetched power/5m renders as 5m (raw) or 30m
+ * (averaged); fetched energy/1d can render as 1d or 1M (summed). Native coarse
+ * intervals (1M, 1y) render at their own grain.
  *
  * @param {string} metric
  * @param {string} interval
@@ -127,6 +132,6 @@ export function getDisplayIntervalForDays(metric, interval, days) {
 	if (interval === '1d') {
 		return days >= 366 ? '1M' : '1d';
 	}
-	// '3M' or '1y' API intervals — display matches the fetched grain.
+	// Native coarse API intervals (1M, 1y, …) — display matches the fetch grain.
 	return interval;
 }
