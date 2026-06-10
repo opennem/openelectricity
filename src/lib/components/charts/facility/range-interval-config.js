@@ -34,10 +34,10 @@ export const INTERVAL_SPEC = {
 		label: '30 min'
 	},
 	'1h': {
-		metric: 'power',
+		metric: 'energy',
 		apiInterval: '1h',
 		aggregate: null,
-		curveType: 'straight',
+		curveType: 'step',
 		label: 'Hourly'
 	},
 	'1d': { metric: 'energy', apiInterval: '1d', aggregate: null, curveType: 'step', label: 'Daily' },

@@ -5,7 +5,8 @@
 	 * sibling components (`FacilityEmissionsIntensityChart`,
 	 * `FacilityEmissionsVolumeChart`) render from the context this provider sets
 	 * up, so a single data fetch powers both. The combined fetch URL
-	 * (`metric=power,market_value,emissions`) is identical to the one used by
+	 * (`metric=<basis>,market_value,emissions`, where `<basis>` is `energy` for
+	 * energy intervals and `power` for 5m/30m) is identical to the one used by
 	 * `FacilityFinancialDataProvider`, so all four data managers across the two
 	 * providers collapse to one network round-trip per range.
 	 *
@@ -24,7 +25,14 @@
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 	import { setFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
-	import { getIntervalHours } from './interval-hours.js';
+	import {
+		getBasisMetric,
+		combinedMetricsFor,
+		rewriteSeriesPrefix,
+		sumSeries,
+		buildEnergyMap,
+		createBasisColour
+	} from './energy-basis.js';
 	import { LINE_COLOUR } from './colours.js';
 
 	/**
@@ -74,6 +82,12 @@
 	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
 	let isEnergyInterval = $derived(interval !== '5m');
 
+	// Intensity = emissions / energy. For energy intervals the API serves `energy`
+	// (MWh) natively; the 5m/30m power grains derive it from power × hours.
+	// See energy-basis.js for the shared rules.
+	let basisMetric = $derived(getBasisMetric(interval));
+	let combinedMetrics = $derived(combinedMetricsFor(basisMetric));
+
 	// Mirror the tooltip date toggle into both chart stores.
 	$effect(() => {
 		if (intensityChartStore) intensityChartStore.chartTooltips.showDate = showTooltipDate;
@@ -117,15 +131,9 @@
 		};
 	});
 
-	let getPowerColour = $derived.by(() => {
-		const colourMap = unitColours;
-		const powerLoadIds = loadIds.map((id) => id.replace('market_value_', 'power_'));
-		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
-			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = powerLoadIds.includes(`power_${unitCode}`);
-			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-		};
-	});
+	let getBasisColour = $derived.by(() =>
+		createBasisColour({ basisMetric, unitColours, loadIds, getFuelTechColor })
+	);
 
 	// ============================================
 	// Data Managers — gated by `active`
@@ -133,8 +141,9 @@
 
 	/** @type {ChartDataManager | null} */
 	let emissionsDataManager = $state(null);
+	/** Denominator basis: energy (MWh) for energy intervals, power (MW) for 5m/30m. */
 	/** @type {ChartDataManager | null} */
-	let powerDataManager = $state(null);
+	let basisDataManager = $state(null);
 
 	$effect(() => {
 		if (!active || !facility) {
@@ -160,13 +169,10 @@
 		// The emissions manager produces `emissions_…` IDs, so rewrite the prefix
 		// or processFacilityPower's `unitOrder.filter(...)` falls through to the
 		// raw API order and the stack misorders.
-		const emissionsUnitOrder = unitOrder.map((/** @type {string} */ id) =>
-			id.replace(/^power_/, 'emissions_')
-		);
-		const emissionsLoadsToInvert = loadIds.map((/** @type {string} */ id) =>
-			id.replace(/^power_/, 'emissions_')
-		);
+		const emissionsUnitOrder = rewriteSeriesPrefix(unitOrder, 'emissions');
+		const emissionsLoadsToInvert = rewriteSeriesPrefix(loadIds, 'emissions');
 
+		const metricParam = combinedMetrics;
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
 			networkId,
@@ -178,10 +184,10 @@
 			getLabel,
 			getColour: getEmissionsColour,
 			// Same combined URL as FacilityFinancialDataProvider's managers so
-			// the API computes all three metrics in one query and the 5-minute
-			// HTTP cache can serve repeat fetches across providers.
+			// the API computes all metrics in one query and the 5-minute HTTP
+			// cache can serve repeat fetches across providers.
 			buildFetchUrl: (params) => {
-				params.set('metric', 'power,market_value,emissions');
+				params.set('metric', metricParam);
 				return `/api/facilities/${currentCode}/power?${params.toString()}`;
 			}
 		});
@@ -200,39 +206,47 @@
 
 	$effect(() => {
 		if (!active || !facility) {
-			powerDataManager = null;
+			basisDataManager = null;
 			return;
 		}
 
 		const currentInterval = interval;
+		const currentBasis = basisMetric;
+		const metricParam = combinedMetrics;
 		const currentCode = facility.code;
 		const networkId = facility.network_id;
 
-		const existing = untrack(() => powerDataManager);
+		const existing = untrack(() => basisDataManager);
 		if (
 			existing &&
 			existing.facilityCode === currentCode &&
 			existing.interval === currentInterval &&
-			existing.metric === 'power'
+			existing.metric === currentBasis
 		) {
 			return;
 		}
+
+		// `unitOrder`/`loadIds` are `power_…` IDs; rewrite to the basis prefix so
+		// processFacilityPower orders/inverts the right series (`energy_…` for
+		// energy intervals).
+		const basisUnitOrder = rewriteSeriesPrefix(unitOrder, currentBasis);
+		const basisLoadsToInvert = rewriteSeriesPrefix(loadIds, currentBasis);
 
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
 			networkId,
 			interval: currentInterval,
-			metric: 'power',
+			metric: currentBasis,
 			unitFuelTechMap,
-			unitOrder,
-			loadsToInvert: loadIds,
+			unitOrder: basisUnitOrder,
+			loadsToInvert: basisLoadsToInvert,
 			getLabel,
-			getColour: getPowerColour,
+			getColour: getBasisColour,
 			// Same combined URL as FacilityFinancialDataProvider's managers so
-			// the API computes all three metrics in one query and the 5-minute
-			// HTTP cache can serve repeat fetches across providers.
+			// the API computes all metrics in one query and the 5-minute HTTP
+			// cache can serve repeat fetches across providers.
 			buildFetchUrl: (params) => {
-				params.set('metric', 'power,market_value,emissions');
+				params.set('metric', metricParam);
 				return `/api/facilities/${currentCode}/power?${params.toString()}`;
 			}
 		});
@@ -246,7 +260,7 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
-		powerDataManager = manager;
+		basisDataManager = manager;
 	});
 
 	// Fetch data when viewport changes — both managers
@@ -263,7 +277,7 @@
 		const bufferedEnd = Math.min(end + buffer, Date.now());
 
 		emissionsDataManager?.requestRange(bufferedStart, bufferedEnd);
-		powerDataManager?.requestRange(bufferedStart, bufferedEnd);
+		basisDataManager?.requestRange(bufferedStart, bufferedEnd);
 	});
 
 	// ============================================
@@ -291,39 +305,29 @@
 	}
 
 	// ============================================
-	// Derived Intensity Data — intensity = (total_emissions_tonnes × 1000) / (total_power × interval_hours)
+	// Derived Intensity Data — intensity = (total_emissions_tonnes × 1000) / total_energy_MWh
+	// (energy is native MWh for energy intervals, power × interval_hours for 5m/30m).
 	// Result: kgCO₂e/MWh
 	// ============================================
 
 	let intensityData = $derived.by(() => {
-		if (!emissionsDataManager?.processedCache || !powerDataManager?.processedCache) return [];
+		if (!emissionsDataManager?.processedCache || !basisDataManager?.processedCache) return [];
 
 		const emissionsRows = getVisibleData(emissionsDataManager, 'sum');
-		const powerRows = getVisibleData(powerDataManager, 'mean');
+		// Energy basis sums native MWh; the power basis averages MW (× hours).
+		const basisRows = getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean');
 		const emissionsSeriesNames = emissionsDataManager.seriesMeta?.seriesNames ?? [];
-		const powerSeriesNames = powerDataManager.seriesMeta?.seriesNames ?? [];
-		const di = displayInterval;
+		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
 
-		/** @type {Map<number, number>} */
-		const powerMap = new Map();
-		for (const row of powerRows) {
-			let total = 0;
-			for (const key of powerSeriesNames) {
-				const v = row[key];
-				if (typeof v === 'number' && !isNaN(v)) total += v;
-			}
-			powerMap.set(row.time, total);
-		}
+		const energyMap = buildEnergyMap(basisRows, basisSeriesNames, {
+			isEnergyInterval,
+			displayInterval,
+			ianaTimeZone
+		});
 
 		return emissionsRows.map((row) => {
-			let emissionsTotal = 0; // tonnes CO₂e
-			for (const key of emissionsSeriesNames) {
-				const v = row[key];
-				if (typeof v === 'number' && !isNaN(v)) emissionsTotal += v;
-			}
-			const powerTotal = powerMap.get(row.time) ?? 0; // MW
-			const intervalHrs = getIntervalHours(di, row.time, ianaTimeZone);
-			const energyMWh = powerTotal * intervalHrs;
+			const emissionsTotal = sumSeries(row, emissionsSeriesNames); // tonnes CO₂e
+			const energyMWh = energyMap.get(row.time) ?? 0;
 			return {
 				date: row.date,
 				time: row.time,
@@ -475,10 +479,10 @@
 
 		if (lastPanDelta < 0 && viewEnd < now) {
 			emissionsDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
-			powerDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
+			basisDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
 		} else if (lastPanDelta > 0) {
 			emissionsDataManager?.requestRange(viewStart - prefetch, viewStart);
-			powerDataManager?.requestRange(viewStart - prefetch, viewStart);
+			basisDataManager?.requestRange(viewStart - prefetch, viewStart);
 		}
 	}
 
@@ -589,7 +593,7 @@
 		get intensityLoadingRanges() {
 			return [
 				...(emissionsDataManager?.loadingRanges ?? []),
-				...(powerDataManager?.loadingRanges ?? [])
+				...(basisDataManager?.loadingRanges ?? [])
 			];
 		},
 		get emissionsVolumeLoadingRanges() {

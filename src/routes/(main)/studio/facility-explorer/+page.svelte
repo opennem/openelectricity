@@ -553,7 +553,7 @@
 
 					{#if datePickerOpen}
 						<div
-							class="border border-mid-grey bg-white absolute top-14 left-1/2 -translate-x-1/2 rounded-lg z-50 shadow-md p-4 w-[220px]"
+							class="border border-mid-grey bg-white absolute top-14 left-1/2 -translate-x-1/2 rounded-lg z-50 shadow-md p-4 w-auto max-w-[calc(100vw-2rem)]"
 							in:fly={{ y: -5, duration: 150 }}
 							out:fly={{ y: -5, duration: 150 }}
 						>
@@ -564,7 +564,6 @@
 								minDate={MIN_DATE}
 								{maxDate}
 								size="sm"
-								inlineCalendar
 								onchange={(range) => {
 									handleDateRangeChange(range);
 									datePickerOpen = false;

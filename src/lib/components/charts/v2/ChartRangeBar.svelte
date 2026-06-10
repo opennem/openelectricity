@@ -108,20 +108,22 @@
 		>
 			<Calendar size={14} />
 		</Popover.Trigger>
-		<Popover.Content
-			sideOffset={6}
-			class="z-50 border border-warm-grey bg-white shadow-lg p-3 rounded-xl"
-		>
-			<DateRangePicker
-				bind:this={datePickerRef}
-				{startDate}
-				{endDate}
-				{minDate}
-				{maxDate}
-				size="sm"
-				onchange={ondaterangechange}
-			/>
-		</Popover.Content>
+		<Popover.Portal>
+			<Popover.Content
+				sideOffset={6}
+				class="z-50 border border-warm-grey bg-white shadow-lg p-3 rounded-xl w-auto max-w-[calc(100vw-2rem)]"
+			>
+				<DateRangePicker
+					bind:this={datePickerRef}
+					{startDate}
+					{endDate}
+					{minDate}
+					{maxDate}
+					size="sm"
+					onchange={ondaterangechange}
+				/>
+			</Popover.Content>
+		</Popover.Portal>
 	</Popover.Root>
 
 	<span class="text-warm-grey text-xs">|</span>

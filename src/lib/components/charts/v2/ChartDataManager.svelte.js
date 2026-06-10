@@ -8,6 +8,9 @@
 
 import { processFacilityPower } from '$lib/components/charts/facility/process-facility-power.js';
 
+/** No facility data exists before this date; every fetch window is clamped to it. */
+const EARLIEST_DATA_MS = new Date('1998-12-01T00:00:00Z').getTime();
+
 /**
  * @typedef {Object} LoadingRange
  * @property {number} start - Start timestamp (ms)
@@ -250,24 +253,25 @@ export default class ChartDataManager {
 	 * Max range per request, scaled by interval. Acts as a safety net that
 	 * chunks very wide gaps into sequential fetches (see #splitGapIntoBatches).
 	 *
-	 * The OE API no longer caps query range, so coarse intervals can pull a
-	 * full facility lifetime in a single request — the cap only stays tight
-	 * for 5m, where a full history would be millions of points.
+	 * The OE API no longer caps query range, so daily-or-coarser intervals can
+	 * pull a full facility lifetime in a single request — the cap only stays
+	 * tight for sub-daily grains (5m, 1h), where a wide span would be millions
+	 * of points. The window is already clamped to [1998 → now] in #executeFetch,
+	 * so realistic "All" energy ranges never reach this cap.
 	 *
 	 * @returns {number} max range in ms
 	 */
 	get #maxApiRangeMs() {
 		const DAY = 24 * 60 * 60 * 1000;
-		// Coarse intervals already span a huge window per request.
-		if (this.interval === '1y') return 3700 * DAY;
-		if (this.interval === '3M') return 1830 * DAY;
-		// Daily/monthly stay modest even over a full facility lifetime
-		// (~30y daily ≈ 11k points, monthly ≈ 360 points), so allow the whole
-		// history in one request rather than batching it.
-		if (this.interval === '1d' || this.interval === '1M') return 11000 * DAY;
-		// High-resolution 5m: keep the tighter cap and let
-		// #splitGapIntoBatches chunk anything wider.
-		return 1000 * DAY;
+		// High-resolution sub-daily grains (5m, 1h) can be millions of points over
+		// a wide span, so keep a tight cap and let #splitGapIntoBatches chunk
+		// anything wider.
+		if (this.interval === '5m' || this.interval === '1h') return 1000 * DAY;
+		// Every daily-or-coarser energy grain (1d/1M/3M/1y) yields at most ~11k
+		// points across a full facility lifetime (daily ≈ 11k, monthly ≈ 360,
+		// quarterly ≈ 120, yearly ≈ 30), so fetch the whole range in one request
+		// rather than splitting it into batches.
+		return 11000 * DAY;
 	}
 
 	/**
@@ -296,8 +300,21 @@ export default class ChartDataManager {
 		if (!pending) return;
 		this.#pendingFetch = null;
 
+		// Clamp the requested window to where data can exist BEFORE computing
+		// gaps/batches. Callers add wide prefetch buffers (3× the viewport for
+		// energy), so an "All" range would otherwise reach decades past 1998 /
+		// into the future and split into wasted batches even though the real
+		// window fits in a single request.
+		const reqStart = Math.max(pending.start, EARLIEST_DATA_MS);
+		const reqEnd = Math.min(pending.end, Date.now());
+		if (reqEnd - reqStart < 1000) {
+			this.hasPendingFetch = false;
+			this.initialLoadComplete = true;
+			return;
+		}
+
 		// Calculate actual gaps to fetch
-		const gaps = this.#computeGaps(pending.start, pending.end);
+		const gaps = this.#computeGaps(reqStart, reqEnd);
 		if (!gaps.length) {
 			this.hasPendingFetch = false;
 			this.initialLoadComplete = true;
@@ -442,9 +459,8 @@ export default class ChartDataManager {
 		}
 
 		// Clamp date range — no data before Dec 1998, no future dates
-		const EARLIEST_MS = new Date('1998-12-01T00:00:00Z').getTime();
 		const now = Date.now();
-		const clampedStart = Math.max(Math.min(startMs, now), EARLIEST_MS);
+		const clampedStart = Math.max(Math.min(startMs, now), EARLIEST_DATA_MS);
 		const clampedEnd = Math.min(endMs, now);
 		// Require at least 1 second between start and end — the API formats dates
 		// at second precision (see below), so sub-second ranges collapse to an

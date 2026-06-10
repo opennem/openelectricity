@@ -1,7 +1,6 @@
 <script>
 	import { DateRangePicker } from 'bits-ui';
 	import { CalendarDate } from '@internationalized/date';
-	import Calendar from '@lucide/svelte/icons/calendar';
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
 
@@ -17,66 +16,32 @@
 	 * @property {string | null} [endDate] - End date in YYYY-MM-DD format
 	 * @property {string | null} [minDate] - Earliest selectable date in YYYY-MM-DD format
 	 * @property {string | null} [maxDate] - Latest selectable date in YYYY-MM-DD format
-	 * @property {'sm' | 'md' | 'lg'} [size] - Size variant
-	 * @property {boolean} [inlineCalendar] - When true, renders the calendar inline below the input instead of in a popover
+	 * @property {'sm' | 'md' | 'lg'} [size] - Size variant for the From/To inputs
+	 * @property {number} [numberOfMonths] - Months shown side by side in the calendar
 	 * @property {(event: DateRangeChangeEvent) => void} [onchange] - Callback when date range changes
 	 */
 
 	/** @type {Props} */
-	let { startDate = null, endDate = null, minDate = null, maxDate = null, size = 'md', inlineCalendar = false, onchange } = $props();
+	let {
+		startDate = null,
+		endDate = null,
+		minDate = null,
+		maxDate = null,
+		size = 'md',
+		numberOfMonths = 2,
+		onchange
+	} = $props();
 
 	let minValue = $derived(parseDate(minDate));
 	let maxValue = $derived(parseDate(maxDate));
 
 	const sizeConfig = {
-		sm: {
-			input: 'px-2 py-1.5 text-xs gap-0.5 rounded-lg',
-			segment: 'px-0.5 text-xs',
-			separator: 'px-0.5',
-			trigger: 'ml-1 p-0.5',
-			iconSize: 'size-3.5',
-			content: 'p-3 rounded-xl',
-			heading: 'text-xs',
-			navButton: 'p-1',
-			navIcon: 'size-5',
-			headCell: 'w-7 text-[10px]',
-			dayCell: 'h-7 w-7 text-[11px]',
-			todayDot: 'h-0.5 w-0.5 bottom-0.5'
-		},
-		md: {
-			input: 'px-3 py-2 text-sm gap-1 rounded-lg',
-			segment: 'px-0.5 text-sm',
-			separator: 'px-1',
-			trigger: 'ml-1.5 p-1',
-			iconSize: 'size-4',
-			content: 'p-4 rounded-xl',
-			heading: 'text-sm',
-			navButton: 'p-1',
-			navIcon: 'size-4',
-			headCell: 'w-9 text-xs',
-			dayCell: 'h-9 w-9 text-xs',
-			todayDot: 'h-1 w-1 bottom-1'
-		},
-		lg: {
-			input: 'px-4 py-3 text-base gap-1.5 rounded-xl',
-			segment: 'px-1 text-base',
-			separator: 'px-1.5',
-			trigger: 'ml-2 p-1',
-			iconSize: 'size-5',
-			content: 'p-5 rounded-2xl',
-			heading: 'text-base',
-			navButton: 'p-1.5',
-			navIcon: 'size-5',
-			headCell: 'w-11 text-sm',
-			dayCell: 'h-11 w-11 text-sm',
-			todayDot: 'h-1 w-1 bottom-1.5'
-		}
+		sm: { input: 'px-2 py-1.5 rounded-lg', segment: 'px-0.5 text-xs' },
+		md: { input: 'px-3 py-2 rounded-lg', segment: 'px-0.5 text-sm' },
+		lg: { input: 'px-4 py-2.5 rounded-xl', segment: 'px-1 text-base' }
 	};
 
 	let s = $derived(sizeConfig[size]);
-
-	let inlineHeadCell = $derived(inlineCalendar ? 'flex-1 text-center text-[10px]' : s.headCell);
-	let inlineDayCell = $derived(inlineCalendar ? 'w-full h-9 text-xs' : s.dayCell);
 
 	/**
 	 * Parse a YYYY-MM-DD string into a CalendarDate
@@ -156,7 +121,6 @@
 	let errorMessage = $state('');
 	let startHasError = $state(false);
 	let endHasError = $state(false);
-	let hasError = $derived(!!errorMessage);
 
 	/**
 	 * Validate a date range against all rules.
@@ -242,7 +206,7 @@
 	let blurTimer = null;
 
 	function handleFocusIn() {
-		// Cancel any pending blur validation (e.g. focus moved to calendar popover and back)
+		// Cancel any pending blur validation (e.g. focus moved to calendar and back)
 		if (blurTimer) {
 			clearTimeout(blurTimer);
 			blurTimer = null;
@@ -251,7 +215,7 @@
 
 	/**
 	 * Show validation errors when focus leaves the date picker entirely.
-	 * Uses a small delay to handle popover focus transitions (portaled content).
+	 * Uses a small delay to handle focus transitions within the panel.
 	 * @param {FocusEvent} e
 	 */
 	function handleFocusOut(e) {
@@ -290,140 +254,138 @@
 
 	// Use the browser's locale for date formatting (e.g. DD/MM/YYYY vs MM/DD/YYYY)
 	const locale = typeof navigator !== 'undefined' ? navigator.language : 'en-AU';
+
+	const monthHeadingFmt = new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' });
+
+	/**
+	 * Heading label ("June 2026") for a month's first-day DateValue.
+	 * @param {import('@internationalized/date').DateValue} dateValue
+	 * @returns {string}
+	 */
+	function formatMonthHeading(dateValue) {
+		return monthHeadingFmt.format(new Date(dateValue.year, dateValue.month - 1, 1));
+	}
 </script>
 
-<div bind:this={containerEl} onfocusin={handleFocusIn} onfocusout={handleFocusOut}>
+<div
+	bind:this={containerEl}
+	onfocusin={handleFocusIn}
+	onfocusout={handleFocusOut}
+	class="inline-block font-sans"
+>
 	<DateRangePicker.Root
 		weekdayFormat="short"
 		fixedWeeks={true}
 		{locale}
+		{numberOfMonths}
 		value={dateRange}
 		onValueChange={handleValueChange}
 		{minValue}
 		{maxValue}
 	>
-		<div
-			class="inline-flex items-center border transition-colors bg-white {inlineCalendar ? 'w-full' : ''} {hasError
-				? 'border-red-300 focus-within:border-red-400'
-				: 'border-warm-grey focus-within:border-dark-grey'} {s.input}"
-		>
+		<!-- Labelled From / To inputs (type to edit, or pick from the calendar) -->
+		<div class="flex items-end gap-3">
 			{#each inputTypes as type (type)}
-				<DateRangePicker.Input
-					{type}
-					class="inline-flex items-center gap-0.5 rounded-sm px-0.5 -mx-0.5 transition-colors {type ===
-						'start' && startHasError
-						? 'bg-red-50'
-						: ''} {type === 'end' && endHasError ? 'bg-red-50' : ''}"
-				>
-					{#snippet children({ segments })}
-						{#each segments as { part, value }, i (part + i)}
-							{#if part === 'literal'}
-								<span class="text-mid-grey {s.segment}">{value}</span>
-							{:else}
-								<DateRangePicker.Segment
-									{part}
-									class="rounded text-dark-grey tabular-nums focus:bg-light-warm-grey focus:text-dark-grey focus:outline-none {s.segment}"
-								>
-									{value}
-								</DateRangePicker.Segment>
-							{/if}
-						{/each}
-					{/snippet}
-				</DateRangePicker.Input>
-				{#if type === 'start'}
-					<span class="text-mid-grey {s.separator}">&ndash;</span>
-				{/if}
+				{@const fieldErr = type === 'start' ? startHasError : endHasError}
+				<label class="flex min-w-0 flex-1 flex-col">
+					<span class="mb-1 text-[10px] font-medium uppercase tracking-wider text-mid-grey">
+						{type === 'start' ? 'From' : 'To'}
+					</span>
+					<DateRangePicker.Input
+						{type}
+						class="flex w-full items-center justify-center gap-0.5 border bg-white transition-colors {fieldErr
+							? 'border-red-300 bg-red-50'
+							: 'border-warm-grey focus-within:border-dark-grey'} {s.input}"
+					>
+						{#snippet children({ segments })}
+							{#each segments as { part, value }, i (part + i)}
+								{#if part === 'literal'}
+									<span class="text-mid-grey {s.segment}">{value}</span>
+								{:else}
+									<DateRangePicker.Segment
+										{part}
+										class="rounded text-dark-grey tabular-nums focus:bg-light-warm-grey focus:text-dark-grey focus:outline-none {s.segment}"
+									>
+										{value}
+									</DateRangePicker.Segment>
+								{/if}
+							{/each}
+						{/snippet}
+					</DateRangePicker.Input>
+				</label>
 			{/each}
-
-			{#if !inlineCalendar}
-				<DateRangePicker.Trigger
-					class="rounded text-mid-grey transition-colors hover:text-dark-grey focus:outline-none {s.trigger}"
-				>
-					<Calendar class={s.iconSize} />
-				</DateRangePicker.Trigger>
-			{/if}
 		</div>
 
-		{#snippet calendarContent()}
-			<DateRangePicker.Calendar>
-				{#snippet children({ months, weekdays })}
-					<DateRangePicker.Header class="flex items-center justify-between pb-3">
-						<DateRangePicker.PrevButton
-							class="rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey {s.navButton}"
-						>
-							<ChevronLeft class={s.navIcon} />
-						</DateRangePicker.PrevButton>
+		<!-- Two-month range calendar -->
+		<DateRangePicker.Calendar class="mt-3 border-t border-warm-grey pt-3">
+			{#snippet children({ months, weekdays })}
+				<div class="relative">
+					<DateRangePicker.PrevButton
+						class="absolute left-0 top-0 rounded-md p-1 text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey focus:outline-none"
+					>
+						<ChevronLeft class="size-4" />
+					</DateRangePicker.PrevButton>
 
-						<DateRangePicker.Heading class="font-medium text-dark-grey {s.heading}" />
+					<DateRangePicker.NextButton
+						class="absolute right-0 top-0 rounded-md p-1 text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey focus:outline-none"
+					>
+						<ChevronRight class="size-4" />
+					</DateRangePicker.NextButton>
 
-						<DateRangePicker.NextButton
-							class="rounded-md text-mid-grey transition-colors hover:bg-light-warm-grey hover:text-dark-grey {s.navButton}"
-						>
-							<ChevronRight class={s.navIcon} />
-						</DateRangePicker.NextButton>
-					</DateRangePicker.Header>
+					<div class="flex flex-col gap-4 sm:flex-row sm:gap-6">
+						{#each months as month (month.value)}
+							<div>
+								<div class="pb-3 text-center text-xs font-medium text-dark-grey">
+									{formatMonthHeading(month.value)}
+								</div>
 
-					{#each months as month (month.value)}
-						<DateRangePicker.Grid class="w-full border-collapse">
-							<DateRangePicker.GridHead>
-								<DateRangePicker.GridRow class="flex w-full">
-									{#each weekdays as day (day)}
-										<DateRangePicker.HeadCell
-											class="text-center font-medium text-mid-grey {inlineHeadCell}"
-										>
-											{day.slice(0, 2)}
-										</DateRangePicker.HeadCell>
-									{/each}
-								</DateRangePicker.GridRow>
-							</DateRangePicker.GridHead>
-
-							<DateRangePicker.GridBody>
-								{#each month.weeks as weekDates (weekDates)}
-									<DateRangePicker.GridRow class="flex w-full">
-										{#each weekDates as date (date)}
-											<DateRangePicker.Cell
-												{date}
-												month={month.value}
-												class="relative p-0 text-center {inlineCalendar ? 'flex-1' : ''}"
-											>
-												<DateRangePicker.Day
-													class="relative inline-flex items-center justify-center rounded-md text-dark-grey transition-colors hover:bg-light-warm-grey focus:outline-none data-[disabled]:pointer-events-none data-[outside-month]:text-warm-grey data-[outside-month]:pointer-events-none data-[highlighted]:bg-light-warm-grey data-[highlighted]:rounded-none data-[selected]:bg-dark-grey data-[selected]:text-white data-[selected]:rounded-none data-[selection-start]:rounded-l-md data-[selection-end]:rounded-r-md data-[disabled]:text-warm-grey {inlineDayCell}"
+								<DateRangePicker.Grid class="select-none border-collapse">
+									<DateRangePicker.GridHead>
+										<DateRangePicker.GridRow class="flex">
+											{#each weekdays as day (day)}
+												<DateRangePicker.HeadCell
+													class="w-8 text-center text-[10px] font-medium text-mid-grey"
 												>
-													{date.day}
-													{#if isToday(date)}
-														<span
-															class="absolute left-1/2 -translate-x-1/2 rounded-full bg-current {s.todayDot}"
-														></span>
-													{/if}
-												</DateRangePicker.Day>
-											</DateRangePicker.Cell>
-										{/each}
-									</DateRangePicker.GridRow>
-								{/each}
-							</DateRangePicker.GridBody>
-						</DateRangePicker.Grid>
-					{/each}
-				{/snippet}
-			</DateRangePicker.Calendar>
-		{/snippet}
+													{day.slice(0, 2)}
+												</DateRangePicker.HeadCell>
+											{/each}
+										</DateRangePicker.GridRow>
+									</DateRangePicker.GridHead>
 
-		{#if inlineCalendar}
-			<div class="mt-3 pt-3 border-t border-warm-grey font-sans">
-				{@render calendarContent()}
-				{#if errorMessage}
-					<p class="text-xs text-red text-center mt-2">{errorMessage}</p>
-				{/if}
-			</div>
-		{:else}
-			<DateRangePicker.Content
-				sideOffset={6}
-				class="z-50 border border-warm-grey bg-white shadow-lg {s.content}"
-			>
-				{@render calendarContent()}
-			</DateRangePicker.Content>
-			{#if errorMessage}
-				<p class="text-xs text-red mt-1">{errorMessage}</p>
-			{/if}
+									<DateRangePicker.GridBody>
+										{#each month.weeks as weekDates (weekDates)}
+											<DateRangePicker.GridRow class="flex">
+												{#each weekDates as date (date)}
+													<DateRangePicker.Cell
+														{date}
+														month={month.value}
+														class="relative p-0 text-center"
+													>
+														<DateRangePicker.Day
+															class="relative inline-flex h-8 w-8 items-center justify-center rounded-md text-xs text-dark-grey transition-colors hover:bg-light-warm-grey focus:outline-none data-[disabled]:pointer-events-none data-[outside-month]:pointer-events-none data-[selected]:rounded-none data-[selection-end]:rounded-r-md data-[selection-start]:rounded-l-md data-[highlighted]:bg-light-warm-grey data-[highlighted]:rounded-none data-[selected]:bg-dark-grey data-[disabled]:text-warm-grey data-[outside-month]:text-warm-grey data-[selected]:text-white"
+														>
+															{date.day}
+															{#if isToday(date)}
+																<span
+																	class="absolute bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-current"
+																></span>
+															{/if}
+														</DateRangePicker.Day>
+													</DateRangePicker.Cell>
+												{/each}
+											</DateRangePicker.GridRow>
+										{/each}
+									</DateRangePicker.GridBody>
+								</DateRangePicker.Grid>
+							</div>
+						{/each}
+					</div>
+				</div>
+			{/snippet}
+		</DateRangePicker.Calendar>
+
+		{#if errorMessage}
+			<p class="mt-2 text-center text-xs text-red">{errorMessage}</p>
 		{/if}
 	</DateRangePicker.Root>
 </div>

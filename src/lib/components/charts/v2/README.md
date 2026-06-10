@@ -856,7 +856,7 @@ Pan/zoom ───requestRange()──> #computeGaps() ──> #fetchFromApi()
 Key behaviors:
 
 - **Gap detection**: Only fetches ranges not already in cache, with overlap buffers scaled by interval (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y)
-- **Interval-aware fetch limits**: Max range per API request scales with interval — ~11000 days (~30y) for 1d/1M so a full history loads in one request, 1830 days (3M), 3700 days (1y), 1000 days for high-resolution 5m
+- **Interval-aware fetch limits**: Every daily-or-coarser energy grain (1d/1M/3M/1y) pulls a full facility lifetime in one request (~11000-day cap — at most ~11k points), so wide ranges like "All" never batch. Only the sub-daily grains (5m, 1h) keep a tight ~1000-day cap, with `#splitGapIntoBatches` chunking anything wider
 - **Date snapping**: Aligns request boundaries to interval periods — midnight for 1d, 1st of month for 1M, quarter start for 3M, Jan 1 for 1y
 - **Debounced fetching**: Batches rapid pan movements into single API calls (150ms debounce)
 - **Dedup merge**: New data rows overwrite existing ones at the same timestamp, then re-sort

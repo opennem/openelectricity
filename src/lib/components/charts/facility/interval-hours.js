@@ -17,10 +17,12 @@ const FALLBACK_HOURS = {
  * `quarter`, `season`, `half`, `fy`, `1y`) vary in length, so pass the row's
  * `timestampMs` and the network `ianaTimeZone` to get the actual bucket length.
  *
- * Shared between `FacilityFinancialDataProvider` (price derivation) and
- * `FacilityEmissionsDataProvider` (intensity derivation) — both compute
+ * Used by `FacilityFinancialDataProvider` (price) and
+ * `FacilityEmissionsDataProvider` (intensity) on the **power** grains (5m/30m)
+ * only, where there's no native energy: they derive
  *   derived = volumeMetric / (power_total × intervalHours)
- * and must agree on the conversion exactly. A wrong hour count skews the line.
+ * and must agree on the conversion exactly. Energy intervals fetch `energy`
+ * (MWh) directly and divide by it, so they don't call this.
  *
  * @param {string} displayInterval
  * @param {number} [timestampMs]

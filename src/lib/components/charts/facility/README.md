@@ -20,7 +20,8 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 | `FacilityUnitsTable.svelte` | Facility unit metadata table                                                                |
 | `process-facility-power.js` | Core data processing — converts API response to chart-ready rows                            |
 | `range-interval-config.js`  | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec |
-| `interval-hours.js`         | `displayInterval` → bucket length in hours (calendar-aware) for energy/price/intensity derivation |
+| `energy-basis.js`           | Shared price/intensity-provider helpers: basis-metric choice, combined query string, series-prefix rewrite, and the per-timestamp energy (MWh) map |
+| `interval-hours.js`         | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains |
 | `helpers.js`                | Color shading (`buildUnitColourMap`), timezone helpers, legacy `transformFacilityPowerData` |
 | `index.js`                  | Barrel exports                                                                              |
 
@@ -174,7 +175,7 @@ requestRange(start, end)
   → debounce 150ms
   → #executeFetch()
     → #computeGaps() — find uncached ranges (with overlap buffer)
-    → #splitGapIntoBatches() — split gaps exceeding max range (~11000d for 1d/1M, 1830d for 3M, 3700d for 1y, 1000d for 5m)
+    → #splitGapIntoBatches() — split gaps exceeding max range (~11000d for every energy grain 1d/1M/3M/1y; ~1000d for sub-daily 5m/1h)
     → for each batch (sequential):
         → skip if #inFlightKeys has this range
         → #fetchFromApi() — call /api/facilities/[code]/power

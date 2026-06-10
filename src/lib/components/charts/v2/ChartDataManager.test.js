@@ -599,6 +599,51 @@ describe('ChartDataManager', () => {
 			expect(fetchSpy).toHaveBeenCalledTimes(1);
 		});
 
+		it('fetches a full-lifetime quarterly (3M) range in a single request', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '3M', metric: 'energy' });
+
+			// "All" can span decades; quarterly is ~4 points/year, so the whole
+			// history must come back in one request, not batched.
+			const now = Date.now();
+			manager.requestRange(now - 25 * 365 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it('fetches a full-lifetime yearly (1y) range in a single request', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '1y', metric: 'energy' });
+
+			const now = Date.now();
+			manager.requestRange(now - 25 * 365 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it('clamps an over-buffered "All" energy range to a single request', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '3M', metric: 'energy' });
+
+			// Mirror FacilityChart's 3× prefetch buffer on a decades-wide "All"
+			// viewport: start is pushed ~100y before 1998, end ~50y past now. The
+			// window must clamp to [1998 → now] and fetch once, not split.
+			const now = Date.now();
+			const YEAR = 365 * DAY;
+			manager.requestRange(now - 130 * YEAR, now + 50 * YEAR, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+		});
+
 		it('still batches high-resolution 5m ranges that exceed the tighter cap', async () => {
 			const fetchSpy = okFetchSpy();
 			vi.stubGlobal('fetch', fetchSpy);

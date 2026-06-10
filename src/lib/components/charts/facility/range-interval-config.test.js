@@ -66,7 +66,8 @@ describe('helpers', () => {
 		const hourly = getIntervalSpec('1h');
 		expect(hourly?.apiInterval).toBe('1h'); // native, no aggregation
 		expect(hourly?.aggregate).toBeNull();
-		expect(hourly?.metric).toBe('power');
+		// Anything coarser than 30m is energy, not power.
+		expect(hourly?.metric).toBe('energy');
 	});
 
 	it('getPresetByDays matches preset day counts', () => {

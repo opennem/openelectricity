@@ -20,7 +20,15 @@
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 	import { setFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
-	import { getIntervalHours } from './interval-hours.js';
+	import {
+		getBasisMetric,
+		combinedMetricsFor,
+		rewriteSeriesPrefix,
+		sumSeries,
+		buildEnergyMap,
+		toEnergySeriesRows,
+		createBasisColour
+	} from './energy-basis.js';
 	import { LINE_COLOUR } from './colours.js';
 
 	/**
@@ -87,6 +95,12 @@
 	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
 	let isEnergyInterval = $derived(interval !== '5m');
 
+	// Price = market_value / energy. For energy intervals the API serves `energy`
+	// (MWh) natively; the 5m/30m power grains derive it from power × hours.
+	// See energy-basis.js for the shared rules.
+	let basisMetric = $derived(getBasisMetric(interval));
+	let combinedMetrics = $derived(combinedMetricsFor(basisMetric));
+
 	// ============================================
 	// Unit Analysis
 	// ============================================
@@ -120,15 +134,9 @@
 		};
 	});
 
-	let getPowerColour = $derived.by(() => {
-		const colourMap = unitColours;
-		const powerLoadIds = loadIds.map((id) => id.replace('market_value_', 'power_'));
-		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
-			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = powerLoadIds.includes(`power_${unitCode}`);
-			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-		};
-	});
+	let getBasisColour = $derived.by(() =>
+		createBasisColour({ basisMetric, unitColours, loadIds, getFuelTechColor })
+	);
 
 	// ============================================
 	// Data Managers — gated by `active`
@@ -136,8 +144,9 @@
 
 	/** @type {ChartDataManager | null} */
 	let mvDataManager = $state(null);
+	/** Denominator basis: energy (MWh) for energy intervals, power (MW) for 5m/30m. */
 	/** @type {ChartDataManager | null} */
-	let powerDataManager = $state(null);
+	let basisDataManager = $state(null);
 
 	$effect(() => {
 		if (!active || !facility) {
@@ -163,13 +172,10 @@
 		// IDs. The MV data manager produces `market_value_…` IDs, so rewrite the
 		// prefix or processFacilityPower's `unitOrder.filter(...)` call falls
 		// through to the raw API order and the chart stack misorders.
-		const mvUnitOrder = unitOrder.map((/** @type {string} */ id) =>
-			id.replace(/^power_/, 'market_value_')
-		);
-		const mvLoadsToInvert = loadIds.map((/** @type {string} */ id) =>
-			id.replace(/^power_/, 'market_value_')
-		);
+		const mvUnitOrder = rewriteSeriesPrefix(unitOrder, 'market_value');
+		const mvLoadsToInvert = rewriteSeriesPrefix(loadIds, 'market_value');
 
+		const metricParam = combinedMetrics;
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
 			networkId,
@@ -181,10 +187,10 @@
 			getLabel,
 			getColour: getMvColour,
 			// Same combined URL as FacilityEmissionsDataProvider's managers so
-			// the API computes all three metrics in one query and the 5-minute
-			// HTTP cache can serve repeat fetches across providers.
+			// the API computes all metrics in one query and the 5-minute HTTP
+			// cache can serve repeat fetches across providers.
 			buildFetchUrl: (params) => {
-				params.set('metric', 'power,market_value,emissions');
+				params.set('metric', metricParam);
 				return `/api/facilities/${currentCode}/power?${params.toString()}`;
 			}
 		});
@@ -203,39 +209,47 @@
 
 	$effect(() => {
 		if (!active || !facility) {
-			powerDataManager = null;
+			basisDataManager = null;
 			return;
 		}
 
 		const currentInterval = interval;
+		const currentBasis = basisMetric;
+		const metricParam = combinedMetrics;
 		const currentCode = facility.code;
 		const networkId = facility.network_id;
 
-		const existing = untrack(() => powerDataManager);
+		const existing = untrack(() => basisDataManager);
 		if (
 			existing &&
 			existing.facilityCode === currentCode &&
 			existing.interval === currentInterval &&
-			existing.metric === 'power'
+			existing.metric === currentBasis
 		) {
 			return;
 		}
+
+		// `unitOrder`/`loadIds` are `power_…` IDs; rewrite to the basis prefix so
+		// processFacilityPower orders/inverts the right series (`energy_…` for
+		// energy intervals).
+		const basisUnitOrder = rewriteSeriesPrefix(unitOrder, currentBasis);
+		const basisLoadsToInvert = rewriteSeriesPrefix(loadIds, currentBasis);
 
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
 			networkId,
 			interval: currentInterval,
-			metric: 'power',
+			metric: currentBasis,
 			unitFuelTechMap,
-			unitOrder,
-			loadsToInvert: loadIds,
+			unitOrder: basisUnitOrder,
+			loadsToInvert: basisLoadsToInvert,
 			getLabel,
-			getColour: getPowerColour,
+			getColour: getBasisColour,
 			// Same combined URL as FacilityEmissionsDataProvider's managers so
-			// the API computes all three metrics in one query and the 5-minute
-			// HTTP cache can serve repeat fetches across providers.
+			// the API computes all metrics in one query and the 5-minute HTTP
+			// cache can serve repeat fetches across providers.
 			buildFetchUrl: (params) => {
-				params.set('metric', 'power,market_value,emissions');
+				params.set('metric', metricParam);
 				return `/api/facilities/${currentCode}/power?${params.toString()}`;
 			}
 		});
@@ -249,7 +263,7 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
-		powerDataManager = manager;
+		basisDataManager = manager;
 	});
 
 	// Fetch data when viewport changes — both managers
@@ -266,7 +280,7 @@
 		const bufferedEnd = Math.min(end + buffer, Date.now());
 
 		mvDataManager?.requestRange(bufferedStart, bufferedEnd);
-		powerDataManager?.requestRange(bufferedStart, bufferedEnd);
+		basisDataManager?.requestRange(bufferedStart, bufferedEnd);
 	});
 
 	// ============================================
@@ -298,34 +312,23 @@
 	// ============================================
 
 	let priceData = $derived.by(() => {
-		if (!mvDataManager?.processedCache || !powerDataManager?.processedCache) return [];
+		if (!mvDataManager?.processedCache || !basisDataManager?.processedCache) return [];
 
 		const mvRows = getVisibleData(mvDataManager, 'sum');
-		const powerRows = getVisibleData(powerDataManager, 'mean');
+		// Energy basis sums native MWh; the power basis averages MW (× hours).
+		const basisRows = getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean');
 		const mvSeriesNames = mvDataManager.seriesMeta?.seriesNames ?? [];
-		const powerSeriesNames = powerDataManager.seriesMeta?.seriesNames ?? [];
-		const di = displayInterval;
+		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
 
-		/** @type {Map<number, number>} */
-		const powerMap = new Map();
-		for (const row of powerRows) {
-			let total = 0;
-			for (const key of powerSeriesNames) {
-				const v = row[key];
-				if (typeof v === 'number' && !isNaN(v)) total += v;
-			}
-			powerMap.set(row.time, total);
-		}
+		const energyMap = buildEnergyMap(basisRows, basisSeriesNames, {
+			isEnergyInterval,
+			displayInterval,
+			ianaTimeZone
+		});
 
 		return mvRows.map((row) => {
-			let mvTotal = 0;
-			for (const key of mvSeriesNames) {
-				const v = row[key];
-				if (typeof v === 'number' && !isNaN(v)) mvTotal += v;
-			}
-			const powerTotal = powerMap.get(row.time) ?? 0;
-			const intervalHrs = getIntervalHours(di, row.time, ianaTimeZone);
-			const energy = powerTotal * intervalHrs;
+			const mvTotal = sumSeries(row, mvSeriesNames);
+			const energy = energyMap.get(row.time) ?? 0;
 			return {
 				date: row.date,
 				time: row.time,
@@ -340,26 +343,20 @@
 
 	$effect(() => {
 		if (!onsummarydata) return;
-		if (!mvDataManager?.processedCache || !powerDataManager?.processedCache || !mvChartStore)
+		if (!mvDataManager?.processedCache || !basisDataManager?.processedCache || !mvChartStore)
 			return;
 
 		const mvRows = getVisibleData(mvDataManager, 'sum');
-		const powerRows = getVisibleData(powerDataManager, 'mean');
-		const powerSeriesNames = powerDataManager.seriesMeta?.seriesNames ?? [];
-		const di = displayInterval;
+		const basisRows = getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean');
+		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
 
-		const energyRows = powerRows.map((row) => {
-			const intervalHrs = getIntervalHours(di, row.time, ianaTimeZone);
-			/** @type {Record<string, any>} */
-			const energyRow = { date: row.date, time: row.time };
-			for (const key of powerSeriesNames) {
-				const energyKey = key.replace('power_', 'energy_');
-				const v = row[key];
-				energyRow[energyKey] = typeof v === 'number' ? v * intervalHrs : v;
-			}
-			return energyRow;
-		});
-		const energySeriesNames = powerSeriesNames.map((k) => k.replace('power_', 'energy_'));
+		// Energy intervals already carry `energy_<unit>` (MWh); power grains
+		// convert MW → MWh via the interval length.
+		const { rows: energyRows, seriesNames: energySeriesNames } = toEnergySeriesRows(
+			basisRows,
+			basisSeriesNames,
+			{ isEnergyInterval, displayInterval, ianaTimeZone }
+		);
 
 		onsummarydata({
 			mvData: mvRows,
@@ -515,10 +512,10 @@
 
 		if (lastPanDelta < 0 && viewEnd < now) {
 			mvDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
-			powerDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
+			basisDataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
 		} else if (lastPanDelta > 0) {
 			mvDataManager?.requestRange(viewStart - prefetch, viewStart);
-			powerDataManager?.requestRange(viewStart - prefetch, viewStart);
+			basisDataManager?.requestRange(viewStart - prefetch, viewStart);
 		}
 	}
 
@@ -625,7 +622,7 @@
 			return mvChartStore;
 		},
 		get priceLoadingRanges() {
-			return [...(mvDataManager?.loadingRanges ?? []), ...(powerDataManager?.loadingRanges ?? [])];
+			return [...(mvDataManager?.loadingRanges ?? []), ...(basisDataManager?.loadingRanges ?? [])];
 		},
 		get mvLoadingRanges() {
 			return mvDataManager?.loadingRanges ?? [];
