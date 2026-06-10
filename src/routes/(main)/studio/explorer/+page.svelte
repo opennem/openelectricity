@@ -11,7 +11,7 @@
 
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
-	import { replaceState } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
 
 	import Meta from '$lib/components/Meta.svelte';
 	import FullscreenLayout from '$lib/components/fullscreen/FullscreenLayout.svelte';
@@ -269,8 +269,12 @@
 		urlTimer = setTimeout(updateUrl, 400);
 	}
 
-	function updateUrl() {
-		if (!mounted) return;
+	/**
+	 * Build the query params from the current dashboard state (not `page.url`,
+	 * which goes stale because `updateUrl` writes it shallowly).
+	 * @param {boolean} fullscreen
+	 */
+	function buildParams(fullscreen) {
 		const params = new URLSearchParams();
 		params.set('region', selectedRegion);
 		params.set('group', selectedGroup);
@@ -281,15 +285,24 @@
 			params.set('start', toDateString(viewStart));
 			params.set('end', toDateString(viewEnd));
 		}
-		if (isFullscreen) params.set('fullscreen', 'true');
-		replaceState(`?${params.toString()}`, {});
+		if (fullscreen) params.set('fullscreen', 'true');
+		return params;
+	}
+
+	function updateUrl() {
+		if (!mounted) return;
+		// Shallow update — keeps the address bar shareable without re-running load.
+		replaceState(`?${buildParams(isFullscreen).toString()}`, {});
 	}
 
 	function toggleFullscreen() {
-		const params = new URLSearchParams(page.url.searchParams);
-		if (isFullscreen) params.delete('fullscreen');
-		else params.set('fullscreen', 'true');
-		replaceState(`?${params.toString()}`, {});
+		// `goto` (not shallow replaceState) so `page.url` updates and the
+		// `isFullscreen` derived actually flips — matching the facility layout.
+		goto(`${page.url.pathname}?${buildParams(!isFullscreen).toString()}`, {
+			noScroll: true,
+			replaceState: true,
+			keepFocus: true
+		});
 	}
 
 	/** @param {KeyboardEvent} e */
