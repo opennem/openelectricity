@@ -3,8 +3,13 @@
 	import IconXMark from '$lib/icons/XMark.svelte';
 	import { fuelTechLabel, milestoneTypeLabel, periodLabel } from '../page-data-options/filters';
 
-	const { selectedRegions, selectedFuelTechs, selectedMetrics, selectedPeriods } =
-		getContext('records-filters');
+	const {
+		selectedRegions,
+		selectedFuelTechs,
+		selectedMetrics,
+		selectedPeriods,
+		selectedSignificance
+	} = getContext('records-filters');
 
 	/**
 	 * @type {{ [key: string]: string }}
@@ -20,7 +25,7 @@
 	};
 </script>
 
-{#if $selectedFuelTechs.length || $selectedMetrics.length || $selectedPeriods.length}
+{#if $selectedFuelTechs.length || $selectedMetrics.length || $selectedPeriods.length || $selectedSignificance > 0}
 	<h4 class="hidden md:block">Filters</h4>
 {/if}
 
@@ -36,7 +41,8 @@
 				<span class="whitespace-nowrap">{regionsLabels[region]}</span>
 				<button
 					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-					onclick={() => ($selectedRegions = $selectedRegions.filter((/** @type {string} */ d) => d !== region))}
+					onclick={() =>
+						($selectedRegions = $selectedRegions.filter((/** @type {string} */ d) => d !== region))}
 				>
 					<IconXMark class="size-6" />
 				</button>
@@ -57,7 +63,10 @@
 				<span class="whitespace-nowrap">{fuelTechLabel[fuelTech]}</span>
 				<button
 					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-					onclick={() => ($selectedFuelTechs = $selectedFuelTechs.filter((/** @type {string} */ d) => d !== fuelTech))}
+					onclick={() =>
+						($selectedFuelTechs = $selectedFuelTechs.filter(
+							(/** @type {string} */ d) => d !== fuelTech
+						))}
 				>
 					<IconXMark class="size-6" />
 				</button>
@@ -78,7 +87,8 @@
 				<span>{milestoneTypeLabel[metric]}</span>
 				<button
 					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-					onclick={() => ($selectedMetrics = $selectedMetrics.filter((/** @type {string} */ d) => d !== metric))}
+					onclick={() =>
+						($selectedMetrics = $selectedMetrics.filter((/** @type {string} */ d) => d !== metric))}
 				>
 					<IconXMark class="size-6" />
 				</button>
@@ -99,7 +109,8 @@
 				<span>{periodLabel[period]}</span>
 				<button
 					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
-					onclick={() => ($selectedPeriods = $selectedPeriods.filter((/** @type {string} */ d) => d !== period))}
+					onclick={() =>
+						($selectedPeriods = $selectedPeriods.filter((/** @type {string} */ d) => d !== period))}
 				>
 					<IconXMark class="size-6" />
 				</button>
@@ -107,3 +118,22 @@
 		{/each}
 	</div>
 </div>
+
+{#if $selectedSignificance > 0}
+	<div>
+		<h6 class="md:mt-10">Significance</h6>
+		<div class="flex flex-col md:flex-row gap-2 flex-wrap">
+			<div
+				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
+			>
+				<span class="whitespace-nowrap">{$selectedSignificance}+</span>
+				<button
+					class="bg-light-warm-grey hover:bg-warm-grey rounded-full p-2 text-mid-grey"
+					onclick={() => ($selectedSignificance = 0)}
+				>
+					<IconXMark class="size-6" />
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}

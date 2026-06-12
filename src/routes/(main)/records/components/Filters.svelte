@@ -8,6 +8,7 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import Button from '$lib/components/form-elements/Button2.svelte';
 	import LinkCopyButton from '$lib/components/LinkCopyButton.svelte';
+	import SignificanceFilter from './SignificanceFilter.svelte';
 
 	import { regions } from '../page-data-options/filters.js';
 	import { viewSectionOptions } from '../page-data-options/view-sections';
@@ -18,8 +19,14 @@
 		periodOptions
 	} from '../page-data-options/filters.js';
 
-	const { selectedView, selectedRegions, selectedFuelTechs, selectedMetrics, selectedPeriods } =
-		getContext('records-filters');
+	const {
+		selectedView,
+		selectedRegions,
+		selectedFuelTechs,
+		selectedMetrics,
+		selectedPeriods,
+		selectedSignificance
+	} = getContext('records-filters');
 
 	let showMobileFilterOptions = $state(false);
 
@@ -31,7 +38,9 @@
 		if (isMetaPressed) {
 			$selectedFuelTechs = [value];
 		} else if ($selectedFuelTechs.includes(value)) {
-			$selectedFuelTechs = $selectedFuelTechs.filter((/** @type {string} */ item) => item !== value);
+			$selectedFuelTechs = $selectedFuelTechs.filter(
+				(/** @type {string} */ item) => item !== value
+			);
 		} else {
 			$selectedFuelTechs = [...$selectedFuelTechs, value];
 		}
@@ -156,6 +165,15 @@
 			/>
 		</section>
 
+		<section class="px-10 pb-10 w-full flex gap-5">
+			<SignificanceFilter
+				value={$selectedSignificance}
+				paddingX=""
+				staticDisplay={true}
+				onchange={(value) => ($selectedSignificance = value)}
+			/>
+		</section>
+
 		{#snippet buttons()}
 			<div class="flex gap-3">
 				<Button
@@ -204,6 +222,13 @@
 				paddingX="px-4"
 				paddingY="py-3"
 				onchange={(value, isMetaPressed) => handlePeriodChange(value, isMetaPressed)}
+			/>
+
+			<SignificanceFilter
+				value={$selectedSignificance}
+				paddingX="px-4"
+				paddingY="py-3"
+				onchange={(value) => ($selectedSignificance = value)}
 			/>
 		</div>
 

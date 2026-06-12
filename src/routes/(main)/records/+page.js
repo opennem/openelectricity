@@ -1,3 +1,5 @@
+import { defaultSignificance } from './page-data-options/filters.js';
+
 export async function load({ url, data }) {
 	const { searchParams } = url;
 	const page = searchParams.get('page');
@@ -6,7 +8,7 @@ export async function load({ url, data }) {
 	const fuelTechs = searchParams.get('fuel_techs');
 	// const aggregates = searchParams.get('aggregates');
 	const metrics = searchParams.get('metrics');
-	// const significance = searchParams.get('significance');
+	const significance = searchParams.get('significance');
 
 	return {
 		...data, // Include server data (pinnedRecords)
@@ -19,7 +21,6 @@ export async function load({ url, data }) {
 		// stringFilter: searchParams.get('recordIdFilter') || '',
 		stringFilter: '', // ignore for now
 		fuelTechs: fuelTechs ? fuelTechs.split(',') : [],
-		// significance: significance ? parseInt(significance) : null
-		significance: 9 // always 9+
+		significance: significance ? parseInt(significance) : defaultSignificance
 	};
 }

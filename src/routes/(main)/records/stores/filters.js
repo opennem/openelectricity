@@ -1,4 +1,5 @@
 import { derived, writable } from 'svelte/store';
+import { defaultSignificance } from '../page-data-options/filters.js';
 
 export default function () {
 	const selectedView = writable('list');
@@ -10,6 +11,8 @@ export default function () {
 	const selectedMetrics = writable([]);
 	/** @type {import('svelte/store').Writable<string[]>} */
 	const selectedPeriods = writable([]);
+	/** @type {import('svelte/store').Writable<number>} */
+	const selectedSignificance = writable(defaultSignificance);
 
 	const selectedRegion = derived(selectedRegions, ($selectedRegions) => {
 		// ATM, it's only possible to select one region
@@ -22,6 +25,7 @@ export default function () {
 		selectedRegions,
 		selectedFuelTechs,
 		selectedMetrics,
-		selectedPeriods
+		selectedPeriods,
+		selectedSignificance
 	};
 }

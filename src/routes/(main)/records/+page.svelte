@@ -17,7 +17,11 @@
 	import Filters from './components/Filters.svelte';
 	import FilterTags from './components/FilterTags.svelte';
 	import fetchRecords from './page-data-options/fetch';
-	import { aggregateOptions, getFilterParams } from './page-data-options/filters';
+	import {
+		aggregateOptions,
+		defaultSignificance,
+		getFilterParams
+	} from './page-data-options/filters';
 	import filtersStore from './stores/filters';
 	import groupByMonthDay from './page-data-options/group-by-month-day';
 
@@ -31,7 +35,8 @@
 		selectedRegions,
 		selectedFuelTechs,
 		selectedMetrics,
-		selectedPeriods
+		selectedPeriods,
+		selectedSignificance
 	} = getContext('records-filters');
 
 	let errorMessage = $state('');
@@ -49,6 +54,7 @@
 		$selectedFuelTechs = data?.fuelTechs?.length ? data.fuelTechs : [];
 		$selectedPeriods = data?.periods?.length ? data.periods : [];
 		$selectedMetrics = data?.metrics?.length ? data.metrics : [];
+		$selectedSignificance = data?.significance ?? defaultSignificance;
 	});
 
 	/** @type {string[]} */
@@ -56,7 +62,6 @@
 		data?.aggregates?.length ? data.aggregates : aggregateOptions.map((i) => i.value)
 	);
 
-	let selectedSignificance = $derived(data?.significance || 8);
 	let recordIdSearch = $derived(data?.stringFilter || '');
 
 	// $: console.log('rolledUpRecords', rolledUpRecords);
@@ -69,24 +74,28 @@
 		currentPage = page;
 		currentStartRecordIndex = (page - 1) * pageSize + 1;
 
-		const { regionsParam, periodsParam, fuelTechParams, metricsParam } = getFilterParams({
-			regions: $selectedRegions,
-			periods: $selectedPeriods,
-			stringFilter: recordIdSearch,
-			fuelTechs: $selectedFuelTechs,
-			aggregates: checkedAggregates,
-			metrics: $selectedMetrics,
-			significance: selectedSignificance
-		});
+		const { regionsParam, periodsParam, fuelTechParams, metricsParam, significanceParam } =
+			getFilterParams({
+				regions: $selectedRegions,
+				periods: $selectedPeriods,
+				stringFilter: recordIdSearch,
+				fuelTechs: $selectedFuelTechs,
+				aggregates: checkedAggregates,
+				metrics: $selectedMetrics,
+				significance: $selectedSignificance
+			});
 
 		let regionsParam2 = regionsParam;
 		if (regionsParam2.charAt(0) !== '?') {
 			regionsParam2 = '?' + regionsParam2.slice(1);
 		}
 
-		goto(`/records${regionsParam2}${periodsParam}${fuelTechParams}${metricsParam}`, {
-			noScroll: true
-		});
+		goto(
+			`/records${regionsParam2}${periodsParam}${fuelTechParams}${metricsParam}${significanceParam}`,
+			{
+				noScroll: true
+			}
+		);
 	}
 	$effect(() => {
 		if (browser) {
@@ -97,7 +106,7 @@
 				$selectedFuelTechs,
 				checkedAggregates,
 				$selectedMetrics,
-				selectedSignificance,
+				$selectedSignificance,
 				recordIdSearch,
 				pageSize
 			).then((res) => {

@@ -14,6 +14,8 @@ export const regions = [
 
 export const networkRegionsOnly = ['nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 
+export const defaultSignificance = 7;
+
 export const regionOptions = [
 	{
 		value: '_all',
@@ -201,7 +203,7 @@ export const milestoneTypeOptions = [
 		label: 'Emissions',
 		displayPrefix: '',
 		allowedPrefixes: ['', 'k']
-	},
+	}
 	// {
 	// 	value: 'renewable_proportion',
 	// 	label: 'Renewable Proportion',
@@ -269,7 +271,12 @@ export function getFilterParams({
 		? `&recordIdFilter=${encodeURIComponent(stringFilter.trim())}`
 		: '';
 
-	const significanceParam = significance ? `&significance=${significance}` : '';
+	// Only encode significance in the URL when it differs from the default —
+	// 0 (all records) must be explicit so it survives a reload
+	const significanceParam =
+		significance == null || significance === defaultSignificance
+			? ''
+			: `&significance=${significance}`;
 
 	return {
 		regionsParam,
