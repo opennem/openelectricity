@@ -708,7 +708,7 @@
 	}) {
 		let url = `/facilities?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}`;
 		// Only include capacity range if it's been filtered from defaults
-		if (cr[0] > 0 || cr[1] < capacityBounds.max) {
+		if (cr[0] > capacityBounds.min || cr[1] < capacityBounds.max) {
 			url += `&capacity_min=${cr[0]}&capacity_max=${cr[1]}`;
 		}
 		// Only include year range if it's been filtered from defaults
