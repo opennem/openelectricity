@@ -95,6 +95,7 @@ src/lib/stratify/                      # Stratify library
 
 src/lib/components/map/                # Generic point-map components (MapLibre)
 ├── PointMap.svelte                    # Lat/lng marker map with popup-on-click, theme + fit-bounds
+├── collapse-attribution.js            # Collapse MapLibre's compact attribution control on load
 └── types.js                           # Shared MapPoint typedef
 
 src/lib/components/charts/plot/        # Shared Observable Plot utilities (used by Stratify + facility-plot)

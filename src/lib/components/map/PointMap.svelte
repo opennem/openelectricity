@@ -8,6 +8,7 @@
 		CircleLayer
 	} from 'svelte-maplibre-gl';
 	import MapLegend from './MapLegend.svelte';
+	import { collapseMapAttribution } from './collapse-attribution.js';
 
 	/**
 	 * @typedef {import('./types.js').MapPoint} MapPoint
@@ -110,6 +111,11 @@
 		} catch {
 			// no-op
 		}
+	});
+
+	$effect(() => {
+		if (!mapInstance) return;
+		return collapseMapAttribution(mapInstance);
 	});
 
 	/** @param {any} ev */

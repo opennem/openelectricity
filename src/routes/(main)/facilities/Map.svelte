@@ -16,6 +16,7 @@
 	import { getRegionLabel } from './_utils/filters';
 	import { DEFAULT_TUNING } from './_utils/map-tuning.js';
 	import { hexToRgb } from '$lib/utils/colour-darken.js';
+	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
 	import { X } from '@lucide/svelte';
 
 	/**
@@ -502,18 +503,6 @@
 	}
 
 	/**
-	 * Compact attribution control
-	 */
-	function compactAttribution() {
-		const attrib = document.querySelector('.maplibregl-ctrl-attrib');
-		if (attrib) {
-			attrib.classList.add('maplibregl-compact');
-			attrib.classList.remove('maplibregl-compact-show');
-			attrib.removeAttribute('open');
-		}
-	}
-
-	/**
 	 * Handle map load event - use idle event instead of setTimeout
 	 */
 	function handleMapLoad() {
@@ -536,7 +525,7 @@
 		}
 
 		// Use idle event for attribution compacting
-		mapInstance.once('idle', compactAttribution);
+		mapInstance.once('idle', () => collapseMapAttribution(mapInstance));
 
 		// Track dragging state to prevent popup dismissal during pan
 		mapInstance.on('dragstart', () => {
