@@ -34,7 +34,7 @@ A chart builder for creating embeddable data visualisations from CSV/TSV data, p
 
 ```
 src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/footer)
-├── +page.svelte                       # Chart list + new chart entry point
+├── +page.svelte                       # Chart list (card grid, thumbnails, per-section pagination)
 ├── +layout.svelte                     # Micro layout wrapper
 ├── new/                               # New chart builder (blank)
 ├── [id]/                              # Edit existing chart
@@ -56,6 +56,9 @@ src/routes/(micro)/stratify/           # Builder UI (micro layout — no nav/foo
     ├── DataInput.svelte               # CSV/TSV textarea + data preview
     ├── ExamplePicker.svelte           # Example dataset buttons
     ├── ChartManager.svelte            # Full chart management modal
+    ├── ChartCard.svelte               # List card: thumbnail + title/status/meta + actions
+    ├── ChartThumbnail.svelte          # Scaled-down live chart preview (500×400 → card width); map placeholder
+    ├── SectionPagination.svelte       # Prev/next pagination for one list section
     ├── StylePresetPicker.svelte       # Theme selector (sans/mono)
     ├── ColourPalettePicker.svelte     # Colour palette selector
     └── panels/
@@ -114,19 +117,19 @@ src/lib/components/text-components/    # Article content rendering
 
 ## Chart Types
 
-| Value            | Family | Description                            |
-| ---------------- | ------ | -------------------------------------- |
-| `line`           | Line   | Multi-series line chart                |
-| `area`           | Area   | Stacked area (time-series)             |
-| `column`         | Column | Vertical bars                          |
-| `column-stacked` | Column | Stacked vertical bars                  |
-| `column-grouped` | Column | Grouped vertical bars                  |
-| `bar`            | Bar    | Horizontal bars                        |
-| `bar-stacked`    | Bar    | Stacked horizontal bars                |
-| `bar-grouped`    | Bar    | Grouped horizontal bars                |
-| `waterfall`             | Waterfall | Running-cumulative vertical bars    |
-| `waterfall-horizontal`  | Waterfall | Running-cumulative horizontal bars  |
-| `map`            | Map    | Lat/lng point map (MapLibre, not Plot) |
+| Value                  | Family    | Description                            |
+| ---------------------- | --------- | -------------------------------------- |
+| `line`                 | Line      | Multi-series line chart                |
+| `area`                 | Area      | Stacked area (time-series)             |
+| `column`               | Column    | Vertical bars                          |
+| `column-stacked`       | Column    | Stacked vertical bars                  |
+| `column-grouped`       | Column    | Grouped vertical bars                  |
+| `bar`                  | Bar       | Horizontal bars                        |
+| `bar-stacked`          | Bar       | Stacked horizontal bars                |
+| `bar-grouped`          | Bar       | Grouped horizontal bars                |
+| `waterfall`            | Waterfall | Running-cumulative vertical bars       |
+| `waterfall-horizontal` | Waterfall | Running-cumulative horizontal bars     |
+| `map`                  | Map       | Lat/lng point map (MapLibre, not Plot) |
 
 Time-series types (`area`, `line`) auto-detect dates from the first column. Column and bar charts support both time-series and category modes. Horizontal bar types use `barX` in Observable Plot; column types use `barY`/`rectY`. The `map` type takes a different render path entirely — see [Map Chart Type](#map-chart-type) below.
 
@@ -157,14 +160,14 @@ Already-set values are not overwritten on CSV edit — manual choices stick.
 
 ### Column-to-role mapping
 
-| Field            | Type             | Purpose                                           |
-| ---------------- | ---------------- | ------------------------------------------------- |
-| `latColumn`      | `string \| null` | Marker latitude (numeric column)                  |
-| `lngColumn`      | `string \| null` | Marker longitude (numeric column)                 |
-| `labelColumn`    | `string \| null` | Popup title                                       |
-| `sizeColumn`     | `string \| null` | Numeric column driving marker radius (sqrt scale) |
+| Field            | Type             | Purpose                                                       |
+| ---------------- | ---------------- | ------------------------------------------------------------- |
+| `latColumn`      | `string \| null` | Marker latitude (numeric column)                              |
+| `lngColumn`      | `string \| null` | Marker longitude (numeric column)                             |
+| `labelColumn`    | `string \| null` | Popup title                                                   |
+| `sizeColumn`     | `string \| null` | Numeric column driving marker radius (sqrt scale)             |
 | `colourColumn`   | `string \| null` | Colour column — categorical (`category`) or numeric (`range`) |
-| `tooltipColumns` | `string[]`       | Columns rendered as key/value rows in the popup   |
+| `tooltipColumns` | `string[]`       | Columns rendered as key/value rows in the popup               |
 
 ### Marker sizing
 
@@ -197,7 +200,7 @@ Plot's stack transform. Connector lines and a per-bar change label are drawn aut
 
 ### Aggregation (`waterfallMode`)
 
-| Value     | Behaviour                                                            |
+| Value     | Behaviour                                                           |
 | --------- | ------------------------------------------------------------------- |
 | `single`  | First (or chosen) series only — one bar per row                     |
 | `sum`     | Sum of all series per row — one bar per row                         |
@@ -676,6 +679,11 @@ All API requests require **Clerk JWT** authentication. Charts are owned by the c
 
 - **My Charts**: User's own drafts + published charts
 - **Community Charts**: Published charts from all other users (superadmins see all statuses)
+- Each section is paginated independently (12 per page) with state in URL query
+  params (`?myPage=2&communityPage=3`); search (`q`) and status filters are applied
+  server-side via GROQ and span all pages
+- Cards show a scaled-down live thumbnail of the chart (map charts show a static
+  placeholder to avoid spinning up a WebGL context per card)
 
 ## Publishing Workflow
 
@@ -693,14 +701,14 @@ The `/strata-community` page displays the 10 most recently published charts in a
 
 ## API Endpoints
 
-| Method | Path                            | Description                    |
-| ------ | ------------------------------- | ------------------------------ |
-| GET    | `/api/stratify/charts`          | List user's + community charts |
-| POST   | `/api/stratify/charts`          | Create new chart               |
-| GET    | `/api/stratify/charts/:id`      | Get single chart               |
-| PATCH  | `/api/stratify/charts/:id`      | Update chart fields            |
-| DELETE | `/api/stratify/charts/:id`      | Delete chart                   |
-| POST   | `/api/stratify/charts/:id/fork` | Fork chart to current user     |
+| Method | Path                            | Description                                                                                                                                              |
+| ------ | ------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/api/stratify/charts`          | List user's + community charts (paginated per section via `scope`, `myPage`, `communityPage`, `pageSize`, `q`, `status`; items are full normalised docs) |
+| POST   | `/api/stratify/charts`          | Create new chart                                                                                                                                         |
+| GET    | `/api/stratify/charts/:id`      | Get single chart                                                                                                                                         |
+| PATCH  | `/api/stratify/charts/:id`      | Update chart fields                                                                                                                                      |
+| DELETE | `/api/stratify/charts/:id`      | Delete chart                                                                                                                                             |
+| POST   | `/api/stratify/charts/:id/fork` | Fork chart to current user                                                                                                                               |
 
 All endpoints require Clerk JWT authentication.
 

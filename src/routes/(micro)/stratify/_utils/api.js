@@ -43,40 +43,62 @@ async function authFetch(url, options = {}) {
 }
 
 /**
- * @typedef {Object} ChartSummary
- * @property {string} _id
- * @property {string} title
- * @property {string} chartType
- * @property {string} status
- * @property {string} description
- * @property {string} [userEmail]
- * @property {string} _createdAt
- * @property {string} _updatedAt
+ * Full normalised chart document (see normaliseChart in $lib/stratify/chart-data.js)
+ * plus list metadata appended by the API.
+ * @typedef {Record<string, any> & {
+ *   _id: string,
+ *   title: string,
+ *   chartType: string,
+ *   description: string,
+ *   csvText: string,
+ *   status: string,
+ *   userEmail?: string,
+ *   publishedAt?: string | null,
+ *   _createdAt: string,
+ *   _updatedAt: string
+ * }} ChartDoc
+ */
+
+/**
+ * @typedef {Object} ChartListSection
+ * @property {ChartDoc[]} items
+ * @property {number} total
+ * @property {number} page
+ * @property {number} totalPages
  */
 
 /**
  * @typedef {Object} ChartsListResponse
- * @property {ChartSummary[]} myCharts
- * @property {ChartSummary[]} communityCharts
+ * @property {ChartListSection} [my]
+ * @property {ChartListSection} [community]
  * @property {boolean} isSuperAdmin
  */
 
 /**
- * List charts — returns own charts + community charts.
- * @param {{ status?: string }} [filters]
+ * List charts — own charts + community charts, each section paginated
+ * independently.
+ * @param {{
+ *   scope?: 'all' | 'my' | 'community',
+ *   myPage?: number,
+ *   communityPage?: number,
+ *   pageSize?: number,
+ *   q?: string,
+ *   status?: string
+ * }} [options]
  * @returns {Promise<ChartsListResponse>}
  */
-export async function listCharts(filters = {}) {
+export async function listCharts(options = {}) {
 	const params = new URLSearchParams();
-	if (filters.status) params.set('status', filters.status);
+	if (options.scope && options.scope !== 'all') params.set('scope', options.scope);
+	if (options.myPage && options.myPage > 1) params.set('myPage', String(options.myPage));
+	if (options.communityPage && options.communityPage > 1) {
+		params.set('communityPage', String(options.communityPage));
+	}
+	if (options.pageSize) params.set('pageSize', String(options.pageSize));
+	if (options.q?.trim()) params.set('q', options.q.trim());
+	if (options.status) params.set('status', options.status);
 	const qs = params.toString();
-	const url = `/api/stratify/charts${qs ? `?${qs}` : ''}`;
-	const data = await authFetch(url);
-	return {
-		myCharts: data.myCharts,
-		communityCharts: data.communityCharts,
-		isSuperAdmin: data.isSuperAdmin
-	};
+	return authFetch(`/api/stratify/charts${qs ? `?${qs}` : ''}`);
 }
 
 /**

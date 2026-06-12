@@ -13,7 +13,7 @@
 	 */
 	let { onclose } = $props();
 
-	/** @type {import('../_utils/api.js').ChartSummary[]} */
+	/** @type {import('../_utils/api.js').ChartDoc[]} */
 	let charts = $state([]);
 	let loading = $state(true);
 	let search = $state('');
@@ -34,8 +34,8 @@
 	async function refreshList() {
 		loading = true;
 		try {
-			const data = await api.listCharts();
-			charts = data.myCharts;
+			const data = await api.listCharts({ scope: 'my', pageSize: 100 });
+			charts = data.my?.items ?? [];
 		} catch {
 			charts = [];
 		} finally {
@@ -57,7 +57,7 @@
 		}
 	}
 
-	/** @param {import('../_utils/api.js').ChartSummary} chart */
+	/** @param {import('../_utils/api.js').ChartDoc} chart */
 	async function handleDuplicate(chart) {
 		try {
 			const full = await api.getChart(chart._id);
@@ -91,7 +91,6 @@
 			deletingId = '';
 		}
 	}
-
 </script>
 
 <div class="flex flex-col h-full">
@@ -99,8 +98,7 @@
 	<div
 		class="flex items-center gap-2 px-4 py-2 border-b border-warm-grey bg-mid-warm-grey/50 shrink-0"
 	>
-		<span class="text-[11px] font-medium text-dark-grey uppercase tracking-wide flex-1"
-			>Charts</span
+		<span class="text-[11px] font-medium text-dark-grey uppercase tracking-wide flex-1">Charts</span
 		>
 		<a href="/stratify" class="text-[10px] text-mid-grey hover:text-dark-grey underline">
 			Full view

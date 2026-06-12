@@ -3,7 +3,7 @@
 	 * @type {{
 	 *   href?: string,
 	 *   onclick?: () => void,
-	 *   variant?: 'default' | 'primary',
+	 *   variant?: 'default' | 'primary' | 'accent',
 	 *   disabled?: boolean,
 	 *   target?: string,
 	 *   title?: string,
@@ -20,10 +20,12 @@
 		children
 	} = $props();
 
-	const base = 'inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] transition-colors disabled:opacity-40 disabled:pointer-events-none';
+	const base =
+		'inline-flex items-center gap-1.5 rounded px-2 py-0.5 text-[10px] transition-colors disabled:opacity-40 disabled:pointer-events-none';
 	const variants = {
 		default: 'border border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey',
-		primary: 'bg-dark-grey text-white hover:bg-black'
+		primary: 'bg-dark-grey text-white hover:bg-black',
+		accent: 'bg-red text-white hover:bg-dark-red'
 	};
 	let className = $derived(`${base} ${variants[variant]}`);
 </script>
