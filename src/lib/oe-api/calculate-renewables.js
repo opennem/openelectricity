@@ -30,11 +30,11 @@ export const RENEWABLE_MODES = [
 		id: 'oe_proportion',
 		label: 'OE getMarket · generation_renewable ÷ gross demand',
 		description:
-			'Official OE method (per the renewables guide). Since the June 2026 backend fix, generation_renewable_energy includes rooftop solar — cross-checking the live API shows it matches Σ(bioenergy + hydro + solar_utility + wind + solar_rooftop) from the fueltech data within ~1%. demand_gross_energy is null before May 2006 (rooftop solar coverage starts then), so demand-dependent lines — gross demand, the derived fossil and every % value — start there; generation_renewable_energy and the fueltech fossil sum plot from Jan 1999 in the raw view.',
+			'Official OE method (per the renewables guide). generation_renewable_energy includes rooftop solar (fixed June 2026) but also counts battery_discharging and pumps as renewable (clamped ≥0 in the backend market_summary aggregate) while excluding the TUMUT3/SNOWYP pump-storage units (added back only in generation_renewable_with_storage_energy) — so it runs ~300–420 GWh/month above a pure renewable fueltech sum. demand_gross_energy is null before May 2006 (rooftop solar coverage starts then), so demand-dependent lines — gross demand, the derived fossil and every % value — start there; generation_renewable_energy and the fueltech fossil sum plot from Jan 1999 in the raw view.',
 		numerator:
-			'generation_renewable_energy from OE getMarket — includes rooftop solar (fixed June 2026); empirically Σ(bioenergy + hydro + solar_utility + wind + solar_rooftop) within ~1%',
+			'generation_renewable_energy from OE getMarket — Σ(bioenergy + hydro + solar_utility + wind + battery_discharging + pumps, clamped ≥0, excl. TUMUT3/SNOWYP) + rooftop solar; ~300–420 GWh/month above a pure renewable fueltech sum',
 		fossilNumerator:
-			'demand_gross_energy − generation_renewable_energy (derived — everything not in the renewable numerator: batteries, pumps, imports, all fossil generation)',
+			'demand_gross_energy − generation_renewable_energy (derived — everything not in the renewable numerator: battery charging and all fossil generation; battery discharging and pumps are already counted as renewable)',
 		fossilFueltechNumerator:
 			'Σ(coal_black + coal_brown + gas_ccgt/ocgt/recip/steam/wcmg + distillate) from OE getNetworkData secondary_grouping=fueltech — fossils only, no battery (light brown line)',
 		denominator: 'demand_gross_energy from OE getMarket (operational demand + rooftop solar)'
@@ -43,11 +43,11 @@ export const RENEWABLE_MODES = [
 		id: 'oe_secondary_renewable',
 		label: 'OE getNetworkData(renewable) · renewable=true ÷ gross demand',
 		description:
-			'OE classifies each fueltech as renewable=true/false and aggregates them server-side. The renewable=true bucket includes rooftop solar and tracks getMarket\'s generation_renewable_energy within ~1–2%. Both renewable=true and renewable=false buckets have full data back to Jan 1999 and plot from there in the raw view, but demand_gross_energy is null before May 2006 (rooftop solar coverage starts then), so the gross demand line and every % value start there.',
+			'OE classifies each fueltech as renewable=true/false and aggregates them server-side. The renewable=true bucket is exactly Σ(bioenergy + hydro + solar_utility + solar_rooftop + wind) — no battery or pumps, which all land in renewable=false. It runs ~300–420 GWh/month below getMarket\'s generation_renewable_energy, which additionally counts battery discharging and pumps as renewable. Both buckets have full data back to Jan 1999 and plot from there in the raw view, but demand_gross_energy is null before May 2006 (rooftop solar coverage starts then), so the gross demand line and every % value start there.',
 		numerator:
-			'OE getNetworkData with secondary_grouping=renewable, the renewable=true row',
+			'OE getNetworkData with secondary_grouping=renewable, the renewable=true row — exactly Σ(bioenergy + hydro + solar_utility + solar_rooftop + wind), no battery or pumps',
 		fossilNumerator:
-			'OE getNetworkData with secondary_grouping=renewable, the renewable=false row — also includes battery discharging and pumps (~300–560 GWh/month above a fossils-only fueltech sum)',
+			'OE getNetworkData with secondary_grouping=renewable, the renewable=false row — also includes battery charging, battery discharging and pumps (~300–560 GWh/month above a fossils-only fueltech sum)',
 		fossilFueltechNumerator:
 			'Σ(coal_black + coal_brown + gas_ccgt/ocgt/recip/steam/wcmg + distillate) from OE getNetworkData secondary_grouping=fueltech — fossils only, no battery (light brown line)',
 		denominator: 'demand_gross_energy from OE getMarket (operational demand + rooftop solar)'
@@ -253,9 +253,10 @@ function buildLocalGroupingStats(fueltechStats) {
 /**
  * Mode `oe_secondary_renewable` — uses the data endpoint's
  * secondary_grouping=renewable aggregate as the numerator and OE's
- * demand_gross_energy as the denominator. Includes rooftop solar in the
- * renewable bucket (unlike the market `generation_renewable_energy` metric,
- * which excludes it).
+ * demand_gross_energy as the denominator. The renewable=true bucket is a pure
+ * renewable fueltech sum (incl. rooftop solar), unlike the market
+ * `generation_renewable_energy` metric, which also counts battery discharging
+ * and pumps as renewable.
  *
  * @param {StatsData[]} marketStats
  * @returns {StatsData[]}
