@@ -1,8 +1,12 @@
 <script>
 	import { browser } from '$app/environment';
+	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { colourReducer } from '$lib/stores/theme';
+	import Checkbox from '$lib/components/form-elements/Checkbox.svelte';
 	import Select from '$lib/components/form-elements/Select.svelte';
 	import Chart from '$lib/components/info-graphics/fossil-fuels-renewables/Chart.svelte';
+	import { displayXTicks } from '$lib/components/info-graphics/fossil-fuels-renewables/helpers';
 	import StudioAnnotations from './_components/StudioAnnotations.svelte';
 	import StudioDataTable from './_components/StudioDataTable.svelte';
 	import {
@@ -35,21 +39,78 @@
 		logCall('generation_renewable_energy', renewablesRawPayloads.generationRenewableEnergy);
 		logCall('demand_gross_energy', renewablesRawPayloads.demandGrossEnergy);
 		logCall('energy by renewable grouping', renewablesRawPayloads.renewableGrouping);
+		logCall('energy by fueltech grouping', renewablesRawPayloads.fueltechEnergy);
 		logCall('legacy OpenNEM JSON', renewablesRawPayloads.legacyOpenNem);
 	});
 
+	// Filter state is mirrored to query params (?smoothing=…&value=…&view=…&demand=…)
+	// so a configured view can be shared by pasting the URL. Defaults are omitted.
+	const URL_DEFAULTS = {
+		smoothing: 'rolling12mth',
+		value: 'percentage',
+		view: 'chart',
+		demand: 'true'
+	};
+
+	/**
+	 * Read a query param, falling back to its default when absent or invalid.
+	 * @param {keyof typeof URL_DEFAULTS} key
+	 * @param {string[]} valid
+	 */
+	function paramOrDefault(key, valid) {
+		const value = page.url.searchParams.get(key);
+		return value && valid.includes(value) ? value : URL_DEFAULTS[key];
+	}
+
 	/** @type {import('$lib/oe-api/calculate-renewables').RenewableSmoothing} */
-	let selectedSmoothing = $state('rolling12mth');
+	let selectedSmoothing = $state(
+		/** @type {import('$lib/oe-api/calculate-renewables').RenewableSmoothing} */ (
+			paramOrDefault(
+				'smoothing',
+				RENEWABLE_SMOOTHING_OPTIONS.map((s) => s.id)
+			)
+		)
+	);
 
 	/** @type {import('$lib/oe-api/calculate-renewables').RenewableValueType} */
-	let selectedValueType = $state('percentage');
+	let selectedValueType = $state(
+		/** @type {import('$lib/oe-api/calculate-renewables').RenewableValueType} */ (
+			paramOrDefault(
+				'value',
+				RENEWABLE_VALUE_TYPE_OPTIONS.map((v) => v.id)
+			)
+		)
+	);
 
 	/** Shared hover time across all charts so hovering one highlights the same x in all. */
 	/** @type {number | undefined} */
 	let sharedHoverTime = $state(undefined);
 
 	/** @type {'chart' | 'table'} */
-	let viewMode = $state('chart');
+	let viewMode = $state(
+		/** @type {'chart' | 'table'} */ (paramOrDefault('view', ['chart', 'table']))
+	);
+
+	/** Show the denominator (gross demand) line. On by default; ?demand=false turns it off. */
+	let showDemand = $state(paramOrDefault('demand', ['true', 'false']) === 'true');
+
+	function syncUrl() {
+		const url = new URL(page.url);
+		const params = {
+			smoothing: selectedSmoothing,
+			value: selectedValueType,
+			view: viewMode,
+			demand: String(showDemand)
+		};
+		for (const [key, value] of Object.entries(params)) {
+			if (value === URL_DEFAULTS[/** @type {keyof typeof URL_DEFAULTS} */ (key)]) {
+				url.searchParams.delete(key);
+			} else {
+				url.searchParams.set(key, value);
+			}
+		}
+		goto(url, { replaceState: true, keepFocus: true, noScroll: true });
+	}
 
 	const smoothingOptions = RENEWABLE_SMOOTHING_OPTIONS.map((s) => ({
 		label: s.label,
@@ -62,6 +123,15 @@
 		value: v.id,
 		description: v.description
 	}));
+
+	// Studio x-axis: Jan 1999 (full series history, unlike the homepage's 2000
+	// start) through to the end of the current year (the homepage default runs
+	// 10 years into the future). Default 5-yearly ticks filtered to fit.
+	const STUDIO_X_DOMAIN = [
+		new Date(1999, 0, 1).getTime(),
+		new Date(new Date().getFullYear() + 1, 0, 1).getTime()
+	];
+	const studioXTicks = displayXTicks.filter((d) => d.getTime() <= STUDIO_X_DOMAIN[1]);
 
 	const UNIT_SUFFIX = {
 		'percentage:rolling12mth': '(%)',
@@ -80,7 +150,8 @@
 			mode,
 			$colourReducer,
 			selectedSmoothing,
-			selectedValueType
+			selectedValueType,
+			showDemand
 		);
 	}
 </script>
@@ -115,6 +186,7 @@
 					/** @type {import('$lib/oe-api/calculate-renewables').RenewableSmoothing} */ (
 						opt.value
 					);
+				syncUrl();
 			}}
 		/>
 		<Select
@@ -129,6 +201,16 @@
 					/** @type {import('$lib/oe-api/calculate-renewables').RenewableValueType} */ (
 						opt.value
 					);
+				syncUrl();
+			}}
+		/>
+		<Checkbox
+			label="Gross demand"
+			checked={showDemand}
+			class="text-sm"
+			onchange={(checked) => {
+				showDemand = checked;
+				syncUrl();
 			}}
 		/>
 		<div
@@ -142,7 +224,10 @@
 					? 'bg-dark-grey text-white'
 					: 'bg-white text-mid-grey hover:bg-light-warm-grey'}"
 				aria-pressed={viewMode === 'chart'}
-				onclick={() => (viewMode = 'chart')}
+				onclick={() => {
+					viewMode = 'chart';
+					syncUrl();
+				}}
 			>
 				Chart
 			</button>
@@ -152,7 +237,10 @@
 					? 'bg-dark-grey text-white'
 					: 'bg-white text-mid-grey hover:bg-light-warm-grey'}"
 				aria-pressed={viewMode === 'table'}
-				onclick={() => (viewMode = 'table')}
+				onclick={() => {
+					viewMode = 'table';
+					syncUrl();
+				}}
 			>
 				Table
 			</button>
@@ -182,6 +270,12 @@
 								<dt class="font-semibold text-dark-grey shrink-0">Fossils =</dt>
 								<dd>{mode.fossilNumerator}</dd>
 							</div>
+							{#if mode.fossilFueltechNumerator}
+								<div class="flex gap-2">
+									<dt class="font-semibold text-dark-grey shrink-0">Fossils (fueltech) =</dt>
+									<dd>{mode.fossilFueltechNumerator}</dd>
+								</div>
+							{/if}
 							<div class="flex gap-2">
 								<dt class="font-semibold text-dark-grey shrink-0">Denominator =</dt>
 								<dd>{mode.denominator}</dd>
@@ -211,6 +305,9 @@
 										skipAnimation={true}
 										historicalDataset={result.statsDatasets}
 										containerClass="chart-container h-[300px] md:h-[350px]"
+										strokeWidth="2px"
+										xDomain={STUDIO_X_DOMAIN}
+										xTicks={studioXTicks}
 										externalHoverTime={sharedHoverTime}
 										onHoverTimeChange={(t) => (sharedHoverTime = t)}
 										showAnnotations={false}

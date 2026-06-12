@@ -40,7 +40,7 @@
 					<span class="flex-1 truncate" title={seriesLabels[name] ?? name}>
 						{seriesLabels[name] ?? name}
 					</span>
-					<span class="text-base font-semibold tabular-nums text-dark-grey">
+					<span class="text-base font-semibold font-mono tabular-nums text-dark-grey">
 						{value == null ? '–' : formatVal(value)}
 					</span>
 					<span class="text-xs">{unit}</span>

@@ -3,6 +3,7 @@ import {
 	calculateRenewables,
 	RENEWABLE_MODES,
 	FOSSIL_ID,
+	FOSSIL_FUELTECH_ID,
 	RENEWABLES_ID,
 	TOTAL_ID
 } from './calculate-renewables.js';
@@ -73,6 +74,13 @@ describe('RENEWABLE_MODES', () => {
 			'legacy_opennem'
 		]);
 	});
+
+	it('documents the fueltech fossil comparison line on both OE modes only', () => {
+		const byId = Object.fromEntries(RENEWABLE_MODES.map((m) => [m.id, m]));
+		expect(byId.oe_proportion.fossilFueltechNumerator).toBeTruthy();
+		expect(byId.oe_secondary_renewable.fossilFueltechNumerator).toBeTruthy();
+		expect(byId.legacy_opennem.fossilFueltechNumerator).toBeUndefined();
+	});
 });
 
 describe('calculateRenewables — empty / invalid inputs', () => {
@@ -119,7 +127,7 @@ describe('calculateRenewables — legacy_opennem mode', () => {
 		);
 
 		expect(out.statsDatasets.map((d) => d.id)).toEqual([FOSSIL_ID, RENEWABLES_ID, TOTAL_ID]);
-		expect(out.seriesNames).toEqual([FOSSIL_ID, RENEWABLES_ID]);
+		expect(out.seriesNames).toEqual([FOSSIL_ID, RENEWABLES_ID, TOTAL_ID]);
 
 		// rolling-sum-12-mth strips months whose 12-mth window isn't strictly after
 		// the first available date, which empirically drops 13 rows for an N-month input.
@@ -287,6 +295,177 @@ describe('calculateRenewables — oe_secondary_renewable mode', () => {
 			'oe_secondary_renewable'
 		);
 		expect(out.dataset).toEqual([]);
+	});
+});
+
+describe('calculateRenewables — fossil fueltech comparison series', () => {
+	it('sums fossil fueltechs into a black comparison line in oe_proportion mode', () => {
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeMarket('demand_gross_energy', constArr(100)),
+			makeFueltech('coal_black', constArr(30)),
+			makeFueltech('gas_ccgt', constArr(25)),
+			// Non-fossil fueltechs must be excluded from the sum.
+			makeFueltech('battery_discharging', constArr(5)),
+			makeFueltech('pumps', constArr(3))
+		];
+
+		const out = calculateRenewables({ marketStats }, 'oe_proportion', undefined, 'monthly');
+
+		expect(out.statsDatasets.map((d) => d.id)).toEqual([
+			FOSSIL_ID,
+			FOSSIL_FUELTECH_ID,
+			RENEWABLES_ID,
+			TOTAL_ID
+		]);
+		expect(out.seriesNames).toContain(FOSSIL_FUELTECH_ID);
+		expect(out.seriesColours[FOSSIL_FUELTECH_ID]).toBe('#A3906799');
+		expect(out.seriesLabels[FOSSIL_FUELTECH_ID]).toBe('Fossils (Σ fueltech)');
+
+		const last = out.dataset[out.dataset.length - 1];
+		// fueltech fossil = (30 + 25) / 100 = 55% — battery & pumps excluded
+		expect(last[FOSSIL_FUELTECH_ID]).toBeCloseTo(55, 5);
+		// derived fossil unchanged: (100 − 40) / 100 = 60%
+		expect(last[FOSSIL_ID]).toBeCloseTo(60, 5);
+	});
+
+	it('adds the same line in oe_secondary_renewable mode', () => {
+		/** @type {StatsData} */
+		const renewableAggregate = /** @type {any} */ (
+			makeMarket('generation_renewable_aggregate', constArr(40))
+		);
+		renewableAggregate.fuel_tech = /** @type {FuelTechCode} */ ('renewable_aggregate');
+
+		const marketStats = [
+			renewableAggregate,
+			makeMarket('demand_gross_energy', constArr(100)),
+			makeFueltech('coal_brown', constArr(20)),
+			makeFueltech('distillate', constArr(2))
+		];
+
+		const out = calculateRenewables(
+			{ marketStats },
+			'oe_secondary_renewable',
+			undefined,
+			'monthly'
+		);
+
+		expect(out.seriesNames).toContain(FOSSIL_FUELTECH_ID);
+		const last = out.dataset[out.dataset.length - 1];
+		expect(last[FOSSIL_FUELTECH_ID]).toBeCloseTo(22, 5);
+	});
+
+	it('omits the series when no fossil fueltech rows are present', () => {
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeMarket('demand_gross_energy', constArr(100))
+		];
+
+		const out = calculateRenewables({ marketStats }, 'oe_proportion', undefined, 'monthly');
+		expect(out.seriesNames).not.toContain(FOSSIL_FUELTECH_ID);
+		expect(out.statsDatasets.map((d) => d.id)).toEqual([FOSSIL_ID, RENEWABLES_ID, TOTAL_ID]);
+	});
+
+	it('treats a single fueltech gap as 0 instead of nulling the sum', () => {
+		// gas_recip ends 6 months early — alignment pads the back with nulls.
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeMarket('demand_gross_energy', constArr(100)),
+			makeFueltech('coal_black', constArr(30)),
+			makeFueltech('gas_recip', constArr(10).slice(0, N - 6))
+		];
+
+		const out = calculateRenewables({ marketStats }, 'oe_proportion', undefined, 'monthly');
+
+		// While both run: 30 + 10 = 40%.
+		expect(out.dataset[0][FOSSIL_FUELTECH_ID]).toBeCloseTo(40, 5);
+		// After gas_recip's series ends only coal_black contributes — the null
+		// counts as 0 rather than nulling the whole sum (which would clip the
+		// line via trimSharedNulls).
+		const last = out.dataset[out.dataset.length - 1];
+		expect(last[FOSSIL_FUELTECH_ID]).toBeCloseTo(30, 5);
+	});
+});
+
+describe('calculateRenewables — gross demand (total) series', () => {
+	const marketStats = () => [
+		makeMarket('generation_renewable_energy', constArr(40)),
+		makeMarket('demand_gross_energy', constArr(100))
+	];
+
+	it('plots the red gross demand line by default (flat 100% in percentage mode)', () => {
+		const out = calculateRenewables(
+			{ marketStats: marketStats() },
+			'oe_proportion',
+			undefined,
+			'monthly'
+		);
+
+		expect(out.seriesNames).toContain(TOTAL_ID);
+		expect(out.seriesColours[TOTAL_ID]).toBe('#E03131');
+		expect(out.seriesLabels[TOTAL_ID]).toBe('Gross demand');
+		// demand ÷ demand — a flat 100% reference line
+		expect(out.dataset[0][TOTAL_ID]).toBeCloseTo(100, 5);
+	});
+
+	it('excludes the total from seriesNames when showTotal is false (both value types)', () => {
+		for (const valueType of /** @type {const} */ (['percentage', 'raw'])) {
+			const out = calculateRenewables(
+				{ marketStats: marketStats() },
+				'oe_proportion',
+				undefined,
+				'monthly',
+				valueType,
+				false
+			);
+			expect(out.seriesNames).not.toContain(TOTAL_ID);
+			// The total stays in statsDatasets — it's still the % denominator.
+			expect(out.statsDatasets.map((d) => d.id)).toContain(TOTAL_ID);
+		}
+	});
+
+	it('keeps full-history series when demand starts later (partial coverage)', () => {
+		// Demand only exists for the last 12 months; renewables spans all 24.
+		const demandLate = [...new Array(N - 12).fill(null), ...new Array(12).fill(100)];
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeMarket('demand_gross_energy', demandLate)
+		];
+
+		const rawOut = calculateRenewables(
+			{ marketStats },
+			'oe_proportion',
+			undefined,
+			'monthly',
+			'raw'
+		);
+		// No leading clip — renewables plots from the very first month…
+		expect(rawOut.dataset.length).toBe(N);
+		expect(rawOut.dataset[0][RENEWABLES_ID]).toBeCloseTo(40, 5);
+		// …while demand-dependent series are null until demand begins.
+		expect(rawOut.dataset[0][TOTAL_ID]).toBeNull();
+		expect(rawOut.dataset[0][FOSSIL_ID]).toBeNull();
+		expect(rawOut.dataset[N - 1][FOSSIL_ID]).toBeCloseTo(60, 5);
+
+		// In percentage mode there's no denominator before demand begins — null, not 0.
+		const pctOut = calculateRenewables({ marketStats }, 'oe_proportion', undefined, 'monthly');
+		expect(pctOut.dataset[0][RENEWABLES_ID]).toBeNull();
+		expect(pctOut.dataset[N - 1][RENEWABLES_ID]).toBeCloseTo(40, 5);
+	});
+
+	it('labels the legacy denominator accurately with the same red', () => {
+		const legacyFueltechStats = [
+			makeFueltech('coal_black', constArr(100)),
+			makeFueltech('wind', constArr(30))
+		];
+		const out = calculateRenewables(
+			{ marketStats: [], legacyFueltechStats },
+			'legacy_opennem',
+			undefined,
+			'monthly'
+		);
+		expect(out.seriesColours[TOTAL_ID]).toBe('#E03131');
+		expect(out.seriesLabels[TOTAL_ID]).toBe('Generation − loads (denominator)');
 	});
 });
 

@@ -99,10 +99,12 @@ TimeSeries.prototype.convertToPercentage = function (
 
 		this.seriesNames.forEach((name) => {
 			const seriesValue = /** @type {number} */ (d[name]);
-			if (seriesValue && total) {
-				obj[name] = (seriesValue / total) * 100;
+			if (seriesValue == null || total == null || total === 0) {
+				// No value or no denominator — a % doesn't exist for this month.
+				// Null (not 0) so chart lines break instead of dropping to zero.
+				obj[name] = null;
 			} else {
-				obj[name] = 0;
+				obj[name] = (seriesValue / total) * 100;
 			}
 		});
 

@@ -12,6 +12,7 @@ import { alignStatsDataToCommonRange } from './align-stats-data';
  *   description: string,
  *   numerator: string,
  *   fossilNumerator: string,
+ *   fossilFueltechNumerator?: string,
  *   denominator: string
  * }} RenewableModeOption */
 
@@ -29,22 +30,26 @@ export const RENEWABLE_MODES = [
 		id: 'oe_proportion',
 		label: 'OE getMarket · generation_renewable ÷ gross demand',
 		description:
-			'Official OE method (per the renewables guide). Empirically the numerator equals bioenergy + hydro + solar_utility + wind only — the OE docs claim it also includes solar_rooftop, battery_discharging and pumps, but cross-checking the live API shows those three are excluded (the docs formula likely matches generation_renewable_with_storage_energy, which currently returns null on the API). Rooftop is captured by the gross-demand denominator instead. Series start May 2006: generation_renewable_energy goes back to Jan 2000, but demand_gross_energy returns null before May 2006 (rooftop solar coverage starts then), so all three lines are clipped to the demand series\' first non-null month.',
+			'Official OE method (per the renewables guide). Since the June 2026 backend fix, generation_renewable_energy includes rooftop solar — cross-checking the live API shows it matches Σ(bioenergy + hydro + solar_utility + wind + solar_rooftop) from the fueltech data within ~1%. demand_gross_energy is null before May 2006 (rooftop solar coverage starts then), so demand-dependent lines — gross demand, the derived fossil and every % value — start there; generation_renewable_energy and the fueltech fossil sum plot from Jan 1999 in the raw view.',
 		numerator:
-			'generation_renewable_energy from OE getMarket — empirically bioenergy + hydro + solar_utility + wind (excludes solar_rooftop, battery_discharging, pumps)',
+			'generation_renewable_energy from OE getMarket — includes rooftop solar (fixed June 2026); empirically Σ(bioenergy + hydro + solar_utility + wind + solar_rooftop) within ~1%',
 		fossilNumerator:
-			'demand_gross_energy − generation_renewable_energy (derived — includes everything not in the limited renewable numerator: rooftop, batteries, pumps, imports, all fossil generation)',
+			'demand_gross_energy − generation_renewable_energy (derived — everything not in the renewable numerator: batteries, pumps, imports, all fossil generation)',
+		fossilFueltechNumerator:
+			'Σ(coal_black + coal_brown + gas_ccgt/ocgt/recip/steam/wcmg + distillate) from OE getNetworkData secondary_grouping=fueltech — fossils only, no battery (light brown line)',
 		denominator: 'demand_gross_energy from OE getMarket (operational demand + rooftop solar)'
 	},
 	{
 		id: 'oe_secondary_renewable',
 		label: 'OE getNetworkData(renewable) · renewable=true ÷ gross demand',
 		description:
-			'OE classifies each fueltech as renewable=true/false and aggregates them server-side. The renewable=true bucket includes rooftop solar. Series start May 2006: both renewable=true and renewable=false buckets have full data back to Jan 2000, but demand_gross_energy returns null before May 2006 (rooftop solar coverage starts then), so all three lines are clipped to the demand series\' first non-null month.',
+			'OE classifies each fueltech as renewable=true/false and aggregates them server-side. The renewable=true bucket includes rooftop solar and tracks getMarket\'s generation_renewable_energy within ~1–2%. Both renewable=true and renewable=false buckets have full data back to Jan 1999 and plot from there in the raw view, but demand_gross_energy is null before May 2006 (rooftop solar coverage starts then), so the gross demand line and every % value start there.',
 		numerator:
 			'OE getNetworkData with secondary_grouping=renewable, the renewable=true row',
 		fossilNumerator:
-			'OE getNetworkData with secondary_grouping=renewable, the renewable=false row (also includes battery_discharging)',
+			'OE getNetworkData with secondary_grouping=renewable, the renewable=false row — also includes battery discharging and pumps (~300–560 GWh/month above a fossils-only fueltech sum)',
+		fossilFueltechNumerator:
+			'Σ(coal_black + coal_brown + gas_ccgt/ocgt/recip/steam/wcmg + distillate) from OE getNetworkData secondary_grouping=fueltech — fossils only, no battery (light brown line)',
 		denominator: 'demand_gross_energy from OE getMarket (operational demand + rooftop solar)'
 	},
 	{
@@ -62,8 +67,17 @@ export const RENEWABLE_MODES = [
 ];
 
 export const FOSSIL_ID = 'fossil_fuels.energy.grouped';
+export const FOSSIL_FUELTECH_ID = 'fossil_fuels_fueltech.energy.grouped';
 export const RENEWABLES_ID = 'renewables.energy.grouped';
 export const TOTAL_ID = 'au-total';
+
+// Legend labels stay short — the methodology card on /studio/renewables
+// spells out the full formula for each fossil series.
+const FOSSIL_FUELTECH_LABEL = 'Fossils (Σ fueltech)';
+// Lighter shade of the derived fossil line's brown (#594929) at 60% opacity
+// so the two fossil series read as related but stay distinguishable.
+const FOSSIL_FUELTECH_COLOUR = '#A3906799';
+const TOTAL_COLOUR = '#E03131';
 
 // `data_type` keys we look up in `marketStats`. The first three are real OE
 // metric names; the last two are synthetic tags emitted by transformOeToStatsData
@@ -142,6 +156,8 @@ export const RENEWABLE_VALUE_TYPE_OPTIONS = [
  * @param {(acc: Object<string,string>, d: StatsData) => Object<string,string>} [colourReducer]
  * @param {RenewableSmoothing} [smoothing]
  * @param {RenewableValueType} [valueType]
+ * @param {boolean} [showTotal] include the denominator series (gross demand or
+ *   generation minus loads) as a plotted line. Flat 100% in percentage mode.
  * @returns {{
  *   dataset: TimeSeriesData[],
  *   statsDatasets: StatsData[],
@@ -155,7 +171,8 @@ export function calculateRenewables(
 	mode,
 	colourReducer,
 	smoothing = 'rolling12mth',
-	valueType = 'percentage'
+	valueType = 'percentage',
+	showTotal = true
 ) {
 	const marketStats = input?.marketStats ?? [];
 	const legacyFueltechStats = input?.legacyFueltechStats ?? [];
@@ -186,7 +203,7 @@ export function calculateRenewables(
 		parseInterval('1M'),
 		'history',
 		labelReducer,
-		colourReducer
+		colourWithOverride(colourReducer)
 	).transform();
 
 	if (smoothing === 'rolling12mth') {
@@ -197,10 +214,9 @@ export function calculateRenewables(
 		ts.convertToPercentage(TOTAL_ID);
 	}
 
-	const seriesNames =
-		valueType === 'percentage'
-			? ts.seriesNames.filter((/** @type {string} */ name) => name !== TOTAL_ID)
-			: ts.seriesNames;
+	const seriesNames = showTotal
+		? ts.seriesNames
+		: ts.seriesNames.filter((/** @type {string} */ name) => name !== TOTAL_ID);
 
 	return {
 		dataset: ts.data,
@@ -225,7 +241,13 @@ function buildLocalGroupingStats(fueltechStats) {
 	const stats = new Statistic(aligned, 'history')
 		.group(DOMAIN_GROUPS)
 		.addTotalMinusLoads(LOAD_FUEL_TECHS, TOTAL_ID);
-	return stats.data;
+	// This mode's denominator isn't gross demand — label it accurately, but use
+	// the same red so the denominator line reads consistently across charts.
+	return stats.data.map((/** @type {StatsData} */ d) =>
+		d.id === TOTAL_ID
+			? { ...d, colour: TOTAL_COLOUR, label: 'Generation − loads (denominator)' }
+			: d
+	);
 }
 
 /**
@@ -246,11 +268,14 @@ function buildOeSecondaryRenewableStats(marketStats) {
 
 	// Align renewable + demand. nonRenewable is optional; if present we use it
 	// for the fossil_fuels series, otherwise derive from demand − renewable.
+	const fossilFueltech = buildFossilFueltechSum(marketStats);
 	const sources = nonRenewable ? [renewable, nonRenewable, demand] : [renewable, demand];
+	if (fossilFueltech) sources.push(fossilFueltech);
 	const aligned = alignStatsDataToCommonRange(sources);
 	const alignedRenewable = aligned[0];
 	const alignedNonRenewable = nonRenewable ? aligned[1] : null;
 	const alignedDemand = nonRenewable ? aligned[2] : aligned[1];
+	const alignedFossilFueltech = fossilFueltech ? aligned[aligned.length - 1] : null;
 
 	const renewablesRaw = alignedRenewable.history.data;
 	const demandRaw = alignedDemand.history.data;
@@ -258,21 +283,24 @@ function buildOeSecondaryRenewableStats(marketStats) {
 		? alignedNonRenewable.history.data
 		: subtractArrays(demandRaw, renewablesRaw);
 
-	const { arrays, meta } = trimSharedNulls([fossilRaw, renewablesRaw, demandRaw], {
+	const arraysIn = [fossilRaw, renewablesRaw, demandRaw];
+	if (alignedFossilFueltech) arraysIn.push(alignedFossilFueltech.history.data);
+	const { arrays, meta } = trimSharedNulls(arraysIn, {
 		start: alignedDemand.history.start,
 		last: alignedDemand.history.last,
 		interval: alignedDemand.history.interval
 	});
-	const [fossilData, renewablesData, demandData] = arrays;
+	const [fossilData, renewablesData, demandData, fossilFueltechData] = arrays;
 
 	const fossilLabel = alignedNonRenewable
-		? 'Fossils (renewable=false bucket)'
-		: 'Fossils (derived: gross demand − renewable)';
+		? 'Fossils (renewable=false)'
+		: 'Fossils (derived)';
 
 	return [
 		makeGroupedStats(FOSSIL_ID, 'fossil_fuels', fossilData, meta, fossilLabel),
+		...(fossilFueltechData ? [makeFossilFueltechStats(fossilFueltechData, meta)] : []),
 		makeGroupedStats(RENEWABLES_ID, 'renewables', renewablesData, meta),
-		makeTotalStats(TOTAL_ID, demandData, meta)
+		makeTotalStats(TOTAL_ID, demandData, meta, 'Gross demand')
 	];
 }
 
@@ -290,17 +318,23 @@ function buildOeProportionStats(marketStats) {
 	const demand = findByDataType(marketStats, METRIC.demand);
 	if (!renewable || !demand) return [];
 
-	const [alignedRenewable, alignedDemand] = alignStatsDataToCommonRange([renewable, demand]);
+	const fossilFueltech = buildFossilFueltechSum(marketStats);
+	const sources = fossilFueltech ? [renewable, demand, fossilFueltech] : [renewable, demand];
+	const aligned = alignStatsDataToCommonRange(sources);
+	const [alignedRenewable, alignedDemand] = aligned;
+	const alignedFossilFueltech = fossilFueltech ? aligned[2] : null;
 	const renewablesRaw = alignedRenewable.history.data;
 	const demandRaw = alignedDemand.history.data;
 	const fossilRaw = subtractArrays(demandRaw, renewablesRaw);
 
-	const { arrays, meta } = trimSharedNulls([fossilRaw, renewablesRaw, demandRaw], {
+	const arraysIn = [fossilRaw, renewablesRaw, demandRaw];
+	if (alignedFossilFueltech) arraysIn.push(alignedFossilFueltech.history.data);
+	const { arrays, meta } = trimSharedNulls(arraysIn, {
 		start: alignedDemand.history.start,
 		last: alignedDemand.history.last,
 		interval: alignedDemand.history.interval
 	});
-	const [fossilData, renewablesData, demandData] = arrays;
+	const [fossilData, renewablesData, demandData, fossilFueltechData] = arrays;
 
 	return [
 		makeGroupedStats(
@@ -308,11 +342,46 @@ function buildOeProportionStats(marketStats) {
 			'fossil_fuels',
 			fossilData,
 			meta,
-			'Fossils (derived: gross demand − renewable)'
+			'Fossils (derived)'
 		),
+		...(fossilFueltechData ? [makeFossilFueltechStats(fossilFueltechData, meta)] : []),
 		makeGroupedStats(RENEWABLES_ID, 'renewables', renewablesData, meta),
-		makeTotalStats(TOTAL_ID, demandData, meta)
+		makeTotalStats(TOTAL_ID, demandData, meta, 'Gross demand')
 	];
+}
+
+/**
+ * Sum the OE per-fueltech energy series (secondary_grouping=fueltech) across
+ * FOSSIL_FUEL_TECHS into one StatsData — fossils only, no battery or pumps.
+ * Provides the light-brown comparison line drawn against the derived/bucket
+ * fossil series in both OE modes. Returns null when no fossil fueltech rows are
+ * present (the fueltech call failed or wasn't made).
+ *
+ * @param {StatsData[]} marketStats
+ * @returns {StatsData | null}
+ */
+function buildFossilFueltechSum(marketStats) {
+	const fossilStats = marketStats.filter(
+		(d) => d.data_type === 'energy' && d.fuel_tech && FOSSIL_FUEL_TECHS.includes(d.fuel_tech)
+	);
+	if (fossilStats.length === 0) return null;
+
+	const aligned = alignStatsDataToCommonRange(fossilStats);
+	const data = sumArrays(aligned.map((d) => d.history.data));
+	const { start, last, interval } = aligned[0].history;
+	return makeGroupedStats(FOSSIL_FUELTECH_ID, 'fossil_fuels', data, { start, last, interval });
+}
+
+/**
+ * @param {Array<number | null>} data
+ * @param {{ start: string, last: string, interval: string }} meta
+ * @returns {StatsData}
+ */
+function makeFossilFueltechStats(data, meta) {
+	return /** @type {StatsData} */ ({
+		...makeGroupedStats(FOSSIL_FUELTECH_ID, 'fossil_fuels', data, meta, FOSSIL_FUELTECH_LABEL),
+		colour: FOSSIL_FUELTECH_COLOUR
+	});
 }
 
 /**
@@ -328,11 +397,12 @@ function findByDataType(stats, key) {
 }
 
 /**
- * Trim leading/trailing months where ANY of the supplied arrays is null.
+ * Trim leading/trailing months where ALL of the supplied arrays are null.
  * Returns the trimmed arrays + an updated meta whose `start` reflects the
- * first kept month. Required because MultiLine builds an SVG path by joining
- * `x,y` pairs — a single `null` value renders as `NaN` and invalidates the
- * entire path, so the line disappears.
+ * first kept month. Months where only some series are null are kept — e.g.
+ * demand_gross_energy is null before May 2006 while renewables runs from
+ * Jan 1999 — so each line plots its full available range (MultiLine splits
+ * its SVG path into segments around null values).
  *
  * @param {Array<number | null>[]} arrays
  * @param {{ start: string, last: string, interval: string }} meta
@@ -343,10 +413,10 @@ function trimSharedNulls(arrays, meta) {
 	const len = arrays[0].length;
 
 	let firstValid = 0;
-	while (firstValid < len && arrays.some((a) => a[firstValid] == null)) firstValid++;
+	while (firstValid < len && arrays.every((a) => a[firstValid] == null)) firstValid++;
 
 	let lastValid = len - 1;
-	while (lastValid >= firstValid && arrays.some((a) => a[lastValid] == null)) lastValid--;
+	while (lastValid >= firstValid && arrays.every((a) => a[lastValid] == null)) lastValid--;
 
 	if (firstValid === 0 && lastValid === len - 1) return { arrays, meta };
 	if (firstValid > lastValid) return { arrays: arrays.map(() => []), meta };
@@ -410,9 +480,33 @@ function makeTotalStats(id, data, meta, label) {
 		data_type: 'energy',
 		units: 'GWh',
 		network: 'NEM',
+		colour: TOTAL_COLOUR,
 		...(label ? { label } : {}),
 		history: { ...meta, data }
 	});
+}
+
+/**
+ * Index-wise null-safe sum across arrays: a null entry counts as 0 unless
+ * every array is null at that index (→ null). Keeps a single fueltech's early
+ * gap (e.g. gas_recip pre-commissioning) from clipping the whole summed line
+ * via trimSharedNulls.
+ *
+ * @param {Array<number | null>[]} arrays
+ * @returns {Array<number | null>}
+ */
+function sumArrays(arrays) {
+	const len = Math.max(...arrays.map((a) => a.length));
+	const out = /** @type {Array<number | null>} */ (new Array(len));
+	for (let i = 0; i < len; i++) {
+		let sum = null;
+		for (const a of arrays) {
+			const v = a[i];
+			if (v != null) sum = (sum ?? 0) + v;
+		}
+		out[i] = sum;
+	}
+	return out;
 }
 
 /**
@@ -429,6 +523,24 @@ function subtractArrays(a, b) {
 		out[i] = av == null || bv == null ? null : av - bv;
 	}
 	return out;
+}
+
+/**
+ * Per-record `colour` overrides the theme's fuel-tech colour lookup — used
+ * for the fueltech-summed fossil line, whose fuel_tech ('fossil_fuels')
+ * would otherwise collide with the derived fossil series' brown.
+ *
+ * @param {((acc: Object<string,string>, d: StatsData) => Object<string,string>) | undefined} colourReducer
+ * @returns {(acc: Object<string,string>, d: StatsData) => Object<string,string>}
+ */
+function colourWithOverride(colourReducer) {
+	return (acc, d) => {
+		if (d.colour) {
+			acc[d.id] = d.colour;
+			return acc;
+		}
+		return colourReducer ? colourReducer(acc, d) : acc;
+	};
 }
 
 /**

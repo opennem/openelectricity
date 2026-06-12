@@ -17,7 +17,13 @@
 
 	import Annotations from './Annotations.svelte';
 
-	import { formatTickX, formatTickY, formatTickYRaw, xDomain, displayXTicks } from './helpers';
+	import {
+		formatTickX,
+		formatTickY,
+		formatTickYRaw,
+		xDomain as defaultXDomain,
+		displayXTicks as defaultDisplayXTicks
+	} from './helpers';
 
 	const formatHoverTickX = (/** @type {Date | number} */ d) => format(d, 'MMM yyyy');
 	let isSafariBrowser = $state(true);
@@ -39,6 +45,9 @@
 	 * @property {((time: number | undefined) => void) | undefined} [onHoverTimeChange]
 	 * @property {'auto' | true | false} [annotationPlacement]
 	 * @property {boolean} [showAnnotations]
+	 * @property {string} [strokeWidth]
+	 * @property {number[]} [xDomain]
+	 * @property {Date[]} [xTicks]
 	 */
 
 	/** @type {Props} */
@@ -57,7 +66,10 @@
 		externalHoverTime = undefined,
 		onHoverTimeChange = undefined,
 		annotationPlacement = 'auto',
-		showAnnotations = true
+		showAnnotations = true,
+		strokeWidth = '4px',
+		xDomain = defaultXDomain,
+		xTicks = defaultDisplayXTicks
 	} = $props();
 
 	let yTickFormatter = $derived(valueType === 'percentage' ? formatTickY : formatTickYRaw);
@@ -164,7 +176,7 @@
 		<Svg>
 			<AxisX
 				formatTick={formatTickX}
-				ticks={displayXTicks}
+				ticks={xTicks}
 				tickMarks={true}
 				gridlines={true}
 				snapTicks={true}
@@ -175,9 +187,9 @@
 			/>
 			<AxisY formatTick={yTickFormatter} ticks={5} xTick={2} />
 
-			<MultiLine opacity={0.1} drawDurationObject={drawDuration} />
+			<MultiLine opacity={0.1} drawDurationObject={drawDuration} {strokeWidth} />
 
-			<MultiLine {hoverData} drawDurationObject={drawDuration} />
+			<MultiLine {hoverData} drawDurationObject={drawDuration} {strokeWidth} />
 			<HoverLayer
 				{dataset}
 				onmousemove={(d) => {

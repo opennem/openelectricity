@@ -20,11 +20,19 @@
 			(data.marketStats?.length > 0 || (data.legacyFueltechStats?.length ?? 0) > 0)
 	);
 
-	// Homepage uses the legacy OpenNEM JSON source, 12-month rolling, percentage.
-	// All other modes / smoothing / value-type combinations live on /studio/renewables.
+	// Homepage uses the legacy OpenNEM JSON source, 12-month rolling, percentage,
+	// without the denominator line (showTotal: false). All other modes / options
+	// live on /studio/renewables.
 	let result = $derived.by(() =>
 		hasData && data
-			? calculateRenewables(data, 'legacy_opennem', $colourReducer, 'rolling12mth', 'percentage')
+			? calculateRenewables(
+					data,
+					'legacy_opennem',
+					$colourReducer,
+					'rolling12mth',
+					'percentage',
+					false
+				)
 			: null
 	);
 </script>

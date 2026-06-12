@@ -3,16 +3,16 @@ import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 
 import { transformOeToStatsData } from './transform';
 import { fetchLegacyOpenNemFueltechStats } from './fetch-legacy-energy.server';
+import { FOSSIL_FUEL_TECHS } from './calculate-renewables';
 
 const oe = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
 	baseUrl: PUBLIC_OE_API_URL
 });
 
-// OE API caps the 1M-interval request range at 10000 days (~27 years).
-// 2000-01-01 keeps us comfortably inside that window and matches the
-// infographic's x-axis which already starts at year 2000.
-const RENEWABLES_DATE_START = '2000-01-01';
+// Full available history in a single request — the OE API no longer caps the
+// 1M-interval range (previously 10000 days), and NEM data starts Jan 1999.
+const RENEWABLES_DATE_START = '1999-01-01';
 
 /**
  * Latest `history.last` across a set of StatsData (ISO-8601 sorts
@@ -98,6 +98,16 @@ export async function fetchRenewablesInput(fetchFn) {
 					dateStart: RENEWABLES_DATE_START,
 					secondaryGrouping: ['renewable']
 				}
+			},
+			{
+				method: 'getNetworkData',
+				network: 'NEM',
+				metrics: ['energy'],
+				options: {
+					interval: '1M',
+					dateStart: RENEWABLES_DATE_START,
+					secondaryGrouping: ['fueltech']
+				}
 			}
 		];
 
@@ -105,6 +115,7 @@ export async function fetchRenewablesInput(fetchFn) {
 			generationRenewableRes,
 			demandGrossRes,
 			renewableGroupingRes,
+			fueltechEnergyRes,
 			legacyFueltechStats
 		] = await Promise.all([
 			oe.getMarket(
@@ -122,8 +133,22 @@ export async function fetchRenewablesInput(fetchFn) {
 				/** @type {any} */ (calls[2].metrics),
 				/** @type {any} */ (calls[2].options)
 			),
+			oe.getNetworkData(
+				/** @type {any} */ (calls[3].network),
+				/** @type {any} */ (calls[3].metrics),
+				/** @type {any} */ (calls[3].options)
+			),
 			fetchLegacyOpenNemFueltechStats(fetchFn)
 		]);
+
+		// Only the fossil fueltech rows are needed (for the fueltech-summed
+		// Fossils comparison line) — drop renewables/batteries/pumps here so
+		// they never reach the client payload.
+		const fossilFueltechStats = (
+			fueltechEnergyRes.response.data[0]
+				? transformOeToStatsData(fueltechEnergyRes.response.data[0])
+				: []
+		).filter((d) => d.fuel_tech && FOSSIL_FUEL_TECHS.includes(d.fuel_tech));
 
 		const marketStatsRaw = [
 			...(generationRenewableRes.response.data[0]
@@ -134,7 +159,8 @@ export async function fetchRenewablesInput(fetchFn) {
 				: []),
 			...(renewableGroupingRes.response.data[0]
 				? transformOeToStatsData(renewableGroupingRes.response.data[0])
-				: [])
+				: []),
+			...fossilFueltechStats
 		];
 
 		// OE returns the current (incomplete) month; the legacy OpenNEM JSON only
@@ -150,6 +176,7 @@ export async function fetchRenewablesInput(fetchFn) {
 			generationRenewableEnergy: { call: calls[0], response: generationRenewableRes.response },
 			demandGrossEnergy: { call: calls[1], response: demandGrossRes.response },
 			renewableGrouping: { call: calls[2], response: renewableGroupingRes.response },
+			fueltechEnergy: { call: calls[3], response: fueltechEnergyRes.response },
 			legacyOpenNem: {
 				call: { method: 'fetch', url: '/api/energy', via: 'energyParser' },
 				response: { count: legacyFueltechStats.length, last: legacyLast }
