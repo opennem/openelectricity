@@ -10,7 +10,6 @@
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import InfoGraphicNem7DayGenerationV2 from '$lib/components/info-graphics/nem-7-day-generation-v2/index.svelte';
-	import InfoGraphicNem7DayGenerationV2Oe from '$lib/components/info-graphics/nem-7-day-generation-v2-oe/index.svelte';
 	import InfoGraphicFossilFuelsRenewables from '$lib/components/info-graphics/fossil-fuels-renewables/index.svelte';
 	import ArticleCard from '$lib/components/articles/ArticleCard.svelte';
 	import PinnedRecords from './records/components/PinnedRecords.svelte';
@@ -37,7 +36,6 @@
 	let flows = $derived(data.flows);
 	let prices = $derived(data.prices);
 	let tracker7dProcessed = $derived(data.tracker7dProcessed);
-	let tracker7dProcessedOe = $derived(data.tracker7dProcessedOe);
 
 	// Client-side fetched data (these APIs make multiple external calls that can timeout on Cloudflare SSR)
 	/** @type {any} */
@@ -252,11 +250,6 @@
 <!-- NEM 7-Day Generation (v2 with server-side processing) -->
 <div class="bg-white py-16 md:py-32 border-t border-b border-warm-grey">
 	{#if tracker7dProcessed?.data && trackerChartReady}
-		<div class="container max-w-none lg:container mb-3">
-			<p class="text-xs uppercase font-space font-semibold text-mid-grey">
-				Source: static JSON (power/7d.json)
-			</p>
-		</div>
 		<InfoGraphicNem7DayGenerationV2 initialData={tracker7dProcessed} />
 	{:else}
 		<!-- 7-day chart placeholder -->
@@ -268,16 +261,6 @@
 				</div>
 			</div>
 		</div>
-	{/if}
-
-	<!-- Comparison: same chart fed by the OE API. Temporary, for data validation. -->
-	{#if tracker7dProcessedOe?.data && trackerChartReady}
-		<div class="container max-w-none lg:container mb-3 mt-16 pt-16 border-t border-warm-grey">
-			<p class="text-xs uppercase font-space font-semibold text-mid-grey">
-				Source: OE API (getNetworkData power, 5m → 30m)
-			</p>
-		</div>
-		<InfoGraphicNem7DayGenerationV2Oe initialData={tracker7dProcessedOe} />
 	{/if}
 </div>
 

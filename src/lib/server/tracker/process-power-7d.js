@@ -2,11 +2,9 @@
  * Shared 7-day power processing.
  *
  * Turns raw per-fueltech power StatsData into chart-ready data for the Stratum
- * 7-day generation chart. Both data paths feed identical StatsData through this,
- * so the only difference between the charts they produce is the data source:
- *   - /api/tracker/7d-processed → static OpenNEM JSON (power/7d.json)
- *   - /api/tracker/7d-oe        → OE API (getNetworkData power, secondary
- *                                  grouping by fueltech), via transformOeToStatsData
+ * 7-day generation chart. Used by `/api/tracker/7d-processed`, which sources NEM
+ * power by fueltech from the OE API (getNetworkData) and normalises it before
+ * calling this. Kept source-agnostic so any equivalent StatsData feed works.
  *
  * Input is OpenNEM-shaped StatsData: `{ type:'power', fuel_tech, units:'MW',
  * history:{ start, last, interval, data } }`. Values are MW and get divided by
