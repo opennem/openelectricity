@@ -2,13 +2,22 @@ import { error } from '@sveltejs/kit';
 import { client as sanityClient } from '$lib/sanity';
 import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
+import facilityCardCodes from '$lib/server/og/facility-card-codes.json';
 
 const DEFAULT_RANGE_DAYS = 7;
 
-// Per-facility OG card, generated out-of-band (scripts/generate-og-images.mjs,
-// committed under static/og/facility) and served as a static asset. Absolute URL
-// so it's valid in the social-card metadata.
-const OG_IMAGE_BASE = 'https://openelectricity.org.au/og/facility';
+const SITE = 'https://openelectricity.org.au';
+
+// Per-facility OG cards are generated out-of-band (scripts/generate-og-images.mjs,
+// committed under static/og/facility) and served as static assets. Absolute URLs
+// so they're valid in the social-card metadata.
+const OG_IMAGE_BASE = `${SITE}/og/facility`;
+
+// A facility added since the last card regeneration has no card yet — fall back to
+// the site default so crawlers never get a 404 (broken preview). `facility-card-codes.json`
+// is the committed manifest of codes that DO have a card (regenerated alongside the cards).
+const DEFAULT_OG_IMAGE = `${SITE}/img/preview.jpg`;
+const FACILITY_CARD_CODES = new Set(facilityCardCodes);
 
 // Static identity only — power/market/emissions series are time-sensitive and
 // fetched client-side (see +page.svelte).
@@ -127,7 +136,7 @@ export async function load({ params, setHeaders }) {
 		timeZone,
 		retiredEndMs: computeRetiredEndMs(facility),
 		rangeDays: DEFAULT_RANGE_DAYS,
-		ogImage: `${OG_IMAGE_BASE}/${code}.jpg`,
+		ogImage: FACILITY_CARD_CODES.has(code) ? `${OG_IMAGE_BASE}/${code}.jpg` : DEFAULT_OG_IMAGE,
 		ogDescription: buildOgDescription(facility, sanityFacility),
 		// Split width is restored client-side from the cookie; the chart self-fetches
 		// its series on mount.

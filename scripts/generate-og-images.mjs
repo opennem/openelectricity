@@ -14,11 +14,14 @@
  * Incremental: skips facilities whose PNG already exists unless OG_FORCE=1.
  */
 
-import { mkdirSync, existsSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdirSync, existsSync, writeFileSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { renderFacilityOgCard } from '../src/lib/server/og/facility-card.js';
 
 const OUT_DIR = resolve(process.cwd(), 'static/og/facility');
+// Manifest of codes that have a committed card — the facility page reads it to
+// pick the per-facility card vs. the default OG image (it can't fs-check at runtime).
+const MANIFEST = resolve(process.cwd(), 'src/lib/server/og/facility-card-codes.json');
 const CONCURRENCY = 12;
 const FORCE = process.env.OG_FORCE === '1';
 
@@ -154,6 +157,15 @@ async function main() {
 	console.log(`[og] done — ${generated} generated, ${skipped} skipped, ${failed} failed`);
 	// A handful of per-facility failures shouldn't fail the deploy; a wholesale
 	// failure (e.g. OE/Sanity down) already threw above.
+
+	// Refresh the manifest from whatever cards now exist on disk so the facility
+	// page's per-card-vs-default OG choice stays in sync. Commit it alongside the cards.
+	const codes = readdirSync(OUT_DIR)
+		.filter((f) => f.endsWith('.jpg'))
+		.map((f) => f.slice(0, -4))
+		.sort();
+	writeFileSync(MANIFEST, JSON.stringify(codes) + '\n');
+	console.log(`[og] manifest: ${codes.length} codes → ${MANIFEST}`);
 }
 
 main().catch((err) => {

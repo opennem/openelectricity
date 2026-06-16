@@ -163,6 +163,12 @@ pnpm build:og              # generate cards for any new facilities (skips existi
 OG_FORCE=1 pnpm build:og   # force-refresh every card
 ```
 
+`pnpm build:og` also rewrites `src/lib/server/og/facility-card-codes.json` — the
+manifest of codes that have a card — so commit it alongside the images. The facility
+page falls back to the default OG image (`/img/preview.jpg`) for any facility **not**
+in that manifest, so a newly-added facility never shows a broken preview before the
+next regeneration.
+
 The `og-cards` GitHub workflow automates this (monthly schedule + manual dispatch)
 and commits only the cards that changed — once its OE/Sanity secrets are configured.
 
