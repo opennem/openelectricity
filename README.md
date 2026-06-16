@@ -151,6 +151,21 @@ git push             # push.followTags pushes the tag automatically
 
 GitHub Actions picks up the `v*` tag and triggers the Cloudflare build.
 
+### Facility OG cards
+
+Per-facility social cards live under `static/og/facility/<code>.jpg` as **committed
+static assets** — they are intentionally **not** generated during the deploy build
+(regenerating all ~600 cards exceeded the Cloudflare build time limit). Regenerate
+them **monthly** (or whenever facility data/photos change) and commit the result:
+
+```bash
+pnpm build:og              # generate cards for any new facilities (skips existing)
+OG_FORCE=1 pnpm build:og   # force-refresh every card
+```
+
+The `og-cards` GitHub workflow automates this (monthly schedule + manual dispatch)
+and commits only the cards that changed — once its OE/Sanity secrets are configured.
+
 ## Licence
 
 See [LICENSE](LICENSE) for details.
