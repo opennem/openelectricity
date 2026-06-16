@@ -111,7 +111,11 @@
 		>
 			{#snippet tooltip()}
 				<div class="container max-w-none lg:container">
-					<ChartTooltip {chart} defaultText="Last 7 days Power Generation (GW)" />
+					<ChartTooltip
+						{chart}
+						defaultText="Last 7 days Power Generation (GW)"
+						contentClass="justify-start md:justify-end"
+					/>
 				</div>
 			{/snippet}
 		</StratumChart>

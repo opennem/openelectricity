@@ -112,7 +112,7 @@
 	let chartLabelStyles = $derived(
 		md
 			? 'text-right text-xs text-mid-grey mr-0 z-10 pointer-events-none relative -mt-8'
-			: 'absolute -top-8 text-xs text-mid-grey right-0'
+			: 'absolute -top-10 text-xs text-mid-grey left-0'
 	);
 
 	let hoverTime = $derived(hoverData ? /** @type {any} */ (hoverData).time || 0 : 0);

@@ -194,3 +194,84 @@ export async function fetchRenewablesInput(fetchFn) {
 		return { data: null, error: `Couldn't load renewables data: ${message}`, rawPayloads: null };
 	}
 }
+
+/**
+ * First day of the previous calendar month as an ISO month timestamp matching
+ * the pipeline's `+10:00` convention. Used to drop the in-progress current month
+ * the OE 1M endpoint returns (a partial month would otherwise drag the chart's
+ * trailing 12-month rolling sum down into a visible end-of-line dip).
+ *
+ * @returns {string}
+ */
+function lastCompleteMonthIso() {
+	const now = new Date();
+	let year = now.getUTCFullYear();
+	// getUTCMonth() is the 0-based current month — i.e. the 1-based *previous*
+	// month — so January (0) rolls back to December of the prior year.
+	let month = now.getUTCMonth();
+	if (month === 0) {
+		year -= 1;
+		month = 12;
+	}
+	return `${year}-${String(month).padStart(2, '0')}-01T00:00:00+10:00`;
+}
+
+/**
+ * Lean renewables input for the homepage hero (`oe_homepage` mode). Fetches only
+ * the three OE series that mode needs — renewable generation, gross demand and
+ * the per-fueltech energy breakdown (filtered to fossils) — in parallel, then
+ * trims the in-progress current month so the chart only ever plots full months.
+ *
+ * Unlike `fetchRenewablesInput` it skips the secondary_grouping=renewable call
+ * and the legacy `/api/energy` fetch, so the homepage loads in a single, lighter
+ * request. Returns the same `{ data: { marketStats }, error }` envelope.
+ */
+export async function fetchHomepageRenewablesInput() {
+	try {
+		const [generationRenewableRes, demandGrossRes, fueltechEnergyRes] = await Promise.all([
+			oe.getMarket(
+				/** @type {any} */ ('NEM'),
+				/** @type {any} */ (['generation_renewable_energy']),
+				/** @type {any} */ ({ interval: '1M', dateStart: RENEWABLES_DATE_START })
+			),
+			oe.getMarket(
+				/** @type {any} */ ('NEM'),
+				/** @type {any} */ (['demand_gross_energy']),
+				/** @type {any} */ ({ interval: '1M', dateStart: RENEWABLES_DATE_START })
+			),
+			oe.getNetworkData(
+				/** @type {any} */ ('NEM'),
+				/** @type {any} */ (['energy']),
+				/** @type {any} */ ({
+					interval: '1M',
+					dateStart: RENEWABLES_DATE_START,
+					secondaryGrouping: ['fueltech']
+				})
+			)
+		]);
+
+		const fossilFueltechStats = (
+			fueltechEnergyRes.response.data[0]
+				? transformOeToStatsData(fueltechEnergyRes.response.data[0])
+				: []
+		).filter((d) => d.fuel_tech && FOSSIL_FUEL_TECHS.includes(d.fuel_tech));
+
+		const marketStatsRaw = [
+			...(generationRenewableRes.response.data[0]
+				? transformOeToStatsData(generationRenewableRes.response.data[0])
+				: []),
+			...(demandGrossRes.response.data[0]
+				? transformOeToStatsData(demandGrossRes.response.data[0])
+				: []),
+			...fossilFueltechStats
+		];
+
+		const marketStats = trimStatsDataToLastDate(marketStatsRaw, lastCompleteMonthIso());
+
+		return { data: { marketStats }, error: null };
+	} catch (e) {
+		console.error('Failed to fetch homepage renewables input from OE API:', e);
+		const message = e instanceof Error ? e.message : String(e);
+		return { data: null, error: `Couldn't load renewables data: ${message}` };
+	}
+}

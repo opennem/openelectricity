@@ -2,8 +2,8 @@ import energyParser from '$lib/opennem/parser';
 
 /**
  * Fetch the legacy OpenNEM static-JSON energy data via the local `/api/energy`
- * route and run it through `energyParser`. Used as the homepage hero's only
- * data source, and as the baseline option on /studio/renewables.
+ * route and run it through `energyParser`. Used as the `legacy_opennem` baseline
+ * option on /studio/renewables (the homepage hero now uses the live OE API).
  *
  * @param {typeof fetch} fetchFn
  * @returns {Promise<StatsData[]>}
@@ -21,20 +21,4 @@ export async function fetchLegacyOpenNemFueltechStats(fetchFn) {
 		console.error('Failed to fetch legacy /api/energy:', e);
 		return [];
 	}
-}
-
-/**
- * Renewables-calculator input for callers that only need the legacy OpenNEM
- * baseline (e.g. the homepage hero, which renders solely the `legacy_opennem`
- * mode). Mirrors the `{ data, error }` envelope returned by
- * `fetchRenewablesInput` so route loaders can stay one-liners.
- *
- * @param {typeof fetch} fetchFn
- */
-export async function fetchLegacyRenewablesInput(fetchFn) {
-	const legacyFueltechStats = await fetchLegacyOpenNemFueltechStats(fetchFn);
-	return {
-		data: { marketStats: [], legacyFueltechStats },
-		error: legacyFueltechStats.length === 0 ? "Couldn't load renewables data" : null
-	};
 }

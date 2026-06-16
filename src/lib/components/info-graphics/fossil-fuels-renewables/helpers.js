@@ -56,9 +56,11 @@ export const xDomain = [
 export const displayXTicks = years.map((year) => new Date(`${year}-01-01`));
 
 /**
- * return an array of years from 2000 to 10 years in the future so the chart has a consistent x-axis
+ * return an array of years from 2005 to 10 years in the future so the chart has a consistent x-axis.
+ * Starts at 2005 because the OE renewable-share calculation depends on gross demand, which is null
+ * before May 2006 — so the plotted lines begin ~2007 and a 2000 start would leave a large empty gap.
  */
 function getYears() {
 	const today = new Date();
-	return range(2000, today.getFullYear() + 10, 5);
+	return range(2005, today.getFullYear() + 10, 5);
 }

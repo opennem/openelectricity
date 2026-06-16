@@ -4,7 +4,7 @@ import parseInterval from '$lib/utils/intervals';
 
 import { alignStatsDataToCommonRange } from './align-stats-data';
 
-/** @typedef {'legacy_opennem' | 'oe_proportion' | 'oe_secondary_renewable'} RenewableMode */
+/** @typedef {'legacy_opennem' | 'oe_proportion' | 'oe_secondary_renewable' | 'oe_homepage'} RenewableMode */
 
 /** @typedef {{
  *   id: RenewableMode,
@@ -43,7 +43,7 @@ export const RENEWABLE_MODES = [
 		id: 'oe_secondary_renewable',
 		label: 'OE getNetworkData(renewable) · renewable=true ÷ gross demand',
 		description:
-			'OE classifies each fueltech as renewable=true/false and aggregates them server-side. The renewable=true bucket is exactly Σ(bioenergy + hydro + solar_utility + solar_rooftop + wind) — no battery or pumps, which all land in renewable=false. It runs ~300–420 GWh/month below getMarket\'s generation_renewable_energy, which additionally counts battery discharging and pumps as renewable. Both buckets have full data back to Jan 1999 and plot from there in the raw view, but demand_gross_energy is null before May 2006 (rooftop solar coverage starts then), so the gross demand line and every % value start there.',
+			"OE classifies each fueltech as renewable=true/false and aggregates them server-side. The renewable=true bucket is exactly Σ(bioenergy + hydro + solar_utility + solar_rooftop + wind) — no battery or pumps, which all land in renewable=false. It runs ~300–420 GWh/month below getMarket's generation_renewable_energy, which additionally counts battery discharging and pumps as renewable. Both buckets have full data back to Jan 1999 and plot from there in the raw view, but demand_gross_energy is null before May 2006 (rooftop solar coverage starts then), so the gross demand line and every % value start there.",
 		numerator:
 			'OE getNetworkData with secondary_grouping=renewable, the renewable=true row — exactly Σ(bioenergy + hydro + solar_utility + solar_rooftop + wind), no battery or pumps',
 		fossilNumerator:
@@ -192,6 +192,8 @@ export function calculateRenewables(
 		statsDatasets = buildOeProportionStats(marketStats);
 	} else if (mode === 'oe_secondary_renewable') {
 		statsDatasets = buildOeSecondaryRenewableStats(marketStats);
+	} else if (mode === 'oe_homepage') {
+		statsDatasets = buildOeHomepageStats(marketStats);
 	} else {
 		throw new Error(`Unknown renewable mode: ${mode}`);
 	}
@@ -293,9 +295,7 @@ function buildOeSecondaryRenewableStats(marketStats) {
 	});
 	const [fossilData, renewablesData, demandData, fossilFueltechData] = arrays;
 
-	const fossilLabel = alignedNonRenewable
-		? 'Fossils (renewable=false)'
-		: 'Fossils (derived)';
+	const fossilLabel = alignedNonRenewable ? 'Fossils (renewable=false)' : 'Fossils (derived)';
 
 	return [
 		makeGroupedStats(FOSSIL_ID, 'fossil_fuels', fossilData, meta, fossilLabel),
@@ -338,17 +338,74 @@ function buildOeProportionStats(marketStats) {
 	const [fossilData, renewablesData, demandData, fossilFueltechData] = arrays;
 
 	return [
-		makeGroupedStats(
-			FOSSIL_ID,
-			'fossil_fuels',
-			fossilData,
-			meta,
-			'Fossils (derived)'
-		),
+		makeGroupedStats(FOSSIL_ID, 'fossil_fuels', fossilData, meta, 'Fossils (derived)'),
 		...(fossilFueltechData ? [makeFossilFueltechStats(fossilFueltechData, meta)] : []),
 		makeGroupedStats(RENEWABLES_ID, 'renewables', renewablesData, meta),
 		makeTotalStats(TOTAL_ID, demandData, meta, 'Gross demand')
 	];
+}
+
+/**
+ * Mode `oe_homepage` — the two-line view rendered by the homepage hero.
+ * Shares `oe_proportion`'s renewable share, but the Fossils line is the
+ * per-fueltech sum (Σ coal + gas + distillate) rather than the derived
+ * `demand − renewable`, so exactly two series plot (same colours/labels as the
+ * legacy homepage chart):
+ *   Renewables = generation_renewable_energy ÷ demand_gross_energy
+ *   Fossils    = Σ fossil fueltechs          ÷ demand_gross_energy
+ *   Total      = demand_gross_energy (the denominator, hidden via showTotal:false)
+ *
+ * Unlike `oe_proportion`, the fossil fueltech sum is required here (it *is* the
+ * fossil line), so we bail out if it's missing.
+ *
+ * @param {StatsData[]} marketStats
+ * @returns {StatsData[]}
+ */
+function buildOeHomepageStats(marketStats) {
+	const renewable = findByDataType(marketStats, METRIC.renewable);
+	const demand = findByDataType(marketStats, METRIC.demand);
+	const fossilFueltech = buildFossilFueltechSum(marketStats);
+	if (!renewable || !demand || !fossilFueltech) return [];
+
+	const aligned = alignStatsDataToCommonRange([renewable, demand, fossilFueltech]);
+	const [alignedRenewable, alignedDemand, alignedFossil] = aligned;
+
+	const { arrays, meta } = trimSharedNulls(
+		[alignedFossil.history.data, alignedRenewable.history.data, alignedDemand.history.data],
+		{
+			start: alignedDemand.history.start,
+			last: alignedDemand.history.last,
+			interval: alignedDemand.history.interval
+		}
+	);
+	const [fossilData, renewablesData, demandData] = arrays;
+
+	// Ignore the first month of gross-demand coverage (May 2006): rooftop-solar
+	// reporting only ramps up mid-2006, so that month is partial and skews the
+	// share. Nulling the denominator nulls the % for that month too, letting the
+	// demand-based lines effectively begin in June 2006.
+	const cleanedDemand = ignoreFirstValue(demandData);
+
+	return [
+		makeGroupedStats(FOSSIL_ID, 'fossil_fuels', fossilData, meta, 'Fossils'),
+		makeGroupedStats(RENEWABLES_ID, 'renewables', renewablesData, meta),
+		makeTotalStats(TOTAL_ID, cleanedDemand, meta, 'Gross demand')
+	];
+}
+
+/**
+ * Return a copy of `arr` with its first non-null entry nulled out. Used to drop
+ * the partial first month of a series' coverage.
+ *
+ * @param {Array<number | null>} arr
+ * @returns {Array<number | null>}
+ */
+function ignoreFirstValue(arr) {
+	const idx = arr.findIndex((v) => v != null);
+	if (idx === -1) return arr;
+	const out = [...arr];
+	out[idx] = null;
+	return out;
 }
 
 /**

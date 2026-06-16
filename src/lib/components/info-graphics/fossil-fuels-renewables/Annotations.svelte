@@ -58,9 +58,30 @@
 	);
 </script>
 
+{#snippet valueReadout(/** @type {TimeSeriesGroupData} */ group)}
+	<!-- pl-9 lines the value up with the label text, not the circle (circle w-5 + gap-4 = 2.25rem). -->
+	<div class="flex items-baseline gap-1 pl-9">
+		<span class="text-2xl font-semibold leading-none">
+			{getValue(group)}
+		</span>
+		<span class="text-lg leading-none">{unit}</span>
+	</div>
+{/snippet}
+
 <div class={classes}>
+	<!-- Beside the latest point, the upper line (Fossils, first series) floats its value
+	     above the label while the lower line (Renewables) keeps it below, so the two
+	     readouts don't crowd when the endpoints sit close together. The bottom-bar
+	     layout (mobile) keeps both below. -->
 	{#each $data as group, i (i)}
+		{@const valueAbove = showBesideLatestPoint && i === 0}
 		<div class:absolute={showBesideLatestPoint} style={getStyles(group.values)}>
+			{#if valueAbove}
+				<div class="absolute bottom-full left-0 pb-0.5">
+					{@render valueReadout(group)}
+				</div>
+			{/if}
+
 			<div class="flex items-center gap-4">
 				<span
 					class="w-5 h-5 bg-black block"
@@ -74,12 +95,9 @@
 				</span>
 			</div>
 
-			<div class="flex items-baseline gap-1">
-				<span class="text-2xl font-semibold">
-					{getValue(group)}
-				</span>
-				<span class="text-lg">{unit}</span>
-			</div>
+			{#if !valueAbove}
+				{@render valueReadout(group)}
+			{/if}
 		</div>
 	{/each}
 </div>

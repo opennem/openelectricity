@@ -1,5 +1,4 @@
 import { client } from '$lib/sanity';
-import { fetchLegacyRenewablesInput } from '$lib/oe-api/fetch-legacy-energy.server';
 
 // Disable prerendering - homepage has dynamic real-time data
 export const prerender = false;
@@ -97,7 +96,10 @@ export async function load({ fetch }) {
 				.then(processPrices)
 				.catch(() => ({ regionPrices: {}, originalJsons: null })),
 			safeFetchJson(fetch, '/api/tracker/7d-processed?regionPath=au/NEM&interval=30m', null),
-			fetchLegacyRenewablesInput(fetch)
+			safeFetchJson(fetch, '/api/renewables', {
+				data: { marketStats: [] },
+				error: "Couldn't load renewables data"
+			})
 		]);
 
 	return {

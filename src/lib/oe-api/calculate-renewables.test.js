@@ -92,10 +92,7 @@ describe('calculateRenewables — empty / invalid inputs', () => {
 	});
 
 	it('returns empty result when legacyFueltechStats is empty in legacy_opennem mode', () => {
-		const out = calculateRenewables(
-			{ marketStats: [], legacyFueltechStats: [] },
-			'legacy_opennem'
-		);
+		const out = calculateRenewables({ marketStats: [], legacyFueltechStats: [] }, 'legacy_opennem');
 		expect(out.dataset).toEqual([]);
 	});
 
@@ -105,9 +102,9 @@ describe('calculateRenewables — empty / invalid inputs', () => {
 	});
 
 	it('throws on unknown mode', () => {
-		expect(() =>
-			calculateRenewables({ marketStats: [] }, /** @type {any} */ ('bogus'))
-		).toThrow(/Unknown renewable mode/);
+		expect(() => calculateRenewables({ marketStats: [] }, /** @type {any} */ ('bogus'))).toThrow(
+			/Unknown renewable mode/
+		);
 	});
 });
 
@@ -121,10 +118,7 @@ describe('calculateRenewables — legacy_opennem mode', () => {
 			makeFueltech('exports', constArr(10))
 		];
 
-		const out = calculateRenewables(
-			{ marketStats: [], legacyFueltechStats },
-			'legacy_opennem'
-		);
+		const out = calculateRenewables({ marketStats: [], legacyFueltechStats }, 'legacy_opennem');
 
 		expect(out.statsDatasets.map((d) => d.id)).toEqual([FOSSIL_ID, RENEWABLES_ID, TOTAL_ID]);
 		expect(out.seriesNames).toEqual([FOSSIL_ID, RENEWABLES_ID, TOTAL_ID]);
@@ -148,10 +142,7 @@ describe('calculateRenewables — legacy_opennem mode', () => {
 			makeFueltech('solar_utility', constArr(20).slice(0, N - 6))
 		];
 
-		const out = calculateRenewables(
-			{ marketStats: [], legacyFueltechStats },
-			'legacy_opennem'
-		);
+		const out = calculateRenewables({ marketStats: [], legacyFueltechStats }, 'legacy_opennem');
 		expect(out.dataset.length).toBeGreaterThan(0);
 	});
 
@@ -218,12 +209,7 @@ describe('calculateRenewables — smoothing', () => {
 			makeMarket('demand_gross_energy', demand)
 		];
 
-		const out = calculateRenewables(
-			{ marketStats },
-			'oe_proportion',
-			undefined,
-			'monthly'
-		);
+		const out = calculateRenewables({ marketStats }, 'oe_proportion', undefined, 'monthly');
 		expect(out.dataset.length).toBe(N);
 
 		// Each row is 40/100 = 40% (monthly, no smoothing window)
@@ -290,10 +276,7 @@ describe('calculateRenewables — oe_secondary_renewable mode', () => {
 
 	it('returns empty when generation_renewable_aggregate is missing', () => {
 		const demand = makeMarket('demand_gross_energy', constArr(100));
-		const out = calculateRenewables(
-			{ marketStats: [demand] },
-			'oe_secondary_renewable'
-		);
+		const out = calculateRenewables({ marketStats: [demand] }, 'oe_secondary_renewable');
 		expect(out.dataset).toEqual([]);
 	});
 });
@@ -469,6 +452,119 @@ describe('calculateRenewables — gross demand (total) series', () => {
 	});
 });
 
+describe('calculateRenewables — oe_homepage mode', () => {
+	it('fossil = Σ fossil fueltechs ÷ gross demand, renewable = generation_renewable ÷ gross demand', () => {
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeMarket('demand_gross_energy', constArr(100)),
+			makeFueltech('coal_black', constArr(30)),
+			makeFueltech('gas_ccgt', constArr(25)),
+			// Non-fossil fueltechs must be excluded from the fossil sum.
+			makeFueltech('battery_discharging', constArr(5)),
+			makeFueltech('pumps', constArr(3))
+		];
+
+		const out = calculateRenewables({ marketStats }, 'oe_homepage', undefined, 'monthly');
+
+		// Exactly two grouped series + the (hidden) gross-demand denominator —
+		// the fossil line IS the fueltech sum, so no separate FOSSIL_FUELTECH_ID.
+		expect(out.statsDatasets.map((d) => d.id)).toEqual([FOSSIL_ID, RENEWABLES_ID, TOTAL_ID]);
+		expect(out.statsDatasets.map((d) => d.id)).not.toContain(FOSSIL_FUELTECH_ID);
+
+		const last = out.dataset[out.dataset.length - 1];
+		// fossil = (30 + 25) / 100 = 55% — battery & pumps excluded
+		expect(last[FOSSIL_ID]).toBeCloseTo(55, 5);
+		// renewable = 40 / 100 = 40%
+		expect(last[RENEWABLES_ID]).toBeCloseTo(40, 5);
+	});
+
+	it('hides the gross-demand denominator line on the homepage (showTotal false)', () => {
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeMarket('demand_gross_energy', constArr(100)),
+			makeFueltech('coal_black', constArr(55))
+		];
+
+		const out = calculateRenewables(
+			{ marketStats },
+			'oe_homepage',
+			undefined,
+			'rolling12mth',
+			'percentage',
+			false
+		);
+
+		expect(out.seriesNames).toEqual([FOSSIL_ID, RENEWABLES_ID]);
+		expect(out.seriesNames).not.toContain(TOTAL_ID);
+		// rolling-sum-12-mth drops 13 rows for an N-month input.
+		expect(out.dataset.length).toBe(N - 13);
+		const last = out.dataset[out.dataset.length - 1];
+		expect(last[FOSSIL_ID]).toBeCloseTo(55, 5);
+		expect(last[RENEWABLES_ID]).toBeCloseTo(40, 5);
+	});
+
+	it('returns empty when no fossil fueltech rows are present (fossil line is required)', () => {
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeMarket('demand_gross_energy', constArr(100))
+		];
+
+		const out = calculateRenewables({ marketStats }, 'oe_homepage', undefined, 'monthly');
+		expect(out.dataset).toEqual([]);
+		expect(out.statsDatasets).toEqual([]);
+	});
+
+	it('returns empty when gross demand is missing', () => {
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeFueltech('coal_black', constArr(55))
+		];
+
+		const out = calculateRenewables({ marketStats }, 'oe_homepage', undefined, 'monthly');
+		expect(out.dataset).toEqual([]);
+	});
+
+	it('nulls the % before gross demand begins (partial coverage)', () => {
+		// Demand only exists for the last 12 months; renewables + fossil span all 24.
+		const demandLate = [...new Array(N - 12).fill(null), ...new Array(12).fill(100)];
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeMarket('demand_gross_energy', demandLate),
+			makeFueltech('coal_black', constArr(55))
+		];
+
+		const out = calculateRenewables({ marketStats }, 'oe_homepage', undefined, 'monthly');
+		// No denominator before demand begins → null, not 0.
+		expect(out.dataset[0][FOSSIL_ID]).toBeNull();
+		expect(out.dataset[0][RENEWABLES_ID]).toBeNull();
+		const last = out.dataset[out.dataset.length - 1];
+		expect(last[FOSSIL_ID]).toBeCloseTo(55, 5);
+		expect(last[RENEWABLES_ID]).toBeCloseTo(40, 5);
+	});
+
+	it('ignores the first (partial) month of gross-demand coverage', () => {
+		// Demand is null for month 0, then covered from month 1 onward — month 1 is
+		// the partial ramp-up month (May 2006) that should be dropped, so the % only
+		// begins at month 2 (June 2006).
+		const demand = [null, ...new Array(N - 1).fill(100)];
+		const marketStats = [
+			makeMarket('generation_renewable_energy', constArr(40)),
+			makeMarket('demand_gross_energy', demand),
+			makeFueltech('coal_black', constArr(55))
+		];
+
+		const out = calculateRenewables({ marketStats }, 'oe_homepage', undefined, 'monthly');
+		// Month 0: no demand at all → null.
+		expect(out.dataset[0][RENEWABLES_ID]).toBeNull();
+		// Month 1: first covered month is ignored → still null.
+		expect(out.dataset[1][FOSSIL_ID]).toBeNull();
+		expect(out.dataset[1][RENEWABLES_ID]).toBeNull();
+		// Month 2: first real data point.
+		expect(out.dataset[2][FOSSIL_ID]).toBeCloseTo(55, 5);
+		expect(out.dataset[2][RENEWABLES_ID]).toBeCloseTo(40, 5);
+	});
+});
+
 describe('calculateRenewables — value type', () => {
 	it('returns raw values (no percentage conversion) when valueType is "raw"', () => {
 		const renewable = constArr(40);
@@ -478,13 +574,7 @@ describe('calculateRenewables — value type', () => {
 			makeMarket('demand_gross_energy', demand)
 		];
 
-		const out = calculateRenewables(
-			{ marketStats },
-			'oe_proportion',
-			undefined,
-			'monthly',
-			'raw'
-		);
+		const out = calculateRenewables({ marketStats }, 'oe_proportion', undefined, 'monthly', 'raw');
 
 		// Each row has the raw GWh values, not percentages
 		const last = out.dataset[out.dataset.length - 1];
@@ -518,4 +608,3 @@ describe('calculateRenewables — value type', () => {
 		expect(last[TOTAL_ID]).toBeCloseTo(100 * 12, 5);
 	});
 });
-

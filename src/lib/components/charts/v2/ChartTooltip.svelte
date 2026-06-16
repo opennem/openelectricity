@@ -21,10 +21,13 @@
 	 * @property {import('./ChartStore.svelte.js').default} chart - The chart store instance
 	 * @property {string} [defaultText] - Text to show when nothing is hovered
 	 * @property {string} [class] - Additional CSS classes
+	 * @property {string} [contentClass] - Justification (and any extra) classes for the
+	 *   content row. Defaults to right-aligned; pass e.g. `justify-start md:justify-end`
+	 *   to left-align on mobile.
 	 */
 
 	/** @type {Props} */
-	let { chart, defaultText = '', class: className = '' } = $props();
+	let { chart, defaultText = '', class: className = '', contentClass = 'justify-end' } = $props();
 
 	let activeData = $derived(getActiveData(chart));
 	let valueKey = $derived(getValueKey(chart));
@@ -40,7 +43,7 @@
 
 <div class="h-[21px] {className}">
 	{#if activeData}
-		<div class="h-full flex items-center justify-end text-xs">
+		<div class="h-full flex items-center {contentClass} text-xs">
 			<!-- Date -->
 			{#if formattedDate}
 				<span class="px-3 py-1 font-light bg-white/40">
@@ -76,7 +79,7 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="h-full flex items-center justify-end text-xs text-mid-grey">
+		<div class="h-full flex items-center {contentClass} text-xs text-mid-grey">
 			{defaultText}
 		</div>
 	{/if}
