@@ -56,6 +56,14 @@
 		return format(d, 'd MMM');
 	};
 
+	// Tooltip shows the exact hovered point's date + time of day. The axis tick
+	// formatter above is date-only and keyed to gridline midpoints, so without
+	// this the 30-minute hover would only ever show the date.
+	chart.formatTooltipX = (/** @type {Date} */ d) => {
+		if (!d || !d.getTime || d.getTime() === 0) return '';
+		return format(d, 'd MMM, h:mmaaa');
+	};
+
 	// Update chart when data is available
 	$effect(() => {
 		if (initialData) {
