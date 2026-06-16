@@ -1,10 +1,11 @@
 /**
  * Build-time generator for per-facility Open Graph cards.
  *
- * Runs before `vite build` (see package.json) in Node, so the native resvg/sharp
- * binaries never enter the Cloudflare Worker bundle. Writes a 1200×630 JPEG per
- * facility to static/og/facility/<code>.jpg, which ship as static assets and are
- * referenced by each page's og:image.
+ * Run out-of-band — NOT part of the deploy build (regenerating all ~600 cards
+ * blew the Cloudflare build time limit). Invoke via `pnpm build:og` or the
+ * `og-cards` GitHub workflow; the JPEGs are committed under static/og/facility
+ * and ship as static assets referenced by each page's og:image. Uses native
+ * resvg/sharp in Node, which is why it never runs inside the Cloudflare Worker.
  *
  * Env: reads process.env (CI / doppler), falling back to a parsed .env for local
  * OSS builds. Needs PUBLIC_OE_API_URL, PUBLIC_OE_API_KEY, PUBLIC_SANITY_PROJECT_ID,

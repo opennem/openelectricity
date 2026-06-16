@@ -1,0 +1,54 @@
+name: Regenerate facility OG cards
+
+# OG cards are committed under static/og/facility and served as static assets,
+# so the deploy build no longer generates them (it was blowing the build time
+# limit). This job refreshes them out-of-band and commits any that changed.
+#
+# Requires repo secrets: PUBLIC_OE_API_URL, PUBLIC_OE_API_KEY,
+# PUBLIC_SANITY_PROJECT_ID, PUBLIC_SANITY_DATASET. The push to main needs
+# github-actions to be allowed past branch protection (or swap GITHUB_TOKEN for
+# a PAT / convert this to a pull request).
+
+on:
+  schedule:
+    - cron: '0 3 1 * *' # monthly, 1st at 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  regenerate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Regenerate OG cards (force refresh all)
+        env:
+          PUBLIC_OE_API_URL: ${{ secrets.PUBLIC_OE_API_URL }}
+          PUBLIC_OE_API_KEY: ${{ secrets.PUBLIC_OE_API_KEY }}
+          PUBLIC_SANITY_PROJECT_ID: ${{ secrets.PUBLIC_SANITY_PROJECT_ID }}
+          PUBLIC_SANITY_DATASET: ${{ secrets.PUBLIC_SANITY_DATASET }}
+          OG_FORCE: '1'
+        run: pnpm build:og
+
+      - name: Commit changed cards
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add static/og/facility
+          if git diff --staged --quiet; then
+            echo "No OG card changes."
+          else
+            git commit -m "Regenerate facility OG cards"
+            git push
+          fi

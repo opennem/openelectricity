@@ -78,7 +78,7 @@
 	"scripts": {
 		"dev": "vite dev",
 		"doppler-dev": "doppler run -- vite dev",
-		"build": "node scripts/generate-og-images.mjs && vite build",
+		"build": "vite build",
 		"build:og": "node scripts/generate-og-images.mjs",
 		"doppler-build": "doppler run -- pnpm run build",
 		"preview": "vite preview",

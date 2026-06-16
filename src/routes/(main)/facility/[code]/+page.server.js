@@ -1,94 +1,34 @@
 import { error } from '@sveltejs/kit';
-import { building } from '$app/environment';
-import { OpenElectricityClient } from 'openelectricity';
-import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { client as sanityClient } from '$lib/sanity';
 import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
 
 const DEFAULT_RANGE_DAYS = 7;
 
-// Per-facility OG card, generated at build time (scripts/generate-og-images.mjs)
-// and served as a static asset. Absolute URL so it's valid in the prerendered HTML.
+// Per-facility OG card, generated out-of-band (scripts/generate-og-images.mjs,
+// committed under static/og/facility) and served as a static asset. Absolute URL
+// so it's valid in the social-card metadata.
 const OG_IMAGE_BASE = 'https://openelectricity.org.au/og/facility';
 
 // Static identity only — power/market/emissions series are time-sensitive and
-// fetched client-side (see +page.svelte), so the page can be prerendered.
+// fetched client-side (see +page.svelte).
 const SANITY_FACILITY_PROJECTION = `{
 	_id, code, name, website, wikipedia, wikidata_id, location,
 	description, photos,
 	owners[]->{_id, name, legal_name, website}
 }`;
 
-// Prerender every facility as a static identity shell. The interactive charts
-// hydrate client-side, so nothing time-sensitive is baked in. Metadata is
-// deploy-fresh (Cloudflare Pages has no on-demand revalidation).
-export const prerender = true;
-
-/** @type {OpenElectricityClient | null} */
-let oeClient = null;
-function getOeClient() {
-	if (!oeClient) {
-		oeClient = new OpenElectricityClient({ apiKey: PUBLIC_OE_API_KEY, baseUrl: PUBLIC_OE_API_URL });
-	}
-	return oeClient;
-}
-
-// ---------------------------------------------------------------------------
-// Build-time bulk memos. During prerender `load` runs once per facility code,
-// so without these the build would make N OE + N Sanity calls. Each memo fetches
-// the whole set once and serves every page from the resulting map.
-// ---------------------------------------------------------------------------
-
-/** @type {Promise<Map<string, any>> | null} */
-let facilitiesMapPromise = null;
-function getFacilitiesMap() {
-	if (!facilitiesMapPromise) {
-		facilitiesMapPromise = getOeClient()
-			.getFacilities()
-			.then((r) => {
-				/** @type {Map<string, any>} */
-				const map = new Map();
-				for (const f of r.response.data || []) {
-					if (f?.code) map.set(f.code, f);
-				}
-				return map;
-			})
-			.catch(() => /** @type {Map<string, any>} */ (new Map()));
-	}
-	return facilitiesMapPromise;
-}
-
-/** @type {Promise<Map<string, any>> | null} */
-let sanityMapPromise = null;
-function getSanityMap() {
-	if (!sanityMapPromise) {
-		sanityMapPromise = sanityClient
-			.fetch(`*[_type == "facility" && defined(code)]${SANITY_FACILITY_PROJECTION}`)
-			.then((/** @type {any[]} */ docs) => {
-				/** @type {Map<string, any>} */
-				const map = new Map();
-				for (const d of docs || []) {
-					if (d?.code) map.set(d.code, d);
-				}
-				return map;
-			})
-			.catch(() => /** @type {Map<string, any>} */ (new Map()));
-	}
-	return sanityMapPromise;
-}
-
-/** Enumerate every facility code so each gets prerendered to a static page. */
-export async function entries() {
-	const map = await getFacilitiesMap();
-	return [...map.keys()].map((code) => ({ code }));
-}
+// Rendered on demand (SSR) rather than prerendered: prerendering all ~600
+// facilities blew the Cloudflare build time limit. The page is identity-only and
+// the interactive charts hydrate client-side, so the SSR output is cacheable at
+// the edge (see the Cache-Control header in load).
+export const prerender = false;
 
 /**
  * Retired facilities have no data near "now" — anchor the default chart window
  * to the latest `data_last_seen` across units (or the latest `closure_date` when
  * no unit has data) so the page surfaces the final operating period instead of an
- * empty range. Pure: no network, safe to run at build time.
+ * empty range.
  *
  * @param {any} facility
  * @returns {number | null}
@@ -158,35 +98,28 @@ function buildOgDescription(facility, sanityFacility) {
 }
 
 /**
- * @param {Object} params
- * @param {{ code: string }} params.params
+ * @param {Object} args
+ * @param {{ code: string }} args.params
+ * @param {(headers: Record<string, string>) => void} args.setHeaders
  */
-export async function load({ params }) {
+export async function load({ params, setHeaders }) {
 	const { code } = params;
 
-	// At build, read identity + editorial from the bulk memos (one OE + one Sanity
-	// call for the whole prerender). In dev/SSR, fetch per-code so visiting a single
-	// facility doesn't pull the entire dataset.
-	/** @type {any} */
-	let facility;
-	/** @type {any} */
-	let sanityFacility;
-	if (building) {
-		const [fMap, sMap] = await Promise.all([getFacilitiesMap(), getSanityMap()]);
-		facility = fMap.get(code) ?? (await fetchFacilityByCode(code));
-		sanityFacility = sMap.get(code) ?? null;
-	} else {
-		[facility, sanityFacility] = await Promise.all([
-			fetchFacilityByCode(code),
-			sanityClient
-				.fetch(`*[_type == "facility" && code == $code][0]${SANITY_FACILITY_PROJECTION}`, { code })
-				.catch(() => null)
-		]);
-	}
+	const [facility, sanityFacility] = await Promise.all([
+		fetchFacilityByCode(code),
+		sanityClient
+			.fetch(`*[_type == "facility" && code == $code][0]${SANITY_FACILITY_PROJECTION}`, { code })
+			.catch(() => null)
+	]);
 
 	if (!facility) throw error(404, `Facility "${code}" not found`);
 
 	const timeZone = facility.network_id === 'WEM' ? '+08:00' : '+10:00';
+
+	// Identity-only payload (nothing request-specific or time-sensitive baked in),
+	// so the SSR HTML is safe to cache at the edge — approximating the previous
+	// prerendered behaviour while keeping the build fast.
+	setHeaders({ 'cache-control': 'public, max-age=3600' });
 
 	return {
 		facility,
@@ -196,8 +129,8 @@ export async function load({ params }) {
 		rangeDays: DEFAULT_RANGE_DAYS,
 		ogImage: `${OG_IMAGE_BASE}/${code}.jpg`,
 		ogDescription: buildOgDescription(facility, sanityFacility),
-		// Split width is restored client-side from the cookie (the prerendered page
-		// can't read request cookies); the chart self-fetches its series on mount.
+		// Split width is restored client-side from the cookie; the chart self-fetches
+		// its series on mount.
 		chartsFraction: CHARTS_FRACTION_DEFAULT,
 		powerData: null
 	};

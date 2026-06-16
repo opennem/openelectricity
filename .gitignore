@@ -18,9 +18,6 @@ package-lock.json
 # Large data files
 static/data/ignore/
 
-# Generated at build time (per-facility OG cards)
-static/og/
-
 # Personal notes
 TODO.md
 
