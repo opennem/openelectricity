@@ -81,26 +81,35 @@ export async function load({ fetch }) {
 	// Fetch all data sources in parallel for better performance
 	// Note: region-power, region-energy, region-emissions are fetched client-side
 	// because they make multiple external API calls that can timeout on Cloudflare
-	const [homepageData, articles, flows, prices, tracker7dProcessed, renewablesInput] =
-		await Promise.all([
-			client.fetch(
-				`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, records_title, analysis_title, goals_title, goals}`
-			),
-			client.fetch(
-				`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
-			),
-			fetch('/api/flows')
-				.then(processFlows)
-				.catch(() => ({ dispatchDateTimeString: '', regionFlows: {}, originalJsons: null })),
-			fetch('/api/prices')
-				.then(processPrices)
-				.catch(() => ({ regionPrices: {}, originalJsons: null })),
-			safeFetchJson(fetch, '/api/tracker/7d-processed?regionPath=au/NEM&interval=30m', null),
-			safeFetchJson(fetch, '/api/renewables', {
-				data: { marketStats: [] },
-				error: "Couldn't load renewables data"
-			})
-		]);
+	const [
+		homepageData,
+		articles,
+		flows,
+		prices,
+		tracker7dProcessed,
+		tracker7dProcessedOe,
+		renewablesInput
+	] = await Promise.all([
+		client.fetch(
+			`*[_type == "homepage"]{_id, banner_title, banner_statement, milestones_title, map_title, records_title, analysis_title, goals_title, goals}`
+		),
+		client.fetch(
+			`*[_type == "article"]| order(publish_date desc)[0..10]{_id, title, content, slug, publish_date, cover, article_type, region, fueltech, summary, author[]->, tags[]->}`
+		),
+		fetch('/api/flows')
+			.then(processFlows)
+			.catch(() => ({ dispatchDateTimeString: '', regionFlows: {}, originalJsons: null })),
+		fetch('/api/prices')
+			.then(processPrices)
+			.catch(() => ({ regionPrices: {}, originalJsons: null })),
+		safeFetchJson(fetch, '/api/tracker/7d-processed?regionPath=au/NEM&interval=30m', null),
+		// Comparison: same chart fed by the OE API instead of the static JSON.
+		safeFetchJson(fetch, '/api/tracker/7d-oe?interval=30m', null),
+		safeFetchJson(fetch, '/api/renewables', {
+			data: { marketStats: [] },
+			error: "Couldn't load renewables data"
+		})
+	]);
 
 	return {
 		homepageData,
@@ -108,6 +117,7 @@ export async function load({ fetch }) {
 		flows,
 		prices,
 		tracker7dProcessed,
+		tracker7dProcessedOe,
 		renewablesInput
 	};
 }
