@@ -19,6 +19,7 @@ const config = {
 					'/data/*',
 					'/fonts/*',
 					'/img/*',
+					'/og/*',
 					'/map-styles/*',
 					'/favicon.png',
 					'/studio/lens-on-emissions/data/*',

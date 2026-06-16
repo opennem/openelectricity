@@ -31,6 +31,7 @@
 	 * @property {any[]} [highlightTicks] - Tick values to render with a darker, solid stroke
 	 * @property {string} [highlightStroke] - Stroke colour for highlighted gridlines
 	 * @property {any[]} [mobileHiddenTicks] - Tick values whose labels are hidden on mobile (gridlines kept)
+	 * @property {boolean} [animate] - Animate tick position changes (skips the first render)
 	 */
 
 	/** @type {Props} */
@@ -90,43 +91,52 @@
 	// Generate tick values for gridlines (use gridlineTicks if provided, otherwise use tickVals)
 	let gridlineTickVals = $derived(gridlineTicks ?? tickVals);
 
+	// Chart-area bottom — invariant across ticks, so compute once rather than
+	// re-spreading $yRange in every gridline/tick/label iteration.
+	let axisBottom = $derived(Math.max(...$yRange));
+
 	/**
-	 * Get text anchor based on position and snapTicks setting
-	 * @param {number} i - Tick index
+	 * When snapTicks is on, a tick sitting on the chart's left/right edge would
+	 * draw a gridline/tick-mark flush against the frame and its label would
+	 * overflow, so those are suppressed/anchored. Detect the edge by PIXEL
+	 * POSITION, not array index: a continuous-time axis emits interior "nice time"
+	 * ticks where the first/last tick is well inside the frame and must keep its
+	 * gridline (index-based detection wrongly dropped the latest gridline).
+	 */
+	const EDGE_PX = 1.5;
+	/** @param {number} xPos */
+	function isLeftEdge(xPos) {
+		return snapTicks && xPos <= EDGE_PX;
+	}
+	/** @param {number} xPos */
+	function isRightEdge(xPos) {
+		return snapTicks && xPos >= $width - EDGE_PX;
+	}
+	/** @param {number} xPos */
+	function isEdgeTick(xPos) {
+		return isLeftEdge(xPos) || isRightEdge(xPos);
+	}
+
+	/**
+	 * Get text anchor based on pixel position and snapTicks setting.
+	 * @param {number} xPos
 	 * @returns {'start' | 'middle' | 'end'}
 	 */
-	function getTextAnchor(i) {
-		if (snapTicks) {
-			if (i === 0) return 'start';
-			if (i === tickVals.length - 1) return 'end';
-		}
+	function getTextAnchor(xPos) {
+		if (isLeftEdge(xPos)) return 'start';
+		if (isRightEdge(xPos)) return 'end';
 		return textAnchor;
 	}
 
 	/**
-	 * Get x offset for snapped ticks — nudge first/last inward by 1px
-	 * @param {number} i - Tick index
+	 * Get x offset for snapped edge ticks — nudge first/last inward by 1px.
+	 * @param {number} xPos
 	 * @returns {number}
 	 */
-	function getSnapOffset(i) {
-		if (snapTicks) {
-			if (i === 0) return 1;
-			if (i === tickVals.length - 1) return -1;
-		}
+	function getSnapOffset(xPos) {
+		if (isLeftEdge(xPos)) return 1;
+		if (isRightEdge(xPos)) return -1;
 		return 0;
-	}
-
-	/**
-	 * When snapTicks is on, the first/last tick coincide with the chart's
-	 * left/right edges and the gridline + tick mark there visually clash with
-	 * the chart frame. Skip rendering those edge indicators.
-	 *
-	 * @param {number} i
-	 * @param {number} total
-	 * @returns {boolean}
-	 */
-	function isEdgeTick(i, total) {
-		return snapTicks && (i === 0 || i === total - 1);
 	}
 </script>
 
@@ -140,10 +150,10 @@
 
 	<!-- Gridlines (rendered separately if gridlineTicks is provided) -->
 	{#if gridlines}
-		{#each gridlineTickVals as tick, i (tick)}
-			{#if !isEdgeTick(i, gridlineTickVals.length)}
-				{@const xPos = $xScale(tick)}
-				{@const yPos = Math.max(...$yRange)}
+		{#each gridlineTickVals as tick (tick)}
+			{@const xPos = $xScale(tick)}
+			{#if !isEdgeTick(xPos)}
+				{@const yPos = axisBottom}
 				{@const isHighlighted = highlightTickSet.has(+tick)}
 				<line
 					class="gridline"
@@ -160,10 +170,10 @@
 
 	<!-- Step mode: tick marks at gridline (band boundary) positions -->
 	{#if stepMode && tickMarks}
-		{#each gridlineTickVals as tick, i (tick)}
-			{#if !isEdgeTick(i, gridlineTickVals.length)}
-				{@const xPos = $xScale(tick)}
-				{@const yPos = Math.max(...$yRange)}
+		{#each gridlineTickVals as tick (tick)}
+			{@const xPos = $xScale(tick)}
+			{#if !isEdgeTick(xPos)}
+				{@const yPos = axisBottom}
 				<line class="tick-mark" {stroke} y1={yPos} y2={yPos + 6} x1={xPos} x2={xPos} />
 			{/if}
 		{/each}
@@ -172,12 +182,17 @@
 	<!-- Tick labels (and non-step tick marks) -->
 	{#each tickVals as tick, i (tick)}
 		{@const xPos = $xScale(tick)}
-		{@const yPos = Math.max(...$yRange)}
+		{@const yPos = axisBottom}
 
 		{@const hideOnMobile = mobileHiddenTickSet.has(+tick)}
-		<g class="tick tick-{i}" class:tick-animate={canTransition} class:hide-label-mobile={hideOnMobile} transform="translate({xPos}, {yPos})">
+		<g
+			class="tick tick-{i}"
+			class:tick-animate={canTransition}
+			class:hide-label-mobile={hideOnMobile}
+			transform="translate({xPos}, {yPos})"
+		>
 			<!-- Tick mark (non-step mode only) -->
-			{#if tickMarks && !stepMode && !isEdgeTick(i, tickVals.length)}
+			{#if tickMarks && !stepMode && !isEdgeTick(xPos)}
 				<line
 					class="tick-mark"
 					stroke="black"
@@ -191,11 +206,11 @@
 			<!-- Tick label -->
 			{#if tickLabel}
 				<text
-					x={isBandwidth ? $xScale.bandwidth() / 2 + xTick : xTick + getSnapOffset(i)}
+					x={isBandwidth ? $xScale.bandwidth() / 2 + xTick : xTick + getSnapOffset(xPos)}
 					y={yTick}
 					dx="0"
 					dy="2"
-					text-anchor={getTextAnchor(i)}
+					text-anchor={getTextAnchor(xPos)}
 					class={effectiveTextClass}
 				>
 					{formatTick(tick)}

@@ -54,6 +54,7 @@
 	 * @property {string} [title] - Override the chart header title (defaults to facility.name).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync. When set, the chart renders its crosshair/tooltip at this time.
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when the local hover state changes so a parent can sync peer charts.
+	 * @property {((state: { hasData: boolean }) => void)} [onloadcomplete] - Called once the initial client-side fetch/seed settles. `hasData` reflects whether any data was found, letting a parent distinguish "still loading" from "no data" (e.g. to show an empty state). Stays accurate across panning.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active. 'tap-to-engage' gates pan/zoom behind the bindable `panZoomEngaged` flag.
 	 * @property {boolean} [panZoomEngaged] - Bindable engagement state for tap-to-engage mode.
 	 * @property {boolean} [bundleDerivedMetrics] - Fetch via the combined `metric=<metric>,market_value,emissions` URL so this chart shares one request with the financial/emissions providers mounted alongside it. Only enable when those providers are present (the facility detail page); off elsewhere to avoid pulling unused metrics.
@@ -87,6 +88,7 @@
 		title = '',
 		hoverTime = undefined,
 		onhoverchange,
+		onloadcomplete,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
 		bundleDerivedMetrics = false
@@ -651,6 +653,16 @@
 		const end = viewEnd;
 		if (!start || !end) return;
 		onviewportchange?.({ start, end });
+	});
+
+	// Report load completion to the parent. `initialLoadComplete` flips true after
+	// the first seed/fetch settles (even when empty), and `cacheStart` is a stable
+	// "data was found" signal that survives panning — so `hasData` stays correct.
+	// Re-fires harmlessly when the manager swaps on facility change.
+	$effect(() => {
+		const manager = dataManager;
+		if (!manager?.initialLoadComplete) return;
+		onloadcomplete?.({ hasData: manager.cacheStart !== null });
 	});
 
 	// ============================================

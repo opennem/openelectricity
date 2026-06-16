@@ -17,38 +17,51 @@ const client = new OpenElectricityClient({
  * @property {number} capacity - Total facility capacity in MW (max per unit, falling back to registered; battery dedup applied)
  */
 
-export function load() {
-	const facilities = client
-		.getFacilities()
-		.then((r) =>
-			(r.response.data || [])
-				.map((f) => {
-					const units = filterDerivedBatteryUnits(f.units || [], hasBidirectionalBattery(f));
-					const capacity = units.reduce(
-						(/** @type {number} */ sum, /** @type {any} */ u) =>
-							sum + (Number(u.capacity_maximum ?? u.capacity_registered) || 0),
-						0
-					);
-					return {
-						code: f.code,
-						name: f.name,
-						network_id: f.network_id,
-						network_region: f.network_region,
-						fuel_techs: Array.from(
-							new Set(
-								units
-									.map((/** @type {any} */ u) => u.fueltech_id)
-									.filter((/** @type {any} */ v) => Boolean(v))
-							)
-						),
-						capacity
-					};
-				})
-				.sort((a, b) => a.name.localeCompare(b.name))
-		)
-		.catch(() => /** @type {FacilityListItem[]} */ ([]));
+/**
+ * The picker list is identical across every facility page, so memoise it: one OE
+ * call serves the whole prerender (and is reused across requests in dev/SSR).
+ * @type {Promise<FacilityListItem[]> | null}
+ */
+let facilitiesPromise = null;
+function getFacilitiesList() {
+	if (!facilitiesPromise) {
+		facilitiesPromise = client
+			.getFacilities()
+			.then((r) =>
+				(r.response.data || [])
+					.map((f) => {
+						const units = filterDerivedBatteryUnits(f.units || [], hasBidirectionalBattery(f));
+						const capacity = units.reduce(
+							(/** @type {number} */ sum, /** @type {any} */ u) =>
+								sum + (Number(u.capacity_maximum ?? u.capacity_registered) || 0),
+							0
+						);
+						return {
+							code: f.code,
+							name: f.name,
+							network_id: f.network_id,
+							network_region: f.network_region,
+							fuel_techs: Array.from(
+								new Set(
+									units
+										.map((/** @type {any} */ u) => u.fueltech_id)
+										.filter((/** @type {any} */ v) => Boolean(v))
+								)
+							),
+							capacity
+						};
+					})
+					.sort((a, b) => a.name.localeCompare(b.name))
+			)
+			.catch(() => /** @type {FacilityListItem[]} */ ([]));
+	}
+	return facilitiesPromise;
+}
 
+export async function load() {
+	// Awaited (not streamed) so the layout resolves during prerender — a pending
+	// promise would hang the static build.
 	return {
-		facilities
+		facilities: await getFacilitiesList()
 	};
 }

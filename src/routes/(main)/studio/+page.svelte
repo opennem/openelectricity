@@ -28,6 +28,12 @@
 			link: '/studio/facility-detail'
 		},
 		{
+			title: 'Facility Social Cards',
+			description:
+				'Preview the build-generated Open Graph cards for every facility, and spot which still fall back to the branded card vs use a photo.',
+			link: '/studio/facility-social-cards'
+		},
+		{
 			title: "Lens on Australia's electricity system and market",
 			description: 'Visualises energy, pricing and emissions data from Australia.',
 			link: '/studio/lens-on-au-grid'

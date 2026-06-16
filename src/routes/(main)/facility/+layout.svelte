@@ -1,6 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page, navigating } from '$app/state';
+	import { building } from '$app/environment';
 	import { onMount, tick } from 'svelte';
 
 	import {
@@ -54,7 +55,10 @@
 	let regionLabel = $derived(regionDef?.longLabel ?? '');
 	let regionShortLabel = $derived(regionDef?.label ?? '');
 
-	let isFullscreen = $derived(page.url.searchParams.get('fullscreen') === 'true');
+	// `building` guard: reading searchParams during prerender crashes the build
+	// (this is why the old `prerender = 'auto'` was disabled). At build there is no
+	// fullscreen state, so it resolves to false and hydrates correctly client-side.
+	let isFullscreen = $derived(!building && page.url.searchParams.get('fullscreen') === 'true');
 
 	function toggleFullscreen() {
 		const url = new URL(page.url);
@@ -143,11 +147,7 @@
 
 <FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
 	{#snippet filterBar()}
-		<div
-			class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen
-				? ''
-				: 'px-4'}"
-		>
+		<div class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}">
 			<FacilityPickerBar
 				selectedLabel={selectedFacility?.name ?? ''}
 				selectedCode={currentCode}
@@ -230,4 +230,3 @@
 		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />
-

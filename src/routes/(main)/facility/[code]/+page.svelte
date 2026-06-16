@@ -1,6 +1,8 @@
 <script>
 	import { onMount } from 'svelte';
+	import { fade } from 'svelte/transition';
 	import { LineChart } from '@lucide/svelte';
+	import Meta from '$lib/components/Meta.svelte';
 	import {
 		FacilityChart,
 		FacilityPriceChart,
@@ -163,7 +165,19 @@
 		initial: data.chartsFraction,
 		scale: () => splitContainerEl?.clientWidth ?? 1,
 		persist: {
-			read: () => data.chartsFraction,
+			// The page is prerendered, so the server can't read the cookie — restore the
+			// user's split client-side. Falls back to the server default during SSR/build.
+			read: () => {
+				if (typeof document === 'undefined') return data.chartsFraction;
+				const m = document.cookie.match(
+					new RegExp('(?:^|; )' + CHARTS_FRACTION_COOKIE + '=([^;]*)')
+				);
+				if (m) {
+					const v = parseFloat(decodeURIComponent(m[1]));
+					if (Number.isFinite(v)) return v;
+				}
+				return data.chartsFraction;
+			},
 			write: (v) => {
 				if (typeof document === 'undefined') return;
 				// 1 year, scoped to the site root so the cookie travels with SSR navigations.
@@ -192,6 +206,10 @@
 		activeMetric = 'power';
 		displayInterval = '30m';
 		panZoomEngaged = false;
+		// Reset client-side load tracking so the new facility shows its skeleton until
+		// its own chart fetch settles.
+		powerLoaded = false;
+		powerHasData = false;
 	});
 
 	const DAY_MS = 24 * 60 * 60 * 1000;
@@ -316,12 +334,24 @@
 		}
 	}
 
-	let hasPowerData = $derived(
-		Boolean(
-			data.powerData?.data?.length &&
-			data.powerData.data[0].results?.some((/** @type {any} */ r) => r.data?.length)
-		)
-	);
+	// The page is prerendered with no power data, so the generation chart self-fetches
+	// on mount (FacilityChart seeds from `dateStart`/`dateEnd` when given no
+	// `powerData`). We surface a skeleton until it reports back via `onloadcomplete`,
+	// then reveal the chart — or, only once the fetch confirms there's genuinely
+	// nothing, the empty state.
+	let powerLoaded = $state(false);
+	let powerHasData = $state(false);
+	let chartReady = $derived(powerLoaded && powerHasData);
+	let showEmptyState = $derived(powerLoaded && !powerHasData);
+
+	/** @param {{ hasData: boolean }} state */
+	function handlePowerLoadComplete({ hasData }) {
+		powerLoaded = true;
+		powerHasData = hasData;
+	}
+
+	/** Static skeleton bar heights (%) — a calm placeholder while the chart loads. */
+	const SKELETON_BARS = [42, 64, 50, 78, 56, 70, 46, 84, 60, 74, 52, 88, 66, 54, 72, 48, 80];
 
 	/** @param {KeyboardEvent} e */
 	function handlePanZoomKeydown(e) {
@@ -344,9 +374,12 @@
 
 <svelte:window onkeydown={handlePanZoomKeydown} onclick={handlePanZoomClickOutside} />
 
-<svelte:head>
-	<title>{selectedFacility?.name ?? 'Facility'} — Open Electricity</title>
-</svelte:head>
+<Meta
+	title={selectedFacility?.name ?? 'Facility'}
+	description={data.ogDescription}
+	image={data.ogImage}
+	path={`/facility/${data.facility?.code ?? ''}`}
+/>
 
 <div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey">
 	<div class="md:sticky md:top-0 md:z-40" bind:clientHeight={headerHeight}>
@@ -370,7 +403,7 @@
 					style:width={leftWidthPercent}
 				>
 					<div class="space-y-10">
-						{#if hasPowerData}
+						{#if !showEmptyState}
 							<!-- Range/date picker — sits outside chartCardEl so clicking the
 							     bar disengages tap-to-engage pan/zoom (deliberate: choosing a
 							     new range is a different interaction modality from chart
@@ -411,27 +444,52 @@
 											{getIntervalSpec(displayInterval)?.label ?? displayInterval}
 										</span>
 									</div>
-									<FacilityChart
-										bind:this={powerChart}
-										facility={selectedFacility}
-										powerData={data.powerData}
-										{timeZone}
-										{dateStart}
-										{dateEnd}
-										interval={activeInterval}
-										metric={activeMetric}
-										{displayInterval}
-										chartHeight="h-[267px]"
-										title={activeMetric === 'energy' ? 'Energy' : 'Power'}
-										tooltipMode="floating"
-										showContainer={false}
-										{hoverTime}
-										onhoverchange={handleHoverChange}
-										onviewportchange={handlePowerViewportChange}
-										panZoomMode="tap-to-engage"
-										bind:panZoomEngaged
-										bundleDerivedMetrics
-									/>
+									<!-- Chart stays mounted while loading so it self-fetches; it fades
+									     in once data arrives, with a skeleton overlaid until then. -->
+									<div class="relative">
+										<div
+											class="transition-opacity duration-500 ease-out {chartReady
+												? 'opacity-100'
+												: 'opacity-0'}"
+										>
+											<FacilityChart
+												bind:this={powerChart}
+												facility={selectedFacility}
+												powerData={data.powerData}
+												{timeZone}
+												{dateStart}
+												{dateEnd}
+												interval={activeInterval}
+												metric={activeMetric}
+												{displayInterval}
+												chartHeight="h-[267px]"
+												title={activeMetric === 'energy' ? 'Energy' : 'Power'}
+												tooltipMode="floating"
+												showContainer={false}
+												{hoverTime}
+												onhoverchange={handleHoverChange}
+												onviewportchange={handlePowerViewportChange}
+												onloadcomplete={handlePowerLoadComplete}
+												panZoomMode="tap-to-engage"
+												bind:panZoomEngaged
+												bundleDerivedMetrics
+											/>
+										</div>
+										{#if !chartReady}
+											<div
+												class="absolute inset-0 flex items-end gap-1.5 px-6 pb-6 pt-8 pointer-events-none"
+												out:fade={{ duration: 300 }}
+												aria-hidden="true"
+											>
+												{#each SKELETON_BARS as h, i (i)}
+													<div
+														class="flex-1 rounded-t bg-light-warm-grey animate-pulse"
+														style="height: {h}%"
+													></div>
+												{/each}
+											</div>
+										{/if}
+									</div>
 								</div>
 
 								<FacilityFinancialDataProvider

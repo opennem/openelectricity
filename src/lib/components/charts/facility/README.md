@@ -13,17 +13,17 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 
 ## Files
 
-| File                        | Description                                                                                 |
-| --------------------------- | ------------------------------------------------------------------------------------------- |
-| `FacilityChart.svelte`      | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping           |
-| `FacilityDataTable.svelte`  | Tabular view of visible chart data                                                          |
-| `FacilityUnitsTable.svelte` | Facility unit metadata table                                                                |
-| `process-facility-power.js` | Core data processing — converts API response to chart-ready rows                            |
-| `range-interval-config.js`  | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec |
+| File                        | Description                                                                                                                                        |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FacilityChart.svelte`      | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping                                                                  |
+| `FacilityDataTable.svelte`  | Tabular view of visible chart data                                                                                                                 |
+| `FacilityUnitsTable.svelte` | Facility unit metadata table                                                                                                                       |
+| `process-facility-power.js` | Core data processing — converts API response to chart-ready rows                                                                                   |
+| `range-interval-config.js`  | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec                                         |
 | `energy-basis.js`           | Shared price/intensity-provider helpers: basis-metric choice, combined query string, series-prefix rewrite, and the per-timestamp energy (MWh) map |
-| `interval-hours.js`         | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains |
-| `helpers.js`                | Color shading (`buildUnitColourMap`), timezone helpers, legacy `transformFacilityPowerData` |
-| `index.js`                  | Barrel exports                                                                              |
+| `interval-hours.js`         | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains                                   |
+| `helpers.js`                | Color shading (`buildUnitColourMap`), timezone helpers, legacy `transformFacilityPowerData`                                                        |
+| `index.js`                  | Barrel exports                                                                                                                                     |
 
 ## Data Pipeline
 
@@ -198,6 +198,7 @@ requestRange(start, end)
 | `onviewportchange`        | callback                      | Fired when viewport changes                                                                                                                                                                                                                            |
 | `onvisibledata`           | callback                      | Debounced visible data for external table                                                                                                                                                                                                              |
 | `ondisplayintervalchange` | callback                      | Fired when display interval changes                                                                                                                                                                                                                    |
+| `onloadcomplete`          | callback                      | Fired once the initial fetch/seed settles, with `{ hasData }` — lets a parent tell "loading" from genuinely "no data" (stays accurate across panning)                                                                                                  |
 | `showIntervalToggle`      | boolean                       | Show built-in interval toggle buttons (default: `true`)                                                                                                                                                                                                |
 | `panZoomMode`             | `'always' \| 'tap-to-engage'` | Forwarded to StratumChart. `'always'` is the default; `'tap-to-engage'` shows a "Click to enable" hint pill and gates gestures behind `panZoomEngaged`. Used on `/facility/[code]` to keep the chart from hijacking page scroll until the user opts in |
 | `panZoomEngaged`          | `boolean` (bindable)          | Engagement state for tap-to-engage mode. The facility page binds the same state across the visible charts (FacilityChart plus whichever of the financial/emissions tab pairs are mounted) and resets it on ESC, click-outside, or facility change      |
