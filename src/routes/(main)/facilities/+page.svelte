@@ -27,6 +27,7 @@
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
 	import List from './List.svelte';
+	import Cards from './Cards.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
@@ -66,10 +67,14 @@
 	let capacityRange = $state(/** @type {[number, number]} */ ([0, 10000]));
 	/** @type {[number, number]} */
 	let yearRange = $state(/** @type {[number, number]} */ ([1900, 2040]));
-	/** @type {'list' | 'timeline' | 'map'} */
-	let selectedView = $derived(/** @type {'list' | 'timeline' | 'map'} */ (data.view));
+	/** @type {'list' | 'timeline' | 'map' | 'card'} */
+	let selectedView = $derived(/** @type {'list' | 'timeline' | 'map' | 'card'} */ (data.view));
 	/** @type {any | null} */
 	let selectedFacility = $state(null);
+
+	// Codes with a committed `static/og/facility/<code>.jpg` — the Cards view shows
+	// the build-generated card for these and a live card for everything else.
+	let cardCodeSet = $derived(new Set(data.cardCodes ?? []));
 
 	// Sync local state when server data changes (e.g., browser back/forward, direct URL navigation)
 	// Note: Only depends on `data` to avoid circular deps with capacityBounds (which depends on selectedView)
@@ -531,7 +536,7 @@
 	 * @param {[number, number]} capacityRangeFilter
 	 * @param {[number, number]} yearRangeFilter
 	 * @param {{ min: number, max: number }} yearBoundsRef
-	 * @param {'list' | 'timeline' | 'map'} view
+	 * @param {'list' | 'timeline' | 'map' | 'card'} view
 	 * @param {number | null} playYearValue
 	 * @returns {any[]}
 	 */
@@ -957,7 +962,7 @@
 	}
 
 	/**
-	 * @param {'list' | 'timeline' | 'map'} value
+	 * @param {'list' | 'timeline' | 'map' | 'card'} value
 	 */
 	function handleSelectedViewChange(value) {
 		// Optimistic update
@@ -1198,14 +1203,26 @@
 				bind:clientHeight={containerHeight}
 				class="flex-1 flex flex-col md:flex-row min-h-0 relative"
 			>
-				<!-- Left panel: List or Timeline (resizable on desktop) -->
+				<!-- Left panel: List, Timeline or Cards (resizable on desktop) -->
 				<div
 					class="relative bg-white flex flex-col min-h-0 z-10 w-full md:shrink-0"
 					class:hidden={selectedView === 'map'}
 					class:md:flex={selectedView === 'map'}
 					style={isDesktop ? `width: ${mainDrag.value}px` : ''}
 				>
-					{#if selectedView === 'list' || selectedView === 'map'}
+					{#if selectedView === 'card'}
+						<div class="flex-1 overflow-y-auto min-h-0">
+							<Cards
+								facilities={filteredFacilities}
+								selectedFacilityCode={selectedFacility?.code ?? null}
+								cardCodes={cardCodeSet}
+								onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
+								onclick={(/** @type {any} */ f) => {
+									handleFacilitySelect(f);
+								}}
+							/>
+						</div>
+					{:else if selectedView === 'list' || selectedView === 'map'}
 						<div class="flex-1 overflow-y-auto min-h-0 mt-4">
 							<List
 								facilities={filteredFacilities}

@@ -21,6 +21,7 @@ import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 import { fuelTechColourMap } from '../../theme/openelectricity.js';
 import { OG_CARD_WIDTH as WIDTH, OG_CARD_HEIGHT as HEIGHT } from '../../og/card-dimensions.js';
+import { deriveCard, formatCardSubtitle } from '../../og/facility-card-data.js';
 
 const ROOT = process.cwd();
 
@@ -160,80 +161,6 @@ function iconDataUri(ft, colour) {
 	return `data:image/svg+xml;base64,${Buffer.from(recoloured).toString('base64')}`;
 }
 
-// ---- facility → card data -------------------------------------------------
-
-/** @param {any} v */
-function num(v) {
-	const n = Number(v);
-	return Number.isFinite(n) ? n : 0;
-}
-
-/** @param {number} v */
-function formatMw(v) {
-	if (!v) return '—';
-	return v < 10 ? v.toFixed(1) : Math.round(v).toLocaleString('en-AU');
-}
-
-/**
- * Derive the badge fueltechs (deduped, capacity-desc), the dominant fueltech,
- * total active capacity, and rolled-up status from a facility's units.
- * @param {any} facility
- */
-function deriveCard(facility) {
-	/** @type {any[]} */
-	let units = Array.isArray(facility.units) ? facility.units : [];
-	// Drop derived battery_charging/discharging when a bidirectional `battery`
-	// unit exists, so the battery isn't triple-counted.
-	if (units.some((u) => u.fueltech_id === 'battery')) {
-		units = units.filter(
-			(u) => u.fueltech_id !== 'battery_charging' && u.fueltech_id !== 'battery_discharging'
-		);
-	}
-
-	/** @type {Map<string, { ft: string, cap: number, active: number }>} */
-	const byFt = new Map();
-	for (const u of units) {
-		const ft = u.fueltech_id;
-		if (!ft) continue;
-		const cap = num(u.capacity_maximum ?? u.capacity_registered);
-		const entry = byFt.get(ft) || { ft, cap: 0, active: 0 };
-		entry.cap += cap;
-		if (u.status_id !== 'retired') entry.active += cap;
-		byFt.set(ft, entry);
-	}
-
-	const groups = [...byFt.values()].sort((a, b) => b.cap - a.cap);
-	const fuelTechs = groups.map((g) => g.ft);
-	const dominant = groups[0]?.ft ?? 'renewables';
-
-	const activeCap = groups.reduce((s, g) => s + g.active, 0);
-	const totalCap = groups.reduce((s, g) => s + g.cap, 0);
-	const capacity = activeCap || totalCap;
-
-	// Status rollup: any operating → operating; all retired → retired; else most
-	// common non-retired status.
-	let status = null;
-	if (units.length) {
-		if (units.some((u) => u.status_id === 'operating')) status = 'operating';
-		else if (units.every((u) => u.status_id === 'retired')) status = 'retired';
-		else {
-			/** @type {Record<string, number>} */
-			const counts = {};
-			for (const u of units) {
-				if (!u.status_id || u.status_id === 'retired') continue;
-				counts[u.status_id] = (counts[u.status_id] || 0) + 1;
-			}
-			status = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
-		}
-	}
-
-	const region = String(facility.network_region || '')
-		.replace(/\d+$/, '')
-		.toUpperCase();
-
-	return { fuelTechs, dominant, capacity, status, region, name: facility.name || facility.code };
-}
-
 // ---- markup ---------------------------------------------------------------
 
 /**
@@ -286,12 +213,7 @@ function escapeHtml(s) {
  */
 export async function renderFacilityOgCard({ facility, photoBuffer = null }) {
 	const d = deriveCard(facility);
-	const subtitleParts = [
-		`${formatMw(d.capacity)} MW`,
-		d.region,
-		d.status ? d.status.charAt(0).toUpperCase() + d.status.slice(1) : ''
-	].filter(Boolean);
-	const subtitle = subtitleParts.join('  ·  ');
+	const subtitle = formatCardSubtitle(d);
 
 	let markup;
 	if (photoBuffer && photoBuffer.length) {

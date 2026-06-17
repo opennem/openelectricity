@@ -8,7 +8,7 @@
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
-	import { Search, X, CalendarClock, List, Map, Maximize2 } from '@lucide/svelte';
+	import { Search, X, CalendarClock, List, LayoutGrid, Map, Maximize2 } from '@lucide/svelte';
 	import OptionsMenu from './_components/OptionsMenu.svelte';
 	import { fly } from 'svelte/transition';
 	import { onDestroy } from 'svelte';
@@ -40,7 +40,7 @@
 	 *   capacityMin?: number,
 	 *   capacityMax?: number,
 	 *   searchTerm?: string,
-	 *   selectedView?: 'list' | 'timeline' | 'map',
+	 *   selectedView?: 'list' | 'timeline' | 'map' | 'card',
 	 *   isFullscreen?: boolean,
 	 *   showShortcuts?: boolean,
 	 *   onstatuseschange?: (values: string[]) => void,
@@ -52,7 +52,7 @@
 	 *   yearMax?: number,
 	 *   onyearrangechange?: (range: [number, number]) => void,
 	 *   onsearchchange?: (value: string) => void,
-	 *   onviewchange?: (view: 'list' | 'timeline' | 'map') => void,
+	 *   onviewchange?: (view: 'list' | 'timeline' | 'map' | 'card') => void,
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
@@ -398,12 +398,14 @@
 
 	const viewButtonsDesktop = [
 		{ label: 'Timeline', value: 'timeline', icon: CalendarClock, size: 'size-6' },
-		{ label: 'List', value: 'list', icon: List, size: 'size-6' }
+		{ label: 'List', value: 'list', icon: List, size: 'size-6' },
+		{ label: 'Cards', value: 'card', icon: LayoutGrid, size: 'size-6' }
 	];
 
 	const viewOptions = [
 		{ label: 'Timeline', value: 'timeline' },
 		{ label: 'List', value: 'list' },
+		{ label: 'Cards', value: 'card' },
 		{ label: 'Map', value: 'map' }
 	];
 
@@ -525,7 +527,7 @@
 	 * @param {{ value: string }} option
 	 */
 	function handleViewChange(option) {
-		onviewchange?.(/** @type {'list' | 'timeline' | 'map'} */ (option.value));
+		onviewchange?.(/** @type {'list' | 'timeline' | 'map' | 'card'} */ (option.value));
 	}
 
 	/**
@@ -533,7 +535,7 @@
 	 */
 	function handleViewSelectChange(option) {
 		if (option.value) {
-			onviewchange?.(/** @type {'list' | 'timeline' | 'map'} */ (option.value));
+			onviewchange?.(/** @type {'list' | 'timeline' | 'map' | 'card'} */ (option.value));
 		}
 	}
 

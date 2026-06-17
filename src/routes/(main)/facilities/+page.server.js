@@ -40,6 +40,9 @@ import {
 import { fetchFacilityPowerData } from './_utils/fetch-power-data.js';
 import { fetchFacilityOwners } from './_utils/fetch-facility-owners.js';
 import { DEFAULT_STATUSES, ALL_STATUSES } from './_utils/filters.js';
+// Codes with a committed `static/og/facility/<code>.jpg`; lets the Cards view show
+// the build-generated card and fall back to a live card for the rest.
+import cardCodes from '$lib/server/og/facility-card-codes.json';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -96,6 +99,7 @@ export async function load({ url }) {
 			selectedFacility,
 			powerData,
 			selectedFacilityOwners,
+			cardCodes,
 			fromCache: true
 		};
 	}
@@ -146,6 +150,7 @@ export async function load({ url }) {
 		selectedFacility,
 		powerData,
 		selectedFacilityOwners,
+		cardCodes,
 		fromCache: false
 	};
 }
