@@ -3,6 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import { LineChart } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
+	import { OG_CARD_WIDTH, OG_CARD_HEIGHT, OG_CARD_TYPE } from '$lib/og/card-dimensions.js';
 	import {
 		FacilityChart,
 		FacilityPriceChart,
@@ -378,6 +379,9 @@
 	title={selectedFacility?.name ?? 'Facility'}
 	description={data.ogDescription}
 	image={data.ogImage}
+	imageWidth={OG_CARD_WIDTH}
+	imageHeight={OG_CARD_HEIGHT}
+	imageType={OG_CARD_TYPE}
 	path={`/facility/${data.facility?.code ?? ''}`}
 />
 

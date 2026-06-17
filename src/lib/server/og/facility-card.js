@@ -20,10 +20,9 @@ import { html } from 'satori-html';
 import { Resvg } from '@resvg/resvg-js';
 import sharp from 'sharp';
 import { fuelTechColourMap } from '../../theme/openelectricity.js';
+import { OG_CARD_WIDTH as WIDTH, OG_CARD_HEIGHT as HEIGHT } from '../../og/card-dimensions.js';
 
 const ROOT = process.cwd();
-const WIDTH = 1200;
-const HEIGHT = 630;
 
 // Fueltechs whose colour is light enough to need dark glyphs/text (mirrors
 // $lib/utils/fueltech-display so this module stays node-importable without $lib).

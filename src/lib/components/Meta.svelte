@@ -6,6 +6,9 @@
 	 * @property {string} [title]
 	 * @property {string} [description]
 	 * @property {string} [image]
+	 * @property {number} [imageWidth] - emits og:image:width (needs imageHeight too)
+	 * @property {number} [imageHeight] - emits og:image:height
+	 * @property {string} [imageType] - e.g. 'image/jpeg'; emits og:image:type
 	 * @property {any} [path]
 	 * @property {string} [domain]
 	 * @property {string} [siteTitle]
@@ -18,6 +21,9 @@
 		title = '',
 		description = "An open platform for tracking Australia's electricity transition",
 		image = '/img/preview.jpg',
+		imageWidth = undefined,
+		imageHeight = undefined,
+		imageType = undefined,
 		path = $page.url.pathname,
 		domain = 'https://openelectricity.org.au',
 		siteTitle = 'Open Electricity',
@@ -28,6 +34,8 @@
 	);
 	let pageTitle = $derived(useSuffix ? titleWithSuffix : title);
 	let fullURI = $derived(`${domain}${path}`);
+	// og:image should be an absolute URL — prefix the domain for root-relative paths.
+	let imageUrl = $derived(image && !/^https?:\/\//.test(image) ? `${domain}${image}` : image);
 </script>
 
 <svelte:head>
@@ -46,9 +54,18 @@
 		<meta property="twitter:description" content={description} />
 	{/if}
 
-	{#if image}
-		<meta property="og:image" content={image} />
+	{#if imageUrl}
+		<meta property="og:image" content={imageUrl} />
+		<meta property="og:image:secure_url" content={imageUrl} />
+		<meta property="og:image:alt" content={pageTitle} />
+		{#if imageType}
+			<meta property="og:image:type" content={imageType} />
+		{/if}
+		{#if imageWidth && imageHeight}
+			<meta property="og:image:width" content={`${imageWidth}`} />
+			<meta property="og:image:height" content={`${imageHeight}`} />
+		{/if}
 		<meta property="twitter:card" content="summary_large_image" />
-		<meta property="twitter:image" content={image} />
+		<meta property="twitter:image" content={imageUrl} />
 	{/if}
 </svelte:head>
