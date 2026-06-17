@@ -7,3 +7,12 @@ allowBuilds:
   sharp: true
   utf-8-validate: true
   workerd: true
+
+# Force-bump vulnerable transitive copies past their patched versions to clear
+# Dependabot alerts. Both are scoped to the affected version only:
+#   cookie@0.6.0  (GHSA-pxg6-pf52-xh8x) pulled by @sveltejs/kit + bits-ui/runed
+#   uuid@8.3.2    (GHSA-w5hq-g745-h8pq) pulled by @clerk/clerk-js' unused Solana
+#                 wallet adapters; >=11.1.1 dedupes onto the 14.0.0 already present
+overrides:
+  cookie@<0.7.0: ^0.7.0
+  uuid@<11.1.1: '>=11.1.1'
