@@ -9,6 +9,7 @@
 
 	import { isSafari } from '$lib/utils/browser-detect';
 	import MultiLine from '$lib/components/charts/elements/MultiLine.svelte';
+	import TrendLine from '$lib/components/charts/elements/TrendLine.svelte';
 	import AxisX from '$lib/components/charts/elements/AxisX.svelte';
 	import AxisY from '$lib/components/charts/elements/AxisY.svelte';
 	import HoverLine from '$lib/components/charts/elements/HoverLine.html.svelte';
@@ -17,6 +18,7 @@
 
 	import Annotations from './Annotations.svelte';
 
+	import { computeTrends, buildTrendHoverRows } from './trends';
 	import {
 		formatTickX,
 		formatTickY,
@@ -48,6 +50,8 @@
 	 * @property {string} [strokeWidth]
 	 * @property {number[]} [xDomain]
 	 * @property {Date[]} [xTicks]
+	 * @property {boolean} [showTrends] draw a dashed linear trend out to the x-domain end
+	 * @property {number} [trendWindowYears] fit the trend over the trailing N years
 	 */
 
 	/** @type {Props} */
@@ -69,7 +73,9 @@
 		showAnnotations = true,
 		strokeWidth = '4px',
 		xDomain = defaultXDomain,
-		xTicks = defaultDisplayXTicks
+		xTicks = defaultDisplayXTicks,
+		showTrends = false,
+		trendWindowYears = 10
 	} = $props();
 
 	let yTickFormatter = $derived(valueType === 'percentage' ? formatTickY : formatTickYRaw);
@@ -80,9 +86,7 @@
 	let localHoverData = $state(undefined);
 
 	/** O(1) lookup of dataset row by `time` for syncing the external hover. */
-	let datasetByTime = $derived(
-		new Map(dataset.map((/** @type {any} */ d) => [d.time, d]))
-	);
+	let datasetByTime = $derived(new Map(dataset.map((/** @type {any} */ d) => [d.time, d])));
 
 	/** Effective hover data: external time wins when set, else local mouseover. */
 	let hoverData = $derived(
@@ -100,14 +104,46 @@
 	let chartLeft = $derived(md ? 0 : 0);
 	let chartRight = $derived(md ? 0 : 0);
 
-	let showBesideLatestPoint = $derived(
-		annotationPlacement === 'auto' ? md : annotationPlacement
-	);
+	let showBesideLatestPoint = $derived(annotationPlacement === 'auto' ? md : annotationPlacement);
 
 	let groupedData = $derived(dataset ? groupLonger(dataset, seriesNames) : []);
 
 	let flatData = $derived(flatten(groupedData, 'values'));
 	let latestDatapoint = $derived(dataset[dataset.length - 1]);
+
+	// Simple linear trend, anchored at each series' last point and extrapolated to
+	// the right edge of the x-domain (2035) so it reads as a dashed continuation.
+	let trends = $derived(
+		showTrends
+			? computeTrends(dataset, seriesNames, {
+					toTime: xDomain[xDomain.length - 1],
+					windowYears: trendWindowYears,
+					clamp: valueType === 'percentage' ? [0, 100] : undefined
+				})
+			: []
+	);
+
+	// Grow the y-axis to fit the projected endpoints; otherwise leave it to
+	// LayerCake (max = null → derived from the plotted data). The data-max scan
+	// only runs when trends are shown, so the default path stays cheap.
+	let yMaxOverride = $derived.by(() => {
+		if (!trends.length) return null;
+		const dataMax = Math.max(
+			0,
+			...flatData
+				.map((/** @type {any} */ d) => d.value)
+				.filter((/** @type {any} */ v) => v != null && Number.isFinite(v))
+		);
+		return Math.max(dataMax, ...trends.flatMap((t) => t.points.map((p) => p.value)));
+	});
+
+	// Synthetic monthly rows over the projected region so the hover layer can snap
+	// to the trend and read out its interpolated values past the last real point.
+	// Deliberately kept out of `dataset`/`groupedData`/`flatData`: these projected
+	// rows must NOT feed MultiLine or the y-domain — only the hover layer reads them.
+	let trendHoverRows = $derived(trends.length ? buildTrendHoverRows(trends) : []);
+	let hoverDataset = $derived(trendHoverRows.length ? [...dataset, ...trendHoverRows] : dataset);
+	let hoverIsTrend = $derived(!!(/** @type {any} */ (hoverData)?.isTrend));
 
 	let chartLabelStyles = $derived(
 		md
@@ -123,6 +159,9 @@
 		shouldAnimate ? { duration: 4000, delay: 1000, easing: quintOut } : { duration: 1, delay: 0 }
 	);
 	let fadeTransition = $derived(shouldAnimate ? { delay: 3500, duration: 300 } : { duration: 300 });
+	// The trend is toggled on demand (hidden Shift+T option), so it fades in
+	// promptly rather than waiting on the initial line-draw sequence.
+	const trendFade = { duration: 400 };
 
 	onMount(() => {
 		isSafariBrowser = isSafari();
@@ -159,7 +198,7 @@
 		y="value"
 		z="group"
 		{xDomain}
-		yDomain={[0, null]}
+		yDomain={[0, yMaxOverride]}
 		zDomain={seriesNames}
 		xScale={scaleUtc()}
 		zScale={scaleOrdinal()}
@@ -190,8 +229,18 @@
 			<MultiLine opacity={0.1} drawDurationObject={drawDuration} {strokeWidth} />
 
 			<MultiLine {hoverData} drawDurationObject={drawDuration} {strokeWidth} />
+
+			{#if show && trends.length}
+				<TrendLine
+					{trends}
+					{hoverData}
+					colours={seriesColours}
+					{strokeWidth}
+					fadeTransition={trendFade}
+				/>
+			{/if}
 			<HoverLayer
-				{dataset}
+				dataset={hoverDataset}
 				onmousemove={(d) => {
 					const next = interact ? /** @type {TimeSeriesData} */ (d) : undefined;
 					localHoverData = next;
@@ -207,7 +256,9 @@
 		<Html pointerEvents={false}>
 			<HoverText {hoverData} position="bottom">
 				<span class="text-xs font-light">
-					{formatHoverTickX(hoverTime)}
+					{formatHoverTickX(hoverTime)}{#if hoverIsTrend}<span class="italic text-mid-grey"
+							>&nbsp;· trend</span
+						>{/if}
 				</span>
 			</HoverText>
 			<HoverLine {hoverData} />
