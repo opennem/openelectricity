@@ -1,4 +1,5 @@
 import { getFueltechColor } from '$lib/utils/fueltech-display';
+import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 
 /**
  * Check if a facility has a bidirectional battery unit (fueltech_id === 'battery').
@@ -7,9 +8,7 @@ import { getFueltechColor } from '$lib/utils/fueltech-display';
  * @returns {boolean}
  */
 export function hasBidirectionalBattery(facility) {
-	return (facility?.units ?? []).some(
-		(/** @type {any} */ unit) => unit.fueltech_id === 'battery'
-	);
+	return (facility?.units ?? []).some((/** @type {any} */ unit) => unit.fueltech_id === 'battery');
 }
 
 /**
@@ -108,6 +107,27 @@ export function groupUnits(facility, options = {}) {
 			max_generation
 		};
 	});
+}
+
+/**
+ * Ordered, de-duplicated fuel-tech groups for a facility's icon row — sorted
+ * top-of-stack first (reversed detailed order, mirroring the chart and the
+ * facility detail panel) and reduced to one entry per `fueltech_id`. Shared by
+ * the detail-panel header and the facilities list so their badge rows show the
+ * same fuel techs in the same order.
+ * @param {any} facility
+ * @returns {UnitGroup[]}
+ */
+export function getOrderedFuelTechGroups(facility) {
+	const sorted = sortByDetailedOrder(groupUnits(facility, { skipBattery: true }), {
+		reverse: true
+	});
+	/** @type {Map<string, UnitGroup>} */
+	const seen = new Map();
+	for (const group of sorted) {
+		if (!seen.has(group.fueltech_id)) seen.set(group.fueltech_id, group);
+	}
+	return [...seen.values()];
 }
 
 /**

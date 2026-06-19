@@ -18,19 +18,22 @@ describe('formatMw', () => {
 });
 
 describe('deriveCard', () => {
-	it('dedupes and sorts fueltechs by capacity descending', () => {
+	it('dedupes and orders fueltechs top-of-stack first, independent of capacity', () => {
 		const card = deriveCard({
 			name: 'Mixed',
 			network_region: 'VIC1',
 			units: [
-				{ fueltech_id: 'wind', capacity_maximum: 50, status_id: 'operating' },
-				{ fueltech_id: 'solar_utility', capacity_maximum: 120, status_id: 'operating' },
-				{ fueltech_id: 'wind', capacity_maximum: 30, status_id: 'operating' }
+				{ fueltech_id: 'gas_ccgt', capacity_maximum: 200, status_id: 'operating' },
+				{ fueltech_id: 'solar_utility', capacity_maximum: 50, status_id: 'operating' },
+				{ fueltech_id: 'gas_ccgt', capacity_maximum: 100, status_id: 'operating' }
 			]
 		});
-		expect(card.fuelTechs).toEqual(['solar_utility', 'wind']);
-		expect(card.dominant).toBe('solar_utility');
-		expect(card.capacity).toBe(200);
+		// Reversed detailed order puts solar ahead of gas (matching the detail
+		// panel + list) even though gas has more capacity...
+		expect(card.fuelTechs).toEqual(['solar_utility', 'gas_ccgt']);
+		// ...while `dominant` still tracks capacity (it drives the card background).
+		expect(card.dominant).toBe('gas_ccgt');
+		expect(card.capacity).toBe(350);
 	});
 
 	it('drops derived battery_charging/discharging when a bidirectional battery exists', () => {

@@ -168,13 +168,19 @@ function iconDataUri(ft, colour) {
  * @param {string} ringColour
  */
 function badgesMarkup(fuelTechs, ringColour) {
-	return fuelTechs
+	// satori has no z-index, so stacking follows paint order (a later DOM node
+	// paints on top). Render the badges reversed — the wrapper uses
+	// `row-reverse`, so the leftmost badge is the last painted and sits on top,
+	// matching the live card and the detail panel. `margin-right` does the
+	// overlap in the reversed flow.
+	return [...fuelTechs]
+		.reverse()
 		.map((ft, i) => {
 			const icon = iconDataUri(ft, needsDarkText(ft) ? '#0b0b0b' : '#ffffff');
 			const iconImg = icon ? `<img style="width:44px;height:44px;" src="${icon}" />` : '';
 			return `<div style="display:flex;align-items:center;justify-content:center;width:74px;height:74px;border-radius:9999px;background:${fuelColour(
 				ft
-			)};border:4px solid ${ringColour};margin-left:${i ? -18 : 0}px;box-shadow:0 3px 10px rgba(0,0,0,0.28);">${iconImg}</div>`;
+			)};border:4px solid ${ringColour};margin-right:${i ? -18 : 0}px;box-shadow:0 3px 10px rgba(0,0,0,0.28);">${iconImg}</div>`;
 		})
 		.join('');
 }
@@ -190,7 +196,10 @@ function badgesMarkup(fuelTechs, ringColour) {
  */
 function titleBlock({ name, subtitle, textColour, subColour, ringColour, fuelTechs }) {
 	return `<div style="position:absolute;left:64px;right:64px;bottom:60px;display:flex;flex-direction:column;">
-		<div style="display:flex;align-items:center;">${badgesMarkup(fuelTechs, ringColour)}</div>
+		<div style="display:flex;flex-direction:row-reverse;justify-content:flex-end;align-items:center;">${badgesMarkup(
+			fuelTechs,
+			ringColour
+		)}</div>
 		<div style="display:flex;margin-top:26px;font-family:'DM Sans';font-weight:700;font-size:62px;line-height:1.04;color:${textColour};letter-spacing:-1px;max-width:1040px;">${escapeHtml(
 			name
 		)}</div>

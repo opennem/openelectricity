@@ -1,9 +1,9 @@
 <script>
-	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import FuelTechBadgeStack from '$lib/components/FuelTechBadgeStack.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
-	import { groupUnits } from '../_utils/units';
+	import { groupUnits, getOrderedFuelTechGroups } from '../_utils/units';
 
 	/**
 	 * @type {{
@@ -39,9 +39,11 @@
 	let showMetric = $derived(metricValue != null && metricUnit != null);
 
 	let unitGroups = $derived(groupUnits(facility));
+	// Ordered + de-duplicated fuel techs for the overlapping badge row — shares
+	// the detail panel's ordering so list and detail icons always match.
+	let orderedFuelTechs = $derived(getOrderedFuelTechGroups(facility));
 	let totalCapacity = $derived(unitGroups.reduce((sum, g) => sum + g.totalCapacity, 0));
 	let totalStorage = $derived(unitGroups.reduce((sum, g) => sum + (g.capacity_storage || 0), 0));
-	let hasMultipleGroups = $derived(unitGroups.length > 1);
 	let primaryGroup = $derived(unitGroups[0]);
 	let hasCommittedUnit = $derived(unitGroups.some((g) => g.status_id === 'committed'));
 
@@ -64,31 +66,7 @@
 </script>
 
 {#snippet badgeGroup()}
-	{#if hasMultipleGroups}
-		<span class="flex">
-			{#each unitGroups as group, i (`${group.fueltech_id}-${group.status_id}`)}
-				<FuelTechBadge
-					fuelTech={group.fueltech_id}
-					status={group.status_id}
-					isCommissioning={group.isCommissioning}
-					size={badgeSize}
-					{darkMode}
-					overlap={i > 0}
-					zIndex={i + 1}
-				/>
-			{/each}
-		</span>
-	{:else if primaryGroup}
-		<span>
-			<FuelTechBadge
-				fuelTech={primaryGroup.fueltech_id}
-				status={primaryGroup.status_id}
-				isCommissioning={primaryGroup.isCommissioning}
-				size={badgeSize}
-				{darkMode}
-			/>
-		</span>
-	{/if}
+	<FuelTechBadgeStack groups={orderedFuelTechs} size={badgeSize} {darkMode} />
 {/snippet}
 
 {#if compact}

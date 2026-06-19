@@ -2,9 +2,12 @@
  * Pure facility → card data derivation, shared by the build-time OG card renderer
  * (`$lib/server/og/facility-card.js`, run in Node) and the live in-app card
  * (`$lib/components/FacilityOgCard.svelte`). Kept here (not under `$lib/server`,
- * and free of any `$lib`/theme/node imports) so both a plain-Node build script and
- * the browser bundle can import it.
+ * and free of `$lib`-alias/theme/node imports) so both a plain-Node build script
+ * and the browser bundle can import it — hence the relative import of the
+ * self-contained `detailed` fuel-tech order below.
  */
+
+import { sortByDetailedOrder } from '../fuel-tech-groups/detailed.js';
 
 /** @param {any} v */
 function num(v) {
@@ -62,9 +65,15 @@ export function deriveCard(facility) {
 		byFt.set(ft, entry);
 	}
 
-	const groups = [...byFt.values()].sort((a, b) => b.cap - a.cap);
-	const fuelTechs = groups.map((g) => g.ft);
-	const dominant = groups[0]?.ft ?? 'renewables';
+	const groups = [...byFt.values()];
+	// Dominant (drives the card background + ring colour) is the highest-capacity
+	// fuel tech; the badge row is ordered top-of-stack first (reversed detailed
+	// order) so it matches the facility detail panel and list.
+	const dominant = groups.length ? [...groups].sort((a, b) => b.cap - a.cap)[0].ft : 'renewables';
+	const fuelTechs = sortByDetailedOrder(
+		groups.map((g) => ({ fueltech_id: g.ft })),
+		{ reverse: true }
+	).map((g) => g.fueltech_id);
 
 	const activeCap = groups.reduce((s, g) => s + g.active, 0);
 	const totalCap = groups.reduce((s, g) => s + g.cap, 0);

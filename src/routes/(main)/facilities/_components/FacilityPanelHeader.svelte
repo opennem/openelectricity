@@ -6,10 +6,16 @@
 	 */
 
 	import { Battery, BookOpen, ExternalLink, Globe, Zap } from '@lucide/svelte';
-	import { groupUnits, hasBidirectionalBattery, filterDerivedBatteryUnits } from '../_utils/units';
+	import {
+		groupUnits,
+		getOrderedFuelTechGroups,
+		hasBidirectionalBattery,
+		filterDerivedBatteryUnits
+	} from '../_utils/units';
 	import { getRegionLabel, getRegionLongLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import FuelTechBadgeStack from '$lib/components/FuelTechBadgeStack.svelte';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import { Tooltip as BitsTooltip } from 'bits-ui';
@@ -138,18 +144,9 @@
 		return top;
 	});
 
-	// De-duplicate by fueltech_id for the overlapped icon row. Inherits the
-	// reversed order from `unitGroups` (top-of-stack first).
-	let headerFuelTechs = $derived.by(() => {
-		/** @type {Map<string, any>} */
-		const seen = new Map();
-		for (const group of unitGroups) {
-			if (!seen.has(group.fueltech_id)) {
-				seen.set(group.fueltech_id, group);
-			}
-		}
-		return Array.from(seen.values());
-	});
+	// Ordered + de-duplicated fuel techs for the overlapped icon row — shared with
+	// the facilities list via `getOrderedFuelTechGroups` so the two always match.
+	let headerFuelTechs = $derived(getOrderedFuelTechGroups(facility));
 
 	// One row per group. When a facility models its battery as separate
 	// `battery_charging` + `battery_discharging` units (no bidirectional
@@ -218,23 +215,7 @@
 			<!-- Left column: icons · name · region · links -->
 			<div class="space-y-2 min-w-0">
 				<div class="flex flex-wrap items-center gap-3">
-					{#if headerFuelTechs.length}
-						<div class="flex items-center shrink-0 gap-1 md:gap-0">
-							{#each headerFuelTechs as group, i (group.fueltech_id)}
-								<span
-									class="rounded-full ring-2 ring-white block {i > 0 ? 'md:-ml-2.5' : ''}"
-									style="z-index: {headerFuelTechs.length - i};"
-								>
-									<FuelTechBadge
-										fuelTech={group.fueltech_id}
-										status={group.status_id}
-										isCommissioning={group.isCommissioning}
-										size="lg"
-									/>
-								</span>
-							{/each}
-						</div>
-					{/if}
+					<FuelTechBadgeStack groups={headerFuelTechs} />
 
 					<h2
 						class="basis-full order-last text-lg font-semibold text-dark-grey truncate m-0 md:basis-auto md:order-none md:flex-1 md:min-w-0"
