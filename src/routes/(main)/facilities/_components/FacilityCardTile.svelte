@@ -50,14 +50,14 @@
 		<FuelTechBadgeStack {groups} size="md" showStatus={false} ring="ring-1 ring-white" />
 		<div class="min-w-0 max-w-full">
 			<h3
-				class="truncate text-sm leading-tight font-bold @sm:text-base @md:text-lg {darkText
+				class="mb-0 truncate text-sm leading-none font-semibold @sm:text-base @md:text-lg {darkText
 					? 'text-black'
 					: 'text-white'}"
 			>
 				{card.name}
 			</h3>
 			<p
-				class="mt-0.5 truncate font-space text-xxxs font-medium @sm:text-xxs {darkText
+				class="mt-0.5 truncate font-space text-xxxs font-light @sm:text-xxs {darkText
 					? 'text-black/70'
 					: 'text-white/85'}"
 			>
