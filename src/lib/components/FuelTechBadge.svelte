@@ -14,7 +14,6 @@
 		iconCache.set(iconName, module.default);
 		return module.default;
 	}
-
 </script>
 
 <script>
@@ -30,6 +29,7 @@
 	 *   size?: 'sm' | 'md' | 'lg',
 	 *   status?: string,
 	 *   isCommissioning?: boolean,
+	 *   showStatus?: boolean,
 	 *   darkMode?: boolean,
 	 *   overlap?: boolean,
 	 *   zIndex?: number
@@ -42,6 +42,7 @@
 		size = 'md',
 		status,
 		isCommissioning = false,
+		showStatus = true,
 		darkMode = false,
 		overlap = false,
 		zIndex = 1
@@ -112,7 +113,7 @@
 		{:then SvelteComponent}
 			<SvelteComponent class="size-{sizeClasses.icon}" />
 		{/await}
-		{#if status && (status !== 'operating' || isCommissioning)}
+		{#if showStatus && status && (status !== 'operating' || isCommissioning)}
 			<div class="absolute {sizeClasses.statusPosition} z-10">
 				<FacilityStatusIcon {status} {isCommissioning} />
 			</div>

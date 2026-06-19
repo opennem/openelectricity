@@ -1,19 +1,19 @@
 <script>
 	import { tick } from 'svelte';
-	import FacilityCardImage from './_components/FacilityCardImage.svelte';
+	import FacilityCardTile from './_components/FacilityCardTile.svelte';
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
 
 	/**
 	 * Card-grid view for the facilities page. Renders each (already-filtered)
-	 * facility as its build-generated OG social card (`/og/facility/<code>.jpg`),
-	 * falling back to a live <FacilityOgCard> for facilities without a committed JPG.
+	 * facility as a native <FacilityCardTile> — its Sanity photo when available,
+	 * else a colour-wash card — so the grid never depends on the committed JPGs.
 	 * Lives in the same resizable panel as List/Timeline, so the column count is
 	 * driven by container width (not the viewport).
 	 *
 	 * @type {{
 	 *   facilities: any[],
 	 *   selectedFacilityCode?: string | null,
-	 *   cardCodes?: Set<string>,
+	 *   facilityPhotos?: Record<string, string>,
 	 *   onclick?: (facility: any) => void,
 	 *   onhover?: (facility: any | null) => void
 	 * }}
@@ -21,7 +21,7 @@
 	let {
 		facilities = [],
 		selectedFacilityCode = null,
-		cardCodes = new Set(),
+		facilityPhotos = {},
 		onclick,
 		onhover
 	} = $props();
@@ -56,7 +56,7 @@
 						onmouseenter={() => onhover?.(facility)}
 						onmouseleave={() => onhover?.(null)}
 					>
-						<FacilityCardImage {facility} {cardCodes} />
+						<FacilityCardTile {facility} photoUrl={facilityPhotos[facility.code] ?? null} />
 					</button>
 				</li>
 			{/each}

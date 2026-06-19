@@ -41,6 +41,7 @@ import {
 } from './_utils/status-utils.js';
 import { fetchFacilityPowerData } from './_utils/fetch-power-data.js';
 import { fetchFacilityOwners } from './_utils/fetch-facility-owners.js';
+import { fetchFacilityPhotos } from './_utils/fetch-facility-photos.js';
 import { DEFAULT_STATUSES, ALL_STATUSES } from './_utils/filters.js';
 // Codes with a committed `static/og/facility/<code>.jpg`; lets the Cards view show
 // the build-generated card and fall back to a live card for the rest.
@@ -102,10 +103,11 @@ export async function load({ url }) {
 	// Check server-side cache first
 	const cached = getCachedFacilities(filterParams);
 	if (cached) {
-		const [powerData, selectedFacilityOwners, sanityFacility] = await Promise.all([
+		const [powerData, selectedFacilityOwners, sanityFacility, facilityPhotos] = await Promise.all([
 			fetchFacilityPowerData(client, cached, selectedFacility),
 			fetchFacilityOwners(selectedFacility),
-			fetchSelectedSanityFacility(selectedFacility)
+			fetchSelectedSanityFacility(selectedFacility),
+			fetchFacilityPhotos()
 		]);
 
 		return {
@@ -122,6 +124,7 @@ export async function load({ url }) {
 			powerData,
 			selectedFacilityOwners,
 			sanityFacility,
+			facilityPhotos,
 			cardCodes,
 			fromCache: true
 		};
@@ -156,10 +159,11 @@ export async function load({ url }) {
 
 	// Fetch power data, owner info and enriched Sanity data for the selected
 	// facility in parallel
-	const [powerData, selectedFacilityOwners, sanityFacility] = await Promise.all([
+	const [powerData, selectedFacilityOwners, sanityFacility, facilityPhotos] = await Promise.all([
 		fetchFacilityPowerData(client, processedFacilities, selectedFacility),
 		fetchFacilityOwners(selectedFacility),
-		fetchSelectedSanityFacility(selectedFacility)
+		fetchSelectedSanityFacility(selectedFacility),
+		fetchFacilityPhotos()
 	]);
 
 	return {
@@ -176,6 +180,7 @@ export async function load({ url }) {
 		powerData,
 		selectedFacilityOwners,
 		sanityFacility,
+		facilityPhotos,
 		cardCodes,
 		fromCache: false
 	};

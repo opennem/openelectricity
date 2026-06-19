@@ -66,9 +66,11 @@
 	/** @type {any | null} */
 	let selectedFacility = $state(null);
 
-	// Codes with a committed `static/og/facility/<code>.jpg` — the Cards view shows
-	// the build-generated card for these and a live card for everything else.
+	// Codes with a committed `static/og/facility/<code>.jpg` — the map card popup
+	// shows the build-generated card for these and a live card for everything else.
 	let cardCodeSet = $derived(new Set(data.cardCodes ?? []));
+	// Facility code → Sanity photo URL, for the card-grid tiles.
+	let facilityPhotos = $derived(data.facilityPhotos ?? {});
 
 	// Sync local state when server data changes (e.g., browser back/forward, direct URL navigation)
 	// Note: Only depends on `data` to avoid circular deps with capacityBounds (which depends on selectedView)
@@ -1031,7 +1033,7 @@
 							<Cards
 								facilities={filteredFacilities}
 								selectedFacilityCode={selectedFacility?.code ?? null}
-								cardCodes={cardCodeSet}
+								{facilityPhotos}
 								onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 								onclick={(/** @type {any} */ f) => {
 									handleFacilitySelect(f);
