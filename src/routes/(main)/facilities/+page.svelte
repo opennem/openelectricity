@@ -133,29 +133,6 @@
 	/** @type {string[]} */
 	let timelineOrderedCodes = $state([]);
 
-	// When a facility is selected, switch the map to satellite view so the
-	// site's surroundings are visible. Remember the prior theme and restore
-	// it when the facility is deselected (panel closed / zoom-out).
-	/** @type {'light' | 'dark' | 'satellite' | null} */
-	let priorMapTheme = $state(null);
-	$effect(() => {
-		if (selectedFacility) {
-			if (priorMapTheme === null) {
-				priorMapTheme = mapTheme;
-			}
-			if (mapTheme !== 'satellite') {
-				mapTheme = 'satellite';
-				updateMapOptionsUrl();
-			}
-		} else if (priorMapTheme !== null) {
-			if (mapTheme !== priorMapTheme) {
-				mapTheme = priorMapTheme;
-				updateMapOptionsUrl();
-			}
-			priorMapTheme = null;
-		}
-	});
-
 	// Map options - read initial values from URL params
 	// satellite: default false, transmission: default true, clustering: default false, golf: default false
 	const VALID_THEMES = /** @type {const} */ (['light', 'dark', 'satellite']);
