@@ -63,10 +63,20 @@
 
 	/** @type {'sm' | 'md' | 'lg'} */
 	let badgeSize = $derived(compact ? 'sm' : 'lg');
+
+	// In the list, badges overlap only on the selected row (the pane narrows when
+	// a facility is selected); otherwise they spread out. The cluster popup
+	// always overlaps.
+	let badgesOverlap = $derived(compact || isSelected);
 </script>
 
 {#snippet badgeGroup()}
-	<FuelTechBadgeStack groups={orderedFuelTechs} size={badgeSize} {darkMode} />
+	<FuelTechBadgeStack
+		groups={orderedFuelTechs}
+		size={badgeSize}
+		{darkMode}
+		overlap={badgesOverlap}
+	/>
 {/snippet}
 
 {#if compact}
@@ -138,11 +148,13 @@
 			class:bg-warm-grey={isHighlighted || isSelected}
 			onclick={() => onclick?.(facility)}
 		>
-			<div class="pl-4 sm:pl-6 pr-4 py-3 sm:py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5">
+			<div
+				class="pl-4 sm:pl-6 pr-4 py-3 sm:py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5 min-w-0"
+			>
 				<div
 					class="{isFullscreen
 						? 'text-xs md:text-sm'
-						: 'text-sm md:text-base'} leading-snug md:leading-base font-medium text-dark-grey"
+						: 'text-sm md:text-base'} leading-snug md:leading-base font-medium text-dark-grey truncate"
 				>
 					{facility.name || 'Unnamed Facility'}
 				</div>

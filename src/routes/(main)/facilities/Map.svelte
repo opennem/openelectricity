@@ -338,6 +338,54 @@
 		validatedHoveredFacility?.code || mapHoveredFacilityCode
 	);
 
+	// Paint + layout for the individual facility circles, shared by the clustered
+	// and non-clustered source paths. On hover the hovered circle stays at full
+	// opacity (and grows slightly) while every other circle's fill AND stroke fade
+	// so it clearly stands out.
+	// circle-opacity and circle-stroke-opacity repeat the same hover expression;
+	// it's left inline (rather than hoisted to a const) because an extracted
+	// const widens to a loose array type and breaks the paint cast's precise
+	// tuple inference.
+	let facilityCirclePaint = $derived(
+		/** @type {import('svelte').ComponentProps<typeof CircleLayer>['paint']} */ ({
+			'circle-color': ['get', 'color'],
+			'circle-radius': [
+				'case',
+				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
+				['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
+			],
+			'circle-radius-transition': { duration: 400, delay: 0 },
+			'circle-stroke-width': [
+				'case',
+				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				2,
+				1
+			],
+			'circle-stroke-color': '#ffffff',
+			'circle-stroke-opacity': [
+				'case',
+				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				1,
+				activeHoveredFacilityCode ? 0.3 : 0.8
+			],
+			'circle-opacity': [
+				'case',
+				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				1,
+				activeHoveredFacilityCode ? 0.3 : 0.8
+			],
+			'circle-opacity-transition': { duration: 200, delay: 0 },
+			'circle-stroke-opacity-transition': { duration: 200, delay: 0 }
+		})
+	);
+
+	let facilityCircleLayout = $derived(
+		/** @type {import('svelte').ComponentProps<typeof CircleLayer>['layout']} */ ({
+			'circle-sort-key': ['case', ['==', ['get', 'code'], activeHoveredFacilityCode ?? ''], 1, 0]
+		})
+	);
+
 	/**
 	 * Calculate bounds from facilities and fit map to them
 	 * @param {any[]} facilityList
@@ -874,37 +922,8 @@
 				<CircleLayer
 					id="facility-points-unclustered"
 					filter={['!', ['has', 'point_count']]}
-					paint={{
-						'circle-color': ['get', 'color'],
-						'circle-radius': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
-							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
-						],
-						'circle-radius-transition': { duration: 400, delay: 0 },
-						'circle-stroke-width': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							2,
-							1
-						],
-						'circle-stroke-color': '#ffffff',
-						'circle-opacity': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							1,
-							activeHoveredFacilityCode ? 0.3 : 0.8
-						]
-					}}
-					layout={{
-						'circle-sort-key': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							1,
-							0
-						]
-					}}
+					paint={facilityCirclePaint}
+					layout={facilityCircleLayout}
 					onmouseenter={handlePointMouseEnter}
 					onmouseleave={handlePointMouseLeave}
 					onclick={handlePointClick}
@@ -916,37 +935,8 @@
 				<!-- All facility points rendered on WebGL canvas -->
 				<CircleLayer
 					id="facility-points"
-					paint={{
-						'circle-color': ['get', 'color'],
-						'circle-radius': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
-							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
-						],
-						'circle-radius-transition': { duration: 400, delay: 0 },
-						'circle-stroke-width': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							2,
-							1
-						],
-						'circle-stroke-color': '#ffffff',
-						'circle-opacity': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							1,
-							activeHoveredFacilityCode ? 0.3 : 0.8
-						]
-					}}
-					layout={{
-						'circle-sort-key': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							1,
-							0
-						]
-					}}
+					paint={facilityCirclePaint}
+					layout={facilityCircleLayout}
 					onmouseenter={handlePointMouseEnter}
 					onmouseleave={handlePointMouseLeave}
 					onclick={handlePointClick}
