@@ -1037,14 +1037,17 @@
 				bind:clientHeight={containerHeight}
 				class="flex-1 flex flex-col md:flex-row min-h-0 relative"
 			>
-				<!-- Left panel: List, Timeline or Cards (resizable on desktop) -->
+				<!-- Left panel: List, Timeline or Cards (resizable on desktop).
+				     Width is driven by a CSS variable + `md:` class rather than a
+				     JS-gated inline style, so the desktop list/map split is reserved
+				     from the first paint (no full-width flash before hydration). -->
 				<div
-					class="relative bg-white flex flex-col min-h-0 z-10 w-full md:shrink-0 {mainDrag.isDragging
+					class="relative bg-white flex flex-col min-h-0 z-10 w-full md:w-[var(--list-w)] md:shrink-0 {mainDrag.isDragging
 						? ''
 						: 'md:transition-[width] md:duration-300 md:ease-out'}"
 					class:hidden={selectedView === 'map'}
 					class:md:flex={selectedView === 'map'}
-					style={isDesktop ? `width: ${listPaneWidth}px` : ''}
+					style="--list-w: {listPaneWidth}px"
 				>
 					{#if selectedView === 'card'}
 						<div class="flex-1 overflow-y-auto min-h-0">
@@ -1125,10 +1128,14 @@
 					{@render summaryBar()}
 				</div>
 
-				<!-- Resizable divider (desktop only) -->
-				{#if isDesktop}
-					<DragHandle axis="x" onstart={mainDrag.start} active={mainDrag.isDragging} />
-				{/if}
+				<!-- Resizable divider (desktop only; hidden via CSS rather than
+				     {#if} so its width is reserved from the first paint). -->
+				<DragHandle
+					axis="x"
+					onstart={mainDrag.start}
+					active={mainDrag.isDragging}
+					class="hidden md:flex"
+				/>
 
 				<!-- Right panel: Map (flex-1 on desktop) -->
 				<div
