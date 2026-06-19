@@ -30,6 +30,8 @@
 
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
+import { client as sanityClient } from '$lib/sanity';
+import { SANITY_FACILITY_UNITS_PROJECTION } from '$lib/server/sanity-projections.js';
 import { getCachedFacilities, setCachedFacilities } from './_stores/facilities-server-cache.js';
 import { expandFuelTechs } from './_utils/fuel-tech-map.js';
 import {
@@ -48,6 +50,25 @@ const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
 	baseUrl: PUBLIC_OE_API_URL
 });
+
+/**
+ * Enriched Sanity unit data for the selected facility's metrics garnishes
+ * (DC:AC, turbine/equipment specs, MLF, storage, closure). Null when nothing is
+ * selected or the fetch fails — the core metrics don't depend on it.
+ * @param {string | null} code
+ * @returns {Promise<any | null>}
+ */
+function fetchSelectedSanityFacility(code) {
+	if (!code) return Promise.resolve(null);
+	return sanityClient
+		.fetch(
+			`*[_type == "facility" && code == $code][0]{ _id, code, ${SANITY_FACILITY_UNITS_PROJECTION} }`,
+			{
+				code
+			}
+		)
+		.catch(() => null);
+}
 
 export async function load({ url }) {
 	const { searchParams } = url;
@@ -81,9 +102,10 @@ export async function load({ url }) {
 	// Check server-side cache first
 	const cached = getCachedFacilities(filterParams);
 	if (cached) {
-		const [powerData, selectedFacilityOwners] = await Promise.all([
+		const [powerData, selectedFacilityOwners, sanityFacility] = await Promise.all([
 			fetchFacilityPowerData(client, cached, selectedFacility),
-			fetchFacilityOwners(selectedFacility)
+			fetchFacilityOwners(selectedFacility),
+			fetchSelectedSanityFacility(selectedFacility)
 		]);
 
 		return {
@@ -99,6 +121,7 @@ export async function load({ url }) {
 			selectedFacility,
 			powerData,
 			selectedFacilityOwners,
+			sanityFacility,
 			cardCodes,
 			fromCache: true
 		};
@@ -131,10 +154,12 @@ export async function load({ url }) {
 	// Store in server cache
 	setCachedFacilities(filterParams, processedFacilities);
 
-	// Fetch power data and owner info for the selected facility in parallel
-	const [powerData, selectedFacilityOwners] = await Promise.all([
+	// Fetch power data, owner info and enriched Sanity data for the selected
+	// facility in parallel
+	const [powerData, selectedFacilityOwners, sanityFacility] = await Promise.all([
 		fetchFacilityPowerData(client, processedFacilities, selectedFacility),
-		fetchFacilityOwners(selectedFacility)
+		fetchFacilityOwners(selectedFacility),
+		fetchSelectedSanityFacility(selectedFacility)
 	]);
 
 	return {
@@ -150,6 +175,7 @@ export async function load({ url }) {
 		selectedFacility,
 		powerData,
 		selectedFacilityOwners,
+		sanityFacility,
 		cardCodes,
 		fromCache: false
 	};

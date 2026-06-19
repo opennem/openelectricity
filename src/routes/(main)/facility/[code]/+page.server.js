@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { client as sanityClient } from '$lib/sanity';
+import { SANITY_FACILITY_UNITS_PROJECTION } from '$lib/server/sanity-projections.js';
 import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
 import facilityCardCodes from '$lib/server/og/facility-card-codes.json';
@@ -19,12 +20,13 @@ const OG_IMAGE_BASE = `${SITE}/og/facility`;
 const DEFAULT_OG_IMAGE = `${SITE}/img/preview.jpg`;
 const FACILITY_CARD_CODES = new Set(facilityCardCodes);
 
-// Static identity only — power/market/emissions series are time-sensitive and
-// fetched client-side (see +page.svelte).
+// Identity + enriched unit data (for the metrics garnishes). Power/market/
+// emissions series are time-sensitive and fetched client-side (see +page.svelte).
 const SANITY_FACILITY_PROJECTION = `{
 	_id, code, name, website, wikipedia, wikidata_id, location,
 	description, photos,
-	owners[]->{_id, name, legal_name, website}
+	owners[]->{_id, name, legal_name, website},
+	${SANITY_FACILITY_UNITS_PROJECTION}
 }`;
 
 // Rendered on demand (SSR) rather than prerendered: prerendering all ~600

@@ -12,7 +12,8 @@
 		FacilityEmissionsIntensityChart,
 		FacilityEmissionsVolumeChart,
 		FacilityEmissionsDataProvider,
-		FacilityPollutionPanel
+		FacilityPollutionPanel,
+		FacilityMetrics
 	} from '$lib/components/charts/facility';
 	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
@@ -80,6 +81,18 @@
 
 	let viewStart = $state(0);
 	let viewEnd = $state(0);
+
+	/** Visible-range data feeding the metrics section. summaryData (energy +
+	 *  market value) comes from the financial provider, emissionsData (reported
+	 *  tCO₂) from the emissions provider, intervalData (raw power) from the
+	 *  generation chart. All are keyed on viewStart/viewEnd so the metrics track
+	 *  the chart's date range. */
+	/** @type {{ mvData: any[], energyData: any[], mvSeriesNames: string[], energySeriesNames: string[] } | null} */
+	let summaryData = $state(null);
+	/** @type {{ rows: any[], seriesNames: string[] } | null} */
+	let emissionsData = $state(null);
+	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
+	let intervalData = $state(null);
 
 	const sync = createViewportSync();
 
@@ -156,9 +169,10 @@
 	let splitContainerEl = $state(undefined);
 	let isMobile = $state(false);
 
-	/** Measured live so both columns can stick just below the header. */
+	/** Measured live so the sidebar can stick just below the header. */
 	let headerHeight = $state(0);
 
+	// Resizable split between the main card and the sidebar; persisted to a cookie.
 	const splitDrag = createDragHandler({
 		axis: 'x',
 		min: CHARTS_FRACTION_MIN,
@@ -211,6 +225,10 @@
 		// its own chart fetch settles.
 		powerLoaded = false;
 		powerHasData = false;
+		// Drop stale metrics data so the new facility recomputes from its own range.
+		summaryData = null;
+		emissionsData = null;
+		intervalData = null;
 	});
 
 	const DAY_MS = 24 * 60 * 60 * 1000;
@@ -390,29 +408,24 @@
 		<FacilityPanelHeader facility={selectedFacility} sanityFacility={data.sanityFacility} />
 	</div>
 	{#if selectedFacility}
-		<div class="p-8 space-y-8">
-			<!-- md:items-start keeps the columns at their natural heights — flex's
-			     default `stretch` align would equalise them and leave sticky no
-			     room to slide. --col-top hoists the sticky-top expression out of
-			     the per-column class strings so both stay in lockstep. -->
-			<div
-				bind:this={splitContainerEl}
-				class="flex flex-col md:flex-row md:items-start min-h-0"
-				style="--hdr-h: {headerHeight}px; --col-top: calc(var(--hdr-h) + 2rem);"
-			>
+		<div
+			class="p-8 space-y-8"
+			style="--hdr-h: {headerHeight}px; --col-top: calc(var(--hdr-h) + 2rem);"
+		>
+			<div bind:this={splitContainerEl} class="flex flex-col md:flex-row md:items-start">
+				<!-- Main column — one unified card holding the range bar, metrics,
+				     unit availability and the three charts as divided sections.
+				     Resizable width; the sidebar takes the remainder. -->
 				<div
-					class="md:shrink-0 md:pr-4 md:sticky md:top-[var(--col-top)] space-y-4 {splitDrag.isDragging
+					class="min-w-0 md:shrink-0 md:pr-4 {splitDrag.isDragging
 						? ''
 						: 'md:transition-[width] md:duration-200 md:ease-out'}"
 					style:width={leftWidthPercent}
 				>
-					<div class="space-y-10">
-						{#if !showEmptyState}
-							<!-- Range/date picker — sits outside chartCardEl so clicking the
-							     bar disengages tap-to-engage pan/zoom (deliberate: choosing a
-							     new range is a different interaction modality from chart
-							     manipulation). -->
-							<div class="flex items-center justify-between gap-4 flex-wrap">
+					{#if !showEmptyState}
+						<div class="overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white">
+							<!-- Range / date picker -->
+							<div class="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
 								<span class="text-xs font-medium text-dark-grey">{dateRangeLabel}</span>
 								<ChartRangeBar
 									{selectedRange}
@@ -430,20 +443,28 @@
 								/>
 							</div>
 
-							<!-- chartCardEl wraps the chart cards (not the range bar) so
-							     pan/zoom click-outside detection treats clicks between cards
-							     as "still engaged" but disengages on a range-bar click. -->
-							<div bind:this={chartCardEl} class="space-y-8">
-								<!-- Generation card — full width. The interval badge stays here
-								     as the per-chart aggregation cue; the shared date range
-								     lives in the bar above. -->
-								<div class="relative rounded-lg border border-mid-warm-grey/40 bg-white">
-									<div
-										class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-									>
-										<h3 class="text-sm font-semibold text-dark-grey m-0">Generation</h3>
+							<!-- Metrics + unit availability. Flush grid; the card supplies the
+							     outer border. Fed by the providers + generation chart below. -->
+							<div class="border-t border-mid-warm-grey/40">
+								<FacilityMetrics
+									facility={selectedFacility}
+									sanityFacility={data.sanityFacility}
+									{summaryData}
+									{emissionsData}
+									{intervalData}
+								/>
+							</div>
+
+							<!-- chartCardEl wraps the chart sections (not the range bar / metrics)
+							     so pan/zoom click-outside treats clicks between charts as "still
+							     engaged" but disengages on a range-bar / metrics click. -->
+							<div bind:this={chartCardEl}>
+								<!-- Generation -->
+								<section class="border-t border-mid-warm-grey/40">
+									<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
+										<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
 										<span
-											class="px-2 py-0.5 rounded bg-light-warm-grey text-dark-grey text-xs uppercase tracking-wider"
+											class="rounded bg-light-warm-grey px-2 py-0.5 text-xs uppercase tracking-wider text-dark-grey"
 										>
 											{getIntervalSpec(displayInterval)?.label ?? displayInterval}
 										</span>
@@ -474,6 +495,7 @@
 												onhoverchange={handleHoverChange}
 												onviewportchange={handlePowerViewportChange}
 												onloadcomplete={handlePowerLoadComplete}
+												onvisibledata={(d) => (intervalData = d)}
 												panZoomMode="tap-to-engage"
 												bind:panZoomEngaged
 												bundleDerivedMetrics
@@ -494,7 +516,7 @@
 											</div>
 										{/if}
 									</div>
-								</div>
+								</section>
 
 								<FacilityFinancialDataProvider
 									facility={selectedFacility}
@@ -505,13 +527,12 @@
 									{viewEnd}
 									{hoverTime}
 									onhoverchange={handleHoverChange}
+									onsummarydata={(d) => (summaryData = d)}
 									onviewportchange={handleDerivedViewportChange}
 								>
-									<div class="relative rounded-lg border border-mid-warm-grey/40 bg-white">
-										<div
-											class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-										>
-											<h3 class="text-sm font-semibold text-dark-grey m-0">Market</h3>
+									<section class="border-t border-mid-warm-grey/40">
+										<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
+											<h3 class="m-0 text-sm font-semibold text-dark-grey">Market</h3>
 											<SwitchTabs
 												buttons={[
 													{ label: 'Price', value: 'price' },
@@ -536,7 +557,7 @@
 												/>
 											{/if}
 										{/if}
-									</div>
+									</section>
 								</FacilityFinancialDataProvider>
 
 								{#if hasEmittingUnits}
@@ -550,13 +571,12 @@
 										{viewEnd}
 										{hoverTime}
 										onhoverchange={handleHoverChange}
+										onsummarydata={(d) => (emissionsData = d)}
 										onviewportchange={handleDerivedViewportChange}
 									>
-										<div class="relative rounded-lg border border-mid-warm-grey/40 bg-white">
-											<div
-												class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-											>
-												<h3 class="text-sm font-semibold text-dark-grey m-0">Emissions</h3>
+										<section class="border-t border-mid-warm-grey/40">
+											<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
+												<h3 class="m-0 text-sm font-semibold text-dark-grey">Emissions</h3>
 												<SwitchTabs
 													buttons={[
 														{ label: 'Intensity', value: 'intensity' },
@@ -582,30 +602,26 @@
 													/>
 												{/if}
 											{/if}
-										</div>
+										</section>
 									</FacilityEmissionsDataProvider>
 								{/if}
 							</div>
-						{:else}
-							<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
-								<div
-									class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-								>
-									<h3 class="text-sm font-semibold text-dark-grey m-0">Generation</h3>
-								</div>
-								<div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-									<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
-										<LineChart size={24} strokeWidth={1.5} />
-									</div>
-									<p class="text-sm font-medium text-dark-grey m-0">No data available</p>
-								</div>
+						</div>
+					{:else}
+						<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
+							<div
+								class="flex items-center justify-between gap-4 border-b border-mid-warm-grey/40 px-6 py-3"
+							>
+								<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
 							</div>
-						{/if}
-
-						{#if hasNpi}
-							<FacilityPollutionPanel facility={selectedFacility} />
-						{/if}
-					</div>
+							<div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
+								<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
+									<LineChart size={24} strokeWidth={1.5} />
+								</div>
+								<p class="m-0 text-sm font-medium text-dark-grey">No data available</p>
+							</div>
+						</div>
+					{/if}
 				</div>
 
 				{#if !isMobile}
@@ -617,11 +633,17 @@
 					/>
 				{/if}
 
-				<div class="flex-1 min-w-0 md:pl-4 md:sticky md:top-[var(--col-top)] space-y-10">
+				<!-- Sidebar — fills the remaining width; sticky below the header. -->
+				<div class="min-w-0 flex-1 space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]">
 					<FacilityInfoPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
 					<FacilityUnitsPanel facility={selectedFacility} />
 				</div>
 			</div>
+
+			<!-- NPI pollution — full width below the main row -->
+			{#if hasNpi}
+				<FacilityPollutionPanel facility={selectedFacility} />
+			{/if}
 		</div>
 	{/if}
 </div>

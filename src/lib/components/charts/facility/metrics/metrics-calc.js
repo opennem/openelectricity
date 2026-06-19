@@ -1,0 +1,217 @@
+/**
+ * Pure metric computation for the facility metrics section.
+ *
+ * Every function takes already-aggregated data (the visible-range rows emitted
+ * by the facility data providers / chart) and returns a number — no side
+ * effects, no fetching, no Svelte. This keeps the maths unit-testable and lets
+ * the same helpers drive both the `/facility/[code]` page and the `/facilities`
+ * detail panel.
+ *
+ * Energy is MWh, power is MW, market value is $, emissions are tCO₂e.
+ */
+
+/**
+ * Sum the finite numeric values of one key across rows.
+ * @param {Array<Record<string, any>>} rows
+ * @param {string} key
+ * @returns {number}
+ */
+export function sumSeries(rows, key) {
+	let total = 0;
+	for (const row of rows) {
+		const val = row[key];
+		if (typeof val === 'number' && !isNaN(val)) total += val;
+	}
+	return total;
+}
+
+/**
+ * Sum the finite numeric values of several keys across rows. Convenience for
+ * "total energy / total emissions across every unit series".
+ * @param {Array<Record<string, any>>} rows
+ * @param {string[]} keys
+ * @returns {number}
+ */
+export function sumAllSeries(rows, keys) {
+	let total = 0;
+	for (const key of keys) {
+		total += sumSeries(rows, key);
+	}
+	return total;
+}
+
+/**
+ * Hours spanned by a set of time-ordered rows (first → last `time` in ms).
+ * @param {Array<Record<string, any>>} rows - Each row must carry `time` (ms)
+ * @returns {number}
+ */
+export function getHoursInRange(rows) {
+	if (!rows.length) return 0;
+	const firstTime = rows[0].time;
+	const lastTime = rows[rows.length - 1].time;
+	return (lastTime - firstTime) / 3_600_000;
+}
+
+/**
+ * Interval length of time-ordered rows in hours (gap between the first two
+ * rows). Returns 0 when there aren't enough rows to measure.
+ * @param {Array<Record<string, any>>} rows
+ * @returns {number}
+ */
+export function getIntervalHours(rows) {
+	if (rows.length < 2) return 0;
+	return (rows[1].time - rows[0].time) / 3_600_000;
+}
+
+/**
+ * Whether time-ordered rows are sub-daily (power grain) — the gap between the
+ * first two rows is under two hours. Daily/monthly energy data returns false.
+ * Gates the interval-derived metrics (running hours, starts, unit availability).
+ * @param {Array<Record<string, any>>} rows
+ * @returns {boolean}
+ */
+export function isSubDailyData(rows) {
+	if (rows.length < 2) return false;
+	const gap = rows[1].time - rows[0].time;
+	return gap > 0 && gap < 7_200_000;
+}
+
+/**
+ * Capacity factor (%) — energy as a share of the theoretical maximum
+ * (capacity × hours).
+ * @param {number} energy - MWh
+ * @param {number} capacity - MW
+ * @param {number} hours
+ * @returns {number} 0–100 (can exceed 100 if registered capacity understates output)
+ */
+export function capacityFactor(energy, capacity, hours) {
+	if (capacity <= 0 || hours <= 0) return 0;
+	return (energy / (capacity * hours)) * 100;
+}
+
+/**
+ * Average price received ($/MWh) — market value divided by energy.
+ * @param {number} marketValue - $
+ * @param {number} energy - MWh
+ * @returns {number}
+ */
+export function avgPriceReceived(marketValue, energy) {
+	if (energy === 0) return 0;
+	return marketValue / energy;
+}
+
+/**
+ * Peak instantaneous output (MW) across the range.
+ *
+ * Each row's positive-series total is taken; when `intervalHours` > 0 the row
+ * total is treated as energy (MWh) and divided back to power (MW). Pass 0 for
+ * native power data.
+ * @param {Array<Record<string, any>>} rows
+ * @param {string[]} seriesNames
+ * @param {number} [intervalHours=0]
+ * @returns {number}
+ */
+export function peakOutput(rows, seriesNames, intervalHours = 0) {
+	let max = 0;
+	for (const row of rows) {
+		let rowTotal = 0;
+		for (const name of seriesNames) {
+			const val = row[name];
+			if (typeof val === 'number' && val > 0) rowTotal += val;
+		}
+		if (intervalHours > 0) rowTotal /= intervalHours;
+		if (rowTotal > max) max = rowTotal;
+	}
+	return max;
+}
+
+/**
+ * Running hours — number of intervals where any series generated, in hours.
+ * @param {Array<Record<string, any>>} powerData
+ * @param {string[]} seriesNames
+ * @param {number} intervalMinutes
+ * @returns {number}
+ */
+export function runningHours(powerData, seriesNames, intervalMinutes) {
+	let count = 0;
+	for (const row of powerData) {
+		for (const name of seriesNames) {
+			const val = row[name];
+			if (typeof val === 'number' && val > 0) {
+				count++;
+				break;
+			}
+		}
+	}
+	return (count * intervalMinutes) / 60;
+}
+
+/**
+ * Start count — transitions from not-generating to generating (an initial
+ * generating interval counts as a start).
+ * @param {Array<Record<string, any>>} powerData
+ * @param {string[]} seriesNames
+ * @returns {number}
+ */
+export function startCount(powerData, seriesNames) {
+	let starts = 0;
+	let wasGenerating = false;
+
+	for (const row of powerData) {
+		let generating = false;
+		for (const name of seriesNames) {
+			const val = row[name];
+			if (typeof val === 'number' && val > 0) {
+				generating = true;
+				break;
+			}
+		}
+		if (generating && !wasGenerating) starts++;
+		wasGenerating = generating;
+	}
+	return starts;
+}
+
+/**
+ * DC:AC ratio for a solar farm (DC array / AC connection). Returns null when
+ * the ratio isn't meaningful (no oversizing, or implausibly high).
+ * @param {number | null | undefined} capacityRegistered - DC (MW)
+ * @param {number | null | undefined} capacityMaximum - AC (MW)
+ * @returns {number | null}
+ */
+export function dcAcRatio(capacityRegistered, capacityMaximum) {
+	if (!capacityRegistered || !capacityMaximum || capacityMaximum <= 0) return null;
+	const ratio = capacityRegistered / capacityMaximum;
+	if (ratio < 1.05 || ratio > 3) return null;
+	return ratio;
+}
+
+/**
+ * Per-unit availability (%) from interval data — the share of non-null
+ * intervals where the unit generated (power > 0).
+ * @param {Array<Record<string, any>>} rows
+ * @param {string[]} seriesNames
+ * @returns {Array<{ unit: string, seriesName: string, availability: number }>}
+ */
+export function computeUnitAvailability(rows, seriesNames) {
+	if (!rows.length || !seriesNames.length) return [];
+
+	return seriesNames.map((name) => {
+		let generating = 0;
+		let total = 0;
+
+		for (const row of rows) {
+			const val = row[name];
+			if (val === null || val === undefined) continue;
+			total++;
+			if (typeof val === 'number' && val > 0) generating++;
+		}
+
+		const unit = name.replace(/^(power|energy)_/, '');
+		return {
+			unit,
+			seriesName: name,
+			availability: total > 0 ? (generating / total) * 100 : 0
+		};
+	});
+}

@@ -58,6 +58,7 @@
 	 * @property {boolean} [showTooltipDate] - Whether the tooltips show their date/time header (default: true).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync.
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when an emissions chart's local hover changes.
+	 * @property {((data: { rows: any[], seriesNames: string[] }) => void)} [onsummarydata] - Visible-range reported emissions (tCO₂) for the metrics section.
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
 	 * @property {import('svelte').Snippet} [children]
 	 */
@@ -76,6 +77,7 @@
 		showTooltipDate = true,
 		hoverTime = undefined,
 		onhoverchange,
+		onsummarydata,
 		onviewportchange,
 		children
 	} = $props();
@@ -329,6 +331,21 @@
 				// tonnes → kg (×1000), divided by MWh → kgCO₂e/MWh
 				intensity: energyMWh > 0 ? (emissionsTotal * 1000) / energyMWh : null
 			};
+		});
+	});
+
+	// ============================================
+	// Summary data callback — visible-range reported emissions (tCO₂) for the
+	// metrics section. Mirrors FacilityFinancialDataProvider.onsummarydata.
+	// ============================================
+
+	$effect(() => {
+		if (!onsummarydata) return;
+		if (!emissionsDataManager?.processedCache) return;
+
+		onsummarydata({
+			rows: getVisibleData(emissionsDataManager, 'sum'),
+			seriesNames: emissionsDataManager.seriesMeta?.seriesNames ?? []
 		});
 	});
 

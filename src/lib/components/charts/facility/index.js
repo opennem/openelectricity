@@ -13,6 +13,7 @@ export { default as FacilityEmissionsIntensityChart } from './FacilityEmissionsI
 export { default as FacilityEmissionsVolumeChart } from './FacilityEmissionsVolumeChart.svelte';
 export { default as FacilityEmissionsDataProvider } from './FacilityEmissionsDataProvider.svelte';
 export { default as FacilitySummaryTable } from './FacilitySummaryTable.svelte';
+export { default as FacilityMetrics } from './metrics/FacilityMetrics.svelte';
 export { default as FacilityDataTable } from './FacilityDataTable.svelte';
 export { default as FacilityUnitsTable } from './FacilityUnitsTable.svelte';
 export {

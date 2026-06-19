@@ -1508,6 +1508,7 @@
 								{/snippet}
 								<FacilityDetailPanel
 									facility={selectedFacility}
+									sanityFacility={data.sanityFacility}
 									{powerData}
 									fillHeight={isFullscreen}
 								/>
@@ -1526,7 +1527,12 @@
 						<FacilityPanelHeader facility={selectedFacility} />
 
 						<div class="flex-1 min-h-0">
-							<FacilityDetailPanel facility={selectedFacility} {powerData} fillHeight={true} />
+							<FacilityDetailPanel
+								facility={selectedFacility}
+								sanityFacility={data.sanityFacility}
+								{powerData}
+								fillHeight={true}
+							/>
 						</div>
 
 						<FacilityPanelFooter
