@@ -59,44 +59,44 @@ Build-time toggles for incomplete or experimental UI live in `PUBLIC_FEATURE_FLA
 
 Current flags:
 
-| Flag                   | Default | Effect                                                                  |
-| ---------------------- | ------- | ----------------------------------------------------------------------- |
-| `show_map_experiments` | `false` | Reveals the experimental Facilities-map controls: marker-style picker (Circles / Hex / Heat), the "Show by" metric dropdown (Capacity / Generation / Pollution), and the live tuning panel (bottom-left). |
+| Flag           | Default | Effect                                                                           |
+| -------------- | ------- | -------------------------------------------------------------------------------- |
+| `tracker2_nav` | `false` | Surfaces the in-progress **Tracker2** (Explorer dashboard) link in the main nav. |
 
 Toggle locally via `.env`:
 
 ```bash
 # .env
 PUBLIC_FEATURE_FLAGS='{
-  "show_map_experiments": true
+  "tracker2_nav": true
 }'
 ```
 
 Toggle in Doppler (maintainers — apply per environment):
 
 ```bash
-doppler secrets set PUBLIC_FEATURE_FLAGS='{"show_map_experiments": true}' --config dev
-doppler secrets set PUBLIC_FEATURE_FLAGS='{"show_map_experiments": true}' --config stg
-doppler secrets set PUBLIC_FEATURE_FLAGS='{"show_map_experiments": true}' --config prd
+doppler secrets set PUBLIC_FEATURE_FLAGS='{"tracker2_nav": true}' --config dev
+doppler secrets set PUBLIC_FEATURE_FLAGS='{"tracker2_nav": true}' --config stg
+doppler secrets set PUBLIC_FEATURE_FLAGS='{"tracker2_nav": true}' --config prd
 ```
 
 The full JSON object replaces the previous value, so include every flag you want to keep — run `doppler secrets get PUBLIC_FEATURE_FLAGS --plain --config <name>` first to see the current value.
 
 ## Commands
 
-| Command                    | Description                                        |
-| -------------------------- | -------------------------------------------------- |
-| `pnpm run dev`             | Start dev server using `.env` (default)            |
-| `pnpm run doppler-dev`     | Start dev server with secrets injected from Doppler (maintainers) |
-| `pnpm run build`           | Production build                                   |
-| `pnpm run doppler-build`   | Production build with secrets injected from Doppler (maintainers) |
-| `pnpm run preview`         | Preview production build                           |
-| `pnpm run doppler-preview` | Preview production build with secrets injected from Doppler (maintainers) |
-| `pnpm run check`           | Type check with svelte-check                       |
-| `pnpm run lint`            | Lint with Prettier + ESLint                        |
-| `pnpm run format`          | Auto-format with Prettier                          |
-| `pnpm run test`            | Run unit tests (Vitest)                            |
-| `pnpm run test:e2e`        | Run end-to-end tests (Playwright)                  |
+| Command                    | Description                                                                |
+| -------------------------- | -------------------------------------------------------------------------- |
+| `pnpm run dev`             | Start dev server using `.env` (default)                                    |
+| `pnpm run doppler-dev`     | Start dev server with secrets injected from Doppler (maintainers)          |
+| `pnpm run build`           | Production build                                                           |
+| `pnpm run doppler-build`   | Production build with secrets injected from Doppler (maintainers)          |
+| `pnpm run preview`         | Preview production build                                                   |
+| `pnpm run doppler-preview` | Preview production build with secrets injected from Doppler (maintainers)  |
+| `pnpm run check`           | Type check with svelte-check                                               |
+| `pnpm run lint`            | Lint with Prettier + ESLint                                                |
+| `pnpm run format`          | Auto-format with Prettier                                                  |
+| `pnpm run test`            | Run unit tests (Vitest)                                                    |
+| `pnpm run test:e2e`        | Run end-to-end tests (Playwright)                                          |
 | `pnpm run dev-sync`        | After a release: fast-forward `dev` to `main` and push (returns to `main`) |
 
 ## Project Structure
@@ -137,9 +137,9 @@ src/
 
 ## Deployment
 
-| Branch | Environment                                                        |
-| ------ | ------------------------------------------------------------------ |
-| `main` | Production — [openelectricity.org.au](https://openelectricity.org.au) |
+| Branch | Environment                                                                |
+| ------ | -------------------------------------------------------------------------- |
+| `main` | Production — [openelectricity.org.au](https://openelectricity.org.au)      |
 | `dev`  | Staging — [dev.openelectricity.org.au](https://dev.openelectricity.org.au) |
 
 Production deployments are triggered via a Cloudflare deploy hook on version tags:

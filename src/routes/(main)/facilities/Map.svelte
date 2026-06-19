@@ -15,8 +15,6 @@
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import FacilityCardImage from './_components/FacilityCardImage.svelte';
 	import { getRegionLabel } from './_utils/filters';
-	import { DEFAULT_TUNING } from './_utils/map-tuning.js';
-	import { hexToRgb } from '$lib/utils/colour-darken.js';
 	import { collapseMapAttribution } from '$lib/components/map/collapse-attribution.js';
 	import { X } from '@lucide/svelte';
 
@@ -33,7 +31,6 @@
 	 *   cardCodes?: Set<string>,
 	 *   clustering?: boolean,
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
-	 *   mapMarkerStyle?: 'circles' | 'columns' | 'heatmap',
 	 *   showTransmissionLines?: boolean,
 	 *   transmissionLineVisibility?: TransmissionLineVisibility,
 	 *   showGolfCourses?: boolean,
@@ -43,9 +40,6 @@
 	 *   flyToOffsetX?: number,
 	 *   flyToOffsetY?: number,
 	 *   metricValues?: Map<string, number | null>,
-	 *   metricMissingByCode?: Set<string>,
-	 *   experimentsEnabled?: boolean,
-	 *   tuning?: import('./_utils/map-tuning.js').Tuning,
 	 *   onhover?: (facility: any | null) => void,
 	 *   onclick?: (facility: any | null) => void,
 	 *   onselect?: (facility: any | null) => void,
@@ -60,7 +54,6 @@
 		cardCodes = new Set(),
 		clustering = false,
 		mapTheme = 'light',
-		mapMarkerStyle = 'circles',
 		showTransmissionLines = true,
 		transmissionLineVisibility = { high: true, medium: true, low: true, lowest: true },
 		showGolfCourses = false,
@@ -70,9 +63,6 @@
 		flyToOffsetX = 0,
 		flyToOffsetY = 0,
 		metricValues = new Map(),
-		metricMissingByCode = new Set(),
-		experimentsEnabled = false,
-		tuning = DEFAULT_TUNING,
 		onhover,
 		onclick,
 		onselect,
@@ -96,70 +86,13 @@
 			max
 		];
 	}
-	let circleStops = $derived(buildCircleStops(tuning.circleMin, tuning.circleMax));
-	let circleStopsHovered = $derived(buildCircleStops(tuning.circleMin + 2, tuning.circleMax + 2));
+	// Circle radius range (px) — was tunable via the (removed) experiments panel.
+	const CIRCLE_MIN = 4;
+	const CIRCLE_MAX = 28;
+	let circleStops = $derived(buildCircleStops(CIRCLE_MIN, CIRCLE_MAX));
+	let circleStopsHovered = $derived(buildCircleStops(CIRCLE_MIN + 2, CIRCLE_MAX + 2));
 
-	// Derived booleans for things that still consume the legacy boolean
-	// shape (existing satellite-aware logic, deck.gl visibility, etc).
-	// Marker styles are mutually exclusive — exactly one of these is true.
 	let satelliteView = $derived(mapTheme === 'satellite');
-	let showColumns = $derived(mapMarkerStyle === 'columns');
-	let showHeatmap = $derived(mapMarkerStyle === 'heatmap');
-	// "Circles" maps to two render paths: the maplibre `CircleLayer`
-	// (default) or — when experiments are on AND the panel's circle
-	// renderer is `'deck'` — deck.gl's `ScatterplotLayer`. Likewise for
-	// transmission.
-	let showCirclesAsScatter = $derived(
-		experimentsEnabled && mapMarkerStyle === 'circles' && tuning.circleRenderer === 'deck'
-	);
-	let showCircles = $derived(mapMarkerStyle === 'circles' && !showCirclesAsScatter);
-	let useDeckTransmission = $derived(experimentsEnabled && tuning.transmissionRenderer === 'deck');
-	let showDeckOverlay = $derived(showColumns || showHeatmap || showCirclesAsScatter);
-	// Mode for the deck.gl overlay. Clustering is intentionally ignored
-	// for the deck modes — they have their own visual semantics and don't
-	// pair well with the count-based maplibre aggregate. Clustering only
-	// drives the maplibre circle layer.
-	let deckMode = $derived(
-		/** @type {'column' | 'heatmap' | 'scatter'} */ (
-			showHeatmap ? 'heatmap' : showCirclesAsScatter ? 'scatter' : 'column'
-		)
-	);
-
-	// `metricValues` is sqrt-normalised (0..1) by `normaliseMetric`; we
-	// scale up to a MW-equivalent visual range so column heights and heatmap
-	// intensities stay comparable across capacity / generation / pollution.
-	const HEX_WEIGHT_SCALE = 10000;
-
-	// Both `facilityColours` and `hexagonData` only feed deck.gl marker
-	// modes — skip the work entirely in maplibre-only renders so dragging
-	// metric / filter sliders doesn't re-parse 600 hex strings + rebuild
-	// 600-entry arrays per tick.
-	let facilityColours = $derived.by(() => {
-		/** @type {Map<string, [number, number, number]>} */
-		const out = new Map();
-		if (!showDeckOverlay) return out;
-		for (const f of facilities) {
-			out.set(f.code, hexToRgb(getFacilityColor(f) || '#888888'));
-		}
-		return out;
-	});
-
-	let hexagonData = $derived.by(() => {
-		if (!showDeckOverlay) return [];
-		return facilities
-			.filter((f) => f.location?.lng != null && f.location?.lat != null)
-			.filter((f) => !metricMissingByCode.has(f.code))
-			.map((f) => {
-				const normalised = metricValues.get(f.code);
-				const weight = typeof normalised === 'number' ? normalised * HEX_WEIGHT_SCALE : 1;
-				return {
-					position: /** @type {[number, number]} */ ([f.location.lng, f.location.lat]),
-					weight,
-					code: f.code,
-					color: facilityColours.get(f.code) ?? [136, 136, 136]
-				};
-			});
-	});
 
 	// Build filter for transmission lines based on visibility settings
 	let transmissionFilter = $derived.by(() => {
@@ -226,24 +159,6 @@
 				? '/map-styles/dark-matter.json'
 				: '/map-styles/positron.json'
 	);
-
-	// Tilt the camera into 3D when hex columns are visible so their height
-	// reads, and ease back to top-down when only circles are showing.
-	// Tracks user pitch via the map's `pitch` event so we don't fight the
-	// user — once they've dragged to a custom angle, we leave it alone
-	// until they next change marker style.
-	const PITCH_3D = 50;
-	const PITCH_FLAT = 0;
-	const PITCH_TRANSITION_MS = 800;
-	$effect(() => {
-		const wantsTilt = showColumns;
-		const map = mapInstance;
-		if (!map || !mapLoaded) return;
-		const targetPitch = wantsTilt ? PITCH_3D : PITCH_FLAT;
-		const currentPitch = map.getPitch();
-		if (Math.abs(currentPitch - targetPitch) < 0.5) return;
-		map.easeTo({ pitch: targetPitch, duration: PITCH_TRANSITION_MS, essential: true });
-	});
 
 	// Cluster panel state
 	/** @type {any[]} */
@@ -355,36 +270,31 @@
 		return cache;
 	});
 
-	// Convert facilities to GeoJSON for clustering. Facilities without a value
-	// for the active metric are dropped here so they're hidden from both the
-	// circle layer and any clustering — e.g. clean renewables disappear when
-	// 'Pollution' is the active metric.
+	// Convert facilities to GeoJSON for clustering.
 	let facilitiesGeoJSON = $derived.by(() => {
 		/** @type {GeoJSON.FeatureCollection} */
 		const geojson = {
 			type: 'FeatureCollection',
-			features: facilities
-				.filter((facility) => !metricMissingByCode.has(facility.code))
-				.map((facility) => {
-					const normalised = metricValues.get(facility.code);
-					return {
-						type: 'Feature',
-						geometry: {
-							type: 'Point',
-							coordinates: [facility.location.lng, facility.location.lat]
-						},
-						properties: {
-							code: facility.code,
-							name: facility.name,
-							color: getFacilityColor(facility),
-							network_id: facility.network_id,
-							network_region: facility.network_region,
-							capacity: getTotalCapacity(facility),
-							// Active metric, normalised to 0..1 — drives marker radius.
-							metric_value: typeof normalised === 'number' ? normalised : 0
-						}
-					};
-				})
+			features: facilities.map((facility) => {
+				const normalised = metricValues.get(facility.code);
+				return {
+					type: 'Feature',
+					geometry: {
+						type: 'Point',
+						coordinates: [facility.location.lng, facility.location.lat]
+					},
+					properties: {
+						code: facility.code,
+						name: facility.name,
+						color: getFacilityColor(facility),
+						network_id: facility.network_id,
+						network_region: facility.network_region,
+						capacity: getTotalCapacity(facility),
+						// Active metric, normalised to 0..1 — drives marker radius.
+						metric_value: typeof normalised === 'number' ? normalised : 0
+					}
+				};
+			})
 		};
 		return geojson;
 	});
@@ -855,201 +765,193 @@
 			/>
 		</GeoJSONSource>
 
-		{#if !useDeckTransmission}
-			<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
-				<LineLayer
-					id="transmission-lines-layer"
-					filter={transmissionFilter}
-					paint={{
-						'line-color': [
+		<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
+			<LineLayer
+				id="transmission-lines-layer"
+				filter={transmissionFilter}
+				paint={{
+					'line-color': [
+						'case',
+						['>=', ['get', 'capacitykv'], 400],
+						satelliteView ? '#ff6b6b' : '#c0392b',
+						['>=', ['get', 'capacitykv'], 220],
+						satelliteView ? '#ffd93d' : '#c49b00',
+						['>=', ['get', 'capacitykv'], 110],
+						satelliteView ? '#6bcb77' : '#27ae60',
+						satelliteView ? '#74b9ff' : '#2980b9'
+					],
+					'line-width': [
+						'interpolate',
+						['linear'],
+						['zoom'],
+						3,
+						[
 							'case',
 							['>=', ['get', 'capacitykv'], 400],
-							satelliteView ? '#ff6b6b' : '#c0392b',
+							1.5,
 							['>=', ['get', 'capacitykv'], 220],
-							satelliteView ? '#ffd93d' : '#c49b00',
+							1,
 							['>=', ['get', 'capacitykv'], 110],
-							satelliteView ? '#6bcb77' : '#27ae60',
-							satelliteView ? '#74b9ff' : '#2980b9'
+							0.7,
+							0.5
 						],
-						'line-width': [
-							'interpolate',
-							['linear'],
-							['zoom'],
+						8,
+						[
+							'case',
+							['>=', ['get', 'capacitykv'], 400],
+							4,
+							['>=', ['get', 'capacitykv'], 220],
 							3,
-							[
-								'case',
-								['>=', ['get', 'capacitykv'], 400],
-								1.5,
-								['>=', ['get', 'capacitykv'], 220],
-								1,
-								['>=', ['get', 'capacitykv'], 110],
-								0.7,
-								0.5
-							],
-							8,
-							[
-								'case',
-								['>=', ['get', 'capacitykv'], 400],
-								4,
-								['>=', ['get', 'capacitykv'], 220],
-								3,
-								['>=', ['get', 'capacitykv'], 110],
-								2,
-								1.5
-							],
-							14,
-							[
-								'case',
-								['>=', ['get', 'capacitykv'], 400],
-								6,
-								['>=', ['get', 'capacitykv'], 220],
-								5,
-								['>=', ['get', 'capacitykv'], 110],
-								4,
-								3
-							]
+							['>=', ['get', 'capacitykv'], 110],
+							2,
+							1.5
 						],
-						'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.5, 8, 0.7, 12, 0.85]
+						14,
+						[
+							'case',
+							['>=', ['get', 'capacitykv'], 400],
+							6,
+							['>=', ['get', 'capacitykv'], 220],
+							5,
+							['>=', ['get', 'capacitykv'], 110],
+							4,
+							3
+						]
+					],
+					'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.5, 8, 0.7, 12, 0.85]
+				}}
+				layout={{
+					'line-cap': 'round',
+					'line-join': 'round',
+					visibility: showTransmissionLines ? 'visible' : 'none'
+				}}
+			/>
+		</GeoJSONSource>
+
+		{#if clustering}
+			<!-- Clustered GeoJSON source -->
+			<GeoJSONSource
+				id="facilities-clustered"
+				data={facilitiesGeoJSON}
+				cluster={true}
+				clusterMaxZoom={5}
+				clusterRadius={50}
+			>
+				<!-- Cluster circles -->
+				<CircleLayer
+					id="cluster-circles"
+					filter={['has', 'point_count']}
+					paint={{
+						'circle-color': satelliteView ? '#ffffff' : '#4a4a4a',
+						'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 50, 35, 100, 45],
+						'circle-opacity': satelliteView ? 0.95 : 0.9
 					}}
-					layout={{
-						'line-cap': 'round',
-						'line-join': 'round',
-						visibility: showTransmissionLines ? 'visible' : 'none'
+					onclick={handleClusterClick}
+					onmouseenter={() => {
+						if (mapInstance) mapInstance.getCanvas().style.cursor = 'pointer';
+					}}
+					onmouseleave={() => {
+						if (mapInstance) mapInstance.getCanvas().style.cursor = '';
 					}}
 				/>
+
+				<!-- Cluster count labels -->
+				<SymbolLayer
+					id="cluster-count"
+					filter={['has', 'point_count']}
+					layout={{
+						'text-field': '{point_count_abbreviated}',
+						'text-font': ['DM_Mono'],
+						'text-size': 14,
+						visibility: isZooming ? 'none' : 'visible'
+					}}
+					paint={{
+						'text-color': satelliteView ? '#1a1a1a' : '#ffffff'
+					}}
+				/>
+
+				<!-- Unclustered points (individual facilities) -->
+				<CircleLayer
+					id="facility-points-unclustered"
+					filter={['!', ['has', 'point_count']]}
+					paint={{
+						'circle-color': ['get', 'color'],
+						'circle-radius': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
+							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
+						],
+						'circle-radius-transition': { duration: 400, delay: 0 },
+						'circle-stroke-width': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							2,
+							1
+						],
+						'circle-stroke-color': '#ffffff',
+						'circle-opacity': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							1,
+							activeHoveredFacilityCode ? 0.3 : 0.8
+						]
+					}}
+					layout={{
+						'circle-sort-key': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							1,
+							0
+						]
+					}}
+					onmouseenter={handlePointMouseEnter}
+					onmouseleave={handlePointMouseLeave}
+					onclick={handlePointClick}
+				/>
 			</GeoJSONSource>
-		{:else if showTransmissionLines}
-			{#await import('./_components/MapTransmissionLayer.svelte') then { default: MapTransmissionLayer }}
-				<MapTransmissionLayer voltageVisibility={transmissionLineVisibility} {facilities} />
-			{/await}
-		{/if}
-
-		{#if showCircles}
-			{#if clustering}
-				<!-- Clustered GeoJSON source -->
-				<GeoJSONSource
-					id="facilities-clustered"
-					data={facilitiesGeoJSON}
-					cluster={true}
-					clusterMaxZoom={5}
-					clusterRadius={50}
-				>
-					<!-- Cluster circles -->
-					<CircleLayer
-						id="cluster-circles"
-						filter={['has', 'point_count']}
-						paint={{
-							'circle-color': satelliteView ? '#ffffff' : '#4a4a4a',
-							'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 50, 35, 100, 45],
-							'circle-opacity': satelliteView ? 0.95 : 0.9
-						}}
-						onclick={handleClusterClick}
-						onmouseenter={() => {
-							if (mapInstance) mapInstance.getCanvas().style.cursor = 'pointer';
-						}}
-						onmouseleave={() => {
-							if (mapInstance) mapInstance.getCanvas().style.cursor = '';
-						}}
-					/>
-
-					<!-- Cluster count labels -->
-					<SymbolLayer
-						id="cluster-count"
-						filter={['has', 'point_count']}
-						layout={{
-							'text-field': '{point_count_abbreviated}',
-							'text-font': ['DM_Mono'],
-							'text-size': 14,
-							visibility: isZooming ? 'none' : 'visible'
-						}}
-						paint={{
-							'text-color': satelliteView ? '#1a1a1a' : '#ffffff'
-						}}
-					/>
-
-					<!-- Unclustered points (individual facilities) -->
-					<CircleLayer
-						id="facility-points-unclustered"
-						filter={['!', ['has', 'point_count']]}
-						paint={{
-							'circle-color': ['get', 'color'],
-							'circle-radius': [
-								'case',
-								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-								['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
-								['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
-							],
-							'circle-radius-transition': { duration: 400, delay: 0 },
-							'circle-stroke-width': [
-								'case',
-								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-								2,
-								1
-							],
-							'circle-stroke-color': '#ffffff',
-							'circle-opacity': [
-								'case',
-								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-								1,
-								activeHoveredFacilityCode ? 0.3 : 0.8
-							]
-						}}
-						layout={{
-							'circle-sort-key': [
-								'case',
-								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-								1,
-								0
-							]
-						}}
-						onmouseenter={handlePointMouseEnter}
-						onmouseleave={handlePointMouseLeave}
-						onclick={handlePointClick}
-					/>
-				</GeoJSONSource>
-			{:else}
-				<!-- Non-clustered GeoJSON source - WebGL rendering for performance -->
-				<GeoJSONSource id="facilities" data={facilitiesGeoJSON}>
-					<!-- All facility points rendered on WebGL canvas -->
-					<CircleLayer
-						id="facility-points"
-						paint={{
-							'circle-color': ['get', 'color'],
-							'circle-radius': [
-								'case',
-								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-								['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
-								['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
-							],
-							'circle-radius-transition': { duration: 400, delay: 0 },
-							'circle-stroke-width': [
-								'case',
-								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-								2,
-								1
-							],
-							'circle-stroke-color': '#ffffff',
-							'circle-opacity': [
-								'case',
-								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-								1,
-								activeHoveredFacilityCode ? 0.3 : 0.8
-							]
-						}}
-						layout={{
-							'circle-sort-key': [
-								'case',
-								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-								1,
-								0
-							]
-						}}
-						onmouseenter={handlePointMouseEnter}
-						onmouseleave={handlePointMouseLeave}
-						onclick={handlePointClick}
-					/>
-				</GeoJSONSource>
-			{/if}
+		{:else}
+			<!-- Non-clustered GeoJSON source - WebGL rendering for performance -->
+			<GeoJSONSource id="facilities" data={facilitiesGeoJSON}>
+				<!-- All facility points rendered on WebGL canvas -->
+				<CircleLayer
+					id="facility-points"
+					paint={{
+						'circle-color': ['get', 'color'],
+						'circle-radius': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
+							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
+						],
+						'circle-radius-transition': { duration: 400, delay: 0 },
+						'circle-stroke-width': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							2,
+							1
+						],
+						'circle-stroke-color': '#ffffff',
+						'circle-opacity': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							1,
+							activeHoveredFacilityCode ? 0.3 : 0.8
+						]
+					}}
+					layout={{
+						'circle-sort-key': [
+							'case',
+							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+							1,
+							0
+						]
+					}}
+					onmouseenter={handlePointMouseEnter}
+					onmouseleave={handlePointMouseLeave}
+					onclick={handlePointClick}
+				/>
+			</GeoJSONSource>
 		{/if}
 
 		<!-- Popup for hovered facility - uses lazy computed content -->
@@ -1121,37 +1023,6 @@
 					</div>
 				</div>
 			</Popup>
-		{/if}
-
-		<!-- deck.gl overlay (hex columns or heatmap) is code-split — the
-		     ~200 KB bundle only loads the first time the user picks a
-		     non-default marker mode. After that the chunk is cached so
-		     subsequent toggles are instant. -->
-		{#if showDeckOverlay}
-			{#await import('./_components/MapHexLayer.svelte') then { default: MapHexLayer }}
-				<MapHexLayer
-					visible={showDeckOverlay}
-					data={hexagonData}
-					mode={deckMode}
-					radius={tuning.hexRadius}
-					elevationScale={tuning.hexElevationScale}
-					hexDiskResolution={tuning.hexDiskResolution}
-					hexBrightMix={tuning.hexBrightMix}
-					hexFillAlpha={tuning.hexFillAlpha}
-					hexGlowRadiusMultiplier={tuning.hexGlowRadiusMultiplier}
-					hexGlowAlpha={tuning.hexGlowAlpha}
-					hexOutlineAlpha={tuning.hexOutlineAlpha}
-					hexExtruded={tuning.hexExtruded}
-					hexMaterial={tuning.hexMaterial}
-					heatmapRadiusPixels={tuning.heatmapRadius}
-					heatmapIntensity={tuning.heatmapIntensity}
-					heatmapThreshold={tuning.heatmapThreshold}
-					heatmapDebounceMs={tuning.heatmapDebounce}
-					heatmapTextureSize={tuning.heatmapTextureSize}
-					circleMin={tuning.circleMin}
-					circleMax={tuning.circleMax}
-				/>
-			{/await}
 		{/if}
 	</MapLibre>
 </div>

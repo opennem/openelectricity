@@ -4,10 +4,6 @@
 	"devDependencies": {
 		"@clerk/backend": "^3.5.0",
 		"@clerk/clerk-js": "^6.14.0",
-		"@deck.gl/aggregation-layers": "^9.3.2",
-		"@deck.gl/core": "^9.3.2",
-		"@deck.gl/layers": "^9.3.2",
-		"@deck.gl/mapbox": "^9.3.2",
 		"@eslint/js": "^9.39.4",
 		"@fontsource/dm-sans": "^5.2.8",
 		"@fontsource/space-grotesk": "^5.2.10",
@@ -31,6 +27,7 @@
 		"@types/d3-format": "^3.0.4",
 		"@types/d3-scale": "^4.0.9",
 		"@types/d3-shape": "^3.1.8",
+		"@types/geojson": "^7946.0.16",
 		"bits-ui": "^2.17.2",
 		"chroma-js": "^3.2.0",
 		"class-variance-authority": "^0.7.1",

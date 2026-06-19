@@ -11,8 +11,8 @@
  * Build the main site nav items. `trackerLink` is resolved at call time so
  * the consumer controls when to read from the `dataTrackerLink` store.
  *
- * `featureFlags` gates experimental entries the same way the map options do —
- * e.g. `tracker2_nav` surfaces the new Explorer dashboard.
+ * `featureFlags` gates experimental nav entries — e.g. `tracker2_nav`
+ * surfaces the new Explorer dashboard.
  *
  * @param {string} trackerLink
  * @param {Record<string, boolean>} [featureFlags]

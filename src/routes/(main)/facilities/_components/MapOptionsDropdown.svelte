@@ -2,20 +2,16 @@
 	import { fly } from 'svelte/transition';
 	import { clickoutside } from '@svelte-put/clickoutside';
 	import { Layers, ChevronDown, Flag, Sparkles } from '@lucide/svelte';
-	import { MARKER_STYLES } from '../_utils/marker-styles.js';
 
 	/**
 	 * @type {{
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
-	 *   markerStyle?: 'circles' | 'columns' | 'heatmap',
-	 *   showMarkerStyleOption?: boolean,
 	 *   showTransmissionLines: boolean,
 	 *   showGolfCourses: boolean,
 	 *   showGolfOption: boolean,
 	 *   showMagicIndicator: boolean,
 	 *   clustering: boolean,
 	 *   onmapthemechange?: (value: 'light' | 'dark' | 'satellite') => void,
-	 *   onmarkerstylechange?: (value: 'circles' | 'columns' | 'heatmap') => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
 	 *   ongolfcourseschange?: (value: boolean) => void,
 	 *   onclusteringchange?: (value: boolean) => void
@@ -23,15 +19,12 @@
 	 */
 	let {
 		mapTheme = 'light',
-		markerStyle = 'circles',
-		showMarkerStyleOption = false,
 		showTransmissionLines = true,
 		showGolfCourses = false,
 		showGolfOption = false,
 		showMagicIndicator = false,
 		clustering = true,
 		onmapthemechange,
-		onmarkerstylechange,
 		ontransmissionlineschange,
 		ongolfcourseschange,
 		onclusteringchange
@@ -48,8 +41,6 @@
 		{ value: 'dark', label: 'Dark' },
 		{ value: 'satellite', label: 'Satellite' }
 	]);
-
-	let clusteringDisabled = $derived(markerStyle !== 'circles');
 </script>
 
 <div class="relative" use:clickoutside onclickoutside={handleClickOutside}>
@@ -96,32 +87,6 @@
 				</div>
 			</div>
 
-			<!-- Marker style (Circles / Hex / Heat) — gated by `show_map_experiments` -->
-			{#if showMarkerStyleOption}
-				<div class="px-3 py-1 mt-2">
-					<div class="text-[10px] font-semibold uppercase tracking-wider text-mid-grey mb-1.5">
-						Marker style
-					</div>
-					<div class="inline-flex w-full rounded-md border border-warm-grey overflow-hidden">
-						{#each MARKER_STYLES as { value, label } (value)}
-							<button
-								type="button"
-								onclick={() => onmarkerstylechange?.(value)}
-								class="flex-1 px-2 py-1 text-xs transition-colors cursor-pointer"
-								class:bg-dark-grey={markerStyle === value}
-								class:text-white={markerStyle === value}
-								class:font-medium={markerStyle === value}
-								class:text-mid-grey={markerStyle !== value}
-								class:hover:text-dark-grey={markerStyle !== value}
-								class:hover:bg-light-warm-grey={markerStyle !== value}
-							>
-								{label}
-							</button>
-						{/each}
-					</div>
-				</div>
-			{/if}
-
 			<div class="border-t border-warm-grey my-2"></div>
 
 			<!-- Transmission lines toggle -->
@@ -152,26 +117,20 @@
 				<span class="flex-1">Transmission lines</span>
 			</button>
 
-			<!-- Clustering toggle (only meaningful for the Circles marker
-			     style — hex and heatmap have their own visual semantics) -->
+			<!-- Clustering toggle -->
 			<button
-				disabled={clusteringDisabled}
 				onclick={() => {
-					if (!clusteringDisabled) onclusteringchange?.(!clustering);
+					onclusteringchange?.(!clustering);
 				}}
-				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 transition-colors text-left disabled:cursor-not-allowed disabled:opacity-50"
-				class:hover:bg-light-warm-grey={!clusteringDisabled}
-				title={clusteringDisabled
-					? 'Clustering only applies to the Circles marker style'
-					: ''}
+				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 transition-colors text-left hover:bg-light-warm-grey"
 			>
 				<span
 					class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
-					class:bg-dark-grey={clustering && !clusteringDisabled}
-					class:border-dark-grey={clustering && !clusteringDisabled}
-					class:border-mid-warm-grey={!clustering || clusteringDisabled}
+					class:bg-dark-grey={clustering}
+					class:border-dark-grey={clustering}
+					class:border-mid-warm-grey={!clustering}
 				>
-					{#if clustering && !clusteringDisabled}
+					{#if clustering}
 						<svg
 							class="w-3 h-3 text-white"
 							fill="none"

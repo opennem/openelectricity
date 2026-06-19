@@ -11,7 +11,7 @@
 		"strict": true,
 		"jsx": "preserve",
 		"jsxImportSource": "svelte",
-		"types": ["node", "svelte"]
+		"types": ["node", "svelte", "geojson"]
 	},
 	"include": [
 		"./src/**/*.js",

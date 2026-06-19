@@ -7,13 +7,7 @@
 	import { ExternalLink, Flag, Pause, Play, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
-	import { fetchMetricData } from './_utils/fetch-metric-data.js';
 	import { normaliseMetric } from './_utils/normalise-metric.js';
-	import { getMetricMeta, isMetricActive } from './_utils/metric-meta.js';
-	import { isFeatureEnabled } from '$lib/stores/app.js';
-	import MapTuningPanel from './_components/MapTuningPanel.svelte';
-	import { DEFAULT_TUNING } from './_utils/map-tuning.js';
-	import { MARKER_STYLE_VALUES } from './_utils/marker-styles.js';
 	import Meta from '$lib/components/Meta.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
@@ -165,142 +159,29 @@
 	// Map options - read initial values from URL params
 	// satellite: default false, transmission: default true, clustering: default false, golf: default false
 	const VALID_THEMES = /** @type {const} */ (['light', 'dark', 'satellite']);
-	const VALID_MARKER_STYLES = MARKER_STYLE_VALUES;
 
 	const initialTheme = page.url.searchParams.get('theme') ?? 'light';
-	const initialMarkerStyle = page.url.searchParams.get('markers') ?? 'circles';
 
 	let mapTheme = $state(
 		/** @type {'light' | 'dark' | 'satellite'} */ (
 			VALID_THEMES.includes(/** @type {any} */ (initialTheme)) ? initialTheme : 'light'
 		)
 	);
-	// Force `circles` when `show_map_experiments` is off so URL overrides
-	// can't land non-experiment users on hex/heatmap.
-	let mapMarkerStyle = $state(
-		/** @type {import('./_utils/marker-styles.js').MarkerStyle} */ (
-			isFeatureEnabled('show_map_experiments') &&
-			VALID_MARKER_STYLES.includes(/** @type {any} */ (initialMarkerStyle))
-				? initialMarkerStyle
-				: 'circles'
-		)
-	);
 	let mapShowTransmissionLines = $state(page.url.searchParams.get('transmission') !== 'false');
 	let mapClustering = $state(page.url.searchParams.get('clustering') === 'true');
 	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
 
-	// Metric switch — drives marker sizing on the map. Defaults to capacity
-	// (current behaviour). Pollution exposes a sub-picker; emissions is a
-	// disabled placeholder.
-	const VALID_METRICS = /** @type {const} */ (['capacity', 'generation', 'pollution', 'emissions']);
-	const VALID_POLLUTANTS = /** @type {const} */ ([
-		'air_pollutant',
-		'water_pollutant',
-		'heavy_metal',
-		'organic'
-	]);
-	const VALID_GENERATION_MODES = /** @type {const} */ (['live', 'daily']);
-	const initialMetric = page.url.searchParams.get('metric') ?? 'capacity';
-	const initialPollutant = page.url.searchParams.get('pollutant') ?? 'air_pollutant';
-	const initialGenerationMode = page.url.searchParams.get('mode') ?? 'daily';
-	let mapMetric = $state(
-		/** @type {'capacity' | 'generation' | 'pollution' | 'emissions'} */ (
-			VALID_METRICS.includes(/** @type {any} */ (initialMetric)) ? initialMetric : 'capacity'
-		)
-	);
-	let mapPollutantCategory = $state(
-		/** @type {'air_pollutant' | 'water_pollutant' | 'heavy_metal' | 'organic'} */ (
-			VALID_POLLUTANTS.includes(/** @type {any} */ (initialPollutant))
-				? initialPollutant
-				: 'air_pollutant'
-		)
-	);
-	let mapGenerationMode = $state(
-		/** @type {'live' | 'daily'} */ (
-			VALID_GENERATION_MODES.includes(/** @type {any} */ (initialGenerationMode))
-				? initialGenerationMode
-				: 'daily'
-		)
-	);
-	let metricLoading = $state(false);
-	/** @type {string | null} */
-	let metricError = $state(null);
-	/** @type {Map<string, number>} */
-	let metricValuesRaw = $state(new Map());
-
-	// Capacity values come from the loaded facility list — no fetch needed.
-	// Other metrics are fetched via /api/facilities/{generation,pollution} and
-	// stored in metricValuesRaw. The active map property is normalised below.
+	// Registered capacity per facility, normalised to 0..1 — sizes the map
+	// markers (circle radius).
 	let capacityValuesByCode = $derived.by(() => {
 		const m = new Map();
 		for (const f of facilities ?? []) m.set(f.code, getFacilityCapacity(f));
 		return m;
 	});
-
-	$effect(() => {
-		const metric = mapMetric;
-		const category = mapPollutantCategory;
-		const generationMode = mapGenerationMode;
-
-		if (metric === 'capacity' || metric === 'emissions') {
-			metricValuesRaw = new Map();
-			metricLoading = false;
-			metricError = null;
-			return;
-		}
-
-		const controller = new AbortController();
-		metricLoading = true;
-		metricError = null;
-
-		fetchMetricData({ metric, category, generationMode, signal: controller.signal })
-			.then((m) => {
-				metricValuesRaw = m;
-			})
-			.catch((/** @type {unknown} */ err) => {
-				if (err instanceof DOMException && err.name === 'AbortError') return;
-				metricError = `Couldn't load ${metric} data — showing capacity`;
-				metricValuesRaw = new Map();
-				// Auto-revert to capacity after a short delay so the user isn't
-				// stuck with empty markers.
-				setTimeout(() => {
-					if (mapMetric === metric) mapMetric = 'capacity';
-				}, 3000);
-			})
-			.finally(() => {
-				metricLoading = false;
-			});
-
-		return () => controller.abort();
-	});
-
-	// Normalised 0..1 map-friendly values for the active metric. Capacity is
-	// always the fallback so the map always has something to size by.
-	let metricValues = $derived.by(() => {
-		if (mapMetric === 'capacity' || mapMetric === 'emissions' || metricValuesRaw.size === 0) {
-			return normaliseMetric(capacityValuesByCode);
-		}
-		return normaliseMetric(metricValuesRaw);
-	});
-
-	// When the active metric is non-capacity, facilities without a value should
-	// fade on the map. Capacity always has a value for every facility.
-	let metricMissingByCode = $derived.by(() => {
-		const out = new Set();
-		if (mapMetric === 'capacity' || mapMetric === 'emissions') return out;
-		for (const f of facilities ?? []) {
-			if (!metricValuesRaw.has(f.code)) out.add(f.code);
-		}
-		return out;
-	});
+	let metricValues = $derived(normaliseMetric(capacityValuesByCode));
 
 	/** @type {{ high: boolean, medium: boolean, low: boolean, lowest: boolean }} */
 	let transmissionLineVisibility = $state({ high: true, medium: true, low: true, lowest: true });
-
-	// Surfaced in `MapTuningPanel` when `show_map_experiments` is on so
-	// designers can iterate without a rebuild.
-	let tuning = $state({ ...DEFAULT_TUNING });
-	let mapExperimentsEnabled = $derived(isFeatureEnabled('show_map_experiments'));
 
 	// Map loading state
 	let mapLoaded = $state(false);
@@ -377,13 +258,8 @@
 		// Drop the legacy satellite=… param if a previous URL had it.
 		params.delete('satellite');
 
-		// markers: only include if non-default (default is circles)
-		if (mapMarkerStyle !== 'circles') {
-			params.set('markers', mapMarkerStyle);
-		} else {
-			params.delete('markers');
-		}
-		// Drop the legacy hex=… param if a previous URL had it.
+		// Drop legacy marker/metric params (the map experiments feature was removed).
+		params.delete('markers');
 		params.delete('hex');
 
 		// transmission: only include if false (default is true)
@@ -407,26 +283,9 @@
 			params.delete('golf');
 		}
 
-		// metric: only include if non-default (default is capacity)
-		if (mapMetric !== 'capacity') {
-			params.set('metric', mapMetric);
-		} else {
-			params.delete('metric');
-		}
-
-		// pollutant: only include if metric is pollution AND non-default category
-		if (mapMetric === 'pollution' && mapPollutantCategory !== 'air_pollutant') {
-			params.set('pollutant', mapPollutantCategory);
-		} else {
-			params.delete('pollutant');
-		}
-
-		// mode: only include if metric is generation AND non-default
-		if (mapMetric === 'generation' && mapGenerationMode !== 'daily') {
-			params.set('mode', mapGenerationMode);
-		} else {
-			params.delete('mode');
-		}
+		params.delete('metric');
+		params.delete('pollutant');
+		params.delete('mode');
 
 		// facility: re-source from local state rather than the (potentially
 		// stale) URL params. `page.url` updates async after replaceState,
@@ -610,20 +469,9 @@
 		}
 	}
 
-	let metricMeta = $derived(
-		getMetricMeta({
-			metric: mapMetric,
-			category: mapPollutantCategory,
-			generationMode: mapGenerationMode
-		})
-	);
-	let metricActive = $derived(isMetricActive({ metric: mapMetric }));
-	// `null` falls through to capacity sort inside `sortFacilities`.
-	let metricSortValues = $derived(metricActive ? metricValuesRaw : null);
-
 	let filteredFacilities = $derived.by(() => {
 		if (!facilities) return [];
-		const userFiltered = filterFacilities(
+		return filterFacilities(
 			facilities,
 			searchTerm,
 			capacityRange,
@@ -632,10 +480,6 @@
 			selectedView,
 			playYear
 		);
-		// Drop facilities with no value for the active "Show by" metric — keeps
-		// List, Timeline, and Map (markers + hex/heat) showing the same set.
-		if (!metricMissingByCode.size) return userFiltered;
-		return userFiltered.filter((f) => !metricMissingByCode.has(f.code));
 	});
 
 	/**
@@ -738,9 +582,6 @@
 		if (mapTheme !== 'light') {
 			url += `&theme=${mapTheme}`;
 		}
-		if (mapMarkerStyle !== 'circles') {
-			url += `&markers=${mapMarkerStyle}`;
-		}
 		if (!mapShowTransmissionLines) {
 			url += '&transmission=false';
 		}
@@ -806,7 +647,7 @@
 	 */
 	let orderedFacilities = $derived.by(() => {
 		if (selectedView === 'list') {
-			return sortFacilities(filteredFacilities, listSortBy, listSortOrder, metricSortValues);
+			return sortFacilities(filteredFacilities, listSortBy, listSortOrder, null);
 		}
 		if (selectedView === 'timeline' && timelineOrderedCodes.length) {
 			/** @type {Record<string, any>} */
@@ -1186,21 +1027,6 @@
 				onyearplayingchange={(playing) => (isYearPlaying = playing)}
 				onplayyearchange={(year) => (playYear = year)}
 				onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
-				{mapMetric}
-				{mapPollutantCategory}
-				{mapGenerationMode}
-				onmetricchange={(m) => {
-					mapMetric = m;
-					updateMapOptionsUrl();
-				}}
-				oncategorychange={(c) => {
-					mapPollutantCategory = c;
-					updateMapOptionsUrl();
-				}}
-				ongenerationmodechange={(m) => {
-					mapGenerationMode = m;
-					updateMapOptionsUrl();
-				}}
 			/>
 		</div>
 	{/snippet}
@@ -1243,9 +1069,6 @@
 								sortBy={listSortBy}
 								sortOrder={listSortOrder}
 								{isFullscreen}
-								{metricMeta}
-								{metricActive}
-								{metricValuesRaw}
 								onhover={(/** @type {any} */ f) => (hoveredFacility = f)}
 								onclick={(/** @type {any} */ f) => {
 									handleFacilitySelect(f);
@@ -1332,8 +1155,6 @@
 								cardCodes={cardCodeSet}
 								clustering={mapClustering}
 								{mapTheme}
-								{mapMarkerStyle}
-								experimentsEnabled={mapExperimentsEnabled}
 								showTransmissionLines={mapShowTransmissionLines}
 								{transmissionLineVisibility}
 								showGolfCourses={mapShowGolfCourses}
@@ -1342,18 +1163,12 @@
 								flyToOffsetX={0}
 								flyToOffsetY={selectedFacility ? -0.15 : 0}
 								{metricValues}
-								{metricMissingByCode}
-								{tuning}
 								onhover={(f) => (hoveredFacility = f)}
 								onclick={(f) => (clickedFacility = f)}
 								onselect={handleFacilitySelect}
 								onload={() => setTimeout(() => (mapLoaded = true), 250)}
 							/>
 						{/await}
-
-						{#if mapExperimentsEnabled}
-							<MapTuningPanel bind:tuning markerStyle={mapMarkerStyle} />
-						{/if}
 
 						<!-- Map controls -->
 						<div class="absolute top-3 right-20 z-20 flex items-center gap-2">
@@ -1371,8 +1186,6 @@
 							</button>
 							<MapOptionsDropdown
 								{mapTheme}
-								markerStyle={mapMarkerStyle}
-								showMarkerStyleOption={mapExperimentsEnabled}
 								showTransmissionLines={mapShowTransmissionLines}
 								showGolfCourses={mapShowGolfCourses}
 								showGolfOption={showGolf}
@@ -1380,10 +1193,6 @@
 								clustering={mapClustering}
 								onmapthemechange={(v) => {
 									mapTheme = v;
-									updateMapOptionsUrl();
-								}}
-								onmarkerstylechange={(v) => {
-									mapMarkerStyle = v;
 									updateMapOptionsUrl();
 								}}
 								ontransmissionlineschange={(v) => {
