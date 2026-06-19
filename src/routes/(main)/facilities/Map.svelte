@@ -961,6 +961,7 @@
 				offset={[0, -15]}
 				closeOnClick={false}
 				anchor="bottom"
+				class={showCardPopup ? 'facility-card-popup' : ''}
 			>
 				{#if showCardPopup && popupFacility}
 					<!-- Timeline/list: the facility's social card (committed image, else live card) -->
@@ -1069,6 +1070,12 @@
 
 	:global(.maplibregl-popup-tip) {
 		border-top-color: black !important;
+	}
+
+	/* The social-card popup (timeline/list views) has no dark background for the
+	   tip to connect to, so the black triangle just looks detached — hide it. */
+	:global(.facility-card-popup .maplibregl-popup-tip) {
+		display: none !important;
 	}
 
 	:global(.maplibregl-popup-close-button) {
