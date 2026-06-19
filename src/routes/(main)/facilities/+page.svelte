@@ -328,6 +328,14 @@
 	let isYearPlaying = $state(false);
 	let windowWidth = $state(0);
 	let isDesktop = $derived(windowWidth >= 768);
+
+	// When a facility is selected in list view, collapse the list pane (drop the
+	// Storage + Capacity columns) to give the map/detail more room — animated.
+	const LIST_COMPACT_WIDTH = 400;
+	let listCompact = $derived(isDesktop && selectedView === 'list' && !!selectedFacility);
+	let listPaneWidth = $derived(
+		listCompact ? Math.min(mainDrag.value, LIST_COMPACT_WIDTH) : mainDrag.value
+	);
 	/** @type {number | null} */
 	let playYear = $state(null);
 	/** @type {{ stop: () => void, toggle: () => void } | null} */
@@ -1205,10 +1213,12 @@
 			>
 				<!-- Left panel: List, Timeline or Cards (resizable on desktop) -->
 				<div
-					class="relative bg-white flex flex-col min-h-0 z-10 w-full md:shrink-0"
+					class="relative bg-white flex flex-col min-h-0 z-10 w-full md:shrink-0 {mainDrag.isDragging
+						? ''
+						: 'md:transition-[width] md:duration-300 md:ease-out'}"
 					class:hidden={selectedView === 'map'}
 					class:md:flex={selectedView === 'map'}
-					style={isDesktop ? `width: ${mainDrag.value}px` : ''}
+					style={isDesktop ? `width: ${listPaneWidth}px` : ''}
 				>
 					{#if selectedView === 'card'}
 						<div class="flex-1 overflow-y-auto min-h-0">
@@ -1229,6 +1239,7 @@
 								{hoveredFacility}
 								{clickedFacility}
 								selectedFacilityCode={selectedFacility?.code ?? null}
+								compact={listCompact}
 								sortBy={listSortBy}
 								sortOrder={listSortOrder}
 								{isFullscreen}
@@ -1317,6 +1328,8 @@
 								facilities={filteredWithLocation}
 								{hoveredFacility}
 								selectedFacilityCode={selectedFacility?.code ?? null}
+								{selectedView}
+								cardCodes={cardCodeSet}
 								clustering={mapClustering}
 								{mapTheme}
 								{mapMarkerStyle}

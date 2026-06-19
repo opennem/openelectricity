@@ -8,7 +8,7 @@
 	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
-	import { Search, X, CalendarClock, List, LayoutGrid, Map, Maximize2 } from '@lucide/svelte';
+	import { Search, X, Maximize2 } from '@lucide/svelte';
 	import OptionsMenu from './_components/OptionsMenu.svelte';
 	import { fly } from 'svelte/transition';
 	import { onDestroy } from 'svelte';
@@ -397,9 +397,9 @@
 	// ============================================
 
 	const viewButtonsDesktop = [
-		{ label: 'Timeline', value: 'timeline', icon: CalendarClock, size: 'size-6' },
-		{ label: 'List', value: 'list', icon: List, size: 'size-6' },
-		{ label: 'Cards', value: 'card', icon: LayoutGrid, size: 'size-6' }
+		{ label: 'Timeline', value: 'timeline' },
+		{ label: 'List', value: 'list' },
+		{ label: 'Cards', value: 'card' }
 	];
 
 	const viewOptions = [
@@ -499,7 +499,6 @@
 		onstatuseschange?.(toggleSelection(selectedStatuses, value, isMetaPressed));
 	}
 
-	
 	/**
 	 * @param {string | string[]} value
 	 * @param {boolean} isMetaPressed
@@ -588,11 +587,7 @@
 	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 />
 
-<FullscreenFilterBar
-	{isFullscreen}
-	routeKey="list"
-	paddingX="px-8"
->
+<FullscreenFilterBar {isFullscreen} routeKey="list" paddingX="px-8">
 	{#snippet stable()}
 		{#if isFullscreen}
 			<FullscreenNavDropdown />
@@ -745,7 +740,9 @@
 						: 'py-3 gap-8'}"
 					class:hover:bg-warm-grey={!showYearDropdown}
 				>
-					<span class="font-semibold {isFullscreen ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}">
+					<span
+						class="font-semibold {isFullscreen ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}"
+					>
 						{yearDisplayLabel}
 					</span>
 

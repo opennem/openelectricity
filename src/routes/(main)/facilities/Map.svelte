@@ -13,6 +13,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import UnitGroup from './_components/UnitGroup.svelte';
 	import FacilityCard from './_components/FacilityCard.svelte';
+	import FacilityCardImage from './_components/FacilityCardImage.svelte';
 	import { getRegionLabel } from './_utils/filters';
 	import { DEFAULT_TUNING } from './_utils/map-tuning.js';
 	import { hexToRgb } from '$lib/utils/colour-darken.js';
@@ -28,6 +29,8 @@
 	 *   facilities: any[],
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
+	 *   selectedView?: 'timeline' | 'list' | 'card' | 'map',
+	 *   cardCodes?: Set<string>,
 	 *   clustering?: boolean,
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
 	 *   mapMarkerStyle?: 'circles' | 'columns' | 'heatmap',
@@ -53,6 +56,8 @@
 		facilities = [],
 		hoveredFacility = null,
 		selectedFacilityCode = null,
+		selectedView = 'timeline',
+		cardCodes = new Set(),
 		clustering = false,
 		mapTheme = 'light',
 		mapMarkerStyle = 'circles',
@@ -79,17 +84,20 @@
 	function buildCircleStops(/** @type {number} */ min, /** @type {number} */ max) {
 		const span = max - min;
 		return [
-			0, min,
-			0.25, min + span * 0.25,
-			0.5, min + span * 0.5,
-			0.75, min + span * 0.75,
-			1, max
+			0,
+			min,
+			0.25,
+			min + span * 0.25,
+			0.5,
+			min + span * 0.5,
+			0.75,
+			min + span * 0.75,
+			1,
+			max
 		];
 	}
 	let circleStops = $derived(buildCircleStops(tuning.circleMin, tuning.circleMax));
-	let circleStopsHovered = $derived(
-		buildCircleStops(tuning.circleMin + 2, tuning.circleMax + 2)
-	);
+	let circleStopsHovered = $derived(buildCircleStops(tuning.circleMin + 2, tuning.circleMax + 2));
 
 	// Derived booleans for things that still consume the legacy boolean
 	// shape (existing satellite-aware logic, deck.gl visibility, etc).
@@ -105,9 +113,7 @@
 		experimentsEnabled && mapMarkerStyle === 'circles' && tuning.circleRenderer === 'deck'
 	);
 	let showCircles = $derived(mapMarkerStyle === 'circles' && !showCirclesAsScatter);
-	let useDeckTransmission = $derived(
-		experimentsEnabled && tuning.transmissionRenderer === 'deck'
-	);
+	let useDeckTransmission = $derived(experimentsEnabled && tuning.transmissionRenderer === 'deck');
 	let showDeckOverlay = $derived(showColumns || showHeatmap || showCirclesAsScatter);
 	// Mode for the deck.gl overlay. Clustering is intentionally ignored
 	// for the deck modes — they have their own visual semantics and don't
@@ -145,8 +151,7 @@
 			.filter((f) => !metricMissingByCode.has(f.code))
 			.map((f) => {
 				const normalised = metricValues.get(f.code);
-				const weight =
-					typeof normalised === 'number' ? normalised * HEX_WEIGHT_SCALE : 1;
+				const weight = typeof normalised === 'number' ? normalised * HEX_WEIGHT_SCALE : 1;
 				return {
 					position: /** @type {[number, number]} */ ([f.location.lng, f.location.lat]),
 					weight,
@@ -414,6 +419,10 @@
 		};
 	});
 
+	// In timeline/list views the popup shows the facility's social card image;
+	// card view keeps the unit-breakdown popup.
+	let showCardPopup = $derived(selectedView === 'timeline' || selectedView === 'list');
+
 	// Combined hover state from list or map
 	let activeHoveredFacilityCode = $derived(
 		validatedHoveredFacility?.code || mapHoveredFacilityCode
@@ -546,7 +555,13 @@
 
 	// Fit bounds when facilities change - use idle event
 	$effect(() => {
-		if (mapInstance && mapLoaded && facilities.length > 0 && !selectedFacilityCode && !suppressFitBounds) {
+		if (
+			mapInstance &&
+			mapLoaded &&
+			facilities.length > 0 &&
+			!selectedFacilityCode &&
+			!suppressFitBounds
+		) {
 			mapInstance.once('idle', () => {
 				fitMapToFacilities(facilities);
 			});
@@ -841,203 +856,200 @@
 		</GeoJSONSource>
 
 		{#if !useDeckTransmission}
-		<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
-			<LineLayer
-				id="transmission-lines-layer"
-				filter={transmissionFilter}
-				paint={{
-					'line-color': [
-						'case',
-						['>=', ['get', 'capacitykv'], 400],
-						satelliteView ? '#ff6b6b' : '#c0392b',
-						['>=', ['get', 'capacitykv'], 220],
-						satelliteView ? '#ffd93d' : '#c49b00',
-						['>=', ['get', 'capacitykv'], 110],
-						satelliteView ? '#6bcb77' : '#27ae60',
-						satelliteView ? '#74b9ff' : '#2980b9'
-					],
-					'line-width': [
-						'interpolate',
-						['linear'],
-						['zoom'],
-						3,
-						[
+			<GeoJSONSource id="transmission-lines" data="/data/transmission-lines.geojson">
+				<LineLayer
+					id="transmission-lines-layer"
+					filter={transmissionFilter}
+					paint={{
+						'line-color': [
 							'case',
 							['>=', ['get', 'capacitykv'], 400],
-							1.5,
+							satelliteView ? '#ff6b6b' : '#c0392b',
 							['>=', ['get', 'capacitykv'], 220],
-							1,
+							satelliteView ? '#ffd93d' : '#c49b00',
 							['>=', ['get', 'capacitykv'], 110],
-							0.7,
-							0.5
+							satelliteView ? '#6bcb77' : '#27ae60',
+							satelliteView ? '#74b9ff' : '#2980b9'
 						],
-						8,
-						[
-							'case',
-							['>=', ['get', 'capacitykv'], 400],
-							4,
-							['>=', ['get', 'capacitykv'], 220],
+						'line-width': [
+							'interpolate',
+							['linear'],
+							['zoom'],
 							3,
-							['>=', ['get', 'capacitykv'], 110],
-							2,
-							1.5
+							[
+								'case',
+								['>=', ['get', 'capacitykv'], 400],
+								1.5,
+								['>=', ['get', 'capacitykv'], 220],
+								1,
+								['>=', ['get', 'capacitykv'], 110],
+								0.7,
+								0.5
+							],
+							8,
+							[
+								'case',
+								['>=', ['get', 'capacitykv'], 400],
+								4,
+								['>=', ['get', 'capacitykv'], 220],
+								3,
+								['>=', ['get', 'capacitykv'], 110],
+								2,
+								1.5
+							],
+							14,
+							[
+								'case',
+								['>=', ['get', 'capacitykv'], 400],
+								6,
+								['>=', ['get', 'capacitykv'], 220],
+								5,
+								['>=', ['get', 'capacitykv'], 110],
+								4,
+								3
+							]
 						],
-						14,
-						[
-							'case',
-							['>=', ['get', 'capacitykv'], 400],
-							6,
-							['>=', ['get', 'capacitykv'], 220],
-							5,
-							['>=', ['get', 'capacitykv'], 110],
-							4,
-							3
-						]
-					],
-					'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.5, 8, 0.7, 12, 0.85]
-				}}
-				layout={{
-					'line-cap': 'round',
-					'line-join': 'round',
-					visibility: showTransmissionLines ? 'visible' : 'none'
-				}}
-			/>
-		</GeoJSONSource>
+						'line-opacity': ['interpolate', ['linear'], ['zoom'], 3, 0.5, 8, 0.7, 12, 0.85]
+					}}
+					layout={{
+						'line-cap': 'round',
+						'line-join': 'round',
+						visibility: showTransmissionLines ? 'visible' : 'none'
+					}}
+				/>
+			</GeoJSONSource>
 		{:else if showTransmissionLines}
 			{#await import('./_components/MapTransmissionLayer.svelte') then { default: MapTransmissionLayer }}
-				<MapTransmissionLayer
-					voltageVisibility={transmissionLineVisibility}
-					{facilities}
-				/>
+				<MapTransmissionLayer voltageVisibility={transmissionLineVisibility} {facilities} />
 			{/await}
 		{/if}
 
 		{#if showCircles}
-		{#if clustering}
-			<!-- Clustered GeoJSON source -->
-			<GeoJSONSource
-				id="facilities-clustered"
-				data={facilitiesGeoJSON}
-				cluster={true}
-				clusterMaxZoom={5}
-				clusterRadius={50}
-			>
-				<!-- Cluster circles -->
-				<CircleLayer
-					id="cluster-circles"
-					filter={['has', 'point_count']}
-					paint={{
-						'circle-color': satelliteView ? '#ffffff' : '#4a4a4a',
-						'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 50, 35, 100, 45],
-						'circle-opacity': satelliteView ? 0.95 : 0.9
-					}}
-					onclick={handleClusterClick}
-					onmouseenter={() => {
-						if (mapInstance) mapInstance.getCanvas().style.cursor = 'pointer';
-					}}
-					onmouseleave={() => {
-						if (mapInstance) mapInstance.getCanvas().style.cursor = '';
-					}}
-				/>
+			{#if clustering}
+				<!-- Clustered GeoJSON source -->
+				<GeoJSONSource
+					id="facilities-clustered"
+					data={facilitiesGeoJSON}
+					cluster={true}
+					clusterMaxZoom={5}
+					clusterRadius={50}
+				>
+					<!-- Cluster circles -->
+					<CircleLayer
+						id="cluster-circles"
+						filter={['has', 'point_count']}
+						paint={{
+							'circle-color': satelliteView ? '#ffffff' : '#4a4a4a',
+							'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 50, 35, 100, 45],
+							'circle-opacity': satelliteView ? 0.95 : 0.9
+						}}
+						onclick={handleClusterClick}
+						onmouseenter={() => {
+							if (mapInstance) mapInstance.getCanvas().style.cursor = 'pointer';
+						}}
+						onmouseleave={() => {
+							if (mapInstance) mapInstance.getCanvas().style.cursor = '';
+						}}
+					/>
 
-				<!-- Cluster count labels -->
-				<SymbolLayer
-					id="cluster-count"
-					filter={['has', 'point_count']}
-					layout={{
-						'text-field': '{point_count_abbreviated}',
-						'text-font': ['DM_Mono'],
-						'text-size': 14,
-						visibility: isZooming ? 'none' : 'visible'
-					}}
-					paint={{
-						'text-color': satelliteView ? '#1a1a1a' : '#ffffff'
-					}}
-				/>
+					<!-- Cluster count labels -->
+					<SymbolLayer
+						id="cluster-count"
+						filter={['has', 'point_count']}
+						layout={{
+							'text-field': '{point_count_abbreviated}',
+							'text-font': ['DM_Mono'],
+							'text-size': 14,
+							visibility: isZooming ? 'none' : 'visible'
+						}}
+						paint={{
+							'text-color': satelliteView ? '#1a1a1a' : '#ffffff'
+						}}
+					/>
 
-				<!-- Unclustered points (individual facilities) -->
-				<CircleLayer
-					id="facility-points-unclustered"
-					filter={['!', ['has', 'point_count']]}
-					paint={{
-						'circle-color': ['get', 'color'],
-						'circle-radius': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
-							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
-						],
-						'circle-radius-transition': { duration: 400, delay: 0 },
-						'circle-stroke-width': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							2,
-							1
-						],
-						'circle-stroke-color': '#ffffff',
-						'circle-opacity': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							1,
-							activeHoveredFacilityCode ? 0.3 : 0.8
-						]
-					}}
-					layout={{
-						'circle-sort-key': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							1,
-							0
-						]
-					}}
-					onmouseenter={handlePointMouseEnter}
-					onmouseleave={handlePointMouseLeave}
-					onclick={handlePointClick}
-				/>
-			</GeoJSONSource>
-		{:else}
-			<!-- Non-clustered GeoJSON source - WebGL rendering for performance -->
-			<GeoJSONSource id="facilities" data={facilitiesGeoJSON}>
-				<!-- All facility points rendered on WebGL canvas -->
-				<CircleLayer
-					id="facility-points"
-					paint={{
-						'circle-color': ['get', 'color'],
-						'circle-radius': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
-							['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
-						],
-						'circle-radius-transition': { duration: 400, delay: 0 },
-						'circle-stroke-width': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							2,
-							1
-						],
-						'circle-stroke-color': '#ffffff',
-						'circle-opacity': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							1,
-							activeHoveredFacilityCode ? 0.3 : 0.8
-						]
-					}}
-					layout={{
-						'circle-sort-key': [
-							'case',
-							['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-							1,
-							0
-						]
-					}}
-					onmouseenter={handlePointMouseEnter}
-					onmouseleave={handlePointMouseLeave}
-					onclick={handlePointClick}
-				/>
-			</GeoJSONSource>
-		{/if}
+					<!-- Unclustered points (individual facilities) -->
+					<CircleLayer
+						id="facility-points-unclustered"
+						filter={['!', ['has', 'point_count']]}
+						paint={{
+							'circle-color': ['get', 'color'],
+							'circle-radius': [
+								'case',
+								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+								['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
+								['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
+							],
+							'circle-radius-transition': { duration: 400, delay: 0 },
+							'circle-stroke-width': [
+								'case',
+								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+								2,
+								1
+							],
+							'circle-stroke-color': '#ffffff',
+							'circle-opacity': [
+								'case',
+								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+								1,
+								activeHoveredFacilityCode ? 0.3 : 0.8
+							]
+						}}
+						layout={{
+							'circle-sort-key': [
+								'case',
+								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+								1,
+								0
+							]
+						}}
+						onmouseenter={handlePointMouseEnter}
+						onmouseleave={handlePointMouseLeave}
+						onclick={handlePointClick}
+					/>
+				</GeoJSONSource>
+			{:else}
+				<!-- Non-clustered GeoJSON source - WebGL rendering for performance -->
+				<GeoJSONSource id="facilities" data={facilitiesGeoJSON}>
+					<!-- All facility points rendered on WebGL canvas -->
+					<CircleLayer
+						id="facility-points"
+						paint={{
+							'circle-color': ['get', 'color'],
+							'circle-radius': [
+								'case',
+								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+								['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
+								['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
+							],
+							'circle-radius-transition': { duration: 400, delay: 0 },
+							'circle-stroke-width': [
+								'case',
+								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+								2,
+								1
+							],
+							'circle-stroke-color': '#ffffff',
+							'circle-opacity': [
+								'case',
+								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+								1,
+								activeHoveredFacilityCode ? 0.3 : 0.8
+							]
+						}}
+						layout={{
+							'circle-sort-key': [
+								'case',
+								['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+								1,
+								0
+							]
+						}}
+						onmouseenter={handlePointMouseEnter}
+						onmouseleave={handlePointMouseLeave}
+						onclick={handlePointClick}
+					/>
+				</GeoJSONSource>
+			{/if}
 		{/if}
 
 		<!-- Popup for hovered facility - uses lazy computed content -->
@@ -1048,22 +1060,29 @@
 				closeOnClick={false}
 				anchor="bottom"
 			>
-				<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[240px]">
-					<div class="font-semibold text-sm">{popupContent.name}</div>
-					<div class="text-xs text-white/60 mb-3 border-b border-white/20 pb-3">
-						{popupContent.region}
+				{#if showCardPopup && popupFacility}
+					<!-- Timeline/list: the facility's social card (committed image, else live card) -->
+					<div class="w-[300px] overflow-hidden rounded-lg shadow-lg">
+						<FacilityCardImage facility={popupFacility} {cardCodes} />
 					</div>
-
-					{#if popupContent.groupedUnits.length > 0}
-						<div
-							class="flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
-						>
-							{#each popupContent.groupedUnits as group (group.fueltech_id + '|||' + group.status_id)}
-								<UnitGroup {...group} />
-							{/each}
+				{:else}
+					<div class="bg-black rounded-lg px-4 py-3 shadow-lg text-white min-w-[240px]">
+						<div class="font-semibold text-sm">{popupContent.name}</div>
+						<div class="text-xs text-white/60 mb-3 border-b border-white/20 pb-3">
+							{popupContent.region}
 						</div>
-					{/if}
-				</div>
+
+						{#if popupContent.groupedUnits.length > 0}
+							<div
+								class="flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
+							>
+								{#each popupContent.groupedUnits as group (group.fueltech_id + '|||' + group.status_id)}
+									<UnitGroup {...group} />
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{/if}
 			</Popup>
 		{/if}
 

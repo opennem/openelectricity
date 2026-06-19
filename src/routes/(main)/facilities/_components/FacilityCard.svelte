@@ -11,6 +11,7 @@
 	 *   isHighlighted?: boolean,
 	 *   isSelected?: boolean,
 	 *   compact?: boolean,
+	 *   hideMetricCols?: boolean,
 	 *   darkMode?: boolean,
 	 *   isFullscreen?: boolean,
 	 *   metricValue?: number | null,
@@ -25,6 +26,7 @@
 		isHighlighted = false,
 		isSelected = false,
 		compact = false,
+		hideMetricCols = false,
 		darkMode = false,
 		isFullscreen = false,
 		metricValue = null,
@@ -169,7 +171,9 @@
 			</div>
 
 			<div
-				class="col-span-12 sm:col-span-7 grid grid-cols-[2fr_1fr_1fr] sm:grid-cols-[auto_1fr_auto_auto] items-center gap-4 px-4 sm:px-0 py-2 sm:py-0 border-t sm:border-t-0"
+				class="col-span-12 sm:col-span-7 grid grid-cols-[2fr_1fr_1fr] items-center gap-4 px-4 sm:px-0 py-2 sm:py-0 border-t sm:border-t-0 {hideMetricCols
+					? 'sm:grid-cols-[auto_1fr]'
+					: 'sm:grid-cols-[auto_1fr_auto_auto]'}"
 				class:border-mid-warm-grey={isHighlighted || isSelected}
 				class:border-warm-grey={!isHighlighted && !isSelected}
 			>
@@ -185,40 +189,44 @@
 					</span>
 				</div>
 
-				<div class="col-start-1 row-start-1 sm:col-start-auto sm:row-start-auto sm:ml-3 flex items-center">
+				<div
+					class="col-start-1 row-start-1 sm:col-start-auto sm:row-start-auto sm:ml-3 flex items-center"
+				>
 					<span class="inline-flex shrink-0">
 						{@render badgeGroup()}
 					</span>
 				</div>
 
-				<div class="hidden sm:flex w-24 justify-end items-baseline gap-1 mr-4">
-					{#if totalStorage > 0}
-						<span class="font-mono text-xxs md:text-xs text-dark-grey" title="Storage Capacity">
-							{formatValue(totalStorage)}
-						</span>
-						<span class="text-xxs text-mid-grey">MWh</span>
-					{/if}
-				</div>
-
-				<div class="flex justify-end items-center gap-2 group col-start-3 sm:col-start-auto w-24">
-					<div class="flex justify-end items-baseline gap-1">
-						{#if showMetric}
-							<span class="font-mono text-xs md:text-sm text-dark-grey">
-								{formatValue(/** @type {number} */ (metricValue))}
+				{#if !hideMetricCols}
+					<div class="hidden sm:flex w-24 justify-end items-baseline gap-1 mr-4">
+						{#if totalStorage > 0}
+							<span class="font-mono text-xxs md:text-xs text-dark-grey" title="Storage Capacity">
+								{formatValue(totalStorage)}
 							</span>
-							<span class="text-xxs md:text-xs text-mid-grey">{metricUnit}</span>
-						{:else}
-							<span class="font-mono text-xs md:text-sm text-dark-grey" title="Total Capacity">
-								{formatValue(totalCapacity)}
-							</span>
-							<span class="text-xxs md:text-xs text-mid-grey">MW</span>
+							<span class="text-xxs text-mid-grey">MWh</span>
 						{/if}
 					</div>
 
-					{#if primaryGroup}
-						<UnitGroupPopup units={popupUnits} network_id={facility.network_id} />
-					{/if}
-				</div>
+					<div class="flex justify-end items-center gap-2 group col-start-3 sm:col-start-auto w-24">
+						<div class="flex justify-end items-baseline gap-1">
+							{#if showMetric}
+								<span class="font-mono text-xs md:text-sm text-dark-grey">
+									{formatValue(/** @type {number} */ (metricValue))}
+								</span>
+								<span class="text-xxs md:text-xs text-mid-grey">{metricUnit}</span>
+							{:else}
+								<span class="font-mono text-xs md:text-sm text-dark-grey" title="Total Capacity">
+									{formatValue(totalCapacity)}
+								</span>
+								<span class="text-xxs md:text-xs text-mid-grey">MW</span>
+							{/if}
+						</div>
+
+						{#if primaryGroup}
+							<UnitGroupPopup units={popupUnits} network_id={facility.network_id} />
+						{/if}
+					</div>
+				{/if}
 			</div>
 		</button>
 	</li>

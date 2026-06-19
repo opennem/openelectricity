@@ -13,6 +13,7 @@
 	 *   hoveredFacility?: any | null,
 	 *   clickedFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
+	 *   compact?: boolean,
 	 *   sortBy?: 'name' | 'region' | 'storage' | 'capacity',
 	 *   sortOrder?: 'asc' | 'desc',
 	 *   isFullscreen?: boolean,
@@ -29,6 +30,7 @@
 		hoveredFacility = null,
 		clickedFacility = null,
 		selectedFacilityCode = null,
+		compact = false,
 		sortBy = 'name',
 		sortOrder = 'asc',
 		isFullscreen = false,
@@ -120,7 +122,11 @@
 				Facility
 				{@render sortIcon('name')}
 			</button>
-			<div class="col-span-7 grid grid-cols-[auto_1fr_auto_auto] items-center gap-4">
+			<div
+				class="col-span-7 grid items-center gap-4 {compact
+					? 'grid-cols-[auto_1fr]'
+					: 'grid-cols-[auto_1fr_auto_auto]'}"
+			>
 				<button
 					class="flex items-center gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer"
 					onclick={() => handleSort('region')}
@@ -129,29 +135,28 @@
 					{@render sortIcon('region')}
 				</button>
 				<div class="ml-3 text-xs font-medium text-mid-grey">Tech</div>
-				<button
-					class="flex items-center justify-end gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer w-24"
-					onclick={() => handleSort('storage')}
-				>
-					Storage
-					{@render sortIcon('storage')}
-				</button>
-				<button
-					class="flex items-center justify-end gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer w-24"
-					onclick={() => handleSort('capacity')}
-				>
-					{#if metricActive}
-						{metricMeta.shortLabel}
-					{:else}
-						<Tooltip
-							text={CAPACITY_TOOLTIP.text}
-							learnMoreHref={CAPACITY_TOOLTIP.learnMoreHref}
-						>
-							Capacity
-						</Tooltip>
-					{/if}
-					{@render sortIcon('capacity')}
-				</button>
+				{#if !compact}
+					<button
+						class="flex items-center justify-end gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer w-24"
+						onclick={() => handleSort('storage')}
+					>
+						Storage
+						{@render sortIcon('storage')}
+					</button>
+					<button
+						class="flex items-center justify-end gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer w-24"
+						onclick={() => handleSort('capacity')}
+					>
+						{#if metricActive}
+							{metricMeta.shortLabel}
+						{:else}
+							<Tooltip text={CAPACITY_TOOLTIP.text} learnMoreHref={CAPACITY_TOOLTIP.learnMoreHref}>
+								Capacity
+							</Tooltip>
+						{/if}
+						{@render sortIcon('capacity')}
+					</button>
+				{/if}
 			</div>
 		</div>
 	</div>
@@ -162,6 +167,7 @@
 				{facility}
 				isHighlighted={hoveredFacility?.code === facility.code}
 				isSelected={selectedFacilityCode === facility.code}
+				hideMetricCols={compact}
 				{isFullscreen}
 				metricValue={metricActive ? (metricValuesRaw.get(facility.code) ?? null) : null}
 				metricUnit={metricActive ? metricMeta.unit : null}

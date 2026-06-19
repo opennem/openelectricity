@@ -1,6 +1,6 @@
 <script>
 	import { tick } from 'svelte';
-	import FacilityOgCard from '$lib/components/FacilityOgCard.svelte';
+	import FacilityCardImage from './_components/FacilityCardImage.svelte';
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
 
 	/**
@@ -56,18 +56,7 @@
 						onmouseenter={() => onhover?.(facility)}
 						onmouseleave={() => onhover?.(null)}
 					>
-						{#if cardCodes.has(facility.code)}
-							<img
-								src="/og/facility/{facility.code}.jpg"
-								alt="Social card for {facility.name}"
-								loading="lazy"
-								width="1200"
-								height="630"
-								class="block aspect-[1200/630] w-full object-cover"
-							/>
-						{:else}
-							<FacilityOgCard {facility} />
-						{/if}
+						<FacilityCardImage {facility} {cardCodes} />
 					</button>
 				</li>
 			{/each}

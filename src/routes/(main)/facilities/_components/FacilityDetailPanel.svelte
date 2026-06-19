@@ -20,6 +20,11 @@
 	 */
 	let { facility = null, sanityFacility = null, powerData = null, fillHeight = false } = $props();
 
+	// Metrics are hidden in this detail panel for now (still shown on the
+	// dedicated /facility/[code] page). Flip to true to restore — this also gates
+	// the headless data providers so no market-value/emissions fetch fires.
+	const SHOW_METRICS = false;
+
 	let chartContainerHeight = $state(0);
 	let chartHeightPx = $derived(fillHeight ? chartContainerHeight || 220 : 220);
 
@@ -151,7 +156,7 @@
 	<div class={fillHeight ? 'flex flex-col h-full min-h-0' : ''}>
 		<!-- Metrics — fuel-tech-appropriate summary for the visible chart range.
 		     FacilityMetrics renders a flush grid, so wrap it in a bordered box here. -->
-		{#if filteredFacility}
+		{#if SHOW_METRICS && filteredFacility}
 			<div class="{fillHeight ? 'shrink-0 ' : ''}border-b border-mid-warm-grey/40 p-3">
 				<div class="overflow-hidden rounded-lg border border-mid-warm-grey/40">
 					<FacilityMetrics
@@ -210,7 +215,7 @@
 
 		<!-- Headless data providers — fetch market value (+ emissions) for the
 		     visible range and feed the metrics above. They render no markup. -->
-		{#if filteredFacility}
+		{#if SHOW_METRICS && filteredFacility}
 			<FacilityFinancialDataProvider
 				facility={filteredFacility}
 				{timeZone}
