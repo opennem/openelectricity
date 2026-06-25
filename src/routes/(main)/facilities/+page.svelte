@@ -1,6 +1,5 @@
 <script>
 	import { fly } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
 	import { goto, replaceState, afterNavigate } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
@@ -32,6 +31,7 @@
 		FullscreenFooter
 	} from '$lib/components/fullscreen';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
+	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from './_utils/units';
@@ -61,13 +61,21 @@
 	let yearRange = $state(/** @type {[number, number]} */ ([1900, 2040]));
 	/** @type {'list' | 'timeline' | 'map' | 'card'} */
 	let selectedView = $derived(/** @type {'list' | 'timeline' | 'map' | 'card'} */ (data.view));
-	// Selection is driven by the `facility` URL param — the single source of truth.
-	// Deriving (rather than mirroring load data in $state) keeps it correct through
-	// optimistic replaceState selection AND browser back/forward, where SvelteKit
-	// may restore stale page data but the URL is always accurate.
+	// Selection follows the `facility` URL param — canonical, so it survives
+	// reload, sharing and browser back/forward (real navigations update page.url
+	// reactively). Clicks additionally set an optimistic override for an instant
+	// response, because replaceState only mirrors the URL — it doesn't reactively
+	// update page.url. The override is dropped after the next real navigation
+	// (afterNavigate), when the URL is authoritative again.
+	//   undefined → no override, use the URL · null → optimistically deselected ·
+	//   string → optimistically selected code
+	/** @type {string | null | undefined} */
+	let optimisticCode = $state(undefined);
+
 	/** @type {any | null} */
 	let selectedFacility = $derived.by(() => {
-		const code = page.url.searchParams.get('facility');
+		const code =
+			optimisticCode !== undefined ? optimisticCode : page.url.searchParams.get('facility');
 		return code ? (facilities?.find((f) => f.code === code) ?? null) : null;
 	});
 
@@ -255,6 +263,14 @@
 	// the next user interaction and synced to the URL then.
 	let routerReady = $state(false);
 	afterNavigate(() => {
+		// Reconcile selection from the *actual* browser URL after every real
+		// navigation (back/forward, filter change). We can't trust page.url /
+		// navigation.to.url here: after a shallow replaceState (how selection syncs
+		// the URL) followed by back/forward, the browser restores the real URL but
+		// SvelteKit reports an older snapshot. window.location is authoritative.
+		// The override drives the derived: a code selects it, null deselects.
+		optimisticCode = new URLSearchParams(window.location.search).get('facility');
+
 		if (routerReady) return;
 		queueMicrotask(() => {
 			routerReady = true;
@@ -772,14 +788,16 @@
 	function handleCapacityRangeChange(range) {
 		// Optimistic update
 		capacityRange = range;
-		// Capacity is client-side filtered, no refetch needed
+		// Capacity is client-side filtered, no refetch needed. Preserve the
+		// selection in the URL so it survives back/forward.
 		navigateWithoutRefetch({
 			statuses,
 			regions,
 			fuelTechs,
 			capacityRange: range,
 			yearRange,
-			view: selectedView
+			view: selectedView,
+			facility: selectedFacility?.code ?? null
 		});
 	}
 
@@ -789,14 +807,16 @@
 	function handleYearRangeChange(range) {
 		// Optimistic update
 		yearRange = range;
-		// Year is client-side filtered, no refetch needed
+		// Year is client-side filtered, no refetch needed. Preserve the selection
+		// in the URL so it survives back/forward.
 		navigateWithoutRefetch({
 			statuses,
 			regions,
 			fuelTechs,
 			capacityRange,
 			yearRange: range,
-			view: selectedView
+			view: selectedView,
+			facility: selectedFacility?.code ?? null
 		});
 	}
 
@@ -850,9 +870,11 @@
 				// Toggle off - clear selection and close popups
 				closeFacilityDetail();
 			} else {
-				// Select new facility — just sync the URL; `selectedFacility` derives
-				// from it. The preview renders from the facility object we already hold
-				// client-side plus the streamed profile, so there's no server round-trip.
+				// Optimistic override for an instant open (replaceState only mirrors
+				// the URL; it doesn't reactively update page.url), then sync the URL.
+				// No server round-trip — the preview renders from the facility object
+				// we hold plus the streamed profile.
+				optimisticCode = facility.code;
 				navigateWithoutRefetch({
 					statuses,
 					regions,
@@ -870,6 +892,9 @@
 	 * Close facility detail panel
 	 */
 	function closeFacilityDetail() {
+		// Optimistic deselect (null override) so the panel closes immediately;
+		// the URL sync below drops the facility param for back/forward consistency.
+		optimisticCode = null;
 		mapRef?.closePopups();
 		navigateWithoutRefetch({
 			statuses,
@@ -1153,7 +1178,7 @@
 										closeFacilityDetail();
 									}
 								}}
-								class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
+								class="bg-white rounded-lg px-3 py-2.5 md:py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
 								title="Reset map to show all facilities"
 							>
 								Reset Map
@@ -1257,7 +1282,7 @@
 									showYearOverlay = true;
 									yearAnimationControls?.toggle();
 								}}
-								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
+								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2.5 md:py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
 								title="Play year animation"
 							>
 								<Play class="size-4 text-mid-grey" />
@@ -1286,6 +1311,7 @@
 											Math.max(30, (FACILITY_PANEL_DEFAULT_PX / containerHeight) * 100)
 										)}
 								minSize={250}
+								dismissThreshold={160}
 								containerSize={containerHeight}
 								class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 {selectedFacility
 									? '[view-transition-name:facility-hero]'
@@ -1315,30 +1341,37 @@
 					</div>
 				</div>
 
-				<!-- Facility detail panel (mobile only - covers full section height) -->
-				{#if selectedFacility && !isDesktop}
-					<div
-						class="md:hidden absolute inset-0 w-full bg-white z-30 flex flex-col overflow-hidden"
-						style:view-transition-name="facility-hero"
-						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
+				<!-- Facility detail panel (mobile only) — a drag-resizable bottom sheet
+				     that leaves the list/map behind it visible and interactive. -->
+				{#if !isDesktop}
+					<BottomSheet
+						open={!!selectedFacility}
+						onclose={closeFacilityDetail}
+						{containerHeight}
+						class="md:hidden z-30 [view-transition-name:facility-hero]"
 					>
-						{@render facilityActionBar(selectedFacility)}
-						<FacilityPanelHeader facility={selectedFacility} sanityFacility={selectedProfile} />
-
-						<div class="flex-1 min-h-0">
+						{#snippet header()}
+							{#if selectedFacility}
+								{@render facilityActionBar(selectedFacility)}
+								<FacilityPanelHeader facility={selectedFacility} sanityFacility={selectedProfile} />
+							{/if}
+						{/snippet}
+						{#if selectedFacility}
 							<FacilityDetailPanel
 								facility={selectedFacility}
 								profile={selectedProfile}
 								{profileLoading}
-								fillHeight={true}
 							/>
-						</div>
-
-						<FacilityPanelFooter
-							owners={selectedProfile?.owners ?? []}
-							facilityCode={selectedFacility?.code ?? null}
-						/>
-					</div>
+						{/if}
+						{#snippet footer()}
+							{#if selectedFacility}
+								<FacilityPanelFooter
+									owners={selectedProfile?.owners ?? []}
+									facilityCode={selectedFacility?.code ?? null}
+								/>
+							{/if}
+						{/snippet}
+					</BottomSheet>
 				{/if}
 			</div>
 
