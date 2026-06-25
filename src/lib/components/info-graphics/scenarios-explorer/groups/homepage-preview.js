@@ -62,7 +62,7 @@ export const order = [
 	// 'distillate',
 	'gas',
 
-	// 'battery_discharging',
+	'battery_discharging',
 	'hydro',
 
 	'wind',

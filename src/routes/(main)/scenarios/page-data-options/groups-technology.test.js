@@ -34,10 +34,11 @@ describe('groups-technology', () => {
 			expect(keys).toContain('hydro');
 		});
 
-		it('homepage_preview order has 6 entries for the grid layout', () => {
+		it('homepage_preview order has 7 entries (incl. battery discharging) for the grid layout', () => {
 			expect(orderMap['homepage_preview']).toEqual([
 				'coal',
 				'gas',
+				'battery_discharging',
 				'hydro',
 				'wind',
 				'solar_utility',
