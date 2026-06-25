@@ -14,6 +14,7 @@ import secondaryColourPalette from '$lib/theme/secondary-colour-palette';
  * - set the default model, scenario and pathway order
  */
 
+export const AEMO_2026_ISP_FINAL = 'aemo2026final';
 export const AEMO_2026_ISP_DRAFT = 'aemo2026draft';
 export const AEMO_2024_ISP = 'aemo2024';
 export const AEMO_2024_ISP_DRAFT = 'aemo2024draft';
@@ -29,6 +30,20 @@ export const modelLogoPath = {
 
 // also the order of the models and scenarios
 export const modelScenarios = {
+	[AEMO_2026_ISP_FINAL]: [
+		{ id: 'step_change', label: 'Step Change' },
+		{ id: 'accelerated_transition', label: 'Accelerated Transition' },
+		{ id: 'slower_growth', label: 'Slower Growth' },
+		{ id: 'step_change_higher_demand', label: 'Step Change (Higher Demand)' },
+		{ id: 'step_change_higher_energy_efficiency', label: 'Step Change (Higher Energy Efficiency)' },
+		{ id: 'step_change_lower_energy_efficiency', label: 'Step Change (Lower Energy Efficiency)' },
+		{ id: 'step_change_constrained_delivery', label: 'Step Change (Constrained Delivery)' },
+		{
+			id: 'step_change_no_further_cer_coordination',
+			label: 'Step Change (No Further CER Coordination)'
+		},
+		{ id: 'step_change_no_further_vpp_uptake', label: 'Step Change (No Further VPP Uptake)' }
+	],
 	[AEMO_2026_ISP_DRAFT]: [
 		{ id: 'step_change', label: 'Step Change' },
 		{ id: 'accelerated_transition', label: 'Accelerated Transition' },
@@ -79,6 +94,44 @@ export const modelScenarios = {
 };
 
 export const modelPathways = {
+	[AEMO_2026_ISP_FINAL]: [
+		'CDP1',
+		'CDP2',
+		'CDP3',
+		'CDP4 (ODP)',
+		'CDP5',
+		'CDP6',
+		'CDP7',
+		'CDP8',
+		'CDP9',
+		'CDP10',
+		'CDP11',
+		'CDP12',
+		'CDP13',
+		'CDP14',
+		'CDP15',
+		'CDP16',
+		'CDP17',
+		'CDP18',
+		'CDP19',
+		'CDP20',
+		'CDP21',
+		'CDP22',
+		'CDP23',
+		'CDP24',
+		'CDP25',
+		'CDP26',
+		'CDP27',
+		'CDP28',
+		'CDP29',
+		'CDP30',
+		'CDP31',
+		'CDP32',
+		'CDP33',
+		'CDP34',
+		'Counterfactual'
+	],
+
 	[AEMO_2026_ISP_DRAFT]: [
 		'CDP1',
 		'CDP2',
@@ -229,6 +282,15 @@ export const defaultPathwayOrder = [
 	'CDP23',
 	'CDP24',
 	'CDP25',
+	'CDP26',
+	'CDP27',
+	'CDP28',
+	'CDP29',
+	'CDP30',
+	'CDP31',
+	'CDP32',
+	'CDP33',
+	'CDP34',
 	'Counterfactual',
 	'DP1',
 	'DP2',
@@ -244,6 +306,7 @@ export const defaultPathwayOrder = [
 // Optimal Path
 /** @type {*} */
 export const defaultModelPathway = {
+	[AEMO_2026_ISP_FINAL]: 'CDP4 (ODP)',
 	[AEMO_2026_ISP_DRAFT]: 'CDP4 (ODP)',
 	[AEMO_2024_ISP]: 'CDP14',
 	[AEMO_2024_ISP_DRAFT]: 'CDP3',
@@ -256,6 +319,7 @@ export const defaultModelPathway = {
 
 /** @type {Record<string, string>} */
 export const modelPaths = {
+	[AEMO_2026_ISP_FINAL]: '/data/scenarios/2026_ISP_final',
 	[AEMO_2026_ISP_DRAFT]: '/data/scenarios/2026_ISP_draft',
 	[AEMO_2024_ISP]: '/data/scenarios/2024_ISP_final',
 	[AEMO_2024_ISP_DRAFT]: '/data/scenarios/2024_ISP_draft',
@@ -267,6 +331,25 @@ export const modelPaths = {
 };
 
 export const modelOptions = [
+	{
+		value: AEMO_2026_ISP_FINAL,
+		label: 'AEMO 2026 ISP (Final)',
+		description: "AEMO's 2026 Integrated System Plan",
+		organisation: 'AEMO',
+		year: 2026,
+		draft: false,
+		scenarios: [
+			...modelScenarios[AEMO_2026_ISP_FINAL].map(({ id, label }) => ({
+				id: `${AEMO_2026_ISP_FINAL}-${id}`,
+				model: AEMO_2026_ISP_FINAL,
+				value: id,
+				label: label,
+				colour: '#000'
+			}))
+		],
+		pathways: [...modelPathways[AEMO_2026_ISP_FINAL]],
+		defaultPathway: defaultModelPathway[AEMO_2026_ISP_FINAL]
+	},
 	{
 		value: AEMO_2026_ISP_DRAFT,
 		label: 'AEMO 2026 ISP (Draft)',
