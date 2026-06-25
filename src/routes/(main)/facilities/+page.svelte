@@ -1034,7 +1034,7 @@
 				     JS-gated inline style, so the desktop list/map split is reserved
 				     from the first paint (no full-width flash before hydration). -->
 				<div
-					class="relative bg-white flex flex-col min-h-0 z-10 w-full md:w-[var(--list-w)] md:shrink-0 {mainDrag.isDragging
+					class="relative bg-white flex flex-col min-h-0 z-10 w-full max-md:flex-1 md:w-[var(--list-w)] md:shrink-0 {mainDrag.isDragging
 						? ''
 						: 'md:transition-[width] md:duration-300 md:ease-out'}"
 					class:hidden={selectedView === 'map'}
@@ -1129,9 +1129,11 @@
 					class="hidden md:flex"
 				/>
 
-				<!-- Right panel: Map (flex-1 on desktop) -->
+				<!-- Right panel: Map (fills the column — flex-1 fills height on mobile
+				     [flex-col] and width on desktop [flex-row], so the h-full map
+				     container always has a real size to render into). -->
 				<div
-					class="relative md:flex-1 md:min-w-0"
+					class="relative flex-1 min-h-0 md:min-w-0"
 					class:hidden={selectedView !== 'map'}
 					class:md:block={selectedView !== 'map'}
 				>
