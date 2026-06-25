@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+	AEMO_2026_ISP_FINAL,
 	AEMO_2026_ISP_DRAFT,
 	AEMO_2024_ISP,
 	AEMO_2024_ISP_DRAFT,
@@ -20,6 +21,7 @@ import {
 
 describe('model constants', () => {
 	it('defines all model constants', () => {
+		expect(AEMO_2026_ISP_FINAL).toBe('aemo2026final');
 		expect(AEMO_2026_ISP_DRAFT).toBe('aemo2026draft');
 		expect(AEMO_2024_ISP).toBe('aemo2024');
 		expect(AEMO_2024_ISP_DRAFT).toBe('aemo2024draft');
@@ -33,6 +35,7 @@ describe('model constants', () => {
 
 describe('modelPaths', () => {
 	it('has entries for all models', () => {
+		expect(modelPaths[AEMO_2026_ISP_FINAL]).toBe('/data/scenarios/2026_ISP_final');
 		expect(modelPaths[AEMO_2026_ISP_DRAFT]).toBe('/data/scenarios/2026_ISP_draft');
 		expect(modelPaths[AEMO_2024_ISP]).toBe('/data/scenarios/2024_ISP_final');
 		expect(modelPaths[AEMO_2024_ISP_DRAFT]).toBe('/data/scenarios/2024_ISP_draft');
@@ -46,6 +49,7 @@ describe('modelPaths', () => {
 
 describe('modelScenarios', () => {
 	it('defines scenarios for all models', () => {
+		expect(modelScenarios[AEMO_2026_ISP_FINAL]).toBeDefined();
 		expect(modelScenarios[AEMO_2026_ISP_DRAFT]).toBeDefined();
 		expect(modelScenarios[AEMO_2024_ISP]).toBeDefined();
 		expect(modelScenarios[AEMO_2024_ISP_DRAFT]).toBeDefined();
@@ -66,6 +70,16 @@ describe('modelScenarios', () => {
 		expect(draft2022Ids).toEqual(final2022Ids);
 	});
 
+	it('2026 final has 9 scenarios (3 headline + 6 step change sensitivities)', () => {
+		expect(modelScenarios[AEMO_2026_ISP_FINAL]).toHaveLength(9);
+		const ids = modelScenarios[AEMO_2026_ISP_FINAL].map((s) => s.id);
+		expect(ids).toContain('step_change');
+		expect(ids).toContain('accelerated_transition');
+		expect(ids).toContain('slower_growth');
+		expect(ids).toContain('step_change_higher_demand');
+		expect(ids).toContain('step_change_no_further_vpp_uptake');
+	});
+
 	it('2026 draft has 3 scenarios', () => {
 		expect(modelScenarios[AEMO_2026_ISP_DRAFT]).toHaveLength(3);
 	});
@@ -84,6 +98,14 @@ describe('modelScenarios', () => {
 });
 
 describe('modelPathways', () => {
+	it('2026 Final has 35 pathways (CDP1-34 + Counterfactual, with CDP4 as ODP)', () => {
+		expect(modelPathways[AEMO_2026_ISP_FINAL]).toHaveLength(35);
+		expect(modelPathways[AEMO_2026_ISP_FINAL]).toContain('CDP4 (ODP)');
+		expect(modelPathways[AEMO_2026_ISP_FINAL]).toContain('CDP34');
+		expect(modelPathways[AEMO_2026_ISP_FINAL]).not.toContain('CDP35');
+		expect(modelPathways[AEMO_2026_ISP_FINAL]).toContain('Counterfactual');
+	});
+
 	it('2026 Draft has 24 pathways (CDP1-23 + Counterfactual, with CDP4 as ODP)', () => {
 		expect(modelPathways[AEMO_2026_ISP_DRAFT]).toHaveLength(24);
 		expect(modelPathways[AEMO_2026_ISP_DRAFT]).toContain('CDP4 (ODP)');
@@ -136,6 +158,7 @@ describe('modelPathways', () => {
 
 describe('defaultModelPathway', () => {
 	it('has defaults for all models', () => {
+		expect(defaultModelPathway[AEMO_2026_ISP_FINAL]).toBe('CDP4 (ODP)');
 		expect(defaultModelPathway[AEMO_2026_ISP_DRAFT]).toBeDefined();
 		expect(defaultModelPathway[AEMO_2024_ISP]).toBeDefined();
 		expect(defaultModelPathway[AEMO_2024_ISP_DRAFT]).toBeDefined();
@@ -154,16 +177,17 @@ describe('defaultModelPathway', () => {
 });
 
 describe('modelOptions', () => {
-	it('has 8 entries with 2026 draft first', () => {
-		expect(modelOptions).toHaveLength(8);
-		expect(modelOptions[0].value).toBe(AEMO_2026_ISP_DRAFT);
-		expect(modelOptions[1].value).toBe(AEMO_2024_ISP);
-		expect(modelOptions[2].value).toBe(AEMO_2024_ISP_DRAFT);
-		expect(modelOptions[3].value).toBe(AEMO_2022_ISP);
-		expect(modelOptions[4].value).toBe(AEMO_2022_ISP_DRAFT);
-		expect(modelOptions[5].value).toBe(AEMO_2020_ISP);
-		expect(modelOptions[6].value).toBe(AEMO_2020_ISP_DRAFT);
-		expect(modelOptions[7].value).toBe(AEMO_2018_ISP);
+	it('has 9 entries with 2026 final first', () => {
+		expect(modelOptions).toHaveLength(9);
+		expect(modelOptions[0].value).toBe(AEMO_2026_ISP_FINAL);
+		expect(modelOptions[1].value).toBe(AEMO_2026_ISP_DRAFT);
+		expect(modelOptions[2].value).toBe(AEMO_2024_ISP);
+		expect(modelOptions[3].value).toBe(AEMO_2024_ISP_DRAFT);
+		expect(modelOptions[4].value).toBe(AEMO_2022_ISP);
+		expect(modelOptions[5].value).toBe(AEMO_2022_ISP_DRAFT);
+		expect(modelOptions[6].value).toBe(AEMO_2020_ISP);
+		expect(modelOptions[7].value).toBe(AEMO_2020_ISP_DRAFT);
+		expect(modelOptions[8].value).toBe(AEMO_2018_ISP);
 	});
 
 	it('draft entries have draft: true', () => {

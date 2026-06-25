@@ -2,6 +2,17 @@
  * @type {ScenarioContent}
  */
 export const scenarioLabels = {
+	aemo2026final: {
+		step_change: 'AEMO Step Change 2026',
+		accelerated_transition: 'AEMO Accelerated Transition 2026',
+		slower_growth: 'AEMO Slower Growth 2026',
+		step_change_higher_demand: 'AEMO Step Change – Higher Demand 2026',
+		step_change_higher_energy_efficiency: 'AEMO Step Change – Higher Energy Efficiency 2026',
+		step_change_lower_energy_efficiency: 'AEMO Step Change – Lower Energy Efficiency 2026',
+		step_change_constrained_delivery: 'AEMO Step Change – Constrained Delivery 2026',
+		step_change_no_further_cer_coordination: 'AEMO Step Change – No Further CER Coordination 2026',
+		step_change_no_further_vpp_uptake: 'AEMO Step Change – No Further VPP Uptake 2026'
+	},
 	aemo2026draft: {
 		step_change: 'AEMO Step Change 2026 (Draft)',
 		accelerated_transition: 'AEMO Accelerated Transition 2026 (Draft)',
@@ -55,6 +66,26 @@ export const scenarioLabels = {
  * @type {ScenarioContent}
  */
 export const scenarioDescriptions = {
+	aemo2026final: {
+		step_change:
+			'The most likely scenario, reflecting an accelerated energy transition consistent with Australia\'s emissions reduction targets and a growing economy.',
+		accelerated_transition:
+			'A faster transition pathway driven by stronger policy action, higher electrification and more rapid coal retirements.',
+		slower_growth:
+			'A scenario with slower economic growth and a more gradual pace of energy transition, resulting in delayed investment and coal retirements.',
+		step_change_higher_demand:
+			'A Step Change sensitivity testing stronger electricity demand growth, requiring more generation, storage and transmission to keep pace.',
+		step_change_higher_energy_efficiency:
+			'A Step Change sensitivity with stronger energy-efficiency uptake, moderating demand growth and easing the build-out of new capacity.',
+		step_change_lower_energy_efficiency:
+			'A Step Change sensitivity with weaker energy-efficiency uptake, lifting electricity demand and the need for additional generation and firming.',
+		step_change_constrained_delivery:
+			'A Step Change sensitivity in which supply-chain and delivery constraints slow the roll-out of new generation, storage and transmission.',
+		step_change_no_further_cer_coordination:
+			'A Step Change sensitivity assuming no further coordination of consumer energy resources, reducing the system value of distributed solar and batteries.',
+		step_change_no_further_vpp_uptake:
+			'A Step Change sensitivity assuming no further growth in virtual power plants, lowering the contribution of aggregated home batteries to firming.'
+	},
 	aemo2026draft: {
 		step_change:
 			'The most likely scenario, reflecting an accelerated energy transition consistent with Australia\'s emissions reduction targets and a growing economy.',
@@ -121,6 +152,26 @@ export const scenarioDescriptions = {
  * @type {ScenarioContent}
  */
 export const scenarioSummary = {
+	aemo2026final: {
+		step_change:
+			'An accelerated transition aligned with Australia\'s emissions targets, featuring faster coal retirements and significant new renewable and storage investment.',
+		accelerated_transition:
+			'A more ambitious transition pathway with stronger policy drivers, higher electrification and earlier coal closures than Step Change.',
+		slower_growth:
+			'A more gradual transition reflecting slower economic growth, with delayed coal retirements and reduced pace of renewable deployment.',
+		step_change_higher_demand:
+			'Step Change under higher demand growth, increasing the generation, storage and network capacity needed to meet load.',
+		step_change_higher_energy_efficiency:
+			'Step Change with greater energy-efficiency improvements that temper demand growth and reduce new-build requirements.',
+		step_change_lower_energy_efficiency:
+			'Step Change with weaker energy-efficiency gains, raising demand and the need for additional capacity and firming.',
+		step_change_constrained_delivery:
+			'Step Change where supply-chain and delivery constraints slow the pace at which new generation, storage and transmission can be built.',
+		step_change_no_further_cer_coordination:
+			'Step Change without further coordination of consumer energy resources, lowering the system contribution of distributed solar and batteries.',
+		step_change_no_further_vpp_uptake:
+			'Step Change without further virtual power plant uptake, reducing aggregated home-battery firming.'
+	},
 	aemo2026draft: {
 		step_change:
 			'An accelerated transition aligned with Australia\'s emissions targets, featuring faster coal retirements and significant new renewable and storage investment.',
@@ -187,6 +238,65 @@ export const scenarioSummary = {
  * @type {ScenarioContent}
  */
 export const scenarioKeyPoints = {
+	aemo2026final: {
+		step_change: [
+			'Accelerated timeline for coal plant retirements aligned with announced closure dates',
+			'Significant investment in utility-scale renewables and battery storage',
+			'Strong electrification of transport and industry',
+			'Increased distributed energy resource uptake across the NEM',
+			'New transmission infrastructure to support renewable energy zones'
+		],
+		accelerated_transition: [
+			'Faster coal retirements than Step Change driven by stronger policy action',
+			'Higher rates of electrification across transport and heating',
+			'More rapid deployment of large-scale renewables and firming capacity',
+			'Stronger emissions reduction trajectory aligned with 1.5°C pathways',
+			'Greater investment in transmission and grid infrastructure'
+		],
+		slower_growth: [
+			'Slower economic growth reducing electricity demand growth',
+			'Delayed coal retirements compared to Step Change',
+			'Reduced pace of renewable energy and storage deployment',
+			'Lower electrification rates for transport and industry',
+			'More gradual transmission investment timeline'
+		],
+		step_change_higher_demand: [
+			'Tests stronger growth in electricity demand than the central Step Change',
+			'Greater electrification of transport and industry lifting consumption',
+			'More utility-scale renewables, storage and firming required to meet load',
+			'Additional transmission needed to deliver higher volumes of energy'
+		],
+		step_change_higher_energy_efficiency: [
+			'Stronger uptake of energy-efficiency measures across the economy',
+			'Lower electricity demand growth than the central Step Change',
+			'Reduced need for new generation and storage investment',
+			'More gradual transmission build-out'
+		],
+		step_change_lower_energy_efficiency: [
+			'Weaker uptake of energy-efficiency measures',
+			'Higher electricity demand than the central Step Change',
+			'Additional generation and firming capacity required',
+			'Greater pressure on transmission and network investment'
+		],
+		step_change_constrained_delivery: [
+			'Supply-chain, labour and approval constraints slow new project delivery',
+			'Renewable, storage and transmission build-out proceeds more slowly',
+			'Greater reliance on existing generation during the transition',
+			'Higher risk to reliability if replacement capacity is delayed'
+		],
+		step_change_no_further_cer_coordination: [
+			'Assumes no further coordination of consumer energy resources (CER)',
+			'Distributed solar and home batteries deliver less system value',
+			'Greater need for utility-scale firming and storage',
+			'Higher operational challenges from uncoordinated distributed generation'
+		],
+		step_change_no_further_vpp_uptake: [
+			'Assumes no further growth in virtual power plants (VPPs)',
+			'Less aggregated home-battery capacity available for firming',
+			'Increased reliance on grid-scale storage and gas firming',
+			'Reduced consumer participation in balancing the grid'
+		]
+	},
 	aemo2026draft: {
 		step_change: [
 			'Accelerated timeline for coal plant retirements aligned with announced closure dates',
@@ -376,6 +486,43 @@ export const scenarioKeyPoints = {
  * @type {ScenarioContent}
  */
 export const scenarioParagraphs = {
+	aemo2026final: {
+		step_change: [
+			'The Step Change scenario in the 2026 ISP represents AEMO\'s most likely pathway for the energy transition. It reflects an accelerated shift to renewable energy consistent with Australia\'s legislated emissions reduction targets within a growing economy. The scenario features faster coal retirements aligned with announced closure dates, significant investment in utility-scale renewables and battery storage, and strong uptake of distributed energy resources.',
+			'Under this scenario, electrification of transport and industry accelerates, driving increased electricity demand. New transmission infrastructure is required to connect renewable energy zones to load centres. The scenario balances the pace of transition with practical delivery constraints, ensuring system reliability throughout the transformation.',
+			'Step Change aims to achieve deep emissions reductions by 2050, driven by a combination of policy commitments, technology cost reductions and consumer behaviour change.'
+		],
+		accelerated_transition: [
+			'The Accelerated Transition scenario models a faster energy transition than Step Change, driven by stronger global and domestic policy action on climate change. This pathway features earlier coal retirements, more rapid deployment of large-scale renewables and firming capacity, and higher rates of electrification across transport and heating.',
+			'This scenario requires greater investment in transmission and grid infrastructure to support the accelerated build-out of renewable energy zones. The pace of transition is consistent with limiting global temperature rise to 1.5°C, requiring a more ambitious trajectory than current policy settings.',
+			'Accelerated Transition represents the upper bound of plausible transition speed, testing the system\'s ability to deliver the required infrastructure and generation capacity on a compressed timeline.'
+		],
+		slower_growth: [
+			'The Slower Growth scenario reflects a future with lower economic growth, resulting in reduced electricity demand growth and a more gradual pace of energy transition. Coal retirements are delayed compared to Step Change, and the deployment of new renewable energy and storage capacity proceeds at a slower rate.',
+			'Under this scenario, lower investment and reduced policy ambition lead to a more extended transition timeline. Electrification of transport and industry proceeds more slowly, and distributed energy resource uptake is more modest than in the other scenarios.',
+			'Slower Growth provides an important lower-bound reference for planning, helping to identify investments that remain robust across a range of economic conditions.'
+		],
+		step_change_higher_demand: [
+			'The Higher Demand sensitivity explores a Step Change future in which electricity demand grows more strongly than the central case, driven by faster electrification of transport and industry and higher underlying economic activity. Meeting this additional load requires more utility-scale wind and solar, more storage and firming, and additional transmission to move energy from renewable energy zones to demand centres.',
+			'By stress-testing the upper end of demand, this sensitivity helps identify the generation and network investments that remain valuable if the transition draws more load onto the grid than expected.'
+		],
+		step_change_higher_energy_efficiency: [
+			'The Higher Energy Efficiency sensitivity applies stronger improvements in how efficiently electricity is used across homes, businesses and industry. Lower demand growth eases the pace at which new generation, storage and transmission must be built, while still delivering the emissions reductions of the central Step Change scenario.'
+		],
+		step_change_lower_energy_efficiency: [
+			'The Lower Energy Efficiency sensitivity assumes weaker uptake of efficiency measures, lifting electricity demand relative to the central Step Change. The higher load increases the need for additional generation and firming capacity and places greater pressure on transmission and network investment to maintain reliability.'
+		],
+		step_change_constrained_delivery: [
+			'The Constrained Delivery sensitivity tests a Step Change future in which supply-chain bottlenecks, labour shortages and approval delays slow the roll-out of new generation, storage and transmission. With replacement capacity arriving more slowly, the system relies for longer on existing generation, raising the risk to reliability if coal retirements proceed ahead of new build.',
+			'This sensitivity highlights the importance of timely delivery and the consequences of delays for cost and security of supply.'
+		],
+		step_change_no_further_cer_coordination: [
+			'The No Further CER Coordination sensitivity assumes that consumer energy resources — such as rooftop solar and home batteries — receive no further coordination beyond current arrangements. Without orchestration, these distributed resources deliver less value to the wider system, increasing the need for utility-scale firming and storage and adding to the operational challenge of managing high volumes of uncoordinated distributed generation.'
+		],
+		step_change_no_further_vpp_uptake: [
+			'The No Further VPP Uptake sensitivity assumes no additional growth in virtual power plants that aggregate home batteries into grid-scale resources. With less aggregated distributed storage available to firm renewable output, the system leans more heavily on grid-scale batteries and gas-fired firming, and consumers play a smaller role in balancing the grid.'
+		]
+	},
 	aemo2026draft: {
 		step_change: [
 			'The Step Change scenario in the 2026 Draft ISP represents AEMO\'s most likely pathway for the energy transition. It reflects an accelerated shift to renewable energy consistent with Australia\'s legislated emissions reduction targets within a growing economy. The scenario features faster coal retirements aligned with announced closure dates, significant investment in utility-scale renewables and battery storage, and strong uptake of distributed energy resources.',

@@ -14,7 +14,8 @@ const modelDirs = {
 	'2022 ISP Final': '2022_ISP_final',
 	'2024 ISP Draft': '2024_ISP_draft',
 	'2024 ISP Final': '2024_ISP_final',
-	'2026 ISP Draft': '2026_ISP_draft'
+	'2026 ISP Draft': '2026_ISP_draft',
+	'2026 ISP Final': '2026_ISP_final'
 };
 
 /**

@@ -8,12 +8,14 @@ import {
 	AEMO_2022_ISP_DRAFT,
 	AEMO_2024_ISP,
 	AEMO_2024_ISP_DRAFT,
-	AEMO_2026_ISP_DRAFT
+	AEMO_2026_ISP_DRAFT,
+	AEMO_2026_ISP_FINAL
 } from './models.js';
 
 describe('chartXHighlightTicks', () => {
 	/** Expected projection start FY year for each model (after +1 year FY shift) */
 	const expectedFyYears = {
+		[AEMO_2026_ISP_FINAL]: 2027,
 		[AEMO_2026_ISP_DRAFT]: 2027,
 		[AEMO_2024_ISP]: 2025,
 		[AEMO_2024_ISP_DRAFT]: 2025,

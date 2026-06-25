@@ -1,5 +1,16 @@
 /** @type {Record<string, Record<string, string>>} */
 export const scenarioLabels = {
+	aemo2026final: {
+		step_change: 'AEMO Step Change 2026',
+		accelerated_transition: 'AEMO Accelerated Transition 2026',
+		slower_growth: 'AEMO Slower Growth 2026',
+		step_change_higher_demand: 'AEMO Step Change – Higher Demand 2026',
+		step_change_higher_energy_efficiency: 'AEMO Step Change – Higher Energy Efficiency 2026',
+		step_change_lower_energy_efficiency: 'AEMO Step Change – Lower Energy Efficiency 2026',
+		step_change_constrained_delivery: 'AEMO Step Change – Constrained Delivery 2026',
+		step_change_no_further_cer_coordination: 'AEMO Step Change – No Further CER Coordination 2026',
+		step_change_no_further_vpp_uptake: 'AEMO Step Change – No Further VPP Uptake 2026'
+	},
 	aemo2026draft: {
 		step_change: 'AEMO Step Change 2026 (Draft)',
 		accelerated_transition: 'AEMO Accelerated Transition 2026 (Draft)',
@@ -50,6 +61,26 @@ export const scenarioLabels = {
 };
 
 export const scenarioDescriptions = {
+	aemo2026final: {
+		step_change:
+			'The most likely scenario, reflecting an accelerated energy transition consistent with Australia\'s emissions reduction targets and a growing economy.',
+		accelerated_transition:
+			'A faster transition pathway driven by stronger policy action, higher electrification and more rapid coal retirements.',
+		slower_growth:
+			'A scenario with slower economic growth and a more gradual pace of energy transition, resulting in delayed investment and coal retirements.',
+		step_change_higher_demand:
+			'A Step Change sensitivity testing stronger electricity demand growth, requiring more generation, storage and transmission to keep pace.',
+		step_change_higher_energy_efficiency:
+			'A Step Change sensitivity with stronger energy-efficiency uptake, moderating demand growth and easing the build-out of new capacity.',
+		step_change_lower_energy_efficiency:
+			'A Step Change sensitivity with weaker energy-efficiency uptake, lifting electricity demand and the need for additional generation and firming.',
+		step_change_constrained_delivery:
+			'A Step Change sensitivity in which supply-chain and delivery constraints slow the roll-out of new generation, storage and transmission.',
+		step_change_no_further_cer_coordination:
+			'A Step Change sensitivity assuming no further coordination of consumer energy resources, reducing the system value of distributed solar and batteries.',
+		step_change_no_further_vpp_uptake:
+			'A Step Change sensitivity assuming no further growth in virtual power plants, lowering the contribution of aggregated home batteries to firming.'
+	},
 	aemo2026draft: {
 		step_change:
 			'The most likely scenario, reflecting an accelerated energy transition consistent with Australia\'s emissions reduction targets and a growing economy.',
