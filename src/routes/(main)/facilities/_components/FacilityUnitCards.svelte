@@ -4,9 +4,9 @@
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import GenCapViz from '$lib/components/facilities/GenCapViz.svelte';
 	import { fuelTechName } from '$lib/fuel_techs';
-	import { groupUnits } from '../../../facilities/_utils/units';
-	import formatValue from '../../../facilities/_utils/format-value';
-	import { getPercentage, getParsedDate, formatTimestampLabel } from '../../../facilities/_utils/unit-helpers';
+	import { groupUnits } from '../_utils/units';
+	import formatValue from '../_utils/format-value';
+	import { getPercentage, getParsedDate, formatTimestampLabel } from '../_utils/unit-helpers';
 	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 
 	/** @type {{ facility: any }} */
