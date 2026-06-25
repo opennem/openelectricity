@@ -20,7 +20,7 @@
 		{#if showCheckbox}
 			<Checkbox
 				name="includeBatteryAndLoads"
-				label="Include Storage and Loads"
+				label="Include Loads"
 				checked={includeBatteryAndLoads}
 				{onchange}
 			/>

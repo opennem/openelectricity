@@ -1,14 +1,12 @@
-const batteryAndLoads = [
-	'battery_discharging',
-	'battery_VPP_discharging',
-	'battery_distributed_discharging',
+// Loads (and storage *charging*) hidden unless "Include Loads" is on.
+// Battery (discharging) is intentionally NOT listed here — it's a generation
+// source and always shown in the technology breakdown.
+const loads = [
 	'battery_charging',
 	'battery_VPP_charging',
 	'battery_distributed_charging',
-	'battery',
 	'exports',
 	'pumps',
-	'storage_discharging',
 	'storage_charging'
 ];
 
@@ -18,7 +16,7 @@ const batteryAndLoads = [
  * @returns
  */
 export default function (fuelTechs) {
-	const filterKeys = Object.keys(fuelTechs).filter((key) => !batteryAndLoads.includes(key));
+	const filterKeys = Object.keys(fuelTechs).filter((key) => !loads.includes(key));
 
 	return filterKeys.reduce((/** @type Object.<FuelTechCode, FuelTechCode[]> */ acc, key) => {
 		acc[key] = fuelTechs[key];
