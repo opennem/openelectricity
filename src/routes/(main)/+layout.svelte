@@ -22,12 +22,17 @@
 	/** @type {Props} */
 	let { children } = $props();
 
-	// Fullscreen mode — derived from the `?fullscreen=true` URL param (available at
-	// SSR / first paint, so Nav/Footer never flash in before the page mounts) and
-	// OR'd with an override set by child pages that force fullscreen imperatively.
+	// Fullscreen mode — the global Nav/Footer chrome is hidden when any of:
+	//   - `?fullscreen=true` URL param (available at SSR, so no first-paint flash),
+	//   - a page returns `fullscreen: true` from its load (e.g. /facilities is
+	//     immersive always — also SSR-available, so no flash), or
+	//   - a child page forces it imperatively via the `layout-fullscreen` context.
 	let contextFullscreen = $state(false);
 	let urlFullscreen = $derived(!building && page.url.searchParams.get('fullscreen') === 'true');
-	let isFullscreen = $derived(contextFullscreen || urlFullscreen);
+	let pageFullscreen = $derived(
+		/** @type {{ fullscreen?: boolean }} */ (page.data)?.fullscreen === true
+	);
+	let isFullscreen = $derived(contextFullscreen || urlFullscreen || pageFullscreen);
 
 	setContext('layout-fullscreen', {
 		/** @param {boolean} value */

@@ -17,3 +17,17 @@ export const SANITY_FACILITY_UNITS_PROJECTION = `units[]->{
 		unit_number, unit_size, capacity, unit_brand, unit_model, unit_height
 	}
 }`;
+
+/**
+ * Full facility profile projection — identity plus the editorial enrichment
+ * (description, photos, external links and owners) that the facility detail
+ * page and the facilities-list detail preview both render. Shared so the two
+ * surfaces stay in sync. Time-sensitive series (power/market/emissions) are
+ * fetched separately from the OE API.
+ */
+export const SANITY_FACILITY_PROFILE_PROJECTION = `{
+	_id, code, name, website, wikipedia, wikidata_id, location,
+	description, photos,
+	owners[]->{_id, name, legal_name, website},
+	${SANITY_FACILITY_UNITS_PROJECTION}
+}`;

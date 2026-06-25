@@ -403,7 +403,10 @@
 	path={`/facility/${data.facility?.code ?? ''}`}
 />
 
-<div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey">
+<!-- Morph target — pairs with the /facilities detail panel
+     (view-transition-name: facility-hero) so the whole panel expands into the
+     full page on navigation. -->
+<div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey" style:view-transition-name="facility-hero">
 	<div class="md:sticky md:top-0 md:z-40" bind:clientHeight={headerHeight}>
 		<FacilityPanelHeader facility={selectedFacility} sanityFacility={data.sanityFacility} />
 	</div>

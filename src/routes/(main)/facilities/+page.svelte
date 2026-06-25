@@ -4,7 +4,7 @@
 	import { goto, replaceState, afterNavigate } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { ExternalLink, Flag, Pause, Play, X, Zap } from '@lucide/svelte';
+	import { ArrowRight, Flag, Pause, Play, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
 	import { normaliseMetric } from './_utils/normalise-metric.js';
@@ -23,7 +23,6 @@
 	import List from './List.svelte';
 	import Cards from './Cards.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
-	import PageHeaderSimple from '$lib/components/PageHeaderSimple.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
 	import FacilityPanelFooter from './_components/FacilityPanelFooter.svelte';
@@ -35,16 +34,15 @@
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
-	import {
-		hasBidirectionalBattery,
-		filterDerivedBatteryUnits,
-		getExploreUrl
-	} from './_utils/units';
+	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from './_utils/units';
+	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
 
 	let { data } = $props();
 
-	// Fullscreen mode — layout reads the same URL param, so no context sync needed
-	let isFullscreen = $derived(page.url.searchParams.get('fullscreen') === 'true');
+	// /facilities is immersive always — the global Nav/Footer is hidden (the page's
+	// load returns `fullscreen: true`, read by the layout) and the in-page
+	// fullscreen layout owns the whole viewport. There is no windowed mode.
+	const isFullscreen = true;
 
 	// Server data (updates when server responds)
 	let facilities = $derived(data.facilities);
@@ -63,8 +61,22 @@
 	let yearRange = $state(/** @type {[number, number]} */ ([1900, 2040]));
 	/** @type {'list' | 'timeline' | 'map' | 'card'} */
 	let selectedView = $derived(/** @type {'list' | 'timeline' | 'map' | 'card'} */ (data.view));
+	// Selection is driven by the `facility` URL param — the single source of truth.
+	// Deriving (rather than mirroring load data in $state) keeps it correct through
+	// optimistic replaceState selection AND browser back/forward, where SvelteKit
+	// may restore stale page data but the URL is always accurate.
 	/** @type {any | null} */
-	let selectedFacility = $state(null);
+	let selectedFacility = $derived.by(() => {
+		const code = page.url.searchParams.get('facility');
+		return code ? (facilities?.find((f) => f.code === code) ?? null) : null;
+	});
+
+	// Editorial profile (description, photos, owners, unit garnishes) for the
+	// selected facility — fetched client-side so opening the detail preview never
+	// blocks on a full page load. `peek`/`fetch` memoise per code.
+	/** @type {any | null} */
+	let selectedProfile = $state(null);
+	let profileLoading = $state(false);
 
 	// Codes with a committed `static/og/facility/<code>.jpg` — the map card popup
 	// shows the build-generated card for these and a live card for everything else.
@@ -72,15 +84,42 @@
 	// Facility code → Sanity photo URL, for the card-grid tiles.
 	let facilityPhotos = $derived(data.facilityPhotos ?? {});
 
-	// Sync local state when server data changes (e.g., browser back/forward, direct URL navigation)
-	// Note: Only depends on `data` to avoid circular deps with capacityBounds (which depends on selectedView)
+	// Sync optimistic filter state when server data changes (e.g. browser
+	// back/forward, direct URL navigation). Selection is handled separately by the
+	// `selectedFacility` derived above (URL-driven).
 	$effect(() => {
 		statuses = data.statuses;
 		regions = data.regions;
 		fuelTechs = data.fuelTechs;
-		selectedFacility = data.selectedFacility
-			? (facilities?.find((f) => f.code === data.selectedFacility) ?? null)
-			: null;
+	});
+
+	// Load the selected facility's editorial profile whenever the selection
+	// changes (initial URL param, click, or back/forward). Cached values resolve
+	// synchronously with no loading flash; misses fetch and show a skeleton.
+	$effect(() => {
+		const code = selectedFacility?.code ?? null;
+		if (!code) {
+			selectedProfile = null;
+			profileLoading = false;
+			return;
+		}
+		const cached = peekFacilityProfile(code);
+		if (cached !== undefined) {
+			selectedProfile = cached;
+			profileLoading = false;
+			return;
+		}
+		selectedProfile = null;
+		profileLoading = true;
+		let cancelled = false;
+		fetchFacilityProfile(code).then((profile) => {
+			if (cancelled) return;
+			selectedProfile = profile;
+			profileLoading = false;
+		});
+		return () => {
+			cancelled = true;
+		};
 	});
 
 	// Separate effect to initialize capacity range when data changes
@@ -177,9 +216,10 @@
 		storageKey: 'facilities-list-width'
 	});
 
-	// Default pixel height of the facility detail panel — sized so the content
-	// fits without scrolling: drag handle + header + chart + legend + footer.
-	const FACILITY_PANEL_DEFAULT_PX = 391;
+	// Default pixel height of the facility detail panel — sized for the preview
+	// content (photo hero + description + units summary). The panel scrolls past
+	// this and is drag-resizable.
+	const FACILITY_PANEL_DEFAULT_PX = 560;
 
 	// Shortcuts toast
 	let showShortcutsToast = $state(false);
@@ -487,11 +527,6 @@
 
 	let filteredWithLocation = $derived(filterWithLocation(filteredFacilities));
 
-	// Get power data from server (only if a facility is selected)
-	let powerData = $derived(
-		data.selectedFacility === selectedFacility?.code ? (data.powerData ?? null) : null
-	);
-
 	// Calculate totals for filtered facilities
 	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
 	let totalCapacityMW = $derived(
@@ -524,7 +559,7 @@
 	});
 
 	/**
-	 * @typedef {{statuses: string[], regions: string[], fuelTechs: string[], capacityRange: [number, number], yearRange: [number, number], view: string, facility?: string | null, fullscreen?: boolean}} NavParams
+	 * @typedef {{statuses: string[], regions: string[], fuelTechs: string[], capacityRange: [number, number], yearRange: [number, number], view: string, facility?: string | null}} NavParams
 	 */
 
 	/**
@@ -539,8 +574,7 @@
 		capacityRange: cr,
 		yearRange: yr,
 		view: v,
-		facility: f = null,
-		fullscreen: fs = false
+		facility: f = null
 	}) {
 		let url = `/facilities?view=${v}&statuses=${s.join(',')}&regions=${r.join(',')}&fuel_techs=${ft.join(',')}`;
 		// Only include capacity range if it's been filtered from defaults
@@ -553,9 +587,6 @@
 		}
 		if (f) {
 			url += `&facility=${f}`;
-		}
-		if (fs) {
-			url += '&fullscreen=true';
 		}
 		// Preserve map layer options
 		if (mapTheme !== 'light') {
@@ -578,7 +609,7 @@
 	 * @param {NavParams} params
 	 */
 	function navigateWithRefetch(params) {
-		goto(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {
+		goto(buildUrl(params), {
 			noScroll: true,
 			invalidateAll: true
 		});
@@ -590,33 +621,13 @@
 	 * @param {NavParams} params
 	 */
 	function navigateWithoutRefetch(params) {
-		replaceState(buildUrl({ ...params, fullscreen: params.fullscreen ?? isFullscreen }), {});
+		replaceState(buildUrl(params), {});
 	}
 
 	function handleDownloadCsv() {
 		if (filteredFacilities?.length) {
 			downloadCsv(facilitiesToCsv(filteredFacilities), 'facilities.csv');
 		}
-	}
-
-	/**
-	 * Toggle fullscreen mode
-	 */
-	function toggleFullscreen() {
-		const newFullscreen = !isFullscreen;
-		goto(
-			buildUrl({
-				statuses,
-				regions,
-				fuelTechs,
-				capacityRange,
-				yearRange,
-				view: selectedView,
-				facility: selectedFacility?.code ?? null,
-				fullscreen: newFullscreen
-			}),
-			{ noScroll: true }
-		);
 	}
 
 	/**
@@ -839,9 +850,10 @@
 				// Toggle off - clear selection and close popups
 				closeFacilityDetail();
 			} else {
-				// Select new facility - store object and refetch to get power data
-				selectedFacility = facility;
-				navigateWithRefetch({
+				// Select new facility — just sync the URL; `selectedFacility` derives
+				// from it. The preview renders from the facility object we already hold
+				// client-side plus the streamed profile, so there's no server round-trip.
+				navigateWithoutRefetch({
 					statuses,
 					regions,
 					fuelTechs,
@@ -858,7 +870,6 @@
 	 * Close facility detail panel
 	 */
 	function closeFacilityDetail() {
-		selectedFacility = null;
 		mapRef?.closePopups();
 		navigateWithoutRefetch({
 			statuses,
@@ -880,39 +891,16 @@
 	image="/img/facilities-preview.jpg"
 />
 
-{#if !isFullscreen}
-	<PageHeaderSimple class="!h-[80px] md:!h-[300px]">
-		{#snippet heading()}
-			<div>
-				<h1 class="md:tracking-widest text-center text-xl md:text-6xl mb-0 md:mb-[0.5em]">
-					Facilities
-				</h1>
-			</div>
-		{/snippet}
-		{#snippet subheading()}
-			<div class="hidden md:block mt-4">
-				<p class="text-sm text-center w-[610px] mx-auto">
-					Explore Australia's power generation facilities across the NEM and WEM. View upcoming
-					projects on the timeline, browse the full list of facilities, or discover their locations
-					on the map.
-				</p>
-			</div>
-		{/snippet}
-	</PageHeaderSimple>
-{/if}
-
 {#snippet facilityActionBar(/** @type {any} */ facility)}
 	<div
 		class="shrink-0 flex items-center justify-end gap-1.5 px-3 pt-1.5 pb-3 bg-light-warm-grey/60 border-b border-warm-grey"
 	>
 		<a
-			href={getExploreUrl(facility)}
-			target="_blank"
-			rel="noopener noreferrer"
+			href={`/facility/${facility.code}?fullscreen=true`}
 			class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-white bg-dark-grey hover:bg-black rounded transition-colors no-underline hover:no-underline"
 		>
-			<ExternalLink size={10} />
-			View
+			View full details
+			<ArrowRight size={10} />
 		</a>
 		<button
 			onclick={closeFacilityDetail}
@@ -975,7 +963,7 @@
 	</div>
 {/snippet}
 
-<FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
+<FullscreenLayout {isFullscreen}>
 	{#snippet filterBar()}
 		<div class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}">
 			<Filters
@@ -999,7 +987,7 @@
 				oncapacityrangechange={handleCapacityRangeChange}
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
-				onfullscreenchange={toggleFullscreen}
+				onfullscreenchange={() => {}}
 				ondownloadcsv={handleDownloadCsv}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onshortcutinvoked={() => (showShortcutsToast = false)}
@@ -1299,25 +1287,27 @@
 										)}
 								minSize={250}
 								containerSize={containerHeight}
-								class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20"
+								class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 {selectedFacility
+									? '[view-transition-name:facility-hero]'
+									: ''}"
 								dragHandleClass="bg-light-warm-grey/60"
 							>
 								{#snippet header()}
 									{#if selectedFacility}
 										{@render facilityActionBar(selectedFacility)}
 									{/if}
-									<FacilityPanelHeader facility={selectedFacility} />
+									<FacilityPanelHeader facility={selectedFacility} sanityFacility={selectedProfile} />
 								{/snippet}
 								{#snippet footer()}
 									<FacilityPanelFooter
-										owners={data.selectedFacilityOwners ?? []}
+										owners={selectedProfile?.owners ?? []}
 										facilityCode={selectedFacility?.code ?? null}
 									/>
 								{/snippet}
 								<FacilityDetailPanel
 									facility={selectedFacility}
-									sanityFacility={data.sanityFacility}
-									{powerData}
+									profile={selectedProfile}
+									{profileLoading}
 									fillHeight={isFullscreen}
 								/>
 							</ResizablePanel>
@@ -1329,22 +1319,23 @@
 				{#if selectedFacility && !isDesktop}
 					<div
 						class="md:hidden absolute inset-0 w-full bg-white z-30 flex flex-col overflow-hidden"
+						style:view-transition-name="facility-hero"
 						transition:fly={{ y: 200, duration: 250, easing: quintOut }}
 					>
 						{@render facilityActionBar(selectedFacility)}
-						<FacilityPanelHeader facility={selectedFacility} />
+						<FacilityPanelHeader facility={selectedFacility} sanityFacility={selectedProfile} />
 
 						<div class="flex-1 min-h-0">
 							<FacilityDetailPanel
 								facility={selectedFacility}
-								sanityFacility={data.sanityFacility}
-								{powerData}
+								profile={selectedProfile}
+								{profileLoading}
 								fillHeight={true}
 							/>
 						</div>
 
 						<FacilityPanelFooter
-							owners={data.selectedFacilityOwners ?? []}
+							owners={selectedProfile?.owners ?? []}
 							facilityCode={selectedFacility?.code ?? null}
 						/>
 					</div>
@@ -1352,7 +1343,7 @@
 			</div>
 
 			{#snippet footer()}
-				<FullscreenFooter {isFullscreen} onenterfullscreen={toggleFullscreen} />
+				<FullscreenFooter {isFullscreen} />
 			{/snippet}
 		</FullscreenContainer>
 	{/snippet}
@@ -1362,7 +1353,6 @@
 	visible={showShortcutsToast}
 	ondismiss={() => (showShortcutsToast = false)}
 	shortcuts={[
-		{ label: 'Enter / exit full screen', keys: ['F'] },
 		{ label: 'Browser full screen', keys: ['Shift', 'F'] },
 		{ label: 'Search', keys: ['/'] },
 		{ label: 'Previous / next facility', keys: ['↑', '↓'] },
