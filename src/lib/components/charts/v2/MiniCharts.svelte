@@ -30,6 +30,7 @@
 	 * @property {any} [xTicks]
 	 * @property {(value: any, timeZone?: string) => string} [formatTickX]
 	 * @property {(value: number) => string} [formatTickY]
+	 * @property {(value: number, key: string) => string} [formatValue] - Optional per-series formatter for the big-number headline only; overrides formatTickY for that value (e.g. extra decimals for a small series). Falls back to formatTickY when omitted.
 	 * @property {number | undefined} [overlayStart]
 	 * @property {any[]} [bgShadingData]
 	 * @property {string} [bgShadingFill]
@@ -70,6 +71,7 @@
 		xTicks,
 		formatTickX,
 		formatTickY,
+		formatValue,
 		overlayStart,
 		bgShadingData = [],
 		bgShadingFill = '',
@@ -285,6 +287,14 @@
 		{@const title = seriesLabels[key]}
 		{@const displayValue = getDisplayValue(store, key)}
 		{@const displayTime = getDisplayTime(store)}
+		{@const headlineValue =
+			displayValue == null
+				? '—'
+				: formatValue
+					? formatValue(displayValue, key)
+					: formatTickY
+						? formatTickY(displayValue)
+						: '—'}
 
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<section
@@ -319,7 +329,7 @@
 				{#if showCardSummary}
 					<h3 class="leading-sm h-14 mt-4 mb-0">
 						{#if displayTime}
-							{displayValue != null && formatTickY ? formatTickY(displayValue) : '—'}
+							{headlineValue}
 							<small class="block text-xs text-mid-grey font-light">{displayUnit}</small>
 						{/if}
 					</h3>

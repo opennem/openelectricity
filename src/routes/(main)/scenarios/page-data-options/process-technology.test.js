@@ -83,6 +83,31 @@ describe('processTechnology', () => {
 			expect(result).toHaveProperty('allowedPrefixes');
 		});
 
+		it('shows battery discharging but not charging when loads are excluded', () => {
+			const projection = [
+				makeProjectionStats({ fuelTech: 'wind', data: [200, 220, 240] }),
+				makeProjectionStats({ fuelTech: 'battery_discharging', data: [10, 12, 14] }),
+				makeProjectionStats({ fuelTech: 'battery_charging', data: [8, 9, 10] })
+			];
+			const history = [
+				makeHistoryStats({ fuelTech: 'wind', data: monthlyData(100) }),
+				makeHistoryStats({ fuelTech: 'battery_discharging', data: monthlyData(5) }),
+				makeHistoryStats({ fuelTech: 'battery_charging', data: monthlyData(4) })
+			];
+
+			const result = processTechnology.generation({
+				projection,
+				history,
+				group: 'simple',
+				colourReducer,
+				includeBatteryAndLoads: false
+			});
+
+			const labels = Object.values(result.seriesLabels);
+			expect(labels).toContain('Storage (Discharging)');
+			expect(labels).not.toContain('Storage (Charging)');
+		});
+
 		it('returns displayPrefix T and allowedPrefixes G/T for energy', () => {
 			const projection = [
 				makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })

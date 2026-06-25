@@ -1,5 +1,7 @@
 <script>
 	import MiniCharts from '$lib/components/charts/v2/MiniCharts.svelte';
+	import { convert } from '$lib/utils/si-units';
+	import { getNumberFormat } from '$lib/utils/formatters';
 	import { withScenarioLabels } from '../../../../../routes/(main)/scenarios/page-data-options/models';
 
 	/**
@@ -22,7 +24,7 @@
 
 	let gridColClass = $derived(
 		selectedGroup === 'homepage_preview'
-			? 'grid-cols-2 md:grid-cols-6'
+			? 'grid-cols-2 md:grid-cols-7'
 			: 'grid-cols-2'
 	);
 
@@ -35,6 +37,22 @@
 
 	let bgShadingData = $derived(chart.bgShadingData);
 	let bgShadingFill = $derived(chart.bgShadingFill);
+
+	// Battery (discharging) is tiny historically, so it rounds to "0 TWh" at the
+	// default integer precision. Give just that tile's headline one decimal place;
+	// every other tile keeps the chart's standard formatter.
+	/**
+	 * @param {number} value
+	 * @param {string} key
+	 */
+	function formatHeadlineValue(value, key) {
+		const label = chart.seriesLabels[key] || '';
+		if (!label.toLowerCase().includes('battery')) {
+			return chart.convertAndFormatValue(value);
+		}
+		const converted = convert(chart.chartOptions.prefix, chart.chartOptions.displayPrefix, value);
+		return isNaN(converted) ? '—' : getNumberFormat(1).format(converted);
+	}
 </script>
 
 {#if chart.seriesData.length > 0}
@@ -49,6 +67,7 @@
 			xTicks={chart.xTicks}
 			formatTickX={chart.formatTickX}
 			formatTickY={chart.convertAndFormatValue}
+			formatValue={formatHeadlineValue}
 			overlayStart={overlayStartValue}
 			shadingData={bgShadingData}
 			shadingFill={bgShadingFill}
@@ -56,7 +75,7 @@
 			focusTime={chart.focusTime}
 			{gridColClass}
 			gridGapClass="gap-0"
-			sectionBorderClass="p-8 border-r border-mid-warm-grey md:last:border-r-0 [&:nth-child(-n+4)]:border-b md:[&:nth-child(-n+4)]:border-b-0"
+			sectionBorderClass="p-8 border-r border-mid-warm-grey last:border-r-0 [&:nth-child(-n+6)]:border-b md:[&:nth-child(-n+6)]:border-b-0"
 			showIcon={true}
 			{onhover}
 			{onhoverend}
@@ -64,7 +83,7 @@
 	</div>
 {:else}
 	<div class="border-t border-b md:border-x border-mid-warm-grey grid {gridColClass} gap-0">
-		{#each { length: 6 } as _, i (i)}
+		{#each { length: 7 } as _, i (i)}
 			<div class="p-8 border-r border-mid-warm-grey animate-pulse">
 				<div class="h-4 w-2/3 bg-warm-grey rounded mb-4"></div>
 				<div class="h-8 w-1/3 bg-warm-grey rounded mb-6"></div>
