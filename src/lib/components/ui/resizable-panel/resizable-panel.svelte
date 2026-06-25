@@ -14,6 +14,11 @@
 		defaultSize = 50,
 		minSize = 250,
 		snapThreshold = 85,
+		/** When > 0, dragging the panel smaller than this many px lets it shrink
+		 *  past `minSize`, and releasing below the threshold dismisses it (calls
+		 *  `onclose`). Releasing between the threshold and `minSize` snaps back up
+		 *  to `minSize`. 0 (default) keeps the panel clamped at `minSize`. */
+		dismissThreshold = 0,
 		containerSize = 0,
 		class: className = '',
 		/** Extra classes applied to the drag-handle wrapper (the strip the
@@ -100,7 +105,10 @@
 
 			const deltaPct = (delta / containerSize) * 100;
 			const minPct = (minSize / containerSize) * 100;
-			let newPct = Math.min(100, Math.max(minPct, startSize + deltaPct));
+			// When dismissible, allow shrinking past minSize (down to 0) so the drag
+			// can reach the dismiss threshold; otherwise clamp at minSize.
+			const lowerPct = dismissThreshold > 0 ? 0 : minPct;
+			let newPct = Math.min(100, Math.max(lowerPct, startSize + deltaPct));
 
 			if (newPct >= snapThreshold) {
 				newPct = 100;
@@ -113,6 +121,17 @@
 			isResizing = false;
 			target.removeEventListener('pointermove', onPointerMove);
 			target.removeEventListener('pointerup', onPointerUp);
+
+			if (dismissThreshold > 0 && containerSize) {
+				const currentPx = (currentSize / 100) * containerSize;
+				if (currentPx < dismissThreshold) {
+					// Dragged below the dismiss line — close.
+					onclose?.();
+				} else if (currentPx < minSize) {
+					// Released between the dismiss line and minSize — snap back up.
+					currentSize = (minSize / containerSize) * 100;
+				}
+			}
 		}
 
 		target.addEventListener('pointermove', onPointerMove);
