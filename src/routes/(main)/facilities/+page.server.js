@@ -76,12 +76,13 @@ export async function load({ url }) {
 
 	const filterParams = { statuses, regions, fuelTechs };
 
-	// The card grid is the only view that renders facility photos, so skip the
-	// (~600-row) Sanity photo query for every other view. Kicked off in parallel
-	// with the facilities fetch below. Per-facility editorial data (description,
-	// photos, owners) is fetched client-side on selection — see the profile
-	// endpoint — so the list render never blocks on the selected facility.
-	const photosPromise = view === 'card' ? fetchFacilityPhotos() : Promise.resolve({});
+	// Card-grid photos (facility code → Sanity URL). Fetched on every load — in
+	// parallel with the facilities fetch below, and cached in-process — rather
+	// than gated to card view: view switches happen client-side without re-running
+	// this load, so the photos must already be in `data` when the user switches to
+	// the card grid. Per-facility editorial data (description, photos, owners) is
+	// still fetched lazily on selection — see the profile endpoint.
+	const photosPromise = fetchFacilityPhotos();
 
 	// Check server-side cache first
 	let facilities = getCachedFacilities(filterParams);
