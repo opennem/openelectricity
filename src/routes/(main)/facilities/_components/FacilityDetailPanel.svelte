@@ -1,241 +1,158 @@
 <script>
-	import {
-		FacilityChart,
-		FacilityFinancialDataProvider,
-		FacilityEmissionsDataProvider,
-		FacilityMetrics,
-		getNetworkTimezone
-	} from '$lib/components/charts/facility';
-	import { getHysteresisSwitch, getDisplayIntervalForDays } from '$lib/utils/metric-interval';
-	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../_utils/units';
-	import FacilityUnitsLegend from './FacilityUnitsLegend.svelte';
+	import { FileText, ImageOff } from '@lucide/svelte';
+	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
+	import PortableTextBody from '$lib/components/PortableTextBody.svelte';
+	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
+	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
+	import { fuelTechName } from '$lib/fuel_techs';
+	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
+	import { hasPortableTextContent } from '$lib/utils/portable-text.js';
+	import { groupUnits } from '../_utils/units';
+	import formatValue from '../_utils/format-value';
 
 	/**
+	 * Lightweight facility preview shown when a facility is selected on the
+	 * /facilities page. Mirrors the editorial content of the dedicated
+	 * /facility/[code] page (photos, description, units) so navigating there
+	 * morphs naturally — but stays a teaser: the charts/market/emissions live on
+	 * the full page. The OE-derived units summary renders instantly from the
+	 * facility object; only photos + description wait on the streamed profile.
+	 *
 	 * @type {{
 	 *   facility: any | null,
-	 *   sanityFacility?: any | null,
-	 *   powerData: any | null,
+	 *   profile?: any | null,
+	 *   profileLoading?: boolean,
 	 *   fillHeight?: boolean
 	 * }}
 	 */
-	let { facility = null, sanityFacility = null, powerData = null, fillHeight = false } = $props();
+	let { facility = null, profile = null, profileLoading = false, fillHeight = false } = $props();
 
-	// Metrics are hidden in this detail panel for now (still shown on the
-	// dedicated /facility/[code] page). Flip to true to restore — this also gates
-	// the headless data providers so no market-value/emissions fetch fires.
-	const SHOW_METRICS = false;
+	let photos = $derived(profile?.photos ?? []);
+	let description = $derived(profile?.description ?? []);
+	let hasDescription = $derived(hasPortableTextContent(description));
 
-	let chartContainerHeight = $state(0);
-	let chartHeightPx = $derived(fillHeight ? chartContainerHeight || 220 : 220);
+	/** Whether the streamed profile is still in flight (no cached value yet). */
+	let loading = $derived(profileLoading && !profile);
 
-	let timeZone = $derived(facility ? getNetworkTimezone(facility.network_id) : '+10:00');
+	// Fuel-tech groups, top-of-stack first (matches the header + chart paint order).
+	let unitGroups = $derived(
+		sortByDetailedOrder(groupUnits(facility, { skipBattery: true }), { reverse: true })
+	);
 
-	// 3 days at 5-minute intervals
-	const LAST_3_DAYS_POINTS = 3 * 24 * 12;
+	// About read-more — collapse long descriptions behind a fade.
+	const MAX_HEIGHT = 200;
+	let expanded = $state(false);
+	/** @type {HTMLDivElement | undefined} */
+	let descriptionEl = $state(undefined);
+	let needsExpand = $state(false);
 
-	/** @type {string} */
-	let activeInterval = $state('5m');
-	/** @type {string} */
-	let activeMetric = $state('power');
-	/** @type {string} */
-	let displayInterval = $state('30m');
-
-	/** Live viewport reported by the chart — drives the metrics' date range and
-	 *  the headless financial/emissions providers below. */
-	let viewStart = $state(0);
-	let viewEnd = $state(0);
-
-	/** Visible-range data feeding the metrics section. */
-	/** @type {{ mvData: any[], energyData: any[], mvSeriesNames: string[], energySeriesNames: string[] } | null} */
-	let summaryData = $state(null);
-	/** @type {{ rows: any[], seriesNames: string[] } | null} */
-	let emissionsData = $state(null);
-	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
-	let intervalData = $state(null);
-
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let metricSwitchTimer = null;
-
-	/** @param {{ start: number, end: number }} range */
-	function handleViewportChange(range) {
-		viewStart = range.start;
-		viewEnd = range.end;
-		const durationDays = (range.end - range.start) / (24 * 60 * 60 * 1000);
-		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
-
-		displayInterval = getDisplayIntervalForDays(
-			next?.metric ?? activeMetric,
-			next?.interval ?? activeInterval,
-			durationDays
-		);
-
-		if (next) {
-			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
-			metricSwitchTimer = setTimeout(() => {
-				activeMetric = next.metric;
-				activeInterval = next.interval;
-			}, 300);
-		}
-	}
-
-	// Reset chart state only when the facility *actually* changes. The `facility`
-	// prop is reassigned to a fresh object whenever the page's `data` updates
-	// (power refetch, invalidation), so keying off the reference would re-run on
-	// every update and clobber the viewStart/viewEnd the chart just reported —
-	// starving the metrics providers. `viewStart`/`viewEnd` deliberately carry
-	// over (a valid recent window) so the providers refetch for the new code.
-	/** @type {string | null} */
-	let lastFacilityCode = null;
+	// Measure (post-layout) whether the description overflows the collapsed
+	// height, and reset the collapsed view for each new description. Tracks
+	// `description` so it re-runs on selection; toggling `expanded` doesn't.
 	$effect(() => {
-		const code = facility?.code ?? null;
-		if (code === lastFacilityCode) return;
-		lastFacilityCode = code;
-		activeInterval = '5m';
-		activeMetric = 'power';
-		displayInterval = '30m';
-		summaryData = null;
-		emissionsData = null;
-		intervalData = null;
-	});
-
-	/**
-	 * @param {any[]} data
-	 * @returns {any[]}
-	 */
-	function filterLastNPoints(data) {
-		if (!data || data.length <= LAST_3_DAYS_POINTS) {
-			return data;
+		const node = descriptionEl;
+		const _desc = description;
+		expanded = false;
+		if (!node) {
+			needsExpand = false;
+			return;
 		}
-		return data.slice(-LAST_3_DAYS_POINTS);
-	}
-
-	let filteredUnits = $derived(
-		filterDerivedBatteryUnits(facility?.units ?? [], hasBidirectionalBattery(facility))
-	);
-	let filteredUnitCodes = $derived(new Set(filteredUnits.map((/** @type {any} */ u) => u.code)));
-
-	let filteredFacility = $derived(
-		facility
-			? {
-					...facility,
-					units: filteredUnits
-				}
-			: null
-	);
-
-	/** Whether any unit actually emits CO₂ — gates the (extra) emissions fetch. */
-	let hasEmittingUnits = $derived(
-		Boolean(
-			filteredFacility?.units?.some(
-				(/** @type {any} */ u) => Number(u.emissions_factor_co2) > 0 && u.dispatch_type !== 'LOAD'
-			)
-		)
-	);
-
-	let filteredPowerData = $derived(
-		powerData && powerData.data.length
-			? {
-					...powerData,
-					data: [
-						{
-							...powerData.data[0],
-							results: powerData.data[0].results
-								?.filter((/** @type {any} */ r) => filteredUnitCodes.has(r.columns?.unit_code))
-								.map((/** @type {any} */ r) => ({
-									...r,
-									data: filterLastNPoints(r.data)
-								}))
-						}
-					]
-				}
-			: null
-	);
+		requestAnimationFrame(() => {
+			needsExpand = node.scrollHeight > MAX_HEIGHT;
+		});
+	});
 </script>
 
 {#if facility}
-	<div class={fillHeight ? 'flex flex-col h-full min-h-0' : ''}>
-		<!-- Metrics — fuel-tech-appropriate summary for the visible chart range.
-		     FacilityMetrics renders a flush grid, so wrap it in a bordered box here. -->
-		{#if SHOW_METRICS && filteredFacility}
-			<div class="{fillHeight ? 'shrink-0 ' : ''}border-b border-mid-warm-grey/40 p-3">
-				<div class="overflow-hidden rounded-lg border border-mid-warm-grey/40">
-					<FacilityMetrics
-						facility={filteredFacility}
-						{sanityFacility}
-						{summaryData}
-						{emissionsData}
-						{intervalData}
-					/>
-				</div>
-			</div>
-		{/if}
-
-		<!-- Power Chart — full-bleed, extends to the panel edges -->
-		<div
-			class={fillHeight ? 'flex-1 min-h-0 relative' : ''}
-			bind:clientHeight={chartContainerHeight}
-		>
-			{#if filteredPowerData}
-				<FacilityChart
-					facility={filteredFacility}
-					powerData={filteredPowerData}
-					{timeZone}
-					{chartHeightPx}
-					useDivergingStack={true}
-					interval={activeInterval}
-					metric={activeMetric}
-					{displayInterval}
-					showAnnotations={false}
-					showHeader={false}
-					showContainer={false}
-					tooltipMode="floating"
-					tightAxisClip={true}
-					overlayInsetPx={8}
-					onviewportchange={handleViewportChange}
-					onvisibledata={(d) => (intervalData = d)}
-				/>
-			{:else if powerData}
-				<div class="flex items-center justify-center h-full" style:min-height="220px">
-					<p class="text-sm text-mid-grey">No power data available</p>
+	<div class={fillHeight ? 'h-full min-h-0 overflow-y-auto' : ''}>
+		<div class="space-y-6 p-4">
+			<!-- Photos — the visual hero of the preview. -->
+			{#if loading}
+				<div class="h-52 animate-pulse rounded-lg bg-light-warm-grey/60"></div>
+			{:else if photos.length > 0}
+				<div class="h-52">
+					<PhotoCarousel {photos} fill class="h-full" />
 				</div>
 			{:else}
 				<div
-					class="animate-pulse bg-light-warm-grey/30 rounded h-full"
-					style:min-height="220px"
-				></div>
+					class="flex h-32 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-mid-warm-grey/50 bg-light-warm-grey/30 text-mid-grey"
+				>
+					<ImageOff size={20} strokeWidth={1.5} />
+					<p class="m-0 text-xs">No photos yet</p>
+				</div>
+			{/if}
+
+			<!-- About -->
+			<section>
+				<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">About</h3>
+				{#if loading}
+					<div class="space-y-2">
+						<div class="h-3 w-full animate-pulse rounded bg-light-warm-grey/60"></div>
+						<div class="h-3 w-11/12 animate-pulse rounded bg-light-warm-grey/60"></div>
+						<div class="h-3 w-3/4 animate-pulse rounded bg-light-warm-grey/60"></div>
+					</div>
+				{:else if hasDescription}
+					<div
+						class="relative overflow-hidden"
+						style:max-height={!expanded ? `${MAX_HEIGHT}px` : 'none'}
+					>
+						<div bind:this={descriptionEl}>
+							<PortableTextBody value={description} class="text-sm leading-relaxed text-dark-grey/80" />
+						</div>
+						{#if needsExpand && !expanded}
+							<div
+								class="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white to-transparent"
+							></div>
+						{/if}
+					</div>
+					{#if needsExpand}
+						<button
+							class="mt-1.5 cursor-pointer text-xs text-mid-grey/70 transition-colors hover:text-mid-grey"
+							onclick={() => (expanded = !expanded)}
+						>
+							{expanded ? 'Show less' : 'Read more'}
+						</button>
+					{/if}
+				{:else}
+					<div class="flex items-center gap-2.5 text-mid-grey">
+						<FileText size={16} strokeWidth={1.5} />
+						<p class="m-0 text-sm">No description available</p>
+					</div>
+				{/if}
+			</section>
+
+			<!-- Units summary — instant from OE data; full table lives on the detail page. -->
+			{#if unitGroups.length}
+				<section>
+					<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">Units</h3>
+					<ul class="m-0 list-none divide-y divide-mid-warm-grey/30 p-0">
+						{#each unitGroups as group (group.fueltech_id + group.status_id)}
+							<li class="flex items-center gap-3 py-2">
+								<FuelTechBadge fuelTech={group.fueltech_id} iconOnly iconSize={16} />
+								<div class="min-w-0 flex-1">
+									<div class="truncate text-xs font-medium text-dark-grey">
+										{fuelTechName(/** @type {FuelTechCode} */ (group.fueltech_id))}
+									</div>
+									<div class="text-[11px] text-mid-grey">
+										{group.units.length}
+										{group.units.length === 1 ? 'unit' : 'units'}
+									</div>
+								</div>
+								<FacilityStatusIcon
+									status={group.status_id}
+									isCommissioning={group.isCommissioning}
+								/>
+								<div class="w-20 text-right">
+									<span class="font-mono text-xs font-medium text-dark-grey"
+										>{formatValue(group.totalCapacity)}</span
+									>
+									<span class="text-[11px] text-mid-grey"> MW</span>
+								</div>
+							</li>
+						{/each}
+					</ul>
+				</section>
 			{/if}
 		</div>
-
-		<!-- Units legend (single horizontal scrolling row) -->
-		{#if filteredUnits.length}
-			<div class={fillHeight ? 'shrink-0' : ''}>
-				<FacilityUnitsLegend units={filteredUnits} />
-			</div>
-		{/if}
-
-		<!-- Headless data providers — fetch market value (+ emissions) for the
-		     visible range and feed the metrics above. They render no markup. -->
-		{#if SHOW_METRICS && filteredFacility}
-			<FacilityFinancialDataProvider
-				facility={filteredFacility}
-				{timeZone}
-				interval={activeInterval}
-				{displayInterval}
-				{viewStart}
-				{viewEnd}
-				onsummarydata={(d) => (summaryData = d)}
-			/>
-			{#if hasEmittingUnits}
-				<FacilityEmissionsDataProvider
-					facility={filteredFacility}
-					{timeZone}
-					interval={activeInterval}
-					{displayInterval}
-					{viewStart}
-					{viewEnd}
-					onsummarydata={(d) => (emissionsData = d)}
-				/>
-			{/if}
-		{/if}
 	</div>
 {/if}
