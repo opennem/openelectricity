@@ -29,13 +29,28 @@
 	 * of the colour wash, above the identity. It receives `darkText` so callers can
 	 * colour their controls for contrast against the banner. Omitted on the
 	 * standalone /facility/[code] page, which has no panel chrome.
+	 *
+	 * `card`/`dominantColour`/`darkText` let a caller that already ran `deriveCard`
+	 * (the /facilities page derives it for the surrounding chrome) pass it in so it
+	 * isn't computed a second time per selection. Omitted on the standalone page,
+	 * where they're derived here from `facility`.
 	 * @type {{
 	 *   facility: any,
 	 *   sanityFacility?: any | null,
-	 *   topBar?: import('svelte').Snippet<[boolean]>
+	 *   topBar?: import('svelte').Snippet<[boolean]>,
+	 *   card?: any | null,
+	 *   dominantColour?: string,
+	 *   darkText?: boolean
 	 * }}
 	 */
-	let { facility, sanityFacility = null, topBar = undefined } = $props();
+	let {
+		facility,
+		sanityFacility = null,
+		topBar = undefined,
+		card: cardProp = undefined,
+		dominantColour: dominantColourProp = undefined,
+		darkText: darkTextProp = undefined
+	} = $props();
 
 	// Mobile tap-to-toggle for the capacity breakdown (hover popover on desktop).
 	let mobileExpanded = $state(false);
@@ -161,15 +176,18 @@
 	});
 
 	// Identity banner — mirrors FacilityCardTile. `deriveCard` gives the ordered,
-	// de-duplicated fuel techs and the dominant fuel tech (drives the colour wash).
-	let card = $derived(facility ? deriveCard(facility) : null);
+	// de-duplicated fuel techs and the dominant fuel tech (drives the colour wash);
+	// reuse the caller's values when provided so they aren't computed twice.
+	let card = $derived(cardProp ?? (facility ? deriveCard(facility) : null));
 	let bannerGroups = $derived(
 		(card?.fuelTechs ?? []).map((/** @type {string} */ ft) => ({ fueltech_id: ft }))
 	);
-	let dominantColour = $derived(card ? getFueltechColor(card.dominant) : 'transparent');
+	let dominantColour = $derived(
+		dominantColourProp ?? (card ? getFueltechColor(card.dominant) : 'transparent')
+	);
 	// Colour-wash header → flip to dark text for the light fuel techs (solar,
 	// OCGT…), matching the no-image card tile.
-	let darkText = $derived(!!card && needsDarkText(card.dominant));
+	let darkText = $derived(darkTextProp ?? (!!card && needsDarkText(card.dominant)));
 
 	// Content overlays the full-height banner, so text + chrome switch between
 	// light (on photos / dark colour washes) and dark (on light colour washes).
