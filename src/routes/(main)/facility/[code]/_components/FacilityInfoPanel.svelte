@@ -3,6 +3,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
 	import PortableTextBody from '$lib/components/PortableTextBody.svelte';
+	import { hasPortableTextContent } from '$lib/utils/portable-text.js';
 
 	/**
 	 * @type {{
@@ -14,24 +15,6 @@
 
 	let description = $derived(sanityFacility?.description ?? []);
 	let hasDescription = $derived(hasPortableTextContent(description));
-
-	/**
-	 * Portable Text presence check that ignores empty blocks. A `block`-type
-	 * entry only counts when at least one child has non-whitespace text;
-	 * custom embeds (images, callouts, etc.) always count.
-	 *
-	 * @param {any[]} blocks
-	 */
-	function hasPortableTextContent(blocks) {
-		if (!Array.isArray(blocks)) return false;
-		return blocks.some((b) => {
-			if (!b || typeof b !== 'object') return false;
-			if (b._type !== 'block') return true;
-			return (b.children ?? []).some(
-				(/** @type {any} */ c) => typeof c?.text === 'string' && c.text.trim().length > 0
-			);
-		});
-	}
 	let photos = $derived(sanityFacility?.photos ?? []);
 
 	let location = $derived(facility?.location ?? sanityFacility?.location ?? null);

@@ -315,8 +315,13 @@
 		return facilitiesMap.has(hoveredFacility.code) ? hoveredFacility : null;
 	});
 
-	// Show popup for hovered facility (from list or map)
-	let popupFacility = $derived(validatedHoveredFacility || mapHoveredFacility);
+	// Show popup for the hovered facility (from list or map) — but never for the
+	// selected facility: while one is selected we only highlight its marker (and dim
+	// the rest), since the detail panel already shows everything the popup would.
+	let popupFacility = $derived.by(() => {
+		const f = validatedHoveredFacility || mapHoveredFacility;
+		return !f || f.code === selectedFacilityCode ? null : f;
+	});
 
 	// Lazy popup content - only computed when popup is shown
 	let popupContent = $derived.by(() => {
@@ -333,9 +338,11 @@
 	// card view keeps the unit-breakdown popup.
 	let showCardPopup = $derived(selectedView === 'timeline' || selectedView === 'list');
 
-	// Combined hover state from list or map
-	let activeHoveredFacilityCode = $derived(
-		validatedHoveredFacility?.code || mapHoveredFacilityCode
+	// Marker highlight follows hover OR selection — the matched marker stays bright
+	// (and grows) while the rest dim. Hover takes priority so it can preview another
+	// facility even while one is selected.
+	let highlightedFacilityCode = $derived(
+		validatedHoveredFacility?.code || mapHoveredFacilityCode || selectedFacilityCode
 	);
 
 	// Paint + layout for the individual facility circles, shared by the clustered
@@ -351,29 +358,29 @@
 			'circle-color': ['get', 'color'],
 			'circle-radius': [
 				'case',
-				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				['==', ['get', 'code'], highlightedFacilityCode ?? ''],
 				['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
 				['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
 			],
 			'circle-radius-transition': { duration: 400, delay: 0 },
 			'circle-stroke-width': [
 				'case',
-				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				['==', ['get', 'code'], highlightedFacilityCode ?? ''],
 				2,
 				1
 			],
 			'circle-stroke-color': '#ffffff',
 			'circle-stroke-opacity': [
 				'case',
-				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				['==', ['get', 'code'], highlightedFacilityCode ?? ''],
 				1,
-				activeHoveredFacilityCode ? 0.3 : 0.8
+				highlightedFacilityCode ? 0.3 : 0.8
 			],
 			'circle-opacity': [
 				'case',
-				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				['==', ['get', 'code'], highlightedFacilityCode ?? ''],
 				1,
-				activeHoveredFacilityCode ? 0.3 : 0.8
+				highlightedFacilityCode ? 0.3 : 0.8
 			],
 			'circle-opacity-transition': { duration: 200, delay: 0 },
 			'circle-stroke-opacity-transition': { duration: 200, delay: 0 }
@@ -382,7 +389,7 @@
 
 	let facilityCircleLayout = $derived(
 		/** @type {import('svelte').ComponentProps<typeof CircleLayer>['layout']} */ ({
-			'circle-sort-key': ['case', ['==', ['get', 'code'], activeHoveredFacilityCode ?? ''], 1, 0]
+			'circle-sort-key': ['case', ['==', ['get', 'code'], highlightedFacilityCode ?? ''], 1, 0]
 		})
 	);
 
@@ -554,7 +561,9 @@
 		return [0, yOffset];
 	}
 
-	// Handle selectedFacilityCode from URL - zoom to facility and show popup
+	// Handle selectedFacilityCode from URL/selection — fly to the facility and let
+	// the paint highlight its marker (keyed off selectedFacilityCode). No popup on
+	// selection; the detail panel carries the info instead.
 	$effect(() => {
 		if (mapInstance && mapLoaded && selectedFacilityCode && facilities.length > 0) {
 			const facility = facilitiesMap.get(selectedFacilityCode);
@@ -565,8 +574,6 @@
 					duration: ZOOM_DURATION,
 					offset: getFlyToOffset()
 				});
-				mapHoveredFacilityCode = facility.code;
-				onhover?.(facility);
 			}
 		}
 	});
@@ -609,11 +616,9 @@
 		if (features && features.length > 0) {
 			const code = features[0].properties.code;
 			const facility = facilitiesMap.get(code);
-			// Set hover state to show popup (important for mobile touch)
-			mapHoveredFacilityCode = code;
-			onhover?.(facility || null);
 			onclick?.(facility || null);
-			// Select the facility to highlight in list/timeline
+			// Select the facility — highlights its marker and opens the detail panel.
+			// No popup on selection (the paint highlights the selected marker).
 			onselect?.(facility || null);
 		}
 	}
@@ -710,7 +715,7 @@
 	}
 
 	/**
-	 * Handle facility click from cluster panel - zoom to facility and show popup
+	 * Handle facility click from cluster panel - zoom to and select the facility
 	 * @param {any} facility
 	 */
 	function handleClusterFacilityClick(facility) {
@@ -728,11 +733,7 @@
 			offset: getFlyToOffset()
 		});
 
-		// Show the facility popup after zoom
-		mapHoveredFacilityCode = facility.code;
-		onhover?.(facility);
-
-		// Notify parent to update URL with selected facility
+		// Select the facility (highlights its marker; no popup on selection).
 		onselect?.(facility);
 	}
 </script>
