@@ -21,6 +21,8 @@
 	 *   fullFraction?: number,
 	 *   dismissFraction?: number,
 	 *   class?: string,
+	 *   gripStyle?: string,
+	 *   gripClass?: string,
 	 *   header?: import('svelte').Snippet,
 	 *   children?: import('svelte').Snippet,
 	 *   footer?: import('svelte').Snippet
@@ -34,6 +36,13 @@
 		fullFraction = 0.94,
 		dismissFraction = 0.4,
 		class: className = '',
+		/** Inline style for the drag-grip strip — lets callers set a dynamic
+		 *  background (e.g. a per-facility colour) so the chrome flows into the
+		 *  content below it. */
+		gripStyle = '',
+		/** Colour classes for the grip pill, so it stays legible when the strip is
+		 *  given a non-default background via `gripStyle`. */
+		gripClass = 'bg-mid-warm-grey',
 		header,
 		children,
 		footer
@@ -94,20 +103,21 @@
 
 {#if open}
 	<div
-		class="absolute inset-x-0 bottom-0 flex flex-col rounded-t-2xl bg-white shadow-[0_-6px_30px_rgba(0,0,0,0.14)] {className}"
+		class="absolute inset-x-0 bottom-0 flex flex-col overflow-hidden rounded-t-2xl bg-white shadow-[0_-6px_30px_rgba(0,0,0,0.14)] {className}"
 		style="height: {height}px; {isDragging ? '' : 'transition: height 0.25s ease-out'}"
 		transition:fly={{ y: containerHeight || 600, duration: 280, easing: quintOut }}
 	>
 		<!-- Drag grip -->
 		<div
 			class="shrink-0 flex items-center justify-center pt-2.5 pb-1.5 cursor-grab touch-none select-none"
+			style={gripStyle}
 			onpointerdown={onGripDown}
 			role="separator"
 			aria-orientation="horizontal"
 			aria-label="Resize panel"
 			tabindex="-1"
 		>
-			<div class="h-1.5 w-10 rounded-full bg-mid-warm-grey"></div>
+			<div class="h-1.5 w-10 rounded-full {gripClass}"></div>
 		</div>
 
 		{@render header?.()}

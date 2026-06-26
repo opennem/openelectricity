@@ -3,7 +3,7 @@
 	import { goto, replaceState, afterNavigate } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
-	import { ArrowRight, Flag, Pause, Play, X, Zap } from '@lucide/svelte';
+	import { Flag, Pause, Play, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
 	import { normaliseMetric } from './_utils/normalise-metric.js';
@@ -34,8 +34,11 @@
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
-	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from './_utils/units';
+	import { hasBidirectionalBattery, filterDerivedBatteryUnits, withMarkedUnits } from './_utils/units';
 	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
+	import { fetchFacilityDetail, peekFacilityDetail } from './_utils/fetch-facility-detail.js';
+	import { deriveCard } from '$lib/og/facility-card-data.js';
+	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 
 	let { data } = $props();
 
@@ -59,8 +62,19 @@
 	let capacityRange = $state(/** @type {[number, number]} */ ([0, 10000]));
 	/** @type {[number, number]} */
 	let yearRange = $state(/** @type {[number, number]} */ ([1900, 2040]));
+	// View follows the `view` URL param — canonical, so it survives reload and
+	// browser back/forward (mirroring the `facility` selection below). Like the
+	// selection, view switches sync the URL via replaceState, which doesn't re-run
+	// load or reactively update page.url/data, so an optimistic override gives an
+	// instant switch and afterNavigate reconciles it from window.location.
+	//   undefined → no override, use data.view (the load's value) ·
+	//   string → optimistically selected view
+	/** @type {'list' | 'timeline' | 'map' | 'card' | undefined} */
+	let optimisticView = $state(undefined);
 	/** @type {'list' | 'timeline' | 'map' | 'card'} */
-	let selectedView = $derived(/** @type {'list' | 'timeline' | 'map' | 'card'} */ (data.view));
+	let selectedView = $derived(
+		/** @type {'list' | 'timeline' | 'map' | 'card'} */ (optimisticView ?? data.view)
+	);
 	// Selection follows the `facility` URL param — canonical, so it survives
 	// reload, sharing and browser back/forward (real navigations update page.url
 	// reactively). Clicks additionally set an optimistic override for an instant
@@ -86,6 +100,32 @@
 	let selectedProfile = $state(null);
 	let profileLoading = $state(false);
 
+	// Complete facility (every unit, all fuel techs + statuses) for the selected
+	// code — fetched client-side, independent of the list's fuel-tech/status
+	// filters, so the detail panel shows the whole facility (mirroring the
+	// /facility/[code] page it morphs into) rather than only the filtered units.
+	/** @type {any | null} */
+	let selectedFacilityFull = $state(null);
+
+	// What the detail panel renders: the complete facility once fetched (matched by
+	// code so a stale in-flight result for a previous selection is never shown),
+	// else the filtered list row so units still appear instantly on selection.
+	/** @type {any | null} */
+	let detailFacility = $derived.by(() => {
+		if (!selectedFacility) return null;
+		return selectedFacilityFull?.code === selectedFacility.code
+			? withMarkedUnits(selectedFacilityFull)
+			: selectedFacility;
+	});
+
+	// Dominant fuel-tech colour of the selection — matches FacilityPanelHeader's
+	// banner so the panel's drag-grip chrome can extend the colour to the top edge.
+	// The grip pill flips light/dark to stay legible on the colour, like the header.
+	let detailCard = $derived(detailFacility ? deriveCard(detailFacility) : null);
+	let detailColour = $derived(detailCard ? getFueltechColor(detailCard.dominant) : 'transparent');
+	let detailDarkText = $derived(!!detailCard && needsDarkText(detailCard.dominant));
+	let detailGripClass = $derived(detailDarkText ? 'bg-black/30' : 'bg-white/55');
+
 	// Codes with a committed `static/og/facility/<code>.jpg` — the map card popup
 	// shows the build-generated card for these and a live card for everything else.
 	let cardCodeSet = $derived(new Set(data.cardCodes ?? []));
@@ -101,30 +141,47 @@
 		fuelTechs = data.fuelTechs;
 	});
 
-	// Load the selected facility's editorial profile whenever the selection
-	// changes (initial URL param, click, or back/forward). Cached values resolve
-	// synchronously with no loading flash; misses fetch and show a skeleton.
+	// Load the selected facility's auxiliary data — editorial profile (photos,
+	// description, owners) and the complete facility (all units) — whenever the
+	// selection changes (initial URL param, click, or back/forward). Both memoise
+	// per code, so cached values resolve synchronously with no flash; the profile
+	// shows a skeleton on a miss, the units fall back to the filtered row until the
+	// full facility arrives.
 	$effect(() => {
 		const code = selectedFacility?.code ?? null;
 		if (!code) {
 			selectedProfile = null;
 			profileLoading = false;
+			selectedFacilityFull = null;
 			return;
 		}
-		const cached = peekFacilityProfile(code);
-		if (cached !== undefined) {
-			selectedProfile = cached;
+
+		const cachedProfile = peekFacilityProfile(code);
+		if (cachedProfile !== undefined) {
+			selectedProfile = cachedProfile;
 			profileLoading = false;
-			return;
+		} else {
+			selectedProfile = null;
+			profileLoading = true;
 		}
-		selectedProfile = null;
-		profileLoading = true;
+
+		const cachedFull = peekFacilityDetail(code);
+		selectedFacilityFull = cachedFull !== undefined ? cachedFull : null;
+
 		let cancelled = false;
-		fetchFacilityProfile(code).then((profile) => {
-			if (cancelled) return;
-			selectedProfile = profile;
-			profileLoading = false;
-		});
+		if (cachedProfile === undefined) {
+			fetchFacilityProfile(code).then((profile) => {
+				if (cancelled) return;
+				selectedProfile = profile;
+				profileLoading = false;
+			});
+		}
+		if (cachedFull === undefined) {
+			fetchFacilityDetail(code).then((facility) => {
+				if (cancelled) return;
+				selectedFacilityFull = facility;
+			});
+		}
 		return () => {
 			cancelled = true;
 		};
@@ -224,10 +281,12 @@
 		storageKey: 'facilities-list-width'
 	});
 
-	// Default pixel height of the facility detail panel — sized for the preview
-	// content (photo hero + description + units summary). The panel scrolls past
-	// this and is drag-resizable.
-	const FACILITY_PANEL_DEFAULT_PX = 560;
+	// Detail panel opens to ~2/3 of the map height (it scrolls past this and is
+	// drag-resizable). The selected marker is then centred in the remaining third
+	// of map visible above it — shift it up by half the panel's height (desktop
+	// only; the Map ignores the fly-to offset on mobile).
+	const FACILITY_PANEL_FRACTION = 2 / 3;
+	let facilityMarkerOffsetY = $derived(selectedFacility ? -FACILITY_PANEL_FRACTION / 2 : 0);
 
 	// Shortcuts toast
 	let showShortcutsToast = $state(false);
@@ -263,13 +322,20 @@
 	// the next user interaction and synced to the URL then.
 	let routerReady = $state(false);
 	afterNavigate(() => {
-		// Reconcile selection from the *actual* browser URL after every real
+		// Reconcile selection *and* view from the *actual* browser URL after every
 		// navigation (back/forward, filter change). We can't trust page.url /
-		// navigation.to.url here: after a shallow replaceState (how selection syncs
-		// the URL) followed by back/forward, the browser restores the real URL but
-		// SvelteKit reports an older snapshot. window.location is authoritative.
-		// The override drives the derived: a code selects it, null deselects.
-		optimisticCode = new URLSearchParams(window.location.search).get('facility');
+		// navigation.to.url here: after a shallow replaceState (how selection and
+		// view sync the URL) followed by back/forward, the browser restores the real
+		// URL but SvelteKit reports an older snapshot. window.location is
+		// authoritative. The overrides drive the deriveds: a code/view selects it,
+		// null deselects the facility.
+		const params = new URLSearchParams(window.location.search);
+		optimisticCode = params.get('facility');
+		// Raw param (mirrors optimisticCode); `selectedView` owns the single
+		// `?? data.view` fallback rather than hardcoding the default twice.
+		optimisticView = /** @type {'list' | 'timeline' | 'map' | 'card' | undefined} */ (
+			params.get('view') ?? undefined
+		);
 
 		if (routerReady) return;
 		queueMicrotask(() => {
@@ -824,8 +890,9 @@
 	 * @param {'list' | 'timeline' | 'map' | 'card'} value
 	 */
 	function handleSelectedViewChange(value) {
-		// Optimistic update
-		selectedView = value;
+		// Optimistic override for an instant switch (replaceState only mirrors the
+		// URL; it doesn't reactively update page.url/data). afterNavigate reconciles.
+		optimisticView = value;
 
 		// Reset capacity range to match new view's bounds
 		// (timeline uses unit capacities, list/map uses facility capacities)
@@ -916,20 +983,15 @@
 	image="/img/facilities-preview.jpg"
 />
 
-{#snippet facilityActionBar(/** @type {any} */ facility)}
-	<div
-		class="shrink-0 flex items-center justify-end gap-1.5 px-3 pt-1.5 pb-3 bg-light-warm-grey/60 border-b border-warm-grey"
-	>
-		<a
-			href={`/facility/${facility.code}?fullscreen=true`}
-			class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-white bg-dark-grey hover:bg-black rounded transition-colors no-underline hover:no-underline"
-		>
-			View full details
-			<ArrowRight size={10} />
-		</a>
+{#snippet facilityActionBar(/** @type {boolean} */ darkText)}
+	<!-- Sits on the header colour wash; the close button hugs the card's top-right
+	     corner and adapts to the wash's light/dark scheme for contrast. -->
+	<div class="flex items-center justify-end pt-2 pr-2">
 		<button
 			onclick={closeFacilityDetail}
-			class="shrink-0 p-1 rounded hover:bg-warm-grey transition-colors text-mid-grey hover:text-dark-grey cursor-pointer"
+			class="shrink-0 p-1 rounded transition-colors cursor-pointer {darkText
+				? 'text-black/60 hover:text-black hover:bg-black/10'
+				: 'text-white/80 hover:text-white hover:bg-white/15'}"
 			aria-label="Close panel"
 		>
 			<X size={14} />
@@ -1162,7 +1224,7 @@
 								scrollZoom={!isYearPlaying}
 								cooperativeGestures={!isFullscreen}
 								flyToOffsetX={0}
-								flyToOffsetY={selectedFacility ? -0.15 : 0}
+								flyToOffsetY={facilityMarkerOffsetY}
 								{metricValues}
 								onhover={(f) => (hoveredFacility = f)}
 								onclick={(f) => (clickedFacility = f)}
@@ -1306,34 +1368,37 @@
 								open={!!selectedFacility}
 								onclose={closeFacilityDetail}
 								direction="top"
-								defaultSize={containerHeight < 650
-									? 100
-									: Math.min(
-											100,
-											Math.max(30, (FACILITY_PANEL_DEFAULT_PX / containerHeight) * 100)
-										)}
+								defaultSize={FACILITY_PANEL_FRACTION * 100}
 								minSize={250}
 								dismissThreshold={160}
 								containerSize={containerHeight}
-								class="hidden md:flex absolute bottom-0 inset-x-0 w-full bg-white md:rounded-lg md:border md:border-mid-warm-grey z-20 {selectedFacility
+								closedOffset="2rem"
+								class="hidden md:flex absolute bottom-8 left-8 right-8 max-h-[calc(100%_-_4rem)] bg-white md:rounded-lg md:border md:border-mid-warm-grey shadow-lg z-20 {selectedFacility
 									? '[view-transition-name:facility-hero]'
 									: ''}"
-								dragHandleClass="bg-light-warm-grey/60"
+								dragHandleStyle={`background-color: ${detailColour}`}
+								gripClass={detailGripClass}
 							>
 								{#snippet header()}
-									{#if selectedFacility}
-										{@render facilityActionBar(selectedFacility)}
-									{/if}
-									<FacilityPanelHeader facility={selectedFacility} sanityFacility={selectedProfile} />
+									<FacilityPanelHeader facility={detailFacility} sanityFacility={selectedProfile}>
+										{#snippet topBar(/** @type {boolean} */ darkText)}
+											{#if selectedFacility}
+												{@render facilityActionBar(darkText)}
+											{/if}
+										{/snippet}
+									</FacilityPanelHeader>
 								{/snippet}
 								{#snippet footer()}
 									<FacilityPanelFooter
 										owners={selectedProfile?.owners ?? []}
 										facilityCode={selectedFacility?.code ?? null}
+										buttonColour={detailColour}
+										darkText={detailDarkText}
+										loading={profileLoading && !selectedProfile}
 									/>
 								{/snippet}
 								<FacilityDetailPanel
-									facility={selectedFacility}
+									facility={detailFacility}
 									profile={selectedProfile}
 									{profileLoading}
 									fillHeight={isFullscreen}
@@ -1350,17 +1415,22 @@
 						open={!!selectedFacility}
 						onclose={closeFacilityDetail}
 						{containerHeight}
+						gripStyle={`background-color: ${detailColour}`}
+						gripClass={detailGripClass}
 						class="md:hidden z-30 [view-transition-name:facility-hero]"
 					>
 						{#snippet header()}
 							{#if selectedFacility}
-								{@render facilityActionBar(selectedFacility)}
-								<FacilityPanelHeader facility={selectedFacility} sanityFacility={selectedProfile} />
+								<FacilityPanelHeader facility={detailFacility} sanityFacility={selectedProfile}>
+									{#snippet topBar(/** @type {boolean} */ darkText)}
+										{@render facilityActionBar(darkText)}
+									{/snippet}
+								</FacilityPanelHeader>
 							{/if}
 						{/snippet}
 						{#if selectedFacility}
 							<FacilityDetailPanel
-								facility={selectedFacility}
+								facility={detailFacility}
 								profile={selectedProfile}
 								{profileLoading}
 							/>
@@ -1370,6 +1440,9 @@
 								<FacilityPanelFooter
 									owners={selectedProfile?.owners ?? []}
 									facilityCode={selectedFacility?.code ?? null}
+									buttonColour={detailColour}
+									darkText={detailDarkText}
+									loading={profileLoading && !selectedProfile}
 								/>
 							{/if}
 						{/snippet}
