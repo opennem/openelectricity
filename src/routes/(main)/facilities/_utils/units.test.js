@@ -82,7 +82,9 @@ describe('withMarkedUnits', () => {
 				{ fueltech_id: 'battery_discharging', status_id: 'operating', capacity_maximum: 100 }
 			]
 		};
-		expect(withMarkedUnits(facility).units.map((u) => u.fueltech_id)).toEqual(['battery']);
+		expect(withMarkedUnits(facility).units.map((/** @type {any} */ u) => u.fueltech_id)).toEqual([
+			'battery'
+		]);
 	});
 
 	it('returns the facility unchanged when it has no units', () => {
@@ -91,7 +93,7 @@ describe('withMarkedUnits', () => {
 	});
 
 	it('does not mutate the input units', () => {
-		const facility = {
+		const facility = /** @type {any} */ ({
 			units: [
 				{
 					fueltech_id: 'solar_utility',
@@ -100,7 +102,7 @@ describe('withMarkedUnits', () => {
 					max_generation: 40
 				}
 			]
-		};
+		});
 		withMarkedUnits(facility);
 		expect(facility.units[0].status_id).toBe('operating');
 		expect(facility.units[0].isCommissioning).toBeUndefined();

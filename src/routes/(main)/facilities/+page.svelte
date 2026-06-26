@@ -34,7 +34,11 @@
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
-	import { hasBidirectionalBattery, filterDerivedBatteryUnits, withMarkedUnits } from './_utils/units';
+	import {
+		hasBidirectionalBattery,
+		filterDerivedBatteryUnits,
+		withMarkedUnits
+	} from './_utils/units';
 	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
 	import { fetchFacilityDetail, peekFacilityDetail } from './_utils/fetch-facility-detail.js';
 	import { deriveCard } from '$lib/og/facility-card-data.js';
@@ -1000,51 +1004,54 @@
 {/snippet}
 
 {#snippet summaryBar()}
-	<div
-		class="z-20 bg-white border-t border-mid-warm-grey px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
-	>
-		<div class="flex items-center gap-4 text-xs font-space">
-			<div class="flex items-center gap-1.5">
-				<span class="text-mid-grey">{totalFacilitiesCount.toLocaleString()}</span>
-				<span class="text-mid-grey">facilities</span>
-			</div>
-			<div class="flex items-center gap-1.5">
-				<span class="text-mid-grey">{totalUnitsCount.toLocaleString()}</span>
-				<span class="text-mid-grey">units</span>
-			</div>
-			{#if mapShowGolfCourses}
-				<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
-					<Flag class="size-5" style="color: #16a34a;" />
-					<span class="text-green-600 font-medium">1,573</span>
-					<span class="text-mid-grey">golf courses</span>
+	<!-- Horizontally scrollable so the stats never stick out of a narrow list pane:
+	     the inner row is `min-w-full` (spreads with justify-between when it fits) and
+	     `w-max` (grows to its content and scrolls when it doesn't). -->
+	<div class="z-20 bg-white border-t border-mid-warm-grey overflow-x-auto">
+		<div class="flex w-max min-w-full items-center justify-between gap-4 px-4 py-3 text-xs">
+			<div class="flex items-center gap-4 font-space shrink-0">
+				<div class="flex items-center gap-1.5">
+					<span class="text-mid-grey">{totalFacilitiesCount.toLocaleString()}</span>
+					<span class="text-mid-grey">facilities</span>
 				</div>
-			{/if}
-		</div>
-		<div class="flex items-center gap-5 text-xs">
-			<StatusCapacityBadge
-				capacity={capacityByStatus.operating}
-				colour={statusColours.operating}
-				label="Operating"
-			/>
-			<StatusCapacityBadge
-				capacity={capacityByStatus.commissioning}
-				colour={statusColours.commissioning}
-				label="Commissioning"
-			/>
-			<StatusCapacityBadge
-				capacity={capacityByStatus.committed}
-				colour={statusColours.committed}
-				label="Committed"
-			/>
-			<StatusCapacityBadge
-				capacity={capacityByStatus.retired}
-				colour={statusColours.retired}
-				label="Retired"
-			/>
-			<div class="flex items-center gap-1.5 pl-5 border-l border-warm-grey">
-				<Zap size={14} class="text-mid-grey" />
-				<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
-				<span class="text-mid-grey">MW</span>
+				<div class="flex items-center gap-1.5">
+					<span class="text-mid-grey">{totalUnitsCount.toLocaleString()}</span>
+					<span class="text-mid-grey">units</span>
+				</div>
+				{#if mapShowGolfCourses}
+					<div class="flex items-center gap-1.5 pl-2 border-l border-warm-grey">
+						<Flag class="size-5" style="color: #16a34a;" />
+						<span class="text-green-600 font-medium">1,573</span>
+						<span class="text-mid-grey">golf courses</span>
+					</div>
+				{/if}
+			</div>
+			<div class="flex items-center gap-5 shrink-0">
+				<StatusCapacityBadge
+					capacity={capacityByStatus.operating}
+					colour={statusColours.operating}
+					label="Operating"
+				/>
+				<StatusCapacityBadge
+					capacity={capacityByStatus.commissioning}
+					colour={statusColours.commissioning}
+					label="Commissioning"
+				/>
+				<StatusCapacityBadge
+					capacity={capacityByStatus.committed}
+					colour={statusColours.committed}
+					label="Committed"
+				/>
+				<StatusCapacityBadge
+					capacity={capacityByStatus.retired}
+					colour={statusColours.retired}
+					label="Retired"
+				/>
+				<div class="flex items-center gap-1.5 pl-5 border-l border-warm-grey">
+					<Zap size={14} class="text-mid-grey" />
+					<span class="font-mono font-medium text-dark-grey">{formatValue(totalCapacityMW)}</span>
+					<span class="text-mid-grey">MW</span>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -1380,7 +1387,13 @@
 								gripClass={detailGripClass}
 							>
 								{#snippet header()}
-									<FacilityPanelHeader facility={detailFacility} sanityFacility={selectedProfile}>
+									<FacilityPanelHeader
+										facility={detailFacility}
+										sanityFacility={selectedProfile}
+										card={detailCard}
+										dominantColour={detailColour}
+										darkText={detailDarkText}
+									>
 										{#snippet topBar(/** @type {boolean} */ darkText)}
 											{#if selectedFacility}
 												{@render facilityActionBar(darkText)}
@@ -1421,7 +1434,13 @@
 					>
 						{#snippet header()}
 							{#if selectedFacility}
-								<FacilityPanelHeader facility={detailFacility} sanityFacility={selectedProfile}>
+								<FacilityPanelHeader
+									facility={detailFacility}
+									sanityFacility={selectedProfile}
+									card={detailCard}
+									dominantColour={detailColour}
+									darkText={detailDarkText}
+								>
 									{#snippet topBar(/** @type {boolean} */ darkText)}
 										{@render facilityActionBar(darkText)}
 									{/snippet}
