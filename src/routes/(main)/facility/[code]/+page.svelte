@@ -17,11 +17,7 @@
 	} from '$lib/components/charts/facility';
 	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
-	import {
-		hasBidirectionalBattery,
-		filterDerivedBatteryUnits
-	} from '../../facilities/_utils/units';
-	import isCommissioningCheck from '../../facilities/_utils/is-commissioning';
+	import { withMarkedUnits } from '../../facilities/_utils/units';
 
 	import {
 		getMetricIntervalForDays,
@@ -51,20 +47,9 @@
 	/** @type {{ data: any }} */
 	let { data } = $props();
 
-	let selectedFacility = $derived.by(() => {
-		const f = data.facility;
-		if (!f?.units) return f;
-		const hasBidirectional = hasBidirectionalBattery(f);
-		const filtered = filterDerivedBatteryUnits(f.units, hasBidirectional);
-		// Mark commissioning units client-side (same as /facilities page)
-		const units = filtered.map((/** @type {any} */ unit) => {
-			if (isCommissioningCheck(unit, { hasBidirectionalBattery: hasBidirectional })) {
-				return { ...unit, isCommissioning: true, status_id: 'commissioning' };
-			}
-			return unit;
-		});
-		return { ...f, units };
-	});
+	// Drop derived battery splits + mark commissioning units (same processing the
+	// /facilities page applies); shared with the /facilities detail panel.
+	let selectedFacility = $derived(withMarkedUnits(data.facility));
 
 	let timeZone = $derived(data.timeZone);
 	let rangeDays = $derived(data.rangeDays ?? 7);

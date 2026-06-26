@@ -9,8 +9,13 @@
 	import { getPercentage, getParsedDate, formatTimestampLabel } from '../_utils/unit-helpers';
 	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 
-	/** @type {{ facility: any }} */
-	let { facility } = $props();
+	/**
+	 * `singleColumn` forces one card per row (used in the narrow 1/3-width units
+	 * column of the /facilities detail pane); otherwise the grid is two-up on wider
+	 * viewports (e.g. the standalone /facility/[code] sidebar).
+	 * @type {{ facility: any, singleColumn?: boolean }}
+	 */
+	let { facility, singleColumn = false } = $props();
 
 	// Top-of-stack first, matching the facility header + chart paint order.
 	let unitGroups = $derived(
@@ -19,7 +24,7 @@
 	let offset = $derived(facility?.network_id === 'WEM' ? '+08:00' : '+10:00');
 </script>
 
-<div class="grid grid-cols-1 min-[420px]:grid-cols-2 gap-3">
+<div class="grid grid-cols-1 gap-3 {singleColumn ? '' : 'min-[420px]:grid-cols-2'}">
 	{#each unitGroups as group (group.fueltech_id + '|||' + group.status_id)}
 		{@const capacity = group.capacity_maximum || group.capacity_registered}
 		{@const unitForViz = {

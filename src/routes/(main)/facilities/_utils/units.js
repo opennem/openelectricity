@@ -1,5 +1,6 @@
 import { getFueltechColor } from '$lib/utils/fueltech-display';
 import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
+import isCommissioningCheck from './is-commissioning';
 
 /**
  * Check if a facility has a bidirectional battery unit (fueltech_id === 'battery').
@@ -128,6 +129,29 @@ export function getOrderedFuelTechGroups(facility) {
 		if (!seen.has(group.fueltech_id)) seen.set(group.fueltech_id, group);
 	}
 	return [...seen.values()];
+}
+
+/**
+ * Normalise a raw API facility for display: drop derived battery
+ * charging/discharging units (when a bidirectional `battery` unit exists) and
+ * mark commissioning units (`isCommissioning` + `status_id`). This is the same
+ * client-side processing the /facilities list applies server-side via
+ * `processFacilitiesWithStatuses`, extracted so the /facility/[code] page and the
+ * /facilities detail panel present the canonical full facility identically from
+ * the raw `fetchFacilityByCode` shape.
+ * @param {any} facility
+ * @returns {any}
+ */
+export function withMarkedUnits(facility) {
+	if (!facility?.units) return facility;
+	const hasBidirectional = hasBidirectionalBattery(facility);
+	const units = filterDerivedBatteryUnits(facility.units, hasBidirectional).map(
+		(/** @type {any} */ unit) =>
+			isCommissioningCheck(unit, { hasBidirectionalBattery: hasBidirectional })
+				? { ...unit, isCommissioning: true, status_id: 'commissioning' }
+				: unit
+	);
+	return { ...facility, units };
 }
 
 /**

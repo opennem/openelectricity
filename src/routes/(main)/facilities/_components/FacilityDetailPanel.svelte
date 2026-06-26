@@ -28,40 +28,17 @@
 
 	/** Whether the streamed profile is still in flight (no cached value yet). */
 	let loading = $derived(profileLoading && !profile);
-
-	// About read-more — collapse long descriptions behind a fade.
-	const MAX_HEIGHT = 200;
-	let expanded = $state(false);
-	/** @type {HTMLDivElement | undefined} */
-	let descriptionEl = $state(undefined);
-	let needsExpand = $state(false);
-
-	// Measure (post-layout) whether the description overflows the collapsed
-	// height, and reset the collapsed view for each new description. Tracks
-	// `description` so it re-runs on selection; toggling `expanded` doesn't.
-	$effect(() => {
-		const node = descriptionEl;
-		const _desc = description;
-		expanded = false;
-		if (!node) {
-			needsExpand = false;
-			return;
-		}
-		requestAnimationFrame(() => {
-			needsExpand = node.scrollHeight > MAX_HEIGHT;
-		});
-	});
 </script>
 
 {#if facility}
 	<div class={fillHeight ? 'h-full min-h-0 overflow-y-auto' : ''}>
-		<div class="grid grid-cols-1 gap-6 p-4 md:grid-cols-2 md:gap-8">
-			<!-- Left: photo + description -->
+		<div class="grid grid-cols-1 gap-8 p-8 md:grid-cols-[2fr_1fr] md:gap-8">
+			<!-- Left: photo + description (2/3) · Right: units (1/3) -->
 			<div class="min-w-0 space-y-6">
 				{#if loading}
-					<div class="h-52 animate-pulse rounded-lg bg-light-warm-grey/60"></div>
+					<div class="h-72 animate-pulse rounded-lg bg-light-warm-grey/60"></div>
 				{:else if photos.length > 0}
-					<div class="h-52">
+					<div class="h-72">
 						<PhotoCarousel {photos} fill class="h-full" />
 					</div>
 				{:else}
@@ -73,7 +50,7 @@
 					</div>
 				{/if}
 
-				<section>
+				<section class="m-4">
 					<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">About</h3>
 					{#if loading}
 						<div class="space-y-2">
@@ -82,30 +59,7 @@
 							<div class="h-3 w-3/4 animate-pulse rounded bg-light-warm-grey/60"></div>
 						</div>
 					{:else if hasDescription}
-						<div
-							class="relative overflow-hidden"
-							style:max-height={!expanded ? `${MAX_HEIGHT}px` : 'none'}
-						>
-							<div bind:this={descriptionEl}>
-								<PortableTextBody
-									value={description}
-									class="text-sm leading-relaxed text-dark-grey/80"
-								/>
-							</div>
-							{#if needsExpand && !expanded}
-								<div
-									class="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-white to-transparent"
-								></div>
-							{/if}
-						</div>
-						{#if needsExpand}
-							<button
-								class="mt-1.5 cursor-pointer text-xs text-mid-grey/70 transition-colors hover:text-mid-grey"
-								onclick={() => (expanded = !expanded)}
-							>
-								{expanded ? 'Show less' : 'Read more'}
-							</button>
-						{/if}
+						<PortableTextBody value={description} class="text-sm leading-relaxed text-dark-grey/80" />
 					{:else}
 						<div class="flex items-center gap-2.5 text-mid-grey">
 							<FileText size={16} strokeWidth={1.5} />
@@ -118,7 +72,7 @@
 			<!-- Right: units — same card design as /facility/[code]. -->
 			<section class="min-w-0">
 				<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">Units</h3>
-				<FacilityUnitCards {facility} />
+				<FacilityUnitCards {facility} singleColumn />
 			</section>
 		</div>
 	</div>
