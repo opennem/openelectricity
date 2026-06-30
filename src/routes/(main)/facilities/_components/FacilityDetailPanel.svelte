@@ -1,17 +1,18 @@
 <script>
 	import { FileText, ImageOff } from '@lucide/svelte';
 	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
-	import PortableTextBody from '$lib/components/PortableTextBody.svelte';
+	import ExpandableDescription from '$lib/components/ExpandableDescription.svelte';
 	import { hasPortableTextContent } from '$lib/utils/portable-text.js';
 	import FacilityUnitCards from './FacilityUnitCards.svelte';
+	import FacilitySnapshotCharts from './FacilitySnapshotCharts.svelte';
 
 	/**
 	 * Facility preview shown when a facility is selected on the /facilities page.
-	 * Mirrors the editorial content of the dedicated /facility/[code] page so
-	 * navigating there morphs naturally. Two columns on desktop — photo +
-	 * description on the left, the unit cards (same design as the detail page) on
-	 * the right; stacked on mobile. The units render instantly from the facility
-	 * object; only photos + description wait on the streamed profile.
+	 * Mirrors the dedicated /facility/[code] page layout so navigating there morphs
+	 * naturally: the 3-day generation/price snapshots fill the wider left column,
+	 * with the description, photos and unit cards stacked in the right column
+	 * (stacked on mobile). The units render instantly from the facility object;
+	 * only the photos + description wait on the streamed profile.
 	 *
 	 * @type {{
 	 *   facility: any | null,
@@ -33,8 +34,35 @@
 {#if facility}
 	<div class={fillHeight ? 'h-full min-h-0 overflow-y-auto' : ''}>
 		<div class="grid grid-cols-1 gap-8 p-8 md:grid-cols-[2fr_1fr] md:gap-8">
-			<!-- Left: photo + description (2/3) · Right: units (1/3) -->
+			<!-- Left: 3-day Generation + Price snapshots (same charts as /facility/[code]). -->
+			<div class="min-w-0">
+				<FacilitySnapshotCharts {facility} />
+			</div>
+
+			<!-- Right: description, photos, then units (mirrors /facility/[code]). -->
 			<div class="min-w-0 space-y-6">
+				<section>
+					<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">
+						About
+					</h3>
+					{#if loading}
+						<div class="space-y-2">
+							<div class="h-3 w-full animate-pulse rounded bg-light-warm-grey/60"></div>
+							<div class="h-3 w-11/12 animate-pulse rounded bg-light-warm-grey/60"></div>
+							<div class="h-3 w-3/4 animate-pulse rounded bg-light-warm-grey/60"></div>
+						</div>
+					{:else if hasDescription}
+						{#key facility.code}
+							<ExpandableDescription value={description} />
+						{/key}
+					{:else}
+						<div class="flex items-center gap-2.5 text-mid-grey">
+							<FileText size={16} strokeWidth={1.5} />
+							<p class="m-0 text-sm">No description available</p>
+						</div>
+					{/if}
+				</section>
+
 				{#if loading}
 					<div class="h-72 animate-pulse rounded-lg bg-light-warm-grey/60"></div>
 				{:else if photos.length > 0}
@@ -50,30 +78,13 @@
 					</div>
 				{/if}
 
-				<section class="m-4">
-					<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">About</h3>
-					{#if loading}
-						<div class="space-y-2">
-							<div class="h-3 w-full animate-pulse rounded bg-light-warm-grey/60"></div>
-							<div class="h-3 w-11/12 animate-pulse rounded bg-light-warm-grey/60"></div>
-							<div class="h-3 w-3/4 animate-pulse rounded bg-light-warm-grey/60"></div>
-						</div>
-					{:else if hasDescription}
-						<PortableTextBody value={description} class="text-sm leading-relaxed text-dark-grey/80" />
-					{:else}
-						<div class="flex items-center gap-2.5 text-mid-grey">
-							<FileText size={16} strokeWidth={1.5} />
-							<p class="m-0 text-sm">No description available</p>
-						</div>
-					{/if}
+				<section class="min-w-0">
+					<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">
+						Units
+					</h3>
+					<FacilityUnitCards {facility} singleColumn />
 				</section>
 			</div>
-
-			<!-- Right: units — same card design as /facility/[code]. -->
-			<section class="min-w-0">
-				<h3 class="m-0 mb-2 text-xs font-semibold uppercase tracking-wide text-mid-grey">Units</h3>
-				<FacilityUnitCards {facility} singleColumn />
-			</section>
 		</div>
 	</div>
 {/if}

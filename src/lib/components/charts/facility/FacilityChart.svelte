@@ -54,9 +54,14 @@
 	 * @property {string} [title] - Override the chart header title (defaults to facility.name).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync. When set, the chart renders its crosshair/tooltip at this time.
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when the local hover state changes so a parent can sync peer charts.
+	 * @property {number | undefined} [focusTime] - External focus (pinned) time for cross-chart sync. When set, the chart pins its crosshair/tooltip at this time.
+	 * @property {((time: number | undefined) => void)} [onfocuschange] - Called when the local focus state changes so a parent can sync peer charts.
 	 * @property {((state: { hasData: boolean }) => void)} [onloadcomplete] - Called once the initial client-side fetch/seed settles. `hasData` reflects whether any data was found, letting a parent distinguish "still loading" from "no data" (e.g. to show an empty state). Stays accurate across panning.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active. 'tap-to-engage' gates pan/zoom behind the bindable `panZoomEngaged` flag.
 	 * @property {boolean} [panZoomEngaged] - Bindable engagement state for tap-to-engage mode.
+	 * @property {boolean} [enablePan] - Whether drag/wheel pan is enabled (default: true). Set false for a fixed-window snapshot chart (hover still works).
+	 * @property {boolean} [resizable] - Whether to show the drag-to-resize handle below the chart (default: true). Set false for a fixed-height snapshot so the chart honours `chartHeight` and doesn't share the persisted resize height.
+	 * @property {number | Array<any> | ((ticks: any[]) => any[])} [yTicks] - Y-axis ticks passed through to AxisY: a count, an explicit array, or a function that thins the scale's default ticks. Omit for the AxisY default (4).
 	 * @property {boolean} [bundleDerivedMetrics] - Fetch via the combined `metric=<metric>,market_value,emissions` URL so this chart shares one request with the financial/emissions providers mounted alongside it. Only enable when those providers are present (the facility detail page); off elsewhere to avoid pulling unused metrics.
 	 */
 
@@ -88,9 +93,14 @@
 		title = '',
 		hoverTime = undefined,
 		onhoverchange,
+		focusTime = undefined,
+		onfocuschange,
 		onloadcomplete,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
+		enablePan = true,
+		resizable = true,
+		yTicks = undefined,
 		bundleDerivedMetrics = false
 	} = $props();
 
@@ -384,6 +394,7 @@
 		if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.chartStyles.snapTicks = true;
+		if (yTicks !== undefined) chart.yTicks = yTicks;
 		chart.useDivergingStack = useDivergingStack;
 		chart.lighterNegative = hasBatteryUnits;
 		chart.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
@@ -759,7 +770,22 @@
 	function handleFocus(time) {
 		if (isPanning) return;
 		chartStore?.toggleFocus(time);
+		onfocuschange?.(chartStore?.focusTime);
 	}
+
+	// Sync externally-driven focus time (from peer charts) into the local chart
+	// store. Gated on `onfocuschange` for the same reason as the hover effect above.
+	$effect(() => {
+		if (!onfocuschange) return;
+		const t = focusTime;
+		if (!chartStore) return;
+		if (chartStore.focusTime === t) return;
+		if (t === undefined) {
+			chartStore.clearFocus();
+		} else {
+			chartStore.setFocus(t);
+		}
+	});
 
 	// ============================================
 	// Public Methods
@@ -823,12 +849,12 @@
 			onpan={handlePan}
 			onpanend={handlePanEnd}
 			onzoom={handleZoom}
-			enablePan={true}
+			{enablePan}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
 			viewDomain={null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
-			resizable
+			{resizable}
 			heightStorageKey="facility-chart-height-generation"
 			minHeight={160}
 			maxHeight={700}

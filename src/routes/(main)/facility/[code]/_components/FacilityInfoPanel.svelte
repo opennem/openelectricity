@@ -2,7 +2,7 @@
 	import { FileText, Building2 } from '@lucide/svelte';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
-	import PortableTextBody from '$lib/components/PortableTextBody.svelte';
+	import ExpandableDescription from '$lib/components/ExpandableDescription.svelte';
 	import { hasPortableTextContent } from '$lib/utils/portable-text.js';
 
 	/**
@@ -43,28 +43,6 @@
 		}
 		return maxFt ? fuelTechColourMap[maxFt] || '#ffffff' : '#ffffff';
 	});
-
-	const MAX_HEIGHT = 160;
-
-	let expanded = $state(false);
-	/** @type {HTMLDivElement | undefined} */
-	let descriptionEl = $state(undefined);
-	let needsExpand = $state(false);
-
-	$effect(() => {
-		const _desc = description;
-		if (descriptionEl) {
-			requestAnimationFrame(() => {
-				needsExpand = descriptionEl ? descriptionEl.scrollHeight > 160 : false;
-			});
-		}
-	});
-
-	$effect(() => {
-		const _code = sanityFacility?.code;
-		expanded = false;
-		needsExpand = false;
-	});
 </script>
 
 <div class="space-y-10">
@@ -74,32 +52,9 @@
 		</div>
 		{#if hasDescription}
 			<div class="p-5">
-				<div
-					class="relative overflow-hidden"
-					style:max-height={!expanded ? `${MAX_HEIGHT}px` : 'none'}
-				>
-					<div bind:this={descriptionEl}>
-						<PortableTextBody
-							value={description}
-							class="text-sm text-dark-grey/80 leading-relaxed"
-						/>
-					</div>
-
-					{#if needsExpand && !expanded}
-						<div
-							class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none"
-						></div>
-					{/if}
-				</div>
-
-				{#if needsExpand}
-					<button
-						class="mt-2 text-xs text-mid-grey/60 hover:text-mid-grey transition-colors cursor-pointer"
-						onclick={() => (expanded = !expanded)}
-					>
-						{expanded ? 'Show less' : 'Read more'}
-					</button>
-				{/if}
+				{#key sanityFacility?.code}
+					<ExpandableDescription value={description} />
+				{/key}
 			</div>
 		{:else}
 			<div class="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">

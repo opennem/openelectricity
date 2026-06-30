@@ -164,8 +164,11 @@ export default class ChartStore {
 	/** @type {any[]} Tick values whose labels are hidden on mobile (gridlines kept) */
 	xMobileHiddenTicks = $state([]);
 
-	/** @type {number[] | number | undefined} */
+	/** @type {number | any[] | ((ticks: any[]) => any[]) | undefined} - A tick count, explicit values, or a function thinning the scale's default ticks (forwarded to AxisY). */
 	yTicks = $state();
+
+	/** @type {any} - Optional custom d3-style y-scale forwarded to LayerCake (e.g. the hybrid price scale). When unset, LayerCake's linear default applies. */
+	yScale = $state();
 
 	// Formatters
 	/** @type {number} */
@@ -518,6 +521,14 @@ export default class ChartStore {
 	 */
 	toggleFocus(time) {
 		this.focusTime = this.focusTime === time ? undefined : time;
+	}
+
+	/**
+	 * Set focus to a specific time point (for cross-chart sync).
+	 * @param {number | undefined} time
+	 */
+	setFocus(time) {
+		this.focusTime = time;
 	}
 
 	/**

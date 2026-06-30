@@ -95,9 +95,7 @@
 	});
 
 	let groupedData = $derived(
-		renderSeriesData.length > 0
-			? groupLonger(renderSeriesData, chart.visibleSeriesNames)
-			: []
+		renderSeriesData.length > 0 ? groupLonger(renderSeriesData, chart.visibleSeriesNames) : []
 	);
 
 	let chartData = $derived(chart.chartOptions.isChartTypeStackedArea ? stackedData : groupedData);
@@ -131,9 +129,7 @@
 	let clipPathId = $derived(dataClipPathId);
 	let clipPath = $derived(`url(#${dataClipPathId})`);
 	// When `tightAxisClip` is true, reuse the tight clip for axis content too.
-	let hoverClipPath = $derived(
-		`url(#${tightAxisClip ? hoverClipPathId : hoverClipPathAxisId})`
-	);
+	let hoverClipPath = $derived(`url(#${tightAxisClip ? hoverClipPathId : hoverClipPathAxisId})`);
 	let axesClipPath = $derived(`url(#${tightAxisClip ? axesClipPathId : axesClipPathAxisId})`);
 
 	// Axis clip allows axis labels to extend `axisBufferLeft/Right` pixels past
@@ -177,6 +173,7 @@
 		zRange={chart.visibleSeriesColours}
 		data={chartData}
 		{flatData}
+		{...chart.yScale ? { yScale: chart.yScale } : {}}
 	>
 		<!-- Main chart area -->
 		<Svg>
@@ -224,11 +221,7 @@
 				{/if}
 
 				{#if netTotalKey && isStepMode}
-					<NetTotalLine
-						dataset={renderSeriesData}
-						valueKey={netTotalKey}
-						stroke={netTotalColor}
-					/>
+					<NetTotalLine dataset={renderSeriesData} valueKey={netTotalKey} stroke={netTotalColor} />
 				{/if}
 
 				{#if chart.fgShadingData?.length > 0}

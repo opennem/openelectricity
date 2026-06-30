@@ -31,6 +31,12 @@
 		createBasisColour
 	} from './energy-basis.js';
 	import { LINE_COLOUR } from './colours.js';
+	import {
+		createPriceYScale,
+		formatPriceTick,
+		PRICE_Y_DOMAIN,
+		PRICE_Y_TICKS
+	} from './price-y-scale.js';
 
 	/**
 	 * @param {string} ftCode
@@ -59,10 +65,13 @@
 	 * @property {number} viewEnd
 	 * @property {string} [priceChartHeight]
 	 * @property {string} [mvChartHeight]
+	 * @property {number | Array<any> | ((ticks: any[]) => any[])} [yTicks] - Y-axis ticks for the market-value chart: a count, an explicit array, or a function thinning the scale's default ticks. (The price chart uses a fixed hybrid axis.) Omit for the AxisY default.
 	 * @property {boolean} [active] - When false, skip manager instantiation (no fetch fires).
 	 * @property {boolean} [showTooltipDate] - Whether the tooltips show their date/time header (default: true).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync.
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when a financial chart's local hover changes.
+	 * @property {number | undefined} [focusTime] - External focus (pinned) time for cross-chart sync.
+	 * @property {((time: number | undefined) => void)} [onfocuschange] - Called when a financial chart's local focus changes.
 	 * @property {((data: SummaryData) => void)} [onsummarydata]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
 	 * @property {import('svelte').Snippet} [children]
@@ -78,10 +87,13 @@
 		viewEnd,
 		priceChartHeight = 'h-[200px]',
 		mvChartHeight = 'h-[200px]',
+		yTicks = undefined,
 		active = true,
 		showTooltipDate = true,
 		hoverTime = undefined,
 		onhoverchange,
+		focusTime = undefined,
+		onfocuschange,
 		onsummarydata,
 		onviewportchange,
 		children
@@ -386,8 +398,13 @@
 		chart.hideChartTypeOptions = true;
 		// Single-series line — the floating-tooltip total just repeats the value.
 		chart.chartTooltips.showTotal = false;
+		// Hybrid axis: linear $0–$300, log above $300 and below $0, on a fixed
+		// domain so the structure stays comparable across facilities and ranges.
+		chart.yScale = createPriceYScale();
+		chart.setYDomain([...PRICE_Y_DOMAIN]);
+		chart.yTicks = PRICE_Y_TICKS;
 		chart.useFormatY = true;
-		chart.formatY = (/** @type {number} */ d) => '$' + dollarFormatter.format(d);
+		chart.formatY = formatPriceTick;
 
 		return chart;
 	});
@@ -400,9 +417,8 @@
 		priceChartStore.seriesLabels = { price: 'Av. Price ($/MWh)' };
 		priceChartStore.seriesData = priceData;
 		priceChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
-		priceChartStore.chartOptions.selectedCurveType = /** @type {any} */ (
-			isEnergyInterval ? 'step' : 'straight'
-		);
+		// Always step-after: each interval's price is held until the next reading.
+		priceChartStore.chartOptions.selectedCurveType = /** @type {any} */ ('step');
 
 		applyFacilityTimeAxis(priceChartStore, {
 			data: priceData,
@@ -435,6 +451,7 @@
 		chart.chartStyles.chartHeightClasses = mvChartHeight;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.chartStyles.snapTicks = true;
+		if (yTicks !== undefined) chart.yTicks = yTicks;
 		chart.useFormatY = true;
 		chart.formatY = (/** @type {number} */ d) => {
 			const converted = chart.convertAndFormatValue(d);
@@ -644,6 +661,12 @@
 		},
 		get onhoverchange() {
 			return onhoverchange;
+		},
+		get focusTime() {
+			return focusTime;
+		},
+		get onfocuschange() {
+			return onfocuschange;
 		},
 		handlePanStart,
 		handlePan,
