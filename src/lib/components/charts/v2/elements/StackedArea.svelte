@@ -31,6 +31,7 @@
 	 * @property {string} [dotStroke] - Dot stroke colour
 	 * @property {string} [dotStrokeWidth] - Dot stroke width
 	 * @property {boolean} [lighterNegative] - Use lighter color for negative values
+	 * @property {[number, number]} [solidLineRange] - For line charts: the y-value band [min, max] within which the line stays solid; outside it (e.g. a non-linear scale's log tails) the line is drawn dotted.
 	 * @property {boolean} [stepMode] - Use floor-based data-point lookup for step curves (value at T covers [T, T+I))
 	 * @property {boolean} [animate] - Animate paths: grow from y=0 on mount, morph on data change
 	 * @property {(evt: { data: TimeSeriesData, key?: string }) => void} [onmousemove]
@@ -52,6 +53,7 @@
 		dotStroke = 'black',
 		dotStrokeWidth = '1px',
 		lighterNegative = false,
+		solidLineRange = undefined,
 		stepMode = false,
 		animate = false,
 		onmousemove,
@@ -202,8 +204,28 @@
 
 {#if display === 'line'}
 	<g class="line-group" role="group">
+		{#if solidLineRange}
+			<!-- Solid within the band, dotted in the tails: clip one copy of the line
+			     to the band's pixel range and a dotted copy to everything outside it.
+			     y grows downward, so the upper value maps to the smaller y. -->
+			{@const yTop = $yScale(solidLineRange[1])}
+			{@const yBot = $yScale(solidLineRange[0])}
+			<defs>
+				<clipPath id="{clipId}-solid">
+					<rect x="0" y={yTop} width={$width} height={Math.max(0, yBot - yTop)} />
+				</clipPath>
+				<clipPath id="{clipId}-dotted">
+					<rect x="0" y="0" width={$width} height={Math.max(0, yTop)} />
+					<rect x="0" y={yBot} width={$width} height={Math.max(0, $height - yBot)} />
+				</clipPath>
+			</defs>
+		{/if}
+
 		{#each $data as d, i (i)}
 			{@const seriesKey = d.key || d.group}
+			{@const path = lineGen(d.values)}
+			{@const stroke = seriesColours[$z(d)]}
+			{@const op = getOpacity(d, 1, 0.5)}
 
 			<!-- Optional dots for line chart -->
 			{#if showLineDots && d.values?.length > 1}
@@ -226,17 +248,45 @@
 				{/each}
 			{/if}
 
-			<!-- Line path -->
-			<path
-				class="path-line"
-				class:path-animate={canTransition}
-				role="presentation"
-				d={lineGen(d.values)}
-				fill="transparent"
-				stroke={seriesColours[$z(d)]}
-				stroke-width={strokeWidth}
-				opacity={getOpacity(d, 1, 0.5)}
-			/>
+			{#if solidLineRange}
+				<!-- Solid copy (clipped to the band) + dotted copy (clipped to the tails) -->
+				<path
+					class="path-line"
+					class:path-animate={canTransition}
+					role="presentation"
+					d={path}
+					fill="transparent"
+					{stroke}
+					stroke-width={strokeWidth}
+					opacity={op}
+					clip-path="url(#{clipId}-solid)"
+				/>
+				<path
+					class="path-line"
+					class:path-animate={canTransition}
+					role="presentation"
+					d={path}
+					fill="transparent"
+					{stroke}
+					stroke-width={strokeWidth}
+					stroke-dasharray="1 3"
+					stroke-linecap="round"
+					opacity={op}
+					clip-path="url(#{clipId}-dotted)"
+				/>
+			{:else}
+				<!-- Line path -->
+				<path
+					class="path-line"
+					class:path-animate={canTransition}
+					role="presentation"
+					d={path}
+					fill="transparent"
+					{stroke}
+					stroke-width={strokeWidth}
+					opacity={op}
+				/>
+			{/if}
 		{/each}
 	</g>
 {/if}

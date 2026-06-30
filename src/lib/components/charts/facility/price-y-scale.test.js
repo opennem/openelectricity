@@ -3,17 +3,20 @@ import {
 	createPriceYScale,
 	formatPriceTick,
 	PRICE_Y_DOMAIN,
-	PRICE_Y_TICKS
+	PRICE_Y_TICKS,
+	PRICE_LINEAR_RANGE
 } from './price-y-scale.js';
 
 describe('price-y-scale', () => {
-	it('exposes the fixed domain and always-on gridlines including 0', () => {
+	it('exposes the fixed domain, gridlines and linear band', () => {
 		expect(PRICE_Y_DOMAIN).toEqual([-1000, 23200]);
 		expect(PRICE_Y_TICKS).toContain(0);
 		expect(PRICE_Y_TICKS).toContain(300);
 		// Sorted ascending, spanning the domain.
 		expect([...PRICE_Y_TICKS].sort((a, b) => a - b)).toEqual(PRICE_Y_TICKS);
 		expect(PRICE_Y_TICKS.every((t) => t >= -1000 && t <= 23200)).toBe(true);
+		// The solid-line band is the linear region $0–$300.
+		expect(PRICE_LINEAR_RANGE).toEqual([0, 300]);
 	});
 
 	it('places the region breakpoints at the configured height fractions', () => {

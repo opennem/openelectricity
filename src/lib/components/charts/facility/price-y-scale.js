@@ -26,7 +26,11 @@ const F_POS = 0.3; //  [300, 23200]  log
 
 /** Fixed domain + the always-on gridlines (shared with the price chart store). */
 export const PRICE_Y_DOMAIN = /** @type {[number, number]} */ ([NEG_MIN, POS_MAX]);
-export const PRICE_Y_TICKS = [-1000, -100, 0, 100, 200, 300, 1000, 3000, 10000];
+export const PRICE_Y_TICKS = [-1000, -100, 0, 100, 200, 300, 1000, 3000, 10000, 15000, 20000];
+
+/** The linear band [$0, $300]. The price line is drawn solid within it and dotted
+ *  in the log tails (above $300 / below $0). */
+export const PRICE_LINEAR_RANGE = /** @type {[number, number]} */ ([0, LIN_MAX]);
 
 const LN_POS_SPAN = Math.log(POS_MAX) - Math.log(LIN_MAX);
 const LN_NEG_SPAN = Math.log(1 - NEG_MIN); // ln(1 + 1000)

@@ -35,7 +35,8 @@
 		createPriceYScale,
 		formatPriceTick,
 		PRICE_Y_DOMAIN,
-		PRICE_Y_TICKS
+		PRICE_Y_TICKS,
+		PRICE_LINEAR_RANGE
 	} from './price-y-scale.js';
 
 	/**
@@ -403,6 +404,7 @@
 		chart.yScale = createPriceYScale();
 		chart.setYDomain([...PRICE_Y_DOMAIN]);
 		chart.yTicks = PRICE_Y_TICKS;
+		chart.solidLineRange = PRICE_LINEAR_RANGE;
 		chart.useFormatY = true;
 		chart.formatY = formatPriceTick;
 

@@ -170,6 +170,9 @@ export default class ChartStore {
 	/** @type {any} - Optional custom d3-style y-scale forwarded to LayerCake (e.g. the hybrid price scale). When unset, LayerCake's linear default applies. */
 	yScale = $state();
 
+	/** @type {[number, number] | undefined} - For line charts: the y-value band within which the line is drawn solid; outside it the line is dotted (e.g. the price chart's linear band, so the log tails read as dotted). */
+	solidLineRange = $state();
+
 	// Formatters
 	/** @type {number} */
 	maximumFractionDigits = $state(0);

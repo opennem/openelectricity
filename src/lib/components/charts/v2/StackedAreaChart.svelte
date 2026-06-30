@@ -213,6 +213,7 @@
 						seriesColours={chart.seriesColours}
 						highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}
 						lighterNegative={chart.lighterNegative}
+						solidLineRange={chart.solidLineRange}
 						stepMode={isStepMode}
 						{onmousemove}
 						{onmouseout}
