@@ -66,10 +66,23 @@
 	let viewEnd = $derived(
 		Math.min(new Date(dates.end + 'T23:59:59' + timeZone).getTime(), Date.now())
 	);
+
+	// Remount on the unit SET, not just the code: a facility selected from a
+	// filtered list arrives first as a list row carrying only the filtered fuel
+	// techs' units, then as the complete facility once its detail loads. The chart
+	// data managers bake in unitOrder/unitFuelTechMap at creation and don't pick up
+	// a units-only change, so without this the charts would plot only the filtered
+	// fuel tech. Keying on the unit codes recreates them with the full set.
+	let bodyKey = $derived(
+		`${facility?.code ?? ''}:${(facility?.units ?? [])
+			.map((/** @type {any} */ u) => u.code)
+			.sort()
+			.join('|')}`
+	);
 </script>
 
 {#if facility}
-	{#key facility.code}
+	{#key bodyKey}
 		<FacilitySnapshotBody
 			{facility}
 			{timeZone}
