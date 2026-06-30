@@ -7,7 +7,7 @@ import {
 	isSubDailyData,
 	capacityFactor,
 	avgPriceReceived,
-	peakOutput,
+	peakBucket,
 	runningHours,
 	startCount,
 	dcAcRatio,
@@ -155,49 +155,38 @@ describe('avgPriceReceived', () => {
 	});
 });
 
-// ── peakOutput ───────────────────────────────────────────────────────
+// ── peakBucket ───────────────────────────────────────────────────────
 
-describe('peakOutput', () => {
-	it('finds peak total across series', () => {
+describe('peakBucket', () => {
+	it('returns the peak value tagged with its timestamp', () => {
 		const rows = [
-			{ unit1: 50, unit2: 30 },
-			{ unit1: 80, unit2: 40 },
-			{ unit1: 60, unit2: 20 }
+			{ time: 1, date: 'a', unit1: 50, unit2: 30 },
+			{ time: 2, date: 'b', unit1: 80, unit2: 40 },
+			{ time: 3, date: 'c', unit1: 60, unit2: 20 }
 		];
-		expect(peakOutput(rows, ['unit1', 'unit2'])).toBe(120);
+		expect(peakBucket(rows, ['unit1', 'unit2'])).toEqual({ value: 120, time: 2, date: 'b' });
 	});
 
-	it('ignores negative values', () => {
-		const rows = [{ unit1: 100, unit2: -50 }];
-		expect(peakOutput(rows, ['unit1', 'unit2'])).toBe(100);
+	it('ignores negative values when totalling a row', () => {
+		const rows = [{ time: 1, date: 'a', unit1: 100, unit2: -50 }];
+		expect(peakBucket(rows, ['unit1', 'unit2'])).toEqual({ value: 100, time: 1, date: 'a' });
 	});
 
-	it('returns 0 for empty rows', () => {
-		expect(peakOutput([], ['unit1'])).toBe(0);
-	});
-
-	it('returns 0 when all values are 0', () => {
-		const rows = [{ unit1: 0 }, { unit1: 0 }];
-		expect(peakOutput(rows, ['unit1'])).toBe(0);
-	});
-
-	it('converts energy to power when intervalHours is provided', () => {
+	it('divides energy to power when intervalHours is provided', () => {
 		const rows = [
-			{ unit1: 50, unit2: 30 },
-			{ unit1: 80, unit2: 40 },
-			{ unit1: 60, unit2: 20 }
+			{ time: 1, date: 'a', unit1: 50 },
+			{ time: 2, date: 'b', unit1: 240 }
 		];
-		expect(peakOutput(rows, ['unit1', 'unit2'], 24)).toBe(5);
-	});
-
-	it('does not convert when intervalHours is 0 (default)', () => {
-		const rows = [{ unit1: 120 }];
-		expect(peakOutput(rows, ['unit1'], 0)).toBe(120);
+		expect(peakBucket(rows, ['unit1'], 24)).toEqual({ value: 10, time: 2, date: 'b' });
 	});
 
 	it('converts correctly for 5-minute intervals', () => {
-		const rows = [{ unit1: 10 }];
-		expect(peakOutput(rows, ['unit1'], 5 / 60)).toBeCloseTo(120);
+		const rows = [{ time: 1, date: 'a', unit1: 10 }];
+		expect(peakBucket(rows, ['unit1'], 5 / 60)?.value).toBeCloseTo(120);
+	});
+
+	it('returns null for empty rows', () => {
+		expect(peakBucket([], ['unit1'])).toBeNull();
 	});
 });
 

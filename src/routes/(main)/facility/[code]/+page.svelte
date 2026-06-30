@@ -52,7 +52,7 @@
 	let selectedFacility = $derived(withMarkedUnits(data.facility));
 
 	let timeZone = $derived(data.timeZone);
-	let rangeDays = $derived(data.rangeDays ?? 7);
+	let rangeDays = $derived(data.rangeDays ?? 3);
 
 	let defaultEnd = $derived(data.retiredEndMs ?? Date.now());
 	let defaultStart = $derived(defaultEnd - rangeDays * 24 * 60 * 60 * 1000);
@@ -132,7 +132,7 @@
 	/** Currently selected range preset in days (-1 = All). null when a custom
 	 *  date range is in use or the user has panned/zoomed off any preset. */
 	/** @type {number | null} */
-	let selectedRange = $state(data.rangeDays ?? 7);
+	let selectedRange = $state(data.rangeDays ?? 3);
 
 	/** Earliest data point across the facility's units, used as the floor for
 	 *  the date picker and the "All" preset. */
@@ -199,6 +199,11 @@
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
 
+	// Whether the default range preset has been applied for the current facility's
+	// chart (see handlePowerLoadComplete). Reset on facility change so each new
+	// facility re-applies it.
+	let rangeApplied = false;
+
 	$effect(() => {
 		// Reset chart-viewport-driven state when the underlying facility changes.
 		const _code = data.facility?.code;
@@ -206,6 +211,7 @@
 		activeMetric = 'power';
 		displayInterval = '30m';
 		panZoomEngaged = false;
+		rangeApplied = false;
 		// Reset client-side load tracking so the new facility shows its skeleton until
 		// its own chart fetch settles.
 		powerLoaded = false;
@@ -350,6 +356,15 @@
 
 	/** @param {{ hasData: boolean }} state */
 	function handlePowerLoadComplete({ hasData }) {
+		// The chart self-seeds a day-snapped window on load. Once it's settled,
+		// apply the default preset through the normal path (before reveal, so no
+		// visible jump): this sets the exact rolling window — so the view matches a
+		// later 3D click instead of trimming — and marks the preset selected (the
+		// setViewport echo is suppressed, so it isn't cleared).
+		if (!rangeApplied) {
+			rangeApplied = true;
+			handleRangeSelect(rangeDays);
+		}
 		powerLoaded = true;
 		powerHasData = hasData;
 	}
@@ -391,7 +406,10 @@
 <!-- Morph target — pairs with the /facilities detail panel
      (view-transition-name: facility-hero) so the whole panel expands into the
      full page on navigation. -->
-<div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey" style:view-transition-name="facility-hero">
+<div
+	class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey"
+	style:view-transition-name="facility-hero"
+>
 	<div class="md:sticky md:top-0 md:z-40" bind:clientHeight={headerHeight}>
 		<FacilityPanelHeader facility={selectedFacility} sanityFacility={data.sanityFacility} />
 	</div>
@@ -440,6 +458,9 @@
 									{summaryData}
 									{emissionsData}
 									{intervalData}
+									{timeZone}
+									{displayInterval}
+									onpeakhighlight={handleHoverChange}
 								/>
 							</div>
 

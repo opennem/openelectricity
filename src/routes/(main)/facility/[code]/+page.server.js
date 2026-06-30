@@ -5,7 +5,7 @@ import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
 import facilityCardCodes from '$lib/server/og/facility-card-codes.json';
 
-const DEFAULT_RANGE_DAYS = 7;
+const DEFAULT_RANGE_DAYS = 3;
 
 const SITE = 'https://openelectricity.org.au';
 
