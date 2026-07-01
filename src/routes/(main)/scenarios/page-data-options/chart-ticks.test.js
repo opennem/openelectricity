@@ -29,19 +29,19 @@ describe('chartXHighlightTicks', () => {
 	for (const [model, expectedYear] of Object.entries(expectedFyYears)) {
 		it(`${model} highlight tick includes Jan 1 ${expectedYear}`, () => {
 			const ticks = chartXHighlightTicks[model];
-			const match = ticks.find((d) => d.getFullYear() === expectedYear);
+			const match = /** @type {Date} */ (ticks.find((d) => d.getFullYear() === expectedYear));
 			expect(match).toBeInstanceOf(Date);
 			expect(match.getMonth()).toBe(0);
 			expect(match.getDate()).toBe(1);
 		});
 	}
 
-	it('2026 ISP draft has highlight tick at FY24/25 for last historical data', () => {
-		const ticks = chartXHighlightTicks[AEMO_2026_ISP_DRAFT];
-		expect(ticks).toHaveLength(2);
-		const fy2425 = ticks.find((d) => d.getFullYear() === 2025);
-		expect(fy2425).toBeInstanceOf(Date);
-		expect(fy2425.getMonth()).toBe(0);
-		expect(fy2425.getDate()).toBe(1);
+	it('2026 ISP final/draft mark only the FY27 projection start (no FY25 history-end line)', () => {
+		for (const model of [AEMO_2026_ISP_FINAL, AEMO_2026_ISP_DRAFT]) {
+			const ticks = chartXHighlightTicks[model];
+			expect(ticks).toHaveLength(1);
+			expect(ticks[0].getFullYear()).toBe(2027);
+			expect(ticks.find((d) => d.getFullYear() === 2025)).toBeUndefined();
+		}
 	});
 });

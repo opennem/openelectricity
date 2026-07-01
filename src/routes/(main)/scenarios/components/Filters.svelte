@@ -12,7 +12,6 @@
 	import Modal from '$lib/components/Modal.svelte';
 	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
 
-
 	import { formatFyTickX } from '$lib/utils/formatters';
 
 	import { viewSectionOptions as _viewSectionOptions } from '../page-data-options/view-sections';
@@ -23,7 +22,11 @@
 	import { modelOptions, modelScenarioPathwayOptions } from '../page-data-options/models';
 	import { groupOptions as groupTechnologyOptions } from '../page-data-options/groups-technology';
 	import { groupOptions as groupScenarioOptions } from '../page-data-options/groups-scenario';
-	import { chartXTicks, chartXHighlightTicks, chartXMobileHiddenTicks } from '../page-data-options/chart-ticks';
+	import {
+		chartXTicks,
+		chartXHighlightTicks,
+		chartXMobileHiddenTicks
+	} from '../page-data-options/chart-ticks';
 	import {
 		planOptions,
 		getScenarioOptions,
@@ -79,9 +82,7 @@
 
 		$multiSelectionData = defaultModel.scenarios
 			.map((s) =>
-				modelScenarioPathwayOptions.find(
-					(m) => m.id === `${s.id}-${defaultModel.defaultPathway}`
-				)
+				modelScenarioPathwayOptions.find((m) => m.id === `${s.id}-${defaultModel.defaultPathway}`)
 			)
 			.filter(Boolean);
 
@@ -105,13 +106,10 @@
 				const allTicks = chartXTicks[modelOptions[0].value];
 				const highlightTicks = chartXHighlightTicks[modelOptions[0].value] || [];
 
-				// Only hide projection start labels (highlight ticks after the first one);
-				// keep the first highlight tick (history end, e.g. FY25)
-				const projectionStartTicks = highlightTicks.slice(1);
-				const hideSet = new Set(projectionStartTicks.map((/** @type {Date} */ t) => +t));
-
-				chart.xGridlineTicks = allTicks.filter((/** @type {Date} */ t) => !hideSet.has(+t));
-				chart.xTicks = allTicks.filter((/** @type {Date} */ t) => !hideSet.has(+t));
+				// Each ISP model has a single projection-start highlight (e.g. FY27) that
+				// doubles as a labelled axis tick, so gridlines and labels use the full set.
+				chart.xGridlineTicks = allTicks;
+				chart.xTicks = allTicks;
 				chart.xHighlightTicks = highlightTicks;
 				chart.xMobileHiddenTicks = chartXMobileHiddenTicks[modelOptions[0].value] || [];
 			} else {
@@ -169,7 +167,6 @@
 	let scenarioOptions = $derived(getScenarioOptions(selectedModel));
 	let pathwayOptions = $derived(getPathwayOptions(selectedModel));
 
-
 	/**
 	 * Handle plan (ISP model) selection — resets scenario and pathway to defaults
 	 * @param {{label: string, value: string | number | null | undefined}} option
@@ -200,7 +197,7 @@
 		};
 	}
 
-/**
+	/**
 	 * Handle single pathway selection
 	 * @param {{label: string, value: string | number | null | undefined}} option
 	 */
@@ -210,7 +207,6 @@
 			pathway: /** @type {string} */ (option.value)
 		};
 	}
-
 </script>
 
 {#if showMobileFilterOptions}
@@ -317,15 +313,23 @@
 				selected={$selectedViewSection}
 				paddingX="px-4"
 				paddingY="py-3"
-				onchange={(option) => handleDisplayViewChange($selectedViewSection, /** @type {ScenarioViewSection} */ (option.value))}
+				onchange={(option) =>
+					handleDisplayViewChange(
+						$selectedViewSection,
+						/** @type {ScenarioViewSection} */ (option.value)
+					)}
 			/>
 		</div>
 
 		<div class="hidden sm:block">
 			<Switch
-				buttons={/** @type {any} */ (viewSectionOptions)}
+				buttons={viewSectionOptions}
 				selected={$selectedViewSection}
-				onchange={(option) => handleDisplayViewChange($selectedViewSection, /** @type {ScenarioViewSection} */ (option.value))}
+				onchange={(option) =>
+					handleDisplayViewChange(
+						$selectedViewSection,
+						/** @type {ScenarioViewSection} */ (option.value)
+					)}
 				class="justify-center"
 			/>
 		</div>
@@ -367,7 +371,11 @@
 				</div>
 			{/if}
 
-			<div class="flex items-center whitespace-nowrap {$isSingleSelectionMode ? 'border-l border-warm-grey pl-4 ml-4' : ''}">
+			<div
+				class="flex items-center whitespace-nowrap {$isSingleSelectionMode
+					? 'border-l border-warm-grey pl-4 ml-4'
+					: ''}"
+			>
 				{#if $isTechnologyViewSection || $isScenarioViewSection}
 					<FormSelect
 						options={regionOptions}
@@ -391,6 +399,10 @@
 	</div>
 
 	<div class="flex items-center border-l border-warm-grey pl-4 ml-4">
-		<OptionsMenu {isFullscreen} onfullscreenchange={() => onfullscreenchange?.()} onshowshortcuts={() => onshowshortcuts?.()} />
+		<OptionsMenu
+			{isFullscreen}
+			onfullscreenchange={() => onfullscreenchange?.()}
+			onshowshortcuts={() => onshowshortcuts?.()}
+		/>
 	</div>
 </div>
