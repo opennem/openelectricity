@@ -4,6 +4,11 @@ import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { transformOeToStatsData } from './transform';
 import { fetchLegacyOpenNemFueltechStats } from './fetch-legacy-energy.server';
 import { FOSSIL_FUEL_TECHS } from './calculate-renewables';
+import {
+	findLatestLastDate,
+	lastCompleteMonthIso,
+	trimStatsDataToLastDate
+} from './renewables-month.js';
 
 const oe = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -13,58 +18,6 @@ const oe = new OpenElectricityClient({
 // Full available history in a single request — the OE API no longer caps the
 // 1M-interval range (previously 10000 days), and NEM data starts Jan 1999.
 const RENEWABLES_DATE_START = '1999-01-01';
-
-/**
- * Latest `history.last` across a set of StatsData (ISO-8601 sorts
- * lexicographically so direct comparison works for monthly timestamps).
- *
- * @param {StatsData[]} stats
- * @returns {string | null}
- */
-function findLatestLastDate(stats) {
-	let latest = null;
-	for (const d of stats) {
-		const last = d.history?.last;
-		if (last && (!latest || last > latest)) latest = last;
-	}
-	return latest;
-}
-
-/**
- * Trim every StatsData record so its `history.last` does not extend past
- * `targetLast`. Drops any trailing months from `history.data` accordingly.
- * Records that already end on or before `targetLast` are returned as-is.
- *
- * @param {StatsData[]} stats
- * @param {string} targetLast — ISO month timestamp (e.g. '2026-03-01T00:00:00+10:00')
- * @returns {StatsData[]}
- */
-function trimStatsDataToLastDate(stats, targetLast) {
-	return stats.map((d) => {
-		if (!d.history?.last || d.history.last <= targetLast) return d;
-		const dropCount = monthsBetween(targetLast, d.history.last);
-		if (dropCount <= 0) return d;
-		return {
-			...d,
-			history: {
-				...d.history,
-				last: targetLast,
-				data: d.history.data.slice(0, d.history.data.length - dropCount)
-			}
-		};
-	});
-}
-
-/**
- * @param {string} earlierIso
- * @param {string} laterIso
- * @returns {number}
- */
-function monthsBetween(earlierIso, laterIso) {
-	const [ey, em] = earlierIso.split('T')[0].split('-').map(Number);
-	const [ly, lm] = laterIso.split('T')[0].split('-').map(Number);
-	return ly * 12 + (lm - 1) - (ey * 12 + (em - 1));
-}
 
 /**
  * Fetch all data sources required by the renewables calculator (fossil-fuels-
@@ -193,27 +146,6 @@ export async function fetchRenewablesInput(fetchFn) {
 		const message = e instanceof Error ? e.message : String(e);
 		return { data: null, error: `Couldn't load renewables data: ${message}`, rawPayloads: null };
 	}
-}
-
-/**
- * First day of the previous calendar month as an ISO month timestamp matching
- * the pipeline's `+10:00` convention. Used to drop the in-progress current month
- * the OE 1M endpoint returns (a partial month would otherwise drag the chart's
- * trailing 12-month rolling sum down into a visible end-of-line dip).
- *
- * @returns {string}
- */
-function lastCompleteMonthIso() {
-	const now = new Date();
-	let year = now.getUTCFullYear();
-	// getUTCMonth() is the 0-based current month — i.e. the 1-based *previous*
-	// month — so January (0) rolls back to December of the prior year.
-	let month = now.getUTCMonth();
-	if (month === 0) {
-		year -= 1;
-		month = 12;
-	}
-	return `${year}-${String(month).padStart(2, '0')}-01T00:00:00+10:00`;
 }
 
 /**
