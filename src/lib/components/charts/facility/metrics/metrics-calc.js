@@ -101,28 +101,28 @@ export function avgPriceReceived(marketValue, energy) {
 }
 
 /**
- * Peak instantaneous output (MW) across the range.
- *
- * Each row's positive-series total is taken; when `intervalHours` > 0 the row
- * total is treated as energy (MWh) and divided back to power (MW). Pass 0 for
- * native power data.
+ * Peak bucket across the range — the row with the highest positive-series total,
+ * tagged with its timestamp so callers can label the period and annotate the
+ * chart. When `intervalHours` > 0 the row total is treated as energy (MWh) and
+ * divided back to power (MW); pass 0 to keep the raw energy.
  * @param {Array<Record<string, any>>} rows
  * @param {string[]} seriesNames
  * @param {number} [intervalHours=0]
- * @returns {number}
+ * @returns {{ value: number, time: number, date: any } | null}
  */
-export function peakOutput(rows, seriesNames, intervalHours = 0) {
-	let max = 0;
+export function peakBucket(rows, seriesNames, intervalHours = 0) {
+	/** @type {{ value: number, time: number, date: any } | null} */
+	let peak = null;
 	for (const row of rows) {
 		let rowTotal = 0;
 		for (const name of seriesNames) {
 			const val = row[name];
 			if (typeof val === 'number' && val > 0) rowTotal += val;
 		}
-		if (intervalHours > 0) rowTotal /= intervalHours;
-		if (rowTotal > max) max = rowTotal;
+		const value = intervalHours > 0 ? rowTotal / intervalHours : rowTotal;
+		if (!peak || value > peak.value) peak = { value, time: row.time, date: row.date };
 	}
-	return max;
+	return peak;
 }
 
 /**

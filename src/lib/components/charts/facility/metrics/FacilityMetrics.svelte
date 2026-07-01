@@ -27,21 +27,30 @@
 		isSubDailyData,
 		capacityFactor,
 		avgPriceReceived,
-		peakOutput,
+		peakBucket,
 		runningHours,
 		startCount,
 		dcAcRatio,
 		computeUnitAvailability
 	} from './metrics-calc.js';
 	import { METRICS, resolveMetricKeys } from './metric-definitions.js';
+	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
 
 	/**
+	 * `onpeakhighlight` is called with the peak bucket's timestamp (ms) when the
+	 * Peak Output / Peak Energy cell is hovered, and `undefined` on leave — the
+	 * page wires it to the shared chart hover time so the peak period is annotated
+	 * on the chart. `displayInterval` is used to label the peak period (matching
+	 * the chart's own tooltip date).
 	 * @type {{
 	 *   facility: any,
 	 *   sanityFacility?: any | null,
 	 *   summaryData?: { mvData: any[], energyData: any[], mvSeriesNames: string[], energySeriesNames: string[] } | null,
 	 *   emissionsData?: { rows: any[], seriesNames: string[] } | null,
-	 *   intervalData?: { data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null
+	 *   intervalData?: { data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null,
+	 *   timeZone?: string,
+	 *   displayInterval?: string,
+	 *   onpeakhighlight?: (time: number | undefined) => void
 	 * }}
 	 */
 	let {
@@ -49,10 +58,15 @@
 		sanityFacility = null,
 		summaryData = null,
 		emissionsData = null,
-		intervalData = null
+		intervalData = null,
+		timeZone = '+10:00',
+		displayInterval = '30m',
+		onpeakhighlight
 	} = $props();
 
 	const fmtMW = getNumberFormat(1);
+
+	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
 
 	let group = $derived(getPrimaryFuelTechGroup(facility?.units ?? []));
 
@@ -134,6 +148,21 @@
 		const hasSubDaily = iData.length > 1 && isSubDailyData(iData);
 		const intervalMinutes = hasSubDaily ? getIntervalHours(iData) * 60 : 0;
 
+		// Peak bucket: when the energy series is sub-daily (power mode) report the
+		// peak instantaneous power (MW, energy ÷ interval); otherwise the bucket is
+		// already energy, so report the highest-energy period raw (MWh).
+		const peakIsPower = isSubDailyData(eData);
+		const pk = peakBucket(eData, eNames, peakIsPower ? getIntervalHours(eData) : 0);
+		const peak =
+			pk && pk.value > 0
+				? {
+						value: pk.value,
+						time: pk.time,
+						isPower: peakIsPower,
+						periodLabel: formatTooltipDateTime(pk.date, ianaTimeZone, displayInterval)
+					}
+				: null;
+
 		return {
 			hasSummary,
 			hasEmissions,
@@ -143,7 +172,7 @@
 			totalMV,
 			capacityFactor: capacityFactor(generationEnergy, totalCapacity, hours),
 			avgPrice: avgPriceReceived(totalMV, generationEnergy),
-			peakOutput: peakOutput(eData, eNames, getIntervalHours(eData)),
+			peak,
 			totalEmissions,
 			emissionsIntensity,
 			runningHours: hasSubDaily ? runningHours(iData, iNames, intervalMinutes) : 0,
@@ -343,9 +372,17 @@
 		<div class="grid grid-cols-2 sm:grid-cols-3 -mr-px -mb-px">
 			{#each metricKeys as key (key)}
 				{@const result = METRICS[key].compute(ctx)}
-				<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
+				{@const interactive = result.highlightTime != null}
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<div
+					class="border-r border-b border-mid-warm-grey/40 px-6 py-4 {interactive
+						? 'cursor-help transition-colors hover:bg-light-warm-grey/40'
+						: ''}"
+					onmouseenter={interactive ? () => onpeakhighlight?.(result.highlightTime) : undefined}
+					onmouseleave={interactive ? () => onpeakhighlight?.(undefined) : undefined}
+				>
 					<MetricCard
-						label={METRICS[key].label}
+						label={result.label ?? METRICS[key].label}
 						value={result.value}
 						unit={result.unit ?? ''}
 						subtitle={result.subtitle ?? ''}

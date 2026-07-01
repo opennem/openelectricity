@@ -32,8 +32,10 @@ function formatRevenue(value) {
 /**
  * @typedef {Object} MetricResult
  * @property {string} value
+ * @property {string} [label] - Overrides the descriptor's default label (e.g. "Peak Output" ↔ "Peak Energy").
  * @property {string} [unit]
  * @property {string} [subtitle]
+ * @property {number} [highlightTime] - When set, hovering/focusing the cell annotates the chart at this time (ms).
  */
 
 /**
@@ -46,7 +48,7 @@ function formatRevenue(value) {
  * @property {number} totalMV
  * @property {number} capacityFactor
  * @property {number} avgPrice
- * @property {number} peakOutput
+ * @property {{ value: number, time: number, isPower: boolean, periodLabel: string } | null} peak
  * @property {number} totalEmissions
  * @property {number | null} emissionsIntensity
  * @property {number} runningHours
@@ -95,11 +97,21 @@ export const METRICS = {
 				: { value: '--' }
 	},
 	peak: {
+		// Power-mode label; energy mode overrides it to "Peak Energy" below. Each
+		// shows the period of the peak as a subtitle and annotates the chart on hover.
 		label: 'Peak Output',
-		compute: (c) =>
-			c.hasSummary
-				? { value: `${fmt0.format(c.peakOutput)} / ${fmt0.format(c.totalCapacity)}`, unit: 'MW' }
-				: { value: '--' }
+		compute: (c) => {
+			const p = c.peak;
+			if (!p) return { value: '--' };
+			const base = { subtitle: p.periodLabel, highlightTime: p.time };
+			return p.isPower
+				? {
+						...base,
+						value: `${fmt0.format(p.value)} / ${fmt0.format(c.totalCapacity)}`,
+						unit: 'MW'
+					}
+				: { ...base, label: 'Peak Energy', value: fmt0.format(p.value), unit: 'MWh' };
+		}
 	},
 	runningHours: {
 		label: 'Running Hours',

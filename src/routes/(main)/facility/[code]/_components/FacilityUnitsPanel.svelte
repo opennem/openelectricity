@@ -1,7 +1,7 @@
 <script>
 	import { LayoutList, Grid2x2 } from '@lucide/svelte';
 	import { FacilityUnitsTable } from '$lib/components/charts/facility';
-	import FacilityUnitCards from './FacilityUnitCards.svelte';
+	import FacilityUnitCards from '../../../facilities/_components/FacilityUnitCards.svelte';
 	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 
 	/**
