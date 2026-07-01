@@ -2,26 +2,13 @@
  * Fuel tech group detection for facility detail views.
  *
  * Classifies a facility into one of six groups based on the dominant
- * fuel technology by registered capacity.
+ * fuel technology by registered capacity. The single-code classifier lives in
+ * `$lib/fuel-tech-groups/facility-group.js` so per-unit views can share it.
  */
 
-/** @typedef {'wind' | 'solar' | 'battery' | 'coal' | 'gas' | 'hydro' | 'other'} FuelTechGroup */
+import { fuelTechToGroup } from '$lib/fuel-tech-groups/facility-group.js';
 
-/**
- * Map a fuel tech code to its broad group.
- * @param {string} ftCode
- * @returns {FuelTechGroup}
- */
-function toGroup(ftCode) {
-	if (!ftCode) return 'other';
-	if (ftCode === 'wind' || ftCode === 'wind_offshore') return 'wind';
-	if (ftCode.startsWith('solar')) return 'solar';
-	if (ftCode === 'battery' || ftCode === 'battery_charging' || ftCode === 'battery_discharging') return 'battery';
-	if (ftCode.startsWith('coal')) return 'coal';
-	if (ftCode.startsWith('gas') || ftCode === 'distillate') return 'gas';
-	if (ftCode === 'hydro' || ftCode === 'pumps') return 'hydro';
-	return 'other';
-}
+/** @typedef {import('$lib/fuel-tech-groups/facility-group.js').FuelTechGroup} FuelTechGroup */
 
 /**
  * Determine the primary fuel tech group for a facility based on
@@ -37,8 +24,9 @@ export function getPrimaryFuelTechGroup(units) {
 	const capacityByGroup = {};
 
 	for (const unit of units) {
-		const group = toGroup(unit.fueltech_id ?? '');
-		capacityByGroup[group] = (capacityByGroup[group] || 0) + (Number(unit.capacity_registered) || 0);
+		const group = fuelTechToGroup(unit.fueltech_id ?? '');
+		capacityByGroup[group] =
+			(capacityByGroup[group] || 0) + (Number(unit.capacity_registered) || 0);
 	}
 
 	let maxGroup = /** @type {FuelTechGroup} */ ('other');

@@ -646,7 +646,11 @@
 				<!-- Sidebar — fills the remaining width; sticky below the header. -->
 				<div class="min-w-0 flex-1 space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]">
 					<FacilityInfoPanel sanityFacility={data.sanityFacility} />
-					<FacilityUnitsPanel facility={selectedFacility} />
+					<FacilityUnitsPanel
+						facility={selectedFacility}
+						sanityFacility={data.sanityFacility}
+						timeZone={data.timeZone}
+					/>
 					<FacilityMediaPanel facility={selectedFacility} sanityFacility={data.sanityFacility} />
 				</div>
 			</div>

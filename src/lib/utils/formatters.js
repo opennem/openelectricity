@@ -9,6 +9,20 @@ export const getNumberFormat = (maximumFractionDigits = 0, useGrouping = true) =
 		useGrouping
 	});
 
+const capacityFmt0 = getNumberFormat(0);
+const capacityFmt1 = getNumberFormat(1);
+
+/**
+ * Format a capacity value (MW / MWh): one decimal below 10, whole numbers at or
+ * above. Shared by the facility unit list, table and detail views.
+ * @param {number | null | undefined} v
+ * @returns {string}
+ */
+export function formatCapacity(v) {
+	if (v == null) return '-';
+	return v < 10 ? capacityFmt1.format(v) : capacityFmt0.format(v);
+}
+
 export const formatFyTickX = (/** @type {Date | number} */ d) => {
 	const year = parseInt(format(d, 'yyyy'), 10);
 	const curr = String(year).slice(-2);
