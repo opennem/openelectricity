@@ -36,6 +36,7 @@
 
 	import FacilityInfoPanel from './_components/FacilityInfoPanel.svelte';
 	import FacilityUnitsPanel from './_components/FacilityUnitsPanel.svelte';
+	import FacilityMediaPanel from './_components/FacilityMediaPanel.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { createViewportSync } from './_utils/viewport-sync.js';
 	import {
@@ -644,8 +645,9 @@
 
 				<!-- Sidebar — fills the remaining width; sticky below the header. -->
 				<div class="min-w-0 flex-1 space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]">
-					<FacilityInfoPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
+					<FacilityInfoPanel sanityFacility={data.sanityFacility} />
 					<FacilityUnitsPanel facility={selectedFacility} />
+					<FacilityMediaPanel facility={selectedFacility} sanityFacility={data.sanityFacility} />
 				</div>
 			</div>
 
