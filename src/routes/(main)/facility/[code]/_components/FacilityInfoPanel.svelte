@@ -25,6 +25,8 @@
 		location && typeof location.lat === 'number' && typeof location.lng === 'number'
 	);
 
+	let osmWayId = $derived(sanityFacility?.osm_way_id ?? null);
+
 	let primaryFuelTechColor = $derived.by(() => {
 		if (!facility?.units?.length) return '#ffffff';
 		/** @type {Record<string, number>} */
@@ -103,7 +105,12 @@
 	{#if hasLocation}
 		<div class="h-[180px]">
 			{#await import('./FacilityMiniMap.svelte') then { default: FacilityMiniMap }}
-				<FacilityMiniMap lat={location.lat} lng={location.lng} color={primaryFuelTechColor} />
+				<FacilityMiniMap
+					lat={location.lat}
+					lng={location.lng}
+					color={primaryFuelTechColor}
+					{osmWayId}
+				/>
 			{/await}
 		</div>
 	{/if}

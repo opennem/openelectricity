@@ -51,6 +51,36 @@ export function isOsmCached(osmId) {
 }
 
 /**
+ * Compute a bounding box `[[minLng, minLat], [maxLng, maxLat]]` from a GeoJSON
+ * Polygon/MultiPolygon feature — used to fit a map viewport to the shape.
+ * @param {GeoJSON.Feature} feature
+ * @returns {[[number, number], [number, number]]}
+ */
+export function featureBounds(feature) {
+	const geom = feature.geometry;
+	const coords =
+		geom.type === 'MultiPolygon'
+			? /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(2))
+			: /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(1));
+
+	let minLng = Infinity;
+	let maxLng = -Infinity;
+	let minLat = Infinity;
+	let maxLat = -Infinity;
+	for (const [lng, lat] of coords) {
+		if (lng < minLng) minLng = lng;
+		if (lng > maxLng) maxLng = lng;
+		if (lat < minLat) minLat = lat;
+		if (lat > maxLat) maxLat = lat;
+	}
+
+	return [
+		[minLng, minLat],
+		[maxLng, maxLat]
+	];
+}
+
+/**
  * Fetch polygon geometry for an OSM way/relation ID from the Overpass API.
  * Results are cached in localStorage for 30 days.
  *
@@ -171,9 +201,10 @@ function relationToFeature(relation) {
 	for (const member of members) {
 		if (member.type !== 'way' || !member.geometry?.length) continue;
 
-		const coords = member.geometry.map(
-			(/** @type {{ lon: number, lat: number }} */ n) => [n.lon, n.lat]
-		);
+		const coords = member.geometry.map((/** @type {{ lon: number, lat: number }} */ n) => [
+			n.lon,
+			n.lat
+		]);
 
 		if (member.role === 'inner') {
 			innerSegments.push(coords);

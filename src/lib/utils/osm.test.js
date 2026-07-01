@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { featureBounds } from './osm.js';
 
 // ============================================
 // Test Helpers
@@ -147,10 +148,7 @@ describe('fetchOsmPolygon', () => {
 		});
 
 		it('does not double-close an already-closed ring', async () => {
-			const closedGeom = [
-				...SQUARE_GEOM,
-				{ lon: SQUARE_GEOM[0].lon, lat: SQUARE_GEOM[0].lat }
-			];
+			const closedGeom = [...SQUARE_GEOM, { lon: SQUARE_GEOM[0].lon, lat: SQUARE_GEOM[0].lat }];
 			stubFetchSuccess(buildWayResponse(100, closedGeom));
 
 			const result = await fetchOsmPolygon(100);
@@ -652,5 +650,90 @@ describe('fetchOsmPolygon', () => {
 			expect(second).not.toBeNull();
 			expect(mock).toHaveBeenCalledTimes(2);
 		});
+	});
+});
+
+describe('featureBounds', () => {
+	/**
+	 * @param {number[][][]} coordinates
+	 * @returns {GeoJSON.Feature}
+	 */
+	const polygon = (coordinates) => ({
+		type: 'Feature',
+		properties: {},
+		geometry: { type: 'Polygon', coordinates }
+	});
+
+	it('computes [[minLng, minLat], [maxLng, maxLat]] for a Polygon', () => {
+		const feature = polygon([
+			[
+				[150.0, -33.0],
+				[150.1, -33.0],
+				[150.1, -33.1],
+				[150.0, -33.1],
+				[150.0, -33.0]
+			]
+		]);
+
+		expect(featureBounds(feature)).toEqual([
+			[150.0, -33.1],
+			[150.1, -33.0]
+		]);
+	});
+
+	it('ignores inner rings that stay within the outer ring', () => {
+		const feature = polygon([
+			[
+				[150.0, -33.0],
+				[150.2, -33.0],
+				[150.2, -33.2],
+				[150.0, -33.2],
+				[150.0, -33.0]
+			],
+			[
+				[150.05, -33.05],
+				[150.15, -33.05],
+				[150.15, -33.15],
+				[150.05, -33.05]
+			]
+		]);
+
+		expect(featureBounds(feature)).toEqual([
+			[150.0, -33.2],
+			[150.2, -33.0]
+		]);
+	});
+
+	it('spans every polygon of a MultiPolygon', () => {
+		const feature = {
+			type: 'Feature',
+			properties: {},
+			geometry: {
+				type: 'MultiPolygon',
+				coordinates: [
+					[
+						[
+							[150.0, -33.0],
+							[150.1, -33.0],
+							[150.1, -33.1],
+							[150.0, -33.0]
+						]
+					],
+					[
+						[
+							[151.0, -34.0],
+							[151.1, -34.0],
+							[151.1, -34.1],
+							[151.0, -34.0]
+						]
+					]
+				]
+			}
+		};
+
+		expect(featureBounds(/** @type {any} */ (feature))).toEqual([
+			[150.0, -34.1],
+			[151.1, -33.0]
+		]);
 	});
 });

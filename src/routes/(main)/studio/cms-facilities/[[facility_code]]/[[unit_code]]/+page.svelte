@@ -16,7 +16,7 @@
 	import FacilityDetail from './_components/FacilityDetail.svelte';
 	import LoginGate from '$lib/components/auth/LoginGate.svelte';
 	import { getClerkState } from '$lib/auth/clerk.svelte.js';
-	import { fetchOsmPolygon, isOsmCached } from './_utils/osm.js';
+	import { fetchOsmPolygon, isOsmCached, featureBounds } from '$lib/utils/osm.js';
 
 	const clerkState = getClerkState();
 
@@ -299,35 +299,6 @@
 				})
 			: emptyFeatureCollection
 	);
-
-	/**
-	 * Compute a bounding box from a GeoJSON polygon feature.
-	 * @param {GeoJSON.Feature} feature
-	 * @returns {[[number, number], [number, number]]}
-	 */
-	function featureBounds(feature) {
-		const geom = feature.geometry;
-		const coords =
-			geom.type === 'MultiPolygon'
-				? /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(2))
-				: /** @type {number[][]} */ (/** @type {any} */ (geom).coordinates.flat(1));
-
-		let minLng = Infinity;
-		let maxLng = -Infinity;
-		let minLat = Infinity;
-		let maxLat = -Infinity;
-		for (const [lng, lat] of coords) {
-			if (lng < minLng) minLng = lng;
-			if (lng > maxLng) maxLng = lng;
-			if (lat < minLat) minLat = lat;
-			if (lat > maxLat) maxLat = lat;
-		}
-
-		return [
-			[minLng, minLat],
-			[maxLng, maxLat]
-		];
-	}
 
 	/**
 	 * Zoom the map to a facility — prefers cached OSM polygon bounds, falls back to point.

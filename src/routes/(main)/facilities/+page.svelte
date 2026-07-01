@@ -1221,6 +1221,7 @@
 								facilities={filteredWithLocation}
 								{hoveredFacility}
 								selectedFacilityCode={selectedFacility?.code ?? null}
+								osmWayId={selectedProfile?.osm_way_id ?? null}
 								{selectedView}
 								cardCodes={cardCodeSet}
 								clustering={mapClustering}

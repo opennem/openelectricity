@@ -11,6 +11,8 @@
 		FillLayer
 	} from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { fetchOsmPolygon } from '$lib/utils/osm.js';
+	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
 	import UnitGroup from './_components/UnitGroup.svelte';
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import FacilityCardImage from './_components/FacilityCardImage.svelte';
@@ -27,6 +29,7 @@
 	 *   facilities: any[],
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
+	 *   osmWayId?: string | number | null,
 	 *   selectedView?: 'timeline' | 'list' | 'card' | 'map',
 	 *   cardCodes?: Set<string>,
 	 *   clustering?: boolean,
@@ -50,6 +53,7 @@
 		facilities = [],
 		hoveredFacility = null,
 		selectedFacilityCode = null,
+		osmWayId = null,
 		selectedView = 'timeline',
 		cardCodes = new Set(),
 		clustering = false,
@@ -315,13 +319,15 @@
 		return facilitiesMap.has(hoveredFacility.code) ? hoveredFacility : null;
 	});
 
-	// Show popup for the hovered facility (from list or map) — but never for the
-	// selected facility: while one is selected we only highlight its marker (and dim
-	// the rest), since the detail panel already shows everything the popup would.
-	let popupFacility = $derived.by(() => {
-		const f = validatedHoveredFacility || mapHoveredFacility;
-		return !f || f.code === selectedFacilityCode ? null : f;
-	});
+	// A facility is selected → isolate it: show only its marker + footprint and hide
+	// the rest (other markers, clusters, hover popup). One flag drives them all.
+	let isFacilitySelected = $derived(!!selectedFacilityCode);
+
+	// Popup follows hover — but never while a facility is selected (the detail panel
+	// already carries everything the popup would, and other markers are hidden).
+	let popupFacility = $derived(
+		isFacilitySelected ? null : validatedHoveredFacility || mapHoveredFacility || null
+	);
 
 	// Lazy popup content - only computed when popup is shown
 	let popupContent = $derived.by(() => {
@@ -343,6 +349,29 @@
 	// facility even while one is selected.
 	let highlightedFacilityCode = $derived(
 		validatedHoveredFacility?.code || mapHoveredFacilityCode || selectedFacilityCode
+	);
+
+	// OSM footprint of the selected facility, resolved from its Sanity osm_way_id
+	// (Overpass + localStorage cache, shared with the facility detail page).
+	/** @type {GeoJSON.Feature | null} */
+	let osmPolygon = $state(null);
+	// Tint the shape to match the selected facility's marker colour.
+	let selectedFacilityColor = $derived.by(() => {
+		if (!selectedFacilityCode) return '#ffffff';
+		const facility = facilitiesMap.get(selectedFacilityCode);
+		return facility ? getFacilityColor(facility) : '#ffffff';
+	});
+
+	// Shared "matches the selected facility" clause — factored here so both the
+	// clustered and non-clustered point layers compose one source of truth for the
+	// selection-isolation filter (null = no selection, i.e. show all).
+	let selectedCodeMatch = $derived(
+		selectedFacilityCode ? /** @type {any} */ (['==', ['get', 'code'], selectedFacilityCode]) : null
+	);
+	let unclusteredPointFilter = $derived(
+		selectedCodeMatch
+			? /** @type {any} */ (['all', ['!', ['has', 'point_count']], selectedCodeMatch])
+			: /** @type {any} */ (['!', ['has', 'point_count']])
 	);
 
 	// Paint + layout for the individual facility circles, shared by the clustered
@@ -576,6 +605,25 @@
 				});
 			}
 		}
+	});
+
+	// Resolve the selected facility's OSM footprint when the selection changes.
+	// Cleared when nothing is selected or the facility has no shape; the cancelled
+	// flag drops a fetch that resolves after the selection has moved on.
+	$effect(() => {
+		const id = osmWayId;
+		osmPolygon = null;
+		if (!id) return;
+
+		let cancelled = false;
+		fetchOsmPolygon(id).then((feature) => {
+			if (cancelled) return;
+			osmPolygon = feature;
+		});
+
+		return () => {
+			cancelled = true;
+		};
 	});
 
 	/**
@@ -877,6 +925,13 @@
 			/>
 		</GeoJSONSource>
 
+		<!-- Selected facility's OSM footprint (rendered beneath the markers) -->
+		<OsmFootprintLayer
+			feature={osmPolygon}
+			color={selectedFacilityColor}
+			id="facility-osm-polygon"
+		/>
+
 		{#if clustering}
 			<!-- Clustered GeoJSON source -->
 			<GeoJSONSource
@@ -895,6 +950,7 @@
 						'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 50, 35, 100, 45],
 						'circle-opacity': satelliteView ? 0.95 : 0.9
 					}}
+					layout={{ visibility: isFacilitySelected ? 'none' : 'visible' }}
 					onclick={handleClusterClick}
 					onmouseenter={() => {
 						if (mapInstance) mapInstance.getCanvas().style.cursor = 'pointer';
@@ -912,7 +968,7 @@
 						'text-field': '{point_count_abbreviated}',
 						'text-font': ['DM_Mono'],
 						'text-size': 14,
-						visibility: isZooming ? 'none' : 'visible'
+						visibility: isZooming || isFacilitySelected ? 'none' : 'visible'
 					}}
 					paint={{
 						'text-color': satelliteView ? '#1a1a1a' : '#ffffff'
@@ -922,7 +978,7 @@
 				<!-- Unclustered points (individual facilities) -->
 				<CircleLayer
 					id="facility-points-unclustered"
-					filter={['!', ['has', 'point_count']]}
+					filter={unclusteredPointFilter}
 					paint={facilityCirclePaint}
 					layout={facilityCircleLayout}
 					onmouseenter={handlePointMouseEnter}
@@ -936,6 +992,7 @@
 				<!-- All facility points rendered on WebGL canvas -->
 				<CircleLayer
 					id="facility-points"
+					filter={selectedCodeMatch}
 					paint={facilityCirclePaint}
 					layout={facilityCircleLayout}
 					onmouseenter={handlePointMouseEnter}

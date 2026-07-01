@@ -26,7 +26,7 @@ export const SANITY_FACILITY_UNITS_PROJECTION = `units[]->{
  * fetched separately from the OE API.
  */
 export const SANITY_FACILITY_PROFILE_PROJECTION = `{
-	_id, code, name, website, wikipedia, wikidata_id, location,
+	_id, code, name, website, wikipedia, wikidata_id, osm_way_id, location,
 	description, photos,
 	owners[]->{_id, name, legal_name, website},
 	${SANITY_FACILITY_UNITS_PROJECTION}
