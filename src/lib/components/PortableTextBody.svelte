@@ -1,5 +1,6 @@
 <script>
 	import { PortableText } from '@portabletext/svelte';
+	import { dedupePortableTextKeys } from '$lib/utils/portable-text.js';
 
 	/**
 	 * @type {{
@@ -8,10 +9,14 @@
 	 * }}
 	 */
 	let { value, class: className = '' } = $props();
+
+	// Guard against CMS content with duplicate block `_key`s, which crashes
+	// PortableText's keyed each (each_key_duplicate).
+	let blocks = $derived(dedupePortableTextKeys(value));
 </script>
 
 <div class="portable-text-body {className}">
-	<PortableText {value} />
+	<PortableText value={blocks} />
 </div>
 
 <style>

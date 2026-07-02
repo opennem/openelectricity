@@ -130,11 +130,13 @@
 
 <div class="flex flex-col w-full h-full min-h-0 overflow-hidden bg-white">
 	<PanelHeader class="gap-2">
+		<!-- 16px (text-base) below md — anything smaller makes iOS Safari zoom the
+		     page when the input gains focus. Desktop keeps the compact text-xs. -->
 		<input
 			bind:this={inputEl}
 			type="search"
 			placeholder="Search facilities"
-			class="flex-1 min-w-0 text-xs px-3 py-1.5 rounded-md bg-white border border-warm-grey focus:outline-none focus:ring-0 focus:border-red transition-colors placeholder:text-mid-grey"
+			class="flex-1 min-w-0 text-base md:text-xs px-3 py-1.5 rounded-md bg-white border border-warm-grey focus:outline-none focus:ring-0 focus:border-red transition-colors placeholder:text-mid-grey"
 			bind:value={query}
 			oninput={() => (activeIndex = 0)}
 			onkeydown={handleKeydown}

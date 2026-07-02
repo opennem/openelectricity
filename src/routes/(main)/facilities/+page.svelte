@@ -989,6 +989,14 @@
 	 */
 	function handleFacilitySelect(facility) {
 		if (facility) {
+			// Mobile skips the detail preview sheet — selecting a facility goes
+			// straight to its page (same destination as the sheet's View facility
+			// button). The sheet still renders for URL-driven selection, e.g. a
+			// shared /facilities?facility=… link opened on a phone.
+			if (!isDesktop) {
+				goto(`/facility/${facility.code}?fullscreen=true`);
+				return;
+			}
 			if (selectedFacility?.code === facility.code) {
 				// Toggle off - clear selection and close popups
 				closeFacilityDetail();

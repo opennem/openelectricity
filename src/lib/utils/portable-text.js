@@ -17,3 +17,36 @@ export function hasPortableTextContent(blocks) {
 		);
 	});
 }
+
+/**
+ * Ensure every top-level Portable Text block has a unique `_key`.
+ * `@portabletext/svelte` renders blocks in an each keyed by `_key`, so
+ * duplicate keys (seen in migration-generated facility descriptions) throw
+ * `each_key_duplicate` and crash the page. Later duplicates get a `-dup-<n>`
+ * suffix; input with unique keys is returned unchanged (same reference).
+ *
+ * @param {any} blocks
+ * @returns {any}
+ */
+export function dedupePortableTextKeys(blocks) {
+	if (!Array.isArray(blocks)) return blocks;
+	/** @type {Set<string>} */
+	const seen = new Set();
+	let changed = false;
+	const result = blocks.map((b) => {
+		const key = b?._key;
+		if (typeof key !== 'string' || !seen.has(key)) {
+			if (typeof key === 'string') seen.add(key);
+			return b;
+		}
+		let n = 0;
+		let next;
+		do {
+			next = `${key}-dup-${++n}`;
+		} while (seen.has(next));
+		seen.add(next);
+		changed = true;
+		return { ...b, _key: next };
+	});
+	return changed ? result : blocks;
+}

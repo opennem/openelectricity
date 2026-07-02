@@ -277,6 +277,16 @@
 	b {
 		font-weight: 600;
 	}
+
+	/* Mobile zoom lock. iOS Safari ignores maximum-scale/user-scalable in the
+	   viewport meta for pinch and double-tap gestures, so this is what actually
+	   blocks them there (the meta covers Android and installed PWAs). Map and
+	   chart gestures are JS-driven on their own elements and are unaffected. */
+	@media (max-width: 767px) {
+		html {
+			touch-action: pan-x pan-y;
+		}
+	}
 }
 
 @layer base {
