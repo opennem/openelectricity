@@ -6,8 +6,8 @@
 	 * A single, declarative renderer (not one component per fuel tech): the fuel
 	 * group selects an ordered list of metric descriptors from
 	 * `metric-definitions.js`, all reading a shared `ctx` built here from the
-	 * visible-range data. Group-specific "garnishes" (badges, DC:AC detail,
-	 * turbine/equipment specs, unit availability) hang off the same context.
+	 * visible-range data. Group-specific "garnishes" (badges, turbine/equipment
+	 * specs) hang off the same context.
 	 *
 	 * Data sources (all already produced by the facility data layer, all keyed on
 	 * the visible viewStart/viewEnd so the numbers track the chart):
@@ -29,8 +29,7 @@
 		peakBucket,
 		runningHours,
 		startCount,
-		dcAcRatio,
-		computeUnitAvailability
+		dcAcRatio
 	} from './metrics-calc.js';
 	import { METRICS, resolveMetricKeys } from './metric-definitions.js';
 	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
@@ -194,19 +193,6 @@
 		distillate: 'Distillate'
 	};
 
-	let coalType = $derived.by(() => {
-		if (group !== 'coal') return null;
-		let black = 0;
-		let brown = 0;
-		for (const unit of facility?.units ?? []) {
-			const cap = unit.capacity_registered || 0;
-			if (unit.fueltech_id === 'coal_black') black += cap;
-			else if (unit.fueltech_id === 'coal_brown') brown += cap;
-		}
-		if (black === 0 && brown === 0) return null;
-		return black >= brown ? 'black' : 'brown';
-	});
-
 	let gasSubtype = $derived.by(() => {
 		if (group !== 'gas') return null;
 		/** @type {Record<string, number>} */
@@ -326,13 +312,6 @@
 		return specs;
 	});
 
-	// ── Garnish: unit availability (coal) ─────────────────────────────
-	let unitAvailability = $derived.by(() => {
-		if (group !== 'coal' || !intervalData?.data?.length || !isSubDailyData(intervalData.data))
-			return null;
-		return computeUnitAvailability(intervalData.data, intervalData.seriesNames);
-	});
-
 	/**
 	 * Whether a badge background needs light text.
 	 * @param {string} colour
@@ -346,11 +325,12 @@
 		return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
 	}
 
-	// Coal/gas get a fuel badge in the grid (last cell, before fillers): coal type
-	// + expected closure, or gas subtype + peaker. Other groups have no badge cell.
+	// Last grid cell before the fillers: coal shows its expected closure as a
+	// plain metric (the units panel carries the fuel-tech tags); gas gets a
+	// subtype badge + peaker note. Other groups have no extra cell.
 	let badgeCell = $derived.by(() => {
-		if (group === 'coal' && coalType)
-			return { kind: /** @type {'coal'} */ ('coal'), coalType, closure: closureInfo };
+		if (group === 'coal' && closureInfo)
+			return { kind: /** @type {'coal'} */ ('coal'), closure: closureInfo };
 		if (group === 'gas' && gasSubtype)
 			return { kind: /** @type {'gas'} */ ('gas'), subtype: gasSubtype, isPeaker };
 		return null;
@@ -388,26 +368,13 @@
 			{/each}
 
 			{#if badgeCell}
-				<div class="flex items-center gap-3 border-r border-b border-mid-warm-grey/40 px-6 py-4">
-					{#if badgeCell.kind === 'coal'}
-						{@const colour =
-							badgeCell.coalType === 'black'
-								? fuelTechColourMap.coal_black
-								: fuelTechColourMap.coal_brown}
-						<span
-							class="inline-flex shrink-0 items-center rounded px-2 py-1 text-xs font-semibold"
-							style="background-color: {colour}; color: #fff"
-						>
-							{badgeCell.coalType === 'black' ? 'Black Coal' : 'Brown Coal'}
-						</span>
-						{#if badgeCell.closure}
-							<span class="flex flex-col leading-tight">
-								<span class="text-xxs text-mid-grey">Closure</span>
-								<span class="text-xs text-dark-grey">{formatClosureDate(badgeCell.closure)}</span>
-							</span>
-						{/if}
-					{:else}
-						{@const bg = fuelTechColourMap[badgeCell.subtype] ?? '#7F7F7F'}
+				{#if badgeCell.kind === 'coal'}
+					<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
+						<MetricCard label="Expected Closure" value={formatClosureDate(badgeCell.closure)} />
+					</div>
+				{:else}
+					{@const bg = fuelTechColourMap[badgeCell.subtype] ?? '#7F7F7F'}
+					<div class="flex items-center gap-3 border-r border-b border-mid-warm-grey/40 px-6 py-4">
 						<span
 							class="inline-flex shrink-0 items-center rounded px-2 py-1 text-xs font-semibold"
 							style="background-color: {bg}; color: {needsLightText(bg) ? '#fff' : '#1a1a1a'}"
@@ -415,8 +382,8 @@
 							{gasSubtypeLabels[badgeCell.subtype] ?? badgeCell.subtype}
 						</span>
 						{#if badgeCell.isPeaker}<span class="text-xs text-mid-grey">Peaker plant</span>{/if}
-					{/if}
-				</div>
+					</div>
+				{/if}
 			{/if}
 
 			{#each Array.from({ length: fillerCount }) as _filler, i (i)}
@@ -456,32 +423,6 @@
 						{#if spec.brand}<span class="font-semibold">{spec.brand}</span>{/if}
 						{#if spec.model}<span>{spec.model}</span>{/if}
 					</span>
-				{/each}
-			</div>
-		</div>
-	{/if}
-
-	{#if unitAvailability?.length}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey"
-				>Unit Availability</span
-			>
-			<div class="mt-1.5 flex flex-col gap-1.5">
-				{#each unitAvailability as ua (ua.seriesName)}
-					<div class="flex items-center gap-2">
-						<span class="text-xxs font-mono text-mid-grey w-20 truncate" title={ua.unit}
-							>{ua.unit}</span
-						>
-						<div class="flex-1 h-4 bg-light-warm-grey rounded-sm overflow-hidden">
-							<div
-								class="h-full rounded-sm transition-all"
-								style="width: {ua.availability}%; background-color: {fuelTechColourMap.coal}"
-							></div>
-						</div>
-						<span class="text-xxs font-mono tabular-nums text-dark-grey w-10 text-right">
-							{ua.availability.toFixed(0)}%
-						</span>
-					</div>
 				{/each}
 			</div>
 		</div>

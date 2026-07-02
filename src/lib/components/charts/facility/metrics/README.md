@@ -31,7 +31,9 @@ fuel tech. The flow is:
    once from the visible-range data using the pure helpers in `metrics-calc.js`.
 4. **Render.** Each id maps to a descriptor in `METRICS` whose `compute(ctx)` returns
    `{ value, unit?, subtitle? }` for a `MetricCard`. Group-specific **garnishes** (badges,
-   turbine/equipment specs, unit-availability bars) hang off the same context.
+   turbine/equipment specs) hang off the same context. Per-unit availability bars
+   (coal) live in the units panel on `/facility/[code]`, computed from the same
+   `intervalData` via `computeUnitAvailability`.
 
 ### Data sources
 
@@ -42,7 +44,7 @@ Everything is produced by the existing facility data layer, keyed on
 | ---------------- | ----------------------------------------------- | ----------------------------------------------------- |
 | `summaryData`    | `FacilityFinancialDataProvider` `onsummarydata` | energy, capacity factor, revenue, avg price, peak     |
 | `emissionsData`  | `FacilityEmissionsDataProvider` `onsummarydata` | CO₂ volume + intensity                                |
-| `intervalData`   | `FacilityChart` `onvisibledata`                 | running hours, starts, unit availability              |
+| `intervalData`   | `FacilityChart` `onvisibledata`                 | running hours, starts                                 |
 | `sanityFacility` | server load (Sanity CMS)                        | DC:AC, turbine/equipment specs, MLF, storage, closure |
 
 The metrics card is rendered above the chart, while the providers that feed it render
@@ -51,15 +53,15 @@ so the card fills in once the providers' fetch settles (showing `--` until then)
 
 ## Metric sets by fuel group
 
-| Group       | Metrics                                                                                                            | Garnishes                                                   |
-| ----------- | ------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| **coal**    | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price                                            | black/brown badge, expected closure, unit-availability bars |
-| **gas**     | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Running Hours, Start Count if peaker)_ | subtype badge (CCGT/OCGT/…), "Peaker plant"                 |
-| **wind**    | Capacity Factor, Total Energy, Avg Price, Revenue, Peak Output                                                     | turbine specs                                               |
-| **solar**   | Capacity Factor, Peak Output, Avg Price, Revenue _(+ DC:AC if known, with DC/AC capacities as its subtitle)_       | —                                                           |
-| **hydro**   | Capacity Factor, Total Energy, Running Hours, Avg Price, Revenue                                                   | pumped-hydro badge                                          |
-| **battery** | Net Revenue, Storage Duration, Round-trip Efficiency, Total Energy, Capacity Factor                                | equipment specs                                             |
-| **other**   | Capacity Factor, Total Energy, Revenue, Avg Price                                                                  | —                                                           |
+| Group       | Metrics                                                                                                            | Garnishes                                   |
+| ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| **coal**    | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Expected Closure if known)_            | —                                           |
+| **gas**     | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Running Hours, Start Count if peaker)_ | subtype badge (CCGT/OCGT/…), "Peaker plant" |
+| **wind**    | Capacity Factor, Total Energy, Avg Price, Revenue, Peak Output                                                     | turbine specs                               |
+| **solar**   | Capacity Factor, Peak Output, Avg Price, Revenue _(+ DC:AC if known, with DC/AC capacities as its subtitle)_       | —                                           |
+| **hydro**   | Capacity Factor, Total Energy, Running Hours, Avg Price, Revenue                                                   | pumped-hydro badge                          |
+| **battery** | Net Revenue, Storage Duration, Round-trip Efficiency, Total Energy, Capacity Factor                                | equipment specs                             |
+| **other**   | Capacity Factor, Total Energy, Revenue, Avg Price                                                                  | —                                           |
 
 **Why these?** Each group surfaces what's decision-relevant for that technology: fossil
 plants are judged on emissions and how hard they run; renewables on how much they

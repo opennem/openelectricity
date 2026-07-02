@@ -1,10 +1,10 @@
 <script>
 	/**
 	 * FacilityPanelFooter — pinned footer at the bottom of the facility detail
-	 * panel. Shows the facility owner name(s) and a View facility (beta) link to
-	 * the new /facility/{code} page.
+	 * panel. Shows the facility owner name(s) and a View facility detail link to
+	 * the /facility/{code} page.
 	 */
-	import { Building2 } from '@lucide/svelte';
+	import { ArrowRight, Building2 } from '@lucide/svelte';
 
 	/**
 	 * `buttonColour` (the facility's dominant fuel-tech colour) + `darkText` match
@@ -57,11 +57,12 @@
 		<a
 			href={`/facility/${facilityCode}?fullscreen=true`}
 			style="background-color: {buttonColour}"
-			class="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-md transition-opacity hover:opacity-90 no-underline hover:no-underline {darkText
+			class="group shrink-0 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all hover:opacity-90 hover:shadow no-underline hover:no-underline {darkText
 				? 'text-black'
 				: 'text-white'}"
 		>
-			View facility <span class="text-xxs opacity-60">(beta)</span>
+			View facility detail
+			<ArrowRight size={15} class="transition-transform group-hover:translate-x-0.5" />
 		</a>
 	{/if}
 </div>

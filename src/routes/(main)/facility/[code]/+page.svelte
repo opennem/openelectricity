@@ -68,11 +68,11 @@
 	let viewStart = $state(0);
 	let viewEnd = $state(0);
 
-	/** Visible-range data feeding the metrics section. summaryData (energy +
-	 *  market value) comes from the financial provider, emissionsData (reported
-	 *  tCO₂) from the emissions provider, intervalData (raw power) from the
-	 *  generation chart. All are keyed on viewStart/viewEnd so the metrics track
-	 *  the chart's date range. */
+	/** Visible-range data feeding the metrics section (and, for coal, the units
+	 *  panel's availability bars). summaryData (energy + market value) comes from
+	 *  the financial provider, emissionsData (reported tCO₂) from the emissions
+	 *  provider, intervalData (raw power) from the generation chart. All are keyed
+	 *  on viewStart/viewEnd so the numbers track the chart's date range. */
 	/** @type {{ mvData: any[], energyData: any[], mvSeriesNames: string[], energySeriesNames: string[] } | null} */
 	let summaryData = $state(null);
 	/** @type {{ rows: any[], seriesNames: string[] } | null} */
@@ -463,8 +463,8 @@
 								/>
 							</div>
 
-							<!-- Metrics + unit availability. Flush grid; the card supplies the
-							     outer border. Fed by the providers + generation chart below. -->
+							<!-- Metrics. Flush grid; the card supplies the outer border. Fed by
+							     the providers + generation chart below. -->
 							<div class="border-t border-mid-warm-grey/40">
 								<FacilityMetrics
 									facility={selectedFacility}
@@ -663,6 +663,7 @@
 						facility={selectedFacility}
 						sanityFacility={data.sanityFacility}
 						timeZone={data.timeZone}
+						{intervalData}
 					/>
 					<FacilityMediaPanel facility={selectedFacility} sanityFacility={data.sanityFacility} />
 				</div>
