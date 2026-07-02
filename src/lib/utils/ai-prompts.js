@@ -106,7 +106,11 @@ export function buildDatasetStats(facilities) {
 		const r = f.region?.name || 'Unknown';
 		regionCount[r] = (regionCount[r] || 0) + 1;
 	}
-	lines.push(`Regions: ${Object.entries(regionCount).map(([r, n]) => `${r}(${n})`).join(', ')}`);
+	lines.push(
+		`Regions: ${Object.entries(regionCount)
+			.map(([r, n]) => `${r}(${n})`)
+			.join(', ')}`
+	);
 
 	// Fuel tech groups
 	/** @type {Record<string, number>} */
@@ -115,7 +119,12 @@ export function buildDatasetStats(facilities) {
 		const g = facilityGroup(f);
 		groupCount[g] = (groupCount[g] || 0) + 1;
 	}
-	lines.push(`Types: ${Object.entries(groupCount).sort((a, b) => b[1] - a[1]).map(([g, n]) => `${g}(${n})`).join(', ')}`);
+	lines.push(
+		`Types: ${Object.entries(groupCount)
+			.sort((a, b) => b[1] - a[1])
+			.map(([g, n]) => `${g}(${n})`)
+			.join(', ')}`
+	);
 
 	// Statuses
 	/** @type {Record<string, number>} */
@@ -124,7 +133,11 @@ export function buildDatasetStats(facilities) {
 		const s = u.status || 'unknown';
 		statusCount[s] = (statusCount[s] || 0) + 1;
 	}
-	lines.push(`Statuses: ${Object.entries(statusCount).map(([s, n]) => `${s}(${n})`).join(', ')}`);
+	lines.push(
+		`Statuses: ${Object.entries(statusCount)
+			.map(([s, n]) => `${s}(${n})`)
+			.join(', ')}`
+	);
 
 	return lines.join('\n');
 }
@@ -138,7 +151,9 @@ export function buildDatasetStats(facilities) {
 export function buildQuerySystemPrompt(facilities, selectedFacility) {
 	const parts = [QUERY_SCHEMA_DESCRIPTION, '\n## Current dataset\n', buildDatasetStats(facilities)];
 	if (selectedFacility) {
-		parts.push(`\nCurrently selected facility: "${selectedFacility.name}" (${selectedFacility.code}) in ${selectedFacility.region?.name}`);
+		parts.push(
+			`\nCurrently selected facility: "${selectedFacility.name}" (${selectedFacility.code}) in ${selectedFacility.region?.name}`
+		);
 	}
 	return parts.join('\n');
 }
@@ -163,8 +178,10 @@ export function describeFilters(filter, search) {
 	if (filter.ownerName) parts.push(`owner contains "${filter.ownerName}"`);
 	if (filter.capacityMin != null) parts.push(`capacity >= ${filter.capacityMin} MW`);
 	if (filter.capacityMax != null) parts.push(`capacity <= ${filter.capacityMax} MW`);
-	if (filter.expectedClosureBefore) parts.push(`expected closure before ${filter.expectedClosureBefore}`);
-	if (filter.expectedClosureAfter) parts.push(`expected closure after ${filter.expectedClosureAfter}`);
+	if (filter.expectedClosureBefore)
+		parts.push(`expected closure before ${filter.expectedClosureBefore}`);
+	if (filter.expectedClosureAfter)
+		parts.push(`expected closure after ${filter.expectedClosureAfter}`);
 	if (filter.commencedBefore) parts.push(`commenced before ${filter.commencedBefore}`);
 	if (filter.commencedAfter) parts.push(`commenced after ${filter.commencedAfter}`);
 	if (filter.hasStorage) parts.push('has storage');

@@ -72,15 +72,15 @@ export function analyzeUnits(facility, getFuelTechColor) {
 	}
 
 	// ── battery flag ──────────────────────────────────────────────
-	const hasBatteryUnits = units.some(
-		(/** @type {any} */ u) => BATTERY_FUEL_TECHS.includes(u.fueltech_id)
+	const hasBatteryUnits = units.some((/** @type {any} */ u) =>
+		BATTERY_FUEL_TECHS.includes(u.fueltech_id)
 	);
 
 	// ── capacity sums ─────────────────────────────────────────────
 	let positive = 0;
 	let negative = 0;
-	const allBattery = units.every(
-		(/** @type {any} */ u) => BATTERY_FUEL_TECHS.includes(u.fueltech_id)
+	const allBattery = units.every((/** @type {any} */ u) =>
+		BATTERY_FUEL_TECHS.includes(u.fueltech_id)
 	);
 	for (const unit of units) {
 		const capacity = Number(unit.capacity_maximum || unit.capacity_registered) || 0;

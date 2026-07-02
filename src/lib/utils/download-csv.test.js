@@ -18,12 +18,15 @@ describe('downloadCsv', () => {
 			})
 		});
 
-		vi.stubGlobal('Blob', class MockBlob {
-			constructor(/** @type {any[]} */ parts, /** @type {any} */ options) {
-				this.parts = parts;
-				this.options = options;
+		vi.stubGlobal(
+			'Blob',
+			class MockBlob {
+				constructor(/** @type {any[]} */ parts, /** @type {any} */ options) {
+					this.parts = parts;
+					this.options = options;
+				}
 			}
-		});
+		);
 
 		vi.stubGlobal('URL', {
 			createObjectURL: vi.fn(() => 'blob:mock-url'),

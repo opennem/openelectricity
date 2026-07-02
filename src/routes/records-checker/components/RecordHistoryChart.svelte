@@ -38,7 +38,9 @@
 		console.log('time series data', data);
 	});
 
-	let annotatedData = $derived(data.filter((/** @type {any} */ d) => issueInstanceIds.includes(d.instance_id)));
+	let annotatedData = $derived(
+		data.filter((/** @type {any} */ d) => issueInstanceIds.includes(d.instance_id))
+	);
 
 	/** @param {any} d */
 	const formatTickX = (d) => {

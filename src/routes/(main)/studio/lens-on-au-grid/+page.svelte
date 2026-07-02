@@ -133,14 +133,16 @@
 			groupMap: fuelTechMap[DEFAULT_GROUP],
 			groupOrder: orderMap[DEFAULT_GROUP],
 			loadsToInvert: loadFuelTechs,
-			labelReducer: /** @type {any} */ ((
-				/** @type {Record<string, string>} */ acc,
-				/** @type {{ fuel_tech?: string, id: string, label?: string }} */ d
-			) => {
-				const id = d.fuel_tech || d.id;
-				acc[id] = fuelTechNameMap[id] || d.label || id;
-				return acc;
-			}),
+			labelReducer: /** @type {any} */ (
+				(
+					/** @type {Record<string, string>} */ acc,
+					/** @type {{ fuel_tech?: string, id: string, label?: string }} */ d
+				) => {
+					const id = d.fuel_tech || d.id;
+					acc[id] = fuelTechNameMap[id] || d.label || id;
+					return acc;
+				}
+			),
 			colourReducer: /** @type {any} */ ($colourReducer)
 		});
 	}

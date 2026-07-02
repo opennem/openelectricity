@@ -59,8 +59,12 @@
 	// $: aemo2024 = data.ispData.aemo2024;
 	// $: console.log(aemo2022, aemo2024);
 
-	let selectedModelScenarioDescriptions = $derived(/** @type {any} */ (scenarioDescriptions)[selectedModel.value]);
-	let selectedModelScenarioLabels = $derived(/** @type {any} */ (scenarioLabels)[selectedModel.value]);
+	let selectedModelScenarioDescriptions = $derived(
+		/** @type {any} */ (scenarioDescriptions)[selectedModel.value]
+	);
+	let selectedModelScenarioLabels = $derived(
+		/** @type {any} */ (scenarioLabels)[selectedModel.value]
+	);
 	// $: selectedModelPathway = selectedPathway[selectedModel.value];
 	let selectedModelYDomain = $derived(/** @type {any} */ (scenarioYDomain)[selectedModel.value]);
 	let selectedModelXTicks = $derived(/** @type {any} */ (modelXTicks)[selectedModel.value]);
@@ -83,7 +87,9 @@
 
 	let outlookData = $derived(selectedModelData.outlookEnergyNem.data);
 
-	let filteredWithScenario = $derived(outlookData.filter((/** @type {any} */ d) => d.scenario === selectedScenario));
+	let filteredWithScenario = $derived(
+		outlookData.filter((/** @type {any} */ d) => d.scenario === selectedScenario)
+	);
 
 	let filteredWithPathwayScenario = $derived(
 		filteredWithScenario.filter((/** @type {any} */ d) => d.pathway === selectedPathway)
@@ -129,7 +135,9 @@
 	);
 
 	let loadData = $derived(
-		projectionStatsCharts ? projectionStatsCharts.data.filter((/** @type {any} */ d) => d.isLoad) : []
+		projectionStatsCharts
+			? projectionStatsCharts.data.filter((/** @type {any} */ d) => d.isLoad)
+			: []
 	);
 	let loadSeries = $derived(loadData.map((/** @type {any} */ d) => d.id));
 	run(() => {
@@ -160,12 +168,16 @@
 	});
 
 	let maxY = $derived(
-		projectionTimeSeriesCharts ? [...projectionTimeSeriesCharts.data.map((/** @type {any} */ d) => d._max)] : []
+		projectionTimeSeriesCharts
+			? [...projectionTimeSeriesCharts.data.map((/** @type {any} */ d) => d._max)]
+			: []
 	);
 	// @ts-ignore
 	let datasetMax = $derived(maxY ? Math.max(...maxY) : 0);
 	let minY = $derived(
-		projectionTimeSeriesCharts ? [...projectionTimeSeriesCharts.data.map((/** @type {any} */ d) => d._min)] : []
+		projectionTimeSeriesCharts
+			? [...projectionTimeSeriesCharts.data.map((/** @type {any} */ d) => d._min)]
+			: []
 	);
 	// @ts-ignore
 	let datasetMin = $derived(minY ? Math.min(...minY) : 0);
@@ -321,11 +333,7 @@
 		<p class="mb-0">Model:</p>
 
 		<div class="w-[240px]">
-			<FormSelect
-				options={modelSelections}
-				selected={selectedModel}
-				onchange={handleModelChange}
-			/>
+			<FormSelect options={modelSelections} selected={selectedModel} onchange={handleModelChange} />
 		</div>
 	</div>
 
@@ -488,21 +496,24 @@
 				</thead> -->
 
 				{#if projectionTimeSeriesCharts}
-				<tbody>
-					{#each [...projectionTimeSeriesCharts.seriesNames].reverse() as key (key)}
-						<tr>
-							<td class="text-left">{projectionTimeSeriesCharts.seriesLabels[key]}</td>
-							<td class="text-right">
-								{hoverData && hoverData[key] !== 0 ? formatValue(/** @type {number} */ (hoverData[key])) : '—'}
-							</td>
-							<td class="text-right">
-								{hoverData && hoverData[key] !== 0 && hoverData._max
-									? formatValue((/** @type {number} */ (hoverData[key]) / hoverData._max) * 100) + '%'
-									: '—'}
-							</td>
-						</tr>
-					{/each}
-				</tbody>
+					<tbody>
+						{#each [...projectionTimeSeriesCharts.seriesNames].reverse() as key (key)}
+							<tr>
+								<td class="text-left">{projectionTimeSeriesCharts.seriesLabels[key]}</td>
+								<td class="text-right">
+									{hoverData && hoverData[key] !== 0
+										? formatValue(/** @type {number} */ (hoverData[key]))
+										: '—'}
+								</td>
+								<td class="text-right">
+									{hoverData && hoverData[key] !== 0 && hoverData._max
+										? formatValue(/** @type {number} */ ((hoverData[key]) / hoverData._max) * 100) +
+											'%'
+										: '—'}
+								</td>
+							</tr>
+						{/each}
+					</tbody>
 				{/if}
 			</table>
 		</div>

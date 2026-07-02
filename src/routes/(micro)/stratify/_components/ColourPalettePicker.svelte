@@ -22,13 +22,16 @@
 <div class="flex flex-col gap-3">
 	<!-- Type selector -->
 	<div class="flex gap-1">
-		{#each /** @type {const} */ (['qualitative', 'sequential', 'diverging']) as type}
+		{#each ['qualitative', 'sequential', 'diverging'] as type}
 			<button
 				type="button"
 				class="px-2 py-0.5 text-[10px] rounded border transition-colors {activeType === type
 					? 'border-dark-grey text-dark-grey bg-white'
 					: 'border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
-				onclick={() => (activeType = /** @type {import('$lib/stratify/colour-palettes.js').PaletteType} */ (type))}
+				onclick={() =>
+					(activeType = /** @type {import('$lib/stratify/colour-palettes.js').PaletteType} */ (
+						type
+					))}
 			>
 				{type.charAt(0).toUpperCase() + type.slice(1)}
 			</button>
@@ -76,10 +79,7 @@
 			>
 				<div class="flex gap-0.5 shrink-0">
 					{#each colours.slice(0, 12) as colour}
-						<span
-							class="block w-3 h-3 rounded-sm"
-							style="background: {colour};"
-						></span>
+						<span class="block w-3 h-3 rounded-sm" style="background: {colour};"></span>
 					{/each}
 				</div>
 				<span class="text-[10px] text-mid-grey truncate">{palette.name}</span>

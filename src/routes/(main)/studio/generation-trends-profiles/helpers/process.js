@@ -107,7 +107,8 @@ export function processCombinedGenerationTrendsData(data, enabledFuelTechs) {
 					const fuelData = /** @type {any} */ (profilesData)[fuelTech];
 					if (fuelData && fuelData.data) {
 						const monthData = fuelData.data.find(
-							(/** @type {any} */ m) => (m.monthIndex !== undefined ? m.monthIndex : m.month - 1) === monthIndex
+							(/** @type {any} */ m) =>
+								(m.monthIndex !== undefined ? m.monthIndex : m.month - 1) === monthIndex
 						);
 						if (monthData && monthData[yearInfo.key] != null) {
 							totalValue += monthData[yearInfo.key];
@@ -172,53 +173,56 @@ export function processCumulativeGenerationTrendsData(data, enabledFuelTechs) {
 
 	// Convert to LayerCake-compatible format for LineChartWithContext
 	// Calculate cumulative sum from January to December for each year
-	const seriesData = firstFuelData.data.map((/** @type {any} */ monthData, /** @type {number} */ monthIndex) => {
-		const date = new Date(2000, monthIndex, 1);
-		const point = {
-			time: date.getTime(), // Use timestamp for proper hover detection
-			date: date, // Create date for month (year doesn't matter for display)
-			datetime: date,
-			month: monthIndex + 1, // 1-based month for display
-			monthName: monthData.monthName || date.toLocaleDateString('en', { month: 'short' })
-		};
+	const seriesData = firstFuelData.data.map(
+		(/** @type {any} */ monthData, /** @type {number} */ monthIndex) => {
+			const date = new Date(2000, monthIndex, 1);
+			const point = {
+				time: date.getTime(), // Use timestamp for proper hover detection
+				date: date, // Create date for month (year doesn't matter for display)
+				datetime: date,
+				month: monthIndex + 1, // 1-based month for display
+				monthName: monthData.monthName || date.toLocaleDateString('en', { month: 'short' })
+			};
 
-		// Add each year's cumulative data as a separate property
-		firstFuelData.years.forEach(
-			(/** @type {{ key: string, label: string, color: string }} */ yearInfo) => {
-				const year = parseInt(yearInfo.label) || parseInt(yearInfo.key);
+			// Add each year's cumulative data as a separate property
+			firstFuelData.years.forEach(
+				(/** @type {{ key: string, label: string, color: string }} */ yearInfo) => {
+					const year = parseInt(yearInfo.label) || parseInt(yearInfo.key);
 
-				// Check if this is a future month (for current year, use last completed month)
-				const isFutureMonth = year === currentYear && monthIndex > (lastMonth < 0 ? 11 : lastMonth);
+					// Check if this is a future month (for current year, use last completed month)
+					const isFutureMonth =
+						year === currentYear && monthIndex > (lastMonth < 0 ? 11 : lastMonth);
 
-				if (isFutureMonth) {
-					// Set future months to null
-					/** @type {any} */ (point)[yearInfo.key] = null;
-				} else {
-					let cumulativeValue = 0;
-					let hasAnyData = false;
+					if (isFutureMonth) {
+						// Set future months to null
+						/** @type {any} */ (point)[yearInfo.key] = null;
+					} else {
+						let cumulativeValue = 0;
+						let hasAnyData = false;
 
-					// Sum values from January up to current month for each enabled fuel tech
-					for (let i = 0; i <= monthIndex; i++) {
-						enabledFuelTechs.forEach((/** @type {string} */ fuelTech) => {
-							const fuelData = /** @type {any} */ (profilesData)[fuelTech];
-							if (fuelData && fuelData.data && fuelData.data[i]) {
-								const monthDataForFuel = fuelData.data[i];
-								if (monthDataForFuel && monthDataForFuel[yearInfo.key] != null) {
-									cumulativeValue += monthDataForFuel[yearInfo.key];
-									hasAnyData = true;
+						// Sum values from January up to current month for each enabled fuel tech
+						for (let i = 0; i <= monthIndex; i++) {
+							enabledFuelTechs.forEach((/** @type {string} */ fuelTech) => {
+								const fuelData = /** @type {any} */ (profilesData)[fuelTech];
+								if (fuelData && fuelData.data && fuelData.data[i]) {
+									const monthDataForFuel = fuelData.data[i];
+									if (monthDataForFuel && monthDataForFuel[yearInfo.key] != null) {
+										cumulativeValue += monthDataForFuel[yearInfo.key];
+										hasAnyData = true;
+									}
 								}
-							}
-						});
+							});
+						}
+
+						// Only set the value if we found actual data, otherwise keep it null
+						/** @type {any} */ (point)[yearInfo.key] = hasAnyData ? cumulativeValue : null;
 					}
-
-					// Only set the value if we found actual data, otherwise keep it null
-					/** @type {any} */ (point)[yearInfo.key] = hasAnyData ? cumulativeValue : null;
 				}
-			}
-		);
+			);
 
-		return point;
-	});
+			return point;
+		}
+	);
 
 	// Create series metadata (same years, but representing cumulative data)
 	const seriesNames = firstFuelData.yearKeys || [];

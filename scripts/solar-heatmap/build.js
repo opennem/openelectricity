@@ -117,9 +117,7 @@ async function main() {
 
 	while (cursor < endDate) {
 		batchNum++;
-		const batchEnd = new Date(
-			Math.min(addDays(cursor, BATCH_DAYS).getTime(), endDate.getTime())
-		);
+		const batchEnd = new Date(Math.min(addDays(cursor, BATCH_DAYS).getTime(), endDate.getTime()));
 
 		const dateStart = formatDate(cursor);
 		const dateEnd = formatDate(batchEnd);

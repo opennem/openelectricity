@@ -209,7 +209,8 @@ function applyFilters(facilities, filter) {
 
 		if (filter.fuelTechCode) {
 			const units = f.units || [];
-			if (!units.some((/** @type {any} */ u) => u.fuel_technology?.code === filter.fuelTechCode)) return false;
+			if (!units.some((/** @type {any} */ u) => u.fuel_technology?.code === filter.fuelTechCode))
+				return false;
 		}
 
 		if (filter.status) {
@@ -228,7 +229,8 @@ function applyFilters(facilities, filter) {
 
 		if (filter.ownerName) {
 			const term = filter.ownerName.toLowerCase();
-			if (!f._ownerNames.some((/** @type {string} */ n) => n.toLowerCase().includes(term))) return false;
+			if (!f._ownerNames.some((/** @type {string} */ n) => n.toLowerCase().includes(term)))
+				return false;
 		}
 
 		if (filter.capacityMin != null) {
@@ -242,25 +244,41 @@ function applyFilters(facilities, filter) {
 		if (filter.expectedClosureBefore) {
 			const before = filter.expectedClosureBefore;
 			const units = f.units || [];
-			if (!units.some((/** @type {any} */ u) => u.expected_closure_date && u.expected_closure_date < before)) return false;
+			if (
+				!units.some(
+					(/** @type {any} */ u) => u.expected_closure_date && u.expected_closure_date < before
+				)
+			)
+				return false;
 		}
 
 		if (filter.expectedClosureAfter) {
 			const after = filter.expectedClosureAfter;
 			const units = f.units || [];
-			if (!units.some((/** @type {any} */ u) => u.expected_closure_date && u.expected_closure_date >= after)) return false;
+			if (
+				!units.some(
+					(/** @type {any} */ u) => u.expected_closure_date && u.expected_closure_date >= after
+				)
+			)
+				return false;
 		}
 
 		if (filter.commencedBefore) {
 			const before = filter.commencedBefore;
 			const units = f.units || [];
-			if (!units.some((/** @type {any} */ u) => u.commencement_date && u.commencement_date < before)) return false;
+			if (
+				!units.some((/** @type {any} */ u) => u.commencement_date && u.commencement_date < before)
+			)
+				return false;
 		}
 
 		if (filter.commencedAfter) {
 			const after = filter.commencedAfter;
 			const units = f.units || [];
-			if (!units.some((/** @type {any} */ u) => u.commencement_date && u.commencement_date >= after)) return false;
+			if (
+				!units.some((/** @type {any} */ u) => u.commencement_date && u.commencement_date >= after)
+			)
+				return false;
 		}
 
 		if (filter.hasStorage) {
@@ -287,12 +305,18 @@ function aggregate(facilities, agg) {
 	 */
 	function getValue(f) {
 		switch (field) {
-			case 'operatingCapacity': return f._operatingCapacity;
-			case 'totalCapacity': return f._totalCapacity;
-			case 'storageCapacity': return f._storageCapacity;
-			case 'facilities': return 1;
-			case 'units': return f._unitCount;
-			default: return f._totalCapacity;
+			case 'operatingCapacity':
+				return f._operatingCapacity;
+			case 'totalCapacity':
+				return f._totalCapacity;
+			case 'storageCapacity':
+				return f._storageCapacity;
+			case 'facilities':
+				return 1;
+			case 'units':
+				return f._unitCount;
+			default:
+				return f._totalCapacity;
 		}
 	}
 
@@ -303,16 +327,21 @@ function aggregate(facilities, agg) {
 	 */
 	function getGroupKey(f) {
 		switch (groupBy) {
-			case 'region': return f.region?.name || 'Unknown';
-			case 'fuelTechGroup': return f._fuelTechGroup;
+			case 'region':
+				return f.region?.name || 'Unknown';
+			case 'fuelTechGroup':
+				return f._fuelTechGroup;
 			case 'status': {
 				// Use dominant unit status
 				const statuses = (f.units || []).map((/** @type {any} */ u) => u.status);
 				return statuses[0] || 'unknown';
 			}
-			case 'owner': return f._ownerNames[0] || 'Unknown';
-			case 'network': return f.network?.name || 'Unknown';
-			default: return 'All';
+			case 'owner':
+				return f._ownerNames[0] || 'Unknown';
+			case 'network':
+				return f.network?.name || 'Unknown';
+			default:
+				return 'All';
 		}
 	}
 
@@ -358,12 +387,18 @@ function aggregate(facilities, agg) {
 function computeAgg(op, values) {
 	if (values.length === 0) return 0;
 	switch (op) {
-		case 'sum': return values.reduce((a, b) => a + b, 0);
-		case 'count': return values.reduce((a, b) => a + b, 0);
-		case 'avg': return values.reduce((a, b) => a + b, 0) / values.length;
-		case 'min': return Math.min(...values);
-		case 'max': return Math.max(...values);
-		default: return values.reduce((a, b) => a + b, 0);
+		case 'sum':
+			return values.reduce((a, b) => a + b, 0);
+		case 'count':
+			return values.reduce((a, b) => a + b, 0);
+		case 'avg':
+			return values.reduce((a, b) => a + b, 0) / values.length;
+		case 'min':
+			return Math.min(...values);
+		case 'max':
+			return Math.max(...values);
+		default:
+			return values.reduce((a, b) => a + b, 0);
 	}
 }
 
@@ -383,12 +418,18 @@ function sortFacilities(facilities, sort) {
 	 */
 	function getSortValue(f) {
 		switch (field) {
-			case 'totalCapacity': return f._totalCapacity;
-			case 'operatingCapacity': return f._operatingCapacity;
-			case 'storageCapacity': return f._storageCapacity;
-			case 'unitCount': return f._unitCount;
-			case 'name': return (f.name || '').toLowerCase();
-			default: return f._totalCapacity;
+			case 'totalCapacity':
+				return f._totalCapacity;
+			case 'operatingCapacity':
+				return f._operatingCapacity;
+			case 'storageCapacity':
+				return f._storageCapacity;
+			case 'unitCount':
+				return f._unitCount;
+			case 'name':
+				return (f.name || '').toLowerCase();
+			default:
+				return f._totalCapacity;
 		}
 	}
 
@@ -400,4 +441,3 @@ function sortFacilities(facilities, sort) {
 		return 0;
 	});
 }
-

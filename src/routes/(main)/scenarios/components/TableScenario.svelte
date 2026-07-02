@@ -39,10 +39,7 @@
 	/** Models not already in the current selection */
 	let availableModels = $derived(
 		planOptions.filter(
-			(p) =>
-				!$orderedModelScenarioPathways.some(
-					(/** @type {any} */ m) => m.model === p.value
-				)
+			(p) => !$orderedModelScenarioPathways.some((/** @type {any} */ m) => m.model === p.value)
 		)
 	);
 
@@ -149,7 +146,6 @@
 			(/** @type {any} */ d) => d.model !== modelValue
 		);
 	}
-
 </script>
 
 <svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
@@ -157,16 +153,15 @@
 <div class="sticky top-10 flex flex-col gap-2">
 	<div class="flex items-center justify-between">
 		<button
-			class="text-xs font-medium px-4 py-2 rounded-lg cursor-pointer {showEditor ? 'bg-dark-grey text-white hover:bg-black' : 'border border-mid-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
+			class="text-xs font-medium px-4 py-2 rounded-lg cursor-pointer {showEditor
+				? 'bg-dark-grey text-white hover:bg-black'
+				: 'border border-mid-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
 			onclick={() => (showEditor = !showEditor)}
 		>
 			{showEditor ? 'Done' : 'Update'}
 		</button>
 
-		<TableHeader
-			showCheckbox={false}
-			hoverTime={generation.hoverTime || generation.focusTime}
-		/>
+		<TableHeader showCheckbox={false} hoverTime={generation.hoverTime || generation.focusTime} />
 	</div>
 
 	<table class="w-full border border-warm-grey">
@@ -307,7 +302,9 @@
 
 				<tr>
 					<th colspan={showEditor ? 1 : 5} class="pb-0 align-top text-left px-2 pt-1 font-medium">
-						<div class="flex items-center justify-between ml-3 mb-0 pb-2 border-b border-warm-grey mr-3">
+						<div
+							class="flex items-center justify-between ml-3 mb-0 pb-2 border-b border-warm-grey mr-3"
+						>
 							<h6 class="mb-0">{modelLabelMap[model]}</h6>
 							{#if showEditor}
 								<button
@@ -370,8 +367,14 @@
 									<div class="text-mid-grey font-normal block flex-1">{pathway}</div>
 									{#if showEditor}
 										<button
-											class="w-7 h-7 border border-warm-grey rounded-sm flex items-center justify-center text-mid-grey hover:text-dark-grey hover:border-mid-grey cursor-pointer {totalPathways > 1 ? '' : 'invisible'}"
-											onclick={(e) => { e.stopPropagation(); removePathway(id); }}
+											class="w-7 h-7 border border-warm-grey rounded-sm flex items-center justify-center text-mid-grey hover:text-dark-grey hover:border-mid-grey cursor-pointer {totalPathways >
+											1
+												? ''
+												: 'invisible'}"
+											onclick={(e) => {
+												e.stopPropagation();
+												removePathway(id);
+											}}
 											aria-label="Remove pathway {pathway}"
 											disabled={totalPathways <= 1}
 										>

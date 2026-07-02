@@ -1,10 +1,5 @@
 <script>
-	import {
-		MapLibre,
-		Marker,
-		NavigationControl,
-		AttributionControl
-	} from 'svelte-maplibre-gl';
+	import { MapLibre, Marker, NavigationControl, AttributionControl } from 'svelte-maplibre-gl';
 
 	/**
 	 * @type {{

@@ -12,7 +12,10 @@ describe('computeYDomain', () => {
 	});
 
 	it('computes domain with 10% padding by default', () => {
-		const data = [{ _min: 0, _max: 100 }, { _min: 10, _max: 200 }];
+		const data = [
+			{ _min: 0, _max: 100 },
+			{ _min: 10, _max: 200 }
+		];
 		// max: 200 + 200*0.1 = 220 → ceil = 220
 		// min: 0 (positive, no padding) → floor = 0
 		expect(computeYDomain(data)).toEqual([0, 220]);
@@ -39,7 +42,10 @@ describe('computeYDomain', () => {
 	});
 
 	it('handles all-zero data', () => {
-		const data = [{ _min: 0, _max: 0 }, { _min: 0, _max: 0 }];
+		const data = [
+			{ _min: 0, _max: 0 },
+			{ _min: 0, _max: 0 }
+		];
 		expect(computeYDomain(data)).toEqual([0, 0]);
 	});
 

@@ -127,9 +127,7 @@
 	let displayPrefix = $state('M');
 	let baseUnit = $derived(isEnergyMetric ? 'Wh' : 'W');
 	let unitLabel = $derived(displayPrefix + baseUnit);
-	let prefixOptions = $derived(
-		['k', 'M', 'G'].map((p) => ({ label: p + baseUnit, value: p }))
-	);
+	let prefixOptions = $derived(['k', 'M', 'G'].map((p) => ({ label: p + baseUnit, value: p })));
 
 	// Auto-set curve type when metric changes
 	$effect(() => {
@@ -259,7 +257,7 @@
 			let end = interaction.viewEnd;
 			if (start && end) {
 				const MAX_POWER_VIEWPORT_MS = 7 * 86_400_000;
-				if (!isEnergy && (end - start) > MAX_POWER_VIEWPORT_MS) {
+				if (!isEnergy && end - start > MAX_POWER_VIEWPORT_MS) {
 					end = Math.min(end, Date.now());
 					start = end - MAX_POWER_VIEWPORT_MS;
 					interaction.setViewport(start, end);
@@ -326,8 +324,7 @@
 			const interaction = chart.interaction;
 
 			interaction.getMinViewport = () => (isEnergy ? 5 * 86_400_000 : 3_600_000);
-			interaction.getMaxViewport = () =>
-				isEnergy ? 50 * 365 * 86_400_000 : 16 * 86_400_000;
+			interaction.getMaxViewport = () => (isEnergy ? 50 * 365 * 86_400_000 : 16 * 86_400_000);
 
 			interaction.onViewportChange = (start, end) => {
 				const buffer = (end - start) * bufferMult;
@@ -344,10 +341,7 @@
 						Math.min(interaction.viewEnd + prefetch, now)
 					);
 				} else if (panDelta > 0) {
-					chart.dataManager?.requestRange(
-						interaction.viewStart - prefetch,
-						interaction.viewStart
-					);
+					chart.dataManager?.requestRange(interaction.viewStart - prefetch, interaction.viewStart);
 				}
 			};
 
@@ -478,9 +472,7 @@
 				{@const analysis = getAnalysis(chart)}
 				{@const processedCache = chart.dataManager?.processedCache}
 				{@const ianaTimeZone =
-					chart.facilityEntry.timeZone === '+08:00'
-						? 'Australia/Perth'
-						: 'Australia/Brisbane'}
+					chart.facilityEntry.timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane'}
 				{@const rawVisibleData = chart.dataManager
 					? chart.dataManager.getDataForRange(interaction.viewStart, interaction.viewEnd)
 					: []}
@@ -512,7 +504,11 @@
 				})}
 
 				{@const nightPeriods = shouldShowNightShading(interaction.viewStart, interaction.viewEnd)
-					? computeNightPeriods(interaction.viewStart, interaction.viewEnd, chart.facilityEntry.timeZone)
+					? computeNightPeriods(
+							interaction.viewStart,
+							interaction.viewEnd,
+							chart.facilityEntry.timeZone
+						)
 					: []}
 
 				{@const plotOptions = (() => {
@@ -539,13 +535,13 @@
 							const converted = convert('M', prefix, d);
 							const abs = Math.abs(converted);
 							const digits = abs < 10 ? 2 : abs < 100 ? 1 : 0;
-							return new Intl.NumberFormat('en-AU', { maximumFractionDigits: digits }).format(converted);
+							return new Intl.NumberFormat('en-AU', { maximumFractionDigits: digits }).format(
+								converted
+							);
 						}
 					};
 
-					const configFn = chartOpts.isLine
-						? createLineOptions
-						: createStackedAreaOptions;
+					const configFn = chartOpts.isLine ? createLineOptions : createStackedAreaOptions;
 					return configFn(
 						visibleData,
 						processedCache.seriesNames,
@@ -585,8 +581,7 @@
 						chart.containerWidth === 0
 					)
 						return 0;
-					const plotWidth =
-						chart.containerWidth - chartOpts.marginLeft - chartOpts.marginRight;
+					const plotWidth = chart.containerWidth - chartOpts.marginLeft - chartOpts.marginRight;
 					const endRatio =
 						(interaction.hoverBandEnd - interaction.viewStart) /
 						(interaction.viewEnd - interaction.viewStart);
@@ -594,10 +589,7 @@
 					return Math.max(0, endPx - interaction.hoverX);
 				})()}
 
-				<div
-					class="border-b"
-					style="border-color: var(--plot-header-border);"
-				>
+				<div class="border-b" style="border-color: var(--plot-header-border);">
 					<!-- Chart Header -->
 					<div
 						class="flex items-center justify-between px-4 py-1.5"
@@ -611,7 +603,11 @@
 						</span>
 						{#if analysis && !isEnergyMetric && capacitySums.positive > 0}
 							<span class="text-[10px]" style="color: var(--plot-subtitle-colour);">
-								Capacity: {formatSI(capacitySums.positive, { fromPrefix: 'M', toPrefix: displayPrefix, baseUnit })}
+								Capacity: {formatSI(capacitySums.positive, {
+									fromPrefix: 'M',
+									toPrefix: displayPrefix,
+									baseUnit
+								})}
 							</span>
 						{/if}
 					</div>
@@ -620,10 +616,7 @@
 					<div class="h-[21px] shrink-0">
 						{#if interaction.hoverData && processedCache}
 							<div class="h-full flex items-center justify-end text-xs">
-								<span
-									class="px-3 py-1 font-light"
-									style="background: var(--plot-tooltip-date-bg);"
-								>
+								<span class="px-3 py-1 font-light" style="background: var(--plot-tooltip-date-bg);">
 									{formattedDate}
 								</span>
 								<div
@@ -644,15 +637,17 @@
 													{processedCache.seriesLabels[name]}
 												</span>
 												<strong class="font-semibold whitespace-nowrap">
-													{formatSI(interaction.hoverData[name], { fromPrefix: 'M', toPrefix: displayPrefix, baseUnit })}
+													{formatSI(interaction.hoverData[name], {
+														fromPrefix: 'M',
+														toPrefix: displayPrefix,
+														baseUnit
+													})}
 												</strong>
 											</div>
 										{/if}
 									{/each}
 									<span class="flex items-center gap-1.5 shrink-0">
-										<span style="color: var(--plot-tooltip-text-colour);">
-											Total
-										</span>
+										<span style="color: var(--plot-tooltip-text-colour);"> Total </span>
 										<strong class="font-semibold">
 											{formatSI(hoverTotal, { fromPrefix: 'M', toPrefix: displayPrefix, baseUnit })}
 										</strong>
@@ -663,7 +658,10 @@
 					</div>
 
 					<!-- Chart -->
-					<div class="px-4 py-2 overflow-hidden" style="height: calc(50vh - 80px); min-height: 250px;">
+					<div
+						class="px-4 py-2 overflow-hidden"
+						style="height: calc(50vh - 80px); min-height: 250px;"
+					>
 						<div
 							use:interaction.bindWheel
 							class="relative h-full select-none"
@@ -682,11 +680,28 @@
 
 							<!-- Night shading overlay -->
 							{#each nightPeriods as [nightStart, nightEnd]}
-								{@const left = timeToPx(nightStart.getTime(), interaction.viewStart, interaction.viewEnd, chartOpts.marginLeft, chart.containerWidth, chartOpts.marginRight)}
-								{@const right = timeToPx(nightEnd.getTime(), interaction.viewStart, interaction.viewEnd, chartOpts.marginLeft, chart.containerWidth, chartOpts.marginRight)}
+								{@const left = timeToPx(
+									nightStart.getTime(),
+									interaction.viewStart,
+									interaction.viewEnd,
+									chartOpts.marginLeft,
+									chart.containerWidth,
+									chartOpts.marginRight
+								)}
+								{@const right = timeToPx(
+									nightEnd.getTime(),
+									interaction.viewStart,
+									interaction.viewEnd,
+									chartOpts.marginLeft,
+									chart.containerWidth,
+									chartOpts.marginRight
+								)}
 								<div
 									class="absolute top-0 bottom-0 pointer-events-none"
-									style="left: {Math.max(left, chartOpts.marginLeft)}px; width: {Math.min(right, chart.containerWidth - chartOpts.marginRight) - Math.max(left, chartOpts.marginLeft)}px; background: rgba(0,0,0,0.04);"
+									style="left: {Math.max(left, chartOpts.marginLeft)}px; width: {Math.min(
+										right,
+										chart.containerWidth - chartOpts.marginRight
+									) - Math.max(left, chartOpts.marginLeft)}px; background: rgba(0,0,0,0.04);"
 								></div>
 							{/each}
 
@@ -763,10 +778,7 @@
 										class="w-2.5 h-2.5 rounded-sm"
 										style="background-color: {processedCache.seriesColours[name]}"
 									></span>
-									<span
-										class="text-[10px]"
-										style="color: var(--plot-legend-text-colour);"
-									>
+									<span class="text-[10px]" style="color: var(--plot-legend-text-colour);">
 										{processedCache.seriesLabels[name]}
 									</span>
 								</div>
@@ -790,13 +802,7 @@
 				fill="none"
 				viewBox="0 0 24 24"
 			>
-				<circle
-					class="opacity-25"
-					cx="12"
-					cy="12"
-					r="10"
-					stroke="currentColor"
-					stroke-width="4"
+				<circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"
 				></circle>
 				<path
 					class="opacity-75"

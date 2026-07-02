@@ -162,7 +162,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if backdrop}
-	<Backdrop open={open} onclick={() => onclose?.()} />
+	<Backdrop {open} onclick={() => onclose?.()} />
 {/if}
 
 <!-- Sheet panel — portalled so it stacks above all page chrome. -->

@@ -124,9 +124,7 @@
 	<table class="w-full text-xs border-collapse">
 		<thead class="sticky top-0 z-10 bg-white">
 			<tr class="border-b border-mid-warm-grey">
-				<th class="text-left font-medium text-mid-grey px-2 py-1.5 whitespace-nowrap">
-					Time
-				</th>
+				<th class="text-left font-medium text-mid-grey px-2 py-1.5 whitespace-nowrap"> Time </th>
 				{#each seriesNames as key (key)}
 					<th class="text-right font-medium text-mid-grey px-2 py-1.5 whitespace-nowrap">
 						{getLabel(key)}
@@ -163,8 +161,6 @@
 	</table>
 
 	{#if !data?.length}
-		<div class="flex items-center justify-center py-8 text-mid-grey text-xs">
-			No data available
-		</div>
+		<div class="flex items-center justify-center py-8 text-mid-grey text-xs">No data available</div>
 	{/if}
 </div>

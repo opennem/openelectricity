@@ -112,9 +112,7 @@ describe('processTechnology', () => {
 			const projection = [
 				makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
 			];
-			const history = [
-				makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
-			];
+			const history = [makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })];
 
 			const result = processTechnology.generation({
 				projection,
@@ -132,9 +130,7 @@ describe('processTechnology', () => {
 			const projection = [
 				makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
 			];
-			const history = [
-				makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
-			];
+			const history = [makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })];
 
 			const result = processTechnology.generation({
 				projection,
@@ -159,9 +155,7 @@ describe('processTechnology', () => {
 			const projection = [
 				makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
 			];
-			const history = [
-				makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
-			];
+			const history = [makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })];
 
 			const result = processTechnology.generation({
 				projection,
@@ -183,9 +177,7 @@ describe('processTechnology', () => {
 			const projection = [
 				makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
 			];
-			const history = [
-				makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
-			];
+			const history = [makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })];
 
 			const result = processTechnology.generation({
 				projection,
@@ -204,9 +196,7 @@ describe('processTechnology', () => {
 			const projection = [
 				makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
 			];
-			const history = [
-				makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
-			];
+			const history = [makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })];
 
 			const result = processTechnology.generation({
 				projection,
@@ -262,7 +252,11 @@ describe('processTechnology', () => {
 	describe('emissions', () => {
 		it('returns a single series for total emissions', () => {
 			const projection = [
-				makeProjectionStats({ fuelTech: 'fossil_fuels', data: [50000, 45000, 40000], units: 'tCO2e' })
+				makeProjectionStats({
+					fuelTech: 'fossil_fuels',
+					data: [50000, 45000, 40000],
+					units: 'tCO2e'
+				})
 			];
 			const history = [
 				makeHistoryStats({ fuelTech: 'coal', data: monthlyData(3000), units: 'tCO2e' }),
@@ -319,9 +313,7 @@ describe('processTechnology', () => {
 
 		it('divides emissions by net generation for intensity values', () => {
 			const processedEmissions = {
-				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), 'au.emissions.total': 600 }
-				],
+				seriesData: [{ time: 1, date: new Date('2022-01-01'), 'au.emissions.total': 600 }],
 				seriesNames: ['au.emissions.total'],
 				seriesColours: {},
 				seriesLabels: {},
@@ -329,9 +321,7 @@ describe('processTechnology', () => {
 			};
 
 			const processedEnergy = {
-				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), _max: 1200 }
-				],
+				seriesData: [{ time: 1, date: new Date('2022-01-01'), _max: 1200 }],
 				seriesNames: ['solar'],
 				seriesColours: {},
 				seriesLabels: {},

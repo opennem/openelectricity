@@ -194,7 +194,7 @@ describe('runningHours', () => {
 			{ power: 150 }
 		];
 		// 4 intervals generating × 5 min / 60 = 0.333... hours
-		expect(runningHours(data, ['power'], 5)).toBeCloseTo(4 * 5 / 60);
+		expect(runningHours(data, ['power'], 5)).toBeCloseTo((4 * 5) / 60);
 	});
 
 	it('returns 0 when no power generated', () => {

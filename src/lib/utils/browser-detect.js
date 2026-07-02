@@ -32,7 +32,8 @@ function isIE() {
 
 function isSafari() {
 	return (
-		(!!(/** @type {any} */ (window).ApplePaySetupFeature) || !!(/** @type {any} */ (window).safari)) &&
+		(!!(/** @type {any} */ (window).ApplePaySetupFeature) ||
+			!!(/** @type {any} */ (window).safari)) &&
 		agentHas('Safari') &&
 		!agentHas('Chrome') &&
 		!agentHas('CriOS')

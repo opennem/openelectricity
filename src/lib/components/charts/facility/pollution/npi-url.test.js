@@ -36,9 +36,9 @@ describe('buildNpiFacilityUrl', () => {
 	});
 
 	it('handles WA via WEM', () => {
-		expect(
-			buildNpiFacilityUrl({ npiId: 'WA1729', networkRegion: 'WEM', year: 2022 })
-		).toContain('/state/WA/year/2022/jurisdiction-facility/WA1729');
+		expect(buildNpiFacilityUrl({ npiId: 'WA1729', networkRegion: 'WEM', year: 2022 })).toContain(
+			'/state/WA/year/2022/jurisdiction-facility/WA1729'
+		);
 	});
 
 	it('truncates a financial-year timestamp to its leading 4 digits', () => {
@@ -58,9 +58,7 @@ describe('buildNpiFacilityUrl', () => {
 	});
 
 	it('returns null when the network region cannot be mapped to a state', () => {
-		expect(
-			buildNpiFacilityUrl({ npiId: 'X', networkRegion: 'BOGUS', year: '2023' })
-		).toBeNull();
+		expect(buildNpiFacilityUrl({ npiId: 'X', networkRegion: 'BOGUS', year: '2023' })).toBeNull();
 	});
 
 	it('URL-encodes the npi id', () => {

@@ -91,7 +91,13 @@ async function proxyAnthropic(apiKey, model, messages) {
 	const { system, filteredMessages } = extractAnthropicSystem(messages);
 
 	/** @type {Record<string, any>} */
-	const body = { model, messages: filteredMessages, stream: true, max_tokens: 2048, temperature: 0.3 };
+	const body = {
+		model,
+		messages: filteredMessages,
+		stream: true,
+		max_tokens: 2048,
+		temperature: 0.3
+	};
 	if (system) body.system = system;
 
 	const res = await fetch(ANTHROPIC_URL, {
@@ -191,7 +197,13 @@ async function fetchAnthropic(apiKey, model, messages) {
 	const { system, filteredMessages } = extractAnthropicSystem(messages);
 
 	/** @type {Record<string, any>} */
-	const body = { model, messages: filteredMessages, stream: false, max_tokens: 1024, temperature: 0.1 };
+	const body = {
+		model,
+		messages: filteredMessages,
+		stream: false,
+		max_tokens: 1024,
+		temperature: 0.1
+	};
 	if (system) body.system = system;
 
 	const res = await fetch(ANTHROPIC_URL, {

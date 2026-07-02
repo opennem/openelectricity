@@ -111,7 +111,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 		}}
 		{y}
 		{z}
-		yDomain={/** @type {any} */ (yDomain)}
+		{yDomain}
 		xScale={scaleUtc()}
 		zScale={scaleOrdinal()}
 		zDomain={seriesNames}

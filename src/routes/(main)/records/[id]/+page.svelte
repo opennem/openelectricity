@@ -102,10 +102,11 @@
 		chartCxt.xDomain = xDomain;
 		defaultXDomain = xDomain;
 
-		chartCxt.chartTooltips.valueColour =
-			/** @type {Record<string, any>} */ (fuelTechColourMap)[
-				(/** @type {string} */ (record.metric) === 'renewable_proportion' ? 'renewables' : record.fueltech_id) || 'demand'
-			];
+		chartCxt.chartTooltips.valueColour = /** @type {Record<string, any>} */ (fuelTechColourMap)[
+			/** @type {string} */ ((record.metric) === 'renewable_proportion'
+				? 'renewables'
+				: record.fueltech_id) || 'demand'
+		];
 		chartCxt.chartOptions.setLineChart();
 
 		// TODO: refactor this bit into a config object
@@ -244,7 +245,8 @@
 		<div class="bg-mid-warm-grey rounded-lg"></div>
 	</div>
 {:else}
-	{@const ftId = (data.metric === 'renewable_proportion' ? 'renewables' : data.fueltech_id) || 'demand'}
+	{@const ftId =
+		(data.metric === 'renewable_proportion' ? 'renewables' : data.fueltech_id) || 'demand'}
 
 	<div class="grid py-6 px-0 md:px-16 grid-cols-1">
 		<section>

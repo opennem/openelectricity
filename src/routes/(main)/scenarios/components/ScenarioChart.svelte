@@ -50,7 +50,9 @@
 									{chart.chartOptions.displayUnit || ''}
 								</button>
 							{:else}
-								<span class="font-light text-sm text-mid-grey">{chart.chartOptions.displayUnit || ''}</span>
+								<span class="font-light text-sm text-mid-grey"
+									>{chart.chartOptions.displayUnit || ''}</span
+								>
 							{/if}
 
 							<span class="hidden md:block font-light text-sm text-mid-grey">—</span>

@@ -20,7 +20,9 @@ export async function GET({ fetch, setHeaders }) {
 			fuel_tech: d.fuel_tech,
 			data_type: d.data_type,
 			units: d.units,
-			data: d.history.data.slice(-12).reduce((/** @type {number} */ acc, /** @type {number} */ cur) => acc + cur, 0)
+			data: d.history.data
+				.slice(-12)
+				.reduce((/** @type {number} */ acc, /** @type {number} */ cur) => acc + cur, 0)
 		};
 	};
 

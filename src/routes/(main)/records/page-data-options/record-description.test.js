@@ -58,9 +58,7 @@ describe('generateDescription', () => {
 		});
 
 		it('emissions', () => {
-			expect(generateDescription('interval', 'low', 'emissions')).toBe(
-				'Lowest ever emissions'
-			);
+			expect(generateDescription('interval', 'low', 'emissions')).toBe('Lowest ever emissions');
 		});
 
 		it('renewable_proportion', () => {
@@ -107,23 +105,21 @@ describe('generateDescription', () => {
 
 		describe('battery', () => {
 			it('power metric', () => {
-				expect(
-					generateDescription('day', 'high', 'power', 'battery_discharging')
-				).toBe('Highest instantaneous battery discharge');
+				expect(generateDescription('day', 'high', 'power', 'battery_discharging')).toBe(
+					'Highest instantaneous battery discharge'
+				);
 			});
 
 			it('energy metric', () => {
-				expect(
-					generateDescription('day', 'high', 'energy', 'battery_charging')
-				).toBe('Highest battery charge over a day');
+				expect(generateDescription('day', 'high', 'energy', 'battery_charging')).toBe(
+					'Highest battery charge over a day'
+				);
 			});
 		});
 
 		describe('price/emissions/market_value/renewable_proportion', () => {
 			it('price over a day', () => {
-				expect(generateDescription('day', 'high', 'price')).toBe(
-					'Highest price over a day'
-				);
+				expect(generateDescription('day', 'high', 'price')).toBe('Highest price over a day');
 			});
 
 			it('market value over a month', () => {
@@ -176,15 +172,11 @@ describe('generateDescription', () => {
 
 	describe('fallback for unhandled combinations', () => {
 		it('returns basic description for unknown period/aggregate', () => {
-			expect(generateDescription('unknown', 'high', 'power', 'solar')).toBe(
-				'Highest solar power'
-			);
+			expect(generateDescription('unknown', 'high', 'power', 'solar')).toBe('Highest solar power');
 		});
 
 		it('uses low label in fallback', () => {
-			expect(generateDescription('unknown', 'low', 'energy', 'wind')).toBe(
-				'Lowest wind energy'
-			);
+			expect(generateDescription('unknown', 'low', 'energy', 'wind')).toBe('Lowest wind energy');
 		});
 	});
 });

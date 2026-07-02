@@ -54,10 +54,7 @@
 <svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
 
 <div class="sticky top-10 flex flex-col gap-2">
-	<TableHeader
-		showCheckbox={false}
-		hoverTime={generation.hoverTime || generation.focusTime}
-	/>
+	<TableHeader showCheckbox={false} hoverTime={generation.hoverTime || generation.focusTime} />
 
 	<table class="w-full border border-warm-grey">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">

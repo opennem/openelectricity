@@ -23,7 +23,10 @@
 		const startDate = new Date(data.queryParams.dateStart);
 		const endDate = new Date(data.queryParams.dateEnd);
 
-		const formatOptions = /** @type {Intl.DateTimeFormatOptions} */ ({ year: 'numeric', month: 'short' });
+		const formatOptions = /** @type {Intl.DateTimeFormatOptions} */ ({
+			year: 'numeric',
+			month: 'short'
+		});
 		const startFormatted = startDate.toLocaleDateString('en', formatOptions);
 		const endFormatted = endDate.toLocaleDateString('en', formatOptions);
 
@@ -45,7 +48,9 @@
 		/** @type {Record<string, string>} */
 		const labels = {};
 		fuelTechNames.forEach((/** @type {string} */ tech) => {
-			labels[tech] = tech.replace('_', ' ').replace(/\b\w/g, (/** @type {string} */ l) => l.toUpperCase());
+			labels[tech] = tech
+				.replace('_', ' ')
+				.replace(/\b\w/g, (/** @type {string} */ l) => l.toUpperCase());
 		});
 		return labels;
 	});
@@ -242,18 +247,14 @@
 				// Calculate custom y-domain from dataset minimum with padding
 				/** @type {number[]} */
 				const allValues = [];
-				combinedProcessedData.seriesData.forEach(
-					(/** @type {any} */ dataPoint) => {
-						combinedProcessedData.seriesNames.forEach(
-							(/** @type {string} */ seriesName) => {
-								const value = dataPoint[seriesName];
-								if (value != null && !isNaN(value)) {
-									allValues.push(value);
-								}
-							}
-						);
-					}
-				);
+				combinedProcessedData.seriesData.forEach((/** @type {any} */ dataPoint) => {
+					combinedProcessedData.seriesNames.forEach((/** @type {string} */ seriesName) => {
+						const value = dataPoint[seriesName];
+						if (value != null && !isNaN(value)) {
+							allValues.push(value);
+						}
+					});
+				});
 
 				if (allValues.length > 0) {
 					const minValue = Math.min(...allValues);
@@ -429,7 +430,7 @@
 				<GenerationChart
 					chartContext={/** @type {any} */ (chartCxts)[fuelTech]}
 					{fuelData}
-					fuelTechName={/** @type {string} */ (fuelTech)}
+					fuelTechName={fuelTech}
 					viewState={getViewState(fuelTech)}
 					onViewStateChange={(/** @type {string} */ value) => setViewState(fuelTech, value)}
 					{onmousemove}

@@ -22,12 +22,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		chart,
-		onmousemove,
-		onmouseout,
-		onpointerup
-	} = $props();
+	let { chart, onmousemove, onmouseout, onpointerup } = $props();
 
 	let styles = $derived(chart.chartStyles);
 	let isStacked = $derived(chart.chartOptions.isChartTypeBarStacked);
@@ -54,9 +49,7 @@
 	});
 
 	/** Band domain labels for the x-axis */
-	let categories = $derived(
-		dataset.map((/** @type {any} */ d) => d.category ?? d._xLabel)
-	);
+	let categories = $derived(dataset.map((/** @type {any} */ d) => d.category ?? d._xLabel));
 
 	/** D3 stack data for stacked mode */
 	let stackedData = $derived.by(() => {
@@ -120,7 +113,7 @@
 				/>
 			{:else}
 				<GroupedBar
-					dataset={dataset}
+					{dataset}
 					seriesNames={chart.visibleSeriesNames}
 					seriesColours={chart.seriesColours}
 					highlightId={chart.chartOptions.allowHoverHighlight ? chart.hoverKey : null}

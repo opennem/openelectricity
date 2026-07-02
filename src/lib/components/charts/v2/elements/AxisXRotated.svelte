@@ -33,13 +33,7 @@
 		{@const xPos = ($xScale(cat) ?? 0) + $xScale.bandwidth() / 2}
 		<g transform="translate({xPos}, {$height})">
 			<line y1={0} y2={6} {stroke} />
-			<text
-				transform="rotate(-45)"
-				x={0}
-				y={16}
-				text-anchor="end"
-				class={textClass}
-			>
+			<text transform="rotate(-45)" x={0} y={16} text-anchor="end" class={textClass}>
 				{cat}
 			</text>
 		</g>

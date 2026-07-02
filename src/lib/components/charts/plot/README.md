@@ -18,50 +18,50 @@ StratifyPlotChart          High-level component: data props + chart type + annot
 
 ### Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `data` | `Array<Record<string, any>>` | required | Parsed row objects (with `date` or `category` key) |
-| `seriesNames` | `string[]` | required | Series column keys |
-| `seriesColours` | `Record<string, string>` | required | Series key to colour hex |
-| `seriesLabels` | `Record<string, string>` | required | Series key to display label |
-| `chartType` | `StratifyPlotChartType` | required | Chart type (see below) |
-| `seriesChartTypes` | `Record<string, string>` | `{}` | Per-series chart type overrides (see below) |
-| `plotOverrides` | `PlotOverrides \| null` | `null` | Extended Plot config overrides (see below) |
-| `height` | `number` | `300` | Chart height in px (per-panel when faceting) |
-| `showLegend` | `boolean` | `true` | Show/hide the colour legend |
-| `facetColumn` | `string \| null` | `null` | Column key to partition data into small-multiple panels |
-| `options` | `TimeSeriesOptions` | `{}` | Pass-through for curve, xDomain, margins, etc. |
-| `annotations` | `Annotation[]` | `[]` | Annotation configs (see below) |
-| `class` | `string` | `''` | CSS classes for the outer container |
+| Prop               | Type                         | Default  | Description                                             |
+| ------------------ | ---------------------------- | -------- | ------------------------------------------------------- |
+| `data`             | `Array<Record<string, any>>` | required | Parsed row objects (with `date` or `category` key)      |
+| `seriesNames`      | `string[]`                   | required | Series column keys                                      |
+| `seriesColours`    | `Record<string, string>`     | required | Series key to colour hex                                |
+| `seriesLabels`     | `Record<string, string>`     | required | Series key to display label                             |
+| `chartType`        | `StratifyPlotChartType`      | required | Chart type (see below)                                  |
+| `seriesChartTypes` | `Record<string, string>`     | `{}`     | Per-series chart type overrides (see below)             |
+| `plotOverrides`    | `PlotOverrides \| null`      | `null`   | Extended Plot config overrides (see below)              |
+| `height`           | `number`                     | `300`    | Chart height in px (per-panel when faceting)            |
+| `showLegend`       | `boolean`                    | `true`   | Show/hide the colour legend                             |
+| `facetColumn`      | `string \| null`             | `null`   | Column key to partition data into small-multiple panels |
+| `options`          | `TimeSeriesOptions`          | `{}`     | Pass-through for curve, xDomain, margins, etc.          |
+| `annotations`      | `Annotation[]`               | `[]`     | Annotation configs (see below)                          |
+| `class`            | `string`                     | `''`     | CSS classes for the outer container                     |
 
 ### Chart Types
 
-| Value | Description |
-|-------|-------------|
+| Value            | Description              |
+| ---------------- | ------------------------ |
 | `'stacked-area'` | Time-series stacked area |
-| `'area'` | Alias for stacked-area |
-| `'line'` | Multi-series line chart |
-| `'bar-stacked'` | Category stacked bar |
-| `'grouped-bar'` | Category grouped bar |
-| `'dot'` | Dot (scatter) chart |
+| `'area'`         | Alias for stacked-area   |
+| `'line'`         | Multi-series line chart  |
+| `'bar-stacked'`  | Category stacked bar     |
+| `'grouped-bar'`  | Category grouped bar     |
+| `'dot'`          | Dot (scatter) chart      |
 
 ### Basic Usage
 
 ```svelte
 <script>
-  import StratifyPlotChart from '$lib/components/charts/plot/StratifyPlotChart.svelte';
-  import { parseCSV } from '$lib/stratify/csv-parser.js';
+	import StratifyPlotChart from '$lib/components/charts/plot/StratifyPlotChart.svelte';
+	import { parseCSV } from '$lib/stratify/csv-parser.js';
 
-  const parsed = parseCSV(csvString);
+	const parsed = parseCSV(csvString);
 </script>
 
 <StratifyPlotChart
-  data={parsed.data}
-  seriesNames={parsed.seriesNames}
-  seriesColours={parsed.seriesColours}
-  seriesLabels={parsed.seriesLabels}
-  chartType="line"
-  height={280}
+	data={parsed.data}
+	seriesNames={parsed.seriesNames}
+	seriesColours={parsed.seriesColours}
+	seriesLabels={parsed.seriesLabels}
+	chartType="line"
+	height={280}
 />
 ```
 
@@ -107,11 +107,11 @@ A vertical rule at a specific x position with a text label at the top.
 }
 ```
 
-| Property | Type | Required | Description |
-|----------|------|----------|-------------|
-| `x` | `string \| Date` | yes | X position (date string or category) |
-| `text` | `string` | yes | Label text |
-| `style` | `AnnotationStyle` | no | Visual overrides |
+| Property | Type              | Required | Description                          |
+| -------- | ----------------- | -------- | ------------------------------------ |
+| `x`      | `string \| Date`  | yes      | X position (date string or category) |
+| `text`   | `string`          | yes      | Label text                           |
+| `style`  | `AnnotationStyle` | no       | Visual overrides                     |
 
 #### `bar-labels`
 
@@ -148,29 +148,29 @@ Free-form text annotation at a specific data coordinate. Supports arrow indicato
 { type: 'point', x: '2024-01-01', y: 5000, text: 'Note', arrow: false }
 ```
 
-| Property | Type | Default | Description |
-|----------|------|---------|-------------|
-| `x` | `string \| Date` | required | X position |
-| `series` | `string` | - | Series key to look up y value from data |
-| `y` | `number` | - | Explicit y position (used if series not provided) |
-| `text` | `string` | required | Annotation text |
-| `arrow` | `boolean` | `true` | Show arrow pointing to the data point |
-| `stacked` | `boolean` | `false` | Resolve y to the stacked midpoint of the series band |
-| `style` | `AnnotationStyle` | - | Visual overrides |
+| Property  | Type              | Default  | Description                                          |
+| --------- | ----------------- | -------- | ---------------------------------------------------- |
+| `x`       | `string \| Date`  | required | X position                                           |
+| `series`  | `string`          | -        | Series key to look up y value from data              |
+| `y`       | `number`          | -        | Explicit y position (used if series not provided)    |
+| `text`    | `string`          | required | Annotation text                                      |
+| `arrow`   | `boolean`         | `true`   | Show arrow pointing to the data point                |
+| `stacked` | `boolean`         | `false`  | Resolve y to the stacked midpoint of the series band |
+| `style`   | `AnnotationStyle` | -        | Visual overrides                                     |
 
 ### AnnotationStyle
 
 All annotation types accept an optional `style` object:
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `colour` | `string` | Text fill colour (also default line stroke) |
-| `fontSize` | `number` | Text size in px |
-| `fontWeight` | `string` | e.g. `'bold'`, `'normal'` |
-| `fontFamily` | `string` | Font family override |
-| `lineColour` | `string` | Line stroke colour (overrides `colour`) |
-| `lineWidth` | `number` | Line stroke width in px |
-| `lineStyle` | `'solid' \| 'dashed' \| 'dotted'` | Line dash pattern |
+| Property     | Type                              | Description                                 |
+| ------------ | --------------------------------- | ------------------------------------------- |
+| `colour`     | `string`                          | Text fill colour (also default line stroke) |
+| `fontSize`   | `number`                          | Text size in px                             |
+| `fontWeight` | `string`                          | e.g. `'bold'`, `'normal'`                   |
+| `fontFamily` | `string`                          | Font family override                        |
+| `lineColour` | `string`                          | Line stroke colour (overrides `colour`)     |
+| `lineWidth`  | `number`                          | Line stroke width in px                     |
+| `lineStyle`  | `'solid' \| 'dashed' \| 'dotted'` | Line dash pattern                           |
 
 ### Combining Annotations
 
@@ -188,20 +188,20 @@ annotations={[
 
 ## File Structure
 
-| File | Purpose |
-|------|---------|
-| `PlotChart.svelte` | Low-level rendering wrapper |
-| `StratifyPlotChart.svelte` | High-level component with data props, tooltips, annotations |
-| `plot-action.js` | Svelte action that calls Observable Plot |
-| `plot-configs.js` | Factory functions for each chart type + mixed mark support |
-| `plot-overrides.js` | PlotOverrides merge system for extended configuration |
-| `plot-annotations.js` | Annotation system (types, processing, mark generation) |
-| `PlotChartOptions.svelte.js` | Reactive chart options state (used by facility-plot) |
-| `PlotChartTheme.svelte.js` | Theme system with CSS custom properties |
-| `PlotInteraction.svelte.js` | Pan/zoom/tooltip interaction state |
-| `PlotSync.svelte.js` | Multi-chart synchronisation controller |
-| `plot-overlays.js` | Night shading and coordinate conversion |
-| `plot-gridlines.js` | Timezone-aware gridline computation |
+| File                         | Purpose                                                     |
+| ---------------------------- | ----------------------------------------------------------- |
+| `PlotChart.svelte`           | Low-level rendering wrapper                                 |
+| `StratifyPlotChart.svelte`   | High-level component with data props, tooltips, annotations |
+| `plot-action.js`             | Svelte action that calls Observable Plot                    |
+| `plot-configs.js`            | Factory functions for each chart type + mixed mark support  |
+| `plot-overrides.js`          | PlotOverrides merge system for extended configuration       |
+| `plot-annotations.js`        | Annotation system (types, processing, mark generation)      |
+| `PlotChartOptions.svelte.js` | Reactive chart options state (used by facility-plot)        |
+| `PlotChartTheme.svelte.js`   | Theme system with CSS custom properties                     |
+| `PlotInteraction.svelte.js`  | Pan/zoom/tooltip interaction state                          |
+| `PlotSync.svelte.js`         | Multi-chart synchronisation controller                      |
+| `plot-overlays.js`           | Night shading and coordinate conversion                     |
+| `plot-gridlines.js`          | Timezone-aware gridline computation                         |
 
 ## Adding a New Chart Type
 
@@ -224,12 +224,12 @@ Override the chart type for individual series by passing `seriesChartTypes`:
 
 ```svelte
 <StratifyPlotChart
-  {data}
-  {seriesNames}
-  {seriesColours}
-  {seriesLabels}
-  chartType="line"
-  seriesChartTypes={{ demand: 'bar', price: 'dot' }}
+	{data}
+	{seriesNames}
+	{seriesColours}
+	{seriesLabels}
+	chartType="line"
+	seriesChartTypes={{ demand: 'bar', price: 'dot' }}
 />
 ```
 
@@ -249,17 +249,17 @@ See `plot-overrides.js` for the `PlotOverrides` type definition and `resolveMark
 
 ```svelte
 <StratifyPlotChart
-  {data}
-  {seriesNames}
-  {seriesColours}
-  {seriesLabels}
-  chartType="line"
-  plotOverrides={{
-    y: { type: 'log', nice: true },
-    layout: { title: 'Log Scale', marginLeft: 50 },
-    extraMarks: [
-      { markType: 'rule-y', data: [1000], options: { stroke: 'red', strokeDasharray: '4,3' } }
-    ]
-  }}
+	{data}
+	{seriesNames}
+	{seriesColours}
+	{seriesLabels}
+	chartType="line"
+	plotOverrides={{
+		y: { type: 'log', nice: true },
+		layout: { title: 'Log Scale', marginLeft: 50 },
+		extraMarks: [
+			{ markType: 'rule-y', data: [1000], options: { stroke: 'red', strokeDasharray: '4,3' } }
+		]
+	}}
 />
 ```

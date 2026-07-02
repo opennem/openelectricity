@@ -165,7 +165,17 @@ export function startCount(powerData, seriesNames) {
  * @param {number} params.hoursInRange
  * @returns {{ netRevenue: number, avgSpread: number, cyclesPerDay: number, storageDuration: number, roundTripEfficiency: number }}
  */
-export function batteryMetrics({ energyData, mvData, generatorSeriesNames, loadSeriesNames, mvGeneratorNames, mvLoadNames, storageCapacity, powerCapacity, hoursInRange }) {
+export function batteryMetrics({
+	energyData,
+	mvData,
+	generatorSeriesNames,
+	loadSeriesNames,
+	mvGeneratorNames,
+	mvLoadNames,
+	storageCapacity,
+	powerCapacity,
+	hoursInRange
+}) {
 	let dischargeEnergy = 0;
 	let chargeEnergy = 0;
 	let dischargeMV = 0;
@@ -190,15 +200,12 @@ export function batteryMetrics({ energyData, mvData, generatorSeriesNames, loadS
 	const avgSpread = avgDischargePrice - avgChargePrice;
 
 	const days = hoursInRange / 24;
-	const cyclesPerDay = storageCapacity > 0 && days > 0
-		? dischargeEnergy / storageCapacity / days
-		: 0;
+	const cyclesPerDay =
+		storageCapacity > 0 && days > 0 ? dischargeEnergy / storageCapacity / days : 0;
 
 	const storageDuration = powerCapacity > 0 ? storageCapacity / powerCapacity : 0;
 
-	const roundTripEfficiency = chargeEnergy > 0
-		? (dischargeEnergy / chargeEnergy) * 100
-		: 0;
+	const roundTripEfficiency = chargeEnergy > 0 ? (dischargeEnergy / chargeEnergy) * 100 : 0;
 
 	return { netRevenue, avgSpread, cyclesPerDay, storageDuration, roundTripEfficiency };
 }

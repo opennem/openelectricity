@@ -203,10 +203,7 @@
 {/snippet}
 
 {#if isVertical}
-	<div
-		class="flex-col overflow-hidden {className}"
-		style={combinedStyle}
-	>
+	<div class="flex-col overflow-hidden {className}" style={combinedStyle}>
 		{#if direction === 'top'}
 			{@render dragHandle()}
 		{/if}
@@ -232,10 +229,7 @@
 		{/if}
 	</div>
 {:else}
-	<div
-		class="flex-row overflow-hidden {className}"
-		style={combinedStyle}
-	>
+	<div class="flex-row overflow-hidden {className}" style={combinedStyle}>
 		{#if direction === 'left'}
 			{@render dragHandle()}
 		{/if}

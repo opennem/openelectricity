@@ -68,8 +68,10 @@
 		if (filterMode === 'text') {
 			checkedRegions = initCheckedRegions || ['_all', 'nem', 'nsw1', 'qld1', 'sa1', 'tas1', 'vic1'];
 			checkedPeriods = initCheckedPeriods || periodOptions.map((/** @type {any} */ i) => i.value);
-			checkedFuelTechs = initCheckedFuelTechs || fuelTechOptions.map((/** @type {any} */ i) => i.value);
-			checkedAggregates = initCheckedAggregates || aggregateOptions.map((/** @type {any} */ i) => i.value);
+			checkedFuelTechs =
+				initCheckedFuelTechs || fuelTechOptions.map((/** @type {any} */ i) => i.value);
+			checkedAggregates =
+				initCheckedAggregates || aggregateOptions.map((/** @type {any} */ i) => i.value);
 			checkedMetrics = initCheckedMetrics || metricOptions.map((/** @type {any} */ i) => i.value);
 			selectedSignificance = initSelectedSignificance || 0;
 			indeterminateRegions = [];

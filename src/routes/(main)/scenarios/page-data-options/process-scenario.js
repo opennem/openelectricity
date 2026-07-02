@@ -8,7 +8,11 @@ import { scenarioLabels } from './descriptions';
 import { scenarioColourMap } from './models';
 import sumFuelTechData from './sum-fuel-tech-data';
 import combineHistoryProjection from './combine-history-projection';
-import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData, currentFinancialYear } from './utils';
+import {
+	mutateDatesToStartOfYear,
+	mergeHistoricalEmissionsData,
+	currentFinancialYear
+} from './utils';
 
 /**
  * Group projection stats by start date, transform each group into a TimeSeries,
@@ -334,7 +338,9 @@ function intensity({ processedEmissions, processedEnergy }) {
  * @returns {Record<string, string>}
  */
 function getScenarioColours(seriesNames, overrides = {}) {
-	const scenarioPathways = seriesNames.filter((/** @type {string} */ name) => name !== 'historical');
+	const scenarioPathways = seriesNames.filter(
+		(/** @type {string} */ name) => name !== 'historical'
+	);
 
 	const scenarioPathwayDetails = scenarioPathways.map((/** @type {string} */ name) => {
 		const [model, scenario, pathway] = name.split('-');

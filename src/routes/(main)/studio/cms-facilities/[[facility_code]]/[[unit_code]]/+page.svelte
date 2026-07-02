@@ -126,9 +126,7 @@
 			if (f.region?.name?.toLowerCase().includes(q)) return true;
 			if (f.units?.some((/** @type {any} */ u) => u.code?.toLowerCase().includes(q))) return true;
 			if (
-				f.units?.some((/** @type {any} */ u) =>
-					u.fuel_technology?.name?.toLowerCase().includes(q)
-				)
+				f.units?.some((/** @type {any} */ u) => u.fuel_technology?.name?.toLowerCase().includes(q))
 			)
 				return true;
 			return false;
@@ -137,7 +135,9 @@
 
 	// Selected facility (from URL param)
 	let selected = $derived(
-		facilityCode ? facilities.find((/** @type {any} */ f) => f.code === facilityCode) ?? null : null
+		facilityCode
+			? (facilities.find((/** @type {any} */ f) => f.code === facilityCode) ?? null)
+			: null
 	);
 
 	// Stats
@@ -168,15 +168,12 @@
 			committedCap,
 			retiredCap,
 			withPhotos: facilities.filter((/** @type {any} */ f) => f.photos?.length > 0).length,
-			withLocation: facilities.filter(
-				(/** @type {any} */ f) => f.location?.lat && f.location?.lng
-			).length,
+			withLocation: facilities.filter((/** @type {any} */ f) => f.location?.lat && f.location?.lng)
+				.length,
 			missingLocation: facilities.filter(
 				(/** @type {any} */ f) => !f.location?.lat || !f.location?.lng
 			).length,
-			withDescription: facilities.filter(
-				(/** @type {any} */ f) => f.description?.length > 0
-			).length
+			withDescription: facilities.filter((/** @type {any} */ f) => f.description?.length > 0).length
 		};
 	});
 
@@ -190,9 +187,8 @@
 					.map((/** @type {any} */ f) => {
 						const primaryFt = f.units?.[0]?.fuel_technology?.code;
 						const colour = primaryFt
-							? fuelTechColourMap[
-									/** @type {keyof typeof fuelTechColourMap} */ (primaryFt)
-								] || '#888'
+							? fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (primaryFt)] ||
+								'#888'
 							: '#888';
 						return {
 							type: 'Feature',
@@ -245,9 +241,7 @@
 	 */
 	function ftColour(code) {
 		if (!code) return '#ccc';
-		return (
-			fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (code)] || '#888'
-		);
+		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (code)] || '#888';
 	}
 
 	/** @param {any} e */
@@ -264,7 +258,9 @@
 		e.preventDefault();
 		const list = filteredFacilities;
 		if (!list.length) return;
-		const idx = facilityCode ? list.findIndex((/** @type {any} */ f) => f.code === facilityCode) : -1;
+		const idx = facilityCode
+			? list.findIndex((/** @type {any} */ f) => f.code === facilityCode)
+			: -1;
 		let next;
 		if (e.key === 'ArrowDown') {
 			next = idx < list.length - 1 ? idx + 1 : 0;
@@ -408,203 +404,243 @@
 </script>
 
 <LoginGate redirectUrl="/studio/cms-facilities">
-{#if mounted}
-<div class="flex flex-col h-dvh overflow-hidden font-mono">
-	<!-- Header bar -->
-	<div
-		class="flex items-center gap-3 px-4 py-2 border-b transition-colors {isProduction ? 'border-red/20 bg-red/5' : isStaging ? '' : 'border-warm-grey bg-light-warm-grey/50'}"
-		style={isStaging ? 'border-color: rgb(202 138 4 / 0.2); background: rgb(254 243 199 / 0.4)' : ''}
-	>
-		<span class="text-[11px] font-medium text-dark-grey tracking-wide uppercase"
-			>CMS Facilities</span
-		>
-		<!-- Dataset switcher -->
-		{#if data.sanity.availableDatasets.length > 1}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<div class="relative" onpointerdown={(e) => e.stopPropagation()}>
-				<button
-					class="text-[10px] px-1.5 py-0.5 border rounded transition-colors flex items-center gap-1 {isProduction ? 'text-red border-red/30 bg-red/5 hover:border-red/50' : isStaging ? '' : 'text-mid-grey border-warm-grey hover:border-dark-grey'}"
-				style={isStaging ? 'color: rgb(161 98 7); border-color: rgb(202 138 4 / 0.3); background: rgb(254 243 199 / 0.5)' : ''}
-					disabled={switchingDataset || detailBusy}
-					onclick={() => (datasetDropdownOpen = !datasetDropdownOpen)}
-				>
-					{data.sanity.dataset}
-					{#if switchingDataset}
-						<span class="animate-pulse">…</span>
-					{:else}
-						<svg class="w-2.5 h-2.5 transition-transform {datasetDropdownOpen ? 'rotate-180' : ''}" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6l4 4 4-4" /></svg>
-					{/if}
-				</button>
-				{#if datasetDropdownOpen}
-					<div class="absolute left-0 top-full z-20 mt-1 min-w-[120px] rounded border border-warm-grey bg-white shadow-sm overflow-hidden">
-						{#each data.sanity.availableDatasets as ds}
-							<button
-								class="w-full text-left px-2 py-1.5 text-[10px] transition-colors {ds === data.sanity.dataset ? 'bg-warm-grey/40 font-medium text-dark-grey' : 'text-mid-grey hover:bg-warm-grey/30 hover:text-dark-grey'}"
-								onclick={async () => {
-									datasetDropdownOpen = false;
-									if (ds === data.sanity.dataset) return;
-									switchingDataset = true;
-									document.cookie = `cms-dataset=${ds};path=/;max-age=${60 * 60 * 24 * 365}`;
-									await invalidateAll();
-									switchingDataset = false;
-								}}
-							>
-								{ds}
-							</button>
-						{/each}
-					</div>
-				{/if}
-			</div>
-		{:else}
-			<span class="text-[10px] text-mid-grey">{data.sanity.dataset}</span>
-		{/if}
-		<span class="ml-auto"></span>
-		{#if clerkState.user}
-			<span class="text-[10px] text-mid-grey">{clerkState.user.primaryEmailAddress?.emailAddress}</span>
-			<button
-				onclick={() => clerkState.instance?.signOut({ redirectUrl: window.location.href })}
-				class="text-[10px] px-1.5 py-0.5 border border-warm-grey rounded text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors inline-flex items-center gap-1"
-			>
-				<LogOut size={10} />
-				SIGN OUT
-			</button>
-		{/if}
-	</div>
-
-	<!-- Map (maplibre-gl loaded on demand) -->
-	{#if showMap}
-		<div transition:slide={{ duration: 200 }}>
-			{#await import('./_components/FacilityMap.svelte') then { default: FacilityMap }}
-				<FacilityMap
-					{mapStyle}
-					{geojson}
-					{osmGeoJson}
-					{circleFilter}
-					{facilityCode}
-					{mapDrag}
-					bind:map={mapInstance}
-					onload={handleMapLoad}
-					onclickmarker={handleMapClick}
-				/>
-			{/await}
-		</div>
-	{/if}
-
-	<!-- Main split pane -->
-	<div class="flex flex-1 min-h-0">
-		<!-- LEFT: Facility list -->
-		<div class="shrink-0 border-r border-warm-grey flex flex-col min-h-0" style="width: {listDrag.value}px;">
-			<PanelHeader>
-				<span class="text-[12px] font-medium text-dark-grey flex-1 truncate">Facilities</span>
-				<span class="text-[10px] text-mid-grey tabular-nums">{filteredFacilities.length}/{facilities.length}</span>
-				<button
-					onclick={() => (showMap = !showMap)}
-					class="text-[10px] px-1.5 py-0.5 border rounded transition-colors ml-1 {showMap
-						? 'border-dark-grey bg-dark-grey text-white'
-						: 'border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
-				>
-					MAP
-				</button>
-			</PanelHeader>
-
-			<!-- Search -->
-			<div class="px-3 py-2 border-b border-warm-grey">
-				<div class="relative">
-					<Search
-						class="absolute left-2 top-1/2 -translate-y-1/2 text-mid-grey"
-						size={12}
-					/>
-					<input
-						type="search"
-						value={searchQuery}
-						oninput={(e) => handleSearch(e.currentTarget.value)}
-						placeholder="Filter..."
-						class="w-full pl-7 pr-3 py-1.5 text-[11px] font-mono border border-warm-grey rounded bg-white hover:border-dark-grey focus:border-dark-grey focus:outline-none"
-					/>
-				</div>
-			</div>
-
-			<!-- List -->
-			<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
+	{#if mounted}
+		<div class="flex flex-col h-dvh overflow-hidden font-mono">
+			<!-- Header bar -->
 			<div
-				class="flex-1 overflow-y-auto"
-				bind:this={listContainer}
-				onkeydown={handleListKeydown}
-				tabindex="0"
+				class="flex items-center gap-3 px-4 py-2 border-b transition-colors {isProduction
+					? 'border-red/20 bg-red/5'
+					: isStaging
+						? ''
+						: 'border-warm-grey bg-light-warm-grey/50'}"
+				style={isStaging
+					? 'border-color: rgb(202 138 4 / 0.2); background: rgb(254 243 199 / 0.4)'
+					: ''}
 			>
-				{#each filteredFacilities as facility (facility._id)}
-					{@const cap = facility.units?.reduce(
-						(/** @type {number} */ s, /** @type {any} */ u) =>
-							s + (u.capacity_registered || 0),
-						0
-					)}
-					<button
-						data-fid={facility.code}
-						onclick={() => selectFacility(facility.code)}
-						class="w-full text-left px-3 py-2 grid grid-cols-[8px_1fr_12px_12px_50px] items-center gap-2 border-b border-warm-grey/60 transition-colors cursor-pointer hover:bg-warm-grey/50
-						{facilityCode === facility.code ? 'bg-warm-grey' : ''}"
-					>
-						<span
-							class="w-2 h-2 rounded-full"
-							style="background: {ftColour(facility.units?.[0]?.fuel_technology?.code)}"
-						></span>
-						<span class="text-[11px] text-dark-grey truncate"
-							>{facility.name || 'Unnamed'}</span
+				<span class="text-[11px] font-medium text-dark-grey tracking-wide uppercase"
+					>CMS Facilities</span
+				>
+				<!-- Dataset switcher -->
+				{#if data.sanity.availableDatasets.length > 1}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div class="relative" onpointerdown={(e) => e.stopPropagation()}>
+						<button
+							class="text-[10px] px-1.5 py-0.5 border rounded transition-colors flex items-center gap-1 {isProduction
+								? 'text-red border-red/30 bg-red/5 hover:border-red/50'
+								: isStaging
+									? ''
+									: 'text-mid-grey border-warm-grey hover:border-dark-grey'}"
+							style={isStaging
+								? 'color: rgb(161 98 7); border-color: rgb(202 138 4 / 0.3); background: rgb(254 243 199 / 0.5)'
+								: ''}
+							disabled={switchingDataset || detailBusy}
+							onclick={() => (datasetDropdownOpen = !datasetDropdownOpen)}
 						>
-						<span class="flex justify-center">
-							{#if facility.photos?.length > 0}
-								<Image size={10} class="text-mid-grey/70" />
+							{data.sanity.dataset}
+							{#if switchingDataset}
+								<span class="animate-pulse">…</span>
+							{:else}
+								<svg
+									class="w-2.5 h-2.5 transition-transform {datasetDropdownOpen ? 'rotate-180' : ''}"
+									viewBox="0 0 16 16"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"><path d="M4 6l4 4 4-4" /></svg
+								>
 							{/if}
-						</span>
-						<span class="flex justify-center">
-							{#if facility.location?.lat && facility.location?.lng}
-								<MapPin size={10} class="text-mid-grey/70" />
-							{/if}
-						</span>
-						<span class="text-[10px] text-mid-grey tabular-nums text-right">{fmtCap(cap)}</span>
+						</button>
+						{#if datasetDropdownOpen}
+							<div
+								class="absolute left-0 top-full z-20 mt-1 min-w-[120px] rounded border border-warm-grey bg-white shadow-sm overflow-hidden"
+							>
+								{#each data.sanity.availableDatasets as ds}
+									<button
+										class="w-full text-left px-2 py-1.5 text-[10px] transition-colors {ds ===
+										data.sanity.dataset
+											? 'bg-warm-grey/40 font-medium text-dark-grey'
+											: 'text-mid-grey hover:bg-warm-grey/30 hover:text-dark-grey'}"
+										onclick={async () => {
+											datasetDropdownOpen = false;
+											if (ds === data.sanity.dataset) return;
+											switchingDataset = true;
+											document.cookie = `cms-dataset=${ds};path=/;max-age=${60 * 60 * 24 * 365}`;
+											await invalidateAll();
+											switchingDataset = false;
+										}}
+									>
+										{ds}
+									</button>
+								{/each}
+							</div>
+						{/if}
+					</div>
+				{:else}
+					<span class="text-[10px] text-mid-grey">{data.sanity.dataset}</span>
+				{/if}
+				<span class="ml-auto"></span>
+				{#if clerkState.user}
+					<span class="text-[10px] text-mid-grey"
+						>{clerkState.user.primaryEmailAddress?.emailAddress}</span
+					>
+					<button
+						onclick={() => clerkState.instance?.signOut({ redirectUrl: window.location.href })}
+						class="text-[10px] px-1.5 py-0.5 border border-warm-grey rounded text-mid-grey hover:text-dark-grey hover:border-dark-grey transition-colors inline-flex items-center gap-1"
+					>
+						<LogOut size={10} />
+						SIGN OUT
 					</button>
-				{/each}
-
-				{#if filteredFacilities.length === 0}
-					<div class="px-3 py-8 text-center text-[11px] text-mid-grey">No results</div>
 				{/if}
 			</div>
-		</div>
 
-		<DragHandle axis="x" onstart={listDrag.start} active={listDrag.isDragging} class="border-r border-warm-grey" />
-
-		<!-- RIGHT: Detail inspector -->
-		<div class="flex-1 flex flex-col min-h-0">
-			{#if selected}
-				<FacilityDetail facility={selected} dataset={data.sanity.dataset} selectedUnitCode={unitCode} {osmStatus} onclose={deselectFacility} onselectunit={selectUnit} onfetchosm={handleOsmFetch} onupdate={handleFacilityUpdate} onbusy={(b) => detailBusy = b} />
-			{:else}
-				<!-- Empty state -->
-				<div class="flex-1 flex items-center justify-center text-[11px] text-mid-grey">
-					Select a facility
+			<!-- Map (maplibre-gl loaded on demand) -->
+			{#if showMap}
+				<div transition:slide={{ duration: 200 }}>
+					{#await import('./_components/FacilityMap.svelte') then { default: FacilityMap }}
+						<FacilityMap
+							{mapStyle}
+							{geojson}
+							{osmGeoJson}
+							{circleFilter}
+							{facilityCode}
+							{mapDrag}
+							bind:map={mapInstance}
+							onload={handleMapLoad}
+							onclickmarker={handleMapClick}
+						/>
+					{/await}
 				</div>
 			{/if}
-		</div>
-	</div>
 
-	<!-- Stats bar -->
-	<div
-		class="border-t border-warm-grey bg-light-warm-grey/50 px-4 py-1.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-[10px] text-mid-grey"
-	>
-		<span><strong class="text-dark-grey">{stats.totalFacilities}</strong> fac</span>
-		<span><strong class="text-dark-grey">{stats.totalUnits}</strong> units</span>
-		<span class="border-l border-warm-grey pl-4"
-			>oper <strong class="text-dark-grey">{fmtCap(stats.operatingCap)}</strong></span
-		>
-		<span>commit <strong class="text-dark-grey">{fmtCap(stats.committedCap)}</strong></span>
-		<span>ret <strong class="text-dark-grey">{fmtCap(stats.retiredCap)}</strong> MW</span>
-		<span class="border-l border-warm-grey pl-4"
-			>photos:<strong class="text-dark-grey">{stats.withPhotos}</strong></span
-		>
-		<span>loc:<strong class="text-dark-grey">{stats.withLocation}</strong></span>
-		<span>no-loc:<strong class="text-dark-grey">{stats.missingLocation}</strong></span>
-		<span>desc:<strong class="text-dark-grey">{stats.withDescription}</strong></span>
-	</div>
-</div>
-{/if}
+			<!-- Main split pane -->
+			<div class="flex flex-1 min-h-0">
+				<!-- LEFT: Facility list -->
+				<div
+					class="shrink-0 border-r border-warm-grey flex flex-col min-h-0"
+					style="width: {listDrag.value}px;"
+				>
+					<PanelHeader>
+						<span class="text-[12px] font-medium text-dark-grey flex-1 truncate">Facilities</span>
+						<span class="text-[10px] text-mid-grey tabular-nums"
+							>{filteredFacilities.length}/{facilities.length}</span
+						>
+						<button
+							onclick={() => (showMap = !showMap)}
+							class="text-[10px] px-1.5 py-0.5 border rounded transition-colors ml-1 {showMap
+								? 'border-dark-grey bg-dark-grey text-white'
+								: 'border-warm-grey text-mid-grey hover:text-dark-grey hover:border-dark-grey'}"
+						>
+							MAP
+						</button>
+					</PanelHeader>
+
+					<!-- Search -->
+					<div class="px-3 py-2 border-b border-warm-grey">
+						<div class="relative">
+							<Search class="absolute left-2 top-1/2 -translate-y-1/2 text-mid-grey" size={12} />
+							<input
+								type="search"
+								value={searchQuery}
+								oninput={(e) => handleSearch(e.currentTarget.value)}
+								placeholder="Filter..."
+								class="w-full pl-7 pr-3 py-1.5 text-[11px] font-mono border border-warm-grey rounded bg-white hover:border-dark-grey focus:border-dark-grey focus:outline-none"
+							/>
+						</div>
+					</div>
+
+					<!-- List -->
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<div
+						class="flex-1 overflow-y-auto"
+						bind:this={listContainer}
+						onkeydown={handleListKeydown}
+						tabindex="0"
+					>
+						{#each filteredFacilities as facility (facility._id)}
+							{@const cap = facility.units?.reduce(
+								(/** @type {number} */ s, /** @type {any} */ u) => s + (u.capacity_registered || 0),
+								0
+							)}
+							<button
+								data-fid={facility.code}
+								onclick={() => selectFacility(facility.code)}
+								class="w-full text-left px-3 py-2 grid grid-cols-[8px_1fr_12px_12px_50px] items-center gap-2 border-b border-warm-grey/60 transition-colors cursor-pointer hover:bg-warm-grey/50
+						{facilityCode === facility.code ? 'bg-warm-grey' : ''}"
+							>
+								<span
+									class="w-2 h-2 rounded-full"
+									style="background: {ftColour(facility.units?.[0]?.fuel_technology?.code)}"
+								></span>
+								<span class="text-[11px] text-dark-grey truncate">{facility.name || 'Unnamed'}</span
+								>
+								<span class="flex justify-center">
+									{#if facility.photos?.length > 0}
+										<Image size={10} class="text-mid-grey/70" />
+									{/if}
+								</span>
+								<span class="flex justify-center">
+									{#if facility.location?.lat && facility.location?.lng}
+										<MapPin size={10} class="text-mid-grey/70" />
+									{/if}
+								</span>
+								<span class="text-[10px] text-mid-grey tabular-nums text-right">{fmtCap(cap)}</span>
+							</button>
+						{/each}
+
+						{#if filteredFacilities.length === 0}
+							<div class="px-3 py-8 text-center text-[11px] text-mid-grey">No results</div>
+						{/if}
+					</div>
+				</div>
+
+				<DragHandle
+					axis="x"
+					onstart={listDrag.start}
+					active={listDrag.isDragging}
+					class="border-r border-warm-grey"
+				/>
+
+				<!-- RIGHT: Detail inspector -->
+				<div class="flex-1 flex flex-col min-h-0">
+					{#if selected}
+						<FacilityDetail
+							facility={selected}
+							dataset={data.sanity.dataset}
+							selectedUnitCode={unitCode}
+							{osmStatus}
+							onclose={deselectFacility}
+							onselectunit={selectUnit}
+							onfetchosm={handleOsmFetch}
+							onupdate={handleFacilityUpdate}
+							onbusy={(b) => (detailBusy = b)}
+						/>
+					{:else}
+						<!-- Empty state -->
+						<div class="flex-1 flex items-center justify-center text-[11px] text-mid-grey">
+							Select a facility
+						</div>
+					{/if}
+				</div>
+			</div>
+
+			<!-- Stats bar -->
+			<div
+				class="border-t border-warm-grey bg-light-warm-grey/50 px-4 py-1.5 flex flex-wrap items-center gap-x-4 gap-y-0.5 text-[10px] text-mid-grey"
+			>
+				<span><strong class="text-dark-grey">{stats.totalFacilities}</strong> fac</span>
+				<span><strong class="text-dark-grey">{stats.totalUnits}</strong> units</span>
+				<span class="border-l border-warm-grey pl-4"
+					>oper <strong class="text-dark-grey">{fmtCap(stats.operatingCap)}</strong></span
+				>
+				<span>commit <strong class="text-dark-grey">{fmtCap(stats.committedCap)}</strong></span>
+				<span>ret <strong class="text-dark-grey">{fmtCap(stats.retiredCap)}</strong> MW</span>
+				<span class="border-l border-warm-grey pl-4"
+					>photos:<strong class="text-dark-grey">{stats.withPhotos}</strong></span
+				>
+				<span>loc:<strong class="text-dark-grey">{stats.withLocation}</strong></span>
+				<span>no-loc:<strong class="text-dark-grey">{stats.missingLocation}</strong></span>
+				<span>desc:<strong class="text-dark-grey">{stats.withDescription}</strong></span>
+			</div>
+		</div>
+	{/if}
 </LoginGate>

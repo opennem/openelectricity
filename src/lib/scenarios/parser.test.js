@@ -26,9 +26,7 @@ describe('scenario parser', () => {
 	});
 
 	it('returns data array as-is', () => {
-		const data = [
-			{ pathway: 'CDP3', fuel_tech: 'coal', projection: { data: [1, 2, 3] } }
-		];
+		const data = [{ pathway: 'CDP3', fuel_tech: 'coal', projection: { data: [1, 2, 3] } }];
 		const result = parser({ data });
 		expect(result.data).toEqual(data);
 	});

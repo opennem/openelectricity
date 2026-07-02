@@ -78,9 +78,7 @@ describe('mergeHistoricalEmissionsData', () => {
 	});
 
 	it('handles a single fuel tech entry', () => {
-		const historyData = [
-			makeStatsData({ fuel_tech: 'wind', history: { data: [7, 14, 21] } })
-		];
+		const historyData = [makeStatsData({ fuel_tech: 'wind', history: { data: [7, 14, 21] } })];
 
 		const result = mergeHistoricalEmissionsData(historyData, false);
 
@@ -105,9 +103,7 @@ describe('mutateDatesToStartOfYear', () => {
 	});
 
 	it('adds additional years when specified', () => {
-		const data = [
-			{ date: new Date('2022-06-15T12:00:00'), time: 0, value: 100 }
-		];
+		const data = [{ date: new Date('2022-06-15T12:00:00'), time: 0, value: 100 }];
 
 		const result = mutateDatesToStartOfYear(data, 3);
 
@@ -116,9 +112,7 @@ describe('mutateDatesToStartOfYear', () => {
 	});
 
 	it('defaults to zero additional years', () => {
-		const data = [
-			{ date: new Date('2024-11-30T23:59:59'), time: 0, value: 50 }
-		];
+		const data = [{ date: new Date('2024-11-30T23:59:59'), time: 0, value: 50 }];
 
 		const result = mutateDatesToStartOfYear(data);
 
@@ -126,9 +120,7 @@ describe('mutateDatesToStartOfYear', () => {
 	});
 
 	it('preserves other properties on the data objects', () => {
-		const data = [
-			{ date: new Date('2022-03-01'), time: 0, value: 42, label: 'test' }
-		];
+		const data = [{ date: new Date('2022-03-01'), time: 0, value: 42, label: 'test' }];
 
 		const result = mutateDatesToStartOfYear(data);
 
@@ -203,9 +195,7 @@ describe('currentFinancialYear', () => {
 
 describe('covertHistoryDataToTWh', () => {
 	it('divides history data values by 1000', () => {
-		const data = [
-			makeStatsData({ units: 'GWh', history: { data: [1000, 2000, 3000] } })
-		];
+		const data = [makeStatsData({ units: 'GWh', history: { data: [1000, 2000, 3000] } })];
 
 		const result = covertHistoryDataToTWh(data);
 
@@ -221,9 +211,7 @@ describe('covertHistoryDataToTWh', () => {
 	});
 
 	it('preserves null values as null', () => {
-		const data = [
-			makeStatsData({ units: 'GWh', history: { data: [1000, null, 3000] } })
-		];
+		const data = [makeStatsData({ units: 'GWh', history: { data: [1000, null, 3000] } })];
 
 		const result = covertHistoryDataToTWh(data);
 

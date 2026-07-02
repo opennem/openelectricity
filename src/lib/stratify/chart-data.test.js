@@ -154,7 +154,7 @@ describe('normaliseChart', () => {
 		});
 
 		expect(result.userSeriesColours).toEqual({ Solar: '#ff0' });
-		expect(result.userSeriesLabels).toEqual({ 'solar_gen': 'Solar Generation' });
+		expect(result.userSeriesLabels).toEqual({ solar_gen: 'Solar Generation' });
 		expect(result.annotations).toEqual([{ type: 'line', x: '2024-01-01' }]);
 		expect(result.seriesChartTypes).toEqual({ wind: 'line' });
 		expect(result.seriesLineStyles).toEqual({ solar: 'dashed', wind: 'dotted' });

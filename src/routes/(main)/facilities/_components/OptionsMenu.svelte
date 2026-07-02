@@ -42,9 +42,7 @@
 <OptionsMenu {isFullscreen} {onfullscreenchange} {onshowshortcuts}>
 	{#snippet sections({ close })}
 		{#if ondownloadcsv}
-			<OptionsMenuHeading icon={downloading ? Check : Download}>
-				Download as CSV
-			</OptionsMenuHeading>
+			<OptionsMenuHeading icon={downloading ? Check : Download}>Download as CSV</OptionsMenuHeading>
 			<OptionsMenuItem onclick={() => handleDownloadCsv(close)}>
 				{downloading ? 'Downloaded!' : 'Facilities'}
 			</OptionsMenuItem>

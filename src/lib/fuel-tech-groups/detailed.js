@@ -161,9 +161,7 @@ export function sortByDetailedOrder(items, { reverse = false } = {}) {
 		return i === -1 ? order.length : i;
 	};
 	return [...items].sort((a, b) =>
-		reverse
-			? rank(b.fueltech_id) - rank(a.fueltech_id)
-			: rank(a.fueltech_id) - rank(b.fueltech_id)
+		reverse ? rank(b.fueltech_id) - rank(a.fueltech_id) : rank(a.fueltech_id) - rank(b.fueltech_id)
 	);
 }
 

@@ -59,7 +59,11 @@
 				{#each gaugeYears as year (year)}
 					<div class="flex justify-between">
 						<span>{year}</span>
-						<span>{/** @type {number} */ (dataset.filter((d) => d.date.getFullYear() === year)[0][key]).toFixed(2)}</span>
+						<span
+							>{/** @type {number} */ (
+								dataset.filter((d) => d.date.getFullYear() === year)[0][key]
+							).toFixed(2)}</span
+						>
 					</div>
 				{/each}
 			</div>

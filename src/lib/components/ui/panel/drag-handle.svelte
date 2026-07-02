@@ -28,7 +28,9 @@
 		)}
 	>
 		{#each { length: 5 } as _, i (i)}
-			<span class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"></span>
+			<span
+				class="block w-1 h-1 rounded-full bg-mid-grey group-hover:bg-dark-grey transition-colors"
+			></span>
 		{/each}
 	</div>
 </div>

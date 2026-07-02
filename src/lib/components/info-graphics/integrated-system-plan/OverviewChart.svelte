@@ -116,7 +116,12 @@
 			</defs>
 
 			<HoverLayer {dataset} {onmousemove} {onmouseout} />
-			<AreaStacked clipPathId={clip ? `${id}-clip-path` : ''} {dataset} {onmousemove} {onmouseout} />
+			<AreaStacked
+				clipPathId={clip ? `${id}-clip-path` : ''}
+				{dataset}
+				{onmousemove}
+				{onmouseout}
+			/>
 		</Svg>
 
 		<Svg pointerEvents={false}>

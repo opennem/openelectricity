@@ -49,7 +49,8 @@
 						{#if shortcut.keys.length === 1}
 							<kbd
 								class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
-							>{shortcut.keys[0]}</kbd>
+								>{shortcut.keys[0]}</kbd
+							>
 						{:else}
 							<div class="flex items-center gap-1">
 								{#each shortcut.keys as key, i (key)}
@@ -58,7 +59,8 @@
 									{/if}
 									<kbd
 										class="text-xs font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-2 py-1 leading-none"
-									>{key}</kbd>
+										>{key}</kbd
+									>
 								{/each}
 							</div>
 						{/if}

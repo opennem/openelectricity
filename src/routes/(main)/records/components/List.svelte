@@ -17,7 +17,9 @@
 		const records = [];
 		const daysArr = [...days];
 		daysArr.forEach(([day, { nonIntervalDayRecords }]) => {
-			let nonYearRecords = nonIntervalDayRecords.filter((/** @type {any} */ r) => r.period !== 'year');
+			let nonYearRecords = nonIntervalDayRecords.filter(
+				(/** @type {any} */ r) => r.period !== 'year'
+			);
 			if (nonYearRecords.length) {
 				records.push([day, nonYearRecords]);
 			}
@@ -33,7 +35,9 @@
 		const records = [];
 		const daysArr = [...days];
 		daysArr.forEach(([day, { nonIntervalDayRecords }]) => {
-			let yearsRecords = nonIntervalDayRecords.filter((/** @type {any} */ r) => r.period === 'year');
+			let yearsRecords = nonIntervalDayRecords.filter(
+				(/** @type {any} */ r) => r.period === 'year'
+			);
 			if (yearsRecords.length) {
 				// year is last 4 chars of the day
 				let year = day.slice(-4);
@@ -114,7 +118,11 @@
 												class:text-black={record.fueltech_id === 'solar'}
 												class:text-white={record.fueltech_id !== 'solar'}
 											>
-												<FuelTechBadge fuelTech={record.fueltech_id || 'demand'} iconOnly iconSize={8} />
+												<FuelTechBadge
+													fuelTech={record.fueltech_id || 'demand'}
+													iconOnly
+													iconSize={8}
+												/>
 											</span>
 											<!-- <div class="text-xs text-mid-grey font-space">
 												{getRegionLabel(record.network_id, record.network_region)}
@@ -175,7 +183,11 @@
 												class:text-black={record.fueltech_id === 'solar'}
 												class:text-white={record.fueltech_id !== 'solar'}
 											>
-												<FuelTechBadge fuelTech={record.fueltech_id || 'demand'} iconOnly iconSize={8} />
+												<FuelTechBadge
+													fuelTech={record.fueltech_id || 'demand'}
+													iconOnly
+													iconSize={8}
+												/>
 											</span>
 											<!-- <div class="text-xs text-mid-grey font-space">
 												{getRegionLabel(record.network_id, record.network_region)}
@@ -241,7 +253,11 @@
 													class:text-black={latest.fueltech_id === 'solar'}
 													class:text-white={latest.fueltech_id !== 'solar'}
 												>
-													<FuelTechBadge fuelTech={latest.fueltech_id || 'demand'} iconOnly iconSize={8} />
+													<FuelTechBadge
+														fuelTech={latest.fueltech_id || 'demand'}
+														iconOnly
+														iconSize={8}
+													/>
 												</span>
 											</div>
 

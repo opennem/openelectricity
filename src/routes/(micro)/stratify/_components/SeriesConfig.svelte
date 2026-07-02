@@ -128,7 +128,6 @@
 			project.seriesLineStyles = { ...project.seriesLineStyles, [key]: value };
 		}
 	}
-
 </script>
 
 {#if project.hasColourSeries || project.isMapCategory || project.isWaterfallPerRow || project.isWaterfallSemantic}

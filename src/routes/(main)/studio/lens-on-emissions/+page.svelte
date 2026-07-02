@@ -593,7 +593,9 @@
 					{chart}
 					netTotalKey="net_total"
 					netTotalColor={NET_TOTAL_COLOR}
-					overlayStart={showProjections ? fyStartDate(TIME_RANGES.PROJECTION_START_FY).getTime() : null}
+					overlayStart={showProjections
+						? fyStartDate(TIME_RANGES.PROJECTION_START_FY).getTime()
+						: null}
 				/>
 			</div>
 		{:else}

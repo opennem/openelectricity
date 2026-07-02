@@ -34,8 +34,8 @@ import { OpenElectricityClient, NoDataFound } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 
 const client = new OpenElectricityClient({
-    apiKey: PUBLIC_OE_API_KEY,
-    baseUrl: PUBLIC_OE_API_URL
+	apiKey: PUBLIC_OE_API_KEY,
+	baseUrl: PUBLIC_OE_API_URL
 });
 
 // Validation constants (include only those relevant to the chosen method)
@@ -43,13 +43,13 @@ const VALID_INTERVALS = ['5m', '1h', '1d', '7d', '1M', '3M', '1y'];
 const VALID_METRICS = ['power', 'energy', 'market_value'];
 
 export async function GET({ params, url, setHeaders }) {
-    // 1. Extract + validate params
-    // 2. Build options object for the SDK
-    // 3. Format any date params as timezone-naive (YYYY-MM-DDTHH:mm:ss)
-    //    by adding the network offset (NEM +10:00, WEM +08:00) then slicing
-    // 4. Call client.<method>(...)
-    // 5. setHeaders({ 'Cache-Control': 'public, max-age=<N>' })
-    // 6. return Response.json({...})
+	// 1. Extract + validate params
+	// 2. Build options object for the SDK
+	// 3. Format any date params as timezone-naive (YYYY-MM-DDTHH:mm:ss)
+	//    by adding the network offset (NEM +10:00, WEM +08:00) then slicing
+	// 4. Call client.<method>(...)
+	// 5. setHeaders({ 'Cache-Control': 'public, max-age=<N>' })
+	// 6. return Response.json({...})
 }
 ```
 
@@ -66,12 +66,12 @@ When accepting `YYYY-MM-DD` strings from URL params, they're already naive — p
 
 ## Data-shape gotchas — `getNetworkData` power with `secondary_grouping: ['fueltech']`
 
-The OE API returns *raw* per-fueltech series, **not** the pre-aligned, chart-ready shape the legacy OpenNEM static JSON (`data.openelectricity.org.au/.../power/7d.json`) gives. If you feed OE output into a pipeline written for that JSON (e.g. `processPower7d`), watch for these — all four bit the 7-day tracker migration (`/api/tracker/7d-processed`, see `alignAndFillPowerSeries` there):
+The OE API returns _raw_ per-fueltech series, **not** the pre-aligned, chart-ready shape the legacy OpenNEM static JSON (`data.openelectricity.org.au/.../power/7d.json`) gives. If you feed OE output into a pipeline written for that JSON (e.g. `processPower7d`), watch for these — all four bit the 7-day tracker migration (`/api/tracker/7d-processed`, see `alignAndFillPowerSeries` there):
 
 1. **No 30m interval for power.** `interval: '30m'` is rejected (`Unprocessable Entity`). Fetch `5m` and aggregate down yourself.
-2. **Per-fueltech windows differ.** Each fueltech has its own `start`/length (e.g. rooftop solar starts later and is shorter than coal). Any code that reconstructs a point's time by *index* from a single reference start will misalign series. **Align all series onto one common grid first** (union of all start/last, null-padded). The shared `alignStatsDataToCommonRange` is **monthly-only**; for sub-daily data use a 5m-aware align (see `alignAndFillPowerSeries` in `7d-processed/+server.js`).
+2. **Per-fueltech windows differ.** Each fueltech has its own `start`/length (e.g. rooftop solar starts later and is shorter than coal). Any code that reconstructs a point's time by _index_ from a single reference start will misalign series. **Align all series onto one common grid first** (union of all start/last, null-padded). The shared `alignStatsDataToCommonRange` is **monthly-only**; for sub-daily data use a 5m-aware align (see `alignAndFillPowerSeries` in `7d-processed/+server.js`).
 3. **30-minute series are step-held across 5m with nulls.** Rooftop solar repeats its 30m value across some 5m slots and leaves the rest `null`. If grouping turns `null`→`0` (as `groupData` does) and you then take a mean to 30m, those buckets get halved → visible dips. Fix with a **bounded forward-fill** (≤ one 30m block) to reconstruct the step, or make the aggregation null-aware. Don't bridge long gaps / coverage edges.
-4. **Net `battery` series is returned alongside the split.** Fueltech `battery` = `battery_discharging − battery_charging` (net; negative when net-charging). It comes *in addition* to `battery_charging` and `battery_discharging`, which the static JSON returns on their own. Keeping all three **double-counts** battery in a stacked chart — drop `battery` (`d.fuel_tech !== 'battery'`) when the chart already stacks the charging/discharging split. The grouping's standalone `battery` group exists only for feeds that report *just* a net figure.
+4. **Net `battery` series is returned alongside the split.** Fueltech `battery` = `battery_discharging − battery_charging` (net; negative when net-charging). It comes _in addition_ to `battery_charging` and `battery_discharging`, which the static JSON returns on their own. Keeping all three **double-counts** battery in a stacked chart — drop `battery` (`d.fuel_tech !== 'battery'`) when the chart already stacks the charging/discharging split. The grouping's standalone `battery` group exists only for feeds that report _just_ a net figure.
 
 Also note OE returns the in-progress current bucket and may include extra fueltechs the JSON omits (curtailment, a blank-code series); filter/trim as needed.
 
@@ -106,7 +106,7 @@ Always annotate the SDK method return type and the NetworkCode cast:
 
 ```js
 const networkId = /** @type {import('openelectricity').NetworkCode} */ (
-    url.searchParams.get('network_id') || 'NEM'
+	url.searchParams.get('network_id') || 'NEM'
 );
 
 /** @type {import('openelectricity').IFacilityTimeSeriesParams} */

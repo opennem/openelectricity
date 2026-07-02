@@ -96,7 +96,8 @@
 								selectedLabelClass="font-medium text-xs"
 								options={groupOptions}
 								selected={filtersCxt.selectedFuelTechGroup}
-								onchange={(/** @type {any} */ option) => (filtersCxt.selectedFuelTechGroup = option.value)}
+								onchange={(/** @type {any} */ option) =>
+									(filtersCxt.selectedFuelTechGroup = option.value)}
 							/>
 						</div>
 					</div>

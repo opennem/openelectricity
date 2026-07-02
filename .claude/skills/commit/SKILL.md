@@ -33,7 +33,7 @@ Invoke the `simplify` skill (available in the harness — `Skill` tool with `ski
 
 - **Skip this step** when the user says "skip simplify" or "just commit", or when the diff is docs-only (`*.md`, comments, skill files) — `simplify` has nothing useful to say about prose.
 - After simplify finishes, re-run `git status --porcelain` to catch any files it touched outside the original diff (helpers it extracted, tests it added, imports it cleaned up). Include them in the commit scope.
-- If simplify surfaces a refactor it *didn't* apply automatically but recommends, summarise to the user and ask whether to include before proceeding.
+- If simplify surfaces a refactor it _didn't_ apply automatically but recommends, summarise to the user and ask whether to include before proceeding.
 
 ## Step 3 — Verify the change is ready
 
@@ -96,6 +96,7 @@ If nothing in a given README is affected, skip it — don't rewrite just to touc
 Before staging, report back what you're about to include. Example:
 
 > "Updating these alongside the code:
+>
 > - `src/lib/components/charts/v2/README.md` — add `stepIntervalMs` / `renderXDomain` to the ChartStore property table, refresh the Step Mode section.
 > - `step-band.test.js` — add cases for uneven-interval last-point extrapolation."
 
@@ -110,6 +111,7 @@ git add src/lib/components/charts/v2/ChartStore.svelte.js src/lib/components/cha
 ```
 
 This protects against accidentally staging:
+
 - Sensitive files that slipped into the working tree
 - Unrelated side changes from a different task
 - Large binaries / generated files
@@ -127,7 +129,7 @@ Quote paths with parens (`src/routes/(main)/…`) if using shell interpolation, 
 **Body** (after one blank line):
 
 - Bullet list (`- ` prefix), one bullet per distinct change.
-- Focus on *why* / *what it now does*, not a restatement of the diff. Future readers want intent, not a list of files.
+- Focus on _why_ / _what it now does_, not a restatement of the diff. Future readers want intent, not a list of files.
 - Wrap around 78 characters for `git log` readability.
 - **UK English** — `colour`, `behaviour`, `initialise`, etc. (from global `CLAUDE.md`).
 
@@ -170,7 +172,7 @@ If the user asks to push afterwards and the push is to `main`, don't use `--forc
 
 ## Guardrails (always)
 
-- **Never** use `git commit --amend` unless the user explicitly asks. If a pre-commit hook rejects the commit, the commit *didn't happen* — fix the issue and make a NEW commit. Amending here would overwrite the previous commit (potentially their in-progress work).
+- **Never** use `git commit --amend` unless the user explicitly asks. If a pre-commit hook rejects the commit, the commit _didn't happen_ — fix the issue and make a NEW commit. Amending here would overwrite the previous commit (potentially their in-progress work).
 - **Never** skip hooks (`--no-verify`, `--no-gpg-sign`).
 - **Never** stage `.env*`, `credentials*`, `*.pem`, or anything that looks like a secret, even if the user says "commit all" — stop and confirm.
 - **Don't** rewrite commits that are already in `origin/main`.

@@ -128,21 +128,35 @@ export function buildDatasetSummary(facilities) {
 	const byGroup = {};
 	for (const f of facilities) {
 		const group = facilityGroup(f);
-		if (!byGroup[group]) byGroup[group] = { facilities: 0, units: 0, operatingMw: 0, committedMw: 0, renewable: null };
+		if (!byGroup[group])
+			byGroup[group] = { facilities: 0, units: 0, operatingMw: 0, committedMw: 0, renewable: null };
 		byGroup[group].facilities++;
 		for (const u of f.units || []) {
 			const uGroup = ftGroup(u.fuel_technology?.code);
-			if (!byGroup[uGroup]) byGroup[uGroup] = { facilities: 0, units: 0, operatingMw: 0, committedMw: 0, renewable: null };
+			if (!byGroup[uGroup])
+				byGroup[uGroup] = {
+					facilities: 0,
+					units: 0,
+					operatingMw: 0,
+					committedMw: 0,
+					renewable: null
+				};
 			byGroup[uGroup].units++;
-			if (u.fuel_technology?.renewable != null) byGroup[uGroup].renewable = u.fuel_technology.renewable;
+			if (u.fuel_technology?.renewable != null)
+				byGroup[uGroup].renewable = u.fuel_technology.renewable;
 			if (u.status === 'operating') byGroup[uGroup].operatingMw += u.capacity_registered || 0;
 			if (u.status === 'committed') byGroup[uGroup].committedMw += u.capacity_registered || 0;
 		}
 	}
 	lines.push('\nBy fuel technology group:');
-	for (const [group, data] of Object.entries(byGroup).sort((a, b) => b[1].operatingMw - a[1].operatingMw)) {
-		const tag = data.renewable === true ? ' [renewable]' : data.renewable === false ? ' [non-renewable]' : '';
-		const parts = [`${data.facilities} facilities, ${data.units} units, ${fmt(data.operatingMw)} MW operating`];
+	for (const [group, data] of Object.entries(byGroup).sort(
+		(a, b) => b[1].operatingMw - a[1].operatingMw
+	)) {
+		const tag =
+			data.renewable === true ? ' [renewable]' : data.renewable === false ? ' [non-renewable]' : '';
+		const parts = [
+			`${data.facilities} facilities, ${data.units} units, ${fmt(data.operatingMw)} MW operating`
+		];
 		if (data.committedMw > 0) parts.push(`${fmt(data.committedMw)} MW committed`);
 		lines.push(`  ${group}: ${parts.join(', ')}${tag}`);
 	}
@@ -171,7 +185,10 @@ export function buildDatasetSummary(facilities) {
 	for (const f of facilities) {
 		const cap = (f.units || [])
 			.filter((/** @type {any} */ u) => u.status === 'operating')
-			.reduce((/** @type {number} */ s, /** @type {any} */ u) => s + (u.capacity_registered || 0), 0);
+			.reduce(
+				(/** @type {number} */ s, /** @type {any} */ u) => s + (u.capacity_registered || 0),
+				0
+			);
 		for (const owner of f.owners || []) {
 			const name = owner.name || owner.legal_name || 'Unknown';
 			ownerCap[name] = (ownerCap[name] || 0) + cap;
@@ -250,7 +267,9 @@ export function buildFacilityDetail(facility) {
 	if (facility.description?.length > 0) {
 		const text = facility.description
 			.filter((/** @type {any} */ b) => b._type === 'block')
-			.map((/** @type {any} */ b) => b.children?.map((/** @type {any} */ c) => c.text).join('') || '')
+			.map(
+				(/** @type {any} */ b) => b.children?.map((/** @type {any} */ c) => c.text).join('') || ''
+			)
 			.join(' ');
 		if (text.trim()) kv('Description', text.trim());
 	}
@@ -261,7 +280,8 @@ export function buildFacilityDetail(facility) {
 		for (const owner of facility.owners) {
 			const name = owner.name || owner.legal_name || 'Unknown';
 			lines.push(`  ${name}`);
-			if (owner.legal_name && owner.legal_name !== owner.name) kv('    Legal name', owner.legal_name);
+			if (owner.legal_name && owner.legal_name !== owner.name)
+				kv('    Legal name', owner.legal_name);
 			kv('    Website', owner.website);
 			kv('    Wikipedia', owner.wikipedia);
 			kv('    Email', owner.contact_email);
@@ -290,7 +310,8 @@ export function buildFacilityDetail(facility) {
 			// Capacity & technical specs
 			const specs = [];
 			if (unit.capacity_maximum != null) specs.push(`max_cap=${unit.capacity_maximum}MW`);
-			if (unit.min_generation_capacity != null) specs.push(`min_gen=${unit.min_generation_capacity}MW`);
+			if (unit.min_generation_capacity != null)
+				specs.push(`min_gen=${unit.min_generation_capacity}MW`);
 			if (unit.storage_capacity != null) specs.push(`storage=${unit.storage_capacity}MWh`);
 			if (unit.grid_forming != null) specs.push(`grid_forming=${unit.grid_forming}`);
 			if (unit.marginal_loss_factor != null) specs.push(`mlf=${unit.marginal_loss_factor}`);
@@ -309,16 +330,20 @@ export function buildFacilityDetail(facility) {
 				if (unit.commencement_date_specificity) d += ` (${unit.commencement_date_specificity})`;
 				dates.push(d);
 			}
-			if (unit.construction_start_date) dates.push(`construction_start=${unit.construction_start_date}`);
+			if (unit.construction_start_date)
+				dates.push(`construction_start=${unit.construction_start_date}`);
 			if (unit.expected_operation_date) {
 				let d = `expected_operation=${unit.expected_operation_date}`;
-				if (unit.expected_operation_date_specificity) d += ` (${unit.expected_operation_date_specificity})`;
+				if (unit.expected_operation_date_specificity)
+					d += ` (${unit.expected_operation_date_specificity})`;
 				dates.push(d);
 			}
-			if (unit.commissioning_confirmed != null) dates.push(`commissioning_confirmed=${unit.commissioning_confirmed}`);
+			if (unit.commissioning_confirmed != null)
+				dates.push(`commissioning_confirmed=${unit.commissioning_confirmed}`);
 			if (unit.expected_closure_date) {
 				let d = `expected_closure=${unit.expected_closure_date}`;
-				if (unit.expected_closure_date_specificity) d += ` (${unit.expected_closure_date_specificity})`;
+				if (unit.expected_closure_date_specificity)
+					d += ` (${unit.expected_closure_date_specificity})`;
 				dates.push(d);
 			}
 			if (unit.closure_date) {
@@ -332,10 +357,12 @@ export function buildFacilityDetail(facility) {
 
 			// Cost
 			if (unit.construction_cost) lines.push(`    construction_cost=${unit.construction_cost}`);
-			if (unit.cis_tender_recipient != null) lines.push(`    cis_tender_recipient=${unit.cis_tender_recipient}`);
+			if (unit.cis_tender_recipient != null)
+				lines.push(`    cis_tender_recipient=${unit.cis_tender_recipient}`);
 
 			// Fuel technology detail
-			if (unit.fuel_technology?.renewable != null) lines.push(`    renewable=${unit.fuel_technology.renewable}`);
+			if (unit.fuel_technology?.renewable != null)
+				lines.push(`    renewable=${unit.fuel_technology.renewable}`);
 
 			// Unit types — full equipment detail
 			if (unit.unit_types?.length > 0) {

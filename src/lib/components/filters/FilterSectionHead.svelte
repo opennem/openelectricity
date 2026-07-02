@@ -27,15 +27,20 @@
 <header class="flex justify-between items-center py-8">
 	{#if toggleHandler}
 		<button
-			onclick={preventDefault(/** @type {(event: Event, ...args: unknown[]) => void} */ (toggleHandler))}
+			onclick={preventDefault(
+				/** @type {(event: Event, ...args: unknown[]) => void} */ (toggleHandler)
+			)}
 			class="subhead-secondary text-dark-grey grow text-left">{title}</button
 		>
 	{:else}
 		<h4 class="subhead-secondary text-dark-grey grow text-left mb-0">{title}</h4>
 	{/if}
 	{#if hasFilters && clearHandler}
-		<button onclick={preventDefault(/** @type {(event: Event, ...args: unknown[]) => void} */ (clearHandler))} class="text-link-large ml-auto mr-4 leading-sm"
-			>{clearTitle}</button
+		<button
+			onclick={preventDefault(
+				/** @type {(event: Event, ...args: unknown[]) => void} */ (clearHandler)
+			)}
+			class="text-link-large ml-auto mr-4 leading-sm">{clearTitle}</button
 		>
 	{/if}
 	{#if toggleHandler}

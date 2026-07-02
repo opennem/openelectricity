@@ -163,9 +163,7 @@ async function fetchRecords(
 		}
 
 		// Filter out renewable_proportion records (not yet supported by OE API)
-		let renewableProportionRecords = recordsData.filter(
-			(d) => d.metric === 'renewable_proportion'
-		);
+		let renewableProportionRecords = recordsData.filter((d) => d.metric === 'renewable_proportion');
 		if (renewableProportionRecords.length > 0) {
 			console.log('renewable_proportion records:', renewableProportionRecords);
 		}

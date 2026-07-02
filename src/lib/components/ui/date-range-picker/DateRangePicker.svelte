@@ -162,8 +162,9 @@
 	 * @param {{ start: import('@internationalized/date').DateValue | undefined, end: import('@internationalized/date').DateValue | undefined }} value
 	 */
 	function handleValueChange(value) {
-		localRange =
-			/** @type {{ start: CalendarDate | undefined, end: CalendarDate | undefined }} */ (value);
+		localRange = /** @type {{ start: CalendarDate | undefined, end: CalendarDate | undefined }} */ (
+			value
+		);
 
 		if (value.start && value.end) {
 			pendingValidation = validateRange(

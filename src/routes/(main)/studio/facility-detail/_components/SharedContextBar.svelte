@@ -125,7 +125,9 @@
 	<!-- MLF -->
 	{#if mlf != null}
 		<span
-			class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium {mlfColourClass(mlf)}"
+			class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono font-medium {mlfColourClass(
+				mlf
+			)}"
 		>
 			MLF {mlf.toFixed(2)}
 		</span>

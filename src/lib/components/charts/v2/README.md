@@ -530,20 +530,20 @@ A unified toolbar combining range presets, a calendar popover, and an interval d
 
 #### Props
 
-| Prop                   | Type                     | Description                                                                               |
-| ---------------------- | ------------------------ | ----------------------------------------------------------------------------------------- |
-| `selectedRange`        | `number \| null`         | Active preset in days (`null` = custom, `-1` = All)                                       |
-| `customDays`           | `number \| null`         | Span (days) of the current custom view — derives the interval options when no preset is active |
+| Prop                   | Type                     | Description                                                                                                              |
+| ---------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `selectedRange`        | `number \| null`         | Active preset in days (`null` = custom, `-1` = All)                                                                      |
+| `customDays`           | `number \| null`         | Span (days) of the current custom view — derives the interval options when no preset is active                           |
 | `displayInterval`      | `string`                 | Current interval id (`'5m'`, `'30m'`, `'1h'`, `'1d'`, `'7d'`, `'1M'`, `'season'`, `'quarter'`, `'half'`, `'fy'`, `'1y'`) |
-| `startDate`            | `string \| null`         | Start date (YYYY-MM-DD) for the DateRangePicker                                           |
-| `endDate`              | `string \| null`         | End date (YYYY-MM-DD) for the DateRangePicker                                             |
-| `minDate`              | `string \| null`         | Earliest selectable date                                                                  |
-| `maxDate`              | `string \| null`         | Latest selectable date                                                                    |
-| `earliestDate`         | `string \| null`         | Earliest data date (used by "All" preset)                                                 |
-| `showIntervalDropdown` | `boolean`                | When `false`, renders the interval as a static badge instead of a Select. Default `true`. |
-| `onrangeselect`        | `(days) => void`         | Called when a range preset is clicked                                                     |
-| `ondaterangechange`    | `({start, end}) => void` | Called when dates change via the calendar                                                 |
-| `onintervalchange`     | `(interval) => void`     | Called when the interval dropdown changes                                                 |
+| `startDate`            | `string \| null`         | Start date (YYYY-MM-DD) for the DateRangePicker                                                                          |
+| `endDate`              | `string \| null`         | End date (YYYY-MM-DD) for the DateRangePicker                                                                            |
+| `minDate`              | `string \| null`         | Earliest selectable date                                                                                                 |
+| `maxDate`              | `string \| null`         | Latest selectable date                                                                                                   |
+| `earliestDate`         | `string \| null`         | Earliest data date (used by "All" preset)                                                                                |
+| `showIntervalDropdown` | `boolean`                | When `false`, renders the interval as a static badge instead of a Select. Default `true`.                                |
+| `onrangeselect`        | `(days) => void`         | Called when a range preset is clicked                                                                                    |
+| `ondaterangechange`    | `({start, end}) => void` | Called when dates change via the calendar                                                                                |
+| `onintervalchange`     | `(interval) => void`     | Called when the interval dropdown changes                                                                                |
 
 #### Range presets
 

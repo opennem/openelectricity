@@ -32,6 +32,7 @@ Add to `fuelTechNameMap` with the display name. If the fuel-tech is a load (char
 For each grouping file (`simple.js`, `detailed.js`, `renewables-fossils.js`, `simple-with-split-solar.js`, `sources-loads.js`, `sources-without-battery.js`, anything under `lens/` or `scenarios/`), add the new code to the appropriate group's array in `fuelTechMap`.
 
 **Don't** blindly add to every file — check the grouping's purpose:
+
 - `simple.js` — broad categories (all wind types → `wind`).
 - `detailed.js` — preserves subtypes.
 - `renewables-fossils.js` — only the renewable/fossil distinction matters.

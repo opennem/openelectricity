@@ -9,11 +9,7 @@
 	 * in the same series.
 	 */
 
-	import {
-		sumSeries,
-		getHoursInRange,
-		capacityFactor
-	} from '../_utils/compute-metrics.js';
+	import { sumSeries, getHoursInRange, capacityFactor } from '../_utils/compute-metrics.js';
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import MetricCard from './MetricCard.svelte';
 
@@ -177,23 +173,11 @@
 				unit={storageDuration != null ? 'hours' : ''}
 			/>
 
-			<MetricCard
-				label="Round-trip Efficiency"
-				value="--"
-				subtitle="Requires interval data"
-			/>
+			<MetricCard label="Round-trip Efficiency" value="--" subtitle="Requires interval data" />
 
-			<MetricCard
-				label="Total Energy"
-				value={fmtEnergy.format(metrics.totalEnergy)}
-				unit="MWh"
-			/>
+			<MetricCard label="Total Energy" value={fmtEnergy.format(metrics.totalEnergy)} unit="MWh" />
 
-			<MetricCard
-				label="Capacity Factor"
-				value={fmtCf.format(metrics.cf)}
-				unit="%"
-			/>
+			<MetricCard label="Capacity Factor" value={fmtCf.format(metrics.cf)} unit="%" />
 		</div>
 	{:else}
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -205,13 +189,13 @@
 
 	{#if equipmentSpecs.length > 0}
 		<div class="border-t border-light-warm-grey pt-3">
-			<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">
-				Equipment
-			</span>
+			<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey"> Equipment </span>
 
 			<div class="mt-1.5 flex flex-wrap gap-2">
 				{#each equipmentSpecs as spec (spec.brand + spec.model)}
-					<span class="inline-flex items-center gap-1 rounded bg-light-warm-grey px-2 py-0.5 text-[11px] font-mono text-dark-grey">
+					<span
+						class="inline-flex items-center gap-1 rounded bg-light-warm-grey px-2 py-0.5 text-[11px] font-mono text-dark-grey"
+					>
 						{#if spec.brand}
 							<span class="font-semibold">{spec.brand}</span>
 						{/if}

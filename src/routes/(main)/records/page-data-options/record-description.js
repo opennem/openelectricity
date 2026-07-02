@@ -96,7 +96,12 @@ export default function generateDescription(period, aggregate, metric, fuelTech)
 	const metricPeriod = metricPeriodMap[`${metric}.${period}`] || metricPeriodMap[metric];
 
 	if (!periodAggregate || !metricPeriod) {
-		console.log('Unhandled record description combination:', { period, aggregate, metric, fuelTech });
+		console.log('Unhandled record description combination:', {
+			period,
+			aggregate,
+			metric,
+			fuelTech
+		});
 		// Fallback: construct a basic description from the raw values
 		const aggLabel = aggregate === 'high' ? 'Highest' : aggregate === 'low' ? 'Lowest' : aggregate;
 		const label = ftLabel || fuelTech || '';

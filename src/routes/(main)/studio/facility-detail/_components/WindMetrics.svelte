@@ -49,7 +49,13 @@
 	 *   timeZone?: string
 	 * }}
 	 */
-	let { facility, sanityFacility = null, summaryData = null, intervalData = null, timeZone = '+10:00' } = $props();
+	let {
+		facility,
+		sanityFacility = null,
+		summaryData = null,
+		intervalData = null,
+		timeZone = '+10:00'
+	} = $props();
 
 	const fmtEnergy = getNumberFormat(0);
 	const fmtCf = getNumberFormat(1);
@@ -110,9 +116,8 @@
 		const hours = getHoursInRange(energyData);
 		const cf = capacityFactor(totalEnergy, totalCapacity, hours);
 		const price = avgPriceReceived(totalMV, totalEnergy);
-		const intervalHours = energyData.length >= 2
-			? (energyData[1].time - energyData[0].time) / 3_600_000
-			: 1;
+		const intervalHours =
+			energyData.length >= 2 ? (energyData[1].time - energyData[0].time) / 3_600_000 : 1;
 		const peak = peakOutput(energyData, energySeriesNames, intervalHours);
 
 		return {
@@ -179,28 +184,13 @@
 <div class="flex flex-col gap-4">
 	{#if metrics}
 		<div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
-			<MetricCard
-				label="Capacity Factor"
-				value={fmtCf.format(metrics.cf)}
-				unit="%"
-			/>
+			<MetricCard label="Capacity Factor" value={fmtCf.format(metrics.cf)} unit="%" />
 
-			<MetricCard
-				label="Total Energy"
-				value={fmtEnergy.format(metrics.totalEnergy)}
-				unit="MWh"
-			/>
+			<MetricCard label="Total Energy" value={fmtEnergy.format(metrics.totalEnergy)} unit="MWh" />
 
-			<MetricCard
-				label="Avg Price Received"
-				value={fmtPrice.format(metrics.price)}
-				unit="$/MWh"
-			/>
+			<MetricCard label="Avg Price Received" value={fmtPrice.format(metrics.price)} unit="$/MWh" />
 
-			<MetricCard
-				label="Revenue"
-				value={formatRevenue(metrics.totalMV)}
-			/>
+			<MetricCard label="Revenue" value={formatRevenue(metrics.totalMV)} />
 
 			<MetricCard
 				label="Peak Output"

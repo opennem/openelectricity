@@ -125,7 +125,8 @@ export async function PATCH({ request, params }) {
 	if (body.chartCurve !== undefined) patches.chartCurve = body.chartCurve;
 	if (body.waterfallMode !== undefined) patches.waterfallMode = body.waterfallMode;
 	if (body.waterfallShowTotal !== undefined) patches.waterfallShowTotal = body.waterfallShowTotal;
-	if (body.waterfallColourMode !== undefined) patches.waterfallColourMode = body.waterfallColourMode;
+	if (body.waterfallColourMode !== undefined)
+		patches.waterfallColourMode = body.waterfallColourMode;
 	if (body.valueFormat !== undefined) patches.valueFormat = body.valueFormat;
 	if (body.chartBorderWidth !== undefined) patches.chartBorderWidth = body.chartBorderWidth;
 	if (body.chartBorderColour !== undefined) patches.chartBorderColour = body.chartBorderColour;

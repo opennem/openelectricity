@@ -88,5 +88,6 @@ Each finding: `path/to/file.svelte:123 — <one-line description>`.
 ## Canonical correct examples
 
 Point users to these when describing what "good" looks like:
+
 - `src/lib/components/charts/v2/ChartStore.svelte.js` — correct `$state.raw` and `$derived.by()` usage.
 - `src/lib/components/charts/v2/ChartDataManager.svelte.js` — correct private `$state` fields.

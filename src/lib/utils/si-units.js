@@ -89,13 +89,7 @@ export function formatSI(value, options = {}) {
 
 	const abs = Math.abs(converted);
 	const digits =
-		maximumFractionDigits !== undefined
-			? maximumFractionDigits
-			: abs < 10
-				? 2
-				: abs < 100
-					? 1
-					: 0;
+		maximumFractionDigits !== undefined ? maximumFractionDigits : abs < 10 ? 2 : abs < 100 ? 1 : 0;
 
 	const formatted = new Intl.NumberFormat('en-AU', {
 		maximumFractionDigits: digits,

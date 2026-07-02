@@ -209,7 +209,10 @@ test.describe('Scenarios Page', () => {
 
 	test('should show all four model groups in scenario selector', async ({ page }) => {
 		// Open scenario selector
-		const selectorButton = page.locator('button').filter({ hasText: /Step Change|Update Scenarios/ }).first();
+		const selectorButton = page
+			.locator('button')
+			.filter({ hasText: /Step Change|Update Scenarios/ })
+			.first();
 		await selectorButton.click();
 
 		// All four model groups should be visible
@@ -224,7 +227,10 @@ test.describe('Scenarios Page', () => {
 		page.on('pageerror', (error) => errors.push(error.message));
 
 		// Open scenario selector
-		const selectorButton = page.locator('button').filter({ hasText: /Step Change|Update Scenarios/ }).first();
+		const selectorButton = page
+			.locator('button')
+			.filter({ hasText: /Step Change|Update Scenarios/ })
+			.first();
 		await selectorButton.click();
 
 		// Click on a 2024 Draft scenario (Step Change)

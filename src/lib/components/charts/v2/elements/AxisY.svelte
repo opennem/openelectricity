@@ -87,7 +87,11 @@
 		{@const isZero = tick === 0}
 		{@const isLastTick = i === tickVals.length - 1}
 
-		<g class="tick tick-{tick}" class:tick-animate={canTransition} transform="translate({xStart}, {yPos})">
+		<g
+			class="tick tick-{tick}"
+			class:tick-animate={canTransition}
+			transform="translate({xStart}, {yPos})"
+		>
 			<!-- Gridline -->
 			{#if gridlines}
 				<line
@@ -135,7 +139,7 @@
 				x={xTick}
 				y={isBandwidth ? $yScale.bandwidth() / 2 + yTick : yTick}
 				dx={isBandwidth ? -9 : dxTick}
-				dy={isBandwidth ? 4 : (isLastTick && lastTickDy != null) ? lastTickDy : dyTick}
+				dy={isBandwidth ? 4 : isLastTick && lastTickDy != null ? lastTickDy : dyTick}
 				style="text-anchor: {isBandwidth ? 'end' : textAnchor}; paint-order: stroke fill;"
 			>
 				{formatTick(tick)}

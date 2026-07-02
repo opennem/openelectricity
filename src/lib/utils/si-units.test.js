@@ -45,9 +45,7 @@ describe('formatSI', () => {
 	});
 
 	it('uses grouping by default for large numbers', () => {
-		expect(formatSI(1234567, { fromPrefix: '', toPrefix: '', baseUnit: 'W' })).toBe(
-			'1,234,567 W'
-		);
+		expect(formatSI(1234567, { fromPrefix: '', toPrefix: '', baseUnit: 'W' })).toBe('1,234,567 W');
 	});
 
 	it('disables grouping when useGrouping is false', () => {

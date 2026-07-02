@@ -70,9 +70,7 @@
 </script>
 
 <div class="rounded-lg border border-mid-warm-grey/40 bg-white">
-	<div
-		class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40"
-	>
+	<div class="flex items-center justify-between gap-4 px-6 py-3 border-b border-mid-warm-grey/40">
 		<h3 class="text-sm font-semibold text-dark-grey m-0">NPI Pollution Data</h3>
 	</div>
 
@@ -96,9 +94,7 @@
 	</div>
 
 	{#if hasNpi && hasPollutants}
-		<div
-			class="px-6 py-3 border-t border-mid-warm-grey/40 text-xs text-mid-grey"
-		>
+		<div class="px-6 py-3 border-t border-mid-warm-grey/40 text-xs text-mid-grey">
 			Source:
 			{#if npiHref}
 				<a

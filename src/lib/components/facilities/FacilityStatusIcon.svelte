@@ -8,9 +8,7 @@
 		isCommissioning ? statusColours.commissioning : statusColours[status] || statusColours.operating
 	);
 
-	let sizeClass = $derived(
-		size === 'lg' ? 'w-5 h-5' : 'w-4 h-4'
-	);
+	let sizeClass = $derived(size === 'lg' ? 'w-5 h-5' : 'w-4 h-4');
 
 	let isOperating = $derived(!isCommissioning && status === 'operating');
 </script>

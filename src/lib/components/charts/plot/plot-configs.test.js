@@ -378,28 +378,14 @@ describe('createMixedMarkOptions', () => {
 	];
 
 	it('returns valid options with no per-series overrides', () => {
-		const result = createMixedMarkOptions(
-			timeData,
-			SERIES,
-			COLOURS,
-			LABELS,
-			{},
-			'line'
-		);
+		const result = createMixedMarkOptions(timeData, SERIES, COLOURS, LABELS, {}, 'line');
 		expect(result.style).toBeDefined();
 		expect(result.color).toBeDefined();
 		expect(result.marks.length).toBeGreaterThan(0);
 	});
 
 	it('uses default mark type from global chartType when no overrides', () => {
-		const result = createMixedMarkOptions(
-			timeData,
-			SERIES,
-			COLOURS,
-			LABELS,
-			{},
-			'stacked-area'
-		);
+		const result = createMixedMarkOptions(timeData, SERIES, COLOURS, LABELS, {}, 'stacked-area');
 		// Should have area mark + ruleY — at least 2 marks
 		expect(result.marks.length).toBeGreaterThanOrEqual(2);
 	});
@@ -444,15 +430,10 @@ describe('createMixedMarkOptions', () => {
 
 	it('applies style and margin options', () => {
 		const customStyle = { fontFamily: 'Arial' };
-		const result = createMixedMarkOptions(
-			timeData,
-			SERIES,
-			COLOURS,
-			LABELS,
-			{},
-			'line',
-			{ style: customStyle, marginRight: 50 }
-		);
+		const result = createMixedMarkOptions(timeData, SERIES, COLOURS, LABELS, {}, 'line', {
+			style: customStyle,
+			marginRight: 50
+		});
 		expect(result.style).toBe(customStyle);
 		expect(result.marginRight).toBe(50);
 	});
@@ -472,15 +453,9 @@ describe('createMixedMarkOptions', () => {
 
 	it('includes extraMarks from options', () => {
 		const extra = { type: 'ruleY' };
-		const result = createMixedMarkOptions(
-			timeData,
-			SERIES,
-			COLOURS,
-			LABELS,
-			{},
-			'line',
-			{ extraMarks: [extra] }
-		);
+		const result = createMixedMarkOptions(timeData, SERIES, COLOURS, LABELS, {}, 'line', {
+			extraMarks: [extra]
+		});
 		expect(result.marks).toContain(extra);
 	});
 
@@ -518,7 +493,12 @@ describe('createColourGroupedBarOptions', () => {
 
 	it('returns valid plot options', () => {
 		const result = createColourGroupedBarOptions(
-			data, 'capacity_factor', groupNames, colours, labels, 'market'
+			data,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market'
 		);
 		expect(result.style).toBeDefined();
 		expect(result.color).toBeDefined();
@@ -528,7 +508,12 @@ describe('createColourGroupedBarOptions', () => {
 
 	it('sets colour domain and range from group names', () => {
 		const result = createColourGroupedBarOptions(
-			data, 'capacity_factor', groupNames, colours, labels, 'market'
+			data,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market'
 		);
 		expect(result.color.domain).toEqual(['NEM', 'WEM']);
 		expect(result.color.range).toEqual(['#f00', '#00f']);
@@ -536,7 +521,12 @@ describe('createColourGroupedBarOptions', () => {
 
 	it('applies tickFormat from labels', () => {
 		const result = createColourGroupedBarOptions(
-			data, 'capacity_factor', groupNames, colours, labels, 'market'
+			data,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market'
 		);
 		expect(result.color.tickFormat('NEM')).toBe('National');
 		expect(result.color.tickFormat('WEM')).toBe('Western');
@@ -549,18 +539,26 @@ describe('createColourGroupedBarOptions', () => {
 			{ category: 'VIC', capacity_factor: null, market: 'NEM' }
 		];
 		const result = createColourGroupedBarOptions(
-			dataWithNull, 'capacity_factor', groupNames, colours, labels, 'market'
+			dataWithNull,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market'
 		);
 		// Should still produce valid output without crashing
 		expect(result.marks.length).toBeGreaterThan(0);
 	});
 
 	it('falls back to Unknown for missing colour series values', () => {
-		const dataWithMissing = [
-			{ category: 'NSW', capacity_factor: 0.3 }
-		];
+		const dataWithMissing = [{ category: 'NSW', capacity_factor: 0.3 }];
 		const result = createColourGroupedBarOptions(
-			dataWithMissing, 'capacity_factor', groupNames, colours, labels, 'market'
+			dataWithMissing,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market'
 		);
 		// Should not crash
 		expect(result.marks.length).toBeGreaterThan(0);
@@ -568,7 +566,12 @@ describe('createColourGroupedBarOptions', () => {
 
 	it('applies marginRight from options', () => {
 		const result = createColourGroupedBarOptions(
-			data, 'capacity_factor', groupNames, colours, labels, 'market',
+			data,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market',
 			{ marginRight: 80 }
 		);
 		expect(result.marginRight).toBe(80);
@@ -576,14 +579,24 @@ describe('createColourGroupedBarOptions', () => {
 
 	it('does not set marginRight when not provided', () => {
 		const result = createColourGroupedBarOptions(
-			data, 'capacity_factor', groupNames, colours, labels, 'market'
+			data,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market'
 		);
 		expect(result.marginRight).toBeUndefined();
 	});
 
 	it('disables legend when legend: false', () => {
 		const result = createColourGroupedBarOptions(
-			data, 'capacity_factor', groupNames, colours, labels, 'market',
+			data,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market',
 			{ legend: false }
 		);
 		expect(result.color.legend).toBe(false);
@@ -592,7 +605,12 @@ describe('createColourGroupedBarOptions', () => {
 	it('includes extraMarks in marks array', () => {
 		const extra = { type: 'ruleY' };
 		const result = createColourGroupedBarOptions(
-			data, 'capacity_factor', groupNames, colours, labels, 'market',
+			data,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market',
 			{ extraMarks: [extra] }
 		);
 		expect(result.marks[0]).toBe(extra);
@@ -600,7 +618,12 @@ describe('createColourGroupedBarOptions', () => {
 
 	it('applies yTickFormat from options', () => {
 		const result = createColourGroupedBarOptions(
-			data, 'capacity_factor', groupNames, colours, labels, 'market',
+			data,
+			'capacity_factor',
+			groupNames,
+			colours,
+			labels,
+			'market',
 			{ yTickFormat: '.0%' }
 		);
 		expect(result.y.tickFormat).toBe('.0%');
@@ -784,15 +807,9 @@ describe('createMixedMarkOptions with seriesLineStyles', () => {
 	});
 
 	it('uses single line mark in mixed mode when no custom styles', () => {
-		const result = createMixedMarkOptions(
-			timeData,
-			SERIES,
-			COLOURS,
-			LABELS,
-			{},
-			'line',
-			{ seriesLineStyles: {} }
-		);
+		const result = createMixedMarkOptions(timeData, SERIES, COLOURS, LABELS, {}, 'line', {
+			seriesLineStyles: {}
+		});
 		// 1 lineY + ruleY = 2 marks
 		expect(result.marks.length).toBe(2);
 	});

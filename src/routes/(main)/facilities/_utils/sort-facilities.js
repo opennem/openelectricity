@@ -25,7 +25,8 @@ function getTotalCapacity(facility) {
 function getTotalStorage(facility) {
 	if (!facility.units) return 0;
 	return facility.units.reduce(
-		(/** @type {number} */ sum, /** @type {any} */ unit) => sum + (Number(unit.capacity_storage) || 0),
+		(/** @type {number} */ sum, /** @type {any} */ unit) =>
+			sum + (Number(unit.capacity_storage) || 0),
 		0
 	);
 }

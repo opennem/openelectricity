@@ -87,7 +87,9 @@
 			</div>
 
 			<div
-				class="{isFullscreen ? 'text-sm' : 'text-base'} leading-base font-medium text-dark-grey flex flex-col @sm:flex-row items-bottom gap-0 @sm:gap-3"
+				class="{isFullscreen
+					? 'text-sm'
+					: 'text-base'} leading-base font-medium text-dark-grey flex flex-col @sm:flex-row items-bottom gap-0 @sm:gap-3"
 			>
 				{facility.name || 'Unnamed Facility'}
 

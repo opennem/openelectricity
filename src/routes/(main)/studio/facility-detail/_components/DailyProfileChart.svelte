@@ -94,11 +94,7 @@
 		<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">{label}</span>
 
 		<div class="mt-1.5" style="max-width: 280px;">
-			<svg
-				viewBox="0 0 200 {SVG_HEIGHT}"
-				preserveAspectRatio="xMidYMid meet"
-				class="w-full"
-			>
+			<svg viewBox="0 0 200 {SVG_HEIGHT}" preserveAspectRatio="xMidYMid meet" class="w-full">
 				<!-- Area fill -->
 				<path d={paths.area} fill={colour} fill-opacity="0.2" />
 

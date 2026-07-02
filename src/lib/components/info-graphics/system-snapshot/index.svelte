@@ -70,7 +70,8 @@
 	 */
 	function updateIntensity(emissionsTotal, generationTotal) {
 		rows.annual.forEach((/** @type {any} */ row) => {
-			/** @type {any} */ (intensity)[row.id] = /** @type {any} */ (emissionsTotal)[row.id] / /** @type {any} */ (generationTotal)[row.id];
+			/** @type {any} */ (intensity)[row.id] =
+				/** @type {any} */ (emissionsTotal)[row.id] / /** @type {any} */ (generationTotal)[row.id];
 		});
 	}
 
@@ -98,7 +99,10 @@
 	 * @param {string} state
 	 */
 	function getRenewablePercent(state) {
-		return Math.round((/** @type {any} */ (renewablesTotal)[state] / /** @type {any} */ (generationTotal)[state]) * 100);
+		return Math.round(
+			/** @type {any} */ ((renewablesTotal)[state] / /** @type {any} */ (generationTotal)[state]) *
+				100
+		);
 	}
 
 	let hoverRegion = $state();
@@ -110,13 +114,17 @@
 	let liveMode = $derived(/** @type {string} */ (mapMode) === 'live');
 	let generationTotal = $derived(
 		regionGenerationTotal(
-			liveMode ? rows.live.map((/** @type {any} */ d) => d.id) : rows.annual.map((/** @type {any} */ d) => d.id),
+			liveMode
+				? rows.live.map((/** @type {any} */ d) => d.id)
+				: rows.annual.map((/** @type {any} */ d) => d.id),
 			liveMode ? regionPower : regionEnergy
 		)
 	);
 	let renewablesTotal = $derived(
 		regionRenewablesTotal(
-			liveMode ? rows.live.map((/** @type {any} */ d) => d.id) : rows.annual.map((/** @type {any} */ d) => d.id),
+			liveMode
+				? rows.live.map((/** @type {any} */ d) => d.id)
+				: rows.annual.map((/** @type {any} */ d) => d.id),
 			liveMode ? regionPower : regionEnergy
 		)
 	);
@@ -231,7 +239,9 @@
 								<td class="py-3 pl-3 md:pl-6">
 									<div
 										class="h-4 border border-black"
-										style:background-color={/** @type {any} */ ($carbonIntensityColour)(intensity[row.id])}
+										style:background-color={/** @type {any} */ ($carbonIntensityColour)(
+											intensity[row.id]
+										)}
 										style:width={`${intensityScale(intensity[row.id])}px`}
 									></div>
 								</td>

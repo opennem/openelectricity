@@ -11,7 +11,9 @@ function groupByMonthDay(data) {
 		(/** @type {MilestoneRecord[]} */ d) => {
 			const intervalDayRecords = d.filter((r) => r.period === 'interval' || r.period === 'day');
 			const nonIntervalDayRecords = d.filter((r) => r.period !== 'interval' && r.period !== 'day');
-			const latestTime = intervalDayRecords.map((r) => r.time || 0).reduce((a, b) => Math.max(a, b), 0);
+			const latestTime = intervalDayRecords
+				.map((r) => r.time || 0)
+				.reduce((a, b) => Math.max(a, b), 0);
 			// console.log('rolled d', nonIntervalDayRecords, intervalDayRecords);
 			const isWem = d[0].network_id === 'WEM';
 			const timeZone = isWem ? '+08:00' : '+10:00';

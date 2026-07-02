@@ -26,7 +26,7 @@
 		{#each ticks as tick (tick)}
 			{@const x = (tick / maxValue) * 240}
 			<line x1={x} y1="12" x2={x} y2="16" stroke="#999" stroke-width="1" />
-			<text x={x} y="24" text-anchor="middle" fill="#999" font-size="9">
+			<text {x} y="24" text-anchor="middle" fill="#999" font-size="9">
 				{tick === 60 ? '>60%' : tick + '%'}
 			</text>
 		{/each}

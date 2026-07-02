@@ -15,16 +15,20 @@ describe('hasPortableTextContent', () => {
 	it('returns false for blocks with only whitespace text', () => {
 		expect(
 			hasPortableTextContent([
-				{ _type: 'block', children: [{ _type: 'span', text: '   ' }, { _type: 'span', text: '' }] }
+				{
+					_type: 'block',
+					children: [
+						{ _type: 'span', text: '   ' },
+						{ _type: 'span', text: '' }
+					]
+				}
 			])
 		).toBe(false);
 	});
 
 	it('returns true when a block has non-whitespace text', () => {
 		expect(
-			hasPortableTextContent([
-				{ _type: 'block', children: [{ _type: 'span', text: 'Hello' }] }
-			])
+			hasPortableTextContent([{ _type: 'block', children: [{ _type: 'span', text: 'Hello' }] }])
 		).toBe(true);
 	});
 

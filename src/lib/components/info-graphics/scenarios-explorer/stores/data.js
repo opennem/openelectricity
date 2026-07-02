@@ -95,7 +95,9 @@ export default function (/** @type {any} */ filters = undefined) {
 		[scenarioProjectionStats, colourReducer],
 		([$scenarioProjectionStats, $colourReducer]) => {
 			return $scenarioProjectionStats.map((/** @type {any} */ d) => {
-				const loads = d.stats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
+				const loads = d.stats.data
+					.filter((/** @type {any} */ d) => d.isLoad)
+					.map((/** @type {any} */ d) => d.id);
 				return {
 					id: d.id,
 					model: d.model,
@@ -126,7 +128,9 @@ export default function (/** @type {any} */ filters = undefined) {
 			$isNetTotalGroup,
 			$usePercentage
 		]) => {
-			const loadIds = $scenarioHistoricalStats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
+			const loadIds = $scenarioHistoricalStats.data
+				.filter((/** @type {any} */ d) => d.isLoad)
+				.map((/** @type {any} */ d) => d.id);
 			let otherTimeSeries = createNewTimeSeries(
 				$scenarioHistoricalStats.data,
 				$colourReducer,
@@ -189,7 +193,9 @@ export default function (/** @type {any} */ filters = undefined) {
 		[regionProjectionStats, colourReducer],
 		([$regionProjectionStats, $colourReducer]) => {
 			return $regionProjectionStats.map((/** @type {any} */ d) => {
-				const loads = d.stats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
+				const loads = d.stats.data
+					.filter((/** @type {any} */ d) => d.isLoad)
+					.map((/** @type {any} */ d) => d.id);
 				console.log('derived', d, loads);
 				return {
 					region: d.region,
@@ -222,7 +228,9 @@ export default function (/** @type {any} */ filters = undefined) {
 			$usePercentage
 		]) => {
 			return $regionHistoricalStats.map((/** @type {any} */ d) => {
-				const loadIds = d.stats.data.filter((/** @type {any} */ s) => s.isLoad).map((/** @type {any} */ s) => s.id);
+				const loadIds = d.stats.data
+					.filter((/** @type {any} */ s) => s.isLoad)
+					.map((/** @type {any} */ s) => s.id);
 
 				let otherTimeSeries = createNewTimeSeries(
 					d.stats.data,

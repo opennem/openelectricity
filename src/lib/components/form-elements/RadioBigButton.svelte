@@ -47,7 +47,9 @@
 			{value}
 			{name}
 			{checked}
-			onchange={preventDefault(/** @type {(event: Event, ...args: unknown[]) => void} */ (changeHandler))}
+			onchange={preventDefault(
+				/** @type {(event: Event, ...args: unknown[]) => void} */ (changeHandler)
+			)}
 		/>
 		<span
 			class="rounded-md border-solid border-[0.05rem] border-mid-warm-grey p-4 font-sans text-sm"

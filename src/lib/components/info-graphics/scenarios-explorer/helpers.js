@@ -30,7 +30,8 @@ export const formatTickY = (/** @type {number} */ d) => d3Format('~s')(d);
 export const formatFyTickX = (/** @type {Date | number} */ d) => {
 	return format(d, 'yyyy');
 };
-export const displayXTicks = (/** @type {Date[]} */ d) => d.map((/** @type {Date} */ t) => startOfYear(t));
+export const displayXTicks = (/** @type {Date[]} */ d) =>
+	d.map((/** @type {Date} */ t) => startOfYear(t));
 export const formatValue = (/** @type {number} */ d) => {
 	if (isNaN(d)) return '—';
 
@@ -210,7 +211,9 @@ export function calculatePercentageStats(statsData, otherStats, type) {
  */
 export function calculatePercentageTimeSeries(dataset, otherTimeSeries, colourReducer, type) {
 	const sourceLoadStats = createNewStats(dataset, 'totals', type);
-	const totalsLoadIds = dataset.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
+	const totalsLoadIds = dataset
+		.filter((/** @type {any} */ d) => d.isLoad)
+		.map((/** @type {any} */ d) => d.id);
 
 	/** @type {Record<string, any>} */
 	let netStatsData = {};
@@ -251,7 +254,10 @@ export function calculatePercentageTimeSeries(dataset, otherTimeSeries, colourRe
 
 	const otherSeriesName = otherTimeSeries.seriesNames[0];
 	otherTimeSeries.data.forEach((/** @type {any} */ s, /** @type {number} */ i) => {
-		s[otherSeriesName] = (s[otherSeriesName] / /** @type {number} */ (/** @type {any} */ (netTimeSeries).data[i]['au.net_total'])) * 100;
+		s[otherSeriesName] =
+			(s[otherSeriesName] /
+				/** @type {number} */ (/** @type {any} */ (netTimeSeries).data[i]['au.net_total'])) *
+			100;
 	});
 
 	return otherTimeSeries;
@@ -407,16 +413,18 @@ export function processScenarioData({
 		).filter((/** @type {any} */ d) => d.date.getFullYear() < 2025 && d.date.getFullYear() > 2009);
 
 		// Mutate projection dates (update july to jan next year)
-		const updatedProjectionTimeSeriesDataArray = scenarioProjectionTimeSeries.map((/** @type {any} */ d) => {
-			const updatedSeries = {
-				...d.series,
-				data: mutateProjectionDataDates(d.series.data) // only mutate dates that are not start of year
-			};
-			return {
-				...d,
-				series: updatedSeries
-			};
-		});
+		const updatedProjectionTimeSeriesDataArray = scenarioProjectionTimeSeries.map(
+			(/** @type {any} */ d) => {
+				const updatedSeries = {
+					...d.series,
+					data: mutateProjectionDataDates(d.series.data) // only mutate dates that are not start of year
+				};
+				return {
+					...d,
+					series: updatedSeries
+				};
+			}
+		);
 
 		console.log('updatedHistoricalTimeSeriesData', updatedHistoricalTimeSeriesData);
 		console.log('updatedProjectionTimeSeriesDataArray', updatedProjectionTimeSeriesDataArray);
@@ -449,23 +457,25 @@ export function processScenarioData({
 			// console.log('first last', firstProjectionItem, lastHistory, historyData);
 
 			// add all date/time and historical net values to updatedData
-			updatedData = [...historyData, ...firstProjectionSeriesData].map((/** @type {any} */ d, /** @type {number} */ i) => {
-				const historical =
-					i < historyData.length
-						? selectedDataView === 'emissions'
-							? d[historySeriesName]
-							: historySeriesName === '_max'
-								? d['au.total_sources.grouped'] - d['au.total_loads.grouped']
-								: d[historySeriesName]
-						: null;
+			updatedData = [...historyData, ...firstProjectionSeriesData].map(
+				(/** @type {any} */ d, /** @type {number} */ i) => {
+					const historical =
+						i < historyData.length
+							? selectedDataView === 'emissions'
+								? d[historySeriesName]
+								: historySeriesName === '_max'
+									? d['au.total_sources.grouped'] - d['au.total_loads.grouped']
+									: d[historySeriesName]
+							: null;
 
-				// console.log('historical', d, d[historySeriesName], historical, d.date, d.time);
-				return {
-					historical,
-					date: d.date,
-					time: d.time
-				};
-			});
+					// console.log('historical', d, d[historySeriesName], historical, d.date, d.time);
+					return {
+						historical,
+						date: d.date,
+						time: d.time
+					};
+				}
+			);
 
 			// add one more year if it doesn't finishes in 2052
 			const lastDate = updatedData[updatedData.length - 1].date;
@@ -519,7 +529,10 @@ export function processScenarioData({
 	colours['historical'] = 'black';
 	/** @type {Record<string, any>} */
 	const labels = scenarioProjectionTimeSeries.reduce(
-		(/** @type {any} */ acc, /** @type {any} */ curr) => ((acc[curr.id] = scenarioLabels[curr.model][curr.scenario]), acc),
+		(/** @type {any} */ acc, /** @type {any} */ curr) => (
+			(acc[curr.id] = scenarioLabels[curr.model][curr.scenario]),
+			acc
+		),
 		{}
 	);
 	// add History
@@ -596,8 +609,12 @@ export function processRegionData({
 		const firstProjectionItem = firstProjectionSeriesData[0];
 
 		regionsOnly.forEach((/** @type {string} */ region) => {
-			const historicalData = regionHistoricalTimeSeries.find((/** @type {any} */ d) => d.region === region);
-			const projectionData = regionProjectionTimeSeries.find((/** @type {any} */ d) => d.region === region);
+			const historicalData = regionHistoricalTimeSeries.find(
+				(/** @type {any} */ d) => d.region === region
+			);
+			const projectionData = regionProjectionTimeSeries.find(
+				(/** @type {any} */ d) => d.region === region
+			);
 
 			if (historicalData && projectionData) {
 				// if last history time is the same as first projection time, remove the last history data

@@ -65,7 +65,9 @@
 			focusScenario = { ...findScenario };
 		}
 
-		selectedScenarios = $selectedMultipleScenarios.map((/** @type {any} */ s) => s.model + '-' + s.scenario);
+		selectedScenarios = $selectedMultipleScenarios.map(
+			(/** @type {any} */ s) => s.model + '-' + s.scenario
+		);
 
 		selectedScenariosPathways = $selectedMultipleScenarios.map((/** @type {any} */ s) => ({
 			id: s.model + '-' + s.scenario,
@@ -158,7 +160,9 @@
 		// const scenarioPathway = selectedScenariosPathways.find((scenario) => scenario.id === id);
 
 		if (focusScenario && focusPathway) {
-			const isPathwayInScenario = focusScenario.pathways.find((/** @type {any} */ p) => p === focusPathway);
+			const isPathwayInScenario = focusScenario.pathways.find(
+				(/** @type {any} */ p) => p === focusPathway
+			);
 
 			if (!isPathwayInScenario) {
 				focusPathway = focusScenario.defaultPathway;
@@ -263,16 +267,25 @@
 					{scenarioLabels[/** @type {string} */ (focusScenario.model)][focusScenario.scenarioId]}
 				</h6>
 				<p class="text-sm my-6">
-					{/** @type {Record<string, Record<string, string>>} */(scenarioDescriptions)[focusScenario.model][focusScenario.scenarioId]}
+					{/** @type {Record<string, Record<string, string>>} */ (scenarioDescriptions)[
+						focusScenario.model
+					][focusScenario.scenarioId]}
 				</p>
 
 				<div class="border border-mid-grey text-sm inline-block rounded-md">
 					<FormSelect
 						paddingY="py-3"
 						paddingX="px-4"
-						options={focusScenarioPathways.map((/** @type {string} */ pathway) => ({ value: pathway, label: pathway }))}
+						options={focusScenarioPathways.map((/** @type {string} */ pathway) => ({
+							value: pathway,
+							label: pathway
+						}))}
 						selected={isSingleSelectionMode ? focusPathway : getPathway()}
-						onchange={(option) => handlePathwayChange(/** @type {string} */ (focusScenarioId), /** @type {string} */ (option.value))}
+						onchange={(option) =>
+							handlePathwayChange(
+								/** @type {string} */ (focusScenarioId),
+								/** @type {string} */ (option.value)
+							)}
 					/>
 				</div>
 			{/if}

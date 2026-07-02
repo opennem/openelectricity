@@ -61,12 +61,8 @@
 	let displayMax = $derived(parseFormattedValue(formatValue(localValue[1] ?? max)));
 
 	// Ghost range positioning (percentage-based)
-	let ghostLeft = $derived(
-		ghostRange ? ((ghostRange[0] - min) / (max - min)) * 100 : 0
-	);
-	let ghostWidth = $derived(
-		ghostRange ? ((ghostRange[1] - ghostRange[0]) / (max - min)) * 100 : 0
-	);
+	let ghostLeft = $derived(ghostRange ? ((ghostRange[0] - min) / (max - min)) * 100 : 0);
+	let ghostWidth = $derived(ghostRange ? ((ghostRange[1] - ghostRange[0]) / (max - min)) * 100 : 0);
 
 	// Playhead positioning (percentage-based)
 	let playheadLeft = $derived(
@@ -88,7 +84,9 @@
 		</span>
 		{#if playheadDisplayValue}
 			<span class="flex items-baseline gap-1">
-				<span class="font-mono text-sm font-semibold text-dark-grey">{playheadDisplayValue.number}</span>
+				<span class="font-mono text-sm font-semibold text-dark-grey"
+					>{playheadDisplayValue.number}</span
+				>
 				<span class="text-xs text-mid-grey">{playheadDisplayValue.unit}</span>
 			</span>
 		{/if}
@@ -104,10 +102,7 @@
 			<!-- Track -->
 			<span class="relative h-1.5 w-full grow overflow-hidden rounded-full bg-warm-grey">
 				<!-- Filled region up to playhead -->
-				<span
-					class="absolute h-full bg-dark-grey"
-					style="left: 0; width: {playheadLeft}%"
-				></span>
+				<span class="absolute h-full bg-dark-grey" style="left: 0; width: {playheadLeft}%"></span>
 			</span>
 
 			<!-- Scrubber thumb -->

@@ -32,5 +32,12 @@
 	{#if bgFill}
 		<rect {x} y={0} width={rectWidth} height={$height} fill={bgFill} pointer-events="none" />
 	{/if}
-	<rect {x} y={0} width={rectWidth} height={$height} fill="url(#{patternId})" pointer-events="none" />
+	<rect
+		{x}
+		y={0}
+		width={rectWidth}
+		height={$height}
+		fill="url(#{patternId})"
+		pointer-events="none"
+	/>
 {/if}

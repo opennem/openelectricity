@@ -12,7 +12,13 @@
 	 */
 
 	/** @type {Props} */
-	let { includeBatteryAndLoads = false, hoverTime = null, showCheckbox = true, showLabel = true, onchange } = $props();
+	let {
+		includeBatteryAndLoads = false,
+		hoverTime = null,
+		showCheckbox = true,
+		showLabel = true,
+		onchange
+	} = $props();
 </script>
 
 <header class="flex items-center justify-between h-12 px-10 md:px-0">

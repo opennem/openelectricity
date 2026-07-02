@@ -31,7 +31,12 @@ export const CHART_TYPES = [
 export const TIME_SERIES_TYPES = new Set(['area', 'line']);
 
 /** Chart types that use horizontal layout (barX) */
-export const HORIZONTAL_TYPES = new Set(['bar', 'bar-stacked', 'bar-grouped', 'waterfall-horizontal']);
+export const HORIZONTAL_TYPES = new Set([
+	'bar',
+	'bar-stacked',
+	'bar-grouped',
+	'waterfall-horizontal'
+]);
 
 /** Chart types that use vertical bars/columns (barY/rectY) */
 export const COLUMN_TYPES = new Set(['column', 'column-stacked', 'column-grouped', 'waterfall']);

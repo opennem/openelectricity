@@ -121,8 +121,8 @@
 	{#snippet subheading()}
 		<div>
 			<p class="text-sm text-center w-full md:w-[600px] mx-auto">
-				Each row is a day, each column a 30-minute interval. Colour intensity shows solar's percentage
-				of total NEM generation — from pale yellow (low) to deep red (high).
+				Each row is a day, each column a 30-minute interval. Colour intensity shows solar's
+				percentage of total NEM generation — from pale yellow (low) to deep red (high).
 			</p>
 		</div>
 	{/snippet}
@@ -168,22 +168,32 @@
 	<div class="container max-w-7xl mx-auto px-4">
 		<div class="flex items-center mb-4">
 			<div class="w-9 shrink-0"></div>
-			<h3 class="flex-1 text-center m-0">
-				Solar's share has increased since 2016
-			</h3>
+			<h3 class="flex-1 text-center m-0">Solar's share has increased since 2016</h3>
 			<button
 				class="bg-black text-white p-2 rounded-lg transition-all hover:bg-dark-grey shrink-0"
 				onclick={toggleAnimation}
 				title={playing ? 'Stop' : 'Play'}
 			>
 				{#if playing}
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="currentColor"
+						class="size-5"
+					>
 						<rect x="6" y="5" width="4" height="14" rx="1" />
 						<rect x="14" y="5" width="4" height="14" rx="1" />
 					</svg>
 				{:else}
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
-						<path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.04-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14Z" />
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 24 24"
+						fill="currentColor"
+						class="size-5"
+					>
+						<path
+							d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.04-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14Z"
+						/>
 					</svg>
 				{/if}
 			</button>

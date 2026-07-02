@@ -10,7 +10,13 @@
 	 */
 
 	/** @type {Props} */
-	let { widthClass = 'w-[150px]', selectLabel = '', options = [], selected = '', onchange } = $props();
+	let {
+		widthClass = 'w-[150px]',
+		selectLabel = '',
+		options = [],
+		selected = '',
+		onchange
+	} = $props();
 </script>
 
 <p class="mb-0 text-xs font-space">{selectLabel}</p>
