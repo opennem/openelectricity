@@ -131,26 +131,19 @@
 						</span>
 
 						<span class="min-w-0 flex-1">
-							<!-- Sub-row 1: unit code + capacity (storage stacked beneath) -->
+							<!-- Sub-row 1: unit code + capacity -->
 							<span class="flex items-baseline justify-between gap-3">
 								<span class="truncate font-mono text-sm font-medium text-dark-grey">
 									{unit.code_display ?? unit.code}
 								</span>
-								<span class="flex shrink-0 flex-col items-end">
-									<span class="font-mono text-sm text-dark-grey">
-										{formatCapacity(unit.capacity_maximum || unit.capacity_registered)}
-										<span class="text-xs text-mid-grey">MW</span>
-									</span>
-									{#if unit.capacity_storage}
-										<span class="font-mono text-xs text-dark-grey" title="Storage Capacity">
-											{formatCapacity(unit.capacity_storage)}
-											<span class="text-xxs text-mid-grey">MWh</span>
-										</span>
-									{/if}
+								<span class="shrink-0 font-mono text-sm text-dark-grey">
+									{formatCapacity(unit.capacity_maximum || unit.capacity_registered)}
+									<span class="text-xs text-mid-grey">MW</span>
 								</span>
 							</span>
 
-							<!-- Sub-row 2: fuel tech tag (unit's series colour), availability bar + % -->
+							<!-- Sub-row 2: fuel tech tag (unit's series colour), storage,
+							     availability bar + % -->
 							<span class="mt-1 flex items-center justify-between gap-3">
 								<span
 									class="inline-block min-w-0 truncate rounded px-1.5 py-0.5 text-xxs font-medium {isDarkText
@@ -160,6 +153,13 @@
 								>
 									{fuelTechNameMap[unit.fueltech_id] || unit.fueltech_id}
 								</span>
+
+								{#if unit.capacity_storage}
+									<span class="shrink-0 font-mono text-xs text-dark-grey" title="Storage Capacity">
+										{formatCapacity(unit.capacity_storage)}
+										<span class="text-xxs text-mid-grey">MWh</span>
+									</span>
+								{/if}
 
 								{#if showAvailability}
 									<!-- Fixed-width cluster so bars + percentages align across rows.

@@ -17,7 +17,7 @@
  *
  * Filter Parameters (URL search params):
  * --------------------------------------
- * - view: 'timeline' | 'list' | 'grid' (default: 'timeline'; 'card' and 'map' are legacy aliases for 'grid' and 'list')
+ * - view: 'timeline' | 'list' | 'grid' (default: 'list'; 'card' and 'map' are legacy aliases for 'grid' and 'list')
  * - statuses: comma-separated status IDs (default: 'operating,commissioning')
  * - regions: comma-separated region codes (e.g., 'nsw,vic')
  * - fuel_techs: comma-separated fuel tech IDs or categories
@@ -50,7 +50,7 @@ const client = new OpenElectricityClient({
 
 export async function load({ url }) {
 	const { searchParams } = url;
-	const view = normaliseViewParam(searchParams.get('view')) || 'timeline';
+	const view = normaliseViewParam(searchParams.get('view')) || 'list';
 	const statusesParam = searchParams.has('statuses')
 		? /** @type {string} */ (searchParams.get('statuses')).split(',').filter(Boolean)
 		: DEFAULT_STATUSES;

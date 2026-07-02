@@ -63,7 +63,7 @@
 		capacityMin = 0,
 		capacityMax = 10000,
 		searchTerm = '',
-		selectedView = 'timeline',
+		selectedView = 'list',
 		isFullscreen = false,
 		facilitySelected = false,
 		// Dark/satellite basemap behind the floating nav → white logo mark.

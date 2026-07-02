@@ -72,11 +72,15 @@
 	let hasScrolledToToday = $state(false);
 </script>
 
+<!-- fullFraction stays below the default 0.94 so the expanded sheet clears
+     the floating nav bar (top-3 + ~52px controls) even on Safari, where the
+     dynamic toolbar squeezes the visual viewport. -->
 <BottomSheet
 	{open}
 	{containerHeight}
 	dismissable={false}
 	peekFraction={0.35}
+	fullFraction={0.85}
 	minHeight={MIN_HEIGHT}
 	bind:snap
 	bind:bodyEl
