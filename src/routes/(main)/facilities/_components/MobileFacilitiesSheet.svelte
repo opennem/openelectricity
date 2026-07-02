@@ -9,6 +9,7 @@
 	import formatValue from '../_utils/format-value';
 	import { sortFacilities } from '../_utils/sort-facilities';
 	import { VIEW_OPTIONS } from '../_utils/filters.js';
+	import { createLocalStorageState } from '$lib/utils/local-storage-state.svelte.js';
 
 	/**
 	 * Mobile facilities browser — a persistent bottom sheet peeking over the
@@ -64,8 +65,13 @@
 	// sheet's sort here to make the sort control work for both.
 	let sortedFacilities = $derived(sortFacilities(facilities, sortBy, sortOrder, null));
 
-	/** @type {'min' | 'peek' | 'full'} */
-	let snap = $state('peek');
+	// Remember how far the user pulled the sheet, so returning from a facility
+	// detail (or a later visit) restores the same view.
+	const sheetSnap = createLocalStorageState(
+		'facilities-sheet-snap',
+		/** @type {'min' | 'peek' | 'full'} */ ('peek'),
+		(v) => v === 'min' || v === 'peek' || v === 'full'
+	);
 	/** @type {HTMLElement | null} */
 	let bodyEl = $state(null);
 
@@ -82,12 +88,17 @@
 	peekFraction={0.35}
 	fullFraction={0.85}
 	minHeight={MIN_HEIGHT}
-	bind:snap
+	bind:snap={sheetSnap.value}
+	defaultSnap={sheetSnap.value}
 	bind:bodyEl
 	class="md:hidden z-20"
 >
 	{#snippet header()}
-		<div class="px-4 pb-3 flex flex-col gap-3 {snap === 'min' ? '' : 'border-b border-warm-grey'}">
+		<div
+			class="px-4 pb-3 flex flex-col gap-3 {sheetSnap.value === 'min'
+				? ''
+				: 'border-b border-warm-grey'}"
+		>
 			<div class="flex items-start justify-between gap-3">
 				<div>
 					<div class="text-lg font-semibold text-dark-grey leading-tight">
@@ -97,7 +108,7 @@
 						{formatValue(totalCapacityMW)} MW · {totalUnitsCount.toLocaleString()} units
 					</div>
 				</div>
-				{#if snap !== 'min' && selectedView !== 'timeline'}
+				{#if sheetSnap.value !== 'min' && selectedView !== 'timeline'}
 					<SortDropdown
 						{sortBy}
 						{sortOrder}
@@ -107,7 +118,7 @@
 			</div>
 
 			<!-- View toggle, revealed at the full snap (search lives in the nav bar) -->
-			{#if snap === 'full'}
+			{#if sheetSnap.value === 'full'}
 				<SwitchWithIcons
 					buttons={VIEW_OPTIONS}
 					selected={selectedView}

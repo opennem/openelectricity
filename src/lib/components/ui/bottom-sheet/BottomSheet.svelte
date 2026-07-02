@@ -1,4 +1,5 @@
 <script>
+	import { untrack } from 'svelte';
 	import { fly } from 'svelte/transition';
 	import { quintOut } from 'svelte/easing';
 
@@ -26,6 +27,7 @@
 	 *   dismissable?: boolean,
 	 *   minHeight?: number | null,
 	 *   snap?: 'min' | 'peek' | 'full',
+	 *   defaultSnap?: 'min' | 'peek' | 'full',
 	 *   bodyEl?: HTMLElement | null,
 	 *   class?: string,
 	 *   gripStyle?: string,
@@ -46,6 +48,9 @@
 		/** Pixel height of the minimised snap; null disables it. */
 		minHeight = null,
 		snap = $bindable('peek'),
+		/** The snap each fresh open starts at — callers that remember the
+		 *  user's last snap pass it here to restore it on reopen. */
+		defaultSnap = /** @type {'min' | 'peek' | 'full'} */ ('peek'),
 		/** The scrollable body element — bindable so callers can wire content
 		 *  that listens to its own scroll container (e.g. the Timeline). */
 		bodyEl = $bindable(null),
@@ -71,10 +76,11 @@
 	let dragHeight = $state(/** @type {number | null} */ (null));
 	let isDragging = $state(false);
 
-	// Each fresh open starts at the peek snap.
+	// Each fresh open starts at the caller's default snap (untracked so a
+	// default that follows the bound snap doesn't re-trigger the reset).
 	$effect(() => {
 		if (open) {
-			snap = 'peek';
+			snap = untrack(() => defaultSnap);
 			dragHeight = null;
 		}
 	});
