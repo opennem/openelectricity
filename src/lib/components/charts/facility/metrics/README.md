@@ -31,7 +31,7 @@ fuel tech. The flow is:
    once from the visible-range data using the pure helpers in `metrics-calc.js`.
 4. **Render.** Each id maps to a descriptor in `METRICS` whose `compute(ctx)` returns
    `{ value, unit?, subtitle? }` for a `MetricCard`. Group-specific **garnishes** (badges,
-   DC:AC line, turbine/equipment specs, unit-availability bars) hang off the same context.
+   turbine/equipment specs, unit-availability bars) hang off the same context.
 
 ### Data sources
 
@@ -56,7 +56,7 @@ so the card fills in once the providers' fetch settles (showing `--` until then)
 | **coal**    | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price                                            | black/brown badge, expected closure, unit-availability bars |
 | **gas**     | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Running Hours, Start Count if peaker)_ | subtype badge (CCGT/OCGT/…), "Peaker plant"                 |
 | **wind**    | Capacity Factor, Total Energy, Avg Price, Revenue, Peak Output                                                     | turbine specs                                               |
-| **solar**   | Capacity Factor, Peak Output, Avg Price, Revenue _(+ DC:AC if known)_                                              | DC/AC capacity line                                         |
+| **solar**   | Capacity Factor, Peak Output, Avg Price, Revenue _(+ DC:AC if known, with DC/AC capacities as its subtitle)_       | —                                                           |
 | **hydro**   | Capacity Factor, Total Energy, Running Hours, Avg Price, Revenue                                                   | pumped-hydro badge                                          |
 | **battery** | Net Revenue, Storage Duration, Round-trip Efficiency, Total Energy, Capacity Factor                                | equipment specs                                             |
 | **other**   | Capacity Factor, Total Energy, Revenue, Avg Price                                                                  | —                                                           |

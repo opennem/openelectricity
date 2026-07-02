@@ -87,7 +87,8 @@
 
 	let activeInterval = $state('5m');
 	let activeMetric = $state('power');
-	let displayInterval = $state('30m');
+	// Power views default to the 5-minute grain on this page (see preferFiveMinute).
+	let displayInterval = $state('5m');
 
 	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
 
@@ -210,7 +211,7 @@
 		const _code = data.facility?.code;
 		activeInterval = '5m';
 		activeMetric = 'power';
-		displayInterval = '30m';
+		displayInterval = '5m';
 		panZoomEngaged = false;
 		rangeApplied = false;
 		// Reset client-side load tracking so the new facility shows its skeleton until
@@ -236,6 +237,16 @@
 	 *  not clobber one of these back to a native grain. */
 	const COARSE_PICKER_INTERVALS = new Set(['7d', 'season', 'quarter', 'half', 'fy']);
 
+	/** This page defaults power views to the 5-minute grain — 30m is still a manual
+	 *  dropdown pick, but never the auto/default. The shared config (studio +
+	 *  facilities charts) still defaults power to 30m; we map that single power
+	 *  display grain down to 5m locally so only /facility/[code] changes. Energy and
+	 *  native coarse grains pass through untouched.
+	 *  @param {string} intervalId @returns {string} */
+	function preferFiveMinute(intervalId) {
+		return intervalId === '30m' ? '5m' : intervalId;
+	}
+
 	/** Hysteresis-aware metric/interval switching for pan/zoom — keeps the
 	 *  current axis where it is unless duration crosses a 13/15-day (and
 	 *  300/365-day, 1500/1825-day) threshold. Display interval is recomputed
@@ -249,10 +260,12 @@
 		// across small pans that don't cross a native fetch threshold.
 		if (!next && COARSE_PICKER_INTERVALS.has(displayInterval)) return;
 
-		displayInterval = getDisplayIntervalForDays(
-			next?.metric ?? activeMetric,
-			next?.interval ?? activeInterval,
-			durationDays
+		displayInterval = preferFiveMinute(
+			getDisplayIntervalForDays(
+				next?.metric ?? activeMetric,
+				next?.interval ?? activeInterval,
+				durationDays
+			)
 		);
 
 		if (next) {
@@ -294,9 +307,9 @@
 		}
 		const startMs = endMs - actualDays * DAY_MS;
 		const preset = getPresetByDays(days);
-		const intervalId = preset
-			? getDefaultIntervalForRange(preset.id)
-			: getMetricIntervalForDays(actualDays).interval;
+		const intervalId = preferFiveMinute(
+			preset ? getDefaultIntervalForRange(preset.id) : getMetricIntervalForDays(actualDays).interval
+		);
 		applyRangeSwitch(startMs, endMs, intervalId);
 	}
 
@@ -306,7 +319,7 @@
 		const startMs = new Date(range.start).getTime();
 		const endMs = new Date(range.end).getTime();
 		const days = Math.max(1, Math.ceil((endMs - startMs) / DAY_MS));
-		applyRangeSwitch(startMs, endMs, getIntervalOptionsForDays(days).default);
+		applyRangeSwitch(startMs, endMs, preferFiveMinute(getIntervalOptionsForDays(days).default));
 	}
 
 	/** Manual interval override from the dropdown. Keeps the current viewport and

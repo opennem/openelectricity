@@ -132,7 +132,7 @@ rather than snapping it back to the native grain.
 
 FacilityChart has internal display interval toggles that perform **client-side aggregation** on top of cached API data:
 
-- **Power mode**: API always fetches `5m`. Toggle between `5m` (raw) and `30m` (`aggregateToInterval` averages).
+- **Power mode**: API always fetches `5m`. Toggle between `5m` (raw) and `30m` (`aggregateToInterval` averages). On `/facility/[code]` the auto/default power display is always `5m` (the page maps the shared config's `30m` default down via `preferFiveMinute`); `30m` remains a manual dropdown pick there. Other consumers keep the shared `30m` default at 2+ days.
 - **Energy mode with `1d` API interval**: Daily (raw) or Monthly (`aggregateToMonth` sums).
 - **Energy mode with `1M` API interval**: Monthly (raw), or the coarse calendar picks — Season / Half-year / Fin-year — bucketed client-side via `aggregateByBoundary`.
 - **Energy mode with `3M` or `1y` API interval**: Quarter / Year render at the fetched grain — no further aggregation.
@@ -140,7 +140,10 @@ FacilityChart has internal display interval toggles that perform **client-side a
 All render-layer aggregation is funnelled through a single dispatcher,
 `aggregateForDisplay(data, seriesNames, { apiInterval, displayInterval, ianaTimeZone, method })`
 in `v2/dataProcessing.js`, so FacilityChart and the financial/emissions providers
-stay in lock-step.
+stay in lock-step. At the `30m` grain the dispatcher opts summed (volume) series —
+market value, emissions — into `trimPartialEdges`, dropping half-filled first/last
+buckets that would otherwise render as a false dip at the viewport edges; averaged
+(rate) series keep theirs, since a partial bucket still averages to the right level.
 
 The `showIntervalToggle` prop (default `true`) controls whether FacilityChart shows its own interval buttons. When using ChartRangeBar (which has its own interval dropdown), pass `showIntervalToggle={false}`.
 

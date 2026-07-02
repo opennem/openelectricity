@@ -10,7 +10,7 @@
  * (so every metric reflects the chart's current date range).
  */
 
-import { getNumberFormat } from '$lib/utils/formatters';
+import { getNumberFormat, formatCapacity } from '$lib/utils/formatters';
 
 const fmt0 = getNumberFormat(0);
 const fmt1 = getNumberFormat(1);
@@ -56,7 +56,7 @@ function formatRevenue(value) {
  * @property {number} netRevenue
  * @property {number | null} roundTripEfficiency
  * @property {number | null} storageDuration
- * @property {{ ratio: number } | null} dcAc
+ * @property {{ ratio: number, dcMW: number, acMW: number } | null} dcAc
  */
 
 const NEEDS_INTERVAL = 'Requires interval data';
@@ -153,7 +153,13 @@ export const METRICS = {
 	},
 	dcac: {
 		label: 'DC:AC Ratio',
-		compute: (c) => (c.dcAc != null ? { value: fmt2.format(c.dcAc.ratio) } : { value: '--' })
+		compute: (c) =>
+			c.dcAc != null
+				? {
+						value: fmt2.format(c.dcAc.ratio),
+						subtitle: `DC array ${formatCapacity(c.dcAc.dcMW)} MW / AC connection ${formatCapacity(c.dcAc.acMW)} MW`
+					}
+				: { value: '--' }
 	}
 };
 

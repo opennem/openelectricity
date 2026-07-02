@@ -17,6 +17,7 @@
 	import { formatDateBySpecificity, stripDateTimezone } from '$lib/utils/date-format.js';
 	import { fuelTechToGroup } from '$lib/fuel-tech-groups/facility-group.js';
 	import { RENEWABLE_FUEL_TECHS } from '$lib/oe-api/calculate-renewables.js';
+	import { dcAcRatio } from '$lib/components/charts/facility/metrics/metrics-calc.js';
 
 	/**
 	 * @type {{
@@ -162,11 +163,9 @@
 	let unitTypes = $derived(sanityUnit?.unit_types ?? []);
 
 	// --- fuel-tech highlight derivations ---
-	let dcac = $derived.by(() => {
-		if (group !== 'solar' || !has(capacityReg) || !has(capacityMax) || capacityMax === 0)
-			return null;
-		return capacityReg / capacityMax;
-	});
+	// DC:AC (inverter loading) ratio — dcAcRatio nulls out ratios that aren't a
+	// meaningful oversizing signal (≤1.05 or >3), shared with the facility metrics.
+	let dcac = $derived(group === 'solar' ? dcAcRatio(capacityReg, capacityMax) : null);
 
 	let storageDuration = $derived.by(() => {
 		if (!has(storage) || !has(capacityReg) || capacityReg <= 0) return null;
@@ -339,12 +338,16 @@
 	</div>
 
 	<!-- Fuel-tech highlight -->
-	{#if group === 'solar' && dcac}
+	{#if group === 'solar' && (has(capacityReg) || has(capacityMax))}
 		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
 			<dl class="grid grid-cols-3 gap-4">
-				{@render stat('DC', formatCapacity(capacityReg), 'MW')}
-				{@render stat('AC', formatCapacity(capacityMax), 'MW')}
-				{@render stat('DC:AC', fmt2.format(dcac))}
+				{#if has(capacityReg)}{@render stat('DC array', formatCapacity(capacityReg), 'MW')}{/if}
+				{#if has(capacityMax)}{@render stat(
+						'AC connection',
+						formatCapacity(capacityMax),
+						'MW'
+					)}{/if}
+				{#if dcac}{@render stat('DC:AC', fmt2.format(dcac))}{/if}
 			</dl>
 			{#if solarMounting}
 				<p class="mt-2 text-xxs capitalize text-mid-grey">Mounting: {solarMounting}</p>
@@ -394,7 +397,10 @@
 	<!-- Key stats -->
 	<div class="border-t border-mid-warm-grey/40 px-6 py-4">
 		<dl class="grid grid-cols-2 gap-4">
-			{@render stat('Capacity', formatCapacity(capacityMax ?? capacityReg), 'MW')}
+			{#if group !== 'solar'}
+				<!-- Solar capacity is shown in full (DC array + AC connection) above. -->
+				{@render stat('Capacity', formatCapacity(capacityMax ?? capacityReg), 'MW')}
+			{/if}
 			{#if has(storage)}{@render stat('Storage', formatCapacity(storage), 'MWh')}{/if}
 			{#if has(emissions) && emissions > 0}
 				{@render stat('Emissions', formatEmissions(emissions), 'kg CO₂/MWh')}

@@ -17,7 +17,6 @@
 	 */
 
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
-	import { getNumberFormat } from '$lib/utils/formatters';
 	import MetricCard from './MetricCard.svelte';
 	import { getPrimaryFuelTechGroup, isGasPeaker, isPumpedHydro } from './fuel-group.js';
 	import {
@@ -63,8 +62,6 @@
 		displayInterval = '30m',
 		onpeakhighlight
 	} = $props();
-
-	const fmtMW = getNumberFormat(1);
 
 	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
 
@@ -434,14 +431,6 @@
 				class="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-mono font-semibold"
 				style="background-color: #88AFD0; color: #1a1a1a">Pumped Hydro</span
 			>
-		</div>
-	{/if}
-
-	{#if dcAc}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-3">
-			<span class="text-xs text-mid-grey">
-				DC array {fmtMW.format(dcAc.dcMW)} MW / AC connection {fmtMW.format(dcAc.acMW)} MW
-			</span>
 		</div>
 	{/if}
 
