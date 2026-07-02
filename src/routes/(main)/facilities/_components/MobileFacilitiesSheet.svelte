@@ -5,6 +5,7 @@
 	import Grid from '../Grid.svelte';
 	import Timeline from '../Timeline.svelte';
 	import SortDropdown from './SortDropdown.svelte';
+	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import formatValue from '../_utils/format-value';
 	import { sortFacilities } from '../_utils/sort-facilities';
 	import { VIEW_OPTIONS } from '../_utils/filters.js';
@@ -23,6 +24,7 @@
 	 *   facilitiesWithLocation: any[],
 	 *   facilityPhotos?: Record<string, string>,
 	 *   selectedView: 'list' | 'timeline' | 'grid',
+	 *   viewLoading?: boolean,
 	 *   sortBy: 'name' | 'region' | 'storage' | 'capacity',
 	 *   sortOrder: 'asc' | 'desc',
 	 *   totalFacilitiesCount: number,
@@ -40,6 +42,10 @@
 		facilitiesWithLocation = [],
 		facilityPhotos = {},
 		selectedView,
+		// True while the page defers the heavy view mount by a painted frame
+		// (see +page.svelte) — the body shows a loader so the switcher above
+		// responds instantly.
+		viewLoading = false,
 		sortBy,
 		sortOrder,
 		totalFacilitiesCount,
@@ -111,7 +117,11 @@
 		</div>
 	{/snippet}
 
-	{#if selectedView === 'grid'}
+	{#if viewLoading}
+		<div class="flex items-center justify-center py-16">
+			<LogoMarkLoader />
+		</div>
+	{:else if selectedView === 'grid'}
 		<Grid
 			facilities={sortedFacilities}
 			{facilityPhotos}

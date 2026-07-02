@@ -131,14 +131,22 @@
 						</span>
 
 						<span class="min-w-0 flex-1">
-							<!-- Sub-row 1: unit code + capacity -->
+							<!-- Sub-row 1: unit code + capacity (storage stacked beneath) -->
 							<span class="flex items-baseline justify-between gap-3">
 								<span class="truncate font-mono text-sm font-medium text-dark-grey">
 									{unit.code_display ?? unit.code}
 								</span>
-								<span class="shrink-0 font-mono text-sm text-dark-grey">
-									{formatCapacity(unit.capacity_maximum || unit.capacity_registered)}
-									<span class="text-xs text-mid-grey">MW</span>
+								<span class="flex shrink-0 flex-col items-end">
+									<span class="font-mono text-sm text-dark-grey">
+										{formatCapacity(unit.capacity_maximum || unit.capacity_registered)}
+										<span class="text-xs text-mid-grey">MW</span>
+									</span>
+									{#if unit.capacity_storage}
+										<span class="font-mono text-xs text-dark-grey" title="Storage Capacity">
+											{formatCapacity(unit.capacity_storage)}
+											<span class="text-xxs text-mid-grey">MWh</span>
+										</span>
+									{/if}
 								</span>
 							</span>
 

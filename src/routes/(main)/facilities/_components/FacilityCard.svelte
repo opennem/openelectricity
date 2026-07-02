@@ -71,10 +71,8 @@
 	let badgeSize = $derived(compact ? 'sm' : 'lg');
 
 	// Standard list badges always spread out (even on the selected row); the
-	// space-constrained cluster popup overlaps, and the dense sheet rows overlap
-	// at every width (lg badges otherwise only overlap at md+).
-	/** @type {boolean | 'always'} */
-	let badgesOverlap = $derived(dense ? 'always' : compact);
+	// space-constrained cluster popup and dense sheet rows overlap them.
+	let badgesOverlap = $derived(compact || dense);
 
 	// Dense subtitle: the leading (dominant) fuel tech's base name + short
 	// region, e.g. "Coal · NSW" (coal_black → Coal, solar_utility → Solar) —

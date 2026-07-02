@@ -83,6 +83,26 @@
 	let selectedView = $derived(
 		/** @type {'list' | 'timeline' | 'grid'} */ (optimisticView ?? data.view)
 	);
+	// The switcher, URL and map react to a view change instantly, but mounting
+	// the new view (hundreds of list rows, the full timeline) blocks the main
+	// thread — so the heavy render lags one painted frame behind `selectedView`
+	// (gated by `viewLoading`) and a loader fills the gap, keeping the tap
+	// feedback snappy.
+	/** @type {'list' | 'timeline' | 'grid'} */
+	let displayedView = $state(/** @type {'list' | 'timeline' | 'grid'} */ (data.view));
+	let viewLoading = $derived(displayedView !== selectedView);
+	$effect(() => {
+		const view = selectedView;
+		if (view === displayedView) return;
+		// Double rAF: the first fires before the loader paints, the second after
+		// — guaranteeing the loader is visible before the heavy mount starts.
+		let raf = requestAnimationFrame(() => {
+			raf = requestAnimationFrame(() => {
+				displayedView = view;
+			});
+		});
+		return () => cancelAnimationFrame(raf);
+	});
 	// Selection follows the `facility` URL param — canonical, so it survives
 	// reload, sharing and browser back/forward (real navigations update page.url
 	// reactively). Clicks additionally set an optimistic override for an instant
@@ -294,9 +314,10 @@
 	let isDesktop = $derived(windowWidth >= 768);
 
 	// Circular white floating buttons over the mobile map (zoom, back) — one
-	// definition so the FABs can't drift apart.
+	// definition so the FABs can't drift apart. Size is set per button (the
+	// back button matches the nav-bar controls, the zoom stack is smaller).
 	const mapFabClass =
-		'size-11 rounded-full bg-white border-2 border-warm-grey shadow-lg flex items-center justify-center hover:bg-light-warm-grey transition-colors cursor-pointer';
+		'rounded-full bg-white border-2 border-warm-grey shadow-lg flex items-center justify-center hover:bg-light-warm-grey transition-colors cursor-pointer';
 
 	// The detail panel opens to ~2/3 of the map height on both breakpoints
 	// (desktop: drag-resizable ResizablePanel; mobile: the detail bottom sheet's
@@ -1149,7 +1170,11 @@
 						: 'md:transition-[width] md:duration-300 md:ease-out'}"
 					style="--list-w: {listPaneWidth}px"
 				>
-					{#if selectedView === 'grid'}
+					{#if viewLoading}
+						<div class="flex-1 flex items-center justify-center">
+							<LogoMarkLoader />
+						</div>
+					{:else if selectedView === 'grid'}
 						<div class="flex-1 overflow-y-auto min-h-0">
 							<Grid
 								facilities={filteredFacilities}
@@ -1327,10 +1352,18 @@
 						     hidden below md). -->
 						<div class="md:hidden absolute top-20 right-3 z-20 flex flex-col items-center gap-2">
 							{@render mapOptionsDropdown(true)}
-							<button onclick={() => mapRef?.zoomIn()} class={mapFabClass} aria-label="Zoom in">
+							<button
+								onclick={() => mapRef?.zoomIn()}
+								class="size-11 {mapFabClass}"
+								aria-label="Zoom in"
+							>
 								<IconPlus class="size-5" />
 							</button>
-							<button onclick={() => mapRef?.zoomOut()} class={mapFabClass} aria-label="Zoom out">
+							<button
+								onclick={() => mapRef?.zoomOut()}
+								class="size-11 {mapFabClass}"
+								aria-label="Zoom out"
+							>
 								<IconMinus class="size-5" />
 							</button>
 						</div>
@@ -1340,10 +1373,10 @@
 						{#if !isDesktop && selectedFacility}
 							<button
 								onclick={closeFacilityDetail}
-								class="md:hidden absolute top-3 left-3 z-30 {mapFabClass}"
+								class="md:hidden absolute top-3 left-3 z-30 size-13 {mapFabClass}"
 								aria-label="Back to facilities list"
 							>
-								<IconChevronLeft class="size-5" />
+								<IconChevronLeft class="size-6" />
 							</button>
 						{/if}
 
@@ -1499,6 +1532,7 @@
 						facilitiesWithLocation={filteredWithLocation}
 						{facilityPhotos}
 						{selectedView}
+						{viewLoading}
 						sortBy={listSortBy}
 						sortOrder={listSortOrder}
 						{totalFacilitiesCount}

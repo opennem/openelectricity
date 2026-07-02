@@ -84,6 +84,11 @@
 	/** @param {PointerEvent} e */
 	function onGripDown(e) {
 		if (!containerHeight) return;
+		// The whole header is a drag surface, so leave presses on interactive
+		// controls (buttons, links, inputs) to the control itself.
+		if (/** @type {HTMLElement} */ (e.target).closest('button, a, input, select, textarea')) {
+			return;
+		}
 		e.preventDefault();
 		const startY = e.clientY;
 		const startH = height;
@@ -137,20 +142,26 @@
 		style="height: {height}px; {isDragging ? '' : 'transition: height 0.25s ease-out'}"
 		transition:fly={{ y: containerHeight || 600, duration: 280, easing: quintOut }}
 	>
-		<!-- Drag grip -->
-		<div
-			class="shrink-0 flex items-center justify-center pt-2.5 pb-1.5 cursor-grab touch-none select-none"
-			style={gripStyle}
-			onpointerdown={onGripDown}
-			role="separator"
-			aria-orientation="horizontal"
-			aria-label="Resize panel"
-			tabindex="-1"
-		>
-			<div class="h-1.5 w-10 rounded-full {gripClass}"></div>
-		</div>
+		<!-- Drag surface: the grip strip and the whole header act as one handle,
+		     so the sheet is easy to grab on touch. Presses on interactive header
+		     controls are left alone (see onGripDown), and only the visual grip
+		     carries the separator semantics so header content reads normally to
+		     assistive tech. -->
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<div class="shrink-0 cursor-grab touch-none select-none" onpointerdown={onGripDown}>
+			<div
+				class="flex items-center justify-center pt-2.5 pb-1.5"
+				style={gripStyle}
+				role="separator"
+				aria-orientation="horizontal"
+				aria-label="Resize panel"
+				tabindex="-1"
+			>
+				<div class="h-1.5 w-10 rounded-full {gripClass}"></div>
+			</div>
 
-		{@render header?.()}
+			{@render header?.()}
+		</div>
 
 		<div bind:this={bodyEl} class="flex-1 min-h-0 overflow-y-auto overscroll-contain">
 			{@render children?.()}
