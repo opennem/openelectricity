@@ -30,7 +30,7 @@
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
 	 *   osmWayId?: string | number | null,
-	 *   selectedView?: 'timeline' | 'list' | 'grid' | 'map',
+	 *   selectedView?: 'timeline' | 'list' | 'grid',
 	 *   cardCodes?: Set<string>,
 	 *   clustering?: boolean,
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
@@ -483,6 +483,21 @@
 	}
 
 	/**
+	 * Step the zoom in - exported for the mobile floating controls (the built-in
+	 * NavigationControl is hidden below md).
+	 */
+	export function zoomIn() {
+		mapInstance?.zoomIn();
+	}
+
+	/**
+	 * Step the zoom out - exported for the mobile floating controls.
+	 */
+	export function zoomOut() {
+		mapInstance?.zoomOut();
+	}
+
+	/**
 	 * Zoom to a specific facility and show popup - exported for external use
 	 * @param {any} facility
 	 */
@@ -565,11 +580,14 @@
 	function getFlyToOffset() {
 		if (typeof window === 'undefined') return [0, 0];
 
-		if (window.innerWidth > 768) {
+		// >= 768 matches the page's isDesktop breakpoint.
+		if (window.innerWidth >= 768) {
 			return [window.innerWidth * flyToOffsetX, window.innerHeight * flyToOffsetY];
 		}
-		// On mobile, no offset needed
-		return [0, 0];
+		// Mobile: no side panels, so no x offset — but the detail bottom sheet
+		// covers the lower part of the viewport, so shift the view up (via the
+		// caller's flyToOffsetY) to keep the marker in the visible top half.
+		return [0, window.innerHeight * flyToOffsetY];
 	}
 
 	/**
@@ -1125,13 +1143,12 @@
 		display: none !important;
 	}
 
-	/* Attribution control: top-left on mobile, bottom-right on desktop */
+	/* The built-in zoom control is hidden on mobile — the page renders its own
+	   floating zoom buttons instead. The attribution keeps its default
+	   bottom-right corner (collapsed via collapseMapAttribution). */
 	@media (max-width: 767px) {
-		:global(.maplibregl-ctrl-bottom-right) {
-			top: 0 !important;
-			bottom: auto !important;
-			left: 0 !important;
-			right: auto !important;
+		:global(.maplibregl-ctrl-top-right) {
+			display: none !important;
 		}
 	}
 

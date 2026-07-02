@@ -17,7 +17,7 @@
  *
  * Filter Parameters (URL search params):
  * --------------------------------------
- * - view: 'timeline' | 'list' | 'grid' | 'map' (default: 'timeline'; 'card' is a legacy alias for 'grid')
+ * - view: 'timeline' | 'list' | 'grid' (default: 'timeline'; 'card' and 'map' are legacy aliases for 'grid' and 'list')
  * - statuses: comma-separated status IDs (default: 'operating,commissioning')
  * - regions: comma-separated region codes (e.g., 'nsw,vic')
  * - fuel_techs: comma-separated fuel tech IDs or categories

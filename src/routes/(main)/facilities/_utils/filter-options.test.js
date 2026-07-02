@@ -3,7 +3,7 @@ import {
 	getLeafValues,
 	countSelectedLeaves,
 	filterOptionsBySearch,
-	summariseSelection
+	getSelectedLabels
 } from './filter-options.js';
 import { fuelTechOptions, regionOptions, statusOptions } from './filters.js';
 
@@ -90,33 +90,32 @@ describe('filterOptionsBySearch', () => {
 	});
 });
 
-describe('summariseSelection', () => {
-	it('returns an empty string for no selection', () => {
-		expect(summariseSelection(statusOptions, [])).toBe('');
+describe('getSelectedLabels', () => {
+	it('returns an empty list for no selection', () => {
+		expect(getSelectedLabels(statusOptions, [])).toEqual([]);
 	});
 
 	it('lists labels in option order', () => {
-		expect(summariseSelection(statusOptions, ['operating', 'committed'])).toBe(
-			'Committed, Operating'
-		);
+		expect(getSelectedLabels(statusOptions, ['operating', 'committed'])).toEqual([
+			'Committed',
+			'Operating'
+		]);
 	});
 
-	it('truncates beyond max with "+ N more"', () => {
-		expect(summariseSelection(regionOptions, ['nsw1', 'sa1', 'wem'])).toBe(
-			'New South Wales, South Australia + 1 more'
-		);
+	it('collects nested child labels', () => {
+		expect(getSelectedLabels(regionOptions, ['nsw1', 'sa1', 'wem'])).toEqual([
+			'New South Wales',
+			'South Australia',
+			'Western Australia'
+		]);
 	});
 
 	it('applies labelMap overrides', () => {
 		const labelMap = { nsw1: 'NSW', sa1: 'SA', wem: 'WA' };
-		expect(summariseSelection(regionOptions, ['wem', 'sa1', 'nsw1'], { labelMap })).toBe(
-			'NSW, SA + 1 more'
-		);
-	});
-
-	it('respects a custom max', () => {
-		expect(
-			summariseSelection(statusOptions, ['committed', 'operating', 'retired'], { max: 3 })
-		).toBe('Committed, Operating, Retired');
+		expect(getSelectedLabels(regionOptions, ['wem', 'sa1', 'nsw1'], { labelMap })).toEqual([
+			'NSW',
+			'SA',
+			'WA'
+		]);
 	});
 });

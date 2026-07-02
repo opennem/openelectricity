@@ -212,13 +212,26 @@ export const fuelTechLabel = optionsReducer(getFlatFuelTechOptions());
 export const regionShortLabels = optionsReducer(regions.filter((r) => r.value));
 
 /**
- * Normalise the `view` URL param. 'card' is the legacy name for the grid view,
- * kept so shared URLs still work.
+ * The facilities views in display order — drives both the desktop switcher
+ * and the mobile sheet's view toggle.
+ */
+export const VIEW_OPTIONS = [
+	{ label: 'Timeline', value: 'timeline' },
+	{ label: 'List', value: 'list' },
+	{ label: 'Grid', value: 'grid' }
+];
+
+/**
+ * Normalise the `view` URL param. 'card' is the legacy name for the grid view
+ * and 'map' was retired when the map became always visible; both are kept so
+ * shared URLs still work.
  * @param {string | null} raw
  * @returns {string | null}
  */
 export function normaliseViewParam(raw) {
-	return raw === 'card' ? 'grid' : raw;
+	if (raw === 'card') return 'grid';
+	if (raw === 'map') return 'list';
+	return raw;
 }
 
 /**

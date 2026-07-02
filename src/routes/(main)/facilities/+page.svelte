@@ -22,6 +22,7 @@
 	import List from './List.svelte';
 	import Grid from './Grid.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
+	import MobileFacilitiesSheet from './_components/MobileFacilitiesSheet.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
 	import FacilityPanelFooter from './_components/FacilityPanelFooter.svelte';
@@ -32,6 +33,9 @@
 	} from '$lib/components/fullscreen';
 	import { ResizablePanel } from '$lib/components/ui/resizable-panel';
 	import { BottomSheet } from '$lib/components/ui/bottom-sheet';
+	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
+	import IconPlus from '$lib/icons/Plus.svelte';
+	import IconMinus from '$lib/icons/Minus.svelte';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import {
@@ -73,11 +77,11 @@
 	// instant switch and afterNavigate reconciles it from window.location.
 	//   undefined → no override, use data.view (the load's value) ·
 	//   string → optimistically selected view
-	/** @type {'list' | 'timeline' | 'map' | 'grid' | undefined} */
+	/** @type {'list' | 'timeline' | 'grid' | undefined} */
 	let optimisticView = $state(undefined);
-	/** @type {'list' | 'timeline' | 'map' | 'grid'} */
+	/** @type {'list' | 'timeline' | 'grid'} */
 	let selectedView = $derived(
-		/** @type {'list' | 'timeline' | 'map' | 'grid'} */ (optimisticView ?? data.view)
+		/** @type {'list' | 'timeline' | 'grid'} */ (optimisticView ?? data.view)
 	);
 	// Selection follows the `facility` URL param — canonical, so it survives
 	// reload, sharing and browser back/forward (real navigations update page.url
@@ -285,10 +289,20 @@
 		storageKey: 'facilities-list-width'
 	});
 
-	// Detail panel opens to ~2/3 of the map height (it scrolls past this and is
-	// drag-resizable). The selected marker is then centred in the remaining third
-	// of map visible above it — shift it up by half the panel's height (desktop
-	// only; the Map ignores the fly-to offset on mobile).
+	// Single reactive breakpoint — gates the desktop panel vs the mobile sheets.
+	let windowWidth = $state(0);
+	let isDesktop = $derived(windowWidth >= 768);
+
+	// Circular white floating buttons over the mobile map (zoom, back) — one
+	// definition so the FABs can't drift apart.
+	const mapFabClass =
+		'size-11 rounded-full bg-white border-2 border-warm-grey shadow-lg flex items-center justify-center hover:bg-light-warm-grey transition-colors cursor-pointer';
+
+	// The detail panel opens to ~2/3 of the map height on both breakpoints
+	// (desktop: drag-resizable ResizablePanel; mobile: the detail bottom sheet's
+	// peek). The selected marker (and its OSM footprint) is then centred in the
+	// remaining third of map visible above it — shift the view up by half the
+	// panel's height.
 	const FACILITY_PANEL_FRACTION = 2 / 3;
 	let facilityMarkerOffsetY = $derived(selectedFacility ? -FACILITY_PANEL_FRACTION / 2 : 0);
 
@@ -297,8 +311,6 @@
 
 	// Year animation playing state (from Filters)
 	let isYearPlaying = $state(false);
-	let windowWidth = $state(0);
-	let isDesktop = $derived(windowWidth >= 768);
 
 	// When a facility is selected in list view, collapse the list pane (drop the
 	// Storage + Capacity columns) to give the map/detail more room — animated.
@@ -337,7 +349,7 @@
 		optimisticCode = params.get('facility');
 		// Raw param (mirrors optimisticCode); `selectedView` owns the single
 		// `?? data.view` fallback rather than hardcoding the default twice.
-		optimisticView = /** @type {'list' | 'timeline' | 'map' | 'grid' | undefined} */ (
+		optimisticView = /** @type {'list' | 'timeline' | 'grid' | undefined} */ (
 			normaliseViewParam(params.get('view')) ?? undefined
 		);
 
@@ -445,7 +457,7 @@
 		);
 	}
 
-	// Calculate capacity bounds based on view (unit capacity for Timeline, facility capacity for List/Map)
+	// Calculate capacity bounds based on view (unit capacity for Timeline, facility capacity for List/Grid)
 	let capacityBounds = $derived.by(() => {
 		if (!facilities || facilities.length === 0) return { min: 0, max: 10000 };
 
@@ -454,7 +466,7 @@
 			// Timeline: use individual unit capacities
 			capacities = getAllUnitCapacities(facilities);
 		} else {
-			// List/Map: use total facility capacities
+			// List/Grid: use total facility capacities
 			capacities = facilities.map(getFacilityCapacity).filter((c) => c > 0);
 		}
 
@@ -502,13 +514,13 @@
 	}
 
 	/**
-	 * Filter facilities - in Timeline view, filter by unit capacity/year; in List/Map view, filter by facility capacity/year
+	 * Filter facilities - in Timeline view, filter by unit capacity/year; in List/Grid view, filter by facility capacity/year
 	 * @param {any[]} facilityList
 	 * @param {string} searchTerm
 	 * @param {[number, number]} capacityRangeFilter
 	 * @param {[number, number]} yearRangeFilter
 	 * @param {{ min: number, max: number }} yearBoundsRef
-	 * @param {'list' | 'timeline' | 'map' | 'grid'} view
+	 * @param {'list' | 'timeline' | 'grid'} view
 	 * @param {number | null} playYearValue
 	 * @returns {any[]}
 	 */
@@ -546,7 +558,7 @@
 				}))
 				.filter((facility) => facility.units && facility.units.length > 0);
 		} else {
-			// List/Map: filter by total facility capacity and year
+			// List/Grid: filter by total facility capacity and year
 			return facilityList
 				.map((facility) => ({
 					...facility,
@@ -891,7 +903,7 @@
 	}
 
 	/**
-	 * @param {'list' | 'timeline' | 'map' | 'grid'} value
+	 * @param {'list' | 'timeline' | 'grid'} value
 	 */
 	function handleSelectedViewChange(value) {
 		// Optimistic override for an instant switch (replaceState only mirrors the
@@ -899,7 +911,7 @@
 		optimisticView = value;
 
 		// Reset capacity range to match new view's bounds
-		// (timeline uses unit capacities, list/map uses facility capacities)
+		// (timeline uses unit capacities, list/grid uses facility capacities)
 		capacityRange = [capacityBounds.min, capacityBounds.max];
 		yearRange = [yearBounds.min, yearBounds.max];
 
@@ -1078,11 +1090,18 @@
 
 <FullscreenLayout {isFullscreen}>
 	{#snippet filterBar()}
-		<div class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}">
+		<!-- The bar itself is desktop-only (Filters renders a floating nav over
+		     the map on mobile), so the border is too — otherwise an empty strip
+		     would sit above the full-bleed map. -->
+		<div
+			class="relative z-40 shrink-0 md:border-b md:border-warm-grey {isFullscreen ? '' : 'px-4'}"
+		>
 			<Filters
 				{searchTerm}
 				{selectedView}
 				{isFullscreen}
+				facilitySelected={!!selectedFacility}
+				darkMap={mapTheme !== 'light'}
 				showShortcuts={showShortcutsToast}
 				selectedStatuses={statuses}
 				selectedFuelTechs={fuelTechs}
@@ -1119,16 +1138,15 @@
 				bind:clientHeight={containerHeight}
 				class="flex-1 flex flex-col md:flex-row min-h-0 relative"
 			>
-				<!-- Left panel: List, Timeline or Grid (resizable on desktop).
-				     Width is driven by a CSS variable + `md:` class rather than a
-				     JS-gated inline style, so the desktop list/map split is reserved
-				     from the first paint (no full-width flash before hydration). -->
+				<!-- Left panel: List, Timeline or Grid (desktop only — mobile shows
+				     these views inside the bottom sheet instead). Width is driven by
+				     a CSS variable + `md:` class rather than a JS-gated inline style,
+				     so the desktop list/map split is reserved from the first paint
+				     (no full-width flash before hydration). -->
 				<div
-					class="relative bg-white flex flex-col min-h-0 z-10 w-full max-md:flex-1 md:w-[var(--list-w)] md:shrink-0 {mainDrag.isDragging
+					class="relative bg-white hidden md:flex flex-col min-h-0 z-10 md:w-[var(--list-w)] md:shrink-0 {mainDrag.isDragging
 						? ''
 						: 'md:transition-[width] md:duration-300 md:ease-out'}"
-					class:hidden={selectedView === 'map'}
-					class:md:flex={selectedView === 'map'}
 					style="--list-w: {listPaneWidth}px"
 				>
 					{#if selectedView === 'grid'}
@@ -1143,7 +1161,7 @@
 								}}
 							/>
 						</div>
-					{:else if selectedView === 'list' || selectedView === 'map'}
+					{:else if selectedView === 'list'}
 						<div class="flex-1 overflow-y-auto min-h-0 mt-4">
 							<List
 								facilities={filteredFacilities}
@@ -1219,14 +1237,11 @@
 					class="hidden md:flex"
 				/>
 
-				<!-- Right panel: Map (fills the column — flex-1 fills height on mobile
-				     [flex-col] and width on desktop [flex-row], so the h-full map
-				     container always has a real size to render into). -->
-				<div
-					class="relative flex-1 min-h-0 md:min-w-0"
-					class:hidden={selectedView !== 'map'}
-					class:md:block={selectedView !== 'map'}
-				>
+				<!-- Right panel: Map (always visible — full-bleed on mobile, right
+				     column on desktop; flex-1 fills height on mobile [flex-col] and
+				     width on desktop [flex-row], so the h-full map container always
+				     has a real size to render into). -->
+				<div class="relative flex-1 min-h-0 md:min-w-0">
 					<!-- Map container -->
 					<div class="relative h-full overflow-hidden">
 						{#if !mapLoaded}
@@ -1262,21 +1277,9 @@
 							/>
 						{/await}
 
-						<!-- Map controls -->
-						<div class="absolute top-3 right-20 z-20 flex items-center gap-2">
-							<button
-								onclick={() => {
-									mapRef?.resetView();
-									if (selectedFacility) {
-										closeFacilityDetail();
-									}
-								}}
-								class="bg-white rounded-lg px-3 py-2.5 md:py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
-								title="Reset map to show all facilities"
-							>
-								Reset Map
-							</button>
+						{#snippet mapOptionsDropdown(/** @type {boolean} */ iconOnly)}
 							<MapOptionsDropdown
+								{iconOnly}
 								{mapTheme}
 								showTransmissionLines={mapShowTransmissionLines}
 								showGolfCourses={mapShowGolfCourses}
@@ -1300,16 +1303,58 @@
 									updateMapOptionsUrl();
 								}}
 							/>
+						{/snippet}
+
+						<!-- Map controls (desktop) -->
+						<div class="absolute top-3 right-20 z-20 hidden md:flex items-center gap-2">
+							<button
+								onclick={() => {
+									mapRef?.resetView();
+									if (selectedFacility) {
+										closeFacilityDetail();
+									}
+								}}
+								class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
+								title="Reset map to show all facilities"
+							>
+								Reset Map
+							</button>
+							{@render mapOptionsDropdown(false)}
 						</div>
 
-						<!-- Year animation controls -->
+						<!-- Map controls (mobile) — a floating stack below the nav bar:
+						     layers + zoom in/out (the built-in NavigationControl is
+						     hidden below md). -->
+						<div class="md:hidden absolute top-20 right-3 z-20 flex flex-col items-center gap-2">
+							{@render mapOptionsDropdown(true)}
+							<button onclick={() => mapRef?.zoomIn()} class={mapFabClass} aria-label="Zoom in">
+								<IconPlus class="size-5" />
+							</button>
+							<button onclick={() => mapRef?.zoomOut()} class={mapFabClass} aria-label="Zoom out">
+								<IconMinus class="size-5" />
+							</button>
+						</div>
+
+						<!-- Back to the facilities list (mobile) — replaces the floating
+						     nav while a facility is selected. -->
+						{#if !isDesktop && selectedFacility}
+							<button
+								onclick={closeFacilityDetail}
+								class="md:hidden absolute top-3 left-3 z-30 {mapFabClass}"
+								aria-label="Back to facilities list"
+							>
+								<IconChevronLeft class="size-5" />
+							</button>
+						{/if}
+
+						<!-- Year animation controls (desktop only) -->
 						{#if showYearOverlay}
 							{@const playheadPercent =
 								playYear !== null && yearRange[1] > yearRange[0]
 									? ((playYear - yearRange[0]) / (yearRange[1] - yearRange[0])) * 100
 									: 0}
 							<div
-								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] flex flex-col gap-3"
+								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] hidden md:flex flex-col gap-3"
 							>
 								<p class="text-[10px] text-mid-grey leading-tight mb-0">
 									Showing facilities connected to the grid
@@ -1375,7 +1420,7 @@
 									showYearOverlay = true;
 									yearAnimationControls?.toggle();
 								}}
-								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2.5 md:py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
+								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2 text-xs font-medium hidden md:flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
 								title="Play year animation"
 							>
 								<Play class="size-4 text-mid-grey" />
@@ -1443,6 +1488,31 @@
 					</div>
 				</div>
 
+				<!-- Facilities list (mobile only) — a persistent bottom sheet peeking
+				     over the full-bleed map; slides away while a facility is selected
+				     and the detail sheet takes its place. -->
+				{#if !isDesktop}
+					<MobileFacilitiesSheet
+						open={!selectedFacility}
+						{containerHeight}
+						facilities={filteredFacilities}
+						facilitiesWithLocation={filteredWithLocation}
+						{facilityPhotos}
+						{selectedView}
+						sortBy={listSortBy}
+						sortOrder={listSortOrder}
+						{totalFacilitiesCount}
+						{totalUnitsCount}
+						{totalCapacityMW}
+						onviewchange={handleSelectedViewChange}
+						onsortchange={(by, order) => {
+							listSortBy = by;
+							listSortOrder = order;
+						}}
+						onselect={handleFacilitySelect}
+					/>
+				{/if}
+
 				<!-- Facility detail panel (mobile only) — a drag-resizable bottom sheet
 				     that leaves the list/map behind it visible and interactive. -->
 				{#if !isDesktop}
@@ -1450,6 +1520,7 @@
 						open={!!selectedFacility}
 						onclose={closeFacilityDetail}
 						{containerHeight}
+						peekFraction={FACILITY_PANEL_FRACTION}
 						gripStyle={`background-color: ${detailColour}`}
 						gripClass={detailGripClass}
 						class="md:hidden z-30 [view-transition-name:facility-hero]"
@@ -1462,6 +1533,7 @@
 									card={detailCard}
 									dominantColour={detailColour}
 									darkText={detailDarkText}
+									photoUrl={facilityPhotos[selectedFacility.code] ?? null}
 								>
 									{#snippet topBar(/** @type {boolean} */ darkText)}
 										{@render facilityActionBar(darkText)}
@@ -1492,7 +1564,10 @@
 			</div>
 
 			{#snippet footer()}
-				<FullscreenFooter {isFullscreen} />
+				<!-- Desktop only — the mobile map is full-bleed to the bottom edge. -->
+				<div class="hidden md:block">
+					<FullscreenFooter {isFullscreen} />
+				</div>
 			{/snippet}
 		</FullscreenContainer>
 	{/snippet}

@@ -7,8 +7,11 @@
 	 * (relatively-positioned) container. There is deliberately no backdrop: the
 	 * map / list behind stays visible and interactive. Drag the grip to snap
 	 * between a peek and a full height, or drag down past the dismiss threshold to
-	 * close. The body scrolls within the current height, so content is reachable
-	 * even at the peek snap.
+	 * close (persistent sheets pass `dismissable={false}` to snap back down
+	 * instead). Passing `minHeight` adds a third, minimised snap below the peek —
+	 * a fixed pixel height sized to the caller's collapsed chrome. The body
+	 * scrolls within the current height, so content is reachable even at the
+	 * peek snap.
 	 *
 	 * Heights are fractions of `containerHeight` (the bounding relative parent),
 	 * so the sheet sizes correctly regardless of viewport.
@@ -20,6 +23,10 @@
 	 *   peekFraction?: number,
 	 *   fullFraction?: number,
 	 *   dismissFraction?: number,
+	 *   dismissable?: boolean,
+	 *   minHeight?: number | null,
+	 *   snap?: 'min' | 'peek' | 'full',
+	 *   bodyEl?: HTMLElement | null,
 	 *   class?: string,
 	 *   gripStyle?: string,
 	 *   gripClass?: string,
@@ -35,6 +42,13 @@
 		peekFraction = 0.6,
 		fullFraction = 0.94,
 		dismissFraction = 0.4,
+		dismissable = true,
+		/** Pixel height of the minimised snap; null disables it. */
+		minHeight = null,
+		snap = $bindable('peek'),
+		/** The scrollable body element — bindable so callers can wire content
+		 *  that listens to its own scroll container (e.g. the Timeline). */
+		bodyEl = $bindable(null),
 		class: className = '',
 		/** Inline style for the drag-grip strip — lets callers set a dynamic
 		 *  background (e.g. a per-facility colour) so the chrome flows into the
@@ -51,8 +65,8 @@
 	let peekPx = $derived(Math.round(containerHeight * peekFraction));
 	let fullPx = $derived(Math.round(containerHeight * fullFraction));
 	let dismissPx = $derived(Math.round(containerHeight * dismissFraction));
+	let minPx = $derived(minHeight ?? 0);
 
-	let snap = $state(/** @type {'peek' | 'full'} */ ('peek'));
 	/** Live height while dragging; null when settled (height comes from `snap`). */
 	let dragHeight = $state(/** @type {number | null} */ (null));
 	let isDragging = $state(false);
@@ -65,7 +79,7 @@
 		}
 	});
 
-	let height = $derived(dragHeight ?? (snap === 'full' ? fullPx : peekPx));
+	let height = $derived(dragHeight ?? (snap === 'full' ? fullPx : snap === 'min' ? minPx : peekPx));
 
 	/** @param {PointerEvent} e */
 	function onGripDown(e) {
@@ -76,9 +90,11 @@
 		const grip = /** @type {HTMLElement} */ (e.currentTarget);
 		grip.setPointerCapture(e.pointerId);
 		isDragging = true;
+		let moved = false;
 
 		/** @param {PointerEvent} ev */
 		function onMove(ev) {
+			if (Math.abs(startY - ev.clientY) > 4) moved = true;
 			const delta = startY - ev.clientY; // drag up → taller
 			dragHeight = Math.max(0, Math.min(fullPx, startH + delta));
 		}
@@ -88,13 +104,27 @@
 			const settled = dragHeight ?? startH;
 			isDragging = false;
 			dragHeight = null;
-			// Dragged below the dismiss line → close.
-			if (settled < dismissPx) {
+			// A press without meaningful movement steps peek up to full and
+			// anything else (min or full) back to peek.
+			if (!moved) {
+				snap = snap === 'peek' ? 'full' : 'peek';
+				return;
+			}
+			// Dragged below the dismiss line → close (persistent sheets fall
+			// through to the nearest-snap pick, which lands on min/peek instead).
+			if (dismissable && settled < dismissPx) {
 				onclose?.();
 				return;
 			}
-			// Otherwise snap to the nearer of peek / full.
-			snap = Math.abs(settled - fullPx) <= Math.abs(settled - peekPx) ? 'full' : 'peek';
+			// Otherwise snap to the nearest height.
+			/** @type {['min' | 'peek' | 'full', number][]} */
+			const targets = [
+				['peek', peekPx],
+				['full', fullPx]
+			];
+			if (minHeight != null) targets.push(['min', minPx]);
+			targets.sort((a, b) => Math.abs(settled - a[1]) - Math.abs(settled - b[1]));
+			snap = targets[0][0];
 		}
 		grip.addEventListener('pointermove', onMove);
 		grip.addEventListener('pointerup', onUp);
@@ -122,7 +152,7 @@
 
 		{@render header?.()}
 
-		<div class="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+		<div bind:this={bodyEl} class="flex-1 min-h-0 overflow-y-auto overscroll-contain">
 			{@render children?.()}
 		</div>
 

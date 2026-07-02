@@ -1,26 +1,23 @@
 <script>
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
 	import MobileFilterModal from './_components/MobileFilterModal.svelte';
 	import SearchInput from './_components/SearchInput.svelte';
 	import FilterDropdown from './_components/filters/FilterDropdown.svelte';
 	import FilterRangeDropdown from './_components/filters/FilterRangeDropdown.svelte';
 	import FuelTechRowContent from './_components/filters/FuelTechRowContent.svelte';
-	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
-	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import { Search, X, Maximize2 } from '@lucide/svelte';
+	import { ListFilter } from '@lucide/svelte';
 	import OptionsMenu from './_components/OptionsMenu.svelte';
-	import { fly } from 'svelte/transition';
 	import { onDestroy } from 'svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 
-	import { getLeafValues } from './_utils/filter-options.js';
+	import { getLeafValues, countSelectedLeaves } from './_utils/filter-options.js';
 	import {
 		regionOptions,
 		fuelTechOptions,
 		statusOptions,
 		ALL_STATUSES,
-		DEFAULT_STATUSES
+		DEFAULT_STATUSES,
+		VIEW_OPTIONS
 	} from './_utils/filters.js';
 
 	/**
@@ -32,8 +29,10 @@
 	 *   capacityMin?: number,
 	 *   capacityMax?: number,
 	 *   searchTerm?: string,
-	 *   selectedView?: 'list' | 'timeline' | 'map' | 'grid',
+	 *   selectedView?: 'list' | 'timeline' | 'grid',
 	 *   isFullscreen?: boolean,
+	 *   facilitySelected?: boolean,
+	 *   darkMap?: boolean,
 	 *   showShortcuts?: boolean,
 	 *   onstatuseschange?: (values: string[]) => void,
 	 *   onregionschange?: (values: string[]) => void,
@@ -44,7 +43,7 @@
 	 *   yearMax?: number,
 	 *   onyearrangechange?: (range: [number, number]) => void,
 	 *   onsearchchange?: (value: string) => void,
-	 *   onviewchange?: (view: 'list' | 'timeline' | 'map' | 'grid') => void,
+	 *   onviewchange?: (view: 'list' | 'timeline' | 'grid') => void,
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
@@ -66,6 +65,9 @@
 		searchTerm = '',
 		selectedView = 'timeline',
 		isFullscreen = false,
+		facilitySelected = false,
+		// Dark/satellite basemap behind the floating nav → white logo mark.
+		darkMap = false,
 		showShortcuts = false,
 		onstatuseschange,
 		onregionschange,
@@ -93,13 +95,20 @@
 	// ============================================
 
 	let showMobileFilterOptions = $state(false);
-	let showMobileSearch = $state(false);
 	let isBrowserFullscreen = $state(false);
 
 	/** @type {SearchInput | null} */
 	let mobileSearchRef = $state(null);
 	/** @type {SearchInput | null} */
 	let desktopSearchRef = $state(null);
+
+	// "N active" across status/technology/region — badges the mobile Filters
+	// button and is passed into the modal so both always agree.
+	let activeFilterCount = $derived(
+		countSelectedLeaves(statusOptions, selectedStatuses) +
+			countSelectedLeaves(fuelTechOptions, selectedFuelTechs) +
+			countSelectedLeaves(regionOptions, selectedRegions)
+	);
 
 	// ============================================
 	// Year Animation (Play button)
@@ -244,25 +253,6 @@
 	}
 
 	// ============================================
-	// View Switcher Config
-	// ============================================
-
-	const viewButtonsDesktop = [
-		{ label: 'Timeline', value: 'timeline' },
-		{ label: 'List', value: 'list' },
-		{ label: 'Grid', value: 'grid' }
-	];
-
-	const viewOptions = [
-		{ label: 'Timeline', value: 'timeline' },
-		{ label: 'List', value: 'list' },
-		{ label: 'Grid', value: 'grid' },
-		{ label: 'Map', value: 'map' }
-	];
-
-	let selectedViewOption = $derived(viewOptions.find((v) => v.value === selectedView));
-
-	// ============================================
 	// Event Handlers
 	// ============================================
 
@@ -279,8 +269,7 @@
 		if (e.key === '/') {
 			e.preventDefault();
 			if (window.innerWidth < 768) {
-				showMobileSearch = true;
-				setTimeout(() => mobileSearchRef?.focus(), 50);
+				mobileSearchRef?.focus();
 			} else {
 				desktopSearchRef?.focus();
 			}
@@ -380,26 +369,7 @@
 	 * @param {{ value: string }} option
 	 */
 	function handleViewChange(option) {
-		onviewchange?.(/** @type {'list' | 'timeline' | 'map' | 'grid'} */ (option.value));
-	}
-
-	/**
-	 * @param {{ value: string | number | null | undefined }} option
-	 */
-	function handleViewSelectChange(option) {
-		if (option.value) {
-			onviewchange?.(/** @type {'list' | 'timeline' | 'map' | 'grid'} */ (option.value));
-		}
-	}
-
-	function closeMobileSearch() {
-		showMobileSearch = false;
-		onsearchchange?.('');
-	}
-
-	function openMobileSearch() {
-		showMobileSearch = true;
-		setTimeout(() => mobileSearchRef?.focus(), 50);
+		onviewchange?.(/** @type {'list' | 'timeline' | 'grid'} */ (option.value));
 	}
 </script>
 
@@ -450,205 +420,172 @@
 	}}
 />
 
-<FullscreenFilterBar {isFullscreen} routeKey="list" paddingX="px-8">
-	{#snippet stable()}
-		{#if isFullscreen}
-			<FullscreenNavDropdown />
-			<a
-				href="/facilities?view=list&fullscreen=true"
-				class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
-			>
-				Facilities
-			</a>
-		{/if}
-	{/snippet}
-
-	{#snippet rest()}
-		{#if isFullscreen}
-			<div class="h-8 border-l border-warm-grey shrink-0"></div>
-		{/if}
-
-		<!-- View Switcher - Desktop -->
-		<div class="hidden md:block {isFullscreen ? 'pl-3' : ''}">
-			<SwitchWithIcons
-				buttons={viewButtonsDesktop}
-				selected={selectedView}
-				compact={isFullscreen}
-				rounded="rounded-lg"
-				darkSelected
-				onchange={handleViewChange}
-			/>
+<!-- Mobile floating nav — the filter bar below is desktop-only; on mobile the
+     map is full-bleed and the chrome floats over it. Hidden while a facility
+     is selected (the page's floating back button takes its place) or while
+     the filter sheet is open (the map peeks bare above it). -->
+{#if !facilitySelected && !showMobileFilterOptions}
+	<div class="md:hidden fixed top-3 inset-x-3 z-40 flex items-stretch gap-2">
+		<div class="shrink-0 flex items-center">
+			<FullscreenNavDropdown light={darkMap} />
 		</div>
-
-		<!-- Fullscreen Toggle - Mobile (only when not already fullscreen; logo handles exit) -->
-		{#if !isFullscreen}
-			<div class="md:hidden">
-				<button
-					onclick={() => onfullscreenchange?.()}
-					class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
-					title="Enter full screen (F). Shift+F for browser fullscreen"
-				>
-					<Maximize2 class="size-7 text-mid-grey" />
-				</button>
-			</div>
-		{/if}
-
-		<!-- View Switcher - Mobile (dropdown) -->
-		<div class="md:hidden">
-			<FormSelect
-				options={viewOptions}
-				selected={selectedViewOption}
-				onchange={handleViewSelectChange}
-				paddingX="px-4"
-				paddingY="py-3"
-				widthClass="w-auto"
-				compact={isFullscreen}
-			/>
-		</div>
-
-		<!-- Desktop Search -->
-		<div
-			class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
-				? 'ml-3 pl-7'
-				: 'ml-6 pl-10'}"
+		<SearchInput
+			bind:this={mobileSearchRef}
+			value={searchTerm}
+			onchange={(value) => onsearchchange?.(value)}
+			rounded="rounded-lg"
+			class="flex-1 min-w-0 rounded-lg shadow-lg"
+		/>
+		<!-- Fixed width so the button doesn't resize when the count badge
+		     appears/disappears. -->
+		<button
+			onclick={() => (showMobileFilterOptions = true)}
+			class="shrink-0 w-40 flex items-center justify-center gap-2 rounded-lg bg-white border border-warm-grey shadow-lg text-sm font-medium text-dark-grey cursor-pointer"
 		>
-			<SearchInput
-				bind:this={desktopSearchRef}
-				value={searchTerm}
-				onchange={(value) => onsearchchange?.(value)}
-				showShortcutHint={showShortcuts}
-				compact={isFullscreen}
-				class="w-[200px]"
-			/>
-		</div>
+			<ListFilter class="size-4" />
+			<span>Filters</span>
+			{#if activeFilterCount > 0}
+				<span
+					class="min-w-6 h-6 px-1.5 rounded-full bg-dark-grey text-white text-xs font-medium flex items-center justify-center"
+				>
+					{activeFilterCount}
+				</span>
+			{/if}
+		</button>
+	</div>
+{/if}
 
-		<!-- Desktop Filter Dropdowns (pushed right via ml-auto). The left padding
+<div class="hidden md:block">
+	<FullscreenFilterBar {isFullscreen} routeKey="list" paddingX="px-8">
+		{#snippet stable()}
+			{#if isFullscreen}
+				<FullscreenNavDropdown />
+				<a
+					href="/facilities?view=list&fullscreen=true"
+					class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
+				>
+					Facilities
+				</a>
+			{/if}
+		{/snippet}
+
+		{#snippet rest()}
+			{#if isFullscreen}
+				<div class="h-8 border-l border-warm-grey shrink-0"></div>
+			{/if}
+
+			<!-- View Switcher -->
+			<div class={isFullscreen ? 'pl-3' : ''}>
+				<SwitchWithIcons
+					buttons={VIEW_OPTIONS}
+					selected={selectedView}
+					compact={isFullscreen}
+					rounded="rounded-lg"
+					darkSelected
+					onchange={handleViewChange}
+				/>
+			</div>
+
+			<!-- Search -->
+			<div
+				class="relative flex items-center border-l border-warm-grey {isFullscreen
+					? 'ml-3 pl-7'
+					: 'ml-6 pl-10'}"
+			>
+				<SearchInput
+					bind:this={desktopSearchRef}
+					value={searchTerm}
+					onchange={(value) => onsearchchange?.(value)}
+					showShortcutHint={showShortcuts}
+					compact={isFullscreen}
+					class="w-[200px]"
+				/>
+			</div>
+
+			<!-- Filter Dropdowns (pushed right via ml-auto). The left padding
 		     mirrors the gap on the other side of the cluster (bar gap-4 + options
 		     menu ml-4, or ml-2 in fullscreen) so the dividers sit evenly. -->
-		<div
-			class="filter-bar-scroll justify-start items-center gap-2 hidden md:flex border-l border-warm-grey overflow-x-auto min-w-0 ml-auto {isFullscreen
-				? 'pl-6'
-				: 'pl-8'}"
-		>
-			<FilterDropdown
-				label="Region"
-				options={regionOptions}
-				selected={selectedRegions}
-				defaultExpanded={['nem']}
-				compact={isFullscreen}
-				onchange={handleRegionChange}
-				onclear={() => onregionschange?.([])}
-				onselectall={() => onregionschange?.(getLeafValues(regionOptions))}
-			/>
-
-			<FilterDropdown
-				label="Status"
-				options={statusOptions}
-				selected={selectedStatuses}
-				compact={isFullscreen}
-				clearLabel="Reset to defaults"
-				onchange={handleStatusChange}
-				onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
-				onselectall={() => onstatuseschange?.([...ALL_STATUSES])}
-			/>
-
-			<FilterDropdown
-				label="Technology"
-				options={fuelTechOptions}
-				selected={selectedFuelTechs}
-				searchable
-				searchPlaceholder="Search technologies"
-				compact={isFullscreen}
-				onchange={handleFuelTechChange}
-				onclear={() => onfueltechschange?.([])}
-				onselectall={() => onfueltechschange?.(getLeafValues(fuelTechOptions))}
-				row={fuelTechRow}
-			/>
-
-			<FilterRangeDropdown
-				label="Capacity"
-				min={capacityMin}
-				max={capacityMax}
-				value={capacityRange}
-				step={10}
-				formatValue={formatCapacity}
-				compact={isFullscreen}
-				onchange={(range) => oncapacityrangechange?.(range)}
-				onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
-			/>
-
-			<FilterRangeDropdown
-				label="Years"
-				min={yearMin}
-				max={yearMax}
-				value={yearRange}
-				step={1}
-				formatValue={formatYear}
-				compact={isFullscreen}
-				suppressScrollClose={isYearPlaying}
-				onchange={(range) => {
-					stopYearAnimation();
-					onyearrangechange?.(range);
-				}}
-				onclear={handleYearClear}
-			/>
-		</div>
-	{/snippet}
-
-	{#snippet options()}
-		<!-- Options Menu - Desktop -->
-		<div class="hidden md:flex items-center">
-			<OptionsMenu
-				{isFullscreen}
-				onfullscreenchange={() => onfullscreenchange?.()}
-				onshowshortcuts={() => onshowshortcuts?.()}
-				ondownloadcsv={() => ondownloadcsv?.()}
-			/>
-		</div>
-
-		<!-- Mobile Filter Button -->
-		<div class="md:hidden">
-			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
-				<IconAdjustmentsHorizontal class="size-10" />
-			</ButtonIcon>
-		</div>
-	{/snippet}
-</FullscreenFilterBar>
-
-<!-- Mobile floating search (expands from bottom-right button to input pill) -->
-<div class="md:hidden fixed bottom-4 left-4 right-4 z-40 flex justify-end pointer-events-none">
-	{#if showMobileSearch}
-		<div
-			class="h-14 flex items-center gap-2 w-full bg-white rounded-full shadow-lg border border-warm-grey px-4 pointer-events-auto"
-			in:fly={{ x: 20, duration: 200 }}
-			out:fly={{ x: 20, duration: 150 }}
-		>
-			<Search class="size-5 text-mid-grey shrink-0" />
-			<SearchInput
-				bind:this={mobileSearchRef}
-				value={searchTerm}
-				onchange={(value) => onsearchchange?.(value)}
-				compact={true}
-				class="flex-1"
-			/>
-			<button
-				class="p-2 rounded-full hover:bg-warm-grey transition-colors cursor-pointer shrink-0"
-				onclick={closeMobileSearch}
-				aria-label="Close search"
+			<div
+				class="filter-bar-scroll justify-start items-center gap-2 flex border-l border-warm-grey overflow-x-auto min-w-0 ml-auto {isFullscreen
+					? 'pl-6'
+					: 'pl-8'}"
 			>
-				<X class="size-5 text-mid-grey" />
-			</button>
-		</div>
-	{:else}
-		<button
-			class="h-14 w-14 flex items-center justify-center rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer shadow-lg pointer-events-auto"
-			onclick={openMobileSearch}
-			aria-label="Search"
-			in:fly={{ x: 20, duration: 200 }}
-		>
-			<Search class="size-6 text-mid-grey" />
-		</button>
-	{/if}
+				<FilterDropdown
+					label="Region"
+					options={regionOptions}
+					selected={selectedRegions}
+					defaultExpanded={['nem']}
+					compact={isFullscreen}
+					onchange={handleRegionChange}
+					onclear={() => onregionschange?.([])}
+					onselectall={() => onregionschange?.(getLeafValues(regionOptions))}
+				/>
+
+				<FilterDropdown
+					label="Status"
+					options={statusOptions}
+					selected={selectedStatuses}
+					compact={isFullscreen}
+					clearLabel="Reset to defaults"
+					onchange={handleStatusChange}
+					onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
+					onselectall={() => onstatuseschange?.([...ALL_STATUSES])}
+				/>
+
+				<FilterDropdown
+					label="Technology"
+					options={fuelTechOptions}
+					selected={selectedFuelTechs}
+					searchable
+					searchPlaceholder="Search technologies"
+					compact={isFullscreen}
+					onchange={handleFuelTechChange}
+					onclear={() => onfueltechschange?.([])}
+					onselectall={() => onfueltechschange?.(getLeafValues(fuelTechOptions))}
+					row={fuelTechRow}
+				/>
+
+				<FilterRangeDropdown
+					label="Capacity"
+					min={capacityMin}
+					max={capacityMax}
+					value={capacityRange}
+					step={10}
+					formatValue={formatCapacity}
+					compact={isFullscreen}
+					onchange={(range) => oncapacityrangechange?.(range)}
+					onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
+				/>
+
+				<FilterRangeDropdown
+					label="Years"
+					min={yearMin}
+					max={yearMax}
+					value={yearRange}
+					step={1}
+					formatValue={formatYear}
+					compact={isFullscreen}
+					suppressScrollClose={isYearPlaying}
+					onchange={(range) => {
+						stopYearAnimation();
+						onyearrangechange?.(range);
+					}}
+					onclear={handleYearClear}
+				/>
+			</div>
+		{/snippet}
+
+		{#snippet options()}
+			<div class="flex items-center">
+				<OptionsMenu
+					{isFullscreen}
+					onfullscreenchange={() => onfullscreenchange?.()}
+					onshowshortcuts={() => onshowshortcuts?.()}
+					ondownloadcsv={() => ondownloadcsv?.()}
+				/>
+			</div>
+		{/snippet}
+	</FullscreenFilterBar>
 </div>
 
 <style>

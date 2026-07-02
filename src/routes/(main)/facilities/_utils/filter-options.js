@@ -82,14 +82,14 @@ export function filterOptionsBySearch(options, term) {
 }
 
 /**
- * One-line summary of the selected leaves in option order,
- * e.g. 'Operating, Committed' or 'WA, SA + 1 more'.
+ * Labels of the selected leaves in option order — e.g. for the mobile filter
+ * sheet's selection tags.
  * @param {FilterOption[]} options
  * @param {string[]} selected
- * @param {{max?: number, labelMap?: Record<string, string>}} [opts] - labelMap overrides option labels (e.g. short region names)
- * @returns {string}
+ * @param {{labelMap?: Record<string, string>}} [opts] - labelMap overrides option labels (e.g. short region names)
+ * @returns {string[]}
  */
-export function summariseSelection(options, selected, { max = 2, labelMap } = {}) {
+export function getSelectedLabels(options, selected, { labelMap } = {}) {
 	/** @type {string[]} */
 	const labels = [];
 	for (const opt of options) {
@@ -103,9 +103,5 @@ export function summariseSelection(options, selected, { max = 2, labelMap } = {}
 			labels.push(labelMap?.[opt.value] ?? opt.label);
 		}
 	}
-
-	if (labels.length === 0) return '';
-	const shown = labels.slice(0, max).join(', ');
-	const remaining = labels.length - max;
-	return remaining > 0 ? `${shown} + ${remaining} more` : shown;
+	return labels;
 }

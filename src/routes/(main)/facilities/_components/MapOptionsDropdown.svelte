@@ -11,6 +11,7 @@
 	 *   showGolfOption: boolean,
 	 *   showMagicIndicator: boolean,
 	 *   clustering: boolean,
+	 *   iconOnly?: boolean,
 	 *   onmapthemechange?: (value: 'light' | 'dark' | 'satellite') => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
 	 *   ongolfcourseschange?: (value: boolean) => void,
@@ -24,6 +25,8 @@
 		showGolfOption = false,
 		showMagicIndicator = false,
 		clustering = true,
+		/** Circular icon-only trigger — used by the mobile floating map controls. */
+		iconOnly = false,
 		onmapthemechange,
 		ontransmissionlineschange,
 		ongolfcourseschange,
@@ -46,16 +49,20 @@
 <div class="relative" use:clickoutside onclickoutside={handleClickOutside}>
 	<button
 		onclick={() => (isOpen = !isOpen)}
-		class="bg-white rounded-lg px-3 py-2 text-xs font-medium flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey"
+		class="bg-white flex items-center hover:bg-light-warm-grey transition-colors border-2 border-warm-grey {iconOnly
+			? 'size-11 rounded-full justify-center shadow-lg'
+			: 'rounded-lg px-3 py-2 text-xs font-medium gap-2'}"
 		title="Map display options"
 	>
 		{#if showMagicIndicator}
 			<Sparkles class="size-5" style="color: #facc15;" />
 		{:else}
-			<Layers class="size-4" />
+			<Layers class={iconOnly ? 'size-5' : 'size-4'} />
 		{/if}
-		<span>Layers</span>
-		<ChevronDown class="size-3 transition-transform {isOpen ? 'rotate-180' : ''}" />
+		{#if !iconOnly}
+			<span>Layers</span>
+			<ChevronDown class="size-3 transition-transform {isOpen ? 'rotate-180' : ''}" />
+		{/if}
 	</button>
 
 	{#if isOpen}

@@ -23,6 +23,7 @@
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 	import { deriveCard } from '$lib/og/facility-card-data.js';
+	import { facilityPhotoSrc } from '../_utils/facility-photo.js';
 
 	/**
 	 * `topBar` renders chrome (e.g. the detail panel's action bar) flush at the top
@@ -34,13 +35,18 @@
 	 * (the /facilities page derives it for the surrounding chrome) pass it in so it
 	 * isn't computed a second time per selection. Omitted on the standalone page,
 	 * where they're derived here from `facility`.
+	 *
+	 * `photoUrl` swaps the colour wash for the facility photo (the Grid-tile
+	 * treatment) — used by the mobile detail sheet; the colour remains the
+	 * fallback while the photo loads or when there is none.
 	 * @type {{
 	 *   facility: any,
 	 *   sanityFacility?: any | null,
 	 *   topBar?: import('svelte').Snippet<[boolean]>,
 	 *   card?: any | null,
 	 *   dominantColour?: string,
-	 *   darkText?: boolean
+	 *   darkText?: boolean,
+	 *   photoUrl?: string | null
 	 * }}
 	 */
 	let {
@@ -49,7 +55,8 @@
 		topBar = undefined,
 		card: cardProp = undefined,
 		dominantColour: dominantColourProp = undefined,
-		darkText: darkTextProp = undefined
+		darkText: darkTextProp = undefined,
+		photoUrl = null
 	} = $props();
 
 	// Mobile tap-to-toggle for the capacity breakdown (hover popover on desktop).
@@ -185,9 +192,13 @@
 	let dominantColour = $derived(
 		dominantColourProp ?? (card ? getFueltechColor(card.dominant) : 'transparent')
 	);
-	// Colour-wash header → flip to dark text for the light fuel techs (solar,
-	// OCGT…), matching the no-image card tile.
-	let darkText = $derived(darkTextProp ?? (!!card && needsDarkText(card.dominant)));
+	// Photo banner is darkened by a scrim, so its text is always white. Plain
+	// colour washes flip to dark text for the light fuel techs (solar, OCGT…),
+	// matching the no-image card tile.
+	let photoSrc = $derived(photoUrl ? facilityPhotoSrc(photoUrl, { w: 1200 }) : null);
+	let darkText = $derived(
+		photoSrc ? false : (darkTextProp ?? (!!card && needsDarkText(card.dominant)))
+	);
 
 	// Content overlays the full-height banner, so text + chrome switch between
 	// light (on photos / dark colour washes) and dark (on light colour washes).
@@ -263,12 +274,19 @@
 
 {#if facility}
 	<header class="relative shrink-0 overflow-hidden" style="background-color: {dominantColour}">
-		<!-- Dominant fuel-tech colour wash behind all header content, mirroring the
-		     no-image FacilityCardTile (with the same subtle diagonal sheen). -->
-		<div
-			class="absolute inset-0"
-			style="background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(0,0,0,0.24));"
-		></div>
+		{#if photoSrc}
+			<!-- Facility photo banner (the Grid-tile treatment) with a scrim so the
+			     overlaid content stays legible; the colour shows while it loads. -->
+			<img src={photoSrc} alt="" class="absolute inset-0 h-full w-full object-cover" />
+			<div class="absolute inset-0 bg-gradient-to-b from-black/30 via-black/45 to-black/60"></div>
+		{:else}
+			<!-- Dominant fuel-tech colour wash behind all header content, mirroring the
+			     no-image FacilityCardTile (with the same subtle diagonal sheen). -->
+			<div
+				class="absolute inset-0"
+				style="background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(0,0,0,0.24));"
+			></div>
+		{/if}
 
 		<div class="relative z-10 flex flex-col gap-5 px-6 py-6 md:gap-7 md:px-10 md:py-8">
 			{#if topBar}

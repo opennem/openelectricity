@@ -27,11 +27,13 @@
 	} = $props();
 </script>
 
+<!-- Owners are desktop-only — on mobile the footer is just the full-width
+     View facility button, with roomier padding around it. -->
 <div
-	class="shrink-0 border-t border-warm-grey px-5 py-2 flex items-center gap-3 text-xxs text-mid-grey bg-white"
+	class="shrink-0 border-t border-warm-grey px-5 py-4 md:py-2 flex items-center gap-3 text-xxs text-mid-grey bg-white"
 >
-	<Building2 size={14} class="shrink-0" />
-	<span class="min-w-0 flex-1 truncate">
+	<Building2 size={14} class="shrink-0 hidden md:block" />
+	<span class="min-w-0 flex-1 truncate hidden md:block">
 		{#if owners.length}
 			{#each owners as owner, i (owner._id ?? i)}
 				{#if i > 0}<span class="mx-2 text-mid-grey/50">·</span>{/if}
@@ -57,7 +59,7 @@
 		<a
 			href={`/facility/${facilityCode}?fullscreen=true`}
 			style="background-color: {buttonColour}"
-			class="group shrink-0 inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all hover:opacity-90 hover:shadow no-underline hover:no-underline {darkText
+			class="group shrink-0 inline-flex items-center justify-center gap-2 w-full md:w-auto px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all hover:opacity-90 hover:shadow no-underline hover:no-underline {darkText
 				? 'text-black'
 				: 'text-white'}"
 		>
