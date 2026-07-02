@@ -232,10 +232,12 @@
 		Math.max(1, Math.ceil(((viewEnd || defaultEnd) - (viewStart || defaultStart)) / DAY_MS))
 	);
 
-	/** Display intervals that only the explicit picker produces (pan/zoom never
-	 *  auto-derives them). A small pan that doesn't cross a native threshold must
-	 *  not clobber one of these back to a native grain. */
-	const COARSE_PICKER_INTERVALS = new Set(['7d', 'season', 'quarter', 'half', 'fy']);
+	/** Display intervals that only the explicit picker produces on this page —
+	 *  pan/zoom auto-derivation never yields them ('30m' qualifies because
+	 *  preferFiveMinute means power always auto-derives to 5m). A pan/zoom that
+	 *  doesn't cross a native fetch threshold must not clobber one of these back
+	 *  to an auto grain. */
+	const PICKER_ONLY_INTERVALS = new Set(['30m', '7d', 'season', 'quarter', 'half', 'fy']);
 
 	/** This page defaults power views to the 5-minute grain — 30m is still a manual
 	 *  dropdown pick, but never the auto/default. The shared config (studio +
@@ -256,9 +258,9 @@
 		const durationDays = (range.end - range.start) / DAY_MS;
 		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
 
-		// Preserve an explicit coarse pick (Season/Quarter/Half/Fin-Year/Week)
-		// across small pans that don't cross a native fetch threshold.
-		if (!next && COARSE_PICKER_INTERVALS.has(displayInterval)) return;
+		// Preserve an explicit picker choice (30m/Week/Season/Quarter/Half/Fin-Year)
+		// across pans and zooms that don't cross a native fetch threshold.
+		if (!next && PICKER_ONLY_INTERVALS.has(displayInterval)) return;
 
 		displayInterval = preferFiveMinute(
 			getDisplayIntervalForDays(
@@ -323,8 +325,9 @@
 	}
 
 	/** Manual interval override from the dropdown. Keeps the current viewport and
-	 *  refetches at the chosen grain. A later range/pan re-derives the interval
-	 *  automatically (memoryless), so the override sticks until then. */
+	 *  refetches at the chosen grain. A later preset or calendar pick re-derives
+	 *  the interval; pans/zooms preserve the pick until they cross a native fetch
+	 *  threshold (see PICKER_ONLY_INTERVALS). */
 	/** @param {string} value */
 	function handleIntervalChange(value) {
 		const startMs = viewStart || defaultStart;

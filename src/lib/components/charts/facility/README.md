@@ -116,9 +116,10 @@ To prevent rapid flipping during continuous zoom, the switch thresholds differ b
 - **Energy/1M → Energy/1d**: at **< 300 days**
 - **Energy/1d → Power/5m**: at **≤ 13 days**
 
-All switches are debounced by 300ms. A small pan that doesn't cross a native
+All switches are debounced by 300ms. A pan/zoom that doesn't cross a native
 threshold preserves an explicit coarse pick (Week/Quarter/Season/Half/Fin-Year)
-rather than snapping it back to the native grain.
+rather than snapping it back to the native grain — and on `/facility/[code]`,
+where power auto-derives to 5m, a manual 30m pick is preserved the same way.
 
 ### What happens on switch
 
