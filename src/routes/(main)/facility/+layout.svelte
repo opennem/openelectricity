@@ -16,6 +16,8 @@
 
 	import FacilityPickerBar from './[code]/_components/FacilityPickerBar.svelte';
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
+	import OptionsMenu from '../facilities/_components/OptionsMenu.svelte';
+	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 
 	/**
 	 * @typedef {Object} FacilityListItem
@@ -83,6 +85,11 @@
 		return () => mq.removeEventListener('change', update);
 	});
 
+	// Dark floating circles over the facility header (mobile chrome) — one
+	// definition so the back link and options trigger can't drift apart.
+	const floatingCircleClass =
+		'flex size-11 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-colors hover:bg-black/55';
+
 	const listDrag = createDragHandler({
 		axis: 'x',
 		min: 240,
@@ -147,7 +154,13 @@
 
 <FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
 	{#snippet filterBar()}
-		<div class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}">
+		<!-- The picker bar is desktop-only; on mobile the back + options buttons
+		     float over the facility header instead (see the content snippet). -->
+		<div
+			class="relative z-40 shrink-0 border-b border-warm-grey hidden md:block {isFullscreen
+				? ''
+				: 'px-4'}"
+		>
 			<FacilityPickerBar
 				selectedLabel={selectedFacility?.name ?? ''}
 				selectedCode={currentCode}
@@ -199,6 +212,28 @@
 				{/if}
 
 				<div class="flex-1 flex flex-col min-w-0 min-h-0 relative">
+					<!-- Mobile floating chrome over the facility header: back to the
+					     facilities list on the left, the options menu on the right. -->
+					<div class="md:hidden absolute top-3 left-3 z-30">
+						<a
+							href="/facilities?view=list&fullscreen=true"
+							class="{floatingCircleClass} text-white"
+							aria-label="Back to facilities"
+						>
+							<IconChevronLeft class="size-6" />
+						</a>
+					</div>
+					<div class="md:hidden absolute top-3 right-3 z-30">
+						<OptionsMenu
+							{isFullscreen}
+							onfullscreenchange={toggleFullscreen}
+							onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
+							onsearchfacilities={openLeftPanelAndFocus}
+							searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
+							triggerClass="{floatingCircleClass} cursor-pointer"
+							iconClass="size-6 text-white"
+						/>
+					</div>
 					{@render children()}
 					{#if navigating.to && navigating.to.url.pathname.startsWith('/facility/')}
 						<div

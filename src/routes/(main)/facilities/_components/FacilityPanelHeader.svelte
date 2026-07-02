@@ -26,10 +26,11 @@
 	import { facilityPhotoSrc } from '../_utils/facility-photo.js';
 
 	/**
-	 * `topBar` renders chrome (e.g. the detail panel's action bar) flush at the top
-	 * of the colour wash, above the identity. It receives `darkText` so callers can
-	 * colour their controls for contrast against the banner. Omitted on the
-	 * standalone /facility/[code] page, which has no panel chrome.
+	 * `topBar` renders chrome flush at the top of the colour wash, above the
+	 * identity — the detail panel's action bar, or the standalone
+	 * /facility/[code] page's mobile spacer that clears its floating buttons.
+	 * It receives `darkText` so callers can colour their controls for contrast
+	 * against the banner.
 	 *
 	 * `card`/`dominantColour`/`darkText` let a caller that already ran `deriveCard`
 	 * (the /facilities page derives it for the surrounding chrome) pass it in so it
@@ -37,8 +38,9 @@
 	 * where they're derived here from `facility`.
 	 *
 	 * `photoUrl` swaps the colour wash for the facility photo (the Grid-tile
-	 * treatment) — used by the mobile detail sheet; the colour remains the
-	 * fallback while the photo loads or when there is none.
+	 * treatment) — used by the mobile detail sheet and the standalone page on
+	 * mobile; the colour remains the fallback while the photo loads or when
+	 * there is none.
 	 * @type {{
 	 *   facility: any,
 	 *   sanityFacility?: any | null,

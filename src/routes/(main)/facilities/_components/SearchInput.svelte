@@ -72,6 +72,8 @@
 </script>
 
 <div class="relative {className}">
+	<!-- 16px (text-base) below md — anything smaller makes iOS Safari zoom the
+	     page when the input gains focus. Desktop keeps the compact text-xs. -->
 	<input
 		bind:this={inputElement}
 		type="search"
@@ -81,7 +83,7 @@
 		onblur={() => (isFocused = false)}
 		{placeholder}
 		class="{rounded} border border-warm-grey bg-white transition-colors hover:border-dark-grey focus:border-red focus:ring-0 focus:outline-none w-full {compact
-			? 'px-4 py-2 text-xs'
+			? 'px-4 py-2 text-base md:text-xs'
 			: 'px-5 py-4 text-base'}"
 	/>
 	{#if showKbd}

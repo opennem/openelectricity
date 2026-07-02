@@ -3,6 +3,7 @@
 	import { fade } from 'svelte/transition';
 	import { LineChart } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
+	import { urlFor } from '$lib/sanity';
 	import { OG_CARD_WIDTH, OG_CARD_HEIGHT, OG_CARD_TYPE } from '$lib/og/card-dimensions.js';
 	import {
 		FacilityChart,
@@ -149,6 +150,12 @@
 	let pickerStartDate = $derived(toDateString(viewStart || defaultStart));
 	let pickerEndDate = $derived(toDateString(viewEnd || defaultEnd));
 
+	// Mobile: each of these sections renders as its own card; desktop: a
+	// border-t divided section of the unified card. One definition so the
+	// treatment can't drift between sections.
+	const sectionCardClass =
+		'overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white md:overflow-visible md:rounded-none md:border-0 md:border-t md:bg-transparent';
+
 	/** @type {HTMLElement | undefined} */
 	let chartCardEl = $state(undefined);
 
@@ -158,6 +165,13 @@
 
 	/** Measured live so the sidebar can stick just below the header. */
 	let headerHeight = $state(0);
+
+	// First facility photo as the mobile header banner (raw CDN URL — the
+	// header applies its own transform params). Desktop keeps the colour wash.
+	let headerPhotoUrl = $derived.by(() => {
+		const photo = data.sanityFacility?.photos?.[0];
+		return photo?.asset ? urlFor(photo).url() : null;
+	});
 
 	// Resizable split between the main card and the sidebar; persisted to a cookie.
 	const splitDrag = createDragHandler({
@@ -427,15 +441,28 @@
 	class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey"
 	style:view-transition-name="facility-hero"
 >
+	{#snippet mobileHeaderSpacer()}
+		<!-- Clears the floating back/options buttons (layout chrome) so the
+		     fuel-tech badges start below them. -->
+		<div class="h-16"></div>
+	{/snippet}
 	<div class="md:sticky md:top-0 md:z-40" bind:clientHeight={headerHeight}>
-		<FacilityPanelHeader facility={selectedFacility} sanityFacility={data.sanityFacility} />
+		<FacilityPanelHeader
+			facility={selectedFacility}
+			sanityFacility={data.sanityFacility}
+			photoUrl={isMobile ? headerPhotoUrl : null}
+			topBar={isMobile ? mobileHeaderSpacer : undefined}
+		/>
 	</div>
 	{#if selectedFacility}
 		<div
-			class="p-8 space-y-8"
+			class="p-4 space-y-4 md:p-8 md:space-y-8"
 			style="--hdr-h: {headerHeight}px; --col-top: calc(var(--hdr-h) + 2rem);"
 		>
-			<div bind:this={splitContainerEl} class="flex flex-col md:flex-row md:items-start">
+			<div
+				bind:this={splitContainerEl}
+				class="flex flex-col gap-4 md:gap-0 md:flex-row md:items-start"
+			>
 				<!-- Main column — one unified card holding the range bar, metrics,
 				     unit availability and the three charts as divided sections.
 				     Resizable width; the sidebar takes the remainder. -->
@@ -446,9 +473,15 @@
 					style:width={leftWidthPercent}
 				>
 					{#if !showEmptyState}
-						<div class="overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white">
+						<!-- Mobile: each section is its own card; desktop: one unified card
+						     with border-t divided sections. -->
+						<div
+							class="space-y-4 md:space-y-0 md:overflow-hidden md:rounded-lg md:border md:border-mid-warm-grey/40 md:bg-white"
+						>
 							<!-- Range / date picker -->
-							<div class="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
+							<div
+								class="flex flex-wrap items-center justify-between gap-4 px-6 py-3 rounded-lg border border-mid-warm-grey/40 bg-white md:rounded-none md:border-0 md:bg-transparent"
+							>
 								<span class="text-xs font-medium text-dark-grey">{dateRangeLabel}</span>
 								<ChartRangeBar
 									{selectedRange}
@@ -468,7 +501,7 @@
 
 							<!-- Metrics. Flush grid; the card supplies the outer border. Fed by
 							     the providers + generation chart below. -->
-							<div class="border-t border-mid-warm-grey/40">
+							<div class={sectionCardClass}>
 								<FacilityMetrics
 									facility={selectedFacility}
 									sanityFacility={data.sanityFacility}
@@ -484,9 +517,9 @@
 							<!-- chartCardEl wraps the chart sections (not the range bar / metrics)
 							     so pan/zoom click-outside treats clicks between charts as "still
 							     engaged" but disengages on a range-bar / metrics click. -->
-							<div bind:this={chartCardEl}>
+							<div bind:this={chartCardEl} class="space-y-4 md:space-y-0">
 								<!-- Generation -->
-								<section class="border-t border-mid-warm-grey/40">
+								<section class={sectionCardClass}>
 									<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 										<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
 										<span
@@ -556,7 +589,7 @@
 									onsummarydata={(d) => (summaryData = d)}
 									onviewportchange={handleDerivedViewportChange}
 								>
-									<section class="border-t border-mid-warm-grey/40">
+									<section class={sectionCardClass}>
 										<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 											<h3 class="m-0 text-sm font-semibold text-dark-grey">Market</h3>
 											<SwitchTabs
@@ -600,7 +633,7 @@
 										onsummarydata={(d) => (emissionsData = d)}
 										onviewportchange={handleDerivedViewportChange}
 									>
-										<section class="border-t border-mid-warm-grey/40">
+										<section class={sectionCardClass}>
 											<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 												<h3 class="m-0 text-sm font-semibold text-dark-grey">Emissions</h3>
 												<SwitchTabs
@@ -660,7 +693,9 @@
 				{/if}
 
 				<!-- Sidebar — fills the remaining width; sticky below the header. -->
-				<div class="min-w-0 flex-1 space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]">
+				<div
+					class="min-w-0 flex-1 space-y-4 md:space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]"
+				>
 					<FacilityInfoPanel sanityFacility={data.sanityFacility} />
 					<FacilityUnitsPanel
 						facility={selectedFacility}
