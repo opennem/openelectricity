@@ -1,10 +1,14 @@
 <script>
-	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
-	import HierarchicalMultiSelect from './HierarchicalMultiSelect.svelte';
+	import { fade } from 'svelte/transition';
+	import { X } from '@lucide/svelte';
+
 	import RangeSlider from '$lib/components/ui/range-slider/RangeSlider.svelte';
-	import Modal from '$lib/components/Modal.svelte';
-	import Button from '$lib/components/form-elements/Button2.svelte';
-	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
+	import SearchInput from './SearchInput.svelte';
+	import FilterAccordionSection from './filters/FilterAccordionSection.svelte';
+	import FilterOptionList from './filters/FilterOptionList.svelte';
+	import FuelTechRowContent from './filters/FuelTechRowContent.svelte';
+	import { countSelectedLeaves, summariseSelection } from '../_utils/filter-options.js';
+	import { regionShortLabels } from '../_utils/filters.js';
 
 	/**
 	 * @type {{
@@ -19,9 +23,11 @@
 	 *   capacityMin: number,
 	 *   capacityMax: number,
 	 *   formatCapacity: (val: number) => string,
+	 *   filteredCount: number,
 	 *   onclose: () => void,
+	 *   onresetall: () => void,
 	 *   onregionschange: (values: string[] | string, isMetaPressed: boolean) => void,
-	 *   onstatuseschange: (values: string[], isMetaPressed: boolean) => void,
+	 *   onstatuseschange: (values: string[] | string, isMetaPressed: boolean) => void,
 	 *   onfueltechschange: (values: string[] | string, isMetaPressed: boolean) => void,
 	 *   oncapacityrangechange: (range: [number, number]) => void,
 	 *   onclearregions: () => void,
@@ -47,7 +53,9 @@
 		capacityMin,
 		capacityMax,
 		formatCapacity,
+		filteredCount,
 		onclose,
+		onresetall,
 		onregionschange,
 		onstatuseschange,
 		onfueltechschange,
@@ -63,112 +71,184 @@
 		onclearyears
 	} = $props();
 
-	let isCapacityFiltered = $derived(capacityRange[0] > capacityMin || capacityRange[1] < capacityMax);
+	let techSearchTerm = $state('');
+
+	let statusCount = $derived(countSelectedLeaves(statusOptions, selectedStatuses));
+	let fuelTechCount = $derived(countSelectedLeaves(fuelTechOptions, selectedFuelTechs));
+	let regionCount = $derived(countSelectedLeaves(regionOptions, selectedRegions));
+	let activeCount = $derived(statusCount + fuelTechCount + regionCount);
+
+	let isCapacityFiltered = $derived(
+		capacityRange[0] > capacityMin || capacityRange[1] < capacityMax
+	);
 	let isYearFiltered = $derived(yearRange[0] > yearMin || yearRange[1] < yearMax);
 </script>
 
-{#if open}
-	<Modal
-		maxWidthClass=""
-		class="fixed! bg-white top-0 bottom-0 left-0 right-0 overflow-y-auto overscroll-contain rounded-none! my-0! pt-0 px-0 z-50"
-	>
-		<header
-			class="sticky top-0 z-50 bg-white pb-2 pt-6 px-10 flex justify-between items-center border-b border-warm-grey"
-		>
-			<h3 class="mb-2">Filters</h3>
+{#snippet fuelTechRow(/** @type {import('../_utils/filter-options.js').FilterOption} */ option)}
+	<FuelTechRowContent {option} />
+{/snippet}
 
-			<div class="mb-2">
-				<IconAdjustmentsHorizontal class="size-10" />
+{#snippet rangeSection(
+	/** @type {{title: string, display: string, isFiltered: boolean, bordered: boolean, onclear: () => void, min: number, max: number, value: [number, number], step: number, formatValue: (v: number) => string, onchange: (range: [number, number]) => void}} */ cfg
+)}
+	<div class="py-4 flex flex-col gap-3 {cfg.bordered ? 'border-b border-warm-grey' : ''}">
+		<div class="flex items-center justify-between gap-3">
+			<span class="font-medium text-dark-grey">{cfg.title}</span>
+			<div class="flex items-center gap-3">
+				{#if cfg.isFiltered}
+					<button
+						type="button"
+						class="text-xs text-mid-grey hover:text-dark-grey underline underline-offset-2 transition-colors cursor-pointer"
+						onclick={cfg.onclear}
+					>
+						Clear
+					</button>
+				{/if}
+				<span class="text-sm text-dark-grey whitespace-nowrap">{cfg.display}</span>
+			</div>
+		</div>
+		<RangeSlider
+			min={cfg.min}
+			max={cfg.max}
+			value={cfg.value}
+			step={cfg.step}
+			onchange={cfg.onchange}
+			formatValue={cfg.formatValue}
+		/>
+	</div>
+{/snippet}
+
+{#if open}
+	<div
+		class="fixed inset-0 z-50 bg-white flex flex-col overscroll-contain"
+		transition:fade={{ duration: 200 }}
+	>
+		<!-- Header -->
+		<header
+			class="shrink-0 px-6 py-4 border-b border-warm-grey flex items-center justify-between gap-4"
+		>
+			<div class="flex items-baseline gap-3">
+				<h3 class="mb-0">Filters</h3>
+				{#if activeCount > 0}
+					<span class="text-xs text-mid-grey whitespace-nowrap">{activeCount} active</span>
+				{/if}
+			</div>
+
+			<div class="flex items-center gap-2">
+				<button
+					type="button"
+					class="text-sm text-mid-grey hover:text-dark-grey font-medium underline underline-offset-2 px-2 transition-colors cursor-pointer"
+					onclick={onresetall}
+				>
+					Reset
+				</button>
+				<button
+					type="button"
+					class="p-2 rounded-full bg-light-warm-grey hover:bg-warm-grey transition-colors cursor-pointer"
+					onclick={onclose}
+					aria-label="Close filters"
+				>
+					<X class="size-5 text-dark-grey" />
+				</button>
 			</div>
 		</header>
 
-		<section class="p-10 pb-12 w-full flex flex-col gap-8">
-			<HierarchicalMultiSelect
-				options={regionOptions}
-				selected={selectedRegions}
-				label="Region"
-				paddingX=""
-				staticDisplay={true}
-				defaultExpanded={['nem']}
-				onchange={(value, isMetaPressed) => onregionschange(value, isMetaPressed)}
-				onclear={onclearregions}
-			/>
-
-			<FormMultiSelect
-				options={statusOptions}
-				selected={selectedStatuses}
-				label="Status"
-				withColours={true}
-				paddingX=""
-				staticDisplay={true}
+		<!-- Filter sections -->
+		<section class="flex-1 overflow-y-auto px-6">
+			<FilterAccordionSection
+				title="Status"
+				summary={summariseSelection(statusOptions, selectedStatuses)}
+				count={statusCount}
 				clearLabel="Reset to defaults"
-				onchange={(value, isMetaPressed) => onstatuseschange([value], isMetaPressed)}
 				onclear={onclearstatuses}
-			/>
+			>
+				<FilterOptionList
+					options={statusOptions}
+					selected={selectedStatuses}
+					onchange={onstatuseschange}
+				/>
+			</FilterAccordionSection>
 
-			<HierarchicalMultiSelect
-				options={fuelTechOptions}
-				selected={selectedFuelTechs}
-				label="Technology"
-				paddingX=""
-				staticDisplay={true}
-				onchange={(value, isMetaPressed) => onfueltechschange(value, isMetaPressed)}
+			<FilterAccordionSection
+				title="Technology"
+				summary={summariseSelection(fuelTechOptions, selectedFuelTechs)}
+				count={fuelTechCount}
 				onclear={onclearfueltechs}
-			/>
-
-			<div class="flex flex-col gap-2">
-				<div class="flex items-center justify-between">
-					<span class="text-sm font-medium text-dark-grey">Capacity</span>
-					{#if isCapacityFiltered}
-						<button
-							type="button"
-							class="text-xs text-mid-grey hover:text-dark-grey transition-colors cursor-pointer"
-							onclick={onclearcapacity}
-						>
-							Clear
-						</button>
-					{/if}
+			>
+				<div class="pb-3">
+					<SearchInput
+						value={techSearchTerm}
+						placeholder="Search technologies"
+						compact
+						debounceMs={100}
+						onchange={(value) => (techSearchTerm = value)}
+						class="w-full"
+					/>
 				</div>
-				<RangeSlider
-					min={capacityMin}
-					max={capacityMax}
-					value={capacityRange}
-					step={10}
-					onchange={oncapacityrangechange}
-					formatValue={formatCapacity}
+				<FilterOptionList
+					options={fuelTechOptions}
+					selected={selectedFuelTechs}
+					searchTerm={techSearchTerm}
+					onchange={onfueltechschange}
+					row={fuelTechRow}
 				/>
-			</div>
+			</FilterAccordionSection>
 
-			<div class="flex flex-col gap-2">
-				<div class="flex items-center justify-between">
-					<span class="text-sm font-medium text-dark-grey">Year</span>
-					{#if isYearFiltered}
-						<button
-							type="button"
-							class="text-xs text-mid-grey hover:text-dark-grey transition-colors cursor-pointer"
-							onclick={onclearyears}
-						>
-							Clear
-						</button>
-					{/if}
-				</div>
-				<RangeSlider
-					min={yearMin}
-					max={yearMax}
-					value={yearRange}
-					step={1}
-					onchange={onyearrangechange}
-					formatValue={(v) => String(v)}
+			<FilterAccordionSection
+				title="Region"
+				summary={summariseSelection(regionOptions, selectedRegions, {
+					labelMap: regionShortLabels
+				})}
+				count={regionCount}
+				onclear={onclearregions}
+			>
+				<FilterOptionList
+					options={regionOptions}
+					selected={selectedRegions}
+					defaultExpanded={['nem']}
+					onchange={onregionschange}
 				/>
-			</div>
+			</FilterAccordionSection>
+
+			{@render rangeSection({
+				title: 'Capacity',
+				display: `${formatCapacity(capacityRange[0])} – ${formatCapacity(capacityRange[1])}${capacityRange[1] >= capacityMax ? '+' : ''}`,
+				isFiltered: isCapacityFiltered,
+				bordered: true,
+				onclear: onclearcapacity,
+				min: capacityMin,
+				max: capacityMax,
+				value: capacityRange,
+				step: 10,
+				formatValue: formatCapacity,
+				onchange: oncapacityrangechange
+			})}
+
+			{@render rangeSection({
+				title: 'Commissioned',
+				display: `${yearRange[0]} – ${yearRange[1]}`,
+				isFiltered: isYearFiltered,
+				bordered: false,
+				onclear: onclearyears,
+				min: yearMin,
+				max: yearMax,
+				value: yearRange,
+				step: 1,
+				formatValue: (v) => String(v),
+				onchange: onyearrangechange
+			})}
 		</section>
 
-		{#snippet buttons()}
-			<div class="flex gap-3">
-				<Button class="bg-dark-grey! text-white hover:bg-black! w-full" onclick={onclose}
-					>Close</Button
-				>
-			</div>
-		{/snippet}
-	</Modal>
+		<!-- Sticky footer -->
+		<footer class="shrink-0 border-t border-warm-grey bg-white p-4">
+			<button
+				type="button"
+				class="w-full bg-dark-grey text-white rounded-lg py-4 font-medium hover:bg-black transition-colors cursor-pointer"
+				onclick={onclose}
+			>
+				Show {filteredCount.toLocaleString()}
+				{filteredCount === 1 ? 'facility' : 'facilities'}
+			</button>
+		</footer>
+	</div>
 {/if}

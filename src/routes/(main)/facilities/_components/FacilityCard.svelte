@@ -64,10 +64,9 @@
 	/** @type {'sm' | 'md' | 'lg'} */
 	let badgeSize = $derived(compact ? 'sm' : 'lg');
 
-	// In the list, badges overlap only on the selected row (the pane narrows when
-	// a facility is selected); otherwise they spread out. The cluster popup
-	// always overlaps.
-	let badgesOverlap = $derived(compact || isSelected);
+	// List badges always spread out (even on the selected row); only the
+	// space-constrained cluster popup overlaps them.
+	let badgesOverlap = $derived(compact);
 </script>
 
 {#snippet badgeGroup()}

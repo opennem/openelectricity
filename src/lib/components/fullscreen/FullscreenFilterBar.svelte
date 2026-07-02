@@ -41,18 +41,15 @@
 		? `md:py-3 md:px-4 ${bgClass}`
 		: ''}"
 >
-	<div class="flex items-center gap-4 min-w-0">
+	<div class="flex flex-1 items-center gap-4 min-w-0">
 		{#if stable}
-			<div
-				class="flex items-center gap-1 shrink-0"
-				style="view-transition-name: filter-bar-stable"
-			>
+			<div class="flex items-center gap-1 shrink-0" style="view-transition-name: filter-bar-stable">
 				{@render stable()}
 			</div>
 		{/if}
 		{#if rest}
 			<div
-				class="flex items-center gap-4 min-w-0"
+				class="flex flex-1 items-center gap-4 min-w-0"
 				style="view-transition-name: filter-bar-rest-{routeKey}"
 			>
 				{@render rest()}

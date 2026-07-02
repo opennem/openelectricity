@@ -30,7 +30,7 @@
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
 	 *   osmWayId?: string | number | null,
-	 *   selectedView?: 'timeline' | 'list' | 'card' | 'map',
+	 *   selectedView?: 'timeline' | 'list' | 'grid' | 'map',
 	 *   cardCodes?: Set<string>,
 	 *   clustering?: boolean,
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
@@ -392,12 +392,7 @@
 				['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
 			],
 			'circle-radius-transition': { duration: 400, delay: 0 },
-			'circle-stroke-width': [
-				'case',
-				['==', ['get', 'code'], highlightedFacilityCode ?? ''],
-				2,
-				1
-			],
+			'circle-stroke-width': ['case', ['==', ['get', 'code'], highlightedFacilityCode ?? ''], 2, 1],
 			'circle-stroke-color': '#ffffff',
 			'circle-stroke-opacity': [
 				'case',

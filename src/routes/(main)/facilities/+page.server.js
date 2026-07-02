@@ -17,7 +17,7 @@
  *
  * Filter Parameters (URL search params):
  * --------------------------------------
- * - view: 'timeline' | 'list' | 'map' (default: 'timeline')
+ * - view: 'timeline' | 'list' | 'grid' | 'map' (default: 'timeline'; 'card' is a legacy alias for 'grid')
  * - statuses: comma-separated status IDs (default: 'operating,commissioning')
  * - regions: comma-separated region codes (e.g., 'nsw,vic')
  * - fuel_techs: comma-separated fuel tech IDs or categories
@@ -38,8 +38,8 @@ import {
 	filterFacilitiesByRegions
 } from './_utils/status-utils.js';
 import { fetchFacilityPhotos } from './_utils/fetch-facility-photos.js';
-import { DEFAULT_STATUSES, ALL_STATUSES } from './_utils/filters.js';
-// Codes with a committed `static/og/facility/<code>.jpg`; lets the Cards view show
+import { DEFAULT_STATUSES, ALL_STATUSES, normaliseViewParam } from './_utils/filters.js';
+// Codes with a committed `static/og/facility/<code>.jpg`; lets the Grid view show
 // the build-generated card and fall back to a live card for the rest.
 import cardCodes from '$lib/server/og/facility-card-codes.json';
 
@@ -50,7 +50,7 @@ const client = new OpenElectricityClient({
 
 export async function load({ url }) {
 	const { searchParams } = url;
-	const view = searchParams.get('view') || 'timeline';
+	const view = normaliseViewParam(searchParams.get('view')) || 'timeline';
 	const statusesParam = searchParams.has('statuses')
 		? /** @type {string} */ (searchParams.get('statuses')).split(',').filter(Boolean)
 		: DEFAULT_STATUSES;
@@ -76,11 +76,11 @@ export async function load({ url }) {
 
 	const filterParams = { statuses, regions, fuelTechs };
 
-	// Card-grid photos (facility code → Sanity URL). Fetched on every load — in
+	// Grid-view photos (facility code → Sanity URL). Fetched on every load — in
 	// parallel with the facilities fetch below, and cached in-process — rather
-	// than gated to card view: view switches happen client-side without re-running
+	// than gated to grid view: view switches happen client-side without re-running
 	// this load, so the photos must already be in `data` when the user switches to
-	// the card grid. Per-facility editorial data (description, photos, owners) is
+	// the grid. Per-facility editorial data (description, photos, owners) is
 	// still fetched lazily on selection — see the profile endpoint.
 	const photosPromise = fetchFacilityPhotos();
 

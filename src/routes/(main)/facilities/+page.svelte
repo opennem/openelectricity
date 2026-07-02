@@ -12,7 +12,7 @@
 	import LogoMarkLoader from '$lib/components/LogoMarkLoader.svelte';
 	import formatValue from './_utils/format-value';
 	import getUnitYear from './_utils/get-unit-year';
-	import { statusColours } from './_utils/filters.js';
+	import { statusColours, DEFAULT_STATUSES, normaliseViewParam } from './_utils/filters.js';
 	import { facilitiesToCsv } from './_utils/facilities-csv.js';
 	import { sortFacilities } from './_utils/sort-facilities';
 	import { downloadCsv } from '$lib/utils/download-csv.js';
@@ -20,7 +20,7 @@
 	import Timeline from './Timeline.svelte';
 	import Filters from './Filters.svelte';
 	import List from './List.svelte';
-	import Cards from './Cards.svelte';
+	import Grid from './Grid.svelte';
 	import StatusCapacityBadge from './StatusCapacityBadge.svelte';
 	import FacilityDetailPanel from './_components/FacilityDetailPanel.svelte';
 	import FacilityPanelHeader from './_components/FacilityPanelHeader.svelte';
@@ -73,11 +73,11 @@
 	// instant switch and afterNavigate reconciles it from window.location.
 	//   undefined → no override, use data.view (the load's value) ·
 	//   string → optimistically selected view
-	/** @type {'list' | 'timeline' | 'map' | 'card' | undefined} */
+	/** @type {'list' | 'timeline' | 'map' | 'grid' | undefined} */
 	let optimisticView = $state(undefined);
-	/** @type {'list' | 'timeline' | 'map' | 'card'} */
+	/** @type {'list' | 'timeline' | 'map' | 'grid'} */
 	let selectedView = $derived(
-		/** @type {'list' | 'timeline' | 'map' | 'card'} */ (optimisticView ?? data.view)
+		/** @type {'list' | 'timeline' | 'map' | 'grid'} */ (optimisticView ?? data.view)
 	);
 	// Selection follows the `facility` URL param — canonical, so it survives
 	// reload, sharing and browser back/forward (real navigations update page.url
@@ -337,8 +337,8 @@
 		optimisticCode = params.get('facility');
 		// Raw param (mirrors optimisticCode); `selectedView` owns the single
 		// `?? data.view` fallback rather than hardcoding the default twice.
-		optimisticView = /** @type {'list' | 'timeline' | 'map' | 'card' | undefined} */ (
-			params.get('view') ?? undefined
+		optimisticView = /** @type {'list' | 'timeline' | 'map' | 'grid' | undefined} */ (
+			normaliseViewParam(params.get('view')) ?? undefined
 		);
 
 		if (routerReady) return;
@@ -508,7 +508,7 @@
 	 * @param {[number, number]} capacityRangeFilter
 	 * @param {[number, number]} yearRangeFilter
 	 * @param {{ min: number, max: number }} yearBoundsRef
-	 * @param {'list' | 'timeline' | 'map' | 'card'} view
+	 * @param {'list' | 'timeline' | 'map' | 'grid'} view
 	 * @param {number | null} playYearValue
 	 * @returns {any[]}
 	 */
@@ -891,7 +891,7 @@
 	}
 
 	/**
-	 * @param {'list' | 'timeline' | 'map' | 'card'} value
+	 * @param {'list' | 'timeline' | 'map' | 'grid'} value
 	 */
 	function handleSelectedViewChange(value) {
 		// Optimistic override for an instant switch (replaceState only mirrors the
@@ -929,6 +929,25 @@
 	 */
 	function handleSearchChange(value) {
 		searchTerm = value;
+	}
+
+	/** Reset every filter (and search) back to defaults. */
+	function handleResetAll() {
+		statuses = [...DEFAULT_STATUSES];
+		regions = [];
+		fuelTechs = [];
+		capacityRange = [capacityBounds.min, capacityBounds.max];
+		yearRange = [yearBounds.min, yearBounds.max];
+		searchTerm = '';
+		navigateWithRefetch({
+			statuses,
+			regions,
+			fuelTechs,
+			capacityRange,
+			yearRange,
+			view: selectedView,
+			facility: selectedFacility?.code ?? null
+		});
 	}
 
 	/**
@@ -988,17 +1007,17 @@
 />
 
 {#snippet facilityActionBar(/** @type {boolean} */ darkText)}
-	<!-- Sits on the header colour wash; the close button hugs the card's top-right
-	     corner and adapts to the wash's light/dark scheme for contrast. -->
-	<div class="flex items-center justify-end pt-2 pr-2">
+	<!-- Sits on the header colour wash; the close button aligns with the header
+	     content's padding and adapts to the wash's light/dark scheme for contrast. -->
+	<div class="flex items-center justify-end pt-8 pr-8">
 		<button
 			onclick={closeFacilityDetail}
-			class="shrink-0 p-1 rounded transition-colors cursor-pointer {darkText
-				? 'text-black/60 hover:text-black hover:bg-black/10'
-				: 'text-white/80 hover:text-white hover:bg-white/15'}"
+			class="shrink-0 p-1.5 rounded-full transition-colors cursor-pointer {darkText
+				? 'bg-black/10 text-black/60 hover:bg-black/20 hover:text-black'
+				: 'bg-white/15 text-white/80 hover:bg-white/25 hover:text-white'}"
 			aria-label="Close panel"
 		>
-			<X size={14} />
+			<X size={16} />
 		</button>
 	</div>
 {/snippet}
@@ -1088,6 +1107,8 @@
 				onyearplayingchange={(playing) => (isYearPlaying = playing)}
 				onplayyearchange={(year) => (playYear = year)}
 				onregisteranimationcontrols={(controls) => (yearAnimationControls = controls)}
+				filteredCount={totalFacilitiesCount}
+				onresetall={handleResetAll}
 			/>
 		</div>
 	{/snippet}
@@ -1098,7 +1119,7 @@
 				bind:clientHeight={containerHeight}
 				class="flex-1 flex flex-col md:flex-row min-h-0 relative"
 			>
-				<!-- Left panel: List, Timeline or Cards (resizable on desktop).
+				<!-- Left panel: List, Timeline or Grid (resizable on desktop).
 				     Width is driven by a CSS variable + `md:` class rather than a
 				     JS-gated inline style, so the desktop list/map split is reserved
 				     from the first paint (no full-width flash before hydration). -->
@@ -1110,9 +1131,9 @@
 					class:md:flex={selectedView === 'map'}
 					style="--list-w: {listPaneWidth}px"
 				>
-					{#if selectedView === 'card'}
+					{#if selectedView === 'grid'}
 						<div class="flex-1 overflow-y-auto min-h-0">
-							<Cards
+							<Grid
 								facilities={filteredFacilities}
 								selectedFacilityCode={selectedFacility?.code ?? null}
 								{facilityPhotos}

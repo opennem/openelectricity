@@ -4,7 +4,7 @@
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
 
 	/**
-	 * Card-grid view for the facilities page. Renders each (already-filtered)
+	 * Grid view for the facilities page. Renders each (already-filtered)
 	 * facility as a native <FacilityCardTile> — its Sanity photo when available,
 	 * else a colour-wash card — so the grid never depends on the committed JPGs.
 	 * Lives in the same resizable panel as List/Timeline, so the column count is
