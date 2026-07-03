@@ -10,8 +10,6 @@
 	 *   regionValue?: string | null,
 	 *   regionLabel?: string,
 	 *   regionShortLabel?: string,
-	 *   isFullscreen?: boolean,
-	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   onsearchfacilities?: () => void,
 	 *   searchShortcutKeys?: string[]
@@ -23,25 +21,21 @@
 		regionValue = null,
 		regionLabel = '',
 		regionShortLabel = '',
-		isFullscreen = false,
-		onfullscreenchange,
 		onshowshortcuts,
 		onsearchfacilities,
 		searchShortcutKeys
 	} = $props();
 
-	let crumbTextClass = $derived(isFullscreen ? 'text-sm lg:text-base' : 'text-base lg:text-lg');
-	let crumbPadClass = $derived(isFullscreen ? 'px-2 py-1' : 'px-3 py-2');
-	let separatorSize = $derived(isFullscreen ? 16 : 18);
+	const crumbTextClass = 'text-sm lg:text-base';
+	const crumbPadClass = 'px-2 py-1';
+	const separatorSize = 16;
 </script>
 
-<FullscreenFilterBar {isFullscreen} routeKey="detail">
+<FullscreenFilterBar routeKey="detail">
 	{#snippet stable()}
-		{#if isFullscreen}
-			<FullscreenNavDropdown />
-		{/if}
+		<FullscreenNavDropdown />
 		<a
-			href="/facilities?view=list&fullscreen=true"
+			href="/facilities?view=list"
 			class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
 		>
 			Facilities
@@ -53,7 +47,7 @@
 			{#if regionValue && regionLabel}
 				<ChevronRight size={separatorSize} class="text-mid-grey shrink-0" />
 				<a
-					href={`/facilities?regions=${regionValue}&view=list&fullscreen=true`}
+					href={`/facilities?regions=${regionValue}&view=list`}
 					class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
 				>
 					<span class="md:hidden">{regionShortLabel || regionLabel}</span>
@@ -65,7 +59,7 @@
 
 			{#if selectedCode}
 				<a
-					href={`/facilities?facility=${selectedCode}&view=list&fullscreen=true`}
+					href={`/facilities?facility=${selectedCode}&view=list`}
 					class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey capitalize no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
 				>
 					{selectedLabel}
@@ -79,12 +73,6 @@
 	{/snippet}
 
 	{#snippet options()}
-		<OptionsMenu
-			{isFullscreen}
-			{onfullscreenchange}
-			{onshowshortcuts}
-			{onsearchfacilities}
-			{searchShortcutKeys}
-		/>
+		<OptionsMenu {onshowshortcuts} {onsearchfacilities} {searchShortcutKeys} />
 	{/snippet}
 </FullscreenFilterBar>

@@ -23,10 +23,22 @@
 	 *   dateEnd: string,
 	 *   viewStart: number,
 	 *   viewEnd: number,
-	 *   days: number
+	 *   days: number,
+	 *   generationHeight?: string,
+	 *   priceHeight?: string
 	 * }}
 	 */
-	let { facility, timeZone, dateStart, dateEnd, viewStart, viewEnd, days } = $props();
+	let {
+		facility,
+		timeZone,
+		dateStart,
+		dateEnd,
+		viewStart,
+		viewEnd,
+		days,
+		generationHeight = 'h-[250px]',
+		priceHeight = 'h-[200px]'
+	} = $props();
 
 	let powerLoaded = $state(false);
 	let powerHasData = $state(false);
@@ -92,7 +104,7 @@
 				interval="5m"
 				metric="power"
 				displayInterval="30m"
-				chartHeight="h-[250px]"
+				chartHeight={generationHeight}
 				title="Power"
 				showHeader={false}
 				showOptions={false}
@@ -122,7 +134,7 @@
 				displayInterval="30m"
 				{viewStart}
 				{viewEnd}
-				priceChartHeight="h-[200px]"
+				priceChartHeight={priceHeight}
 				{hoverTime}
 				onhoverchange={handleHoverChange}
 				{focusTime}

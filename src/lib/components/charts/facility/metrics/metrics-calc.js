@@ -173,6 +173,31 @@ export function startCount(powerData, seriesNames) {
 }
 
 /**
+ * Whether a fuel tech is the charging/pumping side of a storage pair. A
+ * charge/discharge pair describes one store — storage sums and durations
+ * count only the discharge side, whose capacity is generation power.
+ *
+ * @param {string | null | undefined} fueltechId
+ * @returns {boolean}
+ */
+export function isChargingSideUnit(fueltechId) {
+	const ft = fueltechId ?? '';
+	return ft.endsWith('_charging') || ft === 'pumps';
+}
+
+/**
+ * Storage duration in hours — energy capacity over discharge capacity, or
+ * null when either side is missing/zero.
+ *
+ * @param {number} storageMWh
+ * @param {number} powerMW
+ * @returns {number | null}
+ */
+export function storageDurationHours(storageMWh, powerMW) {
+	return storageMWh > 0 && powerMW > 0 ? storageMWh / powerMW : null;
+}
+
+/**
  * DC:AC ratio for a solar farm (DC array / AC connection). Returns null when
  * the ratio isn't meaningful (no oversizing, or implausibly high).
  * @param {number | null | undefined} capacityRegistered - DC (MW)

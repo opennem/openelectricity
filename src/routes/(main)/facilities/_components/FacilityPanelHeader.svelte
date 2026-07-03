@@ -129,6 +129,12 @@
 	let totalCapacity = $derived(
 		totalCapacityGroups.reduce((/** @type {number} */ sum, g) => sum + g.totalCapacity, 0)
 	);
+	// Total battery storage (MWh) over the same groups as the capacity headline,
+	// so both stats agree on active-vs-retired semantics. 0 for non-storage
+	// facilities — the headline only renders when there is something to show.
+	let totalStorage = $derived(
+		totalCapacityGroups.reduce((/** @type {number} */ sum, g) => sum + (g.capacity_storage || 0), 0)
+	);
 
 	// Fuel-tech proportions for the capacity donut — each active group's share of
 	// total capacity, with a running offset so the arcs stack around the ring.
@@ -387,6 +393,34 @@
 					</div>
 				{/snippet}
 
+				{#snippet storageHeadline()}
+					<div class="flex flex-col items-start gap-1 md:items-end">
+						<span
+							class="text-[10px] uppercase tracking-wider inline-flex items-center gap-1 {onColourMuted}"
+						>
+							<Battery size={10} />
+							<Tooltip text="Total energy the facility's batteries can store" class="cursor-help">
+								Storage
+							</Tooltip>
+						</span>
+						<span class="text-xl font-mono font-bold leading-none tabular-nums {onColourText}">
+							{formatValue(totalStorage)}<span class="ml-1 text-xs font-normal {onColourMuted}"
+								>MWh</span
+							>
+						</span>
+					</div>
+				{/snippet}
+
+				<!-- Capacity + (for batteries) storage, side by side. -->
+				{#snippet headlineStats()}
+					<div class="flex items-end gap-5 md:justify-end">
+						{@render capacityHeadline()}
+						{#if totalStorage > 0}
+							{@render storageHeadline()}
+						{/if}
+					</div>
+				{/snippet}
+
 				{#snippet capacityDonut()}
 					{@const size = 60}
 					{@const seg = 10}
@@ -496,7 +530,7 @@
 								onclick={() => (mobileExpanded = !mobileExpanded)}
 								aria-expanded={mobileExpanded}
 							>
-								{@render capacityHeadline()}
+								{@render headlineStats()}
 								{@render capacityDonut()}
 							</button>
 							{#if mobileExpanded}
@@ -516,7 +550,7 @@
 												{...props}
 												class="flex w-full items-center justify-end gap-4 text-left cursor-pointer"
 											>
-												{@render capacityHeadline()}
+												{@render headlineStats()}
 												{@render capacityDonut()}
 											</div>
 										{/snippet}
@@ -534,7 +568,7 @@
 							</BitsTooltip.Provider>
 						</div>
 					{:else}
-						{@render capacityHeadline()}
+						{@render headlineStats()}
 					{/if}
 				</div>
 			</div>

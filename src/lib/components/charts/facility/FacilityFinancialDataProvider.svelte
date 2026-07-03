@@ -16,8 +16,8 @@
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import { analyzeUnits } from './unit-analysis.js';
+	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
 	import { applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
-	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 	import { setFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 	import {
@@ -132,23 +132,17 @@
 	let unitOrder = $derived(analysis?.unitOrder ?? []);
 	let loadIds = $derived(analysis?.loadIds ?? []);
 
-	/**
-	 * @param {string} unitCode
-	 * @param {string} fuelTech
-	 */
-	function getLabel(unitCode, fuelTech) {
-		const displayCode = unitCodeDisplayMap[unitCode] ?? unitCode;
-		return `${displayCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
-	}
-
-	let getMvColour = $derived.by(() => {
-		const colourMap = unitColours;
-		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
-			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = analysis?.loadIds.includes(`market_value_${unitCode}`) ?? false;
-			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-		};
-	});
+	// The factories return closures over plain values only — they're handed to
+	// ChartDataManagers, whose async continuations can outlive this component.
+	let getLabel = $derived(makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNameMap));
+	let getMvColour = $derived(
+		makeLoadAwareColourGetter(
+			unitColours,
+			rewriteSeriesPrefix(loadIds, 'market_value'),
+			'market_value',
+			getFuelTechColor
+		)
+	);
 
 	let getBasisColour = $derived.by(() =>
 		createBasisColour({ basisMetric, unitColours, loadIds, getFuelTechColor })
@@ -280,6 +274,15 @@
 		// Retire the replaced manager so its in-flight fetches become no-ops.
 		existing?.dispose();
 		basisDataManager = manager;
+	});
+
+	// Retire the managers on unmount so in-flight fetches settle as no-ops
+	// instead of calling back into destroyed component state.
+	$effect(() => {
+		return () => {
+			mvDataManager?.dispose();
+			basisDataManager?.dispose();
+		};
 	});
 
 	// Fetch data when viewport changes — both managers

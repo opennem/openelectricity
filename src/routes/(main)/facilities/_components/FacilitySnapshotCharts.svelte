@@ -15,8 +15,14 @@
 	import { getNetworkTimezone } from '$lib/components/charts/facility';
 	import FacilitySnapshotBody from './FacilitySnapshotBody.svelte';
 
-	/** @type {{ facility: any }} */
-	let { facility } = $props();
+	/**
+	 * @type {{
+	 *   facility: any,
+	 *   generationHeight?: string,
+	 *   priceHeight?: string
+	 * }}
+	 */
+	let { facility, generationHeight = undefined, priceHeight = undefined } = $props();
 
 	const DAY_MS = 24 * 60 * 60 * 1000;
 	const SNAPSHOT_DAYS = 3;
@@ -91,6 +97,8 @@
 			{viewStart}
 			{viewEnd}
 			days={SNAPSHOT_DAYS}
+			{generationHeight}
+			{priceHeight}
 		/>
 	{/key}
 {/if}

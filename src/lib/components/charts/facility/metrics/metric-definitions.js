@@ -61,29 +61,38 @@ function formatRevenue(value) {
 
 const NEEDS_INTERVAL = 'Requires interval data';
 
-/** @type {Record<string, { label: string, compute: (ctx: MetricsContext) => MetricResult }>} */
+/** @type {Record<string, { label: string, description: string, compute: (ctx: MetricsContext) => MetricResult }>} */
 export const METRICS = {
 	capacityFactor: {
 		label: 'Capacity Factor',
+		description:
+			'Energy generated over the visible range as a percentage of what running at full registered capacity for the whole period would have produced.',
 		compute: (c) =>
 			c.hasSummary ? { value: fmt1.format(c.capacityFactor), unit: '%' } : { value: '--' }
 	},
 	totalEnergy: {
 		label: 'Total Energy',
+		description:
+			'Energy generated over the visible date range. For storage facilities (batteries, pumped hydro) this is throughput — energy charged plus energy discharged.',
 		compute: (c) =>
 			c.hasSummary ? { value: fmt0.format(c.totalEnergy), unit: 'MWh' } : { value: '--' }
 	},
 	revenue: {
 		label: 'Revenue',
+		description:
+			'Estimated market value over the visible range — the energy in each interval multiplied by the spot price at the time.',
 		compute: (c) => (c.hasSummary ? { value: formatRevenue(c.totalMV) } : { value: '--' })
 	},
 	avgPrice: {
 		label: 'Avg Price Received',
+		description:
+			'Volume-weighted average price: market value divided by energy generated over the visible range.',
 		compute: (c) =>
 			c.hasSummary ? { value: fmt2.format(c.avgPrice), unit: '$/MWh' } : { value: '--' }
 	},
 	co2: {
 		label: 'CO₂ Emissions',
+		description: 'Reported carbon dioxide emissions over the visible date range.',
 		compute: (c) =>
 			c.hasEmissions
 				? { value: fmt0.format(c.totalEmissions), unit: 'tCO₂' }
@@ -91,6 +100,8 @@ export const METRICS = {
 	},
 	intensity: {
 		label: 'Emissions Intensity',
+		description:
+			'Reported emissions divided by energy generated over the visible range — energy-weighted from actual output, not a static factor.',
 		compute: (c) =>
 			c.emissionsIntensity != null
 				? { value: fmt0.format(c.emissionsIntensity), unit: 'kgCO₂e/MWh' }
@@ -100,6 +111,8 @@ export const METRICS = {
 		// Power-mode label; energy mode overrides it to "Peak Energy" below. Each
 		// shows the period of the peak as a subtitle and annotates the chart on hover.
 		label: 'Peak Output',
+		description:
+			'The single interval with the highest generation in the visible range (loads excluded). Hover to highlight the period on the chart.',
 		compute: (c) => {
 			const p = c.peak;
 			if (!p) return { value: '--' };
@@ -115,6 +128,8 @@ export const METRICS = {
 	},
 	runningHours: {
 		label: 'Running Hours',
+		description:
+			'Hours in the visible range where at least one unit was generating (output above zero), counted from sub-daily intervals. Needs a 5- or 30-minute view.',
 		compute: (c) =>
 			c.hasSubDaily
 				? { value: fmt0.format(c.runningHours), unit: 'h' }
@@ -122,6 +137,8 @@ export const METRICS = {
 	},
 	startCount: {
 		label: 'Start Count',
+		description:
+			'How many times the facility went from idle to generating within the visible range. Needs a sub-daily view.',
 		compute: (c) =>
 			c.hasSubDaily
 				? { value: fmt0.format(c.startCount) }
@@ -129,6 +146,8 @@ export const METRICS = {
 	},
 	netRevenue: {
 		label: 'Net Revenue',
+		description:
+			'Discharge revenue minus charging cost over the visible range — the spot-market arbitrage margin.',
 		compute: (c) =>
 			c.hasSummary
 				? {
@@ -139,6 +158,8 @@ export const METRICS = {
 	},
 	storageDuration: {
 		label: 'Storage Duration',
+		description:
+			'How long maximum output can be sustained from full storage: energy capacity (MWh) divided by discharge capacity (MW).',
 		compute: (c) =>
 			c.storageDuration != null
 				? { value: fmt1.format(c.storageDuration), unit: 'h' }
@@ -146,6 +167,8 @@ export const METRICS = {
 	},
 	roundTrip: {
 		label: 'Round-trip Efficiency',
+		description:
+			'Energy discharged as a percentage of energy charged over the visible range — what survives the charge/discharge cycle.',
 		compute: (c) =>
 			c.roundTripEfficiency != null
 				? { value: fmt0.format(c.roundTripEfficiency), unit: '%' }
@@ -153,6 +176,8 @@ export const METRICS = {
 	},
 	dcac: {
 		label: 'DC:AC Ratio',
+		description:
+			'Solar oversizing: DC panel array capacity relative to the AC grid connection. Above 1, the array can produce more than the connection can export.',
 		compute: (c) =>
 			c.dcAc != null
 				? {
@@ -166,18 +191,22 @@ export const METRICS = {
 /**
  * Resolve the ordered metric-descriptor ids for a fuel-tech group. Some entries
  * are conditional: gas peakers add running-hours / starts; solar adds DC:AC only
- * when an oversizing ratio is known.
+ * when an oversizing ratio is known; any non-battery group gains storage
+ * duration when the facility has battery units (mixed-tech hybrids).
  *
  * @param {import('./fuel-group.js').FuelTechGroup} group
- * @param {{ isPeaker?: boolean, hasDcAc?: boolean }} [flags]
+ * @param {{ isPeaker?: boolean, hasDcAc?: boolean, hasStorage?: boolean, isPumpedHydro?: boolean }} [flags]
  * @returns {string[]}
  */
 export function resolveMetricKeys(group, flags = {}) {
+	/** @type {string[]} */
+	let keys;
 	switch (group) {
 		case 'coal':
-			return ['capacityFactor', 'co2', 'intensity', 'revenue', 'avgPrice'];
+			keys = ['capacityFactor', 'co2', 'intensity', 'revenue', 'avgPrice'];
+			break;
 		case 'gas':
-			return [
+			keys = [
 				'capacityFactor',
 				'co2',
 				'intensity',
@@ -185,15 +214,31 @@ export function resolveMetricKeys(group, flags = {}) {
 				'avgPrice',
 				...(flags.isPeaker ? ['runningHours', 'startCount'] : [])
 			];
+			break;
 		case 'wind':
-			return ['capacityFactor', 'totalEnergy', 'avgPrice', 'revenue', 'peak'];
+			keys = ['capacityFactor', 'totalEnergy', 'avgPrice', 'revenue', 'peak'];
+			break;
 		case 'solar':
-			return ['capacityFactor', 'peak', 'avgPrice', 'revenue', ...(flags.hasDcAc ? ['dcac'] : [])];
+			keys = ['capacityFactor', 'peak', 'avgPrice', 'revenue', ...(flags.hasDcAc ? ['dcac'] : [])];
+			break;
 		case 'hydro':
-			return ['capacityFactor', 'totalEnergy', 'runningHours', 'avgPrice', 'revenue'];
+			keys = [
+				'capacityFactor',
+				'totalEnergy',
+				'runningHours',
+				'avgPrice',
+				'revenue',
+				...(flags.isPumpedHydro ? ['roundTrip'] : [])
+			];
+			break;
 		case 'battery':
-			return ['netRevenue', 'storageDuration', 'roundTrip', 'totalEnergy', 'capacityFactor'];
+			keys = ['netRevenue', 'storageDuration', 'roundTrip', 'totalEnergy', 'capacityFactor'];
+			break;
 		default:
-			return ['capacityFactor', 'totalEnergy', 'revenue', 'avgPrice'];
+			keys = ['capacityFactor', 'totalEnergy', 'revenue', 'avgPrice'];
 	}
+	// Any facility with storage units gains the duration metric (battery's
+	// list already carries it in its preferred position).
+	if (flags.hasStorage && !keys.includes('storageDuration')) keys.push('storageDuration');
+	return keys;
 }

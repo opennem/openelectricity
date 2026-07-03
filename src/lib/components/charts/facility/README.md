@@ -13,17 +13,17 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 
 ## Files
 
-| File                        | Description                                                                                                                                        |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FacilityChart.svelte`      | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping                                                                  |
-| `FacilityDataTable.svelte`  | Tabular view of visible chart data                                                                                                                 |
-| `FacilityUnitsTable.svelte` | Facility unit metadata table                                                                                                                       |
-| `process-facility-power.js` | Core data processing — converts API response to chart-ready rows                                                                                   |
-| `range-interval-config.js`  | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec                                         |
-| `energy-basis.js`           | Shared price/intensity-provider helpers: basis-metric choice, combined query string, series-prefix rewrite, and the per-timestamp energy (MWh) map |
-| `interval-hours.js`         | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains                                   |
-| `helpers.js`                | Color shading (`buildUnitColourMap`), timezone helpers, legacy `transformFacilityPowerData`                                                        |
-| `index.js`                  | Barrel exports                                                                                                                                     |
+| File                        | Description                                                                                                                                         |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FacilityChart.svelte`      | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping                                                                   |
+| `FacilityDataTable.svelte`  | Tabular view of visible chart data                                                                                                                  |
+| `FacilityUnitsTable.svelte` | Facility unit metadata table                                                                                                                        |
+| `process-facility-power.js` | Core data processing — converts API response to chart-ready rows                                                                                    |
+| `range-interval-config.js`  | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec                                          |
+| `energy-basis.js`           | Shared price/intensity-provider helpers: basis-metric choice, combined query string, series-prefix rewrite, and the per-timestamp energy (MWh) map  |
+| `interval-hours.js`         | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains                                    |
+| `helpers.js`                | Colour shading (`buildUnitColourMap`, `SHADE_SPREADS`), series label/colour getter factories, timezone helpers, legacy `transformFacilityPowerData` |
+| `index.js`                  | Barrel exports                                                                                                                                      |
 
 ## Data Pipeline
 

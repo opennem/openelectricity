@@ -199,6 +199,10 @@
 		}
 
 		dataManager = manager;
+
+		// Retire this run's manager on re-run or unmount so in-flight fetches
+		// settle as no-ops.
+		return () => manager.dispose();
 	});
 
 	// ============================================

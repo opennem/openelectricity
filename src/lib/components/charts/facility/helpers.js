@@ -96,19 +96,80 @@ export function isWemNetwork(networkId) {
 // ============================================
 
 /**
- * Generate shades for units with the same fuel tech
+ * Default shade spread around the base colour. Kept tight so units of the
+ * same fuel tech read as one colour family rather than unrelated colours.
+ * Exported so the /studio/fueltech-shades tuning page always reflects the
+ * real production values.
+ */
+export const DEFAULT_SHADE_SPREAD = { darken: 0.6, brighten: 0.4 };
+
+/**
+ * Per-fuel-tech spread overrides for base colours the default range can't
+ * shade. coal_black (#121212) is near-black — darkening is invisible, so its
+ * range anchors at the base and spreads upward instead.
+ *
+ * @type {Record<string, { darken: number, brighten: number }>}
+ */
+export const SHADE_SPREADS = {
+	coal_black: { darken: 0, brighten: 2 }
+};
+
+/**
+ * Generate shades for units with the same fuel tech — an interpolated ramp
+ * from darkened to brightened around the base colour (unit 1 darkest).
+ *
  * @param {string} baseColor - Base fuel tech color (hex)
  * @param {number} count - Number of units with this fuel tech
+ * @param {{ darken: number, brighten: number }} [spread] - Range around the base colour
+ * @param {string} [mode] - chroma interpolation mode (the shades tuning page previews others)
  * @returns {string[]} - Array of hex colors
  */
-export function generateUnitShades(baseColor, count) {
+export function generateUnitShades(baseColor, count, spread = DEFAULT_SHADE_SPREAD, mode = 'lab') {
 	if (count === 1) return [baseColor];
 
-	// Wide range from dark to light for clear distinction between stacked units
-	const darkened = chroma(baseColor).darken(1.2).hex();
-	const brightened = chroma(baseColor).brighten(1.5).hex();
+	const darkened = chroma(baseColor).darken(spread.darken).hex();
+	const brightened = chroma(baseColor).brighten(spread.brighten).hex();
 
-	return chroma.scale([darkened, brightened]).mode('lab').colors(count);
+	return chroma
+		.scale([darkened, brightened])
+		.mode(/** @type {any} */ (mode))
+		.colors(count);
+}
+
+/**
+ * Build a display-label getter for chart series. The returned closure is
+ * handed to ChartDataManagers, which call it from async fetch continuations
+ * that can outlive the creating component — so it must only capture plain
+ * values, never read a component `$derived` lazily (svelte `derived_inert`).
+ *
+ * @param {Record<string, string>} unitCodeDisplayMap - unit code → display code
+ * @param {Record<string, string>} fuelTechNames - fuel tech id → display name
+ * @returns {(unitCode: string, fuelTech: string) => string}
+ */
+export function makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNames) {
+	return (unitCode, fuelTech) => {
+		const displayCode = unitCodeDisplayMap[unitCode] ?? unitCode;
+		return `${displayCode} (${fuelTechNames[fuelTech] || fuelTech})`;
+	};
+}
+
+/**
+ * Build a series-colour getter that brightens load series (battery charging,
+ * pumps) against their generation siblings. Same plain-capture constraint as
+ * `makeUnitLabelGetter` — the closure outlives the creating component.
+ *
+ * @param {Record<string, string>} colourMap - unit code → hex colour
+ * @param {string[]} loadIds - load series ids with the given prefix
+ * @param {string} prefix - series id prefix ('power' | 'market_value' | 'emissions' | 'energy')
+ * @param {(ftCode: string) => string} getFuelTechColor - base colour fallback
+ * @returns {(unitCode: string, fuelTech: string) => string}
+ */
+export function makeLoadAwareColourGetter(colourMap, loadIds, prefix, getFuelTechColor) {
+	const loadIdSet = new Set(loadIds);
+	return (unitCode, fuelTech) => {
+		const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
+		return loadIdSet.has(`${prefix}_${unitCode}`) ? chroma(baseColor).brighten(1).hex() : baseColor;
+	};
 }
 
 /**
@@ -138,7 +199,7 @@ export function buildUnitColourMap(units, getBaseColor) {
 
 	for (const [ft, unitCodes] of Object.entries(fuelTechUnits)) {
 		const baseColor = getBaseColor(ft) || '#888888';
-		const shades = generateUnitShades(baseColor, unitCodes.length);
+		const shades = generateUnitShades(baseColor, unitCodes.length, SHADE_SPREADS[ft]);
 
 		unitCodes.forEach((code, index) => {
 			colours[code] = shades[index];

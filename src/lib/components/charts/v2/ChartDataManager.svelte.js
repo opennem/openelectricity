@@ -164,21 +164,33 @@ export default class ChartDataManager {
 		return this.#seriesMeta;
 	}
 
+	// Memo backing for `processedCache` — keyed on the cache/meta references,
+	// which are reassigned wholesale on every change.
+	/** @type {any} */ #processedCacheMemo = null;
+	/** @type {any[] | null} */ #processedCacheForData = null;
+	/** @type {any} */ #processedCacheForMeta = null;
+
 	/**
-	 * Full processed cache with a stable identity — derived so dependants only
-	 * re-run when the cache or meta actually change, not on every access.
+	 * Full processed cache with a stable identity — dependants get the same
+	 * object until the data or meta actually change. Deliberately a plain memo
+	 * rather than a `$derived`: managers are constructed inside component
+	 * effects (and stashed/revived across them), so a class-level derived would
+	 * be owned by — and destroyed with — the effect run that created it, making
+	 * later reads inert/stale (svelte `derived_inert`). Reading the `$state`
+	 * fields here still registers reactive dependencies for effect callers.
 	 * Components should use getDataForRange() to slice by viewport.
 	 */
-	#processedCache = $derived.by(() => {
-		if (!this.#seriesMeta || !this.#dataCache.length) return null;
-		return {
-			data: this.#dataCache,
-			...this.#seriesMeta
-		};
-	});
-
 	get processedCache() {
-		return this.#processedCache;
+		const data = this.#dataCache;
+		const meta = this.#seriesMeta;
+		if (!meta || !data.length) return null;
+
+		if (this.#processedCacheForData !== data || this.#processedCacheForMeta !== meta) {
+			this.#processedCacheForData = data;
+			this.#processedCacheForMeta = meta;
+			this.#processedCacheMemo = { data, ...meta };
+		}
+		return this.#processedCacheMemo;
 	}
 
 	/**

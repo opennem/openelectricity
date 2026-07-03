@@ -10,25 +10,39 @@
 
 	import { ExternalLink } from '@lucide/svelte';
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
-	import { statusColours } from '$lib/theme/openelectricity';
+	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getNumberFormat, formatCapacity, formatDateTime } from '$lib/utils/formatters';
 	import { formatDateBySpecificity, stripDateTimezone } from '$lib/utils/date-format.js';
 	import { fuelTechToGroup } from '$lib/fuel-tech-groups/facility-group.js';
-	import { RENEWABLE_FUEL_TECHS } from '$lib/oe-api/calculate-renewables.js';
-	import { dcAcRatio } from '$lib/components/charts/facility/metrics/metrics-calc.js';
+	import {
+		dcAcRatio,
+		isChargingSideUnit,
+		storageDurationHours
+	} from '$lib/components/charts/facility/metrics/metrics-calc.js';
+	import { METRICS } from '$lib/components/charts/facility/metrics/metric-definitions.js';
+	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
+	import FacilitySnapshotCharts from '../../../facilities/_components/FacilitySnapshotCharts.svelte';
 
 	/**
+	 * `facility` powers the per-unit snapshot charts — the unit is charted by
+	 * handing the facility-page charts a clone containing just this unit
+	 * (processFacilityPower only plots units present in unitFuelTechMap).
 	 * @type {{
 	 *   unit: any,
+	 *   facility?: any | null,
 	 *   sanityUnit?: any | null,
 	 *   timeZone?: string
 	 * }}
 	 */
-	let { unit, sanityUnit = null, timeZone = '+10:00' } = $props();
+	let { unit, facility = null, sanityUnit = null, timeZone = '+10:00' } = $props();
 
 	const fmt0 = getNumberFormat(0);
+
+	// Tooltip copy shared with the facility metrics grid so the two never drift.
+	const STORAGE_DURATION_DESCRIPTION = METRICS.storageDuration.description;
+	const MIN_STABLE_GEN_DESCRIPTION = 'The lowest output the unit can hold stably while running.';
 	const fmt1 = getNumberFormat(1);
 	const fmt2 = getNumberFormat(2);
 
@@ -148,7 +162,6 @@
 	let ftName = $derived(fuelTechNameMap[ft] || ft);
 	let bgColor = $derived(getFueltechColor(ft));
 	let isDarkText = $derived(needsDarkText(ft));
-	let isRenewable = $derived(/** @type {string[]} */ (RENEWABLE_FUEL_TECHS).includes(ft));
 	let status = $derived(unit?.status_id ?? sanityUnit?.status ?? null);
 
 	// Prefer live OE values, fall back to Sanity.
@@ -167,10 +180,10 @@
 	// meaningful oversizing signal (≤1.05 or >3), shared with the facility metrics.
 	let dcac = $derived(group === 'solar' ? dcAcRatio(capacityReg, capacityMax) : null);
 
-	let storageDuration = $derived.by(() => {
-		if (!has(storage) || !has(capacityReg) || capacityReg <= 0) return null;
-		return storage / capacityReg;
-	});
+	// Same formula and capacity precedence as the facility-level metric.
+	let storageDuration = $derived(
+		storageDurationHours(Number(storage) || 0, Number(capacityReg || capacityMax) || 0)
+	);
 
 	let turbineCount = $derived.by(() => {
 		if (!unitTypes.length) return null;
@@ -197,7 +210,6 @@
 
 	let gasSubtype = $derived(GAS_SUBTYPE[ft] ?? null);
 	let isPeaker = $derived(ft === 'gas_ocgt' || ft === 'gas_recip' || ft === 'distillate');
-	let coalFuel = $derived(ft === 'coal_brown' ? 'Brown coal' : 'Black coal');
 	let hydroLabel = $derived(
 		ft === 'pumps' ? 'Pumped storage' : has(storage) ? 'Reservoir' : 'Run-of-river'
 	);
@@ -256,6 +268,121 @@
 			sanityUnit?.commissioning_confirmed === true ||
 			approvalRows.length > 0
 	);
+
+	// ── Metric grid (fuel-tech highlights + key stats, facility-metrics style) ──
+	/** @type {{ label: string, value: string, unit?: string, source?: string, description?: string }[]} */
+	let highlightStats = $derived.by(() => {
+		/** @type {{ label: string, value: string, unit?: string, source?: string, description?: string }[]} */
+		const out = [];
+		if (group === 'solar') {
+			if (has(capacityReg))
+				out.push({ label: 'DC array', value: formatCapacity(capacityReg), unit: 'MW' });
+			if (has(capacityMax))
+				out.push({ label: 'AC connection', value: formatCapacity(capacityMax), unit: 'MW' });
+			if (dcac)
+				out.push({
+					label: 'DC:AC',
+					value: fmt2.format(dcac),
+					description: METRICS.dcac.description
+				});
+		} else if (group === 'battery') {
+			if (storageDuration)
+				out.push({
+					label: 'Storage duration',
+					value: fmt1.format(storageDuration),
+					unit: 'h',
+					description: STORAGE_DURATION_DESCRIPTION
+				});
+			if (gridForming !== null)
+				out.push({
+					label: 'Grid forming',
+					value: gridForming ? 'Yes' : 'No',
+					description:
+						'Whether the inverter can set grid voltage and frequency itself rather than only following the grid.'
+				});
+		} else if (group === 'wind') {
+			if (turbineCount) out.push({ label: 'Turbines', value: fmt0.format(turbineCount) });
+			if (hubHeight) out.push({ label: 'Hub height', value: fmt0.format(hubHeight), unit: 'm' });
+		} else if (group === 'coal') {
+			if (has(minGen))
+				out.push({
+					label: 'Min stable gen',
+					value: formatCapacity(minGen),
+					unit: 'MW',
+					description: MIN_STABLE_GEN_DESCRIPTION
+				});
+		} else if (group === 'gas' && gasSubtype) {
+			out.push({ label: 'Configuration', value: gasSubtype });
+			out.push({ label: 'Role', value: isPeaker ? 'Peaker' : 'Baseload / mid-merit' });
+		} else if (group === 'hydro') {
+			out.push({ label: 'Type', value: hydroLabel });
+			if (has(minGen))
+				out.push({
+					label: 'Min stable gen',
+					value: formatCapacity(minGen),
+					unit: 'MW',
+					description: MIN_STABLE_GEN_DESCRIPTION
+				});
+		}
+		return out;
+	});
+
+	/** @type {{ label: string, value: string, unit?: string, source?: string, description?: string }[]} */
+	let keyStats = $derived.by(() => {
+		/** @type {{ label: string, value: string, unit?: string, source?: string, description?: string }[]} */
+		const out = [];
+		if (group !== 'solar') {
+			// Solar capacity is shown in full (DC array + AC connection) above.
+			out.push({
+				label: 'Capacity',
+				value: formatCapacity(capacityMax ?? capacityReg),
+				unit: 'MW',
+				description: 'Maximum where available, otherwise registered.'
+			});
+		}
+		if (has(storage)) out.push({ label: 'Storage', value: formatCapacity(storage), unit: 'MWh' });
+		// Storage duration applies to any storage-carrying discharge unit (pumped
+		// hydro reservoirs included) — but not to the pumping/charging side, whose
+		// capacity is fill power, not discharge power. Battery units already show
+		// it in their highlight row.
+		if (group !== 'battery' && storageDuration && !isChargingSideUnit(ft))
+			out.push({
+				label: 'Storage duration',
+				value: fmt1.format(storageDuration),
+				unit: 'h',
+				description: STORAGE_DURATION_DESCRIPTION
+			});
+		if (has(emissions) && emissions > 0)
+			out.push({
+				label: 'Emissions',
+				value: formatEmissions(emissions),
+				unit: 'kg CO₂/MWh',
+				source: sanityUnit?.emissions_factor_source ?? undefined,
+				description:
+					'Emissions factor: kilograms of CO₂-equivalent emitted per megawatt hour generated.'
+			});
+		if (has(dispatch))
+			out.push({
+				label: 'Dispatch',
+				value: dispatchLabel(dispatch),
+				description:
+					'How the unit participates in the market: a generator sells energy, a load consumes it, bidirectional units do both.'
+			});
+		if (has(mlf))
+			out.push({
+				label: 'Loss factor',
+				value: fmt2.format(mlf),
+				unit: 'MLF',
+				description:
+					'Marginal loss factor: the transmission-loss adjustment applied to output when settled at the regional reference node.'
+			});
+		return out;
+	});
+
+	let metricStats = $derived([...highlightStats, ...keyStats]);
+
+	// Facility clone carrying only this unit — drives the per-unit snapshot charts.
+	let unitFacility = $derived(facility && unit ? { ...facility, units: [unit] } : null);
 </script>
 
 {#snippet extLink(/** @type {string} */ href, /** @type {string} */ label)}
@@ -268,20 +395,6 @@
 		{label}
 		<ExternalLink size={10} />
 	</a>
-{/snippet}
-
-{#snippet stat(
-	/** @type {string} */ label,
-	/** @type {string | number} */ value,
-	/** @type {string} */ unitLabel = ''
-)}
-	<div>
-		<dt class="text-xxs uppercase tracking-wider text-mid-grey">{label}</dt>
-		<dd class="m-0 mt-0.5 flex items-baseline gap-1">
-			<span class="font-mono text-sm font-medium text-dark-grey">{value}</span>
-			{#if unitLabel}<span class="text-xxs text-mid-grey">{unitLabel}</span>{/if}
-		</dd>
-	</div>
 {/snippet}
 
 {#snippet defRow(
@@ -304,114 +417,72 @@
 {/snippet}
 
 <div>
-	<!-- Hero: fuel tech identity + status -->
-	<div class="flex items-center gap-3 px-6 py-5">
-		<span
-			class="flex h-11 w-11 shrink-0 items-center justify-center rounded-full {isDarkText
-				? 'text-black'
-				: 'text-white'}"
-			style="background-color: {bgColor};"
-		>
-			<FuelTechBadge fuelTech={ft} iconOnly iconSize={6} />
-		</span>
-		<div class="min-w-0">
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="text-base font-semibold text-dark-grey">{ftName}</span>
-				{#if isRenewable}
-					<span
-						class="rounded-full bg-[#52A972]/15 px-2 py-0.5 text-xxs font-medium text-[#3d8159]"
-					>
-						Renewable
+	<!-- Metrics — same bordered-cell grid as the facility page metrics section
+	     (cells carry border-r/border-b; the -mr/-mb pull + overflow clip drop the
+	     outer edges; a filler keeps an odd last row full). Fuel identity and
+	     status lead the grid as metrics of their own. -->
+	<div class="overflow-hidden">
+		<div class="grid grid-cols-2 -mb-px -mr-px">
+			<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
+				<div class="flex flex-col gap-0.5">
+					<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">Fuel</span>
+					<span class="flex items-center gap-2">
+						<span
+							class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full {isDarkText
+								? 'text-black'
+								: 'text-white'}"
+							style="background-color: {bgColor};"
+						>
+							<FuelTechBadge fuelTech={ft} iconOnly iconSize={4} />
+						</span>
+						<span class="text-base font-semibold text-dark-grey">{ftName}</span>
 					</span>
-				{/if}
-			</div>
-			{#if status}
-				<div class="mt-1 inline-flex items-center gap-1.5">
-					<span
-						class="h-2 w-2 rounded-full"
-						style="background-color: {statusColours[status] || statusColours.operating};"
-					></span>
-					<span class="text-xs capitalize text-mid-grey">{status}</span>
 				</div>
+			</div>
+
+			<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
+				<div class="flex flex-col gap-0.5">
+					<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">Status</span>
+					<span class="flex items-center gap-1.5">
+						<FacilityStatusIcon {status} isCommissioning={unit?.isCommissioning ?? false} />
+						<span class="text-base font-semibold capitalize text-dark-grey">{status ?? '—'}</span>
+					</span>
+				</div>
+			</div>
+
+			{#each metricStats as s (s.label)}
+				<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
+					<MetricCard
+						size="sm"
+						label={s.label}
+						value={s.value}
+						unit={s.unit ?? ''}
+						description={s.description ?? ''}
+					/>
+					{#if s.source}
+						{@render sourceNote('Source', s.source)}
+					{/if}
+				</div>
+			{/each}
+			{#if metricStats.length % 2 === 1}
+				<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4" aria-hidden="true"></div>
 			{/if}
 		</div>
 	</div>
-
-	<!-- Fuel-tech highlight -->
-	{#if group === 'solar' && (has(capacityReg) || has(capacityMax))}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<dl class="grid grid-cols-3 gap-4">
-				{#if has(capacityReg)}{@render stat('DC array', formatCapacity(capacityReg), 'MW')}{/if}
-				{#if has(capacityMax)}{@render stat(
-						'AC connection',
-						formatCapacity(capacityMax),
-						'MW'
-					)}{/if}
-				{#if dcac}{@render stat('DC:AC', fmt2.format(dcac))}{/if}
-			</dl>
-			{#if solarMounting}
-				<p class="mt-2 text-xxs capitalize text-mid-grey">Mounting: {solarMounting}</p>
-			{/if}
-		</div>
-	{:else if group === 'battery' && (storageDuration || gridForming !== null)}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<dl class="grid grid-cols-2 gap-4">
-				{#if storageDuration}{@render stat(
-						'Storage duration',
-						fmt1.format(storageDuration),
-						'h'
-					)}{/if}
-				{#if gridForming !== null}{@render stat('Grid forming', gridForming ? 'Yes' : 'No')}{/if}
-			</dl>
-		</div>
-	{:else if group === 'wind' && (turbineCount || hubHeight)}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<dl class="grid grid-cols-2 gap-4">
-				{#if turbineCount}{@render stat('Turbines', fmt0.format(turbineCount))}{/if}
-				{#if hubHeight}{@render stat('Hub height', fmt0.format(hubHeight), 'm')}{/if}
-			</dl>
-		</div>
-	{:else if group === 'coal'}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<dl class="grid grid-cols-2 gap-4">
-				{@render stat('Fuel', coalFuel)}
-				{#if has(minGen)}{@render stat('Min stable gen', formatCapacity(minGen), 'MW')}{/if}
-			</dl>
-		</div>
-	{:else if group === 'gas' && gasSubtype}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<dl class="grid grid-cols-2 gap-4">
-				{@render stat('Configuration', gasSubtype)}
-				{@render stat('Role', isPeaker ? 'Peaker' : 'Baseload / mid-merit')}
-			</dl>
-		</div>
-	{:else if group === 'hydro'}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<dl class="grid grid-cols-2 gap-4">
-				{@render stat('Type', hydroLabel)}
-				{#if has(minGen)}{@render stat('Min stable gen', formatCapacity(minGen), 'MW')}{/if}
-			</dl>
-		</div>
+	{#if group === 'solar' && solarMounting}
+		<p class="m-0 px-6 py-3 text-xxs capitalize text-mid-grey">Mounting: {solarMounting}</p>
 	{/if}
 
-	<!-- Key stats -->
-	<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-		<dl class="grid grid-cols-2 gap-4">
-			{#if group !== 'solar'}
-				<!-- Solar capacity is shown in full (DC array + AC connection) above. -->
-				{@render stat('Capacity', formatCapacity(capacityMax ?? capacityReg), 'MW')}
-			{/if}
-			{#if has(storage)}{@render stat('Storage', formatCapacity(storage), 'MWh')}{/if}
-			{#if has(emissions) && emissions > 0}
-				{@render stat('Emissions', formatEmissions(emissions), 'kg CO₂/MWh')}
-			{/if}
-			{#if has(dispatch)}{@render stat('Type', dispatchLabel(dispatch))}{/if}
-			{#if has(mlf)}{@render stat('Loss factor', fmt2.format(mlf), 'MLF')}{/if}
-		</dl>
-		{#if has(emissions) && emissions > 0 && sanityUnit?.emissions_factor_source}
-			{@render sourceNote('Emissions source', sanityUnit.emissions_factor_source)}
-		{/if}
-	</div>
+	<!-- Charts — the facility page's snapshot charts, scoped to just this unit -->
+	{#if unitFacility}
+		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
+			<FacilitySnapshotCharts
+				facility={unitFacility}
+				generationHeight="h-[180px]"
+				priceHeight="h-[140px]"
+			/>
+		</div>
+	{/if}
 
 	<!-- Lifecycle -->
 	{#if hasLifecycle}

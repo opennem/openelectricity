@@ -12,10 +12,10 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { analyzeUnits } from './unit-analysis.js';
+	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
 	import { combinedMetricsFor, buildCombinedMetricsUrl } from './energy-basis.js';
-	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 	import { ianaFromOffset } from '../v2/network-time.js';
 
@@ -166,28 +166,12 @@
 	// Data Manager
 	// ============================================
 
-	/**
-	 * Get display label for a unit
-	 * @param {string} unitCode
-	 * @param {string} fuelTech
-	 * @returns {string}
-	 */
-	function getLabel(unitCode, fuelTech) {
-		const displayCode = unitCodeDisplayMap[unitCode] ?? unitCode;
-		return `${displayCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
-	}
-
-	/**
-	 * Get colour for a unit — needs dynamic unitColours
-	 */
-	let getColour = $derived.by(() => {
-		const colourMap = unitColours;
-		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
-			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = analysis?.loadIds.includes(`power_${unitCode}`) ?? false;
-			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-		};
-	});
+	// The factories return closures over plain values only — they're handed to
+	// ChartDataManagers, whose async continuations can outlive this component.
+	let getLabel = $derived(makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNameMap));
+	let getColour = $derived(
+		makeLoadAwareColourGetter(unitColours, loadIds, 'power', getFuelTechColor)
+	);
 
 	/**
 	 * When `bundleDerivedMetrics` is on, fetch via the combined
@@ -375,7 +359,10 @@
 	// Prefetch common ranges after initial load completes.
 	// Uses untrack for requestRange calls to prevent cache $state from
 	// becoming dependencies (which would cause a feedback loop on every merge).
+	// Skipped for fixed-window snapshots (enablePan false) — they can't pan, so
+	// the 7-day power and 1-year energy prefetches would be pure waste.
 	$effect(() => {
+		if (!enablePan) return;
 		const manager = dataManager;
 		if (!manager || !manager.initialLoadComplete) return;
 		if (!facility) return;
@@ -414,6 +401,15 @@
 			energyManager.requestRange(oneYearAgo, now);
 			prefetchCache.set(energyKey, energyManager);
 		});
+	});
+
+	// Retire all managers on unmount so in-flight fetches settle as no-ops
+	// instead of calling back into destroyed component state.
+	$effect(() => {
+		return () => {
+			dataManager?.dispose();
+			clearPrefetchCache();
+		};
 	});
 
 	// ============================================

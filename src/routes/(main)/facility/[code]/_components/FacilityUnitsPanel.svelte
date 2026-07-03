@@ -1,5 +1,7 @@
 <script>
 	import { ChevronRight } from '@lucide/svelte';
+	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import { Sheet } from '$lib/components/ui/sheet';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
@@ -7,7 +9,7 @@
 	import { formatCapacity, getNumberFormat } from '$lib/utils/formatters';
 	import { formatDateRange } from '$lib/components/charts/v2';
 	import { buildUnitColourMap } from '$lib/components/charts/facility/helpers.js';
-	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
+	import { sortUnitsForDisplay } from '$lib/components/charts/facility/unit-analysis.js';
 	import { getPrimaryFuelTechGroup } from '$lib/components/charts/facility/metrics/fuel-group.js';
 	import {
 		isSubDailyData,
@@ -36,9 +38,10 @@
 
 	const fmt0 = getNumberFormat(0);
 
-	// Top-of-stack first, matching the facility header + chart paint order.
+	// Canonical display order, top-of-stack first — the same sort the chart
+	// pipeline uses, so the panel always mirrors the chart paint order.
 	let units = $derived(
-		/** @type {any[]} */ (sortByDetailedOrder(facility?.units ?? [], { reverse: true }))
+		/** @type {any[]} */ (sortUnitsForDisplay(facility?.units ?? [], { reverse: true }))
 	);
 	let hasUnits = $derived(units.length > 0);
 
@@ -87,14 +90,26 @@
 		return status.charAt(0).toUpperCase() + status.slice(1);
 	}
 
-	// Track the selected unit by code (not object) so switching facility via the
-	// picker re-derives against the new unit list and closes the sheet if the code
+	// The selected unit lives in the URL (?unit=CODE) so a unit view is
+	// shareable and deep-links straight to the open sheet. Updates use `goto`
+	// with replaceState — SvelteKit's shallow `replaceState()` doesn't update
+	// the reactive `page.url`, and no load function here reads the URL, so the
+	// navigation is a cheap client-side URL swap (no refetch, no history spam).
+	// Tracking by code (not object) means switching facility via the picker
+	// re-derives against the new unit list and closes the sheet if the code
 	// is gone, rather than stranding a stale unit object in the panel.
-	/** @type {string | null} */
-	let selectedCode = $state(null);
+	let selectedCode = $derived(page.url.searchParams.get('unit'));
 	let selectedUnit = $derived(
 		selectedCode ? (units.find((u) => u.code === selectedCode) ?? null) : null
 	);
+
+	/** @param {string | null} code */
+	function setSelectedCode(code) {
+		const url = new URL(page.url);
+		if (code) url.searchParams.set('unit', code);
+		else url.searchParams.delete('unit');
+		goto(`${url.pathname}${url.search}`, { replaceState: true, noScroll: true, keepFocus: true });
+	}
 	// Enrichment — the matching Sanity unit for the one selected unit.
 	let selectedSanityUnit = $derived(
 		selectedUnit
@@ -124,7 +139,7 @@
 					<button
 						type="button"
 						class="group flex w-full cursor-pointer items-center gap-5 px-6 py-3 text-left transition-colors hover:bg-light-warm-grey"
-						onclick={() => (selectedCode = unit.code)}
+						onclick={() => setSelectedCode(unit.code)}
 					>
 						<span class="flex shrink-0 justify-center" title={statusLabel(unit.status_id)}>
 							<FacilityStatusIcon status={unit.status_id} isCommissioning={unit.isCommissioning} />
@@ -207,10 +222,10 @@
 		rounded={false}
 		backdrop
 		title={selectedUnit?.code_display ?? selectedUnit?.code ?? ''}
-		onclose={() => (selectedCode = null)}
+		onclose={() => setSelectedCode(null)}
 	>
 		{#if selectedUnit}
-			<UnitDetail unit={selectedUnit} sanityUnit={selectedSanityUnit} {timeZone} />
+			<UnitDetail unit={selectedUnit} {facility} sanityUnit={selectedSanityUnit} {timeZone} />
 		{/if}
 	</Sheet>
 {/if}

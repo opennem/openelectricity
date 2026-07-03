@@ -29,7 +29,9 @@
 		peakBucket,
 		runningHours,
 		startCount,
-		dcAcRatio
+		dcAcRatio,
+		isChargingSideUnit,
+		storageDurationHours
 	} from './metrics-calc.js';
 	import { METRICS, resolveMetricKeys } from './metric-definitions.js';
 	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
@@ -86,16 +88,34 @@
 		return ratio == null ? null : { ratio, dcMW: totalDC, acMW: totalAC };
 	});
 
-	// ── Storage capacity / duration (battery, Sanity-sourced) ─────────
-	let storageCapacity = $derived.by(() => {
-		for (const unit of sanityFacility?.units ?? []) {
-			if (unit.storage_capacity != null && unit.storage_capacity > 0) return unit.storage_capacity;
+	// ── Storage duration (any facility with storage units) ────────────
+	// Discharge duration in hours: storage (MWh) ÷ discharge power (MW), scoped
+	// to the storage-carrying units so hybrids (e.g. solar + battery) don't
+	// dilute the denominator with the co-located tech's capacity. Covers pumped
+	// hydro the same way — reservoir energy over turbine capacity. Charging-side
+	// units (battery_*_charging, pumps) are skipped: a charge/discharge pair
+	// describes one store, and duration means time at full discharge. OE
+	// `capacity_storage` is preferred, with the matching Sanity unit's
+	// `storage_capacity` as fallback.
+	let storageDuration = $derived.by(() => {
+		const sanityByCode = new Map(
+			(sanityFacility?.units ?? []).map((/** @type {any} */ u) => [u?.code, u])
+		);
+		let storage = 0;
+		let power = 0;
+		for (const unit of facility?.units ?? []) {
+			const ft = unit.fueltech_id ?? '';
+			if (isChargingSideUnit(ft)) continue;
+			const unitStorage =
+				Number(unit.capacity_storage ?? sanityByCode.get(unit.code)?.storage_capacity) || 0;
+			// Battery discharge units always count (a sibling may carry the storage
+			// figure); other techs count only when they carry storage themselves.
+			if (!ft.startsWith('battery') && unitStorage <= 0) continue;
+			storage += unitStorage;
+			power += Number(unit.capacity_registered || unit.capacity_maximum) || 0;
 		}
-		return null;
+		return storageDurationHours(storage, power);
 	});
-	let storageDuration = $derived(
-		storageCapacity != null && totalCapacity > 0 ? storageCapacity / totalCapacity : null
-	);
 
 	let isPeaker = $derived(group === 'gas' && isGasPeaker(facility?.units ?? []));
 	let pumpedHydro = $derived(group === 'hydro' && isPumpedHydro(facility?.units ?? []));
@@ -109,6 +129,10 @@
 		const mNames = summaryData?.mvSeriesNames ?? [];
 		const hasSummary = eData.length > 0;
 		const isBattery = group === 'battery';
+		// Storage facilities (batteries, pumped hydro) consume more than they
+		// generate — the signed net is negative by physics (round-trip losses),
+		// so their headline energy is throughput (|charge| + |discharge|).
+		const isStorageFacility = isBattery || pumpedHydro;
 
 		// Split signed energy so batteries can report throughput + round-trip.
 		let signedEnergy = 0;
@@ -127,7 +151,7 @@
 			}
 		}
 
-		const generationEnergy = isBattery ? absEnergy : signedEnergy;
+		const generationEnergy = isStorageFacility ? absEnergy : signedEnergy;
 		const hours = getHoursInRange(eData);
 		const totalMV = sumAllSeries(mData, mNames);
 
@@ -181,7 +205,14 @@
 		};
 	});
 
-	let metricKeys = $derived(resolveMetricKeys(group, { isPeaker, hasDcAc: dcAc != null }));
+	let metricKeys = $derived(
+		resolveMetricKeys(group, {
+			isPeaker,
+			hasDcAc: dcAc != null,
+			hasStorage: storageDuration != null,
+			isPumpedHydro: pumpedHydro
+		})
+	);
 
 	// ── Garnish: fuel-specific badges ─────────────────────────────────
 	/** @type {Record<string, string>} */
@@ -364,6 +395,7 @@
 						value={result.value}
 						unit={result.unit ?? ''}
 						subtitle={result.subtitle ?? ''}
+						description={METRICS[key].description}
 					/>
 				</div>
 			{/each}
@@ -371,7 +403,11 @@
 			{#if badgeCell}
 				{#if badgeCell.kind === 'coal'}
 					<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
-						<MetricCard label="Expected Closure" value={formatClosureDate(badgeCell.closure)} />
+						<MetricCard
+							label="Expected Closure"
+							value={formatClosureDate(badgeCell.closure)}
+							description="Earliest expected closure date across the facility's units."
+						/>
 					</div>
 				{:else}
 					{@const bg = fuelTechColourMap[badgeCell.subtype] ?? '#7F7F7F'}

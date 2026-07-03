@@ -127,6 +127,25 @@ describe('ChartDataManager', () => {
 			expect(manager.cacheEnd).toBe(startMs + (pointCount - 1) * intervalMs);
 		});
 
+		it('keeps a stable processedCache identity until the cache changes', () => {
+			const manager = createManager();
+			manager.seedCache(
+				buildPowerResponse({
+					networkId: 'NEM',
+					unitCodes: ['UNIT1'],
+					startISO: '2026-02-08T04:50:00+10:00',
+					pointCount: 10
+				})
+			);
+
+			const first = manager.processedCache;
+			// Repeated reads return the same object — dependants don't churn.
+			expect(manager.processedCache).toBe(first);
+
+			manager.clearCache();
+			expect(manager.processedCache).toBeNull();
+		});
+
 		it('should ignore response with no data', () => {
 			const manager = createManager();
 			manager.seedCache(null);

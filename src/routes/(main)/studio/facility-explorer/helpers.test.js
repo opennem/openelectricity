@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	generateUnitShades,
 	buildUnitColourMap,
+	SHADE_SPREADS,
 	getNetworkTimezone,
 	isWemNetwork,
 	transformFacilityPowerData
@@ -38,6 +39,13 @@ describe('generateUnitShades', () => {
 		expect(result[0]).not.toBe(result[2]);
 	});
 
+	it('anchors at the base colour when darken is 0 (coal_black override)', () => {
+		const result = generateUnitShades('#121212', 3, { darken: 0, brighten: 2 });
+		expect(result[0].toLowerCase()).toBe('#121212');
+		// The ramp still brightens toward the last unit.
+		expect(new Set(result).size).toBe(3);
+	});
+
 	it('should handle various base colors', () => {
 		const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFFFF', '#000000'];
 		colors.forEach((color) => {
@@ -64,6 +72,19 @@ describe('buildUnitColourMap', () => {
 		};
 		return colors[ft] || '#888888';
 	};
+
+	it('applies the coal_black spread override (first unit stays at the base colour)', () => {
+		expect(SHADE_SPREADS.coal_black).toEqual({ darken: 0, brighten: 2 });
+		const colours = buildUnitColourMap(
+			[
+				{ code: 'BW01', fueltech_id: 'coal_black' },
+				{ code: 'BW02', fueltech_id: 'coal_black' }
+			],
+			() => '#121212'
+		);
+		expect(colours.BW01.toLowerCase()).toBe('#121212');
+		expect(colours.BW02).not.toBe(colours.BW01);
+	});
 
 	it('should assign unique colors to units with different fuel techs', () => {
 		const units = [

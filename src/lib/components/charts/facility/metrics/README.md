@@ -26,11 +26,13 @@ fuel tech. The flow is:
 2. **Resolve the metric set.** `resolveMetricKeys(group, flags)` returns an ordered list
    of metric ids for that group (`metric-definitions.js`). A few are conditional —
    gas peakers add `runningHours`/`startCount`, solar adds `dcac` only when an oversizing
-   ratio is known.
+   ratio is known, pumped hydro adds `roundTrip`, and any group gains `storageDuration`
+   when the facility has storage units (mixed-tech hybrids included).
 3. **Build one shared context** (`ctx`). `FacilityMetrics.svelte` computes every scalar
    once from the visible-range data using the pure helpers in `metrics-calc.js`.
 4. **Render.** Each id maps to a descriptor in `METRICS` whose `compute(ctx)` returns
-   `{ value, unit?, subtitle? }` for a `MetricCard`. Group-specific **garnishes** (badges,
+   `{ value, unit?, subtitle? }` for a `MetricCard`; each descriptor also carries a
+   `description` rendered as a hover tooltip on the card's label. Group-specific **garnishes** (badges,
    turbine/equipment specs) hang off the same context. Per-unit availability bars
    (coal) live in the units panel on `/facility/[code]`, computed from the same
    `intervalData` via `computeUnitAvailability`.
@@ -59,9 +61,12 @@ so the card fills in once the providers' fetch settles (showing `--` until then)
 | **gas**     | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Running Hours, Start Count if peaker)_ | subtype badge (CCGT/OCGT/…), "Peaker plant" |
 | **wind**    | Capacity Factor, Total Energy, Avg Price, Revenue, Peak Output                                                     | turbine specs                               |
 | **solar**   | Capacity Factor, Peak Output, Avg Price, Revenue _(+ DC:AC if known, with DC/AC capacities as its subtitle)_       | —                                           |
-| **hydro**   | Capacity Factor, Total Energy, Running Hours, Avg Price, Revenue                                                   | pumped-hydro badge                          |
+| **hydro**   | Capacity Factor, Total Energy, Running Hours, Avg Price, Revenue _(+ Round Trip if pumped)_                        | pumped-hydro badge                          |
 | **battery** | Net Revenue, Storage Duration, Round-trip Efficiency, Total Energy, Capacity Factor                                | equipment specs                             |
 | **other**   | Capacity Factor, Total Energy, Revenue, Avg Price                                                                  | —                                           |
+
+Any non-battery group additionally shows **Storage Duration** when the facility has
+storage-carrying units (e.g. a solar + battery hybrid, or a pumped-hydro scheme).
 
 **Why these?** Each group surfaces what's decision-relevant for that technology: fossil
 plants are judged on emissions and how hard they run; renewables on how much they
@@ -78,7 +83,7 @@ Energy is MWh, power MW, market value $, emissions tCO₂e.
 | Metric                        | Definition                                                                                                                                                                                                                                                                                                                          | Source                                        |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | **Capacity Factor**           | `energy / (registered_capacity × hours) × 100`                                                                                                                                                                                                                                                                                      | summaryData                                   |
-| **Total Energy**              | Σ energy across unit series (Σ\|energy\| for batteries)                                                                                                                                                                                                                                                                             | summaryData                                   |
+| **Total Energy**              | Σ energy across unit series (Σ\|energy\| throughput for storage facilities — batteries and pumped hydro, whose signed net is negative by physics)                                                                                                                                                                                   | summaryData                                   |
 | **Revenue**                   | Σ market value across unit series                                                                                                                                                                                                                                                                                                   | summaryData                                   |
 | **Avg Price Received**        | `market_value / energy` ($/MWh)                                                                                                                                                                                                                                                                                                     | summaryData                                   |
 | **CO₂ Emissions**             | Σ reported emissions across unit series (tCO₂)                                                                                                                                                                                                                                                                                      | emissionsData                                 |
@@ -87,8 +92,8 @@ Energy is MWh, power MW, market value $, emissions tCO₂e.
 | **Running Hours**             | intervals where any series generated × interval length                                                                                                                                                                                                                                                                              | intervalData (sub-daily only)                 |
 | **Start Count**               | transitions from not-generating → generating                                                                                                                                                                                                                                                                                        | intervalData (sub-daily only)                 |
 | **Net Revenue**               | Σ market value (discharge revenue − charge cost)                                                                                                                                                                                                                                                                                    | summaryData                                   |
-| **Storage Duration**          | `storage_capacity_MWh / power_capacity_MW` (hours)                                                                                                                                                                                                                                                                                  | Sanity storage_capacity                       |
-| **Round-trip Efficiency**     | `discharge_energy / charge_energy × 100` (from the signed battery series)                                                                                                                                                                                                                                                           | summaryData                                   |
+| **Storage Duration**          | `storage_MWh / discharge_MW` (hours) summed over storage-carrying discharge units only — charging-side units (`battery_*_charging`, `pumps`) excluded                                                                                                                                                                               | OE capacity_storage (Sanity fallback)         |
+| **Round-trip Efficiency**     | `discharge_energy / charge_energy × 100` (from the signed series; batteries and pumped hydro)                                                                                                                                                                                                                                       | summaryData                                   |
 | **DC:AC Ratio**               | `DC_array / AC_connection`, only when 1.05–3.0                                                                                                                                                                                                                                                                                      | Sanity capacity_registered / capacity_maximum |
 
 ### Emissions: reported, not estimated
@@ -124,7 +129,7 @@ from the OE API data providers, are unaffected.
 ```
 metrics/
 ├── FacilityMetrics.svelte    # router/renderer: builds ctx, renders cards + garnishes
-├── MetricCard.svelte         # label / value / unit / subtitle
+├── MetricCard.svelte         # label (with description tooltip) / value / unit / subtitle
 ├── metric-definitions.js     # METRICS descriptors + resolveMetricKeys (per-group sets)
 ├── metrics-calc.js           # pure maths incl. isSubDailyData (+ .test.js)
 └── fuel-group.js             # dominant group, peaker / pumped-hydro (+ .test.js)

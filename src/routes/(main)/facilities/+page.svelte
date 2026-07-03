@@ -797,8 +797,7 @@
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
-		// Esc: close the shortcuts toast if it's showing. (Fullscreen exit is NOT
-		// bound to Esc — use the logo mark, options menu, or F shortcut.)
+		// Esc: close the shortcuts toast if it's showing.
 		if (e.key === 'Escape') {
 			if (showShortcutsToast) {
 				e.preventDefault();
@@ -994,7 +993,7 @@
 			// button). The sheet still renders for URL-driven selection, e.g. a
 			// shared /facilities?facility=… link opened on a phone.
 			if (!isDesktop) {
-				goto(`/facility/${facility.code}?fullscreen=true`);
+				goto(`/facility/${facility.code}`);
 				return;
 			}
 			if (selectedFacility?.code === facility.code) {
@@ -1128,7 +1127,6 @@
 			<Filters
 				{searchTerm}
 				{selectedView}
-				{isFullscreen}
 				facilitySelected={!!selectedFacility}
 				darkMap={mapTheme !== 'light'}
 				showShortcuts={showShortcutsToast}
@@ -1148,7 +1146,6 @@
 				oncapacityrangechange={handleCapacityRangeChange}
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
-				onfullscreenchange={() => {}}
 				ondownloadcsv={handleDownloadCsv}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onshortcutinvoked={() => (showShortcutsToast = false)}
@@ -1162,7 +1159,7 @@
 	{/snippet}
 
 	{#snippet content()}
-		<FullscreenContainer {isFullscreen} class="[view-transition-name:page-body]">
+		<FullscreenContainer class="[view-transition-name:page-body]">
 			<div
 				bind:clientHeight={containerHeight}
 				class="flex-1 flex flex-col md:flex-row min-h-0 relative"
@@ -1608,7 +1605,7 @@
 			{#snippet footer()}
 				<!-- Desktop only — the mobile map is full-bleed to the bottom edge. -->
 				<div class="hidden md:block">
-					<FullscreenFooter {isFullscreen} />
+					<FullscreenFooter />
 				</div>
 			{/snippet}
 		</FullscreenContainer>
@@ -1619,7 +1616,6 @@
 	visible={showShortcutsToast}
 	ondismiss={() => (showShortcutsToast = false)}
 	shortcuts={[
-		{ label: 'Browser full screen', keys: ['Shift', 'F'] },
 		{ label: 'Search', keys: ['/'] },
 		{ label: 'Previous / next facility', keys: ['↑', '↓'] },
 		{ label: 'Toggle navigation menu', keys: ['G'] },
