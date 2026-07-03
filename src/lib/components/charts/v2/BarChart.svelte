@@ -12,6 +12,7 @@
 	import { scaleBand, scaleLinear } from 'd3-scale';
 	import { stack as d3Stack, stackOffsetDiverging } from 'd3-shape';
 	import { AxisY, GroupedBar, StackedBar, AxisXRotated } from './elements';
+	import { formatMonthYear } from './date-labels.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -28,11 +29,18 @@
 	let isStacked = $derived(chart.chartOptions.isChartTypeBarStacked);
 	let isCategoryChart = $derived(chart.isCategoryChart);
 
-	/** Formatter for time-series x-axis labels */
-	const dateFormatter = new Intl.DateTimeFormat('en-AU', {
-		month: 'short',
-		year: 'numeric'
-	});
+	/**
+	 * Time-series x-axis band label: the store's tooltip formatter renders the
+	 * interval-appropriate standalone label; month/year is the fallback for
+	 * stores that never set one.
+	 * @param {any} d
+	 * @returns {string}
+	 */
+	function bandLabel(d) {
+		if (!d.date) return String(d.time);
+		const date = new Date(d.date);
+		return chart.formatTooltipX?.(date, chart.timeZone) || formatMonthYear(date, chart.timeZone);
+	}
 
 	/**
 	 * Augment time-series rows with `_xLabel` for scaleBand domain.
@@ -42,10 +50,7 @@
 		const data = chart.seriesScaledData;
 		if (isCategoryChart) return data;
 
-		return data.map((/** @type {any} */ d) => ({
-			...d,
-			_xLabel: d.date ? dateFormatter.format(new Date(d.date)) : String(d.time)
-		}));
+		return data.map((/** @type {any} */ d) => ({ ...d, _xLabel: bandLabel(d) }));
 	});
 
 	/** Band domain labels for the x-axis */

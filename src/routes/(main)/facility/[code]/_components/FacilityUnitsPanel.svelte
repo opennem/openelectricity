@@ -14,6 +14,7 @@
 		computeUnitAvailability
 	} from '$lib/components/charts/facility/metrics/metrics-calc.js';
 	import UnitDetail from './UnitDetail.svelte';
+	import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
 
 	/**
 	 * `intervalData` is the generation chart's visible-range power data
@@ -60,7 +61,7 @@
 	});
 	let showAvailability = $derived(availabilityByUnit !== null);
 
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 
 	// The date range the availability bars cover — the chart's visible range
 	// (first to last interval row), formatted like the page's own range label.

@@ -138,3 +138,52 @@ describe('ChartStore step-mode domain derivations', () => {
 		expect(chart.renderXDomain).toEqual([500, 2000]);
 	});
 });
+
+describe('ChartStore hover/focus lookups', () => {
+	const rows = Array.from({ length: 50 }, (_, i) => ({
+		time: i * 1000,
+		date: new Date(i * 1000),
+		a: i,
+		b: i * 2
+	}));
+
+	function createChart() {
+		const chart = new ChartStore({ key: Symbol('test') });
+		chart.seriesNames = ['a', 'b'];
+		chart.seriesData = rows;
+		return chart;
+	}
+
+	it('resolves hoverData for an exact timestamp', () => {
+		const chart = createChart();
+		chart.setHover(7000);
+		expect(chart.hoverData?.a).toBe(7);
+		expect(chart.hoverScaledData?.a).toBe(7);
+	});
+
+	it('returns undefined for a time between points (matching .find semantics)', () => {
+		const chart = createChart();
+		chart.setHover(7500);
+		expect(chart.hoverData).toBeUndefined();
+		expect(chart.hoverScaledData).toBeUndefined();
+	});
+
+	it('returns undefined when hover is cleared', () => {
+		const chart = createChart();
+		chart.setHover(7000);
+		chart.clearHover();
+		expect(chart.hoverData).toBeUndefined();
+	});
+
+	it('resolves focusData for an exact timestamp', () => {
+		const chart = createChart();
+		chart.setFocus(49000);
+		expect(chart.focusData?.b).toBe(98);
+	});
+
+	it('returns undefined for times outside the data range', () => {
+		const chart = createChart();
+		chart.setHover(999999);
+		expect(chart.hoverData).toBeUndefined();
+	});
+});

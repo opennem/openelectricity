@@ -13,9 +13,11 @@
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { analyzeUnits } from './unit-analysis.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
 	import { combinedMetricsFor, buildCombinedMetricsUrl } from './energy-basis.js';
 	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
+	import { ianaFromOffset } from '../v2/network-time.js';
 
 	/**
 	 * Get color for a fuel tech code
@@ -112,7 +114,7 @@
 	 * Map offset to IANA timezone for Intl.DateTimeFormat (which doesn't support offsets)
 	 * Uses DST-free zones: Brisbane (AEST +10), Perth (AWST +8)
 	 */
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 
 	// ============================================
 	// Derived: Unit Analysis
@@ -205,14 +207,52 @@
 	/** @type {ChartDataManager | null} */
 	let dataManager = $state(null);
 
-	/** @type {Map<string, ChartDataManager>} Background prefetched managers */
+	/**
+	 * Stashed managers keyed `${interval}-${metric}` — background prefetches plus
+	 * previously-active managers kept warm so switching back to a range renders
+	 * instantly from cache. Insertion order doubles as LRU order; entries leave
+	 * the map while live (re-stashed on the next swap).
+	 * @type {Map<string, ChartDataManager>}
+	 */
 	let prefetchCache = new Map();
+
+	/** Max stashed managers — beyond this the oldest is evicted and retired. */
+	const PREFETCH_CACHE_MAX = 4;
+
+	/**
+	 * Stash the outgoing manager for instant back-switch, or retire it when it
+	 * belongs to another facility.
+	 * @param {ChartDataManager | null | undefined} manager
+	 * @param {string} currentCode
+	 */
+	function stashOrDispose(manager, currentCode) {
+		if (!manager) return;
+		if (manager.facilityCode !== currentCode) {
+			manager.dispose();
+			return;
+		}
+		const key = `${manager.interval}-${manager.metric}`;
+		prefetchCache.delete(key);
+		prefetchCache.set(key, manager);
+		while (prefetchCache.size > PREFETCH_CACHE_MAX) {
+			const oldestKey = /** @type {string} */ (prefetchCache.keys().next().value);
+			prefetchCache.get(oldestKey)?.dispose();
+			prefetchCache.delete(oldestKey);
+		}
+	}
+
+	/** Retire and drop every stashed manager. */
+	function clearPrefetchCache() {
+		for (const manager of prefetchCache.values()) manager.dispose();
+		prefetchCache.clear();
+	}
 
 	// Initialize/reinitialize data manager when facility or interval/metric changes
 	$effect(() => {
 		if (!facility) {
+			untrack(() => dataManager)?.dispose();
 			dataManager = null;
-			prefetchCache.clear();
+			clearPrefetchCache();
 			return;
 		}
 
@@ -224,7 +264,7 @@
 		// Clear prefetch cache if facility changed
 		const existingCode = untrack(() => dataManager?.facilityCode);
 		if (existingCode && existingCode !== currentCode) {
-			prefetchCache.clear();
+			clearPrefetchCache();
 		}
 
 		// Skip recreation if existing manager already matches
@@ -243,6 +283,7 @@
 		const prefetched = prefetchCache.get(prefetchKey);
 		if (prefetched && prefetched.facilityCode === currentCode) {
 			prefetchCache.delete(prefetchKey);
+			stashOrDispose(existing, currentCode);
 			dataManager = prefetched;
 
 			// Still need to request the viewport range (may already be cached)
@@ -306,6 +347,8 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Keep the outgoing manager's cache warm for an instant back-switch.
+		stashOrDispose(existing, currentCode);
 		dataManager = manager;
 	});
 
@@ -594,16 +637,7 @@
 		};
 	});
 
-	/**
-	 * Show loading overlay when the chart has no visible data and data is being fetched.
-	 */
-	let showLoadingOverlay = $derived.by(() => {
-		if (!dataManager || !chartStore) return false;
-		if (chartStore.seriesData.length > 0) return false;
-
-		// No data yet — show overlay if still loading or haven't loaded
-		return !dataManager.initialLoadComplete || dataManager.isLoading || dataManager.hasPendingFetch;
-	});
+	let showLoadingOverlay = $derived(computeShowLoadingOverlay(dataManager, chartStore));
 
 	// ============================================
 	// Pan Handlers
@@ -862,7 +896,7 @@
 
 		{#if showLoadingOverlay}
 			<!-- Loading overlay — previous chart stays visible underneath -->
-			<div class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
+			<div class="absolute inset-0 flex items-center justify-center rounded-lg bg-white/60">
 				<div class="flex items-center gap-3 text-mid-warm-grey">
 					<svg
 						class="animate-spin h-5 w-5"

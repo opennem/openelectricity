@@ -1,4 +1,5 @@
 import { bucketSpanHours } from '$lib/components/charts/v2/bucket-boundaries.js';
+import { offsetHoursFromIana } from '$lib/components/charts/v2/network-time.js';
 
 /** Average-length estimates (hours) for calendar intervals lacking a timestamp. */
 const FALLBACK_HOURS = {
@@ -30,7 +31,7 @@ const FALLBACK_HOURS = {
  * @returns {number}
  */
 export function getIntervalHours(displayInterval, timestampMs, ianaTimeZone) {
-	const offsetHours = ianaTimeZone === 'Australia/Perth' ? 8 : 10;
+	const offsetHours = offsetHoursFromIana(ianaTimeZone);
 
 	switch (displayInterval) {
 		case '5m':

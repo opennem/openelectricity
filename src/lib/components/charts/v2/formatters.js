@@ -6,121 +6,34 @@
  */
 
 import { computeEnergyGridlines } from './energy-gridlines.js';
+import { formatDayMonth } from './date-labels.js';
+import { getTimeFormatPolicy } from './time-format-policy.js';
+import { offsetHoursFromOffset, offsetMsFromOffset } from './network-time.js';
 
-/**
- * Coarse calendar buckets that don't align to the Jan/month gridlines the axis
- * inference assumes, and so need an explicit bucket labeller.
- */
-const COARSE_BUCKET_INTERVALS = new Set(['quarter', 'season', 'half', 'fy']);
-
-/**
- * Format a date for X-axis tick labels (day starts only).
- *
- * @param {Date | any} d
- * @param {string} ianaTimeZone - e.g. 'Australia/Brisbane'
- * @returns {string}
- */
-export function formatXAxis(d, ianaTimeZone) {
-	const date = d instanceof Date ? d : typeof d === 'number' ? new Date(d) : null;
-	if (!date) return String(d);
-
-	return new Intl.DateTimeFormat('en-AU', {
-		day: 'numeric',
-		month: 'short',
-		timeZone: ianaTimeZone
-	}).format(date);
-}
-
-/**
- * Network-local year + 0-based month for a UTC date.
- * @param {Date} date
- * @param {string} ianaTimeZone
- * @returns {{ year: number, month0: number }}
- */
-function localYearMonth(date, ianaTimeZone) {
-	const parts = new Intl.DateTimeFormat('en-AU', {
-		year: 'numeric',
-		month: '2-digit',
-		timeZone: ianaTimeZone
-	}).formatToParts(date);
-	const year = parseInt(parts.find((p) => p.type === 'year')?.value || '2000', 10);
-	const month0 = parseInt(parts.find((p) => p.type === 'month')?.value || '1', 10) - 1;
-	return { year, month0 };
-}
-
-/**
- * Label for a coarse calendar bucket (quarter / season / half-year / financial
- * year), given a timestamp that falls in the bucket. AU conventions: seasons are
- * meteorological, FY runs July–June and is named by its ending year.
- *
- * @param {Date | number} d
- * @param {string} ianaTimeZone
- * @param {'quarter' | 'season' | 'half' | 'fy'} kind
- * @returns {string}
- */
-export function formatBucketLabel(d, ianaTimeZone, kind) {
-	const date = d instanceof Date ? d : new Date(d);
-	if (Number.isNaN(date.getTime())) return '';
-	const { year, month0 } = localYearMonth(date, ianaTimeZone);
-
-	if (kind === 'quarter') return `Q${Math.floor(month0 / 3) + 1} ${year}`;
-	if (kind === 'half') return `${month0 < 6 ? 'H1' : 'H2'} ${year}`;
-	if (kind === 'fy') {
-		// Bucket starts in July of `year`; FY is named by its ending year.
-		const endYear = month0 >= 6 ? year + 1 : year;
-		return `FY${endYear}`;
-	}
-	// season — label by the bucket-start month; summer crosses the year.
-	if (month0 === 11) return `Summer ${year}/${String((year + 1) % 100).padStart(2, '0')}`;
-	if (month0 <= 1) return `Summer ${year - 1}/${String(year % 100).padStart(2, '0')}`;
-	if (month0 <= 4) return `Autumn ${year}`;
-	if (month0 <= 7) return `Winter ${year}`;
-	return `Spring ${year}`;
-}
+// Label primitives live in date-labels.js; re-exported here so existing
+// consumers (v2/index.js, facility components, tests) keep their imports.
+export {
+	formatBucketLabel,
+	formatDateRange,
+	formatDayMonth as formatXAxis
+} from './date-labels.js';
 
 /**
  * Format the hovered point's timestamp for a tooltip header.
  *
  * Unlike the axis tick formatter (which is keyed to gridline midpoints and
  * returns '' for arbitrary points), this always renders a full, readable date
- * for the exact point, adding the time of day for sub-daily (power) intervals
- * and a named label for the coarse calendar buckets.
+ * for the exact point. Thin wrapper over the interval policy in
+ * time-format-policy.js.
  *
  * @param {Date | number} d
  * @param {string} ianaTimeZone - e.g. 'Australia/Brisbane'
- * @param {string} displayInterval - '5m' | '30m' | '1h' | '1d' | '1M' | '3M' | 'quarter' | 'season' | 'half' | 'fy' | '1y'
+ * @param {string} displayInterval - '5m' | '30m' | '1h' | '1d' | '7d' | '1M' | '3M' | 'quarter' | 'season' | 'half' | 'fy' | '1y'
  * @returns {string}
  */
 export function formatTooltipDateTime(d, ianaTimeZone, displayInterval) {
-	const date = d instanceof Date ? d : typeof d === 'number' ? new Date(d) : null;
-	if (!date || Number.isNaN(date.getTime())) return '';
-
-	if (COARSE_BUCKET_INTERVALS.has(displayInterval)) {
-		return formatBucketLabel(date, ianaTimeZone, displayInterval);
-	}
-
-	/** @type {Intl.DateTimeFormatOptions} */
-	let options;
-	if (displayInterval === '1y') {
-		options = { year: 'numeric' };
-	} else if (displayInterval === '1M' || displayInterval === '3M') {
-		options = { month: 'short', year: 'numeric' };
-	} else if (displayInterval === '5m' || displayInterval === '30m' || displayInterval === '1h') {
-		// Sub-daily: include the time of day.
-		options = {
-			day: 'numeric',
-			month: 'short',
-			year: 'numeric',
-			hour: 'numeric',
-			minute: '2-digit',
-			hour12: true
-		};
-	} else {
-		// Daily (1d) and anything else: full date, no time.
-		options = { day: 'numeric', month: 'short', year: 'numeric' };
-	}
-
-	return new Intl.DateTimeFormat('en-AU', { ...options, timeZone: ianaTimeZone }).format(date);
+	if (!(d instanceof Date) && typeof d !== 'number') return '';
+	return getTimeFormatPolicy(displayInterval, ianaTimeZone).formatTooltip(d);
 }
 
 /**
@@ -148,13 +61,16 @@ export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, da
 	// Wide power view (> 2 days): keep day-start ticks.
 	if (!(spanHours > 0) || spanHours > 48) {
 		const dayStarts = getDayStartDates(data, ianaTimeZone, timeZone);
-		return { ticks: dayStarts, formatTick: (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone) };
+		return {
+			ticks: dayStarts,
+			formatTick: (/** @type {any} */ d) => formatDayMonth(d, ianaTimeZone)
+		};
 	}
 
 	// Pick an hour step that yields a readable number of ticks (~4–8).
 	const stepHours = spanHours <= 6 ? 1 : spanHours <= 12 ? 2 : spanHours <= 24 ? 3 : 6;
 	const stepMs = stepHours * HOUR_MS;
-	const offsetMs = timeZone === '+08:00' ? 8 * HOUR_MS : 10 * HOUR_MS;
+	const offsetMs = offsetMsFromOffset(timeZone);
 
 	// Align ticks to local step boundaries.
 	const startLocal = Math.ceil((viewStart + offsetMs) / stepMs) * stepMs;
@@ -190,45 +106,6 @@ export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, da
 }
 
 /**
- * Format a date range for x-axis labels in step/energy mode.
- *
- * Same month:      "21 — 27 Jan"
- * Different month:  "28 Jan — 3 Feb"
- * Different year:   "28 Dec '25 — 3 Jan '26"
- *
- * @param {Date} start
- * @param {Date} end
- * @param {string} ianaTimeZone
- * @returns {string}
- */
-export function formatDateRange(start, end, ianaTimeZone) {
-	const partsFmt = new Intl.DateTimeFormat('en-AU', {
-		day: 'numeric',
-		month: 'short',
-		year: '2-digit',
-		timeZone: ianaTimeZone
-	});
-
-	const sParts = partsFmt.formatToParts(start);
-	const eParts = partsFmt.formatToParts(end);
-
-	const sDay = sParts.find((p) => p.type === 'day')?.value;
-	const eDay = eParts.find((p) => p.type === 'day')?.value;
-	const sMonth = sParts.find((p) => p.type === 'month')?.value;
-	const eMonth = eParts.find((p) => p.type === 'month')?.value;
-	const sYear = sParts.find((p) => p.type === 'year')?.value;
-	const eYear = eParts.find((p) => p.type === 'year')?.value;
-
-	if (sYear !== eYear) {
-		return `${sDay} ${sMonth} '${sYear} \u2014 ${eDay} ${eMonth} '${eYear}`;
-	}
-	if (sMonth !== eMonth) {
-		return `${sDay} ${sMonth} \u2014 ${eDay} ${eMonth}`;
-	}
-	return `${sDay} \u2014 ${eDay} ${eMonth}`;
-}
-
-/**
  * Apply the standard facility x-axis + tooltip formatting to a chart store.
  *
  * Sets the axis ticks/gridlines and `formatTickX` (energy gridlines, or
@@ -244,28 +121,20 @@ export function formatDateRange(start, end, ianaTimeZone) {
  * @param {string} opts.ianaTimeZone - e.g. 'Australia/Brisbane'
  * @param {string} opts.timeZone - offset string, e.g. '+10:00'
  * @param {boolean} opts.isEnergy - Whether the chart is in energy (stepped) mode
- * @param {string} opts.displayInterval - '5m' | '30m' | '1d' | '1M' | '3M' | '1y'
+ * @param {string} opts.displayInterval - '5m' | '30m' | '1h' | '1d' | '7d' | '1M' | '3M' | 'quarter' | 'season' | 'half' | 'fy' | '1y'
  */
 export function applyFacilityTimeAxis(
 	store,
 	{ data, viewStart, viewEnd, ianaTimeZone, timeZone, isEnergy, displayInterval }
 ) {
-	store.formatTooltipX = (/** @type {any} */ d) =>
-		formatTooltipDateTime(d, ianaTimeZone, displayInterval);
+	const policy = getTimeFormatPolicy(displayInterval, ianaTimeZone);
+	store.formatTooltipX = (/** @type {any} */ d) => policy.formatTooltip(d);
 
 	if (isEnergy && data.length > 1) {
-		// Coarse calendar buckets (season/quarter/half/fy) don't align to the
-		// Jan/month gridlines the inference assumes — drive them by an explicit
-		// bucket labeller instead.
-		const coarseLabel = COARSE_BUCKET_INTERVALS.has(displayInterval)
-			? (/** @type {any} */ d) =>
-					formatBucketLabel(
-						d,
-						ianaTimeZone,
-						/** @type {'quarter' | 'season' | 'half' | 'fy'} */ (displayInterval)
-					)
-			: null;
-		const g = computeEnergyGridlines(data, viewStart, viewEnd, ianaTimeZone, coarseLabel);
+		// Coarse calendar buckets (season/quarter/half/fy/1y) don't align to the
+		// Jan/month gridlines the inference assumes — the policy supplies an
+		// explicit bucket labeller for them.
+		const g = computeEnergyGridlines(data, viewStart, viewEnd, ianaTimeZone, policy.bucketTick);
 		store.xGridlineTicks = g.gridlineTicks;
 		store.xTicks = g.ticks;
 		store.formatTickX = g.formatTick;
@@ -298,7 +167,7 @@ export function getStartOfDay(date, ianaTimeZone, timeZone) {
 	const month = parseInt(parts.find((p) => p.type === 'month')?.value || '0') - 1;
 	const day = parseInt(parts.find((p) => p.type === 'day')?.value || '0');
 
-	const offsetHours = timeZone === '+08:00' ? 8 : 10;
+	const offsetHours = offsetHoursFromOffset(timeZone);
 	return new Date(Date.UTC(year, month, day, -offsetHours, 0, 0, 0));
 }
 

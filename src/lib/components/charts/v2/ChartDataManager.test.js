@@ -898,6 +898,109 @@ describe('ChartDataManager', () => {
 	});
 
 	// ------------------------------------------
+	// dispose() / stale-fetch guard
+	// ------------------------------------------
+
+	describe('dispose / stale-fetch guard', () => {
+		/** A fetch spy that stays pending until the returned resolver is called. */
+		function deferredFetchSpy() {
+			/** @type {(v: any) => void} */
+			let resolveFetch = () => {};
+			const ready = new Promise((r) => (resolveFetch = r));
+			const spy = vi.fn().mockImplementation(async () => {
+				await ready;
+				return {
+					ok: true,
+					json: async () => ({
+						response: buildPowerResponse({
+							networkId: 'NEM',
+							unitCodes: ['UNIT1'],
+							startISO: '2026-02-08T00:00:00+10:00',
+							pointCount: 12
+						})
+					})
+				};
+			});
+			return { spy, resolveFetch };
+		}
+
+		it('drops an in-flight fetch result instead of merging it', async () => {
+			const { spy, resolveFetch } = deferredFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - 3600_000, now, { immediate: true });
+			expect(spy).toHaveBeenCalledTimes(1);
+
+			manager.dispose();
+			expect(manager.isLoading).toBe(false);
+			expect(manager.hasPendingFetch).toBe(false);
+
+			resolveFetch(undefined);
+			await vi.advanceTimersByTimeAsync(200);
+
+			// Nothing merged into the retired manager, no loading state revived.
+			expect(manager.processedCache).toBeNull();
+			expect(manager.isLoading).toBe(false);
+		});
+
+		it('cancels a pending debounced fetch', async () => {
+			const fetchSpy = vi.fn();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - 3600_000, now); // debounced (150ms)
+			manager.dispose();
+			await vi.advanceTimersByTimeAsync(300);
+
+			expect(fetchSpy).not.toHaveBeenCalled();
+		});
+
+		it('serves new requests normally after dispose (stash revival)', async () => {
+			const fetchSpy = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: buildPowerResponse({
+						networkId: 'NEM',
+						unitCodes: ['UNIT1'],
+						startISO: '2026-02-08T00:00:00+10:00',
+						pointCount: 12
+					})
+				})
+			});
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager();
+			manager.dispose();
+
+			const now = Date.now();
+			manager.requestRange(now - 3600_000, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+			expect(manager.processedCache).not.toBeNull();
+		});
+
+		it('clearCache during an in-flight fetch drops the stale merge', async () => {
+			const { spy, resolveFetch } = deferredFetchSpy();
+			vi.stubGlobal('fetch', spy);
+
+			const manager = createManager();
+			const now = Date.now();
+			manager.requestRange(now - 3600_000, now, { immediate: true });
+
+			manager.clearCache();
+			resolveFetch(undefined);
+			await vi.advanceTimersByTimeAsync(200);
+
+			// The reset cache must not be repopulated by the stale response.
+			expect(manager.processedCache).toBeNull();
+		});
+	});
+
+	// ------------------------------------------
 	// Zoom viewport math
 	// ------------------------------------------
 

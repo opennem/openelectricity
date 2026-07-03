@@ -124,10 +124,11 @@ where power auto-derives to 5m, a manual 30m pick is preserved the same way.
 ### What happens on switch
 
 1. Page updates `activeMetric` and `activeInterval`
-2. FacilityChart's `$effect` detects the change and creates a **new ChartDataManager** with the new interval/metric
-3. The viewport (`viewStart`/`viewEnd`) is preserved
-4. New data is fetched with a buffer (3x for energy, 1x for power)
-5. Chart re-renders with the new data
+2. FacilityChart's `$effect` detects the change and swaps managers: it first checks its stash (`prefetchCache`, keyed `${interval}-${metric}`) and revives the previous manager for that grain — so switching back to a range renders instantly from cache — otherwise it creates a **new ChartDataManager**
+3. The outgoing manager is stashed (LRU, max 4 entries; evictions are `dispose()`d) so its cache stays warm for a back-switch; managers from another facility are disposed instead
+4. The viewport (`viewStart`/`viewEnd`) is preserved
+5. New data is fetched with a buffer (3x for energy, 1x for power); while it loads, the previous chart stays visible under the loading veil (`chart-loading-state.js`) and the page pulses the active range control (`ChartRangeBar`'s `pending` prop)
+6. Chart re-renders with the new data
 
 ### Display interval vs API interval
 
@@ -158,10 +159,11 @@ Reactive Svelte 5 class that manages a processed data cache independently from t
 
 - **`seedCache(powerResponse)`** — Populate cache from server-side data (no fetch)
 - **`requestRange(start, end)`** — Debounced fetch for uncached time ranges
-- **`getDataForRange(startMs, endMs)`** — Slice cache by viewport bounds
-- **`clearCache()`** — Reset all state
+- **`getDataForRange(startMs, endMs)`** — Slice cache by viewport bounds (binary search)
+- **`dispose()`** — Retire the manager: cancel the pending debounce and make in-flight fetches no-ops on resolve. The cache is left intact so a stashed manager can be revived
+- **`clearCache()`** — Dispose and reset all cached state
 
-Internally calls `processFacilityPower()` and merges results by timestamp (dedup on overlap). The newest (right) boundary keeps an interval-scaled overlap (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y) to refresh the latest bucket; the older (left) boundary fetches contiguously up to the cache start. Concurrent identical fetches across managers (e.g. the generation chart and the price/emissions providers' combined URL) collapse to one network request via an in-flight dedup.
+Internally calls `processFacilityPower()` and merges results with an O(n+m) sorted merge (new rows win on equal timestamps). The newest (right) boundary keeps an interval-scaled overlap (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y) to refresh the latest bucket; the older (left) boundary fetches contiguously up to the cache start. Concurrent identical fetches across managers (e.g. the generation chart and the price/emissions providers' combined URL) collapse to one network request via an in-flight dedup.
 
 ### Cache structure
 
@@ -183,7 +185,8 @@ requestRange(start, end)
     → for each batch (sequential):
         → skip if #inFlightKeys has this range
         → #fetchFromApi() — call /api/facilities/[code]/power
-        → #mergeProcessedData() — dedup by timestamp, new data wins, re-sort
+        → drop the result if dispose()/clearCache() retired this generation mid-flight
+        → #mergeProcessedData() — sorted two-pointer merge, new data wins on equal timestamps
         → #updateCacheRange()
 ```
 

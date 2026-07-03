@@ -22,6 +22,7 @@
 	 * @property {string | null} [maxDate] - Latest selectable date
 	 * @property {string | null} [earliestDate] - Earliest data date (for "All" range)
 	 * @property {boolean} [showIntervalDropdown] - When false, the interval renders as a static badge instead of a Select dropdown. Default `true`.
+	 * @property {boolean} [pending] - While true, the active range control pulses to show the switched range is still loading. The bar stays interactive.
 	 * @property {(days: number) => void} [onrangeselect]
 	 * @property {(range: {start: string, end: string}) => void} [ondaterangechange]
 	 * @property {(interval: string) => void} [onintervalchange]
@@ -38,6 +39,7 @@
 		maxDate = null,
 		earliestDate = null,
 		showIntervalDropdown = true,
+		pending = false,
 		onrangeselect,
 		ondaterangechange,
 		onintervalchange
@@ -89,7 +91,10 @@
 				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedRange ===
 				preset.days
 					? 'bg-white text-dark-grey shadow-sm'
-					: 'text-mid-grey hover:text-dark-grey'}"
+					: 'text-mid-grey hover:text-dark-grey'} {pending && selectedRange === preset.days
+					? 'animate-pulse'
+					: ''}"
+				aria-busy={pending && selectedRange === preset.days}
 				onclick={() => handlePresetClick(preset.days)}
 			>
 				{preset.label}
@@ -175,7 +180,10 @@
 		items={rangePresets.map((p) => ({ value: String(p.days), label: p.label }))}
 	>
 		<Select.Trigger
-			class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
+			class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey hover:bg-light-warm-grey transition-colors cursor-pointer {pending
+				? 'animate-pulse'
+				: ''}"
+			aria-busy={pending}
 		>
 			{currentRangeLabel}
 			<ChevronDown size={12} />

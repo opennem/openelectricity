@@ -7,6 +7,9 @@
  */
 
 import { processFacilityPower } from '$lib/components/charts/facility/process-facility-power.js';
+import { getNetworkTimezone } from '$lib/components/charts/facility/helpers.js';
+import { bisectTime, bisectTimeRight, mergeSortedByTime } from './binary-search.js';
+import { offsetMsFromOffset } from './network-time.js';
 
 /** No facility data exists before this date; every fetch window is clamped to it. */
 const EARLIEST_DATA_MS = new Date('1998-12-01T00:00:00Z').getTime();
@@ -121,6 +124,10 @@ export default class ChartDataManager {
 	// Ranges that returned no data — prevents re-fetching the same empty ranges
 	/** @type {LoadingRange[]} */ #emptyRanges = [];
 
+	// Bumped by dispose()/clearCache(); in-flight fetches capture the value at
+	// entry and drop their results if it has moved on.
+	#generation = 0;
+
 	/**
 	 * @param {ChartDataManagerConfig} config
 	 */
@@ -158,15 +165,20 @@ export default class ChartDataManager {
 	}
 
 	/**
-	 * Reactive getter — returns the full processed cache.
+	 * Full processed cache with a stable identity — derived so dependants only
+	 * re-run when the cache or meta actually change, not on every access.
 	 * Components should use getDataForRange() to slice by viewport.
 	 */
-	get processedCache() {
+	#processedCache = $derived.by(() => {
 		if (!this.#seriesMeta || !this.#dataCache.length) return null;
 		return {
 			data: this.#dataCache,
 			...this.#seriesMeta
 		};
+	});
+
+	get processedCache() {
+		return this.#processedCache;
 	}
 
 	/**
@@ -181,7 +193,7 @@ export default class ChartDataManager {
 			return this.processResponseFn(powerResponse);
 		}
 
-		const networkTimezone = this.networkId === 'WEM' ? '+08:00' : '+10:00';
+		const networkTimezone = getNetworkTimezone(this.networkId);
 
 		return processFacilityPower(powerResponse, {
 			unitFuelTechMap: this.unitFuelTechMap,
@@ -221,12 +233,6 @@ export default class ChartDataManager {
 
 		this.#updateCacheRange();
 		this.initialLoadComplete = true;
-		console.log('ChartDataManager seedCache:', {
-			facilityCode: this.facilityCode,
-			rows: this.#dataCache.length,
-			cacheStart: this.#cacheStart ? new Date(this.#cacheStart).toISOString() : null,
-			cacheEnd: this.#cacheEnd ? new Date(this.#cacheEnd).toISOString() : null
-		});
 	}
 
 	/**
@@ -333,6 +339,7 @@ export default class ChartDataManager {
 	}
 
 	async #executeFetch() {
+		const gen = this.#generation;
 		const pending = this.#pendingFetch;
 		if (!pending) return;
 		this.#pendingFetch = null;
@@ -375,6 +382,9 @@ export default class ChartDataManager {
 
 			try {
 				const data = await this.#fetchFromApi(batch.start, batch.end);
+				// dispose()/clearCache() while awaiting retired this generation —
+				// drop the result instead of merging into dead/reset state.
+				if (gen !== this.#generation) return;
 				if (data) {
 					const prevCacheSize = this.#dataCache.length;
 					this.#mergeProcessedData(data);
@@ -391,13 +401,17 @@ export default class ChartDataManager {
 				console.error('ChartDataManager fetch error:', err);
 			} finally {
 				this.#inFlightKeys.delete(key);
-				this.loadingRanges = this.loadingRanges.filter(
-					(r) => r.start !== batch.start || r.end !== batch.end
-				);
-				this.initialLoadComplete = true;
-				this.hasPendingFetch = this.#pendingFetch !== null || this.loadingRanges.length > 0;
+				if (gen === this.#generation) {
+					this.loadingRanges = this.loadingRanges.filter(
+						(r) => r.start !== batch.start || r.end !== batch.end
+					);
+					this.initialLoadComplete = true;
+					this.hasPendingFetch = this.#pendingFetch !== null || this.loadingRanges.length > 0;
+				}
 			}
 		}
+
+		if (gen !== this.#generation) return;
 
 		// The requested window started before the earliest data point (the 1998
 		// clamp on an over-buffered "All" range) — that pre-data span is empty.
@@ -525,7 +539,7 @@ export default class ChartDataManager {
 
 		// The API expects timezone-naive dates in the network's local time.
 		// Convert UTC ms → local time by adding the network's UTC offset.
-		const offsetMs = this.networkId === 'WEM' ? 8 * 3600_000 : 10 * 3600_000;
+		const offsetMs = offsetMsFromOffset(getNetworkTimezone(this.networkId));
 		let dateStart = new Date(clampedStart + offsetMs).toISOString().slice(0, 19);
 		let dateEnd = new Date(clampedEnd + offsetMs).toISOString().slice(0, 19);
 
@@ -565,14 +579,7 @@ export default class ChartDataManager {
 			? this.buildFetchUrl(params)
 			: `/api/facilities/${this.facilityCode}/power?${params.toString()}`;
 
-		const response = await sharedFetch(fetchUrl);
-		console.log('ChartDataManager fetch:', {
-			facilityCode: this.facilityCode,
-			dateStart,
-			dateEnd,
-			response
-		});
-		return response;
+		return sharedFetch(fetchUrl);
 	}
 
 	/**
@@ -586,17 +593,23 @@ export default class ChartDataManager {
 		const result = this.#processResponse(powerResponse);
 		if (!result || !result.data.length) return;
 
-		// Build a map of existing rows by timestamp for fast dedup
-		const rowMap = new Map(this.#dataCache.map((row) => [row.time, row]));
+		const oldRows = this.#dataCache;
+		const newRows = result.data;
 
-		// Add new rows (new timestamps win in case of overlap)
-		for (const row of result.data) {
-			rowMap.set(row.time, row);
+		// Both sides are sorted by time (every response processor sorts), so
+		// merge in O(n + m): pure append/prepend concat for the common pan and
+		// right-edge-refresh cases, two-pointer merge for overlaps — new rows
+		// win on equal timestamps so a re-fetched trailing bucket replaces the
+		// cached (possibly still-growing) row.
+		if (!oldRows.length) {
+			this.#dataCache = newRows;
+		} else if (newRows[0].time > oldRows[oldRows.length - 1].time) {
+			this.#dataCache = oldRows.concat(newRows);
+		} else if (newRows[newRows.length - 1].time < oldRows[0].time) {
+			this.#dataCache = newRows.concat(oldRows);
+		} else {
+			this.#dataCache = mergeSortedByTime(oldRows, newRows);
 		}
-
-		// Sort by time
-		const prevCount = this.#dataCache.length;
-		this.#dataCache = [...rowMap.values()].sort((a, b) => a.time - b.time);
 
 		// Update series meta if not set (shouldn't change between fetches)
 		if (!this.#seriesMeta) {
@@ -608,14 +621,6 @@ export default class ChartDataManager {
 		}
 
 		this.#updateCacheRange();
-		console.log('ChartDataManager merge:', {
-			facilityCode: this.facilityCode,
-			newRows: result.data.length,
-			prevTotal: prevCount,
-			total: this.#dataCache.length,
-			cacheStart: this.#cacheStart ? new Date(this.#cacheStart).toISOString() : null,
-			cacheEnd: this.#cacheEnd ? new Date(this.#cacheEnd).toISOString() : null
-		});
 	}
 
 	/**
@@ -626,26 +631,42 @@ export default class ChartDataManager {
 	 * @returns {any[]}
 	 */
 	getDataForRange(startMs, endMs) {
-		if (!this.#dataCache.length) return [];
+		const cache = this.#dataCache;
+		if (!cache.length) return [];
 
-		return this.#dataCache.filter((/** @type {any} */ d) => {
-			return d.time >= startMs && d.time <= endMs;
-		});
+		// Cache is sorted and deduped by time — slice [startMs, endMs] inclusive.
+		return cache.slice(bisectTime(cache, startMs), bisectTimeRight(cache, endMs));
 	}
 
 	/**
-	 * Clear all cached data
+	 * Clear all cached data (and, via dispose, cancel pending/in-flight work).
 	 */
 	clearCache() {
+		this.dispose();
 		this.#dataCache = [];
 		this.#seriesMeta = null;
 		this.#cacheStart = null;
 		this.#cacheEnd = null;
 		this.#emptyRanges = [];
-		this.loadingRanges = [];
 		this.initialLoadComplete = false;
-		this.hasPendingFetch = false;
+	}
+
+	/**
+	 * Retire this manager: cancel the pending debounce and make any in-flight
+	 * fetch a no-op when it settles. The processed cache is left intact, so a
+	 * stashed manager can be revived later — new requestRange() calls work
+	 * normally after dispose.
+	 *
+	 * Note: the underlying network request is deliberately NOT aborted —
+	 * `sharedFetch` responses are shared across managers by URL, so another
+	 * (live) manager may still be waiting on the same request.
+	 */
+	dispose() {
+		this.#generation++;
 		if (this.#fetchTimer) clearTimeout(this.#fetchTimer);
+		this.#fetchTimer = null;
 		this.#pendingFetch = null;
+		this.loadingRanges = [];
+		this.hasPendingFetch = false;
 	}
 }

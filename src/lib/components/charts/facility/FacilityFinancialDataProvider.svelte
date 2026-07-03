@@ -31,6 +31,8 @@
 		createBasisColour
 	} from './energy-basis.js';
 	import { LINE_COLOUR } from './colours.js';
+	import { ianaFromOffset } from '../v2/network-time.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '../v2/chart-loading-state.js';
 	import {
 		createPriceYScale,
 		formatPriceTick,
@@ -106,7 +108,7 @@
 		if (mvChartStore) mvChartStore.chartTooltips.showDate = showTooltipDate;
 	});
 
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let isEnergyInterval = $derived(interval !== '5m');
 
 	// Price = market_value / energy. For energy intervals the API serves `energy`
@@ -164,6 +166,7 @@
 
 	$effect(() => {
 		if (!active || !facility) {
+			untrack(() => mvDataManager)?.dispose();
 			mvDataManager = null;
 			return;
 		}
@@ -215,11 +218,14 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Retire the replaced manager so its in-flight fetches become no-ops.
+		existing?.dispose();
 		mvDataManager = manager;
 	});
 
 	$effect(() => {
 		if (!active || !facility) {
+			untrack(() => basisDataManager)?.dispose();
 			basisDataManager = null;
 			return;
 		}
@@ -271,6 +277,8 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Retire the replaced manager so its in-flight fetches become no-ops.
+		existing?.dispose();
 		basisDataManager = manager;
 	});
 
@@ -315,6 +323,15 @@
 		);
 	}
 
+	// Visible, display-aggregated rows — computed once per (cache, viewport,
+	// interval) change and shared by priceData, the summary callback, and the
+	// market-value chart effect. Energy basis sums native MWh; the power basis
+	// averages MW (× hours downstream).
+	let mvVisibleRows = $derived(getVisibleData(mvDataManager, 'sum'));
+	let basisVisibleRows = $derived(
+		getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean')
+	);
+
 	// ============================================
 	// Derived Price Data — price = total_market_value / (total_power × interval_hours)
 	// ============================================
@@ -322,19 +339,16 @@
 	let priceData = $derived.by(() => {
 		if (!mvDataManager?.processedCache || !basisDataManager?.processedCache) return [];
 
-		const mvRows = getVisibleData(mvDataManager, 'sum');
-		// Energy basis sums native MWh; the power basis averages MW (× hours).
-		const basisRows = getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean');
 		const mvSeriesNames = mvDataManager.seriesMeta?.seriesNames ?? [];
 		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
 
-		const energyMap = buildEnergyMap(basisRows, basisSeriesNames, {
+		const energyMap = buildEnergyMap(basisVisibleRows, basisSeriesNames, {
 			isEnergyInterval,
 			displayInterval,
 			ianaTimeZone
 		});
 
-		return mvRows.map((row) => {
+		return mvVisibleRows.map((row) => {
 			const mvTotal = sumSeries(row, mvSeriesNames);
 			const energy = energyMap.get(row.time) ?? 0;
 			return {
@@ -349,30 +363,40 @@
 	// Summary data callback
 	// ============================================
 
+	// Debounced: the summary feeds the metrics section, where a ~0.3s settle is
+	// invisible — without it this recomputes on every pan/zoom tick. The timer
+	// callback only reads the plain values captured here.
 	$effect(() => {
 		if (!onsummarydata) return;
 		if (!mvDataManager?.processedCache || !basisDataManager?.processedCache || !mvChartStore)
 			return;
 
-		const mvRows = getVisibleData(mvDataManager, 'sum');
-		const basisRows = getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean');
+		const mvRows = mvVisibleRows;
+		const basisRows = basisVisibleRows;
+		const mvSeriesNames = mvDataManager.seriesMeta?.seriesNames ?? [];
 		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
+		const chartStore = mvChartStore;
+		const energyOpts = { isEnergyInterval, displayInterval, ianaTimeZone };
 
-		// Energy intervals already carry `energy_<unit>` (MWh); power grains
-		// convert MW → MWh via the interval length.
-		const { rows: energyRows, seriesNames: energySeriesNames } = toEnergySeriesRows(
-			basisRows,
-			basisSeriesNames,
-			{ isEnergyInterval, displayInterval, ianaTimeZone }
-		);
+		const timer = setTimeout(() => {
+			// Energy intervals already carry `energy_<unit>` (MWh); power grains
+			// convert MW → MWh via the interval length.
+			const { rows: energyRows, seriesNames: energySeriesNames } = toEnergySeriesRows(
+				basisRows,
+				basisSeriesNames,
+				energyOpts
+			);
 
-		onsummarydata({
-			mvData: mvRows,
-			energyData: energyRows,
-			mvSeriesNames: mvDataManager.seriesMeta?.seriesNames ?? [],
-			energySeriesNames,
-			mvChartStore
-		});
+			onsummarydata({
+				mvData: mvRows,
+				energyData: energyRows,
+				mvSeriesNames,
+				energySeriesNames,
+				mvChartStore: chartStore
+			});
+		}, 300);
+
+		return () => clearTimeout(timer);
 	});
 
 	// ============================================
@@ -475,7 +499,7 @@
 	$effect(() => {
 		if (!mvChartStore || !mvDataManager?.processedCache) return;
 
-		const visibleData = getVisibleData(mvDataManager, 'sum');
+		const visibleData = mvVisibleRows;
 
 		mvChartStore.seriesData = visibleData;
 		mvChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
@@ -563,13 +587,7 @@
 	// Loading overlay state
 	// ============================================
 
-	let showLoadingOverlay = $derived.by(() => {
-		if (!mvDataManager || !mvChartStore) return false;
-		if (mvChartStore.seriesData.length > 0) return false;
-		return (
-			!mvDataManager.initialLoadComplete || mvDataManager.isLoading || mvDataManager.hasPendingFetch
-		);
-	});
+	let showLoadingOverlay = $derived(computeShowLoadingOverlay(mvDataManager, mvChartStore));
 
 	// ============================================
 	// Tooltip formatting

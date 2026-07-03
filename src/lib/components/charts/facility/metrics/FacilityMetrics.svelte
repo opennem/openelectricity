@@ -33,6 +33,7 @@
 	} from './metrics-calc.js';
 	import { METRICS, resolveMetricKeys } from './metric-definitions.js';
 	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
+	import { ianaFromOffset } from '../../v2/network-time.js';
 
 	/**
 	 * `onpeakhighlight` is called with the peak bucket's timestamp (ms) when the
@@ -62,7 +63,7 @@
 		onpeakhighlight
 	} = $props();
 
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 
 	let group = $derived(getPrimaryFuelTechGroup(facility?.units ?? []));
 

@@ -35,6 +35,8 @@
 		createBasisColour
 	} from './energy-basis.js';
 	import { LINE_COLOUR } from './colours.js';
+	import { ianaFromOffset } from '../v2/network-time.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '../v2/chart-loading-state.js';
 
 	/**
 	 * @param {string} ftCode
@@ -82,7 +84,7 @@
 		children
 	} = $props();
 
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let isEnergyInterval = $derived(interval !== '5m');
 
 	// Intensity = emissions / energy. For energy intervals the API serves `energy`
@@ -150,6 +152,7 @@
 
 	$effect(() => {
 		if (!active || !facility) {
+			untrack(() => emissionsDataManager)?.dispose();
 			emissionsDataManager = null;
 			return;
 		}
@@ -201,11 +204,14 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Retire the replaced manager so its in-flight fetches become no-ops.
+		existing?.dispose();
 		emissionsDataManager = manager;
 	});
 
 	$effect(() => {
 		if (!active || !facility) {
+			untrack(() => basisDataManager)?.dispose();
 			basisDataManager = null;
 			return;
 		}
@@ -257,6 +263,8 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Retire the replaced manager so its in-flight fetches become no-ops.
+		existing?.dispose();
 		basisDataManager = manager;
 	});
 
@@ -301,6 +309,15 @@
 		);
 	}
 
+	// Visible, display-aggregated rows — computed once per (cache, viewport,
+	// interval) change and shared by intensityData, the summary callback, and
+	// the volume chart effect. Energy basis sums native MWh; the power basis
+	// averages MW (× hours downstream).
+	let emissionsVisibleRows = $derived(getVisibleData(emissionsDataManager, 'sum'));
+	let basisVisibleRows = $derived(
+		getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean')
+	);
+
 	// ============================================
 	// Derived Intensity Data — intensity = (total_emissions_tonnes × 1000) / total_energy_MWh
 	// (energy is native MWh for energy intervals, power × interval_hours for 5m/30m).
@@ -310,19 +327,16 @@
 	let intensityData = $derived.by(() => {
 		if (!emissionsDataManager?.processedCache || !basisDataManager?.processedCache) return [];
 
-		const emissionsRows = getVisibleData(emissionsDataManager, 'sum');
-		// Energy basis sums native MWh; the power basis averages MW (× hours).
-		const basisRows = getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean');
 		const emissionsSeriesNames = emissionsDataManager.seriesMeta?.seriesNames ?? [];
 		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
 
-		const energyMap = buildEnergyMap(basisRows, basisSeriesNames, {
+		const energyMap = buildEnergyMap(basisVisibleRows, basisSeriesNames, {
 			isEnergyInterval,
 			displayInterval,
 			ianaTimeZone
 		});
 
-		return emissionsRows.map((row) => {
+		return emissionsVisibleRows.map((row) => {
 			const emissionsTotal = sumSeries(row, emissionsSeriesNames); // tonnes CO₂e
 			const energyMWh = energyMap.get(row.time) ?? 0;
 			return {
@@ -339,14 +353,21 @@
 	// metrics section. Mirrors FacilityFinancialDataProvider.onsummarydata.
 	// ============================================
 
+	// Debounced: the summary feeds the metrics section, where a ~0.3s settle is
+	// invisible — without it this recomputes on every pan/zoom tick. The timer
+	// callback only reads the plain values captured here.
 	$effect(() => {
 		if (!onsummarydata) return;
 		if (!emissionsDataManager?.processedCache) return;
 
-		onsummarydata({
-			rows: getVisibleData(emissionsDataManager, 'sum'),
-			seriesNames: emissionsDataManager.seriesMeta?.seriesNames ?? []
-		});
+		const rows = emissionsVisibleRows;
+		const seriesNames = emissionsDataManager.seriesMeta?.seriesNames ?? [];
+
+		const timer = setTimeout(() => {
+			onsummarydata({ rows, seriesNames });
+		}, 300);
+
+		return () => clearTimeout(timer);
 	});
 
 	// ============================================
@@ -440,7 +461,7 @@
 	$effect(() => {
 		if (!emissionsVolumeChartStore || !emissionsDataManager?.processedCache) return;
 
-		const visibleData = getVisibleData(emissionsDataManager, 'sum');
+		const visibleData = emissionsVisibleRows;
 
 		emissionsVolumeChartStore.seriesData = visibleData;
 		emissionsVolumeChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
@@ -528,15 +549,9 @@
 	// Loading overlay state
 	// ============================================
 
-	let showLoadingOverlay = $derived.by(() => {
-		if (!emissionsDataManager || !emissionsVolumeChartStore) return false;
-		if (emissionsVolumeChartStore.seriesData.length > 0) return false;
-		return (
-			!emissionsDataManager.initialLoadComplete ||
-			emissionsDataManager.isLoading ||
-			emissionsDataManager.hasPendingFetch
-		);
-	});
+	let showLoadingOverlay = $derived(
+		computeShowLoadingOverlay(emissionsDataManager, emissionsVolumeChartStore)
+	);
 
 	// ============================================
 	// Tooltip formatting

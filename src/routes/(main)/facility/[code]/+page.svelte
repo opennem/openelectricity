@@ -40,6 +40,7 @@
 	import FacilityMediaPanel from './_components/FacilityMediaPanel.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { createViewportSync } from './_utils/viewport-sync.js';
+	import { ianaFromOffset, offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
 	import {
 		CHARTS_FRACTION_COOKIE,
 		CHARTS_FRACTION_MIN,
@@ -60,7 +61,7 @@
 	let defaultStart = $derived(defaultEnd - rangeDays * 24 * 60 * 60 * 1000);
 
 	function toDateString(/** @type {number} */ ms) {
-		const offsetMs = timeZone === '+08:00' ? 8 * 3600_000 : 10 * 3600_000;
+		const offsetMs = offsetMsFromOffset(timeZone);
 		return new Date(ms + offsetMs).toISOString().slice(0, 10);
 	}
 	let dateStart = $derived(toDateString(defaultStart));
@@ -104,7 +105,7 @@
 		)
 	);
 
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let dateRangeLabel = $derived.by(() => {
 		const start = viewStart || defaultStart;
 		const end = viewEnd || defaultEnd;
@@ -228,6 +229,7 @@
 		displayInterval = '5m';
 		panZoomEngaged = false;
 		rangeApplied = false;
+		rangeSwitchPending = false;
 		// Reset client-side load tracking so the new facility shows its skeleton until
 		// its own chart fetch settles.
 		powerLoaded = false;
@@ -300,6 +302,7 @@
 	function applyRangeSwitch(startMs, endMs, intervalId) {
 		const spec = getIntervalSpec(intervalId);
 		if (!spec) return;
+		rangeSwitchPending = true;
 		activeMetric = spec.metric;
 		activeInterval = spec.apiInterval;
 		displayInterval = intervalId;
@@ -385,6 +388,12 @@
 	let chartReady = $derived(powerLoaded && powerHasData);
 	let showEmptyState = $derived(powerLoaded && !powerHasData);
 
+	/** True from an explicit range/interval pick until the switched data settles —
+	 *  pulses the active range control. Cleared by whichever settle signal fires
+	 *  first: load-complete (manager swap) or the debounced visible-data callback
+	 *  (same-grain switches that reuse the live manager). */
+	let rangeSwitchPending = $state(false);
+
 	/** @param {{ hasData: boolean }} state */
 	function handlePowerLoadComplete({ hasData }) {
 		// The chart self-seeds a day-snapped window on load. Once it's settled,
@@ -398,6 +407,7 @@
 		}
 		powerLoaded = true;
 		powerHasData = hasData;
+		rangeSwitchPending = false;
 	}
 
 	/** Static skeleton bar heights (%) — a calm placeholder while the chart loads. */
@@ -493,6 +503,7 @@
 									{maxDate}
 									{earliestDate}
 									showIntervalDropdown={true}
+									pending={rangeSwitchPending}
 									onrangeselect={handleRangeSelect}
 									ondaterangechange={handleDateRangeChange}
 									onintervalchange={handleIntervalChange}
@@ -554,7 +565,10 @@
 												onhoverchange={handleHoverChange}
 												onviewportchange={handlePowerViewportChange}
 												onloadcomplete={handlePowerLoadComplete}
-												onvisibledata={(d) => (intervalData = d)}
+												onvisibledata={(d) => {
+													intervalData = d;
+													rangeSwitchPending = false;
+												}}
 												panZoomMode="tap-to-engage"
 												bind:panZoomEngaged
 												bundleDerivedMetrics

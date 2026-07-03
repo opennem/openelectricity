@@ -72,7 +72,9 @@ export {
 // Energy gridline computation
 export { computeEnergyGridlines } from './energy-gridlines.js';
 
-// Formatters
+// Formatters — consumers import date-labels.js / network-time.js /
+// time-format-policy.js directly; only the long-standing helpers are
+// re-exported here.
 export { formatXAxis, formatDateRange, getStartOfDay, getDayStartDates } from './formatters.js';
 
 // Data processing utilities

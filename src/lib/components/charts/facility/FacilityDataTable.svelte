@@ -1,4 +1,6 @@
 <script>
+	import { ianaFromOffset } from '../v2/network-time.js';
+
 	/**
 	 * FacilityDataTable - Scrollable data table showing visible power chart data
 	 *
@@ -21,7 +23,7 @@
 	 * Map offset string to IANA timezone for Intl.DateTimeFormat
 	 * Uses DST-free zones: Brisbane (AEST +10), Perth (AWST +8)
 	 */
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 
 	/** Time formatter for HH:mm display in the facility's timezone */
 	let timeFormatter = $derived(

@@ -8,6 +8,8 @@
 import StatisticV2 from '$lib/utils/Statistic/v2.js';
 import TimeSeriesV2 from '$lib/utils/TimeSeries/v2.js';
 import { bucketStartMs } from './bucket-boundaries.js';
+import { localYearMonth } from './date-labels.js';
+import { offsetHoursFromIana } from './network-time.js';
 
 /**
  * @typedef {Object} ProcessingOptions
@@ -286,24 +288,17 @@ function parseIntervalMs(interval) {
  */
 export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum') {
 	const buckets = new Map();
-	const ymFmt = new Intl.DateTimeFormat('en-AU', {
-		year: 'numeric',
-		month: '2-digit',
-		timeZone: ianaTimeZone
-	});
 
 	// Derive UTC offset from the IANA zone name (DST-free zones only)
-	const offsetHours = ianaTimeZone === 'Australia/Perth' ? 8 : 10;
+	const offsetHours = offsetHoursFromIana(ianaTimeZone);
 
 	for (const point of data) {
-		const parts = ymFmt.formatToParts(new Date(point.time));
-		const y = parts.find((p) => p.type === 'year')?.value || '2000';
-		const m = parts.find((p) => p.type === 'month')?.value || '01';
-		const key = `${y}-${m}`;
+		const { year, month0 } = localYearMonth(new Date(point.time), ianaTimeZone);
+		const key = year * 12 + month0;
 
 		if (!buckets.has(key)) {
 			// Start of month in local tz, expressed as UTC ms
-			const monthStart = new Date(Date.UTC(parseInt(y), parseInt(m) - 1, 1, -offsetHours));
+			const monthStart = new Date(Date.UTC(year, month0, 1, -offsetHours));
 			/** @type {any} */
 			const bucket = {
 				time: monthStart.getTime(),
@@ -366,7 +361,7 @@ export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum'
  * @returns {any[]}
  */
 export function aggregateByBoundary(data, seriesNames, kind, ianaTimeZone, method = 'sum') {
-	const offsetHours = ianaTimeZone === 'Australia/Perth' ? 8 : 10;
+	const offsetHours = offsetHoursFromIana(ianaTimeZone);
 	/** @type {Map<number, any>} */
 	const buckets = new Map();
 
