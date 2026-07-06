@@ -755,7 +755,7 @@
 					class="min-w-0 flex-1 space-y-4 md:space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]"
 				>
 					<div class={[activeTab !== 'about' && 'max-md:hidden']}>
-						<FacilityInfoPanel sanityFacility={data.sanityFacility} />
+						<FacilityInfoPanel sanityFacility={data.sanityFacility} collapsible={!isMobile} />
 					</div>
 					<div class={[activeTab !== 'units' && 'max-md:hidden']}>
 						<FacilityUnitsPanel

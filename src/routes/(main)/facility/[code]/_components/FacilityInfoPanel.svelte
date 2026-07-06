@@ -4,11 +4,14 @@
 	import { hasPortableTextContent } from '$lib/utils/portable-text.js';
 
 	/**
+	 * `collapsible` clamps the description with a Read more toggle (desktop); pass
+	 * false on mobile, where the About tab scrolls and the full text should show.
 	 * @type {{
-	 *   sanityFacility: any | null
+	 *   sanityFacility: any | null,
+	 *   collapsible?: boolean
 	 * }}
 	 */
-	let { sanityFacility } = $props();
+	let { sanityFacility, collapsible = true } = $props();
 
 	let description = $derived(sanityFacility?.description ?? []);
 	let hasDescription = $derived(hasPortableTextContent(description));
@@ -24,7 +27,7 @@
 	{#if hasDescription}
 		<div class="p-5">
 			{#key sanityFacility?.code}
-				<ExpandableDescription value={description} />
+				<ExpandableDescription value={description} {collapsible} />
 			{/key}
 		</div>
 	{:else}
