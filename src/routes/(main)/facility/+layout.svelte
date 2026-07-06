@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page, navigating } from '$app/state';
 	import { onMount, tick } from 'svelte';
+	import { fly } from 'svelte/transition';
 
 	import {
 		FullscreenLayout,
@@ -10,6 +11,8 @@
 	} from '$lib/components/fullscreen';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
+	import { Backdrop } from '$lib/components/ui/backdrop';
+	import { portal } from '$lib/actions/portal.js';
 	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../facilities/_utils/units';
 	import { regions as regionDefs } from '../facilities/_utils/filters.js';
 
@@ -102,12 +105,22 @@
 		goto(`/facility/${code}${search}`, { noScroll: true, keepFocus: true });
 	}
 
+	// On mobile the list is a modal, so a tap dismisses it and loads the facility.
+	/** @param {string} code */
+	function handleMobileSelect(code) {
+		leftOpen = false;
+		handleFacilitySelect(code);
+	}
+
 	/** @param {KeyboardEvent} e */
 	function handleKeydown(e) {
 		if (e.key === 'Escape') {
 			if (showShortcutsToast) {
 				e.preventDefault();
 				showShortcutsToast = false;
+			} else if (leftOpen) {
+				e.preventDefault();
+				leftOpen = false;
 			}
 			return;
 		}
@@ -177,16 +190,6 @@
 					{#if leftOpen}
 						<DragHandle axis="x" onstart={listDrag.start} active={listDrag.isDragging} />
 					{/if}
-				{:else if leftOpen}
-					<div class="fixed inset-0 z-40 bg-white">
-						<FacilityListPanel
-							bind:this={listPanel}
-							facilities={facilitiesList}
-							{currentCode}
-							onclose={() => (leftOpen = false)}
-							onselect={handleFacilitySelect}
-						/>
-					</div>
 				{/if}
 
 				<div class="flex-1 flex flex-col min-w-0 min-h-0 relative">
@@ -222,6 +225,28 @@
 					{/if}
 				</div>
 			</div>
+
+			<!-- Mobile: the facility search list is a modal over the detail page;
+			     tapping a facility dismisses it and loads that facility. -->
+			<Backdrop open={isMobile && leftOpen} onclick={() => (leftOpen = false)} />
+			{#if isMobile && leftOpen}
+				<div
+					use:portal
+					class="fixed inset-x-3 top-14 bottom-3 z-[9999] flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+					role="dialog"
+					aria-modal="true"
+					aria-label="Search facilities"
+					transition:fly={{ y: 12, duration: 200 }}
+				>
+					<FacilityListPanel
+						bind:this={listPanel}
+						facilities={facilitiesList}
+						{currentCode}
+						onclose={() => (leftOpen = false)}
+						onselect={handleMobileSelect}
+					/>
+				</div>
+			{/if}
 
 			{#snippet footer()}
 				<!-- The tiny version strip is hidden on mobile, where the facility
