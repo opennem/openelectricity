@@ -6,8 +6,8 @@
 	 * A single, declarative renderer (not one component per fuel tech): the fuel
 	 * group selects an ordered list of metric descriptors from
 	 * `metric-definitions.js`, all reading a shared `ctx` built here from the
-	 * visible-range data. Group-specific "garnishes" (badges, turbine/equipment
-	 * specs) hang off the same context.
+	 * visible-range data. Coal adds its expected-closure date as a final cell;
+	 * per-unit fuel-tech, turbine and equipment detail lives in the units panel.
 	 *
 	 * Data sources (all already produced by the facility data layer, all keyed on
 	 * the visible viewStart/viewEnd so the numbers track the chart):
@@ -16,7 +16,6 @@
 	 *   • intervalData  — FacilityChart.onvisibledata (raw power, for profile/running hours)
 	 */
 
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import MetricCard from './MetricCard.svelte';
 	import { getPrimaryFuelTechGroup, isGasPeaker, isPumpedHydro } from './fuel-group.js';
 	import {
@@ -28,7 +27,6 @@
 		avgPriceReceived,
 		peakBucket,
 		runningHours,
-		startCount,
 		dcAcRatio,
 		isChargingSideUnit,
 		storageDurationHours
@@ -197,7 +195,6 @@
 			totalEmissions,
 			emissionsIntensity,
 			runningHours: hasSubDaily ? runningHours(iData, iNames, intervalMinutes) : 0,
-			startCount: hasSubDaily ? startCount(iData, iNames) : 0,
 			netRevenue: totalMV,
 			roundTripEfficiency: charge > 0 ? (discharge / charge) * 100 : null,
 			storageDuration,
@@ -213,36 +210,6 @@
 			isPumpedHydro: pumpedHydro
 		})
 	);
-
-	// ── Garnish: fuel-specific badges ─────────────────────────────────
-	/** @type {Record<string, string>} */
-	const gasSubtypeLabels = {
-		gas_ccgt: 'CCGT',
-		gas_ocgt: 'OCGT',
-		gas_steam: 'Gas Steam',
-		gas_recip: 'Reciprocating',
-		gas_wcmg: 'Waste Coal Mine Gas',
-		distillate: 'Distillate'
-	};
-
-	let gasSubtype = $derived.by(() => {
-		if (group !== 'gas') return null;
-		/** @type {Record<string, number>} */
-		const byType = {};
-		for (const unit of facility?.units ?? []) {
-			const ft = unit.fueltech_id ?? '';
-			if (gasSubtypeLabels[ft]) byType[ft] = (byType[ft] || 0) + (unit.capacity_registered || 0);
-		}
-		let maxType = null;
-		let maxCap = 0;
-		for (const [ft, cap] of Object.entries(byType)) {
-			if (cap > maxCap) {
-				maxCap = cap;
-				maxType = ft;
-			}
-		}
-		return maxType;
-	});
 
 	let closureInfo = $derived.by(() => {
 		if (group !== 'coal' || !sanityFacility?.units?.length) return null;
@@ -288,180 +255,51 @@
 		}
 	}
 
-	// ── Garnish: equipment specs (wind / battery, Sanity-sourced) ─────
-	let turbineSpecs = $derived.by(() => {
-		if (group !== 'wind' || !sanityFacility?.units?.length) return [];
-		/** @type {Record<string, { count: number, size: number | null, height: number | null }>} */
-		const specMap = {};
-		for (const unit of sanityFacility.units) {
-			for (const ut of unit.unit_types ?? []) {
-				const brand = ut.unit_brand || '';
-				const model = ut.unit_model || '';
-				if (!brand && !model) continue;
-				const key = `${brand}|${model}`;
-				if (!specMap[key]) {
-					specMap[key] = {
-						count: ut.unit_number || 1,
-						size: ut.unit_size || ut.capacity || null,
-						height: ut.unit_height || null
-					};
-				} else {
-					specMap[key].count += ut.unit_number || 1;
-				}
-			}
-		}
-		/** @type {string[]} */
-		const specs = [];
-		for (const [key, info] of Object.entries(specMap)) {
-			const [brand, model] = key.split('|');
-			let label = `${info.count} ×`;
-			if (brand) label += ` ${brand}`;
-			if (model) label += ` ${model}`;
-			if (info.size) label += ` ${info.size} MW`;
-			if (info.height) label += `, ${info.height}m`;
-			specs.push(label);
-		}
-		return specs;
-	});
-
-	let equipmentSpecs = $derived.by(() => {
-		if (group !== 'battery' || !sanityFacility?.units?.length) return [];
-		/** @type {Array<{ brand: string, model: string }>} */
-		const specs = [];
-		/** @type {Record<string, true>} */
-		const seen = {};
-		for (const unit of sanityFacility.units) {
-			for (const ut of unit.unit_types ?? []) {
-				const brand = ut.unit_brand ?? '';
-				const model = ut.unit_model ?? '';
-				if (!brand && !model) continue;
-				const key = `${brand}|${model}`;
-				if (seen[key]) continue;
-				seen[key] = true;
-				specs.push({ brand, model });
-			}
-		}
-		return specs;
-	});
-
-	/**
-	 * Whether a badge background needs light text.
-	 * @param {string} colour
-	 */
-	function needsLightText(colour) {
-		if (!colour) return false;
-		const hex = colour.replace('#', '');
-		const r = parseInt(hex.substring(0, 2), 16);
-		const g = parseInt(hex.substring(2, 4), 16);
-		const b = parseInt(hex.substring(4, 6), 16);
-		return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
-	}
-
-	// Last grid cell before the fillers: coal shows its expected closure as a
-	// plain metric (the units panel carries the fuel-tech tags); gas gets a
-	// subtype badge + peaker note. Other groups have no extra cell.
-	let badgeCell = $derived.by(() => {
-		if (group === 'coal' && closureInfo)
-			return { kind: /** @type {'coal'} */ ('coal'), closure: closureInfo };
-		if (group === 'gas' && gasSubtype)
-			return { kind: /** @type {'gas'} */ ('gas'), subtype: gasSubtype, isPeaker };
-		return null;
-	});
-
-	// Fillers keep the 3-col last row full (metric cells + optional badge cell).
-	let fillerCount = $derived((3 - ((metricKeys.length + (badgeCell ? 1 : 0)) % 3)) % 3);
+	// Fillers keep the 3-col last row full (metric cells + coal's optional
+	// expected-closure cell). `closureInfo` is already null unless this is a coal
+	// facility; other groups keep their fuel-tech detail in the units panel.
+	let fillerCount = $derived((3 - ((metricKeys.length + (closureInfo ? 1 : 0)) % 3)) % 3);
 </script>
 
-<div>
-	<!-- Metric grid — flush; the parent (page card / panel wrapper) supplies the
-	     outer border. Cells carry border-r/border-b; the -mr/-mb pull + overflow
-	     clip drop the outer right/bottom so they don't double the parent border.
-	     A coal/gas badge cell + fillers keep the last row full. -->
-	<div class="overflow-hidden">
-		<div class="grid grid-cols-2 sm:grid-cols-3 -mr-px -mb-px">
-			{#each metricKeys as key (key)}
-				{@const result = METRICS[key].compute(ctx)}
-				{@const interactive = result.highlightTime != null}
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<div
-					class="border-r border-b border-mid-warm-grey/40 px-6 py-4 {interactive
-						? 'cursor-help transition-colors hover:bg-light-warm-grey/40'
-						: ''}"
-					onmouseenter={interactive ? () => onpeakhighlight?.(result.highlightTime) : undefined}
-					onmouseleave={interactive ? () => onpeakhighlight?.(undefined) : undefined}
-				>
-					<MetricCard
-						label={result.label ?? METRICS[key].label}
-						value={result.value}
-						unit={result.unit ?? ''}
-						subtitle={result.subtitle ?? ''}
-						description={METRICS[key].description}
-					/>
-				</div>
-			{/each}
-
-			{#if badgeCell}
-				{#if badgeCell.kind === 'coal'}
-					<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
-						<MetricCard
-							label="Expected Closure"
-							value={formatClosureDate(badgeCell.closure)}
-							description="Earliest expected closure date across the facility's units."
-						/>
-					</div>
-				{:else}
-					{@const bg = fuelTechColourMap[badgeCell.subtype] ?? '#7F7F7F'}
-					<div class="flex items-center gap-3 border-r border-b border-mid-warm-grey/40 px-6 py-4">
-						<span
-							class="inline-flex shrink-0 items-center rounded px-2 py-1 text-xs font-semibold"
-							style="background-color: {bg}; color: {needsLightText(bg) ? '#fff' : '#1a1a1a'}"
-						>
-							{gasSubtypeLabels[badgeCell.subtype] ?? badgeCell.subtype}
-						</span>
-						{#if badgeCell.isPeaker}<span class="text-xs text-mid-grey">Peaker plant</span>{/if}
-					</div>
-				{/if}
-			{/if}
-
-			{#each Array.from({ length: fillerCount }) as _filler, i (i)}
-				<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4" aria-hidden="true"></div>
-			{/each}
-		</div>
-	</div>
-
-	{#if pumpedHydro}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-3">
-			<span
-				class="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-mono font-semibold"
-				style="background-color: #88AFD0; color: #1a1a1a">Pumped Hydro</span
+<!-- Metric grid — flush; the parent (page card / panel wrapper) supplies the
+     outer border. Cells carry border-r/border-b; the -mr/-mb pull + overflow
+     clip drop the outer right/bottom so they don't double the parent border.
+     Coal's expected-closure cell + fillers keep the last row full. -->
+<div class="overflow-hidden">
+	<div class="grid grid-cols-2 sm:grid-cols-3 -mr-px -mb-px">
+		{#each metricKeys as key (key)}
+			{@const result = METRICS[key].compute(ctx)}
+			{@const interactive = result.highlightTime != null}
+			<!-- svelte-ignore a11y_no_static_element_interactions -->
+			<div
+				class="border-r border-b border-mid-warm-grey/40 px-6 py-4 {interactive
+					? 'cursor-help transition-colors hover:bg-light-warm-grey/40'
+					: ''}"
+				onmouseenter={interactive ? () => onpeakhighlight?.(result.highlightTime) : undefined}
+				onmouseleave={interactive ? () => onpeakhighlight?.(undefined) : undefined}
 			>
-		</div>
-	{/if}
-
-	{#if turbineSpecs.length}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">Turbine Specs</span>
-			<div class="mt-1 flex flex-col gap-0.5">
-				{#each turbineSpecs as spec (spec)}
-					<span class="text-xs text-dark-grey">{spec}</span>
-				{/each}
+				<MetricCard
+					label={result.label ?? METRICS[key].label}
+					value={result.value}
+					unit={result.unit ?? ''}
+					subtitle={result.subtitle ?? ''}
+					description={METRICS[key].description}
+				/>
 			</div>
-		</div>
-	{/if}
+		{/each}
 
-	{#if equipmentSpecs.length}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">Equipment</span>
-			<div class="mt-1.5 flex flex-wrap gap-2">
-				{#each equipmentSpecs as spec (spec.brand + spec.model)}
-					<span
-						class="inline-flex items-center gap-1 rounded bg-light-warm-grey px-2 py-0.5 text-[11px] font-mono text-dark-grey"
-					>
-						{#if spec.brand}<span class="font-semibold">{spec.brand}</span>{/if}
-						{#if spec.model}<span>{spec.model}</span>{/if}
-					</span>
-				{/each}
+		{#if closureInfo}
+			<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
+				<MetricCard
+					label="Expected Closure"
+					value={formatClosureDate(closureInfo)}
+					description="Earliest expected closure date across the facility's units."
+				/>
 			</div>
-		</div>
-	{/if}
+		{/if}
+
+		{#each Array.from({ length: fillerCount }) as _filler, i (i)}
+			<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4" aria-hidden="true"></div>
+		{/each}
+	</div>
 </div>

@@ -191,6 +191,11 @@
 	/** @type {ChartDataManager | null} */
 	let dataManager = $state(null);
 
+	/** Guards the one-shot empty-window retry (see the load-completion effect): set
+	 *  once a facility's first window settles, so only that initial window can
+	 *  auto-retry — a later grain switch keeps the user's viewport. Reset per facility. */
+	let firstWindowSettled = false;
+
 	/**
 	 * Stashed managers keyed `${interval}-${metric}` — background prefetches plus
 	 * previously-active managers kept warm so switching back to a range renders
@@ -231,6 +236,23 @@
 		prefetchCache.clear();
 	}
 
+	/**
+	 * Convert a YYYY-MM-DD date range (interpreted in the network tz) to epoch-ms
+	 * bounds, clamping the end to now. Shared by the initial date-prop seed and the
+	 * empty-window retry.
+	 * @param {string} ds
+	 * @param {string} de
+	 * @param {string} tz - network offset e.g. '+10:00'
+	 * @returns {{ startMs: number, endMs: number }}
+	 */
+	function dateBoundsMs(ds, de, tz) {
+		const t = tz || '+10:00';
+		return {
+			startMs: new Date(ds + 'T00:00:00' + t).getTime(),
+			endMs: Math.min(new Date(de + 'T23:59:59' + t).getTime(), Date.now())
+		};
+	}
+
 	// Initialize/reinitialize data manager when facility or interval/metric changes
 	$effect(() => {
 		if (!facility) {
@@ -249,6 +271,9 @@
 		const existingCode = untrack(() => dataManager?.facilityCode);
 		if (existingCode && existingCode !== currentCode) {
 			clearPrefetchCache();
+			// Re-arm the empty-window retry (see the load-completion effect) for the
+			// new facility.
+			firstWindowSettled = false;
 		}
 
 		// Skip recreation if existing manager already matches
@@ -314,20 +339,16 @@
 				viewEnd = Math.min(manager.cacheEnd, Date.now());
 			} else if (dateStart && dateEnd) {
 				// No seeded cache (e.g. energy mode on page load) — use date props
-				const tz = timeZone || '+10:00';
-				viewStart = new Date(dateStart + 'T00:00:00' + tz).getTime();
-				viewEnd = Math.min(new Date(dateEnd + 'T23:59:59' + tz).getTime(), Date.now());
-				const duration = viewEnd - viewStart;
-				const bufferMultiplier = currentMetric === 'energy' ? 3 : 1;
-				const buffer = duration * bufferMultiplier;
-				manager.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, Date.now()));
+				const { startMs, endMs } = dateBoundsMs(dateStart, dateEnd, timeZone);
+				viewStart = startMs;
+				viewEnd = endMs;
+				const buffer = (endMs - startMs) * fetchBufferMultiplier;
+				manager.requestRange(startMs - buffer, Math.min(endMs + buffer, Date.now()));
 			}
 		} else {
 			// Switching interval/metric — keep current viewport, fetch immediately
 			// (no debounce) so data loads even during continuous zoom gestures
-			const duration = end - start;
-			const bufferMultiplier = currentMetric === 'energy' ? 3 : 1;
-			const buffer = duration * bufferMultiplier;
+			const buffer = (end - start) * fetchBufferMultiplier;
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
@@ -696,14 +717,50 @@
 		onviewportchange?.({ start, end });
 	});
 
-	// Report load completion to the parent. `initialLoadComplete` flips true after
-	// the first seed/fetch settles (even when empty), and `cacheStart` is a stable
-	// "data was found" signal that survives panning — so `hasData` stays correct.
-	// Re-fires harmlessly when the manager swaps on facility change.
+	// Report load completion to the parent once the in-flight fetch settles.
+	// `initialLoadComplete` flips true after the first seed/fetch settles (even when
+	// empty); `cacheStart` is a stable "data was found" signal that survives panning.
+	// If the first settled window is empty, retry once from this facility's own
+	// default range before reporting "no data" — this self-heals a client-side nav
+	// that left a stale viewport (e.g. a retired plant queried in a recent window),
+	// without discarding the viewport on every navigation.
 	$effect(() => {
 		const manager = dataManager;
 		if (!manager?.initialLoadComplete) return;
-		onloadcomplete?.({ hasData: manager.cacheStart !== null });
+		// Wait for the in-flight fetch to settle so a still-empty retry is observed
+		// too, not just the moment data first arrives.
+		if (manager.hasPendingFetch) return;
+
+		const hasData = manager.cacheStart !== null;
+		const canRetry = !firstWindowSettled;
+		firstWindowSettled = true;
+		// If a facility's first settled window is empty, re-seed from its own default
+		// range and refetch once before reporting "no data" — self-heals a stale
+		// viewport left by a client-side nav (e.g. a retired plant queried in the
+		// previous facility's recent window). Skipped when the viewport is already
+		// that default range (a genuinely-empty facility on fresh mount — refetching
+		// the same window would just come back empty).
+		if (!hasData && canRetry) {
+			const ds = untrack(() => dateStart);
+			const de = untrack(() => dateEnd);
+			if (ds && de) {
+				const { startMs, endMs } = dateBoundsMs(
+					ds,
+					de,
+					untrack(() => timeZone)
+				);
+				if (untrack(() => viewStart) !== startMs || untrack(() => viewEnd) !== endMs) {
+					viewStart = startMs;
+					viewEnd = endMs;
+					const buffer = (endMs - startMs) * untrack(() => fetchBufferMultiplier);
+					manager.requestRange(startMs - buffer, Math.min(endMs + buffer, Date.now()), {
+						immediate: true
+					});
+					return;
+				}
+			}
+		}
+		onloadcomplete?.({ hasData });
 	});
 
 	// ============================================

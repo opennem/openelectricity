@@ -147,32 +147,6 @@ export function runningHours(powerData, seriesNames, intervalMinutes) {
 }
 
 /**
- * Start count — transitions from not-generating to generating (an initial
- * generating interval counts as a start).
- * @param {Array<Record<string, any>>} powerData
- * @param {string[]} seriesNames
- * @returns {number}
- */
-export function startCount(powerData, seriesNames) {
-	let starts = 0;
-	let wasGenerating = false;
-
-	for (const row of powerData) {
-		let generating = false;
-		for (const name of seriesNames) {
-			const val = row[name];
-			if (typeof val === 'number' && val > 0) {
-				generating = true;
-				break;
-			}
-		}
-		if (generating && !wasGenerating) starts++;
-		wasGenerating = generating;
-	}
-	return starts;
-}
-
-/**
  * Whether a fuel tech is the charging/pumping side of a storage pair. A
  * charge/discharge pair describes one store — storage sums and durations
  * count only the discharge side, whose capacity is generation power.

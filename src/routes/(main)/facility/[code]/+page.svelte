@@ -482,111 +482,119 @@
 						: 'md:transition-[width] md:duration-200 md:ease-out'}"
 					style:width={leftWidthPercent}
 				>
-					{#if !showEmptyState}
-						<!-- Each section is its own card pane, stacked with an even gap. -->
-						<div class="space-y-4">
-							<!-- Range / date picker — a bare toolbar row, not a card. -->
-							<div class="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
-								<span class="font-space text-base font-medium text-dark-grey">{dateRangeLabel}</span
-								>
-								<ChartRangeBar
-									{selectedRange}
-									{customDays}
-									{displayInterval}
-									startDate={pickerStartDate}
-									endDate={pickerEndDate}
-									minDate={MIN_DATE}
-									{maxDate}
-									{earliestDate}
-									showIntervalDropdown={true}
-									pending={rangeSwitchPending}
-									onrangeselect={handleRangeSelect}
-									ondaterangechange={handleDateRangeChange}
-									onintervalchange={handleIntervalChange}
-								/>
-							</div>
+					<!-- Toolbar + metrics always render; only the charts depend on the fetch. -->
+					<div class="space-y-4">
+						<!-- Range / date picker — a bare toolbar row, not a card. -->
+						<div class="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
+							<span class="font-space text-base font-medium text-dark-grey">{dateRangeLabel}</span>
+							<ChartRangeBar
+								{selectedRange}
+								{customDays}
+								{displayInterval}
+								startDate={pickerStartDate}
+								endDate={pickerEndDate}
+								minDate={MIN_DATE}
+								{maxDate}
+								{earliestDate}
+								showIntervalDropdown={true}
+								pending={rangeSwitchPending}
+								onrangeselect={handleRangeSelect}
+								ondaterangechange={handleDateRangeChange}
+								onintervalchange={handleIntervalChange}
+							/>
+						</div>
 
-							<!-- Metrics. Flush grid; the card supplies the outer border. Fed by
+						<!-- Metrics. Flush grid; the card supplies the outer border. Fed by
 							     the providers + generation chart below. -->
-							<div class={sectionCardClass}>
-								<FacilityMetrics
-									facility={selectedFacility}
-									sanityFacility={data.sanityFacility}
-									{summaryData}
-									{emissionsData}
-									{intervalData}
-									{timeZone}
-									{displayInterval}
-									onpeakhighlight={handleHoverChange}
-								/>
-							</div>
+						<div class={sectionCardClass}>
+							<FacilityMetrics
+								facility={selectedFacility}
+								sanityFacility={data.sanityFacility}
+								summaryData={showEmptyState ? null : summaryData}
+								emissionsData={showEmptyState ? null : emissionsData}
+								intervalData={showEmptyState ? null : intervalData}
+								{timeZone}
+								{displayInterval}
+								onpeakhighlight={handleHoverChange}
+							/>
+						</div>
 
-							<!-- chartCardEl wraps the chart sections (not the range bar / metrics)
+						<!-- chartCardEl wraps the chart sections (not the range bar / metrics)
 							     so pan/zoom click-outside treats clicks between charts as "still
 							     engaged" but disengages on a range-bar / metrics click. -->
-							<div bind:this={chartCardEl} class="space-y-4">
-								<!-- Generation -->
-								<section class={sectionCardClass}>
-									<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
-										<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
-										<span
-											class="rounded bg-light-warm-grey px-2 py-0.5 text-xs uppercase tracking-wider text-dark-grey"
-										>
-											{getIntervalSpec(displayInterval)?.label ?? displayInterval}
-										</span>
-									</div>
-									<!-- Chart stays mounted while loading so it self-fetches; it fades
+						<div bind:this={chartCardEl} class="space-y-4">
+							<!-- Generation -->
+							<section class={sectionCardClass}>
+								<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
+									<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
+									<span
+										class="rounded bg-light-warm-grey px-2 py-0.5 text-xs uppercase tracking-wider text-dark-grey"
+									>
+										{getIntervalSpec(displayInterval)?.label ?? displayInterval}
+									</span>
+								</div>
+								<!-- Chart stays mounted while loading so it self-fetches; it fades
 									     in once data arrives, with a skeleton overlaid until then. -->
-									<div class="relative">
-										<div
-											class="transition-opacity duration-500 ease-out {chartReady
-												? 'opacity-100'
-												: 'opacity-0'}"
-										>
-											<FacilityChart
-												bind:this={powerChart}
-												facility={selectedFacility}
-												powerData={data.powerData}
-												{timeZone}
-												{dateStart}
-												{dateEnd}
-												interval={activeInterval}
-												metric={activeMetric}
-												{displayInterval}
-												chartHeight="h-[267px]"
-												title={activeMetric === 'energy' ? 'Energy' : 'Power'}
-												tooltipMode="floating"
-												showContainer={false}
-												{hoverTime}
-												onhoverchange={handleHoverChange}
-												onviewportchange={handlePowerViewportChange}
-												onloadcomplete={handlePowerLoadComplete}
-												onvisibledata={(d) => {
-													intervalData = d;
-													rangeSwitchPending = false;
-												}}
-												panZoomMode="tap-to-engage"
-												bind:panZoomEngaged
-												bundleDerivedMetrics
-											/>
-										</div>
-										{#if !chartReady}
-											<div
-												class="absolute inset-0 flex items-end gap-1.5 px-6 pb-6 pt-8 pointer-events-none"
-												out:fade={{ duration: 300 }}
-												aria-hidden="true"
-											>
-												{#each SKELETON_BARS as h, i (i)}
-													<div
-														class="flex-1 rounded-t bg-light-warm-grey animate-pulse"
-														style="height: {h}%"
-													></div>
-												{/each}
-											</div>
-										{/if}
+								<div class="relative">
+									<div
+										class="transition-opacity duration-500 ease-out {chartReady
+											? 'opacity-100'
+											: 'opacity-0'}"
+									>
+										<FacilityChart
+											bind:this={powerChart}
+											facility={selectedFacility}
+											powerData={data.powerData}
+											{timeZone}
+											{dateStart}
+											{dateEnd}
+											interval={activeInterval}
+											metric={activeMetric}
+											{displayInterval}
+											chartHeight="h-[267px]"
+											title={activeMetric === 'energy' ? 'Energy' : 'Power'}
+											tooltipMode="floating"
+											showContainer={false}
+											{hoverTime}
+											onhoverchange={handleHoverChange}
+											onviewportchange={handlePowerViewportChange}
+											onloadcomplete={handlePowerLoadComplete}
+											onvisibledata={(d) => {
+												intervalData = d;
+												rangeSwitchPending = false;
+											}}
+											panZoomMode="tap-to-engage"
+											bind:panZoomEngaged
+											bundleDerivedMetrics
+										/>
 									</div>
-								</section>
+									{#if showEmptyState}
+										<div
+											class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center pointer-events-none"
+										>
+											<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
+												<LineChart size={24} strokeWidth={1.5} />
+											</div>
+											<p class="m-0 text-sm font-medium text-dark-grey">No data available</p>
+										</div>
+									{:else if !chartReady}
+										<div
+											class="absolute inset-0 flex items-end gap-1.5 px-6 pb-6 pt-8 pointer-events-none"
+											out:fade={{ duration: 300 }}
+											aria-hidden="true"
+										>
+											{#each SKELETON_BARS as h, i (i)}
+												<div
+													class="flex-1 rounded-t bg-light-warm-grey animate-pulse"
+													style="height: {h}%"
+												></div>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							</section>
 
+							{#if !showEmptyState}
 								<FacilityFinancialDataProvider
 									facility={selectedFacility}
 									{timeZone}
@@ -674,23 +682,9 @@
 										</section>
 									</FacilityEmissionsDataProvider>
 								{/if}
-							</div>
+							{/if}
 						</div>
-					{:else}
-						<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
-							<div
-								class="flex items-center justify-between gap-4 border-b border-mid-warm-grey/40 px-6 py-3"
-							>
-								<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
-							</div>
-							<div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-								<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
-									<LineChart size={24} strokeWidth={1.5} />
-								</div>
-								<p class="m-0 text-sm font-medium text-dark-grey">No data available</p>
-							</div>
-						</div>
-					{/if}
+					</div>
 				</div>
 
 				{#if !isMobile}

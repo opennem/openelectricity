@@ -38,7 +38,7 @@
 
 	{#if owners.length}
 		<div class="space-y-1.5 border-t border-mid-warm-grey/40 p-5">
-			<h4 class="m-0 text-xs font-semibold uppercase tracking-wider text-mid-grey">
+			<h4 class="m-0 text-xxs font-semibold uppercase tracking-wider text-mid-grey">
 				{owners.length > 1 ? 'Owners' : 'Owner'}
 			</h4>
 			<div class="flex flex-col gap-1">

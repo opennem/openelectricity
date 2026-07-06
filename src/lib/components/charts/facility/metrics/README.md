@@ -8,7 +8,7 @@ recomputes.
 ```
 <FacilityMetrics
   facility        // OE API facility (battery-filtered units)
-  sanityFacility  // Sanity CMS doc (optional — enriches the "specs" garnishes)
+  sanityFacility  // Sanity CMS doc (optional — enriches DC:AC / storage / closure)
   summaryData     // { energyData, mvData, energySeriesNames, mvSeriesNames }
   emissionsData   // { rows, seriesNames }  (reported tCO₂)
   intervalData    // { data, seriesNames, seriesLabels }  (raw power)
@@ -25,29 +25,29 @@ fuel tech. The flow is:
    (`fuel-group.js`).
 2. **Resolve the metric set.** `resolveMetricKeys(group, flags)` returns an ordered list
    of metric ids for that group (`metric-definitions.js`). A few are conditional —
-   gas peakers add `runningHours`/`startCount`, solar adds `dcac` only when an oversizing
+   gas peakers add `runningHours`, solar adds `dcac` only when an oversizing
    ratio is known, pumped hydro adds `roundTrip`, and any group gains `storageDuration`
    when the facility has storage units (mixed-tech hybrids included).
 3. **Build one shared context** (`ctx`). `FacilityMetrics.svelte` computes every scalar
    once from the visible-range data using the pure helpers in `metrics-calc.js`.
 4. **Render.** Each id maps to a descriptor in `METRICS` whose `compute(ctx)` returns
    `{ value, unit?, subtitle? }` for a `MetricCard`; each descriptor also carries a
-   `description` rendered as a hover tooltip on the card's label. Group-specific **garnishes** (badges,
-   turbine/equipment specs) hang off the same context. Per-unit availability bars
-   (coal) live in the units panel on `/facility/[code]`, computed from the same
-   `intervalData` via `computeUnitAvailability`.
+   `description` rendered as a hover tooltip on the card's label. Coal appends an
+   Expected Closure cell. Per-unit fuel-tech, turbine and equipment detail lives in the
+   units panel on `/facility/[code]` (which also renders coal's availability bars,
+   computed from the same `intervalData` via `computeUnitAvailability`).
 
 ### Data sources
 
 Everything is produced by the existing facility data layer, keyed on
 `viewStart`/`viewEnd`, so the metrics inherently track the chart:
 
-| Prop             | Produced by                                     | Feeds                                                 |
-| ---------------- | ----------------------------------------------- | ----------------------------------------------------- |
-| `summaryData`    | `FacilityFinancialDataProvider` `onsummarydata` | energy, capacity factor, revenue, avg price, peak     |
-| `emissionsData`  | `FacilityEmissionsDataProvider` `onsummarydata` | CO₂ volume + intensity                                |
-| `intervalData`   | `FacilityChart` `onvisibledata`                 | running hours, starts                                 |
-| `sanityFacility` | server load (Sanity CMS)                        | DC:AC, turbine/equipment specs, MLF, storage, closure |
+| Prop             | Produced by                                     | Feeds                                             |
+| ---------------- | ----------------------------------------------- | ------------------------------------------------- |
+| `summaryData`    | `FacilityFinancialDataProvider` `onsummarydata` | energy, capacity factor, revenue, avg price, peak |
+| `emissionsData`  | `FacilityEmissionsDataProvider` `onsummarydata` | CO₂ volume + intensity                            |
+| `intervalData`   | `FacilityChart` `onvisibledata`                 | running hours                                     |
+| `sanityFacility` | server load (Sanity CMS)                        | DC:AC ratio, storage duration, expected closure   |
 
 The metrics card is rendered above the chart, while the providers that feed it render
 below (or headless, in the panel). DOM order doesn't matter — data flows through state,
@@ -55,15 +55,18 @@ so the card fills in once the providers' fetch settles (showing `--` until then)
 
 ## Metric sets by fuel group
 
-| Group       | Metrics                                                                                                            | Garnishes                                   |
-| ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
-| **coal**    | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Expected Closure if known)_            | —                                           |
-| **gas**     | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Running Hours, Start Count if peaker)_ | subtype badge (CCGT/OCGT/…), "Peaker plant" |
-| **wind**    | Capacity Factor, Total Energy, Avg Price, Revenue, Peak Output                                                     | turbine specs                               |
-| **solar**   | Capacity Factor, Peak Output, Avg Price, Revenue _(+ DC:AC if known, with DC/AC capacities as its subtitle)_       | —                                           |
-| **hydro**   | Capacity Factor, Total Energy, Running Hours, Avg Price, Revenue _(+ Round Trip if pumped)_                        | pumped-hydro badge                          |
-| **battery** | Net Revenue, Storage Duration, Round-trip Efficiency, Total Energy, Capacity Factor                                | equipment specs                             |
-| **other**   | Capacity Factor, Total Energy, Revenue, Avg Price                                                                  | —                                           |
+| Group       | Metrics                                                                                                      |
+| ----------- | ------------------------------------------------------------------------------------------------------------ |
+| **coal**    | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Expected Closure if known)_      |
+| **gas**     | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Running Hours if peaker)_        |
+| **wind**    | Capacity Factor, Total Energy, Avg Price, Revenue, Peak Output                                               |
+| **solar**   | Capacity Factor, Peak Output, Avg Price, Revenue _(+ DC:AC if known, with DC/AC capacities as its subtitle)_ |
+| **hydro**   | Capacity Factor, Total Energy, Running Hours, Avg Price, Revenue _(+ Round Trip if pumped)_                  |
+| **battery** | Net Revenue, Storage Duration, Round-trip Efficiency, Total Energy, Capacity Factor                          |
+| **other**   | Capacity Factor, Total Energy, Revenue, Avg Price                                                            |
+
+Per-unit fuel-tech, turbine and equipment detail is shown in the units slide-out panel,
+not here — only coal's Expected Closure appears as an extra cell.
 
 Any non-battery group additionally shows **Storage Duration** when the facility has
 storage-carrying units (e.g. a solar + battery hybrid, or a pumped-hydro scheme).
@@ -90,7 +93,6 @@ Energy is MWh, power MW, market value $, emissions tCO₂e.
 | **Emissions Intensity**       | `total_tCO₂ × 1000 / energy_MWh` (kgCO₂e/MWh)                                                                                                                                                                                                                                                                                       | emissionsData + summaryData                   |
 | **Peak Output / Peak Energy** | the peak `summaryData` bucket (`peakBucket`). Power mode (sub-daily rows): "Peak Output" = peak MW (`÷ interval_hours`), shown `peak / capacity`. Energy mode (daily+ rows): "Peak Energy" = highest-energy bucket (MWh, raw). Both show the period as a subtitle and annotate the chart at that time on hover (`onpeakhighlight`). | summaryData                                   |
 | **Running Hours**             | intervals where any series generated × interval length                                                                                                                                                                                                                                                                              | intervalData (sub-daily only)                 |
-| **Start Count**               | transitions from not-generating → generating                                                                                                                                                                                                                                                                                        | intervalData (sub-daily only)                 |
 | **Net Revenue**               | Σ market value (discharge revenue − charge cost)                                                                                                                                                                                                                                                                                    | summaryData                                   |
 | **Storage Duration**          | `storage_MWh / discharge_MW` (hours) summed over storage-carrying discharge units only — charging-side units (`battery_*_charging`, `pumps`) excluded                                                                                                                                                                               | OE capacity_storage (Sanity fallback)         |
 | **Round-trip Efficiency**     | `discharge_energy / charge_energy × 100` (from the signed series; batteries and pumped hydro)                                                                                                                                                                                                                                       | summaryData                                   |
@@ -104,14 +106,14 @@ than `emissions_factor × energy`, and it needs no Sanity data. The emissions pr
 only mounted for facilities with emitting units, so renewables/storage fire no emissions
 request.
 
-## "Specs" garnishes — and where they come from
+## Sanity-sourced metrics
 
-The non-metric extras (turbine brand/model, DC/AC capacities, battery equipment, MLF,
-storage capacity, closure dates) are read from the **Sanity CMS** facility document's
-`units[]`, via the shared projection in `$lib/server/sanity-projections.js`
-(`SANITY_FACILITY_UNITS_PROJECTION`), fetched server-side on both pages. When Sanity has
-no data for a facility these garnishes simply don't render — the core metrics, which come
-from the OE API data providers, are unaffected.
+A few metrics (DC:AC ratio, storage duration, expected closure) read from the **Sanity
+CMS** facility document's `units[]`, via the shared projection in
+`$lib/server/sanity-projections.js` (`SANITY_FACILITY_UNITS_PROJECTION`), fetched
+server-side on both pages. When Sanity has no data for a facility these simply don't
+render — the OE-API-derived metrics are unaffected. Per-unit fuel-tech, turbine and
+equipment detail is shown in the units slide-out panel, not here.
 
 ## Provenance
 
@@ -128,7 +130,7 @@ from the OE API data providers, are unaffected.
 
 ```
 metrics/
-├── FacilityMetrics.svelte    # router/renderer: builds ctx, renders cards + garnishes
+├── FacilityMetrics.svelte    # router/renderer: builds ctx, renders metric cards
 ├── MetricCard.svelte         # label (with description tooltip) / value / unit / subtitle
 ├── metric-definitions.js     # METRICS descriptors + resolveMetricKeys (per-group sets)
 ├── metrics-calc.js           # pure maths incl. isSubDailyData (+ .test.js)

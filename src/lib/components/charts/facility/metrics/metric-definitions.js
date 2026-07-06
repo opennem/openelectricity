@@ -52,7 +52,6 @@ function formatRevenue(value) {
  * @property {number} totalEmissions
  * @property {number | null} emissionsIntensity
  * @property {number} runningHours
- * @property {number} startCount
  * @property {number} netRevenue
  * @property {number | null} roundTripEfficiency
  * @property {number | null} storageDuration
@@ -135,15 +134,6 @@ export const METRICS = {
 				? { value: fmt0.format(c.runningHours), unit: 'h' }
 				: { value: '--', subtitle: NEEDS_INTERVAL }
 	},
-	startCount: {
-		label: 'Start Count',
-		description:
-			'How many times the facility went from idle to generating within the visible range. Needs a sub-daily view.',
-		compute: (c) =>
-			c.hasSubDaily
-				? { value: fmt0.format(c.startCount) }
-				: { value: '--', subtitle: NEEDS_INTERVAL }
-	},
 	netRevenue: {
 		label: 'Net Revenue',
 		description:
@@ -212,7 +202,7 @@ export function resolveMetricKeys(group, flags = {}) {
 				'intensity',
 				'revenue',
 				'avgPrice',
-				...(flags.isPeaker ? ['runningHours', 'startCount'] : [])
+				...(flags.isPeaker ? ['runningHours'] : [])
 			];
 			break;
 		case 'wind':

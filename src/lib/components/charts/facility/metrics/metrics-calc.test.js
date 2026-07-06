@@ -9,7 +9,6 @@ import {
 	avgPriceReceived,
 	peakBucket,
 	runningHours,
-	startCount,
 	dcAcRatio,
 	computeUnitAvailability
 } from './metrics-calc.js';
@@ -221,42 +220,6 @@ describe('runningHours', () => {
 
 	it('returns 0 for empty data', () => {
 		expect(runningHours([], ['power'], 5)).toBe(0);
-	});
-});
-
-// ── startCount ───────────────────────────────────────────────────────
-
-describe('startCount', () => {
-	it('counts transitions from 0 to generating', () => {
-		const data = [
-			{ power: 0 },
-			{ power: 100 },
-			{ power: 150 },
-			{ power: 0 },
-			{ power: 50 },
-			{ power: 0 },
-			{ power: 200 }
-		];
-		expect(startCount(data, ['power'])).toBe(3);
-	});
-
-	it('counts initial generating as a start', () => {
-		const data = [{ power: 100 }, { power: 0 }, { power: 50 }];
-		expect(startCount(data, ['power'])).toBe(2);
-	});
-
-	it('returns 0 when never generating', () => {
-		const data = [{ power: 0 }, { power: 0 }];
-		expect(startCount(data, ['power'])).toBe(0);
-	});
-
-	it('returns 1 for continuous generation', () => {
-		const data = [{ power: 100 }, { power: 150 }, { power: 200 }];
-		expect(startCount(data, ['power'])).toBe(1);
-	});
-
-	it('returns 0 for empty data', () => {
-		expect(startCount([], ['power'])).toBe(0);
 	});
 });
 

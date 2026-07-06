@@ -40,7 +40,11 @@
 	</span>
 
 	<span class="flex items-baseline gap-1">
-		<span class="font-semibold tabular-nums text-dark-grey {valueSizeClasses[size]}">
+		<span
+			class="font-semibold tabular-nums {value === '--'
+				? 'text-mid-grey'
+				: 'text-dark-grey'} {valueSizeClasses[size]}"
+		>
 			{value}
 		</span>
 
