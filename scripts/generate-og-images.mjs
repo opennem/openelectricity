@@ -164,7 +164,10 @@ async function main() {
 		.filter((f) => f.endsWith('.jpg'))
 		.map((f) => f.slice(0, -4))
 		.sort();
-	writeFileSync(MANIFEST, JSON.stringify(codes) + '\n');
+	// Tab-indented to match Prettier (the codes are already sorted above) so the
+	// committed manifest stays a clean, minimal diff each regen rather than a
+	// one-line blob that fails `prettier --check`.
+	writeFileSync(MANIFEST, JSON.stringify(codes, null, '\t') + '\n');
 	console.log(`[og] manifest: ${codes.length} codes → ${MANIFEST}`);
 }
 
