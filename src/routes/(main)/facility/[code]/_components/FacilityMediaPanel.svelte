@@ -1,14 +1,18 @@
 <script>
-	import { getFueltechColor } from '$lib/utils/fueltech-display';
+	import { primaryFuelTechColour } from '$lib/utils/fueltech-display';
 	import PhotoCarousel from '$lib/components/PhotoCarousel.svelte';
 
 	/**
+	 * `showMap` gates the location mini-map: on mobile the map has its own
+	 * full-bleed tab, so the panel skips it here — gating the *mount* (not just
+	 * `display`) avoids booting a second, invisible MapLibre instance.
 	 * @type {{
 	 *   facility?: any | null,
-	 *   sanityFacility: any | null
+	 *   sanityFacility: any | null,
+	 *   showMap?: boolean
 	 * }}
 	 */
-	let { facility = null, sanityFacility } = $props();
+	let { facility = null, sanityFacility, showMap = true } = $props();
 
 	let photos = $derived(sanityFacility?.photos ?? []);
 
@@ -20,22 +24,7 @@
 	let osmWayId = $derived(sanityFacility?.osm_way_id ?? null);
 
 	// Primary fuel-tech colour (most common among the units) tints the map marker + shape.
-	let primaryFuelTechColor = $derived.by(() => {
-		/** @type {Record<string, number>} */
-		const counts = {};
-		for (const unit of facility?.units ?? []) {
-			if (unit.fueltech_id) counts[unit.fueltech_id] = (counts[unit.fueltech_id] || 0) + 1;
-		}
-		let maxFt = '';
-		let maxCount = 0;
-		for (const [ft, count] of Object.entries(counts)) {
-			if (count > maxCount) {
-				maxCount = count;
-				maxFt = ft;
-			}
-		}
-		return maxFt ? getFueltechColor(maxFt) : '#ffffff';
-	});
+	let primaryFuelTechColor = $derived(primaryFuelTechColour(facility?.units));
 </script>
 
 {#if photos.length || hasLocation}
@@ -46,7 +35,7 @@
 			</div>
 		{/if}
 
-		{#if hasLocation}
+		{#if hasLocation && showMap}
 			<div class="h-[180px]">
 				{#await import('./FacilityMiniMap.svelte') then { default: FacilityMiniMap }}
 					<FacilityMiniMap

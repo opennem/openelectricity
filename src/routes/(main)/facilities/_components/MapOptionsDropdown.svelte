@@ -6,11 +6,12 @@
 	/**
 	 * @type {{
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
-	 *   showTransmissionLines: boolean,
-	 *   showGolfCourses: boolean,
-	 *   showGolfOption: boolean,
-	 *   showMagicIndicator: boolean,
-	 *   clustering: boolean,
+	 *   showTransmissionLines?: boolean,
+	 *   showGolfCourses?: boolean,
+	 *   showGolfOption?: boolean,
+	 *   showMagicIndicator?: boolean,
+	 *   clustering?: boolean,
+	 *   showClusteringOption?: boolean,
 	 *   iconOnly?: boolean,
 	 *   onmapthemechange?: (value: 'light' | 'dark' | 'satellite') => void,
 	 *   ontransmissionlineschange?: (value: boolean) => void,
@@ -25,6 +26,8 @@
 		showGolfOption = false,
 		showMagicIndicator = false,
 		clustering = true,
+		/** Hide the clustering row for maps with a single point (e.g. one facility). */
+		showClusteringOption = true,
 		/** Circular icon-only trigger — used by the mobile floating map controls. */
 		iconOnly = false,
 		onmapthemechange,
@@ -125,32 +128,34 @@
 			</button>
 
 			<!-- Clustering toggle -->
-			<button
-				onclick={() => {
-					onclusteringchange?.(!clustering);
-				}}
-				class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 transition-colors text-left hover:bg-light-warm-grey"
-			>
-				<span
-					class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
-					class:bg-dark-grey={clustering}
-					class:border-dark-grey={clustering}
-					class:border-mid-warm-grey={!clustering}
+			{#if showClusteringOption}
+				<button
+					onclick={() => {
+						onclusteringchange?.(!clustering);
+					}}
+					class="w-full px-3 py-2 text-xs font-medium flex items-center gap-3 transition-colors text-left hover:bg-light-warm-grey"
 				>
-					{#if clustering}
-						<svg
-							class="w-3 h-3 text-white"
-							fill="none"
-							viewBox="0 0 24 24"
-							stroke="currentColor"
-							stroke-width="3"
-						>
-							<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-						</svg>
-					{/if}
-				</span>
-				<span class="flex-1">Clustering</span>
-			</button>
+					<span
+						class="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors"
+						class:bg-dark-grey={clustering}
+						class:border-dark-grey={clustering}
+						class:border-mid-warm-grey={!clustering}
+					>
+						{#if clustering}
+							<svg
+								class="w-3 h-3 text-white"
+								fill="none"
+								viewBox="0 0 24 24"
+								stroke="currentColor"
+								stroke-width="3"
+							>
+								<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+							</svg>
+						{/if}
+					</span>
+					<span class="flex-1">Clustering</span>
+				</button>
+			{/if}
 
 			{#if showGolfOption}
 				<div class="border-t border-warm-grey my-1"></div>

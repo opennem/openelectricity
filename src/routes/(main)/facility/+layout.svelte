@@ -224,7 +224,11 @@
 			</div>
 
 			{#snippet footer()}
-				<FullscreenFooter />
+				<!-- The tiny version strip is hidden on mobile, where the facility
+				     detail page renders its own fixed bottom navigation. -->
+				{#if !isMobile}
+					<FullscreenFooter />
+				{/if}
 			{/snippet}
 		</FullscreenContainer>
 	{/snippet}

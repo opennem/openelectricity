@@ -1,5 +1,5 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { LineChart } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -32,12 +32,14 @@
 		getIntervalOptionsForDays
 	} from '$lib/components/charts/facility/range-interval-config.js';
 	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
+	import { primaryFuelTechColour } from '$lib/utils/fueltech-display';
 	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 
 	import FacilityInfoPanel from './_components/FacilityInfoPanel.svelte';
 	import FacilityUnitsPanel from './_components/FacilityUnitsPanel.svelte';
 	import FacilityMediaPanel from './_components/FacilityMediaPanel.svelte';
+	import FacilityMobileNav from './_components/FacilityMobileNav.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { createViewportSync } from './_utils/viewport-sync.js';
 	import { ianaFromOffset, offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
@@ -93,6 +95,16 @@
 	let displayInterval = $state('5m');
 
 	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
+
+	// Facility location for the mobile Map tab (mirrors FacilityMediaPanel's source).
+	let mapLocation = $derived(selectedFacility?.location ?? data.sanityFacility?.location ?? null);
+	let hasLocation = $derived(
+		Boolean(
+			mapLocation && typeof mapLocation.lat === 'number' && typeof mapLocation.lng === 'number'
+		)
+	);
+	let mapOsmWayId = $derived(data.sanityFacility?.osm_way_id ?? null);
+	let mapColor = $derived(primaryFuelTechColour(selectedFacility?.units));
 
 	/** Whether any unit on this facility actually emits CO₂. Drives whether
 	 *  the Emissions card renders. Renewables/storage facilities skip the
@@ -164,6 +176,21 @@
 	let splitContainerEl = $state(undefined);
 	let isMobile = $state(false);
 
+	/** Which section the mobile bottom-nav shows below the (always-visible) hero.
+	 *  Desktop ignores this: the section toggles use `max-md:hidden`, which is
+	 *  inert at and above the md breakpoint, so the resizable split is unchanged.
+	 *  @type {'charts' | 'units' | 'map' | 'about'} */
+	let activeTab = $state('charts');
+
+	/** The page's scroll container — bound so `selectTab` can reveal a tab from
+	 *  the top of its content. */
+	/** @type {HTMLElement | undefined} */
+	let scrollEl = $state(undefined);
+
+	/** Measured height of the bottom nav, so the full-bleed Map tab can fill the
+	 *  space between the header and the nav exactly. */
+	let navHeight = $state(0);
+
 	/** Measured live so the sidebar can stick just below the header. */
 	let headerHeight = $state(0);
 
@@ -203,7 +230,10 @@
 		}
 	});
 
-	let leftWidthPercent = $derived(isMobile ? null : `${splitDrag.value * 100}%`);
+	// The split width is applied via a CSS var consumed only at `md:` and up, so
+	// mobile is full-width from the first paint (no dependence on the async
+	// `isMobile` flag, which would otherwise render the desktop split % briefly).
+	let splitWidth = $derived(`${splitDrag.value * 100}%`);
 
 	onMount(() => {
 		const mq = window.matchMedia('(max-width: 767px)');
@@ -212,6 +242,17 @@
 		mq.addEventListener('change', update);
 		return () => mq.removeEventListener('change', update);
 	});
+
+	/** Switch the mobile tab and reveal it from the top: scroll just past the hero
+	 *  so the section's content starts at the top, while the header stays reachable
+	 *  by scrolling back up. `tick()` lets the newly-shown section lay out first so
+	 *  the scroll target isn't clamped short.
+	 *  @param {'charts' | 'units' | 'map' | 'about'} tab */
+	async function selectTab(tab) {
+		activeTab = tab;
+		await tick();
+		scrollEl?.scrollTo({ top: headerHeight });
+	}
 
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
@@ -224,6 +265,8 @@
 	$effect(() => {
 		// Reset chart-viewport-driven state when the underlying facility changes.
 		const _code = data.facility?.code;
+		// Land each facility on its Charts tab so navigation never strands you.
+		activeTab = 'charts';
 		activeInterval = '5m';
 		activeMetric = 'power';
 		displayInterval = '5m';
@@ -448,6 +491,7 @@
      (view-transition-name: facility-hero) so the whole panel expands into the
      full page on navigation. -->
 <div
+	bind:this={scrollEl}
 	class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey"
 	style:view-transition-name="facility-hero"
 >
@@ -466,7 +510,12 @@
 	</div>
 	{#if selectedFacility}
 		<div
-			class="p-4 space-y-4 md:p-8 md:space-y-8"
+			class={[
+				'p-4 pb-24 space-y-4 md:p-8 md:pb-8 md:space-y-8',
+				// On the Map tab collapse to nothing (incl. padding) rather than
+				// display:none, so the LayerCake charts inside keep a real size.
+				activeTab === 'map' && 'max-md:h-0 max-md:overflow-hidden max-md:p-0'
+			]}
 			style="--hdr-h: {headerHeight}px; --col-top: calc(var(--hdr-h) + 2rem);"
 		>
 			<div
@@ -475,12 +524,16 @@
 			>
 				<!-- Main column — a stack of standalone card panes (range bar, metrics
 				     and the three charts). Resizable width; the sidebar takes the
-				     remainder. -->
+				     remainder. When off the Charts tab on mobile it collapses to h-0
+				     (clipped) rather than `display:none`, so the LayerCake charts keep
+				     a real width/height and don't warn about a zero-size container. -->
 				<div
-					class="min-w-0 md:shrink-0 md:pr-4 {splitDrag.isDragging
-						? ''
-						: 'md:transition-[width] md:duration-200 md:ease-out'}"
-					style:width={leftWidthPercent}
+					class={[
+						'w-full min-w-0 md:w-[var(--split-w)] md:shrink-0 md:pr-4',
+						splitDrag.isDragging ? '' : 'md:transition-[width] md:duration-200 md:ease-out',
+						activeTab !== 'charts' && 'max-md:h-0 max-md:overflow-hidden'
+					]}
+					style:--split-w={splitWidth}
 				>
 					<!-- Toolbar + metrics always render; only the charts depend on the fetch. -->
 					<div class="space-y-4">
@@ -687,34 +740,73 @@
 					</div>
 				</div>
 
-				{#if !isMobile}
-					<DragHandle
-						axis="x"
-						onstart={splitDrag.start}
-						active={splitDrag.isDragging}
-						class="h-auto self-stretch"
-					/>
-				{/if}
+				<DragHandle
+					axis="x"
+					onstart={splitDrag.start}
+					active={splitDrag.isDragging}
+					class="h-auto self-stretch max-md:hidden"
+				/>
 
-				<!-- Sidebar — fills the remaining width; sticky below the header. -->
+				<!-- Sidebar — fills the remaining width; sticky below the header. On
+				     mobile each panel belongs to a bottom-nav tab (Info + Media = About,
+				     Units = Units); `max-md:hidden` collapses the others so the desktop
+				     DOM order and layout are untouched. -->
 				<div
 					class="min-w-0 flex-1 space-y-4 md:space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]"
 				>
-					<FacilityInfoPanel sanityFacility={data.sanityFacility} />
-					<FacilityUnitsPanel
-						facility={selectedFacility}
-						sanityFacility={data.sanityFacility}
-						timeZone={data.timeZone}
-						{intervalData}
-					/>
-					<FacilityMediaPanel facility={selectedFacility} sanityFacility={data.sanityFacility} />
+					<div class={[activeTab !== 'about' && 'max-md:hidden']}>
+						<FacilityInfoPanel sanityFacility={data.sanityFacility} />
+					</div>
+					<div class={[activeTab !== 'units' && 'max-md:hidden']}>
+						<FacilityUnitsPanel
+							facility={selectedFacility}
+							sanityFacility={data.sanityFacility}
+							timeZone={data.timeZone}
+							{intervalData}
+						/>
+					</div>
+					<div class={[activeTab !== 'about' && 'max-md:hidden']}>
+						<FacilityMediaPanel
+							facility={selectedFacility}
+							sanityFacility={data.sanityFacility}
+							showMap={!isMobile}
+						/>
+					</div>
 				</div>
 			</div>
 
-			<!-- NPI pollution — full width below the main row -->
+			<!-- NPI pollution — full width below the main row; part of the About tab.
+			     Collapses with h-0 (not display:none) off-tab because it renders its own
+			     LayerCake charts, which warn about a zero-size container under display:none. -->
 			{#if hasNpi}
-				<FacilityPollutionPanel facility={selectedFacility} />
+				<div class={[activeTab !== 'about' && 'max-md:h-0 max-md:overflow-hidden']}>
+					<FacilityPollutionPanel facility={selectedFacility} />
+				</div>
 			{/if}
 		</div>
+
+		<!-- Map tab (mobile only) — full-bleed, no padding, filling the space
+		     between the header and the bottom nav. Mounted only while active so
+		     MapLibre initialises at its final size. -->
+		{#if hasLocation && activeTab === 'map'}
+			<div class="md:hidden" style="height: calc(100dvh - {headerHeight}px - {navHeight}px);">
+				{#await import('./_components/FacilityMap.svelte') then { default: FacilityMap }}
+					<FacilityMap
+						lat={mapLocation.lat}
+						lng={mapLocation.lng}
+						color={mapColor}
+						osmWayId={mapOsmWayId}
+					/>
+				{/await}
+			</div>
+		{/if}
 	{/if}
+
+	<!-- Mobile-only bottom navigation; `md:hidden` keeps desktop untouched. -->
+	<FacilityMobileNav
+		active={activeTab}
+		onselect={selectTab}
+		hasMap={hasLocation}
+		bind:height={navHeight}
+	/>
 </div>
