@@ -46,7 +46,6 @@
 	// Configure chart styles
 	chart.chartStyles.chartHeightClasses = 'h-[300px] md:h-[500px]';
 	chart.chartStyles.yAxisStroke = 'transparent';
-	chart.chartOptions.allowHoverHighlight = false;
 	chart.yTicks = 4;
 	chart.xTicks = 8;
 

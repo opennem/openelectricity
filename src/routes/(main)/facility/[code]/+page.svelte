@@ -151,11 +151,11 @@
 	let pickerStartDate = $derived(toDateString(viewStart || defaultStart));
 	let pickerEndDate = $derived(toDateString(viewEnd || defaultEnd));
 
-	// Mobile: each of these sections renders as its own card; desktop: a
-	// border-t divided section of the unified card. One definition so the
-	// treatment can't drift between sections.
+	// Each of these sections renders as its own card at every breakpoint. One
+	// definition so the treatment can't drift between sections. md:overflow-visible
+	// lets chart floating tooltips escape the card on desktop.
 	const sectionCardClass =
-		'overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white md:overflow-visible md:rounded-none md:border-0 md:border-t md:bg-transparent';
+		'overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white md:overflow-visible';
 
 	/** @type {HTMLElement | undefined} */
 	let chartCardEl = $state(undefined);
@@ -473,9 +473,9 @@
 				bind:this={splitContainerEl}
 				class="flex flex-col gap-4 md:gap-0 md:flex-row md:items-start"
 			>
-				<!-- Main column — one unified card holding the range bar, metrics,
-				     unit availability and the three charts as divided sections.
-				     Resizable width; the sidebar takes the remainder. -->
+				<!-- Main column — a stack of standalone card panes (range bar, metrics
+				     and the three charts). Resizable width; the sidebar takes the
+				     remainder. -->
 				<div
 					class="min-w-0 md:shrink-0 md:pr-4 {splitDrag.isDragging
 						? ''
@@ -483,16 +483,12 @@
 					style:width={leftWidthPercent}
 				>
 					{#if !showEmptyState}
-						<!-- Mobile: each section is its own card; desktop: one unified card
-						     with border-t divided sections. -->
-						<div
-							class="space-y-4 md:space-y-0 md:overflow-hidden md:rounded-lg md:border md:border-mid-warm-grey/40 md:bg-white"
-						>
-							<!-- Range / date picker -->
-							<div
-								class="flex flex-wrap items-center justify-between gap-4 px-6 py-3 rounded-lg border border-mid-warm-grey/40 bg-white md:rounded-none md:border-0 md:bg-transparent"
-							>
-								<span class="text-xs font-medium text-dark-grey">{dateRangeLabel}</span>
+						<!-- Each section is its own card pane, stacked with an even gap. -->
+						<div class="space-y-4">
+							<!-- Range / date picker — a bare toolbar row, not a card. -->
+							<div class="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
+								<span class="font-space text-base font-medium text-dark-grey">{dateRangeLabel}</span
+								>
 								<ChartRangeBar
 									{selectedRange}
 									{customDays}
@@ -528,7 +524,7 @@
 							<!-- chartCardEl wraps the chart sections (not the range bar / metrics)
 							     so pan/zoom click-outside treats clicks between charts as "still
 							     engaged" but disengages on a range-bar / metrics click. -->
-							<div bind:this={chartCardEl} class="space-y-4 md:space-y-0">
+							<div bind:this={chartCardEl} class="space-y-4">
 								<!-- Generation -->
 								<section class={sectionCardClass}>
 									<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">

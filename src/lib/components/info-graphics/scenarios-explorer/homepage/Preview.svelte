@@ -48,7 +48,6 @@
 		}
 	});
 	generationChart.yTicks = 3;
-	generationChart.chartOptions.allowHoverHighlight = false;
 	generationChart.formatTickX = formatFyTickX;
 
 	const sync = createSyncedCharts([generationChart]);

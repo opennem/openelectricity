@@ -196,20 +196,26 @@
 				</div>
 			{/if}
 
-			<!-- One row per visible series -->
+			<!-- One row per visible series; the hovered series is emphasised. -->
 			<div class="flex flex-col gap-1">
 				{#each rows as row (row.key)}
 					<div
-						class="flex items-center gap-3 justify-between rounded-sm {row.isHovered
-							? '-mx-2 px-2 py-0.5 bg-light-warm-grey/60'
+						class="flex items-center gap-3 justify-between rounded-sm transition-colors {row.isHovered
+							? '-mx-2 px-2 py-0.5 bg-mid-warm-grey/40'
 							: ''}"
 					>
 						<span class="flex items-center gap-1.5 min-w-0">
 							<span class="w-2 h-2 rounded-full shrink-0" style:background-color={row.colour}
 							></span>
-							<span class="text-dark-grey truncate">{row.label}</span>
+							<span class="truncate {row.isHovered ? 'font-semibold text-black' : 'text-dark-grey'}"
+								>{row.label}</span
+							>
 						</span>
-						<span class="font-mono font-medium text-dark-grey tabular-nums">
+						<span
+							class="font-mono tabular-nums {row.isHovered
+								? 'font-semibold text-black'
+								: 'font-medium text-dark-grey'}"
+						>
 							{#if row.formattedValue}
 								{row.formattedValue}{#if displayUnit}&nbsp;{displayUnit}{/if}
 							{:else}
