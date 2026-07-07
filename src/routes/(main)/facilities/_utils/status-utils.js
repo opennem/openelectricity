@@ -26,7 +26,9 @@ export function prepareStatusesForApi(statuses) {
 
 /**
  * Mark commissioning units and filter facilities by selected statuses.
- * Units are marked as commissioning based on their expected_closure_date and registered_date.
+ * An operating unit is marked as commissioning when it commenced operation
+ * within the last year but its max generation is still at or below 90% of
+ * its capacity — see is-commissioning.js.
  *
  * @param {any[] | null} facilities - Raw facilities from API
  * @param {string[]} selectedStatuses - User-selected statuses

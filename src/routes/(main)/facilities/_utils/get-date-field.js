@@ -1,6 +1,6 @@
 /**
  * Get the relevant date field name based on status type
- * @param {'committed' | 'operating' | 'retired'} status
+ * @param {'committed' | 'operating' | 'commissioning' | 'retired'} status
  * @returns {string}
  */
 function getDateField(status) {
@@ -8,6 +8,7 @@ function getDateField(status) {
 		case 'committed':
 			return 'expected_operation_date';
 		case 'operating':
+		case 'commissioning':
 			return 'commencement_date';
 		case 'retired':
 			return 'closure_date';
