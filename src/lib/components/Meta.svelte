@@ -13,6 +13,7 @@
 	 * @property {string} [domain]
 	 * @property {string} [siteTitle]
 	 * @property {boolean} [useSuffix]
+	 * @property {boolean | string} [canonical] - false suppresses the canonical link (e.g. draft/preview routes); a string overrides the URL
 	 */
 
 	/** @type {Props} */
@@ -27,7 +28,8 @@
 		path = $page.url.pathname,
 		domain = 'https://openelectricity.org.au',
 		siteTitle = 'Open Electricity',
-		useSuffix = true
+		useSuffix = true,
+		canonical = true
 	} = $props();
 	let titleWithSuffix = $derived(
 		siteTitle === title ? title : (title ? title + ' | ' : '') + siteTitle
@@ -36,22 +38,26 @@
 	let fullURI = $derived(`${domain}${path}`);
 	// og:image should be an absolute URL — prefix the domain for root-relative paths.
 	let imageUrl = $derived(image && !/^https?:\/\//.test(image) ? `${domain}${image}` : image);
+	let canonicalUrl = $derived(canonical === true ? fullURI : canonical || null);
 </script>
 
 <svelte:head>
 	<meta property="og:type" content={type} />
+	<meta property="og:site_name" content={siteTitle} />
 	<meta property="og:url" content={fullURI} />
-	<meta property="twitter:url" content={fullURI} />
+	{#if canonicalUrl}
+		<link rel="canonical" href={canonicalUrl} />
+	{/if}
 
 	<title>{titleWithSuffix}</title>
 	<meta name="title" content={pageTitle} />
 	<meta property="og:title" content={pageTitle} />
-	<meta property="twitter:title" content={pageTitle} />
+	<meta name="twitter:title" content={pageTitle} />
 
 	{#if description}
 		<meta name="description" content={description} />
 		<meta property="og:description" content={description} />
-		<meta property="twitter:description" content={description} />
+		<meta name="twitter:description" content={description} />
 	{/if}
 
 	{#if imageUrl}
@@ -65,7 +71,8 @@
 			<meta property="og:image:width" content={`${imageWidth}`} />
 			<meta property="og:image:height" content={`${imageHeight}`} />
 		{/if}
-		<meta property="twitter:card" content="summary_large_image" />
-		<meta property="twitter:image" content={imageUrl} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:image" content={imageUrl} />
+		<meta name="twitter:image:alt" content={pageTitle} />
 	{/if}
 </svelte:head>

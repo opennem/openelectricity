@@ -22,6 +22,7 @@
 	type="article"
 	description={data.summary}
 	image={hasCover ? urlFor(data.cover).height(630).url() : '/img/preview.jpg'}
+	canonical={false}
 />
 
 <div class="relative">

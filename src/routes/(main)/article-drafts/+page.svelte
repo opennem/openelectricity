@@ -174,7 +174,7 @@
 	};
 </script>
 
-<Meta title="Analysis" image="/img/preview.jpg" />
+<Meta title="Analysis" image="/img/preview.jpg" canonical={false} />
 
 <div>
 	<div class="container max-w-none lg:container">
