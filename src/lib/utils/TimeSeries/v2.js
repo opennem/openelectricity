@@ -219,10 +219,15 @@ export default class TimeSeriesV2 {
 				if (values.length === 0) {
 					/** @type {any} */ (point)[name] = null;
 				} else if (method === 'sum') {
-					/** @type {any} */ (point)[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0);
+					/** @type {any} */ (point)[name] = values.reduce(
+						(/** @type {number} */ a, /** @type {number} */ b) => a + b,
+						0
+					);
 				} else {
 					// mean
-					/** @type {any} */ (point)[name] = values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) / values.length;
+					/** @type {any} */ (point)[name] =
+						values.reduce((/** @type {number} */ a, /** @type {number} */ b) => a + b, 0) /
+						values.length;
 				}
 			});
 

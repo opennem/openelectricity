@@ -16,43 +16,28 @@
 	 * The animation keyframes live in `(main)/+layout.svelte`.
 	 *
 	 * @type {{
-	 *   isFullscreen: boolean,
 	 *   routeKey: string,
-	 *   paddingX?: string,
 	 *   bgClass?: string,
 	 *   stable?: import('svelte').Snippet,
 	 *   rest?: import('svelte').Snippet,
 	 *   options?: import('svelte').Snippet
 	 * }}
 	 */
-	let {
-		isFullscreen,
-		routeKey,
-		paddingX = 'px-4',
-		bgClass = 'md:bg-light-warm-grey/75',
-		stable,
-		rest,
-		options
-	} = $props();
+	let { routeKey, bgClass = 'md:bg-light-warm-grey/75', stable, rest, options } = $props();
 </script>
 
 <div
-	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 min-h-[46.5px] {paddingX} {isFullscreen
-		? `md:py-3 md:px-4 ${bgClass}`
-		: ''}"
+	class="flex items-center justify-between relative z-10 gap-4 py-3 min-h-[46.5px] md:px-4 {bgClass}"
 >
-	<div class="flex items-center gap-4 min-w-0">
+	<div class="flex flex-1 items-center gap-4 min-w-0">
 		{#if stable}
-			<div
-				class="flex items-center gap-1 shrink-0"
-				style="view-transition-name: filter-bar-stable"
-			>
+			<div class="flex items-center gap-1 shrink-0" style="view-transition-name: filter-bar-stable">
 				{@render stable()}
 			</div>
 		{/if}
 		{#if rest}
 			<div
-				class="flex items-center gap-4 min-w-0"
+				class="flex flex-1 items-center gap-4 min-w-0"
 				style="view-transition-name: filter-bar-rest-{routeKey}"
 			>
 				{@render rest()}
@@ -61,9 +46,7 @@
 	</div>
 	{#if options}
 		<div
-			class="flex items-center md:border-l md:border-warm-grey {isFullscreen
-				? 'md:pl-2 md:ml-2'
-				: 'md:pl-4 md:ml-4'}"
+			class="flex items-center md:border-l md:border-warm-grey md:pl-2 md:ml-2"
 			style="view-transition-name: filter-bar-options"
 		>
 			{@render options()}

@@ -2,6 +2,7 @@
 	import FuelTechBadgeStack from '$lib/components/FuelTechBadgeStack.svelte';
 	import { deriveCard, formatCardSubtitle } from '$lib/og/facility-card-data.js';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
+	import { facilityPhotoSrc } from '../_utils/facility-photo.js';
 
 	/**
 	 * Facilities card-grid tile. The social-card design rendered natively (no
@@ -23,7 +24,7 @@
 	// Photo tiles darken toward the bottom, so their text is always white. Plain
 	// colour tiles flip to dark text for the light fuel techs (solar, OCGT…).
 	let darkText = $derived(!photoUrl && needsDarkText(card.dominant));
-	let photoSrc = $derived(photoUrl ? `${photoUrl}?w=800&h=420&fit=crop&auto=format&q=75` : null);
+	let photoSrc = $derived(photoUrl ? facilityPhotoSrc(photoUrl, { w: 800, h: 420 }) : null);
 </script>
 
 <div
@@ -50,7 +51,7 @@
 		<FuelTechBadgeStack {groups} size="md" showStatus={false} ring="ring-1 ring-white" />
 		<div class="min-w-0 max-w-full">
 			<h3
-				class="mb-0 truncate text-sm leading-none font-semibold @sm:text-base @md:text-lg {darkText
+				class="mb-0 truncate text-sm font-semibold @sm:text-base @md:text-lg {darkText
 					? 'text-black'
 					: 'text-white'}"
 			>

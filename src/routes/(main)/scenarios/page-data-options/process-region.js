@@ -5,7 +5,11 @@ import { loadFuelTechs } from '$lib/fuel_techs.js';
 import { fuelTechMap } from './groups-region';
 import sumFuelTechData from './sum-fuel-tech-data';
 import combineHistoryProjection from './combine-history-projection';
-import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData, currentFinancialYear } from './utils';
+import {
+	mutateDatesToStartOfYear,
+	mergeHistoricalEmissionsData,
+	currentFinancialYear
+} from './utils';
 
 /**
  * @param {{
@@ -266,21 +270,23 @@ function emissions({ regionsData, includeBatteryAndLoads }) {
 function intensity({ processedEmissions, processedEnergy }) {
 	const seriesNames = processedEmissions.seriesNames;
 
-	const seriesData = processedEmissions.seriesData.map((/** @type {any} */ d, /** @type {any} */ i) => {
-		/** @type {any} */
-		const obj = {
-			date: d.date,
-			time: d.time
-		};
+	const seriesData = processedEmissions.seriesData.map(
+		(/** @type {any} */ d, /** @type {any} */ i) => {
+			/** @type {any} */
+			const obj = {
+				date: d.date,
+				time: d.time
+			};
 
-		seriesNames.forEach((/** @type {any} */ name) => {
-			if (d[name] && /** @type {any} */ (processedEnergy.seriesData[i])[name]) {
-				obj[name] = d[name] / /** @type {any} */ (processedEnergy.seriesData[i])[name];
-			}
-		});
+			seriesNames.forEach((/** @type {any} */ name) => {
+				if (d[name] && /** @type {any} */ (processedEnergy.seriesData[i])[name]) {
+					obj[name] = d[name] / /** @type {any} */ (processedEnergy.seriesData[i])[name];
+				}
+			});
 
-		return obj;
-	});
+			return obj;
+		}
+	);
 
 	return {
 		...processedEmissions,

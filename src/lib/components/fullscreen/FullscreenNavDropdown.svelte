@@ -9,6 +9,13 @@
 
 	const TOGGLE_KEY = 'g';
 
+	/**
+	 * `light` renders the logo mark in white (for dark backdrops, e.g. the
+	 * mobile floating nav over a dark/satellite map).
+	 * @type {{ light?: boolean }}
+	 */
+	let { light = false } = $props();
+
 	/** @type {{ name: string, href: string }[]} */
 	let navItems = $derived([
 		{ name: 'Home', href: '/' },
@@ -91,12 +98,18 @@
 	<button
 		bind:this={triggerRef}
 		onclick={toggleMenu}
-		class="flex items-center px-2 py-1 rounded-lg hover:bg-warm-grey transition-colors cursor-pointer"
+		class="flex items-center px-2 py-1 rounded-lg transition-colors cursor-pointer {light
+			? 'hover:bg-white/20'
+			: 'hover:bg-warm-grey'}"
 		title="Open navigation menu (g)"
 		aria-haspopup="menu"
 		aria-expanded={isOpen}
 	>
-		<img src="/logo-mark.png" alt="Open Electricity" class="h-8 w-auto" />
+		<img
+			src="/logo-mark.png"
+			alt="Open Electricity"
+			class="h-8 w-auto {light ? 'brightness-0 invert' : ''}"
+		/>
 	</button>
 
 	{#if isOpen}

@@ -86,12 +86,10 @@ function chunk(arr, size) {
 async function fetchChunk(network, codes, dateStart, metric, interval) {
 	if (!codes.length) return [];
 	try {
-		const r = await client.getFacilityData(
-			network,
-			codes,
-			/** @type {any} */ ([metric]),
-			{ interval: /** @type {any} */ (interval), dateStart }
-		);
+		const r = await client.getFacilityData(network, codes, /** @type {any} */ ([metric]), {
+			interval: /** @type {any} */ (interval),
+			dateStart
+		});
 		return r.response.data ?? [];
 	} catch (err) {
 		if (err instanceof NoDataFound) return [];
@@ -102,9 +100,7 @@ async function fetchChunk(network, codes, dateStart, metric, interval) {
 
 export async function GET({ url, setHeaders }) {
 	const modeParam = url.searchParams.get('mode');
-	const mode = /** @type {'live' | 'daily'} */ (
-		modeParam === 'live' ? 'live' : 'daily'
-	);
+	const mode = /** @type {'live' | 'daily'} */ (modeParam === 'live' ? 'live' : 'daily');
 	const config = MODE_CONFIG[mode];
 
 	try {
@@ -167,9 +163,6 @@ export async function GET({ url, setHeaders }) {
 		return Response.json({ mode, unit: config.metric === 'energy' ? 'MWh' : 'MW', values });
 	} catch (err) {
 		console.error('Error fetching batched generation data:', err);
-		return Response.json(
-			{ error: /** @type {any} */ (err).message },
-			{ status: 500 }
-		);
+		return Response.json({ error: /** @type {any} */ (err).message }, { status: 500 });
 	}
 }

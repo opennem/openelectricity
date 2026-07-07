@@ -1,16 +1,21 @@
 <script>
 	import FuelTechBadgeStack from '$lib/components/FuelTechBadgeStack.svelte';
 	import UnitGroupPopup from './UnitGroupPopup.svelte';
+	import { fuelTechNameMap } from '$lib/fuel_techs.js';
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import { groupUnits, getOrderedFuelTechGroups } from '../_utils/units';
 
 	/**
+	 * `dense` renders the mobile-sheet row: fuel-tech icons on the left, name
+	 * with a "Tech · Region" subtitle, capacity (and storage) on the right.
+	 * Skips the unit-group hover popup, which doesn't suit touch.
 	 * @type {{
 	 *   facility: any,
 	 *   isHighlighted?: boolean,
 	 *   isSelected?: boolean,
 	 *   compact?: boolean,
+	 *   dense?: boolean,
 	 *   hideMetricCols?: boolean,
 	 *   darkMode?: boolean,
 	 *   isFullscreen?: boolean,
@@ -26,6 +31,7 @@
 		isHighlighted = false,
 		isSelected = false,
 		compact = false,
+		dense = false,
 		hideMetricCols = false,
 		darkMode = false,
 		isFullscreen = false,
@@ -64,10 +70,24 @@
 	/** @type {'sm' | 'md' | 'lg'} */
 	let badgeSize = $derived(compact ? 'sm' : 'lg');
 
-	// In the list, badges overlap only on the selected row (the pane narrows when
-	// a facility is selected); otherwise they spread out. The cluster popup
-	// always overlaps.
-	let badgesOverlap = $derived(compact || isSelected);
+	// Standard list badges always spread out (even on the selected row); the
+	// space-constrained cluster popup and dense sheet rows overlap them.
+	let badgesOverlap = $derived(compact || dense);
+
+	// Dense subtitle: the leading (dominant) fuel tech's base name + short
+	// region, e.g. "Coal · NSW" (coal_black → Coal, solar_utility → Solar) —
+	// mirrors the icon the badge stack shows first. The base name comes from
+	// the canonical fuelTechNameMap so it can't drift from other surfaces.
+	let denseSubtitle = $derived.by(() => {
+		const id = /** @type {string} */ (orderedFuelTechs[0]?.fueltech_id ?? '');
+		const base = id.split('_')[0];
+		return [
+			fuelTechNameMap[base] ?? base,
+			getRegionLabel(facility.network_id, facility.network_region)
+		]
+			.filter(Boolean)
+			.join(' · ');
+	});
 </script>
 
 {#snippet badgeGroup()}
@@ -77,6 +97,32 @@
 		{darkMode}
 		overlap={badgesOverlap}
 	/>
+{/snippet}
+
+{#snippet metricCell()}
+	<div class="flex flex-col items-end gap-0.5 shrink-0">
+		<div class="flex justify-end items-baseline gap-1">
+			{#if showMetric}
+				<span class="font-mono text-sm text-dark-grey">
+					{formatValue(/** @type {number} */ (metricValue))}
+				</span>
+				<span class="text-xs text-mid-grey">{metricUnit}</span>
+			{:else}
+				<span class="font-mono text-sm text-dark-grey" title="Total Capacity">
+					{formatValue(totalCapacity)}
+				</span>
+				<span class="text-xs text-mid-grey">MW</span>
+			{/if}
+		</div>
+
+		<!-- Dense rows have no storage column, so stack it under the capacity. -->
+		{#if !showMetric && totalStorage > 0}
+			<div class="flex justify-end items-baseline gap-1" title="Storage Capacity">
+				<span class="font-mono text-xxs text-dark-grey">{formatValue(totalStorage)}</span>
+				<span class="text-xxs text-mid-grey">MWh</span>
+			</div>
+		{/if}
+	</div>
 {/snippet}
 
 {#if compact}
@@ -132,6 +178,40 @@
 			</div>
 		</div>
 	</button>
+{:else if dense}
+	<!-- Dense mode for the mobile facilities sheet: icons | name + subtitle | capacity -->
+	<li
+		class="border-b border-warm-grey last:border-b-0"
+		data-facility-code={facility.code}
+		onmouseenter={() => onmouseenter?.(facility)}
+		onmouseleave={() => onmouseleave?.()}
+	>
+		<button
+			class="w-full text-left flex items-center gap-3 px-4 py-3 group relative hover:bg-warm-grey cursor-pointer {isSelected
+				? 'ring-1 ring-mid-grey ring-inset'
+				: ''}"
+			class:bg-light-warm-grey={hasCommittedUnit && !isHighlighted && !isSelected}
+			class:bg-warm-grey={isHighlighted || isSelected}
+			onclick={() => onclick?.(facility)}
+		>
+			<span class="inline-flex shrink-0">
+				{@render badgeGroup()}
+			</span>
+
+			<div class="min-w-0 flex-1">
+				<div class="text-sm font-semibold text-dark-grey truncate">
+					{facility.name || 'Unnamed Facility'}
+				</div>
+				<div class="text-xs text-mid-grey truncate mt-0.5">
+					{denseSubtitle}
+				</div>
+			</div>
+
+			{#if !hideMetricCols}
+				{@render metricCell()}
+			{/if}
+		</button>
+	</li>
 {:else}
 	<!-- Standard mode -->
 	<li

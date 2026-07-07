@@ -394,6 +394,8 @@ The main chart component for stacked area/bar charts:
 
 The shared derivation logic used by the built-in tooltips (hover/focus precedence, `visibleSeriesNames` total, date formatting for time-based and category charts, per-series row building) lives as pure helpers in [`tooltip-derivations.js`](./tooltip-derivations.js) with `tooltip-derivations.test.js` covering the edge cases. The date header prefers `chart.formatTooltipX` (the exact-point formatter) over the midpoint-keyed `formatTickX`, and `chartTooltips.showDate` (default `true`) hides it when `false` — gated centrally in `getFormattedX`, so all tooltip variants honour it.
 
+What a date label should look like per display interval is defined once in [`time-format-policy.js`](./time-format-policy.js): `getTimeFormatPolicy(displayInterval, ianaTimeZone)` returns `{ formatTooltip, bucketTick }` — the standalone per-point label (weeks render as inclusive ranges like "16 — 22 June 2025", financial years as "FY2026", seasons as "Summer 2025/26") and, for the coarse calendar buckets in `COARSE_BUCKET_INTERVALS` (quarter/season/half/fy/1y), an explicit per-bucket axis labeller. `applyFacilityTimeAxis` in `formatters.js` wires the policy into a ChartStore; the underlying cached Intl primitives live in [`date-labels.js`](./date-labels.js) and the NEM/WEM offset ↔ IANA mapping in [`network-time.js`](./network-time.js).
+
 #### Synced Charts Example
 
 ```svelte
@@ -530,20 +532,21 @@ A unified toolbar combining range presets, a calendar popover, and an interval d
 
 #### Props
 
-| Prop                   | Type                     | Description                                                                               |
-| ---------------------- | ------------------------ | ----------------------------------------------------------------------------------------- |
-| `selectedRange`        | `number \| null`         | Active preset in days (`null` = custom, `-1` = All)                                       |
-| `customDays`           | `number \| null`         | Span (days) of the current custom view — derives the interval options when no preset is active |
-| `displayInterval`      | `string`                 | Current interval id (`'5m'`, `'30m'`, `'1h'`, `'1d'`, `'7d'`, `'1M'`, `'season'`, `'quarter'`, `'half'`, `'fy'`, `'1y'`) |
-| `startDate`            | `string \| null`         | Start date (YYYY-MM-DD) for the DateRangePicker                                           |
-| `endDate`              | `string \| null`         | End date (YYYY-MM-DD) for the DateRangePicker                                             |
-| `minDate`              | `string \| null`         | Earliest selectable date                                                                  |
-| `maxDate`              | `string \| null`         | Latest selectable date                                                                    |
-| `earliestDate`         | `string \| null`         | Earliest data date (used by "All" preset)                                                 |
-| `showIntervalDropdown` | `boolean`                | When `false`, renders the interval as a static badge instead of a Select. Default `true`. |
-| `onrangeselect`        | `(days) => void`         | Called when a range preset is clicked                                                     |
-| `ondaterangechange`    | `({start, end}) => void` | Called when dates change via the calendar                                                 |
-| `onintervalchange`     | `(interval) => void`     | Called when the interval dropdown changes                                                 |
+| Prop                   | Type                     | Description                                                                                                                                                            |
+| ---------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `selectedRange`        | `number \| null`         | Active preset in days (`null` = custom, `-1` = All)                                                                                                                    |
+| `customDays`           | `number \| null`         | Span (days) of the current custom view — derives the interval options when no preset is active                                                                         |
+| `displayInterval`      | `string`                 | Current interval id (`'5m'`, `'30m'`, `'1h'`, `'1d'`, `'7d'`, `'1M'`, `'season'`, `'quarter'`, `'half'`, `'fy'`, `'1y'`)                                               |
+| `startDate`            | `string \| null`         | Start date (YYYY-MM-DD) for the DateRangePicker                                                                                                                        |
+| `endDate`              | `string \| null`         | End date (YYYY-MM-DD) for the DateRangePicker                                                                                                                          |
+| `minDate`              | `string \| null`         | Earliest selectable date                                                                                                                                               |
+| `maxDate`              | `string \| null`         | Latest selectable date                                                                                                                                                 |
+| `earliestDate`         | `string \| null`         | Earliest data date (used by "All" preset)                                                                                                                              |
+| `showIntervalDropdown` | `boolean`                | When `false`, renders the interval as a static badge instead of a Select. Default `true`.                                                                              |
+| `pending`              | `boolean`                | While `true`, the active range control pulses (`animate-pulse` + `aria-busy`) to show the switched range is still loading. The bar stays interactive. Default `false`. |
+| `onrangeselect`        | `(days) => void`         | Called when a range preset is clicked                                                                                                                                  |
+| `ondaterangechange`    | `({start, end}) => void` | Called when dates change via the calendar                                                                                                                              |
+| `onintervalchange`     | `(interval) => void`     | Called when the interval dropdown changes                                                                                                                              |
 
 #### Range presets
 
@@ -860,7 +863,8 @@ Key behaviors:
 - **Interval-aware fetch limits**: Every daily-or-coarser energy grain (1d/1M/3M/1y) pulls a full facility lifetime in one request (~11000-day cap — at most ~11k points), so wide ranges like "All" never batch. Only the sub-daily grains (5m, 1h) keep a tight ~1000-day cap, with `#splitGapIntoBatches` chunking anything wider
 - **Date snapping**: Aligns request boundaries to interval periods — midnight for 1d, 1st of month for 1M, quarter start for 3M, Jan 1 for 1y
 - **Debounced fetching**: Batches rapid pan movements into single API calls (150ms debounce)
-- **Dedup merge**: New data rows overwrite existing ones at the same timestamp, then re-sort
+- **Sorted merge**: Both the cache and every processed response are time-sorted, so merges are O(n+m) — plain concat for the common append/prepend cases, a two-pointer merge (`mergeSortedByTime` in `binary-search.js`) for overlaps, with new rows winning on equal timestamps. `getDataForRange` slices by binary search
+- **Disposal / stale-fetch guard**: `dispose()` cancels the pending debounce and makes in-flight fetches no-ops on resolve (a generation counter captured per fetch). The cache is left intact so a stashed manager can be revived; `clearCache()` disposes and also resets the cache. The network request itself is never aborted — `sharedFetch` responses are shared across managers by URL
 - **Metric-aware**: Accepts `interval` and `metric` config; recreated when these change
 
 ---
@@ -893,11 +897,16 @@ src/lib/components/charts/v2/
 ├── IntervalSelector.svelte     # Interval toggle
 │
 ├── dataProcessing.js           # Data processing utilities (incl. aggregateForDisplay / aggregateByBoundary)
+├── binary-search.js            # bisectTime / indexOfTime / mergeSortedByTime for time-sorted rows
 ├── bucket-boundaries.js        # Pure calendar math: network-local quarter/season/half/fy bucket starts + spans
 ├── chart-families.js           # Chart-type family metadata (stacked-area, bar, etc.)
+├── chart-loading-state.js      # Shared isSwitchingData / showLoadingOverlay predicates
 ├── compute-y-domain.js         # Y-domain computation for single/dual axes
+├── date-labels.js              # Cached Intl date-label primitives (formatDayMonth, formatDateRange, formatBucketLabel, …)
 ├── energy-gridlines.js         # Gridline tick computation for energy intervals
-├── formatters.js               # Axis / tick formatters
+├── formatters.js               # Axis/tooltip wiring (applyFacilityTimeAxis, getPowerAxisTicks) + re-exports
+├── network-time.js             # NEM/WEM offset ↔ IANA timezone mapping helpers
+├── time-format-policy.js       # Single source of truth: display interval → tooltip/axis date labels
 ├── intervalConfig.js           # Interval/metric/curve definitions
 ├── intervals.js                # Interval utilities
 ├── presets.js                  # Chart presets

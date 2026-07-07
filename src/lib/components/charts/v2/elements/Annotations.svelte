@@ -6,7 +6,14 @@
 	 * Supports rect, circle, line and text with rotation and custom styles.
 	 */
 	import { getContext } from 'svelte';
-	import { toDateValue, rectDefaults, circleDefaults, lineDefaults, textDefaults, textTransform } from './annotations-helpers.js';
+	import {
+		toDateValue,
+		rectDefaults,
+		circleDefaults,
+		lineDefaults,
+		textDefaults,
+		textTransform
+	} from './annotations-helpers.js';
 
 	const { xScale, yScale, padding } = getContext('LayerCake');
 

@@ -53,7 +53,13 @@
 	 *   timeZone?: string
 	 * }}
 	 */
-	let { facility, sanityFacility = null, summaryData = null, intervalData = null, timeZone = '+10:00' } = $props();
+	let {
+		facility,
+		sanityFacility = null,
+		summaryData = null,
+		intervalData = null,
+		timeZone = '+10:00'
+	} = $props();
 
 	/** @type {Record<string, string>} Map gas fueltech codes to display labels */
 	const gasSubtypeLabels = {
@@ -181,23 +187,11 @@
 <div class="flex flex-col gap-4">
 	{#if metrics}
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-			<MetricCard
-				label="Capacity Factor"
-				value={fmtCf.format(metrics.cf)}
-				unit="%"
-			/>
+			<MetricCard label="Capacity Factor" value={fmtCf.format(metrics.cf)} unit="%" />
 
-			<MetricCard
-				label="Running Hours"
-				value="--"
-				subtitle="Requires power data"
-			/>
+			<MetricCard label="Running Hours" value="--" subtitle="Requires power data" />
 
-			<MetricCard
-				label="Start Count"
-				value="--"
-				subtitle="Requires power data"
-			/>
+			<MetricCard label="Start Count" value="--" subtitle="Requires power data" />
 
 			<MetricCard
 				label="Avg Price Received"
@@ -205,10 +199,7 @@
 				unit="$/MWh"
 			/>
 
-			<MetricCard
-				label="Revenue"
-				value={formatRevenue(metrics.totalMV)}
-			/>
+			<MetricCard label="Revenue" value={formatRevenue(metrics.totalMV)} />
 		</div>
 	{:else}
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -230,9 +221,7 @@
 		{/if}
 
 		{#if isPeaker}
-			<span class="text-xxs text-mid-grey">
-				Peaker plant
-			</span>
+			<span class="text-xxs text-mid-grey"> Peaker plant </span>
 		{/if}
 	</div>
 

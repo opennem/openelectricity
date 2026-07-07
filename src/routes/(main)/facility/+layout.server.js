@@ -62,6 +62,10 @@ export async function load() {
 	// Awaited (not streamed) so the layout resolves during prerender — a pending
 	// promise would hang the static build.
 	return {
-		facilities: await getFacilitiesList()
+		facilities: await getFacilitiesList(),
+		// Hide the global Nav/Footer chrome — facility pages are immersive always,
+		// matching /facilities. Read by (main)/+layout.svelte; SSR-available so
+		// there's no first-paint flash.
+		fullscreen: true
 	};
 }

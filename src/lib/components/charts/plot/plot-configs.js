@@ -441,13 +441,13 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
 			...(xDomain ? { domain: xDomain } : {}),
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isLinear ? { type: 'linear' } : {}),
-			...(gridlines ? { axis: null } : {}),
+			...(gridlines ? { axis: null } : {})
 		},
 		y: {
 			label: null,
 			grid: !gridlines,
 			tickFormat: yTickFormat,
-			...(yDomain ? { domain: yDomain } : {}),
+			...(yDomain ? { domain: yDomain } : {})
 		},
 		...getFacetScales(facetColumn, facetGrid),
 		marks: [
@@ -495,8 +495,18 @@ export function createStackedAreaOptions(data, seriesNames, colours, labels, opt
  * @param {FacetGrid | null} [facetGrid]
  * @returns {any[]}
  */
-function buildLineMarks(data, seriesNames, xKey, seriesLineStyles, curve, facetColumn = null, facetGrid = null) {
-	const hasCustomStyles = seriesNames.some((n) => getLineDasharray(seriesLineStyles[n]) !== undefined);
+function buildLineMarks(
+	data,
+	seriesNames,
+	xKey,
+	seriesLineStyles,
+	curve,
+	facetColumn = null,
+	facetGrid = null
+) {
+	const hasCustomStyles = seriesNames.some(
+		(n) => getLineDasharray(seriesLineStyles[n]) !== undefined
+	);
 	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
 
 	if (!hasCustomStyles) {
@@ -568,7 +578,15 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 	} = options;
 	const { xKey, isCategory, isLinear } = detectXMode(data);
 
-	const lineMarks = buildLineMarks(data, seriesNames, xKey, seriesLineStyles, curve, facetColumn, facetGrid);
+	const lineMarks = buildLineMarks(
+		data,
+		seriesNames,
+		xKey,
+		seriesLineStyles,
+		curve,
+		facetColumn,
+		facetGrid
+	);
 	const facetMark = getFacetMarkSpec(facetColumn, facetGrid);
 	const labelMark = buildFacetLabelMark(facetColumn, facetGrid);
 
@@ -583,13 +601,13 @@ export function createLineOptions(data, seriesNames, colours, labels, options = 
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isCategory ? { tickPadding: 6, type: 'point' } : {}),
 			...(isLinear ? { type: 'linear' } : {}),
-			...(gridlines ? { axis: null } : {}),
+			...(gridlines ? { axis: null } : {})
 		},
 		y: {
 			label: null,
 			grid: !gridlines,
 			...(yTickFormat ? { tickFormat: yTickFormat } : {}),
-			...(yDomain ? { domain: yDomain } : {}),
+			...(yDomain ? { domain: yDomain } : {})
 		},
 		...getFacetScales(facetColumn, facetGrid),
 		marks: [
@@ -703,7 +721,11 @@ export function createStackedBarOptions(data, seriesNames, colours, labels, opti
 		color: { ...colourScale(seriesNames, colours, labels), legend },
 		x: {
 			label: null,
-			...(isCategory ? { tickPadding: 6, type: 'band' } : isLinear ? { type: 'linear' } : { type: 'utc' })
+			...(isCategory
+				? { tickPadding: 6, type: 'band' }
+				: isLinear
+					? { type: 'linear' }
+					: { type: 'utc' })
 		},
 		y: { label: null, grid: true, tickFormat: yTickFormat },
 		...getFacetScales(facetColumn, facetGrid),
@@ -841,7 +863,13 @@ export function createHorizontalBarOptions(data, seriesNames, colours, labels, o
  * @param {BarChartOptions} [options]
  * @returns {import('@observablehq/plot').PlotOptions}
  */
-export function createGroupedHorizontalBarOptions(data, seriesNames, colours, labels, options = {}) {
+export function createGroupedHorizontalBarOptions(
+	data,
+	seriesNames,
+	colours,
+	labels,
+	options = {}
+) {
 	const {
 		style = SHARED_STYLE,
 		marginLeft,
@@ -1123,7 +1151,14 @@ export function createWaterfallOptions(data, seriesNames, colours, labels, optio
 				segStart += value;
 			}
 		} else {
-			bars.push({ x: 'Total', colourKey: 'Total', role: 'total', value: running, start: 0, end: running });
+			bars.push({
+				x: 'Total',
+				colourKey: 'Total',
+				role: 'total',
+				value: running,
+				start: 0,
+				end: running
+			});
 		}
 		domain.push('Total');
 	}
@@ -1194,8 +1229,7 @@ export function createWaterfallOptions(data, seriesNames, colours, labels, optio
 	const bandTickFormat = isStacked
 		? null
 		: waterfallColourMode === 'semantic'
-			? (/** @type {any} */ d) =>
-					String(d) === 'Total' ? waterfallSemanticLabels.total || d : d
+			? (/** @type {any} */ d) => (String(d) === 'Total' ? waterfallSemanticLabels.total || d : d)
 			: (/** @type {any} */ d) => waterfallRowLabels[String(d)] ?? d;
 
 	// Auto annotations (non-stacked only): connector lines linking the running
@@ -1377,13 +1411,13 @@ export function createDotOptions(data, seriesNames, colours, labels, options = {
 			...(xDomain ? { domain: xDomain } : {}),
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isLinear ? { type: 'linear' } : {}),
-			...(gridlines ? { axis: null } : {}),
+			...(gridlines ? { axis: null } : {})
 		},
 		y: {
 			label: null,
 			grid: !gridlines,
 			...(yTickFormat ? { tickFormat: yTickFormat } : {}),
-			...(yDomain ? { domain: yDomain } : {}),
+			...(yDomain ? { domain: yDomain } : {})
 		},
 		...getFacetScales(facetColumn, facetGrid),
 		marks: [
@@ -1619,13 +1653,13 @@ export function createMixedMarkOptions(
 			...(xType ? { type: /** @type {any} */ (xType) } : {}),
 			...(isCategory ? { tickPadding: 6, type: 'band' } : {}),
 			...(isLinear ? { type: 'linear' } : {}),
-			...(gridlines ? { axis: null } : {}),
+			...(gridlines ? { axis: null } : {})
 		},
 		y: {
 			label: null,
 			grid: !gridlines,
 			...(yTickFormat ? { tickFormat: yTickFormat } : {}),
-			...(yDomain ? { domain: yDomain } : {}),
+			...(yDomain ? { domain: yDomain } : {})
 		},
 		...getFacetScales(facetColumn, facetGrid),
 		marks

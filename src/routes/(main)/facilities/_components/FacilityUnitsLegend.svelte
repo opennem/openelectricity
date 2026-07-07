@@ -65,10 +65,7 @@
 				class:opacity-60={isRetired}
 				title={unit.fueltech_id}
 			>
-				<span
-					class="w-4 h-4 rounded-[3px] shrink-0"
-					style:background-color={colour}
-				></span>
+				<span class="w-4 h-4 rounded-[3px] shrink-0" style:background-color={colour}></span>
 				<span class="font-mono text-dark-grey">{unit.code}</span>
 				<span class="text-mid-grey">·</span>
 				{#if unit.capacity_storage}

@@ -49,9 +49,7 @@ export async function GET({ params, url, setHeaders }) {
 	const categories = categoryParam ? categoryParam.split(',') : DEFAULT_CATEGORIES;
 
 	try {
-		const perCategory = await Promise.all(
-			categories.map((cat) => fetchCategory(code, cat))
-		);
+		const perCategory = await Promise.all(categories.map((cat) => fetchCategory(code, cat)));
 		const data = perCategory.flat();
 
 		setHeaders({

@@ -185,9 +185,8 @@ export function loadLayout(storageKey) {
 		const parsed = JSON.parse(raw);
 		if (!parsed || !Array.isArray(parsed.columns)) return null;
 		// Shallow structural check: columns should be arrays of strings
-		const columns = parsed.columns.map(
-			(/** @type {unknown} */ col) =>
-				Array.isArray(col) ? col.filter((/** @type {unknown} */ v) => typeof v === 'string') : []
+		const columns = parsed.columns.map((/** @type {unknown} */ col) =>
+			Array.isArray(col) ? col.filter((/** @type {unknown} */ v) => typeof v === 'string') : []
 		);
 		return { columns };
 	} catch {

@@ -43,22 +43,28 @@ export async function load({ params }) {
 	// Note: client.getFacilities() doesn't support facility_code filtering,
 	// so we use client.request() to access the endpoint directly
 	const [oeResult, sanityFacility] = await Promise.all([
-		client.request(`/facilities/?facility_code=${code}`).then((json) => {
-			const facility = json?.data?.[0];
-			if (!facility) return null;
-			return {
-				...facility,
-				units: filterDerived(facility.units ?? [], (u) => u.fueltech_id)
-			};
-		}).catch(() => null),
+		client
+			.request(`/facilities/?facility_code=${code}`)
+			.then((json) => {
+				const facility = json?.data?.[0];
+				if (!facility) return null;
+				return {
+					...facility,
+					units: filterDerived(facility.units ?? [], (u) => u.fueltech_id)
+				};
+			})
+			.catch(() => null),
 
-		sanityClient.fetch(SANITY_FACILITY_QUERY, { code }).then((facility) => {
-			if (!facility) return null;
-			return {
-				...facility,
-				units: filterDerived(facility.units ?? [], (u) => u.fuel_technology?.code)
-			};
-		}).catch(() => null)
+		sanityClient
+			.fetch(SANITY_FACILITY_QUERY, { code })
+			.then((facility) => {
+				if (!facility) return null;
+				return {
+					...facility,
+					units: filterDerived(facility.units ?? [], (u) => u.fuel_technology?.code)
+				};
+			})
+			.catch(() => null)
 	]);
 
 	return {

@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-	classifyWheelIntent,
-	wheelPanDeltaMs,
-	wheelZoomFactor
-} from './wheel-interaction.js';
+import { classifyWheelIntent, wheelPanDeltaMs, wheelZoomFactor } from './wheel-interaction.js';
 
 describe('classifyWheelIntent', () => {
 	it('returns "pan" when horizontal delta dominates', () => {

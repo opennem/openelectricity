@@ -312,7 +312,12 @@
 								{@const max = Math.max(...unit.values, 0)}
 								{@const height = 24}
 								{@const width = 120}
-								{@const points = unit.values.map((v, i) => `${(i / Math.max(unit.values.length - 1, 1)) * width},${height - (max > 0 ? (v / max) * height : 0)}`).join(' ')}
+								{@const points = unit.values
+									.map(
+										(v, i) =>
+											`${(i / Math.max(unit.values.length - 1, 1)) * width},${height - (max > 0 ? (v / max) * height : 0)}`
+									)
+									.join(' ')}
 								<div class="flex items-center gap-3">
 									<span
 										class="inline-block h-2 w-2 shrink-0 rounded-full"
@@ -322,18 +327,27 @@
 									<svg {width} {height} class="shrink-0">
 										{#if max > 0}
 											<polyline
-												points={points}
+												{points}
 												fill="none"
 												stroke={unit.colour}
 												stroke-width="1.5"
 												stroke-linejoin="round"
 											/>
 										{:else}
-											<line x1="0" y1={height} x2={width} y2={height} stroke="#ccc" stroke-width="1" stroke-dasharray="2,2" />
+											<line
+												x1="0"
+												y1={height}
+												x2={width}
+												y2={height}
+												stroke="#ccc"
+												stroke-width="1"
+												stroke-dasharray="2,2"
+											/>
 										{/if}
 									</svg>
 									<span class="text-xs font-mono tabular-nums text-mid-grey w-16 text-right">
-										{max > 0 ? getNumberFormat(0).format(max) : '—'} <span class="text-xxs">MW</span>
+										{max > 0 ? getNumberFormat(0).format(max) : '—'}
+										<span class="text-xxs">MW</span>
 									</span>
 								</div>
 							{/each}

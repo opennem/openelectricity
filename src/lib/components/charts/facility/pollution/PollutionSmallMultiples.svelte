@@ -115,14 +115,7 @@
 										transform="translate({bar.x + bar.width / 2},{bar.y - 4})"
 										pointer-events="none"
 									>
-										<rect
-											x={-28}
-											y={-20}
-											width={56}
-											height={18}
-											rx={3}
-											fill="rgba(0,0,0,0.8)"
-										/>
+										<rect x={-28} y={-20} width={56} height={18} rx={3} fill="rgba(0,0,0,0.8)" />
 										<text text-anchor="middle" y={-7} fill="white" font-size="8">
 											{bar.year}: {formatValue(bar.value)}
 										</text>
@@ -138,7 +131,11 @@
 							{@const firstX = cd.xScale(firstYear) ?? 0}
 							{@const lastX = (cd.xScale(lastYear) ?? 0) + cd.bandwidth}
 
-							<text x={firstX} y={innerHeight + 12} font-size="8" fill="currentColor"
+							<text
+								x={firstX}
+								y={innerHeight + 12}
+								font-size="8"
+								fill="currentColor"
 								class="text-mid-grey"
 							>
 								{firstYear}

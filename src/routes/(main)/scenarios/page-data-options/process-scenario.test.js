@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import processScenario from './process-scenario.js';
 
-function makeProjectionStats({ fuelTech, data, units = 'GWh', start = '2024-07-01T00:00:00+10:00' }) {
+function makeProjectionStats({
+	fuelTech,
+	data,
+	units = 'GWh',
+	start = '2024-07-01T00:00:00+10:00'
+}) {
 	return {
 		id: `au.fuel_tech.${fuelTech}.energy`,
 		type: 'energy',
@@ -65,17 +70,11 @@ describe('processScenario', () => {
 		});
 
 		it('brightens colours for multiple pathways of same scenario', () => {
-			const names = [
-				'historical',
-				'aemo2024-step_change-CDP14',
-				'aemo2024-step_change-CDP15'
-			];
+			const names = ['historical', 'aemo2024-step_change-CDP14', 'aemo2024-step_change-CDP15'];
 			const result = processScenario.getScenarioColours(names);
 
 			// Two pathways of the same scenario should have different colours
-			expect(result['aemo2024-step_change-CDP14']).not.toBe(
-				result['aemo2024-step_change-CDP15']
-			);
+			expect(result['aemo2024-step_change-CDP14']).not.toBe(result['aemo2024-step_change-CDP15']);
 		});
 	});
 
@@ -83,8 +82,18 @@ describe('processScenario', () => {
 		it('returns chartType line with correct units', () => {
 			const processedEmissions = {
 				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), historical: 500, 'aemo2024-step_change-CDP14': 400 },
-					{ time: 2, date: new Date('2023-01-01'), historical: 480, 'aemo2024-step_change-CDP14': 350 }
+					{
+						time: 1,
+						date: new Date('2022-01-01'),
+						historical: 500,
+						'aemo2024-step_change-CDP14': 400
+					},
+					{
+						time: 2,
+						date: new Date('2023-01-01'),
+						historical: 480,
+						'aemo2024-step_change-CDP14': 350
+					}
 				],
 				seriesNames: ['historical', 'aemo2024-step_change-CDP14'],
 				seriesColours: { historical: '#000', 'aemo2024-step_change-CDP14': '#f00' },
@@ -94,8 +103,18 @@ describe('processScenario', () => {
 
 			const processedEnergy = {
 				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), historical: 1000, 'aemo2024-step_change-CDP14': 1100 },
-					{ time: 2, date: new Date('2023-01-01'), historical: 1050, 'aemo2024-step_change-CDP14': 1200 }
+					{
+						time: 1,
+						date: new Date('2022-01-01'),
+						historical: 1000,
+						'aemo2024-step_change-CDP14': 1100
+					},
+					{
+						time: 2,
+						date: new Date('2023-01-01'),
+						historical: 1050,
+						'aemo2024-step_change-CDP14': 1200
+					}
 				],
 				seriesNames: ['historical', 'aemo2024-step_change-CDP14'],
 				seriesColours: {},
@@ -115,9 +134,7 @@ describe('processScenario', () => {
 
 		it('computes intensity per series as emissions/energy', () => {
 			const processedEmissions = {
-				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), historical: 600 }
-				],
+				seriesData: [{ time: 1, date: new Date('2022-01-01'), historical: 600 }],
 				seriesNames: ['historical'],
 				seriesColours: { historical: '#000' },
 				seriesLabels: { historical: 'Historical' },
@@ -125,9 +142,7 @@ describe('processScenario', () => {
 			};
 
 			const processedEnergy = {
-				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), historical: 1200 }
-				],
+				seriesData: [{ time: 1, date: new Date('2022-01-01'), historical: 1200 }],
 				seriesNames: ['historical'],
 				seriesColours: {},
 				seriesLabels: {},
@@ -196,9 +211,7 @@ describe('processScenario', () => {
 
 			// Energy only has time=1, missing time=2
 			const processedEnergy = {
-				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), historical: 1000 }
-				],
+				seriesData: [{ time: 1, date: new Date('2022-01-01'), historical: 1000 }],
 				seriesNames: ['historical'],
 				seriesColours: {},
 				seriesLabels: {},
@@ -301,9 +314,7 @@ describe('processScenario', () => {
 				}
 			];
 
-			const history = [
-				makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
-			];
+			const history = [makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })];
 
 			const result = processScenario.generation({
 				projections,

@@ -109,7 +109,6 @@
 	});
 
 	const sf = $derived(data.sanityFacility);
-
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -135,7 +134,11 @@
 	</div>
 {/snippet}
 
-{#snippet kvCmp(/** @type {string} */ label, /** @type {any} */ value, /** @type {any} */ counterpartValue)}
+{#snippet kvCmp(
+	/** @type {string} */ label,
+	/** @type {any} */ value,
+	/** @type {any} */ counterpartValue
+)}
 	<div
 		class="grid grid-cols-3 gap-2 py-[3px] border-b border-warm-grey/60"
 		style={hasVal(value) && !hasVal(counterpartValue) ? 'background: #C7452312' : ''}
@@ -191,14 +194,34 @@
 	{@render kvCmp('capacity_registered', unit.capacity_registered, sanityUnit?.capacity_registered)}
 	{@render kvCmp('capacity_maximum', unit.capacity_maximum, sanityUnit?.capacity_maximum)}
 	{@render kvCmp('capacity_storage', unit.capacity_storage, sanityUnit?.storage_capacity)}
-	{@render kvCmp('emissions_factor_co2', unit.emissions_factor_co2, sanityUnit?.emissions_factor_co2)}
+	{@render kvCmp(
+		'emissions_factor_co2',
+		unit.emissions_factor_co2,
+		sanityUnit?.emissions_factor_co2
+	)}
 	{@render kvCmp('data_first_seen', unit.data_first_seen, sanityUnit?.data_first_seen)}
 	{@render kvCmp('data_last_seen', unit.data_last_seen, sanityUnit?.data_last_seen)}
-	{@render kvCmp('commencement_date', unit.commencement_date_display, sanityUnit?.commencement_date)}
+	{@render kvCmp(
+		'commencement_date',
+		unit.commencement_date_display,
+		sanityUnit?.commencement_date
+	)}
 	{@render kvCmp('closure_date', unit.closure_date_display, sanityUnit?.closure_date)}
-	{@render kvCmp('expected_operation_date', unit.expected_operation_date_display, sanityUnit?.expected_operation_date)}
-	{@render kvCmp('expected_closure_date', unit.expected_closure_date_display, sanityUnit?.expected_closure_date)}
-	{@render kvCmp('construction_start_date', unit.construction_start_date_display, sanityUnit?.construction_start_date)}
+	{@render kvCmp(
+		'expected_operation_date',
+		unit.expected_operation_date_display,
+		sanityUnit?.expected_operation_date
+	)}
+	{@render kvCmp(
+		'expected_closure_date',
+		unit.expected_closure_date_display,
+		sanityUnit?.expected_closure_date
+	)}
+	{@render kvCmp(
+		'construction_start_date',
+		unit.construction_start_date_display,
+		sanityUnit?.construction_start_date
+	)}
 	{@render kv('project_approval_date', unit.project_approval_date_display)}
 	{@render kv('project_lodgement_date', unit.project_lodgement_date)}
 	{@render kv('created_at', unit.created_at)}
@@ -245,15 +268,27 @@
 		'commissioning_confirmed',
 		unit.commissioning_confirmed != null ? String(unit.commissioning_confirmed) : null
 	)}
-	{@render kvCmp('expected_operation', unit.expected_operation_date, oeUnit?.expected_operation_date_display)}
+	{@render kvCmp(
+		'expected_operation',
+		unit.expected_operation_date,
+		oeUnit?.expected_operation_date_display
+	)}
 	{@render kv('expected_op_specificity', unit.expected_operation_date_specificity)}
-	{@render kvCmp('expected_closure', unit.expected_closure_date, oeUnit?.expected_closure_date_display)}
+	{@render kvCmp(
+		'expected_closure',
+		unit.expected_closure_date,
+		oeUnit?.expected_closure_date_display
+	)}
 	{@render kv('expected_cl_specificity', unit.expected_closure_date_specificity)}
 	{@render kvCmp('commencement_date', unit.commencement_date, oeUnit?.commencement_date_display)}
 	{@render kv('commencement_specificity', unit.commencement_date_specificity)}
 	{@render kvCmp('closure_date', unit.closure_date, oeUnit?.closure_date_display)}
 	{@render kv('closure_specificity', unit.closure_date_specificity)}
-	{@render kvCmp('construction_start', unit.construction_start_date, oeUnit?.construction_start_date_display)}
+	{@render kvCmp(
+		'construction_start',
+		unit.construction_start_date,
+		oeUnit?.construction_start_date_display
+	)}
 	{@render kv('construction_cost', unit.construction_cost)}
 	{@render kv(
 		'cis_tender_recipient',

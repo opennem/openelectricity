@@ -97,9 +97,11 @@ export default class ChartOptions {
 		this.selectedChartType === 'stacked-area' || this.selectedChartType === 'bar-stacked'
 	);
 
-	// Hover highlight option - when false, hovering over a series won't dim other series
+	// Hover-dim option — when true, hovering a series dims the others. Default off:
+	// hovering no longer dims the rest of the stack; the tooltip still highlights the
+	// hovered series row (driven independently by `hoverKey`, see buildSeriesRows).
 	/** @type {boolean} */
-	allowHoverHighlight = $state(true);
+	allowHoverHighlight = $state(false);
 
 	// Unit configuration
 	/** @type {SiPrefix[]} */

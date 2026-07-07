@@ -29,7 +29,9 @@
 				<th class="py-1.5 pr-3 text-left text-mid-grey font-normal whitespace-nowrap">Unit</th>
 				<th class="py-1.5 pr-3 text-left text-mid-grey font-normal whitespace-nowrap">Trend</th>
 				{#each data.years as year (year)}
-					<th class="py-1.5 px-2 text-right text-mid-grey font-normal whitespace-nowrap border-l border-warm-grey/30">
+					<th
+						class="py-1.5 px-2 text-right text-mid-grey font-normal whitespace-nowrap border-l border-warm-grey/30"
+					>
 						{year}
 					</th>
 				{/each}
@@ -73,7 +75,9 @@
 							/>
 						</td>
 						{#each data.years as year (year)}
-							<td class="py-1.5 px-2 text-right tabular-nums text-dark-grey whitespace-nowrap border-l border-warm-grey/30">
+							<td
+								class="py-1.5 px-2 text-right tabular-nums text-dark-grey whitespace-nowrap border-l border-warm-grey/30"
+							>
 								{formatValue(pollutant.values[year] ?? null)}
 							</td>
 						{/each}

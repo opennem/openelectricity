@@ -30,7 +30,8 @@ function interpolateGap(lastRow, firstRow, gapYears, seriesNames) {
 			if (a == null || b == null) {
 				row[name] = null;
 			} else {
-				row[name] = /** @type {number} */ (a) + t * (/** @type {number} */ (b) - /** @type {number} */ (a));
+				row[name] =
+					/** @type {number} */ (a) + t * /** @type {number} */ ((b) - /** @type {number} */ (a));
 			}
 		}
 
@@ -143,9 +144,10 @@ export default function combineHistoryProjection({
 	}
 
 	// Fill gap with linearly interpolated rows (skip for By Scenario view)
-	const interpolatedRows = gapYears >= 1 && !keepFullHistory
-		? interpolateGap(lastHistoryRow, firstProjectionRow, gapYears, seriesNames)
-		: [];
+	const interpolatedRows =
+		gapYears >= 1 && !keepFullHistory
+			? interpolateGap(lastHistoryRow, firstProjectionRow, gapYears, seriesNames)
+			: [];
 
 	let seriesData;
 
@@ -224,9 +226,8 @@ export default function combineHistoryProjection({
 	// Start shading one year before the first derived row so the shaded region
 	// covers the gap area correctly on the chart
 	const derivedRows = seriesData.filter((d) => d._derived);
-	const derivedStartTime = derivedRows.length > 0
-		? addYears(derivedRows[0].date, -1).getTime()
-		: null;
+	const derivedStartTime =
+		derivedRows.length > 0 ? addYears(derivedRows[0].date, -1).getTime() : null;
 	const derivedEndTime = derivedRows.length > 0 ? projectionStartTime : null;
 
 	return {

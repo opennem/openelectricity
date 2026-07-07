@@ -21,9 +21,7 @@
 		project.currentChartId ? `${window.location.origin}/strata/${project.currentChartId}` : ''
 	);
 	let embedUrl = $derived(
-		project.currentChartId
-			? `${window.location.origin}/strata-embed/${project.currentChartId}`
-			: ''
+		project.currentChartId ? `${window.location.origin}/strata-embed/${project.currentChartId}` : ''
 	);
 	let embedCode = $derived(
 		embedUrl
@@ -144,13 +142,21 @@
 			</StratifyButton>
 		</div>
 	{:else}
-		<StratifyButton variant="primary" onclick={handlePublish} disabled={!project.hasData || publishing}>
+		<StratifyButton
+			variant="primary"
+			onclick={handlePublish}
+			disabled={!project.hasData || publishing}
+		>
 			{publishing ? 'Publishing...' : 'Publish'}
 		</StratifyButton>
 	{/if}
 
 	{#if statusMessage}
-		<p class="text-[10px] mt-1 {statusMessage.startsWith('Error') ? 'text-dark-red' : 'text-mid-grey'}">
+		<p
+			class="text-[10px] mt-1 {statusMessage.startsWith('Error')
+				? 'text-dark-red'
+				: 'text-mid-grey'}"
+		>
 			{statusMessage}
 		</p>
 	{/if}

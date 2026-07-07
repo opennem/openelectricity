@@ -160,7 +160,9 @@
 				seriesItems = processed.nameOptions;
 				yDomain = [processed.minY, processed.maxY];
 
-				seriesLoadsIds = $projectionStats.data.filter((/** @type {any} */ d) => d.isLoad).map((/** @type {any} */ d) => d.id);
+				seriesLoadsIds = $projectionStats.data
+					.filter((/** @type {any} */ d) => d.isLoad)
+					.map((/** @type {any} */ d) => d.id);
 
 				$cachedDisplayData[$selectedDisplayView] = {
 					data: seriesData,
@@ -259,7 +261,9 @@
 	let defaultText = $derived(
 		/** @type {any} */ (dataViewLongLabel)[$selectedDataView] +
 			` (${
-				!$isTechnologyDisplay && isPercentageView ? '% of demand' : /** @type {any} */ (dataViewUnits)[$selectedDataView]
+				!$isTechnologyDisplay && isPercentageView
+					? '% of demand'
+					: /** @type {any} */ (dataViewUnits)[$selectedDataView]
 			}) ` +
 			/** @type {any} */ (dataViewIntervalLabel)[$selectedDataView]
 	);

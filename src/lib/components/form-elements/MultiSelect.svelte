@@ -147,10 +147,14 @@
 			tabindex="0"
 			onclick={() => (showOptions = !showOptions)}
 			onkeydown={(e) => e.key === 'Enter' && (showOptions = !showOptions)}
-			class="flex items-center {compact ? 'gap-4' : 'gap-8'} {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
+			class="flex items-center {compact
+				? 'gap-4'
+				: 'gap-8'} {paddingX} {paddingY} rounded-lg whitespace-nowrap cursor-pointer"
 			class:hover:bg-warm-grey={!showOptions}
 		>
-			<span class={`${selectedLabelClass} ${compact ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}`}>
+			<span
+				class={`${selectedLabelClass} ${compact ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}`}
+			>
 				{displayLabel}
 			</span>
 
@@ -177,7 +181,9 @@
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
 				{:else if opt.isGroupHeader}
-					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">
+						{opt.label}
+					</li>
 				{:else}
 					<li class="whitespace-nowrap border-b border-warm-grey">
 						<button
@@ -222,7 +228,9 @@
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
 				{:else if opt.isGroupHeader}
-					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">
+						{opt.label}
+					</li>
 				{:else}
 					<li class="whitespace-nowrap">
 						<button

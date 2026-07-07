@@ -10,6 +10,22 @@
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
 	import FacilityUnitCard from './_components/FacilityUnitCard.svelte';
 
+	/**
+	 * @type {{
+	 *   facilities?: any[],
+	 *   ontodaybuttonvisible?: (visible: boolean, position: string) => void,
+	 *   scrollContainer?: HTMLElement | null,
+	 *   scrollToToday?: boolean,
+	 *   onscrolledtotoday?: () => void,
+	 *   onhover?: (facility: any | null) => void,
+	 *   onclick?: (facility: any) => void,
+	 *   onorderchange?: (codes: string[]) => void,
+	 *   hoveredFacility?: any | null,
+	 *   clickedFacility?: any | null,
+	 *   selectedFacilityCode?: string | null,
+	 *   isFullscreen?: boolean
+	 * }}
+	 */
 	let {
 		facilities = [],
 		ontodaybuttonvisible,
@@ -165,9 +181,9 @@
 						const relativeTop = elRect.top - containerRect.top;
 
 						if (relativeTop > 0) {
-							ontodaybuttonvisible(!entry.isIntersecting, 'bottom');
+							ontodaybuttonvisible?.(!entry.isIntersecting, 'bottom');
 						} else {
-							ontodaybuttonvisible(!entry.isIntersecting, 'top');
+							ontodaybuttonvisible?.(!entry.isIntersecting, 'top');
 						}
 					});
 				},

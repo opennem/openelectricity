@@ -22,8 +22,7 @@ export function computePollutantTrend(values) {
 
 	const delta = (latest - average) / average;
 	const FLAT_THRESHOLD = 0.05;
-	const direction =
-		delta > FLAT_THRESHOLD ? 'up' : delta < -FLAT_THRESHOLD ? 'down' : 'flat';
+	const direction = delta > FLAT_THRESHOLD ? 'up' : delta < -FLAT_THRESHOLD ? 'down' : 'flat';
 
 	return { latest, average, delta, direction };
 }

@@ -12,6 +12,7 @@ import ChartOptions from './ChartOptions.svelte.js';
 import ChartStyles from './ChartStyles.svelte.js';
 import ChartTooltips from './ChartTooltips.svelte.js';
 import { computeYDomain } from './compute-y-domain.js';
+import { indexOfTime } from './binary-search.js';
 
 /**
  * @typedef {import('./types.js').ChartType} ChartType
@@ -164,8 +165,14 @@ export default class ChartStore {
 	/** @type {any[]} Tick values whose labels are hidden on mobile (gridlines kept) */
 	xMobileHiddenTicks = $state([]);
 
-	/** @type {number[] | number | undefined} */
+	/** @type {number | any[] | ((ticks: any[]) => any[]) | undefined} - A tick count, explicit values, or a function thinning the scale's default ticks (forwarded to AxisY). */
 	yTicks = $state();
+
+	/** @type {any} - Optional custom d3-style y-scale forwarded to LayerCake (e.g. the hybrid price scale). When unset, LayerCake's linear default applies. */
+	yScale = $state();
+
+	/** @type {[number, number] | undefined} - For line charts: the y-value band within which the line is drawn solid; outside it the line is dotted (e.g. the price chart's linear band, so the log tails read as dotted). */
+	solidLineRange = $state();
 
 	// Formatters
 	/** @type {number} */
@@ -283,59 +290,52 @@ export default class ChartStore {
 	/** @type {number | undefined} */
 	hoverTime = $state();
 
-	hoverData = $derived.by(() => {
-		if (this.isCategoryChart && this.hoverCategory !== undefined) {
-			return this.seriesData.find((d) => d[this.xKey] === this.hoverCategory);
+	/**
+	 * Resolve the active row for a hover/focus state: category match for
+	 * category charts, exact-time binary search otherwise (series data is
+	 * time-sorted, and `seriesScaledData`/`seriesProportionData` are 1:1 maps
+	 * over `seriesData`, so the same lookup serves all three).
+	 * @param {any[]} data
+	 * @param {string | number | undefined} category
+	 * @param {number | undefined} time
+	 * @returns {any}
+	 */
+	#activeRow(data, category, time) {
+		if (this.isCategoryChart && category !== undefined) {
+			return data.find((d) => d[this.xKey] === category);
 		}
-		return this.hoverTime ? this.seriesData.find((d) => d.time === this.hoverTime) : undefined;
-	});
+		if (!time) return undefined;
+		const i = indexOfTime(data, time);
+		return i >= 0 ? data[i] : undefined;
+	}
 
-	hoverScaledData = $derived.by(() => {
-		if (this.isCategoryChart && this.hoverCategory !== undefined) {
-			return this.seriesScaledData.find((d) => d[this.xKey] === this.hoverCategory);
-		}
-		return this.hoverTime
-			? this.seriesScaledData.find((d) => d.time === this.hoverTime)
-			: undefined;
-	});
+	hoverData = $derived.by(() =>
+		this.#activeRow(this.seriesData, this.hoverCategory, this.hoverTime)
+	);
 
-	hoverProportionData = $derived.by(() => {
-		if (this.isCategoryChart && this.hoverCategory !== undefined) {
-			return this.seriesProportionData.find((d) => d[this.xKey] === this.hoverCategory);
-		}
-		return this.hoverTime
-			? this.seriesProportionData.find((d) => d.time === this.hoverTime)
-			: undefined;
-	});
+	hoverScaledData = $derived.by(() =>
+		this.#activeRow(this.seriesScaledData, this.hoverCategory, this.hoverTime)
+	);
+
+	hoverProportionData = $derived.by(() =>
+		this.#activeRow(this.seriesProportionData, this.hoverCategory, this.hoverTime)
+	);
 
 	// Focus state (click/lock)
 	/** @type {number | undefined} */
 	focusTime = $state();
 
-	focusData = $derived.by(() => {
-		if (this.isCategoryChart && this.focusCategory !== undefined) {
-			return this.seriesData.find((d) => d[this.xKey] === this.focusCategory);
-		}
-		return this.focusTime ? this.seriesData.find((d) => d.time === this.focusTime) : undefined;
-	});
+	focusData = $derived.by(() =>
+		this.#activeRow(this.seriesData, this.focusCategory, this.focusTime)
+	);
 
-	focusScaledData = $derived.by(() => {
-		if (this.isCategoryChart && this.focusCategory !== undefined) {
-			return this.seriesScaledData.find((d) => d[this.xKey] === this.focusCategory);
-		}
-		return this.focusTime
-			? this.seriesScaledData.find((d) => d.time === this.focusTime)
-			: undefined;
-	});
+	focusScaledData = $derived.by(() =>
+		this.#activeRow(this.seriesScaledData, this.focusCategory, this.focusTime)
+	);
 
-	focusProportionData = $derived.by(() => {
-		if (this.isCategoryChart && this.focusCategory !== undefined) {
-			return this.seriesProportionData.find((d) => d[this.xKey] === this.focusCategory);
-		}
-		return this.focusTime
-			? this.seriesProportionData.find((d) => d.time === this.focusTime)
-			: undefined;
-	});
+	focusProportionData = $derived.by(() =>
+		this.#activeRow(this.seriesProportionData, this.focusCategory, this.focusTime)
+	);
 
 	// CSV export
 	seriesCsvData = $derived.by(() => {
@@ -518,6 +518,14 @@ export default class ChartStore {
 	 */
 	toggleFocus(time) {
 		this.focusTime = this.focusTime === time ? undefined : time;
+	}
+
+	/**
+	 * Set focus to a specific time point (for cross-chart sync).
+	 * @param {number | undefined} time
+	 */
+	setFocus(time) {
+		this.focusTime = time;
 	}
 
 	/**

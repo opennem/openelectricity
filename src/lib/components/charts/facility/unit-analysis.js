@@ -6,10 +6,9 @@
  */
 
 import { loadFuelTechs } from '$lib/fuel_techs';
-import detailedGroup from '$lib/fuel-tech-groups/detailed';
+import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 import { buildUnitColourMap } from './helpers.js';
 
-const fuelTechOrder = detailedGroup.order;
 const BATTERY_FUEL_TECHS = ['battery'];
 
 /**
@@ -24,6 +23,38 @@ const BATTERY_FUEL_TECHS = ['battery'];
  * @property {number | null}          weightedEmissionsIntensity - kgCO2/MWh (generators only), or null
  */
 
+const labelCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+
+/**
+ * Compare units by their display label (`code_display` when present, else
+ * `code`), numeric-aware so e.g. GT2 sorts before GT10. Used as the tie-break
+ * within fuel-tech ordering wherever units are listed or stacked.
+ *
+ * @param {any} a
+ * @param {any} b
+ * @returns {number}
+ */
+export function compareUnitsByLabel(a, b) {
+	const aLabel = String(a?.code_display ?? a?.code ?? '');
+	const bLabel = String(b?.code_display ?? b?.code ?? '');
+	return labelCollator.compare(aLabel, bLabel);
+}
+
+/**
+ * The canonical display order for a facility's units: fuel-tech stack order
+ * primary (chart paint order), display label as the tie-break within each
+ * fuel tech. Used by both the chart pipeline (`analyzeUnits`) and the units
+ * panel so the two can't drift.
+ *
+ * @template {{ fueltech_id: string }} T
+ * @param {T[]} units
+ * @param {{ reverse?: boolean }} [options]
+ * @returns {T[]}
+ */
+export function sortUnitsForDisplay(units, options) {
+	return sortByDetailedOrder([...units].sort(compareUnitsByLabel), options);
+}
+
 /**
  * Analyse a facility's units in one pass.
  *
@@ -32,7 +63,9 @@ const BATTERY_FUEL_TECHS = ['battery'];
  * @returns {UnitAnalysis}
  */
 export function analyzeUnits(facility, getFuelTechColor) {
-	const units = facility?.units ?? [];
+	// Canonical display order (fuel-tech primary, label tie-break) drives
+	// `unitOrder` (chart stack/tooltip order) and the colour-shade gradient.
+	const units = /** @type {any[]} */ (sortUnitsForDisplay(facility?.units ?? []));
 
 	// ── colour map ────────────────────────────────────────────────
 	const unitColours = units.length ? buildUnitColourMap(units, getFuelTechColor) : {};
@@ -50,17 +83,8 @@ export function analyzeUnits(facility, getFuelTechColor) {
 		}
 	}
 
-	// ── ordering (by fuel-tech display order) ─────────────────────
-	const unitPairs = units.map((/** @type {any} */ unit) => ({
-		id: `power_${unit.code}`,
-		fueltech: unit.fueltech_id
-	}));
-	unitPairs.sort((/** @type {any} */ a, /** @type {any} */ b) => {
-		const aPos = fuelTechOrder.indexOf(a.fueltech);
-		const bPos = fuelTechOrder.indexOf(b.fueltech);
-		return (aPos === -1 ? 999 : aPos) - (bPos === -1 ? 999 : bPos);
-	});
-	const unitOrder = unitPairs.map((/** @type {any} */ p) => p.id);
+	// ── ordering — `units` is already in canonical display order ──
+	const unitOrder = units.map((/** @type {any} */ unit) => `power_${unit.code}`);
 
 	// ── load ids ──────────────────────────────────────────────────
 	/** @type {string[]} */
@@ -72,15 +96,15 @@ export function analyzeUnits(facility, getFuelTechColor) {
 	}
 
 	// ── battery flag ──────────────────────────────────────────────
-	const hasBatteryUnits = units.some(
-		(/** @type {any} */ u) => BATTERY_FUEL_TECHS.includes(u.fueltech_id)
+	const hasBatteryUnits = units.some((/** @type {any} */ u) =>
+		BATTERY_FUEL_TECHS.includes(u.fueltech_id)
 	);
 
 	// ── capacity sums ─────────────────────────────────────────────
 	let positive = 0;
 	let negative = 0;
-	const allBattery = units.every(
-		(/** @type {any} */ u) => BATTERY_FUEL_TECHS.includes(u.fueltech_id)
+	const allBattery = units.every((/** @type {any} */ u) =>
+		BATTERY_FUEL_TECHS.includes(u.fueltech_id)
 	);
 	for (const unit of units) {
 		const capacity = Number(unit.capacity_maximum || unit.capacity_registered) || 0;

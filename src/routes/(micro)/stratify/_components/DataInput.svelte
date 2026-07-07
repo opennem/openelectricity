@@ -10,9 +10,7 @@
 
 	const textareaBase =
 		'bg-warm-grey/50 rounded-lg p-3 text-xs font-mono w-full border border-warm-grey outline-none focus:bg-warm-grey resize-y';
-	let textareaClass = $derived(
-		hasData ? `${textareaBase} rounded-t-none` : textareaBase
-	);
+	let textareaClass = $derived(hasData ? `${textareaBase} rounded-t-none` : textareaBase);
 
 	/**
 	 * Update a cell in the CSV text by line and column index.
@@ -47,9 +45,7 @@
 				<button
 					type="button"
 					class="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide cursor-pointer transition-colors rounded-t-lg
-						{activeTab === 'csv'
-						? 'text-dark-grey bg-warm-grey/50'
-						: 'text-mid-grey hover:text-dark-grey'}"
+						{activeTab === 'csv' ? 'text-dark-grey bg-warm-grey/50' : 'text-mid-grey hover:text-dark-grey'}"
 					onclick={() => (activeTab = 'csv')}
 				>
 					CSV
@@ -57,9 +53,7 @@
 				<button
 					type="button"
 					class="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide cursor-pointer transition-colors rounded-t-lg
-						{activeTab === 'parsed'
-						? 'text-dark-grey bg-warm-grey/50'
-						: 'text-mid-grey hover:text-dark-grey'}"
+						{activeTab === 'parsed' ? 'text-dark-grey bg-warm-grey/50' : 'text-mid-grey hover:text-dark-grey'}"
 					onclick={() => (activeTab = 'parsed')}
 				>
 					Parsed
@@ -76,19 +70,15 @@
 				placeholder={'Date,Solar,Wind,Coal\n2024-01-01,150,200,300\n2024-01-02,160,180,290\n2024-01-03,170,210,280'}
 			></textarea>
 		{:else}
-			<div
-				class="max-h-[400px] overflow-y-auto overflow-x-auto bg-warm-grey/50 rounded-b-lg"
-			>
+			<div class="max-h-[400px] overflow-y-auto overflow-x-auto bg-warm-grey/50 rounded-b-lg">
 				<table class="w-full text-[11px] font-mono border-collapse">
 					<thead class="sticky top-0 z-10">
 						<tr class="bg-mid-warm-grey/30">
-							<th
-								class="text-left py-1.5 px-2.5 font-medium text-dark-grey whitespace-nowrap"
+							<th class="text-left py-1.5 px-2.5 font-medium text-dark-grey whitespace-nowrap"
 								>{project.isCategory ? 'Category' : 'Date'}</th
 							>
 							{#each project.parsedData.seriesNames as name (name)}
-								<th
-									class="text-right py-1.5 px-2.5 font-medium text-dark-grey whitespace-nowrap"
+								<th class="text-right py-1.5 px-2.5 font-medium text-dark-grey whitespace-nowrap"
 									>{project.parsedData.seriesLabels[name] || name}</th
 								>
 							{/each}
@@ -102,7 +92,9 @@
 										type="text"
 										value={project.isCategory ? row.category : (row._dateStr ?? '')}
 										onchange={(e) => handleCellEdit(row._lineIndex, 0, e.currentTarget.value)}
-										onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+										onkeydown={(e) => {
+											if (e.key === 'Enter') e.currentTarget.blur();
+										}}
 										class="w-full bg-transparent text-[11px] font-mono text-mid-grey border border-warm-grey outline-none focus:outline-none focus:ring-0 focus:bg-mid-warm-grey/30 px-2.5 py-1"
 									/>
 								</td>
@@ -111,8 +103,15 @@
 										<input
 											type="text"
 											value={row[name] != null ? String(row[name]) : ''}
-											onchange={(e) => handleCellEdit(row._lineIndex, project.parsedData.seriesNames.indexOf(name) + 1, e.currentTarget.value)}
-											onkeydown={(e) => { if (e.key === 'Enter') e.currentTarget.blur(); }}
+											onchange={(e) =>
+												handleCellEdit(
+													row._lineIndex,
+													project.parsedData.seriesNames.indexOf(name) + 1,
+													e.currentTarget.value
+												)}
+											onkeydown={(e) => {
+												if (e.key === 'Enter') e.currentTarget.blur();
+											}}
 											class="w-full bg-transparent text-right text-[11px] font-mono tabular-nums border border-warm-grey outline-none focus:outline-none focus:ring-0 focus:bg-mid-warm-grey/30 px-2.5 py-1"
 										/>
 									</td>

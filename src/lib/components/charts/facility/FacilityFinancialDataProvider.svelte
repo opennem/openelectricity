@@ -16,8 +16,8 @@
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import { analyzeUnits } from './unit-analysis.js';
+	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
 	import { applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
-	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 	import { setFacilityFinancialDataContext } from './FacilityFinancialDataContext.svelte.js';
 	import {
@@ -31,6 +31,15 @@
 		createBasisColour
 	} from './energy-basis.js';
 	import { LINE_COLOUR } from './colours.js';
+	import { ianaFromOffset } from '../v2/network-time.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '../v2/chart-loading-state.js';
+	import {
+		createPriceYScale,
+		formatPriceTick,
+		PRICE_Y_DOMAIN,
+		PRICE_Y_TICKS,
+		PRICE_LINEAR_RANGE
+	} from './price-y-scale.js';
 
 	/**
 	 * @param {string} ftCode
@@ -59,10 +68,13 @@
 	 * @property {number} viewEnd
 	 * @property {string} [priceChartHeight]
 	 * @property {string} [mvChartHeight]
+	 * @property {number | Array<any> | ((ticks: any[]) => any[])} [yTicks] - Y-axis ticks for the market-value chart: a count, an explicit array, or a function thinning the scale's default ticks. (The price chart uses a fixed hybrid axis.) Omit for the AxisY default.
 	 * @property {boolean} [active] - When false, skip manager instantiation (no fetch fires).
 	 * @property {boolean} [showTooltipDate] - Whether the tooltips show their date/time header (default: true).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync.
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when a financial chart's local hover changes.
+	 * @property {number | undefined} [focusTime] - External focus (pinned) time for cross-chart sync.
+	 * @property {((time: number | undefined) => void)} [onfocuschange] - Called when a financial chart's local focus changes.
 	 * @property {((data: SummaryData) => void)} [onsummarydata]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
 	 * @property {import('svelte').Snippet} [children]
@@ -78,10 +90,13 @@
 		viewEnd,
 		priceChartHeight = 'h-[200px]',
 		mvChartHeight = 'h-[200px]',
+		yTicks = undefined,
 		active = true,
 		showTooltipDate = true,
 		hoverTime = undefined,
 		onhoverchange,
+		focusTime = undefined,
+		onfocuschange,
 		onsummarydata,
 		onviewportchange,
 		children
@@ -93,7 +108,7 @@
 		if (mvChartStore) mvChartStore.chartTooltips.showDate = showTooltipDate;
 	});
 
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let isEnergyInterval = $derived(interval !== '5m');
 
 	// Price = market_value / energy. For energy intervals the API serves `energy`
@@ -117,23 +132,17 @@
 	let unitOrder = $derived(analysis?.unitOrder ?? []);
 	let loadIds = $derived(analysis?.loadIds ?? []);
 
-	/**
-	 * @param {string} unitCode
-	 * @param {string} fuelTech
-	 */
-	function getLabel(unitCode, fuelTech) {
-		const displayCode = unitCodeDisplayMap[unitCode] ?? unitCode;
-		return `${displayCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
-	}
-
-	let getMvColour = $derived.by(() => {
-		const colourMap = unitColours;
-		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
-			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = analysis?.loadIds.includes(`market_value_${unitCode}`) ?? false;
-			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-		};
-	});
+	// The factories return closures over plain values only — they're handed to
+	// ChartDataManagers, whose async continuations can outlive this component.
+	let getLabel = $derived(makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNameMap));
+	let getMvColour = $derived(
+		makeLoadAwareColourGetter(
+			unitColours,
+			rewriteSeriesPrefix(loadIds, 'market_value'),
+			'market_value',
+			getFuelTechColor
+		)
+	);
 
 	let getBasisColour = $derived.by(() =>
 		createBasisColour({ basisMetric, unitColours, loadIds, getFuelTechColor })
@@ -151,6 +160,7 @@
 
 	$effect(() => {
 		if (!active || !facility) {
+			untrack(() => mvDataManager)?.dispose();
 			mvDataManager = null;
 			return;
 		}
@@ -202,11 +212,14 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Retire the replaced manager so its in-flight fetches become no-ops.
+		existing?.dispose();
 		mvDataManager = manager;
 	});
 
 	$effect(() => {
 		if (!active || !facility) {
+			untrack(() => basisDataManager)?.dispose();
 			basisDataManager = null;
 			return;
 		}
@@ -258,7 +271,18 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Retire the replaced manager so its in-flight fetches become no-ops.
+		existing?.dispose();
 		basisDataManager = manager;
+	});
+
+	// Retire the managers on unmount so in-flight fetches settle as no-ops
+	// instead of calling back into destroyed component state.
+	$effect(() => {
+		return () => {
+			mvDataManager?.dispose();
+			basisDataManager?.dispose();
+		};
 	});
 
 	// Fetch data when viewport changes — both managers
@@ -302,6 +326,15 @@
 		);
 	}
 
+	// Visible, display-aggregated rows — computed once per (cache, viewport,
+	// interval) change and shared by priceData, the summary callback, and the
+	// market-value chart effect. Energy basis sums native MWh; the power basis
+	// averages MW (× hours downstream).
+	let mvVisibleRows = $derived(getVisibleData(mvDataManager, 'sum'));
+	let basisVisibleRows = $derived(
+		getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean')
+	);
+
 	// ============================================
 	// Derived Price Data — price = total_market_value / (total_power × interval_hours)
 	// ============================================
@@ -309,19 +342,16 @@
 	let priceData = $derived.by(() => {
 		if (!mvDataManager?.processedCache || !basisDataManager?.processedCache) return [];
 
-		const mvRows = getVisibleData(mvDataManager, 'sum');
-		// Energy basis sums native MWh; the power basis averages MW (× hours).
-		const basisRows = getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean');
 		const mvSeriesNames = mvDataManager.seriesMeta?.seriesNames ?? [];
 		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
 
-		const energyMap = buildEnergyMap(basisRows, basisSeriesNames, {
+		const energyMap = buildEnergyMap(basisVisibleRows, basisSeriesNames, {
 			isEnergyInterval,
 			displayInterval,
 			ianaTimeZone
 		});
 
-		return mvRows.map((row) => {
+		return mvVisibleRows.map((row) => {
 			const mvTotal = sumSeries(row, mvSeriesNames);
 			const energy = energyMap.get(row.time) ?? 0;
 			return {
@@ -336,30 +366,40 @@
 	// Summary data callback
 	// ============================================
 
+	// Debounced: the summary feeds the metrics section, where a ~0.3s settle is
+	// invisible — without it this recomputes on every pan/zoom tick. The timer
+	// callback only reads the plain values captured here.
 	$effect(() => {
 		if (!onsummarydata) return;
 		if (!mvDataManager?.processedCache || !basisDataManager?.processedCache || !mvChartStore)
 			return;
 
-		const mvRows = getVisibleData(mvDataManager, 'sum');
-		const basisRows = getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean');
+		const mvRows = mvVisibleRows;
+		const basisRows = basisVisibleRows;
+		const mvSeriesNames = mvDataManager.seriesMeta?.seriesNames ?? [];
 		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
+		const chartStore = mvChartStore;
+		const energyOpts = { isEnergyInterval, displayInterval, ianaTimeZone };
 
-		// Energy intervals already carry `energy_<unit>` (MWh); power grains
-		// convert MW → MWh via the interval length.
-		const { rows: energyRows, seriesNames: energySeriesNames } = toEnergySeriesRows(
-			basisRows,
-			basisSeriesNames,
-			{ isEnergyInterval, displayInterval, ianaTimeZone }
-		);
+		const timer = setTimeout(() => {
+			// Energy intervals already carry `energy_<unit>` (MWh); power grains
+			// convert MW → MWh via the interval length.
+			const { rows: energyRows, seriesNames: energySeriesNames } = toEnergySeriesRows(
+				basisRows,
+				basisSeriesNames,
+				energyOpts
+			);
 
-		onsummarydata({
-			mvData: mvRows,
-			energyData: energyRows,
-			mvSeriesNames: mvDataManager.seriesMeta?.seriesNames ?? [],
-			energySeriesNames,
-			mvChartStore
-		});
+			onsummarydata({
+				mvData: mvRows,
+				energyData: energyRows,
+				mvSeriesNames,
+				energySeriesNames,
+				mvChartStore: chartStore
+			});
+		}, 300);
+
+		return () => clearTimeout(timer);
 	});
 
 	// ============================================
@@ -386,8 +426,14 @@
 		chart.hideChartTypeOptions = true;
 		// Single-series line — the floating-tooltip total just repeats the value.
 		chart.chartTooltips.showTotal = false;
+		// Hybrid axis: linear $0–$300, log above $300 and below $0, on a fixed
+		// domain so the structure stays comparable across facilities and ranges.
+		chart.yScale = createPriceYScale();
+		chart.setYDomain([...PRICE_Y_DOMAIN]);
+		chart.yTicks = PRICE_Y_TICKS;
+		chart.solidLineRange = PRICE_LINEAR_RANGE;
 		chart.useFormatY = true;
-		chart.formatY = (/** @type {number} */ d) => '$' + dollarFormatter.format(d);
+		chart.formatY = formatPriceTick;
 
 		return chart;
 	});
@@ -400,9 +446,8 @@
 		priceChartStore.seriesLabels = { price: 'Av. Price ($/MWh)' };
 		priceChartStore.seriesData = priceData;
 		priceChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
-		priceChartStore.chartOptions.selectedCurveType = /** @type {any} */ (
-			isEnergyInterval ? 'step' : 'straight'
-		);
+		// Always step-after: each interval's price is held until the next reading.
+		priceChartStore.chartOptions.selectedCurveType = /** @type {any} */ ('step');
 
 		applyFacilityTimeAxis(priceChartStore, {
 			data: priceData,
@@ -435,6 +480,7 @@
 		chart.chartStyles.chartHeightClasses = mvChartHeight;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.chartStyles.snapTicks = true;
+		if (yTicks !== undefined) chart.yTicks = yTicks;
 		chart.useFormatY = true;
 		chart.formatY = (/** @type {number} */ d) => {
 			const converted = chart.convertAndFormatValue(d);
@@ -456,7 +502,7 @@
 	$effect(() => {
 		if (!mvChartStore || !mvDataManager?.processedCache) return;
 
-		const visibleData = getVisibleData(mvDataManager, 'sum');
+		const visibleData = mvVisibleRows;
 
 		mvChartStore.seriesData = visibleData;
 		mvChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
@@ -544,13 +590,7 @@
 	// Loading overlay state
 	// ============================================
 
-	let showLoadingOverlay = $derived.by(() => {
-		if (!mvDataManager || !mvChartStore) return false;
-		if (mvChartStore.seriesData.length > 0) return false;
-		return (
-			!mvDataManager.initialLoadComplete || mvDataManager.isLoading || mvDataManager.hasPendingFetch
-		);
-	});
+	let showLoadingOverlay = $derived(computeShowLoadingOverlay(mvDataManager, mvChartStore));
 
 	// ============================================
 	// Tooltip formatting
@@ -644,6 +684,12 @@
 		},
 		get onhoverchange() {
 			return onhoverchange;
+		},
+		get focusTime() {
+			return focusTime;
+		},
+		get onfocuschange() {
+			return onfocuschange;
 		},
 		handlePanStart,
 		handlePan,

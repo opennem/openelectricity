@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { aggregateByBoundary, aggregateForDisplay } from './dataProcessing.js';
+import { aggregateByBoundary, aggregateForDisplay, aggregateToInterval } from './dataProcessing.js';
 
 const HOUR = 60 * 60 * 1000;
+const MIN = 60 * 1000;
+
+/**
+ * `n` 5-minute rows on series `a`, all value `v`, starting at `startMs`.
+ * @param {number} startMs @param {number} n @param {number} [v]
+ */
+function fiveMinRows(startMs, n, v = 1) {
+	return Array.from({ length: n }, (_, i) => {
+		const time = startMs + i * 5 * MIN;
+		return { time, date: new Date(time), a: v };
+	});
+}
 const NEM_TZ = 'Australia/Brisbane';
 const NEM = 10;
 
@@ -125,5 +137,83 @@ describe('aggregateForDisplay', () => {
 				ianaTimeZone: NEM_TZ
 			})
 		).toEqual([]);
+	});
+});
+
+describe('aggregateToInterval — trimPartialEdges', () => {
+	const trim = { trimPartialEdges: true };
+
+	it('drops the partial trailing bucket (the current, in-progress period)', () => {
+		// 6 five-minute samples fill the first 30m bucket; the next bucket has
+		// only 2 so far.
+		const out = aggregateToInterval(fiveMinRows(0, 8), '30m', ['a'], 'sum', trim);
+		expect(out).toHaveLength(1);
+		expect(out[0].time).toBe(0);
+		expect(out[0].a).toBe(6);
+	});
+
+	it('drops the partial leading bucket (viewport starts mid-bucket)', () => {
+		// First 30m bucket holds only 3 samples (data starts 15m in); the second
+		// bucket is full.
+		const out = aggregateToInterval(fiveMinRows(15 * MIN, 9), '30m', ['a'], 'sum', trim);
+		expect(out).toHaveLength(1);
+		expect(out[0].time).toBe(30 * MIN);
+		expect(out[0].a).toBe(6);
+	});
+
+	it('drops both partial edge buckets', () => {
+		// 3 (partial) + 6 (full) + 2 (partial) across three 30m buckets.
+		const out = aggregateToInterval(fiveMinRows(15 * MIN, 11), '30m', ['a'], 'sum', trim);
+		expect(out).toHaveLength(1);
+		expect(out[0].time).toBe(30 * MIN);
+		expect(out[0].a).toBe(6);
+	});
+
+	it('keeps complete edge buckets', () => {
+		// Two full 30m buckets (6 samples each) — nothing is in progress.
+		const out = aggregateToInterval(fiveMinRows(0, 12), '30m', ['a'], 'sum', trim);
+		expect(out).toHaveLength(2);
+		expect(out[1].a).toBe(6);
+	});
+
+	it('does not trim unless requested', () => {
+		// Plain aggregation must never silently discard data.
+		const out = aggregateToInterval(fiveMinRows(0, 8), '30m', ['a'], 'sum');
+		expect(out).toHaveLength(2);
+		expect(out[1].a).toBe(2);
+	});
+
+	it('does not trim when there is no real aggregation (one sample per bucket)', () => {
+		const data = [0, 30, 60].map((m) => {
+			const time = m * MIN;
+			return { time, date: new Date(time), a: 1 };
+		});
+		expect(aggregateToInterval(data, '30m', ['a'], 'sum', trim)).toHaveLength(3);
+	});
+});
+
+describe('aggregateForDisplay — 30m partial-edge policy', () => {
+	it('trims partial edge buckets for summed (volume) series', () => {
+		const out = aggregateForDisplay(fiveMinRows(0, 8), ['a'], {
+			apiInterval: '5m',
+			displayInterval: '30m',
+			ianaTimeZone: NEM_TZ,
+			method: 'sum'
+		});
+		expect(out).toHaveLength(1);
+		expect(out[0].a).toBe(6);
+	});
+
+	it('keeps partial edge buckets for averaged (rate) series', () => {
+		// A partial bucket still averages to the right level (e.g. generation MW).
+		const out = aggregateForDisplay(fiveMinRows(0, 8, 100), ['a'], {
+			apiInterval: '5m',
+			displayInterval: '30m',
+			ianaTimeZone: NEM_TZ,
+			method: 'mean'
+		});
+		expect(out).toHaveLength(2);
+		expect(out[0].a).toBe(100);
+		expect(out[1].a).toBe(100);
 	});
 });

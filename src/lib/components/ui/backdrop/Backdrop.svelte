@@ -25,13 +25,7 @@
 	 *   duration?: number
 	 * }}
 	 */
-	let {
-		open,
-		onclick,
-		variant = 'modal',
-		z = 'z-[9998]',
-		duration = 200
-	} = $props();
+	let { open, onclick, variant = 'modal', z = 'z-[9998]', duration = 200 } = $props();
 
 	const VARIANT_CLASS = {
 		modal: 'bg-black/40 backdrop-blur-sm',

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import processTechnology from '../../../../../routes/(main)/scenarios/page-data-options/process-technology.js';
-import { fuelTechMap, orderMap } from '../../../../../routes/(main)/scenarios/page-data-options/groups-technology.js';
+import {
+	fuelTechMap,
+	orderMap
+} from '../../../../../routes/(main)/scenarios/page-data-options/groups-technology.js';
 
 /**
  * Create a minimal projection StatsData entry for the scenario pipeline.

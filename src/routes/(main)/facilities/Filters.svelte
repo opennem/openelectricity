@@ -1,33 +1,23 @@
 <script>
-	import FormMultiSelect from '$lib/components/form-elements/MultiSelect.svelte';
-	import FormSelect from '$lib/components/form-elements/Select.svelte';
 	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
-	import HierarchicalMultiSelect from './_components/HierarchicalMultiSelect.svelte';
 	import MobileFilterModal from './_components/MobileFilterModal.svelte';
 	import SearchInput from './_components/SearchInput.svelte';
-	import ButtonIcon from '$lib/components/form-elements/ButtonIcon.svelte';
-	import IconAdjustmentsHorizontal from '$lib/icons/AdjustmentsHorizontal.svelte';
-	import IconChevronUpDown from '$lib/icons/ChevronUpDown.svelte';
-	import { Search, X, Maximize2 } from '@lucide/svelte';
+	import FilterDropdown from './_components/filters/FilterDropdown.svelte';
+	import FilterRangeDropdown from './_components/filters/FilterRangeDropdown.svelte';
+	import FuelTechRowContent from './_components/filters/FuelTechRowContent.svelte';
+	import { ListFilter } from '@lucide/svelte';
 	import OptionsMenu from './_components/OptionsMenu.svelte';
-	import { fly } from 'svelte/transition';
 	import { onDestroy } from 'svelte';
-	import { portal } from '$lib/actions/portal.js';
-	import { dropdownPosition } from '$lib/actions/dropdown-position.js';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
-	import RangeDropdown from '$lib/components/ui/range-slider/RangeDropdown.svelte';
-	import RangeSlider from '$lib/components/ui/range-slider/RangeSlider.svelte';
 
+	import { getLeafValues, countSelectedLeaves } from './_utils/filter-options.js';
 	import {
-		regions,
 		regionOptions,
 		fuelTechOptions,
-		getFlatFuelTechOptions,
-		getFlatRegionOptions,
-		getParentFuelTechValues,
-		getParentRegionValues,
 		statusOptions,
-		DEFAULT_STATUSES
+		ALL_STATUSES,
+		DEFAULT_STATUSES,
+		VIEW_OPTIONS
 	} from './_utils/filters.js';
 
 	/**
@@ -39,8 +29,9 @@
 	 *   capacityMin?: number,
 	 *   capacityMax?: number,
 	 *   searchTerm?: string,
-	 *   selectedView?: 'list' | 'timeline' | 'map' | 'card',
-	 *   isFullscreen?: boolean,
+	 *   selectedView?: 'list' | 'timeline' | 'grid',
+	 *   facilitySelected?: boolean,
+	 *   darkMap?: boolean,
 	 *   showShortcuts?: boolean,
 	 *   onstatuseschange?: (values: string[]) => void,
 	 *   onregionschange?: (values: string[]) => void,
@@ -51,14 +42,15 @@
 	 *   yearMax?: number,
 	 *   onyearrangechange?: (range: [number, number]) => void,
 	 *   onsearchchange?: (value: string) => void,
-	 *   onviewchange?: (view: 'list' | 'timeline' | 'map' | 'card') => void,
-	 *   onfullscreenchange?: () => void,
+	 *   onviewchange?: (view: 'list' | 'timeline' | 'grid') => void,
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
 	 *   onshortcutinvoked?: () => void,
 	 *   onyearplayingchange?: (playing: boolean) => void,
 	 *   onplayyearchange?: (year: number | null) => void,
-	 *   onregisteranimationcontrols?: (controls: { stop: () => void, toggle: () => void }) => void
+	 *   onregisteranimationcontrols?: (controls: { stop: () => void, toggle: () => void }) => void,
+	 *   filteredCount?: number,
+	 *   onresetall?: () => void
 	 * }}
 	 */
 	let {
@@ -69,8 +61,10 @@
 		capacityMin = 0,
 		capacityMax = 10000,
 		searchTerm = '',
-		selectedView = 'timeline',
-		isFullscreen = false,
+		selectedView = 'list',
+		facilitySelected = false,
+		// Dark/satellite basemap behind the floating nav → white logo mark.
+		darkMap = false,
 		showShortcuts = false,
 		onstatuseschange,
 		onregionschange,
@@ -82,13 +76,14 @@
 		onyearrangechange,
 		onsearchchange,
 		onviewchange,
-		onfullscreenchange,
 		onshowshortcuts,
 		ondownloadcsv,
 		onshortcutinvoked,
 		onyearplayingchange,
 		onplayyearchange,
-		onregisteranimationcontrols
+		onregisteranimationcontrols,
+		filteredCount = 0,
+		onresetall
 	} = $props();
 
 	// ============================================
@@ -96,41 +91,30 @@
 	// ============================================
 
 	let showMobileFilterOptions = $state(false);
-	let showMobileSearch = $state(false);
-	let isBrowserFullscreen = $state(false);
 
 	/** @type {SearchInput | null} */
 	let mobileSearchRef = $state(null);
 	/** @type {SearchInput | null} */
 	let desktopSearchRef = $state(null);
 
+	// "N active" across status/technology/region — badges the mobile Filters
+	// button and is passed into the modal so both always agree.
+	let activeFilterCount = $derived(
+		countSelectedLeaves(statusOptions, selectedStatuses) +
+			countSelectedLeaves(fuelTechOptions, selectedFuelTechs) +
+			countSelectedLeaves(regionOptions, selectedRegions)
+	);
+
 	// ============================================
-	// Year Dropdown & Animation (Play button)
+	// Year Animation (Play button)
 	// ============================================
 
-	let showYearDropdown = $state(false);
-	/** @type {HTMLElement | undefined} */
-	let yearTriggerRef = $state();
-	/** @type {HTMLElement | undefined} */
-	let yearDropdownRef = $state();
-
-	function handleYearDocumentClick(/** @type {MouseEvent} */ e) {
-		const target = /** @type {Node} */ (e.target);
-		if (yearTriggerRef?.contains(target) || yearDropdownRef?.contains(target)) return;
-		showYearDropdown = false;
-	}
 	let isYearPlaying = $state(false);
 	/** @type {ReturnType<typeof setInterval> | null} */
 	let yearPlayInterval = $state(null);
 	let animationEndYear = 0;
 	/** @type {number | null} */
 	let playYear = $state(null);
-
-	let isYearFiltered = $derived(yearRange[0] > yearMin || yearRange[1] < yearMax);
-	let yearDisplayLabel = $derived.by(() => {
-		if (!isYearFiltered) return 'Years';
-		return `${formatYear(yearRange[0])} – ${formatYear(yearRange[1])}`;
-	});
 
 	function startYearAnimation() {
 		animationEndYear = yearRange[1];
@@ -171,12 +155,6 @@
 		onplayyearchange?.(null);
 	}
 
-	function handleYearDropdownScroll() {
-		if (!isYearPlaying) {
-			showYearDropdown = false;
-		}
-	}
-
 	function handleYearClear() {
 		stopYearAnimation();
 		onyearrangechange?.([yearMin, yearMax]);
@@ -210,79 +188,8 @@
 	});
 
 	// ============================================
-	// Browser Fullscreen API
+	// Formatters
 	// ============================================
-
-	/**
-	 * Toggle browser fullscreen mode
-	 * Also enables app fullscreen (hides nav/footer) when entering
-	 */
-	function toggleBrowserFullscreen() {
-		if (document.fullscreenElement) {
-			document.exitFullscreen();
-		} else {
-			// Enter browser fullscreen and also enable app fullscreen mode
-			document.documentElement.requestFullscreen();
-			if (!isFullscreen) {
-				onfullscreenchange?.();
-			}
-		}
-	}
-
-	/**
-	 * Handle fullscreen change events
-	 * Exit app fullscreen when exiting browser fullscreen
-	 */
-	function handleFullscreenChange() {
-		isBrowserFullscreen = !!document.fullscreenElement;
-		// When exiting browser fullscreen, also exit app fullscreen
-		if (!isBrowserFullscreen && isFullscreen) {
-			onfullscreenchange?.();
-		}
-	}
-
-	// ============================================
-	// Derived Labels
-	// ============================================
-
-	let flatRegionOptions = getFlatRegionOptions();
-	let parentRegionValues = getParentRegionValues();
-
-	let regionLabel = $derived.by(() => {
-		// Filter out parent categories (only count actual regions)
-		const countableRegions = selectedRegions.filter((r) => !parentRegionValues.includes(r));
-
-		if (countableRegions.length === 0) return 'Region';
-		if (countableRegions.length === 1) {
-			const region = flatRegionOptions.find((r) => r.value === countableRegions[0]);
-			return region?.label || countableRegions[0];
-		}
-		return `${countableRegions.length} Regions`;
-	});
-
-	let statusLabel = $derived.by(() => {
-		if (selectedStatuses.length === 0) return 'Status';
-		if (selectedStatuses.length === 1) {
-			const status = statusOptions.find((s) => s.value === selectedStatuses[0]);
-			return status?.label || selectedStatuses[0];
-		}
-		return `${selectedStatuses.length} Statuses`;
-	});
-
-	let flatFuelTechOptions = getFlatFuelTechOptions();
-	let parentFuelTechValues = getParentFuelTechValues();
-
-	let fuelTechLabel = $derived.by(() => {
-		// Filter out parent categories (only count actual sub-technologies)
-		const countableTechs = selectedFuelTechs.filter((ft) => !parentFuelTechValues.includes(ft));
-
-		if (countableTechs.length === 0) return 'Technology';
-		if (countableTechs.length === 1) {
-			const fuelTech = flatFuelTechOptions.find((ft) => ft.value === countableTechs[0]);
-			return fuelTech?.label || countableTechs[0];
-		}
-		return `${countableTechs.length} Technologies`;
-	});
 
 	/**
 	 * Format capacity value for display
@@ -309,30 +216,11 @@
 	}
 
 	// ============================================
-	// View Switcher Config
-	// ============================================
-
-	const viewButtonsDesktop = [
-		{ label: 'Timeline', value: 'timeline' },
-		{ label: 'List', value: 'list' },
-		{ label: 'Cards', value: 'card' }
-	];
-
-	const viewOptions = [
-		{ label: 'Timeline', value: 'timeline' },
-		{ label: 'List', value: 'list' },
-		{ label: 'Cards', value: 'card' },
-		{ label: 'Map', value: 'map' }
-	];
-
-	let selectedViewOption = $derived(viewOptions.find((v) => v.value === selectedView));
-
-	// ============================================
 	// Event Handlers
 	// ============================================
 
 	/**
-	 * Handle keyboard shortcuts: '/' to focus search, 'f' to toggle fullscreen, Shift+F for browser fullscreen
+	 * Handle keyboard shortcuts: '/' to focus search
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
@@ -344,27 +232,10 @@
 		if (e.key === '/') {
 			e.preventDefault();
 			if (window.innerWidth < 768) {
-				showMobileSearch = true;
-				setTimeout(() => mobileSearchRef?.focus(), 50);
+				mobileSearchRef?.focus();
 			} else {
 				desktopSearchRef?.focus();
 			}
-			onshortcutinvoked?.();
-			return;
-		}
-
-		// Shift+F for browser fullscreen
-		if ((e.key === 'f' || e.key === 'F') && e.shiftKey) {
-			e.preventDefault();
-			toggleBrowserFullscreen();
-			onshortcutinvoked?.();
-			return;
-		}
-
-		// F for app fullscreen (maximized mode)
-		if (e.key === 'f' || e.key === 'F') {
-			e.preventDefault();
-			onfullscreenchange?.();
 			onshortcutinvoked?.();
 		}
 	}
@@ -408,10 +279,13 @@
 	}
 
 	/**
-	 * @param {string} value
+	 * Statuses are a flat list, so `value` is always a single string
+	 * (arrays are only emitted for hierarchical parent options).
+	 * @param {string | string[]} value
 	 * @param {boolean} isMetaPressed
 	 */
 	function handleStatusChange(value, isMetaPressed) {
+		if (Array.isArray(value)) return;
 		onstatuseschange?.(toggleSelection(selectedStatuses, value, isMetaPressed));
 	}
 
@@ -442,31 +316,15 @@
 	 * @param {{ value: string }} option
 	 */
 	function handleViewChange(option) {
-		onviewchange?.(/** @type {'list' | 'timeline' | 'map' | 'card'} */ (option.value));
-	}
-
-	/**
-	 * @param {{ value: string | number | null | undefined }} option
-	 */
-	function handleViewSelectChange(option) {
-		if (option.value) {
-			onviewchange?.(/** @type {'list' | 'timeline' | 'map' | 'card'} */ (option.value));
-		}
-	}
-
-	function closeMobileSearch() {
-		showMobileSearch = false;
-		onsearchchange?.('');
-	}
-
-	function openMobileSearch() {
-		showMobileSearch = true;
-		setTimeout(() => mobileSearchRef?.focus(), 50);
+		onviewchange?.(/** @type {'list' | 'timeline' | 'grid'} */ (option.value));
 	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} onscroll={handleYearDropdownScroll} />
-<svelte:document onfullscreenchange={handleFullscreenChange} onclick={handleYearDocumentClick} />
+<svelte:window onkeydown={handleKeydown} />
+
+{#snippet fuelTechRow(/** @type {import('./_utils/filter-options.js').FilterOption} */ option)}
+	<FuelTechRowContent {option} />
+{/snippet}
 
 <!-- Mobile Filter Modal -->
 <MobileFilterModal
@@ -483,7 +341,7 @@
 	{formatCapacity}
 	onclose={() => (showMobileFilterOptions = false)}
 	onregionschange={handleRegionChange}
-	onstatuseschange={(values, isMetaPressed) => handleStatusChange(values[0], isMetaPressed)}
+	onstatuseschange={handleStatusChange}
 	onfueltechschange={handleFuelTechChange}
 	oncapacityrangechange={(range) => oncapacityrangechange?.(range)}
 	{yearRange}
@@ -501,249 +359,167 @@
 	onclearstatuses={() => onstatuseschange?.([...DEFAULT_STATUSES])}
 	onclearfueltechs={() => onfueltechschange?.([])}
 	onclearcapacity={() => oncapacityrangechange?.([capacityMin, capacityMax])}
+	{filteredCount}
+	onresetall={() => {
+		stopYearAnimation();
+		onresetall?.();
+	}}
 />
 
-<FullscreenFilterBar {isFullscreen} routeKey="list" paddingX="px-8">
-	{#snippet stable()}
-		{#if isFullscreen}
+<!-- Mobile floating nav — the filter bar below is desktop-only; on mobile the
+     map is full-bleed and the chrome floats over it. Hidden while a facility
+     is selected (the page's floating back button takes its place) or while
+     the filter sheet is open (the map peeks bare above it). -->
+{#if !facilitySelected && !showMobileFilterOptions}
+	<div class="md:hidden fixed top-3 inset-x-3 z-40 flex items-stretch gap-2">
+		<div class="shrink-0 flex items-center">
+			<FullscreenNavDropdown light={darkMap} />
+		</div>
+		<SearchInput
+			bind:this={mobileSearchRef}
+			value={searchTerm}
+			onchange={(value) => onsearchchange?.(value)}
+			rounded="rounded-lg"
+			class="flex-1 min-w-0 rounded-lg shadow-lg"
+		/>
+		<!-- Fixed width so the button doesn't resize when the count badge
+		     appears/disappears. -->
+		<button
+			onclick={() => (showMobileFilterOptions = true)}
+			class="shrink-0 w-40 flex items-center justify-center gap-2 rounded-lg bg-white border border-warm-grey shadow-lg text-sm font-medium text-dark-grey cursor-pointer"
+		>
+			<ListFilter class="size-4" />
+			<span>Filters</span>
+			{#if activeFilterCount > 0}
+				<span
+					class="min-w-6 h-6 px-1.5 rounded-full bg-dark-grey text-white text-xs font-medium flex items-center justify-center"
+				>
+					{activeFilterCount}
+				</span>
+			{/if}
+		</button>
+	</div>
+{/if}
+
+<div class="hidden md:block">
+	<FullscreenFilterBar routeKey="list">
+		{#snippet stable()}
 			<FullscreenNavDropdown />
 			<a
-				href="/facilities?view=list&fullscreen=true"
+				href="/facilities?view=list"
 				class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
 			>
 				Facilities
 			</a>
-		{/if}
-	{/snippet}
+		{/snippet}
 
-	{#snippet rest()}
-		{#if isFullscreen}
+		{#snippet rest()}
 			<div class="h-8 border-l border-warm-grey shrink-0"></div>
-		{/if}
 
-		<!-- View Switcher - Desktop -->
-		<div class="hidden md:block {isFullscreen ? 'pl-3' : ''}">
-			<SwitchWithIcons
-				buttons={viewButtonsDesktop}
-				selected={selectedView}
-				compact={isFullscreen}
-				onchange={handleViewChange}
-			/>
-		</div>
-
-		<!-- Fullscreen Toggle - Mobile (only when not already fullscreen; logo handles exit) -->
-		{#if !isFullscreen}
-			<div class="md:hidden">
-				<button
-					onclick={() => onfullscreenchange?.()}
-					class="p-3 rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer"
-					title="Enter full screen (F). Shift+F for browser fullscreen"
-				>
-					<Maximize2 class="size-7 text-mid-grey" />
-				</button>
+			<!-- View Switcher -->
+			<div class="pl-3">
+				<SwitchWithIcons
+					buttons={VIEW_OPTIONS}
+					selected={selectedView}
+					compact
+					rounded="rounded-lg"
+					darkSelected
+					onchange={handleViewChange}
+				/>
 			</div>
-		{/if}
 
-		<!-- View Switcher - Mobile (dropdown) -->
-		<div class="md:hidden">
-			<FormSelect
-				options={viewOptions}
-				selected={selectedViewOption}
-				onchange={handleViewSelectChange}
-				paddingX="px-4"
-				paddingY="py-3"
-				widthClass="w-auto"
-				compact={isFullscreen}
-			/>
-		</div>
-
-		<!-- Desktop Search -->
-		<div
-			class="relative hidden md:flex items-center border-l border-warm-grey {isFullscreen
-				? 'ml-3 pl-7'
-				: 'ml-6 pl-10'}"
-		>
-			<SearchInput
-				bind:this={desktopSearchRef}
-				value={searchTerm}
-				onchange={(value) => onsearchchange?.(value)}
-				showShortcutHint={showShortcuts}
-				compact={isFullscreen}
-				class="w-[200px]"
-			/>
-		</div>
-
-		<!-- Desktop Filter Dropdowns -->
-		<div
-			class="filter-bar-scroll justify-start items-center gap-2 hidden md:flex border-l border-warm-grey overflow-x-auto min-w-0 {isFullscreen
-				? 'ml-3 pl-3'
-				: 'ml-6 pl-6'}"
-		>
-			<HierarchicalMultiSelect
-				options={regionOptions}
-				selected={selectedRegions}
-				label={regionLabel}
-				paddingX="pl-5 pr-4"
-				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
-				compact={isFullscreen}
-				defaultExpanded={['nem']}
-				onchange={handleRegionChange}
-				onclear={() => onregionschange?.([])}
-			/>
-
-			<FormMultiSelect
-				options={statusOptions}
-				selected={selectedStatuses}
-				label={statusLabel}
-				withColours={true}
-				paddingX="pl-5 pr-4"
-				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
-				compact={isFullscreen}
-				clearLabel="Reset to defaults"
-				onchange={handleStatusChange}
-				onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
-			/>
-
-			<HierarchicalMultiSelect
-				options={fuelTechOptions}
-				selected={selectedFuelTechs}
-				label={fuelTechLabel}
-				paddingX="pl-5 pr-4"
-				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
-				compact={isFullscreen}
-				onchange={handleFuelTechChange}
-				onclear={() => onfueltechschange?.([])}
-			/>
-
-			<RangeDropdown
-				min={capacityMin}
-				max={capacityMax}
-				value={capacityRange}
-				step={10}
-				label="Capacity"
-				paddingX="pl-5 pr-4"
-				paddingY={isFullscreen ? 'py-1.5' : 'py-3'}
-				compact={isFullscreen}
-				onchange={(range) => oncapacityrangechange?.(range)}
-				onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
-				formatValue={formatCapacity}
-			/>
-
-			<!-- Years dropdown (inline for play/pause control) -->
-			<div class="relative text-sm lg:text-base">
-				<div
-					bind:this={yearTriggerRef}
-					role="button"
-					tabindex="0"
-					onclick={() => (showYearDropdown = !showYearDropdown)}
-					onkeydown={(e) => e.key === 'Enter' && (showYearDropdown = !showYearDropdown)}
-					class="flex items-center pl-5 pr-4 rounded-lg whitespace-nowrap cursor-pointer {isFullscreen
-						? 'py-1.5 gap-4'
-						: 'py-3 gap-8'}"
-					class:hover:bg-warm-grey={!showYearDropdown}
-				>
-					<span
-						class="font-semibold {isFullscreen ? 'text-xs lg:text-sm' : 'text-sm lg:text-base'}"
-					>
-						{yearDisplayLabel}
-					</span>
-
-					<div class="flex items-center gap-1">
-						{#if isYearFiltered}
-							<button
-								onclick={(e) => {
-									e.stopPropagation();
-									handleYearClear();
-								}}
-								class="p-1 rounded-full hover:bg-mid-warm-grey transition-colors"
-								title="Clear selection"
-							>
-								<X class="size-4 text-mid-grey" />
-							</button>
-						{/if}
-						<IconChevronUpDown class="w-7 h-7" />
-					</div>
-				</div>
-
-				{#if showYearDropdown}
-					<div
-						bind:this={yearDropdownRef}
-						use:portal
-						use:dropdownPosition={{ trigger: yearTriggerRef }}
-						class="border border-mid-grey bg-white fixed flex flex-col rounded-lg z-50 shadow-md p-4 min-w-[250px]"
-						transition:fly={{ y: -10, duration: 150 }}
-					>
-						<RangeSlider
-							min={yearMin}
-							max={yearMax}
-							value={yearRange}
-							step={1}
-							onchange={(range) => {
-								stopYearAnimation();
-								onyearrangechange?.(range);
-							}}
-							formatValue={formatYear}
-						/>
-					</div>
-				{/if}
+			<!-- Search -->
+			<div class="relative flex items-center border-l border-warm-grey ml-3 pl-7">
+				<SearchInput
+					bind:this={desktopSearchRef}
+					value={searchTerm}
+					onchange={(value) => onsearchchange?.(value)}
+					showShortcutHint={showShortcuts}
+					compact
+					class="w-[200px]"
+				/>
 			</div>
-		</div>
-	{/snippet}
 
-	{#snippet options()}
-		<!-- Options Menu - Desktop -->
-		<div class="hidden md:flex items-center">
-			<OptionsMenu
-				{isFullscreen}
-				onfullscreenchange={() => onfullscreenchange?.()}
-				onshowshortcuts={() => onshowshortcuts?.()}
-				ondownloadcsv={() => ondownloadcsv?.()}
-			/>
-		</div>
-
-		<!-- Mobile Filter Button -->
-		<div class="md:hidden">
-			<ButtonIcon onclick={() => (showMobileFilterOptions = true)}>
-				<IconAdjustmentsHorizontal class="size-10" />
-			</ButtonIcon>
-		</div>
-	{/snippet}
-</FullscreenFilterBar>
-
-<!-- Mobile floating search (expands from bottom-right button to input pill) -->
-<div class="md:hidden fixed bottom-4 left-4 right-4 z-40 flex justify-end pointer-events-none">
-	{#if showMobileSearch}
-		<div
-			class="h-14 flex items-center gap-2 w-full bg-white rounded-full shadow-lg border border-warm-grey px-4 pointer-events-auto"
-			in:fly={{ x: 20, duration: 200 }}
-			out:fly={{ x: 20, duration: 150 }}
-		>
-			<Search class="size-5 text-mid-grey shrink-0" />
-			<SearchInput
-				bind:this={mobileSearchRef}
-				value={searchTerm}
-				onchange={(value) => onsearchchange?.(value)}
-				compact={true}
-				class="flex-1"
-			/>
-			<button
-				class="p-2 rounded-full hover:bg-warm-grey transition-colors cursor-pointer shrink-0"
-				onclick={closeMobileSearch}
-				aria-label="Close search"
+			<!-- Filter Dropdowns (pushed right via ml-auto). The left padding
+		     mirrors the gap on the other side of the cluster (bar gap-4 +
+		     options menu ml-2) so the dividers sit evenly. -->
+			<div
+				class="filter-bar-scroll justify-start items-center gap-2 flex border-l border-warm-grey overflow-x-auto min-w-0 ml-auto pl-6"
 			>
-				<X class="size-5 text-mid-grey" />
-			</button>
-		</div>
-	{:else}
-		<button
-			class="h-14 w-14 flex items-center justify-center rounded-full border border-warm-grey bg-white hover:border-dark-grey transition-colors cursor-pointer shadow-lg pointer-events-auto"
-			onclick={openMobileSearch}
-			aria-label="Search"
-			in:fly={{ x: 20, duration: 200 }}
-		>
-			<Search class="size-6 text-mid-grey" />
-		</button>
-	{/if}
+				<FilterDropdown
+					label="Region"
+					options={regionOptions}
+					selected={selectedRegions}
+					defaultExpanded={['nem']}
+					compact
+					onchange={handleRegionChange}
+					onclear={() => onregionschange?.([])}
+					onselectall={() => onregionschange?.(getLeafValues(regionOptions))}
+				/>
+
+				<FilterDropdown
+					label="Status"
+					options={statusOptions}
+					selected={selectedStatuses}
+					compact
+					clearLabel="Reset to defaults"
+					onchange={handleStatusChange}
+					onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
+					onselectall={() => onstatuseschange?.([...ALL_STATUSES])}
+				/>
+
+				<FilterDropdown
+					label="Technology"
+					options={fuelTechOptions}
+					selected={selectedFuelTechs}
+					searchable
+					searchPlaceholder="Search technologies"
+					compact
+					onchange={handleFuelTechChange}
+					onclear={() => onfueltechschange?.([])}
+					onselectall={() => onfueltechschange?.(getLeafValues(fuelTechOptions))}
+					row={fuelTechRow}
+				/>
+
+				<FilterRangeDropdown
+					label="Capacity"
+					min={capacityMin}
+					max={capacityMax}
+					value={capacityRange}
+					step={10}
+					formatValue={formatCapacity}
+					compact
+					onchange={(range) => oncapacityrangechange?.(range)}
+					onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
+				/>
+
+				<FilterRangeDropdown
+					label="Years"
+					min={yearMin}
+					max={yearMax}
+					value={yearRange}
+					step={1}
+					formatValue={formatYear}
+					compact
+					suppressScrollClose={isYearPlaying}
+					onchange={(range) => {
+						stopYearAnimation();
+						onyearrangechange?.(range);
+					}}
+					onclear={handleYearClear}
+				/>
+			</div>
+		{/snippet}
+
+		{#snippet options()}
+			<div class="flex items-center">
+				<OptionsMenu
+					onshowshortcuts={() => onshowshortcuts?.()}
+					ondownloadcsv={() => ondownloadcsv?.()}
+				/>
+			</div>
+		{/snippet}
+	</FullscreenFilterBar>
 </div>
 
 <style>

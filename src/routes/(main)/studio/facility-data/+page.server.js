@@ -103,7 +103,10 @@ export async function load({ url, fetch }) {
 						result.pollutionData = data?.length ? data : null;
 					}
 				} catch (err) {
-					console.warn('[facility-data] pollution fetch failed:', /** @type {Error} */ (err).message);
+					console.warn(
+						'[facility-data] pollution fetch failed:',
+						/** @type {Error} */ (err).message
+					);
 				}
 			}
 		}

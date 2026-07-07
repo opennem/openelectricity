@@ -13,17 +13,17 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 
 ## Files
 
-| File                        | Description                                                                                                                                        |
-| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FacilityChart.svelte`      | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping                                                                  |
-| `FacilityDataTable.svelte`  | Tabular view of visible chart data                                                                                                                 |
-| `FacilityUnitsTable.svelte` | Facility unit metadata table                                                                                                                       |
-| `process-facility-power.js` | Core data processing — converts API response to chart-ready rows                                                                                   |
-| `range-interval-config.js`  | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec                                         |
-| `energy-basis.js`           | Shared price/intensity-provider helpers: basis-metric choice, combined query string, series-prefix rewrite, and the per-timestamp energy (MWh) map |
-| `interval-hours.js`         | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains                                   |
-| `helpers.js`                | Color shading (`buildUnitColourMap`), timezone helpers, legacy `transformFacilityPowerData`                                                        |
-| `index.js`                  | Barrel exports                                                                                                                                     |
+| File                        | Description                                                                                                                                         |
+| --------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FacilityChart.svelte`      | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping                                                                   |
+| `FacilityDataTable.svelte`  | Tabular view of visible chart data                                                                                                                  |
+| `FacilityUnitsTable.svelte` | Facility unit metadata table                                                                                                                        |
+| `process-facility-power.js` | Core data processing — converts API response to chart-ready rows                                                                                    |
+| `range-interval-config.js`  | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec                                          |
+| `energy-basis.js`           | Shared price/intensity-provider helpers: basis-metric choice, combined query string, series-prefix rewrite, and the per-timestamp energy (MWh) map  |
+| `interval-hours.js`         | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains                                    |
+| `helpers.js`                | Colour shading (`buildUnitColourMap`, `SHADE_SPREADS`), series label/colour getter factories, timezone helpers, legacy `transformFacilityPowerData` |
+| `index.js`                  | Barrel exports                                                                                                                                      |
 
 ## Data Pipeline
 
@@ -116,23 +116,25 @@ To prevent rapid flipping during continuous zoom, the switch thresholds differ b
 - **Energy/1M → Energy/1d**: at **< 300 days**
 - **Energy/1d → Power/5m**: at **≤ 13 days**
 
-All switches are debounced by 300ms. A small pan that doesn't cross a native
+All switches are debounced by 300ms. A pan/zoom that doesn't cross a native
 threshold preserves an explicit coarse pick (Week/Quarter/Season/Half/Fin-Year)
-rather than snapping it back to the native grain.
+rather than snapping it back to the native grain — and on `/facility/[code]`,
+where power auto-derives to 5m, a manual 30m pick is preserved the same way.
 
 ### What happens on switch
 
 1. Page updates `activeMetric` and `activeInterval`
-2. FacilityChart's `$effect` detects the change and creates a **new ChartDataManager** with the new interval/metric
-3. The viewport (`viewStart`/`viewEnd`) is preserved
-4. New data is fetched with a buffer (3x for energy, 1x for power)
-5. Chart re-renders with the new data
+2. FacilityChart's `$effect` detects the change and swaps managers: it first checks its stash (`prefetchCache`, keyed `${interval}-${metric}`) and revives the previous manager for that grain — so switching back to a range renders instantly from cache — otherwise it creates a **new ChartDataManager**
+3. The outgoing manager is stashed (LRU, max 4 entries; evictions are `dispose()`d) so its cache stays warm for a back-switch; managers from another facility are disposed instead
+4. The viewport (`viewStart`/`viewEnd`) is preserved
+5. New data is fetched with a buffer (3x for energy, 1x for power); while it loads, the previous chart stays visible under the loading veil (`chart-loading-state.js`) and the page pulses the active range control (`ChartRangeBar`'s `pending` prop)
+6. Chart re-renders with the new data
 
 ### Display interval vs API interval
 
 FacilityChart has internal display interval toggles that perform **client-side aggregation** on top of cached API data:
 
-- **Power mode**: API always fetches `5m`. Toggle between `5m` (raw) and `30m` (`aggregateToInterval` averages).
+- **Power mode**: API always fetches `5m`. Toggle between `5m` (raw) and `30m` (`aggregateToInterval` averages). On `/facility/[code]` the auto/default power display is always `5m` (the page maps the shared config's `30m` default down via `preferFiveMinute`); `30m` remains a manual dropdown pick there. Other consumers keep the shared `30m` default at 2+ days.
 - **Energy mode with `1d` API interval**: Daily (raw) or Monthly (`aggregateToMonth` sums).
 - **Energy mode with `1M` API interval**: Monthly (raw), or the coarse calendar picks — Season / Half-year / Fin-year — bucketed client-side via `aggregateByBoundary`.
 - **Energy mode with `3M` or `1y` API interval**: Quarter / Year render at the fetched grain — no further aggregation.
@@ -140,7 +142,10 @@ FacilityChart has internal display interval toggles that perform **client-side a
 All render-layer aggregation is funnelled through a single dispatcher,
 `aggregateForDisplay(data, seriesNames, { apiInterval, displayInterval, ianaTimeZone, method })`
 in `v2/dataProcessing.js`, so FacilityChart and the financial/emissions providers
-stay in lock-step.
+stay in lock-step. At the `30m` grain the dispatcher opts summed (volume) series —
+market value, emissions — into `trimPartialEdges`, dropping half-filled first/last
+buckets that would otherwise render as a false dip at the viewport edges; averaged
+(rate) series keep theirs, since a partial bucket still averages to the right level.
 
 The `showIntervalToggle` prop (default `true`) controls whether FacilityChart shows its own interval buttons. When using ChartRangeBar (which has its own interval dropdown), pass `showIntervalToggle={false}`.
 
@@ -154,10 +159,11 @@ Reactive Svelte 5 class that manages a processed data cache independently from t
 
 - **`seedCache(powerResponse)`** — Populate cache from server-side data (no fetch)
 - **`requestRange(start, end)`** — Debounced fetch for uncached time ranges
-- **`getDataForRange(startMs, endMs)`** — Slice cache by viewport bounds
-- **`clearCache()`** — Reset all state
+- **`getDataForRange(startMs, endMs)`** — Slice cache by viewport bounds (binary search)
+- **`dispose()`** — Retire the manager: cancel the pending debounce and make in-flight fetches no-ops on resolve. The cache is left intact so a stashed manager can be revived
+- **`clearCache()`** — Dispose and reset all cached state
 
-Internally calls `processFacilityPower()` and merges results by timestamp (dedup on overlap). The newest (right) boundary keeps an interval-scaled overlap (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y) to refresh the latest bucket; the older (left) boundary fetches contiguously up to the cache start. Concurrent identical fetches across managers (e.g. the generation chart and the price/emissions providers' combined URL) collapse to one network request via an in-flight dedup.
+Internally calls `processFacilityPower()` and merges results with an O(n+m) sorted merge (new rows win on equal timestamps). The newest (right) boundary keeps an interval-scaled overlap (10min for 5m, 1 day for 1d, 31 days for 1M, 92 days for 3M, 365 days for 1y) to refresh the latest bucket; the older (left) boundary fetches contiguously up to the cache start. Concurrent identical fetches across managers (e.g. the generation chart and the price/emissions providers' combined URL) collapse to one network request via an in-flight dedup.
 
 ### Cache structure
 
@@ -179,7 +185,8 @@ requestRange(start, end)
     → for each batch (sequential):
         → skip if #inFlightKeys has this range
         → #fetchFromApi() — call /api/facilities/[code]/power
-        → #mergeProcessedData() — dedup by timestamp, new data wins, re-sort
+        → drop the result if dispose()/clearCache() retired this generation mid-flight
+        → #mergeProcessedData() — sorted two-pointer merge, new data wins on equal timestamps
         → #updateCacheRange()
 ```
 
@@ -187,21 +194,24 @@ requestRange(start, end)
 
 ### Props
 
-| Prop                      | Type                          | Description                                                                                                                                                                                                                                            |
-| ------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `facility`                | object                        | Facility with `units` array                                                                                                                                                                                                                            |
-| `powerData`               | object                        | Power data from API                                                                                                                                                                                                                                    |
-| `timeZone`                | string                        | `'+10:00'` or `'+08:00'`                                                                                                                                                                                                                               |
-| `title`                   | string                        | Chart title                                                                                                                                                                                                                                            |
-| `chartHeight`             | string                        | Tailwind height class                                                                                                                                                                                                                                  |
-| `useDivergingStack`       | boolean                       | Stack positive/negative independently                                                                                                                                                                                                                  |
-| `onviewportchange`        | callback                      | Fired when viewport changes                                                                                                                                                                                                                            |
-| `onvisibledata`           | callback                      | Debounced visible data for external table                                                                                                                                                                                                              |
-| `ondisplayintervalchange` | callback                      | Fired when display interval changes                                                                                                                                                                                                                    |
-| `onloadcomplete`          | callback                      | Fired once the initial fetch/seed settles, with `{ hasData }` — lets a parent tell "loading" from genuinely "no data" (stays accurate across panning)                                                                                                  |
-| `showIntervalToggle`      | boolean                       | Show built-in interval toggle buttons (default: `true`)                                                                                                                                                                                                |
-| `panZoomMode`             | `'always' \| 'tap-to-engage'` | Forwarded to StratumChart. `'always'` is the default; `'tap-to-engage'` shows a "Click to enable" hint pill and gates gestures behind `panZoomEngaged`. Used on `/facility/[code]` to keep the chart from hijacking page scroll until the user opts in |
-| `panZoomEngaged`          | `boolean` (bindable)          | Engagement state for tap-to-engage mode. The facility page binds the same state across the visible charts (FacilityChart plus whichever of the financial/emissions tab pairs are mounted) and resets it on ESC, click-outside, or facility change      |
+| Prop                      | Type                                  | Description                                                                                                                                                                                                                                                                                                            |
+| ------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `facility`                | object                                | Facility with `units` array                                                                                                                                                                                                                                                                                            |
+| `powerData`               | object                                | Power data from API                                                                                                                                                                                                                                                                                                    |
+| `timeZone`                | string                                | `'+10:00'` or `'+08:00'`                                                                                                                                                                                                                                                                                               |
+| `title`                   | string                                | Chart title                                                                                                                                                                                                                                                                                                            |
+| `chartHeight`             | string                                | Tailwind height class                                                                                                                                                                                                                                                                                                  |
+| `useDivergingStack`       | boolean                               | Stack positive/negative independently                                                                                                                                                                                                                                                                                  |
+| `onviewportchange`        | callback                              | Fired when viewport changes                                                                                                                                                                                                                                                                                            |
+| `onvisibledata`           | callback                              | Debounced visible data for external table                                                                                                                                                                                                                                                                              |
+| `ondisplayintervalchange` | callback                              | Fired when display interval changes                                                                                                                                                                                                                                                                                    |
+| `onloadcomplete`          | callback                              | Fired when a fetch/seed settles, with `{ hasData }` — lets a parent tell "loading" from "no data". If the first settled window is empty it retries once from the facility's own default range before reporting `hasData: false`, so a stale viewport after a client-side nav self-heals. Stays accurate across panning |
+| `showIntervalToggle`      | boolean                               | Show built-in interval toggle buttons (default: `true`)                                                                                                                                                                                                                                                                |
+| `panZoomMode`             | `'always' \| 'tap-to-engage'`         | Forwarded to StratumChart. `'always'` is the default; `'tap-to-engage'` shows a "Click to enable" hint pill and gates gestures behind `panZoomEngaged`. Used on `/facility/[code]` to keep the chart from hijacking page scroll until the user opts in                                                                 |
+| `panZoomEngaged`          | `boolean` (bindable)                  | Engagement state for tap-to-engage mode. The facility page binds the same state across the visible charts (FacilityChart plus whichever of the financial/emissions tab pairs are mounted) and resets it on ESC, click-outside, or facility change                                                                      |
+| `enablePan`               | `boolean`                             | Enable drag/wheel pan (default `true`). Set `false` for a fixed-window snapshot — hover tooltips still work. Used by the `/facilities` detail-pane snapshot charts                                                                                                                                                     |
+| `resizable`               | `boolean`                             | Show the drag-to-resize handle (default `true`). Set `false` for a fixed-height snapshot so the chart honours `chartHeight` and doesn't share the persisted resize height                                                                                                                                              |
+| `yTicks`                  | `number \| any[] \| (ticks) => any[]` | Y-axis ticks forwarded to AxisY: a count, explicit values, or a function thinning the scale's default ticks. Omit for the AxisY default (4). The snapshot charts pass a function capping at 3                                                                                                                          |
 
 ### Features
 

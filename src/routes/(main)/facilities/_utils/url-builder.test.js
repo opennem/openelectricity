@@ -33,7 +33,7 @@ describe('buildUrl', () => {
 
 	it('should handle multiple values in arrays', () => {
 		const params = {
-			view: 'map',
+			view: 'grid',
 			statuses: ['operating', 'commissioning'],
 			regions: ['nsw', 'vic'],
 			fuelTechs: ['wind', 'solar_utility'],
@@ -84,6 +84,6 @@ describe('buildUrl', () => {
 
 		expect(buildUrl({ ...baseParams, view: 'list' })).toContain('view=list');
 		expect(buildUrl({ ...baseParams, view: 'timeline' })).toContain('view=timeline');
-		expect(buildUrl({ ...baseParams, view: 'map' })).toContain('view=map');
+		expect(buildUrl({ ...baseParams, view: 'grid' })).toContain('view=grid');
 	});
 });

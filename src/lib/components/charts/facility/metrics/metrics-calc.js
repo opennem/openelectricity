@@ -101,28 +101,28 @@ export function avgPriceReceived(marketValue, energy) {
 }
 
 /**
- * Peak instantaneous output (MW) across the range.
- *
- * Each row's positive-series total is taken; when `intervalHours` > 0 the row
- * total is treated as energy (MWh) and divided back to power (MW). Pass 0 for
- * native power data.
+ * Peak bucket across the range — the row with the highest positive-series total,
+ * tagged with its timestamp so callers can label the period and annotate the
+ * chart. When `intervalHours` > 0 the row total is treated as energy (MWh) and
+ * divided back to power (MW); pass 0 to keep the raw energy.
  * @param {Array<Record<string, any>>} rows
  * @param {string[]} seriesNames
  * @param {number} [intervalHours=0]
- * @returns {number}
+ * @returns {{ value: number, time: number, date: any } | null}
  */
-export function peakOutput(rows, seriesNames, intervalHours = 0) {
-	let max = 0;
+export function peakBucket(rows, seriesNames, intervalHours = 0) {
+	/** @type {{ value: number, time: number, date: any } | null} */
+	let peak = null;
 	for (const row of rows) {
 		let rowTotal = 0;
 		for (const name of seriesNames) {
 			const val = row[name];
 			if (typeof val === 'number' && val > 0) rowTotal += val;
 		}
-		if (intervalHours > 0) rowTotal /= intervalHours;
-		if (rowTotal > max) max = rowTotal;
+		const value = intervalHours > 0 ? rowTotal / intervalHours : rowTotal;
+		if (!peak || value > peak.value) peak = { value, time: row.time, date: row.date };
 	}
-	return max;
+	return peak;
 }
 
 /**
@@ -147,29 +147,28 @@ export function runningHours(powerData, seriesNames, intervalMinutes) {
 }
 
 /**
- * Start count — transitions from not-generating to generating (an initial
- * generating interval counts as a start).
- * @param {Array<Record<string, any>>} powerData
- * @param {string[]} seriesNames
- * @returns {number}
+ * Whether a fuel tech is the charging/pumping side of a storage pair. A
+ * charge/discharge pair describes one store — storage sums and durations
+ * count only the discharge side, whose capacity is generation power.
+ *
+ * @param {string | null | undefined} fueltechId
+ * @returns {boolean}
  */
-export function startCount(powerData, seriesNames) {
-	let starts = 0;
-	let wasGenerating = false;
+export function isChargingSideUnit(fueltechId) {
+	const ft = fueltechId ?? '';
+	return ft.endsWith('_charging') || ft === 'pumps';
+}
 
-	for (const row of powerData) {
-		let generating = false;
-		for (const name of seriesNames) {
-			const val = row[name];
-			if (typeof val === 'number' && val > 0) {
-				generating = true;
-				break;
-			}
-		}
-		if (generating && !wasGenerating) starts++;
-		wasGenerating = generating;
-	}
-	return starts;
+/**
+ * Storage duration in hours — energy capacity over discharge capacity, or
+ * null when either side is missing/zero.
+ *
+ * @param {number} storageMWh
+ * @param {number} powerMW
+ * @returns {number | null}
+ */
+export function storageDurationHours(storageMWh, powerMW) {
+	return storageMWh > 0 && powerMW > 0 ? storageMWh / powerMW : null;
 }
 
 /**

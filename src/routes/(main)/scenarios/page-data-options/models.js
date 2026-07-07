@@ -239,16 +239,7 @@ export const modelPathways = {
 		'Counterfactual'
 	],
 
-	[AEMO_2020_ISP]: [
-		'DP1',
-		'DP2',
-		'DP3',
-		'DP4',
-		'DP5',
-		'DP6',
-		'DP7',
-		'DP8'
-	],
+	[AEMO_2020_ISP]: ['DP1', 'DP2', 'DP3', 'DP4', 'DP5', 'DP6', 'DP7', 'DP8'],
 
 	[AEMO_2020_ISP_DRAFT]: ['default'],
 
@@ -504,40 +495,55 @@ modelOptions.forEach((/** @type {any} */ model) => {
 });
 
 /** @type {any[]} */
-export const scenarioOptions = modelOptions.reduce((/** @type {any[]} */ acc, /** @type {any} */ curr) => [...acc, ...curr.scenarios], /** @type {any[]} */ ([]));
+export const scenarioOptions = modelOptions.reduce(
+	(/** @type {any[]} */ acc, /** @type {any} */ curr) => [...acc, ...curr.scenarios],
+	/** @type {any[]} */ ([])
+);
 
 // create a list of unique ids for every mutation of model, scenario and pathway
-export const modelScenarioPathwayOptions = modelOptions.reduce((/** @type {any[]} */ acc, /** @type {any} */ model) => {
-	model.scenarios.forEach((/** @type {any} */ scenario) => {
-		model.pathways.forEach((/** @type {string} */ pathway) => {
-			acc.push({
-				id: `${model.value}-${scenario.value}-${pathway}`,
-				model: model.value,
-				scenario: scenario.value,
-				pathway: pathway
+export const modelScenarioPathwayOptions = modelOptions.reduce(
+	(/** @type {any[]} */ acc, /** @type {any} */ model) => {
+		model.scenarios.forEach((/** @type {any} */ scenario) => {
+			model.pathways.forEach((/** @type {string} */ pathway) => {
+				acc.push({
+					id: `${model.value}-${scenario.value}-${pathway}`,
+					model: model.value,
+					scenario: scenario.value,
+					pathway: pathway
+				});
 			});
 		});
-	});
-	return acc;
-}, /** @type {any[]} */ ([]));
+		return acc;
+	},
+	/** @type {any[]} */ ([])
+);
 
 /** @type {Record<string, string>} */
-export const modelLabelMap = modelOptions.reduce((/** @type {Record<string, string>} */ acc, /** @type {any} */ curr) => {
-	acc[curr.value] = curr.label;
-	return acc;
-}, /** @type {Record<string, string>} */ ({}));
+export const modelLabelMap = modelOptions.reduce(
+	(/** @type {Record<string, string>} */ acc, /** @type {any} */ curr) => {
+		acc[curr.value] = curr.label;
+		return acc;
+	},
+	/** @type {Record<string, string>} */ ({})
+);
 
 /** @type {Record<string, string>} */
-export const scenarioColourMap = scenarioOptions.reduce((/** @type {Record<string, string>} */ acc, /** @type {any} */ curr) => {
-	acc[curr.id] = curr.colour;
-	return acc;
-}, /** @type {Record<string, string>} */ ({}));
+export const scenarioColourMap = scenarioOptions.reduce(
+	(/** @type {Record<string, string>} */ acc, /** @type {any} */ curr) => {
+		acc[curr.id] = curr.colour;
+		return acc;
+	},
+	/** @type {Record<string, string>} */ ({})
+);
 
 /** @type {Record<string, string>} */
-export const scenarioLabelMap = scenarioOptions.reduce((/** @type {Record<string, string>} */ acc, /** @type {any} */ curr) => {
-	acc[curr.id] = curr.label;
-	return acc;
-}, /** @type {Record<string, string>} */ ({}));
+export const scenarioLabelMap = scenarioOptions.reduce(
+	(/** @type {Record<string, string>} */ acc, /** @type {any} */ curr) => {
+		acc[curr.id] = curr.label;
+		return acc;
+	},
+	/** @type {Record<string, string>} */ ({})
+);
 
 /**
  * Merge a chart's `seriesLabels` with `scenarioLabelMap` so MiniCharts (now a

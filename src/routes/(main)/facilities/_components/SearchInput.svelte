@@ -8,6 +8,7 @@
 	 *   debounceMs?: number,
 	 *   class?: string,
 	 *   compact?: boolean,
+	 *   rounded?: string,
 	 *   showShortcutHint?: boolean,
 	 *   onchange: (value: string) => void
 	 * }}
@@ -18,6 +19,9 @@
 		debounceMs = 150,
 		class: className = '',
 		compact = false,
+		/** Tailwind radius class for the input (the mobile nav passes rounded-lg
+		 *  to match the desktop filter pills). */
+		rounded = 'rounded-full',
 		showShortcutHint = false,
 		onchange
 	} = $props();
@@ -68,6 +72,8 @@
 </script>
 
 <div class="relative {className}">
+	<!-- 16px (text-base) below md — anything smaller makes iOS Safari zoom the
+	     page when the input gains focus. Desktop keeps the compact text-xs. -->
 	<input
 		bind:this={inputElement}
 		type="search"
@@ -76,13 +82,14 @@
 		onfocus={() => (isFocused = true)}
 		onblur={() => (isFocused = false)}
 		{placeholder}
-		class="rounded-full border border-warm-grey bg-white transition-colors hover:border-dark-grey focus:border-red focus:ring-0 focus:outline-none w-full {compact
-			? 'px-4 py-2 text-xs'
-			: 'px-5 py-4 text-sm'}"
+		class="{rounded} border border-warm-grey bg-white transition-colors hover:border-dark-grey focus:border-red focus:ring-0 focus:outline-none w-full {compact
+			? 'px-4 py-2 text-base md:text-xs'
+			: 'px-5 py-4 text-base'}"
 	/>
 	{#if showKbd}
 		<kbd
 			class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[10px] font-sans text-dark-grey bg-light-warm-grey border border-warm-grey rounded px-1.5 py-0.5 leading-none"
-		>/</kbd>
+			>/</kbd
+		>
 	{/if}
 </div>

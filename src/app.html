@@ -4,6 +4,9 @@
 		<meta charset="utf-8" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.png" />
 		<link rel="apple-touch-icon" href="%sveltekit.assets%/favicon.png" />
+		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
+		<meta name="theme-color" content="#ffffff" />
+		<meta name="mobile-web-app-capable" content="yes" />
 		<link
 			rel="preload"
 			href="%sveltekit.assets%/fonts/DMSans-VariableFont_opsz,wght.ttf"
@@ -32,7 +35,10 @@
 			type="font/ttf"
 			crossorigin
 		/>
-		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+		/>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

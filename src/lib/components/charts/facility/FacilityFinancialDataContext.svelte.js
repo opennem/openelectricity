@@ -19,6 +19,8 @@ const KEY = Symbol('facility-financial-data');
  * @property {boolean} hasViewportHandler
  * @property {number | undefined} hoverTime
  * @property {((time: number | undefined) => void) | undefined} onhoverchange
+ * @property {number | undefined} focusTime
+ * @property {((time: number | undefined) => void) | undefined} onfocuschange
  * @property {() => void} handlePanStart
  * @property {(deltaMs: number) => void} handlePan
  * @property {() => void} handlePanEnd

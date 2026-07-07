@@ -1,16 +1,68 @@
 <script>
 	/**
+	 * Segmented switcher with a thumb that slides to the selected option.
+	 * The thumb is inset from the track via the container padding.
 	 * @typedef {Object} Props
 	 * @property {{ label?: string, value: string | number, icon?: *, size?: string }[]} [buttons]
 	 * @property {string | number } [selected]
 	 * @property {boolean} [compact]
+	 * @property {string} [rounded] - Tailwind radius class for the container, thumb and buttons
+	 * @property {boolean} [darkSelected] - Thumb uses a dark fill (matches active filter pills)
 	 * @property {(option: {value: string}) => void} [onchange]
 	 */
 
 	/** @type {Props & { [key: string]: any }} */
-	let { buttons = [], selected = '', compact = false, onchange, ...rest } = $props();
+	let {
+		buttons = [],
+		selected = '',
+		compact = false,
+		rounded = 'rounded-xl',
+		darkSelected = false,
+		onchange,
+		...rest
+	} = $props();
 
 	let isSelected = $derived((/** @type {string | number} */ value) => selected === value);
+
+	/** @type {HTMLElement | undefined} */
+	let containerEl = $state();
+	/** @type {Record<string, HTMLElement | undefined>} */
+	let buttonEls = $state({});
+
+	let thumbLeft = $state(0);
+	let thumbTop = $state(0);
+	let thumbWidth = $state(0);
+	let thumbHeight = $state(0);
+	let thumbVisible = $state(false);
+
+	function measureThumb() {
+		const el = buttonEls[String(selected)];
+		if (!el) {
+			thumbVisible = false;
+			return;
+		}
+		thumbLeft = el.offsetLeft;
+		thumbTop = el.offsetTop;
+		thumbWidth = el.offsetWidth;
+		thumbHeight = el.offsetHeight;
+		thumbVisible = true;
+	}
+
+	// Re-measure whenever the selection or layout inputs change
+	$effect(() => {
+		void selected;
+		void compact;
+		void buttons;
+		measureThumb();
+	});
+
+	// Re-measure when the container resizes (viewport changes, font load, etc.)
+	$effect(() => {
+		if (!containerEl) return;
+		const observer = new ResizeObserver(() => measureThumb());
+		observer.observe(containerEl);
+		return () => observer.disconnect();
+	});
 
 	/**
 	 * @param {MouseEvent} e
@@ -21,24 +73,31 @@
 	}
 </script>
 
-<!-- selected === value -->
-
 <div
-	class={`flex md:inline-flex rounded-xl bg-light-warm-grey border border-solid border-mid-warm-grey ${compact ? 'text-xs' : 'text-sm'} ${rest.class}`}
+	bind:this={containerEl}
+	class={`relative flex md:inline-flex p-1 ${rounded} bg-light-warm-grey border border-solid border-mid-warm-grey ${compact ? 'text-xs' : 'text-sm'} ${rest.class}`}
 >
+	{#if thumbVisible}
+		<div
+			class="absolute shadow-lg transition-all duration-200 ease-out {rounded} {darkSelected
+				? 'bg-dark-grey border border-dark-grey'
+				: 'bg-white border border-black'}"
+			style="left: {thumbLeft}px; top: {thumbTop}px; width: {thumbWidth}px; height: {thumbHeight}px;"
+		></div>
+	{/if}
+
 	{#each buttons as { label, value, icon, size } (value)}
 		<button
+			bind:this={buttonEls[value]}
 			onclick={handleClick}
 			{value}
-			class="flex w-full gap-3 md:w-auto items-center justify-center hover:text-black border rounded-xl whitespace-nowrap cursor-pointer {compact
+			class="relative z-10 flex w-full gap-3 md:w-auto items-center justify-center whitespace-nowrap cursor-pointer transition-colors duration-200 {rounded} {compact
 				? 'px-3 py-1.5 md:px-4 md:py-1.5'
-				: 'px-4 py-4 md:px-8 md:py-4'}"
-			class:bg-white={isSelected(value)}
-			class:text-black={isSelected(value)}
-			class:border-black={isSelected(value)}
-			class:shadow-lg={isSelected(value)}
-			class:text-mid-grey={!isSelected(value)}
-			class:border-transparent={!isSelected(value)}
+				: 'px-4 py-4 md:px-8 md:py-4'} {isSelected(value)
+				? darkSelected
+					? 'text-white'
+					: 'text-black'
+				: 'text-mid-grey hover:text-black'}"
 		>
 			{#if icon}
 				{@const SvelteComponent = icon}
@@ -50,9 +109,3 @@
 		</button>
 	{/each}
 </div>
-
-<style>
-	.shadow {
-		box-shadow: 0.2rem 0 0.3rem 0 rgba(0, 0, 0, 0.1);
-	}
-</style>

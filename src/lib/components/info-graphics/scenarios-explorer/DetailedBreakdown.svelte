@@ -100,7 +100,11 @@
 
 			{#if $selectedModel && $selectedScenario}
 				<h3>{scenarioLabels[/** @type {string} */ ($selectedModel)][$selectedScenario]}</h3>
-				<p>{/** @type {Record<string, Record<string, string>>} */ (scenarioDescriptions)[/** @type {string} */ ($selectedModel)][$selectedScenario]}</p>
+				<p>
+					{/** @type {Record<string, Record<string, string>>} */ (scenarioDescriptions)[
+						/** @type {string} */ ($selectedModel)
+					][$selectedScenario]}
+				</p>
 
 				<!-- <h5>Five Key Points</h5>
 				<ul class="list-disc list-inside">

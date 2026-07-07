@@ -12,12 +12,14 @@
 
 	const BUTTON_ZOOM_FACTOR = 1.5;
 
-	/** @type {{ showContainer?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean }} */
+	/** @type {{ showContainer?: boolean, showHeader?: boolean, zoomMode?: 'floating' | 'static' | 'none', panZoomMode?: 'always' | 'tap-to-engage', panZoomEngaged?: boolean, resizable?: boolean }} */
 	let {
 		showContainer = true,
+		showHeader = true,
 		zoomMode = 'static',
 		panZoomMode = 'always',
-		panZoomEngaged = $bindable(false)
+		panZoomEngaged = $bindable(false),
+		resizable = true
 	} = $props();
 
 	const ctx = getFacilityFinancialDataContext();
@@ -39,6 +41,7 @@
 	/** @param {number} time */
 	function handleFocus(time) {
 		ctx?.priceChartStore?.toggleFocus(time);
+		ctx?.onfocuschange?.(ctx?.priceChartStore?.focusTime);
 	}
 
 	// Destructure reactive getters at render time
@@ -73,12 +76,28 @@
 			store.setHover(t);
 		}
 	});
+
+	// Mirror externally-driven focus time into the local chart store (same gating
+	// as the hover effect above).
+	$effect(() => {
+		if (!ctx?.onfocuschange) return;
+		const t = ctx.focusTime;
+		const store = priceChartStore;
+		if (!store) return;
+		if (store.focusTime === t) return;
+		if (t === undefined) {
+			store.clearFocus();
+		} else {
+			store.setFocus(t);
+		}
+	});
 </script>
 
 {#if ctx && priceChartStore}
 	<div class="group relative {showContainer ? 'rounded-lg p-4 bg-white' : ''}">
 		<StratumChart
 			chart={priceChartStore}
+			{showHeader}
 			onhover={handleHover}
 			onhoverend={handleHoverEnd}
 			onfocus={handleFocus}
@@ -95,7 +114,7 @@
 			zoomMode={hasViewportHandler ? zoomMode : 'none'}
 			onzoomin={zoomIn}
 			onzoomout={zoomOut}
-			resizable
+			{resizable}
 			heightStorageKey="facility-chart-height-market"
 			minHeight={120}
 			maxHeight={700}

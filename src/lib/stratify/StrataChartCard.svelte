@@ -108,30 +108,30 @@
 							class="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-mid-warm-grey z-50 min-w-50 py-1 whitespace-nowrap"
 							in:fly={{ y: -5, duration: 150 }}
 						>
-								<button
-									onclick={copyLink}
-									class="w-full pl-3 pr-8 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
-								>
-									{#if copied}
-										<ClipboardCheck class="size-4 text-mid-grey" />
-									{:else}
-										<Link class="size-4 text-mid-grey" />
-									{/if}
-									<span class="flex-1">{copied ? 'Copied!' : 'Copy link'}</span>
-								</button>
+							<button
+								onclick={copyLink}
+								class="w-full pl-3 pr-8 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
+							>
+								{#if copied}
+									<ClipboardCheck class="size-4 text-mid-grey" />
+								{:else}
+									<Link class="size-4 text-mid-grey" />
+								{/if}
+								<span class="flex-1">{copied ? 'Copied!' : 'Copy link'}</span>
+							</button>
 
-								<button
-									onclick={copyEmbed}
-									class="w-full pl-3 pr-8 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
-								>
-									{#if copied}
-										<ClipboardCheck class="size-4 text-mid-grey" />
-									{:else}
-										<Code class="size-4 text-mid-grey" />
-									{/if}
-									<span class="flex-1">{copied ? 'Copied!' : 'Copy embed code'}</span>
-								</button>
-							</div>
+							<button
+								onclick={copyEmbed}
+								class="w-full pl-3 pr-8 py-2 text-xs font-medium flex items-center gap-3 hover:bg-light-warm-grey transition-colors text-left"
+							>
+								{#if copied}
+									<ClipboardCheck class="size-4 text-mid-grey" />
+								{:else}
+									<Code class="size-4 text-mid-grey" />
+								{/if}
+								<span class="flex-1">{copied ? 'Copied!' : 'Copy embed code'}</span>
+							</button>
+						</div>
 					{/if}
 				</div>
 			</div>

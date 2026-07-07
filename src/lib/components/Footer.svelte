@@ -52,7 +52,8 @@
 			<div class="mt-16 md:mt-0">
 				<h5>For Developers</h5>
 				<p>
-					Access real-time and historical energy data from across Australia's electricity grid. Built for teams that need reliable, well-documented APIs and clear usage tooling.
+					Access real-time and historical energy data from across Australia's electricity grid.
+					Built for teams that need reliable, well-documented APIs and clear usage tooling.
 				</p>
 				<p class="flex flex-col gap-4 md:flex-row md:gap-12 text-base">
 					<SectionLink

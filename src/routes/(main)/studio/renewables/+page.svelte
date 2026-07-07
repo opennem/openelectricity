@@ -28,11 +28,7 @@
 		function logCall(label, entry) {
 			const { method, network, metrics, options, url, via } = entry.call;
 			const args = network
-				? [
-						JSON.stringify(network),
-						JSON.stringify(metrics),
-						JSON.stringify(options)
-					].join(', ')
+				? [JSON.stringify(network), JSON.stringify(metrics), JSON.stringify(options)].join(', ')
 				: `${JSON.stringify(url)}${via ? ` → ${via}` : ''}`;
 			console.log(`[OE API] ${label} — client.${method}(${args})`, entry.response);
 		}
@@ -183,9 +179,7 @@
 			widthClass="w-auto"
 			onchange={(opt) => {
 				selectedSmoothing =
-					/** @type {import('$lib/oe-api/calculate-renewables').RenewableSmoothing} */ (
-						opt.value
-					);
+					/** @type {import('$lib/oe-api/calculate-renewables').RenewableSmoothing} */ (opt.value);
 				syncUrl();
 			}}
 		/>
@@ -198,9 +192,7 @@
 			widthClass="w-auto"
 			onchange={(opt) => {
 				selectedValueType =
-					/** @type {import('$lib/oe-api/calculate-renewables').RenewableValueType} */ (
-						opt.value
-					);
+					/** @type {import('$lib/oe-api/calculate-renewables').RenewableValueType} */ (opt.value);
 				syncUrl();
 			}}
 		/>

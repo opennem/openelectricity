@@ -25,7 +25,8 @@ function getTotalCapacity(facility) {
 function getTotalStorage(facility) {
 	if (!facility.units) return 0;
 	return facility.units.reduce(
-		(/** @type {number} */ sum, /** @type {any} */ unit) => sum + (Number(unit.capacity_storage) || 0),
+		(/** @type {number} */ sum, /** @type {any} */ unit) =>
+			sum + (Number(unit.capacity_storage) || 0),
 		0
 	);
 }
@@ -79,4 +80,24 @@ export function sortFacilities(facilities, sortBy, sortOrder, metricValues = nul
 		return sortOrder === 'asc' ? comparison : -comparison;
 	});
 	return sorted;
+}
+
+/**
+ * Next sort state when a field is picked: re-picking the current field flips
+ * the order; a new field starts at its natural default (capacity/storage
+ * descending, name/region ascending). Shared by the desktop column headers
+ * and the mobile sort dropdown so the rule can't drift.
+ * @param {'name' | 'region' | 'storage' | 'capacity'} field
+ * @param {'name' | 'region' | 'storage' | 'capacity'} sortBy
+ * @param {'asc' | 'desc'} sortOrder
+ * @returns {{ sortBy: 'name' | 'region' | 'storage' | 'capacity', sortOrder: 'asc' | 'desc' }}
+ */
+export function getNextSort(field, sortBy, sortOrder) {
+	if (sortBy === field) {
+		return { sortBy: field, sortOrder: sortOrder === 'asc' ? 'desc' : 'asc' };
+	}
+	return {
+		sortBy: field,
+		sortOrder: field === 'capacity' || field === 'storage' ? 'desc' : 'asc'
+	};
 }

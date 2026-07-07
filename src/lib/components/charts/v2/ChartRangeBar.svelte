@@ -1,6 +1,7 @@
 <script>
 	import { Popover, Select } from 'bits-ui';
 	import { DateRangePicker } from '$lib/components/ui/date-range-picker';
+	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 	import Calendar from '@lucide/svelte/icons/calendar';
 	import ChevronDown from '@lucide/svelte/icons/chevron-down';
 	import {
@@ -22,6 +23,7 @@
 	 * @property {string | null} [maxDate] - Latest selectable date
 	 * @property {string | null} [earliestDate] - Earliest data date (for "All" range)
 	 * @property {boolean} [showIntervalDropdown] - When false, the interval renders as a static badge instead of a Select dropdown. Default `true`.
+	 * @property {boolean} [pending] - While true, the active range control pulses to show the switched range is still loading. The bar stays interactive.
 	 * @property {(days: number) => void} [onrangeselect]
 	 * @property {(range: {start: string, end: string}) => void} [ondaterangechange]
 	 * @property {(interval: string) => void} [onintervalchange]
@@ -38,12 +40,18 @@
 		maxDate = null,
 		earliestDate = null,
 		showIntervalDropdown = true,
+		pending = false,
 		onrangeselect,
 		ondaterangechange,
 		onintervalchange
 	} = $props();
 
 	const rangePresets = RANGE_PRESETS;
+
+	// Shared pill styling for the range/interval dropdown triggers so they match
+	// the SwitchWithIcons switcher: light track at rest, dark thumb when open.
+	const selectTriggerClass =
+		'inline-flex items-center gap-1 rounded-lg border border-mid-warm-grey bg-light-warm-grey px-3 py-2.5 text-xs font-medium text-mid-grey transition-colors hover:text-black data-[state=open]:border-dark-grey data-[state=open]:bg-dark-grey data-[state=open]:text-white cursor-pointer';
 
 	// Interval options follow the selected range (or the custom span's tier).
 	let intervalOptions = $derived.by(() => {
@@ -74,37 +82,32 @@
 
 {#snippet intervalBadge()}
 	<span
-		class="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey"
+		class="inline-flex items-center rounded-lg border border-mid-warm-grey bg-light-warm-grey px-3 py-2.5 text-xs font-medium text-mid-grey"
 	>
 		{currentIntervalLabel}
 	</span>
 {/snippet}
 
-<!-- Desktop layout -->
-<div class="hidden sm:flex items-center gap-1.5">
+<!-- Desktop layout — items-stretch so the icon-only calendar matches the height
+     of the text controls (switcher / interval) rather than sitting shorter. -->
+<div class="hidden md:flex items-stretch gap-1.5">
 	<!-- Range preset switcher -->
-	<div class="flex items-center gap-0.5 bg-light-warm-grey rounded-md p-0.5">
-		{#each rangePresets as preset (preset.days)}
-			<button
-				class="px-2.5 py-1 text-xs font-medium rounded transition-colors {selectedRange ===
-				preset.days
-					? 'bg-white text-dark-grey shadow-sm'
-					: 'text-mid-grey hover:text-dark-grey'}"
-				onclick={() => handlePresetClick(preset.days)}
-			>
-				{preset.label}
-			</button>
-		{/each}
-	</div>
-
-	<span class="text-warm-grey text-xs">|</span>
+	<SwitchWithIcons
+		buttons={rangePresets.map((p) => ({ label: p.label, value: p.days }))}
+		selected={selectedRange ?? ''}
+		compact
+		rounded="rounded-lg"
+		darkSelected
+		class={pending ? 'animate-pulse' : ''}
+		onchange={(opt) => handlePresetClick(Number(opt.value))}
+	/>
 
 	<!-- Calendar popover -->
 	<Popover.Root bind:open={popoverOpen}>
 		<Popover.Trigger
-			class="px-2.5 py-1 text-xs font-medium rounded-md transition-colors {popoverOpen
-				? 'bg-dark-grey text-white'
-				: 'border border-warm-grey text-mid-grey hover:bg-light-warm-grey'}"
+			class="inline-flex items-center rounded-lg border px-3 py-2.5 text-xs font-medium transition-colors {popoverOpen
+				? 'border-dark-grey bg-dark-grey text-white shadow-sm'
+				: 'border-mid-warm-grey bg-light-warm-grey text-mid-grey hover:text-black'}"
 		>
 			<Calendar size={14} />
 		</Popover.Trigger>
@@ -126,8 +129,6 @@
 		</Popover.Portal>
 	</Popover.Root>
 
-	<span class="text-warm-grey text-xs">|</span>
-
 	{#if showIntervalDropdown}
 		<!-- Interval dropdown -->
 		<Select.Root
@@ -136,9 +137,7 @@
 			onValueChange={(v) => onintervalchange?.(v)}
 			items={intervalOptions}
 		>
-			<Select.Trigger
-				class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
-			>
+			<Select.Trigger class={selectTriggerClass}>
 				{currentIntervalLabel}
 				<ChevronDown size={12} />
 			</Select.Trigger>
@@ -163,7 +162,7 @@
 </div>
 
 <!-- Mobile layout -->
-<div class="flex sm:hidden items-center gap-2">
+<div class="flex md:hidden items-center gap-2">
 	<!-- Range dropdown -->
 	<Select.Root
 		type="single"
@@ -175,7 +174,8 @@
 		items={rangePresets.map((p) => ({ value: String(p.days), label: p.label }))}
 	>
 		<Select.Trigger
-			class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
+			class="{selectTriggerClass} {pending ? 'animate-pulse' : ''}"
+			aria-busy={pending}
 		>
 			{currentRangeLabel}
 			<ChevronDown size={12} />
@@ -204,9 +204,7 @@
 			onValueChange={(v) => onintervalchange?.(v)}
 			items={intervalOptions}
 		>
-			<Select.Trigger
-				class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-warm-grey text-mid-grey hover:bg-light-warm-grey transition-colors cursor-pointer"
-			>
+			<Select.Trigger class={selectTriggerClass}>
 				{currentIntervalLabel}
 				<ChevronDown size={12} />
 			</Select.Trigger>

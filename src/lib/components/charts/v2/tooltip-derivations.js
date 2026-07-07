@@ -9,6 +9,8 @@
  * @typedef {import('./ChartStore.svelte.js').default} ChartStoreLike
  */
 
+import { formatDayMonthYearTime } from './date-labels.js';
+
 /**
  * The currently active data row — prefers a live hover, falls back to a
  * sticky focus (click-locked) state.
@@ -60,14 +62,7 @@ export function getTotalForRow(chart, activeData) {
  * @returns {string}
  */
 function intlTooltipDate(date, timeZone) {
-	return new Intl.DateTimeFormat('en-AU', {
-		timeZone,
-		day: 'numeric',
-		month: 'short',
-		year: 'numeric',
-		hour: '2-digit',
-		minute: '2-digit'
-	}).format(date);
+	return formatDayMonthYearTime(date, timeZone ?? 'Australia/Brisbane');
 }
 
 /**

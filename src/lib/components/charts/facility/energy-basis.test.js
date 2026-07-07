@@ -50,12 +50,14 @@ describe('buildCombinedMetricsUrl', () => {
 	});
 
 	it('produces identical URLs for the same facility + combined metric (dedup key)', () => {
-		const a = buildCombinedMetricsUrl('F1', 'energy,market_value,emissions')(
-			new URLSearchParams({ interval: '1M', metric: 'energy' })
-		);
-		const b = buildCombinedMetricsUrl('F1', 'energy,market_value,emissions')(
-			new URLSearchParams({ interval: '1M', metric: 'market_value' })
-		);
+		const a = buildCombinedMetricsUrl(
+			'F1',
+			'energy,market_value,emissions'
+		)(new URLSearchParams({ interval: '1M', metric: 'energy' }));
+		const b = buildCombinedMetricsUrl(
+			'F1',
+			'energy,market_value,emissions'
+		)(new URLSearchParams({ interval: '1M', metric: 'market_value' }));
 		expect(a).toBe(b);
 	});
 });

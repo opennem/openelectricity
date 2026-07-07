@@ -17,7 +17,7 @@
  *
  * Filter Parameters (URL search params):
  * --------------------------------------
- * - view: 'timeline' | 'list' | 'map' (default: 'timeline')
+ * - view: 'timeline' | 'list' | 'grid' (default: 'list'; 'card' and 'map' are legacy aliases for 'grid' and 'list')
  * - statuses: comma-separated status IDs (default: 'operating,commissioning')
  * - regions: comma-separated region codes (e.g., 'nsw,vic')
  * - fuel_techs: comma-separated fuel tech IDs or categories
@@ -30,8 +30,6 @@
 
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-import { client as sanityClient } from '$lib/sanity';
-import { SANITY_FACILITY_UNITS_PROJECTION } from '$lib/server/sanity-projections.js';
 import { getCachedFacilities, setCachedFacilities } from './_stores/facilities-server-cache.js';
 import { expandFuelTechs } from './_utils/fuel-tech-map.js';
 import {
@@ -39,11 +37,9 @@ import {
 	processFacilitiesWithStatuses,
 	filterFacilitiesByRegions
 } from './_utils/status-utils.js';
-import { fetchFacilityPowerData } from './_utils/fetch-power-data.js';
-import { fetchFacilityOwners } from './_utils/fetch-facility-owners.js';
 import { fetchFacilityPhotos } from './_utils/fetch-facility-photos.js';
-import { DEFAULT_STATUSES, ALL_STATUSES } from './_utils/filters.js';
-// Codes with a committed `static/og/facility/<code>.jpg`; lets the Cards view show
+import { DEFAULT_STATUSES, ALL_STATUSES, normaliseViewParam } from './_utils/filters.js';
+// Codes with a committed `static/og/facility/<code>.jpg`; lets the Grid view show
 // the build-generated card and fall back to a live card for the rest.
 import cardCodes from '$lib/server/og/facility-card-codes.json';
 
@@ -52,28 +48,9 @@ const client = new OpenElectricityClient({
 	baseUrl: PUBLIC_OE_API_URL
 });
 
-/**
- * Enriched Sanity unit data for the selected facility's metrics garnishes
- * (DC:AC, turbine/equipment specs, MLF, storage, closure). Null when nothing is
- * selected or the fetch fails — the core metrics don't depend on it.
- * @param {string | null} code
- * @returns {Promise<any | null>}
- */
-function fetchSelectedSanityFacility(code) {
-	if (!code) return Promise.resolve(null);
-	return sanityClient
-		.fetch(
-			`*[_type == "facility" && code == $code][0]{ _id, code, ${SANITY_FACILITY_UNITS_PROJECTION} }`,
-			{
-				code
-			}
-		)
-		.catch(() => null);
-}
-
 export async function load({ url }) {
 	const { searchParams } = url;
-	const view = searchParams.get('view') || 'timeline';
+	const view = normaliseViewParam(searchParams.get('view')) || 'list';
 	const statusesParam = searchParams.has('statuses')
 		? /** @type {string} */ (searchParams.get('statuses')).split(',').filter(Boolean)
 		: DEFAULT_STATUSES;
@@ -96,78 +73,53 @@ export async function load({ url }) {
 	const yearMaxParam = searchParams.get('year_max');
 	const yearMin = yearMinParam ? parseInt(yearMinParam, 10) : null;
 	const yearMax = yearMaxParam ? parseInt(yearMaxParam, 10) : null;
-	const selectedFacility = searchParams.get('facility') || null;
 
 	const filterParams = { statuses, regions, fuelTechs };
 
+	// Grid-view photos (facility code → Sanity URL). Fetched on every load — in
+	// parallel with the facilities fetch below, and cached in-process — rather
+	// than gated to grid view: view switches happen client-side without re-running
+	// this load, so the photos must already be in `data` when the user switches to
+	// the grid. Per-facility editorial data (description, photos, owners) is
+	// still fetched lazily on selection — see the profile endpoint.
+	const photosPromise = fetchFacilityPhotos();
+
 	// Check server-side cache first
-	const cached = getCachedFacilities(filterParams);
-	if (cached) {
-		const [powerData, selectedFacilityOwners, sanityFacility, facilityPhotos] = await Promise.all([
-			fetchFacilityPowerData(client, cached, selectedFacility),
-			fetchFacilityOwners(selectedFacility),
-			fetchSelectedSanityFacility(selectedFacility),
-			fetchFacilityPhotos()
-		]);
+	let facilities = getCachedFacilities(filterParams);
 
-		return {
-			facilities: cached,
-			view,
-			statuses: statusesParam.length === 0 ? [] : statuses,
-			regions,
-			fuelTechs,
-			capacityMin,
-			capacityMax,
-			yearMin,
-			yearMax,
-			selectedFacility,
-			powerData,
-			selectedFacilityOwners,
-			sanityFacility,
-			facilityPhotos,
-			cardCodes,
-			fromCache: true
-		};
+	if (!facilities) {
+		// Expand fuel tech selections to API IDs
+		const fuelTechIds = expandFuelTechs(fuelTechs);
+
+		// Prepare statuses for API (handle commissioning conversion)
+		const apiStatuses = prepareStatusesForApi(statuses);
+
+		let facilitiesResponse = null;
+
+		try {
+			const { response } = await client.getFacilities({
+				fueltech_id: fuelTechIds,
+				status_id: apiStatuses
+			});
+			facilitiesResponse = response.data;
+		} catch {
+			// API error - facilitiesResponse remains null
+		}
+
+		// Filter by regions
+		const regionFiltered = filterFacilitiesByRegions(facilitiesResponse, regions);
+
+		// Process facilities: mark commissioning units and filter by selected statuses
+		facilities = processFacilitiesWithStatuses(regionFiltered, statuses);
+
+		// Store in server cache
+		setCachedFacilities(filterParams, facilities);
 	}
 
-	// Expand fuel tech selections to API IDs
-	const fuelTechIds = expandFuelTechs(fuelTechs);
-
-	// Prepare statuses for API (handle commissioning conversion)
-	const apiStatuses = prepareStatusesForApi(statuses);
-
-	let facilitiesResponse = null;
-
-	try {
-		const { response } = await client.getFacilities({
-			fueltech_id: fuelTechIds,
-			status_id: apiStatuses
-		});
-		facilitiesResponse = response.data;
-	} catch {
-		// API error - facilitiesResponse remains null
-	}
-
-	// Filter by regions
-	const regionFiltered = filterFacilitiesByRegions(facilitiesResponse, regions);
-
-	// Process facilities: mark commissioning units and filter by selected statuses
-	const processedFacilities = processFacilitiesWithStatuses(regionFiltered, statuses);
-
-	// Store in server cache
-	setCachedFacilities(filterParams, processedFacilities);
-
-	// Fetch power data, owner info and enriched Sanity data for the selected
-	// facility in parallel
-	const [powerData, selectedFacilityOwners, sanityFacility, facilityPhotos] = await Promise.all([
-		fetchFacilityPowerData(client, processedFacilities, selectedFacility),
-		fetchFacilityOwners(selectedFacility),
-		fetchSelectedSanityFacility(selectedFacility),
-		fetchFacilityPhotos()
-	]);
+	const facilityPhotos = await photosPromise;
 
 	return {
-		facilities: processedFacilities,
+		facilities,
 		view,
 		statuses: statusesParam.length === 0 ? [] : statuses,
 		regions,
@@ -176,12 +128,11 @@ export async function load({ url }) {
 		capacityMax,
 		yearMin,
 		yearMax,
-		selectedFacility,
-		powerData,
-		selectedFacilityOwners,
-		sanityFacility,
 		facilityPhotos,
 		cardCodes,
-		fromCache: false
+		// /facilities is immersive always — the global Nav/Footer chrome is hidden
+		// in favour of the in-page fullscreen layout. Read by (main)/+layout.svelte
+		// at SSR so the chrome never flashes in.
+		fullscreen: true
 	};
 }

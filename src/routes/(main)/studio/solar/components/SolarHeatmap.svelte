@@ -14,9 +14,7 @@
 	} = $props();
 
 	let colorScale = $derived(
-		chroma
-			.scale(['#FFFDE4', '#FED500', '#F08030', '#C62828', '#6A1B1B'])
-			.domain([0, maxValue])
+		chroma.scale(['#FFFDE4', '#FED500', '#F08030', '#C62828', '#6A1B1B']).domain([0, maxValue])
 	);
 
 	let canvas = $state(null);
@@ -91,7 +89,20 @@
 		onclick(year);
 	}
 
-	const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+	const months = [
+		'Jan',
+		'Feb',
+		'Mar',
+		'Apr',
+		'May',
+		'Jun',
+		'Jul',
+		'Aug',
+		'Sep',
+		'Oct',
+		'Nov',
+		'Dec'
+	];
 	const timeLabels = ['00:00', '06:00', '12:00', '18:00', '00:00'];
 
 	let monthPositions = $derived.by(() => {

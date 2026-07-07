@@ -61,9 +61,11 @@ If object with xStartValue and xEndValue, overlay will be a range
 	let hoverTime = $derived(hoverData ? hoverData.time || 0 : 0);
 	let hoverValue = $derived(hoverData ? hoverData[key] || 0 : 0);
 	let hoverPercentage = $derived(
-		hoverData && hoverData._max ? (/** @type {number} */ (hoverValue) / hoverData._max) * 100 : 0
+		hoverData && hoverData._max ? /** @type {number} */ ((hoverValue) / hoverData._max) * 100 : 0
 	);
-	let maxValue = $derived(Math.round(Math.max(...dataset.map((d) => /** @type {number} */ (d[key]) || 0))));
+	let maxValue = $derived(
+		Math.round(Math.max(...dataset.map((d) => /** @type {number} */ (d[key]) || 0)))
+	);
 	let maxY = $derived(maxValue > 0 ? maxValue : 10);
 </script>
 

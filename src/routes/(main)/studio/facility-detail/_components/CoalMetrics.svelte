@@ -181,8 +181,18 @@
 		if (isNaN(d.getTime())) return info.date;
 
 		const months = [
-			'January', 'February', 'March', 'April', 'May', 'June',
-			'July', 'August', 'September', 'October', 'November', 'December'
+			'January',
+			'February',
+			'March',
+			'April',
+			'May',
+			'June',
+			'July',
+			'August',
+			'September',
+			'October',
+			'November',
+			'December'
 		];
 
 		switch (info.specificity) {
@@ -258,17 +268,11 @@
 <div class="flex flex-col gap-4">
 	{#if metrics}
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-			<MetricCard
-				label="Capacity Factor"
-				value={fmtCf.format(metrics.cf)}
-				unit="%"
-			/>
+			<MetricCard label="Capacity Factor" value={fmtCf.format(metrics.cf)} unit="%" />
 
 			<MetricCard
 				label="CO2 Emissions"
-				value={Object.keys(emissionsFactors).length > 0
-					? fmtEmissions.format(metrics.co2)
-					: '--'}
+				value={Object.keys(emissionsFactors).length > 0 ? fmtEmissions.format(metrics.co2) : '--'}
 				unit={Object.keys(emissionsFactors).length > 0 ? 'tCO2' : ''}
 				subtitle={Object.keys(emissionsFactors).length === 0
 					? 'No emissions factors available'
@@ -281,10 +285,7 @@
 				unit={metrics.intensity != null ? 'kgCO2/MWh' : ''}
 			/>
 
-			<MetricCard
-				label="Revenue"
-				value={formatRevenue(metrics.totalMV)}
-			/>
+			<MetricCard label="Revenue" value={formatRevenue(metrics.totalMV)} />
 
 			<MetricCard
 				label="Avg Price Received"
@@ -303,7 +304,8 @@
 	<!-- Coal type badge, closure date, min generation -->
 	<div class="flex flex-wrap items-center gap-2">
 		{#if coalType}
-			{@const colour = coalType === 'black' ? fuelTechColourMap.coal_black : fuelTechColourMap.coal_brown}
+			{@const colour =
+				coalType === 'black' ? fuelTechColourMap.coal_black : fuelTechColourMap.coal_brown}
 			<span
 				class="inline-flex items-center rounded px-2 py-0.5 text-[11px] font-mono font-semibold"
 				style="background-color: {colour}; color: #fff"
@@ -333,7 +335,9 @@
 			<div class="mt-1.5 flex flex-col gap-1.5">
 				{#each unitAvailability as ua (ua.unit)}
 					<div class="flex items-center gap-2">
-						<span class="text-xxs font-mono text-mid-grey w-20 truncate" title={ua.unit}>{ua.unit}</span>
+						<span class="text-xxs font-mono text-mid-grey w-20 truncate" title={ua.unit}
+							>{ua.unit}</span
+						>
 						<div class="flex-1 h-4 bg-light-warm-grey rounded-sm overflow-hidden">
 							<div
 								class="h-full rounded-sm transition-all"

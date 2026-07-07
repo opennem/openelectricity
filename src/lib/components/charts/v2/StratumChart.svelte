@@ -340,6 +340,9 @@
 </div>
 
 <style>
+	.stratum-chart {
+		overflow: hidden;
+	}
 	.stratum-chart :global(svg *:focus) {
 		outline: none;
 	}

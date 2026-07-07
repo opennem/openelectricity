@@ -12,7 +12,8 @@
 			onclick={() => {
 				project.stylePreset = theme.id;
 			}}
-			class="flex-1 px-2.5 py-2 rounded border text-left transition-colors {project.stylePreset === theme.id
+			class="flex-1 px-2.5 py-2 rounded border text-left transition-colors {project.stylePreset ===
+			theme.id
 				? 'border-dark-grey bg-white'
 				: 'border-warm-grey hover:border-mid-warm-grey'}"
 		>

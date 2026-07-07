@@ -54,4 +54,3 @@ export async function resolveDataset(cookies) {
 
 /** Backwards-compatible default client */
 export const cmsClient = createCmsClient();
-

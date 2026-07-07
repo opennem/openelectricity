@@ -56,15 +56,21 @@
 	// $: console.log(aemo2022, aemo2024);
 
 	let selectedModelScenarios = $derived(/** @type {any} */ (scenarios)[selectedModel.value]);
-	let selectedModelScenarioDescriptions = $derived(/** @type {any} */ (scenarioDescriptions)[selectedModel.value]);
-	let selectedModelScenarioLabels = $derived(/** @type {any} */ (scenarioLabels)[selectedModel.value]);
+	let selectedModelScenarioDescriptions = $derived(
+		/** @type {any} */ (scenarioDescriptions)[selectedModel.value]
+	);
+	let selectedModelScenarioLabels = $derived(
+		/** @type {any} */ (scenarioLabels)[selectedModel.value]
+	);
 	let selectedModelPathway = $derived(/** @type {any} */ (selectedPathway)[selectedModel.value]);
 	let selectedModelYDomain = $derived(/** @type {any} */ (scenarioYDomain)[selectedModel.value]);
 	let selectedModelXTicks = $derived(/** @type {any} */ (modelXTicks)[selectedModel.value]);
 	let selectedModelData = $derived(data.ispData[selectedModel.value]);
 
 	let outlookData = $derived(selectedModelData.outlookEnergyNem.data);
-	let filteredWithScenario = $derived(outlookData.filter((/** @type {any} */ d) => d.scenario === selectedScenario));
+	let filteredWithScenario = $derived(
+		outlookData.filter((/** @type {any} */ d) => d.scenario === selectedScenario)
+	);
 
 	let filteredWithPathwayScenario = $derived(
 		filteredWithScenario.filter((/** @type {any} */ d) => d.pathway === selectedModelPathway)
@@ -135,7 +141,9 @@
 	);
 
 	let filteredHistoricalTimeSeriesDatasets = $derived(
-		updatedHistoricalTimeSeriesDatasets.filter((/** @type {any} */ d) => d.date.getFullYear() > 2009)
+		updatedHistoricalTimeSeriesDatasets.filter(
+			(/** @type {any} */ d) => d.date.getFullYear() > 2009
+		)
 	);
 
 	let sparkLineXTicks = $derived(/** @type {any} */ (modelSparklineXTicks)[selectedModel.value]);

@@ -36,8 +36,14 @@ describe('sumFuelTechData', () => {
 
 	it('sums values across multiple fuel techs', () => {
 		const data = [
-			makeStats({ fuel_tech: 'solar_utility', history: { start: '2010-01-01', last: '2010-03-01', interval: '1M', data: [10, 20, 30] } }),
-			makeStats({ fuel_tech: 'wind', history: { start: '2010-01-01', last: '2010-03-01', interval: '1M', data: [5, 10, 15] } })
+			makeStats({
+				fuel_tech: 'solar_utility',
+				history: { start: '2010-01-01', last: '2010-03-01', interval: '1M', data: [10, 20, 30] }
+			}),
+			makeStats({
+				fuel_tech: 'wind',
+				history: { start: '2010-01-01', last: '2010-03-01', interval: '1M', data: [5, 10, 15] }
+			})
 		];
 		const result = sumFuelTechData(data, 'history', groupMap);
 		expect(result.history.data).toEqual([15, 30, 45]);
@@ -51,7 +57,12 @@ describe('sumFuelTechData', () => {
 			}),
 			makeStats({
 				fuel_tech: 'solar_utility',
-				history: { start: '2010-01-01', last: '2015-01-01', interval: '1M', data: [10, 20, 30, 40, 50] }
+				history: {
+					start: '2010-01-01',
+					last: '2015-01-01',
+					interval: '1M',
+					data: [10, 20, 30, 40, 50]
+				}
 			})
 		];
 		const result = sumFuelTechData(data, 'history', groupMap);
@@ -75,7 +86,12 @@ describe('sumFuelTechData', () => {
 			}),
 			makeStats({
 				fuel_tech: 'solar_utility',
-				history: { start: '2009-07-01', last: '2025-02-01', interval: '1M', data: [10, 20, 30, 40, 50] }
+				history: {
+					start: '2009-07-01',
+					last: '2025-02-01',
+					interval: '1M',
+					data: [10, 20, 30, 40, 50]
+				}
 			})
 		];
 		const result = sumFuelTechData(data, 'history', groupMap);
@@ -122,8 +138,14 @@ describe('sumFuelTechData', () => {
 			total_loads: ['battery_charging']
 		};
 		const data = [
-			makeStats({ fuel_tech: 'solar_utility', history: { start: '2010-01-01', last: '2010-03-01', interval: '1M', data: [100] } }),
-			makeStats({ fuel_tech: 'battery_charging', history: { start: '2010-01-01', last: '2010-03-01', interval: '1M', data: [50] } })
+			makeStats({
+				fuel_tech: 'solar_utility',
+				history: { start: '2010-01-01', last: '2010-03-01', interval: '1M', data: [100] }
+			}),
+			makeStats({
+				fuel_tech: 'battery_charging',
+				history: { start: '2010-01-01', last: '2010-03-01', interval: '1M', data: [50] }
+			})
 		];
 		const result = sumFuelTechData(data, 'history', multiGroupMap, {
 			excludeGroups: ['total_loads']
@@ -136,11 +158,21 @@ describe('sumFuelTechData', () => {
 		const data = [
 			makeStats({
 				fuel_tech: 'solar_utility',
-				history: { start: '2010-01-01', last: '2010-05-01', interval: '1M', data: [10, null, 30, null, 50] }
+				history: {
+					start: '2010-01-01',
+					last: '2010-05-01',
+					interval: '1M',
+					data: [10, null, 30, null, 50]
+				}
 			}),
 			makeStats({
 				fuel_tech: 'wind',
-				history: { start: '2010-01-01', last: '2010-05-01', interval: '1M', data: [5, 10, null, 20, 25] }
+				history: {
+					start: '2010-01-01',
+					last: '2010-05-01',
+					interval: '1M',
+					data: [5, 10, null, 20, 25]
+				}
 			})
 		];
 		const result = sumFuelTechData(data, 'history', groupMap);

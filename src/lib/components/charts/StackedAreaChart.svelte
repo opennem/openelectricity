@@ -130,7 +130,7 @@ If object with xStartValue and xEndValue, overlay will be a range
 				<Overlay fill="#FAF9F6" {...overlay} />
 			{/if}
 
-			<HoverLayer {dataset} {onmousemove} {onmouseout} onpointerup={onpointerup} />
+			<HoverLayer {dataset} {onmousemove} {onmouseout} {onpointerup} />
 
 			<!-- {#if display === 'area'}
 				<AreaStacked

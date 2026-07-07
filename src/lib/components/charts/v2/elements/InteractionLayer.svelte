@@ -84,6 +84,23 @@
 
 	// ---- Coordinate mapping ----
 
+	/**
+	 * Cached wrapper rect — `getBoundingClientRect()` forces a layout read, too
+	 * expensive per mousemove/wheel event. Refreshed on pointer entry/downs,
+	 * element resize, and scroll while hovered.
+	 * @type {DOMRect | null}
+	 */
+	let cachedRect = null;
+
+	function refreshRect() {
+		cachedRect = el ? el.getBoundingClientRect() : null;
+	}
+
+	function getRect() {
+		if (!cachedRect || cachedRect.width === 0) refreshRect();
+		return cachedRect;
+	}
+
 	function getTimeDomain() {
 		if (viewDomain) return viewDomain;
 		// `renderXDomain` is `xDomain` extended for step mode; using it here
@@ -106,7 +123,7 @@
 	function clientXToTime(clientX) {
 		const domain = getTimeDomain();
 		if (!domain) return 0;
-		const rect = el?.getBoundingClientRect();
+		const rect = getRect();
 		if (!rect || rect.width === 0) return domain[0];
 
 		const pad = chart.chartStyles.chartPadding;
@@ -158,7 +175,7 @@
 
 	function captureMsPerPx() {
 		const domain = getTimeDomain();
-		const rect = el?.getBoundingClientRect();
+		const rect = getRect();
 		if (domain && rect && rect.width > 0) {
 			const pad = chart.chartStyles.chartPadding;
 			const drawWidth = rect.width - (pad.left || 0) - (pad.right || 0);
@@ -203,6 +220,7 @@
 	 */
 	function handlePointerDown(event) {
 		if (!enablePan) return;
+		refreshRect();
 
 		// --- Touch ---
 		if (event.pointerType === 'touch') {
@@ -263,8 +281,11 @@
 		// Touch 1-finger hover
 		if (interactionMode === 'hover' && pointers.size === 1) {
 			const time = snapTime(clientXToTime(event.clientX));
-			chart.setHover(time);
-			onhover?.(time);
+			// Same snapped bucket — skip the store write and parent fan-out.
+			if (time !== chart.hoverTime) {
+				chart.setHover(time);
+				onhover?.(time);
+			}
 			return;
 		}
 
@@ -381,11 +402,26 @@
 	function handleMouseMove(event) {
 		if (interactionMode !== 'none') return;
 		const time = snapTime(clientXToTime(event.clientX));
+		// Same snapped bucket as the current hover — nothing to update.
+		if (time === chart.hoverTime) return;
 		chart.setHover(time);
 		onhover?.(time);
 	}
 
+	function handleScrollWhileHovered() {
+		// Invalidate only — getRect() refreshes lazily on the next pointer use,
+		// so momentum scrolling costs zero layout reads.
+		cachedRect = null;
+	}
+
+	function handleMouseEnter() {
+		refreshRect();
+		// Scroll doesn't bubble — capture catches ancestor scroll containers too.
+		window.addEventListener('scroll', handleScrollWhileHovered, { passive: true, capture: true });
+	}
+
 	function handleMouseLeave() {
+		window.removeEventListener('scroll', handleScrollWhileHovered, { capture: true });
 		if (interactionMode !== 'none') return;
 		chart.clearHover();
 		onhoverend?.();
@@ -426,7 +462,7 @@
 		if (interactionMode !== 'none') return;
 		if (!onpan && !onzoom) return;
 
-		const rect = el?.getBoundingClientRect();
+		const rect = getRect();
 		if (!rect || rect.width === 0) return;
 
 		const domain = getTimeDomain();
@@ -455,6 +491,21 @@
 
 	// ---- Lifecycle ----
 
+	// Keep the cached rect fresh across element/layout resizes (split-pane
+	// drags, chart resize handle) independent of pan being enabled.
+	$effect(() => {
+		const target = el;
+		if (!target) return;
+		const observer = new ResizeObserver(() => {
+			cachedRect = null;
+		});
+		observer.observe(target);
+		return () => {
+			observer.disconnect();
+			window.removeEventListener('scroll', handleScrollWhileHovered, { capture: true });
+		};
+	});
+
 	$effect(() => {
 		const target = el;
 		if (!target || !effectiveEnablePan) return;
@@ -481,6 +532,7 @@
 	bind:this={el}
 	class={className}
 	style:touch-action={effectiveEnablePan ? 'none' : undefined}
+	onmouseenter={handleMouseEnter}
 	onmousemove={handleMouseMove}
 	onmouseleave={handleMouseLeave}
 	onclick={handleClick}

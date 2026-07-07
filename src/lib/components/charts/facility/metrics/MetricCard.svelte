@@ -1,16 +1,21 @@
 <script>
+	import Tooltip from '$lib/components/ui/Tooltip.svelte';
+
 	/**
-	 * A single metric: uppercase label, large mono value, optional unit + subtitle.
+	 * A single metric: uppercase label, large value in the site's normal font,
+	 * optional unit + subtitle. `description` makes the label a hover tooltip
+	 * explaining what the metric is and how it's derived.
 	 *
 	 * @type {{
 	 *   label: string,
 	 *   value: string,
 	 *   unit?: string,
 	 *   subtitle?: string,
+	 *   description?: string,
 	 *   size?: 'sm' | 'md' | 'lg'
 	 * }}
 	 */
-	let { label, value, unit = '', subtitle = '', size = 'md' } = $props();
+	let { label, value, unit = '', subtitle = '', description = '', size = 'md' } = $props();
 
 	const valueSizeClasses = {
 		sm: 'text-base',
@@ -26,15 +31,25 @@
 </script>
 
 <div class="flex flex-col gap-0.5">
-	<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">{label}</span>
+	<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">
+		{#if description}
+			<Tooltip text={description} class="cursor-help">{label}</Tooltip>
+		{:else}
+			{label}
+		{/if}
+	</span>
 
 	<span class="flex items-baseline gap-1">
-		<span class="font-mono font-bold tabular-nums text-dark-grey {valueSizeClasses[size]}">
+		<span
+			class="font-semibold tabular-nums {value === '--'
+				? 'text-mid-grey'
+				: 'text-dark-grey'} {valueSizeClasses[size]}"
+		>
 			{value}
 		</span>
 
 		{#if unit}
-			<span class="font-mono text-mid-grey {unitSizeClasses[size]}">{unit}</span>
+			<span class="text-mid-grey {unitSizeClasses[size]}">{unit}</span>
 		{/if}
 	</span>
 

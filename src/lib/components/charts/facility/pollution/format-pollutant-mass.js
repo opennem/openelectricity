@@ -23,8 +23,7 @@ export function formatPollutantMassParts(v) {
 	if (v == null) return { value: '—', unit: '' };
 	if (v === 0) return { value: '0', unit: '' };
 	const abs = Math.abs(v);
-	const fmt = (/** @type {number} */ n) =>
-		n.toLocaleString('en-AU', { maximumFractionDigits: 2 });
+	const fmt = (/** @type {number} */ n) => n.toLocaleString('en-AU', { maximumFractionDigits: 2 });
 	if (abs >= 1e9) return { value: fmt(v / 1e9), unit: 'Mt' };
 	if (abs >= 1e6) return { value: fmt(v / 1e6), unit: 'kt' };
 	if (abs >= 1e3) return { value: fmt(v / 1e3), unit: 't' };

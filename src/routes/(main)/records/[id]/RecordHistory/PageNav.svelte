@@ -88,7 +88,9 @@
 			label: r.label,
 			value: r.longValue,
 			divider: r.divider,
-			labelClassName: availableRegions?.find((/** @type {{ value: string }} */ m) => m.value === r.longValue)
+			labelClassName: availableRegions?.find(
+				(/** @type {{ value: string }} */ m) => m.value === r.longValue
+			)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
@@ -113,7 +115,9 @@
 	let availableFuelTechsOptions = $derived(
 		fuelTechOptions.map((r) => ({
 			...r,
-			labelClassName: availableFuelTechs?.find((/** @type {{ value: string | undefined }} */ m) => m.value === r.value)
+			labelClassName: availableFuelTechs?.find(
+				(/** @type {{ value: string | undefined }} */ m) => m.value === r.value
+			)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
@@ -142,7 +146,9 @@
 	let availableMetricsOptions = $derived(
 		milestoneTypeOptions.map((r) => ({
 			...r,
-			labelClassName: availableMetrics?.find((/** @type {{ value: string }} */ m) => m.value === r.value)
+			labelClassName: availableMetrics?.find(
+				(/** @type {{ value: string }} */ m) => m.value === r.value
+			)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
@@ -171,7 +177,9 @@
 	let availablePeriodsOptions = $derived(
 		periodOptions.map((r) => ({
 			...r,
-			labelClassName: availablePeriods?.find((/** @type {{ value: string }} */ m) => m.value === r.value)
+			labelClassName: availablePeriods?.find(
+				(/** @type {{ value: string }} */ m) => m.value === r.value
+			)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))
@@ -200,7 +208,9 @@
 	let availableAggregatesOptions = $derived(
 		aggregateOptions.map((r) => ({
 			...r,
-			labelClassName: availableAggregates?.find((/** @type {{ value: string }} */ m) => m.value === r.value)
+			labelClassName: availableAggregates?.find(
+				(/** @type {{ value: string }} */ m) => m.value === r.value
+			)
 				? ''
 				: 'italic text-mid-warm-grey'
 		}))

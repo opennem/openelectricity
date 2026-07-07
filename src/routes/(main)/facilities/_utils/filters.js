@@ -189,35 +189,6 @@ export const fuelTechOptions = [
 ];
 
 /**
- * Get the values of parent regions that have children (e.g., 'nem')
- * These should not be counted when displaying the selection count
- * @returns {string[]}
- */
-export function getParentRegionValues() {
-	return regionOptions
-		.filter((opt) => opt.children && opt.children.length > 0)
-		.map((opt) => opt.value);
-}
-
-/**
- * Flatten the hierarchical region options to a simple list for label lookup
- * @returns {{value: string, label: string}[]}
- */
-export function getFlatRegionOptions() {
-	/** @type {{value: string, label: string}[]} */
-	const flat = [];
-	for (const opt of regionOptions) {
-		flat.push({ value: opt.value, label: opt.label });
-		if (opt.children) {
-			for (const child of opt.children) {
-				flat.push({ value: child.value, label: child.label });
-			}
-		}
-	}
-	return flat;
-}
-
-/**
  * Flatten the hierarchical fuel tech options to a simple list for label lookup
  * @returns {{value: string, label: string}[]}
  */
@@ -235,18 +206,33 @@ export function getFlatFuelTechOptions() {
 	return flat;
 }
 
-/**
- * Get the values of parent fuel techs that have children (e.g., 'gas', 'coal', 'bioenergy')
- * These should not be counted when displaying the selection count
- * @returns {string[]}
- */
-export function getParentFuelTechValues() {
-	return fuelTechOptions
-		.filter((opt) => opt.children && opt.children.length > 0)
-		.map((opt) => opt.value);
-}
-
 export const fuelTechLabel = optionsReducer(getFlatFuelTechOptions());
+
+/** Region value → short label (NSW, QLD, …), e.g. for compact selection summaries */
+export const regionShortLabels = optionsReducer(regions.filter((r) => r.value));
+
+/**
+ * The facilities views in display order — drives both the desktop switcher
+ * and the mobile sheet's view toggle.
+ */
+export const VIEW_OPTIONS = [
+	{ label: 'Timeline', value: 'timeline' },
+	{ label: 'List', value: 'list' },
+	{ label: 'Grid', value: 'grid' }
+];
+
+/**
+ * Normalise the `view` URL param. 'card' is the legacy name for the grid view
+ * and 'map' was retired when the map became always visible; both are kept so
+ * shared URLs still work.
+ * @param {string | null} raw
+ * @returns {string | null}
+ */
+export function normaliseViewParam(raw) {
+	if (raw === 'card') return 'grid';
+	if (raw === 'map') return 'list';
+	return raw;
+}
 
 /**
  * Get the display label for a region

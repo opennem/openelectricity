@@ -47,7 +47,8 @@ export function regionGenerationTotal(regions, regionData) {
 	regions.forEach((/** @type {string} */ r) => {
 		const region = /** @type {any} */ (regionData)[r];
 		const total = region.reduce(
-			(/** @type {number} */ acc, /** @type {any} */ cur) => (loadFts.includes(cur.fuel_tech) ? acc - cur.data : acc + cur.data),
+			(/** @type {number} */ acc, /** @type {any} */ cur) =>
+				loadFts.includes(cur.fuel_tech) ? acc - cur.data : acc + cur.data,
 			0
 		);
 		/** @type {any} */ (regionGeneration)[r] = total;
@@ -68,7 +69,8 @@ export function regionRenewablesTotal(regions, regionData) {
 	regions.forEach((/** @type {string} */ r) => {
 		const region = /** @type {any} */ (regionData)[r];
 		const total = region.reduce(
-			(/** @type {number} */ acc, /** @type {any} */ cur) => (renewablesFts.includes(cur.fuel_tech) ? acc + cur.data : acc),
+			(/** @type {number} */ acc, /** @type {any} */ cur) =>
+				renewablesFts.includes(cur.fuel_tech) ? acc + cur.data : acc,
 			0
 		);
 		/** @type {any} */ (regionRenewables)[r] = total;

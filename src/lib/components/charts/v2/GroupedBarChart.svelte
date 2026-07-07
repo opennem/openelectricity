@@ -20,12 +20,7 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		chart,
-		onmousemove,
-		onmouseout,
-		onpointerup
-	} = $props();
+	let { chart, onmousemove, onmouseout, onpointerup } = $props();
 
 	let styles = $derived(chart.chartStyles);
 

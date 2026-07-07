@@ -12,9 +12,7 @@ test.describe('Homepage ISP Scenarios Preview', () => {
 	// 1. Structure tests
 
 	test('should render the scenarios section heading', async ({ page }) => {
-		await expect(
-			page.getByRole('heading', { name: /Explore the future/i })
-		).toBeVisible();
+		await expect(page.getByRole('heading', { name: /Explore the future/i })).toBeVisible();
 	});
 
 	test('should render main stacked area chart with SVG paths', async ({ page }) => {

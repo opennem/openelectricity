@@ -10,14 +10,19 @@
 	let showUserMenu = $state(false);
 </script>
 
-<svelte:document onclick={(e) => {
-	if (showUserMenu && !/** @type {HTMLElement} */ (e.target).closest('.user-menu-area')) {
-		showUserMenu = false;
-	}
-}} />
+<svelte:document
+	onclick={(e) => {
+		if (showUserMenu && !(/** @type {HTMLElement} */ (e.target).closest('.user-menu-area'))) {
+			showUserMenu = false;
+		}
+	}}
+/>
 
 <div class="flex items-center gap-3 px-4 py-2 border-b border-warm-grey bg-light-warm-grey/50">
-	<a href="/stratify" class="text-[11px] font-bold text-dark-grey tracking-wide uppercase hover:underline ml-2">
+	<a
+		href="/stratify"
+		class="text-[11px] font-bold text-dark-grey tracking-wide uppercase hover:underline ml-2"
+	>
 		Stratify
 	</a>
 
@@ -38,8 +43,12 @@
 				</button>
 
 				{#if showUserMenu}
-					<div class="absolute right-0 top-9 z-50 bg-white border border-warm-grey rounded-lg shadow-md py-1 min-w-[180px]">
-						<span class="block px-3 pl-[25px] py-2 text-[11px] text-mid-grey truncate border-b border-warm-grey">
+					<div
+						class="absolute right-0 top-9 z-50 bg-white border border-warm-grey rounded-lg shadow-md py-1 min-w-[180px]"
+					>
+						<span
+							class="block px-3 pl-[25px] py-2 text-[11px] text-mid-grey truncate border-b border-warm-grey"
+						>
 							{clerkState.user.primaryEmailAddress?.emailAddress ?? ''}
 						</span>
 						<button

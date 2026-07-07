@@ -1,8 +1,8 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page, navigating } from '$app/state';
-	import { building } from '$app/environment';
 	import { onMount, tick } from 'svelte';
+	import { fly } from 'svelte/transition';
 
 	import {
 		FullscreenLayout,
@@ -11,11 +11,15 @@
 	} from '$lib/components/fullscreen';
 	import ShortcutsToast from '$lib/components/ShortcutsToast.svelte';
 	import { createDragHandler, DragHandle } from '$lib/components/ui/panel';
+	import { Backdrop } from '$lib/components/ui/backdrop';
+	import { portal } from '$lib/actions/portal.js';
 	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../facilities/_utils/units';
 	import { regions as regionDefs } from '../facilities/_utils/filters.js';
 
 	import FacilityPickerBar from './[code]/_components/FacilityPickerBar.svelte';
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
+	import OptionsMenu from '../facilities/_components/OptionsMenu.svelte';
+	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
 
 	/**
 	 * @typedef {Object} FacilityListItem
@@ -55,18 +59,6 @@
 	let regionLabel = $derived(regionDef?.longLabel ?? '');
 	let regionShortLabel = $derived(regionDef?.label ?? '');
 
-	// `building` guard: reading searchParams during prerender crashes the build
-	// (this is why the old `prerender = 'auto'` was disabled). At build there is no
-	// fullscreen state, so it resolves to false and hydrates correctly client-side.
-	let isFullscreen = $derived(!building && page.url.searchParams.get('fullscreen') === 'true');
-
-	function toggleFullscreen() {
-		const url = new URL(page.url);
-		if (isFullscreen) url.searchParams.delete('fullscreen');
-		else url.searchParams.set('fullscreen', 'true');
-		goto(`${url.pathname}${url.search}`, { noScroll: true, replaceState: true, keepFocus: true });
-	}
-
 	let showShortcutsToast = $state(false);
 	let leftOpen = $state(false);
 	/** @type {{ focusSearch: () => void } | null} */
@@ -82,6 +74,11 @@
 		mq.addEventListener('change', update);
 		return () => mq.removeEventListener('change', update);
 	});
+
+	// Dark floating circles over the facility header (mobile chrome) — one
+	// definition so the back link and options trigger can't drift apart.
+	const floatingCircleClass =
+		'flex size-11 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm transition-colors hover:bg-black/55';
 
 	const listDrag = createDragHandler({
 		axis: 'x',
@@ -100,7 +97,19 @@
 	/** @param {string} code */
 	function handleFacilitySelect(code) {
 		if (code === currentCode) return;
-		goto(`/facility/${code}${page.url.search}`, { noScroll: true, keepFocus: true });
+		// Carry the view settings across, but not the unit sheet — `?unit=` codes
+		// belong to the facility being left.
+		const params = new URLSearchParams(page.url.search);
+		params.delete('unit');
+		const search = params.size ? `?${params.toString()}` : '';
+		goto(`/facility/${code}${search}`, { noScroll: true, keepFocus: true });
+	}
+
+	// On mobile the list is a modal, so a tap dismisses it and loads the facility.
+	/** @param {string} code */
+	function handleMobileSelect(code) {
+		leftOpen = false;
+		handleFacilitySelect(code);
 	}
 
 	/** @param {KeyboardEvent} e */
@@ -109,6 +118,9 @@
 			if (showShortcutsToast) {
 				e.preventDefault();
 				showShortcutsToast = false;
+			} else if (leftOpen) {
+				e.preventDefault();
+				leftOpen = false;
 			}
 			return;
 		}
@@ -131,31 +143,23 @@
 
 		if (e.key === '?') {
 			showShortcutsToast = !showShortcutsToast;
-			return;
-		}
-
-		if (e.key === 'f' || e.key === 'F') {
-			if (e.shiftKey) return;
-			e.preventDefault();
-			toggleFullscreen();
-			showShortcutsToast = false;
 		}
 	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<FullscreenLayout {isFullscreen} onexitfullscreen={toggleFullscreen}>
+<FullscreenLayout isFullscreen={true}>
 	{#snippet filterBar()}
-		<div class="relative z-40 shrink-0 border-b border-warm-grey {isFullscreen ? '' : 'px-4'}">
+		<!-- The picker bar is desktop-only; on mobile the back + options buttons
+		     float over the facility header instead (see the content snippet). -->
+		<div class="relative z-40 shrink-0 border-b border-warm-grey hidden md:block">
 			<FacilityPickerBar
 				selectedLabel={selectedFacility?.name ?? ''}
 				selectedCode={currentCode}
 				{regionValue}
 				{regionLabel}
 				{regionShortLabel}
-				{isFullscreen}
-				onfullscreenchange={toggleFullscreen}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onsearchfacilities={openLeftPanelAndFocus}
 				searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
@@ -164,7 +168,7 @@
 	{/snippet}
 
 	{#snippet content()}
-		<FullscreenContainer {isFullscreen} class="[view-transition-name:page-body]">
+		<FullscreenContainer class="[view-transition-name:page-body]">
 			<div class="flex-1 flex flex-col md:flex-row min-h-0">
 				{#if !isMobile}
 					<div
@@ -186,21 +190,31 @@
 					{#if leftOpen}
 						<DragHandle axis="x" onstart={listDrag.start} active={listDrag.isDragging} />
 					{/if}
-				{:else if leftOpen}
-					<div class="fixed inset-0 z-40 bg-white">
-						<FacilityListPanel
-							bind:this={listPanel}
-							facilities={facilitiesList}
-							{currentCode}
-							onclose={() => (leftOpen = false)}
-							onselect={handleFacilitySelect}
-						/>
-					</div>
 				{/if}
 
 				<div class="flex-1 flex flex-col min-w-0 min-h-0 relative">
+					<!-- Mobile floating chrome over the facility header: back to the
+					     facilities list on the left, the options menu on the right. -->
+					<div class="md:hidden absolute top-3 left-3 z-30">
+						<a
+							href="/facilities?view=list"
+							class="{floatingCircleClass} text-white"
+							aria-label="Back to facilities"
+						>
+							<IconChevronLeft class="size-6" />
+						</a>
+					</div>
+					<div class="md:hidden absolute top-3 right-3 z-30">
+						<OptionsMenu
+							onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
+							onsearchfacilities={openLeftPanelAndFocus}
+							searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
+							triggerClass="{floatingCircleClass} cursor-pointer"
+							iconClass="size-6 text-white"
+						/>
+					</div>
 					{@render children()}
-					{#if navigating.to && navigating.to.url.pathname.startsWith('/facility/')}
+					{#if navigating.to && navigating.to.url.pathname.startsWith('/facility/') && navigating.to.url.pathname !== navigating.from?.url.pathname}
 						<div
 							class="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center z-20 pointer-events-none"
 						>
@@ -212,8 +226,34 @@
 				</div>
 			</div>
 
+			<!-- Mobile: the facility search list is a modal over the detail page;
+			     tapping a facility dismisses it and loads that facility. -->
+			<Backdrop open={isMobile && leftOpen} onclick={() => (leftOpen = false)} />
+			{#if isMobile && leftOpen}
+				<div
+					use:portal
+					class="fixed inset-x-3 top-14 bottom-3 z-[9999] flex flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+					role="dialog"
+					aria-modal="true"
+					aria-label="Search facilities"
+					transition:fly={{ y: 12, duration: 200 }}
+				>
+					<FacilityListPanel
+						bind:this={listPanel}
+						facilities={facilitiesList}
+						{currentCode}
+						onclose={() => (leftOpen = false)}
+						onselect={handleMobileSelect}
+					/>
+				</div>
+			{/if}
+
 			{#snippet footer()}
-				<FullscreenFooter {isFullscreen} onenterfullscreen={toggleFullscreen} />
+				<!-- The tiny version strip is hidden on mobile, where the facility
+				     detail page renders its own fixed bottom navigation. -->
+				{#if !isMobile}
+					<FullscreenFooter />
+				{/if}
 			{/snippet}
 		</FullscreenContainer>
 	{/snippet}
@@ -226,7 +266,6 @@
 		{ label: 'Toggle facility list', keys: [isMac ? '⌘' : 'Ctrl', 'K'] },
 		{ label: 'Search facilities', keys: ['/'] },
 		{ label: 'Toggle navigation menu', keys: ['G'] },
-		{ label: 'Enter / exit full screen', keys: ['F'] },
 		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />

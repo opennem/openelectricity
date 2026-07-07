@@ -59,19 +59,11 @@ const OE_ENERGY = [
 	'#521986', // imports
 	'#52A972', // renewables
 	'#7F7F7F', // interconnector
-	'#594929'  // fossil fuels
+	'#594929' // fossil fuels
 ];
 
 /** OE Secondary palette — supplementary qualitative palette */
-const OE_SECONDARY = [
-	'#545353',
-	'#DE4E28',
-	'#F480EE',
-	'#069FAF',
-	'#3245C9',
-	'#BDBCBC',
-	'#A078D7'
-];
+const OE_SECONDARY = ['#545353', '#DE4E28', '#F480EE', '#069FAF', '#3245C9', '#BDBCBC', '#A078D7'];
 
 /**
  * Sample N evenly-spaced colours from a d3 interpolator.
@@ -100,25 +92,110 @@ export const PALETTES = [
 	{ id: 'accent', name: 'Accent', type: 'qualitative', colours: [...schemeAccent] },
 
 	// Sequential
-	{ id: 'blues', name: 'Blues', type: 'sequential', colours: (n) => sampleInterpolator(interpolateBlues, n) },
-	{ id: 'greens', name: 'Greens', type: 'sequential', colours: (n) => sampleInterpolator(interpolateGreens, n) },
-	{ id: 'oranges', name: 'Oranges', type: 'sequential', colours: (n) => sampleInterpolator(interpolateOranges, n) },
-	{ id: 'purples', name: 'Purples', type: 'sequential', colours: (n) => sampleInterpolator(interpolatePurples, n) },
-	{ id: 'reds', name: 'Reds', type: 'sequential', colours: (n) => sampleInterpolator(interpolateReds, n) },
-	{ id: 'greys', name: 'Greys', type: 'sequential', colours: (n) => sampleInterpolator(interpolateGreys, n) },
-	{ id: 'ylgn', name: 'Yellow-Green', type: 'sequential', colours: (n) => sampleInterpolator(interpolateYlGn, n) },
-	{ id: 'ylorrd', name: 'Yellow-Orange-Red', type: 'sequential', colours: (n) => sampleInterpolator(interpolateYlOrRd, n) },
-	{ id: 'bugn', name: 'Blue-Green', type: 'sequential', colours: (n) => sampleInterpolator(interpolateBuGn, n) },
-	{ id: 'pubu', name: 'Purple-Blue', type: 'sequential', colours: (n) => sampleInterpolator(interpolatePuBu, n) },
+	{
+		id: 'blues',
+		name: 'Blues',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolateBlues, n)
+	},
+	{
+		id: 'greens',
+		name: 'Greens',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolateGreens, n)
+	},
+	{
+		id: 'oranges',
+		name: 'Oranges',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolateOranges, n)
+	},
+	{
+		id: 'purples',
+		name: 'Purples',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolatePurples, n)
+	},
+	{
+		id: 'reds',
+		name: 'Reds',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolateReds, n)
+	},
+	{
+		id: 'greys',
+		name: 'Greys',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolateGreys, n)
+	},
+	{
+		id: 'ylgn',
+		name: 'Yellow-Green',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolateYlGn, n)
+	},
+	{
+		id: 'ylorrd',
+		name: 'Yellow-Orange-Red',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolateYlOrRd, n)
+	},
+	{
+		id: 'bugn',
+		name: 'Blue-Green',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolateBuGn, n)
+	},
+	{
+		id: 'pubu',
+		name: 'Purple-Blue',
+		type: 'sequential',
+		colours: (n) => sampleInterpolator(interpolatePuBu, n)
+	},
 
 	// Diverging
-	{ id: 'rdbu', name: 'Red-Blue', type: 'diverging', colours: (n) => sampleInterpolator(interpolateRdBu, n) },
-	{ id: 'rdylgn', name: 'Red-Yellow-Green', type: 'diverging', colours: (n) => sampleInterpolator(interpolateRdYlGn, n) },
-	{ id: 'brbg', name: 'Brown-Teal', type: 'diverging', colours: (n) => sampleInterpolator(interpolateBrBG, n) },
-	{ id: 'piyg', name: 'Pink-Green', type: 'diverging', colours: (n) => sampleInterpolator(interpolatePiYG, n) },
-	{ id: 'prgn', name: 'Purple-Green', type: 'diverging', colours: (n) => sampleInterpolator(interpolatePRGn, n) },
-	{ id: 'rdylbu', name: 'Red-Yellow-Blue', type: 'diverging', colours: (n) => sampleInterpolator(interpolateRdYlBu, n) },
-	{ id: 'spectral', name: 'Spectral', type: 'diverging', colours: (n) => sampleInterpolator(interpolateSpectral, n) }
+	{
+		id: 'rdbu',
+		name: 'Red-Blue',
+		type: 'diverging',
+		colours: (n) => sampleInterpolator(interpolateRdBu, n)
+	},
+	{
+		id: 'rdylgn',
+		name: 'Red-Yellow-Green',
+		type: 'diverging',
+		colours: (n) => sampleInterpolator(interpolateRdYlGn, n)
+	},
+	{
+		id: 'brbg',
+		name: 'Brown-Teal',
+		type: 'diverging',
+		colours: (n) => sampleInterpolator(interpolateBrBG, n)
+	},
+	{
+		id: 'piyg',
+		name: 'Pink-Green',
+		type: 'diverging',
+		colours: (n) => sampleInterpolator(interpolatePiYG, n)
+	},
+	{
+		id: 'prgn',
+		name: 'Purple-Green',
+		type: 'diverging',
+		colours: (n) => sampleInterpolator(interpolatePRGn, n)
+	},
+	{
+		id: 'rdylbu',
+		name: 'Red-Yellow-Blue',
+		type: 'diverging',
+		colours: (n) => sampleInterpolator(interpolateRdYlBu, n)
+	},
+	{
+		id: 'spectral',
+		name: 'Spectral',
+		type: 'diverging',
+		colours: (n) => sampleInterpolator(interpolateSpectral, n)
+	}
 ];
 
 /** @type {Record<string, PaletteDefinition>} */

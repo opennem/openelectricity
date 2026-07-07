@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { PortableText } from '@portabletext/svelte';
 	import { Tweet, YouTube } from 'sveltekit-embed';
+	import { dedupePortableTextKeys } from '$lib/utils/portable-text.js';
 
 	import Image from '$lib/components/text-components/Image.svelte';
 	import StrataEmbed from '$lib/components/text-components/StrataEmbed.svelte';
@@ -13,12 +14,6 @@
 	 * @property {Block[]} [blocks]
 	 * @property {Array<{_type: string, _key: string, href?: string}>} [markDefs]
 	 * @property {Array<{text: string, marks?: string[]}>} [children]
-	 */
-
-	/**
-	 * @typedef {Object} ContentBlock
-	 * @property {'narrow' | 'wide'} type
-	 * @property {Block[]} blocks
 	 */
 
 	/**
@@ -43,63 +38,12 @@
 		}>;
 	};
 
-	type ContentBlock = {
-		type: 'narrow' | 'wide';
-		blocks: Block[];
-	};
-
 	/** @type {Props} */
 	let { content = null, charts = {} } = $props();
 
-	// Process content blocks into narrow/wide sections reactively
-	let values = $derived.by(() => {
-		if (!content) return [];
-
-		const result: ContentBlock[] = [];
-		let current: Block[] = [];
-
-		// First pass: build current array
-		content.forEach((block: Block) => {
-			if (block._type === 'image' && block.style === 'wide') {
-				current = [];
-			} else {
-				current.push(block);
-			}
-		});
-
-		// Reset current for second pass
-		current = [];
-
-		// Second pass: build values array
-		content.forEach((block: Block) => {
-			if (block._type === 'image' && block.style === 'wide') {
-				if (current.length !== 0) {
-					result.push({
-						type: 'narrow',
-						blocks: [...current]
-					});
-					current = [];
-				}
-
-				result.push({
-					type: 'wide',
-					blocks: [block]
-				});
-			} else {
-				current.push(block);
-			}
-		});
-
-		// Add remaining narrow blocks
-		if (current.length > 0) {
-			result.push({
-				type: 'narrow',
-				blocks: [...current]
-			});
-		}
-
-		return result;
-	});
+	// Guard against CMS content with duplicate block `_key`s before rendering
+	// (crashes PortableText's keyed each with each_key_duplicate).
+	let blocks = $derived(content ? dedupePortableTextKeys(content) : null);
 
 	const components = { types: { image: Image } };
 
@@ -208,8 +152,8 @@
 	}
 </script>
 
-{#if content}
-	{#each content as value}
+{#if blocks}
+	{#each blocks as value}
 		{#if value._type === 'image'}
 			<div
 				class="mx-auto"
@@ -282,8 +226,5 @@
 				<PortableText value={value.blocks ? value.blocks : value} {components} />
 			</div>
 		{/if}
-		<!-- <div class={`mx-auto max-w-5xl ${value.type === 'wide' ? 'full-width-image' : ''}`}>
-			<PortableText value={value.blocks ? value.blocks : value} {components} />
-		</div> -->
 	{/each}
 {/if}

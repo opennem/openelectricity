@@ -1,8 +1,9 @@
 <script>
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { LineChart } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
+	import { urlFor } from '$lib/sanity';
 	import { OG_CARD_WIDTH, OG_CARD_HEIGHT, OG_CARD_TYPE } from '$lib/og/card-dimensions.js';
 	import {
 		FacilityChart,
@@ -17,11 +18,7 @@
 	} from '$lib/components/charts/facility';
 	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
-	import {
-		hasBidirectionalBattery,
-		filterDerivedBatteryUnits
-	} from '../../facilities/_utils/units';
-	import isCommissioningCheck from '../../facilities/_utils/is-commissioning';
+	import { withMarkedUnits } from '../../facilities/_utils/units';
 
 	import {
 		getMetricIntervalForDays,
@@ -35,13 +32,17 @@
 		getIntervalOptionsForDays
 	} from '$lib/components/charts/facility/range-interval-config.js';
 	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
+	import { primaryFuelTechColour } from '$lib/utils/fueltech-display';
 	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
 	import DragHandle from '$lib/components/ui/panel/drag-handle.svelte';
 
 	import FacilityInfoPanel from './_components/FacilityInfoPanel.svelte';
 	import FacilityUnitsPanel from './_components/FacilityUnitsPanel.svelte';
+	import FacilityMediaPanel from './_components/FacilityMediaPanel.svelte';
+	import FacilityMobileNav from './_components/FacilityMobileNav.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { createViewportSync } from './_utils/viewport-sync.js';
+	import { ianaFromOffset, offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
 	import {
 		CHARTS_FRACTION_COOKIE,
 		CHARTS_FRACTION_MIN,
@@ -51,29 +52,18 @@
 	/** @type {{ data: any }} */
 	let { data } = $props();
 
-	let selectedFacility = $derived.by(() => {
-		const f = data.facility;
-		if (!f?.units) return f;
-		const hasBidirectional = hasBidirectionalBattery(f);
-		const filtered = filterDerivedBatteryUnits(f.units, hasBidirectional);
-		// Mark commissioning units client-side (same as /facilities page)
-		const units = filtered.map((/** @type {any} */ unit) => {
-			if (isCommissioningCheck(unit, { hasBidirectionalBattery: hasBidirectional })) {
-				return { ...unit, isCommissioning: true, status_id: 'commissioning' };
-			}
-			return unit;
-		});
-		return { ...f, units };
-	});
+	// Drop derived battery splits + mark commissioning units (same processing the
+	// /facilities page applies); shared with the /facilities detail panel.
+	let selectedFacility = $derived(withMarkedUnits(data.facility));
 
 	let timeZone = $derived(data.timeZone);
-	let rangeDays = $derived(data.rangeDays ?? 7);
+	let rangeDays = $derived(data.rangeDays ?? 3);
 
 	let defaultEnd = $derived(data.retiredEndMs ?? Date.now());
 	let defaultStart = $derived(defaultEnd - rangeDays * 24 * 60 * 60 * 1000);
 
 	function toDateString(/** @type {number} */ ms) {
-		const offsetMs = timeZone === '+08:00' ? 8 * 3600_000 : 10 * 3600_000;
+		const offsetMs = offsetMsFromOffset(timeZone);
 		return new Date(ms + offsetMs).toISOString().slice(0, 10);
 	}
 	let dateStart = $derived(toDateString(defaultStart));
@@ -82,11 +72,11 @@
 	let viewStart = $state(0);
 	let viewEnd = $state(0);
 
-	/** Visible-range data feeding the metrics section. summaryData (energy +
-	 *  market value) comes from the financial provider, emissionsData (reported
-	 *  tCO₂) from the emissions provider, intervalData (raw power) from the
-	 *  generation chart. All are keyed on viewStart/viewEnd so the metrics track
-	 *  the chart's date range. */
+	/** Visible-range data feeding the metrics section (and, for coal, the units
+	 *  panel's availability bars). summaryData (energy + market value) comes from
+	 *  the financial provider, emissionsData (reported tCO₂) from the emissions
+	 *  provider, intervalData (raw power) from the generation chart. All are keyed
+	 *  on viewStart/viewEnd so the numbers track the chart's date range. */
 	/** @type {{ mvData: any[], energyData: any[], mvSeriesNames: string[], energySeriesNames: string[] } | null} */
 	let summaryData = $state(null);
 	/** @type {{ rows: any[], seriesNames: string[] } | null} */
@@ -101,9 +91,20 @@
 
 	let activeInterval = $state('5m');
 	let activeMetric = $state('power');
-	let displayInterval = $state('30m');
+	// Power views default to the 5-minute grain on this page (see preferFiveMinute).
+	let displayInterval = $state('5m');
 
 	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
+
+	// Facility location for the mobile Map tab (mirrors FacilityMediaPanel's source).
+	let mapLocation = $derived(selectedFacility?.location ?? data.sanityFacility?.location ?? null);
+	let hasLocation = $derived(
+		Boolean(
+			mapLocation && typeof mapLocation.lat === 'number' && typeof mapLocation.lng === 'number'
+		)
+	);
+	let mapOsmWayId = $derived(data.sanityFacility?.osm_way_id ?? null);
+	let mapColor = $derived(primaryFuelTechColour(selectedFacility?.units));
 
 	/** Whether any unit on this facility actually emits CO₂. Drives whether
 	 *  the Emissions card renders. Renewables/storage facilities skip the
@@ -116,7 +117,7 @@
 		)
 	);
 
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let dateRangeLabel = $derived.by(() => {
 		const start = viewStart || defaultStart;
 		const end = viewEnd || defaultEnd;
@@ -147,7 +148,7 @@
 	/** Currently selected range preset in days (-1 = All). null when a custom
 	 *  date range is in use or the user has panned/zoomed off any preset. */
 	/** @type {number | null} */
-	let selectedRange = $state(data.rangeDays ?? 7);
+	let selectedRange = $state(data.rangeDays ?? 3);
 
 	/** Earliest data point across the facility's units, used as the floor for
 	 *  the date picker and the "All" preset. */
@@ -162,6 +163,12 @@
 	let pickerStartDate = $derived(toDateString(viewStart || defaultStart));
 	let pickerEndDate = $derived(toDateString(viewEnd || defaultEnd));
 
+	// Each of these sections renders as its own card at every breakpoint. One
+	// definition so the treatment can't drift between sections. md:overflow-visible
+	// lets chart floating tooltips escape the card on desktop.
+	const sectionCardClass =
+		'overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white md:overflow-visible';
+
 	/** @type {HTMLElement | undefined} */
 	let chartCardEl = $state(undefined);
 
@@ -169,8 +176,30 @@
 	let splitContainerEl = $state(undefined);
 	let isMobile = $state(false);
 
+	/** Which section the mobile bottom-nav shows below the (always-visible) hero.
+	 *  Desktop ignores this: the section toggles use `max-md:hidden`, which is
+	 *  inert at and above the md breakpoint, so the resizable split is unchanged.
+	 *  @type {'charts' | 'units' | 'map' | 'about'} */
+	let activeTab = $state('charts');
+
+	/** The page's scroll container — bound so `selectTab` can reveal a tab from
+	 *  the top of its content. */
+	/** @type {HTMLElement | undefined} */
+	let scrollEl = $state(undefined);
+
+	/** Measured height of the bottom nav, so the full-bleed Map tab can fill the
+	 *  space between the header and the nav exactly. */
+	let navHeight = $state(0);
+
 	/** Measured live so the sidebar can stick just below the header. */
 	let headerHeight = $state(0);
+
+	// First facility photo as the mobile header banner (raw CDN URL — the
+	// header applies its own transform params). Desktop keeps the colour wash.
+	let headerPhotoUrl = $derived.by(() => {
+		const photo = data.sanityFacility?.photos?.[0];
+		return photo?.asset ? urlFor(photo).url() : null;
+	});
 
 	// Resizable split between the main card and the sidebar; persisted to a cookie.
 	const splitDrag = createDragHandler({
@@ -201,7 +230,10 @@
 		}
 	});
 
-	let leftWidthPercent = $derived(isMobile ? null : `${splitDrag.value * 100}%`);
+	// The split width is applied via a CSS var consumed only at `md:` and up, so
+	// mobile is full-width from the first paint (no dependence on the async
+	// `isMobile` flag, which would otherwise render the desktop split % briefly).
+	let splitWidth = $derived(`${splitDrag.value * 100}%`);
 
 	onMount(() => {
 		const mq = window.matchMedia('(max-width: 767px)');
@@ -211,16 +243,36 @@
 		return () => mq.removeEventListener('change', update);
 	});
 
+	/** Switch the mobile tab and reveal it from the top: scroll just past the hero
+	 *  so the section's content starts at the top, while the header stays reachable
+	 *  by scrolling back up. `tick()` lets the newly-shown section lay out first so
+	 *  the scroll target isn't clamped short.
+	 *  @param {'charts' | 'units' | 'map' | 'about'} tab */
+	async function selectTab(tab) {
+		activeTab = tab;
+		await tick();
+		scrollEl?.scrollTo({ top: headerHeight });
+	}
+
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let metricSwitchTimer = null;
+
+	// Whether the default range preset has been applied for the current facility's
+	// chart (see handlePowerLoadComplete). Reset on facility change so each new
+	// facility re-applies it.
+	let rangeApplied = false;
 
 	$effect(() => {
 		// Reset chart-viewport-driven state when the underlying facility changes.
 		const _code = data.facility?.code;
+		// Land each facility on its Charts tab so navigation never strands you.
+		activeTab = 'charts';
 		activeInterval = '5m';
 		activeMetric = 'power';
-		displayInterval = '30m';
+		displayInterval = '5m';
 		panZoomEngaged = false;
+		rangeApplied = false;
+		rangeSwitchPending = false;
 		// Reset client-side load tracking so the new facility shows its skeleton until
 		// its own chart fetch settles.
 		powerLoaded = false;
@@ -239,10 +291,22 @@
 		Math.max(1, Math.ceil(((viewEnd || defaultEnd) - (viewStart || defaultStart)) / DAY_MS))
 	);
 
-	/** Display intervals that only the explicit picker produces (pan/zoom never
-	 *  auto-derives them). A small pan that doesn't cross a native threshold must
-	 *  not clobber one of these back to a native grain. */
-	const COARSE_PICKER_INTERVALS = new Set(['7d', 'season', 'quarter', 'half', 'fy']);
+	/** Display intervals that only the explicit picker produces on this page —
+	 *  pan/zoom auto-derivation never yields them ('30m' qualifies because
+	 *  preferFiveMinute means power always auto-derives to 5m). A pan/zoom that
+	 *  doesn't cross a native fetch threshold must not clobber one of these back
+	 *  to an auto grain. */
+	const PICKER_ONLY_INTERVALS = new Set(['30m', '7d', 'season', 'quarter', 'half', 'fy']);
+
+	/** This page defaults power views to the 5-minute grain — 30m is still a manual
+	 *  dropdown pick, but never the auto/default. The shared config (studio +
+	 *  facilities charts) still defaults power to 30m; we map that single power
+	 *  display grain down to 5m locally so only /facility/[code] changes. Energy and
+	 *  native coarse grains pass through untouched.
+	 *  @param {string} intervalId @returns {string} */
+	function preferFiveMinute(intervalId) {
+		return intervalId === '30m' ? '5m' : intervalId;
+	}
 
 	/** Hysteresis-aware metric/interval switching for pan/zoom — keeps the
 	 *  current axis where it is unless duration crosses a 13/15-day (and
@@ -253,14 +317,16 @@
 		const durationDays = (range.end - range.start) / DAY_MS;
 		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
 
-		// Preserve an explicit coarse pick (Season/Quarter/Half/Fin-Year/Week)
-		// across small pans that don't cross a native fetch threshold.
-		if (!next && COARSE_PICKER_INTERVALS.has(displayInterval)) return;
+		// Preserve an explicit picker choice (30m/Week/Season/Quarter/Half/Fin-Year)
+		// across pans and zooms that don't cross a native fetch threshold.
+		if (!next && PICKER_ONLY_INTERVALS.has(displayInterval)) return;
 
-		displayInterval = getDisplayIntervalForDays(
-			next?.metric ?? activeMetric,
-			next?.interval ?? activeInterval,
-			durationDays
+		displayInterval = preferFiveMinute(
+			getDisplayIntervalForDays(
+				next?.metric ?? activeMetric,
+				next?.interval ?? activeInterval,
+				durationDays
+			)
 		);
 
 		if (next) {
@@ -279,6 +345,7 @@
 	function applyRangeSwitch(startMs, endMs, intervalId) {
 		const spec = getIntervalSpec(intervalId);
 		if (!spec) return;
+		rangeSwitchPending = true;
 		activeMetric = spec.metric;
 		activeInterval = spec.apiInterval;
 		displayInterval = intervalId;
@@ -302,9 +369,9 @@
 		}
 		const startMs = endMs - actualDays * DAY_MS;
 		const preset = getPresetByDays(days);
-		const intervalId = preset
-			? getDefaultIntervalForRange(preset.id)
-			: getMetricIntervalForDays(actualDays).interval;
+		const intervalId = preferFiveMinute(
+			preset ? getDefaultIntervalForRange(preset.id) : getMetricIntervalForDays(actualDays).interval
+		);
 		applyRangeSwitch(startMs, endMs, intervalId);
 	}
 
@@ -314,12 +381,13 @@
 		const startMs = new Date(range.start).getTime();
 		const endMs = new Date(range.end).getTime();
 		const days = Math.max(1, Math.ceil((endMs - startMs) / DAY_MS));
-		applyRangeSwitch(startMs, endMs, getIntervalOptionsForDays(days).default);
+		applyRangeSwitch(startMs, endMs, preferFiveMinute(getIntervalOptionsForDays(days).default));
 	}
 
 	/** Manual interval override from the dropdown. Keeps the current viewport and
-	 *  refetches at the chosen grain. A later range/pan re-derives the interval
-	 *  automatically (memoryless), so the override sticks until then. */
+	 *  refetches at the chosen grain. A later preset or calendar pick re-derives
+	 *  the interval; pans/zooms preserve the pick until they cross a native fetch
+	 *  threshold (see PICKER_ONLY_INTERVALS). */
 	/** @param {string} value */
 	function handleIntervalChange(value) {
 		const startMs = viewStart || defaultStart;
@@ -363,10 +431,26 @@
 	let chartReady = $derived(powerLoaded && powerHasData);
 	let showEmptyState = $derived(powerLoaded && !powerHasData);
 
+	/** True from an explicit range/interval pick until the switched data settles —
+	 *  pulses the active range control. Cleared by whichever settle signal fires
+	 *  first: load-complete (manager swap) or the debounced visible-data callback
+	 *  (same-grain switches that reuse the live manager). */
+	let rangeSwitchPending = $state(false);
+
 	/** @param {{ hasData: boolean }} state */
 	function handlePowerLoadComplete({ hasData }) {
+		// The chart self-seeds a day-snapped window on load. Once it's settled,
+		// apply the default preset through the normal path (before reveal, so no
+		// visible jump): this sets the exact rolling window — so the view matches a
+		// later 3D click instead of trimming — and marks the preset selected (the
+		// setViewport echo is suppressed, so it isn't cleared).
+		if (!rangeApplied) {
+			rangeApplied = true;
+			handleRangeSelect(rangeDays);
+		}
 		powerLoaded = true;
 		powerHasData = hasData;
+		rangeSwitchPending = false;
 	}
 
 	/** Static skeleton bar heights (%) — a calm placeholder while the chart loads. */
@@ -403,121 +487,167 @@
 	path={`/facility/${data.facility?.code ?? ''}`}
 />
 
-<div class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey">
+<!-- Morph target — pairs with the /facilities detail panel
+     (view-transition-name: facility-hero) so the whole panel expands into the
+     full page on navigation. -->
+<div
+	bind:this={scrollEl}
+	class="flex-1 min-h-0 overflow-y-auto bg-light-warm-grey"
+	style:view-transition-name="facility-hero"
+>
+	{#snippet mobileHeaderSpacer()}
+		<!-- Clears the floating back/options buttons (layout chrome) so the
+		     fuel-tech badges start below them. -->
+		<div class="h-16"></div>
+	{/snippet}
 	<div class="md:sticky md:top-0 md:z-40" bind:clientHeight={headerHeight}>
-		<FacilityPanelHeader facility={selectedFacility} sanityFacility={data.sanityFacility} />
+		<FacilityPanelHeader
+			facility={selectedFacility}
+			sanityFacility={data.sanityFacility}
+			photoUrl={isMobile ? headerPhotoUrl : null}
+			topBar={isMobile ? mobileHeaderSpacer : undefined}
+		/>
 	</div>
 	{#if selectedFacility}
 		<div
-			class="p-8 space-y-8"
+			class={[
+				'p-4 pb-24 space-y-4 md:p-8 md:pb-8 md:space-y-8',
+				// On the Map tab collapse to nothing (incl. padding) rather than
+				// display:none, so the LayerCake charts inside keep a real size.
+				activeTab === 'map' && 'max-md:h-0 max-md:overflow-hidden max-md:p-0'
+			]}
 			style="--hdr-h: {headerHeight}px; --col-top: calc(var(--hdr-h) + 2rem);"
 		>
-			<div bind:this={splitContainerEl} class="flex flex-col md:flex-row md:items-start">
-				<!-- Main column — one unified card holding the range bar, metrics,
-				     unit availability and the three charts as divided sections.
-				     Resizable width; the sidebar takes the remainder. -->
+			<div
+				bind:this={splitContainerEl}
+				class="flex flex-col gap-4 md:gap-0 md:flex-row md:items-start"
+			>
+				<!-- Main column — a stack of standalone card panes (range bar, metrics
+				     and the three charts). Resizable width; the sidebar takes the
+				     remainder. When off the Charts tab on mobile it collapses to h-0
+				     (clipped) rather than `display:none`, so the LayerCake charts keep
+				     a real width/height and don't warn about a zero-size container. -->
 				<div
-					class="min-w-0 md:shrink-0 md:pr-4 {splitDrag.isDragging
-						? ''
-						: 'md:transition-[width] md:duration-200 md:ease-out'}"
-					style:width={leftWidthPercent}
+					class={[
+						'w-full min-w-0 md:w-[var(--split-w)] md:shrink-0 md:pr-4',
+						splitDrag.isDragging ? '' : 'md:transition-[width] md:duration-200 md:ease-out',
+						activeTab !== 'charts' && 'max-md:h-0 max-md:overflow-hidden'
+					]}
+					style:--split-w={splitWidth}
 				>
-					{#if !showEmptyState}
-						<div class="overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white">
-							<!-- Range / date picker -->
-							<div class="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
-								<span class="text-xs font-medium text-dark-grey">{dateRangeLabel}</span>
-								<ChartRangeBar
-									{selectedRange}
-									{customDays}
-									{displayInterval}
-									startDate={pickerStartDate}
-									endDate={pickerEndDate}
-									minDate={MIN_DATE}
-									{maxDate}
-									{earliestDate}
-									showIntervalDropdown={true}
-									onrangeselect={handleRangeSelect}
-									ondaterangechange={handleDateRangeChange}
-									onintervalchange={handleIntervalChange}
-								/>
-							</div>
+					<!-- Toolbar + metrics always render; only the charts depend on the fetch. -->
+					<div class="space-y-4">
+						<!-- Range / date picker — a bare toolbar row, not a card. -->
+						<div class="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
+							<span class="font-space text-base font-medium text-dark-grey">{dateRangeLabel}</span>
+							<ChartRangeBar
+								{selectedRange}
+								{customDays}
+								{displayInterval}
+								startDate={pickerStartDate}
+								endDate={pickerEndDate}
+								minDate={MIN_DATE}
+								{maxDate}
+								{earliestDate}
+								showIntervalDropdown={true}
+								pending={rangeSwitchPending}
+								onrangeselect={handleRangeSelect}
+								ondaterangechange={handleDateRangeChange}
+								onintervalchange={handleIntervalChange}
+							/>
+						</div>
 
-							<!-- Metrics + unit availability. Flush grid; the card supplies the
-							     outer border. Fed by the providers + generation chart below. -->
-							<div class="border-t border-mid-warm-grey/40">
-								<FacilityMetrics
-									facility={selectedFacility}
-									sanityFacility={data.sanityFacility}
-									{summaryData}
-									{emissionsData}
-									{intervalData}
-								/>
-							</div>
+						<!-- Metrics. Flush grid; the card supplies the outer border. Fed by
+							     the providers + generation chart below. -->
+						<div class={sectionCardClass}>
+							<FacilityMetrics
+								facility={selectedFacility}
+								sanityFacility={data.sanityFacility}
+								summaryData={showEmptyState ? null : summaryData}
+								emissionsData={showEmptyState ? null : emissionsData}
+								intervalData={showEmptyState ? null : intervalData}
+								{timeZone}
+								{displayInterval}
+								onpeakhighlight={handleHoverChange}
+							/>
+						</div>
 
-							<!-- chartCardEl wraps the chart sections (not the range bar / metrics)
+						<!-- chartCardEl wraps the chart sections (not the range bar / metrics)
 							     so pan/zoom click-outside treats clicks between charts as "still
 							     engaged" but disengages on a range-bar / metrics click. -->
-							<div bind:this={chartCardEl}>
-								<!-- Generation -->
-								<section class="border-t border-mid-warm-grey/40">
-									<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
-										<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
-										<span
-											class="rounded bg-light-warm-grey px-2 py-0.5 text-xs uppercase tracking-wider text-dark-grey"
-										>
-											{getIntervalSpec(displayInterval)?.label ?? displayInterval}
-										</span>
-									</div>
-									<!-- Chart stays mounted while loading so it self-fetches; it fades
+						<div bind:this={chartCardEl} class="space-y-4">
+							<!-- Generation -->
+							<section class={sectionCardClass}>
+								<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
+									<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
+									<span
+										class="rounded bg-light-warm-grey px-2 py-0.5 text-xs uppercase tracking-wider text-dark-grey"
+									>
+										{getIntervalSpec(displayInterval)?.label ?? displayInterval}
+									</span>
+								</div>
+								<!-- Chart stays mounted while loading so it self-fetches; it fades
 									     in once data arrives, with a skeleton overlaid until then. -->
-									<div class="relative">
-										<div
-											class="transition-opacity duration-500 ease-out {chartReady
-												? 'opacity-100'
-												: 'opacity-0'}"
-										>
-											<FacilityChart
-												bind:this={powerChart}
-												facility={selectedFacility}
-												powerData={data.powerData}
-												{timeZone}
-												{dateStart}
-												{dateEnd}
-												interval={activeInterval}
-												metric={activeMetric}
-												{displayInterval}
-												chartHeight="h-[267px]"
-												title={activeMetric === 'energy' ? 'Energy' : 'Power'}
-												tooltipMode="floating"
-												showContainer={false}
-												{hoverTime}
-												onhoverchange={handleHoverChange}
-												onviewportchange={handlePowerViewportChange}
-												onloadcomplete={handlePowerLoadComplete}
-												onvisibledata={(d) => (intervalData = d)}
-												panZoomMode="tap-to-engage"
-												bind:panZoomEngaged
-												bundleDerivedMetrics
-											/>
-										</div>
-										{#if !chartReady}
-											<div
-												class="absolute inset-0 flex items-end gap-1.5 px-6 pb-6 pt-8 pointer-events-none"
-												out:fade={{ duration: 300 }}
-												aria-hidden="true"
-											>
-												{#each SKELETON_BARS as h, i (i)}
-													<div
-														class="flex-1 rounded-t bg-light-warm-grey animate-pulse"
-														style="height: {h}%"
-													></div>
-												{/each}
-											</div>
-										{/if}
+								<div class="relative">
+									<div
+										class="transition-opacity duration-500 ease-out {chartReady
+											? 'opacity-100'
+											: 'opacity-0'}"
+									>
+										<FacilityChart
+											bind:this={powerChart}
+											facility={selectedFacility}
+											powerData={data.powerData}
+											{timeZone}
+											{dateStart}
+											{dateEnd}
+											interval={activeInterval}
+											metric={activeMetric}
+											{displayInterval}
+											chartHeight="h-[267px]"
+											title={activeMetric === 'energy' ? 'Energy' : 'Power'}
+											tooltipMode="floating"
+											showContainer={false}
+											{hoverTime}
+											onhoverchange={handleHoverChange}
+											onviewportchange={handlePowerViewportChange}
+											onloadcomplete={handlePowerLoadComplete}
+											onvisibledata={(d) => {
+												intervalData = d;
+												rangeSwitchPending = false;
+											}}
+											panZoomMode="tap-to-engage"
+											bind:panZoomEngaged
+											bundleDerivedMetrics
+										/>
 									</div>
-								</section>
+									{#if showEmptyState}
+										<div
+											class="absolute inset-0 flex flex-col items-center justify-center gap-3 px-6 text-center pointer-events-none"
+										>
+											<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
+												<LineChart size={24} strokeWidth={1.5} />
+											</div>
+											<p class="m-0 text-sm font-medium text-dark-grey">No data available</p>
+										</div>
+									{:else if !chartReady}
+										<div
+											class="absolute inset-0 flex items-end gap-1.5 px-6 pb-6 pt-8 pointer-events-none"
+											out:fade={{ duration: 300 }}
+											aria-hidden="true"
+										>
+											{#each SKELETON_BARS as h, i (i)}
+												<div
+													class="flex-1 rounded-t bg-light-warm-grey animate-pulse"
+													style="height: {h}%"
+												></div>
+											{/each}
+										</div>
+									{/if}
+								</div>
+							</section>
 
+							{#if !showEmptyState}
 								<FacilityFinancialDataProvider
 									facility={selectedFacility}
 									{timeZone}
@@ -530,7 +660,7 @@
 									onsummarydata={(d) => (summaryData = d)}
 									onviewportchange={handleDerivedViewportChange}
 								>
-									<section class="border-t border-mid-warm-grey/40">
+									<section class={sectionCardClass}>
 										<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 											<h3 class="m-0 text-sm font-semibold text-dark-grey">Market</h3>
 											<SwitchTabs
@@ -574,7 +704,7 @@
 										onsummarydata={(d) => (emissionsData = d)}
 										onviewportchange={handleDerivedViewportChange}
 									>
-										<section class="border-t border-mid-warm-grey/40">
+										<section class={sectionCardClass}>
 											<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
 												<h3 class="m-0 text-sm font-semibold text-dark-grey">Emissions</h3>
 												<SwitchTabs
@@ -605,45 +735,78 @@
 										</section>
 									</FacilityEmissionsDataProvider>
 								{/if}
-							</div>
+							{/if}
 						</div>
-					{:else}
-						<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
-							<div
-								class="flex items-center justify-between gap-4 border-b border-mid-warm-grey/40 px-6 py-3"
-							>
-								<h3 class="m-0 text-sm font-semibold text-dark-grey">Generation</h3>
-							</div>
-							<div class="flex flex-col items-center justify-center gap-3 px-6 py-20 text-center">
-								<div class="rounded-full bg-light-warm-grey p-4 text-mid-grey">
-									<LineChart size={24} strokeWidth={1.5} />
-								</div>
-								<p class="m-0 text-sm font-medium text-dark-grey">No data available</p>
-							</div>
-						</div>
-					{/if}
+					</div>
 				</div>
 
-				{#if !isMobile}
-					<DragHandle
-						axis="x"
-						onstart={splitDrag.start}
-						active={splitDrag.isDragging}
-						class="h-auto self-stretch"
-					/>
-				{/if}
+				<DragHandle
+					axis="x"
+					onstart={splitDrag.start}
+					active={splitDrag.isDragging}
+					class="h-auto self-stretch max-md:hidden"
+				/>
 
-				<!-- Sidebar — fills the remaining width; sticky below the header. -->
-				<div class="min-w-0 flex-1 space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]">
-					<FacilityInfoPanel sanityFacility={data.sanityFacility} facility={selectedFacility} />
-					<FacilityUnitsPanel facility={selectedFacility} />
+				<!-- Sidebar — fills the remaining width; sticky below the header. On
+				     mobile each panel belongs to a bottom-nav tab (Info + Media = About,
+				     Units = Units); `max-md:hidden` collapses the others so the desktop
+				     DOM order and layout are untouched. -->
+				<div
+					class="min-w-0 flex-1 space-y-4 md:space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]"
+				>
+					<div class={[activeTab !== 'about' && 'max-md:hidden']}>
+						<FacilityInfoPanel sanityFacility={data.sanityFacility} collapsible={!isMobile} />
+					</div>
+					<div class={[activeTab !== 'units' && 'max-md:hidden']}>
+						<FacilityUnitsPanel
+							facility={selectedFacility}
+							sanityFacility={data.sanityFacility}
+							timeZone={data.timeZone}
+							{intervalData}
+						/>
+					</div>
+					<div class={[activeTab !== 'about' && 'max-md:hidden']}>
+						<FacilityMediaPanel
+							facility={selectedFacility}
+							sanityFacility={data.sanityFacility}
+							showMap={!isMobile}
+						/>
+					</div>
 				</div>
 			</div>
 
-			<!-- NPI pollution — full width below the main row -->
+			<!-- NPI pollution — full width below the main row; part of the About tab.
+			     Collapses with h-0 (not display:none) off-tab because it renders its own
+			     LayerCake charts, which warn about a zero-size container under display:none. -->
 			{#if hasNpi}
-				<FacilityPollutionPanel facility={selectedFacility} />
+				<div class={[activeTab !== 'about' && 'max-md:h-0 max-md:overflow-hidden']}>
+					<FacilityPollutionPanel facility={selectedFacility} />
+				</div>
 			{/if}
 		</div>
+
+		<!-- Map tab (mobile only) — full-bleed, no padding, filling the space
+		     between the header and the bottom nav. Mounted only while active so
+		     MapLibre initialises at its final size. -->
+		{#if hasLocation && activeTab === 'map'}
+			<div class="md:hidden" style="height: calc(100dvh - {headerHeight}px - {navHeight}px);">
+				{#await import('./_components/FacilityMap.svelte') then { default: FacilityMap }}
+					<FacilityMap
+						lat={mapLocation.lat}
+						lng={mapLocation.lng}
+						color={mapColor}
+						osmWayId={mapOsmWayId}
+					/>
+				{/await}
+			</div>
+		{/if}
 	{/if}
+
+	<!-- Mobile-only bottom navigation; `md:hidden` keeps desktop untouched. -->
+	<FacilityMobileNav
+		active={activeTab}
+		onselect={selectTab}
+		hasMap={hasLocation}
+		bind:height={navHeight}
+	/>
 </div>

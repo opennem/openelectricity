@@ -11,6 +11,8 @@
 		FillLayer
 	} from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { fetchOsmPolygon } from '$lib/utils/osm.js';
+	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
 	import UnitGroup from './_components/UnitGroup.svelte';
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import FacilityCardImage from './_components/FacilityCardImage.svelte';
@@ -27,7 +29,8 @@
 	 *   facilities: any[],
 	 *   hoveredFacility?: any | null,
 	 *   selectedFacilityCode?: string | null,
-	 *   selectedView?: 'timeline' | 'list' | 'card' | 'map',
+	 *   osmWayId?: string | number | null,
+	 *   selectedView?: 'timeline' | 'list' | 'grid',
 	 *   cardCodes?: Set<string>,
 	 *   clustering?: boolean,
 	 *   mapTheme?: 'light' | 'dark' | 'satellite',
@@ -50,6 +53,7 @@
 		facilities = [],
 		hoveredFacility = null,
 		selectedFacilityCode = null,
+		osmWayId = null,
 		selectedView = 'timeline',
 		cardCodes = new Set(),
 		clustering = false,
@@ -315,8 +319,15 @@
 		return facilitiesMap.has(hoveredFacility.code) ? hoveredFacility : null;
 	});
 
-	// Show popup for hovered facility (from list or map)
-	let popupFacility = $derived(validatedHoveredFacility || mapHoveredFacility);
+	// A facility is selected → isolate it: show only its marker + footprint and hide
+	// the rest (other markers, clusters, hover popup). One flag drives them all.
+	let isFacilitySelected = $derived(!!selectedFacilityCode);
+
+	// Popup follows hover — but never while a facility is selected (the detail panel
+	// already carries everything the popup would, and other markers are hidden).
+	let popupFacility = $derived(
+		isFacilitySelected ? null : validatedHoveredFacility || mapHoveredFacility || null
+	);
 
 	// Lazy popup content - only computed when popup is shown
 	let popupContent = $derived.by(() => {
@@ -333,9 +344,34 @@
 	// card view keeps the unit-breakdown popup.
 	let showCardPopup = $derived(selectedView === 'timeline' || selectedView === 'list');
 
-	// Combined hover state from list or map
-	let activeHoveredFacilityCode = $derived(
-		validatedHoveredFacility?.code || mapHoveredFacilityCode
+	// Marker highlight follows hover OR selection — the matched marker stays bright
+	// (and grows) while the rest dim. Hover takes priority so it can preview another
+	// facility even while one is selected.
+	let highlightedFacilityCode = $derived(
+		validatedHoveredFacility?.code || mapHoveredFacilityCode || selectedFacilityCode
+	);
+
+	// OSM footprint of the selected facility, resolved from its Sanity osm_way_id
+	// (Overpass + localStorage cache, shared with the facility detail page).
+	/** @type {GeoJSON.Feature | null} */
+	let osmPolygon = $state(null);
+	// Tint the shape to match the selected facility's marker colour.
+	let selectedFacilityColor = $derived.by(() => {
+		if (!selectedFacilityCode) return '#ffffff';
+		const facility = facilitiesMap.get(selectedFacilityCode);
+		return facility ? getFacilityColor(facility) : '#ffffff';
+	});
+
+	// Shared "matches the selected facility" clause — factored here so both the
+	// clustered and non-clustered point layers compose one source of truth for the
+	// selection-isolation filter (null = no selection, i.e. show all).
+	let selectedCodeMatch = $derived(
+		selectedFacilityCode ? /** @type {any} */ (['==', ['get', 'code'], selectedFacilityCode]) : null
+	);
+	let unclusteredPointFilter = $derived(
+		selectedCodeMatch
+			? /** @type {any} */ (['all', ['!', ['has', 'point_count']], selectedCodeMatch])
+			: /** @type {any} */ (['!', ['has', 'point_count']])
 	);
 
 	// Paint + layout for the individual facility circles, shared by the clustered
@@ -351,29 +387,24 @@
 			'circle-color': ['get', 'color'],
 			'circle-radius': [
 				'case',
-				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				['==', ['get', 'code'], highlightedFacilityCode ?? ''],
 				['interpolate', ['linear'], ['get', 'metric_value'], ...circleStopsHovered],
 				['interpolate', ['linear'], ['get', 'metric_value'], ...circleStops]
 			],
 			'circle-radius-transition': { duration: 400, delay: 0 },
-			'circle-stroke-width': [
-				'case',
-				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
-				2,
-				1
-			],
+			'circle-stroke-width': ['case', ['==', ['get', 'code'], highlightedFacilityCode ?? ''], 2, 1],
 			'circle-stroke-color': '#ffffff',
 			'circle-stroke-opacity': [
 				'case',
-				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				['==', ['get', 'code'], highlightedFacilityCode ?? ''],
 				1,
-				activeHoveredFacilityCode ? 0.3 : 0.8
+				highlightedFacilityCode ? 0.3 : 0.8
 			],
 			'circle-opacity': [
 				'case',
-				['==', ['get', 'code'], activeHoveredFacilityCode ?? ''],
+				['==', ['get', 'code'], highlightedFacilityCode ?? ''],
 				1,
-				activeHoveredFacilityCode ? 0.3 : 0.8
+				highlightedFacilityCode ? 0.3 : 0.8
 			],
 			'circle-opacity-transition': { duration: 200, delay: 0 },
 			'circle-stroke-opacity-transition': { duration: 200, delay: 0 }
@@ -382,7 +413,7 @@
 
 	let facilityCircleLayout = $derived(
 		/** @type {import('svelte').ComponentProps<typeof CircleLayer>['layout']} */ ({
-			'circle-sort-key': ['case', ['==', ['get', 'code'], activeHoveredFacilityCode ?? ''], 1, 0]
+			'circle-sort-key': ['case', ['==', ['get', 'code'], highlightedFacilityCode ?? ''], 1, 0]
 		})
 	);
 
@@ -449,6 +480,21 @@
 	export function resetView() {
 		closePopups();
 		fitMapToFacilities(facilities);
+	}
+
+	/**
+	 * Step the zoom in - exported for the mobile floating controls (the built-in
+	 * NavigationControl is hidden below md).
+	 */
+	export function zoomIn() {
+		mapInstance?.zoomIn();
+	}
+
+	/**
+	 * Step the zoom out - exported for the mobile floating controls.
+	 */
+	export function zoomOut() {
+		mapInstance?.zoomOut();
 	}
 
 	/**
@@ -534,11 +580,14 @@
 	function getFlyToOffset() {
 		if (typeof window === 'undefined') return [0, 0];
 
-		if (window.innerWidth > 768) {
+		// >= 768 matches the page's isDesktop breakpoint.
+		if (window.innerWidth >= 768) {
 			return [window.innerWidth * flyToOffsetX, window.innerHeight * flyToOffsetY];
 		}
-		// On mobile, no offset needed
-		return [0, 0];
+		// Mobile: no side panels, so no x offset — but the detail bottom sheet
+		// covers the lower part of the viewport, so shift the view up (via the
+		// caller's flyToOffsetY) to keep the marker in the visible top half.
+		return [0, window.innerHeight * flyToOffsetY];
 	}
 
 	/**
@@ -554,7 +603,9 @@
 		return [0, yOffset];
 	}
 
-	// Handle selectedFacilityCode from URL - zoom to facility and show popup
+	// Handle selectedFacilityCode from URL/selection — fly to the facility and let
+	// the paint highlight its marker (keyed off selectedFacilityCode). No popup on
+	// selection; the detail panel carries the info instead.
 	$effect(() => {
 		if (mapInstance && mapLoaded && selectedFacilityCode && facilities.length > 0) {
 			const facility = facilitiesMap.get(selectedFacilityCode);
@@ -565,10 +616,27 @@
 					duration: ZOOM_DURATION,
 					offset: getFlyToOffset()
 				});
-				mapHoveredFacilityCode = facility.code;
-				onhover?.(facility);
 			}
 		}
+	});
+
+	// Resolve the selected facility's OSM footprint when the selection changes.
+	// Cleared when nothing is selected or the facility has no shape; the cancelled
+	// flag drops a fetch that resolves after the selection has moved on.
+	$effect(() => {
+		const id = osmWayId;
+		osmPolygon = null;
+		if (!id) return;
+
+		let cancelled = false;
+		fetchOsmPolygon(id).then((feature) => {
+			if (cancelled) return;
+			osmPolygon = feature;
+		});
+
+		return () => {
+			cancelled = true;
+		};
 	});
 
 	/**
@@ -609,11 +677,9 @@
 		if (features && features.length > 0) {
 			const code = features[0].properties.code;
 			const facility = facilitiesMap.get(code);
-			// Set hover state to show popup (important for mobile touch)
-			mapHoveredFacilityCode = code;
-			onhover?.(facility || null);
 			onclick?.(facility || null);
-			// Select the facility to highlight in list/timeline
+			// Select the facility — highlights its marker and opens the detail panel.
+			// No popup on selection (the paint highlights the selected marker).
 			onselect?.(facility || null);
 		}
 	}
@@ -710,7 +776,7 @@
 	}
 
 	/**
-	 * Handle facility click from cluster panel - zoom to facility and show popup
+	 * Handle facility click from cluster panel - zoom to and select the facility
 	 * @param {any} facility
 	 */
 	function handleClusterFacilityClick(facility) {
@@ -728,11 +794,7 @@
 			offset: getFlyToOffset()
 		});
 
-		// Show the facility popup after zoom
-		mapHoveredFacilityCode = facility.code;
-		onhover?.(facility);
-
-		// Notify parent to update URL with selected facility
+		// Select the facility (highlights its marker; no popup on selection).
 		onselect?.(facility);
 	}
 </script>
@@ -876,6 +938,13 @@
 			/>
 		</GeoJSONSource>
 
+		<!-- Selected facility's OSM footprint (rendered beneath the markers) -->
+		<OsmFootprintLayer
+			feature={osmPolygon}
+			color={selectedFacilityColor}
+			id="facility-osm-polygon"
+		/>
+
 		{#if clustering}
 			<!-- Clustered GeoJSON source -->
 			<GeoJSONSource
@@ -894,6 +963,7 @@
 						'circle-radius': ['step', ['get', 'point_count'], 20, 10, 25, 50, 35, 100, 45],
 						'circle-opacity': satelliteView ? 0.95 : 0.9
 					}}
+					layout={{ visibility: isFacilitySelected ? 'none' : 'visible' }}
 					onclick={handleClusterClick}
 					onmouseenter={() => {
 						if (mapInstance) mapInstance.getCanvas().style.cursor = 'pointer';
@@ -911,7 +981,7 @@
 						'text-field': '{point_count_abbreviated}',
 						'text-font': ['DM_Mono'],
 						'text-size': 14,
-						visibility: isZooming ? 'none' : 'visible'
+						visibility: isZooming || isFacilitySelected ? 'none' : 'visible'
 					}}
 					paint={{
 						'text-color': satelliteView ? '#1a1a1a' : '#ffffff'
@@ -921,7 +991,7 @@
 				<!-- Unclustered points (individual facilities) -->
 				<CircleLayer
 					id="facility-points-unclustered"
-					filter={['!', ['has', 'point_count']]}
+					filter={unclusteredPointFilter}
 					paint={facilityCirclePaint}
 					layout={facilityCircleLayout}
 					onmouseenter={handlePointMouseEnter}
@@ -935,6 +1005,7 @@
 				<!-- All facility points rendered on WebGL canvas -->
 				<CircleLayer
 					id="facility-points"
+					filter={selectedCodeMatch}
 					paint={facilityCirclePaint}
 					layout={facilityCircleLayout}
 					onmouseenter={handlePointMouseEnter}
@@ -1072,13 +1143,12 @@
 		display: none !important;
 	}
 
-	/* Attribution control: top-left on mobile, bottom-right on desktop */
+	/* The built-in zoom control is hidden on mobile — the page renders its own
+	   floating zoom buttons instead. The attribution keeps its default
+	   bottom-right corner (collapsed via collapseMapAttribution). */
 	@media (max-width: 767px) {
-		:global(.maplibregl-ctrl-bottom-right) {
-			top: 0 !important;
-			bottom: auto !important;
-			left: 0 !important;
-			right: auto !important;
+		:global(.maplibregl-ctrl-top-right) {
+			display: none !important;
 		}
 	}
 

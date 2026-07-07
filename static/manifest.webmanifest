@@ -1,0 +1,23 @@
+{
+	"name": "Open Electricity",
+	"short_name": "OpenElectricity",
+	"description": "Explore Australia's electricity grid — live generation, emissions, facilities and analysis.",
+	"start_url": "/",
+	"scope": "/",
+	"display": "standalone",
+	"background_color": "#ffffff",
+	"theme_color": "#ffffff",
+	"icons": [
+		{
+			"src": "/icon-192.png",
+			"sizes": "192x192",
+			"type": "image/png"
+		},
+		{
+			"src": "/favicon.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any maskable"
+		}
+	]
+}

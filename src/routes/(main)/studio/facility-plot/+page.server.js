@@ -29,9 +29,7 @@ export async function load({ fetch }) {
 
 		const results = await Promise.all(
 			FACILITY_CODES.map(async (code) => {
-				const facility = allFacilities.find(
-					(/** @type {any} */ f) => f.code === code
-				);
+				const facility = allFacilities.find((/** @type {any} */ f) => f.code === code);
 
 				if (!facility) {
 					return {
@@ -50,9 +48,7 @@ export async function load({ fetch }) {
 						days: '7'
 					});
 
-					const powerRes = await fetch(
-						`/api/facilities/${code}/power?${apiParams.toString()}`
-					);
+					const powerRes = await fetch(`/api/facilities/${code}/power?${apiParams.toString()}`);
 
 					if (powerRes.ok) {
 						const powerJson = await powerRes.json();
@@ -74,12 +70,14 @@ export async function load({ fetch }) {
 	} catch (err) {
 		console.error('Error loading facility plot:', err);
 		return {
-			facilities: [{
-				facility: null,
-				powerData: null,
-				timeZone: '+10:00',
-				error: /** @type {Error} */ (err).message
-			}]
+			facilities: [
+				{
+					facility: null,
+					powerData: null,
+					timeZone: '+10:00',
+					error: /** @type {Error} */ (err).message
+				}
+			]
 		};
 	}
 }

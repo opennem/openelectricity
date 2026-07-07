@@ -113,7 +113,9 @@ export default class StatisticV2 {
 			if (idsToInvert.includes(id)) {
 				const statsData = item[instance.statsType];
 				if (statsData?.data) {
-					statsData.data = statsData.data.map((/** @type {any} */ v) => (v !== null && v !== undefined ? -v : v));
+					statsData.data = statsData.data.map((/** @type {any} */ v) =>
+						v !== null && v !== undefined ? -v : v
+					);
 				}
 			}
 		});

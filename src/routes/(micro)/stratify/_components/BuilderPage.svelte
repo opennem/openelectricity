@@ -83,11 +83,11 @@
 	/** @type {string | null} JSON of the project state at the last save (or initial load). */
 	let lastSavedSnapshotJSON = $state(null);
 
-	const currentSnapshotJSON = $derived(
-		project.hasData ? JSON.stringify(project.toJSON()) : ''
-	);
+	const currentSnapshotJSON = $derived(project.hasData ? JSON.stringify(project.toJSON()) : '');
 	const isDirty = $derived(
-		project.hasData && lastSavedSnapshotJSON !== null && currentSnapshotJSON !== lastSavedSnapshotJSON
+		project.hasData &&
+			lastSavedSnapshotJSON !== null &&
+			currentSnapshotJSON !== lastSavedSnapshotJSON
 	);
 
 	function markSaved() {

@@ -6,7 +6,11 @@ import { fuelTechNameReducer, loadFuelTechs } from '$lib/fuel_techs.js';
 import { fuelTechMap, orderMap } from './groups-technology';
 import excludeBatteryAndLoads from './exclude-battery-and-loads';
 import combineHistoryProjection from './combine-history-projection';
-import { mutateDatesToStartOfYear, mergeHistoricalEmissionsData, currentFinancialYear } from './utils';
+import {
+	mutateDatesToStartOfYear,
+	mergeHistoricalEmissionsData,
+	currentFinancialYear
+} from './utils';
 
 /**
  * @param {StatsData[]} statsData
@@ -258,7 +262,8 @@ function intensity({ processedEmissions, processedEnergy }) {
 			time: d.time,
 			date: d.date,
 			'au.emission_intensity':
-				Number(d['au.emissions.total'] || 0) / Number(generationsNetTotalData[i]?.['au.net_generation.total'] || 1)
+				Number(d['au.emissions.total'] || 0) /
+				Number(generationsNetTotalData[i]?.['au.net_generation.total'] || 1)
 		};
 	});
 

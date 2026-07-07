@@ -22,7 +22,8 @@ export const formatValue = (/** @type {number} */ d) => {
 	return formatted;
 };
 
-export const displayXTicks = (/** @type {any[]} */ d) => d.map((/** @type {any} */ t) => startOfYear(t));
+export const displayXTicks = (/** @type {any[]} */ d) =>
+	d.map((/** @type {any} */ t) => startOfYear(t));
 
 // Convert historical data to Terra to match ISP
 /** @param {any[]} data */

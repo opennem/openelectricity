@@ -28,6 +28,12 @@
 			link: '/studio/facility-detail'
 		},
 		{
+			title: 'Fuel Tech Shades',
+			description:
+				'Preview the fuel tech primary colours and the unit shade splits used on facility charts, with live darken/brighten tuning.',
+			link: '/studio/fueltech-shades'
+		},
+		{
 			title: 'Facility Social Cards',
 			description:
 				'Preview the build-generated Open Graph cards for every facility, and spot which still fall back to the branded card vs use a photo.',

@@ -78,7 +78,10 @@ export const dataViewLongLabel = dataViewOptions.reduce(
 );
 /** @type {Record<string, string>} */
 export const dataViewIntervalLabel = dataViewOptions.reduce(
-	(/** @type {Record<string, string>} */ acc, curr) => ((acc[curr.value] = curr.intervalLabel), acc),
+	(/** @type {Record<string, string>} */ acc, curr) => (
+		(acc[curr.value] = curr.intervalLabel),
+		acc
+	),
 	/** @type {Record<string, string>} */ ({})
 );
 
@@ -262,16 +265,7 @@ export const modelPathways = {
 		'Counterfactual'
 	],
 
-	aemo2020: [
-		'DP1',
-		'DP2',
-		'DP3',
-		'DP4',
-		'DP5',
-		'DP6',
-		'DP7',
-		'DP8'
-	],
+	aemo2020: ['DP1', 'DP2', 'DP3', 'DP4', 'DP5', 'DP6', 'DP7', 'DP8'],
 
 	aemo2018: ['default']
 };

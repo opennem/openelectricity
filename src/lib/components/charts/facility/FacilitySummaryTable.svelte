@@ -127,8 +127,7 @@
 			marketValue += s.marketValue;
 		}
 
-		const capFactor =
-			regCap > 0 && hoursInRange > 0 ? (energy / (regCap * hoursInRange)) * 100 : 0;
+		const capFactor = regCap > 0 && hoursInRange > 0 ? (energy / (regCap * hoursInRange)) * 100 : 0;
 		const avgValue = energy !== 0 ? marketValue / energy : 0;
 
 		return { regCap, energy, capFactor, marketValue, avgValue };
@@ -145,7 +144,9 @@
 	 */
 	function formatMarketValue(value) {
 		if (isNaN(value)) return '—';
-		return '$' + mvChartStore.convertAndFormatValue(value) + mvChartStore.chartOptions.displayPrefix;
+		return (
+			'$' + mvChartStore.convertAndFormatValue(value) + mvChartStore.chartOptions.displayPrefix
+		);
 	}
 
 	/**

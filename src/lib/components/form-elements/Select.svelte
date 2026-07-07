@@ -100,7 +100,9 @@
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
 				{:else if opt.isGroupHeader}
-					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">
+						{opt.label}
+					</li>
 				{:else}
 					<li class="border-b border-warm-grey">
 						<button
@@ -113,7 +115,9 @@
 							<span class="text-left">
 								<span class="capitalize">{opt.label}</span>
 								{#if opt.description}
-									<span class="block text-xs text-mid-grey font-normal mt-0.5">{opt.description}</span>
+									<span class="block text-xs text-mid-grey font-normal mt-0.5"
+										>{opt.description}</span
+									>
 								{/if}
 							</span>
 						</button>
@@ -136,9 +140,17 @@
 						<div class="w-full h-px bg-warm-grey"></div>
 					</li>
 				{:else if opt.isGroupHeader}
-					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">{opt.label}</li>
+					<li class="font-space uppercase text-xs text-mid-grey px-4 py-2 mt-2 first:mt-0">
+						{opt.label}
+					</li>
 				{:else}
-					<li class="{opt.description && i < options.length - 1 ? 'border-b border-warm-grey' : opt.description ? '' : 'whitespace-nowrap'}">
+					<li
+						class={opt.description && i < options.length - 1
+							? 'border-b border-warm-grey'
+							: opt.description
+								? ''
+								: 'whitespace-nowrap'}
+					>
 						<button
 							class="hover:bg-warm-grey w-full rounded-md flex items-start justify-between {compact
 								? 'px-3 py-1.5 gap-8'
@@ -150,7 +162,9 @@
 							<span class="text-left">
 								<span class="capitalize {opt.labelClassName}">{opt.label}</span>
 								{#if opt.description}
-									<span class="block text-xs text-mid-grey font-normal mt-0.5 max-w-80">{opt.description}</span>
+									<span class="block text-xs text-mid-grey font-normal mt-0.5 max-w-80"
+										>{opt.description}</span
+									>
 								{/if}
 							</span>
 

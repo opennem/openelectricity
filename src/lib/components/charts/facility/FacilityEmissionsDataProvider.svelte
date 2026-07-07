@@ -21,8 +21,8 @@
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import { analyzeUnits } from './unit-analysis.js';
+	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
 	import { applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
-	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
 	import { setFacilityEmissionsDataContext } from './FacilityEmissionsDataContext.svelte.js';
 	import {
@@ -35,6 +35,8 @@
 		createBasisColour
 	} from './energy-basis.js';
 	import { LINE_COLOUR } from './colours.js';
+	import { ianaFromOffset } from '../v2/network-time.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '../v2/chart-loading-state.js';
 
 	/**
 	 * @param {string} ftCode
@@ -82,7 +84,7 @@
 		children
 	} = $props();
 
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let isEnergyInterval = $derived(interval !== '5m');
 
 	// Intensity = emissions / energy. For energy intervals the API serves `energy`
@@ -113,26 +115,17 @@
 	let unitOrder = $derived(analysis?.unitOrder ?? []);
 	let loadIds = $derived(analysis?.loadIds ?? []);
 
-	/**
-	 * @param {string} unitCode
-	 * @param {string} fuelTech
-	 */
-	function getLabel(unitCode, fuelTech) {
-		const displayCode = unitCodeDisplayMap[unitCode] ?? unitCode;
-		return `${displayCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
-	}
-
-	let getEmissionsColour = $derived.by(() => {
-		const colourMap = unitColours;
-		const emissionsLoadIds = loadIds.map((/** @type {string} */ id) =>
-			id.replace(/^power_/, 'emissions_')
-		);
-		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
-			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = emissionsLoadIds.includes(`emissions_${unitCode}`);
-			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-		};
-	});
+	// The factories return closures over plain values only — they're handed to
+	// ChartDataManagers, whose async continuations can outlive this component.
+	let getLabel = $derived(makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNameMap));
+	let getEmissionsColour = $derived(
+		makeLoadAwareColourGetter(
+			unitColours,
+			rewriteSeriesPrefix(loadIds, 'emissions'),
+			'emissions',
+			getFuelTechColor
+		)
+	);
 
 	let getBasisColour = $derived.by(() =>
 		createBasisColour({ basisMetric, unitColours, loadIds, getFuelTechColor })
@@ -150,6 +143,7 @@
 
 	$effect(() => {
 		if (!active || !facility) {
+			untrack(() => emissionsDataManager)?.dispose();
 			emissionsDataManager = null;
 			return;
 		}
@@ -201,11 +195,14 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Retire the replaced manager so its in-flight fetches become no-ops.
+		existing?.dispose();
 		emissionsDataManager = manager;
 	});
 
 	$effect(() => {
 		if (!active || !facility) {
+			untrack(() => basisDataManager)?.dispose();
 			basisDataManager = null;
 			return;
 		}
@@ -257,7 +254,18 @@
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Retire the replaced manager so its in-flight fetches become no-ops.
+		existing?.dispose();
 		basisDataManager = manager;
+	});
+
+	// Retire the managers on unmount so in-flight fetches settle as no-ops
+	// instead of calling back into destroyed component state.
+	$effect(() => {
+		return () => {
+			emissionsDataManager?.dispose();
+			basisDataManager?.dispose();
+		};
 	});
 
 	// Fetch data when viewport changes — both managers
@@ -301,6 +309,15 @@
 		);
 	}
 
+	// Visible, display-aggregated rows — computed once per (cache, viewport,
+	// interval) change and shared by intensityData, the summary callback, and
+	// the volume chart effect. Energy basis sums native MWh; the power basis
+	// averages MW (× hours downstream).
+	let emissionsVisibleRows = $derived(getVisibleData(emissionsDataManager, 'sum'));
+	let basisVisibleRows = $derived(
+		getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean')
+	);
+
 	// ============================================
 	// Derived Intensity Data — intensity = (total_emissions_tonnes × 1000) / total_energy_MWh
 	// (energy is native MWh for energy intervals, power × interval_hours for 5m/30m).
@@ -310,19 +327,16 @@
 	let intensityData = $derived.by(() => {
 		if (!emissionsDataManager?.processedCache || !basisDataManager?.processedCache) return [];
 
-		const emissionsRows = getVisibleData(emissionsDataManager, 'sum');
-		// Energy basis sums native MWh; the power basis averages MW (× hours).
-		const basisRows = getVisibleData(basisDataManager, isEnergyInterval ? 'sum' : 'mean');
 		const emissionsSeriesNames = emissionsDataManager.seriesMeta?.seriesNames ?? [];
 		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
 
-		const energyMap = buildEnergyMap(basisRows, basisSeriesNames, {
+		const energyMap = buildEnergyMap(basisVisibleRows, basisSeriesNames, {
 			isEnergyInterval,
 			displayInterval,
 			ianaTimeZone
 		});
 
-		return emissionsRows.map((row) => {
+		return emissionsVisibleRows.map((row) => {
 			const emissionsTotal = sumSeries(row, emissionsSeriesNames); // tonnes CO₂e
 			const energyMWh = energyMap.get(row.time) ?? 0;
 			return {
@@ -339,14 +353,21 @@
 	// metrics section. Mirrors FacilityFinancialDataProvider.onsummarydata.
 	// ============================================
 
+	// Debounced: the summary feeds the metrics section, where a ~0.3s settle is
+	// invisible — without it this recomputes on every pan/zoom tick. The timer
+	// callback only reads the plain values captured here.
 	$effect(() => {
 		if (!onsummarydata) return;
 		if (!emissionsDataManager?.processedCache) return;
 
-		onsummarydata({
-			rows: getVisibleData(emissionsDataManager, 'sum'),
-			seriesNames: emissionsDataManager.seriesMeta?.seriesNames ?? []
-		});
+		const rows = emissionsVisibleRows;
+		const seriesNames = emissionsDataManager.seriesMeta?.seriesNames ?? [];
+
+		const timer = setTimeout(() => {
+			onsummarydata({ rows, seriesNames });
+		}, 300);
+
+		return () => clearTimeout(timer);
 	});
 
 	// ============================================
@@ -440,7 +461,7 @@
 	$effect(() => {
 		if (!emissionsVolumeChartStore || !emissionsDataManager?.processedCache) return;
 
-		const visibleData = getVisibleData(emissionsDataManager, 'sum');
+		const visibleData = emissionsVisibleRows;
 
 		emissionsVolumeChartStore.seriesData = visibleData;
 		emissionsVolumeChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
@@ -528,15 +549,9 @@
 	// Loading overlay state
 	// ============================================
 
-	let showLoadingOverlay = $derived.by(() => {
-		if (!emissionsDataManager || !emissionsVolumeChartStore) return false;
-		if (emissionsVolumeChartStore.seriesData.length > 0) return false;
-		return (
-			!emissionsDataManager.initialLoadComplete ||
-			emissionsDataManager.isLoading ||
-			emissionsDataManager.hasPendingFetch
-		);
-	});
+	let showLoadingOverlay = $derived(
+		computeShowLoadingOverlay(emissionsDataManager, emissionsVolumeChartStore)
+	);
 
 	// ============================================
 	// Tooltip formatting

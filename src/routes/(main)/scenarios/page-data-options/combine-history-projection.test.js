@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import combineHistoryProjection, { interpolateGap } from './combine-history-projection.js';
 
-function makeMockTimeSeries({ data, seriesNames, seriesColours = {}, seriesLabels = {}, statsDatasets = [] }) {
+function makeMockTimeSeries({
+	data,
+	seriesNames,
+	seriesColours = {},
+	seriesLabels = {},
+	statsDatasets = []
+}) {
 	return {
 		data,
 		seriesNames,
@@ -252,10 +258,22 @@ describe('combineHistoryProjection', () => {
 describe('gap interpolation', () => {
 	it('does not interpolate when history and projection are adjacent (no gap)', () => {
 		const history = [
-			{ time: new Date('2024-01-01').getTime(), date: new Date('2024-01-01'), solar: 100, _min: 0, _max: 100 }
+			{
+				time: new Date('2024-01-01').getTime(),
+				date: new Date('2024-01-01'),
+				solar: 100,
+				_min: 0,
+				_max: 100
+			}
 		];
 		const projection = [
-			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: 200, _min: 0, _max: 200 }
+			{
+				time: new Date('2025-01-01').getTime(),
+				date: new Date('2025-01-01'),
+				solar: 200,
+				_min: 0,
+				_max: 200
+			}
 		];
 
 		const result = combineHistoryProjection({
@@ -270,10 +288,24 @@ describe('gap interpolation', () => {
 
 	it('interpolates a single gap year', () => {
 		const history = [
-			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: 100, wind: 50, _min: 0, _max: 100 }
+			{
+				time: new Date('2025-01-01').getTime(),
+				date: new Date('2025-01-01'),
+				solar: 100,
+				wind: 50,
+				_min: 0,
+				_max: 100
+			}
 		];
 		const projection = [
-			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), solar: 200, wind: 100, _min: 0, _max: 200 }
+			{
+				time: new Date('2027-01-01').getTime(),
+				date: new Date('2027-01-01'),
+				solar: 200,
+				wind: 100,
+				_min: 0,
+				_max: 200
+			}
 		];
 
 		const result = combineHistoryProjection({
@@ -301,10 +333,22 @@ describe('gap interpolation', () => {
 
 	it('interpolates multiple gap years with correct fractions', () => {
 		const history = [
-			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: 0, _min: 0, _max: 0 }
+			{
+				time: new Date('2025-01-01').getTime(),
+				date: new Date('2025-01-01'),
+				solar: 0,
+				_min: 0,
+				_max: 0
+			}
 		];
 		const projection = [
-			{ time: new Date('2029-01-01').getTime(), date: new Date('2029-01-01'), solar: 400, _min: 0, _max: 400 }
+			{
+				time: new Date('2029-01-01').getTime(),
+				date: new Date('2029-01-01'),
+				solar: 400,
+				_min: 0,
+				_max: 400
+			}
 		];
 
 		const result = combineHistoryProjection({
@@ -339,10 +383,22 @@ describe('gap interpolation', () => {
 
 	it('sets null for interpolated values when boundary has null', () => {
 		const history = [
-			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: null, _min: 0, _max: 0 }
+			{
+				time: new Date('2025-01-01').getTime(),
+				date: new Date('2025-01-01'),
+				solar: null,
+				_min: 0,
+				_max: 0
+			}
 		];
 		const projection = [
-			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), solar: 200, _min: 0, _max: 200 }
+			{
+				time: new Date('2027-01-01').getTime(),
+				date: new Date('2027-01-01'),
+				solar: 200,
+				_min: 0,
+				_max: 200
+			}
 		];
 
 		const result = combineHistoryProjection({
@@ -357,10 +413,22 @@ describe('gap interpolation', () => {
 
 	it('interpolates _min and _max correctly', () => {
 		const history = [
-			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), solar: 100, _min: -10, _max: 100 }
+			{
+				time: new Date('2025-01-01').getTime(),
+				date: new Date('2025-01-01'),
+				solar: 100,
+				_min: -10,
+				_max: 100
+			}
 		];
 		const projection = [
-			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), solar: 200, _min: -20, _max: 200 }
+			{
+				time: new Date('2027-01-01').getTime(),
+				date: new Date('2027-01-01'),
+				solar: 200,
+				_min: -20,
+				_max: 200
+			}
 		];
 
 		const result = combineHistoryProjection({
@@ -404,8 +472,18 @@ describe('line chart scenario bridging', () => {
 			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), historical: 120 }
 		];
 		const projection = [
-			{ time: new Date('2026-01-01').getTime(), date: new Date('2026-01-01'), 'scenario-a': 200, 'scenario-b': 180 },
-			{ time: new Date('2027-01-01').getTime(), date: new Date('2027-01-01'), 'scenario-a': 220, 'scenario-b': 190 }
+			{
+				time: new Date('2026-01-01').getTime(),
+				date: new Date('2026-01-01'),
+				'scenario-a': 200,
+				'scenario-b': 180
+			},
+			{
+				time: new Date('2027-01-01').getTime(),
+				date: new Date('2027-01-01'),
+				'scenario-a': 220,
+				'scenario-b': 190
+			}
 		];
 
 		const result = combineHistoryProjection({
@@ -421,9 +499,7 @@ describe('line chart scenario bridging', () => {
 		});
 
 		// Last history row should have projection series anchored to historical value
-		const lastHistRow = result.seriesData.find(
-			(d) => d.time === new Date('2025-01-01').getTime()
-		);
+		const lastHistRow = result.seriesData.find((d) => d.time === new Date('2025-01-01').getTime());
 		expect(lastHistRow.historical).toBe(120);
 		expect(lastHistRow['scenario-a']).toBe(120);
 		expect(lastHistRow['scenario-b']).toBe(120);
@@ -498,10 +574,22 @@ describe('line chart scenario bridging', () => {
 
 	it('does not anchor when chart type is area', () => {
 		const history = [
-			{ time: new Date('2025-01-01').getTime(), date: new Date('2025-01-01'), historical: 100, _min: 0, _max: 100 }
+			{
+				time: new Date('2025-01-01').getTime(),
+				date: new Date('2025-01-01'),
+				historical: 100,
+				_min: 0,
+				_max: 100
+			}
 		];
 		const projection = [
-			{ time: new Date('2026-01-01').getTime(), date: new Date('2026-01-01'), 'scenario-a': 200, _min: 0, _max: 200 }
+			{
+				time: new Date('2026-01-01').getTime(),
+				date: new Date('2026-01-01'),
+				'scenario-a': 200,
+				_min: 0,
+				_max: 200
+			}
 		];
 
 		const result = combineHistoryProjection({
@@ -559,9 +647,7 @@ describe('keepFullHistory (By Scenario)', () => {
 		expect(historyRows[4].historical).toBe(120);
 
 		// Overlapping rows have both history and projection values
-		const overlap2022 = result.seriesData.find(
-			(d) => d.time === new Date('2022-01-01').getTime()
-		);
+		const overlap2022 = result.seriesData.find((d) => d.time === new Date('2022-01-01').getTime());
 		expect(overlap2022.historical).toBe(100);
 		expect(overlap2022['scenario-a']).toBe(200);
 	});
@@ -633,10 +719,26 @@ describe('keepFullHistory (By Scenario)', () => {
 			{ time: new Date('2020-01-01').getTime(), date: new Date('2020-01-01'), historical: 520 }
 		];
 		const projection = [
-			{ time: new Date('2018-01-01').getTime(), date: new Date('2018-01-01'), 'aemo2018-neutral-default': 480 },
-			{ time: new Date('2019-01-01').getTime(), date: new Date('2019-01-01'), 'aemo2018-neutral-default': 460 },
-			{ time: new Date('2020-01-01').getTime(), date: new Date('2020-01-01'), 'aemo2018-neutral-default': 440 },
-			{ time: new Date('2021-01-01').getTime(), date: new Date('2021-01-01'), 'aemo2018-neutral-default': 420 }
+			{
+				time: new Date('2018-01-01').getTime(),
+				date: new Date('2018-01-01'),
+				'aemo2018-neutral-default': 480
+			},
+			{
+				time: new Date('2019-01-01').getTime(),
+				date: new Date('2019-01-01'),
+				'aemo2018-neutral-default': 460
+			},
+			{
+				time: new Date('2020-01-01').getTime(),
+				date: new Date('2020-01-01'),
+				'aemo2018-neutral-default': 440
+			},
+			{
+				time: new Date('2021-01-01').getTime(),
+				date: new Date('2021-01-01'),
+				'aemo2018-neutral-default': 420
+			}
 		];
 
 		const result = combineHistoryProjection({
@@ -702,9 +804,7 @@ describe('keepFullHistory (By Scenario)', () => {
 		// (plus possible interpolation, but gap is 1yr so anchoring applies)
 		expect(result.seriesData[0].historical).toBe(490);
 		// Projection rows present
-		const proj2018 = result.seriesData.find(
-			(d) => d.time === new Date('2018-01-01').getTime()
-		);
+		const proj2018 = result.seriesData.find((d) => d.time === new Date('2018-01-01').getTime());
 		expect(proj2018['scenario-a']).toBe(480);
 	});
 

@@ -1,4 +1,6 @@
 <script>
+	import { ianaFromOffset } from '../v2/network-time.js';
+
 	/**
 	 * FacilityDataTable - Scrollable data table showing visible power chart data
 	 *
@@ -21,7 +23,7 @@
 	 * Map offset string to IANA timezone for Intl.DateTimeFormat
 	 * Uses DST-free zones: Brisbane (AEST +10), Perth (AWST +8)
 	 */
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 
 	/** Time formatter for HH:mm display in the facility's timezone */
 	let timeFormatter = $derived(
@@ -124,9 +126,7 @@
 	<table class="w-full text-xs border-collapse">
 		<thead class="sticky top-0 z-10 bg-white">
 			<tr class="border-b border-mid-warm-grey">
-				<th class="text-left font-medium text-mid-grey px-2 py-1.5 whitespace-nowrap">
-					Time
-				</th>
+				<th class="text-left font-medium text-mid-grey px-2 py-1.5 whitespace-nowrap"> Time </th>
 				{#each seriesNames as key (key)}
 					<th class="text-right font-medium text-mid-grey px-2 py-1.5 whitespace-nowrap">
 						{getLabel(key)}
@@ -163,8 +163,6 @@
 	</table>
 
 	{#if !data?.length}
-		<div class="flex items-center justify-center py-8 text-mid-grey text-xs">
-			No data available
-		</div>
+		<div class="flex items-center justify-center py-8 text-mid-grey text-xs">No data available</div>
 	{/if}
 </div>

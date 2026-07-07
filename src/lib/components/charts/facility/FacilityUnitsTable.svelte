@@ -77,7 +77,9 @@
 </script>
 
 {#if units?.length}
-	<div class="grid grid-cols-12 items-center gap-3 px-2 py-1.5 text-xxs text-mid-grey border-b border-mid-warm-grey">
+	<div
+		class="grid grid-cols-12 items-center gap-3 px-2 py-1.5 text-xxs text-mid-grey border-b border-mid-warm-grey"
+	>
 		<div class="col-span-6">Unit</div>
 		<div class="col-span-2 text-right">Status</div>
 		<div class="col-span-2 text-right">Storage</div>
@@ -88,7 +90,10 @@
 		{#each units as unit (unit.code)}
 			{@const bgColor = colours[unit.code] || getFueltechColor(unit.fueltech_id)}
 			{@const isDarkText = needsDarkText(unit.fueltech_id)}
-			{@const hasBothCapacities = unit.capacity_maximum && unit.capacity_registered && unit.capacity_maximum !== unit.capacity_registered}
+			{@const hasBothCapacities =
+				unit.capacity_maximum &&
+				unit.capacity_registered &&
+				unit.capacity_maximum !== unit.capacity_registered}
 
 			<li
 				class="hover:bg-light-warm-grey transition-colors"
@@ -151,7 +156,9 @@
 							>
 								{formatCapacity(unit.capacity_storage)}
 							</span>
-							<span class="text-mid-grey" class:text-xxs={compact} class:text-xs={!compact}>MWh</span>
+							<span class="text-mid-grey" class:text-xxs={compact} class:text-xs={!compact}
+								>MWh</span
+							>
 						{/if}
 					</div>
 
@@ -171,7 +178,9 @@
 
 				<!-- Detailed Info Row -->
 				{#if detailed}
-					<div class="mt-1.5 ml-11 flex items-center gap-x-4 gap-y-1 flex-wrap text-xxs text-mid-grey">
+					<div
+						class="mt-1.5 ml-11 flex items-center gap-x-4 gap-y-1 flex-wrap text-xxs text-mid-grey"
+					>
 						{#if unit.dispatch_type}
 							<span class="inline-flex items-center gap-1">
 								<span class="text-warm-grey">Type:</span>

@@ -53,7 +53,13 @@
 	 *   timeZone?: string
 	 * }}
 	 */
-	let { facility, sanityFacility = null, summaryData = null, intervalData = null, timeZone = '+10:00' } = $props();
+	let {
+		facility,
+		sanityFacility = null,
+		summaryData = null,
+		intervalData = null,
+		timeZone = '+10:00'
+	} = $props();
 
 	/** @type {Record<string, string>} Representative colour for each fuel tech group */
 	const groupColourMap = {
@@ -209,22 +215,11 @@
 		</div>
 	{:else if metrics}
 		<div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-			<MetricCard
-				label="Capacity Factor"
-				value={fmtCf.format(metrics.cf)}
-				unit="%"
-			/>
+			<MetricCard label="Capacity Factor" value={fmtCf.format(metrics.cf)} unit="%" />
 
-			<MetricCard
-				label="Total Energy"
-				value={fmtEnergy.format(metrics.totalEnergy)}
-				unit="MWh"
-			/>
+			<MetricCard label="Total Energy" value={fmtEnergy.format(metrics.totalEnergy)} unit="MWh" />
 
-			<MetricCard
-				label="Revenue"
-				value={formatRevenue(metrics.totalMV)}
-			/>
+			<MetricCard label="Revenue" value={formatRevenue(metrics.totalMV)} />
 
 			<MetricCard
 				label="Avg Price Received"

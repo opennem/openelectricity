@@ -14,18 +14,10 @@
 	 */
 
 	/** @type {Props} */
-	let {
-		chart,
-		selectedGroup,
-		seriesLoadsIds = [],
-		onhover,
-		onhoverend
-	} = $props();
+	let { chart, selectedGroup, seriesLoadsIds = [], onhover, onhoverend } = $props();
 
 	let gridColClass = $derived(
-		selectedGroup === 'homepage_preview'
-			? 'grid-cols-2 md:grid-cols-7'
-			: 'grid-cols-2'
+		selectedGroup === 'homepage_preview' ? 'grid-cols-2 md:grid-cols-7' : 'grid-cols-2'
 	);
 
 	// Normalise overlay to number for MiniCharts

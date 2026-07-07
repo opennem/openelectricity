@@ -8,6 +8,8 @@
 import StatisticV2 from '$lib/utils/Statistic/v2.js';
 import TimeSeriesV2 from '$lib/utils/TimeSeries/v2.js';
 import { bucketStartMs } from './bucket-boundaries.js';
+import { localYearMonth } from './date-labels.js';
+import { offsetHoursFromIana } from './network-time.js';
 
 /**
  * @typedef {Object} ProcessingOptions
@@ -155,9 +157,18 @@ export function createProcessor(presetOptions) {
  * @param {string} targetInterval - Target interval (e.g., '30m', '1h')
  * @param {string[]} seriesNames - Names of series to aggregate
  * @param {'sum' | 'mean'} [method='mean'] - Aggregation method
+ * @param {{ trimPartialEdges?: boolean }} [options] - `trimPartialEdges` drops
+ *   incomplete first/last buckets (a display policy — see below); off by default
+ *   so plain aggregation never silently discards data.
  * @returns {any[]}
  */
-export function aggregateToInterval(data, targetInterval, seriesNames, method = 'mean') {
+export function aggregateToInterval(
+	data,
+	targetInterval,
+	seriesNames,
+	method = 'mean',
+	{ trimPartialEdges = false } = {}
+) {
 	const intervalMs = parseIntervalMs(targetInterval);
 	const buckets = new Map();
 
@@ -213,7 +224,33 @@ export function aggregateToInterval(data, targetInterval, seriesNames, method = 
 		result.push(point);
 	}
 
-	return result.sort((a, b) => a.time - b.time);
+	result.sort((a, b) => a.time - b.time);
+
+	// Drop incomplete edge buckets when the caller opts in. The first and last
+	// visible buckets usually straddle the viewport bounds (the range slice is
+	// exact) or "now", so they hold only part of their source samples and a plain
+	// sum understates them — a false dip at the start/end of the period (e.g.
+	// facility emissions / market-value volume at 30m). Callers request this for
+	// summed (volume) display series; averaged (rate) series don't have the
+	// problem. "Full" is the richest bucket's sample count, so genuinely complete
+	// edge buckets, or data with no real aggregation (one sample per bucket), are
+	// left untouched; we never empty the result.
+	if (trimPartialEdges && result.length > 1) {
+		let fullCount = 0;
+		for (const bucket of buckets.values()) {
+			if (bucket._count > fullCount) fullCount = bucket._count;
+		}
+		if (fullCount > 1) {
+			const isPartial = (/** @type {any} */ row) =>
+				(buckets.get(row.time)?._count ?? 0) < fullCount;
+			// The enclosing guard already ensures length > 1 here; re-check only after
+			// a pop, so a two-bucket, both-partial view keeps its (leading) bucket.
+			if (isPartial(result[result.length - 1])) result.pop();
+			if (result.length > 1 && isPartial(result[0])) result.shift();
+		}
+	}
+
+	return result;
 }
 
 /**
@@ -251,24 +288,17 @@ function parseIntervalMs(interval) {
  */
 export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum') {
 	const buckets = new Map();
-	const ymFmt = new Intl.DateTimeFormat('en-AU', {
-		year: 'numeric',
-		month: '2-digit',
-		timeZone: ianaTimeZone
-	});
 
 	// Derive UTC offset from the IANA zone name (DST-free zones only)
-	const offsetHours = ianaTimeZone === 'Australia/Perth' ? 8 : 10;
+	const offsetHours = offsetHoursFromIana(ianaTimeZone);
 
 	for (const point of data) {
-		const parts = ymFmt.formatToParts(new Date(point.time));
-		const y = parts.find((p) => p.type === 'year')?.value || '2000';
-		const m = parts.find((p) => p.type === 'month')?.value || '01';
-		const key = `${y}-${m}`;
+		const { year, month0 } = localYearMonth(new Date(point.time), ianaTimeZone);
+		const key = year * 12 + month0;
 
 		if (!buckets.has(key)) {
 			// Start of month in local tz, expressed as UTC ms
-			const monthStart = new Date(Date.UTC(parseInt(y), parseInt(m) - 1, 1, -offsetHours));
+			const monthStart = new Date(Date.UTC(year, month0, 1, -offsetHours));
 			/** @type {any} */
 			const bucket = {
 				time: monthStart.getTime(),
@@ -331,7 +361,7 @@ export function aggregateToMonth(data, seriesNames, ianaTimeZone, method = 'sum'
  * @returns {any[]}
  */
 export function aggregateByBoundary(data, seriesNames, kind, ianaTimeZone, method = 'sum') {
-	const offsetHours = ianaTimeZone === 'Australia/Perth' ? 8 : 10;
+	const offsetHours = offsetHoursFromIana(ianaTimeZone);
 	/** @type {Map<number, any>} */
 	const buckets = new Map();
 
@@ -398,8 +428,13 @@ export function aggregateForDisplay(
 
 	switch (displayInterval) {
 		case '30m':
-			// Aggregate raw 5m power; mean (averaged MW), not sum.
-			return aggregateToInterval(data, '30m', seriesNames, method);
+			// Aggregate raw 5m samples. Summed (volume) series trim partial edge
+			// buckets so a half-filled first/last period doesn't render as a false
+			// dip; averaged (rate) series keep them — a partial bucket still
+			// averages to the right level.
+			return aggregateToInterval(data, '30m', seriesNames, method, {
+				trimPartialEdges: method === 'sum'
+			});
 		case '1M':
 			// Monthly display from daily energy; native 1M needs no aggregation.
 			return apiInterval === '1d'

@@ -1,4 +1,5 @@
 <script>
+	import { onMount } from 'svelte';
 	import { X } from '@lucide/svelte';
 	import { portal } from '$lib/actions/portal.js';
 	import { Backdrop } from '$lib/components/ui/backdrop';
@@ -33,6 +34,16 @@
 		children,
 		footer
 	} = $props();
+
+	// The panel is portalled to <body> on mount (actions are client-only), so a
+	// server-rendered "open" sheet would paint inline — trapped inside ancestor
+	// stacking contexts and briefly overlapped by page chrome. Keep it visually
+	// closed until mounted; deep-linked sheets slide in right after hydration.
+	let mounted = $state(false);
+	onMount(() => {
+		mounted = true;
+	});
+	let isOpen = $derived(mounted && open);
 
 	/**
 	 * Handle keydown for escape key
@@ -162,14 +173,14 @@
 <svelte:window onkeydown={handleKeydown} />
 
 {#if backdrop}
-	<Backdrop open={open} onclick={() => onclose?.()} />
+	<Backdrop open={isOpen} onclick={() => onclose?.()} />
 {/if}
 
 <!-- Sheet panel — portalled so it stacks above all page chrome. -->
 <div
 	use:portal
 	class="fixed bg-white shadow-xl z-[9999] flex flex-col border-warm-grey transition-transform duration-300 ease-out {positionClasses} {borderClasses} {roundedClasses}"
-	style="{sizeStyle} transform: {open ? 'translate(0, 0)' : slideTransform};"
+	style="{sizeStyle} transform: {isOpen ? 'translate(0, 0)' : slideTransform};"
 >
 	<!-- Header -->
 	<header class="flex items-center justify-between px-6 py-4 border-b border-warm-grey shrink-0">

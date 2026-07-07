@@ -198,10 +198,7 @@ describe('isGasPeaker', () => {
 
 describe('isPumpedHydro', () => {
 	it('returns true when both hydro and pumps present', () => {
-		const units = [
-			{ fueltech_id: 'hydro' },
-			{ fueltech_id: 'pumps' }
-		];
+		const units = [{ fueltech_id: 'hydro' }, { fueltech_id: 'pumps' }];
 		expect(isPumpedHydro(units)).toBe(true);
 	});
 

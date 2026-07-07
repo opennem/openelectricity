@@ -95,9 +95,6 @@ export async function GET({ setHeaders }) {
 		return Response.json({ values });
 	} catch (err) {
 		console.error('Error fetching batched pollution data:', err);
-		return Response.json(
-			{ error: /** @type {any} */ (err).message },
-			{ status: 500 }
-		);
+		return Response.json({ error: /** @type {any} */ (err).message }, { status: 500 });
 	}
 }

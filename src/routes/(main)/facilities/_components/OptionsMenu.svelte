@@ -9,21 +9,21 @@
 
 	/**
 	 * @type {{
-	 *   isFullscreen?: boolean,
-	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
 	 *   onsearchfacilities?: () => void,
-	 *   searchShortcutKeys?: string[]
+	 *   searchShortcutKeys?: string[],
+	 *   triggerClass?: string,
+	 *   iconClass?: string
 	 * }}
 	 */
 	let {
-		isFullscreen = false,
-		onfullscreenchange,
 		onshowshortcuts,
 		ondownloadcsv,
 		onsearchfacilities,
-		searchShortcutKeys = ['/']
+		searchShortcutKeys = ['/'],
+		triggerClass = undefined,
+		iconClass = undefined
 	} = $props();
 
 	let downloading = $state(false);
@@ -39,12 +39,10 @@
 	}
 </script>
 
-<OptionsMenu {isFullscreen} {onfullscreenchange} {onshowshortcuts}>
+<OptionsMenu {onshowshortcuts} {triggerClass} {iconClass}>
 	{#snippet sections({ close })}
 		{#if ondownloadcsv}
-			<OptionsMenuHeading icon={downloading ? Check : Download}>
-				Download as CSV
-			</OptionsMenuHeading>
+			<OptionsMenuHeading icon={downloading ? Check : Download}>Download as CSV</OptionsMenuHeading>
 			<OptionsMenuItem onclick={() => handleDownloadCsv(close)}>
 				{downloading ? 'Downloaded!' : 'Facilities'}
 			</OptionsMenuItem>

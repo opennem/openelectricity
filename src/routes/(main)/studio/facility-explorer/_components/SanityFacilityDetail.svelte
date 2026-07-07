@@ -142,7 +142,10 @@
 				>
 					Description
 				</div>
-				<PortableTextBody value={description} class="text-[12px] text-dark-grey leading-relaxed font-sans" />
+				<PortableTextBody
+					value={description}
+					class="text-[12px] text-dark-grey leading-relaxed font-sans"
+				/>
 			</div>
 		{/if}
 

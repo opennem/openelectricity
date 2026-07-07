@@ -37,9 +37,7 @@
 				<button
 					type="button"
 					class="px-3 py-1.5 text-[11px] font-medium uppercase tracking-wide cursor-pointer transition-colors rounded-t-lg
-						{activeTab === tab.id
-						? 'text-dark-grey bg-warm-grey/50'
-						: 'text-mid-grey hover:text-dark-grey'}"
+						{activeTab === tab.id ? 'text-dark-grey bg-warm-grey/50' : 'text-mid-grey hover:text-dark-grey'}"
 					onclick={() => (activeTab = tab.id)}
 				>
 					{tab.label}

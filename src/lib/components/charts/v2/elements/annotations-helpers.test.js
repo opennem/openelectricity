@@ -37,8 +37,16 @@ describe('rectDefaults', () => {
 
 	it('preserves explicitly set values', () => {
 		const item = /** @type {any} */ ({
-			type: 'rect', x: 0, y: 0, width: 10, height: 10,
-			fill: 'red', stroke: 'blue', strokeWidth: 3, opacity: 0.5, rx: 8
+			type: 'rect',
+			x: 0,
+			y: 0,
+			width: 10,
+			height: 10,
+			fill: 'red',
+			stroke: 'blue',
+			strokeWidth: 3,
+			opacity: 0.5,
+			rx: 8
 		});
 		const result = rectDefaults(item);
 		expect(result).toEqual({
@@ -65,8 +73,14 @@ describe('circleDefaults', () => {
 
 	it('preserves explicitly set values', () => {
 		const item = /** @type {any} */ ({
-			type: 'circle', x: 0, y: 0, r: 5,
-			fill: '#C74523', stroke: '#000', strokeWidth: 2, opacity: 0.8
+			type: 'circle',
+			x: 0,
+			y: 0,
+			r: 5,
+			fill: '#C74523',
+			stroke: '#000',
+			strokeWidth: 2,
+			opacity: 0.8
 		});
 		const result = circleDefaults(item);
 		expect(result).toEqual({
@@ -92,8 +106,15 @@ describe('lineDefaults', () => {
 
 	it('preserves explicitly set values', () => {
 		const item = /** @type {any} */ ({
-			type: 'line', x1: 0, y1: 0, x2: 100, y2: 100,
-			stroke: 'red', strokeWidth: 2, strokeDasharray: '4,4', opacity: 0.6
+			type: 'line',
+			x1: 0,
+			y1: 0,
+			x2: 100,
+			y2: 100,
+			stroke: 'red',
+			strokeWidth: 2,
+			strokeDasharray: '4,4',
+			opacity: 0.6
 		});
 		const result = lineDefaults(item);
 		expect(result).toEqual({
@@ -123,10 +144,18 @@ describe('textDefaults', () => {
 
 	it('preserves explicitly set values', () => {
 		const item = /** @type {any} */ ({
-			type: 'text', x: 0, y: 0, text: 'hello',
-			dx: 5, dy: -3, fill: 'white', fontSize: '14px',
-			fontWeight: 'bold', textAnchor: 'middle',
-			dominantBaseline: 'central', opacity: 0.9
+			type: 'text',
+			x: 0,
+			y: 0,
+			text: 'hello',
+			dx: 5,
+			dy: -3,
+			fill: 'white',
+			fontSize: '14px',
+			fontWeight: 'bold',
+			textAnchor: 'middle',
+			dominantBaseline: 'central',
+			opacity: 0.9
 		});
 		const result = textDefaults(item);
 		expect(result).toEqual({

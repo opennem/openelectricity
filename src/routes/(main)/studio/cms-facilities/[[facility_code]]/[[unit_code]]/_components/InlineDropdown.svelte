@@ -17,9 +17,7 @@
 	let searchInputEl = $state(null);
 
 	let filteredOptions = $derived(
-		search
-			? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
-			: options
+		search ? options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase())) : options
 	);
 
 	let selectedLabel = $derived(options.find((o) => o.value === selected)?.label ?? null);
@@ -74,9 +72,7 @@
 		</span>
 
 		<svg
-			class="h-2.5 w-2.5 shrink-0 text-mid-grey transition-transform {open
-				? 'rotate-180'
-				: ''}"
+			class="h-2.5 w-2.5 shrink-0 text-mid-grey transition-transform {open ? 'rotate-180' : ''}"
 			viewBox="0 0 16 16"
 			fill="none"
 			stroke="currentColor"
@@ -102,7 +98,10 @@
 				{#each filteredOptions as option (option.value)}
 					<button
 						type="button"
-						class="w-full cursor-pointer px-2 py-1.5 text-left font-mono text-[11px] hover:bg-warm-grey/50 {option.value === selected ? 'bg-warm-grey/30' : ''}"
+						class="w-full cursor-pointer px-2 py-1.5 text-left font-mono text-[11px] hover:bg-warm-grey/50 {option.value ===
+						selected
+							? 'bg-warm-grey/30'
+							: ''}"
 						onclick={() => selectOption(option.value)}
 					>
 						{option.label}

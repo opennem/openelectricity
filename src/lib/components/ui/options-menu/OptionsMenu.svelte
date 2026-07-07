@@ -13,10 +13,21 @@
 	 *   isFullscreen?: boolean,
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
+	 *   triggerClass?: string,
+	 *   iconClass?: string,
 	 *   sections?: import('svelte').Snippet<[{ close: () => void }]>
 	 * }}
 	 */
-	let { isFullscreen = false, onfullscreenchange, onshowshortcuts, sections } = $props();
+	let {
+		isFullscreen = false,
+		onfullscreenchange,
+		onshowshortcuts,
+		// Trigger styling overrides — the defaults are the neutral bar kebab;
+		// the mobile facility header passes a dark floating circle instead.
+		triggerClass = 'p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer',
+		iconClass = 'size-6 text-mid-grey',
+		sections
+	} = $props();
 
 	let isOpen = $state(false);
 
@@ -43,12 +54,12 @@
 	<button
 		bind:this={triggerRef}
 		onclick={() => (isOpen = !isOpen)}
-		class="p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer"
+		class={triggerClass}
 		title="Options"
 		aria-haspopup="menu"
 		aria-expanded={isOpen}
 	>
-		<EllipsisVertical class="size-6 text-mid-grey" />
+		<EllipsisVertical class={iconClass} />
 	</button>
 
 	{#if isOpen}

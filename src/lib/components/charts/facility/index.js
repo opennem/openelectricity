@@ -19,6 +19,7 @@ export { default as FacilityUnitsTable } from './FacilityUnitsTable.svelte';
 export {
 	generateUnitShades,
 	buildUnitColourMap,
+	SHADE_SPREADS,
 	getNetworkTimezone,
 	isWemNetwork,
 	transformFacilityPowerData

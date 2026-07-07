@@ -71,7 +71,9 @@ export function transformGenerationTrendsProfiles(apiData) {
 		const expandedData = [];
 		years.forEach((year) => {
 			months.forEach((month) => {
-				const dataPoint = dataPoints.find((/** @type {any} */ d) => d.year === year && d.month === month.index);
+				const dataPoint = dataPoints.find(
+					(/** @type {any} */ d) => d.year === year && d.month === month.index
+				);
 				if (dataPoint) {
 					expandedData.push({
 						time: month.index,

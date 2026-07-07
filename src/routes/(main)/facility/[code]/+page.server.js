@@ -1,11 +1,11 @@
 import { error } from '@sveltejs/kit';
 import { client as sanityClient } from '$lib/sanity';
-import { SANITY_FACILITY_UNITS_PROJECTION } from '$lib/server/sanity-projections.js';
+import { SANITY_FACILITY_PROFILE_PROJECTION } from '$lib/server/sanity-projections.js';
 import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
 import facilityCardCodes from '$lib/server/og/facility-card-codes.json';
 
-const DEFAULT_RANGE_DAYS = 7;
+const DEFAULT_RANGE_DAYS = 3;
 
 const SITE = 'https://openelectricity.org.au';
 
@@ -19,15 +19,6 @@ const OG_IMAGE_BASE = `${SITE}/og/facility`;
 // is the committed manifest of codes that DO have a card (regenerated alongside the cards).
 const DEFAULT_OG_IMAGE = `${SITE}/img/preview.jpg`;
 const FACILITY_CARD_CODES = new Set(facilityCardCodes);
-
-// Identity + enriched unit data (for the metrics garnishes). Power/market/
-// emissions series are time-sensitive and fetched client-side (see +page.svelte).
-const SANITY_FACILITY_PROJECTION = `{
-	_id, code, name, website, wikipedia, wikidata_id, location,
-	description, photos,
-	owners[]->{_id, name, legal_name, website},
-	${SANITY_FACILITY_UNITS_PROJECTION}
-}`;
 
 // Rendered on demand (SSR) rather than prerendered: prerendering all ~600
 // facilities blew the Cloudflare build time limit. The page is identity-only and
@@ -119,7 +110,9 @@ export async function load({ params, setHeaders }) {
 	const [facility, sanityFacility] = await Promise.all([
 		fetchFacilityByCode(code),
 		sanityClient
-			.fetch(`*[_type == "facility" && code == $code][0]${SANITY_FACILITY_PROJECTION}`, { code })
+			.fetch(`*[_type == "facility" && code == $code][0]${SANITY_FACILITY_PROFILE_PROJECTION}`, {
+				code
+			})
 			.catch(() => null)
 	]);
 

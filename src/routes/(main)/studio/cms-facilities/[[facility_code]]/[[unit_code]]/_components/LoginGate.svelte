@@ -181,9 +181,7 @@
 	<!-- Unauthenticated — login form -->
 	<div class="flex h-dvh items-center justify-center bg-light-warm-grey/50">
 		<div class="w-full max-w-[320px] rounded border border-warm-grey bg-white p-6">
-			<h2 class="mb-4 font-mono text-[11px] font-semibold uppercase tracking-wider">
-				Sign in
-			</h2>
+			<h2 class="mb-4 font-mono text-[11px] font-semibold uppercase tracking-wider">Sign in</h2>
 
 			<!-- OAuth buttons -->
 			<div class="flex flex-col gap-2">
@@ -316,9 +314,7 @@
 				</form>
 
 				<p class="mt-3 font-mono text-[10px] text-mid-grey">
-					<button class="underline hover:text-dark-grey" onclick={handleBack}>
-						Back
-					</button>
+					<button class="underline hover:text-dark-grey" onclick={handleBack}> Back </button>
 				</p>
 			{/if}
 

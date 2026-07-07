@@ -99,15 +99,14 @@ async function main() {
 	const recentResults = recentRes?.data?.[0]?.results;
 	/** @type {string[]} */
 	let headerColumns = recentResults
-		? recentResults.map(
-				(r) =>
-					String(
-						r.columns?.fueltech ||
-							r.columns?.fueltech_group ||
-							r.columns?.fuel_tech ||
-							r.name ||
-							'unknown'
-					)
+		? recentResults.map((r) =>
+				String(
+					r.columns?.fueltech ||
+						r.columns?.fueltech_group ||
+						r.columns?.fuel_tech ||
+						r.name ||
+						'unknown'
+				)
 			)
 		: [];
 	console.log(`Columns (${headerColumns.length}): ${headerColumns.join(', ')}\n`);
@@ -123,9 +122,7 @@ async function main() {
 
 	while (cursor < endDate) {
 		batchNum++;
-		const batchEnd = new Date(
-			Math.min(addDays(cursor, BATCH_DAYS).getTime(), endDate.getTime())
-		);
+		const batchEnd = new Date(Math.min(addDays(cursor, BATCH_DAYS).getTime(), endDate.getTime()));
 
 		const dateStart = formatDate(cursor);
 		const dateEnd = formatDate(batchEnd);

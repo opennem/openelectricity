@@ -106,9 +106,7 @@ describe('processRegion', () => {
 					projectionData: [
 						makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
 					],
-					historyData: [
-						makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
-					]
+					historyData: [makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })]
 				})
 			];
 
@@ -134,20 +132,14 @@ describe('processRegion', () => {
 					projectionData: [
 						makeProjectionStats({ fuelTech: 'solar_utility', data: [100, 110, 120] })
 					],
-					historyData: [
-						makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })
-					]
+					historyData: [makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(50) })]
 				}),
 				makeRegion({
 					id: 'vic',
 					label: 'VIC',
 					colour: '#e8501a',
-					projectionData: [
-						makeProjectionStats({ fuelTech: 'solar_utility', data: [80, 90, 100] })
-					],
-					historyData: [
-						makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(40) })
-					]
+					projectionData: [makeProjectionStats({ fuelTech: 'solar_utility', data: [80, 90, 100] })],
+					historyData: [makeHistoryStats({ fuelTech: 'solar_utility', data: monthlyData(40) })]
 				})
 			];
 
@@ -165,9 +157,7 @@ describe('processRegion', () => {
 	describe('intensity', () => {
 		it('returns chartType line with correct units', () => {
 			const processedEmissions = {
-				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), nsw: 500, vic: 400 }
-				],
+				seriesData: [{ time: 1, date: new Date('2022-01-01'), nsw: 500, vic: 400 }],
 				seriesNames: ['nsw', 'vic'],
 				seriesColours: { nsw: '#1a73e8', vic: '#e8501a' },
 				seriesLabels: { nsw: 'NSW', vic: 'VIC' },
@@ -175,9 +165,7 @@ describe('processRegion', () => {
 			};
 
 			const processedEnergy = {
-				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), nsw: 1000, vic: 800 }
-				],
+				seriesData: [{ time: 1, date: new Date('2022-01-01'), nsw: 1000, vic: 800 }],
 				seriesNames: ['nsw', 'vic'],
 				seriesColours: {},
 				seriesLabels: {},
@@ -196,9 +184,7 @@ describe('processRegion', () => {
 
 		it('computes intensity per region', () => {
 			const processedEmissions = {
-				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), nsw: 600, vic: 300 }
-				],
+				seriesData: [{ time: 1, date: new Date('2022-01-01'), nsw: 600, vic: 300 }],
 				seriesNames: ['nsw', 'vic'],
 				seriesColours: { nsw: '#1a73e8', vic: '#e8501a' },
 				seriesLabels: { nsw: 'NSW', vic: 'VIC' },
@@ -206,9 +192,7 @@ describe('processRegion', () => {
 			};
 
 			const processedEnergy = {
-				seriesData: [
-					{ time: 1, date: new Date('2022-01-01'), nsw: 1200, vic: 600 }
-				],
+				seriesData: [{ time: 1, date: new Date('2022-01-01'), nsw: 1200, vic: 600 }],
 				seriesNames: ['nsw', 'vic'],
 				seriesColours: {},
 				seriesLabels: {},

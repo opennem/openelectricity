@@ -3,7 +3,6 @@
 	import { X } from '@lucide/svelte';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getFueltechColor } from '$lib/utils/fueltech-display';
-	import formatValue from '../../../facilities/_utils/format-value.js';
 	import { PanelHeader } from '$lib/components/ui/panel';
 	import {
 		buildFacilityHaystack,
@@ -131,11 +130,13 @@
 
 <div class="flex flex-col w-full h-full min-h-0 overflow-hidden bg-white">
 	<PanelHeader class="gap-2">
+		<!-- 16px (text-base) below md — anything smaller makes iOS Safari zoom the
+		     page when the input gains focus. Desktop keeps the compact text-xs. -->
 		<input
 			bind:this={inputEl}
 			type="search"
 			placeholder="Search facilities"
-			class="flex-1 min-w-0 text-xs px-3 py-1.5 rounded-md bg-white border border-warm-grey focus:outline-none focus:ring-0 focus:border-red transition-colors placeholder:text-mid-grey"
+			class="flex-1 min-w-0 text-base md:text-xs px-3 py-1.5 rounded-md bg-white border border-warm-grey focus:outline-none focus:ring-0 focus:border-red transition-colors placeholder:text-mid-grey"
 			bind:value={query}
 			oninput={() => (activeIndex = 0)}
 			onkeydown={handleKeydown}
@@ -163,7 +164,7 @@
 				<button
 					data-index={i}
 					data-code={facility.code}
-					class="flex w-full items-center gap-3 p-3 text-left text-dark-grey transition-colors border-l-2 border-b border-b-warm-grey border-l-transparent last:border-b-0 [content-visibility:auto] [contain-intrinsic-size:auto_72px] {isActive
+					class="flex w-full items-center gap-3 p-3 text-left text-dark-grey transition-colors border-l-2 border-b border-b-warm-grey border-l-transparent last:border-b-0 [content-visibility:auto] [contain-intrinsic-size:auto_56px] {isActive
 						? 'bg-warm-grey'
 						: 'hover:bg-light-warm-grey'} {isCurrent ? 'border-l-red' : ''}"
 					onclick={() => {
@@ -173,36 +174,21 @@
 					}}
 				>
 					{#if facility.fuel_techs?.length}
-						<span
-							class="flex shrink-0 h-11 rounded-sm overflow-hidden"
-							aria-hidden="true"
-						>
+						<span class="flex shrink-0 h-8 rounded-sm overflow-hidden" aria-hidden="true">
 							{#each facility.fuel_techs as ft (ft)}
 								<span
-									class="w-[4px] h-full"
+									class="w-[6px] h-full"
 									style="background: {getFueltechColor(ft)}"
 									title={fuelTechNameMap[/** @type {keyof typeof fuelTechNameMap} */ (ft)] || ft}
 								></span>
 							{/each}
 						</span>
 					{/if}
-					<span class="flex-1 min-w-0 flex flex-col gap-1">
-						<span class="text-sm truncate min-w-0">{facility.name}</span>
-						<span
-							class="self-start text-[9px] uppercase tracking-wider text-mid-grey font-mono px-1.5 py-0.5 rounded bg-warm-grey/60"
-						>
-							{facility.network_region}
-						</span>
-					</span>
+					<span class="flex-1 min-w-0 truncate text-sm">{facility.name}</span>
 					<span
-						class="font-mono tabular-nums shrink-0 w-20 text-right whitespace-nowrap text-dark-grey flex flex-col items-end gap-1"
+						class="shrink-0 text-[9px] uppercase tracking-wider text-mid-grey font-mono px-1.5 py-0.5 rounded bg-warm-grey/60"
 					>
-						{#if facility.capacity > 0}
-							<span class="text-sm font-bold">{formatValue(facility.capacity)}</span>
-							<span class="text-[11px] text-mid-grey">MW</span>
-						{:else}
-							<span class="text-sm text-mid-grey">—</span>
-						{/if}
+						{facility.network_region}
 					</span>
 				</button>
 			{/each}

@@ -19,6 +19,7 @@
 		buildSeriesRows
 	} from './tooltip-derivations.js';
 	import { computeStepBand } from './elements/step-band.js';
+	import { indexOfTime } from './binary-search.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -43,16 +44,32 @@
 	// Track the pointer globally so we can read its position even though the
 	// tooltip overlay itself is `pointer-events-none`. Listening on the window
 	// and projecting into the wrapper's local coordinates avoids intercepting
-	// chart pointer events.
+	// chart pointer events. rAF-throttled: cursorY only drives the top/bottom
+	// snap, so one layout read + state write per frame is plenty.
 	$effect(() => {
 		if (!wrapperEl) return;
 		/** @type {HTMLDivElement} */
 		const el = wrapperEl;
+		/** @type {number | null} */
+		let rafId = null;
+		let lastClientY = 0;
+
+		function processFrame() {
+			rafId = null;
+			const rect = el.getBoundingClientRect();
+			const y = lastClientY - rect.top;
+			cursorY = y >= 0 && y <= rect.height ? y : null;
+		}
 		/** @param {PointerEvent} e */
 		function onMove(e) {
-			const rect = el.getBoundingClientRect();
-			const y = e.clientY - rect.top;
-			cursorY = y >= 0 && y <= rect.height ? y : null;
+			// Only track while a hover/focus is active — otherwise any pointer
+			// movement page-wide would cost a layout read per frame.
+			if (!getActiveData(chart)) {
+				if (cursorY !== null) cursorY = null;
+				return;
+			}
+			lastClientY = e.clientY;
+			if (rafId === null) rafId = requestAnimationFrame(processFrame);
 		}
 		function onLeave() {
 			cursorY = null;
@@ -60,6 +77,7 @@
 		window.addEventListener('pointermove', onMove);
 		window.addEventListener('pointerleave', onLeave);
 		return () => {
+			if (rafId !== null) cancelAnimationFrame(rafId);
 			window.removeEventListener('pointermove', onMove);
 			window.removeEventListener('pointerleave', onLeave);
 		};
@@ -106,7 +124,7 @@
 		if (!isStepMode || !activeData) return null;
 		const data = chart.seriesScaledData;
 		if (!data?.length) return null;
-		const idx = data.findIndex((/** @type {{ time: number }} */ d) => d.time === activeData.time);
+		const idx = indexOfTime(data, activeData.time);
 		if (idx < 0) return null;
 		const band = computeStepBand(idx, data);
 		return band ? timeToX(band.endMs) : null;
@@ -178,20 +196,26 @@
 				</div>
 			{/if}
 
-			<!-- One row per visible series -->
+			<!-- One row per visible series; the hovered series is emphasised. -->
 			<div class="flex flex-col gap-1">
 				{#each rows as row (row.key)}
 					<div
-						class="flex items-center gap-3 justify-between rounded-sm {row.isHovered
-							? '-mx-2 px-2 py-0.5 bg-light-warm-grey/60'
+						class="flex items-center gap-3 justify-between rounded-sm transition-colors {row.isHovered
+							? '-mx-2 px-2 py-0.5 bg-mid-warm-grey/40'
 							: ''}"
 					>
 						<span class="flex items-center gap-1.5 min-w-0">
 							<span class="w-2 h-2 rounded-full shrink-0" style:background-color={row.colour}
 							></span>
-							<span class="text-dark-grey truncate">{row.label}</span>
+							<span class="truncate {row.isHovered ? 'font-semibold text-black' : 'text-dark-grey'}"
+								>{row.label}</span
+							>
 						</span>
-						<span class="font-mono font-medium text-dark-grey tabular-nums">
+						<span
+							class="font-mono tabular-nums {row.isHovered
+								? 'font-semibold text-black'
+								: 'font-medium text-dark-grey'}"
+						>
 							{#if row.formattedValue}
 								{row.formattedValue}{#if displayUnit}&nbsp;{displayUnit}{/if}
 							{:else}

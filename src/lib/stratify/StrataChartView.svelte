@@ -126,7 +126,8 @@
 	});
 	const waterfallRowNames = $derived.by(() => {
 		if (!isWaterfallPerRow) return [];
-		const key = parsed.mode === 'category' ? 'category' : parsed.mode === 'linear' ? 'linear' : 'date';
+		const key =
+			parsed.mode === 'category' ? 'category' : parsed.mode === 'linear' ? 'linear' : 'date';
 		/** @type {Set<string>} */
 		const seen = new Set();
 		/** @type {string[]} */

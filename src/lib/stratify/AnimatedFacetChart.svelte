@@ -45,9 +45,7 @@
 	let rafHandle = null;
 
 	const lastIndex = $derived(Math.max(0, facetValues.length - 1));
-	const safeFrame = $derived(
-		Number.isFinite(displayedFrame) ? Math.max(0, displayedFrame) : 0
-	);
+	const safeFrame = $derived(Number.isFinite(displayedFrame) ? Math.max(0, displayedFrame) : 0);
 	const currentFrameIndex = $derived(Math.min(Math.round(displayedFrame), lastIndex));
 	const currentFacet = $derived(facetValues[currentFrameIndex] ?? facetValues[0]);
 
@@ -94,7 +92,9 @@
 		// When tweening, lerp between floor and next frame using the fraction.
 		// When not, snap to the nearest frame so the chart matches the label
 		// (currentFrameIndex uses round) and jumps cleanly during playback.
-		const baseIndex = tween ? Math.floor(safeFrame) : Math.min(Math.round(safeFrame), frames.length - 1);
+		const baseIndex = tween
+			? Math.floor(safeFrame)
+			: Math.min(Math.round(safeFrame), frames.length - 1);
 		const i = baseIndex % frames.length;
 		const next = (i + 1) % frames.length;
 		const t = tween ? safeFrame - Math.floor(safeFrame) : 0;
@@ -221,9 +221,7 @@
 		snapDisplayedFrame();
 	}
 
-	const timelineProgress = $derived(
-		lastIndex > 0 ? Math.min(1, safeFrame / lastIndex) * 100 : 0
-	);
+	const timelineProgress = $derived(lastIndex > 0 ? Math.min(1, safeFrame / lastIndex) * 100 : 0);
 
 	$effect(() => {
 		if (displayedFrame >= facetValues.length) displayedFrame = 0;
@@ -271,20 +269,35 @@
 			aria-label={isPlaying ? 'Pause' : 'Play'}
 		>
 			{#if isPlaying}
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					class="size-5"
+				>
 					<rect x="6" y="5" width="4" height="14" rx="1" />
 					<rect x="14" y="5" width="4" height="14" rx="1" />
 				</svg>
 			{:else}
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-5">
-					<path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.04-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14Z" />
+				<svg
+					xmlns="http://www.w3.org/2000/svg"
+					viewBox="0 0 24 24"
+					fill="currentColor"
+					class="size-5"
+				>
+					<path
+						d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.04-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14Z"
+					/>
 				</svg>
 			{/if}
 		</button>
 
 		<div class="flex-1 min-w-0">
 			{#if facetValues.length >= 2}
-				<div bind:clientHeight={timelineHeight} class="border border-warm-grey rounded-lg px-3 py-2">
+				<div
+					bind:clientHeight={timelineHeight}
+					class="border border-warm-grey rounded-lg px-3 py-2"
+				>
 					<div
 						role="slider"
 						tabindex="0"

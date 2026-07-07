@@ -100,16 +100,12 @@ export function createNormalisedStream(reader, extractContent, options = {}) {
 
 							if (result.error) {
 								controller.enqueue(
-									encoder.encode(
-										`data: ${JSON.stringify({ error: result.error })}\n\n`
-									)
+									encoder.encode(`data: ${JSON.stringify({ error: result.error })}\n\n`)
 								);
 							}
 							if (result.content) {
 								controller.enqueue(
-									encoder.encode(
-										`data: ${JSON.stringify({ content: result.content })}\n\n`
-									)
+									encoder.encode(`data: ${JSON.stringify({ content: result.content })}\n\n`)
 								);
 							}
 							if (result.done) {

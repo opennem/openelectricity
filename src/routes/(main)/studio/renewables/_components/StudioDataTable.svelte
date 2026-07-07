@@ -67,8 +67,6 @@
 	</table>
 
 	{#if !rows.length}
-		<div class="flex items-center justify-center py-8 text-mid-grey text-xs">
-			No data available
-		</div>
+		<div class="flex items-center justify-center py-8 text-mid-grey text-xs">No data available</div>
 	{/if}
 </div>

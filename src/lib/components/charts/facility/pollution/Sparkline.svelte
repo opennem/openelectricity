@@ -66,9 +66,7 @@
 			return { points: [], linePath: '', areaPath: '', singlePoint: null };
 		}
 
-		const validEntries = vals
-			.map((v, i) => ({ v, i }))
-			.filter((d) => d.v != null);
+		const validEntries = vals.map((v, i) => ({ v, i })).filter((d) => d.v != null);
 
 		if (validEntries.length === 0) {
 			return {
@@ -86,8 +84,7 @@
 			const points = vals.map((v, i) =>
 				v == null ? null : { x: i * xStep, y: h / 2, value: /** @type {number} */ (v) }
 			);
-			const single =
-				vals.length > 1 ? { x: entry.i * xStep, y: h / 2 } : { x: w / 2, y: h / 2 };
+			const single = vals.length > 1 ? { x: entry.i * xStep, y: h / 2 } : { x: w / 2, y: h / 2 };
 			return { points, linePath: '', areaPath: '', singlePoint: single };
 		}
 
@@ -192,12 +189,7 @@
 		<path d={geometry.linePath} fill="none" stroke={colour} stroke-width="1.5" />
 	{/if}
 	{#if geometry.singlePoint}
-		<circle
-			cx={geometry.singlePoint.x}
-			cy={geometry.singlePoint.y}
-			r="2.5"
-			fill={colour}
-		/>
+		<circle cx={geometry.singlePoint.x} cy={geometry.singlePoint.y} r="2.5" fill={colour} />
 	{/if}
 	{#if hoverX != null}
 		<line

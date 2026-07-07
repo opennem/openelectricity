@@ -6,15 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This project uses **[pnpm](https://pnpm.io/)** for package management and script execution, locally and on Cloudflare's build image (pinned via the `packageManager` field in `package.json`, picked up automatically through Corepack). Bun and npm are no longer used.
 
-| Command    | Invocation         |
-| ---------- | ------------------ |
-| Install    | `pnpm install`     |
-| Dev server | `pnpm run dev`     |
-| Build      | `pnpm run build`   |
-| Type check | `pnpm run check`   |
-| Lint       | `pnpm run lint`    |
-| Format     | `pnpm run format`  |
-| Test       | `pnpm run test`    |
+| Command    | Invocation        |
+| ---------- | ----------------- |
+| Install    | `pnpm install`    |
+| Dev server | `pnpm run dev`    |
+| Build      | `pnpm run build`  |
+| Type check | `pnpm run check`  |
+| Lint       | `pnpm run lint`   |
+| Format     | `pnpm run format` |
+| Test       | `pnpm run test`   |
 
 - **Development**: `pnpm run dev` - Start Vite development server (reads `.env` — the default for contributors using their own API keys)
 - **Maintainer Development**: `pnpm run doppler-dev` - Same as `dev` but injects secrets via `doppler run` (requires Doppler login + `doppler setup` linking)
@@ -34,6 +34,7 @@ This project uses **[pnpm](https://pnpm.io/)** for package management and script
 This is an open-source project. The canonical local-dev path is `pnpm run dev` reading from a hand-edited `.env` — anyone can clone the repo, supply their own keys (Open Electricity API, Sanity, Clerk, etc.), and run it. Do not remove the `.env` workflow or assume Doppler is available.
 
 Maintainers use Doppler to sync secrets across machines via `pnpm run doppler-dev`. When making changes that affect env vars:
+
 - Always update `.env.example` with the new key (commented placeholder).
 - Mention both flows in any user-facing docs you touch.
 - Don't add Doppler as a hard requirement for `dev`, `build`, `preview`, etc.

@@ -44,9 +44,7 @@
 	);
 
 	let loadNames = $derived(
-		generation.seriesNames
-			.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d))
-			.reverse()
+		generation.seriesNames.filter((/** @type {string} */ d) => seriesLoadsIds.includes(d)).reverse()
 	);
 
 	let energySourcesTotal = $derived(
@@ -167,10 +165,7 @@
 <svelte:window onkeyup={handleKeyup} onkeydown={handleKeydown} />
 
 <div class="sticky top-10 flex flex-col gap-2">
-	<TableHeader
-		showCheckbox={false}
-		hoverTime={generation.hoverTime || generation.focusTime}
-	/>
+	<TableHeader showCheckbox={false} hoverTime={generation.hoverTime || generation.focusTime} />
 
 	<table class="w-full table-fixed border border-warm-grey mb-8">
 		<thead class="main-thead bg-light-warm-grey border-b border-warm-grey">

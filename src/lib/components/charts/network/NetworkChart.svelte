@@ -21,6 +21,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { loadFuelTechs } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
+	import { ianaFromOffset } from '../v2/network-time.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -76,7 +77,7 @@
 
 	const dollarFormatter = getNumberFormat(0);
 
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 	let isPriceKind = $derived(chartKind === 'line');
 	let isEnergyMetric = $derived(metric === 'energy');
 
@@ -198,6 +199,10 @@
 		}
 
 		dataManager = manager;
+
+		// Retire this run's manager on re-run or unmount so in-flight fetches
+		// settle as no-ops.
+		return () => manager.dispose();
 	});
 
 	// ============================================

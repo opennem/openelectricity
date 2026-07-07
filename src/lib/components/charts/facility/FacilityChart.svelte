@@ -12,10 +12,12 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { analyzeUnits } from './unit-analysis.js';
+	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
+	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
 	import { combinedMetricsFor, buildCombinedMetricsUrl } from './energy-basis.js';
-	import chroma from 'chroma-js';
 	import { untrack } from 'svelte';
+	import { ianaFromOffset } from '../v2/network-time.js';
 
 	/**
 	 * Get color for a fuel tech code
@@ -54,9 +56,14 @@
 	 * @property {string} [title] - Override the chart header title (defaults to facility.name).
 	 * @property {number | undefined} [hoverTime] - External hover time for cross-chart sync. When set, the chart renders its crosshair/tooltip at this time.
 	 * @property {((time: number | undefined) => void)} [onhoverchange] - Called when the local hover state changes so a parent can sync peer charts.
+	 * @property {number | undefined} [focusTime] - External focus (pinned) time for cross-chart sync. When set, the chart pins its crosshair/tooltip at this time.
+	 * @property {((time: number | undefined) => void)} [onfocuschange] - Called when the local focus state changes so a parent can sync peer charts.
 	 * @property {((state: { hasData: boolean }) => void)} [onloadcomplete] - Called once the initial client-side fetch/seed settles. `hasData` reflects whether any data was found, letting a parent distinguish "still loading" from "no data" (e.g. to show an empty state). Stays accurate across panning.
 	 * @property {'always' | 'tap-to-engage'} [panZoomMode] - 'always' (default) keeps pan/zoom active. 'tap-to-engage' gates pan/zoom behind the bindable `panZoomEngaged` flag.
 	 * @property {boolean} [panZoomEngaged] - Bindable engagement state for tap-to-engage mode.
+	 * @property {boolean} [enablePan] - Whether drag/wheel pan is enabled (default: true). Set false for a fixed-window snapshot chart (hover still works).
+	 * @property {boolean} [resizable] - Whether to show the drag-to-resize handle below the chart (default: true). Set false for a fixed-height snapshot so the chart honours `chartHeight` and doesn't share the persisted resize height.
+	 * @property {number | Array<any> | ((ticks: any[]) => any[])} [yTicks] - Y-axis ticks passed through to AxisY: a count, an explicit array, or a function that thins the scale's default ticks. Omit for the AxisY default (4).
 	 * @property {boolean} [bundleDerivedMetrics] - Fetch via the combined `metric=<metric>,market_value,emissions` URL so this chart shares one request with the financial/emissions providers mounted alongside it. Only enable when those providers are present (the facility detail page); off elsewhere to avoid pulling unused metrics.
 	 */
 
@@ -88,9 +95,14 @@
 		title = '',
 		hoverTime = undefined,
 		onhoverchange,
+		focusTime = undefined,
+		onfocuschange,
 		onloadcomplete,
 		panZoomMode = /** @type {'always' | 'tap-to-engage'} */ ('always'),
 		panZoomEngaged = $bindable(false),
+		enablePan = true,
+		resizable = true,
+		yTicks = undefined,
 		bundleDerivedMetrics = false
 	} = $props();
 
@@ -102,7 +114,7 @@
 	 * Map offset to IANA timezone for Intl.DateTimeFormat (which doesn't support offsets)
 	 * Uses DST-free zones: Brisbane (AEST +10), Perth (AWST +8)
 	 */
-	let ianaTimeZone = $derived(timeZone === '+08:00' ? 'Australia/Perth' : 'Australia/Brisbane');
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 
 	// ============================================
 	// Derived: Unit Analysis
@@ -154,28 +166,12 @@
 	// Data Manager
 	// ============================================
 
-	/**
-	 * Get display label for a unit
-	 * @param {string} unitCode
-	 * @param {string} fuelTech
-	 * @returns {string}
-	 */
-	function getLabel(unitCode, fuelTech) {
-		const displayCode = unitCodeDisplayMap[unitCode] ?? unitCode;
-		return `${displayCode} (${fuelTechNameMap[fuelTech] || fuelTech})`;
-	}
-
-	/**
-	 * Get colour for a unit — needs dynamic unitColours
-	 */
-	let getColour = $derived.by(() => {
-		const colourMap = unitColours;
-		return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
-			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = analysis?.loadIds.includes(`power_${unitCode}`) ?? false;
-			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-		};
-	});
+	// The factories return closures over plain values only — they're handed to
+	// ChartDataManagers, whose async continuations can outlive this component.
+	let getLabel = $derived(makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNameMap));
+	let getColour = $derived(
+		makeLoadAwareColourGetter(unitColours, loadIds, 'power', getFuelTechColor)
+	);
 
 	/**
 	 * When `bundleDerivedMetrics` is on, fetch via the combined
@@ -195,14 +191,74 @@
 	/** @type {ChartDataManager | null} */
 	let dataManager = $state(null);
 
-	/** @type {Map<string, ChartDataManager>} Background prefetched managers */
+	/** Guards the one-shot empty-window retry (see the load-completion effect): set
+	 *  once a facility's first window settles, so only that initial window can
+	 *  auto-retry — a later grain switch keeps the user's viewport. Reset per facility. */
+	let firstWindowSettled = false;
+
+	/**
+	 * Stashed managers keyed `${interval}-${metric}` — background prefetches plus
+	 * previously-active managers kept warm so switching back to a range renders
+	 * instantly from cache. Insertion order doubles as LRU order; entries leave
+	 * the map while live (re-stashed on the next swap).
+	 * @type {Map<string, ChartDataManager>}
+	 */
 	let prefetchCache = new Map();
+
+	/** Max stashed managers — beyond this the oldest is evicted and retired. */
+	const PREFETCH_CACHE_MAX = 4;
+
+	/**
+	 * Stash the outgoing manager for instant back-switch, or retire it when it
+	 * belongs to another facility.
+	 * @param {ChartDataManager | null | undefined} manager
+	 * @param {string} currentCode
+	 */
+	function stashOrDispose(manager, currentCode) {
+		if (!manager) return;
+		if (manager.facilityCode !== currentCode) {
+			manager.dispose();
+			return;
+		}
+		const key = `${manager.interval}-${manager.metric}`;
+		prefetchCache.delete(key);
+		prefetchCache.set(key, manager);
+		while (prefetchCache.size > PREFETCH_CACHE_MAX) {
+			const oldestKey = /** @type {string} */ (prefetchCache.keys().next().value);
+			prefetchCache.get(oldestKey)?.dispose();
+			prefetchCache.delete(oldestKey);
+		}
+	}
+
+	/** Retire and drop every stashed manager. */
+	function clearPrefetchCache() {
+		for (const manager of prefetchCache.values()) manager.dispose();
+		prefetchCache.clear();
+	}
+
+	/**
+	 * Convert a YYYY-MM-DD date range (interpreted in the network tz) to epoch-ms
+	 * bounds, clamping the end to now. Shared by the initial date-prop seed and the
+	 * empty-window retry.
+	 * @param {string} ds
+	 * @param {string} de
+	 * @param {string} tz - network offset e.g. '+10:00'
+	 * @returns {{ startMs: number, endMs: number }}
+	 */
+	function dateBoundsMs(ds, de, tz) {
+		const t = tz || '+10:00';
+		return {
+			startMs: new Date(ds + 'T00:00:00' + t).getTime(),
+			endMs: Math.min(new Date(de + 'T23:59:59' + t).getTime(), Date.now())
+		};
+	}
 
 	// Initialize/reinitialize data manager when facility or interval/metric changes
 	$effect(() => {
 		if (!facility) {
+			untrack(() => dataManager)?.dispose();
 			dataManager = null;
-			prefetchCache.clear();
+			clearPrefetchCache();
 			return;
 		}
 
@@ -214,7 +270,10 @@
 		// Clear prefetch cache if facility changed
 		const existingCode = untrack(() => dataManager?.facilityCode);
 		if (existingCode && existingCode !== currentCode) {
-			prefetchCache.clear();
+			clearPrefetchCache();
+			// Re-arm the empty-window retry (see the load-completion effect) for the
+			// new facility.
+			firstWindowSettled = false;
 		}
 
 		// Skip recreation if existing manager already matches
@@ -233,6 +292,7 @@
 		const prefetched = prefetchCache.get(prefetchKey);
 		if (prefetched && prefetched.facilityCode === currentCode) {
 			prefetchCache.delete(prefetchKey);
+			stashOrDispose(existing, currentCode);
 			dataManager = prefetched;
 
 			// Still need to request the viewport range (may already be cached)
@@ -279,23 +339,21 @@
 				viewEnd = Math.min(manager.cacheEnd, Date.now());
 			} else if (dateStart && dateEnd) {
 				// No seeded cache (e.g. energy mode on page load) — use date props
-				const tz = timeZone || '+10:00';
-				viewStart = new Date(dateStart + 'T00:00:00' + tz).getTime();
-				viewEnd = Math.min(new Date(dateEnd + 'T23:59:59' + tz).getTime(), Date.now());
-				const duration = viewEnd - viewStart;
-				const bufferMultiplier = currentMetric === 'energy' ? 3 : 1;
-				const buffer = duration * bufferMultiplier;
-				manager.requestRange(viewStart - buffer, Math.min(viewEnd + buffer, Date.now()));
+				const { startMs, endMs } = dateBoundsMs(dateStart, dateEnd, timeZone);
+				viewStart = startMs;
+				viewEnd = endMs;
+				const buffer = (endMs - startMs) * fetchBufferMultiplier;
+				manager.requestRange(startMs - buffer, Math.min(endMs + buffer, Date.now()));
 			}
 		} else {
 			// Switching interval/metric — keep current viewport, fetch immediately
 			// (no debounce) so data loads even during continuous zoom gestures
-			const duration = end - start;
-			const bufferMultiplier = currentMetric === 'energy' ? 3 : 1;
-			const buffer = duration * bufferMultiplier;
+			const buffer = (end - start) * fetchBufferMultiplier;
 			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
 		}
 
+		// Keep the outgoing manager's cache warm for an instant back-switch.
+		stashOrDispose(existing, currentCode);
 		dataManager = manager;
 	});
 
@@ -322,7 +380,10 @@
 	// Prefetch common ranges after initial load completes.
 	// Uses untrack for requestRange calls to prevent cache $state from
 	// becoming dependencies (which would cause a feedback loop on every merge).
+	// Skipped for fixed-window snapshots (enablePan false) — they can't pan, so
+	// the 7-day power and 1-year energy prefetches would be pure waste.
 	$effect(() => {
+		if (!enablePan) return;
 		const manager = dataManager;
 		if (!manager || !manager.initialLoadComplete) return;
 		if (!facility) return;
@@ -363,6 +424,15 @@
 		});
 	});
 
+	// Retire all managers on unmount so in-flight fetches settle as no-ops
+	// instead of calling back into destroyed component state.
+	$effect(() => {
+		return () => {
+			dataManager?.dispose();
+			clearPrefetchCache();
+		};
+	});
+
 	// ============================================
 	// Chart Store — created once, updated reactively
 	// ============================================
@@ -384,6 +454,7 @@
 		if (chartHeightPx) chart.chartStyles.chartHeightPx = chartHeightPx;
 		chart.chartStyles.chartPadding = { top: 0, right: 0, bottom: 20, left: 0 };
 		chart.chartStyles.snapTicks = true;
+		if (yTicks !== undefined) chart.yTicks = yTicks;
 		chart.useDivergingStack = useDivergingStack;
 		chart.lighterNegative = hasBatteryUnits;
 		chart.formatTickX = (/** @type {any} */ d) => formatXAxis(d, ianaTimeZone);
@@ -583,16 +654,7 @@
 		};
 	});
 
-	/**
-	 * Show loading overlay when the chart has no visible data and data is being fetched.
-	 */
-	let showLoadingOverlay = $derived.by(() => {
-		if (!dataManager || !chartStore) return false;
-		if (chartStore.seriesData.length > 0) return false;
-
-		// No data yet — show overlay if still loading or haven't loaded
-		return !dataManager.initialLoadComplete || dataManager.isLoading || dataManager.hasPendingFetch;
-	});
+	let showLoadingOverlay = $derived(computeShowLoadingOverlay(dataManager, chartStore));
 
 	// ============================================
 	// Pan Handlers
@@ -655,14 +717,50 @@
 		onviewportchange?.({ start, end });
 	});
 
-	// Report load completion to the parent. `initialLoadComplete` flips true after
-	// the first seed/fetch settles (even when empty), and `cacheStart` is a stable
-	// "data was found" signal that survives panning — so `hasData` stays correct.
-	// Re-fires harmlessly when the manager swaps on facility change.
+	// Report load completion to the parent once the in-flight fetch settles.
+	// `initialLoadComplete` flips true after the first seed/fetch settles (even when
+	// empty); `cacheStart` is a stable "data was found" signal that survives panning.
+	// If the first settled window is empty, retry once from this facility's own
+	// default range before reporting "no data" — this self-heals a client-side nav
+	// that left a stale viewport (e.g. a retired plant queried in a recent window),
+	// without discarding the viewport on every navigation.
 	$effect(() => {
 		const manager = dataManager;
 		if (!manager?.initialLoadComplete) return;
-		onloadcomplete?.({ hasData: manager.cacheStart !== null });
+		// Wait for the in-flight fetch to settle so a still-empty retry is observed
+		// too, not just the moment data first arrives.
+		if (manager.hasPendingFetch) return;
+
+		const hasData = manager.cacheStart !== null;
+		const canRetry = !firstWindowSettled;
+		firstWindowSettled = true;
+		// If a facility's first settled window is empty, re-seed from its own default
+		// range and refetch once before reporting "no data" — self-heals a stale
+		// viewport left by a client-side nav (e.g. a retired plant queried in the
+		// previous facility's recent window). Skipped when the viewport is already
+		// that default range (a genuinely-empty facility on fresh mount — refetching
+		// the same window would just come back empty).
+		if (!hasData && canRetry) {
+			const ds = untrack(() => dateStart);
+			const de = untrack(() => dateEnd);
+			if (ds && de) {
+				const { startMs, endMs } = dateBoundsMs(
+					ds,
+					de,
+					untrack(() => timeZone)
+				);
+				if (untrack(() => viewStart) !== startMs || untrack(() => viewEnd) !== endMs) {
+					viewStart = startMs;
+					viewEnd = endMs;
+					const buffer = (endMs - startMs) * untrack(() => fetchBufferMultiplier);
+					manager.requestRange(startMs - buffer, Math.min(endMs + buffer, Date.now()), {
+						immediate: true
+					});
+					return;
+				}
+			}
+		}
+		onloadcomplete?.({ hasData });
 	});
 
 	// ============================================
@@ -759,7 +857,22 @@
 	function handleFocus(time) {
 		if (isPanning) return;
 		chartStore?.toggleFocus(time);
+		onfocuschange?.(chartStore?.focusTime);
 	}
+
+	// Sync externally-driven focus time (from peer charts) into the local chart
+	// store. Gated on `onfocuschange` for the same reason as the hover effect above.
+	$effect(() => {
+		if (!onfocuschange) return;
+		const t = focusTime;
+		if (!chartStore) return;
+		if (chartStore.focusTime === t) return;
+		if (t === undefined) {
+			chartStore.clearFocus();
+		} else {
+			chartStore.setFocus(t);
+		}
+	});
 
 	// ============================================
 	// Public Methods
@@ -823,12 +936,12 @@
 			onpan={handlePan}
 			onpanend={handlePanEnd}
 			onzoom={handleZoom}
-			enablePan={true}
+			{enablePan}
 			{panZoomMode}
 			bind:engaged={panZoomEngaged}
 			viewDomain={null}
 			loadingRanges={dataManager?.loadingRanges ?? []}
-			resizable
+			{resizable}
 			heightStorageKey="facility-chart-height-generation"
 			minHeight={160}
 			maxHeight={700}
@@ -836,7 +949,7 @@
 
 		{#if showLoadingOverlay}
 			<!-- Loading overlay — previous chart stays visible underneath -->
-			<div class="absolute inset-0 flex items-center justify-center bg-white/60 rounded-lg">
+			<div class="absolute inset-0 flex items-center justify-center rounded-lg bg-white/60">
 				<div class="flex items-center gap-3 text-mid-warm-grey">
 					<svg
 						class="animate-spin h-5 w-5"

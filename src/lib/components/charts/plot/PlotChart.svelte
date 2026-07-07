@@ -26,7 +26,7 @@
 </div>
 
 <style>
-	:global(.plot-chart-container [aria-label="bar"] rect) {
+	:global(.plot-chart-container [aria-label='bar'] rect) {
 		shape-rendering: crispEdges;
 	}
 </style>
