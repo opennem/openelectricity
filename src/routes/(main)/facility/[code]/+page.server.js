@@ -2,6 +2,7 @@ import { error } from '@sveltejs/kit';
 import { client as sanityClient } from '$lib/sanity';
 import { SANITY_FACILITY_PROFILE_PROJECTION } from '$lib/server/sanity-projections.js';
 import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
+import { retiredAnchorMs } from '$lib/components/charts/facility/data-end.js';
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
 import facilityCardCodes from '$lib/server/og/facility-card-codes.json';
 
@@ -30,35 +31,14 @@ export const prerender = false;
  * Retired facilities have no data near "now" — anchor the default chart window
  * to the latest `data_last_seen` across units (or the latest `closure_date` when
  * no unit has data) so the page surfaces the final operating period instead of an
- * empty range.
+ * empty range. Null (not retired / no anchor) rather than a server-side "now" —
+ * the SSR payload is edge-cached and must not bake a timestamp in.
  *
  * @param {any} facility
  * @returns {number | null}
  */
 function computeRetiredEndMs(facility) {
-	const units = Array.isArray(facility.units) ? facility.units : [];
-	const isFullyRetired =
-		units.length > 0 && units.every((/** @type {any} */ u) => u.status_id === 'retired');
-	if (!isFullyRetired) return null;
-
-	/** @type {string | null} */
-	let anchor = null;
-	for (const u of units) {
-		const d = u.data_last_seen;
-		if (!d) continue;
-		if (!anchor || d > anchor) anchor = d;
-	}
-	if (!anchor) {
-		for (const u of units) {
-			const d = u.closure_date;
-			if (!d) continue;
-			if (!anchor || d > anchor) anchor = d;
-		}
-	}
-	if (!anchor) return null;
-
-	const t = new Date(anchor).getTime();
-	return Number.isFinite(t) ? t : null;
+	return retiredAnchorMs(Array.isArray(facility.units) ? facility.units : []);
 }
 
 /**

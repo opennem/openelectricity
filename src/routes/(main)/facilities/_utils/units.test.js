@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getOrderedFuelTechGroups, withMarkedUnits } from './units.js';
+import { canSplitBatteryUnits, getOrderedFuelTechGroups, withMarkedUnits } from './units.js';
 
 describe('getOrderedFuelTechGroups', () => {
 	it('orders top-of-stack first (reversed detailed order) and dedupes by fueltech_id', () => {
@@ -87,6 +87,64 @@ describe('withMarkedUnits', () => {
 		]);
 	});
 
+	it('keeps the split units and drops the bidirectional battery in split view', () => {
+		const facility = {
+			units: [
+				{
+					fueltech_id: 'battery',
+					status_id: 'operating',
+					capacity_maximum: 100,
+					max_generation: 100
+				},
+				{ fueltech_id: 'battery_charging', status_id: 'operating', capacity_maximum: 100 },
+				{ fueltech_id: 'battery_discharging', status_id: 'operating', capacity_maximum: 100 }
+			]
+		};
+		expect(
+			withMarkedUnits(facility, { batteryView: 'split' }).units.map(
+				(/** @type {any} */ u) => u.fueltech_id
+			)
+		).toEqual(['battery_charging', 'battery_discharging']);
+	});
+
+	it('does not mark derived split units as commissioning in split view', () => {
+		const facility = {
+			units: [
+				{
+					fueltech_id: 'battery',
+					status_id: 'operating',
+					capacity_maximum: 100,
+					max_generation: 100
+				},
+				{
+					fueltech_id: 'battery_charging',
+					status_id: 'operating',
+					capacity_maximum: 100,
+					// Low max-gen ratio is an artefact of the derived split, not commissioning.
+					max_generation: 10,
+					commencement_date: new Date().toISOString().slice(0, 10)
+				}
+			]
+		};
+		const [unit] = withMarkedUnits(facility, { batteryView: 'split' }).units;
+		expect(unit.isCommissioning).toBeUndefined();
+		expect(unit.status_id).toBe('operating');
+	});
+
+	it('ignores split view for facilities without a bidirectional battery', () => {
+		const facility = {
+			units: [
+				{ fueltech_id: 'battery_charging', status_id: 'operating', capacity_maximum: 100 },
+				{ fueltech_id: 'battery_discharging', status_id: 'operating', capacity_maximum: 100 }
+			]
+		};
+		expect(
+			withMarkedUnits(facility, { batteryView: 'split' }).units.map(
+				(/** @type {any} */ u) => u.fueltech_id
+			)
+		).toEqual(['battery_charging', 'battery_discharging']);
+	});
+
 	it('returns the facility unchanged when it has no units', () => {
 		const facility = { code: 'X' };
 		expect(withMarkedUnits(facility)).toBe(facility);
@@ -106,5 +164,43 @@ describe('withMarkedUnits', () => {
 		withMarkedUnits(facility);
 		expect(facility.units[0].status_id).toBe('operating');
 		expect(facility.units[0].isCommissioning).toBeUndefined();
+	});
+});
+
+describe('canSplitBatteryUnits', () => {
+	it('is true when a bidirectional battery has derived split units', () => {
+		const facility = {
+			units: [
+				{ fueltech_id: 'battery', status_id: 'operating' },
+				{ fueltech_id: 'battery_charging', status_id: 'operating' },
+				{ fueltech_id: 'battery_discharging', status_id: 'operating' }
+			]
+		};
+		expect(canSplitBatteryUnits(facility)).toBe(true);
+	});
+
+	it('is false for a bidirectional battery without split units', () => {
+		const facility = {
+			units: [
+				{ fueltech_id: 'battery', status_id: 'operating' },
+				{ fueltech_id: 'solar_utility', status_id: 'operating' }
+			]
+		};
+		expect(canSplitBatteryUnits(facility)).toBe(false);
+	});
+
+	it('is false for native charge/discharge units with no bidirectional battery', () => {
+		const facility = {
+			units: [
+				{ fueltech_id: 'battery_charging', status_id: 'operating' },
+				{ fueltech_id: 'battery_discharging', status_id: 'operating' }
+			]
+		};
+		expect(canSplitBatteryUnits(facility)).toBe(false);
+	});
+
+	it('is false with no units', () => {
+		expect(canSplitBatteryUnits({ units: [] })).toBe(false);
+		expect(canSplitBatteryUnits(null)).toBe(false);
 	});
 });

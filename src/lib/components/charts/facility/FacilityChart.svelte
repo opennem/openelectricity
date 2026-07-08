@@ -11,7 +11,7 @@
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import { analyzeUnits } from './unit-analysis.js';
+	import { analyzeUnits, unitSeriesIds } from './unit-analysis.js';
 	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
@@ -65,6 +65,8 @@
 	 * @property {boolean} [resizable] - Whether to show the drag-to-resize handle below the chart (default: true). Set false for a fixed-height snapshot so the chart honours `chartHeight` and doesn't share the persisted resize height.
 	 * @property {number | Array<any> | ((ticks: any[]) => any[])} [yTicks] - Y-axis ticks passed through to AxisY: a count, an explicit array, or a function that thins the scale's default ticks. Omit for the AxisY default (4).
 	 * @property {boolean} [bundleDerivedMetrics] - Fetch via the combined `metric=<metric>,market_value,emissions` URL so this chart shares one request with the financial/emissions providers mounted alongside it. Only enable when those providers are present (the facility detail page); off elsewhere to avoid pulling unused metrics.
+	 * @property {boolean} [prefetchRanges] - Whether to background-prefetch the 7-day power and 1-year energy ranges after the initial load (default: true). Disable for compact consumers (e.g. the unit detail sheet) where the prefetch would duplicate the main page's cache.
+	 * @property {string[]} [hiddenUnitCodes] - Unit codes whose series are hidden from the chart (e.g. toggled off in the units panel). Mapped to `<metric>_<code>` series ids on the chart store.
 	 */
 
 	/** @type {Props} */
@@ -103,7 +105,9 @@
 		enablePan = true,
 		resizable = true,
 		yTicks = undefined,
-		bundleDerivedMetrics = false
+		bundleDerivedMetrics = false,
+		prefetchRanges = true,
+		hiddenUnitCodes = []
 	} = $props();
 
 	// ============================================
@@ -132,6 +136,10 @@
 	let loadIds = $derived(analysis?.loadIds ?? []);
 	let hasBatteryUnits = $derived(analysis?.hasBatteryUnits ?? false);
 	let capacitySums = $derived(analysis?.capacitySums ?? { positive: 0, negative: 0 });
+
+	/** Identity of the unit set — a units-only change (e.g. battery net ⇄ split)
+	 *  must recreate the managers even though facility/interval/metric match. */
+	let unitsKey = $derived(analysis?.unitsKey ?? '');
 
 	// ============================================
 	// Viewport State
@@ -210,7 +218,9 @@
 
 	/**
 	 * Stash the outgoing manager for instant back-switch, or retire it when it
-	 * belongs to another facility.
+	 * belongs to another facility. Stash keys include the manager's unitsKey, so
+	 * managers for different unit sets (battery net ⇄ split) coexist and a flip
+	 * back revives the warm cache instead of refetching.
 	 * @param {ChartDataManager | null | undefined} manager
 	 * @param {string} currentCode
 	 */
@@ -220,7 +230,7 @@
 			manager.dispose();
 			return;
 		}
-		const key = `${manager.interval}-${manager.metric}`;
+		const key = `${manager.interval}-${manager.metric}-${manager.unitsKey}`;
 		prefetchCache.delete(key);
 		prefetchCache.set(key, manager);
 		while (prefetchCache.size > PREFETCH_CACHE_MAX) {
@@ -262,10 +272,11 @@
 			return;
 		}
 
-		// Track interval and metric as dependencies
+		// Track interval, metric and the unit set as dependencies
 		const currentInterval = interval;
 		const currentMetric = metric;
 		const currentCode = facility.code;
+		const currentUnitsKey = unitsKey;
 
 		// Clear prefetch cache if facility changed
 		const existingCode = untrack(() => dataManager?.facilityCode);
@@ -282,13 +293,14 @@
 			existing &&
 			existing.facilityCode === currentCode &&
 			existing.interval === currentInterval &&
-			existing.metric === currentMetric
+			existing.metric === currentMetric &&
+			existing.unitsKey === currentUnitsKey
 		) {
 			return;
 		}
 
 		// Check prefetch cache before creating a new manager
-		const prefetchKey = `${currentInterval}-${currentMetric}`;
+		const prefetchKey = `${currentInterval}-${currentMetric}-${currentUnitsKey}`;
 		const prefetched = prefetchCache.get(prefetchKey);
 		if (prefetched && prefetched.facilityCode === currentCode) {
 			prefetchCache.delete(prefetchKey);
@@ -381,9 +393,10 @@
 	// Uses untrack for requestRange calls to prevent cache $state from
 	// becoming dependencies (which would cause a feedback loop on every merge).
 	// Skipped for fixed-window snapshots (enablePan false) — they can't pan, so
-	// the 7-day power and 1-year energy prefetches would be pure waste.
+	// the 7-day power and 1-year energy prefetches would be pure waste — and for
+	// compact consumers that opt out via `prefetchRanges` (e.g. the unit sheet).
 	$effect(() => {
-		if (!enablePan) return;
+		if (!enablePan || !prefetchRanges) return;
 		const manager = dataManager;
 		if (!manager || !manager.initialLoadComplete) return;
 		if (!facility) return;
@@ -393,6 +406,7 @@
 
 		const currentCode = facility.code;
 		const currentNetworkId = facility.network_id;
+		const currentUnitsKey = unitsKey;
 
 		untrack(() => {
 			const now = Date.now();
@@ -402,7 +416,7 @@
 			manager.requestRange(sevenDaysAgo, now);
 
 			// 2. Background energy/1d manager for 1-year range
-			const energyKey = '1d-energy';
+			const energyKey = `1d-energy-${currentUnitsKey}`;
 			if (prefetchCache.has(energyKey)) return;
 
 			const energyManager = new ChartDataManager({
@@ -489,6 +503,13 @@
 		chartStore.seriesNames = processed.seriesNames;
 		chartStore.seriesColours = processed.seriesColours;
 		chartStore.seriesLabels = processed.seriesLabels;
+	});
+
+	// Hide externally-toggled units (e.g. from the units panel). Series ids carry
+	// the metric prefix (power_<code> / energy_<code>); unknown ids are harmless.
+	$effect(() => {
+		if (!chartStore) return;
+		chartStore.hiddenSeriesNames = unitSeriesIds(metric, hiddenUnitCodes);
 	});
 
 	// Update metric-dependent config (curve type, unit) reactively

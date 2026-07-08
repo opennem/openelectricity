@@ -91,6 +91,19 @@ export function isWemNetwork(networkId) {
 	return networkId === 'WEM';
 }
 
+/**
+ * Cap a y-axis at 3 ticks (endpoints + middle) so compact chart axes never
+ * crowd. AxisY calls this with the scale's default ticks; d3's `ticks(3)` only
+ * targets ~3 and can overshoot, so we thin explicitly. Used by the compact
+ * facility charts (snapshot pane, unit detail sheet).
+ * @param {any[]} ticks
+ * @returns {any[]}
+ */
+export function capYTicks(ticks) {
+	if (ticks.length <= 3) return ticks;
+	return [ticks[0], ticks[Math.round((ticks.length - 1) / 2)], ticks[ticks.length - 1]];
+}
+
 // ============================================
 // Color Shading Helpers
 // ============================================

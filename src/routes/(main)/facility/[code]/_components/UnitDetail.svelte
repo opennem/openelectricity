@@ -23,7 +23,7 @@
 	} from '$lib/components/charts/facility/metrics/metrics-calc.js';
 	import { METRICS } from '$lib/components/charts/facility/metrics/metric-definitions.js';
 	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
-	import FacilitySnapshotCharts from '../../../facilities/_components/FacilitySnapshotCharts.svelte';
+	import UnitCharts from './UnitCharts.svelte';
 
 	/**
 	 * `facility` powers the per-unit snapshot charts — the unit is charted by
@@ -473,14 +473,14 @@
 		<p class="m-0 px-6 py-3 text-xxs capitalize text-mid-grey">Mounting: {solarMounting}</p>
 	{/if}
 
-	<!-- Charts — the facility page's snapshot charts, scoped to just this unit -->
+	<!-- Charts — the facility page's charts scoped to just this unit, with their
+	     own range/interval/date controls and tap-to-engage pan/zoom. Keyed on the
+	     unit so viewport + load state reset when a different unit opens. -->
 	{#if unitFacility}
 		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<FacilitySnapshotCharts
-				facility={unitFacility}
-				generationHeight="h-[180px]"
-				priceHeight="h-[140px]"
-			/>
+			{#key unit.code}
+				<UnitCharts facility={unitFacility} {timeZone} />
+			{/key}
 		</div>
 	{/if}
 

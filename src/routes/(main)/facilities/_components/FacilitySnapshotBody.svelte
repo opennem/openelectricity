@@ -14,6 +14,7 @@
 		FacilityPriceChart,
 		FacilityFinancialDataProvider
 	} from '$lib/components/charts/facility';
+	import { capYTicks } from '$lib/components/charts/facility/helpers.js';
 
 	/**
 	 * @type {{
@@ -66,17 +67,6 @@
 	/** @param {number | undefined} time */
 	function handleFocusChange(time) {
 		focusTime = time;
-	}
-
-	/**
-	 * Cap the y-axis at 3 ticks (endpoints + middle) so the compact snapshot axes
-	 * never crowd. AxisY calls this with the scale's default ticks; d3's
-	 * `ticks(3)` only targets ~3 and can overshoot, so we thin explicitly.
-	 * @param {any[]} ticks
-	 */
-	function capYTicks(ticks) {
-		if (ticks.length <= 3) return ticks;
-		return [ticks[0], ticks[Math.round((ticks.length - 1) / 2)], ticks[ticks.length - 1]];
 	}
 </script>
 

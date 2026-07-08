@@ -943,6 +943,7 @@
 			feature={osmPolygon}
 			color={selectedFacilityColor}
 			id="facility-osm-polygon"
+			emphasise={mapTheme !== 'light'}
 		/>
 
 		{#if clustering}

@@ -1,5 +1,36 @@
 import { describe, it, expect } from 'vitest';
-import { analyzeUnits, compareUnitsByLabel } from './unit-analysis.js';
+import { analyzeUnits, compareUnitsByLabel, unitsKeyFor, unitSeriesIds } from './unit-analysis.js';
+
+describe('unitsKeyFor', () => {
+	it('is stable regardless of key insertion order', () => {
+		expect(unitsKeyFor({ B: 'coal_black', A: 'coal_black' })).toBe(
+			unitsKeyFor({ A: 'coal_black', B: 'coal_black' })
+		);
+	});
+
+	it('differs when the unit set differs', () => {
+		expect(unitsKeyFor({ A: 'battery' })).not.toBe(
+			unitsKeyFor({ 'A-C': 'battery_charging', 'A-D': 'battery_discharging' })
+		);
+	});
+
+	it('is empty for an empty map', () => {
+		expect(unitsKeyFor({})).toBe('');
+	});
+});
+
+describe('unitSeriesIds', () => {
+	it('prefixes each code with the metric', () => {
+		expect(unitSeriesIds('market_value', ['BW01', 'BW02'])).toEqual([
+			'market_value_BW01',
+			'market_value_BW02'
+		]);
+	});
+
+	it('returns an empty list for no codes', () => {
+		expect(unitSeriesIds('power', [])).toEqual([]);
+	});
+});
 
 const getColour = () => '#888888';
 

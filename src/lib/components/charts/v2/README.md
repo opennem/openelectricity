@@ -865,7 +865,7 @@ Key behaviors:
 - **Debounced fetching**: Batches rapid pan movements into single API calls (150ms debounce)
 - **Sorted merge**: Both the cache and every processed response are time-sorted, so merges are O(n+m) — plain concat for the common append/prepend cases, a two-pointer merge (`mergeSortedByTime` in `binary-search.js`) for overlaps, with new rows winning on equal timestamps. `getDataForRange` slices by binary search
 - **Disposal / stale-fetch guard**: `dispose()` cancels the pending debounce and makes in-flight fetches no-ops on resolve (a generation counter captured per fetch). The cache is left intact so a stashed manager can be revived; `clearCache()` disposes and also resets the cache. The network request itself is never aborted — `sharedFetch` responses are shared across managers by URL
-- **Metric-aware**: Accepts `interval` and `metric` config; recreated when these change
+- **Metric-aware**: Accepts `interval` and `metric` config; recreated when these change. The constructor also self-computes `unitsKey` — a stable identity of the unit set derived from `unitFuelTechMap` — so owners can detect a units-only change (e.g. battery net ⇄ split on `/facility/[code]`) that requires a new manager even though facility/interval/metric are unchanged
 
 ---
 

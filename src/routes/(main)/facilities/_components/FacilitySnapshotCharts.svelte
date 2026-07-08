@@ -13,6 +13,8 @@
 	 */
 
 	import { getNetworkTimezone } from '$lib/components/charts/facility';
+	import { dataEndMs } from '$lib/components/charts/facility/data-end.js';
+	import { toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 	import FacilitySnapshotBody from './FacilitySnapshotBody.svelte';
 
 	/**
@@ -29,42 +31,15 @@
 
 	let timeZone = $derived(getNetworkTimezone(facility?.network_id));
 
-	/**
-	 * YYYY-MM-DD for the given instant in the network's local day.
-	 * @param {number} ms
-	 */
-	function toDateStr(ms) {
-		const offsetMs = timeZone === '+08:00' ? 8 * 3600_000 : 10 * 3600_000;
-		return new Date(ms + offsetMs).toISOString().slice(0, 10);
-	}
-
 	// Anchor the window end: "now" normally, or the latest data_last_seen /
 	// closure_date for a fully-retired facility, so a decommissioned facility
 	// still shows its final operating days instead of an empty range.
-	let endMs = $derived.by(() => {
-		const units = facility?.units ?? [];
-		const now = Date.now();
-		const isFullyRetired =
-			units.length > 0 && units.every((/** @type {any} */ u) => u.status_id === 'retired');
-		if (!isFullyRetired) return now;
+	let endMs = $derived(dataEndMs(facility?.units ?? []));
 
-		/** @type {string | null} */
-		let anchor = null;
-		for (const u of units) {
-			const d = u.data_last_seen;
-			if (d && (!anchor || d > anchor)) anchor = d;
-		}
-		if (!anchor) {
-			for (const u of units) {
-				const d = u.closure_date;
-				if (d && (!anchor || d > anchor)) anchor = d;
-			}
-		}
-		const t = anchor ? new Date(anchor).getTime() : NaN;
-		return Number.isFinite(t) ? Math.min(t, now) : now;
+	let dates = $derived({
+		start: toNetworkDateString(endMs - SNAPSHOT_DAYS * DAY_MS, timeZone),
+		end: toNetworkDateString(endMs, timeZone)
 	});
-
-	let dates = $derived({ start: toDateStr(endMs - SNAPSHOT_DAYS * DAY_MS), end: toDateStr(endMs) });
 
 	// Exact ms viewport for the financial provider — derived with the same formula
 	// FacilityChart applies to its date strings so the two x-axes line up.
@@ -73,18 +48,11 @@
 		Math.min(new Date(dates.end + 'T23:59:59' + timeZone).getTime(), Date.now())
 	);
 
-	// Remount on the unit SET, not just the code: a facility selected from a
-	// filtered list arrives first as a list row carrying only the filtered fuel
-	// techs' units, then as the complete facility once its detail loads. The chart
-	// data managers bake in unitOrder/unitFuelTechMap at creation and don't pick up
-	// a units-only change, so without this the charts would plot only the filtered
-	// fuel tech. Keying on the unit codes recreates them with the full set.
-	let bodyKey = $derived(
-		`${facility?.code ?? ''}:${(facility?.units ?? [])
-			.map((/** @type {any} */ u) => u.code)
-			.sort()
-			.join('|')}`
-	);
+	// Remount per facility so the body's load-tracking state resets. Units-only
+	// changes (e.g. a filtered list row upgrading to the complete facility once
+	// its detail loads) no longer need a remount — the chart data managers
+	// re-key themselves on the unit set (see ChartDataManager `unitsKey`).
+	let bodyKey = $derived(facility?.code ?? '');
 </script>
 
 {#if facility}

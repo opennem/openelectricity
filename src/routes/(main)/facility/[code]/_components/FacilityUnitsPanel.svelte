@@ -16,24 +16,43 @@
 		computeUnitAvailability
 	} from '$lib/components/charts/facility/metrics/metrics-calc.js';
 	import UnitDetail from './UnitDetail.svelte';
+	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
 	import { ianaFromOffset } from '$lib/components/charts/v2/network-time.js';
 
 	/**
 	 * `intervalData` is the generation chart's visible-range power data
 	 * (`FacilityChart` `onvisibledata`) — it feeds the per-unit availability bars
 	 * for coal facilities, so the bars track the chart's current date range.
+	 *
+	 * `hiddenUnitCodes`/`ontoggleunit` drive the per-unit chart-series toggles:
+	 * each row's colour swatch toggles that unit in the page's charts, while the
+	 * rest of the row still opens the unit detail sheet.
+	 *
+	 * `batteryMode`/`showBatteryModeSwitch`/`onbatterymodechange` expose the
+	 * battery Net ⇄ Charge/Discharge view switch for facilities with a
+	 * bidirectional battery unit plus derived split units.
 	 * @type {{
 	 *   facility?: any | null,
 	 *   sanityFacility?: any | null,
 	 *   timeZone?: string,
-	 *   intervalData?: { data: any[], seriesNames: string[] } | null
+	 *   intervalData?: { data: any[], seriesNames: string[] } | null,
+	 *   hiddenUnitCodes?: string[],
+	 *   ontoggleunit?: (code: string) => void,
+	 *   batteryMode?: 'net' | 'split',
+	 *   showBatteryModeSwitch?: boolean,
+	 *   onbatterymodechange?: (mode: string) => void
 	 * }}
 	 */
 	let {
 		facility = null,
 		sanityFacility = null,
 		timeZone = '+10:00',
-		intervalData = null
+		intervalData = null,
+		hiddenUnitCodes = [],
+		ontoggleunit = undefined,
+		batteryMode = 'net',
+		showBatteryModeSwitch = false,
+		onbatterymodechange = undefined
 	} = $props();
 
 	const fmt0 = getNumberFormat(0);
@@ -122,12 +141,24 @@
 
 {#if hasUnits}
 	<div class="rounded-lg border border-mid-warm-grey/40 bg-white">
-		<div class="flex items-center justify-between border-b border-mid-warm-grey/40 px-6 py-3">
+		<div class="flex items-center justify-between gap-3 border-b border-mid-warm-grey/40 px-6 py-3">
 			<h3 class="m-0 text-sm font-semibold text-dark-grey">Units</h3>
-			<span class="text-xs text-mid-grey">
-				{units.length}
-				{units.length === 1 ? 'unit' : 'units'}
-			</span>
+			<div class="flex items-center gap-3">
+				{#if showBatteryModeSwitch}
+					<SwitchTabs
+						buttons={[
+							{ label: 'Net', value: 'net' },
+							{ label: 'Charge/Discharge', value: 'split' }
+						]}
+						selected={batteryMode}
+						onChange={(v) => onbatterymodechange?.(v)}
+					/>
+				{/if}
+				<span class="text-xs text-mid-grey">
+					{units.length}
+					{units.length === 1 ? 'unit' : 'units'}
+				</span>
+			</div>
 		</div>
 
 		<ol class="divide-y divide-mid-warm-grey/40">
@@ -135,10 +166,35 @@
 				{@const bgColor = colours[unit.code] || getFueltechColor(unit.fueltech_id)}
 				{@const isDarkText = needsDarkText(unit.fueltech_id)}
 				{@const availability = availabilityByUnit?.[unit.code]}
-				<li>
+				{@const isHidden = hiddenUnitCodes.includes(unit.code)}
+				{@const unitLabel = unit.code_display ?? unit.code}
+				<!-- Two sibling buttons per row (nesting them would be invalid HTML):
+				     the colour swatch toggles the unit's chart series, the rest of the
+				     row opens the unit detail sheet. Hover lives on the <li> so the
+				     whole row highlights either way. -->
+				<li class="flex items-center gap-3 pl-5 transition-colors hover:bg-light-warm-grey">
+					{#if ontoggleunit}
+						<!-- Generous hit area (44px) around the swatch so it's easy to tap. -->
+						<button
+							type="button"
+							class="flex size-11 shrink-0 cursor-pointer items-center justify-center"
+							aria-pressed={!isHidden}
+							aria-label="Toggle {unitLabel} in charts"
+							title="{isHidden ? 'Show' : 'Hide'} {unitLabel} in charts"
+							onclick={() => ontoggleunit(unit.code)}
+						>
+							<span
+								class="size-6 rounded-[4px] border-2 transition-colors"
+								style:border-color={bgColor}
+								style:background-color={isHidden ? 'transparent' : bgColor}
+							></span>
+						</button>
+					{/if}
 					<button
 						type="button"
-						class="group flex w-full cursor-pointer items-center gap-5 px-6 py-3 text-left transition-colors hover:bg-light-warm-grey"
+						class="group flex min-w-0 flex-1 cursor-pointer items-center gap-5 py-3 pr-6 text-left transition-opacity {isHidden
+							? 'opacity-50'
+							: ''}"
 						onclick={() => setSelectedCode(unit.code)}
 					>
 						<span class="flex shrink-0 justify-center" title={statusLabel(unit.status_id)}>
@@ -150,7 +206,7 @@
 							<!-- Sub-row 1: unit code + capacity -->
 							<span class="flex items-baseline justify-between gap-3">
 								<span class="truncate font-mono text-sm font-medium text-dark-grey">
-									{unit.code_display ?? unit.code}
+									{unitLabel}
 								</span>
 								<span class="shrink-0 font-mono text-sm text-dark-grey">
 									{formatCapacity(unit.capacity_maximum || unit.capacity_registered)}

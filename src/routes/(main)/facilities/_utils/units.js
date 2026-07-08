@@ -2,6 +2,9 @@ import { getFueltechColor } from '$lib/utils/fueltech-display';
 import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 import isCommissioningCheck from './is-commissioning';
 
+/** Fuel techs of the split units derived from a bidirectional `battery` unit. */
+const DERIVED_BATTERY_FUEL_TECHS = ['battery_charging', 'battery_discharging'];
+
 /**
  * Check if a facility has a bidirectional battery unit (fueltech_id === 'battery').
  * When present, the separate charging/discharging units are derived and should be excluded.
@@ -23,8 +26,22 @@ export function hasBidirectionalBattery(facility) {
 export function filterDerivedBatteryUnits(units, hasBidirectional) {
 	if (!hasBidirectional) return units;
 	return units.filter(
-		(/** @type {any} */ unit) =>
-			unit.fueltech_id !== 'battery_charging' && unit.fueltech_id !== 'battery_discharging'
+		(/** @type {any} */ unit) => !DERIVED_BATTERY_FUEL_TECHS.includes(unit.fueltech_id)
+	);
+}
+
+/**
+ * Whether a facility can offer the split (charge/discharge) battery view: it has
+ * a bidirectional battery unit AND the derived charging/discharging units to swap
+ * in. Facilities with only native charge/discharge units (no bidirectional) show
+ * them in the net view already, so no switch is needed.
+ * @param {any} facility
+ * @returns {boolean}
+ */
+export function canSplitBatteryUnits(facility) {
+	if (!hasBidirectionalBattery(facility)) return false;
+	return (facility?.units ?? []).some((/** @type {any} */ unit) =>
+		DERIVED_BATTERY_FUEL_TECHS.includes(unit.fueltech_id)
 	);
 }
 
@@ -70,10 +87,7 @@ export function groupUnits(facility, options = {}) {
 
 	for (const unit of facility.units) {
 		// Skip battery_charging/discharging only when a bidirectional battery unit exists
-		if (
-			bidirectional &&
-			(unit.fueltech_id === 'battery_charging' || unit.fueltech_id === 'battery_discharging')
-		) {
+		if (bidirectional && DERIVED_BATTERY_FUEL_TECHS.includes(unit.fueltech_id)) {
 			continue;
 		}
 
@@ -132,24 +146,32 @@ export function getOrderedFuelTechGroups(facility) {
 }
 
 /**
- * Normalise a raw API facility for display: drop derived battery
- * charging/discharging units (when a bidirectional `battery` unit exists) and
+ * Normalise a raw API facility for display: resolve the battery unit set and
  * mark commissioning units (`isCommissioning` + `status_id`). This is the same
  * client-side processing the /facilities list applies server-side via
  * `processFacilitiesWithStatuses`, extracted so the /facility/[code] page and the
  * /facilities detail panel present the canonical full facility identically from
  * the raw `fetchFacilityByCode` shape.
+ *
+ * `batteryView` picks which battery units survive when a bidirectional `battery`
+ * unit exists: `'net'` (default) drops the derived charging/discharging units;
+ * `'split'` keeps them and drops the bidirectional unit instead. Callers should
+ * gate `'split'` on `canSplitBatteryUnits`.
  * @param {any} facility
+ * @param {{ batteryView?: 'net' | 'split' }} [options]
  * @returns {any}
  */
-export function withMarkedUnits(facility) {
+export function withMarkedUnits(facility, { batteryView = 'net' } = {}) {
 	if (!facility?.units) return facility;
 	const hasBidirectional = hasBidirectionalBattery(facility);
-	const units = filterDerivedBatteryUnits(facility.units, hasBidirectional).map(
-		(/** @type {any} */ unit) =>
-			isCommissioningCheck(unit, { hasBidirectionalBattery: hasBidirectional })
-				? { ...unit, isCommissioning: true, status_id: 'commissioning' }
-				: unit
+	const filtered =
+		batteryView === 'split' && hasBidirectional
+			? facility.units.filter((/** @type {any} */ unit) => unit.fueltech_id !== 'battery')
+			: filterDerivedBatteryUnits(facility.units, hasBidirectional);
+	const units = filtered.map((/** @type {any} */ unit) =>
+		isCommissioningCheck(unit, { hasBidirectionalBattery: hasBidirectional })
+			? { ...unit, isCommissioning: true, status_id: 'commissioning' }
+			: unit
 	);
 	return { ...facility, units };
 }

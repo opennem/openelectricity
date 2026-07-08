@@ -18,10 +18,36 @@ const BATTERY_FUEL_TECHS = ['battery'];
  * @property {Record<string, string>} unitCodeDisplayMap - unit code → display code (only units that have one)
  * @property {string[]}               unitOrder          - series ids in fuel-tech display order
  * @property {string[]}               loadIds            - series ids that are loads (to invert)
+ * @property {string}                 unitsKey           - identity of the unit set (see unitsKeyFor)
  * @property {boolean}                hasBatteryUnits    - whether any unit is a battery
  * @property {{ positive: number, negative: number }} capacitySums - generation / load capacity
  * @property {number | null}          weightedEmissionsIntensity - kgCO2/MWh (generators only), or null
  */
+
+/**
+ * Stable identity of a unit set. ChartDataManager bakes its unit maps in at
+ * construction, so owners compare this key to detect a units-only change (e.g.
+ * battery net ⇄ split) that requires a new manager even though
+ * facility/interval/metric are unchanged.
+ * @param {Record<string, string>} unitFuelTechMap
+ * @returns {string}
+ */
+export function unitsKeyFor(unitFuelTechMap) {
+	return Object.keys(unitFuelTechMap).sort().join('|');
+}
+
+/**
+ * Series ids for a set of unit codes under a metric prefix — the single home
+ * for the `<metric>_<code>` naming convention (matching the OE API series
+ * names and `unitOrder` below). Used to map units-panel toggles onto each
+ * chart store's `hiddenSeriesNames`.
+ * @param {string} metric - e.g. 'power' | 'energy' | 'market_value' | 'emissions'
+ * @param {string[]} codes
+ * @returns {string[]}
+ */
+export function unitSeriesIds(metric, codes) {
+	return codes.map((code) => `${metric}_${code}`);
+}
 
 const labelCollator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
@@ -142,6 +168,7 @@ export function analyzeUnits(facility, getFuelTechColor) {
 		unitCodeDisplayMap,
 		unitOrder,
 		loadIds,
+		unitsKey: unitsKeyFor(unitFuelTechMap),
 		hasBatteryUnits,
 		capacitySums,
 		weightedEmissionsIntensity

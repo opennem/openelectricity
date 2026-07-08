@@ -15,7 +15,7 @@
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
-	import { analyzeUnits } from './unit-analysis.js';
+	import { analyzeUnits, unitSeriesIds } from './unit-analysis.js';
 	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
 	import { applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import { untrack } from 'svelte';
@@ -77,6 +77,7 @@
 	 * @property {((time: number | undefined) => void)} [onfocuschange] - Called when a financial chart's local focus changes.
 	 * @property {((data: SummaryData) => void)} [onsummarydata]
 	 * @property {((range: { start: number, end: number }) => void)} [onviewportchange]
+	 * @property {string[]} [hiddenUnitCodes] - Unit codes whose series are hidden from the market-value chart (e.g. toggled off in the units panel). The derived price line stays facility-wide.
 	 * @property {import('svelte').Snippet} [children]
 	 */
 
@@ -99,6 +100,7 @@
 		onfocuschange,
 		onsummarydata,
 		onviewportchange,
+		hiddenUnitCodes = [],
 		children
 	} = $props();
 
@@ -131,6 +133,10 @@
 	let unitCodeDisplayMap = $derived(analysis?.unitCodeDisplayMap ?? {});
 	let unitOrder = $derived(analysis?.unitOrder ?? []);
 	let loadIds = $derived(analysis?.loadIds ?? []);
+
+	/** Identity of the unit set — a units-only change (e.g. battery net ⇄ split)
+	 *  must recreate the managers even though facility/interval/metric match. */
+	let unitsKey = $derived(analysis?.unitsKey ?? '');
 
 	// The factories return closures over plain values only — they're handed to
 	// ChartDataManagers, whose async continuations can outlive this component.
@@ -168,13 +174,15 @@
 		const currentInterval = interval;
 		const currentCode = facility.code;
 		const networkId = facility.network_id;
+		const currentUnitsKey = unitsKey;
 
 		const existing = untrack(() => mvDataManager);
 		if (
 			existing &&
 			existing.facilityCode === currentCode &&
 			existing.interval === currentInterval &&
-			existing.metric === 'market_value'
+			existing.metric === 'market_value' &&
+			existing.unitsKey === currentUnitsKey
 		) {
 			return;
 		}
@@ -229,13 +237,15 @@
 		const metricParam = combinedMetrics;
 		const currentCode = facility.code;
 		const networkId = facility.network_id;
+		const currentUnitsKey = unitsKey;
 
 		const existing = untrack(() => basisDataManager);
 		if (
 			existing &&
 			existing.facilityCode === currentCode &&
 			existing.interval === currentInterval &&
-			existing.metric === currentBasis
+			existing.metric === currentBasis &&
+			existing.unitsKey === currentUnitsKey
 		) {
 			return;
 		}
@@ -497,6 +507,14 @@
 		mvChartStore.seriesNames = processed.seriesNames;
 		mvChartStore.seriesColours = processed.seriesColours;
 		mvChartStore.seriesLabels = processed.seriesLabels;
+	});
+
+	// Hide externally-toggled units from the market-value stack. The derived
+	// price line (Σ market_value / Σ energy) intentionally stays facility-wide —
+	// it's a single physical measure, not a per-unit series.
+	$effect(() => {
+		if (!mvChartStore) return;
+		mvChartStore.hiddenSeriesNames = unitSeriesIds('market_value', hiddenUnitCodes);
 	});
 
 	$effect(() => {

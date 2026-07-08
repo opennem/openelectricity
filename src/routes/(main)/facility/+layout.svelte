@@ -20,6 +20,7 @@
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
 	import OptionsMenu from '../facilities/_components/OptionsMenu.svelte';
 	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
+	import { backToFacilities } from './_utils/back-navigation.js';
 
 	/**
 	 * @typedef {Object} FacilityListItem
@@ -196,13 +197,14 @@
 					<!-- Mobile floating chrome over the facility header: back to the
 					     facilities list on the left, the options menu on the right. -->
 					<div class="md:hidden absolute top-3 left-3 z-30">
-						<a
-							href="/facilities?view=list"
-							class="{floatingCircleClass} text-white"
+						<button
+							type="button"
+							class="{floatingCircleClass} text-white cursor-pointer"
 							aria-label="Back to facilities"
+							onclick={() => backToFacilities(currentCode)}
 						>
 							<IconChevronLeft class="size-6" />
-						</a>
+						</button>
 					</div>
 					<div class="md:hidden absolute top-3 right-3 z-30">
 						<OptionsMenu

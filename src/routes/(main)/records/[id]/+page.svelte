@@ -16,6 +16,7 @@
 	import { xTickValueFormatters } from './RecordHistory/helpers/config';
 	import dateTimeQuery from '../page-data-options/date-time-query';
 	import { showToast } from '$lib/stores/toast';
+	import { backOr } from '$lib/utils/back-navigation.js';
 	/** @type {{ data: any }} */
 	let { data } = $props();
 	let { period, recordIds, focusTime } = $derived(data);
@@ -26,11 +27,7 @@
 	$effect(() => {
 		if (data.notFound) {
 			showToast(`Record "${data.notFoundId}" not found`);
-			if (history.length > 1) {
-				history.back();
-			} else {
-				goto('/records', { replaceState: true });
-			}
+			backOr('/records');
 			return;
 		}
 	});
@@ -103,9 +100,9 @@
 		defaultXDomain = xDomain;
 
 		chartCxt.chartTooltips.valueColour = /** @type {Record<string, any>} */ (fuelTechColourMap)[
-			/** @type {string} */ ((record.metric) === 'renewable_proportion'
-				? 'renewables'
-				: record.fueltech_id) || 'demand'
+			/** @type {string} */ (
+				record.metric === 'renewable_proportion' ? 'renewables' : record.fueltech_id
+			) || 'demand'
 		];
 		chartCxt.chartOptions.setLineChart();
 

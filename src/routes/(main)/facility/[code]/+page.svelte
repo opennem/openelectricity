@@ -1,5 +1,6 @@
 <script>
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
+	import { page } from '$app/state';
 	import { fade } from 'svelte/transition';
 	import { LineChart } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -18,19 +19,10 @@
 	} from '$lib/components/charts/facility';
 	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
-	import { withMarkedUnits } from '../../facilities/_utils/units';
+	import { withMarkedUnits, canSplitBatteryUnits } from '../../facilities/_utils/units';
 
-	import {
-		getMetricIntervalForDays,
-		getHysteresisSwitch,
-		getDisplayIntervalForDays
-	} from '$lib/utils/metric-interval';
-	import {
-		getIntervalSpec,
-		getPresetByDays,
-		getDefaultIntervalForRange,
-		getIntervalOptionsForDays
-	} from '$lib/components/charts/facility/range-interval-config.js';
+	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
+	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
 	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
 	import { primaryFuelTechColour } from '$lib/utils/fueltech-display';
 	import { createDragHandler } from '$lib/components/ui/panel/drag-resize.svelte.js';
@@ -41,8 +33,7 @@
 	import FacilityMediaPanel from './_components/FacilityMediaPanel.svelte';
 	import FacilityMobileNav from './_components/FacilityMobileNav.svelte';
 	import SwitchTabs from '$lib/components/SwitchTabs.svelte';
-	import { createViewportSync } from './_utils/viewport-sync.js';
-	import { ianaFromOffset, offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
+	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 	import {
 		CHARTS_FRACTION_COOKIE,
 		CHARTS_FRACTION_MIN,
@@ -56,18 +47,52 @@
 	// /facilities page applies); shared with the /facilities detail panel.
 	let selectedFacility = $derived(withMarkedUnits(data.facility));
 
+	/** Battery view: 'net' shows the bidirectional battery unit, 'split' swaps in
+	 *  the derived charging/discharging units. Charts + units panel follow
+	 *  `activeFacility`; identity consumers (header, metrics, meta, map) stay on
+	 *  the net `selectedFacility` so they're stable across mode flips. */
+	/** @type {'net' | 'split'} */
+	let batteryMode = $state('net');
+	let canSplitBattery = $derived(canSplitBatteryUnits(data.facility));
+	let splitFacility = $derived(
+		canSplitBattery ? withMarkedUnits(data.facility, { batteryView: 'split' }) : null
+	);
+	let activeFacility = $derived.by(() =>
+		batteryMode === 'split' && splitFacility ? splitFacility : selectedFacility
+	);
+
+	/** Unit codes toggled off in the units panel — hidden from the chart stacks. */
+	/** @type {string[]} */
+	let hiddenUnitCodes = $state([]);
+
+	/** @param {string} code */
+	function toggleUnitHidden(code) {
+		if (hiddenUnitCodes.includes(code)) {
+			hiddenUnitCodes = hiddenUnitCodes.filter((c) => c !== code);
+			return;
+		}
+		const next = [...hiddenUnitCodes, code];
+		// Hiding the last visible unit resets to all-visible, mirroring
+		// ChartStore.toggleSeriesVisibility's hide-all guard.
+		hiddenUnitCodes = next.length >= (activeFacility?.units?.length ?? 0) ? [] : next;
+	}
+
+	/** @param {string} mode */
+	function setBatteryMode(mode) {
+		if (mode === batteryMode) return;
+		batteryMode = /** @type {'net' | 'split'} */ (mode);
+		// Unit codes differ between the net and split sets.
+		hiddenUnitCodes = [];
+	}
+
 	let timeZone = $derived(data.timeZone);
 	let rangeDays = $derived(data.rangeDays ?? 3);
 
 	let defaultEnd = $derived(data.retiredEndMs ?? Date.now());
 	let defaultStart = $derived(defaultEnd - rangeDays * 24 * 60 * 60 * 1000);
 
-	function toDateString(/** @type {number} */ ms) {
-		const offsetMs = offsetMsFromOffset(timeZone);
-		return new Date(ms + offsetMs).toISOString().slice(0, 10);
-	}
-	let dateStart = $derived(toDateString(defaultStart));
-	let dateEnd = $derived(toDateString(defaultEnd));
+	let dateStart = $derived(toNetworkDateString(defaultStart, timeZone));
+	let dateEnd = $derived(toNetworkDateString(defaultEnd, timeZone));
 
 	let viewStart = $state(0);
 	let viewEnd = $state(0);
@@ -84,15 +109,8 @@
 	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
 	let intervalData = $state(null);
 
-	const sync = createViewportSync();
-
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let powerChart = $state(undefined);
-
-	let activeInterval = $state('5m');
-	let activeMetric = $state('power');
-	// Power views default to the 5-minute grain on this page (see preferFiveMinute).
-	let displayInterval = $state('5m');
 
 	let hasNpi = $derived(Boolean(selectedFacility?.npi_id));
 
@@ -145,23 +163,31 @@
 	/** @type {'intensity' | 'volume'} */
 	let activeEmissionsTab = $state('intensity');
 
-	/** Currently selected range preset in days (-1 = All). null when a custom
-	 *  date range is in use or the user has panned/zoomed off any preset. */
-	/** @type {number | null} */
-	let selectedRange = $state(data.rangeDays ?? 3);
-
 	/** Earliest data point across the facility's units, used as the floor for
 	 *  the date picker and the "All" preset. */
 	let earliestDate = $derived(getEarliestDate(selectedFacility?.units ?? []));
 
-	/** Latest selectable date — today, or retiredEndMs for retired facilities. */
-	let maxDate = $derived(toDateString(defaultEnd));
+	/** Range/interval/preset state machine (metric switching, hysteresis, picker
+	 *  dates, echo-suppressed viewport pushes into the generation chart) —
+	 *  shared with the unit detail sheet via createChartRangeControl. The
+	 *  viewport values stay in this component (`viewStart`/`viewEnd`); the
+	 *  controller reads and stores them through the getters below. */
+	const range = createChartRangeControl({
+		viewport: () => ({ start: viewStart, end: viewEnd }),
+		defaultViewport: () => ({ start: defaultStart, end: defaultEnd }),
+		setViewport: (startMs, endMs) => {
+			viewStart = startMs;
+			viewEnd = endMs;
+		},
+		chart: () => powerChart,
+		timeZone: () => timeZone,
+		earliestDate: () => earliestDate,
+		initialRangeDays: data.rangeDays ?? 3
+	});
 
-	/** Track the live viewport so the calendar popover always reflects what's
-	 *  currently visible (falls back to the default range before the chart
-	 *  reports its first viewport). */
-	let pickerStartDate = $derived(toDateString(viewStart || defaultStart));
-	let pickerEndDate = $derived(toDateString(viewEnd || defaultEnd));
+	$effect(() => {
+		return () => range.dispose();
+	});
 
 	// Each of these sections renders as its own card at every breakpoint. One
 	// definition so the treatment can't drift between sections. md:overflow-visible
@@ -254,9 +280,6 @@
 		scrollEl?.scrollTo({ top: headerHeight });
 	}
 
-	/** @type {ReturnType<typeof setTimeout> | null} */
-	let metricSwitchTimer = null;
-
 	// Whether the default range preset has been applied for the current facility's
 	// chart (see handlePowerLoadComplete). Reset on facility change so each new
 	// facility re-applies it.
@@ -267,12 +290,9 @@
 		const _code = data.facility?.code;
 		// Land each facility on its Charts tab so navigation never strands you.
 		activeTab = 'charts';
-		activeInterval = '5m';
-		activeMetric = 'power';
-		displayInterval = '5m';
+		range.reset();
 		panZoomEngaged = false;
 		rangeApplied = false;
-		rangeSwitchPending = false;
 		// Reset client-side load tracking so the new facility shows its skeleton until
 		// its own chart fetch settles.
 		powerLoaded = false;
@@ -281,145 +301,17 @@
 		summaryData = null;
 		emissionsData = null;
 		intervalData = null;
+		// Battery view + unit toggles are per-facility state. A ?unit= deep link
+		// naming a derived split unit opens in split view (it only exists there).
+		hiddenUnitCodes = [];
+		batteryMode = untrack(() => {
+			const unitParam = page.url.searchParams.get('unit');
+			if (!unitParam || !canSplitBattery) return 'net';
+			const inNet = selectedFacility?.units?.some((/** @type {any} */ u) => u.code === unitParam);
+			const inSplit = splitFacility?.units?.some((/** @type {any} */ u) => u.code === unitParam);
+			return !inNet && inSplit ? 'split' : 'net';
+		});
 	});
-
-	const DAY_MS = 24 * 60 * 60 * 1000;
-
-	/** Span of the current view in days — drives the interval options offered for
-	 *  a custom (calendar) range when no preset is active. */
-	let customDays = $derived(
-		Math.max(1, Math.ceil(((viewEnd || defaultEnd) - (viewStart || defaultStart)) / DAY_MS))
-	);
-
-	/** Display intervals that only the explicit picker produces on this page —
-	 *  pan/zoom auto-derivation never yields them ('30m' qualifies because
-	 *  preferFiveMinute means power always auto-derives to 5m). A pan/zoom that
-	 *  doesn't cross a native fetch threshold must not clobber one of these back
-	 *  to an auto grain. */
-	const PICKER_ONLY_INTERVALS = new Set(['30m', '7d', 'season', 'quarter', 'half', 'fy']);
-
-	/** This page defaults power views to the 5-minute grain — 30m is still a manual
-	 *  dropdown pick, but never the auto/default. The shared config (studio +
-	 *  facilities charts) still defaults power to 30m; we map that single power
-	 *  display grain down to 5m locally so only /facility/[code] changes. Energy and
-	 *  native coarse grains pass through untouched.
-	 *  @param {string} intervalId @returns {string} */
-	function preferFiveMinute(intervalId) {
-		return intervalId === '30m' ? '5m' : intervalId;
-	}
-
-	/** Hysteresis-aware metric/interval switching for pan/zoom — keeps the
-	 *  current axis where it is unless duration crosses a 13/15-day (and
-	 *  300/365-day, 1500/1825-day) threshold. Display interval is recomputed
-	 *  every tick from the (possibly newly-targeted) metric/interval. */
-	/** @param {{ start: number, end: number }} range */
-	function applyMetricSwitch(range) {
-		const durationDays = (range.end - range.start) / DAY_MS;
-		const next = getHysteresisSwitch(activeMetric, activeInterval, durationDays);
-
-		// Preserve an explicit picker choice (30m/Week/Season/Quarter/Half/Fin-Year)
-		// across pans and zooms that don't cross a native fetch threshold.
-		if (!next && PICKER_ONLY_INTERVALS.has(displayInterval)) return;
-
-		displayInterval = preferFiveMinute(
-			getDisplayIntervalForDays(
-				next?.metric ?? activeMetric,
-				next?.interval ?? activeInterval,
-				durationDays
-			)
-		);
-
-		if (next) {
-			if (metricSwitchTimer) clearTimeout(metricSwitchTimer);
-			metricSwitchTimer = setTimeout(() => {
-				activeMetric = next.metric;
-				activeInterval = next.interval;
-			}, 300);
-		}
-	}
-
-	/** Explicit selection (preset, custom dates, or interval dropdown) — resolves
-	 *  the interval id to its native fetch grain via the config and refetches the
-	 *  given viewport through `FacilityChart.setViewport()`. */
-	/** @param {number} startMs @param {number} endMs @param {string} intervalId */
-	function applyRangeSwitch(startMs, endMs, intervalId) {
-		const spec = getIntervalSpec(intervalId);
-		if (!spec) return;
-		rangeSwitchPending = true;
-		activeMetric = spec.metric;
-		activeInterval = spec.apiInterval;
-		displayInterval = intervalId;
-		viewStart = startMs;
-		viewEnd = endMs;
-		if (powerChart) {
-			sync.runSuppressed(() => powerChart?.setViewport(startMs, endMs));
-		}
-	}
-
-	/** @param {number} days */
-	function handleRangeSelect(days) {
-		selectedRange = days;
-		const endMs = defaultEnd;
-		let actualDays = days;
-		if (days === -1) {
-			const earliestMs = earliestDate
-				? new Date(earliestDate).getTime()
-				: new Date(MIN_DATE).getTime();
-			actualDays = Math.max(1, Math.ceil((endMs - earliestMs) / DAY_MS));
-		}
-		const startMs = endMs - actualDays * DAY_MS;
-		const preset = getPresetByDays(days);
-		const intervalId = preferFiveMinute(
-			preset ? getDefaultIntervalForRange(preset.id) : getMetricIntervalForDays(actualDays).interval
-		);
-		applyRangeSwitch(startMs, endMs, intervalId);
-	}
-
-	/** @param {{ start: string, end: string }} range */
-	function handleDateRangeChange(range) {
-		selectedRange = null;
-		const startMs = new Date(range.start).getTime();
-		const endMs = new Date(range.end).getTime();
-		const days = Math.max(1, Math.ceil((endMs - startMs) / DAY_MS));
-		applyRangeSwitch(startMs, endMs, preferFiveMinute(getIntervalOptionsForDays(days).default));
-	}
-
-	/** Manual interval override from the dropdown. Keeps the current viewport and
-	 *  refetches at the chosen grain. A later preset or calendar pick re-derives
-	 *  the interval; pans/zooms preserve the pick until they cross a native fetch
-	 *  threshold (see PICKER_ONLY_INTERVALS). */
-	/** @param {string} value */
-	function handleIntervalChange(value) {
-		const startMs = viewStart || defaultStart;
-		const endMs = viewEnd || defaultEnd;
-		applyRangeSwitch(startMs, endMs, value);
-	}
-
-	/** @param {{ start: number, end: number }} range */
-	function handlePowerViewportChange(range) {
-		if (sync.isSuppressed()) return;
-		viewStart = range.start;
-		viewEnd = range.end;
-		selectedRange = null;
-		applyMetricSwitch(range);
-	}
-
-	/** Viewport change emitted by a derived-chart provider (financial OR emissions).
-	 *  Both providers receive the same `viewStart`/`viewEnd` props and react to
-	 *  the resulting state update; the generation chart owns its own viewport
-	 *  internally so we push the new range through `sync.runSuppressed` to avoid
-	 *  an echo. */
-	/** @param {{ start: number, end: number }} range */
-	function handleDerivedViewportChange(range) {
-		if (sync.isSuppressed()) return;
-		viewStart = range.start;
-		viewEnd = range.end;
-		selectedRange = null;
-		applyMetricSwitch(range);
-		if (powerChart) {
-			sync.runSuppressed(() => powerChart?.setViewport(range.start, range.end));
-		}
-	}
 
 	// The page is prerendered with no power data, so the generation chart self-fetches
 	// on mount (FacilityChart seeds from `dateStart`/`dateEnd` when given no
@@ -431,12 +323,6 @@
 	let chartReady = $derived(powerLoaded && powerHasData);
 	let showEmptyState = $derived(powerLoaded && !powerHasData);
 
-	/** True from an explicit range/interval pick until the switched data settles —
-	 *  pulses the active range control. Cleared by whichever settle signal fires
-	 *  first: load-complete (manager swap) or the debounced visible-data callback
-	 *  (same-grain switches that reuse the live manager). */
-	let rangeSwitchPending = $state(false);
-
 	/** @param {{ hasData: boolean }} state */
 	function handlePowerLoadComplete({ hasData }) {
 		// The chart self-seeds a day-snapped window on load. Once it's settled,
@@ -446,11 +332,11 @@
 		// setViewport echo is suppressed, so it isn't cleared).
 		if (!rangeApplied) {
 			rangeApplied = true;
-			handleRangeSelect(rangeDays);
+			range.handleRangeSelect(rangeDays);
 		}
 		powerLoaded = true;
 		powerHasData = hasData;
-		rangeSwitchPending = false;
+		range.settle();
 	}
 
 	/** Static skeleton bar heights (%) — a calm placeholder while the chart loads. */
@@ -541,19 +427,19 @@
 						<div class="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
 							<span class="font-space text-base font-medium text-dark-grey">{dateRangeLabel}</span>
 							<ChartRangeBar
-								{selectedRange}
-								{customDays}
-								{displayInterval}
-								startDate={pickerStartDate}
-								endDate={pickerEndDate}
+								selectedRange={range.selectedRange}
+								customDays={range.customDays}
+								displayInterval={range.displayInterval}
+								startDate={range.pickerStartDate}
+								endDate={range.pickerEndDate}
 								minDate={MIN_DATE}
-								{maxDate}
+								maxDate={range.maxDate}
 								{earliestDate}
 								showIntervalDropdown={true}
-								pending={rangeSwitchPending}
-								onrangeselect={handleRangeSelect}
-								ondaterangechange={handleDateRangeChange}
-								onintervalchange={handleIntervalChange}
+								pending={range.rangeSwitchPending}
+								onrangeselect={range.handleRangeSelect}
+								ondaterangechange={range.handleDateRangeChange}
+								onintervalchange={range.handleIntervalChange}
 							/>
 						</div>
 
@@ -567,7 +453,7 @@
 								emissionsData={showEmptyState ? null : emissionsData}
 								intervalData={showEmptyState ? null : intervalData}
 								{timeZone}
-								{displayInterval}
+								displayInterval={range.displayInterval}
 								onpeakhighlight={handleHoverChange}
 							/>
 						</div>
@@ -583,7 +469,7 @@
 									<span
 										class="rounded bg-light-warm-grey px-2 py-0.5 text-xs uppercase tracking-wider text-dark-grey"
 									>
-										{getIntervalSpec(displayInterval)?.label ?? displayInterval}
+										{getIntervalSpec(range.displayInterval)?.label ?? range.displayInterval}
 									</span>
 								</div>
 								<!-- Chart stays mounted while loading so it self-fetches; it fades
@@ -596,29 +482,30 @@
 									>
 										<FacilityChart
 											bind:this={powerChart}
-											facility={selectedFacility}
+											facility={activeFacility}
 											powerData={data.powerData}
 											{timeZone}
 											{dateStart}
 											{dateEnd}
-											interval={activeInterval}
-											metric={activeMetric}
-											{displayInterval}
+											interval={range.activeInterval}
+											metric={range.activeMetric}
+											displayInterval={range.displayInterval}
 											chartHeight="h-[267px]"
-											title={activeMetric === 'energy' ? 'Energy' : 'Power'}
+											title={range.activeMetric === 'energy' ? 'Energy' : 'Power'}
 											tooltipMode="floating"
 											showContainer={false}
 											{hoverTime}
 											onhoverchange={handleHoverChange}
-											onviewportchange={handlePowerViewportChange}
+											onviewportchange={range.handleChartViewportChange}
 											onloadcomplete={handlePowerLoadComplete}
 											onvisibledata={(d) => {
 												intervalData = d;
-												rangeSwitchPending = false;
+												range.settle();
 											}}
 											panZoomMode="tap-to-engage"
 											bind:panZoomEngaged
 											bundleDerivedMetrics
+											{hiddenUnitCodes}
 										/>
 									</div>
 									{#if showEmptyState}
@@ -649,16 +536,17 @@
 
 							{#if !showEmptyState}
 								<FacilityFinancialDataProvider
-									facility={selectedFacility}
+									facility={activeFacility}
 									{timeZone}
-									interval={activeInterval}
-									{displayInterval}
+									interval={range.activeInterval}
+									displayInterval={range.displayInterval}
 									{viewStart}
 									{viewEnd}
 									{hoverTime}
+									{hiddenUnitCodes}
 									onhoverchange={handleHoverChange}
 									onsummarydata={(d) => (summaryData = d)}
-									onviewportchange={handleDerivedViewportChange}
+									onviewportchange={range.handleDerivedViewportChange}
 								>
 									<section class={sectionCardClass}>
 										<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
@@ -693,16 +581,17 @@
 								{#if hasEmittingUnits}
 									<!-- Hidden for non-emitting facilities so no emissions fetch fires. -->
 									<FacilityEmissionsDataProvider
-										facility={selectedFacility}
+										facility={activeFacility}
 										{timeZone}
-										interval={activeInterval}
-										{displayInterval}
+										interval={range.activeInterval}
+										displayInterval={range.displayInterval}
 										{viewStart}
 										{viewEnd}
 										{hoverTime}
+										{hiddenUnitCodes}
 										onhoverchange={handleHoverChange}
 										onsummarydata={(d) => (emissionsData = d)}
-										onviewportchange={handleDerivedViewportChange}
+										onviewportchange={range.handleDerivedViewportChange}
 									>
 										<section class={sectionCardClass}>
 											<div class="flex items-center justify-between gap-4 px-6 pb-1 pt-4">
@@ -759,10 +648,15 @@
 					</div>
 					<div class={[activeTab !== 'units' && 'max-md:hidden']}>
 						<FacilityUnitsPanel
-							facility={selectedFacility}
+							facility={activeFacility}
 							sanityFacility={data.sanityFacility}
 							timeZone={data.timeZone}
 							{intervalData}
+							{hiddenUnitCodes}
+							ontoggleunit={toggleUnitHidden}
+							{batteryMode}
+							showBatteryModeSwitch={canSplitBattery}
+							onbatterymodechange={setBatteryMode}
 						/>
 					</div>
 					<div class={[activeTab !== 'about' && 'max-md:hidden']}>

@@ -120,7 +120,7 @@
 				/>
 			</GeoJSONSource>
 		{/if}
-		<OsmFootprintLayer feature={osmPolygon} {color} />
+		<OsmFootprintLayer feature={osmPolygon} {color} emphasise={mapTheme !== 'light'} />
 		<Marker lnglat={markerLngLat} content={markerContent} />
 		<AttributionControl position="bottom-right" compact={true} />
 	</MapLibre>

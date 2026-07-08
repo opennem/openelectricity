@@ -8,6 +8,7 @@
 
 import { processFacilityPower } from '$lib/components/charts/facility/process-facility-power.js';
 import { getNetworkTimezone } from '$lib/components/charts/facility/helpers.js';
+import { unitsKeyFor } from '$lib/components/charts/facility/unit-analysis.js';
 import { bisectTime, bisectTimeRight, mergeSortedByTime } from './binary-search.js';
 import { offsetMsFromOffset } from './network-time.js';
 
@@ -81,6 +82,11 @@ export default class ChartDataManager {
 	/** @type {Record<string, string>} */ unitFuelTechMap;
 	/** @type {string[]} */ unitOrder;
 	/** @type {string[]} */ loadsToInvert;
+	/** Identity of the unit set baked into this manager — unitFuelTechMap/
+	 *  unitOrder/loadsToInvert are fixed at construction, so owners compare this
+	 *  key to detect a units-only change (e.g. battery net ⇄ split) that needs a
+	 *  new manager even though facility/interval/metric are unchanged. */
+	/** @type {string} */ unitsKey;
 	/** @type {(unitCode: string, fuelTech: string) => string} */ getLabel;
 	/** @type {(unitCode: string, fuelTech: string) => string} */ getColour;
 	/** @type {((response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null) | null} */
@@ -139,6 +145,7 @@ export default class ChartDataManager {
 		this.unitFuelTechMap = config.unitFuelTechMap;
 		this.unitOrder = config.unitOrder || [];
 		this.loadsToInvert = config.loadsToInvert || [];
+		this.unitsKey = unitsKeyFor(config.unitFuelTechMap ?? {});
 		this.getLabel = config.getLabel;
 		this.getColour = config.getColour;
 		this.processResponseFn = config.processResponseFn || null;
