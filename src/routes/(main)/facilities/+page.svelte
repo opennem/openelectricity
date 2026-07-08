@@ -46,7 +46,9 @@
 	} from './_utils/units';
 	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
 	import { fetchFacilityDetail, peekFacilityDetail } from './_utils/fetch-facility-detail.js';
+	import { MediaQuery } from 'svelte/reactivity';
 	import {
+		BELOW_MD_QUERY,
 		isFullscreenUrl,
 		toggleFullscreenMode,
 		windowedHref
@@ -56,14 +58,24 @@
 
 	let { data } = $props();
 
+	// Single reactive breakpoint — gates the desktop panel vs the mobile sheets.
+	let windowWidth = $state(0);
+	let isDesktop = $derived(windowWidth >= 768);
+
 	// /facilities is fullscreen by default — the global Nav/Footer is hidden (the
 	// page's load returns `fullscreen: true`, read by the layout) and the in-page
 	// fullscreen layout owns the whole viewport. An explicit `?fullscreen=false`
-	// opts back into windowed mode (F shortcut toggles it). The param only ever
-	// changes via a real `goto` (never shallow replaceState), so deriving from
-	// page.url is safe here. `building` guard: reading searchParams during
-	// prerender crashes the build.
-	let isFullscreen = $derived(building ? true : isFullscreenUrl(page.url));
+	// opts back into windowed mode (F shortcut toggles it) — desktop only: below
+	// md the param is ignored and the page is always fullscreen. Keyed to the
+	// same md boundary as the `max-md:` CSS gates (1024px here — see
+	// BELOW_MD_QUERY), which is NOT the 768px the rest of this page uses for
+	// its panel/sheet behaviour. On the server the query resolves false, so the
+	// URL is honoured first (the root layout hides the global chrome below md
+	// via CSS either way). The param only ever changes via a real `goto` (never
+	// shallow replaceState), so deriving from page.url is safe here. `building`
+	// guard: reading searchParams during prerender crashes the build.
+	const belowMd = new MediaQuery(BELOW_MD_QUERY);
+	let isFullscreen = $derived(building ? true : belowMd.current || isFullscreenUrl(page.url));
 
 	// Server data (updates when server responds)
 	let facilities = $derived(data.facilities);
@@ -318,10 +330,6 @@
 		initial: 480,
 		storageKey: 'facilities-list-width'
 	});
-
-	// Single reactive breakpoint — gates the desktop panel vs the mobile sheets.
-	let windowWidth = $state(0);
-	let isDesktop = $derived(windowWidth >= 768);
 
 	// Circular white floating buttons over the mobile map (zoom, back) — one
 	// definition so the FABs can't drift apart. Size is set per button (the
@@ -754,8 +762,10 @@
 		replaceState(buildUrl(params), {});
 	}
 
-	/** Toggle app fullscreen (hide/show the global Nav/Footer chrome). */
+	/** Toggle app fullscreen (hide/show the global Nav/Footer chrome). Desktop
+	 * only — below md is always fullscreen. */
 	function toggleFullscreen() {
+		if (belowMd.current) return;
 		toggleFullscreenMode(isFullscreen);
 	}
 
@@ -1640,8 +1650,12 @@
 		{ label: 'Search', keys: ['/'] },
 		{ label: 'Previous / next facility', keys: ['↑', '↓'] },
 		{ label: 'Toggle navigation menu', keys: ['G'] },
-		{ label: 'Enter / exit full screen', keys: ['F'] },
-		{ label: 'Browser full screen', keys: ['Shift', 'F'] },
+		...(belowMd.current
+			? []
+			: [
+					{ label: 'Enter / exit full screen', keys: ['F'] },
+					{ label: 'Browser full screen', keys: ['Shift', 'F'] }
+				]),
 		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />

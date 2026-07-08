@@ -639,14 +639,19 @@
 				<!-- Sidebar — fills the remaining width; sticky below the header. On
 				     mobile each panel belongs to a bottom-nav tab (Info + Media = About,
 				     Units = Units); `max-md:hidden` collapses the others so the desktop
-				     DOM order and layout are untouched. -->
+				     DOM order and layout are untouched. Exception: the Units wrapper
+				     collapses with h-0, not display:none — a deep-linked `?unit=` sheet
+				     renders its LayerCake charts inline here until the portal runs, and
+				     under display:none they measure 0×0 and warn. The pre-portal sheet
+				     is `fixed`, so h-0 doesn't zero it; mb-0 drops the space-y gap the
+				     zero-height box would otherwise double. -->
 				<div
 					class="min-w-0 flex-1 space-y-4 md:space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]"
 				>
 					<div class={[activeTab !== 'about' && 'max-md:hidden']}>
 						<FacilityInfoPanel sanityFacility={data.sanityFacility} collapsible={!isMobile} />
 					</div>
-					<div class={[activeTab !== 'units' && 'max-md:hidden']}>
+					<div class={[activeTab !== 'units' && 'max-md:h-0 max-md:overflow-hidden max-md:mb-0']}>
 						<FacilityUnitsPanel
 							facility={activeFacility}
 							sanityFacility={data.sanityFacility}

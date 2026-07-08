@@ -1,10 +1,22 @@
 import { goto } from '$app/navigation';
 
 /**
+ * Media query matching viewports below the Tailwind `md` breakpoint — 1024px
+ * in this project (tailwind.config.js `screens.md`, loaded via `@config`),
+ * NOT the framework-default 768. The fullscreen pages pair JS gates with
+ * `max-md:` CSS gates, so both must key off this same boundary. Use with
+ * `new MediaQuery(BELOW_MD_QUERY)` from svelte/reactivity.
+ */
+export const BELOW_MD_QUERY = '(max-width: 1023px)';
+
+/**
  * Fullscreen-mode URL convention for /facilities and /facility/[code]:
  * fullscreen is the DEFAULT, so it is never serialised — only the windowed
  * opt-out (`?fullscreen=false`) appears in URLs. The root (main) layout reads
  * the param and hides the global Nav/Footer chrome unless it is 'false'.
+ * Windowed mode is desktop-only: below md (see BELOW_MD_QUERY) the pages
+ * ignore the param and are always fullscreen (they fold their viewport state
+ * into `isFullscreen`).
  * (Scenarios/studio use the inverse opt-in `?fullscreen=true` convention —
  * they default to windowed, so these helpers don't apply there.)
  */

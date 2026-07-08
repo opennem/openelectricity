@@ -16,7 +16,12 @@
 	import { portal } from '$lib/actions/portal.js';
 	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../facilities/_utils/units';
 	import { regions as regionDefs } from '../facilities/_utils/filters.js';
-	import { isFullscreenUrl, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
+	import { MediaQuery } from 'svelte/reactivity';
+	import {
+		BELOW_MD_QUERY,
+		isFullscreenUrl,
+		toggleFullscreenMode
+	} from '$lib/utils/fullscreen-mode.js';
 
 	import FacilityPickerBar from './[code]/_components/FacilityPickerBar.svelte';
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
@@ -62,23 +67,29 @@
 	let regionLabel = $derived(regionDef?.longLabel ?? '');
 	let regionShortLabel = $derived(regionDef?.label ?? '');
 
-	// Fullscreen by default (the layout load returns `fullscreen: true`); an
-	// explicit `?fullscreen=false` opts into windowed mode (F shortcut toggles).
-	// `building` guard: reading searchParams during prerender crashes the build
-	// (this is why the old `prerender = 'auto'` was disabled). At build there is
-	// no windowed state, so it resolves to fullscreen and hydrates correctly.
-	let isFullscreen = $derived(building ? true : isFullscreenUrl(page.url));
-
-	function toggleFullscreen() {
-		toggleFullscreenMode(isFullscreen);
-	}
-
 	let showShortcutsToast = $state(false);
 	let leftOpen = $state(false);
 	/** @type {{ focusSearch: () => void } | null} */
 	let listPanel = $state(null);
 	let isMobile = $state(false);
 	let isMac = $state(true);
+
+	// Fullscreen by default (the layout load returns `fullscreen: true`); an
+	// explicit `?fullscreen=false` opts into windowed mode (F shortcut toggles)
+	// — desktop only: below md the param is ignored and the page is always
+	// fullscreen (the root layout hides the global chrome below md via CSS).
+	// Keyed to the same md boundary as the `max-md:` CSS gates (1024px — see
+	// BELOW_MD_QUERY), NOT the 768px `isMobile` uses for panel/sheet behaviour.
+	// `building` guard: reading searchParams during prerender crashes the build
+	// (this is why the old `prerender = 'auto'` was disabled). At build there is
+	// no windowed state, so it resolves to fullscreen and hydrates correctly.
+	const belowMd = new MediaQuery(BELOW_MD_QUERY);
+	let isFullscreen = $derived(building ? true : belowMd.current || isFullscreenUrl(page.url));
+
+	function toggleFullscreen() {
+		if (belowMd.current) return;
+		toggleFullscreenMode(isFullscreen);
+	}
 
 	onMount(() => {
 		isMac = /Mac|iPod|iPhone|iPad/.test(navigator.platform);
@@ -234,9 +245,9 @@
 						</button>
 					</div>
 					<div class="md:hidden absolute top-3 right-3 z-30">
+						<!-- No fullscreen toggle here — this menu is mobile-only, and
+						     mobile is always fullscreen. -->
 						<OptionsMenu
-							{isFullscreen}
-							onfullscreenchange={toggleFullscreen}
 							onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 							onsearchfacilities={openLeftPanelAndFocus}
 							searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
@@ -297,7 +308,7 @@
 		{ label: 'Toggle facility list', keys: [isMac ? '⌘' : 'Ctrl', 'K'] },
 		{ label: 'Search facilities', keys: ['/'] },
 		{ label: 'Toggle navigation menu', keys: ['G'] },
-		{ label: 'Enter / exit full screen', keys: ['F'] },
+		...(belowMd.current ? [] : [{ label: 'Enter / exit full screen', keys: ['F'] }]),
 		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />
