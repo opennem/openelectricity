@@ -51,7 +51,7 @@
 		<FuelTechBadgeStack {groups} size="md" showStatus={false} ring="ring-1 ring-white" />
 		<div class="min-w-0 max-w-full">
 			<h3
-				class="mb-0 truncate text-sm font-semibold @sm:text-base @md:text-lg {darkText
+				class="mb-0 truncate text-sm font-semibold @sm:text-base @tablet:text-lg {darkText
 					? 'text-black'
 					: 'text-white'}"
 			>

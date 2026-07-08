@@ -91,7 +91,7 @@
 	bind:snap={sheetSnap.value}
 	defaultSnap={sheetSnap.value}
 	bind:bodyEl
-	class="md:hidden z-20"
+	class="tablet:hidden z-20"
 >
 	{#snippet header()}
 		<div

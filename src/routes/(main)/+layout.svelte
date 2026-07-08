@@ -30,10 +30,11 @@
 	//   - a child page forces it imperatively via the `layout-fullscreen` context.
 	// An explicit `?fullscreen=false` overrides all of the above — it's how the
 	// fullscreen-by-default pages opt back into windowed mode (F shortcut) —
-	// but only from md up: mobile is always fullscreen on those pages, so when
-	// the override is the only reason chrome would show, it's hidden below md
-	// via CSS (viewport width isn't known server-side, so a CSS breakpoint is
-	// the only flash-free way to express this).
+	// but only from the `tablet` breakpoint (768px) up: mobile is always
+	// fullscreen on those pages, so when the override is the only reason chrome
+	// would show, it's hidden below that breakpoint via CSS (viewport width
+	// isn't known server-side, so a CSS breakpoint is the only flash-free way
+	// to express this).
 	let contextFullscreen = $state(false);
 	let fullscreenParam = $derived(building ? null : page.url.searchParams.get('fullscreen'));
 	let pageFullscreen = $derived(
@@ -166,7 +167,7 @@
 	{/if} -->
 
 {#if !isFullscreen}
-	<div class={chromeMobileHidden ? 'max-md:hidden' : ''}>
+	<div class={chromeMobileHidden ? 'max-tablet:hidden' : ''}>
 		<GlobalBanner />
 		<Nav />
 	</div>
@@ -177,7 +178,7 @@
 </main>
 
 {#if !isFullscreen}
-	<div class={chromeMobileHidden ? 'max-md:hidden' : ''}>
+	<div class={chromeMobileHidden ? 'max-tablet:hidden' : ''}>
 		<Footer />
 	</div>
 {/if}

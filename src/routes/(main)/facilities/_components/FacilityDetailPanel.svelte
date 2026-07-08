@@ -33,7 +33,7 @@
 
 {#if facility}
 	<div class={fillHeight ? 'h-full min-h-0 overflow-y-auto' : ''}>
-		<div class="grid grid-cols-1 gap-8 p-8 md:grid-cols-[2fr_1fr] md:gap-8">
+		<div class="grid grid-cols-1 gap-8 p-8 tablet:grid-cols-[2fr_1fr] tablet:gap-8">
 			<!-- Left: 3-day Generation + Price snapshots (same charts as /facility/[code]). -->
 			<div class="min-w-0">
 				<FacilitySnapshotCharts {facility} />

@@ -30,17 +30,17 @@
 </script>
 
 {#if selectedRegions.length || selectedStatuses.length || selectedFuelTechs.length}
-	<h4 class="hidden md:block">Filters</h4>
+	<h4 class="hidden tablet:block">Filters</h4>
 {/if}
 
 <div>
 	{#if selectedRegions.length}
-		<h6 class="md:mt-10">Region</h6>
+		<h6 class="tablet:mt-10">Region</h6>
 	{/if}
-	<div class="flex flex-col md:flex-row gap-2 flex-wrap">
+	<div class="flex flex-col tablet:flex-row gap-2 flex-wrap">
 		{#each selectedRegions as region (region)}
 			<div
-				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
+				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 tablet:py-0"
 			>
 				<span class="whitespace-nowrap">{regionsLabels[region]}</span>
 				<button
@@ -56,12 +56,12 @@
 
 <div>
 	{#if selectedStatuses.length}
-		<h6 class="md:mt-10">Status</h6>
+		<h6 class="tablet:mt-10">Status</h6>
 	{/if}
-	<div class="flex flex-col md:flex-row gap-2 flex-wrap">
+	<div class="flex flex-col tablet:flex-row gap-2 flex-wrap">
 		{#each selectedStatuses as status (status)}
 			<div
-				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
+				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 tablet:py-0"
 			>
 				<span class="whitespace-nowrap capitalize">{status}</span>
 				<button
@@ -77,12 +77,12 @@
 
 <div>
 	{#if selectedFuelTechs.length}
-		<h6 class="md:mt-10">Fuel Technology</h6>
+		<h6 class="tablet:mt-10">Fuel Technology</h6>
 	{/if}
-	<div class="flex flex-col md:flex-row gap-2 flex-wrap">
+	<div class="flex flex-col tablet:flex-row gap-2 flex-wrap">
 		{#each selectedFuelTechs as fuelTech (fuelTech)}
 			<div
-				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 md:py-0"
+				class="bg-white border border-warm-grey text-xs leading-xs rounded-full flex justify-between items-center gap-3 pl-5 py-1 tablet:py-0"
 			>
 				<span class="whitespace-nowrap">{fuelTechLabel[fuelTech]}</span>
 				<button

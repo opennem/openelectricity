@@ -233,8 +233,8 @@
 			>
 				<div
 					class="{isFullscreen
-						? 'text-xs md:text-sm'
-						: 'text-sm md:text-base'} leading-snug md:leading-base font-medium text-dark-grey truncate"
+						? 'text-xs tablet:text-sm'
+						: 'text-sm tablet:text-base'} leading-snug tablet:leading-base font-medium text-dark-grey truncate"
 				>
 					{facility.name || 'Unnamed Facility'}
 				</div>
@@ -248,10 +248,10 @@
 				class:border-warm-grey={!isHighlighted && !isSelected}
 			>
 				<div
-					class="text-xxs md:text-xs text-mid-grey col-start-2 sm:col-start-auto flex justify-end sm:justify-start"
+					class="text-xxs tablet:text-xs text-mid-grey col-start-2 sm:col-start-auto flex justify-end sm:justify-start"
 				>
 					<span
-						class="block w-14 md:w-18 border-r pr-4 md:pr-6 text-right group-hover:border-light-warm-grey"
+						class="block w-14 tablet:w-18 border-r pr-4 tablet:pr-6 text-right group-hover:border-light-warm-grey"
 						class:border-mid-warm-grey={isHighlighted || isSelected}
 						class:border-warm-grey={!isHighlighted && !isSelected}
 					>
@@ -270,7 +270,10 @@
 				{#if !hideMetricCols}
 					<div class="hidden sm:flex w-24 justify-end items-baseline gap-1 mr-4">
 						{#if totalStorage > 0}
-							<span class="font-mono text-xxs md:text-xs text-dark-grey" title="Storage Capacity">
+							<span
+								class="font-mono text-xxs tablet:text-xs text-dark-grey"
+								title="Storage Capacity"
+							>
 								{formatValue(totalStorage)}
 							</span>
 							<span class="text-xxs text-mid-grey">MWh</span>
@@ -280,15 +283,18 @@
 					<div class="flex justify-end items-center gap-2 group col-start-3 sm:col-start-auto w-24">
 						<div class="flex justify-end items-baseline gap-1">
 							{#if showMetric}
-								<span class="font-mono text-xs md:text-sm text-dark-grey">
+								<span class="font-mono text-xs tablet:text-sm text-dark-grey">
 									{formatValue(/** @type {number} */ (metricValue))}
 								</span>
-								<span class="text-xxs md:text-xs text-mid-grey">{metricUnit}</span>
+								<span class="text-xxs tablet:text-xs text-mid-grey">{metricUnit}</span>
 							{:else}
-								<span class="font-mono text-xs md:text-sm text-dark-grey" title="Total Capacity">
+								<span
+									class="font-mono text-xs tablet:text-sm text-dark-grey"
+									title="Total Capacity"
+								>
 									{formatValue(totalCapacity)}
 								</span>
-								<span class="text-xxs md:text-xs text-mid-grey">MW</span>
+								<span class="text-xxs tablet:text-xs text-mid-grey">MW</span>
 							{/if}
 						</div>
 

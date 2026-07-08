@@ -18,7 +18,7 @@
 	import { regions as regionDefs } from '../facilities/_utils/filters.js';
 	import { MediaQuery } from 'svelte/reactivity';
 	import {
-		BELOW_MD_QUERY,
+		BELOW_TABLET_QUERY,
 		isFullscreenUrl,
 		toggleFullscreenMode
 	} from '$lib/utils/fullscreen-mode.js';
@@ -76,18 +76,18 @@
 
 	// Fullscreen by default (the layout load returns `fullscreen: true`); an
 	// explicit `?fullscreen=false` opts into windowed mode (F shortcut toggles)
-	// — desktop only: below md the param is ignored and the page is always
-	// fullscreen (the root layout hides the global chrome below md via CSS).
-	// Keyed to the same md boundary as the `max-md:` CSS gates (1024px — see
-	// BELOW_MD_QUERY), NOT the 768px `isMobile` uses for panel/sheet behaviour.
-	// `building` guard: reading searchParams during prerender crashes the build
-	// (this is why the old `prerender = 'auto'` was disabled). At build there is
-	// no windowed state, so it resolves to fullscreen and hydrates correctly.
-	const belowMd = new MediaQuery(BELOW_MD_QUERY);
-	let isFullscreen = $derived(building ? true : belowMd.current || isFullscreenUrl(page.url));
+	// — desktop only: below the tablet breakpoint (768px, matching the
+	// `tablet:`/`max-tablet:` CSS gates and `isMobile` — see BELOW_TABLET_QUERY)
+	// the param is ignored and the page is always fullscreen (the root layout
+	// hides the global chrome there via CSS). `building` guard: reading
+	// searchParams during prerender crashes the build (this is why the old
+	// `prerender = 'auto'` was disabled). At build there is no windowed state,
+	// so it resolves to fullscreen and hydrates correctly.
+	const belowTablet = new MediaQuery(BELOW_TABLET_QUERY);
+	let isFullscreen = $derived(building ? true : belowTablet.current || isFullscreenUrl(page.url));
 
 	function toggleFullscreen() {
-		if (belowMd.current) return;
+		if (belowTablet.current) return;
 		toggleFullscreenMode(isFullscreen);
 	}
 
@@ -187,7 +187,7 @@
 		<!-- The picker bar is desktop-only; on mobile the back + options buttons
 		     float over the facility header instead (see the content snippet). -->
 		<div
-			class="relative z-40 shrink-0 border-b border-warm-grey hidden md:block {isFullscreen
+			class="relative z-40 shrink-0 border-b border-warm-grey hidden tablet:block {isFullscreen
 				? ''
 				: 'px-4'}"
 		>
@@ -208,7 +208,7 @@
 
 	{#snippet content()}
 		<FullscreenContainer {isFullscreen} class="[view-transition-name:page-body]">
-			<div class="flex-1 flex flex-col md:flex-row min-h-0">
+			<div class="flex-1 flex flex-col tablet:flex-row min-h-0">
 				{#if !isMobile}
 					<div
 						class="shrink-0 overflow-hidden {leftOpen
@@ -234,7 +234,7 @@
 				<div class="flex-1 flex flex-col min-w-0 min-h-0 relative">
 					<!-- Mobile floating chrome over the facility header: back to the
 					     facilities list on the left, the options menu on the right. -->
-					<div class="md:hidden absolute top-3 left-3 z-30">
+					<div class="tablet:hidden absolute top-3 left-3 z-30">
 						<button
 							type="button"
 							class="{floatingCircleClass} text-white cursor-pointer"
@@ -244,7 +244,7 @@
 							<ArrowLeft size={24} class="shrink-0" />
 						</button>
 					</div>
-					<div class="md:hidden absolute top-3 right-3 z-30">
+					<div class="tablet:hidden absolute top-3 right-3 z-30">
 						<!-- No fullscreen toggle here — this menu is mobile-only, and
 						     mobile is always fullscreen. -->
 						<OptionsMenu
@@ -308,7 +308,7 @@
 		{ label: 'Toggle facility list', keys: [isMac ? '⌘' : 'Ctrl', 'K'] },
 		{ label: 'Search facilities', keys: ['/'] },
 		{ label: 'Toggle navigation menu', keys: ['G'] },
-		...(belowMd.current ? [] : [{ label: 'Enter / exit full screen', keys: ['F'] }]),
+		...(belowTablet.current ? [] : [{ label: 'Enter / exit full screen', keys: ['F'] }]),
 		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />

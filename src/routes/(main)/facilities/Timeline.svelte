@@ -269,12 +269,12 @@
 					class="relative grid grid-cols-12 px-4"
 					class:mx-0={isToday}
 					class:my-2={!isToday}
-					class:md:my-4={!isToday}
+					class:tablet:my-4={!isToday}
 					class:py-2={!isToday}
 					id={`d${d}`}
 				>
 					<header
-						class="sticky md:top-[50px] top-[43px] self-start z-5 py-2 mb-2 col-span-12"
+						class="sticky tablet:top-[50px] top-[43px] self-start z-5 py-2 mb-2 col-span-12"
 						class:bg-white={!isToday}
 						class:backdrop-blur-xs={!isToday}
 					>

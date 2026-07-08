@@ -48,7 +48,7 @@
 	import { fetchFacilityDetail, peekFacilityDetail } from './_utils/fetch-facility-detail.js';
 	import { MediaQuery } from 'svelte/reactivity';
 	import {
-		BELOW_MD_QUERY,
+		BELOW_TABLET_QUERY,
 		isFullscreenUrl,
 		toggleFullscreenMode,
 		windowedHref
@@ -66,16 +66,16 @@
 	// page's load returns `fullscreen: true`, read by the layout) and the in-page
 	// fullscreen layout owns the whole viewport. An explicit `?fullscreen=false`
 	// opts back into windowed mode (F shortcut toggles it) — desktop only: below
-	// md the param is ignored and the page is always fullscreen. Keyed to the
-	// same md boundary as the `max-md:` CSS gates (1024px here — see
-	// BELOW_MD_QUERY), which is NOT the 768px the rest of this page uses for
-	// its panel/sheet behaviour. On the server the query resolves false, so the
-	// URL is honoured first (the root layout hides the global chrome below md
-	// via CSS either way). The param only ever changes via a real `goto` (never
-	// shallow replaceState), so deriving from page.url is safe here. `building`
-	// guard: reading searchParams during prerender crashes the build.
-	const belowMd = new MediaQuery(BELOW_MD_QUERY);
-	let isFullscreen = $derived(building ? true : belowMd.current || isFullscreenUrl(page.url));
+	// the tablet breakpoint (768px, matching the `tablet:`/`max-tablet:` CSS
+	// gates and `isDesktop` above — see BELOW_TABLET_QUERY) the param is ignored
+	// and the page is always fullscreen. On the server the query resolves false,
+	// so the URL is honoured first (the root layout hides the global chrome
+	// below the same breakpoint via CSS either way). The param only ever changes
+	// via a real `goto` (never shallow replaceState), so deriving from page.url
+	// is safe here. `building` guard: reading searchParams during prerender
+	// crashes the build.
+	const belowTablet = new MediaQuery(BELOW_TABLET_QUERY);
+	let isFullscreen = $derived(building ? true : belowTablet.current || isFullscreenUrl(page.url));
 
 	// Server data (updates when server responds)
 	let facilities = $derived(data.facilities);
@@ -763,9 +763,9 @@
 	}
 
 	/** Toggle app fullscreen (hide/show the global Nav/Footer chrome). Desktop
-	 * only — below md is always fullscreen. */
+	 * only — below the tablet breakpoint is always fullscreen. */
 	function toggleFullscreen() {
-		if (belowMd.current) return;
+		if (belowTablet.current) return;
 		toggleFullscreenMode(isFullscreen);
 	}
 
@@ -1149,7 +1149,9 @@
 		     the map on mobile), so the border is too — otherwise an empty strip
 		     would sit above the full-bleed map. -->
 		<div
-			class="relative z-40 shrink-0 md:border-b md:border-warm-grey {isFullscreen ? '' : 'px-4'}"
+			class="relative z-40 shrink-0 tablet:border-b tablet:border-warm-grey {isFullscreen
+				? ''
+				: 'px-4'}"
 		>
 			<Filters
 				{searchTerm}
@@ -1191,17 +1193,17 @@
 		<FullscreenContainer {isFullscreen} class="[view-transition-name:page-body]">
 			<div
 				bind:clientHeight={containerHeight}
-				class="flex-1 flex flex-col md:flex-row min-h-0 relative"
+				class="flex-1 flex flex-col tablet:flex-row min-h-0 relative"
 			>
 				<!-- Left panel: List, Timeline or Grid (desktop only — mobile shows
 				     these views inside the bottom sheet instead). Width is driven by
-				     a CSS variable + `md:` class rather than a JS-gated inline style,
+				     a CSS variable + `tablet:` class rather than a JS-gated inline style,
 				     so the desktop list/map split is reserved from the first paint
 				     (no full-width flash before hydration). -->
 				<div
-					class="relative bg-white hidden md:flex flex-col min-h-0 z-10 md:w-[var(--list-w)] md:shrink-0 {mainDrag.isDragging
+					class="relative bg-white hidden tablet:flex flex-col min-h-0 z-10 tablet:w-[var(--list-w)] tablet:shrink-0 {mainDrag.isDragging
 						? ''
-						: 'md:transition-[width] md:duration-300 md:ease-out'}"
+						: 'tablet:transition-[width] tablet:duration-300 tablet:ease-out'}"
 					style="--list-w: {listPaneWidth}px"
 				>
 					{#if viewLoading}
@@ -1293,19 +1295,19 @@
 					axis="x"
 					onstart={mainDrag.start}
 					active={mainDrag.isDragging}
-					class="hidden md:flex"
+					class="hidden tablet:flex"
 				/>
 
 				<!-- Right panel: Map (always visible — full-bleed on mobile, right
 				     column on desktop; flex-1 fills height on mobile [flex-col] and
 				     width on desktop [flex-row], so the h-full map container always
 				     has a real size to render into). -->
-				<div class="relative flex-1 min-h-0 md:min-w-0">
+				<div class="relative flex-1 min-h-0 tablet:min-w-0">
 					<!-- Map container -->
 					<div class="relative h-full overflow-hidden">
 						{#if !mapLoaded}
 							<div
-								class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center md:rounded-lg"
+								class="absolute inset-0 z-10 bg-[#D5D8DC]/50 flex items-center justify-center tablet:rounded-lg"
 							>
 								<LogoMarkLoader />
 							</div>
@@ -1365,7 +1367,7 @@
 						{/snippet}
 
 						<!-- Map controls (desktop) -->
-						<div class="absolute top-3 right-20 z-20 hidden md:flex items-center gap-2">
+						<div class="absolute top-3 right-20 z-20 hidden tablet:flex items-center gap-2">
 							<button
 								onclick={() => {
 									mapRef?.resetView();
@@ -1383,8 +1385,10 @@
 
 						<!-- Map controls (mobile) — a floating stack below the nav bar:
 						     layers + zoom in/out (the built-in NavigationControl is
-						     hidden below md). -->
-						<div class="md:hidden absolute top-20 right-3 z-20 flex flex-col items-center gap-2">
+						     hidden below the tablet breakpoint). -->
+						<div
+							class="tablet:hidden absolute top-20 right-3 z-20 flex flex-col items-center gap-2"
+						>
 							{@render mapOptionsDropdown(true)}
 							<button
 								onclick={() => mapRef?.zoomIn()}
@@ -1407,7 +1411,7 @@
 						{#if !isDesktop && selectedFacility}
 							<button
 								onclick={closeFacilityDetail}
-								class="md:hidden absolute top-3 left-3 z-30 size-13 {mapFabClass}"
+								class="tablet:hidden absolute top-3 left-3 z-30 size-13 {mapFabClass}"
 								aria-label="Back to facilities list"
 							>
 								<IconChevronLeft class="size-6" />
@@ -1421,7 +1425,7 @@
 									? ((playYear - yearRange[0]) / (yearRange[1] - yearRange[0])) * 100
 									: 0}
 							<div
-								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] hidden md:flex flex-col gap-3"
+								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-4 border-2 border-warm-grey w-[220px] hidden tablet:flex flex-col gap-3"
 							>
 								<p class="text-[10px] text-mid-grey leading-tight mb-0">
 									Showing facilities connected to the grid
@@ -1487,7 +1491,7 @@
 									showYearOverlay = true;
 									yearAnimationControls?.toggle();
 								}}
-								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2 text-xs font-medium hidden md:flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
+								class="absolute top-3 left-4 z-20 bg-white rounded-lg px-3 py-2 text-xs font-medium hidden tablet:flex items-center gap-2 hover:bg-light-warm-grey transition-colors border-2 border-warm-grey cursor-pointer"
 								title="Play year animation"
 							>
 								<Play class="size-4 text-mid-grey" />
@@ -1514,7 +1518,7 @@
 								dismissThreshold={160}
 								containerSize={containerHeight}
 								closedOffset="2rem"
-								class="hidden md:flex absolute bottom-8 left-8 right-8 max-h-[calc(100%_-_4rem)] bg-white md:rounded-lg md:border md:border-mid-warm-grey shadow-lg z-20 {selectedFacility
+								class="hidden tablet:flex absolute bottom-8 left-8 right-8 max-h-[calc(100%_-_4rem)] bg-white tablet:rounded-lg tablet:border tablet:border-mid-warm-grey shadow-lg z-20 {selectedFacility
 									? '[view-transition-name:facility-hero]'
 									: ''}"
 								dragHandleStyle={`background-color: ${detailColour}`}
@@ -1592,7 +1596,7 @@
 						peekFraction={FACILITY_PANEL_FRACTION}
 						gripStyle={`background-color: ${detailColour}`}
 						gripClass={detailGripClass}
-						class="md:hidden z-30 [view-transition-name:facility-hero]"
+						class="tablet:hidden z-30 [view-transition-name:facility-hero]"
 					>
 						{#snippet header()}
 							{#if selectedFacility}
@@ -1635,7 +1639,7 @@
 
 			{#snippet footer()}
 				<!-- Desktop only — the mobile map is full-bleed to the bottom edge. -->
-				<div class="hidden md:block">
+				<div class="hidden tablet:block">
 					<FullscreenFooter {isFullscreen} onenterfullscreen={toggleFullscreen} />
 				</div>
 			{/snippet}
@@ -1650,7 +1654,7 @@
 		{ label: 'Search', keys: ['/'] },
 		{ label: 'Previous / next facility', keys: ['↑', '↓'] },
 		{ label: 'Toggle navigation menu', keys: ['G'] },
-		...(belowMd.current
+		...(belowTablet.current
 			? []
 			: [
 					{ label: 'Enter / exit full screen', keys: ['F'] },

@@ -33,7 +33,7 @@
 		isFullscreen,
 		routeKey,
 		paddingX = 'px-4',
-		bgClass = 'md:bg-light-warm-grey/75',
+		bgClass = 'tablet:bg-light-warm-grey/75',
 		back,
 		stable,
 		rest,
@@ -43,7 +43,7 @@
 
 <div
 	class="flex items-center justify-between relative z-10 gap-4 pt-3 pb-3 min-h-[46.5px] {paddingX} {isFullscreen
-		? `md:py-3 md:px-4 ${bgClass}`
+		? `tablet:py-3 tablet:px-4 ${bgClass}`
 		: ''}"
 >
 	<div class="flex flex-1 items-center gap-4 min-w-0">
@@ -75,9 +75,9 @@
 	</div>
 	{#if options}
 		<div
-			class="flex items-center md:border-l md:border-warm-grey {isFullscreen
-				? 'md:pl-2 md:ml-2'
-				: 'md:pl-4 md:ml-4'}"
+			class="flex items-center tablet:border-l tablet:border-warm-grey {isFullscreen
+				? 'tablet:pl-2 tablet:ml-2'
+				: 'tablet:pl-4 tablet:ml-4'}"
 			style="view-transition-name: filter-bar-options"
 		>
 			{@render options()}

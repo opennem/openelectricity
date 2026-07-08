@@ -127,7 +127,10 @@
      the sheet's fly in/out transition can play; only the sheet itself is
      interactive. A strip of map stays visible above it, like the facility
      detail sheet, and the grip supports pull-down to close. -->
-<div class="md:hidden fixed inset-0 z-50 pointer-events-none" bind:clientHeight={containerHeight}>
+<div
+	class="tablet:hidden fixed inset-0 z-50 pointer-events-none"
+	bind:clientHeight={containerHeight}
+>
 	<BottomSheet
 		{open}
 		{onclose}

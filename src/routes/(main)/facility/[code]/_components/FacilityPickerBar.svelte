@@ -75,8 +75,8 @@
 					href={windowedHref(`/facilities?regions=${regionValue}&view=list`, !isFullscreen)}
 					class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline {crumbTextClass} {crumbPadClass}"
 				>
-					<span class="md:hidden">{regionShortLabel || regionLabel}</span>
-					<span class="hidden md:inline">{regionLabel}</span>
+					<span class="tablet:hidden">{regionShortLabel || regionLabel}</span>
+					<span class="hidden tablet:inline">{regionLabel}</span>
 				</a>
 			{/if}
 

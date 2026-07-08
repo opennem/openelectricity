@@ -213,10 +213,12 @@
 	let onColourText = $derived(darkText ? 'text-black' : 'text-white');
 	let onColourMuted = $derived(darkText ? 'text-black/65' : 'text-white/70');
 	let onColourBorder = $derived(darkText ? 'border-black/20' : 'border-white/30');
-	let sepColour = $derived(darkText ? 'md:before:text-black/40' : 'md:before:text-white/50');
+	let sepColour = $derived(
+		darkText ? 'tablet:before:text-black/40' : 'tablet:before:text-white/50'
+	);
 	// Mobile: bordered grid tile matching the metadata row. Desktop: rounded pill.
 	let pillClasses = $derived(
-		`inline-flex items-center gap-1 px-2 py-1 -mr-px -mb-px text-[11px] no-underline border transition-colors md:m-0 md:py-0.5 md:rounded-full ${onColourText} ${onColourBorder} ${darkText ? 'hover:bg-black/10' : 'hover:bg-white/15'}`
+		`inline-flex items-center gap-1 px-2 py-1 -mr-px -mb-px text-[11px] no-underline border transition-colors tablet:m-0 tablet:py-0.5 tablet:rounded-full ${onColourText} ${onColourBorder} ${darkText ? 'hover:bg-black/10' : 'hover:bg-white/15'}`
 	);
 
 	// One row per group. When a facility models its battery as separate
@@ -296,12 +298,12 @@
 			></div>
 		{/if}
 
-		<div class="relative z-10 flex flex-col gap-5 px-6 py-6 md:gap-7 md:px-10 md:py-8">
+		<div class="relative z-10 flex flex-col gap-5 px-6 py-6 tablet:gap-7 tablet:px-10 tablet:py-8">
 			{#if topBar}
 				<!-- Panel chrome (action bar), pulled flush to the top edge and full-bleed
 				     to the side edges so it sits on the colour wash and its controls can
 				     hug the card corners rather than the content padding. -->
-				<div class="-mx-6 -mt-6 md:-mx-10 md:-mt-8">{@render topBar(darkText)}</div>
+				<div class="-mx-6 -mt-6 tablet:-mx-10 tablet:-mt-8">{@render topBar(darkText)}</div>
 			{/if}
 			<!-- Identity: fuel-tech badges + name -->
 			<div class="space-y-2 min-w-0">
@@ -311,21 +313,23 @@
 					showStatus={false}
 					ring="ring-1 ring-white"
 				/>
-				<h2 class="m-0 max-w-full truncate text-xl font-semibold md:text-2xl {onColourText}">
+				<h2 class="m-0 max-w-full truncate text-xl font-semibold tablet:text-2xl {onColourText}">
 					{facility.name}
 				</h2>
 			</div>
 
 			<!-- Metadata (left) + total capacity (right) -->
-			<div class="grid grid-cols-1 gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-end md:gap-8">
+			<div
+				class="grid grid-cols-1 gap-6 tablet:grid-cols-[minmax(0,1fr)_auto] tablet:items-end tablet:gap-8"
+			>
 				<!-- Left column: status · region · commissioned · links -->
 				<div class="space-y-2 min-w-0">
 					<div
-						class="flex flex-wrap items-center gap-0 text-xs font-space md:items-baseline md:gap-x-4 md:gap-y-1"
+						class="flex flex-wrap items-center gap-0 text-xs font-space tablet:items-baseline tablet:gap-x-4 tablet:gap-y-1"
 					>
 						{#if facilityStatus}
 							<span
-								class="inline-flex items-center gap-1.5 font-medium shrink-0 border px-2 py-1 -mr-px -mb-px md:border-0 md:px-0 md:py-0 md:m-0 {onColourText} {onColourBorder}"
+								class="inline-flex items-center gap-1.5 font-medium shrink-0 border px-2 py-1 -mr-px -mb-px tablet:border-0 tablet:px-0 tablet:py-0 tablet:m-0 {onColourText} {onColourBorder}"
 							>
 								<FacilityStatusIcon status={facilityStatus} />
 								{#if facilityStatus === 'retired' && retiredDateLabel}
@@ -337,18 +341,18 @@
 						{/if}
 
 						<span
-							class="shrink-0 border px-2 py-1 -mr-px -mb-px md:border-0 md:px-0 md:py-0 md:m-0 {onColourText} {onColourBorder} {facilityStatus
-								? `md:before:content-['·'] md:before:mr-4 ${sepColour}`
+							class="shrink-0 border px-2 py-1 -mr-px -mb-px tablet:border-0 tablet:px-0 tablet:py-0 tablet:m-0 {onColourText} {onColourBorder} {facilityStatus
+								? `tablet:before:content-['·'] tablet:before:mr-4 ${sepColour}`
 								: ''}"
 						>
-							<span class="md:hidden">{regionShortLabel}</span>
-							<span class="hidden md:inline">{regionLabel}</span>
+							<span class="tablet:hidden">{regionShortLabel}</span>
+							<span class="hidden tablet:inline">{regionLabel}</span>
 						</span>
 
 						{#if commissionedYear}
 							<Tooltip
 								text="Commissioned"
-								class="font-medium cursor-help shrink-0 border px-2 py-1 -mr-px -mb-px md:border-0 md:px-0 md:py-0 md:m-0 md:before:content-['·'] md:before:mr-4 md:before:font-normal {onColourText} {onColourBorder} {sepColour}"
+								class="font-medium cursor-help shrink-0 border px-2 py-1 -mr-px -mb-px tablet:border-0 tablet:px-0 tablet:py-0 tablet:m-0 tablet:before:content-['·'] tablet:before:mr-4 tablet:before:font-normal {onColourText} {onColourBorder} {sepColour}"
 							>
 								{commissionedYear}
 							</Tooltip>
@@ -356,7 +360,7 @@
 					</div>
 
 					{#if hasLinks}
-						<div class="flex flex-wrap items-center gap-0 md:gap-1.5">
+						<div class="flex flex-wrap items-center gap-0 tablet:gap-1.5">
 							{#if websiteUrl}
 								{@render linkPill(websiteUrl, Globe, 'Website')}
 							{/if}
@@ -372,7 +376,7 @@
 
 				<!-- Right column: total capacity headline + proportion bar; rows live in a hover tooltip -->
 				{#snippet capacityHeadline()}
-					<div class="flex flex-col items-start gap-1 md:items-end">
+					<div class="flex flex-col items-start gap-1 tablet:items-end">
 						<span
 							class="text-[10px] uppercase tracking-wider inline-flex items-center gap-1 {onColourMuted}"
 						>
@@ -394,7 +398,7 @@
 				{/snippet}
 
 				{#snippet storageHeadline()}
-					<div class="flex flex-col items-start gap-1 md:items-end">
+					<div class="flex flex-col items-start gap-1 tablet:items-end">
 						<span
 							class="text-[10px] uppercase tracking-wider inline-flex items-center gap-1 {onColourMuted}"
 						>
@@ -413,7 +417,7 @@
 
 				<!-- Capacity + (for batteries) storage, side by side. -->
 				{#snippet headlineStats()}
-					<div class="flex items-end gap-5 md:justify-end">
+					<div class="flex items-end gap-5 tablet:justify-end">
 						{@render capacityHeadline()}
 						{#if totalStorage > 0}
 							{@render storageHeadline()}
@@ -517,13 +521,13 @@
 				<!-- Right column: headline + donut inline; rows in a popover/expand (on a
 				     solid card so the dark-text breakdown stays legible over the banner). -->
 				<div
-					class="min-w-0 w-full rounded-lg border p-4 md:w-[360px] md:rounded-none md:border-0 md:bg-transparent md:p-0 {onColourBorder} {darkText
+					class="min-w-0 w-full rounded-lg border p-4 tablet:w-[360px] tablet:rounded-none tablet:border-0 tablet:bg-transparent tablet:p-0 {onColourBorder} {darkText
 						? 'bg-black/5'
-						: 'bg-white/10'} {activeUnitGroups.length > 1 ? '' : 'md:self-center'}"
+						: 'bg-white/10'} {activeUnitGroups.length > 1 ? '' : 'tablet:self-center'}"
 				>
 					{#if activeUnitGroups.length > 1 && totalCapacity > 0}
 						<!-- Mobile: tap to toggle inline breakdown -->
-						<div class="md:hidden">
+						<div class="tablet:hidden">
 							<button
 								type="button"
 								class="flex w-full items-center justify-between gap-4 text-left cursor-pointer"
@@ -541,7 +545,7 @@
 						</div>
 
 						<!-- Desktop: hover popover -->
-						<div class="hidden md:block">
+						<div class="hidden tablet:block">
 							<BitsTooltip.Provider>
 								<BitsTooltip.Root delayDuration={100}>
 									<BitsTooltip.Trigger>

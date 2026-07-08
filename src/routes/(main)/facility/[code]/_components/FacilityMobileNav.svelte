@@ -6,8 +6,8 @@
 	 * Switches which section renders below the (always-visible) hero header, so
 	 * users tap between Charts / Units / Map / About instead of scrolling the page.
 	 *
-	 * `md:hidden` — desktop keeps the resizable two-column layout and never shows
-	 * this bar. The active section is toggled by the page via `max-md:hidden`, so
+	 * `tablet:hidden` — desktop keeps the resizable two-column layout and never shows
+	 * this bar. The active section is toggled by the page via `max-tablet:hidden`, so
 	 * this component only reflects and reports the selection.
 	 *
 	 * `height` is bound so the page can size the full-bleed Map tab to the space
@@ -36,7 +36,7 @@
 
 <nav
 	bind:clientHeight={height}
-	class="fixed inset-x-0 bottom-0 z-30 flex border-t border-mid-warm-grey/40 bg-white md:hidden"
+	class="fixed inset-x-0 bottom-0 z-30 flex border-t border-mid-warm-grey/40 bg-white tablet:hidden"
 	style="padding-bottom: env(safe-area-inset-bottom);"
 	aria-label="Facility sections"
 >

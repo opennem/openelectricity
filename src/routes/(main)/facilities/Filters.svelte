@@ -418,7 +418,7 @@
      is selected (the page's floating back button takes its place) or while
      the filter sheet is open (the map peeks bare above it). -->
 {#if !facilitySelected && !showMobileFilterOptions}
-	<div class="md:hidden fixed top-3 inset-x-3 z-40 flex items-stretch gap-2">
+	<div class="tablet:hidden fixed top-3 inset-x-3 z-40 flex items-stretch gap-2">
 		<div class="shrink-0 flex items-center">
 			<FullscreenNavDropdown light={darkMap} />
 		</div>
@@ -448,7 +448,7 @@
 	</div>
 {/if}
 
-<div class="hidden md:block">
+<div class="hidden tablet:block">
 	<FullscreenFilterBar {isFullscreen} routeKey="list" paddingX="px-8">
 		{#snippet stable()}
 			{#if isFullscreen}

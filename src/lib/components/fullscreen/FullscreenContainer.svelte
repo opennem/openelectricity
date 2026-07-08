@@ -22,7 +22,7 @@
 <section
 	class="relative flex flex-col {isFullscreen
 		? 'flex-1 min-h-0'
-		: 'px-4 pb-4 md:px-6 md:pb-6 pt-3 md:pt-4 h-[calc(100dvh-214px)] md:h-[calc(100dvh-300px)] md:min-h-[700px]'} {className}"
+		: 'px-4 pb-4 tablet:px-6 tablet:pb-6 pt-3 tablet:pt-4 h-[calc(100dvh-214px)] tablet:h-[calc(100dvh-300px)] tablet:min-h-[700px]'} {className}"
 >
 	<div
 		class="flex-1 flex flex-col min-h-0 overflow-hidden bg-white {isFullscreen

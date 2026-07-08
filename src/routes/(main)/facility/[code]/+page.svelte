@@ -190,10 +190,10 @@
 	});
 
 	// Each of these sections renders as its own card at every breakpoint. One
-	// definition so the treatment can't drift between sections. md:overflow-visible
+	// definition so the treatment can't drift between sections. tablet:overflow-visible
 	// lets chart floating tooltips escape the card on desktop.
 	const sectionCardClass =
-		'overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white md:overflow-visible';
+		'overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white tablet:overflow-visible';
 
 	/** @type {HTMLElement | undefined} */
 	let chartCardEl = $state(undefined);
@@ -203,8 +203,8 @@
 	let isMobile = $state(false);
 
 	/** Which section the mobile bottom-nav shows below the (always-visible) hero.
-	 *  Desktop ignores this: the section toggles use `max-md:hidden`, which is
-	 *  inert at and above the md breakpoint, so the resizable split is unchanged.
+	 *  Desktop ignores this: the section toggles use `max-tablet:hidden`, which is
+	 *  inert at and above the tablet breakpoint, so the resizable split is unchanged.
 	 *  @type {'charts' | 'units' | 'map' | 'about'} */
 	let activeTab = $state('charts');
 
@@ -256,7 +256,7 @@
 		}
 	});
 
-	// The split width is applied via a CSS var consumed only at `md:` and up, so
+	// The split width is applied via a CSS var consumed only at `tablet:` and up, so
 	// mobile is full-width from the first paint (no dependence on the async
 	// `isMobile` flag, which would otherwise render the desktop split % briefly).
 	let splitWidth = $derived(`${splitDrag.value * 100}%`);
@@ -386,7 +386,7 @@
 		     fuel-tech badges start below them. -->
 		<div class="h-16"></div>
 	{/snippet}
-	<div class="md:sticky md:top-0 md:z-40" bind:clientHeight={headerHeight}>
+	<div class="tablet:sticky tablet:top-0 tablet:z-40" bind:clientHeight={headerHeight}>
 		<FacilityPanelHeader
 			facility={selectedFacility}
 			sanityFacility={data.sanityFacility}
@@ -397,16 +397,16 @@
 	{#if selectedFacility}
 		<div
 			class={[
-				'p-4 pb-24 space-y-4 md:p-8 md:pb-8 md:space-y-8',
+				'p-4 pb-24 space-y-4 tablet:p-8 tablet:pb-8 tablet:space-y-8',
 				// On the Map tab collapse to nothing (incl. padding) rather than
 				// display:none, so the LayerCake charts inside keep a real size.
-				activeTab === 'map' && 'max-md:h-0 max-md:overflow-hidden max-md:p-0'
+				activeTab === 'map' && 'max-tablet:h-0 max-tablet:overflow-hidden max-tablet:p-0'
 			]}
 			style="--hdr-h: {headerHeight}px; --col-top: calc(var(--hdr-h) + 2rem);"
 		>
 			<div
 				bind:this={splitContainerEl}
-				class="flex flex-col gap-4 md:gap-0 md:flex-row md:items-start"
+				class="flex flex-col gap-4 tablet:gap-0 tablet:flex-row tablet:items-start"
 			>
 				<!-- Main column — a stack of standalone card panes (range bar, metrics
 				     and the three charts). Resizable width; the sidebar takes the
@@ -415,9 +415,11 @@
 				     a real width/height and don't warn about a zero-size container. -->
 				<div
 					class={[
-						'w-full min-w-0 md:w-[var(--split-w)] md:shrink-0 md:pr-4',
-						splitDrag.isDragging ? '' : 'md:transition-[width] md:duration-200 md:ease-out',
-						activeTab !== 'charts' && 'max-md:h-0 max-md:overflow-hidden'
+						'w-full min-w-0 tablet:w-[var(--split-w)] tablet:shrink-0 tablet:pr-4',
+						splitDrag.isDragging
+							? ''
+							: 'tablet:transition-[width] tablet:duration-200 tablet:ease-out',
+						activeTab !== 'charts' && 'max-tablet:h-0 max-tablet:overflow-hidden'
 					]}
 					style:--split-w={splitWidth}
 				>
@@ -633,12 +635,12 @@
 					axis="x"
 					onstart={splitDrag.start}
 					active={splitDrag.isDragging}
-					class="h-auto self-stretch max-md:hidden"
+					class="h-auto self-stretch max-tablet:hidden"
 				/>
 
 				<!-- Sidebar — fills the remaining width; sticky below the header. On
 				     mobile each panel belongs to a bottom-nav tab (Info + Media = About,
-				     Units = Units); `max-md:hidden` collapses the others so the desktop
+				     Units = Units); `max-tablet:hidden` collapses the others so the desktop
 				     DOM order and layout are untouched. Exception: the Units wrapper
 				     collapses with h-0, not display:none — a deep-linked `?unit=` sheet
 				     renders its LayerCake charts inline here until the portal runs, and
@@ -646,12 +648,16 @@
 				     is `fixed`, so h-0 doesn't zero it; mb-0 drops the space-y gap the
 				     zero-height box would otherwise double. -->
 				<div
-					class="min-w-0 flex-1 space-y-4 md:space-y-8 md:pl-4 md:sticky md:top-[var(--col-top)]"
+					class="min-w-0 flex-1 space-y-4 tablet:space-y-8 tablet:pl-4 tablet:sticky tablet:top-[var(--col-top)]"
 				>
-					<div class={[activeTab !== 'about' && 'max-md:hidden']}>
+					<div class={[activeTab !== 'about' && 'max-tablet:hidden']}>
 						<FacilityInfoPanel sanityFacility={data.sanityFacility} collapsible={!isMobile} />
 					</div>
-					<div class={[activeTab !== 'units' && 'max-md:h-0 max-md:overflow-hidden max-md:mb-0']}>
+					<div
+						class={[
+							activeTab !== 'units' && 'max-tablet:h-0 max-tablet:overflow-hidden max-tablet:mb-0'
+						]}
+					>
 						<FacilityUnitsPanel
 							facility={activeFacility}
 							sanityFacility={data.sanityFacility}
@@ -664,7 +670,7 @@
 							onbatterymodechange={setBatteryMode}
 						/>
 					</div>
-					<div class={[activeTab !== 'about' && 'max-md:hidden']}>
+					<div class={[activeTab !== 'about' && 'max-tablet:hidden']}>
 						<FacilityMediaPanel
 							facility={selectedFacility}
 							sanityFacility={data.sanityFacility}
@@ -678,7 +684,7 @@
 			     Collapses with h-0 (not display:none) off-tab because it renders its own
 			     LayerCake charts, which warn about a zero-size container under display:none. -->
 			{#if hasNpi}
-				<div class={[activeTab !== 'about' && 'max-md:h-0 max-md:overflow-hidden']}>
+				<div class={[activeTab !== 'about' && 'max-tablet:h-0 max-tablet:overflow-hidden']}>
 					<FacilityPollutionPanel facility={selectedFacility} />
 				</div>
 			{/if}
@@ -688,7 +694,7 @@
 		     between the header and the bottom nav. Mounted only while active so
 		     MapLibre initialises at its final size. -->
 		{#if hasLocation && activeTab === 'map'}
-			<div class="md:hidden" style="height: calc(100dvh - {headerHeight}px - {navHeight}px);">
+			<div class="tablet:hidden" style="height: calc(100dvh - {headerHeight}px - {navHeight}px);">
 				{#await import('./_components/FacilityMap.svelte') then { default: FacilityMap }}
 					<FacilityMap
 						lat={mapLocation.lat}
@@ -701,7 +707,7 @@
 		{/if}
 	{/if}
 
-	<!-- Mobile-only bottom navigation; `md:hidden` keeps desktop untouched. -->
+	<!-- Mobile-only bottom navigation; `tablet:hidden` keeps desktop untouched. -->
 	<FacilityMobileNav
 		active={activeTab}
 		onselect={selectTab}

@@ -484,7 +484,7 @@
 
 	/**
 	 * Step the zoom in - exported for the mobile floating controls (the built-in
-	 * NavigationControl is hidden below md).
+	 * NavigationControl is hidden below the tablet breakpoint).
 	 */
 	export function zoomIn() {
 		mapInstance?.zoomIn();

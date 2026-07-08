@@ -14,6 +14,10 @@ export default {
 		},
 		screens: {
 			sm: '640px',
+			// The /facilities and /facility/[code] mobile↔desktop boundary — those
+			// routes use `tablet:`/`max-tablet:` instead of `md:` so their mobile
+			// layout ends at 768px rather than the site-wide 1024px md.
+			tablet: '768px',
 			md: '1024px',
 			lg: '1440px',
 			xl: '1920px'
