@@ -3,6 +3,7 @@
 	import { goto, replaceState, afterNavigate } from '$app/navigation';
 	import { untrack } from 'svelte';
 	import { page } from '$app/state';
+	import { building } from '$app/environment';
 	import { Flag, Pause, Play, X, Zap } from '@lucide/svelte';
 	import MapOptionsDropdown from './_components/MapOptionsDropdown.svelte';
 	import TransmissionLinesLegend from './_components/TransmissionLinesLegend.svelte';
@@ -45,15 +46,24 @@
 	} from './_utils/units';
 	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
 	import { fetchFacilityDetail, peekFacilityDetail } from './_utils/fetch-facility-detail.js';
+	import {
+		isFullscreenUrl,
+		toggleFullscreenMode,
+		windowedHref
+	} from '$lib/utils/fullscreen-mode.js';
 	import { deriveCard } from '$lib/og/facility-card-data.js';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 
 	let { data } = $props();
 
-	// /facilities is immersive always — the global Nav/Footer is hidden (the page's
-	// load returns `fullscreen: true`, read by the layout) and the in-page
-	// fullscreen layout owns the whole viewport. There is no windowed mode.
-	const isFullscreen = true;
+	// /facilities is fullscreen by default — the global Nav/Footer is hidden (the
+	// page's load returns `fullscreen: true`, read by the layout) and the in-page
+	// fullscreen layout owns the whole viewport. An explicit `?fullscreen=false`
+	// opts back into windowed mode (F shortcut toggles it). The param only ever
+	// changes via a real `goto` (never shallow replaceState), so deriving from
+	// page.url is safe here. `building` guard: reading searchParams during
+	// prerender crashes the build.
+	let isFullscreen = $derived(building ? true : isFullscreenUrl(page.url));
 
 	// Server data (updates when server responds)
 	let facilities = $derived(data.facilities);
@@ -720,7 +730,8 @@
 		if (mapShowGolfCourses) {
 			url += '&golf=true';
 		}
-		return url;
+		// Preserve windowed mode (fullscreen is the default and never serialised)
+		return windowedHref(url, !isFullscreen);
 	}
 
 	/**
@@ -741,6 +752,11 @@
 	 */
 	function navigateWithoutRefetch(params) {
 		replaceState(buildUrl(params), {});
+	}
+
+	/** Toggle app fullscreen (hide/show the global Nav/Footer chrome). */
+	function toggleFullscreen() {
+		toggleFullscreenMode(isFullscreen);
 	}
 
 	function handleDownloadCsv() {
@@ -797,7 +813,8 @@
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
-		// Esc: close the shortcuts toast if it's showing.
+		// Esc: close the shortcuts toast if it's showing. (Fullscreen exit is NOT
+		// bound to Esc — use the options menu or F shortcut.)
 		if (e.key === 'Escape') {
 			if (showShortcutsToast) {
 				e.preventDefault();
@@ -993,7 +1010,7 @@
 			// button). The sheet still renders for URL-driven selection, e.g. a
 			// shared /facilities?facility=… link opened on a phone.
 			if (!isDesktop) {
-				goto(`/facility/${facility.code}`);
+				goto(windowedHref(`/facility/${facility.code}`, !isFullscreen));
 				return;
 			}
 			if (selectedFacility?.code === facility.code) {
@@ -1127,6 +1144,7 @@
 			<Filters
 				{searchTerm}
 				{selectedView}
+				{isFullscreen}
 				facilitySelected={!!selectedFacility}
 				darkMap={mapTheme !== 'light'}
 				showShortcuts={showShortcutsToast}
@@ -1146,6 +1164,7 @@
 				oncapacityrangechange={handleCapacityRangeChange}
 				onyearrangechange={handleYearRangeChange}
 				onviewchange={handleSelectedViewChange}
+				onfullscreenchange={toggleFullscreen}
 				ondownloadcsv={handleDownloadCsv}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onshortcutinvoked={() => (showShortcutsToast = false)}
@@ -1159,7 +1178,7 @@
 	{/snippet}
 
 	{#snippet content()}
-		<FullscreenContainer class="[view-transition-name:page-body]">
+		<FullscreenContainer {isFullscreen} class="[view-transition-name:page-body]">
 			<div
 				bind:clientHeight={containerHeight}
 				class="flex-1 flex flex-col md:flex-row min-h-0 relative"
@@ -1513,6 +1532,7 @@
 										buttonColour={detailColour}
 										darkText={detailDarkText}
 										loading={profileLoading && !selectedProfile}
+										{isFullscreen}
 									/>
 								{/snippet}
 								<FacilityDetailPanel
@@ -1595,6 +1615,7 @@
 									buttonColour={detailColour}
 									darkText={detailDarkText}
 									loading={profileLoading && !selectedProfile}
+									{isFullscreen}
 								/>
 							{/if}
 						{/snippet}
@@ -1605,7 +1626,7 @@
 			{#snippet footer()}
 				<!-- Desktop only — the mobile map is full-bleed to the bottom edge. -->
 				<div class="hidden md:block">
-					<FullscreenFooter />
+					<FullscreenFooter {isFullscreen} onenterfullscreen={toggleFullscreen} />
 				</div>
 			{/snippet}
 		</FullscreenContainer>
@@ -1619,6 +1640,8 @@
 		{ label: 'Search', keys: ['/'] },
 		{ label: 'Previous / next facility', keys: ['↑', '↓'] },
 		{ label: 'Toggle navigation menu', keys: ['G'] },
+		{ label: 'Enter / exit full screen', keys: ['F'] },
+		{ label: 'Browser full screen', keys: ['Shift', 'F'] },
 		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />

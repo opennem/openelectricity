@@ -1,3 +1,5 @@
+import { windowedHref } from '$lib/utils/fullscreen-mode.js';
+
 /**
  * @typedef {Object} NavItem
  * @property {string} name
@@ -14,15 +16,21 @@
  * `featureFlags` gates experimental nav entries — e.g. `tracker2_nav`
  * surfaces the new Explorer dashboard.
  *
+ * `windowed: true` makes links to fullscreen-by-default pages (/facilities)
+ * open in windowed mode via `?fullscreen=false` — used by the global Nav,
+ * whose chrome only shows on windowed pages. The fullscreen nav dropdown
+ * keeps the plain links so those pages stay fullscreen.
+ *
  * @param {string} trackerLink
  * @param {Record<string, boolean>} [featureFlags]
+ * @param {{ windowed?: boolean }} [options]
  * @returns {NavItem[]}
  */
-export function getNavItems(trackerLink, featureFlags = {}) {
+export function getNavItems(trackerLink, featureFlags = {}, { windowed = false } = {}) {
 	/** @type {NavItem[]} */
 	const items = [
 		{ name: 'Tracker', href: trackerLink },
-		{ name: 'Facilities', href: '/facilities' },
+		{ name: 'Facilities', href: windowedHref('/facilities', windowed) },
 		{ name: 'Scenarios', href: '/scenarios' },
 		{ name: 'Records', href: '/records' },
 		{ name: 'Analysis', href: '/analysis' },

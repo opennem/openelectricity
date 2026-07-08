@@ -6,7 +6,9 @@
 	import { getNavItems } from '$lib/components/nav/nav-items.js';
 	import { isNonProductionHost } from '$lib/utils/environment.js';
 
-	let navItems = getNavItems($dataTrackerLink, parsedFeatureFlags);
+	// The global Nav only shows on windowed pages, so its links to
+	// fullscreen-by-default pages (/facilities) open in windowed mode.
+	let navItems = getNavItems($dataTrackerLink, parsedFeatureFlags, { windowed: true });
 
 	let mobileNavActive = $state(false);
 	/** @type {string | null} */
@@ -48,6 +50,10 @@
 		>
 			{#each navItems as { name, href, children, show } (name)}
 				{#if show !== false}
+					<!-- Active matching compares paths only — hrefs may carry a query
+					     string (e.g. /facilities?fullscreen=false). -->
+					{@const hrefPath = href.split('?')[0]}
+					{@const isActive = page.url.pathname.includes(hrefPath)}
 					{#if children && children.length > 0}
 						<div
 							class="relative group mb-8 md:mb-0 md:flex items-center"
@@ -57,9 +63,9 @@
 						>
 							<a
 								class="text-lg font-medium flex items-center md:text-sm cursor-pointer"
-								class:text-mid-grey={!page.url.pathname.includes(href)}
-								class:text-black={page.url.pathname.includes(href)}
-								class:font-semibold={page.url.pathname.includes(href)}
+								class:text-mid-grey={!isActive}
+								class:text-black={isActive}
+								class:font-semibold={isActive}
 								href={children ? '#' : href}
 							>
 								{name}
@@ -114,9 +120,9 @@
 					{:else}
 						<a
 							class="text-lg font-medium flex items-center mb-8 md:text-sm md:mb-0"
-							class:text-mid-grey={!page.url.pathname.includes(href)}
-							class:text-black={page.url.pathname.includes(href)}
-							class:font-semibold={page.url.pathname.includes(href)}
+							class:text-mid-grey={!isActive}
+							class:text-black={isActive}
+							class:font-semibold={isActive}
 							{href}
 						>
 							{name}

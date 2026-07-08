@@ -30,6 +30,7 @@
 	 *   capacityMax?: number,
 	 *   searchTerm?: string,
 	 *   selectedView?: 'list' | 'timeline' | 'grid',
+	 *   isFullscreen?: boolean,
 	 *   facilitySelected?: boolean,
 	 *   darkMap?: boolean,
 	 *   showShortcuts?: boolean,
@@ -43,6 +44,7 @@
 	 *   onyearrangechange?: (range: [number, number]) => void,
 	 *   onsearchchange?: (value: string) => void,
 	 *   onviewchange?: (view: 'list' | 'timeline' | 'grid') => void,
+	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
 	 *   onshortcutinvoked?: () => void,
@@ -62,6 +64,7 @@
 		capacityMax = 10000,
 		searchTerm = '',
 		selectedView = 'list',
+		isFullscreen = true,
 		facilitySelected = false,
 		// Dark/satellite basemap behind the floating nav → white logo mark.
 		darkMap = false,
@@ -76,6 +79,7 @@
 		onyearrangechange,
 		onsearchchange,
 		onviewchange,
+		onfullscreenchange,
 		onshowshortcuts,
 		ondownloadcsv,
 		onshortcutinvoked,
@@ -188,6 +192,36 @@
 	});
 
 	// ============================================
+	// Browser Fullscreen API
+	// ============================================
+
+	/**
+	 * Toggle browser fullscreen mode
+	 * Also enables app fullscreen (hides nav/footer) when entering
+	 */
+	function toggleBrowserFullscreen() {
+		if (document.fullscreenElement) {
+			document.exitFullscreen();
+		} else {
+			// Enter browser fullscreen and also enable app fullscreen mode
+			document.documentElement.requestFullscreen();
+			if (!isFullscreen) {
+				onfullscreenchange?.();
+			}
+		}
+	}
+
+	/**
+	 * Handle fullscreen change events
+	 * Exit app fullscreen when exiting browser fullscreen
+	 */
+	function handleFullscreenChange() {
+		if (!document.fullscreenElement && isFullscreen) {
+			onfullscreenchange?.();
+		}
+	}
+
+	// ============================================
 	// Formatters
 	// ============================================
 
@@ -220,7 +254,7 @@
 	// ============================================
 
 	/**
-	 * Handle keyboard shortcuts: '/' to focus search
+	 * Handle keyboard shortcuts: '/' to focus search, 'f' to toggle fullscreen, Shift+F for browser fullscreen
 	 * @param {KeyboardEvent} e
 	 */
 	function handleKeydown(e) {
@@ -235,6 +269,18 @@
 				mobileSearchRef?.focus();
 			} else {
 				desktopSearchRef?.focus();
+			}
+			onshortcutinvoked?.();
+			return;
+		}
+
+		// F for app fullscreen (maximised mode), Shift+F for browser fullscreen
+		if (e.key === 'f' || e.key === 'F') {
+			e.preventDefault();
+			if (e.shiftKey) {
+				toggleBrowserFullscreen();
+			} else {
+				onfullscreenchange?.();
 			}
 			onshortcutinvoked?.();
 		}
@@ -321,6 +367,7 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
+<svelte:document onfullscreenchange={handleFullscreenChange} />
 
 {#snippet fuelTechRow(/** @type {import('./_utils/filter-options.js').FilterOption} */ option)}
 	<FuelTechRowContent {option} />
@@ -402,26 +449,30 @@
 {/if}
 
 <div class="hidden md:block">
-	<FullscreenFilterBar routeKey="list">
+	<FullscreenFilterBar {isFullscreen} routeKey="list" paddingX="px-8">
 		{#snippet stable()}
-			<FullscreenNavDropdown />
-			<a
-				href="/facilities?view=list"
-				class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
-			>
-				Facilities
-			</a>
+			{#if isFullscreen}
+				<FullscreenNavDropdown />
+				<a
+					href="/facilities?view=list"
+					class="rounded-lg hover:bg-warm-grey font-semibold text-dark-grey no-underline hover:no-underline text-sm lg:text-base px-2 py-1"
+				>
+					Facilities
+				</a>
+			{/if}
 		{/snippet}
 
 		{#snippet rest()}
-			<div class="h-8 border-l border-warm-grey shrink-0"></div>
+			{#if isFullscreen}
+				<div class="h-8 border-l border-warm-grey shrink-0"></div>
+			{/if}
 
 			<!-- View Switcher -->
-			<div class="pl-3">
+			<div class={isFullscreen ? 'pl-3' : ''}>
 				<SwitchWithIcons
 					buttons={VIEW_OPTIONS}
 					selected={selectedView}
-					compact
+					compact={isFullscreen}
 					rounded="rounded-lg"
 					darkSelected
 					onchange={handleViewChange}
@@ -429,29 +480,35 @@
 			</div>
 
 			<!-- Search -->
-			<div class="relative flex items-center border-l border-warm-grey ml-3 pl-7">
+			<div
+				class="relative flex items-center border-l border-warm-grey {isFullscreen
+					? 'ml-3 pl-7'
+					: 'ml-6 pl-10'}"
+			>
 				<SearchInput
 					bind:this={desktopSearchRef}
 					value={searchTerm}
 					onchange={(value) => onsearchchange?.(value)}
 					showShortcutHint={showShortcuts}
-					compact
+					compact={isFullscreen}
 					class="w-[200px]"
 				/>
 			</div>
 
 			<!-- Filter Dropdowns (pushed right via ml-auto). The left padding
-		     mirrors the gap on the other side of the cluster (bar gap-4 +
-		     options menu ml-2) so the dividers sit evenly. -->
+		     mirrors the gap on the other side of the cluster (bar gap-4 + options
+		     menu ml-4, or ml-2 in fullscreen) so the dividers sit evenly. -->
 			<div
-				class="filter-bar-scroll justify-start items-center gap-2 flex border-l border-warm-grey overflow-x-auto min-w-0 ml-auto pl-6"
+				class="filter-bar-scroll justify-start items-center gap-2 flex border-l border-warm-grey overflow-x-auto min-w-0 ml-auto {isFullscreen
+					? 'pl-6'
+					: 'pl-8'}"
 			>
 				<FilterDropdown
 					label="Region"
 					options={regionOptions}
 					selected={selectedRegions}
 					defaultExpanded={['nem']}
-					compact
+					compact={isFullscreen}
 					onchange={handleRegionChange}
 					onclear={() => onregionschange?.([])}
 					onselectall={() => onregionschange?.(getLeafValues(regionOptions))}
@@ -461,7 +518,7 @@
 					label="Status"
 					options={statusOptions}
 					selected={selectedStatuses}
-					compact
+					compact={isFullscreen}
 					clearLabel="Reset to defaults"
 					onchange={handleStatusChange}
 					onclear={() => onstatuseschange?.([...DEFAULT_STATUSES])}
@@ -474,7 +531,7 @@
 					selected={selectedFuelTechs}
 					searchable
 					searchPlaceholder="Search technologies"
-					compact
+					compact={isFullscreen}
 					onchange={handleFuelTechChange}
 					onclear={() => onfueltechschange?.([])}
 					onselectall={() => onfueltechschange?.(getLeafValues(fuelTechOptions))}
@@ -488,7 +545,7 @@
 					value={capacityRange}
 					step={10}
 					formatValue={formatCapacity}
-					compact
+					compact={isFullscreen}
 					onchange={(range) => oncapacityrangechange?.(range)}
 					onclear={() => oncapacityrangechange?.([capacityMin, capacityMax])}
 				/>
@@ -500,7 +557,7 @@
 					value={yearRange}
 					step={1}
 					formatValue={formatYear}
-					compact
+					compact={isFullscreen}
 					suppressScrollClose={isYearPlaying}
 					onchange={(range) => {
 						stopYearAnimation();
@@ -514,6 +571,8 @@
 		{#snippet options()}
 			<div class="flex items-center">
 				<OptionsMenu
+					{isFullscreen}
+					onfullscreenchange={() => onfullscreenchange?.()}
 					onshowshortcuts={() => onshowshortcuts?.()}
 					ondownloadcsv={() => ondownloadcsv?.()}
 				/>

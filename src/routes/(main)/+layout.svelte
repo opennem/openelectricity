@@ -24,15 +24,22 @@
 
 	// Fullscreen mode — the global Nav/Footer chrome is hidden when any of:
 	//   - `?fullscreen=true` URL param (available at SSR, so no first-paint flash),
-	//   - a page returns `fullscreen: true` from its load (e.g. /facilities is
-	//     immersive always — also SSR-available, so no flash), or
+	//   - a page returns `fullscreen: true` from its load (e.g. /facilities and
+	//     /facility/[code] are fullscreen by default — also SSR-available, so no
+	//     flash), or
 	//   - a child page forces it imperatively via the `layout-fullscreen` context.
+	// An explicit `?fullscreen=false` overrides all of the above — it's how the
+	// fullscreen-by-default pages opt back into windowed mode (F shortcut).
 	let contextFullscreen = $state(false);
-	let urlFullscreen = $derived(!building && page.url.searchParams.get('fullscreen') === 'true');
+	let fullscreenParam = $derived(building ? null : page.url.searchParams.get('fullscreen'));
 	let pageFullscreen = $derived(
 		/** @type {{ fullscreen?: boolean }} */ (page.data)?.fullscreen === true
 	);
-	let isFullscreen = $derived(contextFullscreen || urlFullscreen || pageFullscreen);
+	let isFullscreen = $derived(
+		fullscreenParam === 'false'
+			? false
+			: contextFullscreen || fullscreenParam === 'true' || pageFullscreen
+	);
 
 	setContext('layout-fullscreen', {
 		/** @param {boolean} value */
@@ -198,15 +205,37 @@
 	   cross-fade. Remove this block plus the matching `view-transition-name`
 	   hooks in the two routes to revert. */
 	:global {
-		/* Logo + first breadcrumb on the left, options dropdown on the right —
-		   both stay visually fixed across the route swap. */
-		::view-transition-group(filter-bar-stable),
+		/* Logo + first breadcrumb on the left: the pair's content is identical
+		   on both routes, so the images don't cross-fade (animation: none) but
+		   the GROUP keeps its default position animation — it slides right to
+		   make room for the back button entering on /facility/[code], and back
+		   left on the way out. The options dropdown stays visually fixed. */
 		::view-transition-old(filter-bar-stable),
 		::view-transition-new(filter-bar-stable),
 		::view-transition-group(filter-bar-options),
 		::view-transition-old(filter-bar-options),
 		::view-transition-new(filter-bar-options) {
 			animation: none;
+		}
+		/* Back button — only exists on /facility/[code], so it's always
+		   unpaired: slides in from the left on entry, back out on exit. */
+		::view-transition-old(filter-bar-back):only-child {
+			animation: facilities-filter-bar-back-out 240ms ease both;
+		}
+		::view-transition-new(filter-bar-back):only-child {
+			animation: facilities-filter-bar-back-in 240ms ease both;
+		}
+		@keyframes facilities-filter-bar-back-out {
+			to {
+				transform: translateX(-24px);
+				opacity: 0;
+			}
+		}
+		@keyframes facilities-filter-bar-back-in {
+			from {
+				transform: translateX(-24px);
+				opacity: 0;
+			}
 		}
 		/* The middle (page-specific) region uses its OWN view-transition-name
 		   per route (-list on /facilities, -detail on /facility/[code]). The

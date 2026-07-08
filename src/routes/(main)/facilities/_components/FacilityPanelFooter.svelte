@@ -5,6 +5,7 @@
 	 * the /facility/{code} page.
 	 */
 	import { ArrowRight, Building2 } from '@lucide/svelte';
+	import { windowedHref } from '$lib/utils/fullscreen-mode.js';
 
 	/**
 	 * `buttonColour` (the facility's dominant fuel-tech colour) + `darkText` match
@@ -15,7 +16,8 @@
 	 *   facilityCode?: string | null,
 	 *   buttonColour?: string,
 	 *   darkText?: boolean,
-	 *   loading?: boolean
+	 *   loading?: boolean,
+	 *   isFullscreen?: boolean
 	 * }}
 	 */
 	let {
@@ -23,7 +25,8 @@
 		facilityCode = null,
 		buttonColour = 'transparent',
 		darkText = false,
-		loading = false
+		loading = false,
+		isFullscreen = true
 	} = $props();
 </script>
 
@@ -57,7 +60,7 @@
 
 	{#if facilityCode}
 		<a
-			href={`/facility/${facilityCode}`}
+			href={windowedHref(`/facility/${facilityCode}`, !isFullscreen)}
 			style="background-color: {buttonColour}"
 			class="group shrink-0 inline-flex items-center justify-center gap-2 w-full md:w-auto px-4 py-2 text-sm font-semibold rounded-lg shadow-sm transition-all hover:opacity-90 hover:shadow no-underline hover:no-underline {darkText
 				? 'text-black'

@@ -1,6 +1,7 @@
 <script>
 	import { goto } from '$app/navigation';
 	import { page, navigating } from '$app/state';
+	import { building } from '$app/environment';
 	import { onMount, tick } from 'svelte';
 	import { fly } from 'svelte/transition';
 
@@ -15,11 +16,12 @@
 	import { portal } from '$lib/actions/portal.js';
 	import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../facilities/_utils/units';
 	import { regions as regionDefs } from '../facilities/_utils/filters.js';
+	import { isFullscreenUrl, toggleFullscreenMode } from '$lib/utils/fullscreen-mode.js';
 
 	import FacilityPickerBar from './[code]/_components/FacilityPickerBar.svelte';
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
 	import OptionsMenu from '../facilities/_components/OptionsMenu.svelte';
-	import IconChevronLeft from '$lib/icons/ChevronLeft.svelte';
+	import { ArrowLeft } from '@lucide/svelte';
 	import { backToFacilities } from './_utils/back-navigation.js';
 
 	/**
@@ -59,6 +61,17 @@
 	let regionDef = $derived(regionValue ? regionDefs.find((r) => r.value === regionValue) : null);
 	let regionLabel = $derived(regionDef?.longLabel ?? '');
 	let regionShortLabel = $derived(regionDef?.label ?? '');
+
+	// Fullscreen by default (the layout load returns `fullscreen: true`); an
+	// explicit `?fullscreen=false` opts into windowed mode (F shortcut toggles).
+	// `building` guard: reading searchParams during prerender crashes the build
+	// (this is why the old `prerender = 'auto'` was disabled). At build there is
+	// no windowed state, so it resolves to fullscreen and hydrates correctly.
+	let isFullscreen = $derived(building ? true : isFullscreenUrl(page.url));
+
+	function toggleFullscreen() {
+		toggleFullscreenMode(isFullscreen);
+	}
 
 	let showShortcutsToast = $state(false);
 	let leftOpen = $state(false);
@@ -144,23 +157,37 @@
 
 		if (e.key === '?') {
 			showShortcutsToast = !showShortcutsToast;
+			return;
+		}
+
+		if (e.key === 'f' || e.key === 'F') {
+			if (e.shiftKey) return;
+			e.preventDefault();
+			toggleFullscreen();
+			showShortcutsToast = false;
 		}
 	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
 
-<FullscreenLayout isFullscreen={true}>
+<FullscreenLayout {isFullscreen}>
 	{#snippet filterBar()}
 		<!-- The picker bar is desktop-only; on mobile the back + options buttons
 		     float over the facility header instead (see the content snippet). -->
-		<div class="relative z-40 shrink-0 border-b border-warm-grey hidden md:block">
+		<div
+			class="relative z-40 shrink-0 border-b border-warm-grey hidden md:block {isFullscreen
+				? ''
+				: 'px-4'}"
+		>
 			<FacilityPickerBar
 				selectedLabel={selectedFacility?.name ?? ''}
 				selectedCode={currentCode}
 				{regionValue}
 				{regionLabel}
 				{regionShortLabel}
+				{isFullscreen}
+				onfullscreenchange={toggleFullscreen}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onsearchfacilities={openLeftPanelAndFocus}
 				searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
@@ -169,7 +196,7 @@
 	{/snippet}
 
 	{#snippet content()}
-		<FullscreenContainer class="[view-transition-name:page-body]">
+		<FullscreenContainer {isFullscreen} class="[view-transition-name:page-body]">
 			<div class="flex-1 flex flex-col md:flex-row min-h-0">
 				{#if !isMobile}
 					<div
@@ -201,13 +228,15 @@
 							type="button"
 							class="{floatingCircleClass} text-white cursor-pointer"
 							aria-label="Back to facilities"
-							onclick={() => backToFacilities(currentCode)}
+							onclick={() => backToFacilities(currentCode, !isFullscreen)}
 						>
-							<IconChevronLeft class="size-6" />
+							<ArrowLeft size={24} class="shrink-0" />
 						</button>
 					</div>
 					<div class="md:hidden absolute top-3 right-3 z-30">
 						<OptionsMenu
+							{isFullscreen}
+							onfullscreenchange={toggleFullscreen}
 							onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 							onsearchfacilities={openLeftPanelAndFocus}
 							searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
@@ -254,7 +283,7 @@
 				<!-- The tiny version strip is hidden on mobile, where the facility
 				     detail page renders its own fixed bottom navigation. -->
 				{#if !isMobile}
-					<FullscreenFooter />
+					<FullscreenFooter {isFullscreen} onenterfullscreen={toggleFullscreen} />
 				{/if}
 			{/snippet}
 		</FullscreenContainer>
@@ -268,6 +297,7 @@
 		{ label: 'Toggle facility list', keys: [isMac ? '⌘' : 'Ctrl', 'K'] },
 		{ label: 'Search facilities', keys: ['/'] },
 		{ label: 'Toggle navigation menu', keys: ['G'] },
+		{ label: 'Enter / exit full screen', keys: ['F'] },
 		{ label: 'Show shortcuts', keys: ['?'] }
 	]}
 />

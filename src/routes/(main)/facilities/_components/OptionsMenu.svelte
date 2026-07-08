@@ -9,6 +9,8 @@
 
 	/**
 	 * @type {{
+	 *   isFullscreen?: boolean,
+	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   ondownloadcsv?: () => void,
 	 *   onsearchfacilities?: () => void,
@@ -18,6 +20,8 @@
 	 * }}
 	 */
 	let {
+		isFullscreen = false,
+		onfullscreenchange,
 		onshowshortcuts,
 		ondownloadcsv,
 		onsearchfacilities,
@@ -39,7 +43,7 @@
 	}
 </script>
 
-<OptionsMenu {onshowshortcuts} {triggerClass} {iconClass}>
+<OptionsMenu {isFullscreen} {onfullscreenchange} {onshowshortcuts} {triggerClass} {iconClass}>
 	{#snippet sections({ close })}
 		{#if ondownloadcsv}
 			<OptionsMenuHeading icon={downloading ? Check : Download}>Download as CSV</OptionsMenuHeading>
