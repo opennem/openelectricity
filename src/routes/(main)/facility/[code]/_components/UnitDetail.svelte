@@ -24,6 +24,7 @@
 	import { METRICS } from '$lib/components/charts/facility/metrics/metric-definitions.js';
 	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
 	import UnitCharts from './UnitCharts.svelte';
+	import { sectionCardClass } from '../_utils/section-card.js';
 
 	/**
 	 * `facility` powers the per-unit snapshot charts — the unit is charted by
@@ -416,68 +417,80 @@
 	</p>
 {/snippet}
 
-<div>
+{#snippet cardHeader(/** @type {string} */ title)}
+	<div class="border-b border-mid-warm-grey/40 px-6 py-3">
+		<h3 class="m-0 text-sm font-semibold text-dark-grey">{title}</h3>
+	</div>
+{/snippet}
+
+<!-- Card stack matching the facility page's main column: standalone card
+     sections on a light-warm-grey backdrop. -->
+<div class="min-h-full space-y-4 bg-light-warm-grey p-4">
 	<!-- Metrics — same bordered-cell grid as the facility page metrics section
 	     (cells carry border-r/border-b; the -mr/-mb pull + overflow clip drop the
 	     outer edges; a filler keeps an odd last row full). Fuel identity and
-	     status lead the grid as metrics of their own. -->
-	<div class="overflow-hidden">
-		<div class="grid grid-cols-2 -mb-px -mr-px">
-			<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
-				<div class="flex flex-col gap-0.5">
-					<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">Fuel</span>
-					<span class="flex items-center gap-2">
-						<span
-							class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full {isDarkText
-								? 'text-black'
-								: 'text-white'}"
-							style="background-color: {bgColor};"
-						>
-							<FuelTechBadge fuelTech={ft} iconOnly iconSize={4} />
-						</span>
-						<span class="text-base font-semibold text-dark-grey">{ftName}</span>
-					</span>
-				</div>
-			</div>
-
-			<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
-				<div class="flex flex-col gap-0.5">
-					<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">Status</span>
-					<span class="flex items-center gap-1.5">
-						<FacilityStatusIcon {status} isCommissioning={unit?.isCommissioning ?? false} />
-						<span class="text-base font-semibold capitalize text-dark-grey">{status ?? '—'}</span>
-					</span>
-				</div>
-			</div>
-
-			{#each metricStats as s (s.label)}
+	     status lead the grid as metrics of their own. The inner wrapper keeps
+	     clipping at every breakpoint so the pulled borders never show. -->
+	<div class={sectionCardClass}>
+		<div class="overflow-hidden">
+			<div class="grid grid-cols-2 -mb-px -mr-px">
 				<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
-					<MetricCard
-						size="sm"
-						label={s.label}
-						value={s.value}
-						unit={s.unit ?? ''}
-						description={s.description ?? ''}
-					/>
-					{#if s.source}
-						{@render sourceNote('Source', s.source)}
-					{/if}
+					<div class="flex flex-col gap-0.5">
+						<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">Fuel</span>
+						<span class="flex items-center gap-2">
+							<span
+								class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full {isDarkText
+									? 'text-black'
+									: 'text-white'}"
+								style="background-color: {bgColor};"
+							>
+								<FuelTechBadge fuelTech={ft} iconOnly iconSize={4} />
+							</span>
+							<span class="text-base font-semibold text-dark-grey">{ftName}</span>
+						</span>
+					</div>
 				</div>
-			{/each}
-			{#if metricStats.length % 2 === 1}
-				<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4" aria-hidden="true"></div>
-			{/if}
+
+				<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
+					<div class="flex flex-col gap-0.5">
+						<span class="text-xxs font-medium uppercase tracking-wider text-mid-grey">Status</span>
+						<span class="flex items-center gap-1.5">
+							<FacilityStatusIcon {status} isCommissioning={unit?.isCommissioning ?? false} />
+							<span class="text-base font-semibold capitalize text-dark-grey">{status ?? '—'}</span>
+						</span>
+					</div>
+				</div>
+
+				{#each metricStats as s (s.label)}
+					<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4">
+						<MetricCard
+							size="sm"
+							label={s.label}
+							value={s.value}
+							unit={s.unit ?? ''}
+							description={s.description ?? ''}
+						/>
+						{#if s.source}
+							{@render sourceNote('Source', s.source)}
+						{/if}
+					</div>
+				{/each}
+				{#if metricStats.length % 2 === 1}
+					<div class="border-r border-b border-mid-warm-grey/40 px-6 py-4" aria-hidden="true"></div>
+				{/if}
+			</div>
 		</div>
+		{#if group === 'solar' && solarMounting}
+			<p class="m-0 px-6 py-3 text-xxs capitalize text-mid-grey">Mounting: {solarMounting}</p>
+		{/if}
 	</div>
-	{#if group === 'solar' && solarMounting}
-		<p class="m-0 px-6 py-3 text-xxs capitalize text-mid-grey">Mounting: {solarMounting}</p>
-	{/if}
 
 	<!-- Charts — the facility page's charts scoped to just this unit, with their
-	     own range/interval/date controls and tap-to-engage pan/zoom. Keyed on the
-	     unit so viewport + load state reset when a different unit opens. -->
+	     own range/interval/date controls and tap-to-engage pan/zoom in a single
+	     card. Keyed on the unit so viewport + load state reset when a different
+	     unit opens. -->
 	{#if unitFacility}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
+		<div class="{sectionCardClass} px-6 py-4">
 			{#key unit.code}
 				<UnitCharts facility={unitFacility} {timeZone} />
 			{/key}
@@ -486,9 +499,9 @@
 
 	<!-- Lifecycle -->
 	{#if hasLifecycle}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<h4 class="m-0 text-xxs font-semibold uppercase tracking-wider text-mid-grey">Lifecycle</h4>
-			<dl class="mt-2">
+		<div class={sectionCardClass}>
+			{@render cardHeader('Lifecycle')}
+			<dl class="m-0 px-6 py-3">
 				{#if has(sanityUnit?.construction_start_date)}
 					{@render defRow(
 						'Construction start',
@@ -533,9 +546,9 @@
 
 	<!-- Data -->
 	{#if hasData}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<h4 class="m-0 text-xxs font-semibold uppercase tracking-wider text-mid-grey">Data</h4>
-			<dl class="mt-2">
+		<div class={sectionCardClass}>
+			{@render cardHeader('Data')}
+			<dl class="m-0 px-6 py-3">
 				{#if has(unit?.data_first_seen)}
 					{@render defRow('First seen', fmtDateTime(unit.data_first_seen))}
 				{/if}
@@ -548,53 +561,51 @@
 
 	<!-- Development & approvals -->
 	{#if hasApprovals}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<h4 class="m-0 text-xxs font-semibold uppercase tracking-wider text-mid-grey">
-				Development &amp; approvals
-			</h4>
-			{#if has(sanityUnit?.construction_cost) || sanityUnit?.commissioning_confirmed === true}
-				<dl class="mt-2">
-					{#if has(sanityUnit?.construction_cost)}
-						{@render defRow(
-							'Construction cost',
-							formatCost(sanityUnit.construction_cost),
-							sanityUnit.construction_cost_source
-						)}
-					{/if}
-					{#if sanityUnit?.commissioning_confirmed === true}
-						{@render defRow('Commissioning', 'Confirmed')}
-					{/if}
-				</dl>
-			{/if}
+		<div class={sectionCardClass}>
+			{@render cardHeader('Development & approvals')}
+			<div class="space-y-4 px-6 py-3">
+				{#if has(sanityUnit?.construction_cost) || sanityUnit?.commissioning_confirmed === true}
+					<dl class="m-0">
+						{#if has(sanityUnit?.construction_cost)}
+							{@render defRow(
+								'Construction cost',
+								formatCost(sanityUnit.construction_cost),
+								sanityUnit.construction_cost_source
+							)}
+						{/if}
+						{#if sanityUnit?.commissioning_confirmed === true}
+							{@render defRow('Commissioning', 'Confirmed')}
+						{/if}
+					</dl>
+				{/if}
 
-			{#if approvalRows.length}
-				<div class="mt-4 grid grid-cols-[1fr_auto_auto] items-baseline gap-x-4 gap-y-2">
-					<span></span>
-					<span class="text-right text-xxs uppercase tracking-wider text-mid-grey">Lodged</span>
-					<span class="text-right text-xxs uppercase tracking-wider text-mid-grey">Approved</span>
-					{#each approvalRows as row (row.label)}
-						<div class="min-w-0 text-xs text-mid-grey">
-							{#if isUrl(row.href)}{@render extLink(row.href, row.label)}{:else}{row.label}{/if}
-						</div>
-						<div class="text-right text-sm text-dark-grey">
-							{has(row.lodged) ? fmtDate(row.lodged, 'day') : '—'}
-						</div>
-						<div class="text-right text-sm text-dark-grey">
-							{has(row.approved) ? fmtDate(row.approved, 'day') : '—'}
-						</div>
-					{/each}
-				</div>
-			{/if}
+				{#if approvalRows.length}
+					<div class="grid grid-cols-[1fr_auto_auto] items-baseline gap-x-4 gap-y-2">
+						<span></span>
+						<span class="text-right text-xxs uppercase tracking-wider text-mid-grey">Lodged</span>
+						<span class="text-right text-xxs uppercase tracking-wider text-mid-grey">Approved</span>
+						{#each approvalRows as row (row.label)}
+							<div class="min-w-0 text-xs text-mid-grey">
+								{#if isUrl(row.href)}{@render extLink(row.href, row.label)}{:else}{row.label}{/if}
+							</div>
+							<div class="text-right text-sm text-dark-grey">
+								{has(row.lodged) ? fmtDate(row.lodged, 'day') : '—'}
+							</div>
+							<div class="text-right text-sm text-dark-grey">
+								{has(row.approved) ? fmtDate(row.approved, 'day') : '—'}
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</div>
 		</div>
 	{/if}
 
 	<!-- Equipment -->
 	{#if unitTypes.length}
-		<div class="border-t border-mid-warm-grey/40 px-6 py-4">
-			<h4 class="m-0 mb-2 text-xxs font-semibold uppercase tracking-wider text-mid-grey">
-				Equipment
-			</h4>
-			<div class="flex flex-col gap-2">
+		<div class={sectionCardClass}>
+			{@render cardHeader('Equipment')}
+			<div class="flex flex-col gap-2 px-6 py-4">
 				{#each unitTypes as ut, i (ut._id ?? i)}
 					{@const title = [ut.unit_brand, ut.unit_model].filter(Boolean).join(' ')}
 					<div class="rounded-lg bg-light-warm-grey px-3 py-2">

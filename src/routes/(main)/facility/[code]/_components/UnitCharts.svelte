@@ -16,12 +16,12 @@
 		FacilityPriceChart,
 		FacilityFinancialDataProvider
 	} from '$lib/components/charts/facility';
-	import { ChartRangeBar } from '$lib/components/charts/v2';
+	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
 	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
 	import { dataEndMs } from '$lib/components/charts/facility/data-end.js';
 	import { capYTicks } from '$lib/components/charts/facility/helpers.js';
 	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
-	import { toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
+	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 
 	/** @type {{ facility: any, timeZone: string, rangeDays?: number }} */
 	let { facility, timeZone, rangeDays = 3 } = $props();
@@ -37,6 +37,15 @@
 
 	let viewStart = $state(0);
 	let viewEnd = $state(0);
+
+	// Toolbar label mirrors the facility page: the live viewport once the
+	// charts have seeded it, the default window before then.
+	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
+	let dateRangeLabel = $derived.by(() => {
+		const start = viewStart || defaultStart;
+		const end = viewEnd || defaultEnd;
+		return formatDateRange(new Date(start), new Date(end), ianaTimeZone);
+	});
 
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let powerChart = $state(undefined);
@@ -107,21 +116,25 @@
 </script>
 
 <div class="space-y-4">
-	<ChartRangeBar
-		selectedRange={range.selectedRange}
-		customDays={range.customDays}
-		displayInterval={range.displayInterval}
-		startDate={range.pickerStartDate}
-		endDate={range.pickerEndDate}
-		minDate={MIN_DATE}
-		maxDate={range.maxDate}
-		{earliestDate}
-		showIntervalDropdown={true}
-		pending={range.rangeSwitchPending}
-		onrangeselect={range.handleRangeSelect}
-		ondaterangechange={range.handleDateRangeChange}
-		onintervalchange={range.handleIntervalChange}
-	/>
+	<div class="flex flex-wrap items-center justify-between gap-4">
+		<span class="font-space text-base font-medium text-dark-grey">{dateRangeLabel}</span>
+		<ChartRangeBar
+			selectedRange={range.selectedRange}
+			customDays={range.customDays}
+			displayInterval={range.displayInterval}
+			startDate={range.pickerStartDate}
+			endDate={range.pickerEndDate}
+			minDate={MIN_DATE}
+			maxDate={range.maxDate}
+			{earliestDate}
+			showIntervalDropdown={true}
+			compact
+			pending={range.rangeSwitchPending}
+			onrangeselect={range.handleRangeSelect}
+			ondaterangechange={range.handleDateRangeChange}
+			onintervalchange={range.handleIntervalChange}
+		/>
+	</div>
 
 	<!-- Charts stay mounted under the empty state (visibility, not display:none —
 	     LayerCake needs a real size) so a later range/preset pick can still fetch
