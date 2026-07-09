@@ -38,6 +38,9 @@
 	// The back arrow sits a step above the crumb separators so it reads as a
 	// control (and is easier to hit) rather than punctuation.
 	let backIconSize = $derived(isFullscreen ? 20 : 22);
+	// Hover box is a step larger than the resting size-8 footprint; the
+	// negative margins cancel the growth so the bar layout doesn't shift.
+	let backButtonClass = $derived(isFullscreen ? 'size-9 -m-0.5' : 'size-10 -m-1');
 </script>
 
 <FullscreenFilterBar {isFullscreen} routeKey="detail">
@@ -46,7 +49,7 @@
 		     this facility's pane selected. -->
 		<button
 			type="button"
-			class="flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-dark-grey hover:bg-warm-grey"
+			class="flex {backButtonClass} shrink-0 cursor-pointer items-center justify-center rounded-lg text-dark-grey hover:bg-warm-grey"
 			aria-label="Back"
 			title="Back"
 			onclick={() => backToFacilities(selectedCode, !isFullscreen)}
