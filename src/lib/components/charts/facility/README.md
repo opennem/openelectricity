@@ -23,7 +23,8 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 | `chart-range-control.svelte.js` | `createChartRangeControl` — shared range/interval/preset state machine (hysteresis, picker dates, echo-suppressed viewport pushes) used by `/facility/[code]` and its unit detail sheet |
 | `data-end.js`                   | Retired-data window anchors: `retiredAnchorMs` (shared with the page server load) and `dataEndMs` (chart window end for snapshot/unit charts)                                           |
 | `range-interval-config.js`      | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec                                                                              |
-| `energy-basis.js`               | Shared price/intensity-provider helpers: basis-metric choice, combined query string, series-prefix rewrite, and the per-timestamp energy (MWh) map                                      |
+| `energy-basis.js`               | Shared price/intensity-provider helpers: basis-metric choice, combined query string, and the per-timestamp energy (MWh) map                                                             |
+| `price-lines.js`                | Direction-decomposed derived price: generation vs load partition, per-side VWAP rows, price-line labels (see "Derived price" below)                                                     |
 | `interval-hours.js`             | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains                                                                        |
 | `helpers.js`                    | Colour shading (`buildUnitColourMap`, `SHADE_SPREADS`), series label/colour getter factories, timezone helpers, legacy `transformFacilityPowerData`                                     |
 | `index.js`                      | Barrel exports                                                                                                                                                                          |
@@ -51,8 +52,8 @@ The OE API returns power data as `[timestamp, value]` pairs per unit:
 ```js
 processFacilityPower(powerResponse, {
 	unitFuelTechMap, // Record<string, string> — unit code → fuel tech
-	unitOrder, // string[] — series ordering (e.g. ['power_UNIT1', 'power_UNIT2'])
-	loadsToInvert, // string[] — series IDs to negate
+	unitOrder, // string[] — series ordering, prefixed for the fetched metric (build via unitSeriesIds(metric, analysis.orderedCodes))
+	loadsToInvert, // string[] — series IDs to negate (build via unitSeriesIds(metric, analysis.loadCodes))
 	getLabel, // (unitCode: string, fuelTech: string) => string
 	getColour, // (unitCode: string, fuelTech: string) => string
 	metricFilter, // string — default 'power'
@@ -154,6 +155,69 @@ buckets that would otherwise render as a false dip at the viewport edges; averag
 The `showIntervalToggle` prop (default `true`) controls whether FacilityChart shows its own interval buttons. When using ChartRangeBar (which has its own interval dropdown), pass `showIntervalToggle={false}`.
 
 The `setDisplayInterval(intv)` export method allows external control of the display interval (for `5m`/`30m`/`1d`/`1M` — the client-side aggregation levels).
+
+## Derived price (`price-lines.js` + FacilityFinancialDataProvider)
+
+The Market tab's price is derived, not fetched: volume-weighted average price
+= Σ market_value / Σ energy over the visible window. That division is only
+meaningful while the numerator and denominator describe flow in **one
+direction**, so the derivation partitions the unit set into a **generation
+side** and a **load side** (`loadFuelTechs`: battery charging variants, pumps,
+etc.) and computes an independent line per side:
+
+| Line        | Formula                           | Valid while | Meaning                                                             |
+| ----------- | --------------------------------- | ----------- | ------------------------------------------------------------------- |
+| `price`     | Σ mv(gen units) / Σ energy(gen)   | energy > 0  | VWAP earned by generation/discharge                                 |
+| `loadPrice` | Σ mv(load units) / Σ energy(load) | energy < 0  | VWAP paid to charge/pump — negative when paid to consume (−ve spot) |
+
+Load series arrive sign-inverted from `processFacilityPower` (`loadsToInvert`),
+so on the load side both totals are negative and the ratio recovers the
+positive price paid. Sides without volume in their direction render `null`
+(gaps): a generator that's off, a battery that isn't charging — and, crucially,
+a **net-signed** series while flowing the "wrong" way (see net battery below).
+
+### Facility shapes
+
+- **Generation-only facility** (coal/wind/solar…): no load units, so only the
+  `price` line exists — identical to the historical single-line behaviour.
+- **Battery, split view** (`battery_discharging` + `battery_charging`):
+  `price` is the discharge VWAP, `loadPrice` the charge VWAP; the gap between
+  the lines is the arbitrage spread.
+- **Battery, net view**: the bidirectional `battery` unit is _not_ a load, and
+  its net-signed series can't be decomposed row-by-row at daily+ grains (a day
+  mixes both directions; round-trip losses make most days net-negative, which
+  is why the naive facility-wide price rendered nothing). The page therefore
+  passes the **split** unit set via the provider's `priceFacility` prop, so
+  both toggles show the same two decomposed price lines. The dedicated pricing
+  managers fetch the same combined URL as the display managers — the in-flight
+  dedup and HTTP cache collapse them into the same requests.
+- **Mixed fuel techs + battery** (e.g. solar + storage): solar and discharging
+  sit together on the generation side; charging gets its own `loadPrice` line.
+- **Pumped hydro**: `pumps` units are loads, so pumping cost is the
+  `loadPrice` line next to the hydro generation price.
+- **Unit slide-out**: the per-unit facility clone prices just that unit — a
+  discharge unit shows only `price`, a charging/pump unit only `loadPrice`.
+
+### Labels and colours
+
+`genPriceLabel` / `loadPriceLabel` name the lines by what's on each side:
+"Discharge price" (pure battery discharge) vs "Generation price"; "Charge
+price" (all charging variants), "Pumping price" (all pumps), else "Load
+price". With no load line the single line keeps its historical "Av. Price"
+label. The load line takes its first unit's fuel-tech colour so it ties back
+to the same units in the stacked charts; the generation line keeps the shared
+red `LINE_COLOUR`.
+
+When both lines render, the price chart's hover strip lists each direction's
+value separately — never a total, since the lines are independent $/MWh
+measures.
+
+The price lines are facility-wide by design — the units-panel visibility
+toggles (`hiddenUnitCodes`) hide series from the market-value stack only.
+The emissions-intensity line keeps its `energy > 0` guard: loads have no
+generation intensity, so a load-side intensity would be meaningless.
+
+Business-logic tests: `price-lines.test.js`.
 
 ## ChartDataManager
 

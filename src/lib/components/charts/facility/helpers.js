@@ -172,16 +172,15 @@ export function makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNames) {
  * `makeUnitLabelGetter` — the closure outlives the creating component.
  *
  * @param {Record<string, string>} colourMap - unit code → hex colour
- * @param {string[]} loadIds - load series ids with the given prefix
- * @param {string} prefix - series id prefix ('power' | 'market_value' | 'emissions' | 'energy')
+ * @param {string[]} loadCodes - unit codes of load units (from analyzeUnits)
  * @param {(ftCode: string) => string} getFuelTechColor - base colour fallback
  * @returns {(unitCode: string, fuelTech: string) => string}
  */
-export function makeLoadAwareColourGetter(colourMap, loadIds, prefix, getFuelTechColor) {
-	const loadIdSet = new Set(loadIds);
+export function makeLoadAwareColourGetter(colourMap, loadCodes, getFuelTechColor) {
+	const loadCodeSet = new Set(loadCodes);
 	return (unitCode, fuelTech) => {
 		const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-		return loadIdSet.has(`${prefix}_${unitCode}`) ? chroma(baseColor).brighten(1).hex() : baseColor;
+		return loadCodeSet.has(unitCode) ? chroma(baseColor).brighten(1).hex() : baseColor;
 	};
 }
 

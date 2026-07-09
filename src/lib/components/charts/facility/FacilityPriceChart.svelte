@@ -121,13 +121,31 @@
 		>
 			{#snippet tooltip()}
 				{@const tip = ctx.getTooltipData(priceChartStore)}
+				{@const multiLine = priceChartStore.seriesNames.length > 1}
 				<div class="h-[21px]">
 					{#if tip}
 						<div class="h-full flex items-center justify-end text-xs">
 							<span class="px-3 py-1 font-light bg-white/40">{tip.date}</span>
+							<!-- One entry per direction line — the lines are independent
+							     $/MWh measures, so there is deliberately no total. -->
 							<div class="bg-light-warm-grey px-4 py-1 flex gap-4 items-center">
-								<span class="text-mid-grey">Av. Price</span>
-								<strong class="font-semibold">{ctx.formatPriceValue(tip.total)}/MWh</strong>
+								{#each priceChartStore.seriesNames as name (name)}
+									{@const value = tip.data?.[name]}
+									{#if value != null}
+										<span class="flex items-center gap-1.5">
+											{#if multiLine}
+												<span
+													class="inline-block size-2 shrink-0 rounded-full"
+													style="background-color: {priceChartStore.seriesColours[name]};"
+												></span>
+											{/if}
+											<span class="text-mid-grey">
+												{(priceChartStore.seriesLabels[name] ?? name).replace(' ($/MWh)', '')}
+											</span>
+											<strong class="font-semibold">{ctx.formatPriceValue(value)}/MWh</strong>
+										</span>
+									{/if}
+								{/each}
 							</div>
 						</div>
 					{/if}

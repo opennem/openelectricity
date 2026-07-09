@@ -16,8 +16,8 @@ const BATTERY_FUEL_TECHS = ['battery'];
  * @property {Record<string, string>} unitColours       - unit code → hex colour
  * @property {Record<string, string>} unitFuelTechMap    - unit code → fuel tech id
  * @property {Record<string, string>} unitCodeDisplayMap - unit code → display code (only units that have one)
- * @property {string[]}               unitOrder          - series ids in fuel-tech display order
- * @property {string[]}               loadIds            - series ids that are loads (to invert)
+ * @property {string[]}               orderedCodes       - unit codes in fuel-tech display order (prefix with `unitSeriesIds(metric, …)` for series ids)
+ * @property {string[]}               loadCodes          - unit codes that are loads (series to invert)
  * @property {string}                 unitsKey           - identity of the unit set (see unitsKeyFor)
  * @property {boolean}                hasBatteryUnits    - whether any unit is a battery
  * @property {{ positive: number, negative: number }} capacitySums - generation / load capacity
@@ -90,7 +90,7 @@ export function sortUnitsForDisplay(units, options) {
  */
 export function analyzeUnits(facility, getFuelTechColor) {
 	// Canonical display order (fuel-tech primary, label tie-break) drives
-	// `unitOrder` (chart stack/tooltip order) and the colour-shade gradient.
+	// `orderedCodes` (chart stack/tooltip order) and the colour-shade gradient.
 	const units = /** @type {any[]} */ (sortUnitsForDisplay(facility?.units ?? []));
 
 	// ── colour map ────────────────────────────────────────────────
@@ -110,14 +110,17 @@ export function analyzeUnits(facility, getFuelTechColor) {
 	}
 
 	// ── ordering — `units` is already in canonical display order ──
-	const unitOrder = units.map((/** @type {any} */ unit) => `power_${unit.code}`);
+	// Bare unit codes: consumers prefix with the metric they fetch via
+	// unitSeriesIds(metric, codes) so power/energy/market_value/emissions
+	// managers all match their own series ids.
+	const orderedCodes = units.map((/** @type {any} */ unit) => unit.code);
 
-	// ── load ids ──────────────────────────────────────────────────
+	// ── load codes ────────────────────────────────────────────────
 	/** @type {string[]} */
-	const loadIds = [];
+	const loadCodes = [];
 	for (const unit of units) {
 		if (loadFuelTechs.includes(unit.fueltech_id)) {
-			loadIds.push(`power_${unit.code}`);
+			loadCodes.push(unit.code);
 		}
 	}
 
@@ -166,8 +169,8 @@ export function analyzeUnits(facility, getFuelTechColor) {
 		unitColours,
 		unitFuelTechMap,
 		unitCodeDisplayMap,
-		unitOrder,
-		loadIds,
+		orderedCodes,
+		loadCodes,
 		unitsKey: unitsKeyFor(unitFuelTechMap),
 		hasBatteryUnits,
 		capacitySums,

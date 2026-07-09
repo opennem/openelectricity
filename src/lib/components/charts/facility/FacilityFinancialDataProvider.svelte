@@ -24,12 +24,9 @@
 		getBasisMetric,
 		combinedMetricsFor,
 		buildCombinedMetricsUrl,
-		rewriteSeriesPrefix,
-		sumSeries,
-		buildEnergyMap,
-		toEnergySeriesRows,
-		createBasisColour
+		toEnergySeriesRows
 	} from './energy-basis.js';
+	import { derivePriceRows, genPriceLabel, loadPriceLabel } from './price-lines.js';
 	import { LINE_COLOUR } from './colours.js';
 	import { ianaFromOffset } from '../v2/network-time.js';
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '../v2/chart-loading-state.js';
@@ -61,6 +58,7 @@
 	/**
 	 * @typedef {Object} Props
 	 * @property {any} facility
+	 * @property {any | null} [priceFacility] - Unit set the derived price lines are computed from, when it should differ from the displayed `facility` — e.g. the SPLIT battery view while the market-value chart shows the net unit (a net-signed bidirectional series can't be decomposed by direction at daily+ grains). Defaults to `facility`.
 	 * @property {string} timeZone
 	 * @property {string} [interval]
 	 * @property {string} [displayInterval]
@@ -84,6 +82,7 @@
 	/** @type {Props} */
 	let {
 		facility,
+		priceFacility = null,
 		timeZone,
 		interval = '5m',
 		displayInterval = '30m',
@@ -119,6 +118,18 @@
 	let basisMetric = $derived(getBasisMetric(interval));
 	let combinedMetrics = $derived(combinedMetricsFor(basisMetric));
 
+	/**
+	 * Fetch window for a viewport — buffered each side (wider for the energy
+	 * basis since its intervals are daily+), clamped to now on the future edge.
+	 * @param {number} start
+	 * @param {number} end
+	 * @returns {[number, number]}
+	 */
+	function bufferedRange(start, end) {
+		const buffer = (end - start) * (isEnergyInterval ? 3 : 1);
+		return [start - buffer, Math.min(end + buffer, Date.now())];
+	}
+
 	// ============================================
 	// Unit Analysis
 	// ============================================
@@ -131,8 +142,8 @@
 	let unitColours = $derived(analysis?.unitColours ?? {});
 	let unitFuelTechMap = $derived(analysis?.unitFuelTechMap ?? {});
 	let unitCodeDisplayMap = $derived(analysis?.unitCodeDisplayMap ?? {});
-	let unitOrder = $derived(analysis?.unitOrder ?? []);
-	let loadIds = $derived(analysis?.loadIds ?? []);
+	let orderedCodes = $derived(analysis?.orderedCodes ?? []);
+	let loadCodes = $derived(analysis?.loadCodes ?? []);
 
 	/** Identity of the unit set — a units-only change (e.g. battery net ⇄ split)
 	 *  must recreate the managers even though facility/interval/metric match. */
@@ -141,18 +152,34 @@
 	// The factories return closures over plain values only — they're handed to
 	// ChartDataManagers, whose async continuations can outlive this component.
 	let getLabel = $derived(makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNameMap));
-	let getMvColour = $derived(
-		makeLoadAwareColourGetter(
-			unitColours,
-			rewriteSeriesPrefix(loadIds, 'market_value'),
-			'market_value',
-			getFuelTechColor
-		)
+	let getSeriesColour = $derived(
+		makeLoadAwareColourGetter(unitColours, loadCodes, getFuelTechColor)
 	);
 
-	let getBasisColour = $derived.by(() =>
-		createBasisColour({ basisMetric, unitColours, loadIds, getFuelTechColor })
+	// ── Pricing unit set ──────────────────────────────────────────
+	// The derived price lines decompose by direction (generation vs load), so
+	// they may need a different unit set from the displayed one: the battery
+	// net view prices from the SPLIT units (see the `priceFacility` prop).
+	// Reuses the display analysis when no distinct pricing set is supplied, so
+	// the common case doesn't run analyzeUnits (unit sort + colour ramps) twice.
+	let priceAnalysis = $derived(
+		priceFacility ? analyzeUnits(priceFacility, getFuelTechColor) : analysis
 	);
+	let priceLoadCodes = $derived(priceAnalysis?.loadCodes ?? []);
+	let priceUnitsKey = $derived(priceAnalysis?.unitsKey ?? '');
+	/** When the pricing unit set matches the displayed one, the price reuses the
+	 *  mv/basis managers; otherwise it runs its own pair (see below). */
+	let hasOwnPriceManagers = $derived(priceUnitsKey !== unitsKey);
+
+	let priceGenFuelTechs = $derived(
+		(priceAnalysis?.orderedCodes ?? [])
+			.filter((code) => !priceLoadCodes.includes(code))
+			.map((code) => priceAnalysis?.unitFuelTechMap?.[code] ?? '')
+	);
+	let priceLoadFuelTechs = $derived(
+		priceLoadCodes.map((code) => priceAnalysis?.unitFuelTechMap?.[code] ?? '')
+	);
+	let hasLoadPriceLine = $derived(priceLoadCodes.length > 0);
 
 	// ============================================
 	// Data Managers — gated by `active`
@@ -187,13 +214,6 @@
 			return;
 		}
 
-		// `unitOrder` and `loadIds` come from analyzeUnits as `power_…` series
-		// IDs. The MV data manager produces `market_value_…` IDs, so rewrite the
-		// prefix or processFacilityPower's `unitOrder.filter(...)` call falls
-		// through to the raw API order and the chart stack misorders.
-		const mvUnitOrder = rewriteSeriesPrefix(unitOrder, 'market_value');
-		const mvLoadsToInvert = rewriteSeriesPrefix(loadIds, 'market_value');
-
 		const metricParam = combinedMetrics;
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
@@ -201,10 +221,13 @@
 			interval: currentInterval,
 			metric: 'market_value',
 			unitFuelTechMap,
-			unitOrder: mvUnitOrder,
-			loadsToInvert: mvLoadsToInvert,
+			// The MV manager produces `market_value_…` series ids — build ordering
+			// and inversion for that prefix or processFacilityPower falls through
+			// to the raw API order and the chart stack misorders.
+			unitOrder: unitSeriesIds('market_value', orderedCodes),
+			loadsToInvert: unitSeriesIds('market_value', loadCodes),
 			getLabel,
-			getColour: getMvColour,
+			getColour: getSeriesColour,
 			// One combined URL shared with the emissions provider + generation chart
 			// so the API computes all metrics once and the in-flight dedup collapses
 			// the managers into a single request.
@@ -214,10 +237,8 @@
 		const start = untrack(() => viewStart);
 		const end = untrack(() => viewEnd);
 		if (start && end) {
-			const duration = end - start;
-			const bufferMultiplier = isEnergyInterval ? 3 : 1;
-			const buffer = duration * bufferMultiplier;
-			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
+			const [from, to] = bufferedRange(start, end);
+			manager.requestRange(from, to, { immediate: true });
 		}
 
 		// Retire the replaced manager so its in-flight fetches become no-ops.
@@ -250,22 +271,18 @@
 			return;
 		}
 
-		// `unitOrder`/`loadIds` are `power_…` IDs; rewrite to the basis prefix so
-		// processFacilityPower orders/inverts the right series (`energy_…` for
-		// energy intervals).
-		const basisUnitOrder = rewriteSeriesPrefix(unitOrder, currentBasis);
-		const basisLoadsToInvert = rewriteSeriesPrefix(loadIds, currentBasis);
-
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
 			networkId,
 			interval: currentInterval,
 			metric: currentBasis,
 			unitFuelTechMap,
-			unitOrder: basisUnitOrder,
-			loadsToInvert: basisLoadsToInvert,
+			// Basis series ids carry the basis prefix (`energy_…` for energy
+			// intervals, `power_…` for 5m) — build ordering/inversion to match.
+			unitOrder: unitSeriesIds(currentBasis, orderedCodes),
+			loadsToInvert: unitSeriesIds(currentBasis, loadCodes),
 			getLabel,
-			getColour: getBasisColour,
+			getColour: getSeriesColour,
 			// One combined URL shared with the emissions provider + generation chart
 			// so the API computes all metrics once and the in-flight dedup collapses
 			// the managers into a single request.
@@ -275,15 +292,93 @@
 		const start = untrack(() => viewStart);
 		const end = untrack(() => viewEnd);
 		if (start && end) {
-			const duration = end - start;
-			const bufferMultiplier = isEnergyInterval ? 3 : 1;
-			const buffer = duration * bufferMultiplier;
-			manager.requestRange(start - buffer, Math.min(end + buffer, Date.now()), { immediate: true });
+			const [from, to] = bufferedRange(start, end);
+			manager.requestRange(from, to, { immediate: true });
 		}
 
 		// Retire the replaced manager so its in-flight fetches become no-ops.
 		existing?.dispose();
 		basisDataManager = manager;
+	});
+
+	// Pricing managers — only when the pricing unit set differs from the
+	// displayed one (battery net view pricing from the split units). They fetch
+	// the same combined URL as the active managers, so the in-flight dedup and
+	// the HTTP cache collapse them into the same network requests; only the
+	// unit maps (and therefore the processed series) differ.
+	/** @type {ChartDataManager | null} */
+	let ownPriceMvManager = $state(null);
+	/** @type {ChartDataManager | null} */
+	let ownPriceBasisManager = $state(null);
+
+	$effect(() => {
+		if (!active || !facility || !hasOwnPriceManagers) {
+			untrack(() => ownPriceMvManager)?.dispose();
+			untrack(() => ownPriceBasisManager)?.dispose();
+			ownPriceMvManager = null;
+			ownPriceBasisManager = null;
+			return;
+		}
+
+		const currentInterval = interval;
+		const currentBasis = basisMetric;
+		const metricParam = combinedMetrics;
+		const currentCode = facility.code;
+		const networkId = facility.network_id;
+		const currentPriceUnitsKey = priceUnitsKey;
+		const analysis = priceAnalysis;
+
+		const existingMv = untrack(() => ownPriceMvManager);
+		const existingBasis = untrack(() => ownPriceBasisManager);
+		if (
+			existingMv &&
+			existingBasis &&
+			existingMv.facilityCode === currentCode &&
+			existingMv.interval === currentInterval &&
+			existingBasis.metric === currentBasis &&
+			existingMv.unitsKey === currentPriceUnitsKey
+		) {
+			return;
+		}
+
+		const shared = {
+			facilityCode: currentCode,
+			networkId,
+			interval: currentInterval,
+			unitFuelTechMap: analysis?.unitFuelTechMap ?? {},
+			getLabel: makeUnitLabelGetter(analysis?.unitCodeDisplayMap ?? {}, fuelTechNameMap),
+			getColour: makeLoadAwareColourGetter(
+				analysis?.unitColours ?? {},
+				analysis?.loadCodes ?? [],
+				getFuelTechColor
+			),
+			buildFetchUrl: buildCombinedMetricsUrl(currentCode, metricParam)
+		};
+		const mvManager = new ChartDataManager({
+			...shared,
+			metric: 'market_value',
+			unitOrder: unitSeriesIds('market_value', analysis?.orderedCodes ?? []),
+			loadsToInvert: unitSeriesIds('market_value', analysis?.loadCodes ?? [])
+		});
+		const basisManager = new ChartDataManager({
+			...shared,
+			metric: currentBasis,
+			unitOrder: unitSeriesIds(currentBasis, analysis?.orderedCodes ?? []),
+			loadsToInvert: unitSeriesIds(currentBasis, analysis?.loadCodes ?? [])
+		});
+
+		const start = untrack(() => viewStart);
+		const end = untrack(() => viewEnd);
+		if (start && end) {
+			const [from, to] = bufferedRange(start, end);
+			mvManager.requestRange(from, to, { immediate: true });
+			basisManager.requestRange(from, to, { immediate: true });
+		}
+
+		existingMv?.dispose();
+		existingBasis?.dispose();
+		ownPriceMvManager = mvManager;
+		ownPriceBasisManager = basisManager;
 	});
 
 	// Retire the managers on unmount so in-flight fetches settle as no-ops
@@ -292,24 +387,23 @@
 		return () => {
 			mvDataManager?.dispose();
 			basisDataManager?.dispose();
+			ownPriceMvManager?.dispose();
+			ownPriceBasisManager?.dispose();
 		};
 	});
 
-	// Fetch data when viewport changes — both managers
+	// Fetch data when viewport changes — all managers
 	$effect(() => {
 		if (!active) return;
 		const start = viewStart;
 		const end = viewEnd;
 		if (!start || !end) return;
 
-		const duration = end - start;
-		const bufferMultiplier = isEnergyInterval ? 3 : 1;
-		const buffer = duration * bufferMultiplier;
-		const bufferedStart = start - buffer;
-		const bufferedEnd = Math.min(end + buffer, Date.now());
-
-		mvDataManager?.requestRange(bufferedStart, bufferedEnd);
-		basisDataManager?.requestRange(bufferedStart, bufferedEnd);
+		const [from, to] = bufferedRange(start, end);
+		mvDataManager?.requestRange(from, to);
+		basisDataManager?.requestRange(from, to);
+		ownPriceMvManager?.requestRange(from, to);
+		ownPriceBasisManager?.requestRange(from, to);
 	});
 
 	// ============================================
@@ -349,26 +443,39 @@
 	// Derived Price Data — price = total_market_value / (total_power × interval_hours)
 	// ============================================
 
+	// The pricing rows reuse the display managers when the unit sets match, and
+	// the dedicated pricing managers otherwise.
+	let pricingMvManager = $derived(
+		/** @type {ChartDataManager | null} */ (hasOwnPriceManagers ? ownPriceMvManager : mvDataManager)
+	);
+	let pricingBasisManager = $derived(
+		/** @type {ChartDataManager | null} */ (
+			hasOwnPriceManagers ? ownPriceBasisManager : basisDataManager
+		)
+	);
+	let pricingMvRows = $derived(
+		hasOwnPriceManagers ? getVisibleData(ownPriceMvManager, 'sum') : mvVisibleRows
+	);
+	let pricingBasisRows = $derived(
+		hasOwnPriceManagers
+			? getVisibleData(ownPriceBasisManager, isEnergyInterval ? 'sum' : 'mean')
+			: basisVisibleRows
+	);
+
+	// Direction-decomposed price — an independent volume-weighted line per side
+	// (generation vs load). See price-lines.js for the business rules covering
+	// batteries (net + split), mixed fuel techs and pumped hydro.
 	let priceData = $derived.by(() => {
-		if (!mvDataManager?.processedCache || !basisDataManager?.processedCache) return [];
+		if (!pricingMvManager?.processedCache || !pricingBasisManager?.processedCache) return [];
 
-		const mvSeriesNames = mvDataManager.seriesMeta?.seriesNames ?? [];
-		const basisSeriesNames = basisDataManager.seriesMeta?.seriesNames ?? [];
-
-		const energyMap = buildEnergyMap(basisVisibleRows, basisSeriesNames, {
-			isEnergyInterval,
-			displayInterval,
-			ianaTimeZone
-		});
-
-		return mvVisibleRows.map((row) => {
-			const mvTotal = sumSeries(row, mvSeriesNames);
-			const energy = energyMap.get(row.time) ?? 0;
-			return {
-				date: row.date,
-				time: row.time,
-				price: energy > 0 ? mvTotal / energy : null
-			};
+		return derivePriceRows({
+			mvRows: pricingMvRows,
+			mvSeriesNames: pricingMvManager.seriesMeta?.seriesNames ?? [],
+			basisRows: pricingBasisRows,
+			basisSeriesNames: pricingBasisManager.seriesMeta?.seriesNames ?? [],
+			basisMetric,
+			loadCodes: priceLoadCodes,
+			energyOpts: { isEnergyInterval, displayInterval, ianaTimeZone }
 		});
 	});
 
@@ -434,7 +541,8 @@
 		chart.chartStyles.snapTicks = true;
 		chart.hideDataOptions = true;
 		chart.hideChartTypeOptions = true;
-		// Single-series line — the floating-tooltip total just repeats the value.
+		// Line chart — summing the price lines in the floating tooltip would be
+		// meaningless (each is an independent $/MWh measure).
 		chart.chartTooltips.showTotal = false;
 		// Hybrid axis: linear $0–$300, log above $300 and below $0, on a fixed
 		// domain so the structure stays comparable across facilities and ranges.
@@ -451,9 +559,24 @@
 	$effect(() => {
 		if (!priceChartStore) return;
 
-		priceChartStore.seriesNames = ['price'];
-		priceChartStore.seriesColours = { price: LINE_COLOUR };
-		priceChartStore.seriesLabels = { price: 'Av. Price ($/MWh)' };
+		// One line per direction: the generation side keeps the historical red
+		// line; the load side (charge/pumping cost) picks up its fuel tech's
+		// colour so it ties back to the same units in the stacked charts.
+		if (hasLoadPriceLine) {
+			priceChartStore.seriesNames = ['price', 'loadPrice'];
+			priceChartStore.seriesColours = {
+				price: LINE_COLOUR,
+				loadPrice: getFuelTechColor(priceLoadFuelTechs[0])
+			};
+			priceChartStore.seriesLabels = {
+				price: `${genPriceLabel(priceGenFuelTechs)} ($/MWh)`,
+				loadPrice: `${loadPriceLabel(priceLoadFuelTechs)} ($/MWh)`
+			};
+		} else {
+			priceChartStore.seriesNames = ['price'];
+			priceChartStore.seriesColours = { price: LINE_COLOUR };
+			priceChartStore.seriesLabels = { price: 'Av. Price ($/MWh)' };
+		}
 		priceChartStore.seriesData = priceData;
 		priceChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
 		// Always step-after: each interval's price is held until the next reading.
@@ -510,8 +633,8 @@
 	});
 
 	// Hide externally-toggled units from the market-value stack. The derived
-	// price line (Σ market_value / Σ energy) intentionally stays facility-wide —
-	// it's a single physical measure, not a per-unit series.
+	// price lines (Σ market_value / Σ energy per direction) intentionally stay
+	// facility-wide — they're physical measures, not per-unit series.
 	$effect(() => {
 		if (!mvChartStore) return;
 		mvChartStore.hiddenSeriesNames = unitSeriesIds('market_value', hiddenUnitCodes);
@@ -677,7 +800,10 @@
 			return mvChartStore;
 		},
 		get priceLoadingRanges() {
-			return [...(mvDataManager?.loadingRanges ?? []), ...(basisDataManager?.loadingRanges ?? [])];
+			return [
+				...(pricingMvManager?.loadingRanges ?? []),
+				...(pricingBasisManager?.loadingRanges ?? [])
+			];
 		},
 		get mvLoadingRanges() {
 			return mvDataManager?.loadingRanges ?? [];

@@ -132,8 +132,8 @@
 	let unitColours = $derived(analysis?.unitColours ?? {});
 	let unitFuelTechMap = $derived(analysis?.unitFuelTechMap ?? {});
 	let unitCodeDisplayMap = $derived(analysis?.unitCodeDisplayMap ?? {});
-	let unitOrder = $derived(analysis?.unitOrder ?? []);
-	let loadIds = $derived(analysis?.loadIds ?? []);
+	let orderedCodes = $derived(analysis?.orderedCodes ?? []);
+	let loadCodes = $derived(analysis?.loadCodes ?? []);
 	let hasBatteryUnits = $derived(analysis?.hasBatteryUnits ?? false);
 	let capacitySums = $derived(analysis?.capacitySums ?? { positive: 0, negative: 0 });
 
@@ -177,9 +177,7 @@
 	// The factories return closures over plain values only — they're handed to
 	// ChartDataManagers, whose async continuations can outlive this component.
 	let getLabel = $derived(makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNameMap));
-	let getColour = $derived(
-		makeLoadAwareColourGetter(unitColours, loadIds, 'power', getFuelTechColor)
-	);
+	let getColour = $derived(makeLoadAwareColourGetter(unitColours, loadCodes, getFuelTechColor));
 
 	/**
 	 * When `bundleDerivedMetrics` is on, fetch via the combined
@@ -328,8 +326,10 @@
 			interval: currentInterval,
 			metric: currentMetric,
 			unitFuelTechMap,
-			unitOrder,
-			loadsToInvert: loadIds,
+			// Series ids carry the metric prefix (power_/energy_…), so build them
+			// for the metric this manager fetches or ordering/inversion won't match.
+			unitOrder: unitSeriesIds(currentMetric, orderedCodes),
+			loadsToInvert: unitSeriesIds(currentMetric, loadCodes),
 			getLabel,
 			getColour,
 			buildFetchUrl: bundledFetchUrl(currentCode, currentMetric)
@@ -425,8 +425,8 @@
 				interval: '1d',
 				metric: 'energy',
 				unitFuelTechMap,
-				unitOrder,
-				loadsToInvert: loadIds,
+				unitOrder: unitSeriesIds('energy', orderedCodes),
+				loadsToInvert: unitSeriesIds('energy', loadCodes),
 				getLabel,
 				getColour,
 				buildFetchUrl: bundledFetchUrl(currentCode, 'energy')

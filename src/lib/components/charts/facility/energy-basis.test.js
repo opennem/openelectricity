@@ -3,11 +3,9 @@ import {
 	getBasisMetric,
 	combinedMetricsFor,
 	buildCombinedMetricsUrl,
-	rewriteSeriesPrefix,
 	sumSeries,
 	buildEnergyMap,
-	toEnergySeriesRows,
-	createBasisColour
+	toEnergySeriesRows
 } from './energy-basis.js';
 
 const TZ = 'Australia/Brisbane';
@@ -59,23 +57,6 @@ describe('buildCombinedMetricsUrl', () => {
 			'energy,market_value,emissions'
 		)(new URLSearchParams({ interval: '1M', metric: 'market_value' }));
 		expect(a).toBe(b);
-	});
-});
-
-describe('rewriteSeriesPrefix', () => {
-	it('rewrites power_ IDs to the target metric prefix', () => {
-		expect(rewriteSeriesPrefix(['power_U1', 'power_U2'], 'energy')).toEqual([
-			'energy_U1',
-			'energy_U2'
-		]);
-	});
-
-	it('is a no-op for power → power', () => {
-		expect(rewriteSeriesPrefix(['power_U1'], 'power')).toEqual(['power_U1']);
-	});
-
-	it('only rewrites the leading prefix', () => {
-		expect(rewriteSeriesPrefix(['power_power_x'], 'energy')).toEqual(['energy_power_x']);
 	});
 });
 
@@ -151,42 +132,5 @@ describe('toEnergySeriesRows', () => {
 		expect(out.rows[0].energy_U1).toBe(50); // 100 MW × 0.5 h
 		expect(out.rows[0].energy_U2).toBeNull();
 		expect(out.rows[0].time).toBe(1);
-	});
-});
-
-describe('createBasisColour', () => {
-	const unitColours = { U1: '#336699', U2: '#aabbcc' };
-	const getFuelTechColor = () => '#000000';
-
-	it('returns the base colour for generators', () => {
-		const colour = createBasisColour({
-			basisMetric: 'energy',
-			unitColours,
-			loadIds: [],
-			getFuelTechColor
-		});
-		expect(colour('U1', 'coal_black')).toBe('#336699');
-	});
-
-	it('brightens load units (matched via the basis prefix)', () => {
-		const colour = createBasisColour({
-			basisMetric: 'energy',
-			unitColours,
-			loadIds: ['power_U1'], // analyzeUnits IDs, rewritten to energy_U1
-			getFuelTechColor
-		});
-		const loadColour = colour('U1', 'battery_charging');
-		expect(loadColour).not.toBe('#336699'); // brightened
-		expect(colour('U2', 'coal_black')).toBe('#aabbcc'); // non-load unchanged
-	});
-
-	it('falls back to the fuel-tech colour when the unit has none', () => {
-		const colour = createBasisColour({
-			basisMetric: 'power',
-			unitColours: {},
-			loadIds: [],
-			getFuelTechColor: () => '#123456'
-		});
-		expect(colour('UX', 'gas_ccgt')).toBe('#123456');
 	});
 });

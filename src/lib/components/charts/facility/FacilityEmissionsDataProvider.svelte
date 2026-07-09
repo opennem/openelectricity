@@ -29,10 +29,8 @@
 		getBasisMetric,
 		combinedMetricsFor,
 		buildCombinedMetricsUrl,
-		rewriteSeriesPrefix,
 		sumSeries,
-		buildEnergyMap,
-		createBasisColour
+		buildEnergyMap
 	} from './energy-basis.js';
 	import { LINE_COLOUR } from './colours.js';
 	import { ianaFromOffset } from '../v2/network-time.js';
@@ -114,8 +112,8 @@
 	let unitColours = $derived(analysis?.unitColours ?? {});
 	let unitFuelTechMap = $derived(analysis?.unitFuelTechMap ?? {});
 	let unitCodeDisplayMap = $derived(analysis?.unitCodeDisplayMap ?? {});
-	let unitOrder = $derived(analysis?.unitOrder ?? []);
-	let loadIds = $derived(analysis?.loadIds ?? []);
+	let orderedCodes = $derived(analysis?.orderedCodes ?? []);
+	let loadCodes = $derived(analysis?.loadCodes ?? []);
 
 	/** Identity of the unit set — a units-only change (e.g. battery net ⇄ split)
 	 *  must recreate the managers even though facility/interval/metric match. */
@@ -124,17 +122,8 @@
 	// The factories return closures over plain values only — they're handed to
 	// ChartDataManagers, whose async continuations can outlive this component.
 	let getLabel = $derived(makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNameMap));
-	let getEmissionsColour = $derived(
-		makeLoadAwareColourGetter(
-			unitColours,
-			rewriteSeriesPrefix(loadIds, 'emissions'),
-			'emissions',
-			getFuelTechColor
-		)
-	);
-
-	let getBasisColour = $derived.by(() =>
-		createBasisColour({ basisMetric, unitColours, loadIds, getFuelTechColor })
+	let getSeriesColour = $derived(
+		makeLoadAwareColourGetter(unitColours, loadCodes, getFuelTechColor)
 	);
 
 	// ============================================
@@ -170,13 +159,6 @@
 			return;
 		}
 
-		// `unitOrder` and `loadIds` from analyzeUnits are `power_…` series IDs.
-		// The emissions manager produces `emissions_…` IDs, so rewrite the prefix
-		// or processFacilityPower's `unitOrder.filter(...)` falls through to the
-		// raw API order and the stack misorders.
-		const emissionsUnitOrder = rewriteSeriesPrefix(unitOrder, 'emissions');
-		const emissionsLoadsToInvert = rewriteSeriesPrefix(loadIds, 'emissions');
-
 		const metricParam = combinedMetrics;
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
@@ -184,10 +166,13 @@
 			interval: currentInterval,
 			metric: 'emissions',
 			unitFuelTechMap,
-			unitOrder: emissionsUnitOrder,
-			loadsToInvert: emissionsLoadsToInvert,
+			// The emissions manager produces `emissions_…` series ids — build
+			// ordering and inversion for that prefix or processFacilityPower falls
+			// through to the raw API order and the stack misorders.
+			unitOrder: unitSeriesIds('emissions', orderedCodes),
+			loadsToInvert: unitSeriesIds('emissions', loadCodes),
 			getLabel,
-			getColour: getEmissionsColour,
+			getColour: getSeriesColour,
 			// One combined URL shared with the financial provider + generation chart
 			// so the API computes all metrics once and the in-flight dedup collapses
 			// the managers into a single request.
@@ -233,22 +218,18 @@
 			return;
 		}
 
-		// `unitOrder`/`loadIds` are `power_…` IDs; rewrite to the basis prefix so
-		// processFacilityPower orders/inverts the right series (`energy_…` for
-		// energy intervals).
-		const basisUnitOrder = rewriteSeriesPrefix(unitOrder, currentBasis);
-		const basisLoadsToInvert = rewriteSeriesPrefix(loadIds, currentBasis);
-
 		const manager = new ChartDataManager({
 			facilityCode: currentCode,
 			networkId,
 			interval: currentInterval,
 			metric: currentBasis,
 			unitFuelTechMap,
-			unitOrder: basisUnitOrder,
-			loadsToInvert: basisLoadsToInvert,
+			// Basis series ids carry the basis prefix (`energy_…` for energy
+			// intervals, `power_…` for 5m) — build ordering/inversion to match.
+			unitOrder: unitSeriesIds(currentBasis, orderedCodes),
+			loadsToInvert: unitSeriesIds(currentBasis, loadCodes),
 			getLabel,
-			getColour: getBasisColour,
+			getColour: getSeriesColour,
 			// One combined URL shared with the financial provider + generation chart
 			// so the API computes all metrics once and the in-flight dedup collapses
 			// the managers into a single request.

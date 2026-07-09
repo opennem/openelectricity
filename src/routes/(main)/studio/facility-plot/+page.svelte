@@ -14,10 +14,10 @@
 		shouldShowNightShading
 	} from '$lib/components/charts/plot/plot-overlays.js';
 	import { computePlotGridlines } from '$lib/components/charts/plot/plot-gridlines.js';
-	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
+	import { analyzeUnits, unitSeriesIds } from '$lib/components/charts/facility/unit-analysis.js';
+	import { makeLoadAwareColourGetter } from '$lib/components/charts/facility/helpers.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
-	import chroma from 'chroma-js';
 	import Select from '$lib/components/form-elements/Select.svelte';
 	import { formatSI, convert } from '$lib/utils/si-units';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
@@ -183,13 +183,11 @@
 	 * @returns {(unitCode: string, fuelTech: string) => string}
 	 */
 	function getColourFn(analysis) {
-		const colourMap = analysis?.unitColours ?? {};
-		const loadIds = analysis?.loadIds ?? [];
-		return (unitCode, fuelTech) => {
-			const baseColor = colourMap[unitCode] || getFuelTechColor(fuelTech);
-			const isLoad = loadIds.includes(`power_${unitCode}`);
-			return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
-		};
+		return makeLoadAwareColourGetter(
+			analysis?.unitColours ?? {},
+			analysis?.loadCodes ?? [],
+			getFuelTechColor
+		);
 	}
 
 	/**
@@ -208,8 +206,10 @@
 			interval,
 			metric,
 			unitFuelTechMap: analysis?.unitFuelTechMap ?? {},
-			unitOrder: analysis?.unitOrder ?? [],
-			loadsToInvert: analysis?.loadIds ?? [],
+			// Series ids carry the metric prefix — build them for the metric this
+			// manager fetches or ordering/inversion won't match energy series.
+			unitOrder: unitSeriesIds(metric, analysis?.orderedCodes ?? []),
+			loadsToInvert: unitSeriesIds(metric, analysis?.loadCodes ?? []),
 			getLabel: getLabelFn(analysis),
 			getColour: getColourFn(analysis)
 		});

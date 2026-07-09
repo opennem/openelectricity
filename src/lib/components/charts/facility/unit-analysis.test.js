@@ -55,7 +55,7 @@ describe('compareUnitsByLabel', () => {
 });
 
 describe('analyzeUnits unit ordering', () => {
-	it('orders unitOrder by label within a fuel tech', () => {
+	it('orders orderedCodes by label within a fuel tech', () => {
 		const facility = {
 			units: [
 				{ code: 'ER03', fueltech_id: 'coal_black' },
@@ -63,8 +63,8 @@ describe('analyzeUnits unit ordering', () => {
 				{ code: 'ER02', fueltech_id: 'coal_black' }
 			]
 		};
-		const { unitOrder } = analyzeUnits(facility, getColour);
-		expect(unitOrder).toEqual(['power_ER01', 'power_ER02', 'power_ER03']);
+		const { orderedCodes } = analyzeUnits(facility, getColour);
+		expect(orderedCodes).toEqual(['ER01', 'ER02', 'ER03']);
 	});
 
 	it('keeps fuel-tech order primary, label as the tie-break', () => {
@@ -75,10 +75,25 @@ describe('analyzeUnits unit ordering', () => {
 				{ code: 'SF1', fueltech_id: 'solar_utility' }
 			]
 		};
-		const { unitOrder } = analyzeUnits(facility, getColour);
+		const { orderedCodes } = analyzeUnits(facility, getColour);
 		// Same fuel-tech grouping as before, but SF1 now precedes SF2.
-		const solarIds = unitOrder.filter((id) => id.startsWith('power_SF'));
-		expect(solarIds).toEqual(['power_SF1', 'power_SF2']);
-		expect(unitOrder).toHaveLength(3);
+		const solarCodes = orderedCodes.filter((code) => code.startsWith('SF'));
+		expect(solarCodes).toEqual(['SF1', 'SF2']);
+		expect(orderedCodes).toHaveLength(3);
+	});
+});
+
+describe('analyzeUnits load codes', () => {
+	it('collects bare unit codes for load fuel techs only', () => {
+		const facility = {
+			units: [
+				{ code: 'BESS_G', fueltech_id: 'battery_discharging' },
+				{ code: 'BESS_L', fueltech_id: 'battery_charging' },
+				{ code: 'PUMP1', fueltech_id: 'pumps' }
+			]
+		};
+		const { loadCodes } = analyzeUnits(facility, getColour);
+		expect(loadCodes).toEqual(expect.arrayContaining(['BESS_L', 'PUMP1']));
+		expect(loadCodes).not.toContain('BESS_G');
 	});
 });

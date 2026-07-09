@@ -39,6 +39,7 @@
 		CHARTS_FRACTION_MIN,
 		CHARTS_FRACTION_MAX
 	} from './_utils/charts-fraction.js';
+	import { sectionCardClass } from './_utils/section-card.js';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -188,12 +189,6 @@
 	$effect(() => {
 		return () => range.dispose();
 	});
-
-	// Each of these sections renders as its own card at every breakpoint. One
-	// definition so the treatment can't drift between sections. tablet:overflow-visible
-	// lets chart floating tooltips escape the card on desktop.
-	const sectionCardClass =
-		'overflow-hidden rounded-lg border border-mid-warm-grey/40 bg-white tablet:overflow-visible';
 
 	/** @type {HTMLElement | undefined} */
 	let chartCardEl = $state(undefined);
@@ -539,6 +534,7 @@
 							{#if !showEmptyState}
 								<FacilityFinancialDataProvider
 									facility={activeFacility}
+									priceFacility={splitFacility}
 									{timeZone}
 									interval={range.activeInterval}
 									displayInterval={range.displayInterval}

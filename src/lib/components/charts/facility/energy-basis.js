@@ -7,12 +7,11 @@
  * (MWh) natively; the sub-daily `5m` grain (which also backs the 30m display)
  * has no native energy, so energy is derived as power (MW) × interval hours.
  *
- * Centralising the basis-metric choice, the combined query string, the
- * series-prefix rewriting and the per-timestamp energy (MWh) map keeps the two
- * providers in lock-step and makes the conversion unit-testable.
+ * Centralising the basis-metric choice, the combined query string and the
+ * per-timestamp energy (MWh) map keeps the two providers in lock-step and
+ * makes the conversion unit-testable.
  */
 
-import chroma from 'chroma-js';
 import { getIntervalHours } from './interval-hours.js';
 
 /**
@@ -53,39 +52,6 @@ export function buildCombinedMetricsUrl(facilityCode, combinedMetric) {
 	return (/** @type {URLSearchParams} */ params) => {
 		params.set('metric', combinedMetric);
 		return `/api/facilities/${facilityCode}/power?${params.toString()}`;
-	};
-}
-
-/**
- * Rewrite `power_<unit>` series IDs (as produced by analyzeUnits) to another
- * metric's prefix. `power → power` is a no-op.
- *
- * @param {string[]} ids
- * @param {string} toMetric
- * @returns {string[]}
- */
-export function rewriteSeriesPrefix(ids, toMetric) {
-	return ids.map((id) => id.replace(/^power_/, `${toMetric}_`));
-}
-
-/**
- * Build the colour accessor for a basis (power/energy) stack. Load units are
- * brightened so they read distinctly from generators. `loadIds` are `power_…`
- * IDs from analyzeUnits, rewritten to the basis prefix for matching.
- *
- * @param {Object} opts
- * @param {string} opts.basisMetric - 'power' | 'energy'
- * @param {Record<string, string>} opts.unitColours - unit code → base hex
- * @param {string[]} opts.loadIds - `power_<unit>` load IDs
- * @param {(fuelTech: string) => string} opts.getFuelTechColor - fallback colour
- * @returns {(unitCode: string, fuelTech: string) => string}
- */
-export function createBasisColour({ basisMetric, unitColours, loadIds, getFuelTechColor }) {
-	const basisLoadIds = rewriteSeriesPrefix(loadIds, basisMetric);
-	return (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) => {
-		const baseColor = unitColours[unitCode] || getFuelTechColor(fuelTech);
-		const isLoad = basisLoadIds.includes(`${basisMetric}_${unitCode}`);
-		return isLoad ? chroma(baseColor).brighten(1).hex() : baseColor;
 	};
 }
 
