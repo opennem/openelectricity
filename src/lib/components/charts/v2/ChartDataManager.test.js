@@ -666,18 +666,36 @@ describe('ChartDataManager', () => {
 			expect(fetchSpy).toHaveBeenCalledTimes(1);
 		});
 
-		it('still batches high-resolution 5m ranges that exceed the tighter cap', async () => {
+		it('batches 5m ranges wider than the API 30-day cap', async () => {
 			const fetchSpy = okFetchSpy();
 			vi.stubGlobal('fetch', fetchSpy);
 
 			const manager = createManager({ interval: '5m', metric: 'power' });
 
-			// 2500 days at a 1000-day cap → three sequential batches.
+			// A power-mode zoom-out toward the 16-day viewport clamp fetches 3×
+			// the span (viewport + 1× pan buffer each side) at 5m before the
+			// hysteresis flips to energy. Over the API's 30-day cap the gap must
+			// arrive as two batches, not one rejected request.
 			const now = Date.now();
-			manager.requestRange(now - 2500 * DAY, now, { immediate: true });
+			manager.requestRange(now - 39 * DAY, now, { immediate: true });
 			await vi.advanceTimersByTimeAsync(200);
 
-			expect(fetchSpy).toHaveBeenCalledTimes(3);
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+		});
+
+		it('batches 1h ranges wider than the API 365-day cap', async () => {
+			const fetchSpy = okFetchSpy();
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const manager = createManager({ interval: '1h', metric: 'energy' });
+
+			// A ~60-day custom range at hourly grain with the 3× energy buffer
+			// spans up to 420 days — over the API's 365-day cap for 1h.
+			const now = Date.now();
+			manager.requestRange(now - 420 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
 		});
 	});
 
@@ -787,7 +805,9 @@ describe('ChartDataManager', () => {
 			vi.stubGlobal('fetch', fetchSpy);
 
 			const manager = createManager({ interval: '5m', metric: 'power' });
-			const reqStart = dataStart - 50 * DAY; // reaches before the first data point
+			// Reaches before the first data point, but stays under the 30-day 5m
+			// batch cap so the request isn't split.
+			const reqStart = dataStart - 25 * DAY;
 
 			manager.requestRange(reqStart, lastPoint, { immediate: true });
 			await vi.advanceTimersByTimeAsync(200);

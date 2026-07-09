@@ -20,7 +20,7 @@
 // ── Threshold constants ──────────────────────────────────────────────
 
 /** Days below which we use power/5m. */
-export const POWER_THRESHOLD = 15;
+export const POWER_THRESHOLD = 10;
 /** Days at which we switch from energy/1d to energy/1M. */
 export const MONTHLY_THRESHOLD = 365;
 /** Days at which we switch from energy/1M to energy/1y. */
@@ -30,7 +30,11 @@ export const YEARLY_THRESHOLD = 1825;
 // near the boundary doesn't flip back and forth).
 const HYST_YEARLY_TO_MONTHLY = 1500;
 const HYST_MONTHLY_TO_DAILY = 300;
-const HYST_DAILY_TO_POWER = 13;
+// UX choice: hold the coarser energy view until the zoom is comfortably in
+// power territory. As a bonus the switch fetch (viewport + 1× pan buffer each
+// side, so 3× the span) fits OE_API_MAX_RANGE_DAYS['5m'] in one request —
+// ChartDataManager batches over-cap spans, so that's latency, not validity.
+const HYST_DAILY_TO_POWER = 8;
 
 /**
  * Determine the metric and native API interval for a given number of days.

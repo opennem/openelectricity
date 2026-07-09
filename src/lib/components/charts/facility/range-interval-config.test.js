@@ -78,7 +78,9 @@ describe('helpers', () => {
 
 	it('getIntervalOptionsForDays buckets custom spans into preset tiers', () => {
 		expect(getIntervalOptionsForDays(1)).toBe(RANGE_INTERVALS['1D']);
-		expect(getIntervalOptionsForDays(10)).toBe(RANGE_INTERVALS['7D']);
+		expect(getIntervalOptionsForDays(9)).toBe(RANGE_INTERVALS['7D']);
+		// 10+ days is energy territory (POWER_THRESHOLD) — no 5m/30m options.
+		expect(getIntervalOptionsForDays(10)).toBe(RANGE_INTERVALS['30D']);
 		expect(getIntervalOptionsForDays(45)).toBe(RANGE_INTERVALS['30D']);
 		expect(getIntervalOptionsForDays(200)).toBe(RANGE_INTERVALS['1Y']);
 		expect(getIntervalOptionsForDays(5000)).toBe(RANGE_INTERVALS['ALL']);

@@ -16,6 +16,14 @@ import { offsetMsFromOffset } from './network-time.js';
 const EARLIEST_DATA_MS = new Date('1998-12-01T00:00:00Z').getTime();
 
 /**
+ * OE API per-interval range caps (days) — the API rejects wider requests with
+ * "Date range too large for {interval} interval. Maximum range is N days."
+ * Sub-daily grains only; daily-or-coarser intervals are uncapped.
+ * @type {Record<string, number>}
+ */
+export const OE_API_MAX_RANGE_DAYS = { '5m': 30, '1h': 365 };
+
+/**
  * Concurrent identical API requests share a single in-flight fetch, keyed by URL.
  * The price and emissions providers each run a market_value/emissions manager
  * plus a basis (energy) manager, and all of them resolve to the *same* combined
@@ -312,23 +320,21 @@ export default class ChartDataManager {
 	}
 
 	/**
-	 * Max range per request, scaled by interval. Acts as a safety net that
-	 * chunks very wide gaps into sequential fetches (see #splitGapIntoBatches).
+	 * Max range per request, scaled by interval. Chunks wide gaps into batched
+	 * fetches (see #splitGapIntoBatches).
 	 *
-	 * The OE API no longer caps query range, so daily-or-coarser intervals can
-	 * pull a full facility lifetime in a single request — the cap only stays
-	 * tight for sub-daily grains (5m, 1h), where a wide span would be millions
-	 * of points. The window is already clamped to [1998 → now] in #executeFetch,
-	 * so realistic "All" energy ranges never reach this cap.
+	 * Splitting at OE_API_MAX_RANGE_DAYS keeps buffered sub-daily fetches valid
+	 * — an over-cap span (e.g. a wide power viewport plus its pan buffers)
+	 * arrives as multiple ≤cap batches instead of one rejected request. The
+	 * window is already clamped to [1998 → now] in #executeFetch, so realistic
+	 * "All" energy ranges never reach the uncapped fallback.
 	 *
 	 * @returns {number} max range in ms
 	 */
 	get #maxApiRangeMs() {
 		const DAY = 24 * 60 * 60 * 1000;
-		// High-resolution sub-daily grains (5m, 1h) can be millions of points over
-		// a wide span, so keep a tight cap and let #splitGapIntoBatches chunk
-		// anything wider.
-		if (this.interval === '5m' || this.interval === '1h') return 1000 * DAY;
+		const capDays = OE_API_MAX_RANGE_DAYS[this.interval];
+		if (capDays) return capDays * DAY;
 		// Every daily-or-coarser energy grain (1d/1M/3M/1y) yields at most ~11k
 		// points across a full facility lifetime (daily ≈ 11k, monthly ≈ 360,
 		// quarterly ≈ 120, yearly ≈ 30), so fetch the whole range in one request
@@ -391,9 +397,13 @@ export default class ChartDataManager {
 			allBatches.push(...this.#splitGapIntoBatches(gap));
 		}
 
-		for (const batch of allBatches) {
+		// Fetch batches concurrently — the merge is order-independent (sorted
+		// two-pointer merge, new rows win on equal timestamps) and the loading/
+		// empty-range bookkeeping is per-batch, so a split gap costs one round
+		// trip instead of one per batch.
+		const fetchBatch = async (/** @type {LoadingRange} */ batch) => {
 			const key = `${batch.start}-${batch.end}`;
-			if (this.#inFlightKeys.has(key)) continue;
+			if (this.#inFlightKeys.has(key)) return;
 			this.#inFlightKeys.add(key);
 
 			// Add to loading ranges
@@ -428,7 +438,8 @@ export default class ChartDataManager {
 					this.hasPendingFetch = this.#pendingFetch !== null || this.loadingRanges.length > 0;
 				}
 			}
-		}
+		};
+		await Promise.all(allBatches.map(fetchBatch));
 
 		if (gen !== this.#generation) return;
 

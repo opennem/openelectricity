@@ -8,6 +8,7 @@
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { client as sanityClient } from '$lib/sanity';
+import { POWER_THRESHOLD } from '$lib/utils/metric-interval';
 import { getPrimaryFuelTechGroup } from './_utils/fuel-tech-group.js';
 
 const client = new OpenElectricityClient({
@@ -95,9 +96,10 @@ export async function load({ url, fetch }) {
 				result.facility = selectedFacility;
 				result.timeZone = selectedFacility.network_id === 'WEM' ? '+08:00' : '+10:00';
 
-				// Only fetch power data server-side for short ranges (≤14 days)
+				// Only fetch power data server-side for ranges that start in power
+				// mode; wider ranges start on energy/1d, fetched client-side.
 				const numDays = days ? parseInt(days, 10) : 7;
-				if (numDays > 0 && numDays <= 14) {
+				if (numDays > 0 && numDays < POWER_THRESHOLD) {
 					const apiParams = new URLSearchParams({
 						network_id: selectedFacility.network_id
 					});

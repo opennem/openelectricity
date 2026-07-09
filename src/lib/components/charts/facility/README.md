@@ -6,7 +6,7 @@ Components for visualizing facility-level power data with per-unit breakdown, ho
 
 The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orchestrates these components:
 
-1. **Server load** (`+page.server.js`): Fetches all facilities + selected facility. For ranges **1–14 days**, fetches 5m power data server-side. For **>14 days or "All" (-1)**, skips — ChartDataManager handles it client-side.
+1. **Server load** (`+page.server.js`): Fetches all facilities + selected facility. For ranges below **POWER_THRESHOLD (10 days)**, fetches 5m power data server-side. For wider ranges or "All" (-1), skips — ChartDataManager handles it client-side.
 2. **Page component** (`+page.svelte`): Manages `activeMetric`/`activeInterval`, syncs ChartRangeBar ↔ chart viewport, handles auto metric/interval switching.
 3. **ChartRangeBar** (`v2/ChartRangeBar.svelte`): Unified toolbar with range presets (1D/3D/7D/30D/1Y/All), calendar popover (DateRangePicker), and an interval dropdown whose options follow the selected range (resolved from `range-interval-config.js`).
 4. **FacilityChart**: Owns the viewport state (`viewStart`/`viewEnd`), creates ChartDataManager, renders via StratumChart → StackedAreaChart.
@@ -98,8 +98,8 @@ explicit picker choices (see `range-interval-config.js`), never auto-selected.
 
 | Viewport duration | Metric   | API Interval | Auto display |
 | ----------------- | -------- | ------------ | ------------ |
-| < 15 days         | `power`  | `5m`         | 5 min        |
-| 15–364 days       | `energy` | `1d`         | Daily        |
+| < 10 days         | `power`  | `5m`         | 5 min        |
+| 10–364 days       | `energy` | `1d`         | Daily        |
 | 365–1824 days     | `energy` | `1M`         | Month        |
 | ≥ 1825 days       | `energy` | `1y`         | Year         |
 
@@ -109,7 +109,7 @@ To prevent rapid flipping during continuous zoom, the switch thresholds differ b
 
 **Zoom out (→ coarser):**
 
-- **Power/5m → Energy/1d**: at **15+ days**
+- **Power/5m → Energy/1d**: at **10+ days**
 - **Energy/1d → Energy/1M**: at **365+ days**
 - **Energy/1M → Energy/1y**: at **1825+ days**
 
@@ -117,7 +117,7 @@ To prevent rapid flipping during continuous zoom, the switch thresholds differ b
 
 - **Energy/1y → Energy/1M**: at **< 1500 days**
 - **Energy/1M → Energy/1d**: at **< 300 days**
-- **Energy/1d → Power/5m**: at **≤ 13 days**
+- **Energy/1d → Power/5m**: at **≤ 8 days**
 
 All switches are debounced by 300ms. A pan/zoom that doesn't cross a native
 threshold preserves an explicit interval-dropdown pick (5m/30m/Week/Quarter/

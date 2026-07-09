@@ -1,3 +1,5 @@
+import { POWER_THRESHOLD } from '$lib/utils/metric-interval';
+
 /**
  * Range + interval configuration for the facility charts — the single source of
  * truth for the range presets, which intervals each range exposes, and how each
@@ -134,14 +136,16 @@ export function getPresetByDays(days) {
 
 /**
  * Interval options + default for a custom (calendar) date range, by bucketing
- * the span into the nearest preset tier.
+ * the span into the nearest preset tier. Power intervals (5m/30m) are only
+ * offered below POWER_THRESHOLD — wider spans would immediately flip back to
+ * energy/1d on the first pan/zoom hysteresis tick, discarding the 5m fetch.
  * @param {number} days
  * @returns {{ options: string[], default: string }}
  */
 export function getIntervalOptionsForDays(days) {
 	if (days <= 1.5) return RANGE_INTERVALS['1D'];
 	if (days <= 5) return RANGE_INTERVALS['3D'];
-	if (days <= 14) return RANGE_INTERVALS['7D'];
+	if (days < POWER_THRESHOLD) return RANGE_INTERVALS['7D'];
 	if (days <= 60) return RANGE_INTERVALS['30D'];
 	if (days <= 550) return RANGE_INTERVALS['1Y'];
 	return RANGE_INTERVALS['ALL'];

@@ -11,8 +11,8 @@ import {
 describe('getMetricIntervalForDays', () => {
 	it('maps duration to a native interval (no 3M in the auto ladder)', () => {
 		expect(getMetricIntervalForDays(1)).toEqual({ metric: 'power', interval: '5m' });
-		expect(getMetricIntervalForDays(14)).toEqual({ metric: 'power', interval: '5m' });
-		expect(getMetricIntervalForDays(15)).toEqual({ metric: 'energy', interval: '1d' });
+		expect(getMetricIntervalForDays(9)).toEqual({ metric: 'power', interval: '5m' });
+		expect(getMetricIntervalForDays(10)).toEqual({ metric: 'energy', interval: '1d' });
 		expect(getMetricIntervalForDays(364)).toEqual({ metric: 'energy', interval: '1d' });
 		expect(getMetricIntervalForDays(365)).toEqual({ metric: 'energy', interval: '1M' });
 		expect(getMetricIntervalForDays(1824)).toEqual({ metric: 'energy', interval: '1M' });
@@ -47,7 +47,7 @@ describe('getHysteresisSwitch', () => {
 	it('zooms in through the native ladder', () => {
 		expect(getHysteresisSwitch('energy', '1y', 1499)).toEqual({ metric: 'energy', interval: '1M' });
 		expect(getHysteresisSwitch('energy', '1M', 299)).toEqual({ metric: 'energy', interval: '1d' });
-		expect(getHysteresisSwitch('energy', '1d', 13)).toEqual({ metric: 'power', interval: '5m' });
+		expect(getHysteresisSwitch('energy', '1d', 8)).toEqual({ metric: 'power', interval: '5m' });
 	});
 
 	it('does not flip inside the hysteresis dead-band', () => {
@@ -56,8 +56,10 @@ describe('getHysteresisSwitch', () => {
 		expect(getHysteresisSwitch('energy', '1d', 320)).toBeNull();
 		// 1M at 1600 days: above 1500 zoom-in floor, below 1825 zoom-out → no switch.
 		expect(getHysteresisSwitch('energy', '1M', 1600)).toBeNull();
-		// power at 14 days: below the 15 zoom-out threshold → no switch.
-		expect(getHysteresisSwitch('power', '5m', 14)).toBeNull();
+		// power at 9 days: below the 10 zoom-out threshold → no switch.
+		expect(getHysteresisSwitch('power', '5m', 9)).toBeNull();
+		// 1d at 9 days: above the 8 zoom-in floor, below the 10 zoom-out → no switch.
+		expect(getHysteresisSwitch('energy', '1d', 9)).toBeNull();
 	});
 
 	it('never targets a non-native interval', () => {

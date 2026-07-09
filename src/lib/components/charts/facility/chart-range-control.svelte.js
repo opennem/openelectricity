@@ -107,7 +107,7 @@ export function createChartRangeControl(config) {
 	}
 
 	/** Hysteresis-aware metric/interval switching for pan/zoom — keeps the
-	 *  current axis where it is unless duration crosses a 13/15-day (and
+	 *  current axis where it is unless duration crosses an 8/10-day (and
 	 *  300/365-day, 1500/1825-day) threshold. Display interval is recomputed
 	 *  every tick from the (possibly newly-targeted) metric/interval. */
 	/** @param {{ start: number, end: number }} range */

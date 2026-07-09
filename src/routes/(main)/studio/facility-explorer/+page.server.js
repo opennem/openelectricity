@@ -10,6 +10,7 @@
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
 import { client as sanityClient } from '$lib/sanity';
+import { POWER_THRESHOLD } from '$lib/utils/metric-interval';
 import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
 
 const client = new OpenElectricityClient({
@@ -117,11 +118,11 @@ export async function load({ url, fetch }) {
 			)
 			.catch(() => null);
 
-		// Only fetch power data server-side for short ranges (≤14 days).
-		// Energy ranges (>14 days) are fetched client-side by ChartDataManager.
+		// Only fetch power data server-side for ranges that start in power mode.
+		// Wider ranges start on energy/1d, fetched client-side by ChartDataManager.
 		const numDays = days ? parseInt(days, 10) : 7;
 		let powerPromise = /** @type {Promise<any | null>} */ (Promise.resolve(null));
-		if (numDays > 0 && numDays <= 14) {
+		if (numDays > 0 && numDays < POWER_THRESHOLD) {
 			const apiParams = new URLSearchParams({
 				network_id: selectedFacility.network_id
 			});
