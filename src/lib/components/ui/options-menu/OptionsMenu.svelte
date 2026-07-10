@@ -15,6 +15,7 @@
 	 *   onshowshortcuts?: () => void,
 	 *   triggerClass?: string,
 	 *   iconClass?: string,
+	 *   showDocumentation?: boolean,
 	 *   sections?: import('svelte').Snippet<[{ close: () => void }]>
 	 * }}
 	 */
@@ -26,6 +27,7 @@
 		// the mobile facility header passes a dark floating circle instead.
 		triggerClass = 'p-2 rounded-lg hover:bg-light-warm-grey transition-colors cursor-pointer',
 		iconClass = 'size-6 text-mid-grey',
+		showDocumentation = true,
 		sections
 	} = $props();
 
@@ -63,11 +65,15 @@
 	</button>
 
 	{#if isOpen}
+		<!-- z-[10000]: the menu portals to <body>, exists only while open and has
+		     no backdrop, so it must always beat the app's overlay band — sheets,
+		     toasts and tooltips all sit at z-[9999] (e.g. the unit detail sheet,
+		     which hosts one of these menus). -->
 		<div
 			bind:this={dropdownRef}
 			use:portal
 			use:dropdownPosition={{ trigger: triggerRef, align: 'right', position: 'bottom' }}
-			class="fixed bg-white rounded-lg shadow-lg border border-mid-warm-grey z-[60] min-w-[200px] py-1"
+			class="fixed bg-white rounded-lg shadow-lg border border-mid-warm-grey z-[10000] min-w-[200px] py-1"
 			in:fly={{ y: -5, duration: 150 }}
 			role="menu"
 		>
@@ -101,11 +107,15 @@
 				</OptionsMenuItem>
 			{/if}
 
-			{#if sections || onfullscreenchange || onshowshortcuts}
-				<OptionsMenuDivider />
-			{/if}
+			{#if showDocumentation}
+				<!-- Section snippets end with their own trailing divider, so only the
+				     built-in items above need one added here. -->
+				{#if onfullscreenchange || onshowshortcuts}
+					<OptionsMenuDivider />
+				{/if}
 
-			<OptionsMenuItem icon={BookOpen} href={DOCS_URL}>Documentation</OptionsMenuItem>
+				<OptionsMenuItem icon={BookOpen} href={DOCS_URL}>Documentation</OptionsMenuItem>
+			{/if}
 		</div>
 	{/if}
 </div>

@@ -21,6 +21,7 @@
 	 *   ondownloaditem?: (key: string) => void,
 	 *   onsearchfacilities?: () => void,
 	 *   showCopyLink?: boolean,
+	 *   showDocumentation?: boolean,
 	 *   searchShortcutKeys?: string[],
 	 *   triggerClass?: string,
 	 *   iconClass?: string
@@ -35,6 +36,7 @@
 		ondownloaditem,
 		onsearchfacilities,
 		showCopyLink = false,
+		showDocumentation = true,
 		searchShortcutKeys = ['/'],
 		triggerClass = undefined,
 		iconClass = undefined
@@ -64,7 +66,14 @@
 	}
 </script>
 
-<OptionsMenu {isFullscreen} {onfullscreenchange} {onshowshortcuts} {triggerClass} {iconClass}>
+<OptionsMenu
+	{isFullscreen}
+	{onfullscreenchange}
+	{onshowshortcuts}
+	{triggerClass}
+	{iconClass}
+	{showDocumentation}
+>
 	{#snippet sections({ close })}
 		{#if ondownloadcsv || downloadItems.length}
 			<OptionsMenuHeading icon={downloading ? Check : Download}>Download as CSV</OptionsMenuHeading>

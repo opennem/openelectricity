@@ -182,9 +182,14 @@
 				ondaterangechange={range.handleDateRangeChange}
 				onintervalchange={range.handleIntervalChange}
 			/>
-			<!-- No emissions entry (the sheet has no emissions provider) and no
-			     copy link (its internal range isn't URL-encoded). -->
-			<OptionsMenu downloadItems={chartDownloadItems()} ondownloaditem={handleDownload} />
+			<!-- No emissions entry (the sheet has no emissions provider). Copy link
+			     copies the unit deep-link (?unit=). -->
+			<OptionsMenu
+				downloadItems={chartDownloadItems()}
+				ondownloaditem={handleDownload}
+				showCopyLink
+				showDocumentation={false}
+			/>
 		</div>
 	</div>
 
