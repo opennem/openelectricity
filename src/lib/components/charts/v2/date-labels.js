@@ -180,13 +180,23 @@ export function formatBucketLabel(d, ianaTimeZone, kind) {
  * ("16 — 22 Jun 2025", "28 Jul — 3 Aug 2025") — used for tooltip labels
  * that must stand alone, e.g. weekly buckets.
  *
+ * With `yearIfNotCurrent`, the year is appended only when the range doesn't
+ * end in the current year — used for standalone toolbar labels where a bare
+ * "1 — 3 Jul" would read as this year; axis ticks keep the year-less default
+ * (their chart supplies the context, and a year on every tick would crowd).
+ *
  * @param {Date} start
  * @param {Date} end
  * @param {string} ianaTimeZone
- * @param {{ alwaysYear?: boolean }} [opts]
+ * @param {{ alwaysYear?: boolean, yearIfNotCurrent?: boolean }} [opts]
  * @returns {string}
  */
-export function formatDateRange(start, end, ianaTimeZone, { alwaysYear = false } = {}) {
+export function formatDateRange(
+	start,
+	end,
+	ianaTimeZone,
+	{ alwaysYear = false, yearIfNotCurrent = false } = {}
+) {
 	const partsFmt = cachedFormatter('dmy2', ianaTimeZone, {
 		day: 'numeric',
 		month: 'short',
@@ -206,7 +216,10 @@ export function formatDateRange(start, end, ianaTimeZone, { alwaysYear = false }
 	if (sYear !== eYear) {
 		return `${sDay} ${sMonth} '${sYear} ${RANGE_SEPARATOR} ${eDay} ${eMonth} '${eYear}`;
 	}
-	const yearSuffix = alwaysYear ? ` ${formatYear(end, ianaTimeZone)}` : '';
+	const showYear =
+		alwaysYear ||
+		(yearIfNotCurrent && formatYear(end, ianaTimeZone) !== formatYear(new Date(), ianaTimeZone));
+	const yearSuffix = showYear ? ` ${formatYear(end, ianaTimeZone)}` : '';
 	if (sMonth !== eMonth) {
 		return `${sDay} ${sMonth} ${RANGE_SEPARATOR} ${eDay} ${eMonth}${yearSuffix}`;
 	}

@@ -575,6 +575,7 @@
 					onfullscreenchange={() => onfullscreenchange?.()}
 					onshowshortcuts={() => onshowshortcuts?.()}
 					ondownloadcsv={() => ondownloadcsv?.()}
+					showCopyLink
 				/>
 			</div>
 		{/snippet}

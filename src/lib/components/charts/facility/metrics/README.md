@@ -12,8 +12,16 @@ recomputes.
   summaryData     // { energyData, mvData, energySeriesNames, mvSeriesNames }
   emissionsData   // { rows, seriesNames }  (reported tCO₂)
   intervalData    // { data, seriesNames, seriesLabels }  (raw power)
+  hiddenUnitCodes // units toggled off in the units panel — excluded from every metric
 />
 ```
+
+`hiddenUnitCodes` scopes the metrics to the selected units, matching the charts:
+hidden units are dropped from the unit list (capacity, fuel-group selection, storage
+duration) and their series are filtered out of every sum via `unitSeriesIds` across
+the four metric prefixes (`power`/`energy`/`market_value`/`emissions`). On
+`/facility/[code]` retired units start toggled off (unless the whole facility is
+retired), so the default view describes the operating units.
 
 ## How it works
 

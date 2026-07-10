@@ -94,7 +94,8 @@
 		return formatDateRange(
 			new Date(rows[0].time),
 			new Date(rows[rows.length - 1].time),
-			ianaTimeZone
+			ianaTimeZone,
+			{ yearIfNotCurrent: true }
 		);
 	});
 

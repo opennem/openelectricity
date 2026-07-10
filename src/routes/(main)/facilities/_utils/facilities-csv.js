@@ -25,7 +25,7 @@ const CSV_HEADERS = [
  * @param {*} value
  * @returns {string}
  */
-function escapeCsv(value) {
+export function escapeCsv(value) {
 	if (value == null) return '';
 	const str = String(value);
 	if (str.includes(',') || str.includes('"') || str.includes('\n')) {

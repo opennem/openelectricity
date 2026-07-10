@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page, navigating } from '$app/state';
 	import { building } from '$app/environment';
-	import { onMount, tick } from 'svelte';
+	import { onMount, setContext, tick } from 'svelte';
 	import { fly } from 'svelte/transition';
 
 	import {
@@ -66,6 +66,19 @@
 	let regionDef = $derived(regionValue ? regionDefs.find((r) => r.value === regionValue) : null);
 	let regionLabel = $derived(regionDef?.longLabel ?? '');
 	let regionShortLabel = $derived(regionDef?.label ?? '');
+
+	/** Chart CSV exports registered by the facility page — the chart data lives
+	 *  in the page, but the options menus that surface the downloads (desktop
+	 *  picker bar + mobile floating kebab) are layout chrome, so the page pushes
+	 *  its entries up through this context handle (same shape as the
+	 *  `layout-fullscreen` precedent in the main layout). */
+	/** @type {{ items: Array<{ key: string, label: string }>, download: (key: string) => void } | null} */
+	let chartDownloads = $state(null);
+	setContext('facility-chart-downloads', {
+		/** @param {{ items: Array<{ key: string, label: string }>, download: (key: string) => void }} value */
+		set: (value) => (chartDownloads = value),
+		clear: () => (chartDownloads = null)
+	});
 
 	let showShortcutsToast = $state(false);
 	let leftOpen = $state(false);
@@ -201,6 +214,9 @@
 				onfullscreenchange={toggleFullscreen}
 				onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 				onsearchfacilities={openLeftPanelAndFocus}
+				downloadItems={chartDownloads?.items ?? []}
+				ondownloaditem={(key) => chartDownloads?.download(key)}
+				showCopyLink
 				searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
 			/>
 		</div>
@@ -250,6 +266,9 @@
 						<OptionsMenu
 							onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 							onsearchfacilities={openLeftPanelAndFocus}
+							downloadItems={chartDownloads?.items ?? []}
+							ondownloaditem={(key) => chartDownloads?.download(key)}
+							showCopyLink
 							searchShortcutKeys={[isMac ? '⌘' : 'Ctrl', 'K']}
 							triggerClass="{floatingCircleClass} cursor-pointer"
 							iconClass="size-6 text-white"

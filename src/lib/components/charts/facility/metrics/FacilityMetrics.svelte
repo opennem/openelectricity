@@ -36,13 +36,17 @@
 	import { METRICS, resolveMetricKeys } from './metric-definitions.js';
 	import { formatTooltipDateTime } from '$lib/components/charts/v2/formatters.js';
 	import { ianaFromOffset } from '../../v2/network-time.js';
+	import { unitSeriesIds } from '../unit-analysis.js';
 
 	/**
 	 * `onpeakhighlight` is called with the peak bucket's timestamp (ms) when the
 	 * Peak Output / Peak Energy cell is hovered, and `undefined` on leave — the
 	 * page wires it to the shared chart hover time so the peak period is annotated
 	 * on the chart. `displayInterval` is used to label the peak period (matching
-	 * the chart's own tooltip date).
+	 * the chart's own tooltip date). `hiddenUnitCodes` (units toggled off in the
+	 * units panel) are excluded from every metric — capacity, energy sums and the
+	 * fuel-group selection all describe the selected units only, matching the
+	 * charts.
 	 * @type {{
 	 *   facility: any,
 	 *   sanityFacility?: any | null,
@@ -51,6 +55,7 @@
 	 *   intervalData?: { data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null,
 	 *   timeZone?: string,
 	 *   displayInterval?: string,
+	 *   hiddenUnitCodes?: string[],
 	 *   onpeakhighlight?: (time: number | undefined) => void
 	 * }}
 	 */
@@ -62,14 +67,29 @@
 		intervalData = null,
 		timeZone = '+10:00',
 		displayInterval = '30m',
+		hiddenUnitCodes = [],
 		onpeakhighlight
 	} = $props();
 
 	let ianaTimeZone = $derived(ianaFromOffset(timeZone));
 
-	let group = $derived(getPrimaryFuelTechGroup(facility?.units ?? []));
+	let visibleUnits = $derived(
+		(facility?.units ?? []).filter((/** @type {any} */ u) => !hiddenUnitCodes.includes(u.code))
+	);
 
-	let totalCapacity = $derived(sumUnitCapacities(facility?.units ?? []));
+	/** Series ids for the hidden units across every dataset's metric prefix, so
+	 *  the sums below can drop them without knowing which prefix each carries. */
+	let hiddenSeriesIds = $derived(
+		new Set(
+			['power', 'energy', 'market_value', 'emissions'].flatMap((metric) =>
+				unitSeriesIds(metric, hiddenUnitCodes)
+			)
+		)
+	);
+
+	let group = $derived(getPrimaryFuelTechGroup(visibleUnits));
+
+	let totalCapacity = $derived(sumUnitCapacities(visibleUnits));
 
 	// ── DC:AC ratio (solar, Sanity-sourced) ──────────────────────────
 	let dcAc = $derived.by(() => {
@@ -99,7 +119,7 @@
 		);
 		let storage = 0;
 		let power = 0;
-		for (const unit of facility?.units ?? []) {
+		for (const unit of visibleUnits) {
 			const ft = unit.fueltech_id ?? '';
 			if (isChargingSideUnit(ft)) continue;
 			const unitStorage =
@@ -113,16 +133,17 @@
 		return storageDurationHours(storage, power);
 	});
 
-	let isPeaker = $derived(group === 'gas' && isGasPeaker(facility?.units ?? []));
-	let pumpedHydro = $derived(group === 'hydro' && isPumpedHydro(facility?.units ?? []));
+	let isPeaker = $derived(group === 'gas' && isGasPeaker(visibleUnits));
+	let pumpedHydro = $derived(group === 'hydro' && isPumpedHydro(visibleUnits));
 
 	// ── Shared metrics context ────────────────────────────────────────
 	/** @type {import('./metric-definitions.js').MetricsContext} */
 	let ctx = $derived.by(() => {
+		const visible = (/** @type {string[]} */ names) => names.filter((n) => !hiddenSeriesIds.has(n));
 		const eData = summaryData?.energyData ?? [];
-		const eNames = summaryData?.energySeriesNames ?? [];
+		const eNames = visible(summaryData?.energySeriesNames ?? []);
 		const mData = summaryData?.mvData ?? [];
-		const mNames = summaryData?.mvSeriesNames ?? [];
+		const mNames = visible(summaryData?.mvSeriesNames ?? []);
 		const hasSummary = eData.length > 0;
 		const isBattery = group === 'battery';
 		// Storage facilities (batteries, pumped hydro) consume more than they
@@ -141,13 +162,13 @@
 		// intensity), not a static factor — accurate without Sanity.
 		const em = emissionsData;
 		const hasEmissions = (em?.rows?.length ?? 0) > 0;
-		const totalEmissions = em && hasEmissions ? sumAllSeries(em.rows, em.seriesNames) : 0;
+		const totalEmissions = em && hasEmissions ? sumAllSeries(em.rows, visible(em.seriesNames)) : 0;
 		const emissionsIntensity =
 			hasEmissions && signedEnergy > 0 ? (totalEmissions * 1000) / signedEnergy : null;
 
 		// Interval-derived metrics need sub-daily (power) data.
 		const iData = intervalData?.data ?? [];
-		const iNames = intervalData?.seriesNames ?? [];
+		const iNames = visible(intervalData?.seriesNames ?? []);
 		const hasSubDaily = iData.length > 1 && isSubDailyData(iData);
 		const intervalMinutes = hasSubDaily ? getIntervalHours(iData) * 60 : 0;
 

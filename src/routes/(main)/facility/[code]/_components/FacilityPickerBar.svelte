@@ -16,6 +16,9 @@
 	 *   onfullscreenchange?: () => void,
 	 *   onshowshortcuts?: () => void,
 	 *   onsearchfacilities?: () => void,
+	 *   downloadItems?: Array<{ key: string, label: string }>,
+	 *   ondownloaditem?: (key: string) => void,
+	 *   showCopyLink?: boolean,
 	 *   searchShortcutKeys?: string[]
 	 * }}
 	 */
@@ -29,6 +32,9 @@
 		onfullscreenchange,
 		onshowshortcuts,
 		onsearchfacilities,
+		downloadItems = [],
+		ondownloaditem,
+		showCopyLink = false,
 		searchShortcutKeys
 	} = $props();
 
@@ -106,6 +112,9 @@
 			{onfullscreenchange}
 			{onshowshortcuts}
 			{onsearchfacilities}
+			{downloadItems}
+			{ondownloaditem}
+			{showCopyLink}
 			{searchShortcutKeys}
 		/>
 	{/snippet}

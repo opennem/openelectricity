@@ -22,6 +22,9 @@
 	import { capYTicks } from '$lib/components/charts/facility/helpers.js';
 	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
+	import OptionsMenu from '../../../facilities/_components/OptionsMenu.svelte';
+	import { chartDownloadItems, downloadChartCsv } from '../_utils/facility-csv.js';
+	import { rangeSlugFor } from '../_utils/range-params.js';
 
 	/**
 	 * `onsummarydata` forwards the financial provider's visible-range energy +
@@ -54,11 +57,32 @@
 	let dateRangeLabel = $derived.by(() => {
 		const start = viewStart || defaultStart;
 		const end = viewEnd || defaultEnd;
-		return formatDateRange(new Date(start), new Date(end), ianaTimeZone);
+		return formatDateRange(new Date(start), new Date(end), ianaTimeZone, {
+			yearIfNotCurrent: true
+		});
 	});
 
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let powerChart = $state(undefined);
+
+	/** Visible-range data captured for the CSV downloads in the options menu:
+	 *  generation rows from the chart, energy + market value from the financial
+	 *  provider (whose summary also forwards up to UnitDetail via `onsummarydata`).
+	 *  $state.raw — replaced wholesale, only ever read; the datasets are too
+	 *  large to deep-proxy. */
+	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
+	let intervalData = $state.raw(null);
+	/** @type {{ mvData: any[], energyData: any[], mvSeriesNames: string[], energySeriesNames: string[] } | null} */
+	let summaryData = $state.raw(null);
+
+	/** @param {any} d */
+	function handleSummaryData(d) {
+		summaryData = d;
+		onsummarydata?.(d);
+	}
+
+	/** The single unit's code — the sheet's facility is a one-unit clone. */
+	let unitCode = $derived(facility?.units?.[0]?.code);
 
 	/** Earliest data point for this unit — floor for the date picker + All preset. */
 	let earliestDate = $derived(getEarliestDate(facility?.units ?? []));
@@ -82,6 +106,19 @@
 	$effect(() => {
 		return () => range.dispose();
 	});
+
+	/** @param {string} key */
+	function handleDownload(key) {
+		downloadChartCsv(key, {
+			intervalData,
+			summaryData,
+			facility,
+			metric: range.activeMetric,
+			timeZone,
+			fileCode: unitCode,
+			rangeSlug: rangeSlugFor(range)
+		});
+	}
 
 	// Load tracking — charts render immediately (they self-fetch); the empty
 	// state replaces them only once the fetch confirms there's no data.
@@ -128,22 +165,27 @@
 <div class="space-y-4">
 	<div class="flex flex-wrap items-center justify-between gap-4">
 		<span class="font-space text-base font-medium text-dark-grey">{dateRangeLabel}</span>
-		<ChartRangeBar
-			selectedRange={range.selectedRange}
-			customDays={range.customDays}
-			displayInterval={range.displayInterval}
-			startDate={range.pickerStartDate}
-			endDate={range.pickerEndDate}
-			minDate={MIN_DATE}
-			maxDate={range.maxDate}
-			{earliestDate}
-			showIntervalDropdown={true}
-			compact
-			pending={range.rangeSwitchPending}
-			onrangeselect={range.handleRangeSelect}
-			ondaterangechange={range.handleDateRangeChange}
-			onintervalchange={range.handleIntervalChange}
-		/>
+		<div class="flex items-center gap-1">
+			<ChartRangeBar
+				selectedRange={range.selectedRange}
+				customDays={range.customDays}
+				displayInterval={range.displayInterval}
+				startDate={range.pickerStartDate}
+				endDate={range.pickerEndDate}
+				minDate={MIN_DATE}
+				maxDate={range.maxDate}
+				{earliestDate}
+				showIntervalDropdown={true}
+				compact
+				pending={range.rangeSwitchPending}
+				onrangeselect={range.handleRangeSelect}
+				ondaterangechange={range.handleDateRangeChange}
+				onintervalchange={range.handleIntervalChange}
+			/>
+			<!-- No emissions entry (the sheet has no emissions provider) and no
+			     copy link (its internal range isn't URL-encoded). -->
+			<OptionsMenu downloadItems={chartDownloadItems()} ondownloaditem={handleDownload} />
+		</div>
 	</div>
 
 	<!-- Charts stay mounted under the empty state (visibility, not display:none —
@@ -180,7 +222,10 @@
 					onfocuschange={handleFocusChange}
 					onviewportchange={range.handleChartViewportChange}
 					onloadcomplete={handleLoadComplete}
-					onvisibledata={() => range.settle()}
+					onvisibledata={(d) => {
+						intervalData = d;
+						range.settle();
+					}}
 					panZoomMode="tap-to-engage"
 					bind:panZoomEngaged
 					bundleDerivedMetrics
@@ -206,7 +251,7 @@
 						{focusTime}
 						onfocuschange={handleFocusChange}
 						onviewportchange={range.handleDerivedViewportChange}
-						{onsummarydata}
+						onsummarydata={handleSummaryData}
 					>
 						<FacilityPriceChart
 							showContainer={false}

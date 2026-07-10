@@ -1,6 +1,7 @@
 <script>
-	import { onMount, tick, untrack } from 'svelte';
+	import { getContext, onMount, tick, untrack } from 'svelte';
 	import { page } from '$app/state';
+	import { goto } from '$app/navigation';
 	import { fade } from 'svelte/transition';
 	import { LineChart } from '@lucide/svelte';
 	import Meta from '$lib/components/Meta.svelte';
@@ -40,6 +41,8 @@
 		CHARTS_FRACTION_MAX
 	} from './_utils/charts-fraction.js';
 	import { sectionCardClass } from './_utils/section-card.js';
+	import { parseRangeParams, applyRangeParams, rangeSlugFor } from './_utils/range-params.js';
+	import { chartDownloadItems, downloadChartCsv } from './_utils/facility-csv.js';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -49,8 +52,9 @@
 	let selectedFacility = $derived(withMarkedUnits(data.facility));
 
 	/** Battery view: 'net' shows the bidirectional battery unit, 'split' swaps in
-	 *  the derived charging/discharging units. Charts + units panel follow
-	 *  `activeFacility`; identity consumers (header, metrics, meta, map) stay on
+	 *  the derived charging/discharging units. Charts, units panel and metrics
+	 *  follow `activeFacility` (metrics filter by the unit toggles, whose codes
+	 *  belong to the active set); identity consumers (header, meta, map) stay on
 	 *  the net `selectedFacility` so they're stable across mode flips. */
 	/** @type {'net' | 'split'} */
 	let batteryMode = $state('net');
@@ -65,6 +69,18 @@
 	/** Unit codes toggled off in the units panel — hidden from the chart stacks. */
 	/** @type {string[]} */
 	let hiddenUnitCodes = $state([]);
+
+	/** Default toggles for a unit set: retired units start hidden — on recent
+	 *  ranges they only add empty series — unless the whole facility is retired,
+	 *  in which case everything stays visible.
+	 *  @param {any[] | undefined} units
+	 *  @returns {string[]} */
+	function defaultHiddenUnitCodes(units) {
+		const all = units ?? [];
+		const retired = all.filter((/** @type {any} */ u) => u.status_id === 'retired');
+		if (retired.length === all.length) return [];
+		return retired.map((/** @type {any} */ u) => u.code);
+	}
 
 	/** @param {string} code */
 	function toggleUnitHidden(code) {
@@ -83,7 +99,7 @@
 		if (mode === batteryMode) return;
 		batteryMode = /** @type {'net' | 'split'} */ (mode);
 		// Unit codes differ between the net and split sets.
-		hiddenUnitCodes = [];
+		hiddenUnitCodes = defaultHiddenUnitCodes(activeFacility?.units);
 	}
 
 	let timeZone = $derived(data.timeZone);
@@ -104,11 +120,11 @@
 	 *  provider, intervalData (raw power) from the generation chart. All are keyed
 	 *  on viewStart/viewEnd so the numbers track the chart's date range. */
 	/** @type {{ mvData: any[], energyData: any[], mvSeriesNames: string[], energySeriesNames: string[] } | null} */
-	let summaryData = $state(null);
+	let summaryData = $state.raw(null);
 	/** @type {{ rows: any[], seriesNames: string[] } | null} */
-	let emissionsData = $state(null);
+	let emissionsData = $state.raw(null);
 	/** @type {{ data: any[], seriesNames: string[], seriesLabels: Record<string, string> } | null} */
-	let intervalData = $state(null);
+	let intervalData = $state.raw(null);
 
 	/** @type {import('$lib/components/charts/facility/FacilityChart.svelte').default | undefined} */
 	let powerChart = $state(undefined);
@@ -140,7 +156,9 @@
 	let dateRangeLabel = $derived.by(() => {
 		const start = viewStart || defaultStart;
 		const end = viewEnd || defaultEnd;
-		return formatDateRange(new Date(start), new Date(end), ianaTimeZone);
+		return formatDateRange(new Date(start), new Date(end), ianaTimeZone, {
+			yearIfNotCurrent: true
+		});
 	});
 
 	/** Shared hover time — syncs crosshair/tooltip across all three charts. */
@@ -188,6 +206,34 @@
 
 	$effect(() => {
 		return () => range.dispose();
+	});
+
+	let rangeSlug = $derived(rangeSlugFor(range));
+
+	/** The chart CSV downloads surface in the header nav's options menus (desktop
+	 *  picker bar + mobile floating kebab). The layout owns those menus but the
+	 *  chart data lives here, so the page registers its entries through the
+	 *  layout's context handle. */
+	const chartDownloads = getContext('facility-chart-downloads');
+
+	/** @param {string} key */
+	function handleChartDownload(key) {
+		downloadChartCsv(key, {
+			intervalData,
+			summaryData,
+			emissionsData,
+			facility: activeFacility,
+			metric: range.activeMetric,
+			timeZone,
+			fileCode: selectedFacility?.code,
+			rangeSlug
+		});
+	}
+
+	$effect(() => {
+		const items = chartDownloadItems({ showEmissions: hasEmittingUnits });
+		chartDownloads?.set({ items, download: handleChartDownload });
+		return () => chartDownloads?.clear();
 	});
 
 	/** @type {HTMLElement | undefined} */
@@ -298,7 +344,6 @@
 		intervalData = null;
 		// Battery view + unit toggles are per-facility state. A ?unit= deep link
 		// naming a derived split unit opens in split view (it only exists there).
-		hiddenUnitCodes = [];
 		batteryMode = untrack(() => {
 			const unitParam = page.url.searchParams.get('unit');
 			if (!unitParam || !canSplitBattery) return 'net';
@@ -306,6 +351,9 @@
 			const inSplit = splitFacility?.units?.some((/** @type {any} */ u) => u.code === unitParam);
 			return !inNet && inSplit ? 'split' : 'net';
 		});
+		// After the battery mode resolves, so the defaults describe the active
+		// unit set (net vs split codes differ).
+		hiddenUnitCodes = untrack(() => defaultHiddenUnitCodes(activeFacility?.units));
 	});
 
 	// The page is prerendered with no power data, so the generation chart self-fetches
@@ -318,21 +366,67 @@
 	let chartReady = $derived(powerLoaded && powerHasData);
 	let showEmptyState = $derived(powerLoaded && !powerHasData);
 
+	/** Apply the initial range through the normal selection paths: the URL's
+	 *  range params when present (shared links reproduce the view), otherwise
+	 *  the default preset. Reads window.location rather than page.url — the
+	 *  latter can be stale after shallow replaceState navigations. */
+	function applyInitialRange() {
+		const parsed = parseRangeParams(new URLSearchParams(window.location.search), {
+			nowMs: Date.now()
+		});
+		if (!parsed) {
+			range.handleRangeSelect(rangeDays);
+			return;
+		}
+		if (parsed.kind === 'preset') {
+			range.handleRangeSelect(parsed.days);
+		} else {
+			range.handleDateRangeChange({
+				start: new Date(parsed.startMs).toISOString(),
+				end: new Date(parsed.endMs).toISOString()
+			});
+		}
+		if (parsed.intervalId) range.handleIntervalChange(parsed.intervalId);
+	}
+
 	/** @param {{ hasData: boolean }} state */
 	function handlePowerLoadComplete({ hasData }) {
 		// The chart self-seeds a day-snapped window on load. Once it's settled,
-		// apply the default preset through the normal path (before reveal, so no
+		// apply the initial range through the normal path (before reveal, so no
 		// visible jump): this sets the exact rolling window — so the view matches a
 		// later 3D click instead of trimming — and marks the preset selected (the
 		// setViewport echo is suppressed, so it isn't cleared).
 		if (!rangeApplied) {
 			rangeApplied = true;
-			range.handleRangeSelect(rangeDays);
+			applyInitialRange();
 		}
 		powerLoaded = true;
 		powerHasData = hasData;
 		range.settle();
 	}
+
+	// Keep the selected range shareable: mirror it into the query string
+	// (replaceState, like ?unit=) once the chart has settled. Debounced so
+	// pan/zoom doesn't thrash the URL. Loop-free by construction — the effect
+	// depends on range/viewport state only, never on the URL itself.
+	$effect(() => {
+		const state = {
+			selectedRange: range.selectedRange,
+			displayInterval: range.displayInterval,
+			viewStart,
+			viewEnd,
+			defaultRangeDays: rangeDays
+		};
+		if (!powerLoaded || !state.viewStart || !state.viewEnd) return;
+		const timer = setTimeout(() => {
+			const url = new URL(window.location.href);
+			const before = url.searchParams.toString();
+			applyRangeParams(url.searchParams, state);
+			if (url.searchParams.toString() === before) return;
+			goto(`${url.pathname}${url.search}`, { replaceState: true, noScroll: true, keepFocus: true });
+		}, 300);
+		return () => clearTimeout(timer);
+	});
 
 	/** Static skeleton bar heights (%) — a calm placeholder while the chart loads. */
 	const SKELETON_BARS = [42, 64, 50, 78, 56, 70, 46, 84, 60, 74, 52, 88, 66, 54, 72, 48, 80];
@@ -444,13 +538,14 @@
 							     the providers + generation chart below. -->
 						<div class={sectionCardClass}>
 							<FacilityMetrics
-								facility={selectedFacility}
+								facility={activeFacility}
 								sanityFacility={data.sanityFacility}
 								summaryData={showEmptyState ? null : summaryData}
 								emissionsData={showEmptyState ? null : emissionsData}
 								intervalData={showEmptyState ? null : intervalData}
 								{timeZone}
 								displayInterval={range.displayInterval}
+								{hiddenUnitCodes}
 								onpeakhighlight={handleHoverChange}
 							/>
 						</div>
