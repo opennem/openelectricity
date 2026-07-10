@@ -17,9 +17,11 @@
 	 */
 
 	import MetricCard from './MetricCard.svelte';
+	import { getUnitCapacity, sumUnitCapacities } from '$lib/utils/capacity';
 	import { getPrimaryFuelTechGroup, isGasPeaker, isPumpedHydro } from './fuel-group.js';
 	import {
 		sumAllSeries,
+		sumEnergy,
 		getHoursInRange,
 		getIntervalHours,
 		isSubDailyData,
@@ -67,11 +69,7 @@
 
 	let group = $derived(getPrimaryFuelTechGroup(facility?.units ?? []));
 
-	let totalCapacity = $derived.by(() => {
-		let sum = 0;
-		for (const unit of facility?.units ?? []) sum += unit.capacity_registered || 0;
-		return sum;
-	});
+	let totalCapacity = $derived(sumUnitCapacities(facility?.units ?? []));
 
 	// ── DC:AC ratio (solar, Sanity-sourced) ──────────────────────────
 	let dcAc = $derived.by(() => {
@@ -110,7 +108,7 @@
 			// figure); other techs count only when they carry storage themselves.
 			if (!ft.startsWith('battery') && unitStorage <= 0) continue;
 			storage += unitStorage;
-			power += Number(unit.capacity_registered || unit.capacity_maximum) || 0;
+			power += getUnitCapacity(unit);
 		}
 		return storageDurationHours(storage, power);
 	});
@@ -133,23 +131,9 @@
 		const isStorageFacility = isBattery || pumpedHydro;
 
 		// Split signed energy so batteries can report throughput + round-trip.
-		let signedEnergy = 0;
-		let absEnergy = 0;
-		let discharge = 0;
-		let charge = 0;
-		for (const row of eData) {
-			for (const name of eNames) {
-				const v = row[name];
-				if (typeof v === 'number' && !isNaN(v)) {
-					signedEnergy += v;
-					absEnergy += Math.abs(v);
-					if (v > 0) discharge += v;
-					else charge += -v;
-				}
-			}
-		}
+		const { signed: signedEnergy, throughput, discharge, charge } = sumEnergy(eData, eNames);
 
-		const generationEnergy = isStorageFacility ? absEnergy : signedEnergy;
+		const generationEnergy = isStorageFacility ? throughput : signedEnergy;
 		const hours = getHoursInRange(eData);
 		const totalMV = sumAllSeries(mData, mNames);
 

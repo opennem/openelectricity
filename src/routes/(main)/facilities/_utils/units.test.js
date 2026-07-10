@@ -1,5 +1,60 @@
 import { describe, it, expect } from 'vitest';
-import { canSplitBatteryUnits, getOrderedFuelTechGroups, withMarkedUnits } from './units.js';
+import {
+	canSplitBatteryUnits,
+	getFacilityCapacity,
+	getOrderedFuelTechGroups,
+	groupUnits,
+	withMarkedUnits
+} from './units.js';
+
+describe('getFacilityCapacity', () => {
+	it('sums per-unit capacity net of derived battery charge/discharge units', () => {
+		const facility = {
+			units: [
+				{ fueltech_id: 'battery', capacity_maximum: 100 },
+				{ fueltech_id: 'battery_charging', capacity_maximum: 100 },
+				{ fueltech_id: 'battery_discharging', capacity_maximum: 100 },
+				{ fueltech_id: 'solar_utility', capacity_registered: 50 }
+			]
+		};
+		expect(getFacilityCapacity(facility)).toBe(150);
+	});
+
+	it('returns 0 for a facility with no units', () => {
+		expect(getFacilityCapacity({})).toBe(0);
+		expect(getFacilityCapacity(null)).toBe(0);
+	});
+});
+
+describe('groupUnits', () => {
+	it('applies the max→registered fallback per unit when summing totalCapacity', () => {
+		const facility = {
+			units: [
+				{ fueltech_id: 'wind', status_id: 'operating', capacity_maximum: 100 },
+				// Registered-only unit — a group-level fallback (sum(max) || sum(reg))
+				// would ignore this unit's 50 MW and report 100.
+				{ fueltech_id: 'wind', status_id: 'operating', capacity_registered: 50 }
+			]
+		};
+		const [group] = groupUnits(facility);
+		expect(group.totalCapacity).toBe(150);
+	});
+
+	it('prefers maximum over registered within a unit', () => {
+		const facility = {
+			units: [
+				{
+					fueltech_id: 'wind',
+					status_id: 'operating',
+					capacity_maximum: 120,
+					capacity_registered: 100
+				}
+			]
+		};
+		const [group] = groupUnits(facility);
+		expect(group.totalCapacity).toBe(120);
+	});
+});
 
 describe('getOrderedFuelTechGroups', () => {
 	it('orders top-of-stack first (reversed detailed order) and dedupes by fueltech_id', () => {

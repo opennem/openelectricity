@@ -13,13 +13,17 @@
 	import FacilityStatusIcon from '$lib/components/facilities/FacilityStatusIcon.svelte';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
+	import { pickCapacity } from '$lib/utils/capacity';
 	import { getNumberFormat, formatCapacity, formatDateTime } from '$lib/utils/formatters';
 	import { formatDateBySpecificity, stripDateTimezone } from '$lib/utils/date-format.js';
 	import { fuelTechToGroup } from '$lib/fuel-tech-groups/facility-group.js';
 	import {
+		capacityFactor,
 		dcAcRatio,
+		getHoursInRange,
 		isChargingSideUnit,
-		storageDurationHours
+		storageDurationHours,
+		sumEnergy
 	} from '$lib/components/charts/facility/metrics/metrics-calc.js';
 	import { METRICS } from '$lib/components/charts/facility/metrics/metric-definitions.js';
 	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
@@ -181,10 +185,12 @@
 	// meaningful oversizing signal (≤1.05 or >3), shared with the facility metrics.
 	let dcac = $derived(group === 'solar' ? dcAcRatio(capacityReg, capacityMax) : null);
 
+	// The unit's canonical capacity — the shared maximum-falling-back-to-
+	// registered precedence over the merged OE/Sanity scalars.
+	let unitCapacity = $derived(pickCapacity(capacityMax, capacityReg));
+
 	// Same formula and capacity precedence as the facility-level metric.
-	let storageDuration = $derived(
-		storageDurationHours(Number(storage) || 0, Number(capacityReg || capacityMax) || 0)
-	);
+	let storageDuration = $derived(storageDurationHours(Number(storage) || 0, unitCapacity));
 
 	let turbineCount = $derived.by(() => {
 		if (!unitTypes.length) return null;
@@ -271,9 +277,20 @@
 	);
 
 	// ── Metric grid (fuel-tech highlights + key stats, facility-metrics style) ──
-	/** @type {{ label: string, value: string, unit?: string, source?: string, description?: string }[]} */
+	/**
+	 * @typedef {Object} UnitStat
+	 * @property {string} label
+	 * @property {string} [value]
+	 * @property {string} [unit]
+	 * @property {string} [subtitle]
+	 * @property {{ header: string, value: string, unit?: string }[]} [columns]
+	 * @property {string} [source]
+	 * @property {string} [description]
+	 */
+
+	/** @type {UnitStat[]} */
 	let highlightStats = $derived.by(() => {
-		/** @type {{ label: string, value: string, unit?: string, source?: string, description?: string }[]} */
+		/** @type {UnitStat[]} */
 		const out = [];
 		if (group === 'solar') {
 			if (has(capacityReg))
@@ -328,19 +345,10 @@
 		return out;
 	});
 
-	/** @type {{ label: string, value: string, unit?: string, source?: string, description?: string }[]} */
+	/** @type {UnitStat[]} */
 	let keyStats = $derived.by(() => {
-		/** @type {{ label: string, value: string, unit?: string, source?: string, description?: string }[]} */
+		/** @type {UnitStat[]} */
 		const out = [];
-		if (group !== 'solar') {
-			// Solar capacity is shown in full (DC array + AC connection) above.
-			out.push({
-				label: 'Capacity',
-				value: formatCapacity(capacityMax ?? capacityReg),
-				unit: 'MW',
-				description: 'Maximum where available, otherwise registered.'
-			});
-		}
 		if (has(storage)) out.push({ label: 'Storage', value: formatCapacity(storage), unit: 'MWh' });
 		// Storage duration applies to any storage-carrying discharge unit (pumped
 		// hydro reservoirs included) — but not to the pumping/charging side, whose
@@ -353,22 +361,6 @@
 				unit: 'h',
 				description: STORAGE_DURATION_DESCRIPTION
 			});
-		if (has(emissions) && emissions > 0)
-			out.push({
-				label: 'Emissions',
-				value: formatEmissions(emissions),
-				unit: 'kg CO₂/MWh',
-				source: sanityUnit?.emissions_factor_source ?? undefined,
-				description:
-					'Emissions factor: kilograms of CO₂-equivalent emitted per megawatt hour generated.'
-			});
-		if (has(dispatch))
-			out.push({
-				label: 'Dispatch',
-				value: dispatchLabel(dispatch),
-				description:
-					'How the unit participates in the market: a generator sells energy, a load consumes it, bidirectional units do both.'
-			});
 		if (has(mlf))
 			out.push({
 				label: 'Loss factor',
@@ -380,10 +372,97 @@
 		return out;
 	});
 
-	let metricStats = $derived([...highlightStats, ...keyStats]);
-
 	// Facility clone carrying only this unit — drives the per-unit snapshot charts.
 	let unitFacility = $derived(facility && unit ? { ...facility, units: [unit] } : null);
+
+	// ── Capacity factor (over the unit charts' visible range) ──
+	// The energy summary comes up from UnitCharts' financial provider. Tagged
+	// with the unit code because the sheet reuses this component across units
+	// (only the charts are {#key}ed) — a stale summary must not leak into the
+	// next unit's metric.
+	/** @type {{ code: string, data: any } | null} */
+	let unitSummary = $state(null);
+	let summaryData = $derived.by(() => {
+		if (!unitSummary || !unit?.code) return null;
+		return unitSummary.code === unit.code ? unitSummary.data : null;
+	});
+
+	// Same formula and capacity precedence as the facility metrics grid, via
+	// the shared sumEnergy fold. Storage units (battery sides, pumps) report
+	// throughput (|charge| + |discharge|) like the facility-level metric —
+	// their signed net is negative by physics.
+	let capacityFactorValue = $derived.by(() => {
+		const eData = summaryData?.energyData ?? [];
+		if (!eData.length || unitCapacity <= 0) return null;
+		const { signed, throughput } = sumEnergy(eData, summaryData?.energySeriesNames ?? []);
+		const isStorageUnit = ft.startsWith('battery') || ft === 'pumps';
+		return capacityFactor(
+			isStorageUnit ? throughput : signed,
+			unitCapacity,
+			getHoursInRange(eData)
+		);
+	});
+
+	// Grid order: Capacity (straight after the Status cell), Capacity Factor,
+	// Dispatch, Emissions, then the fuel-tech highlights and remaining key stats.
+	let metricStats = $derived.by(() => {
+		/** @type {UnitStat[]} */
+		const stats = [];
+		// Solar shows its capacity in full (DC array + AC connection) in its
+		// highlights instead.
+		if (group !== 'solar') {
+			stats.push({
+				label: 'Capacity',
+				columns: [
+					{
+						header: 'Maximum',
+						value: formatCapacity(has(capacityMax) ? Number(capacityMax) : null),
+						unit: has(capacityMax) ? 'MW' : undefined
+					},
+					{
+						header: 'Registered',
+						value: formatCapacity(has(capacityReg) ? Number(capacityReg) : null),
+						unit: has(capacityReg) ? 'MW' : undefined
+					}
+				],
+				description: 'Capacity figures elsewhere use maximum where available, otherwise registered.'
+			});
+		}
+		// Rendered through the shared descriptor so the value/unit/placeholder
+		// treatment can never drift from the facility metrics grid.
+		if (unitFacility) {
+			stats.push({
+				label: METRICS.capacityFactor.label,
+				description: METRICS.capacityFactor.description,
+				...METRICS.capacityFactor.compute(
+					/** @type {any} */ ({
+						hasSummary: capacityFactorValue != null,
+						capacityFactor: capacityFactorValue
+					})
+				)
+			});
+		}
+		if (has(dispatch)) {
+			stats.push({
+				label: 'Dispatch',
+				value: dispatchLabel(dispatch),
+				description:
+					'How the unit participates in the market: a generator sells energy, a load consumes it, bidirectional units do both.'
+			});
+		}
+		if (has(emissions) && emissions > 0) {
+			stats.push({
+				label: 'Emissions',
+				value: formatEmissions(emissions),
+				unit: 'kg CO₂/MWh',
+				source: sanityUnit?.emissions_factor_source ?? undefined,
+				description:
+					'Emissions factor: kilograms of CO₂-equivalent emitted per megawatt hour generated.'
+			});
+		}
+		stats.push(...highlightStats, ...keyStats);
+		return stats;
+	});
 </script>
 
 {#snippet extLink(/** @type {string} */ href, /** @type {string} */ label)}
@@ -466,8 +545,10 @@
 						<MetricCard
 							size="sm"
 							label={s.label}
-							value={s.value}
+							value={s.value ?? ''}
 							unit={s.unit ?? ''}
+							subtitle={s.subtitle ?? ''}
+							columns={s.columns ?? []}
 							description={s.description ?? ''}
 						/>
 						{#if s.source}
@@ -492,7 +573,11 @@
 	{#if unitFacility}
 		<div class="{sectionCardClass} px-6 py-4">
 			{#key unit.code}
-				<UnitCharts facility={unitFacility} {timeZone} />
+				<UnitCharts
+					facility={unitFacility}
+					{timeZone}
+					onsummarydata={(d) => (unitSummary = { code: unit.code, data: d })}
+				/>
 			{/key}
 		</div>
 	{/if}

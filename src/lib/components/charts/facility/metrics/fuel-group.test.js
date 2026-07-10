@@ -54,6 +54,15 @@ describe('getPrimaryFuelTechGroup', () => {
 		expect(getPrimaryFuelTechGroup(units)).toBe('solar');
 	});
 
+	it('prefers maximum capacity over registered when weighing dominance', () => {
+		const units = [
+			// Registered alone would make solar dominant; maximum flips it to battery.
+			{ fueltech_id: 'solar_utility', capacity_registered: 50, capacity_maximum: 40 },
+			{ fueltech_id: 'battery', capacity_registered: 30, capacity_maximum: 60 }
+		];
+		expect(getPrimaryFuelTechGroup(units)).toBe('battery');
+	});
+
 	it('sums capacity within a group across units', () => {
 		const units = [
 			{ fueltech_id: 'gas_ocgt', capacity_registered: 40 },

@@ -10,6 +10,7 @@
 	import { buildUnitColourMap } from '$lib/components/charts/facility/helpers.js';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
 	import detailedGroup from '$lib/fuel-tech-groups/detailed';
+	import { getUnitCapacity } from '$lib/utils/capacity';
 	import { getNumberFormat } from '$lib/utils/formatters';
 
 	const fuelTechOrder = detailedGroup.order;
@@ -58,7 +59,7 @@
 	>
 		{#each sortedUnits as unit (unit.code)}
 			{@const colour = unitColourMap[unit.code] ?? '#888'}
-			{@const capacity = unit.capacity_maximum ?? unit.capacity_registered}
+			{@const capacity = getUnitCapacity(unit) || null}
 			{@const isRetired = unit.status_id === 'retired'}
 			<div
 				class="shrink-0 inline-flex items-center gap-2 px-3 text-xs"

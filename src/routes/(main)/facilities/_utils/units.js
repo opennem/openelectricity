@@ -1,4 +1,5 @@
 import { getFueltechColor } from '$lib/utils/fueltech-display';
+import { sumUnitCapacities } from '$lib/utils/capacity';
 import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 import isCommissioningCheck from './is-commissioning';
 
@@ -56,15 +57,26 @@ export function sumField(units, field) {
 }
 
 /**
+ * A facility's headline capacity in MW: per-unit maximum-falling-back-to-
+ * registered, summed net of derived battery charge/discharge units (so a
+ * bidirectional battery isn't double-counted).
+ * @param {any} facility
+ * @returns {number}
+ */
+export function getFacilityCapacity(facility) {
+	return sumUnitCapacities(
+		filterDerivedBatteryUnits(facility?.units ?? [], hasBidirectionalBattery(facility))
+	);
+}
+
+/**
  * @typedef {Object} UnitGroup
  * @property {string} fueltech_id
  * @property {string} status_id
  * @property {any[]} units
  * @property {boolean} isCommissioning
- * @property {number} totalCapacity
+ * @property {number} totalCapacity - sum of per-unit capacity (maximum falling back to registered, per unit)
  * @property {string} bgColor
- * @property {number} capacity_maximum
- * @property {number} capacity_registered
  * @property {number} capacity_storage
  * @property {number} max_generation
  */
@@ -104,22 +116,15 @@ export function groupUnits(facility, options = {}) {
 	}
 
 	return Array.from(groups.values()).map((group) => {
-		const capacity_maximum = sumField(group.units, 'capacity_maximum');
-		const capacity_registered = sumField(group.units, 'capacity_registered');
-		const capacity_storage = sumField(group.units, 'capacity_storage');
-		const max_generation = sumField(group.units, 'max_generation');
-
 		return {
 			fueltech_id: group.fueltech_id,
 			status_id: group.status_id,
 			units: group.units,
 			isCommissioning: group.units.some((unit) => unit.isCommissioning),
-			totalCapacity: capacity_maximum || capacity_registered,
+			totalCapacity: sumUnitCapacities(group.units),
 			bgColor: getFueltechColor(group.fueltech_id),
-			capacity_maximum,
-			capacity_registered,
-			capacity_storage,
-			max_generation
+			capacity_storage: sumField(group.units, 'capacity_storage'),
+			max_generation: sumField(group.units, 'max_generation')
 		};
 	});
 }

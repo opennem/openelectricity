@@ -4,6 +4,7 @@
 	import { browser } from '$app/environment';
 	import { formatDateBySpecificity, stripDateTimezone } from '$lib/utils/date-format';
 	import { formatDateTime } from '$lib/utils/formatters';
+	import { getUnitCapacity } from '$lib/utils/capacity';
 	import formatValue from './_utils/format-value';
 	import groupByMonthDay from './_utils/group-by-month-day';
 	import getDateField from './_utils/get-date-field';
@@ -228,7 +229,7 @@
 			facilities.forEach((/** @type {any} */ facility) => {
 				// ignore today row as it's not a facility
 				if (!facility.isToday && facility.unit) {
-					total += Number(facility.unit.capacity_maximum || facility.unit.capacity_registered);
+					total += getUnitCapacity(facility.unit);
 				}
 			});
 		});

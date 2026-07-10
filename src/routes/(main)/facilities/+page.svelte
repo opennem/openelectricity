@@ -42,8 +42,10 @@
 	import {
 		hasBidirectionalBattery,
 		filterDerivedBatteryUnits,
+		getFacilityCapacity,
 		withMarkedUnits
 	} from './_utils/units';
+	import { getUnitCapacity, sumUnitCapacities } from '$lib/utils/capacity';
 	import { fetchFacilityProfile, peekFacilityProfile } from './_utils/fetch-facility-profile.js';
 	import { fetchFacilityDetail, peekFacilityDetail } from './_utils/fetch-facility-detail.js';
 	import { MediaQuery } from 'svelte/reactivity';
@@ -304,8 +306,8 @@
 	let mapClustering = $state(page.url.searchParams.get('clustering') === 'true');
 	let mapShowGolfCourses = $state(page.url.searchParams.get('golf') === 'true');
 
-	// Registered capacity per facility, normalised to 0..1 — sizes the map
-	// markers (circle radius).
+	// Capacity per facility (maximum falling back to registered), normalised to
+	// 0..1 — sizes the map markers (circle radius).
 	let capacityValuesByCode = $derived.by(() => {
 		const m = new Map();
 		for (const f of facilities ?? []) m.set(f.code, getFacilityCapacity(f));
@@ -460,30 +462,6 @@
 	let mapRef = $state(null);
 
 	/**
-	 * Get unit capacity
-	 * @param {any} unit
-	 * @returns {number}
-	 */
-	function getUnitCapacity(unit) {
-		return Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0;
-	}
-
-	/**
-	 * Calculate facility capacity
-	 * @param {any} facility
-	 * @returns {number}
-	 */
-	function getFacilityCapacity(facility) {
-		return filterDerivedBatteryUnits(
-			facility.units ?? [],
-			hasBidirectionalBattery(facility)
-		).reduce(
-			(/** @type {number} */ sum, /** @type {any} */ unit) => sum + getUnitCapacity(unit),
-			0
-		);
-	}
-
-	/**
 	 * Get all unit capacities from facilities (excluding battery charging/discharging)
 	 * @param {any[]} facilityList
 	 * @returns {number[]}
@@ -610,10 +588,7 @@
 				}))
 				.filter((facility) => facility.units && facility.units.length > 0)
 				.filter((facility) => {
-					const totalCapacity = facility.units.reduce(
-						(/** @type {number} */ sum, /** @type {any} */ unit) => sum + getUnitCapacity(unit),
-						0
-					);
+					const totalCapacity = sumUnitCapacities(facility.units);
 					return totalCapacity >= capacityRangeFilter[0] && totalCapacity <= capacityRangeFilter[1];
 				})
 				.filter((facility) => {
@@ -666,12 +641,7 @@
 
 	// Calculate totals for filtered facilities
 	let filteredUnits = $derived(filteredFacilities?.flatMap((f) => f.units) ?? []);
-	let totalCapacityMW = $derived(
-		filteredUnits.reduce(
-			(sum, u) => sum + (Number(u.capacity_maximum) || Number(u.capacity_registered) || 0),
-			0
-		)
-	);
+	let totalCapacityMW = $derived(sumUnitCapacities(filteredUnits));
 	let totalFacilitiesCount = $derived(filteredFacilities?.length ?? 0);
 	let totalUnitsCount = $derived(filteredUnits?.length ?? 0);
 
@@ -681,12 +651,7 @@
 	 * @returns {number}
 	 */
 	function getCapacityByStatus(status) {
-		return filteredUnits
-			.filter((u) => u.status_id === status)
-			.reduce(
-				(sum, u) => sum + (Number(u.capacity_maximum) || Number(u.capacity_registered) || 0),
-				0
-			);
+		return sumUnitCapacities(filteredUnits.filter((u) => u.status_id === status));
 	}
 	let capacityByStatus = $derived({
 		operating: getCapacityByStatus('operating'),

@@ -41,6 +41,35 @@ export function sumAllSeries(rows, keys) {
 }
 
 /**
+ * Fold signed energy series into the shapes the headline metrics need:
+ * `signed` (net), `throughput` (Σ|energy| — a storage facility's headline,
+ * since its signed net is negative by physics), and the `discharge`/`charge`
+ * split (for round-trip efficiency). One tested home for the fold shared by
+ * the facility metrics grid and the unit slide-out.
+ * @param {Array<Record<string, any>>} rows
+ * @param {string[]} keys
+ * @returns {{ signed: number, throughput: number, discharge: number, charge: number }}
+ */
+export function sumEnergy(rows, keys) {
+	let signed = 0;
+	let throughput = 0;
+	let discharge = 0;
+	let charge = 0;
+	for (const row of rows) {
+		for (const key of keys) {
+			const v = row[key];
+			if (typeof v === 'number' && !isNaN(v)) {
+				signed += v;
+				throughput += Math.abs(v);
+				if (v > 0) discharge += v;
+				else charge += -v;
+			}
+		}
+	}
+	return { signed, throughput, discharge, charge };
+}
+
+/**
  * Hours spanned by a set of time-ordered rows (first → last `time` in ms).
  * @param {Array<Record<string, any>>} rows - Each row must carry `time` (ms)
  * @returns {number}
@@ -78,11 +107,12 @@ export function isSubDailyData(rows) {
 
 /**
  * Capacity factor (%) — energy as a share of the theoretical maximum
- * (capacity × hours).
+ * (capacity × hours). Callers pass capacity with the canonical precedence
+ * (maximum falling back to registered — see $lib/utils/capacity.js).
  * @param {number} energy - MWh
  * @param {number} capacity - MW
  * @param {number} hours
- * @returns {number} 0–100 (can exceed 100 if registered capacity understates output)
+ * @returns {number} 0–100 (can exceed 100 if the capacity value understates output)
  */
 export function capacityFactor(energy, capacity, hours) {
 	if (capacity <= 0 || hours <= 0) return 0;

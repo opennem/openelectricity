@@ -1,4 +1,5 @@
 import { subYears } from 'date-fns';
+import { getUnitCapacity } from '$lib/utils/capacity';
 
 /** How long after commencement a unit can still be considered commissioning. */
 const COMMISSIONING_MAX_AGE_YEARS = 1;
@@ -46,7 +47,7 @@ export default function isCommissioning(unit, options = {}) {
 		return false;
 	}
 
-	const cap = Number(unit.capacity_maximum || unit.capacity_registered);
+	const cap = getUnitCapacity(unit);
 	const gen = Number(unit.max_generation);
 
 	if (gen) {

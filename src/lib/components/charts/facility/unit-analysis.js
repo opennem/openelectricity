@@ -7,6 +7,7 @@
 
 import { loadFuelTechs } from '$lib/fuel_techs';
 import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
+import { getUnitCapacity } from '$lib/utils/capacity';
 import { buildUnitColourMap } from './helpers.js';
 
 const BATTERY_FUEL_TECHS = ['battery'];
@@ -136,7 +137,7 @@ export function analyzeUnits(facility, getFuelTechColor) {
 		BATTERY_FUEL_TECHS.includes(u.fueltech_id)
 	);
 	for (const unit of units) {
-		const capacity = Number(unit.capacity_maximum || unit.capacity_registered) || 0;
+		const capacity = getUnitCapacity(unit);
 		if (loadFuelTechs.includes(unit.fueltech_id)) {
 			negative += capacity;
 		} else if (allBattery && unit.fueltech_id === 'battery') {
@@ -153,8 +154,8 @@ export function analyzeUnits(facility, getFuelTechColor) {
 	let totalCap = 0;
 	for (const unit of units) {
 		const ef = Number(unit.emissions_factor_co2);
-		const cap = Number(unit.capacity_maximum || unit.capacity_registered);
-		if (ef && cap && !isNaN(ef) && !isNaN(cap) && unit.dispatch_type !== 'LOAD') {
+		const cap = getUnitCapacity(unit);
+		if (ef && cap && !isNaN(ef) && unit.dispatch_type !== 'LOAD') {
 			totalWeighted += ef * cap;
 			totalCap += cap;
 		}

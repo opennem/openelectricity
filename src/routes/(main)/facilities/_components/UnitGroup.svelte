@@ -12,8 +12,7 @@
 	 *   fueltech_id: string,
 	 *   status_id: string,
 	 *   isCommissioning: boolean,
-	 *   capacity_maximum: number,
-	 *   capacity_registered: number,
+	 *   capacity: number,
 	 *   capacity_storage?: number,
 	 *   max_generation: number,
 	 *   bgColor: string,
@@ -27,8 +26,7 @@
 		fueltech_id,
 		status_id,
 		isCommissioning,
-		capacity_maximum,
-		capacity_registered,
+		capacity,
 		capacity_storage = 0,
 		max_generation,
 		bgColor,
@@ -38,7 +36,6 @@
 		network_id = 'NEM'
 	} = $props();
 
-	let capacity = $derived(capacity_maximum || capacity_registered);
 	let offset = $derived(network_id === 'WEM' ? '+08:00' : '+10:00');
 
 	/**
@@ -61,13 +58,6 @@
 		if (!dateValue) return new Date();
 		return new Date(stripDateTimezone(dateValue) + offset);
 	}
-
-	// Create unit object for GenCapViz
-	let unitForViz = $derived({
-		capacity_maximum,
-		capacity_registered,
-		max_generation
-	});
 </script>
 
 <div>
@@ -118,7 +108,7 @@
 
 	{#if isCommissioning}
 		<div class="mt-2">
-			<GenCapViz unit={unitForViz} fill={bgColor} />
+			<GenCapViz {capacity} maxGeneration={max_generation} fill={bgColor} />
 		</div>
 	{/if}
 

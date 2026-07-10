@@ -48,7 +48,7 @@
 	} = $props();
 
 	// When a non-capacity metric is active, the rightmost column sorts by the
-	// raw metric value rather than by registered capacity (MW).
+	// raw metric value rather than by capacity (MW).
 	let sortedFacilities = $derived(
 		sortFacilities(facilities, sortBy, sortOrder, metricActive ? metricValuesRaw : null)
 	);

@@ -3,6 +3,7 @@
  * keyboard navigation so both operate on the same ordering.
  */
 
+import { sumUnitCapacities } from '$lib/utils/capacity';
 import { getRegionLabel } from './filters';
 
 /**
@@ -10,12 +11,7 @@ import { getRegionLabel } from './filters';
  * @returns {number}
  */
 function getTotalCapacity(facility) {
-	if (!facility.units) return 0;
-	return facility.units.reduce(
-		(/** @type {number} */ sum, /** @type {any} */ unit) =>
-			sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0),
-		0
-	);
+	return sumUnitCapacities(facility.units);
 }
 
 /**

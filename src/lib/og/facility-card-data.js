@@ -8,12 +8,7 @@
  */
 
 import { sortByDetailedOrder } from '../fuel-tech-groups/detailed.js';
-
-/** @param {any} v */
-function num(v) {
-	const n = Number(v);
-	return Number.isFinite(n) ? n : 0;
-}
+import { getUnitCapacity } from '../utils/capacity.js';
 
 /** @param {number} v */
 export function formatMw(v) {
@@ -58,7 +53,7 @@ export function deriveCard(facility) {
 	for (const u of units) {
 		const ft = u.fueltech_id;
 		if (!ft) continue;
-		const cap = num(u.capacity_maximum ?? u.capacity_registered);
+		const cap = getUnitCapacity(u);
 		const entry = byFt.get(ft) || { ft, cap: 0, active: 0 };
 		entry.cap += cap;
 		if (u.status_id !== 'retired') entry.active += cap;

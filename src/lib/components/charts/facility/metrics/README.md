@@ -21,8 +21,8 @@ recomputes.
 fuel tech. The flow is:
 
 1. **Pick the fuel group.** `getPrimaryFuelTechGroup(units)` returns the dominant group
-   by registered capacity: `wind | solar | battery | coal | gas | hydro | other`
-   (`fuel-group.js`).
+   by capacity (maximum falling back to registered, per unit):
+   `wind | solar | battery | coal | gas | hydro | other` (`fuel-group.js`).
 2. **Resolve the metric set.** `resolveMetricKeys(group, flags)` returns an ordered list
    of metric ids for that group (`metric-definitions.js`). A few are conditional —
    gas peakers add `runningHours`, solar adds `dcac` only when an oversizing
@@ -55,18 +55,24 @@ so the card fills in once the providers' fetch settles (showing `--` until then)
 
 ## Metric sets by fuel group
 
-| Group       | Metrics                                                                                                      |
-| ----------- | ------------------------------------------------------------------------------------------------------------ |
-| **coal**    | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Expected Closure if known)_      |
-| **gas**     | Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Running Hours if peaker)_        |
-| **wind**    | Capacity Factor, Total Energy, Avg Price, Revenue, Peak Output                                               |
-| **solar**   | Capacity Factor, Peak Output, Avg Price, Revenue _(+ DC:AC if known, with DC/AC capacities as its subtitle)_ |
-| **hydro**   | Capacity Factor, Total Energy, Running Hours, Avg Price, Revenue _(+ Round Trip if pumped)_                  |
-| **battery** | Net Revenue, Storage Duration, Round-trip Efficiency, Total Energy, Capacity Factor                          |
-| **other**   | Capacity Factor, Total Energy, Revenue, Avg Price                                                            |
+Every group leads with **Total Energy** and **Capacity Factor**; the rest of the set is
+technology-specific:
+
+| Group       | Metrics                                                                                                                    |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------- |
+| **coal**    | Total Energy, Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Expected Closure if known)_      |
+| **gas**     | Total Energy, Capacity Factor, CO₂ Emissions, Emissions Intensity, Revenue, Avg Price _(+ Running Hours if peaker)_        |
+| **wind**    | Total Energy, Capacity Factor, Avg Price, Revenue, Peak Output                                                             |
+| **solar**   | Total Energy, Capacity Factor, Peak Output, Avg Price, Revenue _(+ DC:AC if known, with DC/AC capacities as its subtitle)_ |
+| **hydro**   | Total Energy, Capacity Factor, Running Hours, Avg Price, Revenue _(+ Round Trip if pumped)_                                |
+| **battery** | Total Energy, Capacity Factor, Net Revenue, Storage Duration, Round-trip Efficiency                                        |
+| **other**   | Total Energy, Capacity Factor, Revenue, Avg Price                                                                          |
 
 Per-unit fuel-tech, turbine and equipment detail is shown in the units slide-out panel,
-not here — only coal's Expected Closure appears as an extra cell.
+not here — only coal's Expected Closure appears as an extra cell. The unit slide-out
+(`UnitDetail`) reuses the `capacityFactor` descriptor's label and tooltip for its own
+per-unit Capacity Factor, computed over the unit charts' visible range from the same
+financial-provider summary.
 
 Any non-battery group additionally shows **Storage Duration** when the facility has
 storage-carrying units (e.g. a solar + battery hybrid, or a pumped-hydro scheme).
@@ -85,7 +91,7 @@ Energy is MWh, power MW, market value $, emissions tCO₂e.
 
 | Metric                        | Definition                                                                                                                                                                                                                                                                                                                          | Source                                        |
 | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| **Capacity Factor**           | `energy / (registered_capacity × hours) × 100`                                                                                                                                                                                                                                                                                      | summaryData                                   |
+| **Capacity Factor**           | `energy / (capacity × hours) × 100` — capacity is the per-unit sum of maximum falling back to registered (`$lib/utils/capacity.js`)                                                                                                                                                                                                 | summaryData                                   |
 | **Total Energy**              | Σ energy across unit series (Σ\|energy\| throughput for storage facilities — batteries and pumped hydro, whose signed net is negative by physics)                                                                                                                                                                                   | summaryData                                   |
 | **Revenue**                   | Σ market value across unit series                                                                                                                                                                                                                                                                                                   | summaryData                                   |
 | **Avg Price Received**        | `market_value / energy` ($/MWh)                                                                                                                                                                                                                                                                                                     | summaryData                                   |
@@ -94,7 +100,7 @@ Energy is MWh, power MW, market value $, emissions tCO₂e.
 | **Peak Output / Peak Energy** | the peak `summaryData` bucket (`peakBucket`). Power mode (sub-daily rows): "Peak Output" = peak MW (`÷ interval_hours`), shown `peak / capacity`. Energy mode (daily+ rows): "Peak Energy" = highest-energy bucket (MWh, raw). Both show the period as a subtitle and annotate the chart at that time on hover (`onpeakhighlight`). | summaryData                                   |
 | **Running Hours**             | intervals where any series generated × interval length                                                                                                                                                                                                                                                                              | intervalData (sub-daily only)                 |
 | **Net Revenue**               | Σ market value (discharge revenue − charge cost)                                                                                                                                                                                                                                                                                    | summaryData                                   |
-| **Storage Duration**          | `storage_MWh / discharge_MW` (hours) summed over storage-carrying discharge units only — charging-side units (`battery_*_charging`, `pumps`) excluded                                                                                                                                                                               | OE capacity_storage (Sanity fallback)         |
+| **Storage Duration**          | `storage_MWh / discharge_MW` (hours) summed over storage-carrying discharge units only — charging-side units (`battery_*_charging`, `pumps`) excluded; discharge MW uses the same maximum-falling-back-to-registered precedence                                                                                                     | OE capacity_storage (Sanity fallback)         |
 | **Round-trip Efficiency**     | `discharge_energy / charge_energy × 100` (from the signed series; batteries and pumped hydro)                                                                                                                                                                                                                                       | summaryData                                   |
 | **DC:AC Ratio**               | `DC_array / AC_connection`, only when 1.05–3.0                                                                                                                                                                                                                                                                                      | Sanity capacity_registered / capacity_maximum |
 

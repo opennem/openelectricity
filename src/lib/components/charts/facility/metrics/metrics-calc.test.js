@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
 	sumSeries,
 	sumAllSeries,
+	sumEnergy,
 	getHoursInRange,
 	getIntervalHours,
 	isSubDailyData,
@@ -54,6 +55,41 @@ describe('sumAllSeries', () => {
 
 	it('returns 0 for no keys', () => {
 		expect(sumAllSeries([{ a: 1 }], [])).toBe(0);
+	});
+});
+
+describe('sumEnergy', () => {
+	it('folds signed, throughput and the discharge/charge split in one pass', () => {
+		const rows = [
+			{ a: 10, b: -4 },
+			{ a: -6, b: 2 }
+		];
+		expect(sumEnergy(rows, ['a', 'b'])).toEqual({
+			signed: 2,
+			throughput: 22,
+			discharge: 12,
+			charge: 10
+		});
+	});
+
+	it('ignores non-numeric and NaN values', () => {
+		const rows = [{ a: 5, b: null }, { a: NaN, b: 'x' }, { a: undefined }];
+		expect(sumEnergy(rows, ['a', 'b'])).toEqual({
+			signed: 5,
+			throughput: 5,
+			discharge: 5,
+			charge: 0
+		});
+	});
+
+	it('returns zeros for empty rows or keys', () => {
+		expect(sumEnergy([], ['a'])).toEqual({ signed: 0, throughput: 0, discharge: 0, charge: 0 });
+		expect(sumEnergy([{ a: 1 }], [])).toEqual({
+			signed: 0,
+			throughput: 0,
+			discharge: 0,
+			charge: 0
+		});
 	});
 });
 

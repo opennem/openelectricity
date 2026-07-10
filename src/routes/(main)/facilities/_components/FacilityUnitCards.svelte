@@ -28,12 +28,7 @@
 
 <div class="grid grid-cols-1 gap-3 {singleColumn ? '' : 'min-[420px]:grid-cols-2'}">
 	{#each unitGroups as group (group.fueltech_id + '|||' + group.status_id)}
-		{@const capacity = group.capacity_maximum || group.capacity_registered}
-		{@const unitForViz = {
-			capacity_maximum: group.capacity_maximum,
-			capacity_registered: group.capacity_registered,
-			max_generation: group.max_generation
-		}}
+		{@const capacity = group.totalCapacity}
 		{@const firstUnit = group.units[0]}
 
 		<div class="rounded-lg border border-warm-grey bg-white px-3 py-3 relative">
@@ -91,7 +86,7 @@
 			<!-- Commissioning progress -->
 			{#if group.isCommissioning}
 				<div class="mt-3">
-					<GenCapViz unit={unitForViz} fill={group.bgColor} />
+					<GenCapViz {capacity} maxGeneration={group.max_generation} fill={group.bgColor} />
 					{#if group.max_generation}
 						<div class="text-xxs text-mid-grey mt-1">
 							{getPercentage(group.max_generation, capacity)}%

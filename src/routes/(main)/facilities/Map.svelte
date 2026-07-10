@@ -11,9 +11,11 @@
 		FillLayer
 	} from 'svelte-maplibre-gl';
 	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { sumUnitCapacities } from '$lib/utils/capacity';
 	import { fetchOsmPolygon } from '$lib/utils/osm.js';
 	import OsmFootprintLayer from '$lib/components/map/OsmFootprintLayer.svelte';
 	import UnitGroup from './_components/UnitGroup.svelte';
+	import { groupUnits } from './_utils/units';
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import FacilityCardImage from './_components/FacilityCardImage.svelte';
 	import { getRegionLabel } from './_utils/filters';
@@ -225,54 +227,8 @@
 	 * @returns {number}
 	 */
 	function getTotalCapacity(facility) {
-		if (!facility.units || facility.units.length === 0) return 0;
-		return facility.units.reduce((/** @type {number} */ sum, /** @type {any} */ unit) => {
-			return sum + (Number(unit.capacity_maximum) || Number(unit.capacity_registered) || 0);
-		}, 0);
+		return sumUnitCapacities(facility.units);
 	}
-
-	// Memoized unit grouping cache - computed once per facility set
-	let groupedUnitsCache = $derived.by(() => {
-		/** @type {Map<string, Array<{fueltech_id: string, status_id: string, isCommissioning: boolean, capacity_maximum: number, capacity_registered: number, max_generation: number, bgColor: string}>>} */
-		const cache = new Map();
-
-		for (const facility of facilities) {
-			if (!facility.units || facility.units.length === 0) {
-				cache.set(facility.code, []);
-				continue;
-			}
-
-			/** @type {Map<string, any>} */
-			const groups = new Map();
-
-			for (const unit of facility.units) {
-				const key = `${unit.fueltech_id}|||${unit.status_id}`;
-
-				if (!groups.has(key)) {
-					groups.set(key, {
-						fueltech_id: unit.fueltech_id,
-						status_id: unit.status_id,
-						isCommissioning: unit.isCommissioning,
-						capacity_maximum: 0,
-						capacity_registered: 0,
-						capacity_storage: 0,
-						max_generation: 0,
-						bgColor: fuelTechColourMap[unit.fueltech_id] || '#6A6A6A'
-					});
-				}
-
-				const group = groups.get(key);
-				group.capacity_maximum += Number(unit.capacity_maximum) || 0;
-				group.capacity_registered += Number(unit.capacity_registered) || 0;
-				group.capacity_storage += Number(unit.capacity_storage) || 0;
-				group.max_generation += Number(unit.max_generation) || 0;
-			}
-
-			cache.set(facility.code, Array.from(groups.values()));
-		}
-
-		return cache;
-	});
 
 	// Convert facilities to GeoJSON for clustering.
 	let facilitiesGeoJSON = $derived.by(() => {
@@ -329,14 +285,15 @@
 		isFacilitySelected ? null : validatedHoveredFacility || mapHoveredFacility || null
 	);
 
-	// Lazy popup content - only computed when popup is shown
+	// Lazy popup content - only computed when popup is shown. Grouping just the
+	// hovered facility is cheap (a handful of units), so no all-facilities cache.
 	let popupContent = $derived.by(() => {
 		if (!popupFacility) return null;
 		return {
 			name: popupFacility.name,
 			region: getRegionLabel(popupFacility.network_id, popupFacility.network_region),
 			location: popupFacility.location,
-			groupedUnits: groupedUnitsCache.get(popupFacility.code) || []
+			groupedUnits: groupUnits(popupFacility)
 		};
 	});
 
@@ -1042,7 +999,15 @@
 								class="flex flex-col divide-y divide-white/20 [&>*]:py-2 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0"
 							>
 								{#each popupContent.groupedUnits as group (group.fueltech_id + '|||' + group.status_id)}
-									<UnitGroup {...group} />
+									<UnitGroup
+										fueltech_id={group.fueltech_id}
+										status_id={group.status_id}
+										isCommissioning={group.isCommissioning}
+										capacity={group.totalCapacity}
+										capacity_storage={group.capacity_storage}
+										max_generation={group.max_generation}
+										bgColor={group.bgColor}
+									/>
 								{/each}
 							</div>
 						{/if}

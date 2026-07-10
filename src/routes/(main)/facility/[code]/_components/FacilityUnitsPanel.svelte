@@ -6,6 +6,7 @@
 	import { Sheet } from '$lib/components/ui/sheet';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
+	import { getUnitCapacity } from '$lib/utils/capacity';
 	import { formatCapacity, getNumberFormat } from '$lib/utils/formatters';
 	import { formatDateRange } from '$lib/components/charts/v2';
 	import { buildUnitColourMap } from '$lib/components/charts/facility/helpers.js';
@@ -209,7 +210,7 @@
 									{unitLabel}
 								</span>
 								<span class="shrink-0 font-mono text-sm text-dark-grey">
-									{formatCapacity(unit.capacity_maximum || unit.capacity_registered)}
+									{formatCapacity(getUnitCapacity(unit) || null)}
 									<span class="text-xs text-mid-grey">MW</span>
 								</span>
 							</span>

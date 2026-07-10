@@ -3,6 +3,7 @@ import { client as sanityClient } from '$lib/sanity';
 import { SANITY_FACILITY_PROFILE_PROJECTION } from '$lib/server/sanity-projections.js';
 import { fetchFacilityByCode } from '$lib/server/opennem/fetch-facility-by-code.js';
 import { retiredAnchorMs } from '$lib/components/charts/facility/data-end.js';
+import { sumUnitCapacities } from '$lib/utils/capacity';
 import { CHARTS_FRACTION_DEFAULT } from './_utils/charts-fraction.js';
 import facilityCardCodes from '$lib/server/og/facility-card-codes.json';
 
@@ -68,11 +69,7 @@ function buildOgDescription(facility, sanityFacility) {
 	if (plain) return plain.length > 200 ? plain.slice(0, 199).trimEnd() + '…' : plain;
 
 	const units = Array.isArray(facility.units) ? facility.units : [];
-	const capacity = units.reduce(
-		(/** @type {number} */ sum, /** @type {any} */ u) =>
-			sum + (Number(u.capacity_maximum ?? u.capacity_registered) || 0),
-		0
-	);
+	const capacity = sumUnitCapacities(units);
 	const capStr = capacity ? `${Math.round(capacity).toLocaleString('en-AU')} MW ` : '';
 	const region = (facility.network_region || '').toUpperCase();
 	const where = region ? ` in ${region}` : '';

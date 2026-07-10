@@ -6,8 +6,7 @@
 	 * @property {string} fueltech_id
 	 * @property {string} status_id
 	 * @property {boolean} [isCommissioning]
-	 * @property {number} capacity_maximum
-	 * @property {number} capacity_registered
+	 * @property {number} capacity
 	 * @property {number} [capacity_storage]
 	 * @property {number} [max_generation]
 	 * @property {string} [max_generation_interval]
@@ -38,8 +37,7 @@
 				fueltech_id={unit.fueltech_id}
 				status_id={unit.status_id}
 				isCommissioning={unit.isCommissioning ?? false}
-				capacity_maximum={unit.capacity_maximum}
-				capacity_registered={unit.capacity_registered}
+				capacity={unit.capacity}
 				capacity_storage={unit.capacity_storage ?? 0}
 				max_generation={unit.max_generation ?? 0}
 				max_generation_interval={unit.max_generation_interval}

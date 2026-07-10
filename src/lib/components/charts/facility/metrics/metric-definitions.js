@@ -65,7 +65,7 @@ export const METRICS = {
 	capacityFactor: {
 		label: 'Capacity Factor',
 		description:
-			'Energy generated over the visible range as a percentage of what running at full registered capacity for the whole period would have produced.',
+			'Energy generated over the visible range as a percentage of what running at full capacity (maximum where available, otherwise registered) for the whole period would have produced.',
 		compute: (c) =>
 			c.hasSummary ? { value: fmt1.format(c.capacityFactor), unit: '%' } : { value: '--' }
 	},
@@ -179,10 +179,12 @@ export const METRICS = {
 };
 
 /**
- * Resolve the ordered metric-descriptor ids for a fuel-tech group. Some entries
- * are conditional: gas peakers add running-hours / starts; solar adds DC:AC only
- * when an oversizing ratio is known; any non-battery group gains storage
- * duration when the facility has battery units (mixed-tech hybrids).
+ * Resolve the ordered metric-descriptor ids for a fuel-tech group. Every group
+ * leads with Total Energy and Capacity Factor; the rest of the set is
+ * technology-specific. Some entries are conditional: gas peakers add
+ * running-hours / starts; solar adds DC:AC only when an oversizing ratio is
+ * known; any non-battery group gains storage duration when the facility has
+ * battery units (mixed-tech hybrids).
  *
  * @param {import('./fuel-group.js').FuelTechGroup} group
  * @param {{ isPeaker?: boolean, hasDcAc?: boolean, hasStorage?: boolean, isPumpedHydro?: boolean }} [flags]
@@ -193,10 +195,11 @@ export function resolveMetricKeys(group, flags = {}) {
 	let keys;
 	switch (group) {
 		case 'coal':
-			keys = ['capacityFactor', 'co2', 'intensity', 'revenue', 'avgPrice'];
+			keys = ['totalEnergy', 'capacityFactor', 'co2', 'intensity', 'revenue', 'avgPrice'];
 			break;
 		case 'gas':
 			keys = [
+				'totalEnergy',
 				'capacityFactor',
 				'co2',
 				'intensity',
@@ -206,15 +209,22 @@ export function resolveMetricKeys(group, flags = {}) {
 			];
 			break;
 		case 'wind':
-			keys = ['capacityFactor', 'totalEnergy', 'avgPrice', 'revenue', 'peak'];
+			keys = ['totalEnergy', 'capacityFactor', 'avgPrice', 'revenue', 'peak'];
 			break;
 		case 'solar':
-			keys = ['capacityFactor', 'peak', 'avgPrice', 'revenue', ...(flags.hasDcAc ? ['dcac'] : [])];
+			keys = [
+				'totalEnergy',
+				'capacityFactor',
+				'peak',
+				'avgPrice',
+				'revenue',
+				...(flags.hasDcAc ? ['dcac'] : [])
+			];
 			break;
 		case 'hydro':
 			keys = [
-				'capacityFactor',
 				'totalEnergy',
+				'capacityFactor',
 				'runningHours',
 				'avgPrice',
 				'revenue',
@@ -222,10 +232,10 @@ export function resolveMetricKeys(group, flags = {}) {
 			];
 			break;
 		case 'battery':
-			keys = ['netRevenue', 'storageDuration', 'roundTrip', 'totalEnergy', 'capacityFactor'];
+			keys = ['totalEnergy', 'capacityFactor', 'netRevenue', 'storageDuration', 'roundTrip'];
 			break;
 		default:
-			keys = ['capacityFactor', 'totalEnergy', 'revenue', 'avgPrice'];
+			keys = ['totalEnergy', 'capacityFactor', 'revenue', 'avgPrice'];
 	}
 	// Any facility with storage units gains the duration metric (battery's
 	// list already carries it in its preferred position).

@@ -15,12 +15,19 @@ describe('resolveMetricKeys', () => {
 		const keys = resolveMetricKeys('battery', { hasStorage: true });
 		expect(keys.filter((k) => k === 'storageDuration')).toHaveLength(1);
 		expect(keys).toEqual([
+			'totalEnergy',
+			'capacityFactor',
 			'netRevenue',
 			'storageDuration',
-			'roundTrip',
-			'totalEnergy',
-			'capacityFactor'
+			'roundTrip'
 		]);
+	});
+
+	it('leads every group with total energy then capacity factor', () => {
+		for (const group of ['coal', 'gas', 'wind', 'solar', 'hydro', 'battery', 'other']) {
+			const keys = resolveMetricKeys(/** @type {any} */ (group), {});
+			expect(keys.slice(0, 2)).toEqual(['totalEnergy', 'capacityFactor']);
+		}
 	});
 
 	it('adds round trip for pumped hydro', () => {

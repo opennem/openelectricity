@@ -23,8 +23,18 @@
 	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
 
-	/** @type {{ facility: any, timeZone: string, rangeDays?: number }} */
-	let { facility, timeZone, rangeDays = 3 } = $props();
+	/**
+	 * `onsummarydata` forwards the financial provider's visible-range energy +
+	 * market-value summary up to UnitDetail, which derives the unit's Capacity
+	 * Factor from it.
+	 * @type {{
+	 *   facility: any,
+	 *   timeZone: string,
+	 *   rangeDays?: number,
+	 *   onsummarydata?: (data: any) => void
+	 * }}
+	 */
+	let { facility, timeZone, rangeDays = 3, onsummarydata = undefined } = $props();
 
 	const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -196,6 +206,7 @@
 						{focusTime}
 						onfocuschange={handleFocusChange}
 						onviewportchange={range.handleDerivedViewportChange}
+						{onsummarydata}
 					>
 						<FacilityPriceChart
 							showContainer={false}

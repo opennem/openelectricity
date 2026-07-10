@@ -2,9 +2,12 @@
  * Fuel-tech grouping for the facility metrics section.
  *
  * A facility's units can mix technologies, so the metrics panel keys off the
- * *dominant* group (by registered capacity). The six recognised groups each get
- * a tailored metric set; anything else falls back to `other`.
+ * *dominant* group (by capacity — maximum falling back to registered). The six
+ * recognised groups each get a tailored metric set; anything else falls back
+ * to `other`.
  */
+
+import { getUnitCapacity } from '$lib/utils/capacity';
 
 /** @typedef {'wind' | 'solar' | 'battery' | 'coal' | 'gas' | 'hydro' | 'other'} FuelTechGroup */
 
@@ -27,8 +30,8 @@ export function toGroup(ftCode) {
 
 /**
  * The dominant fuel-tech group across a facility's units, weighted by
- * registered capacity.
- * @param {Array<{ fueltech_id?: string, capacity_registered?: number }>} units
+ * capacity (maximum falling back to registered).
+ * @param {Array<{ fueltech_id?: string, capacity_registered?: number, capacity_maximum?: number }>} units
  * @returns {FuelTechGroup}
  */
 export function getPrimaryFuelTechGroup(units) {
@@ -38,8 +41,7 @@ export function getPrimaryFuelTechGroup(units) {
 	const capacityByGroup = {};
 	for (const unit of units) {
 		const group = toGroup(unit.fueltech_id ?? '');
-		capacityByGroup[group] =
-			(capacityByGroup[group] || 0) + (Number(unit.capacity_registered) || 0);
+		capacityByGroup[group] = (capacityByGroup[group] || 0) + getUnitCapacity(unit);
 	}
 
 	let maxGroup = /** @type {FuelTechGroup} */ ('other');
@@ -56,7 +58,7 @@ export function getPrimaryFuelTechGroup(units) {
 /**
  * Whether a gas facility is a peaker (majority OCGT / reciprocating /
  * distillate capacity). Peakers get running-hours / start-count metrics.
- * @param {Array<{ fueltech_id?: string, capacity_registered?: number }>} units
+ * @param {Array<{ fueltech_id?: string, capacity_registered?: number, capacity_maximum?: number }>} units
  * @returns {boolean}
  */
 export function isGasPeaker(units) {
@@ -65,7 +67,7 @@ export function isGasPeaker(units) {
 	let peakerCap = 0;
 	let totalCap = 0;
 	for (const unit of units) {
-		const cap = Number(unit.capacity_registered) || 0;
+		const cap = getUnitCapacity(unit);
 		totalCap += cap;
 		if (peakerTypes.includes(unit.fueltech_id ?? '')) peakerCap += cap;
 	}

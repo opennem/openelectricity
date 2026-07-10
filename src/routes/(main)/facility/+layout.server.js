@@ -1,6 +1,10 @@
 import { OpenElectricityClient } from 'openelectricity';
 import { PUBLIC_OE_API_KEY, PUBLIC_OE_API_URL } from '$env/static/public';
-import { hasBidirectionalBattery, filterDerivedBatteryUnits } from '../facilities/_utils/units.js';
+import {
+	hasBidirectionalBattery,
+	filterDerivedBatteryUnits,
+	getFacilityCapacity
+} from '../facilities/_utils/units.js';
 
 const client = new OpenElectricityClient({
 	apiKey: PUBLIC_OE_API_KEY,
@@ -31,11 +35,6 @@ function getFacilitiesList() {
 				(r.response.data || [])
 					.map((f) => {
 						const units = filterDerivedBatteryUnits(f.units || [], hasBidirectionalBattery(f));
-						const capacity = units.reduce(
-							(/** @type {number} */ sum, /** @type {any} */ u) =>
-								sum + (Number(u.capacity_maximum ?? u.capacity_registered) || 0),
-							0
-						);
 						return {
 							code: f.code,
 							name: f.name,
@@ -48,7 +47,7 @@ function getFacilitiesList() {
 										.filter((/** @type {any} */ v) => Boolean(v))
 								)
 							),
-							capacity
+							capacity: getFacilityCapacity(f)
 						};
 					})
 					.sort((a, b) => a.name.localeCompare(b.name))

@@ -59,8 +59,7 @@
 			fueltech_id: g.fueltech_id,
 			status_id: g.status_id,
 			isCommissioning: g.isCommissioning,
-			capacity_maximum: g.capacity_maximum,
-			capacity_registered: g.capacity_registered,
+			capacity: g.totalCapacity,
 			capacity_storage: g.capacity_storage,
 			max_generation: g.max_generation,
 			bgColor: g.bgColor

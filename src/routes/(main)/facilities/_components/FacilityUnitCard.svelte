@@ -6,6 +6,7 @@
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import { getFueltechColor } from '$lib/utils/fueltech-display';
+	import { getUnitCapacity, getUnitCapacitySource } from '$lib/utils/capacity';
 
 	/**
 	 * @type {{
@@ -51,8 +52,7 @@
 						fueltech_id: facility.unit.fueltech_id,
 						status_id: facility.unit.status_id,
 						isCommissioning: facility.isCommissioning,
-						capacity_maximum: facility.unit.capacity_maximum,
-						capacity_registered: facility.unit.capacity_registered,
+						capacity: getUnitCapacity(facility.unit),
 						capacity_storage: facility.unit.capacity_storage,
 						max_generation: facility.unit.max_generation,
 						max_generation_interval: facility.unit.max_generation_interval,
@@ -130,9 +130,11 @@
 						<div class="flex items-baseline gap-2">
 							<span
 								class="font-mono text-sm text-dark-grey"
-								title={facility.unit.capacity_maximum ? 'Maximum Capacity' : 'Registered Capacity'}
+								title={getUnitCapacitySource(facility.unit) === 'maximum'
+									? 'Maximum Capacity'
+									: 'Registered Capacity'}
 							>
-								{formatValue(facility.unit.capacity_maximum || facility.unit.capacity_registered)}
+								{formatValue(getUnitCapacity(facility.unit))}
 							</span>
 							<span class="text-xs text-mid-grey">MW</span>
 						</div>
@@ -148,7 +150,11 @@
 
 					{#if facility.isCommissioning}
 						<div class="w-1/2 sm:w-1/2">
-							<GenCapViz unit={facility.unit} fill={bgColor} />
+							<GenCapViz
+								capacity={getUnitCapacity(facility.unit)}
+								maxGeneration={Number(facility.unit.max_generation) || 0}
+								fill={bgColor}
+							/>
 						</div>
 					{/if}
 				</div>

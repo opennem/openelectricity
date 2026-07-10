@@ -144,7 +144,7 @@
 		/** @type {{ key: string, colour: string, fraction: number, offset: number }[]} */
 		const out = [];
 		for (const g of activeUnitGroups) {
-			const cap = g.capacity_maximum || g.capacity_registered;
+			const cap = g.totalCapacity;
 			if (cap <= 0) continue;
 			const fraction = cap / totalCapacity;
 			out.push({
@@ -233,7 +233,7 @@
 			unitGroups.some((/** @type {any} */ g) => g.fueltech_id === 'battery_discharging') &&
 			unitGroups.some((/** @type {any} */ g) => g.fueltech_id === 'battery_charging');
 		for (const g of unitGroups) {
-			const cap = g.capacity_maximum || g.capacity_registered;
+			const cap = g.totalCapacity;
 			const isPair =
 				hasBatteryPair &&
 				(g.fueltech_id === 'battery_discharging' || g.fueltech_id === 'battery_charging');
