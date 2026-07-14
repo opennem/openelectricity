@@ -26,6 +26,38 @@ import {
 } from '$lib/components/charts/v2/series-rows.js';
 
 /**
+ * Battery split fuel techs. The OE network responses return the aggregate
+ * `battery` fuel tech alongside these — and its values are exactly their net
+ * (discharging − charging), verified against the live API — so keeping all
+ * three would count every battery flow twice in the stack. When any split is
+ * present the aggregate is skipped; a response carrying only `battery` keeps
+ * it.
+ */
+const BATTERY_SPLIT_FUELTECHS = new Set([
+	'battery_charging',
+	'battery_discharging',
+	'battery_VPP_charging',
+	'battery_VPP_discharging',
+	'battery_distributed_charging',
+	'battery_distributed_discharging'
+]);
+
+/**
+ * @param {any} response
+ * @param {string} metricFilter
+ * @returns {boolean}
+ */
+function hasBatterySplits(response, metricFilter) {
+	for (const metric of response?.data ?? []) {
+		if (metric.metric !== metricFilter) continue;
+		for (const series of metric.results ?? []) {
+			if (BATTERY_SPLIT_FUELTECHS.has(series.columns?.fueltech || series.name)) return true;
+		}
+	}
+	return false;
+}
+
+/**
  * @typedef {Object} ProcessNetworkDataConfig
  * @property {Record<string, string[]>} groupMap - group id → member fuel-tech codes
  * @property {string[]} groupOrder - stack order of group ids
@@ -61,6 +93,9 @@ export function processNetworkData(response, config) {
 		for (const ft of groupMap[groupId]) fuelTechToGroup[ft] = groupId;
 	}
 
+	// Prefer the charging/discharging splits over the aggregate net series.
+	const skipAggregateBattery = hasBatterySplits(response, metricFilter);
+
 	const { seriesMaps, timestamps } = collectSeriesByTimestamp(response, {
 		metricFilter,
 		networkTimezone,
@@ -68,6 +103,7 @@ export function processNetworkData(response, config) {
 		shouldInvert: (groupId) => loadsToInvert.includes(groupId),
 		classifySeries: (series) => {
 			const fuelTech = series.columns?.fueltech || series.name;
+			if (skipAggregateBattery && fuelTech === 'battery') return null;
 			const groupId = fuelTechToGroup[fuelTech];
 			return groupId ? { id: groupId } : null;
 		}
