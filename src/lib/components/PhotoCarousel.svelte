@@ -162,6 +162,25 @@
 					{lightboxPhoto.caption}
 				</p>
 			{/if}
+			{#if lightboxPhoto.attribution || lightboxPhoto.url}
+				{@const sourceLabel = lightboxPhoto.attribution
+					? `Source: ${lightboxPhoto.attribution}`
+					: 'Source'}
+				<p class="max-w-[60vw] text-center text-[11px] text-white/50">
+					{#if lightboxPhoto.url}
+						<a
+							href={lightboxPhoto.url}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="underline hover:text-white"
+						>
+							{sourceLabel}
+						</a>
+					{:else}
+						{sourceLabel}
+					{/if}
+				</p>
+			{/if}
 			{#if photos.length > 1}
 				<p class="text-[10px] text-white/40">
 					{lightboxIndex + 1} / {photos.length}
