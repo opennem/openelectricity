@@ -450,6 +450,33 @@
 
 	/** @type {ReturnType<typeof setTimeout> | null} */
 	let wheelPanEndTimeout = null;
+	/** @type {number | null} */
+	let wheelRafId = null;
+	let wheelPendingPanMs = 0;
+	let wheelPendingZoomFactor = 1;
+	let wheelPendingZoomCenterMs = 0;
+
+	// Trackpads emit wheel events well above the display refresh rate, and each
+	// onpan/onzoom triggers the consumer's full slice/aggregate/render cascade.
+	// Accumulate intents (deltas sum, factors multiply — same maths as the pinch
+	// processor) and flush once per frame, mirroring the pointer rAF machinery.
+	function processWheelFrame() {
+		wheelRafId = null;
+		if (wheelPendingPanMs !== 0) {
+			const deltaMs = wheelPendingPanMs;
+			wheelPendingPanMs = 0;
+			onpan?.(deltaMs);
+		}
+		if (wheelPendingZoomFactor !== 1) {
+			const factor = wheelPendingZoomFactor;
+			wheelPendingZoomFactor = 1;
+			onzoom?.(factor, wheelPendingZoomCenterMs);
+		}
+	}
+
+	function scheduleWheelFrame() {
+		wheelRafId ??= requestAnimationFrame(processWheelFrame);
+	}
 
 	/**
 	 * Horizontal scroll pans the viewport; vertical scroll zooms at the
@@ -474,9 +501,11 @@
 
 		if (intent === 'pan') {
 			if (!onpan) return;
-			const deltaMs = wheelPanDeltaMs(event.deltaX, rect.width, domain[1] - domain[0]);
-			onpan(deltaMs);
+			wheelPendingPanMs += wheelPanDeltaMs(event.deltaX, rect.width, domain[1] - domain[0]);
+			scheduleWheelFrame();
 
+			// The end-of-stream timeout far outlives the pending rAF, so the final
+			// pan delta always flushes before onpanend fires.
 			if (wheelPanEndTimeout) clearTimeout(wheelPanEndTimeout);
 			wheelPanEndTimeout = setTimeout(() => {
 				wheelPanEndTimeout = null;
@@ -486,7 +515,9 @@
 		}
 
 		if (!onzoom) return;
-		onzoom(wheelZoomFactor(event.deltaY), clientXToTime(event.clientX));
+		wheelPendingZoomFactor *= wheelZoomFactor(event.deltaY);
+		wheelPendingZoomCenterMs = clientXToTime(event.clientX);
+		scheduleWheelFrame();
 	}
 
 	// ---- Lifecycle ----
@@ -520,6 +551,12 @@
 			if (wheelPanEndTimeout) {
 				clearTimeout(wheelPanEndTimeout);
 				wheelPanEndTimeout = null;
+			}
+			if (wheelRafId !== null) {
+				cancelAnimationFrame(wheelRafId);
+				wheelRafId = null;
+				wheelPendingPanMs = 0;
+				wheelPendingZoomFactor = 1;
 			}
 			cleanup();
 		};

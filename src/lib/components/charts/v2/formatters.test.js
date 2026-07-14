@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { formatTooltipDateTime, getPowerAxisTicks, formatBucketLabel } from './formatters.js';
+import {
+	formatTooltipDateTime,
+	getPowerAxisTicks,
+	formatBucketLabel,
+	getStartOfDay,
+	getDayStartDates
+} from './formatters.js';
 
 const TZ = 'Australia/Brisbane'; // AEST +10, no DST
 const OFFSET = '+10:00';
@@ -108,5 +114,83 @@ describe('getPowerAxisTicks', () => {
 		// Exactly one tick falls on local midnight and renders as a date.
 		expect(labels.some((l) => /Jan/.test(l))).toBe(true);
 		expect(labels.some((l) => /am|pm/i.test(l))).toBe(true);
+	});
+});
+
+describe('getStartOfDay', () => {
+	/**
+	 * Reference implementation: the Intl-based path (what unknown zones use and
+	 * what the arithmetic fast path for the fixed-offset AU zones must match).
+	 * @param {Date} date
+	 * @param {string} ianaTimeZone
+	 * @param {string} timeZone
+	 */
+	function intlStartOfDay(date, ianaTimeZone, timeZone) {
+		const formatter = new Intl.DateTimeFormat('en-AU', {
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			timeZone: ianaTimeZone
+		});
+		const parts = formatter.formatToParts(date);
+		const year = parseInt(parts.find((p) => p.type === 'year')?.value || '0');
+		const month = parseInt(parts.find((p) => p.type === 'month')?.value || '0') - 1;
+		const day = parseInt(parts.find((p) => p.type === 'day')?.value || '0');
+		const offsetHours = timeZone === '+08:00' ? 8 : 10;
+		return new Date(Date.UTC(year, month, day, -offsetHours, 0, 0, 0));
+	}
+
+	const ZONES = [
+		{ iana: 'Australia/Brisbane', offset: '+10:00' },
+		{ iana: 'Australia/Perth', offset: '+08:00' }
+	];
+
+	it('matches the Intl path across day boundaries for both fixed-offset zones', () => {
+		for (const { iana, offset } of ZONES) {
+			// Sweep hourly across several days, including the local-midnight edges.
+			const base = Date.UTC(2026, 5, 28, 0, 0);
+			for (let h = 0; h < 96; h++) {
+				const date = new Date(base + h * HOUR);
+				expect(getStartOfDay(date, iana, offset).getTime(), `${iana} +${h}h`).toBe(
+					intlStartOfDay(date, iana, offset).getTime()
+				);
+			}
+		}
+	});
+
+	it('returns local midnight as a UTC instant', () => {
+		// 2026-01-21 13:59 UTC = 23:59 Brisbane → day start 2026-01-21 00:00 +10 (14:00 UTC on the 20th)
+		const d = new Date(Date.UTC(2026, 0, 21, 13, 59));
+		expect(getStartOfDay(d, 'Australia/Brisbane', '+10:00').toISOString()).toBe(
+			'2026-01-20T14:00:00.000Z'
+		);
+		// One minute later it's past local midnight → next day start
+		const d2 = new Date(Date.UTC(2026, 0, 21, 14, 0));
+		expect(getStartOfDay(d2, 'Australia/Brisbane', '+10:00').toISOString()).toBe(
+			'2026-01-21T14:00:00.000Z'
+		);
+	});
+});
+
+describe('getDayStartDates', () => {
+	const rows = (/** @type {number[]} */ times) =>
+		times.map((t) => ({ time: t, date: new Date(t) }));
+
+	it('dedupes rows to unique sorted day starts', () => {
+		const base = Date.UTC(2026, 0, 20, 14, 0); // local midnight 21 Jan AEST
+		const data = rows([base + 26 * HOUR, base + 2 * HOUR, base + 1 * HOUR, base + 30 * HOUR]);
+		const starts = getDayStartDates(data, TZ, OFFSET);
+		expect(starts.map((d) => d.toISOString())).toEqual([
+			'2026-01-20T14:00:00.000Z',
+			'2026-01-21T14:00:00.000Z'
+		]);
+	});
+
+	it('memoises on the same rows array reference', () => {
+		const data = rows([Date.UTC(2026, 0, 21, 0, 0), Date.UTC(2026, 0, 22, 0, 0)]);
+		const first = getDayStartDates(data, TZ, OFFSET);
+		expect(getDayStartDates(data, TZ, OFFSET)).toBe(first);
+		// Different inputs invalidate the memo
+		expect(getDayStartDates(data, 'Australia/Perth', '+08:00')).not.toBe(first);
 	});
 });

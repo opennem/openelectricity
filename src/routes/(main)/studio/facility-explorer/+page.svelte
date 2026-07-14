@@ -8,7 +8,7 @@
 
 	import { goto, replaceState } from '$app/navigation';
 	import { getContext, onDestroy, onMount } from 'svelte';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import {
 		FacilityChart,
 		FacilityPriceChart,
@@ -44,15 +44,6 @@
 		getDefaultDateEnd,
 		buildFacilityExplorerUrl
 	} from './_utils';
-
-	/**
-	 * Get color for a fuel tech code
-	 * @param {string} ftCode
-	 * @returns {string}
-	 */
-	function getFuelTechColor(ftCode) {
-		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (ftCode)] || '#888888';
-	}
 
 	/**
 	 * @typedef {Object} FacilityListItem
@@ -197,7 +188,7 @@
 
 	let analysis = $derived.by(() => {
 		if (!selectedFacility) return null;
-		return analyzeUnits(selectedFacility, getFuelTechColor);
+		return analyzeUnits(selectedFacility, getFuelTechColour);
 	});
 
 	let unitColours = $derived(analysis?.unitColours ?? {});

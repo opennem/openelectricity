@@ -26,6 +26,8 @@
 	} from './elements';
 	import NetTotalLine from './elements/NetTotalLine.svelte';
 	import HatchOverlay from './elements/HatchOverlay.svelte';
+	import { indexOfTime } from './binary-search.js';
+	import { perfSpan } from './perf.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -86,12 +88,14 @@
 	let stackedData = $derived.by(() => {
 		if (renderSeriesData.length === 0) return [];
 
-		if (chart.useDivergingStack) {
-			const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
-			return stackGen(renderSeriesData);
-		}
+		return perfSpan('chart:d3-stack', () => {
+			if (chart.useDivergingStack) {
+				const stackGen = d3Stack().keys(chart.visibleSeriesNames).offset(stackOffsetDiverging);
+				return stackGen(renderSeriesData);
+			}
 
-		return lcStack(renderSeriesData, chart.visibleSeriesNames);
+			return lcStack(renderSeriesData, chart.visibleSeriesNames);
+		});
 	});
 
 	let groupedData = $derived(
@@ -144,14 +148,16 @@
 	// When clampHoverLine is true, limit the hover/focus line to the stacked area height
 	let hoverMaxY = $derived.by(() => {
 		if (!clampHoverLine || !chart.hoverTime) return undefined;
-		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.hoverTime);
-		return point?._max;
+		const rows = chart.seriesScaledDataWithMinMax;
+		const i = indexOfTime(rows, chart.hoverTime);
+		return i === -1 ? undefined : rows[i]._max;
 	});
 
 	let focusMaxY = $derived.by(() => {
 		if (!clampHoverLine || !chart.focusTime) return undefined;
-		const point = chart.seriesScaledDataWithMinMax.find((d) => d.time === chart.focusTime);
-		return point?._max;
+		const rows = chart.seriesScaledDataWithMinMax;
+		const i = indexOfTime(rows, chart.focusTime);
+		return i === -1 ? undefined : rows[i]._max;
 	});
 </script>
 

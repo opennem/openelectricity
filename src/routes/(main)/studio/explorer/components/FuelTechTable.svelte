@@ -9,7 +9,8 @@
 	 * the user is hovering (or the latest sample when not hovering).
 	 */
 
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
+	import { nearestIndexOfTime } from '$lib/components/charts/v2/binary-search.js';
 	import { loadFuelTechs } from '$lib/fuel_techs';
 
 	/**
@@ -36,17 +37,7 @@
 		const rows = tableData?.data;
 		if (!rows || rows.length === 0) return null;
 		if (hoverTime == null) return rows[rows.length - 1];
-		// Nearest row to the hovered time
-		let best = rows[0];
-		let bestDist = Math.abs(rows[0].time - hoverTime);
-		for (const row of rows) {
-			const dist = Math.abs(row.time - hoverTime);
-			if (dist < bestDist) {
-				best = row;
-				bestDist = dist;
-			}
-		}
-		return best;
+		return rows[nearestIndexOfTime(rows, hoverTime)];
 	});
 
 	// Stack order is top-down in the legend, so reverse the chart's bottom-up order.
@@ -56,11 +47,6 @@
 	let loadNames = $derived(
 		(tableData?.seriesNames ?? []).filter((id) => loadSet.has(id)).reverse()
 	);
-
-	/** @param {string} id */
-	function colourFor(id) {
-		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (id)] || '#888888';
-	}
 
 	/** @param {string} id */
 	function labelFor(id) {
@@ -113,7 +99,7 @@
 							<span class="flex items-center gap-2">
 								<span
 									class="inline-block w-3 h-3 rounded-sm shrink-0"
-									style:background-color={colourFor(id)}
+									style:background-color={getFuelTechColour(id)}
 								></span>
 								<span>{labelFor(id)}</span>
 							</span>
@@ -139,7 +125,7 @@
 								<span class="flex items-center gap-2">
 									<span
 										class="inline-block w-3 h-3 rounded-sm shrink-0"
-										style:background-color={colourFor(id)}
+										style:background-color={getFuelTechColour(id)}
 									></span>
 									<span>{labelFor(id)}</span>
 								</span>

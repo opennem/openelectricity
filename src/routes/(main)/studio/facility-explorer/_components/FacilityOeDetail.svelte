@@ -6,7 +6,7 @@
 	 */
 
 	import { MapPin, ExternalLink } from '@lucide/svelte';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { FacilityUnitsTable } from '$lib/components/charts/facility';
 	import { analyzeUnits } from '$lib/components/charts/facility/unit-analysis.js';
 	import { groupUnits, getExploreUrl } from '../../../facilities/_utils/units';
@@ -22,16 +22,9 @@
 	/** @type {Props} */
 	let { label, facility } = $props();
 
-	/**
-	 * @param {string} ftCode
-	 */
-	function getFuelTechColor(ftCode) {
-		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (ftCode)] || '#888888';
-	}
-
 	let analysis = $derived.by(() => {
 		if (!facility) return null;
-		return analyzeUnits(facility, getFuelTechColor);
+		return analyzeUnits(facility, getFuelTechColour);
 	});
 
 	let unitColours = $derived(analysis?.unitColours ?? {});
@@ -54,7 +47,7 @@
 				maxFt = ft;
 			}
 		}
-		return maxFt ? getFuelTechColor(maxFt) : '#353535';
+		return maxFt ? getFuelTechColour(maxFt) : '#353535';
 	});
 </script>
 
