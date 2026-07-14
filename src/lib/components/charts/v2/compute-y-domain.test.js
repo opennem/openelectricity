@@ -28,6 +28,16 @@ describe('computeYDomain', () => {
 		expect(computeYDomain(data)).toEqual([-110, 55]);
 	});
 
+	it('anchors the max at 0 for all-negative data so the zero baseline stays on-plot', () => {
+		const data = [
+			{ _min: -100, _max: -20 },
+			{ _min: -80, _max: -10 }
+		];
+		// min: -100 + (-100)*0.1 = -110 → floor = -110
+		// max: -10 → clamped to 0 (zero line must remain visible)
+		expect(computeYDomain(data)).toEqual([-110, 0]);
+	});
+
 	it('does not pad positive min values', () => {
 		const data = [{ _min: 10, _max: 50 }];
 		// max: 50 + 5 = 55 → ceil = 55

@@ -22,8 +22,13 @@ export function computeYDomain(data, options = {}) {
 		if (min < datasetMin) datasetMin = min;
 	}
 
-	if (datasetMax === -Infinity) datasetMax = 0;
 	if (datasetMin === Infinity) datasetMin = 0;
+
+	// Stacked/area charts draw from a zero baseline — when every value is
+	// negative the maxima sit below zero, which would push the zero line off
+	// the top of the plot. Anchor the top at 0 so the baseline stays visible
+	// (this also normalises the -Infinity no-data sentinel).
+	if (datasetMax < 0) datasetMax = 0;
 
 	const paddedMax = datasetMax + datasetMax * padding;
 	const paddedMin = datasetMin < 0 ? datasetMin + datasetMin * padding : datasetMin;

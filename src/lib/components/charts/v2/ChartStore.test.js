@@ -187,3 +187,44 @@ describe('ChartStore hover/focus lookups', () => {
 		expect(chart.hoverData).toBeUndefined();
 	});
 });
+
+describe('ChartStore stacked min/max derivations', () => {
+	/**
+	 * @param {Array<{time: number, date: Date, a?: number | null, b?: number | null}>} data
+	 */
+	function createStackedChart(data) {
+		const chart = new ChartStore({ key: Symbol('test') });
+		// Default chart type is 'stacked-area' (isAnyStackedType)
+		chart.seriesNames = ['a', 'b'];
+		chart.seriesData = data;
+		return chart;
+	}
+
+	it('sums only positive values into _max (negatives stack below zero)', () => {
+		const chart = createStackedChart([{ time: 0, date: new Date(0), a: 100, b: -40 }]);
+		const [row] = chart.seriesScaledDataWithMinMax;
+		expect(row._max).toBe(100);
+		expect(row._min).toBe(-40);
+	});
+
+	const allNegativeRows = [
+		{ time: 0, date: new Date(0), a: -80, b: -20 },
+		{ time: 1000, date: new Date(1000), a: -60, b: -10 }
+	];
+
+	it('keeps _max at 0 for all-negative rows so the zero line stays on-plot', () => {
+		const chart = createStackedChart(allNegativeRows);
+		const [first, second] = chart.seriesScaledDataWithMinMax;
+		expect(first._max).toBe(0);
+		expect(first._min).toBe(-100);
+		expect(second._max).toBe(0);
+		expect(second._min).toBe(-70);
+	});
+
+	it('yDomain includes 0 when every value is negative', () => {
+		const chart = createStackedChart(allNegativeRows);
+		const [min, max] = chart.yDomain;
+		expect(min).toBeLessThan(0);
+		expect(max).toBe(0);
+	});
+});

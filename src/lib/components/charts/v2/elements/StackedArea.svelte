@@ -295,13 +295,14 @@
 	<!-- Clip path definitions for positive/negative regions -->
 	{#if lighterNegative}
 		<defs>
-			<!-- Clip path for positive region (y >= 0, which is y <= zeroY in SVG coords) -->
+			<!-- Clip path for positive region (y >= 0, which is y <= zeroY in SVG coords).
+			     Heights clamped: a custom y-domain excluding 0 puts zeroY off-plot. -->
 			<clipPath id="{clipId}-positive">
-				<rect x="0" y="0" width={$width} height={zeroY} />
+				<rect x="0" y="0" width={$width} height={Math.max(0, zeroY)} />
 			</clipPath>
 			<!-- Clip path for negative region (y < 0, which is y > zeroY in SVG coords) -->
 			<clipPath id="{clipId}-negative">
-				<rect x="0" y={zeroY} width={$width} height={$height - zeroY} />
+				<rect x="0" y={zeroY} width={$width} height={Math.max(0, $height - zeroY)} />
 			</clipPath>
 		</defs>
 	{/if}

@@ -247,6 +247,8 @@ export default class ChartStore {
 	});
 
 	seriesScaledDataWithMinMax = $derived.by(() => {
+		// Read the signal-backed getter once, not per value in the hot loop.
+		const isStacked = this.chartOptions?.isAnyStackedType;
 		return this.seriesScaledData.map((d) => {
 			const result = { ...d, _max: 0, _min: 0 };
 			let hasValue = false;
@@ -259,8 +261,13 @@ export default class ChartStore {
 
 				hasValue = true;
 
-				if (this.chartOptions?.isAnyStackedType) {
-					result._max += value;
+				if (isStacked) {
+					// Stacks pile positives above 0 and negatives below, so the
+					// rendered top is the positive sum alone. Folding negatives
+					// in would drag the domain max below 0 for all-negative rows
+					// (e.g. a charging-only battery), pushing the zero line off
+					// the plot.
+					if (value > 0) result._max += value;
 				} else {
 					result._max = Math.max(result._max, value);
 				}
