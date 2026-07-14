@@ -13,21 +13,24 @@ The Facility Explorer page (`src/routes/(main)/studio/facility-explorer/`) orche
 
 ## Files
 
-| File                            | Description                                                                                                                                                                             |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `FacilityChart.svelte`          | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping                                                                                                       |
-| `FacilityDataTable.svelte`      | Tabular view of visible chart data                                                                                                                                                      |
-| `FacilityUnitsTable.svelte`     | Facility unit metadata table                                                                                                                                                            |
-| `process-facility-power.js`     | Core data processing — converts API response to chart-ready rows                                                                                                                        |
-| `unit-analysis.js`              | One-pass unit analysis (`analyzeUnits`): colours, fuel-tech/order/load maps, `unitsKey`, capacity sums; plus `unitSeriesIds` (series-id convention)                                     |
-| `chart-range-control.svelte.js` | `createChartRangeControl` — shared range/interval/preset state machine (hysteresis, picker dates, echo-suppressed viewport pushes) used by `/facility/[code]` and its unit detail sheet |
-| `data-end.js`                   | Retired-data window anchors: `retiredAnchorMs` (shared with the page server load) and `dataEndMs` (chart window end for snapshot/unit charts)                                           |
-| `range-interval-config.js`      | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec                                                                              |
-| `energy-basis.js`               | Shared price/intensity-provider helpers: basis-metric choice, combined query string, and the per-timestamp energy (MWh) map                                                             |
-| `price-lines.js`                | Direction-decomposed derived price: generation vs load partition, per-side VWAP rows, price-line labels (see "Derived price" below)                                                     |
-| `interval-hours.js`             | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains                                                                        |
-| `helpers.js`                    | Colour shading (`buildUnitColourMap`, `SHADE_SPREADS`), series label/colour getter factories, timezone helpers, legacy `transformFacilityPowerData`                                     |
-| `index.js`                      | Barrel exports                                                                                                                                                                          |
+| File                            | Description                                                                                                                                                                               |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FacilityChart.svelte`          | Main chart component with pan/zoom/viewport, interval toggle, unit colour mapping                                                                                                         |
+| `FacilityCompactCharts.svelte`  | Compact interactive Generation + Price block (own range tray, CSV options menu) shared by the `/facility/[code]` unit detail sheet and the `/facilities` selected-facility pane           |
+| `FacilityDataTable.svelte`      | Tabular view of visible chart data                                                                                                                                                        |
+| `FacilityUnitsTable.svelte`     | Facility unit metadata table                                                                                                                                                              |
+| `process-facility-power.js`     | Core data processing — converts API response to chart-ready rows                                                                                                                          |
+| `unit-analysis.js`              | One-pass unit analysis (`analyzeUnits`): colours, fuel-tech/order/load maps, `unitsKey`, capacity sums; plus `unitSeriesIds` (series-id convention)                                       |
+| `chart-range-control.svelte.js` | `createChartRangeControl` — shared range/interval/preset state machine (hysteresis, picker dates, echo-suppressed viewport pushes) used by `/facility/[code]` and `FacilityCompactCharts` |
+| `data-end.js`                   | Retired-data window anchors: `retiredAnchorMs` (shared with the page server load) and `dataEndMs` (chart window end for the compact charts)                                               |
+| `range-interval-config.js`      | Single source of truth: range presets, per-range interval options, interval → API fetch + aggregation spec                                                                                |
+| `range-params.js`               | URL query-param (de)serialisation for the selected range (`range`/`start`/`end`/`interval`) plus `rangeSlugFor` (CSV filenames); URL sync is used by `/facility/[code]` only              |
+| `facility-csv.js`               | Chart CSV catalogue + builders (`chartDownloadItems`, `downloadChartCsv`) fed by the charts' visible-range datasets                                                                       |
+| `energy-basis.js`               | Shared price/intensity-provider helpers: basis-metric choice, combined query string, and the per-timestamp energy (MWh) map                                                               |
+| `price-lines.js`                | Direction-decomposed derived price: generation vs load partition, per-side VWAP rows, price-line labels (see "Derived price" below)                                                       |
+| `interval-hours.js`             | `displayInterval` → bucket length in hours (calendar-aware); used to convert power → energy on the 5m/30m grains                                                                          |
+| `helpers.js`                    | Colour shading (`buildUnitColourMap`, `SHADE_SPREADS`), series label/colour getter factories, timezone helpers, legacy `transformFacilityPowerData`                                       |
+| `index.js`                      | Barrel exports                                                                                                                                                                            |
 
 ## Data Pipeline
 

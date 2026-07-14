@@ -4,15 +4,16 @@
 	import ExpandableDescription from '$lib/components/ExpandableDescription.svelte';
 	import { hasPortableTextContent } from '$lib/utils/portable-text.js';
 	import FacilityUnitCards from './FacilityUnitCards.svelte';
-	import FacilitySnapshotCharts from './FacilitySnapshotCharts.svelte';
+	import { FacilityCompactCharts, getNetworkTimezone } from '$lib/components/charts/facility';
 
 	/**
 	 * Facility preview shown when a facility is selected on the /facilities page.
 	 * Mirrors the dedicated /facility/[code] page layout so navigating there morphs
-	 * naturally: the 3-day generation/price snapshots fill the wider left column,
-	 * with the description, photos and unit cards stacked in the right column
-	 * (stacked on mobile). The units render instantly from the facility object;
-	 * only the photos + description wait on the streamed profile.
+	 * naturally: the compact generation/price charts (the same block as the unit
+	 * detail sheet, with range picker and CSV downloads) fill the wider left
+	 * column, with the description, photos and unit cards stacked in the right
+	 * column (stacked on mobile). The units render instantly from the facility
+	 * object; only the photos + description wait on the streamed profile.
 	 *
 	 * @type {{
 	 *   facility: any | null,
@@ -22,6 +23,8 @@
 	 * }}
 	 */
 	let { facility = null, profile = null, profileLoading = false, fillHeight = false } = $props();
+
+	let timeZone = $derived(getNetworkTimezone(facility?.network_id));
 
 	let photos = $derived(profile?.photos ?? []);
 	let description = $derived(profile?.description ?? []);
@@ -34,9 +37,13 @@
 {#if facility}
 	<div class={fillHeight ? 'h-full min-h-0 overflow-y-auto' : ''}>
 		<div class="grid grid-cols-1 gap-8 p-8 tablet:grid-cols-[2fr_1fr] tablet:gap-8">
-			<!-- Left: 3-day Generation + Price snapshots (same charts as /facility/[code]). -->
+			<!-- Left: compact Generation + Price charts — the same interactive block as
+			     the unit detail sheet, with its own range presets, date picker and
+			     options menu. Keyed on the facility so range + load state reset. -->
 			<div class="min-w-0">
-				<FacilitySnapshotCharts {facility} />
+				{#key facility.code}
+					<FacilityCompactCharts {facility} {timeZone} />
+				{/key}
 			</div>
 
 			<!-- Right: description, photos, then units (mirrors /facility/[code]). -->

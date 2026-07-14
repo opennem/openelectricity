@@ -6,6 +6,7 @@
  */
 
 export { default as FacilityChart } from './FacilityChart.svelte';
+export { default as FacilityCompactCharts } from './FacilityCompactCharts.svelte';
 export { default as FacilityPriceChart } from './FacilityPriceChart.svelte';
 export { default as FacilityMarketValueChart } from './FacilityMarketValueChart.svelte';
 export { default as FacilityFinancialDataProvider } from './FacilityFinancialDataProvider.svelte';

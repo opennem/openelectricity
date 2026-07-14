@@ -1,5 +1,27 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { downloadCsv } from './download-csv.js';
+import { downloadCsv, escapeCsv } from './download-csv.js';
+
+describe('escapeCsv', () => {
+	it('returns an empty string for null and undefined', () => {
+		expect(escapeCsv(null)).toBe('');
+		expect(escapeCsv(undefined)).toBe('');
+	});
+
+	it('stringifies plain values without quoting', () => {
+		expect(escapeCsv('Bango')).toBe('Bango');
+		expect(escapeCsv(42)).toBe('42');
+		expect(escapeCsv(0)).toBe('0');
+	});
+
+	it('quotes values containing commas or newlines', () => {
+		expect(escapeCsv('Bango, NSW')).toBe('"Bango, NSW"');
+		expect(escapeCsv('line1\nline2')).toBe('"line1\nline2"');
+	});
+
+	it('doubles embedded quotes and wraps the value', () => {
+		expect(escapeCsv('the "big" battery')).toBe('"the ""big"" battery"');
+	});
+});
 
 describe('downloadCsv', () => {
 	let mockClick;

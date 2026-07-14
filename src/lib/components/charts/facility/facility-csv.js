@@ -7,10 +7,9 @@
  */
 
 import { fuelTechNameMap } from '$lib/fuel_techs';
-import { makeUnitLabelGetter } from '$lib/components/charts/facility/helpers.js';
+import { makeUnitLabelGetter } from './helpers.js';
 import { offsetMsFromOffset } from '$lib/components/charts/v2/network-time.js';
-import { downloadCsv } from '$lib/utils/download-csv';
-import { escapeCsv } from '../../../facilities/_utils/facilities-csv.js';
+import { downloadCsv, escapeCsv } from '$lib/utils/download-csv';
 
 /**
  * The context the chart CSV builders draw from — the viewport-clipped datasets

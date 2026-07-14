@@ -27,7 +27,7 @@
 	} from '$lib/components/charts/facility/metrics/metrics-calc.js';
 	import { METRICS } from '$lib/components/charts/facility/metrics/metric-definitions.js';
 	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
-	import UnitCharts from './UnitCharts.svelte';
+	import { FacilityCompactCharts } from '$lib/components/charts/facility';
 	import { sectionCardClass } from '../_utils/section-card.js';
 
 	/**
@@ -376,7 +376,7 @@
 	let unitFacility = $derived(facility && unit ? { ...facility, units: [unit] } : null);
 
 	// ── Capacity factor (over the unit charts' visible range) ──
-	// The energy summary comes up from UnitCharts' financial provider. Tagged
+	// The energy summary comes up from the compact charts' financial provider. Tagged
 	// with the unit code because the sheet reuses this component across units
 	// (only the charts are {#key}ed) — a stale summary must not leak into the
 	// next unit's metric.
@@ -571,11 +571,12 @@
 	     card. Keyed on the unit so viewport + load state reset when a different
 	     unit opens. -->
 	{#if unitFacility}
-		<div class="{sectionCardClass} px-6 py-4">
+		<div class="{sectionCardClass} p-4">
 			{#key unit.code}
-				<UnitCharts
+				<FacilityCompactCharts
 					facility={unitFacility}
 					{timeZone}
+					fileCode={unit.code}
 					onsummarydata={(d) => (unitSummary = { code: unit.code, data: d })}
 				/>
 			{/key}

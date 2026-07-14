@@ -21,7 +21,7 @@ import {
 	getIntervalsForRange,
 	getDefaultIntervalForRange,
 	getIntervalOptionsForDays
-} from '$lib/components/charts/facility/range-interval-config.js';
+} from './range-interval-config.js';
 import { MIN_DATE } from '$lib/utils/date-range';
 
 const DAY_MS = 24 * 60 * 60 * 1000;

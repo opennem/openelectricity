@@ -25,7 +25,7 @@
 
 	import FacilityPickerBar from './[code]/_components/FacilityPickerBar.svelte';
 	import FacilityListPanel from './[code]/_components/FacilityListPanel.svelte';
-	import OptionsMenu from '../facilities/_components/OptionsMenu.svelte';
+	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import { ArrowLeft } from '@lucide/svelte';
 	import { backToFacilities } from './_utils/back-navigation.js';
 
@@ -263,7 +263,7 @@
 					<div class="tablet:hidden absolute top-3 right-3 z-30">
 						<!-- No fullscreen toggle here — this menu is mobile-only, and
 						     mobile is always fullscreen. -->
-						<OptionsMenu
+						<PageOptionsMenu
 							onshowshortcuts={() => (showShortcutsToast = !showShortcutsToast)}
 							onsearchfacilities={openLeftPanelAndFocus}
 							downloadItems={chartDownloads?.items ?? []}

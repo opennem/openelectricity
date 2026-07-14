@@ -18,7 +18,7 @@
 		FacilityPollutionPanel,
 		FacilityMetrics
 	} from '$lib/components/charts/facility';
-	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
+	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
 	import { withMarkedUnits, canSplitBatteryUnits } from '../../facilities/_utils/units';
 
@@ -41,8 +41,15 @@
 		CHARTS_FRACTION_MAX
 	} from './_utils/charts-fraction.js';
 	import { sectionCardClass } from './_utils/section-card.js';
-	import { parseRangeParams, applyRangeParams, rangeSlugFor } from './_utils/range-params.js';
-	import { chartDownloadItems, downloadChartCsv } from './_utils/facility-csv.js';
+	import {
+		parseRangeParams,
+		applyRangeParams,
+		rangeSlugFor
+	} from '$lib/components/charts/facility/range-params.js';
+	import {
+		chartDownloadItems,
+		downloadChartCsv
+	} from '$lib/components/charts/facility/facility-csv.js';
 
 	/** @type {{ data: any }} */
 	let { data } = $props();
@@ -514,40 +521,44 @@
 				>
 					<!-- Toolbar + metrics always render; only the charts depend on the fetch. -->
 					<div class="space-y-4">
-						<!-- Range / date picker — a bare toolbar row, not a card. -->
-						<div class="flex flex-wrap items-center justify-between gap-4 px-6 py-3">
-							<span class="font-space text-base font-medium text-dark-grey">{dateRangeLabel}</span>
-							<ChartRangeBar
-								selectedRange={range.selectedRange}
-								customDays={range.customDays}
-								displayInterval={range.displayInterval}
-								startDate={range.pickerStartDate}
-								endDate={range.pickerEndDate}
-								minDate={MIN_DATE}
-								maxDate={range.maxDate}
-								{earliestDate}
-								showIntervalDropdown={true}
-								pending={range.rangeSwitchPending}
-								onrangeselect={range.handleRangeSelect}
-								ondaterangechange={range.handleDateRangeChange}
-								onintervalchange={range.handleIntervalChange}
-							/>
-						</div>
-
-						<!-- Metrics. Flush grid; the card supplies the outer border. Fed by
-							     the providers + generation chart below. -->
+						<!-- Metrics card, headed by the range / date picker tray: the light
+						     well carries the date-range label, the controls float on it as
+						     raised white chips (`raised`). The metrics grid below stays
+						     flush; the card supplies the outer border. Fed by the providers
+						     + generation chart below. -->
 						<div class={sectionCardClass}>
-							<FacilityMetrics
-								facility={activeFacility}
-								sanityFacility={data.sanityFacility}
-								summaryData={showEmptyState ? null : summaryData}
-								emissionsData={showEmptyState ? null : emissionsData}
-								intervalData={showEmptyState ? null : intervalData}
-								{timeZone}
-								displayInterval={range.displayInterval}
-								{hiddenUnitCodes}
-								onpeakhighlight={handleHoverChange}
-							/>
+							<div class="{toolbarTrayClass} rounded-t-lg py-2 pr-2 pl-6">
+								<span class="text-base font-medium text-dark-grey">{dateRangeLabel}</span>
+								<ChartRangeBar
+									selectedRange={range.selectedRange}
+									customDays={range.customDays}
+									displayInterval={range.displayInterval}
+									startDate={range.pickerStartDate}
+									endDate={range.pickerEndDate}
+									minDate={MIN_DATE}
+									maxDate={range.maxDate}
+									{earliestDate}
+									showIntervalDropdown={true}
+									raised
+									pending={range.rangeSwitchPending}
+									onrangeselect={range.handleRangeSelect}
+									ondaterangechange={range.handleDateRangeChange}
+									onintervalchange={range.handleIntervalChange}
+								/>
+							</div>
+							<div class="border-t border-mid-warm-grey/40">
+								<FacilityMetrics
+									facility={activeFacility}
+									sanityFacility={data.sanityFacility}
+									summaryData={showEmptyState ? null : summaryData}
+									emissionsData={showEmptyState ? null : emissionsData}
+									intervalData={showEmptyState ? null : intervalData}
+									{timeZone}
+									displayInterval={range.displayInterval}
+									{hiddenUnitCodes}
+									onpeakhighlight={handleHoverChange}
+								/>
+							</div>
 						</div>
 
 						<!-- chartCardEl wraps the chart sections (not the range bar / metrics)

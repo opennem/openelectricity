@@ -1,5 +1,5 @@
 <script>
-	import OptionsMenu from '../../../facilities/_components/OptionsMenu.svelte';
+	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import { ArrowLeft, ChevronRight } from '@lucide/svelte';
 	import { FullscreenFilterBar, FullscreenNavDropdown } from '$lib/components/fullscreen';
 	import { backToFacilities } from '../../_utils/back-navigation.js';
@@ -107,7 +107,7 @@
 	{/snippet}
 
 	{#snippet options()}
-		<OptionsMenu
+		<PageOptionsMenu
 			{isFullscreen}
 			{onfullscreenchange}
 			{onshowshortcuts}

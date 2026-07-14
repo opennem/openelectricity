@@ -6,7 +6,7 @@
 	import FilterRangeDropdown from './_components/filters/FilterRangeDropdown.svelte';
 	import FuelTechRowContent from './_components/filters/FuelTechRowContent.svelte';
 	import { ListFilter } from '@lucide/svelte';
-	import OptionsMenu from './_components/OptionsMenu.svelte';
+	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
 	import { onDestroy } from 'svelte';
 	import SwitchWithIcons from '$lib/components/SwitchWithIcons.svelte';
 
@@ -570,7 +570,7 @@
 
 		{#snippet options()}
 			<div class="flex items-center">
-				<OptionsMenu
+				<PageOptionsMenu
 					{isFullscreen}
 					onfullscreenchange={() => onfullscreenchange?.()}
 					onshowshortcuts={() => onshowshortcuts?.()}

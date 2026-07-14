@@ -8,6 +8,7 @@
 	 * @property {boolean} [compact]
 	 * @property {string} [rounded] - Tailwind radius class for the container, thumb and buttons
 	 * @property {boolean} [darkSelected] - Thumb uses a dark fill (matches active filter pills)
+	 * @property {string} [trackClass] - Fill + border colour classes for the track (default: light grey chip; pass white for placement on a recessed tray)
 	 * @property {(option: {value: string}) => void} [onchange]
 	 */
 
@@ -18,6 +19,7 @@
 		compact = false,
 		rounded = 'rounded-xl',
 		darkSelected = false,
+		trackClass = 'bg-light-warm-grey border-mid-warm-grey',
 		onchange,
 		...rest
 	} = $props();
@@ -75,7 +77,7 @@
 
 <div
 	bind:this={containerEl}
-	class={`relative flex md:inline-flex p-1 ${rounded} bg-light-warm-grey border border-solid border-mid-warm-grey ${compact ? 'text-xs' : 'text-sm'} ${rest.class}`}
+	class={`relative flex md:inline-flex p-1 ${rounded} ${trackClass} border border-solid ${compact ? 'text-xs' : 'text-sm'} ${rest.class}`}
 >
 	{#if thumbVisible}
 		<div

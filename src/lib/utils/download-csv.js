@@ -1,4 +1,19 @@
 /**
+ * Escape a value for CSV output.
+ * Wraps in double quotes if the value contains a comma, quote, or newline.
+ * @param {*} value
+ * @returns {string}
+ */
+export function escapeCsv(value) {
+	if (value == null) return '';
+	const str = String(value);
+	if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+		return `"${str.replace(/"/g, '""')}"`;
+	}
+	return str;
+}
+
+/**
  * Trigger a CSV file download from string data.
  * Creates a temporary blob URL and anchor element, clicks it, then revokes the URL.
  *

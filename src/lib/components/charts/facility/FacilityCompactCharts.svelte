@@ -1,43 +1,54 @@
 <script>
 	/**
-	 * UnitCharts — interactive Generation + Price charts for the unit detail
-	 * sheet. Unlike the static FacilitySnapshotCharts, these carry their own
-	 * range presets, interval dropdown and date picker (independent of the main
-	 * page's controls) plus tap-to-engage pan/zoom — driven by the same
-	 * createChartRangeControl state machine as the facility page.
+	 * FacilityCompactCharts — the compact, interactive Generation + Price chart
+	 * block shared by the /facility/[code] unit detail sheet and the /facilities
+	 * selected-facility pane. It carries its own range presets, interval dropdown
+	 * and date picker (independent of the facility page's controls) plus
+	 * tap-to-engage pan/zoom — driven by the same createChartRangeControl state
+	 * machine as the facility page — and an options menu with CSV downloads.
 	 *
-	 * `facility` is the single-unit clone built by UnitDetail; the charts fetch
-	 * the whole facility's series and plot only this unit's.
+	 * `facility` is whatever the host wants charted: the full facility on the
+	 * /facilities pane, or the single-unit clone built by UnitDetail (the charts
+	 * fetch the whole facility's series and plot the supplied units').
+	 *
+	 * Hosts should `{#key}` this component on the facility/unit code so the range
+	 * controller and load-tracking state reset when the subject changes.
 	 */
 
 	import { LineChart } from '@lucide/svelte';
-	import {
-		FacilityChart,
-		FacilityPriceChart,
-		FacilityFinancialDataProvider
-	} from '$lib/components/charts/facility';
-	import { formatDateRange, ChartRangeBar } from '$lib/components/charts/v2';
-	import { createChartRangeControl } from '$lib/components/charts/facility/chart-range-control.svelte.js';
-	import { dataEndMs } from '$lib/components/charts/facility/data-end.js';
-	import { capYTicks } from '$lib/components/charts/facility/helpers.js';
+	import FacilityChart from './FacilityChart.svelte';
+	import FacilityPriceChart from './FacilityPriceChart.svelte';
+	import FacilityFinancialDataProvider from './FacilityFinancialDataProvider.svelte';
+	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
+	import { createChartRangeControl } from './chart-range-control.svelte.js';
+	import { dataEndMs } from './data-end.js';
+	import { capYTicks } from './helpers.js';
 	import { MIN_DATE, getEarliestDate } from '$lib/utils/date-range';
 	import { ianaFromOffset, toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
-	import OptionsMenu from '../../../facilities/_components/OptionsMenu.svelte';
-	import { chartDownloadItems, downloadChartCsv } from '../_utils/facility-csv.js';
-	import { rangeSlugFor } from '../_utils/range-params.js';
+	import PageOptionsMenu from '$lib/components/PageOptionsMenu.svelte';
+	import { chartDownloadItems, downloadChartCsv } from './facility-csv.js';
+	import { rangeSlugFor } from './range-params.js';
 
 	/**
-	 * `onsummarydata` forwards the financial provider's visible-range energy +
-	 * market-value summary up to UnitDetail, which derives the unit's Capacity
-	 * Factor from it.
+	 * `fileCode` names the CSV downloads (defaults to the facility code; the unit
+	 * sheet passes the unit's code). `onsummarydata` forwards the financial
+	 * provider's visible-range energy + market-value summary up to the host —
+	 * UnitDetail derives the unit's Capacity Factor from it.
 	 * @type {{
 	 *   facility: any,
 	 *   timeZone: string,
 	 *   rangeDays?: number,
+	 *   fileCode?: string,
 	 *   onsummarydata?: (data: any) => void
 	 * }}
 	 */
-	let { facility, timeZone, rangeDays = 3, onsummarydata = undefined } = $props();
+	let {
+		facility,
+		timeZone,
+		rangeDays = 3,
+		fileCode = undefined,
+		onsummarydata = undefined
+	} = $props();
 
 	const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -81,8 +92,6 @@
 		onsummarydata?.(d);
 	}
 
-	/** The single unit's code — the sheet's facility is a one-unit clone. */
-	let unitCode = $derived(facility?.units?.[0]?.code);
 
 	/** Earliest data point for this unit — floor for the date picker + All preset. */
 	let earliestDate = $derived(getEarliestDate(facility?.units ?? []));
@@ -98,7 +107,7 @@
 		timeZone: () => timeZone,
 		earliestDate: () => earliestDate,
 		// Initial value by design — the controller is created once per mount
-		// ({#key}ed on the unit).
+		// (the host {#key}s this component on its facility/unit code).
 		// svelte-ignore state_referenced_locally
 		initialRangeDays: rangeDays
 	});
@@ -115,7 +124,7 @@
 			facility,
 			metric: range.activeMetric,
 			timeZone,
-			fileCode: unitCode,
+			fileCode,
 			rangeSlug: rangeSlugFor(range)
 		});
 	}
@@ -163,9 +172,12 @@
 </script>
 
 <div class="space-y-4">
-	<div class="flex flex-wrap items-center justify-between gap-4">
-		<span class="font-space text-base font-medium text-dark-grey">{dateRangeLabel}</span>
-		<div class="flex items-center gap-1">
+	<!-- Recessed toolbar tray: the light well carries the date-range label while
+	     the controls float on it as raised white chips (`raised`) — the same
+	     track-and-thumb depth story as SwitchWithIcons, scaled to the row. -->
+	<div class="{toolbarTrayClass} rounded-lg p-2 pl-4">
+		<span class="text-base font-medium text-dark-grey">{dateRangeLabel}</span>
+		<div class="flex items-center gap-1.5">
 			<ChartRangeBar
 				selectedRange={range.selectedRange}
 				customDays={range.customDays}
@@ -177,18 +189,21 @@
 				{earliestDate}
 				showIntervalDropdown={true}
 				compact
+				raised
 				pending={range.rangeSwitchPending}
 				onrangeselect={range.handleRangeSelect}
 				ondaterangechange={range.handleDateRangeChange}
 				onintervalchange={range.handleIntervalChange}
 			/>
-			<!-- No emissions entry (the sheet has no emissions provider). Copy link
-			     copies the unit deep-link (?unit=). -->
-			<OptionsMenu
+			<!-- No emissions entry (this block has no emissions provider). Copy link
+			     copies the host page's URL (?unit= deep link on the unit sheet, the
+			     selected-facility URL on /facilities). -->
+			<PageOptionsMenu
 				downloadItems={chartDownloadItems()}
 				ondownloaditem={handleDownload}
 				showCopyLink
 				showDocumentation={false}
+				triggerClass="p-2 rounded-lg hover:bg-white/60 transition-colors cursor-pointer"
 			/>
 		</div>
 	</div>

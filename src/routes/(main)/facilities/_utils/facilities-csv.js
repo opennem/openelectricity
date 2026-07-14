@@ -1,3 +1,5 @@
+import { escapeCsv } from '$lib/utils/download-csv';
+
 const CSV_HEADERS = [
 	'facility_code',
 	'facility_name',
@@ -18,21 +20,6 @@ const CSV_HEADERS = [
 	'data_first_seen',
 	'data_last_seen'
 ];
-
-/**
- * Escape a value for CSV output.
- * Wraps in double quotes if the value contains a comma, quote, or newline.
- * @param {*} value
- * @returns {string}
- */
-export function escapeCsv(value) {
-	if (value == null) return '';
-	const str = String(value);
-	if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-		return `"${str.replace(/"/g, '""')}"`;
-	}
-	return str;
-}
 
 /**
  * Convert filtered facilities array to a CSV string.
