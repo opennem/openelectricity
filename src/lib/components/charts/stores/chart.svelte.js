@@ -4,6 +4,7 @@ import ChartOptions from './chart-options.svelte.js';
 import ChartStyles from './chart-styles.svelte.js';
 import ChartTooltips from './chart-tooltips.svelte.js';
 import { transformToProportion } from '$lib/utils/data-transform/index.js';
+import { computeYDomain } from '../v2/compute-y-domain.js';
 
 /**
  * @typedef {Object} chartCxtOptions
@@ -101,15 +102,7 @@ export default class ChartStore {
 		if (this.chartOptions.isDataTransformTypeProportion && !this.chartOptions.isChartTypeLine) {
 			return [0, 100];
 		}
-		const addTenPercent = (/** @type {number} */ val) => val + val * 0.1;
-		const maxY = this.seriesScaledDataWithMinMax.map((d) => d._max);
-		// @ts-ignore
-		const datasetMax = maxY ? addTenPercent(Math.max(...maxY)) : 0;
-
-		const minY = this.seriesScaledDataWithMinMax.map((d) => d._min);
-		// @ts-ignore
-		const datasetMin = minY ? addTenPercent(Math.min(...minY)) : 0;
-		return [Math.floor(datasetMin), Math.ceil(datasetMax)];
+		return computeYDomain(this.seriesScaledDataWithMinMax);
 	});
 
 	/** @type {*} */
@@ -177,28 +170,36 @@ export default class ChartStore {
 		);
 	});
 
-	seriesScaledDataWithMinMax = $derived(
-		$state.snapshot(this.seriesScaledData).map((d) => {
+	seriesScaledDataWithMinMax = $derived.by(() => {
+		// Read the signal-backed getters once, not per value in the hot loop.
+		const isArea = this.chartOptions.isChartTypeArea;
+		const isAreaOrLine = isArea || this.chartOptions.isChartTypeLine;
+		const names = this.visibleSeriesNames;
+		return $state.snapshot(this.seriesScaledData).map((d) => {
 			const newObj = { ...d };
 			newObj._max = 0;
 			newObj._min = 0;
-			this.visibleSeriesNames.forEach((name) => {
+			names.forEach((name) => {
 				const value = d[name];
-				if (this.chartOptions.isChartTypeArea) {
-					if (newObj._max || newObj._max === 0) newObj._max += +value;
+				if (isArea) {
+					// Stacked positives render above 0, so _max is the positive
+					// sum only — see computeYDomain for the zero-baseline
+					// rationale. Math.max propagates NaN for undefined values,
+					// keeping this store's NaN row poisoning.
+					newObj._max += Math.max(0, +value);
 				} else {
-					if (newObj._max || newObj._max === 0) newObj._max = Math.max(newObj._max, +value);
+					newObj._max = Math.max(newObj._max, +value);
 				}
 
-				if (this.chartOptions.isChartTypeArea || this.chartOptions.isChartTypeLine) {
-					if ((newObj._min || newObj._min === 0) && value < 0) newObj._min += +value;
+				if (isAreaOrLine) {
+					if (value < 0) newObj._min += +value;
 				} else {
-					if (newObj._min || newObj._min === 0) newObj._min = Math.min(newObj._min, +value);
+					newObj._min = Math.min(newObj._min, +value);
 				}
 			});
 			return newObj;
-		})
-	);
+		});
+	});
 
 	/** @type {string | undefined} */
 	highlightName = $state();
