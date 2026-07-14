@@ -13,6 +13,7 @@ import ChartStyles from './ChartStyles.svelte.js';
 import ChartTooltips from './ChartTooltips.svelte.js';
 import { computeYDomain } from './compute-y-domain.js';
 import { indexOfTime } from './binary-search.js';
+import { perfSpan } from './perf.js';
 
 /**
  * @typedef {import('./types.js').ChartType} ChartType
@@ -249,41 +250,43 @@ export default class ChartStore {
 	seriesScaledDataWithMinMax = $derived.by(() => {
 		// Read the signal-backed getter once, not per value in the hot loop.
 		const isStacked = this.chartOptions?.isAnyStackedType;
-		return this.seriesScaledData.map((d) => {
-			const result = { ...d, _max: 0, _min: 0 };
-			let hasValue = false;
+		return perfSpan('chart:minmax', () =>
+			this.seriesScaledData.map((d) => {
+				const result = { ...d, _max: 0, _min: 0 };
+				let hasValue = false;
 
-			for (const name of this.visibleSeriesNames) {
-				const raw = d[name];
-				const value = raw != null ? Number(raw) : null;
+				for (const name of this.visibleSeriesNames) {
+					const raw = d[name];
+					const value = raw != null ? Number(raw) : null;
 
-				if (value === null) continue;
+					if (value === null) continue;
 
-				hasValue = true;
+					hasValue = true;
 
-				if (isStacked) {
-					// Stacks pile positives above 0 and negatives below, so the
-					// rendered top is the positive sum alone. Folding negatives
-					// in would drag the domain max below 0 for all-negative rows
-					// (e.g. a charging-only battery), pushing the zero line off
-					// the plot.
-					if (value > 0) result._max += value;
-				} else {
-					result._max = Math.max(result._max, value);
+					if (isStacked) {
+						// Stacks pile positives above 0 and negatives below, so the
+						// rendered top is the positive sum alone. Folding negatives
+						// in would drag the domain max below 0 for all-negative rows
+						// (e.g. a charging-only battery), pushing the zero line off
+						// the plot.
+						if (value > 0) result._max += value;
+					} else {
+						result._max = Math.max(result._max, value);
+					}
+
+					if (value < 0) {
+						result._min += value;
+					}
 				}
 
-				if (value < 0) {
-					result._min += value;
+				if (!hasValue) {
+					result._max = NaN;
+					result._min = NaN;
 				}
-			}
 
-			if (!hasValue) {
-				result._max = NaN;
-				result._min = NaN;
-			}
-
-			return result;
-		});
+				return result;
+			})
+		);
 	});
 
 	// Highlight state
