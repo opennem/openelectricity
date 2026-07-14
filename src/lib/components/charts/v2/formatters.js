@@ -148,10 +148,35 @@ export function applyFacilityTimeAxis(
 	{ data, viewStart, viewEnd, ianaTimeZone, timeZone, isEnergy, displayInterval }
 ) {
 	perfSpan('chart:time-axis', () => {
-		const policy = getTimeFormatPolicy(displayInterval, ianaTimeZone);
-		store.formatTooltipX = (/** @type {any} */ d) => policy.formatTooltip(d);
+		let memo = timeAxisMemos.get(store);
+		if (!memo) {
+			memo = {};
+			timeAxisMemos.set(store, memo);
+		}
+
+		// The tooltip formatter depends only on the interval policy — reassigning
+		// a fresh closure per viewport tick would needlessly notify dependants.
+		const policyKey = `${displayInterval}|${ianaTimeZone}`;
+		if (memo.policyKey !== policyKey) {
+			memo.policyKey = policyKey;
+			memo.policy = getTimeFormatPolicy(displayInterval, ianaTimeZone);
+			const policy = memo.policy;
+			store.formatTooltipX = (/** @type {any} */ d) => policy.formatTooltip(d);
+		}
+		const policy = memo.policy;
 
 		if (isEnergy && data.length > 1) {
+			// The energy tick formatter captures data-derived midpoint maps, so it
+			// can only be reused when every input is unchanged (common for effect
+			// re-runs triggered by other dependencies).
+			const energyKey = `${viewStart}|${viewEnd}|${policyKey}`;
+			if (memo.tickSource === 'energy' && memo.energyKey === energyKey && memo.energyData === data)
+				return;
+			memo.tickSource = 'energy';
+			memo.energyKey = energyKey;
+			memo.energyData = data;
+			memo.powerFormatKey = undefined;
+
 			// Coarse calendar buckets (season/quarter/half/fy/1y) don't align to the
 			// Jan/month gridlines the inference assumes — the policy supplies an
 			// explicit bucket labeller for them.
@@ -162,11 +187,50 @@ export function applyFacilityTimeAxis(
 		} else if (data.length > 0) {
 			// Power mode: time ticks when zoomed in, day-start ticks otherwise.
 			const ax = getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, data);
-			store.xTicks = ax.ticks;
-			store.xGridlineTicks = ax.ticks;
-			store.formatTickX = ax.formatTick;
+			if (memo.tickSource !== 'power' || !sameTickDates(store.xTicks, ax.ticks)) {
+				store.xTicks = ax.ticks;
+				store.xGridlineTicks = ax.ticks;
+			}
+			memo.tickSource = 'power';
+			memo.energyKey = undefined;
+			// Both power formatters depend only on the zone and the branch (day-start
+			// labels vs intra-day times), never on the data — reuse across ticks.
+			const HOUR_MS = 60 * 60 * 1000;
+			const spanHours = (viewEnd - viewStart) / HOUR_MS;
+			const branch = !(spanHours > 0) || spanHours > 48 ? 'day' : 'time';
+			const powerFormatKey = `${branch}|${ianaTimeZone}|${timeZone}`;
+			if (memo.powerFormatKey !== powerFormatKey) {
+				memo.powerFormatKey = powerFormatKey;
+				store.formatTickX = ax.formatTick;
+			}
 		}
 	});
+}
+
+/**
+ * Per-store memo of the last-applied axis state so unchanged viewport effects
+ * don't churn tick arrays and formatter closures. WeakMap-keyed on the store
+ * so retired ChartStores don't leak.
+ * @type {WeakMap<any, any>}
+ */
+const timeAxisMemos = new WeakMap();
+
+/**
+ * Two tick arrays render identically when they have the same length and the
+ * same first/last instants (ticks are monotonic sequences generated from the
+ * same rules, so the interior follows from the endpoints).
+ *
+ * @param {Date[] | undefined} a
+ * @param {Date[]} b
+ * @returns {boolean}
+ */
+function sameTickDates(a, b) {
+	if (a === b) return true;
+	if (!Array.isArray(a) || a.length !== b.length) return false;
+	if (b.length === 0) return true;
+	return (
+		a[0].getTime() === b[0].getTime() && a[a.length - 1].getTime() === b[b.length - 1].getTime()
+	);
 }
 
 /**
