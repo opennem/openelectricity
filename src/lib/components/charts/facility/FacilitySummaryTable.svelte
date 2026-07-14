@@ -7,6 +7,7 @@
 	 */
 
 	import { getNumberFormat } from '$lib/utils/formatters';
+	import { SERIES_FALLBACK_COLOUR } from '$lib/components/charts/colours.js';
 
 	const formatter0 = getNumberFormat(0);
 	const formatter1 = getNumberFormat(1);
@@ -110,7 +111,7 @@
 			const capFactor =
 				regCap > 0 && hoursInRange > 0 ? (energy / (regCap * hoursInRange)) * 100 : 0;
 			const avgValue = energy !== 0 ? marketValue / energy : 0;
-			const colour = unitColours[code] || '#888888';
+			const colour = unitColours[code] || SERIES_FALLBACK_COLOUR;
 
 			return { code, regCap, energy, capFactor, marketValue, avgValue, colour };
 		});

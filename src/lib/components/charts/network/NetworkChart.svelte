@@ -15,7 +15,7 @@
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
-	import { createManagerStash } from '$lib/components/charts/v2/manager-stash.js';
+	import { createManagerStash, managerKey } from '$lib/components/charts/v2/manager-stash.js';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { processNetworkData } from './process-network-data.js';
 	import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
@@ -153,8 +153,8 @@
 	let dataManager = $state(null);
 
 	/**
-	 * Warm managers stashed on swap (keyed `${interval}|${metric}|${seriesKey}`
-	 * within the current region+kind) so filter round-trips — a grouping
+	 * Warm managers stashed on swap (keyed by grain + series identity via
+	 * managerKey, within the current region+kind) so filter round-trips — a grouping
 	 * toggle-back, a hysteresis metric flip on zoom — revive cached data
 	 * instantly instead of refetching.
 	 */
@@ -175,7 +175,7 @@
 			manager.dispose();
 			return;
 		}
-		managerStash.stash(`${manager.interval}|${manager.metric}|${manager.seriesKey}`, manager);
+		managerStash.stash(managerKey(manager.interval, manager.metric, manager.seriesKey), manager);
 	}
 
 	$effect(() => {
@@ -213,7 +213,7 @@
 		}
 
 		// Revive a warm manager when one matches; otherwise construct fresh.
-		const revived = managerStash.take(`${currentInterval}|${currentMetric}|${currentSeriesKey}`);
+		const revived = managerStash.take(managerKey(currentInterval, currentMetric, currentSeriesKey));
 		const manager =
 			revived ??
 			new ChartDataManager({
@@ -366,10 +366,7 @@
 			});
 
 			chartStore.seriesData = visibleData;
-			const [domainStart, domainEnd] = chartStore.xDomain ?? [];
-			if (domainStart !== start || domainEnd !== end) {
-				chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
-			}
+			chartStore.setXDomain(start, end);
 			chartStore.setYDomain(undefined);
 
 			applyFacilityTimeAxis(chartStore, {

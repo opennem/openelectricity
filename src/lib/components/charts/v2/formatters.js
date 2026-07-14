@@ -6,9 +6,9 @@
  */
 
 import { computeEnergyGridlines } from './energy-gridlines.js';
-import { formatDayMonth } from './date-labels.js';
+import { cachedFormatter, formatDayMonth } from './date-labels.js';
 import { getTimeFormatPolicy } from './time-format-policy.js';
-import { offsetHoursFromOffset, offsetMsFromOffset } from './network-time.js';
+import { ianaFromOffset, offsetHoursFromOffset, offsetMsFromOffset } from './network-time.js';
 import { perfSpan } from './perf.js';
 
 // Label primitives live in date-labels.js; re-exported here so existing
@@ -38,35 +38,6 @@ export function formatTooltipDateTime(d, ianaTimeZone, displayInterval) {
 }
 
 /**
- * Cached intra-day tick formatters, one pair per zone (see dayPartsFormatters
- * for rationale).
- * @type {Map<string, { timeFmt: Intl.DateTimeFormat, dateFmt: Intl.DateTimeFormat }>}
- */
-const tickFormatters = new Map();
-
-/** @param {string} ianaTimeZone */
-function getTickFormatters(ianaTimeZone) {
-	let pair = tickFormatters.get(ianaTimeZone);
-	if (!pair) {
-		pair = {
-			timeFmt: new Intl.DateTimeFormat('en-AU', {
-				hour: 'numeric',
-				minute: '2-digit',
-				hour12: true,
-				timeZone: ianaTimeZone
-			}),
-			dateFmt: new Intl.DateTimeFormat('en-AU', {
-				day: 'numeric',
-				month: 'short',
-				timeZone: ianaTimeZone
-			})
-		};
-		tickFormatters.set(ianaTimeZone, pair);
-	}
-	return pair;
-}
-
-/**
  * Compute x-axis ticks + formatter for power-mode (sub-daily) charts.
  *
  * When the visible span is short enough (≤ 2 days) the axis switches from
@@ -81,7 +52,10 @@ function getTickFormatters(ianaTimeZone) {
  * @param {string} ianaTimeZone - e.g. 'Australia/Brisbane'
  * @param {string} timeZone - offset string, e.g. '+10:00'
  * @param {any[]} data - Series rows (for the wide-span day-start fallback)
- * @returns {{ ticks: Date[], formatTick: (d: any) => string }}
+ * @returns {{ ticks: Date[], formatTick: (d: any) => string, formatKey: string }}
+ *   `formatKey` identifies the formatter (branch + zones) so callers can skip
+ *   reassigning an equivalent `formatTick` — the branch rule lives here, not
+ *   in the callers.
  */
 export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, data) {
 	const HOUR_MS = 60 * 60 * 1000;
@@ -93,7 +67,8 @@ export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, da
 		const dayStarts = getDayStartDates(data, ianaTimeZone, timeZone);
 		return {
 			ticks: dayStarts,
-			formatTick: (/** @type {any} */ d) => formatDayMonth(d, ianaTimeZone)
+			formatTick: (/** @type {any} */ d) => formatDayMonth(d, ianaTimeZone),
+			formatKey: `day|${ianaTimeZone}`
 		};
 	}
 
@@ -111,18 +86,22 @@ export function getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, da
 		ticks.push(new Date(localMs - offsetMs));
 	}
 
-	const { timeFmt, dateFmt } = getTickFormatters(ianaTimeZone);
+	const timeFmt = cachedFormatter('tick-time', ianaTimeZone, {
+		hour: 'numeric',
+		minute: '2-digit',
+		hour12: true
+	});
 
 	/** @param {any} d */
 	const formatTick = (d) => {
 		const date = d instanceof Date ? d : new Date(d);
 		const localMs = date.getTime() + offsetMs;
 		// At local midnight, label the date instead of "12:00 am".
-		if (((localMs % DAY_MS) + DAY_MS) % DAY_MS === 0) return dateFmt.format(date);
+		if (((localMs % DAY_MS) + DAY_MS) % DAY_MS === 0) return formatDayMonth(date, ianaTimeZone);
 		return timeFmt.format(date);
 	};
 
-	return { ticks, formatTick };
+	return { ticks, formatTick, formatKey: `time|${ianaTimeZone}|${timeZone}` };
 }
 
 /**
@@ -184,23 +163,25 @@ export function applyFacilityTimeAxis(
 			store.xGridlineTicks = g.gridlineTicks;
 			store.xTicks = g.ticks;
 			store.formatTickX = g.formatTick;
+			memo.lastTicks = g.ticks;
 		} else if (data.length > 0) {
 			// Power mode: time ticks when zoomed in, day-start ticks otherwise.
+			// Compare against the memo, never the store — reading a store field the
+			// effect later writes would make every calling effect self-invalidate
+			// and run twice per viewport tick.
 			const ax = getPowerAxisTicks(viewStart, viewEnd, ianaTimeZone, timeZone, data);
-			if (memo.tickSource !== 'power' || !sameTickDates(store.xTicks, ax.ticks)) {
+			if (memo.tickSource !== 'power' || !sameTickDates(memo.lastTicks, ax.ticks)) {
 				store.xTicks = ax.ticks;
 				store.xGridlineTicks = ax.ticks;
+				memo.lastTicks = ax.ticks;
 			}
 			memo.tickSource = 'power';
 			memo.energyKey = undefined;
-			// Both power formatters depend only on the zone and the branch (day-start
-			// labels vs intra-day times), never on the data — reuse across ticks.
-			const HOUR_MS = 60 * 60 * 1000;
-			const spanHours = (viewEnd - viewStart) / HOUR_MS;
-			const branch = !(spanHours > 0) || spanHours > 48 ? 'day' : 'time';
-			const powerFormatKey = `${branch}|${ianaTimeZone}|${timeZone}`;
-			if (memo.powerFormatKey !== powerFormatKey) {
-				memo.powerFormatKey = powerFormatKey;
+			memo.energyData = undefined;
+			// The power formatters depend only on the branch and zones — the
+			// identity comes from getPowerAxisTicks, which owns the branch rule.
+			if (memo.powerFormatKey !== ax.formatKey) {
+				memo.powerFormatKey = ax.formatKey;
 				store.formatTickX = ax.formatTick;
 			}
 		}
@@ -233,36 +214,7 @@ function sameTickDates(a, b) {
 	);
 }
 
-/**
- * The network zones this app renders in (via `ianaFromOffset`) don't observe
- * DST, so a local day start is pure offset arithmetic — no Intl needed. Other
- * zones fall back to a (cached) Intl.DateTimeFormat.
- */
-const FIXED_OFFSET_ZONES = new Set(['Australia/Brisbane', 'Australia/Perth']);
-
 const DAY_MS = 24 * 60 * 60 * 1000;
-
-/**
- * Constructing Intl.DateTimeFormat is expensive (~0.1ms+) and `getStartOfDay`
- * runs per visible row on wide power windows — cache one formatter per zone.
- * @type {Map<string, Intl.DateTimeFormat>}
- */
-const dayPartsFormatters = new Map();
-
-/** @param {string} ianaTimeZone */
-function getDayPartsFormatter(ianaTimeZone) {
-	let formatter = dayPartsFormatters.get(ianaTimeZone);
-	if (!formatter) {
-		formatter = new Intl.DateTimeFormat('en-AU', {
-			year: 'numeric',
-			month: '2-digit',
-			day: '2-digit',
-			timeZone: ianaTimeZone
-		});
-		dayPartsFormatters.set(ianaTimeZone, formatter);
-	}
-	return formatter;
-}
 
 /**
  * Get the start of the day in the facility's timezone, returned as a UTC Date.
@@ -273,12 +225,20 @@ function getDayPartsFormatter(ianaTimeZone) {
  * @returns {Date}
  */
 export function getStartOfDay(date, ianaTimeZone, timeZone) {
-	if (FIXED_OFFSET_ZONES.has(ianaTimeZone)) {
+	// The zones network-time.js maps offsets onto don't observe DST, so when
+	// the pair is consistent a local day start is pure offset arithmetic — no
+	// Intl needed. Anything else falls back to a (cached) Intl.DateTimeFormat.
+	// getStartOfDay runs per visible row on wide power windows.
+	if (ianaFromOffset(timeZone) === ianaTimeZone) {
 		const offsetMs = offsetMsFromOffset(timeZone);
 		return new Date(Math.floor((date.getTime() + offsetMs) / DAY_MS) * DAY_MS - offsetMs);
 	}
 
-	const parts = getDayPartsFormatter(ianaTimeZone).formatToParts(date);
+	const parts = cachedFormatter('ymd2', ianaTimeZone, {
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit'
+	}).formatToParts(date);
 	const year = parseInt(parts.find((p) => p.type === 'year')?.value || '0');
 	const month = parseInt(parts.find((p) => p.type === 'month')?.value || '0') - 1;
 	const day = parseInt(parts.find((p) => p.type === 'day')?.value || '0');
@@ -288,11 +248,13 @@ export function getStartOfDay(date, ianaTimeZone, timeZone) {
 }
 
 /**
- * One-entry memo for `getDayStartDates` — the axis path recomputes it on every
- * viewport tick, usually over the same rows array.
- * @type {{ data: any[] | null, iana: string, tz: string, result: Date[] }}
+ * Memo for `getDayStartDates`, keyed on the rows array — the axis path
+ * recomputes it on every viewport tick, and multi-chart pages alternate
+ * between one stable rows array per chart, so a single shared slot would
+ * thrash. WeakMap-keyed so retired arrays don't leak.
+ * @type {WeakMap<any[], { iana: string, tz: string, result: Date[] }>}
  */
-let dayStartsMemo = { data: null, iana: '', tz: '', result: [] };
+const dayStartsMemos = new WeakMap();
 
 /**
  * Compute day-start dates from series data for power-mode gridlines.
@@ -305,12 +267,9 @@ let dayStartsMemo = { data: null, iana: '', tz: '', result: [] };
 export function getDayStartDates(data, ianaTimeZone, timeZone) {
 	if (!data?.length) return [];
 
-	if (
-		dayStartsMemo.data === data &&
-		dayStartsMemo.iana === ianaTimeZone &&
-		dayStartsMemo.tz === timeZone
-	) {
-		return dayStartsMemo.result;
+	const memo = dayStartsMemos.get(data);
+	if (memo && memo.iana === ianaTimeZone && memo.tz === timeZone) {
+		return memo.result;
 	}
 
 	const dayStarts = new Set();
@@ -329,6 +288,6 @@ export function getDayStartDates(data, ianaTimeZone, timeZone) {
 	}
 
 	result.sort((a, b) => a.getTime() - b.getTime());
-	dayStartsMemo = { data, iana: ianaTimeZone, tz: timeZone, result };
+	dayStartsMemos.set(data, { iana: ianaTimeZone, tz: timeZone, result });
 	return result;
 }

@@ -15,6 +15,21 @@
  */
 
 /**
+ * Stash key for a manager's grain + series identity — the single home for the
+ * key scheme, so the stash/take/has call sites in different owners can't
+ * drift. The data-source identity (cacheKey) is deliberately excluded:
+ * owners clear the stash when the source changes.
+ *
+ * @param {string} interval
+ * @param {string} metric
+ * @param {string} seriesKey
+ * @returns {string}
+ */
+export function managerKey(interval, metric, seriesKey) {
+	return `${interval}|${metric}|${seriesKey}`;
+}
+
+/**
  * @param {{ max?: number }} [options]
  */
 export function createManagerStash({ max = 4 } = {}) {

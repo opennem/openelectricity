@@ -415,7 +415,7 @@
 						<NetworkChart
 							bind:this={chartRefs[panel.id]}
 							region={selectedRegion}
-							metric={panel.metric === 'price' ? 'price' : activeMetric}
+							metric={panel.metric === 'power' ? activeMetric : panel.metric}
 							interval={activeInterval}
 							{displayInterval}
 							group={panel.grouped ? selectedGroup : undefined}

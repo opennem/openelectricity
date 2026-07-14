@@ -101,6 +101,10 @@
 	let basisMetric = $derived(getBasisMetric(interval));
 	let combinedMetrics = $derived(combinedMetricsFor(basisMetric));
 
+	/** Fetch/prefetch buffer multiplier — wider for the energy basis since its
+	 *  intervals are daily+. */
+	let fetchBufferMultiplier = $derived(isEnergyInterval ? 3 : 1);
+
 	/**
 	 * Fetch window for a viewport — buffered each side (wider for the energy
 	 * basis since its intervals are daily+), clamped to now on the future edge.
@@ -109,7 +113,7 @@
 	 * @returns {[number, number]}
 	 */
 	function bufferedRange(start, end) {
-		const buffer = (end - start) * (isEnergyInterval ? 3 : 1);
+		const buffer = (end - start) * fetchBufferMultiplier;
 		return [start - buffer, Math.min(end + buffer, Date.now())];
 	}
 
@@ -535,7 +539,7 @@
 		rateChartStore.seriesColours = rateSeries.seriesColours;
 		rateChartStore.seriesLabels = rateSeries.seriesLabels;
 		rateChartStore.seriesData = rateData;
-		rateChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
+		rateChartStore.setXDomain(viewStart, viewEnd);
 		rateChartStore.chartOptions.selectedCurveType = /** @type {any} */ (
 			recipe.getRateCurveType(isEnergyInterval)
 		);
@@ -584,7 +588,7 @@
 		const visibleData = volumeVisibleRows;
 
 		volumeChartStore.seriesData = visibleData;
-		volumeChartStore.xDomain = /** @type {[number, number]} */ ([viewStart, viewEnd]);
+		volumeChartStore.setXDomain(viewStart, viewEnd);
 		volumeChartStore.chartOptions.selectedCurveType = /** @type {any} */ (
 			isEnergyInterval ? 'step' : 'straight'
 		);
@@ -616,8 +620,7 @@
 			volumeChartStore?.clearHover();
 		},
 		onPanEnd: (direction, start, end) => {
-			const bufferMultiplier = isEnergyInterval ? 3 : 1;
-			const prefetch = (end - start) * bufferMultiplier;
+			const prefetch = (end - start) * fetchBufferMultiplier;
 			if (direction === -1) {
 				const to = Math.min(end + prefetch, Date.now());
 				volumeDataManager?.requestRange(end, to);

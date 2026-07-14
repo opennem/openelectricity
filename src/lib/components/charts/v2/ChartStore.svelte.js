@@ -5,6 +5,7 @@
  * Manages all chart data, configuration, and interaction state.
  */
 
+import { untrack } from 'svelte';
 import { convert } from '$lib/utils/si-units';
 import { getNumberFormat, getFormattedDate, getFormattedTime } from '$lib/utils/formatters';
 import { transformToProportion } from '$lib/utils/data-transform';
@@ -109,6 +110,22 @@ export default class ChartStore {
 	// Domain configuration
 	/** @type {[number, number] | undefined} */
 	xDomain = $state();
+
+	/**
+	 * Set the x-domain, skipping the write when the bounds are unchanged so
+	 * dependants aren't notified for a no-op. The comparison read is untracked
+	 * — viewport effects call this after reading their own state, and a tracked
+	 * read of a field the effect then writes would self-invalidate the effect
+	 * into a second run per tick.
+	 *
+	 * @param {number} start
+	 * @param {number} end
+	 */
+	setXDomain(start, end) {
+		const current = untrack(() => this.xDomain);
+		if (current && current[0] === start && current[1] === end) return;
+		this.xDomain = [start, end];
+	}
 
 	// Step-mode: last interval between consecutive data points, in ms. Used
 	// to extend the render domain (and the area path via a phantom trailing

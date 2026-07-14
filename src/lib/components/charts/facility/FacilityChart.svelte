@@ -9,7 +9,7 @@
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
 	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 	import { createFacilityDataManager } from './facility-data-manager.js';
-	import { createManagerStash } from '$lib/components/charts/v2/manager-stash.js';
+	import { createManagerStash, managerKey } from '$lib/components/charts/v2/manager-stash.js';
 	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
@@ -196,7 +196,7 @@
 	let firstWindowSettled = false;
 
 	/**
-	 * Stashed managers keyed `${interval}-${metric}-${seriesKey}` — background
+	 * Stashed managers keyed by grain + series identity (managerKey) — background
 	 * prefetches plus previously-active managers kept warm so switching back to
 	 * a range renders instantly from cache. Keys include the seriesKey so
 	 * managers for different unit sets (battery net ⇄ split) coexist and a flip
@@ -217,7 +217,7 @@
 			manager.dispose();
 			return;
 		}
-		managerStash.stash(`${manager.interval}-${manager.metric}-${manager.seriesKey}`, manager);
+		managerStash.stash(managerKey(manager.interval, manager.metric, manager.seriesKey), manager);
 	}
 
 	/**
@@ -274,7 +274,7 @@
 		}
 
 		// Check the stash before creating a new manager
-		const prefetchKey = `${currentInterval}-${currentMetric}-${currentUnitsKey}`;
+		const prefetchKey = managerKey(currentInterval, currentMetric, currentUnitsKey);
 		const prefetched = managerStash.take(prefetchKey);
 		if (prefetched && prefetched.cacheKey === currentCode) {
 			stashOrDispose(existing, currentCode);
@@ -392,7 +392,7 @@
 			manager.requestRange(sevenDaysAgo, now);
 
 			// 2. Background energy/1d manager for 1-year range
-			const energyKey = `1d-energy-${currentUnitsKey}`;
+			const energyKey = managerKey('1d', 'energy', currentUnitsKey);
 			if (managerStash.has(energyKey)) return;
 
 			const energyManager = createFacilityDataManager({
@@ -527,10 +527,7 @@
 			});
 
 			chartStore.seriesData = visibleData;
-			const [domainStart, domainEnd] = chartStore.xDomain ?? [];
-			if (domainStart !== start || domainEnd !== end) {
-				chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
-			}
+			chartStore.setXDomain(start, end);
 
 			applyFacilityTimeAxis(chartStore, {
 				data: visibleData,

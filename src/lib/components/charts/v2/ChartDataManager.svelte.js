@@ -238,7 +238,8 @@ export default class ChartDataManager {
 	 * be owned by — and destroyed with — the effect run that created it, making
 	 * later reads inert/stale (svelte `derived_inert`). Reading the `$state`
 	 * fields here still registers reactive dependencies for effect callers.
-	 * Components should use getDataForRange() to slice by viewport.
+	 * Chart components slice by viewport through createVisibleAggregation()
+	 * (display-aggregation.js), which memoises on this object's identity.
 	 */
 	get processedCache() {
 		const data = this.#dataCache;
