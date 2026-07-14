@@ -25,6 +25,7 @@ import {
 } from './range-interval-config.js';
 import { MIN_DATE } from '$lib/utils/date-range';
 import { toNetworkDateString } from '$lib/components/charts/v2/network-time.js';
+import { createEchoGuard } from '$lib/components/charts/v2/echo-guard.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -80,7 +81,7 @@ export function createChartRangeControl(config) {
 
 	/** Suppression guard so pushing a viewport into the generation chart doesn't
 	 *  echo back through its own `onviewportchange`. */
-	let suppressed = false;
+	const echo = createEchoGuard();
 
 	/**
 	 * @param {number} startMs
@@ -89,14 +90,7 @@ export function createChartRangeControl(config) {
 	function pushToChart(startMs, endMs) {
 		const c = chart();
 		if (!c) return;
-		suppressed = true;
-		try {
-			c.setViewport(startMs, endMs);
-		} finally {
-			queueMicrotask(() => {
-				suppressed = false;
-			});
-		}
+		echo.run(() => c.setViewport(startMs, endMs));
 	}
 
 	/** Live viewport with default fallbacks while the chart hasn't reported. */
@@ -196,7 +190,7 @@ export function createChartRangeControl(config) {
 	/** Pan/zoom-driven viewport change from the generation chart. */
 	/** @param {{ start: number, end: number }} range */
 	function handleChartViewportChange(range) {
-		if (suppressed) return;
+		if (echo.suppressed) return;
 		setViewport(range.start, range.end);
 		selectedRange = null;
 		applyMetricSwitch(range);
@@ -208,7 +202,7 @@ export function createChartRangeControl(config) {
 	 *  with the echo suppressed. */
 	/** @param {{ start: number, end: number }} range */
 	function handleDerivedViewportChange(range) {
-		if (suppressed) return;
+		if (echo.suppressed) return;
 		setViewport(range.start, range.end);
 		selectedRange = null;
 		applyMetricSwitch(range);

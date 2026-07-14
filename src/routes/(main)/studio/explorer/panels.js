@@ -11,9 +11,11 @@
  * @property {string} title - Header label
  * @property {'power' | 'energy' | 'price'} metric - Base metric (generation flips power↔energy with the interval)
  * @property {'stacked' | 'line'} chartKind - Render style
+ * @property {string} heightClass - Chart height class
  * @property {boolean} [grouped] - Whether the fuel-tech grouping selector applies
  * @property {boolean} [diverging] - Stack positive/negative independently (loads vs sources)
  * @property {boolean} [feedsTable] - Whether this panel feeds the fuel-tech table
+ * @property {string} [unitLabel] - Fixed unit shown in the header (grouped panels show the interval instead)
  */
 
 /** @type {PanelDef[]} */
@@ -23,6 +25,7 @@ export const PANELS = [
 		title: 'Generation',
 		metric: 'power',
 		chartKind: 'stacked',
+		heightClass: 'h-[320px]',
 		grouped: true,
 		diverging: true,
 		feedsTable: true
@@ -31,6 +34,8 @@ export const PANELS = [
 		id: 'price',
 		title: 'Price',
 		metric: 'price',
-		chartKind: 'line'
+		chartKind: 'line',
+		heightClass: 'h-[200px]',
+		unitLabel: '$/MWh'
 	}
 ];
