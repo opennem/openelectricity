@@ -6,9 +6,6 @@
  * timestamp, avoiding the index-alignment bug in TimeSeriesV2.transform().
  */
 
-import { processFacilityPower } from '$lib/components/charts/facility/process-facility-power.js';
-import { getNetworkTimezone } from '$lib/components/charts/facility/helpers.js';
-import { unitsKeyFor } from '$lib/components/charts/facility/unit-analysis.js';
 import { bisectTime, bisectTimeRight, mergeSortedByTime } from './binary-search.js';
 import { offsetMsFromOffset } from './network-time.js';
 
@@ -35,14 +32,74 @@ export const OE_API_MAX_RANGE_DAYS = { '5m': 30, '1h': 365 };
  */
 const inFlightFetches = new Map();
 
+/** Max completed responses kept for reuse. */
+const RESPONSE_CACHE_MAX = 30;
+
+/** Matches the chart API routes' `Cache-Control: max-age=300`. */
+const RESPONSE_CACHE_TTL_MS = 5 * 60 * 1000;
+
 /**
- * Fetch a URL, collapsing concurrent identical requests into one network call.
+ * Completed responses by URL, LRU by Map insertion order. `sharedFetch` only
+ * dedupes *concurrent* requests; this lets sequential repeats of the same URL
+ * (a group toggle re-fetching history, manager rebuilds) skip both the network
+ * round-trip and the JSON re-parse. Right-edge batches embed a now-clamped
+ * `date_end`, so only historical batches — the bulk of a wide window — hit.
+ * @type {Map<string, { response: any, ts: number }>}
+ */
+const completedResponses = new Map();
+
+/**
+ * @param {string} url
+ * @returns {any | undefined} the cached payload, or undefined on miss/expiry
+ */
+function getCachedResponse(url) {
+	const entry = completedResponses.get(url);
+	if (!entry) return undefined;
+	if (Date.now() - entry.ts > RESPONSE_CACHE_TTL_MS) {
+		completedResponses.delete(url);
+		return undefined;
+	}
+	// Refresh recency
+	completedResponses.delete(url);
+	completedResponses.set(url, entry);
+	return entry.response;
+}
+
+/**
+ * @param {string} url
+ * @param {any} response
+ */
+function storeCachedResponse(url, response) {
+	// Never cache failures — a later retry should hit the network.
+	if (response == null) return;
+	completedResponses.delete(url);
+	completedResponses.set(url, { response, ts: Date.now() });
+	while (completedResponses.size > RESPONSE_CACHE_MAX) {
+		const oldest = /** @type {string} */ (completedResponses.keys().next().value);
+		completedResponses.delete(oldest);
+	}
+}
+
+/**
+ * Empty the completed-response LRU. For tests — module state would otherwise
+ * leak fetch results between cases (fake timers never expire the TTL).
+ */
+export function clearCompletedResponses() {
+	completedResponses.clear();
+}
+
+/**
+ * Fetch a URL, collapsing concurrent identical requests into one network call
+ * and serving recent completed responses from the module-level LRU.
  * Resolves to the API `response` payload, or `null` on a non-OK status.
  *
  * @param {string} url
  * @returns {Promise<any>}
  */
 function sharedFetch(url) {
+	const cached = getCachedResponse(url);
+	if (cached !== undefined) return Promise.resolve(cached);
+
 	let pending = inFlightFetches.get(url);
 	if (!pending) {
 		pending = fetch(url)
@@ -52,6 +109,7 @@ function sharedFetch(url) {
 					return null;
 				}
 				const json = await res.json();
+				storeCachedResponse(url, json.response);
 				return json.response;
 			})
 			.finally(() => inFlightFetches.delete(url));
@@ -68,38 +126,27 @@ function sharedFetch(url) {
 
 /**
  * @typedef {Object} ChartDataManagerConfig
- * @property {string} facilityCode - Facility code
- * @property {string} networkId - Network ID (NEM, WEM)
+ * @property {string} cacheKey - Identity of the data source (facility code, `${region}:${kind}`…)
+ * @property {string} networkTimezone - Offset string used for API date formatting ('+10:00' / '+08:00')
  * @property {string} [interval] - Data interval (default: '5m')
  * @property {string} [metric] - Data metric (default: 'power')
- * @property {Record<string, string>} unitFuelTechMap - Map unit code → fuel tech
- * @property {string[]} [unitOrder] - Unit ordering for chart processing
- * @property {string[]} [loadsToInvert] - Series IDs to invert
- * @property {(unitCode: string, fuelTech: string) => string} getLabel - Returns display label for a unit
- * @property {(unitCode: string, fuelTech: string) => string} getColour - Returns hex colour for a unit
- * @property {((response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null) | null} [processResponseFn] - Custom response processor (default: processFacilityPower)
- * @property {((params: URLSearchParams) => string) | null} [buildFetchUrl] - Custom URL builder for API requests (default: /api/facilities/{code}/power)
+ * @property {string} [seriesKey] - Identity of the series set baked into `processResponse`
+ *   (unit set, fuel-tech grouping…). Owners compare it to detect a series-only change
+ *   that needs a new manager even though cacheKey/interval/metric are unchanged.
+ * @property {(response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null} processResponse - Maps a raw API response to chart-ready rows
+ * @property {(params: URLSearchParams) => string} buildFetchUrl - Builds the request URL from the standard params (interval, metric, date_start, date_end)
  */
 
 export default class ChartDataManager {
 	// Config
-	/** @type {string} */ facilityCode;
-	/** @type {string} */ networkId;
+	/** @type {string} */ cacheKey;
+	/** @type {string} */ networkTimezone;
 	/** @type {string} */ interval;
 	/** @type {string} */ metric;
-	/** @type {Record<string, string>} */ unitFuelTechMap;
-	/** @type {string[]} */ unitOrder;
-	/** @type {string[]} */ loadsToInvert;
-	/** Identity of the unit set baked into this manager — unitFuelTechMap/
-	 *  unitOrder/loadsToInvert are fixed at construction, so owners compare this
-	 *  key to detect a units-only change (e.g. battery net ⇄ split) that needs a
-	 *  new manager even though facility/interval/metric are unchanged. */
-	/** @type {string} */ unitsKey;
-	/** @type {(unitCode: string, fuelTech: string) => string} */ getLabel;
-	/** @type {(unitCode: string, fuelTech: string) => string} */ getColour;
-	/** @type {((response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null) | null} */
-	processResponseFn;
-	/** @type {((params: URLSearchParams) => string) | null} */
+	/** @type {string} */ seriesKey;
+	/** @type {(response: any) => { data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null} */
+	processResponse;
+	/** @type {(params: URLSearchParams) => string} */
 	buildFetchUrl;
 
 	/**
@@ -146,18 +193,16 @@ export default class ChartDataManager {
 	 * @param {ChartDataManagerConfig} config
 	 */
 	constructor(config) {
-		this.facilityCode = config.facilityCode;
-		this.networkId = config.networkId;
+		if (!config.processResponse || !config.buildFetchUrl) {
+			throw new Error('ChartDataManager requires processResponse and buildFetchUrl');
+		}
+		this.cacheKey = config.cacheKey;
+		this.networkTimezone = config.networkTimezone;
 		this.interval = config.interval || '5m';
 		this.metric = config.metric || 'power';
-		this.unitFuelTechMap = config.unitFuelTechMap;
-		this.unitOrder = config.unitOrder || [];
-		this.loadsToInvert = config.loadsToInvert || [];
-		this.unitsKey = unitsKeyFor(config.unitFuelTechMap ?? {});
-		this.getLabel = config.getLabel;
-		this.getColour = config.getColour;
-		this.processResponseFn = config.processResponseFn || null;
-		this.buildFetchUrl = config.buildFetchUrl || null;
+		this.seriesKey = config.seriesKey || '';
+		this.processResponse = config.processResponse;
+		this.buildFetchUrl = config.buildFetchUrl;
 	}
 
 	get isLoading() {
@@ -209,31 +254,6 @@ export default class ChartDataManager {
 	}
 
 	/**
-	 * Process raw API response through the same pipeline as the original chart.
-	 * Returns { data: [...rows], seriesNames, seriesColours, seriesLabels }.
-	 *
-	 * @param {any} powerResponse
-	 * @returns {{ data: any[], seriesNames: string[], seriesColours: Record<string, string>, seriesLabels: Record<string, string> } | null}
-	 */
-	#processResponse(powerResponse) {
-		if (this.processResponseFn) {
-			return this.processResponseFn(powerResponse);
-		}
-
-		const networkTimezone = getNetworkTimezone(this.networkId);
-
-		return processFacilityPower(powerResponse, {
-			unitFuelTechMap: this.unitFuelTechMap,
-			unitOrder: this.unitOrder,
-			loadsToInvert: this.loadsToInvert,
-			getLabel: this.getLabel,
-			getColour: this.getColour,
-			metricFilter: this.metric,
-			networkTimezone
-		});
-	}
-
-	/**
 	 * Seed cache with server-provided data (no fetch).
 	 * Called once with the initial server-side data.
 	 *
@@ -245,7 +265,7 @@ export default class ChartDataManager {
 			return;
 		}
 
-		const result = this.#processResponse(powerResponse);
+		const result = this.processResponse(powerResponse);
 		if (!result || !result.data.length) {
 			this.initialLoadComplete = true;
 			return;
@@ -569,7 +589,7 @@ export default class ChartDataManager {
 
 		// The API expects timezone-naive dates in the network's local time.
 		// Convert UTC ms → local time by adding the network's UTC offset.
-		const offsetMs = offsetMsFromOffset(getNetworkTimezone(this.networkId));
+		const offsetMs = offsetMsFromOffset(this.networkTimezone);
 		let dateStart = new Date(clampedStart + offsetMs).toISOString().slice(0, 19);
 		let dateEnd = new Date(clampedEnd + offsetMs).toISOString().slice(0, 19);
 
@@ -598,18 +618,13 @@ export default class ChartDataManager {
 		}
 
 		const params = new URLSearchParams({
-			network_id: this.networkId,
 			interval: this.interval,
 			metric: this.metric,
 			date_start: dateStart,
 			date_end: dateEnd
 		});
 
-		const fetchUrl = this.buildFetchUrl
-			? this.buildFetchUrl(params)
-			: `/api/facilities/${this.facilityCode}/power?${params.toString()}`;
-
-		return sharedFetch(fetchUrl);
+		return sharedFetch(this.buildFetchUrl(params));
 	}
 
 	/**
@@ -620,7 +635,7 @@ export default class ChartDataManager {
 	 * @param {any} powerResponse
 	 */
 	#mergeProcessedData(powerResponse) {
-		const result = this.#processResponse(powerResponse);
+		const result = this.processResponse(powerResponse);
 		if (!result || !result.data.length) return;
 
 		const oldRows = this.#dataCache;

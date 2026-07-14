@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import ChartDataManager from './ChartDataManager.svelte.js';
+import ChartDataManager, { clearCompletedResponses } from './ChartDataManager.svelte.js';
+import { processFacilityPower } from '../facility/process-facility-power.js';
 
 // ============================================
 // Test Helpers
@@ -49,22 +50,50 @@ function buildPowerResponse({ networkId, unitCodes, startISO, pointCount, valueF
 }
 
 /**
- * Create a ChartDataManager with sensible defaults for testing.
- * @param {Partial<import('./ChartDataManager.svelte.js').ChartDataManagerConfig>} [overrides]
+ * Create a ChartDataManager with sensible defaults for testing — reproduces
+ * the facility wiring (processFacilityPower + the facility URL with its
+ * `network_id` param) that used to be the manager's built-in default, so the
+ * behavioural assertions below are unchanged by the neutral-config refactor.
+ * @param {any} [overrides]
  * @returns {ChartDataManager}
  */
 function createManager(overrides = {}) {
+	const {
+		facilityCode = 'TESTFAC',
+		networkId = 'NEM',
+		interval = '5m',
+		metric = 'power',
+		unitFuelTechMap = { UNIT1: 'solar_utility', UNIT2: 'wind' },
+		unitOrder = ['power_UNIT1', 'power_UNIT2'],
+		loadsToInvert = [],
+		getLabel = (/** @type {string} */ unitCode, /** @type {string} */ fuelTech) =>
+			`${unitCode} (${fuelTech})`,
+		getColour = (/** @type {string} */ unitCode) => (unitCode === 'UNIT1' ? '#ff0000' : '#0000ff'),
+		...neutralOverrides
+	} = overrides;
+
+	const networkTimezone = networkId === 'WEM' ? '+08:00' : '+10:00';
+
 	return new ChartDataManager({
-		facilityCode: 'TESTFAC',
-		networkId: 'NEM',
-		interval: '5m',
-		metric: 'power',
-		unitFuelTechMap: { UNIT1: 'solar_utility', UNIT2: 'wind' },
-		unitOrder: ['power_UNIT1', 'power_UNIT2'],
-		loadsToInvert: [],
-		getLabel: (unitCode, fuelTech) => `${unitCode} (${fuelTech})`,
-		getColour: (unitCode, _fuelTech) => (unitCode === 'UNIT1' ? '#ff0000' : '#0000ff'),
-		...overrides
+		cacheKey: facilityCode,
+		networkTimezone,
+		interval,
+		metric,
+		processResponse: (/** @type {any} */ response) =>
+			processFacilityPower(response, {
+				unitFuelTechMap,
+				unitOrder,
+				loadsToInvert,
+				getLabel,
+				getColour,
+				metricFilter: metric,
+				networkTimezone
+			}),
+		buildFetchUrl: (/** @type {URLSearchParams} */ params) => {
+			params.set('network_id', networkId);
+			return `/api/facilities/${facilityCode}/power?${params.toString()}`;
+		},
+		...neutralOverrides
 	});
 }
 
@@ -75,6 +104,8 @@ function createManager(overrides = {}) {
 describe('ChartDataManager', () => {
 	beforeEach(() => {
 		vi.useFakeTimers();
+		// Module-level LRU would otherwise serve responses across tests.
+		clearCompletedResponses();
 	});
 
 	afterEach(() => {
@@ -750,7 +781,7 @@ describe('ChartDataManager', () => {
 			expect(spy).toHaveBeenCalledTimes(1);
 		});
 
-		it('re-fetches once the first request has settled (entry is cleared)', async () => {
+		it('serves a sequential identical request from the completed-response cache', async () => {
 			const fetchSpy = vi.fn().mockResolvedValue({
 				ok: true,
 				json: async () => ({
@@ -768,11 +799,65 @@ describe('ChartDataManager', () => {
 			const m1 = createManager({ interval: '1M', metric: 'energy' });
 			m1.requestRange(now - 100 * DAY, now, { immediate: true });
 			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
 
+			// A later manager repeating the same URL skips the network and the JSON
+			// re-parse entirely — same data, no second fetch.
 			const m2 = createManager({ interval: '1M', metric: 'energy' });
 			m2.requestRange(now - 100 * DAY, now, { immediate: true });
 			await vi.advanceTimersByTimeAsync(200);
 
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+		});
+
+		it('re-fetches an identical URL once the response cache TTL has expired', async () => {
+			const fetchSpy = vi.fn().mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					response: buildPowerResponse({
+						networkId: 'NEM',
+						unitCodes: ['UNIT1'],
+						startISO: '2026-02-08T00:00:00+10:00',
+						pointCount: 12
+					})
+				})
+			});
+			vi.stubGlobal('fetch', fetchSpy);
+
+			// Fix the range up-front so both requests format identical URLs even
+			// after the clock advances past the TTL.
+			const now = Date.now();
+			const from = now - 100 * DAY;
+
+			const m1 = createManager({ interval: '1M', metric: 'energy' });
+			m1.requestRange(from, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+			// Past the 5-minute TTL (matches the API route's max-age) → miss.
+			await vi.advanceTimersByTimeAsync(5 * 60 * 1000 + 1000);
+
+			const m2 = createManager({ interval: '1M', metric: 'energy' });
+			m2.requestRange(from, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+
+			expect(fetchSpy).toHaveBeenCalledTimes(2);
+		});
+
+		it('does not cache non-OK responses', async () => {
+			const fetchSpy = vi.fn().mockResolvedValue({ ok: false, status: 500 });
+			vi.stubGlobal('fetch', fetchSpy);
+
+			const now = Date.now();
+			const m1 = createManager({ interval: '1M', metric: 'energy' });
+			m1.requestRange(now - 100 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+
+			// A retry after a failure must hit the network again.
+			const m2 = createManager({ interval: '1M', metric: 'energy' });
+			m2.requestRange(now - 100 * DAY, now, { immediate: true });
+			await vi.advanceTimersByTimeAsync(200);
 			expect(fetchSpy).toHaveBeenCalledTimes(2);
 		});
 	});
@@ -911,6 +996,10 @@ describe('ChartDataManager', () => {
 
 			// Clear cache — should reset empty range tracking
 			manager.clearCache();
+			// Also drop the module-level response cache so the assertion below sees
+			// the manager's re-request at the fetch layer (the LRU would otherwise
+			// serve it without a network call).
+			clearCompletedResponses();
 
 			// Re-seed and request the same range — should fetch again
 			manager.seedCache(response);
