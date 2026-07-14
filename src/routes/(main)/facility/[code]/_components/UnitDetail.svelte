@@ -28,6 +28,7 @@
 	import { METRICS } from '$lib/components/charts/facility/metrics/metric-definitions.js';
 	import MetricCard from '$lib/components/charts/facility/metrics/MetricCard.svelte';
 	import { FacilityCompactCharts } from '$lib/components/charts/facility';
+	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
 	import { sectionCardClass } from '../_utils/section-card.js';
 
 	/**
@@ -571,7 +572,8 @@
 	     card. Keyed on the unit so viewport + load state reset when a different
 	     unit opens. -->
 	{#if unitFacility}
-		<div class="{sectionCardClass} p-4">
+		<div class="{sectionCardClass} space-y-4 p-4">
+			<RetiredFacilityNotice units={[unit]} subject="unit" />
 			{#key unit.code}
 				<FacilityCompactCharts
 					facility={unitFacility}

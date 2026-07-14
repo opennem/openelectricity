@@ -19,6 +19,7 @@
 		FacilityMetrics
 	} from '$lib/components/charts/facility';
 	import { formatDateRange, ChartRangeBar, toolbarTrayClass } from '$lib/components/charts/v2';
+	import RetiredFacilityNotice from '$lib/components/facilities/RetiredFacilityNotice.svelte';
 	import FacilityPanelHeader from '../../facilities/_components/FacilityPanelHeader.svelte';
 	import { withMarkedUnits, canSplitBatteryUnits } from '../../facilities/_utils/units';
 
@@ -521,6 +522,8 @@
 				>
 					<!-- Toolbar + metrics always render; only the charts depend on the fetch. -->
 					<div class="space-y-4">
+						<RetiredFacilityNotice units={activeFacility?.units ?? []} />
+
 						<!-- Metrics card, headed by the range / date picker tray: the light
 						     well carries the date-range label, the controls float on it as
 						     raised white chips (`raised`). The metrics grid below stays

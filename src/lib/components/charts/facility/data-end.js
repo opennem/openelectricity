@@ -1,4 +1,14 @@
 /**
+ * Whether every unit of a facility is retired — the pane and chart-window
+ * logic both key off this to treat the facility as historical.
+ * @param {any[]} units
+ * @returns {boolean}
+ */
+export function isFullyRetired(units) {
+	return units.length > 0 && units.every((/** @type {any} */ u) => u.status_id === 'retired');
+}
+
+/**
  * Retired-data anchor for a set of units: the latest `data_last_seen` (or,
  * failing that, `closure_date`) when every unit is retired, else null. Retired
  * facilities have no data near "now", so chart windows anchor to this instead
@@ -7,9 +17,7 @@
  * @returns {number | null} epoch ms, or null when not fully retired / no anchor
  */
 export function retiredAnchorMs(units) {
-	const isFullyRetired =
-		units.length > 0 && units.every((/** @type {any} */ u) => u.status_id === 'retired');
-	if (!isFullyRetired) return null;
+	if (!isFullyRetired(units)) return null;
 
 	/** @type {string | null} */
 	let anchor = null;

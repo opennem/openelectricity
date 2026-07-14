@@ -1,7 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { retiredAnchorMs, dataEndMs } from './data-end.js';
+import { isFullyRetired, retiredAnchorMs, dataEndMs } from './data-end.js';
 
 const NOW_TOLERANCE_MS = 5_000;
+
+describe('isFullyRetired', () => {
+	it('is true only when every unit is retired', () => {
+		expect(isFullyRetired([{ status_id: 'retired' }, { status_id: 'retired' }])).toBe(true);
+		expect(isFullyRetired([{ status_id: 'retired' }, { status_id: 'operating' }])).toBe(false);
+		expect(isFullyRetired([{ status_id: 'committed' }])).toBe(false);
+	});
+
+	it('is false for an empty unit list', () => {
+		expect(isFullyRetired([])).toBe(false);
+	});
+});
 
 describe('retiredAnchorMs', () => {
 	it('returns null when any unit is still operating', () => {
