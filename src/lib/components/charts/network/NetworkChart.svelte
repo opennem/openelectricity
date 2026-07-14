@@ -11,17 +11,20 @@
 
 	import { untrack } from 'svelte';
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { aggregateForDisplay } from '$lib/components/charts/v2/dataProcessing.js';
+	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import { getIntervalSpec } from '$lib/components/charts/facility/range-interval-config.js';
 	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
+	import { createManagerStash } from '$lib/components/charts/v2/manager-stash.js';
+	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
 	import { processNetworkData } from './process-network-data.js';
 	import { processPriceData } from '$lib/components/charts/facility/process-price-data.js';
 	import { getGroup } from './groups.js';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { loadFuelTechs } from '$lib/fuel_techs';
 	import { getNumberFormat } from '$lib/utils/formatters';
 	import { ianaFromOffset } from '../v2/network-time.js';
+	import { perfSpan } from '../v2/perf.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -98,8 +101,6 @@
 	let viewStart = $state(0);
 	/** @type {number} */
 	let viewEnd = $state(0);
-	/** @type {number} */
-	let lastPanDelta = $state(0);
 	let isPanning = $state(false);
 
 	// ============================================
@@ -107,11 +108,6 @@
 	// ============================================
 
 	let groupConfig = $derived(getGroup(group));
-
-	/** @param {string} groupId */
-	function getGroupColour(groupId) {
-		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (groupId)] || '#888888';
-	}
 
 	/**
 	 * Process function for the active panel — fuel-tech-grouped generation or a
@@ -128,7 +124,7 @@
 			groupOrder: groupConfig.order,
 			groupLabels: groupConfig.labels,
 			loadsToInvert: loadFuelTechs,
-			getColour: getGroupColour,
+			getColour: getFuelTechColour,
 			metricFilter: metric,
 			networkTimezone: tz
 		};
@@ -156,28 +152,79 @@
 	/** @type {ChartDataManager | null} */
 	let dataManager = $state(null);
 
+	/**
+	 * Warm managers stashed on swap (keyed `${interval}|${metric}|${seriesKey}`
+	 * within the current region+kind) so filter round-trips — a grouping
+	 * toggle-back, a hysteresis metric flip on zoom — revive cached data
+	 * instantly instead of refetching.
+	 */
+	const managerStash = createManagerStash();
+
+	/** Region the stash belongs to — a region change invalidates every entry. */
+	let stashRegion = '';
+
+	/**
+	 * Stash the outgoing manager for an instant back-switch, or retire it when
+	 * it belongs to another region/kind.
+	 * @param {ChartDataManager | null | undefined} manager
+	 * @param {string} currentCacheKey
+	 */
+	function stashOrDispose(manager, currentCacheKey) {
+		if (!manager) return;
+		if (manager.cacheKey !== currentCacheKey) {
+			manager.dispose();
+			return;
+		}
+		managerStash.stash(`${manager.interval}|${manager.metric}|${manager.seriesKey}`, manager);
+	}
+
 	$effect(() => {
 		// Dependencies that require a fresh manager
 		const currentRegion = region;
 		const currentMetric = metric;
 		const currentInterval = interval;
 		const currentKind = chartKind;
+		// The processed series set is group-dependent for generation panels.
+		const currentSeriesKey = isPriceKind ? '' : group;
 		// `processResponseFn` already depends on `group` (via groupConfig), so a
 		// group change recomputes it and re-runs this effect with a fresh manager.
 		const processFn = processResponseFn;
 		const urlFn = buildFetchUrl;
 
-		const manager = new ChartDataManager({
-			facilityCode: `${currentRegion}:${currentKind}`,
-			networkId: timeZone === '+08:00' ? 'WEM' : 'NEM',
-			interval: currentInterval,
-			metric: currentMetric,
-			unitFuelTechMap: {},
-			processResponseFn: processFn,
-			buildFetchUrl: urlFn,
-			getLabel: () => '',
-			getColour: () => ''
-		});
+		const currentCacheKey = `${currentRegion}:${currentKind}`;
+
+		// A region change means a different data source — drop the warm managers.
+		if (stashRegion !== currentRegion) {
+			if (stashRegion) managerStash.clear();
+			stashRegion = currentRegion;
+		}
+
+		// Skip recreation when the live manager already matches — unrelated
+		// dependency churn must not refetch.
+		const existing = untrack(() => dataManager);
+		if (
+			existing &&
+			existing.cacheKey === currentCacheKey &&
+			existing.interval === currentInterval &&
+			existing.metric === currentMetric &&
+			existing.seriesKey === currentSeriesKey
+		) {
+			return;
+		}
+
+		// Revive a warm manager when one matches; otherwise construct fresh.
+		const revived = managerStash.take(`${currentInterval}|${currentMetric}|${currentSeriesKey}`);
+		const manager =
+			revived ??
+			new ChartDataManager({
+				cacheKey: currentCacheKey,
+				networkTimezone: timeZone || '+10:00',
+				interval: currentInterval,
+				metric: currentMetric,
+				seriesKey: currentSeriesKey,
+				processResponse: processFn,
+				buildFetchUrl: urlFn
+			});
 
 		const start = untrack(() => viewStart);
 		const end = untrack(() => viewEnd);
@@ -195,14 +242,22 @@
 		if (vs && ve) {
 			const duration = ve - vs;
 			const buffer = duration * (currentMetric === 'energy' || !fineGrain ? 3 : 1);
+			// A revived manager that still covers the window returns immediately
+			// from its cache — no fetch, no loading flash.
 			manager.requestRange(vs - buffer, Math.min(ve + buffer, Date.now()), { immediate: true });
 		}
 
+		// Keep the outgoing manager's cache warm for an instant back-switch.
+		stashOrDispose(existing, currentCacheKey);
 		dataManager = manager;
+	});
 
-		// Retire this run's manager on re-run or unmount so in-flight fetches
-		// settle as no-ops.
-		return () => manager.dispose();
+	// Retire all managers on unmount so in-flight fetches settle as no-ops.
+	$effect(() => {
+		return () => {
+			untrack(() => dataManager)?.dispose();
+			managerStash.clear();
+		};
 	});
 
 	// ============================================
@@ -285,37 +340,47 @@
 		);
 	});
 
+	// Memoises the slice + display aggregation so pan ticks within one native
+	// sample reuse the previous rows array (stable reference → the seriesData
+	// assignment below is a signal no-op on a hit).
+	const visibleAggregation = createVisibleAggregation();
+
 	// Visible data + axis
 	$effect(() => {
-		if (!chartStore || !dataManager?.processedCache) return;
+		const manager = dataManager;
+		if (!chartStore || !manager?.processedCache) return;
 
-		const start = viewStart;
-		const end = viewEnd;
-		const currentDisplayInterval = displayInterval;
-		const isEnergy = isEnergyMetric;
+		perfSpan('chart:viewport-effect', () => {
+			const start = viewStart;
+			const end = viewEnd;
+			const currentDisplayInterval = displayInterval;
+			const isEnergy = isEnergyMetric;
 
-		let visibleData = dataManager.getDataForRange(start, end);
-		if (dataManager.seriesMeta) {
-			visibleData = aggregateForDisplay(visibleData, dataManager.seriesMeta.seriesNames, {
+			const visibleData = visibleAggregation(manager.processedCache, {
+				viewStart: start,
+				viewEnd: end,
 				apiInterval: interval,
 				displayInterval: currentDisplayInterval,
 				ianaTimeZone,
 				method: isEnergy ? 'sum' : 'mean'
 			});
-		}
 
-		chartStore.seriesData = visibleData;
-		chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
-		chartStore.setYDomain(undefined);
+			chartStore.seriesData = visibleData;
+			const [domainStart, domainEnd] = chartStore.xDomain ?? [];
+			if (domainStart !== start || domainEnd !== end) {
+				chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
+			}
+			chartStore.setYDomain(undefined);
 
-		applyFacilityTimeAxis(chartStore, {
-			data: visibleData,
-			viewStart: start,
-			viewEnd: end,
-			ianaTimeZone,
-			timeZone,
-			isEnergy: isEnergy || getIntervalSpec(displayInterval)?.curveType === 'step',
-			displayInterval: currentDisplayInterval
+			applyFacilityTimeAxis(chartStore, {
+				data: visibleData,
+				viewStart: start,
+				viewEnd: end,
+				ianaTimeZone,
+				timeZone,
+				isEnergy: isEnergy || getIntervalSpec(displayInterval)?.curveType === 'step',
+				displayInterval: currentDisplayInterval
+			});
 		});
 	});
 
@@ -338,7 +403,11 @@
 
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
-			const rows = aggregateForDisplay(manager.getDataForRange(start, end), meta.seriesNames, {
+			// Usually a memo hit — the viewport effect computed the same slice with
+			// the same options 300ms ago.
+			const rows = visibleAggregation(manager.processedCache, {
+				viewStart: start,
+				viewEnd: end,
 				apiInterval: currentInterval,
 				displayInterval: currentDisplayInterval,
 				ianaTimeZone: currentIana,
@@ -362,37 +431,35 @@
 	// Pan / zoom
 	// ============================================
 
-	function handlePanStart() {
-		isPanning = true;
-		chartStore?.clearHover();
-	}
-
-	/** @param {number} deltaMs */
-	function handlePan(deltaMs) {
-		let newStart = viewStart - deltaMs;
-		let newEnd = viewEnd - deltaMs;
-		const now = Date.now();
-		if (newEnd > now) {
-			newEnd = now;
-			newStart = now - (viewEnd - viewStart);
-		}
-		viewStart = newStart;
-		viewEnd = newEnd;
-		lastPanDelta = deltaMs;
-		const buffer = (viewEnd - viewStart) * fetchBufferMultiplier;
-		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
-	}
-
-	function handlePanEnd() {
-		isPanning = false;
-		const prefetch = (viewEnd - viewStart) * fetchBufferMultiplier;
-		const now = Date.now();
-		if (lastPanDelta < 0 && viewEnd < now) {
-			dataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
-		} else if (lastPanDelta > 0) {
-			dataManager?.requestRange(viewStart - prefetch, viewStart);
-		}
-	}
+	const { handlePanStart, handlePan, handlePanEnd, handleZoom, zoomIn, zoomOut } =
+		createViewportGestures({
+			viewport: () => ({ start: viewStart, end: viewEnd }),
+			apply: (start, end) => {
+				viewStart = start;
+				viewEnd = end;
+			},
+			minDurationMs: () => MIN_VIEWPORT_MS,
+			maxDurationMs: () => MAX_VIEWPORT_MS,
+			onGestureStart: () => {
+				isPanning = true;
+				chartStore?.clearHover();
+			},
+			onGestureEnd: () => {
+				isPanning = false;
+			},
+			onMove: (start, end) => {
+				const buffer = (end - start) * fetchBufferMultiplier;
+				dataManager?.requestRange(start - buffer, end + buffer);
+			},
+			onPanEnd: (direction, start, end) => {
+				const prefetch = (end - start) * fetchBufferMultiplier;
+				if (direction === -1) {
+					dataManager?.requestRange(end, Math.min(end + prefetch, Date.now()));
+				} else {
+					dataManager?.requestRange(start - prefetch, start);
+				}
+			}
+		});
 
 	$effect(() => {
 		const start = viewStart;
@@ -401,31 +468,6 @@
 		onviewportchange?.({ start, end });
 	});
 
-	/** @param {number} factor @param {number} centerMs */
-	function handleZoom(factor, centerMs) {
-		const duration = viewEnd - viewStart;
-		const newDuration = Math.min(Math.max(duration / factor, MIN_VIEWPORT_MS), MAX_VIEWPORT_MS);
-		const ratio = (centerMs - viewStart) / duration;
-		let newStart = centerMs - ratio * newDuration;
-		let newEnd = newStart + newDuration;
-		const now = Date.now();
-		if (newEnd > now) {
-			newEnd = now;
-			newStart = now - newDuration;
-		}
-		viewStart = newStart;
-		viewEnd = newEnd;
-		const buffer = newDuration * fetchBufferMultiplier;
-		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
-	}
-
-	const BUTTON_ZOOM_FACTOR = 1.5;
-	function zoomIn() {
-		handleZoom(BUTTON_ZOOM_FACTOR, (viewStart + viewEnd) / 2);
-	}
-	function zoomOut() {
-		handleZoom(1 / BUTTON_ZOOM_FACTOR, (viewStart + viewEnd) / 2);
-	}
 	let isAtMinZoom = $derived(viewEnd - viewStart <= MIN_VIEWPORT_MS);
 	let isAtMaxZoom = $derived(viewEnd - viewStart >= MAX_VIEWPORT_MS);
 

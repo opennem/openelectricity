@@ -7,26 +7,21 @@
 	 */
 
 	import { ChartStore, StratumChart } from '$lib/components/charts/v2';
-	import { aggregateForDisplay } from '$lib/components/charts/v2/dataProcessing.js';
-	import ChartDataManager from '$lib/components/charts/v2/ChartDataManager.svelte.js';
-	import { fuelTechColourMap } from '$lib/theme/openelectricity';
+	import { createVisibleAggregation } from '$lib/components/charts/v2/display-aggregation.js';
+	import { createFacilityDataManager } from './facility-data-manager.js';
+	import { createManagerStash } from '$lib/components/charts/v2/manager-stash.js';
+	import { createViewportGestures } from '$lib/components/charts/v2/viewport-gestures.js';
+	import { getFuelTechColour } from '$lib/components/charts/colours.js';
 	import { fuelTechNameMap } from '$lib/fuel_techs';
 	import { analyzeUnits, unitSeriesIds } from './unit-analysis.js';
+	import { capacityAnnotations } from './capacity-annotations.js';
 	import { makeUnitLabelGetter, makeLoadAwareColourGetter } from './helpers.js';
 	import { formatXAxis, applyFacilityTimeAxis } from '$lib/components/charts/v2/formatters.js';
 	import { showLoadingOverlay as computeShowLoadingOverlay } from '$lib/components/charts/v2/chart-loading-state.js';
 	import { combinedMetricsFor, buildCombinedMetricsUrl } from './energy-basis.js';
 	import { untrack } from 'svelte';
 	import { ianaFromOffset } from '../v2/network-time.js';
-
-	/**
-	 * Get color for a fuel tech code
-	 * @param {string} ftCode
-	 * @returns {string}
-	 */
-	function getFuelTechColor(ftCode) {
-		return fuelTechColourMap[/** @type {keyof typeof fuelTechColourMap} */ (ftCode)] || '#888888';
-	}
+	import { perfSpan } from '../v2/perf.js';
 
 	/**
 	 * @typedef {Object} Props
@@ -68,6 +63,8 @@
 	 * @property {boolean} [prefetchRanges] - Whether to background-prefetch the 7-day power and 1-year energy ranges after the initial load (default: true). Disable for compact consumers (e.g. the unit detail sheet) where the prefetch would duplicate the main page's cache.
 	 * @property {string[]} [hiddenUnitCodes] - Unit codes whose series are hidden from the chart (e.g. toggled off in the units panel). Mapped to `<metric>_<code>` series ids on the chart store.
 	 */
+
+	/** @typedef {import('$lib/components/charts/v2/ChartDataManager.svelte.js').default} ChartDataManager */
 
 	/** @type {Props} */
 	let {
@@ -126,7 +123,7 @@
 
 	let analysis = $derived.by(() => {
 		if (!facility) return null;
-		return analyzeUnits(facility, getFuelTechColor);
+		return analyzeUnits(facility, getFuelTechColour);
 	});
 
 	let unitColours = $derived(analysis?.unitColours ?? {});
@@ -163,10 +160,6 @@
 	/** Prefetch buffer multiplier — energy uses wider buffers since intervals are daily */
 	let fetchBufferMultiplier = $derived(isEnergyMetric ? 3 : 1);
 
-	/** Track the last pan direction for prefetching */
-	/** @type {number} */
-	let lastPanDelta = $state(0);
-
 	/** Whether we're currently in a pan gesture */
 	let isPanning = $state(false);
 
@@ -177,7 +170,7 @@
 	// The factories return closures over plain values only — they're handed to
 	// ChartDataManagers, whose async continuations can outlive this component.
 	let getLabel = $derived(makeUnitLabelGetter(unitCodeDisplayMap, fuelTechNameMap));
-	let getColour = $derived(makeLoadAwareColourGetter(unitColours, loadCodes, getFuelTechColor));
+	let getColour = $derived(makeLoadAwareColourGetter(unitColours, loadCodes, getFuelTechColour));
 
 	/**
 	 * When `bundleDerivedMetrics` is on, fetch via the combined
@@ -203,45 +196,28 @@
 	let firstWindowSettled = false;
 
 	/**
-	 * Stashed managers keyed `${interval}-${metric}` — background prefetches plus
-	 * previously-active managers kept warm so switching back to a range renders
-	 * instantly from cache. Insertion order doubles as LRU order; entries leave
-	 * the map while live (re-stashed on the next swap).
-	 * @type {Map<string, ChartDataManager>}
+	 * Stashed managers keyed `${interval}-${metric}-${seriesKey}` — background
+	 * prefetches plus previously-active managers kept warm so switching back to
+	 * a range renders instantly from cache. Keys include the seriesKey so
+	 * managers for different unit sets (battery net ⇄ split) coexist and a flip
+	 * back revives the warm cache instead of refetching.
 	 */
-	let prefetchCache = new Map();
-
-	/** Max stashed managers — beyond this the oldest is evicted and retired. */
-	const PREFETCH_CACHE_MAX = 4;
+	const managerStash = createManagerStash();
 
 	/**
 	 * Stash the outgoing manager for instant back-switch, or retire it when it
-	 * belongs to another facility. Stash keys include the manager's unitsKey, so
-	 * managers for different unit sets (battery net ⇄ split) coexist and a flip
-	 * back revives the warm cache instead of refetching.
+	 * belongs to another facility (facility-navigation policy lives here; the
+	 * LRU mechanics live in manager-stash.js).
 	 * @param {ChartDataManager | null | undefined} manager
 	 * @param {string} currentCode
 	 */
 	function stashOrDispose(manager, currentCode) {
 		if (!manager) return;
-		if (manager.facilityCode !== currentCode) {
+		if (manager.cacheKey !== currentCode) {
 			manager.dispose();
 			return;
 		}
-		const key = `${manager.interval}-${manager.metric}-${manager.unitsKey}`;
-		prefetchCache.delete(key);
-		prefetchCache.set(key, manager);
-		while (prefetchCache.size > PREFETCH_CACHE_MAX) {
-			const oldestKey = /** @type {string} */ (prefetchCache.keys().next().value);
-			prefetchCache.get(oldestKey)?.dispose();
-			prefetchCache.delete(oldestKey);
-		}
-	}
-
-	/** Retire and drop every stashed manager. */
-	function clearPrefetchCache() {
-		for (const manager of prefetchCache.values()) manager.dispose();
-		prefetchCache.clear();
+		managerStash.stash(`${manager.interval}-${manager.metric}-${manager.seriesKey}`, manager);
 	}
 
 	/**
@@ -266,7 +242,7 @@
 		if (!facility) {
 			untrack(() => dataManager)?.dispose();
 			dataManager = null;
-			clearPrefetchCache();
+			managerStash.clear();
 			return;
 		}
 
@@ -277,9 +253,9 @@
 		const currentUnitsKey = unitsKey;
 
 		// Clear prefetch cache if facility changed
-		const existingCode = untrack(() => dataManager?.facilityCode);
+		const existingCode = untrack(() => dataManager?.cacheKey);
 		if (existingCode && existingCode !== currentCode) {
-			clearPrefetchCache();
+			managerStash.clear();
 			// Re-arm the empty-window retry (see the load-completion effect) for the
 			// new facility.
 			firstWindowSettled = false;
@@ -289,19 +265,18 @@
 		const existing = untrack(() => dataManager);
 		if (
 			existing &&
-			existing.facilityCode === currentCode &&
+			existing.cacheKey === currentCode &&
 			existing.interval === currentInterval &&
 			existing.metric === currentMetric &&
-			existing.unitsKey === currentUnitsKey
+			existing.seriesKey === currentUnitsKey
 		) {
 			return;
 		}
 
-		// Check prefetch cache before creating a new manager
+		// Check the stash before creating a new manager
 		const prefetchKey = `${currentInterval}-${currentMetric}-${currentUnitsKey}`;
-		const prefetched = prefetchCache.get(prefetchKey);
-		if (prefetched && prefetched.facilityCode === currentCode) {
-			prefetchCache.delete(prefetchKey);
+		const prefetched = managerStash.take(prefetchKey);
+		if (prefetched && prefetched.cacheKey === currentCode) {
 			stashOrDispose(existing, currentCode);
 			dataManager = prefetched;
 
@@ -316,20 +291,21 @@
 			}
 			return;
 		}
+		// Unreachable in practice (the stash is cleared on facility change), but a
+		// taken manager for another facility must not leak.
+		prefetched?.dispose();
 
 		// Read powerData without tracking — seeding is handled by a separate effect
 		const currentPowerData = untrack(() => powerData);
 
-		const manager = new ChartDataManager({
+		const manager = createFacilityDataManager({
 			facilityCode: currentCode,
 			networkId: facility.network_id,
 			interval: currentInterval,
 			metric: currentMetric,
 			unitFuelTechMap,
-			// Series ids carry the metric prefix (power_/energy_…), so build them
-			// for the metric this manager fetches or ordering/inversion won't match.
-			unitOrder: unitSeriesIds(currentMetric, orderedCodes),
-			loadsToInvert: unitSeriesIds(currentMetric, loadCodes),
+			orderedCodes,
+			loadCodes,
 			getLabel,
 			getColour,
 			buildFetchUrl: bundledFetchUrl(currentCode, currentMetric)
@@ -417,16 +393,16 @@
 
 			// 2. Background energy/1d manager for 1-year range
 			const energyKey = `1d-energy-${currentUnitsKey}`;
-			if (prefetchCache.has(energyKey)) return;
+			if (managerStash.has(energyKey)) return;
 
-			const energyManager = new ChartDataManager({
+			const energyManager = createFacilityDataManager({
 				facilityCode: currentCode,
 				networkId: currentNetworkId,
 				interval: '1d',
 				metric: 'energy',
 				unitFuelTechMap,
-				unitOrder: unitSeriesIds('energy', orderedCodes),
-				loadsToInvert: unitSeriesIds('energy', loadCodes),
+				orderedCodes,
+				loadCodes,
 				getLabel,
 				getColour,
 				buildFetchUrl: bundledFetchUrl(currentCode, 'energy')
@@ -434,7 +410,7 @@
 
 			const oneYearAgo = now - 365 * 24 * 60 * 60 * 1000;
 			energyManager.requestRange(oneYearAgo, now);
-			prefetchCache.set(energyKey, energyManager);
+			managerStash.stash(energyKey, energyManager);
 		});
 	});
 
@@ -443,7 +419,7 @@
 	$effect(() => {
 		return () => {
 			dataManager?.dispose();
-			clearPrefetchCache();
+			managerStash.clear();
 		};
 	});
 
@@ -521,115 +497,68 @@
 		chartStore.chartOptions.selectedCurveType = /** @type {any} */ (isEnergy ? 'step' : 'straight');
 	});
 
+	// Memoises the slice + display aggregation on (cache identity, slice indices,
+	// options) so pan ticks within one native sample — and effect re-runs from
+	// unrelated dependencies — reuse the previous rows array. The stable reference
+	// makes the `seriesData` assignment below a signal no-op on a hit.
+	const visibleAggregation = createVisibleAggregation();
+
 	// Update chart data/domain when viewport, interval, or data changes
 	$effect(() => {
-		if (!chartStore || !dataManager?.processedCache) return;
+		const manager = dataManager;
+		if (!chartStore || !manager?.processedCache) return;
 
-		const start = viewStart;
-		const end = viewEnd;
-		const currentDisplayInterval = displayInterval;
-		const isEnergy = isEnergyMetric;
+		perfSpan('chart:viewport-effect', () => {
+			const start = viewStart;
+			const end = viewEnd;
+			const currentDisplayInterval = displayInterval;
+			const isEnergy = isEnergyMetric;
 
-		let visibleData = dataManager.getDataForRange(start, end);
-
-		// Aggregate the fetched native grain to the selected display interval
-		// (30m from 5m, or season/half/fy/month from coarser energy data). Power
-		// averages (mean MW); energy volume sums.
-		if (dataManager.seriesMeta) {
-			visibleData = aggregateForDisplay(visibleData, dataManager.seriesMeta.seriesNames, {
+			// Aggregate the fetched native grain to the selected display interval
+			// (30m from 5m, or season/half/fy/month from coarser energy data). Power
+			// averages (mean MW); energy volume sums.
+			const visibleData = visibleAggregation(manager.processedCache, {
+				viewStart: start,
+				viewEnd: end,
 				apiInterval: interval,
 				displayInterval: currentDisplayInterval,
 				ianaTimeZone,
 				method: isEnergy ? 'sum' : 'mean'
 			});
-		}
 
-		chartStore.seriesData = visibleData;
-		chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
+			chartStore.seriesData = visibleData;
+			const [domainStart, domainEnd] = chartStore.xDomain ?? [];
+			if (domainStart !== start || domainEnd !== end) {
+				chartStore.xDomain = /** @type {[number, number]} */ ([start, end]);
+			}
 
-		applyFacilityTimeAxis(chartStore, {
-			data: visibleData,
-			viewStart: start,
-			viewEnd: end,
-			ianaTimeZone,
-			timeZone,
-			isEnergy,
-			displayInterval: currentDisplayInterval
+			applyFacilityTimeAxis(chartStore, {
+				data: visibleData,
+				viewStart: start,
+				viewEnd: end,
+				ianaTimeZone,
+				timeZone,
+				isEnergy,
+				displayInterval: currentDisplayInterval
+			});
 		});
 	});
 
-	// Update reference lines and yDomain reactively
+	// Update reference lines and yDomain reactively (rules in capacity-annotations.js)
 	$effect(() => {
 		if (!chartStore) return;
 
-		// No capacity reference lines for energy charts (MW doesn't apply to MWh)
-		if (isEnergyMetric) {
-			chartStore.yReferenceLines = [];
-			chartStore.setYDomain(undefined);
-			return;
-		}
-
-		const isProportion = chartStore.chartOptions.isDataTransformTypeProportion;
-		const isChangeSince = chartStore.chartOptions.isDataTransformTypeChangeSince;
-		const isLine = chartStore.chartOptions.isChartTypeLine;
-
-		if (isProportion) {
-			chartStore.yReferenceLines = [];
-			chartStore.setYDomain(undefined);
-			return;
-		}
-
-		// When capacity annotations aren't requested, let the chart use its
-		// data-driven domain (computeYDomain with +10% padding) instead of
-		// pinning to nameplate capacity — that way dispatch data fills the
-		// chart naturally without a weird empty headroom above the peak.
-		if (!showAnnotations) {
-			chartStore.yReferenceLines = [];
-			chartStore.setYDomain(undefined);
-			return;
-		}
-
-		if (isLine || isChangeSince) {
-			const maxCapacity = Math.max(capacitySums.positive, capacitySums.negative);
-			if (maxCapacity > 0) {
-				chartStore.yReferenceLines = [
-					{ value: maxCapacity, label: 'Capacity', colour: 'var(--chart-1)' }
-				];
-				const padding = 0.15;
-				chartStore.setYDomain([0, maxCapacity * (1 + padding)]);
-			} else {
-				chartStore.yReferenceLines = [];
-				chartStore.setYDomain(undefined);
-			}
-			return;
-		}
-
-		const refLines = [];
-		if (capacitySums.positive > 0) {
-			refLines.push({
-				value: capacitySums.positive,
-				label: 'Generation Capacity',
-				colour: 'var(--chart-1)'
-			});
-		}
-		if (capacitySums.negative > 0) {
-			refLines.push({
-				value: -capacitySums.negative,
-				label: 'Load Capacity',
-				colour: 'var(--chart-1)'
-			});
-		}
-		chartStore.yReferenceLines = refLines;
-
-		const padding = 0.15;
-		const yMax = capacitySums.positive > 0 ? capacitySums.positive * (1 + padding) : undefined;
-		const yMin = capacitySums.negative > 0 ? -capacitySums.negative * (1 + padding) : undefined;
-		if (yMax !== undefined || yMin !== undefined) {
-			const minValue = hasBatteryUnits ? (yMin ?? -(yMax ?? 0)) : (yMin ?? 0);
-			chartStore.setYDomain([minValue, yMax ?? 0]);
-		} else {
-			chartStore.setYDomain(undefined);
-		}
+		const { yReferenceLines, yDomain } = capacityAnnotations({
+			isEnergyMetric,
+			showAnnotations,
+			isProportion: chartStore.chartOptions.isDataTransformTypeProportion,
+			isChangeSince: chartStore.chartOptions.isDataTransformTypeChangeSince,
+			isLine: chartStore.chartOptions.isChartTypeLine,
+			capacitySums,
+			hasBatteryUnits
+		});
+		chartStore.yReferenceLines = yReferenceLines;
+		chartStore.setYDomain(yDomain);
 	});
 
 	/** Debounced callback for visible data — only fires after pan/zoom settles */
@@ -655,7 +584,11 @@
 
 		const meta = manager.seriesMeta;
 		tableDebounceTimer = setTimeout(() => {
-			const rows = aggregateForDisplay(manager.getDataForRange(start, end), meta.seriesNames, {
+			// Usually a memo hit — the viewport effect computed the same slice with
+			// the same options 300ms ago.
+			const rows = visibleAggregation(manager.processedCache, {
+				viewStart: start,
+				viewEnd: end,
 				apiInterval: currentInterval,
 				displayInterval: currentDisplayInterval,
 				ianaTimeZone: currentIana,
@@ -678,57 +611,41 @@
 	let showLoadingOverlay = $derived(computeShowLoadingOverlay(dataManager, chartStore));
 
 	// ============================================
-	// Pan Handlers
+	// Pan / Zoom Handlers
 	// ============================================
 
-	function handlePanStart() {
-		isPanning = true;
-		// Clear hover during pan
-		chartStore?.clearHover();
-	}
-
-	/**
-	 * Handle pan movement — shift viewport by time delta
-	 * @param {number} deltaMs
-	 */
-	function handlePan(deltaMs) {
-		// deltaMs is positive when dragging right (moving backward in time)
-		// We invert: dragging right should show earlier data
-		let newStart = viewStart - deltaMs;
-		let newEnd = viewEnd - deltaMs;
-
-		// Clamp: don't allow panning past current time
-		const now = Date.now();
-		if (newEnd > now) {
-			newEnd = now;
-			newStart = now - (viewEnd - viewStart);
-		}
-
-		viewStart = newStart;
-		viewEnd = newEnd;
-		lastPanDelta = deltaMs;
-
-		// Request data for any uncached range (wider buffer for energy)
-		const viewportWidth = viewEnd - viewStart;
-		const buffer = viewportWidth * fetchBufferMultiplier;
-		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
-	}
-
-	function handlePanEnd() {
-		isPanning = false;
-
-		// Prefetch ahead in the pan direction (wider for energy)
-		const viewportWidth = viewEnd - viewStart;
-		const prefetch = viewportWidth * fetchBufferMultiplier;
-		const now = Date.now();
-		if (lastPanDelta < 0 && viewEnd < now) {
-			// Was panning left (toward future) — prefetch ahead, clamped to now
-			dataManager?.requestRange(viewEnd, Math.min(viewEnd + prefetch, now));
-		} else if (lastPanDelta > 0) {
-			// Was panning right (toward past) — prefetch behind
-			dataManager?.requestRange(viewStart - prefetch, viewStart);
-		}
-	}
+	const { handlePanStart, handlePan, handlePanEnd, handleZoom, zoomIn, zoomOut } =
+		createViewportGestures({
+			viewport: () => ({ start: viewStart, end: viewEnd }),
+			apply: (start, end) => {
+				viewStart = start;
+				viewEnd = end;
+			},
+			minDurationMs: () => MIN_VIEWPORT_MS,
+			maxDurationMs: () => MAX_VIEWPORT_MS,
+			onGestureStart: () => {
+				isPanning = true;
+				// Clear hover during pan
+				chartStore?.clearHover();
+			},
+			onGestureEnd: () => {
+				isPanning = false;
+			},
+			// Request data for any uncached range (wider buffer for energy)
+			onMove: (start, end) => {
+				const buffer = (end - start) * fetchBufferMultiplier;
+				dataManager?.requestRange(start - buffer, end + buffer);
+			},
+			// Prefetch ahead in the pan direction (wider for energy)
+			onPanEnd: (direction, start, end) => {
+				const prefetch = (end - start) * fetchBufferMultiplier;
+				if (direction === -1) {
+					dataManager?.requestRange(end, Math.min(end + prefetch, Date.now()));
+				} else {
+					dataManager?.requestRange(start - prefetch, start);
+				}
+			}
+		});
 
 	// Reactively notify parent whenever viewport changes (pan, zoom, setViewport, initial load, metric switch)
 	$effect(() => {
@@ -783,56 +700,6 @@
 		}
 		onloadcomplete?.({ hasData });
 	});
-
-	// ============================================
-	// Zoom Handler
-	// ============================================
-
-	/**
-	 * Handle zoom — scale viewport around the cursor/pinch center point.
-	 * @param {number} factor - Zoom factor (>1 = zoom in, <1 = zoom out)
-	 * @param {number} centerMs - Time position to anchor the zoom to
-	 */
-	function handleZoom(factor, centerMs) {
-		const duration = viewEnd - viewStart;
-		const newDuration = Math.min(Math.max(duration / factor, MIN_VIEWPORT_MS), MAX_VIEWPORT_MS);
-
-		// Anchor zoom to cursor position — keep centerMs at the same screen proportion
-		const ratio = (centerMs - viewStart) / duration;
-		let newStart = centerMs - ratio * newDuration;
-		let newEnd = newStart + newDuration;
-
-		// Clamp to present
-		const now = Date.now();
-		if (newEnd > now) {
-			newEnd = now;
-			newStart = now - newDuration;
-		}
-
-		viewStart = newStart;
-		viewEnd = newEnd;
-
-		// Request data for any uncached range (wider buffer for energy)
-		const buffer = newDuration * fetchBufferMultiplier;
-		dataManager?.requestRange(viewStart - buffer, viewEnd + buffer);
-	}
-
-	// ============================================
-	// Button Zoom
-	// ============================================
-
-	/** Zoom factor per button click */
-	const BUTTON_ZOOM_FACTOR = 1.5;
-
-	function zoomIn() {
-		const center = (viewStart + viewEnd) / 2;
-		handleZoom(BUTTON_ZOOM_FACTOR, center);
-	}
-
-	function zoomOut() {
-		const center = (viewStart + viewEnd) / 2;
-		handleZoom(1 / BUTTON_ZOOM_FACTOR, center);
-	}
 
 	let isAtMinZoom = $derived(viewEnd - viewStart <= MIN_VIEWPORT_MS);
 	let isAtMaxZoom = $derived(viewEnd - viewStart >= MAX_VIEWPORT_MS);
