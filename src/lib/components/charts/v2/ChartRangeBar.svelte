@@ -143,9 +143,13 @@
 			<Calendar size={14} />
 		</Popover.Trigger>
 		<Popover.Portal>
+			<!-- z-[10000]: the calendar portals to <body>, so it must beat the app's
+			     overlay band — sheets sit at z-[9999] (e.g. the unit detail sheet,
+			     which hosts this range bar). The inline Select menus don't need this;
+			     they stay in the sheet's own stacking context. -->
 			<Popover.Content
 				sideOffset={6}
-				class="z-50 border border-warm-grey bg-white shadow-lg p-3 rounded-xl w-auto max-w-[calc(100vw-2rem)]"
+				class="z-[10000] border border-warm-grey bg-white shadow-lg p-3 rounded-xl w-auto max-w-[calc(100vw-2rem)]"
 			>
 				<DateRangePicker
 					bind:this={datePickerRef}
@@ -197,7 +201,7 @@
 	<!-- Compact layout — range dropdown at every viewport width, for narrow
 	     containers where the preset pills don't fit. Keeps the calendar popover
 	     so custom date ranges stay available. -->
-	<div class="flex items-stretch gap-1.5">
+	<div class="flex items-stretch gap-1.5 font-space">
 		{@render rangeDropdown()}
 		{@render calendarPopover()}
 		{@render intervalControl()}
@@ -205,7 +209,7 @@
 {:else}
 	<!-- Desktop layout — items-stretch so the icon-only calendar matches the height
 	     of the text controls (switcher / interval) rather than sitting shorter. -->
-	<div class="hidden md:flex items-stretch gap-1.5">
+	<div class="hidden md:flex items-stretch gap-1.5 font-space">
 		<!-- Range preset switcher -->
 		<SwitchWithIcons
 			buttons={rangePresets.map((p) => ({ label: p.label, value: p.days }))}
@@ -223,7 +227,7 @@
 	</div>
 
 	<!-- Mobile layout -->
-	<div class="flex md:hidden items-center gap-2">
+	<div class="flex md:hidden items-center gap-2 font-space">
 		{@render rangeDropdown()}
 		{@render intervalControl()}
 	</div>

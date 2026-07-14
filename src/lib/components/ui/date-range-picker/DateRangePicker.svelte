@@ -272,7 +272,7 @@
 	bind:this={containerEl}
 	onfocusin={handleFocusIn}
 	onfocusout={handleFocusOut}
-	class="inline-block font-sans"
+	class="inline-block font-space"
 >
 	<DateRangePicker.Root
 		weekdayFormat="short"
