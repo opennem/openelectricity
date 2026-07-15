@@ -23,6 +23,7 @@
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 	import { sortByDetailedOrder } from '$lib/fuel-tech-groups/detailed';
 	import { deriveCard } from '$lib/og/facility-card-data.js';
+	import { retiredHatch } from '$lib/og/retired-hatch.js';
 	import { facilityPhotoSrc } from '../_utils/facility-photo.js';
 
 	/**
@@ -295,6 +296,16 @@
 			<div
 				class="absolute inset-0"
 				style="background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(0,0,0,0.24));"
+			></div>
+		{/if}
+
+		{#if card?.status === 'retired'}
+			<!-- Decommissioned hatch — subtle diagonal lines over the banner, light or
+			     dark to match the text contrast on this wash/photo. Gated on the
+			     deriveCard rollup so all four hatch surfaces share one source. -->
+			<div
+				class="absolute inset-0"
+				style="background-image: {retiredHatch({ dark: darkText })};"
 			></div>
 		{/if}
 

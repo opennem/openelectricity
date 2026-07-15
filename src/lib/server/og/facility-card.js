@@ -22,6 +22,7 @@ import sharp from 'sharp';
 import { fuelTechColourMap } from '../../theme/openelectricity.js';
 import { OG_CARD_WIDTH as WIDTH, OG_CARD_HEIGHT as HEIGHT } from '../../og/card-dimensions.js';
 import { deriveCard, formatCardSubtitle } from '../../og/facility-card-data.js';
+import { retiredHatch } from '../../og/retired-hatch.js';
 
 const ROOT = process.cwd();
 
@@ -215,6 +216,17 @@ function escapeHtml(s) {
 }
 
 /**
+ * Decommissioned hatch overlay for retired facilities — same pattern as the
+ * in-app banners/tiles (retired-hatch.js), doubled for the 1200×630 canvas.
+ * @param {boolean} dark
+ */
+function hatchLayer(dark) {
+	return `<div style="display:flex;position:absolute;top:0;left:0;width:${WIDTH}px;height:${HEIGHT}px;background-image:${retiredHatch(
+		{ dark, scale: 2 }
+	)};"></div>`;
+}
+
+/**
  * Render a facility's OG card to a JPEG (PNG of a 1200×630 photo is ~800 KB;
  * JPEG keeps the set deploy-friendly while staying universally OG-compatible).
  * @param {{ facility: any, photoBuffer?: Buffer | Uint8Array | null }} opts
@@ -230,6 +242,7 @@ export async function renderFacilityOgCard({ facility, photoBuffer = null }) {
 		markup = `<div style="display:flex;position:relative;width:${WIDTH}px;height:${HEIGHT}px;">
 			<img src="${photo}" style="position:absolute;top:0;left:0;width:${WIDTH}px;height:${HEIGHT}px;object-fit:cover;" />
 			<div style="display:flex;position:absolute;top:0;left:0;width:${WIDTH}px;height:${HEIGHT}px;background:linear-gradient(to bottom, rgba(0,0,0,0) 26%, rgba(0,0,0,0.5) 62%, rgba(0,0,0,0.86) 100%);"></div>
+			${d.status === 'retired' ? hatchLayer(false) : ''}
 			<div style="display:flex;position:absolute;top:52px;left:64px;"><img style="width:219px;height:26px;" src="${logoDataUri(
 				'#ffffff'
 			)}" /></div>
@@ -255,6 +268,7 @@ export async function renderFacilityOgCard({ facility, photoBuffer = null }) {
 		)};">
 			${watermarkImg}
 			<div style="display:flex;position:absolute;top:0;left:0;width:${WIDTH}px;height:${HEIGHT}px;background:linear-gradient(135deg, rgba(255,255,255,0.07), rgba(0,0,0,0.24));"></div>
+			${d.status === 'retired' ? hatchLayer(dark) : ''}
 			<div style="display:flex;position:absolute;top:52px;left:64px;"><img style="width:219px;height:26px;" src="${logoDataUri(
 				textColour
 			)}" /></div>

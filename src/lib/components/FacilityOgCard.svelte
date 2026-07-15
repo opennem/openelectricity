@@ -49,6 +49,7 @@
 	import FuelTechBadge from '$lib/components/FuelTechBadge.svelte';
 	import { getFueltechColor, needsDarkText } from '$lib/utils/fueltech-display';
 	import { deriveCard, formatCardSubtitle } from '$lib/og/facility-card-data.js';
+	import { retiredHatch } from '$lib/og/retired-hatch.js';
 	import { OG_CARD_WIDTH, OG_CARD_HEIGHT } from '$lib/og/card-dimensions.js';
 
 	/** @type {{ facility: any }} */
@@ -83,6 +84,14 @@
 			class="absolute top-0 left-0 origin-top-left"
 			style="width: {OG_CARD_WIDTH}px; height: {OG_CARD_HEIGHT}px; transform: scale({scale});"
 		>
+			{#if card.status === 'retired'}
+				<!-- Decommissioned hatch, matching the satori card — inside the scaled
+				     1200×630 canvas so the pattern downscales exactly like the JPEG. -->
+				<div
+					class="absolute inset-0"
+					style="background-image: {retiredHatch({ dark, scale: 2 })};"
+				></div>
+			{/if}
 			<!-- faint dominant-tech watermark -->
 			<div
 				class="absolute"
