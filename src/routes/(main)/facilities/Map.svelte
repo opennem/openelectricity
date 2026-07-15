@@ -514,19 +514,21 @@
 		});
 	}
 
-	// Fit bounds when facilities change - use idle event
+	// Fit bounds when the facilities set itself changes (filtering) — tracked by
+	// array identity so selection flips can't retrigger it: deselecting a
+	// facility must leave the map where the user put it.
+	/** @type {any[] | null} */
+	let lastFittedFacilities = null;
 	$effect(() => {
-		if (
-			mapInstance &&
-			mapLoaded &&
-			facilities.length > 0 &&
-			!selectedFacilityCode &&
-			!suppressFitBounds
-		) {
-			mapInstance.once('idle', () => {
-				fitMapToFacilities(facilities);
-			});
-		}
+		if (!mapInstance || !mapLoaded || facilities.length === 0) return;
+		const changed = facilities !== lastFittedFacilities;
+		// Mark as seen even when the fit is skipped (facility selected, or the
+		// caller suppressed it) so a later deselect doesn't replay a stale fit.
+		lastFittedFacilities = facilities;
+		if (!changed || selectedFacilityCode || suppressFitBounds) return;
+		mapInstance.once('idle', () => {
+			fitMapToFacilities(facilities);
+		});
 	});
 
 	/**
