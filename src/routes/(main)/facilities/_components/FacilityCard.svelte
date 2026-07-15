@@ -5,18 +5,23 @@
 	import { getRegionLabel } from '../_utils/filters';
 	import formatValue from '../_utils/format-value';
 	import { groupUnits, getOrderedFuelTechGroups } from '../_utils/units';
+	import { nameColumnClass, metaColumnsClass } from '../_utils/list-columns.js';
 
 	/**
 	 * `dense` renders the mobile-sheet row: fuel-tech icons on the left, name
 	 * with a "Tech · Region" subtitle, capacity (and storage) on the right.
 	 * Skips the unit-group hover popup, which doesn't suit touch.
+	 *
+	 * `narrow` is the selected-state list treatment: the list shrinks beside the
+	 * detail panel, so the row drops the storage/capacity and region columns and
+	 * overlaps the fuel-tech badges.
 	 * @type {{
 	 *   facility: any,
 	 *   isHighlighted?: boolean,
 	 *   isSelected?: boolean,
 	 *   compact?: boolean,
 	 *   dense?: boolean,
-	 *   hideMetricCols?: boolean,
+	 *   narrow?: boolean,
 	 *   darkMode?: boolean,
 	 *   isFullscreen?: boolean,
 	 *   metricValue?: number | null,
@@ -32,7 +37,7 @@
 		isSelected = false,
 		compact = false,
 		dense = false,
-		hideMetricCols = false,
+		narrow = false,
 		darkMode = false,
 		isFullscreen = false,
 		metricValue = null,
@@ -69,9 +74,9 @@
 	/** @type {'sm' | 'md' | 'lg'} */
 	let badgeSize = $derived(compact ? 'sm' : 'lg');
 
-	// Standard list badges always spread out (even on the selected row); the
-	// space-constrained cluster popup and dense sheet rows overlap them.
-	let badgesOverlap = $derived(compact || dense);
+	// Standard list badges spread out; the space-constrained cluster popup,
+	// dense sheet rows and the narrowed selected-state list overlap them.
+	let badgesOverlap = $derived(compact || dense || narrow);
 
 	// Dense subtitle: the leading (dominant) fuel tech's base name + short
 	// region, e.g. "Coal · NSW" (coal_black → Coal, solar_utility → Solar) —
@@ -206,9 +211,7 @@
 				</div>
 			</div>
 
-			{#if !hideMetricCols}
-				{@render metricCell()}
-			{/if}
+			{@render metricCell()}
 		</button>
 	</li>
 {:else}
@@ -228,7 +231,9 @@
 			onclick={() => onclick?.(facility)}
 		>
 			<div
-				class="pl-4 sm:pl-6 pr-4 py-3 sm:py-4 pb-2 sm:pb-4 @container col-span-12 sm:col-span-5 min-w-0"
+				class="pl-4 sm:pl-6 pr-4 py-3 sm:py-4 pb-2 sm:pb-4 @container col-span-12 min-w-0 {nameColumnClass(
+					narrow
+				)}"
 			>
 				<div
 					class="{isFullscreen
@@ -240,23 +245,25 @@
 			</div>
 
 			<div
-				class="col-span-12 sm:col-span-7 grid grid-cols-[2fr_1fr_1fr] items-center gap-4 px-4 sm:px-0 py-2 sm:py-0 border-t sm:border-t-0 {hideMetricCols
-					? 'sm:grid-cols-[auto_1fr]'
-					: 'sm:grid-cols-[auto_1fr_auto_auto]'}"
+				class="col-span-12 grid grid-cols-[2fr_1fr_1fr] items-center gap-4 px-4 sm:px-0 py-2 sm:py-0 border-t sm:border-t-0 {metaColumnsClass(
+					narrow
+				)}"
 				class:border-mid-warm-grey={isHighlighted || isSelected}
 				class:border-warm-grey={!isHighlighted && !isSelected}
 			>
-				<div
-					class="text-xxs tablet:text-xs text-mid-grey col-start-2 sm:col-start-auto flex justify-end sm:justify-start"
-				>
-					<span
-						class="block w-14 tablet:w-18 border-r pr-4 tablet:pr-6 text-right group-hover:border-light-warm-grey"
-						class:border-mid-warm-grey={isHighlighted || isSelected}
-						class:border-warm-grey={!isHighlighted && !isSelected}
+				{#if !narrow}
+					<div
+						class="text-xxs tablet:text-xs text-mid-grey col-start-2 sm:col-start-auto flex justify-end sm:justify-start"
 					>
-						{getRegionLabel(facility.network_id, facility.network_region)}
-					</span>
-				</div>
+						<span
+							class="block w-14 tablet:w-18 border-r pr-4 tablet:pr-6 text-right group-hover:border-light-warm-grey"
+							class:border-mid-warm-grey={isHighlighted || isSelected}
+							class:border-warm-grey={!isHighlighted && !isSelected}
+						>
+							{getRegionLabel(facility.network_id, facility.network_region)}
+						</span>
+					</div>
+				{/if}
 
 				<div
 					class="col-start-1 row-start-1 sm:col-start-auto sm:row-start-auto sm:ml-3 flex items-center"
@@ -266,7 +273,7 @@
 					</span>
 				</div>
 
-				{#if !hideMetricCols}
+				{#if !narrow}
 					<div class="hidden sm:flex w-24 justify-end items-baseline gap-1 mr-4">
 						{#if totalStorage > 0}
 							<span

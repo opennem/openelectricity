@@ -354,8 +354,9 @@
 	let isYearPlaying = $state(false);
 
 	// When a facility is selected in list view, collapse the list pane (drop the
-	// Storage + Capacity columns) to give the map/detail more room — animated.
-	const LIST_COMPACT_WIDTH = 400;
+	// Storage + Capacity + Region columns, overlap the fuel-tech badges) to give
+	// the map/detail more room — animated. 320 fits name + overlapped badges.
+	const LIST_COMPACT_WIDTH = 320;
 	let listCompact = $derived(isDesktop && selectedView === 'list' && !!selectedFacility);
 	let listPaneWidth = $derived(
 		listCompact ? Math.min(mainDrag.value, LIST_COMPACT_WIDTH) : mainDrag.value

@@ -4,6 +4,7 @@
 	import FacilityCard from './_components/FacilityCard.svelte';
 	import { scrollToFacilityIfNeeded } from './_utils/scroll-utils';
 	import { sortFacilities, getNextSort } from './_utils/sort-facilities';
+	import { nameColumnClass, metaColumnsClass } from './_utils/list-columns.js';
 	import Tooltip from '$lib/components/ui/Tooltip.svelte';
 	import { CAPACITY_TOOLTIP } from './_utils/capacity-tooltip.js';
 
@@ -113,24 +114,24 @@
 		<div class="hidden sm:block sticky top-0 z-10 bg-white border-b border-mid-warm-grey">
 			<div class="grid grid-cols-12 items-center gap-2 pr-6">
 				<button
-					class="col-span-5 flex items-center gap-1 pl-6 pr-4 py-3 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer text-left"
+					class="flex items-center gap-1 pl-6 pr-4 py-3 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer text-left {nameColumnClass(
+						compact
+					)}"
 					onclick={() => handleSort('name')}
 				>
 					Facility
 					{@render sortIcon('name')}
 				</button>
-				<div
-					class="col-span-7 grid items-center gap-4 {compact
-						? 'grid-cols-[auto_1fr]'
-						: 'grid-cols-[auto_1fr_auto_auto]'}"
-				>
-					<button
-						class="flex items-center gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer"
-						onclick={() => handleSort('region')}
-					>
-						Region
-						{@render sortIcon('region')}
-					</button>
+				<div class="grid items-center gap-4 {metaColumnsClass(compact)}">
+					{#if !compact}
+						<button
+							class="flex items-center gap-1 text-xs font-medium text-mid-grey hover:text-dark-grey transition-colors cursor-pointer"
+							onclick={() => handleSort('region')}
+						>
+							Region
+							{@render sortIcon('region')}
+						</button>
+					{/if}
 					<div class="ml-3 text-xs font-medium text-mid-grey">Tech</div>
 					{#if !compact}
 						<button
@@ -168,7 +169,7 @@
 				{facility}
 				isHighlighted={hoveredFacility?.code === facility.code}
 				isSelected={selectedFacilityCode === facility.code}
-				hideMetricCols={compact}
+				narrow={compact}
 				{dense}
 				{isFullscreen}
 				metricValue={metricActive ? (metricValuesRaw.get(facility.code) ?? null) : null}
